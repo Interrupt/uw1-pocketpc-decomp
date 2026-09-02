@@ -53,6 +53,10 @@ Then run with:
 UW_DATA_DIR=/path/to/UWDATA ./build/uw
 ```
 
+A copy of the extracted game data also lives at `data/` in this repo for
+local convenience (`UW_DATA_DIR=$(pwd)/data ./build/uw`) — it's
+gitignored, not checked in, since it's copyrighted game data.
+
 File loads are logged to stderr (`[fileio] open-read: ...`), including
 failures, which is the fastest way to tell what's missing or misnamed.
 
