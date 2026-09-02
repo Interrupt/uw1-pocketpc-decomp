@@ -1445,7 +1445,7 @@ void FUN_00078434();
 void FUN_00078550();
 undefined4 FUN_0007856c();
 void thunk_FUN_00078e28();
-undefined4 FUN_0007863c();
+char *FUN_0007863c();
 int FUN_0007873c();
 uint FUN_00078918();
 void FUN_00078a04();

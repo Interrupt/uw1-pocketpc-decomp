@@ -326,9 +326,19 @@ long Ordinal_535()
     return 0;
 }
 
-long Ordinal_553()
+/* CloseHandle-shaped file-close, used ~49 times across uw.c (e.g.
+ * FUN_0007ee4c closes every file it opens through this). Was a no-op,
+ * so every file handle ever opened leaked -- harmless until a loop that
+ * opens+"closes" a file every frame (e.g. the credits screen, reopening
+ * CREDIT1/2/3.BYT once per tick while waiting for input) exhausted the
+ * 64-slot handle table within a few seconds, after which *every*
+ * subsequent file open in the whole game failed (including files
+ * completely unrelated to the credits screen, like OPSCR.BYT/PALS.DAT
+ * when returning to the options menu), triggering a fatal error exit. */
+long Ordinal_553(handle)
+int handle;
 {
-    return 0;
+    return uw_file_close(handle);
 }
 
 long Ordinal_687()
@@ -366,14 +376,28 @@ long Ordinal_859()
     return 0;
 }
 
+/* DAT_0023c448 is uw.c's real "pending input event" flags word, set
+ * directly by FUN_00077b2c() from uw_pump_events()'s real SDL key
+ * events (not through a faked MSG struct). */
+extern unsigned short DAT_0023c448;
+
 int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigned int wMsgFilterMax, unsigned int wRemoveMsg)
 {
     (void)msg; (void)hwndFilter; (void)wMsgFilterMin; (void)wMsgFilterMax; (void)wRemoveMsg;
     uw_pump_events();
-    return 0; /* always report "no message pending": the caller
-                 branches on the message contents only when this
-                 is nonzero, and we drive input/quit directly from
-                 uw_pump_events() instead of faking a MSG struct. */
+    /* Originally always returned 0 ("never a message pending") on the
+     * assumption that every caller only branches on the message
+     * contents when this is nonzero and that driving input via
+     * DAT_0023c448 directly was independent of that. That's wrong for
+     * FUN_000579e4 (uw.c) -- the real keyboard-polling function used by
+     * every menu/input-wait loop in the game -- which only reads
+     * DAT_0023c448 *inside* the branch gated on this return value being
+     * nonzero. With this always 0, DAT_0023c448 was never read at all,
+     * so no keypress could ever reach the game after the first screen
+     * that waits on input (confirmed: menu displayed correctly but
+     * never responded to any key). Report a message pending whenever
+     * there's a real one queued. */
+    return DAT_0023c448 != 0;
 }
 
 long Ordinal_866()

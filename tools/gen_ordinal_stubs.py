@@ -125,6 +125,22 @@ SPECIAL = {
         body="    if (f == 0) return 0;\n"
              "    return fclose((FILE *)f);",
     ),
+    "553": dict(
+        # CloseHandle-shaped, ~49 call sites across uw.c, always closing a
+        # handle FUN_000227d4/uw_file_open_read (or the write-side
+        # equivalent) returned. A no-op stub silently leaked every file
+        # handle ever opened through this path -- harmless most of the
+        # time, but a loop that opens+"closes" a file every frame (e.g.
+        # the credits screen, reopening CREDIT1/2/3.BYT once per tick
+        # while waiting for input) exhausts the 64-slot handle table
+        # within a few seconds, after which *every* subsequent file open
+        # anywhere in the game fails, including files unrelated to
+        # whatever was leaking (confirmed: returning from the credits
+        # screen to the options menu then failed to reopen OPSCR.BYT/
+        # PALS.DAT/OPBTN.GR, triggering a fatal-error exit).
+        proto="long Ordinal_553(int handle)",
+        body="    return uw_file_close(handle);",
+    ),
     "1064": dict(
         # strchr-shaped: every one of its 10 call sites passes a small
         # constant (0x40='@', 10='\n', 0x20=' ', 0x30='0', 0x26='&',

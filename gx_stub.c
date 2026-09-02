@@ -3,6 +3,7 @@
 #include "gx_stub.h"
 #include "ordinal_stubs.h"
 #include "uw.h"
+#include "demomode.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -86,6 +87,7 @@ static int translate_vk(SDL_Keycode sym) {
 void uw_pump_events(void) {
     SDL_Event ev;
     if (!g_win) return;
+    demomode_pump();
     while (SDL_PollEvent(&ev)) {
         switch (ev.type) {
             case SDL_QUIT:
@@ -137,6 +139,7 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
     g_tex = SDL_CreateTexture(g_ren, SDL_PIXELFORMAT_RGB565,
                                SDL_TEXTUREACCESS_STREAMING, GX_W, GX_H);
     memset(g_framebuffer, 0, sizeof(g_framebuffer));
+    demomode_init();
     return 1;
 }
 

@@ -26,7 +26,10 @@ static undefined2 DAT_0024ad60_backing[32768];
 ushort DAT_0008909c;
 short DAT_0008894c;
 short DAT_000a85b8;
-int DAT_00088940;
+/* Was `int`, truncating the real char* pointer (DAT_000890a4) assigned
+   into it -- used as a glyph-bitmap-data base address in byte-pointer
+   arithmetic passed to FUN_000112fc. */
+char *DAT_00088940;
 int DAT_0024af74;
 int DAT_0023c5b0;
 byte DAT_0008429c_backing[128];
@@ -35,7 +38,14 @@ char *DAT_000879b0;
 undefined2 DAT_000a85b0;
 char *DAT_000890a4;
 short DAT_0024ad94;
-undefined2 DAT_000891b0;
+/* Was a lone `undefined2` scalar, but used as a full-screen shadow/
+   backup buffer the same size as g_uw_buf_25800 (FUN_00011478 saves
+   aside every non-transparent pixel across the whole 320x200 framebuffer
+   into it; FUN_000114e4/FUN_0001156c restore from it later) -- classic
+   "undersized global used as a large table" bug. Widened to match
+   g_uw_buf_25800's exact size (0x25800 bytes = 76800 shorts). */
+static undefined2 DAT_000891b0_backing[76800];
+#define DAT_000891b0 DAT_000891b0_backing[0]
 undefined2 DAT_000a85c0;
 undefined2 DAT_000a85c4;
 undefined2 DAT_000a85c8;
@@ -782,7 +792,12 @@ static undefined DAT_00084e50_backing[8192];
 static undefined DAT_00084e58_backing[8192];
 #define DAT_00084e58 DAT_00084e58_backing[0]
 char *DAT_001005c8;
-undefined4 DAT_000fb858;
+/* Was `undefined4` (4 bytes), but assigned real char* pointers
+   (DAT_001005c4/DAT_001005c8) throughout the character-generation/
+   font-drawing subsystem and passed directly as FUN_00011e5c's char*
+   source-bitmap param -- truncated every one of those pointers on this
+   64-bit host. */
+char *DAT_000fb858;
 char *DAT_001005c4;
 static undefined1 DAT_000fb860_backing[256];
 #define DAT_000fb860 DAT_000fb860_backing[0]
@@ -967,7 +982,10 @@ char s_set_quest_000851fc[] = "set_quest";
 char s_get_quest_00085208[] = "get_quest";
 char s_babl_fmenu_00085214[] = "babl_fmenu";
 char s_babl_menu_00085220[] = "babl_menu";
-undefined4 DAT_001007b8;
+/* Was `undefined4`, truncating the real char* buffer FUN_00018ac8
+   returns (assigned at its only writer) -- dereferenced directly a
+   few lines after its only other read. */
+char *DAT_001007b8;
 char DAT_001007b4;
 undefined4 LAB_0001840c()
 
@@ -2900,6 +2918,16 @@ static undefined1 DAT_0024bfa4_backing[1052672];
 #define DAT_0024bfa4 DAT_0024bfa4_backing[0]
 static undefined1 DAT_0024bfa5_backing[1052672];
 #define DAT_0024bfa5 DAT_0024bfa5_backing[0]
+/* The record-registration function (near FUN_00078820, "the string-
+   interning cache") splits a real char* pointer byte-by-byte across
+   these FOUR SEPARATE byte-plane arrays at the SAME index (byte0 in
+   bfa2[i], byte1 in bfa3[i], byte2 in bfa4[i], byte3 in bfa5[i]) --
+   capturing only the pointer's low 32 bits even before this port's
+   64-bit truncation concerns. A side table of real pointers, indexed
+   the same way (record*0x201+slot, i.e. the byte-plane index /4) is
+   used instead wherever the real pointer is needed. Sized to match
+   DAT_0024bfa2_backing's total addressable slot count (1052672/4). */
+static char *g_bfa2_real_ptrs[263168];
 static undefined1 DAT_0024c7a2_backing[8200];
 #define DAT_0024c7a2 DAT_0024c7a2_backing[0]
 static undefined1 DAT_0024c7a3_backing[8200];
@@ -3921,7 +3949,9 @@ short param_7;
 void FUN_000120c8(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 short param_1;
 short param_2;
-int param_3;
+/* Was `int`, truncating the real char* source-bitmap pointer callers
+   pass (e.g. DAT_001005c8) -- same role/bug as FUN_00011e5c's param_3. */
+char *param_3;
 short param_4;
 short param_5;
 short param_6;
@@ -4100,7 +4130,9 @@ undefined2 * param_3;
     do {
       iVar9 = iVar9 + -1;
       iVar1 = ((int)((*puVar7 & 0xf800) << 1) >> 6) * iVar6 >> 0x12;
-      puVar8 = (ushort *)(((int)param_3 - (int)puVar4) + (int)puVar7);
+      /* Same param_3/puVar4/puVar7 offset-reconstruction truncation as
+         FUN_000122d4 right above -- see its comment. */
+      puVar8 = (ushort *)(((intptr_t)param_3 - (intptr_t)puVar4) + (intptr_t)puVar7);
       *puVar8 = (ushort)((uint)(iVar1 << 0x1b) >> 0x10);
       uVar3 = (ushort)(iVar1 << 0xb) |
               (ushort)((((int)((*puVar7 & 0x7e0) << 7) >> 6) * iVar6 >> 0x12) << 5);
@@ -12669,15 +12701,27 @@ undefined1 param_4;
   int iVar4;
   bool bVar5;
   bool bVar6;
-  char acStack_41 [31];
-  char local_22 [2];
+  /* acStack_41[31] and local_22[2] were separate Ghidra locals, but
+     their names encode adjacent stack offsets in the original binary
+     (-0x41 to -0x22 is exactly 31 bytes) and the code walks backward
+     from `local_22 + 1` straight into acStack_41 -- the classic
+     "separate locals relied on being contiguous" artifact documented
+     in the README. Merged into one 33-byte array; local_22[x] becomes
+     acStack_41[31 + x]. */
+  char acStack_41 [33];
+  /* param_2 - pcVar2 offset-reconstruction idiom (same pattern as
+     FUN_00022abc): `(int)param_2 - (int)pcVar2` truncated both real
+     pointers before iVar3's later `pcVar2[iVar3]` re-addition. iVar3
+     itself is reused for a plain int digit-counter earlier in this
+     function, so this needs its own dedicated variable. */
+  intptr_t offset;
   
   bVar5 = param_1 < 0;
   bVar6 = param_1 == 0;
   if (bVar6) {
     param_4 = 0x30;
   }
-  local_22[1] = 0;
+  acStack_41[32] = 0;
   if (bVar6) {
     *param_2 = param_4;
     param_2[1] = 0;
@@ -12688,7 +12732,7 @@ undefined1 param_4;
       param_1 = -param_1;
     }
     if (0 < param_1) {
-      pcVar2 = local_22 + 1;
+      pcVar2 = acStack_41 + 32;
       do {
         iVar3 = iVar3 + -1;
         Ordinal_2005(param_3,param_1);
@@ -12703,10 +12747,10 @@ undefined1 param_4;
       acStack_41[iVar3] = '-';
     }
     pcVar2 = acStack_41 + iVar4 + 1;
-    iVar3 = (int)param_2 - (int)pcVar2;
+    offset = (intptr_t)param_2 - (intptr_t)pcVar2;
     do {
       cVar1 = *pcVar2;
-      pcVar2[iVar3] = cVar1;
+      pcVar2[offset] = cVar1;
       pcVar2 = pcVar2 + 1;
     } while (cVar1 != '\0');
   }
@@ -13244,9 +13288,9 @@ int param_1;
 
 undefined4 FUN_000238b4(param_1,param_2,param_3,param_4)
 byte * param_1;
-int param_2;
-int param_3;
-int param_4;
+char *param_2;
+char *param_3;
+char *param_4;
 
 {
   byte bVar1;
@@ -13275,7 +13319,14 @@ int param_4;
           iVar3 = (int)sVar2;
           *(undefined1 *)(param_3 + 10) = *(undefined1 *)(iVar3 + param_4);
           *(undefined1 *)(param_3 + 0xb) = 0;
-          if (*(char *)(iVar3 + param_4) != '\0') {
+          /* *(int*)(param_3+6) (the outer character record's +0x42
+             field) is never written anywhere in this decompile -- same
+             "unrecoverable, never-populated pointer field" class as
+             DAT_000fb880 above. The record is heap-allocated (not
+             zeroed), so this field holds arbitrary garbage rather than
+             a reliable 0 -- a `!= 0` guard isn't enough to catch it.
+             Skip unconditionally instead of writing through it. */
+          if (0) {
             iVar5 = 0;
             do {
               *(char *)(*(int *)(param_3 + 6) + iVar5 * 2) =
@@ -13333,11 +13384,12 @@ void FUN_00023b38()
 {
   int iVar1;
   int iVar2;
-  undefined4 uVar3;
+  /* Was `undefined4`, truncating FUN_0007863c's real char* return. */
+  char *uVar3;
   int iVar4;
   int iVar5;
   undefined1 auStack_24 [12];
-  
+
   FUN_00011694(0x1a);
   FUN_00011774(0x1e,0x85,0x7d,0xbc);
   FUN_00035df8(1);
@@ -13371,11 +13423,11 @@ void FUN_00023b38()
 
 int FUN_00023c90(param_1,param_2)
 int param_1;
-int param_2;
+char *param_2;
 
 {
   int iVar1;
-  
+
   for (iVar1 = param_1 << 0x10; iVar1 = iVar1 >> 0x10, iVar1 < 6; iVar1 = (iVar1 + 1) * 0x10000) {
     if (*(byte *)(iVar1 + param_2) < 0x14) {
       FUN_00070548(*(byte *)(iVar1 + param_2));
@@ -13395,10 +13447,16 @@ void FUN_00023cdc()
   uint uVar3;
   undefined4 uVar4;
   int extraout_r1;
-  int iVar5;
+  /* Was `int`, truncating the real char* pointer DAT_0023be74. */
+  char *iVar5;
+  /* iVar6 doubles as a plain int index (into &DAT_000fb860) in the
+     first loop and a real pointer (DAT_00086df8 + iVar2) in the
+     second -- mutually exclusive, but both squeezed into `int`,
+     truncating the pointer role. Dedicated variable for that role. */
   int iVar6;
+  char *pcVar_df8;
   uint uVar7;
-  
+
   iVar2 = 0;
   do {
     iVar6 = iVar2 + (uint)(*(byte *)(DAT_00086df8 + 100) >> 5) * 4;
@@ -13408,9 +13466,9 @@ void FUN_00023cdc()
   } while (iVar2 < 3);
   iVar2 = 0;
   do {
-    iVar6 = DAT_00086df8 + iVar2;
+    pcVar_df8 = DAT_00086df8 + iVar2;
     iVar2 = iVar2 + 1;
-    *(undefined1 *)(iVar6 + 0x21) = 0;
+    *(undefined1 *)(pcVar_df8 + 0x21) = 0;
   } while (iVar2 < 0x14);
   for (uVar7 = (uint)(byte)(&DAT_000fb863)[(uint)(*(byte *)(DAT_00086df8 + 100) >> 5) * 4];
       0 < (int)uVar7; uVar7 = uVar7 - uVar3) {
@@ -13440,38 +13498,65 @@ short * param_1;
 {
   byte bVar1;
   byte bVar2;
-  int iVar3;
+  /* Was `int iVar3` holding DAT_000fb858 (a real pointer, used as
+     FUN_00011e5c's source-bitmap arg right after) -- truncating. Only
+     ever used for this one pointer-holding role in this function. */
+  char *iVar3;
   short sVar4;
   short sVar5;
   undefined2 uVar6;
   short sVar7;
-  undefined4 uVar8;
+  /* Was `undefined4`, truncating FUN_0007863c's real char* return
+     (a string-resource lookup) before it's passed to FUN_000112a0
+     (strlen-shaped) and FUN_00011060 (draw string). */
+  char *uVar8;
   int iVar9;
   int extraout_r1;
   int iVar10;
   int iVar11;
+  /* iVar11 doubles as a real pointer (DAT_000fb858 + a small table
+     offset, read from right after) early on, and a plain int for
+     screen-coordinate math for the rest of the function -- mutually
+     exclusive, but both squeezed into `int iVar11`, truncating the
+     pointer since DAT_000fb858 is a real 64-bit pointer. Dedicated
+     variable for the pointer role only. */
+  char *pcVar_off;
   uint uVar12;
   uint uVar13;
   ushort local_2c;
   int local_28;
-  
+
   if (*(int *)(param_1 + 3) == 0) {
     uVar12 = (uint)(short)local_2c;
     iVar10 = 9;
     uVar13 = (uint)(short)local_2c;
   }
   else {
-    iVar11 = (&DAT_000fb880)[param_1[6]] + DAT_000fb858;
+    pcVar_off = DAT_000fb858 + (&DAT_000fb880)[param_1[6]];
     sVar7 = *param_1;
     FUN_00035df8(0);
     DAT_000fb858 = DAT_001005c4;
     iVar10 = 0x14;
-    bVar1 = *(byte *)(iVar11 + -3);
+    /* DAT_000fb880 (indexed by param_1[6], a race/portrait-style
+       selector) is never written anywhere in this decompile -- no call
+       site populates it, so it's permanently all-zero. With a zero
+       table entry, pcVar_off lands exactly at DAT_000fb858's buffer
+       start and `pcVar_off + -3/-4` reads before the allocation
+       (heap-buffer-overflow). Since there's no real data to read here
+       (this table's real populator is unrecovered, same class as the
+       already-documented non-functional glyph-width/texture-LUT
+       subsystems), fall back to 0 instead of underrunning the buffer. */
+    if (pcVar_off - DAT_000fb858 < 4) {
+      bVar1 = 0;
+      bVar2 = 0;
+    } else {
+      bVar1 = *(byte *)(pcVar_off + -3);
+      bVar2 = *(byte *)(pcVar_off + -4);
+    }
     uVar13 = (uint)bVar1;
     if ((sVar7 != 0) == 0) {
       iVar10 = 0;
     }
-    bVar2 = *(byte *)(iVar11 + -4);
     uVar12 = (uint)bVar2;
     sVar5 = param_1[5];
     local_2c = (ushort)bVar1;
@@ -13543,7 +13628,10 @@ short * param_1;
                      (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)param_1 + 0xd),(char)param_1[6])]
                      + iVar3,(int)(short)local_2c,sVar7,0,0,0);
         if (param_1[6] == 0) {
-          uVar8 = FUN_0007863c(*(byte *)(*(int *)(param_1 + 3) + local_28 * 2) | 0x400);
+          /* param_1+3 (byte offset +6 in the record) holds a relative
+             offset from &DAT_000fb8f0, not an absolute pointer -- see
+             the write site in FUN_00025608. Reconstruct before use. */
+          uVar8 = FUN_0007863c(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + local_28 * 2) | 0x400);
           sVar5 = FUN_000112a0();
           iVar9 = (int)sVar7 - (int)sVar5;
           if (iVar9 < 0) {
@@ -13555,8 +13643,9 @@ short * param_1;
           DAT_00088960 = 1;
           FUN_00011e5c(iVar11,iVar10,
                        (&DAT_000fb880)
-                       [(int)(((uint)**(byte **)(param_1 + 3) +
-                               ((int)((uint)(*(byte **)(param_1 + 3))[1] << 0x18) >> 0x10) +
+                       [(int)(((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) +
+                               ((int)((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3) + 1)
+                                      << 0x18) >> 0x10) +
                               local_28) * 0x10000) >> 0x10] + DAT_000fb858,(int)(short)local_2c,
                        sVar7,0,0,1);
           DAT_00088960 = 0;
@@ -13587,6 +13676,11 @@ byte param_3;
   uint uVar8;
   int iVar9;
   int iVar10;
+  /* iVar10 doubles as a plain int (screen-coordinate math, early on) and
+     a real pointer (DAT_000fb858, used as FUN_00011e5c's source-bitmap
+     arg) later -- mutually exclusive, but both squeezed into one `int`,
+     truncating the pointer. Dedicated variable for the pointer role. */
+  char *pcVar_fb858;
   byte local_2c [2];
   short local_2a;
   short local_28;
@@ -13599,16 +13693,23 @@ byte param_3;
     local_2c[0] = param_3;
     local_2c[1] = param_2;
     iVar9 = 0;
-    bVar1 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -3);
+    /* Same DAT_000fb880-is-never-written underflow guard as
+       FUN_00023de8 above -- see its comment. */
+    if ((&DAT_000fb880)[param_1[6]] < 4) {
+      bVar1 = 0;
+      bVar2 = 0;
+    } else {
+      bVar1 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -3);
+      bVar2 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -4);
+    }
     local_28 = param_1[9] + 0xa0;
-    bVar2 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -4);
     iVar10 = -(((int)param_1[7] + (int)sVar4) * ((short)(ushort)bVar1 + 4));
     iVar5 = iVar10 + 200;
     if (iVar5 < 0) {
       iVar5 = iVar10 + 0xc9;
     }
     local_2a = (short)(iVar5 >> 1) + 3;
-    iVar10 = DAT_000fb858;
+    pcVar_fb858 = DAT_000fb858;
     do {
       uVar8 = (uint)local_2c[iVar9];
       if ((int)uVar8 < (int)param_1[5]) {
@@ -13624,9 +13725,9 @@ byte param_3;
         DAT_000fb858 = DAT_001005c4;
         DAT_00088960 = 1;
         FUN_00011e5c((int)extraout_r1 * ((int)sVar4 + (uint)bVar2) + iVar6,
-                     (int)sVar3 * (bVar1 + 4) + iVar5,iVar7 + iVar10,(uint)bVar1,bVar2,0,0,1);
+                     (int)sVar3 * (bVar1 + 4) + iVar5,pcVar_fb858 + iVar7,(uint)bVar1,bVar2,0,0,1);
         FUN_000570b4();
-        iVar10 = DAT_000fb858;
+        pcVar_fb858 = DAT_000fb858;
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
     } while (iVar9 < 2);
@@ -13665,8 +13766,15 @@ uint param_2;
   uint local_4;
   
   sVar4 = *param_1;
-  bVar2 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -4);
-  bVar3 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -3);
+  /* Same DAT_000fb880-is-never-written underflow guard as
+     FUN_00023de8 above -- see its comment. */
+  if ((&DAT_000fb880)[param_1[6]] < 4) {
+    bVar2 = 0;
+    bVar3 = 0;
+  } else {
+    bVar2 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -4);
+    bVar3 = *(byte *)((&DAT_000fb880)[param_1[6]] + DAT_000fb858 + -3);
+  }
   sVar5 = param_1[9];
   local_3c = (ushort)bVar2;
   iVar10 = bVar3 + 4;
@@ -13966,21 +14074,43 @@ LAB_00024dd4:
 
 
 undefined4 FUN_00024e24(param_1,param_2,param_3)
-int param_1;
-int param_2;
-int param_3;
+char *param_1;
+char *param_2;
+char *param_3;
 
 {
   uint uVar1;
   byte bVar2;
   byte bVar3;
   int iVar4;
+  /* iVar4 doubles as the character record's name-string pointer field
+     (read from pcVar_rec+6, a relative offset from &DAT_000fb8f0 --
+     see the write site in FUN_00025608 and FUN_00023de8's matching
+     read-site comments) early in each state, and a plain screen-
+     coordinate int in case 4 later -- mutually exclusive, but the
+     pointer role can't just reuse `iVar4 + base` arithmetic since it's
+     a *relative* offset needing reconstruction against &DAT_000fb8f0,
+     not a raw pointer. Dedicated variable for the pointer role. */
+  char *pcVar_name;
   char *pcVar5;
+  /* iVar13 doubles as a "current character record" pointer (0x14-byte
+     stride into param_3, computed fresh at the top of each state-machine
+     iteration and consumed by FUN_00023de8/FUN_0002431c/FUN_00024840,
+     all of which take a real `short *`) and, later in the SAME
+     iteration inside case 4, a plain screen-coordinate int -- mutually
+     exclusive in practice (the pointer role is only read before the
+     switch), but both squeezed into one `int` `iVar13`, truncating the
+     pointer role now that param_3 is a real 64-bit pointer. Given a
+     dedicated variable for the pointer role only; iVar13 keeps its
+     case-4 int role untouched. */
+  char *pcVar_rec;
   ulonglong uVar6;
   undefined1 uVar7;
   short sVar8;
   uint uVar9;
-  undefined4 uVar10;
+  /* Was `undefined4`, truncating FUN_0007863c's real char* return
+     before FUN_000112a0/FUN_00011060 use it as a pointer. */
+  char *uVar10;
   int iVar11;
   undefined4 extraout_r1;
   undefined4 extraout_r1_00;
@@ -13991,34 +14121,41 @@ int param_3;
   ulonglong uVar15;
   byte local_64 [4];
   undefined4 local_60;
-  undefined4 local_5c;
-  undefined1 local_58;
-  undefined1 local_57;
-  undefined1 local_56;
-  undefined1 local_55;
-  undefined1 local_54;
-  undefined1 local_53;
+  char *pcVar_p2off;
+  /* local_5c and local_58 were separate Ghidra locals (`undefined4
+     local_5c` + 6 more `undefined1 local_58/57/56/55/54/53` scalars),
+     but their names encode adjacent stack offsets (-0x5c then -0x58,
+     4 bytes apart) and the code writes across both as one flowing
+     buffer -- `&local_5c + local_64[0] + 3` walks from local_5c's last
+     byte straight into local_58's first bytes as local_64[0] grows.
+     Classic "separate locals relied on being contiguous" artifact
+     (see the README). Merged into one 10-byte array: local_5c's old 4
+     bytes are index [0,4), local_58's old 6 bytes are index [4,10).
+     local_5c's own VALUE was never read anywhere (only its address),
+     so its old write is dropped; FUN_000238b4/FUN_00023c90 get
+     `local_5c_buf + 4` where they used to get `local_58`. */
+  undefined1 local_5c_buf [10];
   undefined1 auStack_4c [32];
-  
+
   local_64[0] = 0;
   sVar8 = 0;
   uVar15 = FUN_00076a2c(0x5f,0x6e);
   local_60 = (undefined4)uVar15;
-  local_5c = param_2 + 0x20;
-  local_58 = 0x14;
-  local_57 = 0x14;
-  local_56 = 0x14;
-  local_55 = 0x14;
-  local_54 = 0x14;
-  local_53 = 0x14;
-  *(char *)(param_3 + 0x7a) = (char)auStack_4c;
-  *(char *)(param_3 + 0x7b) = (char)((uint)auStack_4c >> 8);
-  *(char *)(param_3 + 0x7c) = (char)((uint)auStack_4c >> 0x10);
-  *(char *)(param_3 + 0x7d) = (char)((uint)auStack_4c >> 0x18);
+  pcVar_p2off = param_2 + 0x20;
+  memset(local_5c_buf + 4, 0x14, 6);
+  /* Was 4 separate byte writes reconstructing a 32-bit address (`(char)
+     auStack_4c`, `>>8`, `>>0x10`, `>>0x18`) at param_3+0x7a..0x7d --
+     correct for the original 32-bit binary, but only ever captured the
+     low 32 bits of a real pointer; the later read-back at case 6
+     (`pcVar5 = *(char **)(param_3 + 0x7a);`) reads a full 8-byte
+     pointer, so the upper 4 bytes were left uninitialized garbage.
+     Store the real pointer directly instead. */
+  *(char **)(param_3 + 0x7a) = auStack_4c;
   do {
     iVar12 = (int)sVar8;
-    iVar13 = iVar12 * 0x14 + param_3;
-    iVar4 = *(int *)(iVar13 + 6);
+    pcVar_rec = param_3 + iVar12 * 0x14;
+    iVar4 = *(int *)(pcVar_rec + 6);
+    pcVar_name = (char *)&DAT_000fb8f0 + iVar4;
     FUN_00011478((int)uVar15,(int)(uVar15 >> 0x20));
     FUN_00035df8(1);
     DAT_000fb858 = DAT_001005c8;
@@ -14030,10 +14167,10 @@ int param_3;
     FUN_00011694(0x1a);
     FUN_00011774(0x11,0,0x8e,199);
     FUN_000114e4();
-    FUN_00023de8(iVar13);
-    FUN_0002431c(iVar13,0,0xff);
+    FUN_00023de8((short *)pcVar_rec);
+    FUN_0002431c((short *)pcVar_rec,0,0xff);
     FUN_000114e4();
-    uVar15 = FUN_00024840(iVar13);
+    uVar15 = FUN_00024840((short *)pcVar_rec);
     uVar6 = CONCAT44((int)(uVar15 >> 0x20),DAT_00086df8);
     uVar9 = (uint)uVar15;
     uVar1 = (uint)(short)uVar15;
@@ -14042,13 +14179,8 @@ int param_3;
         return 0;
       }
       local_64[0] = 0;
-      local_58 = 0x14;
+      memset(local_5c_buf + 4, 0x14, 6);
       DAT_001005c0 = 0;
-      local_57 = 0x14;
-      local_56 = 0x14;
-      local_55 = 0x14;
-      local_54 = 0x14;
-      local_53 = 0x14;
       FUN_00035df8(1);
       DAT_000fb858 = DAT_001005c8;
       FUN_00011e5c(0,0,DAT_001005c8,200,0x140,0,0,1);
@@ -14063,13 +14195,20 @@ LAB_00025468:
       bVar2 = (byte)uVar15;
       switch(iVar12) {
       case 0:
-        uVar10 = FUN_0007863c(*(byte *)(uVar1 + iVar4) | 0x400);
+        uVar10 = FUN_0007863c(*(byte *)(pcVar_name + uVar1) | 0x400);
         uVar7 = 0xc;
         if (uVar1 == 0) {
           uVar7 = 7;
         }
-        *(undefined1 *)CONCAT13(*(undefined1 *)(param_3 + 0x59),*(undefined3 *)(param_3 + 0x56)) =
-             uVar7;
+        /* Was a write through CONCAT13(param_3+0x59, param_3+0x56) --
+           reconstructing a pointer split across those 4 bytes the same
+           way param_3+0x7a's pointer field was (see that fix above).
+           But nothing anywhere in this file ever WRITES a real value
+           into param_3+0x56/0x59 in the first place (confirmed by
+           search), so the "pointer" being reconstructed here was
+           always garbage/zero -- and nothing ever READS this field
+           back either, so the write itself is dead regardless. Skipped
+           rather than writing through reconstructed garbage. */
         *(byte *)(DAT_00086df8 + 100) =
              *(byte *)(DAT_00086df8 + 100) & 0xfd | (byte)((uVar9 & 1) << 1);
         FUN_00057118();
@@ -14084,15 +14223,15 @@ LAB_00025468:
         *(byte *)(DAT_00086df8 + 100) = (bVar2 ^ bVar3) & 1 ^ bVar3;
         break;
       case 2:
-        uVar10 = FUN_0007863c(*(byte *)(iVar4 + uVar1 * 2) | 0x400);
+        uVar10 = FUN_0007863c(*(byte *)(pcVar_name + uVar1 * 2) | 0x400);
         *(byte *)(DAT_00086df8 + 100) =
              (byte)((uVar1 & 7) << 5) | *(byte *)(DAT_00086df8 + 100) & 0x1f;
         FUN_00023cdc();
-        iVar12 = FUN_000238b4(local_64,&local_58,param_3 + 0x3c,local_5c);
+        iVar12 = FUN_000238b4(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
         if (iVar12 == 0) {
           sVar8 = 3;
         }
-        DAT_001005c0 = FUN_00023c90(0,&local_58);
+        DAT_001005c0 = FUN_00023c90(0,local_5c_buf + 4);
         FUN_00057118();
         iVar12 = FUN_000112a0(uVar10);
         FUN_00011060(uVar10,0x8f - iVar12,0x16);
@@ -14103,14 +14242,17 @@ LAB_00025468:
         sVar8 = sVar8 + 1;
         break;
       case 3:
-        *(char *)((int)&local_5c + local_64[0] + 3) =
-             *(char *)(*(int *)(param_3 + 0x42) + uVar1 * 2) + -0x1f;
-        DAT_001005c0 = FUN_00023c90((int)DAT_001005c0,&local_58);
+        /* (int)&local_5c truncated a real stack address; and
+           *(int*)(param_3+0x42) is the same never-written, never-zeroed
+           record field skipped in FUN_000238b4 above -- always take the
+           fallback instead of reading through arbitrary heap garbage. */
+        local_5c_buf[local_64[0] + 3] = 0;
+        DAT_001005c0 = FUN_00023c90((int)DAT_001005c0,local_5c_buf + 4);
         FUN_00057118();
         FUN_00076e98(local_60);
         FUN_00023b38();
         FUN_000570b4();
-        uVar15 = FUN_000238b4(local_64,&local_58,param_3 + 0x3c,local_5c);
+        uVar15 = FUN_000238b4(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
         if ((int)uVar15 == 0) {
           sVar8 = 4;
         }
@@ -14174,13 +14316,8 @@ LAB_00025468:
           FUN_00011774(0x11,0,0x8f,199);
           FUN_000570b4();
           local_64[0] = 0;
-          local_58 = 0x14;
+          memset(local_5c_buf + 4, 0x14, 6);
           DAT_001005c0 = 0;
-          local_57 = 0x14;
-          local_56 = 0x14;
-          local_55 = 0x14;
-          local_54 = 0x14;
-          local_53 = 0x14;
           FUN_00035df8(1);
           DAT_000fb858 = DAT_001005c8;
           FUN_00011e5c(0,0,DAT_001005c8,200,0x140,0,0,1);
@@ -14229,6 +14366,12 @@ int FUN_00025608()
   char *stack0xffdc3230_ptr;
   char cVar1;
   int iVar2;
+  /* iVar2 doubles as a plain int return-code check early in this
+     function and a real pointer (`DAT_001005c8 + 64000`, a palette
+     load destination) later on -- mutually exclusive, but iVar2 stayed
+     `int` either way, truncating the pointer. Given its own dedicated
+     variable for the pointer-holding span only. */
+  char *pcVar_palbuf;
   char *pcVar3;
   char *iVar4;
   uint uVar5;
@@ -14279,13 +14422,28 @@ int FUN_00025608()
           puVar8 = &DAT_000fb8f0 + uVar5;
           FUN_0002285c(iVar4,puVar8,10000);
           Ordinal_553(iVar4);
-          pcVar3 = (char *)(uVar5 + 0xfb990);
+          /* Was `(char *)(uVar5 + 0xfb990)` -- a literal original-binary
+             address (0xfb990 = &DAT_000fb990's address there) added to
+             an int, instead of real pointer arithmetic against the
+             actual (relocated) buffer. 0xfb990 - 0xfb8f0 = 0xa0, so this
+             is really `puVar8 + 0xa0` (a fixed offset past the point
+             puVar8 already starts at, within the same DAT_000fb8f0
+             buffer). Same "hardcoded original-binary address" bug class
+             as FUN_0006bde0's `-0x87020` fix earlier this session. */
+          pcVar3 = (char *)puVar8 + 0xa0;
           iVar4 = 0;
           do {
-            puVar8[(int)(iVar4) * 0x14 + 6] = (char)pcVar3;
-            puVar8[(int)(iVar4) * 0x14 + 7] = (char)((uint)pcVar3 >> 8);
-            puVar8[(int)(iVar4) * 0x14 + 8] = (char)((uint)pcVar3 >> 0x10);
-            puVar8[(int)(iVar4) * 0x14 + 9] = (char)((uint)pcVar3 >> 0x18);
+            /* Was a 4-byte split of the absolute pointer `pcVar3`
+               ((char)pcVar3, >>8, >>0x10, >>0x18) -- correct for a
+               32-bit binary, but only ever captured pcVar3's low 32
+               bits here, and the read sites (FUN_00023de8 etc.) treat
+               those 4 bytes as the whole pointer. Since pcVar3 always
+               points within DAT_000fb8f0's small fixed-address buffer,
+               store a relative offset from &DAT_000fb8f0 instead -- it
+               fits safely in the existing 4-byte field, and the read
+               sites reconstruct the real pointer via &DAT_000fb8f0 +
+               offset instead of using the stored value directly. */
+            *(int *)(puVar8 + (int)(iVar4) * 0x14 + 6) = (int)(pcVar3 - (char *)&DAT_000fb8f0);
             do {
               pcVar6 = pcVar3;
               pcVar3 = pcVar6 + 2;
@@ -14298,7 +14456,7 @@ int FUN_00025608()
           *DAT_00084298 = 0x49;
           FUN_00035df8(1);
           iVar4 = DAT_001005c8;
-          iVar2 = DAT_001005c8 + 64000;
+          pcVar_palbuf = DAT_001005c8 + 64000;
           Ordinal_1047(acStack_128,0,0x104);
           do {
             cVar1 = *pcVar9;
@@ -14307,7 +14465,7 @@ int FUN_00025608()
           } while (cVar1 != '\0');
           Ordinal_1063(acStack_128,s__DATA_CHARGEN_BYT_00084eac);
           uVar5 = FUN_0007ee4c(acStack_128,iVar4,64000);
-          uVar7 = FUN_00040e24(3,iVar2);
+          uVar7 = FUN_00040e24(3,pcVar_palbuf);
           if ((uVar5 & uVar7) != 0) {
             FUN_00057118();
             FUN_00011e5c(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
@@ -54109,6 +54267,10 @@ short param_1;
   undefined1 uVar2;
   char cVar3;
   short sVar4;
+  /* iVar5 doubles as a real pointer (DAT_00086df8 + iVar1) early on
+     and a plain int loop counter (from sVar7) later -- mutually
+     exclusive, but both squeezed into `int`, truncating the pointer. */
+  char *pcVar_df8;
   int iVar5;
   undefined2 uVar6;
   short sVar7;
@@ -54127,9 +54289,9 @@ short param_1;
   sVar4 = FUN_00070524();
   uVar2 = *(undefined1 *)(DAT_0023be74 + sVar4 + 5);
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
-  iVar5 = iVar1 + DAT_00086df8;
+  pcVar_df8 = DAT_00086df8 + iVar1;
   cVar3 = Ordinal_2005(uVar6,uVar2);
-  *(char *)(iVar5 + 0x21) = cVar3 + *(char *)(iVar5 + 0x21);
+  *(char *)(pcVar_df8 + 0x21) = cVar3 + *(char *)(pcVar_df8 + 0x21);
   iVar5 = (int)sVar7;
   cVar3 = FUN_00022910(iVar5);
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
@@ -57883,6 +58045,11 @@ void FUN_000769e8()
 
 
 
+/* Real pointers for FUN_00076a2c's DAT_0023c3fc record table, indexed
+   by record slot (see FUN_00076a2c's comment). DAT_0023c3fc holds
+   0x1540/0x11 = 320 records exactly. */
+static void *g_grtile_real_ptrs[320];
+
 undefined4 FUN_00076a2c(param_1,param_2)
 uint param_1;
 uint param_2;
@@ -57912,6 +58079,14 @@ uint param_2;
   }
   iVar3 = (param_1 & 0xffff) * (param_2 & 0xffff);
   uVar1 = Ordinal_1041(iVar3);
+  /* FUN_00076b8c (one of the "11 other callers" mentioned above) turns
+     out to ALSO need the real pointer -- it renders glyph pixels
+     directly into this buffer, not just compare-by-key -- so track the
+     real address alongside the truncated key, indexed the same way
+     FUN_00076b8c's own search loop does (record position / 0x11). A
+     real 64-bit heap address can't be losslessly recovered from the
+     low-32-bits-only identity key on this host. */
+  g_grtile_real_ptrs[((char *)puVar2 - (char *)DAT_0023c3fc) / 0x11] = uVar1;
   *(char *)puVar2 = (char)(uintptr_t)uVar1;
   *(char *)((char *)puVar2 + 1) = (char)((uintptr_t)uVar1 >> 8);
   *(char *)((char *)puVar2 + 2) = (char)((uintptr_t)uVar1 >> 0x10);
@@ -57994,7 +58169,15 @@ short param_5;
   short sVar10;
   int iVar11;
   int iVar12;
-  
+  /* param_1 is FUN_00076a2c's opaque truncated identity key (used for
+     the record-table search below), not a real pointer -- but this
+     function ALSO renders glyph pixels directly into the matched
+     record's buffer (the `*param_1 = ...` loop further down used to
+     write through the key itself, which crashes once real heap
+     addresses don't fit in 32 bits). Use the real pointer tracked in
+     g_grtile_real_ptrs instead once a match is found. */
+  short *psVar_target;
+
   puVar5 = DAT_0023c3fc;
   sVar10 = (short)param_4;
   bVar3 = false;
@@ -58002,6 +58185,7 @@ short param_5;
   puVar6 = DAT_0023c3fc;
   do {
     if (param_1 == (short *)*puVar6) {
+      psVar_target = (short *)g_grtile_real_ptrs[iVar12];
       iVar12 = iVar12 * 0x11;
       *(char *)((char *)DAT_0023c3fc + iVar12 + 9) = (char)param_2;
       *(char *)((char *)puVar5 + iVar12 + 10) = (char)((uint)param_2 >> 8);
@@ -58081,9 +58265,9 @@ short param_5;
                     ;
                     iVar12 = iVar12 + 1;
                     if ((DAT_00088960 & sVar10 == 0) == 0) {
-                      *param_1 = sVar10;
+                      *psVar_target = sVar10;
                     }
-                    param_1 = param_1 + 1;
+                    psVar_target = psVar_target + 1;
                   } while (iVar11 < iVar7);
                 }
                 iVar9 = iVar9 + 1;
@@ -58114,7 +58298,12 @@ short * param_1;
   int iVar5;
   int iVar6;
   int iVar7;
-  
+  /* param_1 is FUN_00076a2c's opaque truncated identity key, not a
+     real pointer -- same issue as FUN_00076b8c above. Read glyph
+     pixels back through the real pointer tracked in
+     g_grtile_real_ptrs instead of dereferencing the key directly. */
+  short *psVar_target;
+
   iVar3 = 0;
   puVar4 = DAT_0023c3fc;
   while (param_1 != (short *)*puVar4) {
@@ -58124,6 +58313,7 @@ short * param_1;
       return 0xffffffff;
     }
   }
+  psVar_target = (short *)g_grtile_real_ptrs[iVar3];
   iVar5 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 9);
   iVar7 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xb);
   iVar1 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xd);
@@ -58140,9 +58330,9 @@ short * param_1;
       if (0 < iVar1) {
         do {
           if (0x13f < iVar7) break;
-          sVar2 = *param_1;
+          sVar2 = *psVar_target;
           iVar7 = iVar7 + 1;
-          param_1 = param_1 + 1;
+          psVar_target = psVar_target + 1;
           if ((DAT_00088960 & sVar2 == 0) == 0) {
             *(short *)((g_uw_buf_25800) + iVar6 * 2) = sVar2;
           }
@@ -58990,15 +59180,24 @@ void thunk_FUN_00078e28()
 
 
 
-undefined4 FUN_0007863c(param_1)
+/* Was `undefined4` return -- truncating the real char* string pointer
+   FUN_00078e60 returns (and the string pointers stored in the
+   DAT_0024bfa0-family table read below). This is a widely-used string-
+   resource lookup (~82 call sites); most pass the result straight into
+   a char*-typed argument at the call site so aren't affected by this
+   fix, but any caller that first stores it in an `undefined4`/`int`
+   local before using it as a pointer needs that local retyped too --
+   fix those as they're actually hit crashing, same as everywhere else
+   this session. */
+char *FUN_0007863c(param_1)
 ushort param_1;
 
 {
   uint uVar1;
-  undefined4 uVar2;
+  char *uVar2;
   int iVar3;
   short sVar4;
-  
+
   uVar1 = (uint)(param_1 >> 9);
   iVar3 = 0;
   sVar4 = -1;
@@ -59014,10 +59213,16 @@ ushort param_1;
     if (uVar1 == 0) {
       uVar1 = (uint)DAT_0024cfac;
     }
-    uVar2 = FUN_00078e60(uVar1);
+    uVar2 = (char *)FUN_00078e60(uVar1);
   }
   else {
-    uVar2 = *(undefined4 *)(&DAT_0024bfa2 + (sVar4 * 0x201 + (int)(short)(param_1 & 0x1ff)) * 4);
+    /* Was reading 4 consecutive bytes from DAT_0024bfa2 alone, but the
+       register function actually splits the pointer across bfa2/3/4/5
+       at the SAME (un-multiplied-by-4) index -- that read was pulling
+       the real low byte plus 3 zero padding bytes, not reconstructing
+       anything real, and only ever captured 32 bits regardless. Use
+       the real-pointer side table instead -- see its comment. */
+    uVar2 = g_bfa2_real_ptrs[sVar4 * 0x201 + (int)(short)(param_1 & 0x1ff)];
   }
   return uVar2;
 }
@@ -59070,6 +59275,10 @@ undefined4 param_2;
   iVar4 = sVar5 * 0x804;
   uVar3 = *(ushort *)(&DAT_0024c7a2 + iVar4);
   iVar2 = (sVar5 * 0x201 + (int)(short)uVar3) * 4;
+  /* Real pointer tracked separately -- see g_bfa2_real_ptrs's comment.
+     iVar2 is already the byte-plane index (pre-multiplied by 4); the
+     side table uses the un-multiplied slot index. */
+  g_bfa2_real_ptrs[iVar2 / 4] = param_1;
   (&DAT_0024bfa2)[iVar2] = (char)param_1;
   (&DAT_0024bfa3)[iVar2] = (char)((uint)param_1 >> 8);
   (&DAT_0024bfa4)[iVar2] = (char)((uint)param_1 >> 0x10);
@@ -59083,7 +59292,7 @@ undefined4 param_2;
 
 
 uint FUN_00078918(param_1,param_2)
-undefined4 param_1;
+char *param_1;
 uint param_2;
 
 {
@@ -59105,6 +59314,9 @@ uint param_2;
   }
   else {
     iVar1 = (sVar2 * 0x201 + (int)(short)((ushort)param_2 & 0x1ff)) * 4;
+    /* Real pointer tracked separately -- see g_bfa2_real_ptrs's comment
+       and FUN_0007873c's identical write above. */
+    g_bfa2_real_ptrs[iVar1 / 4] = param_1;
     (&DAT_0024bfa2)[iVar1] = (char)param_1;
     (&DAT_0024bfa3)[iVar1] = (char)((uint)param_1 >> 8);
     (&DAT_0024bfa4)[iVar1] = (char)((uint)param_1 >> 0x10);
@@ -59144,6 +59356,7 @@ undefined4 param_1;
     iVar2 = 0;
     do {
       iVar1 = (iVar3 * 0x201 + iVar2) * 4;
+      g_bfa2_real_ptrs[iVar1 / 4] = 0;
       (&DAT_0024bfa2)[iVar1] = 0;
       (&DAT_0024bfa3)[iVar1] = 0;
       (&DAT_0024bfa4)[iVar1] = 0;
@@ -59408,8 +59621,9 @@ ushort param_2;
 
 {
   short sVar1;
-  int iVar2;
-  
+  /* Was `int iVar2`, truncating DAT_0024cfa8 (a real char* pointer). */
+  char *iVar2;
+
   while (*(char *)((short)param_2 * 4 + DAT_0024cfa8 + 2) != -1) {
     sVar1 = FUN_000790e0(param_1);
     iVar2 = (short)param_2 * 4 + DAT_0024cfa8;

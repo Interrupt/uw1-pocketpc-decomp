@@ -1,0 +1,7 @@
+# Main menu -> character generation, advancing through several pages
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
