@@ -100,6 +100,19 @@ void uw_pump_events(void) {
                 break;
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
+                /* SDL auto-repeats a held key as a stream of SDL_KEYDOWN
+                 * events; the game's menu/chargen "wait for one keypress"
+                 * loops (e.g. FUN_00024840) treat every keydown as a
+                 * fresh confirm/select, so a held Enter blasts through
+                 * many unrelated screens in a fraction of a second
+                 * (confirmed via a state-trace: 3 full character-
+                 * generation cycles logged almost instantly). Drop
+                 * repeats so each physical press yields exactly one
+                 * keydown, matching how a deliberate tap actually
+                 * behaves. */
+                if (ev.type == SDL_KEYDOWN && ev.key.repeat) {
+                    break;
+                }
                 int vk = translate_vk(ev.key.keysym.sym);
                 if (vk != 0) {
                     unsigned int msg = (ev.type == SDL_KEYDOWN) ? 0x100u : 0x101u;
@@ -118,19 +131,37 @@ void uw_pump_events(void) {
                         FUN_00077b2c(0, 0x102u, 0x0Du);
                     }
                 }
-                break;
+                /* Real Windows delivers WM_KEYDOWN and WM_CHAR as
+                 * separate messages, polled one at a time -- the game's
+                 * input loop (FUN_000579e4 et al) clears its single
+                 * pending-input slot (DAT_0023c448) and re-reads it
+                 * fresh on every poll. SDL instead reports a keydown and
+                 * its matching SDL_TEXTINPUT in the same batch; draining
+                 * both in one uw_pump_events() call let Space's mapped
+                 * button code (VK_SPACE -> 0x4a, a direct assignment)
+                 * get bitwise-ORed with its char code (0x20) in the same
+                 * slot before the game ever polled in between, producing
+                 * neither a clean space char nor a clean button press
+                 * (confirmed: Space did nothing in the name field).
+                 * Stop draining after any key event so its SDL_TEXTINPUT
+                 * counterpart (if any) is left in SDL's own queue for
+                 * the *next* pump call instead, landing on its own
+                 * freshly-cleared poll. */
+                return;
             }
             case SDL_TEXTINPUT: {
                 /* Real typed characters (respects keyboard layout/shift
                  * state) -- forwarded as WM_CHAR (0x102), matching
-                 * FUN_00077b2c's real-text-input path. */
+                 * FUN_00077b2c's real-text-input path. Only ever one
+                 * pending-input slot is read per poll (see the keydown
+                 * case above), so stop after this event too. */
                 for (const char *p = ev.text.text; *p; p++) {
                     unsigned char c = (unsigned char)*p;
                     if (c < 0x80) {
                         FUN_00077b2c(0, 0x102u, (unsigned int)c);
                     }
                 }
-                break;
+                return;
             }
             case SDL_WINDOWEVENT:
                 if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)

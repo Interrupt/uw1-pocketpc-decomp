@@ -194,7 +194,7 @@ int uw_file_write(int handle, const void *buf, unsigned int size) {
         return 0;
     }
     int n = (int)fwrite(buf, 1, size, f);
-    fprintf(stderr, "[fileio] write: handle %d requested=%u wrote=%d\n", handle, size, n);
+    /* fprintf(stderr, "[fileio] write: handle %d requested=%u wrote=%d\n", handle, size, n); */
     return n;
 }
 

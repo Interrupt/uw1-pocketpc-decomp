@@ -804,23 +804,28 @@ static undefined1 DAT_000fb860_backing[256];
 undefined DAT_000fb863;
 /* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]`
    (4-byte stride) with idx up to a CONCAT11 of two record byte fields
-   (FUN_00023de8) -- for idx==0 this happened to read the in-bounds
-   value 0 (matching "never written, stays zero"), but for idx!=0 it's
-   an out-of-bounds read of whatever memory follows, which is NOT
-   reliably zero and defeated the "is this table entry usably small"
-   guards added around it. No writer exists anywhere in this decompile
-   (confirmed by search) -- this table's real data is unrecoverable,
-   same as DAT_000fb884/the glyph-width table -- but it needs to be a
-   real (zero-initialized) array so every index at least reads a
-   consistent, safe 0 instead of garbage. */
+   (FUN_00023de8). Real populator recovered this session: LAB_000255d0
+   (a callback Ghidra never resolved into a named function -- see its
+   own comment near its definition) builds this as a cumulative per-
+   entry byte-size table when the "chrbtns" resource loads. */
 static undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb880 DAT_000fb880_backing[0]
 int DAT_000fb898;
 char s_key_to_continue_00084e60[] = "key_to_continue";
 char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
 char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
-static undefined1 DAT_000fb884_backing[65536];
-#define DAT_000fb884 DAT_000fb884_backing[0]
+/* DAT_000fb884's address (0xfb884) is exactly one 4-byte element past
+   DAT_000fb880's (0xfb880) -- not a separate table at all, but an
+   alias into the SAME array LAB_000255d0 populates, just viewed
+   starting one element later (its own read site indexes it with
+   identical 4-byte-stride byte-pointer arithmetic to DAT_000fb880's).
+   Declaring it as an independent, separately-backed array (as an
+   earlier fix pass did, before LAB_000255d0's role was known) split
+   it apart from the real data and left it permanently zero -- the
+   root cause of chrbtns button/portrait graphics reading pixel data
+   from the wrong offset (garbled/sheared "pitch is off" artifacts)
+   even after DAT_000fb880 itself started being populated correctly. */
+#define DAT_000fb884 (((undefined1 *)DAT_000fb880_backing)[4])
 short DAT_001005c0;
 /* Was a lone 1-byte `undefined` scalar, but read as `*(int*)(&DAT_000fb8c4
    + idx*4)` (4-byte stride) in FUN_00024e24's case 4 -- an out-of-bounds
@@ -834,31 +839,73 @@ static undefined1 DAT_000fb8c4_backing[256];
 static undefined1 DAT_000fb8f0_backing[1680];
 #define DAT_000fb8f0 DAT_000fb8f0_backing[0]
 int DAT_00201c98;
-undefined4 LAB_000255b4()
+/* Ghidra's auto-analysis never recognized LAB_000255b4/LAB_000255d0 as
+   real functions -- they're only reached indirectly (passed as callback
+   pointers to FUN_000417b4 at FUN_00025608's call site below), so no
+   `bl` ever pointed at them for the analyzer to follow, and they were
+   left as raw undecompiled ARM code, previously stubbed here as no-ops.
+   That silently made DAT_000fb858/DAT_000fb880 stay permanently
+   uninitialized, which is the real root cause behind this session's
+   "DAT_000fb880 is never written anywhere in this decompile" findings
+   throughout FUN_00023de8/FUN_0002431c/FUN_00024840/etc. -- their
+   fallback-to-0 guards were masking a genuine missing-callback bug, not
+   a genuine data-recovery gap. Recovered by disassembling this address
+   range directly (via Ghidra's headless analyzer against the original
+   UU.exe): both are real, small functions with real logic. */
 
+/* r1 = &DAT_000fb858; r2 = *r1 (current cursor); r0 = r2 + param_1;
+   *r1 = r0 (advance cursor by param_1 bytes); return r2 (the position
+   *before* advancing) -- a bump-pointer sub-allocator carving fixed-
+   size chunks out of whatever buffer DAT_000fb858 currently points to. */
+char *LAB_000255b4(param_1)
+int param_1;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  char *old = DAT_000fb858;
+  DAT_000fb858 = DAT_000fb858 + param_1;
+  return old;
 }
-undefined4 LAB_000255d0()
 
+/* r0 is loaded fresh from a literal (&DAT_000fb880), discarding
+   whatever was passed in that register -- this callback's real
+   parameters are param_2 (r1) and param_3 (r2, only its low 16 bits
+   used, sign-extended, as a table index). Builds DAT_000fb880 as a
+   running total: table[0] seeded to 5 the first time idx==0 is seen,
+   then table[idx+1] = table[idx] + param_2 each call -- a cumulative
+   per-entry byte-offset table (matches every read site indexing it by
+   a record's portrait/race selector). Returns 0 when param_2==0
+   (signals "empty entry"/no more data to the FUN_000417b4 driver),
+   else 1. */
+undefined4 LAB_000255d0(param_1,param_2,param_3)
+int param_1;
+int param_2;
+int param_3;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  int idx = (short)(param_3 & 0xffff);
+  if (idx == 0) {
+    DAT_000fb880_backing[0] = 5;
+  }
+  int old = DAT_000fb880_backing[idx];
+  DAT_000fb880_backing[idx + 1] = old + param_2;
+  return (param_2 == 0) ? 0 : 1;
 }
 char s_FONT5X6P_SYS_00084e9c[] = "FONT5X6P.SYS";
 char s__DATA_CHARGEN_BYT_00084eac[] = "\\DATA\\CHARGEN.BYT";
 char s_FONTCHAR_SYS_00084ec0[] = "FONTCHAR.SYS";
 char s__DATA_chrgen_dat_00084ed0[] = "\\DATA\\chrgen.dat";
 char s__DATA_skills_dat_00084ee4[] = "\\DATA\\skills.dat";
-static undefined DAT_00084ef8_backing[8192];
-#define DAT_00084ef8 DAT_00084ef8_backing[0]
+/* Was a zero-initialized array standing in for an unrecovered string
+   constant (Ghidra had no content at this address, just a dangling
+   reference -- see FUN_000417b4's comment). Recovered by dumping the
+   real bytes at this address directly from the original UU.exe via
+   Ghidra's headless analyzer: the string "chrbtns" (character-gen
+   button/portrait graphics, matching its neighboring resource-name
+   constants here). Leaving this as an all-zero buffer made
+   FUN_000417b4's `param_1[0] == '\0'` empty-name check always true, so
+   it always took the "nothing to load" early-return path and never
+   invoked its per-item callbacks (LAB_000255b4/LAB_000255d0) at all --
+   the real root cause of DAT_000fb880 staying empty despite those
+   callbacks now being correctly implemented. */
+char s_chrbtns_00084ef8[] = "chrbtns";
 undefined1 DAT_001005cc;
 undefined1 DAT_001005cd;
 undefined1 DAT_001005ce;
@@ -952,8 +999,21 @@ char s__DATA_cnv_ark_00084fc8[] = "\\DATA\\cnv.ark";
 static undefined2 DAT_0023add0_backing[8192];
 #define DAT_0023add0 DAT_0023add0_backing[0]
 char *DAT_00100784;
-undefined4 DAT_00100670;
-undefined4 DAT_00100728;
+/* Was `undefined4`, truncating the real char* buffer pointer (DAT_00100784)
+   assigned to it before every "heads"/"converse"/"genhead"/"charhead"
+   resource load -- it's the bump-allocator cursor LAB_00028688 advances
+   (see that function's comment). */
+char *DAT_00100670;
+/* Was a lone `undefined4` scalar, but LAB_000286a4 writes real pointers
+   into it as an array (`DAT_00100728[idx] = allocated_buffer + 5`, one
+   entry per loaded head/portrait) -- same "array Ghidra saw as a single
+   scalar" bug class as DAT_000fb880. Only index 0 is read directly by
+   this file's existing call sites (single-item head loads all pass a
+   count of 1), but the array still needs real backing storage so
+   multi-item loads (the full "heads" resource) don't write out of
+   bounds past a 4-byte scalar. */
+static char *DAT_00100728_backing[256];
+#define DAT_00100728 DAT_00100728_backing[0]
 undefined4 DAT_0010072c;
 undefined4 DAT_00100730;
 undefined4 DAT_00100734;
@@ -966,23 +1026,33 @@ short DAT_00201c74;
 undefined4 DAT_001007c0;
 undefined1 DAT_0023bf0c;
 undefined2 DAT_002020c0;
-undefined4 LAB_00028688()
-
+/* Recovered by disassembling the original UU.exe (same method as
+   LAB_000255b4/LAB_000255d0 -- see their comment): FUN_000417b4's
+   allocator callback for the "heads"/"converse"/"genhead"/"charhead"
+   resource loads. Bumps DAT_00100670 (the cursor into the DAT_00100784
+   buffer) by param_1 bytes and returns the pre-advance position. */
+char *LAB_00028688(param_1)
+int param_1;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  char *old = DAT_00100670;
+  DAT_00100670 = DAT_00100670 + param_1;
+  return old;
 }
-undefined4 LAB_000286a4()
 
+/* Recovered the same way: FUN_000417b4's post-process callback for the
+   same resource loads. Stores the allocated buffer pointer (skipping a
+   5-byte per-item header) into DAT_00100728[idx], where idx is
+   param_3's low 16 bits sign-extended (the item index, matching
+   FUN_000417b4's `(*param_5)(pvVar_buf,iVar4,iVar5)` call shape).
+   Returns 0 when param_2 (item byte size) == 0, else 1. */
+undefined4 LAB_000286a4(param_1,param_2,param_3)
+char *param_1;
+int param_2;
+int param_3;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  int idx = (short)(param_3 & 0xffff);
+  DAT_00100728_backing[idx] = param_1 + 5;
+  return (param_2 == 0) ? 0 : 1;
 }
 char s_genhead_00084fd8[] = "genhead";
 char s_charhead_00084fe0[] = "charhead";
@@ -2974,7 +3044,20 @@ short DAT_0024cfc0;
 char s_strings_pak_000878c0[] = "strings.pak";
 short DAT_0024cfb4;
 undefined2 DAT_000878bc;
-undefined DAT_0024af98;
+/* FUN_00078e60's decoded-string ring buffer: DAT_0024cfb4 cycles
+   through offsets 0, 0x200, 0x400, ... wrapping back to 0 once it
+   would reach 0x1000 (4096), and each slot can hold up to a 0x200-byte
+   decoded string. Declared as a single scalar byte, this let every
+   decode past the very first 512-byte slot write far out of bounds --
+   confirmed via an lldb watchpoint that this overflow is what corrupts
+   DAT_0024bf98 (the compressed-string file handle, coincidentally laid
+   out 0x1000 bytes after this one in our translation) into garbage
+   partway through the very first character-generation screen, which is
+   the root cause of the "most chargen text doesn't render" bug: once
+   DAT_0024bf98 is corrupted, every subsequent compressed-string decode
+   for the rest of the process fails. */
+static undefined1 DAT_0024af98_backing[4096];
+#define DAT_0024af98 DAT_0024af98_backing[0]
 static undefined2 DAT_0024cfbc_backing[8192];
 #define DAT_0024cfbc DAT_0024cfbc_backing[0]
 int DAT_0024cfc4;
@@ -12998,6 +13081,23 @@ short param_2;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+/* This is the game's dirty-rect blit: DAT_00088954/5c/50/58 (top/
+   bottom/left/right) accumulate via FUN_00011000, called from every
+   draw (rect fill, text draw, sprite blit, ...) to grow the damaged
+   region -- clamped here, then blitted from the software buffer
+   (g_uw_buf_25800) into GXBeginDraw()'s real framebuffer and
+   presented via GXEndDraw(). Investigated as a suspect for the
+   chargen "text flashes then gets covered by a rectangle" bug (SS1
+   shares this same Looking Glass dirty-rect heritage): the bounds are
+   accumulate-only in the normal UI flow -- the only explicit reset
+   (FUN_00011040, setting them back to an empty/degenerate rect) is a
+   single call site elsewhere unrelated to chargen -- so nothing here
+   makes the tracked region shrink or exclude an area once drawn to.
+   Didn't find a bug in this function itself; the rapid-cycling
+   behavior traced back to unfiltered SDL key-repeat instead (see
+   gx_stub.c's uw_pump_events), but noting this in case the covered-
+   rectangle symptom persists after that fix and this needs a second
+   look. */
 void FUN_00022f0c()
 
 {
@@ -13567,6 +13667,7 @@ void FUN_00023cdc()
    sufficient. */
 static char *g_chargen_textfield_buf;
 
+// Draws the current chargen field's label and current value/text (and, for the name field, the "Enter your name..." prompt).
 void FUN_00023de8(param_1)
 short * param_1;
 
@@ -13739,6 +13840,7 @@ short * param_1;
 
 
 
+// Draws up to two selectable option icons/portraits (e.g. prev/next choice) for the current chargen field.
 undefined4 FUN_0002431c(param_1,param_2,param_3)
 short * param_1;
 byte param_2;
@@ -13748,7 +13850,17 @@ byte param_3;
   byte bVar1;
   byte bVar2;
   short sVar3;
-  short extraout_r1;
+  /* Was `short extraout_r1` -- the classic "call Ordinal_2005 once for
+     the quotient, call it again with identical args purely to grab the
+     remainder via the register-leftover idiom" pattern already fixed
+     elsewhere this session (see FUN_000229e0), except here the second
+     call's return was silently dropped without ever assigning
+     extraout_r1 at all -- it was genuinely uninitialized garbage,
+     multiplied straight into the button/portrait X draw coordinate
+     below (confirmed: buttons drew far off to the screen's right edge
+     instead of centered in the right half once DAT_000fb880 started
+     returning real nonzero sizes). Computed directly instead. */
+  short sVar_rem;
   short sVar4;
   int iVar5;
   int iVar6;
@@ -13795,8 +13907,8 @@ byte param_3;
       if ((int)uVar8 < (int)param_1[5]) {
         sVar4 = param_1[8];
         sVar3 = Ordinal_2005((int)sVar4,uVar8);
+        sVar_rem = (sVar4 == 0) ? 0 : (short)((int)uVar8 % (int)sVar4);
         iVar5 = (int)local_2a;
-        Ordinal_2005((int)sVar4,uVar8);
         sVar4 = param_1[9];
         iVar6 = (int)local_28;
         iVar7 = *(int *)(&DAT_000fb884 + (iVar9 + param_1[6]) * 4);
@@ -13804,7 +13916,7 @@ byte param_3;
         FUN_00035df8(0);
         DAT_000fb858 = DAT_001005c4;
         DAT_00088960 = 1;
-        FUN_00011e5c((int)extraout_r1 * ((int)sVar4 + (uint)bVar2) + iVar6,
+        FUN_00011e5c((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
                      (int)sVar3 * (bVar1 + 4) + iVar5,pcVar_fb858 + iVar7,(uint)bVar1,bVar2,0,0,1);
         FUN_000570b4();
         pcVar_fb858 = DAT_000fb858;
@@ -13818,6 +13930,7 @@ byte param_3;
 
 
 
+// Translates a touch/shortcut-key position into a selected item index for the current chargen field.
 uint FUN_0002454c(param_1,param_2)
 short * param_1;
 uint param_2;
@@ -13926,6 +14039,7 @@ LAB_000247f8:
 
 
 
+// Waits for input on the current chargen field: navigates/selects a list, or (for the name field) runs the text-entry loop.
 uint FUN_00024840(param_1,param_2)
 short * param_1;
 undefined4 param_2;
@@ -14196,6 +14310,7 @@ LAB_00024dd4:
 
 
 
+// The main character-generation state machine: steps through portrait/gender/skills/stats/name/confirm, one screen per state.
 undefined4 FUN_00024e24(param_1,param_2,param_3)
 char *param_1;
 char *param_2;
@@ -14491,6 +14606,7 @@ LAB_00025468:
 
 
 
+// Loads CHRGEN.DAT/CHARGEN.BYT/fonts/palette, builds the per-field record array, and drives FUN_00024e24's state machine.
 int FUN_00025608()
 
 {
@@ -14520,7 +14636,7 @@ int FUN_00025608()
   iVar4 = DAT_001005c4;
   uVar10 = 2;
   DAT_000fb858 = DAT_001005c4;
-  iVar2 = FUN_000417b4(&DAT_00084ef8,0,0xffffffff,&LAB_000255b4,&LAB_000255d0);
+  iVar2 = FUN_000417b4(s_chrbtns_00084ef8,0,0xffffffff,&LAB_000255b4,&LAB_000255d0);
   if (iVar2 != 0) {
     DAT_000fb858 = iVar4;
     Ordinal_1047(acStack_128,0,0x104);
@@ -14645,6 +14761,7 @@ int FUN_00025608()
 
 
 
+// Thin wrapper that enters/exits a critical section around FUN_00025608 (the character-generation entry point).
 undefined4 FUN_000259a0()
 
 {
