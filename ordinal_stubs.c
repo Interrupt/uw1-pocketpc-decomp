@@ -1,5 +1,6 @@
 #include "ordinal_stubs.h"
 #include "file_io.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -625,14 +626,60 @@ long Ordinal_1416()
     return 0;
 }
 
-long Ordinal_1417()
+/* MSVCRT-style `_isctype(c, mask)` character classification helper --
+ * every call site ORs together the standard CRT _ctype.h bit values as
+ * its mask (_UPPER=1, _LOWER=2, _DIGIT=4, _SPACE=8, _PUNCT=0x10,
+ * _CONTROL=0x20, _BLANK=0x40, _HEX=0x80, _ALPHA=0x103) and checks the
+ * result against 0, e.g. FUN_00024840's name-entry field tests
+ * `Ordinal_1417(ch, 0x157)` (_ALPHA|_DIGIT|_PUNCT|_BLANK, i.e. "any
+ * typeable name character") to decide whether to append a typed
+ * character to the name buffer. A prior no-op stub (`return 0`) made
+ * that test always fail, so no character was ever considered valid --
+ * every keystroke fell through to backspace-only handling, the name
+ * buffer stayed permanently empty, and Enter's "buffer non-empty" exit
+ * condition could never be satisfied, hanging the whole name-entry
+ * screen (confirmed as the cause of character creation getting stuck
+ * indefinitely at "Enter your name"). */
+long Ordinal_1417(c, mask)
+int c;
+int mask;
 {
-    return 0;
+    unsigned char ch = (unsigned char)c;
+    int flags = 0;
+    if ((ch >= 'A') && (ch <= 'Z')) flags |= 0x1;
+    if ((ch >= 'a') && (ch <= 'z')) flags |= 0x2;
+    if ((ch >= '0') && (ch <= '9')) flags |= 0x4;
+    if (isspace(ch)) flags |= 0x8;
+    if (ispunct(ch)) flags |= 0x10;
+    if (iscntrl(ch)) flags |= 0x20;
+    if ((ch == ' ') || (ch == '\t')) flags |= 0x40;
+    if (isxdigit(ch)) flags |= 0x80;
+    if (isalpha(ch)) flags |= 0x100;
+    return flags & mask;
 }
 
-long Ordinal_2005()
+/* ARM has no hardware integer divide, so the original WinCE/ARM compiler
+ * routed every `/` and `%` in the whole game through this shared runtime
+ * division helper -- it's called ~250 places across uw.c. Per AAPCS32's
+ * div/mod helper convention, it returns the quotient in r0 (the normal
+ * C return value here) while the remainder comes back in r1; Ghidra
+ * surfaces reads of that second value as the `extraout_r1` idiom at call
+ * sites that want the remainder instead of (or in addition to) the
+ * quotient. A prior no-op stub (`return 0`) silently zeroed every
+ * division result in the game and left `extraout_r1` reads pointing at
+ * genuinely uninitialized memory -- confirmed as the cause of a SIGSEGV
+ * in FUN_000229e0 indexing a hex-digit table with garbage. K&R-declared
+ * (matching the project's established Ordinal_1068-style pattern) so
+ * call sites that only pass one argument -- relying on the original
+ * ABI's register-content-reuse from a preceding computation -- still
+ * compile and get *a* value for the unfilled parameter, exactly like
+ * the rest of this codebase's "dropped argument" idiom. */
+long Ordinal_2005(divisor, dividend)
+int divisor;
+int dividend;
 {
-    return 0;
+    if (divisor == 0) return 0;
+    return dividend / divisor;
 }
 
 long Ordinal_2008()

@@ -183,7 +183,7 @@ int uw_file_read(int handle, void *buf, unsigned int size) {
         return 0;
     }
     int n = (int)fread(buf, 1, size, f);
-    fprintf(stderr, "[fileio] read: handle %d requested=%u got=%d\n", handle, size, n);
+    /* fprintf(stderr, "[fileio] read: handle %d requested=%u got=%d\n", handle, size, n); */
     return n;
 }
 

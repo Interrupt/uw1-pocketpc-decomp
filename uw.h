@@ -1457,7 +1457,7 @@ undefined4 FUN_00078d18();
 void FUN_00078e28();
 undefined1 *FUN_00078e60();
 undefined1 FUN_0007907c();
-ushort FUN_000790e0();
+int FUN_000790e0();
 undefined4 FUN_00079144();
 void FUN_0007931c();
 void FUN_00079350();

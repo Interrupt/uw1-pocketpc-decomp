@@ -3222,7 +3222,20 @@ short param_3;
   char *local_48;
   undefined1 auStack_40 [16];
 
-  iVar2 = Ordinal_1068();
+  /* Was `Ordinal_1068()` -- called with no argument, relying on
+     whatever was left in the first-argument register from earlier code
+     (the "dropped argument" idiom used throughout this file). That
+     register no longer reliably holds param_1 by this point under this
+     compiler/ABI (confirmed via ASAN: iVar2 came out larger than the
+     caller's actual buffer, e.g. FUN_00024840's 4-byte `local_2c`
+     scratch string, causing a stack-buffer-overflow read here). iVar2
+     is provably meant to be strlen(param_1) -- the very next line
+     computes the same length via FUN_000112a0(param_1), and the
+     allocation size below (`uVar3 * uVar10`) only makes sense if the
+     inner loop below (which runs iVar2 times) walks exactly that many
+     characters of param_1. Pass it explicitly instead of relying on
+     register leftovers. */
+  iVar2 = Ordinal_1068(param_1);
   uVar3 = FUN_000112a0(param_1);
   uVar10 = (uint)DAT_0008909c;
   pcVar4 = (char *)Ordinal_1041((uVar3 & 0xffff) * uVar10);
@@ -3301,8 +3314,13 @@ char * param_1;
   char cVar1;
   uint uVar2;
   short sVar3;
-  
-  uVar2 = Ordinal_1068();
+
+  /* Was `Ordinal_1068()` with no argument, relying on register leftovers
+     to still hold param_1 (see FUN_00011060's matching fix/comment a
+     few lines above -- same root bug, this is the more foundational of
+     the two call sites since FUN_000112a0 is the general string pixel-
+     width measurement used throughout the file). */
+  uVar2 = Ordinal_1068(param_1);
   sVar3 = 0;
   for (uVar2 = uVar2 & 0xffff; uVar2 != 0; uVar2 = uVar2 - 1) {
     cVar1 = *param_1;
@@ -12764,9 +12782,14 @@ undefined1 param_4;
       pcVar2 = acStack_41 + 32;
       do {
         iVar3 = iVar3 + -1;
-        Ordinal_2005(param_3,param_1);
         pcVar2 = pcVar2 + -1;
-        *pcVar2 = s_0123456789ABCDEF_00084a28[extraout_r1];
+        /* Original idiom read the divide helper's remainder back via
+           the extraout_r1 register-leftover trick (see Ordinal_2005's
+           comment) -- computed directly here instead, since C gives us
+           no portable way to recover "whatever was left in r1" and the
+           uninitialized read was corrupting this index (confirmed
+           SIGSEGV). */
+        *pcVar2 = s_0123456789ABCDEF_00084a28[param_1 % param_3];
         param_1 = Ordinal_2005(param_3,param_1);
       } while (0 < param_1);
     }
@@ -13521,6 +13544,29 @@ void FUN_00023cdc()
 
 
 
+/* FUN_00024e24's per-record array is raw CHRGEN.DAT file data laid out
+   as 8 contiguous 0x14-byte records; the name-entry text field (record
+   6) is the only one that needs a *real* buffer pointer, stored at
+   record6_base+2 (aka `param_1+1` in FUN_00023de8/FUN_0002431c/
+   FUN_00024840's short-indexed reads, aka `param_3+0x7a`). In the
+   original 32-bit binary that field is only 4 bytes wide -- the low 32
+   bits of the buffer's address, just used as a "is this a text field"
+   nonzero check, never dereferenced as a real pointer directly by that
+   struct field's own storage. Widening it to an 8-byte pointer store/
+   load (an earlier fix attempt) corrupts the 4 bytes immediately after
+   it (record 6's own name-offset field at record6_base+6) and, worse,
+   for every OTHER record the same 8-byte-wide read pulls in whatever
+   raw file bytes follow their own (unrelated, genuinely 4-byte) low
+   bytes, misfiring as "nonzero" and sending every record into text-
+   entry mode with a garbage buffer pointer (confirmed via ASAN: BUS
+   error dereferencing 0x15b00000000-style nonsense for record 0).
+   Keep the field's ORIGINAL 4-byte marker semantics (any nonzero value
+   -- the exact bits never mattered) and stash the one real buffer
+   pointer here instead; only ever one text-entry field is active at a
+   time (character creation's name field), so a single global is
+   sufficient. */
+static char *g_chargen_textfield_buf;
+
 void FUN_00023de8(param_1)
 short * param_1;
 
@@ -13614,6 +13660,11 @@ short * param_1;
   else {
     uVar8 = FUN_0007863c((int)*param_1 | 0x400);
     iVar11 = 0xa4;
+    /* This field is a plain 4-byte nonzero marker ("is this a text-
+       entry field") for whichever record is currently being processed
+       -- see g_chargen_textfield_buf's comment near FUN_00024e24 for
+       why it must stay a narrow 4-byte read (widening it to 8 bytes
+       pulls in unrelated file data from other records and misfires). */
     if (*(int *)(param_1 + 1) == 0) {
       sVar7 = FUN_000112a0(uVar8);
       iVar9 = -(int)sVar7 + 0x91;
@@ -13661,7 +13712,7 @@ short * param_1;
              offset from &DAT_000fb8f0, not an absolute pointer -- see
              the write site in FUN_00025608. Reconstruct before use. */
           uVar8 = FUN_0007863c(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + local_28 * 2) | 0x400);
-          sVar5 = FUN_000112a0();
+          sVar5 = FUN_000112a0(uVar8);
           iVar9 = (int)sVar7 - (int)sVar5;
           if (iVar9 < 0) {
             iVar9 = iVar9 + 1;
@@ -13886,6 +13937,17 @@ undefined4 param_2;
   undefined2 uVar4;
   short sVar5;
   uint uVar6;
+  /* FUN_0007863c's return (the label string for this field) was
+     discarded here, with the very next line calling FUN_000112a0() with
+     no argument -- relying on register leftovers to still hold that
+     same return value (the "dropped argument" idiom, same root bug as
+     FUN_00011060/FUN_000112a0's own Ordinal_1068() fixes above). That
+     register doesn't reliably survive here either (confirmed: with it
+     broken, the name-entry field's Ordinal_1417 gate always fell
+     through to the "buffer full" branch regardless of the typed key,
+     since iVar7's garbage value made every character comparison see an
+     always-too-large field). Capture and pass it explicitly. */
+  char *pcVar_str;
   int iVar7;
   int iVar8;
   int iVar9;
@@ -13907,6 +13969,8 @@ undefined4 param_2;
   uVar12 = 0;
   uVar6 = (uint)*param_1;
   uVar13 = 0;
+  /* Plain 4-byte nonzero marker -- see FUN_00023de8's matching comment
+     and g_chargen_textfield_buf's comment near FUN_00024e24. */
   if ((*param_1 == 0) || (*(int *)(param_1 + 1) == 0)) {
     do {
       do {
@@ -14024,8 +14088,26 @@ LAB_00024dd4:
     } while (uVar13 == 0);
   }
   else {
-    FUN_0007863c(uVar6 | 0x400);
-    iVar7 = FUN_000112a0();
+    pcVar_str = FUN_0007863c(uVar6 | 0x400);
+    iVar7 = FUN_000112a0(pcVar_str);
+    /* FUN_0007863c's compressed-string decoder (FUN_0007907c and its
+       tree-walk helpers) has a separate, deeper bug -- confirmed via
+       diagnostics that this field's label lookup returns a fragment of
+       an unrelated, much longer string instead of the short intended
+       label, giving FUN_000112a0 a huge nonsensical pixel width
+       (observed: 1743, vs. a real short label's ~10-60). That fed
+       straight into this text-entry loop's "does the cursor still fit
+       in the field" bounds check below (`0x12d < sVar3`), which starts
+       failing before a single character is even typed, permanently
+       blocking every keystroke (confirmed as the cause of character
+       creation hanging at "Enter your name" indefinitely). Until the
+       decoder bug is fixed, clamp the measured label width so the
+       field's cursor math stays sane and typing/confirming a name
+       works correctly -- the label text itself may still render wrong,
+       which is the already-documented separate cosmetic issue. */
+    if (0x40 < iVar7) {
+      iVar7 = 0x40;
+    }
     iVar7 = iVar7 + 0xa8;
     if (*(int *)(param_1 + 3) == 0) {
       iVar9 = (int)(short)local_2c[0];
@@ -14082,7 +14164,7 @@ LAB_00024dd4:
           }
           else {
             uVar13 = uVar13 - 1;
-            local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),*(undefined1 *)(*(int *)(param_1 + 1) + uVar13)
+            local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),*(undefined1 *)(g_chargen_textfield_buf + uVar13)
                                   );
             sVar5 = FUN_000112a0(local_2c);
             iVar11 = ((int)sVar3 - (int)sVar5) * 0x10000;
@@ -14102,12 +14184,12 @@ LAB_00024dd4:
         iVar7 = FUN_000112a0(local_2c);
         iVar7 = iVar7 + sVar3;
         local_28 = 0;
-        *(char *)(*(int *)(param_1 + 1) + uVar13) = (char)sVar5;
+        *(char *)(g_chargen_textfield_buf + uVar13) = (char)sVar5;
         uVar13 = uVar13 + 1;
       }
     }
     uVar10 = 0;
-    *(undefined1 *)(*(int *)(param_1 + 1) + uVar13) = 0;
+    *(undefined1 *)(g_chargen_textfield_buf + uVar13) = 0;
   }
   return uVar10;
 }
@@ -14184,14 +14266,14 @@ char *param_3;
   local_60 = (undefined4)uVar15;
   pcVar_p2off = param_2 + 0x20;
   memset(local_5c_buf + 4, 0x14, 6);
-  /* Was 4 separate byte writes reconstructing a 32-bit address (`(char)
-     auStack_4c`, `>>8`, `>>0x10`, `>>0x18`) at param_3+0x7a..0x7d --
-     correct for the original 32-bit binary, but only ever captured the
-     low 32 bits of a real pointer; the later read-back at case 6
-     (`pcVar5 = *(char **)(param_3 + 0x7a);`) reads a full 8-byte
-     pointer, so the upper 4 bytes were left uninitialized garbage.
-     Store the real pointer directly instead. */
-  *(char **)(param_3 + 0x7a) = auStack_4c;
+  /* Was 4 separate byte writes reconstructing a 32-bit address, then
+     (in an earlier, incorrect fix attempt) a direct 8-byte pointer
+     store -- see g_chargen_textfield_buf's comment above for why
+     that's wrong. Keep this field a plain nonzero marker (its exact
+     bits were never meaningful) and route the real pointer through the
+     dedicated global instead. */
+  *(int *)(param_3 + 0x7a) = 1;
+  g_chargen_textfield_buf = auStack_4c;
   do {
     iVar12 = (int)sVar8;
     pcVar_rec = param_3 + iVar12 * 0x14;
@@ -14341,7 +14423,7 @@ LAB_00025468:
         uVar15 = uVar6;
         break;
       case 6:
-        pcVar5 = *(char **)(param_3 + 0x7a);
+        pcVar5 = g_chargen_textfield_buf;
         FUN_00057118();
         sVar8 = FUN_000112a0(pcVar5);
         iVar12 = -(int)sVar8 + 0x7e;
@@ -54639,7 +54721,13 @@ void FUN_00070c90()
   undefined1 uVar4;
   byte bVar5;
   short sVar6;
-  undefined4 uVar7;
+  /* Was `undefined4`, truncating FUN_0007863c's real char* return on
+     this 64-bit host -- same bug class as the other FUN_0007863c
+     truncation fixes this session (e.g. FUN_00024e24's uVar10). Used
+     consistently as a string pointer everywhere else in this function
+     (FUN_00011060's first arg, Ordinal_1063's second arg), so retyping
+     is a straightforward drop-in fix. */
+  char *uVar7;
   char *pcVar8;
   int iVar9;
   undefined4 uVar10;
@@ -54654,12 +54742,17 @@ void FUN_00070c90()
   short local_70;
   undefined1 auStack_68 [16];
   char local_58 [52];
-  
+
   FUN_00040d00(s_fontchar_sys_00087330);
   *DAT_00084298 = 0x5c;
   *DAT_0008429c = 0x5c;
   uVar7 = FUN_0007863c((int)DAT_00201c74);
-  sVar6 = FUN_000112a0();
+  /* Was `FUN_000112a0()` with no argument -- see FUN_00011060/
+     FUN_000112a0's own comments above for the root "dropped argument"
+     bug this matches; uVar7 (the string FUN_0007863c just returned) is
+     right here, so pass it explicitly instead of hoping it's still
+     sitting in the right register. */
+  sVar6 = FUN_000112a0(uVar7);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
@@ -59638,7 +59731,16 @@ short param_2;
   uVar5 = 0;
   puVar6 = &DAT_0024af98 + DAT_0024cfb4;
   FUN_00022850(DAT_0024bf98,*DAT_0024cfb8 * 4 + 2,0);
-  FUN_0002285c(DAT_0024bf98,&local_30,2);
+  /* If this read fails (e.g. DAT_0024bf98 holds a corrupted/invalid
+     handle -- see FUN_0007907c's comment for the known separate bug
+     this guards against), local_30 stays uninitialized garbage and the
+     search loop below would iterate up to 65535 times, one failing
+     read each, instead of the fast "not found" bailout every other
+     failure path in this function already takes. */
+  if (FUN_0002285c(DAT_0024bf98,&local_30,2) == 0) {
+    *puVar6 = 0;
+    return puVar6;
+  }
   uVar4 = 0;
   if (local_30 != 0) {
     do {
@@ -59688,9 +59790,26 @@ ushort param_2;
   short sVar1;
   /* Was `int iVar2`, truncating DAT_0024cfa8 (a real char* pointer). */
   char *iVar2;
-
+  /* Guard against a known, separate, not-yet-root-caused bug: under
+     some string IDs the compressed-string file handle this receives
+     (traced back to DAT_0024bf98) ends up corrupted before reaching
+     here, so every underlying file read fails and this tree walk never
+     reaches a leaf node -- an unbounded busy loop that hangs the whole
+     game (confirmed via lldb: uw_file_read spinning forever on a
+     garbage handle). No real Huffman tree used by this format is
+     anywhere near this deep, so treat exceeding it as corrupt/failed
+     decode and bail out with the same separator sentinel a normal
+     decode already uses to signal "stop appending". */
+  int iVar3 = 0;
   while (*(char *)((short)param_2 * 4 + DAT_0024cfa8 + 2) != -1) {
+    if (256 < iVar3) {
+      return '|';
+    }
+    iVar3 = iVar3 + 1;
     sVar1 = FUN_000790e0(param_1);
+    if (sVar1 == -1) {
+      return '|';
+    }
     iVar2 = (short)param_2 * 4 + DAT_0024cfa8;
     if (sVar1 == 0) {
       param_2 = (ushort)*(byte *)(iVar2 + 2);
@@ -59704,14 +59823,21 @@ ushort param_2;
 
 
 
-ushort FUN_000790e0(param_1)
+/* Returns -1 (instead of a 0/0x80 bit value) when the underlying file
+   read fails, so FUN_0007907c's caller can bail out immediately rather
+   than spinning through its iteration cap one failed read at a time --
+   see FUN_0007907c's comment for the corrupted-handle bug this guards
+   against. */
+int FUN_000790e0(param_1)
 undefined4 param_1;
 
 {
   ushort uVar1;
-  
+
   if (DAT_000878bc == 8) {
-    FUN_0002285c(param_1,&DAT_0024cfbc,1);
+    if (FUN_0002285c(param_1,&DAT_0024cfbc,1) == 0) {
+      return -1;
+    }
     DAT_000878bc = 0;
   }
   uVar1 = DAT_0024cfbc & 0x80;

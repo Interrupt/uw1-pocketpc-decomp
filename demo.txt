@@ -1,4 +1,47 @@
-# Main menu -> character generation, advancing through several pages
+# Main menu -> character generation, mixing in arrows/space/esc to
+# explore beyond plain ENTER navigation
+ENTER
+ENTER
+ENTER
+UP
+DOWN
+ENTER
+LEFT
+RIGHT
+ENTER
+SPACE
+ENTER
+ENTER
+DOWN
+ENTER
+UP
+ENTER
+SPACE
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+# By now we should be near/at the name entry screen -- try typing a name
+# and confirming it.
+TYPE Avatar
+ENTER
+# Keep pushing through whatever comes after name entry (stat allocation,
+# confirmation, etc.) to see how far we can get toward actual gameplay.
+ENTER
+ENTER
+ENTER
+ENTER
+ENTER
+SPACE
+ENTER
+SPACE
+ENTER
+SPACE
 ENTER
 ENTER
 ENTER

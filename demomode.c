@@ -1,6 +1,8 @@
 /* See demomode.h. Input file format: one command per line, case-
  * insensitive, blank lines and lines starting with '#' ignored:
- *   UP DOWN LEFT RIGHT ENTER SPACE CTRL ESC
+ *   UP DOWN LEFT RIGHT ENTER SPACE CTRL ESC BACKSPACE
+ *   TYPE <text>   -- sends each character of <text> as a real WM_CHAR
+ *                    (0x102), one per delay tick, simulating name entry
  * Pacing is controlled by the UW_DEMO_DELAY_MS env var (default 250ms
  * between inputs). Playback stops permanently once the file runs out --
  * the game keeps running normally (or waiting for real input) after
@@ -22,6 +24,7 @@
 #define VK_SPACE 0x20
 #define VK_CONTROL 0x11
 #define VK_ESCAPE 0x1B
+#define VK_BACK 0x08
 
 #define DEMO_DEFAULT_DELAY_MS 250
 
@@ -30,6 +33,12 @@ static Uint32 g_demo_next_tick;
 static int g_demo_delay_ms = DEMO_DEFAULT_DELAY_MS;
 static int g_demo_active;
 static int g_demo_done;
+
+/* When a "TYPE <text>" line is in progress, feed one character per pump
+ * tick (rather than the whole string at once) so it plays back at the
+ * same pace as other inputs and interleaves realistically. */
+static char g_demo_type_buf[256];
+static const char *g_demo_type_pos;
 
 static int demo_translate_vk(const char *name) {
     if (strcasecmp(name, "UP") == 0) return VK_UP;
@@ -40,6 +49,7 @@ static int demo_translate_vk(const char *name) {
     if (strcasecmp(name, "SPACE") == 0) return VK_SPACE;
     if (strcasecmp(name, "CTRL") == 0 || strcasecmp(name, "CONTROL") == 0) return VK_CONTROL;
     if (strcasecmp(name, "ESC") == 0 || strcasecmp(name, "ESCAPE") == 0) return VK_ESCAPE;
+    if (strcasecmp(name, "BACKSPACE") == 0 || strcasecmp(name, "BACK") == 0) return VK_BACK;
     return 0;
 }
 
@@ -69,6 +79,18 @@ void demomode_pump(void) {
     Uint32 now = SDL_GetTicks();
     if (now < g_demo_next_tick) return;
 
+    /* Mid-TYPE: send the next character (as a real WM_CHAR, matching
+     * SDL_TEXTINPUT's forwarding in gx_stub.c) and come back next tick
+     * for the rest, rather than dumping the whole string in one frame. */
+    if (g_demo_type_pos && *g_demo_type_pos) {
+        unsigned char c = (unsigned char)*g_demo_type_pos++;
+        fprintf(stderr, "[demo] typing '%c'\n", c);
+        FUN_00077b2c(0, 0x102u, (unsigned int)c);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+    g_demo_type_pos = NULL;
+
     char line[256];
     if (!fgets(line, sizeof(line), g_demo_file)) {
         fprintf(stderr, "[demo] end of input, stopping playback\n");
@@ -90,13 +112,36 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strncasecmp(p, "TYPE ", 5) == 0) {
+        const char *text = p + 5;
+        strncpy(g_demo_type_buf, text, sizeof(g_demo_type_buf) - 1);
+        g_demo_type_buf[sizeof(g_demo_type_buf) - 1] = '\0';
+        fprintf(stderr, "[demo] queued typing '%s'\n", g_demo_type_buf);
+        g_demo_type_pos = g_demo_type_buf;
+        /* Retry immediately so the first character goes out on the next
+         * pump rather than burning a delay slot on the TYPE line itself. */
+        g_demo_next_tick = now;
+        return;
+    }
+
     int vk = demo_translate_vk(p);
     if (vk == 0) {
         fprintf(stderr, "[demo] unrecognized input '%s', skipping\n", p);
+    } else if (vk == VK_BACK) {
+        /* Backspace only ever reaches the game as WM_CHAR (0x102), not a
+         * VK keydown/keyup -- see gx_stub.c's uw_pump_events. */
+        fprintf(stderr, "[demo] sending %s\n", p);
+        FUN_00077b2c(0, 0x102u, (unsigned int)VK_BACK);
     } else {
         fprintf(stderr, "[demo] sending %s\n", p);
         FUN_00077b2c(0, 0x100u, (unsigned int)vk);
         FUN_00077b2c(0, 0x101u, (unsigned int)vk);
+        if (vk == VK_RETURN) {
+            /* Enter also carries a WM_CHAR (0x0D), matching gx_stub.c's
+             * real-keyboard forwarding, since text-entry fields submit
+             * on the WM_CHAR rather than the VK keydown. */
+            FUN_00077b2c(0, 0x102u, (unsigned int)VK_RETURN);
+        }
     }
     g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
 }
