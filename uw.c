@@ -802,7 +802,19 @@ char *DAT_001005c4;
 static undefined1 DAT_000fb860_backing[256];
 #define DAT_000fb860 DAT_000fb860_backing[0]
 undefined DAT_000fb863;
-undefined4 DAT_000fb880;
+/* Was a lone `undefined4` scalar, but indexed as `(&DAT_000fb880)[idx]`
+   (4-byte stride) with idx up to a CONCAT11 of two record byte fields
+   (FUN_00023de8) -- for idx==0 this happened to read the in-bounds
+   value 0 (matching "never written, stays zero"), but for idx!=0 it's
+   an out-of-bounds read of whatever memory follows, which is NOT
+   reliably zero and defeated the "is this table entry usably small"
+   guards added around it. No writer exists anywhere in this decompile
+   (confirmed by search) -- this table's real data is unrecoverable,
+   same as DAT_000fb884/the glyph-width table -- but it needs to be a
+   real (zero-initialized) array so every index at least reads a
+   consistent, safe 0 instead of garbage. */
+static undefined4 DAT_000fb880_backing[4096];
+#define DAT_000fb880 DAT_000fb880_backing[0]
 int DAT_000fb898;
 char s_key_to_continue_00084e60[] = "key_to_continue";
 char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
@@ -810,7 +822,15 @@ char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
 static undefined1 DAT_000fb884_backing[65536];
 #define DAT_000fb884 DAT_000fb884_backing[0]
 short DAT_001005c0;
-undefined DAT_000fb8c4;
+/* Was a lone 1-byte `undefined` scalar, but read as `*(int*)(&DAT_000fb8c4
+   + idx*4)` (4-byte stride) in FUN_00024e24's case 4 -- an out-of-bounds
+   read of whatever memory follows for any idx!=0 (this crashed with a
+   BUS error/high-address dereference). No writer exists anywhere in this
+   decompile -- same "unrecoverable, never-populated table" class as
+   DAT_000fb880 above -- widened to a real (zero-initialized) array so
+   every index reads a consistent, safe 0 instead of garbage. */
+static undefined1 DAT_000fb8c4_backing[256];
+#define DAT_000fb8c4 DAT_000fb8c4_backing[0]
 static undefined1 DAT_000fb8f0_backing[1680];
 #define DAT_000fb8f0 DAT_000fb8f0_backing[0]
 int DAT_00201c98;
@@ -3214,7 +3234,15 @@ short param_3;
       pcVar9 = param_1;
       if (0 < iVar2) {
         do {
-          sVar1 = (&DAT_000890b0)[*pcVar9];
+          /* char is signed by default on this host; the original ARM
+             ABI treats it as unsigned, so bytes >=0x80 (e.g. any
+             extended/high glyph index) went NEGATIVE here and indexed
+             before the table -- reading garbage widths (observed: 190,
+             causing a downstream buffer overflow) and, for the common
+             case, contributing to characters silently not rendering.
+             Cast to byte (unsigned char) to match the original
+             semantics. */
+          sVar1 = (&DAT_000890b0)[(byte)*pcVar9];
           FUN_000112fc(auStack_40,
                        (DAT_000a85b8 + 1) * (int)*pcVar9 + DAT_0008894c * iVar11 + DAT_00088940,
                        (int)DAT_0008894c << 3);
@@ -3279,7 +3307,8 @@ char * param_1;
   for (uVar2 = uVar2 & 0xffff; uVar2 != 0; uVar2 = uVar2 - 1) {
     cVar1 = *param_1;
     param_1 = param_1 + 1;
-    sVar3 = sVar3 + (&DAT_000890b0)[cVar1];
+    /* Same signed-char-indexing bug as FUN_00011060 above. */
+    sVar3 = sVar3 + (&DAT_000890b0)[(byte)cVar1];
   }
   return (int)sVar3;
 }
@@ -13862,6 +13891,11 @@ undefined4 param_2;
   int iVar9;
   uint uVar10;
   int iVar11;
+  /* iVar11 doubles as a real pointer (DAT_000fb858 + a table offset,
+     read from right after) and then a plain int for the rest of the
+     function -- same pattern already fixed in FUN_00023de8/
+     FUN_0002431c above. Dedicated variable for the pointer role. */
+  char *pcVar_off;
   uint uVar12;
   uint uVar13;
   undefined8 uVar14;
@@ -13997,17 +14031,24 @@ LAB_00024dd4:
       iVar9 = (int)(short)local_2c[0];
     }
     else {
-      iVar11 = (&DAT_000fb880)[param_1[6]] + DAT_000fb858;
+      pcVar_off = (&DAT_000fb880)[param_1[6]] + DAT_000fb858;
       sVar5 = *param_1;
       FUN_00035df8(0);
       iVar9 = 0x14;
       if ((sVar5 != 0) == 0) {
         iVar9 = 0;
       }
+      /* Same DAT_000fb880-is-never-written underflow guard as
+         FUN_00023de8 above -- see its comment. */
+      if (pcVar_off - DAT_000fb858 < 4) {
+        bVar1 = 0;
+        iVar11 = 4;
+      } else {
+        bVar1 = *(byte *)(pcVar_off + -4);
+        iVar11 = (short)(ushort)*(byte *)(pcVar_off + -3) + 4;
+      }
       DAT_000fb858 = DAT_001005c4;
-      bVar1 = *(byte *)(iVar11 + -4);
       sVar3 = param_1[5];
-      iVar11 = (short)(ushort)*(byte *)(iVar11 + -3) + 4;
       sVar2 = Ordinal_2005(0xc4 - iVar9,sVar3 * iVar11 + -4);
       iVar9 = sVar2 + 1;
       *(char *)(param_1 + 8) = (char)iVar9;
@@ -14263,8 +14304,17 @@ LAB_00025468:
                          );
         FUN_00035df8(0);
         DAT_000fb858 = DAT_001005c4;
-        bVar2 = *(byte *)(iVar14 + param_1 + -4);
-        bVar3 = *(byte *)(iVar14 + param_1 + -3);
+        /* DAT_000fb8c4 is never populated (see its comment), so iVar14
+           is always 0 here and `iVar14 + param_1 + -4/-3` underruns
+           param_1's buffer. Same fallback-to-0 guard as the
+           DAT_000fb880 cases above. */
+        if (iVar14 < 4) {
+          bVar2 = 0;
+          bVar3 = 0;
+        } else {
+          bVar2 = *(byte *)(iVar14 + param_1 + -4);
+          bVar3 = *(byte *)(iVar14 + param_1 + -3);
+        }
         FUN_00057118();
         iVar12 = -(int)(short)(ushort)bVar3;
         iVar11 = iVar12 + 0x4c;
@@ -28553,7 +28603,22 @@ char *param_1;
   if (iVar3 != -1) {
     DAT_0020250c = 1;
     FUN_0002285c(iVar3,DAT_000879b0,0xc);
-    FUN_0002285c(iVar3,DAT_000890a4,((int)DAT_000879b0[1] + (int)*DAT_000879b0) * 0x80);
+    /* Was `((int)DAT_000879b0[1] + (int)*DAT_000879b0) * 0x80` -- reads
+       header bytes 0 and 1 (both always 1 and 0 across every font file
+       checked) giving a constant 128-byte read regardless of the font.
+       FUN_000113b4 (called right after) walks this buffer with a real
+       per-glyph stride of (height+1) for 128 glyphs -- e.g. FONTCHAR.SYS
+       needs ~2667 bytes (its real on-disk size minus the 12-byte
+       header), FONTBIG.SYS needs ~3937 -- so the actual glyph data was
+       >90% truncated, leaving FUN_000113b4 reading uninitialized malloc
+       memory as "widths" (observed: a bogus width of 190, causing a
+       downstream buffer overflow, and more generally wrong/zero widths
+       silently keeping characters undrawn). DAT_000890a4's own buffer
+       is allocated at a fixed 0x1080 (4224) bytes -- comfortably larger
+       than any of these font files' real data -- so just read up to
+       that whole capacity; fread naturally stops at EOF for smaller
+       files. */
+    FUN_0002285c(iVar3,DAT_000890a4,0x1080);
     Ordinal_553(iVar3);
     FUN_000113b4();
   }
