@@ -62,9 +62,33 @@ long Ordinal_80()
     return 0;
 }
 
-long Ordinal_89()
+/* SystemParametersInfo-shaped call (action=0x102=SPI_GETOEMINFO at its
+ * only call site). The caller uses the returned OEM string to decide
+ * whether to run the "real" GAPI display-properties init path
+ * (GXOpenInput + GXGetDisplayProperties, gated on Ordinal_230 matching
+ * against a specific hardware name, "HP,Jornada_540") or skip it
+ * entirely. Skipping it left DAT_0023cdc0 (cBPP) permanently 0, so the
+ * present/blit gate `DAT_0023cdc0 == 0x10` never passed and the screen
+ * stayed black even once real pixel data was being drawn into the
+ * software framebuffer. Our gx_stub.c backend is a fixed-size 16bpp
+ * RGB565 framebuffer close enough to that device's, so report that same
+ * device string unconditionally to make sure the game always takes the
+ * branch that initializes pitch/BPP. */
+static const unsigned short g_oem_info_str[] = {
+    'H','P',',','J','o','r','n','a','d','a','_','5','4','0',0
+};
+
+long Ordinal_89(action, cb, buf, fWinIni)
+unsigned int action;
+unsigned int cb;
+void *buf;
+unsigned int fWinIni;
 {
-    return 0;
+    (void)fWinIni;
+    if (action == 0x102 && buf && cb >= sizeof(g_oem_info_str)) {
+        memcpy(buf, g_oem_info_str, sizeof(g_oem_info_str));
+    }
+    return 1;
 }
 
 long Ordinal_95()
@@ -137,9 +161,11 @@ long Ordinal_181()
     return 0;
 }
 
-long Ordinal_184()
+int Ordinal_184(void *path, unsigned int flags, void *out_struct, unsigned int *out_free_lo)
 {
-    return 0;
+    (void)path; (void)flags; (void)out_struct;
+    if (out_free_lo) *out_free_lo = 0x7fffffff;
+    return 1;
 }
 
 long Ordinal_196()
@@ -162,9 +188,16 @@ long Ordinal_218()
     return 0;
 }
 
-long Ordinal_230()
+/* UTF-16 string-equality check; the only call site compares Ordinal_89's
+ * SPI_GETOEMINFO string against a fixed device name (see Ordinal_89's
+ * comment). wcscmp isn't used here because macOS wchar_t is 4 bytes,
+ * not the 2-byte UTF-16 units this game's strings use. */
+long Ordinal_230(a, b)
+unsigned short *a;
+unsigned short *b;
 {
-    return 0;
+    while (*a && *b && *a == *b) { a++; b++; }
+    return *a == *b;
 }
 
 long Ordinal_242()
@@ -461,9 +494,10 @@ char *src;
     return dest;
 }
 
-long Ordinal_1064()
+char *Ordinal_1064(const char *s, int c)
 {
-    return 0;
+    if (s == 0) return 0;
+    return strchr(s, c);
 }
 
 int Ordinal_1065(const char *a, const char *b)
@@ -592,14 +626,47 @@ long Ordinal_2016()
     return 0;
 }
 
-long Ordinal_2018()
+/* ARM/WinCE softfloat helper ABI: floats travel as raw IEEE-754 bit
+ * patterns through plain integer registers/params (no hardware FPU on
+ * the original target). Ordinal_2032/2026/2020/2018 are the int<->float
+ * conversion and multiply primitives used throughout the game's palette
+ * gamma correction and (likely) 3D math; they were previously no-op
+ * stubs, which silently zeroed every value that passed through them
+ * (e.g. the whole RGB565 palette LUT stayed all-black, since every
+ * channel's gamma-corrected value came out 0 regardless of input). */
+static float ordfloat_bits_to_float(unsigned int bits)
 {
-    return 0;
+    float f;
+    memcpy(&f, &bits, sizeof(f));
+    return f;
 }
 
-long Ordinal_2020()
+static unsigned int ordfloat_float_to_bits(float f)
 {
-    return 0;
+    unsigned int bits;
+    memcpy(&bits, &f, sizeof(bits));
+    return bits;
+}
+
+/* Called with NO explicit argument at every use site in uw.c -- Ghidra
+ * dropped the parameter because it's just the return-register value
+ * chained straight from the preceding Ordinal_2026/2032 call (the same
+ * "K&R drops a register-reused argument" pattern already fixed
+ * elsewhere in this codebase, e.g. Ordinal_1068's strlen argument).
+ * Declaring one K&R parameter here lets the calling convention pick it
+ * up from the register the prior call's return value is still sitting
+ * in. No call site distinguishes its rounding behavior from
+ * Ordinal_2020's, so implemented identically until proven otherwise. */
+long Ordinal_2018(x)
+unsigned int x;
+{
+    return (long)ordfloat_bits_to_float(x);
+}
+
+long Ordinal_2020(x)
+unsigned int x;
+{
+    return (long)ordfloat_bits_to_float(x);
 }
 
 long Ordinal_2021()
@@ -612,9 +679,11 @@ long Ordinal_2023()
     return 0;
 }
 
-long Ordinal_2026()
+long Ordinal_2026(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) * ordfloat_bits_to_float(b));
 }
 
 long Ordinal_2027()
@@ -632,9 +701,10 @@ long Ordinal_2030()
     return 0;
 }
 
-long Ordinal_2032()
+long Ordinal_2032(x)
+int x;
 {
-    return 0;
+    return (long)ordfloat_float_to_bits((float)x);
 }
 
 long Ordinal_2033()

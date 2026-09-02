@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <strings.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #define MAX_HANDLES 64
 static FILE *g_handles[MAX_HANDLES];
@@ -83,6 +84,25 @@ static int resolve_path(const char *win_path, char *out, size_t out_sz) {
     return 1;
 }
 
+/* The game's WinCE install always had its SAVE0/SAVE1/etc. directories
+ * pre-created (part of the shipped install), so it never needed to
+ * create one itself -- resolve_path() only case-insensitively matches
+ * existing entries and otherwise passes the path through unchanged.
+ * We're extracting fresh data without those save directories, so create
+ * the target file's parent directory on write instead of failing (this
+ * showed up as a fatal "not enough disk space"-style error at startup,
+ * from a bglobals.dat save write into a nonexistent SAVE0/). */
+static void ensure_parent_dir(const char *path) {
+    char dir[4096];
+    snprintf(dir, sizeof(dir), "%s", path);
+    char *slash = strrchr(dir, '/');
+    if (!slash || slash == dir) return;
+    *slash = '\0';
+    if (mkdir(dir, 0755) != 0 && errno != EEXIST) {
+        fprintf(stderr, "[fileio] mkdir FAILED: %s (errno %d)\n", dir, errno);
+    }
+}
+
 static int alloc_handle(FILE *f) {
     for (int i = 1; i < MAX_HANDLES; i++) {
         if (!g_handles[i]) {
@@ -129,6 +149,7 @@ void *uw_file_fopen(const char *win_path, const char *mode) {
         return NULL;
     }
     if (!mode || !mode[0]) mode = "r";
+    if (mode[0] == 'w' || mode[0] == 'a') ensure_parent_dir(real);
     FILE *f = fopen(real, mode);
     fprintf(stderr, "[fileio] fopen: %s -> %s (mode %s) %s\n", win_path, real, mode, f ? "ok" : "FAILED");
     return f;
@@ -137,6 +158,7 @@ void *uw_file_fopen(const char *win_path, const char *mode) {
 int uw_file_open_write(const char *win_path, int create_always) {
     char real[4096];
     if (!resolve_path(win_path, real, sizeof(real))) return -1;
+    ensure_parent_dir(real);
     const char *mode = create_always ? "wb+" : "rb+";
     FILE *f = fopen(real, mode);
     if (!f && !create_always) f = fopen(real, "wb+");

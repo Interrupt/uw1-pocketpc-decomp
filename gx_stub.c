@@ -12,6 +12,22 @@
 #define GX_W 320
 #define GX_H 240
 
+/* The game's own screen-flush routines (FUN_00022f0c/FUN_0002310c in
+ * uw.c) always blit by transposing rows<->columns from the software
+ * framebuffer into whatever GXBeginDraw() returns, using the pitch
+ * values from GXGetDisplayProperties() -- i.e. the code unconditionally
+ * performs a 90-degree rotation from its internal 320x240 landscape
+ * buffer into the "hardware" framebuffer. That only makes sense if the
+ * real target device's framebuffer is natively portrait-oriented
+ * (matches the original HP Jornada/Pocket PC-class hardware this port
+ * targets); reporting landscape pitch/dimensions here made the blit's
+ * row/column math write far outside the buffer (global-buffer-overflow
+ * on `g_framebuffer`). Emulate that portrait "hardware" framebuffer
+ * faithfully, then rotate it back to landscape ourselves when
+ * presenting to the (landscape, GX_W x GX_H) SDL window/texture. */
+#define HW_W 240
+#define HW_H 320
+
 /* Real Microsoft GXDisplayProperties layout (6 x 4-byte fields = 0x18). */
 typedef struct {
     unsigned int cxWidth;
@@ -48,7 +64,8 @@ typedef struct {
 static SDL_Window *g_win;
 static SDL_Renderer *g_ren;
 static SDL_Texture *g_tex;
-static unsigned short g_framebuffer[GX_W * GX_H]; /* RGB565 */
+static unsigned short g_framebuffer[HW_W * HW_H]; /* RGB565, portrait "hardware" buffer */
+static unsigned short g_display_buf[GX_W * GX_H]; /* RGB565, rotated landscape buffer for display */
 static int g_running = 1;
 
 static int translate_vk(SDL_Keycode sym) {
@@ -144,7 +161,16 @@ void *GXBeginDraw(void) {
 
 int GXEndDraw(void) {
     if (!g_tex) return 0;
-    SDL_UpdateTexture(g_tex, NULL, g_framebuffer, GX_W * sizeof(unsigned short));
+    /* Un-rotate the portrait "hardware" framebuffer back to a natural
+     * landscape image for display -- see the HW_W/HW_H comment above.
+     * landscape(x,y) = portrait((HW_W-1-x), y), i.e. the inverse of the
+     * clockwise rotation the game's own blit performs. */
+    for (int y = 0; y < GX_H; y++) {
+        for (int x = 0; x < GX_W; x++) {
+            g_display_buf[y * GX_W + x] = g_framebuffer[(HW_H - 1 - x) * HW_W + y];
+        }
+    }
+    SDL_UpdateTexture(g_tex, NULL, g_display_buf, GX_W * sizeof(unsigned short));
     SDL_RenderClear(g_ren);
     SDL_RenderCopy(g_ren, g_tex, NULL, NULL);
     SDL_RenderPresent(g_ren);
@@ -157,12 +183,14 @@ int GXSuspend(void) { fprintf(stderr, "[gx] GXSuspend (window lost focus)\n"); r
 int GXResume(void) { fprintf(stderr, "[gx] GXResume (window gained focus)\n"); return 1; }
 
 void *GXGetDisplayProperties(void) {
-    fprintf(stderr, "[gx] GXGetDisplayProperties: reporting %dx%d 16bpp RGB565\n", GX_W, GX_H);
+    fprintf(stderr, "[gx] GXGetDisplayProperties: reporting %dx%d 16bpp RGB565 (portrait "
+                    "hardware framebuffer; presented rotated to a %dx%d landscape window)\n",
+            HW_W, HW_H, GX_W, GX_H);
     static GxDisplayProps props;
-    props.cxWidth = GX_W;
-    props.cyHeight = GX_H;
+    props.cxWidth = HW_W;
+    props.cyHeight = HW_H;
     props.cbxPitch = 2;
-    props.cbyPitch = GX_W * 2;
+    props.cbyPitch = HW_W * 2;
     props.cBPP = 16;
     props.ffFormat = KF_DIRECT565;
     return &props;

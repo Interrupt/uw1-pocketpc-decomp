@@ -27,11 +27,24 @@ audit.
 - **Font/glyph-width setup (partially broken)**: `FUN_0003894c`,
   `DAT_00110fc8`/`DAT_00110fc0`/`DAT_00110fcc`
 - **Texture-LUT loader (non-functional)**: `FUN_0005b054`, `FUN_0005b514`
-- **Unidentified, still under investigation**: `FUN_000232ec` (writes a
-  big fixed-offset device/config-ish record via `DAT_00086df8`, plus
-  something at `DAT_0023be74`), `FUN_00066cb4`/`FUN_00066e90` (sets up
-  `DAT_0023be64`/`DAT_0023be74` from a `DAT_002029cc`-backed workspace —
-  purpose still unclear, maybe a font/palette record)
+- **Options menu / in-game UI text-and-icon rendering**: `FUN_0006a3d8`
+  (top-level options-menu loop), `FUN_0006af3c`/`FUN_0006ac38`/
+  `FUN_0006a200` (menu-item draw + input-wait dispatch), `FUN_000122d4`/
+  `FUN_00012444` (RGB565 pixel-format conversion blit), `FUN_00011e5c`/
+  `FUN_00011060`/`FUN_000112a0` (paletted-bitmap-to-framebuffer text/
+  glyph blitter), `FUN_0006c98c`/`FUN_00040e24`/`FUN_00040efc` (load a
+  `.BYT` background image + a PALS.DAT palette index and draw it)
+- **Screen present / GAPI blit pipeline**: `FUN_00022f0c`/`FUN_0002310c`
+  (dirty-rect flush from the software framebuffer to the real display),
+  `FUN_00022b54` (palette→RGB565 LUT builder, doubles as a secondary
+  overlay blit), `FUN_000778fc` (same secondary overlay blit), all
+  gated on `DAT_0023cdc0`/`DAT_0023cdb8`/`DAT_0023cdbc` (GAPI display
+  properties) and targeting a **portrait**-oriented hardware framebuffer
+  — see "Display rotation" below.
+- **Unidentified, still under investigation**: `FUN_00066cb4`/
+  `FUN_00066e90` (sets up `DAT_0023be64`/`DAT_0023be74` from a
+  `DAT_002029cc`-backed workspace — purpose still unclear, maybe a
+  font/palette record)
 
 ## Entry / startup chain
 
@@ -158,6 +171,60 @@ audit.
   longer run..." fatal-error display + `FUN_00082388(-24)`. Always exits
   with code -24 regardless of the display error code.
 
+## Display rotation (portrait "hardware" framebuffer)
+
+The GAPI screen-present functions (`FUN_00022f0c`/`FUN_0002310c`/
+`FUN_00022b54`'s tail/`FUN_000778fc`) all blit by transposing rows and
+columns from the game's internal 320×240 landscape software framebuffer
+(`g_uw_buf_25800`) into whatever `GXBeginDraw()` returns, using the pitch
+values from `GXGetDisplayProperties()`. That's a real 90°-rotation
+algorithm, not a decompile artifact — it only makes sense if the actual
+target device (an HP Jornada/Pocket-PC-class handheld) has a **portrait**
+-oriented hardware framebuffer. `gx_stub.c` now emulates that faithfully:
+`GXBeginDraw()`/`GXGetDisplayProperties()` expose a 240×320 portrait
+buffer (`g_framebuffer`), and `GXEndDraw()` rotates it back to a natural
+320×240 landscape image (`g_display_buf`) before presenting to the SDL
+window. Reporting landscape properties instead (the initial approach)
+made the game's own rotation math write far outside the buffer.
+
+Getting the game to reach this code at all required two more fixes:
+- `Ordinal_89`/`Ordinal_230` (SystemParametersInfo SPI_GETOEMINFO + a
+  device-name string compare against `u"HP,Jornada_540"`) were generic
+  no-op stubs, so the device-detection check that gates the *entire*
+  `GXOpenInput()`/`GXGetDisplayProperties()`/`GXGetDefaultKeys()` init
+  block always failed and those calls were skipped outright — no `else`
+  path exists, so input and display-properties setup were both silently
+  missing. Implemented to always report/match that device string.
+- `DAT_0023cdb8`/`DAT_0023cdbc`/`DAT_0023cdc0` (cbxPitch/cbyPitch/cBPP)
+  were Ghidra-split field accesses into the *same* struct that
+  `GXGetDisplayProperties()`'s result gets memcpy'd into (at struct
+  offsets 8/0xc/0x10), but got declared as independent globals instead
+  of aliases into that backing buffer — so the copy silently populated
+  memory nothing else read, and the present-gate check `DAT_0023cdc0 ==
+  0x10` (checking cBPP==16) never passed. Re-aliased onto the backing
+  buffer at the right offsets.
+
+## Palette gamma-correction softfloat ordinals
+
+`Ordinal_2032`/`Ordinal_2026`/`Ordinal_2020`/`Ordinal_2018` are ARM/WinCE
+softfloat-emulation helpers (int→float, float×float, float→int; floats
+travel as raw IEEE-754 bit patterns through plain integer
+registers/params — no hardware FPU on the original target). They're used
+~470 times combined across the file, overwhelmingly for palette gamma
+correction (`FUN_00022b54`'s non-null-`param_1` branch) but likely
+elsewhere too (3D math has not been exercised yet). All four were no-op
+stubs returning 0, which meant *every* computed palette color came out
+as 0 (black) regardless of the real PALS.DAT data loaded from disk —
+this, not a missing draw call, was why the options-menu background
+stayed solid black even after every earlier bug in the chain got fixed.
+`Ordinal_2020`/`Ordinal_2018` are called with **zero explicit arguments**
+at every site in `uw.c` — Ghidra dropped the parameter because it's just
+the return-register value chained straight from the preceding
+`Ordinal_2026`/`Ordinal_2032` call (the same register-reuse pattern
+already seen with `Ordinal_1068`'s strlen argument); implemented as K&R
+functions with one parameter so the calling convention picks it up from
+whatever register the prior call's return is still sitting in.
+
 ## Resolved this session (previously undersized/uninitialized globals)
 
 Beyond the `.E` parser's own record clusters (POINTS/PARTS/CLUSTERS/NODES,
@@ -201,15 +268,29 @@ path once those stopped masking them:
   still observed after that fix in at least one ASAN run, so there may
   be one more overflow source somewhere not yet found. Worth another
   watchpoint session if it recurs.
-- `FUN_000232ec` — writes a large fixed-offset record through
-  `DAT_00086df8` (looks like device/config init — many single-byte
-  field writes at offsets like `+0x4e`, `+0xce`, `+0x21..0x34`, etc.,
-  unclear what real subsystem this is yet) and also touches
-  `DAT_0023be74 + 5..7` (set earlier by `FUN_00066cb4` from
-  `&DAT_001007d0 + (*DAT_0023be64 & 0x3f) * 0x30`). Current crash
-  point (SEGV reading through `DAT_0023be74`, garbage-looking address)
-  — not yet root-caused; `DAT_0023be74`'s backing (`DAT_001007d0`,
-  6144 bytes) is not obviously undersized for the offsets used, so this
-  may be the same not-yet-found stray-write source as `DAT_002029cc`
-  above, or a separate issue. Next step: lldb watchpoint on
-  `DAT_0023be74` the same way `DAT_002029cc`'s corruption was found.
+- The `FUN_000232ec`/`DAT_0023be74` SEGV noted here previously was
+  root-caused and fixed: `DAT_0023bca8` (a single-byte scalar Ghidra
+  declared, but actually used as the base of a large device/config
+  record via `DAT_00086df8`) was undersized and its overflow was
+  corrupting the unrelated `DAT_0023be74` byte-by-byte. Widened to
+  8192 bytes.
+- Several more pointer-truncation bugs surfaced while chasing the
+  options-menu black-screen issue (see "Options menu" subsystem and
+  "Display rotation" above): `FUN_0006af3c`/`FUN_0006ac38`'s `param_2`
+  (`undefined4`/`int`, truncating the pointer forwarded into
+  `FUN_0006a200`), `FUN_0006a200`'s 4-byte-stride `char**` menu-string
+  array (was a 4-byte-per-slot `int*`, matching the source `local_1d0`
+  array in `FUN_0006b178` which had the same truncation), and
+  `FUN_00011e5c`'s `param_3` (source-bitmap pointer for the paletted-
+  blit primitive, `int` truncating real pointers from ~30 call sites —
+  only the callers on the options-menu path have been re-typed so far;
+  the rest still pass through an implicit int↔pointer conversion and
+  may need the same fix if/when reached). Also two plain missing- or
+  wrong-argument bugs: `FUN_00057a70`/`FUN_00057a78` computed a real
+  input-event code via `FUN_000579e4()` and then discarded it in favor
+  of a hardcoded `return 0`, which made every input-wait loop in the
+  game immediately believe an event had arrived — this was the actual
+  cause of a 390,000-iterations/30s busy-loop (constantly re-opening
+  font files) before it was found; and `GXGetDefaultKeys((int)auStack_798)`
+  in `FUN_00077408`, where the `(int)` cast truncated a real stack
+  pointer, crashing on the very first `memset` inside it.

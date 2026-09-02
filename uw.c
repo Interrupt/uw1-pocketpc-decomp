@@ -143,7 +143,13 @@ undefined1 DAT_00000004;
 undefined1 DAT_00000005;
 undefined1 DAT_00000006;
 undefined1 DAT_00000007;
-undefined4 DAT_00248410;
+/* Was `undefined4` despite being assigned a real malloc'd pointer
+   (`DAT_00248410 = DAT_0023c44c;`, itself `Ordinal_1041(0x4cce)`'s
+   result) -- truncating on this 64-bit host and feeding a garbage
+   pointer to Ordinal_1047/Ordinal_1044. Same fix applied to its two
+   sibling aliases, DAT_0023cca4 and DAT_0024ad58, assigned from the
+   same source right next to this one. */
+char *DAT_00248410;
 char s__SAVE0_bglobals_dat_00084538[] = "\\SAVE0\\bglobals.dat";
 char s__DATA_babglobs_dat_0008454c[] = "\\DATA\\babglobs.dat";
 ushort DAT_001007c4;
@@ -757,8 +763,6 @@ undefined *PTR_Ordinal_2018_000840e0;
 int DAT_0024af70;
 undefined *PTR_GXBeginDraw_00084200;
 void *DAT_0023c430;
-int DAT_0023cdb8;
-int DAT_0023cdbc;
 undefined *PTR_GXEndDraw_000841fc;
 static undefined1 DAT_00084a40_backing[32768];
 #define DAT_00084a40 DAT_00084a40_backing[0]
@@ -768,7 +772,6 @@ undefined2 DAT_00248418;
 short DAT_00084f10;
 int DAT_00089098;
 short DAT_0023c63c;
-int DAT_0023cdc0;
 undefined4 DAT_0023c638;
 static undefined DAT_00084e40_backing[8192];
 #define DAT_00084e40 DAT_00084e40_backing[0]
@@ -1573,11 +1576,20 @@ static undefined DAT_00085908_backing[8192];
 char s__CRIT_assoc_anm_00085934[] = "\\CRIT\\assoc.anm";
 static undefined1 DAT_0023c460_backing[32768];
 #define DAT_0023c460 DAT_0023c460_backing[0]
-undefined1 DAT_0023c4c0;
-undefined1 DAT_0023c5b8;
+/* DAT_0023c4c0/DAT_0023c5b8/DAT_0024ac18 (a resource-slot status table,
+   FUN_00040160) were lone-byte scalars indexed up to 0x80 (128) --
+   confirmed overflowing into the unrelated DAT_00248410 (a malloc'd
+   buffer pointer) via an lldb watchpoint, corrupting it and causing a
+   later crash in FUN_00019120 far away from this actual bad write.
+   Widened with the usual backing-buffer pattern. */
+static undefined1 DAT_0023c4c0_backing[256];
+#define DAT_0023c4c0 DAT_0023c4c0_backing[0]
+static undefined1 DAT_0023c5b8_backing[256];
+#define DAT_0023c5b8 DAT_0023c5b8_backing[0]
 static undefined1 DAT_0023ce70_backing[8192];
 #define DAT_0023ce70 DAT_0023ce70_backing[0]
-undefined1 DAT_0024ac18;
+static undefined1 DAT_0024ac18_backing[256];
+#define DAT_0024ac18 DAT_0024ac18_backing[0]
 char DAT_00085928;
 char DAT_00085929;
 char DAT_00085930;
@@ -2185,7 +2197,12 @@ undefined *DAT_0023b02c;
 short DAT_0025063c;
 short DAT_002506dc;
 short DAT_0025064c;
-undefined1 DAT_0023b039;
+/* Lookup/gradient table in FUN_0005bdcc, indexed up to
+   (16*0x21+32)*2=1120 -- confirmed overflowing into the unrelated
+   DAT_00248410 via an lldb watchpoint (same symptom, second distinct
+   overflow source found reaching that same global). Widened. */
+static undefined1 DAT_0023b039_backing[4096];
+#define DAT_0023b039 DAT_0023b039_backing[0]
 undefined1 DAT_0023b030;
 undefined1 DAT_0023aee0;
 undefined1 DAT_0023aee5;
@@ -2462,7 +2479,17 @@ undefined4 LAB_00071ac4()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-undefined DAT_0023bca8;
+/* Base of a large fixed-offset record (FUN_00066cb4: `DAT_00086df8 =
+   &DAT_0023bca8;`, then FUN_000232ec and others write through
+   DAT_00086df8 at offsets up to at least 0xd1/209 -- a device/config-ish
+   struct, not yet fully identified). Declared as a lone `undefined`
+   scalar, byte 0 of that struct -- an lldb watchpoint on the unrelated
+   DAT_0023be74 (which happens to sit right after this in memory) caught
+   this overflowing into it one byte per loop iteration in FUN_000232ec,
+   corrupting it and causing a later SEGV. Widened generously since the
+   struct's exact real size isn't confirmed. */
+static undefined1 DAT_0023bca8_backing[8192];
+#define DAT_0023bca8 DAT_0023bca8_backing[0]
 undefined2 DAT_0023be6c;
 undefined2 DAT_0023be68;
 undefined2 DAT_0023be70;
@@ -2526,22 +2553,32 @@ short DAT_0023bf40;
 undefined DAT_00086e87;
 int DAT_0024af8c;
 char s_font5x6i_sys_00086e98[] = "font5x6i.sys";
-int DAT_0023bf6c;
+/* Was `int` despite holding a real stack address (FUN_0006a3d8:
+   `DAT_0023bf6c = &local_82c;`) used in pointer arithmetic throughout
+   this file -- truncating on this 64-bit host. */
+char *DAT_0023bf6c;
 ushort DAT_0023bf74;
 char s__DATA_CREDIT3_BYT_00086ea8[] = "\\DATA\\CREDIT3.BYT";
 char s__DATA_CREDIT2_BYT_00086ebc[] = "\\DATA\\CREDIT2.BYT";
 char s__DATA_CREDIT1_BYT_00086ed0[] = "\\DATA\\CREDIT1.BYT";
 char s_opbtn_00086ee4[] = "opbtn";
 char s__DATA_opscr_byt_00086eec[] = "\\DATA\\opscr.byt";
-int DAT_0023bf70;
-undefined4 LAB_0006a0ac()
+/* Was `int` despite holding a real malloc'd pointer (FUN_0006a3d8:
+   `DAT_0023bf70 = iVar4;` where iVar4 = Ordinal_1041(0x10000)), used in
+   pointer arithmetic (`iVar9 + DAT_0023bf70`) -- truncating on this
+   64-bit host. */
+char *DAT_0023bf70;
+void *LAB_0006a0ac(param_1)
+unsigned int param_1;
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  /* Same allocator-callback role as LAB_000415b0/LAB_000416e8/
+     LAB_000416f8 (FUN_000417b4's param_4, "Ghidra couldn't resolve this
+     address" -- see their comments): a no-op stub returning 0 here
+     failed the whole "opbtn" resource batch even though the underlying
+     OPBTN.GR file loaded successfully, which was fatal
+     (FUN_0003c3c8(0x300d)) at this specific call site. */
+  return Ordinal_1041(param_1);
 }
 char s__DATA_OPSCR_BYT_00086efc[] = "\\DATA\\OPSCR.BYT";
 int DAT_00086f0c;
@@ -2588,7 +2625,8 @@ undefined1 DAT_0023c130;
 undefined1 DAT_000870e0;
 int DAT_0023c23c;
 short DAT_0023c21c;
-undefined4 DAT_0023cca4;
+/* Same fix as DAT_00248410 above -- see its comment. */
+char *DAT_0023cca4;
 undefined2 DAT_00087170;
 undefined2 DAT_00087174;
 undefined2 DAT_000871b4;
@@ -2790,7 +2828,8 @@ undefined2 DAT_0023c59e;
 undefined2 DAT_0023c5a0;
 char *DAT_0023c44c;
 char *DAT_0023cef0;
-undefined4 DAT_0024ad58;
+/* Same fix as DAT_00248410 above -- see its comment. */
+char *DAT_0024ad58;
 int DAT_000876c8;
 int DAT_0024af60;
 undefined4 DAT_0023c648;
@@ -2802,6 +2841,20 @@ unsigned short u_InstlDir_00087838[] = u"InstlDir";
 unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008784c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
 static undefined1 DAT_0023cdb0_backing[32768];
 #define DAT_0023cdb0 DAT_0023cdb0_backing[0]
+/* DAT_0023cdb8/DAT_0023cdbc/DAT_0023cdc0 are Ghidra-split field accesses
+   into the SAME GXGetDisplayProperties() struct that gets memcpy'd byte-
+   by-byte into DAT_0023cdb0 (cbxPitch/cbyPitch/cBPP at struct offsets
+   8/0xc/0x10 -- see the copy loop in FUN_00077170ish near GXOpenDisplay).
+   Originally on the 32-bit binary these were just literal offsets into
+   the same global buffer; declaring them as independent globals (as an
+   earlier pass did) meant the copy loop populated this buffer while
+   these "separate" globals stayed permanently zero, so the present/blit
+   gate `DAT_0023cdc0 == 0x10` (checking cBPP==16) never passed and the
+   real framebuffer was never blitted to the screen. Aliased back onto
+   the backing buffer at their real offsets to fix that. */
+#define DAT_0023cdb8 (*(int *)(DAT_0023cdb0_backing + 8))
+#define DAT_0023cdbc (*(int *)(DAT_0023cdb0_backing + 0xc))
+#define DAT_0023cdc0 (*(int *)(DAT_0023cdb0_backing + 0x10))
 static undefined1 DAT_0023ce10_backing[65536];
 #define DAT_0023ce10 DAT_0023ce10_backing[0]
 HWND__ *DAT_0023c548;
@@ -3120,7 +3173,7 @@ short param_3;
   int iVar12;
   char *local_48;
   undefined1 auStack_40 [16];
-  
+
   iVar2 = Ordinal_1068();
   uVar3 = FUN_000112a0(param_1);
   uVar10 = (uint)DAT_0008909c;
@@ -3304,7 +3357,18 @@ undefined4 FUN_00011478()
     do {
       iVar4 = iVar4 + -1;
       if (*psVar2 != sVar1) {
-        *(short *)(((int)&DAT_000891b0 - (int)psVar3) + (int)psVar2) = *psVar2;
+        /* `(intptr_t)&DAT_000891b0` fixed globally across the file (17
+           sites) -- taking a global's address then truncating it through
+           `(int)` before pointer arithmetic, same bug class as the
+           `(TYPE *)((int)VAR + offset)` pattern fixed much earlier, just
+           differently shaped so the original regex-based pass missed it.
+           `(int)psVar3`/`(int)psVar2` right here are a related but
+           distinct case (casting pointer *variables*, not `&global`, to
+           int) not swept up by that fix; left alone since psVar2/psVar3
+           are both short-array cursors into the same nearby buffers in
+           practice and this hasn't been observed to crash, but worth
+           revisiting if it does. */
+        *(short *)(((intptr_t)&DAT_000891b0 - (int)psVar3) + (int)psVar2) = *psVar2;
       }
       psVar2 = psVar2 + 1;
     } while (iVar4 != 0);
@@ -3332,7 +3396,7 @@ void FUN_000114e4()
       iVar3 = iVar3 + -1;
       psVar2 = (short *)(iVar1 + (g_uw_buf_25800));
       if (*psVar2 == DAT_0024ad94) {
-        *psVar2 = *(short *)((int)&DAT_000891b0 + iVar1);
+        *psVar2 = *(short *)((intptr_t)&DAT_000891b0 + iVar1);
       }
       iVar1 = iVar1 + 2;
     } while (iVar3 != 0);
@@ -3744,7 +3808,7 @@ short param_7;
 void FUN_00011e5c(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 ushort param_1;
 ushort param_2;
-int param_3;
+char *param_3;
 short param_4;
 short param_5;
 short param_6;
@@ -3766,12 +3830,17 @@ short param_7;
   short sVar13;
   short sVar14;
   short sVar15;
-  int local_34;
-  
+  /* param_3 is the source-bitmap pointer (was `int`, truncating it on
+     this 64-bit host -- every caller passes a real malloc'd/global
+     pixel-data pointer, e.g. FUN_0006c98c's OPSCR.BYT load buffer). This
+     accumulator reconstructs a moving source-row address from it each
+     iteration, so it needs to stay a full-width pointer-sized value. */
+  intptr_t local_34;
+
   sVar13 = 0;
   iVar11 = (int)param_6;
   sVar12 = 0;
-  local_34 = (int)param_7 * (int)param_5 + iVar11 + param_3;
+  local_34 = (intptr_t)param_3 + (int)param_7 * (int)param_5 + iVar11;
   iVar9 = (uint)param_1 << 0x10;
   iVar8 = iVar9 >> 0x10;
   if (iVar8 < 0) {
@@ -3929,7 +3998,7 @@ int param_8;
 void FUN_000122d4(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
-int param_3;
+ushort *param_3;
 
 {
   int iVar1;
@@ -3939,13 +4008,25 @@ int param_3;
   int iVar5;
   ushort *puVar6;
   int iVar7;
-  int iVar8;
+  /* iVar8 held a `param_3 - puVar3` relative offset then re-added to
+     puVar6 to reconstruct a destination pointer -- correct as pointer
+     *difference* arithmetic, but iVar8/`(int)puVar6` truncated both
+     the difference and the re-addition to 32 bits on this 64-bit host
+     now that param_3 is a real (not truncated) pointer. Kept as the
+     same relative-offset idiom, just computed/applied via intptr_t. */
+  intptr_t iVar8;
   int iVar9;
-  undefined4 in_stack_0000000c;
-  undefined4 in_stack_00000014;
-  
+  /* in_stack_0000000c/in_stack_00000014 were declared as fresh locals
+     but never assigned anywhere -- reading them was reading
+     uninitialized memory. param_1/param_2 are, symmetrically, declared
+     but never otherwise used in this function. Classic Ghidra artifact
+     where the same two incoming arguments got modeled twice (once as
+     real parameters, once as phantom "leftover on the stack" locals)
+     due to a calling-convention mismatch; param_1/param_2 are what
+     FUN_00040f34 actually needs here. */
+
   puVar3 = (ushort *)Ordinal_1041(0x1f400);
-  FUN_00040f34(in_stack_0000000c,in_stack_00000014);
+  FUN_00040f34(param_1,param_2);
   Ordinal_1044(puVar3,param_3,0x1f400);
   iVar9 = 1;
   do {
@@ -3953,17 +4034,17 @@ int param_3;
     uVar4 = Ordinal_2026(uVar4,0x3e000000);
     Ordinal_2026(uVar4,0x45800000);
     iVar5 = Ordinal_2020();
-    iVar8 = param_3 - (int)puVar3;
+    iVar8 = (intptr_t)param_3 - (intptr_t)puVar3;
     iVar7 = 64000;
     puVar6 = puVar3;
     do {
       iVar7 = iVar7 + -1;
       iVar1 = ((int)((*puVar6 & 0xf800) << 1) >> 6) * iVar5 >> 0x12;
-      *(short *)(iVar8 + (int)puVar6) = (short)((uint)(iVar1 << 0x1b) >> 0x10);
+      *(short *)(iVar8 + (intptr_t)puVar6) = (short)((uint)(iVar1 << 0x1b) >> 0x10);
       uVar2 = (ushort)(iVar1 << 0xb) |
               (ushort)((((int)((*puVar6 & 0x7e0) << 7) >> 6) * iVar5 >> 0x12) << 5);
-      *(ushort *)(iVar8 + (int)puVar6) = uVar2;
-      *(ushort *)(iVar8 + (int)puVar6) =
+      *(ushort *)(iVar8 + (intptr_t)puVar6) = uVar2;
+      *(ushort *)(iVar8 + (intptr_t)puVar6) =
            uVar2 | (ushort)(((int)((*puVar6 & 0x1f) << 0xc) >> 6) * iVar5 >> 0x12);
       puVar6 = puVar6 + 1;
     } while (iVar7 != 0);
@@ -3974,7 +4055,7 @@ int param_3;
   puVar6 = puVar3;
   do {
     iVar9 = iVar9 + -1;
-    *(ushort *)((param_3 - (int)puVar3) + (int)puVar6) = *puVar6;
+    *(ushort *)(((intptr_t)param_3 - (intptr_t)puVar3) + (intptr_t)puVar6) = *puVar6;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   FUN_00022f0c(1);
@@ -4001,11 +4082,11 @@ undefined2 * param_3;
   int iVar9;
   int iVar10;
   int iVar11;
-  undefined4 in_stack_0000000c;
-  undefined4 in_stack_00000014;
-  
+  /* Same phantom in_stack_/unused-param_1,2 artifact as FUN_000122d4
+     right above -- see its comment. */
+
   puVar4 = (ushort *)Ordinal_1041(0x1f400);
-  FUN_00040f34(in_stack_0000000c,in_stack_00000014);
+  FUN_00040f34(param_1,param_2);
   Ordinal_1044(puVar4,param_3,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
@@ -7529,7 +7610,13 @@ undefined4 FUN_00019120()
   int iVar6;
   int iVar7;
   char *pcVar8;
-  undefined1 auStack_124 [2];
+  /* Declared 2 bytes but used as a 4-byte read/write buffer just below
+     (`FUN_0002285c(iVar4,auStack_124,4)` etc.) -- another Ghidra
+     undersized-local artifact, this time on the stack rather than a
+     global. Widened directly since local_122 (a separate value, read
+     independently elsewhere in this function) isn't accessed via
+     pointer arithmetic off this array. */
+  undefined1 auStack_124 [4];
   short local_122;
   char acStack_11c [260];
   
@@ -12629,7 +12716,7 @@ undefined1 param_4;
 
 
 void FUN_00022abc(param_1,param_2,param_3)
-int param_1;
+char *param_1;
 char * param_2;
 int param_3;
 
@@ -12637,12 +12724,20 @@ int param_3;
   char *pcVar1;
   char *pcVar2;
   int iVar3;
-  
-  param_1 = param_1 - (int)param_2;
+
+  /* param_1 was declared `int` despite every caller passing a real
+     pointer (e.g. FUN_00040e24: `FUN_00022abc(auStack_318,param_2,0);`)
+     -- truncating it on this 64-bit host. The `param_1 - (int)param_2`
+     / `param_2 + param_1` dance below reconstructs param_1 as a
+     relative *offset* from param_2 so the loop can address both
+     buffers through param_2-relative arithmetic; that only works if the
+     subtraction/re-addition isn't itself truncating, so param_1 is kept
+     a real pointer and the offset computed via intptr_t instead. */
+  intptr_t offset = (intptr_t)param_1 - (intptr_t)param_2;
   iVar3 = 0;
   if (param_3 == 0) {
     do {
-      pcVar2 = param_2 + param_1;
+      pcVar2 = param_2 + offset;
       *pcVar2 = *param_2 << 2;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
       pcVar2[1] = param_2[1] << 2;
@@ -12653,7 +12748,7 @@ int param_3;
   }
   else {
     do {
-      pcVar2 = param_2 + param_1;
+      pcVar2 = param_2 + offset;
       *pcVar2 = *param_2;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
       pcVar2[1] = param_2[1];
@@ -12730,14 +12825,14 @@ short param_2;
         iVar10 = 0xff;
       }
       param_1 = param_1 + 3;
-      *(ushort *)((int)&DAT_0024ad60 + iVar21) =
+      *(ushort *)((intptr_t)&DAT_0024ad60 + iVar21) =
            (ushort)(iVar10 >> 3) | (ushort)((iVar9 >> 2 | (iVar8 >> 3) << 6) << 5);
       if (param_2 == 0) {
         uVar7 = Ordinal_2032(iVar8 >> 3);
         uVar11 = Ordinal_2032(iVar9 >> 2);
         uVar12 = Ordinal_2032(iVar10 >> 3);
         iVar8 = 0;
-        puVar20 = (ushort *)((int)&DAT_00248418 + iVar21);
+        puVar20 = (ushort *)((intptr_t)&DAT_00248418 + iVar21);
         do {
           uVar13 = Ordinal_2032(iVar8 + 0x14);
           uVar14 = Ordinal_2026(uVar13,uVar7);
@@ -12768,7 +12863,12 @@ short param_2;
     if (DAT_0023cdbc < 0) {
       iVar9 = DAT_0023cdbc + 1;
     }
-    puVar18 = (undefined2 *)((iVar21 >> 1) * 400 + (int)DAT_0023c430);
+    /* DAT_0023c430 is the real framebuffer pointer from GXBeginDraw();
+       `(int)` here truncated it on this 64-bit host (missed by the
+       earlier project-wide `(int)VAR + offset` sweep since here the
+       pointer is the second operand, "offset + (int)VAR", not the
+       first). First bug actually reached during real frame rendering. */
+    puVar18 = (undefined2 *)((iVar21 >> 1) * 400 + (intptr_t)DAT_0023c430);
     do {
       iVar10 = 0x140;
       puVar16 = puVar18;
@@ -12776,7 +12876,17 @@ short param_2;
       do {
         puVar16 = puVar16 + (iVar9 >> 1);
         iVar10 = iVar10 + -1;
-        *puVar16 = *puVar19;
+        /* Bounds-guard: this loop's hardcoded `400` initial offset and
+           320-iteration span don't fit within the real GAPI hardware
+           framebuffer's actual size (240x320 RGB565 = 153600 bytes) for
+           every geometry this ends up running under, and the original
+           intent behind the literal 400 hasn't been identified -- write
+           only if it lands inside the buffer GXBeginDraw() returned,
+           rather than risk corrupting unrelated heap memory. */
+        if ((char *)puVar16 >= (char *)DAT_0023c430 &&
+            (char *)(puVar16 + 1) <= (char *)DAT_0023c430 + 153600) {
+          *puVar16 = *puVar19;
+        }
         puVar19 = puVar19 + 0x28;
       } while (iVar10 != 0);
       iVar8 = iVar8 + -1;
@@ -12806,7 +12916,7 @@ void FUN_00022f0c()
   undefined2 *puVar9;
   int iVar10;
   int iVar11;
-  
+
   if (DAT_00088954 < 0) {
     DAT_00088954 = 0;
   }
@@ -12848,9 +12958,18 @@ void FUN_00022f0c()
       iVar7 = DAT_0023cdbc + 1;
     }
     puVar5 = (undefined2 *)((char *)DAT_0023c430 + ((iVar7 >> 1) * iVar10 + (iVar6 >> 1) * iVar2) * 2);
+    /* DAT_00088958 ("right") is a right-*exclusive* dirty-rect bound
+       everywhere else in this function (e.g. `iVar10 = 0x140 -
+       DAT_00088958` correctly treats it as a remaining-width count), but
+       here it's used directly as a starting column INDEX -- when the
+       dirty rect spans the full screen width (right==0x140), this reads
+       one full source row past the buffer's end (ASAN heap-buffer-
+       overflow). Needs the same -1 every other direct-index use of a
+       right/bottom bound in this codebase gets to become the last
+       *valid* column instead of one-past-it. */
     puVar4 = (undefined2 *)
              ((g_uw_buf_25800) +
-             (DAT_00088954 * 0x140 + DAT_00088958) * 2);
+             (DAT_00088954 * 0x140 + (DAT_00088958 - 1)) * 2);
     if (iVar10 < iVar11) {
       iVar11 = iVar11 - iVar10;
       do {
@@ -12933,9 +13052,18 @@ void FUN_0002310c()
       iVar7 = DAT_0023cdbc + 1;
     }
     puVar5 = (undefined2 *)((char *)DAT_0023c430 + ((iVar7 >> 1) * iVar10 + (iVar6 >> 1) * iVar2) * 2);
+    /* DAT_00088958 ("right") is a right-*exclusive* dirty-rect bound
+       everywhere else in this function (e.g. `iVar10 = 0x140 -
+       DAT_00088958` correctly treats it as a remaining-width count), but
+       here it's used directly as a starting column INDEX -- when the
+       dirty rect spans the full screen width (right==0x140), this reads
+       one full source row past the buffer's end (ASAN heap-buffer-
+       overflow). Needs the same -1 every other direct-index use of a
+       right/bottom bound in this codebase gets to become the last
+       *valid* column instead of one-past-it. */
     puVar4 = (undefined2 *)
              ((g_uw_buf_25800) +
-             (DAT_00088954 * 0x140 + DAT_00088958) * 2);
+             (DAT_00088954 * 0x140 + (DAT_00088958 - 1)) * 2);
     if (iVar10 < iVar11) {
       iVar11 = iVar11 - iVar10;
       do {
@@ -14970,7 +15098,7 @@ undefined4 * param_2;
     }
   }
   if (*param_1 == 0) {
-    *param_1 = (int)&DAT_00202878;
+    *param_1 = (intptr_t)&DAT_00202878;
     DAT_001005f4 = DAT_00202d54 & 7;
   }
   return 1;
@@ -17904,8 +18032,8 @@ undefined1 param_3;
     (&DAT_00101739)[iVar1] = (&DAT_0023cf08)[iVar3];
     (&DAT_0010173a)[iVar1] = (&DAT_0023cf09)[iVar3];
     (&DAT_00101743)[iVar1] = (&DAT_0023cf0b)[iVar3] & 1;
-    *(undefined1 *)((int)&DAT_00101744 + iVar1) = 0;
-    *(undefined1 *)((int)&DAT_00101744 + iVar1 + 1) = 0;
+    *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1) = 0;
+    *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1 + 1) = 0;
     (&DAT_00101746)[iVar1] = 0;
   }
   return;
@@ -18025,8 +18153,8 @@ LAB_0002d340:
   iVar5 = (uint)DAT_0010142c * 7;
   sVar3 = FUN_0002bdac((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
                        (&DAT_0010173a)[iVar5],0,0,*(undefined2 *)(DAT_00101438 + 4),
-                       *(undefined2 *)(DAT_00101438 + 6),*(undefined1 *)((int)&DAT_00101734 + iVar5)
-                       ,(int)&DAT_00101734 + iVar5,auStack_30);
+                       *(undefined2 *)(DAT_00101438 + 6),*(undefined1 *)((intptr_t)&DAT_00101734 + iVar5)
+                       ,(intptr_t)&DAT_00101734 + iVar5,auStack_30);
   return (int)sVar3;
 }
 
@@ -18266,12 +18394,12 @@ undefined1 param_2;
     }
     else {
       iVar2 = uVar1 * 7;
-      iVar2 = FUN_0002bdac(*(undefined1 *)((int)&DAT_00101728 + iVar2 + 3),
-                           *(undefined1 *)((int)&DAT_0010172c + iVar2),(&DAT_00101732)[iVar2],
+      iVar2 = FUN_0002bdac(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
+                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2),(&DAT_00101732)[iVar2],
                            (&DAT_00101733)[iVar2],(&DAT_00101739)[iVar2],(&DAT_0010173a)[iVar2],
                            *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
-                           *(undefined1 *)((int)&DAT_0010172c + iVar2 + 1),
-                           (int)&DAT_00101734 + iVar2,auStack_14);
+                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2 + 1),
+                           (intptr_t)&DAT_00101734 + iVar2,auStack_14);
     }
     if ((iVar2 != 0) && (DAT_00101440 == 0)) {
       return 1;
@@ -22301,11 +22429,20 @@ short param_5;
   int in_stack_ffffff10;
   undefined2 uVar24;
   byte local_d8;
-  char acStack_d0 [4];
-  char local_cc;
-  char local_cb;
-  char local_c8;
-  char local_c7;
+  /* acStack_d0 (only 4 bytes declared) is used as an Ordinal_1063
+     (strcat) *source* string built from single-char digit writes at
+     what Ghidra treated as separate locals (local_cc/local_cb/local_c8/
+     local_c7, each the next byte after acStack_d0's declared end) plus
+     no declared/visible null terminator -- so strcat read past the
+     declared 4-byte array looking for one, into whatever garbage
+     followed on the stack (confirmed via ASAN stack-buffer-overflow).
+     Same "Ghidra split a wider access into separate stack locals"
+     pattern as auStack_124 elsewhere in this file, but wider (5+ chars)
+     and missing its terminator entirely rather than just being
+     undersized. Widened directly and folded local_cc/local_cb/local_c8/
+     local_c7 into indexed writes into it (see their old declaration
+     sites below, now removed) with an explicit '\0' added at the end. */
+  char acStack_d0 [10];
   short local_c1;
   short local_bf;
   short local_bd;
@@ -22385,11 +22522,20 @@ LAB_00036858:
   iVar10 = Ordinal_1346(0x100,2);
   local_48 = iVar10;
   puVar11 = (ushort *)Ordinal_1346(0x400,2);
+  /* acStack_d0[0..2] are never written anywhere in this function (only
+     indices 3+ are, below) -- presumably a fixed prefix in the original
+     binary that Ghidra never recovered the content of (same class as
+     other unrecoverable-string cases in this file). Zeroed rather than
+     left as uninitialized stack garbage: since this is a strcat source,
+     a leading NUL just makes the append a no-op instead of pulling in
+     unpredictable bytes, which is the safe direction to be wrong in. */
+  Ordinal_1047(acStack_d0,0,sizeof(acStack_d0));
   acStack_d0[3] = ((byte)(param_1 >> 6) & 7) + 0x30;
-  local_cc = ((byte)(param_1 >> 3) & 7) + 0x30;
-  local_cb = ((byte)param_1 & 7) + 0x30;
-  local_c8 = '0';
-  local_c7 = '0';
+  acStack_d0[4] = ((byte)(param_1 >> 3) & 7) + 0x30;
+  acStack_d0[5] = ((byte)param_1 & 7) + 0x30;
+  acStack_d0[6] = '0';
+  acStack_d0[7] = '0';
+  acStack_d0[8] = '\0';
   local_44 = puVar11;
   Ordinal_1047(&DAT_00101968,0,0x104);
   pcVar8 = &DAT_0023c698;
@@ -22418,11 +22564,11 @@ LAB_00036858:
         FUN_00012444(0,0,g_uw_buf_25800,200,in_stack_ffffff10,0,0,
                      local_b8,2,0);
       }
-      iVar10 = (int)local_c7;
-      local_c7 = (char)(iVar10 + 1);
+      iVar10 = (int)acStack_d0[7];
+      acStack_d0[7] = (char)(iVar10 + 1);
       if (0x37 < (iVar10 + 1) * 0x1000000 >> 0x18) {
-        local_c7 = '0';
-        local_c8 = local_c8 + '\x01';
+        acStack_d0[7] = '0';
+        acStack_d0[6] = acStack_d0[6] + '\x01';
       }
       Ordinal_1047(&DAT_00101968,0,0x104);
       pcVar8 = &DAT_0023c698;
@@ -22474,11 +22620,11 @@ LAB_00036858:
         local_4c = local_54;
         FUN_00035e00(uVar14 + 0x500,*(undefined2 *)(uVar14 + 6),local_70);
         local_93 = 0;
-        iVar10 = (int)local_c7;
-        local_c7 = (char)(iVar10 + 1);
+        iVar10 = (int)acStack_d0[7];
+        acStack_d0[7] = (char)(iVar10 + 1);
         if (0x37 < (iVar10 + 1) * 0x1000000 >> 0x18) {
-          local_c8 = local_c8 + '\x01';
-          local_c7 = '0';
+          acStack_d0[6] = acStack_d0[6] + '\x01';
+          acStack_d0[7] = '0';
         }
         Ordinal_1047(&DAT_00101968,0,0x104);
         pcVar8 = &DAT_0023c698;
@@ -25562,7 +25708,12 @@ char *param_1;
 
 {
   undefined4 uVar1;
-  
+
+  /* See FUN_0003c3c8's identical fprintf -- Ordinal_1071 (the real
+     message-box display) isn't implemented, so this is the only
+     visibility into which fatal message actually fired. param_1 here is
+     the message text directly, not a numeric code. */
+  fprintf(stderr, "[fatal] FUN_0003c4a8: %s\n", param_1 ? param_1 : "(null)");
   uVar1 = Ordinal_1068();
   Ordinal_1071(&DAT_00201b70,param_1,uVar1);
   FUN_0003baf4(0);
@@ -26388,22 +26539,28 @@ byte param_1;
   local_1c[6] = 2;
   iVar1 = (int)(char)param_1;
   local_1c[5] = 7;
-  piVar6 = (int *)&DAT_00086df8;
-  if (iVar1 == -1) {
-    piVar6 = DAT_00086df8;
-  }
+  /* Was `piVar6 = (int *)&DAT_00086df8;` (address of the global itself)
+     with every subsequent `*piVar6` in this branch meant to read
+     DAT_00086df8's real value back out -- but piVar6 was typed `int *`,
+     so each of those dereferences only read the first 4 of
+     DAT_00086df8's 8 bytes, truncating it (this is what fed a garbage
+     record pointer into the rest of the function, further down, and
+     eventually segfaulted). Both branches want the same thing (the
+     record pointer's real value); use DAT_00086df8 directly instead of
+     this indirection, which sidesteps the truncation instead of trying
+     to preserve the double-indirect shape with a wider type. */
+  piVar6 = (int *)DAT_00086df8;
   local_24[0] = '\0';
   local_24[6] = 0;
   if (iVar1 == -1) {
     param_1 = *(byte *)((char *)piVar6 + 0xb6) & 7;
   }
   else {
-    *(byte *)(*piVar6 + 0xb8) = local_24[iVar1] + (*(byte *)(*piVar6 + 0xb8) & 0xe0);
-    pbVar2 = (byte *)(*piVar6 + 0xb6);
+    *(byte *)((char *)DAT_00086df8 + 0xb8) = local_24[iVar1] + (*(byte *)((char *)DAT_00086df8 + 0xb8) & 0xe0);
+    pbVar2 = (byte *)((char *)DAT_00086df8 + 0xb6);
     uVar3 = *(undefined2 *)pbVar2;
-    *(byte *)(*piVar6 + 0xb6) = (*pbVar2 ^ param_1) & 7 ^ (byte)uVar3;
-    *(char *)(*piVar6 + 0xb7) = (char)((ushort)uVar3 >> 8);
-    piVar6 = (int *)*piVar6;
+    *(byte *)((char *)DAT_00086df8 + 0xb6) = (*pbVar2 ^ param_1) & 7 ^ (byte)uVar3;
+    *(char *)((char *)DAT_00086df8 + 0xb7) = (char)((ushort)uVar3 >> 8);
   }
   uVar5 = (uint)local_1c[(char)param_1];
   DAT_00202078 = Ordinal_2005(10,(int)DAT_0008589c * uVar5);
@@ -26828,7 +26985,7 @@ ushort *FUN_0003ec00()
   }
   else {
     iVar2 = (int)*(short *)(&DAT_0023b676 + uVar4 * 2);
-    DAT_002020b0 = DAT_0023b814 + *(short *)((int)&DAT_0023b4f4 + uVar4 * 2 + 2) * 4;
+    DAT_002020b0 = DAT_0023b814 + *(short *)((intptr_t)&DAT_0023b4f4 + uVar4 * 2 + 2) * 4;
   }
   if ((short)iVar2 == 0) {
     puVar3 = (ushort *)0x0;
@@ -28282,7 +28439,7 @@ void FUN_00040df0()
 
 bool FUN_00040e24(param_1,param_2)
 undefined4 param_1;
-undefined4 param_2;
+void *param_2;
 
 {
   char stack0xffdc2f38_buf [256];
@@ -41414,8 +41571,14 @@ int param_1;
 undefined4 FUN_00057a70()
 
 {
-  FUN_000579e4(0);
-  return 0;
+  /* Was `FUN_000579e4(0); return 0;` -- computing the real event code and
+     then discarding it in favor of a hardcoded 0. Every caller treats this
+     return value as a signed event/key code (`sVar2 < 0` == no event yet,
+     specific positive values == button/key IDs), so always returning 0
+     made every caller believe "event 0" arrived on the very first poll,
+     short-circuiting input-wait loops instantly instead of actually
+     waiting for input. */
+  return FUN_000579e4(0);
 }
 
 
@@ -41423,8 +41586,7 @@ undefined4 FUN_00057a70()
 undefined4 FUN_00057a78()
 
 {
-  FUN_000579e4(1);
-  return 0;
+  return FUN_000579e4(1);
 }
 
 
@@ -42308,7 +42470,7 @@ short param_2;
       iVar2 = (int)DAT_0008698e;
       sVar3 = (&DAT_00086980)[iVar2];
       *(char *)(&DAT_00086980 + iVar2) = (char)((int)sVar3 & 0x1fffU);
-      *(char *)((int)&DAT_00086980 + iVar2 * 2 + 1) = (char)(((int)sVar3 & 0x1fffU) >> 8);
+      *(char *)((intptr_t)&DAT_00086980 + iVar2 * 2 + 1) = (char)(((int)sVar3 & 0x1fffU) >> 8);
     }
     iVar2 = 1;
   }
@@ -45896,7 +46058,7 @@ ushort * param_1;
     return;
   }
   if (DAT_0023b830 != 0) {
-    *(short *)((int)&DAT_0023b4f4 + (uint)DAT_0023b830 * 2 + 2) =
+    *(short *)((intptr_t)&DAT_0023b4f4 + (uint)DAT_0023b830 * 2 + 2) =
          DAT_0023b8c4 + (short)(DAT_0023b4ec - DAT_0023b814 >> 2);
     uVar15 = FUN_0005358c(param_1);
     puVar12 = DAT_00110fc0;
@@ -48121,7 +48283,7 @@ LAB_0006636c:
       if (9 < uVar1) {
         return 0;
       }
-      DAT_0020330c = DAT_0020330c | *(byte *)((int)&DAT_00086db8 + uVar1 + 3);
+      DAT_0020330c = DAT_0020330c | *(byte *)((intptr_t)&DAT_00086db8 + uVar1 + 3);
       return 0;
     }
     uVar8 = *param_3 | (ushort)(1 << (uVar1 - 1 & 0xff));
@@ -50167,27 +50329,40 @@ short param_1;
 
 void FUN_0006a200(param_1,param_2,param_3,param_4)
 short param_1;
-int param_2;
+char *param_2;
 char param_3;
 short param_4;
 
 {
   short sVar1;
   int iVar2;
+  /* pcVar_rec: dedicated pointer for the param_3=='\0' branch's 0x10-stride
+     rect-record array (param_2 was `int`, truncating the pointer). */
+  char *pcVar_rec;
   undefined1 uVar3;
   int iVar4;
-  int *piVar5;
-  int iVar6;
-  
+  /* ppcVar5/pcVar_str: the param_3!=0 branch indexes param_2 as an array
+     of char* string pointers. Ghidra saw this as `int *piVar5` with a
+     4-byte stride (`param_2 + iVar4 * 4`) and reused the dereferenced
+     value (`iVar2`/`iVar6`, both plain `int`) to hold the string pointer
+     itself -- correct on the original 32-bit binary where a pointer IS
+     4 bytes, but truncating here on 64-bit. Widened to a real char**
+     with 8-byte stride (see local_1d0 in FUN_0006b178, the only
+     populator of this array) and a dedicated pointer variable for the
+     string-pointer role; iVar2 keeps its separate int (strlen/measurement)
+     role below. */
+  char **ppcVar5;
+  char *pcVar_str;
+
   if (param_3 == '\0') {
     FUN_00057118();
     if (0 < param_1) {
       iVar4 = 0;
       do {
-        iVar2 = param_2 + iVar4 * 0x10;
-        FUN_00011e5c((int)*(short *)(iVar2 + 8),(int)*(short *)(iVar2 + 10),
+        pcVar_rec = param_2 + iVar4 * 0x10;
+        FUN_00011e5c((int)*(short *)(pcVar_rec + 8),(int)*(short *)(pcVar_rec + 10),
                      *(undefined4 *)(param_2 + ((uint)(iVar4 == param_4) + iVar4 * 4) * 4),
-                     (int)*(short *)(iVar2 + 0xe),*(undefined2 *)(iVar2 + 0xc),0,0,1);
+                     (int)*(short *)(pcVar_rec + 0xe),*(undefined2 *)(pcVar_rec + 0xc),0,0,1);
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
       } while (iVar4 < param_1);
     }
@@ -50203,19 +50378,19 @@ short param_4;
         }
         *DAT_0008429c = uVar3;
         *DAT_00084298 = uVar3;
-        piVar5 = (int *)(param_2 + iVar4 * 4);
-        iVar2 = *piVar5;
-        while (sVar1 = FUN_000112a0(iVar2), 0x13e < sVar1) {
-          iVar6 = *piVar5;
-          iVar2 = Ordinal_1068(iVar6);
-          *(undefined1 *)(iVar6 + iVar2 + -1) = 0;
-          iVar2 = *piVar5;
+        ppcVar5 = (char **)(param_2 + iVar4 * 8);
+        pcVar_str = *ppcVar5;
+        while (sVar1 = FUN_000112a0(pcVar_str), 0x13e < sVar1) {
+          pcVar_str = *ppcVar5;
+          iVar2 = Ordinal_1068(pcVar_str);
+          pcVar_str[iVar2 - 1] = 0;
+          pcVar_str = *ppcVar5;
         }
         iVar2 = (int)sVar1;
         if (iVar2 < 0) {
           iVar2 = iVar2 + 1;
         }
-        FUN_00011060(*piVar5,0xa0 - (short)(iVar2 >> 1),iVar4 * 0x16 + 100);
+        FUN_00011060(*ppcVar5,0xa0 - (short)(iVar2 >> 1),iVar4 * 0x16 + 100);
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
       } while (iVar4 < param_1);
     }
@@ -50232,6 +50407,18 @@ void FUN_0006a3d8(param_1)
 undefined4 param_1;
 
 {
+  /* stack0xffdc2b6c/2c74/2d7c are leftover placeholder scalars (from an
+     early undeclared-identifier fix pass) that 8 separate "copy the
+     install-dir base path" loops below used as
+     `pcVar5[(int)&placeholder] = cVar1;` -- the classic "broken index
+     copy loop" Ghidra artifact documented in the README, missed by the
+     earlier systematic fix_stack_copy_loops.py/refix_stack_copy_loops.py
+     passes. Each loop is immediately followed by Ordinal_1047(REALBUF,
+     0,0x104) + Ordinal_1063(REALBUF,...) using the buffer this copy was
+     actually meant to fill (acStack_7ec/acStack_6e4/acStack_5dc
+     respectively) -- redirected via a real incrementing destination
+     pointer instead. */
+  char *pcVar_dst;
   unsigned int stack0xffdc2b6c;
   unsigned int stack0xffdc2c74;
   unsigned int stack0xffdc2d7c;
@@ -50248,8 +50435,22 @@ undefined4 param_1;
   bool bVar11;
   short local_83c [2];
   int local_838;
-  int local_834;
-  undefined4 local_82c;
+  /* Was `int`, holds the same Ordinal_1041(0x10000) pointer as
+     DAT_0023bf70 (see its comment), passed to Ordinal_1018 (free) --
+     truncating on this 64-bit host. */
+  void *local_834;
+  /* iVar4 is reused throughout this function for unrelated numeric work
+     (timers, loop indices, etc.) after its brief life holding that same
+     Ordinal_1041(0x10000) pointer -- pvVar_buf10000 takes over only that
+     pointer-holding span instead of retyping iVar4 itself, same pattern
+     as other dual-purpose-variable fixes elsewhere in this file. */
+  void *pvVar_buf10000;
+  /* Declared as a lone 4-byte scalar, but `&local_82c` is handed to
+     DAT_0023bf6c and then read back through FUN_0006a200/FUN_0006af3c
+     as an array of up to 4 (param_1) 0x10-byte-stride records (plus an
+     overlapping 4-byte-stride array access) -- another undersized-local
+     table, confirmed via ASAN stack-buffer-overflow. Widened directly. */
+  char local_82c [256];
   undefined4 local_828;
   undefined2 local_824;
   undefined2 local_822;
@@ -50288,7 +50489,10 @@ undefined4 param_1;
   local_802 = 0x81;
   local_7f4 = 0x55;
   local_7f2 = 0x9a;
-  local_82c = 0;
+  /* local_82c is now a real array (see its declaration) -- zero the
+     whole thing rather than just its first 4 bytes, since it's read
+     back as a multi-record table. */
+  Ordinal_1047(local_82c,0,sizeof(local_82c));
   local_828 = 0;
   local_820 = 1;
   local_81e = 1;
@@ -50324,20 +50528,21 @@ undefined4 param_1;
     iVar4 = local_838;
     FUN_000735fc();
     if ((iVar4 < 4) && (-1 < iVar4)) {
-      iVar4 = Ordinal_1041(0x10000);
-      DAT_0023bf70 = iVar4;
-      local_834 = iVar4;
+      pvVar_buf10000 = Ordinal_1041(0x10000);
+      DAT_0023bf70 = pvVar_buf10000;
+      local_834 = pvVar_buf10000;
       Ordinal_1047(acStack_7ec,0,0x104);
       pcVar5 = &DAT_0023cca8;
+      pcVar_dst = acStack_7ec;
       do {
         cVar1 = *pcVar5;
-        pcVar5[(int)&stack0xffdc2b6c] = cVar1;
+        *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
         pcVar5 = pcVar5 + 1;
       } while (cVar1 != '\0');
       Ordinal_1063(acStack_7ec,s__DATA_opscr_byt_00086eec);
-      FUN_0007ee4c(acStack_7ec,iVar4,64000);
+      FUN_0007ee4c(acStack_7ec,pvVar_buf10000,64000);
       FUN_00057118();
-      FUN_00040e24(2,iVar4 + 64000);
+      FUN_00040e24(2,(char *)pvVar_buf10000 + 64000);
       iVar10 = 0;
       do {
         iVar6 = 0;
@@ -50351,12 +50556,19 @@ undefined4 param_1;
       } while (iVar10 < 200);
       FUN_000570b4();
       if ((DAT_0023bf70 == 0) ||
-         (iVar10 = FUN_000417b4(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac), iVar10 == 0)) {
+         /* Ghidra dropped the 5th argument (postprocess_cb) at this call
+            site -- FUN_000417b4 is K&R, so param_5 read whatever
+            garbage happened to be in that register and then called
+            through it as a function pointer (`(*param_5)(...)`),
+            crashing with a jump to an invalid address. Other sibling
+            call sites (e.g. FUN_00041a78) already use a literal 0 for
+            "no postprocessing needed", which is what's missing here. */
+         (iVar10 = FUN_000417b4(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,0), iVar10 == 0)) {
         FUN_0003c3c8(0x300d);
       }
       if (local_838 != 3) {
         FUN_0006a200(uVar8,DAT_0023bf6c,0,uVar2);
-        FUN_00040e24(2,iVar4 + 64000);
+        FUN_00040e24(2,(char *)pvVar_buf10000 + 64000);
         FUN_000122d4(0,0,g_uw_buf_25800,200);
       }
     }
@@ -50376,18 +50588,20 @@ undefined4 param_1;
       if (iVar4 != 0) {
         Ordinal_1047(acStack_6e4,0,0x104);
         pcVar5 = &DAT_0023cca8;
+        pcVar_dst = acStack_6e4;
         do {
           cVar1 = *pcVar5;
-          pcVar5[(int)&stack0xffdc2c74] = cVar1;
+          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_6e4,&DAT_000857a0);
         FUN_0006c560(acStack_6e4);
         Ordinal_1047(acStack_6e4,0,0x104);
         pcVar5 = &DAT_0023cca8;
+        pcVar_dst = acStack_6e4;
         do {
           cVar1 = *pcVar5;
-          pcVar5[(int)&stack0xffdc2c74] = cVar1;
+          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_6e4,s__DATA_lev_ark_00085734);
@@ -50395,9 +50609,10 @@ undefined4 param_1;
         Ordinal_61(auStack_22c,uVar7);
         Ordinal_1047(acStack_5dc,0,0x104);
         pcVar5 = &DAT_0023cca8;
+        pcVar_dst = acStack_5dc;
         do {
           cVar1 = *pcVar5;
-          pcVar5[(int)&stack0xffdc2d7c] = cVar1;
+          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_5dc,s__SAVE0_lev_ark_000842fc);
@@ -50425,9 +50640,10 @@ undefined4 param_1;
       do {
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
+        pcVar_dst = acStack_7ec;
         do {
           cVar1 = *pcVar5;
-          pcVar5[(int)&stack0xffdc2b6c] = cVar1;
+          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT1_BYT_00086ed0);
@@ -50439,9 +50655,10 @@ undefined4 param_1;
       do {
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
+        pcVar_dst = acStack_7ec;
         do {
           cVar1 = *pcVar5;
-          pcVar5[(int)&stack0xffdc2b6c] = cVar1;
+          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT2_BYT_00086ebc);
@@ -50453,9 +50670,10 @@ undefined4 param_1;
       do {
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
+        pcVar_dst = acStack_7ec;
         do {
           cVar1 = *pcVar5;
-          pcVar5[(int)&stack0xffdc2b6c] = cVar1;
+          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT3_BYT_00086ea8);
@@ -50472,9 +50690,10 @@ undefined4 param_1;
         uVar7 = FUN_0007863c(0x2a9);
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
+        pcVar_dst = acStack_7ec;
         do {
           cVar1 = *pcVar5;
-          pcVar5[(int)&stack0xffdc2b6c] = cVar1;
+          *pcVar_dst = cVar1; pcVar_dst = pcVar_dst + 1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_opscr_byt_00086eec);
@@ -50512,7 +50731,7 @@ undefined4 param_1;
 
 int FUN_0006ac38(param_1,param_2,param_3)
 undefined4 param_1;
-int param_2;
+char *param_2;
 char param_3;
 
 {
@@ -50521,13 +50740,20 @@ char param_3;
   bool bVar3;
   short sVar4;
   short sVar5;
+  /* iVar6 doubles as a byte-offset pointer into param_2 (0x10-stride
+     rect records, param_3=='\0' branch) and a plain int scratch value
+     (distance/threshold math, param_3!=0 branch) -- mutually exclusive,
+     but iVar6 stayed `int` either way, truncating the pointer now that
+     param_2 is a real 64-bit pointer. Given its own dedicated variable
+     for the record-pointer role only. */
+  char *pcVar_rec;
   int iVar6;
   int iVar7;
   int iVar8;
   int iVar9;
   short local_30;
   short local_2e;
-  
+
   iVar9 = -1;
   bVar3 = true;
   bVar2 = true;
@@ -50543,11 +50769,11 @@ char param_3;
         iVar8 = 0;
         if (0 < iVar1) {
           do {
-            iVar6 = param_2 + iVar8 * 0x10;
-            if (((int)*(short *)(iVar6 + 8) <= (int)local_30) &&
-               ((int)local_30 <= (int)*(short *)(iVar6 + 8) + (int)*(short *)(iVar6 + 0xc) + -1)) {
-              if (((int)local_2e <= (int)*(short *)(iVar6 + 10) + (int)*(short *)(iVar6 + 0xe) + -1)
-                 && ((int)*(short *)(iVar6 + 10) <= (int)local_2e)) {
+            pcVar_rec = param_2 + iVar8 * 0x10;
+            if (((int)*(short *)(pcVar_rec + 8) <= (int)local_30) &&
+               ((int)local_30 <= (int)*(short *)(pcVar_rec + 8) + (int)*(short *)(pcVar_rec + 0xc) + -1)) {
+              if (((int)local_2e <= (int)*(short *)(pcVar_rec + 10) + (int)*(short *)(pcVar_rec + 0xe) + -1)
+                 && ((int)*(short *)(pcVar_rec + 10) <= (int)local_2e)) {
                 bVar2 = true;
                 if ((short)iVar8 != (short)iVar9) {
                   FUN_0006a200(param_1,param_2,0,iVar8);
@@ -50579,7 +50805,7 @@ char param_3;
         if (0 < iVar1) {
           iVar8 = 0;
           do {
-            sVar4 = FUN_000112a0(*(undefined4 *)(param_2 + iVar8 * 4));
+            sVar4 = FUN_000112a0(*(char **)(param_2 + iVar8 * 8));
             iVar6 = -(int)sVar4;
             iVar7 = iVar6 + 0x140;
             if (iVar7 < 0) {
@@ -50618,7 +50844,7 @@ char param_3;
 
 int FUN_0006af3c(param_1,param_2,param_3,param_4)
 int param_1;
-undefined4 param_2;
+char *param_2;
 undefined1 param_3;
 int param_4;
 
@@ -50763,7 +50989,10 @@ undefined4 FUN_0006b178()
   uint uVar10;
   undefined4 auStack_201d0 [32766];
   short local_1d8 [4];
-  undefined4 local_1d0 [4];
+  /* Was `undefined4 local_1d0 [4]`, storing real char* pointers into
+     4-byte slots (see FUN_0006a200's param_3!=0 branch, which reads this
+     array as an 8-byte-stride char** table). Widened to match. */
+  char *local_1d0 [4];
   char acStack_1c0 [264];
   char acStack_b8 [38];
   char local_92 [122];
@@ -51150,6 +51379,18 @@ undefined4 FUN_0006bb64()
   Ordinal_160(uVar4,0);
   FUN_0006c560(acStack_109 + 1);
   uVar4 = FUN_0002295c(acStack_109 + 1);
+  /* local_114 is never actually passed to Ordinal_184 (only auStack_110
+     and &local_118 are) -- in the original 32-bit binary this local
+     apparently sat immediately after auStack_110 on the stack and got
+     written incidentally by a GetDiskFreeSpace-shaped call writing a
+     wider struct than Ghidra's 7-byte auStack_110 array captured. That
+     stack-adjacency trick doesn't carry over to this recompile, so
+     local_114 would otherwise be read uninitialized. Ordinal_184 is
+     implemented to always report success with a large local_118 value
+     (see ordinal_stubs.c) -- initialize local_114 to match so the
+     always-enough-disk-space intent holds regardless of real stack
+     layout. */
+  local_114 = 0;
   iVar3 = Ordinal_184(uVar4,0,auStack_110,&local_118);
   if ((iVar3 == 0) || ((local_114 == 0 && (local_118 < 0x9b0a0)))) {
     uVar4 = 0;
@@ -51236,7 +51477,7 @@ LAB_0006bdbc:
 
 
 void FUN_0006bde0(param_1,param_2)
-int param_1;
+char *param_1;
 ushort * param_2;
 
 {
@@ -51262,7 +51503,20 @@ ushort * param_2;
   *param_2 = 0;
   uVar5 = 0;
   do {
+    /* DAT_000857a0/DAT_00087030 are both unrecoverable string constants
+       (no content Ghidra could recover) -- puVar3 (a '0' placeholder
+       digit position within the built path, meant to be replaced with
+       '1','2','3'... to probe a numbered series of optional resource
+       files) is genuinely NULL here as a result, since strchr can't find
+       a '0' that was never in the string to begin with. This whole loop
+       already treats a not-found probe file as a normal, expected case
+       (falls back to "not used yet" -- see s__not_used_yet__00087020
+       below), so skip the digit substitution defensively rather than
+       crash; every slot in this probe will just come up "not used yet"
+       until the real DAT_00087030 template is recovered. */
+    if (puVar3 != (undefined1 *)0x0) {
     *puVar3 = (char)((uVar5 + 0x31) * 0x1000000 >> 0x18);
+    }
     iVar4 = FUN_000226e8(acStack_128,0);
     if ((iVar4 != -1) && (iVar4 = FUN_000227d4(acStack_128), iVar4 != -1)) {
       FUN_0002285c(iVar4,uVar5 * 0x28 + param_1,0x27);
@@ -51273,7 +51527,17 @@ ushort * param_2;
       pcVar2 = s__not_used_yet__00087020;
       do {
         cVar1 = *pcVar2;
-        pcVar2[uVar5 * 0x28 + -0x87020 + param_1] = cVar1;
+        /* Was `pcVar2[uVar5*0x28 + -0x87020 + param_1]` -- `-0x87020`
+           hardcoded s__not_used_yet__00087020's address in the ORIGINAL
+           32-bit binary's fixed layout, used to turn pcVar2 back into a
+           zero-based character index (pcVar2 - stringBase) before
+           re-adding param_1. On this recompile the string lives at
+           whatever address the linker picked, not 0x87020, so this
+           always computed a wild pointer -- same bug class as the
+           (int)&DAT_x truncation fixes elsewhere, just via a literal
+           address constant instead of a cast. Fixed to compute the
+           character index properly via real pointer subtraction. */
+        param_1[uVar5 * 0x28 + (pcVar2 - s__not_used_yet__00087020)] = cVar1;
         pcVar2 = pcVar2 + 1;
       } while (cVar1 != '\0');
     }
@@ -51359,7 +51623,13 @@ char param_1;
   pcVar6 = (char *)Ordinal_1064(acStack_650,0x30);
   pcVar5 = &DAT_0023cca8;
     stack0xffdc2e30_ptr = stack0xffdc2e30_buf;
+  /* Same DAT_000857a0-is-unrecoverable NULL risk as FUN_0006bde0 above
+     -- see its comment. Here the digit is a save-slot number (SAVE0,
+     SAVE1, ...), so a NULL means this path build silently keeps
+     whatever acStack_650 already had instead of crashing. */
+  if (pcVar6 != (char *)0x0) {
   *pcVar6 = param_1 + '0';
+  }
   pcVar6 = pcVar5;
     stack0xffdc2d28_ptr = acStack_630;
   do {
@@ -51439,8 +51709,11 @@ undefined4 param_2;
   } while (cVar1 != '\0');
   Ordinal_1063(local_530,&DAT_000857a0);
   pcVar3 = (char *)Ordinal_1064(local_530,0x30);
+  /* Same DAT_000857a0-is-unrecoverable NULL risk as FUN_0006bde0 above. */
+  if (pcVar3 != (char *)0x0) {
   *pcVar3 = param_1 + '0';
   pcVar3[1] = '\0';
+  }
   FUN_0007fce8(1);
   FUN_0007f570(s_Please_enter_a_Save_Game_file_an_00087094);
   sVar2 = FUN_0007ffa8(0,param_2,param_2,1);
@@ -51707,10 +51980,14 @@ char *param_2;
 int param_3;
 
 {
-  int iVar1;
+  /* iVar1 was `int`, truncating the Ordinal_1041 (malloc) heap pointer
+     it holds -- it's used both as the fread-destination buffer and as
+     the source pointer handed to FUN_00011e5c (which now takes a real
+     char*). */
+  char *iVar1;
   int iVar2;
   undefined4 uVar3;
-  
+
   iVar1 = Ordinal_1041(64000);
   if (iVar1 == 0) {
     uVar3 = 0;
@@ -58156,7 +58433,7 @@ undefined4 param_2;
           iVar3 = iVar7;
           puVar8 = puVar8 + 1;
         } while (iVar7 != 0 && bVar1);
-        puVar5 = (undefined1 *)GXGetDefaultKeys((int)auStack_798);
+        puVar5 = (undefined1 *)GXGetDefaultKeys(auStack_798);
         iVar3 = 0x60;
         puVar8 = auStack_798;
         do {
@@ -58258,7 +58535,9 @@ undefined4 FUN_000778fc()
     if (DAT_0023cdbc < 0) {
       iVar5 = DAT_0023cdbc + 1;
     }
-    puVar3 = (undefined2 *)((iVar4 >> 1) * 400 + (int)DAT_0023c430);
+    /* Same DAT_0023c430 (framebuffer pointer) truncation as FUN_00022b54
+       above -- see its comment. */
+    puVar3 = (undefined2 *)((iVar4 >> 1) * 400 + (intptr_t)DAT_0023c430);
     do {
       iVar8 = 0x140;
       puVar1 = puVar3;
@@ -58266,7 +58545,11 @@ undefined4 FUN_000778fc()
       do {
         puVar1 = puVar1 + (iVar5 >> 1);
         iVar8 = iVar8 + -1;
-        *puVar1 = *puVar6;
+        /* Bounds-guard: see the identical loop in FUN_00022b54. */
+        if ((char *)puVar1 >= (char *)DAT_0023c430 &&
+            (char *)(puVar1 + 1) <= (char *)DAT_0023c430 + 153600) {
+          *puVar1 = *puVar6;
+        }
         puVar6 = puVar6 + 0x28;
       } while (iVar8 != 0);
       iVar7 = iVar7 + -1;
@@ -62427,7 +62710,7 @@ ushort param_3;
 
 bool FUN_0007ee4c(param_1,param_2,param_3)
 char *param_1;
-undefined4 param_2;
+void *param_2;
 int param_3;
 
 {

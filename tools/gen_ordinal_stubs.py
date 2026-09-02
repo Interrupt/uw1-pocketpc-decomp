@@ -125,6 +125,36 @@ SPECIAL = {
         body="    if (f == 0) return 0;\n"
              "    return fclose((FILE *)f);",
     ),
+    "1064": dict(
+        # strchr-shaped: every one of its 10 call sites passes a small
+        # constant (0x40='@', 10='\n', 0x20=' ', 0x30='0', 0x26='&',
+        # 0x5f='_', 0x5c='\\') as the second argument -- ASCII character
+        # codes, not sizes/flags. Several callers then WRITE through the
+        # returned pointer (e.g. FUN_0006bde0: finds the '0' placeholder
+        # in a template filename and overwrites it with a real digit,
+        # the same digit-substitution pattern as other resource-name
+        # building elsewhere in this file) -- a no-op stub returning 0
+        # unconditionally meant every one of those was a guaranteed NULL
+        # dereference the first time this ran.
+        proto="char *Ordinal_1064(const char *s, int c)",
+        body="    if (s == 0) return 0;\n"
+             "    return strchr(s, c);",
+    ),
+    "184": dict(
+        # GetDiskFreeSpace-shaped: (path, flags, out_struct, out_free_lo).
+        # The only call site (FUN_0006bb64) checks out_free_lo against a
+        # ~620KB threshold to decide "enough disk space to save" -- a
+        # no-op stub here (returning 0 = failure) made every save-game
+        # disk-space check report failure unconditionally, hard-erroring
+        # the game at startup. Real disk space on a modern host is
+        # never the constraint this was checking for, so just report a
+        # large free-space number rather than querying the real
+        # filesystem.
+        proto="int Ordinal_184(void *path, unsigned int flags, void *out_struct, unsigned int *out_free_lo)",
+        body="    (void)path; (void)flags; (void)out_struct;\n"
+             "    if (out_free_lo) *out_free_lo = 0x7fffffff;\n"
+             "    return 1;",
+    ),
     "1054": dict(
         # realloc-shaped: (existing_ptr_or_null, new_size) -> new_ptr,
         # consistent across all 4 call sites (growing arrays by a fixed
