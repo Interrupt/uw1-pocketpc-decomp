@@ -466,7 +466,12 @@ static char DAT_000c4c38_backing[0x3e58];
 #define DAT_000c8a90 (*(undefined1 *)(DAT_000c4c38_backing + 0x3e58))
 static undefined1 DAT_000c8b08_backing[65536];
 #define DAT_000c8b08 DAT_000c8b08_backing[0]
-undefined DAT_000c8ca0;
+/* Base of a growing per-cluster-connection undefined4 array in
+   FUN_00020a74's CLUSTERS block (`puVar8 = &DAT_000c8ca0; ... *puVar8 =
+   local_1d8; puVar8 = puVar8 + 1;`) -- same undersized-scalar bug as
+   DAT_000da868/DAT_000dab90 right above, for the same block. */
+static undefined1 DAT_000c8ca0_backing[65536];
+#define DAT_000c8ca0 DAT_000c8ca0_backing[0]
 undefined DAT_000c9540;
 undefined DAT_000c9541;
 undefined DAT_000c9542;
@@ -489,18 +494,36 @@ undefined DAT_000c9552;
 undefined DAT_000c9553;
 undefined DAT_000c9554;
 undefined DAT_000c9555;
-undefined1 DAT_000c9dd8;
-undefined1 DAT_000c9dd9;
-undefined1 DAT_000c9dda;
-undefined1 DAT_000c9ddb;
-undefined1 DAT_000c9ddc;
-undefined1 DAT_000c9ddd;
-undefined1 DAT_000c9dde;
-undefined1 DAT_000c9ddf;
-undefined1 DAT_000c9de0;
-undefined1 DAT_000c9de1;
-undefined1 DAT_000c9de2;
-undefined1 DAT_000c9de3;
+/* DAT_000c9dd8 through DAT_000c9de3 (12 globals) are byte fields of a
+   0x67(103)-byte-stride per-PART record in FUN_00020a74's ".E" model
+   parser (`iVar5 = DAT_000db430 * 0x67; (&DAT_000c9ddc)[iVar5] = ...`),
+   bounded by `if (0x15e < DAT_000db430)` (350 parts) -- same undersized-
+   scalar-instead-of-real-table bug as the DAT_000d2ab0-family POINTS
+   record right above, just for PARTS. Widened the same way. */
+static undefined1 DAT_000c9dd8_backing[65536];
+#define DAT_000c9dd8 DAT_000c9dd8_backing[0]
+static undefined1 DAT_000c9dd9_backing[65536];
+#define DAT_000c9dd9 DAT_000c9dd9_backing[0]
+static undefined1 DAT_000c9dda_backing[65536];
+#define DAT_000c9dda DAT_000c9dda_backing[0]
+static undefined1 DAT_000c9ddb_backing[65536];
+#define DAT_000c9ddb DAT_000c9ddb_backing[0]
+static undefined1 DAT_000c9ddc_backing[65536];
+#define DAT_000c9ddc DAT_000c9ddc_backing[0]
+static undefined1 DAT_000c9ddd_backing[65536];
+#define DAT_000c9ddd DAT_000c9ddd_backing[0]
+static undefined1 DAT_000c9dde_backing[65536];
+#define DAT_000c9dde DAT_000c9dde_backing[0]
+static undefined1 DAT_000c9ddf_backing[65536];
+#define DAT_000c9ddf DAT_000c9ddf_backing[0]
+static undefined1 DAT_000c9de0_backing[65536];
+#define DAT_000c9de0 DAT_000c9de0_backing[0]
+static undefined1 DAT_000c9de1_backing[65536];
+#define DAT_000c9de1 DAT_000c9de1_backing[0]
+static undefined1 DAT_000c9de2_backing[65536];
+#define DAT_000c9de2 DAT_000c9de2_backing[0]
+static undefined1 DAT_000c9de3_backing[65536];
+#define DAT_000c9de3 DAT_000c9de3_backing[0]
 undefined1 DAT_000c9e0e;
 undefined1 DAT_000c9e0f;
 undefined1 DAT_000c9e10;
@@ -532,34 +555,73 @@ undefined1 DAT_000c9e3b;
 undefined1 DAT_000c9e3c;
 undefined1 DAT_000c9e3d;
 undefined1 DAT_000c9e3e;
-undefined1 DAT_000d2ab0;
-undefined1 DAT_000d2ab1;
-undefined1 DAT_000d2ab2;
-undefined1 DAT_000d2ab3;
-undefined1 DAT_000d2ab4;
-undefined1 DAT_000d2ab5;
-undefined1 DAT_000d2ab6;
-undefined1 DAT_000d2ab7;
-undefined1 DAT_000d2ab8;
-undefined1 DAT_000d2ab9;
-undefined1 DAT_000d2aba;
-undefined1 DAT_000d2abb;
-undefined1 DAT_000d2abc;
-undefined1 DAT_000d2abd;
-undefined1 DAT_000d2abe;
-undefined1 DAT_000d2abf;
-undefined1 DAT_000d2ac0;
-undefined1 DAT_000d2ac1;
-undefined1 DAT_000d2ac2;
-undefined1 DAT_000d2ac3;
-undefined1 DAT_000d2ac8;
-undefined1 DAT_000d2ac9;
-undefined1 DAT_000d2aca;
-undefined1 DAT_000d2acb;
-undefined1 DAT_000d2ad0;
-undefined1 DAT_000d2ad1;
-undefined1 DAT_000d2ad2;
-undefined1 DAT_000d2ad3;
+/* DAT_000d2ab0 through DAT_000d2ad3 (28 globals) are individual byte
+   fields of a 0x2c(44)-byte-stride per-POINT record in FUN_00020a74's
+   ".E" model parser (`iVar6 = DAT_000d91d0 * 0x2c; (&DAT_000d2ab0)[iVar6]
+   = ...;`, bounded by `if (600 < DAT_000d91d0)`) -- up to 600 points *
+   44 bytes = 26400 bytes needed per field, but each was declared as a
+   lone `undefined1` scalar. A watchpoint confirmed this overflow
+   corrupting an unrelated global (DAT_002029cc, ~26KB+ away) during a
+   real model file's parse, which crashed much later and far from the
+   actual bad write -- the same "detected at a distance" pattern as the
+   STRINGS.PAK heap corruption. Widened with the usual backing-buffer
+   pattern. */
+static undefined1 DAT_000d2ab0_backing[32768];
+#define DAT_000d2ab0 DAT_000d2ab0_backing[0]
+static undefined1 DAT_000d2ab1_backing[32768];
+#define DAT_000d2ab1 DAT_000d2ab1_backing[0]
+static undefined1 DAT_000d2ab2_backing[32768];
+#define DAT_000d2ab2 DAT_000d2ab2_backing[0]
+static undefined1 DAT_000d2ab3_backing[32768];
+#define DAT_000d2ab3 DAT_000d2ab3_backing[0]
+static undefined1 DAT_000d2ab4_backing[32768];
+#define DAT_000d2ab4 DAT_000d2ab4_backing[0]
+static undefined1 DAT_000d2ab5_backing[32768];
+#define DAT_000d2ab5 DAT_000d2ab5_backing[0]
+static undefined1 DAT_000d2ab6_backing[32768];
+#define DAT_000d2ab6 DAT_000d2ab6_backing[0]
+static undefined1 DAT_000d2ab7_backing[32768];
+#define DAT_000d2ab7 DAT_000d2ab7_backing[0]
+static undefined1 DAT_000d2ab8_backing[32768];
+#define DAT_000d2ab8 DAT_000d2ab8_backing[0]
+static undefined1 DAT_000d2ab9_backing[32768];
+#define DAT_000d2ab9 DAT_000d2ab9_backing[0]
+static undefined1 DAT_000d2aba_backing[32768];
+#define DAT_000d2aba DAT_000d2aba_backing[0]
+static undefined1 DAT_000d2abb_backing[32768];
+#define DAT_000d2abb DAT_000d2abb_backing[0]
+static undefined1 DAT_000d2abc_backing[32768];
+#define DAT_000d2abc DAT_000d2abc_backing[0]
+static undefined1 DAT_000d2abd_backing[32768];
+#define DAT_000d2abd DAT_000d2abd_backing[0]
+static undefined1 DAT_000d2abe_backing[32768];
+#define DAT_000d2abe DAT_000d2abe_backing[0]
+static undefined1 DAT_000d2abf_backing[32768];
+#define DAT_000d2abf DAT_000d2abf_backing[0]
+static undefined1 DAT_000d2ac0_backing[32768];
+#define DAT_000d2ac0 DAT_000d2ac0_backing[0]
+static undefined1 DAT_000d2ac1_backing[32768];
+#define DAT_000d2ac1 DAT_000d2ac1_backing[0]
+static undefined1 DAT_000d2ac2_backing[32768];
+#define DAT_000d2ac2 DAT_000d2ac2_backing[0]
+static undefined1 DAT_000d2ac3_backing[32768];
+#define DAT_000d2ac3 DAT_000d2ac3_backing[0]
+static undefined1 DAT_000d2ac8_backing[32768];
+#define DAT_000d2ac8 DAT_000d2ac8_backing[0]
+static undefined1 DAT_000d2ac9_backing[32768];
+#define DAT_000d2ac9 DAT_000d2ac9_backing[0]
+static undefined1 DAT_000d2aca_backing[32768];
+#define DAT_000d2aca DAT_000d2aca_backing[0]
+static undefined1 DAT_000d2acb_backing[32768];
+#define DAT_000d2acb DAT_000d2acb_backing[0]
+static undefined1 DAT_000d2ad0_backing[32768];
+#define DAT_000d2ad0 DAT_000d2ad0_backing[0]
+static undefined1 DAT_000d2ad1_backing[32768];
+#define DAT_000d2ad1 DAT_000d2ad1_backing[0]
+static undefined1 DAT_000d2ad2_backing[32768];
+#define DAT_000d2ad2 DAT_000d2ad2_backing[0]
+static undefined1 DAT_000d2ad3_backing[32768];
+#define DAT_000d2ad3 DAT_000d2ad3_backing[0]
 undefined4 DAT_000d95d8;
 undefined DAT_000d9768;
 undefined DAT_000d9769;
@@ -586,7 +648,14 @@ static undefined1 DAT_000d98c8_backing[32768];
 #define DAT_000d98c8 DAT_000d98c8_backing[0]
 static undefined1 DAT_000da480_backing[65536];
 #define DAT_000da480 DAT_000da480_backing[0]
-undefined DAT_000da868;
+/* Per-CLUSTER pointer/index slot in the same ".E" model parser
+   (FUN_00020a74's CLUSTERS block) as DAT_000dab90 right below, same
+   "declared as a lone scalar, actually a large indexed table" bug --
+   `*(undefined **)(&DAT_000da868 + iVar4) = local_258;` where iVar4
+   grows per cluster. Widened the same way, matching DAT_000dab90's
+   size. */
+static undefined1 DAT_000da868_backing[65536];
+#define DAT_000da868 DAT_000da868_backing[0]
 static undefined1 DAT_000dab90_backing[65536];
 #define DAT_000dab90 DAT_000dab90_backing[0]
 static undefined DAT_000db454_backing[8192];
@@ -672,7 +741,14 @@ undefined1 DAT_001005ce;
 static undefined1 DAT_00088d98_backing[1536];
 #define DAT_00088d98 DAT_00088d98_backing[0]
 ushort DAT_00100610;
-int DAT_002046b8;
+/* Base address of a 0x1b(27)-byte-stride record table (every use is
+   `offset * 0x1b + DAT_002046b8`, cast to a pointer type) -- was `int`
+   despite being assigned a real malloc'd address plus an offset
+   (FUN_00052960: `DAT_002046b8 = DAT_002029cc + 0x4000;`), truncating it
+   on this 64-bit host and feeding a garbage near-zero base pointer to
+   every reader, including a real crash (Ordinal_1047/memset on the
+   resulting ~0x1b address) in FUN_00066cb4. */
+char *DAT_002046b8;
 undefined2 DAT_00100600;
 ushort DAT_00100604;
 static undefined1 DAT_00202c3a_backing[8192];
@@ -701,7 +777,11 @@ undefined4 DAT_001005d8;
 undefined DAT_001007d8;
 byte DAT_001005fc;
 char DAT_00084f1c;
-int DAT_0023b82c;
+/* Was `int` despite being assigned real pointer values derived from
+   DAT_002046b8 (see there) and itself assigned into DAT_0023be64
+   (`char *`) -- truncating on this 64-bit host, part of the same crash
+   chain (FUN_00066cb4's Ordinal_1047 call reading DAT_0023be64). */
+char *DAT_0023b82c;
 static undefined1 DAT_001007d0_backing[6144];
 #define DAT_001007d0 DAT_001007d0_backing[0]
 undefined DAT_001007e0;
@@ -1220,10 +1300,29 @@ undefined2 DAT_00189570;
 undefined2 DAT_00189572;
 undefined2 DAT_00189574;
 char * DAT_00110fc8 = 0;
-char *DAT_00110fc0;
+/* DAT_00110fc0 is a byte-cursor written through directly by other
+   functions too (e.g. FUN_0005b828: `*DAT_00110fc0 = 0;
+   DAT_00110fc0 = DAT_00110fc0 + 1;`), not just by FUN_0003894c (which
+   would normally seed it from DAT_00110fc8 -- see that function's
+   comment on why it skips instead). Left NULL by default (same
+   tentative-definition zero-init issue as DAT_00110fc8/DAT_00110fcc),
+   it segfaulted on the very first such write. Given a real scratch
+   buffer here instead of NULL so those direct writes land somewhere
+   safe; this is a fallback, not a recovered value, so whatever
+   downstream code reads this data back may not see the real original
+   content. */
+static char DAT_00110fc0_scratch[65536];
+char *DAT_00110fc0 = DAT_00110fc0_scratch;
 undefined1 DAT_00110fc4;
 undefined4 DAT_00110bb8;
-undefined4 DAT_00110fcc = 0;
+/* Was `undefined4` (4 bytes) despite FUN_00038acc using it to reset
+   DAT_00110fc0 (`char *`) -- truncating on this 64-bit host, and
+   overwriting the DAT_00110fc0_scratch fallback (see DAT_00110fc0's own
+   comment) with a truncated garbage/NULL pointer right before
+   FUN_0005b828 dereferences it. Retyped to a real pointer, defaulted to
+   the same scratch buffer for the same "no real initializer found,
+   avoid crashing" reason. */
+char *DAT_00110fcc = DAT_00110fc0_scratch;
 undefined2 DAT_00201b38;
 undefined2 DAT_00201b10;
 short DAT_00201c7c;
@@ -38537,7 +38636,7 @@ uint param_2;
   *(byte *)(param_2 + 4) = (*(byte *)(param_2 + 4) ^ bVar2) & 0x3f ^ bVar2;
   *(char *)(param_2 + 5) = (char)((ushort)uVar1 >> 8);
   if (param_2 < DAT_002046c4) {
-    sVar3 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
+    sVar3 = Ordinal_2005(0x1b,param_2 - (uint)(uintptr_t)DAT_002046b8);
     uVar4 = *param_1 & 0x3f | sVar3 << 6;
   }
   else {
@@ -38565,7 +38664,7 @@ uint param_2;
   *(byte *)(param_2 + 4) = *(byte *)(param_2 + 4) & 0x3f;
   *(undefined1 *)(param_2 + 5) = 0;
   if (param_2 < DAT_002046c4) {
-    sVar1 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
+    sVar1 = Ordinal_2005(0x1b,param_2 - (uint)(uintptr_t)DAT_002046b8);
     uVar3 = *param_1 & 0x3f | sVar1 << 6;
   }
   else {
@@ -48355,7 +48454,25 @@ void FUN_00066e90()
 
 {
   int iVar1;
-  
+
+  /* DAT_002029cc is set once, early (FUN_00049960/FUN_00052960: a real
+     malloc'd pointer via Ordinal_1041), and DAT_002046b8/DAT_002046c4
+     are derived from it and never touched again. By the time this
+     function runs, though, DAT_002029cc has been observed (via a
+     temporary diagnostic print) to no longer hold that pointer -- some
+     other write elsewhere in this file is landing on its storage
+     between then and now, the same general "stray write corrupts an
+     unrelated global" class of bug as DAT_0023c5ac/DAT_0023c5b0 and
+     DAT_00110fc8/fc0/fcc earlier, but the actual writer wasn't pinned
+     down (not caught by ASAN as an out-of-bounds write, so it's likely
+     a plausible-looking but wrong destination computed elsewhere rather
+     than a classic overflow). Rather than dereference a pointer derived
+     from corrupted state (confirmed crashing in Ordinal_1047 by way of
+     FUN_00066cb4), bail out defensively if it doesn't look like a
+     plausible heap pointer. */
+  if ((uintptr_t)DAT_002029cc < 0x10000) {
+    return;
+  }
   DAT_0023b82c = (byte *)(DAT_002046b8 + 0x1b);
   DAT_00202080 = 0xffff;
   DAT_00201c78 = 0;
