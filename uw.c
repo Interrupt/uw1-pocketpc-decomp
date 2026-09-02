@@ -13687,7 +13687,6 @@ short * param_1;
      (strlen-shaped) and FUN_00011060 (draw string). */
   char *uVar8;
   int iVar9;
-  int extraout_r1;
   int iVar10;
   int iVar11;
   /* iVar11 doubles as a real pointer (DAT_000fb858 + a small table
@@ -13697,6 +13696,18 @@ short * param_1;
      pointer since DAT_000fb858 is a real 64-bit pointer. Dedicated
      variable for the pointer role only. */
   char *pcVar_off;
+  /* Was `extraout_r1` -- the classic "call Ordinal_2005, discard its
+     return, read the remainder via a register-leftover" idiom (same
+     class as FUN_0002431c's sVar_rem fix earlier this session), but
+     here that register was never even assigned in our C translation
+     -- genuinely uninitialized. This value is the column-within-row
+     remainder of `local_28 / param_1[8]` (items-per-row), gating both
+     whether the draw cursor wraps to a new row (Y advance) and where
+     X resets to for that new row. With it always uninitialized-
+     nonzero, Y never advanced and X grew unbounded every item --
+     confirmed via a caller-tagged diagnostic: all 8 class names drew
+     on the same row, X running from 288 to 1072 (screen is 320 wide). */
+  int iVar_rem;
   uint uVar12;
   uint uVar13;
   ushort local_2c;
@@ -13795,12 +13806,13 @@ short * param_1;
       do {
         iVar3 = DAT_000fb858;
         Ordinal_2005((int)param_1[8],local_28);
-        iVar9 = extraout_r1;
-        if (extraout_r1 == 0) {
+        iVar_rem = (param_1[8] == 0) ? 0 : (int)local_28 % (int)param_1[8];
+        iVar9 = iVar_rem;
+        if (iVar_rem == 0) {
           iVar9 = (int)(short)local_2c;
           iVar11 = 0xa0 - uVar12;
         }
-        if (extraout_r1 == 0) {
+        if (iVar_rem == 0) {
           iVar10 = iVar10 + iVar9 + 4;
         }
         sVar7 = (short)uVar12;
@@ -59488,7 +59500,19 @@ ushort param_1;
     if (uVar1 == 0) {
       uVar1 = (uint)DAT_0024cfac;
     }
-    uVar2 = (char *)FUN_00078e60(uVar1);
+    /* Was `FUN_00078e60(uVar1)` -- called with only one explicit
+       argument, relying on a register-leftover idiom for the second
+       (the "dropped argument" pattern used throughout this file, e.g.
+       Ordinal_1068/FUN_00011060 earlier this session) to still hold
+       the string's sub-index within this page. That register doesn't
+       reliably survive here either (confirmed: string lookups that
+       should succeed -- e.g. chargen field labels -- came back as
+       genuinely empty strings, because FUN_00078e60's own `iVar1 <
+       local_2e` bounds check saw garbage and fell straight through to
+       its "not found" empty-string return). param_1's low 9 bits are
+       exactly this sub-index (uVar1 above is `param_1 >> 9`, the page
+       number) -- pass it explicitly instead. */
+    uVar2 = (char *)FUN_00078e60(uVar1,(uint)(param_1 & 0x1ff));
   }
   else {
     /* Was reading 4 consecutive bytes from DAT_0024bfa2 alone, but the

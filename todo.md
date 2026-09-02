@@ -52,42 +52,101 @@
       Ghidra never resolved" pattern as above, for the "heads"/"converse"/
       "genhead"/"charhead" resource loads), writes it as an array. Widened
       to a real backing array and implemented the two callbacks from
-      disassembly. **Still doesn't visibly work** — see below.
+      disassembly. Turned out this specific screen has a deeper, separate
+      issue — see "Still open" below.
+- [x] **Most chargen text missing/empty everywhere** (the real root cause
+      behind the "no text on buttons" investigation) — `FUN_0007863c` (the
+      central string-lookup function, ~82 call sites throughout the whole
+      file) called its decoder as `FUN_00078e60(uVar1)` with only ONE of its
+      TWO required arguments, relying on the same unreliable "register-
+      leftover" idiom fixed repeatedly elsewhere this session. The second
+      argument (the string's index within its resource "page") never
+      reliably survived, so `FUN_00078e60`'s own bounds check
+      (`iVar1 < local_2e`) saw garbage and silently fell through to its
+      "not found" path, returning a genuinely empty string. Confirmed via a
+      direct diagnostic: "Male" decoded as "" before the fix, and correctly
+      as "Male" after passing `param_1 & 0x1ff` explicitly. This is likely
+      the single biggest text-rendering fix this session — affects far more
+      than character generation.
+- [x] **Chargen option-list layout completely broken** (first button on the
+      same row as its prompt; all list items — e.g. all 8 class names —
+      stacking horizontally off past the right edge of the screen instead
+      of listing vertically). Root cause in `FUN_00023de8`'s per-item draw
+      loop: another uninitialized `extraout_r1` register-leftover (same
+      idiom, same root bug class as the string-lookup fix above and
+      FUN_0002431c's earlier fix) was meant to hold
+      `local_28 % param_1[8]` (item's column-within-row, from a discarded
+      `Ordinal_2005` call), gating whether the draw cursor wraps to a new
+      row. With it always uninitialized-nonzero, Y never advanced and X
+      grew unbounded every item. Confirmed via a caller-tagged diagnostic
+      (dladdr on `FUN_00011060`'s return address) showing all 8 class names
+      landing at the same Y with X running 288→1072 before the fix, and
+      properly stacked at Y=16,36,56,...,176 with consistent X≈210-227
+      after. Computed the remainder directly instead.
+
+## FUN_00024e24 state map (confirmed via diagnostic + user's screen-by-screen walkthrough)
+| state | `*param_1` | item count | screen |
+|---|---|---|---|
+| 0 | 1 | 2 | Choose sex |
+| 1 | 2 | 2 | Handedness |
+| 2 | 3 | 8 | Pick a class |
+| 3 (×3 sub-passes) | 4 | 2, 5, 6 | Skill categories (combat/magic/special) |
+| 4 | **0 (no prompt configured)** | — | Head/race selection |
+| 5 | 6 | 2 | Difficulty |
+| 6 | 7 | 0 | Name entry |
+| 7 | 8 | 2 | Keep this character? |
 
 ## Still open
 - [ ] Main menu never shows the three option buttons (Introduction, Create
       Character, Acknowledgements) — not yet investigated this round.
-- [ ] Chargen buttons still have no text on them at all (expected labels
-      confirmed by user: sex="Male"/"Female", handedness="Left"/"Right",
-      class=8 options ending in "Shepherd"). `FUN_0002431c` only blits the
-      "chrbtns" bitmap (background/frame) via `FUN_00011e5c` — there's no
-      separate text-draw call in it, so either (a) the label text is meant
-      to be baked into the "chrbtns" bitmap pixels themselves and the
-      pitch/offset math is still wrong somewhere despite the DAT_000fb884
-      re-aliasing fix, or (b) there's a genuinely separate, still-missing
-      text-draw call site (possibly another Ghidra-unresolved callback, same
-      pattern as everything above). Needs more investigation, likely another
-      disassembly pass around wherever chrbtns per-item headers get parsed.
-- [ ] First button in a multi-item list still draws at the far right screen
-      edge (not centered in the right half) and what might be text on it
-      looks garbled — the X-anchor itself (`param_1[9] + 0xa0` in
-      FUN_0002431c) may be wrong, separate from the extraout_r1 fix already
-      applied. `param_1[9]`'s real meaning/population hasn't been traced.
-- [ ] Head/race selector: button background now draws (chrbtns fix worked)
-      but the actual face bitmap (from the "heads" resource / DAT_00100728,
-      fixed this round) still doesn't appear. Traced `FUN_00028488` (which
-      contains the "heads"/"genhead"/"charhead" load logic) and its callers
-      (FUN_00073... conversation code, NPC-related contexts at lines 20656,
-      24824, 24897, 24914, 27537, 60615, 62663) — **none of them are reached
-      from FUN_00024e24/FUN_00025608 (the character-generation state
-      machine)**. So the face-drawing call for chargen's race-selection
-      screen may be entirely missing from this decompile, not just broken.
-      Needs tracing what should call the heads-loading path during chargen,
-      possibly another not-yet-discovered Ghidra-unresolved function.
+- [ ] Chargen icon-button graphics (the "chrbtns" background/frame bitmap
+      FUN_0002431c blits via FUN_00011e5c) may still have their own
+      separate offset/pitch issue distinct from the text-layout fix above —
+      not re-verified visually since the text fix landed. Earlier
+      disassembly-verified findings (before the text fix, may want a fresh
+      look): FUN_0002431c's own coordinate/offset math is a byte-for-byte-
+      faithful translation of the real ARM code, and FUN_00011e5c's width/
+      height/stride usage is internally consistent for the ~67x16
+      dimensions read from the button header. Inspected the actual loaded
+      CHRBTNS.GR bytes at runtime (928/1082 nonzero bytes for item 0 — real
+      pixel data, not empty) and confirmed each item has a 5-byte header
+      (e.g. `04 43 10 30 04`, bytes[1]=width, bytes[2]=height) immediately
+      followed by its pixel data, with DAT_000fb880[idx] consistently
+      meaning "byte offset where item idx's *pixel data* begins (after its
+      own header)". BUT: the pixel-data read site uses index
+      `iVar9+param_1[6]+1` (verified via disassembly: reads
+      `DAT_000fb880[...+1]`, i.e. one array element past the dimension read
+      at index `param_1[6]` with no +1) — meaning the two reads use
+      *different* item indices for a single button's dimensions vs. its
+      pixel data. Whether that's intentional (shared header, offset pixel
+      data) or a genuine off-by-one requires understanding param_1[6]'s
+      real value/meaning, not yet resolved. Re-check whether this is even
+      still visible now that the text/layout bugs are fixed.
+- [ ] Head/race selection (confirmed = state 4, see table above) draws
+      nothing because `*param_1==0` for this record, skipping FUN_00023de8's
+      prompt-text branch entirely, AND case 4's own bitmap draw reads
+      `DAT_000fb8c4[...]`, a lookup table confirmed via a **fresh Ghidra
+      xref check against the real binary** (not just the decompiled C) to
+      have **zero writers anywhere in the compiled ARM code** — unlike
+      DAT_000fb880, there is no hidden callback to recover here; the real
+      game binary itself never populates this table. The "heads"/"genhead"/
+      "charhead" resource loader (FUN_00028488, containing the real
+      portrait-loading logic, callbacks already implemented this session as
+      LAB_00028688/LAB_000286a4) is never called anywhere in
+      FUN_00024e24 either (verified: dumped all 476 instructions / every
+      `bl` call in the function, zero hits). This looks like it may be a
+      genuine bug/incomplete feature in this specific PocketPC port's
+      shipped binary, not a decompilation artifact — recovering working
+      head/portrait selection would mean reconstructing functionality that
+      may never have worked in this build, not just fixing a broken
+      translation. Lower priority / may not be fixable without much deeper
+      reverse engineering (e.g. checking whether a PC/other-platform build
+      of this game had working portrait selection, to understand what the
+      intended data flow was).
   - Related: "extra pixels at the top of the screen that look like a button
-    border" on the face-selection screen — possibly a fragment of the real
-    face-drawing code executing with wrong coordinates, or leftover/dirty
-    framebuffer content from a different screen. Not yet investigated.
+    border" on this screen — likely just the chrbtns-based button frame
+    (from the fixed DAT_000fb880 path) with no portrait drawn inside it, not
+    a separate bug.
 - [ ] After finishing character creation, the game restarts from the first
       step instead of continuing into gameplay (FUN_00024e24 case 7: `if
       (uVar1 != 0) goto restart;` — the confirm/redo selection value may be
@@ -95,6 +154,17 @@
       re-investigated since the key-repeat fix (which was the earlier
       leading theory) landed — needs a fresh look once text renders well
       enough to see which button says what.
+- [ ] User spotted that this binary has real debug-log-style format strings
+      baked in (System Shock 1 heritage — same engine family), e.g.
+      `"objsbecombinable_returns_%d"`, `"combination_%d_is_%d_and_%d."`,
+      `"checking_if_%d_and_%d_are_combin"`, `"Error:_Part_%d_is_a_polygon_"`,
+      `"got_bitmap_%d:_%d"`, `"Too_many_points_(%d)"`. Confirms debug
+      logging infrastructure exists in the game, likely gated behind a
+      disabled debug flag/build define. Not yet investigated: find what
+      calls these (a central debug-print function?), whether there's a
+      flag that enables it, and whether turning it on could make future
+      "what's actually happening" investigations (like the text/layout bugs
+      above) much faster than manual disassembly archaeology.
 
 ## Useful tooling discovered this round
 - The original game binary is at `data/UU.exe` (PE32, WinCE, despite the
