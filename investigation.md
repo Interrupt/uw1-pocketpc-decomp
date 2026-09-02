@@ -9,6 +9,30 @@ this file is the "what is this actually for" index. Not exhaustive —
 added to opportunistically as things get figured out, not a systematic
 audit.
 
+## Subsystems (terse index — see sections below for detail)
+
+- **Entry/startup**: `entry`, `FUN_00077004`, `FUN_0003b820`, `FUN_0005b828`
+- **`.E` 3D model script parser**: `FUN_00020a74`, `FUN_00038680`
+- **Resource preload (`.GR`/STRINGS.PAK)**: `FUN_00041aac`, `FUN_000417b4`,
+  `FUN_00041304`, `FUN_00041708`/`FUN_00041770`, `FUN_00076a2c`,
+  `FUN_00076b8c`/`FUN_00076e98`, `uw_alloc_grtile`
+- **File I/O (CreateFile-style)**: `FUN_000227d4`, `FUN_0002285c`,
+  `Ordinal_553`, `FUN_00022850`
+- **C runtime via coredll ordinals**: `Ordinal_1041/1018/1047/1044/1054`
+  (malloc/free/memset/memmove/realloc), `Ordinal_1063/1065/1068/1070`
+  (strcat/strcmp/strlen/strncmp), `Ordinal_1113/1114/1118/1102`
+  (fopen/fscanf/fclose/printf-log)
+- **Process exit / fatal error**: `FUN_00082388`, `FUN_0003c3c8`,
+  `FUN_0003c4a8`
+- **Font/glyph-width setup (partially broken)**: `FUN_0003894c`,
+  `DAT_00110fc8`/`DAT_00110fc0`/`DAT_00110fcc`
+- **Texture-LUT loader (non-functional)**: `FUN_0005b054`, `FUN_0005b514`
+- **Unidentified, still under investigation**: `FUN_000232ec` (writes a
+  big fixed-offset device/config-ish record via `DAT_00086df8`, plus
+  something at `DAT_0023be74`), `FUN_00066cb4`/`FUN_00066e90` (sets up
+  `DAT_0023be64`/`DAT_0023be74` from a `DAT_002029cc`-backed workspace —
+  purpose still unclear, maybe a font/palette record)
+
 ## Entry / startup chain
 
 - `entry` (uw.c ~64100s) — WinMain-equivalent process entry point. Calls
@@ -134,6 +158,22 @@ audit.
   longer run..." fatal-error display + `FUN_00082388(-24)`. Always exits
   with code -24 regardless of the display error code.
 
+## Resolved this session (previously undersized/uninitialized globals)
+
+Beyond the `.E` parser's own record clusters (POINTS/PARTS/CLUSTERS/NODES,
+listed above), a few more turned up nearby in the same general startup
+path once those stopped masking them:
+
+- `DAT_0024bfa0`-family (6 arrays) — already widened once in an earlier
+  session from a lone scalar, but only to 8200 bytes; `FUN_0007873c`
+  indexes them with a 0x804-byte stride and an unbounded growing record
+  count (`DAT_0024cfc0`). Widened again, twice (8200 → 131072 was still
+  not enough — ASAN caught real startup traffic hitting record ~64 — →
+  1052672, a ~512-record margin).
+- `Ordinal_1054` — realloc-shaped (`(ptr_or_null, new_size) -> new_ptr`),
+  was a no-op stub returning 0, which every one of its 4 callers treats
+  as allocation failure → immediate fatal error. Implemented for real.
+
 ## Known-unresolved / still-broken areas
 
 - `FUN_0003894c` — glyph-width table setup. Reads through
@@ -149,10 +189,27 @@ audit.
 - `DAT_002029cc` (a `FUN_00049960`/`FUN_00052960`-managed ~32KB
   workspace buffer, purpose not yet identified — feeds
   `DAT_002046b8`/`DAT_002046c4`, both ~0x67-byte-stride-ish table bases
-  used somewhere in glyph/UI rendering) gets corrupted mid-run by a
-  stray write from elsewhere in the file — confirmed via an lldb
-  watchpoint that it changes value during `.E` model parsing, but the
-  exact writer wasn't pinned down before a defensive magnitude-sanity
-  guard was added in its main consumer (`FUN_00066e90`) instead. Worth
-  revisiting with more watchpoint sessions if UI/text rendering looks
-  wrong later.
+  used somewhere in glyph/UI rendering) was getting corrupted mid-run by
+  a stray write from elsewhere in the file — confirmed via an lldb
+  watchpoint that it changed value during `.E` model parsing. Widening
+  the `.E` parser's four undersized record clusters (POINTS/PARTS/
+  CLUSTERS/NODES — the watchpoint had caught POINTS specifically, but
+  the others turned out to share the bug) seems to have fixed the
+  specific write the watchpoint caught; a defensive magnitude-sanity
+  guard is still in place in `FUN_00066e90` (its main consumer) as a
+  backstop, since a *different* corruption of the same variable was
+  still observed after that fix in at least one ASAN run, so there may
+  be one more overflow source somewhere not yet found. Worth another
+  watchpoint session if it recurs.
+- `FUN_000232ec` — writes a large fixed-offset record through
+  `DAT_00086df8` (looks like device/config init — many single-byte
+  field writes at offsets like `+0x4e`, `+0xce`, `+0x21..0x34`, etc.,
+  unclear what real subsystem this is yet) and also touches
+  `DAT_0023be74 + 5..7` (set earlier by `FUN_00066cb4` from
+  `&DAT_001007d0 + (*DAT_0023be64 & 0x3f) * 0x30`). Current crash
+  point (SEGV reading through `DAT_0023be74`, garbage-looking address)
+  — not yet root-caused; `DAT_0023be74`'s backing (`DAT_001007d0`,
+  6144 bytes) is not obviously undersized for the offsets used, so this
+  may be the same not-yet-found stray-write source as `DAT_002029cc`
+  above, or a separate issue. Next step: lldb watchpoint on
+  `DAT_0023be74` the same way `DAT_002029cc`'s corruption was found.

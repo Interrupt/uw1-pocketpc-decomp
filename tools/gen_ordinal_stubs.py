@@ -125,6 +125,17 @@ SPECIAL = {
         body="    if (f == 0) return 0;\n"
              "    return fclose((FILE *)f);",
     ),
+    "1054": dict(
+        # realloc-shaped: (existing_ptr_or_null, new_size) -> new_ptr,
+        # consistent across all 4 call sites (growing arrays by a fixed
+        # per-element size as a counter increments). Was a no-op stub
+        # returning 0 unconditionally, which every caller treats as
+        # allocation failure -> fatal error, so this was 100% fatal the
+        # first time any of these growable arrays was touched.
+        proto="void *Ordinal_1054(void *ptr, unsigned int size)",
+        body="    if (size == 0) return ptr;\n"
+             "    return realloc(ptr, size);",
+    ),
     "1113": dict(
         proto="void *Ordinal_1113(void *path, void *mode)",
         body="    return uw_file_fopen((const char *)path, (const char *)mode);",

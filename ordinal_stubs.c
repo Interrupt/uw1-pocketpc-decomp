@@ -437,9 +437,10 @@ long Ordinal_1053()
     return 0;
 }
 
-long Ordinal_1054()
+void *Ordinal_1054(void *ptr, unsigned int size)
 {
-    return 0;
+    if (size == 0) return ptr;
+    return realloc(ptr, size);
 }
 
 long Ordinal_1058()

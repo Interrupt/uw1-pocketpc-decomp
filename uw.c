@@ -472,28 +472,58 @@ static undefined1 DAT_000c8b08_backing[65536];
    DAT_000da868/DAT_000dab90 right above, for the same block. */
 static undefined1 DAT_000c8ca0_backing[65536];
 #define DAT_000c8ca0 DAT_000c8ca0_backing[0]
-undefined DAT_000c9540;
-undefined DAT_000c9541;
-undefined DAT_000c9542;
-undefined DAT_000c9543;
-undefined DAT_000c9544;
-undefined DAT_000c9545;
-undefined DAT_000c9546;
-undefined DAT_000c9547;
-undefined DAT_000c9548;
-undefined DAT_000c9549;
-undefined DAT_000c954a;
-undefined DAT_000c954b;
-undefined DAT_000c954c;
-undefined DAT_000c954d;
-undefined DAT_000c954e;
-undefined DAT_000c954f;
-undefined DAT_000c9550;
-undefined DAT_000c9551;
-undefined DAT_000c9552;
-undefined DAT_000c9553;
-undefined DAT_000c9554;
-undefined DAT_000c9555;
+/* DAT_000c9540..DAT_000c9555 (22 fields): another per-record byte-field
+   cluster in FUN_00020a74's ".E" model parser (NODES block), same
+   undersized-scalar bug as DAT_000d2ab0/DAT_000c9dd8/DAT_000c8ca0/
+   DAT_000da868/DAT_000dab90 above -- found via a systematic scan of
+   every `(&DAT_x)[idx]` pattern in this function after the POINTS/PARTS/
+   CLUSTERS instances turned out not to be the only ones (a real model
+   file's parse was still corrupting an unrelated global afterward).
+   Widened the same way. */
+static undefined1 DAT_000c9540_backing[65536];
+#define DAT_000c9540 DAT_000c9540_backing[0]
+static undefined1 DAT_000c9541_backing[65536];
+#define DAT_000c9541 DAT_000c9541_backing[0]
+static undefined1 DAT_000c9542_backing[65536];
+#define DAT_000c9542 DAT_000c9542_backing[0]
+static undefined1 DAT_000c9543_backing[65536];
+#define DAT_000c9543 DAT_000c9543_backing[0]
+static undefined1 DAT_000c9544_backing[65536];
+#define DAT_000c9544 DAT_000c9544_backing[0]
+static undefined1 DAT_000c9545_backing[65536];
+#define DAT_000c9545 DAT_000c9545_backing[0]
+static undefined1 DAT_000c9546_backing[65536];
+#define DAT_000c9546 DAT_000c9546_backing[0]
+static undefined1 DAT_000c9547_backing[65536];
+#define DAT_000c9547 DAT_000c9547_backing[0]
+static undefined1 DAT_000c9548_backing[65536];
+#define DAT_000c9548 DAT_000c9548_backing[0]
+static undefined1 DAT_000c9549_backing[65536];
+#define DAT_000c9549 DAT_000c9549_backing[0]
+static undefined1 DAT_000c954a_backing[65536];
+#define DAT_000c954a DAT_000c954a_backing[0]
+static undefined1 DAT_000c954b_backing[65536];
+#define DAT_000c954b DAT_000c954b_backing[0]
+static undefined1 DAT_000c954c_backing[65536];
+#define DAT_000c954c DAT_000c954c_backing[0]
+static undefined1 DAT_000c954d_backing[65536];
+#define DAT_000c954d DAT_000c954d_backing[0]
+static undefined1 DAT_000c954e_backing[65536];
+#define DAT_000c954e DAT_000c954e_backing[0]
+static undefined1 DAT_000c954f_backing[65536];
+#define DAT_000c954f DAT_000c954f_backing[0]
+static undefined1 DAT_000c9550_backing[65536];
+#define DAT_000c9550 DAT_000c9550_backing[0]
+static undefined1 DAT_000c9551_backing[65536];
+#define DAT_000c9551 DAT_000c9551_backing[0]
+static undefined1 DAT_000c9552_backing[65536];
+#define DAT_000c9552 DAT_000c9552_backing[0]
+static undefined1 DAT_000c9553_backing[65536];
+#define DAT_000c9553 DAT_000c9553_backing[0]
+static undefined1 DAT_000c9554_backing[65536];
+#define DAT_000c9554 DAT_000c9554_backing[0]
+static undefined1 DAT_000c9555_backing[65536];
+#define DAT_000c9555 DAT_000c9555_backing[0]
 /* DAT_000c9dd8 through DAT_000c9de3 (12 globals) are byte fields of a
    0x67(103)-byte-stride per-PART record in FUN_00020a74's ".E" model
    parser (`iVar5 = DAT_000db430 * 0x67; (&DAT_000c9ddc)[iVar5] = ...`),
@@ -524,37 +554,70 @@ static undefined1 DAT_000c9de2_backing[65536];
 #define DAT_000c9de2 DAT_000c9de2_backing[0]
 static undefined1 DAT_000c9de3_backing[65536];
 #define DAT_000c9de3 DAT_000c9de3_backing[0]
-undefined1 DAT_000c9e0e;
-undefined1 DAT_000c9e0f;
-undefined1 DAT_000c9e10;
-undefined1 DAT_000c9e11;
-undefined1 DAT_000c9e22;
-undefined1 DAT_000c9e23;
-undefined1 DAT_000c9e24;
-undefined1 DAT_000c9e25;
-undefined1 DAT_000c9e26;
-undefined1 DAT_000c9e28;
-undefined1 DAT_000c9e29;
-undefined1 DAT_000c9e2b;
-undefined1 DAT_000c9e2c;
-undefined1 DAT_000c9e2d;
-undefined1 DAT_000c9e2e;
-undefined1 DAT_000c9e2f;
-undefined1 DAT_000c9e30;
-undefined1 DAT_000c9e31;
-undefined1 DAT_000c9e32;
-undefined1 DAT_000c9e33;
-undefined1 DAT_000c9e34;
-undefined1 DAT_000c9e35;
-undefined1 DAT_000c9e36;
-undefined1 DAT_000c9e37;
-undefined1 DAT_000c9e38;
-undefined1 DAT_000c9e39;
-undefined1 DAT_000c9e3a;
-undefined1 DAT_000c9e3b;
-undefined1 DAT_000c9e3c;
-undefined1 DAT_000c9e3d;
-undefined1 DAT_000c9e3e;
+/* DAT_000c9e0e..DAT_000c9e3e (30 fields): same bug, same parser, same
+   systematic-scan discovery as DAT_000c9540 above. */
+static undefined1 DAT_000c9e0e_backing[65536];
+#define DAT_000c9e0e DAT_000c9e0e_backing[0]
+static undefined1 DAT_000c9e0f_backing[65536];
+#define DAT_000c9e0f DAT_000c9e0f_backing[0]
+static undefined1 DAT_000c9e10_backing[65536];
+#define DAT_000c9e10 DAT_000c9e10_backing[0]
+static undefined1 DAT_000c9e11_backing[65536];
+#define DAT_000c9e11 DAT_000c9e11_backing[0]
+static undefined1 DAT_000c9e22_backing[65536];
+#define DAT_000c9e22 DAT_000c9e22_backing[0]
+static undefined1 DAT_000c9e23_backing[65536];
+#define DAT_000c9e23 DAT_000c9e23_backing[0]
+static undefined1 DAT_000c9e24_backing[65536];
+#define DAT_000c9e24 DAT_000c9e24_backing[0]
+static undefined1 DAT_000c9e25_backing[65536];
+#define DAT_000c9e25 DAT_000c9e25_backing[0]
+static undefined1 DAT_000c9e26_backing[65536];
+#define DAT_000c9e26 DAT_000c9e26_backing[0]
+static undefined1 DAT_000c9e28_backing[65536];
+#define DAT_000c9e28 DAT_000c9e28_backing[0]
+static undefined1 DAT_000c9e29_backing[65536];
+#define DAT_000c9e29 DAT_000c9e29_backing[0]
+static undefined1 DAT_000c9e2b_backing[65536];
+#define DAT_000c9e2b DAT_000c9e2b_backing[0]
+static undefined1 DAT_000c9e2c_backing[65536];
+#define DAT_000c9e2c DAT_000c9e2c_backing[0]
+static undefined1 DAT_000c9e2d_backing[65536];
+#define DAT_000c9e2d DAT_000c9e2d_backing[0]
+static undefined1 DAT_000c9e2e_backing[65536];
+#define DAT_000c9e2e DAT_000c9e2e_backing[0]
+static undefined1 DAT_000c9e2f_backing[65536];
+#define DAT_000c9e2f DAT_000c9e2f_backing[0]
+static undefined1 DAT_000c9e30_backing[65536];
+#define DAT_000c9e30 DAT_000c9e30_backing[0]
+static undefined1 DAT_000c9e31_backing[65536];
+#define DAT_000c9e31 DAT_000c9e31_backing[0]
+static undefined1 DAT_000c9e32_backing[65536];
+#define DAT_000c9e32 DAT_000c9e32_backing[0]
+static undefined1 DAT_000c9e33_backing[65536];
+#define DAT_000c9e33 DAT_000c9e33_backing[0]
+static undefined1 DAT_000c9e34_backing[65536];
+#define DAT_000c9e34 DAT_000c9e34_backing[0]
+static undefined1 DAT_000c9e35_backing[65536];
+#define DAT_000c9e35 DAT_000c9e35_backing[0]
+static undefined1 DAT_000c9e36_backing[65536];
+#define DAT_000c9e36 DAT_000c9e36_backing[0]
+static undefined1 DAT_000c9e37_backing[65536];
+#define DAT_000c9e37 DAT_000c9e37_backing[0]
+static undefined1 DAT_000c9e38_backing[65536];
+#define DAT_000c9e38 DAT_000c9e38_backing[0]
+static undefined1 DAT_000c9e39_backing[65536];
+#define DAT_000c9e39 DAT_000c9e39_backing[0]
+static undefined1 DAT_000c9e3a_backing[65536];
+#define DAT_000c9e3a DAT_000c9e3a_backing[0]
+static undefined1 DAT_000c9e3b_backing[65536];
+#define DAT_000c9e3b DAT_000c9e3b_backing[0]
+static undefined1 DAT_000c9e3c_backing[65536];
+#define DAT_000c9e3c DAT_000c9e3c_backing[0]
+static undefined1 DAT_000c9e3d_backing[65536];
+#define DAT_000c9e3d DAT_000c9e3d_backing[0]
+static undefined1 DAT_000c9e3e_backing[65536];
+#define DAT_000c9e3e DAT_000c9e3e_backing[0]
 /* DAT_000d2ab0 through DAT_000d2ad3 (28 globals) are individual byte
    fields of a 0x2c(44)-byte-stride per-POINT record in FUN_00020a74's
    ".E" model parser (`iVar6 = DAT_000d91d0 * 0x2c; (&DAT_000d2ab0)[iVar6]
@@ -623,27 +686,50 @@ static undefined1 DAT_000d2ad2_backing[32768];
 static undefined1 DAT_000d2ad3_backing[32768];
 #define DAT_000d2ad3 DAT_000d2ad3_backing[0]
 undefined4 DAT_000d95d8;
-undefined DAT_000d9768;
-undefined DAT_000d9769;
-undefined DAT_000d976a;
-undefined DAT_000d976b;
-undefined DAT_000d976c;
-undefined DAT_000d976d;
-undefined DAT_000d976e;
-undefined DAT_000d976f;
-undefined DAT_000d9770;
-undefined DAT_000d9771;
-undefined DAT_000d9772;
-undefined DAT_000d9773;
-undefined DAT_000d9774;
-undefined DAT_000d9775;
-undefined DAT_000d9776;
-undefined DAT_000d9777;
-undefined DAT_000d9778;
-undefined DAT_000d9779;
-undefined DAT_000d977a;
-undefined DAT_000d977b;
-undefined DAT_000d977c;
+/* DAT_000d9768..DAT_000d977c (21 fields): same bug, same parser, same
+   systematic-scan discovery as the two clusters above. */
+static undefined1 DAT_000d9768_backing[65536];
+#define DAT_000d9768 DAT_000d9768_backing[0]
+static undefined1 DAT_000d9769_backing[65536];
+#define DAT_000d9769 DAT_000d9769_backing[0]
+static undefined1 DAT_000d976a_backing[65536];
+#define DAT_000d976a DAT_000d976a_backing[0]
+static undefined1 DAT_000d976b_backing[65536];
+#define DAT_000d976b DAT_000d976b_backing[0]
+static undefined1 DAT_000d976c_backing[65536];
+#define DAT_000d976c DAT_000d976c_backing[0]
+static undefined1 DAT_000d976d_backing[65536];
+#define DAT_000d976d DAT_000d976d_backing[0]
+static undefined1 DAT_000d976e_backing[65536];
+#define DAT_000d976e DAT_000d976e_backing[0]
+static undefined1 DAT_000d976f_backing[65536];
+#define DAT_000d976f DAT_000d976f_backing[0]
+static undefined1 DAT_000d9770_backing[65536];
+#define DAT_000d9770 DAT_000d9770_backing[0]
+static undefined1 DAT_000d9771_backing[65536];
+#define DAT_000d9771 DAT_000d9771_backing[0]
+static undefined1 DAT_000d9772_backing[65536];
+#define DAT_000d9772 DAT_000d9772_backing[0]
+static undefined1 DAT_000d9773_backing[65536];
+#define DAT_000d9773 DAT_000d9773_backing[0]
+static undefined1 DAT_000d9774_backing[65536];
+#define DAT_000d9774 DAT_000d9774_backing[0]
+static undefined1 DAT_000d9775_backing[65536];
+#define DAT_000d9775 DAT_000d9775_backing[0]
+static undefined1 DAT_000d9776_backing[65536];
+#define DAT_000d9776 DAT_000d9776_backing[0]
+static undefined1 DAT_000d9777_backing[65536];
+#define DAT_000d9777 DAT_000d9777_backing[0]
+static undefined1 DAT_000d9778_backing[65536];
+#define DAT_000d9778 DAT_000d9778_backing[0]
+static undefined1 DAT_000d9779_backing[65536];
+#define DAT_000d9779 DAT_000d9779_backing[0]
+static undefined1 DAT_000d977a_backing[65536];
+#define DAT_000d977a DAT_000d977a_backing[0]
+static undefined1 DAT_000d977b_backing[65536];
+#define DAT_000d977b DAT_000d977b_backing[0]
+static undefined1 DAT_000d977c_backing[65536];
+#define DAT_000d977c DAT_000d977c_backing[0]
 static undefined1 DAT_000d98c8_backing[32768];
 #define DAT_000d98c8 DAT_000d98c8_backing[0]
 static undefined1 DAT_000da480_backing[65536];
@@ -2743,17 +2829,23 @@ undefined *PTR_GXSuspend_000841dc;
 undefined *PTR_GXResume_000841f4;
 byte DAT_0024af80;
 undefined4 DAT_0024af88;
-static undefined1 DAT_0024bfa0_backing[8200];
+/* DAT_0024bfa0-family (6 arrays) were already widened once (from a
+   pre-this-session pass) to 8200 bytes, but FUN_0007873c indexes with a
+   0x804(2052)-byte stride and DAT_0024cfc0 (the record count) grows
+   unboundedly as new entries are registered at runtime -- 8200 bytes
+   only covers ~4 records, and ASAN caught real startup traffic already
+   exceeding that. Widened further to a generous 64-record margin. */
+static undefined1 DAT_0024bfa0_backing[1052672];
 #define DAT_0024bfa0 DAT_0024bfa0_backing[0]
-static undefined1 DAT_0024bfa1_backing[8200];
+static undefined1 DAT_0024bfa1_backing[1052672];
 #define DAT_0024bfa1 DAT_0024bfa1_backing[0]
-static undefined1 DAT_0024bfa2_backing[8200];
+static undefined1 DAT_0024bfa2_backing[1052672];
 #define DAT_0024bfa2 DAT_0024bfa2_backing[0]
-static undefined1 DAT_0024bfa3_backing[8200];
+static undefined1 DAT_0024bfa3_backing[1052672];
 #define DAT_0024bfa3 DAT_0024bfa3_backing[0]
-static undefined1 DAT_0024bfa4_backing[8200];
+static undefined1 DAT_0024bfa4_backing[1052672];
 #define DAT_0024bfa4 DAT_0024bfa4_backing[0]
-static undefined1 DAT_0024bfa5_backing[8200];
+static undefined1 DAT_0024bfa5_backing[1052672];
 #define DAT_0024bfa5 DAT_0024bfa5_backing[0]
 static undefined1 DAT_0024c7a2_backing[8200];
 #define DAT_0024c7a2 DAT_0024c7a2_backing[0]
@@ -25428,6 +25520,11 @@ void FUN_0003c3c8(param_1)
 ushort param_1;
 
 {
+  /* Ordinal_1071 (the real message-box display for this error) isn't
+     implemented, so this is currently the only visibility into which
+     fatal error actually fired -- kept as a permanent log line, not a
+     one-off diagnostic. */
+  fprintf(stderr, "[fatal] FUN_0003c3c8: error code 0x%x\n", param_1);
   char *wptr_24645;
   char cVar1;
   undefined4 uVar2;
@@ -28911,17 +29008,24 @@ undefined4 param_7;
 {
   short sVar1;
   int iVar2;
-  int iVar3;
-  
+  char *iVar3;
+  void *pvVar4;
+
   iVar2 = (int)DAT_00202898;
   DAT_00202898 = (short)(iVar2 + 1);
-  iVar2 = Ordinal_1054(DAT_00202890,((iVar2 + 1) * 0x10000 >> 0x10) * 0x12);
-  if (iVar2 == 0) {
+  /* Ordinal_1054 is realloc-shaped and now returns a real pointer;
+     iVar2 was reused here for that result even though it's declared
+     int, truncating it (and iVar3, derived from it, and DAT_00202890,
+     assigned from it) on this 64-bit host. Split into a dedicated
+     pointer variable rather than retyping iVar2 (used as a plain int
+     counter just above). */
+  pvVar4 = Ordinal_1054(DAT_00202890,((iVar2 + 1) * 0x10000 >> 0x10) * 0x12);
+  if (pvVar4 == 0) {
     FUN_0003c3c8(0x1005);
   }
   sVar1 = DAT_00202894;
-  iVar3 = DAT_00202898 * 0x12 + iVar2;
-  DAT_00202890 = iVar2;
+  iVar3 = (char *)((char *)pvVar4 + DAT_00202898 * 0x12);
+  DAT_00202890 = pvVar4;
   *(undefined1 *)(iVar3 + -0x12) = (char)DAT_00202894;
   *(char *)(iVar3 + -0x11) = (char)((ushort)sVar1 >> 8);
   DAT_00202894 = DAT_00202894 + 1;
@@ -28955,17 +29059,20 @@ undefined4 param_4;
 {
   short sVar1;
   int iVar2;
-  int iVar3;
-  
+  char *iVar3;
+  void *pvVar4;
+
   iVar2 = (int)DAT_0020288c;
   DAT_0020288c = (short)(iVar2 + 1);
-  iVar2 = Ordinal_1054(DAT_0020289c,((iVar2 + 1) * 0x10000 >> 0x10) * 0xc);
-  if (iVar2 == 0) {
+  /* See FUN_0004202c's identical fix -- Ordinal_1054 (realloc-shaped)
+     returns a real pointer, iVar2 was truncating it. */
+  pvVar4 = Ordinal_1054(DAT_0020289c,((iVar2 + 1) * 0x10000 >> 0x10) * 0xc);
+  if (pvVar4 == 0) {
     FUN_0003c3c8(0x1006);
   }
   sVar1 = DAT_00085a70;
-  iVar3 = DAT_0020288c * 0xc + iVar2;
-  DAT_0020289c = iVar2;
+  iVar3 = (char *)((char *)pvVar4 + DAT_0020288c * 0xc);
+  DAT_0020289c = pvVar4;
   *(undefined1 *)(iVar3 + -0xc) = (char)DAT_00085a70;
   *(char *)(iVar3 + -0xb) = (char)((ushort)sVar1 >> 8);
   DAT_00085a70 = DAT_00085a70 + -1;

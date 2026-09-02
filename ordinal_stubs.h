@@ -84,7 +84,7 @@ void *Ordinal_1041();
 void *Ordinal_1044();
 void *Ordinal_1047(void *ptr, int val, unsigned int n);
 long Ordinal_1053();
-long Ordinal_1054();
+void *Ordinal_1054(void *ptr, unsigned int size);
 long Ordinal_1058();
 long Ordinal_1061();
 char *Ordinal_1063();
