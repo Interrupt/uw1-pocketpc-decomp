@@ -88,6 +88,96 @@ SPECIAL = {
         body="    if (dest && src) strcat(dest, src);\n"
              "    return dest;",
     ),
+    "1044": dict(
+        # memcpy/memmove-shaped: (dest, src, n) at the overwhelming
+        # majority of call sites -- used pervasively to move loaded
+        # resource data into runtime buffers. Was a no-op generic stub
+        # until identified; that silently skipped nearly all in-game data
+        # copying while file loads still reported success, which is why
+        # things "loaded" but nothing downstream worked. A few call sites
+        # (Ghidra) drop the size argument -- K&R + defensive guard here,
+        # same pattern as 1041/1063. memmove, not memcpy: at least one call
+        # site shifts a struct array by a fixed stride and dest/src ranges
+        # can overlap.
+        retpart="void *",
+        krname="Ordinal_1044(dest, src, n)\nvoid *dest;\nvoid *src;\nunsigned int n;",
+        body="    if (dest == 0 || src == 0 || n == 0 || n > (64u * 1024u * 1024u)) return dest;\n"
+             "    memmove(dest, src, n);\n"
+             "    return dest;",
+    ),
+    # 1113/1114/1065/1070/1068/1102 are the real C runtime (fopen/fscanf/
+    # strcmp/strncmp/strlen/vprintf-to-log) exposed directly by coredll,
+    # used by the game's own text script parser (conversation/cutscene
+    # scripts with BEGIN/VERSION/NAMES/POINTS blocks -- format strings
+    # like "%100s%1s" and "BEGIN"/"NAMES" are recovered string constants
+    # in uw.c right next to these call sites) rather than going through
+    # the CreateFile/ReadFile-style wrappers. Confirmed by call shape at
+    # every site across the whole file, not just this one parser -- e.g.
+    # Ordinal_1068 alone has 46 call sites, all single-string-argument.
+    # Real implementations, not just this parser's fix, since a no-op
+    # stub here silently broke every caller (fatal-erroring on the very
+    # first script load) while looking like an unrelated hang/crash
+    # elsewhere.
+    "1118": dict(
+        # fclose-shaped: the only call site closes the handle Ordinal_1113
+        # (fopen) opened.
+        proto="int Ordinal_1118(void *f)",
+        body="    if (f == 0) return 0;\n"
+             "    return fclose((FILE *)f);",
+    ),
+    "1113": dict(
+        proto="void *Ordinal_1113(void *path, void *mode)",
+        body="    return uw_file_fopen((const char *)path, (const char *)mode);",
+    ),
+    "1114": dict(
+        proto="int Ordinal_1114(void *f, const char *fmt, ...)",
+        body="    if (f == 0 || fmt == 0) return -1;\n"
+             "    va_list ap;\n"
+             "    va_start(ap, fmt);\n"
+             "    int r = vfscanf((FILE *)f, fmt, ap);\n"
+             "    va_end(ap);\n"
+             "    return r;",
+    ),
+    "1065": dict(
+        # A handful of call sites pass int-typed operands (Ghidra) rather
+        # than the char* every other site uses; -Wno-int-conversion lets
+        # those compile as implicit int->pointer, matching what the
+        # original 32-bit ABI did for free.
+        proto="int Ordinal_1065(const char *a, const char *b)",
+        body="    if (a == 0 || b == 0) return -1;\n"
+             "    return strcmp(a, b);",
+    ),
+    "1070": dict(
+        proto="int Ordinal_1070(const char *a, const char *b, unsigned int n)",
+        body="    if (a == 0 || b == 0) return -1;\n"
+             "    return strncmp(a, b, n);",
+    ),
+    "1068": dict(
+        # Several call sites drop the argument entirely (Ghidra) -- K&R
+        # here too. A garbage/missing pointer read as a result is a real
+        # (if narrow) crash risk, same class as 1041/1063's dropped-arg
+        # sites, but leaving this a no-op broke all 46 call sites outright
+        # (e.g. FUN_0005b36c/FUN_00041aac's NAMES-block parser advancing
+        # a cursor by strlen()+1 through a buffer -- always advancing by
+        # just 1 when this returned 0 unconditionally).
+        retpart="unsigned int ",
+        krname="Ordinal_1068(s)\nconst char *s;",
+        body="    if (s == 0) return 0;\n"
+             "    return (unsigned int)strlen(s);",
+    ),
+    "1102": dict(
+        # In-game parse-error logger (format strings like "error: %s,%c",
+        # "Too many points (%d)"); no in-game dialog to route this to, so
+        # send it to stderr alongside the rest of this port's diagnostics.
+        proto="void Ordinal_1102(const char *fmt, ...)",
+        body="    if (fmt == 0) return;\n"
+             "    va_list ap;\n"
+             "    fprintf(stderr, \"[game] \");\n"
+             "    va_start(ap, fmt);\n"
+             "    vfprintf(stderr, fmt, ap);\n"
+             "    va_end(ap);\n"
+             "    fprintf(stderr, \"\\n\");",
+    ),
     "864": dict(
         # PeekMessage-shaped: (MSG*, hwndFilter, min, max, PM_REMOVE).
         # Confirmed by the caller checking msg.message == 0x12 (WM_QUIT).
@@ -105,8 +195,9 @@ SPECIAL = {
 
 def main():
     header = ["#ifndef ORDINAL_STUBS_H", "#define ORDINAL_STUBS_H", "", "void uw_pump_events(void);", ""]
-    source = ['#include "ordinal_stubs.h"', '#include <stdio.h>', '#include <stdlib.h>',
-               '#include <string.h>', "", "void uw_pump_events(void);", ""]
+    source = ['#include "ordinal_stubs.h"', '#include "file_io.h"', '#include <stdio.h>',
+               '#include <stdlib.h>', '#include <string.h>', '#include <stdarg.h>',
+               "", "void uw_pump_events(void);", ""]
 
     for n in all_nums:
         if n in SPECIAL:

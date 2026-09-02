@@ -81,6 +81,16 @@ typedef void code();
  * actually used as a value (Ghidra's jump tables mix void and value-
  * returning targets under the same 'code' label). */
 typedef undefined4 codeval();
+/* Same idea as 'codeval', but for call-through-pointer sites whose result
+ * is a real pointer (e.g. an allocator callback) rather than a 4-byte
+ * scalar -- returning through 'codeval' truncates the pointer on 64-bit
+ * hosts. */
+typedef void *codeptr();
+
+/* Forward declaration needed because FUN_00041708 (much earlier in uw.c)
+   calls this before its own definition later in the file -- see its
+   definition, right after FUN_00076a2c, for why it exists. */
+void *uw_alloc_grtile();
 
 typedef union IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion, *PIMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion;
 

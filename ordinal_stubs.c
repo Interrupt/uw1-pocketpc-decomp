@@ -1,7 +1,9 @@
 #include "ordinal_stubs.h"
+#include "file_io.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 void uw_pump_events(void);
 
@@ -414,9 +416,14 @@ unsigned int size;
     return malloc(size);
 }
 
-long Ordinal_1044()
+void *Ordinal_1044(dest, src, n)
+void *dest;
+void *src;
+unsigned int n;
 {
-    return 0;
+    if (dest == 0 || src == 0 || n == 0 || n > (64u * 1024u * 1024u)) return dest;
+    memmove(dest, src, n);
+    return dest;
 }
 
 void *Ordinal_1047(void *ptr, int val, unsigned int n)
@@ -458,19 +465,23 @@ long Ordinal_1064()
     return 0;
 }
 
-long Ordinal_1065()
+int Ordinal_1065(const char *a, const char *b)
 {
-    return 0;
+    if (a == 0 || b == 0) return -1;
+    return strcmp(a, b);
 }
 
-long Ordinal_1068()
+unsigned int Ordinal_1068(s)
+const char *s;
 {
-    return 0;
+    if (s == 0) return 0;
+    return (unsigned int)strlen(s);
 }
 
-long Ordinal_1070()
+int Ordinal_1070(const char *a, const char *b, unsigned int n)
 {
-    return 0;
+    if (a == 0 || b == 0) return -1;
+    return strncmp(a, b, n);
 }
 
 long Ordinal_1071()
@@ -503,24 +514,36 @@ long Ordinal_1095()
     return 0;
 }
 
-long Ordinal_1102()
+void Ordinal_1102(const char *fmt, ...)
 {
-    return 0;
+    if (fmt == 0) return;
+    va_list ap;
+    fprintf(stderr, "[game] ");
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    fprintf(stderr, "\n");
 }
 
-long Ordinal_1113()
+void *Ordinal_1113(void *path, void *mode)
 {
-    return 0;
+    return uw_file_fopen((const char *)path, (const char *)mode);
 }
 
-long Ordinal_1114()
+int Ordinal_1114(void *f, const char *fmt, ...)
 {
-    return 0;
+    if (f == 0 || fmt == 0) return -1;
+    va_list ap;
+    va_start(ap, fmt);
+    int r = vfscanf((FILE *)f, fmt, ap);
+    va_end(ap);
+    return r;
 }
 
-long Ordinal_1118()
+int Ordinal_1118(void *f)
 {
-    return 0;
+    if (f == 0) return 0;
+    return fclose((FILE *)f);
 }
 
 long Ordinal_1346()

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <strings.h>
+#include <sys/stat.h>
 
 #define MAX_HANDLES 64
 static FILE *g_handles[MAX_HANDLES];
@@ -96,6 +97,19 @@ static int alloc_handle(FILE *f) {
 int uw_file_open_read(const char *win_path) {
     char real[4096];
     if (!resolve_path(win_path, real, sizeof(real))) return -1;
+    /* real Windows CreateFile fails to open a directory as a file (without
+     * FILE_FLAG_BACKUP_SEMANTICS, which this game never asks for); POSIX
+     * fopen() happily "succeeds" on one instead, which papers over game
+     * paths that are missing a filename component (a path built from a
+     * directory prefix with no filename ever appended -- see uw.c's
+     * FUN_0005b514 for a case that depends on this failing cleanly rather
+     * than than silently opening the directory and returning garbage on
+     * every subsequent read). */
+    struct stat st;
+    if (stat(real, &st) == 0 && S_ISDIR(st.st_mode)) {
+        fprintf(stderr, "[fileio] open-read FAILED (is a directory): %s -> %s\n", win_path, real);
+        return -1;
+    }
     FILE *f = fopen(real, "rb");
     if (!f) {
         fprintf(stderr, "[fileio] open-read FAILED: %s -> %s\n", win_path, real);
@@ -104,6 +118,20 @@ int uw_file_open_read(const char *win_path) {
     int h = alloc_handle(f);
     fprintf(stderr, "[fileio] open-read: %s -> %s (handle %d)\n", win_path, real, h);
     return h;
+}
+
+void *uw_file_fopen(const char *win_path, const char *mode) {
+    char real[4096];
+    if (!resolve_path(win_path, real, sizeof(real))) return NULL;
+    struct stat st;
+    if (stat(real, &st) == 0 && S_ISDIR(st.st_mode)) {
+        fprintf(stderr, "[fileio] fopen FAILED (is a directory): %s -> %s\n", win_path, real);
+        return NULL;
+    }
+    if (!mode || !mode[0]) mode = "r";
+    FILE *f = fopen(real, mode);
+    fprintf(stderr, "[fileio] fopen: %s -> %s (mode %s) %s\n", win_path, real, mode, f ? "ok" : "FAILED");
+    return f;
 }
 
 int uw_file_open_write(const char *win_path, int create_always) {
