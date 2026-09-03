@@ -83,6 +83,7 @@ short param_4;
           uVar5 = param_2 & 0xffff;
           uVar9 = iVar12 + (param_2 & 0xffff);
           iVar13 = 0;
+          // DAT_00204848 is only ever set by the mouse-cursor code (FUN_000584c0 sets it to 1 right before deliberately drawing with color 0x14, to save what's under the cursor), so colors 0x14/0x15 only mean save/restore during that specific sequence -- with DAT_00204848 at its default 0 (every other caller), they're ordinary palette colors and this whole block is skipped in favor of the flat fill below. There are 256 real palette entries (0x100, see the palette-conversion loop), so 20/21 aren't reserved from the palette's own perspective either.
           if (DAT_00204848 != 0) {
             if (DAT_000a85c0 == 0x14) {
               // SAVE mode: copy the rect from g_uw_framebuffer into the DAT_000879b8 scratch buffer.
