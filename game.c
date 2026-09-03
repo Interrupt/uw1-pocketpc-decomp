@@ -2,7 +2,7 @@
  * the OS message pump) and the title/main menu loop. Split out of uw.c
  * (the original monolithic decompile) once these functions' real roles
  * were confirmed. */
-#include "uw.h"
+#include "headers/game.h"
 
 
 

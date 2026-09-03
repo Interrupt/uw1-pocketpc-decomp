@@ -2,7 +2,7 @@
  * restore, and paletted-bitmap blitting into the game's internal
  * software framebuffer. Split out of uw.c (the original monolithic
  * decompile) once these functions' real roles were confirmed. */
-#include "uw.h"
+#include "headers/graphics.h"
 
 /* Scratch buffer for rect_fill_or_save_restore's save/restore modes --
  * only ever used within this function, so it stays local to this file

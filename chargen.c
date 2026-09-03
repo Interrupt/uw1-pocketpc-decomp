@@ -3,7 +3,7 @@
  * resource-loading setup, and the critical-section entry wrapper. Split
  * out of uw.c (the original monolithic decompile) once these functions'
  * real roles were confirmed. */
-#include "uw.h"
+#include "headers/chargen.h"
 
 
 

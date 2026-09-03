@@ -1,3 +1,6 @@
+#ifndef UW_H
+#define UW_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -456,13 +459,10 @@ void FUN_000113b4();
 undefined4 FUN_00011478();
 void FUN_000114e4();
 void FUN_0001156c();
-void set_draw_color();
 void FUN_000116a4();
 void FUN_000116dc();
-void rect_fill_or_save_restore();
 void FUN_00011b34();
 void FUN_00011c10();
-void bitmap_blit_to_framebuffer();
 void FUN_000120c8();
 void FUN_000122d4();
 void FUN_00012444();
@@ -652,9 +652,6 @@ void FUN_00023de8();
 undefined4 FUN_0002431c();
 uint FUN_0002454c();
 uint FUN_00024840();
-undefined4 character_generator_loop();
-int run_character_generator();
-undefined4 character_generator_entry();
 void FUN_000259c0();
 undefined4 FUN_00025a98();
 int FUN_00025b84();
@@ -1368,7 +1365,6 @@ bool FUN_0006a0c8();
 void FUN_0006a168();
 void FUN_0006a1c4();
 void FUN_0006a200();
-void main_menu_loop();
 int FUN_0006ac38();
 int FUN_0006af3c();
 undefined4 FUN_0006b178();
@@ -1526,7 +1522,6 @@ undefined4 FUN_00076a2c();
 undefined4 FUN_00076b24();
 undefined4 FUN_00076b8c();
 undefined4 FUN_00076e98();
-undefined4 app_main_loop();
 void FUN_000773ac();
 undefined4 FUN_00077408();
 undefined4 FUN_00077860();
@@ -1706,3 +1701,16 @@ undefined4 FUN_000824f0();
 #define _DAT_0023c5ac (*(uint*)&DAT_0023c5ac)
 #define _DAT_0023ce10 (*(uint*)&DAT_0023ce10)
 #define Ordinal_2005_exref ((void*)&Ordinal_2005)
+
+/* Declarations for the functions that used to live directly in this file
+ * but were split out into their own topic .c files this session -- moved
+ * to matching headers/*.h so those files (and anything else that only
+ * needs one topic's functions) can include just what they need. Included
+ * here too so anything that already includes uw.h keeps working
+ * unchanged. Safe against the circular #include "../uw.h" each of these
+ * does themselves, since UW_H is already defined by this point. */
+#include "headers/graphics.h"
+#include "headers/game.h"
+#include "headers/chargen.h"
+
+#endif /* UW_H */
