@@ -4,6 +4,7 @@
  * out of uw.c (the original monolithic decompile) once these functions'
  * real roles were confirmed. */
 #include "headers/chargen.h"
+#include "debug.h"
 
 
 
@@ -88,6 +89,11 @@ char *param_3;
   g_chargen_textfield_buf = auStack_4c;
   do {
     iVar12 = (int)sVar8;
+    // Fires once per chargen screen (sex/handedness/class/skill/portrait/
+    // difficulty/name/confirm are states 0-7, in that order) -- state is
+    // whatever the previous iteration's switch-case just advanced sVar8
+    // to (or reset it to 0 for, on a "back"/cancel).
+    DEBUG(TRACE, "[chargen] screen advancing to state=%d", iVar12);
     pcVar_rec = param_3 + iVar12 * 0x14;
     iVar4 = *(int *)(pcVar_rec + 6);
     pcVar_name = (char *)&DAT_000fb8f0 + iVar4;
@@ -465,9 +471,11 @@ undefined4 character_generator_start()
 
 {
   undefined4 uVar1;
-  
+
+  DEBUG(TRACE, "[chargen] character generation starting");
   FUN_000232ec(1);
   uVar1 = run_character_generator();
   FUN_0006e89c();
+  DEBUG(TRACE, "[chargen] character generation returning, result=%u", uVar1);
   return uVar1;
 }
