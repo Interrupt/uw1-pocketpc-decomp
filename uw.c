@@ -3979,6 +3979,7 @@ ushort *param_3;
   FUN_00040f34(param_1,param_2);
   Ordinal_1044(puVar3,param_3,0x1f400);
   iVar9 = 1;
+  // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = FUN_0002294c();
   do {
     uVar4 = Ordinal_2032(iVar9);
@@ -4042,6 +4043,7 @@ undefined2 * param_3;
   Ordinal_1044(puVar4,param_3,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
+  // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
   uint diag_t0 = FUN_0002294c();
   do {
     uVar5 = Ordinal_2032(iVar11);
