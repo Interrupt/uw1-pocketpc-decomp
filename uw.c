@@ -2697,6 +2697,18 @@ char s_font5x6i_sys_00086e98[] = "font5x6i.sys";
    this file -- truncating on this 64-bit host. */
 char *DAT_0023bf6c;
 ushort DAT_0023bf74;
+/* FUN_0006a0c8 (main menu button record populator) used to split each
+   loaded button bitmap's real pointer into 4 bytes and pack it directly
+   into DAT_0023bf6c's record array -- fine for a 32-bit pointer on the
+   original binary, but silently truncates a real 64-bit pointer here
+   (confirmed via ASAN: FUN_0006a200 dereferencing the reassembled
+   low-32-bits-only value, SEGV). Same "route the real pointer through a
+   dedicated global instead of packing it into an undersized field"
+   pattern as g_chargen_textfield_buf. Index formula (shared by
+   FUN_0006a0c8/FUN_0006a200) is (selected?1:0) + button_index*4 -- a
+   stride of 4 per button, not 2, so up to 4 buttons needs slots through
+   index 13 (1 + 3*4); sized generously to 16. */
+static char *g_menu_button_bitmaps[16];
 char s__DATA_CREDIT3_BYT_00086ea8[] = "\\DATA\\CREDIT3.BYT";
 char s__DATA_CREDIT2_BYT_00086ebc[] = "\\DATA\\CREDIT2.BYT";
 char s__DATA_CREDIT1_BYT_00086ed0[] = "\\DATA\\CREDIT1.BYT";
@@ -50047,30 +50059,29 @@ short param_2;
 
 
 
+// Postprocess callback for the main menu's "opbtn" (OPBTN.GR) resource load -- populates DAT_0023bf6c's per-button record table (bitmap pointer via g_menu_button_bitmaps, plus width/height) as each button-state bitmap finishes loading.
 bool FUN_0006a0c8(param_1,param_2,param_3)
-int param_1;
+char *param_1;
 int param_2;
 short param_3;
 
 {
   uint uVar1;
-  undefined1 *puVar2;
   int iVar3;
-  
+  int bmp_idx;
+
   uVar1 = (int)param_3 & 1;
-  iVar3 = param_1 + 5;
-  puVar2 = (undefined1 *)(DAT_0023bf6c + (uVar1 + ((int)param_3 >> 1) * 4) * 4);
-  *puVar2 = (char)iVar3;
-  puVar2[1] = (char)((uint)iVar3 >> 8);
-  puVar2[2] = (char)((uint)iVar3 >> 0x10);
-  puVar2[3] = (char)((uint)iVar3 >> 0x18);
+  iVar3 = (int)param_3 >> 1;
+  bmp_idx = uVar1 + iVar3 * 4;
+  if ((uint)bmp_idx < sizeof(g_menu_button_bitmaps) / sizeof(g_menu_button_bitmaps[0])) {
+    g_menu_button_bitmaps[bmp_idx] = param_1 + 5;
+  }
   if ((short)uVar1 == 0) {
-    iVar3 = DAT_0023bf6c + ((int)param_3 >> 1) * 0x10;
-    *(undefined1 *)(iVar3 + 0xc) = *(undefined1 *)(param_1 + 1);
-    *(undefined1 *)(iVar3 + 0xd) = 0;
-    iVar3 = DAT_0023bf6c + ((int)param_3 >> 1) * 0x10;
-    *(undefined1 *)(iVar3 + 0xe) = *(undefined1 *)(param_1 + 2);
-    *(undefined1 *)(iVar3 + 0xf) = 0;
+    char *rec = DAT_0023bf6c + iVar3 * 0x10;
+    rec[0xc] = param_1[1];
+    rec[0xd] = 0;
+    rec[0xe] = param_1[2];
+    rec[0xf] = 0;
   }
   return param_2 != 0;
 }
@@ -50142,8 +50153,15 @@ short param_4;
       iVar4 = 0;
       do {
         pcVar_rec = param_2 + iVar4 * 0x10;
+        /* Was reading the bitmap pointer back out of param_2's packed
+           4-byte record slot -- see g_menu_button_bitmaps' declaration
+           comment for why that's now routed through a dedicated array
+           instead (the packed slot only ever held a truncated 32-bit
+           pointer fragment on this host, not a real one). */
+        int bmp_idx = (uint)(iVar4 == param_4) + iVar4 * 4;
         bitmap_blit_to_framebuffer((int)*(short *)(pcVar_rec + 8),(int)*(short *)(pcVar_rec + 10),
-                     *(undefined4 *)(param_2 + ((uint)(iVar4 == param_4) + iVar4 * 4) * 4),
+                     (uint)bmp_idx < sizeof(g_menu_button_bitmaps) / sizeof(g_menu_button_bitmaps[0])
+                       ? g_menu_button_bitmaps[bmp_idx] : 0,
                      (int)*(short *)(pcVar_rec + 0xe),*(undefined2 *)(pcVar_rec + 0xc),0,0,1);
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
       } while (iVar4 < param_1);

@@ -266,14 +266,19 @@ undefined4 param_1;
       } while (iVar10 < 200);
       FUN_000570b4();
       if ((DAT_0023bf70 == 0) ||
-         /* Ghidra dropped the 5th argument (postprocess_cb) at this call
-            site -- FUN_000417b4 is K&R, so param_5 read whatever
-            garbage happened to be in that register and then called
-            through it as a function pointer (`(*param_5)(...)`),
-            crashing with a jump to an invalid address. Other sibling
-            call sites (e.g. FUN_00041a78) already use a literal 0 for
-            "no postprocessing needed", which is what's missing here. */
-         (iVar10 = FUN_000417b4(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,0), iVar10 == 0)) {
+         /* Was a literal 0 here (an earlier fix pass believed this
+            mirrored sibling call sites like FUN_00041a78's genuine
+            "no postprocessing needed" case) -- but FUN_0006a0c8 is
+            exactly the postprocess_cb this resource load needs: same
+            3-arg shape as chargen's LAB_000255d0 (see its comment near
+            DAT_000fb880), and it writes the per-button bitmap-pointer/
+            width/height fields FUN_0006a200 reads out of DAT_0023bf6c's
+            record table -- which is otherwise only ever zeroed
+            (local_82c's memset above), never populated. Same orphaned-
+            callback bug class as LAB_000255d0 was, just already
+            decompiled as a named function instead of staying raw
+            undecompiled ARM. */
+         (iVar10 = FUN_000417b4(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,&FUN_0006a0c8), iVar10 == 0)) {
         FUN_0003c3c8(0x300d);
       }
       if (local_838 != 3) {
