@@ -315,7 +315,27 @@ long Ordinal_464()
  * being a hardcoded 0 earlier this session. */
 long Ordinal_496(unsigned int ms)
 {
-    SDL_Delay(ms);
+    /* HACK: a single long SDL_Delay(ms) blocks this thread for the whole
+     * duration without ever pumping SDL's event queue, which on macOS
+     * (and likely other platforms) stops the window from actually
+     * compositing/repainting whatever was just SDL_RenderPresent()'d --
+     * it can look frozen/blank for the entire sleep instead of showing
+     * the frame (confirmed report: splash images not displaying during
+     * their now-real 1.5s dwell). Chunk the sleep and call
+     * SDL_PumpEvents() between pieces instead of one long blocking call
+     * -- this only lets the OS/SDL process its own event queue (window
+     * expose/repaint, etc.), it does NOT dispatch anything into the
+     * game's own input handling (that stays untouched, still driven by
+     * uw_pump_events() elsewhere), so this doesn't change game
+     * behavior, just keeps the window visually alive during a sleep. */
+    const unsigned int chunk_ms = 10;
+    unsigned int remaining = ms;
+    while (remaining > 0) {
+        unsigned int this_chunk = remaining < chunk_ms ? remaining : chunk_ms;
+        SDL_Delay(this_chunk);
+        SDL_PumpEvents();
+        remaining -= this_chunk;
+    }
     return 0;
 }
 
