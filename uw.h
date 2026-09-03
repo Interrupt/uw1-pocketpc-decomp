@@ -1,3 +1,6 @@
+#ifndef UW_H
+#define UW_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -91,6 +94,12 @@ typedef void *codeptr();
    calls this before its own definition later in the file -- see its
    definition, right after FUN_00076a2c, for why it exists. */
 void *uw_alloc_grtile();
+
+/* Forward declaration needed because main_menu_loop (now in game.c) takes
+   this LAB_ callback's address to pass to FUN_000417b4; its own
+   definition stays in uw.c (see LAB_000415b0/LAB_000416e8's matching
+   comment for what this callback family does). */
+void *LAB_0006a0ac();
 
 typedef union IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion, *PIMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion;
 
@@ -346,6 +355,101 @@ struct IMAGE_RESOURCE_DIRECTORY {
 
 
 
+/* Globals defined in uw.c but also used by functions that now live in
+   graphics.c (bitmap_blit_to_framebuffer, rect_fill_or_save_restore,
+   set_draw_color) -- extern'd here so both translation units see the same
+   storage. */
+extern void *g_uw_framebuffer;
+extern undefined2 DAT_0024ad60_backing[32768];
+#define DAT_0024ad60 DAT_0024ad60_backing[0]
+extern undefined2 DAT_000a85c0;
+extern undefined2 DAT_000a85c4;
+extern undefined2 DAT_000a85c8;
+extern undefined2 DAT_000842a4;
+extern undefined2 DAT_000842a8;
+extern int DAT_00204848;
+extern int DAT_00088960;
+/* Globals defined in uw.c but also used by functions that now live in
+   game.c (app_main_loop, main_menu_loop) -- extern'd here so both
+   translation units see the same storage. */
+extern undefined1 *DAT_00084298;
+extern byte *DAT_0008429c;
+extern undefined1 DAT_000857a0_backing[32768];
+#define DAT_000857a0 DAT_000857a0_backing[0]
+extern undefined2 DAT_000868d8;
+extern ushort *DAT_000876bc;
+extern short *DAT_000876c0;
+extern int DAT_000876c8;
+extern char *DAT_000879b0;
+extern char *DAT_000890a4;
+extern undefined2 DAT_00201b6c;
+extern int DAT_00201c98;
+extern char *DAT_0023bf6c;
+extern char *DAT_0023bf70;
+extern char *DAT_0023c210;
+extern int DAT_0023c214;
+extern ushort DAT_0023c448;
+extern char *DAT_0023c44c;
+extern undefined4 DAT_0023c540;
+extern undefined2 DAT_0023c59e;
+extern undefined2 DAT_0023c5a0;
+extern int DAT_0023c5b0;
+extern undefined4 DAT_0023c648;
+extern undefined4 DAT_0023c7a0;
+extern char *DAT_0023cca0;
+extern char *DAT_0023cca4;
+extern undefined1 DAT_0023cca8_backing[32768];
+#define DAT_0023cca8 DAT_0023cca8_backing[0]
+extern char *DAT_0023cef0;
+extern char *DAT_00248410;
+extern char *DAT_0024ad58;
+extern int DAT_0024af60;
+extern short DAT_0024af6c;
+extern int DAT_0024af74;
+extern byte *DAT_0024af78;
+extern byte *DAT_0024af7c;
+extern char s__DATA_CREDIT1_BYT_00086ed0[];
+extern char s__DATA_CREDIT2_BYT_00086ebc[];
+extern char s__DATA_CREDIT3_BYT_00086ea8[];
+extern char s__DATA_lev_ark_00085734[];
+extern char s__DATA_opscr_byt_00086eec[];
+extern char s__SAVE0_lev_ark_000842fc[];
+extern char s_FONT5X6P_SYS_00084e9c[];
+extern char s_FONTBIG_SYS_00085454[];
+extern char s_opbtn_00086ee4[];
+extern unsigned short u_Ultima_Under_World_00087690[];
+extern unsigned short u_UltimaUW_00087678[];
+/* Globals defined in uw.c but also used by functions that now live in
+   chargen.c (character_generator_start, run_character_generator,
+   character_generator_loop) -- extern'd here so both translation units
+   see the same storage. */
+extern char *DAT_00086df8;
+extern char *DAT_000fb858;
+extern undefined1 DAT_000fb860_backing[256];
+#define DAT_000fb860 DAT_000fb860_backing[0]
+extern undefined1 DAT_000fb8c4_backing[256];
+#define DAT_000fb8c4 DAT_000fb8c4_backing[0]
+extern undefined1 DAT_000fb8f0_backing[1680];
+#define DAT_000fb8f0 DAT_000fb8f0_backing[0]
+extern char *DAT_001005c4;
+extern char *DAT_001005c8;
+extern char *g_chargen_textfield_buf;
+/* LAB_000255b4/LAB_000255d0: orphaned callbacks Ghidra never recognized
+   as real functions (only reached indirectly, via addresses passed to
+   FUN_000417b4) -- their definitions stay in uw.c (see their own comment
+   there for the full recovery story), forward-declared here because
+   run_character_generator (chargen.c) takes their addresses. */
+char *LAB_000255b4();
+undefined4 LAB_000255d0();
+extern short DAT_001005c0;
+extern char s__DATA_CHARGEN_BYT_00084eac[];
+extern char s_FONTCHAR_SYS_00084ec0[];
+extern char s__DATA_chrgen_dat_00084ed0[];
+extern char s__DATA_skills_dat_00084ee4[];
+extern char s_chrbtns_00084ef8[];
+
+
+
 void FUN_00011000();
 void FUN_00011040();
 void FUN_00011060();
@@ -355,13 +459,10 @@ void FUN_000113b4();
 undefined4 FUN_00011478();
 void FUN_000114e4();
 void FUN_0001156c();
-void set_draw_color();
 void FUN_000116a4();
 void FUN_000116dc();
-void rect_fill_or_save_restore();
 void FUN_00011b34();
 void FUN_00011c10();
-void bitmap_blit_to_framebuffer();
 void FUN_000120c8();
 void FUN_000122d4();
 void FUN_00012444();
@@ -551,9 +652,6 @@ void FUN_00023de8();
 undefined4 FUN_0002431c();
 uint FUN_0002454c();
 uint FUN_00024840();
-undefined4 character_generator_loop();
-int FUN_00025608();
-undefined4 FUN_000259a0();
 void FUN_000259c0();
 undefined4 FUN_00025a98();
 int FUN_00025b84();
@@ -1267,7 +1365,6 @@ bool FUN_0006a0c8();
 void FUN_0006a168();
 void FUN_0006a1c4();
 void FUN_0006a200();
-void FUN_0006a3d8();
 int FUN_0006ac38();
 int FUN_0006af3c();
 undefined4 FUN_0006b178();
@@ -1425,7 +1522,6 @@ undefined4 FUN_00076a2c();
 undefined4 FUN_00076b24();
 undefined4 FUN_00076b8c();
 undefined4 FUN_00076e98();
-undefined4 FUN_00077004();
 void FUN_000773ac();
 undefined4 FUN_00077408();
 undefined4 FUN_00077860();
@@ -1605,3 +1701,16 @@ undefined4 FUN_000824f0();
 #define _DAT_0023c5ac (*(uint*)&DAT_0023c5ac)
 #define _DAT_0023ce10 (*(uint*)&DAT_0023ce10)
 #define Ordinal_2005_exref ((void*)&Ordinal_2005)
+
+/* Declarations for the functions that used to live directly in this file
+ * but were split out into their own topic .c files this session -- moved
+ * to matching headers/*.h so those files (and anything else that only
+ * needs one topic's functions) can include just what they need. Included
+ * here too so anything that already includes uw.h keeps working
+ * unchanged. Safe against the circular #include "../uw.h" each of these
+ * does themselves, since UW_H is already defined by this point. */
+#include "headers/graphics.h"
+#include "headers/game.h"
+#include "headers/chargen.h"
+
+#endif /* UW_H */
