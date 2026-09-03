@@ -1,5 +1,6 @@
 #include "ordinal_stubs.h"
 #include "file_io.h"
+#include "debug.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -315,6 +316,7 @@ long Ordinal_464()
  * being a hardcoded 0 earlier this session. */
 long Ordinal_496(unsigned int ms)
 {
+    DEBUG(TRACE, "[sleep] Ordinal_496 requested ms=%u", ms);
     /* HACK: a single long SDL_Delay(ms) blocks this thread for the whole
      * duration without ever pumping SDL's event queue, which on macOS
      * (and likely other platforms) stops the window from actually
