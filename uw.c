@@ -1,4 +1,5 @@
 #include "uw.h"
+#include "debug.h"
 #include <dlfcn.h>
 #include <stdarg.h>
 
@@ -13914,13 +13915,6 @@ undefined4 param_2;
               uVar10 = -uVar10 - 1;
               uVar12 = uVar10;
             }
-            /* Test-support diagnostic (see demo_click_female.txt): logs
-               the field's confirmed selection index whenever a click
-               actually confirms one, so scripted demo runs can verify
-               which item got picked without eyeballing a screenshot. */
-            if (uVar13 != 0 && getenv("UW_DIAG_MOUSE")) {
-              fprintf(stderr, "[chargen] click confirmed selection index=%u\n", uVar10);
-            }
           }
           else if (uVar6 == 0xd) {
             uVar13 = 1;
@@ -14000,6 +13994,22 @@ LAB_00024dd4:
       uVar6 = (uint)uVar14;
       uVar12 = uVar10;
     } while (uVar13 == 0);
+    /* Log every confirmed chargen button selection (arrow-key/ENTER
+       confirm or a click), so it's always visible which one fired --
+       see debug.h. param_1[6]==0 fields (plain text lists, e.g. sex/
+       class selection) carry their per-item label strings in the
+       DAT_000fb8f0 table indexed by selection; other field kinds
+       (icon/portrait lists) don't have a per-item text label, so just
+       report the index for those. *param_1 is the field's own overall
+       prompt label id (see FUN_00023de8's matching lookup). */
+    {
+      char *item_text = "";
+      if ((param_1[6] == 0) && (*(int *)(param_1 + 3) != 0)) {
+        item_text = FUN_0007863c(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + uVar10 * 2) | 0x400);
+      }
+      char *field_label = (*param_1 != 0) ? FUN_0007863c((int)*param_1 | 0x400) : "";
+      DEBUG(TRACE, "[chargen] button selected: index=%u text=\"%s\" label=\"%s\"", uVar10, item_text, field_label);
+    }
   }
   else {
     pcVar_str = FUN_0007863c(uVar6 | 0x400);
