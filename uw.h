@@ -416,6 +416,35 @@ extern char s_FONTBIG_SYS_00085454[];
 extern char s_opbtn_00086ee4[];
 extern unsigned short u_Ultima_Under_World_00087690[];
 extern unsigned short u_UltimaUW_00087678[];
+/* Globals defined in uw.c but also used by functions that now live in
+   chargen.c (character_generator_entry, run_character_generator,
+   character_generator_loop) -- extern'd here so both translation units
+   see the same storage. */
+extern char *DAT_00086df8;
+extern char *DAT_000fb858;
+extern undefined1 DAT_000fb860_backing[256];
+#define DAT_000fb860 DAT_000fb860_backing[0]
+extern undefined1 DAT_000fb8c4_backing[256];
+#define DAT_000fb8c4 DAT_000fb8c4_backing[0]
+extern undefined1 DAT_000fb8f0_backing[1680];
+#define DAT_000fb8f0 DAT_000fb8f0_backing[0]
+extern char *DAT_001005c4;
+extern char *DAT_001005c8;
+extern char *g_chargen_textfield_buf;
+/* LAB_000255b4/LAB_000255d0: orphaned callbacks Ghidra never recognized
+   as real functions (only reached indirectly, via addresses passed to
+   FUN_000417b4) -- their definitions stay in uw.c (see their own comment
+   there for the full recovery story), forward-declared here because
+   run_character_generator (chargen.c) takes their addresses. */
+char *LAB_000255b4();
+undefined4 LAB_000255d0();
+extern short DAT_001005c0;
+extern char s__DATA_CHARGEN_BYT_00084eac[];
+extern char s_FONTCHAR_SYS_00084ec0[];
+extern char s__DATA_chrgen_dat_00084ed0[];
+extern char s__DATA_skills_dat_00084ee4[];
+extern char s_chrbtns_00084ef8[];
+
 
 
 void FUN_00011000();
