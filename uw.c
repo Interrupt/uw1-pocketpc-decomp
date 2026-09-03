@@ -13914,6 +13914,13 @@ undefined4 param_2;
               uVar10 = -uVar10 - 1;
               uVar12 = uVar10;
             }
+            /* Test-support diagnostic (see demo_click_female.txt): logs
+               the field's confirmed selection index whenever a click
+               actually confirms one, so scripted demo runs can verify
+               which item got picked without eyeballing a screenshot. */
+            if (uVar13 != 0 && getenv("UW_DIAG_MOUSE")) {
+              fprintf(stderr, "[chargen] click confirmed selection index=%u\n", uVar10);
+            }
           }
           else if (uVar6 == 0xd) {
             uVar13 = 1;

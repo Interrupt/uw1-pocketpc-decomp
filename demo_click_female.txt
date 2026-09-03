@@ -1,0 +1,28 @@
+# Regression test for the chargen click-select path: confirms that
+# clicking "Female" on the sex-selection screen (the first character
+# generation page) picks item index 1 (0-based: 0=Male, 1=Female), not
+# just whatever the default/current selection happened to be.
+#
+# Run with UW_DIAG_MOUSE=1 so FUN_00024840's click-confirm diagnostic
+# (uw.c, "[chargen] click confirmed selection index=") prints the
+# actually-confirmed index to stderr for verification, e.g.:
+#   UW_DIAG_MOUSE=1 UW_DEMO_FILE=demo_click_female.txt UW_DEMO_DELAY_MS=200 \
+#     UW_DATA_DIR="$(pwd)/data" ./build/uw_dbg
+# Expect a line reading "[chargen] click confirmed selection index=1".
+#
+# Uses SDLDOWN/SDLUP (not SDLCLICK) to give the click a real multi-poll
+# gap between press and release, matching actual click timing -- see
+# gx_stub.c's g_mouse_button_held comment for why an instantaneous
+# down+up pair alone isn't representative here.
+
+# Title screen -> character generation (sex-selection is chargen's
+# first page).
+ENTER
+
+SCREENSHOT /tmp/demo_click_female_before.bmp
+
+# Click "Female" (window coordinates, 640x480 window).
+SDLDOWN 480 240
+SDLUP 480 240
+
+SCREENSHOT /tmp/demo_click_female_after.bmp
