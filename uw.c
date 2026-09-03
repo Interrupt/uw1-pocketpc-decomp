@@ -3979,6 +3979,7 @@ ushort *param_3;
   FUN_00040f34(param_1,param_2);
   Ordinal_1044(puVar3,param_3,0x1f400);
   iVar9 = 1;
+  uint diag_t0 = FUN_0002294c();
   do {
     uVar4 = Ordinal_2032(iVar9);
     uVar4 = Ordinal_2026(uVar4,0x3e000000);
@@ -4009,6 +4010,7 @@ ushort *param_3;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   FUN_00022f0c(1);
+  DEBUG(TRACE, "[fade] FUN_000122d4 total elapsed=%ums", FUN_0002294c() - diag_t0);
   Ordinal_1018(puVar3);
   return;
 }
@@ -14168,7 +14170,17 @@ int param_3;
     sVar3 = -3;
   }
   else {
-    puVar1 = (undefined *)((param_2 & 0xff) * 3 + iVar5 + 0x88d95);
+    /* Was `(undefined *)(... + 0x88d95)` -- a literal original-binary
+       address (0x88d95 = &DAT_00088d98's real address there, minus 3)
+       instead of real pointer arithmetic against the actual (relocated)
+       global -- same bug class as FUN_0006bde0's `-0x87020` fix and
+       run_character_generator's pcVar3 fix elsewhere this session.
+       Never exercised until Ordinal_535 (GetTickCount) stopped being a
+       hardcoded 0 (see its comment): this branch (param_3!=0) is only
+       reached from FUN_0006a168's periodic timer, which always saw
+       "0ms elapsed" and never fired before that fix. Confirmed via
+       ASan SEGV the moment it first ran for real. */
+    puVar1 = &DAT_00088d98 + (-3 + (param_2 & 0xff) * 3 + iVar5);
   }
   DAT_001005cc = *puVar1;
   iVar4 = 0;

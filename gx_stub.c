@@ -345,8 +345,25 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
         }
     }
     SDL_StartTextInput();
-    g_ren = SDL_CreateRenderer(g_win, -1, SDL_RENDERER_ACCELERATED);
+    /* VSYNC matters beyond just avoiding tearing here: several original
+     * routines (e.g. FUN_000122d4's fade-in-from-black transition) pace
+     * themselves purely by how long each GXEndDraw-equivalent present
+     * call naturally takes, with no explicit delay of their own -- real
+     * WinCE hardware's slow per-pixel math and real hardware blit made
+     * that implicitly visible (confirmed: FUN_000122d4's 8-step fade
+     * plus final restore pass completed in 0ms without this, i.e.
+     * instantly/imperceptibly, on modern hardware). Real display refresh
+     * pacing via vsync restores roughly the intended per-step timing
+     * without adding an artificial sleep/delay this decompile never had. */
+    g_ren = SDL_CreateRenderer(g_win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!g_ren) g_ren = SDL_CreateRenderer(g_win, -1, SDL_RENDERER_PRESENTVSYNC);
     if (!g_ren) g_ren = SDL_CreateRenderer(g_win, -1, 0);
+    {
+        SDL_RendererInfo info;
+        SDL_GetRendererInfo(g_ren, &info);
+        fprintf(stderr, "[gx] renderer=%s vsync=%s\n", info.name,
+                (info.flags & SDL_RENDERER_PRESENTVSYNC) ? "yes" : "no");
+    }
     SDL_RenderSetLogicalSize(g_ren, GX_W, GX_H);
     g_tex = SDL_CreateTexture(g_ren, SDL_PIXELFORMAT_RGB565,
                                SDL_TEXTUREACCESS_STREAMING, GX_W, GX_H);

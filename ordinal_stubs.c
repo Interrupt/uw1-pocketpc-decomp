@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <SDL.h>
 
 void uw_pump_events(void);
 unsigned int FUN_00077b2c(void *param_1, unsigned int param_2, unsigned int param_3);
@@ -324,9 +325,16 @@ long Ordinal_533()
     return 0;
 }
 
+/* GetTickCount-shaped: real elapsed milliseconds since startup. Was a
+ * hardcoded 0, meaning every FUN_0002294c() (this file's Ordinal_535()
+ * >> 2) call across the whole game always read "0 elapsed" -- silently
+ * breaking every timing check built on it, not just the one that
+ * exposed it (FUN_000122d4's fade-in-from-black transition measured
+ * 0ms end to end with this stubbed out, confirming the fade logic
+ * itself was intact and only the time source was missing). */
 long Ordinal_535()
 {
-    return 0;
+    return (long)SDL_GetTicks();
 }
 
 /* CloseHandle-shaped file-close, used ~49 times across uw.c (e.g.
