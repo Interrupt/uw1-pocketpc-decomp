@@ -38,7 +38,7 @@ void DEBUG_impl(DebugLevel level, const char *file, int line, const char *fmt, .
         return;
     }
 
-    fprintf(stderr, "[%s] %s:%d: ", level_name(level), file, line);
+    fprintf(stderr, "[%s] %s:%d ", level_name(level), file, line);
 
     va_list args;
     va_start(args, fmt);
