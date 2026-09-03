@@ -158,31 +158,27 @@ undefined4 param_1;
      DAT_0023bf6c and then read back through FUN_0006a200/FUN_0006af3c
      as an array of up to 4 (param_1) 0x10-byte-stride records (plus an
      overlapping 4-byte-stride array access) -- another undersized-local
-     table, confirmed via ASAN stack-buffer-overflow. Widened directly. */
+     table, confirmed via ASAN stack-buffer-overflow. Widened directly.
+
+     Ghidra also split the buffer's own first 0x40 bytes into 22 further
+     separate locals (local_828 down through local_7ee, originally named
+     for their individual stack offsets -0x828..-0x7ee -- each exactly
+     0x82c-that_offset bytes into local_82c) instead of recognizing them
+     as writes into this same array -- the classic "separate locals
+     relied on being contiguous" artifact (see the README). Their
+     offsets land EXACTLY on the first 4 button records' fields (4
+     records x 0x10 bytes = 0x40): each record is [4-byte bitmap-ptr
+     slot for unselected, 4-byte slot for selected (both now unused --
+     see g_menu_button_bitmaps), 2-byte X, 2-byte Y, 2-byte W
+     (placeholder, overwritten by FUN_0006a0c8), 2-byte H (same)].
+     Confirmed: their X/Y values (e.g. (0x62,0x52), (0x51,0x69),
+     (0x48,0x81), (0x55,0x9a)) are exactly the button position data
+     FUN_0006a200 reads back out at pcVar_rec+8/+10 -- previously always
+     zero because these locals never actually reached local_82c's
+     memory, which is why every button rendered stacked at (0,0). Merged
+     directly into offset-based writes into local_82c below instead of
+     keeping them as separate, non-aliasing scalars. */
   char local_82c [256];
-  undefined4 local_828;
-  undefined2 local_824;
-  undefined2 local_822;
-  undefined2 local_820;
-  undefined2 local_81e;
-  undefined4 local_81c;
-  undefined4 local_818;
-  undefined2 local_814;
-  undefined2 local_812;
-  undefined2 local_810;
-  undefined2 local_80e;
-  undefined4 local_80c;
-  undefined4 local_808;
-  undefined2 local_804;
-  undefined2 local_802;
-  undefined2 local_800;
-  undefined2 local_7fe;
-  undefined4 local_7fc;
-  undefined4 local_7f8;
-  undefined2 local_7f4;
-  undefined2 local_7f2;
-  undefined2 local_7f0;
-  undefined2 local_7ee;
   char acStack_7ec [264];
   char acStack_6e4 [264];
   char acStack_5dc [264];
@@ -190,33 +186,35 @@ undefined4 param_1;
   undefined1 auStack_434 [520];
   undefined1 auStack_22c [520];
   
-  local_824 = 0x62;
-  local_822 = 0x52;
-  local_814 = 0x51;
-  local_812 = 0x69;
-  local_804 = 0x48;
-  local_802 = 0x81;
-  local_7f4 = 0x55;
-  local_7f2 = 0x9a;
   /* local_82c is now a real array (see its declaration) -- zero the
      whole thing rather than just its first 4 bytes, since it's read
-     back as a multi-record table. */
+     back as a multi-record table. Every one of the offset writes below
+     must happen after this, not before -- see local_82c's declaration
+     comment for why they used to be separate, unmerged locals. */
   Ordinal_1047(local_82c,0,sizeof(local_82c));
-  local_828 = 0;
-  local_820 = 1;
-  local_81e = 1;
-  local_81c = 0;
-  local_818 = 0;
-  local_810 = 1;
-  local_80e = 1;
-  local_80c = 0;
-  local_808 = 0;
-  local_800 = 1;
-  local_7fe = 1;
-  local_7fc = 0;
-  local_7f8 = 0;
-  local_7f0 = 1;
-  local_7ee = 1;
+  /* Record 0 (button 0): bitmap-ptr slots (offsets 0/4) are now unused
+     -- see g_menu_button_bitmaps -- X/Y at 8/0xa, W/H placeholders
+     (overwritten by FUN_0006a0c8 once the real bitmap loads) at
+     0xc/0xe. */
+  *(short *)(local_82c + 8) = 0x62;
+  *(short *)(local_82c + 0xa) = 0x52;
+  *(short *)(local_82c + 0xc) = 1;
+  *(short *)(local_82c + 0xe) = 1;
+  /* Record 1 (button 1), same layout at +0x10. */
+  *(short *)(local_82c + 0x18) = 0x51;
+  *(short *)(local_82c + 0x1a) = 0x69;
+  *(short *)(local_82c + 0x1c) = 1;
+  *(short *)(local_82c + 0x1e) = 1;
+  /* Record 2 (button 2), same layout at +0x20. */
+  *(short *)(local_82c + 0x28) = 0x48;
+  *(short *)(local_82c + 0x2a) = 0x81;
+  *(short *)(local_82c + 0x2c) = 1;
+  *(short *)(local_82c + 0x2e) = 1;
+  /* Record 3 (button 3), same layout at +0x30. */
+  *(short *)(local_82c + 0x38) = 0x55;
+  *(short *)(local_82c + 0x3a) = 0x9a;
+  *(short *)(local_82c + 0x3c) = 1;
+  *(short *)(local_82c + 0x3e) = 1;
   FUN_00011000(0,200,0,0x140);
   DAT_0023bf6c = &local_82c;
   FUN_0006bde0(auStack_4d4,local_83c);
