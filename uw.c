@@ -796,7 +796,7 @@ static undefined2 DAT_00242010_backing[32768];
 #define DAT_00242010 DAT_00242010_backing[0]
 undefined2 DAT_00248418;
 short DAT_00084f10;
-int DAT_00089098;
+int g_force_flush;
 short DAT_0023c63c;
 undefined4 DAT_0023c638;
 static undefined DAT_00084e40_backing[8192];
@@ -12920,7 +12920,7 @@ void FUN_00022f0c()
   iVar10 = 0x140 - DAT_00088958;
   iVar11 = 0x140 - DAT_00088950;
   if (((0 < DAT_00084f10) ||
-      (((DAT_00202948 == 0 || (DAT_00089098 != 0)) && ((DAT_0023c63c == 0 || (DAT_00089098 != 0)))))
+      (((DAT_00202948 == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0)))))
       ) && ((DAT_0023cdc0 == 0x10 && (DAT_0023c430 = GXBeginDraw(), DAT_0023c430 != (void *)0x0))))
   {
     iVar6 = DAT_0023cdb8;
@@ -13788,17 +13788,17 @@ uint param_2;
     do {
       /* HACK: DAT_0023c63c (our click-hold flag -- see FUN_00077dd0's
          HACK comment) blocks FUN_00022f0c's actual screen flush the
-         whole time a button is held, unless DAT_00089098 is set (see
+         whole time a button is held, unless g_force_flush is set (see
          its gate at FUN_00022f0c's top, and FUN_0005857c's matching
-         use of DAT_00089098 around its own single draw). Without this,
+         use of g_force_flush around its own single draw). Without this,
          every per-iteration redraw here updated the software
          framebuffer but the screen never actually presented it until
          release -- confirmed via testing (drag/hover highlight updates
          were invisible until mouse-up). Force the flush the same way
          FUN_0005857c does. */
-      DAT_00089098 = 1;
+      g_force_flush = 1;
       FUN_00022f0c(1);
-      DAT_00089098 = 0;
+      g_force_flush = 0;
       if (((short)uVar13 != (short)param_2) && ((short)uVar13 != -1)) {
         FUN_00057118();
         FUN_0002431c(param_1,uVar13 & 0xff,param_2 & 0xff);
@@ -41800,13 +41800,13 @@ void FUN_0005857c()
   FUN_000584c0();
 LAB_00058674:
   DAT_00088960 = 1;
-  DAT_00089098 = 1;
+  g_force_flush = 1;
   FUN_00040b0c((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
                ((int)g_mouse_y - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
                DAT_00204784);
   FUN_00022f0c(1);
   DAT_00088960 = 0;
-  DAT_00089098 = 0;
+  g_force_flush = 0;
   set_draw_color(0);
   return;
 }
