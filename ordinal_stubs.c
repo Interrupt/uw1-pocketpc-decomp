@@ -305,8 +305,17 @@ long Ordinal_464()
     return 0;
 }
 
-long Ordinal_496()
+/* Sleep-shaped: real elapsed-ms delay. Was a hardcoded no-op, so every
+ * `Ordinal_496(ms)` call across the game -- e.g. the splash-screen
+ * sequence's 1.5s dwell between each image (FUN_0003b820) and
+ * app_main_loop's own startup 2000ms pause -- did nothing at all.
+ * Confirmed as the real cause of splash images blitting past instantly
+ * ("flashes") instead of actually being shown for a moment: this stub,
+ * not a missing fade, same root-cause class as Ordinal_535 (GetTickCount)
+ * being a hardcoded 0 earlier this session. */
+long Ordinal_496(unsigned int ms)
 {
+    SDL_Delay(ms);
     return 0;
 }
 

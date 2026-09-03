@@ -4010,7 +4010,7 @@ ushort *param_3;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   FUN_00022f0c(1);
-  DEBUG(TRACE, "[fade] FUN_000122d4 total elapsed=%ums", FUN_0002294c() - diag_t0);
+  DEBUG(TRACE, "[fade] FUN_000122d4 (fade-in) total elapsed=%ums", FUN_0002294c() - diag_t0);
   Ordinal_1018(puVar3);
   return;
 }
@@ -4042,6 +4042,7 @@ undefined2 * param_3;
   Ordinal_1044(puVar4,param_3,0x1f400);
   iVar11 = 7;
   iVar10 = 64000;
+  uint diag_t0 = FUN_0002294c();
   do {
     uVar5 = Ordinal_2032(iVar11);
     uVar5 = Ordinal_2026(uVar5,0x3e000000);
@@ -4071,6 +4072,7 @@ undefined2 * param_3;
     param_3 = param_3 + 1;
   }
   FUN_00022f0c(1);
+  DEBUG(TRACE, "[fade] FUN_00012444 (fade-out) total elapsed=%ums", FUN_0002294c() - diag_t0);
   Ordinal_1018(puVar4);
   return;
 }
