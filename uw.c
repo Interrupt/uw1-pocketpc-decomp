@@ -11,7 +11,7 @@ undefined DAT_0023c5ac;
 /* Ghidra modeled a single 32-bit pointer, stored straddling the byte
    ranges of two separately-declared globals (_DAT_0023c5ac's upper 16
    bits + DAT_0023c5b0's lower 16 bits -- see the CONCAT22 write site in
-   FUN_00077004 and every read site's "_DAT_0023c5ac >> 0x10 |
+   app_main_loop and every read site's "_DAT_0023c5ac >> 0x10 |
    DAT_0023c5b0 << 0x10" reconstruction), because that's how the packed
    bytes landed in the original 32-bit binary's fixed memory layout.
    Neither underlying global has any other independent use in this
@@ -843,7 +843,7 @@ static undefined1 DAT_000fb8f0_backing[1680];
 int DAT_00201c98;
 /* Ghidra's auto-analysis never recognized LAB_000255b4/LAB_000255d0 as
    real functions -- they're only reached indirectly (passed as callback
-   pointers to FUN_000417b4 at FUN_00025608's call site below), so no
+   pointers to FUN_000417b4 at run_character_generator's call site below), so no
    `bl` ever pointed at them for the analyzer to follow, and they were
    left as raw undecompiled ARM code, previously stubbed here as no-ops.
    That silently made DAT_000fb858/DAT_000fb880 stay permanently
@@ -2676,7 +2676,7 @@ short DAT_0023bf40;
 undefined DAT_00086e87;
 int DAT_0024af8c;
 char s_font5x6i_sys_00086e98[] = "font5x6i.sys";
-/* Was `int` despite holding a real stack address (FUN_0006a3d8:
+/* Was `int` despite holding a real stack address (main_menu_loop:
    `DAT_0023bf6c = &local_82c;`) used in pointer arithmetic throughout
    this file -- truncating on this 64-bit host. */
 char *DAT_0023bf6c;
@@ -2686,7 +2686,7 @@ char s__DATA_CREDIT2_BYT_00086ebc[] = "\\DATA\\CREDIT2.BYT";
 char s__DATA_CREDIT1_BYT_00086ed0[] = "\\DATA\\CREDIT1.BYT";
 char s_opbtn_00086ee4[] = "opbtn";
 char s__DATA_opscr_byt_00086eec[] = "\\DATA\\opscr.byt";
-/* Was `int` despite holding a real malloc'd pointer (FUN_0006a3d8:
+/* Was `int` despite holding a real malloc'd pointer (main_menu_loop:
    `DAT_0023bf70 = iVar4;` where iVar4 = Ordinal_1041(0x10000)), used in
    pointer arithmetic (`iVar9 + DAT_0023bf70`) -- truncating on this
    64-bit host. */
@@ -3752,6 +3752,7 @@ short param_4;
           iVar13 = 0;
           if (DAT_00204848 != 0) {
             if (DAT_000a85c0 == 0x14) {
+              // SAVE mode: copy the rect from g_uw_framebuffer into the DAT_000879b8 scratch buffer.
               if ((uVar9 & 0xffff) <= uVar5) {
                 return;
               }
@@ -3781,6 +3782,7 @@ short param_4;
               } while( true );
             }
             if (DAT_000a85c0 == 0x15) {
+              // RESTORE mode: copy the rect back from the DAT_000879b8 scratch buffer into g_uw_framebuffer.
               if ((uVar9 & 0xffff) <= uVar5) {
                 return;
               }
@@ -3811,6 +3813,7 @@ short param_4;
             }
           }
           if (uVar5 < (uVar9 & 0xffff)) {
+            // FILL mode (default -- reached whenever save/restore isn't active): flood the rect with the current draw color.
             iVar13 = uVar5 * 0x140;
             do {
               if (63999 < iVar13) {
@@ -13851,7 +13854,7 @@ short * param_1;
         if (param_1[6] == 0) {
           /* param_1+3 (byte offset +6 in the record) holds a relative
              offset from &DAT_000fb8f0, not an absolute pointer -- see
-             the write site in FUN_00025608. Reconstruct before use. */
+             the write site in run_character_generator. Reconstruct before use. */
           uVar8 = FUN_0007863c(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + local_28 * 2) | 0x400);
           sVar5 = FUN_000112a0(uVar8);
           iVar9 = (int)sVar7 - (int)sVar5;
@@ -14366,7 +14369,7 @@ char *param_3;
   int iVar4;
   /* iVar4 doubles as the character record's name-string pointer field
      (read from pcVar_rec+6, a relative offset from &DAT_000fb8f0 --
-     see the write site in FUN_00025608 and FUN_00023de8's matching
+     see the write site in run_character_generator and FUN_00023de8's matching
      read-site comments) early in each state, and a plain screen-
      coordinate int in case 4 later -- mutually exclusive, but the
      pointer role can't just reuse `iVar4 + base` arithmetic since it's
@@ -14652,7 +14655,7 @@ LAB_00025468:
 
 
 // Loads CHRGEN.DAT/CHARGEN.BYT/fonts/palette, builds the per-field record array, and drives character_generator_loop's state machine.
-int FUN_00025608()
+int run_character_generator()
 
 {
   char stack0xffdc3230_buf [256];
@@ -14806,14 +14809,14 @@ int FUN_00025608()
 
 
 
-// Thin wrapper that enters/exits a critical section around FUN_00025608 (the character-generation entry point).
-undefined4 FUN_000259a0()
+// Thin wrapper that enters/exits a critical section around run_character_generator.
+undefined4 character_generator_entry()
 
 {
   undefined4 uVar1;
   
   FUN_000232ec(1);
-  uVar1 = FUN_00025608();
+  uVar1 = run_character_generator();
   FUN_0006e89c();
   return uVar1;
 }
@@ -25999,7 +26002,7 @@ short param_1;
   FUN_0003bee4();
   Ordinal_1044(auStack_31c,&DAT_00088d98,0x300);
   FUN_00040f64(auStack_31c,2);
-  FUN_0006a3d8(0);
+  main_menu_loop(0);
   DAT_00201c98 = 1;
   DAT_00201b60 = (undefined2)(1 << ((int)sVar1 & 0xffU));
   DAT_00201b64 = sVar1;
@@ -50870,7 +50873,8 @@ short param_4;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0006a3d8(param_1)
+// Title/main menu loop: builds the menu layout, dispatches on the selected option (0=continue?, 1=new game -> character_generator_loop, 2=show CREDIT1/2/3.BYT credits screens, 3=load a saved game), looping back to the menu until a game session actually starts.
+void main_menu_loop(param_1)
 undefined4 param_1;
 
 {
@@ -51051,7 +51055,7 @@ undefined4 param_1;
     else if (local_838 == 1) {
       DAT_0024af74 = 1;
       FUN_00012444(0,0,g_uw_framebuffer,200);
-      iVar4 = FUN_000259a0();
+      iVar4 = character_generator_entry();
       if (iVar4 != 0) {
         Ordinal_1047(acStack_6e4,0,0x104);
         pcVar5 = &DAT_0023cca8;
@@ -58670,7 +58674,8 @@ short * param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-undefined4 FUN_00077004(param_1,param_2,param_3,param_4)
+// WinMain's real body: single-instance mutex check, window class/window creation, framebuffer + subsystem init, shows the main menu once, then runs the PeekMessage/Translate/Dispatch message pump until quit.
+undefined4 app_main_loop(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -58736,7 +58741,7 @@ undefined4 param_4;
       FUN_0003b820();
       FUN_0001dd2c();
       FUN_0003bb60();
-      FUN_0006a3d8(1);
+      main_menu_loop(1);
       DAT_00201c98 = 1;
       while (DAT_00201b6c != 0) {
         if (DAT_000876c8 == 0) {
@@ -65263,7 +65268,7 @@ void entry(undefined4 param_1,undefined4 param_2,undefined4 param_3,undefined4 p
 
 {
   FUN_00082328();
-  FUN_00077004(param_1,param_2,param_3,param_4);
+  app_main_loop(param_1,param_2,param_3,param_4);
   FUN_00082388();
   return;
 }
