@@ -97,6 +97,27 @@ static int g_mouse_event_pending = 0;
 static int g_mouseup_deferred = 0;
 static int g_mouseup_deferred_lparam = 0;
 
+/* True from a dispatched button-down until the (possibly still-deferred)
+ * matching button-up actually dispatches. See its use at the bottom of
+ * uw_pump_events for why this is needed even with g_mouseup_deferred
+ * above: a *real* held click (any actual wall-clock gap between press
+ * and release, which is every real click) means several poll calls
+ * happen while the button is down but nothing NEW has arrived from SDL.
+ * Ordinal_864/FUN_000579e4 treat "no new message this call" as "no
+ * message at all" and return early without ever reading DAT_0023c448 or
+ * calling poll_mouse_event() -- so DAT_0023c63c (still 1, genuinely
+ * held) never even gets checked, and character_generator_touch_select's
+ * position-check loop (gated on seeing a positive code from that same
+ * poll chain) never runs even once. Confirmed via diagnostics: a click
+ * with a real hold duration confirmed the current selection on the very
+ * first poll after button-down, before release ever happened. Keeping
+ * g_mouse_event_pending true for every poll while the button is
+ * physically down (not just the instant a new SDL event arrives) fixes
+ * this by making poll_mouse_event() get consulted continuously, the
+ * same way a real WinCE input driver would keep reporting a held
+ * touch. */
+static int g_mouse_button_held = 0;
+
 static int translate_vk(SDL_Keycode sym) {
     switch (sym) {
         case SDLK_UP: return VK_UP;
@@ -122,6 +143,7 @@ void uw_pump_events(void) {
          * held back last call now, one full poll cycle after the
          * matching button-down. */
         g_mouseup_deferred = 0;
+        g_mouse_button_held = 0;
         g_mouse_event_pending = 1;
         FUN_00077dd0(0, 0x202u, 0, g_mouseup_deferred_lparam);
         return;
@@ -267,6 +289,9 @@ void uw_pump_events(void) {
                     g_mouse_event_pending = 1;
                     return;
                 }
+                if (ev.type == SDL_MOUSEBUTTONDOWN) {
+                    g_mouse_button_held = 1;
+                }
                 g_mouse_event_pending = 1;
                 FUN_00077dd0(0, msg, 0, lparam);
                 return;
@@ -278,6 +303,13 @@ void uw_pump_events(void) {
                     FUN_00077b2c(0, 8, 0);
                 break;
         }
+    }
+
+    /* No new SDL event this call -- see g_mouse_button_held's comment
+     * for why we still need to signal "a message is pending" here
+     * whenever the button remains physically held. */
+    if (g_mouse_button_held) {
+        g_mouse_event_pending = 1;
     }
 }
 
@@ -329,17 +361,22 @@ int uw_take_mouse_event_pending(void) {
     return had;
 }
 
-int uw_inject_mouse_click(int window_x, int window_y) {
+int uw_inject_mouse_down(int window_x, int window_y) {
     /* For scripted/unattended testing: warps the real OS cursor into the
      * window at the given point (window points, not logical/portrait
-     * coordinates) then pushes genuine SDL_MOUSEBUTTONDOWN/UP events, so
+     * coordinates) then pushes a genuine SDL_MOUSEBUTTONDOWN event, so
      * this exercises the exact same code path a real click does --
      * unlike demomode's CLICK command, which calls FUN_00077dd0 directly
      * and bypasses uw_pump_events (and therefore g_mouse_event_pending)
      * entirely. gx_stub.c's own mouse handling reads the cursor position
      * via SDL_GetGlobalMouseState() (see its HiDPI-workaround comment),
      * not the event's own x/y fields, so the warp is what actually
-     * controls where the click lands. */
+     * controls where the click lands. Split from the button-up half (see
+     * uw_inject_mouse_up) so tests can insert a real multi-poll gap
+     * between them, matching how an actual held click behaves -- a
+     * same-instant down+up pair hides bugs that only show up once
+     * genuine wall-clock time (and therefore multiple uw_pump_events()
+     * calls with nothing new queued in between) separates the two. */
     if (!g_win) return 0;
     SDL_WarpMouseInWindow(g_win, window_x, window_y);
     SDL_PumpEvents();
@@ -349,6 +386,14 @@ int uw_inject_mouse_click(int window_x, int window_y) {
     down.button.x = window_x;
     down.button.y = window_y;
     SDL_PushEvent(&down);
+    return 1;
+}
+
+int uw_inject_mouse_up(int window_x, int window_y) {
+    /* See uw_inject_mouse_down's comment. */
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
     SDL_Event up = {0};
     up.type = SDL_MOUSEBUTTONUP;
     up.button.button = SDL_BUTTON_LEFT;
@@ -356,6 +401,14 @@ int uw_inject_mouse_click(int window_x, int window_y) {
     up.button.y = window_y;
     SDL_PushEvent(&up);
     return 1;
+}
+
+int uw_inject_mouse_click(int window_x, int window_y) {
+    /* Instantaneous down+up, both already queued before the game ever
+     * polls -- see uw_inject_mouse_down's comment for why that's not
+     * fully representative of a real click's timing. */
+    if (!uw_inject_mouse_down(window_x, window_y)) return 0;
+    return uw_inject_mouse_up(window_x, window_y);
 }
 
 int uw_save_screenshot(const char *path) {

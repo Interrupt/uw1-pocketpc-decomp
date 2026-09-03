@@ -176,6 +176,28 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strncasecmp(p, "SDLDOWN ", 8) == 0) {
+        /* SDLDOWN/SDLUP <window_x> <window_y> -- split halves of
+         * SDLCLICK, for testing a click with a real multi-tick gap
+         * between button-down and button-up (matching an actual held
+         * click's timing) rather than both queued in the same instant. */
+        int wx = 0, wy = 0;
+        sscanf(p + 8, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLDOWN window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_down(wx, wy);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLUP ", 6) == 0) {
+        int wx = 0, wy = 0;
+        sscanf(p + 6, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLUP window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_up(wx, wy);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     if (strncasecmp(p, "SCREENSHOT ", 11) == 0) {
         const char *path = p + 11;
         uw_save_screenshot(path);
