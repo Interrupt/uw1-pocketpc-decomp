@@ -3,6 +3,7 @@
  * software framebuffer. Split out of uw.c (the original monolithic
  * decompile) once these functions' real roles were confirmed. */
 #include "headers/graphics.h"
+#include "debug.h"
 
 /* Scratch buffer for rect_fill_or_save_restore's save/restore modes --
  * only ever used within this function, so it stays local to this file
@@ -17,6 +18,7 @@ void set_draw_color(param_1)
 undefined2 param_1;
 
 {
+  DEBUG(TRACE, "[graphics] set draw color to %u", param_1);
   DAT_000a85c0 = param_1;
   return;
 }
@@ -48,6 +50,8 @@ short param_4;
   int iVar13;
   int iVar14;
   int iVar15;
+  
+  DEBUG(TRACE, "[graphics] rect_fill_or_save_restore(%u,%u,%u,%u)", param_1, param_2, param_3, param_4);
   
   iVar14 = (int)(short)param_1;
   iVar13 = (param_3 - iVar14) * 0x10000;
@@ -205,6 +209,8 @@ short param_7;
      accumulator reconstructs a moving source-row address from it each
      iteration, so it needs to stay a full-width pointer-sized value. */
   intptr_t local_34;
+  
+  DEBUG(TRACE, "[graphics] bitmap_blit_to_framebuffer(%u,%u,%u,%u,%u,%u,%u)", param_1, param_2, param_3, param_4, param_5, param_6, param_7);
 
   sVar13 = 0;
   iVar11 = (int)param_6;
