@@ -13747,7 +13747,7 @@ uint param_2;
   int local_34;
   int local_30;
   uint local_4;
-  
+
   sVar4 = *param_1;
   /* Same DAT_000fb880-is-never-written underflow guard as
      FUN_00023de8 above -- see its comment. */
@@ -58143,6 +58143,16 @@ int param_4;
       if ((DAT_002020c0 != 0) || (DAT_002020c4 != 0)) {
         DAT_00204844 = 2;
       }
+      // HACK: same dead-plumbing story as DAT_000876c4 above -- FUN_00058738
+      // (the source of chargen's touch-select event codes 1-3) only ever
+      // returns nonzero via DAT_0023c63c or DAT_002506aa/ab, and all three
+      // are confirmed via Ghidra xrefs to have zero writers anywhere in the
+      // real binary, so character_generator_touch_select is unreachable
+      // there regardless of cursor tracking. Setting it here (outside the
+      // on-screen-keyboard strip, so it doesn't interfere with WM_CHAR
+      // dispatch during name entry) is what actually lets a click on a
+      // chargen list button register; not original behavior.
+      DAT_0023c63c = 1;
     }
   }
   if (param_2 == 0x202) {
@@ -58152,6 +58162,7 @@ int param_4;
     }
     *DAT_000876bc = 0;
     *DAT_000876c0 = 0;
+    DAT_0023c63c = 0;
   }
   return 0;
 }
