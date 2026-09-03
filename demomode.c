@@ -7,6 +7,10 @@
  *                    directly in portrait "hardware" framebuffer
  *                    coordinates, bypassing gx_stub.c's window->portrait
  *                    transform (see FUN_00077dd0's comment in uw.c)
+ *   SDLCLICK <window_x> <window_y>  -- warps the real cursor and pushes
+ *                    genuine SDL mouse events, exercising the full
+ *                    uw_pump_events() path (unlike CLICK above, which
+ *                    bypasses it entirely)
  *   SCREENSHOT <path>  -- saves the current window contents (post-
  *                    rotation, what's actually on screen) as a BMP,
  *                    so a scripted run -- or Claude -- can see what a
@@ -154,6 +158,20 @@ void demomode_pump(void) {
         int lparam = (py << 16) | (px & 0xffff);
         FUN_00077dd0(0, 0x201u, 0, lparam);
         FUN_00077dd0(0, 0x202u, 0, lparam);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLCLICK ", 9) == 0) {
+        /* SDLCLICK <window_x> <window_y> -- warps the real cursor and
+         * pushes genuine SDL mouse events (via uw_inject_mouse_click),
+         * so unlike CLICK above this exercises the actual
+         * uw_pump_events() path end to end, including
+         * g_mouse_event_pending/Ordinal_864. */
+        int wx = 0, wy = 0;
+        sscanf(p + 9, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLCLICK window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_click(wx, wy);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

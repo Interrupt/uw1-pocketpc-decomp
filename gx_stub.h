@@ -19,4 +19,19 @@ int GXResume(void);
    without a human manually taking one. */
 int uw_save_screenshot(const char *path);
 
+/* Returns 1 and clears the flag if a mouse event (move/click) was
+   processed since the last call, 0 otherwise. One-shot "was there a
+   pending mouse message" signal for Ordinal_864 (PeekMessage) -- see its
+   comment in ordinal_stubs.c for why this is needed alongside
+   DAT_0023c448. */
+int uw_take_mouse_event_pending(void);
+
+/* For scripted/unattended testing: warps the real cursor to (window_x,
+   window_y) (SDL window points) and pushes genuine SDL_MOUSEBUTTONDOWN/UP
+   events, so the click flows through the exact same path a real mouse
+   click does (unlike demomode's CLICK command, which bypasses
+   uw_pump_events entirely). Returns 1 on success, 0 if there's no window
+   yet. */
+int uw_inject_mouse_click(int window_x, int window_y);
+
 #endif

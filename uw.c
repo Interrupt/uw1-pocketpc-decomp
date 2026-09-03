@@ -78,7 +78,18 @@ undefined *PTR_Ordinal_2005_0008403c;
 undefined *PTR_Ordinal_2015_00084008;
 undefined *PTR_Ordinal_2023_0008402c;
 undefined *PTR_Ordinal_2051_00084028;
-undefined4 DAT_000b5638;
+/* Ghidra only saw pointer-walking writes (FUN_00014294) and an indexed
+   read (sVar7 clamped to 0x9f, i.e. 160 entries -- see its use below), so
+   it declared this as a lone scalar instead of the real 160-entry
+   distance/lighting falloff table. That undersizing let FUN_00014294's
+   fill loop silently scribble past it into whatever the compiler placed
+   next in .bss (confirmed via `nm`: DAT_000bbef8 landed 28 bytes later,
+   exactly iteration 7 of the loop) -- invisible to ASan because a
+   non-static tentative definition like `undefined4 DAT_000b5638;` gets
+   common linkage, and Clang's ASan cannot redzone-instrument common
+   symbols. */
+static undefined4 DAT_000b5638_backing[160];
+#define DAT_000b5638 DAT_000b5638_backing[0]
 char DAT_000842b0;
 undefined *PTR_Ordinal_2028_00084044;
 undefined *PTR_Ordinal_2038_00084038;
@@ -1659,8 +1670,8 @@ undefined4 DAT_002020ec;
 code *DAT_0023b4f4;
 static undefined1 DAT_0023b676_backing[65536];
 #define DAT_0023b676 DAT_0023b676_backing[0]
-short DAT_00086964;
-short DAT_00086960;
+short g_mouse_y;
+short g_mouse_x;
 short DAT_002020ac;
 char s_You_see_000858fc[] = "You_see";
 static undefined1 DAT_0023ad58_backing[65536];
@@ -13710,7 +13721,7 @@ byte param_3;
 
 
 // Translates a touch/shortcut-key position into a selected item index for the current chargen field.
-uint FUN_0002454c(param_1,param_2)
+uint character_generator_touch_select(param_1,param_2)
 short * param_1;
 uint param_2;
 
@@ -13895,7 +13906,7 @@ undefined4 param_2;
         if (uVar6 == 0x8f) goto LAB_00024d54;
         if (0 < (int)uVar6) {
           if ((int)uVar6 < 4) {
-            uVar10 = FUN_0002454c(param_1,uVar10);
+            uVar10 = character_generator_touch_select(param_1,uVar10);
             uVar6 = (uint)(short)uVar10;
             uVar13 = (uint)(uVar6 < 0x80000000);
             uVar12 = uVar10;
@@ -26703,7 +26714,7 @@ ushort *FUN_0003ec00()
   FUN_0005bac0();
   iVar2 = 0;
   DAT_002020ac = 0;
-  bVar1 = *(byte *)(DAT_00086964 * 0x140 + (int)DAT_00086960 + DAT_0023cca0);
+  bVar1 = *(byte *)(g_mouse_y * 0x140 + (int)g_mouse_x + DAT_0023cca0);
   uVar4 = (uint)bVar1;
   if ((uVar4 == 0) || (DAT_0023b830 <= uVar4)) {
     if ((0xbf < uVar4) && (uVar4 < 0xfb)) {
@@ -40838,9 +40849,9 @@ int FUN_00056fe8()
   iVar1 = 0;
   if (DAT_00204844 != 0) {
     set_draw_color(0x15);
-    rect_fill_or_save_restore(DAT_00086960 - DAT_0020471c,DAT_00086964 - DAT_00204748,
-                 ((int)DAT_00204784 - (int)DAT_0020471c) + (int)DAT_00086960 + 1,
-                 ((int)DAT_002047a4 - (int)DAT_00204748) + (int)DAT_00086964 + 1);
+    rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
+                 ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
+                 ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
     FUN_00022f0c(1);
     DAT_00204848 = 0;
     iVar1 = DAT_00204844;
@@ -40927,14 +40938,14 @@ void FUN_0005721c()
   int iVar7;
   
   iVar3 = (int)DAT_0020479c;
-  iVar4 = (((int)DAT_00086960 - (int)DAT_00204784) + (int)DAT_0020471c) * 0x10000 >> 0x10;
+  iVar4 = (((int)g_mouse_x - (int)DAT_00204784) + (int)DAT_0020471c) * 0x10000 >> 0x10;
   if ((iVar4 <= iVar3 + DAT_00204798) &&
-     (iVar5 = (((int)DAT_00086960 - (int)DAT_0020471c) + (int)DAT_00204784) * 0x10000 >> 0x10,
+     (iVar5 = (((int)g_mouse_x - (int)DAT_0020471c) + (int)DAT_00204784) * 0x10000 >> 0x10,
      iVar3 <= iVar5)) {
-    iVar6 = (((int)DAT_00086964 - (int)DAT_002047a4) + (int)DAT_00204748) * 0x10000 >> 0x10;
+    iVar6 = (((int)g_mouse_y - (int)DAT_002047a4) + (int)DAT_00204748) * 0x10000 >> 0x10;
     iVar7 = (int)DAT_002047a0;
     if ((iVar6 <= iVar7 + DAT_00204790) &&
-       (iVar1 = (((int)DAT_00086964 - (int)DAT_00204748) + (int)DAT_002047a4) * 0x10000 >> 0x10,
+       (iVar1 = (((int)g_mouse_y - (int)DAT_00204748) + (int)DAT_002047a4) * 0x10000 >> 0x10,
        iVar7 <= iVar1)) {
       if ((((iVar3 < iVar4) && (iVar5 < iVar3 + DAT_00204798)) && (iVar7 < iVar6)) &&
          (iVar1 < iVar7 + DAT_00204790)) {
@@ -41002,8 +41013,8 @@ undefined2 * param_1;
 undefined2 * param_2;
 
 {
-  *param_1 = DAT_00086960;
-  *param_2 = DAT_00086964;
+  *param_1 = g_mouse_x;
+  *param_2 = g_mouse_y;
   return;
 }
 
@@ -41017,8 +41028,8 @@ undefined2 * param_2;
   undefined2 uVar1;
   
   if (DAT_0020484c == 0) {
-    *param_1 = DAT_00086960;
-    uVar1 = DAT_00086964;
+    *param_1 = g_mouse_x;
+    uVar1 = g_mouse_y;
   }
   else {
     *param_1 = DAT_0008696a;
@@ -41056,8 +41067,8 @@ undefined2 param_2;
 {
   FUN_00057118();
   FUN_00057e54();
-  DAT_00086960 = param_1;
-  DAT_00086964 = param_2;
+  g_mouse_x = param_1;
+  g_mouse_y = param_2;
   FUN_000570b4();
   return;
 }
@@ -41101,11 +41112,11 @@ int param_1;
     }
     FUN_00057904(1);
     FUN_00058734();
-    FUN_00057ff0();
+    update_mouse_state();
   }
   if ((DAT_0008696e == -1) && (sVar2 = FUN_00058738(), sVar2 != 0)) {
-    DAT_0008696a = DAT_00086960;
-    DAT_0008696c = DAT_00086964;
+    DAT_0008696a = g_mouse_x;
+    DAT_0008696c = g_mouse_y;
     DAT_00086968 = sVar2;
   }
   return;
@@ -41139,7 +41150,7 @@ int param_1;
     FUN_000579e4(0);
     FUN_00057904(1);
     FUN_00058734();
-    FUN_00057ff0();
+    update_mouse_state();
     FUN_00057504(&local_18,&local_14);
     uVar1 = (int)local_18 - (int)local_16 >> 0x1f;
     uVar2 = (int)local_14 - (int)local_12 >> 0x1f;
@@ -41195,12 +41206,12 @@ void FUN_000577f0()
 
 
 
-int FUN_00057888()
+int poll_mouse_event()
 
 {
   short sVar1;
   
-  FUN_00057ff0();
+  update_mouse_state();
   if (DAT_00086968 == -1) {
     DAT_0020484c = 0;
     sVar1 = FUN_00058738();
@@ -41302,7 +41313,7 @@ int param_1;
     Ordinal_859(auStack_24);
     uVar2 = (uint)DAT_0023c448;
     if (uVar2 == 0) {
-      uVar2 = FUN_00057888();
+      uVar2 = poll_mouse_event();
     }
   }
   return uVar2;
@@ -41477,9 +41488,9 @@ short param_4;
   int iVar1;
   
   iVar1 = (int)(short)(DAT_002047a4 + 1 >> 1);
-  if ((iVar1 + param_2 <= (int)DAT_00086964) && ((int)DAT_00086964 <= param_4 - iVar1)) {
+  if ((iVar1 + param_2 <= (int)g_mouse_y) && ((int)g_mouse_y <= param_4 - iVar1)) {
     iVar1 = (int)(short)(DAT_00204784 + 1 >> 1);
-    if ((param_1 - iVar1 <= (int)DAT_00086960) && ((int)DAT_00086960 <= iVar1 + param_3)) {
+    if ((param_1 - iVar1 <= (int)g_mouse_x) && ((int)g_mouse_x <= iVar1 + param_3)) {
       return 1;
     }
   }
@@ -41524,16 +41535,16 @@ void FUN_00057e54()
   int iVar2;
   
   if ((DAT_00204858 < '\x01') &&
-     ((((DAT_00086970 == -1 || (DAT_00086960 < DAT_00086970)) || (DAT_002047a8 < DAT_00086960)) ||
-      ((DAT_0020478c < DAT_00086964 || (DAT_00086964 < DAT_002047ac)))))) {
+     ((((DAT_00086970 == -1 || (g_mouse_x < DAT_00086970)) || (DAT_002047a8 < g_mouse_x)) ||
+      ((DAT_0020478c < g_mouse_y || (g_mouse_y < DAT_002047ac)))))) {
     iVar2 = 0;
     if (0 < DAT_00204854) {
       iVar2 = 0;
       do {
-        if ((((short)(&DAT_002047b0)[iVar2] <= DAT_00086960) &&
-            (DAT_00086960 <= (short)(&DAT_00204808)[iVar2])) &&
-           ((DAT_00086964 <= (short)(&DAT_00204750)[iVar2] &&
-            ((short)(&DAT_002047e0)[iVar2] <= DAT_00086964)))) {
+        if ((((short)(&DAT_002047b0)[iVar2] <= g_mouse_x) &&
+            (g_mouse_x <= (short)(&DAT_00204808)[iVar2])) &&
+           ((g_mouse_y <= (short)(&DAT_00204750)[iVar2] &&
+            ((short)(&DAT_002047e0)[iVar2] <= g_mouse_y)))) {
           iVar1 = (int)(short)iVar2;
           DAT_00086970 = (&DAT_002047b0)[iVar1];
           DAT_002047a8 = (&DAT_00204808)[iVar1];
@@ -41555,7 +41566,7 @@ void FUN_00057e54()
 
 
 
-void FUN_00057ff0()
+void update_mouse_state()
 
 {
   short sVar1;
@@ -41614,20 +41625,20 @@ void FUN_00057ff0()
       iVar8 = (int)DAT_00204700;
       local_28 = (short)((uint)((iVar8 + -1) * 0x10000) >> 0x10);
       while ((iVar8 != 0 && (uVar10 != 0))) {
-        if ((DAT_00086974 + -5 < (int)(short)DAT_00086960 + (int)(short)local_2a) &&
-           (((int)(short)DAT_00086960 + (int)(short)local_2a < DAT_00086974 + 5 &&
+        if ((DAT_00086974 + -5 < (int)(short)g_mouse_x + (int)(short)local_2a) &&
+           (((int)(short)g_mouse_x + (int)(short)local_2a < DAT_00086974 + 5 &&
             ((uVar10 & 1) != 0)))) {
           uVar10 = uVar10 ^ 1;
-          local_2a = DAT_00086974 - DAT_00086960;
+          local_2a = DAT_00086974 - g_mouse_x;
         }
         else if ((uVar10 & 1) != 0) {
           local_2a = DAT_0020477c + local_2a;
         }
         iVar8 = (int)DAT_00204778;
-        iVar9 = (int)DAT_00086964 + (int)local_2c;
+        iVar9 = (int)g_mouse_y + (int)local_2c;
         if (((iVar8 + -5 < iVar9) && (iVar9 < iVar8 + 5)) && ((uVar10 & 2) != 0)) {
           uVar10 = uVar10 ^ 2;
-          local_2c = (short)((uint)((iVar8 + DAT_00086964) * 0x10000) >> 0x10);
+          local_2c = (short)((uint)((iVar8 + g_mouse_y) * 0x10000) >> 0x10);
         }
         else if ((uVar10 & 2) != 0) {
           local_2c = local_2c - DAT_00204780;
@@ -41659,16 +41670,16 @@ void FUN_00057ff0()
     }
     uVar10 = DAT_0020470c;
     if (((short)local_2a < (short)DAT_0020470c) ||
-       (uVar10 = DAT_00204830, DAT_00086960 = local_2a, (short)DAT_00204830 < (short)local_2a)) {
-      DAT_00086960 = uVar10;
+       (uVar10 = DAT_00204830, g_mouse_x = local_2a, (short)DAT_00204830 < (short)local_2a)) {
+      g_mouse_x = uVar10;
     }
     sVar4 = DAT_00204710;
     if ((local_2c < DAT_00204710) ||
-       (sVar4 = DAT_00204834, DAT_00086964 = local_2c, DAT_00204834 < local_2c)) {
-      DAT_00086964 = sVar4;
+       (sVar4 = DAT_00204834, g_mouse_y = local_2c, DAT_00204834 < local_2c)) {
+      g_mouse_y = sVar4;
     }
-    iVar9 = (int)DAT_00086964;
-    iVar8 = (uint)DAT_00086960 << 0x10;
+    iVar9 = (int)g_mouse_y;
+    iVar8 = (uint)g_mouse_x << 0x10;
     bVar11 = (int)DAT_00086974 == iVar8 >> 0x10;
     if (bVar11) {
       iVar8 = (int)DAT_00204778;
@@ -41696,15 +41707,15 @@ short param_1;
 
 {
   DAT_0020485c = (int)param_1;
-  FUN_00057ff0();
+  update_mouse_state();
   DAT_0020485c = 0;
   if (DAT_0023c63c == 0) {
     DAT_0008696e = 0;
   }
   else if (DAT_00086968 == -1) {
     DAT_00086968 = DAT_0023c63c;
-    DAT_0008696a = DAT_00086960;
-    DAT_0008696c = DAT_00086964;
+    DAT_0008696a = g_mouse_x;
+    DAT_0008696c = g_mouse_y;
   }
   return;
 }
@@ -41716,9 +41727,9 @@ void FUN_000584c0()
 {
   DAT_00204848 = 1;
   set_draw_color(0x14);
-  rect_fill_or_save_restore(DAT_00086960 - DAT_0020471c,DAT_00086964 - DAT_00204748,
-               ((int)DAT_00204784 - (int)DAT_0020471c) + (int)DAT_00086960 + 1,
-               ((int)DAT_002047a4 - (int)DAT_00204748) + (int)DAT_00086964 + 1);
+  rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
+               ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
+               ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
   DAT_00204844 = 1;
   return;
 }
@@ -41742,16 +41753,16 @@ void FUN_0005857c()
       return;
     }
     if (((ushort)DAT_00201b60 & 0xc9) != 0) {
-      if (DAT_00086960 < DAT_00204838) {
+      if (g_mouse_x < DAT_00204838) {
         return;
       }
-      if (DAT_00086964 < DAT_0020483c) {
+      if (g_mouse_y < DAT_0020483c) {
         return;
       }
-      if (DAT_002047dc < DAT_00086960) {
+      if (DAT_002047dc < g_mouse_x) {
         return;
       }
-      if (DAT_002047d8 < DAT_00086964) {
+      if (DAT_002047d8 < g_mouse_y) {
         return;
       }
     }
@@ -41761,8 +41772,8 @@ void FUN_0005857c()
 LAB_00058674:
   DAT_00088960 = 1;
   DAT_00089098 = 1;
-  FUN_00040b0c((int)DAT_00204788,((int)DAT_00086960 - (int)DAT_0020471c) * 0x10000 >> 0x10,
-               ((int)DAT_00086964 - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
+  FUN_00040b0c((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
+               ((int)g_mouse_y - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
                DAT_00204784);
   FUN_00022f0c(1);
   DAT_00088960 = 0;
@@ -58115,6 +58126,8 @@ int param_4;
   *DAT_000876c0 = x;
 
   if (param_2 == 0x201) {
+    // HACK: DAT_000876c4 has zero writers anywhere in the real binary (confirmed via Ghidra xrefs), so update_mouse_state() would never trust *DAT_000876bc/*DAT_000876c0 and g_mouse_x/g_mouse_y would never update from real clicks -- this input plumbing is genuinely dead in the shipped binary. Setting it here on every click is a deliberate deviation from original logic to keep click-driven cursor tracking working; not something the real binary ever did.
+    *DAT_000876c4 = 1;
     if ((200 < x) && (x < 0xf0)) {
       id = FUN_00057a80(*DAT_000876bc,x);
       fprintf(stderr, "[mousehit] on-screen-keyboard tap: x=%d storedY=%d -> id=%d ('%c')\n", x, *DAT_000876bc, id, (id >= 0x20 && id < 0x7f) ? id : '?');

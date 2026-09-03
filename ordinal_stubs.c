@@ -8,6 +8,7 @@
 
 void uw_pump_events(void);
 unsigned int FUN_00077b2c(void *param_1, unsigned int param_2, unsigned int param_3);
+int uw_take_mouse_event_pending(void);
 
 long Ordinal_4()
 {
@@ -398,8 +399,21 @@ int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigne
      * so no keypress could ever reach the game after the first screen
      * that waits on input (confirmed: menu displayed correctly but
      * never responded to any key). Report a message pending whenever
-     * there's a real one queued. */
-    return DAT_0023c448 != 0;
+     * there's a real one queued.
+     *
+     * DAT_0023c448 only ever reflects keyboard state, though -- mouse
+     * events are handled synchronously and completely inline in
+     * uw_pump_events (FUN_00077dd0 finishes with each one immediately),
+     * leaving no "pending" state for DAT_0023c448 to hold the way
+     * keyboard input does. Without also checking
+     * uw_take_mouse_event_pending(), FUN_000579e4 never falls through to
+     * poll_mouse_event()/update_mouse_state() for mouse-only activity
+     * (no keyboard event pending at the same moment), so g_mouse_x/
+     * g_mouse_y never track the real cursor and the game's own
+     * registered-rect click hit-test (FUN_00057e54) never runs. Real
+     * WinCE PeekMessage would report a pending message for either input
+     * type, so check both here to match. */
+    return (DAT_0023c448 != 0) || uw_take_mouse_event_pending();
 }
 
 long Ordinal_866()

@@ -68,6 +68,15 @@ static SDL_Texture *g_tex;
 static unsigned short g_framebuffer[HW_W * HW_H]; /* RGB565, portrait "hardware" buffer */
 static unsigned short g_display_buf[GX_W * GX_H]; /* RGB565, rotated landscape buffer for display */
 static int g_running = 1;
+/* Mouse events (unlike keyboard ones) get handled synchronously and
+ * completely inline in uw_pump_events -- FUN_00077dd0 processes and
+ * finishes with each one before uw_pump_events even returns, so there's
+ * no lingering "pending" state the way DAT_0023c448 stays set for
+ * keyboard input. Real WinCE PeekMessage would report ANY pending
+ * message type, not just keyboard, so Ordinal_864 needs a way to know
+ * "a mouse message was just processed" too -- this one-shot flag is
+ * that signal, consumed via uw_take_mouse_event_pending(). */
+static int g_mouse_event_pending = 0;
 
 static int translate_vk(SDL_Keycode sym) {
     switch (sym) {
@@ -215,6 +224,7 @@ void uw_pump_events(void) {
                 if (ev.type != SDL_MOUSEMOTION && ev.button.button != SDL_BUTTON_LEFT) {
                     break;
                 }
+                g_mouse_event_pending = 1;
                 FUN_00077dd0(0, msg, 0, lparam);
                 return;
             }
@@ -267,6 +277,41 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
                                SDL_TEXTUREACCESS_STREAMING, GX_W, GX_H);
     memset(g_framebuffer, 0, sizeof(g_framebuffer));
     demomode_init();
+    return 1;
+}
+
+int uw_take_mouse_event_pending(void) {
+    int had = g_mouse_event_pending;
+    g_mouse_event_pending = 0;
+    return had;
+}
+
+int uw_inject_mouse_click(int window_x, int window_y) {
+    /* For scripted/unattended testing: warps the real OS cursor into the
+     * window at the given point (window points, not logical/portrait
+     * coordinates) then pushes genuine SDL_MOUSEBUTTONDOWN/UP events, so
+     * this exercises the exact same code path a real click does --
+     * unlike demomode's CLICK command, which calls FUN_00077dd0 directly
+     * and bypasses uw_pump_events (and therefore g_mouse_event_pending)
+     * entirely. gx_stub.c's own mouse handling reads the cursor position
+     * via SDL_GetGlobalMouseState() (see its HiDPI-workaround comment),
+     * not the event's own x/y fields, so the warp is what actually
+     * controls where the click lands. */
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
+    SDL_Event down = {0};
+    down.type = SDL_MOUSEBUTTONDOWN;
+    down.button.button = SDL_BUTTON_LEFT;
+    down.button.x = window_x;
+    down.button.y = window_y;
+    SDL_PushEvent(&down);
+    SDL_Event up = {0};
+    up.type = SDL_MOUSEBUTTONUP;
+    up.button.button = SDL_BUTTON_LEFT;
+    up.button.x = window_x;
+    up.button.y = window_y;
+    SDL_PushEvent(&up);
     return 1;
 }
 
