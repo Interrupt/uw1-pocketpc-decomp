@@ -78,6 +78,25 @@ static int g_running = 1;
  * that signal, consumed via uw_take_mouse_event_pending(). */
 static int g_mouse_event_pending = 0;
 
+/* A button-up dispatched on the very next poll after its matching
+ * button-down leaves character_generator_touch_select's position-
+ * validation loop (uw.c's character_generator_touch_select, called via
+ * FUN_00024840) with zero chances to ever run: its first internal poll
+ * (a *second* call, right after the outer poll that consumed the
+ * button-down) immediately dequeues the already-queued button-up,
+ * resetting DAT_0023c63c before the loop body -- which does the actual
+ * hit-test against button bounds -- executes even once. With no
+ * validated hit, it falls through to its "return the selection
+ * unchanged" default, which the caller unconditionally treats as
+ * "confirmed" -- so ANY click, on or off a button, advanced the field
+ * (confirmed via screenshot diffing: identical result whether or not
+ * the click landed on a button). Holding the button-up back for exactly
+ * one extra uw_pump_events() call keeps DAT_0023c63c==1 visible to that
+ * loop's first iteration, so it runs the real position check before the
+ * (now-deferred) release finally clears it. */
+static int g_mouseup_deferred = 0;
+static int g_mouseup_deferred_lparam = 0;
+
 static int translate_vk(SDL_Keycode sym) {
     switch (sym) {
         case SDLK_UP: return VK_UP;
@@ -97,6 +116,17 @@ void uw_pump_events(void) {
     SDL_Event ev;
     if (!g_win) return;
     demomode_pump();
+
+    if (g_mouseup_deferred) {
+        /* See g_mouseup_deferred's comment. Dispatch the button-up we
+         * held back last call now, one full poll cycle after the
+         * matching button-down. */
+        g_mouseup_deferred = 0;
+        g_mouse_event_pending = 1;
+        FUN_00077dd0(0, 0x202u, 0, g_mouseup_deferred_lparam);
+        return;
+    }
+
     while (SDL_PollEvent(&ev)) {
         switch (ev.type) {
             case SDL_QUIT:
@@ -223,6 +253,19 @@ void uw_pump_events(void) {
                 }
                 if (ev.type != SDL_MOUSEMOTION && ev.button.button != SDL_BUTTON_LEFT) {
                     break;
+                }
+                if (ev.type == SDL_MOUSEBUTTONUP) {
+                    /* Hold this back one poll cycle -- see
+                     * g_mouseup_deferred's comment. Still report a
+                     * pending message this call (without touching
+                     * DAT_0023c63c yet) so callers that only consult
+                     * poll_mouse_event() after seeing "a message
+                     * arrived" get a chance to read the still-held-down
+                     * state first. */
+                    g_mouseup_deferred = 1;
+                    g_mouseup_deferred_lparam = lparam;
+                    g_mouse_event_pending = 1;
+                    return;
                 }
                 g_mouse_event_pending = 1;
                 FUN_00077dd0(0, msg, 0, lparam);
