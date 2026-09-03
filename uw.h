@@ -92,6 +92,12 @@ typedef void *codeptr();
    definition, right after FUN_00076a2c, for why it exists. */
 void *uw_alloc_grtile();
 
+/* Forward declaration needed because main_menu_loop (now in game.c) takes
+   this LAB_ callback's address to pass to FUN_000417b4; its own
+   definition stays in uw.c (see LAB_000415b0/LAB_000416e8's matching
+   comment for what this callback family does). */
+void *LAB_0006a0ac();
+
 typedef union IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion, *PIMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion;
 
 typedef struct IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryStruct IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryStruct, *PIMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryStruct;
@@ -360,6 +366,57 @@ extern undefined2 DAT_000842a4;
 extern undefined2 DAT_000842a8;
 extern int DAT_00204848;
 extern int DAT_00088960;
+/* Globals defined in uw.c but also used by functions that now live in
+   game.c (app_main_loop, main_menu_loop) -- extern'd here so both
+   translation units see the same storage. */
+extern undefined1 *DAT_00084298;
+extern byte *DAT_0008429c;
+extern undefined1 DAT_000857a0_backing[32768];
+#define DAT_000857a0 DAT_000857a0_backing[0]
+extern undefined2 DAT_000868d8;
+extern ushort *DAT_000876bc;
+extern short *DAT_000876c0;
+extern int DAT_000876c8;
+extern char *DAT_000879b0;
+extern char *DAT_000890a4;
+extern undefined2 DAT_00201b6c;
+extern int DAT_00201c98;
+extern char *DAT_0023bf6c;
+extern char *DAT_0023bf70;
+extern char *DAT_0023c210;
+extern int DAT_0023c214;
+extern ushort DAT_0023c448;
+extern char *DAT_0023c44c;
+extern undefined4 DAT_0023c540;
+extern undefined2 DAT_0023c59e;
+extern undefined2 DAT_0023c5a0;
+extern int DAT_0023c5b0;
+extern undefined4 DAT_0023c648;
+extern undefined4 DAT_0023c7a0;
+extern char *DAT_0023cca0;
+extern char *DAT_0023cca4;
+extern undefined1 DAT_0023cca8_backing[32768];
+#define DAT_0023cca8 DAT_0023cca8_backing[0]
+extern char *DAT_0023cef0;
+extern char *DAT_00248410;
+extern char *DAT_0024ad58;
+extern int DAT_0024af60;
+extern short DAT_0024af6c;
+extern int DAT_0024af74;
+extern byte *DAT_0024af78;
+extern byte *DAT_0024af7c;
+extern char s__DATA_CREDIT1_BYT_00086ed0[];
+extern char s__DATA_CREDIT2_BYT_00086ebc[];
+extern char s__DATA_CREDIT3_BYT_00086ea8[];
+extern char s__DATA_lev_ark_00085734[];
+extern char s__DATA_opscr_byt_00086eec[];
+extern char s__SAVE0_lev_ark_000842fc[];
+extern char s_FONT5X6P_SYS_00084e9c[];
+extern char s_FONTBIG_SYS_00085454[];
+extern char s_opbtn_00086ee4[];
+extern unsigned short u_Ultima_Under_World_00087690[];
+extern unsigned short u_UltimaUW_00087678[];
+
 
 void FUN_00011000();
 void FUN_00011040();
