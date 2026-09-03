@@ -30,7 +30,7 @@ static void read_min_level_once(void) {
     else if (strcasecmp(env, "ERR") == 0 || strcasecmp(env, "ERROR") == 0) g_min_level = ERR;
 }
 
-void DEBUG(DebugLevel level, const char *fmt, ...) {
+void DEBUG_impl(DebugLevel level, const char *file, int line, const char *fmt, ...) {
     if (!g_min_level_read) {
         read_min_level_once();
     }
@@ -38,7 +38,7 @@ void DEBUG(DebugLevel level, const char *fmt, ...) {
         return;
     }
 
-    fprintf(stderr, "[%s] ", level_name(level));
+    fprintf(stderr, "[%s] %s:%d: ", level_name(level), file, line);
 
     va_list args;
     va_start(args, fmt);
