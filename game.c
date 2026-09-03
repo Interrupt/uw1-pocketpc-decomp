@@ -3,6 +3,7 @@
  * (the original monolithic decompile) once these functions' real roles
  * were confirmed. */
 #include "headers/game.h"
+#include "debug.h"
 
 
 
@@ -248,6 +249,7 @@ undefined4 param_1;
         pcVar5 = pcVar5 + 1;
       } while (cVar1 != '\0');
       Ordinal_1063(acStack_7ec,s__DATA_opscr_byt_00086eec);
+      DEBUG(TRACE, "blitting %s", s__DATA_opscr_byt_00086eec);
       FUN_0007ee4c(acStack_7ec,pvVar_buf10000,64000);
       FUN_00057118();
       FUN_00040e24(2,(char *)pvVar_buf10000 + 64000);
