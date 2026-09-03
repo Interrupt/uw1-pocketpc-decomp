@@ -346,6 +346,21 @@ struct IMAGE_RESOURCE_DIRECTORY {
 
 
 
+/* Globals defined in uw.c but also used by functions that now live in
+   graphics.c (bitmap_blit_to_framebuffer, rect_fill_or_save_restore,
+   set_draw_color) -- extern'd here so both translation units see the same
+   storage. */
+extern void *g_uw_framebuffer;
+extern undefined2 DAT_0024ad60_backing[32768];
+#define DAT_0024ad60 DAT_0024ad60_backing[0]
+extern undefined2 DAT_000a85c0;
+extern undefined2 DAT_000a85c4;
+extern undefined2 DAT_000a85c8;
+extern undefined2 DAT_000842a4;
+extern undefined2 DAT_000842a8;
+extern int DAT_00204848;
+extern int DAT_00088960;
+
 void FUN_00011000();
 void FUN_00011040();
 void FUN_00011060();
