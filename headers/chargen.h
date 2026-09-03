@@ -7,7 +7,7 @@
  * for any caller. */
 #include "../uw.h"
 
-undefined4 character_generator_entry();
+undefined4 character_generator_start();
 int run_character_generator();
 undefined4 character_generator_loop();
 

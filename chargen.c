@@ -461,7 +461,7 @@ int run_character_generator()
 
 
 // Thin wrapper that enters/exits a critical section around run_character_generator.
-undefined4 character_generator_entry()
+undefined4 character_generator_start()
 
 {
   undefined4 uVar1;

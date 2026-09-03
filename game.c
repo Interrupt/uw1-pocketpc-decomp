@@ -292,7 +292,7 @@ undefined4 param_1;
     else if (local_838 == 1) {
       DAT_0024af74 = 1;
       FUN_00012444(0,0,g_uw_framebuffer,200);
-      iVar4 = character_generator_entry();
+      iVar4 = character_generator_start();
       if (iVar4 != 0) {
         Ordinal_1047(acStack_6e4,0,0x104);
         pcVar5 = &DAT_0023cca8;

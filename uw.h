@@ -420,7 +420,7 @@ extern char s_opbtn_00086ee4[];
 extern unsigned short u_Ultima_Under_World_00087690[];
 extern unsigned short u_UltimaUW_00087678[];
 /* Globals defined in uw.c but also used by functions that now live in
-   chargen.c (character_generator_entry, run_character_generator,
+   chargen.c (character_generator_start, run_character_generator,
    character_generator_loop) -- extern'd here so both translation units
    see the same storage. */
 extern char *DAT_00086df8;
