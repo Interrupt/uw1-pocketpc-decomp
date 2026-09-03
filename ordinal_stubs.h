@@ -69,7 +69,7 @@ long Ordinal_858();
 long Ordinal_859();
 int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigned int wMsgFilterMax, unsigned int wRemoveMsg);
 long Ordinal_866();
-long Ordinal_868();
+int Ordinal_868(void *hwnd, unsigned int msg, unsigned int wparam, int lparam);
 long Ordinal_870();
 long Ordinal_885();
 long Ordinal_912();

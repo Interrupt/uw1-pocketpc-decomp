@@ -3,10 +3,19 @@
  *   UP DOWN LEFT RIGHT ENTER SPACE CTRL ESC BACKSPACE
  *   TYPE <text>   -- sends each character of <text> as a real WM_CHAR
  *                    (0x102), one per delay tick, simulating name entry
+ *   CLICK <portrait_x> <portrait_y>  -- injects a synthetic mouse click
+ *                    directly in portrait "hardware" framebuffer
+ *                    coordinates, bypassing gx_stub.c's window->portrait
+ *                    transform (see FUN_00077dd0's comment in uw.c)
+ *   SCREENSHOT <path>  -- saves the current window contents (post-
+ *                    rotation, what's actually on screen) as a BMP,
+ *                    so a scripted run -- or Claude -- can see what a
+ *                    screen looks like without a human taking one
  * Pacing is controlled by the UW_DEMO_DELAY_MS env var (default 250ms
- * between inputs). Playback stops permanently once the file runs out --
- * the game keeps running normally (or waiting for real input) after
- * that, it just stops receiving synthetic events. */
+ * between inputs). Once the file runs out, the process exits (making
+ * scripted test runs self-terminating for fast feedback loops); set
+ * UW_DEMO_KEEP_RUNNING=1 to keep the window open and just stop feeding
+ * synthetic events instead. */
 #include "demomode.h"
 #include "uw.h"
 
@@ -93,10 +102,18 @@ void demomode_pump(void) {
 
     char line[256];
     if (!fgets(line, sizeof(line), g_demo_file)) {
-        fprintf(stderr, "[demo] end of input, stopping playback\n");
         g_demo_done = 1;
         fclose(g_demo_file);
         g_demo_file = NULL;
+        /* Quitting here (instead of idling with the window still open)
+         * makes scripted test runs self-terminating -- set
+         * UW_DEMO_KEEP_RUNNING=1 to keep the window open after playback
+         * finishes (e.g. to keep manually poking at the resulting state). */
+        if (!getenv("UW_DEMO_KEEP_RUNNING")) {
+            fprintf(stderr, "[demo] end of input, exiting\n");
+            exit(0);
+        }
+        fprintf(stderr, "[demo] end of input, stopping playback\n");
         return;
     }
 
@@ -120,6 +137,30 @@ void demomode_pump(void) {
         g_demo_type_pos = g_demo_type_buf;
         /* Retry immediately so the first character goes out on the next
          * pump rather than burning a delay slot on the TYPE line itself. */
+        g_demo_next_tick = now;
+        return;
+    }
+
+    if (strncasecmp(p, "CLICK ", 6) == 0) {
+        /* CLICK <portrait_x> <portrait_y> -- injects a synthetic
+         * WM_LBUTTONDOWN directly into FUN_00077dd0 (the recovered mouse
+         * handler) using portrait "hardware" framebuffer coordinates
+         * directly, bypassing gx_stub.c's SDL window->portrait transform
+         * entirely. Lets us test the click-to-button-ID recovery in
+         * isolation from that coordinate math. */
+        int px = 0, py = 0;
+        sscanf(p + 6, "%d %d", &px, &py);
+        fprintf(stderr, "[demo] CLICK portrait=(%d,%d)\n", px, py);
+        int lparam = (py << 16) | (px & 0xffff);
+        FUN_00077dd0(0, 0x201u, 0, lparam);
+        FUN_00077dd0(0, 0x202u, 0, lparam);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SCREENSHOT ", 11) == 0) {
+        const char *path = p + 11;
+        uw_save_screenshot(path);
         g_demo_next_tick = now;
         return;
     }

@@ -163,6 +163,61 @@ void uw_pump_events(void) {
                 }
                 return;
             }
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONUP:
+            case SDL_MOUSEMOTION: {
+                /* The real device's stylus reports taps in the portrait
+                 * "hardware" framebuffer's own 240x320 coordinate space
+                 * (see the HW_W/HW_H comment up top), packed as a real
+                 * Windows lParam (y<<16)|x -- FUN_00077dd0 (recovered from
+                 * the original binary's mouse message-dispatch table,
+                 * separate from FUN_00077b2c's keyboard-only table) does
+                 * its own portrait Y flip internally, so just convert SDL's
+                 * landscape window coordinates into the same un-rotated
+                 * portrait space GXEndDraw's blit reads from:
+                 * portrait_x = landscape_y, portrait_y = (HW_H-1) -
+                 * landscape_x (inverse of GXEndDraw's rotation -- note
+                 * HW_H, the portrait *height*, here: landscape_x ranges
+                 * over the full 0..319 GX_W span, which is what portrait_y
+                 * must cover too). Go through SDL_RenderWindowToLogical
+                 * rather than a fixed /2 scale since the window is
+                 * resizable.
+                 *
+                 * ev.button.x/y (and ev.motion.x/y) come back at half the
+                 * scale SDL_GetWindowSize/SDL_GetRendererOutputSize agree
+                 * on, on at least one real HiDPI Mac setup tested (SDL2
+                 * 2.32.4) -- confirmed by comparing against
+                 * SDL_GetGlobalMouseState() - SDL_GetWindowPosition(),
+                 * which does NOT show the same halving. Use that instead
+                 * of the raw event fields. */
+                int win_x, win_y;
+                {
+                    int gx = 0, gy = 0, wx = 0, wy = 0;
+                    SDL_GetGlobalMouseState(&gx, &gy);
+                    SDL_GetWindowPosition(g_win, &wx, &wy);
+                    win_x = gx - wx;
+                    win_y = gy - wy;
+                }
+                float lx, ly;
+                SDL_RenderWindowToLogical(g_ren, win_x, win_y, &lx, &ly);
+                int landscape_x = (int)lx, landscape_y = (int)ly;
+                int portrait_x = landscape_y;
+                int portrait_y = (HW_H - 1) - landscape_x;
+                int lparam = (portrait_y << 16) | (portrait_x & 0xffff);
+                unsigned int msg = (ev.type == SDL_MOUSEBUTTONDOWN) ? 0x201u
+                                  : (ev.type == SDL_MOUSEBUTTONUP) ? 0x202u
+                                  : 0x200u;
+                if (ev.type == SDL_MOUSEBUTTONDOWN) {
+                    fprintf(stderr, "[mouse] click win=(%d,%d) landscape=(%d,%d) portrait=(%d,%d) %s\n",
+                            win_x, win_y, landscape_x, landscape_y, portrait_x, portrait_y,
+                            (portrait_x > 200 && portrait_x < 0xf0) ? "IN on-screen-keyboard strip" : "outside keyboard strip");
+                }
+                if (ev.type != SDL_MOUSEMOTION && ev.button.button != SDL_BUTTON_LEFT) {
+                    break;
+                }
+                FUN_00077dd0(0, msg, 0, lparam);
+                return;
+            }
             case SDL_WINDOWEVENT:
                 if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
                     FUN_00077b2c(0, 7, 0);
@@ -189,6 +244,21 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
         fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
         return 0;
     }
+    {
+        int wx = 0, wy = 0, ww = 0, wh = 0;
+        SDL_GetWindowPosition(g_win, &wx, &wy);
+        SDL_GetWindowSize(g_win, &ww, &wh);
+        int numDisplays = SDL_GetNumVideoDisplays();
+        fprintf(stderr, "[gx] window created at pos=(%d,%d) size=(%d,%d), %d display(s)\n", wx, wy, ww, wh, numDisplays);
+        for (int i = 0; i < numDisplays; i++) {
+            SDL_Rect bounds;
+            float ddpi = 0, hdpi = 0, vdpi = 0;
+            SDL_GetDisplayBounds(i, &bounds);
+            SDL_GetDisplayDPI(i, &ddpi, &hdpi, &vdpi);
+            fprintf(stderr, "[gx] display %d: bounds=(%d,%d,%d,%d) dpi=(%.1f,%.1f,%.1f)\n",
+                    i, bounds.x, bounds.y, bounds.w, bounds.h, ddpi, hdpi, vdpi);
+        }
+    }
     SDL_StartTextInput();
     g_ren = SDL_CreateRenderer(g_win, -1, SDL_RENDERER_ACCELERATED);
     if (!g_ren) g_ren = SDL_CreateRenderer(g_win, -1, 0);
@@ -198,6 +268,32 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
     memset(g_framebuffer, 0, sizeof(g_framebuffer));
     demomode_init();
     return 1;
+}
+
+int uw_save_screenshot(const char *path) {
+    if (!g_ren) return 0;
+    int w = 0, h = 0;
+    SDL_GetRendererOutputSize(g_ren, &w, &h);
+    /* RGB24 (no alpha) rather than ARGB8888 -- some BMP readers (macOS's
+       `sips` among them) choke on 32bpp BMPs with an alpha channel. */
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, w, h, 24, SDL_PIXELFORMAT_RGB24);
+    if (!surf) {
+        fprintf(stderr, "[gx] screenshot: SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return 0;
+    }
+    if (SDL_RenderReadPixels(g_ren, NULL, SDL_PIXELFORMAT_RGB24, surf->pixels, surf->pitch) != 0) {
+        fprintf(stderr, "[gx] screenshot: SDL_RenderReadPixels failed: %s\n", SDL_GetError());
+        SDL_FreeSurface(surf);
+        return 0;
+    }
+    int ok = SDL_SaveBMP(surf, path) == 0;
+    if (!ok) {
+        fprintf(stderr, "[gx] screenshot: SDL_SaveBMP failed: %s\n", SDL_GetError());
+    } else {
+        fprintf(stderr, "[gx] screenshot saved to %s (%dx%d)\n", path, w, h);
+    }
+    SDL_FreeSurface(surf);
+    return ok;
 }
 
 int GXCloseDisplay(void) {

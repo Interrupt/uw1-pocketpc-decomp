@@ -1,4 +1,6 @@
 #include "uw.h"
+#include <dlfcn.h>
+#include <stdarg.h>
 
 
 int DAT_00088954;
@@ -17,7 +19,7 @@ undefined DAT_0023c5ac;
    pointer: it was truncating the buffer's address to its low 32 bits on
    this 64-bit host and segfaulting the first time Ordinal_1044 actually
    did real memmove work. */
-void *g_uw_buf_25800;
+void *g_uw_framebuffer;
 undefined2 DAT_0024ae20;
 static undefined2 DAT_000890b0_backing[32768];
 #define DAT_000890b0 DAT_000890b0_backing[0]
@@ -39,11 +41,11 @@ undefined2 DAT_000a85b0;
 char *DAT_000890a4;
 short DAT_0024ad94;
 /* Was a lone `undefined2` scalar, but used as a full-screen shadow/
-   backup buffer the same size as g_uw_buf_25800 (FUN_00011478 saves
+   backup buffer the same size as g_uw_framebuffer (FUN_00011478 saves
    aside every non-transparent pixel across the whole 320x200 framebuffer
    into it; FUN_000114e4/FUN_0001156c restore from it later) -- classic
    "undersized global used as a large table" bug. Widened to match
-   g_uw_buf_25800's exact size (0x25800 bytes = 76800 shorts). */
+   g_uw_framebuffer's exact size (0x25800 bytes = 76800 shorts). */
 static undefined2 DAT_000891b0_backing[76800];
 #define DAT_000891b0 DAT_000891b0_backing[0]
 undefined2 DAT_000a85c0;
@@ -794,7 +796,7 @@ static undefined DAT_00084e58_backing[8192];
 char *DAT_001005c8;
 /* Was `undefined4` (4 bytes), but assigned real char* pointers
    (DAT_001005c4/DAT_001005c8) throughout the character-generation/
-   font-drawing subsystem and passed directly as FUN_00011e5c's char*
+   font-drawing subsystem and passed directly as bitmap_blit's char*
    source-bitmap param -- truncated every one of those pointers on this
    64-bit host. */
 char *DAT_000fb858;
@@ -828,7 +830,7 @@ char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
 #define DAT_000fb884 (((undefined1 *)DAT_000fb880_backing)[4])
 short DAT_001005c0;
 /* Was a lone 1-byte `undefined` scalar, but read as `*(int*)(&DAT_000fb8c4
-   + idx*4)` (4-byte stride) in FUN_00024e24's case 4 -- an out-of-bounds
+   + idx*4)` (4-byte stride) in character_generator_loop's case 4 -- an out-of-bounds
    read of whatever memory follows for any idx!=0 (this crashed with a
    BUS error/high-address dereference). No writer exists anywhere in this
    decompile -- same "unrecoverable, never-populated table" class as
@@ -2192,7 +2194,20 @@ ushort DAT_0023c448;
 undefined4 DAT_00204868;
 char DAT_0008794c_backing[128];
 char *DAT_0008794c = DAT_0008794c_backing;
-undefined DAT_00087650;
+/* Real static lookup table (.data, read-only in practice) recovered
+   byte-for-byte from UU.exe -- the stylus-tap hit grid for the chargen
+   name-entry on-screen keyboard. Indexed by FUN_00057a80 as
+   [row + column*20], row = (touch-Y)>>4 (16px-tall rows spanning the full
+   320px portrait screen height), column = (touch-X-200)/20 (two 20px-wide
+   columns in the 200..240 strip). Column 0 = digits 0-9 then 'a'-'j';
+   column 1 = 'k'-'z' then backspace(8)/enter(13)/space(32)/0x14. */
+static undefined1 DAT_00087650_backing[40] = {
+  '0','1','2','3','4','5','6','7','8','9',
+  'a','b','c','d','e','f','g','h','i','j',
+  'k','l','m','n','o','p','q','r','s','t',
+  'u','v','w','x','y','z',8,13,32,0x14
+};
+#define DAT_00087650 DAT_00087650_backing[0]
 short DAT_00204854;
 static undefined1 DAT_00204720_backing[65536];
 #define DAT_00204720 DAT_00204720_backing[0]
@@ -3290,6 +3305,19 @@ short param_2;
 short param_3;
 
 {
+  /* Opt-in trace (UW_DIAG_TEXT=1): every text draw's calling function
+     (via dladdr on the return address), position, and content. Zero
+     cost when unset. Has repeatedly been the fastest way to pin down
+     which of this file's many draw call sites is responsible for a
+     given on-screen text bug -- keep it. */
+  if (getenv("UW_DIAG_TEXT")) {
+    Dl_info _dli;
+    const char *_caller = "?";
+    if (dladdr(__builtin_return_address(0), &_dli) && _dli.dli_sname) {
+      _caller = _dli.dli_sname;
+    }
+    fprintf(stderr, "[diag11060] caller=%s xy=(%d,%d) str=\"%.30s\"\n", _caller, param_2, param_3, param_1 ? param_1 : "(null)");
+  }
   short sVar1;
   int iVar2;
   uint uVar3;
@@ -3366,11 +3394,11 @@ short param_3;
       for (; (iVar5 < iVar12 && (iVar5 < 0x140)); iVar5 = iVar5 + 1) {
         if (*pcVar8 == '\x01') {
           if (DAT_0024af74 == 0) {
-            *(undefined2 *)((g_uw_buf_25800) + (iVar6 + iVar5) * 2) =
+            *(undefined2 *)((g_uw_framebuffer) + (iVar6 + iVar5) * 2) =
                  DAT_0024ae20;
           }
           else {
-            *(undefined2 *)((g_uw_buf_25800) + (iVar6 + iVar5) * 2) =
+            *(undefined2 *)((g_uw_framebuffer) + (iVar6 + iVar5) * 2) =
                  (&DAT_0024ad60)[*DAT_0008429c];
             pcVar8 = local_48;
           }
@@ -3508,7 +3536,7 @@ undefined4 FUN_00011478()
   
   sVar1 = DAT_0024ad94;
   iVar5 = 200;
-  psVar3 = (short *)(g_uw_buf_25800);
+  psVar3 = (short *)(g_uw_framebuffer);
   psVar2 = psVar3;
   do {
     iVar4 = 0x140;
@@ -3552,7 +3580,7 @@ void FUN_000114e4()
     iVar3 = 0x140;
     do {
       iVar3 = iVar3 + -1;
-      psVar2 = (short *)(iVar1 + (g_uw_buf_25800));
+      psVar2 = (short *)(iVar1 + (g_uw_framebuffer));
       if (*psVar2 == DAT_0024ad94) {
         *psVar2 = *(short *)((intptr_t)&DAT_000891b0 + iVar1);
       }
@@ -3591,7 +3619,7 @@ uint param_4;
       while (((int)uVar1 < (int)(param_3 & 0xffff) && ((int)uVar1 < 0x140))) {
         iVar2 = iVar4 + uVar1;
         uVar1 = uVar1 + 1;
-        psVar3 = (short *)(iVar2 * 2 + (g_uw_buf_25800));
+        psVar3 = (short *)(iVar2 * 2 + (g_uw_framebuffer));
         if (*psVar3 == DAT_0024ad94) {
           *psVar3 = (&DAT_000891b0)[iVar2];
         }
@@ -3652,7 +3680,7 @@ uint param_3;
     iVar2 = (param_2 * 0x140 + (param_1 & 0xffff)) * 2;
     do {
       iVar3 = iVar3 + -1;
-      *(undefined2 *)(iVar2 + (g_uw_buf_25800)) =
+      *(undefined2 *)(iVar2 + (g_uw_framebuffer)) =
            (&DAT_0024ad60)[DAT_000a85c0];
       iVar2 = iVar2 + 2;
     } while (iVar3 != 0);
@@ -3728,7 +3756,7 @@ short param_4;
                 return;
               }
               iVar15 = uVar5 * 0x140;
-              pvVar_buf25800 = g_uw_buf_25800;
+              pvVar_buf25800 = g_uw_framebuffer;
               do {
                 if (63999 < iVar15) {
                   return;
@@ -3769,7 +3797,7 @@ short param_4;
                     iVar14 = iVar15 + uVar6;
                     uVar6 = uVar6 + 1;
                     iVar13 = iVar13 + 1;
-                    *(undefined2 *)((g_uw_buf_25800) + iVar14 * 2) =
+                    *(undefined2 *)((g_uw_framebuffer) + iVar14 * 2) =
                          *puVar8;
                     puVar8 = puVar8 + 1;
                   } while ((int)uVar6 < (int)(uint)param_1);
@@ -3791,7 +3819,7 @@ short param_4;
               for (uVar6 = uVar2; ((int)uVar6 < (int)(uint)param_1 && ((int)uVar6 < 0x140));
                   uVar6 = uVar6 + 1) {
                 *(undefined2 *)
-                 ((g_uw_buf_25800) + (iVar13 + uVar6) * 2) =
+                 ((g_uw_framebuffer) + (iVar13 + uVar6) * 2) =
                      (&DAT_0024ad60)[DAT_000a85c0];
               }
               uVar5 = uVar5 + 1;
@@ -3826,7 +3854,7 @@ void FUN_00011b34()
     do {
       if (63999 < iVar5) break;
       for (iVar1 = (int)DAT_000a85c4; (iVar1 < sVar2 && (iVar1 < 0x140)); iVar1 = iVar1 + 1) {
-        *(undefined2 *)((g_uw_buf_25800) + (iVar5 + iVar1) * 2) =
+        *(undefined2 *)((g_uw_framebuffer) + (iVar5 + iVar1) * 2) =
              (&DAT_0024ad60)[DAT_000a85c0];
         sVar2 = DAT_000842a4;
       }
@@ -3916,7 +3944,7 @@ short param_7;
           iVar3 = (iVar1 - sVar10) - iVar6;
           do {
             iVar3 = iVar3 + -1;
-            *(undefined2 *)(iVar13 + (g_uw_buf_25800)) = *puVar4;
+            *(undefined2 *)(iVar13 + (g_uw_framebuffer)) = *puVar4;
             puVar4 = puVar4 + 1;
             iVar13 = iVar13 + 2;
           } while (iVar3 != 0);
@@ -3943,7 +3971,7 @@ short param_7;
             sVar11 = *psVar9;
             psVar9 = psVar9 + 1;
             if (sVar11 != 0) {
-              *(short *)((g_uw_buf_25800) + (iVar7 + iVar13) * 2) =
+              *(short *)((g_uw_framebuffer) + (iVar7 + iVar13) * 2) =
                    sVar11;
             }
             iVar13 = iVar13 + 1;
@@ -3963,7 +3991,7 @@ short param_7;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00011e5c(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+void bitmap_blit(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 ushort param_1;
 ushort param_2;
 char *param_3;
@@ -4039,7 +4067,7 @@ short param_7;
           do {
             pbVar4 = (byte *)(iVar9 * iVar5 + local_34 + iVar6);
             iVar6 = iVar6 + 1;
-            *(undefined2 *)(iVar7 + (g_uw_buf_25800)) =
+            *(undefined2 *)(iVar7 + (g_uw_framebuffer)) =
                  (&DAT_0024ad60)[*pbVar4];
             iVar7 = iVar7 + 2;
           } while (iVar6 < iVar9 - sVar13);
@@ -4058,7 +4086,7 @@ short param_7;
         do {
           uVar10 = (uint)*(byte *)(iVar9 * iVar5 + local_34 + iVar7);
           if (uVar10 != 0) {
-            *(undefined2 *)((g_uw_buf_25800) + (iVar8 + iVar7) * 2) =
+            *(undefined2 *)((g_uw_framebuffer) + (iVar8 + iVar7) * 2) =
                  (&DAT_0024ad60)[uVar10];
           }
           iVar7 = iVar7 + 1;
@@ -4080,7 +4108,7 @@ void FUN_000120c8(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_
 short param_1;
 short param_2;
 /* Was `int`, truncating the real char* source-bitmap pointer callers
-   pass (e.g. DAT_001005c8) -- same role/bug as FUN_00011e5c's param_3. */
+   pass (e.g. DAT_001005c8) -- same role/bug as bitmap_blit's param_3. */
 char *param_3;
 short param_4;
 short param_5;
@@ -4129,7 +4157,7 @@ int param_8;
                   bVar3 = *pbVar5;
                   pbVar5 = pbVar5 + 1;
                   if ((DAT_00088960 & bVar3 == 0) == 0) {
-                    *(undefined2 *)((g_uw_buf_25800) + iVar4 * 2) =
+                    *(undefined2 *)((g_uw_framebuffer) + iVar4 * 2) =
                          (&DAT_0024ad60)[bVar3];
                   }
                   iVar6 = iVar6 + 1;
@@ -4355,7 +4383,7 @@ short param_7;
           iVar6 = (iVar14 + iVar7) * 2;
           iVar10 = iVar7;
           do {
-            *(undefined2 *)(iVar6 + (g_uw_buf_25800)) =
+            *(undefined2 *)(iVar6 + (g_uw_framebuffer)) =
                  (&DAT_0024ad60)[*(byte *)(iVar5 + param_3)];
             if (iVar3 * iVar2 + -5 < iVar5) {
               return;
@@ -4386,7 +4414,7 @@ short param_7;
           do {
             uVar9 = (uint)*(byte *)(iVar2 * iVar4 + param_3 + iVar6);
             if (uVar9 != 0) {
-              *(undefined2 *)((g_uw_buf_25800) + (iVar14 + iVar6) * 2)
+              *(undefined2 *)((g_uw_framebuffer) + (iVar14 + iVar6) * 2)
                    = (&DAT_0024ad60)[uVar9];
             }
             if (iVar3 * iVar2 + -5 < iVar10) {
@@ -4434,7 +4462,7 @@ short param_6;
   if (param_6 < iVar7) {
     iVar4 = (int)param_4;
     iVar5 = (int)param_3;
-    pvVar_buf25800 = g_uw_buf_25800;
+    pvVar_buf25800 = g_uw_framebuffer;
     iVar10 = 0x140 - iVar5;
     FUN_00011000(200 - iVar4,iVar4 + (200 - iVar4),iVar10,iVar7 + iVar10);
     iVar6 = param_6 * 0x140 + (int)param_5;
@@ -4452,7 +4480,7 @@ short param_6;
             iVar7 = iVar7 + 1;
             iVar2 = iVar6 * 2;
             iVar6 = iVar6 + 1;
-            *(undefined2 *)((g_uw_buf_25800) + iVar2) = *puVar11;
+            *(undefined2 *)((g_uw_framebuffer) + iVar2) = *puVar11;
             puVar11 = puVar11 + 1;
           } while (iVar8 < iVar5);
         }
@@ -6373,7 +6401,7 @@ int param_2;
   ushort *puVar1;
   
   puVar1 = (ushort *)
-           ((g_uw_buf_25800) +
+           ((g_uw_framebuffer) +
            ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
   *puVar1 = *puVar1 >> 1 & 0x7bef;
   return;
@@ -6971,7 +6999,7 @@ undefined4 param_1;
   else {
     FUN_000116a4(0,0,0x13f,199);
     FUN_00040efc(1);
-    FUN_00011e5c(0,1,uVar3,200,0x140,0,0,1);
+    bitmap_blit(0,1,uVar3,200,0x140,0,0,1);
     FUN_000165d0();
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
@@ -11684,7 +11712,7 @@ void FUN_00020370()
           local_34 = Ordinal_2015(0x42a00000,uVar11);
           local_30 = Ordinal_2026(uVar5,0x3a2ec33e);
           DAT_000da47c = (undefined2)piVar14[0x1d];
-          FUN_00014350(0x140,g_uw_buf_25800,&local_60,piVar14[0x1e],
+          FUN_00014350(0x140,g_uw_framebuffer,&local_60,piVar14[0x1e],
                        piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],piVar14[0x1a],&local_70);
           iVar16 = iVar16 + 1;
           iVar17 = iVar17 + 0xc;
@@ -13085,7 +13113,7 @@ short param_2;
    bottom/left/right) accumulate via FUN_00011000, called from every
    draw (rect fill, text draw, sprite blit, ...) to grow the damaged
    region -- clamped here, then blitted from the software buffer
-   (g_uw_buf_25800) into GXBeginDraw()'s real framebuffer and
+   (g_uw_framebuffer) into GXBeginDraw()'s real framebuffer and
    presented via GXEndDraw(). Investigated as a suspect for the
    chargen "text flashes then gets covered by a rectangle" bug (SS1
    shares this same Looking Glass dirty-rect heritage): the bounds are
@@ -13164,7 +13192,7 @@ void FUN_00022f0c()
        right/bottom bound in this codebase gets to become the last
        *valid* column instead of one-past-it. */
     puVar4 = (undefined2 *)
-             ((g_uw_buf_25800) +
+             ((g_uw_framebuffer) +
              (DAT_00088954 * 0x140 + (DAT_00088958 - 1)) * 2);
     if (iVar10 < iVar11) {
       iVar11 = iVar11 - iVar10;
@@ -13258,7 +13286,7 @@ void FUN_0002310c()
        right/bottom bound in this codebase gets to become the last
        *valid* column instead of one-past-it. */
     puVar4 = (undefined2 *)
-             ((g_uw_buf_25800) +
+             ((g_uw_framebuffer) +
              (DAT_00088954 * 0x140 + (DAT_00088958 - 1)) * 2);
     if (iVar10 < iVar11) {
       iVar11 = iVar11 - iVar10;
@@ -13644,7 +13672,7 @@ void FUN_00023cdc()
 
 
 
-/* FUN_00024e24's per-record array is raw CHRGEN.DAT file data laid out
+/* character_generator_loop's per-record array is raw CHRGEN.DAT file data laid out
    as 8 contiguous 0x14-byte records; the name-entry text field (record
    6) is the only one that needs a *real* buffer pointer, stored at
    record6_base+2 (aka `param_1+1` in FUN_00023de8/FUN_0002431c/
@@ -13675,7 +13703,7 @@ short * param_1;
   byte bVar1;
   byte bVar2;
   /* Was `int iVar3` holding DAT_000fb858 (a real pointer, used as
-     FUN_00011e5c's source-bitmap arg right after) -- truncating. Only
+     bitmap_blit's source-bitmap arg right after) -- truncating. Only
      ever used for this one pointer-holding role in this function. */
   char *iVar3;
   short sVar4;
@@ -13774,7 +13802,7 @@ short * param_1;
     iVar11 = 0xa4;
     /* This field is a plain 4-byte nonzero marker ("is this a text-
        entry field") for whichever record is currently being processed
-       -- see g_chargen_textfield_buf's comment near FUN_00024e24 for
+       -- see g_chargen_textfield_buf's comment near character_generator_loop for
        why it must stay a narrow 4-byte read (widening it to 8 bytes
        pulls in unrelated file data from other records and misfires). */
     if (*(int *)(param_1 + 1) == 0) {
@@ -13786,7 +13814,7 @@ short * param_1;
       iVar9 = ((iVar9 >> 1) + 0xa4) * 0x10000 >> 0x10;
     }
     else {
-      FUN_00011e5c(0xa4,iVar10,DAT_000fb898 + DAT_000fb858,0x10,0x91,0,0,1);
+      bitmap_blit(0xa4,iVar10,DAT_000fb898 + DAT_000fb858,0x10,0x91,0,0,1);
       iVar11 = 0xa8;
       iVar9 = 0xa8;
     }
@@ -13817,7 +13845,7 @@ short * param_1;
         }
         sVar7 = (short)uVar12;
         iVar11 = CONCAT11(*(undefined1 *)((char *)param_1 + 0x13),(char)param_1[9]) + iVar11 + uVar12;
-        FUN_00011e5c(iVar11,iVar10,
+        bitmap_blit(iVar11,iVar10,
                      (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)param_1 + 0xd),(char)param_1[6])]
                      + iVar3,(int)(short)local_2c,sVar7,0,0,0);
         if (param_1[6] == 0) {
@@ -13834,7 +13862,7 @@ short * param_1;
         }
         else if (param_1[6] == 3) {
           DAT_00088960 = 1;
-          FUN_00011e5c(iVar11,iVar10,
+          bitmap_blit(iVar11,iVar10,
                        (&DAT_000fb880)
                        [(int)(((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) +
                                ((int)((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3) + 1)
@@ -13881,7 +13909,7 @@ byte param_3;
   int iVar9;
   int iVar10;
   /* iVar10 doubles as a plain int (screen-coordinate math, early on) and
-     a real pointer (DAT_000fb858, used as FUN_00011e5c's source-bitmap
+     a real pointer (DAT_000fb858, used as bitmap_blit's source-bitmap
      arg) later -- mutually exclusive, but both squeezed into one `int`,
      truncating the pointer. Dedicated variable for the pointer role. */
   char *pcVar_fb858;
@@ -13928,7 +13956,7 @@ byte param_3;
         FUN_00035df8(0);
         DAT_000fb858 = DAT_001005c4;
         DAT_00088960 = 1;
-        FUN_00011e5c((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
+        bitmap_blit((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
                      (int)sVar3 * (bVar1 + 4) + iVar5,pcVar_fb858 + iVar7,(uint)bVar1,bVar2,0,0,1);
         FUN_000570b4();
         pcVar_fb858 = DAT_000fb858;
@@ -14077,7 +14105,7 @@ undefined4 param_2;
   int iVar7;
   int iVar8;
   int iVar9;
-  uint uVar10;
+  uint uVar10; // Selection index -- the currently-highlighted item in the field's list.
   int iVar11;
   /* iVar11 doubles as a real pointer (DAT_000fb858 + a table offset,
      read from right after) and then a plain int for the rest of the
@@ -14096,7 +14124,7 @@ undefined4 param_2;
   uVar6 = (uint)*param_1;
   uVar13 = 0;
   /* Plain 4-byte nonzero marker -- see FUN_00023de8's matching comment
-     and g_chargen_textfield_buf's comment near FUN_00024e24. */
+     and g_chargen_textfield_buf's comment near character_generator_loop. */
   if ((*param_1 == 0) || (*(int *)(param_1 + 1) == 0)) {
     do {
       do {
@@ -14202,6 +14230,9 @@ LAB_00024dd4:
         sVar5 = param_1[5];
         uVar14 = CONCAT44(iVar7,(int)sVar5);
         if (iVar7 < sVar5) {
+          if (getenv("UW_DIAG_TEXT")) {
+            fprintf(stderr, "[diagnav] key=0x%x uVar10(new)=%u uVar12(old)=%u itemcount=%d\n", uVar6, uVar10, uVar12, sVar5);
+          }
           uVar14 = FUN_0002431c(param_1,uVar10 & 0xff,uVar12 & 0xff);
         }
         else {
@@ -14296,7 +14327,7 @@ LAB_00024dd4:
             iVar11 = ((int)sVar3 - (int)sVar5) * 0x10000;
             iVar7 = iVar11 >> 0x10;
             FUN_00057118();
-            FUN_00011e5c(iVar7,iVar9,DAT_000fb898 + DAT_000fb858,0x10,0x91,
+            bitmap_blit(iVar7,iVar9,DAT_000fb898 + DAT_000fb858,0x10,0x91,
                          (short)((uint)iVar11 >> 0x10) + -0xa4,0,1);
             FUN_000570b4();
           }
@@ -14323,7 +14354,7 @@ LAB_00024dd4:
 
 
 // The main character-generation state machine: steps through portrait/gender/skills/stats/name/confirm, one screen per state.
-undefined4 FUN_00024e24(param_1,param_2,param_3)
+undefined4 character_generator_loop(param_1,param_2,param_3)
 char *param_1;
 char *param_2;
 char *param_3;
@@ -14409,12 +14440,14 @@ char *param_3;
     FUN_00011478((int)uVar15,(int)(uVar15 >> 0x20));
     FUN_00035df8(1);
     DAT_000fb858 = DAT_001005c8;
-    FUN_00011e5c(0,0,DAT_001005c8,200,0x140,0,0,1);
+    // Redraws the raw parchment background (both pages, 0,0 to 320,200) from scratch every loop iteration -- this is the mechanism that clears stale text from the *right* page between prompts (confirmed: disabling it leaves old prompt text visibly bleeding through under new prompt text). As a side effect it also wipes any stats text the previous iteration's switch-case drew on the left page. Confirmed present in the real ARM disassembly at this exact spot, in this exact order relative to the fill below -- not a decompilation bug.
+    bitmap_blit(0,0,DAT_001005c8,200,0x140,0,0,1);
     FUN_000570b4();
     FUN_00035df8(0);
     DAT_000fb858 = DAT_001005c4;
     FUN_00057118();
     FUN_00011694(0x1a);
+    // Fills the left-page stats/portrait area (x:17-142,y:0-199) with a solid backing color, on top of the parchment the reblit above just redrew. Runs *after* that reblit (confirmed via disassembly), so despite looking like an eraser this can't be "protecting" the area from it -- more likely just the stats card's background color. The stats themselves only get redrawn when the switch below happens to hit case 2 or 3, so they're only visible for one frame after finishing class/skill picks. This contradicts a real-device reference screenshot showing stats persisting through later screens (e.g. name entry) -- root cause not yet found; see the STILL OPEN notes.
     FUN_00011774(0x11,0,0x8e,199);
     FUN_000114e4();
     FUN_00023de8((short *)pcVar_rec);
@@ -14433,7 +14466,7 @@ char *param_3;
       DAT_001005c0 = 0;
       FUN_00035df8(1);
       DAT_000fb858 = DAT_001005c8;
-      FUN_00011e5c(0,0,DAT_001005c8,200,0x140,0,0,1);
+      bitmap_blit(0,0,DAT_001005c8,200,0x140,0,0,1);
 LAB_00025468:
       sVar8 = 0;
       FUN_000570b4();
@@ -14535,7 +14568,7 @@ LAB_00025468:
         if (iVar13 < 0) {
           iVar13 = iVar4 + 0x39;
         }
-        FUN_00011e5c((short)(iVar13 >> 1) + 0x10,(short)(iVar11 >> 1) + 0x2b,iVar14 + param_1,bVar3,
+        bitmap_blit((short)(iVar13 >> 1) + 0x10,(short)(iVar11 >> 1) + 0x2b,iVar14 + param_1,bVar3,
                      bVar2,0,0,1);
         FUN_000570b4();
         uVar15 = CONCAT44(extraout_r1,DAT_00086df8);
@@ -14579,7 +14612,7 @@ LAB_00025468:
           DAT_001005c0 = 0;
           FUN_00035df8(1);
           DAT_000fb858 = DAT_001005c8;
-          FUN_00011e5c(0,0,DAT_001005c8,200,0x140,0,0,1);
+          bitmap_blit(0,0,DAT_001005c8,200,0x140,0,0,1);
           goto LAB_00025468;
         }
         sVar8 = 8;
@@ -14592,7 +14625,7 @@ LAB_00025468:
       FUN_00035df8(1);
       DAT_000fb858 = DAT_001005c8;
       FUN_000114e4();
-      FUN_00011e5c(0,0,DAT_000fb858,200,0x140,0,0,1);
+      bitmap_blit(0,0,DAT_000fb858,200,0x140,0,0,1);
       sVar8 = FUN_000112a0(auStack_4c);
       iVar12 = -(int)sVar8 + 0xa0;
       if (iVar12 < 0) {
@@ -14618,7 +14651,7 @@ LAB_00025468:
 
 
 
-// Loads CHRGEN.DAT/CHARGEN.BYT/fonts/palette, builds the per-field record array, and drives FUN_00024e24's state machine.
+// Loads CHRGEN.DAT/CHARGEN.BYT/fonts/palette, builds the per-field record array, and drives character_generator_loop's state machine.
 int FUN_00025608()
 
 {
@@ -14728,8 +14761,8 @@ int FUN_00025608()
           uVar7 = FUN_00040e24(3,pcVar_palbuf);
           if ((uVar5 & uVar7) != 0) {
             FUN_00057118();
-            FUN_00011e5c(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
-            iVar4 = FUN_00024e24(DAT_000fb858,&DAT_000fb8f0,puVar8);
+            bitmap_blit(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
+            iVar4 = character_generator_loop(DAT_000fb858,&DAT_000fb8f0,puVar8);
             FUN_00040d00(s_FONT5X6P_SYS_00084e9c);
             if (DAT_00201c98 != 0) {
               FUN_0005b36c();
@@ -16145,15 +16178,15 @@ void FUN_000286cc()
   if (iVar3 != 0) {
     FUN_00011694(0xf1);
     FUN_00011774(0x2a,1,0xc2,0x2f);
-    FUN_00011e5c(0x2b,1,DAT_00100728,9,CONCAT22(uVar6,0x5e),0,0,1);
-    FUN_00011e5c(0x8b,1,DAT_00100728,9,0x5e,0,0,1);
-    FUN_00011e5c(0x52,10,DAT_0010072c,0x26,0x37,0,0,1);
-    FUN_00011e5c(0x8b,10,DAT_0010072c,0x26,0x37,0,0,1);
-    FUN_00011e5c(0x2b,10,DAT_00100730,0x26,0x26,0,0,1);
-    FUN_00011e5c(0xc3,10,DAT_00100730,0x26,0x26,0,0,1);
-    FUN_00011e5c(0x2a,0x31,DAT_00100734,10,0xc0,0,0,1);
-    FUN_00011e5c(0x2a,0x7f,DAT_00100738,10,0xc0,0,0,1);
-    FUN_00011e5c(0xec,8,DAT_0010073c,0x72,0x54,0,0,1);
+    bitmap_blit(0x2b,1,DAT_00100728,9,CONCAT22(uVar6,0x5e),0,0,1);
+    bitmap_blit(0x8b,1,DAT_00100728,9,0x5e,0,0,1);
+    bitmap_blit(0x52,10,DAT_0010072c,0x26,0x37,0,0,1);
+    bitmap_blit(0x8b,10,DAT_0010072c,0x26,0x37,0,0,1);
+    bitmap_blit(0x2b,10,DAT_00100730,0x26,0x26,0,0,1);
+    bitmap_blit(0xc3,10,DAT_00100730,0x26,0x26,0,0,1);
+    bitmap_blit(0x2a,0x31,DAT_00100734,10,0xc0,0,0,1);
+    bitmap_blit(0x2a,0x7f,DAT_00100738,10,0xc0,0,0,1);
+    bitmap_blit(0xec,8,DAT_0010073c,0x72,0x54,0,0,1);
     FUN_00011694(0xf1);
     FUN_000116dc(0x34,0x30,0xdc);
     DAT_00100678 = DAT_0023c1d4;
@@ -16176,7 +16209,7 @@ void FUN_000286cc()
                          (*(byte *)(DAT_00086df8 + 100) >> 2 & 7),1,&LAB_00028688,&LAB_000286a4);
     if (iVar3 != 0) {
       DAT_00088960 = 1;
-      FUN_00011e5c(0xc5,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
+      bitmap_blit(0xc5,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
       DAT_00088960 = 0;
       pcVar4 = (char *)FUN_0007863c((int)DAT_00201c74);
       pcVar5 = local_44;
@@ -16202,7 +16235,7 @@ void FUN_000286cc()
         }
       }
       DAT_00088960 = 1;
-      FUN_00011e5c(0x2d,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
+      bitmap_blit(0x2d,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
       DAT_00088960 = 0;
       sVar2 = FUN_00078b18(local_44,DAT_00100674,0,0);
       if (sVar2 != 0) {
@@ -22980,7 +23013,7 @@ LAB_00036858:
       Ordinal_1044(local_b8,&DAT_00088d98,0x300);
       if (local_b9 == '\0') {
         in_stack_ffffff10 = CONCAT22((short)((uint)in_stack_ffffff10 >> 0x10),0x140);
-        FUN_00012444(0,0,g_uw_buf_25800,200,in_stack_ffffff10,0,0,
+        FUN_00012444(0,0,g_uw_framebuffer,200,in_stack_ffffff10,0,0,
                      local_b8,2,0);
       }
       iVar10 = (int)acStack_d0[7];
@@ -23152,7 +23185,7 @@ LAB_00036ca4:
               }
               else {
                 in_stack_ffffff10 = CONCAT22((short)((uint)in_stack_ffffff10 >> 0x10),0x140);
-                FUN_00011e5c((int)param_2,200 - param_3,DAT_00101a70,200,in_stack_ffffff10,
+                bitmap_blit((int)param_2,200 - param_3,DAT_00101a70,200,in_stack_ffffff10,
                              0x140 - param_4,200 - param_5,1);
                 uVar14 = extraout_r3;
                 do {
@@ -23389,7 +23422,7 @@ LAB_00037a94:
       }
       if (local_b9 == '\0') {
         if (local_8d != -2) {
-          FUN_00012444(0,0,g_uw_buf_25800,200,CONCAT22(uVar24,0x140),0
+          FUN_00012444(0,0,g_uw_framebuffer,200,CONCAT22(uVar24,0x140),0
                        ,0,local_b8,2,1);
         }
         FUN_00040df0();
@@ -25865,7 +25898,7 @@ void FUN_0003bd50()
   FUN_000678e0();
   FUN_0005b758(0x34,0x14,0xab,0x70);
   Ordinal_1044(auStack_314,&DAT_00088d98,0x300);
-  FUN_00012444(0,0,g_uw_buf_25800,200,0x140,0,0,auStack_314,2,0);
+  FUN_00012444(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   FUN_00040e24(0,auStack_314);
   Ordinal_1047(acStack_41c,0,0x104);
   pcVar2 = &DAT_0023cca8;
@@ -25886,7 +25919,7 @@ void FUN_0003bd50()
   FUN_0005bb5c();
   FUN_0006fea4();
   FUN_000570b4();
-  FUN_000122d4(0,0,g_uw_buf_25800,200,0x140,0,0,auStack_314,2,0);
+  FUN_000122d4(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   return;
 }
 
@@ -28614,7 +28647,7 @@ undefined4 param_3;
       else {
         pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
       }
-      FUN_00011e5c(param_2,param_3,pcVar3,cVar2,cVar1,0,0,0);
+      bitmap_blit(param_2,param_3,pcVar3,cVar2,cVar1,0,0,0);
     }
   }
   else {
@@ -28717,7 +28750,7 @@ undefined4 param_3;
   else {
     pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
   }
-  FUN_00011e5c(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1,unaff_r4,unaff_r5);
+  bitmap_blit(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1,unaff_r4,unaff_r5);
   return;
 }
 
@@ -50794,7 +50827,7 @@ short param_4;
       iVar4 = 0;
       do {
         pcVar_rec = param_2 + iVar4 * 0x10;
-        FUN_00011e5c((int)*(short *)(pcVar_rec + 8),(int)*(short *)(pcVar_rec + 10),
+        bitmap_blit((int)*(short *)(pcVar_rec + 8),(int)*(short *)(pcVar_rec + 10),
                      *(undefined4 *)(param_2 + ((uint)(iVar4 == param_4) + iVar4 * 4) * 4),
                      (int)*(short *)(pcVar_rec + 0xe),*(undefined2 *)(pcVar_rec + 0xc),0,0,1);
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
@@ -50982,7 +51015,7 @@ undefined4 param_1;
         iVar6 = 0;
         do {
           iVar9 = iVar10 * 0x140 + iVar6;
-          *(undefined2 *)((g_uw_buf_25800) + iVar9 * 2) =
+          *(undefined2 *)((g_uw_framebuffer) + iVar9 * 2) =
                (&DAT_0024ad60)[*(byte *)(iVar9 + DAT_0023bf70)];
           iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
         } while (iVar6 < 0x140);
@@ -51003,7 +51036,7 @@ undefined4 param_1;
       if (local_838 != 3) {
         FUN_0006a200(uVar8,DAT_0023bf6c,0,uVar2);
         FUN_00040e24(2,(char *)pvVar_buf10000 + 64000);
-        FUN_000122d4(0,0,g_uw_buf_25800,200);
+        FUN_000122d4(0,0,g_uw_framebuffer,200);
       }
     }
     sVar3 = FUN_0006af3c(uVar8,DAT_0023bf6c,0,uVar2);
@@ -51017,7 +51050,7 @@ undefined4 param_1;
     }
     else if (local_838 == 1) {
       DAT_0024af74 = 1;
-      FUN_00012444(0,0,g_uw_buf_25800,200);
+      FUN_00012444(0,0,g_uw_framebuffer,200);
       iVar4 = FUN_000259a0();
       if (iVar4 != 0) {
         Ordinal_1047(acStack_6e4,0,0x104);
@@ -52416,7 +52449,7 @@ int param_3;
 {
   /* iVar1 was `int`, truncating the Ordinal_1041 (malloc) heap pointer
      it holds -- it's used both as the fread-destination buffer and as
-     the source pointer handed to FUN_00011e5c (which now takes a real
+     the source pointer handed to bitmap_blit (which now takes a real
      char*). */
   char *iVar1;
   int iVar2;
@@ -52436,7 +52469,7 @@ int param_3;
       if (-1 < (short)param_1) {
         FUN_00040efc(param_1);
       }
-      FUN_00011e5c(0,0,iVar1,200,0x140,0,0,0);
+      bitmap_blit(0,0,iVar1,200,0x140,0,0,0);
       if (param_3 != 0) {
         FUN_00022f0c(1);
       }
@@ -52597,7 +52630,7 @@ void FUN_0006cca8()
   FUN_00076390((int)DAT_0023c21c,0x20a6);
   FUN_0006e96c(DAT_00086df8 + 0x47);
   FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
-  FUN_00011e5c(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+  bitmap_blit(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
   (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
   FUN_00076508();
   return;
@@ -53689,7 +53722,7 @@ undefined2 param_5;
     }
     FUN_00057118();
     uVar4 = FUN_00049954(DAT_0023c202);
-    FUN_00011e5c(0xec,8,uVar4,0x72,0x53,0,0,1);
+    bitmap_blit(0xec,8,uVar4,0x72,0x53,0,0,1);
     uVar1 = DAT_0023c1d4;
     DAT_0023c1d4 = (undefined1)param_1;
     DAT_00085c54 = 0;
@@ -53717,7 +53750,7 @@ void FUN_0006ed0c()
   }
   else {
     FUN_00057118();
-    FUN_00011e5c(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+    bitmap_blit(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
     (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
     FUN_00011694(0x1a);
     FUN_00022f0c(1);
@@ -53811,7 +53844,7 @@ bool FUN_0006edfc()
       if (iVar5 < 0) {
         iVar5 = iVar5 + 1;
       }
-      FUN_00011e5c((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
+      bitmap_blit((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
                    (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
                    DAT_0023c13c,0,0,1);
     }
@@ -53859,7 +53892,7 @@ bool FUN_0006edfc()
         if (iVar5 < 0) {
           iVar5 = iVar5 + 1;
         }
-        FUN_00011e5c((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
+        bitmap_blit((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
                      (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
                      DAT_0023c13c,0,0,1);
       }
@@ -53894,7 +53927,7 @@ bool FUN_0006edfc()
         if (iVar9 < 0) {
           iVar9 = DAT_0023c144 + -2;
         }
-        FUN_00011e5c((int)(short)DAT_0023c148 + (int)(short)(iVar9 >> 1),
+        bitmap_blit((int)(short)DAT_0023c148 + (int)(short)(iVar9 >> 1),
                      (int)(short)(iVar5 >> 1) - (int)(short)DAT_0023c14c,iVar7 + 0x2800,0x78,3,0,0,1
                     );
       }
@@ -53923,7 +53956,7 @@ bool FUN_0006edfc()
           if (iVar5 < 0) {
             iVar5 = iVar5 + 1;
           }
-          FUN_00011e5c((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
+          bitmap_blit((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
                        (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
                        DAT_0023c13c,0,0,1);
         }
@@ -53942,7 +53975,7 @@ bool FUN_0006edfc()
           }
           FUN_00011774((int)(short)DAT_0023c148,(int)DAT_0023c140 + (uint)DAT_0023c14c,
                        DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
-          FUN_00011e5c((int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c140,
+          bitmap_blit((int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c140,
                        DAT_0023c144,0,0,1);
           DAT_0023c208 = 0;
         }
@@ -53961,7 +53994,7 @@ bool FUN_0006edfc()
     FUN_00011774(0xec,8,0x13f,0x7a);
     FUN_00040b0c(0x20bc,0x110,4,1,1);
     FUN_00040b0c(0x20b4,0x110,0x7a,1,1);
-    FUN_00011e5c(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
+    bitmap_blit(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
 LAB_0006f008:
     FUN_000570b4();
   }
@@ -53975,7 +54008,7 @@ LAB_0006f008:
       uVar1 = DAT_0023c1d4;
       DAT_0023c1d4 = (undefined1)DAT_0023c134;
       FUN_0001156c(0xec,8,0x13f,0x7a);
-      FUN_00011e5c(0xec,8,uVar3,0x72,0x53,0,0,1);
+      bitmap_blit(0xec,8,uVar3,0x72,0x53,0,0,1);
       (*(code *)(&PTR_FUN_00087220)[DAT_0023c134])();
       FUN_00011478();
       DAT_0023c1d4 = uVar1;
@@ -54234,7 +54267,7 @@ void FUN_0006fcb0()
     }
     DAT_0023c210 = DAT_0023c214 + (short)(&DAT_0023c158)[sVar1];
     uVar2 = FUN_000409f8();
-    FUN_00011e5c((uint)(byte)(&DAT_0023c1b8)[sVar1] + (int)DAT_0023c1ec + 0x34,
+    bitmap_blit((uint)(byte)(&DAT_0023c1b8)[sVar1] + (int)DAT_0023c1ec + 0x34,
                  0x83 - (uint)(byte)(&DAT_0023c198)[sVar1],uVar2,*(undefined1 *)(DAT_0023c210 + 2),
                  *(undefined1 *)(DAT_0023c210 + 1),0,0,1);
   }
@@ -54852,7 +54885,7 @@ void FUN_00070c90()
   short sVar6;
   /* Was `undefined4`, truncating FUN_0007863c's real char* return on
      this 64-bit host -- same bug class as the other FUN_0007863c
-     truncation fixes this session (e.g. FUN_00024e24's uVar10). Used
+     truncation fixes this session (e.g. character_generator_loop's uVar10). Used
      consistently as a string pointer everywhere else in this function
      (FUN_00011060's first arg, Ordinal_1063's second arg), so retyping
      is a straightforward drop-in fix. */
@@ -58548,7 +58581,7 @@ short param_5;
                   do {
                     if (0x13f < iVar11) break;
                     iVar11 = iVar11 + 1;
-                    sVar10 = *(short *)((g_uw_buf_25800) + iVar12 * 2)
+                    sVar10 = *(short *)((g_uw_framebuffer) + iVar12 * 2)
                     ;
                     iVar12 = iVar12 + 1;
                     if ((DAT_00088960 & sVar10 == 0) == 0) {
@@ -58621,7 +58654,7 @@ short * param_1;
           iVar7 = iVar7 + 1;
           psVar_target = psVar_target + 1;
           if ((DAT_00088960 & sVar2 == 0) == 0) {
-            *(short *)((g_uw_buf_25800) + iVar6 * 2) = sVar2;
+            *(short *)((g_uw_framebuffer) + iVar6 * 2) = sVar2;
           }
           iVar6 = iVar6 + 1;
         } while (iVar7 < iVar1);
@@ -58662,12 +58695,12 @@ undefined4 param_4;
     if (iVar2 != 0) {
       uVar3 = Ordinal_1041(0x25800);
       /* was a CONCAT22 pair split across _DAT_0023c5ac/DAT_0023c5b0 --
-         see g_uw_buf_25800's declaration comment. */
-      g_uw_buf_25800 = uVar3;
+         see g_uw_framebuffer's declaration comment. */
+      g_uw_framebuffer = uVar3;
       uVar3 = Ordinal_1041(0x25800);
       FUN_0003af28(param_1,0xca,uVar3);
       FUN_00011000(0,0xf0,0,0x140);
-      Ordinal_1044(g_uw_buf_25800,uVar3,0x25800);
+      Ordinal_1044(g_uw_framebuffer,uVar3,0x25800);
       FUN_0002310c();
       Ordinal_496(2000);
       Ordinal_1018(uVar3);
@@ -59190,6 +59223,78 @@ LAB_00077d4c:
   uVar3 = 0;
 LAB_00077d70:
   *puVar2 = uVar3;
+  return 0;
+}
+
+
+
+/* Recovered from a message-dispatch table baked into the original binary's
+   .rdata (0x830e4-0x83144) that routes WM_MOUSEMOVE/WM_LBUTTONDOWN/
+   WM_LBUTTONUP/WM_RBUTTONDOWN/WM_RBUTTONUP (msg 0x200/0x201/0x202/0x204/
+   0x205) to this handler -- entirely separate from FUN_00077b2c's table
+   entries (msg 0x100-0x107, keyboard only). Ghidra never resolved this
+   address into a named function since it's only ever reached through that
+   table, never a direct call -- same "orphaned callback" pattern as
+   LAB_000255b4/d0 and LAB_00028688/a4 above. Recovered by hand from the
+   real ARM disassembly of UU.exe (function body 0x77dd0-0x77f18).
+
+   param_2 = message code; param_4 = lParam, the tap/cursor position packed
+   as (y<<16)|x in the portrait "hardware" framebuffer's own 240x320
+   coordinate space (see gx_stub.c's HW_W/HW_H comment) -- x is untouched,
+   y is stored flipped (320-y) to match whatever coordinate origin the
+   rest of the game's mouse-position consumers expect (already visible in
+   the existing *DAT_000876bc/*DAT_000876c0 reset-to-0 pattern elsewhere
+   in this file). Every message type updates the tracked cursor position;
+   WM_LBUTTONDOWN additionally hit-tests taps landing in the x:200-240
+   strip (the chargen name-entry on-screen keyboard, see DAT_00087650's
+   comment) via FUN_00057a80 and re-dispatches the resulting button ID as
+   a synthetic WM_CHAR (letters/digits) or WM_KEYDOWN (backspace/enter/
+   space/0x14) through Ordinal_868 (PostMessage) -> FUN_00077b2c, the same
+   path real keyboard input already uses. Taps outside that strip instead
+   set DAT_00204844, a general click-pending flag consumed elsewhere
+   (main game world / inventory click handling, not chargen). */
+undefined4 FUN_00077dd0(param_1,param_2,param_3,param_4)
+undefined4 param_1;
+uint param_2;
+undefined4 param_3;
+int param_4;
+
+{
+  short x;
+  short y;
+  int id;
+
+  y = (short)(param_4 >> 16);
+  *DAT_000876bc = (ushort)(0x140 - y);
+  x = (short)param_4;
+  *DAT_000876c0 = x;
+
+  if (param_2 == 0x201) {
+    if ((200 < x) && (x < 0xf0)) {
+      id = FUN_00057a80(*DAT_000876bc,x);
+      fprintf(stderr, "[mousehit] on-screen-keyboard tap: x=%d storedY=%d -> id=%d ('%c')\n", x, *DAT_000876bc, id, (id >= 0x20 && id < 0x7f) ? id : '?');
+      if ((id == 8) || (id == 0xd) || (id == 0x20) || (id == 0x14)) {
+        Ordinal_868(DAT_0023c548,0x100,id,0);
+      }
+      else {
+        Ordinal_868(DAT_0023c548,0x102,id,0);
+      }
+    }
+    else {
+      DAT_00204844 = 1;
+      if ((DAT_002020c0 != 0) || (DAT_002020c4 != 0)) {
+        DAT_00204844 = 2;
+      }
+    }
+  }
+  if (param_2 == 0x202) {
+    DAT_00204844 = 0;
+    if ((DAT_00202948 == 0) && ((DAT_00201b60 & 2) == 0)) {
+      DAT_00204844 = 0;
+    }
+    *DAT_000876bc = 0;
+    *DAT_000876c0 = 0;
+  }
   return 0;
 }
 
@@ -63008,7 +63113,7 @@ short param_3;
   
   iVar1 = (int)param_2;
   *(undefined2 *)
-   ((g_uw_buf_25800) + (iVar1 * 0x140 + (int)param_1) * 2) =
+   ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
        (&DAT_0024ad60)[param_3];
   FUN_00011000(iVar1,iVar1,(int)param_1);
   return;
@@ -63016,6 +63121,11 @@ short param_3;
 
 
 
+/* Real body confirmed stripped from the shipped ARM code (disassembly is
+   just `cpy pc,lr` -- an immediate return, ignoring whatever argument its
+   single call site passes). Likely InitDebug()-equivalent from the same
+   LG/SS1-heritage debug-print system FUN_0007ea34 belongs to; genuinely
+   does nothing in this binary, so left as a no-op. */
 void FUN_0007ea30()
 
 {
@@ -63024,9 +63134,32 @@ void FUN_0007ea30()
 
 
 
-void FUN_0007ea34()
+/* Real body confirmed stripped from the shipped ARM code (disassembly:
+   the standard vararg prologue -- stmdb saving r0-r3 and r12/lr to the
+   stack -- immediately followed by ldmia popping straight back out and
+   returning, i.e. the compiler kept the calling convention but the actual
+   printf-style body was compiled out, e.g. via #ifdef DEBUG). This is the
+   same SS1-engine-style debug-print gateway the remaining format strings
+   elsewhere in this file belong to (e.g. "checking_if_%d_and_%d_are_com-
+   bin", "objsbecombinable_returns_%d", "At_%d_%d") -- there's no level
+   parameter to recover since none of its ~8 call sites pass one and the
+   real body never used one, so there's nothing to restore verbatim.
+   Implemented here as a real vararg printer instead. Currently defaults
+   to ON (UW_DEBUG_PRINT=0 to silence) while this is under active
+   development, unlike the original release build which had it fully
+   compiled out. */
+void FUN_0007ea34(char *param_1, ...)
 
 {
+  const char *diag = getenv("UW_DEBUG_PRINT");
+  if ((param_1 != (char *)0x0) && (diag == (char *)0x0 || diag[0] != '0')) {
+    va_list ap;
+    fprintf(stderr, "[dbg] ");
+    va_start(ap, param_1);
+    vfprintf(stderr, param_1, ap);
+    va_end(ap);
+    fprintf(stderr, "\n");
+  }
   return;
 }
 
