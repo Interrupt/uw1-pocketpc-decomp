@@ -250,7 +250,24 @@ undefined4 param_1;
       DEBUG(TRACE, "blitting %s", s__DATA_opscr_byt_00086eec);
       FUN_0007ee4c(acStack_7ec,pvVar_buf10000,64000);
       FUN_00057118();
-      FUN_00040e24(2,(char *)pvVar_buf10000 + 64000);
+      // HACK: deviation from the real binary -- was FUN_00040e24(2, temp_buf),
+      /* confirmed via ARM disassembly of the original UU.exe
+         (main_menu_loop == FUN_0006a3d8, calls FUN_00040e24 directly at
+         both its own palette-load points, never through FUN_00040efc).
+         That's a genuine shipped bug, not a decompile artifact:
+         FUN_00040e24 installs DAT_0024ad60 correctly for the menu's own
+         draw, but never syncs DAT_00088d98 -- the buffer
+         FUN_0007e99c() (called periodically by the menu's own hover-
+         loop timer, FUN_0006a168) always reinstalls from. Since nothing
+         else keeps DAT_00088d98 current for the menu screen, it holds
+         whatever palette some other screen last loaded via
+         FUN_00040efc, and the timer clobbers the menu's correct
+         palette back to that stale one on the very next hover/redraw
+         (confirmed via UW_DEBUG_LEVEL=TRACE: DAT_0024ad60 flips from
+         pals.dat index 2 to a leftover index 5). Using FUN_00040efc(2)
+         here instead keeps DAT_00088d98 in sync, so that clobber
+         reinstalls the *same* correct palette instead of a stale one. */
+      FUN_00040efc(2);
       iVar10 = 0;
       do {
         iVar6 = 0;
@@ -281,7 +298,9 @@ undefined4 param_1;
       }
       if (local_838 != 3) {
         FUN_0006a200(uVar8,DAT_0023bf6c,0,uVar2);
-        FUN_00040e24(2,(char *)pvVar_buf10000 + 64000);
+        // HACK: same DAT_00088d98-sync deviation as this function's other
+        // palette-load point above -- see that comment.
+        FUN_00040efc(2);
         FUN_000122d4(0,0,g_uw_framebuffer,200);
       }
     }

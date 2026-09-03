@@ -12757,7 +12757,9 @@ short param_2;
   undefined2 *puVar19;
   ushort *puVar20;
   int iVar21;
-  
+
+  DEBUG(TRACE, "[palette] FUN_00022b54 installing DAT_0024ad60, param_1=%s param_2=%d",
+        param_1 ? "buffer" : "NULL(default)", param_2);
   if (param_1 == (undefined1 *)0x0) {
     puVar20 = &DAT_0024ad60;
     iVar21 = 0x100;
@@ -28244,7 +28246,8 @@ void *param_2;
   undefined4 uVar4;
   char acStack_420 [264];
   undefined1 auStack_318 [768];
-  
+
+  DEBUG(TRACE, "[palette] FUN_00040e24 loading pals.dat index=%u", param_1);
   pcVar3 = &DAT_0023cca8;
     stack0xffdc2f38_ptr = acStack_420;
   do {
