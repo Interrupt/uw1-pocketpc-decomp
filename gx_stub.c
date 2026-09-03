@@ -488,6 +488,31 @@ int GXEndDraw(void) {
     SDL_RenderClear(g_ren);
     SDL_RenderCopy(g_ren, g_tex, NULL, NULL);
     SDL_RenderPresent(g_ren);
+
+    /* Real GAPI hardware's GXEndDraw blocked until the next display
+     * refresh -- that's what gave the whole game its effective 60Hz
+     * tick rate (every polling/redraw loop in the game funnels through
+     * here via FUN_00022f0c), with no explicit frame-rate code of its
+     * own anywhere in the decompile. SDL_RENDERER_PRESENTVSYNC alone
+     * doesn't reliably reproduce that on this host -- desktop GPU
+     * drivers can queue/batch several presents before actually blocking
+     * on a vsync (confirmed: FUN_000122d4's fade-in, which calls
+     * GXEndDraw 8 times in a tight loop, measured only ~19ms total
+     * instead of something near 8 * 16.67ms). Explicitly cap how often
+     * a call here can complete, so every present -- not just whichever
+     * ones the driver happens to actually block on -- gets real ~60Hz
+     * pacing. */
+    static Uint32 last_frame_ticks = 0;
+    const Uint32 frame_budget_ms = 1000 / 60;
+    Uint32 now = SDL_GetTicks();
+    if (last_frame_ticks != 0) {
+        Uint32 elapsed = now - last_frame_ticks;
+        if (elapsed < frame_budget_ms) {
+            SDL_Delay(frame_budget_ms - elapsed);
+        }
+    }
+    last_frame_ticks = SDL_GetTicks();
+
     return 1;
 }
 
