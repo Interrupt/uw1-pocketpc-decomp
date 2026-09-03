@@ -62013,7 +62013,25 @@ void FUN_0007e998()
 void FUN_0007e99c()
 
 {
-  FUN_00022abc(&DAT_00088640,&DAT_00088d98);
+  /* FUN_00022abc's 3rd argument was dropped here -- confirmed via real
+     ARM disassembly: this call site (`bl FUN_00022abc` right after
+     loading only r0/r1) never sets r2 itself, so it silently used
+     whatever was left over in that register from the caller's own
+     context. FUN_00022abc's param_3 controls whether it scales each
+     raw palette byte up from PALS.DAT's 6-bit-per-channel storage
+     (param_3==0, `<<2`) or copies it unscaled (param_3!=0) -- and
+     DAT_00088d98 (the source here) always holds the RAW, unscaled bytes
+     FUN_00040e24 loaded (it only produces the *scaled* version in its
+     own local stack buffer, which doesn't survive past that call). With
+     a leftover-nonzero r2, this installed the unscaled (very dark)
+     values into DAT_0024ad60 instead of the real palette -- confirmed:
+     this is what made the whole screen go dark after wiring
+     main_menu_loop through FUN_00040efc (which calls this function on
+     every palette load, unlike the rarer hover-timer-only path this
+     bug previously hid behind). Pass 0 explicitly, matching
+     FUN_00040e24's own established convention for this exact source
+     format. */
+  FUN_00022abc(&DAT_00088640,&DAT_00088d98,0);
   FUN_00022b54(&DAT_00088640,0xffffffff);
   return;
 }
