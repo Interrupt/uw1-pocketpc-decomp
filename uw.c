@@ -796,7 +796,7 @@ static undefined DAT_00084e58_backing[8192];
 char *DAT_001005c8;
 /* Was `undefined4` (4 bytes), but assigned real char* pointers
    (DAT_001005c4/DAT_001005c8) throughout the character-generation/
-   font-drawing subsystem and passed directly as bitmap_blit's char*
+   font-drawing subsystem and passed directly as bitmap_blit_to_framebuffer's char*
    source-bitmap param -- truncated every one of those pointers on this
    64-bit host. */
 char *DAT_000fb858;
@@ -3633,7 +3633,7 @@ uint param_4;
 
 
 
-void FUN_00011694(param_1)
+void set_draw_color(param_1)
 undefined2 param_1;
 
 {
@@ -3692,7 +3692,7 @@ uint param_3;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00011774(param_1,param_2,param_3,param_4)
+void rect_fill_or_save_restore(param_1,param_2,param_3,param_4)
 ushort param_1;
 uint param_2;
 short param_3;
@@ -3991,7 +3991,7 @@ short param_7;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void bitmap_blit(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+void bitmap_blit_to_framebuffer(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 ushort param_1;
 ushort param_2;
 char *param_3;
@@ -4108,7 +4108,7 @@ void FUN_000120c8(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_
 short param_1;
 short param_2;
 /* Was `int`, truncating the real char* source-bitmap pointer callers
-   pass (e.g. DAT_001005c8) -- same role/bug as bitmap_blit's param_3. */
+   pass (e.g. DAT_001005c8) -- same role/bug as bitmap_blit_to_framebuffer's param_3. */
 char *param_3;
 short param_4;
 short param_5;
@@ -4533,8 +4533,8 @@ void FUN_00012958()
 undefined4 FUN_00012970()
 
 {
-  FUN_00011694(0);
-  FUN_00011774(0x34,0x13,0xe0,0x83);
+  set_draw_color(0);
+  rect_fill_or_save_restore(0x34,0x13,0xe0,0x83);
   FUN_0001de0c();
   FUN_0001f370(0,0);
   FUN_0001dfe8(&DAT_000a85d0);
@@ -6721,8 +6721,8 @@ LAB_000170bc:
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
             iVar10 = FUN_000112a0(local_58);
-            FUN_00011694(0x1a);
-            FUN_00011774((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
+            set_draw_color(0x1a);
+            rect_fill_or_save_restore((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
                          (uint)*(ushort *)(pcVar5 + 0x32) + iVar10,*(ushort *)(pcVar5 + 0x34) + 5);
             FUN_0001156c((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
                          (uint)*(ushort *)(pcVar5 + 0x32) + iVar10,*(ushort *)(pcVar5 + 0x34) + 5);
@@ -6784,8 +6784,8 @@ LAB_000171d0:
         }
         iVar8 = FUN_000112a0(local_58);
         if (0 < (short)iVar8) {
-          FUN_00011694(0x1a);
-          FUN_00011774((uint)*(ushort *)(&DAT_000baa0a + iVar7),
+          set_draw_color(0x1a);
+          rect_fill_or_save_restore((uint)*(ushort *)(&DAT_000baa0a + iVar7),
                        (uint)*(ushort *)(&DAT_000baa0c + iVar7),
                        (uint)*(ushort *)(&DAT_000baa0a + iVar7) + iVar8,
                        *(ushort *)(&DAT_000baa0c + iVar7) + 6);
@@ -6999,7 +6999,7 @@ undefined4 param_1;
   else {
     FUN_000116a4(0,0,0x13f,199);
     FUN_00040efc(1);
-    bitmap_blit(0,1,uVar3,200,0x140,0,0,1);
+    bitmap_blit_to_framebuffer(0,1,uVar3,200,0x140,0,0,1);
     FUN_000165d0();
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
@@ -13535,8 +13535,8 @@ void FUN_00023a00()
   int iVar1;
   undefined1 auStack_14 [12];
   
-  FUN_00011694(0x1a);
-  FUN_00011774(0x5d,0x32,0x8c,0x7a);
+  set_draw_color(0x1a);
+  rect_fill_or_save_restore(0x5d,0x32,0x8c,0x7a);
   FUN_000114e4();
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
   FUN_00011060(&DAT_00084e58,0x5d,0x32);
@@ -13570,8 +13570,8 @@ void FUN_00023b38()
   int iVar5;
   undefined1 auStack_24 [12];
 
-  FUN_00011694(0x1a);
-  FUN_00011774(0x1e,0x85,0x7d,0xbc);
+  set_draw_color(0x1a);
+  rect_fill_or_save_restore(0x1e,0x85,0x7d,0xbc);
   FUN_00035df8(1);
   DAT_000fb858 = DAT_001005c8;
   FUN_000120c8(0x1e,0x85,DAT_001005c8,0x37,0x5f,0x1e,0x85,1);
@@ -13703,7 +13703,7 @@ short * param_1;
   byte bVar1;
   byte bVar2;
   /* Was `int iVar3` holding DAT_000fb858 (a real pointer, used as
-     bitmap_blit's source-bitmap arg right after) -- truncating. Only
+     bitmap_blit_to_framebuffer's source-bitmap arg right after) -- truncating. Only
      ever used for this one pointer-holding role in this function. */
   char *iVar3;
   short sVar4;
@@ -13814,7 +13814,7 @@ short * param_1;
       iVar9 = ((iVar9 >> 1) + 0xa4) * 0x10000 >> 0x10;
     }
     else {
-      bitmap_blit(0xa4,iVar10,DAT_000fb898 + DAT_000fb858,0x10,0x91,0,0,1);
+      bitmap_blit_to_framebuffer(0xa4,iVar10,DAT_000fb898 + DAT_000fb858,0x10,0x91,0,0,1);
       iVar11 = 0xa8;
       iVar9 = 0xa8;
     }
@@ -13845,7 +13845,7 @@ short * param_1;
         }
         sVar7 = (short)uVar12;
         iVar11 = CONCAT11(*(undefined1 *)((char *)param_1 + 0x13),(char)param_1[9]) + iVar11 + uVar12;
-        bitmap_blit(iVar11,iVar10,
+        bitmap_blit_to_framebuffer(iVar11,iVar10,
                      (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)param_1 + 0xd),(char)param_1[6])]
                      + iVar3,(int)(short)local_2c,sVar7,0,0,0);
         if (param_1[6] == 0) {
@@ -13862,7 +13862,7 @@ short * param_1;
         }
         else if (param_1[6] == 3) {
           DAT_00088960 = 1;
-          bitmap_blit(iVar11,iVar10,
+          bitmap_blit_to_framebuffer(iVar11,iVar10,
                        (&DAT_000fb880)
                        [(int)(((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) +
                                ((int)((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3) + 1)
@@ -13909,7 +13909,7 @@ byte param_3;
   int iVar9;
   int iVar10;
   /* iVar10 doubles as a plain int (screen-coordinate math, early on) and
-     a real pointer (DAT_000fb858, used as bitmap_blit's source-bitmap
+     a real pointer (DAT_000fb858, used as bitmap_blit_to_framebuffer's source-bitmap
      arg) later -- mutually exclusive, but both squeezed into one `int`,
      truncating the pointer. Dedicated variable for the pointer role. */
   char *pcVar_fb858;
@@ -13956,7 +13956,7 @@ byte param_3;
         FUN_00035df8(0);
         DAT_000fb858 = DAT_001005c4;
         DAT_00088960 = 1;
-        bitmap_blit((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
+        bitmap_blit_to_framebuffer((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
                      (int)sVar3 * (bVar1 + 4) + iVar5,pcVar_fb858 + iVar7,(uint)bVar1,bVar2,0,0,1);
         FUN_000570b4();
         pcVar_fb858 = DAT_000fb858;
@@ -14327,7 +14327,7 @@ LAB_00024dd4:
             iVar11 = ((int)sVar3 - (int)sVar5) * 0x10000;
             iVar7 = iVar11 >> 0x10;
             FUN_00057118();
-            bitmap_blit(iVar7,iVar9,DAT_000fb898 + DAT_000fb858,0x10,0x91,
+            bitmap_blit_to_framebuffer(iVar7,iVar9,DAT_000fb898 + DAT_000fb858,0x10,0x91,
                          (short)((uint)iVar11 >> 0x10) + -0xa4,0,1);
             FUN_000570b4();
           }
@@ -14441,14 +14441,14 @@ char *param_3;
     FUN_00035df8(1);
     DAT_000fb858 = DAT_001005c8;
     // Redraws the raw parchment background (both pages, 0,0 to 320,200) from scratch every loop iteration -- this is the mechanism that clears stale text from the *right* page between prompts (confirmed: disabling it leaves old prompt text visibly bleeding through under new prompt text). As a side effect it also wipes any stats text the previous iteration's switch-case drew on the left page. Confirmed present in the real ARM disassembly at this exact spot, in this exact order relative to the fill below -- not a decompilation bug.
-    bitmap_blit(0,0,DAT_001005c8,200,0x140,0,0,1);
+    bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
     FUN_000570b4();
     FUN_00035df8(0);
     DAT_000fb858 = DAT_001005c4;
     FUN_00057118();
-    FUN_00011694(0x1a);
+    set_draw_color(0x1a);
     // Fills the left-page stats/portrait area (x:17-142,y:0-199) with a solid backing color, on top of the parchment the reblit above just redrew. Runs *after* that reblit (confirmed via disassembly), so despite looking like an eraser this can't be "protecting" the area from it -- more likely just the stats card's background color. The stats themselves only get redrawn when the switch below happens to hit case 2 or 3, so they're only visible for one frame after finishing class/skill picks. This contradicts a real-device reference screenshot showing stats persisting through later screens (e.g. name entry) -- root cause not yet found; see the STILL OPEN notes.
-    FUN_00011774(0x11,0,0x8e,199);
+    rect_fill_or_save_restore(0x11,0,0x8e,199);
     FUN_000114e4();
     FUN_00023de8((short *)pcVar_rec);
     FUN_0002431c((short *)pcVar_rec,0,0xff);
@@ -14466,7 +14466,7 @@ char *param_3;
       DAT_001005c0 = 0;
       FUN_00035df8(1);
       DAT_000fb858 = DAT_001005c8;
-      bitmap_blit(0,0,DAT_001005c8,200,0x140,0,0,1);
+      bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
 LAB_00025468:
       sVar8 = 0;
       FUN_000570b4();
@@ -14568,7 +14568,7 @@ LAB_00025468:
         if (iVar13 < 0) {
           iVar13 = iVar4 + 0x39;
         }
-        bitmap_blit((short)(iVar13 >> 1) + 0x10,(short)(iVar11 >> 1) + 0x2b,iVar14 + param_1,bVar3,
+        bitmap_blit_to_framebuffer((short)(iVar13 >> 1) + 0x10,(short)(iVar11 >> 1) + 0x2b,iVar14 + param_1,bVar3,
                      bVar2,0,0,1);
         FUN_000570b4();
         uVar15 = CONCAT44(extraout_r1,DAT_00086df8);
@@ -14604,15 +14604,15 @@ LAB_00025468:
       case 7:
         if (uVar1 != 0) {
           FUN_00057118();
-          FUN_00011694(0x1a);
-          FUN_00011774(0x11,0,0x8f,199);
+          set_draw_color(0x1a);
+          rect_fill_or_save_restore(0x11,0,0x8f,199);
           FUN_000570b4();
           local_64[0] = 0;
           memset(local_5c_buf + 4, 0x14, 6);
           DAT_001005c0 = 0;
           FUN_00035df8(1);
           DAT_000fb858 = DAT_001005c8;
-          bitmap_blit(0,0,DAT_001005c8,200,0x140,0,0,1);
+          bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
           goto LAB_00025468;
         }
         sVar8 = 8;
@@ -14625,7 +14625,7 @@ LAB_00025468:
       FUN_00035df8(1);
       DAT_000fb858 = DAT_001005c8;
       FUN_000114e4();
-      bitmap_blit(0,0,DAT_000fb858,200,0x140,0,0,1);
+      bitmap_blit_to_framebuffer(0,0,DAT_000fb858,200,0x140,0,0,1);
       sVar8 = FUN_000112a0(auStack_4c);
       iVar12 = -(int)sVar8 + 0xa0;
       if (iVar12 < 0) {
@@ -14641,8 +14641,8 @@ LAB_00025468:
       }
       FUN_00011060(uVar10,(short)(iVar12 >> 1) + 0xa0,0x62);
       FUN_000114e4();
-      FUN_00011694(0x1a);
-      FUN_00011774(0xa0,199,0x13f,0);
+      set_draw_color(0x1a);
+      rect_fill_or_save_restore(0xa0,199,0x13f,0);
       FUN_00076b24(local_60);
       return 1;
     }
@@ -14761,7 +14761,7 @@ int FUN_00025608()
           uVar7 = FUN_00040e24(3,pcVar_palbuf);
           if ((uVar5 & uVar7) != 0) {
             FUN_00057118();
-            bitmap_blit(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
+            bitmap_blit_to_framebuffer(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
             iVar4 = character_generator_loop(DAT_000fb858,&DAT_000fb8f0,puVar8);
             FUN_00040d00(s_FONT5X6P_SYS_00084e9c);
             if (DAT_00201c98 != 0) {
@@ -16176,18 +16176,18 @@ void FUN_000286cc()
   uVar6 = 2;
   iVar3 = FUN_000417b4(s_converse_00084ff4,0,0xffffffff,&LAB_00028688,&LAB_000286a4);
   if (iVar3 != 0) {
-    FUN_00011694(0xf1);
-    FUN_00011774(0x2a,1,0xc2,0x2f);
-    bitmap_blit(0x2b,1,DAT_00100728,9,CONCAT22(uVar6,0x5e),0,0,1);
-    bitmap_blit(0x8b,1,DAT_00100728,9,0x5e,0,0,1);
-    bitmap_blit(0x52,10,DAT_0010072c,0x26,0x37,0,0,1);
-    bitmap_blit(0x8b,10,DAT_0010072c,0x26,0x37,0,0,1);
-    bitmap_blit(0x2b,10,DAT_00100730,0x26,0x26,0,0,1);
-    bitmap_blit(0xc3,10,DAT_00100730,0x26,0x26,0,0,1);
-    bitmap_blit(0x2a,0x31,DAT_00100734,10,0xc0,0,0,1);
-    bitmap_blit(0x2a,0x7f,DAT_00100738,10,0xc0,0,0,1);
-    bitmap_blit(0xec,8,DAT_0010073c,0x72,0x54,0,0,1);
-    FUN_00011694(0xf1);
+    set_draw_color(0xf1);
+    rect_fill_or_save_restore(0x2a,1,0xc2,0x2f);
+    bitmap_blit_to_framebuffer(0x2b,1,DAT_00100728,9,CONCAT22(uVar6,0x5e),0,0,1);
+    bitmap_blit_to_framebuffer(0x8b,1,DAT_00100728,9,0x5e,0,0,1);
+    bitmap_blit_to_framebuffer(0x52,10,DAT_0010072c,0x26,0x37,0,0,1);
+    bitmap_blit_to_framebuffer(0x8b,10,DAT_0010072c,0x26,0x37,0,0,1);
+    bitmap_blit_to_framebuffer(0x2b,10,DAT_00100730,0x26,0x26,0,0,1);
+    bitmap_blit_to_framebuffer(0xc3,10,DAT_00100730,0x26,0x26,0,0,1);
+    bitmap_blit_to_framebuffer(0x2a,0x31,DAT_00100734,10,0xc0,0,0,1);
+    bitmap_blit_to_framebuffer(0x2a,0x7f,DAT_00100738,10,0xc0,0,0,1);
+    bitmap_blit_to_framebuffer(0xec,8,DAT_0010073c,0x72,0x54,0,0,1);
+    set_draw_color(0xf1);
     FUN_000116dc(0x34,0x30,0xdc);
     DAT_00100678 = DAT_0023c1d4;
     DAT_0023c1d4 = 0;
@@ -16209,7 +16209,7 @@ void FUN_000286cc()
                          (*(byte *)(DAT_00086df8 + 100) >> 2 & 7),1,&LAB_00028688,&LAB_000286a4);
     if (iVar3 != 0) {
       DAT_00088960 = 1;
-      bitmap_blit(0xc5,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
+      bitmap_blit_to_framebuffer(0xc5,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
       DAT_00088960 = 0;
       pcVar4 = (char *)FUN_0007863c((int)DAT_00201c74);
       pcVar5 = local_44;
@@ -16235,7 +16235,7 @@ void FUN_000286cc()
         }
       }
       DAT_00088960 = 1;
-      bitmap_blit(0x2d,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
+      bitmap_blit_to_framebuffer(0x2d,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
       DAT_00088960 = 0;
       sVar2 = FUN_00078b18(local_44,DAT_00100674,0,0);
       if (sVar2 != 0) {
@@ -23185,7 +23185,7 @@ LAB_00036ca4:
               }
               else {
                 in_stack_ffffff10 = CONCAT22((short)((uint)in_stack_ffffff10 >> 0x10),0x140);
-                bitmap_blit((int)param_2,200 - param_3,DAT_00101a70,200,in_stack_ffffff10,
+                bitmap_blit_to_framebuffer((int)param_2,200 - param_3,DAT_00101a70,200,in_stack_ffffff10,
                              0x140 - param_4,200 - param_5,1);
                 uVar14 = extraout_r3;
                 do {
@@ -28647,7 +28647,7 @@ undefined4 param_3;
       else {
         pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
       }
-      bitmap_blit(param_2,param_3,pcVar3,cVar2,cVar1,0,0,0);
+      bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,0);
     }
   }
   else {
@@ -28750,7 +28750,7 @@ undefined4 param_3;
   else {
     pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
   }
-  bitmap_blit(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1,unaff_r4,unaff_r5);
+  bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1,unaff_r4,unaff_r5);
   return;
 }
 
@@ -28881,7 +28881,7 @@ void thunk_FUN_00057118()
   if ((((iVar1 + -1) * 0x10000 >> 0x10 == 0) || (DAT_000bbef4 != 0)) &&
      (iVar1 = FUN_00056fe8(), iVar1 != 0)) {
     DAT_00204844 = 0;
-    FUN_00011694(1);
+    set_draw_color(1);
   }
   if (DAT_00204840 < 0) {
     DAT_00204840 = DAT_00204840 + 1;
@@ -28896,7 +28896,7 @@ void FUN_00040df0()
 {
   FUN_00057118();
   FUN_000116a4(0,0,0x13f,199);
-  FUN_00011694(0);
+  set_draw_color(0);
   FUN_00011b34();
   FUN_000570b4();
   return;
@@ -32368,8 +32368,8 @@ void FUN_00046bfc()
     FUN_00057118();
     if (DAT_00085c54 != 0) {
       FUN_00011478();
-      FUN_00011694(0x1a);
-      FUN_00011774(0xf0,0xb,0x13b,0x76);
+      set_draw_color(0x1a);
+      rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76);
       FUN_0001156c(0xf0,0xb,0x13b,0x76);
     }
     DAT_00088960 = 1;
@@ -32405,8 +32405,8 @@ void FUN_00046bfc()
     }
     if (DAT_00085c54 != 0) {
       FUN_00011478();
-      FUN_00011694(0x1a);
-      FUN_00011774(0xf0,0xb,0x13b,0x76);
+      set_draw_color(0x1a);
+      rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76);
       FUN_0001156c(0xf0,0xb,0x13b,0x76);
     }
     iVar4 = FUN_00048514(1);
@@ -41562,8 +41562,8 @@ int FUN_00056fe8()
   
   iVar1 = 0;
   if (DAT_00204844 != 0) {
-    FUN_00011694(0x15);
-    FUN_00011774(DAT_00086960 - DAT_0020471c,DAT_00086964 - DAT_00204748,
+    set_draw_color(0x15);
+    rect_fill_or_save_restore(DAT_00086960 - DAT_0020471c,DAT_00086964 - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)DAT_00086960 + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)DAT_00086964 + 1);
     FUN_00022f0c(1);
@@ -41603,7 +41603,7 @@ void FUN_00057118()
   if ((((iVar1 + -1) * 0x10000 >> 0x10 == 0) || (DAT_000bbef4 != 0)) &&
      (iVar1 = FUN_00056fe8(), iVar1 != 0)) {
     DAT_00204844 = 0;
-    FUN_00011694(1);
+    set_draw_color(1);
   }
   if (DAT_00204840 < 0) {
     DAT_00204840 = DAT_00204840 + 1;
@@ -42440,8 +42440,8 @@ void FUN_000584c0()
 
 {
   DAT_00204848 = 1;
-  FUN_00011694(0x14);
-  FUN_00011774(DAT_00086960 - DAT_0020471c,DAT_00086964 - DAT_00204748,
+  set_draw_color(0x14);
+  rect_fill_or_save_restore(DAT_00086960 - DAT_0020471c,DAT_00086964 - DAT_00204748,
                ((int)DAT_00204784 - (int)DAT_0020471c) + (int)DAT_00086960 + 1,
                ((int)DAT_002047a4 - (int)DAT_00204748) + (int)DAT_00086964 + 1);
   DAT_00204844 = 1;
@@ -42492,7 +42492,7 @@ LAB_00058674:
   FUN_00022f0c(1);
   DAT_00088960 = 0;
   DAT_00089098 = 0;
-  FUN_00011694(0);
+  set_draw_color(0);
   return;
 }
 
@@ -50827,7 +50827,7 @@ short param_4;
       iVar4 = 0;
       do {
         pcVar_rec = param_2 + iVar4 * 0x10;
-        bitmap_blit((int)*(short *)(pcVar_rec + 8),(int)*(short *)(pcVar_rec + 10),
+        bitmap_blit_to_framebuffer((int)*(short *)(pcVar_rec + 8),(int)*(short *)(pcVar_rec + 10),
                      *(undefined4 *)(param_2 + ((uint)(iVar4 == param_4) + iVar4 * 4) * 4),
                      (int)*(short *)(pcVar_rec + 0xe),*(undefined2 *)(pcVar_rec + 0xc),0,0,1);
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
@@ -52449,7 +52449,7 @@ int param_3;
 {
   /* iVar1 was `int`, truncating the Ordinal_1041 (malloc) heap pointer
      it holds -- it's used both as the fread-destination buffer and as
-     the source pointer handed to bitmap_blit (which now takes a real
+     the source pointer handed to bitmap_blit_to_framebuffer (which now takes a real
      char*). */
   char *iVar1;
   int iVar2;
@@ -52469,7 +52469,7 @@ int param_3;
       if (-1 < (short)param_1) {
         FUN_00040efc(param_1);
       }
-      bitmap_blit(0,0,iVar1,200,0x140,0,0,0);
+      bitmap_blit_to_framebuffer(0,0,iVar1,200,0x140,0,0,0);
       if (param_3 != 0) {
         FUN_00022f0c(1);
       }
@@ -52630,7 +52630,7 @@ void FUN_0006cca8()
   FUN_00076390((int)DAT_0023c21c,0x20a6);
   FUN_0006e96c(DAT_00086df8 + 0x47);
   FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
-  bitmap_blit(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+  bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
   (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
   FUN_00076508();
   return;
@@ -53722,7 +53722,7 @@ undefined2 param_5;
     }
     FUN_00057118();
     uVar4 = FUN_00049954(DAT_0023c202);
-    bitmap_blit(0xec,8,uVar4,0x72,0x53,0,0,1);
+    bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
     uVar1 = DAT_0023c1d4;
     DAT_0023c1d4 = (undefined1)param_1;
     DAT_00085c54 = 0;
@@ -53750,9 +53750,9 @@ void FUN_0006ed0c()
   }
   else {
     FUN_00057118();
-    bitmap_blit(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+    bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
     (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
-    FUN_00011694(0x1a);
+    set_draw_color(0x1a);
     FUN_00022f0c(1);
     FUN_000570b4();
   }
@@ -53804,7 +53804,7 @@ bool FUN_0006edfc()
       FUN_0007e998(uVar4,(int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,(int)DAT_0023c144,
                    DAT_0023c140);
       FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
-      FUN_00011694(0xf1);
+      set_draw_color(0xf1);
       iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
       iVar7 = (int)DAT_0023c144 - (int)DAT_0023c13c;
       if (iVar5 < 0) {
@@ -53817,7 +53817,7 @@ bool FUN_0006edfc()
       if (iVar9 < 0) {
         iVar9 = iVar9 + 1;
       }
-      FUN_00011774((int)(short)DAT_0023c148,(iVar9 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+      rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar9 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
                    (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
                    (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
       iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
@@ -53832,7 +53832,7 @@ bool FUN_0006edfc()
       if (iVar9 < 0) {
         iVar9 = iVar9 + 1;
       }
-      FUN_00011774((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
+      rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
                    (iVar7 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
                    (int)DAT_0023c144 + (uint)DAT_0023c148,(uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff
                   );
@@ -53844,7 +53844,7 @@ bool FUN_0006edfc()
       if (iVar5 < 0) {
         iVar5 = iVar5 + 1;
       }
-      bitmap_blit((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
+      bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
                    (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
                    DAT_0023c13c,0,0,1);
     }
@@ -53852,7 +53852,7 @@ bool FUN_0006edfc()
       if (DAT_0023c208 < 4) {
         uVar4 = FUN_00049954(DAT_0023c200);
         FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
-        FUN_00011694(0xf1);
+        set_draw_color(0xf1);
         iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
         iVar7 = (int)DAT_0023c144 - (int)DAT_0023c13c;
         if (iVar5 < 0) {
@@ -53865,7 +53865,7 @@ bool FUN_0006edfc()
         if (iVar9 < 0) {
           iVar9 = iVar9 + 1;
         }
-        FUN_00011774((int)(short)DAT_0023c148,(iVar9 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+        rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar9 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
                      (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
                      (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
         iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
@@ -53880,7 +53880,7 @@ bool FUN_0006edfc()
         if (iVar9 < 0) {
           iVar9 = iVar9 + 1;
         }
-        FUN_00011774((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
+        rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
                      (iVar7 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
                      (int)DAT_0023c144 + (uint)DAT_0023c148,
                      (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
@@ -53892,13 +53892,13 @@ bool FUN_0006edfc()
         if (iVar5 < 0) {
           iVar5 = iVar5 + 1;
         }
-        bitmap_blit((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
+        bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
                      (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
                      DAT_0023c13c,0,0,1);
       }
       else if (DAT_0023c208 == 4) {
         iVar7 = FUN_00049954(DAT_0023c200);
-        FUN_00011694(0xf1);
+        set_draw_color(0xf1);
         iVar9 = (int)DAT_0023c140 + (int)DAT_0023c138;
         iVar5 = (int)DAT_0023c144 + (int)DAT_0023c13c;
         if (iVar9 < 0) {
@@ -53915,7 +53915,7 @@ bool FUN_0006edfc()
         if (iVar6 < 0) {
           iVar6 = iVar6 + 1;
         }
-        FUN_00011774((uint)DAT_0023c148 + (iVar6 >> 1) & 0xffff,
+        rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar6 >> 1) & 0xffff,
                      (iVar8 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
                      (uint)DAT_0023c148 + (iVar5 >> 1) & 0xffff,
                      (uint)DAT_0023c14c + (iVar9 >> 1) & 0xffff);
@@ -53927,25 +53927,25 @@ bool FUN_0006edfc()
         if (iVar9 < 0) {
           iVar9 = DAT_0023c144 + -2;
         }
-        bitmap_blit((int)(short)DAT_0023c148 + (int)(short)(iVar9 >> 1),
+        bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar9 >> 1),
                      (int)(short)(iVar5 >> 1) - (int)(short)DAT_0023c14c,iVar7 + 0x2800,0x78,3,0,0,1
                     );
       }
       else if (4 < DAT_0023c208) {
         if (DAT_0023c208 < 8) {
           uVar4 = FUN_00049954(DAT_0023c202);
-          FUN_00011694(0xf1);
+          set_draw_color(0xf1);
           iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          FUN_00011774((int)(short)DAT_0023c148,(iVar7 >> 1 & 0xffffU) - (int)(short)DAT_0023c14c,
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar7 >> 1 & 0xffffU) - (int)(short)DAT_0023c14c,
                        DAT_0023c148 + DAT_0023c144);
           iVar7 = (int)DAT_0023c138 + (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          FUN_00011774((int)(short)DAT_0023c148,(int)DAT_0023c140 + (uint)DAT_0023c14c,
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c140 + (uint)DAT_0023c14c,
                        DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
           FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
           iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
@@ -53956,26 +53956,26 @@ bool FUN_0006edfc()
           if (iVar5 < 0) {
             iVar5 = iVar5 + 1;
           }
-          bitmap_blit((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
+          bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
                        (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
                        DAT_0023c13c,0,0,1);
         }
         else if (DAT_0023c208 == 8) {
           uVar3 = FUN_00049954(DAT_0023c202);
-          FUN_00011694(0xf1);
+          set_draw_color(0xf1);
           iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          FUN_00011774((int)(short)DAT_0023c148,(iVar7 >> 1 & 0xffffU) - (int)(short)DAT_0023c14c,
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar7 >> 1 & 0xffffU) - (int)(short)DAT_0023c14c,
                        DAT_0023c148 + DAT_0023c144);
           iVar7 = (int)DAT_0023c138 + (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          FUN_00011774((int)(short)DAT_0023c148,(int)DAT_0023c140 + (uint)DAT_0023c14c,
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c140 + (uint)DAT_0023c14c,
                        DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
-          bitmap_blit((int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c140,
+          bitmap_blit_to_framebuffer((int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c140,
                        DAT_0023c144,0,0,1);
           DAT_0023c208 = 0;
         }
@@ -53990,11 +53990,11 @@ bool FUN_0006edfc()
     DAT_0023c208 = bVar2;
     FUN_00041a78(s_panels_00087260,3,DAT_0023cca4);
     FUN_00057118();
-    FUN_00011694(0xf1);
-    FUN_00011774(0xec,8,0x13f,0x7a);
+    set_draw_color(0xf1);
+    rect_fill_or_save_restore(0xec,8,0x13f,0x7a);
     FUN_00040b0c(0x20bc,0x110,4,1,1);
     FUN_00040b0c(0x20b4,0x110,0x7a,1,1);
-    bitmap_blit(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
+    bitmap_blit_to_framebuffer(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
 LAB_0006f008:
     FUN_000570b4();
   }
@@ -54003,19 +54003,19 @@ LAB_0006f008:
       DAT_0023c208 = bVar2;
       FUN_00041a78(s_panels_00087260,(int)DAT_0023c134,DAT_0023cca4);
       FUN_00057118();
-      FUN_00011694(0xf1);
-      FUN_00011774(0x114,5,0x117,0x7d);
+      set_draw_color(0xf1);
+      rect_fill_or_save_restore(0x114,5,0x117,0x7d);
       uVar1 = DAT_0023c1d4;
       DAT_0023c1d4 = (undefined1)DAT_0023c134;
       FUN_0001156c(0xec,8,0x13f,0x7a);
-      bitmap_blit(0xec,8,uVar3,0x72,0x53,0,0,1);
+      bitmap_blit_to_framebuffer(0xec,8,uVar3,0x72,0x53,0,0,1);
       (*(code *)(&PTR_FUN_00087220)[DAT_0023c134])();
       FUN_00011478();
       DAT_0023c1d4 = uVar1;
       FUN_00040b0c(0x20b8,0x110,4,1,1);
       FUN_00040b0c(0x20b0,0x110,0x7a,1,1);
-      FUN_00011694(0x1a);
-      FUN_00011774(0xec,8,0x13e,0x79);
+      set_draw_color(0x1a);
+      rect_fill_or_save_restore(0xec,8,0x13e,0x79);
       goto LAB_0006f008;
     }
     bVar10 = DAT_0023c208 == '\a';
@@ -54267,7 +54267,7 @@ void FUN_0006fcb0()
     }
     DAT_0023c210 = DAT_0023c214 + (short)(&DAT_0023c158)[sVar1];
     uVar2 = FUN_000409f8();
-    bitmap_blit((uint)(byte)(&DAT_0023c1b8)[sVar1] + (int)DAT_0023c1ec + 0x34,
+    bitmap_blit_to_framebuffer((uint)(byte)(&DAT_0023c1b8)[sVar1] + (int)DAT_0023c1ec + 0x34,
                  0x83 - (uint)(byte)(&DAT_0023c198)[sVar1],uVar2,*(undefined1 *)(DAT_0023c210 + 2),
                  *(undefined1 *)(DAT_0023c210 + 1),0,0,1);
   }
@@ -63638,8 +63638,8 @@ int param_1;
                ((int)*(short *)(DAT_00250704 + 6) - (int)sVar2) * 0x10000 >> 0x10,
                ((sVar1 * -0x10000 >> 0x10) - (int)*(short *)(DAT_000879b0 + 6)) + param_1,sVar2,
                sVar1);
-  FUN_00011694(0x2a);
-  FUN_00011774(*(undefined2 *)(DAT_00250704 + 4),*(undefined2 *)(DAT_00250704 + 10),
+  set_draw_color(0x2a);
+  rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 4),*(undefined2 *)(DAT_00250704 + 10),
                *(undefined2 *)(DAT_00250704 + 6),param_1 + 1);
   if (DAT_00250704 == &DAT_00087960) {
     FUN_0006cff4(4,1);
@@ -63667,8 +63667,8 @@ void FUN_0007f454()
   *DAT_0008429c = 0xd4;
   FUN_00011060(s__MORE__00087994,(int)*(short *)(DAT_00250704 + 0xc),(int)sVar3);
   FUN_0007f170(0,1);
-  FUN_00011694(0x2a);
-  FUN_00011774(*(undefined2 *)(DAT_00250704 + 0xc),(int)sVar3,*(undefined2 *)(DAT_00250704 + 6),
+  set_draw_color(0x2a);
+  rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 0xc),(int)sVar3,*(undefined2 *)(DAT_00250704 + 6),
                *(undefined2 *)(DAT_00250704 + 2));
   *DAT_0008429c = uVar2;
   DAT_00250710 = *(short *)(DAT_00250704 + 0x14) + -1;
@@ -63969,11 +63969,11 @@ int param_5;
 
 {
   if (param_5 != 0) {
-    FUN_00011694(0xf1);
-    FUN_00011774(param_1 + 0xe,param_2 + 1,param_3 + -0xf,param_4 + -1);
+    set_draw_color(0xf1);
+    rect_fill_or_save_restore(param_1 + 0xe,param_2 + 1,param_3 + -0xf,param_4 + -1);
   }
-  FUN_00011694(0x2a);
-  FUN_00011774(param_1,param_2,param_3,param_4);
+  set_draw_color(0x2a);
+  rect_fill_or_save_restore(param_1,param_2,param_3,param_4);
   return;
 }
 
@@ -63989,8 +63989,8 @@ int param_1;
   if ((param_1 != 0) && (FUN_0007f094(), DAT_00250708 != 0)) {
     FUN_00057118();
   }
-  FUN_00011694(0x2a);
-  FUN_00011774(DAT_00250704[2],*DAT_00250704,(ushort)DAT_00250704[3] + 1,(ushort)DAT_00250704[1] + 1
+  set_draw_color(0x2a);
+  rect_fill_or_save_restore(DAT_00250704[2],*DAT_00250704,(ushort)DAT_00250704[3] + 1,(ushort)DAT_00250704[1] + 1
               );
   puVar1 = DAT_00250704 + 7;
   *(char *)(DAT_00250704 + 5) = (char)*puVar1;
@@ -64035,8 +64035,8 @@ short param_1;
   sVar1 = *(short *)(DAT_00250704 + 10);
   FUN_0007f0e0();
   *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
-  FUN_00011694(0x2a);
-  FUN_00011774(iVar2,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
+  set_draw_color(0x2a);
+  rect_fill_or_save_restore(iVar2,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
                (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
   sVar1 = DAT_0025070c;
   *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
@@ -64059,8 +64059,8 @@ int param_1;
   sVar1 = *(short *)(DAT_00250704 + 10);
   FUN_0007f0e0();
   *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
-  FUN_00011694(0x2a);
-  FUN_00011774(iVar3,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
+  set_draw_color(0x2a);
+  rect_fill_or_save_restore(iVar3,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
                (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
   sVar1 = DAT_0025070c;
   *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
@@ -64152,8 +64152,8 @@ short param_5;
     if ((((iVar12 == 0xd) || (sVar5 = (short)uVar13, iVar12 == 0x1b)) || (iVar12 == 1)) ||
        ((iVar12 == 2 || (iVar12 == 3)))) {
       if (1999 < local_a8) {
-        FUN_00011694(0x2a);
-        FUN_00011774(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
+        set_draw_color(0x2a);
+        rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
         uVar13 = Ordinal_1068(acStack_a1 + 1);
         if ((uint)(int)sVar5 < uVar13) {
           FUN_00011060(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
@@ -64167,8 +64167,8 @@ short param_5;
           param_2[param_3] = cVar1;
           param_2 = param_2 + 1;
         } while (cVar1 != '\0');
-        FUN_00011694(0x2a);
-        FUN_00011774((int)DAT_0025070c,(uint)*(ushort *)(DAT_00250704 + 10),
+        set_draw_color(0x2a);
+        rect_fill_or_save_restore((int)DAT_0025070c,(uint)*(ushort *)(DAT_00250704 + 10),
                      *(undefined2 *)(DAT_00250704 + 6),
                      (*(ushort *)(DAT_00250704 + 10) - 1) + (uint)*(ushort *)(DAT_000879b0 + 6));
         sVar3 = DAT_0025070c;
@@ -64201,9 +64201,9 @@ short param_5;
     iVar7 = ((int)sVar5 + (int)DAT_0025070c) * 0x10000 >> 0x10;
     if ((local_a8 < 2000) || (3999 < local_a8)) {
       if (local_a8 == 4000) {
-        FUN_00011694(0x2a);
+        set_draw_color(0x2a);
         local_a8 = 0;
-        FUN_00011774(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
+        rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
         uVar9 = Ordinal_1068(acStack_a1 + 1);
         if (uVar11 < uVar9) {
           FUN_00011060(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
@@ -64211,8 +64211,8 @@ short param_5;
       }
     }
     else {
-      FUN_00011694(*(undefined2 *)(DAT_00250704 + 0x16));
-      FUN_00011774(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
+      set_draw_color(*(undefined2 *)(DAT_00250704 + 0x16));
+      rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
     }
     local_a8 = local_a8 + 1;
     if (iVar12 < 0xa9) {
@@ -64333,8 +64333,8 @@ LAB_000804d0:
         }
       }
 LAB_0008062c:
-      FUN_00011694(0x2a);
-      FUN_00011774((int)DAT_0025070c,*(short *)(DAT_00250704 + 10),*(undefined2 *)(DAT_00250704 + 6)
+      set_draw_color(0x2a);
+      rect_fill_or_save_restore((int)DAT_0025070c,*(short *)(DAT_00250704 + 10),*(undefined2 *)(DAT_00250704 + 6)
                    ,*(short *)(DAT_000879b0 + 6) + *(short *)(DAT_00250704 + 10));
       *DAT_0008429c = *(undefined1 *)(DAT_00250704 + 0x16);
       FUN_00011060(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
