@@ -13361,20 +13361,26 @@ char *param_4;
       else {
         if (*pbVar4 != 1) {
           iVar3 = (int)sVar2;
+          /* Branch node in the skill tree: [count][id0][id1]...  Set the
+             skill record's on-screen item count to this sub-menu's choice
+             count and populate its string-id list with the choice names
+             (skill id + 0x1f = its string number in block 4), then return
+             1 so character_generator_loop keeps state 3 and shows the
+             sub-menu drawn from that list. */
           *(undefined1 *)(param_3 + 10) = *(undefined1 *)(iVar3 + param_4);
           *(undefined1 *)(param_3 + 0xb) = 0;
-          /* *(int*)(param_3+6) (the outer character record's +0x42
-             field) is never written anywhere in this decompile -- same
-             "unrecoverable, never-populated pointer field" class as
-             DAT_000fb880 above. The record is heap-allocated (not
-             zeroed), so this field holds arbitrary garbage rather than
-             a reliable 0 -- a `!= 0` guard isn't enough to catch it.
-             Skip unconditionally instead of writing through it. */
-          if (0) {
+          /* param_3+6 is the skill record's string-list field. Ghidra had
+             this as a bare absolute pointer (correct for the 32-bit
+             binary) and an earlier pass disabled the whole loop believing
+             the field was never populated -- but run_character_generator
+             (chargen.c) DOES write it, as a relative offset from
+             &DAT_000fb8f0 (same convention FUN_00023de8's read site uses).
+             Reconstruct the real pointer that way instead of skipping. */
+          {
+            char *list = (char *)&DAT_000fb8f0 + *(int *)(param_3 + 6);
             iVar5 = 0;
             do {
-              *(char *)(*(int *)(param_3 + 6) + iVar5 * 2) =
-                   *(char *)(iVar5 + iVar3 + param_4 + 1) + '\x1f';
+              list[iVar5 * 2] = *(char *)(iVar5 + iVar3 + param_4 + 1) + '\x1f';
               iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
             } while (iVar5 < (int)(uint)*(byte *)(iVar3 + param_4));
           }
