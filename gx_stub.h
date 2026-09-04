@@ -24,9 +24,10 @@ int uw_save_screenshot(const char *path);
    debug/gr/<resource-name>/<entry-index>.bmp, colored with the currently
    installed game palette. No-op (cheap check) when the env var is unset.
    entry_data/entry_size are the raw bytes for one entry as loaded from
-   the file (5-byte header: format, height, width, 2 unknown bytes,
+   the file (5-byte header: format, width, height, 2 unknown bytes,
    followed by width*height raw palette-index pixel bytes -- confirmed
-   against CHRBTNS.GR's real file layout this session). */
+   against CHRBTNS.GR's real file layout and bitmap_blit_to_framebuffer's
+   param semantics this session). */
 void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
                              const unsigned char *entry_data, int entry_size);
 

@@ -930,12 +930,40 @@ undefined1 DAT_001005ce;
 static undefined1 DAT_00088d98_backing[1536];
 #define DAT_00088d98 DAT_00088d98_backing[0]
 
-/* Debug-only accessor for the currently-installed 8-bit RGB game palette
-   (256 entries, 3 bytes each) -- DAT_00088d98_backing is static to this
-   file, so gx_stub.c's GR-entry BMP dumper needs this to color its
-   output instead of dumping raw palette indices. */
-unsigned char *uw_get_current_palette(void) {
-    return (unsigned char *)DAT_00088d98_backing;
+/* Debug-only accessor for gx_stub.c's GR-entry BMP dumper. Loads PALS.DAT
+   palette index 0 (the game's default/base palette) fresh and scales it
+   to 8-bit RGB itself, independent of whatever's currently live.
+
+   Two reasons this doesn't just read DAT_00088d98 (the "current" palette
+   buffer): (1) DAT_00088d98 holds the RAW 6-bit-per-channel bytes read
+   straight from the file -- FUN_00040e24 scales into a *local* stack
+   buffer for installing into DAT_0024ad60 and never writes the scaled
+   result back to DAT_00088d98, so reading it directly produced BMPs at
+   roughly 1/4 brightness (confirmed: this is what "faded" turned out to
+   be, not an actual fade-in/out in progress). (2) Whatever's live at any
+   given moment depends on load order -- e.g. chrbtns.gr loads before
+   chargen's own palette (index 3) gets installed -- so it's not a stable
+   choice for a debug tool either. Loading index 0 ourselves and caching
+   it sidesteps both: correct scaling, and consistent across every dump
+   regardless of when in the load sequence it happens. Must NOT reuse
+   FUN_00040e24 for this -- it installs its result into DAT_0024ad60 as a
+   side effect, which would visibly change the live game's on-screen
+   colors just from having dumping enabled. */
+unsigned char *uw_get_default_palette(void) {
+    static unsigned char scaled[768];
+    static int loaded = 0;
+    if (!loaded) {
+        unsigned char raw[768];
+        undefined4 handle = FUN_000227d4("\\DATA\\pals.dat");
+        FUN_00022850(handle, 0, 0);
+        short got = (short)FUN_0002285c(handle, raw, 0x300);
+        Ordinal_553(handle);
+        if (got == 0x300) {
+            FUN_00022abc(scaled, raw, 0);
+            loaded = 1;
+        }
+    }
+    return scaled;
 }
 
 ushort DAT_00100610;

@@ -479,11 +479,17 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
     }
     if (!enabled) return;
 
-    /* See the header comment: byte0=format, byte1=height, byte2=width,
-       bytes3-4 unknown, then width*height raw palette-index pixels. */
+    /* See the header comment: byte0=format, byte1=width, byte2=height,
+       bytes3-4 unknown, then width*height raw palette-index pixels.
+       Confirmed via bitmap_blit_to_framebuffer's real param semantics
+       (its param_4/height arg is clipped against 200, param_5/width arg
+       against 0x140=320) traced back through FUN_0006a200's blit call
+       and FUN_0006a0c8's header-byte-to-record-field assignment -- a
+       width<->height swap here previously produced transposed BMPs for
+       every non-square entry. */
     if (entry_size < 5) return;
-    int height = entry_data[1];
-    int width = entry_data[2];
+    int width = entry_data[1];
+    int height = entry_data[2];
     int payload_len = entry_size - 5;
     if (width == 0 || height == 0 || width * height > payload_len) {
         fprintf(stderr, "[gr-dump] %s entry %d: header dims %dx%d don't fit a %d-byte payload -- skipped\n",
@@ -504,7 +510,7 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
         return;
     }
 
-    unsigned char *pal = uw_get_current_palette();
+    unsigned char *pal = uw_get_default_palette();
     SDL_Color colors[256];
     for (int i = 0; i < 256; i++) {
         colors[i].r = pal[i * 3 + 0];
