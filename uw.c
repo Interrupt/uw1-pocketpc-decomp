@@ -18386,9 +18386,10 @@ undefined1 * param_1;
 void FUN_0002dba4()
 
 {
-  int iVar1;
+  /* Was `int`, truncating FUN_000535fc's real pointer return. */
+  char *iVar1;
   int iVar2;
-  
+
   iVar2 = 2;
   do {
     iVar1 = FUN_000535fc(iVar2);
@@ -23144,11 +23145,13 @@ int param_2;
 
 undefined4 FUN_00037fe8(param_1,param_2)
 undefined4 param_1;
-uint param_2;
+/* Object-record pointer -- was `uint`, truncating it (same class as
+   FUN_000530c4/FUN_000531a0 below). */
+char *param_2;
 
 {
   int iVar1;
-  
+
   if (param_2 < DAT_002046c4) {
     *(undefined1 *)(param_2 + 8) = 0;
   }
@@ -29405,22 +29408,29 @@ undefined1 * param_1;
 
 
 void FUN_00042758(param_1,param_2)
-int param_1;
+/* Was `int`, truncating the real pointer FUN_0004251c passes through
+   (its own param_1, e.g. DAT_00085a6c). */
+char *param_1;
 short param_2;
 
 {
-  int iVar1;
+  /* Was `int`; both double as a plain loop index (iVar2 only) and a real
+     pointer into the DAT_0020289c keybinding table (iVar1 always, iVar2
+     once more on the match path just before it returns) -- truncating
+     that pointer since DAT_0020289c is a genuine malloc'd 64-bit pointer.
+     Dedicated pointer variable for the record-address role. */
+  char *pcVar1;
   int iVar2;
-  
+
   iVar2 = 0;
   if (0 < DAT_0020288c) {
     do {
-      iVar1 = iVar2 * 0xc + DAT_0020289c;
-      if (((*(short *)(iVar1 + 2) == param_2) &&
-          ((*(ushort *)(iVar1 + 6) & *(ushort *)(param_1 + 8)) != 0)) && (*(int *)(iVar1 + 8) != 0))
+      pcVar1 = iVar2 * 0xc + DAT_0020289c;
+      if (((*(short *)(pcVar1 + 2) == param_2) &&
+          ((*(ushort *)(pcVar1 + 6) & *(ushort *)(param_1 + 8)) != 0)) && (*(int *)(pcVar1 + 8) != 0))
       {
-        iVar2 = (short)iVar2 * 0xc + DAT_0020289c;
-        (**(code **)(iVar2 + 8))((int)*(short *)(iVar2 + 4));
+        pcVar1 = (short)iVar2 * 0xc + DAT_0020289c;
+        (**(code **)(pcVar1 + 8))((int)*(short *)(pcVar1 + 4));
         return;
       }
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
@@ -38861,20 +38871,23 @@ char *param_1;
 
 void FUN_000530c4(param_1,param_2)
 byte * param_1;
-uint param_2;
+/* Object-record pointer -- was `uint`, truncating it (e.g. FUN_0003cff8
+   passes the real DAT_0023be64 player-object pointer here; truncated it
+   crashed placing the player into the level). */
+char *param_2;
 
 {
   undefined2 uVar1;
   byte bVar2;
   short sVar3;
   ushort uVar4;
-  
+
   uVar1 = *(undefined2 *)param_1;
   bVar2 = (byte)uVar1;
   *(byte *)(param_2 + 4) = (*(byte *)(param_2 + 4) ^ bVar2) & 0x3f ^ bVar2;
   *(char *)(param_2 + 5) = (char)((ushort)uVar1 >> 8);
   if (param_2 < DAT_002046c4) {
-    sVar3 = Ordinal_2005(0x1b,param_2 - (uint)(uintptr_t)DAT_002046b8);
+    sVar3 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
     uVar4 = *param_1 & 0x3f | sVar3 << 6;
   }
   else {
@@ -38889,20 +38902,22 @@ uint param_2;
 
 void FUN_000531a0(param_1,param_2)
 byte * param_1;
-uint param_2;
+/* Object-record pointer -- was `uint`, truncating it (same class as
+   FUN_000530c4 above). */
+char *param_2;
 
 {
   short sVar1;
   int iVar2;
   ushort uVar3;
-  
+
   while (iVar2 = FUN_00053514(param_1), iVar2 != 0) {
     param_1 = (byte *)(iVar2 + 4);
   }
   *(byte *)(param_2 + 4) = *(byte *)(param_2 + 4) & 0x3f;
   *(undefined1 *)(param_2 + 5) = 0;
   if (param_2 < DAT_002046c4) {
-    sVar1 = Ordinal_2005(0x1b,param_2 - (uint)(uintptr_t)DAT_002046b8);
+    sVar1 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
     uVar3 = *param_1 & 0x3f | sVar1 << 6;
   }
   else {
@@ -39070,23 +39085,31 @@ char *param_1;
 
 
 
-int FUN_000535fc(param_1)
+/* The fundamental "object slot index -> record pointer" accessor (70 call
+   sites): slots 0-0xff are 0x1b-byte records in the DAT_002046b8 table,
+   slots >=0x100 are 8-byte records in the DAT_002046c4 table. Was `int`,
+   truncating the real pointer arithmetic below on this 64-bit host --
+   many callers already store the result through a pointer-typed local
+   (e.g. `puVar4 = (undefined1 *)FUN_000535fc()`), so they got a
+   truncated pointer back regardless of their own care. Confirmed as a
+   crash source in FUN_0002dba4 (level-load object-table reset). */
+void *FUN_000535fc(param_1)
 short param_1;
 
 {
-  int iVar1;
-  
+  intptr_t iVar1;
+
   iVar1 = (int)param_1;
   if (iVar1 == 0) {
     iVar1 = 0;
   }
   else if (iVar1 < 0x100) {
-    iVar1 = iVar1 * 0x1b + DAT_002046b8;
+    iVar1 = iVar1 * 0x1b + (intptr_t)DAT_002046b8;
   }
   else {
-    iVar1 = DAT_002046c4 + (iVar1 + -0x100) * 8;
+    iVar1 = (intptr_t)DAT_002046c4 + (iVar1 + -0x100) * 8;
   }
-  return iVar1;
+  return (void *)iVar1;
 }
 
 
@@ -46562,7 +46585,9 @@ LAB_00060f54:
 
 void FUN_00061e60(param_1,param_2,param_3,param_4)
 byte param_1;
-uint param_2;
+/* Object-record pointer -- was `uint`, truncating it (same class as
+   FUN_000530c4 above). */
+char *param_2;
 char param_3;
 short param_4;
 
