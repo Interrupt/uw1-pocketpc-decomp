@@ -13616,6 +13616,14 @@ short * param_1;
         }
         sVar7 = (short)uVar12;
         iVar11 = CONCAT11(*(undefined1 *)((char *)param_1 + 0x13),(char)param_1[9]) + iVar11 + uVar12;
+        /* Investigated as a possible "missing button outline" source this
+           session -- ruled out. DAT_000fb880[idx] here is constant across
+           every item in the list (idx is derived from the field's own
+           record, not per item), and its real CHRBTNS.GR pixel data is the
+           ornate gold bracket decoration running down the left page, not a
+           per-button border (confirmed by rendering it and by direct
+           inspection of the source .GR file's bytes). The actual button
+           outlines render correctly elsewhere in this same screen. */
         bitmap_blit_to_framebuffer(iVar11,iVar10,
                      (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)param_1 + 0xd),(char)param_1[6])]
                      + iVar3,(int)(short)local_2c,sVar7,0,0,0);
@@ -13825,6 +13833,7 @@ uint param_2;
         FUN_000570b4();
         local_4 = uVar13 & 0xffff;
       }
+      // Click/touch detection: reads the current pointer position, then the math below maps it to a list-item index.
       FUN_00057504(&local_40,&local_3e);
       sVar4 = local_40;
       sVar7 = param_1[8];
