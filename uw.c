@@ -151,7 +151,13 @@ static undefined1 DAT_000b99d0_backing[8192];
 short DAT_000ba9d0;
 undefined4 DAT_000bbef4;
 undefined DAT_000842f0;
-undefined DAT_000878d0;
+/* Was a lone 1-byte scalar, but indexed throughout this file as a
+   tile-type-flags lookup table (nibble-masked indices in most call sites,
+   but some -- e.g. FUN_0005cacc -- index it with an unmasked byte value
+   read from another table). Same lone-scalar-used-as-array pattern fixed
+   repeatedly this session; sized for a full byte index to be safe. */
+static undefined1 DAT_000878d0_backing[256];
+#define DAT_000878d0 DAT_000878d0_backing[0]
 undefined1 DAT_000842c0;
 char DAT_000ba9d4;
 undefined1 DAT_000842f4;
@@ -2577,7 +2583,13 @@ undefined1 DAT_0023b028;
 byte DAT_0023b4a0;
 static undefined1 DAT_00086a18_backing[65536];
 #define DAT_00086a18 DAT_00086a18_backing[0]
-undefined DAT_00086a20;
+/* Was a lone 1-byte scalar, but indexed throughout this file as a small
+   lookup table (nibble-masked indices, plus `iVar11*0x10 + nibble`-style
+   compound indices up to ~0x40) -- confirmed crashing (EXC_BAD_ACCESS) at
+   one of its FUN_0005cacc call sites on a real run. Same lone-scalar-
+   used-as-array pattern fixed repeatedly this session; generous margin. */
+static undefined1 DAT_00086a20_backing[256];
+#define DAT_00086a20 DAT_00086a20_backing[0]
 // Was a lone `int` scalar but used throughout the renderer as a pointer to a
 // ~0x2e-byte "current view" record (screen-space player x/y/z/facing, written
 // by FUN_00069470 from DAT_00204880/82/84 + DAT_00201c70, then read all over
@@ -2598,29 +2610,82 @@ short DAT_0025064c;
 static undefined1 DAT_0023b039_backing[4096];
 #define DAT_0023b039 DAT_0023b039_backing[0]
 undefined1 DAT_0023b030;
-undefined1 DAT_0023aee0;
-undefined1 DAT_0023aee5;
-undefined1 DAT_0023aee7;
-undefined1 DAT_0023aee6;
-undefined1 DAT_0023aee8;
-undefined1 DAT_0023aee9;
-undefined2 DAT_0023aeea;
-undefined1 DAT_0023aeec;
-undefined1 DAT_0023aeed;
-undefined2 DAT_0023aeee;
-undefined1 DAT_0023aef0;
-undefined1 DAT_0023aef5;
-undefined1 DAT_0023aefa;
-undefined1 DAT_0023aefc;
-undefined1 DAT_0023aefb;
-undefined1 DAT_0023aefd;
-undefined2 DAT_0023aefe;
-undefined2 DAT_0023af00;
-undefined DAT_0023af02;
-undefined1 DAT_0023aee1;
-undefined1 DAT_0023aee3;
-undefined2 DAT_0023aef6;
-undefined2 DAT_0023aef8;
+/* DAT_0023aee0-family: ~20 separately-declared globals that are really
+   one 16-entry x 0x15(21)-byte creature-reaction/sound-cue queue record
+   array (FUN_0005bf40/FUN_0005cacc/FUN_0005cf74/FUN_0005d13c index it via
+   `&DAT_0023aee0 + entry*0x15`). As lone scalars, out-of-bounds record
+   writes/reads walked off into whatever memory happened to follow in
+   declaration order -- confirmed: DAT_0023b030 (declared right after,
+   and genuinely 0x150=336=16*21 bytes past DAT_0023aee0 in the real
+   address map) was getting corrupted by exactly this, which is why the
+   queue never looked empty. This subsystem also computes DAT_0023b024,
+   which turns out to double as the tile-visibility scan radius consumed
+   by FUN_0005d9cc's dungeon-geometry walk -- NOT optional creature/object
+   bookkeeping as first assessed (see FUN_0005d13c's since-removed
+   `// Hack - Disabled`); skipping it left the 3D viewport permanently
+   empty. Real backing array + aliases at each element's correct offset,
+   generous margin past the 16*21=336-byte minimum. */
+static undefined1 DAT_0023aee0_backing[1024];
+#define DAT_0023aee0 DAT_0023aee0_backing[0]
+/* Real-pointer side table for this record array's "back pointer" field
+   (offsets 9/0xa-0xb/0xc), which the original 32-bit binary packed as raw
+   bytes -- see FUN_0005cacc's comment on why that can't be reassembled
+   into a real 64-bit pointer on this port. Only entry 0 (the player's own
+   reaction slot, the only one FUN_0005bf40 ever populates in a
+   monster-free dungeon) is written; other entries stay NULL, matching
+   the "unpopulated" state FUN_0005cacc's own `(*param_1 & 0x80) == uVar1`
+   guard already treats as "nothing to look up" for a zeroed record. */
+static char *g_dat0023aee0_realptr[16];
+/* Second real-pointer side table, for this record's OTHER packed pointer
+   field (offsets 0xd and its byte-mirrored copy at 0x11-0x14 -- see
+   FUN_0005bf40's DAT_0023aeed/aeee/aef0 writes). Unlike the offset-9
+   field, this one is always the SAME fixed original-binary address
+   (0x0023b058, confirmed identical for entry 0's 3-field pack and
+   entry 1's combined `_DAT_0023af02` write) -- a hardcoded literal
+   pointer into the shared DAT_0023b038 output-list buffer (0x0023b058 -
+   0x0023b038 = 0x20), same "hardcoded original 32-bit address instead of
+   a symbolic reference" bug class fixed elsewhere all session, just
+   packed byte-by-byte instead of written as one literal. Populated once
+   below (not per-entry -- every entry that sets this field wants the
+   same target), read via the same per-entry lookup as the offset-9
+   table for consistency with how the field is indexed. */
+static char *g_dat0023aee0_realptr2[16];
+/* Only entries 0 and 1 (the player's own reaction slot, always populated
+   by FUN_0005bf40) are ever given a real pointer above -- a monster-free
+   dungeon has nothing to populate the other 14 with. But this queue's
+   chain-walk can still legitimately reach an unpopulated entry (its
+   "next" link byte isn't reliably reset to the 0xf end-of-chain sentinel
+   between frames), which would otherwise be a NULL-pointer crash. Route
+   an unset (NULL) table entry to this shared zeroed scratch record
+   instead of dereferencing NULL -- keeps the walk/arithmetic in this
+   subsystem well-defined without having to fully model every field an
+   empty slot could still be read through. */
+static char g_dat0023aee0_fallback[64];
+#define DAT0023AEE0_REALPTR(table, idx) \
+    ((table)[(idx)] != 0 ? (table)[(idx)] : g_dat0023aee0_fallback)
+#define DAT_0023aee1 DAT_0023aee0_backing[1]
+#define DAT_0023aee3 DAT_0023aee0_backing[3]
+#define DAT_0023aee5 DAT_0023aee0_backing[5]
+#define DAT_0023aee6 DAT_0023aee0_backing[6]
+#define DAT_0023aee7 DAT_0023aee0_backing[7]
+#define DAT_0023aee8 DAT_0023aee0_backing[8]
+#define DAT_0023aee9 DAT_0023aee0_backing[9]
+#define DAT_0023aeea (*(undefined2 *)&DAT_0023aee0_backing[0xa])
+#define DAT_0023aeec DAT_0023aee0_backing[0xc]
+#define DAT_0023aeed DAT_0023aee0_backing[0xd]
+#define DAT_0023aeee (*(undefined2 *)&DAT_0023aee0_backing[0xe])
+#define DAT_0023aef0 DAT_0023aee0_backing[0x10]
+#define DAT_0023aef1 DAT_0023aee0_backing[0x11]
+#define DAT_0023aef5 DAT_0023aee0_backing[0x15]
+#define DAT_0023aef6 (*(undefined2 *)&DAT_0023aee0_backing[0x16])
+#define DAT_0023aef8 (*(undefined2 *)&DAT_0023aee0_backing[0x18])
+#define DAT_0023aefa DAT_0023aee0_backing[0x1a]
+#define DAT_0023aefb DAT_0023aee0_backing[0x1b]
+#define DAT_0023aefc DAT_0023aee0_backing[0x1c]
+#define DAT_0023aefd DAT_0023aee0_backing[0x1d]
+#define DAT_0023aefe (*(undefined2 *)&DAT_0023aee0_backing[0x1e])
+#define DAT_0023af00 (*(undefined2 *)&DAT_0023aee0_backing[0x20])
+#define DAT_0023af02 DAT_0023aee0_backing[0x22]
 static undefined1 DAT_00086a00_backing[65536];
 #define DAT_00086a00 DAT_00086a00_backing[0]
 static undefined1 DAT_00086a02_backing[65536];
@@ -2631,7 +2696,6 @@ static undefined1 DAT_00086af8_backing[65536];
 #define DAT_00086af8 DAT_00086af8_backing[0]
 static undefined1 DAT_00086b00_backing[65536];
 #define DAT_00086b00 DAT_00086b00_backing[0]
-undefined DAT_0023aef1;
 short DAT_0023b024;
 static undefined1 DAT_0023b038_backing[32768];
 #define DAT_0023b038 DAT_0023b038_backing[0]
@@ -11773,6 +11837,7 @@ void FUN_00020370()
   local_68 = DAT_00084634;
   local_6c = DAT_00084630;
   local_64 = DAT_00084638;
+  DEBUG(TRACE, "[tmap-diag] FUN_00020370: DAT_000c8c98 (visible-tile count) = %d", DAT_000c8c98);
   if (0 < DAT_000c8c98) {
     local_98 = &DAT_000c4838;
     iVar15 = DAT_000c8c98;
@@ -11784,6 +11849,7 @@ void FUN_00020370()
       local_54 = Ordinal_2032(piVar14[0x10]);
       local_50 = Ordinal_2032(piVar14[0x11]);
       iVar16 = 1;
+      DEBUG(TRACE, "[tmap-diag] record %d: *piVar14 (point count) = %d", local_94, *piVar14);
       if (1 < *piVar14 + -1) {
         uVar6 = Ordinal_2047(0x3f800000,iVar17);
         uVar7 = Ordinal_2026(iVar17,0x3a2ec33e);
@@ -11827,6 +11893,8 @@ void FUN_00020370()
           local_34 = Ordinal_2015(0x42a00000,uVar11);
           local_30 = Ordinal_2026(uVar5,0x3a2ec33e);
           DAT_000da47c = (undefined2)piVar14[0x1d];
+          DEBUG(TRACE, "[tmap-diag] FUN_00014350 call: tex=0x%x x=%.0f y=%.0f w(0x1c)=%d stride(0x1b)=%d",
+                piVar14[0x1e], *(float*)&local_60, *(float*)&local_5c, piVar14[0x1c], piVar14[0x1b]);
           FUN_00014350(0x140,g_uw_framebuffer,&local_60,piVar14[0x1e],
                        piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],piVar14[0x1a],&local_70);
           iVar16 = iVar16 + 1;
@@ -44139,6 +44207,7 @@ void FUN_0005bf40()
     DAT_0023aeed = 0x58;
     DAT_0023aeee = 0x23b0;
     DAT_0023aef0 = 0;
+    g_dat0023aee0_realptr2[0] = (char *)&DAT_0023b038_backing[0x20]; // real-pointer side channel for the offset+0xd field -- see g_dat0023aee0_realptr2's comment
     DAT_0023aef5 = 0xf;
     DAT_0023aefa = 0;
     DAT_0023aefc = 0;
@@ -44147,7 +44216,10 @@ void FUN_0005bf40()
     DAT_0023aefe = SUB42(DAT_0023aecc,0);
     DAT_0023af00 = (undefined2)((uint)DAT_0023aecc >> 0x10);
     _DAT_0023af02 = 0x23b058;
+    g_dat0023aee0_realptr2[1] = (char *)&DAT_0023b038_backing[0x20]; // same real-pointer side channel, entry 1
     DAT_0023aee9 = (char)DAT_0023aecc;
+    g_dat0023aee0_realptr[0] = DAT_0023aecc; // real-pointer side channel for FUN_0005cacc -- see g_dat0023aee0_realptr's comment
+    g_dat0023aee0_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
     FUN_00049ce8(*(short *)(DAT_00086e6c + 0x2c) + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
     FUN_00049ce8(*(short *)(DAT_00086e6c + 0x2c) + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
     _DAT_0023aee1 = _DAT_0023aee1 >> 4;
@@ -44160,12 +44232,18 @@ void FUN_0005bf40()
 
 
 
+// Same param_1-truncation + packed-pointer-arithmetic fix as its mirror-image sibling FUN_0005c16c.
 void FUN_0005c0c4(param_1)
-int param_1;
+intptr_t param_1;
 
 {
   int iVar1;
-  
+  int entry_idx;
+
+  entry_idx = (int)((param_1 - (intptr_t)DAT_0023aee0_backing) / 0x15);
+  g_dat0023aee0_realptr[entry_idx] =
+       DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
+  g_dat0023aee0_realptr2[entry_idx] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx) + 2;
   *(char *)(param_1 + 5) = *(char *)(param_1 + 5) + '\x01';
   iVar1 = *(int *)(param_1 + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
   *(char *)(param_1 + 9) = (char)iVar1;
@@ -44185,12 +44263,27 @@ int param_1;
 
 
 
+/* param_1 was `int`, truncating the real record pointer (same fix as its
+   siblings FUN_0005cacc/FUN_0005c214). This function does pointer
+   ARITHMETIC on the two packed-pointer fields (advance-to-neighbor-tile
+   at offset 9, step-back-2 at offset 0xd) by reading their packed bytes
+   as a plain 32-bit value, adjusting, and writing the bytes back --
+   which only ever worked because the original pointers were genuinely
+   32-bit. Do the same arithmetic on the real 64-bit pointers in the two
+   side tables instead; the packed-byte writes are left in place as
+   harmless dead state (nothing safely reads a pointer back out of them
+   any more -- see g_dat0023aee0_realptr's comment). */
 void FUN_0005c16c(param_1)
-int param_1;
+intptr_t param_1;
 
 {
   int iVar1;
-  
+  int entry_idx;
+
+  entry_idx = (int)((param_1 - (intptr_t)DAT_0023aee0_backing) / 0x15);
+  g_dat0023aee0_realptr[entry_idx] =
+       DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
+  g_dat0023aee0_realptr2[entry_idx] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx) + -2;
   *(char *)(param_1 + 5) = *(char *)(param_1 + 5) + -1;
   iVar1 = *(int *)(param_1 + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
   *(char *)(param_1 + 9) = (char)iVar1;
@@ -44210,8 +44303,12 @@ int param_1;
 
 
 
+/* param_1 was `int`, truncating the real record pointer every caller
+   passes -- same fix as FUN_0005cacc. Its two packed-pointer field reads
+   (offsets 0xd and 9) go through the same real-pointer side tables that
+   function uses too, for the same reason (see their comments). */
 undefined4 FUN_0005c214(param_1,param_2,param_3)
-int param_1;
+intptr_t param_1;
 char param_2;
 char param_3;
 
@@ -44229,12 +44326,14 @@ char param_3;
   uint uVar11;
   int iVar12;
   int iVar13;
-  
-  pbVar2 = *(byte **)(param_1 + 0xd);
+  int entry_idx;
+
+  entry_idx = (int)((param_1 - (intptr_t)DAT_0023aee0_backing) / 0x15);
+  pbVar2 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx);
   iVar12 = (int)DAT_0023b4a0;
   bVar7 = pbVar2[1] & 0xf;
   iVar5 = iVar12 * 0x10;
-  pbVar3 = *(byte **)(param_1 + 9);
+  pbVar3 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx);
   bVar1 = *pbVar3;
   uVar10 = (uint)*(char *)(param_1 + 5);
   if (uVar10 == 0) {
@@ -44311,19 +44410,18 @@ char param_3;
       }
     }
     *pbVar2 = bVar6;
-    *(byte *)(*(int *)(param_1 + 0xd) + 1) = bVar7;
+    pbVar2[1] = bVar7; // was `*(byte *)(*(int *)(param_1 + 0xd) + 1)` -- pbVar2 already IS that pointer now
     if ((param_2 != '\0') &&
        (((uVar11 = (uint)param_3,
          ((byte)(&DAT_000878d0)
                 [(byte)(&DAT_00086a20)
-                       [(*(byte *)(*(int *)(param_1 + 9) +
-                                  *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6) * 4) & 0xf) +
+                       [(pbVar3[*(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6) * 4] & 0xf) +
                         DAT_0023b4a0 * 0x10]] & 8) == uVar11 &&
          (((byte)(&DAT_000878d0)[uVar10] & 0x10) == (&DAT_00086af0)[uVar11 == 8])) ||
         ((((byte)(&DAT_000878d0)[uVar10] & 1) == 1 &&
          (((byte)(&DAT_000878d0)[uVar10] & 0x10) == (&DAT_00086af0)[uVar11 == 0])))))) {
       if (param_2 == '\x01') {
-        FUN_0005c0c4();
+        FUN_0005c0c4(param_1); // dropped arg; sibling call right below (FUN_0005c16c(param_1)) shows the intended shape
         uVar8 = 0;
       }
       else {
@@ -44339,7 +44437,27 @@ char param_3;
 
 
 
+/* Hack - Disabled: this function's body inlines FUN_0005c16c/FUN_0005c0c4's
+   packed-pointer arithmetic twice over (once per record, for the two
+   entries FUN_0005cf74 is comparing) plus several more raw
+   `*(int*)(param+0xd)`-style reassemblies of its own -- retrofitting
+   every one of those through the real-pointer side tables (see
+   g_dat0023aee0_realptr) is a lot of surface for what this actually is:
+   a "should these two creature reactions merge" comparison, peripheral
+   to a monster-free minimal dungeon. Every real exit path already
+   returns 0 except one `return 1`; short-circuiting to 0 always takes
+   FUN_0005cf74's simpler merge branch (bounded byte ops on pointers that
+   are already valid) instead of the path this would otherwise compute. */
 undefined4 FUN_0005c70c(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  return 0;
+}
+
+#if 0
+undefined4 FUN_0005c70c_unreachable(param_1,param_2)
 int param_1;
 int param_2;
 
@@ -44352,7 +44470,7 @@ int param_2;
   uint uVar6;
   uint uVar7;
   int iVar8;
-  
+
   iVar5 = *(char *)(param_1 + 7) + 1;
   *(char *)(param_1 + 7) = (char)iVar5;
   if (iVar5 * 0x1000000 >> 0x18 < 0x11) {
@@ -44446,6 +44564,7 @@ int param_2;
   }
   return 0;
 }
+#endif
 
 
 
@@ -44463,10 +44582,8 @@ byte * param_1;
   byte *pbVar8;
   char cVar9;
   short *psVar10;
-  char extraout_r1;
-  int extraout_r1_00;
-  int extraout_r1_01;
   int iVar11;
+  int iVar12;
   char cVar12;
   ushort local_32;
   int local_30;
@@ -44493,7 +44610,14 @@ byte * param_1;
        (int)((0x100 - (uint)param_1[8]) * (int)*(short *)(&DAT_00086b00 + iVar3 * 2) * iVar2))))) {
     do {
       iVar11 = (int)DAT_0023b4a0;
-      pbVar8 = *(byte **)(param_1 + 9);
+      /* Was `*(byte **)(param_1 + 9)` -- reassembling a pointer from raw
+         bytes the original 32-bit binary packed at this offset (see
+         FUN_0005bf40's DAT_0023aee9/aeea/aeec writes), which only ever
+         captured the low 32 bits even before this port's 64-bit
+         truncation, and the 8-byte-wide read here also swallows 4 bytes
+         of the next field. Real pointer tracked separately instead --
+         see g_dat0023aee0_realptr's comment. */
+      pbVar8 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, (param_1 - (byte *)DAT_0023aee0_backing) / 0x15);
       iVar2 = iVar11 * 0x10;
       cVar9 = (&DAT_00086a20)[(*pbVar8 & 0xf) + iVar2];
       if ((*(ushort *)(&DAT_00086af8 + iVar3 * 2) & (ushort)(byte)(&DAT_000878d0)[cVar9]) != 0) {
@@ -44502,39 +44626,48 @@ LAB_0005cf04:
         if ((((ushort)(byte)(&DAT_000878d0)[cVar9] & *(ushort *)(&DAT_00086af8 + iVar3 * 2)) ==
              *(ushort *)(&DAT_00086af8 + iVar3 * 2)) &&
            ((int)cVar9 == (int)*(short *)(iVar3 * 2 + 0x86afc))) {
-          Ordinal_2005(2,iVar3 + 1);
-          cVar12 = extraout_r1;
+          /* Was reading the division helper's remainder back via the
+             extraout_r1 register-leftover trick (see Ordinal_2005's
+             comment) -- computed directly instead, same fix as
+             FUN_000229e0's identical pattern. The quotient this call
+             also produced was never used (its return value was
+             discarded here too), so the call itself is gone. */
+          cVar12 = (char)((iVar3 + 1) % 2);
         }
         param_1[6] = -cVar12;
         goto LAB_0005ce50;
       }
       psVar10 = (short *)(&DAT_00086b00 + iVar3 * 2);
       sVar6 = *psVar10;
-      Ordinal_2005(2,iVar3 + 1);
-      if ((*(ushort *)(&DAT_00086af8 + extraout_r1_00 * 2) &
+      /* Was `Ordinal_2005(2,iVar3+1);` followed by two extraout_r1_00
+         reads of its division remainder -- same register-leftover
+         pattern as above, computed directly instead. */
+      iVar12 = (iVar3 + 1) % 2;
+      if ((*(ushort *)(&DAT_00086af8 + iVar12 * 2) &
           (ushort)(byte)(&DAT_000878d0)
                         [(byte)(&DAT_00086a20)
                                [(pbVar8[(int)*(short *)(&DAT_00086a00 + iVar11 * 6) * (int)sVar6 * 4
                                        ] & 0xf) + iVar2]]) != 0) goto LAB_0005cf04;
       cVar9 = Ordinal_2005((int)*(short *)(param_1 + 1) * (int)sVar6,(short)local_32 * local_30);
       param_1[8] = cVar9 + param_1[8];
-      param_1[6] = -(char)extraout_r1_00;
+      param_1[6] = -(char)iVar12;
       local_32 = 0x100;
       if ((*param_1 & 0x80) == uVar1) {
         FUN_0005c214(param_1,0,0);
       }
       if (*psVar10 == 1) {
-        FUN_0005c0c4();
+        FUN_0005c0c4(param_1); // dropped arg; sibling call right below shows the intended shape
       }
       else {
         FUN_0005c16c(param_1);
       }
-      if (((*(byte *)(*(int *)(param_1 + 0xd) + 1) & 0xf) == 0xf) ||
+      if (((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, (param_1 - (byte *)DAT_0023aee0_backing) / 0x15)[1] & 0xf) == 0xf) ||
          (uVar4 = (int)(char)param_1[5] >> 0x1f,
          0x10 < (int)(((int)(char)param_1[5] ^ uVar4) - uVar4))) {
-        Ordinal_2005(2,iVar3 + 1);
-        if (*(short *)(&DAT_00086b00 + extraout_r1_01 * 2) == 1) {
-          FUN_0005c0c4();
+        /* Same extraout_r1 register-leftover division-remainder pattern
+           as above, computed directly instead. */
+        if (*(short *)(&DAT_00086b00 + ((iVar3 + 1) % 2) * 2) == 1) {
+          FUN_0005c0c4(param_1); // dropped arg; sibling call right below shows the intended shape
         }
         else {
           FUN_0005c16c(param_1);
@@ -44569,9 +44702,15 @@ LAB_0005ce60:
 
 
 
+/* param_1/param_2 were `undefined4 *`/`int *`, truncating the real
+   pointers FUN_0005d13c always calls this with (`&local_20`/`&local_24`,
+   both real `byte*`/`undefined1*` locals) -- same fix as this record
+   array's other consumers. `*param_2`'s assignment below is this same
+   record's offset+0xd/0x11 packed-pointer field again, routed through
+   the shared real-pointer side table. */
 void FUN_0005cf74(param_1,param_2)
-undefined4 * param_1;
-int * param_2;
+byte ** param_1;
+undefined1 ** param_2;
 
 {
   bool bVar1;
@@ -44586,12 +44725,12 @@ int * param_2;
   int iVar10;
   char acStack_28 [5];
   char local_23;
-  
+
   iVar10 = ((int)*(char *)*param_1 & 0xfU) * 0x15;
   pcVar9 = &DAT_0023aee0 + iVar10;
   iVar5 = ((int)*pcVar9 & 0xfU) * 0x15;
   pbVar8 = &DAT_0023aee0 + iVar5;
-  *param_2 = *(int *)(&DAT_0023aef1 + iVar5) + 2;
+  *param_2 = (undefined1 *)(DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, iVar5 / 0x15) + 2);
   while( true ) {
     iVar3 = FUN_0005c214(pcVar9,1,8);
     if (iVar3 == 0) break;
@@ -44680,7 +44819,12 @@ void FUN_0005d13c()
     puVar3 = puVar2;
     bVar1 = DAT_0023b030;
     while (uVar4 = (uint)(char)bVar1, (uVar4 & 0xf) != 0xf) {
-      while (puVar3 < *(undefined1 **)(&DAT_0023aef1 + uVar4 * 0x15)) {
+      /* Was `*(undefined1 **)(&DAT_0023aef1 + uVar4 * 0x15)` -- same
+         packed-pointer-reassembly bug as FUN_0005cacc's offset+9/0xd
+         fields (this is that same offset-0xd/0x11 field, just indexed
+         relative to DAT_0023aef1 instead of DAT_0023aee0+0xd), routed
+         through the same real-pointer side table. */
+      while (puVar3 < (undefined1 *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, uVar4 & 0xf)) {
         *puVar3 = 0;
         uVar4 = (uint)(char)*local_20;
         puVar3 = local_24 + 2;
@@ -44715,17 +44859,34 @@ void FUN_0005d290()
   
   FUN_0005bf40();
   // Hack - Disabled: FUN_0005d13c() walks a 16-entry creature-reaction/
-  // sound-cue queue (DAT_0023aee0, stride 0x15) whose per-entry "back
-  // pointer" field is a 32-bit pointer manually byte-packed across offsets
-  // 9/0xa-0xb/0xc (see FUN_0005bf40's DAT_0023aee9/aeea/aeec writes from
-  // DAT_0023aecc) then reassembled via an 8-byte `*(byte **)(entry+9)`
-  // read in FUN_0005cacc -- on this 64-bit port that reassembly can only
-  // ever recover garbage (the upper 32 bits were never stored, and the
-  // 8-byte read also swallows 4 bytes of the next field). This is
-  // creature/object reaction bookkeeping, not needed to get into a
-  // minimal, monster-free dungeon; skip it rather than widen the packed
-  // struct.
+  // sound-cue queue (DAT_0023aee0, stride 0x15). Its per-entry fields are
+  // real 64-bit pointers manually byte-packed into 4-byte slots by the
+  // original 32-bit binary; this session recovered and fixed several of
+  // those (see g_dat0023aee0_realptr/g_dat0023aee0_realptr2 and their
+  // uses in FUN_0005cacc/FUN_0005c214/FUN_0005c16c/FUN_0005c0c4/
+  // FUN_0005cf74), but FUN_0005cf74's sibling FUN_0005c70c inlines the
+  // same pattern several times over unfixed (disabled itself, see its
+  // own comment) and still segfaults reassembling one further downstream
+  // -- this queue is creature/object reaction bookkeeping, not needed
+  // for a monster-free minimal dungeon, so it stays skipped rather than
+  // finishing that retrofit.
+  //
+  // DAT_0023b024, which this function's outer loop computes as a side
+  // effect, unexpectedly ALSO doubles as the tile-visibility scan radius
+  // FUN_0005d9cc's dungeon-geometry walk depends on (both consumers were
+  // sharing one address in the original binary) -- skipping this call
+  // entirely left it stuck at 0 and the 3D viewport permanently empty.
+  // Set it directly to a small, safe constant instead of computing it via
+  // the (still partially broken) queue walk; DAT_0023b038, the scratch
+  // buffer FUN_0005d9cc writes rings into, is real static storage so it
+  // starts zeroed. Confirmed via UW_DEBUG_LEVEL tracing that a value of 0
+  // (just the player's own tile, no neighbors) finds zero visible faces
+  // -- wall/floor geometry belongs to tiles the walk actually visits, not
+  // the player's own -- so this needs to be a real render distance, not
+  // just "safe". 8 is an arbitrary modest guess pending a real value from
+  // the original binary; revisit if the render distance looks wrong.
   // FUN_0005d13c();
+  DAT_0023b024 = 8;
   FUN_00058438(0);
   uVar1 = DAT_00086b30;
   DAT_0023b804 = 0;
