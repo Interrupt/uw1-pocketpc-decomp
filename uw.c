@@ -153,7 +153,7 @@ undefined4 DAT_000bbef4;
 undefined DAT_000842f0;
 /* Was a lone 1-byte scalar, but indexed throughout this file as a
    tile-type-flags lookup table (nibble-masked indices in most call sites,
-   but some -- e.g. FUN_0005cacc -- index it with an unmasked byte value
+   but some -- e.g. process_reaction_entry -- index it with an unmasked byte value
    read from another table). Same lone-scalar-used-as-array pattern fixed
    repeatedly this session; sized for a full byte index to be safe. */
 static undefined1 DAT_000878d0_backing[256];
@@ -2586,7 +2586,7 @@ static undefined1 DAT_00086a18_backing[65536];
 /* Was a lone 1-byte scalar, but indexed throughout this file as a small
    lookup table (nibble-masked indices, plus `iVar11*0x10 + nibble`-style
    compound indices up to ~0x40) -- confirmed crashing (EXC_BAD_ACCESS) at
-   one of its FUN_0005cacc call sites on a real run. Same lone-scalar-
+   one of its process_reaction_entry call sites on a real run. Same lone-scalar-
    used-as-array pattern fixed repeatedly this session; generous margin. */
 static undefined1 DAT_00086a20_backing[256];
 #define DAT_00086a20 DAT_00086a20_backing[0]
@@ -2612,7 +2612,7 @@ static undefined1 DAT_0023b039_backing[4096];
 undefined1 DAT_0023b030;
 /* DAT_0023aee0-family: ~20 separately-declared globals that are really
    one 16-entry x 0x15(21)-byte creature-reaction/sound-cue queue record
-   array (FUN_0005bf40/FUN_0005cacc/FUN_0005cf74/FUN_0005d13c index it via
+   array (FUN_0005bf40/process_reaction_entry/merge_adjacent_reactions/process_reaction_queue index it via
    `&DAT_0023aee0 + entry*0x15`). As lone scalars, out-of-bounds record
    writes/reads walked off into whatever memory happened to follow in
    declaration order -- confirmed: DAT_0023b030 (declared right after,
@@ -2621,7 +2621,7 @@ undefined1 DAT_0023b030;
    queue never looked empty. This subsystem also computes DAT_0023b024,
    which turns out to double as the tile-visibility scan radius consumed
    by FUN_0005d9cc's dungeon-geometry walk -- NOT optional creature/object
-   bookkeeping as first assessed (see FUN_0005d13c's since-removed
+   bookkeeping as first assessed (see process_reaction_queue's since-removed
    `// Hack - Disabled`); skipping it left the 3D viewport permanently
    empty. Real backing array + aliases at each element's correct offset,
    generous margin past the 16*21=336-byte minimum. */
@@ -2629,11 +2629,11 @@ static undefined1 DAT_0023aee0_backing[1024];
 #define DAT_0023aee0 DAT_0023aee0_backing[0]
 /* Real-pointer side table for this record array's "back pointer" field
    (offsets 9/0xa-0xb/0xc), which the original 32-bit binary packed as raw
-   bytes -- see FUN_0005cacc's comment on why that can't be reassembled
+   bytes -- see process_reaction_entry's comment on why that can't be reassembled
    into a real 64-bit pointer on this port. Only entry 0 (the player's own
    reaction slot, the only one FUN_0005bf40 ever populates in a
    monster-free dungeon) is written; other entries stay NULL, matching
-   the "unpopulated" state FUN_0005cacc's own `(*param_1 & 0x80) == uVar1`
+   the "unpopulated" state process_reaction_entry's own `(*param_1 & 0x80) == uVar1`
    guard already treats as "nothing to look up" for a zeroed record. */
 static char *g_dat0023aee0_realptr[16];
 /* Second real-pointer side table, for this record's OTHER packed pointer
@@ -44218,7 +44218,7 @@ void FUN_0005bf40()
     _DAT_0023af02 = 0x23b058;
     g_dat0023aee0_realptr2[1] = (char *)&DAT_0023b038_backing[0x20]; // same real-pointer side channel, entry 1
     DAT_0023aee9 = (char)DAT_0023aecc;
-    g_dat0023aee0_realptr[0] = DAT_0023aecc; // real-pointer side channel for FUN_0005cacc -- see g_dat0023aee0_realptr's comment
+    g_dat0023aee0_realptr[0] = DAT_0023aecc; // real-pointer side channel for process_reaction_entry -- see g_dat0023aee0_realptr's comment
     g_dat0023aee0_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
     FUN_00049ce8(*(short *)(DAT_00086e6c + 0x2c) + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
     FUN_00049ce8(*(short *)(DAT_00086e6c + 0x2c) + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
@@ -44232,8 +44232,8 @@ void FUN_0005bf40()
 
 
 
-// Same param_1-truncation + packed-pointer-arithmetic fix as its mirror-image sibling FUN_0005c16c.
-void FUN_0005c0c4(param_1)
+// Was FUN_0005c0c4. Same param_1-truncation + packed-pointer-arithmetic fix as its mirror-image sibling reaction_retreat_tile.
+void reaction_advance_tile(param_1)
 intptr_t param_1;
 
 {
@@ -44263,8 +44263,8 @@ intptr_t param_1;
 
 
 
-/* param_1 was `int`, truncating the real record pointer (same fix as its
-   siblings FUN_0005cacc/FUN_0005c214). This function does pointer
+/* Was FUN_0005c16c. param_1 was `int`, truncating the real record pointer (same fix as its
+   siblings process_reaction_entry/compute_reaction_offset). This function does pointer
    ARITHMETIC on the two packed-pointer fields (advance-to-neighbor-tile
    at offset 9, step-back-2 at offset 0xd) by reading their packed bytes
    as a plain 32-bit value, adjusting, and writing the bytes back --
@@ -44273,7 +44273,7 @@ intptr_t param_1;
    side tables instead; the packed-byte writes are left in place as
    harmless dead state (nothing safely reads a pointer back out of them
    any more -- see g_dat0023aee0_realptr's comment). */
-void FUN_0005c16c(param_1)
+void reaction_retreat_tile(param_1)
 intptr_t param_1;
 
 {
@@ -44303,11 +44303,11 @@ intptr_t param_1;
 
 
 
-/* param_1 was `int`, truncating the real record pointer every caller
-   passes -- same fix as FUN_0005cacc. Its two packed-pointer field reads
+/* Was FUN_0005c214. param_1 was `int`, truncating the real record pointer every caller
+   passes -- same fix as process_reaction_entry. Its two packed-pointer field reads
    (offsets 0xd and 9) go through the same real-pointer side tables that
    function uses too, for the same reason (see their comments). */
-undefined4 FUN_0005c214(param_1,param_2,param_3)
+undefined4 compute_reaction_offset(param_1,param_2,param_3)
 intptr_t param_1;
 char param_2;
 char param_3;
@@ -44421,11 +44421,11 @@ char param_3;
         ((((byte)(&DAT_000878d0)[uVar10] & 1) == 1 &&
          (((byte)(&DAT_000878d0)[uVar10] & 0x10) == (&DAT_00086af0)[uVar11 == 0])))))) {
       if (param_2 == '\x01') {
-        FUN_0005c0c4(param_1); // dropped arg; sibling call right below (FUN_0005c16c(param_1)) shows the intended shape
+        reaction_advance_tile(param_1); // dropped arg; sibling call right below (reaction_retreat_tile(param_1)) shows the intended shape
         uVar8 = 0;
       }
       else {
-        FUN_0005c16c(param_1);
+        reaction_retreat_tile(param_1);
         uVar8 = 0xff;
       }
       *(undefined1 *)(param_1 + 6) = uVar8;
@@ -44437,18 +44437,18 @@ char param_3;
 
 
 
-/* Hack - Disabled: this function's body inlines FUN_0005c16c/FUN_0005c0c4's
+/* Was FUN_0005c70c. Hack - Disabled: this function's body inlines reaction_retreat_tile/reaction_advance_tile's
    packed-pointer arithmetic twice over (once per record, for the two
-   entries FUN_0005cf74 is comparing) plus several more raw
+   entries merge_adjacent_reactions is comparing) plus several more raw
    `*(int*)(param+0xd)`-style reassemblies of its own -- retrofitting
    every one of those through the real-pointer side tables (see
    g_dat0023aee0_realptr) is a lot of surface for what this actually is:
    a "should these two creature reactions merge" comparison, peripheral
    to a monster-free minimal dungeon. Every real exit path already
    returns 0 except one `return 1`; short-circuiting to 0 always takes
-   FUN_0005cf74's simpler merge branch (bounded byte ops on pointers that
+   merge_adjacent_reactions's simpler merge branch (bounded byte ops on pointers that
    are already valid) instead of the path this would otherwise compute. */
-undefined4 FUN_0005c70c(param_1,param_2)
+undefined4 reactions_should_merge(param_1,param_2)
 int param_1;
 int param_2;
 
@@ -44457,7 +44457,7 @@ int param_2;
 }
 
 #if 0
-undefined4 FUN_0005c70c_unreachable(param_1,param_2)
+undefined4 reactions_should_merge_unreachable(param_1,param_2)
 int param_1;
 int param_2;
 
@@ -44551,15 +44551,15 @@ int param_2;
             *(char *)(param_2 + 0xc) = (char)((uint)iVar5 >> 0x18);
             return 1;
           }
-          FUN_0005c16c(param_2);
+          reaction_retreat_tile(param_2);
           *(undefined1 *)(param_2 + 6) = 0xff;
-          FUN_0005c214(param_2,0,0);
+          compute_reaction_offset(param_2,0,0);
         } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
         return 0;
       }
-      FUN_0005c0c4(param_1);
+      reaction_advance_tile(param_1);
       *(undefined1 *)(param_1 + 6) = 0;
-      FUN_0005c214(param_1,0,0);
+      compute_reaction_offset(param_1,0,0);
     } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
   }
   return 0;
@@ -44568,7 +44568,8 @@ int param_2;
 
 
 
-void FUN_0005cacc(param_1)
+// Was FUN_0005cacc.
+void process_reaction_entry(param_1)
 byte * param_1;
 
 {
@@ -44653,13 +44654,13 @@ LAB_0005cf04:
       param_1[6] = -(char)iVar12;
       local_32 = 0x100;
       if ((*param_1 & 0x80) == uVar1) {
-        FUN_0005c214(param_1,0,0);
+        compute_reaction_offset(param_1,0,0);
       }
       if (*psVar10 == 1) {
-        FUN_0005c0c4(param_1); // dropped arg; sibling call right below shows the intended shape
+        reaction_advance_tile(param_1); // dropped arg; sibling call right below shows the intended shape
       }
       else {
-        FUN_0005c16c(param_1);
+        reaction_retreat_tile(param_1);
       }
       if (((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, (param_1 - (byte *)DAT_0023aee0_backing) / 0x15)[1] & 0xf) == 0xf) ||
          (uVar4 = (int)(char)param_1[5] >> 0x1f,
@@ -44667,10 +44668,10 @@ LAB_0005cf04:
         /* Same extraout_r1 register-leftover division-remainder pattern
            as above, computed directly instead. */
         if (*(short *)(&DAT_00086b00 + ((iVar3 + 1) % 2) * 2) == 1) {
-          FUN_0005c0c4(param_1); // dropped arg; sibling call right below shows the intended shape
+          reaction_advance_tile(param_1); // dropped arg; sibling call right below shows the intended shape
         }
         else {
-          FUN_0005c16c(param_1);
+          reaction_retreat_tile(param_1);
         }
         param_1[6] = -cVar12;
         param_1[8] = 0xff;
@@ -44702,13 +44703,13 @@ LAB_0005ce60:
 
 
 
-/* param_1/param_2 were `undefined4 *`/`int *`, truncating the real
-   pointers FUN_0005d13c always calls this with (`&local_20`/`&local_24`,
+/* Was FUN_0005cf74. param_1/param_2 were `undefined4 *`/`int *`, truncating the real
+   pointers process_reaction_queue always calls this with (`&local_20`/`&local_24`,
    both real `byte*`/`undefined1*` locals) -- same fix as this record
    array's other consumers. `*param_2`'s assignment below is this same
    record's offset+0xd/0x11 packed-pointer field again, routed through
    the shared real-pointer side table. */
-void FUN_0005cf74(param_1,param_2)
+void merge_adjacent_reactions(param_1,param_2)
 byte ** param_1;
 undefined1 ** param_2;
 
@@ -44732,7 +44733,7 @@ undefined1 ** param_2;
   pbVar8 = &DAT_0023aee0 + iVar5;
   *param_2 = (undefined1 *)(DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, iVar5 / 0x15) + 2);
   while( true ) {
-    iVar3 = FUN_0005c214(pcVar9,1,8);
+    iVar3 = compute_reaction_offset(pcVar9,1,8);
     if (iVar3 == 0) break;
     if ((int)((uint)(byte)(&DAT_0023aee6)[iVar5] + (char)(&DAT_0023aee5)[iVar5] * 0x100) <
         (int)((uint)(byte)(&DAT_0023aee6)[iVar10] + (char)(&DAT_0023aee5)[iVar10] * 0x100))
@@ -44740,7 +44741,7 @@ undefined1 ** param_2;
   }
   if ((int)(char)(&DAT_0023aee5)[iVar10] < (int)(char)(&DAT_0023aee5)[iVar5]) {
     do {
-      iVar3 = FUN_0005c214(pbVar8,0xffffffff,8);
+      iVar3 = compute_reaction_offset(pbVar8,0xffffffff,8);
     } while (iVar3 != 0);
   }
   iVar3 = 0x15;
@@ -44754,7 +44755,7 @@ undefined1 ** param_2;
     pcVar6 = pcVar6 + 1;
     pcVar7 = pcVar7 + 1;
   } while (iVar4 != 0 && bVar1);
-  iVar3 = FUN_0005c70c(pcVar9,pbVar8);
+  iVar3 = reactions_should_merge(pcVar9,pbVar8);
   if (iVar3 == 0) {
 LAB_0005d064:
     bVar2 = *(byte *)*param_1;
@@ -44766,19 +44767,19 @@ LAB_0005d064:
     *param_1 = pbVar8;
     if ((&DAT_0023aee5)[iVar10] != (&DAT_0023aee5)[iVar5]) {
       do {
-        FUN_0005c0c4(acStack_28);
+        reaction_advance_tile(acStack_28);
         do {
           if ((char)(&DAT_0023aee5)[iVar5] <= local_23) {
             return;
           }
           do {
-            iVar10 = FUN_0005c214(acStack_28,1,0);
+            iVar10 = compute_reaction_offset(acStack_28,1,0);
             if (iVar10 == 0) break;
           } while (local_23 < (char)(&DAT_0023aee5)[iVar5]);
         } while ((char)(&DAT_0023aee5)[iVar5] <= local_23);
-        FUN_0005c0c4(acStack_28);
+        reaction_advance_tile(acStack_28);
         do {
-          iVar10 = FUN_0005c214(acStack_28,1,8);
+          iVar10 = compute_reaction_offset(acStack_28,1,8);
           if (iVar10 == 0) break;
         } while (local_23 < (char)(&DAT_0023aee5)[iVar5]);
       } while( true );
@@ -44789,7 +44790,8 @@ LAB_0005d064:
 
 
 
-void FUN_0005d13c()
+// Was FUN_0005d13c.
+void process_reaction_queue()
 
 {
   byte bVar1;
@@ -44810,7 +44812,7 @@ void FUN_0005d13c()
     bVar1 = DAT_0023b030;
     while ((bVar1 & 0xf) != 0xf) {
       pbVar5 = &DAT_0023aee0 + ((int)(char)*local_20 & 0xfU) * 0x15;
-      FUN_0005cacc(pbVar5);
+      process_reaction_entry(pbVar5);
       puVar2 = local_24;
       local_20 = pbVar5;
       bVar1 = *pbVar5;
@@ -44820,7 +44822,7 @@ void FUN_0005d13c()
     bVar1 = DAT_0023b030;
     while (uVar4 = (uint)(char)bVar1, (uVar4 & 0xf) != 0xf) {
       /* Was `*(undefined1 **)(&DAT_0023aef1 + uVar4 * 0x15)` -- same
-         packed-pointer-reassembly bug as FUN_0005cacc's offset+9/0xd
+         packed-pointer-reassembly bug as process_reaction_entry's offset+9/0xd
          fields (this is that same offset-0xd/0x11 field, just indexed
          relative to DAT_0023aef1 instead of DAT_0023aee0+0xd), routed
          through the same real-pointer side table. */
@@ -44830,7 +44832,7 @@ void FUN_0005d13c()
         puVar3 = local_24 + 2;
         local_24 = puVar3;
       }
-      FUN_0005cf74(&local_20,&local_24);
+      merge_adjacent_reactions(&local_20,&local_24);
       puVar3 = local_24;
       bVar1 = *local_20;
     }
@@ -44858,13 +44860,13 @@ void FUN_0005d290()
   bool bVar5;
   
   FUN_0005bf40();
-  // Hack - Disabled: FUN_0005d13c() walks a 16-entry creature-reaction/
+  // Hack - Disabled: process_reaction_queue() walks a 16-entry creature-reaction/
   // sound-cue queue (DAT_0023aee0, stride 0x15). Its per-entry fields are
   // real 64-bit pointers manually byte-packed into 4-byte slots by the
   // original 32-bit binary; this session recovered and fixed several of
   // those (see g_dat0023aee0_realptr/g_dat0023aee0_realptr2 and their
-  // uses in FUN_0005cacc/FUN_0005c214/FUN_0005c16c/FUN_0005c0c4/
-  // FUN_0005cf74), but FUN_0005cf74's sibling FUN_0005c70c inlines the
+  // uses in process_reaction_entry/compute_reaction_offset/reaction_retreat_tile/reaction_advance_tile/
+  // merge_adjacent_reactions), but merge_adjacent_reactions's sibling reactions_should_merge inlines the
   // same pattern several times over unfixed (disabled itself, see its
   // own comment) and still segfaults reassembling one further downstream
   // -- this queue is creature/object reaction bookkeeping, not needed
@@ -44885,7 +44887,7 @@ void FUN_0005d290()
   // the player's own -- so this needs to be a real render distance, not
   // just "safe". 8 is an arbitrary modest guess pending a real value from
   // the original binary; revisit if the render distance looks wrong.
-  // FUN_0005d13c();
+  // process_reaction_queue();
   DAT_0023b024 = 8;
   FUN_00058438(0);
   uVar1 = DAT_00086b30;
