@@ -432,8 +432,13 @@ extern char *DAT_00086df8;
 extern char *DAT_000fb858;
 extern undefined1 DAT_000fb860_backing[256];
 #define DAT_000fb860 DAT_000fb860_backing[0]
-extern undefined1 DAT_000fb8c4_backing[256];
-#define DAT_000fb8c4 DAT_000fb8c4_backing[0]
+/* chrbtns.gr cumulative per-entry offset table (built by LAB_000255d0).
+   DAT_000fb8c4 is an alias into it starting at element 17 -- the same
+   relationship DAT_000fb884 (element 1) has, matching the 0xfb8c4 vs
+   0xfb880 symbol addresses (0x44 = 17*4). Elements 17..26 are the
+   full-body figure offsets read by character_generator_loop case 4. */
+extern undefined4 DAT_000fb880_backing[4096];
+#define DAT_000fb8c4 (((undefined1 *)DAT_000fb880_backing)[0x44])
 extern undefined1 DAT_000fb8f0_backing[1680];
 #define DAT_000fb8f0 DAT_000fb8f0_backing[0]
 extern char *DAT_001005c4;

@@ -206,10 +206,11 @@ LAB_00025468:
                          );
         FUN_00035df8(0);
         DAT_000fb858 = DAT_001005c4;
-        /* DAT_000fb8c4 is never populated (see its comment), so iVar14
-           is always 0 here and `iVar14 + param_1 + -4/-3` underruns
-           param_1's buffer. Same fallback-to-0 guard as the
-           DAT_000fb880 cases above. */
+        /* iVar14 is chrbtns.gr's cumulative offset for the chosen body
+           figure (entry 17 + sexbit*5 + portraitIdx) -- now that
+           DAT_000fb8c4 aliases the real LAB_000255d0 table (see uw.h),
+           this is a genuine nonzero offset. Keep the <4 guard as a
+           defensive floor against a still-empty table. */
         if (iVar14 < 4) {
           bVar2 = 0;
           bVar3 = 0;

@@ -839,8 +839,10 @@ undefined DAT_000fb863;
    (FUN_00023de8). Real populator recovered this session: LAB_000255d0
    (a callback Ghidra never resolved into a named function -- see its
    own comment near its definition) builds this as a cumulative per-
-   entry byte-size table when the "chrbtns" resource loads. */
-static undefined4 DAT_000fb880_backing[4096];
+   entry byte-size table when the "chrbtns" resource loads.
+   Not `static` -- chargen.c reaches it through the DAT_000fb8c4 alias
+   in uw.h (case 4's body-figure offset lookup). */
+undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb880 DAT_000fb880_backing[0]
 int DAT_000fb898;
 char s_key_to_continue_00084e60[] = "key_to_continue";
@@ -859,16 +861,17 @@ char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
    even after DAT_000fb880 itself started being populated correctly. */
 #define DAT_000fb884 (((undefined1 *)DAT_000fb880_backing)[4])
 short DAT_001005c0;
-/* Was a lone 1-byte `undefined` scalar, but read as `*(int*)(&DAT_000fb8c4
-   + idx*4)` (4-byte stride) in character_generator_loop's case 4 -- an out-of-bounds
-   read of whatever memory follows for any idx!=0 (this crashed with a
-   BUS error/high-address dereference). No writer exists anywhere in this
-   decompile -- same "unrecoverable, never-populated table" class as
-   DAT_000fb880 above -- widened to a real (zero-initialized) array so
-   every index reads a consistent, safe 0 instead of garbage. */
-/* Not `static` -- also used by chargen.c; see the extern declarations and
-   macro aliases in uw.h. */
-undefined1 DAT_000fb8c4_backing[256];
+/* DAT_000fb8c4's address (0xfb8c4) is 0x44 bytes = 17 elements past
+   DAT_000fb880's (0xfb880) -- like DAT_000fb884, not a separate table but
+   an alias into the SAME cumulative per-entry offset array LAB_000255d0
+   builds for chrbtns.gr, viewed starting at element 17. Elements 17..26
+   are the offsets of chrbtns entries 17-26 (the ten full-body figures,
+   five male + five female); character_generator_loop's case 4 reads
+   `table[17 + sexbit*5 + portraitIdx]` to blit the chosen body. Declaring
+   it as an independent zero array (as an earlier pass did, before
+   LAB_000255d0's role was known) split it from the real data and left it
+   permanently zero -- so no body was ever drawn. Aliased onto the real
+   array instead. See uw.h. */
 undefined1 DAT_000fb8f0_backing[1680];
 int DAT_00201c98;
 /* Ghidra's auto-analysis never recognized LAB_000255b4/LAB_000255d0 as
@@ -13740,15 +13743,24 @@ short * param_1;
           FUN_00011060(uVar8,iVar11 + (short)(iVar9 >> 1),iVar10 + 3);
         }
         else if (param_1[6] == 3) {
-          DAT_00088960 = 1;
-          bitmap_blit_to_framebuffer(iVar11,iVar10,
-                       (&DAT_000fb880)
-                       [(int)(((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) +
-                               ((int)((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3) + 1)
-                                      << 0x18) >> 0x10) +
-                              local_28) * 0x10000) >> 0x10] + DAT_000fb858,(int)(short)local_2c,
-                       sVar7,0,0,1);
-          DAT_00088960 = 0;
+          /* Portrait/head selector (chargen state 4). The DAT_000fb880
+             index Ghidra reconstructed here -- list[0] + sext(list[1]) +
+             local_28 -- evaluates to 1 + local_28 for this build's
+             CHRGEN.DAT (record 4's list is just {1}), which lands on
+             chrbtns entries 1-5 (button plates / armour tiles), not the
+             heads, and it has no sex term at all. chrbtns entries 7-16
+             are the ten head graphics (five male then five female);
+             character_generator_loop case 4 already indexes the matching
+             body figures as `17 + sexbit*5 + idx`. Use the same shape for
+             the heads: `7 + sexbit*5 + local_28`. */
+          {
+            int head_idx = 7 + ((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 5) + local_28;
+            DAT_00088960 = 1;
+            bitmap_blit_to_framebuffer(iVar11,iVar10,
+                         (&DAT_000fb880)[head_idx] + DAT_000fb858,(int)(short)local_2c,
+                         sVar7,0,0,1);
+            DAT_00088960 = 0;
+          }
         }
         local_28 = (local_28 + 1) * 0x10000 >> 0x10;
       } while (local_28 < param_1[5]);
