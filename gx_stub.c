@@ -62,6 +62,11 @@ typedef struct {
 #define VK_SPACE 0x20
 #define VK_CONTROL 0x11
 #define VK_ESCAPE 0x1B
+/* WinCE app-launch button virtual-key. Real GAPI hands the game codes
+ * like this for the hardware A/B/C/Start buttons -- never ASCII keys --
+ * so mapping "button A" to one keeps the spacebar free to type a literal
+ * space in the name-entry field. */
+#define VK_APP1 0xC1
 
 static SDL_Window *g_win;
 static SDL_Renderer *g_ren;
@@ -126,7 +131,13 @@ static int translate_vk(SDL_Keycode sym) {
         case SDLK_LEFT: return VK_LEFT;
         case SDLK_RIGHT: return VK_RIGHT;
         case SDLK_RETURN: return VK_RETURN;
-        case SDLK_SPACE: return VK_SPACE;
+        /* SDLK_SPACE is deliberately NOT mapped here: the spacebar must
+         * reach the game only as a WM_CHAR (0x20) via SDL_TEXTINPUT so it
+         * types a literal space in the name-entry field. Sending a
+         * WM_KEYDOWN for it too made FUN_00077b2c match it against the
+         * "button A" key (see GXGetDefaultKeys) and emit event 0x91,
+         * which that field handles as delete -- so every space deleted
+         * the character before it. */
         case SDLK_LCTRL:
         case SDLK_RCTRL: return VK_CONTROL;
         case SDLK_ESCAPE: return VK_ESCAPE;
@@ -613,12 +624,18 @@ void *GXGetDisplayProperties(void) {
 }
 
 void *GXGetDefaultKeys(void *outBuffer) {
-    fprintf(stderr, "[gx] GXGetDefaultKeys: mapping arrows/space/ctrl/esc/enter to the game's "
-                    "D-pad and A/B/C/Start buttons\n");
+    fprintf(stderr, "[gx] GXGetDefaultKeys: mapping arrows/ctrl/esc/enter to the game's "
+                    "D-pad and B/C/Start buttons (A left unbound -- see below)\n");
     GxKeyList *kl = (GxKeyList *)outBuffer;
     if (!kl) return outBuffer;
     memset(kl, 0, sizeof(*kl));
-    kl->a.vk = VK_SPACE;
+    /* Button A was VK_SPACE, which collided with typing a space in the
+     * name-entry field (FUN_00077b2c turns a button-A keydown into event
+     * 0x91 = delete-previous-char). Use a WinCE app-button VK instead --
+     * the shape real GAPI returns -- so the spacebar is free. Desktop
+     * "activate" is the mouse click, so leaving A without a keyboard
+     * binding costs nothing here. */
+    kl->a.vk = VK_APP1;
     kl->b.vk = VK_CONTROL;
     kl->c.vk = VK_ESCAPE;
     kl->start.vk = VK_RETURN;

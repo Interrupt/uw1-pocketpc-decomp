@@ -844,7 +844,15 @@ undefined DAT_000fb863;
    in uw.h (case 4's body-figure offset lookup). */
 undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb880 DAT_000fb880_backing[0]
-int DAT_000fb898;
+/* Another alias into the LAB_000255d0 offset table (like DAT_000fb884 at
+   element 1 and DAT_000fb8c4 at element 17): 0xfb898 - 0xfb880 = 0x18 =
+   element 6. That's the offset of chrbtns.gr entry 6 -- the 145x16
+   parchment-with-border strip FUN_00023de8 blits as the name-entry
+   field's background, and FUN_00024840's backspace handler re-blits to
+   erase a deleted character. Declared as a lone uninitialised `int` it
+   stayed 0, so both blits read from the buffer's start (button plates)
+   and drew a garbled rectangle. */
+#define DAT_000fb898 (((int *)DAT_000fb880_backing)[6])
 char s_key_to_continue_00084e60[] = "key_to_continue";
 char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
 char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
