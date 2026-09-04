@@ -1703,18 +1703,57 @@ undefined2 DAT_00201c90;
 undefined2 DAT_00201c8c;
 undefined1 DAT_0023c3dc;
 undefined1 DAT_0023c3d8;
-/* DAT_00204880/82/84 were three separate lone `short`/`undefined2`
+/* DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/
+   a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2`
    scalars, but FUN_0005878c and its siblings (FUN_00058e08, FUN_0005a550,
    FUN_0005ad18, FUN_00059488 -- reached by `DAT_00204874 = &DAT_00204880`
    then dereferenced relative to that) treat this as one struct with real
    fields up to offset 0x2a (42 bytes) -- confirmed crashing
-   (EXC_BAD_ACCESS) dereferencing that far out on a real run. Same
-   lone-scalars-instead-of-a-real-record pattern fixed repeatedly this
-   session; widened with a safety margin past the furthest offset seen. */
-static short DAT_00204880_backing[32];
-#define DAT_00204880 DAT_00204880_backing[0]
-#define DAT_00204882 DAT_00204880_backing[1]
-#define DAT_00204884 DAT_00204880_backing[2]
+   (EXC_BAD_ACCESS) dereferencing that far out on a real run. Widened to
+   a real backing buffer for that crash, but originally only 80/82/84
+   were pointed at it -- every other field was left as its own
+   independent global, so `apply_heading_turn`/`apply_movement_tick` and
+   friends, which write these fields BY NAME (e.g. `DAT_00204894 = ...`
+   for heading), were updating completely different memory than what
+   FUN_0005878c's collision/movement engine reads via
+   `*(short *)(DAT_00204874 + 0x14)` pointer arithmetic (real address
+   0x204894) -- confirmed via lldb: DAT_00204894 demonstrably changed on
+   turn input, while `*(short*)(DAT_00204874+0x14)` read 0 on every
+   single check all session. This -- not a dropped call anywhere -- is
+   why position/heading never visibly changed despite the movement-
+   command-decode and turn-application fixes earlier this session: the
+   update landed in memory the movement/collision code never looks at.
+   Same lone-scalars-instead-of-a-real-record pattern fixed repeatedly
+   this session, just spread across two declaration sites and not
+   caught the first time because the earlier fix only needed to solve
+   the immediate crash. Rebuilt as a real byte-addressed backing buffer
+   (byte, not short, since several fields are single bytes at odd
+   offsets) with every field aliased at its real offset, generous
+   margin past the furthest (0x2a) seen. */
+static undefined1 DAT_00204880_backing[128];
+#define DAT_00204880 (*(short *)&DAT_00204880_backing[0])
+#define DAT_00204882 (*(short *)&DAT_00204880_backing[2])
+#define DAT_00204884 (*(short *)&DAT_00204880_backing[4])
+#define DAT_00204886 (*(short *)&DAT_00204880_backing[6])
+#define DAT_00204888 (*(short *)&DAT_00204880_backing[8])
+#define DAT_0020488a (*(short *)&DAT_00204880_backing[0xa])
+#define DAT_0020488c (*(short *)&DAT_00204880_backing[0xc])
+#define DAT_0020488e (*(short *)&DAT_00204880_backing[0xe])
+#define DAT_00204890 (*(short *)&DAT_00204880_backing[0x10])
+#define DAT_00204892 (*(short *)&DAT_00204880_backing[0x12])
+#define DAT_00204894 (*(short *)&DAT_00204880_backing[0x14])
+#define DAT_00204896 DAT_00204880_backing[0x16]
+#define DAT_00204897 DAT_00204880_backing[0x17]
+#define DAT_002048a1 DAT_00204880_backing[0x21]
+#define DAT_002048a2 DAT_00204880_backing[0x22]
+#define DAT_002048a3 DAT_00204880_backing[0x23]
+#define DAT_002048a4 DAT_00204880_backing[0x24]
+#define DAT_002048a5 DAT_00204880_backing[0x25]
+#define DAT_002048a6 DAT_00204880_backing[0x26]
+#define DAT_002048a7 DAT_00204880_backing[0x27]
+#define DAT_002048a8 DAT_00204880_backing[0x28]
+#define DAT_002048a9 DAT_00204880_backing[0x29]
+#define DAT_002048aa DAT_00204880_backing[0x2a]
 short DAT_00201c70;
 undefined DAT_002035cf;
 char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in_your_face!";
@@ -1820,9 +1859,6 @@ static undefined DAT_00201b70_backing[8192];
 #define DAT_00201b70 DAT_00201b70_backing[0]
 ushort DAT_00202084;
 byte DAT_0020208c;
-short DAT_00204890;
-short DAT_0020488a;
-short DAT_00204894;
 short DAT_00085890;
 short DAT_00202c68;
 short DAT_00202c30;
@@ -1832,25 +1868,10 @@ short DAT_0023bf1c;
 short DAT_00202078;
 short DAT_0023bf4c;
 short DAT_00086e68;
-short DAT_00204892;
-undefined1 DAT_00204896;
-undefined1 DAT_00204897;
-short DAT_0020488e;
-short DAT_0020488c;
-undefined1 DAT_002048a1;
-undefined1 DAT_002048a2;
 static undefined2 DAT_002048b0_backing[8192];
 #define DAT_002048b0 DAT_002048b0_backing[0]
-undefined1 DAT_002048a9;
-undefined1 DAT_002048aa;
 undefined1 *DAT_002048b8;
 undefined2 DAT_002048b2;
-undefined2 DAT_00204888;
-undefined2 DAT_00204886;
-undefined1 DAT_002048a7;
-undefined1 DAT_002048a3;
-undefined1 DAT_002048a4;
-undefined1 DAT_002048a8;
 undefined2 DAT_0023be98;
 undefined4 DAT_000858a0;
 undefined4 LAB_0003d8e4()
@@ -3015,8 +3036,6 @@ char DAT_00086e84;
 int DAT_0023bf64;
 char DAT_0023bf60;
 uint DAT_0023bf5c;
-byte DAT_002048a5;
-undefined1 DAT_002048a6;
 undefined2 DAT_0023be9e;
 undefined2 DAT_0023be9c;
 undefined2 DAT_0023be9a;
@@ -50221,20 +50240,31 @@ void FUN_00068c1c()
 
 
 // was FUN_00068cac
-void apply_movement_tick()
+/* Was called with no args from both call sites (movement_tick's real
+   time-delta param_1, and FUN_00068c1c's literal 0x40) -- dropped
+   argument, same pattern as apply_heading_turn below (which this
+   function itself calls with no args, same bug one level deeper).
+   Confirmed this matters now that the DAT_00204880-relative struct
+   fields are correctly aliased (see that fix's comment): apply_heading_turn
+   writes this forwarded value into DAT_00204892 (struct offset 0x12,
+   the "speed" field FUN_00058e08's movement engine reads), so losing
+   it here meant that field could never become the real per-tick delta
+   even once the aliasing bug was fixed. */
+void apply_movement_tick(param_1)
+undefined4 param_1;
 
 {
   byte bVar1;
   char cVar2;
   char cVar3;
   short sVar4;
-  
+
   DAT_002048a5 = (&DAT_00202c91)[(*DAT_0023be64 & 0x1ff) * 0xd] & 7;
   DAT_002048a6 = (&DAT_00202c90)[(*DAT_0023be64 & 0x1ff) * 0xd];
   DAT_0023be9e = 0;
   DAT_0023be9c = 0;
   DAT_0023be9a = 0;
-  apply_heading_turn();
+  apply_heading_turn(param_1);
   FUN_0005878c(&DAT_00204880,&DAT_002048b0);
   update_3d_sound_position();
   FUN_00049924(10);
