@@ -44891,15 +44891,18 @@ void FUN_0005d290()
   FUN_0005bf40();
   /* Re-enabled again: DAT_0023b038 (the buffer FUN_0005d9cc's ring-walk
      reads per-tile visibility/occlusion data from via FUN_0005e604,
-     offset DAT_0023b820) is the SAME 0x42-byte-stride buffer
-     process_reaction_queue builds its creature-reaction display list
-     into (`&DAT_0023b038`, confirmed same base address, same stride) --
-     a whole-binary Ghidra reference search found NO OTHER writer of this
-     memory anywhere, so hardcoding DAT_0023b024 while skipping this call
-     (the previous approach here) skips the only real populator too,
-     which is why the viewport stayed black even with a positive scan
-     radius. Finishing the retrofit properly instead of hardcoding
-     around it -- see the crash this hits next for where that stood. */
+     offset DAT_0023b820) is the SAME 0x42-byte-stride buffer this
+     function builds its creature-reaction display list into
+     (`&DAT_0023b038`, confirmed same base address, same stride) -- a
+     whole-binary Ghidra reference search found NO OTHER writer of this
+     memory anywhere, so an earlier attempt that hardcoded DAT_0023b024
+     while skipping this call was also skipping its only real populator.
+     Finishing the retrofit properly instead of hardcoding around it.
+     NOTE: DAT_0023b024 (this function's own loop counter) legitimately
+     computes to 0 with no creatures present -- see memory.md's tmap-
+     tiles section for why that rules out "DAT_0023b024 is a general
+     tile-scan radius" as the explanation for the still-black viewport;
+     the real renderer is still being searched for. */
   process_reaction_queue();
   FUN_00058438(0);
   uVar1 = DAT_00086b30;
