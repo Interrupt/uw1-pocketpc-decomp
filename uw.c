@@ -1669,9 +1669,62 @@ undefined2 DAT_00201b60;
 undefined2 DAT_00201b64;
 undefined2 DAT_00202080;
 short DAT_00201c94;
-static undefined1 DAT_00085668_backing[65536];
+/* Per-(redraw-mode, dirty-bit) handler dispatch table read by
+   FUN_00049818/FUN_0003bd50/FUN_0003c038/FUN_0003bcb8 (DAT_00201b64 = the
+   mode: 0 is the normal in-game/dungeon view, seen so far; 1 and 2 are
+   some other screen). It's link-time-initialized data in the original
+   binary -- nothing in this decompile ever writes to it at runtime -- so
+   unlike this file's usual "orphaned populator function" bugs (e.g.
+   LAB_000255d0), there's no call to recover: the table's real content
+   was recovered by reading UU.exe's .data section directly via Ghidra
+   (same method already used for this file's string-constant symbols; see
+   e.g. s_chrbtns_00084ef8's comment), then matching each recovered
+   32-bit ARM address against this file's own FUN_ names by address.
+   Left as a bare zero-filled placeholder, every handler read came back
+   NULL, so the per-frame redraw dispatch (FUN_00049818) never called
+   anything -- the game reached the dungeon and ran forever, but no HUD
+   panel, 3D view, or tmap tile ever drew.
+
+   3 of the 48 slots point at functions this decompile never recovered:
+   they're only ever reached indirectly through this table, so Ghidra's
+   original auto-analysis had no direct call site to find them from (same
+   root cause as LAB_000255d0/FUN_0006a0c8 needing separate recovery).
+   Disassembling them directly (Ghidra, headless) shows they're
+   conversation-portrait-animation and ambient-sound-cycling handlers --
+   not needed to get a player standing in a rendered dungeon, so left
+   NULL (safely skipped by this table's own "if handler != NULL" guard)
+   rather than ported. // Hack - Disabled
+
+   Real entries are function-pointer-sized (8 bytes on this 64-bit host)
+   -- wider than the original 4-byte ARM pointers the table's own index
+   math was written for, so every read site's byte-stride constant is
+   doubled (0x40 -> 0x80 per 16-entry mode row, 4 -> 8 per single entry;
+   see each site's own comment). */
+static void (*const DAT_00085668_real_table[48])(void) = {
+  /* mode 0 (in-game/dungeon view) */
+  (void(*)(void))FUN_0003bd50, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))FUN_0003c194,
+  0, 0, 0, 0,
+  0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))FUN_000689a0,
+  (void(*)(void))FUN_0003e4cc, (void(*)(void))FUN_0006d284, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
+  /* mode 1 */
+  0, (void(*)(void))FUN_00016354, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0 /* Hack - Disabled: ambient sound cycling */, 0, 0, (void(*)(void))FUN_0001651c,
+  /* mode 2 */
+  (void(*)(void))FUN_000286cc, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, (void(*)(void))FUN_00028bac,
+};
+#define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)
 #define DAT_00085668 DAT_00085668_backing[0]
-undefined DAT_000856a4;
+/* Alias into the same table at entry 15 (byte offset 15*8) -- Ghidra's
+   own decompile of the real UU.exe shows this used as `&DAT_000856a4 +
+   mode*0x80`, i.e. "entry 15 of whichever mode", the same table
+   FUN_00049818 reads -- not a separate byte the way it was declared
+   before (that left it permanently 0/NULL too). */
+#define DAT_000856a4 (DAT_00085668_backing[15 * 8])
 char s__DATA_main_byt_000857a8[] = "\\DATA\\main.byt";
 undefined2 DAT_000868d8;
 undefined4 DAT_0024cfc8;
@@ -2888,7 +2941,26 @@ undefined2 DAT_00087174;
 undefined2 DAT_000871b4;
 undefined2 DAT_000871d4;
 undefined2 DAT_000871d8;
-undefined *PTR_FUN_00087220;
+/* HUD-panel/tab dispatch table (13 entries), read as
+   `(&PTR_FUN_00087220)[index]` at 4 call sites (DAT_0023c1d4/DAT_0023c134
+   select the index -- which panel/tab is active). Same class of bug as
+   DAT_00085668 above: link-time-initialized data in the original binary
+   that nothing in this decompile ever writes, declared here as a single
+   never-populated pointer instead of the real array -- so every one of
+   those 4 calls jumped through NULL/garbage. Recovered the same way
+   (Ghidra, reading UU.exe's .data directly and matching addresses
+   against this file's own FUN_ names); index 3 is genuinely NULL in the
+   original data, not a recovery gap. Since this was already declared as
+   a bare pointer rather than a byte array, no caller-side index-math
+   needs to change -- `(&PTR_FUN_00087220)[i]` already scales by the
+   (now-real, 8-byte-on-this-host) pointer size. */
+static void (*const PTR_FUN_00087220_table[13])(void) = {
+  (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))FUN_0007830c, 0,
+  (void(*)(void))FUN_0006d4a4, (void(*)(void))FUN_0006d4a4, (void(*)(void))FUN_0006df70, (void(*)(void))FUN_0006e038,
+  (void(*)(void))FUN_0006d894, (void(*)(void))FUN_0006d894, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
+  (void(*)(void))FUN_0006e648,
+};
+#define PTR_FUN_00087220 (PTR_FUN_00087220_table[0])
 char s_panels_00087260[] = "panels";
 undefined1 DAT_0023c11c;
 undefined1 DAT_0023c12c;
@@ -3062,11 +3134,29 @@ static undefined DAT_0008762c_backing[8192];
 undefined DAT_00087630;
 undefined DAT_00087634;
 char *DAT_0023c3e8;
-int DAT_0023c3ec;
+/* Was `int`, truncating the real pointer assigned to it
+   (`DAT_0023c3e8 + 0x500`, a genuine 64-bit heap pointer on this host) --
+   every comparison against it (`DAT_0023c3ec <= someRealPointer`) then
+   always came out true regardless of the real slot table's size, so
+   FUN_00076078 (the HUD button-slot allocator) always believed the table
+   was full and returned -1 on its very first call, crashing the first
+   caller that tried to use that "slot". */
+char *DAT_0023c3ec;
 char *DAT_0023c40c;
-int DAT_0023c414;
+/* Same "was `int`, truncating a real pointer" bug as DAT_0023c3ec right
+   above -- assigned `DAT_0023c40c + 0x100` (a real 64-bit pointer) and
+   then compared against/derived into real `ushort *` locals throughout
+   FUN_00076508 and friends. */
+ushort *DAT_0023c414;
 char *DAT_0023c3e4;
-int DAT_0023c410;
+/* Same truncation bug as DAT_0023c414/DAT_0023c3ec above, though this one
+   is never read back anywhere in this decompile -- fixed for consistency
+   regardless. Its assignment (FUN_00075be0) computes it from
+   DAT_0023c40c + 0x100, the same expression as DAT_0023c414, rather than
+   from DAT_0023c3e4 (the buffer it's presumably meant to bound) -- looks
+   like a genuine bug already present in the original, not a decompile
+   artifact; left as-is since it's dead either way. */
+char *DAT_0023c410;
 undefined2 DAT_0023c41c;
 ushort DAT_0008763c;
 ushort DAT_0023c400;
@@ -4202,7 +4292,11 @@ undefined2 * param_3;
 void FUN_000125a8(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 short param_1;
 short param_2;
-int param_3;
+/* Source-bitmap pointer -- was `int`, truncating the real `char *` the
+   caller (FUN_00040918) already reconstructed (iVar4 + 5). Same
+   bitmap_blit_to_framebuffer-shaped sprite blit, same pointer-truncation
+   class as everywhere else this session. */
+char *param_3;
 short param_4;
 short param_5;
 short param_6;
@@ -25360,7 +25454,9 @@ int param_1;
   pcVar1 = (code *)(int)DAT_00201b64;
   bVar2 = pcVar1 != (code *)0xffffffff;
   if (bVar2) {
-    pcVar1 = *(code **)(&DAT_000856a4 + (int)pcVar1 * 0x40);
+    /* 0x80 = 16 entries/mode * 8 bytes/entry (real pointer size) -- was
+       0x40 (*4-byte entries), see DAT_00085668's comment. */
+    pcVar1 = *(code **)(&DAT_000856a4 + (int)pcVar1 * 0x80);
   }
   if (bVar2 && pcVar1 != (code *)0x0) {
     (*pcVar1)();
@@ -25372,8 +25468,9 @@ int param_1;
     DAT_00201c94 = (short)DAT_00201b60;
   }
   FUN_0003bc40(param_1);
-  if (*(code **)(&DAT_00085668 + DAT_00201b64 * 0x40) != (code *)0x0) {
-    (**(code **)(&DAT_00085668 + DAT_00201b64 * 0x40))();
+  /* 0x80, see DAT_00085668's comment. */
+  if (*(code **)(&DAT_00085668 + DAT_00201b64 * 0x80) != (code *)0x0) {
+    (**(code **)(&DAT_00085668 + DAT_00201b64 * 0x80))();
   }
   if ((short)param_1 != 1) {
     FUN_00049924(0x7ffe);
@@ -25489,7 +25586,8 @@ short param_1;
     sVar1 = FUN_00057a70();
   } while (sVar1 < 0);
   FUN_0007fce8(1);
-  (**(code **)(&DAT_000856a4 + DAT_00201b64 * 0x40))();
+  /* 0x80, see DAT_00085668's comment. */
+  (**(code **)(&DAT_000856a4 + DAT_00201b64 * 0x80))();
   *(undefined1 *)(DAT_00085a6c + 8) = 0;
   *(undefined1 *)(DAT_00085a6c + 9) = 0;
   sVar1 = DAT_00201b64;
@@ -25506,7 +25604,8 @@ short param_1;
   DAT_00201c98 = 1;
   DAT_00201b60 = (undefined2)(1 << ((int)sVar1 & 0xffU));
   DAT_00201b64 = sVar1;
-  (**(code **)(&DAT_00085668 + sVar1 * 0x40))();
+  /* 0x80, see DAT_00085668's comment. */
+  (**(code **)(&DAT_00085668 + sVar1 * 0x80))();
   return;
 }
 
@@ -28939,12 +29038,16 @@ char *param_1;
 
 void FUN_00041a18(param_1,param_2,param_3)
 short param_1;
-undefined4 param_2;
+/* Was `undefined4`, truncating the real resource-name string pointer
+   callers pass (e.g. FUN_0004638c's s_bodies_00085c58) before it reaches
+   FUN_000417b4's own `char *param_1`, which then crashed dereferencing
+   it. Same pointer-truncation class as everywhere else this session. */
+char *param_2;
 undefined4 param_3;
 
 {
   undefined2 uVar1;
-  
+
   uVar1 = DAT_00202744;
   DAT_00202744 = DAT_00202738 + param_1 + -0x2000;
   FUN_000417b4(param_2,param_3,1,&LAB_000416e8,FUN_00041770);
@@ -30889,12 +30992,21 @@ short param_1;
 
 
 
-undefined4 FUN_00045054(param_1)
+/* Was `FUN_00053514(...); return 0;` -- computing the real object-record
+   pointer and then discarding it in favor of a hardcoded 0, same
+   "dropped return value" idiom already fixed for FUN_00057a70 elsewhere
+   in this file. Every caller treats the return as the real result (e.g.
+   `puVar6 = (ushort *)FUN_00045054(iVar4); if (puVar6 != 0) ...`), so the
+   hardcoded 0 silently turned every one of those checks into "nothing
+   here" -- except the *upper* bits of the 8-byte-wide return register
+   this recompile reads were left uninitialized (the old `undefined4`
+   return type only ever set the low 32 bits), so callers actually read
+   garbage instead of a clean NULL and crashed dereferencing it. */
+void *FUN_00045054(param_1)
 short param_1;
 
 {
-  FUN_00053514(&DAT_00202950 + param_1 * 2);
-  return 0;
+  return FUN_00053514(&DAT_00202950 + param_1 * 2);
 }
 
 
@@ -31616,16 +31728,27 @@ void FUN_00046414()
     DAT_002028ec = FUN_00076a2c(0x54,0x52);
     iVar5 = 6;
     do {
+      /* iVar5==10/11 were hardcoded original-binary literal addresses
+         (0x85b5c/0x85b6a, plus the standalone DAT_00085b64/DAT_00085b72
+         symbols) instead of the same &DAT_00085ad0/&DAT_00085ad8 +
+         iVar5*stride expression every other iteration already uses --
+         same "hardcoded address" bug class as FUN_0006bde0's -0x87020.
+         Confirmed identical by address arithmetic (0x85ad0 + 10*0xe =
+         0x85b5c, 0x85ad8 + 10*7 shorts = 0x85b64, etc.); rewritten to the
+         general form so these two icons resolve against our recompiled
+         symbols instead of the original binary's fixed layout. The
+         +5/-5 adjustments are the only real difference from the general
+         case and are kept as-is. */
       if (iVar5 == 10) {
-        puVar2 = (undefined1 *)0x85b5c;
-        iVar3 = DAT_00085b64 + 5;
+        puVar2 = &DAT_00085ad0 + iVar5 * 0xe;
+        iVar3 = (&DAT_00085ad8)[iVar5 * 7] + 5;
 LAB_000464c8:
         uVar4 = (byte)puVar2[0xc] - 5;
       }
       else {
         if (iVar5 == 0xb) {
-          puVar2 = (undefined1 *)0x85b6a;
-          iVar3 = (int)CONCAT11(((undefined1)(DAT_00085b72 >> 8)),(undefined1)DAT_00085b72);
+          puVar2 = &DAT_00085ad0 + iVar5 * 0xe;
+          iVar3 = (&DAT_00085ad8)[iVar5 * 7];
           goto LAB_000464c8;
         }
         puVar2 = &DAT_00085ad0 + iVar5 * 0xe;
@@ -33381,8 +33504,10 @@ void FUN_00049818()
     do {
       if ((DAT_00201c84 & uVar4) != 0) {
         DAT_00201c84 = DAT_00201c84 & ~uVar4;
-        if (*(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 4) != (code *)0x0) {
-          (**(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 4))();
+        /* *8 (real pointer size), see DAT_00085668's comment; *0x10 stays
+           -- that's the 16-entries-per-mode count, not a byte stride. */
+        if (*(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 8) != (code *)0x0) {
+          (**(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 8))();
           sVar1 = DAT_00201b64;
         }
       }
@@ -39043,12 +39168,15 @@ int param_2;
 
 
 
-int FUN_00053514(param_1)
+/* Was `int`, truncating the same DAT_002046b8/DAT_002046c4 object-record
+   pointer arithmetic as FUN_000535fc above (fixed earlier this session)
+   -- same fix. */
+void *FUN_00053514(param_1)
 ushort * param_1;
 
 {
   ushort uVar1;
-  
+
   if (param_1 != (ushort *)0x0) {
     uVar1 = *param_1;
     if ((uVar1 & 0xffc0) != 0) {
@@ -48615,7 +48743,12 @@ LAB_000669a8:
   do {
     puVar6 = DAT_00202948;
     if (!bVar12) {
-      puVar6 = (ushort *)FUN_00045054();
+      /* Dropped argument (Ghidra relied on a register leftover that
+         doesn't hold the right value on this recompile) -- every other
+         call to this function in this loop nest passes the current slot
+         index (see the identically-shaped loop at line ~48762 below);
+         iVar4 is that same index here. */
+      puVar6 = (ushort *)FUN_00045054(iVar4);
     }
     DAT_00204690 = puVar6;
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
@@ -52834,7 +52967,9 @@ bool FUN_0006e89c()
 
 
 void FUN_0006e96c(param_1)
-int param_1;
+/* Was `int`, truncating the real pointer callers pass (DAT_00086df8 +
+   0x47, DAT_00086df8 being a genuine `char *`). */
+char *param_1;
 
 {
   undefined4 uVar1;
@@ -52868,7 +53003,8 @@ int param_1;
 
 
 void FUN_0006ea54(param_1)
-int param_1;
+/* Same truncation bug as its sibling FUN_0006e96c above. */
+char *param_1;
 
 {
   undefined4 uVar1;
@@ -57307,8 +57443,11 @@ undefined2 param_5;
 
 {
   undefined4 uVar1;
-  int iVar2;
-  
+  /* Was `int`, truncating the real DAT_0023c3e8 slot-record pointer
+     computed here (same bug as its sibling functions FUN_00076338 and
+     FUN_0007699c below, which compute the identical expression). */
+  char * iVar2;
+
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
     *(char *)(iVar2 + 6) = (char)param_4;
@@ -57337,7 +57476,7 @@ undefined4 param_3;
 
 {
   undefined4 uVar1;
-  int iVar2;
+  char * iVar2;
   
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
@@ -57563,7 +57702,7 @@ undefined4 param_2;
 
 {
   undefined4 uVar1;
-  int iVar2;
+  char * iVar2;
   
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
