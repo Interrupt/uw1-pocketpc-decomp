@@ -3138,7 +3138,16 @@ ushort DAT_0023c1e0;
 undefined1 DAT_0023c11b;
 byte DAT_0023c12a;
 byte DAT_0023c150;
-undefined4 DAT_00087230;
+/* Was a lone `undefined4` scalar, but FUN_0006d284 indexes 9 entries
+   from it (`(&DAT_00087230)[0..8]`) as a function-pointer dispatch
+   table and calls through them -- same lone-scalar-instead-of-a-real-
+   array bug as everywhere else this project, except this one turned out
+   to need no new Ghidra archaeology: 0x87230 is exactly
+   PTR_FUN_00087220_table[4] (0x87220 + 4*4), and FUN_0006d284's 9-entry
+   range (0x87230..0x87250) is exactly that table's remaining entries
+   4-12 -- a stray duplicate alias into an already-recovered table, same
+   shape as DAT_000856a4 aliasing into DAT_00085668_backing. */
+#define DAT_00087230 (PTR_FUN_00087220_table[4])
 static undefined1 DAT_0023c1f0_backing[65536];
 #define DAT_0023c1f0 DAT_0023c1f0_backing[0]
 static undefined1 DAT_0023c1f8_backing[65536];
