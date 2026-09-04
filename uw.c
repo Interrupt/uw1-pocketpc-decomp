@@ -27,9 +27,9 @@ static undefined2 DAT_000890b0_backing[32768];
 #define DAT_000890b0 DAT_000890b0_backing[0]
 /* Not `static` -- referenced from graphics.c (bitmap_blit_to_framebuffer,
    rect_fill_or_save_restore) as well as here; the extern declaration and
-   DAT_0024ad60 macro alias both live in uw.h now so both files see the
+   g_palette_rgb565 macro alias both live in uw.h now so both files see the
    same thing. */
-undefined2 DAT_0024ad60_backing[32768];
+undefined2 g_palette_rgb565_backing[32768];
 ushort DAT_0008909c;
 short DAT_0008894c;
 short DAT_000a85b8;
@@ -46,22 +46,23 @@ undefined2 DAT_000a85b0;
 char *DAT_000890a4;
 /* Ghidra split this out as a standalone, never-written `short` -- but its
    address (0x0024ad94) is exactly 0x34 bytes into the RGB565 palette LUT
-   at DAT_0024ad60 (0x34/2 = entry 26 = palette color 0x1a), and nothing
+   at g_palette_rgb565 (0x34/2 = entry 26 = palette color 0x1a), and nothing
    ever assigns it because every LUT write goes through the array base
-   (&DAT_0024ad60 / puVar20 loops in FUN_00022b54), not this symbol. Left
+   (&g_palette_rgb565 / puVar20 loops in FUN_00022b54), not this symbol. Left
    as its own zero global it means "framebuffer pixel value 0x0000 (pure
-   black)", which the chargen overlay compositor (FUN_00011478 save /
-   FUN_000114e4 + FUN_0001156c restore) then treats as "not drawn, paint
-   the saved background over it" -- eating every legitimately-black pixel,
-   e.g. CHRBTNS.GR's palette-index-0 button outlines. Aliased onto LUT
+   black)", which the transient-panel compositor (screen_backup_save then
+   screen_backup_restore / screen_backup_restore_rect) then treats as "not
+   drawn, paint the saved background over it" -- eating every legitimately-
+   black pixel, e.g. CHRBTNS.GR's palette-index-0 button outlines. Aliased onto LUT
    entry 26 so it tracks the real RGB565 of the chargen "backing/erase"
    color 0x1a (the one chargen fills its panels with via set_draw_color
    (0x1a) right before drawing the UI overlay on top). */
-#define DAT_0024ad94 (*(short *)&DAT_0024ad60_backing[26])
+#define g_transparent_screen_color (*(short *)&g_palette_rgb565_backing[26])
 /* Was a lone `undefined2` scalar, but used as a full-screen shadow/
-   backup buffer the same size as g_uw_framebuffer (FUN_00011478 saves
+   backup buffer the same size as g_uw_framebuffer (screen_backup_save saves
    aside every non-transparent pixel across the whole 320x200 framebuffer
-   into it; FUN_000114e4/FUN_0001156c restore from it later) -- classic
+   into it; screen_backup_restore/screen_backup_restore_rect restore from it
+   later) -- classic
    "undersized global used as a large table" bug. Widened to match
    g_uw_framebuffer's exact size (0x25800 bytes = 76800 shorts). */
 static undefined2 DAT_000891b0_backing[76800];
@@ -945,7 +946,7 @@ static undefined1 DAT_00088d98_backing[1536];
 
 /* Side-effect-free PALS.DAT read: raw 6-bit bytes for one palette index,
    scaled to 8-bit RGB into out_rgb (768 bytes). Deliberately does NOT
-   reuse FUN_00040e24 -- it always installs its result into DAT_0024ad60
+   reuse FUN_00040e24 -- it always installs its result into g_palette_rgb565
    too, which would visibly recolor the live game just from a debug dump
    running. Returns 1 on success. */
 static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
@@ -962,7 +963,7 @@ static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
 /* Debug-only accessor for gx_stub.c's GR-entry BMP dumper, keyed by the
    .GR resource's base name (e.g. "chrbtns").
 
-   Default path: reconstruct an 8-bit RGB palette from DAT_0024ad60 --
+   Default path: reconstruct an 8-bit RGB palette from g_palette_rgb565 --
    the RGB565 lookup table the renderer itself actually indexes into for
    every on-screen pixel -- rather than tracking any of the raw/scaled
    staging buffers upstream of it. This matches on-screen appearance
@@ -973,9 +974,9 @@ static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
    chrbtns.gr is a confirmed exception: it preloads at chargen.c:344,
    before chargen's own palette (index 3, chargen.c:421's
    FUN_00040e24(3,pcVar_palbuf) call, into a scratch buffer that never
-   touches DAT_0024ad60 until that line runs) is installed -- so at
-   preload time DAT_0024ad60 still reflects whatever the main menu left
-   behind. No amount of reading DAT_0024ad60 at THIS moment can produce
+   touches g_palette_rgb565 until that line runs) is installed -- so at
+   preload time g_palette_rgb565 still reflects whatever the main menu left
+   behind. No amount of reading g_palette_rgb565 at THIS moment can produce
    the right answer, since the right palette genuinely isn't live yet;
    load index 3 directly instead. opbtn.GR turned out not to need this
    (its main-menu palette install already runs before OPBTN.GR loads),
@@ -997,7 +998,7 @@ unsigned char *uw_get_default_palette(const char *gr_name) {
         }
     }
 
-    unsigned short *pal565 = (unsigned short *)DAT_0024ad60_backing;
+    unsigned short *pal565 = (unsigned short *)g_palette_rgb565_backing;
     for (int i = 0; i < 256; i++) {
         unsigned short p = pal565[i];
         unsigned char r5 = (p >> 11) & 0x1f;
@@ -3509,7 +3510,7 @@ short param_3;
           }
           else {
             *(undefined2 *)((g_uw_framebuffer) + (iVar6 + iVar5) * 2) =
-                 (&DAT_0024ad60)[*DAT_0008429c];
+                 (&g_palette_rgb565)[*DAT_0008429c];
             pcVar8 = local_48;
           }
         }
@@ -3635,7 +3636,13 @@ void FUN_000113b4()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-undefined4 FUN_00011478()
+// Snapshots the current 320x200 framebuffer into the DAT_000891b0 backup
+// buffer, skipping any pixel already equal to g_transparent_screen_color.
+// First half of the transient-panel idiom: a caller saves a clean
+// background here, draws a panel over it leaving untouched areas in the
+// transparent key color, then calls screen_backup_restore[_rect] to pour
+// the saved pixels back into those gaps.
+undefined4 screen_backup_save()
 
 {
   short sVar1;
@@ -3644,7 +3651,7 @@ undefined4 FUN_00011478()
   int iVar4;
   int iVar5;
   
-  sVar1 = DAT_0024ad94;
+  sVar1 = g_transparent_screen_color;
   iVar5 = 200;
   psVar3 = (short *)(g_uw_framebuffer);
   psVar2 = psVar3;
@@ -3677,7 +3684,10 @@ undefined4 FUN_00011478()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_000114e4()
+// Whole-screen composite: every framebuffer pixel still equal to
+// g_transparent_screen_color is refilled from the screen_backup_save
+// snapshot (DAT_000891b0), then the frame is presented.
+void screen_backup_restore()
 
 {
   int iVar1;
@@ -3691,7 +3701,7 @@ void FUN_000114e4()
     do {
       iVar3 = iVar3 + -1;
       psVar2 = (short *)(iVar1 + (g_uw_framebuffer));
-      if (*psVar2 == DAT_0024ad94) {
+      if (*psVar2 == g_transparent_screen_color) {
         *psVar2 = *(short *)((intptr_t)&DAT_000891b0 + iVar1);
       }
       iVar1 = iVar1 + 2;
@@ -3705,7 +3715,9 @@ void FUN_000114e4()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0001156c(param_1,param_2,param_3,param_4)
+// screen_backup_restore bounded to the rect (param_1,param_2)-(param_3,
+// param_4); unlike the full-screen version it does not present.
+void screen_backup_restore_rect(param_1,param_2,param_3,param_4)
 uint param_1;
 uint param_2;
 uint param_3;
@@ -3730,7 +3742,7 @@ uint param_4;
         iVar2 = iVar4 + uVar1;
         uVar1 = uVar1 + 1;
         psVar3 = (short *)(iVar2 * 2 + (g_uw_framebuffer));
-        if (*psVar3 == DAT_0024ad94) {
+        if (*psVar3 == g_transparent_screen_color) {
           *psVar3 = (&DAT_000891b0)[iVar2];
         }
       }
@@ -3779,7 +3791,7 @@ uint param_3;
     do {
       iVar3 = iVar3 + -1;
       *(undefined2 *)(iVar2 + (g_uw_framebuffer)) =
-           (&DAT_0024ad60)[DAT_000a85c0];
+           (&g_palette_rgb565)[DAT_000a85c0];
       iVar2 = iVar2 + 2;
     } while (iVar3 != 0);
   }
@@ -3808,7 +3820,7 @@ void FUN_00011b34()
       if (63999 < iVar5) break;
       for (iVar1 = (int)DAT_000a85c4; (iVar1 < sVar2 && (iVar1 < 0x140)); iVar1 = iVar1 + 1) {
         *(undefined2 *)((g_uw_framebuffer) + (iVar5 + iVar1) * 2) =
-             (&DAT_0024ad60)[DAT_000a85c0];
+             (&g_palette_rgb565)[DAT_000a85c0];
         sVar2 = DAT_000842a4;
       }
       iVar4 = iVar4 + 1;
@@ -4002,7 +4014,7 @@ int param_8;
                   pbVar5 = pbVar5 + 1;
                   if ((DAT_00088960 & bVar3 == 0) == 0) {
                     *(undefined2 *)((g_uw_framebuffer) + iVar4 * 2) =
-                         (&DAT_0024ad60)[bVar3];
+                         (&g_palette_rgb565)[bVar3];
                   }
                   iVar6 = iVar6 + 1;
                   iVar4 = iVar4 + 1;
@@ -4234,7 +4246,7 @@ short param_7;
           iVar10 = iVar7;
           do {
             *(undefined2 *)(iVar6 + (g_uw_framebuffer)) =
-                 (&DAT_0024ad60)[*(byte *)(iVar5 + param_3)];
+                 (&g_palette_rgb565)[*(byte *)(iVar5 + param_3)];
             if (iVar3 * iVar2 + -5 < iVar5) {
               return;
             }
@@ -4265,7 +4277,7 @@ short param_7;
             uVar9 = (uint)*(byte *)(iVar2 * iVar4 + param_3 + iVar6);
             if (uVar9 != 0) {
               *(undefined2 *)((g_uw_framebuffer) + (iVar14 + iVar6) * 2)
-                   = (&DAT_0024ad60)[uVar9];
+                   = (&g_palette_rgb565)[uVar9];
             }
             if (iVar3 * iVar2 + -5 < iVar10) {
               return;
@@ -5598,7 +5610,7 @@ byte param_10;
           iVar12 = 0;
         }
         sVar7 = (short)iVar12;
-        uVar2 = (uint)(ushort)(&DAT_0024ad60)[bVar1];
+        uVar2 = (uint)(ushort)(&g_palette_rgb565)[bVar1];
         if (0x9f < sVar7) {
           sVar7 = 0x9f;
         }
@@ -6574,7 +6586,7 @@ LAB_000170bc:
             set_draw_color(0x1a);
             rect_fill_or_save_restore((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
                          (uint)*(ushort *)(pcVar5 + 0x32) + iVar10,*(ushort *)(pcVar5 + 0x34) + 5);
-            FUN_0001156c((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
+            screen_backup_restore_rect((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
                          (uint)*(ushort *)(pcVar5 + 0x32) + iVar10,*(ushort *)(pcVar5 + 0x34) + 5);
             if ((int)(short)iVar7 == DAT_000bbef0 + -1) {
               DAT_000bbef0 = (short)(DAT_000bbef0 + -1);
@@ -6639,7 +6651,7 @@ LAB_000171d0:
                        (uint)*(ushort *)(&DAT_000baa0c + iVar7),
                        (uint)*(ushort *)(&DAT_000baa0a + iVar7) + iVar8,
                        *(ushort *)(&DAT_000baa0c + iVar7) + 6);
-          FUN_0001156c((uint)*(ushort *)(&DAT_000baa0a + iVar7),
+          screen_backup_restore_rect((uint)*(ushort *)(&DAT_000baa0a + iVar7),
                        (uint)*(ushort *)(&DAT_000baa0c + iVar7),
                        (uint)*(ushort *)(&DAT_000baa0a + iVar7) + iVar8,
                        *(ushort *)(&DAT_000baa0c + iVar7) + 6);
@@ -6860,7 +6872,7 @@ undefined4 param_1;
     }
     DAT_000ba9d0 = (short)param_1;
     FUN_00040efc(1);
-    FUN_00011478();
+    screen_backup_save();
     FUN_0001786c(param_1);
     *DAT_0008429c = 0x2d;
     *DAT_00084298 = 0x2d;
@@ -12846,10 +12858,10 @@ short param_2;
   ushort *puVar20;
   int iVar21;
 
-  DEBUG(TRACE, "[palette] FUN_00022b54 installing DAT_0024ad60, param_1=%s param_2=%d",
+  DEBUG(TRACE, "[palette] FUN_00022b54 installing g_palette_rgb565, param_1=%s param_2=%d",
         param_1 ? "buffer" : "NULL(default)", param_2);
   if (param_1 == (undefined1 *)0x0) {
-    puVar20 = &DAT_0024ad60;
+    puVar20 = &g_palette_rgb565;
     iVar21 = 0x100;
     pbVar15 = &DAT_00084a40;
     do {
@@ -12884,7 +12896,7 @@ short param_2;
         iVar10 = 0xff;
       }
       param_1 = param_1 + 3;
-      *(ushort *)((intptr_t)&DAT_0024ad60 + iVar21) =
+      *(ushort *)((intptr_t)&g_palette_rgb565 + iVar21) =
            (ushort)(iVar10 >> 3) | (ushort)((iVar9 >> 2 | (iVar8 >> 3) << 6) << 5);
       if (param_2 == 0) {
         uVar7 = Ordinal_2032(iVar8 >> 3);
@@ -13389,7 +13401,7 @@ void FUN_00023a00()
   
   set_draw_color(0x1a);
   rect_fill_or_save_restore(0x5d,0x32,0x8c,0x7a);
-  FUN_000114e4();
+  screen_backup_restore();
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
   FUN_00011060(&DAT_00084e58,0x5d,0x32);
   iVar1 = FUN_000112a0(auStack_14);
@@ -13427,7 +13439,7 @@ void FUN_00023b38()
   FUN_00035df8(1);
   DAT_000fb858 = DAT_001005c8;
   FUN_000120c8(0x1e,0x85,DAT_001005c8,0x37,0x5f,0x1e,0x85,1);
-  FUN_00011478();
+  screen_backup_save();
   FUN_000570b4();
   FUN_00035df8(0);
   DAT_000fb858 = DAT_001005c4;
@@ -13447,7 +13459,7 @@ void FUN_00023b38()
     }
     iVar2 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 0x14);
-  FUN_000114e4();
+  screen_backup_restore();
   return;
 }
 
@@ -31810,10 +31822,10 @@ void FUN_00046bfc()
   if (DAT_0023c1d4 == '\0') {
     FUN_00057118();
     if (DAT_00085c54 != 0) {
-      FUN_00011478();
+      screen_backup_save();
       set_draw_color(0x1a);
       rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76);
-      FUN_0001156c(0xf0,0xb,0x13b,0x76);
+      screen_backup_restore_rect(0xf0,0xb,0x13b,0x76);
     }
     DAT_00088960 = 1;
     FUN_00040b0c(0x2091,(int)DAT_00085ad8,(int)DAT_00085ada,DAT_00085add,DAT_00085adc);
@@ -31847,10 +31859,10 @@ void FUN_00046bfc()
       FUN_00048198(10,0xb);
     }
     if (DAT_00085c54 != 0) {
-      FUN_00011478();
+      screen_backup_save();
       set_draw_color(0x1a);
       rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76);
-      FUN_0001156c(0xf0,0xb,0x13b,0x76);
+      screen_backup_restore_rect(0xf0,0xb,0x13b,0x76);
     }
     iVar4 = FUN_00048514(1);
     if (iVar4 != 0) {
@@ -53131,10 +53143,10 @@ LAB_0006f008:
       rect_fill_or_save_restore(0x114,5,0x117,0x7d);
       uVar1 = DAT_0023c1d4;
       DAT_0023c1d4 = (undefined1)DAT_0023c134;
-      FUN_0001156c(0xec,8,0x13f,0x7a);
+      screen_backup_restore_rect(0xec,8,0x13f,0x7a);
       bitmap_blit_to_framebuffer(0xec,8,uVar3,0x72,0x53,0,0,1);
       (*(code *)(&PTR_FUN_00087220)[DAT_0023c134])();
-      FUN_00011478();
+      screen_backup_save();
       DAT_0023c1d4 = uVar1;
       FUN_00040b0c(0x20b8,0x110,4,1,1);
       FUN_00040b0c(0x20b0,0x110,0x7a,1,1);
@@ -53148,7 +53160,7 @@ LAB_0006f008:
       DAT_0023c208 = 0;
     }
   }
-  FUN_0001156c(0xec,8,0x13f,0x7a);
+  screen_backup_restore_rect(0xec,8,0x13f,0x7a);
 LAB_0006f6c8:
   return DAT_0023c208 == 0;
 }
@@ -62137,7 +62149,7 @@ void FUN_0007e99c()
      FUN_00040e24 loaded (it only produces the *scaled* version in its
      own local stack buffer, which doesn't survive past that call). With
      a leftover-nonzero r2, this installed the unscaled (very dark)
-     values into DAT_0024ad60 instead of the real palette -- confirmed:
+     values into g_palette_rgb565 instead of the real palette -- confirmed:
      this is what made the whole screen go dark after wiring
      main_menu_loop through FUN_00040efc (which calls this function on
      every palette load, unlike the rarer hover-timer-only path this
@@ -62164,7 +62176,7 @@ short param_3;
   iVar1 = (int)param_2;
   *(undefined2 *)
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
-       (&DAT_0024ad60)[param_3];
+       (&g_palette_rgb565)[param_3];
   FUN_00011000(iVar1,iVar1,(int)param_1);
   return;
 }

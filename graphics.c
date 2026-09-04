@@ -7,7 +7,7 @@
 
 /* Scratch buffer for rect_fill_or_save_restore's save/restore modes --
  * only ever used within this function, so it stays local to this file
- * (unlike DAT_0024ad60_backing, which uw.c also needs and is extern'd in
+ * (unlike g_palette_rgb565_backing, which uw.c also needs and is extern'd in
  * uw.h instead). */
 static undefined2 DAT_000879b8_backing[32768];
 #define DAT_000879b8 DAT_000879b8_backing[0]
@@ -161,7 +161,7 @@ short param_4;
                   uVar6 = uVar6 + 1) {
                 *(undefined2 *)
                  ((g_uw_framebuffer) + (iVar13 + uVar6) * 2) =
-                     (&DAT_0024ad60)[DAT_000a85c0];
+                     (&g_palette_rgb565)[DAT_000a85c0];
               }
               uVar5 = uVar5 + 1;
               iVar13 = iVar13 + 0x140;
@@ -257,7 +257,7 @@ short param_7;
             pbVar4 = (byte *)(iVar9 * iVar5 + local_34 + iVar6);
             iVar6 = iVar6 + 1;
             *(undefined2 *)(iVar7 + (g_uw_framebuffer)) =
-                 (&DAT_0024ad60)[*pbVar4];
+                 (&g_palette_rgb565)[*pbVar4];
             iVar7 = iVar7 + 2;
           } while (iVar6 < iVar9 - sVar13);
         }
@@ -276,7 +276,7 @@ short param_7;
           uVar10 = (uint)*(byte *)(iVar9 * iVar5 + local_34 + iVar7);
           if (uVar10 != 0) {
             *(undefined2 *)((g_uw_framebuffer) + (iVar8 + iVar7) * 2) =
-                 (&DAT_0024ad60)[uVar10];
+                 (&g_palette_rgb565)[uVar10];
           }
           iVar7 = iVar7 + 1;
         } while (iVar7 < iVar9 - sVar13);

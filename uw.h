@@ -360,8 +360,13 @@ struct IMAGE_RESOURCE_DIRECTORY {
    set_draw_color) -- extern'd here so both translation units see the same
    storage. */
 extern void *g_uw_framebuffer;
-extern undefined2 DAT_0024ad60_backing[32768];
-#define DAT_0024ad60 DAT_0024ad60_backing[0]
+/* 256-entry palette -> RGB565 lookup table (rebuilt by FUN_00022b54 on
+   every palette load). Real binary size is 256 shorts at 0x0024ad60;
+   over-allocated here as a safety margin. Indexed as
+   `(&g_palette_rgb565)[palette_index]`. g_transparent_screen_color
+   (uw.c) aliases entry 26. */
+extern undefined2 g_palette_rgb565_backing[32768];
+#define g_palette_rgb565 g_palette_rgb565_backing[0]
 extern undefined2 DAT_000a85c0;
 extern undefined2 DAT_000a85c4;
 extern undefined2 DAT_000a85c8;
@@ -456,9 +461,9 @@ void FUN_00011060();
 int FUN_000112a0();
 undefined4 FUN_000112fc();
 void FUN_000113b4();
-undefined4 FUN_00011478();
-void FUN_000114e4();
-void FUN_0001156c();
+undefined4 screen_backup_save();
+void screen_backup_restore();
+void screen_backup_restore_rect();
 void FUN_000116a4();
 void FUN_000116dc();
 void FUN_00011b34();

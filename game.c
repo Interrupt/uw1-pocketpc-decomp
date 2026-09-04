@@ -255,7 +255,7 @@ undefined4 param_1;
          (main_menu_loop == FUN_0006a3d8, calls FUN_00040e24 directly at
          both its own palette-load points, never through FUN_00040efc).
          That's a genuine shipped bug, not a decompile artifact:
-         FUN_00040e24 installs DAT_0024ad60 correctly for the menu's own
+         FUN_00040e24 installs g_palette_rgb565 correctly for the menu's own
          draw, but never syncs DAT_00088d98 -- the buffer
          FUN_0007e99c() (called periodically by the menu's own hover-
          loop timer, FUN_0006a168) always reinstalls from. Since nothing
@@ -263,7 +263,7 @@ undefined4 param_1;
          whatever palette some other screen last loaded via
          FUN_00040efc, and the timer clobbers the menu's correct
          palette back to that stale one on the very next hover/redraw
-         (confirmed via UW_DEBUG_LEVEL=TRACE: DAT_0024ad60 flips from
+         (confirmed via UW_DEBUG_LEVEL=TRACE: g_palette_rgb565 flips from
          pals.dat index 2 to a leftover index 5). Using FUN_00040efc(2)
          here instead keeps DAT_00088d98 in sync, so that clobber
          reinstalls the *same* correct palette instead of a stale one. */
@@ -274,7 +274,7 @@ undefined4 param_1;
         do {
           iVar9 = iVar10 * 0x140 + iVar6;
           *(undefined2 *)((g_uw_framebuffer) + iVar9 * 2) =
-               (&DAT_0024ad60)[*(byte *)(iVar9 + DAT_0023bf70)];
+               (&g_palette_rgb565)[*(byte *)(iVar9 + DAT_0023bf70)];
           iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
         } while (iVar6 < 0x140);
         iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;

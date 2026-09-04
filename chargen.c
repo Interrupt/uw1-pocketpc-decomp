@@ -97,7 +97,7 @@ char *param_3;
     pcVar_rec = param_3 + iVar12 * 0x14;
     iVar4 = *(int *)(pcVar_rec + 6);
     pcVar_name = (char *)&DAT_000fb8f0 + iVar4;
-    FUN_00011478((int)uVar15,(int)(uVar15 >> 0x20));
+    screen_backup_save((int)uVar15,(int)(uVar15 >> 0x20));
     FUN_00035df8(1);
     DAT_000fb858 = DAT_001005c8;
     // Redraws the raw parchment background (both pages, 0,0 to 320,200) from scratch every loop iteration -- this is the mechanism that clears stale text from the *right* page between prompts (confirmed: disabling it leaves old prompt text visibly bleeding through under new prompt text). As a side effect it also wipes any stats text the previous iteration's switch-case drew on the left page. Confirmed present in the real ARM disassembly at this exact spot, in this exact order relative to the fill below -- not a decompilation bug.
@@ -109,10 +109,10 @@ char *param_3;
     set_draw_color(0x1a);
     // Fills the left-page stats/portrait area (x:17-142,y:0-199) with a solid backing color, on top of the parchment the reblit above just redrew. Runs *after* that reblit (confirmed via disassembly), so despite looking like an eraser this can't be "protecting" the area from it -- more likely just the stats card's background color. The stats themselves only get redrawn when the switch below happens to hit case 2 or 3, so they're only visible for one frame after finishing class/skill picks. This contradicts a real-device reference screenshot showing stats persisting through later screens (e.g. name entry) -- root cause not yet found; see the STILL OPEN notes.
     rect_fill_or_save_restore(0x11,0,0x8e,199);
-    FUN_000114e4();
+    screen_backup_restore();
     FUN_00023de8((short *)pcVar_rec);
     FUN_0002431c((short *)pcVar_rec,0,0xff);
-    FUN_000114e4();
+    screen_backup_restore();
     uVar15 = FUN_00024840((short *)pcVar_rec);
     uVar6 = CONCAT44((int)(uVar15 >> 0x20),DAT_00086df8);
     uVar9 = (uint)uVar15;
@@ -132,7 +132,7 @@ LAB_00025468:
       FUN_000570b4();
       FUN_00035df8(0);
       DAT_000fb858 = DAT_001005c4;
-      uVar15 = FUN_00011478();
+      uVar15 = screen_backup_save();
     }
     else {
       bVar2 = (byte)uVar15;
@@ -284,7 +284,7 @@ LAB_00025468:
       FUN_00057118();
       FUN_00035df8(1);
       DAT_000fb858 = DAT_001005c8;
-      FUN_000114e4();
+      screen_backup_restore();
       bitmap_blit_to_framebuffer(0,0,DAT_000fb858,200,0x140,0,0,1);
       sVar8 = FUN_000112a0(auStack_4c);
       iVar12 = -(int)sVar8 + 0xa0;
@@ -300,7 +300,7 @@ LAB_00025468:
         iVar12 = -(int)sVar8 + 0xa1;
       }
       FUN_00011060(uVar10,(short)(iVar12 >> 1) + 0xa0,0x62);
-      FUN_000114e4();
+      screen_backup_restore();
       set_draw_color(0x1a);
       rect_fill_or_save_restore(0xa0,199,0x13f,0);
       FUN_00076b24(local_60);
