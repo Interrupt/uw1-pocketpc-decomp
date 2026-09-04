@@ -26351,6 +26351,7 @@ LAB_0003cdf8:
 
 
 
+// was FUN_0003ce04
 void apply_heading_turn(param_1)
 undefined4 param_1;
 
@@ -26505,6 +26506,7 @@ uint param_2;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// was FUN_0003d438
 void update_3d_sound_position()
 
 {
@@ -49843,6 +49845,7 @@ short param_1;
 
 
 
+// was FUN_000685e8
 void decode_movement_command()
 
 {
@@ -50015,6 +50018,7 @@ undefined4 param_1;
 
 
 
+// was FUN_000689a0
 void movement_pacing_handler()
 
 {
@@ -50071,6 +50075,7 @@ void movement_pacing_handler()
 
 
 
+// was FUN_00068ad4
 void movement_tick(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
@@ -50184,6 +50189,7 @@ void FUN_00068c1c()
 
 
 
+// was FUN_00068cac
 void apply_movement_tick()
 
 {
@@ -51047,6 +51053,7 @@ char param_3;
 
 
 
+// was FUN_0006af3c
 int menu_button_list_navigate(param_1,param_2,param_3,param_4)
 int param_1;
 char *param_2;
@@ -58760,6 +58767,7 @@ undefined4 FUN_00077a38()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// was FUN_00077b2c
 undefined4 handle_keyboard_message(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
