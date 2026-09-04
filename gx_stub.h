@@ -19,6 +19,17 @@ int GXResume(void);
    without a human manually taking one. */
 int uw_save_screenshot(const char *path);
 
+/* Debug tool: if UW_DEBUG_DUMP_GR is set (and not "0"), dumps every
+   .GR resource entry loaded through FUN_000417b4 to a BMP under
+   debug/gr/<resource-name>/<entry-index>.bmp, colored with the currently
+   installed game palette. No-op (cheap check) when the env var is unset.
+   entry_data/entry_size are the raw bytes for one entry as loaded from
+   the file (5-byte header: format, height, width, 2 unknown bytes,
+   followed by width*height raw palette-index pixel bytes -- confirmed
+   against CHRBTNS.GR's real file layout this session). */
+void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
+                             const unsigned char *entry_data, int entry_size);
+
 /* Returns 1 and clears the flag if a mouse event (move/click) was
    processed since the last call, 0 otherwise. One-shot "was there a
    pending mouse message" signal for Ordinal_864 (PeekMessage) -- see its

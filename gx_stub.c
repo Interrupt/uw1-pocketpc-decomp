@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define GX_W 320
 #define GX_H 240
@@ -452,6 +453,76 @@ int uw_save_screenshot(const char *path) {
     }
     SDL_FreeSurface(surf);
     return ok;
+}
+
+static void debug_mkdir_p(const char *path) {
+    char buf[300];
+    size_t len = strlen(path);
+    if (len >= sizeof(buf)) return;
+    strcpy(buf, path);
+    for (char *p = buf + 1; *p; p++) {
+        if (*p == '/') {
+            *p = '\0';
+            mkdir(buf, 0755);
+            *p = '/';
+        }
+    }
+    mkdir(buf, 0755);
+}
+
+void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
+                             const unsigned char *entry_data, int entry_size) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DUMP_GR");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+
+    /* See the header comment: byte0=format, byte1=height, byte2=width,
+       bytes3-4 unknown, then width*height raw palette-index pixels. */
+    if (entry_size < 5) return;
+    int height = entry_data[1];
+    int width = entry_data[2];
+    int payload_len = entry_size - 5;
+    if (width == 0 || height == 0 || width * height > payload_len) {
+        fprintf(stderr, "[gr-dump] %s entry %d: header dims %dx%d don't fit a %d-byte payload -- skipped\n",
+                gr_name, entry_index, width, height, payload_len);
+        return;
+    }
+
+    char dir[280];
+    snprintf(dir, sizeof(dir), "debug/gr/%s", gr_name);
+    debug_mkdir_p(dir);
+
+    char path[320];
+    snprintf(path, sizeof(path), "%s/%03d.bmp", dir, entry_index);
+
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, width, height, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!surf) {
+        fprintf(stderr, "[gr-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    unsigned char *pal = uw_get_current_palette();
+    SDL_Color colors[256];
+    for (int i = 0; i < 256; i++) {
+        colors[i].r = pal[i * 3 + 0];
+        colors[i].g = pal[i * 3 + 1];
+        colors[i].b = pal[i * 3 + 2];
+        colors[i].a = 255;
+    }
+    SDL_SetPaletteColors(surf->format->palette, colors, 0, 256);
+
+    const unsigned char *src = entry_data + 5;
+    for (int y = 0; y < height; y++) {
+        memcpy((unsigned char *)surf->pixels + y * surf->pitch, src + y * width, width);
+    }
+
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[gr-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    }
+    SDL_FreeSurface(surf);
 }
 
 int GXCloseDisplay(void) {

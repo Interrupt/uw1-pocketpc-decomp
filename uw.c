@@ -1,5 +1,6 @@
 #include "uw.h"
 #include "debug.h"
+#include "gx_stub.h"
 #include <dlfcn.h>
 #include <stdarg.h>
 
@@ -928,6 +929,15 @@ undefined1 DAT_001005cd;
 undefined1 DAT_001005ce;
 static undefined1 DAT_00088d98_backing[1536];
 #define DAT_00088d98 DAT_00088d98_backing[0]
+
+/* Debug-only accessor for the currently-installed 8-bit RGB game palette
+   (256 entries, 3 bytes each) -- DAT_00088d98_backing is static to this
+   file, so gx_stub.c's GR-entry BMP dumper needs this to color its
+   output instead of dumping raw palette indices. */
+unsigned char *uw_get_current_palette(void) {
+    return (unsigned char *)DAT_00088d98_backing;
+}
+
 ushort DAT_00100610;
 /* Base address of a 0x1b(27)-byte-stride record table (every use is
    `offset * 0x1b + DAT_002046b8`, cast to a pointer type) -- was `int`
@@ -28718,9 +28728,15 @@ codeval * param_5;
         if ((pvVar_buf == 0) || (iVar1 = FUN_000414f4(iVar1,pvVar_buf), iVar4 != iVar1)) {
           uVar6 = 0;
         }
-        else if (param_5 != (code *)0x0) {
-          uVar3 = (*param_5)(pvVar_buf,iVar4,iVar5);
-          uVar6 = uVar6 & uVar3;
+        else {
+          /* Debug-only hook, not in the original decompile: dumps this
+             entry's raw bytes to a BMP under debug/gr/ when
+             UW_DEBUG_DUMP_GR is set. No-op otherwise. */
+          uw_debug_dump_gr_entry(param_1,iVar5,(unsigned char *)pvVar_buf,iVar4);
+          if (param_5 != (code *)0x0) {
+            uVar3 = (*param_5)(pvVar_buf,iVar4,iVar5);
+            uVar6 = uVar6 & uVar3;
+          }
         }
         iVar5 = ((short)iVar5 + 1) * 0x10000 >> 0x10;
         if (param_3 <= iVar5) break;

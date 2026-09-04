@@ -939,6 +939,7 @@ uint FUN_000414f4();
 bool FUN_00041708();
 undefined4 FUN_00041770();
 uint FUN_000417b4();
+unsigned char *uw_get_current_palette(void);
 undefined4 FUN_00041910();
 undefined4 FUN_00041960();
 undefined4 FUN_00041990();
