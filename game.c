@@ -350,7 +350,17 @@ undefined4 param_1;
         Ordinal_1063(acStack_5dc,s__SAVE0_lev_ark_000842fc);
         uVar7 = FUN_0002295c(acStack_5dc);
         Ordinal_61(auStack_434,uVar7);
+        /* The original does CopyFileW(auStack_22c, auStack_434) here to
+           seed the new game's world from the pristine template. That path
+           relies on the coredll wide-string ordinals (Ordinal_196/61/164),
+           which are no-op stubs -- and the pointer FUN_0002295c returns
+           gets truncated through this function's `undefined4` locals, so
+           making them real would crash. Do the copy directly against the
+           game paths instead: without it \SAVE0\lev.ark never exists and
+           FUN_0006bc28 below fails, bouncing straight back to the menu
+           instead of entering the dungeon. */
         Ordinal_164(auStack_22c,auStack_434,0);
+        uw_file_copy(s__DATA_lev_ark_00085734, s__SAVE0_lev_ark_000842fc);
         sVar3 = FUN_00019120();
         if (sVar3 != 0) {
           FUN_0003c3c8();

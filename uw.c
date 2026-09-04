@@ -1987,6 +1987,17 @@ static ushort DAT_00202976_backing[8192];
 undefined4 DAT_002028ec;
 undefined4 DAT_002029a0;
 undefined4 DAT_0020299c;
+/* Ghidra left 0x202988 and 0x2028e0 as bare literal addresses (no symbol)
+   -- small per-hand "currently drawn weapon / hand state" arrays indexed
+   0..5 by FUN_000465c8/FUN_0004638c (which zero them) and FUN_00046xxx
+   (which reads+rewrites them to gate a paperdoll redraw). On the 32-bit
+   binary `idx + 0x202988` was real addressing; here it hits an unmapped
+   low address and segfaults level init. Give them real backing storage
+   and address them as `&DAT_00202988 + idx`. */
+undefined1 DAT_00202988_backing[16];
+#define DAT_00202988 DAT_00202988_backing[0]
+undefined1 DAT_002028e0_backing[16];
+#define DAT_002028e0 DAT_002028e0_backing[0]
 static undefined DAT_00202978_backing[8192];
 #define DAT_00202978 DAT_00202978_backing[0]
 ushort DAT_00202986;
@@ -5797,25 +5808,25 @@ uint param_4;
   
   iVar8 = (param_2 & 0xffff) * 4;
   uVar16 = 0;
-  uVar15 = *(uint *)(*(int *)((char *)param_1 + 10) + iVar8);
+  /* param_1+0xa..0xd held the literal 0x000b78b8 (&DAT_000b78b8's address
+     in the original 32-bit binary) as the .ark entry-offset table
+     pointer -- see FUN_0001613c's matching comment. The table is a fixed
+     global; use its real address. */
+  uVar15 = *(uint *)((char *)&DAT_000b78b8 + iVar8);
   if ((param_2 & 0xffff) <= (uint)*(ushort *)(param_1 + 2)) {
     if (uVar15 == 0) {
       uVar4 = FUN_00022850(*param_1,0,2);
       uVar15 = FUN_00022884(*param_1,param_3,param_4 & 0xffff);
       *(undefined1 *)((char *)param_1 + 0xe) = 1;
-      *(undefined4 *)
-       (CONCAT13(*(undefined1 *)((char *)param_1 + 0xd),
-                 CONCAT12(*(undefined1 *)(param_1 + 3),
-                          CONCAT11(*(undefined1 *)((char *)param_1 + 0xb),
-                                   *(undefined1 *)((char *)param_1 + 10)))) + iVar8) = uVar4;
+      *(undefined4 *)((char *)&DAT_000b78b8 + iVar8) = uVar4;
       return uVar15 == (param_4 & 0xffff);
     }
     iVar5 = FUN_00022850(*param_1,0,2);
-    uVar17 = iVar5 - *(int *)(*(int *)((char *)param_1 + 10) + iVar8);
+    uVar17 = iVar5 - *(int *)((char *)&DAT_000b78b8 + iVar8);
     if (*(ushort *)(param_1 + 2) != 0) {
       uVar12 = 0;
       do {
-        uVar6 = *(uint *)(*(int *)((char *)param_1 + 10) + uVar12 * 4);
+        uVar6 = *(uint *)((char *)&DAT_000b78b8 + uVar12 * 4);
         uVar13 = uVar6 - uVar15;
         if ((uVar15 < uVar6) && (uVar13 < uVar17)) {
           uVar17 = uVar13;
@@ -5853,7 +5864,7 @@ uint param_4;
       if (*(short *)(param_1 + 2) != 0) {
         uVar12 = 0;
         do {
-          puVar7 = (uint *)(*(int *)((char *)param_1 + 10) + uVar12 * 4);
+          puVar7 = (uint *)((char *)&DAT_000b78b8 + uVar12 * 4);
           uVar6 = *puVar7;
           if (uVar6 != 0 && uVar15 < uVar6) {
             *puVar7 = uVar6 - (uVar17 & 0xffff);
@@ -5863,7 +5874,7 @@ uint param_4;
       }
       pcVar14 = &DAT_000b98b8;
     wptr_4897 = acStack_b9ae8;
-      *(uint *)(*(int *)((char *)param_1 + 10) + iVar8) = uVar16;
+      *(uint *)((char *)&DAT_000b78b8 + iVar8) = uVar16;
       do {
         cVar1 = *pcVar14;
         *wptr_4897 = cVar1; wptr_4897 = wptr_4897 + 1;
@@ -5927,7 +5938,12 @@ uint param_4;
 undefined2 FUN_0001613c(param_1,param_2,param_3)
 undefined4 * param_1;
 uint param_2;
-undefined4 param_3;
+/* Was `undefined4`, truncating the real destination buffer pointer the
+   callers pass (FUN_000499c0: the malloc'd DAT_002029cc workspace;
+   FUN_000164e4: &DAT_000b99d0). Forwarded straight to FUN_0002285c
+   (uw_file_read), which needs a valid pointer -- the truncated value
+   segfaulted the level loader on the first real read. */
+void *param_3;
 
 {
   undefined2 uVar1;
@@ -5938,8 +5954,16 @@ undefined4 param_3;
   uint uVar6;
   uint uVar7;
   
+  /* param_1+10 (bytes 0xa..0xd) held the literal address 0x000b78b8 --
+     &DAT_000b78b8's location in the ORIGINAL 32-bit binary -- baked in by
+     FUN_00015870 as the .ark entry-offset table pointer. That table is a
+     single fixed global (FUN_00015870/FUN_00015a58 read the archive
+     straight into &DAT_000b78b8), so on this recompile just use its real
+     address instead of the truncated literal (which dereferenced as
+     ~0xb78b8 and crashed the level loader). Same "hardcoded original-
+     binary address" bug class as FUN_0006bde0's -0x87020. */
   if (((uint)*(ushort *)(param_1 + 2) < (param_2 & 0xffff)) ||
-     (uVar6 = *(uint *)(*(int *)((char *)param_1 + 10) + (param_2 & 0xffff) * 4), uVar6 == 0)) {
+     (uVar6 = *(uint *)((char *)&DAT_000b78b8 + (param_2 & 0xffff) * 4), uVar6 == 0)) {
     uVar1 = 0;
   }
   else {
@@ -5948,7 +5972,7 @@ undefined4 param_3;
     if (*(ushort *)(param_1 + 2) != 0) {
       uVar5 = 0;
       do {
-        uVar3 = *(uint *)(*(int *)((char *)param_1 + 10) + uVar5 * 4);
+        uVar3 = *(uint *)((char *)&DAT_000b78b8 + uVar5 * 4);
         uVar4 = uVar3 - uVar6;
         if (uVar3 <= uVar6) {
           uVar4 = 0;
@@ -6085,7 +6109,9 @@ int param_2;
 
 
 undefined4 FUN_000164e4(param_1,param_2)
-undefined4 param_1;
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before
+   FUN_0001613c. */
+undefined1 * param_1;
 int param_2;
 
 {
@@ -31548,7 +31574,7 @@ void FUN_0004638c()
                (int)(short)((int)((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 10) >> 1));
   iVar1 = 1;
   do {
-    *(undefined1 *)(iVar1 + 0x202988) = 0;
+    *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 6);
   return;
@@ -31621,7 +31647,7 @@ void FUN_000465c8()
   } while (iVar1 < 0x1c);
   iVar1 = 1;
   do {
-    *(undefined1 *)(iVar1 + 0x202988) = 0;
+    *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 6);
   DAT_00202990 = 0;
@@ -31867,10 +31893,10 @@ void FUN_00046bfc()
         else {
           uVar2 = 3;
         }
-        if (((int)(short)uVar3 + 1U != (int)*(char *)(iVar4 + 0x202988)) ||
-           ((short)uVar2 + 1 != (int)*(char *)(iVar4 + 0x2028e0))) {
-          *(char *)(iVar4 + 0x202988) = (char)uVar3 + '\x01';
-          *(char *)(iVar4 + 0x2028e0) = (char)uVar2 + '\x01';
+        if (((int)(short)uVar3 + 1U != (int)*(char *)((char *)&DAT_00202988 + iVar4)) ||
+           ((short)uVar2 + 1 != (int)*(char *)((char *)&DAT_002028e0 + iVar4))) {
+          *(char *)((char *)&DAT_00202988 + iVar4) = (char)uVar3 + '\x01';
+          *(char *)((char *)&DAT_002028e0 + iVar4) = (char)uVar2 + '\x01';
           FUN_00046b88(iVar4,uVar2 * 0xf + uVar3);
         }
         FUN_00040b0c(iVar4 + 0x2091,(int)(&DAT_00085ad8)[iVar4 * 7],(int)(&DAT_00085ada)[iVar4 * 7],
@@ -43232,7 +43258,9 @@ undefined4 FUN_0005b054()
 
 
 bool FUN_0005b188(param_1,param_2)
-undefined4 param_1;
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before
+   FUN_0001613c. */
+undefined1 * param_1;
 int param_2;
 
 {
@@ -43240,11 +43268,17 @@ int param_2;
   undefined2 uVar2;
   short sVar3;
   int iVar4;
-  undefined2 local_90 [48];
-  undefined2 local_30 [10];
-  undefined2 local_1c [6];
-  
-  sVar3 = FUN_0001613c(param_1,param_2 + 0x11,local_90);
+  /* local_90[48] / local_30[10] / local_1c[6] were separate Ghidra
+     locals whose names encode adjacent stack offsets (-0x90, -0x30,
+     -0x1c) -- one contiguous 128-byte / 64-short region. FUN_0001613c
+     reads exactly 0x7a = 122 bytes into it (96 + 20 + 6), overflowing
+     local_90 into the other two by design. As separate arrays with a
+     stack canary between them that read smashed the canary (SIGABRT).
+     Merged: local_90[i] -> [i], local_30[i] -> [48+i], local_1c[i] ->
+     [58+i]. */
+  undefined2 local_tmap_buf [64];
+
+  sVar3 = FUN_0001613c(param_1,param_2 + 0x11,local_tmap_buf);
   if (sVar3 != 0x7a) {
     FUN_0007ea34(s_bad_tmap_ids_size_000869b7 + 1);
   }
@@ -43252,20 +43286,20 @@ int param_2;
   do {
     (&DAT_0023add0)[iVar4] = 0;
     iVar1 = (iVar4 + 1) * 0x10000 >> 0x10;
-    (&DAT_0023ae58)[iVar4] = local_90[iVar4];
+    (&DAT_0023ae58)[iVar4] = local_tmap_buf[iVar4];
     iVar4 = iVar1;
   } while (iVar1 < 0x30);
   iVar4 = 0;
   do {
     (&DAT_0023ae40)[iVar4] = 0;
     iVar1 = (iVar4 + 1) * 0x10000 >> 0x10;
-    (&DAT_0023adb8)[iVar4] = local_30[iVar4];
+    (&DAT_0023adb8)[iVar4] = local_tmap_buf[48 + iVar4];
     iVar4 = iVar1;
   } while (iVar1 < 10);
-  FUN_0005b660();
+  FUN_0005b660((char *)&DAT_0023ae58,(char *)&DAT_0023adb8);
   iVar4 = 0;
   do {
-    uVar2 = local_1c[iVar4];
+    uVar2 = local_tmap_buf[58 + iVar4];
     (&DAT_0023b840)[iVar4 * 2] = (char)uVar2;
     (&DAT_0023b841)[iVar4 * 2] = (char)((ushort)uVar2 >> 8);
     iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
@@ -43277,7 +43311,9 @@ int param_2;
 
 
 undefined4 FUN_0005b298(param_1,param_2)
-undefined4 param_1;
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before
+   FUN_00015b94. */
+undefined1 * param_1;
 int param_2;
 
 {
@@ -43460,8 +43496,13 @@ int param_4;
 
 
 void FUN_0005b660(param_1,param_2)
-int param_1;
-int param_2;
+/* Both are bases into the tmap-id arrays FUN_0005b188 fills
+   (&DAT_0023ae58 and &DAT_0023adb8) -- Ghidra dropped both args at the
+   lone call site and typed them `int`, so the reads below hit a bogus
+   address and segfaulted level init. Kept as byte-addressed pointers so
+   the existing `iVar4 * 2 + paramN` arithmetic stays correct. */
+char *param_1;
+char *param_2;
 
 {
   char stack0xffdc3238_buf [256];
@@ -64190,7 +64231,9 @@ int param_2;
 
 
 undefined4 FUN_00081ce4(param_1,param_2)
-undefined4 param_1;
+/* .ark handle-struct pointer -- was `undefined4`, truncating the stack
+   struct FUN_000499c0 passes and crashing FUN_0001613c below. */
+undefined1 * param_1;
 int param_2;
 
 {
