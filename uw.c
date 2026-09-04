@@ -2237,8 +2237,30 @@ char s_You_read_the_00085ce8[] = "You_read_the";
 char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 char s_an_adventurer__00085d08[] = "an_adventurer.";
 char s_named_00085d18[] = "named";
-static undefined1 DAT_00085728_backing[65536];
-#define DAT_00085728 DAT_00085728_backing[0]
+/* Per-mode "sticky redraw bits" mask read by FUN_00049818 right after it
+   finishes dispatching DAT_00201c84's currently-set bits through
+   DAT_00085668: `DAT_00201c84 = DAT_00085728[mode] | DAT_00201c84;` re-arms
+   whichever bits this mode always wants re-triggered next idle tick, which
+   is how a mode's per-frame handlers (as opposed to one-shot event
+   handlers) keep firing forever instead of running once and going quiet.
+   Same "link-time-initialized data, nothing in this decompile ever writes
+   it" situation as DAT_00085668 (see its own comment) -- left zero-filled,
+   NO mode's dispatch bits were ever re-armed after the first pass, so
+   every DAT_00085668 handler (this file's HUD-panel/button-state/sound-
+   timer updates, mode 0's bits 11-13) ran exactly once at mode-entry and
+   then silently stopped, no matter how many frames/inputs followed.
+   Recovered the same way: read UU.exe's real .data bytes at 0x85728
+   directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
+   FUN_000689a0/FUN_0003e4cc/FUN_0006d284; mode 1 = 0x1000 = bit 12 =
+   FUN_0001651c; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
+   mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
+   bytes immediately after are the next struct over (a `\DATA\lev.ark`
+   string literal), so this backing array is oversized like its siblings
+   only to satisfy the >0-bytes-past-any-real-index habit the rest of this
+   file uses for recovered fixed-size tables; only index 0-2 are ever
+   read (mode is always 0-2, see DAT_00085668's comment). */
+static const unsigned short DAT_00085728_real_table[3] = { 0x3800, 0x1000, 0x0000 };
+#define DAT_00085728 (*(undefined1 *)DAT_00085728_real_table)
 undefined4 DAT_002029d0;
 char *DAT_002046a4;
 char *DAT_002046a8;
