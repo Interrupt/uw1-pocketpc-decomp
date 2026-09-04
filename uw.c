@@ -33915,6 +33915,10 @@ int param_2;
     DAT_0020469c = DAT_002046bc + *(short *)(iVar3 + 0x7c04) * 2;
     DAT_002046c8 = DAT_002046c0 + *(short *)(iVar3 + 0x7c00);
     DAT_002029d0 = 0;
+    /* Debug tool (UW_DEBUG_DUMP_TMAP): dump this level's 64x64 tile map
+       right after a real load, magic marker and all -- see gx_stub.h's
+       comment. */
+    uw_debug_dump_tmap(param_2, (unsigned char *)iVar3);
   }
   else {
     FUN_0003c3c8(3);

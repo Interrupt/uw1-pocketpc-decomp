@@ -543,6 +543,66 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
     SDL_FreeSurface(surf);
 }
 
+void uw_debug_dump_tmap(int level, const unsigned char *tile_data) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DUMP_TMAP");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+
+    /* One directory per run (same convention as debug_framebuffer_dump's
+       drawdumps/<ts>/), created lazily. */
+    static char run_dir[300];
+    static int run_dir_ready = 0;
+    if (!run_dir_ready) {
+        time_t now = time(NULL);
+        struct tm tm_now;
+        localtime_r(&now, &tm_now);
+        char ts[32];
+        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
+        snprintf(run_dir, sizeof(run_dir), "debug/tmap/%s", ts);
+        debug_mkdir_p(run_dir);
+        run_dir_ready = 1;
+    }
+
+    static unsigned int counter = 0;
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%03u_level%02d.bmp", run_dir, counter++, level);
+
+    /* 64x64, one pixel per tile: index = x + y*64 (see FUN_0003cff8's
+       `param_1 + param_2*0x40` tile-index arithmetic in uw.c -- x is the
+       fast-varying/column axis, y the row). 4 bytes per tile; only byte 0's
+       low nibble (the tile-type field) matters here -- 0 is the classic UW
+       "solid rock, no floor" type, 1-9 are open floor and its diagonal/
+       slope variants (all "not solid" for this dump's purposes). */
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, 64, 64, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!surf) {
+        fprintf(stderr, "[tmap-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+    SDL_Color colors[256] = {0};
+    colors[0].r = colors[0].g = colors[0].b = 0;   /* solid -> black */
+    colors[1].r = colors[1].g = colors[1].b = 255; /* everything else -> white */
+    SDL_SetPaletteColors(surf->format->palette, colors, 0, 2);
+
+    unsigned char *pixels = (unsigned char *)surf->pixels;
+    for (int y = 0; y < 64; y++) {
+        unsigned char *row = pixels + y * surf->pitch;
+        for (int x = 0; x < 64; x++) {
+            int tile_type = tile_data[(x + y * 64) * 4] & 0xf;
+            row[x] = (tile_type == 0) ? 0 : 1;
+        }
+    }
+
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[tmap-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    } else {
+        fprintf(stderr, "[tmap-dump] wrote %s\n", path);
+    }
+    SDL_FreeSurface(surf);
+}
+
 void debug_framebuffer_dump(const char *tag) {
     static int enabled = -1;
     if (enabled < 0) {

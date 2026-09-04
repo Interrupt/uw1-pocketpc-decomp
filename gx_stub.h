@@ -42,6 +42,18 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
    unset. `tag` should be a short caller name, e.g. "blit" or "rect_fill". */
 void debug_framebuffer_dump(const char *tag);
 
+/* Debug tool: if UW_DEBUG_DUMP_TMAP is set (and not "0"), dumps a level's
+   64x64 tile map to a BMP right after it's loaded from the .ark file --
+   solid tiles (tile type 0, the classic UW "rock/no floor" type) as black,
+   every other tile type (open floor and its diagonal/slope variants) as
+   white. One 64x64-pixel BMP per load under debug/tmap/<ts>/, named by an
+   increasing counter and the level number, so a new game (and any level
+   transition) each gets their own file. tile_data is the raw 4-bytes-per-
+   tile array as loaded (DAT_002029cc in uw.c); only byte 0's low nibble of
+   each 4-byte entry is read. No-op (cheap check) when the env var is
+   unset. */
+void uw_debug_dump_tmap(int level, const unsigned char *tile_data);
+
 /* Returns 1 and clears the flag if a mouse event (move/click) was
    processed since the last call, 0 otherwise. One-shot "was there a
    pending mouse message" signal for Ordinal_864 (PeekMessage) -- see its
