@@ -155,7 +155,7 @@ undefined4 param_1;
      as other dual-purpose-variable fixes elsewhere in this file. */
   void *pvVar_buf10000;
   /* Declared as a lone 4-byte scalar, but `&local_82c` is handed to
-     DAT_0023bf6c and then read back through FUN_0006a200/FUN_0006af3c
+     DAT_0023bf6c and then read back through FUN_0006a200/menu_button_list_navigate
      as an array of up to 4 (param_1) 0x10-byte-stride records (plus an
      overlapping 4-byte-stride array access) -- another undersized-local
      table, confirmed via ASAN stack-buffer-overflow. Widened directly.
@@ -305,7 +305,7 @@ undefined4 param_1;
         FUN_000122d4(0,0,g_uw_framebuffer,200);
       }
     }
-    sVar3 = FUN_0006af3c(uVar8,DAT_0023bf6c,0,uVar2);
+    sVar3 = menu_button_list_navigate(uVar8,DAT_0023bf6c,0,uVar2);
     local_838 = (int)sVar3;
     if (local_838 == -1) {
       FUN_0003baf4(0);

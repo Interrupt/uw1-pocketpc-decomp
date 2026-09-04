@@ -1778,7 +1778,7 @@ static void (*const DAT_00085668_real_table[48])(void) = {
   /* mode 0 (in-game/dungeon view) */
   (void(*)(void))FUN_0003bd50, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))FUN_0003c194,
   0, 0, 0, 0,
-  0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))FUN_000689a0,
+  0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))movement_pacing_handler,
   (void(*)(void))FUN_0003e4cc, (void(*)(void))FUN_0006d284, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
   /* mode 1 */
   0, (void(*)(void))FUN_00016354, 0, 0,
@@ -2251,7 +2251,7 @@ char s_named_00085d18[] = "named";
    then silently stopped, no matter how many frames/inputs followed.
    Recovered the same way: read UU.exe's real .data bytes at 0x85728
    directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
-   FUN_000689a0/FUN_0003e4cc/FUN_0006d284; mode 1 = 0x1000 = bit 12 =
+   movement_pacing_handler/FUN_0003e4cc/FUN_0006d284; mode 1 = 0x1000 = bit 12 =
    FUN_0001651c; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
    mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
    bytes immediately after are the next struct over (a `\DATA\lev.ark`
@@ -3409,7 +3409,7 @@ static undefined1 DAT_0023ce10_backing[65536];
    table backing array in this file) while the real separate globals
    stayed at their zero-initialized default forever. Concretely: pressing
    Enter (VK_RETURN, the real start.vk) never matched `DAT_0023ce34` (a
-   permanent 0), so `FUN_00077b2c` fell through to the generic raw-vk
+   permanent 0), so `handle_keyboard_message` fell through to the generic raw-vk
    fallback instead of recognizing it as the "start button" movement
    command -- silently breaking every A/B/C/Start-button-driven input
    this whole session's demo scripts (which use Enter throughout) relied
@@ -26351,7 +26351,7 @@ LAB_0003cdf8:
 
 
 
-void FUN_0003ce04(param_1)
+void apply_heading_turn(param_1)
 undefined4 param_1;
 
 {
@@ -26505,7 +26505,7 @@ uint param_2;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0003d438()
+void update_3d_sound_position()
 
 {
   short sVar1;
@@ -49819,7 +49819,7 @@ short param_1;
   }
   else {
     DAT_0023bf50 = 1;
-    FUN_000685e8();
+    decode_movement_command();
     if (param_1 == 0) {
       DAT_0023bf1c = param_1;
       DAT_0023bf48 = 0;
@@ -49843,7 +49843,7 @@ short param_1;
 
 
 
-void FUN_000685e8()
+void decode_movement_command()
 
 {
   DAT_0023bf48 = 0;
@@ -50003,7 +50003,7 @@ undefined4 param_1;
       DAT_0023bf58 = DAT_0023bf58 & 1;
       uVar3 = (short)uVar3 >> 1;
     }
-    FUN_00068ad4(0x40,uVar3,1);
+    movement_tick(0x40,uVar3,1);
     FUN_00049924(10);
   }
   do {
@@ -50015,7 +50015,7 @@ undefined4 param_1;
 
 
 
-void FUN_000689a0()
+void movement_pacing_handler()
 
 {
   byte bVar1;
@@ -50065,13 +50065,13 @@ void FUN_000689a0()
   }
   bVar1 = DAT_0023bf58;
   DAT_0023bf58 = bVar2;
-  FUN_00068ad4(uVar6 & 0xffff,bVar1,0);
+  movement_tick(uVar6 & 0xffff,bVar1,0);
   return;
 }
 
 
 
-void FUN_00068ad4(param_1,param_2,param_3)
+void movement_tick(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
 int param_3;
@@ -50094,12 +50094,12 @@ int param_3;
   DAT_0023be98 = 0;
   DAT_0023bf18 = (char)param_1 + DAT_0023bf18;
   if (DAT_0023bf1c == 0) {
-    FUN_000685e8();
+    decode_movement_command();
   }
   if ((((((DAT_0023bf1c != 0) || (DAT_00204894 != 0)) || (DAT_0020488a != 0)) ||
        ((DAT_00204890 != 0 || (DAT_0020488e != 0)))) || ((DAT_0020488c != 0 || (DAT_000858a0 != 0)))
       ) && (param_3 == 0)) {
-    FUN_00068cac(param_1);
+    apply_movement_tick(param_1);
   }
   if (((DAT_00086dfc != 0) && (DAT_002020d0 == 0)) && ((short)param_2 != 0)) {
     FUN_000349bc(param_2);
@@ -50177,14 +50177,14 @@ void FUN_00068c1c()
   DAT_0023bf1c = 0;
   while ((((DAT_00204894 != 0 || (DAT_0020488a != 0)) || (DAT_00204890 != 0)) ||
          (((DAT_0020488e != 0 || (DAT_0020488c != 0)) || (DAT_000858a0 != 0))))) {
-    FUN_00068cac(0x40);
+    apply_movement_tick(0x40);
   }
   return;
 }
 
 
 
-void FUN_00068cac()
+void apply_movement_tick()
 
 {
   byte bVar1;
@@ -50197,9 +50197,9 @@ void FUN_00068cac()
   DAT_0023be9e = 0;
   DAT_0023be9c = 0;
   DAT_0023be9a = 0;
-  FUN_0003ce04();
+  apply_heading_turn();
   FUN_0005878c(&DAT_00204880,&DAT_002048b0);
-  FUN_0003d438();
+  update_3d_sound_position();
   FUN_00049924(10);
   sVar4 = DAT_0023bf1c;
   bVar1 = DAT_0023bf18;
@@ -51047,7 +51047,7 @@ char param_3;
 
 
 
-int FUN_0006af3c(param_1,param_2,param_3,param_4)
+int menu_button_list_navigate(param_1,param_2,param_3,param_4)
 int param_1;
 char *param_2;
 undefined1 param_3;
@@ -51231,7 +51231,7 @@ undefined4 FUN_0006b178()
     }
     uVar7 = (int)((uVar7 + 1) * 0x10000) >> 0x10;
   } while ((int)uVar7 < 4);
-  sVar2 = FUN_0006af3c(iVar4,local_1d0,1,0);
+  sVar2 = menu_button_list_navigate(iVar4,local_1d0,1,0);
   if (sVar2 < 0) {
     uVar5 = 0;
   }
@@ -58760,7 +58760,7 @@ undefined4 FUN_00077a38()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-undefined4 FUN_00077b2c(param_1,param_2,param_3)
+undefined4 handle_keyboard_message(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
 uint param_3;
@@ -58871,7 +58871,7 @@ LAB_00077d70:
 /* Recovered from a message-dispatch table baked into the original binary's
    .rdata (0x830e4-0x83144) that routes WM_MOUSEMOVE/WM_LBUTTONDOWN/
    WM_LBUTTONUP/WM_RBUTTONDOWN/WM_RBUTTONUP (msg 0x200/0x201/0x202/0x204/
-   0x205) to this handler -- entirely separate from FUN_00077b2c's table
+   0x205) to this handler -- entirely separate from handle_keyboard_message's table
    entries (msg 0x100-0x107, keyboard only). Ghidra never resolved this
    address into a named function since it's only ever reached through that
    table, never a direct call -- same "orphaned callback" pattern as
@@ -58889,7 +58889,7 @@ LAB_00077d70:
    strip (the chargen name-entry on-screen keyboard, see DAT_00087650's
    comment) via FUN_00057a80 and re-dispatches the resulting button ID as
    a synthetic WM_CHAR (letters/digits) or WM_KEYDOWN (backspace/enter/
-   space/0x14) through Ordinal_868 (PostMessage) -> FUN_00077b2c, the same
+   space/0x14) through Ordinal_868 (PostMessage) -> handle_keyboard_message, the same
    path real keyboard input already uses. Taps outside that strip instead
    set DAT_00204844, a general click-pending flag consumed elsewhere
    (main game world / inventory click handling, not chargen). */

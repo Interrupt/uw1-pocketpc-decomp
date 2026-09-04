@@ -9,7 +9,7 @@
 #include <SDL.h>
 
 void uw_pump_events(void);
-unsigned int FUN_00077b2c(void *param_1, unsigned int param_2, unsigned int param_3);
+unsigned int handle_keyboard_message(void *param_1, unsigned int param_2, unsigned int param_3);
 int uw_take_mouse_event_pending(void);
 
 long Ordinal_4()
@@ -433,7 +433,7 @@ long Ordinal_859()
 }
 
 /* DAT_0023c448 is uw.c's real "pending input event" flags word, set
- * directly by FUN_00077b2c() from uw_pump_events()'s real SDL key
+ * directly by handle_keyboard_message() from uw_pump_events()'s real SDL key
  * events (not through a faked MSG struct). */
 extern unsigned short DAT_0023c448;
 
@@ -479,12 +479,12 @@ long Ordinal_866()
  * mouse handler (FUN_00077dd0 in uw.c) makes to re-dispatch a stylus tap
  * on the chargen on-screen keyboard as a synthetic WM_CHAR/WM_KEYDOWN.
  * This port never builds a real Win32 MSG queue (see Ordinal_864's
- * comment -- FUN_00077b2c is driven directly from DAT_0023c448), so
+ * comment -- handle_keyboard_message is driven directly from DAT_0023c448), so
  * dispatch synchronously into the same handler real keyboard input
  * already reaches instead of queuing. */
 int Ordinal_868(void *hwnd, unsigned int msg, unsigned int wparam, int lparam)
 {
-    return (int)FUN_00077b2c(hwnd, msg, wparam);
+    return (int)handle_keyboard_message(hwnd, msg, wparam);
 }
 
 long Ordinal_870()

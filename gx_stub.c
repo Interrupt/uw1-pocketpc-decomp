@@ -135,7 +135,7 @@ static int translate_vk(SDL_Keycode sym) {
         /* SDLK_SPACE is deliberately NOT mapped here: the spacebar must
          * reach the game only as a WM_CHAR (0x20) via SDL_TEXTINPUT so it
          * types a literal space in the name-entry field. Sending a
-         * WM_KEYDOWN for it too made FUN_00077b2c match it against the
+         * WM_KEYDOWN for it too made handle_keyboard_message match it against the
          * "button A" key (see GXGetDefaultKeys) and emit event 0x91,
          * which that field handles as delete -- so every space deleted
          * the character before it. */
@@ -190,19 +190,19 @@ void uw_pump_events(void) {
                 int vk = translate_vk(ev.key.keysym.sym);
                 if (vk != 0) {
                     unsigned int msg = (ev.type == SDL_KEYDOWN) ? 0x100u : 0x101u;
-                    FUN_00077b2c(0, msg, (unsigned int)vk);
+                    handle_keyboard_message(0, msg, (unsigned int)vk);
                 }
                 /* Backspace/Enter don't come through SDL_TEXTINPUT (that
                  * event only fires for printable characters), but the
-                 * game's WM_CHAR handler (FUN_00077b2c, message 0x102)
+                 * game's WM_CHAR handler (handle_keyboard_message, message 0x102)
                  * treats any raw byte value the same way regardless of
                  * how it arrived, so send them here as the real
                  * control-character bytes a Windows WM_CHAR would carry. */
                 if (ev.type == SDL_KEYDOWN) {
                     if (ev.key.keysym.sym == SDLK_BACKSPACE) {
-                        FUN_00077b2c(0, 0x102u, 0x08u);
+                        handle_keyboard_message(0, 0x102u, 0x08u);
                     } else if (ev.key.keysym.sym == SDLK_RETURN) {
-                        FUN_00077b2c(0, 0x102u, 0x0Du);
+                        handle_keyboard_message(0, 0x102u, 0x0Du);
                     }
                 }
                 /* Real Windows delivers WM_KEYDOWN and WM_CHAR as
@@ -226,13 +226,13 @@ void uw_pump_events(void) {
             case SDL_TEXTINPUT: {
                 /* Real typed characters (respects keyboard layout/shift
                  * state) -- forwarded as WM_CHAR (0x102), matching
-                 * FUN_00077b2c's real-text-input path. Only ever one
+                 * handle_keyboard_message's real-text-input path. Only ever one
                  * pending-input slot is read per poll (see the keydown
                  * case above), so stop after this event too. */
                 for (const char *p = ev.text.text; *p; p++) {
                     unsigned char c = (unsigned char)*p;
                     if (c < 0x80) {
-                        FUN_00077b2c(0, 0x102u, (unsigned int)c);
+                        handle_keyboard_message(0, 0x102u, (unsigned int)c);
                     }
                 }
                 return;
@@ -245,7 +245,7 @@ void uw_pump_events(void) {
                  * (see the HW_W/HW_H comment up top), packed as a real
                  * Windows lParam (y<<16)|x -- FUN_00077dd0 (recovered from
                  * the original binary's mouse message-dispatch table,
-                 * separate from FUN_00077b2c's keyboard-only table) does
+                 * separate from handle_keyboard_message's keyboard-only table) does
                  * its own portrait Y flip internally, so just convert SDL's
                  * landscape window coordinates into the same un-rotated
                  * portrait space GXEndDraw's blit reads from:
@@ -311,9 +311,9 @@ void uw_pump_events(void) {
             }
             case SDL_WINDOWEVENT:
                 if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-                    FUN_00077b2c(0, 7, 0);
+                    handle_keyboard_message(0, 7, 0);
                 else if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
-                    FUN_00077b2c(0, 8, 0);
+                    handle_keyboard_message(0, 8, 0);
                 break;
         }
     }
@@ -676,7 +676,7 @@ void *GXGetDefaultKeys(void *outBuffer) {
     if (!kl) return outBuffer;
     memset(kl, 0, sizeof(*kl));
     /* Button A was VK_SPACE, which collided with typing a space in the
-     * name-entry field (FUN_00077b2c turns a button-A keydown into event
+     * name-entry field (handle_keyboard_message turns a button-A keydown into event
      * 0x91 = delete-previous-char). Use a WinCE app-button VK instead --
      * the shape real GAPI returns -- so the spacebar is free. Desktop
      * "activate" is the mouse click, so leaving A without a keyboard

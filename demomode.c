@@ -98,7 +98,7 @@ void demomode_pump(void) {
     if (g_demo_type_pos && *g_demo_type_pos) {
         unsigned char c = (unsigned char)*g_demo_type_pos++;
         fprintf(stderr, "[demo] typing '%c'\n", c);
-        FUN_00077b2c(0, 0x102u, (unsigned int)c);
+        handle_keyboard_message(0, 0x102u, (unsigned int)c);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
@@ -212,11 +212,11 @@ void demomode_pump(void) {
         /* Backspace only ever reaches the game as WM_CHAR (0x102), not a
          * VK keydown/keyup -- see gx_stub.c's uw_pump_events. */
         fprintf(stderr, "[demo] sending %s\n", p);
-        FUN_00077b2c(0, 0x102u, (unsigned int)VK_BACK);
+        handle_keyboard_message(0, 0x102u, (unsigned int)VK_BACK);
     } else {
         fprintf(stderr, "[demo] sending %s\n", p);
-        FUN_00077b2c(0, 0x100u, (unsigned int)vk);
-        FUN_00077b2c(0, 0x101u, (unsigned int)vk);
+        handle_keyboard_message(0, 0x100u, (unsigned int)vk);
+        handle_keyboard_message(0, 0x101u, (unsigned int)vk);
         /* Used to also send a WM_CHAR(0x0D) here for Enter specifically,
          * on the theory that text-entry fields submit on the WM_CHAR
          * rather than the VK keydown. That's now known wrong on two
@@ -224,7 +224,7 @@ void demomode_pump(void) {
          * keydown alone -- confirmed empirically once DAT_0023ce34
          * (start.vk) was fixed to really hold VK_RETURN (see its uw.c
          * comment) -- and (2) sending both messages actively breaks
-         * every other consumer of DAT_0023c448: FUN_00077b2c's WM_CHAR
+         * every other consumer of DAT_0023c448: handle_keyboard_message's WM_CHAR
          * case ORs its byte in rather than replacing
          * (`DAT_0023c448 = DAT_0023c448 | uVar1`), so this always
          * corrupted the keydown's real command code (0x93, the "start
