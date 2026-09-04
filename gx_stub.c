@@ -510,7 +510,7 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
         return;
     }
 
-    unsigned char *pal = uw_get_default_palette();
+    unsigned char *pal = uw_get_default_palette(gr_name);
     SDL_Color colors[256];
     for (int i = 0; i < 256; i++) {
         colors[i].r = pal[i * 3 + 0];
