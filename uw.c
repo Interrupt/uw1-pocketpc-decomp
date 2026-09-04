@@ -44,7 +44,20 @@ byte *DAT_0008429c = DAT_0008429c_backing;
 char *DAT_000879b0;
 undefined2 DAT_000a85b0;
 char *DAT_000890a4;
-short DAT_0024ad94;
+/* Ghidra split this out as a standalone, never-written `short` -- but its
+   address (0x0024ad94) is exactly 0x34 bytes into the RGB565 palette LUT
+   at DAT_0024ad60 (0x34/2 = entry 26 = palette color 0x1a), and nothing
+   ever assigns it because every LUT write goes through the array base
+   (&DAT_0024ad60 / puVar20 loops in FUN_00022b54), not this symbol. Left
+   as its own zero global it means "framebuffer pixel value 0x0000 (pure
+   black)", which the chargen overlay compositor (FUN_00011478 save /
+   FUN_000114e4 + FUN_0001156c restore) then treats as "not drawn, paint
+   the saved background over it" -- eating every legitimately-black pixel,
+   e.g. CHRBTNS.GR's palette-index-0 button outlines. Aliased onto LUT
+   entry 26 so it tracks the real RGB565 of the chargen "backing/erase"
+   color 0x1a (the one chargen fills its panels with via set_draw_color
+   (0x1a) right before drawing the UI overlay on top). */
+#define DAT_0024ad94 (*(short *)&DAT_0024ad60_backing[26])
 /* Was a lone `undefined2` scalar, but used as a full-screen shadow/
    backup buffer the same size as g_uw_framebuffer (FUN_00011478 saves
    aside every non-transparent pixel across the whole 320x200 framebuffer
