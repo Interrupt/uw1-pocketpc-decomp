@@ -44732,9 +44732,20 @@ undefined1 ** param_2;
   char *pcVar7;
   byte *pbVar8;
   char *pcVar9;
+  /* acStack_28/local_23 were separate locals sized 5+1=6 bytes, but the
+     copy loop just below writes a full 0x15(21)-byte record into
+     acStack_28 (`iVar3 = 0x15; ... *pcVar7 = *pcVar6; ...`) -- a genuine
+     stack-buffer overflow (confirmed crashing, EXC_BAD_ACCESS with a
+     corrupted pcVar9, the classic signature of a stack smash landing on
+     an adjacent local) every single time this function runs, regardless
+     of which branch follows. Same "locals declared as whatever fragment
+     Ghidra individually named instead of the real buffer a copy/init
+     needs" bug as FUN_0001de0c's matrices earlier this session, just for
+     a stack array instead of a global one. local_23 was the record's own
+     byte offset+5 (0x28-0x23=5) -- folded into the real-sized array as
+     acStack_28[5], its declaration removed. */
+  char acStack_28 [0x15];
   int iVar10;
-  char acStack_28 [5];
-  char local_23;
 
   iVar10 = ((int)*(char *)*param_1 & 0xfU) * 0x15;
   pcVar9 = &DAT_0023aee0 + iVar10;
@@ -44773,24 +44784,33 @@ LAB_0005d064:
     *pbVar8 = 0;
   }
   else {
+    /* Currently dead: reactions_should_merge is stubbed to always return
+       0 (see its own comment), so iVar3 above is never non-zero and this
+       branch never runs. If that's ever un-stubbed: reaction_advance_tile/
+       compute_reaction_offset below compute their target real-pointer-table
+       entry as an offset of the passed pointer *within DAT_0023aee0_backing*
+       -- passing them acStack_28 (a stack copy, not a real array entry)
+       will index that table with a wild/negative value. Needs its own fix
+       (likely: write back through pcVar9 instead of a local copy) before
+       this branch can safely run for real. */
     *param_1 = pbVar8;
     if ((&DAT_0023aee5)[iVar10] != (&DAT_0023aee5)[iVar5]) {
       do {
         reaction_advance_tile(acStack_28);
         do {
-          if ((char)(&DAT_0023aee5)[iVar5] <= local_23) {
+          if ((char)(&DAT_0023aee5)[iVar5] <= acStack_28[5]) {
             return;
           }
           do {
             iVar10 = compute_reaction_offset(acStack_28,1,0);
             if (iVar10 == 0) break;
-          } while (local_23 < (char)(&DAT_0023aee5)[iVar5]);
-        } while ((char)(&DAT_0023aee5)[iVar5] <= local_23);
+          } while (acStack_28[5] < (char)(&DAT_0023aee5)[iVar5]);
+        } while ((char)(&DAT_0023aee5)[iVar5] <= acStack_28[5]);
         reaction_advance_tile(acStack_28);
         do {
           iVar10 = compute_reaction_offset(acStack_28,1,8);
           if (iVar10 == 0) break;
-        } while (local_23 < (char)(&DAT_0023aee5)[iVar5]);
+        } while (acStack_28[5] < (char)(&DAT_0023aee5)[iVar5]);
       } while( true );
     }
   }
@@ -44869,35 +44889,18 @@ void FUN_0005d290()
   bool bVar5;
   
   FUN_0005bf40();
-  // Hack - Disabled: process_reaction_queue() walks a 16-entry creature-reaction/
-  // sound-cue queue (DAT_0023aee0, stride 0x15). Its per-entry fields are
-  // real 64-bit pointers manually byte-packed into 4-byte slots by the
-  // original 32-bit binary; this session recovered and fixed several of
-  // those (see g_dat0023aee0_realptr/g_dat0023aee0_realptr2 and their
-  // uses in process_reaction_entry/compute_reaction_offset/reaction_retreat_tile/reaction_advance_tile/
-  // merge_adjacent_reactions), but merge_adjacent_reactions's sibling reactions_should_merge inlines the
-  // same pattern several times over unfixed (disabled itself, see its
-  // own comment) and still segfaults reassembling one further downstream
-  // -- this queue is creature/object reaction bookkeeping, not needed
-  // for a monster-free minimal dungeon, so it stays skipped rather than
-  // finishing that retrofit.
-  //
-  // DAT_0023b024, which this function's outer loop computes as a side
-  // effect, unexpectedly ALSO doubles as the tile-visibility scan radius
-  // FUN_0005d9cc's dungeon-geometry walk depends on (both consumers were
-  // sharing one address in the original binary) -- skipping this call
-  // entirely left it stuck at 0 and the 3D viewport permanently empty.
-  // Set it directly to a small, safe constant instead of computing it via
-  // the (still partially broken) queue walk; DAT_0023b038, the scratch
-  // buffer FUN_0005d9cc writes rings into, is real static storage so it
-  // starts zeroed. Confirmed via UW_DEBUG_LEVEL tracing that a value of 0
-  // (just the player's own tile, no neighbors) finds zero visible faces
-  // -- wall/floor geometry belongs to tiles the walk actually visits, not
-  // the player's own -- so this needs to be a real render distance, not
-  // just "safe". 8 is an arbitrary modest guess pending a real value from
-  // the original binary; revisit if the render distance looks wrong.
-  // process_reaction_queue();
-  DAT_0023b024 = 8;
+  /* Re-enabled again: DAT_0023b038 (the buffer FUN_0005d9cc's ring-walk
+     reads per-tile visibility/occlusion data from via FUN_0005e604,
+     offset DAT_0023b820) is the SAME 0x42-byte-stride buffer
+     process_reaction_queue builds its creature-reaction display list
+     into (`&DAT_0023b038`, confirmed same base address, same stride) --
+     a whole-binary Ghidra reference search found NO OTHER writer of this
+     memory anywhere, so hardcoding DAT_0023b024 while skipping this call
+     (the previous approach here) skips the only real populator too,
+     which is why the viewport stayed black even with a positive scan
+     radius. Finishing the retrofit properly instead of hardcoding
+     around it -- see the crash this hits next for where that stood. */
+  process_reaction_queue();
   FUN_00058438(0);
   uVar1 = DAT_00086b30;
   DAT_0023b804 = 0;
