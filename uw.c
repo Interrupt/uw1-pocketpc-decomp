@@ -3395,6 +3395,32 @@ static undefined1 DAT_0023cdb0_backing[32768];
 #define DAT_0023cdc0 (*(int *)(DAT_0023cdb0_backing + 0x10))
 static undefined1 DAT_0023ce10_backing[65536];
 #define DAT_0023ce10 DAT_0023ce10_backing[0]
+/* DAT_0023ce1c/28/34/40/4c/58/64 are the same GXGetDefaultKeys() struct's
+   remaining 7 button.vk fields (b/c/start/up/down/left/right, each 0xc
+   bytes after the previous one -- see gx_stub.c's GxKeyEntry) as
+   DAT_0023ce10 (the "a" button). Same bug DAT_0023cdb0's comment above
+   already describes for GXGetDisplayProperties: FUN_00077408 populates
+   this whole 0x60-byte struct with one sequential byte-copy loop
+   starting at `&DAT_0023ce10`, but every field past the first had been
+   declared as its own independent global instead of an alias into that
+   same backing buffer -- so the copy's bytes for b/c/start/up/down/
+   left/right all landed harmlessly in DAT_0023ce10_backing's own unused
+   tail (it's oversized, 65536 bytes, same as every other recovered-
+   table backing array in this file) while the real separate globals
+   stayed at their zero-initialized default forever. Concretely: pressing
+   Enter (VK_RETURN, the real start.vk) never matched `DAT_0023ce34` (a
+   permanent 0), so `FUN_00077b2c` fell through to the generic raw-vk
+   fallback instead of recognizing it as the "start button" movement
+   command -- silently breaking every A/B/C/Start-button-driven input
+   this whole session's demo scripts (which use Enter throughout) relied
+   on, though none of that was diagnosed until this fix. */
+#define DAT_0023ce1c (*(ushort *)(DAT_0023ce10_backing + 0xc))
+#define DAT_0023ce28 (*(ushort *)(DAT_0023ce10_backing + 0x18))
+#define DAT_0023ce34 (*(ushort *)(DAT_0023ce10_backing + 0x24))
+#define DAT_0023ce40 (*(ushort *)(DAT_0023ce10_backing + 0x30))
+#define DAT_0023ce4c (*(ushort *)(DAT_0023ce10_backing + 0x3c))
+#define DAT_0023ce58 (*(ushort *)(DAT_0023ce10_backing + 0x48))
+#define DAT_0023ce64 (*(ushort *)(DAT_0023ce10_backing + 0x54))
 HWND__ *DAT_0023c548;
 undefined *PTR_GXOpenDisplay_000841ec;
 undefined *PTR_GXOpenInput_000841f0;
@@ -3409,13 +3435,6 @@ static undefined1 UNK_000830b4_backing[65536];
 #define UNK_000830b4 UNK_000830b4_backing[0]
 undefined *PTR_GXCloseInput_000841e4;
 undefined *PTR_GXCloseDisplay_000841e8;
-ushort DAT_0023ce1c;
-ushort DAT_0023ce28;
-ushort DAT_0023ce34;
-ushort DAT_0023ce40;
-ushort DAT_0023ce4c;
-ushort DAT_0023ce58;
-ushort DAT_0023ce64;
 undefined *PTR_GXSuspend_000841dc;
 undefined *PTR_GXResume_000841f4;
 byte DAT_0024af80;
