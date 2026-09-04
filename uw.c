@@ -17580,7 +17580,16 @@ int param_1;
 
 // WARNING: Type propagation algorithm not settling
 
-undefined4 FUN_0002bdac(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10,param_11)
+// was FUN_0002bdac. Tests whether movement/sight between tile (param_1,
+// param_2) and tile (param_3,param_4) -- via intermediate tile (param_5,
+// param_6) -- is blocked by a wall, reading each tile's DAT_000878d0
+// direction-blocking bitmask (bits 2/4/8/0x10 = which of the 4 axis
+// directions that tile type blocks). Used by creature_find_path_to_tile's
+// wavefront pathfinding and by the line-of-sight scanner below it -- NOT
+// part of the 3D dungeon-view render chain (see memory.md's tmap-tiles
+// section: this whole subsystem is creature AI, a dead end for that
+// investigation, but a real, previously-unexamined one worth naming).
+undefined4 tile_pair_los_blocked(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10,param_11)
 byte param_1;
 byte param_2;
 byte param_3;
@@ -18070,7 +18079,14 @@ LAB_0002caa4:
 
 
 
-undefined4 FUN_0002cb14(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+// was FUN_0002cb14. BFS/wavefront pathfinder from tile (param_1,param_2)
+// toward tile (param_4,param_5), expanding outward one ring at a time
+// (DAT_0023cf08-family scratch arrays hold each visited tile's parent
+// direction/cost, capped at 0x20 rings) and using tile_pair_los_blocked
+// to test whether each candidate step is wall-blocked. Calls
+// FUN_0002d110 to reconstruct the path on success. Creature AI, not
+// part of the 3D render chain -- see tile_pair_los_blocked's comment.
+undefined4 creature_find_path_to_tile(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 undefined4 param_1;
 char param_2;
 undefined1 param_3;
@@ -18176,7 +18192,7 @@ undefined1 param_7;
     uVar2 = iVar7 * 0x1000000 >> 0x18;
     iVar8 = (uVar2 + uVar11 * 0x40) * 5;
     local_5c = 0;
-    iVar7 = FUN_0002bdac(0,0,param_1,param_2,uVar5,uVar6,*(undefined2 *)(DAT_00101438 + 4),
+    iVar7 = tile_pair_los_blocked(0,0,param_1,param_2,uVar5,uVar6,*(undefined2 *)(DAT_00101438 + 4),
                          *(undefined2 *)(DAT_00101438 + 6),param_3,&DAT_0023cf0a + iVar8,&local_5c);
     if (iVar7 != 0) {
       if ((uVar11 == local_48) && (uVar2 == local_44)) {
@@ -18231,7 +18247,7 @@ undefined1 param_7;
           local_5c = (byte)(&DAT_0023cf0b)[iVar18] >> 1;
           if (((byte)(&DAT_0023cf08)[iVar18] != uVar2) ||
              ((byte)(&DAT_0023cf09)[iVar18] != local_3c)) {
-            iVar9 = FUN_0002bdac((uint)(byte)(&DAT_0023cf08)[iVar18],(&DAT_0023cf09)[iVar18],iVar7,
+            iVar9 = tile_pair_los_blocked((uint)(byte)(&DAT_0023cf08)[iVar18],(&DAT_0023cf09)[iVar18],iVar7,
                                  iVar8,(char)iVar15,(char)iVar17,*(undefined2 *)(DAT_00101438 + 4),
                                  *(undefined2 *)(DAT_00101438 + 6),(&DAT_0023cf0a)[iVar18],&local_59
                                  ,&local_5c);
@@ -18264,7 +18280,7 @@ undefined1 param_7;
               }
               bVar14 = local_5b;
               if (((uVar2 == local_48) && (local_3c == local_44)) &&
-                 (iVar15 = FUN_0002bdac(iVar7,iVar8,iVar15,iVar17,0,0,
+                 (iVar15 = tile_pair_los_blocked(iVar7,iVar8,iVar15,iVar17,0,0,
                                         *(undefined2 *)(DAT_00101438 + 4),
                                         *(undefined2 *)(DAT_00101438 + 6),(&DAT_0023cf0a)[iVar19],
                                         &DAT_0023cf0a + iVar19,&local_5c), uVar11 = local_38,
@@ -18438,7 +18454,7 @@ LAB_0002d340:
     iVar5 = FUN_0002d9f4(uVar8,uVar10);
   }
   iVar5 = (uint)DAT_0010142c * 7;
-  sVar3 = FUN_0002bdac((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
+  sVar3 = tile_pair_los_blocked((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
                        (&DAT_0010173a)[iVar5],0,0,*(undefined2 *)(DAT_00101438 + 4),
                        *(undefined2 *)(DAT_00101438 + 6),*(undefined1 *)((intptr_t)&DAT_00101734 + iVar5)
                        ,(intptr_t)&DAT_00101734 + iVar5,auStack_30);
@@ -18675,13 +18691,13 @@ undefined1 param_2;
   DAT_0010142c = (byte)uVar3;
   if (uVar1 < 0x40) {
     if (uVar1 == 2) {
-      iVar2 = FUN_0002bdac(0,0,DAT_00101740,DAT_00101741,DAT_00101747,DAT_00101748,
+      iVar2 = tile_pair_los_blocked(0,0,DAT_00101740,DAT_00101741,DAT_00101747,DAT_00101748,
                            *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
                            DAT_00101742,&DAT_00101749,auStack_14);
     }
     else {
       iVar2 = uVar1 * 7;
-      iVar2 = FUN_0002bdac(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
+      iVar2 = tile_pair_los_blocked(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
                            *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2),(&DAT_00101732)[iVar2],
                            (&DAT_00101733)[iVar2],(&DAT_00101739)[iVar2],(&DAT_0010173a)[iVar2],
                            *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
@@ -19285,7 +19301,7 @@ LAB_0002ed50:
     iVar6 = FUN_0002db4c(local_40);
     if (iVar6 != 0) {
       uVar4 = FUN_0003431c();
-      iVar6 = FUN_0002cb14(DAT_00101918,DAT_001013f8,*(byte *)(DAT_0010190c + 2) >> 3 & 0xf,param_1,
+      iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,*(byte *)(DAT_0010190c + 2) >> 3 & 0xf,param_1,
                            param_2,param_3,uVar4);
       if (iVar6 != 0) {
         DAT_000853b8 = DAT_000853b8 & ~(ushort)(1 << (uint)local_40[0]);
@@ -22067,7 +22083,7 @@ ushort * param_3;
       if (((((iVar11 * 0x10000 >> 0x10) * (iVar11 * 0x10000 >> 0x10) +
             (iVar13 * 0x10000 >> 0x10) * (iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10 <=
             (int)(uVar9 * uVar9 * 3)) &&
-          (iVar11 = FUN_0002cb14((uint)DAT_00101918,(uint)DAT_001013f8,
+          (iVar11 = creature_find_path_to_tile((uint)DAT_00101918,(uint)DAT_001013f8,
                                  *(byte *)(DAT_0010190c + 2) >> 3 & 0xf,(uint)(uVar4 >> 10),
                                  CONCAT11(uVar16,(char)(uVar4 >> 4)) & 0xff3f,
                                  CONCAT31((int3)((uint)in_stack_ffffffd0 >> 8),
