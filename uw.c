@@ -77,7 +77,21 @@ int DAT_00088960;
 undefined *PTR_Ordinal_2032_00084010;
 undefined *PTR_Ordinal_2026_00084014;
 undefined *PTR_Ordinal_2020_00084018;
-undefined4 DAT_000a85d0;
+/* Was a lone `undefined4` scalar, but FUN_0001dfe8/FUN_0001e274/
+   FUN_0001f370 (the vertex/geometry-transform pipeline feeding tile/sprite
+   rendering) all take `&DAT_000a85d0` as a base pointer into a large
+   per-record transform-cache struct, reading/writing offsets up to
+   ~0x4874 (~18.5KB) from it -- confirmed crashing (EXC_BAD_ACCESS) inside
+   FUN_0001f370 dereferencing that far out. Elsewhere in this file
+   DAT_000a85d0 is also used as a plain scalar counter/index -- that's not
+   a conflict, just the same address doing double duty at different times,
+   same as other reused-scratch-memory globals already documented this
+   session (e.g. DAT_0008522c); the `[0]` alias below preserves that use
+   unchanged. Widened to a generous backing size well past every offset
+   observed, same pattern as the other undersized-record-table fixes this
+   session. */
+static undefined4 DAT_000a85d0_backing[16384];
+#define DAT_000a85d0 DAT_000a85d0_backing[0]
 byte *DAT_000b4628;
 byte *DAT_000b461c;
 int DAT_000b4610;
@@ -313,63 +327,97 @@ undefined4 DAT_000db440;
 int DAT_000db448;
 int DAT_000db44c;
 int DAT_000db450;
-undefined4 DAT_000c8ac0;
-undefined4 DAT_000c8ad0;
-undefined4 DAT_000c8ae0;
-undefined4 DAT_000c8af0;
-undefined4 DAT_000c8ac4;
-undefined4 DAT_000c8ad4;
-undefined4 DAT_000c8ae4;
-undefined4 DAT_000c8af4;
-undefined4 DAT_000c8ac8;
-undefined4 DAT_000c8ad8;
-undefined4 DAT_000c8ae8;
-undefined4 DAT_000c8af8;
+/* DAT_000c8ac0-family: 12 separately-declared globals that are really the
+   12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
+   view/camera matrix -- FUN_0001de0c writes the whole matrix in one shot
+   via `FUN_00013b8c(...,...,&DAT_000c8ac0)`, a matrix-multiply that treats
+   its output as one contiguous 64-byte buffer starting at DAT_000c8ac0
+   (including the 4 never-individually-named "column 3" slots at
+   +0xc/+0x1c/+0x2c/+0x3c, always 0/0/0/1 for this kind of matrix). As
+   separate globals our compiler doesn't guarantee they're adjacent, so
+   that write would land wherever the linker happened to place each one --
+   same lone-scalar/stray-symbol-declared-instead-of-a-real-array pattern
+   fixed repeatedly this session, just spread across a dozen names instead
+   of one. Real backing array + aliases at each element's correct offset. */
+static undefined4 DAT_000c8ac0_mtx[16];
+#define DAT_000c8ac0 DAT_000c8ac0_mtx[0]
+#define DAT_000c8ac4 DAT_000c8ac0_mtx[1]
+#define DAT_000c8ac8 DAT_000c8ac0_mtx[2]
+#define DAT_000c8ad0 DAT_000c8ac0_mtx[4]
+#define DAT_000c8ad4 DAT_000c8ac0_mtx[5]
+#define DAT_000c8ad8 DAT_000c8ac0_mtx[6]
+#define DAT_000c8ae0 DAT_000c8ac0_mtx[8]
+#define DAT_000c8ae4 DAT_000c8ac0_mtx[9]
+#define DAT_000c8ae8 DAT_000c8ac0_mtx[10]
+#define DAT_000c8af0 DAT_000c8ac0_mtx[12]
+#define DAT_000c8af4 DAT_000c8ac0_mtx[13]
+#define DAT_000c8af8 DAT_000c8ac0_mtx[14]
 int DAT_000c8c98;
 undefined4 DAT_00084608;
-undefined DAT_000bc038;
-undefined DAT_000bc039;
-undefined DAT_000bc03a;
-undefined DAT_000bc03b;
+/* DAT_000bc038-family: ~40 separately-declared 1-byte globals that are
+   really one 0x88(136)-byte-stride per-tile record array (its sibling
+   DAT_000bc044 -- a few bytes further into the same original record --
+   was already fixed as a real backing array by a prior session; these
+   were missed). FUN_00020370's tile-visibility pass indexes them all with
+   the same `local_7c*0x88 [+ byte offset]` scheme (confirmed: the byte
+   offsets below, relative to DAT_000bc038, span exactly 0..0x87, one full
+   record). As lone scalars this walks off into whatever memory happens to
+   follow them, corrupting adjacent globals -- confirmed crashing
+   (EXC_BAD_ACCESS) a few calls further down this same file. Same
+   lone-scalar-used-as-array pattern fixed repeatedly this session; given
+   DAT_000bc044's real size the same generous record count. */
+static undefined DAT_000bc038_backing[32768];
+#define DAT_000bc038 DAT_000bc038_backing[0]
+#define DAT_000bc039 DAT_000bc038_backing[1]
+#define DAT_000bc03a DAT_000bc038_backing[2]
+#define DAT_000bc03b DAT_000bc038_backing[3]
 static undefined DAT_000bc044_backing[32768];
 #define DAT_000bc044 DAT_000bc044_backing[0]
-undefined DAT_000bc07c;
-undefined DAT_000bc07d;
-undefined DAT_000bc07e;
-undefined DAT_000bc07f;
-undefined DAT_000bc0a0;
-undefined DAT_000bc0a1;
-undefined DAT_000bc0a2;
-undefined DAT_000bc0a3;
-undefined DAT_000bc0a4;
-undefined DAT_000bc0a5;
-undefined DAT_000bc0a6;
-undefined DAT_000bc0a7;
-undefined DAT_000bc0a8;
-undefined DAT_000bc0a9;
-undefined DAT_000bc0aa;
-undefined DAT_000bc0ab;
-undefined DAT_000bc0ac;
-undefined DAT_000bc0ad;
-undefined DAT_000bc0ae;
-undefined DAT_000bc0af;
-undefined DAT_000bc0b0;
-undefined DAT_000bc0b1;
-undefined DAT_000bc0b2;
-undefined DAT_000bc0b3;
-undefined DAT_000bc0b4;
-undefined DAT_000bc0b5;
-undefined DAT_000bc0b6;
-undefined DAT_000bc0b7;
-undefined DAT_000bc0b8;
-undefined DAT_000bc0b9;
-undefined DAT_000bc0ba;
-undefined DAT_000bc0bb;
-undefined DAT_000bc0bc;
-undefined DAT_000bc0bd;
-undefined DAT_000bc0be;
-undefined DAT_000bc0bf;
-undefined4 DAT_000c4838;
+#define DAT_000bc07c DAT_000bc038_backing[0x44]
+#define DAT_000bc07d DAT_000bc038_backing[0x45]
+#define DAT_000bc07e DAT_000bc038_backing[0x46]
+#define DAT_000bc07f DAT_000bc038_backing[0x47]
+#define DAT_000bc0a0 DAT_000bc038_backing[0x68]
+#define DAT_000bc0a1 DAT_000bc038_backing[0x69]
+#define DAT_000bc0a2 DAT_000bc038_backing[0x6a]
+#define DAT_000bc0a3 DAT_000bc038_backing[0x6b]
+#define DAT_000bc0a4 DAT_000bc038_backing[0x6c]
+#define DAT_000bc0a5 DAT_000bc038_backing[0x6d]
+#define DAT_000bc0a6 DAT_000bc038_backing[0x6e]
+#define DAT_000bc0a7 DAT_000bc038_backing[0x6f]
+#define DAT_000bc0a8 DAT_000bc038_backing[0x70]
+#define DAT_000bc0a9 DAT_000bc038_backing[0x71]
+#define DAT_000bc0aa DAT_000bc038_backing[0x72]
+#define DAT_000bc0ab DAT_000bc038_backing[0x73]
+#define DAT_000bc0ac DAT_000bc038_backing[0x74]
+#define DAT_000bc0ad DAT_000bc038_backing[0x75]
+#define DAT_000bc0ae DAT_000bc038_backing[0x76]
+#define DAT_000bc0af DAT_000bc038_backing[0x77]
+#define DAT_000bc0b0 DAT_000bc038_backing[0x78]
+#define DAT_000bc0b1 DAT_000bc038_backing[0x79]
+#define DAT_000bc0b2 DAT_000bc038_backing[0x7a]
+#define DAT_000bc0b3 DAT_000bc038_backing[0x7b]
+#define DAT_000bc0b4 DAT_000bc038_backing[0x7c]
+#define DAT_000bc0b5 DAT_000bc038_backing[0x7d]
+#define DAT_000bc0b6 DAT_000bc038_backing[0x7e]
+#define DAT_000bc0b7 DAT_000bc038_backing[0x7f]
+#define DAT_000bc0b8 DAT_000bc038_backing[0x80]
+#define DAT_000bc0b9 DAT_000bc038_backing[0x81]
+#define DAT_000bc0ba DAT_000bc038_backing[0x82]
+#define DAT_000bc0bb DAT_000bc038_backing[0x83]
+#define DAT_000bc0bc DAT_000bc038_backing[0x84]
+#define DAT_000bc0bd DAT_000bc038_backing[0x85]
+#define DAT_000bc0be DAT_000bc038_backing[0x86]
+#define DAT_000bc0bf DAT_000bc038_backing[0x87]
+/* DAT_000c4838-family: same story, but holding real 8-byte pointers (one
+   per visible-tile record, written by FUN_0001f370 and read back by
+   FUN_00020370) rather than bytes -- was a lone `undefined4` (4 bytes),
+   which would silently truncate every pointer stored into it on this
+   64-bit port even before the out-of-bounds-array problem. Real backing
+   array of genuine pointer-sized slots, same generous record count as its
+   sibling arrays above. */
+static void *DAT_000c4838_backing[4096];
+#define DAT_000c4838 DAT_000c4838_backing[0]
 undefined4 DAT_0008462c;
 undefined4 DAT_00084634;
 undefined4 DAT_00084630;
@@ -809,7 +857,18 @@ static undefined1 DAT_00084a40_backing[32768];
 #define DAT_00084a40 DAT_00084a40_backing[0]
 static undefined2 DAT_00242010_backing[32768];
 #define DAT_00242010 DAT_00242010_backing[0]
-undefined2 DAT_00248418;
+/* Was a lone `undefined2` scalar, but FUN_00022b54 uses it as the base of a
+   20-level x 256-entry faded-palette table (`(ushort*)(&DAT_00248418 +
+   iVar21) + level*0x100`, iVar21 stepping by 2 per palette entry, 20 levels
+   stepped by 0x100 ushorts/level) -- a real ~10KB out-of-bounds write on
+   every single palette install. Root-caused via an lldb watchpoint on
+   DAT_0024cfc0 (a totally unrelated string-page counter ~26KB away) that
+   showed this exact write clobbering it into a huge garbage value, which
+   then produced a wild out-of-bounds array read/UAF-style crash much later
+   in FUN_0007863c's string lookup. Same lone-scalar-used-as-array pattern
+   fixed repeatedly this session (DAT_002028e8, DAT_0023aee0, etc). */
+static undefined2 DAT_00248418_backing[20 * 256];
+#define DAT_00248418 DAT_00248418_backing[0]
 short DAT_00084f10;
 int g_force_flush;
 short DAT_0023c63c;
@@ -1636,11 +1695,20 @@ undefined2 DAT_00201b10;
 short DAT_00201c7c;
 undefined2 DAT_00201c90;
 undefined2 DAT_00201c8c;
-undefined2 DAT_00204884;
 undefined1 DAT_0023c3dc;
 undefined1 DAT_0023c3d8;
-short DAT_00204880;
-short DAT_00204882;
+/* DAT_00204880/82/84 were three separate lone `short`/`undefined2`
+   scalars, but FUN_0005878c and its siblings (FUN_00058e08, FUN_0005a550,
+   FUN_0005ad18, FUN_00059488 -- reached by `DAT_00204874 = &DAT_00204880`
+   then dereferenced relative to that) treat this as one struct with real
+   fields up to offset 0x2a (42 bytes) -- confirmed crashing
+   (EXC_BAD_ACCESS) dereferencing that far out on a real run. Same
+   lone-scalars-instead-of-a-real-record pattern fixed repeatedly this
+   session; widened with a safety margin past the furthest offset seen. */
+static short DAT_00204880_backing[32];
+#define DAT_00204880 DAT_00204880_backing[0]
+#define DAT_00204882 DAT_00204880_backing[1]
+#define DAT_00204884 DAT_00204880_backing[2]
 short DAT_00201c70;
 undefined DAT_002035cf;
 char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in_your_face!";
@@ -2033,11 +2101,33 @@ static undefined1 DAT_00202950_backing[8192];
 #define DAT_00202950 DAT_00202950_backing[0]
 undefined4 DAT_00202990;
 undefined1 DAT_00085c39;
-undefined4 DAT_002028a0;
-undefined4 DAT_002028e8;
+/* Was a lone `undefined4` scalar, but indexed as `(&DAT_002028a0)[i]` for
+   i up to 7 (FUN_00042aa8's icon save/restore swap) -- classic
+   "undersized global used as an array" bug (same class as
+   DAT_0024bfa0/DAT_000891b0 etc.), and it happened to corrupt whatever
+   real global the linker/compiler placed a few slots further along --
+   confirmed via an lldb watchpoint that this exact write
+   (`(&DAT_002028e8)[iVar5] = uVar1` in FUN_00046414, a sibling of this
+   same bug one array over) was clobbering DAT_00202948 (a real, load-
+   bearing `char *`), corrupting an equipped-item lookup and crashing
+   FUN_000667cc on the very first in-game frame. Widened with a safety
+   margin. */
+static undefined4 DAT_002028a0_backing[64];
+#define DAT_002028a0 DAT_002028a0_backing[0]
+/* Same bug: indexed as `(&DAT_002028e8)[i]` for i up to 0x16 (22) in
+   FUN_00046414/FUN_00042aa8/etc. -- this is the specific array whose
+   overflow was landing on and corrupting DAT_00202948 (see above).
+   Widened with a safety margin. */
+static undefined4 DAT_002028e8_backing[64];
+#define DAT_002028e8 DAT_002028e8_backing[0]
 static ushort DAT_00202976_backing[8192];
 #define DAT_00202976 DAT_00202976_backing[0]
-undefined4 DAT_002028ec;
+/* DAT_002028ec's address (0x2028ec) is exactly one element (4 bytes)
+   past DAT_002028e8's (0x2028e8) -- not a separate global, an alias into
+   the same array at index 1 (same relationship as the DAT_000fb880
+   family elsewhere in this file). Declaring it separately, as an
+   earlier pass did, split it apart from the real array. */
+#define DAT_002028ec DAT_002028e8_backing[1]
 undefined4 DAT_002029a0;
 undefined4 DAT_0020299c;
 /* Ghidra left 0x202988 and 0x2028e0 as bare literal addresses (no symbol)
@@ -2488,7 +2578,14 @@ byte DAT_0023b4a0;
 static undefined1 DAT_00086a18_backing[65536];
 #define DAT_00086a18 DAT_00086a18_backing[0]
 undefined DAT_00086a20;
-int DAT_00086e6c;
+// Was a lone `int` scalar but used throughout the renderer as a pointer to a
+// ~0x2e-byte "current view" record (screen-space player x/y/z/facing, written
+// by FUN_00069470 from DAT_00204880/82/84 + DAT_00201c70, then read all over
+// the tile/sprite projection code). Never populated with a real address in
+// this decompile, so give it real backing storage like the other
+// lone-scalar-used-as-array globals found this session (DAT_000fb880-family).
+static undefined1 DAT_00086e6c_backing[64];
+#define DAT_00086e6c ((intptr_t)DAT_00086e6c_backing)
 char *DAT_0023aecc;
 undefined *DAT_0023b02c;
 short DAT_0025063c;
@@ -3636,6 +3733,7 @@ short param_3;
   if (pcVar4 != (char *)0x0) {
     Ordinal_1018(pcVar4);
   }
+  debug_framebuffer_dump("FUN_00011060");
   return;
 }
 
@@ -3819,6 +3917,7 @@ void screen_backup_restore()
       iVar1 = iVar1 + 2;
     } while (iVar3 != 0);
   } while (iVar1 < 0x1f400);
+  debug_framebuffer_dump("screen_backup_restore");
   FUN_00022f0c(1);
   return;
 }
@@ -3862,6 +3961,7 @@ uint param_4;
       iVar4 = iVar4 + 0x140;
     } while ((int)param_2 < (int)(param_4 & 0xffff));
   }
+  debug_framebuffer_dump("screen_backup_restore_rect");
   return;
 }
 
@@ -3907,6 +4007,7 @@ uint param_3;
       iVar2 = iVar2 + 2;
     } while (iVar3 != 0);
   }
+  debug_framebuffer_dump("FUN_000116dc");
   return;
 }
 
@@ -3939,6 +4040,7 @@ void FUN_00011b34()
       iVar5 = iVar5 + 0x140;
     } while (iVar4 < 200 - iVar3);
   }
+  debug_framebuffer_dump("FUN_00011b34");
   FUN_00022f0c(1);
   return;
 }
@@ -4061,6 +4163,7 @@ short param_7;
       } while (iVar5 != 0);
     }
   }
+  debug_framebuffer_dump("FUN_00011c10");
   return;
 }
 
@@ -4146,6 +4249,7 @@ int param_8;
       }
     }
   }
+  debug_framebuffer_dump("FUN_000120c8");
   return;
 }
 
@@ -4218,6 +4322,7 @@ ushort *param_3;
   } while (iVar9 != 0);
   FUN_00022f0c(1);
   DEBUG(TRACE, "[fade] FUN_000122d4 (fade-in) total elapsed=%ums", FUN_0002294c() - diag_t0);
+  debug_framebuffer_dump("FUN_000122d4_fade_in");
   Ordinal_1018(puVar3);
   return;
 }
@@ -4281,6 +4386,7 @@ undefined2 * param_3;
   }
   FUN_00022f0c(1);
   DEBUG(TRACE, "[fade] FUN_00012444 (fade-out) total elapsed=%ums", FUN_0002294c() - diag_t0);
+  debug_framebuffer_dump("FUN_00012444_fade_out");
   Ordinal_1018(puVar4);
   return;
 }
@@ -4409,6 +4515,7 @@ short param_7;
       } while (iVar4 < iVar11);
     }
   }
+  debug_framebuffer_dump("FUN_000125a8");
   return;
 }
 
@@ -4467,6 +4574,7 @@ short param_6;
         iVar7 = iVar10 + iVar7;
       } while (iVar9 < iVar4);
     }
+    debug_framebuffer_dump("FUN_00012850");
     FUN_00022f0c(1);
   }
   return;
@@ -6397,6 +6505,7 @@ int param_2;
            ((g_uw_framebuffer) +
            ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
   *puVar1 = *puVar1 >> 1 & 0x7bef;
+  debug_framebuffer_dump("FUN_00016940");
   return;
 }
 
@@ -7929,8 +8038,7 @@ undefined4 param_2;
     sVar1 = FUN_0001613c(auStack_20,DAT_001007c4);
     FUN_00015a58(auStack_20);
     if (sVar1 < 1) {
-      FUN_0007863c(0xe01);
-      FUN_0007f570();
+      FUN_0007f570(FUN_0007863c(0xe01)); // was two separate calls with FUN_0007f570()'s arg dropped; fresh Ghidra disassembly (0x44c90-0x44c94) shows no register load between the two `bl`s -- FUN_0007863c's return (char *) flows straight into FUN_0007f570 as its argument
       return 1;
     }
   }
@@ -10728,57 +10836,63 @@ void FUN_0001de0c()
   undefined4 uVar1;
   undefined4 uVar2;
   undefined4 uVar3;
-  undefined4 local_198;
-  undefined4 local_194;
-  undefined4 local_188;
-  undefined4 local_184;
-  undefined1 auStack_158 [20];
-  undefined4 local_144;
-  undefined4 local_140;
-  undefined4 local_134;
-  undefined4 local_130;
-  undefined4 local_118 [2];
-  undefined4 local_110;
-  undefined4 local_f8;
-  undefined4 local_f0;
-  undefined1 auStack_d8 [48];
-  undefined4 local_a8;
-  undefined4 local_a4;
-  undefined4 local_a0;
+  /* This function's four matrices (local_198.., auStack_158, local_118,
+     auStack_d8) were each declared as only as many bytes as this function
+     happens to name individual elements of, but FUN_0001422c (called on
+     each below) zeroes+identity-inits a real 0x40(64)-byte/16-element 4x4
+     float matrix at every one of these base pointers, and FUN_00013b8c
+     (the matrix multiply also called below) reads/writes the full 16
+     elements of whichever buffers it's given -- e.g. local_118 was only
+     `undefined4[2]` (8 bytes) despite being passed as a matrix-multiply
+     operand read up to element 10. That's a real stack-buffer overflow
+     (confirmed crashing with a __stack_chk_fail SIGABRT on a real run),
+     not just a decompiler cosmetic gap. Ghidra split each matrix into
+     these oddly-offset scalar names only because this function happens to
+     assign a handful of specific elements by name (a 2x2 rotation block
+     plus, for one matrix, a translation column) -- the untouched elements
+     still need to keep FUN_0001422c's identity-matrix values, which
+     requires them to actually share one real contiguous 64-byte buffer.
+     Widened all four to real 16-element arrays and switched every named
+     element write to an indexed one at its correct offset (verified
+     against each matrix's original Ghidra byte offset from its base). */
+  undefined4 local_198_mtx [16];
+  undefined1 auStack_158 [64];
+  undefined4 local_118 [16];
+  undefined1 auStack_d8 [64];
   undefined1 auStack_98 [64];
   undefined1 auStack_58 [64];
-  
+
   FUN_0001422c(auStack_d8);
   FUN_0001422c(auStack_158);
   FUN_0001422c(local_118);
-  FUN_0001422c(&local_198);
-  local_a8 = Ordinal_2023(DAT_000db438);
-  local_a4 = Ordinal_2023(DAT_000db43c);
-  local_a0 = Ordinal_2023(DAT_000db440);
+  FUN_0001422c(local_198_mtx);
+  ((undefined4 *)auStack_d8)[12] = Ordinal_2023(DAT_000db438);
+  ((undefined4 *)auStack_d8)[13] = Ordinal_2023(DAT_000db43c);
+  ((undefined4 *)auStack_d8)[14] = Ordinal_2023(DAT_000db440);
   uVar1 = (&DAT_000d9ed8)[DAT_000db448];
   uVar3 = (&DAT_000d9930)[DAT_000db448];
-  local_144 = uVar1;
-  local_140 = Ordinal_2023(uVar3);
+  ((undefined4 *)auStack_158)[5] = uVar1;
+  ((undefined4 *)auStack_158)[6] = Ordinal_2023(uVar3);
   Ordinal_2023(uVar3);
-  local_134 = Ordinal_2023();
+  ((undefined4 *)auStack_158)[9] = Ordinal_2023();
   uVar2 = (&DAT_000d9ed8)[DAT_000db44c];
   uVar3 = (&DAT_000d9930)[DAT_000db44c];
-  local_130 = uVar1;
+  ((undefined4 *)auStack_158)[10] = uVar1;
   local_118[0] = uVar2;
   Ordinal_2023(uVar3);
-  local_110 = Ordinal_2023();
-  local_f8 = Ordinal_2023(uVar3);
+  local_118[2] = Ordinal_2023();
+  local_118[8] = Ordinal_2023(uVar3);
   uVar1 = (&DAT_000d9ed8)[DAT_000db450];
   uVar3 = (&DAT_000d9930)[DAT_000db450];
-  local_198 = uVar1;
-  local_f0 = uVar2;
-  local_194 = Ordinal_2023(uVar3);
+  local_198_mtx[0] = uVar1;
+  local_118[10] = uVar2;
+  local_198_mtx[1] = Ordinal_2023(uVar3);
   Ordinal_2023(uVar3);
-  local_188 = Ordinal_2023();
-  local_184 = uVar1;
+  local_198_mtx[4] = Ordinal_2023();
+  local_198_mtx[5] = uVar1;
   FUN_00013b8c(auStack_d8,local_118,auStack_98);
   FUN_00013b8c(auStack_98,auStack_158,auStack_58);
-  FUN_00013b8c(auStack_58,&local_198,&DAT_000c8ac0);
+  FUN_00013b8c(auStack_58,local_198_mtx,&DAT_000c8ac0);
   return;
 }
 
@@ -11300,8 +11414,16 @@ int * param_2;
 
 
 
+/* param_1 (and every local below that's assigned an address derived from
+   it -- iVar5/6/7/12/14, local_50) was `int`, truncating the real 64-bit
+   &DAT_000a85d0 pointer this is always called with. Confirmed crashing
+   (EXC_BAD_ACCESS, param_1 read back as a tiny ~1MB-range garbage value)
+   on a real run. iVar4/13/18/19 and the local_7c/78/74/64/4c/48 group stay
+   `int` -- they're genuinely counts/loop indices/array indices, never
+   dereferenced as addresses themselves (confirmed by reading every use).
+   Same pointer-truncation pattern fixed repeatedly this session. */
 void FUN_0001f370(param_1,param_2)
-int param_1;
+intptr_t param_1;
 int param_2;
 
 {
@@ -11309,16 +11431,16 @@ int param_2;
   undefined1 uVar2;
   undefined1 uVar3;
   int iVar4;
-  int iVar5;
-  int iVar6;
-  int iVar7;
+  intptr_t iVar5;
+  intptr_t iVar6;
+  intptr_t iVar7;
   undefined4 *puVar8;
   undefined4 uVar9;
   undefined4 uVar10;
   undefined4 uVar11;
-  int iVar12;
+  intptr_t iVar12;
   int iVar13;
-  int iVar14;
+  intptr_t iVar14;
   undefined *puVar15;
   undefined *puVar16;
   undefined *puVar17;
@@ -11329,10 +11451,10 @@ int param_2;
   int local_78;
   int local_74;
   int local_64;
-  int local_50;
+  intptr_t local_50;
   int local_4c;
   int local_48;
-  
+
   if (param_2 == 0) {
     DAT_000c8c98 = 0;
   }
@@ -11624,7 +11746,7 @@ void FUN_00020370()
   int iVar15;
   int iVar16;
   int iVar17;
-  undefined4 *local_98;
+  void **local_98; // was `undefined4 *`, misaligning the DAT_000c4838 pointer-array walk below now that its elements are real 8-byte pointers
   int local_94;
   undefined4 local_70;
   undefined4 local_6c;
@@ -11717,6 +11839,7 @@ void FUN_00020370()
       local_98 = local_98 + 1;
     } while (local_94 < iVar15);
   }
+  debug_framebuffer_dump("FUN_00020370");
   return;
 }
 
@@ -23647,7 +23770,13 @@ uint param_1;
 {
   int iVar1;
   char *iVar2;
-  
+
+  /* Same never-initialized-in-this-decompile DAT_00110fc8 issue documented
+     on its sibling function above (see that comment) -- guard this one the
+     same way instead of dereferencing NULL. */
+  if (DAT_00110fc8 == 0) {
+    return;
+  }
   iVar2 = DAT_00110fc8;
   param_1 = param_1 & 0xff;
   if (param_1 == 0xa0) {
@@ -29631,13 +29760,21 @@ int param_1;
 
 
 
+/* NOT YET FIXED (not on the crash path reached so far, but the same bug
+   class as everywhere else in this file): the body below reads/writes
+   through the literal `iVar1*4 + 0x202870`/`iVar10*4 + 0x202870` --
+   a hardcoded original-binary address, same "FUN_0006bde0 -0x87020"
+   class fixed elsewhere. 0x202870 is 8 bytes before DAT_00202878 (itself
+   only declared as a single `undefined` byte here, so also likely
+   undersized) -- revisit both together if/when this function's icon
+   save/restore path is actually exercised and crashes. */
 void FUN_00042aa8()
 
 {
   undefined1 uVar1;
   undefined3 uVar2;
   int iVar3;
-  
+
   if (DAT_00202994 != 0) {
     uVar2 = *(undefined3 *)(DAT_00202994 + 4);
     uVar1 = *(undefined1 *)(DAT_00202994 + 7);
@@ -42183,9 +42320,17 @@ uint FUN_00058738()
 
 
 
+/* param_1/param_2 were `int`/`undefined4`, truncating the real pointers
+   this is always called with (&DAT_00204880, &DAT_002048b0) -- confirmed
+   crashing (EXC_BAD_ACCESS, param_1 read back truncated to ~12MB) on a
+   real run even after widening the callee-side globals, because the
+   truncation was happening right here at the call boundary. DAT_00086978/
+   DAT_00204874 (assigned from these) are already real pointer-typed
+   globals, confirming the intent. Same pointer-truncation pattern fixed
+   repeatedly this session. */
 void FUN_0005878c(param_1,param_2)
-int param_1;
-undefined4 param_2;
+char *param_1;
+char *param_2;
 
 {
   int iVar1;
@@ -43886,7 +44031,7 @@ undefined4 FUN_0005bc38()
   FUN_00069470();
   DAT_00101938 = (short)(char)((ushort)*(undefined2 *)(DAT_00086e6c + 10) >> 8);
   DAT_0010193c = (short)(char)((ushort)*(undefined2 *)(DAT_00086e6c + 0x12) >> 8);
-  DAT_0023aecc = FUN_00068100();
+  DAT_0023aecc = FUN_00068100(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
   bVar3 = (byte)((short)(*(ushort *)(DAT_00086e6c + 0x2c) >> 0xd) + 1 >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
   Ordinal_2005(2);
@@ -44569,7 +44714,18 @@ void FUN_0005d290()
   bool bVar5;
   
   FUN_0005bf40();
-  FUN_0005d13c();
+  // Hack - Disabled: FUN_0005d13c() walks a 16-entry creature-reaction/
+  // sound-cue queue (DAT_0023aee0, stride 0x15) whose per-entry "back
+  // pointer" field is a 32-bit pointer manually byte-packed across offsets
+  // 9/0xa-0xb/0xc (see FUN_0005bf40's DAT_0023aee9/aeea/aeec writes from
+  // DAT_0023aecc) then reassembled via an 8-byte `*(byte **)(entry+9)`
+  // read in FUN_0005cacc -- on this 64-bit port that reassembly can only
+  // ever recover garbage (the upper 32 bits were never stored, and the
+  // 8-byte read also swallows 4 bytes of the next field). This is
+  // creature/object reaction bookkeeping, not needed to get into a
+  // minimal, monster-free dungeon; skip it rather than widen the packed
+  // struct.
+  // FUN_0005d13c();
   FUN_00058438(0);
   uVar1 = DAT_00086b30;
   DAT_0023b804 = 0;
@@ -49303,13 +49459,15 @@ void FUN_00067f1c()
 
 
 
-int FUN_00068100(param_1,param_2)
+// Was `int`, truncating the real DAT_002029cc pointer arithmetic result below
+// (same pointer-truncation pattern fixed elsewhere this session).
+void *FUN_00068100(param_1,param_2)
 short param_1;
 short param_2;
 
 {
-  int iVar1;
-  
+  char *iVar1;
+
   if (((int)param_2 & 0xffffffc0U) + ((int)param_1 & 0xffffffc0U) == 0) {
     iVar1 = DAT_002029cc + ((int)param_1 + param_2 * 0x40) * 4;
   }
@@ -50090,13 +50248,13 @@ void FUN_00069938()
   char cVar1;
   ushort uVar2;
   ushort uVar3;
-  int iVar4;
+  intptr_t iVar4; // holds DAT_00086e6c (a real pointer); was `int`, truncating it
   ushort uVar5;
   int iVar6;
   ushort uVar7;
   short sVar8;
   ushort local_20;
-  
+
   cVar1 = DAT_0023b4a0;
   iVar4 = DAT_00086e6c;
   sVar8 = 0;
@@ -58030,6 +58188,7 @@ short * param_1;
       iVar6 = iVar6 + (0x140 - iVar1);
     } while (iVar5 < iVar3);
   }
+  debug_framebuffer_dump("FUN_00076e98");
   return 0;
 }
 
@@ -59135,8 +59294,7 @@ void FUN_00078c80(param_1)
 uint param_1;
 
 {
-  FUN_0007863c(param_1 | 0x200);
-  FUN_0007f570();
+  FUN_0007f570(FUN_0007863c(param_1 | 0x200)); // was two separate calls with FUN_0007f570()'s arg dropped; see uw.c ~7961's sibling call and its comment
   return;
 }
 
@@ -62409,6 +62567,7 @@ short param_3;
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
        (&g_palette_rgb565)[param_3];
   FUN_00011000(iVar1,iVar1,(int)param_1);
+  debug_framebuffer_dump("FUN_0007e9c4");
   return;
 }
 
@@ -63093,7 +63252,22 @@ undefined4 param_2;
   char *iVar5;
   undefined1 uVar6;
   int iVar7;
-  
+  /* Recursion-depth safety valve for the FUN_0007f7cc<->FUN_0007fb2c word-
+     wrap pair: FUN_0007fb2c's search-for-a-space-to-split-on has no
+     fallback once the remainder is down to a single character/space that
+     still doesn't fit the remaining line width (its own retry at
+     LAB_0007fc64 hands the SAME unshrinkable string straight back here),
+     which is a genuine stack-overflow-via-infinite-recursion for that
+     input, not a symptom of any pointer/memory bug already fixed this
+     session (confirmed: reached with param_1==" " on a real run after
+     every other known corruption source was already fixed). Rather than
+     reverse-engineer the exact original cursor-reset semantics for that
+     edge case, force this call to take the normal "print it" path once
+     recursion goes needlessly deep -- printing slightly past the margin
+     beats crashing the whole game over HUD message text. */
+  static int s_wrap_recursion_depth = 0;
+  s_wrap_recursion_depth++;
+
   iVar5 = 0;
   if ((DAT_00087990 != 0) && (*param_1 == '\\')) {
     cVar2 = param_1[1];
@@ -63173,7 +63347,8 @@ LAB_0007f9ac:
 LAB_0007fa30:
   iVar7 = FUN_000112a0(param_1);
   iVar5 = DAT_00250704;
-  if ((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
+  if (((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
+      || (32 < s_wrap_recursion_depth))
   {
     uVar4 = Ordinal_1068(param_1);
     if (param_1[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] == '\n') {
@@ -63193,6 +63368,7 @@ LAB_0007fa30:
   else {
     FUN_0007fb2c(param_1,param_2);
   }
+  s_wrap_recursion_depth--;
   return;
 }
 
@@ -63209,7 +63385,22 @@ undefined4 param_2;
   char *pcVar4;
   int iVar5;
   char cVar6;
-  
+
+  /* Guard against infinite FUN_0007f7cc<->FUN_0007fb2c recursion on an
+     empty string: FUN_0007f7cc sends param_1 here whenever its pixel width
+     doesn't fit the remaining line width, but an empty string has zero
+     width and can never be split any narrower -- every one of this
+     function's exits below hands param_1 straight back to FUN_0007f7cc
+     unchanged, which (if the line is already full) sends it right back
+     here forever. There's nothing to wrap for an empty string, so just
+     stop. Confirmed via a real crash: reached with param_1="" once (this
+     session) the actual upstream bug (a lone-scalar DAT_00248418 palette
+     table smashing ~10KB of adjacent memory on every palette install,
+     since fixed) had already been eliminated, so this is a genuine
+     separate edge case, not just a symptom of that corruption. */
+  if (Ordinal_1068(param_1) == 0) {
+    return;
+  }
   pcVar3 = (char *)Ordinal_1407(param_1,0x20);
   if (pcVar3 != (char *)0x0) {
     cVar6 = ' ';

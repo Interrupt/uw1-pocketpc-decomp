@@ -317,6 +317,20 @@ long Ordinal_464()
 long Ordinal_496(unsigned int ms)
 {
     DEBUG(TRACE, "[sleep] Ordinal_496 requested ms=%u", ms);
+    /* UW_FAST_SLEEP: debug-only switch to skip the real delay below (splash
+     * dwells, app_main_loop's startup pause, etc. otherwise add up to real
+     * wall-clock seconds every run) so automated/demo-driven test runs reach
+     * gameplay quickly. Still pumps events once so the window doesn't look
+     * dead. Checked once and cached -- this is a debug hook, not something
+     * that should read the environment on every call. */
+    static int fast = -1;
+    if (fast < 0) {
+        fast = getenv("UW_FAST_SLEEP") != NULL;
+    }
+    if (fast) {
+        SDL_PumpEvents();
+        return 0;
+    }
     /* HACK: a single long SDL_Delay(ms) blocks this thread for the whole
      * duration without ever pumping SDL's event queue, which on macOS
      * (and likely other platforms) stops the window from actually

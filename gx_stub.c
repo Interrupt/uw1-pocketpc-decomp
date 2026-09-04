@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #define GX_W 320
 #define GX_H 240
@@ -538,6 +539,51 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
 
     if (SDL_SaveBMP(surf, path) != 0) {
         fprintf(stderr, "[gr-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    }
+    SDL_FreeSurface(surf);
+}
+
+void debug_framebuffer_dump(const char *tag) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DRAW");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+
+    /* One directory per run, named for when the run started; every dump
+       this process makes lands under it. Created lazily so a run that
+       never draws doesn't leave an empty folder behind. */
+    static char run_dir[300];
+    static int run_dir_ready = 0;
+    if (!run_dir_ready) {
+        time_t now = time(NULL);
+        struct tm tm_now;
+        localtime_r(&now, &tm_now);
+        char ts[32];
+        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
+        snprintf(run_dir, sizeof(run_dir), "debug/drawdumps/%s", ts);
+        debug_mkdir_p(run_dir);
+        run_dir_ready = 1;
+    }
+
+    static unsigned int counter = 0;
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", run_dir, counter++, tag ? tag : "draw");
+
+    /* g_uw_framebuffer is the game's internal 320x240 RGB565 software
+       framebuffer that every graphics.c draw primitive writes into (see
+       its declaration comment in uw.c) -- already landscape-oriented, no
+       rotation needed (unlike g_framebuffer/g_display_buf below, which are
+       the portrait "hardware" buffer this gets flushed to later). */
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, GX_W, GX_H, 16, SDL_PIXELFORMAT_RGB565);
+    if (!surf) {
+        fprintf(stderr, "[draw-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+    memcpy(surf->pixels, g_uw_framebuffer, (size_t)GX_W * GX_H * 2);
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[draw-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
     }
     SDL_FreeSurface(surf);
 }

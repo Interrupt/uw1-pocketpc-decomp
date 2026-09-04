@@ -279,6 +279,7 @@ undefined4 param_1;
         } while (iVar6 < 0x140);
         iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
       } while (iVar10 < 200);
+      debug_framebuffer_dump("main_menu_loop");
       FUN_000570b4();
       if ((DAT_0023bf70 == 0) ||
          /* Was a literal 0 here (an earlier fix pass believed this

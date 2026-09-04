@@ -171,6 +171,7 @@ short param_4;
       }
     }
   }
+  debug_framebuffer_dump("rect_fill");
   return;
 }
 
@@ -286,5 +287,6 @@ short param_7;
       local_34 = iVar11 + local_34;
     } while (iVar5 < iVar2 - sVar12);
   }
+  debug_framebuffer_dump("blit");
   return;
 }
