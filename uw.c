@@ -29708,12 +29708,23 @@ undefined1 * param_1;
 
 {
   undefined4 uVar1;
-  int iVar2;
+  /* Was `int`, truncating the real DAT_00202890 pointer arithmetic result
+     below -- same pointer-truncation pattern already fixed in this
+     function's own sibling FUN_00042758 (see its comment): DAT_00202890
+     is a genuine malloc'd 64-bit pointer (registered mouse-click-region
+     records, FUN_0004202c's array), and this variable held one record's
+     address, not a plain offset. Confirmed crashing (EXC_BAD_ACCESS) the
+     first time this function's match-loop ever actually ran on this
+     recompile -- FUN_0003f420 (the 3D-viewport's own click-and-hold-to-
+     walk region, registered by FUN_0006764c) is only reachable through
+     here, and nothing in this whole project's testing had ever clicked
+     inside the viewport before. */
+  char *pcVar2;
   int iVar3;
   int iVar4;
   short local_28;
   short local_26;
-  
+
   uVar1 = FUN_00057a78();
   if (-1 < (short)uVar1) {
     if ((short)uVar1 < 4) {
@@ -29727,12 +29738,12 @@ undefined1 * param_1;
       iVar3 = iVar4 * 0x10000 >> 0x10;
       if (-1 < iVar3) {
         do {
-          iVar2 = iVar3 * 0x12 + DAT_00202890;
-          if ((((*(short *)(iVar2 + 6) <= local_28) && (local_26 <= *(short *)(iVar2 + 8))) &&
-              (local_28 <= *(short *)(iVar2 + 2))) &&
-             (((*(short *)(iVar2 + 4) <= local_26 &&
-               ((*(ushort *)(iVar2 + 0xc) & *(ushort *)(param_1 + 8)) != 0)) &&
-              (*(int *)(iVar2 + 0xe) != 0)))) {
+          pcVar2 = DAT_00202890 + iVar3 * 0x12;
+          if ((((*(short *)(pcVar2 + 6) <= local_28) && (local_26 <= *(short *)(pcVar2 + 8))) &&
+              (local_28 <= *(short *)(pcVar2 + 2))) &&
+             (((*(short *)(pcVar2 + 4) <= local_26 &&
+               ((*(ushort *)(pcVar2 + 0xc) & *(ushort *)(param_1 + 8)) != 0)) &&
+              (*(int *)(pcVar2 + 0xe) != 0)))) {
             iVar3 = (short)iVar4 * 0x12;
             iVar4 = (int)local_28 - (int)*(short *)(iVar3 + DAT_00202890 + 6);
             *param_1 = (char)iVar4;
