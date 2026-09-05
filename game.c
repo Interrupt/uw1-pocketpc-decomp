@@ -464,7 +464,7 @@ undefined4 param_1;
   } while (!bVar11);
   FUN_00057cac(3);
   FUN_000570b4();
-  FUN_0003bc40(1);
+  set_game_mode(1);
   FUN_00049924(0x7ffe);
   DAT_000868d8 = 0;
   return;

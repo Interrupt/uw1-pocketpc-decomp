@@ -26,12 +26,13 @@
  *                    the ring-walk that marks automap tiles revealed --
  *                    TELEPORT and ordinary movement don't trigger this
  *                    on their own.
- *   OPENMAP       -- calls enter_automap_screen (the automap-screen "enter"
- *                    routine) directly. No known caller anywhere in the
- *                    compiled game (whole-binary reference search found
- *                    zero) -- for testing the automap's own (simpler,
- *                    blit-based) draw path independent of the still-broken
- *                    3D dungeon view.
+ *   OPENMAP       -- calls change_game_mode(2), the real switch to the
+ *                    automap game mode (its entry handler,
+ *                    enter_automap_screen, then fires on the next idle
+ *                    tick). Follow it with a WAIT so that tick happens
+ *                    before a SCREENSHOT. Whatever HUD button/key
+ *                    reaches this in the real Pocket PC UI still hasn't
+ *                    been found.
  *   TYPE <text>   -- sends each character of <text> as a real WM_CHAR
  *                    (0x102), one per delay tick, simulating name entry
  *   CLICK <portrait_x> <portrait_y>  -- injects a synthetic mouse click
@@ -261,16 +262,18 @@ void demomode_pump(void) {
     }
 
     if (strcasecmp(p, "OPENMAP") == 0) {
-        /* Calls enter_automap_screen (the automap-screen "enter" routine) directly.
-         * A whole-binary Ghidra reference search found ZERO callers of this
-         * function anywhere in the compiled game -- whatever HUD button or
-         * key is supposed to reach it in the real Pocket PC UI has not been
-         * found yet. Added so the automap's own drawing path (a much
-         * simpler blit-based renderer than the still-broken 3D dungeon
-         * view) can be tested directly while that real trigger stays
-         * unidentified. */
-        fprintf(stderr, "[demo] opening automap screen\n");
-        enter_automap_screen();
+        /* set_game_mode(2) is the real mode switch: DAT_00201b60 = 2 maps
+         * to game-mode index DAT_00201b64 = 1 (the automap), whose entry
+         * handler in DAT_00085668's mode-1 row is enter_automap_screen.
+         * Going through the mode switch (rather than calling
+         * enter_automap_screen directly, as an earlier version did) keeps
+         * the game in map mode so the HUD's per-frame redraw doesn't
+         * immediately paint over it. Whatever HUD button/key reaches this
+         * in the real Pocket PC UI still hasn't been found -- a
+         * whole-binary Ghidra reference search on the automap entry point
+         * came up empty. */
+        fprintf(stderr, "[demo] switching to automap mode (change_game_mode(2))\n");
+        change_game_mode(2);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

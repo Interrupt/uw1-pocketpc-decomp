@@ -158,7 +158,7 @@ undefined DAT_000842f0;
    repeatedly this session; sized for a full byte index to be safe. */
 static undefined1 DAT_000878d0_backing[256];
 #define DAT_000878d0 DAT_000878d0_backing[0]
-/* Was a lone `undefined1` scalar, but FUN_00016948 indexes it as a real
+/* Was a lone `undefined1` scalar, but draw_automap_cell indexes it as a real
    5x3x3 (45-entry) shape-pattern table:
    `(&DAT_000842c0)[((shape-1)*3+row)*3+col]`, shape=1-5, comparing each
    entry against 1 or 2 to decide whether to darken a corner pixel when
@@ -1813,7 +1813,7 @@ undefined2 DAT_00201b64;
 undefined2 DAT_00202080;
 short DAT_00201c94;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
-   FUN_00049818/FUN_0003bd50/FUN_0003c038/FUN_0003bcb8 (DAT_00201b64 = the
+   FUN_00049818/FUN_0003bd50/FUN_0003c038/change_game_mode (DAT_00201b64 = the
    mode: 0 is the normal in-game/dungeon view, seen so far; 1 and 2 are
    some other screen). It's link-time-initialized data in the original
    binary -- nothing in this decompile ever writes to it at runtime -- so
@@ -2832,7 +2832,7 @@ byte *DAT_0023b4ec;
 
    That raw table can't be right as-is, though: the reveal byte it
    stores is consumed by draw_automap_screen's per-cell renderer
-   (FUN_000165d0 -> FUN_00016948) as a packed value --
+   (draw_automap_tiles -> draw_automap_cell) as a packed value --
      bits 0-3 (`& 0xf`): tile shape class, must be 1-9 or the whole
        cell is skipped (`cmp r6,#0xa; bge <skip>`, confirmed real
        machine code, not a decompiler artifact);
@@ -6494,7 +6494,7 @@ void enter_automap_screen()
 
 {
   if (DAT_000bbefc == 0) {
-    FUN_0004213c(0x1b,1,2,FUN_0003bcb8);
+    FUN_0004213c(0x1b,1,2,change_game_mode);
     DAT_000bbefc = 1;
   }
   FUN_000735b0(0xd);
@@ -6622,7 +6622,8 @@ void FUN_000165bc()
 
 
 
-void FUN_000165d0()
+// was FUN_000165d0
+void draw_automap_tiles()
 
 {
   char cVar1;
@@ -6641,22 +6642,22 @@ void FUN_000165d0()
       uVar4 = (byte)(&DAT_000b99d0)[local_3c * 0x40 + iVar6] & 0xf;
       uVar5 = (uint)(short)uVar4;
       if ((uVar5 != 0) && (uVar5 < 10)) {
-        FUN_00016948(uVar4,iVar6,local_3c);
+        draw_automap_cell(uVar4,iVar6,local_3c);
         Ordinal_1047(local_34,0,0x10);
         if (((&DAT_000878d0)[uVar5] & 1) == 0) {
           iVar2 = 0;
           do {
-            iVar3 = FUN_000167d4(iVar2,iVar6,local_3c);
+            iVar3 = draw_automap_cell_edge(iVar2,iVar6,local_3c);
             local_34[iVar2] = iVar3;
             iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
           } while (iVar2 < 4);
         }
         else {
           cVar1 = (&DAT_000842f0)[(int)((uVar4 - 2) * 0x10000) >> 0x10];
-          iVar2 = FUN_000167d4((int)cVar1,iVar6,local_3c);
+          iVar2 = draw_automap_cell_edge((int)cVar1,iVar6,local_3c);
           local_34[(short)cVar1] = iVar2;
           uVar5 = (int)cVar1 + 1U & 3;
-          iVar2 = FUN_000167d4(uVar5,iVar6,local_3c);
+          iVar2 = draw_automap_cell_edge(uVar5,iVar6,local_3c);
           local_34[(short)uVar5] = iVar2;
         }
         uVar5 = 0;
@@ -6679,7 +6680,8 @@ void FUN_000165d0()
 
 
 
-undefined4 FUN_000167d4(param_1,param_2,param_3)
+// was FUN_000167d4
+undefined4 draw_automap_cell_edge(param_1,param_2,param_3)
 short param_1;
 int param_2;
 int param_3;
@@ -6771,7 +6773,8 @@ int param_2;
 
 
 
-void FUN_00016948(param_1,param_2,param_3)
+// was FUN_00016948
+void draw_automap_cell(param_1,param_2,param_3)
 int param_1;
 int param_2;
 int param_3;
@@ -6845,7 +6848,7 @@ LAB_00016b00:
       uVar13 = uVar13 + 1 & 0xffff;
     } while (uVar13 < 3);
     if (bVar2 == 4) {
-      FUN_00016c70((int)(short)param_2,(int)(short)param_3,iVar10,iVar11);
+      draw_automap_door_edge((int)(short)param_2,(int)(short)param_3,iVar10,iVar11);
     }
     else if (bVar2 == 8) {
       uVar9 = 0;
@@ -6883,7 +6886,8 @@ LAB_00016b00:
 
 
 
-void FUN_00016c70(param_1,param_2,param_3,param_4)
+// was FUN_00016c70
+void draw_automap_door_edge(param_1,param_2,param_3,param_4)
 short param_1;
 short param_2;
 int param_3;
@@ -7041,7 +7045,7 @@ LAB_000170bc:
   }
   else {
     sVar2 = 0xff;
-    FUN_0003bcb8(1);
+    change_game_mode(1);
   }
   if (sVar2 == 0xfb) {
     if (0x62 < DAT_000ba9d0) goto LAB_0001764c;
@@ -7370,7 +7374,7 @@ undefined4 param_1;
     FUN_000116a4(0,0,0x13f,199);
     FUN_00040efc(1);
     bitmap_blit_to_framebuffer(0,1,uVar3,200,0x140,0,0,1);
-    FUN_000165d0();
+    draw_automap_tiles();
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
       DAT_00088960 = 1;
@@ -16128,7 +16132,7 @@ LAB_000285e4:
     Ordinal_1063(acStack_114,s__DATA_cnv_ark_00084fc8);
     sVar2 = FUN_0001629c(acStack_114,uVar6);
     if (0 < sVar2) {
-      FUN_0003bcb8(4);
+      change_game_mode(4);
       return;
     }
   }
@@ -16244,7 +16248,7 @@ void FUN_000286cc()
       FUN_0003fa1c(5);
       DAT_002020c0 = 0;
       FUN_00028c00(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
-      FUN_0003bcb8(1);
+      change_game_mode(1);
       return;
     }
   }
@@ -23528,7 +23532,7 @@ uint param_1;
   }
   if (uVar1 < 0x100) {
     if (*(short *)(DAT_00085a6c + 8) == 1) {
-      FUN_0003bcb8(1);
+      change_game_mode(1);
       goto LAB_00037d3c;
     }
     if (*(short *)(DAT_00085a6c + 8) == 0) goto LAB_00037d3c;
@@ -25841,7 +25845,8 @@ void FUN_0003bc1c()
 
 
 
-void FUN_0003bc40(param_1)
+// was FUN_0003bc40
+void set_game_mode(param_1)
 undefined4 param_1;
 
 {
@@ -25866,7 +25871,8 @@ LAB_0003bcb0:
 
 
 
-void FUN_0003bcb8(param_1)
+// was FUN_0003bcb8
+void change_game_mode(param_1)
 int param_1;
 
 {
@@ -25889,7 +25895,7 @@ int param_1;
   else {
     DAT_00201c94 = (short)DAT_00201b60;
   }
-  FUN_0003bc40(param_1);
+  set_game_mode(param_1);
   /* 0x80, see DAT_00085668's comment. */
   if (*(code **)(&DAT_00085668 + DAT_00201b64 * 0x80) != (code *)0x0) {
     (**(code **)(&DAT_00085668 + DAT_00201b64 * 0x80))();
@@ -61522,7 +61528,7 @@ int param_2;
     uVar2 = *param_1;
     if ((uVar2 & 0x1ff) == 0x13b) {
       if (*(short *)(DAT_00085a6c + 8) == 1) {
-        FUN_0003bcb8(2);
+        change_game_mode(2);
       }
     }
     else if (((uVar2 & 0x1000) == 0) || ((uVar2 & 0x1c0) == 0x140)) {
