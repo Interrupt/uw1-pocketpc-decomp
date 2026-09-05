@@ -2092,7 +2092,7 @@ static undefined1 DAT_0024d090_backing[65536];
      ae34 = ae38 + DAT_0023adb0*0x1000   (10 x 0x400 shade tables at +0x30..)
      ae3c = ae34 + DAT_0023aeb8*0x400
      ae30 = ae3c + n*0x100               (10 x 0x100 colour-light tables at +0x6a..)
-   FUN_00040c5c returns *one* of these + index*stride; its callers cast
+   get_texture_page returns *one* of these + index*stride; its callers cast
    the result to (byte*) and dereference it -> wild pointer + crash the
    moment the (now-live) 3D geometry path calls it. */
 char *DAT_0023ae38;
@@ -2769,7 +2769,7 @@ static undefined1 DAT_000869e4_backing[32768];
 #define DAT_000869e4 DAT_000869e4_backing[0]
 /* Was a lone `undefined` scalar. It is the base of the texture / shade /
    colour-light table arena: FUN_00042174 sets DAT_0023ae38 = &DAT_002049e0
-   and loads several .tr/.dat files into it, then FUN_00040c5c hands out
+   and loads several .tr/.dat files into it, then get_texture_page hands out
    `&DAT_002049e0 + page*stride` pointers. Needs real backing storage
    (1 MB is comfortably more than UW1's texture set). */
 static undefined1 DAT_002049e0_backing[0x100000];
@@ -15176,7 +15176,7 @@ short * param_1;
       puVar6 = (ushort *)FUN_000535fc();
       if ((((*puVar6 & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
          (((DAT_00100610 != 1 ||
-           ((iVar5 = FUN_00053728(puVar6), iVar5 == 0 ||
+           ((iVar5 = object_ptr_in_arena(puVar6), iVar5 == 0 ||
             ((*(byte *)((char *)puVar6 + 0x19) & 0x40) == 0)))) ||
           ((iVar10 == iVar9 + -1 && (iVar11 == 100000)))))) {
         uVar7 = (int)*(short *)(&DAT_00202c3c + iVar10 * 6) + (((int)*param_1 << 0x10) >> 0x13) &
@@ -15678,7 +15678,7 @@ undefined4 FUN_000270d0()
   else {
     if ((DAT_00100610 != 1) && (iVar1 = (int)DAT_00100620, DAT_00100620 != 1)) {
       FUN_000535fc();
-      iVar3 = FUN_00053728();
+      iVar3 = object_ptr_in_arena();
       iVar1 = 0;
       if (iVar3 != 0) {
         iVar3 = FUN_000535fc((int)DAT_00100620);
@@ -16049,7 +16049,7 @@ undefined1 param_7;
     FUN_00072f30(3,0,0);
   }
   else {
-    iVar3 = FUN_00053728(param_3);
+    iVar3 = object_ptr_in_arena(param_3);
     if (iVar3 != 0) {
       FUN_00072fc8(4,param_3,0);
     }
@@ -24077,7 +24077,7 @@ undefined2 param_5;
   if ((((*param_1 & 0x2000) == 0) &&
       (uVar6 = ((byte)(&DAT_00202c97)[(*param_1 & 0x1ff) * 0xd] & 0xc) >> 2, (short)uVar6 != 3)) &&
      (iVar5 = (int)param_3 >> uVar6, 0 < (short)iVar5)) {
-    iVar4 = FUN_00053728(param_1);
+    iVar4 = object_ptr_in_arena(param_1);
     if (iVar4 == 0) {
       if ((0x13f < (*param_1 & 0x1ff)) && ((*param_1 & 0x1ff) < 0x148)) {
         uVar2 = param_1[3];
@@ -24427,7 +24427,7 @@ int param_6;
         for (puVar11 = (ushort *)(pbVar10 + 2); (*puVar11 & 0xffc0) != 0; puVar11 = puVar11 + 2) {
           puVar11 = (ushort *)resolve_object_link();
           if (((&DAT_00202c90)[(*puVar11 & 0x1ff) * 0xd] != '\0') ||
-             (iVar12 = FUN_00053728(puVar11), iVar12 != 0)) {
+             (iVar12 = object_ptr_in_arena(puVar11), iVar12 != 0)) {
             FUN_00053334(pbVar10 + 2,puVar11,0);
           }
         }
@@ -24691,7 +24691,7 @@ LAB_0003987c:
                 uVar10 = puVar8[1] & 0xff80;
                 *(byte *)(puVar8 + 1) = (byte)uVar10 | (byte)((uVar13 & 0xf) << 3);
                 *(char *)((char *)puVar8 + 3) = (char)(uVar10 >> 8);
-                iVar9 = FUN_00053728(puVar8);
+                iVar9 = object_ptr_in_arena(puVar8);
                 if ((iVar9 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
                   if (puVar8 == DAT_0023be64) {
                     DAT_00204884 = (undefined2)(iVar12 << 6);
@@ -24713,7 +24713,7 @@ LAB_0003987c:
                 uVar10 = puVar8[1] & 0xff80;
                 *(byte *)(puVar8 + 1) = (byte)uVar10 | (byte)((uVar13 & 0xf) << 3);
                 *(char *)((char *)puVar8 + 3) = (char)(uVar10 >> 8);
-                uVar14 = FUN_00053728(puVar8);
+                uVar14 = object_ptr_in_arena(puVar8);
                 uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
                 if (((int)uVar14 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
                   if (puVar8 == DAT_0023be64) {
@@ -25459,7 +25459,7 @@ ushort * param_1;
   int iVar2;
   uint uVar3;
   
-  iVar2 = FUN_00053728();
+  iVar2 = object_ptr_in_arena();
   if (iVar2 == 0) {
     uVar3 = *param_1 & 0x1c0;
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
@@ -25959,7 +25959,7 @@ void FUN_0003b820()
   FUN_000232ec(0);
   FUN_00075be0();
   FUN_0003bb84();
-  FUN_00070118();
+  load_light_tables();
   FUN_00028004();
   iVar3 = FUN_0006bb64();
   if (iVar3 == 0) {
@@ -27711,7 +27711,7 @@ ushort *FUN_0003ec00()
     puVar3 = (ushort *)FUN_000535fc(iVar2);
     DAT_002020a8 = DAT_002020b0 + 2;
     if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
-       (iVar2 = FUN_00053728(puVar3), iVar2 == 0)) {
+       (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;
       return puVar3;
     }
@@ -27781,7 +27781,7 @@ void FUN_0003ee90()
   iVar2 = FUN_0003e8b0((int)DAT_000858c4,DAT_002020cc);
   if (DAT_002020ec == 0) {
     if (DAT_002020e0 != 0) {
-      iVar1 = FUN_00053728(DAT_002020cc);
+      iVar1 = object_ptr_in_arena(DAT_002020cc);
       if ((iVar1 != 0) && ((*DAT_002020cc & 0x1c0) == 0x40)) {
         FUN_0003f128();
         return;
@@ -29045,7 +29045,8 @@ short param_6;
 
 /* Return type was `int`, truncating the real 64-bit pointer every
    caller casts back to (byte *) and dereferences. */
-void *FUN_00040c5c(param_1)
+// was FUN_00040c5c
+void *get_texture_page(param_1)
 short param_1;
 
 {
@@ -39280,7 +39281,7 @@ short param_5;
   *(byte *)((char *)param_1 + 3) =
        (byte)((uVar1 & 0x3ff) >> 8) | (byte)(((uVar6 & 7 | (uVar4 & 0x1fff) << 3) << 10) >> 8);
   object_list_append_tail(iVar5 + 2,param_1);
-  iVar5 = FUN_00053728(param_1);
+  iVar5 = object_ptr_in_arena(param_1);
   if (iVar5 == 0) {
     FUN_00055f98(param_1,(int)uVar4 >> 3,(int)uVar6 >> 3,1);
   }
@@ -39999,7 +40000,8 @@ LAB_00053720:
 
 
 
-undefined4 FUN_00053728(param_1)
+// was FUN_00053728
+undefined4 object_ptr_in_arena(param_1)
 char *param_1;
 
 {
@@ -45829,7 +45831,7 @@ ushort param_3;
   byte *pbVar1;
   
   if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)FUN_00040c5c((param_3 & 0xff) + 0x6a);
+    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
     DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
                                     DAT_0024fa2c);
   }
@@ -45867,7 +45869,7 @@ uint param_3;
   byte *pbVar1;
   
   if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)FUN_00040c5c((param_3 & 0xff) + 0x6a);
+    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
     DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
                                     DAT_0024fa2c);
   }
@@ -45906,7 +45908,7 @@ ushort param_4;
   byte *pbVar1;
   
   if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)FUN_00040c5c((param_4 & 0xff) + 0x3a);
+    pbVar1 = (byte *)get_texture_page((param_4 & 0xff) + 0x3a);
     DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
                                     DAT_0024fa2c);
   }
@@ -46259,7 +46261,7 @@ LAB_0005e7e0:
     (&DAT_000ace05)[iVar32] = 0;
     (&DAT_000ace06)[iVar32] = 0;
     (&DAT_000ace07)[iVar32] = 0;
-    uVar17 = FUN_00040c5c(iVar16);
+    uVar17 = get_texture_page(iVar16);
     iVar32 = DAT_0023b83c;
     iVar30 = DAT_0023b83c * 0x60;
     (&DAT_000acdfc)[iVar30] = (char)uVar17;
@@ -46446,7 +46448,7 @@ LAB_0005e7e0:
     (&DAT_000ace05)[iVar33] = 0;
     (&DAT_000ace06)[iVar33] = 0;
     (&DAT_000ace07)[iVar33] = 0;
-    uVar17 = FUN_00040c5c(uVar17);
+    uVar17 = get_texture_page(uVar17);
     iVar19 = DAT_0023b83c * 0x60;
     (&DAT_000acdfc)[iVar19] = (char)uVar17;
     (&DAT_000acdfd)[iVar19] = (char)((uint)uVar17 >> 8);
@@ -46676,7 +46678,7 @@ LAB_0005e7e0:
       (&DAT_000ace05)[iVar16] = 0;
       (&DAT_000ace06)[iVar16] = 0;
       (&DAT_000ace07)[iVar16] = 0;
-      uVar17 = FUN_00040c5c(bVar25);
+      uVar17 = get_texture_page(bVar25);
       iVar32 = DAT_0023b83c;
       iVar18 = DAT_0023b83c * 0x60;
       (&DAT_000acdfc)[iVar18] = (char)uVar17;
@@ -46923,7 +46925,7 @@ LAB_0005e7e0:
       (&DAT_000ace05)[iVar16] = 0;
       (&DAT_000ace06)[iVar16] = 0;
       (&DAT_000ace07)[iVar16] = 0;
-      uVar17 = FUN_00040c5c(bVar25);
+      uVar17 = get_texture_page(bVar25);
       iVar34 = DAT_0023b83c * 0x60;
       (&DAT_000acdfc)[iVar34] = (char)uVar17;
       (&DAT_000acdfd)[iVar34] = (char)((uint)uVar17 >> 8);
@@ -47173,7 +47175,7 @@ ushort * param_1;
       DAT_0023b830 = 1;
     }
   }
-  iVar17 = FUN_00053728(param_1);
+  iVar17 = object_ptr_in_arena(param_1);
   if ((iVar17 != 0) && ((*param_1 & 0x1c0) != 0x40)) {
     bVar13 = *(byte *)((char *)param_1 + 0xb);
     bVar1 = *(byte *)((char *)param_1 + 0xd);
@@ -47791,7 +47793,7 @@ short param_4;
     }
   }
   else {
-    local_58 = (byte *)FUN_00040c5c((int)param_4);
+    local_58 = (byte *)get_texture_page((int)param_4);
     bVar5 = *local_58;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -49019,7 +49021,7 @@ ushort * param_1;
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e8 << 0x13) >> 0x10)) * 0x20 + 0x10;
-          if (((*puVar5 & 0x1c0) == 0x40) || (iVar16 = FUN_00053728(puVar5), iVar16 == 0)) {
+          if (((*puVar5 & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
             DAT_0023b91c = ((byte)puVar5[1] & 0x7f) << 3;
           }
           else {
@@ -54739,7 +54741,8 @@ LAB_0006fff4:
 
 
 
-void FUN_00070118()
+// was FUN_00070118
+void load_light_tables()
 
 {
   char stack0xffdc323c_buf [256];
@@ -57915,7 +57918,7 @@ int param_2;
   *(byte *)(iVar4 + 2) = (byte)uVar6 | 0x6e;
   *(char *)(iVar4 + 3) = (char)(uVar6 >> 8);
   iVar5 = FUN_000522f0(param_1 * 8 + 3,param_2 * 8 + 3,0x6e,iVar4,0,0);
-  if ((iVar5 != 0) && (iVar5 = FUN_00053728(iVar4), iVar5 != 0)) {
+  if ((iVar5 != 0) && (iVar5 = object_ptr_in_arena(iVar4), iVar5 != 0)) {
     bVar1 = Ordinal_1053();
     *(byte *)(iVar4 + 0x13) =
          ((bVar1 & 3) + 2 ^ *(byte *)(iVar4 + 0x13)) & 0x7f ^ *(byte *)(iVar4 + 0x13);
@@ -60371,7 +60374,7 @@ short param_2;
     iVar4 = resolve_object_link();
     *(byte *)(param_1 + 3) = (byte)param_1[3] & 0x3f;
     *(undefined1 *)((char *)param_1 + 7) = 0;
-    iVar5 = FUN_00053728(param_1);
+    iVar5 = object_ptr_in_arena(param_1);
     if (iVar5 == 0) {
       uVar7 = (uint)DAT_002020a0;
       uVar8 = (uint)DAT_002020a4;
@@ -62691,10 +62694,10 @@ uint param_3;
     if (((*puVar12 & 0x1c0) == 0x40) && (iVar16 = FUN_0007e694(puVar12), iVar16 != 0)) {
       return 2;
     }
-    FUN_00053728(puVar12);
+    object_ptr_in_arena(puVar12);
     puVar8 = (ushort *)alloc_object_slot();
     if (puVar8 != (ushort *)0x0) {
-      iVar16 = FUN_00053728(puVar12);
+      iVar16 = object_ptr_in_arena(puVar12);
       if (iVar16 == 0) {
         *(char *)puVar8 = (char)*puVar12;
         *(undefined1 *)((char *)puVar8 + 1) = *(undefined1 *)((char *)puVar12 + 1);
@@ -63282,7 +63285,7 @@ undefined4 param_1;
   while (iVar2 != 0) {
     if ((*(byte *)(iVar2 + 1) & 0x1e) == 0) {
       iVar3 = resolve_object_link(iVar2 + 6);
-      iVar4 = FUN_00053728();
+      iVar4 = object_ptr_in_arena();
       if (iVar4 != 0) {
         uVar1 = *(undefined2 *)(iVar3 + 0xd);
         *(char *)(iVar3 + 0xd) = (char)uVar1;
