@@ -21,6 +21,11 @@
  *                    the movement/collision engine entirely. For
  *                    testing the renderer against a known-good position
  *                    without depending on movement actually working.
+ *   REVEAL        -- calls full_dungeon_redraw (the "full dungeon redraw"
+ *                    wrapper) directly at the current position, forcing
+ *                    the ring-walk that marks automap tiles revealed --
+ *                    TELEPORT and ordinary movement don't trigger this
+ *                    on their own.
  *   OPENMAP       -- calls enter_automap_screen (the automap-screen "enter"
  *                    routine) directly. No known caller anywhere in the
  *                    compiled game (whole-binary reference search found
@@ -266,6 +271,22 @@ void demomode_pump(void) {
          * unidentified. */
         fprintf(stderr, "[demo] opening automap screen\n");
         enter_automap_screen();
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "REVEAL") == 0) {
+        /* Calls full_dungeon_redraw (the "full dungeon redraw" wrapper,
+         * was FUN_0005bb5c) directly at the player's current position.
+         * This is the only thing that runs the ring-walk which marks
+         * automap tiles revealed -- confirmed it does NOT run on
+         * TELEPORT or ordinary movement, only on a handful of discrete
+         * events (level entry/transition, pause-close, etc.), none of
+         * which a demo script naturally passes through. Added so a
+         * script can force that update at each TELEPORT stop instead of
+         * only ever seeing the single reveal mark from dungeon entry. */
+        fprintf(stderr, "[demo] forcing a full dungeon redraw (automap reveal update)\n");
+        full_dungeon_redraw();
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

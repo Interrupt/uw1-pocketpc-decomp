@@ -1291,7 +1291,7 @@ void FUN_0005b828();
 void FUN_0005b890();
 void FUN_0005b8ac();
 void FUN_0005bac0();
-void FUN_0005bb5c();
+void full_dungeon_redraw();
 void FUN_0005bbe0();
 undefined4 FUN_0005bc38();
 void FUN_0005bdcc();

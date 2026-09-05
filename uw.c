@@ -2805,10 +2805,31 @@ byte *DAT_0023b4ec;
    DAT_00085728/DAT_00086e68 earlier this session. Nothing anywhere in
    the binary writes it (confirmed via Ghidra reference search: 3 refs,
    all reads, in FUN_0005d9cc/FUN_0005e604). Real bytes recovered
-   directly from UU.exe's .data at 0x86bf0. */
+   directly from UU.exe's .data at 0x86bf0 (confirmed 3 independent
+   ways: reference search, literal-pool value, and disassembly of the
+   `ldrb r2,[r2,r0]` read itself): 0a 0b 0c 0d 0e 0f 0b 0b 0b 0b 0a 0b
+   0c 0d 0e 0f.
+
+   That raw table can't be right as-is, though: draw_automap_screen's
+   own consumer (FUN_000165d0/FUN_000167d4) requires the stored value
+   be < 10 before drawing anything -- confirmed via disassembly this
+   check is real machine code (`cmp r6,#0xa; bge <skip>`), not a
+   decompiler artifact -- and EVERY entry in the raw table is >= 10, so
+   no tile type could ever pass it; the automap could never draw a
+   single wall pixel for any level, which can't be the shipped
+   behavior. Every entry is suspiciously exactly 10 more than a very
+   plausible small icon-class index (0-5), which also happens to
+   exactly match FUN_00016948's own internal clamp (`if (5 <
+   param_1) param_1 = 1;` -- i.e. valid classes are 1-5). Applying that
+   -10 unshift here (each table entry minus 0xa) as a deliberately
+   experimental correction -- NOT a confirmed original value, just the
+   one hypothesis that makes the surrounding, independently-verified
+   code paths internally consistent instead of provably dead for every
+   possible input. Revisit if real gameplay footage or a source leak
+   ever turns up to check this against. */
 static const unsigned char DAT_00086bf0_real_table[16] = {
-  0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0b, 0x0b,
-  0x0b, 0x0b, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x01, 0x01,
+  0x01, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
 };
 #define DAT_00086bf0 (*(undefined1 *)DAT_00086bf0_real_table)
 undefined1 DAT_0023b818;
@@ -25881,7 +25902,7 @@ void FUN_0003bd50()
   FUN_0003e44c();
   FUN_00049924(0x7dfe);
   FUN_000667cc();
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_0006fea4();
   FUN_000570b4();
   fade_in(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
@@ -25985,7 +26006,7 @@ undefined4 FUN_0003c194()
   
   if (0 < DAT_00201c90) {
     if ((DAT_00085730 & 1) != 0) {
-      FUN_0005bb5c();
+      full_dungeon_redraw();
       FUN_000411b8((int)DAT_0023bca0);
     }
     if (DAT_00201b68 != DAT_00201c7c) {
@@ -26010,7 +26031,7 @@ undefined4 FUN_0003c194()
     DAT_00201c8c = local_1e;
     set_player_tile_position((int)local_20,(int)local_1e,1);
     if ((DAT_00085730 & 2) != 0) {
-      FUN_0005bb5c();
+      full_dungeon_redraw();
       FUN_000411cc((int)DAT_0023bca0);
     }
     DAT_00201c90 = 0;
@@ -29060,16 +29081,16 @@ void FUN_000411e0()
 void FUN_00041210()
 
 {
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_00067d10(0xffffffff);
   FUN_000411b8(5);
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_000411cc(5);
   FUN_00057604(1);
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_000411b8(5);
   FUN_00067d10(1);
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_000411cc(5);
   return;
 }
@@ -41360,7 +41381,7 @@ int param_1;
          (byte)(((param_1 + 4) * 0x10000 >> 0x10 & 0xfU) << 4) |
          *(byte *)(DAT_00086df8 + 0xb5) & 0xf;
     FUN_0005d2b0();
-    FUN_0005bb5c();
+    full_dungeon_redraw();
     FUN_0006fea4();
     FUN_00041a18(0x20ed,s_optbtns_00086954,param_1 + 0x39);
     FUN_00040b0c(0x20ed,5,10,0x12,0x22);
@@ -44234,7 +44255,8 @@ void FUN_0005bac0()
 
 
 
-void FUN_0005bb5c()
+// was FUN_0005bb5c
+void full_dungeon_redraw()
 
 {
   FUN_0005bc38();
@@ -55090,7 +55112,7 @@ short param_1;
   bVar2 = true;
   if (param_1 < 0) {
 LAB_0007158c:
-    FUN_0005bb5c();
+    full_dungeon_redraw();
     FUN_000735b0(0xd);
     FUN_00073634();
     FUN_000411b8(5);
@@ -55215,7 +55237,7 @@ LAB_0007158c:
       DAT_00204888 = 0;
       DAT_00204886 = 0;
       FUN_00078550();
-      FUN_0005bb5c();
+      full_dungeon_redraw();
       FUN_000735c0();
       if (bVar2) {
         FUN_000411cc(5);
@@ -55512,7 +55534,7 @@ void FUN_00072288()
   thunk_FUN_00072c44();
   FUN_00072910(10,1);
   FUN_00069bd0((int)((uint)(*(uint3 *)(DAT_00086df8 + 0x4e) >> 3) * -0x10000) >> 0x10);
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_000411b8(5);
   FUN_00027694();
   if (DAT_00202948 != 0) {
