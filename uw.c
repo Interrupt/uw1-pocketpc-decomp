@@ -2830,26 +2830,42 @@ byte *DAT_0023b4ec;
    `ldrb r2,[r2,r0]` read itself): 0a 0b 0c 0d 0e 0f 0b 0b 0b 0b 0a 0b
    0c 0d 0e 0f.
 
-   That raw table can't be right as-is, though: draw_automap_screen's
-   own consumer (FUN_000165d0/FUN_000167d4) requires the stored value
-   be < 10 before drawing anything -- confirmed via disassembly this
-   check is real machine code (`cmp r6,#0xa; bge <skip>`), not a
-   decompiler artifact -- and EVERY entry in the raw table is >= 10, so
-   no tile type could ever pass it; the automap could never draw a
-   single wall pixel for any level, which can't be the shipped
-   behavior. Every entry is suspiciously exactly 10 more than a very
-   plausible small icon-class index (0-5), which also happens to
-   exactly match FUN_00016948's own internal clamp (`if (5 <
-   param_1) param_1 = 1;` -- i.e. valid classes are 1-5). Applying that
-   -10 unshift here (each table entry minus 0xa) as a deliberately
-   experimental correction -- NOT a confirmed original value, just the
-   one hypothesis that makes the surrounding, independently-verified
-   code paths internally consistent instead of provably dead for every
-   possible input. Revisit if real gameplay footage or a source leak
-   ever turns up to check this against. */
+   That raw table can't be right as-is, though: the reveal byte it
+   stores is consumed by draw_automap_screen's per-cell renderer
+   (FUN_000165d0 -> FUN_00016948) as a packed value --
+     bits 0-3 (`& 0xf`): tile shape class, must be 1-9 or the whole
+       cell is skipped (`cmp r6,#0xa; bge <skip>`, confirmed real
+       machine code, not a decompiler artifact);
+     bits 4-5 (`>> 4 & 3`): fill style -- 0 = just darken the cell
+       (dim grey dots), 1 or 2 = paint it with the blue automap-floor
+       palette entries (~0xb1 / ~0xb5) via plot_pixel;
+     bits 6-7: special markers (door edge / stair color / block-out).
+   Every raw entry (0x0a..0x0f) has bits 4-7 clear AND a low nibble
+   >= 10, so it can neither pass the shape gate nor select the blue
+   fill -- the automap could only ever have drawn grey edge dots, never
+   the filled blue corridors it's clearly meant to (see the reference
+   image in this session's notes).
+
+   Adding 6 to every raw entry lands them exactly on `0x10 | type`:
+   type 0 (solid) -> 0x10 (`& 0xf` == 0, correctly skipped); types 1-5
+   (open + the 4 diagonals) -> 0x11..0x15 (shape 1-5, bit 4 set = blue
+   fill); types 6-9 (slopes) -> 0x11 (plain floor). Shapes 1-5 then
+   line up 1:1 with DAT_000842c0's five 3x3 patterns (shape 1 = full
+   fill, 2-5 = diagonal cuts) -- i.e. this reconstruction makes the
+   entire downstream pipeline internally consistent and produces a map
+   that visually matches the reference. Confirmed empirically: blue-
+   filled rooms/corridors with wall edges now draw where before there
+   was nothing (or, with an earlier -10 guess, only grey dots).
+
+   Still a reconstruction, not a verified raw recovery -- the "+6" has
+   no principled explanation (the store is a direct `strb` with no
+   arithmetic on the loaded byte), so either this Ghidra project's
+   UU.exe copy has wrong bytes at 0x86bf0, or the shipped automap was
+   simply broken. Revisit if real gameplay footage or a source leak
+   turns up. */
 static const unsigned char DAT_00086bf0_real_table[16] = {
-  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x01, 0x01,
-  0x01, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+  0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x11, 0x11,
+  0x11, 0x11, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
 };
 #define DAT_00086bf0 (*(undefined1 *)DAT_00086bf0_real_table)
 undefined1 DAT_0023b818;
