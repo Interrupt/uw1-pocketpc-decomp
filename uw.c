@@ -90,8 +90,103 @@ undefined *PTR_Ordinal_2020_00084018;
    unchanged. Widened to a generous backing size well past every offset
    observed, same pattern as the other undersized-record-table fixes this
    session. */
+/* --- Unified 3D-view record arena (recovered structure at 0xa85d0) ---
+   Ghidra fragmented one contiguous ~0x4900-byte structure into a
+   64KB backing array plus ~80 lone scalars and a second 32KB array,
+   each independently addressed -- so process_visible_tile_cell wrote
+   the geometry records into the scalars while FUN_0001dfe8 /
+   FUN_0001e274 / FUN_0001f370 read them as `&DAT_000a85d0 + off`,
+   and the two never met (DAT_000c8c98 stayed 0). All the pieces are
+   now byte offsets into the one DAT_000a85d0_backing array.
+     +0x00      first-list (raw vertex) record count / cursor
+     +0x04      DAT_000a85d4  second-list (visible-tile) record count
+     +0x08..13  DAT_000a85d8.. first-list vertex record 0 fields (0xc stride)
+     +0x4814..  DAT_000acde4.. second-list record 0 fields (0x60 stride)
+   FUN_0001dfe8 seeds each second-list record's +0x486c flag = 1. */
 static undefined4 DAT_000a85d0_backing[16384];
 #define DAT_000a85d0 DAT_000a85d0_backing[0]
+#define UW_A85B(o) (*(undefined1 *)((char *)DAT_000a85d0_backing + (o)))
+#define DAT_000a85d4 (*(int *)((char *)DAT_000a85d0_backing + 0x4))
+#define DAT_000a85d8 UW_A85B(0x8)
+#define DAT_000a85d9 UW_A85B(0x9)
+#define DAT_000a85da UW_A85B(0xa)
+#define DAT_000a85db UW_A85B(0xb)
+#define DAT_000a85dc UW_A85B(0xc)
+#define DAT_000a85dd UW_A85B(0xd)
+#define DAT_000a85de UW_A85B(0xe)
+#define DAT_000a85df UW_A85B(0xf)
+#define DAT_000a85e0 UW_A85B(0x10)
+#define DAT_000a85e1 UW_A85B(0x11)
+#define DAT_000a85e2 UW_A85B(0x12)
+#define DAT_000a85e3 UW_A85B(0x13)
+#define DAT_000acde4 UW_A85B(0x4814)
+#define DAT_000acde5 UW_A85B(0x4815)
+#define DAT_000acde6 UW_A85B(0x4816)
+#define DAT_000acde7 UW_A85B(0x4817)
+#define DAT_000acde8 UW_A85B(0x4818)
+#define DAT_000acde9 UW_A85B(0x4819)
+#define DAT_000acdea UW_A85B(0x481a)
+#define DAT_000acdeb UW_A85B(0x481b)
+#define DAT_000acdec UW_A85B(0x481c)
+#define DAT_000acded UW_A85B(0x481d)
+#define DAT_000acdee UW_A85B(0x481e)
+#define DAT_000acdef UW_A85B(0x481f)
+#define DAT_000acdf0 UW_A85B(0x4820)
+#define DAT_000acdf1 UW_A85B(0x4821)
+#define DAT_000acdf2 UW_A85B(0x4822)
+#define DAT_000acdf3 UW_A85B(0x4823)
+#define DAT_000acdf4 UW_A85B(0x4824)
+#define DAT_000acdf5 UW_A85B(0x4825)
+#define DAT_000acdf6 UW_A85B(0x4826)
+#define DAT_000acdf7 UW_A85B(0x4827)
+#define DAT_000acdfc UW_A85B(0x482c)
+#define DAT_000acdfd UW_A85B(0x482d)
+#define DAT_000acdfe UW_A85B(0x482e)
+#define DAT_000acdff UW_A85B(0x482f)
+#define DAT_000ace00 UW_A85B(0x4830)
+#define DAT_000ace01 UW_A85B(0x4831)
+#define DAT_000ace02 UW_A85B(0x4832)
+#define DAT_000ace03 UW_A85B(0x4833)
+#define DAT_000ace04 UW_A85B(0x4834)
+#define DAT_000ace05 UW_A85B(0x4835)
+#define DAT_000ace06 UW_A85B(0x4836)
+#define DAT_000ace07 UW_A85B(0x4837)
+#define DAT_000ace08 UW_A85B(0x4838)
+#define DAT_000ace09 UW_A85B(0x4839)
+#define DAT_000ace0a UW_A85B(0x483a)
+#define DAT_000ace0b UW_A85B(0x483b)
+#define DAT_000ace0c UW_A85B(0x483c)
+#define DAT_000ace0d UW_A85B(0x483d)
+#define DAT_000ace0e UW_A85B(0x483e)
+#define DAT_000ace0f UW_A85B(0x483f)
+#define DAT_000ace10 UW_A85B(0x4840)
+#define DAT_000ace11 UW_A85B(0x4841)
+#define DAT_000ace12 UW_A85B(0x4842)
+#define DAT_000ace13 UW_A85B(0x4843)
+#define DAT_000ace14 UW_A85B(0x4844)
+#define DAT_000ace15 UW_A85B(0x4845)
+#define DAT_000ace16 UW_A85B(0x4846)
+#define DAT_000ace17 UW_A85B(0x4847)
+#define DAT_000ace18 UW_A85B(0x4848)
+#define DAT_000ace19 UW_A85B(0x4849)
+#define DAT_000ace1a UW_A85B(0x484a)
+#define DAT_000ace1b UW_A85B(0x484b)
+#define DAT_000ace1c UW_A85B(0x484c)
+#define DAT_000ace1d UW_A85B(0x484d)
+#define DAT_000ace1e UW_A85B(0x484e)
+#define DAT_000ace1f UW_A85B(0x484f)
+#define DAT_000ace20 UW_A85B(0x4850)
+#define DAT_000ace21 UW_A85B(0x4851)
+#define DAT_000ace22 UW_A85B(0x4852)
+#define DAT_000ace23 UW_A85B(0x4853)
+#define DAT_000ace24 UW_A85B(0x4854)
+#define DAT_000ace25 UW_A85B(0x4855)
+#define DAT_000ace26 UW_A85B(0x4856)
+#define DAT_000ace27 UW_A85B(0x4857)
+#define DAT_000ace30 UW_A85B(0x4860)
+#define DAT_000ace31 UW_A85B(0x4861)
+#define DAT_000ace32 UW_A85B(0x4862)
+#define DAT_000ace33 UW_A85B(0x4863)
 byte *DAT_000b4628;
 byte *DAT_000b461c;
 /* Was `int` / `undefined4` -- both hold real pointers (DAT_000b4614 +
@@ -3091,91 +3186,9 @@ ushort DAT_0023b81c;
 ushort DAT_0023b4d8;
 undefined2 DAT_0023b4d0;
 byte DAT_0023b4e0;
-int DAT_000a85d4;
 char DAT_0023b834;
 /* DAT_00086b84/b88/bb0..bb5/bc8..bcd/c00 -> DAT_00086b50_region /
    DAT_00086c00_arr, #define'd above. */
-static undefined DAT_000a85d8_backing[32768];
-#define DAT_000a85d8 DAT_000a85d8_backing[0]
-undefined DAT_000a85d9;
-undefined DAT_000a85da;
-undefined DAT_000a85db;
-undefined DAT_000a85dc;
-undefined DAT_000a85dd;
-undefined DAT_000a85de;
-undefined DAT_000a85df;
-undefined DAT_000a85e0;
-undefined DAT_000a85e1;
-undefined DAT_000a85e2;
-undefined DAT_000a85e3;
-undefined DAT_000acde4;
-undefined DAT_000acde5;
-undefined DAT_000acde6;
-undefined DAT_000acde7;
-undefined DAT_000acde8;
-undefined DAT_000acde9;
-undefined DAT_000acdea;
-undefined DAT_000acdeb;
-undefined DAT_000acdec;
-undefined DAT_000acded;
-undefined DAT_000acdee;
-undefined DAT_000acdef;
-undefined DAT_000acdf0;
-undefined DAT_000acdf1;
-undefined DAT_000acdf2;
-undefined DAT_000acdf3;
-undefined DAT_000acdf4;
-undefined DAT_000acdf5;
-undefined DAT_000acdf6;
-undefined DAT_000acdf7;
-undefined DAT_000acdfc;
-undefined DAT_000acdfd;
-undefined DAT_000acdfe;
-undefined DAT_000acdff;
-undefined DAT_000ace00;
-undefined DAT_000ace01;
-undefined DAT_000ace02;
-undefined DAT_000ace03;
-undefined DAT_000ace04;
-undefined DAT_000ace05;
-undefined DAT_000ace06;
-undefined DAT_000ace07;
-undefined DAT_000ace08;
-undefined DAT_000ace09;
-undefined DAT_000ace0a;
-undefined DAT_000ace0b;
-undefined DAT_000ace0c;
-undefined DAT_000ace0d;
-undefined DAT_000ace0e;
-undefined DAT_000ace0f;
-undefined DAT_000ace10;
-undefined DAT_000ace11;
-undefined DAT_000ace12;
-undefined DAT_000ace13;
-undefined DAT_000ace14;
-undefined DAT_000ace15;
-undefined DAT_000ace16;
-undefined DAT_000ace17;
-undefined DAT_000ace18;
-undefined DAT_000ace19;
-undefined DAT_000ace1a;
-undefined DAT_000ace1b;
-undefined DAT_000ace1c;
-undefined DAT_000ace1d;
-undefined DAT_000ace1e;
-undefined DAT_000ace1f;
-undefined DAT_000ace20;
-undefined DAT_000ace21;
-undefined DAT_000ace22;
-undefined DAT_000ace23;
-undefined DAT_000ace24;
-undefined DAT_000ace25;
-undefined DAT_000ace26;
-undefined DAT_000ace27;
-undefined DAT_000ace30;
-undefined DAT_000ace31;
-undefined DAT_000ace32;
-undefined DAT_000ace33;
 short DAT_0023b8c4;
 ushort DAT_0023b904;
 ushort DAT_0023b920;
@@ -5771,7 +5784,7 @@ char param_1;
 
 void FUN_00014350(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 undefined4 param_1;
-undefined4 param_2;
+void *param_2; /* was undefined4 -- the framebuffer base (g_uw_framebuffer) */
 undefined4 * param_3;
 undefined4 param_4;
 undefined4 param_5;
@@ -5924,11 +5937,11 @@ LAB_00014684:
 
 
 int FUN_00014868(param_1)
-int param_1;
+intptr_t param_1; /* was int -- edge-walk struct pointer */
 
 {
   int iVar1;
-  
+
   *(int *)(param_1 + 8) = *(int *)(param_1 + 8) + 1;
   iVar1 = *(int *)(param_1 + 0xc) + -1;
   *(int *)(param_1 + 0xc) = iVar1;
@@ -6053,8 +6066,8 @@ undefined4 * param_2;
 
 
 void FUN_00014ef4(param_1,param_2,param_3,param_4,param_5,param_6)
-int param_1;
-int param_2;
+intptr_t param_1; /* was int -- edge-coeff array pointer */
+intptr_t param_2; /* was int -- vertex array pointer (stride 0x14) */
 int param_3;
 int param_4;
 int param_5;
@@ -6176,13 +6189,13 @@ undefined4 * param_6;
 
 void FUN_0001548c(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
 int param_1;
-int param_2;
-int param_3;
-int param_4;
-int param_5;
+intptr_t param_2; /* framebuffer base */
+intptr_t param_3; /* edge struct */
+intptr_t param_4; /* edge struct */
+intptr_t param_5; /* edge struct */
 int param_6;
 int param_7;
-int param_8;
+intptr_t param_8; /* texture pixel data */
 int * param_9;
 byte param_10;
 
@@ -6203,7 +6216,7 @@ byte param_10;
   int iVar14;
   int local_38;
   int local_34;
-  int local_4;
+  intptr_t local_4; /* fb row pointer */
   
   iVar12 = DAT_0023cca0;
   uVar2 = *(uint *)(param_4 + 0x28);

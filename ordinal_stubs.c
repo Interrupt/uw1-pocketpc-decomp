@@ -768,9 +768,18 @@ long Ordinal_2008()
     return 0;
 }
 
-long Ordinal_2015()
+static float ordfloat_bits_to_float(unsigned int bits);
+static unsigned int ordfloat_float_to_bits(float f);
+
+/* Softfloat single-precision SUBTRACT: a - b (IEEE-754 bit patterns in,
+   bit pattern out). Was a no-op stub, which zeroed every subtraction in
+   the 3D vertex-clip / projection math (FUN_0001f370 &c). Sibling of the
+   already-real Ordinal_2026 (multiply) / Ordinal_2032 (int->float). */
+long Ordinal_2015(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) - ordfloat_bits_to_float(b));
 }
 
 long Ordinal_2016()
@@ -869,9 +878,16 @@ long Ordinal_2036()
     return 0;
 }
 
-long Ordinal_2038()
+/* Softfloat single-precision COMPARE for the 3D near-plane clip test:
+   returns 1 when a >= b, else 0. Call sites read it as
+   `if (Ordinal_2038(vertex_z, near_plane) == 0) { ...clip... }`. Was a
+   no-op stub (always "clip"), so every vertex was treated as behind the
+   near plane -> no visible geometry survived. */
+long Ordinal_2038(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return ordfloat_bits_to_float(a) >= ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
 long Ordinal_2044()
@@ -884,9 +900,16 @@ long Ordinal_2046()
     return 0;
 }
 
-long Ordinal_2047()
+/* Softfloat single-precision DIVIDE: a / b. Used for the near-plane
+   clip interpolation factor ((near - z0) / (z1 - z0)) in FUN_0001f370.
+   Was a no-op stub. */
+long Ordinal_2047(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    float fb = ordfloat_bits_to_float(b);
+    if (fb == 0.0f) return 0;
+    return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) / fb);
 }
 
 long Ordinal_2048()
@@ -894,9 +917,15 @@ long Ordinal_2048()
     return 0;
 }
 
-long Ordinal_2051()
+/* Softfloat single-precision ADD: a + b. The workhorse of the 3D
+   matrix-multiply / vertex-transform math (FUN_0001e274, FUN_0001dfe8,
+   FUN_0001f370). Was a no-op stub -> every transformed vertex came out
+   0 -> nothing to draw. */
+long Ordinal_2051(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) + ordfloat_bits_to_float(b));
 }
 
 long Ordinal_2053()
