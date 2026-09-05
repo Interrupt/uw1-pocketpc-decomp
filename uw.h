@@ -642,7 +642,7 @@ undefined4 FUN_0002285c();
 undefined4 FUN_00022884();
 uint FUN_000228ac();
 void FUN_000228d4();
-undefined4 FUN_00022910();
+undefined4 rand_below();
 uint FUN_0002294c();
 undefined *FUN_0002295c();
 undefined *FUN_00022998();

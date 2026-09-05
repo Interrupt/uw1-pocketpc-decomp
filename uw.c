@@ -6872,7 +6872,7 @@ LAB_00016b00:
         uVar13 = 0;
         uVar6 = 0;
         do {
-          sVar3 = FUN_00022910(3);
+          sVar3 = rand_below(3);
           plot_pixel(uVar13 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar9) + 200,sVar3 + 0xe9)
           ;
@@ -8383,7 +8383,7 @@ int param_1;
   short sVar1;
   
   sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
-  sVar1 = FUN_00022910((int)sVar1);
+  sVar1 = rand_below((int)sVar1);
   return sVar1 + 1;
 }
 
@@ -10871,7 +10871,7 @@ short param_3;
 {
   int iVar1;
   
-  iVar1 = FUN_00022910((int)param_3 - (int)param_2);
+  iVar1 = rand_below((int)param_3 - (int)param_2);
   iVar1 = Ordinal_2005(100,(iVar1 + param_2) * (int)param_1);
   return (iVar1 + param_1) * 0x10000 >> 0x10;
 }
@@ -13208,7 +13208,8 @@ void FUN_000228d4()
    into an uninitialised `extraout_r1`, so it always returned garbage
    (and with Ordinal_1053 stubbed to 0, effectively always 0). Compute
    the modulo directly. */
-undefined4 FUN_00022910(param_1)
+// was FUN_00022910
+undefined4 rand_below(param_1)
 int param_1;
 
 {
@@ -15210,7 +15211,7 @@ undefined4 param_2;
     }
   }
   else if (((param_1 == 1) && ((uVar6 & 0x1f0) == 0x140)) &&
-          (iVar3 = FUN_00022910(0xc), iVar3 < (int)(((byte)*puVar2 & 7) * 2))) {
+          (iVar3 = rand_below(0xc), iVar3 < (int)(((byte)*puVar2 & 7) * 2))) {
     bVar1 = *(byte *)(DAT_00086df8 + 100);
     uVar4 = FUN_0006a058(2,4);
     FUN_00046030(8 - (bVar1 & 1),uVar4,4,0,1);
@@ -23750,7 +23751,7 @@ LAB_00038100:
           if ((uVar5 & 3) == 0) {
             uVar4 = FUN_0006a058(6,10);
             FUN_00081814(param_1,8,uVar4,0,0,sVar2,param_5);
-            sVar2 = FUN_00022910(2);
+            sVar2 = rand_below(2);
             uVar6 = (int)sVar2 + 0xd5;
           }
         }
@@ -23760,7 +23761,7 @@ LAB_00038100:
       }
     }
     if ((short)uVar6 < -1) {
-      sVar2 = FUN_00022910(2);
+      sVar2 = rand_below(2);
       uVar6 = (int)sVar2 + 0xd5;
     }
     if (-1 < (short)uVar6) {
@@ -32068,7 +32069,7 @@ int param_5;
   }
   else {
     if (param_5 != 0) {
-      sVar4 = FUN_00022910(2);
+      sVar4 = rand_below(2);
       uVar7 = FUN_00068138(sVar4 + 0xd5,0);
       FUN_000523d0(DAT_0023be64,uVar7,6,0);
     }
@@ -39306,7 +39307,7 @@ int param_2;
   
   if (param_2 != 0) {
     if (param_1 != 0) {
-      sVar1 = FUN_00022910(3);
+      sVar1 = rand_below(3);
       param_1 = param_1 + sVar1;
     }
     DAT_002046b0 = param_1;
@@ -39319,7 +39320,7 @@ int param_2;
           return 0;
         }
       }
-      iVar2 = FUN_00022910(10);
+      iVar2 = rand_below(10);
       if (iVar2 < DAT_002046b0) {
         return 1;
       }
@@ -51083,7 +51084,7 @@ short param_2;
   if ((0 < param_2) && (iVar2 = (int)(short)param_1, 0 < iVar2)) {
     do {
       iVar2 = (iVar2 + -1) * 0x10000 >> 0x10;
-      sVar1 = FUN_00022910((int)param_2);
+      sVar1 = rand_below((int)param_2);
       param_1 = param_1 + sVar1;
     } while (iVar2 != 0);
   }
@@ -54647,7 +54648,7 @@ short param_1;
   cVar3 = Ordinal_2005(uVar6,uVar2);
   *(char *)(pcVar_df8 + 0x21) = cVar3 + *(char *)(pcVar_df8 + 0x21);
   iVar5 = (int)sVar7;
-  cVar3 = FUN_00022910(iVar5);
+  cVar3 = rand_below(iVar5);
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
   if (iVar5 != 0) {
     do {
@@ -54894,7 +54895,7 @@ LAB_00070c78:
         iVar7 = 7;
       }
       else {
-        iVar7 = FUN_00022910(cVar11);
+        iVar7 = rand_below(cVar11);
         iVar7 = (sVar13 + iVar7) * 0x1000000 >> 0x18;
       }
       iVar9 = FUN_0007067c(iVar7);
@@ -55584,7 +55585,7 @@ void FUN_0007213c()
       *(byte *)(DAT_0023be64 + 8) = *(byte *)(DAT_0023be74 + 4);
     }
     else {
-      cVar1 = FUN_00022910(3);
+      cVar1 = rand_below(3);
       *(char *)(DAT_0023be64 + 8) = (-2 - cVar1) + *(char *)(DAT_0023be74 + 4);
     }
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
@@ -61107,7 +61108,7 @@ LAB_0007ae1c:
         if (uVar8 == 0xb8) {
           sVar4 = FUN_00069b68(*(undefined1 *)(DAT_0023be74 + 7),0x14);
           if (sVar4 != 0) {
-            iVar11 = FUN_00022910(3);
+            iVar11 = rand_below(3);
             FUN_00073e14(DAT_0023be64,iVar11 * -0x1000000 >> 0x18);
           }
           uVar9 = *(ushort *)(DAT_00086df8 + 0x61);
@@ -61235,7 +61236,7 @@ LAB_0007b2e0:
       if (sVar4 == 0) {
         Ordinal_1063(acStack_7c,s_UNNAMED_00084f24);
       }
-      iVar11 = FUN_00022910(0x14);
+      iVar11 = rand_below(0x14);
       iVar11 = ((byte)param_2[2] & 0x3f) + iVar11;
       if (iVar11 < 0) {
         iVar11 = iVar11 + 0xf;
@@ -61307,7 +61308,7 @@ int param_3;
       else {
         FUN_00078c80(0x87);
         iVar7 = FUN_00068100((int)DAT_002020a0,(int)DAT_002020a4);
-        sVar4 = FUN_00022910(2);
+        sVar4 = rand_below(2);
         iVar6 = ((int)sVar4 - uVar11) + 0x156;
         while( true ) {
           iVar6 = iVar6 * 0x10000 >> 0x10;
@@ -61320,7 +61321,7 @@ int param_3;
           *(undefined1 *)((char *)puVar8 + 5) = *(undefined1 *)((char *)param_1 + 5);
           *(char *)(puVar8 + 3) = (char)param_1[3];
           *(undefined1 *)((char *)puVar8 + 7) = *(undefined1 *)((char *)param_1 + 7);
-          sVar4 = FUN_00022910(2);
+          sVar4 = rand_below(2);
           uVar9 = uVar11 + (int)sVar4 + 1;
           if (0x156 < (int)(uVar9 * 0x10000) >> 0x10) {
             uVar9 = 0x10;
@@ -62099,7 +62100,7 @@ uint * param_4;
         return 0;
       }
       if ((((param_1[2] & 0x3f) == 0) && (DAT_0024cfcc == 0)) &&
-         (iVar3 = FUN_00022910(10), iVar3 < 4)) {
+         (iVar3 = rand_below(10), iVar3 < 4)) {
         return 0;
       }
     }
@@ -62186,7 +62187,7 @@ int param_1;
       (iVar3 = FUN_000537d0(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
     uVar1 = *(ushort *)(iVar3 + 4);
     if ((uVar1 & 0x3f) == 0) {
-      iVar4 = FUN_00022910(10);
+      iVar4 = rand_below(10);
       if (iVar4 < 4) {
         object_list_unlink(local_c,iVar3);
         free_object_slot(iVar3);
@@ -62338,7 +62339,7 @@ uint param_3;
   iVar16 = 2;
   switch(*param_1 & 0x3f) {
   case 0:
-    iVar16 = FUN_00022910(10);
+    iVar16 = rand_below(10);
     uVar6 = 2;
     if (6 < iVar16) {
       uVar6 = 0;
@@ -62379,7 +62380,7 @@ uint param_3;
                           CONCAT22(uVar21,(ushort)(byte)param_1[3]) & 0xffff003f);
     break;
   case 7:
-    iVar16 = FUN_00022910(0x3f);
+    iVar16 = rand_below(0x3f);
     if (iVar16 < (int)((byte)param_1[2] & 0x3f)) {
       return 2;
     }
@@ -62529,7 +62530,7 @@ LAB_0007dce4:
     if (((param_1[2] & 0x3f) != 0x3f) && (((*DAT_0024cff4 & 0xf ^ param_1[2]) & 0x3f) != 0)) {
       return 2;
     }
-    sVar3 = FUN_00022910(*(undefined1 *)(DAT_00086df8 + 0x2a));
+    sVar3 = rand_below(*(undefined1 *)(DAT_00086df8 + 0x2a));
     uVar6 = FUN_0007863c(0x2f5);
     FUN_0007ed20(uVar6,*(ushort *)(DAT_0023be64 + 0x16) >> 10,
                  (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4,0,
@@ -63018,7 +63019,7 @@ int param_1;
   while (pbVar1 != (byte *)0x0) {
     iVar2 = FUN_00068100((int)local_1c,(int)local_1a);
     if ((((*(byte *)(iVar2 + 1) & 0x80) == 0) && (7 < (*pbVar1 & 0xf))) &&
-       (iVar2 = FUN_00022910(10), iVar2 < 3)) {
+       (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
       DAT_002020a4 = local_1a;
       iVar2 = FUN_0007e6e0(param_1);
