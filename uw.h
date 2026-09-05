@@ -930,7 +930,7 @@ uint FUN_00040aa8();
 void draw_sprite_by_id();
 void FUN_00040bc0();
 void FUN_00040be0();
-int FUN_00040c5c();
+void *FUN_00040c5c();
 undefined4 FUN_00040cd4();
 bool FUN_00040d00();
 void thunk_FUN_00057118();

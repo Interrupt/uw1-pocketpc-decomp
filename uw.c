@@ -2086,10 +2086,19 @@ ushort DAT_00202738;
 ushort DAT_00202730;
 static undefined1 DAT_0024d090_backing[65536];
 #define DAT_0024d090 DAT_0024d090_backing[0]
-int DAT_0023ae38;
-int DAT_0023ae34;
-undefined4 DAT_0023ae30;
-undefined4 DAT_0023ae3c;
+/* Were int / undefined4, truncating the real &DAT_002049e0-relative
+   pointers this loader (FUN_00042174 area) computes into them:
+     ae38 = &DAT_002049e0
+     ae34 = ae38 + DAT_0023adb0*0x1000   (10 x 0x400 shade tables at +0x30..)
+     ae3c = ae34 + DAT_0023aeb8*0x400
+     ae30 = ae3c + n*0x100               (10 x 0x100 colour-light tables at +0x6a..)
+   FUN_00040c5c returns *one* of these + index*stride; its callers cast
+   the result to (byte*) and dereference it -> wild pointer + crash the
+   moment the (now-live) 3D geometry path calls it. */
+char *DAT_0023ae38;
+char *DAT_0023ae34;
+char *DAT_0023ae30;
+char *DAT_0023ae3c;
 undefined4 DAT_0020250c;
 char s__DATA__00085970[] = "\\DATA\\";
 short DAT_00204840;
@@ -2758,7 +2767,13 @@ static undefined1 DAT_000869dc_backing[32768];
 #define DAT_000869dc DAT_000869dc_backing[0]
 static undefined1 DAT_000869e4_backing[32768];
 #define DAT_000869e4 DAT_000869e4_backing[0]
-undefined DAT_002049e0;
+/* Was a lone `undefined` scalar. It is the base of the texture / shade /
+   colour-light table arena: FUN_00042174 sets DAT_0023ae38 = &DAT_002049e0
+   and loads several .tr/.dat files into it, then FUN_00040c5c hands out
+   `&DAT_002049e0 + page*stride` pointers. Needs real backing storage
+   (1 MB is comfortably more than UW1's texture set). */
+static undefined1 DAT_002049e0_backing[0x100000];
+#define DAT_002049e0 DAT_002049e0_backing[0]
 char s__DATA_terrain_dat_000869ec[] = "\\DATA\\terrain.dat";
 undefined4 DAT_0023b01c;
 undefined2 DAT_0023b020;
@@ -2954,18 +2969,21 @@ short DAT_0023b810;
    pointers, selected by an index (0 or 1, from DAT_00086b2c) in
    walk_visible_tiles, loaded into DAT_0023b4f4 / DAT_0023b80c / DAT_0023b4d4,
    and called by process_visible_tile_cell to emit a visible tile's 3D geometry
-   slice (wall / floor-or-ceiling / diagonal). Were three silently-zero
-   `undefined4` scalars, so `(*DAT_0023b4f4)(...)` was a call through
-   NULL the instant the (now-working) visibility fill marked any tile
-   visible. The six entries are contiguous in .data: b38,b3c / b40,b44
-   / b48,b4c -- one array, the three symbols index it at 0/2/4. */
-static code * const DAT_00086b38_fnptrs[6] = {
+   slice (wall / floor-or-ceiling / diagonal). Were silently-zero scalars,
+   so `(*DAT_0023b4f4)(...)` was a call through NULL the instant the
+   (now-working) visibility fill marked any tile visible. The six entries
+   are contiguous in .data: b38,b3c / b40,b44 / b48,b4c -- one array, the
+   symbols index it at 0..4. NOT const: FUN_0005d664 patches entries [1]
+   and [3] (b3c / b44) at runtime between FUN_0005dd84 and FUN_0005e12c. */
+static code *DAT_00086b38_fnptrs[6] = {
   (code *)FUN_0005dd84, (code *)FUN_0005e12c,
   (code *)FUN_0005debc, (code *)FUN_0005dd84,
   (code *)FUN_0005dff4, (code *)FUN_0005e3c0,
 };
 #define DAT_00086b38 (DAT_00086b38_fnptrs[0])
+#define DAT_00086b3c (DAT_00086b38_fnptrs[1])
 #define DAT_00086b40 (DAT_00086b38_fnptrs[2])
+#define DAT_00086b44 (DAT_00086b38_fnptrs[3])
 #define DAT_00086b48 (DAT_00086b38_fnptrs[4])
 undefined4 DAT_0023b804;
 undefined2 DAT_00086b30;
@@ -2975,14 +2993,61 @@ code *DAT_0023b80c;
 code *DAT_0023b4d4;
 undefined2 DAT_00189582;
 ushort DAT_00189580;
-undefined *DAT_00086b44;
-undefined *DAT_00086b3c;
-static undefined1 DAT_00086b52_backing[65536];
-#define DAT_00086b52 DAT_00086b52_backing[0]
+/* DAT_00086b3c / DAT_00086b44 are entries [1] and [3] of
+   DAT_00086b38_fnptrs (see its comment) -- #define'd there. */
+
+/* Recovered from UU.exe .data: 0x86b50 .. 0x86bef (0xa0 bytes). A dense
+   cluster of small per-view-orientation / per-tile-shape byte tables
+   that process_visible_tile_cell reads while building a tile's vertex
+   set for the 3D view. Ghidra had scattered it across ~15 lone
+   `undefined`/`undefined1` scalars (DAT_00086b50, b52, b84, b88,
+   bb0..bb5, bc8..bcd) PLUS a dozen bare-literal `iVar + 0x86bXX`
+   dereferences -- all reading zero / wild. Unified into one region with
+   the real bytes; the scalars and literals now index into it.
+     +0x00 (b50) view-basis shorts, [facing*4] (walk_visible_tiles)
+     +0x10 (b60) 4x4 per-facing something
+     +0x20 (b70) vertex/height offset base, indexed via b84/b88 + n*4
+     +0x40 (b90) 6x5 per-(facing,slot) offsets
+     +0x60 (bb0) 6-entry group used by the billboard-vertex Ordinal_2032 calls
+     +0x78 (bc8) 6-entry group for the diagonal-tile path
+     +0x90 (be0) 3x4 cull-plane normal components (be0/be1/be2) */
+static const undefined1 DAT_00086b50_region[0xa0] = {
+  0x01,0x00,0x40,0x00,0xc0,0xff,0x01,0x00, 0xff,0xff,0xc0,0xff,0x40,0x00,0xff,0xff,
+  0x00,0x01,0x03,0x02,0x02,0x00,0x01,0x03, 0x03,0x02,0x00,0x01,0x01,0x03,0x02,0x00,
+  0x00,0x00,0x01,0x01,0x01,0x01,0x00,0x00, 0x00,0x01,0x00,0x01,0x01,0x00,0x01,0x00,
+  0x00,0x00,0x00,0x00,0x02,0x00,0x01,0x00, 0x00,0x01,0x03,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x01,0x00,0x00,0x01,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x01,
+  0x01,0x00,0x01,0x00,0x00,0x01,0x01,0x01, 0x00,0x01,0x01,0x01,0x00,0x00,0x00,0x00,
+  0x01,0x01,0x03,0x01,0x00,0x01,0x00,0x01, 0x02,0x01,0x01,0x03,0x00,0x00,0x00,0x00,
+  0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x01,0x01,0x01,0xff,0x00,0x01,
+  0x01,0x00,0xff,0xff,0x01,0x00,0x00,0x01, 0x01,0x01,0x01,0x01,0x00,0x00,0xff,0x01,
+  0x00,0x04,0xff,0x00,0x04,0x01,0xff,0x04, 0x00,0x01,0x04,0x00,0x00,0x00,0x00,0x00,
+};
+#define DAT_00086b50_at(off)  (*(const undefined1 *)(DAT_00086b50_region + (off)))
+#define DAT_00086b50  DAT_00086b50_at(0x00)
+#define DAT_00086b52  DAT_00086b50_at(0x02)
+#define DAT_00086b84  DAT_00086b50_at(0x34)
+#define DAT_00086b88  DAT_00086b50_at(0x38)
+#define DAT_00086bb0  DAT_00086b50_at(0x60)
+#define DAT_00086bb1  DAT_00086b50_at(0x61)
+#define DAT_00086bb2  DAT_00086b50_at(0x62)
+#define DAT_00086bb3  DAT_00086b50_at(0x63)
+#define DAT_00086bb4  DAT_00086b50_at(0x64)
+#define DAT_00086bb5  DAT_00086b50_at(0x65)
+#define DAT_00086bc8  DAT_00086b50_at(0x78)
+#define DAT_00086bc9  DAT_00086b50_at(0x79)
+#define DAT_00086bca  DAT_00086b50_at(0x7a)
+#define DAT_00086bcb  DAT_00086b50_at(0x7b)
+#define DAT_00086bcc  DAT_00086b50_at(0x7c)
+#define DAT_00086bcd  DAT_00086b50_at(0x7d)
+/* numeric base for the surviving `iVar + 0x86bXX` literal derefs:
+   substitute UW_B50_LIT(0x86bXX) for the literal so the arithmetic
+   lands in the recovered region instead of at absolute address 0x86bXX. */
+#define UW_B50_LIT(addr)  ((intptr_t)(const char *)DAT_00086b50_region + ((intptr_t)(addr) - 0x86b50))
+static const undefined1 DAT_00086c00_arr[8] = { 0x00,0x01,0x02,0x00,0x00,0x00,0x00,0x00 };
+#define DAT_00086c00 (*(const undefined1 *)DAT_00086c00_arr)
 undefined2 DAT_0023bc8c;
 undefined2 DAT_0023b8c0;
-static undefined1 DAT_00086b50_backing[65536];
-#define DAT_00086b50 DAT_00086b50_backing[0]
 byte *DAT_0023b4ec;
 /* Was a lone `undefined` scalar; walk_visible_tiles/process_visible_tile_cell index it as
    `(&DAT_00086bf0)[tile_type_nibble]`. Real bytes recovered from
@@ -3028,21 +3093,8 @@ undefined2 DAT_0023b4d0;
 byte DAT_0023b4e0;
 int DAT_000a85d4;
 char DAT_0023b834;
-undefined1 DAT_00086b84;
-undefined1 DAT_00086b88;
-undefined1 DAT_00086bb0;
-undefined1 DAT_00086bb1;
-undefined1 DAT_00086bb2;
-undefined1 DAT_00086bb3;
-undefined1 DAT_00086bb4;
-undefined1 DAT_00086bb5;
-undefined DAT_00086bc8;
-undefined DAT_00086bc9;
-undefined DAT_00086bca;
-undefined DAT_00086bcb;
-undefined DAT_00086bcc;
-undefined DAT_00086bcd;
-undefined1 DAT_00086c00;
+/* DAT_00086b84/b88/bb0..bb5/bc8..bcd/c00 -> DAT_00086b50_region /
+   DAT_00086c00_arr, #define'd above. */
 static undefined DAT_000a85d8_backing[32768];
 #define DAT_000a85d8 DAT_000a85d8_backing[0]
 undefined DAT_000a85d9;
@@ -3167,8 +3219,18 @@ undefined1 DAT_0023bb98;
 undefined2 DAT_0023b848;
 undefined1 DAT_0023bb99;
 undefined1 DAT_0023bb9a;
-undefined DAT_00086d68;
-undefined DAT_00086d69;
+/* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view-
+   facing corner-index remap for a rotating quad: FUN_00065210 reads
+   `(&DAT_00086d68)[idx*2]` (low byte) and `(&DAT_00086d69)[idx*2]` (high
+   byte) with idx = (corner>>5) + facing*8. Were lone zero scalars. */
+static const undefined1 DAT_00086d68_region[64] = {
+  0x00,0x00,0x01,0x00,0x02,0x00,0x03,0x00, 0x04,0x00,0x05,0x00,0x06,0x00,0x07,0x00,
+  0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x03, 0x00,0x04,0x00,0x05,0x00,0x06,0x00,0x07,
+  0x07,0x00,0x06,0x00,0x05,0x00,0x04,0x00, 0x03,0x00,0x02,0x00,0x01,0x00,0x00,0x00,
+  0x00,0x07,0x00,0x06,0x00,0x05,0x00,0x04, 0x00,0x03,0x00,0x02,0x00,0x01,0x00,0x00,
+};
+#define DAT_00086d68 (*(const undefined1 *)DAT_00086d68_region)
+#define DAT_00086d69 (*(const undefined1 *)(DAT_00086d68_region + 1))
 undefined DAT_0023b92e;
 undefined1 DAT_0020330c;
 char DAT_00086db0;
@@ -28981,35 +29043,34 @@ short param_6;
 
 
 
-int FUN_00040c5c(param_1)
+/* Return type was `int`, truncating the real 64-bit pointer every
+   caller casts back to (byte *) and dereferences. */
+void *FUN_00040c5c(param_1)
 short param_1;
 
 {
   int iVar1;
-  int *piVar2;
-  
+  char **ppcVar2;
+
   iVar1 = (int)param_1;
   if (iVar1 < 0x30) {
-    iVar1 = DAT_0023ae38 + iVar1 * 0x1000;
+    return DAT_0023ae38 + iVar1 * 0x1000;
   }
-  else if (iVar1 < 0x3a) {
-    iVar1 = DAT_0023ae34 + (iVar1 + -0x30) * 0x400;
+  if (iVar1 < 0x3a) {
+    return DAT_0023ae34 + (iVar1 + -0x30) * 0x400;
+  }
+  if (iVar1 < 0x6a) {
+    iVar1 = iVar1 + -0x3a;
+    ppcVar2 = &DAT_0023ae3c;
   }
   else {
-    if (iVar1 < 0x6a) {
-      iVar1 = iVar1 + -0x3a;
-      piVar2 = &DAT_0023ae3c;
+    if (0x73 < iVar1) {
+      return 0;
     }
-    else {
-      if (0x73 < iVar1) {
-        return 0;
-      }
-      iVar1 = iVar1 + -0x6a;
-      piVar2 = &DAT_0023ae30;
-    }
-    iVar1 = *piVar2 + iVar1 * 0x100;
+    iVar1 = iVar1 + -0x6a;
+    ppcVar2 = &DAT_0023ae30;
   }
-  return iVar1;
+  return *ppcVar2 + iVar1 * 0x100;
 }
 
 
@@ -45678,7 +45739,7 @@ void walk_visible_tiles()
   undefined1 *puVar9;
   
   DAT_0023b818 = 0xe0;
-  DAT_0023b4f0 = DAT_0023b4a0 * 4 + 0x86b60;
+  DAT_0023b4f0 = DAT_0023b4a0 * 4 + UW_B50_LIT(0x86b60);
   iVar4 = DAT_0023b4a0 * 6;
   sVar2 = *(short *)(&DAT_00086a00 + iVar4);
   iVar7 = (int)sVar2;
@@ -46050,7 +46111,7 @@ byte * param_1;
   undefined1 uVar13;
   undefined1 uVar14;
   byte bVar15;
-  int iVar16;
+  intptr_t iVar16; /* was int -- also holds the DAT_00086e6c view-record pointer */
   undefined4 uVar17;
   int iVar18;
   int iVar19;
@@ -46146,7 +46207,7 @@ byte * param_1;
     local_4c = 4;
   }
   iVar33 = local_4c * 4;
-  pbVar35 = (byte *)(iVar33 + 0x86b70);
+  pbVar35 = (byte *)(iVar33 + UW_B50_LIT(0x86b70));
   if (local_4c == 4) {
     if (*(short *)(&DAT_00085d20 + uVar1 * 2) < *(short *)(DAT_00086e6c + 0xe)) {
 LAB_0005e988:
@@ -46157,11 +46218,11 @@ LAB_0005e988:
   else {
     iVar16 = local_4c * 3;
     if (((int)*(short *)(&DAT_00085d20 + (uVar1 + *pbVar35) * 2) -
-        (int)*(short *)(DAT_00086e6c + 0xe)) * (int)*(char *)(iVar16 + 0x86be1) +
+        (int)*(short *)(DAT_00086e6c + 0xe)) * (int)*(char *)(UW_B50_LIT(0x86be1) + iVar16) +
         (DAT_0023b4e8 * 0x100 - (int)*(short *)(DAT_00086e6c + 0x12)) *
-        (int)*(char *)(iVar16 + 0x86be2) +
+        (int)*(char *)(UW_B50_LIT(0x86be2) + iVar16) +
         ((DAT_0023b4e4 + -0x10) * 0x100 - (int)*(short *)(DAT_00086e6c + 10)) *
-        (int)*(char *)(iVar16 + 0x86be0) < 0) goto LAB_0005e988;
+        (int)*(char *)(UW_B50_LIT(0x86be0) + iVar16) < 0) goto LAB_0005e988;
   }
   bVar39 = false;
 LAB_0005e7e0:
@@ -46231,7 +46292,7 @@ LAB_0005e7e0:
     (&DAT_000a85e2)[iVar34] = uVar6;
     uVar7 = (undefined1)((uint)uVar20 >> 0x18);
     (&DAT_000a85e3)[iVar34] = uVar7;
-    uVar21 = Ordinal_2032((uVar1 + *(byte *)(iVar33 + 0x86b72)) * 0x40);
+    uVar21 = Ordinal_2032((uVar1 + *(byte *)(UW_B50_LIT(0x86b72) + iVar33)) * 0x40);
     (&DAT_000a85dc)[iVar34] = (char)uVar21;
     (&DAT_000a85dd)[iVar34] = (char)((uint)uVar21 >> 8);
     (&DAT_000a85de)[iVar34] = (char)((uint)uVar21 >> 0x10);
@@ -46300,7 +46361,7 @@ LAB_0005e7e0:
     (&DAT_000a85e1)[iVar18] = uVar24;
     (&DAT_000a85e2)[iVar18] = uVar3;
     (&DAT_000a85e3)[iVar18] = uVar4;
-    uVar17 = Ordinal_2032((uVar1 + *(byte *)(iVar33 + 0x86b71)) * 0x40);
+    uVar17 = Ordinal_2032((uVar1 + *(byte *)(UW_B50_LIT(0x86b71) + iVar33)) * 0x40);
     (&DAT_000a85dc)[iVar18] = (char)uVar17;
     (&DAT_000a85dd)[iVar18] = (char)((uint)uVar17 >> 8);
     (&DAT_000a85de)[iVar18] = (char)((uint)uVar17 >> 0x10);
@@ -46328,7 +46389,7 @@ LAB_0005e7e0:
     (&DAT_000a85e1)[iVar18] = uVar5;
     (&DAT_000a85e2)[iVar18] = uVar6;
     (&DAT_000a85e3)[iVar18] = uVar7;
-    uVar17 = Ordinal_2032((uVar1 + *(byte *)(iVar33 + 0x86b73)) * 0x40);
+    uVar17 = Ordinal_2032((uVar1 + *(byte *)(UW_B50_LIT(0x86b73) + iVar33)) * 0x40);
     (&DAT_000a85dc)[iVar18] = (char)uVar17;
     (&DAT_000a85dd)[iVar18] = (char)((uint)uVar17 >> 8);
     DAT_000a85d0 = iVar16 + 4;
@@ -46546,7 +46607,7 @@ LAB_0005e7e0:
       if ((DAT_0023b820[1] & uVar27) == 0) {
         local_81 = 0x10;
         local_80 = 0x10;
-        iVar16 = ((-uVar1 & 0xff) - (uint)*(byte *)(local_54 * 5 + local_4c + 0x86b90)) + 0x10;
+        iVar16 = ((-uVar1 & 0xff) - (uint)*(byte *)(UW_B50_LIT(0x86b90) + local_54 * 5 + local_4c)) + 0x10;
       }
       else {
         local_81 = (byte)puVar23[*(short *)(&DAT_00086a00 +
@@ -46566,11 +46627,11 @@ LAB_0005e7e0:
           uVar28 = 4;
         }
         uVar28 = uVar28 & 0xff;
-        iVar16 = (((uint)*(byte *)((local_54 + 3) * 5 + uVar28 + 0x86b90) -
-                  (uint)*(byte *)(local_54 * 5 + local_4c + 0x86b90)) - uVar1) + (uint)local_81;
-        local_80 = *(char *)((uint)(byte)(&DAT_00086b88)[local_54] + uVar28 * 4 + 0x86b70) +
+        iVar16 = (((uint)*(byte *)(UW_B50_LIT(0x86b90) + (local_54 + 3) * 5 + uVar28) -
+                  (uint)*(byte *)(UW_B50_LIT(0x86b90) + local_54 * 5 + local_4c)) - uVar1) + (uint)local_81;
+        local_80 = *(char *)((uint)(byte)(&DAT_00086b88)[local_54] + uVar28 * 4 + UW_B50_LIT(0x86b70)) +
                    local_81;
-        local_81 = *(char *)((uint)(byte)(&DAT_00086b84)[local_54] + uVar28 * 4 + 0x86b70) +
+        local_81 = *(char *)((uint)(byte)(&DAT_00086b84)[local_54] + uVar28 * 4 + UW_B50_LIT(0x86b70)) +
                    local_81;
         bVar25 = local_83;
       }
@@ -47024,7 +47085,16 @@ LAB_0005e7e0:
       puVar23 = DAT_0023b4ec;
     }
   }
-  FUN_00065394(puVar23 + 1);
+  /* Hack - Disabled: FUN_00065394 renders this tile's animated features
+     and the objects sitting on it (doors, switches, bridges, item
+     billboards). With object processing off it walks a bogus object
+     count and dereferences a NULL slot from FUN_000535fc. The wall /
+     floor / diagonal geometry for the tile was already emitted above
+     (the DAT_0023b4f4/b80c/b4d4 calls), so skip this for now. Set
+     UW_ENABLE_TILE_FEATURES to run it. */
+  if (getenv("UW_ENABLE_TILE_FEATURES") != NULL) {
+    FUN_00065394(puVar23 + 1);
+  }
   cVar2 = DAT_0023b834;
   if (((puVar23 + 1 != (ushort *)0x0) && (DAT_0023b834 != '\0')) &&
      (DAT_0023b834 = '\0', DAT_0023b4e0 < 8)) {
@@ -48775,9 +48845,11 @@ LAB_000651ec:
 
 
 
+/* param_1 (out record) and param_2 (src record) were `int`, truncating
+   the real pointers FUN_00065394 passes. */
 void FUN_00065210(param_1,param_2)
-int param_1;
-int param_2;
+byte *param_1;
+byte *param_2;
 
 {
   *(undefined *)(param_1 + 1) =
