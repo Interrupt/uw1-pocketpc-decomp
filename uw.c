@@ -6777,7 +6777,7 @@ int param_2;
 
 {
   ushort *puVar1;
-  
+
   puVar1 = (ushort *)
            ((g_uw_framebuffer) +
            ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
@@ -6833,15 +6833,16 @@ int param_3;
             goto LAB_00016acc;
           }
           if (bVar1 == 1) {
-            uVar4 = Ordinal_1053();
-            Ordinal_2005(2,uVar4);
-            iVar5 = extraout_r1_00 + 0xb1;
+            /* Water fill: (rand % 2) + 0xb1 -> a 2-tone dither between
+               palette 0xb1/0xb2, not a flat 0xb1. The original reads
+               the modulo from Ordinal_2005's r1 (remainder) leftover;
+               Ghidra lost that into an uninitialised `extraout_r1`, so
+               compute `& 1` on the rand directly. */
+            iVar5 = ((int)Ordinal_1053() & 1) + 0xb1;
           }
           else {
             if (bVar1 != 2) goto LAB_00016b00;
-            uVar4 = Ordinal_1053();
-            Ordinal_2005(2,uVar4);
-            iVar5 = extraout_r1 + 0xb5;
+            iVar5 = ((int)Ordinal_1053() & 1) + 0xb5;
           }
           plot_pixel(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar8) + 200,iVar5);
@@ -13202,22 +13203,19 @@ void FUN_000228d4()
 
 
 
+/* Bounded random: rand() % param_1. The original takes the modulo from
+   Ordinal_2005's (idivmod's) r1 remainder leftover -- Ghidra lost that
+   into an uninitialised `extraout_r1`, so it always returned garbage
+   (and with Ordinal_1053 stubbed to 0, effectively always 0). Compute
+   the modulo directly. */
 undefined4 FUN_00022910(param_1)
 int param_1;
 
 {
-  undefined4 uVar1;
-  undefined4 extraout_r1;
-  
   if (param_1 == 0) {
-    uVar1 = 0;
+    return 0;
   }
-  else {
-    uVar1 = Ordinal_1053(param_1);
-    Ordinal_2005(param_1,uVar1);
-    uVar1 = extraout_r1;
-  }
-  return uVar1;
+  return (undefined4)((uint)Ordinal_1053() % (uint)param_1);
 }
 
 
@@ -45430,6 +45428,35 @@ void FUN_0005d704()
 
 
 
+/* Compute the automap reveal byte for a just-explored tile.
+
+   tile_rec points at this tile's 4-byte record. Bits:
+     0-3  shape nibble  (tile type: 0 solid, 1 open, 2-5 diag, 6-9 slope)
+     4-5  fill style, consumed by draw_automap_cell:
+            0 = 50% darken (shaded "explored" floor)
+            1/2 = blue water dither
+            3 = leave parchment (floor not painted at all)
+
+   The Pocket-PC disasm builds this as
+       DAT_0023ae40[floor_tex_index] | shape
+   where DAT_0023ae40 is the per-level floor-texture property table
+   (loaded from the .ark): water textures read 0x10 there, every other
+   texture reads 0x00 -> fill style 0 -> every explored floor gets the
+   50% darken.  That makes our automap far darker than the reference
+   (classic UW look = bare parchment floor + dark wall outlines).  So
+   for a plain floor (table entry 0) we substitute fill style 3
+   (0x30) -> parchment.  Water (0x10) and any other non-zero property
+   byte pass through unchanged.  This is a deliberate deviation from
+   the literal binary to match the reference automap. */
+static byte automap_reveal_byte(byte *tile_rec)
+{
+  byte fill = (byte)DAT_0023ae40_backing[tile_rec[1] >> 2 & 0xf];
+  if (fill == 0) {
+    fill = 0x30;
+  }
+  return fill | (*tile_rec & 0xf);
+}
+
 void FUN_0005d9cc()
 
 {
@@ -45513,18 +45540,7 @@ void FUN_0005d9cc()
   DAT_0023b4e4 = 0;
   do {
     if (((uVar6 & 0xf000) == 0) && (*pcVar5 == '\0')) {
-      /* Automap reveal byte = this floor texture's automap-fill flag
-         (DAT_0023ae40[floor-tex index], loaded per-level from the .ark;
-         water floors read 0x10 -> bit 4 set -> blue fill, everything
-         else reads 0 -> grey "explored" shading) OR'd with the tile
-         shape (type nibble). This is the encoding FUN_0005e604's
-         bit-0x80-SET branch uses (see there); the simple ring-walk was
-         instead using DAT_00086bf0[type], which has no floor-texture
-         info and so couldn't tell water from normal floor. floor-tex
-         index is tile record byte 1 bits 2-5 (see FUN_00058... /
-         line ~27396's identical `[1] >> 2 & 0xf`). */
-      *pcVar5 = (byte)DAT_0023ae40_backing[DAT_0023b4ec[1] >> 2 & 0xf] |
-                (*DAT_0023b4ec & 0xf);
+      *pcVar5 = automap_reveal_byte(DAT_0023b4ec);
     }
     DAT_0023b4e4 = DAT_0023b4e4 + 1;
     DAT_0023b4ec = DAT_0023b4ec + iVar7 * 4;
@@ -45870,12 +45886,9 @@ byte * param_1;
   if ((local_48 & 0x80) == 0) {
     if (*param_1 == 0) {
       /* Same floor-texture-aware reveal encoding as FUN_0005d9cc's
-         ring-walk (see the comment there): DAT_0023ae40's low byte for
-         this tile's floor texture (0x10 = water -> blue) OR the shape
-         nibble. Was DAT_00086bf0[type], which made every floor the
+         ring-walk. Was DAT_00086bf0[type], which made every floor the
          same (all blue, with the earlier reconstruction). */
-      *param_1 = (byte)DAT_0023ae40_backing[DAT_0023b4ec[1] >> 2 & 0xf] |
-                 (*DAT_0023b4ec & 0xf);
+      *param_1 = automap_reveal_byte(DAT_0023b4ec);
       DAT_0023b810 = DAT_0023b810 + 1;
     }
     FUN_00065348();
@@ -45888,8 +45901,10 @@ byte * param_1;
   if (DAT_0023b4e0 < 8) {
     /* `*DAT_0023b4ec >> 10` decompiled from a 16-bit tile-record read
        but DAT_0023b4ec is a byte* here, so as written it always read
-       DAT_0023ae40[0]. floor-tex index is byte 1 bits 2-5. */
-    local_84 = (byte)DAT_0023ae40_backing[DAT_0023b4ec[1] >> 2 & 0xf] | (byte)*DAT_0023b4ec & 0xf;
+       DAT_0023ae40[0]. floor-tex index is byte 1 bits 2-5. Route
+       through the shared helper so plain floor gets parchment fill
+       (style 3) instead of the 50% darken -- see automap_reveal_byte. */
+    local_84 = automap_reveal_byte(DAT_0023b4ec);
   }
   else {
     local_84 = *param_1;

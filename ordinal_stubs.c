@@ -566,9 +566,14 @@ void *Ordinal_1047(void *ptr, int val, unsigned int n)
     return ptr;
 }
 
+/* COREDLL ordinal 1053 = rand(). Was stubbed to always return 0, which
+   silently killed every randomized effect in the game -- e.g. the
+   automap water/lava fill collapsed from its intended 2-/3-tone dither
+   to a flat single color. Real rand(); deterministic (no srand) so
+   scripted runs stay reproducible. */
 long Ordinal_1053()
 {
-    return 0;
+    return rand();
 }
 
 void *Ordinal_1054(void *ptr, unsigned int size)
