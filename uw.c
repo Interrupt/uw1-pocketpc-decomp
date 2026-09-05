@@ -2380,12 +2380,70 @@ char *DAT_002046a4;
 char *DAT_002046a8;
 char * DAT_002046bc;
 char *DAT_0020469c;
-static undefined1 DAT_00085d48_backing[65536];
-#define DAT_00085d48 DAT_00085d48_backing[0]
-static undefined1 DAT_00085f50_backing[65536];
-#define DAT_00085f50 DAT_00085f50_backing[0]
-undefined DAT_00085d4c;
-undefined DAT_00085f54;
+/* Recovered from UU.exe .data: the renderer's sine (0x85d48) and cosine
+   (0x85f50) tables, 256 int16 entries each, amplitude 32767 --
+   sine[i] = round(32767 * sin(i*PI/128)); cosine[i] = sine[(i+64)&255].
+   Both were silently-zero 64KB Ghidra backing arrays, so FUN_00049ce8
+   (angle -> screen delta) returned {0,0} for every angle. That zeroed
+   the entry-0 direction vector FUN_0005bf40 seeds the visibility
+   flood-fill with, so process_reaction_entry did no expansion,
+   process_reaction_queue marked no tile visible, and the 3D tile list
+   came out empty (black viewport). It also broke every other bit of
+   angle math in the projection code. Four trailing pad shorts each
+   (the +2 interpolation in FUN_00049ce8 can index one past 255).
+   DAT_00085d4c / DAT_00085f54 are &table + 4 (the "next" sample). */
+static const short DAT_00085d48_sine[260] = {
+  0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
+  9512, 10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
+  18205, 18868, 19520, 20160, 20788, 21403, 22006, 22595, 23170, 23732, 24279, 24812,
+  25330, 25833, 26320, 26791, 27246, 27684, 28106, 28511, 28899, 29269, 29622, 29957,
+  30274, 30572, 30853, 31114, 31357, 31581, 31786, 31972, 32138, 32286, 32413, 32522,
+  32610, 32679, 32729, 32758, 32767, 32758, 32729, 32679, 32610, 32522, 32413, 32286,
+  32138, 31972, 31786, 31581, 31357, 31114, 30853, 30572, 30274, 29957, 29622, 29269,
+  28899, 28511, 28106, 27684, 27246, 26791, 26320, 25833, 25330, 24812, 24279, 23732,
+  23170, 22595, 22006, 21403, 20788, 20160, 19520, 18868, 18205, 17531, 16846, 16151,
+  15447, 14733, 14010, 13279, 12540, 11793, 11039, 10279, 9512, 8740, 7962, 7180,
+  6393, 5602, 4808, 4011, 3212, 2411, 1608, 804, 0, -804, -1608, -2411,
+  -3212, -4011, -4808, -5602, -6393, -7180, -7962, -8740, -9512, -10279, -11039, -11793,
+  -12540, -13279, -14010, -14733, -15447, -16151, -16846, -17531, -18205, -18868, -19520, -20160,
+  -20788, -21403, -22006, -22595, -23170, -23732, -24279, -24812, -25330, -25833, -26320, -26791,
+  -27246, -27684, -28106, -28511, -28899, -29269, -29622, -29957, -30274, -30572, -30853, -31114,
+  -31357, -31581, -31786, -31972, -32138, -32286, -32413, -32522, -32610, -32679, -32729, -32758,
+  -32767, -32758, -32729, -32679, -32610, -32522, -32413, -32286, -32138, -31972, -31786, -31581,
+  -31357, -31114, -30853, -30572, -30274, -29957, -29622, -29269, -28899, -28511, -28106, -27684,
+  -27246, -26791, -26320, -25833, -25330, -24812, -24279, -23732, -23170, -22595, -22006, -21403,
+  -20788, -20160, -19520, -18868, -18205, -17531, -16846, -16151, -15447, -14733, -14010, -13279,
+  -12540, -11793, -11039, -10279, -9512, -8740, -7962, -7180, -6393, -5602, -4808, -4011,
+  -3212, -2411, -1608, -804, 0, 0, 0, 0,
+};
+static const short DAT_00085f50_cosine[260] = {
+  32767, 32758, 32729, 32679, 32610, 32522, 32413, 32286, 32138, 31972, 31786, 31581,
+  31357, 31114, 30853, 30572, 30274, 29957, 29622, 29269, 28899, 28511, 28106, 27684,
+  27246, 26791, 26320, 25833, 25330, 24812, 24279, 23732, 23170, 22595, 22006, 21403,
+  20788, 20160, 19520, 18868, 18205, 17531, 16846, 16151, 15447, 14733, 14010, 13279,
+  12540, 11793, 11039, 10279, 9512, 8740, 7962, 7180, 6393, 5602, 4808, 4011,
+  3212, 2411, 1608, 804, 0, -804, -1608, -2411, -3212, -4011, -4808, -5602,
+  -6393, -7180, -7962, -8740, -9512, -10279, -11039, -11793, -12540, -13279, -14010, -14733,
+  -15447, -16151, -16846, -17531, -18205, -18868, -19520, -20160, -20788, -21403, -22006, -22595,
+  -23170, -23732, -24279, -24812, -25330, -25833, -26320, -26791, -27246, -27684, -28106, -28511,
+  -28899, -29269, -29622, -29957, -30274, -30572, -30853, -31114, -31357, -31581, -31786, -31972,
+  -32138, -32286, -32413, -32522, -32610, -32679, -32729, -32758, -32767, -32758, -32729, -32679,
+  -32610, -32522, -32413, -32286, -32138, -31972, -31786, -31581, -31357, -31114, -30853, -30572,
+  -30274, -29957, -29622, -29269, -28899, -28511, -28106, -27684, -27246, -26791, -26320, -25833,
+  -25330, -24812, -24279, -23732, -23170, -22595, -22006, -21403, -20788, -20160, -19520, -18868,
+  -18205, -17531, -16846, -16151, -15447, -14733, -14010, -13279, -12540, -11793, -11039, -10279,
+  -9512, -8740, -7962, -7180, -6393, -5602, -4808, -4011, -3212, -2411, -1608, -804,
+  0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
+  9512, 10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
+  18205, 18868, 19520, 20160, 20788, 21403, 22006, 22595, 23170, 23732, 24279, 24812,
+  25330, 25833, 26320, 26791, 27246, 27684, 28106, 28511, 28899, 29269, 29622, 29957,
+  30274, 30572, 30853, 31114, 31357, 31581, 31786, 31972, 32138, 32286, 32413, 32522,
+  32610, 32679, 32729, 32758, 32767, 0, 0, 0,
+};
+#define DAT_00085d48 (*(const undefined1 *)(const void *)DAT_00085d48_sine)
+#define DAT_00085d4c (*(const undefined1 *)((const char *)(const void *)DAT_00085d48_sine + 4))
+#define DAT_00085f50 (*(const undefined1 *)(const void *)DAT_00085f50_cosine)
+#define DAT_00085f54 (*(const undefined1 *)((const char *)(const void *)DAT_00085f50_cosine + 4))
 undefined DAT_00086260;
 undefined DAT_00086264;
 static undefined1 DAT_002029d8_backing[256];
@@ -2835,34 +2893,80 @@ static char g_dat0023aee0_fallback[64];
      +0x18  four facing angles {0x0000, 0x4000, 0x8000, 0xc000}, [dir*2].
      +0x20  four 10-entry tile-shape rotation remaps, one row (stride
             0x10) per facing: identity, then the diagonal/slope types
-            (2-9) permuted for each 90-degree view rotation. */
-static const undefined1 DAT_00086a00_region[0x80] = {
+            (2-9) permuted for each 90-degree view rotation.
+     +0x60  DAT_00086a60: the tile-shape -> visibility-edge-flags table
+            compute_reaction_offset indexes as [shape*7 + sVar9] (shape
+            0..9, sVar9 0..~8; 80 bytes). This was a lone silently-zero
+            `undefined` scalar, so compute_reaction_offset's bVar6 came
+            out 0 for every cell -> it wrote 0 (never the 0x80 "visible"
+            bit) into the DAT_0023b038 output grid -> process_reaction_
+            queue marked NO tile visible -> empty 3D tile list (black
+            viewport) and only the un-gated automap reveal worked. */
+static const undefined1 DAT_00086a00_region[0xb0] = {
   0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff,
   0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x00,0x00,0x00,0x40,0x00,0x80,0x00,0xc0,
   0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07, 0x08,0x09,0x00,0x00,0x00,0x00,0x00,0x00,
   0x00,0x01,0x04,0x02,0x05,0x03,0x09,0x08, 0x06,0x07,0x00,0x00,0x00,0x00,0x00,0x00,
   0x00,0x01,0x05,0x04,0x03,0x02,0x07,0x06, 0x09,0x08,0x00,0x00,0x00,0x00,0x00,0x00,
   0x00,0x01,0x03,0x05,0x02,0x04,0x08,0x09, 0x07,0x06,0x00,0x00,0x00,0x00,0x00,0x00,
+  /* +0x60  DAT_00086a60 */
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xb8, 0x98,0xb0,0x98,0xb0,0x98,0xb0,0xe4,0xc4,
+  0xe4,0xc4,0xe0,0xc4,0xe4,0xcd,0xcd,0xc5, 0xc9,0xc5,0xcd,0xc5,0xd6,0xd2,0x00,0xd6,
+  0x00,0xd6,0x00,0xd7,0x00,0xd3,0x00,0xd7, 0x00,0xd7,0xbc,0x9c,0xb4,0x9c,0xb4,0x9c,
+  0xb4,0xbd,0x9d,0xb5,0x9d,0xb5,0x9d,0xb5, 0xbe,0x9e,0xb6,0x9e,0xb6,0x9e,0xb6,0xbf,
+  0x9f,0xb7,0x9f,0xb7,0x9f,0xb7,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 };
 #define DAT_00086a00 (*(undefined1 *)(DAT_00086a00_region + 0x00))
 #define DAT_00086a02 (*(undefined1 *)(DAT_00086a00_region + 0x02))
 #define DAT_00086a18 (*(undefined1 *)(DAT_00086a00_region + 0x18))
 #define DAT_00086a20 (*(undefined1 *)(DAT_00086a00_region + 0x20))
-undefined DAT_00086a60;
-undefined4 DAT_00086af0;
-static undefined1 DAT_00086af8_backing[65536];
-#define DAT_00086af8 DAT_00086af8_backing[0]
-static undefined1 DAT_00086b00_backing[65536];
-#define DAT_00086b00 DAT_00086b00_backing[0]
+#define DAT_00086a60 (*(undefined1 *)(DAT_00086a00_region + 0x60))
+/* {0x10, 0x00}: compute_reaction_offset reads (&DAT_00086af0)[bool].
+   Was a silently-zero undefined4. */
+static const undefined1 DAT_00086af0_arr[4] = { 0x10, 0x00, 0x00, 0x00 };
+#define DAT_00086af0 (*(undefined1 *)DAT_00086af0_arr)
+/* Recovered from UU.exe .data at 0x86af8 (12 bytes = 6 int16). Was two
+   separate silently-zero 64KB Ghidra arrays (DAT_00086af8, DAT_00086b00)
+   plus a bare literal `0x86afc` deref in process_reaction_entry. These
+   are the per-view-orientation constants that function's visibility
+   flood-fill uses to decide whether a neighbour tile occludes the view;
+   with them all zero the fill's expansion tests (uw.c ~44965, ~44978,
+   ~45001) never fire, so process_reaction_queue drains after ~2 entries
+   and marks NO tile visible -> FUN_0005e604 only ever takes its
+   un-gated automap-reveal path and never emits 3D tile geometry (black
+   viewport). Indexed [orient] with orient in {0,1}:
+     +0x00  DAT_00086af8 = {2, 4}    wall-edge bitmask (AND'd with DAT_000878d0[shape])
+     +0x04  DAT_00086afc = {2, 3}    expected shape id for the "aligned" case
+     +0x08  DAT_00086b00 = {-1, 1}   neighbour step sign */
+static const undefined1 DAT_00086af8_region[12] = {
+  0x02,0x00, 0x04,0x00, 0x02,0x00, 0x03,0x00, 0xff,0xff, 0x01,0x00,
+};
+#define DAT_00086af8 (*(undefined1 *)(DAT_00086af8_region + 0))
+#define DAT_00086afc (*(undefined1 *)(DAT_00086af8_region + 4))
+#define DAT_00086b00 (*(undefined1 *)(DAT_00086af8_region + 8))
 short DAT_0023b024;
 static undefined1 DAT_0023b038_backing[32768];
 #define DAT_0023b038 DAT_0023b038_backing[0]
 undefined DAT_00086b34;
 undefined2 DAT_00189578;
 short DAT_0023b810;
-undefined4 DAT_00086b38;
-undefined4 DAT_00086b40;
-undefined4 DAT_00086b48;
+/* Recovered from UU.exe .data at 0x86b38: three pairs of function
+   pointers, selected by an index (0 or 1, from DAT_00086b2c) in
+   FUN_0005d9cc, loaded into DAT_0023b4f4 / DAT_0023b80c / DAT_0023b4d4,
+   and called by FUN_0005e604 to emit a visible tile's 3D geometry
+   slice (wall / floor-or-ceiling / diagonal). Were three silently-zero
+   `undefined4` scalars, so `(*DAT_0023b4f4)(...)` was a call through
+   NULL the instant the (now-working) visibility fill marked any tile
+   visible. The six entries are contiguous in .data: b38,b3c / b40,b44
+   / b48,b4c -- one array, the three symbols index it at 0/2/4. */
+static code * const DAT_00086b38_fnptrs[6] = {
+  (code *)FUN_0005dd84, (code *)FUN_0005e12c,
+  (code *)FUN_0005debc, (code *)FUN_0005dd84,
+  (code *)FUN_0005dff4, (code *)FUN_0005e3c0,
+};
+#define DAT_00086b38 (DAT_00086b38_fnptrs[0])
+#define DAT_00086b40 (DAT_00086b38_fnptrs[2])
+#define DAT_00086b48 (DAT_00086b38_fnptrs[4])
 undefined4 DAT_0023b804;
 undefined2 DAT_00086b30;
 undefined DAT_0023b4dc;
@@ -44980,7 +45084,7 @@ LAB_0005cf04:
         param_1[8] = 0xff;
         if ((((ushort)(byte)(&DAT_000878d0)[cVar9] & *(ushort *)(&DAT_00086af8 + iVar3 * 2)) ==
              *(ushort *)(&DAT_00086af8 + iVar3 * 2)) &&
-           ((int)cVar9 == (int)*(short *)(iVar3 * 2 + 0x86afc))) {
+           ((int)cVar9 == (int)*(short *)((char *)&DAT_00086afc + iVar3 * 2))) {
           /* Was reading the division helper's remainder back via the
              extraout_r1 register-leftover trick (see Ordinal_2005's
              comment) -- computed directly instead, same fix as
@@ -45217,29 +45321,25 @@ void process_reaction_queue()
     }
   } while (DAT_0023b030 != 0xf);
 
-  /* Hack - Testing: DAT_0023b024 is the row depth of FUN_0005d9cc's
-     automap reveal walk (it starts at row &DAT_0023b038 +
-     DAT_0023b024*0x42 and sweeps back to row 0). It is the count of
-     reaction-queue passes the loop above made, minus 1. With
-     object/creature processing disabled the queue is always empty, the
-     loop runs once, and DAT_0023b024 ends at 0 -- so the walk only
-     sweeps the single row through the player and a teleport+REVEAL
-     reveals just a thin strip. (The other half of that bug -- the walk
-     not advancing tile-to-tile *at all* -- was the silently-zero
-     DAT_00086a00 stride table, now recovered.) Force a non-zero depth
-     so REVEAL fills a proper fan for testing. The rows above row 0 were
-     never populated by the empty queue, so zero them first: that makes
-     FUN_0005e604 treat their cells as "not specially visible" (flag bit
-     0x80 clear) and take the plain automap-reveal path rather than
-     reading stale bytes as billboard draw commands. DAT_0023b038_backing
-     is 32768 bytes (0x42 stride -> ~496 rows), so this is in bounds.
-     Remove once the reaction/visibility queue is actually populated. */
-  if (DAT_0023b024 < 8) {
+  /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): DAT_0023b024 is the
+     row depth of FUN_0005d9cc's reveal/visibility walk -- it starts at
+     row &DAT_0023b038 + DAT_0023b024*0x42 and sweeps back to row 0, and
+     equals (reaction-queue passes made) - 1. With a small visible set it
+     comes out 0, so a demomode TELEPORT+REVEAL only marks a thin strip.
+     Forcing it larger widens the automap reveal fan for testing, BUT it
+     also decouples the walk from process_reaction_queue's real output
+     rows (which now genuinely carry visibility bits -- see the table
+     recoveries this session), so it is opt-in and off by default. When
+     enabled, the upper rows are zeroed first so FUN_0005e604 reads them
+     as "not visible" and takes the plain automap-reveal path rather than
+     stale bytes. DAT_0023b038_backing is 32768 bytes (0x42 stride) so 8
+     rows is well in bounds. */
+  if (getenv("UW_HACK_REVEAL_DEPTH")) {
     int hack_row;
     for (hack_row = 0x42; hack_row < 0x42 * 9; hack_row = hack_row + 1) {
       DAT_0023b038_backing[hack_row] = 0;
     }
-    DAT_0023b024 = 8;
+    if (DAT_0023b024 < 8) DAT_0023b024 = 8;
   }
   return;
 }
@@ -45994,6 +46094,25 @@ byte * param_1;
       DAT_0023b810 = DAT_0023b810 + 1;
     }
     FUN_00065348();
+    return;
+  }
+  /* Hack - Disabled: this branch emits a visible tile's 3D geometry
+     slice for the dungeon viewport. It is now actually REACHED -- the
+     visibility flood-fill (process_reaction_queue / process_reaction_
+     entry / compute_reaction_offset) was resurrected this session by
+     recovering the silently-zero tables it depends on (DAT_00086a00
+     rotation basis, DAT_00086a60 edge-flags, the sin/cos tables, the
+     DAT_00086b38 function-pointer trio). But the geometry path below
+     then walks into a FURTHER chain of silently-zero globals
+     (DAT_0024fa2c, DAT_00086b30, DAT_00085d20, ...) and segfaults. Until
+     those are recovered too, mark the tile revealed for the automap
+     like the un-visible case and skip the geometry. Set
+     UW_ENABLE_3D_GEOMETRY to walk into it (expect a crash). */
+  if (getenv("UW_ENABLE_3D_GEOMETRY") == NULL) {
+    if (*param_1 == 0) {
+      *param_1 = automap_reveal_byte(DAT_0023b4ec);
+      DAT_0023b810 = DAT_0023b810 + 1;
+    }
     return;
   }
   DAT_0023b4d0 = 200;
