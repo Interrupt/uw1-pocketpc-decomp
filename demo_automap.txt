@@ -1,0 +1,129 @@
+# Regression/exercise test for the automap tile-reveal system.
+#
+# Teleports through a real, connected corridor path (coordinates
+# confirmed walkable via a direct read of DAT_002029cc's tile-type
+# data, not guessed from the level screenshot), calling REVEAL after
+# each stop to force the ring-walk that marks automap tiles revealed
+# (TELEPORT and ordinary movement don't trigger this on their own --
+# see memory.md's automap-reveal section). Ends by opening the map and
+# saving a screenshot.
+#
+# Run with UW_DEBUG_DRAW=1 to also get a debug/drawdumps/<timestamp>/
+# dump of every draw call along the way (the automap's own content
+# doesn't yet reach the visible on-screen flush, so UW_DEBUG_DRAW's
+# raw framebuffer dumps -- specifically the last "draw_text_string"
+# dump in the run -- are the only way to actually see it right now):
+#   UW_DEBUG_DRAW=1 UW_DATA_DIR="$(pwd)/data" UW_FAST_SLEEP=1 \
+#     UW_DEMO_FILE=demo_automap.txt UW_DEMO_DELAY_MS=10 ./build/uw_dbg
+#
+# Uses the real chargen navigation scheme (D-pad Up = confirm/advance,
+# not the older "DOWN then many ENTERs" some other demo files use --
+# see memory.md's "New canonical navigation sequence").
+
+ENTER
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+TYPE Avatar
+UP
+UP
+UP
+UP
+UP
+
+# Walk down from spawn (32,2) through the corridor south of it.
+TELEPORT 32 2
+REVEAL
+TELEPORT 32 3
+REVEAL
+TELEPORT 32 4
+REVEAL
+TELEPORT 32 5
+REVEAL
+TELEPORT 32 6
+REVEAL
+TELEPORT 32 7
+REVEAL
+TELEPORT 32 8
+REVEAL
+
+# West through the room/corridor system toward (20,11)-(22,14).
+TELEPORT 30 9
+REVEAL
+TELEPORT 27 9
+REVEAL
+TELEPORT 27 10
+REVEAL
+TELEPORT 27 11
+REVEAL
+TELEPORT 22 11
+REVEAL
+TELEPORT 20 11
+REVEAL
+TELEPORT 20 12
+REVEAL
+TELEPORT 20 13
+REVEAL
+TELEPORT 22 13
+REVEAL
+TELEPORT 22 14
+REVEAL
+TELEPORT 18 14
+REVEAL
+TELEPORT 16 14
+REVEAL
+
+# Sweep east-west along the big room at y=15.
+TELEPORT 15 15
+REVEAL
+TELEPORT 20 15
+REVEAL
+TELEPORT 25 15
+REVEAL
+TELEPORT 30 15
+REVEAL
+
+# North to the door at (16,8), then west along the corridor toward
+# (2,11) and the door area around (2,17)-(2,25).
+TELEPORT 16 8
+REVEAL
+TELEPORT 14 8
+REVEAL
+TELEPORT 9 8
+REVEAL
+TELEPORT 5 8
+REVEAL
+TELEPORT 5 10
+REVEAL
+TELEPORT 5 11
+REVEAL
+TELEPORT 2 11
+REVEAL
+TELEPORT 2 17
+REVEAL
+TELEPORT 2 18
+REVEAL
+TELEPORT 2 25
+REVEAL
+TELEPORT 5 26
+REVEAL
+TELEPORT 5 27
+REVEAL
+TELEPORT 5 28
+REVEAL
+
+OPENMAP
+SCREENSHOT /tmp/demo_automap.bmp

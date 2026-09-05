@@ -158,7 +158,27 @@ undefined DAT_000842f0;
    repeatedly this session; sized for a full byte index to be safe. */
 static undefined1 DAT_000878d0_backing[256];
 #define DAT_000878d0 DAT_000878d0_backing[0]
-undefined1 DAT_000842c0;
+/* Was a lone `undefined1` scalar, but FUN_00016948 indexes it as a real
+   5x3x3 (45-entry) shape-pattern table:
+   `(&DAT_000842c0)[((shape-1)*3+row)*3+col]`, shape=1-5, comparing each
+   entry against 1 or 2 to decide whether to darken a corner pixel when
+   drawing an automap wall/floor cell. Unlike DAT_00086bf0/DAT_00085668/
+   etc earlier this session, this one is NOT silently zero -- a Ghidra
+   reference search confirms real, varied 0/1/2 data already sitting at
+   this address in UU.exe's .data (nothing writes it, it's genuinely
+   read-only). The bug here is purely the lone-scalar-instead-of-a-real-
+   array declaration: any index past byte 0 was reading whatever the
+   compiler placed adjacent in memory on this port, not this real table.
+   Real bytes recovered directly from UU.exe (45 real entries; sized
+   larger for a safety margin past the last byte any index reaches). */
+static const unsigned char DAT_000842c0_real_table[64] = {
+  1, 1, 1, 1, 1, 1, 1, 1, 1,
+  2, 1, 1, 0, 2, 1, 0, 0, 2,
+  1, 1, 2, 1, 2, 0, 2, 0, 0,
+  0, 0, 2, 0, 2, 1, 2, 1, 1,
+  2, 0, 0, 1, 2, 0, 1, 1, 2,
+};
+#define DAT_000842c0 (*(undefined1 *)DAT_000842c0_real_table)
 char DAT_000ba9d4;
 undefined1 DAT_000842f4;
 undefined1 DAT_000842f8;
