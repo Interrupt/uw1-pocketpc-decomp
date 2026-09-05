@@ -6028,14 +6028,33 @@ byte param_10;
 
 
 
-bool FUN_00015870(param_1)
+/* param_2 was dropped entirely -- declared with only 1 parameter but
+   every caller passes 2 (the filename to open, e.g.
+   s__SAVE0_lev_ark_000842fc). `Ordinal_1063(local_120);` (a strcat-
+   shaped Ordinal used with an explicit 2-arg form everywhere else in
+   this file) was being called with just 1 visible argument, relying on
+   whatever the compiler happened to leave in the dropped argument's
+   register -- and `local_120` itself was never initialized first
+   either, so the "destination" that register leftover got appended
+   onto was uninitialized stack garbage, not an empty string. Confirmed
+   via lldb (this exact call site): this "worked" for the level-load
+   caller purely because the stack garbage there happened to already
+   read as an empty string, and broke for the automap-entry caller
+   (FUN_00016434, exercised for the first time by the new OPENMAP
+   demomode command) once different preceding activity left a stray
+   0x01 byte on the stack instead, producing a corrupt filename
+   ("\x01\SAVE0\lev.ark") and a failed file open. Fixed by copying
+   param_2 into local_120 directly instead of relying on either the
+   DAT_0023cca8 scratch-buffer copy or the dropped-argument concat --
+   neither was ever the real filename source. */
+bool FUN_00015870(param_1,param_2)
 undefined1 * param_1;
+char * param_2;
 
 {
-  char stack0xffdc3238_buf [256];
-  char *stack0xffdc3238_ptr;
   char cVar1;
   char *pcVar2;
+  char *pcVar9;
   int iVar3;
   int iVar4;
   int iVar5;
@@ -6045,15 +6064,14 @@ undefined1 * param_1;
   ushort local_230 [4];
   char local_228 [264];
   char local_120 [260];
-  
-  pcVar2 = &DAT_0023cca8;
-    stack0xffdc3238_ptr = stack0xffdc3238_buf;
+
+  pcVar2 = param_2;
+  pcVar9 = local_120;
   do {
     cVar1 = *pcVar2;
-    *stack0xffdc3238_ptr = cVar1; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
+    *pcVar9 = cVar1; pcVar9 = pcVar9 + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(local_120);
   iVar3 = 0;
   do {
     pcVar2 = local_120 + iVar3;
@@ -7239,6 +7257,13 @@ int param_1;
 
 
 
+/* uVar3 was `undefined4` (4 bytes), truncating Ordinal_1041's real
+   64-bit malloc'd pointer on this host -- same pointer-truncation
+   pattern fixed repeatedly this session. Confirmed via lldb: this is
+   why the automap screen loaded blnkmap.byt's file handle successfully
+   but FUN_0007ee4c (the actual read-into-buffer call) still failed --
+   it was reading 64000 real bytes into a wild, truncated destination
+   address instead of the buffer Ordinal_1041 actually allocated. */
 void FUN_00017908(param_1)
 undefined4 param_1;
 
@@ -7247,12 +7272,12 @@ undefined4 param_1;
   char *stack0xffdc323c_ptr;
   char cVar1;
   short sVar2;
-  undefined4 uVar3;
+  void *uVar3;
   char *pcVar4;
   int iVar5;
   undefined1 auStack_124 [8];
   char acStack_11c [260];
-  
+
   uVar3 = Ordinal_1041(64000);
   FUN_00057118();
   pcVar4 = &DAT_0023cca8;

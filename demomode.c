@@ -16,6 +16,12 @@
  *                    the movement/collision engine entirely. For
  *                    testing the renderer against a known-good position
  *                    without depending on movement actually working.
+ *   OPENMAP       -- calls FUN_00016354 (the automap-screen "enter"
+ *                    routine) directly. No known caller anywhere in the
+ *                    compiled game (whole-binary reference search found
+ *                    zero) -- for testing the automap's own (simpler,
+ *                    blit-based) draw path independent of the still-broken
+ *                    3D dungeon view.
  *   TYPE <text>   -- sends each character of <text> as a real WM_CHAR
  *                    (0x102), one per delay tick, simulating name entry
  *   CLICK <portrait_x> <portrait_y>  -- injects a synthetic mouse click
@@ -214,6 +220,21 @@ void demomode_pump(void) {
         }
         fprintf(stderr, "[demo] teleporting to tile (%d,%d)\n", tx, ty);
         set_player_tile_position(tx, ty);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "OPENMAP") == 0) {
+        /* Calls FUN_00016354 (the automap-screen "enter" routine) directly.
+         * A whole-binary Ghidra reference search found ZERO callers of this
+         * function anywhere in the compiled game -- whatever HUD button or
+         * key is supposed to reach it in the real Pocket PC UI has not been
+         * found yet. Added so the automap's own drawing path (a much
+         * simpler blit-based renderer than the still-broken 3D dungeon
+         * view) can be tested directly while that real trigger stays
+         * unidentified. */
+        fprintf(stderr, "[demo] opening automap screen\n");
+        FUN_00016354();
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
