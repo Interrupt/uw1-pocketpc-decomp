@@ -97,10 +97,10 @@ byte *DAT_000b461c;
 /* Was `int` / `undefined4` -- both hold real pointers (DAT_000b4614 +
    an offset; a color-remap table row) that got truncated to 32 bits on
    this 64-bit host, so the sprite-blit color-remap read
-   (`*(byte *)(DAT_000b4610 + bVar1)` in FUN_00013170) dereferenced a
+   (`*(byte *)(DAT_000b4610 + bVar1)` in blit_sprite_row_remapped) dereferenced a
    wild address. Surfaced by drawing the automap player marker with the
-   player at certain positions (FUN_00040b0c(0x103f,...) ->
-   FUN_000129f8 -> FUN_00013170). Retyped to real pointers. */
+   player at certain positions (draw_sprite_by_id(0x103f,...) ->
+   FUN_000129f8 -> blit_sprite_row_remapped). Retyped to real pointers. */
 byte *DAT_000b4610;
 byte *DAT_000b4624;
 byte *DAT_0024af78;
@@ -108,7 +108,7 @@ byte *DAT_0024af7c;
 /* Was `undefined4`, silently 0 -- a link-time-initialized pointer
    constant this decompile never writes (holds 0xb45f0 in UU.exe, i.e.
    the address of a 0x20-byte sprite-row scratch buffer). Confirmed via
-   Ghidra: 3 refs, all reads, in FUN_00013170/FUN_000129f8, plus the
+   Ghidra: 3 refs, all reads, in blit_sprite_row_remapped/FUN_000129f8, plus the
    `.data` word at 0x842ac literally being 0xb45f0. As NULL it made
    `Ordinal_1047(DAT_000842ac, 10, 0x20)` memset through address 0 and
    the blit write past it. Backed by a real (over-sized) buffer. */
@@ -4953,7 +4953,7 @@ LAB_000130d0:
       return DAT_000b462c;
     }
     if (param_3 == '\x06') {
-      FUN_00013170(bVar2,6,2);
+      blit_sprite_row_remapped(bVar2,6,2);
       DAT_000b462c = pbVar4;
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
@@ -5011,7 +5011,7 @@ LAB_000130d0:
     else {
       if (param_3 != '\b') {
         if (param_3 == '\n') {
-          FUN_00013170(bVar2,10,1);
+          blit_sprite_row_remapped(bVar2,10,1);
           DAT_000b462c = pbVar4;
           DAT_000b4628 = pbVar4;
           DAT_000b461c = pbVar4;
@@ -5038,7 +5038,7 @@ LAB_000130d0:
         }
         goto LAB_000130d0;
       }
-      FUN_00013170(bVar2,8,1);
+      blit_sprite_row_remapped(bVar2,8,1);
       DAT_000b462c = pbVar4;
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
@@ -5113,7 +5113,8 @@ uint param_4;
 
 
 
-void FUN_00013170(param_1,param_2,param_3,param_4)
+// was FUN_00013170
+void blit_sprite_row_remapped(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
 uint param_3;
@@ -7393,7 +7394,7 @@ undefined4 param_1;
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
       DAT_00088960 = 1;
-      FUN_00040b0c(0x103f,((*(ushort *)(DAT_0023be64 + 0x16) >> 10) + 2) * 3,
+      draw_sprite_by_id(0x103f,((*(ushort *)(DAT_0023be64 + 0x16) >> 10) + 2) * 3,
                    (((*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
       DAT_00088960 = 0;
     }
@@ -10209,13 +10210,13 @@ short param_2;
   if (psVar2 == (short *)0x0) {
     FUN_00076e98((&DAT_000bc010)[iVar3]);
     if (sVar4 == 0) goto LAB_0001c1b4;
-    FUN_00040b0c(uVar9,(int)*(short *)(&DAT_000845d8 + iVar1),(int)*(short *)(&DAT_000845da + iVar1)
+    draw_sprite_by_id(uVar9,(int)*(short *)(&DAT_000845d8 + iVar1),(int)*(short *)(&DAT_000845da + iVar1)
                  ,0x10,0x10);
   }
   else {
     FUN_00076e98((&DAT_000bc028)[iVar3]);
     if (sVar4 == 0) goto LAB_0001c1b4;
-    FUN_00040b0c(uVar9,(int)*(short *)(&DAT_000845b8 + iVar1),(int)*(short *)(&DAT_000845ba + iVar1)
+    draw_sprite_by_id(uVar9,(int)*(short *)(&DAT_000845b8 + iVar1),(int)*(short *)(&DAT_000845ba + iVar1)
                  ,0x10,0x10);
   }
   if (sVar4 != 0) {
@@ -28057,7 +28058,7 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   DAT_00088960 = 1;
-  FUN_00040b0c((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
+  draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
   DAT_00088960 = 0;
   FUN_000570b4();
   return;
@@ -28078,7 +28079,7 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   DAT_00088960 = 1;
-  FUN_00040b0c((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
+  draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
   DAT_00088960 = 0;
   FUN_000570b4();
   return;
@@ -28746,7 +28747,8 @@ int param_1;
 
 
 
-void FUN_00040b0c(param_1,param_2,param_3,param_4,param_5)
+// was FUN_00040b0c
+void draw_sprite_by_id(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -30334,7 +30336,7 @@ short param_1;
       if (DAT_00202990 == (undefined4 *)0x0) {
         FUN_00057118();
         if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
-          FUN_00040b0c(0x2097,0xec,0x51,0x29,0x54);
+          draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
         }
         if (DAT_002028a0 == 0) {
           iVar10 = 0xc;
@@ -31182,7 +31184,7 @@ uint param_1;
   FUN_00057118();
   iVar1 = ((int)(short)param_1 >> 2) * 0xf;
   iVar2 = (param_1 & 3) * 0x12;
-  FUN_00040b0c(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
+  draw_sprite_by_id(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
   FUN_000570b4();
   return;
 }
@@ -32478,7 +32480,7 @@ void FUN_00046bfc()
       screen_backup_restore_rect(0xf0,0xb,0x13b,0x76);
     }
     DAT_00088960 = 1;
-    FUN_00040b0c(0x2091,(int)DAT_00085ad8,(int)DAT_00085ada,DAT_00085add,DAT_00085adc);
+    draw_sprite_by_id(0x2091,(int)DAT_00085ad8,(int)DAT_00085ada,DAT_00085add,DAT_00085adc);
     iVar4 = 1;
     DAT_00088960 = 1;
     do {
@@ -32497,7 +32499,7 @@ void FUN_00046bfc()
           *(char *)((char *)&DAT_002028e0 + iVar4) = (char)uVar2 + '\x01';
           FUN_00046b88(iVar4,uVar2 * 0xf + uVar3);
         }
-        FUN_00040b0c(iVar4 + 0x2091,(int)(&DAT_00085ad8)[iVar4 * 7],(int)(&DAT_00085ada)[iVar4 * 7],
+        draw_sprite_by_id(iVar4 + 0x2091,(int)(&DAT_00085ad8)[iVar4 * 7],(int)(&DAT_00085ada)[iVar4 * 7],
                      (&DAT_00085add)[iVar4 * 0xe],(&DAT_00085adc)[iVar4 * 0xe]);
       }
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
@@ -32553,7 +32555,7 @@ undefined4 param_1;
       }
       if (-1 < (short)uVar2) {
         DAT_00088960 = 1;
-        FUN_00040b0c(uVar2,(int)(short)(&DAT_00085ad8)[iVar1 * 7],
+        draw_sprite_by_id(uVar2,(int)(short)(&DAT_00085ad8)[iVar1 * 7],
                      (int)(short)(&DAT_00085ada)[iVar1 * 7],(&DAT_00085add)[iVar1 * 0xe],
                      (&DAT_00085adc)[iVar1 * 0xe]);
         DAT_00088960 = 0;
@@ -33128,7 +33130,7 @@ void FUN_00048110()
       FUN_00076e98(DAT_002028ec);
     }
     else {
-      FUN_00040b0c(0x2097,0xec,0x51,0x29,0x54);
+      draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
     }
     FUN_00048198(6,0x16);
   }
@@ -33173,7 +33175,7 @@ joined_r0x00048308:
           if (iVar6 < 0x15) {
             if ((*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2) & 0xffc0) != 0) {
               puVar7 = (ushort *)resolve_object_link();
-              FUN_00040b0c(*puVar7 & 0x1ff,(int)(short)(&DAT_00085ad8)[iVar6 * 7],
+              draw_sprite_by_id(*puVar7 & 0x1ff,(int)(short)(&DAT_00085ad8)[iVar6 * 7],
                            (int)(short)(&DAT_00085ada)[iVar6 * 7],(&DAT_00085add)[iVar6 * 0xe],
                            (&DAT_00085adc)[iVar6 * 0xe]);
               if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
@@ -33212,7 +33214,7 @@ joined_r0x00048308:
       local_2c = 1;
       if ((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0) {
         puVar7 = (ushort *)resolve_object_link();
-        FUN_00040b0c(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
+        draw_sprite_by_id(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                      DAT_00085bf5,DAT_00085bf4);
         if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
            (uVar4 = puVar7[3] >> 6, 1 < uVar4)) {
@@ -41206,7 +41208,7 @@ undefined4 param_1;
 
 {
   FUN_00041a18(0x20eb,s_optbtns_00086954,param_1);
-  FUN_00040b0c(0x20eb,4,0xb,0x6c,0x23);
+  draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   return;
 }
 
@@ -41218,7 +41220,7 @@ undefined4 param_2;
 
 {
   FUN_00041a18(0x20ec,s_optbtns_00086954,param_2);
-  FUN_00040b0c(0x20ec,5,param_1 * -0xf + 0x67,0xe,0x1f);
+  draw_sprite_by_id(0x20ec,5,param_1 * -0xf + 0x67,0xe,0x1f);
   return;
 }
 
@@ -41247,7 +41249,7 @@ void FUN_00056724()
   DAT_000868d8 = 0;
   DAT_000868dc = 7;
   FUN_00041a18(0x20eb,s_optbtns_00086954,0);
-  FUN_00040b0c(0x20eb,4,0xb,0x6c,0x23);
+  draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   if (0 < DAT_002020c0) {
     FUN_0003f99c();
   }
@@ -41360,7 +41362,7 @@ void FUN_0005693c()
   DAT_002046f0 = 0xffff;
   FUN_00056640(5);
   FUN_00041a18(0x20ed,s_optbtns_00086954,uVar1 + 0x35);
-  FUN_00040b0c(0x20ed,5,10,0x12,0x22);
+  draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
   FUN_000566dc(4 - uVar1,(uVar1 + 0x13) * 2);
   return;
 }
@@ -41441,7 +41443,7 @@ int param_1;
     full_dungeon_redraw();
     FUN_0006fea4();
     FUN_00041a18(0x20ed,s_optbtns_00086954,param_1 + 0x39);
-    FUN_00040b0c(0x20ed,5,10,0x12,0x22);
+    draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
     FUN_000566dc(4 - (param_1 + 4),(param_1 + 0x17) * 2);
   }
   if (sVar1 == 0) {
@@ -42650,7 +42652,7 @@ void FUN_0005857c()
 LAB_00058674:
   DAT_00088960 = 1;
   g_force_flush = 1;
-  FUN_00040b0c((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
+  draw_sprite_by_id((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
                ((int)g_mouse_y - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
                DAT_00204784);
   flush_dirty_rect_to_display(1);
@@ -52514,7 +52516,7 @@ short param_1;
     }
     iVar4 = 0x2025;
   }
-  FUN_00040b0c(0x2057,(int)*(short *)(&DAT_000870ec + iVar1 * 2),0x7e,1,1);
+  draw_sprite_by_id(0x2057,(int)*(short *)(&DAT_000870ec + iVar1 * 2),0x7e,1,1);
   iVar3 = 0;
   pbVar5 = &DAT_0023c118 + iVar1;
   if (*pbVar5 != 0) {
@@ -53990,8 +53992,8 @@ bool FUN_0006edfc()
         }
       }
     }
-    FUN_00040b0c(DAT_0023c208 + 0x20b8,0x110,4,1,1);
-    FUN_00040b0c(DAT_0023c208 + 0x20b0,0x110,0x7a,1,1);
+    draw_sprite_by_id(DAT_0023c208 + 0x20b8,0x110,4,1,1);
+    draw_sprite_by_id(DAT_0023c208 + 0x20b0,0x110,0x7a,1,1);
     FUN_000570b4();
     goto LAB_0006f6c8;
   }
@@ -54001,8 +54003,8 @@ bool FUN_0006edfc()
     FUN_00057118();
     set_draw_color(0xf1);
     rect_fill_or_save_restore(0xec,8,0x13f,0x7a);
-    FUN_00040b0c(0x20bc,0x110,4,1,1);
-    FUN_00040b0c(0x20b4,0x110,0x7a,1,1);
+    draw_sprite_by_id(0x20bc,0x110,4,1,1);
+    draw_sprite_by_id(0x20b4,0x110,0x7a,1,1);
     bitmap_blit_to_framebuffer(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
 LAB_0006f008:
     FUN_000570b4();
@@ -54021,8 +54023,8 @@ LAB_0006f008:
       (*(code *)(&PTR_FUN_00087220)[DAT_0023c134])();
       screen_backup_save();
       DAT_0023c1d4 = uVar1;
-      FUN_00040b0c(0x20b8,0x110,4,1,1);
-      FUN_00040b0c(0x20b0,0x110,0x7a,1,1);
+      draw_sprite_by_id(0x20b8,0x110,4,1,1);
+      draw_sprite_by_id(0x20b0,0x110,0x7a,1,1);
       set_draw_color(0x1a);
       rect_fill_or_save_restore(0xec,8,0x13e,0x79);
       goto LAB_0006f008;
@@ -58290,14 +58292,14 @@ void FUN_00076508()
               if (puVar4[5] == 0) {
                 DAT_00088960 = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
-                  FUN_00040b0c((int)(short)puVar4[7],
+                  draw_sprite_by_id((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
                                puVar4[3]);
                 }
                 else {
-                  FUN_00040b0c((int)(short)puVar4[7],
+                  draw_sprite_by_id((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
@@ -63532,8 +63534,8 @@ undefined4 FUN_0007f208()
 {
   int iVar1;
   
-  FUN_00040b0c(DAT_00250724 + 0x20d5,0xb,0xa9,0x1c,4);
-  FUN_00040b0c(DAT_00250724 + 0x20da,0x132,0xa9,0x1c,4);
+  draw_sprite_by_id(DAT_00250724 + 0x20d5,0xb,0xa9,0x1c,4);
+  draw_sprite_by_id(DAT_00250724 + 0x20da,0x132,0xa9,0x1c,4);
   iVar1 = (int)DAT_00250724;
   DAT_00250724 = (short)(iVar1 + 1);
   if ((iVar1 + 1) * 0x10000 >> 0x10 == 5) {
@@ -63553,8 +63555,8 @@ undefined4 FUN_0007f290()
   iVar1 = 0;
   do {
     iVar2 = iVar1 * 0x1b + 0x34;
-    FUN_00040b0c(DAT_00250728 + 0x20df,0x34,iVar2,0x1b,5);
-    FUN_00040b0c(DAT_00250728 + 0x20e5,0xdc,iVar2,0x1b,5);
+    draw_sprite_by_id(DAT_00250728 + 0x20df,0x34,iVar2,0x1b,5);
+    draw_sprite_by_id(DAT_00250728 + 0x20e5,0xdc,iVar2,0x1b,5);
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 3);
   iVar1 = (int)DAT_00250728;
