@@ -364,7 +364,7 @@ undefined4 DAT_00084608;
    really one 0x88(136)-byte-stride per-tile record array (its sibling
    DAT_000bc044 -- a few bytes further into the same original record --
    was already fixed as a real backing array by a prior session; these
-   were missed). FUN_00020370's tile-visibility pass indexes them all with
+   were missed). render_visible_tile_list's tile-visibility pass indexes them all with
    the same `local_7c*0x88 [+ byte offset]` scheme (confirmed: the byte
    offsets below, relative to DAT_000bc038, span exactly 0..0x87, one full
    record). As lone scalars this walks off into whatever memory happens to
@@ -417,7 +417,7 @@ static undefined DAT_000bc044_backing[32768];
 #define DAT_000bc0bf DAT_000bc038_backing[0x87]
 /* DAT_000c4838-family: same story, but holding real 8-byte pointers (one
    per visible-tile record, written by FUN_0001f370 and read back by
-   FUN_00020370) rather than bytes -- was a lone `undefined4` (4 bytes),
+   render_visible_tile_list) rather than bytes -- was a lone `undefined4` (4 bytes),
    which would silently truncate every pointer stored into it on this
    64-bit port even before the out-of-bounds-array problem. Real backing
    array of genuine pointer-sized slots, same generous record count as its
@@ -3785,7 +3785,8 @@ undefined4 param_4;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00011060(param_1,param_2,param_3)
+// was FUN_00011060
+void draw_text_string(param_1,param_2,param_3)
 char * param_1;
 short param_2;
 short param_3;
@@ -3899,7 +3900,7 @@ short param_3;
   if (pcVar4 != (char *)0x0) {
     Ordinal_1018(pcVar4);
   }
-  debug_framebuffer_dump("FUN_00011060");
+  debug_framebuffer_dump("draw_text_string");
   return;
 }
 
@@ -3914,7 +3915,7 @@ char * param_1;
   short sVar3;
 
   /* Was `Ordinal_1068()` with no argument, relying on register leftovers
-     to still hold param_1 (see FUN_00011060's matching fix/comment a
+     to still hold param_1 (see draw_text_string's matching fix/comment a
      few lines above -- same root bug, this is the more foundational of
      the two call sites since FUN_000112a0 is the general string pixel-
      width measurement used throughout the file). */
@@ -3923,7 +3924,7 @@ char * param_1;
   for (uVar2 = uVar2 & 0xffff; uVar2 != 0; uVar2 = uVar2 - 1) {
     cVar1 = *param_1;
     param_1 = param_1 + 1;
-    /* Same signed-char-indexing bug as FUN_00011060 above. */
+    /* Same signed-char-indexing bug as draw_text_string above. */
     sVar3 = sVar3 + (&DAT_000890b0)[(byte)cVar1];
   }
   return (int)sVar3;
@@ -4084,7 +4085,7 @@ void screen_backup_restore()
     } while (iVar3 != 0);
   } while (iVar1 < 0x1f400);
   debug_framebuffer_dump("screen_backup_restore");
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -4207,7 +4208,7 @@ void FUN_00011b34()
     } while (iVar4 < 200 - iVar3);
   }
   debug_framebuffer_dump("FUN_00011b34");
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -4409,7 +4410,7 @@ int param_8;
             } while (iVar7 < iVar2);
           }
           if (param_8 != 0) {
-            FUN_00022f0c(1);
+            flush_dirty_rect_to_display(1);
           }
         }
       }
@@ -4421,7 +4422,8 @@ int param_8;
 
 
 
-void FUN_000122d4(param_1,param_2,param_3)
+// was FUN_000122d4
+void fade_in(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
 ushort *param_3;
@@ -4476,7 +4478,7 @@ ushort *param_3;
            uVar2 | (ushort)(((int)((*puVar6 & 0x1f) << 0xc) >> 6) * iVar5 >> 0x12);
       puVar6 = puVar6 + 1;
     } while (iVar7 != 0);
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     iVar9 = iVar9 + 1;
   } while (iVar9 < 9);
   iVar9 = 64000;
@@ -4486,16 +4488,17 @@ ushort *param_3;
     *(ushort *)(((intptr_t)param_3 - (intptr_t)puVar3) + (intptr_t)puVar6) = *puVar6;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
-  FUN_00022f0c(1);
-  DEBUG(TRACE, "[fade] FUN_000122d4 (fade-in) total elapsed=%ums", FUN_0002294c() - diag_t0);
-  debug_framebuffer_dump("FUN_000122d4_fade_in");
+  flush_dirty_rect_to_display(1);
+  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", FUN_0002294c() - diag_t0);
+  debug_framebuffer_dump("fade_in");
   Ordinal_1018(puVar3);
   return;
 }
 
 
 
-void FUN_00012444(param_1,param_2,param_3)
+// was FUN_00012444
+void fade_out(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
 undefined2 * param_3;
@@ -4512,7 +4515,7 @@ undefined2 * param_3;
   int iVar9;
   int iVar10;
   int iVar11;
-  /* Same phantom in_stack_/unused-param_1,2 artifact as FUN_000122d4
+  /* Same phantom in_stack_/unused-param_1,2 artifact as fade_in
      right above -- see its comment. */
 
   puVar4 = (ushort *)Ordinal_1041(0x1f400);
@@ -4533,7 +4536,7 @@ undefined2 * param_3;
       iVar9 = iVar9 + -1;
       iVar1 = ((int)((*puVar7 & 0xf800) << 1) >> 6) * iVar6 >> 0x12;
       /* Same param_3/puVar4/puVar7 offset-reconstruction truncation as
-         FUN_000122d4 right above -- see its comment. */
+         fade_in right above -- see its comment. */
       puVar8 = (ushort *)(((intptr_t)param_3 - (intptr_t)puVar4) + (intptr_t)puVar7);
       *puVar8 = (ushort)((uint)(iVar1 << 0x1b) >> 0x10);
       uVar3 = (ushort)(iVar1 << 0xb) |
@@ -4543,16 +4546,16 @@ undefined2 * param_3;
       puVar7 = puVar7 + 1;
       *puVar8 = uVar3 | (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * iVar6 >> 0x12);
     } while (iVar9 != 0);
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     iVar11 = iVar11 + -1;
   } while (0 < iVar11);
   while (iVar10 = iVar10 + -1, -1 < iVar10) {
     *param_3 = 0;
     param_3 = param_3 + 1;
   }
-  FUN_00022f0c(1);
-  DEBUG(TRACE, "[fade] FUN_00012444 (fade-out) total elapsed=%ums", FUN_0002294c() - diag_t0);
-  debug_framebuffer_dump("FUN_00012444_fade_out");
+  flush_dirty_rect_to_display(1);
+  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", FUN_0002294c() - diag_t0);
+  debug_framebuffer_dump("fade_out");
   Ordinal_1018(puVar4);
   return;
 }
@@ -4741,7 +4744,7 @@ short param_6;
       } while (iVar9 < iVar4);
     }
     debug_framebuffer_dump("FUN_00012850");
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
   }
   return;
 }
@@ -4759,7 +4762,7 @@ void FUN_00012948()
 void FUN_0001294c()
 
 {
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -4792,7 +4795,7 @@ undefined4 FUN_00012970()
   FUN_0001dfe8(&DAT_000a85d0);
   FUN_0001e274(&DAT_000a85d0);
   FUN_0001f370(&DAT_000a85d0,1);
-  FUN_00020370();
+  render_visible_tile_list();
   FUN_0005b8ac();
   return 0;
 }
@@ -6569,7 +6572,7 @@ void FUN_000165d0()
         uVar5 = 0;
         do {
           if ((local_34[uVar5] != 0) && (local_34[uVar5 + 1 & 3] != 0)) {
-            FUN_00016940((((int)((uVar5 & 2) * -0x20000) >> 0x10) +
+            darken_pixel((((int)((uVar5 & 2) * -0x20000) >> 0x10) +
                          ((iVar6 * 3 + 10) * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                          (((int)((uVar5 & 2) * -0x20000) >> 0x10) +
                          ((local_3c * 3 + 7) * 0x10000 >> 0x10)) * 0x10000 >> 0x10,3,2);
@@ -6633,7 +6636,7 @@ int param_3;
 LAB_000168f8:
     iVar2 = 0;
     do {
-      FUN_00016940((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1,uVar4,uVar5);
+      darken_pixel((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1,uVar4,uVar5);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
   }
@@ -6649,7 +6652,7 @@ LAB_000168f8:
     }
     iVar2 = 0;
     do {
-      FUN_00016940(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10,uVar4,uVar5);
+      darken_pixel(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10,uVar4,uVar5);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
   }
@@ -6660,7 +6663,8 @@ LAB_000168f8:
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00016940(param_1,param_2)
+// was FUN_00016940
+void darken_pixel(param_1,param_2)
 uint param_1;
 int param_2;
 
@@ -6671,7 +6675,7 @@ int param_2;
            ((g_uw_framebuffer) +
            ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
   *puVar1 = *puVar1 >> 1 & 0x7bef;
-  debug_framebuffer_dump("FUN_00016940");
+  debug_framebuffer_dump("darken_pixel");
   return;
 }
 
@@ -6731,7 +6735,7 @@ int param_3;
             Ordinal_2005(2,uVar4);
             iVar5 = extraout_r1 + 0xb5;
           }
-          FUN_0007e9c4(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
+          plot_pixel(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar8) + 200,iVar5);
         }
         else if ((&DAT_000842c0)[(((param_1 + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
@@ -6739,7 +6743,7 @@ int param_3;
           uVar7 = 2;
           uVar4 = 6;
 LAB_00016acc:
-          FUN_00016940(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
+          darken_pixel(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                        ((int)(short)uVar8 + (iVar11 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,uVar4,
                        uVar7);
         }
@@ -6760,7 +6764,7 @@ LAB_00016b00:
         uVar6 = 0;
         do {
           sVar3 = FUN_00022910(3);
-          FUN_0007e9c4(uVar13 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
+          plot_pixel(uVar13 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar9) + 200,sVar3 + 0xe9)
           ;
           uVar6 = uVar6 + 1;
@@ -6775,7 +6779,7 @@ LAB_00016b00:
         uVar13 = 0;
         uVar6 = 0;
         do {
-          FUN_00016940(uVar9 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
+          darken_pixel(uVar9 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
                        uVar13 + (int)(short)((uint)(iVar11 * 0x10000) >> 0x10),6,3);
           uVar6 = uVar6 + 1;
           uVar13 = (uint)uVar6;
@@ -6801,7 +6805,7 @@ int param_4;
   
   param_4 = param_4 + 1;
   param_3 = param_3 + 1;
-  FUN_00016940(param_3,param_4,6,3);
+  darken_pixel(param_3,param_4,6,3);
   iVar2 = 0;
   DAT_000ba9d4 = '\0';
   while( true ) {
@@ -6818,9 +6822,9 @@ int param_4;
       return;
     }
   }
-  FUN_00016940(param_3 + (char)(&DAT_000842f4)[(char)iVar2],
+  darken_pixel(param_3 + (char)(&DAT_000842f4)[(char)iVar2],
                param_4 + (char)(&DAT_000842f8)[(char)iVar2],6,3);
-  FUN_00016940(param_3 - (char)(&DAT_000842f4)[DAT_000ba9d4],
+  darken_pixel(param_3 - (char)(&DAT_000842f4)[DAT_000ba9d4],
                param_4 - (char)(&DAT_000842f8)[DAT_000ba9d4],6,3);
   return;
 }
@@ -7088,9 +7092,9 @@ LAB_000171d0:
     iVar4 = FUN_000112a0(local_58);
     iVar8 = *(short *)(&DAT_000baa0a + iVar7) + iVar4 + -1;
     FUN_00057590(*(short *)(&DAT_000baa0a + iVar7) + iVar4 + 9,local_60 + -0x12);
-    FUN_00011060(local_58,(int)*(short *)(&DAT_000baa0a + iVar7),
+    draw_text_string(local_58,(int)*(short *)(&DAT_000baa0a + iVar7),
                  (int)*(short *)(&DAT_000baa0c + iVar7));
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
   }
   goto LAB_000171bc;
 LAB_0001739c:
@@ -7105,13 +7109,13 @@ LAB_0001739c:
     } while (cVar1 != '\0');
     DAT_000bbef0 = DAT_000bbef0 + 1;
   }
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
 LAB_00017404:
   FUN_00057118();
   FUN_0001765c();
   FUN_00057590(iVar8 + 0x16,local_60 + -7);
   FUN_00057cac(2);
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   DAT_000bbef8 = 0;
   DAT_000bbef4 = 1;
   goto LAB_0001764c;
@@ -7158,7 +7162,7 @@ void FUN_0001765c()
           *wptr_5787 = cVar1; wptr_5787 = wptr_5787 + 1;
           pcVar3 = pcVar3 + 1;
         } while (cVar1 != '\0');
-        FUN_00011060(auStack_48,(int)sVar2,(int)*(short *)(&DAT_000baa0c + iVar4));
+        draw_text_string(auStack_48,(int)sVar2,(int)*(short *)(&DAT_000baa0c + iVar4));
         sVar6 = DAT_000bbef0;
       }
       iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
@@ -7289,7 +7293,7 @@ undefined4 param_1;
     if (iVar5 < 0) {
       iVar5 = iVar5 + 1;
     }
-    FUN_00011060(auStack_124,0x121 - (short)(iVar5 >> 1),6);
+    draw_text_string(auStack_124,0x121 - (short)(iVar5 >> 1),6);
     FUN_00040d00(s_font5x6p_sys_0008430c);
   }
   DAT_000bbef4 = 1;
@@ -8781,7 +8785,7 @@ undefined4 FUN_0001a1c8()
   if (*DAT_000bbf80 == 0x22) {
     sVar2 = 1;
     do {
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
       psVar7 = DAT_000bbf80 + DAT_000bbf74;
       switch(*psVar7) {
       case 0:
@@ -9699,9 +9703,9 @@ void FUN_0001b474()
   iVar7 = 0;
   do {
     iVar1 = iVar7 * 4;
-    FUN_00076b8c((&DAT_000bc028)[iVar7],(int)*(short *)(&DAT_000845b8 + iVar1),
+    capture_framebuffer_rect_to_grtile((&DAT_000bc028)[iVar7],(int)*(short *)(&DAT_000845b8 + iVar1),
                  (int)*(short *)(&DAT_000845ba + iVar1),0x10,0x10);
-    FUN_00076b8c((&DAT_000bc010)[iVar7],(int)*(short *)(&DAT_000845d8 + iVar1),
+    capture_framebuffer_rect_to_grtile((&DAT_000bc010)[iVar7],(int)*(short *)(&DAT_000845d8 + iVar1),
                  (int)*(short *)(&DAT_000845da + iVar1),0x10,0x10);
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 4);
@@ -10115,7 +10119,7 @@ short param_2;
         uVar7 = Ordinal_1025(uVar8,auStack_2c,10);
         puVar10 = &DAT_000845b8;
       }
-      FUN_00011060(uVar7,*(short *)(puVar10 + iVar1) + 3,*(short *)((int)(puVar10 + iVar1) + 2) + 1)
+      draw_text_string(uVar7,*(short *)(puVar10 + iVar1) + 3,*(short *)((int)(puVar10 + iVar1) + 2) + 1)
       ;
       FUN_00040d00(s_font5x6p_sys_0008430c);
     }
@@ -10265,11 +10269,11 @@ undefined ** param_2;
     uVar3 = 0xf1;
   }
   FUN_00057118();
-  FUN_0007e9c4((int)*(short *)param_2,(int)*(short *)((char *)param_2 + 2),uVar3);
-  FUN_0007e9c4(*(short *)param_2 + -1,(int)*(short *)((char *)param_2 + 2),uVar3);
-  FUN_0007e9c4(*(short *)param_2 + 1,(int)*(short *)((char *)param_2 + 2),uVar3);
-  FUN_0007e9c4((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + -1,uVar3);
-  FUN_0007e9c4((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + 1,uVar3);
+  plot_pixel((int)*(short *)param_2,(int)*(short *)((char *)param_2 + 2),uVar3);
+  plot_pixel(*(short *)param_2 + -1,(int)*(short *)((char *)param_2 + 2),uVar3);
+  plot_pixel(*(short *)param_2 + 1,(int)*(short *)((char *)param_2 + 2),uVar3);
+  plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + -1,uVar3);
+  plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + 1,uVar3);
   FUN_000570b4();
   FUN_0007ec50();
   return;
@@ -11892,7 +11896,8 @@ LAB_0002029c:
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00020370()
+// was FUN_00020370
+void render_visible_tile_list()
 
 {
   int iVar1;
@@ -11939,7 +11944,7 @@ void FUN_00020370()
   local_68 = DAT_00084634;
   local_6c = DAT_00084630;
   local_64 = DAT_00084638;
-  DEBUG(TRACE, "[tmap-diag] FUN_00020370: DAT_000c8c98 (visible-tile count) = %d", DAT_000c8c98);
+  DEBUG(TRACE, "[tmap-diag] render_visible_tile_list: DAT_000c8c98 (visible-tile count) = %d", DAT_000c8c98);
   if (0 < DAT_000c8c98) {
     local_98 = &DAT_000c4838;
     iVar15 = DAT_000c8c98;
@@ -12009,7 +12014,7 @@ void FUN_00020370()
       local_98 = local_98 + 1;
     } while (local_94 < iVar15);
   }
-  debug_framebuffer_dump("FUN_00020370");
+  debug_framebuffer_dump("render_visible_tile_list");
   return;
 }
 
@@ -13414,7 +13419,8 @@ short param_2;
    gx_stub.c's uw_pump_events), but noting this in case the covered-
    rectangle symptom persists after that fix and this needs a second
    look. */
-void FUN_00022f0c()
+// was FUN_00022f0c
+void flush_dirty_rect_to_display()
 
 {
   undefined2 uVar1;
@@ -13511,7 +13517,10 @@ void FUN_00022f0c()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0002310c()
+// was FUN_0002310c -- near-identical twin of flush_dirty_rect_to_display
+// above, clamped to a 240px-tall dirty rect instead of 200px; likely a
+// different screen-height device variant of the same GX-hardware flush.
+void flush_dirty_rect_to_display_240()
 
 {
   undefined2 uVar1;
@@ -13833,21 +13842,21 @@ void FUN_00023a00()
   rect_fill_or_save_restore(0x5d,0x32,0x8c,0x7a);
   screen_backup_restore();
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
-  FUN_00011060(&DAT_00084e58,0x5d,0x32);
+  draw_text_string(&DAT_00084e58,0x5d,0x32);
   iVar1 = FUN_000112a0(auStack_14);
-  FUN_00011060(auStack_14,0x8c - iVar1,0x32);
+  draw_text_string(auStack_14,0x8c - iVar1,0x32);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 6),auStack_14,10);
-  FUN_00011060(&DAT_00084e50,0x5d,0x44);
+  draw_text_string(&DAT_00084e50,0x5d,0x44);
   iVar1 = FUN_000112a0(auStack_14);
-  FUN_00011060(auStack_14,0x8c - iVar1,0x44);
+  draw_text_string(auStack_14,0x8c - iVar1,0x44);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 7),auStack_14,10);
-  FUN_00011060(&DAT_00084e48,0x5d,0x56);
+  draw_text_string(&DAT_00084e48,0x5d,0x56);
   iVar1 = FUN_000112a0(auStack_14);
-  FUN_00011060(auStack_14,0x8c - iVar1,0x56);
+  draw_text_string(auStack_14,0x8c - iVar1,0x56);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_14,10);
-  FUN_00011060(&DAT_00084e40,0x5d,0x68);
+  draw_text_string(&DAT_00084e40,0x5d,0x68);
   iVar1 = FUN_000112a0(auStack_14);
-  FUN_00011060(auStack_14,0x8c - iVar1,0x68);
+  draw_text_string(auStack_14,0x8c - iVar1,0x68);
   return;
 }
 
@@ -13882,9 +13891,9 @@ void FUN_00023b38()
       uVar3 = FUN_0007863c(iVar2 + 0x1fU | 0x400);
       FUN_000229e0(*(undefined1 *)(iVar1 + DAT_00086df8 + 0x21),auStack_24,10);
       iVar5 = iVar4 * 0xb + 0x85;
-      FUN_00011060(uVar3,0x1e,iVar5);
+      draw_text_string(uVar3,0x1e,iVar5);
       iVar2 = FUN_000112a0(auStack_24);
-      FUN_00011060(auStack_24,0x7d - iVar2,iVar5);
+      draw_text_string(auStack_24,0x7d - iVar2,iVar5);
       iVar4 = ((short)iVar4 + 1) * 0x10000 >> 0x10;
     }
     iVar2 = (iVar1 + 1) * 0x10000 >> 0x10;
@@ -14007,7 +14016,7 @@ short * param_1;
   short sVar7;
   /* Was `undefined4`, truncating FUN_0007863c's real char* return
      (a string-resource lookup) before it's passed to FUN_000112a0
-     (strlen-shaped) and FUN_00011060 (draw string). */
+     (strlen-shaped) and draw_text_string (draw string). */
   char *uVar8;
   int iVar9;
   int iVar10;
@@ -14113,11 +14122,11 @@ short * param_1;
       iVar11 = 0xa8;
       iVar9 = 0xa8;
     }
-    FUN_00011060(uVar8,iVar9,iVar10 + 3);
+    draw_text_string(uVar8,iVar9,iVar10 + 3);
     if (*param_1 == 7) {
-      FUN_00011060(s_Enter_your_name_and_00084e88,0xaa,0x3c);
-      FUN_00011060(s_then_press_the_Enter_00084e70,0xaa,0x46);
-      FUN_00011060(s_key_to_continue_00084e60,0xb9,0x50);
+      draw_text_string(s_Enter_your_name_and_00084e88,0xaa,0x3c);
+      draw_text_string(s_then_press_the_Enter_00084e70,0xaa,0x46);
+      draw_text_string(s_key_to_continue_00084e60,0xb9,0x50);
     }
   }
   if (*(int *)(param_1 + 3) != 0) {
@@ -14161,7 +14170,7 @@ short * param_1;
           if (iVar9 < 0) {
             iVar9 = iVar9 + 1;
           }
-          FUN_00011060(uVar8,iVar11 + (short)(iVar9 >> 1),iVar10 + 3);
+          draw_text_string(uVar8,iVar11 + (short)(iVar9 >> 1),iVar10 + 3);
         }
         else if (param_1[6] == 3) {
           /* Portrait/head selector (chargen state 4). The DAT_000fb880
@@ -14348,9 +14357,9 @@ uint param_2;
     local_4 = param_2;
     do {
       /* HACK: DAT_0023c63c (our click-hold flag -- see FUN_00077dd0's
-         HACK comment) blocks FUN_00022f0c's actual screen flush the
+         HACK comment) blocks flush_dirty_rect_to_display's actual screen flush the
          whole time a button is held, unless g_force_flush is set (see
-         its gate at FUN_00022f0c's top, and FUN_0005857c's matching
+         its gate at flush_dirty_rect_to_display's top, and FUN_0005857c's matching
          use of g_force_flush around its own single draw). Without this,
          every per-iteration redraw here updated the software
          framebuffer but the screen never actually presented it until
@@ -14358,7 +14367,7 @@ uint param_2;
          were invisible until mouse-up). Force the flush the same way
          FUN_0005857c does. */
       g_force_flush = 1;
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
       g_force_flush = 0;
       if (((short)uVar13 != (short)param_2) && ((short)uVar13 != -1)) {
         FUN_00057118();
@@ -14420,7 +14429,7 @@ undefined4 param_2;
      discarded here, with the very next line calling FUN_000112a0() with
      no argument -- relying on register leftovers to still hold that
      same return value (the "dropped argument" idiom, same root bug as
-     FUN_00011060/FUN_000112a0's own Ordinal_1068() fixes above). That
+     draw_text_string/FUN_000112a0's own Ordinal_1068() fixes above). That
      register doesn't reliably survive here either (confirmed: with it
      broken, the name-entry field's Ordinal_1417 gate always fell
      through to the "buffer full" branch regardless of the typed key,
@@ -14454,7 +14463,7 @@ undefined4 param_2;
     do {
       do {
         FUN_000735fc(uVar6,param_2);
-        FUN_00022f0c(1);
+        flush_dirty_rect_to_display(1);
         uVar14 = FUN_00057a70();
         param_2 = (undefined4)((ulonglong)uVar14 >> 0x20);
         uVar6 = (uint)uVar14;
@@ -14652,7 +14661,7 @@ LAB_00024dd4:
       sVar5 = FUN_00057a70();
       iVar11 = (int)sVar5;
       if (((iVar11 == 0xd) && (local_28 == 0)) || (iVar11 == 0x1b)) break;
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
       sVar3 = (short)iVar7;
       if (((iVar11 == -1) || (iVar8 = Ordinal_1417(iVar11,0x157), iVar8 == 0)) ||
          ((0x12d < sVar3 || (0x1c < (int)uVar13)))) {
@@ -14677,7 +14686,7 @@ LAB_00024dd4:
       else {
         local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),(char)sVar5);
         FUN_00057118();
-        FUN_00011060(local_2c,iVar7,iVar9 + 3);
+        draw_text_string(local_2c,iVar7,iVar9 + 3);
         FUN_000570b4();
         iVar7 = FUN_000112a0(local_2c);
         iVar7 = iVar7 + sVar3;
@@ -16106,7 +16115,7 @@ void FUN_000286cc()
         *pcVar5 = cVar1;
         pcVar5 = pcVar5 + 1;
       } while (cVar1 != '\0');
-      FUN_00011060(local_44,0x90,3);
+      draw_text_string(local_44,0x90,3);
       DAT_00100670 = DAT_00100784;
       if (DAT_00100674[0x1a] == 0) {
         uVar6 = 2;
@@ -16126,7 +16135,7 @@ void FUN_000286cc()
       DAT_00088960 = 0;
       sVar2 = FUN_00078b18(local_44,DAT_00100674,0,0);
       if (sVar2 != 0) {
-        FUN_00011060(local_44,0x30,3);
+        draw_text_string(local_44,0x30,3);
       }
       DAT_001007c0 = DAT_00100784;
       FUN_0001b474();
@@ -16251,7 +16260,7 @@ void FUN_00028ffc()
   char acStack_b9 [157];
   
   while (DAT_0010078c != 0) {
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     FUN_000735fc();
     if (DAT_00201c84 != 0) {
       FUN_00049818();
@@ -22917,7 +22926,7 @@ LAB_00036858:
       Ordinal_1044(local_b8,&DAT_00088d98,0x300);
       if (local_b9 == '\0') {
         in_stack_ffffff10 = CONCAT22((short)((uint)in_stack_ffffff10 >> 0x10),0x140);
-        FUN_00012444(0,0,g_uw_framebuffer,200,in_stack_ffffff10,0,0,
+        fade_out(0,0,g_uw_framebuffer,200,in_stack_ffffff10,0,0,
                      local_b8,2,0);
       }
       iVar10 = (int)acStack_d0[7];
@@ -23177,7 +23186,7 @@ LAB_00036ca4:
                       if (iVar19 < 0) {
                         iVar19 = iVar19 + 1;
                       }
-                      FUN_00011060(CONCAT13(*(undefined1 *)((int)&local_b4 + iVar13 + 3),
+                      draw_text_string(CONCAT13(*(undefined1 *)((int)&local_b4 + iVar13 + 3),
                                             CONCAT12(*(undefined1 *)((int)&local_b4 + iVar13 + 2),
                                                      CONCAT11(*(undefined1 *)
                                                                ((int)&local_b4 + iVar13 + 1),
@@ -23193,7 +23202,7 @@ LAB_00036ca4:
                   local_8f = -2;
                   local_8d = -1;
                 }
-                FUN_00022f0c(1);
+                flush_dirty_rect_to_display(1);
               }
               if ((((local_8b & 0x20) != 0) && ((local_8b & 0x40) == 0)) &&
                  ((-1 < local_91 && (local_91 < 999)))) {
@@ -23326,7 +23335,7 @@ LAB_00037a94:
       }
       if (local_b9 == '\0') {
         if (local_8d != -2) {
-          FUN_00012444(0,0,g_uw_framebuffer,200,CONCAT22(uVar24,0x140),0
+          fade_out(0,0,g_uw_framebuffer,200,CONCAT22(uVar24,0x140),0
                        ,0,local_b8,2,1);
         }
         FUN_00040df0();
@@ -25813,7 +25822,7 @@ void FUN_0003bd50()
   FUN_000678e0();
   FUN_0005b758(0x34,0x14,0xab,0x70);
   Ordinal_1044(auStack_314,&DAT_00088d98,0x300);
-  FUN_00012444(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
+  fade_out(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   FUN_00040e24(0,auStack_314);
   Ordinal_1047(acStack_41c,0,0x104);
   pcVar2 = &DAT_0023cca8;
@@ -25834,7 +25843,7 @@ void FUN_0003bd50()
   FUN_0005bb5c();
   FUN_0006fea4();
   FUN_000570b4();
-  FUN_000122d4(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
+  fade_in(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   return;
 }
 
@@ -30215,7 +30224,7 @@ short param_1;
             uVar8 = FUN_00076a2c((&DAT_00085adc)[iVar11],(uint)(byte)(&DAT_00085add)[iVar11] << 1);
             sVar4 = (&DAT_00085ada)[iVar10 * 7];
             (&DAT_002028a0)[iVar10 + -0xc] = uVar8;
-            FUN_00076b8c(*(undefined4 *)(iVar10 * 4 + 0x202870),
+            capture_framebuffer_rect_to_grtile(*(undefined4 *)(iVar10 * 4 + 0x202870),
                          (int)(short)(&DAT_00085ad8)[iVar10 * 7],(int)sVar4,(&DAT_00085adc)[iVar11],
                          (&DAT_00085add)[iVar11]);
             iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
@@ -32092,11 +32101,11 @@ LAB_000464c8:
         iVar3 = (int)(short)(&DAT_00085ad8)[iVar5 * 7];
         uVar4 = (uint)(byte)(&DAT_00085adc)[iVar5 * 0xe];
       }
-      FUN_00076b8c((&DAT_002028e8)[iVar5],iVar3,(int)*(short *)(puVar2 + 10),uVar4,puVar2[0xd]);
+      capture_framebuffer_rect_to_grtile((&DAT_002028e8)[iVar5],iVar3,(int)*(short *)(puVar2 + 10),uVar4,puVar2[0xd]);
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 0x17);
-    FUN_00076b8c(DAT_002028ec,0xec,0x51,0x54,0x29);
-    FUN_00076b8c(DAT_002028e8,299,0x3b,0x10,10);
+    capture_framebuffer_rect_to_grtile(DAT_002028ec,0xec,0x51,0x54,0x29);
+    capture_framebuffer_rect_to_grtile(DAT_002028e8,299,0x3b,0x10,10);
     DAT_00202998 = FUN_0004202c(0xf0,0x76,0x13b,0xb,0,5,FUN_0003f95c);
   }
   return;
@@ -32375,8 +32384,8 @@ void FUN_00046bfc()
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 6);
     DAT_00088960 = 0;
-    FUN_00076b8c(DAT_00202914,(int)DAT_00085b72,(int)DAT_00085b74,DAT_00085b76 - 5,DAT_00085b77);
-    FUN_00076b8c(DAT_00202910,DAT_00085b64 + 5,(int)DAT_00085b66,DAT_00085b68 - 5,DAT_00085b69);
+    capture_framebuffer_rect_to_grtile(DAT_00202914,(int)DAT_00085b72,(int)DAT_00085b74,DAT_00085b76 - 5,DAT_00085b77);
+    capture_framebuffer_rect_to_grtile(DAT_00202910,DAT_00085b64 + 5,(int)DAT_00085b66,DAT_00085b68 - 5,DAT_00085b69);
     if (((DAT_00202962 & 0xffc0) != 0) || ((DAT_00202964 & 0xffc0) != 0)) {
       FUN_00048198(10,0xb);
     }
@@ -33069,7 +33078,7 @@ joined_r0x00048308:
         for (; iVar1 <= iVar2; iVar1 = (iVar1 + 1) * 0x10000 >> 0x10) {
           if (1 < (short)auStack_54[iVar1]) {
             uVar8 = Ordinal_1025((int)(short)auStack_54[iVar1],auStack_60,10);
-            FUN_00011060(uVar8,(short)(&DAT_00085ad8)[iVar1 * 7] + 3,
+            draw_text_string(uVar8,(short)(&DAT_00085ad8)[iVar1 * 7] + 3,
                          (short)(&DAT_00085ada)[iVar1 * 7] + 1);
           }
         }
@@ -33126,7 +33135,7 @@ int param_1;
     if (iVar4 < 0) {
       iVar4 = iVar4 + 1;
     }
-    FUN_00011060(auStack_24,0x131 - (short)(iVar4 >> 1),0x3c);
+    draw_text_string(auStack_24,0x131 - (short)(iVar4 >> 1),0x3c);
   }
   return bVar5;
 }
@@ -33819,7 +33828,7 @@ void FUN_000497cc()
     FUN_00049818();
   }
   FUN_0004251c(DAT_00085a6c);
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -41017,7 +41026,7 @@ short param_1;
       sVar1 = FUN_00057a70();
       if (-1 < sVar1) break;
       FUN_000735fc();
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
     }
     if (sVar1 < 0x8e) {
       if (sVar1 == 0x8d) {
@@ -41602,7 +41611,7 @@ int FUN_00056fe8()
     rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     DAT_00204848 = 0;
     iVar1 = DAT_00204844;
   }
@@ -41893,7 +41902,7 @@ int param_1;
   while( true ) {
     sVar3 = FUN_000575c4(auStack_10);
     if ((sVar3 == 0) || (iVar4 != 0)) break;
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     if (param_1 != 0) {
       FUN_00049818();
     }
@@ -42525,7 +42534,7 @@ LAB_00058674:
   FUN_00040b0c((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
                ((int)g_mouse_y - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
                DAT_00204784);
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   DAT_00088960 = 0;
   g_force_flush = 0;
   set_draw_color(0);
@@ -50967,7 +50976,7 @@ void FUN_0006a168()
     FUN_0007e99c(0x40,0x40,0);
     DAT_0023bf74 = FUN_0002294c();
   }
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -51058,7 +51067,7 @@ short param_4;
         if (iVar2 < 0) {
           iVar2 = iVar2 + 1;
         }
-        FUN_00011060(*ppcVar5,0xa0 - (short)(iVar2 >> 1),iVar4 * 0x16 + 100);
+        draw_text_string(*ppcVar5,0xa0 - (short)(iVar2 >> 1),iVar4 * 0x16 + 100);
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
       } while (iVar4 < param_1);
     }
@@ -51404,7 +51413,7 @@ undefined4 FUN_0006b178()
     if (iVar8 < 0) {
       iVar8 = -(int)sVar2 + 0x141;
     }
-    FUN_00011060(uVar5,(short)(iVar8 >> 1) + 10,0x5a);
+    draw_text_string(uVar5,(short)(iVar8 >> 1) + 10,0x5a);
     FUN_00040d00(s_font5x6p_sys_0008430c);
     iVar4 = FUN_0006c0c0(iVar4 + 1);
     if (iVar4 == 0) {
@@ -52348,7 +52357,7 @@ int param_3;
       }
       bitmap_blit_to_framebuffer(0,0,iVar1,200,0x140,0,0,0);
       if (param_3 != 0) {
-        FUN_00022f0c(1);
+        flush_dirty_rect_to_display(1);
       }
     }
     Ordinal_1018(iVar1);
@@ -53633,7 +53642,7 @@ void FUN_0006ed0c()
     bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
     (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
     set_draw_color(0x1a);
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     FUN_000570b4();
   }
   return;
@@ -54767,7 +54776,7 @@ void FUN_00070c90()
      this 64-bit host -- same bug class as the other FUN_0007863c
      truncation fixes this session (e.g. character_generator_loop's uVar10). Used
      consistently as a string pointer everywhere else in this function
-     (FUN_00011060's first arg, Ordinal_1063's second arg), so retyping
+     (draw_text_string's first arg, Ordinal_1063's second arg), so retyping
      is a straightforward drop-in fix. */
   char *uVar7;
   char *pcVar8;
@@ -54789,7 +54798,7 @@ void FUN_00070c90()
   *DAT_00084298 = 0x5c;
   *DAT_0008429c = 0x5c;
   uVar7 = FUN_0007863c((int)DAT_00201c74);
-  /* Was `FUN_000112a0()` with no argument -- see FUN_00011060/
+  /* Was `FUN_000112a0()` with no argument -- see draw_text_string/
      FUN_000112a0's own comments above for the root "dropped argument"
      bug this matches; uVar7 (the string FUN_0007863c just returned) is
      right here, so pass it explicitly instead of hoping it's still
@@ -54799,7 +54808,7 @@ void FUN_00070c90()
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
   }
-  FUN_00011060(uVar7,0xa0 - (short)((int)(iVar12) >> 1),0x14);
+  draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),0x14);
   pcVar8 = (char *)FUN_0007863c(699);
   pcVar11 = local_58;
   do {
@@ -54828,7 +54837,7 @@ void FUN_00070c90()
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
   }
-  FUN_00011060(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
+  draw_text_string(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   uVar7 = FUN_0007863c(700);
   iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
   sVar6 = FUN_000112a0(uVar7);
@@ -54836,7 +54845,7 @@ void FUN_00070c90()
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
   }
-  FUN_00011060(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
+  draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   sVar6 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
   sVar6 = Ordinal_2005(0xc,(int)sVar6);
   pcVar8 = (char *)FUN_0007863c(0x2bd);
@@ -54857,7 +54866,7 @@ void FUN_00070c90()
     iVar12 = iVar12 + 1;
   }
   iVar13 = CONCAT11(*(undefined1 *)(DAT_000879b0 + 7),*(undefined1 *)(DAT_000879b0 + 6)) + iVar13;
-  FUN_00011060(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
+  draw_text_string(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   iVar12 = 0;
   iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
   do {
@@ -54892,8 +54901,8 @@ void FUN_00070c90()
 LAB_00071110:
     local_70 = (short)((uint)(iVar13 * 0x10000) >> 0x10);
     iVar14 = (int)extraout_r1_01 * (int)sVar2 + (int)local_70;
-    FUN_00011060(uVar7,(int)sVar6,iVar14);
-    FUN_00011060(local_58,sVar6 + 0x2d,iVar14);
+    draw_text_string(uVar7,(int)sVar6,iVar14);
+    draw_text_string(local_58,sVar6 + 0x2d,iVar14);
     iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
     if (5 < iVar12) {
       iVar12 = 0;
@@ -54923,12 +54932,12 @@ LAB_00071110:
           iVar13 = *(short *)(iVar14 + 6) + iVar13;
         }
         iVar14 = (short)extraout_r1_02 * 0x4a + 0x32;
-        FUN_00011060(uVar7,iVar14,iVar13);
+        draw_text_string(uVar7,iVar14,iVar13);
         iVar9 = FUN_000112a0(local_58);
-        FUN_00011060(local_58,(iVar14 - iVar9) + 0x46,iVar13);
+        draw_text_string(local_58,(iVar14 - iVar9) + 0x46,iVar13);
         iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
       } while (iVar12 < 0x14);
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
       return;
     }
   } while( true );
@@ -56131,7 +56140,7 @@ short param_1;
     uVar4 = FUN_00057a70();
     uVar1 = (ushort)uVar4;
     if (uVar1 == 0x1b) break;
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     if (((uVar1 != 0) && (0x2f < (short)(uVar1 & 0xfcff))) && ((short)(uVar1 & 0xfcff) < 0x3a)) {
       uVar2 = (uVar4 & 0xff) - 0x30;
       if ((uVar2 & 0xff) == 0) {
@@ -58146,7 +58155,7 @@ void FUN_00076508()
               *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
             }
             else {
-              FUN_00076b8c(*(undefined4 *)(puVar3 + 8),(int)(short)puVar3[1],(int)(short)puVar3[2],
+              capture_framebuffer_rect_to_grtile(*(undefined4 *)(puVar3 + 8),(int)(short)puVar3[1],(int)(short)puVar3[2],
                            (int)(short)puVar3[3],puVar3[4]);
             }
             puVar4 = puVar4 + 1;
@@ -58262,7 +58271,7 @@ uint param_2;
      packed byte-by-byte into the record below as an opaque 4-byte
      identity key, and *that* truncated key -- not the real pointer -- is
      what this function returns and what all 11 of its other callers
-     store/compare/pass into FUN_00076e98/FUN_00076b8c ("does this key
+     store/compare/pass into FUN_00076e98/capture_framebuffer_rect_to_grtile ("does this key
      match a record's stored key"): self-consistent lookups that don't
      need the real address, so leave this alone. The one caller that DOES
      need the real, dereferenceable pointer (FUN_00041708, feeding a
@@ -58282,11 +58291,11 @@ uint param_2;
   }
   iVar3 = (param_1 & 0xffff) * (param_2 & 0xffff);
   uVar1 = Ordinal_1041(iVar3);
-  /* FUN_00076b8c (one of the "11 other callers" mentioned above) turns
+  /* capture_framebuffer_rect_to_grtile (one of the "11 other callers" mentioned above) turns
      out to ALSO need the real pointer -- it renders glyph pixels
      directly into this buffer, not just compare-by-key -- so track the
      real address alongside the truncated key, indexed the same way
-     FUN_00076b8c's own search loop does (record position / 0x11). A
+     capture_framebuffer_rect_to_grtile's own search loop does (record position / 0x11). A
      real 64-bit heap address can't be losslessly recovered from the
      low-32-bits-only identity key on this host. */
   g_grtile_real_ptrs[((char *)puVar2 - (char *)DAT_0023c3fc) / 0x11] = uVar1;
@@ -58352,7 +58361,8 @@ int param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-undefined4 FUN_00076b8c(param_1,param_2,param_3,param_4,param_5)
+// was FUN_00076b8c
+undefined4 capture_framebuffer_rect_to_grtile(param_1,param_2,param_3,param_4,param_5)
 short * param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -58502,7 +58512,7 @@ short * param_1;
   int iVar6;
   int iVar7;
   /* param_1 is FUN_00076a2c's opaque truncated identity key, not a
-     real pointer -- same issue as FUN_00076b8c above. Read glyph
+     real pointer -- same issue as capture_framebuffer_rect_to_grtile above. Read glyph
      pixels back through the real pointer tracked in
      g_grtile_real_ptrs instead of dereferencing the key directly. */
   short *psVar_target;
@@ -59111,10 +59121,10 @@ void FUN_00077f30()
   if (iVar4 < 0) {
     iVar4 = -(int)sVar2 + 0x49;
   }
-  FUN_00011060(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
+  draw_text_string(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
   FUN_0007863c((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400);
   uVar3 = Ordinal_1416();
-  FUN_00011060(uVar3,0xf2,0x16);
+  draw_text_string(uVar3,0xf2,0x16);
   FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
   cVar1 = *(byte *)(DAT_00086df8 + 0x3d) - 1;
   if (3 < *(byte *)(DAT_00086df8 + 0x3d)) {
@@ -59125,7 +59135,7 @@ void FUN_00077f30()
      (see FUN_00041304 for the same pattern) -- skipped rather than
      guessed, this is cosmetic HUD text formatting. */
   iVar4 = FUN_000112a0(auStack_28);
-  FUN_00011060(auStack_28,0x138 - iVar4,0x16);
+  draw_text_string(auStack_28,0x138 - iVar4,0x16);
   return;
 }
 
@@ -59140,7 +59150,7 @@ uint param_1;
   
   FUN_000229e0(*(undefined1 *)((param_1 & 0xff) + DAT_0023be74 + 5),auStack_c,10);
   iVar1 = FUN_000112a0(auStack_c);
-  FUN_00011060(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
+  draw_text_string(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
   return;
 }
 
@@ -59158,7 +59168,7 @@ void FUN_00078088()
   auStack_c[sVar1] = 0x2f;
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
   iVar2 = FUN_000112a0(auStack_c);
-  FUN_00011060(auStack_c,0x138 - iVar2,0x32);
+  draw_text_string(auStack_c,0x138 - iVar2,0x32);
   return;
 }
 
@@ -59177,7 +59187,7 @@ void FUN_00078118()
   FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_10 + ((sVar1 + 1) * 0x10000 >> 0x10),10)
   ;
   iVar2 = FUN_000112a0(auStack_10);
-  FUN_00011060(auStack_10,0x138 - iVar2,0x39);
+  draw_text_string(auStack_10,0x138 - iVar2,0x39);
   return;
 }
 
@@ -59193,7 +59203,7 @@ void FUN_000781a0()
   uVar1 = Ordinal_2008(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
   Ordinal_1039(uVar1,auStack_18,10);
   iVar2 = FUN_000112a0(auStack_18);
-  FUN_00011060(auStack_18,0x138 - iVar2,0x40);
+  draw_text_string(auStack_18,0x138 - iVar2,0x40);
   return;
 }
 
@@ -59216,9 +59226,9 @@ uint param_1;
   FUN_0007863c((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400);
   uVar1 = Ordinal_1416();
   iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
-  FUN_00011060(uVar1,0xf2,iVar4);
+  draw_text_string(uVar1,0xf2,iVar4);
   iVar2 = FUN_000112a0(auStack_18);
-  FUN_00011060(auStack_18,0x138 - iVar2,iVar4);
+  draw_text_string(auStack_18,0x138 - iVar2,iVar4);
   return;
 }
 
@@ -59232,11 +59242,11 @@ void FUN_0007830c()
   if (DAT_0024af88 == 0) {
     DAT_0024af88 = FUN_00076a2c(0x96,0x2b);
     if (DAT_0024af88 != 0) {
-      FUN_00076b8c(DAT_0024af88,0xf0,0x47,0x4b,0x2b);
+      capture_framebuffer_rect_to_grtile(DAT_0024af88,0xf0,0x47,0x4b,0x2b);
     }
     DAT_0024af8c = FUN_00076a2c(0x46,0x15);
     if (DAT_0024af8c != 0) {
-      FUN_00076b8c(DAT_0024af8c,0x115,0x32,0x23,0x15);
+      capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
   }
   *DAT_0008429c = 0xf1;
@@ -59401,7 +59411,7 @@ ushort param_1;
     /* Was `FUN_00078e60(uVar1)` -- called with only one explicit
        argument, relying on a register-leftover idiom for the second
        (the "dropped argument" pattern used throughout this file, e.g.
-       Ordinal_1068/FUN_00011060 earlier this session) to still hold
+       Ordinal_1068/draw_text_string earlier this session) to still hold
        the string's sub-index within this page. That register doesn't
        reliably survive here either (confirmed: string lookups that
        should succeed -- e.g. chargen field labels -- came back as
@@ -62913,7 +62923,8 @@ void FUN_0007e99c()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0007e9c4(param_1,param_2,param_3)
+// was FUN_0007e9c4
+void plot_pixel(param_1,param_2,param_3)
 short param_1;
 short param_2;
 short param_3;
@@ -62926,7 +62937,7 @@ short param_3;
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
        (&g_palette_rgb565)[param_3];
   FUN_00011000(iVar1,iVar1,(int)param_1);
-  debug_framebuffer_dump("FUN_0007e9c4");
+  debug_framebuffer_dump("plot_pixel");
   return;
 }
 
@@ -63384,7 +63395,7 @@ uint param_2;
   do {
     sVar2 = FUN_00057a70();
     if (sVar1 != sVar2) break;
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
   } while ((param_1 == 0) || (uVar4 = FUN_0002294c(), uVar4 <= (uint)(param_1 + iVar3)));
   FUN_00057604(1);
   FUN_0007f094();
@@ -63476,7 +63487,7 @@ void FUN_0007f454()
   sVar3 = *(short *)(DAT_00250704 + 10);
   uVar2 = *DAT_0008429c;
   *DAT_0008429c = 0xd4;
-  FUN_00011060(s__MORE__00087994,(int)*(short *)(DAT_00250704 + 0xc),(int)sVar3);
+  draw_text_string(s__MORE__00087994,(int)*(short *)(DAT_00250704 + 0xc),(int)sVar3);
   FUN_0007f170(0,1);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 0xc),(int)sVar3,*(undefined2 *)(DAT_00250704 + 6),
@@ -63718,7 +63729,7 @@ LAB_0007fa30:
       *(undefined1 *)(DAT_00250704 + 0x13) = 0;
       iVar5 = DAT_00250704;
     }
-    FUN_00011060(param_1,(int)*(short *)(iVar5 + 8),(int)*(short *)(iVar5 + 10));
+    draw_text_string(param_1,(int)*(short *)(iVar5 + 8),(int)*(short *)(iVar5 + 10));
     iVar5 = FUN_000112a0(param_1);
     iVar5 = *(short *)(DAT_00250704 + 8) + iVar5;
     *(char *)(DAT_00250704 + 8) = (char)iVar5;
@@ -63999,7 +64010,7 @@ short param_5;
         rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
         uVar13 = Ordinal_1068(acStack_a1 + 1);
         if ((uint)(int)sVar5 < uVar13) {
-          FUN_00011060(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
+          draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
       }
       FUN_000570b4();
@@ -64031,7 +64042,7 @@ short param_5;
       }
       return uVar8;
     }
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     iVar7 = 0;
     do {
       cVar1 = acStack_a1[iVar7 + 1];
@@ -64049,7 +64060,7 @@ short param_5;
         rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
         uVar9 = Ordinal_1068(acStack_a1 + 1);
         if (uVar11 < uVar9) {
-          FUN_00011060(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
+          draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
       }
     }
@@ -64180,7 +64191,7 @@ LAB_0008062c:
       rect_fill_or_save_restore((int)DAT_0025070c,*(short *)(DAT_00250704 + 10),*(undefined2 *)(DAT_00250704 + 6)
                    ,*(short *)(DAT_000879b0 + 6) + *(short *)(DAT_00250704 + 10));
       *DAT_0008429c = *(undefined1 *)(DAT_00250704 + 0x16);
-      FUN_00011060(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
+      draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
     }
     sVar5 = (short)uVar13;
     uVar8 = FUN_00057a70();
@@ -64236,7 +64247,7 @@ int * param_3;
       }
       return uVar3;
     }
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     if (sVar1 == 0x4e) break;
     if (sVar1 == 0x59) goto LAB_0008090c;
     if (sVar1 == 0x6e) break;

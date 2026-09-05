@@ -39,7 +39,7 @@ undefined4 param_4;
       FUN_0003af28(param_1,0xca,uVar3);
       FUN_00011000(0,0xf0,0,0x140);
       Ordinal_1044(g_uw_framebuffer,uVar3,0x25800);
-      FUN_0002310c();
+      flush_dirty_rect_to_display_240();
       Ordinal_496(2000);
       Ordinal_1018(uVar3);
       FUN_00022b54(0,0xffffffff);
@@ -302,7 +302,7 @@ undefined4 param_1;
         // HACK: same DAT_00088d98-sync deviation as this function's other
         // palette-load point above -- see that comment.
         FUN_00040efc(2);
-        FUN_000122d4(0,0,g_uw_framebuffer,200);
+        fade_in(0,0,g_uw_framebuffer,200);
       }
     }
     sVar3 = menu_button_list_navigate(uVar8,DAT_0023bf6c,0,uVar2);
@@ -316,7 +316,7 @@ undefined4 param_1;
     }
     else if (local_838 == 1) {
       DAT_0024af74 = 1;
-      FUN_00012444(0,0,g_uw_framebuffer,200);
+      fade_out(0,0,g_uw_framebuffer,200);
       iVar4 = character_generator_start();
       if (iVar4 != 0) {
         Ordinal_1047(acStack_6e4,0,0x104);
@@ -449,7 +449,7 @@ undefined4 param_1;
         if (iVar4 < 0) {
           iVar4 = iVar4 + 1;
         }
-        FUN_00011060(uVar7,0xa0 - (short)(iVar4 >> 1),0x5a);
+        draw_text_string(uVar7,0xa0 - (short)(iVar4 >> 1),0x5a);
         FUN_000570b4();
         while (sVar3 = FUN_00057a70(), sVar3 < 0) {
           FUN_0006a168();

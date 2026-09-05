@@ -53,7 +53,7 @@ void DEBUG_impl(DebugLevel level, const char *file, int line, const char *fmt, .
        DEBUG(...) call lives inside a shared helper (e.g.
        bitmap_blit_to_framebuffer) and several different callers hit it.
        Same dladdr-on-a-return-address idiom already used by
-       FUN_00011060's UW_DIAG_TEXT trace in uw.c. Reliable at -O0 (this
+       draw_text_string's UW_DIAG_TEXT trace in uw.c. Reliable at -O0 (this
        project's only build mode) since frame pointers stay intact;
        silently prints nothing extra if it can't resolve a symbol. */
     Dl_info caller_info;

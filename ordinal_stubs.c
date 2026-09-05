@@ -374,7 +374,7 @@ long Ordinal_533()
  * hardcoded 0, meaning every FUN_0002294c() (this file's Ordinal_535()
  * >> 2) call across the whole game always read "0 elapsed" -- silently
  * breaking every timing check built on it, not just the one that
- * exposed it (FUN_000122d4's fade-in-from-black transition measured
+ * exposed it (fade_in's fade-in-from-black transition measured
  * 0ms end to end with this stubbed out, confirming the fade logic
  * itself was intact and only the time source was missing). */
 long Ordinal_535()

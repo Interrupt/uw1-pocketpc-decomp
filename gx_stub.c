@@ -15,7 +15,7 @@
 #define GX_W 320
 #define GX_H 240
 
-/* The game's own screen-flush routines (FUN_00022f0c/FUN_0002310c in
+/* The game's own screen-flush routines (flush_dirty_rect_to_display/flush_dirty_rect_to_display_240 in
  * uw.c) always blit by transposing rows<->columns from the software
  * framebuffer into whatever GXBeginDraw() returns, using the pitch
  * values from GXGetDisplayProperties() -- i.e. the code unconditionally
@@ -359,11 +359,11 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
     }
     SDL_StartTextInput();
     /* VSYNC matters beyond just avoiding tearing here: several original
-     * routines (e.g. FUN_000122d4's fade-in-from-black transition) pace
+     * routines (e.g. fade_in's fade-in-from-black transition) pace
      * themselves purely by how long each GXEndDraw-equivalent present
      * call naturally takes, with no explicit delay of their own -- real
      * WinCE hardware's slow per-pixel math and real hardware blit made
-     * that implicitly visible (confirmed: FUN_000122d4's 8-step fade
+     * that implicitly visible (confirmed: fade_in's 8-step fade
      * plus final restore pass completed in 0ms without this, i.e.
      * instantly/imperceptibly, on modern hardware). Real display refresh
      * pacing via vsync restores roughly the intended per-step timing
@@ -686,11 +686,11 @@ int GXEndDraw(void) {
     /* Real GAPI hardware's GXEndDraw blocked until the next display
      * refresh -- that's what gave the whole game its effective 60Hz
      * tick rate (every polling/redraw loop in the game funnels through
-     * here via FUN_00022f0c), with no explicit frame-rate code of its
+     * here via flush_dirty_rect_to_display), with no explicit frame-rate code of its
      * own anywhere in the decompile. SDL_RENDERER_PRESENTVSYNC alone
      * doesn't reliably reproduce that on this host -- desktop GPU
      * drivers can queue/batch several presents before actually blocking
-     * on a vsync (confirmed: FUN_000122d4's fade-in, which calls
+     * on a vsync (confirmed: fade_in's fade-in, which calls
      * GXEndDraw 8 times in a tight loop, measured only ~19ms total
      * instead of something near 8 * 16.67ms). Explicitly cap how often
      * a call here can complete, so every present -- not just whichever
