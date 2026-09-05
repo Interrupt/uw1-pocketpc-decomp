@@ -1867,7 +1867,19 @@ undefined1 DAT_00203303;
 short DAT_0023bf1c;
 short DAT_00202078;
 short DAT_0023bf4c;
-short DAT_00086e68;
+/* Link-time-initialized read-only data (same situation as DAT_00085668/
+   DAT_00085728: nothing in this decompile ever writes it, and an
+   exhaustive whole-binary Ghidra reference search confirms that's true
+   of the real UU.exe too -- every one of its 4 references, in
+   FUN_0003d94c/FUN_0003dca4/apply_heading_turn, is a read). Left as a
+   bare zero-initialized global, this turn-rate constant (multiplied
+   into every heading-step computation in apply_heading_turn's case-1
+   branch) made every turn compute to a zero step no matter how long a
+   turn key was held -- confirmed via lldb holding Ctrl for 20 ticks:
+   DAT_0023bf4c (decoded turn amount) read a real nonzero -72, but the
+   player's heading never moved off 0. Recovered the real value by
+   reading UU.exe's .data byte at 0x86e68 directly via Ghidra: 0xf. */
+#define DAT_00086e68 15
 static undefined2 DAT_002048b0_backing[8192];
 #define DAT_002048b0 DAT_002048b0_backing[0]
 undefined1 *DAT_002048b8;

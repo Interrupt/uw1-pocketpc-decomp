@@ -1,6 +1,15 @@
 /* See demomode.h. Input file format: one command per line, case-
  * insensitive, blank lines and lines starting with '#' ignored:
  *   UP DOWN LEFT RIGHT ENTER SPACE CTRL ESC BACKSPACE
+ *   HOLD <KEY> <ticks>  -- sends KEYDOWN for <KEY> once, then idles
+ *                    (feeding no new input, so the game's own idle-tick
+ *                    dispatch keeps running with the key conceptually
+ *                    still down) for <ticks> more pump ticks before
+ *                    finally sending KEYUP -- simulates a genuinely
+ *                    held key, unlike the plain UP/DOWN/etc commands
+ *                    (which send KEYDOWN+KEYUP back to back in the same
+ *                    tick). Needed for anything gated on hold duration,
+ *                    e.g. DAT_0024af6c in uw.c.
  *   TYPE <text>   -- sends each character of <text> as a real WM_CHAR
  *                    (0x102), one per delay tick, simulating name entry
  *   CLICK <portrait_x> <portrait_y>  -- injects a synthetic mouse click
@@ -53,6 +62,12 @@ static int g_demo_done;
 static char g_demo_type_buf[256];
 static const char *g_demo_type_pos;
 
+/* HOLD <KEY> <ticks> state: g_demo_hold_vk is the VK code currently
+ * "held" (0 = nothing), g_demo_hold_ticks is how many more idle pump
+ * ticks to wait before releasing it. */
+static int g_demo_hold_vk;
+static int g_demo_hold_ticks;
+
 static int demo_translate_vk(const char *name) {
     if (strcasecmp(name, "UP") == 0) return VK_UP;
     if (strcasecmp(name, "DOWN") == 0) return VK_DOWN;
@@ -92,6 +107,23 @@ void demomode_pump(void) {
     Uint32 now = SDL_GetTicks();
     if (now < g_demo_next_tick) return;
 
+    /* Mid-HOLD: the key's KEYDOWN was already sent when the HOLD line
+     * was first read (below); every tick until the countdown reaches 0
+     * just idles (no new input fed at all, matching a real held key
+     * generating no fresh keydown/keyup), then releases on the last one. */
+    if (g_demo_hold_vk != 0) {
+        if (g_demo_hold_ticks > 0) {
+            g_demo_hold_ticks--;
+            g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+            return;
+        }
+        fprintf(stderr, "[demo] releasing held key vk=0x%x\n", g_demo_hold_vk);
+        handle_keyboard_message(0, 0x101u, (unsigned int)g_demo_hold_vk);
+        g_demo_hold_vk = 0;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     /* Mid-TYPE: send the next character (as a real WM_CHAR, matching
      * SDL_TEXTINPUT's forwarding in gx_stub.c) and come back next tick
      * for the rest, rather than dumping the whole string in one frame. */
@@ -130,6 +162,28 @@ void demomode_pump(void) {
         /* Blank/comment line -- retry immediately on the next pump
          * instead of burning a full delay slot on nothing. */
         g_demo_next_tick = now;
+        return;
+    }
+
+    if (strncasecmp(p, "HOLD ", 5) == 0) {
+        char keyname[32];
+        int ticks = 0;
+        if (sscanf(p + 5, "%31s %d", keyname, &ticks) != 2 || ticks < 0) {
+            fprintf(stderr, "[demo] malformed HOLD line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        int vk = demo_translate_vk(keyname);
+        if (vk == 0) {
+            fprintf(stderr, "[demo] HOLD: unrecognized key '%s', skipping\n", keyname);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] holding %s (vk=0x%x) for %d ticks\n", keyname, vk, ticks);
+        handle_keyboard_message(0, 0x100u, (unsigned int)vk);
+        g_demo_hold_vk = vk;
+        g_demo_hold_ticks = ticks;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
 
