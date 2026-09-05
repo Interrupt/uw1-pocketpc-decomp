@@ -1902,9 +1902,20 @@ short DAT_0023bf48;
 short DAT_0020207a;
 short DAT_0020207c;
 short DAT_00202074;
-short DAT_0008589c;
-short DAT_00085898;
-short DAT_00085894;
+/* DAT_0008589c/85898/85894 are link-time-initialized read-only data,
+   same situation as DAT_00086e68 right above's fix (nothing in this
+   decompile writes any of the three, and an exhaustive whole-binary
+   Ghidra reference search confirms the real UU.exe agrees -- their
+   only references, all in FUN_0003dca4, are reads). Sibling constants
+   to DAT_00086e68 in the exact same per-facing-direction table
+   (FUN_0003dca4 multiplies each by the same `uVar5` direction-lookup
+   value right next to where it uses DAT_00086e68), so almost
+   certainly hit the same bug for the same reason. Recovered the real
+   values by reading UU.exe's .data bytes directly via Ghidra:
+   0x3ac (940), 0xeb (235), 0xbc (188) respectively. */
+#define DAT_0008589c 0x3ac
+#define DAT_00085898 0xeb
+#define DAT_00085894 0xbc
 static undefined DAT_001c2000_backing[8192];
 #define DAT_001c2000 DAT_001c2000_backing[0]
 char s_out_of_000858dc[] = "out_of";
