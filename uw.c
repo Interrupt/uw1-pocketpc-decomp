@@ -2383,14 +2383,14 @@ char *DAT_0020469c;
 /* Recovered from UU.exe .data: the renderer's sine (0x85d48) and cosine
    (0x85f50) tables, 256 int16 entries each, amplitude 32767 --
    sine[i] = round(32767 * sin(i*PI/128)); cosine[i] = sine[(i+64)&255].
-   Both were silently-zero 64KB Ghidra backing arrays, so FUN_00049ce8
+   Both were silently-zero 64KB Ghidra backing arrays, so angle_to_screen_delta
    (angle -> screen delta) returned {0,0} for every angle. That zeroed
-   the entry-0 direction vector FUN_0005bf40 seeds the visibility
+   the entry-0 direction vector seed_visibility_queue seeds the visibility
    flood-fill with, so process_reaction_entry did no expansion,
    process_reaction_queue marked no tile visible, and the 3D tile list
    came out empty (black viewport). It also broke every other bit of
    angle math in the projection code. Four trailing pad shorts each
-   (the +2 interpolation in FUN_00049ce8 can index one past 255).
+   (the +2 interpolation in angle_to_screen_delta can index one past 255).
    DAT_00085d4c / DAT_00085f54 are &table + 4 (the "next" sample). */
 static const short DAT_00085d48_sine[260] = {
   0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
@@ -2790,7 +2790,7 @@ undefined *DAT_0023b02c;
 short DAT_0025063c;
 short DAT_002506dc;
 short DAT_0025064c;
-/* Lookup/gradient table in FUN_0005bdcc, indexed up to
+/* Lookup/gradient table in build_visibility_light_grid, indexed up to
    (16*0x21+32)*2=1120 -- confirmed overflowing into the unrelated
    DAT_00248410 via an lldb watchpoint (same symptom, second distinct
    overflow source found reaching that same global). Widened. */
@@ -2799,7 +2799,7 @@ static undefined1 DAT_0023b039_backing[4096];
 undefined1 DAT_0023b030;
 /* DAT_0023aee0-family: ~20 separately-declared globals that are really
    one 16-entry x 0x15(21)-byte creature-reaction/sound-cue queue record
-   array (FUN_0005bf40/process_reaction_entry/merge_adjacent_reactions/process_reaction_queue index it via
+   array (seed_visibility_queue/process_reaction_entry/merge_adjacent_reactions/process_reaction_queue index it via
    `&DAT_0023aee0 + entry*0x15`). As lone scalars, out-of-bounds record
    writes/reads walked off into whatever memory happened to follow in
    declaration order -- confirmed: DAT_0023b030 (declared right after,
@@ -2807,7 +2807,7 @@ undefined1 DAT_0023b030;
    address map) was getting corrupted by exactly this, which is why the
    queue never looked empty. This subsystem also computes DAT_0023b024,
    which turns out to double as the tile-visibility scan radius consumed
-   by FUN_0005d9cc's dungeon-geometry walk -- NOT optional creature/object
+   by walk_visible_tiles's dungeon-geometry walk -- NOT optional creature/object
    bookkeeping as first assessed (see process_reaction_queue's since-removed
    `// Hack - Disabled`); skipping it left the 3D viewport permanently
    empty. Real backing array + aliases at each element's correct offset,
@@ -2818,14 +2818,14 @@ static undefined1 DAT_0023aee0_backing[1024];
    (offsets 9/0xa-0xb/0xc), which the original 32-bit binary packed as raw
    bytes -- see process_reaction_entry's comment on why that can't be reassembled
    into a real 64-bit pointer on this port. Only entry 0 (the player's own
-   reaction slot, the only one FUN_0005bf40 ever populates in a
+   reaction slot, the only one seed_visibility_queue ever populates in a
    monster-free dungeon) is written; other entries stay NULL, matching
    the "unpopulated" state process_reaction_entry's own `(*param_1 & 0x80) == uVar1`
    guard already treats as "nothing to look up" for a zeroed record. */
 static char *g_dat0023aee0_realptr[16];
 /* Second real-pointer side table, for this record's OTHER packed pointer
    field (offsets 0xd and its byte-mirrored copy at 0x11-0x14 -- see
-   FUN_0005bf40's DAT_0023aeed/aeee/aef0 writes). Unlike the offset-9
+   seed_visibility_queue's DAT_0023aeed/aeee/aef0 writes). Unlike the offset-9
    field, this one is always the SAME fixed original-binary address
    (0x0023b058, confirmed identical for entry 0's 3-field pack and
    entry 1's combined `_DAT_0023af02` write) -- a hardcoded literal
@@ -2838,7 +2838,7 @@ static char *g_dat0023aee0_realptr[16];
    table for consistency with how the field is indexed. */
 static char *g_dat0023aee0_realptr2[16];
 /* Only entries 0 and 1 (the player's own reaction slot, always populated
-   by FUN_0005bf40) are ever given a real pointer above -- a monster-free
+   by seed_visibility_queue) are ever given a real pointer above -- a monster-free
    dungeon has nothing to populate the other 14 with. But this queue's
    chain-walk can still legitimately reach an unpopulated entry (its
    "next" link byte isn't reliably reset to the 0xf end-of-chain sentinel
@@ -2885,7 +2885,7 @@ static char g_dat0023aee0_fallback[64];
               dir 0..3  a00 = {+1, -64, -1, +64}
                         a02 = {+64, +1, -64, -1}
             i.e. the 90-degree rotation basis (tile index = x + y*64) that
-            FUN_0005d9cc's automap reveal walk and the 3D tile-neighbour
+            walk_visible_tiles's automap reveal walk and the 3D tile-neighbour
             sampling (FUN_0005bd9c &c, uw.c ~44695-44982) step tiles by.
             All zero before this -> the reveal walk never advanced
             (teleport+REVEAL only marked the player's own tile) and the
@@ -2932,7 +2932,7 @@ static const undefined1 DAT_00086af0_arr[4] = { 0x10, 0x00, 0x00, 0x00 };
    flood-fill uses to decide whether a neighbour tile occludes the view;
    with them all zero the fill's expansion tests (uw.c ~44965, ~44978,
    ~45001) never fire, so process_reaction_queue drains after ~2 entries
-   and marks NO tile visible -> FUN_0005e604 only ever takes its
+   and marks NO tile visible -> process_visible_tile_cell only ever takes its
    un-gated automap-reveal path and never emits 3D tile geometry (black
    viewport). Indexed [orient] with orient in {0,1}:
      +0x00  DAT_00086af8 = {2, 4}    wall-edge bitmask (AND'd with DAT_000878d0[shape])
@@ -2952,8 +2952,8 @@ undefined2 DAT_00189578;
 short DAT_0023b810;
 /* Recovered from UU.exe .data at 0x86b38: three pairs of function
    pointers, selected by an index (0 or 1, from DAT_00086b2c) in
-   FUN_0005d9cc, loaded into DAT_0023b4f4 / DAT_0023b80c / DAT_0023b4d4,
-   and called by FUN_0005e604 to emit a visible tile's 3D geometry
+   walk_visible_tiles, loaded into DAT_0023b4f4 / DAT_0023b80c / DAT_0023b4d4,
+   and called by process_visible_tile_cell to emit a visible tile's 3D geometry
    slice (wall / floor-or-ceiling / diagonal). Were three silently-zero
    `undefined4` scalars, so `(*DAT_0023b4f4)(...)` was a call through
    NULL the instant the (now-working) visibility fill marked any tile
@@ -2984,7 +2984,7 @@ undefined2 DAT_0023b8c0;
 static undefined1 DAT_00086b50_backing[65536];
 #define DAT_00086b50 DAT_00086b50_backing[0]
 byte *DAT_0023b4ec;
-/* Was a lone `undefined` scalar; FUN_0005d9cc/FUN_0005e604 index it as
+/* Was a lone `undefined` scalar; walk_visible_tiles/process_visible_tile_cell index it as
    `(&DAT_00086bf0)[tile_type_nibble]`. Real bytes recovered from
    UU.exe's .data at 0x86bf0 (confirmed 3 ways: reference search,
    literal-pool value, disassembly of the `ldrb r2,[r2,r0]` read):
@@ -2992,8 +2992,8 @@ byte *DAT_0023b4ec;
 
    NOTE: this table is now essentially unused. It turned out NOT to be
    the real automap reveal-byte source -- the two ring-walk write sites
-   (FUN_0005d9cc / FUN_0005e604) were changed to compute the reveal byte
-   the way FUN_0005e604's bit-0x80-SET branch always did:
+   (walk_visible_tiles / process_visible_tile_cell) were changed to compute the reveal byte
+   the way process_visible_tile_cell's bit-0x80-SET branch always did:
      `DAT_0023ae40[floor-texture index] low byte  |  tile shape nibble`
    where DAT_0023ae40 is the per-level floor-texture property table
    (loaded from the .ark). Water floors read 0x10 there -> reveal-byte
@@ -34375,7 +34375,8 @@ int param_3;
 
 
 
-void FUN_00049ce8(param_1,param_2,param_3)
+// was FUN_00049ce8
+void angle_to_screen_delta(param_1,param_2,param_3)
 uint param_1;
 undefined1 * param_2;
 undefined1 * param_3;
@@ -43043,7 +43044,7 @@ int param_2;
   short local_20;
   short local_1e;
   
-  FUN_00049ce8((int)*(short *)(DAT_00204874 + 0x21),&local_20,&local_1e);
+  angle_to_screen_delta((int)*(short *)(DAT_00204874 + 0x21),&local_20,&local_1e);
   iVar10 = (int)*(short *)(DAT_00204874 + 0x14) * (int)local_20 >> 0xf;
   *(char *)(DAT_00204874 + 6) = (char)iVar10;
   *(char *)(DAT_00204874 + 7) = (char)((uint)iVar10 >> 8);
@@ -44404,7 +44405,7 @@ void FUN_0005b828()
   DAT_0023aed0 = DAT_00110fc0;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_0005bdcc(8);
+  build_visibility_light_grid(8);
   DAT_0023b49c = DAT_00250650;
   return;
 }
@@ -44474,7 +44475,7 @@ void full_dungeon_redraw()
 {
   FUN_0005bc38();
   FUN_0005b890();
-  FUN_0005d290();
+  rebuild_dungeon_view();
   FUN_00038c14(0xa0);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -44505,7 +44506,7 @@ void FUN_0005bbe0()
   iVar8 = FUN_0005bc38();
   if (iVar8 != 0) {
     FUN_0005b890();
-    FUN_0005d290();
+    rebuild_dungeon_view();
     FUN_00038c14(0xa0);
     *DAT_00110fc0 = 0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -44591,7 +44592,8 @@ LAB_0005bd98:
 
 
 
-void FUN_0005bdcc(param_1)
+// was FUN_0005bdcc
+void build_visibility_light_grid(param_1)
 short param_1;
 
 {
@@ -44647,7 +44649,8 @@ short param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0005bf40()
+// was FUN_0005bf40
+void seed_visibility_queue()
 
 {
   if ((*DAT_0023aecc & 0xf) == 0) {
@@ -44678,8 +44681,8 @@ void FUN_0005bf40()
     DAT_0023aee9 = (char)DAT_0023aecc;
     g_dat0023aee0_realptr[0] = DAT_0023aecc; // real-pointer side channel for process_reaction_entry -- see g_dat0023aee0_realptr's comment
     g_dat0023aee0_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
-    FUN_00049ce8(*(short *)(DAT_00086e6c + 0x2c) + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
-    FUN_00049ce8(*(short *)(DAT_00086e6c + 0x2c) + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
+    angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
+    angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
     _DAT_0023aee1 = _DAT_0023aee1 >> 4;
     _DAT_0023aee3 = _DAT_0023aee3 >> 4;
     DAT_0023aef6 = DAT_0023aef6 >> 4;
@@ -45071,7 +45074,7 @@ byte * param_1;
       iVar11 = (int)DAT_0023b4a0;
       /* Was `*(byte **)(param_1 + 9)` -- reassembling a pointer from raw
          bytes the original 32-bit binary packed at this offset (see
-         FUN_0005bf40's DAT_0023aee9/aeea/aeec writes), which only ever
+         seed_visibility_queue's DAT_0023aee9/aeea/aeec writes), which only ever
          captured the low 32 bits even before this port's 64-bit
          truncation, and the 8-byte-wide read here also swallows 4 bytes
          of the next field. Real pointer tracked separately instead --
@@ -45322,7 +45325,7 @@ void process_reaction_queue()
   } while (DAT_0023b030 != 0xf);
 
   /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): DAT_0023b024 is the
-     row depth of FUN_0005d9cc's reveal/visibility walk -- it starts at
+     row depth of walk_visible_tiles's reveal/visibility walk -- it starts at
      row &DAT_0023b038 + DAT_0023b024*0x42 and sweeps back to row 0, and
      equals (reaction-queue passes made) - 1. With a small visible set it
      comes out 0, so a demomode TELEPORT+REVEAL only marks a thin strip.
@@ -45330,7 +45333,7 @@ void process_reaction_queue()
      also decouples the walk from process_reaction_queue's real output
      rows (which now genuinely carry visibility bits -- see the table
      recoveries this session), so it is opt-in and off by default. When
-     enabled, the upper rows are zeroed first so FUN_0005e604 reads them
+     enabled, the upper rows are zeroed first so process_visible_tile_cell reads them
      as "not visible" and takes the plain automap-reveal path rather than
      stale bytes. DAT_0023b038_backing is 32768 bytes (0x42 stride) so 8
      rows is well in bounds. */
@@ -45349,7 +45352,8 @@ void process_reaction_queue()
 // WARNING: Heritage AFTER dead removal. Example location: r0x0023b4dc : 0x0005d664
 // WARNING: Restarted to delay deadcode elimination for space: ram
 
-void FUN_0005d290()
+// was FUN_0005d290
+void rebuild_dungeon_view()
 
 {
   undefined2 uVar1;
@@ -45358,9 +45362,9 @@ void FUN_0005d290()
   int iVar4;
   bool bVar5;
   
-  FUN_0005bf40();
-  /* Re-enabled again: DAT_0023b038 (the buffer FUN_0005d9cc's ring-walk
-     reads per-tile visibility/occlusion data from via FUN_0005e604,
+  seed_visibility_queue();
+  /* Re-enabled again: DAT_0023b038 (the buffer walk_visible_tiles's ring-walk
+     reads per-tile visibility/occlusion data from via process_visible_tile_cell,
      offset DAT_0023b820) is the SAME 0x42-byte-stride buffer this
      function builds its creature-reaction display list into
      (`&DAT_0023b038`, confirmed same base address, same stride) -- a
@@ -45458,7 +45462,7 @@ void FUN_0005d290()
   DAT_00110fc0 = DAT_00110fc0 + 1;
   FUN_0005d2ac(1);
   DAT_0023b810 = 0;
-  FUN_0005d9cc();
+  walk_visible_tiles();
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
       (DAT_00201b68 != 9)) &&
      (sVar3 = Ordinal_2005(10,(int)DAT_0023b810 * (int)DAT_00201b68), sVar3 != 0)) {
@@ -45600,7 +45604,7 @@ void FUN_0005d704()
   FUN_0005d2ac(2);
   DAT_0023bc8c = *(undefined2 *)(&DAT_00086b50 + DAT_0023b4a0 * 4);
   DAT_0023b8c0 = *(undefined2 *)(&DAT_00086b52 + DAT_0023b4a0 * 4);
-  FUN_0005d9cc();
+  walk_visible_tiles();
   return;
 }
 
@@ -45659,7 +45663,8 @@ void automap_reveal_all_tiles(void)
   }
 }
 
-void FUN_0005d9cc()
+// was FUN_0005d9cc
+void walk_visible_tiles()
 
 {
   short sVar1;
@@ -45700,7 +45705,7 @@ void FUN_0005d9cc()
       DAT_0023b4ec = pbVar8;
       do {
         if ((uVar6 & 0xf000) == 0) {
-          FUN_0005e604(&DAT_000b99d0 + (short)uVar6);
+          process_visible_tile_cell(&DAT_000b99d0 + (short)uVar6);
         }
         DAT_0023b4e4 = DAT_0023b4e4 + 1;
         DAT_0023b4ec = DAT_0023b4ec + iVar7 * 4;
@@ -45715,7 +45720,7 @@ void FUN_0005d9cc()
       uVar6 = ((int)sVar1 + iVar7 * 0x20) * 0x10000 >> 0x10;
       do {
         if ((uVar6 & 0xf000) == 0) {
-          FUN_0005e604(&DAT_000b99d0 + (short)uVar6);
+          process_visible_tile_cell(&DAT_000b99d0 + (short)uVar6);
           iVar4 = (int)DAT_0023b4e4;
         }
         DAT_0023b4ec = DAT_0023b4ec + iVar7 * -4;
@@ -45726,7 +45731,7 @@ void FUN_0005d9cc()
       } while (0x10 < iVar4 * 0x10000 >> 0x10);
       FUN_00064d34(0);
       if ((uVar6 * 0x10000 & 0xf0000000) == 0) {
-        FUN_0005e604(&DAT_000b99d0 + ((int)(uVar6 * 0x10000) >> 0x10));
+        process_visible_tile_cell(&DAT_000b99d0 + ((int)(uVar6 * 0x10000) >> 0x10));
       }
       puVar9 = puVar9 + -0x42;
       *DAT_00110fc0 = 0xb0;
@@ -46025,7 +46030,8 @@ ushort param_4;
 
 
 
-void FUN_0005e604(param_1)
+// was FUN_0005e604
+void process_visible_tile_cell(param_1)
 byte * param_1;
 
 {
@@ -46087,7 +46093,7 @@ byte * param_1;
   local_48 = (uint)(short)(ushort)bVar25;
   if ((local_48 & 0x80) == 0) {
     if (*param_1 == 0) {
-      /* Same floor-texture-aware reveal encoding as FUN_0005d9cc's
+      /* Same floor-texture-aware reveal encoding as walk_visible_tiles's
          ring-walk. Was DAT_00086bf0[type], which made every floor the
          same (all blue, with the earlier reconstruction). */
       *param_1 = automap_reveal_byte(DAT_0023b4ec);
@@ -46123,7 +46129,7 @@ byte * param_1;
     /* `*DAT_0023b4ec >> 10` decompiled from a 16-bit tile-record read
        but DAT_0023b4ec is a byte* here, so as written it always read
        DAT_0023ae40[0]. floor-tex index is byte 1 bits 2-5. Shared
-       helper with FUN_0005d9cc's ring-walk. */
+       helper with walk_visible_tiles's ring-walk. */
     local_84 = automap_reveal_byte(DAT_0023b4ec);
   }
   else {
@@ -50031,7 +50037,7 @@ void FUN_00067b98()
   iVar4 = (uint)DAT_0023bf00 + ((uVar3 & 0xffff) + 0x3f) * 0x400;
   DAT_0023bf00 = (ushort)iVar4;
   if (sVar2 != 1) {
-    FUN_00049ce8(iVar4,&local_14,&local_12);
+    angle_to_screen_delta(iVar4,&local_14,&local_12);
     DAT_0023be90 = (short)cStack_13 * (sVar2 + -1) + DAT_0023be90;
     DAT_0023be92 = (short)cStack_11 * (sVar2 + -1) + DAT_0023be92;
   }
@@ -50933,7 +50939,7 @@ LAB_00069910:
         if (DAT_0023b82c != DAT_002046b8 - 0x36) {
           return;
         }
-        FUN_00049ce8(DAT_0023bea4,&local_a,&local_c);
+        angle_to_screen_delta(DAT_0023bea4,&local_a,&local_c);
         iVar1 = (int)((0x40 - (uint)DAT_0023bf08) * 0x10000) >> 0x10;
         iVar5 = (int)local_a;
         if (iVar5 < 0) {
@@ -50969,7 +50975,7 @@ LAB_00069910:
         sVar4 = DAT_0023bf08 << 0xb;
         goto LAB_00069910;
       }
-      FUN_00049ce8((int)DAT_00201c70,&local_c,&local_a);
+      angle_to_screen_delta((int)DAT_00201c70,&local_c,&local_a);
       *(short *)(DAT_00086e6c + 10) = DAT_00204880 - (local_c >> 7);
       *(short *)(DAT_00086e6c + 0x12) = DAT_00204882 - (local_a >> 7);
       *(short *)(DAT_00086e6c + 0xe) = DAT_00204884 + 0x148;
@@ -54653,7 +54659,7 @@ LAB_0006fff4:
     DAT_00086b28 = local_124;
     DAT_00086b24 = local_122;
     Ordinal_553(iVar3);
-    FUN_0005bdcc((int)DAT_0023bca0);
+    build_visibility_light_grid((int)DAT_0023bca0);
     FUN_00049924(2);
   }
   return;
