@@ -94,14 +94,29 @@ static undefined4 DAT_000a85d0_backing[16384];
 #define DAT_000a85d0 DAT_000a85d0_backing[0]
 byte *DAT_000b4628;
 byte *DAT_000b461c;
-int DAT_000b4610;
+/* Was `int` / `undefined4` -- both hold real pointers (DAT_000b4614 +
+   an offset; a color-remap table row) that got truncated to 32 bits on
+   this 64-bit host, so the sprite-blit color-remap read
+   (`*(byte *)(DAT_000b4610 + bVar1)` in FUN_00013170) dereferenced a
+   wild address. Surfaced by drawing the automap player marker with the
+   player at certain positions (FUN_00040b0c(0x103f,...) ->
+   FUN_000129f8 -> FUN_00013170). Retyped to real pointers. */
+byte *DAT_000b4610;
 byte *DAT_000b4624;
 byte *DAT_0024af78;
 byte *DAT_0024af7c;
-undefined4 DAT_000842ac;
+/* Was `undefined4`, silently 0 -- a link-time-initialized pointer
+   constant this decompile never writes (holds 0xb45f0 in UU.exe, i.e.
+   the address of a 0x20-byte sprite-row scratch buffer). Confirmed via
+   Ghidra: 3 refs, all reads, in FUN_00013170/FUN_000129f8, plus the
+   `.data` word at 0x842ac literally being 0xb45f0. As NULL it made
+   `Ordinal_1047(DAT_000842ac, 10, 0x20)` memset through address 0 and
+   the blit write past it. Backed by a real (over-sized) buffer. */
+static undefined1 DAT_000842ac_backing[4096];
+#define DAT_000842ac ((void *)DAT_000842ac_backing)
 char *DAT_0024fa2c;
 byte *DAT_000b462c;
-undefined4 DAT_000b4614;
+char *DAT_000b4614;
 byte *DAT_000b5630;
 byte *DAT_000b4618;
 undefined *PTR_Ordinal_2005_0008403c;
