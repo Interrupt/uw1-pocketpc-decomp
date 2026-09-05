@@ -11,7 +11,7 @@
  *                    tick). Needed for anything gated on hold duration,
  *                    e.g. DAT_0024af6c in uw.c.
  *   TELEPORT <x> <y>  -- directly sets the player's tile position via
- *                    FUN_0003cff8 (the same function the game itself
+ *                    set_player_tile_position (the same function the game itself
  *                    uses for level-load/teleport placement), bypassing
  *                    the movement/collision engine entirely. For
  *                    testing the renderer against a known-good position
@@ -213,7 +213,7 @@ void demomode_pump(void) {
             return;
         }
         fprintf(stderr, "[demo] teleporting to tile (%d,%d)\n", tx, ty);
-        FUN_0003cff8(tx, ty);
+        set_player_tile_position(tx, ty);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

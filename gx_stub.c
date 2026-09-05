@@ -570,7 +570,7 @@ void uw_debug_dump_tmap(int level, const unsigned char *tile_data) {
     char path[360];
     snprintf(path, sizeof(path), "%s/%03u_level%02d.bmp", run_dir, counter++, level);
 
-    /* 64x64, one pixel per tile: index = x + y*64 (see FUN_0003cff8's
+    /* 64x64, one pixel per tile: index = x + y*64 (see set_player_tile_position's
        `param_1 + param_2*0x40` tile-index arithmetic in uw.c -- x is the
        fast-varying/column axis, y the row). 4 bytes per tile; only byte 0's
        low nibble (the tile-type field) matters here -- 0 is the classic UW

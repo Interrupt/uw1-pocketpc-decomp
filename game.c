@@ -372,7 +372,7 @@ undefined4 param_1;
         }
         else {
           bVar11 = true;
-          FUN_0003cff8(0x20,2,1);
+          set_player_tile_position(0x20,2,1);
           FUN_0006c834(1,0);
         }
       }
