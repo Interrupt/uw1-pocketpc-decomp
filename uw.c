@@ -2833,54 +2833,28 @@ undefined2 DAT_0023b8c0;
 static undefined1 DAT_00086b50_backing[65536];
 #define DAT_00086b50 DAT_00086b50_backing[0]
 byte *DAT_0023b4ec;
-/* Was a lone `undefined` scalar, but FUN_0005d9cc/FUN_0005e604 index it
-   as `(&DAT_00086bf0)[tile_type_nibble]` (0-15) -- the tile-type ->
-   automap-icon lookup table, same "link-time-initialized read-only
-   data this decompile never writes" bug class as DAT_00085668/
-   DAT_00085728/DAT_00086e68 earlier this session. Nothing anywhere in
-   the binary writes it (confirmed via Ghidra reference search: 3 refs,
-   all reads, in FUN_0005d9cc/FUN_0005e604). Real bytes recovered
-   directly from UU.exe's .data at 0x86bf0 (confirmed 3 independent
-   ways: reference search, literal-pool value, and disassembly of the
-   `ldrb r2,[r2,r0]` read itself): 0a 0b 0c 0d 0e 0f 0b 0b 0b 0b 0a 0b
-   0c 0d 0e 0f.
+/* Was a lone `undefined` scalar; FUN_0005d9cc/FUN_0005e604 index it as
+   `(&DAT_00086bf0)[tile_type_nibble]`. Real bytes recovered from
+   UU.exe's .data at 0x86bf0 (confirmed 3 ways: reference search,
+   literal-pool value, disassembly of the `ldrb r2,[r2,r0]` read):
+   0a 0b 0c 0d 0e 0f 0b 0b 0b 0b 0a 0b 0c 0d 0e 0f.
 
-   That raw table can't be right as-is, though: the reveal byte it
-   stores is consumed by draw_automap_screen's per-cell renderer
-   (draw_automap_tiles -> draw_automap_cell) as a packed value --
-     bits 0-3 (`& 0xf`): tile shape class, must be 1-9 or the whole
-       cell is skipped (`cmp r6,#0xa; bge <skip>`, confirmed real
-       machine code, not a decompiler artifact);
-     bits 4-5 (`>> 4 & 3`): fill style -- 0 = just darken the cell
-       (dim grey dots), 1 or 2 = paint it with the blue automap-floor
-       palette entries (~0xb1 / ~0xb5) via plot_pixel;
-     bits 6-7: special markers (door edge / stair color / block-out).
-   Every raw entry (0x0a..0x0f) has bits 4-7 clear AND a low nibble
-   >= 10, so it can neither pass the shape gate nor select the blue
-   fill -- the automap could only ever have drawn grey edge dots, never
-   the filled blue corridors it's clearly meant to (see the reference
-   image in this session's notes).
+   NOTE: this table is now essentially unused. It turned out NOT to be
+   the real automap reveal-byte source -- the two ring-walk write sites
+   (FUN_0005d9cc / FUN_0005e604) were changed to compute the reveal byte
+   the way FUN_0005e604's bit-0x80-SET branch always did:
+     `DAT_0023ae40[floor-texture index] low byte  |  tile shape nibble`
+   where DAT_0023ae40 is the per-level floor-texture property table
+   (loaded from the .ark). Water floors read 0x10 there -> reveal-byte
+   bit 4 set -> blue fill; every other floor reads 0 -> grey "explored"
+   shading. That's what makes ONLY water render blue (an all-`0x10|type`
+   reconstruction of THIS table made every floor blue, which was wrong).
 
-   Adding 6 to every raw entry lands them exactly on `0x10 | type`:
-   type 0 (solid) -> 0x10 (`& 0xf` == 0, correctly skipped); types 1-5
-   (open + the 4 diagonals) -> 0x11..0x15 (shape 1-5, bit 4 set = blue
-   fill); types 6-9 (slopes) -> 0x11 (plain floor). Shapes 1-5 then
-   line up 1:1 with DAT_000842c0's five 3x3 patterns (shape 1 = full
-   fill, 2-5 = diagonal cuts) -- i.e. this reconstruction makes the
-   entire downstream pipeline internally consistent and produces a map
-   that visually matches the reference. Confirmed empirically: blue-
-   filled rooms/corridors with wall edges now draw where before there
-   was nothing (or, with an earlier -10 guess, only grey dots).
-
-   Still a reconstruction, not a verified raw recovery -- the "+6" has
-   no principled explanation (the store is a direct `strb` with no
-   arithmetic on the loaded byte), so either this Ghidra project's
-   UU.exe copy has wrong bytes at 0x86bf0, or the shipped automap was
-   simply broken. Revisit if real gameplay footage or a source leak
-   turns up. */
+   Kept here as the raw recovered bytes; it's only hit now via a
+   `local_84 == 0` fallback in dead (bit-0x80-SET) code. */
 static const unsigned char DAT_00086bf0_real_table[16] = {
-  0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x11, 0x11,
-  0x11, 0x11, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+  0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0b, 0x0b,
+  0x0b, 0x0b, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
 };
 #define DAT_00086bf0 (*(undefined1 *)DAT_00086bf0_real_table)
 undefined1 DAT_0023b818;
@@ -45514,7 +45488,18 @@ void FUN_0005d9cc()
   DAT_0023b4e4 = 0;
   do {
     if (((uVar6 & 0xf000) == 0) && (*pcVar5 == '\0')) {
-      *pcVar5 = (&DAT_00086bf0)[*DAT_0023b4ec & 0xf];
+      /* Automap reveal byte = this floor texture's automap-fill flag
+         (DAT_0023ae40[floor-tex index], loaded per-level from the .ark;
+         water floors read 0x10 -> bit 4 set -> blue fill, everything
+         else reads 0 -> grey "explored" shading) OR'd with the tile
+         shape (type nibble). This is the encoding FUN_0005e604's
+         bit-0x80-SET branch uses (see there); the simple ring-walk was
+         instead using DAT_00086bf0[type], which has no floor-texture
+         info and so couldn't tell water from normal floor. floor-tex
+         index is tile record byte 1 bits 2-5 (see FUN_00058... /
+         line ~27396's identical `[1] >> 2 & 0xf`). */
+      *pcVar5 = (byte)DAT_0023ae40_backing[DAT_0023b4ec[1] >> 2 & 0xf] |
+                (*DAT_0023b4ec & 0xf);
     }
     DAT_0023b4e4 = DAT_0023b4e4 + 1;
     DAT_0023b4ec = DAT_0023b4ec + iVar7 * 4;
@@ -45859,7 +45844,13 @@ byte * param_1;
   local_48 = (uint)(short)(ushort)bVar25;
   if ((local_48 & 0x80) == 0) {
     if (*param_1 == 0) {
-      *param_1 = (&DAT_00086bf0)[(byte)*DAT_0023b4ec & 0xf];
+      /* Same floor-texture-aware reveal encoding as FUN_0005d9cc's
+         ring-walk (see the comment there): DAT_0023ae40's low byte for
+         this tile's floor texture (0x10 = water -> blue) OR the shape
+         nibble. Was DAT_00086bf0[type], which made every floor the
+         same (all blue, with the earlier reconstruction). */
+      *param_1 = (byte)DAT_0023ae40_backing[DAT_0023b4ec[1] >> 2 & 0xf] |
+                 (*DAT_0023b4ec & 0xf);
       DAT_0023b810 = DAT_0023b810 + 1;
     }
     FUN_00065348();
@@ -45870,7 +45861,10 @@ byte * param_1;
   uVar1 = (uint)bVar15;
   DAT_0023b4e0 = DAT_0023b820[1] & 0xf;
   if (DAT_0023b4e0 < 8) {
-    local_84 = *(byte *)(&DAT_0023ae40 + (*DAT_0023b4ec >> 10 & 0xf)) | (byte)*DAT_0023b4ec & 0xf;
+    /* `*DAT_0023b4ec >> 10` decompiled from a 16-bit tile-record read
+       but DAT_0023b4ec is a byte* here, so as written it always read
+       DAT_0023ae40[0]. floor-tex index is byte 1 bits 2-5. */
+    local_84 = (byte)DAT_0023ae40_backing[DAT_0023b4ec[1] >> 2 & 0xf] | (byte)*DAT_0023b4ec & 0xf;
   }
   else {
     local_84 = *param_1;
