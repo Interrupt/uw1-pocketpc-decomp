@@ -1830,10 +1830,10 @@ static void (*const DAT_00085668_real_table[48])(void) = {
   0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))movement_pacing_handler,
   (void(*)(void))FUN_0003e4cc, (void(*)(void))FUN_0006d284, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
   /* mode 1 */
-  0, (void(*)(void))FUN_00016354, 0, 0,
+  0, (void(*)(void))enter_automap_screen, 0, 0,
   0, 0, 0, 0,
   0, 0, 0, 0,
-  0 /* Hack - Disabled: ambient sound cycling */, 0, 0, (void(*)(void))FUN_0001651c,
+  0 /* Hack - Disabled: ambient sound cycling */, 0, 0, (void(*)(void))exit_automap_screen,
   /* mode 2 */
   (void(*)(void))FUN_000286cc, 0, 0, 0,
   0, 0, 0, 0,
@@ -2306,7 +2306,7 @@ char s_named_00085d18[] = "named";
    Recovered the same way: read UU.exe's real .data bytes at 0x85728
    directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
    movement_pacing_handler/FUN_0003e4cc/FUN_0006d284; mode 1 = 0x1000 = bit 12 =
-   FUN_0001651c; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
+   exit_automap_screen; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
    mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
    bytes immediately after are the next struct over (a `\DATA\lev.ark`
    string literal), so this backing array is oversized like its siblings
@@ -6028,6 +6028,7 @@ byte param_10;
 
 
 
+// was FUN_00015870
 /* param_2 was dropped entirely -- declared with only 1 parameter but
    every caller passes 2 (the filename to open, e.g.
    s__SAVE0_lev_ark_000842fc). `Ordinal_1063(local_120);` (a strcat-
@@ -6047,7 +6048,7 @@ byte param_10;
    param_2 into local_120 directly instead of relying on either the
    DAT_0023cca8 scratch-buffer copy or the dropped-argument concat --
    neither was ever the real filename source. */
-bool FUN_00015870(param_1,param_2)
+bool open_level_archive(param_1,param_2)
 undefined1 * param_1;
 char * param_2;
 
@@ -6345,8 +6346,8 @@ void *param_3;
   
   /* param_1+10 (bytes 0xa..0xd) held the literal address 0x000b78b8 --
      &DAT_000b78b8's location in the ORIGINAL 32-bit binary -- baked in by
-     FUN_00015870 as the .ark entry-offset table pointer. That table is a
-     single fixed global (FUN_00015870/FUN_00015a58 read the archive
+     open_level_archive as the .ark entry-offset table pointer. That table is a
+     single fixed global (open_level_archive/FUN_00015a58 read the archive
      straight into &DAT_000b78b8), so on this recompile just use its real
      address instead of the truncated literal (which dereferenced as
      ~0xb78b8 and crashed the level loader). Same "hardcoded original-
@@ -6419,7 +6420,8 @@ uint param_2;
 
 
 
-void FUN_00016354()
+// was FUN_00016354
+void enter_automap_screen()
 
 {
   if (DAT_000bbefc == 0) {
@@ -6429,7 +6431,7 @@ void FUN_00016354()
   FUN_000735b0(0xd);
   FUN_00073634();
   FUN_00016434(0,(int)DAT_00201b68);
-  FUN_00017908((int)DAT_00201b68);
+  draw_automap_screen((int)DAT_00201b68);
   DAT_000b99c0 = FUN_0004202c(0,200,0x13f,1,0,2,FUN_00016ef8);
   FUN_00057788(0,199,0x13f,0);
   FUN_00057118();
@@ -6455,7 +6457,7 @@ int param_2;
   undefined1 auStack_1c [16];
   
   if (param_1 == (undefined1 *)0x0) {
-    iVar2 = FUN_00015870(auStack_1c,s__SAVE0_lev_ark_000842fc);
+    iVar2 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc);
     if (iVar2 == 0) {
       return 0;
     }
@@ -6516,7 +6518,8 @@ int param_2;
 
 
 
-void FUN_0001651c()
+// was FUN_0001651c
+void exit_automap_screen()
 
 {
   int iVar1;
@@ -6527,7 +6530,7 @@ void FUN_0001651c()
   FUN_00057cac(0);
   FUN_00017768((int)DAT_000ba9d0);
   if ((DAT_000ba9d0 != DAT_00201b68) &&
-     (iVar1 = FUN_00015870(auStack_1c,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
+     (iVar1 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
     FUN_000164e4(auStack_1c,(int)DAT_00201b68);
     FUN_00015a58(auStack_1c);
   }
@@ -7221,7 +7224,7 @@ int param_1;
         } while (iVar4 < iVar2);
       }
       DAT_000bbef0 = sVar1;
-      iVar2 = FUN_00015870(auStack_2c,s__SAVE0_lev_ark_000842fc);
+      iVar2 = open_level_archive(auStack_2c,s__SAVE0_lev_ark_000842fc);
       if (iVar2 != 0) {
         FUN_00015b94(auStack_2c,param_1 + 0x23,&DAT_000ba9d8,(uint)(DAT_000bbef0 * 0x360000) >> 0x10
                     );
@@ -7244,7 +7247,7 @@ int param_1;
   
   DAT_000bbef0 = 0;
   DAT_000b99c8 = 0;
-  iVar2 = FUN_00015870(auStack_20,s__SAVE0_lev_ark_000842fc);
+  iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   if (iVar2 != 0) {
     uVar1 = FUN_0001613c(auStack_20,param_1 + 0x23,&DAT_000ba9d8);
     DAT_000b99c8 = Ordinal_2008(0x36,uVar1);
@@ -7257,6 +7260,7 @@ int param_1;
 
 
 
+// was FUN_00017908
 /* uVar3 was `undefined4` (4 bytes), truncating Ordinal_1041's real
    64-bit malloc'd pointer on this host -- same pointer-truncation
    pattern fixed repeatedly this session. Confirmed via lldb: this is
@@ -7264,7 +7268,7 @@ int param_1;
    but FUN_0007ee4c (the actual read-into-buffer call) still failed --
    it was reading 64000 real bytes into a wild, truncated destination
    address instead of the buffer Ordinal_1041 actually allocated. */
-void FUN_00017908(param_1)
+void draw_automap_screen(param_1)
 undefined4 param_1;
 
 {
@@ -7291,7 +7295,7 @@ undefined4 param_1;
   iVar5 = FUN_0007ee4c(acStack_11c,uVar3,64000);
   if (iVar5 == 0) {
     FUN_000570b4();
-    FUN_0001651c();
+    exit_automap_screen();
   }
   else {
     FUN_000116a4(0,0,0x13f,199);
@@ -7339,11 +7343,11 @@ undefined4 param_1;
   FUN_00017768((int)DAT_000ba9d0);
   FUN_000165bc();
   if (((short)param_1 < 9) &&
-     (iVar1 = FUN_00015870(auStack_18,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
+     (iVar1 = open_level_archive(auStack_18,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
     FUN_000164e4(auStack_18,param_1);
     FUN_00015a58(auStack_18);
   }
-  FUN_00017908(param_1);
+  draw_automap_screen(param_1);
   return;
 }
 
@@ -8220,7 +8224,7 @@ undefined4 param_2;
   FUN_00019660(param_2);
   DAT_000bbf30 = 0;
   DAT_000bbf20 = param_1;
-  iVar2 = FUN_00015870(auStack_20,param_1);
+  iVar2 = open_level_archive(auStack_20,param_1);
   if (iVar2 == 0) {
     FUN_0003c3c8(0x300a);
   }
@@ -33991,7 +33995,7 @@ int param_2;
   undefined1 auStack_20 [16];
   
   if (param_1 == (undefined1 *)0x0) {
-    iVar3 = FUN_00015870(auStack_20,s__SAVE0_lev_ark_000842fc);
+    iVar3 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
     if (iVar3 == 0) {
       return 0;
     }
@@ -34051,7 +34055,7 @@ int param_2;
   undefined1 auStack_20 [16];
   
   if (param_1 == (undefined1 *)0x0) {
-    iVar4 = FUN_00015870(auStack_20,s__SAVE0_lev_ark_000842fc);
+    iVar4 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
     if (iVar4 == 0) {
       return 0;
     }
@@ -51793,7 +51797,7 @@ undefined4 param_1;
   if (-1 < DAT_00202080) {
     DAT_00202080 = -1;
   }
-  iVar2 = FUN_00015870(auStack_1c,s__SAVE0_lev_ark_000842fc);
+  iVar2 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc);
   if (iVar2 == 0) {
     iVar2 = 0;
   }
@@ -51835,7 +51839,7 @@ undefined4 param_1;
   uVar1 = *DAT_0023be64;
   *(char *)DAT_0023be64 = (char)(uVar1 & 0xfe3f);
   *(char *)((char *)DAT_0023be64 + 1) = (char)((uVar1 & 0xfe3f) >> 8);
-  iVar2 = FUN_00015870(auStack_20,s__SAVE0_lev_ark_000842fc);
+  iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   uVar3 = 0;
   if (iVar2 != 0) {
     iVar2 = FUN_00049b04(auStack_20,param_1);

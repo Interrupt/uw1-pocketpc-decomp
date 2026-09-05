@@ -16,7 +16,7 @@
  *                    the movement/collision engine entirely. For
  *                    testing the renderer against a known-good position
  *                    without depending on movement actually working.
- *   OPENMAP       -- calls FUN_00016354 (the automap-screen "enter"
+ *   OPENMAP       -- calls enter_automap_screen (the automap-screen "enter"
  *                    routine) directly. No known caller anywhere in the
  *                    compiled game (whole-binary reference search found
  *                    zero) -- for testing the automap's own (simpler,
@@ -225,7 +225,7 @@ void demomode_pump(void) {
     }
 
     if (strcasecmp(p, "OPENMAP") == 0) {
-        /* Calls FUN_00016354 (the automap-screen "enter" routine) directly.
+        /* Calls enter_automap_screen (the automap-screen "enter" routine) directly.
          * A whole-binary Ghidra reference search found ZERO callers of this
          * function anywhere in the compiled game -- whatever HUD button or
          * key is supposed to reach it in the real Pocket PC UI has not been
@@ -234,7 +234,7 @@ void demomode_pump(void) {
          * view) can be tested directly while that real trigger stays
          * unidentified. */
         fprintf(stderr, "[demo] opening automap screen\n");
-        FUN_00016354();
+        enter_automap_screen();
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
