@@ -39,7 +39,9 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
    one directory named for that run's start time, debug/drawdumps/<ts>/,
    each file numbered by an increasing draw-call counter and tagged with
    which function produced it. No-op (cheap check) when the env var is
-   unset. `tag` should be a short caller name, e.g. "blit" or "rect_fill". */
+   unset. `tag` should be a short caller name, e.g. "blit" or "rect_fill".
+   UW_DEBUG_DRAW_EVERY=N thins the output to every Nth call (for very
+   long sequences like a full-level automap fill). */
 void debug_framebuffer_dump(const char *tag);
 
 /* Debug tool: if UW_DEBUG_DUMP_TMAP is set (and not "0"), dumps a level's

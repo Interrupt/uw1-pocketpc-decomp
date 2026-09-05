@@ -605,11 +605,25 @@ void uw_debug_dump_tmap(int level, const unsigned char *tile_data) {
 
 void debug_framebuffer_dump(const char *tag) {
     static int enabled = -1;
+    static unsigned int every = 1;
     if (enabled < 0) {
         const char *env = getenv("UW_DEBUG_DRAW");
         enabled = (env && env[0] && strcmp(env, "0") != 0);
+        /* UW_DEBUG_DRAW_EVERY=N: only actually write every Nth dump
+           (still counting all of them, so filenames stay a stable
+           stride). Lets a huge sequence -- e.g. a full-level automap
+           fill, ~30k pixel ops -- be sampled down to a manageable
+           number of BMPs. Unset / <=1 means dump every call. */
+        const char *ev = getenv("UW_DEBUG_DRAW_EVERY");
+        if (ev && ev[0]) {
+            long n = strtol(ev, NULL, 10);
+            if (n > 1) every = (unsigned int)n;
+        }
     }
     if (!enabled) return;
+
+    static unsigned int call_no = 0;
+    if ((call_no++ % every) != 0) return;
 
     /* One directory per run, named for when the run started; every dump
        this process makes lands under it. Created lazily so a run that
