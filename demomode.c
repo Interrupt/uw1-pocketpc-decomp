@@ -1,6 +1,11 @@
 /* See demomode.h. Input file format: one command per line, case-
  * insensitive, blank lines and lines starting with '#' ignored:
  *   UP DOWN LEFT RIGHT ENTER SPACE CTRL ESC BACKSPACE
+ *   WAIT <ticks>  -- burns <ticks> idle pump ticks feeding no input at
+ *                    all, letting the game's own idle-tick dispatch run
+ *                    on its own (e.g. after a TELEPORT, to see whether
+ *                    anything reacts to the new position before the
+ *                    next scripted input).
  *   HOLD <KEY> <ticks>  -- sends KEYDOWN for <KEY> once, then idles
  *                    (feeding no new input, so the game's own idle-tick
  *                    dispatch keeps running with the key conceptually
@@ -80,6 +85,10 @@ static const char *g_demo_type_pos;
 static int g_demo_hold_vk;
 static int g_demo_hold_ticks;
 
+/* WAIT <ticks> state: how many more idle pump ticks to burn with no
+ * input at all before reading the next line. */
+static int g_demo_wait_ticks;
+
 static int demo_translate_vk(const char *name) {
     if (strcasecmp(name, "UP") == 0) return VK_UP;
     if (strcasecmp(name, "DOWN") == 0) return VK_DOWN;
@@ -118,6 +127,15 @@ void demomode_pump(void) {
     if (!g_demo_active || g_demo_done) return;
     Uint32 now = SDL_GetTicks();
     if (now < g_demo_next_tick) return;
+
+    /* Mid-WAIT: burn one idle tick with no input at all, letting
+     * whatever the game's own idle-tick dispatch does run on its own --
+     * unlike HOLD, nothing is pressed during this. */
+    if (g_demo_wait_ticks > 0) {
+        g_demo_wait_ticks--;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
 
     /* Mid-HOLD: the key's KEYDOWN was already sent when the HOLD line
      * was first read (below); every tick until the countdown reaches 0
@@ -174,6 +192,19 @@ void demomode_pump(void) {
         /* Blank/comment line -- retry immediately on the next pump
          * instead of burning a full delay slot on nothing. */
         g_demo_next_tick = now;
+        return;
+    }
+
+    if (strncasecmp(p, "WAIT ", 5) == 0) {
+        int ticks = 0;
+        if (sscanf(p + 5, "%d", &ticks) != 1 || ticks < 0) {
+            fprintf(stderr, "[demo] malformed WAIT line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] waiting %d idle ticks\n", ticks);
+        g_demo_wait_ticks = ticks;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
 

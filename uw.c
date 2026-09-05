@@ -2798,7 +2798,19 @@ undefined2 DAT_0023b8c0;
 static undefined1 DAT_00086b50_backing[65536];
 #define DAT_00086b50 DAT_00086b50_backing[0]
 byte *DAT_0023b4ec;
-undefined DAT_00086bf0;
+/* Was a lone `undefined` scalar, but FUN_0005d9cc/FUN_0005e604 index it
+   as `(&DAT_00086bf0)[tile_type_nibble]` (0-15) -- the tile-type ->
+   automap-icon lookup table, same "link-time-initialized read-only
+   data this decompile never writes" bug class as DAT_00085668/
+   DAT_00085728/DAT_00086e68 earlier this session. Nothing anywhere in
+   the binary writes it (confirmed via Ghidra reference search: 3 refs,
+   all reads, in FUN_0005d9cc/FUN_0005e604). Real bytes recovered
+   directly from UU.exe's .data at 0x86bf0. */
+static const unsigned char DAT_00086bf0_real_table[16] = {
+  0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0b, 0x0b,
+  0x0b, 0x0b, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+};
+#define DAT_00086bf0 (*(undefined1 *)DAT_00086bf0_real_table)
 undefined1 DAT_0023b818;
 char *DAT_0023b4f0;
 undefined4 DAT_0023b808;
