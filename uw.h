@@ -1169,7 +1169,7 @@ undefined4 FUN_00052bac();
 undefined4 FUN_00052c5c();
 undefined4 FUN_00052d24();
 void FUN_00052d68();
-int FUN_00052f28();
+void *FUN_00052f28();
 void FUN_00053004();
 void FUN_000530c4();
 void FUN_000531a0();

@@ -10,6 +10,12 @@
  *                    (which send KEYDOWN+KEYUP back to back in the same
  *                    tick). Needed for anything gated on hold duration,
  *                    e.g. DAT_0024af6c in uw.c.
+ *   TELEPORT <x> <y>  -- directly sets the player's tile position via
+ *                    FUN_0003cff8 (the same function the game itself
+ *                    uses for level-load/teleport placement), bypassing
+ *                    the movement/collision engine entirely. For
+ *                    testing the renderer against a known-good position
+ *                    without depending on movement actually working.
  *   TYPE <text>   -- sends each character of <text> as a real WM_CHAR
  *                    (0x102), one per delay tick, simulating name entry
  *   CLICK <portrait_x> <portrait_y>  -- injects a synthetic mouse click
@@ -196,6 +202,19 @@ void demomode_pump(void) {
         /* Retry immediately so the first character goes out on the next
          * pump rather than burning a delay slot on the TYPE line itself. */
         g_demo_next_tick = now;
+        return;
+    }
+
+    if (strncasecmp(p, "TELEPORT ", 9) == 0) {
+        int tx = 0, ty = 0;
+        if (sscanf(p + 9, "%d %d", &tx, &ty) != 2) {
+            fprintf(stderr, "[demo] malformed TELEPORT line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] teleporting to tile (%d,%d)\n", tx, ty);
+        FUN_0003cff8(tx, ty);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
 

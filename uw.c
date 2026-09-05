@@ -1581,7 +1581,17 @@ char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char *DAT_002506ec;
 static undefined1 DAT_00085460_backing[32768];
 #define DAT_00085460 DAT_00085460_backing[0]
-uint DAT_002046c4;
+/* Was `uint`, truncating the real pointer this holds (`DAT_002029cc +
+   0x5b00`, assigned in FUN_00052960 -- see there) on this 64-bit host.
+   Most uses are pointer<->pointer comparisons or subtractions between
+   two pointers sharing the same upper 32 bits, which happen to come out
+   right either way -- but FUN_00053514's high-array branch and
+   FUN_00052f28's high-array allocation branch both return
+   `DAT_002046c4 + offset` as a real pointer, and did so through the
+   truncated 32-bit value (same bug class as FUN_00052f28's own
+   int-returning-a-pointer bug below). Retyped to match its sibling
+   DAT_002046b8 (already a real pointer). */
+char *DAT_002046c4;
 char s__DATA3D_BED2_E_00085474[] = "\\DATA3D\\BED2.E";
 char s__DATA3D_CHAIRSIM_E_00085484[] = "\\DATA3D\\CHAIRSIM.E";
 char s__DATA3D_BARRCLOS_E_00085498[] = "\\DATA3D\\BARRCLOS.E";
@@ -39267,20 +39277,33 @@ short param_2;
 
 
 
-int FUN_00052f28(param_1)
+/* Was `int FUN_00052f28(...)` with a local `int iVar1` holding the
+   computed slot address (`DAT_002046b8/DAT_002046c4 + offset`, both
+   real pointers) -- truncated the pointer to 32 bits on this 64-bit
+   host. Every call site casts the return value straight to a pointer
+   type (e.g. `(ushort *)FUN_00052f28(...)`), so the caller got a wild
+   address with zeroed-out upper 32 bits. This is the confirmed root
+   cause of the crash the new TELEPORT demomode command exposed: the
+   player object's slot, handed out by this function once already
+   during chargen, had its upper bits silently dropped, and the second
+   FUN_0003cff8 call (via FUN_00053274/FUN_00053514, walking the tile's
+   object chain to unlink the player before its move) dereferenced that
+   truncated address and crashed (EXC_BAD_ACCESS on an address matching
+   the low 32 bits of a real heap pointer, upper 32 bits zero). */
+void *FUN_00052f28(param_1)
 int param_1;
 
 {
-  int iVar1;
+  void *pvVar1;
   ushort *puVar2;
   undefined4 *puVar3;
-  
+
   if (param_1 == 0) {
     puVar3 = &DAT_0020469c;
     if ((DAT_0020469c < DAT_002046bc) && (FUN_00052d68(3,10), DAT_0020469c < DAT_002046bc)) {
       return 0;
     }
-    iVar1 = DAT_002046c4 + (*DAT_0020469c - 0x100) * 8;
+    pvVar1 = DAT_002046c4 + (*DAT_0020469c - 0x100) * 8;
     puVar2 = DAT_0020469c;
   }
   else {
@@ -39289,11 +39312,11 @@ int param_1;
       return 0;
     }
     FUN_00053750((int)(short)*DAT_002046a8);
-    iVar1 = (uint)*DAT_002046a8 * 0x1b + DAT_002046b8;
+    pvVar1 = (uint)*DAT_002046a8 * 0x1b + DAT_002046b8;
     puVar2 = DAT_002046a8;
   }
   *puVar3 = puVar2 + -1;
-  return iVar1;
+  return pvVar1;
 }
 
 
@@ -39363,11 +39386,15 @@ char *param_2;
 
 {
   short sVar1;
-  int iVar2;
+  byte *pbVar2;
   ushort uVar3;
 
-  while (iVar2 = FUN_00053514(param_1), iVar2 != 0) {
-    param_1 = (byte *)(iVar2 + 4);
+  /* iVar2 was `int`, truncating FUN_00053514's real pointer return --
+     same tile/object-chain-walk bug as FUN_00053274 (see there), just
+     never exercised yet (this walks a different list, e.g. a
+     container's contents, to append param_2 at its tail). */
+  while (pbVar2 = (byte *)FUN_00053514(param_1), pbVar2 != 0) {
+    param_1 = pbVar2 + 4;
   }
   *(byte *)(param_2 + 4) = *(byte *)(param_2 + 4) & 0x3f;
   *(undefined1 *)(param_2 + 5) = 0;
@@ -39385,22 +39412,36 @@ char *param_2;
 
 
 
+/* param_2 was `int`, and the local holding FUN_00053514's return value
+   was `int iVar4` -- both truncating real pointers on this 64-bit host.
+   Confirmed crashing (EXC_BAD_ACCESS on a wild ~32-bit address) the
+   first time this got called with DAT_00202080 already set from a
+   prior call (i.e. calling FUN_0003cff8/set-player-position a SECOND
+   time in one run) -- every demo script this whole session only ever
+   called it once per process, so this path had never actually run
+   before the new TELEPORT demomode command exercised it. This is a
+   linked-list walk (FUN_00053514 returns "next node", searching for
+   the node matching param_2); same pointer-truncation pattern fixed
+   repeatedly this session. Retyped both to real pointers; left the
+   30+ other call sites' own argument variables unaudited since only
+   this one (DAT_0023be64, already a real pointer, needs no caller-side
+   change) has actually been exercised and confirmed fixed. */
 void FUN_00053274(param_1,param_2)
 byte * param_1;
-int param_2;
+byte * param_2;
 
 {
   short sVar1;
   undefined2 uVar2;
   byte bVar3;
-  int iVar4;
+  byte *pbVar4;
   int iVar5;
-  
+
   iVar5 = 0;
   if (param_2 != 0) {
     while( true ) {
-      iVar4 = FUN_00053514(param_1);
-      if (iVar4 == 0) {
+      pbVar4 = (byte *)FUN_00053514(param_1);
+      if (pbVar4 == 0) {
         return;
       }
       sVar1 = (short)iVar5;
@@ -39408,8 +39449,8 @@ int param_2;
       if (0x400 < sVar1) {
         return;
       }
-      if (iVar4 == param_2) break;
-      param_1 = (byte *)(iVar4 + 4);
+      if (pbVar4 == param_2) break;
+      param_1 = pbVar4 + 4;
     }
     uVar2 = *(undefined2 *)(param_2 + 4);
     bVar3 = (byte)uVar2;
