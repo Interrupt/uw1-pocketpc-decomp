@@ -6788,6 +6788,32 @@ int param_2;
 
 
 
+/* Like darken_pixel but only a 25% cut (x 3/4 brightness) instead of a
+   halve: RGB565 (px>>1 & 0x7bef) + (px>>2 & 0x39e7).  Not in the
+   original binary -- the Pocket-PC automap 50%-darkens explored floor
+   via darken_pixel, which comes out far darker than the reference map
+   (whose explored floor is a light tint over the parchment).  Used
+   only for the draw_automap_cell floor fill; wall edges / accent
+   pixels keep the faithful darken_pixel. */
+void darken_pixel_light(param_1,param_2)
+uint param_1;
+int param_2;
+
+{
+  ushort *puVar1;
+  ushort uVar2;
+
+  puVar1 = (ushort *)
+           ((g_uw_framebuffer) +
+           ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
+  uVar2 = *puVar1;
+  *puVar1 = (uVar2 >> 1 & 0x7bef) + (uVar2 >> 2 & 0x39e7);
+  debug_framebuffer_dump("darken_pixel_light");
+  return;
+}
+
+
+
 // was FUN_00016948
 void draw_automap_cell(param_1,param_2,param_3)
 int param_1;
@@ -6828,9 +6854,13 @@ int param_3;
         if ((&DAT_000842c0)[(((param_1 + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
             '\x01') {
           if (bVar1 == 0) {
-            uVar7 = 3;
-            uVar4 = 2;
-            goto LAB_00016acc;
+            /* Normal explored floor. The binary calls darken_pixel
+               here (uVar4/uVar7 args are ignored by it) for a 50%
+               darken; that's much darker than the reference automap,
+               so use the 25% darken instead. Deliberate deviation. */
+            darken_pixel_light(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
+                       ((int)(short)uVar8 + (iVar11 * 0x10000 >> 0x10)) * 0x10000 >> 0x10);
+            goto LAB_00016b00;
           }
           if (bVar1 == 1) {
             /* Water fill: (rand % 2) + 0xb1 -> a 2-tone dither between
@@ -45434,28 +45464,24 @@ void FUN_0005d704()
    tile_rec points at this tile's 4-byte record. Bits:
      0-3  shape nibble  (tile type: 0 solid, 1 open, 2-5 diag, 6-9 slope)
      4-5  fill style, consumed by draw_automap_cell:
-            0 = 50% darken (shaded "explored" floor)
+            0 = shaded "explored" floor
             1/2 = blue water dither
             3 = leave parchment (floor not painted at all)
 
-   The Pocket-PC disasm builds this as
-       DAT_0023ae40[floor_tex_index] | shape
-   where DAT_0023ae40 is the per-level floor-texture property table
-   (loaded from the .ark): water textures read 0x10 there, every other
-   texture reads 0x00 -> fill style 0 -> every explored floor gets the
-   50% darken.  That makes our automap far darker than the reference
-   (classic UW look = bare parchment floor + dark wall outlines).  So
-   for a plain floor (table entry 0) we substitute fill style 3
-   (0x30) -> parchment.  Water (0x10) and any other non-zero property
-   byte pass through unchanged.  This is a deliberate deviation from
-   the literal binary to match the reference automap. */
+   Built as DAT_0023ae40[floor_tex_index] | shape, matching the
+   Pocket-PC disasm.  DAT_0023ae40 is the per-level floor-texture
+   property table (loaded from the .ark): water textures read 0x10
+   there (-> fill style 1 -> blue), everything else reads 0 (-> fill
+   style 0 -> shaded floor).  floor-tex index is tile-record byte 1
+   bits 2-5.  The simple ring-walk was instead using DAT_00086bf0[type],
+   which has no floor-texture info and so couldn't tell water from
+   normal floor.  (The floor being *too dark* vs the reference is a
+   separate issue, fixed in draw_automap_cell by using a 25% darken
+   for the fill instead of darken_pixel's 50%.) */
 static byte automap_reveal_byte(byte *tile_rec)
 {
-  byte fill = (byte)DAT_0023ae40_backing[tile_rec[1] >> 2 & 0xf];
-  if (fill == 0) {
-    fill = 0x30;
-  }
-  return fill | (*tile_rec & 0xf);
+  return (byte)DAT_0023ae40_backing[tile_rec[1] >> 2 & 0xf] |
+         (*tile_rec & 0xf);
 }
 
 void FUN_0005d9cc()
@@ -45902,9 +45928,8 @@ byte * param_1;
   if (DAT_0023b4e0 < 8) {
     /* `*DAT_0023b4ec >> 10` decompiled from a 16-bit tile-record read
        but DAT_0023b4ec is a byte* here, so as written it always read
-       DAT_0023ae40[0]. floor-tex index is byte 1 bits 2-5. Route
-       through the shared helper so plain floor gets parchment fill
-       (style 3) instead of the 50% darken -- see automap_reveal_byte. */
+       DAT_0023ae40[0]. floor-tex index is byte 1 bits 2-5. Shared
+       helper with FUN_0005d9cc's ring-walk. */
     local_84 = automap_reveal_byte(DAT_0023b4ec);
   }
   else {

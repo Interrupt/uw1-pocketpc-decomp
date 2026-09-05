@@ -516,6 +516,7 @@ void FUN_000165bc();
 void draw_automap_tiles();
 undefined4 draw_automap_cell_edge();
 void darken_pixel();
+void darken_pixel_light();
 void draw_automap_cell();
 void draw_automap_door_edge();
 char *FUN_00016d7c();
