@@ -165,13 +165,32 @@ static undefined1 DAT_000b99d0_backing[8192];
 #define DAT_000b99d0 DAT_000b99d0_backing[0]
 short DAT_000ba9d0;
 undefined4 DAT_000bbef4;
-undefined DAT_000842f0;
+/* Was a lone `undefined` scalar; draw_automap_tiles indexes it as
+   `(&DAT_000842f0)[shape - 2]` (shape 2-5, the diagonal tile types)
+   to pick the base wall-edge direction for a diagonal cell. Real 4
+   bytes from UU.exe .data at 0x842f0. Its two neighbours DAT_000842f4
+   / DAT_000842f8 (per-direction dx / dy deltas, signed) had the same
+   lone-scalar bug and are fixed just below. */
+static const unsigned char DAT_000842f0_real_table[4] = { 0x01, 0x02, 0x00, 0x03 };
+#define DAT_000842f0 (*(undefined1 *)DAT_000842f0_real_table)
 /* Was a lone 1-byte scalar, but indexed throughout this file as a
    tile-type-flags lookup table (nibble-masked indices in most call sites,
    but some -- e.g. process_reaction_entry -- index it with an unmasked byte value
-   read from another table). Same lone-scalar-used-as-array pattern fixed
-   repeatedly this session; sized for a full byte index to be safe. */
-static undefined1 DAT_000878d0_backing[256];
+   read from another table). The prior fix widened it to 256 bytes but
+   never filled it -- so it read all-zero, and in particular
+   draw_automap_tiles' `DAT_000878d0[shape] & 1` was always false,
+   forcing every tile (diagonals included) down the 4-way wall-edge
+   path instead of the 2-way diagonal path -- walls didn't follow the
+   diagonal floor shape. Real 16 bytes from UU.exe .data at 0x878d0
+   (bit 0 = "is a diagonal, use the 2-way edge path"; bits 1-4 =
+   per-direction wall-present flags used by LOS/pathfinding elsewhere;
+   0x20 on the slope types). Entry 16 onward is a string literal, so
+   there are exactly 16 real entries; kept oversized for the unmasked-
+   index call sites. */
+static undefined1 DAT_000878d0_backing[256] = {
+  0x1e, 0x00, 0x13, 0x15, 0x0b, 0x0d, 0x20, 0x20,
+  0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1e,
+};
 #define DAT_000878d0 DAT_000878d0_backing[0]
 /* Was a lone `undefined1` scalar, but draw_automap_cell indexes it as a real
    5x3x3 (45-entry) shape-pattern table:
@@ -195,8 +214,14 @@ static const unsigned char DAT_000842c0_real_table[64] = {
 };
 #define DAT_000842c0 (*(undefined1 *)DAT_000842c0_real_table)
 char DAT_000ba9d4;
-undefined1 DAT_000842f4;
-undefined1 DAT_000842f8;
+/* Lone-scalar-used-as-4-entry-array, same as DAT_000842f0 above.
+   draw_automap_door_edge indexes `(&DAT_000842f4)[dir]` / same for f8
+   as signed-char dx / dy deltas per direction. Real bytes from UU.exe
+   .data at 0x842f4 / 0x842f8. */
+static const signed char DAT_000842f4_real_table[4] = { -1, 0, -1, 1 };
+#define DAT_000842f4 (*(undefined1 *)DAT_000842f4_real_table)
+static const signed char DAT_000842f8_real_table[4] = { 0, -1, -1, -1 };
+#define DAT_000842f8 (*(undefined1 *)DAT_000842f8_real_table)
 undefined1 DAT_00084298_backing[128];
 undefined1 *DAT_00084298 = DAT_00084298_backing;
 short DAT_00085a6c_backing[128];
