@@ -26,6 +26,10 @@
  *                    the ring-walk that marks automap tiles revealed --
  *                    TELEPORT and ordinary movement don't trigger this
  *                    on their own.
+ *   REVEALALL     -- marks every walkable tile of the current level's
+ *                    automap revealed in one pass (automap_reveal_all_tiles),
+ *                    no per-tile teleport/redraw. For exercising the
+ *                    automap renderer on a fully-explored map quickly.
  *   OPENMAP       -- calls change_game_mode(2), the real switch to the
  *                    automap game mode (its entry handler,
  *                    enter_automap_screen, then fires on the next idle
@@ -290,6 +294,17 @@ void demomode_pump(void) {
          * only ever seeing the single reveal mark from dungeon entry. */
         fprintf(stderr, "[demo] forcing a full dungeon redraw (automap reveal update)\n");
         full_dungeon_redraw();
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "REVEALALL") == 0) {
+        /* Reveal the entire current level's automap in one pass, with
+         * no per-tile teleport or dungeon redraw. Much faster than a
+         * TELEPORT+REVEAL sweep for exercising the automap renderer on
+         * a fully-explored map. */
+        fprintf(stderr, "[demo] revealing the entire level automap\n");
+        automap_reveal_all_tiles();
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

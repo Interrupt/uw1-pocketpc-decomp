@@ -45484,6 +45484,34 @@ static byte automap_reveal_byte(byte *tile_rec)
          (*tile_rec & 0xf);
 }
 
+/* Reveal every walkable tile of the current level's automap in a single
+   pass -- no ring-walk, no dungeon redraw. Not part of the original
+   game; demomode's REVEALALL uses it to fill the whole map at once
+   (the per-tile TELEPORT+REVEAL sweep in demo_automap.txt exists only
+   because ordinary movement never reconnects to the reveal ring-walk).
+   Uses the same reveal-byte encoding as the ring-walk. */
+void automap_reveal_all_tiles(void)
+{
+  int x;
+  int y;
+  int shape;
+  byte *rec;
+  byte *dst;
+
+  for (y = 0; y < 64; y = y + 1) {
+    for (x = 0; x < 64; x = x + 1) {
+      rec = (byte *)(DAT_002029cc + (x + y * 0x40) * 4);
+      shape = *rec & 0xf;
+      if ((shape >= 1) && (shape < 10)) {
+        dst = (byte *)(&DAT_000b99d0) + (y * 0x40 + x);
+        if (*dst == 0) {
+          *dst = automap_reveal_byte(rec);
+        }
+      }
+    }
+  }
+}
+
 void FUN_0005d9cc()
 
 {

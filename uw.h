@@ -1293,6 +1293,7 @@ void FUN_0005b890();
 void FUN_0005b8ac();
 void FUN_0005bac0();
 void full_dungeon_redraw();
+void automap_reveal_all_tiles(void);
 void FUN_0005bbe0();
 undefined4 FUN_0005bc38();
 void FUN_0005bdcc();
