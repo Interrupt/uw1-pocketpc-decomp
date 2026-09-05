@@ -2717,15 +2717,8 @@ int DAT_0023aec8;
 ushort DAT_0023b4c8;
 undefined1 DAT_0023b028;
 byte DAT_0023b4a0;
-static undefined1 DAT_00086a18_backing[65536];
-#define DAT_00086a18 DAT_00086a18_backing[0]
-/* Was a lone 1-byte scalar, but indexed throughout this file as a small
-   lookup table (nibble-masked indices, plus `iVar11*0x10 + nibble`-style
-   compound indices up to ~0x40) -- confirmed crashing (EXC_BAD_ACCESS) at
-   one of its process_reaction_entry call sites on a real run. Same lone-scalar-
-   used-as-array pattern fixed repeatedly this session; generous margin. */
-static undefined1 DAT_00086a20_backing[256];
-#define DAT_00086a20 DAT_00086a20_backing[0]
+/* DAT_00086a18 and DAT_00086a20 are now offsets into DAT_00086a00_region
+   (real bytes recovered from UU.exe) -- see its definition further down. */
 // Was a lone `int` scalar but used throughout the renderer as a pointer to a
 // ~0x2e-byte "current view" record (screen-space player x/y/z/facing, written
 // by FUN_00069470 from DAT_00204880/82/84 + DAT_00201c70, then read all over
@@ -2822,10 +2815,39 @@ static char g_dat0023aee0_fallback[64];
 #define DAT_0023aefe (*(undefined2 *)&DAT_0023aee0_backing[0x1e])
 #define DAT_0023af00 (*(undefined2 *)&DAT_0023aee0_backing[0x20])
 #define DAT_0023af02 DAT_0023aee0_backing[0x22]
-static undefined1 DAT_00086a00_backing[65536];
-#define DAT_00086a00 DAT_00086a00_backing[0]
-static undefined1 DAT_00086a02_backing[65536];
-#define DAT_00086a02 DAT_00086a02_backing[0]
+/* Recovered from UU.exe .data at 0x86a00 (0x60 bytes). Was FOUR separate
+   silently-zero 64KB Ghidra backing arrays (DAT_00086a00/a02/a18/a20),
+   which also broke the relative addressing the code relies on -- e.g.
+   `*(short *)(&DAT_00086a00 + dir*6)` and `*(short *)(&DAT_00086a02 +
+   dir*6)` are meant to read the same table two bytes apart. Unified into
+   one region with the real bytes; the four symbols are offsets into it.
+
+     +0x00  per-facing tile-record stride pairs, indexed [dir*6] (via
+            &DAT_00086a00) and [dir*6] (via &DAT_00086a02, = +0x02):
+              dir 0..3  a00 = {+1, -64, -1, +64}
+                        a02 = {+64, +1, -64, -1}
+            i.e. the 90-degree rotation basis (tile index = x + y*64) that
+            FUN_0005d9cc's automap reveal walk and the 3D tile-neighbour
+            sampling (FUN_0005bd9c &c, uw.c ~44695-44982) step tiles by.
+            All zero before this -> the reveal walk never advanced
+            (teleport+REVEAL only marked the player's own tile) and the
+            view geometry kept sampling one tile.
+     +0x18  four facing angles {0x0000, 0x4000, 0x8000, 0xc000}, [dir*2].
+     +0x20  four 10-entry tile-shape rotation remaps, one row (stride
+            0x10) per facing: identity, then the diagonal/slope types
+            (2-9) permuted for each 90-degree view rotation. */
+static const undefined1 DAT_00086a00_region[0x80] = {
+  0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff,
+  0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x00,0x00,0x00,0x40,0x00,0x80,0x00,0xc0,
+  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07, 0x08,0x09,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x01,0x04,0x02,0x05,0x03,0x09,0x08, 0x06,0x07,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x01,0x05,0x04,0x03,0x02,0x07,0x06, 0x09,0x08,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x01,0x03,0x05,0x02,0x04,0x08,0x09, 0x07,0x06,0x00,0x00,0x00,0x00,0x00,0x00,
+};
+#define DAT_00086a00 (*(undefined1 *)(DAT_00086a00_region + 0x00))
+#define DAT_00086a02 (*(undefined1 *)(DAT_00086a00_region + 0x02))
+#define DAT_00086a18 (*(undefined1 *)(DAT_00086a00_region + 0x18))
+#define DAT_00086a20 (*(undefined1 *)(DAT_00086a00_region + 0x20))
 undefined DAT_00086a60;
 undefined4 DAT_00086af0;
 static undefined1 DAT_00086af8_backing[65536];
@@ -45194,6 +45216,31 @@ void process_reaction_queue()
       local_24 = puVar3;
     }
   } while (DAT_0023b030 != 0xf);
+
+  /* Hack - Testing: DAT_0023b024 is the row depth of FUN_0005d9cc's
+     automap reveal walk (it starts at row &DAT_0023b038 +
+     DAT_0023b024*0x42 and sweeps back to row 0). It is the count of
+     reaction-queue passes the loop above made, minus 1. With
+     object/creature processing disabled the queue is always empty, the
+     loop runs once, and DAT_0023b024 ends at 0 -- so the walk only
+     sweeps the single row through the player and a teleport+REVEAL
+     reveals just a thin strip. (The other half of that bug -- the walk
+     not advancing tile-to-tile *at all* -- was the silently-zero
+     DAT_00086a00 stride table, now recovered.) Force a non-zero depth
+     so REVEAL fills a proper fan for testing. The rows above row 0 were
+     never populated by the empty queue, so zero them first: that makes
+     FUN_0005e604 treat their cells as "not specially visible" (flag bit
+     0x80 clear) and take the plain automap-reveal path rather than
+     reading stale bytes as billboard draw commands. DAT_0023b038_backing
+     is 32768 bytes (0x42 stride -> ~496 rows), so this is in bounds.
+     Remove once the reaction/visibility queue is actually populated. */
+  if (DAT_0023b024 < 8) {
+    int hack_row;
+    for (hack_row = 0x42; hack_row < 0x42 * 9; hack_row = hack_row + 1) {
+      DAT_0023b038_backing[hack_row] = 0;
+    }
+    DAT_0023b024 = 8;
+  }
   return;
 }
 
