@@ -687,9 +687,17 @@ int Ordinal_1118(void *f)
     return fclose((FILE *)f);
 }
 
-long Ordinal_1346()
+/* Zeroing allocator, called as Ordinal_1346(elem_size, count) at every
+   site (e.g. the .tr texture loader's offset table, FUN_0005b514). Was a
+   no-op stub that returned NULL -> FUN_0003c3c8(0x1008) fatal the moment
+   the texture files actually started loading. */
+void *Ordinal_1346(elem_size, count)
+unsigned int elem_size;
+unsigned int count;
 {
-    return 0;
+    if (elem_size == 0) elem_size = 1;
+    if (count == 0) count = 1;
+    return calloc(count, elem_size);
 }
 
 long Ordinal_1407()

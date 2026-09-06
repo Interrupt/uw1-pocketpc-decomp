@@ -2854,14 +2854,18 @@ undefined2 DAT_0023adb8;
 undefined1 DAT_0024f090;
 char s_bad_tmap_ids_size_000869b7[] = "bad_tmap_ids_size";
 undefined1 DAT_0023b841;
-static undefined1 DAT_000869cc_backing[32768];
-#define DAT_000869cc DAT_000869cc_backing[0]
-static undefined1 DAT_000869d4_backing[32768];
-#define DAT_000869d4 DAT_000869d4_backing[0]
-static undefined1 DAT_000869dc_backing[32768];
-#define DAT_000869dc DAT_000869dc_backing[0]
-static undefined1 DAT_000869e4_backing[32768];
-#define DAT_000869e4 DAT_000869e4_backing[0]
+/* Recovered from UU.exe .data: the four texture-file basenames
+   FUN_0005b36c appends to "\DATA\" and loads into the arena. Were
+   silently-zero 32KB arrays, so every path was just the bare "\DATA\"
+   directory -> FUN_0005b514 failed -> DAT_002049e0 stayed all zero. */
+static const char DAT_000869cc_str[] = "f16.tr";
+#define DAT_000869cc (DAT_000869cc_str[0])
+static const char DAT_000869d4_str[] = "w16.tr";
+#define DAT_000869d4 (DAT_000869d4_str[0])
+static const char DAT_000869dc_str[] = "f32.tr";
+#define DAT_000869dc (DAT_000869dc_str[0])
+static const char DAT_000869e4_str[] = "w64.tr";
+#define DAT_000869e4 (DAT_000869e4_str[0])
 /* Was a lone `undefined` scalar. It is the base of the texture / shade /
    colour-light table arena: FUN_00042174 sets DAT_0023ae38 = &DAT_002049e0
    and loads several .tr/.dat files into it, then get_texture_page hands out
@@ -44260,18 +44264,25 @@ void FUN_0005b36c()
   char *wptr_42265;
   char *wptr_42273;
   char *wptr_42281;
-  char stack0xffdc3244_buf [256];
   char *stack0xffdc3244_ptr;
   char cVar1;
   char *pcVar2;
   int iVar3;
-  char acStack_86af8 [8];
-  char acStack_86af0 [8];
-  char acStack_86ae8 [8];
-  char acStack_86ae0 [551364];
   short local_11c [4];
   char acStack_114 [260];
-  
+  /* acStack_86af8 / _86af0 / _86ae8 / _86ae0 were four separate stack
+     locals (8, 8, 8, 551364 bytes), but every use is `<base> + iVar3`
+     where iVar3 is strlen(acStack_114) after the "\DATA\" prefix -- i.e.
+     the code appends each texture filename at path + strlen(path). They
+     are all really acStack_114 (the path buffer); Ghidra split the
+     `+ iVar3` writes onto per-file base names. Same "one buffer, many
+     Ghidra names" bug as FUN_0001de0c's matrices. With them separate,
+     the filename suffix was written to a stray 8-byte local, so
+     FUN_0005b514 opened the bare "...\DATA\" directory and the whole
+     texture / shade / colour-light arena (DAT_002049e0) stayed zero --
+     which is why the (now-running) 3D span rasterizer drew nothing.
+     Fixed by pointing all four `+ iVar3` writes at acStack_114. */
+
   DAT_0023ae38 = &DAT_002049e0;
   Ordinal_1047(acStack_114,0,0x104);
   pcVar2 = &DAT_0023cca8;
@@ -44284,7 +44295,7 @@ void FUN_0005b36c()
   Ordinal_1063(acStack_114,s__DATA__00085970);
   iVar3 = Ordinal_1068(acStack_114);
   pcVar2 = &DAT_000869e4;
-    wptr_42257 = (acStack_86af8 + iVar3);
+    wptr_42257 = (acStack_114 + iVar3);
   do {
     cVar1 = *pcVar2;
     *wptr_42257 = cVar1; wptr_42257 = wptr_42257 + 1;
@@ -44293,47 +44304,52 @@ void FUN_0005b36c()
   local_11c[0] = DAT_0023adb0;
   FUN_0005b514(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae38);
   pcVar2 = &DAT_000869dc;
-    wptr_42265 = (acStack_86af0 + iVar3);
+    wptr_42265 = (acStack_114 + iVar3);
   do {
     cVar1 = *pcVar2;
     *wptr_42265 = cVar1; wptr_42265 = wptr_42265 + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   DAT_0023ae34 = DAT_0023ae38 + DAT_0023adb0 * 0x1000;
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8);
+  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
   pcVar2 = &DAT_000869d4;
-    wptr_42273 = (acStack_86ae8 + iVar3);
+    wptr_42273 = (acStack_114 + iVar3);
   do {
     cVar1 = *pcVar2;
     *wptr_42273 = cVar1; wptr_42273 = wptr_42273 + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   DAT_0023ae3c = DAT_0023ae34 + DAT_0023aeb8 * 0x400;
-  FUN_0005b514(acStack_114,&DAT_0023ae58,local_11c);
+  FUN_0005b514(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae3c);
   pcVar2 = &DAT_000869cc;
-    wptr_42281 = (acStack_86ae0 + iVar3);
+    wptr_42281 = (acStack_114 + iVar3);
   do {
     cVar1 = *pcVar2;
     *wptr_42281 = cVar1; wptr_42281 = wptr_42281 + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8);
+  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
   FUN_00041db0();
   return;
 }
 
 
 
+/* param_2 (a short* remap/index table) and param_4 (the destination
+   arena region) were `int`, truncating the real pointers -- fread'ing
+   texture data through a chopped &DAT_002049e0 segfaulted the moment
+   the .tr files actually opened. Three of the four call sites also had
+   param_4 dropped by Ghidra (stale-register reuse); restored. */
 void FUN_0005b514(param_1,param_2,param_3,param_4)
 char *param_1;
-int param_2;
+short *param_2;
 short * param_3;
-int param_4;
+char *param_4;
 
 {
   int iVar1;
-  int iVar2;
+  char *iVar2; /* was int -- Ordinal_1346() offset-table allocation */
   int iVar3;
   int iVar4;
   int iVar5;
