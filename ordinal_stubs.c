@@ -860,14 +860,24 @@ long Ordinal_2027()
     return 0;
 }
 
-long Ordinal_2028()
+/* Softfloat single-precision COMPARE (less-than): returns 1 when
+   a < b, else 0. Used by the 3D triangle rasterizer's clip /
+   vertex-sort tests (FUN_00014350). Was a no-op stub. */
+long Ordinal_2028(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return ordfloat_bits_to_float(a) < ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
-long Ordinal_2030()
+/* Softfloat single-precision COMPARE (greater-than): returns 1 when
+   a > b, else 0. Used by the 3D triangle rasterizer's clip /
+   vertex-sort tests (FUN_00014350). Was a no-op stub. */
+long Ordinal_2030(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return ordfloat_bits_to_float(a) > ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
 long Ordinal_2032(x)
@@ -881,9 +891,14 @@ long Ordinal_2033()
     return 0;
 }
 
-long Ordinal_2036()
+/* Softfloat single-precision COMPARE (greater-than (mirror of 2028 for the opposite clip edge)): returns 1 when
+   a > b, else 0. Used by the 3D triangle rasterizer's clip /
+   vertex-sort tests (FUN_00014350). Was a no-op stub. */
+long Ordinal_2036(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return ordfloat_bits_to_float(a) > ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
 /* Softfloat single-precision COMPARE for the 3D near-plane clip test:

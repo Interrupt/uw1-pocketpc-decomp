@@ -103,6 +103,16 @@ undefined *PTR_Ordinal_2020_00084018;
      +0x08..13  DAT_000a85d8.. first-list vertex record 0 fields (0xc stride)
      +0x4814..  DAT_000acde4.. second-list record 0 fields (0x60 stride)
    FUN_0001dfe8 seeds each second-list record's +0x486c flag = 1. */
+/* Real-pointer side channel for the per-visible-tile texture pointer.
+   process_visible_tile_cell packs get_texture_page()'s result into a
+   4-byte record field (DAT_000acdfc) -> truncated on 64-bit. We stash
+   the full pointer here keyed by the emit record index, FUN_0001f370
+   carries it across to the render index, and render_visible_tile_list
+   reads it instead of the truncated piVar14[0x1a]. */
+#define UW_MAX_VIS_TILES 2048
+static void *g_tile_texptr_emit[UW_MAX_VIS_TILES];
+static void *g_tile_texptr_out[UW_MAX_VIS_TILES];
+
 static undefined4 DAT_000a85d0_backing[16384];
 #define DAT_000a85d0 DAT_000a85d0_backing[0]
 #define UW_A85B(o) (*(undefined1 *)((char *)DAT_000a85d0_backing + (o)))
@@ -12229,6 +12239,10 @@ LAB_0002029c:
               (&DAT_000bc039)[iVar19] = (char)((uint)iVar18 >> 8);
               (&DAT_000bc03a)[iVar19] = (char)((uint)iVar18 >> 0x10);
               (&DAT_000c4838)[local_7c] = puVar20;
+              /* carry the real texture pointer from emit index to render index */
+              if ((unsigned)local_7c < UW_MAX_VIS_TILES && (unsigned)local_48 < UW_MAX_VIS_TILES) {
+                g_tile_texptr_out[local_7c] = g_tile_texptr_emit[local_48];
+              }
               local_7c = local_7c + 1;
               (&DAT_000bc03b)[iVar19] = (char)((uint)iVar18 >> 0x18);
               DAT_000c8c98 = local_7c;
@@ -12356,7 +12370,11 @@ void render_visible_tile_list()
           DEBUG(TRACE, "[tmap-diag] FUN_00014350 call: tex=0x%x x=%.0f y=%.0f w(0x1c)=%d stride(0x1b)=%d",
                 piVar14[0x1e], *(float*)&local_60, *(float*)&local_5c, piVar14[0x1c], piVar14[0x1b]);
           FUN_00014350(0x140,g_uw_framebuffer,&local_60,piVar14[0x1e],
-                       piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],piVar14[0x1a],&local_70);
+                       piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],
+                       ((unsigned)local_94 < UW_MAX_VIS_TILES)
+                         ? (intptr_t)g_tile_texptr_out[local_94]
+                         : (intptr_t)piVar14[0x1a],
+                       &local_70);
           iVar16 = iVar16 + 1;
           iVar17 = iVar17 + 0xc;
           piVar14 = (int *)*local_98;
@@ -46290,7 +46308,7 @@ LAB_0005e7e0:
     (&DAT_000ace05)[iVar32] = 0;
     (&DAT_000ace06)[iVar32] = 0;
     (&DAT_000ace07)[iVar32] = 0;
-    uVar17 = get_texture_page(iVar16);
+    { void *_tp = get_texture_page(iVar16); if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) g_tile_texptr_emit[DAT_0023b83c] = _tp; uVar17 = (undefined4)(uintptr_t)_tp; }
     iVar32 = DAT_0023b83c;
     iVar30 = DAT_0023b83c * 0x60;
     (&DAT_000acdfc)[iVar30] = (char)uVar17;
@@ -46477,7 +46495,7 @@ LAB_0005e7e0:
     (&DAT_000ace05)[iVar33] = 0;
     (&DAT_000ace06)[iVar33] = 0;
     (&DAT_000ace07)[iVar33] = 0;
-    uVar17 = get_texture_page(uVar17);
+    { void *_tp = get_texture_page(uVar17); if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) g_tile_texptr_emit[DAT_0023b83c] = _tp; uVar17 = (undefined4)(uintptr_t)_tp; }
     iVar19 = DAT_0023b83c * 0x60;
     (&DAT_000acdfc)[iVar19] = (char)uVar17;
     (&DAT_000acdfd)[iVar19] = (char)((uint)uVar17 >> 8);
@@ -46707,7 +46725,7 @@ LAB_0005e7e0:
       (&DAT_000ace05)[iVar16] = 0;
       (&DAT_000ace06)[iVar16] = 0;
       (&DAT_000ace07)[iVar16] = 0;
-      uVar17 = get_texture_page(bVar25);
+      { void *_tp = get_texture_page(bVar25); if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) g_tile_texptr_emit[DAT_0023b83c] = _tp; uVar17 = (undefined4)(uintptr_t)_tp; }
       iVar32 = DAT_0023b83c;
       iVar18 = DAT_0023b83c * 0x60;
       (&DAT_000acdfc)[iVar18] = (char)uVar17;
@@ -46954,7 +46972,7 @@ LAB_0005e7e0:
       (&DAT_000ace05)[iVar16] = 0;
       (&DAT_000ace06)[iVar16] = 0;
       (&DAT_000ace07)[iVar16] = 0;
-      uVar17 = get_texture_page(bVar25);
+      { void *_tp = get_texture_page(bVar25); if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) g_tile_texptr_emit[DAT_0023b83c] = _tp; uVar17 = (undefined4)(uintptr_t)_tp; }
       iVar34 = DAT_0023b83c * 0x60;
       (&DAT_000acdfc)[iVar34] = (char)uVar17;
       (&DAT_000acdfd)[iVar34] = (char)((uint)uVar17 >> 8);
