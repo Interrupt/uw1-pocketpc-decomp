@@ -5839,7 +5839,7 @@ undefined4 * param_3;
 undefined4 param_4;
 undefined4 param_5;
 undefined4 param_6;
-undefined4 param_7;
+intptr_t param_7; /* was undefined4 -- the tile's texture pixel data pointer */
 int * param_8;
 
 {
