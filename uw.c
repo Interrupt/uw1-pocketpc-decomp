@@ -47227,7 +47227,15 @@ LAB_0005e7e0:
       (&DAT_000ace0a)[iVar34] = 0;
       (&DAT_000ace0b)[iVar34] = 0;
       iVar19 = DAT_0023b824 + -1;
-      uVar17 = Ordinal_2032();
+      /* Ghidra dropped the argument: this is Ordinal_2032(iVar19), the
+         int->float of (texture_size - 1) used as the V-texcoord scale for
+         all four corners of this tile-emit branch -- exactly as the sibling
+         branch does at the `Ordinal_2032(iVar38 + -1)` site above. Left
+         no-arg, uVar17 took a stale register (the 512.0f / 1024.0f literal
+         bit pattern from the projection scratch), so every V texcoord this
+         branch emitted came out as ~1.14e9 -> the back-wall dither and
+         part of the ceiling breakup in the 3D view. */
+      uVar17 = Ordinal_2032(iVar19);
       uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar32));
       uVar20 = Ordinal_2026(uVar20,0x3b800000);
       Ordinal_2026(uVar20,uVar17);
