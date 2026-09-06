@@ -917,7 +917,7 @@ unsigned int bhi;
 
 /* Softfloat single-precision COMPARE: returns 1 when a <  b, else 0.
    Paired with 2030 (<=), 2036 (>), 2038 (>=) -- inferred from the
-   viewport-cull tests in FUN_00014350 (all verts left of x0 -> cull uses
+   viewport-cull tests in raster_triangle (all verts left of x0 -> cull uses
    2028; all verts right of x1 -> cull uses 2036). Earlier no-op stub made
    every triangle survive culling with degenerate edges. */
 long Ordinal_2028(a, b)

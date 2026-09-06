@@ -97,7 +97,7 @@ undefined4 param_4;
           Ordinal_870(auStack_40);
           Ordinal_859(auStack_40);
         }
-        FUN_000497cc();
+        main_loop_hud_flush();
       }
       uVar3 = FUN_00077860(param_1,local_38);
       return uVar3;

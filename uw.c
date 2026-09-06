@@ -610,8 +610,8 @@ static void *DAT_000c4838_backing[4096];
 /* Recovered from UU.exe .data at 0x8462c: the 3D viewport clip rect
    {x0=0x34, y0=0x13, w=0xe0, h=0x84} == {52, 19, 224, 132}, matching
    FUN_00012970's `rect_fill(0x34,0x13,0xe0,0x83)`. render_visible_tile_
-   list copies these into a local passed to FUN_00014350 as param_8;
-   FUN_00014350 only calls the span rasterizer FUN_0001548c inside
+   list copies these into a local passed to raster_triangle as param_8;
+   raster_triangle only calls the span rasterizer raster_textured_span inside
    `while (param_8[0] != 0 && ...)`. All zero -> that loop never ran ->
    no pixel ever drawn even with the geometry projecting into view. */
 undefined4 DAT_0008462c = 0x34;
@@ -4108,7 +4108,9 @@ int param_4;
 
 
 
-void FUN_00011040(param_1,param_2,param_3,param_4)
+// was FUN_00011040 -- dirty-rect SET (overwrite the damaged-region
+// bounds to exact values; sibling of dirty_rect union FUN_00011000)
+void dirty_rect_set(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -5839,7 +5841,11 @@ char param_1;
 
 
 
-void FUN_00014350(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
+// was FUN_00014350 -- textured-triangle driver: viewport-culls, sorts
+// the 3 verts by Y, builds 3 edges via raster_edge_setup, walks
+// scanlines stepping edges (raster_edge_step) and emitting spans
+// (raster_textured_span)
+void raster_triangle(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 undefined4 param_1;
 void *param_2; /* was undefined4 -- the framebuffer base (g_uw_framebuffer) */
 undefined4 * param_3;
@@ -5861,15 +5867,15 @@ int * param_8;
   uint uVar9;
   undefined4 uVar10;
   undefined4 uVar11;
-  /* auStack_c4 / auStack_7c were 12-byte locals but FUN_00014ef4 (called
+  /* auStack_c4 / auStack_7c were 12-byte locals but raster_edge_setup (called
      on each below) writes its edge record out to param_6[10] == byte
      0x2b, overflowing them; Ghidra named the tail of each overflow
      `local_b8` / `local_70` (the param_6[3] scanline-count field, byte
      0xc). Widened to real 72-byte buffers like their siblings and
      local_b8 / local_70 folded back in as element [3]. With them
      undersized the edge-walk counts came back as stack garbage, so
-     FUN_00014350's `while (local_70 != 0 && ...)` never ran the span
-     rasterizer FUN_0001548c. */
+     raster_triangle's `while (local_70 != 0 && ...)` never ran the span
+     rasterizer raster_textured_span. */
   undefined1 auStack_154 [72];
   undefined1 auStack_10c [72];
   undefined1 auStack_c4 [72];
@@ -5952,10 +5958,10 @@ LAB_0001467c:
   uVar4 = 2;
   uVar9 = 2;
 LAB_00014684:
-  FUN_000148c8(param_3,auStack_10c);
-  FUN_00014ef4(auStack_10c,param_3,uVar11,uVar4,param_8[1],auStack_154);
-  FUN_00014ef4(auStack_10c,param_3,uVar11,uVar1,param_8[1],auStack_c4);
-  FUN_00014ef4(auStack_10c,param_3,uVar1,uVar4,param_8[1],auStack_7c);
+  raster_triangle_perspective_setup(param_3,auStack_10c);
+  raster_edge_setup(auStack_10c,param_3,uVar11,uVar4,param_8[1],auStack_154);
+  raster_edge_setup(auStack_10c,param_3,uVar11,uVar1,param_8[1],auStack_c4);
+  raster_edge_setup(auStack_10c,param_3,uVar1,uVar4,param_8[1],auStack_7c);
   if (uVar9 < uVar7) {
     puVar3 = auStack_154;
     puVar5 = auStack_c4;
@@ -5978,11 +5984,11 @@ LAB_00014684:
       while ((local_70 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
         if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) &&
            (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)) {
-          FUN_0001548c(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,
+          raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,
                        param_4);
         }
-        FUN_00014868(auStack_7c);
-        FUN_00014868(auStack_154);
+        raster_edge_step(auStack_7c);
+        raster_edge_step(auStack_154);
         local_70 = local_70 + -1;
       }
       return;
@@ -5991,11 +5997,11 @@ LAB_00014684:
     if (param_8[3] <= *(int *)(puVar3 + 8)) break;
     if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) && (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)
        ) {
-      FUN_0001548c(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,param_4
+      raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,param_4
                   );
     }
-    FUN_00014868(auStack_c4);
-    FUN_00014868(auStack_154);
+    raster_edge_step(auStack_c4);
+    raster_edge_step(auStack_154);
   }
   return;
 }
@@ -6004,7 +6010,8 @@ LAB_00014684:
 
 
 
-int FUN_00014868(param_1)
+// was FUN_00014868 -- advance one scanline down an edge record
+int raster_edge_step(param_1)
 intptr_t param_1; /* was int -- edge-walk struct pointer */
 
 {
@@ -6022,7 +6029,10 @@ intptr_t param_1; /* was int -- edge-walk struct pointer */
 
 
 
-void FUN_000148c8(param_1,param_2)
+// was FUN_000148c8 -- per-triangle perspective setup: 1/w, u/w, v/w per
+// vertex plus the screen-space interpolation gradients, into the
+// edge-coefficient array raster_edge_setup reads
+void raster_triangle_perspective_setup(param_1,param_2)
 undefined4 * param_1;
 undefined4 * param_2;
 
@@ -6133,7 +6143,9 @@ undefined4 * param_2;
 
 
 
-void FUN_00014ef4(param_1,param_2,param_3,param_4,param_5,param_6)
+// was FUN_00014ef4 -- per-edge setup: given two vertex indices, the
+// starting value and per-scanline step for x, u/w, v/w and 1/w
+void raster_edge_setup(param_1,param_2,param_3,param_4,param_5,param_6)
 intptr_t param_1; /* was int -- edge-coeff array pointer */
 intptr_t param_2; /* was int -- vertex array pointer (stride 0x14) */
 int param_3;
@@ -6255,7 +6267,10 @@ undefined4 * param_6;
 
 
 
-void FUN_0001548c(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
+// was FUN_0001548c -- the textured span rasterizer: for one scanline
+// span between two edges, perspective-divides per pixel, samples the
+// tile texture, shade-corrects and writes RGB565 into g_uw_framebuffer
+void raster_textured_span(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
 int param_1;
 intptr_t param_2; /* framebuffer base */
 intptr_t param_3; /* edge struct */
@@ -12360,9 +12375,9 @@ void render_visible_tile_list()
   void **local_98; // was `undefined4 *`, misaligning the DAT_000c4838 pointer-array walk below now that its elements are real 8-byte pointers
   int local_94;
   /* Ghidra named the 4 words of the viewport-clip-rect struct passed to
-     FUN_00014350 (as param_8) as 4 separate locals. The recompiler is
+     raster_triangle (as param_8) as 4 separate locals. The recompiler is
      free to lay them out in any order / non-contiguously, so param_8[1..3]
-     read stack garbage and FUN_00014350's `*(int*)(puVar3+8) < param_8[3]`
+     read stack garbage and raster_triangle's `*(int*)(puVar3+8) < param_8[3]`
      never let it call the span rasterizer. Real 4-int array. */
   undefined4 local_70_rect[4];
 #define local_70 (local_70_rect[0])
@@ -12370,10 +12385,10 @@ void render_visible_tile_list()
 #define local_68 (local_70_rect[2])
 #define local_64 (local_70_rect[3])
   /* Same bug as local_70_rect above: Ghidra named the 15 words of the
-     triangle-vertex struct passed to FUN_00014350 as param_3 (three
+     triangle-vertex struct passed to raster_triangle as param_3 (three
      vertices x 5 floats: x, y, w, u, v) as 15 separate locals. The
-     recompiler lays them out non-contiguously, so FUN_000148c8 /
-     FUN_00014ef4 read stack garbage for every field past [0] -- every
+     recompiler lays them out non-contiguously, so raster_triangle_perspective_setup /
+     raster_edge_setup read stack garbage for every field past [0] -- every
      transformed vertex came out (x,0,0) and the triangle setup produced
      -inf/nan, so no texel was ever sampled. Real 15-float array. */
   undefined4 local_60_arr[15];
@@ -12454,9 +12469,9 @@ void render_visible_tile_list()
           local_34 = Ordinal_2015(0x42a00000,uVar11);
           local_30 = Ordinal_2026(uVar5,0x3a2ec33e);
           DAT_000da47c = (undefined2)piVar14[0x1d];
-          DEBUG(TRACE, "[tmap-diag] FUN_00014350 call: tex=0x%x x=%.0f y=%.0f w(0x1c)=%d stride(0x1b)=%d",
+          DEBUG(TRACE, "[tmap-diag] raster_triangle call: tex=0x%x x=%.0f y=%.0f w(0x1c)=%d stride(0x1b)=%d",
                 piVar14[0x1e], ((float*)local_60_arr)[0], ((float*)local_60_arr)[1], piVar14[0x1c], piVar14[0x1b]);
-          FUN_00014350(0x140,g_uw_framebuffer,local_60_arr,piVar14[0x1e],
+          raster_triangle(0x140,g_uw_framebuffer,local_60_arr,piVar14[0x1e],
                        piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],
                        ((unsigned)local_94 < UW_MAX_VIS_TILES)
                          ? (intptr_t)g_tile_texptr_out[local_94]
@@ -13886,7 +13901,7 @@ short param_2;
    chargen "text flashes then gets covered by a rectangle" bug (SS1
    shares this same Looking Glass dirty-rect heritage): the bounds are
    accumulate-only in the normal UI flow -- the only explicit reset
-   (FUN_00011040, setting them back to an empty/degenerate rect) is a
+   (dirty_rect_set, setting them back to an empty/degenerate rect) is a
    single call site elsewhere unrelated to chargen -- so nothing here
    makes the tracked region shrink or exclude an area once drawn to.
    Didn't find a bug in this function itself; the rapid-cycling
@@ -34298,10 +34313,13 @@ LAB_000497a0:
 
 
 
-void FUN_000497cc()
+// was FUN_000497cc -- runs once per in-game main-loop iteration: resets
+// the dirty rect to a degenerate {100,100,100,100}, redraws the small
+// HUD/cursor element, and flushes that to the display
+void main_loop_hud_flush()
 
 {
-  FUN_00011040(100,100,100,100);
+  dirty_rect_set(100,100,100,100);
   if (DAT_00201c84 != 0) {
     FUN_00049818();
   }

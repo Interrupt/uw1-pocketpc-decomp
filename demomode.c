@@ -365,7 +365,7 @@ void demomode_pump(void) {
     if (strncasecmp(p, "SCREENSHOT ", 11) == 0) {
         const char *path = p + 11;
         /* Push the whole software framebuffer to the display before
-         * capturing. The in-game main loop's FUN_000497cc() resets the
+         * capturing. The in-game main loop's main_loop_hud_flush() resets the
          * dirty rect to a degenerate {100,100,100,100} every iteration,
          * so anything drawn by a bare demomode call (full_dungeon_redraw
          * for the 3D view, automap fills, ...) lands in g_uw_framebuffer
