@@ -46347,24 +46347,24 @@ byte * param_1;
     FUN_00065348();
     return;
   }
-  /* Hack - Disabled: this branch emits a visible tile's 3D geometry
-     slice for the dungeon viewport. It is now actually REACHED -- the
+  /* This branch emits a visible tile's 3D geometry slice for the dungeon
+     viewport. It now renders a real textured room end to end -- the
      visibility flood-fill (process_reaction_queue / process_reaction_
-     entry / compute_reaction_offset) was resurrected this session by
-     recovering the silently-zero tables it depends on (DAT_00086a00
-     rotation basis, DAT_00086a60 edge-flags, the sin/cos tables, the
-     DAT_00086b38 function-pointer trio). But the geometry path below
-     then walks into a FURTHER chain of silently-zero globals
-     (DAT_0024fa2c, DAT_00086b30, DAT_00085d20, ...) and segfaults. Until
-     those are recovered too, mark the tile revealed for the automap
-     like the un-visible case and skip the geometry. Set
-     UW_ENABLE_3D_GEOMETRY to walk into it (expect a crash). */
-  if (getenv("UW_ENABLE_3D_GEOMETRY") == NULL) {
-    if (*param_1 == 0) {
-      *param_1 = automap_reveal_byte(DAT_0023b4ec);
-      DAT_0023b810 = DAT_0023b810 + 1;
+     entry / compute_reaction_offset / reaction_advance_row) and the
+     software span rasterizer (raster_triangle / raster_textured_span)
+     were resurrected across this session's commits (see git tags
+     milestone-3d-tiles-render, milestone-3d-room). Enabled by default;
+     set UW_DISABLE_3D_GEOMETRY to fall back to the automap-reveal-only
+     path (the old behaviour). */
+  { static int _disabled = -1;
+    if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_GEOMETRY") != NULL);
+    if (_disabled) {
+      if (*param_1 == 0) {
+        *param_1 = automap_reveal_byte(DAT_0023b4ec);
+        DAT_0023b810 = DAT_0023b810 + 1;
+      }
+      return;
     }
-    return;
   }
   DAT_0023b4d0 = 200;
   bVar15 = (byte)*DAT_0023b4ec >> 4;
