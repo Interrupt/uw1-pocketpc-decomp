@@ -45494,9 +45494,11 @@ void process_reaction_queue()
      stale bytes. DAT_0023b038_backing is 32768 bytes (0x42 stride) so 8
      rows is well in bounds. */
   if (getenv("UW_HACK_REVEAL_DEPTH")) {
-    int hack_row;
-    for (hack_row = 0x42; hack_row < 0x42 * 9; hack_row = hack_row + 1) {
-      DAT_0023b038_backing[hack_row] = 0;
+    if (getenv("UW_HACK_REVEAL_DEPTH_ZERO")) {
+      int hack_row;
+      for (hack_row = 0x42; hack_row < 0x42 * 9; hack_row = hack_row + 1) {
+        DAT_0023b038_backing[hack_row] = 0;
+      }
     }
     if (DAT_0023b024 < 8) DAT_0023b024 = 8;
   }
@@ -51214,6 +51216,13 @@ void FUN_00069938()
     }
     DAT_000db448 = (iVar6 >> 8) + (int)DAT_0023bf3c;
   }
+  /* Hack - Testing: UW_HACK_PITCH overrides the camera pitch angle
+     (index into the sin/cos tables, 0..360). DAT_0023beb4 / DAT_0023bf3c
+     come out 0 with nothing driving the look-up/down, so the 3D view
+     looks dead level and the floor you are standing on projects entirely
+     below the viewport. A downward pitch (~300-340) brings it into view
+     for testing -- the real look pitch source is still unrecovered. */
+  { const char *_p = getenv("UW_HACK_PITCH"); if (_p) DAT_000db448 = atoi(_p); }
   if (cVar1 == '\0') {
     sVar8 = *(short *)(iVar4 + 0x2c);
   }
