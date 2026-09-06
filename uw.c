@@ -44917,8 +44917,19 @@ void seed_visibility_queue()
     g_dat0023aee0_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
     angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
     angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
-    _DAT_0023aee1 = _DAT_0023aee1 >> 4;
-    _DAT_0023aee3 = _DAT_0023aee3 >> 4;
+    /* angle_to_screen_delta writes a 2-byte X delta at DAT_0023aee1 and a
+       2-byte Y delta at DAT_0023aee3, and every downstream reader
+       (process_reaction_entry's `*(short *)(param_1 + 1)` / `+ 3`) treats
+       them as separate signed shorts -- exactly like the DAT_0023aef6 /
+       aef8 pair two lines down. Ghidra had `DAT_0023aee1` as a lone byte
+       so an earlier fix pass widened the `>>4` to `_DAT_0023aee1`, a
+       4-byte view spanning BOTH deltas (bytes 1..4): the shift then bled
+       the Y delta's low nibble into the X delta's high bits and dropped
+       X's low 4 bits, so the left frustum edge came out garbage
+       (X ~= 31338 vs the right edge's ~1465) and the beam-trace only
+       ever marked one tile visible. Shift each 16-bit delta on its own. */
+    *(short *)&DAT_0023aee0_backing[1] = (short)(*(short *)&DAT_0023aee0_backing[1] >> 4);
+    *(short *)&DAT_0023aee0_backing[3] = (short)(*(short *)&DAT_0023aee0_backing[3] >> 4);
     DAT_0023aef6 = DAT_0023aef6 >> 4;
     DAT_0023aef8 = DAT_0023aef8 >> 4;
   }
