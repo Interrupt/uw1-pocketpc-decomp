@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <math.h>
 #include <SDL.h>
 
 void uw_pump_events(void);
@@ -512,9 +513,19 @@ long Ordinal_993()
     return 0;
 }
 
-long Ordinal_1004()
+/* cos(x): x is a double bit-pattern arriving in the return/first-arg
+   register (chained from Ordinal_2021 in FUN_0001dd2c, which builds the
+   renderer's per-degree cos table DAT_000d9ed8). Was a return-0 stub,
+   which left the whole view matrix zero -> every 3D vertex projected to
+   a single point. */
+long Ordinal_1004(x)
+unsigned long long x;
 {
-    return 0;
+    double d;
+    memcpy(&d, &x, 8);
+    d = cos(d);
+    memcpy(&x, &d, 8);
+    return (long)x;
 }
 
 void Ordinal_1018(ptr)
@@ -582,9 +593,18 @@ void *Ordinal_1054(void *ptr, unsigned int size)
     return realloc(ptr, size);
 }
 
-long Ordinal_1058()
+/* sin(x): x is a double bit-pattern split across the first two arg
+   registers (FUN_0001dd2c passes it as two ints). Builds DAT_000d9930. */
+long Ordinal_1058(lo, hi)
+unsigned int lo;
+unsigned int hi;
 {
-    return 0;
+    unsigned long long b = (unsigned long long)lo | ((unsigned long long)hi << 32);
+    double d;
+    memcpy(&d, &b, 8);
+    d = sin(d);
+    memcpy(&b, &d, 8);
+    return (long)b;
 }
 
 long Ordinal_1061()
@@ -838,14 +858,35 @@ unsigned int x;
     return (long)ordfloat_bits_to_float(x);
 }
 
-long Ordinal_2021()
+/* Softfloat float -> double: single-precision bit pattern in the
+   first-arg register (chained), returns the double bit pattern. Was a
+   return-0 stub -- part of FUN_0001dd2c's sin/cos table build. */
+long Ordinal_2021(x)
+unsigned long long x;
 {
-    return 0;
+    unsigned int fbits = (unsigned int)x;
+    float f;
+    double d;
+    memcpy(&f, &fbits, 4);
+    d = (double)f;
+    memcpy(&x, &d, 8);
+    return (long)x;
 }
 
-long Ordinal_2023()
+/* Softfloat single-precision NEGATE: -x. Called both with an explicit
+   arg and no-arg (chained). FUN_0001de0c uses it for a view matrix's
+   translation column (-camera_pos) and the -sin entries of its rotation
+   blocks; it also appears in the sprite/billboard transform. Was a
+   return-0 stub -> the view matrix had zero rotation and zero
+   translation, so every transformed vertex collapsed to the origin. */
+long Ordinal_2023(x)
+unsigned int x;
 {
-    return 0;
+    float f;
+    memcpy(&f, &x, 4);
+    f = -f;
+    memcpy(&x, &f, 4);
+    return (long)x;
 }
 
 long Ordinal_2026(a, b)
@@ -855,9 +896,23 @@ unsigned int b;
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) * ordfloat_bits_to_float(b));
 }
 
-long Ordinal_2027()
+/* Softfloat double MULTIPLY: a * b, each passed as a lo/hi int pair.
+   FUN_0001dd2c multiplies (double)degrees by the constant
+   0x3f91df45a50de271 == PI/180. Was a return-0 stub. */
+long Ordinal_2027(alo, ahi, blo, bhi)
+unsigned int alo;
+unsigned int ahi;
+unsigned int blo;
+unsigned int bhi;
 {
-    return 0;
+    unsigned long long ab = (unsigned long long)alo | ((unsigned long long)ahi << 32);
+    unsigned long long bb = (unsigned long long)blo | ((unsigned long long)bhi << 32);
+    double a, b, r;
+    memcpy(&a, &ab, 8);
+    memcpy(&b, &bb, 8);
+    r = a * b;
+    memcpy(&ab, &r, 8);
+    return (long)ab;
 }
 
 long Ordinal_2028()
@@ -907,9 +962,19 @@ unsigned int b;
     return ordfloat_bits_to_float(a) >= ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
-long Ordinal_2044()
+/* Softfloat double -> float: double bit pattern in the first-arg
+   register (chained), returns the single-precision bit pattern. Was a
+   return-0 stub -- the final step feeding DAT_000d9ed8 / DAT_000d9930. */
+long Ordinal_2044(x)
+unsigned long long x;
 {
-    return 0;
+    double d;
+    float f;
+    unsigned int r;
+    memcpy(&d, &x, 8);
+    f = (float)d;
+    memcpy(&r, &f, 4);
+    return (long)r;
 }
 
 long Ordinal_2046()

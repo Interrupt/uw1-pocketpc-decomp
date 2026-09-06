@@ -490,8 +490,16 @@ undefined DAT_0018959f;
 undefined *PTR_Ordinal_2021_00084030;
 undefined *PTR_Ordinal_2027_00084094;
 undefined *PTR_Ordinal_2044_00084034;
-undefined4 DAT_000d9930;
-undefined4 DAT_000d9ed8;
+/* FUN_0001dd2c builds these as 361-entry (0..360 degrees) sin / cos
+   tables (float bit patterns); every reader indexes
+   `(&DAT_000d99xx)[angle]`. Were lone `undefined4` scalars, so
+   FUN_0001dd2c's `[0..360]` writes smashed ~1.4 KB of adjacent
+   globals. In UU.exe they are contiguous .bss (0xd9930 sin, 0xd9ed8
+   cos). */
+static undefined4 DAT_000d9930_arr[512];
+#define DAT_000d9930 (DAT_000d9930_arr[0])
+static undefined4 DAT_000d9ed8_arr[512];
+#define DAT_000d9ed8 (DAT_000d9ed8_arr[0])
 undefined4 DAT_000db438;
 undefined4 DAT_000db43c;
 undefined4 DAT_000db440;
@@ -524,7 +532,12 @@ static undefined4 DAT_000c8ac0_mtx[16];
 #define DAT_000c8af4 DAT_000c8ac0_mtx[13]
 #define DAT_000c8af8 DAT_000c8ac0_mtx[14]
 int DAT_000c8c98;
-undefined4 DAT_00084608;
+/* Recovered from UU.exe .data at 0x84608: the near-clip distance,
+   float 5.0 (bit pattern 0x40a00000). render_visible_tile_list /
+   FUN_0001f370 pass it straight to the softfloat compare/subtract
+   ordinals as a float bit pattern. Was silently zero -> the near-plane
+   clip and the 1/(z-near) perspective divide both degenerated. */
+undefined4 DAT_00084608 = 0x40a00000u;
 /* DAT_000bc038-family: ~40 separately-declared 1-byte globals that are
    really one 0x88(136)-byte-stride per-tile record array (its sibling
    DAT_000bc044 -- a few bytes further into the same original record --
@@ -593,7 +606,13 @@ undefined4 DAT_0008462c;
 undefined4 DAT_00084634;
 undefined4 DAT_00084630;
 undefined4 DAT_00084638;
-undefined4 DAT_00084610;
+/* Recovered from UU.exe .data at 0x84610: the perspective/screen scale,
+   integer 100. render_visible_tile_list does Ordinal_2032(DAT_00084610)
+   (int->float) -> 100.0, then multiplies each vertex's 1/z * eye-space
+   coord by it to get the screen offset from the viewport centre. Was
+   silently zero -> that offset was always 0, so every tile triangle
+   projected to the single centre point (x=140, y=80). */
+undefined4 DAT_00084610 = 100u;
 undefined1 *DAT_000db45c;
 int DAT_000db458;
 int DAT_000d91d0;
@@ -11394,6 +11413,16 @@ void FUN_0001de0c()
   undefined1 auStack_d8 [64];
   undefined1 auStack_98 [64];
   undefined1 auStack_58 [64];
+
+  /* FUN_0001dd2c fills the per-degree sin/cos tables (DAT_000d9ed8 /
+     DAT_000d9930) this function's rotation blocks read from. Ghidra
+     recovered no caller for it anywhere, so the tables stayed zero and
+     every view matrix came out degenerate (all vertices projected to
+     one screen point). Build them once, lazily, right before first use. */
+  {
+    static int dd2c_done = 0;
+    if (!dd2c_done) { dd2c_done = 1; FUN_0001dd2c(); }
+  }
 
   FUN_0001422c(auStack_d8);
   FUN_0001422c(auStack_158);
@@ -51181,11 +51210,16 @@ void FUN_00069938()
     sVar8 = *(short *)(iVar4 + 0x2c) + 0x4000;
   }
   if (sVar8 < 1) {
-    iVar4 = Ordinal_2005(0xb4);
+    /* Ghidra dropped the dividend: this is the 16-bit view angle sVar8
+       converted to degrees, angle / 180 (0xb4). Without sVar8 passed
+       the divide ran on a leftover register -> yaw came out 0/360 ->
+       identity view rotation -> every tile projected behind the near
+       plane. */
+    iVar4 = Ordinal_2005(0xb4, (int)sVar8);
     DAT_000db44c = iVar4 + DAT_0023bf40 + 0x168;
   }
   else {
-    iVar4 = Ordinal_2005();
+    iVar4 = Ordinal_2005(0xb4, (int)sVar8);
     DAT_000db44c = iVar4 + DAT_0023bf40;
   }
   return;
