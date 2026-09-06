@@ -2989,7 +2989,7 @@ static undefined1 DAT_0023aee0_backing[1024];
    monster-free dungeon) is written; other entries stay NULL, matching
    the "unpopulated" state process_reaction_entry's own `(*param_1 & 0x80) == uVar1`
    guard already treats as "nothing to look up" for a zeroed record. */
-static char *g_dat0023aee0_realptr[16];
+static char *g_dat0023aee0_realptr[24];
 /* Second real-pointer side table, for this record's OTHER packed pointer
    field (offsets 0xd and its byte-mirrored copy at 0x11-0x14 -- see
    seed_visibility_queue's DAT_0023aeed/aeee/aef0 writes). Unlike the offset-9
@@ -3003,7 +3003,7 @@ static char *g_dat0023aee0_realptr[16];
    below (not per-entry -- every entry that sets this field wants the
    same target), read via the same per-entry lookup as the offset-9
    table for consistency with how the field is indexed. */
-static char *g_dat0023aee0_realptr2[16];
+static char *g_dat0023aee0_realptr2[24];
 /* Only entries 0 and 1 (the player's own reaction slot, always populated
    by seed_visibility_queue) are ever given a real pointer above -- a monster-free
    dungeon has nothing to populate the other 14 with. But this queue's
@@ -3017,6 +3017,20 @@ static char *g_dat0023aee0_realptr2[16];
 static char g_dat0023aee0_fallback[64];
 #define DAT0023AEE0_REALPTR(table, idx) \
     ((table)[(idx)] != 0 ? (table)[(idx)] : g_dat0023aee0_fallback)
+/* Slot 16 (past the 0..15 nibble-addressable real entries) is a scratch
+   slot for merge_adjacent_reactions's acStack_28 -- a stack-local COPY of
+   a real entry that the un-stubbed reactions_should_merge / the spreading
+   branch walk in place. Its `(ptr - DAT_0023aee0_backing) / 0x15` index
+   would be a wild value, so reaction_entry_idx() folds any pointer
+   outside the backing array to this slot; merge_adjacent_reactions seeds
+   the slot from the source entry's real pointers right before the copy. */
+#define REACTION_SCRATCH_IDX 16
+static int reaction_entry_idx(const void *p) {
+    intptr_t off = (intptr_t)p - (intptr_t)DAT_0023aee0_backing;
+    if (off < 0 || off + 0x15 > (intptr_t)sizeof(DAT_0023aee0_backing))
+        return REACTION_SCRATCH_IDX;
+    return (int)(off / 0x15);
+}
 #define DAT_0023aee1 DAT_0023aee0_backing[1]
 #define DAT_0023aee3 DAT_0023aee0_backing[3]
 #define DAT_0023aee5 DAT_0023aee0_backing[5]
@@ -44946,7 +44960,7 @@ intptr_t param_1;
   int iVar1;
   int entry_idx;
 
-  entry_idx = (int)((param_1 - (intptr_t)DAT_0023aee0_backing) / 0x15);
+  entry_idx = reaction_entry_idx(param_1);
   g_dat0023aee0_realptr[entry_idx] =
        DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
   g_dat0023aee0_realptr2[entry_idx] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx) + 2;
@@ -44986,7 +45000,7 @@ intptr_t param_1;
   int iVar1;
   int entry_idx;
 
-  entry_idx = (int)((param_1 - (intptr_t)DAT_0023aee0_backing) / 0x15);
+  entry_idx = reaction_entry_idx(param_1);
   g_dat0023aee0_realptr[entry_idx] =
        DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
   g_dat0023aee0_realptr2[entry_idx] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx) + -2;
@@ -45034,7 +45048,7 @@ char param_3;
   int iVar13;
   int entry_idx;
 
-  entry_idx = (int)((param_1 - (intptr_t)DAT_0023aee0_backing) / 0x15);
+  entry_idx = reaction_entry_idx(param_1);
   pbVar2 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx);
   iVar12 = (int)DAT_0023b4a0;
   bVar7 = pbVar2[1] & 0xf;
@@ -45143,29 +45157,26 @@ char param_3;
 
 
 
-/* Was FUN_0005c70c. Hack - Disabled: this function's body inlines reaction_retreat_tile/reaction_advance_tile's
-   packed-pointer arithmetic twice over (once per record, for the two
-   entries merge_adjacent_reactions is comparing) plus several more raw
-   `*(int*)(param+0xd)`-style reassemblies of its own -- retrofitting
-   every one of those through the real-pointer side tables (see
-   g_dat0023aee0_realptr) is a lot of surface for what this actually is:
-   a "should these two creature reactions merge" comparison, peripheral
-   to a monster-free minimal dungeon. Every real exit path already
-   returns 0 except one `return 1`; short-circuiting to 0 always takes
-   merge_adjacent_reactions's simpler merge branch (bounded byte ops on pointers that
-   are already valid) instead of the path this would otherwise compute. */
+/* Was FUN_0005c70c. Un-stubbed 2026-09-05: this is NOT a "should these
+   merge" predicate -- it is the row-advance / cone-continuation step that
+   keeps the beam-trace visibility flood alive past row 0. Each call bumps
+   the entry's per-pass counter (offset 7), and while that stays under 16
+   AND the entry's visibility-grid cursor hasn't hit an end-of-chain
+   nibble, it steps the entry ONE ROW forward -- the tile-data cursor by
+   DAT_00086a02[facing]*4, the visibility-grid cursor by 0x42 -- re-walks
+   that row via reaction_advance_tile / compute_reaction_offset, and
+   returns 1. merge_adjacent_reactions's `iVar3 != 0` branch then keeps
+   the queue head off the 0xf sentinel, so process_reaction_queue makes
+   another pass and DAT_0023b024 (== view depth) grows. Stubbing it to
+   `return 0` (done in a much earlier session while the whole viewport
+   was still black) is why only row 0 was ever flooded -> only 1-2 tiles
+   visible. The two packed 32-bit pointer fields (offsets 9 and 0xd) are
+   carried in g_dat0023aee0_realptr / _realptr2 on this 64-bit port; the
+   original's byte-packed writes are kept as harmless dead state. Verified
+   against the 0x5c70c disasm. */
 undefined4 reactions_should_merge(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  return 0;
-}
-
-#if 0
-undefined4 reactions_should_merge_unreachable(param_1,param_2)
-int param_1;
-int param_2;
+byte * param_1;
+byte * param_2;
 
 {
   uint uVar1;
@@ -45176,12 +45187,19 @@ int param_2;
   uint uVar6;
   uint uVar7;
   int iVar8;
+  int idx1;
+  int idx2;
+  short row_stride;
+
+  idx1 = reaction_entry_idx(param_1);
+  idx2 = reaction_entry_idx(param_2);
+  row_stride = *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6);
 
   iVar5 = *(char *)(param_1 + 7) + 1;
   *(char *)(param_1 + 7) = (char)iVar5;
   if (iVar5 * 0x1000000 >> 0x18 < 0x11) {
     do {
-      if ((*(byte *)(*(int *)(param_1 + 0xd) + 0x43) & 0xf) != 0xf) {
+      if ((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx1)[0x43] & 0xf) != 0xf) {
         cVar3 = *(char *)(param_1 + 7);
         if (('\x01' < cVar3) ||
            (uVar7 = (uint)*(byte *)(param_1 + 6) - (int)*(short *)(DAT_00086e6c + 10),
@@ -45201,24 +45219,13 @@ int param_2;
           *(char *)(param_1 + 3) = (char)iVar5;
           *(char *)(param_1 + 4) = (char)((uint)iVar5 >> 8);
         }
-        sVar4 = *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6);
         *(undefined1 *)(param_1 + 8) = 0;
-        iVar5 = CONCAT13(*(undefined1 *)(param_1 + 0xc),*(undefined3 *)(param_1 + 9)) + sVar4 * 4;
-        *(char *)(param_1 + 9) = (char)iVar5;
-        *(char *)(param_1 + 10) = (char)((uint)iVar5 >> 8);
-        *(char *)(param_1 + 0xb) = (char)((uint)iVar5 >> 0x10);
-        *(char *)(param_1 + 0xc) = (char)((uint)iVar5 >> 0x18);
-        iVar5 = CONCAT13(*(undefined1 *)(param_1 + 0x10),
-                         CONCAT12(*(undefined1 *)(param_1 + 0xf),
-                                  CONCAT11(*(undefined1 *)(param_1 + 0xe),
-                                           *(undefined1 *)(param_1 + 0xd)))) + 0x42;
-        *(char *)(param_1 + 0xd) = (char)iVar5;
-        *(char *)(param_1 + 0xe) = (char)((uint)iVar5 >> 8);
-        *(char *)(param_1 + 0xf) = (char)((uint)iVar5 >> 0x10);
-        *(char *)(param_1 + 0x10) = (char)((uint)iVar5 >> 0x18);
+        /* one row forward: tile-data cursor += row_stride*4, grid cursor += 0x42 */
+        g_dat0023aee0_realptr[idx1] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, idx1) + row_stride * 4;
+        g_dat0023aee0_realptr2[idx1] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx1) + 0x42;
         *(char *)(param_2 + 7) = *(char *)(param_2 + 7) + '\x01';
         do {
-          if ((*(byte *)(*(int *)(param_2 + 0xd) + 0x43) & 0xf) != 0xf) {
+          if ((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx2)[0x43] & 0xf) != 0xf) {
             cVar3 = *(char *)(param_2 + 7);
             if (('\x01' < cVar3) ||
                (uVar7 = (uint)*(byte *)(param_2 + 6) - (int)*(short *)(DAT_00086e6c + 10),
@@ -45239,38 +45246,23 @@ int param_2;
               *(char *)(param_2 + 4) = (char)((uint)iVar5 >> 8);
             }
             *(undefined1 *)(param_2 + 8) = 0;
-            iVar5 = CONCAT13(*(undefined1 *)(param_2 + 0x10),
-                             CONCAT12(*(undefined1 *)(param_2 + 0xf),*(undefined2 *)(param_2 + 0xd))
-                            ) + 0x42;
-            *(char *)(param_2 + 0xd) = (char)iVar5;
-            *(char *)(param_2 + 0xe) = (char)((uint)iVar5 >> 8);
-            *(char *)(param_2 + 0xf) = (char)((uint)iVar5 >> 0x10);
-            *(char *)(param_2 + 0x10) = (char)((uint)iVar5 >> 0x18);
-            iVar5 = CONCAT13(*(undefined1 *)(param_2 + 0xc),
-                             CONCAT12(*(undefined1 *)(param_2 + 0xb),
-                                      CONCAT11(*(undefined1 *)(param_2 + 10),
-                                               *(undefined1 *)(param_2 + 9)))) +
-                    *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6) * 4;
-            *(char *)(param_2 + 9) = (char)iVar5;
-            *(char *)(param_2 + 10) = (char)((uint)iVar5 >> 8);
-            *(char *)(param_2 + 0xb) = (char)((uint)iVar5 >> 0x10);
-            *(char *)(param_2 + 0xc) = (char)((uint)iVar5 >> 0x18);
+            g_dat0023aee0_realptr2[idx2] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx2) + 0x42;
+            g_dat0023aee0_realptr[idx2] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, idx2) + row_stride * 4;
             return 1;
           }
           reaction_retreat_tile(param_2);
           *(undefined1 *)(param_2 + 6) = 0xff;
-          compute_reaction_offset(param_2,0,0);
+          compute_reaction_offset((intptr_t)param_2,0,0);
         } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
         return 0;
       }
-      reaction_advance_tile(param_1);
+      reaction_advance_tile((intptr_t)param_1);
       *(undefined1 *)(param_1 + 6) = 0;
-      compute_reaction_offset(param_1,0,0);
+      compute_reaction_offset((intptr_t)param_1,0,0);
     } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
   }
   return 0;
 }
-#endif
 
 
 
@@ -45324,7 +45316,7 @@ byte * param_1;
          truncation, and the 8-byte-wide read here also swallows 4 bytes
          of the next field. Real pointer tracked separately instead --
          see g_dat0023aee0_realptr's comment. */
-      pbVar8 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, (param_1 - (byte *)DAT_0023aee0_backing) / 0x15);
+      pbVar8 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, reaction_entry_idx(param_1));
       iVar2 = iVar11 * 0x10;
       cVar9 = (&DAT_00086a20)[(*pbVar8 & 0xf) + iVar2];
       if ((*(ushort *)(&DAT_00086af8 + iVar3 * 2) & (ushort)(byte)(&DAT_000878d0)[cVar9]) != 0) {
@@ -45368,7 +45360,7 @@ LAB_0005cf04:
       else {
         reaction_retreat_tile(param_1);
       }
-      if (((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, (param_1 - (byte *)DAT_0023aee0_backing) / 0x15)[1] & 0xf) == 0xf) ||
+      if (((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, reaction_entry_idx(param_1))[1] & 0xf) == 0xf) ||
          (uVar4 = (int)(char)param_1[5] >> 0x1f,
          0x10 < (int)(((int)(char)param_1[5] ^ uVar4) - uVar4))) {
         /* Same extraout_r1 register-leftover division-remainder pattern
@@ -45472,6 +45464,15 @@ undefined1 ** param_2;
     pcVar6 = pcVar6 + 1;
     pcVar7 = pcVar7 + 1;
   } while (iVar4 != 0 && bVar1);
+  /* acStack_28 is a byte-copy of entry pcVar9; seed the scratch
+     real-pointer slot (16) from that entry so reaction_advance_tile /
+     compute_reaction_offset on acStack_28 -- whose in-backing-array index
+     would be a wild value -- resolve through reaction_entry_idx() to a
+     valid grid cursor instead of indexing the side table out of bounds. */
+  g_dat0023aee0_realptr[REACTION_SCRATCH_IDX]  =
+      DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, iVar10 / 0x15);
+  g_dat0023aee0_realptr2[REACTION_SCRATCH_IDX] =
+      DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, iVar10 / 0x15);
   iVar3 = reactions_should_merge(pcVar9,pbVar8);
   if (iVar3 == 0) {
 LAB_0005d064:
@@ -45481,15 +45482,10 @@ LAB_0005d064:
     *pbVar8 = 0;
   }
   else {
-    /* Currently dead: reactions_should_merge is stubbed to always return
-       0 (see its own comment), so iVar3 above is never non-zero and this
-       branch never runs. If that's ever un-stubbed: reaction_advance_tile/
-       compute_reaction_offset below compute their target real-pointer-table
-       entry as an offset of the passed pointer *within DAT_0023aee0_backing*
-       -- passing them acStack_28 (a stack copy, not a real array entry)
-       will index that table with a wild/negative value. Needs its own fix
-       (likely: write back through pcVar9 instead of a local copy) before
-       this branch can safely run for real. */
+    /* reactions_should_merge returned "keep spreading". The walk below
+       operates on acStack_28 (the stack copy) and marks tiles via
+       compute_reaction_offset; its side-table pointers live in the
+       scratch slot seeded just above. */
     *param_1 = pbVar8;
     if ((&DAT_0023aee5)[iVar10] != (&DAT_0023aee5)[iVar5]) {
       do {
