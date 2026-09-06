@@ -3019,7 +3019,7 @@ static char g_dat0023aee0_fallback[64];
     ((table)[(idx)] != 0 ? (table)[(idx)] : g_dat0023aee0_fallback)
 /* Slot 16 (past the 0..15 nibble-addressable real entries) is a scratch
    slot for merge_adjacent_reactions's acStack_28 -- a stack-local COPY of
-   a real entry that the un-stubbed reactions_should_merge / the spreading
+   a real entry that the un-stubbed reaction_advance_row / the spreading
    branch walk in place. Its `(ptr - DAT_0023aee0_backing) / 0x15` index
    would be a wild value, so reaction_entry_idx() folds any pointer
    outside the backing array to this slot; merge_adjacent_reactions seeds
@@ -45157,9 +45157,11 @@ char param_3;
 
 
 
-/* Was FUN_0005c70c. Un-stubbed 2026-09-05: this is NOT a "should these
-   merge" predicate -- it is the row-advance / cone-continuation step that
-   keeps the beam-trace visibility flood alive past row 0. Each call bumps
+/* Was FUN_0005c70c, and was mis-named `reactions_should_merge` until the
+   un-stub below showed what it does. Un-stubbed 2026-09-05: this is NOT a
+   "should these merge" predicate -- it is the row-advance / cone-
+   continuation step that keeps the beam-trace visibility flood alive past
+   row 0. Each call bumps
    the entry's per-pass counter (offset 7), and while that stays under 16
    AND the entry's visibility-grid cursor hasn't hit an end-of-chain
    nibble, it steps the entry ONE ROW forward -- the tile-data cursor by
@@ -45174,7 +45176,7 @@ char param_3;
    carried in g_dat0023aee0_realptr / _realptr2 on this 64-bit port; the
    original's byte-packed writes are kept as harmless dead state. Verified
    against the 0x5c70c disasm. */
-undefined4 reactions_should_merge(param_1,param_2)
+undefined4 reaction_advance_row(param_1,param_2)
 byte * param_1;
 byte * param_2;
 
@@ -45473,7 +45475,7 @@ undefined1 ** param_2;
       DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, iVar10 / 0x15);
   g_dat0023aee0_realptr2[REACTION_SCRATCH_IDX] =
       DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, iVar10 / 0x15);
-  iVar3 = reactions_should_merge(pcVar9,pbVar8);
+  iVar3 = reaction_advance_row(pcVar9,pbVar8);
   if (iVar3 == 0) {
 LAB_0005d064:
     bVar2 = *(byte *)*param_1;
@@ -45482,7 +45484,7 @@ LAB_0005d064:
     *pbVar8 = 0;
   }
   else {
-    /* reactions_should_merge returned "keep spreading". The walk below
+    /* reaction_advance_row returned "keep spreading". The walk below
        operates on acStack_28 (the stack copy) and marks tiles via
        compute_reaction_offset; its side-table pointers live in the
        scratch slot seeded just above. */

@@ -1301,7 +1301,7 @@ void seed_visibility_queue();
 void reaction_advance_tile();
 void reaction_retreat_tile();
 undefined4 compute_reaction_offset();
-undefined4 reactions_should_merge();
+undefined4 reaction_advance_row();
 void process_reaction_entry();
 void merge_adjacent_reactions();
 void process_reaction_queue();
