@@ -555,8 +555,13 @@ static undefined DAT_000bc038_backing[32768];
 #define DAT_000bc039 DAT_000bc038_backing[1]
 #define DAT_000bc03a DAT_000bc038_backing[2]
 #define DAT_000bc03b DAT_000bc038_backing[3]
-static undefined DAT_000bc044_backing[32768];
-#define DAT_000bc044 DAT_000bc044_backing[0]
+/* 0xbc044 is 0xc bytes into the same record as 0xbc038 -- FUN_0001f370
+   writes each clipped vertex's Z here and render_visible_tile_list reads
+   it back as piVar14[3] / piVar14[iVar17+0xc]. It was a SEPARATE 32KB
+   array (0x8000 bytes away from DAT_000bc038_backing), so the Z never
+   reached render -> every tile's 1/z divide hit 0 -> everything drew at
+   the viewport centre. */
+#define DAT_000bc044 DAT_000bc038_backing[0xc]
 #define DAT_000bc07c DAT_000bc038_backing[0x44]
 #define DAT_000bc07d DAT_000bc038_backing[0x45]
 #define DAT_000bc07e DAT_000bc038_backing[0x46]
@@ -2089,7 +2094,19 @@ undefined4 LAB_0003d8e4()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-static undefined1 DAT_00085d20_backing[65536];
+/* Recovered from UU.exe .data at 0x85d20: tile-floor-height -> world Z
+   table, `height_nibble * 64` for nibbles 0..13 (then 0,0,1024).
+   `*(short *)(&DAT_00085d20 + nibble*2)`. Was all-zero, so the player's
+   world Z (DAT_00204884, set from this table at uw.c ~26936) stayed 0
+   -> the 3D camera sat at floor level + a 164-unit eye offset while the
+   tile geometry's Y is `height*64` (~768 for a mid-level floor), so
+   every floor projected far above the viewport. Also used by
+   process_visible_tile_cell's height cull. */
+static undefined1 DAT_00085d20_backing[65536] = {
+  0x00,0x00, 0x40,0x00, 0x80,0x00, 0xc0,0x00, 0x00,0x01, 0x40,0x01,
+  0x80,0x01, 0xc0,0x01, 0x00,0x02, 0x40,0x02, 0x80,0x02, 0xc0,0x02,
+  0x00,0x03, 0x40,0x03, 0x00,0x00, 0x00,0x00, 0x00,0x04, 0x00,0x00,
+};
 #define DAT_00085d20 DAT_00085d20_backing[0]
 short DAT_00202088;
 short DAT_0023bf48;
@@ -12102,7 +12119,7 @@ int param_2;
                   puVar15[6] = (char)((uint)uVar10 >> 0x10);
                   puVar15[7] = (char)((uint)uVar10 >> 0x18);
                   uVar10 = *(undefined4 *)(iVar5 + 0x300c);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c));
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
                   uVar9 = Ordinal_2026(uVar9,uVar11);
                   uVar10 = Ordinal_2051(uVar9,uVar10);
                   puVar15[8] = (char)uVar10;
@@ -12177,13 +12194,13 @@ int param_2;
                 }
               }
               else {
-                iVar6 = Ordinal_2038();
+                iVar6 = Ordinal_2038(uVar11,DAT_00084608); /* dropped args: is vert1 in front of the near plane? */
                 if (iVar6 == 0) {
                   uVar9 = Ordinal_2015(DAT_00084608,uVar10);
                   uVar10 = Ordinal_2015(uVar11,uVar10);
                   uVar11 = Ordinal_2047(uVar9,uVar10);
                   uVar10 = *(undefined4 *)(iVar5 + 0x3008);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x3008));
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x3008),uVar10); /* dropped 2nd arg (vert0 ref coord) */
                   uVar9 = Ordinal_2026(uVar9,uVar11);
                   uVar10 = Ordinal_2051(uVar9,uVar10);
                   puVar15[4] = (char)uVar10;
@@ -12191,7 +12208,7 @@ int param_2;
                   puVar15[6] = (char)((uint)uVar10 >> 0x10);
                   puVar15[7] = (char)((uint)uVar10 >> 0x18);
                   uVar10 = *(undefined4 *)(iVar5 + 0x300c);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c));
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
                   uVar9 = Ordinal_2026(uVar9,uVar11);
                   uVar10 = Ordinal_2051(uVar9,uVar10);
                   puVar15[8] = (char)uVar10;
