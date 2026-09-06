@@ -2369,6 +2369,17 @@ static undefined1 DAT_00202750_backing[256];
 #define DAT_00202750 DAT_00202750_backing[0]
 char *DAT_00202890;
 char *DAT_0020289c;
+/* Real-pointer side table for the keybinding records' handler field. Each
+   DAT_0020289c record packs its handler as 4 raw bytes (offset 8-0xb) --
+   fine on the original 32-bit target, a truncated / uncallable pointer on
+   this 64-bit host. register_key_binding writes the real 64-bit handler here
+   keyed by record position (== registration order, and also 0xffff minus
+   the record's own id byte); dispatch_key_binding calls it from here; unregister_key_binding
+   keeps it in sync when it compacts the table. Nothing ever matched a
+   keybinding before (the mode gate was reading the wrong byte -- see
+   set_game_mode), so the truncated call had simply never been reached. */
+static void (*g_keybind_handler[512])(int);
+static int g_keybind_handler_n;
 undefined2 DAT_00202898;
 undefined2 DAT_0020288c;
 undefined2 DAT_00202894;
@@ -6816,14 +6827,14 @@ void enter_automap_screen()
 
 {
   if (DAT_000bbefc == 0) {
-    FUN_0004213c(0x1b,1,2,change_game_mode);
+    register_key_binding(0x1b,1,2,change_game_mode);
     DAT_000bbefc = 1;
   }
   FUN_000735b0(0xd);
   FUN_00073634();
   FUN_00016434(0,(int)DAT_00201b68);
   draw_automap_screen((int)DAT_00201b68);
-  DAT_000b99c0 = FUN_0004202c(0,200,0x13f,1,0,2,FUN_00016ef8);
+  DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,FUN_00016ef8);
   FUN_00057788(0,199,0x13f,0);
   FUN_00057118();
   FUN_00057c5c(0x1078);
@@ -6917,7 +6928,7 @@ void exit_automap_screen()
   undefined1 auStack_1c [16];
   
   FUN_00057118();
-  FUN_0004221c((int)DAT_000b99c0);
+  unregister_key_binding((int)DAT_000b99c0);
   FUN_00057cac(0);
   FUN_00017768((int)DAT_000ba9d0);
   if ((DAT_000ba9d0 != DAT_00201b68) &&
@@ -16794,7 +16805,7 @@ void FUN_00028ffc()
       FUN_0007f0e0();
       DAT_00250718 = 1;
     }
-    FUN_0004251c(DAT_00085a6c);
+    poll_input_bindings(DAT_00085a6c);
   }
   return;
 }
@@ -26065,7 +26076,7 @@ void FUN_0003b820()
   FUN_0007ea44(2);
   FUN_0007856c();
   FUN_00049960();
-  FUN_00041f34();
+  input_bindings_init();
   FUN_0007ea30();
   FUN_00077868(DAT_0023c540);
   FUN_00037d50();
@@ -26177,7 +26188,7 @@ void FUN_0003baf4()
   char acStack_108 [260];
   
   thunk_FUN_00057118();
-  FUN_00041fe4();
+  input_bindings_free();
   FUN_0007eb34();
   FUN_000499a4();
   thunk_FUN_0006edb8();
@@ -26215,13 +26226,14 @@ void FUN_0003bb60()
 void FUN_0003bb84()
 
 {
-  FUN_0004213c(0x278,0,0xbd,FUN_0003bc08);
+  register_key_binding(0x278,0,0xbd,FUN_0003bc08);
   DAT_00201b6c = 1;
   DAT_00201c84 = 0x7fff;
   DAT_00201b60 = 0;
   DAT_00201b64 = 0xffff;
   *(undefined1 *)(DAT_00085a6c + 8) = 0;
   *(undefined1 *)(DAT_00085a6c + 9) = 0;
+  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
   return;
 }
 
@@ -26254,6 +26266,19 @@ undefined4 param_1;
 {
   *(char *)(DAT_00085a6c + 8) = (char)param_1;
   *(char *)(DAT_00085a6c + 9) = (char)((uint)param_1 >> 8);
+  /* The real game mode lives at BYTE offset 8 of the DAT_00085a6c struct
+     (== DAT_00085a6c[4] with its `short *` typing) -- that is what the
+     0x3bc40 disasm writes (`strb [buf,#8]` / `[buf,#9]`) and what the
+     keybinding dispatcher dispatch_key_binding reads (`ldrb [state,#8]`). Ghidra
+     typed DAT_00085a6c as `short *`, so the two `*(char *)(DAT_00085a6c +
+     8/9)` writes just above actually land at byte 16/18, and every
+     `*(short *)(DAT_00085a6c + 8) == N` mode check elsewhere reads byte
+     16 too -- self-consistent, so mode transitions still "work", but
+     dispatch_key_binding's byte-8 read then always saw 0, so NO keybinding's
+     mode mask ever matched and every table-dispatched key (the W/S/X/A/D
+     movement keys, ...) was dead. Mirror the mode to byte 8 as well so
+     the dispatcher sees it, without disturbing the byte-16 readers. */
+  DAT_00085a6c[4] = (short)param_1;
   DAT_00201b60 = (short)param_1;
   if ((short)DAT_00201b60 != 1) {
     if ((short)DAT_00201b60 == 2) {
@@ -26420,6 +26445,7 @@ short param_1;
   (**(code **)(&DAT_000856a4 + DAT_00201b64 * 0x80))();
   *(undefined1 *)(DAT_00085a6c + 8) = 0;
   *(undefined1 *)(DAT_00085a6c + 9) = 0;
+  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
   sVar1 = DAT_00201b64;
   DAT_00201b60 = 0;
   DAT_00201b64 = 0xffff;
@@ -26764,7 +26790,9 @@ LAB_0003c780:
 
 
 
-undefined4 FUN_0003c7f4(param_1)
+// was FUN_0003c7f4 -- translate a W/S/X/A/D direction arg (-2..2) into
+// movement-engine target state (heading-relative goal position/heading).
+undefined4 begin_directional_move(param_1)
 short param_1;
 
 {
@@ -27581,12 +27609,12 @@ void FUN_0003e2a4()
 
 {
   DAT_000868d8 = 0;
-  DAT_00202090 = FUN_0004202c(8,0x74,0x20,0xfffffffa,0xffff,1,FUN_0003faa0);
-  DAT_00202090 = FUN_0004202c(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
-  DAT_002020c8 = FUN_0004202c(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
-  DAT_002020bc = FUN_0004202c(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
-  DAT_0020209c = FUN_0004202c(0x7a,0x97,0x98,0x88,0,1,FUN_0003df28);
-  DAT_002020b4 = FUN_0004202c(0xf4,0x9c,0x135,0x78,0,1,FUN_0003e0b4);
+  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,1,FUN_0003faa0);
+  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
+  DAT_002020c8 = register_click_region(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
+  DAT_002020bc = register_click_region(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
+  DAT_0020209c = register_click_region(0x7a,0x97,0x98,0x88,0,1,FUN_0003df28);
+  DAT_002020b4 = register_click_region(0xf4,0x9c,0x135,0x78,0,1,FUN_0003e0b4);
   return;
 }
 
@@ -27595,10 +27623,10 @@ void FUN_0003e2a4()
 void FUN_0003e404()
 
 {
-  FUN_0004221c((int)DAT_002020c8);
-  FUN_0004221c((int)DAT_002020bc);
-  FUN_0004221c((int)DAT_002020b4);
-  FUN_0004221c((int)DAT_0020209c);
+  unregister_key_binding((int)DAT_002020c8);
+  unregister_key_binding((int)DAT_002020bc);
+  unregister_key_binding((int)DAT_002020b4);
+  unregister_key_binding((int)DAT_0020209c);
   return;
 }
 
@@ -30035,7 +30063,8 @@ undefined4 param_1;
 
 
 
-void FUN_00041f34()
+// was FUN_00041f34 -- allocate/reset the keybinding + click-region tables.
+void input_bindings_init()
 
 {
   DAT_00202890 = Ordinal_1041(0x12);
@@ -30045,6 +30074,7 @@ void FUN_00041f34()
   }
   DAT_00202898 = 0;
   DAT_0020288c = 0;
+  g_keybind_handler_n = 0;   /* keybind table reset -- drop the real-handler side table too */
   DAT_00202894 = 1;
   DAT_00085a70 = 0xffff;
   *(undefined1 *)(DAT_00085a6c + 6) = 0;
@@ -30054,7 +30084,8 @@ void FUN_00041f34()
 
 
 
-void FUN_00041fe4()
+// was FUN_00041fe4 -- free the keybinding + click-region tables.
+void input_bindings_free()
 
 {
   if (DAT_00085a70 != -0x29a) {
@@ -30067,7 +30098,8 @@ void FUN_00041fe4()
 
 
 
-int FUN_0004202c(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+// was FUN_0004202c -- append a mouse click-region record to DAT_00202890.
+int register_click_region(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -30121,11 +30153,16 @@ undefined4 param_7;
 
 
 
-int FUN_0004213c(param_1,param_2,param_3,param_4)
+// was FUN_0004213c -- append a (keycode, arg, mode-mask, handler) record
+// to the DAT_0020289c keybinding table.
+int register_key_binding(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
-undefined4 param_4;
+void *param_4;   /* was undefined4 -- the handler function pointer; 32-bit
+                    truncated every real 64-bit callee address at the call
+                    site (move_key_directional_step etc.), so the side-table entry was
+                    an uncallable low-32-bits value. */
 
 {
   short sVar1;
@@ -30135,7 +30172,7 @@ undefined4 param_4;
 
   iVar2 = (int)DAT_0020288c;
   DAT_0020288c = (short)(iVar2 + 1);
-  /* See FUN_0004202c's identical fix -- Ordinal_1054 (realloc-shaped)
+  /* See register_click_region's identical fix -- Ordinal_1054 (realloc-shaped)
      returns a real pointer, iVar2 was truncating it. */
   pvVar4 = Ordinal_1054(DAT_0020289c,((iVar2 + 1) * 0x10000 >> 0x10) * 0xc);
   if (pvVar4 == 0) {
@@ -30144,17 +30181,22 @@ undefined4 param_4;
   sVar1 = DAT_00085a70;
   iVar3 = (char *)((char *)pvVar4 + DAT_0020288c * 0xc);
   DAT_0020289c = pvVar4;
+  /* real 64-bit handler, indexed by record position (iVar2 == old count) */
+  if ((uint)iVar2 < 512) {
+    g_keybind_handler[iVar2] = (void (*)(int))param_4;
+    if (iVar2 + 1 > g_keybind_handler_n) g_keybind_handler_n = iVar2 + 1;
+  }
   *(undefined1 *)(iVar3 + -0xc) = (char)DAT_00085a70;
   *(char *)(iVar3 + -0xb) = (char)((ushort)sVar1 >> 8);
   DAT_00085a70 = DAT_00085a70 + -1;
   *(char *)(iVar3 + -7) = (char)((uint)param_2 >> 8);
   *(char *)(iVar3 + -5) = (char)((uint)param_3 >> 8);
-  *(char *)(iVar3 + -3) = (char)((uint)param_4 >> 8);
+  *(char *)(iVar3 + -3) = (char)((uintptr_t)param_4 >> 8);
   *(char *)(iVar3 + -8) = (char)param_2;
-  *(char *)(iVar3 + -2) = (char)((uint)param_4 >> 0x10);
+  *(char *)(iVar3 + -2) = (char)((uintptr_t)param_4 >> 0x10);
   *(char *)(iVar3 + -6) = (char)param_3;
-  *(char *)(iVar3 + -4) = (char)param_4;
-  *(char *)(iVar3 + -1) = (char)((uint)param_4 >> 0x18);
+  *(char *)(iVar3 + -4) = (char)(uintptr_t)param_4;
+  *(char *)(iVar3 + -1) = (char)((uintptr_t)param_4 >> 0x18);
   *(char *)(iVar3 + -9) = (char)((uint)param_1 >> 8);
   *(char *)(iVar3 + -10) = (char)param_1;
   return (int)CONCAT11(*(undefined1 *)(iVar3 + -0xb),*(undefined1 *)(iVar3 + -0xc));
@@ -30162,7 +30204,9 @@ undefined4 param_4;
 
 
 
-void FUN_0004221c(param_1)
+// was FUN_0004221c -- remove a keybinding (and its mouse-region sibling)
+// by record id, compacting the table.
+void unregister_key_binding(param_1)
 short param_1;
 
 {
@@ -30201,6 +30245,13 @@ short param_1;
       return;
     }
     if (sVar6 < iVar5) {
+      /* the byte copy below moves the LAST record over the removed one;
+         mirror that move in the real-handler side table (found 0-based =
+         sVar6-1, last 0-based = iVar5-1, before iVar5 is reused as the
+         copy counter). */
+      if ((uint)(sVar6 - 1) < 512 && (uint)(iVar5 - 1) < 512) {
+        g_keybind_handler[sVar6 - 1] = g_keybind_handler[iVar5 - 1];
+      }
       iVar10 = 0xc;
       psVar8 = DAT_0020289c + iVar5 * 6 + -6;
       do {
@@ -30212,6 +30263,7 @@ short param_1;
         psVar7 = (short *)((char *)psVar7 + 1);
       } while (iVar5 != 0 && bVar1);
     }
+    if (g_keybind_handler_n > 0) g_keybind_handler_n--;
     sVar6 = DAT_0020288c;
     if (DAT_0020288c < 2) goto LAB_00042510;
     DAT_0020288c = (short)((uint)((DAT_0020288c + -1) * 0x10000) >> 0x10);
@@ -30288,16 +30340,18 @@ LAB_00042510:
 
 
 
-void FUN_0004251c(param_1)
+// was FUN_0004251c -- per-frame input pump: read the pending input code,
+// dispatch a mouse button to a click region or a key to a keybinding.
+void poll_input_bindings(param_1)
 undefined1 * param_1;
 
 {
   undefined4 uVar1;
   /* Was `int`, truncating the real DAT_00202890 pointer arithmetic result
      below -- same pointer-truncation pattern already fixed in this
-     function's own sibling FUN_00042758 (see its comment): DAT_00202890
+     function's own sibling dispatch_key_binding (see its comment): DAT_00202890
      is a genuine malloc'd 64-bit pointer (registered mouse-click-region
-     records, FUN_0004202c's array), and this variable held one record's
+     records, register_click_region's array), and this variable held one record's
      address, not a plain offset. Confirmed crashing (EXC_BAD_ACCESS) the
      first time this function's match-loop ever actually ran on this
      recompile -- FUN_0003f420 (the 3D-viewport's own click-and-hold-to-
@@ -30347,7 +30401,7 @@ undefined1 * param_1;
     else {
       param_1[4] = 0;
       param_1[5] = 0;
-      FUN_00042758(param_1,uVar1);
+      dispatch_key_binding(param_1,uVar1);
     }
   }
   return;
@@ -30355,8 +30409,10 @@ undefined1 * param_1;
 
 
 
-void FUN_00042758(param_1,param_2)
-/* Was `int`, truncating the real pointer FUN_0004251c passes through
+// was FUN_00042758 -- look up a pressed key in the DAT_0020289c table
+// (keycode + mode-mask match) and invoke its handler.
+void dispatch_key_binding(param_1,param_2)
+/* Was `int`, truncating the real pointer poll_input_bindings passes through
    (its own param_1, e.g. DAT_00085a6c). */
 char *param_1;
 short param_2;
@@ -30375,10 +30431,10 @@ short param_2;
     do {
       pcVar1 = iVar2 * 0xc + DAT_0020289c;
       if (((*(short *)(pcVar1 + 2) == param_2) &&
-          ((*(ushort *)(pcVar1 + 6) & *(ushort *)(param_1 + 8)) != 0)) && (*(int *)(pcVar1 + 8) != 0))
+          ((*(ushort *)(pcVar1 + 6) & *(ushort *)(param_1 + 8)) != 0)) &&
+          (((uint)iVar2 < 512 && g_keybind_handler[iVar2] != 0)))
       {
-        pcVar1 = (short)iVar2 * 0xc + DAT_0020289c;
-        (**(code **)(pcVar1 + 8))((int)*(short *)(pcVar1 + 4));
+        g_keybind_handler[iVar2]((int)*(short *)(pcVar1 + 4));
         return;
       }
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
@@ -32613,7 +32669,7 @@ LAB_000464c8:
     } while (iVar5 < 0x17);
     capture_framebuffer_rect_to_grtile(DAT_002028ec,0xec,0x51,0x54,0x29);
     capture_framebuffer_rect_to_grtile(DAT_002028e8,299,0x3b,0x10,10);
-    DAT_00202998 = FUN_0004202c(0xf0,0x76,0x13b,0xb,0,5,FUN_0003f95c);
+    DAT_00202998 = register_click_region(0xf0,0x76,0x13b,0xb,0,5,FUN_0003f95c);
   }
   return;
 }
@@ -34337,7 +34393,7 @@ void main_loop_hud_flush()
   if (DAT_00201c84 != 0) {
     FUN_00049818();
   }
-  FUN_0004251c(DAT_00085a6c);
+  poll_input_bindings(DAT_00085a6c);
   flush_dirty_rect_to_display(1);
   return;
 }
@@ -38663,6 +38719,20 @@ uint param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+/* Recovered from UU.exe .data at 0x86878 (28 real bytes, then the
+   "\DATA\comobj.dat" string literal). FUN_00050d78's four
+   `*(char *)(bVarNN + 0x86878)` derefs are a bare hardcoded original-
+   32-bit address -- unmapped on this port, so a keyboard forward step
+   (the first thing that ever reached this animated-shade recompute for
+   a moving wall) faulted here. The index bytes bVar11..bVar14 stay
+   small in practice; pad to 256 with 0 so a wrapped byte reads a
+   defined 0 instead of the string bytes the original would have hit. */
+static const signed char DAT_00086878_arr[256] = {
+  -0x41,-0x40,-0x3f,-1, 0,1,0x3f,0x40, 0x41,0,0,0, 1,-1,-1,1,
+  5,4,3,6, 9,2,7,0, 1,0,0,0,
+};
+#define DAT_00086878_IDX(b) DAT_00086878_arr[(unsigned char)(b)]
+
 void FUN_00050d78(param_1)
 uint param_1;
 
@@ -38748,25 +38818,25 @@ uint param_1;
     DAT_00202c07 = bVar14;
     DAT_00202c09 = DAT_00202c04;
     if (*(short *)(&DAT_00202c70 + (uint)bVar11 * 2) == 0x1111) {
-      uVar3 = _DAT_00202c34[*(char *)(bVar11 + 0x86878) * 2];
+      uVar3 = _DAT_00202c34[DAT_00086878_IDX(bVar11) * 2];
       *(ushort *)(&DAT_00202c70 + (uint)bVar11 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar12 * 2) == 0x1111) {
-      uVar3 = puVar2[*(char *)(bVar12 + 0x86878) * 2];
+      uVar3 = puVar2[DAT_00086878_IDX(bVar12) * 2];
       *(ushort *)(&DAT_00202c70 + (uint)bVar12 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar13 * 2) == 0x1111) {
-      uVar3 = puVar2[*(char *)(bVar13 + 0x86878) * 2];
+      uVar3 = puVar2[DAT_00086878_IDX(bVar13) * 2];
       *(ushort *)(&DAT_00202c70 + (uint)bVar13 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar14 * 2) == 0x1111) {
-      uVar3 = puVar2[*(char *)(bVar14 + 0x86878) * 2];
+      uVar3 = puVar2[DAT_00086878_IDX(bVar14) * 2];
       *(ushort *)(&DAT_00202c70 + (uint)bVar14 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
@@ -39046,7 +39116,11 @@ int param_2;
   int iVar2;
   ushort uVar3;
   byte bVar4;
-  int iVar5;
+  intptr_t iVar5;  /* was int -- holds the void* FUN_00068100 returns (a
+                      real 64-bit tile-array pointer); truncated to 32
+                      bits it made `*(ushort *)(iVar5 + ...)` a wild
+                      deref -- the crash the first time a keyboard
+                      forward step actually dispatched. */
   ushort *puVar6;
   ushort *puVar7;
   short sVar8;
@@ -39136,9 +39210,16 @@ int param_2;
                 FUN_00051658(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
               }
             }
-            iVar10 = resolve_object_link(puVar6);
+            /* was `iVar10 = resolve_object_link(...); puVar6 = (ushort
+               *)(iVar10 + 4);` -- iVar10 is `int`, truncating the real
+               64-bit object-record pointer resolve_object_link returns,
+               so the very next `*puVar6` was a wild deref (the second
+               crash a keyboard forward step hits). Keep the pointer in
+               its own width; iVar10 is reset to the loop counter right
+               after anyway. */
+            { intptr_t _objp = (intptr_t)resolve_object_link(puVar6);
+              puVar6 = (ushort *)(_objp + 4); }
             iVar2 = (sVar8 + 1) * 0x10000;
-            puVar6 = (ushort *)(iVar10 + 4);
             iVar10 = iVar2 >> 0x10;
             sVar8 = (short)((uint)iVar2 >> 0x10);
             pbVar13 = DAT_00202c6c;
@@ -50040,6 +50121,18 @@ void FUN_00066e90()
   DAT_00201c70 = 0;
   DAT_0023beb4 = 0;
   DAT_0023beb8 = 0;
+  /* Command-input mode. When set, handle_keyboard_message folds a WM_CHAR
+     letter to its uppercase code before dropping it in DAT_0023c448, so
+     the movement key bindings registered just below (W/S/X/A/D = VK
+     codes 0x57/0x53/0x58/0x41/0x44) actually match a keypress, and the
+     main loop ramps the hold-acceleration counter faster. It is a
+     link-time-initialised flag whose real setup Ghidra dropped (same
+     silently-zero class as DAT_00086e68 / DAT_0008589c etc.): left at 0
+     the keyboard movement keys were dead. Toggled off again by the
+     Caps-Lock key (VK 0x14) in handle_keyboard_message; text-entry
+     screens that need raw lowercase (chargen name entry) run before this
+     function. */
+  DAT_0024af60 = 1;
   DAT_00201b68 = 1;
   DAT_002048a7 = 8;
   DAT_002048a3 = 1;
@@ -50058,75 +50151,81 @@ void FUN_00066e90()
   if (DAT_00201c74 == 0) {
     DAT_00201c74 = FUN_0007873c(DAT_00086df8,0x7d);
   }
-  FUN_0004213c(0x3f,0xe,1,FUN_000682f0);
-  FUN_0004213c(0x8d,5,1,FUN_000682f0);
-  FUN_0004213c(0x8f,3,1,FUN_000682f0);
-  FUN_0004213c(0x91,4,1,FUN_000682f0);
-  FUN_0004213c(0x3f,0xe,1,FUN_000682f0);
-  FUN_0004213c(0x8d,5,1,FUN_000682f0);
-  FUN_0004213c(0x8f,3,1,FUN_000682f0);
-  FUN_0004213c(0x91,4,1,FUN_000682f0);
-  FUN_0004213c(0x7a,9,1,FUN_000682f0);
-  FUN_0004213c(99,10,1,FUN_000682f0);
-  FUN_0004213c(0x93,8,1,FUN_000682f0);
-  FUN_0004213c(0x6c,0xc,0x1b,FUN_000682f0);
-  FUN_0004213c(0x6b,0xd,0x1b,FUN_000682f0);
-  FUN_0004213c(0x41,0xffffffff,1,FUN_00068884);
-  FUN_0004213c(0x44,1,1,FUN_00068884);
-  FUN_0004213c(0x53,0,1,FUN_00068884);
-  FUN_0004213c(0x58,0xfffffffe,1,FUN_00068884);
-  FUN_0004213c(0x57,2,1,FUN_00068884);
-  FUN_0004202c(0x6b,0xa7,0x7b,0x99,0xffff,1,FUN_00068884);
-  FUN_0004202c(0x82,0xa9,0x92,0x9c,0,1,FUN_00068884);
-  FUN_0004202c(0x9b,0xa7,0xaa,0x99,1,1,FUN_00068884);
-  FUN_0004213c(0x33,1,0x11,&LAB_000680d0);
-  FUN_0004213c(0x31,0xffffffff,0x11,&LAB_000680d0);
-  FUN_0004213c(0x32,0,0x11,&LAB_000680d0);
-  FUN_0004213c(0x6a,7,0x1b,FUN_000682f0);
-  FUN_0004213c(0x4a,6,0x1b,FUN_000682f0);
-  FUN_0004213c(0x86,0,0x1b,FUN_0003def4);
-  FUN_0004213c(0x89,0,0x1b,&LAB_00071ac4);
-  FUN_0004213c(0x88,2,0x1b,&LAB_0007036c);
-  FUN_0004213c(0x87,1,0x1b,FUN_00044d14);
-  FUN_0004213c(0x173,0x173,1,FUN_00056ebc);
-  FUN_0004213c(0x172,0x172,1,FUN_00056ebc);
-  FUN_0004213c(0x16d,0x16d,1,FUN_00056ebc);
-  FUN_0004213c(0x166,0x166,1,FUN_00056ebc);
-  FUN_0004213c(0x164,0x164,1,FUN_00056ebc);
-  FUN_0004213c(0x171,0x171,1,FUN_00056ebc);
-  FUN_0004213c(0x80,5,1,FUN_0003faa0);
-  FUN_0004213c(0x81,4,1,FUN_0003faa0);
-  FUN_0004213c(0x82,3,1,FUN_0003faa0);
-  FUN_0004213c(0x83,2,1,FUN_0003faa0);
-  FUN_0004213c(0x83,2,4,FUN_0003faa0);
-  FUN_0004213c(0x84,1,1,FUN_0003faa0);
-  FUN_0004213c(0x85,0,1,FUN_0003faa0);
-  FUN_0004213c(0x70,9,1,FUN_00027708);
-  FUN_0004213c(0x2e,3,1,FUN_00027708);
-  FUN_0004213c(0x3b,6,1,FUN_00027708);
-  FUN_0004213c(0x4a3,0x4a3,7,FUN_00058734);
-  FUN_0004213c(9,9,7,FUN_00058734);
-  FUN_0004213c(0x8d,0x8d,7,FUN_00058734);
-  FUN_0004213c(0x93,0x93,7,FUN_00058734);
-  FUN_0004213c(0x8f,0x8f,7,FUN_00058734);
-  FUN_0004213c(0x91,0x91,7,FUN_00058734);
-  FUN_0004213c(0x8c,0x8c,7,FUN_00058734);
-  FUN_0004213c(0x8e,0x8e,7,FUN_00058734);
-  FUN_0004213c(0x92,0x92,7,FUN_00058734);
-  FUN_0004213c(0x94,0x94,7,FUN_00058734);
-  FUN_0004213c(0x95,0x95,7,FUN_00058734);
-  FUN_0004213c(0x96,0x96,7,FUN_00058734);
-  FUN_0004213c(0x1b,4,4,&DAT_00028bfc);
-  FUN_0004213c(0x31,1,4,FUN_000295b4);
-  FUN_0004213c(0x32,2,4,FUN_000295b4);
-  FUN_0004213c(0x33,3,4,FUN_000295b4);
-  FUN_0004213c(0x34,4,4,FUN_000295b4);
-  FUN_0004202c(0x52,0x30,0x88,10,4,4,FUN_0001baa0);
-  FUN_0004202c(0x8b,0x30,0xc1,10,4,4,FUN_0001b89c);
-  FUN_0004202c(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
-  FUN_0004202c(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
-  FUN_0004213c(0x286,0,0x1b,FUN_000679f4);
-  FUN_0004213c(0x30,0,0x1b,FUN_00067950);
+  register_key_binding(0x3f,0xe,1,move_command_dispatch);
+  register_key_binding(0x8d,5,1,move_command_dispatch);
+  register_key_binding(0x8f,3,1,move_command_dispatch);
+  register_key_binding(0x91,4,1,move_command_dispatch);
+  register_key_binding(0x3f,0xe,1,move_command_dispatch);
+  register_key_binding(0x8d,5,1,move_command_dispatch);
+  register_key_binding(0x8f,3,1,move_command_dispatch);
+  register_key_binding(0x91,4,1,move_command_dispatch);
+  /* Z / C strafe: the original registered these as raw lowercase ascii
+     (0x7a 'z', 0x63 'c'), but every other letter movement key here uses
+     the uppercase VK code (W=0x57 ...) and handle_keyboard_message
+     upper-cases letters in command mode -- so as shipped the lowercase
+     entries could never match. Use the uppercase VK codes (VK_Z 0x5a,
+     VK_C 0x43) for consistency with W/S/X/A/D. */
+  register_key_binding(0x5a,9,1,move_command_dispatch);
+  register_key_binding(0x43,10,1,move_command_dispatch);
+  register_key_binding(0x93,8,1,move_command_dispatch);
+  register_key_binding(0x6c,0xc,0x1b,move_command_dispatch);
+  register_key_binding(0x6b,0xd,0x1b,move_command_dispatch);
+  register_key_binding(0x41,0xffffffff,1,move_key_directional_step);
+  register_key_binding(0x44,1,1,move_key_directional_step);
+  register_key_binding(0x53,0,1,move_key_directional_step);
+  register_key_binding(0x58,0xfffffffe,1,move_key_directional_step);
+  register_key_binding(0x57,2,1,move_key_directional_step);
+  register_click_region(0x6b,0xa7,0x7b,0x99,0xffff,1,move_key_directional_step);
+  register_click_region(0x82,0xa9,0x92,0x9c,0,1,move_key_directional_step);
+  register_click_region(0x9b,0xa7,0xaa,0x99,1,1,move_key_directional_step);
+  register_key_binding(0x33,1,0x11,&LAB_000680d0);
+  register_key_binding(0x31,0xffffffff,0x11,&LAB_000680d0);
+  register_key_binding(0x32,0,0x11,&LAB_000680d0);
+  register_key_binding(0x6a,7,0x1b,move_command_dispatch);
+  register_key_binding(0x4a,6,0x1b,move_command_dispatch);
+  register_key_binding(0x86,0,0x1b,FUN_0003def4);
+  register_key_binding(0x89,0,0x1b,&LAB_00071ac4);
+  register_key_binding(0x88,2,0x1b,&LAB_0007036c);
+  register_key_binding(0x87,1,0x1b,FUN_00044d14);
+  register_key_binding(0x173,0x173,1,FUN_00056ebc);
+  register_key_binding(0x172,0x172,1,FUN_00056ebc);
+  register_key_binding(0x16d,0x16d,1,FUN_00056ebc);
+  register_key_binding(0x166,0x166,1,FUN_00056ebc);
+  register_key_binding(0x164,0x164,1,FUN_00056ebc);
+  register_key_binding(0x171,0x171,1,FUN_00056ebc);
+  register_key_binding(0x80,5,1,FUN_0003faa0);
+  register_key_binding(0x81,4,1,FUN_0003faa0);
+  register_key_binding(0x82,3,1,FUN_0003faa0);
+  register_key_binding(0x83,2,1,FUN_0003faa0);
+  register_key_binding(0x83,2,4,FUN_0003faa0);
+  register_key_binding(0x84,1,1,FUN_0003faa0);
+  register_key_binding(0x85,0,1,FUN_0003faa0);
+  register_key_binding(0x70,9,1,FUN_00027708);
+  register_key_binding(0x2e,3,1,FUN_00027708);
+  register_key_binding(0x3b,6,1,FUN_00027708);
+  register_key_binding(0x4a3,0x4a3,7,FUN_00058734);
+  register_key_binding(9,9,7,FUN_00058734);
+  register_key_binding(0x8d,0x8d,7,FUN_00058734);
+  register_key_binding(0x93,0x93,7,FUN_00058734);
+  register_key_binding(0x8f,0x8f,7,FUN_00058734);
+  register_key_binding(0x91,0x91,7,FUN_00058734);
+  register_key_binding(0x8c,0x8c,7,FUN_00058734);
+  register_key_binding(0x8e,0x8e,7,FUN_00058734);
+  register_key_binding(0x92,0x92,7,FUN_00058734);
+  register_key_binding(0x94,0x94,7,FUN_00058734);
+  register_key_binding(0x95,0x95,7,FUN_00058734);
+  register_key_binding(0x96,0x96,7,FUN_00058734);
+  register_key_binding(0x1b,4,4,&DAT_00028bfc);
+  register_key_binding(0x31,1,4,FUN_000295b4);
+  register_key_binding(0x32,2,4,FUN_000295b4);
+  register_key_binding(0x33,3,4,FUN_000295b4);
+  register_key_binding(0x34,4,4,FUN_000295b4);
+  register_click_region(0x52,0x30,0x88,10,4,4,FUN_0001baa0);
+  register_click_region(0x8b,0x30,0xc1,10,4,4,FUN_0001b89c);
+  register_click_region(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
+  register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
+  register_key_binding(0x286,0,0x1b,FUN_000679f4);
+  register_key_binding(0x30,0,0x1b,FUN_00067950);
   return;
 }
 
@@ -50150,7 +50249,7 @@ int param_4;
   int iVar9;
   int iVar10;
   
-  FUN_0004221c((int)DAT_0023be8c);
+  unregister_key_binding((int)DAT_0023be8c);
   iVar9 = (param_2 - param_4) + 1;
   sVar2 = (short)param_1;
   iVar10 = param_1 + param_3 + -1;
@@ -50161,7 +50260,7 @@ int param_4;
   DAT_0023be5c = sVar2;
   DAT_0023be80 = sVar3;
   DAT_0023be88 = sVar5;
-  DAT_0023be8c = FUN_0004202c(param_1,param_2,iVar10,iVar9,0,0x1b,FUN_0003f420);
+  DAT_0023be8c = register_click_region(param_1,param_2,iVar10,iVar9,0,0x1b,FUN_0003f420);
   iVar6 = Ordinal_2005(0xf,sVar5 * 3);
   iVar6 = (sVar3 - iVar6) * 0x10000 >> 0x10;
   iVar7 = Ordinal_2005(0xf,sVar4 * 5);
@@ -50185,7 +50284,7 @@ int param_4;
 void FUN_000678e0()
 
 {
-  FUN_0004221c((int)DAT_0023be8c);
+  unregister_key_binding((int)DAT_0023be8c);
   DAT_0023be8c = 0;
   FUN_00057bb0((int)DAT_0023be6c);
   FUN_00057bb0((int)DAT_0023be68);
@@ -50517,7 +50616,7 @@ void FUN_00068260()
 
 {
   if (DAT_002020d8 == 0) {
-    FUN_000682f0(0xffffffff);
+    move_command_dispatch(0xffffffff);
     if (DAT_0023bf0c == '\0') {
       FUN_00057788((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
                    ((int)DAT_0023be80 - (int)DAT_0023be88) + 1);
@@ -50532,7 +50631,11 @@ void FUN_00068260()
 
 
 
-void FUN_000682f0(param_1)
+// was FUN_000682f0 -- discrete movement-command handler: keyboard Z/C
+// (strafe left/right), the 4 GAPI hardware buttons (0x8d/0x8f/0x91/0x93),
+// and the mouse click-and-hold walk (param_1 < 0). Routes via
+// decode_movement_command.
+void move_command_dispatch(param_1)
 short param_1;
 
 {
@@ -50742,7 +50845,10 @@ LAB_000687fc:
 
 
 
-void FUN_00068884(param_1)
+// was FUN_00068884 -- keyboard directional-move handler bound to W/S/X/A/D
+// (run-forward / walk-forward / walk-back / turn-left / turn-right); calls
+// begin_directional_move then movement_tick, then paces one held-key frame.
+void move_key_directional_step(param_1)
 undefined4 param_1;
 
 {
@@ -50751,7 +50857,7 @@ undefined4 param_1;
   ushort uVar3;
   
   iVar1 = FUN_0002294c();
-  iVar2 = FUN_0003c7f4(param_1);
+  iVar2 = begin_directional_move(param_1);
   if (iVar2 != 0) {
     DAT_0023bf54 = FUN_0002294c();
     DAT_0023bf58 = DAT_0023bf58 + 4;
@@ -55938,6 +56044,7 @@ void FUN_00071b94()
     FUN_00011000(0,200,0,0x140);
     *(undefined1 *)(DAT_00085a6c + 8) = 0;
     *(undefined1 *)(DAT_00085a6c + 9) = 0;
+  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
     DAT_000868d8 = 2;
     FUN_00037c14(1);
     FUN_00057118();
