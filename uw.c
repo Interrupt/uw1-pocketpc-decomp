@@ -6006,7 +6006,19 @@ LAB_00014684:
         puVar3 = auStack_7c;
         puVar5 = auStack_154;
       }
-      while ((local_70 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
+      /* Second-half (mid vertex -> bottom vertex) scanline walk. Ghidra
+         collapsed the original's private loop counter into the memory
+         reference `local_70` -- which IS the short edge auStack_7c's
+         remaining-scanline field (byte +0xc) -- AND kept an explicit
+         `local_70--`. raster_edge_step(auStack_7c) already decrements that
+         same field every iteration, so the counter was consumed twice per
+         scanline and the bottom half of every triangle drew only half its
+         rows. That was the diagonal white seam splitting each tile quad
+         (and the ceiling "wedge" gaps). Mirror the first-half loop above:
+         count down a private copy, let raster_edge_step own the edge
+         field. */
+      iVar2 = local_70;
+      while ((iVar2 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
         if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) &&
            (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)) {
           raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,
@@ -6014,7 +6026,7 @@ LAB_00014684:
         }
         raster_edge_step(auStack_7c);
         raster_edge_step(auStack_154);
-        local_70 = local_70 + -1;
+        iVar2 = iVar2 + -1;
       }
       return;
     }
