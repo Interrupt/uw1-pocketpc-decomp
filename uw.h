@@ -630,7 +630,7 @@ void FUN_0001e594();
 void FUN_0001e6f0();
 void FUN_0001e848();
 void FUN_0001ecb0();
-void FUN_0001f370();
+void near_clip_visible_tiles();
 void render_visible_tile_list();
 void FUN_00020a74();
 undefined4 FUN_000226e8();

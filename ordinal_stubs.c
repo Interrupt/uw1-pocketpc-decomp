@@ -801,7 +801,7 @@ static unsigned int ordfloat_float_to_bits(float f);
 
 /* Softfloat single-precision SUBTRACT: a - b (IEEE-754 bit patterns in,
    bit pattern out). Was a no-op stub, which zeroed every subtraction in
-   the 3D vertex-clip / projection math (FUN_0001f370 &c). Sibling of the
+   the 3D vertex-clip / projection math (near_clip_visible_tiles &c). Sibling of the
    already-real Ordinal_2026 (multiply) / Ordinal_2032 (int->float). */
 long Ordinal_2015(a, b)
 unsigned int a;
@@ -987,7 +987,7 @@ long Ordinal_2046()
 }
 
 /* Softfloat single-precision DIVIDE: a / b. Used for the near-plane
-   clip interpolation factor ((near - z0) / (z1 - z0)) in FUN_0001f370.
+   clip interpolation factor ((near - z0) / (z1 - z0)) in near_clip_visible_tiles.
    Was a no-op stub. */
 long Ordinal_2047(a, b)
 unsigned int a;
@@ -1005,7 +1005,7 @@ long Ordinal_2048()
 
 /* Softfloat single-precision ADD: a + b. The workhorse of the 3D
    matrix-multiply / vertex-transform math (FUN_0001e274, FUN_0001dfe8,
-   FUN_0001f370). Was a no-op stub -> every transformed vertex came out
+   near_clip_visible_tiles). Was a no-op stub -> every transformed vertex came out
    0 -> nothing to draw. */
 long Ordinal_2051(a, b)
 unsigned int a;

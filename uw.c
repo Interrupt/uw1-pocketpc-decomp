@@ -78,11 +78,11 @@ undefined *PTR_Ordinal_2032_00084010;
 undefined *PTR_Ordinal_2026_00084014;
 undefined *PTR_Ordinal_2020_00084018;
 /* Was a lone `undefined4` scalar, but FUN_0001dfe8/FUN_0001e274/
-   FUN_0001f370 (the vertex/geometry-transform pipeline feeding tile/sprite
+   near_clip_visible_tiles (the vertex/geometry-transform pipeline feeding tile/sprite
    rendering) all take `&DAT_000a85d0` as a base pointer into a large
    per-record transform-cache struct, reading/writing offsets up to
    ~0x4874 (~18.5KB) from it -- confirmed crashing (EXC_BAD_ACCESS) inside
-   FUN_0001f370 dereferencing that far out. Elsewhere in this file
+   near_clip_visible_tiles dereferencing that far out. Elsewhere in this file
    DAT_000a85d0 is also used as a plain scalar counter/index -- that's not
    a conflict, just the same address doing double duty at different times,
    same as other reused-scratch-memory globals already documented this
@@ -95,7 +95,7 @@ undefined *PTR_Ordinal_2020_00084018;
    64KB backing array plus ~80 lone scalars and a second 32KB array,
    each independently addressed -- so process_visible_tile_cell wrote
    the geometry records into the scalars while FUN_0001dfe8 /
-   FUN_0001e274 / FUN_0001f370 read them as `&DAT_000a85d0 + off`,
+   FUN_0001e274 / near_clip_visible_tiles read them as `&DAT_000a85d0 + off`,
    and the two never met (DAT_000c8c98 stayed 0). All the pieces are
    now byte offsets into the one DAT_000a85d0_backing array.
      +0x00      first-list (raw vertex) record count / cursor
@@ -106,7 +106,7 @@ undefined *PTR_Ordinal_2020_00084018;
 /* Real-pointer side channel for the per-visible-tile texture pointer.
    process_visible_tile_cell packs get_texture_page()'s result into a
    4-byte record field (DAT_000acdfc) -> truncated on 64-bit. We stash
-   the full pointer here keyed by the emit record index, FUN_0001f370
+   the full pointer here keyed by the emit record index, near_clip_visible_tiles
    carries it across to the render index, and render_visible_tile_list
    reads it instead of the truncated piVar14[0x1a]. */
 #define UW_MAX_VIS_TILES 2048
@@ -534,7 +534,7 @@ static undefined4 DAT_000c8ac0_mtx[16];
 int DAT_000c8c98;
 /* Recovered from UU.exe .data at 0x84608: the near-clip distance,
    float 5.0 (bit pattern 0x40a00000). render_visible_tile_list /
-   FUN_0001f370 pass it straight to the softfloat compare/subtract
+   near_clip_visible_tiles pass it straight to the softfloat compare/subtract
    ordinals as a float bit pattern. Was silently zero -> the near-plane
    clip and the 1/(z-near) perspective divide both degenerated. */
 undefined4 DAT_00084608 = 0x40a00000u;
@@ -555,7 +555,7 @@ static undefined DAT_000bc038_backing[32768];
 #define DAT_000bc039 DAT_000bc038_backing[1]
 #define DAT_000bc03a DAT_000bc038_backing[2]
 #define DAT_000bc03b DAT_000bc038_backing[3]
-/* 0xbc044 is 0xc bytes into the same record as 0xbc038 -- FUN_0001f370
+/* 0xbc044 is 0xc bytes into the same record as 0xbc038 -- near_clip_visible_tiles
    writes each clipped vertex's Z here and render_visible_tile_list reads
    it back as piVar14[3] / piVar14[iVar17+0xc]. It was a SEPARATE 32KB
    array (0x8000 bytes away from DAT_000bc038_backing), so the Z never
@@ -599,7 +599,7 @@ static undefined DAT_000bc038_backing[32768];
 #define DAT_000bc0be DAT_000bc038_backing[0x86]
 #define DAT_000bc0bf DAT_000bc038_backing[0x87]
 /* DAT_000c4838-family: same story, but holding real 8-byte pointers (one
-   per visible-tile record, written by FUN_0001f370 and read back by
+   per visible-tile record, written by near_clip_visible_tiles and read back by
    render_visible_tile_list) rather than bytes -- was a lone `undefined4` (4 bytes),
    which would silently truncate every pointer stored into it on this
    64-bit port even before the out-of-bounds-array problem. Real backing
@@ -5159,10 +5159,10 @@ undefined4 FUN_00012970()
   set_draw_color(0);
   rect_fill_or_save_restore(0x34,0x13,0xe0,0x83);
   FUN_0001de0c();
-  FUN_0001f370(0,0);
+  near_clip_visible_tiles(0,0);
   FUN_0001dfe8(&DAT_000a85d0);
   FUN_0001e274(&DAT_000a85d0);
-  FUN_0001f370(&DAT_000a85d0,1);
+  near_clip_visible_tiles(&DAT_000a85d0,1);
   render_visible_tile_list();
   FUN_0005b8ac();
   return 0;
@@ -12068,7 +12068,10 @@ int * param_2;
    `int` -- they're genuinely counts/loop indices/array indices, never
    dereferenced as addresses themselves (confirmed by reading every use).
    Same pointer-truncation pattern fixed repeatedly this session. */
-void FUN_0001f370(param_1,param_2)
+// was FUN_0001f370 -- near-plane (w=DAT_00084608=5.0) Sutherland-Hodgman clip of
+// each visible tile quad; writes clipped positions + interpolated texcoords into
+// the 0x88-byte render records at DAT_000bc038 and the DAT_000c4838[] pointer table
+void near_clip_visible_tiles(param_1,param_2)
 intptr_t param_1;
 int param_2;
 
