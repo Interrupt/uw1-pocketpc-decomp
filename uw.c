@@ -607,10 +607,17 @@ static undefined DAT_000bc038_backing[32768];
    sibling arrays above. */
 static void *DAT_000c4838_backing[4096];
 #define DAT_000c4838 DAT_000c4838_backing[0]
-undefined4 DAT_0008462c;
-undefined4 DAT_00084634;
-undefined4 DAT_00084630;
-undefined4 DAT_00084638;
+/* Recovered from UU.exe .data at 0x8462c: the 3D viewport clip rect
+   {x0=0x34, y0=0x13, w=0xe0, h=0x84} == {52, 19, 224, 132}, matching
+   FUN_00012970's `rect_fill(0x34,0x13,0xe0,0x83)`. render_visible_tile_
+   list copies these into a local passed to FUN_00014350 as param_8;
+   FUN_00014350 only calls the span rasterizer FUN_0001548c inside
+   `while (param_8[0] != 0 && ...)`. All zero -> that loop never ran ->
+   no pixel ever drawn even with the geometry projecting into view. */
+undefined4 DAT_0008462c = 0x34;
+undefined4 DAT_00084634 = 0xe0;
+undefined4 DAT_00084630 = 0x13;
+undefined4 DAT_00084638 = 0x84;
 /* Recovered from UU.exe .data at 0x84610: the perspective/screen scale,
    integer 100. render_visible_tile_list does Ordinal_2032(DAT_00084610)
    (int->float) -> 100.0, then multiplies each vertex's 1/z * eye-space
@@ -5854,13 +5861,22 @@ int * param_8;
   uint uVar9;
   undefined4 uVar10;
   undefined4 uVar11;
+  /* auStack_c4 / auStack_7c were 12-byte locals but FUN_00014ef4 (called
+     on each below) writes its edge record out to param_6[10] == byte
+     0x2b, overflowing them; Ghidra named the tail of each overflow
+     `local_b8` / `local_70` (the param_6[3] scanline-count field, byte
+     0xc). Widened to real 72-byte buffers like their siblings and
+     local_b8 / local_70 folded back in as element [3]. With them
+     undersized the edge-walk counts came back as stack garbage, so
+     FUN_00014350's `while (local_70 != 0 && ...)` never ran the span
+     rasterizer FUN_0001548c. */
   undefined1 auStack_154 [72];
   undefined1 auStack_10c [72];
-  undefined1 auStack_c4 [12];
-  int local_b8;
-  undefined1 auStack_7c [12];
-  int local_70;
-  
+  undefined1 auStack_c4 [72];
+  undefined1 auStack_7c [72];
+#define local_b8 (*(int *)(auStack_c4 + 0xc))
+#define local_70 (*(int *)(auStack_7c + 0xc))
+
   uVar8 = param_3[6];
   uVar10 = param_3[0xb];
   uVar6 = param_3[1];
@@ -5983,6 +5999,8 @@ LAB_00014684:
   }
   return;
 }
+#undef local_b8
+#undef local_70
 
 
 
@@ -6261,14 +6279,23 @@ byte param_10;
   int iVar9;
   ushort *puVar10;
   int iVar11;
-  char *iVar12;
+  /* Ghidra merged two different variables into one `char *iVar12`: the
+     DAT_0023cca0-based stencil-buffer walker (used up to the puVar13
+     init) and, inside the span loop, a plain signed texel index. As a
+     pointer type the guard `-1 < iVar12` and the wrap test
+     `param_7 < iVar12` were unsigned pointer compares -- `-1` became
+     0xFFFF...F so `-1 < iVar12` was ALWAYS false and the texel fetch
+     `bVar1 = *(byte*)(iVar12 + param_8)` never ran (every span sampled
+     the flat fallback colour 0 -> nothing drawn). Signed intptr_t makes
+     both roles behave. */
+  intptr_t iVar12;
   undefined1 *puVar13;
   int iVar14;
   int local_38;
   int local_34;
   intptr_t local_4; /* fb row pointer */
   
-  iVar12 = DAT_0023cca0;
+  iVar12 = (intptr_t)DAT_0023cca0;
   uVar2 = *(uint *)(param_4 + 0x28);
   uVar8 = uVar2 & 0x3fff;
   if (uVar8 != 0) {
@@ -12332,25 +12359,39 @@ void render_visible_tile_list()
   int iVar17;
   void **local_98; // was `undefined4 *`, misaligning the DAT_000c4838 pointer-array walk below now that its elements are real 8-byte pointers
   int local_94;
-  undefined4 local_70;
-  undefined4 local_6c;
-  undefined4 local_68;
-  undefined4 local_64;
-  undefined4 local_60;
-  undefined4 local_5c;
-  undefined4 local_58;
-  undefined4 local_54;
-  undefined4 local_50;
-  undefined4 local_4c;
-  undefined4 local_48;
-  undefined4 local_44;
-  undefined4 local_40;
-  undefined4 local_3c;
-  undefined4 local_38;
-  undefined4 local_34;
-  undefined4 local_30;
-  undefined4 local_2c;
-  undefined4 local_28;
+  /* Ghidra named the 4 words of the viewport-clip-rect struct passed to
+     FUN_00014350 (as param_8) as 4 separate locals. The recompiler is
+     free to lay them out in any order / non-contiguously, so param_8[1..3]
+     read stack garbage and FUN_00014350's `*(int*)(puVar3+8) < param_8[3]`
+     never let it call the span rasterizer. Real 4-int array. */
+  undefined4 local_70_rect[4];
+#define local_70 (local_70_rect[0])
+#define local_6c (local_70_rect[1])
+#define local_68 (local_70_rect[2])
+#define local_64 (local_70_rect[3])
+  /* Same bug as local_70_rect above: Ghidra named the 15 words of the
+     triangle-vertex struct passed to FUN_00014350 as param_3 (three
+     vertices x 5 floats: x, y, w, u, v) as 15 separate locals. The
+     recompiler lays them out non-contiguously, so FUN_000148c8 /
+     FUN_00014ef4 read stack garbage for every field past [0] -- every
+     transformed vertex came out (x,0,0) and the triangle setup produced
+     -inf/nan, so no texel was ever sampled. Real 15-float array. */
+  undefined4 local_60_arr[15];
+#define local_60 (local_60_arr[0])
+#define local_5c (local_60_arr[1])
+#define local_58 (local_60_arr[2])
+#define local_54 (local_60_arr[3])
+#define local_50 (local_60_arr[4])
+#define local_4c (local_60_arr[5])
+#define local_48 (local_60_arr[6])
+#define local_44 (local_60_arr[7])
+#define local_40 (local_60_arr[8])
+#define local_3c (local_60_arr[9])
+#define local_38 (local_60_arr[10])
+#define local_34 (local_60_arr[11])
+#define local_30 (local_60_arr[12])
+#define local_2c (local_60_arr[13])
+#define local_28 (local_60_arr[14])
   
   local_94 = 0;
   local_70 = DAT_0008462c;
@@ -12414,13 +12455,13 @@ void render_visible_tile_list()
           local_30 = Ordinal_2026(uVar5,0x3a2ec33e);
           DAT_000da47c = (undefined2)piVar14[0x1d];
           DEBUG(TRACE, "[tmap-diag] FUN_00014350 call: tex=0x%x x=%.0f y=%.0f w(0x1c)=%d stride(0x1b)=%d",
-                piVar14[0x1e], *(float*)&local_60, *(float*)&local_5c, piVar14[0x1c], piVar14[0x1b]);
-          FUN_00014350(0x140,g_uw_framebuffer,&local_60,piVar14[0x1e],
+                piVar14[0x1e], ((float*)local_60_arr)[0], ((float*)local_60_arr)[1], piVar14[0x1c], piVar14[0x1b]);
+          FUN_00014350(0x140,g_uw_framebuffer,local_60_arr,piVar14[0x1e],
                        piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],
                        ((unsigned)local_94 < UW_MAX_VIS_TILES)
                          ? (intptr_t)g_tile_texptr_out[local_94]
                          : (intptr_t)piVar14[0x1a],
-                       &local_70);
+                       local_70_rect);
           iVar16 = iVar16 + 1;
           iVar17 = iVar17 + 0xc;
           piVar14 = (int *)*local_98;
@@ -12434,6 +12475,25 @@ void render_visible_tile_list()
   debug_framebuffer_dump("render_visible_tile_list");
   return;
 }
+#undef local_70
+#undef local_6c
+#undef local_68
+#undef local_64
+#undef local_60
+#undef local_5c
+#undef local_58
+#undef local_54
+#undef local_50
+#undef local_4c
+#undef local_48
+#undef local_44
+#undef local_40
+#undef local_3c
+#undef local_38
+#undef local_34
+#undef local_30
+#undef local_2c
+#undef local_28
 
 
 

@@ -915,20 +915,24 @@ unsigned int bhi;
     return (long)ab;
 }
 
-long Ordinal_2028()
+/* Softfloat single-precision COMPARE: returns 1 when a <  b, else 0.
+   Paired with 2030 (<=), 2036 (>), 2038 (>=) -- inferred from the
+   viewport-cull tests in FUN_00014350 (all verts left of x0 -> cull uses
+   2028; all verts right of x1 -> cull uses 2036). Earlier no-op stub made
+   every triangle survive culling with degenerate edges. */
+long Ordinal_2028(a, b)
+unsigned int a;
+unsigned int b;
 {
-    /* Reverted to a no-op: the real compare made FUN_00014350 spin in
-       an edge-walk loop (geometry path only, gated by UW_ENABLE_3D_GEOMETRY).
-       Re-enable once the loop is understood. */
-    return 0;
+    return ordfloat_bits_to_float(a) < ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
-long Ordinal_2030()
+/* Softfloat single-precision COMPARE: returns 1 when a <= b, else 0. */
+long Ordinal_2030(a, b)
+unsigned int a;
+unsigned int b;
 {
-    /* Reverted to a no-op: the real compare made FUN_00014350 spin in
-       an edge-walk loop (geometry path only, gated by UW_ENABLE_3D_GEOMETRY).
-       Re-enable once the loop is understood. */
-    return 0;
+    return ordfloat_bits_to_float(a) <= ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
 long Ordinal_2032(x)
@@ -942,12 +946,12 @@ long Ordinal_2033()
     return 0;
 }
 
-long Ordinal_2036()
+/* Softfloat single-precision COMPARE: returns 1 when a >  b, else 0. */
+long Ordinal_2036(a, b)
+unsigned int a;
+unsigned int b;
 {
-    /* Reverted to a no-op: the real compare made FUN_00014350 spin in
-       an edge-walk loop (geometry path only, gated by UW_ENABLE_3D_GEOMETRY).
-       Re-enable once the loop is understood. */
-    return 0;
+    return ordfloat_bits_to_float(a) > ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
 /* Softfloat single-precision COMPARE for the 3D near-plane clip test:

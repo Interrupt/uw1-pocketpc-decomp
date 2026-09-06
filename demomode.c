@@ -364,6 +364,19 @@ void demomode_pump(void) {
 
     if (strncasecmp(p, "SCREENSHOT ", 11) == 0) {
         const char *path = p + 11;
+        /* Push the whole software framebuffer to the display before
+         * capturing. The in-game main loop's FUN_000497cc() resets the
+         * dirty rect to a degenerate {100,100,100,100} every iteration,
+         * so anything drawn by a bare demomode call (full_dungeon_redraw
+         * for the 3D view, automap fills, ...) lands in g_uw_framebuffer
+         * but is never flushed to the GX framebuffer that the screenshot
+         * reads back. Force a full-screen flush the same way FUN_0005857c
+         * and the click-hold redraw path force their own. */
+        { extern int g_force_flush; extern void flush_dirty_rect_to_display();
+          FUN_00011000(0, 200, 0, 0x140);
+          g_force_flush = 1;
+          flush_dirty_rect_to_display(1);
+          g_force_flush = 0; }
         uw_save_screenshot(path);
         g_demo_next_tick = now;
         return;
