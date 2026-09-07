@@ -2870,7 +2870,17 @@ int DAT_0020485c;
 char DAT_002506aa;
 char DAT_002506ab;
 char *DAT_002048bc;
-char *DAT_00086978;
+/* The three 16-bit velocity components of the movement block
+   (&DAT_00204886/88/8a). Ghidra typed this `char *`, so movement_sweep_setup's
+   `DAT_00086978[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
+   shorts at offsets 2,4 -- and every copy (`psVar11 = DAT_00086978`) is
+   already `short *`, confirming the intent. The byte misread made `[2]`
+   (meant: the Z/vertical velocity DAT_0020488a, 0 for level movement) return
+   the low byte of the forward velocity DAT_00204888, so plain forward
+   movement took the "vertical movement" path (FUN_00050d78 / FUN_000518c0)
+   which corrupts DAT_00204880 -- one forward step overflowed the player X to
+   the map edge and wedged them there. */
+short *DAT_00086978;
 undefined1 DAT_002049c0;
 undefined1 DAT_002049bc;
 short DAT_00086990;
@@ -43239,7 +43249,7 @@ char *param_2;
   char cVar3;
   
   cVar3 = '\0';
-  DAT_00086978 = param_1 + 6;
+  DAT_00086978 = (short *)(param_1 + 6);
   DAT_002049c0 = *(undefined1 *)(param_1 + 0x28);
   DAT_002049bc = 0;
   DAT_00204874 = param_1;
@@ -43324,7 +43334,10 @@ void reticle_object_pick()
         do {
           iVar6 = iVar4 * 6;
           puVar2 = (ushort *)FUN_000535fc(*(ushort *)(&DAT_00202c3a + iVar6) >> 6);
-          if (((&DAT_00202c97)[(*puVar2 & 0x1ff) * 0xd] & 1) != 0) {
+          /* FUN_000535fc returns NULL for an empty slot (id bits clear).
+             Ghidra dropped the guard; with forward movement now working this
+             loop runs (via FUN_0005a6bc) and hit the NULL deref. */
+          if (puVar2 != (ushort *)0x0 && ((&DAT_00202c97)[(*puVar2 & 0x1ff) * 0xd] & 1) != 0) {
             if (iVar4 < (char)DAT_002049de) {
               if ((bVar7) &&
                  (bVar1 = (&DAT_00202c38)[iVar6], (short)_DAT_0008699b <= (short)(ushort)bVar1)) {
@@ -43594,27 +43607,32 @@ void FUN_00059488()
   undefined2 uVar2;
   int iVar3;
   
-  iVar3 = *DAT_0008697c * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18);
-  *(char *)DAT_00204874 = (char)iVar3;
-  *(char *)((char *)DAT_00204874 + 1) = (char)((uint)iVar3 >> 8);
-  iVar3 = DAT_0008697c[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18);
-  *(char *)(DAT_00204874 + 1) = (char)iVar3;
-  *(char *)((char *)DAT_00204874 + 3) = (char)((uint)iVar3 >> 8);
-  iVar3 = DAT_0008697c[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18);
-  *(char *)(DAT_00204874 + 2) = (char)iVar3;
-  *(char *)((char *)DAT_00204874 + 5) = (char)((uint)iVar3 >> 8);
+  /* Ghidra split three 16-bit stores of the reconstructed player position
+     (X at +0, Y at +2, Z at +4 of the movement block) into byte pairs and
+     botched the low-byte offset of the 2nd and 3rd: Y-low went to +1 (X's
+     high byte) and Z-low to +2 (Y's low byte), while the high bytes stayed
+     at the correct +3 / +5. Result: one forward step scrambled X and Y and
+     threw the player off the map. Restore proper halfword stores. */
+  *(short *)(DAT_00204874 + 0) =
+       (short)(*DAT_0008697c * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18));
+  *(short *)(DAT_00204874 + 2) =
+       (short)(DAT_0008697c[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18));
+  *(short *)(DAT_00204874 + 4) =
+       (short)(DAT_0008697c[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18));
   if (((((DAT_002049d4 & 0x2000) != 0) &&
        (uVar1 = (int)((int)DAT_0008697c[2] - (uint)DAT_002049d8) >> 0x1f,
        (int)(((int)DAT_0008697c[2] - (uint)DAT_002049d8 ^ uVar1) - uVar1) <=
        (int)(uint)*(byte *)((char *)DAT_00204874 + 0x25))) && (DAT_002049d2 == 1)) &&
-     (DAT_00204874[5] == 0)) {
-    uVar2 = FUN_00050aa8((int)*DAT_00204874,(int)DAT_00204874[1]);
-    *(char *)(DAT_00204874 + 2) = (char)uVar2;
-    *(char *)((char *)DAT_00204874 + 5) = (char)((ushort)uVar2 >> 8);
+     (*(char *)(DAT_00204874 + 5) == 0)) {
+    /* re-snap Z (bytes +4..+5) to the floor height. FUN_00050aa8 wants the
+       tile X and Y as halfwords; Ghidra rendered the args as X's two bytes
+       and stored the result's low byte to +2 (Y-low) instead of +4. */
+    uVar2 = FUN_00050aa8(*(short *)(DAT_00204874 + 0),*(short *)(DAT_00204874 + 2));
+    *(short *)(DAT_00204874 + 4) = (short)uVar2;
   }
-  uVar2 = DAT_002049ce;
-  *(char *)((char *)DAT_00204874 + 0x21) = (char)DAT_002049ce;
-  *(char *)(DAT_00204874 + 0x11) = (char)((ushort)uVar2 >> 8);
+  /* heading is the halfword at +0x21; Ghidra put the high byte at +0x11
+     (DAT_00204890's high byte), clobbering the Z-force accumulator. */
+  *(short *)(DAT_00204874 + 0x21) = DAT_002049ce;
   return;
 }
 
@@ -45067,6 +45085,15 @@ short param_1;
 void seed_visibility_queue()
 
 {
+  /* DAT_0023aecc is the player's current tile record; it is NULL when the
+     player position is outside the 64x64 map. That should not happen (the
+     collision sweep is meant to keep the player in bounds) but a residual
+     movement bug can still push them off the edge -- skip the visibility
+     seed rather than segfaulting the whole game. */
+  if (DAT_0023aecc == (char *)0x0) {
+    DAT_0023b030 = 0xf;
+    return;
+  }
   if ((*DAT_0023aecc & 0xf) == 0) {
     DAT_0023b030 = 0xf;
   }
