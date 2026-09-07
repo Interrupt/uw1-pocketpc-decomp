@@ -419,7 +419,7 @@ int run_character_generator()
           } while (cVar1 != '\0');
           Ordinal_1063(acStack_128,s__DATA_CHARGEN_BYT_00084eac);
           uVar5 = FUN_0007ee4c(acStack_128,iVar4,64000);
-          uVar7 = FUN_00040e24(3,pcVar_palbuf);
+          uVar7 = load_pals_bank(3,pcVar_palbuf);
           if ((uVar5 & uVar7) != 0) {
             FUN_00057118();
             bitmap_blit_to_framebuffer(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);

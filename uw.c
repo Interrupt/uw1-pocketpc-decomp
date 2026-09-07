@@ -48,7 +48,7 @@ char *DAT_000890a4;
    address (0x0024ad94) is exactly 0x34 bytes into the RGB565 palette LUT
    at g_palette_rgb565 (0x34/2 = entry 26 = palette color 0x1a), and nothing
    ever assigns it because every LUT write goes through the array base
-   (&g_palette_rgb565 / puVar20 loops in FUN_00022b54), not this symbol. Left
+   (&g_palette_rgb565 / puVar20 loops in build_rgb565_palette), not this symbol. Left
    as its own zero global it means "framebuffer pixel value 0x0000 (pure
    black)", which the transient-panel compositor (screen_backup_save then
    screen_backup_restore / screen_backup_restore_rect) then treats as "not
@@ -228,10 +228,10 @@ undefined *PTR_Ordinal_2005_0008403c;
 undefined *PTR_Ordinal_2015_00084008;
 undefined *PTR_Ordinal_2023_0008402c;
 undefined *PTR_Ordinal_2051_00084028;
-/* Ghidra only saw pointer-walking writes (FUN_00014294) and an indexed
+/* Ghidra only saw pointer-walking writes (build_shade_lut) and an indexed
    read (sVar7 clamped to 0x9f, i.e. 160 entries -- see its use below), so
    it declared this as a lone scalar instead of the real 160-entry
-   distance/lighting falloff table. That undersizing let FUN_00014294's
+   distance/lighting falloff table. That undersizing let build_shade_lut's
    fill loop silently scribble past it into whatever the compiler placed
    next in .bss (confirmed via `nm`: DAT_000bbef8 landed 28 bytes later,
    exactly iteration 7 of the loop) -- invisible to ASan because a
@@ -1059,7 +1059,7 @@ static undefined1 DAT_00084a40_backing[32768];
 #define DAT_00084a40 DAT_00084a40_backing[0]
 static undefined2 DAT_00242010_backing[32768];
 #define DAT_00242010 DAT_00242010_backing[0]
-/* Was a lone `undefined2` scalar, but FUN_00022b54 uses it as the base of a
+/* Was a lone `undefined2` scalar, but build_rgb565_palette uses it as the base of a
    20-level x 256-entry faded-palette table (`(ushort*)(&DAT_00248418 +
    iVar21) + level*0x100`, iVar21 stepping by 2 per palette entry, 20 levels
    stepped by 0x100 ushorts/level) -- a real ~10KB out-of-bounds write on
@@ -1218,7 +1218,7 @@ static undefined1 DAT_00088d98_backing[1536];
 
 /* Side-effect-free PALS.DAT read: raw 6-bit bytes for one palette index,
    scaled to 8-bit RGB into out_rgb (768 bytes). Deliberately does NOT
-   reuse FUN_00040e24 -- it always installs its result into g_palette_rgb565
+   reuse load_pals_bank -- it always installs its result into g_palette_rgb565
    too, which would visibly recolor the live game just from a debug dump
    running. Returns 1 on success. */
 static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
@@ -1228,7 +1228,7 @@ static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
     short got = (short)FUN_0002285c(handle, raw, 0x300);
     Ordinal_553(handle);
     if (got != 0x300) return 0;
-    FUN_00022abc(out_rgb, raw, 0);
+    expand_pals_bytes(out_rgb, raw, 0);
     return 1;
 }
 
@@ -1245,7 +1245,7 @@ static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
 
    chrbtns.gr is a confirmed exception: it preloads at chargen.c:344,
    before chargen's own palette (index 3, chargen.c:421's
-   FUN_00040e24(3,pcVar_palbuf) call, into a scratch buffer that never
+   load_pals_bank(3,pcVar_palbuf) call, into a scratch buffer that never
    touches g_palette_rgb565 until that line runs) is installed -- so at
    preload time g_palette_rgb565 still reflects whatever the main menu left
    behind. No amount of reading g_palette_rgb565 at THIS moment can produce
@@ -1989,7 +1989,7 @@ undefined2 DAT_00201b64;
 undefined2 DAT_00202080;
 short DAT_00201c94;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
-   FUN_00049818/FUN_0003bd50/FUN_0003c038/change_game_mode (DAT_00201b64 = the
+   FUN_00049818/enter_dungeon_view/FUN_0003c038/change_game_mode (DAT_00201b64 = the
    mode: 0 is the normal in-game/dungeon view, seen so far; 1 and 2 are
    some other screen). It's link-time-initialized data in the original
    binary -- nothing in this decompile ever writes to it at runtime -- so
@@ -2021,7 +2021,7 @@ short DAT_00201c94;
    see each site's own comment). */
 static void (*const DAT_00085668_real_table[48])(void) = {
   /* mode 0 (in-game/dungeon view) */
-  (void(*)(void))FUN_0003bd50, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))FUN_0003c194,
+  (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))FUN_0003c194,
   0, 0, 0, 0,
   0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))movement_pacing_handler,
   (void(*)(void))FUN_0003e4cc, (void(*)(void))FUN_0006d284, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
@@ -5820,7 +5820,8 @@ undefined4 * param_2;
 
 
 
-void FUN_00014294()
+// was build_shade_lut -- build the 160-entry distance-shade LUT DAT_000b5638
+void build_shade_lut()
 
 {
   undefined4 uVar1;
@@ -7748,7 +7749,7 @@ undefined4 param_1;
   }
   else {
     FUN_000116a4(0,0,0x13f,199);
-    FUN_00040efc(1);
+    set_palette_bank(1);
     bitmap_blit_to_framebuffer(0,1,uVar3,200,0x140,0,0,1);
     draw_automap_tiles();
     iVar5 = (int)(short)param_1;
@@ -7759,7 +7760,7 @@ undefined4 param_1;
       DAT_00088960 = 0;
     }
     DAT_000ba9d0 = (short)param_1;
-    FUN_00040efc(1);
+    set_palette_bank(1);
     screen_backup_save();
     FUN_0001786c(param_1);
     *DAT_0008429c = 0x2d;
@@ -13689,7 +13690,7 @@ undefined1 param_4;
      acStack_41[31 + x]. */
   char acStack_41 [33];
   /* param_2 - pcVar2 offset-reconstruction idiom (same pattern as
-     FUN_00022abc): `(int)param_2 - (int)pcVar2` truncated both real
+     expand_pals_bytes): `(int)param_2 - (int)pcVar2` truncated both real
      pointers before iVar3's later `pcVar2[iVar3]` re-addition. iVar3
      itself is reused for a plain int digit-counter earlier in this
      function, so this needs its own dedicated variable. */
@@ -13743,7 +13744,9 @@ undefined1 param_4;
 
 
 
-void FUN_00022abc(param_1,param_2,param_3)
+// was expand_pals_bytes -- expand PALS.DAT 6-bit channel bytes (param_2) to 8-bit into
+// param_1; param_3!=0 copies unscaled
+void expand_pals_bytes(param_1,param_2,param_3)
 char *param_1;
 char * param_2;
 int param_3;
@@ -13754,7 +13757,7 @@ int param_3;
   int iVar3;
 
   /* param_1 was declared `int` despite every caller passing a real
-     pointer (e.g. FUN_00040e24: `FUN_00022abc(auStack_318,param_2,0);`)
+     pointer (e.g. load_pals_bank: `expand_pals_bytes(auStack_318,param_2,0);`)
      -- truncating it on this 64-bit host. The `param_1 - (int)param_2`
      / `param_2 + param_1` dance below reconstructs param_1 as a
      relative *offset* from param_2 so the loop can address both
@@ -13790,7 +13793,9 @@ int param_3;
 
 
 
-void FUN_00022b54(param_1,param_2)
+// was build_rgb565_palette -- build g_palette_rgb565 from an RGB buffer (param_1; NULL =
+// built-in default). param_2==0 also builds the 21-level shade ramp DAT_00248418.
+void build_rgb565_palette(param_1,param_2)
 undefined1 * param_1;
 short param_2;
 
@@ -13817,7 +13822,7 @@ short param_2;
   ushort *puVar20;
   int iVar21;
 
-  DEBUG(TRACE, "[palette] FUN_00022b54 installing g_palette_rgb565, param_1=%s param_2=%d",
+  DEBUG(TRACE, "[palette] build_rgb565_palette installing g_palette_rgb565, param_1=%s param_2=%d",
         param_1 ? "buffer" : "NULL(default)", param_2);
   if (param_1 == (undefined1 *)0x0) {
     puVar20 = &g_palette_rgb565;
@@ -15236,7 +15241,9 @@ LAB_00024dd4:
 
 
 
-void FUN_000259c0(param_1,param_2,param_3)
+// was palette_cycle_range -- rotate a contiguous run of DAT_00088d98 palette entries by
+// one (torch-flicker / water-shimmer colour cycling)
+void palette_cycle_range(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
 int param_3;
@@ -23077,8 +23084,8 @@ ushort * param_1;
       iVar3 = Ordinal_2005(param_1[1],0x38e);
       if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*param_1)) {
         uVar2 = (1 - (uint)(byte)param_1[3]) + (uint)*(byte *)((char *)param_1 + 7);
-        FUN_000259c0((uint)(byte)param_1[3],uVar2,0);
-        FUN_0007e99c(uVar2 & 0xff,(char)param_1[3],1);
+        palette_cycle_range((uint)(byte)param_1[3],uVar2,0);
+        reinstall_active_palette(uVar2 & 0xff,(char)param_1[3],1);
         uVar1 = FUN_0002294c();
         *(char *)param_1 = (char)uVar1;
         *(char *)((char *)param_1 + 1) = (char)((ushort)uVar1 >> 8);
@@ -23510,7 +23517,7 @@ LAB_00036858:
         } while (iVar10 != 0);
         local_64 = uVar14;
         FUN_00035fdc(uVar14 + 0x100,local_b8);
-        FUN_00022b54(local_b8,0xffffffff);
+        build_rgb565_palette(local_b8,0xffffffff);
         local_54 = FUN_0002294c();
         local_4c = local_54;
         FUN_00035e00(uVar14 + 0x500,*(undefined2 *)(uVar14 + 6),local_70);
@@ -23964,7 +23971,7 @@ uint param_1;
       goto LAB_00037d3c;
     }
     if (*(short *)(DAT_00085a6c + 8) == 0) goto LAB_00037d3c;
-    FUN_00040efc(0);
+    set_palette_bank(0);
     uVar2 = 0x7ffe;
   }
   else {
@@ -26187,7 +26194,7 @@ void FUN_0003b820()
     FUN_0003c3c8();
   }
   FUN_00040df0();
-  FUN_00040efc(5);
+  set_palette_bank(5);
   return;
 }
 
@@ -26352,7 +26359,9 @@ int param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0003bd50()
+// was enter_dungeon_view -- 3D dungeon-view entry transition (fade out, load PALS.DAT
+// bank 0, redraw dungeon, fade in)
+void enter_dungeon_view()
 
 {
   char stack0xffdc2f3c_buf [256];
@@ -26369,12 +26378,12 @@ void FUN_0003bd50()
   FUN_0005b758(0x34,0x14,0xab,0x70);
   Ordinal_1044(auStack_314,&DAT_00088d98,0x300);
   fade_out(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
-  FUN_00040e24(0,auStack_314);
-  /* FUN_00040e24 loads PALS.DAT bank 0 (the 3D dungeon-view palette --
-     cf. FUN_00040efc(0) at the game-mode switch) into the local
+  load_pals_bank(0,auStack_314);
+  /* load_pals_bank loads PALS.DAT bank 0 (the 3D dungeon-view palette --
+     cf. set_palette_bank(0) at the game-mode switch) into the local
      auStack_314 and installs it, but leaves the global DAT_00088d98
      holding whatever bank the main menu last loaded (bank 2). The torch
-     palette-cycle loop (FUN_000259c0 -> FUN_0007e99c) then re-installs
+     palette-cycle loop (palette_cycle_range -> reinstall_active_palette) then re-installs
      g_palette_rgb565 straight from DAT_00088d98 on the very next redraw,
      so the dungeon flips from its real bank-0 colours to the stale menu
      palette (grey -> gold) after the first frame. Mirror the loaded
@@ -29394,7 +29403,9 @@ void FUN_00040df0()
 
 
 
-bool FUN_00040e24(param_1,param_2)
+// was load_pals_bank -- read PALS.DAT bank param_1 (768 raw bytes) into param_2 and
+// install it via build_rgb565_palette
+bool load_pals_bank(param_1,param_2)
 undefined4 param_1;
 void *param_2;
 
@@ -29408,7 +29419,7 @@ void *param_2;
   char acStack_420 [264];
   undefined1 auStack_318 [768];
 
-  DEBUG(TRACE, "[palette] FUN_00040e24 loading pals.dat index=%u", param_1);
+  DEBUG(TRACE, "[palette] load_pals_bank loading pals.dat index=%u", param_1);
   pcVar3 = &DAT_0023cca8;
     stack0xffdc2f38_ptr = acStack_420;
   do {
@@ -29422,23 +29433,25 @@ void *param_2;
   sVar2 = FUN_0002285c(uVar4,param_2,0x300);
   Ordinal_553(uVar4);
   if (sVar2 == 0x300) {
-    FUN_00022abc(auStack_318,param_2,0);
-    FUN_00022b54(auStack_318,param_1);
+    expand_pals_bytes(auStack_318,param_2,0);
+    build_rgb565_palette(auStack_318,param_1);
   }
   return sVar2 == 0x300;
 }
 
 
 
-bool FUN_00040efc(param_1)
+// was set_palette_bank -- switch active palette to PALS.DAT bank param_1 (load into
+// DAT_00088d98, install, reinstall_active_palette)
+bool set_palette_bank(param_1)
 undefined4 param_1;
 
 {
   int iVar1;
   
-  iVar1 = FUN_00040e24(param_1,&DAT_00088d98);
+  iVar1 = load_pals_bank(param_1,&DAT_00088d98);
   if (iVar1 != 0) {
-    FUN_0007e99c(0x100,0,0);
+    reinstall_active_palette(0x100,0,0);
   }
   return iVar1 != 0;
 }
@@ -29451,7 +29464,7 @@ undefined4 param_2;
 
 {
   Ordinal_1044(&DAT_00088d98,param_1,0x300);
-  FUN_0007e99c(0x100,0,param_2);
+  reinstall_active_palette(0x100,0,param_2);
   return;
 }
 
@@ -49606,7 +49619,7 @@ int param_1;
   if (param_1 == 0) {
     if (-1 < DAT_00086db4) {
       if (DAT_00086db4 == '\x01') {
-        FUN_00040efc(0);
+        set_palette_bank(0);
       }
       else if (DAT_00086db4 == '\x02') {
         FUN_00070224(0);
@@ -49626,7 +49639,7 @@ int param_1;
     }
     if (DAT_00086db4 == '\x01') {
       uVar1 = Ordinal_1053();
-      FUN_00040efc(uVar1 & 7);
+      set_palette_bank(uVar1 & 7);
     }
     else if (DAT_00086db4 == '\x02') {
       FUN_00070224(1);
@@ -51762,8 +51775,8 @@ void FUN_0006a168()
   
   uVar1 = FUN_0002294c();
   if (0xd < (int)((uVar1 & 0xffff) - (uint)DAT_0023bf74)) {
-    FUN_000259c0(0x40,0x40,1);
-    FUN_0007e99c(0x40,0x40,0);
+    palette_cycle_range(0x40,0x40,1);
+    reinstall_active_palette(0x40,0x40,0);
     DAT_0023bf74 = FUN_0002294c();
   }
   flush_dirty_rect_to_display(1);
@@ -53143,7 +53156,7 @@ int param_3;
       }
       FUN_000116a4(0,0,0x13f,199);
       if (-1 < (short)param_1) {
-        FUN_00040efc(param_1);
+        set_palette_bank(param_1);
       }
       bitmap_blit_to_framebuffer(0,0,iVar1,200,0x140,0,0,0);
       if (param_3 != 0) {
@@ -59626,7 +59639,7 @@ undefined4 FUN_000778fc()
     if (DAT_0023cdbc < 0) {
       iVar5 = DAT_0023cdbc + 1;
     }
-    /* Same DAT_0023c430 (framebuffer pointer) truncation as FUN_00022b54
+    /* Same DAT_0023c430 (framebuffer pointer) truncation as build_rgb565_palette
        above -- see its comment. */
     puVar3 = (undefined2 *)((iVar4 >> 1) * 400 + (intptr_t)DAT_0023c430);
     do {
@@ -59636,7 +59649,7 @@ undefined4 FUN_000778fc()
       do {
         puVar1 = puVar1 + (iVar5 >> 1);
         iVar8 = iVar8 + -1;
-        /* Bounds-guard: see the identical loop in FUN_00022b54. */
+        /* Bounds-guard: see the identical loop in build_rgb565_palette. */
         if ((char *)puVar1 >= (char *)DAT_0023c430 &&
             (char *)(puVar1 + 1) <= (char *)DAT_0023c430 + 153600) {
           *puVar1 = *puVar6;
@@ -63685,29 +63698,31 @@ void FUN_0007e998()
 
 
 
-void FUN_0007e99c()
+// was reinstall_active_palette -- re-expand DAT_00088d98 into DAT_00088640 and re-install it as
+// g_palette_rgb565 (real light-level/tint args dropped by Ghidra)
+void reinstall_active_palette()
 
 {
-  /* FUN_00022abc's 3rd argument was dropped here -- confirmed via real
-     ARM disassembly: this call site (`bl FUN_00022abc` right after
+  /* expand_pals_bytes's 3rd argument was dropped here -- confirmed via real
+     ARM disassembly: this call site (`bl expand_pals_bytes` right after
      loading only r0/r1) never sets r2 itself, so it silently used
      whatever was left over in that register from the caller's own
-     context. FUN_00022abc's param_3 controls whether it scales each
+     context. expand_pals_bytes's param_3 controls whether it scales each
      raw palette byte up from PALS.DAT's 6-bit-per-channel storage
      (param_3==0, `<<2`) or copies it unscaled (param_3!=0) -- and
      DAT_00088d98 (the source here) always holds the RAW, unscaled bytes
-     FUN_00040e24 loaded (it only produces the *scaled* version in its
+     load_pals_bank loaded (it only produces the *scaled* version in its
      own local stack buffer, which doesn't survive past that call). With
      a leftover-nonzero r2, this installed the unscaled (very dark)
      values into g_palette_rgb565 instead of the real palette -- confirmed:
      this is what made the whole screen go dark after wiring
-     main_menu_loop through FUN_00040efc (which calls this function on
+     main_menu_loop through set_palette_bank (which calls this function on
      every palette load, unlike the rarer hover-timer-only path this
      bug previously hid behind). Pass 0 explicitly, matching
-     FUN_00040e24's own established convention for this exact source
+     load_pals_bank's own established convention for this exact source
      format. */
-  FUN_00022abc(&DAT_00088640,&DAT_00088d98,0);
-  FUN_00022b54(&DAT_00088640,0xffffffff);
+  expand_pals_bytes(&DAT_00088640,&DAT_00088d98,0);
+  build_rgb565_palette(&DAT_00088640,0xffffffff);
   return;
 }
 

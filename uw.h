@@ -360,7 +360,7 @@ struct IMAGE_RESOURCE_DIRECTORY {
    set_draw_color) -- extern'd here so both translation units see the same
    storage. */
 extern void *g_uw_framebuffer;
-/* 256-entry palette -> RGB565 lookup table (rebuilt by FUN_00022b54 on
+/* 256-entry palette -> RGB565 lookup table (rebuilt by build_rgb565_palette on
    every palette load). Real binary size is 256 shorts at 0x0024ad60;
    over-allocated here as a safety margin. Indexed as
    `(&g_palette_rgb565)[palette_index]`. g_transparent_screen_color
@@ -495,7 +495,7 @@ void FUN_00013904();
 void FUN_00013b8c();
 void FUN_0001422c();
 void FUN_00014258();
-void FUN_00014294();
+void build_shade_lut();
 void FUN_00014324();
 void FUN_0001433c();
 void raster_triangle();
@@ -648,8 +648,8 @@ uint FUN_0002294c();
 undefined *FUN_0002295c();
 undefined *FUN_00022998();
 void FUN_000229e0();
-void FUN_00022abc();
-void FUN_00022b54();
+void expand_pals_bytes();
+void build_rgb565_palette();
 void flush_dirty_rect_to_display();
 void flush_dirty_rect_to_display_240();
 void FUN_000232b0();
@@ -663,7 +663,7 @@ void FUN_00023de8();
 undefined4 FUN_0002431c();
 uint character_generator_touch_select();
 uint FUN_00024840();
-void FUN_000259c0();
+void palette_cycle_range();
 undefined4 FUN_00025a98();
 int FUN_00025b84();
 void FUN_00025ed8();
@@ -862,7 +862,7 @@ void FUN_0003bc08();
 void FUN_0003bc1c();
 void set_game_mode();
 void change_game_mode();
-void FUN_0003bd50();
+void enter_dungeon_view();
 void FUN_0003bee4();
 void FUN_0003c038();
 undefined4 FUN_0003c194();
@@ -935,8 +935,8 @@ undefined4 FUN_00040cd4();
 bool FUN_00040d00();
 void thunk_FUN_00057118();
 void FUN_00040df0();
-bool FUN_00040e24();
-bool FUN_00040efc();
+bool load_pals_bank();
+bool set_palette_bank();
 void FUN_00040f34();
 void FUN_00040f64();
 void FUN_000411b8();
@@ -1629,7 +1629,7 @@ undefined4 FUN_0007e6e0();
 void FUN_0007e778();
 void FUN_0007e85c();
 void FUN_0007e998();
-void FUN_0007e99c();
+void reinstall_active_palette();
 void plot_pixel();
 void FUN_0007ea30();
 void FUN_0007ea34(char *param_1, ...);

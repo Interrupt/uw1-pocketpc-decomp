@@ -42,8 +42,8 @@ undefined4 param_4;
       flush_dirty_rect_to_display_240();
       Ordinal_496(2000);
       Ordinal_1018(uVar3);
-      FUN_00022b54(0,0xffffffff);
-      FUN_00014294();
+      build_rgb565_palette(0,0xffffffff);
+      build_shade_lut();
       DAT_0023c44c = Ordinal_1041(0x4cce);
       DAT_0023cca0 = Ordinal_1041(64000);
       DAT_0023cef0 = Ordinal_1041(0x7fff);
@@ -250,24 +250,24 @@ undefined4 param_1;
       DEBUG(TRACE, "blitting %s", s__DATA_opscr_byt_00086eec);
       FUN_0007ee4c(acStack_7ec,pvVar_buf10000,64000);
       FUN_00057118();
-      // HACK: deviation from the real binary -- was FUN_00040e24(2, temp_buf),
+      // HACK: deviation from the real binary -- was load_pals_bank(2, temp_buf),
       /* confirmed via ARM disassembly of the original UU.exe
-         (main_menu_loop == FUN_0006a3d8, calls FUN_00040e24 directly at
-         both its own palette-load points, never through FUN_00040efc).
+         (main_menu_loop == FUN_0006a3d8, calls load_pals_bank directly at
+         both its own palette-load points, never through set_palette_bank).
          That's a genuine shipped bug, not a decompile artifact:
-         FUN_00040e24 installs g_palette_rgb565 correctly for the menu's own
+         load_pals_bank installs g_palette_rgb565 correctly for the menu's own
          draw, but never syncs DAT_00088d98 -- the buffer
-         FUN_0007e99c() (called periodically by the menu's own hover-
+         reinstall_active_palette() (called periodically by the menu's own hover-
          loop timer, FUN_0006a168) always reinstalls from. Since nothing
          else keeps DAT_00088d98 current for the menu screen, it holds
          whatever palette some other screen last loaded via
-         FUN_00040efc, and the timer clobbers the menu's correct
+         set_palette_bank, and the timer clobbers the menu's correct
          palette back to that stale one on the very next hover/redraw
          (confirmed via UW_DEBUG_LEVEL=TRACE: g_palette_rgb565 flips from
-         pals.dat index 2 to a leftover index 5). Using FUN_00040efc(2)
+         pals.dat index 2 to a leftover index 5). Using set_palette_bank(2)
          here instead keeps DAT_00088d98 in sync, so that clobber
          reinstalls the *same* correct palette instead of a stale one. */
-      FUN_00040efc(2);
+      set_palette_bank(2);
       iVar10 = 0;
       do {
         iVar6 = 0;
@@ -301,7 +301,7 @@ undefined4 param_1;
         FUN_0006a200(uVar8,DAT_0023bf6c,0,uVar2);
         // HACK: same DAT_00088d98-sync deviation as this function's other
         // palette-load point above -- see that comment.
-        FUN_00040efc(2);
+        set_palette_bank(2);
         fade_in(0,0,g_uw_framebuffer,200);
       }
     }
