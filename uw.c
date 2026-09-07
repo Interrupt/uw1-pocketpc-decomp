@@ -3673,7 +3673,14 @@ undefined2 DAT_0023c158;
 char s__DATA_shades_dat_000872a4[] = "\\DATA\\shades.dat";
 char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
 char s__DATA_light_dat_000872c8[] = "\\DATA\\light.dat";
-char DAT_000872a0;
+/* "currently-loaded shading level" for FUN_0006ff08's `if (DAT_000872a0
+   == param_1) return;` early-out. Ghidra dropped its initialiser (same
+   silently-zero link-time-init class as DAT_00086e68 &c); left at 0 the
+   first dungeon entry -- FUN_0006ff08(0) -- matched and returned without
+   ever reading SHADES.DAT, so the texture-LOD threshold DAT_00086b24
+   stayed 0 and every visible tile drew with the 16x16 low-detail
+   texture. Sentinel = no level loaded yet. */
+char DAT_000872a0 = -1;
 char s__DATA_xfer_dat_000872d8[] = "\\DATA\\xfer.dat";
 char s_cLightTabs_allocation_error_____000872e8[] = "cLightTabs_allocation_error_...";
 static undefined1 DAT_0024fa38_backing[3072];
@@ -55041,12 +55048,21 @@ char param_1;
   char *pcVar2;
   int iVar3;
   char *pcVar4;
-  short local_12c;
-  undefined2 local_12a;
-  undefined2 local_128;
-  short local_126;
-  undefined2 local_124;
-  undefined2 local_122;
+  /* Ghidra modelled the 12-byte SHADES.DAT per-level header as six
+     separate `short` locals that FUN_0002285c(&local_12c, 0xc) reads
+     into as one contiguous block -- but the C compiler is free to lay
+     them out non-contiguously / reorder them, so only local_12c landed
+     where the read wrote and local_12a..local_122 read stack garbage
+     (observed: DAT_00086b24, the texture-LOD distance threshold, came
+     out 0 instead of the file's 16 -> every visible tile fell to the
+     16x16 low-detail texture, walls included). Real 6-short array. */
+  short _shades_hdr[6];
+#define local_12c (_shades_hdr[0])
+#define local_12a (_shades_hdr[1])
+#define local_128 (_shades_hdr[2])
+#define local_126 (_shades_hdr[3])
+#define local_124 (_shades_hdr[4])
+#define local_122 (_shades_hdr[5])
   char acStack_11c [260];
   
   if (DAT_000872a0 == param_1) {
@@ -55095,7 +55111,7 @@ LAB_0006fff4:
   iVar3 = FUN_000227d4(acStack_11c);
   if (iVar3 != -1) {
     FUN_00022850(iVar3,param_1 * 0xc0000 >> 0x10,0);
-    FUN_0002285c(iVar3,&local_12c,0xc);
+    FUN_0002285c(iVar3,_shades_hdr,0xc);
     DAT_0025063c = local_12c;
     if (local_12c < 2) {
       DAT_0025063c = 1;
@@ -55111,6 +55127,12 @@ LAB_0006fff4:
   }
   return;
 }
+#undef local_12c
+#undef local_12a
+#undef local_128
+#undef local_126
+#undef local_124
+#undef local_122
 
 
 
