@@ -1911,7 +1911,7 @@ undefined1 DAT_0023c3dc;
 undefined1 DAT_0023c3d8;
 /* DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/
    a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2`
-   scalars, but FUN_0005878c and its siblings (FUN_00058e08, FUN_0005a550,
+   scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, FUN_0005a550,
    FUN_0005ad18, FUN_00059488 -- reached by `DAT_00204874 = &DAT_00204880`
    then dereferenced relative to that) treat this as one struct with real
    fields up to offset 0x2a (42 bytes) -- confirmed crashing
@@ -1921,7 +1921,7 @@ undefined1 DAT_0023c3d8;
    independent global, so `apply_heading_turn`/`apply_movement_tick` and
    friends, which write these fields BY NAME (e.g. `DAT_00204894 = ...`
    for heading), were updating completely different memory than what
-   FUN_0005878c's collision/movement engine reads via
+   movement_collision_sweep's collision/movement engine reads via
    `*(short *)(DAT_00204874 + 0x14)` pointer arithmetic (real address
    0x204894) -- confirmed via lldb: DAT_00204894 demonstrably changed on
    turn input, while `*(short*)(DAT_00204874+0x14)` read 0 on every
@@ -18177,7 +18177,7 @@ int param_1;
 {
   *(char *)(param_1 + 0x12) = (char)(((*(byte *)(DAT_0010190c + 0x14) & 7) << 0x14) >> 0x10);
   *(undefined1 *)(param_1 + 0x13) = 0;
-  FUN_0005878c();
+  movement_collision_sweep();
   return 1;
 }
 
@@ -43217,7 +43217,8 @@ uint FUN_00058738()
    DAT_00204874 (assigned from these) are already real pointer-typed
    globals, confirming the intent. Same pointer-truncation pattern fixed
    repeatedly this session. */
-void FUN_0005878c(param_1,param_2)
+// was FUN_0005878c -- per-tick movement + collision sweep (from apply_movement_tick)
+void movement_collision_sweep(param_1,param_2)
 char *param_1;
 char *param_2;
 
@@ -43232,7 +43233,7 @@ char *param_2;
   DAT_002049bc = 0;
   DAT_00204874 = param_1;
   DAT_002048bc = param_2;
-  iVar1 = FUN_00058e08(1,1);
+  iVar1 = movement_sweep_setup(1,1);
   if (iVar1 != 0) {
     while ((int)DAT_00086996 < DAT_00086990 + 1) {
       cVar2 = cVar3 + '\x01';
@@ -43279,7 +43280,8 @@ void FUN_00058878()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0005898c()
+// was FUN_0005898c -- pick the object under the view reticle (-> DAT_00086998 slot, DAT_00086999/9a tile x/y)
+void reticle_object_pick()
 
 {
   byte bVar1;
@@ -43385,7 +43387,7 @@ LAB_00058db4:
        filter yet resolves to NULL here.  The ARM original guarded this deref;
        the Ghidra decompile dropped the check, so a turn tick whose reticle pick
        lands on such a slot segfaults in this per-frame path
-       (FUN_0005898c <- FUN_00058e08 <- FUN_0005878c <- apply_movement_tick),
+       (reticle_object_pick <- movement_sweep_setup <- movement_collision_sweep <- apply_movement_tick),
        which is what made scripted in-dungeon turning die mid-spin.  Treat a
        NULL resolve as "nothing under the reticle". */
     if (psVar3 == (short *)0x0) {
@@ -43401,7 +43403,8 @@ LAB_00058db4:
 
 
 
-undefined4 FUN_00058e08(param_1,param_2)
+// was FUN_00058e08 -- set up the movement/collision sweep (screen deltas, step DDA state)
+undefined4 movement_sweep_setup(param_1,param_2)
 int param_1;
 int param_2;
 
@@ -43503,7 +43506,7 @@ int param_2;
   if (psVar11[2] < 1) {
     DAT_0008698a = -0x800;
   }
-  FUN_0005898c(param_2);
+  reticle_object_pick(param_2);
   psVar11 = DAT_00086978;
   if (DAT_00086978[(short)DAT_0008698c] != 0) {
     iVar10 = (int)*(short *)(&DAT_00086986 + (short)DAT_0008698c * 2);
@@ -43542,7 +43545,7 @@ undefined4 param_1;
   iVar1 = ((int)*(short *)(DAT_00204874 + 0x12) - (int)DAT_00086996 * (int)DAT_00086994) * 0x10000;
   *(char *)(DAT_00204874 + 0x12) = (char)((uint)iVar1 >> 0x10);
   *(char *)(DAT_00204874 + 0x13) = (char)((uint)iVar1 >> 0x18);
-  if ((*(short *)(DAT_00204874 + 0x12) < 1) || (iVar1 = FUN_00058e08(0,param_1), iVar1 == 0)) {
+  if ((*(short *)(DAT_00204874 + 0x12) < 1) || (iVar1 = movement_sweep_setup(0,param_1), iVar1 == 0)) {
     DAT_00086996 = DAT_00086990 + 1;
   }
   return;
@@ -44085,7 +44088,7 @@ undefined4 param_1;
   bVar1 = false;
   if ((short)param_1 == -1) {
     FUN_000518c0(0,0);
-    FUN_0005898c(0);
+    reticle_object_pick(0);
     *(undefined1 *)(DAT_00204874 + 0x28) = DAT_002049c0;
     if (DAT_00204870 != 0) {
       bVar1 = true;
@@ -44173,7 +44176,7 @@ uint FUN_0005a6bc()
   DAT_00204870 = 0;
   FUN_00050d78(*(undefined1 *)(DAT_00204874 + 0x27));
   FUN_000518c0(0,0);
-  FUN_0005898c(0);
+  reticle_object_pick(0);
   local_3c = DAT_002049d6 | DAT_002049d4;
   bVar8 = (local_3c & DAT_002048bc[2]) == 0;
   if ((DAT_002049dc != '\0') &&
@@ -51139,7 +51142,7 @@ void FUN_00068c1c()
    Confirmed this matters now that the DAT_00204880-relative struct
    fields are correctly aliased (see that fix's comment): apply_heading_turn
    writes this forwarded value into DAT_00204892 (struct offset 0x12,
-   the "speed" field FUN_00058e08's movement engine reads), so losing
+   the "speed" field movement_sweep_setup's movement engine reads), so losing
    it here meant that field could never become the real per-tick delta
    even once the aliasing bug was fixed. */
 void apply_movement_tick(param_1)
@@ -51157,7 +51160,7 @@ undefined4 param_1;
   DAT_0023be9c = 0;
   DAT_0023be9a = 0;
   apply_heading_turn(param_1);
-  FUN_0005878c(&DAT_00204880,&DAT_002048b0);
+  movement_collision_sweep(&DAT_00204880,&DAT_002048b0);
   update_3d_sound_position();
   FUN_00049924(10);
   sVar4 = DAT_0023bf1c;
