@@ -1911,8 +1911,8 @@ undefined1 DAT_0023c3dc;
 undefined1 DAT_0023c3d8;
 /* DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/
    a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2`
-   scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, FUN_0005a550,
-   FUN_0005ad18, FUN_00059488 -- reached by `DAT_00204874 = &DAT_00204880`
+   scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step,
+   sweep_apply_collision, sweep_writeback_position -- reached by `DAT_00204874 = &DAT_00204880`
    then dereferenced relative to that) treat this as one struct with real
    fields up to offset 0x2a (42 bytes) -- confirmed crashing
    (EXC_BAD_ACCESS) dereferencing that far out on a real run. Widened to
@@ -43267,20 +43267,21 @@ char *param_2;
         *(undefined1 *)(DAT_00204874 + 0x15) = 0;
         return;
       }
-      iVar1 = FUN_0005a550(1);
+      iVar1 = sweep_step(1);
       cVar3 = cVar2;
       if (iVar1 != 0) {
-        FUN_0005ad18();
+        sweep_apply_collision();
       }
     }
-    FUN_00059488();
+    sweep_writeback_position();
   }
   return;
 }
 
 
 
-void FUN_00058878()
+// was FUN_00058878 -- init the per-tick collision-sweep working set from the movement block
+void sweep_init_position()
 
 {
   DAT_00202c6c = &DAT_002049c8;
@@ -43336,7 +43337,7 @@ void reticle_object_pick()
           puVar2 = (ushort *)FUN_000535fc(*(ushort *)(&DAT_00202c3a + iVar6) >> 6);
           /* FUN_000535fc returns NULL for an empty slot (id bits clear).
              Ghidra dropped the guard; with forward movement now working this
-             loop runs (via FUN_0005a6bc) and hit the NULL deref. */
+             loop runs (via sweep_collision_flags) and hit the NULL deref. */
           if (puVar2 != (ushort *)0x0 && ((&DAT_00202c97)[(*puVar2 & 0x1ff) * 0xd] & 1) != 0) {
             if (iVar4 < (char)DAT_002049de) {
               if ((bVar7) &&
@@ -43465,7 +43466,7 @@ int param_2;
     return 0;
   }
   if (param_1 != 0) {
-    FUN_00058878(psVar11);
+    sweep_init_position(psVar11);
   }
   iVar8 = DAT_00204874;
   psVar11 = DAT_00086978;
@@ -43600,7 +43601,8 @@ void FUN_000593c0()
 
 
 
-void FUN_00059488()
+// was FUN_00059488 -- write the swept X/Y/Z position + heading back into the movement block
+void sweep_writeback_position()
 
 {
   uint uVar1;
@@ -43638,7 +43640,8 @@ void FUN_00059488()
 
 
 
-int FUN_000595d4(param_1,param_2)
+// was FUN_000595d4 -- integrate one sub-tile step of the movement/collision sweep
+int sweep_integrate_substep(param_1,param_2)
 short param_1;
 short param_2;
 
@@ -43823,7 +43826,7 @@ int param_1;
   ushort uVar2;
   
   if ('\0' < DAT_002049bc) {
-    FUN_0005a550(0xffffffff);
+    sweep_step(0xffffffff);
     DAT_00086996 = DAT_00086990 + 1;
     return;
   }
@@ -43834,7 +43837,7 @@ int param_1;
   }
   uVar2 = DAT_0008698c << 1;
 LAB_00059be4:
-  FUN_0005a550(0xffffffff);
+  sweep_step(0xffffffff);
   iVar1 = FUN_0005989c(*(undefined2 *)(&DAT_000869a8 + (short)uVar2 * 2));
   if (iVar1 == 0) {
     DAT_00086996 = DAT_00086990 + 1;
@@ -44100,13 +44103,14 @@ LAB_0005a4f8:
     *(short *)(DAT_0008697c + 4) = (short)iVar2;
   }
 LAB_0005a4ac:
-  uVar1 = FUN_000595d4();
+  uVar1 = sweep_integrate_substep();
   return uVar1;
 }
 
 
 
-undefined4 FUN_0005a550(param_1)
+// was FUN_0005a550 -- advance the sweep one step (param_1==-1 commits the move)
+undefined4 sweep_step(param_1)
 undefined4 param_1;
 
 {
@@ -44127,13 +44131,13 @@ undefined4 param_1;
     DAT_002049bc = DAT_002049bc + -1;
   }
   if (*(short *)(DAT_00204874 + 10) == 0) {
-    uVar3 = FUN_000595d4(0,param_1);
+    uVar3 = sweep_integrate_substep(0,param_1);
   }
   else {
     uVar3 = FUN_0005a348();
   }
   if (bVar1) {
-    FUN_0005a6bc();
+    sweep_collision_flags();
     DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
     uVar2 = FUN_0005a630();
     *(undefined1 *)(DAT_00204874 + 0x28) = uVar2;
@@ -44186,7 +44190,8 @@ short param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-uint FUN_0005a6bc()
+// was FUN_0005a6bc -- compute blocked/step-up flags for the sweep's current sub-position
+uint sweep_collision_flags()
 
 {
   ushort uVar1;
@@ -44332,7 +44337,8 @@ LAB_0005abe4:
 
 
 
-void FUN_0005ad18()
+// was FUN_0005ad18 -- act on sweep_collision_flags (stop/slide/step the move)
+void sweep_apply_collision()
 
 {
   undefined1 uVar1;
@@ -44340,7 +44346,7 @@ void FUN_0005ad18()
   bool bVar3;
   ushort local_14 [2];
   
-  local_14[0] = FUN_0005a6bc();
+  local_14[0] = sweep_collision_flags();
   DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
   uVar1 = FUN_0005a630();
   *(undefined1 *)(DAT_00204874 + 0x28) = uVar1;
@@ -44366,10 +44372,10 @@ void FUN_0005ad18()
       FUN_0005932c(bVar3);
       return;
     }
-    FUN_0005a550(0xffffffff);
+    sweep_step(0xffffffff);
   }
   else {
-    FUN_0005a550(0xffffffff);
+    sweep_step(0xffffffff);
     if ((local_14[0] & 0x4000) != 0) {
       FUN_000593c0();
       return;
