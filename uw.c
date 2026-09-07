@@ -43457,7 +43457,13 @@ void reticle_object_pick()
   }
   if (DAT_002049dc == 0) {
 LAB_00058a64:
-    _DAT_0008699b = 0x80 - *(byte *)(DAT_00204874 + 0x26);
+    /* No slope/step feature at this sub-position: the target foot height is
+       just the tile's flat floor (DAT_002049d9). Ghidra's `0x80 - height`
+       (tiletop minus the player's height) is the "no floor at all" sentinel;
+       used as the default it left a player who had walked off a ledge
+       floating near the ceiling instead of falling to the floor below, and
+       made the swept foot height oscillate when blocked beside a drop. */
+    _DAT_0008699b = (ushort)DAT_002049d9;
   }
   else {
     iVar4 = (uint)DAT_002049dd + (int)(char)DAT_002049de;
