@@ -2924,7 +2924,15 @@ undefined1 DAT_000869a1;
 undefined1 DAT_000869a2;
 static undefined1 DAT_00086986_backing[65536];
 #define DAT_00086986 DAT_00086986_backing[0]
-undefined DAT_00086987;
+/* The high byte of DAT_00086986[]'s int16 entries. movement_sweep_setup /
+   sweep_integrate_substep write the per-axis "direction" words as
+   `(&DAT_00086986)[k*2] = lo; (&DAT_00086987)[k*2] = hi;`. Ghidra emitted
+   this as a lone scalar, so the high byte landed on an unrelated global and
+   every entry read back as 0 -- `sweep_integrate_substep`'s
+   `DAT_00086986[dominant] * iVar2 < 1` test then always took the negative
+   branch, so "walk forward" moved the player BACKWARD (toward the wall
+   behind the spawn). Alias it to backing[1]. */
+#define DAT_00086987 DAT_00086986_backing[1]
 static undefined1 DAT_000869a8_backing[65536];
 #define DAT_000869a8 DAT_000869a8_backing[0]
 int DAT_00204870;
