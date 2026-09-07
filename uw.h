@@ -1692,10 +1692,10 @@ undefined4 FUN_000824f0();
 
 /* --- auto-generated overlap/exref aliases --- */
 #define _DAT_00085bf0 (*(uint*)&DAT_00085bf0)
-#define _DAT_00086999 (*(uint*)&DAT_00086999)
-#define _DAT_0008699b (*(uint*)&DAT_0008699b)
-#define _DAT_0008699f (*(uint*)&DAT_0008699f)
-#define _DAT_000869a1 (*(uint*)&DAT_000869a1)
+#define _DAT_00086999 (*(unsigned short*)&DAT_00086999)
+#define _DAT_0008699b (*(unsigned short*)&DAT_0008699b)
+#define _DAT_0008699f (*(unsigned short*)&DAT_0008699f)
+#define _DAT_000869a1 (*(unsigned short*)&DAT_000869a1)
 #define _DAT_00202978 (*(uint*)&DAT_00202978)
 #define _DAT_00202bfb (*(uint*)&DAT_00202bfb)
 #define _DAT_00202c00 (*(uint*)&DAT_00202c00)

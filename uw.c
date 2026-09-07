@@ -2802,9 +2802,25 @@ static unsigned char DAT_002049c8_backing[64];
 undefined DAT_000868c0;
 int DAT_002046d4;
 int DAT_002046ec;
-char DAT_00086998;
-undefined1 DAT_00086999;
-undefined1 DAT_0008699a;
+/* The reticle/collision "picked tile" record at 0x86998..0x869a2. Ghidra
+   split it into scattered byte scalars (DAT_00086998/99/9a/9b/9f/a0/a1/a2)
+   plus overlapping 16-bit "_DAT_" views (_DAT_00086999 = the x/y pair,
+   _DAT_0008699b = target floor height, _DAT_0008699f = ceiling clearance).
+   Recompiled as separate globals the wide writes and narrow reads landed on
+   different memory: reticle_object_pick's `_DAT_0008699f = 0x7f` never
+   reached DAT_0008699f/DAT_000869a0, so sweep_collision_flags read the
+   ceiling clearance as 0 and decided the player never fits -> "walk forward"
+   stalled after 1/8 tile on every open tile. Back them with one buffer so
+   the byte and word views alias. */
+static unsigned char DAT_00086998_backing[16];
+#define DAT_00086998  (*(signed char *)(DAT_00086998_backing + 0))
+#define DAT_00086999  (DAT_00086998_backing[1])
+#define DAT_0008699a  (DAT_00086998_backing[2])
+#define DAT_0008699b  (DAT_00086998_backing[3])
+#define DAT_0008699f  (DAT_00086998_backing[7])
+#define DAT_000869a0  (DAT_00086998_backing[8])
+#define DAT_000869a1  (DAT_00086998_backing[9])
+#define DAT_000869a2  (DAT_00086998_backing[10])
 int DAT_002046f8;
 char s_optbtns_00086954[] = "optbtns";
 short DAT_002046f0;
@@ -2917,16 +2933,12 @@ short DAT_00086980;
 short DAT_00086982;
 short DAT_00086984;
 undefined4 DAT_00204878;
-undefined DAT_0008699f;
-undefined DAT_0008699b;
 undefined DAT_00202c32;
 ushort DAT_0008698c;
 short DAT_0008698e;
 ushort DAT_00086992;
 short DAT_00086994;
 short DAT_0008698a;
-undefined1 DAT_000869a1;
-undefined1 DAT_000869a2;
 static undefined1 DAT_00086986_backing[65536];
 #define DAT_00086986 DAT_00086986_backing[0]
 /* The high byte of DAT_00086986[]'s int16 entries. movement_sweep_setup /
@@ -2941,7 +2953,6 @@ static undefined1 DAT_00086986_backing[65536];
 static undefined1 DAT_000869a8_backing[65536];
 #define DAT_000869a8 DAT_000869a8_backing[0]
 int DAT_00204870;
-undefined1 DAT_000869a0;
 undefined1 DAT_0024f0ca;
 undefined2 DAT_0023adb0;
 static undefined2 DAT_0023aeb8_backing[8192];
