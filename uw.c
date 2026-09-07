@@ -26370,6 +26370,17 @@ void FUN_0003bd50()
   Ordinal_1044(auStack_314,&DAT_00088d98,0x300);
   fade_out(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   FUN_00040e24(0,auStack_314);
+  /* FUN_00040e24 loads PALS.DAT bank 0 (the 3D dungeon-view palette --
+     cf. FUN_00040efc(0) at the game-mode switch) into the local
+     auStack_314 and installs it, but leaves the global DAT_00088d98
+     holding whatever bank the main menu last loaded (bank 2). The torch
+     palette-cycle loop (FUN_000259c0 -> FUN_0007e99c) then re-installs
+     g_palette_rgb565 straight from DAT_00088d98 on the very next redraw,
+     so the dungeon flips from its real bank-0 colours to the stale menu
+     palette (grey -> gold) after the first frame. Mirror the loaded
+     palette into DAT_00088d98 so the cycle loop keeps re-installing
+     bank 0. */
+  Ordinal_1044(&DAT_00088d98,auStack_314,0x300);
   Ordinal_1047(acStack_41c,0,0x104);
   pcVar2 = &DAT_0023cca8;
     stack0xffdc2f3c_ptr = acStack_41c;
