@@ -38660,6 +38660,9 @@ undefined1 * param_1;
 
 
 // was FUN_00050984 -- sample the floor height at one tile corner (type 0 solid -> 0x80)
+// PHYSICS: floor height source -- returns the standable height at corner param_1
+// of the current tile: 0x80 (= tile top, "no floor / solid") for a rock tile,
+// height*8 for flat floor, and interpolated values for slopes/diagonals.
 uint collision_sample_floor_height(param_1,param_2)
 uint param_1;
 undefined4 * param_2;
@@ -38669,10 +38672,11 @@ undefined4 * param_2;
   short sVar2;
   uint uVar3;
   int iVar4;
-  
+
   iVar4 = (param_1 & 0xff) * 5;
   sVar2 = *(short *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2);
   *param_2 = 0;
+  // PHYSICS: floor height -- (corner height nibble) * 8; refined per shape below
   uVar3 = (int)sVar2 >> 1 & 0x78;
   switch(*(ushort *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2) & 0xf) {
   case 0:
@@ -43323,8 +43327,11 @@ char *param_2;
   DAT_002049bc = 0;
   DAT_00204874 = param_1;
   DAT_002048bc = param_2;
+  // PHYSICS: set up this tick's velocity, sub-step count and target heights
   iVar1 = movement_sweep_setup(1,1);
   if (iVar1 != 0) {
+    // PHYSICS: sub-tile sweep -- advance the move DAT_00086990+1 sub-steps,
+    // colliding (floor/wall/ceiling) at each one; capped at 16 iterations
     while ((int)DAT_00086996 < DAT_00086990 + 1) {
       cVar2 = cVar3 + '\x01';
       if (cVar3 == '\x10') {
@@ -43336,12 +43343,15 @@ char *param_2;
         *(undefined1 *)(DAT_00204874 + 0x15) = 0;
         return;
       }
+      // PHYSICS: integrate one sub-step (horizontal, or vertical if falling/climbing)
       iVar1 = sweep_step(1);
       cVar3 = cVar2;
       if (iVar1 != 0) {
+        // PHYSICS: this sub-step crossed a cell boundary -- run collision resolution
         sweep_apply_collision();
       }
     }
+    // PHYSICS: commit the swept X/Y/Z back into the player movement block
     sweep_writeback_position();
   }
   return;
@@ -43599,15 +43609,22 @@ int param_2;
     DAT_00086994 = ((ushort)uVar6 ^ uVar4) - uVar4;
   }
   DAT_00086996 = 0;
+  // PHYSICS: build the destination tile's floor/ceiling height field for collision
   if (((DAT_002049d2 == 1) || (psVar11[2] != 0)) && (param_2 != 0)) {
     collision_build_height_field(*(undefined1 *)(iVar8 + 0x27));
     collision_height_envelope(0,0);
     psVar11 = DAT_00086978;
   }
+  // PHYSICS: gravity gate -- psVar11[2] (== DAT_0020488a, the vertical velocity
+  // input) must be non-zero to run any vertical integration this sweep. It is
+  // only set for scripted vertical motion (jump / knockback / slope step); a
+  // plain walk off a ledge never sets it, so no gravity accumulates and the
+  // step resolver snaps the foot down in one tick.
   if (psVar11[2] == 0) {
     DAT_0008698a = 0;
     return 1;
   }
+  // PHYSICS: seed the vertical velocity, sign from the requested direction
   DAT_0008698a = 0x800;
   if (psVar11[2] < 1) {
     DAT_0008698a = -0x800;
@@ -43635,6 +43652,8 @@ int param_2;
   uVar1 = iVar10 >> 0x1f;
   uVar9 = (undefined2)(((iVar10 >> 5 ^ uVar1) - uVar1) * 0x10000 >> 0x10);
 LAB_000592f8:
+  // PHYSICS: gravity/climb rate -- _DAT_000869a1 (DAT_000869a1/a2) is the vertical
+  // speed the integrator (FUN_0005a348) accelerates by each sub-step this sweep
   DAT_000869a2 = (char)((ushort)uVar9 >> 8);
   DAT_000869a1 = (char)uVar9;
   return 1;
@@ -43659,6 +43678,9 @@ undefined4 param_1;
 
 
 
+// PHYSICS: kill all velocity -- zero the horizontal (+6/+8/+0xc/+0xe) and
+// vertical (+0xa/+0x10) velocity/accumulator fields and end the sweep. Called
+// on a hard blocking hit (0x4000) so the player stops instead of bouncing.
 void FUN_000593c0()
 
 {
@@ -43696,6 +43718,7 @@ void sweep_writeback_position()
      high byte) and Z-low to +2 (Y's low byte), while the high bytes stayed
      at the correct +3 / +5. Result: one forward step scrambled X and Y and
      threw the player off the map. Restore proper halfword stores. */
+  // PHYSICS: commit swept X (+0), Y (+2) and Z/foot height (+4) to the movement block
   *(short *)(DAT_00204874 + 0) =
        (short)(*DAT_0008697c * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18));
   *(short *)(DAT_00204874 + 2) =
@@ -43722,6 +43745,8 @@ void sweep_writeback_position()
 
 
 // was FUN_000595d4 -- integrate one sub-tile step of the movement/collision sweep
+// PHYSICS: horizontal integrator -- advances the swept X/Y (DAT_0008697c[0/1])
+// along the dominant/secondary axes and carries the sub-cell remainders
 int sweep_integrate_substep(param_1,param_2)
 short param_1;
 short param_2;
@@ -43963,6 +43988,10 @@ void FUN_00059c38()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// PHYSICS: landing / surface contact -- called when the vertical integrator
+// crosses the target height. Derives a landing-impact value (bob/thump on the
+// camera via DAT_00204874+9), snaps the foot Z to _DAT_0008699b, clears the
+// vertical remainder, and if this was a floor landing kills the fall velocity.
 void FUN_00059d20()
 
 {
@@ -43999,6 +44028,8 @@ void FUN_00059d20()
   }
   *(char *)(DAT_00204874 + 9) = (char)sVar4;
   *(char *)((char *)DAT_00204874 + 0x13) = (char)((ushort)sVar4 >> 8);
+  // PHYSICS: floor/ceiling collision -- snap the foot exactly onto the surface
+  // and zero the vertical sub-unit accumulator so gravity restarts from rest
   *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
   psVar9 = DAT_00204874;
   DAT_00086984 = 0;
@@ -44107,6 +44138,12 @@ LAB_0005a33c:
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// PHYSICS: vertical integrator -- applies gravity/climb to the swept foot Z
+// (DAT_0008697c[2]) and resolves floor + ceiling contact. Only reached from
+// sweep_step when the "vertical motion active" flag *(DAT_00204874+10) is set.
+// _DAT_000869a1 = per-tick vertical rate (gravity accel / climb speed),
+// DAT_0008698a = signed vertical velocity, DAT_00086984 = sub-unit remainder,
+// _DAT_0008699b = target surface height (floor when falling, ceiling when rising).
 undefined4 FUN_0005a348(param_1,param_2)
 undefined4 param_1;
 short param_2;
@@ -44118,15 +44155,19 @@ short param_2;
   short sVar4;
   uint uVar5;
   int iVar6;
-  
+
   iVar2 = (int)param_2;
   if ((int)DAT_00086996 < (int)((uint)(iVar2 == -1) + (int)DAT_00086990)) {
+    // PHYSICS: gravity -- accelerate the vertical velocity by _DAT_000869a1*32 per
+    // sub-step; sign follows the current velocity (downward when falling/resting)
     iVar6 = _DAT_000869a1 * 0x20;
     if (DAT_0008698a * iVar2 < 1) {
       iVar6 = _DAT_000869a1 * -0x20;
     }
   }
   else {
+    // PHYSICS: final partial sub-step -- vertical displacement from the current
+    // velocity, scaled by the horizontal distance covered (DAT_00086992)
     iVar6 = (int)DAT_0008698a;
     if (DAT_00086992 == 0) {
       if (iVar6 < 0) {
@@ -44162,6 +44203,7 @@ short param_2;
   }
   DAT_00086984 = (ushort)(uVar3 * 0x10000 >> 0x10) & 0x7ff;
   if (iVar2 == -1) {
+    // PHYSICS: revert path -- just back the foot Z out by the computed delta
     *(short *)((char *)DAT_0008697c + 4) = *(short *)((char *)DAT_0008697c + 4) + sVar4;
   }
   else {
@@ -44169,11 +44211,15 @@ short param_2;
     if (iVar2 < 1) {
       if (-1 < iVar2) goto LAB_0005a4ac;
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
+      // PHYSICS: floor collision -- falling; if this step would drop the foot
+      // below the target floor height, stop and snap to it (FUN_00059d20)
       iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
       if (iVar2 < _DAT_0008699b) goto LAB_0005a4f8;
     }
     else {
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
+      // PHYSICS: ceiling collision -- rising; if this step would push the foot
+      // above the target height, stop and snap to it
       iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
       if (_DAT_0008699b < iVar2) {
 LAB_0005a4f8:
@@ -44181,10 +44227,12 @@ LAB_0005a4f8:
         return 0;
       }
     }
+    // PHYSICS: no surface hit this step -- commit the new foot Z
     *(short *)((char *)DAT_0008697c + 4) = (short)iVar2;
   }
 LAB_0005a4ac:
-  uVar1 = sweep_integrate_substep();
+  // PHYSICS: after the vertical step, run the horizontal sub-tile integrator for the same direction
+  uVar1 = sweep_integrate_substep(0,param_2);
   return uVar1;
 }
 
@@ -44212,10 +44260,17 @@ undefined4 param_1;
     DAT_002049bc = DAT_002049bc + -1;
   }
   if (*(short *)(DAT_00204874 + 10) == 0) {
+    // PHYSICS: no vertical motion this step -> integrate the horizontal sub-tile move only
     uVar3 = sweep_integrate_substep(0,param_1);
   }
   else {
-    uVar3 = FUN_0005a348();
+    /* PHYSICS: vertical motion active (falling / climbing a slope) -> run the
+       gravity + floor/ceiling integrator. Ghidra dropped both args here, so
+       FUN_0005a348 ran with a garbage `param_2` direction/scale -- one call
+       overshot the target height and snapped, which is why a drop resolved
+       in a single tick instead of accelerating over several. Forward the
+       sweep direction like the horizontal path above. */
+    uVar3 = FUN_0005a348(0,param_1);
   }
   if (bVar1) {
     sweep_collision_flags();
@@ -44327,6 +44382,8 @@ uint sweep_collision_flags()
       iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
     } while (iVar6 < (int)((uint)DAT_002049dd + (int)DAT_002049de));
   }
+  // PHYSICS: floor collision -- compare the foot Z against the destination
+  // tile's floor height _DAT_0008699b to decide level / step-up / step-down / fall
   iVar4 = (int)*(short *)((char *)DAT_0008697c + 4);
   iVar6 = (int)_DAT_0008699b;
   iVar5 = (int)DAT_00086998;
@@ -44337,6 +44394,12 @@ uint sweep_collision_flags()
   }
   else {
     if ((iVar5 == -1) && (bVar8)) {
+      // PHYSICS: floor step -- if the height change is within the step limit
+      // (byte 0x27), OR the tile is a walkable auto-stick floor (DAT_002049d4 & 4)
+      // and no vertical motion is active, snap straight to it instead of falling.
+      // A drop larger than the step limit on a non-auto-stick tile falls through
+      // here without setting the airborne flag -- that is why a ledge drop is
+      // resolved in one tick rather than a multi-tick fall.
       uVar3 = iVar4 - iVar6 >> 0x1f;
       if (((int)((iVar4 - iVar6 ^ uVar3) - uVar3) <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)) ||
          (((*(short *)(DAT_00204874 + 10) == 0 && ((DAT_002049d6 & 0x800) == 0)) &&
@@ -44347,12 +44410,16 @@ LAB_0005a970:
           if (CONCAT11(DAT_000869a0,DAT_0008699f) <= iVar6) {
             local_3c = local_3c & 0xfeff;
           }
+          // PHYSICS: ceiling clearance -- target floor + player height (byte 0x26)
+          // must fit under the ceiling clearance value; if not, treat as a wall
           iVar6 = iVar6 + (uint)*(byte *)(DAT_00204874 + 0x26);
           if (iVar6 < 0x80) {
             if ((iVar5 != -1) || (iVar6 <= CONCAT11(DAT_000869a0,DAT_0008699f))) {
               if ((((local_3c & 0x400) != 0) || (iVar5 == -1)) ||
                  ((((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) != 0 && (bVar7)))) {
                 DAT_00204870 = 1;
+                // PHYSICS: floor collision -- step resolved: snap the foot Z onto
+                // this tile's floor in a single tick (no gravity for small steps)
                 *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
                 uVar3 = (int)((int)_DAT_0008699b - (uint)DAT_002049d8) >> 0x1f;
                 if ((int)(uint)*(byte *)(DAT_00204874 + 0x25) <
@@ -44422,9 +44489,13 @@ LAB_0005abe4:
     }
   }
   local_3c = uVar1;
+  // PHYSICS: wall collision -- no floor/step bit resolved this move: mark it
+  // blocked (0x1000) so sweep_apply_collision stops the horizontal advance
   if ((local_3c & 0xfc) == 0) {
     local_3c = local_3c | 0x1000;
   }
+  // PHYSICS: wall collision -- also blocked if the foot sits far enough above
+  // this tile's floor that it is a wall face, not a step
   if (((local_3c & 0x80) == 0) &&
      ((int)(uint)DAT_002049d9 <
       (int)((int)*(short *)((char *)DAT_0008697c + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
@@ -44444,6 +44515,7 @@ void sweep_apply_collision()
   bool bVar3;
   ushort local_14 [2];
   
+  // PHYSICS: collide this sub-step and act on the result flags
   local_14[0] = sweep_collision_flags();
   DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
   uVar1 = FUN_0005a630();
@@ -44455,24 +44527,31 @@ void sweep_apply_collision()
     }
     if (((local_14[0] & DAT_002048bc[1]) == 0) ||
        (iVar2 = (**(codeval **)(DAT_002048bc + 4))(local_14), iVar2 == 0)) {
+      // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
+      // slide the move along it (FUN_00059b7c) instead of stopping dead
       bVar3 = (local_14[0] & 0x700) != 0;
       if (bVar3) {
         FUN_00059b7c((local_14[0] & 0x400) == 0);
       }
+      // PHYSICS: wall collision -- 0x1000 = fully blocked: end the sub-tile sweep
       if ((local_14[0] & 0x1000) == 0) {
         return;
       }
       if (*(short *)(DAT_00204874 + 0x10) != 0) {
         return;
       }
+      // PHYSICS: wall collision -- arm the vertical path (DAT_00204874+0x10) and
+      // hand off to FUN_0005932c to finish/redirect the blocked move
       *(undefined1 *)(DAT_00204874 + 0x10) = 0xfc;
       *(undefined1 *)(DAT_00204874 + 0x11) = 0xff;
       FUN_0005932c(bVar3);
       return;
     }
+    // PHYSICS: soft block resolved -- back the sub-step out (sweep_step(-1))
     sweep_step(0xffffffff);
   }
   else {
+    // PHYSICS: hard block (0xc000) -- revert the sub-step and, on 0x4000, kill velocity
     sweep_step(0xffffffff);
     if ((local_14[0] & 0x4000) != 0) {
       FUN_000593c0();
