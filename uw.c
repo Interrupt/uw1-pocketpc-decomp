@@ -2771,8 +2771,29 @@ char *DAT_00204874;
 int DAT_002046e8;
 undefined1 DAT_002046e0;
 undefined1 DAT_002046e4;
-short DAT_002049c8;
-short DAT_002049ca;
+/* The movement/collision-sweep working block. Ghidra split this one ~24-byte
+   struct into 14 separate globals (DAT_002049c8 .. DAT_002049de), but
+   FUN_00050d78 / FUN_000518c0 write its fields through `DAT_00202c6c[offset]`
+   (DAT_00202c6c = &DAT_002049c8) while sweep_init_position / sweep_collision_
+   flags read/write them by name -- so the indexed writes and the named reads
+   landed on unrelated memory and collision flags never reflected the tile
+   under the player (walked straight through walls). Back them with one buffer
+   at the name-derived offsets so both views alias. */
+static unsigned char DAT_002049c8_backing[64];
+#define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
+#define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
+#define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
+#define DAT_002049d0 (DAT_002049c8_backing[0x08])
+#define DAT_002049d1 (DAT_002049c8_backing[0x09])
+#define DAT_002049d2 (*(undefined2 *)(DAT_002049c8_backing + 0x0a))
+#define DAT_002049d4 (*(ushort *)(DAT_002049c8_backing + 0x0c))
+#define DAT_002049d6 (*(ushort *)(DAT_002049c8_backing + 0x0e))
+#define DAT_002049d8 (DAT_002049c8_backing[0x10])
+#define DAT_002049d9 (DAT_002049c8_backing[0x11])
+#define DAT_002049da (DAT_002049c8_backing[0x12])
+#define DAT_002049dc (DAT_002049c8_backing[0x14])
+#define DAT_002049dd (DAT_002049c8_backing[0x15])
+#define DAT_002049de (DAT_002049c8_backing[0x16])
 undefined DAT_000868c0;
 int DAT_002046d4;
 int DAT_002046ec;
@@ -2885,10 +2906,6 @@ undefined1 DAT_002049c0;
 undefined1 DAT_002049bc;
 short DAT_00086990;
 short DAT_00086996;
-undefined2 DAT_002049ce;
-byte DAT_002049d0;
-byte DAT_002049d1;
-undefined2 DAT_002049d2;
 short DAT_0008697c_backing[128];
 short *DAT_0008697c = DAT_0008697c_backing;
 short DAT_00086980;
@@ -2896,12 +2913,7 @@ short DAT_00086982;
 short DAT_00086984;
 undefined4 DAT_00204878;
 undefined DAT_0008699f;
-byte DAT_002049dc;
-byte DAT_002049dd;
-byte DAT_002049de;
 undefined DAT_0008699b;
-byte DAT_002049d9;
-byte DAT_002049d8;
 undefined DAT_00202c32;
 ushort DAT_0008698c;
 short DAT_0008698e;
@@ -2913,11 +2925,8 @@ undefined1 DAT_000869a2;
 static undefined1 DAT_00086986_backing[65536];
 #define DAT_00086986 DAT_00086986_backing[0]
 undefined DAT_00086987;
-ushort DAT_002049d4;
-byte DAT_002049da;
 static undefined1 DAT_000869a8_backing[65536];
 #define DAT_000869a8 DAT_000869a8_backing[0]
-ushort DAT_002049d6;
 int DAT_00204870;
 undefined1 DAT_000869a0;
 undefined1 DAT_0024f0ca;
@@ -38835,6 +38844,12 @@ uint param_1;
   _DAT_00202c34 =
        (ushort *)
        FUN_00068100((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+  /* off-map tile -- this function derefs _DAT_00202c34 below and assumes a
+     valid record; the sweep collision-revert path can reach here out of
+     bounds. */
+  if (_DAT_00202c34 == (ushort *)0x0) {
+    return;
+  }
   bVar11 = 4;
   bVar12 = *DAT_00202c6c;
   bVar13 = DAT_00202c6c[2];
@@ -39201,9 +39216,18 @@ int param_2;
   
   local_3c = 0;
   iVar5 = FUN_00068100((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+  /* off-map tile (DAT_00202c6c position outside 0..63): this function assumes
+     a valid tile record and derefs iVar5 + offsets below. The sweep's
+     collision revert path (sweep_step(-1)) can reach here with an out-of-
+     bounds position. */
+  if (iVar5 == 0) {
+    return;
+  }
   if (*(short *)(DAT_00202c6c + 10) != 0) {
     puVar6 = (ushort *)FUN_000535fc();
-    if ((*puVar6 & 0x1c0) == 0x40) {
+    /* Ghidra dropped FUN_000535fc's argument here (an object slot id), so it
+       can hand back garbage / NULL. Guard the deref. */
+    if (puVar6 != (ushort *)0x0 && (*puVar6 & 0x1c0) == 0x40) {
       local_3c = 1;
     }
     else {
@@ -44208,6 +44232,23 @@ uint sweep_collision_flags()
   bVar7 = (DAT_002048bc[2] & 0x80) == 0;
   uVar1 = *DAT_002048bc;
   DAT_00204870 = 0;
+  /* Sync the collision working block's X/Y (DAT_00202c6c[+0/+2], i.e.
+     DAT_002049c8/ca) to the sweep's live sub-tile position before the tile
+     lookups in FUN_00050d78 / FUN_000518c0.  sweep_init_position copies the
+     heading/height fields into this block but never the position, and Ghidra
+     dropped whatever kept it current -- so DAT_002049c8/ca sat at (0,0) and
+     every collision test hit tile (0,0), letting the player walk straight
+     through solid walls and off the map.  DAT_0008697c is the live position
+     in the same 1/8-tile units these readers expect (>>3 -> tile). */
+  DAT_002049c8 = DAT_0008697c[0];
+  DAT_002049ca = DAT_0008697c[1];
+  if (FUN_00068100((short)((int)DAT_0008697c[0] >> 3),(short)((int)DAT_0008697c[1] >> 3)) ==
+      (void *)0x0) {
+    /* stepped outside the 64x64 map -- the border is always solid; report a
+       hard block so sweep_apply_collision backs the move out. (Also stops
+       FUN_00050d78 dereferencing a NULL tile pointer.) */
+    return 0xffff8000;
+  }
   FUN_00050d78(*(undefined1 *)(DAT_00204874 + 0x27));
   FUN_000518c0(0,0);
   reticle_object_pick(0);
