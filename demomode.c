@@ -109,6 +109,22 @@ static int demo_translate_vk(const char *name) {
     if (strcasecmp(name, "CTRL") == 0 || strcasecmp(name, "CONTROL") == 0) return VK_CONTROL;
     if (strcasecmp(name, "ESC") == 0 || strcasecmp(name, "ESCAPE") == 0) return VK_ESCAPE;
     if (strcasecmp(name, "BACKSPACE") == 0 || strcasecmp(name, "BACK") == 0) return VK_BACK;
+    /* Single letter or digit -> its Windows VK code (VK_A..VK_Z == 'A'..'Z'
+       == 0x41..0x5A, VK_0..VK_9 == '0'..'9'). Lets a demo drive the DOS
+       shifted-WASD world movement (A/D turn, W/S/X walk, Z/C strafe) which
+       is bound by VK code, not WM_CHAR. */
+    if (name[0] && name[1] == '\0') {
+        unsigned char c = (unsigned char)name[0];
+        if (c >= 'a' && c <= 'z') return c - 'a' + 'A';
+        if ((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) return c;
+    }
+    /* 0xNN / decimal -> raw key/command code, for the GAPI D-pad movement
+       codes (0x8d/0x8f/0x91/0x93) and anything else bound directly. */
+    if ((name[0] == '0' && (name[1] == 'x' || name[1] == 'X')) ||
+        (name[0] >= '0' && name[0] <= '9')) {
+        long v = strtol(name, NULL, 0);
+        if (v > 0 && v < 0x400) return (int)v;
+    }
     return 0;
 }
 

@@ -697,6 +697,45 @@ int GXEndDraw(void) {
     SDL_RenderCopy(g_ren, g_tex, NULL, NULL);
     SDL_RenderPresent(g_ren);
 
+    /* UW_DEBUG_TIMELAPSE=<ms>: save a numbered screenshot every <ms> of
+       wall-clock time (min 1, "1" or empty -> 250ms) into
+       debug/timelapse/<run-timestamp>/. Pairs with UW_DEMO_DELAY_MS to
+       pace a scripted demo into an even timelapse -- assemble the BMPs
+       into a GIF afterwards. */
+    {
+        static int tl_ms = -1;
+        static Uint32 tl_next = 0;
+        static char tl_dir[300];
+        static unsigned tl_n = 0;
+        if (tl_ms < 0) {
+            const char *e = getenv("UW_DEBUG_TIMELAPSE");
+            if (e && e[0] && strcmp(e, "0") != 0) {
+                long v = strtol(e, NULL, 10);
+                tl_ms = (v > 1) ? (int)v : 250;
+                time_t now = time(NULL);
+                struct tm tm_now;
+                localtime_r(&now, &tm_now);
+                char ts[32];
+                strftime(ts, sizeof ts, "%Y%m%d_%H%M%S", &tm_now);
+                snprintf(tl_dir, sizeof tl_dir, "debug/timelapse/%s", ts);
+                debug_mkdir_p(tl_dir);
+                tl_next = SDL_GetTicks();
+                fprintf(stderr, "[timelapse] every %dms -> %s/\n", tl_ms, tl_dir);
+            } else {
+                tl_ms = 0;
+            }
+        }
+        if (tl_ms > 0) {
+            Uint32 now = SDL_GetTicks();
+            if (now >= tl_next) {
+                char p[360];
+                snprintf(p, sizeof p, "%s/%05u.bmp", tl_dir, tl_n++);
+                uw_save_screenshot(p);
+                tl_next = now + (Uint32)tl_ms;
+            }
+        }
+    }
+
     /* Real GAPI hardware's GXEndDraw blocked until the next display
      * refresh -- that's what gave the whole game its effective 60Hz
      * tick rate (every polling/redraw loop in the game funnels through
