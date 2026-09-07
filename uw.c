@@ -2915,10 +2915,10 @@ undefined2 DAT_0023adb0;
 static undefined2 DAT_0023aeb8_backing[8192];
 #define DAT_0023aeb8 DAT_0023aeb8_backing[0]
 /* Was a lone `undefined2` scalar, but it is the per-level floor/ceiling
-   texture-id list -- FUN_0005b054 / FUN_0005b188 write (&DAT_0023adb8)[0..9]
-   and FUN_0005b514 reads them to pick which F32.TR / W16.TR entries to load
+   texture-id list -- reset_texture_id_lists / load_level_texture_ids write (&DAT_0023adb8)[0..9]
+   and load_texture_arena reads them to pick which F32.TR / W16.TR entries to load
    into the 10-slot arena. As a scalar only slot 0 was coherent; slots 1..9
-   aliased whatever globals the linker placed next, so FUN_0005b514 hit a
+   aliased whatever globals the linker placed next, so load_texture_arena hit a
    garbage/negative id after ~2 entries and DAT_0023aeb8 (the loaded count)
    came out 2. get_texture_page(0x39) (the ceiling = arena slot 9) then read
    far past the 2-texture arena into the W16/colour-light memory -> wrong
@@ -2932,7 +2932,7 @@ undefined1 DAT_0023b841;
 /* Recovered from UU.exe .data: the four texture-file basenames
    FUN_0005b36c appends to "\DATA\" and loads into the arena. Were
    silently-zero 32KB arrays, so every path was just the bare "\DATA\"
-   directory -> FUN_0005b514 failed -> DAT_002049e0 stayed all zero. */
+   directory -> load_texture_arena failed -> DAT_002049e0 stayed all zero. */
 static const char DAT_000869cc_str[] = "f16.tr";
 #define DAT_000869cc (DAT_000869cc_str[0])
 static const char DAT_000869d4_str[] = "w16.tr";
@@ -26173,7 +26173,7 @@ void FUN_0003b820()
   if (sVar2 != 0) {
     FUN_0003c3c8();
   }
-  FUN_0005b054();
+  reset_texture_id_lists();
   FUN_0005b828();
   FUN_00066e90();
   FUN_0002b63c();
@@ -44417,7 +44417,8 @@ undefined4 FUN_0005b010()
 
 
 
-undefined4 FUN_0005b054()
+// was FUN_0005b054 -- reset texture id lists to identity + default counts (0x30 wall, 10 floor)
+undefined4 reset_texture_id_lists()
 
 {
   int iVar1;
@@ -44470,7 +44471,8 @@ undefined4 FUN_0005b054()
 
 
 
-bool FUN_0005b188(param_1,param_2)
+// was FUN_0005b188 -- read the level's 0x7a-byte tmap-id block (48 wall + 10 floor + 3) from the .ark
+bool load_level_texture_ids(param_1,param_2)
 /* .ark handle-struct pointer -- was `undefined4`, truncating it before
    FUN_0001613c. */
 undefined1 * param_1;
@@ -44509,7 +44511,7 @@ int param_2;
     (&DAT_0023adb8)[iVar4] = local_tmap_buf[48 + iVar4];
     iVar4 = iVar1;
   } while (iVar1 < 10);
-  FUN_0005b660((char *)&DAT_0023ae58,(char *)&DAT_0023adb8);
+  load_terrain_texture_props((char *)&DAT_0023ae58,(char *)&DAT_0023adb8);
   iVar4 = 0;
   do {
     uVar2 = local_tmap_buf[58 + iVar4];
@@ -44589,7 +44591,7 @@ void FUN_0005b36c()
      `+ iVar3` writes onto per-file base names. Same "one buffer, many
      Ghidra names" bug as FUN_0001de0c's matrices. With them separate,
      the filename suffix was written to a stray 8-byte local, so
-     FUN_0005b514 opened the bare "...\DATA\" directory and the whole
+     load_texture_arena opened the bare "...\DATA\" directory and the whole
      texture / shade / colour-light arena (DAT_002049e0) stayed zero --
      which is why the (now-running) 3D span rasterizer drew nothing.
      Fixed by pointing all four `+ iVar3` writes at acStack_114. */
@@ -44613,7 +44615,7 @@ void FUN_0005b36c()
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   local_11c[0] = DAT_0023adb0;
-  FUN_0005b514(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae38);
+  load_texture_arena(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae38);
   pcVar2 = &DAT_000869dc;
     wptr_42265 = (acStack_114 + iVar3);
   do {
@@ -44622,7 +44624,7 @@ void FUN_0005b36c()
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   DAT_0023ae34 = DAT_0023ae38 + DAT_0023adb0 * 0x1000;
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
   pcVar2 = &DAT_000869d4;
     wptr_42273 = (acStack_114 + iVar3);
   do {
@@ -44631,7 +44633,7 @@ void FUN_0005b36c()
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   DAT_0023ae3c = DAT_0023ae34 + DAT_0023aeb8 * 0x400;
-  FUN_0005b514(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae3c);
+  load_texture_arena(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae3c);
   pcVar2 = &DAT_000869cc;
     wptr_42281 = (acStack_114 + iVar3);
   do {
@@ -44640,7 +44642,7 @@ void FUN_0005b36c()
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
   FUN_00041db0();
   return;
 }
@@ -44652,7 +44654,8 @@ void FUN_0005b36c()
    texture data through a chopped &DAT_002049e0 segfaulted the moment
    the .tr files actually opened. Three of the four call sites also had
    param_4 dropped by Ghidra (stale-register reuse); restored. */
-void FUN_0005b514(param_1,param_2,param_3,param_4)
+// was FUN_0005b514 -- load selected entries of a .tr texture file (ids in list param_2) into an arena
+void load_texture_arena(param_1,param_2,param_3,param_4)
 char *param_1;
 short *param_2;
 short * param_3;
@@ -44727,8 +44730,9 @@ char *param_4;
 
 
 
-void FUN_0005b660(param_1,param_2)
-/* Both are bases into the tmap-id arrays FUN_0005b188 fills
+// was FUN_0005b660 -- load TERRAIN.DAT texture-property words -> DAT_0023add0 (wall) / DAT_0023ae40 (floor)
+void load_terrain_texture_props(param_1,param_2)
+/* Both are bases into the tmap-id arrays load_level_texture_ids fills
    (&DAT_0023ae58 and &DAT_0023adb8) -- Ghidra dropped both args at the
    lone call site and typed them `int`, so the reads below hit a bogus
    address and segfaulted level init. Kept as byte-addressed pointers so
@@ -49636,7 +49640,7 @@ byte param_1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_114,s__DATA_f32_tr_00086de8);
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
   Ordinal_1047(acStack_114,0,0x104);
   do {
     cVar1 = *pcVar3;
@@ -49644,7 +49648,7 @@ byte param_1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_114,s__DATA_f16_tr_00086dd8);
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
   return;
 }
 
@@ -52648,7 +52652,7 @@ undefined4 param_1;
     iVar2 = (int)sVar1;
     FUN_00044624(0);
     if (0 < iVar2) {
-      FUN_0005b188(auStack_1c,param_1);
+      load_level_texture_ids(auStack_1c,param_1);
       FUN_000165bc();
       FUN_0002dba4();
       FUN_000359f4();

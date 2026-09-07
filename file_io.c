@@ -122,7 +122,7 @@ int uw_file_open_read(const char *win_path) {
      * fopen() happily "succeeds" on one instead, which papers over game
      * paths that are missing a filename component (a path built from a
      * directory prefix with no filename ever appended -- see uw.c's
-     * FUN_0005b514 for a case that depends on this failing cleanly rather
+     * load_texture_arena for a case that depends on this failing cleanly rather
      * than than silently opening the directory and returning garbage on
      * every subsequent read). */
     struct stat st;

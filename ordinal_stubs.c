@@ -708,7 +708,7 @@ int Ordinal_1118(void *f)
 }
 
 /* Zeroing allocator, called as Ordinal_1346(elem_size, count) at every
-   site (e.g. the .tr texture loader's offset table, FUN_0005b514). Was a
+   site (e.g. the .tr texture loader's offset table, load_texture_arena). Was a
    no-op stub that returned NULL -> FUN_0003c3c8(0x1008) fatal the moment
    the texture files actually started loading. */
 void *Ordinal_1346(elem_size, count)
