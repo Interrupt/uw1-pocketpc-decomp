@@ -2914,7 +2914,18 @@ undefined1 DAT_0024f0ca;
 undefined2 DAT_0023adb0;
 static undefined2 DAT_0023aeb8_backing[8192];
 #define DAT_0023aeb8 DAT_0023aeb8_backing[0]
-undefined2 DAT_0023adb8;
+/* Was a lone `undefined2` scalar, but it is the per-level floor/ceiling
+   texture-id list -- FUN_0005b054 / FUN_0005b188 write (&DAT_0023adb8)[0..9]
+   and FUN_0005b514 reads them to pick which F32.TR / W16.TR entries to load
+   into the 10-slot arena. As a scalar only slot 0 was coherent; slots 1..9
+   aliased whatever globals the linker placed next, so FUN_0005b514 hit a
+   garbage/negative id after ~2 entries and DAT_0023aeb8 (the loaded count)
+   came out 2. get_texture_page(0x39) (the ceiling = arena slot 9) then read
+   far past the 2-texture arena into the W16/colour-light memory -> wrong
+   ceiling texture. Sibling lists DAT_0023ae58 / DAT_0023add0 / DAT_0023b840
+   already have backing arrays; this one was missed. */
+static undefined2 DAT_0023adb8_backing[8192];
+#define DAT_0023adb8 DAT_0023adb8_backing[0]
 undefined1 DAT_0024f090;
 char s_bad_tmap_ids_size_000869b7[] = "bad_tmap_ids_size";
 undefined1 DAT_0023b841;
@@ -44689,7 +44700,14 @@ char *param_4;
     if (0 < *param_3) {
       iVar3 = 0;
       do {
-        iVar4 = (int)*(short *)(param_2 + iVar3 * 2);
+        /* Ghidra kept a byte *2 scale from the original `*(short*)((char*)base
+           + i*2)` but also retyped param_2 as short* -- the two compound, so
+           this read every OTHER id (idlist[0], idlist[2], idlist[4]...). That
+           loaded F32.TR[7,42,5,29,16,0,0,0,0,0] into the 10-slot arena instead
+           of F32.TR[7,4,42,1,5,0,29,12,16,15], so floor slot 9 (= the ceiling,
+           get_texture_page(0x39)) came out F32.TR[0] (cobblestone) rather than
+           the level's real ceiling id 15. Read ids consecutively. */
+        iVar4 = (int)param_2[iVar3];
         if (iVar4 < 0) break;
         FUN_00022850(iVar1,*(undefined4 *)(iVar2 + iVar4 * 4),0);
         iVar4 = FUN_0002285c(iVar1,param_4,iVar5);
