@@ -697,11 +697,15 @@ int GXEndDraw(void) {
     SDL_RenderCopy(g_ren, g_tex, NULL, NULL);
     SDL_RenderPresent(g_ren);
 
-    /* UW_DEBUG_TIMELAPSE=<ms>: save a numbered screenshot every <ms> of
+    /* UW_DEBUG_TIMELAPSE=<ms>: save a numbered frame every <ms> of
        wall-clock time (min 1, "1" or empty -> 250ms) into
        debug/timelapse/<run-timestamp>/. Pairs with UW_DEMO_DELAY_MS to
        pace a scripted demo into an even timelapse -- assemble the BMPs
-       into a GIF afterwards. */
+       into a GIF afterwards. Captures g_uw_framebuffer directly (the
+       game's live 320xGX_H RGB565 software buffer that every draw writes
+       into) rather than the SDL renderer's last present -- the 3D
+       viewport only reaches the renderer on a dirty-rect flush, so a
+       renderer read goes stale between redraws (e.g. while turning). */
     {
         static int tl_ms = -1;
         static Uint32 tl_next = 0;
@@ -727,10 +731,16 @@ int GXEndDraw(void) {
         }
         if (tl_ms > 0) {
             Uint32 now = SDL_GetTicks();
-            if (now >= tl_next) {
+            if (now >= tl_next && g_uw_framebuffer) {
                 char p[360];
                 snprintf(p, sizeof p, "%s/%05u.bmp", tl_dir, tl_n++);
-                uw_save_screenshot(p);
+                SDL_Surface *tls = SDL_CreateRGBSurfaceWithFormat(
+                    0, GX_W, GX_H, 16, SDL_PIXELFORMAT_RGB565);
+                if (tls) {
+                    memcpy(tls->pixels, g_uw_framebuffer, (size_t)GX_W * GX_H * 2);
+                    SDL_SaveBMP(tls, p);
+                    SDL_FreeSurface(tls);
+                }
                 tl_next = now + (Uint32)tl_ms;
             }
         }
