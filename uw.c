@@ -51777,6 +51777,26 @@ void FUN_0006a168()
   if (0xd < (int)((uVar1 & 0xffff) - (uint)DAT_0023bf74)) {
     palette_cycle_range(0x40,0x40,1);
     reinstall_active_palette(0x40,0x40,0);
+    /* Palette-cycle animation on the menu's "Ultima Underworld" title (and
+       the copyright line): palette_cycle_range rotates PALS entries
+       0x40..0x7f -- the gold gradient ramp -- and reinstall_active_palette
+       rebuilds g_palette_rgb565. On the original 8bpp target the hardware
+       palette swap animated the screen for free; this port draws straight
+       to RGB565, so the already-composited pixels have to be recoloured
+       here. Re-blit exactly the pixels whose OPSCR source index is in the
+       cycled range (0x40..0x7f) -- that hits the title/copyright and never
+       the menu buttons (drawn on top, over non-gold stone). */
+    if (DAT_0023bf70 != (char *)0x0) {
+      unsigned char *_src = (unsigned char *)DAT_0023bf70;
+      unsigned short *_dst = (unsigned short *)g_uw_framebuffer;
+      unsigned short *_lut = &g_palette_rgb565;
+      int _i;
+      for (_i = 0; _i < 0x140 * 200; _i++) {
+        unsigned char _ix = _src[_i];
+        if ((_ix & 0xc0) == 0x40) _dst[_i] = _lut[_ix];
+      }
+      FUN_00011000(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
+    }
     DAT_0023bf74 = FUN_0002294c();
   }
   flush_dirty_rect_to_display(1);
@@ -52018,8 +52038,14 @@ int param_4;
     FUN_0006a200(param_1,param_2,param_3,param_4);
     FUN_00040d00(s_font5x6p_sys_0008430c);
     while (sVar2 = FUN_00057a70(), sVar2 < 0) {
+      ushort _cyc_t = DAT_0023bf74;
       FUN_000735fc();
       FUN_0006a168();
+      /* FUN_0006a168 rotated the gold gradient palette (indices 0x40..0x7f)
+         this tick and re-blitted the OPSCR title; recolour the menu-item
+         bitmaps too so they shimmer in step with the title, the way the
+         original's hardware palette swap did. */
+      if (DAT_0023bf74 != _cyc_t) FUN_0006a200(param_1,param_2,param_3,param_4);
     }
     sVar1 = (short)param_1;
     iVar3 = param_4;
