@@ -2641,9 +2641,9 @@ undefined4 DAT_00086370;
 undefined DAT_00086810;
 static undefined1 DAT_00202a58_backing[65536];
 #define DAT_00202a58 DAT_00202a58_backing[0]
-/* FUN_00050d78's collision height-field: five 5-byte corner records at
-   0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. FUN_00050d78 writes the
-   fields by name (DAT_00202bfd, DAT_00202c0c, ...) while FUN_00050984 reads
+/* collision_build_height_field's collision height-field: five 5-byte corner records at
+   0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the
+   fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads
    them by index off DAT_00202bf8. Only DAT_00202bf8 had a backing array;
    the rest were lone Ghidra scalars, so the named writes and indexed reads
    hit different memory and every corner sampled as height 8 -- solid-rock
@@ -2675,7 +2675,7 @@ static undefined1 DAT_00202bf8_backing[32768];
 #define DAT_00202c14  (*(unsigned int *)(DAT_00202bf8_backing + 0x1c))
 static undefined1 DAT_00202c70_backing[65536];
 #define DAT_00202c70 DAT_00202c70_backing[0]
-/* At offset 8 of the DAT_00202c70 corner-height block -- FUN_00050d78's
+/* At offset 8 of the DAT_00202c70 corner-height block -- collision_build_height_field's
    `Ordinal_1047(&DAT_00202c70, 0x11, 0x12)` (memset) seeds it (and every
    corner) with the 0x1111 "recompute me" sentinel. As a separate scalar the
    memset never touched it, so it stayed 0, the `DAT_00202c78 == 0x1111`
@@ -2795,7 +2795,7 @@ undefined1 DAT_002046e0;
 undefined1 DAT_002046e4;
 /* The movement/collision-sweep working block. Ghidra split this one ~24-byte
    struct into 14 separate globals (DAT_002049c8 .. DAT_002049de), but
-   FUN_00050d78 / FUN_000518c0 write its fields through `DAT_00202c6c[offset]`
+   collision_build_height_field / collision_height_envelope write its fields through `DAT_00202c6c[offset]`
    (DAT_00202c6c = &DAT_002049c8) while sweep_init_position / sweep_collision_
    flags read/write them by name -- so the indexed writes and the named reads
    landed on unrelated memory and collision flags never reflected the tile
@@ -2936,7 +2936,7 @@ char *DAT_002048bc;
    already `short *`, confirming the intent. The byte misread made `[2]`
    (meant: the Z/vertical velocity DAT_0020488a, 0 for level movement) return
    the low byte of the forward velocity DAT_00204888, so plain forward
-   movement took the "vertical movement" path (FUN_00050d78 / FUN_000518c0)
+   movement took the "vertical movement" path (collision_build_height_field / collision_height_envelope)
    which corrupts DAT_00204880 -- one forward step overflowed the player X to
    the map edge and wedged them there. */
 short *DAT_00086978;
@@ -15529,7 +15529,7 @@ byte * param_3;
   DAT_00202c6c[0xb] = 0;
   local_18 = (short)((uint)((int)*(short *)DAT_00202c6c << 0x14) >> 0x10);
   local_16 = (short)((uint)((int)*(short *)(DAT_00202c6c + 2) << 0x14) >> 0x10);
-  while (FUN_00050d78(0),
+  while (collision_build_height_field(0),
         ((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
     FUN_00069f2c(param_1,0x10,&local_18,&local_16);
     param_2 = param_2 + -1;
@@ -15617,9 +15617,9 @@ undefined4 FUN_00026194()
   local_3a = (short)((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
   iVar5 = ((byte)puVar6[0xc] & 0x1f) + ((puVar6[1] & 0x380) >> 2);
   FUN_00069f2c(iVar5,uVar7 + 3,&local_3c,&local_3a);
-  FUN_000518c0(0,1);
+  collision_height_envelope(0,1);
   if (*(char *)((char *)DAT_00202c6c + 0x14) == '\0') {
-    FUN_00050d78(0);
+    collision_build_height_field(0);
     if (((*(ushort *)((char *)DAT_00202c6c + 0xe) | *(ushort *)((char *)DAT_00202c6c + 0xc)) & 0x300) != 0
        ) {
       iVar4 = ((puVar6[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)puVar6 + 3) >> 5);
@@ -18093,7 +18093,7 @@ ushort * param_1;
   DAT_00202c6c[3] = (char)((uint)iVar2 >> 8);
   DAT_00202c6c[4] = (byte)param_1[1] & 0x7f;
   DAT_00202c6c[5] = 0;
-  FUN_00050d78(8);
+  collision_build_height_field(8);
   return (int)(short)(*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc));
 }
 
@@ -27021,7 +27021,7 @@ LAB_0003c940:
       }
       local_3a = (undefined2)(iVar7 >> 5);
       local_38 = *(byte *)(DAT_0023be64 + 2) & 0x7f;
-      FUN_000518c0(0,0);
+      collision_height_envelope(0,0);
       FUN_00051dd0();
       iVar8 = (int)*(char *)(DAT_00202c6c + 0xb);
       iVar7 = (int)(short)*(char *)(DAT_00202c6c + 0xb);
@@ -27216,7 +27216,7 @@ uint param_2;
   iVar2 = (int)DAT_00204884;
   DAT_00202c6c[4] = (char)(iVar2 >> 3);
   DAT_00202c6c[5] = (char)((uint)(iVar2 >> 3) >> 8);
-  FUN_00050d78(DAT_002048a7);
+  collision_build_height_field(DAT_002048a7);
   DAT_002048a8 = FUN_0005a630((int)(short)(*(ushort *)(DAT_00202c6c + 0xe) |
                                           *(ushort *)(DAT_00202c6c + 0xc)));
   FUN_0003c524(DAT_002048a8,0);
@@ -35319,8 +35319,8 @@ ushort * param_2;
                DAT_00202c6c + 1);
   *(byte *)(DAT_00202c6c + 2) = (byte)param_1[1] & 0x7f;
   *(byte *)((char *)DAT_00202c6c + 5) = 0;
-  FUN_000518c0(0,1);
-  FUN_00050d78(0);
+  collision_height_envelope(0,1);
+  collision_build_height_field(0);
   if (((local_2a | local_2c) & 0x300) == 0) {
     if ((byte)DAT_00202c6c[10] != 0) {
       FUN_00051dd0();
@@ -38659,7 +38659,8 @@ undefined1 * param_1;
 
 
 
-uint FUN_00050984(param_1,param_2)
+// was FUN_00050984 -- sample the floor height at one tile corner (type 0 solid -> 0x80)
+uint collision_sample_floor_height(param_1,param_2)
 uint param_1;
 undefined4 * param_2;
 
@@ -38761,7 +38762,7 @@ uint param_2;
   int iVar5;
   int local_20;
   
-  bVar2 = FUN_00050984(param_1,&local_20);
+  bVar2 = collision_sample_floor_height(param_1,&local_20);
   iVar1 = DAT_00202c6c;
   uVar3 = (uint)bVar2;
   if (uVar3 == 0x80) {
@@ -38790,7 +38791,8 @@ uint param_2;
 
 
 
-bool FUN_00050c18(param_1)
+// was FUN_00050c18 -- per-corner slope/blocked flag word from the packed tile height DAT_00202c78
+bool collision_corner_flags(param_1)
 uint param_1;
 
 {
@@ -38802,7 +38804,7 @@ uint param_1;
   
   *(byte *)(DAT_00202c6c + 0xc) = (byte)(DAT_00202c78 >> 8) & 3;
   *(undefined1 *)(DAT_00202c6c + 0xd) = 0;
-  uVar2 = FUN_00050984(4,&local_14);
+  uVar2 = collision_sample_floor_height(4,&local_14);
   *(undefined1 *)(DAT_00202c6c + 0x10) = uVar2;
   uVar3 = (uint)*(byte *)(DAT_00202c6c + 0x10);
   if (uVar3 == 0x80) {
@@ -38837,7 +38839,7 @@ uint param_1;
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 /* Recovered from UU.exe .data at 0x86878 (28 real bytes, then the
-   "\DATA\comobj.dat" string literal). FUN_00050d78's four
+   "\DATA\comobj.dat" string literal). collision_build_height_field's four
    `*(char *)(bVarNN + 0x86878)` derefs are a bare hardcoded original-
    32-bit address -- unmapped on this port, so a keyboard forward step
    (the first thing that ever reached this animated-shade recompute for
@@ -38850,7 +38852,8 @@ static const signed char DAT_00086878_arr[256] = {
 };
 #define DAT_00086878_IDX(b) DAT_00086878_arr[(unsigned char)(b)]
 
-void FUN_00050d78(param_1)
+// was FUN_00050d78 -- build the per-corner tile height field the sweep collides against
+void collision_build_height_field(param_1)
 uint param_1;
 
 {
@@ -38902,7 +38905,7 @@ uint param_1;
     DAT_00202c78 = (uVar3 & 0xf) +
                    (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10;
   }
-  FUN_00050c18(param_1);
+  collision_corner_flags(param_1);
   pbVar1 = DAT_00202c6c + 0xc;
   DAT_00202c6c[0xe] = (byte)*(undefined2 *)pbVar1;
   DAT_00202c6c[0xf] = (byte)((ushort)*(undefined2 *)pbVar1 >> 8);
@@ -39230,7 +39233,8 @@ int param_5;
 
 
 
-void FUN_000518c0(param_1,param_2)
+// was FUN_000518c0 -- reduce the height field to floor/ceiling envelope + block flags
+void collision_height_envelope(param_1,param_2)
 int param_1;
 int param_2;
 
@@ -39510,7 +39514,7 @@ byte param_7;
     local_3c = param_3;
     local_3a = param_4;
     local_32 = param_2;
-    FUN_00050d78(uVar8);
+    collision_build_height_field(uVar8);
     if (((DAT_00202c6c[7] | DAT_00202c6c[6]) & 0x300) == 0) {
       bVar1 = *(byte *)((char *)DAT_00202c6c + 0x11);
       if ((int)(uVar8 + (int)(short)DAT_00202c6c[2]) < (int)(uint)bVar1) {
@@ -39531,7 +39535,7 @@ byte param_7;
       if ((DAT_00202c68 == 0x10) || (uVar3 = 1, param_2 < 0x100)) {
         uVar3 = 0;
       }
-      FUN_000518c0(uVar3,1);
+      collision_height_envelope(uVar3,1);
       if (*(char *)(DAT_00202c6c + 10) != '\0') {
         iVar9 = -1;
         sVar7 = -1;
@@ -41632,12 +41636,12 @@ int param_4;
     iVar12 = param_3 * 8 + ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2);
     DAT_00202c6c[2] = (char)iVar12;
     DAT_00202c6c[3] = (char)((uint)iVar12 >> 8);
-    FUN_00050d78(DAT_00202c6c[8]);
+    collision_build_height_field(DAT_00202c6c[8]);
     if (((int)((uint)(byte)DAT_00202c6c[8] + (uint)(byte)DAT_00202c6c[0x10]) <
          (int)*(short *)(DAT_00202c6c + 4)) || (iVar12 = 1, bVar1)) {
       iVar12 = 0;
     }
-    FUN_000518c0(iVar12,1);
+    collision_height_envelope(iVar12,1);
     FUN_00051dd0();
     DAT_00086998 = -1;
     if (((DAT_00202c6c[0x15] == '\0') && (iVar11 = (int)(char)DAT_00202c6c[0x16], 0 < iVar11)) &&
@@ -43590,8 +43594,8 @@ int param_2;
   }
   DAT_00086996 = 0;
   if (((DAT_002049d2 == 1) || (psVar11[2] != 0)) && (param_2 != 0)) {
-    FUN_00050d78(*(undefined1 *)(iVar8 + 0x27));
-    FUN_000518c0(0,0);
+    collision_build_height_field(*(undefined1 *)(iVar8 + 0x27));
+    collision_height_envelope(0,0);
     psVar11 = DAT_00086978;
   }
   if (psVar11[2] == 0) {
@@ -44191,7 +44195,7 @@ undefined4 param_1;
   
   bVar1 = false;
   if ((short)param_1 == -1) {
-    FUN_000518c0(0,0);
+    collision_height_envelope(0,0);
     reticle_object_pick(0);
     *(undefined1 *)(DAT_00204874 + 0x28) = DAT_002049c0;
     if (DAT_00204870 != 0) {
@@ -44281,7 +44285,7 @@ uint sweep_collision_flags()
   DAT_00204870 = 0;
   /* Sync the collision working block's X/Y (DAT_00202c6c[+0/+2], i.e.
      DAT_002049c8/ca) to the sweep's live sub-tile position before the tile
-     lookups in FUN_00050d78 / FUN_000518c0.  sweep_init_position copies the
+     lookups in collision_build_height_field / collision_height_envelope.  sweep_init_position copies the
      heading/height fields into this block but never the position, and Ghidra
      dropped whatever kept it current -- so DAT_002049c8/ca sat at (0,0) and
      every collision test hit tile (0,0), letting the player walk straight
@@ -44293,11 +44297,11 @@ uint sweep_collision_flags()
       (void *)0x0) {
     /* stepped outside the 64x64 map -- the border is always solid; report a
        hard block so sweep_apply_collision backs the move out. (Also stops
-       FUN_00050d78 dereferencing a NULL tile pointer.) */
+       collision_build_height_field dereferencing a NULL tile pointer.) */
     return 0xffff8000;
   }
-  FUN_00050d78(*(undefined1 *)(DAT_00204874 + 0x27));
-  FUN_000518c0(0,0);
+  collision_build_height_field(*(undefined1 *)(DAT_00204874 + 0x27));
+  collision_height_envelope(0,0);
   reticle_object_pick(0);
   local_3c = DAT_002049d6 | DAT_002049d4;
   bVar8 = (local_3c & DAT_002048bc[2]) == 0;
