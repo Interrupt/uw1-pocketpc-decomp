@@ -46985,9 +46985,15 @@ LAB_0005e7e0:
                    local_81;
         bVar25 = local_83;
       }
-      (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[1] & 0x3f);
+      /* UW1 tile word2 (bytes 2-3) bits 0-5 = wall texture index; word1's
+         high byte (byte 1) holds the floor texture / height and was almost
+         always 0 here, so every wall drew arena slot 0 (plain grey) instead
+         of the level's real -- often mossy -- wall texture. Ghidra read the
+         wrong byte. (automap_reveal_byte / the floor path correctly take the
+         floor index from byte 1 bits 2-5.) */
+      (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[2] & 0x3f);
       uVar26 = (ushort)DAT_0023b4e0;
-      bVar25 = (byte)DAT_0023b4ec[1] & 0x3f;
+      bVar25 = (byte)DAT_0023b4ec[2] & 0x3f;
       if ((short)uVar26 < DAT_00086b24) {
         DAT_0023b81c = 4;
         if ((uVar26 != 0) || (DAT_00087938 != 'd')) {
@@ -47232,9 +47238,11 @@ LAB_0005e7e0:
         (int)(char)(&DAT_00086bcc)[iVar33] +
         (((int)(char)(&DAT_00086bc9)[iVar33] + (int)DAT_0023b4e8) * 0x100 -
         (int)*(short *)(iVar16 + 0x12)) * (int)(char)(&DAT_00086bcd)[iVar33] < 0) {
-      (*DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[1] & 0x3f);
+      /* diagonal-wall face: same wall-texture-index byte fix as the
+         orthogonal branch above (word2 byte 2 bits 0-5, not byte 1). */
+      (*DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[2] & 0x3f);
       uVar27 = (ushort)DAT_0023b4e0;
-      bVar25 = (byte)DAT_0023b4ec[1] & 0x3f;
+      bVar25 = (byte)DAT_0023b4ec[2] & 0x3f;
       if ((short)uVar27 < DAT_00086b24) {
         DAT_0023b81c = 4;
         if ((uVar27 != 0) || (DAT_00087938 != 'd')) {
