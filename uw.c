@@ -2558,8 +2558,13 @@ char *DAT_0020469c;
    process_reaction_queue marked no tile visible, and the 3D tile list
    came out empty (black viewport). It also broke every other bit of
    angle math in the projection code. Four trailing pad shorts each
-   (the +2 interpolation in angle_to_screen_delta can index one past 255).
-   DAT_00085d4c / DAT_00085f54 are &table + 4 (the "next" sample). */
+   (angle_to_screen_delta interpolates to table[idx+1], so idx can reach 256).
+   DAT_00085d4c / DAT_00085f54 are &table + 2 == &table[1], the "next" sample:
+   the angle's high byte is the coarse index 0..255 (single-step, period 256)
+   and the low byte the 0..255 lerp fraction, so the next sample is +1 entry
+   (+2 bytes). Was &table + 4 (== &table[2]) -- an off-by-one-entry that
+   skipped every other sample and gave the wrong direction for any heading
+   whose coarse index was odd, so a turned player kept walking the old way. */
 static const short DAT_00085d48_sine[260] = {
   0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
   9512, 10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
@@ -2609,9 +2614,9 @@ static const short DAT_00085f50_cosine[260] = {
   32610, 32679, 32729, 32758, 32767, 0, 0, 0,
 };
 #define DAT_00085d48 (*(const undefined1 *)(const void *)DAT_00085d48_sine)
-#define DAT_00085d4c (*(const undefined1 *)((const char *)(const void *)DAT_00085d48_sine + 4))
+#define DAT_00085d4c (*(const undefined1 *)((const char *)(const void *)DAT_00085d48_sine + 2))
 #define DAT_00085f50 (*(const undefined1 *)(const void *)DAT_00085f50_cosine)
-#define DAT_00085f54 (*(const undefined1 *)((const char *)(const void *)DAT_00085f50_cosine + 4))
+#define DAT_00085f54 (*(const undefined1 *)((const char *)(const void *)DAT_00085f50_cosine + 2))
 undefined DAT_00086260;
 undefined DAT_00086264;
 static undefined1 DAT_002029d8_backing[256];
