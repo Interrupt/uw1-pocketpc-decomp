@@ -7903,7 +7903,7 @@ int param_1;
     iVar12 = (int)(short)iVar10;
     do {
       while (iVar5 <= sVar8) {
-        iVar5 = FUN_00068100(iVar9,iVar10);
+        iVar5 = tilemap_lookup(iVar9,iVar10);
         puVar7 = (ushort *)resolve_object_link(iVar5 + 2);
         if (puVar7 != (ushort *)0x0) {
           do {
@@ -8011,7 +8011,7 @@ LAB_0001818c:
   else {
     if ((((0 < iVar8) && (iVar8 < 0x40)) && (iVar1 = (int)(short)uVar6, 0 < iVar1)) &&
        (iVar1 < 0x40)) {
-      pbVar9 = (byte *)FUN_00068100(uVar5,uVar6);
+      pbVar9 = (byte *)tilemap_lookup(uVar5,uVar6);
       uVar2 = *(ushort *)(puVar4 + 2);
       puVar4[2] = (byte)(uVar2 & 0xff80) | *pbVar9 >> 1 & 0x78;
       puVar4[3] = (char)((uVar2 & 0xff80) >> 8);
@@ -8075,7 +8075,7 @@ void FUN_0001825c()
 {
   int iVar1;
   
-  iVar1 = FUN_00068100(*(ushort *)(DAT_00100674 + 0x16) >> 10,
+  iVar1 = tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
                        (*(ushort *)(DAT_00100674 + 0x16) & 0x3f0) >> 4);
   FUN_00053334(iVar1 + 2,DAT_00100674,1);
   return;
@@ -8156,7 +8156,7 @@ int param_1;
   
   uVar4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
   uVar5 = FUN_0001adc4((int)*(short *)(param_1 + -6));
-  local_24 = FUN_00068100(uVar5,uVar4);
+  local_24 = tilemap_lookup(uVar5,uVar4);
   local_24 = local_24 + 2;
   iVar6 = FUN_000537d0(&local_24,0,5,0,0xffff);
   if ((iVar6 == 0) && (iVar6 = FUN_000537d0(&local_24,0,7,0,0xf), iVar6 == 0)) {
@@ -8337,7 +8337,7 @@ int param_1;
         uVar8 = (uVar8 ^ *(ushort *)(iVar5 + 2)) & 0x7f ^ *(ushort *)(iVar5 + 2);
       }
       else {
-        pbVar6 = (byte *)FUN_00068100((int)(short)*puVar2,(int)*psVar3);
+        pbVar6 = (byte *)tilemap_lookup((int)(short)*puVar2,(int)*psVar3);
         uVar8 = *pbVar6 >> 1 & 0x78 | *(ushort *)(iVar5 + 2) & 0xff80;
       }
       *(char *)(iVar5 + 2) = (char)uVar8;
@@ -15527,7 +15527,7 @@ byte * param_3;
     free_object_slot(iVar7);
     return;
   }
-  iVar9 = FUN_00068100((int)sVar4 >> 3,(int)sVar5 >> 3);
+  iVar9 = tilemap_lookup((int)sVar4 >> 3,(int)sVar5 >> 3);
   object_list_append_tail(iVar9 + 2,iVar7);
   return;
 }
@@ -17918,7 +17918,7 @@ ushort param_3;
   undefined4 uVar7;
   int extraout_r1;
   
-  iVar4 = FUN_00068100(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
+  iVar4 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
   ;
   if (((param_2 & 0xff) != 0) &&
      (iVar5 = FUN_00068138((short)(param_2 & 0xff) + 0xd8,0), iVar5 != 0)) {
@@ -17963,7 +17963,7 @@ int FUN_0002b47c()
   
   if (((char)DAT_0010190c[4] == '\0') &&
      (((&DAT_00202c97)[(*DAT_0010190c & 0x1ff) * 0xd] & 0xc) < 0xc)) {
-    iVar2 = FUN_00068100(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
+    iVar2 = tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
     iVar2 = FUN_00053334(iVar2 + 2,DAT_0010190c,0);
     if (iVar2 == 0) {
       return 0;
@@ -18265,10 +18265,10 @@ byte * param_11;
   DAT_00101440 = 0;
   bVar6 = false;
   bVar1 = false;
-  puVar7 = (ushort *)FUN_00068100(param_3,param_4);
-  pbVar8 = (byte *)FUN_00068100(param_1,param_2);
+  puVar7 = (ushort *)tilemap_lookup(param_3,param_4);
+  pbVar8 = (byte *)tilemap_lookup(param_1,param_2);
   uVar18 = (uint)param_5;
-  puVar9 = (ushort *)FUN_00068100(uVar18,param_6);
+  puVar9 = (ushort *)tilemap_lookup(uVar18,param_6);
   uVar19 = *puVar7 & 0xf;
   uVar11 = *puVar9 & 0xf;
   bVar3 = (byte)uVar11;
@@ -18658,8 +18658,8 @@ byte param_7;
   uint uVar4;
   uint uVar5;
   
-  pbVar2 = (byte *)FUN_00068100(param_3,param_4);
-  puVar3 = (ushort *)FUN_00068100(param_5,param_6);
+  pbVar2 = (byte *)tilemap_lookup(param_3,param_4);
+  puVar3 = (ushort *)tilemap_lookup(param_5,param_6);
   uVar5 = *pbVar2 & 0xf;
   uVar4 = *puVar3 & 0xf;
   if ((param_1 == 0) || ((param_1 == param_3 && (param_2 == param_4)))) {
@@ -19011,7 +19011,7 @@ short param_4;
   iVar7 = (int)(char)param_4 - (int)(char)param_2;
   local_34 = param_2;
   local_33 = param_1;
-  pbVar4 = (byte *)FUN_00068100();
+  pbVar4 = (byte *)tilemap_lookup();
   iVar5 = ((int)(char)param_3 - (int)(char)param_1) * 0x1000000;
   iVar1 = iVar5 >> 0x18;
   if (iVar1 == 0) {
@@ -19974,7 +19974,7 @@ undefined1 param_2;
   uint uVar5;
   
   if (DAT_00101914 == 0) {
-    pbVar2 = (byte *)FUN_00068100(param_1,param_2);
+    pbVar2 = (byte *)tilemap_lookup(param_1,param_2);
     uVar5 = *(byte *)(DAT_0010190c + 2) & 0x7f;
     uVar3 = (uint)(*pbVar2 >> 4) * 8 + 0x14;
     if (0x78 < uVar3) {
@@ -20075,7 +20075,7 @@ void FUN_0002f124()
     DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)(DAT_0010190c + 0x16) & 0xf));
     *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0x7f;
   }
-  pbVar2 = (byte *)FUN_00068100(DAT_00101918,DAT_001013f8);
+  pbVar2 = (byte *)tilemap_lookup(DAT_00101918,DAT_001013f8);
   if (DAT_00101734 == 0) {
     *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xf9 | 1;
     return;
@@ -20274,8 +20274,8 @@ void FUN_0002f818()
     iVar8 = Ordinal_2005((int)sVar4,
                          (((int)DAT_001013f8 - (int)(short)DAT_00101410) * 0x10000 >> 0x10) << 2);
     iVar8 = (iVar8 + iVar9) * 0x1000000;
-    iVar9 = FUN_00068100(cVar3,cVar2);
-    pbVar6 = (byte *)FUN_00068100((int)(iVar5) >> 0x18,iVar8 >> 0x18);
+    iVar9 = tilemap_lookup(cVar3,cVar2);
+    pbVar6 = (byte *)tilemap_lookup((int)(iVar5) >> 0x18,iVar8 >> 0x18);
     object_list_unlink(iVar9 + 2,DAT_0010190c);
     object_list_insert_head(pbVar6 + 2,DAT_0010190c);
     uVar7 = *(ushort *)(DAT_0010190c + 0x16) & 0x3ff;
@@ -20319,7 +20319,7 @@ void FUN_0002fba8()
     iVar3 = ((int)DAT_0010173c - (int)DAT_001013f8) * 0x1000000 >> 0x18;
     uVar1 = (uint)(*(byte *)(DAT_00101404 + 0x1c) >> 4);
     if ((int)(uVar1 * uVar1) < iVar2 * iVar2 + iVar3 * iVar3) {
-      puVar4 = (ushort *)FUN_00068100(DAT_0010143c,DAT_0010173c);
+      puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
       FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
     }
     else {
@@ -21272,7 +21272,7 @@ void FUN_00031fa8()
       }
     }
     else {
-      puVar4 = (ushort *)FUN_00068100(DAT_0010143c,DAT_0010173c);
+      puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
       FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
     }
   }
@@ -21682,7 +21682,7 @@ LAB_00033830:
       FUN_0003a73c(DAT_0010190c,1);
       DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
       DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
-      iVar5 = FUN_00068100();
+      iVar5 = tilemap_lookup();
       object_list_unlink(iVar5 + 2,DAT_0010190c);
       FUN_000798c4(DAT_0010190c);
       FUN_0002b258(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
@@ -21907,7 +21907,7 @@ LAB_00033d18:
   case 0:
     goto LAB_00033e9c;
   case 1:
-    puVar8 = (ushort *)FUN_00068100(DAT_0010143c,DAT_0010173c);
+    puVar8 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
     FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar8 >> 4 & 0xf);
     break;
   case 2:
@@ -22483,7 +22483,7 @@ int param_2;
   iVar6 = ((byte)*param_1 & 0x3f) * 0x30;
   uVar9 = (uint)(param_1[0xb] >> 10);
   uVar11 = param_1[0xb] >> 4 & 0x3f;
-  local_28 = FUN_00068100(uVar9,uVar11);
+  local_28 = tilemap_lookup(uVar9,uVar11);
   if ((param_1[7] & 1) != 0) {
     FUN_000534a8(local_28 + 2,param_1);
     return;
@@ -22514,7 +22514,7 @@ int param_2;
 LAB_00034db4:
   uVar10 = (byte)param_1[2] & 0x3f;
   uVar8 = param_1[3] & 0x3f;
-  puVar4 = (ushort *)FUN_00068100(uVar10,uVar8);
+  puVar4 = (ushort *)tilemap_lookup(uVar10,uVar8);
   if (((uVar9 != uVar10) || (uVar11 != uVar8)) &&
      (iVar5 = FUN_00034ba8(*puVar4 & 0xf,&local_2c,local_2b), iVar5 != 0)) {
     if (((&DAT_001007da)[iVar6] & 0x80) == 0) {
@@ -22564,7 +22564,7 @@ int param_1;
   uVar7 = (*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4;
   DAT_00101454 = (undefined2)uVar7;
   bVar2 = *(byte *)(param_1 + 3);
-  pbVar4 = (byte *)FUN_00068100();
+  pbVar4 = (byte *)tilemap_lookup();
   pbVar8 = pbVar4 + 2;
   iVar5 = FUN_00053334(pbVar8,param_1,0);
   if ((iVar5 != 0) && (iVar5 = FUN_0005596c(param_1), iVar5 != 0)) {
@@ -22729,7 +22729,7 @@ ushort * param_3;
           uVar12 = 0;
           do {
             iVar11 = uVar12 * 7;
-            uVar15 = FUN_00068100((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
+            uVar15 = tilemap_lookup((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
             uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
             for (puVar7 = (ushort *)((char *)uVar15 + 2); (*puVar7 & 0xffc0) != 0; puVar7 = puVar7 + 2)
             {
@@ -22759,7 +22759,7 @@ ushort * param_3;
         }
         bVar1 = (&DAT_00101733)[uVar9 * 7];
         bVar2 = (&DAT_00101732)[uVar9 * 7];
-        puVar7 = (ushort *)FUN_00068100((uint)bVar2,(uint)bVar1);
+        puVar7 = (ushort *)tilemap_lookup((uint)bVar2,(uint)bVar1);
         iVar11 = FUN_00034ba8(*puVar7 & 0xf,&local_28,local_27);
         if (iVar11 != 0) {
           bVar3 = (&DAT_0023cf0a)[((int)(short)(ushort)bVar1 + (short)(ushort)bVar2 * 0x40) * 5];
@@ -22770,7 +22770,7 @@ ushort * param_3;
                                  0x10,(ushort)((uint)bVar3 << 3) & 0xff,
                                 *(byte *)(DAT_00101404 + 10) >> 7,8);
           if (iVar11 != 0) {
-            iVar11 = FUN_00068100(DAT_00101918,DAT_001013f8);
+            iVar11 = tilemap_lookup(DAT_00101918,DAT_001013f8);
             object_list_unlink(iVar11 + 2,param_3);
             object_list_insert_head(puVar7 + 1,param_3);
             uVar9 = bVar1 & 0x3f | (uint)bVar2 << 6;
@@ -24199,7 +24199,7 @@ LAB_00038100:
     else {
       if ((param_3 & 8) != 0) {
         if (((uVar1 & 0x1ff) == 0xd5) || ((uVar1 & 0x1ff) == 0xd6)) {
-          iVar3 = FUN_00068100(param_4,(int)param_5);
+          iVar3 = tilemap_lookup(param_4,(int)param_5);
           iVar3 = FUN_00037fe8(iVar3 + 2,param_1);
           if (iVar3 != 0) goto LAB_000382ac;
           uVar6 = 0xffffffff;
@@ -24662,7 +24662,7 @@ int param_6;
     do {
       cVar21 = (local_a4 + local_a8 * 2)[1];
       cVar7 = local_a4[local_a8 * 2];
-      pbVar10 = (byte *)FUN_00068100((int)cVar7,(int)cVar21);
+      pbVar10 = (byte *)tilemap_lookup((int)cVar7,(int)cVar21);
       if (param_6 != 0) {
         for (puVar11 = (ushort *)(pbVar10 + 2); (*puVar11 & 0xffc0) != 0; puVar11 = puVar11 + 2) {
           puVar11 = (ushort *)resolve_object_link();
@@ -24907,7 +24907,7 @@ short param_9;
       if (sVar4 <= iVar2) {
         iVar12 = (int)(short)uVar13;
         do {
-          puVar7 = (ushort *)FUN_00068100((int)local_44,param_2);
+          puVar7 = (ushort *)tilemap_lookup((int)local_44,param_2);
           uVar10 = *puVar7 >> 4 & 0xf;
           if ((param_9 == 1) || (param_9 == 3)) {
             uVar13 = (uVar10 - (int)param_9) + 2;
@@ -25076,7 +25076,7 @@ undefined4 FUN_00039d78()
   local_6 = DAT_00204880 >> 5;
   local_8 = DAT_00204882 >> 5;
   FUN_00069f2c((int)DAT_00201c70 >> 8,0xb,&local_6,&local_8);
-  puVar2 = (ushort *)FUN_00068100((int)local_6 >> 3,(int)local_8 >> 3);
+  puVar2 = (ushort *)tilemap_lookup((int)local_6 >> 3,(int)local_8 >> 3);
   uVar1 = *puVar2;
   if ((((uVar1 & 0xf) == 0) || (((&DAT_0023ae40)[uVar1 >> 10 & 0xf] & 0xfff0) != 0x10)) ||
      ((int)(*(byte *)(DAT_0023be64 + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
@@ -25209,7 +25209,7 @@ int param_3;
     cVar6 = -4;
     iVar3 = -4;
     do {
-      iVar2 = FUN_00068100(((short)param_2 + iVar1) * 0x10000 >> 0x10,
+      iVar2 = tilemap_lookup(((short)param_2 + iVar1) * 0x10000 >> 0x10,
                            ((short)param_3 + iVar3) * 0x10000 >> 0x10);
       iVar3 = (int)(char)iVar5;
       local_34[iVar3] = iVar2;
@@ -25229,7 +25229,7 @@ int param_3;
   } while (iVar1 < 5);
   if ((char)iVar5 == '\x04') {
     iVar5 = FUN_00068138(0xfd,0);
-    iVar1 = FUN_00068100(param_2,param_3 + 1);
+    iVar1 = tilemap_lookup(param_2,param_3 + 1);
     uVar4 = *(ushort *)(iVar5 + 2) & 0x380 | 0x6c40;
     *(char *)(iVar5 + 2) = (char)uVar4;
     *(char *)(iVar5 + 3) = (char)(uVar4 >> 8);
@@ -25293,7 +25293,7 @@ void FUN_0003a398()
   int iVar2;
   int local_10;
   
-  local_10 = FUN_00068100(*(ushort *)(DAT_0023be64 + 0x16) >> 10,
+  local_10 = tilemap_lookup(*(ushort *)(DAT_0023be64 + 0x16) >> 10,
                           (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4);
   local_10 = local_10 + 2;
   iVar2 = FUN_000537d0(&local_10,1,4,1,4);
@@ -25325,7 +25325,7 @@ undefined4 param_3;
   int iVar2;
   int local_c;
   
-  local_c = FUN_00068100(param_2,param_3);
+  local_c = tilemap_lookup(param_2,param_3);
   local_c = local_c + 2;
   iVar2 = FUN_000537d0(&local_c,1,4,1,4);
   if (iVar2 != 0) {
@@ -25384,7 +25384,7 @@ int param_1;
 {
   int iVar1;
   
-  iVar1 = FUN_00068100(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
+  iVar1 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
   ;
   FUN_000534a8(iVar1 + 2,param_1);
   return 1;
@@ -25409,7 +25409,7 @@ void FUN_0003a654()
     FUN_00074be8(*(undefined1 *)(iVar4 + 0x85638),0,0,FUN_0003a604);
     iVar4 = (iVar4 + -1) * 0x1000000 >> 0x18;
   } while (0 < iVar4);
-  iVar4 = FUN_00068100(0x17,0x38);
+  iVar4 = tilemap_lookup(0x17,0x38);
   puVar3 = (ushort *)resolve_object_link(iVar4 + 2);
   while (puVar2 = puVar3, puVar2 != (ushort *)0x0) {
     puVar3 = (ushort *)resolve_object_link(puVar2 + 2);
@@ -25657,7 +25657,7 @@ int param_3;
   iVar2 = FUN_0003a99c(param_1,param_2,local_6c);
   if (param_3 == 0) {
     if ((short)iVar2 == -2) {
-      iVar2 = FUN_00068100((int)DAT_002020a0,(int)DAT_002020a4);
+      iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
       FUN_00053334(iVar2 + 2,param_1,0);
     }
   }
@@ -27877,7 +27877,7 @@ int param_2;
     uVar2 = *(ushort *)(DAT_0023be64 + 0x16) >> 10;
     uVar9 = (uint)uVar2;
     uVar10 = (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4;
-    iVar5 = FUN_00068100(uVar9,uVar10);
+    iVar5 = tilemap_lookup(uVar9,uVar10);
     uVar13 = (uint)DAT_002020a4;
     sVar4 = (&DAT_0023ae40)[*(byte *)(iVar5 + 1) >> 2 & 0xf];
     uVar12 = (uint)DAT_002020a0;
@@ -27926,7 +27926,7 @@ int param_2;
              ((0 < sVar8 && ((int)(short)uVar13 < (int)(uVar10 * 0x10000) >> 0x10)))) {
             uVar10 = uVar13;
           }
-          pbVar6 = (byte *)FUN_00068100(uVar9,uVar10);
+          pbVar6 = (byte *)tilemap_lookup(uVar9,uVar10);
           sVar7 = FUN_0003e83c();
           bVar1 = false;
           iVar14 = (int)sVar7;
@@ -35086,7 +35086,7 @@ int param_2;
     }
     iVar7 = (int)(short)local_28;
     iVar8 = (int)(short)local_26;
-    iVar4 = FUN_00068100(iVar7 >> 3,iVar8 >> 3);
+    iVar4 = tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
     if (bVar3) {
       if (param_2 != 0) {
         FUN_00078c80(0xfd);
@@ -35233,7 +35233,7 @@ LAB_0004b06c:
       *(char *)(puVar6 + 3) = (char)(uVar9 & 0xffc0);
       *(char *)((char *)puVar6 + 7) = (char)((uVar9 & 0xffc0) >> 8);
     }
-    iVar8 = FUN_00068100(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
+    iVar8 = tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
     object_list_insert_head(iVar8 + 2,puVar6);
     FUN_00072fc8(10,puVar6,0);
   }
@@ -38843,7 +38843,7 @@ uint param_1;
   } while (iVar7 != 0);
   _DAT_00202c34 =
        (ushort *)
-       FUN_00068100((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+       tilemap_lookup((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
   /* off-map tile -- this function derefs _DAT_00202c34 below and assumes a
      valid record; the sweep collision-revert path can reach here out of
      bounds. */
@@ -39198,7 +39198,7 @@ int param_2;
   int iVar2;
   ushort uVar3;
   byte bVar4;
-  intptr_t iVar5;  /* was int -- holds the void* FUN_00068100 returns (a
+  intptr_t iVar5;  /* was int -- holds the void* tilemap_lookup returns (a
                       real 64-bit tile-array pointer); truncated to 32
                       bits it made `*(ushort *)(iVar5 + ...)` a wild
                       deref -- the crash the first time a keyboard
@@ -39215,7 +39215,7 @@ int param_2;
   int local_3c;
   
   local_3c = 0;
-  iVar5 = FUN_00068100((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+  iVar5 = tilemap_lookup((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
   /* off-map tile (DAT_00202c6c position outside 0..63): this function assumes
      a valid tile record and derefs iVar5 + offsets below. The sweep's
      collision revert path (sweep_step(-1)) can reach here with an out-of-
@@ -39557,7 +39557,7 @@ int param_6;
     *(char *)(param_4 + 2) = (char)uVar2;
     *(byte *)(param_4 + 3) =
          (byte)(uVar2 >> 8) | (byte)(((param_2 & 7 | (param_1 & 0x1fff) << 3) << 10) >> 8);
-    iVar1 = FUN_00068100((int)(short)param_1 >> 3,(int)(short)param_2 >> 3);
+    iVar1 = tilemap_lookup((int)(short)param_1 >> 3,(int)(short)param_2 >> 3);
     object_list_insert_head(iVar1 + 2,param_4);
   }
   return 1;
@@ -39619,7 +39619,7 @@ short param_5;
       return 0;
     }
   }
-  iVar5 = FUN_00068100((int)uVar4 >> 3,(int)uVar6 >> 3);
+  iVar5 = tilemap_lookup((int)uVar4 >> 3,(int)uVar6 >> 3);
   uVar1 = param_1[1];
   bVar3 = (byte)(uVar1 & 0x3ff);
   *(byte *)(param_1 + 1) = (bVar3 ^ (byte)param_4) & 0x7f ^ bVar3;
@@ -41160,11 +41160,11 @@ ushort * param_2;
   bool bVar11;
   
   if (((short)*param_2 >> 8 != DAT_0010144c) || ((short)param_2[1] >> 8 != DAT_00101454)) {
-    iVar5 = FUN_00068100();
+    iVar5 = tilemap_lookup();
     object_list_unlink(iVar5 + 2,param_1);
     DAT_0010144c = (ushort)(char)(*param_2 >> 8);
     DAT_00101454 = (short)(char)(param_2[1] >> 8);
-    iVar5 = FUN_00068100();
+    iVar5 = tilemap_lookup();
     object_list_insert_head(iVar5 + 2,param_1);
   }
   uVar7 = (uint)param_1[1];
@@ -41299,7 +41299,7 @@ ushort * param_1;
   int iVar1;
   ushort *puVar2;
   
-  iVar1 = FUN_00068100((int)DAT_0010144c,(int)DAT_00101454);
+  iVar1 = tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
   puVar2 = (ushort *)alloc_object_slot(1);
   if (puVar2 == (ushort *)0x0) {
     puVar2 = (ushort *)0x0;
@@ -41459,7 +41459,7 @@ ushort * param_1;
   if (DAT_00201b68 == 9) {
     bVar3 = false;
   }
-  iVar8 = FUN_00068100((int)DAT_0010144c,(int)DAT_00101454);
+  iVar8 = tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
   iVar8 = iVar8 + 2;
   if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
     *(byte *)puVar9 = (byte)*param_1;
@@ -41633,7 +41633,7 @@ LAB_000564d0:
         return param_1;
       }
 LAB_000564d8:
-      iVar12 = FUN_00068100((int)param_2,(int)param_3);
+      iVar12 = tilemap_lookup((int)param_2,(int)param_3);
       puVar9 = (ushort *)FUN_00053334(iVar12 + 2,param_1,0);
       return puVar9;
     }
@@ -44242,7 +44242,7 @@ uint sweep_collision_flags()
      in the same 1/8-tile units these readers expect (>>3 -> tile). */
   DAT_002049c8 = DAT_0008697c[0];
   DAT_002049ca = DAT_0008697c[1];
-  if (FUN_00068100((short)((int)DAT_0008697c[0] >> 3),(short)((int)DAT_0008697c[1] >> 3)) ==
+  if (tilemap_lookup((short)((int)DAT_0008697c[0] >> 3),(short)((int)DAT_0008697c[1] >> 3)) ==
       (void *)0x0) {
     /* stepped outside the 64x64 map -- the border is always solid; report a
        hard block so sweep_apply_collision backs the move out. (Also stops
@@ -45037,7 +45037,7 @@ undefined4 FUN_0005bc38()
   FUN_00069470();
   DAT_00101938 = (short)(char)((ushort)*(undefined2 *)(DAT_00086e6c + 10) >> 8);
   DAT_0010193c = (short)(char)((ushort)*(undefined2 *)(DAT_00086e6c + 0x12) >> 8);
-  DAT_0023aecc = FUN_00068100(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
+  DAT_0023aecc = tilemap_lookup(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
   bVar3 = (byte)((short)(*(ushort *)(DAT_00086e6c + 0x2c) >> 0xd) + 1 >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
   Ordinal_2005(2);
@@ -46170,8 +46170,8 @@ void walk_visible_tiles()
   sVar3 = *(short *)(&DAT_00086a02 + iVar4);
   puVar9 = &DAT_0023b038 + DAT_0023b024 * 0x42;
   pbVar8 = (byte *)(DAT_0023aecc + ((int)sVar3 * (int)DAT_0023b024 + iVar7 * -0x10) * 4);
-  DAT_0023b814 = FUN_00068100(0,0);
-  DAT_0023b808 = FUN_00068100(0x3f,0x3f);
+  DAT_0023b814 = tilemap_lookup(0,0);
+  DAT_0023b808 = tilemap_lookup(0x3f,0x3f);
   DAT_0023b83c = 0;
   uVar6 = (uint)(short)((int)pbVar8 - (int)DAT_0023b814 >> 2);
   DAT_0023b838 = 0;
@@ -50724,7 +50724,8 @@ void FUN_00067f1c()
 
 // Was `int`, truncating the real DAT_002029cc pointer arithmetic result below
 // (same pointer-truncation pattern fixed elsewhere this session).
-void *FUN_00068100(param_1,param_2)
+// was FUN_00068100 -- (tileX,tileY) -> 4-byte tile record ptr in the level map, NULL if either coord is outside 0..63
+void *tilemap_lookup(param_1,param_2)
 short param_1;
 short param_2;
 
@@ -56237,7 +56238,7 @@ void FUN_00071b94()
         *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar2 >> 8) | 0x80;
         *(byte *)(puVar5 + 3) = *(byte *)(puVar5 + 3) & 0x3f;
         *(undefined1 *)((char *)puVar5 + 7) = 0xb0;
-        iVar6 = FUN_00068100(0x20,0x20);
+        iVar6 = tilemap_lookup(0x20,0x20);
         local_11c = iVar6 + 2;
         object_list_append_tail(local_11c,puVar5);
       }
@@ -56323,7 +56324,7 @@ undefined4 FUN_00071e20()
     local_16 = DAT_00204880 >> 5;
     local_18 = DAT_00204882 >> 5;
     FUN_00069f2c((int)DAT_00201c70 >> 8,0xb,&local_16,&local_18);
-    puVar5 = (ushort *)FUN_00068100((int)(short)local_16 >> 3,(int)(short)local_18 >> 3);
+    puVar5 = (ushort *)tilemap_lookup((int)(short)local_16 >> 3,(int)(short)local_18 >> 3);
     uVar1 = *puVar5;
     if (((uVar1 & 0xf) == 1) &&
        (((((sVar3 = (&DAT_0023adb8)[uVar1 >> 10 & 0xf], 4 < sVar3 && (sVar3 < 0xc)) ||
@@ -57477,7 +57478,7 @@ byte FUN_00073b18()
 {
   int iVar1;
   
-  iVar1 = FUN_00068100();
+  iVar1 = tilemap_lookup();
   return *(byte *)(iVar1 + 1) >> 6 & 1;
 }
 
@@ -58080,7 +58081,7 @@ char param_8;
       if ((0 < iVar1) && (iVar8 = (int)cVar11, 0 < iVar8)) {
         iVar12 = (int)param_6;
         iVar10 = (int)param_5;
-        iVar16 = FUN_00068100(iVar10,iVar12);
+        iVar16 = tilemap_lookup(iVar10,iVar12);
         iVar9 = iVar1 + param_5;
         do {
           local_60 = (short)iVar10;
@@ -58310,7 +58311,7 @@ char param_2;
     }
   }
   else {
-    pbVar5 = (byte *)FUN_00068100();
+    pbVar5 = (byte *)tilemap_lookup();
     local_30 = (ushort)(*pbVar5 >> 4) << 3;
     local_28 = pbVar5;
     if (param_2 == '\x01') {
@@ -58701,7 +58702,7 @@ undefined1 param_4;
   
   bVar5 = param_3 - 1;
   if (param_3 != '\0') {
-    iVar2 = FUN_00068100(param_1);
+    iVar2 = tilemap_lookup(param_1);
     iVar2 = resolve_object_link(iVar2 + 2);
     if (iVar2 != 0) {
       do {
@@ -61284,7 +61285,7 @@ undefined4 param_3;
   ushort local_14 [2];
   
   if (param_2 == 0) {
-    iVar2 = FUN_00068100((int)DAT_002020a0,(int)DAT_002020a4);
+    iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
     uVar3 = FUN_0005358c(param_1);
     iVar2 = FUN_00053644(iVar2 + 2,1,uVar3);
     if (iVar2 == 0) {
@@ -61518,7 +61519,7 @@ undefined4 param_2;
       local_1e = local_1e | 0xc0;
       local_12 = 0x1b;
       FUN_00028488(local_2c);
-      iVar2 = FUN_00068100(0x36,0x34);
+      iVar2 = tilemap_lookup(0x36,0x34);
       iVar2 = resolve_object_link(iVar2 + 2);
       if (iVar2 != 0) {
         FUN_0007cdbc(DAT_0023be64,0,iVar2,0);
@@ -61645,7 +61646,7 @@ int param_2;
       FUN_00079d08(DAT_00202098,param_2,1);
     }
     FUN_00081814(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
-    iVar2 = FUN_00068100((int)DAT_002020a0,(int)DAT_002020a4);
+    iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
     FUN_00053334(iVar2 + 2,param_1,1);
     DAT_002020a0 = -1;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
@@ -62124,7 +62125,7 @@ int param_3;
       }
       else {
         FUN_00078c80(0x87);
-        iVar7 = FUN_00068100((int)DAT_002020a0,(int)DAT_002020a4);
+        iVar7 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
         sVar4 = rand_below(2);
         iVar6 = ((int)sVar4 - uVar11) + 0x156;
         while( true ) {
@@ -63087,7 +63088,7 @@ ushort param_4;
   uVar4 = FUN_0007d074(param_1,param_2,iVar3,bVar6,bVar7);
   if ((*param_3 & 0x400) == 0) {
     if ((param_3[3] & 0xffc0) != 0) {
-      iVar5 = FUN_00068100(bVar6,bVar7);
+      iVar5 = tilemap_lookup(bVar6,bVar7);
       FUN_0007dfd8(iVar5 + 2,iVar3);
       return uVar4 | 0x20;
     }
@@ -63275,7 +63276,7 @@ uint param_3;
     }
     return 2;
   case 8:
-    local_34 = FUN_00068100(param_2,param_3);
+    local_34 = tilemap_lookup(param_2,param_3);
     local_34 = local_34 + 2;
     iVar16 = FUN_000537d0(&local_34,0,5,0,CONCAT22(uVar20,0xffff));
     DAT_002020a0 = (undefined2)param_2;
@@ -63357,7 +63358,7 @@ LAB_0007dce4:
     iVar16 = FUN_00039bd8(uVar6,sVar3 + 3,4,0);
     return iVar16;
   case 0xb:
-    local_34 = FUN_00068100(param_1[2] & 0x3f,(byte)param_1[3] & 0x3f);
+    local_34 = tilemap_lookup(param_1[2] & 0x3f,(byte)param_1[3] & 0x3f);
     local_34 = local_34 + 2;
     uVar6 = resolve_object_link(param_1 + 3);
     FUN_000534a8(local_34,uVar6);
@@ -63649,7 +63650,7 @@ uint param_3;
   if (puVar4 != (ushort *)0x0) {
     puVar5 = (ushort *)alloc_object_slot(0);
     if (puVar5 != (ushort *)0x0) {
-      pbVar6 = (byte *)FUN_00068100(param_1,param_2);
+      pbVar6 = (byte *)tilemap_lookup(param_1,param_2);
       uVar2 = *puVar4;
       uVar7 = uVar2 & 0xffa0 | 0x61a0;
       *(char *)puVar4 = (char)uVar7;
@@ -63720,7 +63721,7 @@ int param_2;
   uVar2 = *puVar4;
   uVar1 = (uVar2 & 0x1e00) >> 9;
   if ((short)uVar1 == 1) {
-    iVar5 = FUN_00068100(*(byte *)(param_2 + 4) & 0x3f,*(ushort *)(param_2 + 6) & 0x3f);
+    iVar5 = tilemap_lookup(*(byte *)(param_2 + 4) & 0x3f,*(ushort *)(param_2 + 6) & 0x3f);
     FUN_0007dfd8(iVar5 + 2,puVar4);
   }
   else {
@@ -63834,7 +63835,7 @@ int param_1;
   local_1a = 0;
   pbVar1 = (byte *)FUN_000539b0(5,0,0xffffffff,&local_1c,&local_1a);
   while (pbVar1 != (byte *)0x0) {
-    iVar2 = FUN_00068100((int)local_1c,(int)local_1a);
+    iVar2 = tilemap_lookup((int)local_1c,(int)local_1a);
     if ((((*(byte *)(iVar2 + 1) & 0x80) == 0) && (7 < (*pbVar1 & 0xf))) &&
        (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
@@ -65252,7 +65253,7 @@ short param_1;
   
   iVar2 = param_1 * 6;
   uVar1 = resolve_object_link(&DAT_00250778 + iVar2);
-  iVar2 = FUN_00068100((&DAT_0025077c)[iVar2],(&DAT_0025077d)[iVar2]);
+  iVar2 = tilemap_lookup((&DAT_0025077c)[iVar2],(&DAT_0025077d)[iVar2]);
   object_list_unlink(iVar2 + 2,uVar1);
   free_object_slot(uVar1);
   return;
@@ -65669,7 +65670,7 @@ undefined4 param_3;
     bVar3 = (byte)uVar2;
     *(byte *)(puVar8 + 1) = (((bVar4 & 0xf) + bVar3) - 8 ^ bVar3) & 0x7f ^ bVar3;
     *(char *)((char *)puVar8 + 3) = (char)(uVar2 >> 8);
-    iVar7 = FUN_00068100(param_2,param_3);
+    iVar7 = tilemap_lookup(param_2,param_3);
     object_list_insert_head(iVar7 + 2,puVar8);
     uVar6 = Ordinal_1053();
     Ordinal_2005(3,uVar6);
@@ -65681,7 +65682,7 @@ undefined4 param_3;
     sVar5 = FUN_00080ed4(uVar11,((int)extraout_r1_03 - (int)extraout_r1_02) + 2,(int)extraout_r1_02,
                          param_2 & 0xff,uVar12,uVar13);
     if (sVar5 == -1) {
-      iVar7 = FUN_00068100(param_2,param_3);
+      iVar7 = tilemap_lookup(param_2,param_3);
       object_list_unlink(iVar7 + 2,puVar8);
       free_object_slot(puVar8);
       iVar7 = -1;
@@ -65798,7 +65799,7 @@ LAB_00081980:
     free_object_slot(iVar5);
     return 0;
   }
-  iVar8 = FUN_00068100((int)param_6,(int)param_7);
+  iVar8 = tilemap_lookup((int)param_6,(int)param_7);
   object_list_append_tail(iVar8 + 2,iVar5);
   return 1;
 }

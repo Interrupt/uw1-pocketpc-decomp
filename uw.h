@@ -1353,7 +1353,7 @@ void FUN_00067d10();
 void FUN_00067e2c();
 void FUN_00067e40();
 void FUN_00067f1c();
-void *FUN_00068100();
+void *tilemap_lookup();
 undefined4 FUN_00068138();
 void FUN_00068260();
 void move_command_dispatch();
