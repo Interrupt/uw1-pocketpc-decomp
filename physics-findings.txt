@@ -17,16 +17,18 @@ CALL TREE (per movement tick)
            -> loop DAT_00086990+1 times:
                sweep_step               (was FUN_0005a550) advance one sub-step
                  -> sweep_integrate_substep (was FUN_000595d4) HORIZONTAL X/Y integrate
-                 -> FUN_0005a348           VERTICAL integrate (gravity/climb) -- only when
+                 -> sweep_step_vertical   (was FUN_0005a348) VERTICAL integrate
+                                           (gravity/climb) -- only when
                                            *(DAT_00204874+10) (DAT_0020488a) != 0
-                     -> FUN_00059d20       landing / floor+ceiling contact snap
+                     -> sweep_land_on_surface (was FUN_00059d20) floor+ceiling snap
                      -> sweep_integrate_substep
                sweep_apply_collision    (was FUN_0005ad18) act on flags: stop / slide / step
                  -> sweep_collision_flags (was FUN_0005a6bc) build block/step/fall flag word
-                 -> FUN_00059b7c          slide along an angled/solid face
-                 -> FUN_0005932c          finish / redirect a blocked move
-                 -> FUN_000593c0          kill all velocity (hard hit)
-                 -> FUN_00059c38          stagger / knockback set-up
+                 -> sweep_slide_along_wall  (was FUN_00059b7c) slide along a solid face
+                     -> sweep_deflect_heading (was FUN_0005989c) deflect heading vs normal
+                 -> sweep_restart_remaining (was FUN_0005932c) re-seed the leftover move
+                 -> sweep_kill_velocity     (was FUN_000593c0) zero all velocity (hard hit)
+                 -> sweep_apply_knockback   (was FUN_00059c38) recoil / stagger set-up
            -> sweep_writeback_position   (was FUN_00059488) working set -> movement block
    -> FUN_0006907c                       animation: knockback / stagger / shove effects
                                          (NOT floor gravity)
@@ -50,22 +52,23 @@ KEY STATE
   DAT_0008699f/869a0   ceiling clearance (CONCAT11) for the head-fits test
 
 WHY A DROP IS ONE TICK, NOT SMOOTH GRAVITY
-  Vertical integration (FUN_0005a348: accel by _DAT_000869a1*0x20 per sub-step,
-  land via FUN_00059d20) only runs when DAT_0020488a != 0. movement_sweep_setup
+  Vertical integration (sweep_step_vertical: accel by _DAT_000869a1*0x20 per sub-step,
+  land via sweep_land_on_surface) only runs when DAT_0020488a != 0. movement_sweep_setup
   returns early (DAT_0008698a = 0) whenever the vertical-velocity input
   psVar11[2] (== DAT_0020488a) is 0, and never computes _DAT_000869a1.
   The game only sets DAT_0020488a for scripted vertical motion -- jump,
-  knockback, slope steps (via FUN_0005989c). Plain "walked off a ledge" never
+  knockback, slope steps (via sweep_deflect_heading). Plain "walked off a ledge" never
   sets it. So no gravity accumulates; instead sweep_collision_flags' step
   resolver (LAB_0005a970) hits the `DAT_002049d4 & 4` clause and snaps the
   foot straight onto the lower floor in the single tick that crosses the edge.
   A real multi-tick fall would need: when the foot ends a tick more than the
   step-down limit above DAT_002049d9, set DAT_0020488a (downward) so the next
-  ticks run FUN_0005a348 until FUN_00059d20 lands.
+  ticks run sweep_step_vertical until sweep_land_on_surface lands.
 
-  Also fixed this pass: sweep_step called FUN_0005a348() and FUN_0005a348
-  called sweep_integrate_substep() with Ghidra-dropped args -- the vertical
-  integrator ran with a garbage direction/scale. Now both forward param_1.
+  Also fixed this pass: sweep_step called sweep_step_vertical() and
+  sweep_step_vertical called sweep_integrate_substep() with Ghidra-dropped
+  args -- the vertical integrator ran with a garbage direction/scale.
+  Now both forward param_1.
 
 RELATED FIXES ALREADY ON THIS BRANCH (repo memory.md UPDATEs 21-28)
   DAT_00086987 alias (reversed forward), sine-table stride (turning), the

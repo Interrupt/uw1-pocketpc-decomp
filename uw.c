@@ -43653,7 +43653,7 @@ int param_2;
   uVar9 = (undefined2)(((iVar10 >> 5 ^ uVar1) - uVar1) * 0x10000 >> 0x10);
 LAB_000592f8:
   // PHYSICS: gravity/climb rate -- _DAT_000869a1 (DAT_000869a1/a2) is the vertical
-  // speed the integrator (FUN_0005a348) accelerates by each sub-step this sweep
+  // speed the integrator (sweep_step_vertical) accelerates by each sub-step this sweep
   DAT_000869a2 = (char)((ushort)uVar9 >> 8);
   DAT_000869a1 = (char)uVar9;
   return 1;
@@ -43661,7 +43661,10 @@ LAB_000592f8:
 
 
 
-void FUN_0005932c(param_1)
+// was FUN_0005932c -- re-seed the sweep for the distance still left (after a
+// block/redirect): recompute the remaining-distance field (+0x12), re-run
+// movement_sweep_setup, and end the tick if nothing is left or setup fails
+void sweep_restart_remaining(param_1)
 undefined4 param_1;
 
 {
@@ -43678,10 +43681,11 @@ undefined4 param_1;
 
 
 
+// was FUN_000593c0
 // PHYSICS: kill all velocity -- zero the horizontal (+6/+8/+0xc/+0xe) and
 // vertical (+0xa/+0x10) velocity/accumulator fields and end the sweep. Called
 // on a hard blocking hit (0x4000) so the player stops instead of bouncing.
-void FUN_000593c0()
+void sweep_kill_velocity()
 
 {
   *(undefined1 *)(DAT_00204874 + 8) = 0;
@@ -43831,7 +43835,10 @@ short param_2;
 
 
 
-undefined4 FUN_0005989c(param_1)
+// was FUN_0005989c -- deflect the move's heading against the wall normal it
+// hit (DAT_002049ce) so it slides along the face; returns 0 when the move
+// cannot be deflected (dead stop). Used by the slide path.
+undefined4 sweep_deflect_heading(param_1)
 uint param_1;
 
 {
@@ -43924,7 +43931,10 @@ LAB_000599b0:
 
 
 
-void FUN_00059b7c(param_1)
+// was FUN_00059b7c -- PHYSICS: wall collision (slide). Reverts the blocked
+// sub-step, deflects the heading along the hit face (sweep_deflect_heading)
+// and either resumes the remaining move or ends the tick.
+void sweep_slide_along_wall(param_1)
 int param_1;
 
 {
@@ -43944,12 +43954,12 @@ int param_1;
   uVar2 = DAT_0008698c << 1;
 LAB_00059be4:
   sweep_step(0xffffffff);
-  iVar1 = FUN_0005989c(*(undefined2 *)(&DAT_000869a8 + (short)uVar2 * 2));
+  iVar1 = sweep_deflect_heading(*(undefined2 *)(&DAT_000869a8 + (short)uVar2 * 2));
   if (iVar1 == 0) {
     DAT_00086996 = DAT_00086990 + 1;
   }
   else {
-    FUN_0005932c(1);
+    sweep_restart_remaining(1);
     DAT_002049bc = '\x02';
   }
   return;
@@ -43957,7 +43967,10 @@ LAB_00059be4:
 
 
 
-void FUN_00059c38()
+// was FUN_00059c38 -- PHYSICS: recoil. Seeds a downward vertical velocity
+// (+0xa = -0x15, +0x10 = -4) and shoves the facing (+0x21) back by ~0x3000
+// plus a random amount -- the stagger/knockback when a move is hard-blocked.
+void sweep_apply_knockback()
 
 {
   undefined4 uVar1;
@@ -43988,11 +44001,12 @@ void FUN_00059c38()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// was FUN_00059d20
 // PHYSICS: landing / surface contact -- called when the vertical integrator
 // crosses the target height. Derives a landing-impact value (bob/thump on the
 // camera via DAT_00204874+9), snaps the foot Z to _DAT_0008699b, clears the
 // vertical remainder, and if this was a floor landing kills the fall velocity.
-void FUN_00059d20()
+void sweep_land_on_surface()
 
 {
   byte *pbVar1;
@@ -44036,7 +44050,7 @@ void FUN_00059d20()
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
       ((int)*(short *)((char *)DAT_0008697c + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
      (DAT_00204874[5] < 0)) {
-    FUN_000593c0();
+    sweep_kill_velocity();
     *(undefined1 *)(DAT_00204874 + 0x14) = 2;
     uVar3 = Ordinal_2005(0x32,(short)(uVar2 >> 4) + -600);
     FUN_00072c74(5,(int)*DAT_00204874 >> 5,(int)DAT_00204874[1] >> 5,uVar3);
@@ -44051,7 +44065,7 @@ void FUN_00059d20()
   psVar9 = DAT_00204874;
   if ((uVar8 & 0x18) != 0) {
     if ((uVar8 & 0x10) != 0) {
-      FUN_000593c0();
+      sweep_kill_velocity();
       return;
     }
     DAT_00086996 = DAT_00086990 + 1;
@@ -44127,10 +44141,10 @@ LAB_0005a2d0:
       goto LAB_0005a33c;
     }
 LAB_0005a238:
-    FUN_00059c38();
+    sweep_apply_knockback();
   }
 LAB_0005a33c:
-  FUN_0005932c(0);
+  sweep_restart_remaining(0);
   return;
 }
 
@@ -44138,13 +44152,14 @@ LAB_0005a33c:
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+// was FUN_0005a348
 // PHYSICS: vertical integrator -- applies gravity/climb to the swept foot Z
 // (DAT_0008697c[2]) and resolves floor + ceiling contact. Only reached from
 // sweep_step when the "vertical motion active" flag *(DAT_00204874+10) is set.
 // _DAT_000869a1 = per-tick vertical rate (gravity accel / climb speed),
 // DAT_0008698a = signed vertical velocity, DAT_00086984 = sub-unit remainder,
 // _DAT_0008699b = target surface height (floor when falling, ceiling when rising).
-undefined4 FUN_0005a348(param_1,param_2)
+undefined4 sweep_step_vertical(param_1,param_2)
 undefined4 param_1;
 short param_2;
 
@@ -44212,7 +44227,7 @@ short param_2;
       if (-1 < iVar2) goto LAB_0005a4ac;
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
       // PHYSICS: floor collision -- falling; if this step would drop the foot
-      // below the target floor height, stop and snap to it (FUN_00059d20)
+      // below the target floor height, stop and snap to it (sweep_land_on_surface)
       iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
       if (iVar2 < _DAT_0008699b) goto LAB_0005a4f8;
     }
@@ -44223,7 +44238,7 @@ short param_2;
       iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
       if (_DAT_0008699b < iVar2) {
 LAB_0005a4f8:
-        FUN_00059d20();
+        sweep_land_on_surface();
         return 0;
       }
     }
@@ -44266,11 +44281,11 @@ undefined4 param_1;
   else {
     /* PHYSICS: vertical motion active (falling / climbing a slope) -> run the
        gravity + floor/ceiling integrator. Ghidra dropped both args here, so
-       FUN_0005a348 ran with a garbage `param_2` direction/scale -- one call
+       sweep_step_vertical ran with a garbage `param_2` direction/scale -- one call
        overshot the target height and snapped, which is why a drop resolved
        in a single tick instead of accelerating over several. Forward the
        sweep direction like the horizontal path above. */
-    uVar3 = FUN_0005a348(0,param_1);
+    uVar3 = sweep_step_vertical(0,param_1);
   }
   if (bVar1) {
     sweep_collision_flags();
@@ -44528,10 +44543,10 @@ void sweep_apply_collision()
     if (((local_14[0] & DAT_002048bc[1]) == 0) ||
        (iVar2 = (**(codeval **)(DAT_002048bc + 4))(local_14), iVar2 == 0)) {
       // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
-      // slide the move along it (FUN_00059b7c) instead of stopping dead
+      // slide the move along it (sweep_slide_along_wall) instead of stopping dead
       bVar3 = (local_14[0] & 0x700) != 0;
       if (bVar3) {
-        FUN_00059b7c((local_14[0] & 0x400) == 0);
+        sweep_slide_along_wall((local_14[0] & 0x400) == 0);
       }
       // PHYSICS: wall collision -- 0x1000 = fully blocked: end the sub-tile sweep
       if ((local_14[0] & 0x1000) == 0) {
@@ -44541,10 +44556,10 @@ void sweep_apply_collision()
         return;
       }
       // PHYSICS: wall collision -- arm the vertical path (DAT_00204874+0x10) and
-      // hand off to FUN_0005932c to finish/redirect the blocked move
+      // hand off to sweep_restart_remaining to finish/redirect the blocked move
       *(undefined1 *)(DAT_00204874 + 0x10) = 0xfc;
       *(undefined1 *)(DAT_00204874 + 0x11) = 0xff;
-      FUN_0005932c(bVar3);
+      sweep_restart_remaining(bVar3);
       return;
     }
     // PHYSICS: soft block resolved -- back the sub-step out (sweep_step(-1))
@@ -44554,7 +44569,7 @@ void sweep_apply_collision()
     // PHYSICS: hard block (0xc000) -- revert the sub-step and, on 0x4000, kill velocity
     sweep_step(0xffffffff);
     if ((local_14[0] & 0x4000) != 0) {
-      FUN_000593c0();
+      sweep_kill_velocity();
       return;
     }
   }
