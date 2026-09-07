@@ -43500,12 +43500,18 @@ int param_2;
           (int)(((int)*(short *)(DAT_00204874 + 8) ^ uVar2) - uVar2);
   DAT_0008698c = (ushort)bVar3;
   iVar10 = (int)(short)(ushort)bVar3;
-  Ordinal_2005(2,iVar10 + 1);
   uVar5 = 0x20;
   if (psVar11[iVar10] < 1) {
     uVar5 = 0xe0;
   }
-  DAT_0008698e = extraout_r1;
+  /* DAT_0008698e is the OTHER movement axis (DAT_0008698c is the dominant one,
+     0=X or 1=Y). Ghidra dropped the `Ordinal_2005(2, iVar10+1)` whose result
+     it wanted and read `extraout_r1` (the division remainder register
+     leftover), which is 0 for iVar10 in {0,1} -- so the secondary axis was
+     always X and turning never changed the direction of travel. Compute it
+     directly: `(iVar10 + 1) % 2` == `1 - iVar10`. (Same register-leftover
+     pattern the reaction-queue code documents at ~uw.c:45585.) */
+  DAT_0008698e = (short)((iVar10 + 1) % 2);
   (&DAT_00086986)[iVar10 * 2] = 0;
   (&DAT_00086987)[iVar10 * 2] = uVar5;
   if (DAT_00086978[(short)DAT_0008698c] == 0) {
