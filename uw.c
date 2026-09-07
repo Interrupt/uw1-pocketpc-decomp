@@ -43379,8 +43379,22 @@ LAB_00058a64:
 LAB_00058db4:
   if (DAT_00086998 != -1) {
     psVar3 = (short *)resolve_object_link(&DAT_00202c3a + DAT_00086998 * 6);
-    DAT_00086999 = (undefined1)((int)*psVar3 & 0x1ffU);
-    DAT_0008699a = (undefined1)(((int)*psVar3 & 0x1ffU) >> 8);
+    /* resolve_object_link returns NULL when the picked slot carries no object
+       link (id bits 6..15 clear).  The slot-selection loop above only tests a
+       tile flag via FUN_000535fc(id >> 6), so a slot with id < 0x40 passes the
+       filter yet resolves to NULL here.  The ARM original guarded this deref;
+       the Ghidra decompile dropped the check, so a turn tick whose reticle pick
+       lands on such a slot segfaults in this per-frame path
+       (FUN_0005898c <- FUN_00058e08 <- FUN_0005878c <- apply_movement_tick),
+       which is what made scripted in-dungeon turning die mid-spin.  Treat a
+       NULL resolve as "nothing under the reticle". */
+    if (psVar3 == (short *)0x0) {
+      DAT_00086998 = -1;
+    }
+    else {
+      DAT_00086999 = (undefined1)((int)*psVar3 & 0x1ffU);
+      DAT_0008699a = (undefined1)(((int)*psVar3 & 0x1ffU) >> 8);
+    }
   }
   return;
 }
