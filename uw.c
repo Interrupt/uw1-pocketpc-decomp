@@ -2641,33 +2641,50 @@ undefined4 DAT_00086370;
 undefined DAT_00086810;
 static undefined1 DAT_00202a58_backing[65536];
 #define DAT_00202a58 DAT_00202a58_backing[0]
+/* FUN_00050d78's collision height-field: five 5-byte corner records at
+   0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. FUN_00050d78 writes the
+   fields by name (DAT_00202bfd, DAT_00202c0c, ...) while FUN_00050984 reads
+   them by index off DAT_00202bf8. Only DAT_00202bf8 had a backing array;
+   the rest were lone Ghidra scalars, so the named writes and indexed reads
+   hit different memory and every corner sampled as height 8 -- solid-rock
+   tiles reported the same floor height as open floor, so collision never
+   stopped the player at a wall. Alias every field into the one backing
+   buffer. Per-corner layout: [0]=shape/index, [1..2]=diag corner offsets,
+   [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05). */
 static undefined1 DAT_00202bf8_backing[32768];
 #define DAT_00202bf8 DAT_00202bf8_backing[0]
-undefined1 DAT_00202bf9;
-undefined1 DAT_00202bfa;
+#define DAT_00202bf9  (DAT_00202bf8_backing[0x01])
+#define DAT_00202bfa  (DAT_00202bf8_backing[0x02])
+#define DAT_00202bfb  (DAT_00202bf8_backing[0x03])
+#define DAT_00202bfc  (DAT_00202bf8_backing[0x04])
+#define DAT_00202bfd  (DAT_00202bf8_backing[0x05])
+#define DAT_00202bfe  (DAT_00202bf8_backing[0x06])
+#define DAT_00202bff  (DAT_00202bf8_backing[0x07])
+#define DAT_00202c00  (DAT_00202bf8_backing[0x08])
+#define DAT_00202c02  (DAT_00202bf8_backing[0x0a])
+#define DAT_00202c03  (DAT_00202bf8_backing[0x0b])
+#define DAT_00202c04  (DAT_00202bf8_backing[0x0c])
+#define DAT_00202c05  (DAT_00202bf8_backing[0x0d])
+#define DAT_00202c07  (DAT_00202bf8_backing[0x0f])
+#define DAT_00202c08  (DAT_00202bf8_backing[0x10])
+#define DAT_00202c09  (DAT_00202bf8_backing[0x11])
+#define DAT_00202c0a  (*(unsigned short *)(DAT_00202bf8_backing + 0x12))
+#define DAT_00202c0c  (DAT_00202bf8_backing[0x14])
+#define DAT_00202c0d  (DAT_00202bf8_backing[0x15])
+#define DAT_00202c0e  (DAT_00202bf8_backing[0x16])
+#define DAT_00202c14  (*(unsigned int *)(DAT_00202bf8_backing + 0x1c))
 static undefined1 DAT_00202c70_backing[65536];
 #define DAT_00202c70 DAT_00202c70_backing[0]
-ushort DAT_00202c78;
-undefined1 DAT_00202bfb;
-undefined1 DAT_00202bfc;
+/* At offset 8 of the DAT_00202c70 corner-height block -- FUN_00050d78's
+   `Ordinal_1047(&DAT_00202c70, 0x11, 0x12)` (memset) seeds it (and every
+   corner) with the 0x1111 "recompute me" sentinel. As a separate scalar the
+   memset never touched it, so it stayed 0, the `DAT_00202c78 == 0x1111`
+   guard never fired, and the tile's packed height was never computed -- so
+   every corner sampled as height 8 and collision couldn't tell solid rock
+   from open floor. */
+#define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
 undefined DAT_00202c34;
 ushort *_DAT_00202c34;
-undefined1 DAT_00202c0c;
-undefined1 DAT_00202c0d;
-undefined1 DAT_00202c0e;
-byte DAT_00202bfd;
-undefined1 DAT_00202bfe;
-undefined1 DAT_00202bff;
-byte DAT_00202c02;
-undefined1 DAT_00202c03;
-undefined1 DAT_00202c04;
-byte DAT_00202c07;
-undefined1 DAT_00202c08;
-undefined1 DAT_00202c09;
-undefined4 DAT_00202c14;
-ushort DAT_00202c0a;
-undefined DAT_00202c05;
-undefined DAT_00202c00;
 undefined1 DAT_00086884;
 undefined DAT_0008688c;
 char DAT_00202c20;
@@ -43369,7 +43386,7 @@ void reticle_object_pick()
   if (*(short *)(DAT_00204874 + 10) < 1) {
     if (*(short *)(DAT_00204874 + 10) == 0) {
       bVar1 = DAT_002049d9;
-      if ((int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)(DAT_0008697c + 4)) <
+      if ((int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)DAT_0008697c + 4)) <
           (int)(uint)DAT_002049d9) {
         bVar1 = DAT_002049d8;
       }
@@ -43446,7 +43463,7 @@ LAB_00058a64:
          (ushort)(byte)(&DAT_00202c39)[iVar4 * 6] - (ushort)*(byte *)(DAT_00204874 + 0x26);
   }
   DAT_00204878 = 0;
-  if ((int)((uint)*(byte *)(DAT_00204874 + 0x25) + (int)*(short *)(DAT_0008697c + 4)) <
+  if ((int)((uint)*(byte *)(DAT_00204874 + 0x25) + (int)*(short *)((char *)DAT_0008697c + 4)) <
       (int)(uint)DAT_002049d9) {
     _DAT_0008699b = (ushort)DAT_002049d9;
     DAT_00204878 = 1;
@@ -43960,7 +43977,7 @@ void FUN_00059d20()
     sVar4 = 0;
   }
   else {
-    uVar11 = (int)*(short *)(DAT_0008697c + 4) - (int)_DAT_0008699b;
+    uVar11 = (int)*(short *)((char *)DAT_0008697c + 4) - (int)_DAT_0008699b;
     uVar8 = (int)uVar11 >> 0x1f;
     if (iVar12 < 0) {
       iVar12 = iVar12 + 3;
@@ -43972,11 +43989,11 @@ void FUN_00059d20()
   }
   *(char *)(DAT_00204874 + 9) = (char)sVar4;
   *(char *)((char *)DAT_00204874 + 0x13) = (char)((ushort)sVar4 >> 8);
-  *(short *)(DAT_0008697c + 4) = _DAT_0008699b;
+  *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
   psVar9 = DAT_00204874;
   DAT_00086984 = 0;
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
-      ((int)*(short *)(DAT_0008697c + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
+      ((int)*(short *)((char *)DAT_0008697c + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
      (DAT_00204874[5] < 0)) {
     FUN_000593c0();
     *(undefined1 *)(DAT_00204874 + 0x14) = 2;
@@ -44043,7 +44060,7 @@ void FUN_00059d20()
   *(undefined1 *)(DAT_00204874 + 8) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0x11) = 0;
   if (DAT_00086998 == -1) {
-    if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)(DAT_0008697c + 4)) {
+    if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)DAT_0008697c + 4)) {
       puVar7 = (ushort *)FUN_000535fc((int)*(short *)((char *)DAT_00204874 + 0x23));
       if ((*puVar7 & 0x1c0) != 0x40) goto LAB_0005a238;
       if ((DAT_002049d6 & 0x10) == 0) {
@@ -44135,26 +44152,26 @@ short param_2;
   }
   DAT_00086984 = (ushort)(uVar3 * 0x10000 >> 0x10) & 0x7ff;
   if (iVar2 == -1) {
-    *(short *)(DAT_0008697c + 4) = *(short *)(DAT_0008697c + 4) + sVar4;
+    *(short *)((char *)DAT_0008697c + 4) = *(short *)((char *)DAT_0008697c + 4) + sVar4;
   }
   else {
     iVar2 = (int)sVar4;
     if (iVar2 < 1) {
       if (-1 < iVar2) goto LAB_0005a4ac;
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
-      iVar2 = iVar2 + *(short *)(DAT_0008697c + 4);
+      iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
       if (iVar2 < _DAT_0008699b) goto LAB_0005a4f8;
     }
     else {
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
-      iVar2 = iVar2 + *(short *)(DAT_0008697c + 4);
+      iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
       if (_DAT_0008699b < iVar2) {
 LAB_0005a4f8:
         FUN_00059d20();
         return 0;
       }
     }
-    *(short *)(DAT_0008697c + 4) = (short)iVar2;
+    *(short *)((char *)DAT_0008697c + 4) = (short)iVar2;
   }
 LAB_0005a4ac:
   uVar1 = sweep_integrate_substep();
@@ -44300,7 +44317,7 @@ uint sweep_collision_flags()
       iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
     } while (iVar6 < (int)((uint)DAT_002049dd + (int)DAT_002049de));
   }
-  iVar4 = (int)*(short *)(DAT_0008697c + 4);
+  iVar4 = (int)*(short *)((char *)DAT_0008697c + 4);
   iVar6 = (int)_DAT_0008699b;
   iVar5 = (int)DAT_00086998;
   if (iVar4 == iVar6) {
@@ -44326,7 +44343,7 @@ LAB_0005a970:
               if ((((local_3c & 0x400) != 0) || (iVar5 == -1)) ||
                  ((((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) != 0 && (bVar7)))) {
                 DAT_00204870 = 1;
-                *(short *)(DAT_0008697c + 4) = _DAT_0008699b;
+                *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
                 uVar3 = (int)((int)_DAT_0008699b - (uint)DAT_002049d8) >> 0x1f;
                 if ((int)(uint)*(byte *)(DAT_00204874 + 0x25) <
                     (int)(((int)_DAT_0008699b - (uint)DAT_002049d8 ^ uVar3) - uVar3)) {
@@ -44387,10 +44404,10 @@ LAB_0005abe4:
   uVar1 = local_3c;
   if (((((DAT_002049d6 & 0x100) != 0) && (bVar8)) && (*(short *)(DAT_00204874 + 10) == 0)) &&
      ((int)(uint)DAT_002049d9 <=
-      (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)(DAT_0008697c + 4)))) {
-    *(ushort *)(DAT_0008697c + 4) = (ushort)DAT_002049d9;
+      (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)DAT_0008697c + 4)))) {
+    *(ushort *)((char *)DAT_0008697c + 4) = (ushort)DAT_002049d9;
     uVar1 = local_3c & 0xfeff | 4;
-    if (*(ushort *)(DAT_0008697c + 4) != (ushort)DAT_002049d8) {
+    if (*(ushort *)((char *)DAT_0008697c + 4) != (ushort)DAT_002049d8) {
       uVar1 = local_3c & 0xfefb;
     }
   }
@@ -44400,7 +44417,7 @@ LAB_0005abe4:
   }
   if (((local_3c & 0x80) == 0) &&
      ((int)(uint)DAT_002049d9 <
-      (int)((int)*(short *)(DAT_0008697c + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
+      (int)((int)*(short *)((char *)DAT_0008697c + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
     local_3c = local_3c | 0x1000;
   }
   return (int)(short)local_3c;
