@@ -51,21 +51,31 @@ KEY STATE
   byte DAT_00204874+0x25  wall-vs-step threshold
   DAT_0008699f/869a0   ceiling clearance (CONCAT11) for the head-fits test
 
-WHY A DROP IS ONE TICK, NOT SMOOTH GRAVITY
-  Vertical integration (sweep_step_vertical: accel by _DAT_000869a1*0x20 per sub-step,
-  land via sweep_land_on_surface) only runs when DAT_0020488a != 0. movement_sweep_setup
-  returns early (DAT_0008698a = 0) whenever the vertical-velocity input
-  psVar11[2] (== DAT_0020488a) is 0, and never computes _DAT_000869a1.
-  The game only sets DAT_0020488a for scripted vertical motion -- jump,
-  knockback, slope steps (via sweep_deflect_heading). Plain "walked off a ledge" never
-  sets it. So no gravity accumulates; instead sweep_collision_flags' step
-  resolver (LAB_0005a970) hits the `DAT_002049d4 & 4` clause and snaps the
-  foot straight onto the lower floor in the single tick that crosses the edge.
-  A real multi-tick fall would need: when the foot ends a tick more than the
-  step-down limit above DAT_002049d9, set DAT_0020488a (downward) so the next
-  ticks run sweep_step_vertical until sweep_land_on_surface lands.
+FALL PHYSICS  (fixed -- repo memory.md UPDATE 30, commits 95670c7 + fd862cf)
+  How a gravity fall runs:
+   - sweep_apply_collision arms it: a sub-step that returns fully blocked
+     (flag 0x1000) sets movement block +0x10 (DAT_00204890) = -4.
+   - movement_sweep_setup integrates it every tick:
+        DAT_00086978[2] += remaining(+0x12) * (+0x10)
+     and DAT_00086978[2] IS +0xa (DAT_0020488a) -- DAT_00086978 = (short*)(block+6),
+     so [2] = *(short*)(block+0xa). So +0xa accumulates downward velocity.
+   - It then derives the 16-bit accel rate _DAT_000869a1 from +0xa and the
+     horizontal distance (u16, NOT a byte -- do not sign-extend the low byte).
+   - sweep_step dispatches to sweep_step_vertical while +0xa != 0.
+   - sweep_step_vertical moves the foot by ~(_DAT_000869a1*0x20 + rem) >> 11
+     per sub-step; when the step would cross _DAT_0008699b it calls
+     sweep_land_on_surface, which snaps the foot and (our fix) clears +0xa,
+     +0x10 and the airborne state byte +0x28 (0x10 -> 8).
 
-  Also fixed this pass: sweep_step called sweep_step_vertical() and
+  The ledge walk never reached this because sweep_collision_flags' auto-stick
+  clause (DAT_002049d4 & 4) snapped the foot onto ANY lower floor in one tick.
+  FIX: restrict that clause to `footZ - floorZ <= step-down limit (byte +0x27)`
+  so a bigger drop falls through to the blocked path and the existing hook
+  arms the fall. See set_locomotion_state (was FUN_0003c524): it re-arms
+  +0x10 = -4 every tick while +0x28 says airborne, hence the state reset on
+  landing.
+
+  Also fixed earlier this pass: sweep_step called sweep_step_vertical() and
   sweep_step_vertical called sweep_integrate_substep() with Ghidra-dropped
   args -- the vertical integrator ran with a garbage direction/scale.
   Now both forward param_1.
