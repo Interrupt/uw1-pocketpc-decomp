@@ -194,3 +194,37 @@ REMAINING (quality, not blocking):
   path still untested -- only class 0 (item billboards) confirmed.
 - UW_ENABLE_TILE_FEATURES is still a gate; flip it on by default once
   classes 1-3 and depth are checked.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-07 (4): transparency + palette fixed
+═══════════════════════════════════════════════════════════════════════════
+The user's two observations were the format-8 RLE decode:
+- FUN_000129f8's 3rd arg (compression mode, *pcVar3) was dropped, so it
+  took its param_3==0 path -> all-transparent bitmap.  FIXED commit 19d98ce.
+- With the mode restored it takes the format-8 branch, whose RLE fill
+  (FUN_000132c4) looks run colours up through DAT_000b4610.
+  blit_sprite_row_remapped (the setup helper) RESETS DAT_000b4610 to the
+  0x0a-filled scratch DAT_000842ac on the way out, so every run resolved
+  to palette index 0x0a (a flat tan) and there were no transparent
+  (index 0) pixels.  FIX: point DAT_000b4610 at the aux palette (param_2)
+  before FUN_000132c4.  commit 9f21ca3.
+
+Now: bag (type 0x80) decodes 134/256 opaque px, real palette, transparent
+background; walls/door show through. milestones/objects-render-fmt8-palette.bmp.
+demo_objects.txt frames a room with several objects.
+
+REMAINING:
+- No explicit U/V on the billboard quad. render_visible_tile_list takes
+  the per-vertex texcoord from the near_clip output record [0x10..0x17],
+  which near_clip fills from the vertex's PROJECTED position
+  (iVar7 + 0x3008 / +0x300c). For a world-locked tile texture that works;
+  for a sprite it means the 16x16 is sampled by screen position, so a few
+  (mostly wall-mounted) object sprites still show garbled -- red glyph-like
+  specks. Needs a real change: either a per-record "billboard" flag that
+  makes near_clip emit 0..w / 0..h uv for the 4 corners, or write the uv
+  into a field project_verts_through_view_matrix does not overwrite.
+- Floor items render small; billboard scale (FUN_00060aa0 class-0's
+  sprite_w * -6 * 0.5) may need tuning.
+- Object vs wall depth (painter's order) not verified.
+- Render classes 1-3 (doors as geometry / switches / bridges) still only
+  lightly exercised.
