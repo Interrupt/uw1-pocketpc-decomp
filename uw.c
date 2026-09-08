@@ -5466,6 +5466,14 @@ LAB_000130d0:
     DAT_000b5630 = pbVar4;
     DAT_000b4628 = pbVar5;
     DAT_000b461c = pbVar5;
+    /* blit_sprite_row_remapped above resets DAT_000b4610 to the scratch
+       DAT_000842ac (memset to 0x0a) on the way out, but FUN_000132c4's RLE
+       fill looks its run colours up through DAT_000b4610 -- for the RLE
+       formats (6/8/0xa) that table is the auxiliary palette passed in
+       param_2 (nibble -> 8-bit palette index). Ghidra dropped the setup;
+       point it there so the sprite decodes to real colours instead of a
+       flat 0x0a. */
+    DAT_000b4610 = (byte *)param_2;
     FUN_000132c4(uVar7,param_3,uVar8);
     DAT_000b462c = DAT_000b4628;
   }
