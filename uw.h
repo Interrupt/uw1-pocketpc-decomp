@@ -400,7 +400,8 @@ extern undefined2 DAT_0023c59e;
 extern undefined2 DAT_0023c5a0;
 extern int DAT_0023c5b0;
 extern undefined4 DAT_0023c648;
-extern undefined4 DAT_0023c7a0;
+extern void *DAT_0023c7a0_arr[0x140];
+#define DAT_0023c7a0 DAT_0023c7a0_arr[0]
 extern char *DAT_0023cca0;
 extern char *DAT_0023cca4;
 extern undefined1 DAT_0023cca8_backing[32768];

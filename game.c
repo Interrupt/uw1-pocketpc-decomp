@@ -48,12 +48,12 @@ undefined4 param_4;
       DAT_0023cca0 = Ordinal_1041(64000);
       DAT_0023cef0 = Ordinal_1041(0x7fff);
       Ordinal_1047(DAT_0023c44c,0,0x4cce);
-      iVar2 = 0x140;
-      puVar4 = &DAT_0023c7a0;
-      while (iVar2 = iVar2 + -1, -1 < iVar2) {
-        *puVar4 = 0;
-        puVar4 = puVar4 + 1;
+      /* DAT_0023c7a0 is now a real void*[] (widened from Ghidra's
+         `undefined4`); zero it as one so the whole 8-byte slots clear. */
+      for (iVar2 = 0; iVar2 < 0x140; iVar2++) {
+        DAT_0023c7a0_arr[iVar2] = 0;
       }
+      (void)puVar4;
       Ordinal_1047(DAT_0023cca0,0,64000);
       Ordinal_1047(DAT_0023cef0,0,0x7fff);
       DAT_0023cca4 = DAT_0023c44c;

@@ -2214,7 +2214,14 @@ undefined4 DAT_00202308;
 int DAT_0023b83c;
 static undefined1 DAT_00202520_backing[1024];
 #define DAT_00202520 DAT_00202520_backing[0]
-undefined4 DAT_0023c7a0;
+/* Per-geometry-record decoded-sprite pixel buffers, one malloc per visible
+   object, freed each frame by free_frame_geometry_buffers. Ghidra typed it
+   `undefined4` (4 bytes), truncating the 64-bit Ordinal_1041 pointer -- the
+   memcpy into it (Ordinal_1044) would fault. Widened to a real pointer
+   array; only FUN_00040770, free_frame_geometry_buffers and app_main_loop's
+   startup zero-fill touch it. */
+void *DAT_0023c7a0_arr[0x140];
+#define DAT_0023c7a0 DAT_0023c7a0_arr[0]
 undefined1 DAT_0023ce71;
 /* Actually a large table of 4-byte glyph/resource-pointer slots indexed
    by font/char id (see FUN_000408fc and its populator around line
@@ -29135,9 +29142,9 @@ undefined4 FUN_00040770()
   byte bVar1;
   byte bVar2;
   char *pcVar3;
-  undefined4 uVar4;
+  void *buf;
   int iVar5;
-  
+
   FUN_00040aa8();
   pcVar3 = (char *)FUN_000408fc();
   bVar1 = pcVar3[1];
@@ -29149,13 +29156,23 @@ undefined4 FUN_00040770()
     pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
   }
   iVar5 = (int)(short)(ushort)bVar2 * (int)(short)(ushort)bVar1;
-  uVar4 = Ordinal_1041(iVar5);
-  (&DAT_0023c7a0)[DAT_0023b83c] = uVar4;
-  Ordinal_1047(uVar4,0,iVar5);
-  Ordinal_1044((&DAT_0023c7a0)[DAT_0023b83c],pcVar3,iVar5);
-  DAT_002022fc = (&DAT_0023c7a0)[DAT_0023b83c];
+  /* decode this object's sprite into a fresh per-record buffer (keep the
+     full 64-bit pointer -- Ordinal_1041's result was truncated through the
+     `undefined4` DAT_0023c7a0). */
+  buf = Ordinal_1041(iVar5);
+  (&DAT_0023c7a0)[DAT_0023b83c] = buf;
+  Ordinal_1047(buf,0,iVar5);
+  Ordinal_1044(buf,pcVar3,iVar5);
+  DAT_002022fc = (int)(intptr_t)buf;
   DAT_00202508 = (ushort)bVar1;
   DAT_002022f8 = (ushort)bVar2;
+  /* TODO(objects): render_visible_tile_list reads the per-record texture
+     from the g_tile_texptr_out[] side channel, not this buffer -- object
+     billboards still rasterise with a null texture. Publishing `buf` here
+     via g_tile_texptr_emit[DAT_0023b83c] is not enough: DAT_0023b83c at
+     this point (small, e.g. 6/19/22) does not match the record's final
+     index in near_clip_visible_tiles' list (70+). The object geom-record
+     counter is out of sync with DAT_000a85d4 -- see object-rendering-findings.txt. */
   return 1;
 }
 
@@ -45125,17 +45142,16 @@ void free_frame_geometry_buffers()
 {
   int *piVar1;
   int iVar2;
-  
-  piVar1 = &DAT_0023c7a0;
-  iVar2 = 0x140;
-  do {
-    if (*piVar1 != 0) {
-      Ordinal_1018();
-      *piVar1 = 0;
+
+  /* DAT_0023c7a0 is now a real void*[] (see its declaration); walk it as
+     one so whole 8-byte slots clear (the old int* stride freed/zeroed only
+     the low half of each pointer). */
+  {
+    int _i;
+    for (_i = 0; _i < 0x140; _i++) {
+      if (DAT_0023c7a0_arr[_i] != 0) { Ordinal_1018(); DAT_0023c7a0_arr[_i] = 0; }
     }
-    iVar2 = iVar2 + -1;
-    piVar1 = piVar1 + 1;
-  } while (iVar2 != 0);
+  }
   piVar1 = &DAT_002020f8;
   iVar2 = 0x80;
   do {
@@ -49590,7 +49606,7 @@ ushort * param_1;
   short local_36;
   undefined4 local_34;
   int local_30;
-  
+
   local_34 = local_34 & 0xffff0000;
   iVar13 = 0;
   local_36 = -1;
