@@ -2155,16 +2155,36 @@ uint DAT_002020e4;
 byte DAT_002020e8;
 byte * DAT_0023b814;
 int DAT_0023bc94;
-int DAT_002020b0;
-int DAT_002020a8;
+/* Tilemap byte addresses (DAT_0023b814 + tile*4), not ints -- Ghidra
+   typed them `int` and truncated the 64-bit pointer. Set in FUN_0003ec00
+   from the object-pick result, consumed by FUN_0003e694 / object_list_unlink. */
+char *DAT_002020b0;
+char *DAT_002020a8;
 undefined4 DAT_002020ec;
+/* SPLIT SYMBOL. In the 32-bit original, DAT_0023b4f4 was the head of a
+   memory region: bytes 0..3 a function pointer (a tile-geometry emitter,
+   selected in walk_visible_tiles / emit_hud_draw_commands, called at
+   process_visible_tile_cell), and from byte 4 on a short[] of per-pick-
+   slot tile offsets, indexed `slot*2 + 2` (slot 1 -> byte 4) by the
+   object-pick ID assignment (FUN_00060aa0) and read back by FUN_0003ec00.
+   On a 64-bit host the pointer is 8 bytes, so those short writes landed
+   *inside* the pointer and corrupted it -> wild call in
+   process_visible_tile_cell the moment pick IDs were being assigned
+   (i.e. as soon as the pick re-render ran). Give the offset table its own
+   backing store; keep the exact `v*2 + 2` index math at both use sites. */
 code *DAT_0023b4f4;
+static short g_pick_tile_off_backing[0x200];
 static undefined1 DAT_0023b676_backing[65536];
 #define DAT_0023b676 DAT_0023b676_backing[0]
 short g_mouse_y;
 short g_mouse_x;
 short DAT_002020ac;
-char s_You_see_000858fc[] = "You_see";
+/* Ghidra recovered this as "You_see" (underscores, no trailing space);
+   it's the "You see " prefix the look/identify code prepends to an
+   object/terrain name, so the real bytes are "You see " with a trailing
+   space (see FUN_0003ed6c: message_scroll_print_wrapped(this) then the
+   name then "."). */
+char s_You_see_000858fc[] = "You see ";
 static undefined1 DAT_0023ad58_backing[65536];
 #define DAT_0023ad58 DAT_0023ad58_backing[0]
 static undefined2 DAT_0023ae58_backing[8192];
@@ -3743,15 +3763,37 @@ static undefined1 DAT_000870f0_backing[65536];
 #define DAT_000870f0 DAT_000870f0_backing[0]
 static undefined1 DAT_00087112_backing[65536];
 #define DAT_00087112 DAT_00087112_backing[0]
-undefined DAT_0023c240;
-undefined DAT_0023c244;
-undefined DAT_0023c248;
-undefined DAT_0023c24c;
+/* .bss 0x23c240..0x23c24f: four short[2] rows of sprite handles for the
+   HUD flask/vitals animation (FUN_0006d4a4 / FUN_0006d894), indexed
+   `&row + param*2` with param in {0,1}. Ghidra split the region into four
+   lone 1-byte `undefined` scalars, so the param==1 (`+2`) access ran off
+   the end of a 1-byte global and read/wrote a neighbouring variable --
+   the resulting garbage handle crashed FUN_0007699c (`param_1 * 0x14 +
+   base` with a huge negative param_1). Back it with real contiguous
+   storage; the `&sym + iVar1` byte indexing is unchanged. */
+static char DAT_0023c240_vitals[16];
+#define DAT_0023c240 DAT_0023c240_vitals[0]
+#define DAT_0023c244 DAT_0023c240_vitals[4]
+#define DAT_0023c248 DAT_0023c240_vitals[8]
+#define DAT_0023c24c DAT_0023c240_vitals[12]
 short DAT_0023c250;
-undefined DAT_00087178;
-undefined DAT_00087188;
-undefined *PTR_DAT_00087198;
-undefined *PTR_DAT_000871a8;
+/* .data 0x87178..0x871b7: four rows (x / y / w / h) of the HUD damage-
+   flash sprite placement table, read as `*(short *)(&row + iVar6*6)` at
+   three call sites in FUN_0006d894 and handed to FUN_000762c4. Ghidra
+   split it into two lone `undefined` scalars plus two `undefined *`
+   pointer slots -- and `&PTR_DAT_00087198` was then cast through `(int)`,
+   truncating the 64-bit address (wild `*(short *)` read -> crash on the
+   first HUD flash). Back each row with real storage and keep the byte-
+   offset indexing. Values weren't recovered from the binary (zero here);
+   worst case the flash sprite draws at 0,0 with 0 size. */
+static char DAT_00087178_arr[16];
+static char DAT_00087188_arr[16];
+static char PTR_DAT_00087198_arr[16];
+static char PTR_DAT_000871a8_arr[16];
+#define DAT_00087178 DAT_00087178_arr[0]
+#define DAT_00087188 DAT_00087188_arr[0]
+#define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
+#define PTR_DAT_000871a8 PTR_DAT_000871a8_arr[0]
 static undefined1 DAT_000871b8_backing[65536];
 #define DAT_000871b8 DAT_000871b8_backing[0]
 undefined DAT_0023c124;
@@ -27957,10 +27999,16 @@ void FUN_0003e644()
 
 
 
+/* param_2 (the picked object, DAT_002020cc -- a real ushort*) and param_3
+   (DAT_002020b0 -- a tilemap byte address) were both declared `int`,
+   truncating the 64-bit pointers every caller passes; param_2 is then
+   dereferenced at `*(ushort *)(param_2 + 2)` and param_3 differenced
+   against the 64-bit tilemap base DAT_0023b814. Same pointer-truncation
+   class as the rest of this session. */
 undefined4 FUN_0003e694(param_1,param_2,param_3)
 short param_1;
-int param_2;
-int param_3;
+char *param_2;
+char *param_3;
 
 {
   short sVar1;
@@ -27971,8 +28019,8 @@ int param_3;
   ushort uVar6;
   undefined4 uVar7;
   uint uVar8;
-  
-  sVar1 = (short)(param_3 - (int)DAT_0023b814 >> 2);
+
+  sVar1 = (short)((int)(param_3 - (char *)DAT_0023b814) >> 2);
   uVar8 = (int)sVar1 & 0x3f;
   DAT_002020a0 = (undefined2)uVar8;
   iVar3 = (int)sVar1 >> 6;
@@ -28004,12 +28052,12 @@ int param_3;
 
 
 uint FUN_0003e83c(param_1)
-int param_1;
+char *param_1;   /* was int -- truncated the tile-record pointer FUN_0003e8b0 passes */
 
 {
   ushort *puVar1;
   uint uVar2;
-  
+
   uVar2 = 0xffffffff;
   puVar1 = (ushort *)(param_1 + 2);
   while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
@@ -28027,7 +28075,7 @@ int param_1;
 
 undefined4 FUN_0003e8b0(param_1,param_2)
 short param_1;
-int param_2;
+char *param_2;  /* was int -- truncated DAT_002020cc; deref'd at param_2+2 */
 
 {
   bool bVar1;
@@ -28049,9 +28097,12 @@ int param_2;
     uVar2 = *(ushort *)(DAT_0023be64 + 0x16) >> 10;
     uVar9 = (uint)uVar2;
     uVar10 = (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4;
-    iVar5 = tilemap_lookup(uVar9,uVar10);
+    /* tilemap_lookup returns a 64-bit tile-record pointer; `int iVar5`
+       truncated it and the very next line dereferenced the result. Use
+       the byte* local this function already has for the same call later. */
+    pbVar6 = (byte *)tilemap_lookup(uVar9,uVar10);
     uVar13 = (uint)DAT_002020a4;
-    sVar4 = (&DAT_0023ae40)[*(byte *)(iVar5 + 1) >> 2 & 0xf];
+    sVar4 = (&DAT_0023ae40)[pbVar6[1] >> 2 & 0xf];
     uVar12 = (uint)DAT_002020a0;
     iVar14 = (int)DAT_002020a0;
     iVar5 = (int)(short)uVar2;
@@ -28099,7 +28150,7 @@ int param_2;
             uVar10 = uVar13;
           }
           pbVar6 = (byte *)tilemap_lookup(uVar9,uVar10);
-          sVar7 = FUN_0003e83c();
+          sVar7 = FUN_0003e83c((char *)pbVar6);  /* arg dropped by Ghidra -- it's the tile just looked up */
           bVar1 = false;
           iVar14 = (int)sVar7;
           if ((((iVar14 < 0) || (iVar5 < iVar14)) || (bVar1 = iVar3 <= iVar14, !bVar1)) &&
@@ -28131,22 +28182,26 @@ ushort *FUN_0003ec00()
   int iVar2;
   ushort *puVar3;
   uint uVar4;
-  /* FUN_0005bac0() re-renders the whole HUD+3D view to refresh the
-     per-pixel pick/stencil buffer DAT_0023cca0 that this function reads
-     below. This port's rasterizer never writes that buffer (the read
-     always comes back 0 -> DAT_0023b830 stays 0 -> no object is ever
-     picked here anyway), so the re-render buys nothing and, with tile
-     features on, its object-billboard pass can crash -- a right-click
-     would then take the game down. Skip it until the pick buffer is
-     actually implemented. Set UW_PICK_RERENDER to restore the call. */
+  /* FUN_0005bac0() re-renders the HUD+3D view in "pick" mode so the
+     per-pixel object/texture id buffer DAT_0023cca0 this function reads
+     below is fresh for the current cursor position. It used to crash via
+     process_visible_tile_cell (the DAT_0023b4f4 split-symbol -- a short[]
+     pick table written inside a function pointer); with that fixed the
+     re-render is safe, so it runs by default. Set UW_DISABLE_PICK_RERENDER
+     to skip it (picks then read a stale buffer). */
   { static int _rr = -1;
-    if (_rr < 0) _rr = (getenv("UW_PICK_RERENDER") != NULL);
+    if (_rr < 0) _rr = (getenv("UW_DISABLE_PICK_RERENDER") == NULL);
     if (_rr) FUN_0005bac0();
   }
   iVar2 = 0;
   DAT_002020ac = 0;
   bVar1 = *(byte *)(g_mouse_y * 0x140 + (int)g_mouse_x + DAT_0023cca0);
   uVar4 = (uint)bVar1;
+  { const char *_f = getenv("UW_PICK_FORCE_SLOT");   /* debug: force the object branch */
+    if (_f && (uint)DAT_0023b830 > 1) { uVar4 = (uint)atoi(_f); if (uVar4 == 0 || uVar4 >= (uint)DAT_0023b830) uVar4 = 1; bVar1 = (byte)uVar4; } }
+  if (getenv("UW_PICK_DIAG"))
+    fprintf(stderr, "[pick] mx=%d my=%d stencil=0x%02x nobj=%d\n",
+            (int)g_mouse_x, (int)g_mouse_y, uVar4, (int)DAT_0023b830);
   if ((uVar4 == 0) || (DAT_0023b830 <= uVar4)) {
     if ((0xbf < uVar4) && (uVar4 < 0xfb)) {
       DAT_002020ac = bVar1 - 0xbf;
@@ -28154,7 +28209,8 @@ ushort *FUN_0003ec00()
   }
   else {
     iVar2 = (int)*(short *)(&DAT_0023b676 + uVar4 * 2);
-    DAT_002020b0 = DAT_0023b814 + *(short *)((intptr_t)&DAT_0023b4f4 + uVar4 * 2 + 2) * 4;
+    DAT_002020b0 = (char *)(DAT_0023b814 +
+        *(short *)((intptr_t)g_pick_tile_off_backing + uVar4 * 2 + 2) * 4);
   }
   if ((short)iVar2 == 0) {
     puVar3 = (ushort *)0x0;
@@ -29380,6 +29436,19 @@ undefined4 param_3;
      the pcVar3+5 idiom in the branch right above it), so it's retyped
      from int to char* rather than truncated through a 4-byte read. */
   iVar4 = *(char **)(&DAT_0024e090 + param_1 * 8);
+  if (iVar4 == (char *)0x0) {
+    /* Table slot never populated. Four .GR resource names in the preload
+       sequence around SCRLEDGE.GR (FUN_00041ca8: the &DAT_000859fc /
+       &DAT_000859e0 / &DAT_000859d0 / &DAT_000859ac calls) were never
+       recovered by Ghidra -- empty strings -> those files don't load ->
+       the running slot cursor is short, so the scroll-edge decoration
+       sprites (ids 0x20d5..0x20e5, drawn by FUN_0007f208/FUN_0007f290
+       every time the message scroll advances a line) land on empty
+       slots. Draw nothing rather than dereferencing NULL and taking the
+       game down mid-message. Same safe-fallback shape as FUN_000408fc. */
+    static char dummy_sprite[8];
+    iVar4 = dummy_sprite;
+  }
   if ((int)param_1 < (int)(uint)DAT_00202738) {
     /* argument dropped by Ghidra here; param_1 matches the lookup right above */
     pcVar3 = (char *)FUN_000408fc(param_1);
@@ -29519,8 +29588,13 @@ short param_6;
   sVar1 = FUN_00040aa8();
   /* DAT_0024e090 is an 8-byte-stride pointer table -- see its declaration
      comment; mirrors the iVar4+5 idiom in FUN_00040918. */
-  FUN_000125a8(param_2,param_3,*(char **)(&DAT_0024e090 + sVar1 * 8) + 5,
-               ((int)param_4 + (int)param_6) * 0x10000 >> 0x10,param_5,0,param_6,1);
+  {
+    static char dummy_sprite[8];
+    char *spr = *(char **)(&DAT_0024e090 + sVar1 * 8);
+    if (spr == (char *)0x0) spr = dummy_sprite;  /* unregistered slot -- see FUN_00040918 */
+    FUN_000125a8(param_2,param_3,spr + 5,
+                 ((int)param_4 + (int)param_6) * 0x10000 >> 0x10,param_5,0,param_6,1);
+  }
   return;
 }
 
@@ -48075,7 +48149,7 @@ ushort * param_1;
     return;
   }
   if (DAT_0023b830 != 0) {
-    *(short *)((intptr_t)&DAT_0023b4f4 + (uint)DAT_0023b830 * 2 + 2) =
+    *(short *)((intptr_t)g_pick_tile_off_backing + (uint)DAT_0023b830 * 2 + 2) =
          DAT_0023b8c4 + (short)(DAT_0023b4ec - DAT_0023b814 >> 2);
     uVar15 = FUN_0005358c(param_1);
     puVar12 = DAT_00110fc0;
@@ -54399,8 +54473,8 @@ int param_1;
       iVar5 = iVar6 * 6;
       FUN_000762c4((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
                    (int)*(short *)(&DAT_00087188 + iVar5),
-                   (int)*(short *)((int)&PTR_DAT_00087198 + iVar5),
-                   *(undefined2 *)((int)&PTR_DAT_000871a8 + iVar5));
+                   (int)*(short *)((char *)&PTR_DAT_00087198 + iVar5),
+                   *(undefined2 *)((char *)&PTR_DAT_000871a8 + iVar5));
       *(short *)(&DAT_0023c24c + iVar1) = local_40[iVar6 * 3];
       *(undefined2 *)(&DAT_0023c124 + iVar1) = 1;
       *psVar7 = 3;
@@ -54484,8 +54558,8 @@ LAB_0006de54:
       iVar5 = iVar8 * 2;
       FUN_000762c4((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
                    (int)*(short *)(&DAT_00087188 + iVar5),
-                   (int)*(short *)((int)&PTR_DAT_00087198 + iVar5),
-                   *(undefined2 *)((int)&PTR_DAT_000871a8 + iVar5));
+                   (int)*(short *)((char *)&PTR_DAT_00087198 + iVar5),
+                   *(undefined2 *)((char *)&PTR_DAT_000871a8 + iVar5));
       sVar4 = local_40[iVar8];
       *(undefined2 *)(&DAT_0023c124 + iVar1) = 3;
       *(short *)(&DAT_0023c24c + iVar1) = sVar4;
@@ -54511,8 +54585,8 @@ LAB_0006dd88:
         iVar5 = iVar8 * 2;
         FUN_000762c4((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
                      (int)*(short *)(&DAT_00087188 + iVar5),
-                     (int)*(short *)((int)&PTR_DAT_00087198 + iVar5),
-                     *(undefined2 *)((int)&PTR_DAT_000871a8 + iVar5));
+                     (int)*(short *)((char *)&PTR_DAT_00087198 + iVar5),
+                     *(undefined2 *)((char *)&PTR_DAT_000871a8 + iVar5));
         *(short *)(&DAT_0023c24c + iVar1) = local_40[iVar8];
         *(undefined2 *)(&DAT_0023c124 + iVar1) = 6;
         *psVar7 = 2;
@@ -65025,6 +65099,17 @@ char *param_1;
   undefined1 local_23 [3];
   
   iVar2 = (int)(short)DAT_00201b60;
+  /* Debug: log every string handed to the message scroll. UW_DEBUG_SCROLL
+     to enable. param_1 is NULL at the call sites that only flush a pending
+     inline graphic token (FUN_0007863c). DAT_00201b60 (1 or 4) is the
+     "message scroll is the active text sink" gate -- anything else is
+     dropped on the floor, so note that too. */
+  if (getenv("UW_DEBUG_SCROLL")) {
+    fprintf(stderr, "[scroll] add %s\"%s\" (mode=%d)\n",
+            (iVar2 == 1 || iVar2 == 4) ? "" : "DROPPED ",
+            (param_1 != (char *)0x0) ? param_1 : "(inline-graphic)",
+            iVar2);
+  }
   if (iVar2 == 1 || iVar2 == 4) {
     FUN_0007f094(iVar2);
     iVar2 = extraout_r3;
