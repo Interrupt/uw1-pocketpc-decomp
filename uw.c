@@ -47007,7 +47007,21 @@ byte * param_1;
      path (the old behaviour). */
   { static int _disabled = -1;
     if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_GEOMETRY") != NULL);
-    if (_disabled) {
+    /* Arena overflow guard. The DAT_000a85d0_backing arena packs the raw,
+       camera-space and projected vertex arrays at 0x8 / 0x1808 / 0x3008
+       (0xc stride), and near_clip_visible_tiles reads a record's stored
+       vertex index as `idx*0xc + base + 0x3010` -- so once the vertex
+       count (DAT_000a85d0, == DAT_0023b838) passes ~512 the projected
+       coords run into the 0x4814 record region and near_clip then
+       dereferences a garbage vertex index (wild-pointer crash / black
+       view when looking down a long open hallway). Records likewise cap
+       near 490 (0x60 apart from 0x4814 to the 64KB end). One tile emits
+       up to ~28 verts / ~6 records, so stop emitting geometry for further
+       tiles well before that; walk_visible_tiles rings outward from the
+       camera, so it's the farthest tiles that drop. */
+    if (_disabled
+        || (int)*(int *)((char *)DAT_000a85d0_backing) >= 512 - 28
+        || (int)DAT_0023b83c >= 490 - 6) {
       if (*param_1 == 0) {
         *param_1 = automap_reveal_byte(DAT_0023b4ec);
         DAT_0023b810 = DAT_0023b810 + 1;
@@ -48278,10 +48292,16 @@ LAB_00061d34:
     *DAT_00110fc0 = 0x7f8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     uVar29 = *(byte *)((char *)param_1 + 0x15) & 0x3f;
-    Ordinal_2005(0x20,((param_1[1] >> 5 & 0x1c) -
-                      ((int)((int)*(short *)(DAT_00086e6c + 0x2c) +
-                            (uint)*(ushort *)(&DAT_00086a18 + DAT_0023b4a0 * 2)) >> 0xb)) + 0x20);
-    bVar13 = (&DAT_00086cc0)[extraout_r1];
+    /* Ghidra modelled the divmod's remainder (ARM r1) as `extraout_r1`,
+       which was never assigned -> wild index into the 0x20-entry
+       DAT_00086cc0 direction table (crash when an object first came into
+       view down a long hallway). It is (that dividend) % 0x20. */
+    {
+      int _dm = ((param_1[1] >> 5 & 0x1c) -
+                 ((int)((int)*(short *)(DAT_00086e6c + 0x2c) +
+                        (uint)*(ushort *)(&DAT_00086a18 + DAT_0023b4a0 * 2)) >> 0xb)) + 0x20;
+      bVar13 = (&DAT_00086cc0)[((_dm % 0x20) + 0x20) % 0x20];
+    }
     if ((ushort)uVar29 < 0x20) {
       if (((ushort)uVar29 != 0xc) && (2 < (bVar13 - 3 & 7))) {
         uVar29 = bVar13 + 0x20;
