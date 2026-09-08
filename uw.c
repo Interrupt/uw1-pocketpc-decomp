@@ -23305,12 +23305,17 @@ int param_2;
   *(byte *)(param_2 + 8) = ((byte)(param_1[1] >> 3) & 7) + 0x30;
   *(byte *)(param_2 + 9) = ((byte)param_1[1] & 7) + 0x30;
   Ordinal_1047(&DAT_00101968,0,0x104);
-  pcVar2 = &DAT_0023c698;
-  do {
-    cVar1 = *pcVar2;
-    pcVar2[-0x13ad30] = cVar1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
+  /* strcpy(&DAT_00101968, &DAT_0023c698). Ghidra baked the delta between
+     the two globals as -0x13ad30, which only resolves in the original
+     0x00xx_xxxx address space -- in the recompile pcVar2[-0x13ad30] is a
+     wild pointer (ASan: global-buffer-overflow). Bounded indexed copy. */
+  {
+    int _i = 0;
+    while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
+      (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+    }
+    (&DAT_00101968)[_i] = '\0';
+  }
   Ordinal_1063(&DAT_00101968,param_2);
   return 2;
 }
@@ -23526,13 +23531,16 @@ LAB_00036858:
   acStack_d0[8] = '\0';
   local_44 = puVar11;
   Ordinal_1047(&DAT_00101968,0,0x104);
-  pcVar8 = &DAT_0023c698;
   local_3c = -0x13ad30;
-  do {
-    cVar5 = *pcVar8;
-    pcVar8[-0x13ad30] = cVar5;
-    pcVar8 = pcVar8 + 1;
-  } while (cVar5 != '\0');
+  /* strcpy(&DAT_00101968, &DAT_0023c698) -- see the note at the sibling
+     copy above; the -0x13ad30 baked delta is a wild pointer here. */
+  {
+    int _i = 0;
+    while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
+      (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+    }
+    (&DAT_00101968)[_i] = '\0';
+  }
   Ordinal_1063(&DAT_00101968,acStack_d0);
   iVar12 = FUN_000227d4(&DAT_00101968);
   local_5c = iVar12;
@@ -23559,12 +23567,15 @@ LAB_00036858:
         acStack_d0[6] = acStack_d0[6] + '\x01';
       }
       Ordinal_1047(&DAT_00101968,0,0x104);
-      pcVar8 = &DAT_0023c698;
-      do {
-        cVar5 = *pcVar8;
-        pcVar8[-0x13ad30] = cVar5;
-        pcVar8 = pcVar8 + 1;
-      } while (cVar5 != '\0');
+      /* strcpy(&DAT_00101968, &DAT_0023c698) -- baked -0x13ad30 delta is
+         a wild pointer in the recompile; bounded indexed copy. */
+      {
+        int _i = 0;
+        while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
+          (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+        }
+        (&DAT_00101968)[_i] = '\0';
+      }
       Ordinal_1063(&DAT_00101968,acStack_d0);
       uVar2 = *puVar11;
       puVar21 = local_84;
@@ -23615,12 +23626,15 @@ LAB_00036858:
           acStack_d0[7] = '0';
         }
         Ordinal_1047(&DAT_00101968,0,0x104);
-        pcVar8 = &DAT_0023c698;
-        do {
-          cVar5 = *pcVar8;
-          pcVar8[local_3c] = cVar5;
-          pcVar8 = pcVar8 + 1;
-        } while (cVar5 != '\0');
+        /* strcpy(&DAT_00101968, &DAT_0023c698) -- local_3c is the baked
+           -0x13ad30 delta, a wild pointer here; bounded indexed copy. */
+        {
+          int _i = 0;
+          while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
+            (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+          }
+          (&DAT_00101968)[_i] = '\0';
+        }
         Ordinal_1063(&DAT_00101968,acStack_d0);
         local_9b = 0;
 LAB_00036ca4:
@@ -49577,7 +49591,12 @@ ushort * param_1;
       if (8 < iVar1) break;
       uVar9 = *(ushort *)(&DAT_0023b940 + (iVar15 * 9 + (int)(short)iVar7) * 2);
       (&DAT_0023b848)[iVar1] = uVar9 & 0x3ff;
-      uVar4 = FUN_000535fc();
+      /* Ghidra dropped the object-slot arg -- with it defaulting to 0,
+         FUN_000535fc returned NULL and FUN_00065210 below dereferenced it,
+         which is why the whole tile-features/object pass was disabled.
+         Pass the slot id just stored, like the other FUN_000535fc call
+         sites in this function. */
+      uVar4 = FUN_000535fc((int)(short)(&DAT_0023b848)[iVar1]);
       iVar15 = iVar1 * 4;
       pcVar14 = &DAT_0023bb98 + iVar15;
       FUN_00065210(pcVar14,uVar4);
@@ -49782,7 +49801,10 @@ LAB_000657f4:
       iVar13 = (int)local_38;
     }
     param_1 = puVar5 + 2;
-    puVar5 = (ushort *)resolve_object_link();
+    /* Ghidra dropped the arg -- advance to the next object in the tile's
+       chain via the link field at puVar5+2 (== param_1), same as the
+       resolve_object_link(param_1) call that primes this loop. */
+    puVar5 = (ushort *)resolve_object_link(param_1);
     iVar16 = (local_30 + 1) * 0x10000 >> 0x10;
   } while( true );
 }
