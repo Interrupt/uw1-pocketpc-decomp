@@ -77,14 +77,16 @@ typedef struct {
    (move_command_dispatch -> decode_movement_command) via the latched
    input code DAT_0023c448 -- 0x8d forward, 0x8f turn-left, 0x91
    turn-right -- scaled by the held-repeat accelerator DAT_0024af6c. We
-   route WASD into that analog path for smooth free rotation and motion:
-   set DAT_0023c448 to the analog code while the key is held (and clear
-   DAT_000876c8 so the accelerator ramps), then set DAT_000876c8 on
-   release so the game's main loop drops the latched code. */
+   route plain WASD into that analog path for smooth free rotation and
+   motion; SHIFT+WASD is left alone so it still reaches the game's stepped
+   move handler at the key-repeat cadence, matching the DOS controls.
+   Keys 1 / 2 / 3 pitch the view up / centre / down (DAT_0023beb4; the
+   game's own handler for these, LAB_000680d0, is a lost jump-table stub). */
 extern unsigned short DAT_00201b64;   /* game mode; 0 == in-game 3D dungeon view */
 extern unsigned short DAT_0023c448;   /* latched pending input code */
 extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears DAT_0023c448 */
 extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move rate scale) */
+extern short DAT_0023beb4;            /* view pitch (1/256 deg); sync_camera_from_player -> DAT_000db448 */
 
 /* OR'd into the real SDL_GetKeyboardState() so scripted tests (SDLHOLD /
    uw_inject_key_down/up) can drive the same movement path -- SDL_PushEvent
@@ -168,14 +170,23 @@ static int translate_vk(SDL_Keycode sym) {
     }
 }
 
+/* True while the game is showing the interactive 3D dungeon view and the
+   WASD/1-3 poller should own those keys. SHIFT+WASD is excluded so it
+   still drives the game's stepped (tile-based, key-repeat) move handler,
+   as in the DOS controls. */
+static int in_dungeon_freelook(void) {
+    if (DAT_00201b64 != 0) return 0;
+    return (SDL_GetModState() & KMOD_SHIFT) == 0;
+}
+
 /* DOS-style: poll the physical keyboard each pump and drive the analog
-   movement decoder while in the 3D dungeon view. WASD -> free rotation /
-   forward-back; released -> stop. Held letters still type normally in
-   menus / the name-entry field (this only runs when DAT_00201b64 == 0). */
+   movement decoder while in the 3D dungeon view. plain WASD -> free
+   rotation / forward-back; 1/2/3 -> look up / centre / down; released ->
+   stop. SHIFT+WASD and all of this in menus fall through untouched. */
 static void poll_dungeon_movement_keys(void) {
     static int active = 0;
 
-    if (DAT_00201b64 != 0) {          /* not in the 3D view */
+    if (!in_dungeon_freelook()) {     /* menu, or SHIFT held */
         if (active) { DAT_000876c8 = 1; active = 0; }
         return;
     }
@@ -188,7 +199,23 @@ static void poll_dungeon_movement_keys(void) {
     int back    = UW_HELD(SDL_SCANCODE_X);
     int strafeL = UW_HELD(SDL_SCANCODE_Z);
     int strafeR = UW_HELD(SDL_SCANCODE_C);
+    int lookUp  = UW_HELD(SDL_SCANCODE_1);
+    int lookCtr = UW_HELD(SDL_SCANCODE_2);
+    int lookDn  = UW_HELD(SDL_SCANCODE_3);
     #undef UW_HELD
+
+    /* View pitch: keys 1 / 2 / 3. DAT_0023beb4 is a signed 1/256-degree
+       pitch the camera build reads; negative looks up. It is never
+       auto-recentred, so ramp it while held and snap on 2. */
+    if (lookCtr) {
+        DAT_0023beb4 = 0;
+    } else if (lookUp && !lookDn) {
+        int p = (int)DAT_0023beb4 - 0x120;
+        DAT_0023beb4 = (short)(p < -0x1800 ? -0x1800 : p);
+    } else if (lookDn && !lookUp) {
+        int p = (int)DAT_0023beb4 + 0x120;
+        DAT_0023beb4 = (short)(p > 0x1800 ? 0x1800 : p);
+    }
 
     /* One latched code; turning takes priority so free-look always works.
        (The keyboard decoder is single-axis -- diagonal move+turn would
@@ -240,17 +267,18 @@ void uw_pump_events(void) {
                 break;
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
-                /* In the 3D view the WASD movement letters are handled by
-                 * poll_dungeon_movement_keys() from the physical key state,
-                 * not as discrete events -- swallow their key events (and
-                 * their SDL_TEXTINPUT, below) so they neither type nor hit
-                 * the game's stepped move handler. In menus they fall
-                 * through to normal typing. */
-                if (DAT_00201b64 == 0) {
+                /* In the 3D view (no SHIFT) the WASD / ZXC / 1-3 keys are
+                 * handled by poll_dungeon_movement_keys() from the physical
+                 * key state, not as discrete events -- swallow their key
+                 * events (and their SDL_TEXTINPUT, below) so they neither
+                 * type nor hit the game's stepped move / look handlers.
+                 * With SHIFT held, or in menus, they fall through. */
+                if (in_dungeon_freelook()) {
                     SDL_Keycode msym = ev.key.keysym.sym;
                     if (msym == SDLK_a || msym == SDLK_d || msym == SDLK_w ||
                         msym == SDLK_s || msym == SDLK_x || msym == SDLK_z ||
-                        msym == SDLK_c) {
+                        msym == SDLK_c || msym == SDLK_1 || msym == SDLK_2 ||
+                        msym == SDLK_3) {
                         return;
                     }
                 }
@@ -311,11 +339,13 @@ void uw_pump_events(void) {
                  * case above), so stop after this event too. */
                 for (const char *p = ev.text.text; *p; p++) {
                     unsigned char c = (unsigned char)*p;
-                    /* In the 3D view the WASD/ZXC movement letters are
-                       polled by poll_dungeon_movement_keys(), not typed. */
-                    if (DAT_00201b64 == 0 &&
+                    /* In 3D free-look the WASD/ZXC/1-3 keys are polled by
+                       poll_dungeon_movement_keys(), not typed. (SHIFT+WASD
+                       makes in_dungeon_freelook() false, so uppercase
+                       WASD still reaches the stepped move handler.) */
+                    if (in_dungeon_freelook() &&
                         (c=='a'||c=='d'||c=='w'||c=='s'||c=='x'||c=='z'||c=='c'||
-                         c=='A'||c=='D'||c=='W'||c=='S'||c=='X'||c=='Z'||c=='C')) {
+                         c=='1'||c=='2'||c=='3')) {
                         continue;
                     }
                     if (c < 0x80) {
