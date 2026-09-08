@@ -2031,7 +2031,7 @@ static void (*const DAT_00085668_real_table[48])(void) = {
   (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))dungeon_view_anim_tick,
   0, 0, 0, 0,
   0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))movement_pacing_handler,
-  (void(*)(void))FUN_0003e4cc, (void(*)(void))FUN_0006d284, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
+  (void(*)(void))FUN_0003e4cc, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
   /* mode 1 */
   0, (void(*)(void))enter_automap_screen, 0, 0,
   0, 0, 0, 0,
@@ -2156,8 +2156,8 @@ byte DAT_002020e8;
 byte * DAT_0023b814;
 int DAT_0023bc94;
 /* Tilemap byte addresses (DAT_0023b814 + tile*4), not ints -- Ghidra
-   typed them `int` and truncated the 64-bit pointer. Set in FUN_0003ec00
-   from the object-pick result, consumed by FUN_0003e694 / object_list_unlink. */
+   typed them `int` and truncated the 64-bit pointer. Set in pick_object_under_cursor
+   from the object-pick result, consumed by target_in_range / object_list_unlink. */
 char *DAT_002020b0;
 char *DAT_002020a8;
 undefined4 DAT_002020ec;
@@ -2166,7 +2166,7 @@ undefined4 DAT_002020ec;
    selected in walk_visible_tiles / emit_hud_draw_commands, called at
    process_visible_tile_cell), and from byte 4 on a short[] of per-pick-
    slot tile offsets, indexed `slot*2 + 2` (slot 1 -> byte 4) by the
-   object-pick ID assignment (FUN_00060aa0) and read back by FUN_0003ec00.
+   object-pick ID assignment (FUN_00060aa0) and read back by pick_object_under_cursor.
    On a 64-bit host the pointer is 8 bytes, so those short writes landed
    *inside* the pointer and corrupted it -> wild call in
    process_visible_tile_cell the moment pick IDs were being assigned
@@ -2182,7 +2182,7 @@ short DAT_002020ac;
 /* Ghidra recovered this as "You_see" (underscores, no trailing space);
    it's the "You see " prefix the look/identify code prepends to an
    object/terrain name, so the real bytes are "You see " with a trailing
-   space (see FUN_0003ed6c: message_scroll_print_wrapped(this) then the
+   space (see describe_picked_terrain: message_scroll_print_wrapped(this) then the
    name then "."). */
 char s_You_see_000858fc[] = "You see ";
 static undefined1 DAT_0023ad58_backing[65536];
@@ -2203,11 +2203,11 @@ short DAT_0023bd80;
    the decompile never populated, so every right-click on an object jumped
    through garbage. Reconstructed from the five no-arg handlers defined
    just above FUN_0003f420 that each act on the picked object DAT_002020cc
-   (see their bodies): index 2 (default / "hand") -> FUN_0003ee90, the
+   (see their bodies): index 2 (default / "hand") -> interact_default, the
    use/get/activate super-handler that itself routes to look vs talk by
    object type. Ordering of the fight/talk/look/[4] slots is a best guess
    -- if right-click does the wrong action, reorder these. */
-extern void FUN_0003ee90(void);
+extern void interact_default(void);
 extern void FUN_0003f128(void);
 extern void FUN_0003f14c(void);
 extern void FUN_0003f2c4(void);
@@ -2215,7 +2215,7 @@ extern void FUN_0003f368(void);
 static void (*const PTR_FUN_000858c8_table[5])(void) = {
   FUN_0003f14c,   /* 0: fight  */
   FUN_0003f2c4,   /* 1: talk   */
-  FUN_0003ee90,   /* 2: default / get-use */
+  interact_default,   /* 2: default / get-use */
   FUN_0003f128,   /* 3: look   */
   FUN_0003f368,   /* 4:        */
 };
@@ -2615,7 +2615,7 @@ char s_named_00085d18[] = "named";
    then silently stopped, no matter how many frames/inputs followed.
    Recovered the same way: read UU.exe's real .data bytes at 0x85728
    directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
-   movement_pacing_handler/FUN_0003e4cc/FUN_0006d284; mode 1 = 0x1000 = bit 12 =
+   movement_pacing_handler/FUN_0003e4cc/hud_panel_redraw_dispatch; mode 1 = 0x1000 = bit 12 =
    exit_automap_screen; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
    mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
    bytes immediately after are the next struct over (a `\DATA\lev.ark`
@@ -3723,8 +3723,8 @@ undefined2 DAT_000871d8;
    (now-real, 8-byte-on-this-host) pointer size. */
 static void (*const PTR_FUN_00087220_table[13])(void) = {
   (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))FUN_0007830c, 0,
-  (void(*)(void))FUN_0006d4a4, (void(*)(void))FUN_0006d4a4, (void(*)(void))FUN_0006df70, (void(*)(void))FUN_0006e038,
-  (void(*)(void))FUN_0006d894, (void(*)(void))FUN_0006d894, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
+  (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))FUN_0006df70, (void(*)(void))FUN_0006e038,
+  (void(*)(void))hud_damage_flash_tick, (void(*)(void))hud_damage_flash_tick, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
   (void(*)(void))FUN_0006e648,
 };
 #define PTR_FUN_00087220 (PTR_FUN_00087220_table[0])
@@ -3744,12 +3744,12 @@ ushort DAT_0023c1e0;
 undefined1 DAT_0023c11b;
 byte DAT_0023c12a;
 byte DAT_0023c150;
-/* Was a lone `undefined4` scalar, but FUN_0006d284 indexes 9 entries
+/* Was a lone `undefined4` scalar, but hud_panel_redraw_dispatch indexes 9 entries
    from it (`(&DAT_00087230)[0..8]`) as a function-pointer dispatch
    table and calls through them -- same lone-scalar-instead-of-a-real-
    array bug as everywhere else this project, except this one turned out
    to need no new Ghidra archaeology: 0x87230 is exactly
-   PTR_FUN_00087220_table[4] (0x87220 + 4*4), and FUN_0006d284's 9-entry
+   PTR_FUN_00087220_table[4] (0x87220 + 4*4), and hud_panel_redraw_dispatch's 9-entry
    range (0x87230..0x87250) is exactly that table's remaining entries
    4-12 -- a stray duplicate alias into an already-recovered table, same
    shape as DAT_000856a4 aliasing into DAT_00085668_backing. */
@@ -3764,11 +3764,11 @@ static undefined1 DAT_000870f0_backing[65536];
 static undefined1 DAT_00087112_backing[65536];
 #define DAT_00087112 DAT_00087112_backing[0]
 /* .bss 0x23c240..0x23c24f: four short[2] rows of sprite handles for the
-   HUD flask/vitals animation (FUN_0006d4a4 / FUN_0006d894), indexed
+   HUD flask/vitals animation (hud_vitals_bar_tick / hud_damage_flash_tick), indexed
    `&row + param*2` with param in {0,1}. Ghidra split the region into four
    lone 1-byte `undefined` scalars, so the param==1 (`+2`) access ran off
    the end of a 1-byte global and read/wrote a neighbouring variable --
-   the resulting garbage handle crashed FUN_0007699c (`param_1 * 0x14 +
+   the resulting garbage handle crashed sprite_list_set_lifetime (`param_1 * 0x14 +
    base` with a huge negative param_1). Back it with real contiguous
    storage; the `&sym + iVar1` byte indexing is unchanged. */
 static char DAT_0023c240_vitals[16];
@@ -3779,7 +3779,7 @@ static char DAT_0023c240_vitals[16];
 short DAT_0023c250;
 /* .data 0x87178..0x871b7: four rows (x / y / w / h) of the HUD damage-
    flash sprite placement table, read as `*(short *)(&row + iVar6*6)` at
-   three call sites in FUN_0006d894 and handed to FUN_000762c4. Ghidra
+   three call sites in hud_damage_flash_tick and handed to FUN_000762c4. Ghidra
    split it into two lone `undefined` scalars plus two `undefined *`
    pointer slots -- and `&PTR_DAT_00087198` was then cast through `(int)`,
    truncating the 64-bit address (wild `*(short *)` read -> crash on the
@@ -28005,7 +28005,8 @@ void FUN_0003e644()
    dereferenced at `*(ushort *)(param_2 + 2)` and param_3 differenced
    against the 64-bit tilemap base DAT_0023b814. Same pointer-truncation
    class as the rest of this session. */
-undefined4 FUN_0003e694(param_1,param_2,param_3)
+// was FUN_0003e694
+undefined4 target_in_range(param_1,param_2,param_3)
 short param_1;
 char *param_2;
 char *param_3;
@@ -28051,8 +28052,9 @@ char *param_3;
 
 
 
-uint FUN_0003e83c(param_1)
-char *param_1;   /* was int -- truncated the tile-record pointer FUN_0003e8b0 passes */
+// was FUN_0003e83c
+uint object_chain_max_barrier(param_1)
+char *param_1;   /* was int -- truncated the tile-record pointer target_line_of_sight passes */
 
 {
   ushort *puVar1;
@@ -28073,7 +28075,8 @@ char *param_1;   /* was int -- truncated the tile-record pointer FUN_0003e8b0 pa
 
 
 
-undefined4 FUN_0003e8b0(param_1,param_2)
+// was FUN_0003e8b0
+undefined4 target_line_of_sight(param_1,param_2)
 short param_1;
 char *param_2;  /* was int -- truncated DAT_002020cc; deref'd at param_2+2 */
 
@@ -28150,7 +28153,7 @@ char *param_2;  /* was int -- truncated DAT_002020cc; deref'd at param_2+2 */
             uVar10 = uVar13;
           }
           pbVar6 = (byte *)tilemap_lookup(uVar9,uVar10);
-          sVar7 = FUN_0003e83c((char *)pbVar6);  /* arg dropped by Ghidra -- it's the tile just looked up */
+          sVar7 = object_chain_max_barrier((char *)pbVar6);  /* arg dropped by Ghidra -- it's the tile just looked up */
           bVar1 = false;
           iVar14 = (int)sVar7;
           if ((((iVar14 < 0) || (iVar5 < iVar14)) || (bVar1 = iVar3 <= iVar14, !bVar1)) &&
@@ -28175,7 +28178,8 @@ char *param_2;  /* was int -- truncated DAT_002020cc; deref'd at param_2+2 */
 
 
 
-ushort *FUN_0003ec00()
+// was FUN_0003ec00
+ushort *pick_object_under_cursor()
 
 {
   byte bVar1;
@@ -28230,7 +28234,8 @@ ushort *FUN_0003ec00()
 
 
 
-void FUN_0003ed6c(param_1,param_2)
+// was FUN_0003ed6c
+void describe_picked_terrain(param_1,param_2)
 byte param_1;
 short param_2;
 
@@ -28277,7 +28282,8 @@ char *param_1;
 
 
 
-void FUN_0003ee90()
+// was FUN_0003ee90
+void interact_default()
 
 {
   int iVar1;
@@ -28285,8 +28291,8 @@ void FUN_0003ee90()
   ushort *puVar3;
   
   puVar3 = (ushort *)0x0;
-  iVar1 = FUN_0003e694((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
-  iVar2 = FUN_0003e8b0((int)DAT_000858c4,DAT_002020cc);
+  iVar1 = target_in_range((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
+  iVar2 = target_line_of_sight((int)DAT_000858c4,DAT_002020cc);
   if (DAT_002020ec == 0) {
     if (DAT_002020e0 != 0) {
       iVar1 = object_ptr_in_arena(DAT_002020cc);
@@ -28488,7 +28494,7 @@ void FUN_0003f14c()
   undefined4 uVar3;
   uint local_18;
   
-  iVar2 = FUN_0003e694(0x48,DAT_002020cc,DAT_002020b0);
+  iVar2 = target_in_range(0x48,DAT_002020cc,DAT_002020b0);
   if ((iVar2 == 0) || (uVar3 = 1, DAT_002020ec != 0)) {
     uVar3 = 0;
   }
@@ -28518,7 +28524,7 @@ void FUN_0003f14c()
   else {
     iVar2 = FUN_000576d0();
     if (iVar2 != 0) {
-      FUN_0003ee90();
+      interact_default();
     }
   }
   DAT_002020e0 = 0;
@@ -28533,8 +28539,8 @@ void FUN_0003f2c4()
   int iVar1;
   
   FUN_00057604(1);
-  iVar1 = FUN_0003e694((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
-  if ((iVar1 == 0) || (iVar1 = FUN_0003e8b0((int)DAT_000858c4,DAT_002020cc), iVar1 != 0)) {
+  iVar1 = target_in_range((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
+  if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,DAT_002020cc), iVar1 != 0)) {
     if ((*DAT_002020cc & 0x1fe) != 0x16e) {
       FUN_00078c80(0xb9);
     }
@@ -28583,7 +28589,7 @@ void FUN_0003f420()
     if (*(short *)(DAT_00085a6c + 6) != 2) {
       return;
     }
-    DAT_002020cc = FUN_0003ec00(2);
+    DAT_002020cc = pick_object_under_cursor(2);
     if (DAT_002020cc == 0) {
       return;
     }
@@ -28607,9 +28613,9 @@ void FUN_0003f420()
         DAT_002020cc = 0;
         return;
       }
-      DAT_002020cc = FUN_0003ec00(2);
+      DAT_002020cc = pick_object_under_cursor(2);
       if (DAT_002020cc == 0) {
-        FUN_0003ed6c(uVar2,(int)DAT_002020ac);
+        describe_picked_terrain(uVar2,(int)DAT_002020ac);
         goto LAB_0003f584;
       }
     }
@@ -28630,10 +28636,10 @@ void FUN_0003f420()
         FUN_0007ca0c();
         return;
       }
-      DAT_002020cc = FUN_0003ec00(2);
+      DAT_002020cc = pick_object_under_cursor(2);
       if (DAT_002020cc != 0) {
-        iVar1 = FUN_0003e694((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
-        if ((iVar1 == 0) || (iVar1 = FUN_0003e8b0((int)DAT_000858c4,DAT_002020cc), iVar1 != 0)) {
+        iVar1 = target_in_range((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
+        if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,DAT_002020cc), iVar1 != 0)) {
           FUN_00078c80(0x5e);
         }
         else {
@@ -29442,7 +29448,7 @@ undefined4 param_3;
        &DAT_000859e0 / &DAT_000859d0 / &DAT_000859ac calls) were never
        recovered by Ghidra -- empty strings -> those files don't load ->
        the running slot cursor is short, so the scroll-edge decoration
-       sprites (ids 0x20d5..0x20e5, drawn by FUN_0007f208/FUN_0007f290
+       sprites (ids 0x20d5..0x20e5, drawn by msg_scroll_draw_edges/FUN_0007f290
        every time the message scroll advances a line) land on empty
        slots. Draw nothing rather than dereferencing NULL and taking the
        game down mid-message. Same safe-fallback shape as FUN_000408fc. */
@@ -34486,7 +34492,7 @@ short param_2;
       FUN_00078c80(0xab);
     }
     else {
-      FUN_0003ed6c(2,(uVar8 >> 9) + 0x2f);
+      describe_picked_terrain(2,(uVar8 >> 9) + 0x2f);
     }
   }
   else {
@@ -34499,7 +34505,7 @@ short param_2;
           return;
         }
         if (-1 < param_2) {
-          FUN_0003ed6c(2,((byte)param_1[3] & 0x3f) + 1);
+          describe_picked_terrain(2,((byte)param_1[3] & 0x3f) + 1);
         }
         if (param_2 < 1) {
           return;
@@ -54196,7 +54202,8 @@ LAB_0006d17c:
 
 
 
-void FUN_0006d284()
+// was FUN_0006d284
+void hud_panel_redraw_dispatch()
 
 {
   ushort uVar1;
@@ -54278,7 +54285,8 @@ void FUN_0006d284()
 
 
 
-void FUN_0006d4a4(param_1)
+// was FUN_0006d4a4
+void hud_vitals_bar_tick(param_1)
 short param_1;
 
 {
@@ -54352,7 +54360,7 @@ short param_1;
       sVar5 = (&DAT_000870f2)[iVar3];
       FUN_000762c4((int)*psVar11,(int)sVar4,(int)sVar5,0x18,
                    *(undefined2 *)(&DAT_00087112 + iVar3 * 2));
-      FUN_0007699c((int)*psVar11,sVar5 + -0x7e);
+      sprite_list_set_lifetime((int)*psVar11,sVar5 + -0x7e);
       FUN_00076390((int)*psVar11,0x2057);
       if (iVar3 != 0) {
         FUN_00076338((int)(short)(&DAT_0023c224)[uVar2],(int)*(short *)(&DAT_000870ec + iVar1),
@@ -54389,7 +54397,7 @@ short param_1;
       *psVar11 = *psVar11 + 1;
       FUN_00076390((int)sVar4);
       psVar11 = (short *)(&DAT_0023c248 + iVar1);
-      FUN_0007699c((int)*psVar11,*psVar10 + -0x7e);
+      sprite_list_set_lifetime((int)*psVar11,*psVar10 + -0x7e);
       FUN_00076338((int)*psVar11,(int)*(short *)(&DAT_000870ec + iVar1),(int)*psVar10);
       FUN_00076404((int)*psVar11,0x2058);
     }
@@ -54399,7 +54407,8 @@ short param_1;
 
 
 
-void FUN_0006d894(param_1)
+// was FUN_0006d894
+void hud_damage_flash_tick(param_1)
 int param_1;
 
 {
@@ -59533,7 +59542,7 @@ undefined2 param_5;
   undefined4 uVar1;
   /* Was `int`, truncating the real DAT_0023c3e8 slot-record pointer
      computed here (same bug as its sibling functions FUN_00076338 and
-     FUN_0007699c below, which compute the identical expression). */
+     sprite_list_set_lifetime below, which compute the identical expression). */
   char * iVar2;
 
   if (param_1 < 0x40) {
@@ -59784,7 +59793,8 @@ void FUN_00076508()
 
 
 
-undefined4 FUN_0007699c(param_1,param_2)
+// was FUN_0007699c
+undefined4 sprite_list_set_lifetime(param_1,param_2)
 short param_1;
 undefined4 param_2;
 
@@ -64908,7 +64918,7 @@ void FUN_0007f044()
   DAT_00250704 = &DAT_00087960;
   DAT_00250714 = 0;
   FUN_0007fc8c(0xf,0xa9,0x131,200,0);
-  FUN_0007f208();
+  msg_scroll_draw_edges();
   return;
 }
 
@@ -64988,7 +64998,8 @@ uint param_2;
 
 
 
-undefined4 FUN_0007f208()
+// was FUN_0007f208
+undefined4 msg_scroll_draw_edges()
 
 {
   int iVar1;
@@ -65028,7 +65039,8 @@ undefined4 FUN_0007f290()
 
 
 
-void FUN_0007f340(param_1)
+// was FUN_0007f340
+void msg_scroll_scroll_up_line(param_1)
 int param_1;
 
 {
@@ -65046,7 +65058,7 @@ int param_1;
                *(undefined2 *)(DAT_00250704 + 6),param_1 + 1);
   if (DAT_00250704 == &DAT_00087960) {
     FUN_0006cff4(4,1);
-    FUN_0007f208();
+    msg_scroll_draw_edges();
   }
   else {
     FUN_0007f290();
@@ -65063,7 +65075,7 @@ void FUN_0007f454()
   undefined1 uVar2;
   short sVar3;
   
-  FUN_0007f340(((int)*(short *)(DAT_000879b0 + 6) + (int)*(short *)(DAT_00250704 + 10)) * 0x10000 >>
+  msg_scroll_scroll_up_line(((int)*(short *)(DAT_000879b0 + 6) + (int)*(short *)(DAT_00250704 + 10)) * 0x10000 >>
                0x10);
   sVar3 = *(short *)(DAT_00250704 + 10);
   uVar2 = *DAT_0008429c;
@@ -65298,7 +65310,7 @@ LAB_0007f9ac:
   }
   else {
     if (iVar7 <= iVar5) goto LAB_0007f9ac;
-    FUN_0007f340();
+    msg_scroll_scroll_up_line();
     uVar3 = *(undefined2 *)(DAT_00250704 + 10);
     DAT_00250710 = DAT_00250710 + -1;
   }
@@ -65483,7 +65495,7 @@ int param_1;
   *(undefined1 *)((char *)DAT_00250704 + 0x15) = 0;
   if (DAT_00250704 == (undefined2 *)&DAT_00087960) {
     FUN_0006cff4(4,1);
-    iVar2 = FUN_0007f208();
+    iVar2 = msg_scroll_draw_edges();
   }
   else {
     iVar2 = FUN_0007f290();
