@@ -69,6 +69,11 @@ typedef struct {
  * space in the name-entry field. */
 #define VK_APP1 0xC1
 
+/* SDL_Event.*.which value tagging a click injected by uw_inject_mouse_* so
+   uw_pump_events takes the event's own coords (the GetGlobalMouseState
+   warp is a no-op under the dummy video driver). */
+#define UW_SYNTH_MOUSE 0x55570001u
+
 /* Dungeon-view (3D) player movement is polled from the physical keyboard
    state every pump (poll_dungeon_movement_keys), DOS-style, rather than
    driven off discrete key events. UW binds W/S/X/A/D to a *stepped*
@@ -382,7 +387,13 @@ void uw_pump_events(void) {
                  * which does NOT show the same halving. Use that instead
                  * of the raw event fields. */
                 int win_x, win_y;
-                {
+                if (ev.button.which == UW_SYNTH_MOUSE) {
+                    /* injected click (uw_inject_mouse_*): the SDL_GetGlobalMouseState
+                       warp does not work under the dummy video driver, so take the
+                       event's own window-point coords directly. */
+                    win_x = (ev.type == SDL_MOUSEMOTION) ? ev.motion.x : ev.button.x;
+                    win_y = (ev.type == SDL_MOUSEMOTION) ? ev.motion.y : ev.button.y;
+                } else {
                     int gx = 0, gy = 0, wx = 0, wy = 0;
                     SDL_GetGlobalMouseState(&gx, &gy);
                     SDL_GetWindowPosition(g_win, &wx, &wy);
@@ -530,6 +541,7 @@ int uw_inject_mouse_down(int window_x, int window_y) {
     SDL_Event down = {0};
     down.type = SDL_MOUSEBUTTONDOWN;
     down.button.button = SDL_BUTTON_LEFT;
+    down.button.which = UW_SYNTH_MOUSE;
     down.button.x = window_x;
     down.button.y = window_y;
     SDL_PushEvent(&down);
@@ -544,6 +556,7 @@ int uw_inject_mouse_up(int window_x, int window_y) {
     SDL_Event up = {0};
     up.type = SDL_MOUSEBUTTONUP;
     up.button.button = SDL_BUTTON_LEFT;
+    up.button.which = UW_SYNTH_MOUSE;
     up.button.x = window_x;
     up.button.y = window_y;
     SDL_PushEvent(&up);

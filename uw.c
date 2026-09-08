@@ -2410,6 +2410,15 @@ char *DAT_0020289c;
    set_game_mode), so the truncated call had simply never been reached. */
 static void (*g_keybind_handler[512])(int);
 static int g_keybind_handler_n;
+/* Same 64-bit-truncation problem for the mouse-click-region table
+   (register_click_region stored param_7 -- the handler -- in a 4-byte
+   field of an 0x12-byte record, and poll_input_bindings called through
+   that truncated pointer -> EXC_BAD_ACCESS the first time a click landed
+   in a registered region, e.g. the 3D viewport's walk region). Keep the
+   real 64-bit handler here, keyed by record position, exactly like
+   g_keybind_handler; unregister_key_binding keeps it in sync. */
+static void (*g_click_region_handler[128])(int);
+static int g_click_region_handler_n;
 undefined2 DAT_00202898;
 undefined2 DAT_0020288c;
 undefined2 DAT_00202894;
@@ -30320,7 +30329,8 @@ void input_bindings_init()
   }
   DAT_00202898 = 0;
   DAT_0020288c = 0;
-  g_keybind_handler_n = 0;   /* keybind table reset -- drop the real-handler side table too */
+  g_keybind_handler_n = 0;       /* keybind table reset -- drop the real-handler side table too */
+  g_click_region_handler_n = 0;  /* likewise the click-region handler side table */
   DAT_00202894 = 1;
   DAT_00085a70 = 0xffff;
   *(undefined1 *)(DAT_00085a6c + 6) = 0;
@@ -30352,7 +30362,7 @@ undefined4 param_3;
 undefined4 param_4;
 undefined2 param_5;
 undefined2 param_6;
-undefined4 param_7;
+void *param_7;   /* was undefined4 -- handler fn pointer; see g_click_region_handler */
 
 {
   short sVar1;
@@ -30362,6 +30372,11 @@ undefined4 param_7;
 
   iVar2 = (int)DAT_00202898;
   DAT_00202898 = (short)(iVar2 + 1);
+  /* real 64-bit handler, indexed by record position (iVar2 == old count) */
+  if ((uint)iVar2 < 128) {
+    g_click_region_handler[iVar2] = (void (*)(int))param_7;
+    if (iVar2 + 1 > g_click_region_handler_n) g_click_region_handler_n = iVar2 + 1;
+  }
   /* Ordinal_1054 is realloc-shaped and now returns a real pointer;
      iVar2 was reused here for that result even though it's declared
      int, truncating it (and iVar3, derived from it, and DAT_00202890,
@@ -30386,10 +30401,13 @@ undefined4 param_7;
   *(char *)(iVar3 + -6) = (char)param_6;
   *(char *)(iVar3 + -0xe) = (char)param_4;
   *(char *)(iVar3 + -5) = (char)((ushort)param_6 >> 8);
-  *(char *)(iVar3 + -4) = (char)param_7;
-  *(char *)(iVar3 + -3) = (char)((uint)param_7 >> 8);
-  *(char *)(iVar3 + -2) = (char)((uint)param_7 >> 0x10);
-  *(char *)(iVar3 + -1) = (char)((uint)param_7 >> 0x18);
+  /* low 32 bits only (0x12-byte record has no room for a 64-bit pointer);
+     kept solely so poll_input_bindings' non-null gate passes -- the real
+     call goes through g_click_region_handler. */
+  *(char *)(iVar3 + -4) = (char)(uintptr_t)param_7;
+  *(char *)(iVar3 + -3) = (char)((uintptr_t)param_7 >> 8);
+  *(char *)(iVar3 + -2) = (char)((uintptr_t)param_7 >> 0x10);
+  *(char *)(iVar3 + -1) = (char)((uintptr_t)param_7 >> 0x18);
   *(char *)(iVar3 + -0xb) = (char)((uint)param_1 >> 8);
   *(char *)(iVar3 + -9) = (char)((uint)param_2 >> 8);
   *(char *)(iVar3 + -0xf) = (char)((uint)param_3 >> 8);
@@ -30539,6 +30557,12 @@ short param_1;
       return;
     }
     if (sVar6 < iVar5) {
+      /* record copy below moves the last click region over the removed
+         one; mirror that in the real-handler side table (found 0-based =
+         sVar6-1, last 0-based = iVar5-1). */
+      if ((uint)(sVar6 - 1) < 128 && (uint)(iVar5 - 1) < 128) {
+        g_click_region_handler[sVar6 - 1] = g_click_region_handler[iVar5 - 1];
+      }
       sVar6 = DAT_00202890[iVar5 * 9 + -9];
       *(char *)psVar7 = (char)sVar6;
       *(char *)((char *)psVar7 + 1) = (char)((ushort)sVar6 >> 8);
@@ -30566,6 +30590,7 @@ short param_1;
       *(char *)(psVar7 + 8) = (char)((uint)uVar4 >> 0x10);
       *(char *)((char *)psVar7 + 0x11) = (char)((uint)uVar4 >> 0x18);
     }
+    if (g_click_region_handler_n > 0) g_click_region_handler_n--;
     sVar6 = DAT_00202898;
     if (DAT_00202898 < 2) {
 LAB_00042510:
@@ -30629,14 +30654,21 @@ undefined1 * param_1;
              (((*(short *)(pcVar2 + 4) <= local_26 &&
                ((*(ushort *)(pcVar2 + 0xc) & *(ushort *)(param_1 + 8)) != 0)) &&
               (*(int *)(pcVar2 + 0xe) != 0)))) {
-            iVar3 = (short)iVar4 * 0x12;
-            iVar4 = (int)local_28 - (int)*(short *)(iVar3 + DAT_00202890 + 6);
-            *param_1 = (char)iVar4;
-            param_1[1] = (char)((uint)iVar4 >> 8);
-            iVar4 = (int)*(short *)(iVar3 + DAT_00202890 + 8) - (int)local_26;
-            param_1[2] = (char)iVar4;
-            param_1[3] = (char)((uint)iVar4 >> 8);
-            (**(code **)(iVar3 + DAT_00202890 + 0xe))((int)*(short *)(iVar3 + DAT_00202890 + 10));
+            {
+              int _cri = (int)(short)iVar4;   /* matched record index */
+              iVar3 = (short)iVar4 * 0x12;
+              iVar4 = (int)local_28 - (int)*(short *)(iVar3 + DAT_00202890 + 6);
+              *param_1 = (char)iVar4;
+              param_1[1] = (char)((uint)iVar4 >> 8);
+              iVar4 = (int)*(short *)(iVar3 + DAT_00202890 + 8) - (int)local_26;
+              param_1[2] = (char)iVar4;
+              param_1[3] = (char)((uint)iVar4 >> 8);
+              /* call the real 64-bit handler, not the truncated in-record
+                 pointer (see g_click_region_handler). */
+              if ((uint)_cri < 128 && g_click_region_handler[_cri] != 0) {
+                g_click_region_handler[_cri]((int)*(short *)(iVar3 + DAT_00202890 + 10));
+              }
+            }
             return;
           }
           iVar4 = (iVar3 + -1) * 0x10000 >> 0x10;
