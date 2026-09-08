@@ -69,19 +69,27 @@ typedef struct {
  * space in the name-entry field. */
 #define VK_APP1 0xC1
 
-/* The game binds the letters W/S/X/A/D to run-forward / walk-forward /
-   walk-back / turn-left / turn-right (uw.c move_key_directional_step,
-   keyed off WM_CHAR codes landing in DAT_0023c448). SDL only re-delivers
-   a held letter as SDL_TEXTINPUT at the OS key-repeat cadence (a ~0.5s
-   initial delay, then ~30Hz) and the game consumes each WM_CHAR after a
-   single step -- so holding A or D turned in visible jerks. We take over
-   the repeat for these keys while in the 3D view: track their physical
-   held state here and re-feed the WM_CHAR once per pump (see
-   uw_pump_events), matching the smooth per-frame repeat a held VK
-   (arrows / Ctrl) already gets. */
+/* Dungeon-view (3D) player movement is polled from the physical keyboard
+   state every pump (poll_dungeon_movement_keys), DOS-style, rather than
+   driven off discrete key events. UW binds W/S/X/A/D to a *stepped*
+   45-degree turn / one-tile move (uw.c move_key_directional_step); the
+   GAPI hardware buttons instead feed the *analog* movement decoder
+   (move_command_dispatch -> decode_movement_command) via the latched
+   input code DAT_0023c448 -- 0x8d forward, 0x8f turn-left, 0x91
+   turn-right -- scaled by the held-repeat accelerator DAT_0024af6c. We
+   route WASD into that analog path for smooth free rotation and motion:
+   set DAT_0023c448 to the analog code while the key is held (and clear
+   DAT_000876c8 so the accelerator ramps), then set DAT_000876c8 on
+   release so the game's main loop drops the latched code. */
 extern unsigned short DAT_00201b64;   /* game mode; 0 == in-game 3D dungeon view */
-static unsigned char g_move_char_held[256];
-#define UW_MOVE_LETTERS "wsxad"
+extern unsigned short DAT_0023c448;   /* latched pending input code */
+extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears DAT_0023c448 */
+extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move rate scale) */
+
+/* OR'd into the real SDL_GetKeyboardState() so scripted tests (SDLHOLD /
+   uw_inject_key_down/up) can drive the same movement path -- SDL_PushEvent
+   does not update SDL's own keyboard-state array. Indexed by SDL scancode. */
+static unsigned char g_synth_scancode_held[SDL_NUM_SCANCODES];
 
 static SDL_Window *g_win;
 static SDL_Renderer *g_ren;
@@ -160,22 +168,54 @@ static int translate_vk(SDL_Keycode sym) {
     }
 }
 
+/* DOS-style: poll the physical keyboard each pump and drive the analog
+   movement decoder while in the 3D dungeon view. WASD -> free rotation /
+   forward-back; released -> stop. Held letters still type normally in
+   menus / the name-entry field (this only runs when DAT_00201b64 == 0). */
+static void poll_dungeon_movement_keys(void) {
+    static int active = 0;
+
+    if (DAT_00201b64 != 0) {          /* not in the 3D view */
+        if (active) { DAT_000876c8 = 1; active = 0; }
+        return;
+    }
+
+    const Uint8 *ks = SDL_GetKeyboardState(NULL);
+    #define UW_HELD(sc) (ks[(sc)] || g_synth_scancode_held[(sc)])
+    int left    = UW_HELD(SDL_SCANCODE_A);
+    int right   = UW_HELD(SDL_SCANCODE_D);
+    int fwd     = UW_HELD(SDL_SCANCODE_W) || UW_HELD(SDL_SCANCODE_S);
+    int back    = UW_HELD(SDL_SCANCODE_X);
+    int strafeL = UW_HELD(SDL_SCANCODE_Z);
+    int strafeR = UW_HELD(SDL_SCANCODE_C);
+    #undef UW_HELD
+
+    /* One latched code; turning takes priority so free-look always works.
+       (The keyboard decoder is single-axis -- diagonal move+turn would
+       need the analog rates set directly.) */
+    int code = 0;
+    if (left && !right)         code = 0x8f;   /* turn left   */
+    else if (right && !left)    code = 0x91;   /* turn right  */
+    else if (fwd)               code = 0x8d;   /* forward     */
+    else if (back)              code = 0x93;   /* backward / turn-around */
+    else if (strafeL && !strafeR) code = 0x6b; /* strafe left  (if DAT_0020208c allows) */
+    else if (strafeR && !strafeL) code = 0x6c; /* strafe right (if DAT_0020208c allows) */
+
+    if (code) {
+        if (!active) { DAT_0024af6c = 0x14; active = 1; }  /* re-arm accel on press edge */
+        DAT_0023c448 = (unsigned short)code;
+        DAT_000876c8 = 0;
+    } else if (active) {
+        DAT_000876c8 = 1;   /* release: main loop clears DAT_0023c448 -> stop */
+        active = 0;
+    }
+}
+
 void uw_pump_events(void) {
     SDL_Event ev;
     if (!g_win) return;
     demomode_pump();
-
-    /* Re-feed every held W/S/X/A/D movement letter once per pump so a held
-       turn/step key repeats smoothly instead of at the OS key-repeat
-       cadence (see g_move_char_held). Only in the 3D view -- held letters
-       must still type normally in menus / the name-entry field. */
-    if (DAT_00201b64 == 0) {
-        for (const char *m = UW_MOVE_LETTERS; *m; m++) {
-            if (g_move_char_held[(unsigned char)*m]) {
-                handle_keyboard_message(0, 0x102u, (unsigned int)(unsigned char)*m);
-            }
-        }
-    }
+    poll_dungeon_movement_keys();
 
     if (g_mouseup_deferred) {
         /* See g_mouseup_deferred's comment. Dispatch the button-up we
@@ -200,31 +240,18 @@ void uw_pump_events(void) {
                 break;
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
-                /* W/S/X/A/D movement letters: take over their key-repeat
-                 * so a held turn/step is smooth (see g_move_char_held).
-                 * The release is always honoured -- even if the game mode
-                 * changed while the key was held -- so the flag can't get
-                 * stuck; the WM_KEYUP makes the game drop the latched
-                 * action. In the 3D view the press just marks the key
-                 * held (the per-pump re-feed above drives it) and its
-                 * SDL_TEXTINPUT is suppressed below; in menus it falls
+                /* In the 3D view the WASD movement letters are handled by
+                 * poll_dungeon_movement_keys() from the physical key state,
+                 * not as discrete events -- swallow their key events (and
+                 * their SDL_TEXTINPUT, below) so they neither type nor hit
+                 * the game's stepped move handler. In menus they fall
                  * through to normal typing. */
-                {
+                if (DAT_00201b64 == 0) {
                     SDL_Keycode msym = ev.key.keysym.sym;
-                    if (msym >= 32 && msym < 127 &&
-                        strchr(UW_MOVE_LETTERS, (int)msym) != NULL) {
-                        unsigned char mc = (unsigned char)msym;
-                        if (ev.type == SDL_KEYUP) {
-                            if (g_move_char_held[mc]) {
-                                g_move_char_held[mc] = 0;
-                                handle_keyboard_message(0, 0x101u, 0);
-                            }
-                            return;
-                        }
-                        if (DAT_00201b64 == 0) {
-                            if (!ev.key.repeat) g_move_char_held[mc] = 1;
-                            return;
-                        }
+                    if (msym == SDLK_a || msym == SDLK_d || msym == SDLK_w ||
+                        msym == SDLK_s || msym == SDLK_x || msym == SDLK_z ||
+                        msym == SDLK_c) {
+                        return;
                     }
                 }
                 /* SDL auto-repeats a held key as a stream of SDL_KEYDOWN
@@ -284,10 +311,14 @@ void uw_pump_events(void) {
                  * case above), so stop after this event too. */
                 for (const char *p = ev.text.text; *p; p++) {
                     unsigned char c = (unsigned char)*p;
-                    /* A movement letter we're already driving per-pump
-                       (see g_move_char_held) must not also come through
-                       here at the OS repeat cadence. */
-                    if (c < 0x80 && !g_move_char_held[c]) {
+                    /* In the 3D view the WASD/ZXC movement letters are
+                       polled by poll_dungeon_movement_keys(), not typed. */
+                    if (DAT_00201b64 == 0 &&
+                        (c=='a'||c=='d'||c=='w'||c=='s'||c=='x'||c=='z'||c=='c'||
+                         c=='A'||c=='D'||c=='W'||c=='S'||c=='X'||c=='Z'||c=='C')) {
+                        continue;
+                    }
+                    if (c < 0x80) {
                         handle_keyboard_message(0, 0x102u, (unsigned int)c);
                     }
                 }
@@ -503,14 +534,18 @@ int uw_inject_key_down(int sdl_keycode) {
      * SDL_TEXTINPUT -- exactly what a real key press produces -- so
      * uw_pump_events()'s full key handling runs (unlike demomode's HOLD,
      * which calls handle_keyboard_message directly). Pair with
-     * uw_inject_key_up after a real multi-poll gap. */
+     * uw_inject_key_up after a real multi-poll gap. Also marks the key
+     * held in g_synth_scancode_held, since SDL_PushEvent does not update
+     * SDL_GetKeyboardState() (which poll_dungeon_movement_keys reads). */
     if (!g_win) return 0;
+    SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    if (sc > 0 && sc < SDL_NUM_SCANCODES) g_synth_scancode_held[sc] = 1;
     SDL_Event kd = {0};
     kd.type = SDL_KEYDOWN;
     kd.key.state = SDL_PRESSED;
     kd.key.repeat = 0;
     kd.key.keysym.sym = (SDL_Keycode)sdl_keycode;
-    kd.key.keysym.scancode = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    kd.key.keysym.scancode = sc;
     SDL_PushEvent(&kd);
     if (sdl_keycode >= 32 && sdl_keycode < 127) {
         SDL_Event ti = {0};
@@ -525,12 +560,14 @@ int uw_inject_key_down(int sdl_keycode) {
 int uw_inject_key_up(int sdl_keycode) {
     /* See uw_inject_key_down. */
     if (!g_win) return 0;
+    SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    if (sc > 0 && sc < SDL_NUM_SCANCODES) g_synth_scancode_held[sc] = 0;
     SDL_Event ku = {0};
     ku.type = SDL_KEYUP;
     ku.key.state = SDL_RELEASED;
     ku.key.repeat = 0;
     ku.key.keysym.sym = (SDL_Keycode)sdl_keycode;
-    ku.key.keysym.scancode = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    ku.key.keysym.scancode = sc;
     SDL_PushEvent(&ku);
     return 1;
 }
