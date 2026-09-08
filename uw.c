@@ -1075,7 +1075,7 @@ short DAT_00084f10;
 int g_force_flush;
 /* Set by the force-3D-redraw hack in main_loop_hud_flush around its
    per-frame full_dungeon_redraw() call: tells rebuild_dungeon_view to skip
-   its passive experience-point trickle (FUN_00069bd0), which otherwise
+   its passive experience-point trickle (grant_experience_points), which otherwise
    fires once per redraw and -- called with a dropped arg (garbage XP
    amount) -- walks into the level-up message path and crashes. A cosmetic
    forced repaint must not touch game state anyway. */
@@ -8819,7 +8819,7 @@ undefined4 param_2;
     sVar1 = FUN_0001613c(auStack_20,DAT_001007c4);
     FUN_00015a58(auStack_20);
     if (sVar1 < 1) {
-      FUN_0007f570(FUN_0007863c(0xe01)); // was two separate calls with FUN_0007f570()'s arg dropped; fresh Ghidra disassembly (0x44c90-0x44c94) shows no register load between the two `bl`s -- FUN_0007863c's return (char *) flows straight into FUN_0007f570 as its argument
+      message_scroll_print_wrapped(FUN_0007863c(0xe01)); // was two separate calls with message_scroll_print_wrapped()'s arg dropped; fresh Ghidra disassembly (0x44c90-0x44c94) shows no register load between the two `bl`s -- FUN_0007863c's return (char *) flows straight into message_scroll_print_wrapped as its argument
       return 1;
     }
   }
@@ -16062,7 +16062,7 @@ short param_1;
   iVar3 = FUN_000452dc(0,1,(int)cVar1,4,local_4c);
   if (iVar3 == 0) {
     local_44[0] = ((short)cVar1 + 0x10U ^ local_44[0]) & 0x1ff ^ local_44[0];
-    FUN_0007f570(s_Sorry__you_have_no_00084f2c);
+    message_scroll_print_wrapped(s_Sorry__you_have_no_00084f2c);
     sVar2 = FUN_00078b18(acStack_3c,local_44,0,1);
     if (sVar2 == 0) {
       pcVar4 = s_UNNAMED_00084f24;
@@ -16073,8 +16073,8 @@ short param_1;
         pcVar4 = pcVar4 + 1;
       } while (cVar1 != '\0');
     }
-    FUN_0007f570(acStack_3c);
-    FUN_0007f570(&DAT_00084f20);
+    message_scroll_print_wrapped(acStack_3c);
+    message_scroll_print_wrapped(&DAT_00084f20);
     iVar3 = -1;
   }
   else {
@@ -16476,7 +16476,7 @@ ushort * param_1;
       }
       iVar2 = (int)(short)(iVar2 >> 4);
     }
-    FUN_00069bd0(iVar2);
+    grant_experience_points(iVar2);
   }
   return;
 }
@@ -16718,7 +16718,7 @@ LAB_000285e4:
   uVar3 = 0xe01;
 LAB_0002865c:
   FUN_0007863c(uVar3);
-  FUN_0007f570();
+  message_scroll_print_wrapped();
   return;
 }
 
@@ -16858,7 +16858,7 @@ void FUN_00028c00()
   sVar1 = FUN_00019470(s__DATA_cnv_ark_00084fc8,DAT_00100784 + 0x400);
   if (sVar1 < 0) {
     FUN_0007863c(0xe01);
-    FUN_0007f570();
+    message_scroll_print_wrapped();
   }
   else {
     FUN_0001ae28(s_babl_menu_00085220,&LAB_0002912c);
@@ -16957,7 +16957,7 @@ void FUN_00028ffc()
             pcVar3 = pcVar3 + 1;
           } while (cVar1 != '\0');
           Ordinal_1063(&local_bc,&DAT_0008522c);
-          FUN_0007f570(&local_bc);
+          message_scroll_print_wrapped(&local_bc);
           iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
         } while (iVar4 < DAT_00100794);
       }
@@ -17054,7 +17054,7 @@ int param_1;
         pcVar10 = pcVar10 + 1;
       } while (cVar1 != '\0');
       Ordinal_1063(&local_c4,&DAT_0008522c);
-      sVar5 = FUN_0007f570(&local_c4);
+      sVar5 = message_scroll_print_wrapped(&local_c4);
       FUN_0007ec50();
       for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
         (&DAT_00100770)[iVar9] = (short)iVar12;
@@ -17136,7 +17136,7 @@ undefined4 param_1;
   Ordinal_1063(DAT_001007c0,param_1);
   Ordinal_1063(DAT_001007c0,&DAT_0008522c);
   FUN_0007f110();
-  FUN_0007f570(DAT_001007c0);
+  message_scroll_print_wrapped(DAT_001007c0);
   FUN_0007ec50();
   FUN_0007f0e0();
   DAT_001007b4 = 0;
@@ -17161,7 +17161,7 @@ char * param_1;
   } while (cVar1 != '\0');
   Ordinal_1063(DAT_001007c0,&DAT_0008522c);
   FUN_0007f140();
-  FUN_0007f570(DAT_001007c0);
+  message_scroll_print_wrapped(DAT_001007c0);
   FUN_0007ec50();
   FUN_0007f0e0();
   DAT_001007b4 = 1;
@@ -17189,7 +17189,7 @@ undefined4 param_1;
   Ordinal_1063(DAT_001007c0,param_1);
   Ordinal_1063(DAT_001007c0,&DAT_00085234);
   FUN_0007f110();
-  FUN_0007f570(DAT_001007c0);
+  message_scroll_print_wrapped(DAT_001007c0);
   FUN_0007ec50();
   FUN_0007f0e0();
   DAT_001007b4 = 1;
@@ -17222,7 +17222,7 @@ int param_1;
   Ordinal_1063(DAT_001007c0,iVar3);
   Ordinal_1063(DAT_001007c0,&DAT_00085234);
   FUN_0007f110();
-  FUN_0007f570(DAT_001007c0);
+  message_scroll_print_wrapped(DAT_001007c0);
   FUN_0007f0e0();
   FUN_0007ec50();
   if (iVar3 != iVar2) {
@@ -17257,7 +17257,7 @@ int FUN_0002990c()
   char local_a8 [160];
   
   FUN_0007ffa8(0,0,local_a8,1,0x32);
-  FUN_0007f570(&DAT_0008522c);
+  message_scroll_print_wrapped(&DAT_0008522c);
   FUN_0007ec50();
   pcVar2 = local_a8;
   pcVar4 = DAT_001007b8;
@@ -17996,7 +17996,7 @@ char *param_1;
   *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
   FUN_0001afe4(s_new_player_exp_0008527c,&local_10,1);
   if (local_10 != 0) {
-    FUN_00069bd0();
+    grant_experience_points();
   }
   return bVar4;
 }
@@ -23008,7 +23008,7 @@ ushort * param_3;
       FUN_00078b18(auStack_74,param_3,1,0);
       uVar4 = FUN_0007863c(uVar8 + 0xe1 | 0x200);
       Ordinal_1063(auStack_74,uVar4);
-      FUN_0007f570(auStack_74);
+      message_scroll_print_wrapped(auStack_74);
       return 1;
     }
   }
@@ -25412,7 +25412,7 @@ void FUN_0003a398()
   local_10 = local_10 + 2;
   iVar2 = FUN_000537d0(&local_10,1,4,1,4);
   if (iVar2 != 0) {
-    FUN_0007f570(s_The_book_explodes_in_your_face__00085644);
+    message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
     uVar1 = *(undefined4 *)(DAT_00086df8 + 0x65);
     *(char *)(DAT_00086df8 + 0x65) = (char)uVar1;
     *(byte *)(DAT_00086df8 + 0x66) = (byte)((uint)uVar1 >> 8) | 1;
@@ -25443,7 +25443,7 @@ undefined4 param_3;
   local_c = local_c + 2;
   iVar2 = FUN_000537d0(&local_c,1,4,1,4);
   if (iVar2 != 0) {
-    FUN_0007f570(s_The_book_explodes_in_your_face__00085644);
+    message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
     uVar1 = *(undefined4 *)(DAT_00086df8 + 0x65);
     *(char *)(DAT_00086df8 + 0x65) = (char)uVar1;
     *(byte *)(DAT_00086df8 + 0x66) = (byte)((uint)uVar1 >> 8) | 1;
@@ -25557,7 +25557,7 @@ int param_2;
     if (param_2 == 0) {
       if ((*(byte *)(param_1 + 10) & 0x70) == 0) {
         *(byte *)(param_1 + 10) = *(byte *)(param_1 + 10) & 0x9f | 0x10;
-        FUN_00069bd0(500);
+        grant_experience_points(500);
       }
       *(undefined1 *)(param_1 + 0x12) = 0;
       FUN_00027694();
@@ -25756,13 +25756,13 @@ int param_3;
     FUN_00078c80(0xd8);
     FUN_00078c80(iVar2 + 0xdb);
     FUN_00078c80(0xd9);
-    FUN_0007f570(auStack_64);
+    message_scroll_print_wrapped(auStack_64);
     sVar1 = FUN_00080828(0,0xda,&local_68);
     if ((sVar1 != 0) && (sVar1 < 4)) {
       local_68 = (uint)(sVar1 == 2);
       FUN_0007fee8();
     }
-    FUN_0007f570(&DAT_0008522c);
+    message_scroll_print_wrapped(&DAT_0008522c);
     if (local_68 == 0) {
       return;
     }
@@ -25794,7 +25794,7 @@ int param_3;
     }
     FUN_00078c80(iVar2 + 0x8e);
     if ((short)iVar2 != 0) {
-      FUN_0007f570(auStack_64);
+      message_scroll_print_wrapped(auStack_64);
       FUN_00078c80(0x53);
     }
     FUN_000667cc();
@@ -26619,7 +26619,7 @@ short param_1;
     FUN_0006cff4(2,0);
     FUN_0006cb74();
     FUN_0006ca4c(0);
-    FUN_0007f570(s_You_died_000857b8);
+    message_scroll_print_wrapped(s_You_died_000857b8);
     FUN_00037c14(0x103);
     Ordinal_496(2000);
   }
@@ -27726,7 +27726,7 @@ void FUN_0003df28()
   int iVar3;
   short extraout_r1;
   
-  FUN_0007f570(&DAT_0008522c);
+  message_scroll_print_wrapped(&DAT_0008522c);
   sVar1 = Ordinal_2005(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
   FUN_00078c94(0x40,sVar1 + 0x68,0x67);
   sVar1 = Ordinal_2005(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
@@ -27735,7 +27735,7 @@ void FUN_0003df28()
     iVar3 = 5;
   }
   FUN_00078c80(0x76 - iVar3);
-  FUN_0007f570(&DAT_00084f20);
+  message_scroll_print_wrapped(&DAT_00084f20);
   FUN_00078c94(0x41,DAT_00201b68 + 0x19a,0x42);
   sVar1 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
   sVar2 = Ordinal_2005(0xc,(int)sVar1);
@@ -27791,7 +27791,7 @@ void FUN_0003e0b4()
       Ordinal_1063(local_84,s_out_of_000858dc);
       Ordinal_1063(local_84,auStack_a4);
       Ordinal_1063(local_84,&DAT_0008522c);
-      FUN_0007f570(local_84);
+      message_scroll_print_wrapped(local_84);
       FUN_00057604(1);
     }
   }
@@ -28140,10 +28140,10 @@ short param_2;
     else {
       uVar2 = 0x1ff;
     }
-    FUN_0007f570(s_You_see_000858fc);
+    message_scroll_print_wrapped(s_You_see_000858fc);
     FUN_0007863c(uVar2 | 0x1400);
-    FUN_0007f570();
-    FUN_0007f570(&DAT_00084f20);
+    message_scroll_print_wrapped();
+    message_scroll_print_wrapped(&DAT_00084f20);
   }
   return;
 }
@@ -28360,7 +28360,7 @@ LAB_000489fc:
     Ordinal_1063(acStack_7c,uVar11);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
-  FUN_0007f570(acStack_7c);
+  message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   FUN_000495d0(param_1,param_2);
   return;
@@ -28390,7 +28390,7 @@ void FUN_0003f14c()
         local_18 = (uint)(sVar1 == 2);
         FUN_0007fee8();
       }
-      FUN_0007f570(&DAT_0008522c);
+      message_scroll_print_wrapped(&DAT_0008522c);
       if (local_18 != 0) {
         FUN_0007266c(DAT_002020cc,*(undefined1 *)(DAT_00086df8 + 0x2b));
       }
@@ -31965,7 +31965,7 @@ void FUN_0004497c()
 void FUN_00044bcc()
 
 {
-  FUN_0007f570(s_Not_a_spell_00085a80);
+  message_scroll_print_wrapped(s_Not_a_spell_00085a80);
   return;
 }
 
@@ -31992,7 +31992,7 @@ void FUN_00044bd8()
       else {
         FUN_000664bc(abStack_e);
         FUN_0007863c(abStack_e[local_10] + 0x180 | 0xc00);
-        FUN_0007f570();
+        message_scroll_print_wrapped();
         bVar1 = *(byte *)(DAT_00086df8 + local_10 * 2 + 0x3f);
         if (bVar1 < 3) {
           iVar2 = 0;
@@ -32778,7 +32778,7 @@ int param_5;
   }
   Ordinal_1063(acStack_4d + 1,pcVar8);
   Ordinal_1063(acStack_4d + 1,pcVar9);
-  FUN_0007f570(acStack_4d + 1);
+  message_scroll_print_wrapped(acStack_4d + 1);
   FUN_0004503c(param_1);
   return uVar7;
 }
@@ -33314,7 +33314,7 @@ undefined1 * param_1;
       }
       FUN_0007fe20(uVar5);
     }
-    FUN_0007f570(&DAT_0008522c);
+    message_scroll_print_wrapped(&DAT_0008522c);
     if (((int)(short)uVar5 != 0) &&
        (puVar4 = param_1, (int)(short)uVar5 != (uint)(*(ushort *)(param_1 + 6) >> 6))) {
       puVar4 = (undefined1 *)alloc_object_slot(0);
@@ -33532,9 +33532,9 @@ LAB_00047a0c:
         pcVar14 = pcVar14 + 1;
       } while (cVar3 != '\0');
     }
-    FUN_0007f570(&DAT_00085c88);
-    FUN_0007f570(acStack_40);
-    FUN_0007f570(s_is_too_full__00085c78);
+    message_scroll_print_wrapped(&DAT_00085c88);
+    message_scroll_print_wrapped(acStack_40);
+    message_scroll_print_wrapped(s_is_too_full__00085c78);
     return 0;
   }
   uVar2 = (uint)*(short *)(&DAT_002029f9 + iVar15);
@@ -34087,7 +34087,7 @@ LAB_000489fc:
     Ordinal_1063(acStack_7c,uVar11);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
-  FUN_0007f570(acStack_7c);
+  message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   FUN_000495d0(param_1,param_2);
   return;
@@ -34272,15 +34272,15 @@ short param_2;
             Ordinal_1063(acStack_6c,s_UNNAMED_00084f24);
           }
           Ordinal_1063(acStack_6c,&DAT_00085ce0);
-          FUN_0007f570(acStack_6c);
+          message_scroll_print_wrapped(acStack_6c);
           FUN_0007863c(param_1[3] >> 6 | 0x600);
-          FUN_0007f570();
+          message_scroll_print_wrapped();
           puVar5 = &DAT_0008522c;
         }
         else {
           puVar5 = (undefined *)FUN_0007863c(uVar3 >> 6 | 0x600);
         }
-        FUN_0007f570(puVar5);
+        message_scroll_print_wrapped(puVar5);
       }
       else {
         FUN_00037c14((param_1[3] >> 6 & 0x1ff) + 0x100);
@@ -34378,12 +34378,12 @@ short param_2;
     }
     if (((*param_1 & 0xf) == 6) || (local_128[0] == '\0')) {
       FUN_0007863c((*param_1 >> 9 & 0xf) + sVar10 | 0x1000);
-      FUN_0007f570();
+      message_scroll_print_wrapped();
     }
     if (iVar5 != 0) {
       FUN_00078bfc(iVar5,1,0);
-      FUN_0007f570();
-      FUN_0007f570(&DAT_0008522c);
+      message_scroll_print_wrapped();
+      message_scroll_print_wrapped(&DAT_0008522c);
     }
     if (local_128[0] != '\0') {
       FUN_0006fee8(local_128[0]);
@@ -34424,10 +34424,10 @@ short param_2;
         local_54[0] = (uVar2 + 0x40 ^ local_54[0]) & 0x1ff ^ local_54[0];
         local_3a = 0;
         FUN_00078b18(auStack_34,local_54,1,0);
-        FUN_0007f570(auStack_34);
+        message_scroll_print_wrapped(auStack_34);
         pcVar4 = &DAT_00084f20;
       }
-      FUN_0007f570(pcVar4);
+      message_scroll_print_wrapped(pcVar4);
     }
   }
   return;
@@ -34444,7 +34444,7 @@ short param_2;
   
   if ((param_2 != 0) &&
      (iVar1 = FUN_0007863c((*(byte *)(param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
-    FUN_0007f570();
+    message_scroll_print_wrapped();
   }
   return;
 }
@@ -34511,7 +34511,7 @@ undefined4 param_2;
     Ordinal_1063(param_2,uVar7);
   }
   Ordinal_1063(param_2,&DAT_00084f20);
-  FUN_0007f570(param_2);
+  message_scroll_print_wrapped(param_2);
   return;
 }
 
@@ -42048,17 +42048,17 @@ void FUN_000567ec()
   local_bc[3] = &DAT_0008705c;
   FUN_0007fce8(1);
   FUN_0006bde0(auStack_ac,auStack_c4);
-  FUN_0007f570(s__6_Save_Game_Descriptions_0008703c);
+  message_scroll_print_wrapped(s__6_Save_Game_Descriptions_0008703c);
   iVar1 = 0;
   DAT_00087990 = 0;
   do {
-    FUN_0007f570(&DAT_0008522c);
-    FUN_0007f570(local_bc[iVar1]);
-    FUN_0007f570(auStack_ac + iVar1 * 0x28);
+    message_scroll_print_wrapped(&DAT_0008522c);
+    message_scroll_print_wrapped(local_bc[iVar1]);
+    message_scroll_print_wrapped(auStack_ac + iVar1 * 0x28);
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 4);
   DAT_00087990 = 1;
-  FUN_0007f570(&DAT_00087038);
+  message_scroll_print_wrapped(&DAT_00087038);
   return;
 }
 
@@ -45368,7 +45368,7 @@ undefined4 build_frame_draw_list()
   Ordinal_2005(2);
   DAT_0023b028 = extraout_r1;
   DAT_0023b4a0 = bVar3;
-  FUN_00069938();
+  sync_camera_from_player();
   *(ushort *)(DAT_00086e6c + 10) = *(ushort *)(DAT_00086e6c + 10) & 0xff;
   *(ushort *)(DAT_00086e6c + 0x12) = *(ushort *)(DAT_00086e6c + 0x12) & 0xff;
   if (DAT_0023b4a0 == 1) {
@@ -46277,7 +46277,7 @@ void rebuild_dungeon_view()
       (DAT_00201b68 != 9)) &&
      (sVar3 = Ordinal_2005(10,(int)DAT_0023b810 * (int)DAT_00201b68), sVar3 != 0)) {
     if (g_force_redraw_no_xp == 0) {
-      FUN_00069bd0();
+      grant_experience_points();
     }
   }
   if (DAT_00201b68 == 9) {
@@ -50825,7 +50825,7 @@ void FUN_00067950()
               (int)DAT_00204880 >> 8,(int)DAT_00204880 >> 5 & 7,((int)DAT_00204882 << 0x10) >> 0x18,
               ((int)DAT_00204882 << 0x10) >> 0x15 & 7,((int)DAT_00204884 << 0x10) >> 0x13,
               iVar1 >> 8 & 0xffff);
-  FUN_0007f570(auStack_2c);
+  message_scroll_print_wrapped(auStack_2c);
   return;
 }
 
@@ -50840,7 +50840,7 @@ void FUN_000679f4()
     DAT_00086e06 = 0;
   }
   FUN_00078c80(0x113);
-  FUN_0007f570(&DAT_00086e00);
+  message_scroll_print_wrapped(&DAT_00086e00);
   return;
 }
 
@@ -51865,7 +51865,11 @@ LAB_00069910:
 
 
 
-void FUN_00069938()
+// was FUN_00069938 -- sync the 3D camera globals (DAT_000db438.. position,
+// DAT_000db448 pitch / DAT_000db44c yaw) from the player object DAT_00086e6c
+// (pos at +10/+0x12, view angle at +0x2c), applying the DAT_0023b4a0 screen
+// -rotation quadrant. Called from build_frame_draw_list each redraw.
+void sync_camera_from_player()
 
 {
   char cVar1;
@@ -51990,7 +51994,10 @@ int param_2;
 
 
 
-void FUN_00069bd0(param_1)
+// was FUN_00069bd0 -- add param_1 experience points to the character
+// (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level
+// when the Ordinal_2008(500) threshold is crossed.
+void grant_experience_points(param_1)
 short param_1;
 
 {
@@ -52050,7 +52057,7 @@ short param_1;
       bVar1 = (&DAT_00086e87)[uVar6];
     }
     if ((short)iVar7 != 0) {
-      FUN_00070464(iVar7);
+      advance_character_level(iVar7);
     }
     if ((uint)(int)(short)(uVar2 >> 4) < uVar3 >> 4) {
       FUN_00069e30();
@@ -53317,7 +53324,7 @@ char param_1;
       }
     }
   }
-  FUN_0007f570(&DAT_0008522c);
+  message_scroll_print_wrapped(&DAT_0008522c);
   return 0;
 }
 
@@ -53363,10 +53370,10 @@ undefined4 param_2;
   pcVar3[1] = '\0';
   }
   FUN_0007fce8(1);
-  FUN_0007f570(s_Please_enter_a_Save_Game_file_an_00087094);
+  message_scroll_print_wrapped(s_Please_enter_a_Save_Game_file_an_00087094);
   sVar2 = FUN_0007ffa8(0,param_2,param_2,1);
   if (((sVar2 != 0x1b) && (sVar2 != 1)) && (sVar2 != 2)) {
-    FUN_0007f570(&DAT_0008522c);
+    message_scroll_print_wrapped(&DAT_0008522c);
     FUN_00078c80(0xa7);
     iVar4 = 0;
     do {
@@ -53419,7 +53426,7 @@ undefined4 param_2;
             Ordinal_61(auStack_220,uVar5);
             iVar4 = FUN_0006c670(auStack_220,auStack_428);
             if (iVar4 != 0) {
-              FUN_0007f570(&DAT_00087038);
+              message_scroll_print_wrapped(&DAT_00087038);
               uVar5 = 1;
               goto LAB_0006c544;
             }
@@ -55719,7 +55726,10 @@ int param_1;
 
 
 
-void FUN_00070464(param_1)
+// was FUN_00070464 -- raise the character level byte (DAT_00086df8 + 0x3d)
+// by param_1, show the "attained experience level N" scroll message, and
+// bump the dependent stat at +0x52.
+void advance_character_level(param_1)
 char param_1;
 
 {
@@ -55739,7 +55749,7 @@ char param_1;
   Ordinal_2005(10,*(undefined1 *)(iVar1 + 0x3d));
   DAT_0008730d = (undefined1)((uint)((extraout_r1 + 0x30) * 0x1000000) >> 0x18);
   FUN_00078c80(0x93);
-  FUN_0007f570(&DAT_0008730c);
+  message_scroll_print_wrapped(&DAT_0008730c);
   *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + param_1;
   FUN_000703a0(0);
   FUN_00078550();
@@ -55888,8 +55898,8 @@ int param_2;
   else {
     FUN_00078c80(0x1c);
     FUN_0007863c(param_1 + 0x1fU | 0x400);
-    FUN_0007f570();
-    FUN_0007f570(&DAT_00084f20);
+    message_scroll_print_wrapped();
+    message_scroll_print_wrapped(&DAT_00084f20);
   }
   return;
 }
@@ -55916,7 +55926,7 @@ char * param_1;
 LAB_00070870:
           pcVar1 = s_and_00087310;
 LAB_00070874:
-          FUN_0007f570(pcVar1);
+          message_scroll_print_wrapped(pcVar1);
         }
         else if (iVar2 != 0) {
           if (param_1[iVar2 + 1] == -1) goto LAB_00070870;
@@ -55924,11 +55934,11 @@ LAB_00070874:
           goto LAB_00070874;
         }
         FUN_0007863c((byte)param_1[iVar2] + 0x1f | 0x400);
-        FUN_0007f570();
+        message_scroll_print_wrapped();
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
       } while (param_1[iVar2] != -1);
     }
-    FUN_0007f570(&DAT_00084f20);
+    message_scroll_print_wrapped(&DAT_00084f20);
   }
   return;
 }
@@ -55956,7 +55966,7 @@ void FUN_000708bc()
   
   local_58[0] = 0;
   FUN_0007ffa8(s_Chant_the_mantra__0008731c,0,local_58,1,10);
-  FUN_0007f570(&DAT_0008522c);
+  message_scroll_print_wrapped(&DAT_0008522c);
   iVar10 = 0x33;
   do {
     uVar4 = Ordinal_1416(local_58);
@@ -56782,7 +56792,7 @@ void FUN_00072288()
   }
   thunk_FUN_00072c44();
   FUN_00072910(10,1);
-  FUN_00069bd0((int)((uint)(*(uint3 *)(DAT_00086df8 + 0x4e) >> 3) * -0x10000) >> 0x10);
+  grant_experience_points((int)((uint)(*(uint3 *)(DAT_00086df8 + 0x4e) >> 3) * -0x10000) >> 0x10);
   full_dungeon_redraw();
   FUN_000411b8(5);
   FUN_00027694();
@@ -56900,7 +56910,7 @@ undefined4 param_2;
         uVar8 = FUN_00069b68(param_2,8);
         if ((short)uVar8 < 1) {
           if ((short)uVar8 < 0) {
-            FUN_0007f570(s_Your_bumbling_attempts_have_set_o_00087384);
+            message_scroll_print_wrapped(s_Your_bumbling_attempts_have_set_o_00087384);
             sVar2 = FUN_00078b18(acStack_2c,pbVar4,0,0);
             if (sVar2 == 0) {
               pcVar6 = s_UNNAMED_00084f24;
@@ -56911,8 +56921,8 @@ undefined4 param_2;
                 pcVar6 = pcVar6 + 1;
               } while (cVar1 != '\0');
             }
-            FUN_0007f570(acStack_2c);
-            FUN_0007f570(&DAT_00084f20);
+            message_scroll_print_wrapped(acStack_2c);
+            message_scroll_print_wrapped(&DAT_00084f20);
             if (pbVar7 == (byte *)0x0) {
               FUN_0007d074(DAT_0023be64,param_1,pbVar4,(int)DAT_002020a0,DAT_002020a4);
               FUN_0007dfd8(local_34[0],pbVar4);
@@ -56922,7 +56932,7 @@ undefined4 param_2;
             }
           }
           else {
-            FUN_0007f570(s_Unable_to_defuse_trap__0008736c);
+            message_scroll_print_wrapped(s_Unable_to_defuse_trap__0008736c);
           }
         }
         else {
@@ -56938,9 +56948,9 @@ undefined4 param_2;
               pcVar5 = pcVar5 + 1;
             } while (cVar1 != '\0');
           }
-          FUN_0007f570(&DAT_00085c88);
-          FUN_0007f570(acStack_2c);
-          FUN_0007f570(s_on_the_000873cc);
+          message_scroll_print_wrapped(&DAT_00085c88);
+          message_scroll_print_wrapped(acStack_2c);
+          message_scroll_print_wrapped(s_on_the_000873cc);
           sVar2 = FUN_00078b18(acStack_2c,param_1,0,0);
           if (sVar2 == 0) {
             do {
@@ -56949,8 +56959,8 @@ undefined4 param_2;
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
           }
-          FUN_0007f570(acStack_2c);
-          FUN_0007f570(s_was_successfully_dearmed__000873b0);
+          message_scroll_print_wrapped(acStack_2c);
+          message_scroll_print_wrapped(s_was_successfully_dearmed__000873b0);
           FUN_000533e4(local_34[0]);
         }
       }
@@ -60975,7 +60985,7 @@ void FUN_00078c80(param_1)
 uint param_1;
 
 {
-  FUN_0007f570(FUN_0007863c(param_1 | 0x200)); // was two separate calls with FUN_0007f570()'s arg dropped; see uw.c ~7961's sibling call and its comment
+  message_scroll_print_wrapped(FUN_0007863c(param_1 | 0x200)); // was two separate calls with message_scroll_print_wrapped()'s arg dropped; see uw.c ~7961's sibling call and its comment
   return;
 }
 
@@ -61009,7 +61019,7 @@ uint param_3;
     uVar3 = FUN_0007863c(param_3 | 0x200);
     Ordinal_1063(local_10c,uVar3);
   }
-  FUN_0007f570(local_10c);
+  message_scroll_print_wrapped(local_10c);
   return;
 }
 
@@ -61772,7 +61782,7 @@ undefined4 param_2;
     Ordinal_1063(acStack_34,s_UNNAMED_00084f24);
   }
   Ordinal_1063(acStack_34,s_on_what__000878e0);
-  FUN_0007f570(acStack_34);
+  message_scroll_print_wrapped(acStack_34);
   FUN_00057c5c(*param_1 & 0x1ff);
   DAT_00202948 = param_1;
   DAT_002020c4 = 2;
@@ -62400,7 +62410,7 @@ LAB_0007b2e0:
       if (4 < iVar11) {
         iVar11 = 4;
       }
-      FUN_0007f570(acStack_7c);
+      message_scroll_print_wrapped(acStack_7c);
       iVar11 = iVar11 + 0xac;
     }
     FUN_00078c80(iVar11);
@@ -62754,10 +62764,10 @@ int param_2;
             Ordinal_1063(acStack_7c,s_UNNAMED_00084f24);
           }
           Ordinal_1063(acStack_7c,&DAT_00085ce0);
-          FUN_0007f570(acStack_7c);
+          message_scroll_print_wrapped(acStack_7c);
           FUN_0007863c(param_1[3] >> 6 | 0x600);
-          FUN_0007f570();
-          FUN_0007f570(&DAT_0008522c);
+          message_scroll_print_wrapped();
+          message_scroll_print_wrapped(&DAT_0008522c);
         }
         else {
           FUN_000282ac();
@@ -62809,9 +62819,9 @@ ushort * param_2;
               pcVar3 = pcVar3 + 1;
             } while (cVar1 != '\0');
           }
-          FUN_0007f570(&DAT_00085c88);
-          FUN_0007f570(acStack_20);
-          FUN_0007f570(s_is_locked__000878fc);
+          message_scroll_print_wrapped(&DAT_00085c88);
+          message_scroll_print_wrapped(acStack_20);
+          message_scroll_print_wrapped(s_is_locked__000878fc);
         }
       }
       else if ((param_1 == DAT_0023be64) || ((param_2[3] & 1) == 0)) {
@@ -63172,7 +63182,7 @@ int param_2;
     iVar2 = Ordinal_1068(acStack_5c);
     FUN_00078b18(acStack_5c + iVar2,param_1,0,0);
     Ordinal_1063(acStack_5c,s_is_empty__0008790c);
-    FUN_0007f570(acStack_5c);
+    message_scroll_print_wrapped(acStack_5c);
   }
   FUN_00049924(2);
   return;
@@ -63205,9 +63215,9 @@ int param_3;
         pcVar3 = pcVar3 + 1;
       } while (cVar1 != '\0');
     }
-    FUN_0007f570(&DAT_00085c88);
-    FUN_0007f570(acStack_24);
-    FUN_0007f570(s_is_locked__000878fc);
+    message_scroll_print_wrapped(&DAT_00085c88);
+    message_scroll_print_wrapped(acStack_24);
+    message_scroll_print_wrapped(s_is_locked__000878fc);
   }
   else if (param_3 == 0) {
     FUN_0007c84c(param_2,param_1 == DAT_0023be64);
@@ -63814,7 +63824,7 @@ LAB_0007d460:
     iVar11 = FUN_0007863c((byte)param_1[3] & 0x3f | ((byte)param_1[2] & 0x2f | 0x90) << 5);
     FUN_0007ea34(s_Look__it_s_a_text_trap_00087918);
     if (iVar11 != 0) {
-      FUN_0007f570(iVar11);
+      message_scroll_print_wrapped(iVar11);
     }
   }
   if ((param_1[3] & 0xffc0) != 0) {
@@ -64463,7 +64473,7 @@ short param_8;
   char *pcVar4;
   
   bVar3 = false;
-  FUN_0007f570();
+  message_scroll_print_wrapped();
   if (param_8 < 0) {
 LAB_0007ed8c:
     bVar3 = true;
@@ -64483,9 +64493,9 @@ LAB_0007ed8c:
     if (!bVar3) goto LAB_0007edd8;
     pcVar4 = s_and_00087310;
   }
-  FUN_0007f570(pcVar4);
+  message_scroll_print_wrapped(pcVar4);
 LAB_0007edd8:
-  FUN_0007f570(&DAT_00084f20);
+  message_scroll_print_wrapped(&DAT_00084f20);
   return;
 }
 
@@ -64816,7 +64826,9 @@ void FUN_0007f454()
 
 
 
-int FUN_0007f570(param_1)
+// was FUN_0007f570 -- print a string to the message scroll, word-wrapped
+// at ~0x31 columns (one FUN_0007f6fc call per line).
+int message_scroll_print_wrapped(param_1)
 char *param_1;
 
 {
@@ -65209,7 +65221,7 @@ short param_1;
   sVar1 = DAT_0025070c;
   *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
   *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
-  FUN_0007f570(auStack_18);
+  message_scroll_print_wrapped(auStack_18);
   return;
 }
 
@@ -65239,7 +65251,7 @@ int param_1;
   else {
     puVar2 = &DAT_000879a0;
   }
-  FUN_0007f570(puVar2);
+  message_scroll_print_wrapped(puVar2);
   return;
 }
 
@@ -65286,14 +65298,14 @@ short param_5;
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
   }
   sVar2 = *(short *)(DAT_00250704 + 6);
-  FUN_0007f570(param_1);
+  message_scroll_print_wrapped(param_1);
   DAT_0025070c = *(short *)(DAT_00250704 + 8);
   if (param_2 == (char *)0x0) {
     uVar13 = 0;
   }
   else {
     DAT_00087990 = 0;
-    FUN_0007f570(param_2);
+    message_scroll_print_wrapped(param_2);
     DAT_00087990 = 1;
     pcVar6 = param_2;
     do {
@@ -65342,7 +65354,7 @@ short param_5;
         sVar3 = DAT_0025070c;
         *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
         *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar3 >> 8);
-        FUN_0007f570(&DAT_000879a4);
+        message_scroll_print_wrapped(&DAT_000879a4);
       }
       else {
         pcVar6 = acStack_a1;
@@ -65534,7 +65546,7 @@ int * param_3;
     FUN_00078c80(param_2);
   }
   else {
-    FUN_0007f570(param_1);
+    message_scroll_print_wrapped(param_1);
   }
   DAT_0025070c = *(undefined2 *)(DAT_00250704 + 8);
   if (*param_3 == 0) {
@@ -65543,7 +65555,7 @@ int * param_3;
   else {
     puVar2 = &DAT_000879a0;
   }
-  FUN_0007f570(puVar2);
+  message_scroll_print_wrapped(puVar2);
   FUN_00057118();
   FUN_00057604(0);
   while( true ) {
