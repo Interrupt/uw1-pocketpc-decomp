@@ -115,9 +115,11 @@ static int demo_translate_vk(const char *name) {
     if (strcasecmp(name, "ESC") == 0 || strcasecmp(name, "ESCAPE") == 0) return VK_ESCAPE;
     if (strcasecmp(name, "BACKSPACE") == 0 || strcasecmp(name, "BACK") == 0) return VK_BACK;
     /* Single letter or digit -> its Windows VK code (VK_A..VK_Z == 'A'..'Z'
-       == 0x41..0x5A, VK_0..VK_9 == '0'..'9'). Lets a demo drive the DOS
-       shifted-WASD world movement (A/D turn, W/S/X walk, Z/C strafe) which
-       is bound by VK code, not WM_CHAR. */
+       == 0x41..0x5A, VK_0..VK_9 == '0'..'9'). NOTE: the W/S/X/A/D world
+       movement (walk / turn) is actually bound by *WM_CHAR* (lowercase
+       0x61..), not by these VK codes -- a plain "HOLD A" therefore does
+       nothing. Use SDLHOLD (which pushes a real SDL key event through
+       gx_stub's held-movement-letter path) to drive those from a demo. */
     if (name[0] && name[1] == '\0') {
         unsigned char c = (unsigned char)name[0];
         if (c >= 'a' && c <= 'z') return c - 'a' + 'A';
