@@ -45,7 +45,7 @@ char *param_3;
   short sVar8;
   uint uVar9;
   /* Was `undefined4`, truncating FUN_0007863c's real char* return
-     before FUN_000112a0/FUN_00011060 use it as a pointer. */
+     before FUN_000112a0/draw_text_string use it as a pointer. */
   char *uVar10;
   int iVar11;
   undefined4 extraout_r1;
@@ -155,7 +155,7 @@ LAB_00025468:
         *(byte *)(DAT_00086df8 + 100) =
              *(byte *)(DAT_00086df8 + 100) & 0xfd | (byte)((uVar9 & 1) << 1);
         FUN_00057118();
-        FUN_00011060(uVar10,0x11,0x16);
+        draw_text_string(uVar10,0x11,0x16);
         uVar15 = FUN_000570b4();
         sVar8 = 1;
         break;
@@ -177,9 +177,9 @@ LAB_00025468:
         DAT_001005c0 = FUN_00023c90(0,local_5c_buf + 4);
         FUN_00057118();
         iVar12 = FUN_000112a0(uVar10);
-        FUN_00011060(uVar10,0x8f - iVar12,0x16);
+        draw_text_string(uVar10,0x8f - iVar12,0x16);
         FUN_00023a00();
-        FUN_00076b8c(local_60,0x1e,0x85,0x5f,0x37);
+        capture_framebuffer_rect_to_grtile(local_60,0x1e,0x85,0x5f,0x37);
         FUN_00023b38();
         uVar15 = FUN_000570b4();
         sVar8 = sVar8 + 1;
@@ -206,10 +206,11 @@ LAB_00025468:
                          );
         FUN_00035df8(0);
         DAT_000fb858 = DAT_001005c4;
-        /* DAT_000fb8c4 is never populated (see its comment), so iVar14
-           is always 0 here and `iVar14 + param_1 + -4/-3` underruns
-           param_1's buffer. Same fallback-to-0 guard as the
-           DAT_000fb880 cases above. */
+        /* iVar14 is chrbtns.gr's cumulative offset for the chosen body
+           figure (entry 17 + sexbit*5 + portraitIdx) -- now that
+           DAT_000fb8c4 aliases the real LAB_000255d0 table (see uw.h),
+           this is a genuine nonzero offset. Keep the <4 guard as a
+           defensive floor against a still-empty table. */
         if (iVar14 < 4) {
           bVar2 = 0;
           bVar3 = 0;
@@ -250,7 +251,7 @@ LAB_00025468:
         if (iVar12 < 0) {
           iVar12 = -(int)sVar8 + 0x7f;
         }
-        FUN_00011060(pcVar5,(short)(iVar12 >> 1) + 0x11,0xb);
+        draw_text_string(pcVar5,(short)(iVar12 >> 1) + 0x11,0xb);
         FUN_000570b4();
         uVar10 = extraout_r1_00;
         if (*pcVar5 != '\0') {
@@ -291,7 +292,7 @@ LAB_00025468:
       if (iVar12 < 0) {
         iVar12 = -(int)sVar8 + 0xa1;
       }
-      FUN_00011060(auStack_4c,(short)(iVar12 >> 1) + 0xa0,
+      draw_text_string(auStack_4c,(short)(iVar12 >> 1) + 0xa0,
                    0x62 - CONCAT11(*(undefined1 *)(DAT_000879b0 + 7),
                                    *(undefined1 *)(DAT_000879b0 + 6)));
       sVar8 = FUN_000112a0(uVar10);
@@ -299,7 +300,7 @@ LAB_00025468:
       if (iVar12 < 0) {
         iVar12 = -(int)sVar8 + 0xa1;
       }
-      FUN_00011060(uVar10,(short)(iVar12 >> 1) + 0xa0,0x62);
+      draw_text_string(uVar10,(short)(iVar12 >> 1) + 0xa0,0x62);
       screen_backup_restore();
       set_draw_color(0x1a);
       rect_fill_or_save_restore(0xa0,199,0x13f,0);
@@ -418,7 +419,7 @@ int run_character_generator()
           } while (cVar1 != '\0');
           Ordinal_1063(acStack_128,s__DATA_CHARGEN_BYT_00084eac);
           uVar5 = FUN_0007ee4c(acStack_128,iVar4,64000);
-          uVar7 = FUN_00040e24(3,pcVar_palbuf);
+          uVar7 = load_pals_bank(3,pcVar_palbuf);
           if ((uVar5 & uVar7) != 0) {
             FUN_00057118();
             bitmap_blit_to_framebuffer(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);

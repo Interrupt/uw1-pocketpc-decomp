@@ -1,0 +1,128 @@
+UW1 PORT -- RENDERING FUNCTIONS
+(source uw.c unless noted; "was FUN_xxxx" = original Ghidra name. See repo
+memory.md UPDATEs 6-18 and milestone-3d-tiles-render for the fix history.)
+
+═══════════════════════════════════════════════════════════════════════════
+3D DUNGEON VIEW -- per-frame pipeline
+═══════════════════════════════════════════════════════════════════════════
+FUN_00012970                     3D-view frame driver: clears the viewport rect
+                                 then runs the whole pipeline below. Called from
+                                 full_dungeon_redraw / FUN_0005bbe0 / FUN_0005bc38.
+  FUN_0001de0c                   build the view/camera matrix -> DAT_000c8ac0:
+                                 identity-init 4 matrices, load a translation
+                                 (camera pos DAT_000db438/43c/440) and 3 axis
+                                 rotations (angles DAT_000db448/44c/450 into the
+                                 per-degree sin/cos tables), multiply them all.
+  walk_visible_tiles             (was FUN_0005d9cc) visibility flood/beam-trace
+                                 from the camera tile; for each tile it decides
+                                 is visible, calls process_visible_tile_cell.
+    process_visible_tile_cell    (was FUN_0005e604) emit one visible tile's 3D
+                                 geometry: floor/ceiling/wall quads, each with a
+                                 texture page (get_texture_page) and per-vertex
+                                 U/V, into the geometry buffer (count DAT_000c8c98).
+  FUN_0001dfe8                   per vertex: tile/world coords -> eye space
+                                 (translate by camera pos via Ordinal_2051) and
+                                 clear the per-tile "visible" flags.
+  FUN_0001e274                   per vertex: eye space -> clip/projected space,
+                                 multiply-add through the view matrix DAT_000c8ac0
+                                 (Ordinal_2026 mul, Ordinal_2051 add) -> x,y,z,w.
+  near_clip_visible_tiles        (was FUN_0001f370) param_2==0: reset the visible
+                                 -tile count. param_2==1: near-plane
+                                 (w = DAT_00084608 = 5.0f) Sutherland-Hodgman clip
+                                 of each visible tile polygon; writes clipped
+                                 vertices + their Z for render_visible_tile_list.
+    FUN_0001e848 / FUN_0001ecb0  clip/emit helpers used by near_clip: interpolate
+                                 a new vertex on a clipped edge / append a polygon.
+  render_visible_tile_list       (was FUN_00020370) for every surviving tile poly:
+                                 perspective divide (Ordinal_2047), per-triangle
+                                 and per-edge gradient setup, then rasterize as
+                                 textured triangles (2 per quad) via raster_triangle.
+  FUN_0005b8ac                   per-frame teardown: free the scratch geometry /
+                                 clip-vertex buffers (DAT_0023c7a0[0x140],
+                                 DAT_002020f8[0x80]) via Ordinal_1018.
+
+enter_dungeon_view               (was FUN_0003bd50) enter the 3D-view game mode:
+                                 loads PALS.DAT bank 0 (the real 3D palette) and
+                                 mirrors it into DAT_00088d98; installs the HUD.
+
+═══════════════════════════════════════════════════════════════════════════
+SOFTWARE RASTERIZER  (perspective-correct textured spans)
+═══════════════════════════════════════════════════════════════════════════
+raster_triangle                  (was FUN_00014350) textured-triangle driver:
+                                 viewport-cull, sort the 3 vertices by Y, split
+                                 into top and bottom halves, walk scanlines.
+raster_triangle_perspective_setup (was FUN_000148c8) per-triangle setup: 1/w, u/w,
+                                 v/w and their screen-space X/Y gradients.
+raster_edge_setup                (was FUN_00014ef4) per-edge setup: from two
+                                 vertex indices, the per-scanline deltas (x, z,
+                                 u/w, v/w, 1/w) down that edge.
+raster_edge_step                 (was FUN_00014868) advance one scanline down an
+                                 edge record (add the deltas).
+raster_textured_span             (was FUN_0001548c) inner loop: for one scanline
+                                 between the two active edges, per-pixel recover
+                                 u,v (divide by 1/w), fetch the texel, write
+                                 RGB565 to the framebuffer.
+
+═══════════════════════════════════════════════════════════════════════════
+TEXTURES & PALETTE
+═══════════════════════════════════════════════════════════════════════════
+FUN_0005b054                     (was) reset the wall/floor texture-id lists to
+                                 identity + default counts (0x30 wall, 10 floor).
+load_texture_arena               (was FUN_0005b514) load the selected entries of a
+                                 .tr texture file (ids in the list arg) into the
+                                 decoded-texture arena; called 4x (W64/F32/W16/F16).
+FUN_0005b660                     (was) load TERRAIN.DAT texture-property words ->
+                                 DAT_0023add0 (wall) / DAT_0023ae40 (floor).
+get_texture_page                 (was FUN_00040c5c) map a tile's texture index to
+                                 the arena page number process_visible_tile_cell
+                                 packs into each emitted vertex.
+palette_cycle_range              (was FUN_00015324) rotate a sub-range of the
+                                 palette one step (torch flicker, water, lava,
+                                 the menu/title gold shimmer); port re-blits the
+                                 affected RGB565 pixels since it composites to 565.
+
+═══════════════════════════════════════════════════════════════════════════
+2D AUTOMAP
+═══════════════════════════════════════════════════════════════════════════
+draw_automap_screen              (was FUN_00017908) draw the whole automap page.
+draw_automap_tiles               (was FUN_000165d0) iterate revealed tiles, draw each.
+draw_automap_cell                (was FUN_00016948) fill one map cell by tile type.
+draw_automap_cell_edge           (was FUN_000167d4) draw a cell's wall edge segment.
+draw_automap_door_edge           (was FUN_00016c70) draw a door glyph on a cell edge.
+
+═══════════════════════════════════════════════════════════════════════════
+SPRITES / TEXT / LOW-LEVEL PRIMITIVES
+═══════════════════════════════════════════════════════════════════════════
+draw_sprite_by_id                (was FUN_00040b0c) blit a .GR sprite by id at
+                                 x,y with a palette-remap table.
+blit_sprite_row_remapped         (was FUN_00013170) blit one row of a sprite,
+                                 applying a per-pixel remap/skip.
+draw_text_string                 (was FUN_00011060) draw a font string at x,y.
+FUN_00011040                     (was) dirty-rect SET (overwrite the damaged region).
+FUN_00011060                     (was) dirty-rect MERGE (union with the damaged region).
+flush_dirty_rect_to_display      push the damaged region to the GX/SDL surface;
+FUN_0002310c                     is a near-identical twin of it.
+FUN_000116a4 / FUN_00011000      viewport rect fill / save-restore helpers used
+                                 around the 3D-view draw.
+
+═══════════════════════════════════════════════════════════════════════════
+REDRAW WRAPPERS
+═══════════════════════════════════════════════════════════════════════════
+full_dungeon_redraw              (was FUN_0005bb5c) force a complete HUD + 3D-view
+                                 redraw (used by the demo REVEAL command).
+FUN_0005bbe0                     timed 3D-view redraw (measures FUN_00012970 cost).
+FUN_0005bc38                     build the HUD draw-command list then
+                                 walk_visible_tiles (world + objects pass).
+FUN_0005b890 / FUN_0005d704 / FUN_0005d2ac   HUD/panel and command-list setup.
+
+═══════════════════════════════════════════════════════════════════════════
+SOFTFLOAT ORDINALS  (ordinal_stubs.c -- the ARM __e32/mathlib the port needs)
+═══════════════════════════════════════════════════════════════════════════
+Ordinal_2023   int -> float (via long cast)          Ordinal_2032   int -> float
+Ordinal_2026   float MUL (a*b, bit-pattern args)     Ordinal_2051   float ADD
+Ordinal_2047   float DIV (perspective divide)        Ordinal_2027   double MUL
+Ordinal_2028   float  a <  b   -> 0/1                 Ordinal_2044   double -> float
+Ordinal_2030   float  a <= b   -> 0/1
+Ordinal_2036   float  a >  b   -> 0/1
+Ordinal_2038   float  a >= b   -> 0/1  (near-plane clip test)
+Ordinal_2005   integer idiv/imod (also used widely outside rendering)

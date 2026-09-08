@@ -122,7 +122,7 @@ int uw_file_open_read(const char *win_path) {
      * fopen() happily "succeeds" on one instead, which papers over game
      * paths that are missing a filename component (a path built from a
      * directory prefix with no filename ever appended -- see uw.c's
-     * FUN_0005b514 for a case that depends on this failing cleanly rather
+     * load_texture_arena for a case that depends on this failing cleanly rather
      * than than silently opening the directory and returning garbage on
      * every subsequent read). */
     struct stat st;
@@ -211,4 +211,39 @@ int uw_file_close(int handle) {
     fclose(g_handles[handle]);
     g_handles[handle] = NULL;
     return 0;
+}
+
+/* Byte-for-byte copy of one game-path file to another (CopyFile-shaped).
+ * Used for new-game world setup (\DATA\lev.ark -> \SAVE0\lev.ark) and
+ * save/restore. Returns 1 on success, 0 on failure -- the Win32
+ * CopyFile convention the callers expect. */
+int uw_file_copy(const char *win_src, const char *win_dst) {
+    char src[4096], dst[4096];
+    if (!resolve_path(win_src, src, sizeof(src)) ||
+        !resolve_path(win_dst, dst, sizeof(dst))) {
+        return 0;
+    }
+    FILE *in = fopen(src, "rb");
+    if (!in) {
+        fprintf(stderr, "[fileio] copy FAILED (no source): %s -> %s\n", win_src, src);
+        return 0;
+    }
+    ensure_parent_dir(dst);
+    FILE *out = fopen(dst, "wb");
+    if (!out) {
+        fprintf(stderr, "[fileio] copy FAILED (cannot create dest): %s -> %s\n", win_dst, dst);
+        fclose(in);
+        return 0;
+    }
+    char buf[65536];
+    size_t n;
+    int ok = 1;
+    while ((n = fread(buf, 1, sizeof(buf), in)) > 0) {
+        if (fwrite(buf, 1, n, out) != n) { ok = 0; break; }
+    }
+    if (ferror(in)) ok = 0;
+    fclose(in);
+    if (fclose(out) != 0) ok = 0;
+    fprintf(stderr, "[fileio] copy %s: %s -> %s\n", ok ? "ok" : "FAILED", src, dst);
+    return ok;
 }

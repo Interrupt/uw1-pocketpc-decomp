@@ -1,6 +1,42 @@
 /* See demomode.h. Input file format: one command per line, case-
  * insensitive, blank lines and lines starting with '#' ignored:
  *   UP DOWN LEFT RIGHT ENTER SPACE CTRL ESC BACKSPACE
+ *   WAIT <ticks>  -- burns <ticks> idle pump ticks feeding no input at
+ *                    all, letting the game's own idle-tick dispatch run
+ *                    on its own (e.g. after a TELEPORT, to see whether
+ *                    anything reacts to the new position before the
+ *                    next scripted input).
+ *   HOLD <KEY> <ticks>  -- sends KEYDOWN for <KEY> once, then idles
+ *                    (feeding no new input, so the game's own idle-tick
+ *                    dispatch keeps running with the key conceptually
+ *                    still down) for <ticks> more pump ticks before
+ *                    finally sending KEYUP -- simulates a genuinely
+ *                    held key, unlike the plain UP/DOWN/etc commands
+ *                    (which send KEYDOWN+KEYUP back to back in the same
+ *                    tick). Needed for anything gated on hold duration,
+ *                    e.g. DAT_0024af6c in uw.c.
+ *   TELEPORT <x> <y>  -- directly sets the player's tile position via
+ *                    set_player_tile_position (the same function the game itself
+ *                    uses for level-load/teleport placement), bypassing
+ *                    the movement/collision engine entirely. For
+ *                    testing the renderer against a known-good position
+ *                    without depending on movement actually working.
+ *   REVEAL        -- calls full_dungeon_redraw (the "full dungeon redraw"
+ *                    wrapper) directly at the current position, forcing
+ *                    the ring-walk that marks automap tiles revealed --
+ *                    TELEPORT and ordinary movement don't trigger this
+ *                    on their own.
+ *   REVEALALL     -- marks every walkable tile of the current level's
+ *                    automap revealed in one pass (automap_reveal_all_tiles),
+ *                    no per-tile teleport/redraw. For exercising the
+ *                    automap renderer on a fully-explored map quickly.
+ *   OPENMAP       -- calls change_game_mode(2), the real switch to the
+ *                    automap game mode (its entry handler,
+ *                    enter_automap_screen, then fires on the next idle
+ *                    tick). Follow it with a WAIT so that tick happens
+ *                    before a SCREENSHOT. Whatever HUD button/key
+ *                    reaches this in the real Pocket PC UI still hasn't
+ *                    been found.
  *   TYPE <text>   -- sends each character of <text> as a real WM_CHAR
  *                    (0x102), one per delay tick, simulating name entry
  *   CLICK <portrait_x> <portrait_y>  -- injects a synthetic mouse click
@@ -53,6 +89,16 @@ static int g_demo_done;
 static char g_demo_type_buf[256];
 static const char *g_demo_type_pos;
 
+/* HOLD <KEY> <ticks> state: g_demo_hold_vk is the VK code currently
+ * "held" (0 = nothing), g_demo_hold_ticks is how many more idle pump
+ * ticks to wait before releasing it. */
+static int g_demo_hold_vk;
+static int g_demo_hold_ticks;
+
+/* WAIT <ticks> state: how many more idle pump ticks to burn with no
+ * input at all before reading the next line. */
+static int g_demo_wait_ticks;
+
 static int demo_translate_vk(const char *name) {
     if (strcasecmp(name, "UP") == 0) return VK_UP;
     if (strcasecmp(name, "DOWN") == 0) return VK_DOWN;
@@ -63,6 +109,22 @@ static int demo_translate_vk(const char *name) {
     if (strcasecmp(name, "CTRL") == 0 || strcasecmp(name, "CONTROL") == 0) return VK_CONTROL;
     if (strcasecmp(name, "ESC") == 0 || strcasecmp(name, "ESCAPE") == 0) return VK_ESCAPE;
     if (strcasecmp(name, "BACKSPACE") == 0 || strcasecmp(name, "BACK") == 0) return VK_BACK;
+    /* Single letter or digit -> its Windows VK code (VK_A..VK_Z == 'A'..'Z'
+       == 0x41..0x5A, VK_0..VK_9 == '0'..'9'). Lets a demo drive the DOS
+       shifted-WASD world movement (A/D turn, W/S/X walk, Z/C strafe) which
+       is bound by VK code, not WM_CHAR. */
+    if (name[0] && name[1] == '\0') {
+        unsigned char c = (unsigned char)name[0];
+        if (c >= 'a' && c <= 'z') return c - 'a' + 'A';
+        if ((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) return c;
+    }
+    /* 0xNN / decimal -> raw key/command code, for the GAPI D-pad movement
+       codes (0x8d/0x8f/0x91/0x93) and anything else bound directly. */
+    if ((name[0] == '0' && (name[1] == 'x' || name[1] == 'X')) ||
+        (name[0] >= '0' && name[0] <= '9')) {
+        long v = strtol(name, NULL, 0);
+        if (v > 0 && v < 0x400) return (int)v;
+    }
     return 0;
 }
 
@@ -92,13 +154,39 @@ void demomode_pump(void) {
     Uint32 now = SDL_GetTicks();
     if (now < g_demo_next_tick) return;
 
+    /* Mid-WAIT: burn one idle tick with no input at all, letting
+     * whatever the game's own idle-tick dispatch does run on its own --
+     * unlike HOLD, nothing is pressed during this. */
+    if (g_demo_wait_ticks > 0) {
+        g_demo_wait_ticks--;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    /* Mid-HOLD: the key's KEYDOWN was already sent when the HOLD line
+     * was first read (below); every tick until the countdown reaches 0
+     * just idles (no new input fed at all, matching a real held key
+     * generating no fresh keydown/keyup), then releases on the last one. */
+    if (g_demo_hold_vk != 0) {
+        if (g_demo_hold_ticks > 0) {
+            g_demo_hold_ticks--;
+            g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+            return;
+        }
+        fprintf(stderr, "[demo] releasing held key vk=0x%x\n", g_demo_hold_vk);
+        handle_keyboard_message(0, 0x101u, (unsigned int)g_demo_hold_vk);
+        g_demo_hold_vk = 0;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     /* Mid-TYPE: send the next character (as a real WM_CHAR, matching
      * SDL_TEXTINPUT's forwarding in gx_stub.c) and come back next tick
      * for the rest, rather than dumping the whole string in one frame. */
     if (g_demo_type_pos && *g_demo_type_pos) {
         unsigned char c = (unsigned char)*g_demo_type_pos++;
         fprintf(stderr, "[demo] typing '%c'\n", c);
-        FUN_00077b2c(0, 0x102u, (unsigned int)c);
+        handle_keyboard_message(0, 0x102u, (unsigned int)c);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
@@ -133,6 +221,41 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strncasecmp(p, "WAIT ", 5) == 0) {
+        int ticks = 0;
+        if (sscanf(p + 5, "%d", &ticks) != 1 || ticks < 0) {
+            fprintf(stderr, "[demo] malformed WAIT line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] waiting %d idle ticks\n", ticks);
+        g_demo_wait_ticks = ticks;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "HOLD ", 5) == 0) {
+        char keyname[32];
+        int ticks = 0;
+        if (sscanf(p + 5, "%31s %d", keyname, &ticks) != 2 || ticks < 0) {
+            fprintf(stderr, "[demo] malformed HOLD line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        int vk = demo_translate_vk(keyname);
+        if (vk == 0) {
+            fprintf(stderr, "[demo] HOLD: unrecognized key '%s', skipping\n", keyname);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] holding %s (vk=0x%x) for %d ticks\n", keyname, vk, ticks);
+        handle_keyboard_message(0, 0x100u, (unsigned int)vk);
+        g_demo_hold_vk = vk;
+        g_demo_hold_ticks = ticks;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     if (strncasecmp(p, "TYPE ", 5) == 0) {
         const char *text = p + 5;
         strncpy(g_demo_type_buf, text, sizeof(g_demo_type_buf) - 1);
@@ -142,6 +265,63 @@ void demomode_pump(void) {
         /* Retry immediately so the first character goes out on the next
          * pump rather than burning a delay slot on the TYPE line itself. */
         g_demo_next_tick = now;
+        return;
+    }
+
+    if (strncasecmp(p, "TELEPORT ", 9) == 0) {
+        int tx = 0, ty = 0;
+        if (sscanf(p + 9, "%d %d", &tx, &ty) != 2) {
+            fprintf(stderr, "[demo] malformed TELEPORT line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] teleporting to tile (%d,%d)\n", tx, ty);
+        set_player_tile_position(tx, ty);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "OPENMAP") == 0) {
+        /* set_game_mode(2) is the real mode switch: DAT_00201b60 = 2 maps
+         * to game-mode index DAT_00201b64 = 1 (the automap), whose entry
+         * handler in DAT_00085668's mode-1 row is enter_automap_screen.
+         * Going through the mode switch (rather than calling
+         * enter_automap_screen directly, as an earlier version did) keeps
+         * the game in map mode so the HUD's per-frame redraw doesn't
+         * immediately paint over it. Whatever HUD button/key reaches this
+         * in the real Pocket PC UI still hasn't been found -- a
+         * whole-binary Ghidra reference search on the automap entry point
+         * came up empty. */
+        fprintf(stderr, "[demo] switching to automap mode (change_game_mode(2))\n");
+        change_game_mode(2);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "REVEAL") == 0) {
+        /* Calls full_dungeon_redraw (the "full dungeon redraw" wrapper,
+         * was FUN_0005bb5c) directly at the player's current position.
+         * This is the only thing that runs the ring-walk which marks
+         * automap tiles revealed -- confirmed it does NOT run on
+         * TELEPORT or ordinary movement, only on a handful of discrete
+         * events (level entry/transition, pause-close, etc.), none of
+         * which a demo script naturally passes through. Added so a
+         * script can force that update at each TELEPORT stop instead of
+         * only ever seeing the single reveal mark from dungeon entry. */
+        fprintf(stderr, "[demo] forcing a full dungeon redraw (automap reveal update)\n");
+        full_dungeon_redraw();
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "REVEALALL") == 0) {
+        /* Reveal the entire current level's automap in one pass, with
+         * no per-tile teleport or dungeon redraw. Much faster than a
+         * TELEPORT+REVEAL sweep for exercising the automap renderer on
+         * a fully-explored map. */
+        fprintf(stderr, "[demo] revealing the entire level automap\n");
+        automap_reveal_all_tiles();
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
 
@@ -200,6 +380,19 @@ void demomode_pump(void) {
 
     if (strncasecmp(p, "SCREENSHOT ", 11) == 0) {
         const char *path = p + 11;
+        /* Push the whole software framebuffer to the display before
+         * capturing. The in-game main loop's main_loop_hud_flush() resets the
+         * dirty rect to a degenerate {100,100,100,100} every iteration,
+         * so anything drawn by a bare demomode call (full_dungeon_redraw
+         * for the 3D view, automap fills, ...) lands in g_uw_framebuffer
+         * but is never flushed to the GX framebuffer that the screenshot
+         * reads back. Force a full-screen flush the same way FUN_0005857c
+         * and the click-hold redraw path force their own. */
+        { extern int g_force_flush; extern void flush_dirty_rect_to_display();
+          FUN_00011000(0, 200, 0, 0x140);
+          g_force_flush = 1;
+          flush_dirty_rect_to_display(1);
+          g_force_flush = 0; }
         uw_save_screenshot(path);
         g_demo_next_tick = now;
         return;
@@ -212,17 +405,25 @@ void demomode_pump(void) {
         /* Backspace only ever reaches the game as WM_CHAR (0x102), not a
          * VK keydown/keyup -- see gx_stub.c's uw_pump_events. */
         fprintf(stderr, "[demo] sending %s\n", p);
-        FUN_00077b2c(0, 0x102u, (unsigned int)VK_BACK);
+        handle_keyboard_message(0, 0x102u, (unsigned int)VK_BACK);
     } else {
         fprintf(stderr, "[demo] sending %s\n", p);
-        FUN_00077b2c(0, 0x100u, (unsigned int)vk);
-        FUN_00077b2c(0, 0x101u, (unsigned int)vk);
-        if (vk == VK_RETURN) {
-            /* Enter also carries a WM_CHAR (0x0D), matching gx_stub.c's
-             * real-keyboard forwarding, since text-entry fields submit
-             * on the WM_CHAR rather than the VK keydown. */
-            FUN_00077b2c(0, 0x102u, (unsigned int)VK_RETURN);
-        }
+        handle_keyboard_message(0, 0x100u, (unsigned int)vk);
+        handle_keyboard_message(0, 0x101u, (unsigned int)vk);
+        /* Used to also send a WM_CHAR(0x0D) here for Enter specifically,
+         * on the theory that text-entry fields submit on the WM_CHAR
+         * rather than the VK keydown. That's now known wrong on two
+         * counts: (1) name entry already submits correctly off the
+         * keydown alone -- confirmed empirically once DAT_0023ce34
+         * (start.vk) was fixed to really hold VK_RETURN (see its uw.c
+         * comment) -- and (2) sending both messages actively breaks
+         * every other consumer of DAT_0023c448: handle_keyboard_message's WM_CHAR
+         * case ORs its byte in rather than replacing
+         * (`DAT_0023c448 = DAT_0023c448 | uVar1`), so this always
+         * corrupted the keydown's real command code (0x93, the "start
+         * button" pressed) into a value nothing recognizes (0x93|0xd =
+         * 0x9f) -- silently discarding every Enter press system-wide,
+         * menus and world movement alike, without ever crashing. */
     }
     g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
 }

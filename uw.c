@@ -48,7 +48,7 @@ char *DAT_000890a4;
    address (0x0024ad94) is exactly 0x34 bytes into the RGB565 palette LUT
    at g_palette_rgb565 (0x34/2 = entry 26 = palette color 0x1a), and nothing
    ever assigns it because every LUT write goes through the array base
-   (&g_palette_rgb565 / puVar20 loops in FUN_00022b54), not this symbol. Left
+   (&g_palette_rgb565 / puVar20 loops in build_rgb565_palette), not this symbol. Left
    as its own zero global it means "framebuffer pixel value 0x0000 (pure
    black)", which the transient-panel compositor (screen_backup_save then
    screen_backup_restore / screen_backup_restore_rect) then treats as "not
@@ -77,27 +77,161 @@ int DAT_00088960;
 undefined *PTR_Ordinal_2032_00084010;
 undefined *PTR_Ordinal_2026_00084014;
 undefined *PTR_Ordinal_2020_00084018;
-undefined4 DAT_000a85d0;
+/* Was a lone `undefined4` scalar, but FUN_0001dfe8/FUN_0001e274/
+   near_clip_visible_tiles (the vertex/geometry-transform pipeline feeding tile/sprite
+   rendering) all take `&DAT_000a85d0` as a base pointer into a large
+   per-record transform-cache struct, reading/writing offsets up to
+   ~0x4874 (~18.5KB) from it -- confirmed crashing (EXC_BAD_ACCESS) inside
+   near_clip_visible_tiles dereferencing that far out. Elsewhere in this file
+   DAT_000a85d0 is also used as a plain scalar counter/index -- that's not
+   a conflict, just the same address doing double duty at different times,
+   same as other reused-scratch-memory globals already documented this
+   session (e.g. DAT_0008522c); the `[0]` alias below preserves that use
+   unchanged. Widened to a generous backing size well past every offset
+   observed, same pattern as the other undersized-record-table fixes this
+   session. */
+/* --- Unified 3D-view record arena (recovered structure at 0xa85d0) ---
+   Ghidra fragmented one contiguous ~0x4900-byte structure into a
+   64KB backing array plus ~80 lone scalars and a second 32KB array,
+   each independently addressed -- so process_visible_tile_cell wrote
+   the geometry records into the scalars while FUN_0001dfe8 /
+   FUN_0001e274 / near_clip_visible_tiles read them as `&DAT_000a85d0 + off`,
+   and the two never met (DAT_000c8c98 stayed 0). All the pieces are
+   now byte offsets into the one DAT_000a85d0_backing array.
+     +0x00      first-list (raw vertex) record count / cursor
+     +0x04      DAT_000a85d4  second-list (visible-tile) record count
+     +0x08..13  DAT_000a85d8.. first-list vertex record 0 fields (0xc stride)
+     +0x4814..  DAT_000acde4.. second-list record 0 fields (0x60 stride)
+   FUN_0001dfe8 seeds each second-list record's +0x486c flag = 1. */
+/* Real-pointer side channel for the per-visible-tile texture pointer.
+   process_visible_tile_cell packs get_texture_page()'s result into a
+   4-byte record field (DAT_000acdfc) -> truncated on 64-bit. We stash
+   the full pointer here keyed by the emit record index, near_clip_visible_tiles
+   carries it across to the render index, and render_visible_tile_list
+   reads it instead of the truncated piVar14[0x1a]. */
+#define UW_MAX_VIS_TILES 2048
+static void *g_tile_texptr_emit[UW_MAX_VIS_TILES];
+static void *g_tile_texptr_out[UW_MAX_VIS_TILES];
+
+static undefined4 DAT_000a85d0_backing[16384];
+#define DAT_000a85d0 DAT_000a85d0_backing[0]
+#define UW_A85B(o) (*(undefined1 *)((char *)DAT_000a85d0_backing + (o)))
+#define DAT_000a85d4 (*(int *)((char *)DAT_000a85d0_backing + 0x4))
+#define DAT_000a85d8 UW_A85B(0x8)
+#define DAT_000a85d9 UW_A85B(0x9)
+#define DAT_000a85da UW_A85B(0xa)
+#define DAT_000a85db UW_A85B(0xb)
+#define DAT_000a85dc UW_A85B(0xc)
+#define DAT_000a85dd UW_A85B(0xd)
+#define DAT_000a85de UW_A85B(0xe)
+#define DAT_000a85df UW_A85B(0xf)
+#define DAT_000a85e0 UW_A85B(0x10)
+#define DAT_000a85e1 UW_A85B(0x11)
+#define DAT_000a85e2 UW_A85B(0x12)
+#define DAT_000a85e3 UW_A85B(0x13)
+#define DAT_000acde4 UW_A85B(0x4814)
+#define DAT_000acde5 UW_A85B(0x4815)
+#define DAT_000acde6 UW_A85B(0x4816)
+#define DAT_000acde7 UW_A85B(0x4817)
+#define DAT_000acde8 UW_A85B(0x4818)
+#define DAT_000acde9 UW_A85B(0x4819)
+#define DAT_000acdea UW_A85B(0x481a)
+#define DAT_000acdeb UW_A85B(0x481b)
+#define DAT_000acdec UW_A85B(0x481c)
+#define DAT_000acded UW_A85B(0x481d)
+#define DAT_000acdee UW_A85B(0x481e)
+#define DAT_000acdef UW_A85B(0x481f)
+#define DAT_000acdf0 UW_A85B(0x4820)
+#define DAT_000acdf1 UW_A85B(0x4821)
+#define DAT_000acdf2 UW_A85B(0x4822)
+#define DAT_000acdf3 UW_A85B(0x4823)
+#define DAT_000acdf4 UW_A85B(0x4824)
+#define DAT_000acdf5 UW_A85B(0x4825)
+#define DAT_000acdf6 UW_A85B(0x4826)
+#define DAT_000acdf7 UW_A85B(0x4827)
+#define DAT_000acdfc UW_A85B(0x482c)
+#define DAT_000acdfd UW_A85B(0x482d)
+#define DAT_000acdfe UW_A85B(0x482e)
+#define DAT_000acdff UW_A85B(0x482f)
+#define DAT_000ace00 UW_A85B(0x4830)
+#define DAT_000ace01 UW_A85B(0x4831)
+#define DAT_000ace02 UW_A85B(0x4832)
+#define DAT_000ace03 UW_A85B(0x4833)
+#define DAT_000ace04 UW_A85B(0x4834)
+#define DAT_000ace05 UW_A85B(0x4835)
+#define DAT_000ace06 UW_A85B(0x4836)
+#define DAT_000ace07 UW_A85B(0x4837)
+#define DAT_000ace08 UW_A85B(0x4838)
+#define DAT_000ace09 UW_A85B(0x4839)
+#define DAT_000ace0a UW_A85B(0x483a)
+#define DAT_000ace0b UW_A85B(0x483b)
+#define DAT_000ace0c UW_A85B(0x483c)
+#define DAT_000ace0d UW_A85B(0x483d)
+#define DAT_000ace0e UW_A85B(0x483e)
+#define DAT_000ace0f UW_A85B(0x483f)
+#define DAT_000ace10 UW_A85B(0x4840)
+#define DAT_000ace11 UW_A85B(0x4841)
+#define DAT_000ace12 UW_A85B(0x4842)
+#define DAT_000ace13 UW_A85B(0x4843)
+#define DAT_000ace14 UW_A85B(0x4844)
+#define DAT_000ace15 UW_A85B(0x4845)
+#define DAT_000ace16 UW_A85B(0x4846)
+#define DAT_000ace17 UW_A85B(0x4847)
+#define DAT_000ace18 UW_A85B(0x4848)
+#define DAT_000ace19 UW_A85B(0x4849)
+#define DAT_000ace1a UW_A85B(0x484a)
+#define DAT_000ace1b UW_A85B(0x484b)
+#define DAT_000ace1c UW_A85B(0x484c)
+#define DAT_000ace1d UW_A85B(0x484d)
+#define DAT_000ace1e UW_A85B(0x484e)
+#define DAT_000ace1f UW_A85B(0x484f)
+#define DAT_000ace20 UW_A85B(0x4850)
+#define DAT_000ace21 UW_A85B(0x4851)
+#define DAT_000ace22 UW_A85B(0x4852)
+#define DAT_000ace23 UW_A85B(0x4853)
+#define DAT_000ace24 UW_A85B(0x4854)
+#define DAT_000ace25 UW_A85B(0x4855)
+#define DAT_000ace26 UW_A85B(0x4856)
+#define DAT_000ace27 UW_A85B(0x4857)
+#define DAT_000ace30 UW_A85B(0x4860)
+#define DAT_000ace31 UW_A85B(0x4861)
+#define DAT_000ace32 UW_A85B(0x4862)
+#define DAT_000ace33 UW_A85B(0x4863)
 byte *DAT_000b4628;
 byte *DAT_000b461c;
-int DAT_000b4610;
+/* Was `int` / `undefined4` -- both hold real pointers (DAT_000b4614 +
+   an offset; a color-remap table row) that got truncated to 32 bits on
+   this 64-bit host, so the sprite-blit color-remap read
+   (`*(byte *)(DAT_000b4610 + bVar1)` in blit_sprite_row_remapped) dereferenced a
+   wild address. Surfaced by drawing the automap player marker with the
+   player at certain positions (draw_sprite_by_id(0x103f,...) ->
+   FUN_000129f8 -> blit_sprite_row_remapped). Retyped to real pointers. */
+byte *DAT_000b4610;
 byte *DAT_000b4624;
 byte *DAT_0024af78;
 byte *DAT_0024af7c;
-undefined4 DAT_000842ac;
+/* Was `undefined4`, silently 0 -- a link-time-initialized pointer
+   constant this decompile never writes (holds 0xb45f0 in UU.exe, i.e.
+   the address of a 0x20-byte sprite-row scratch buffer). Confirmed via
+   Ghidra: 3 refs, all reads, in blit_sprite_row_remapped/FUN_000129f8, plus the
+   `.data` word at 0x842ac literally being 0xb45f0. As NULL it made
+   `Ordinal_1047(DAT_000842ac, 10, 0x20)` memset through address 0 and
+   the blit write past it. Backed by a real (over-sized) buffer. */
+static undefined1 DAT_000842ac_backing[4096];
+#define DAT_000842ac ((void *)DAT_000842ac_backing)
 char *DAT_0024fa2c;
 byte *DAT_000b462c;
-undefined4 DAT_000b4614;
+char *DAT_000b4614;
 byte *DAT_000b5630;
 byte *DAT_000b4618;
 undefined *PTR_Ordinal_2005_0008403c;
 undefined *PTR_Ordinal_2015_00084008;
 undefined *PTR_Ordinal_2023_0008402c;
 undefined *PTR_Ordinal_2051_00084028;
-/* Ghidra only saw pointer-walking writes (FUN_00014294) and an indexed
+/* Ghidra only saw pointer-walking writes (build_shade_lut) and an indexed
    read (sVar7 clamped to 0x9f, i.e. 160 entries -- see its use below), so
    it declared this as a lone scalar instead of the real 160-entry
-   distance/lighting falloff table. That undersizing let FUN_00014294's
+   distance/lighting falloff table. That undersizing let build_shade_lut's
    fill loop silently scribble past it into whatever the compiler placed
    next in .bss (confirmed via `nm`: DAT_000bbef8 landed 28 bytes later,
    exactly iteration 7 of the loop) -- invisible to ASan because a
@@ -136,12 +270,63 @@ static undefined1 DAT_000b99d0_backing[8192];
 #define DAT_000b99d0 DAT_000b99d0_backing[0]
 short DAT_000ba9d0;
 undefined4 DAT_000bbef4;
-undefined DAT_000842f0;
-undefined DAT_000878d0;
-undefined1 DAT_000842c0;
+/* Was a lone `undefined` scalar; draw_automap_tiles indexes it as
+   `(&DAT_000842f0)[shape - 2]` (shape 2-5, the diagonal tile types)
+   to pick the base wall-edge direction for a diagonal cell. Real 4
+   bytes from UU.exe .data at 0x842f0. Its two neighbours DAT_000842f4
+   / DAT_000842f8 (per-direction dx / dy deltas, signed) had the same
+   lone-scalar bug and are fixed just below. */
+static const unsigned char DAT_000842f0_real_table[4] = { 0x01, 0x02, 0x00, 0x03 };
+#define DAT_000842f0 (*(undefined1 *)DAT_000842f0_real_table)
+/* Was a lone 1-byte scalar, but indexed throughout this file as a
+   tile-type-flags lookup table (nibble-masked indices in most call sites,
+   but some -- e.g. process_reaction_entry -- index it with an unmasked byte value
+   read from another table). The prior fix widened it to 256 bytes but
+   never filled it -- so it read all-zero, and in particular
+   draw_automap_tiles' `DAT_000878d0[shape] & 1` was always false,
+   forcing every tile (diagonals included) down the 4-way wall-edge
+   path instead of the 2-way diagonal path -- walls didn't follow the
+   diagonal floor shape. Real 16 bytes from UU.exe .data at 0x878d0
+   (bit 0 = "is a diagonal, use the 2-way edge path"; bits 1-4 =
+   per-direction wall-present flags used by LOS/pathfinding elsewhere;
+   0x20 on the slope types). Entry 16 onward is a string literal, so
+   there are exactly 16 real entries; kept oversized for the unmasked-
+   index call sites. */
+static undefined1 DAT_000878d0_backing[256] = {
+  0x1e, 0x00, 0x13, 0x15, 0x0b, 0x0d, 0x20, 0x20,
+  0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1e,
+};
+#define DAT_000878d0 DAT_000878d0_backing[0]
+/* Was a lone `undefined1` scalar, but draw_automap_cell indexes it as a real
+   5x3x3 (45-entry) shape-pattern table:
+   `(&DAT_000842c0)[((shape-1)*3+row)*3+col]`, shape=1-5, comparing each
+   entry against 1 or 2 to decide whether to darken a corner pixel when
+   drawing an automap wall/floor cell. Unlike DAT_00086bf0/DAT_00085668/
+   etc earlier this session, this one is NOT silently zero -- a Ghidra
+   reference search confirms real, varied 0/1/2 data already sitting at
+   this address in UU.exe's .data (nothing writes it, it's genuinely
+   read-only). The bug here is purely the lone-scalar-instead-of-a-real-
+   array declaration: any index past byte 0 was reading whatever the
+   compiler placed adjacent in memory on this port, not this real table.
+   Real bytes recovered directly from UU.exe (45 real entries; sized
+   larger for a safety margin past the last byte any index reaches). */
+static const unsigned char DAT_000842c0_real_table[64] = {
+  1, 1, 1, 1, 1, 1, 1, 1, 1,
+  2, 1, 1, 0, 2, 1, 0, 0, 2,
+  1, 1, 2, 1, 2, 0, 2, 0, 0,
+  0, 0, 2, 0, 2, 1, 2, 1, 1,
+  2, 0, 0, 1, 2, 0, 1, 1, 2,
+};
+#define DAT_000842c0 (*(undefined1 *)DAT_000842c0_real_table)
 char DAT_000ba9d4;
-undefined1 DAT_000842f4;
-undefined1 DAT_000842f8;
+/* Lone-scalar-used-as-4-entry-array, same as DAT_000842f0 above.
+   draw_automap_door_edge indexes `(&DAT_000842f4)[dir]` / same for f8
+   as signed-char dx / dy deltas per direction. Real bytes from UU.exe
+   .data at 0x842f4 / 0x842f8. */
+static const signed char DAT_000842f4_real_table[4] = { -1, 0, -1, 1 };
+#define DAT_000842f4 (*(undefined1 *)DAT_000842f4_real_table)
+static const signed char DAT_000842f8_real_table[4] = { 0, -1, -1, -1 };
+#define DAT_000842f8 (*(undefined1 *)DAT_000842f8_real_table)
 undefined1 DAT_00084298_backing[128];
 undefined1 *DAT_00084298 = DAT_00084298_backing;
 short DAT_00085a6c_backing[128];
@@ -305,76 +490,141 @@ undefined DAT_0018959f;
 undefined *PTR_Ordinal_2021_00084030;
 undefined *PTR_Ordinal_2027_00084094;
 undefined *PTR_Ordinal_2044_00084034;
-undefined4 DAT_000d9930;
-undefined4 DAT_000d9ed8;
+/* FUN_0001dd2c builds these as 361-entry (0..360 degrees) sin / cos
+   tables (float bit patterns); every reader indexes
+   `(&DAT_000d99xx)[angle]`. Were lone `undefined4` scalars, so
+   FUN_0001dd2c's `[0..360]` writes smashed ~1.4 KB of adjacent
+   globals. In UU.exe they are contiguous .bss (0xd9930 sin, 0xd9ed8
+   cos). */
+static undefined4 DAT_000d9930_arr[512];
+#define DAT_000d9930 (DAT_000d9930_arr[0])
+static undefined4 DAT_000d9ed8_arr[512];
+#define DAT_000d9ed8 (DAT_000d9ed8_arr[0])
 undefined4 DAT_000db438;
 undefined4 DAT_000db43c;
 undefined4 DAT_000db440;
 int DAT_000db448;
 int DAT_000db44c;
 int DAT_000db450;
-undefined4 DAT_000c8ac0;
-undefined4 DAT_000c8ad0;
-undefined4 DAT_000c8ae0;
-undefined4 DAT_000c8af0;
-undefined4 DAT_000c8ac4;
-undefined4 DAT_000c8ad4;
-undefined4 DAT_000c8ae4;
-undefined4 DAT_000c8af4;
-undefined4 DAT_000c8ac8;
-undefined4 DAT_000c8ad8;
-undefined4 DAT_000c8ae8;
-undefined4 DAT_000c8af8;
+/* DAT_000c8ac0-family: 12 separately-declared globals that are really the
+   12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
+   view/camera matrix -- FUN_0001de0c writes the whole matrix in one shot
+   via `FUN_00013b8c(...,...,&DAT_000c8ac0)`, a matrix-multiply that treats
+   its output as one contiguous 64-byte buffer starting at DAT_000c8ac0
+   (including the 4 never-individually-named "column 3" slots at
+   +0xc/+0x1c/+0x2c/+0x3c, always 0/0/0/1 for this kind of matrix). As
+   separate globals our compiler doesn't guarantee they're adjacent, so
+   that write would land wherever the linker happened to place each one --
+   same lone-scalar/stray-symbol-declared-instead-of-a-real-array pattern
+   fixed repeatedly this session, just spread across a dozen names instead
+   of one. Real backing array + aliases at each element's correct offset. */
+static undefined4 DAT_000c8ac0_mtx[16];
+#define DAT_000c8ac0 DAT_000c8ac0_mtx[0]
+#define DAT_000c8ac4 DAT_000c8ac0_mtx[1]
+#define DAT_000c8ac8 DAT_000c8ac0_mtx[2]
+#define DAT_000c8ad0 DAT_000c8ac0_mtx[4]
+#define DAT_000c8ad4 DAT_000c8ac0_mtx[5]
+#define DAT_000c8ad8 DAT_000c8ac0_mtx[6]
+#define DAT_000c8ae0 DAT_000c8ac0_mtx[8]
+#define DAT_000c8ae4 DAT_000c8ac0_mtx[9]
+#define DAT_000c8ae8 DAT_000c8ac0_mtx[10]
+#define DAT_000c8af0 DAT_000c8ac0_mtx[12]
+#define DAT_000c8af4 DAT_000c8ac0_mtx[13]
+#define DAT_000c8af8 DAT_000c8ac0_mtx[14]
 int DAT_000c8c98;
-undefined4 DAT_00084608;
-undefined DAT_000bc038;
-undefined DAT_000bc039;
-undefined DAT_000bc03a;
-undefined DAT_000bc03b;
-static undefined DAT_000bc044_backing[32768];
-#define DAT_000bc044 DAT_000bc044_backing[0]
-undefined DAT_000bc07c;
-undefined DAT_000bc07d;
-undefined DAT_000bc07e;
-undefined DAT_000bc07f;
-undefined DAT_000bc0a0;
-undefined DAT_000bc0a1;
-undefined DAT_000bc0a2;
-undefined DAT_000bc0a3;
-undefined DAT_000bc0a4;
-undefined DAT_000bc0a5;
-undefined DAT_000bc0a6;
-undefined DAT_000bc0a7;
-undefined DAT_000bc0a8;
-undefined DAT_000bc0a9;
-undefined DAT_000bc0aa;
-undefined DAT_000bc0ab;
-undefined DAT_000bc0ac;
-undefined DAT_000bc0ad;
-undefined DAT_000bc0ae;
-undefined DAT_000bc0af;
-undefined DAT_000bc0b0;
-undefined DAT_000bc0b1;
-undefined DAT_000bc0b2;
-undefined DAT_000bc0b3;
-undefined DAT_000bc0b4;
-undefined DAT_000bc0b5;
-undefined DAT_000bc0b6;
-undefined DAT_000bc0b7;
-undefined DAT_000bc0b8;
-undefined DAT_000bc0b9;
-undefined DAT_000bc0ba;
-undefined DAT_000bc0bb;
-undefined DAT_000bc0bc;
-undefined DAT_000bc0bd;
-undefined DAT_000bc0be;
-undefined DAT_000bc0bf;
-undefined4 DAT_000c4838;
-undefined4 DAT_0008462c;
-undefined4 DAT_00084634;
-undefined4 DAT_00084630;
-undefined4 DAT_00084638;
-undefined4 DAT_00084610;
+/* Recovered from UU.exe .data at 0x84608: the near-clip distance,
+   float 5.0 (bit pattern 0x40a00000). render_visible_tile_list /
+   near_clip_visible_tiles pass it straight to the softfloat compare/subtract
+   ordinals as a float bit pattern. Was silently zero -> the near-plane
+   clip and the 1/(z-near) perspective divide both degenerated. */
+undefined4 DAT_00084608 = 0x40a00000u;
+/* DAT_000bc038-family: ~40 separately-declared 1-byte globals that are
+   really one 0x88(136)-byte-stride per-tile record array (its sibling
+   DAT_000bc044 -- a few bytes further into the same original record --
+   was already fixed as a real backing array by a prior session; these
+   were missed). render_visible_tile_list's tile-visibility pass indexes them all with
+   the same `local_7c*0x88 [+ byte offset]` scheme (confirmed: the byte
+   offsets below, relative to DAT_000bc038, span exactly 0..0x87, one full
+   record). As lone scalars this walks off into whatever memory happens to
+   follow them, corrupting adjacent globals -- confirmed crashing
+   (EXC_BAD_ACCESS) a few calls further down this same file. Same
+   lone-scalar-used-as-array pattern fixed repeatedly this session; given
+   DAT_000bc044's real size the same generous record count. */
+static undefined DAT_000bc038_backing[32768];
+#define DAT_000bc038 DAT_000bc038_backing[0]
+#define DAT_000bc039 DAT_000bc038_backing[1]
+#define DAT_000bc03a DAT_000bc038_backing[2]
+#define DAT_000bc03b DAT_000bc038_backing[3]
+/* 0xbc044 is 0xc bytes into the same record as 0xbc038 -- near_clip_visible_tiles
+   writes each clipped vertex's Z here and render_visible_tile_list reads
+   it back as piVar14[3] / piVar14[iVar17+0xc]. It was a SEPARATE 32KB
+   array (0x8000 bytes away from DAT_000bc038_backing), so the Z never
+   reached render -> every tile's 1/z divide hit 0 -> everything drew at
+   the viewport centre. */
+#define DAT_000bc044 DAT_000bc038_backing[0xc]
+#define DAT_000bc07c DAT_000bc038_backing[0x44]
+#define DAT_000bc07d DAT_000bc038_backing[0x45]
+#define DAT_000bc07e DAT_000bc038_backing[0x46]
+#define DAT_000bc07f DAT_000bc038_backing[0x47]
+#define DAT_000bc0a0 DAT_000bc038_backing[0x68]
+#define DAT_000bc0a1 DAT_000bc038_backing[0x69]
+#define DAT_000bc0a2 DAT_000bc038_backing[0x6a]
+#define DAT_000bc0a3 DAT_000bc038_backing[0x6b]
+#define DAT_000bc0a4 DAT_000bc038_backing[0x6c]
+#define DAT_000bc0a5 DAT_000bc038_backing[0x6d]
+#define DAT_000bc0a6 DAT_000bc038_backing[0x6e]
+#define DAT_000bc0a7 DAT_000bc038_backing[0x6f]
+#define DAT_000bc0a8 DAT_000bc038_backing[0x70]
+#define DAT_000bc0a9 DAT_000bc038_backing[0x71]
+#define DAT_000bc0aa DAT_000bc038_backing[0x72]
+#define DAT_000bc0ab DAT_000bc038_backing[0x73]
+#define DAT_000bc0ac DAT_000bc038_backing[0x74]
+#define DAT_000bc0ad DAT_000bc038_backing[0x75]
+#define DAT_000bc0ae DAT_000bc038_backing[0x76]
+#define DAT_000bc0af DAT_000bc038_backing[0x77]
+#define DAT_000bc0b0 DAT_000bc038_backing[0x78]
+#define DAT_000bc0b1 DAT_000bc038_backing[0x79]
+#define DAT_000bc0b2 DAT_000bc038_backing[0x7a]
+#define DAT_000bc0b3 DAT_000bc038_backing[0x7b]
+#define DAT_000bc0b4 DAT_000bc038_backing[0x7c]
+#define DAT_000bc0b5 DAT_000bc038_backing[0x7d]
+#define DAT_000bc0b6 DAT_000bc038_backing[0x7e]
+#define DAT_000bc0b7 DAT_000bc038_backing[0x7f]
+#define DAT_000bc0b8 DAT_000bc038_backing[0x80]
+#define DAT_000bc0b9 DAT_000bc038_backing[0x81]
+#define DAT_000bc0ba DAT_000bc038_backing[0x82]
+#define DAT_000bc0bb DAT_000bc038_backing[0x83]
+#define DAT_000bc0bc DAT_000bc038_backing[0x84]
+#define DAT_000bc0bd DAT_000bc038_backing[0x85]
+#define DAT_000bc0be DAT_000bc038_backing[0x86]
+#define DAT_000bc0bf DAT_000bc038_backing[0x87]
+/* DAT_000c4838-family: same story, but holding real 8-byte pointers (one
+   per visible-tile record, written by near_clip_visible_tiles and read back by
+   render_visible_tile_list) rather than bytes -- was a lone `undefined4` (4 bytes),
+   which would silently truncate every pointer stored into it on this
+   64-bit port even before the out-of-bounds-array problem. Real backing
+   array of genuine pointer-sized slots, same generous record count as its
+   sibling arrays above. */
+static void *DAT_000c4838_backing[4096];
+#define DAT_000c4838 DAT_000c4838_backing[0]
+/* Recovered from UU.exe .data at 0x8462c: the 3D viewport clip rect
+   {x0=0x34, y0=0x13, w=0xe0, h=0x84} == {52, 19, 224, 132}, matching
+   FUN_00012970's `rect_fill(0x34,0x13,0xe0,0x83)`. render_visible_tile_
+   list copies these into a local passed to raster_triangle as param_8;
+   raster_triangle only calls the span rasterizer raster_textured_span inside
+   `while (param_8[0] != 0 && ...)`. All zero -> that loop never ran ->
+   no pixel ever drawn even with the geometry projecting into view. */
+undefined4 DAT_0008462c = 0x34;
+undefined4 DAT_00084634 = 0xe0;
+undefined4 DAT_00084630 = 0x13;
+undefined4 DAT_00084638 = 0x84;
+/* Recovered from UU.exe .data at 0x84610: the perspective/screen scale,
+   integer 100. render_visible_tile_list does Ordinal_2032(DAT_00084610)
+   (int->float) -> 100.0, then multiplies each vertex's 1/z * eye-space
+   coord by it to get the screen offset from the viewport centre. Was
+   silently zero -> that offset was always 0, so every tile triangle
+   projected to the single centre point (x=140, y=80). */
+undefined4 DAT_00084610 = 100u;
 undefined1 *DAT_000db45c;
 int DAT_000db458;
 int DAT_000d91d0;
@@ -809,7 +1059,18 @@ static undefined1 DAT_00084a40_backing[32768];
 #define DAT_00084a40 DAT_00084a40_backing[0]
 static undefined2 DAT_00242010_backing[32768];
 #define DAT_00242010 DAT_00242010_backing[0]
-undefined2 DAT_00248418;
+/* Was a lone `undefined2` scalar, but build_rgb565_palette uses it as the base of a
+   20-level x 256-entry faded-palette table (`(ushort*)(&DAT_00248418 +
+   iVar21) + level*0x100`, iVar21 stepping by 2 per palette entry, 20 levels
+   stepped by 0x100 ushorts/level) -- a real ~10KB out-of-bounds write on
+   every single palette install. Root-caused via an lldb watchpoint on
+   DAT_0024cfc0 (a totally unrelated string-page counter ~26KB away) that
+   showed this exact write clobbering it into a huge garbage value, which
+   then produced a wild out-of-bounds array read/UAF-style crash much later
+   in FUN_0007863c's string lookup. Same lone-scalar-used-as-array pattern
+   fixed repeatedly this session (DAT_002028e8, DAT_0023aee0, etc). */
+static undefined2 DAT_00248418_backing[20 * 256];
+#define DAT_00248418 DAT_00248418_backing[0]
 short DAT_00084f10;
 int g_force_flush;
 short DAT_0023c63c;
@@ -839,10 +1100,20 @@ undefined DAT_000fb863;
    (FUN_00023de8). Real populator recovered this session: LAB_000255d0
    (a callback Ghidra never resolved into a named function -- see its
    own comment near its definition) builds this as a cumulative per-
-   entry byte-size table when the "chrbtns" resource loads. */
-static undefined4 DAT_000fb880_backing[4096];
+   entry byte-size table when the "chrbtns" resource loads.
+   Not `static` -- chargen.c reaches it through the DAT_000fb8c4 alias
+   in uw.h (case 4's body-figure offset lookup). */
+undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb880 DAT_000fb880_backing[0]
-int DAT_000fb898;
+/* Another alias into the LAB_000255d0 offset table (like DAT_000fb884 at
+   element 1 and DAT_000fb8c4 at element 17): 0xfb898 - 0xfb880 = 0x18 =
+   element 6. That's the offset of chrbtns.gr entry 6 -- the 145x16
+   parchment-with-border strip FUN_00023de8 blits as the name-entry
+   field's background, and FUN_00024840's backspace handler re-blits to
+   erase a deleted character. Declared as a lone uninitialised `int` it
+   stayed 0, so both blits read from the buffer's start (button plates)
+   and drew a garbled rectangle. */
+#define DAT_000fb898 (((int *)DAT_000fb880_backing)[6])
 char s_key_to_continue_00084e60[] = "key_to_continue";
 char s_then_press_the_Enter_00084e70[] = "then_press_the_Enter";
 char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
@@ -859,16 +1130,17 @@ char s_Enter_your_name_and_00084e88[] = "Enter_your_name_and";
    even after DAT_000fb880 itself started being populated correctly. */
 #define DAT_000fb884 (((undefined1 *)DAT_000fb880_backing)[4])
 short DAT_001005c0;
-/* Was a lone 1-byte `undefined` scalar, but read as `*(int*)(&DAT_000fb8c4
-   + idx*4)` (4-byte stride) in character_generator_loop's case 4 -- an out-of-bounds
-   read of whatever memory follows for any idx!=0 (this crashed with a
-   BUS error/high-address dereference). No writer exists anywhere in this
-   decompile -- same "unrecoverable, never-populated table" class as
-   DAT_000fb880 above -- widened to a real (zero-initialized) array so
-   every index reads a consistent, safe 0 instead of garbage. */
-/* Not `static` -- also used by chargen.c; see the extern declarations and
-   macro aliases in uw.h. */
-undefined1 DAT_000fb8c4_backing[256];
+/* DAT_000fb8c4's address (0xfb8c4) is 0x44 bytes = 17 elements past
+   DAT_000fb880's (0xfb880) -- like DAT_000fb884, not a separate table but
+   an alias into the SAME cumulative per-entry offset array LAB_000255d0
+   builds for chrbtns.gr, viewed starting at element 17. Elements 17..26
+   are the offsets of chrbtns entries 17-26 (the ten full-body figures,
+   five male + five female); character_generator_loop's case 4 reads
+   `table[17 + sexbit*5 + portraitIdx]` to blit the chosen body. Declaring
+   it as an independent zero array (as an earlier pass did, before
+   LAB_000255d0's role was known) split it from the real data and left it
+   permanently zero -- so no body was ever drawn. Aliased onto the real
+   array instead. See uw.h. */
 undefined1 DAT_000fb8f0_backing[1680];
 int DAT_00201c98;
 /* Ghidra's auto-analysis never recognized LAB_000255b4/LAB_000255d0 as
@@ -946,7 +1218,7 @@ static undefined1 DAT_00088d98_backing[1536];
 
 /* Side-effect-free PALS.DAT read: raw 6-bit bytes for one palette index,
    scaled to 8-bit RGB into out_rgb (768 bytes). Deliberately does NOT
-   reuse FUN_00040e24 -- it always installs its result into g_palette_rgb565
+   reuse load_pals_bank -- it always installs its result into g_palette_rgb565
    too, which would visibly recolor the live game just from a debug dump
    running. Returns 1 on success. */
 static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
@@ -956,7 +1228,7 @@ static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
     short got = (short)FUN_0002285c(handle, raw, 0x300);
     Ordinal_553(handle);
     if (got != 0x300) return 0;
-    FUN_00022abc(out_rgb, raw, 0);
+    expand_pals_bytes(out_rgb, raw, 0);
     return 1;
 }
 
@@ -973,7 +1245,7 @@ static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
 
    chrbtns.gr is a confirmed exception: it preloads at chargen.c:344,
    before chargen's own palette (index 3, chargen.c:421's
-   FUN_00040e24(3,pcVar_palbuf) call, into a scratch buffer that never
+   load_pals_bank(3,pcVar_palbuf) call, into a scratch buffer that never
    touches g_palette_rgb565 until that line runs) is installed -- so at
    preload time g_palette_rgb565 still reflects whatever the main menu left
    behind. No amount of reading g_palette_rgb565 at THIS moment can produce
@@ -1505,7 +1777,17 @@ char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char *DAT_002506ec;
 static undefined1 DAT_00085460_backing[32768];
 #define DAT_00085460 DAT_00085460_backing[0]
-uint DAT_002046c4;
+/* Was `uint`, truncating the real pointer this holds (`DAT_002029cc +
+   0x5b00`, assigned in FUN_00052960 -- see there) on this 64-bit host.
+   Most uses are pointer<->pointer comparisons or subtractions between
+   two pointers sharing the same upper 32 bits, which happen to come out
+   right either way -- but resolve_object_link's high-array branch and
+   alloc_object_slot's high-array allocation branch both return
+   `DAT_002046c4 + offset` as a real pointer, and did so through the
+   truncated 32-bit value (same bug class as alloc_object_slot's own
+   int-returning-a-pointer bug below). Retyped to match its sibling
+   DAT_002046b8 (already a real pointer). */
+char *DAT_002046c4;
 char s__DATA3D_BED2_E_00085474[] = "\\DATA3D\\BED2.E";
 char s__DATA3D_CHAIRSIM_E_00085484[] = "\\DATA3D\\CHAIRSIM.E";
 char s__DATA3D_BARRCLOS_E_00085498[] = "\\DATA3D\\BARRCLOS.E";
@@ -1625,11 +1907,59 @@ undefined2 DAT_00201b10;
 short DAT_00201c7c;
 undefined2 DAT_00201c90;
 undefined2 DAT_00201c8c;
-undefined2 DAT_00204884;
 undefined1 DAT_0023c3dc;
 undefined1 DAT_0023c3d8;
-short DAT_00204880;
-short DAT_00204882;
+/* DAT_00204880/82/84/86/88/8a/8c/8e/90/92/94/96/97/a1/a2/a3/a4/a5/a6/
+   a7/a8/a9/aa were ~20 separate lone `short`/`undefined1`/`undefined2`
+   scalars, but movement_collision_sweep and its siblings (movement_sweep_setup, sweep_step,
+   sweep_apply_collision, sweep_writeback_position -- reached by `DAT_00204874 = &DAT_00204880`
+   then dereferenced relative to that) treat this as one struct with real
+   fields up to offset 0x2a (42 bytes) -- confirmed crashing
+   (EXC_BAD_ACCESS) dereferencing that far out on a real run. Widened to
+   a real backing buffer for that crash, but originally only 80/82/84
+   were pointed at it -- every other field was left as its own
+   independent global, so `apply_heading_turn`/`apply_movement_tick` and
+   friends, which write these fields BY NAME (e.g. `DAT_00204894 = ...`
+   for heading), were updating completely different memory than what
+   movement_collision_sweep's collision/movement engine reads via
+   `*(short *)(DAT_00204874 + 0x14)` pointer arithmetic (real address
+   0x204894) -- confirmed via lldb: DAT_00204894 demonstrably changed on
+   turn input, while `*(short*)(DAT_00204874+0x14)` read 0 on every
+   single check all session. This -- not a dropped call anywhere -- is
+   why position/heading never visibly changed despite the movement-
+   command-decode and turn-application fixes earlier this session: the
+   update landed in memory the movement/collision code never looks at.
+   Same lone-scalars-instead-of-a-real-record pattern fixed repeatedly
+   this session, just spread across two declaration sites and not
+   caught the first time because the earlier fix only needed to solve
+   the immediate crash. Rebuilt as a real byte-addressed backing buffer
+   (byte, not short, since several fields are single bytes at odd
+   offsets) with every field aliased at its real offset, generous
+   margin past the furthest (0x2a) seen. */
+static undefined1 DAT_00204880_backing[128];
+#define DAT_00204880 (*(short *)&DAT_00204880_backing[0])
+#define DAT_00204882 (*(short *)&DAT_00204880_backing[2])
+#define DAT_00204884 (*(short *)&DAT_00204880_backing[4])
+#define DAT_00204886 (*(short *)&DAT_00204880_backing[6])
+#define DAT_00204888 (*(short *)&DAT_00204880_backing[8])
+#define DAT_0020488a (*(short *)&DAT_00204880_backing[0xa])
+#define DAT_0020488c (*(short *)&DAT_00204880_backing[0xc])
+#define DAT_0020488e (*(short *)&DAT_00204880_backing[0xe])
+#define DAT_00204890 (*(short *)&DAT_00204880_backing[0x10])
+#define DAT_00204892 (*(short *)&DAT_00204880_backing[0x12])
+#define DAT_00204894 (*(short *)&DAT_00204880_backing[0x14])
+#define DAT_00204896 DAT_00204880_backing[0x16]
+#define DAT_00204897 DAT_00204880_backing[0x17]
+#define DAT_002048a1 DAT_00204880_backing[0x21]
+#define DAT_002048a2 DAT_00204880_backing[0x22]
+#define DAT_002048a3 DAT_00204880_backing[0x23]
+#define DAT_002048a4 DAT_00204880_backing[0x24]
+#define DAT_002048a5 DAT_00204880_backing[0x25]
+#define DAT_002048a6 DAT_00204880_backing[0x26]
+#define DAT_002048a7 DAT_00204880_backing[0x27]
+#define DAT_002048a8 DAT_00204880_backing[0x28]
+#define DAT_002048a9 DAT_00204880_backing[0x29]
+#define DAT_002048aa DAT_00204880_backing[0x2a]
 short DAT_00201c70;
 undefined DAT_002035cf;
 char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in_your_face!";
@@ -1658,9 +1988,62 @@ undefined2 DAT_00201b60;
 undefined2 DAT_00201b64;
 undefined2 DAT_00202080;
 short DAT_00201c94;
-static undefined1 DAT_00085668_backing[65536];
+/* Per-(redraw-mode, dirty-bit) handler dispatch table read by
+   FUN_00049818/enter_dungeon_view/FUN_0003c038/change_game_mode (DAT_00201b64 = the
+   mode: 0 is the normal in-game/dungeon view, seen so far; 1 and 2 are
+   some other screen). It's link-time-initialized data in the original
+   binary -- nothing in this decompile ever writes to it at runtime -- so
+   unlike this file's usual "orphaned populator function" bugs (e.g.
+   LAB_000255d0), there's no call to recover: the table's real content
+   was recovered by reading UU.exe's .data section directly via Ghidra
+   (same method already used for this file's string-constant symbols; see
+   e.g. s_chrbtns_00084ef8's comment), then matching each recovered
+   32-bit ARM address against this file's own FUN_ names by address.
+   Left as a bare zero-filled placeholder, every handler read came back
+   NULL, so the per-frame redraw dispatch (FUN_00049818) never called
+   anything -- the game reached the dungeon and ran forever, but no HUD
+   panel, 3D view, or tmap tile ever drew.
+
+   3 of the 48 slots point at functions this decompile never recovered:
+   they're only ever reached indirectly through this table, so Ghidra's
+   original auto-analysis had no direct call site to find them from (same
+   root cause as LAB_000255d0/FUN_0006a0c8 needing separate recovery).
+   Disassembling them directly (Ghidra, headless) shows they're
+   conversation-portrait-animation and ambient-sound-cycling handlers --
+   not needed to get a player standing in a rendered dungeon, so left
+   NULL (safely skipped by this table's own "if handler != NULL" guard)
+   rather than ported. // Hack - Disabled
+
+   Real entries are function-pointer-sized (8 bytes on this 64-bit host)
+   -- wider than the original 4-byte ARM pointers the table's own index
+   math was written for, so every read site's byte-stride constant is
+   doubled (0x40 -> 0x80 per 16-entry mode row, 4 -> 8 per single entry;
+   see each site's own comment). */
+static void (*const DAT_00085668_real_table[48])(void) = {
+  /* mode 0 (in-game/dungeon view) */
+  (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))FUN_0003c194,
+  0, 0, 0, 0,
+  0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))movement_pacing_handler,
+  (void(*)(void))FUN_0003e4cc, (void(*)(void))FUN_0006d284, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
+  /* mode 1 */
+  0, (void(*)(void))enter_automap_screen, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0 /* Hack - Disabled: ambient sound cycling */, 0, 0, (void(*)(void))exit_automap_screen,
+  /* mode 2 */
+  (void(*)(void))FUN_000286cc, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, (void(*)(void))FUN_00028bac,
+};
+#define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)
 #define DAT_00085668 DAT_00085668_backing[0]
-undefined DAT_000856a4;
+/* Alias into the same table at entry 15 (byte offset 15*8) -- Ghidra's
+   own decompile of the real UU.exe shows this used as `&DAT_000856a4 +
+   mode*0x80`, i.e. "entry 15 of whichever mode", the same table
+   FUN_00049818 reads -- not a separate byte the way it was declared
+   before (that left it permanently 0/NULL too). */
+#define DAT_000856a4 (DAT_00085668_backing[15 * 8])
 char s__DATA_main_byt_000857a8[] = "\\DATA\\main.byt";
 undefined2 DAT_000868d8;
 undefined4 DAT_0024cfc8;
@@ -1682,9 +2065,6 @@ static undefined DAT_00201b70_backing[8192];
 #define DAT_00201b70 DAT_00201b70_backing[0]
 ushort DAT_00202084;
 byte DAT_0020208c;
-short DAT_00204890;
-short DAT_0020488a;
-short DAT_00204894;
 short DAT_00085890;
 short DAT_00202c68;
 short DAT_00202c30;
@@ -1693,26 +2073,23 @@ undefined1 DAT_00203303;
 short DAT_0023bf1c;
 short DAT_00202078;
 short DAT_0023bf4c;
-short DAT_00086e68;
-short DAT_00204892;
-undefined1 DAT_00204896;
-undefined1 DAT_00204897;
-short DAT_0020488e;
-short DAT_0020488c;
-undefined1 DAT_002048a1;
-undefined1 DAT_002048a2;
+/* Link-time-initialized read-only data (same situation as DAT_00085668/
+   DAT_00085728: nothing in this decompile ever writes it, and an
+   exhaustive whole-binary Ghidra reference search confirms that's true
+   of the real UU.exe too -- every one of its 4 references, in
+   FUN_0003d94c/FUN_0003dca4/apply_heading_turn, is a read). Left as a
+   bare zero-initialized global, this turn-rate constant (multiplied
+   into every heading-step computation in apply_heading_turn's case-1
+   branch) made every turn compute to a zero step no matter how long a
+   turn key was held -- confirmed via lldb holding Ctrl for 20 ticks:
+   DAT_0023bf4c (decoded turn amount) read a real nonzero -72, but the
+   player's heading never moved off 0. Recovered the real value by
+   reading UU.exe's .data byte at 0x86e68 directly via Ghidra: 0xf. */
+#define DAT_00086e68 15
 static undefined2 DAT_002048b0_backing[8192];
 #define DAT_002048b0 DAT_002048b0_backing[0]
-undefined1 DAT_002048a9;
-undefined1 DAT_002048aa;
 undefined1 *DAT_002048b8;
 undefined2 DAT_002048b2;
-undefined2 DAT_00204888;
-undefined2 DAT_00204886;
-undefined1 DAT_002048a7;
-undefined1 DAT_002048a3;
-undefined1 DAT_002048a4;
-undefined1 DAT_002048a8;
 undefined2 DAT_0023be98;
 undefined4 DAT_000858a0;
 undefined4 LAB_0003d8e4()
@@ -1724,16 +2101,39 @@ undefined4 LAB_0003d8e4()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-static undefined1 DAT_00085d20_backing[65536];
+/* Recovered from UU.exe .data at 0x85d20: tile-floor-height -> world Z
+   table, `height_nibble * 64` for nibbles 0..13 (then 0,0,1024).
+   `*(short *)(&DAT_00085d20 + nibble*2)`. Was all-zero, so the player's
+   world Z (DAT_00204884, set from this table at uw.c ~26936) stayed 0
+   -> the 3D camera sat at floor level + a 164-unit eye offset while the
+   tile geometry's Y is `height*64` (~768 for a mid-level floor), so
+   every floor projected far above the viewport. Also used by
+   process_visible_tile_cell's height cull. */
+static undefined1 DAT_00085d20_backing[65536] = {
+  0x00,0x00, 0x40,0x00, 0x80,0x00, 0xc0,0x00, 0x00,0x01, 0x40,0x01,
+  0x80,0x01, 0xc0,0x01, 0x00,0x02, 0x40,0x02, 0x80,0x02, 0xc0,0x02,
+  0x00,0x03, 0x40,0x03, 0x00,0x00, 0x00,0x00, 0x00,0x04, 0x00,0x00,
+};
 #define DAT_00085d20 DAT_00085d20_backing[0]
 short DAT_00202088;
 short DAT_0023bf48;
 short DAT_0020207a;
 short DAT_0020207c;
 short DAT_00202074;
-short DAT_0008589c;
-short DAT_00085898;
-short DAT_00085894;
+/* DAT_0008589c/85898/85894 are link-time-initialized read-only data,
+   same situation as DAT_00086e68 right above's fix (nothing in this
+   decompile writes any of the three, and an exhaustive whole-binary
+   Ghidra reference search confirms the real UU.exe agrees -- their
+   only references, all in FUN_0003dca4, are reads). Sibling constants
+   to DAT_00086e68 in the exact same per-facing-direction table
+   (FUN_0003dca4 multiplies each by the same `uVar5` direction-lookup
+   value right next to where it uses DAT_00086e68), so almost
+   certainly hit the same bug for the same reason. Recovered the real
+   values by reading UU.exe's .data bytes directly via Ghidra:
+   0x3ac (940), 0xeb (235), 0xbc (188) respectively. */
+#define DAT_0008589c 0x3ac
+#define DAT_00085898 0xeb
+#define DAT_00085894 0xbc
 static undefined DAT_001c2000_backing[8192];
 #define DAT_001c2000 DAT_001c2000_backing[0]
 char s_out_of_000858dc[] = "out_of";
@@ -1834,10 +2234,19 @@ ushort DAT_00202738;
 ushort DAT_00202730;
 static undefined1 DAT_0024d090_backing[65536];
 #define DAT_0024d090 DAT_0024d090_backing[0]
-int DAT_0023ae38;
-int DAT_0023ae34;
-undefined4 DAT_0023ae30;
-undefined4 DAT_0023ae3c;
+/* Were int / undefined4, truncating the real &DAT_002049e0-relative
+   pointers this loader (FUN_00042174 area) computes into them:
+     ae38 = &DAT_002049e0
+     ae34 = ae38 + DAT_0023adb0*0x1000   (10 x 0x400 shade tables at +0x30..)
+     ae3c = ae34 + DAT_0023aeb8*0x400
+     ae30 = ae3c + n*0x100               (10 x 0x100 colour-light tables at +0x6a..)
+   get_texture_page returns *one* of these + index*stride; its callers cast
+   the result to (byte*) and dereference it -> wild pointer + crash the
+   moment the (now-live) 3D geometry path calls it. */
+char *DAT_0023ae38;
+char *DAT_0023ae34;
+char *DAT_0023ae30;
+char *DAT_0023ae3c;
 undefined4 DAT_0020250c;
 char s__DATA__00085970[] = "\\DATA\\";
 short DAT_00204840;
@@ -1960,6 +2369,17 @@ static undefined1 DAT_00202750_backing[256];
 #define DAT_00202750 DAT_00202750_backing[0]
 char *DAT_00202890;
 char *DAT_0020289c;
+/* Real-pointer side table for the keybinding records' handler field. Each
+   DAT_0020289c record packs its handler as 4 raw bytes (offset 8-0xb) --
+   fine on the original 32-bit target, a truncated / uncallable pointer on
+   this 64-bit host. register_key_binding writes the real 64-bit handler here
+   keyed by record position (== registration order, and also 0xffff minus
+   the record's own id byte); dispatch_key_binding calls it from here; unregister_key_binding
+   keeps it in sync when it compacts the table. Nothing ever matched a
+   keybinding before (the mode gate was reading the wrong byte -- see
+   set_game_mode), so the truncated call had simply never been reached. */
+static void (*g_keybind_handler[512])(int);
+static int g_keybind_handler_n;
 undefined2 DAT_00202898;
 undefined2 DAT_0020288c;
 undefined2 DAT_00202894;
@@ -1969,13 +2389,46 @@ static undefined1 DAT_00202950_backing[8192];
 #define DAT_00202950 DAT_00202950_backing[0]
 undefined4 DAT_00202990;
 undefined1 DAT_00085c39;
-undefined4 DAT_002028a0;
-undefined4 DAT_002028e8;
+/* Was a lone `undefined4` scalar, but indexed as `(&DAT_002028a0)[i]` for
+   i up to 7 (FUN_00042aa8's icon save/restore swap) -- classic
+   "undersized global used as an array" bug (same class as
+   DAT_0024bfa0/DAT_000891b0 etc.), and it happened to corrupt whatever
+   real global the linker/compiler placed a few slots further along --
+   confirmed via an lldb watchpoint that this exact write
+   (`(&DAT_002028e8)[iVar5] = uVar1` in FUN_00046414, a sibling of this
+   same bug one array over) was clobbering DAT_00202948 (a real, load-
+   bearing `char *`), corrupting an equipped-item lookup and crashing
+   FUN_000667cc on the very first in-game frame. Widened with a safety
+   margin. */
+static undefined4 DAT_002028a0_backing[64];
+#define DAT_002028a0 DAT_002028a0_backing[0]
+/* Same bug: indexed as `(&DAT_002028e8)[i]` for i up to 0x16 (22) in
+   FUN_00046414/FUN_00042aa8/etc. -- this is the specific array whose
+   overflow was landing on and corrupting DAT_00202948 (see above).
+   Widened with a safety margin. */
+static undefined4 DAT_002028e8_backing[64];
+#define DAT_002028e8 DAT_002028e8_backing[0]
 static ushort DAT_00202976_backing[8192];
 #define DAT_00202976 DAT_00202976_backing[0]
-undefined4 DAT_002028ec;
+/* DAT_002028ec's address (0x2028ec) is exactly one element (4 bytes)
+   past DAT_002028e8's (0x2028e8) -- not a separate global, an alias into
+   the same array at index 1 (same relationship as the DAT_000fb880
+   family elsewhere in this file). Declaring it separately, as an
+   earlier pass did, split it apart from the real array. */
+#define DAT_002028ec DAT_002028e8_backing[1]
 undefined4 DAT_002029a0;
 undefined4 DAT_0020299c;
+/* Ghidra left 0x202988 and 0x2028e0 as bare literal addresses (no symbol)
+   -- small per-hand "currently drawn weapon / hand state" arrays indexed
+   0..5 by FUN_000465c8/FUN_0004638c (which zero them) and FUN_00046xxx
+   (which reads+rewrites them to gate a paperdoll redraw). On the 32-bit
+   binary `idx + 0x202988` was real addressing; here it hits an unmapped
+   low address and segfaults level init. Give them real backing storage
+   and address them as `&DAT_00202988 + idx`. */
+undefined1 DAT_00202988_backing[16];
+#define DAT_00202988 DAT_00202988_backing[0]
+undefined1 DAT_002028e0_backing[16];
+#define DAT_002028e0 DAT_002028e0_backing[0]
 static undefined DAT_00202978_backing[8192];
 #define DAT_00202978 DAT_00202978_backing[0]
 ushort DAT_00202986;
@@ -2066,19 +2519,104 @@ char s_You_read_the_00085ce8[] = "You_read_the";
 char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 char s_an_adventurer__00085d08[] = "an_adventurer.";
 char s_named_00085d18[] = "named";
-static undefined1 DAT_00085728_backing[65536];
-#define DAT_00085728 DAT_00085728_backing[0]
+/* Per-mode "sticky redraw bits" mask read by FUN_00049818 right after it
+   finishes dispatching DAT_00201c84's currently-set bits through
+   DAT_00085668: `DAT_00201c84 = DAT_00085728[mode] | DAT_00201c84;` re-arms
+   whichever bits this mode always wants re-triggered next idle tick, which
+   is how a mode's per-frame handlers (as opposed to one-shot event
+   handlers) keep firing forever instead of running once and going quiet.
+   Same "link-time-initialized data, nothing in this decompile ever writes
+   it" situation as DAT_00085668 (see its own comment) -- left zero-filled,
+   NO mode's dispatch bits were ever re-armed after the first pass, so
+   every DAT_00085668 handler (this file's HUD-panel/button-state/sound-
+   timer updates, mode 0's bits 11-13) ran exactly once at mode-entry and
+   then silently stopped, no matter how many frames/inputs followed.
+   Recovered the same way: read UU.exe's real .data bytes at 0x85728
+   directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
+   movement_pacing_handler/FUN_0003e4cc/FUN_0006d284; mode 1 = 0x1000 = bit 12 =
+   exit_automap_screen; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
+   mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
+   bytes immediately after are the next struct over (a `\DATA\lev.ark`
+   string literal), so this backing array is oversized like its siblings
+   only to satisfy the >0-bytes-past-any-real-index habit the rest of this
+   file uses for recovered fixed-size tables; only index 0-2 are ever
+   read (mode is always 0-2, see DAT_00085668's comment). */
+static const unsigned short DAT_00085728_real_table[3] = { 0x3800, 0x1000, 0x0000 };
+#define DAT_00085728 (*(undefined1 *)DAT_00085728_real_table)
 undefined4 DAT_002029d0;
 char *DAT_002046a4;
 char *DAT_002046a8;
 char * DAT_002046bc;
 char *DAT_0020469c;
-static undefined1 DAT_00085d48_backing[65536];
-#define DAT_00085d48 DAT_00085d48_backing[0]
-static undefined1 DAT_00085f50_backing[65536];
-#define DAT_00085f50 DAT_00085f50_backing[0]
-undefined DAT_00085d4c;
-undefined DAT_00085f54;
+/* Recovered from UU.exe .data: the renderer's sine (0x85d48) and cosine
+   (0x85f50) tables, 256 int16 entries each, amplitude 32767 --
+   sine[i] = round(32767 * sin(i*PI/128)); cosine[i] = sine[(i+64)&255].
+   Both were silently-zero 64KB Ghidra backing arrays, so angle_to_screen_delta
+   (angle -> screen delta) returned {0,0} for every angle. That zeroed
+   the entry-0 direction vector seed_visibility_queue seeds the visibility
+   flood-fill with, so process_reaction_entry did no expansion,
+   process_reaction_queue marked no tile visible, and the 3D tile list
+   came out empty (black viewport). It also broke every other bit of
+   angle math in the projection code. Four trailing pad shorts each
+   (angle_to_screen_delta interpolates to table[idx+1], so idx can reach 256).
+   DAT_00085d4c / DAT_00085f54 are &table + 2 == &table[1], the "next" sample:
+   the angle's high byte is the coarse index 0..255 (single-step, period 256)
+   and the low byte the 0..255 lerp fraction, so the next sample is +1 entry
+   (+2 bytes). Was &table + 4 (== &table[2]) -- an off-by-one-entry that
+   skipped every other sample and gave the wrong direction for any heading
+   whose coarse index was odd, so a turned player kept walking the old way. */
+static const short DAT_00085d48_sine[260] = {
+  0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
+  9512, 10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
+  18205, 18868, 19520, 20160, 20788, 21403, 22006, 22595, 23170, 23732, 24279, 24812,
+  25330, 25833, 26320, 26791, 27246, 27684, 28106, 28511, 28899, 29269, 29622, 29957,
+  30274, 30572, 30853, 31114, 31357, 31581, 31786, 31972, 32138, 32286, 32413, 32522,
+  32610, 32679, 32729, 32758, 32767, 32758, 32729, 32679, 32610, 32522, 32413, 32286,
+  32138, 31972, 31786, 31581, 31357, 31114, 30853, 30572, 30274, 29957, 29622, 29269,
+  28899, 28511, 28106, 27684, 27246, 26791, 26320, 25833, 25330, 24812, 24279, 23732,
+  23170, 22595, 22006, 21403, 20788, 20160, 19520, 18868, 18205, 17531, 16846, 16151,
+  15447, 14733, 14010, 13279, 12540, 11793, 11039, 10279, 9512, 8740, 7962, 7180,
+  6393, 5602, 4808, 4011, 3212, 2411, 1608, 804, 0, -804, -1608, -2411,
+  -3212, -4011, -4808, -5602, -6393, -7180, -7962, -8740, -9512, -10279, -11039, -11793,
+  -12540, -13279, -14010, -14733, -15447, -16151, -16846, -17531, -18205, -18868, -19520, -20160,
+  -20788, -21403, -22006, -22595, -23170, -23732, -24279, -24812, -25330, -25833, -26320, -26791,
+  -27246, -27684, -28106, -28511, -28899, -29269, -29622, -29957, -30274, -30572, -30853, -31114,
+  -31357, -31581, -31786, -31972, -32138, -32286, -32413, -32522, -32610, -32679, -32729, -32758,
+  -32767, -32758, -32729, -32679, -32610, -32522, -32413, -32286, -32138, -31972, -31786, -31581,
+  -31357, -31114, -30853, -30572, -30274, -29957, -29622, -29269, -28899, -28511, -28106, -27684,
+  -27246, -26791, -26320, -25833, -25330, -24812, -24279, -23732, -23170, -22595, -22006, -21403,
+  -20788, -20160, -19520, -18868, -18205, -17531, -16846, -16151, -15447, -14733, -14010, -13279,
+  -12540, -11793, -11039, -10279, -9512, -8740, -7962, -7180, -6393, -5602, -4808, -4011,
+  -3212, -2411, -1608, -804, 0, 0, 0, 0,
+};
+static const short DAT_00085f50_cosine[260] = {
+  32767, 32758, 32729, 32679, 32610, 32522, 32413, 32286, 32138, 31972, 31786, 31581,
+  31357, 31114, 30853, 30572, 30274, 29957, 29622, 29269, 28899, 28511, 28106, 27684,
+  27246, 26791, 26320, 25833, 25330, 24812, 24279, 23732, 23170, 22595, 22006, 21403,
+  20788, 20160, 19520, 18868, 18205, 17531, 16846, 16151, 15447, 14733, 14010, 13279,
+  12540, 11793, 11039, 10279, 9512, 8740, 7962, 7180, 6393, 5602, 4808, 4011,
+  3212, 2411, 1608, 804, 0, -804, -1608, -2411, -3212, -4011, -4808, -5602,
+  -6393, -7180, -7962, -8740, -9512, -10279, -11039, -11793, -12540, -13279, -14010, -14733,
+  -15447, -16151, -16846, -17531, -18205, -18868, -19520, -20160, -20788, -21403, -22006, -22595,
+  -23170, -23732, -24279, -24812, -25330, -25833, -26320, -26791, -27246, -27684, -28106, -28511,
+  -28899, -29269, -29622, -29957, -30274, -30572, -30853, -31114, -31357, -31581, -31786, -31972,
+  -32138, -32286, -32413, -32522, -32610, -32679, -32729, -32758, -32767, -32758, -32729, -32679,
+  -32610, -32522, -32413, -32286, -32138, -31972, -31786, -31581, -31357, -31114, -30853, -30572,
+  -30274, -29957, -29622, -29269, -28899, -28511, -28106, -27684, -27246, -26791, -26320, -25833,
+  -25330, -24812, -24279, -23732, -23170, -22595, -22006, -21403, -20788, -20160, -19520, -18868,
+  -18205, -17531, -16846, -16151, -15447, -14733, -14010, -13279, -12540, -11793, -11039, -10279,
+  -9512, -8740, -7962, -7180, -6393, -5602, -4808, -4011, -3212, -2411, -1608, -804,
+  0, 804, 1608, 2411, 3212, 4011, 4808, 5602, 6393, 7180, 7962, 8740,
+  9512, 10279, 11039, 11793, 12540, 13279, 14010, 14733, 15447, 16151, 16846, 17531,
+  18205, 18868, 19520, 20160, 20788, 21403, 22006, 22595, 23170, 23732, 24279, 24812,
+  25330, 25833, 26320, 26791, 27246, 27684, 28106, 28511, 28899, 29269, 29622, 29957,
+  30274, 30572, 30853, 31114, 31357, 31581, 31786, 31972, 32138, 32286, 32413, 32522,
+  32610, 32679, 32729, 32758, 32767, 0, 0, 0,
+};
+#define DAT_00085d48 (*(const undefined1 *)(const void *)DAT_00085d48_sine)
+#define DAT_00085d4c (*(const undefined1 *)((const char *)(const void *)DAT_00085d48_sine + 2))
+#define DAT_00085f50 (*(const undefined1 *)(const void *)DAT_00085f50_cosine)
+#define DAT_00085f54 (*(const undefined1 *)((const char *)(const void *)DAT_00085f50_cosine + 2))
 undefined DAT_00086260;
 undefined DAT_00086264;
 static undefined1 DAT_002029d8_backing[256];
@@ -2103,33 +2641,50 @@ undefined4 DAT_00086370;
 undefined DAT_00086810;
 static undefined1 DAT_00202a58_backing[65536];
 #define DAT_00202a58 DAT_00202a58_backing[0]
+/* collision_build_height_field's collision height-field: five 5-byte corner records at
+   0x202bf8, laid out `(&DAT_00202bf8)[corner*5 + k]`. collision_build_height_field writes the
+   fields by name (DAT_00202bfd, DAT_00202c0c, ...) while collision_sample_floor_height reads
+   them by index off DAT_00202bf8. Only DAT_00202bf8 had a backing array;
+   the rest were lone Ghidra scalars, so the named writes and indexed reads
+   hit different memory and every corner sampled as height 8 -- solid-rock
+   tiles reported the same floor height as open floor, so collision never
+   stopped the player at a wall. Alias every field into the one backing
+   buffer. Per-corner layout: [0]=shape/index, [1..2]=diag corner offsets,
+   [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05). */
 static undefined1 DAT_00202bf8_backing[32768];
 #define DAT_00202bf8 DAT_00202bf8_backing[0]
-undefined1 DAT_00202bf9;
-undefined1 DAT_00202bfa;
+#define DAT_00202bf9  (DAT_00202bf8_backing[0x01])
+#define DAT_00202bfa  (DAT_00202bf8_backing[0x02])
+#define DAT_00202bfb  (DAT_00202bf8_backing[0x03])
+#define DAT_00202bfc  (DAT_00202bf8_backing[0x04])
+#define DAT_00202bfd  (DAT_00202bf8_backing[0x05])
+#define DAT_00202bfe  (DAT_00202bf8_backing[0x06])
+#define DAT_00202bff  (DAT_00202bf8_backing[0x07])
+#define DAT_00202c00  (DAT_00202bf8_backing[0x08])
+#define DAT_00202c02  (DAT_00202bf8_backing[0x0a])
+#define DAT_00202c03  (DAT_00202bf8_backing[0x0b])
+#define DAT_00202c04  (DAT_00202bf8_backing[0x0c])
+#define DAT_00202c05  (DAT_00202bf8_backing[0x0d])
+#define DAT_00202c07  (DAT_00202bf8_backing[0x0f])
+#define DAT_00202c08  (DAT_00202bf8_backing[0x10])
+#define DAT_00202c09  (DAT_00202bf8_backing[0x11])
+#define DAT_00202c0a  (*(unsigned short *)(DAT_00202bf8_backing + 0x12))
+#define DAT_00202c0c  (DAT_00202bf8_backing[0x14])
+#define DAT_00202c0d  (DAT_00202bf8_backing[0x15])
+#define DAT_00202c0e  (DAT_00202bf8_backing[0x16])
+#define DAT_00202c14  (*(unsigned int *)(DAT_00202bf8_backing + 0x1c))
 static undefined1 DAT_00202c70_backing[65536];
 #define DAT_00202c70 DAT_00202c70_backing[0]
-ushort DAT_00202c78;
-undefined1 DAT_00202bfb;
-undefined1 DAT_00202bfc;
+/* At offset 8 of the DAT_00202c70 corner-height block -- collision_build_height_field's
+   `Ordinal_1047(&DAT_00202c70, 0x11, 0x12)` (memset) seeds it (and every
+   corner) with the 0x1111 "recompute me" sentinel. As a separate scalar the
+   memset never touched it, so it stayed 0, the `DAT_00202c78 == 0x1111`
+   guard never fired, and the tile's packed height was never computed -- so
+   every corner sampled as height 8 and collision couldn't tell solid rock
+   from open floor. */
+#define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
 undefined DAT_00202c34;
 ushort *_DAT_00202c34;
-undefined1 DAT_00202c0c;
-undefined1 DAT_00202c0d;
-undefined1 DAT_00202c0e;
-byte DAT_00202bfd;
-undefined1 DAT_00202bfe;
-undefined1 DAT_00202bff;
-byte DAT_00202c02;
-undefined1 DAT_00202c03;
-undefined1 DAT_00202c04;
-byte DAT_00202c07;
-undefined1 DAT_00202c08;
-undefined1 DAT_00202c09;
-undefined4 DAT_00202c14;
-ushort DAT_00202c0a;
-undefined DAT_00202c05;
-undefined DAT_00202c00;
 undefined1 DAT_00086884;
 undefined DAT_0008688c;
 char DAT_00202c20;
@@ -2238,14 +2793,51 @@ char *DAT_00204874;
 int DAT_002046e8;
 undefined1 DAT_002046e0;
 undefined1 DAT_002046e4;
-short DAT_002049c8;
-short DAT_002049ca;
+/* The movement/collision-sweep working block. Ghidra split this one ~24-byte
+   struct into 14 separate globals (DAT_002049c8 .. DAT_002049de), but
+   collision_build_height_field / collision_height_envelope write its fields through `DAT_00202c6c[offset]`
+   (DAT_00202c6c = &DAT_002049c8) while sweep_init_position / sweep_collision_
+   flags read/write them by name -- so the indexed writes and the named reads
+   landed on unrelated memory and collision flags never reflected the tile
+   under the player (walked straight through walls). Back them with one buffer
+   at the name-derived offsets so both views alias. */
+static unsigned char DAT_002049c8_backing[64];
+#define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
+#define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
+#define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
+#define DAT_002049d0 (DAT_002049c8_backing[0x08])
+#define DAT_002049d1 (DAT_002049c8_backing[0x09])
+#define DAT_002049d2 (*(undefined2 *)(DAT_002049c8_backing + 0x0a))
+#define DAT_002049d4 (*(ushort *)(DAT_002049c8_backing + 0x0c))
+#define DAT_002049d6 (*(ushort *)(DAT_002049c8_backing + 0x0e))
+#define DAT_002049d8 (DAT_002049c8_backing[0x10])
+#define DAT_002049d9 (DAT_002049c8_backing[0x11])
+#define DAT_002049da (DAT_002049c8_backing[0x12])
+#define DAT_002049dc (DAT_002049c8_backing[0x14])
+#define DAT_002049dd (DAT_002049c8_backing[0x15])
+#define DAT_002049de (DAT_002049c8_backing[0x16])
 undefined DAT_000868c0;
 int DAT_002046d4;
 int DAT_002046ec;
-char DAT_00086998;
-undefined1 DAT_00086999;
-undefined1 DAT_0008699a;
+/* The reticle/collision "picked tile" record at 0x86998..0x869a2. Ghidra
+   split it into scattered byte scalars (DAT_00086998/99/9a/9b/9f/a0/a1/a2)
+   plus overlapping 16-bit "_DAT_" views (_DAT_00086999 = the x/y pair,
+   _DAT_0008699b = target floor height, _DAT_0008699f = ceiling clearance).
+   Recompiled as separate globals the wide writes and narrow reads landed on
+   different memory: reticle_object_pick's `_DAT_0008699f = 0x7f` never
+   reached DAT_0008699f/DAT_000869a0, so sweep_collision_flags read the
+   ceiling clearance as 0 and decided the player never fits -> "walk forward"
+   stalled after 1/8 tile on every open tile. Back them with one buffer so
+   the byte and word views alias. */
+static unsigned char DAT_00086998_backing[16];
+#define DAT_00086998  (*(signed char *)(DAT_00086998_backing + 0))
+#define DAT_00086999  (DAT_00086998_backing[1])
+#define DAT_0008699a  (DAT_00086998_backing[2])
+#define DAT_0008699b  (DAT_00086998_backing[3])
+#define DAT_0008699f  (DAT_00086998_backing[7])
+#define DAT_000869a0  (DAT_00086998_backing[8])
+#define DAT_000869a1  (DAT_00086998_backing[9])
+#define DAT_000869a2  (DAT_00086998_backing[10])
 int DAT_002046f8;
 char s_optbtns_00086954[] = "optbtns";
 short DAT_002046f0;
@@ -2337,63 +2929,85 @@ int DAT_0020485c;
 char DAT_002506aa;
 char DAT_002506ab;
 char *DAT_002048bc;
-char *DAT_00086978;
+/* The three 16-bit velocity components of the movement block
+   (&DAT_00204886/88/8a). Ghidra typed this `char *`, so movement_sweep_setup's
+   `DAT_00086978[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
+   shorts at offsets 2,4 -- and every copy (`psVar11 = DAT_00086978`) is
+   already `short *`, confirming the intent. The byte misread made `[2]`
+   (meant: the Z/vertical velocity DAT_0020488a, 0 for level movement) return
+   the low byte of the forward velocity DAT_00204888, so plain forward
+   movement took the "vertical movement" path (collision_build_height_field / collision_height_envelope)
+   which corrupts DAT_00204880 -- one forward step overflowed the player X to
+   the map edge and wedged them there. */
+short *DAT_00086978;
 undefined1 DAT_002049c0;
 undefined1 DAT_002049bc;
 short DAT_00086990;
 short DAT_00086996;
-undefined2 DAT_002049ce;
-byte DAT_002049d0;
-byte DAT_002049d1;
-undefined2 DAT_002049d2;
 short DAT_0008697c_backing[128];
 short *DAT_0008697c = DAT_0008697c_backing;
 short DAT_00086980;
 short DAT_00086982;
 short DAT_00086984;
 undefined4 DAT_00204878;
-undefined DAT_0008699f;
-byte DAT_002049dc;
-byte DAT_002049dd;
-byte DAT_002049de;
-undefined DAT_0008699b;
-byte DAT_002049d9;
-byte DAT_002049d8;
 undefined DAT_00202c32;
 ushort DAT_0008698c;
 short DAT_0008698e;
 ushort DAT_00086992;
 short DAT_00086994;
 short DAT_0008698a;
-undefined1 DAT_000869a1;
-undefined1 DAT_000869a2;
 static undefined1 DAT_00086986_backing[65536];
 #define DAT_00086986 DAT_00086986_backing[0]
-undefined DAT_00086987;
-ushort DAT_002049d4;
-byte DAT_002049da;
+/* The high byte of DAT_00086986[]'s int16 entries. movement_sweep_setup /
+   sweep_integrate_substep write the per-axis "direction" words as
+   `(&DAT_00086986)[k*2] = lo; (&DAT_00086987)[k*2] = hi;`. Ghidra emitted
+   this as a lone scalar, so the high byte landed on an unrelated global and
+   every entry read back as 0 -- `sweep_integrate_substep`'s
+   `DAT_00086986[dominant] * iVar2 < 1` test then always took the negative
+   branch, so "walk forward" moved the player BACKWARD (toward the wall
+   behind the spawn). Alias it to backing[1]. */
+#define DAT_00086987 DAT_00086986_backing[1]
 static undefined1 DAT_000869a8_backing[65536];
 #define DAT_000869a8 DAT_000869a8_backing[0]
-ushort DAT_002049d6;
 int DAT_00204870;
-undefined1 DAT_000869a0;
 undefined1 DAT_0024f0ca;
 undefined2 DAT_0023adb0;
 static undefined2 DAT_0023aeb8_backing[8192];
 #define DAT_0023aeb8 DAT_0023aeb8_backing[0]
-undefined2 DAT_0023adb8;
+/* Was a lone `undefined2` scalar, but it is the per-level floor/ceiling
+   texture-id list -- reset_texture_id_lists / load_level_texture_ids write (&DAT_0023adb8)[0..9]
+   and load_texture_arena reads them to pick which F32.TR / W16.TR entries to load
+   into the 10-slot arena. As a scalar only slot 0 was coherent; slots 1..9
+   aliased whatever globals the linker placed next, so load_texture_arena hit a
+   garbage/negative id after ~2 entries and DAT_0023aeb8 (the loaded count)
+   came out 2. get_texture_page(0x39) (the ceiling = arena slot 9) then read
+   far past the 2-texture arena into the W16/colour-light memory -> wrong
+   ceiling texture. Sibling lists DAT_0023ae58 / DAT_0023add0 / DAT_0023b840
+   already have backing arrays; this one was missed. */
+static undefined2 DAT_0023adb8_backing[8192];
+#define DAT_0023adb8 DAT_0023adb8_backing[0]
 undefined1 DAT_0024f090;
 char s_bad_tmap_ids_size_000869b7[] = "bad_tmap_ids_size";
 undefined1 DAT_0023b841;
-static undefined1 DAT_000869cc_backing[32768];
-#define DAT_000869cc DAT_000869cc_backing[0]
-static undefined1 DAT_000869d4_backing[32768];
-#define DAT_000869d4 DAT_000869d4_backing[0]
-static undefined1 DAT_000869dc_backing[32768];
-#define DAT_000869dc DAT_000869dc_backing[0]
-static undefined1 DAT_000869e4_backing[32768];
-#define DAT_000869e4 DAT_000869e4_backing[0]
-undefined DAT_002049e0;
+/* Recovered from UU.exe .data: the four texture-file basenames
+   FUN_0005b36c appends to "\DATA\" and loads into the arena. Were
+   silently-zero 32KB arrays, so every path was just the bare "\DATA\"
+   directory -> load_texture_arena failed -> DAT_002049e0 stayed all zero. */
+static const char DAT_000869cc_str[] = "f16.tr";
+#define DAT_000869cc (DAT_000869cc_str[0])
+static const char DAT_000869d4_str[] = "w16.tr";
+#define DAT_000869d4 (DAT_000869d4_str[0])
+static const char DAT_000869dc_str[] = "f32.tr";
+#define DAT_000869dc (DAT_000869dc_str[0])
+static const char DAT_000869e4_str[] = "w64.tr";
+#define DAT_000869e4 (DAT_000869e4_str[0])
+/* Was a lone `undefined` scalar. It is the base of the texture / shade /
+   colour-light table arena: FUN_00042174 sets DAT_0023ae38 = &DAT_002049e0
+   and loads several .tr/.dat files into it, then get_texture_page hands out
+   `&DAT_002049e0 + page*stride` pointers. Needs real backing storage
+   (1 MB is comfortably more than UW1's texture set). */
+static undefined1 DAT_002049e0_backing[0x100000];
+#define DAT_002049e0 DAT_002049e0_backing[0]
 char s__DATA_terrain_dat_000869ec[] = "\\DATA\\terrain.dat";
 undefined4 DAT_0023b01c;
 undefined2 DAT_0023b020;
@@ -2410,65 +3024,215 @@ int DAT_0023aec8;
 ushort DAT_0023b4c8;
 undefined1 DAT_0023b028;
 byte DAT_0023b4a0;
-static undefined1 DAT_00086a18_backing[65536];
-#define DAT_00086a18 DAT_00086a18_backing[0]
-undefined DAT_00086a20;
-int DAT_00086e6c;
+/* DAT_00086a18 and DAT_00086a20 are now offsets into DAT_00086a00_region
+   (real bytes recovered from UU.exe) -- see its definition further down. */
+// Was a lone `int` scalar but used throughout the renderer as a pointer to a
+// ~0x2e-byte "current view" record (screen-space player x/y/z/facing, written
+// by FUN_00069470 from DAT_00204880/82/84 + DAT_00201c70, then read all over
+// the tile/sprite projection code). Never populated with a real address in
+// this decompile, so give it real backing storage like the other
+// lone-scalar-used-as-array globals found this session (DAT_000fb880-family).
+static undefined1 DAT_00086e6c_backing[64];
+#define DAT_00086e6c ((intptr_t)DAT_00086e6c_backing)
 char *DAT_0023aecc;
 undefined *DAT_0023b02c;
 short DAT_0025063c;
 short DAT_002506dc;
 short DAT_0025064c;
-/* Lookup/gradient table in FUN_0005bdcc, indexed up to
+/* Lookup/gradient table in build_visibility_light_grid, indexed up to
    (16*0x21+32)*2=1120 -- confirmed overflowing into the unrelated
    DAT_00248410 via an lldb watchpoint (same symptom, second distinct
    overflow source found reaching that same global). Widened. */
 static undefined1 DAT_0023b039_backing[4096];
 #define DAT_0023b039 DAT_0023b039_backing[0]
 undefined1 DAT_0023b030;
-undefined1 DAT_0023aee0;
-undefined1 DAT_0023aee5;
-undefined1 DAT_0023aee7;
-undefined1 DAT_0023aee6;
-undefined1 DAT_0023aee8;
-undefined1 DAT_0023aee9;
-undefined2 DAT_0023aeea;
-undefined1 DAT_0023aeec;
-undefined1 DAT_0023aeed;
-undefined2 DAT_0023aeee;
-undefined1 DAT_0023aef0;
-undefined1 DAT_0023aef5;
-undefined1 DAT_0023aefa;
-undefined1 DAT_0023aefc;
-undefined1 DAT_0023aefb;
-undefined1 DAT_0023aefd;
-undefined2 DAT_0023aefe;
-undefined2 DAT_0023af00;
-undefined DAT_0023af02;
-undefined1 DAT_0023aee1;
-undefined1 DAT_0023aee3;
-undefined2 DAT_0023aef6;
-undefined2 DAT_0023aef8;
-static undefined1 DAT_00086a00_backing[65536];
-#define DAT_00086a00 DAT_00086a00_backing[0]
-static undefined1 DAT_00086a02_backing[65536];
-#define DAT_00086a02 DAT_00086a02_backing[0]
-undefined DAT_00086a60;
-undefined4 DAT_00086af0;
-static undefined1 DAT_00086af8_backing[65536];
-#define DAT_00086af8 DAT_00086af8_backing[0]
-static undefined1 DAT_00086b00_backing[65536];
-#define DAT_00086b00 DAT_00086b00_backing[0]
-undefined DAT_0023aef1;
+/* DAT_0023aee0-family: ~20 separately-declared globals that are really
+   one 16-entry x 0x15(21)-byte creature-reaction/sound-cue queue record
+   array (seed_visibility_queue/process_reaction_entry/merge_adjacent_reactions/process_reaction_queue index it via
+   `&DAT_0023aee0 + entry*0x15`). As lone scalars, out-of-bounds record
+   writes/reads walked off into whatever memory happened to follow in
+   declaration order -- confirmed: DAT_0023b030 (declared right after,
+   and genuinely 0x150=336=16*21 bytes past DAT_0023aee0 in the real
+   address map) was getting corrupted by exactly this, which is why the
+   queue never looked empty. This subsystem also computes DAT_0023b024,
+   which turns out to double as the tile-visibility scan radius consumed
+   by walk_visible_tiles's dungeon-geometry walk -- NOT optional creature/object
+   bookkeeping as first assessed (see process_reaction_queue's since-removed
+   `// Hack - Disabled`); skipping it left the 3D viewport permanently
+   empty. Real backing array + aliases at each element's correct offset,
+   generous margin past the 16*21=336-byte minimum. */
+static undefined1 DAT_0023aee0_backing[1024];
+#define DAT_0023aee0 DAT_0023aee0_backing[0]
+/* Real-pointer side table for this record array's "back pointer" field
+   (offsets 9/0xa-0xb/0xc), which the original 32-bit binary packed as raw
+   bytes -- see process_reaction_entry's comment on why that can't be reassembled
+   into a real 64-bit pointer on this port. Only entry 0 (the player's own
+   reaction slot, the only one seed_visibility_queue ever populates in a
+   monster-free dungeon) is written; other entries stay NULL, matching
+   the "unpopulated" state process_reaction_entry's own `(*param_1 & 0x80) == uVar1`
+   guard already treats as "nothing to look up" for a zeroed record. */
+static char *g_dat0023aee0_realptr[24];
+/* Second real-pointer side table, for this record's OTHER packed pointer
+   field (offsets 0xd and its byte-mirrored copy at 0x11-0x14 -- see
+   seed_visibility_queue's DAT_0023aeed/aeee/aef0 writes). Unlike the offset-9
+   field, this one is always the SAME fixed original-binary address
+   (0x0023b058, confirmed identical for entry 0's 3-field pack and
+   entry 1's combined `_DAT_0023af02` write) -- a hardcoded literal
+   pointer into the shared DAT_0023b038 output-list buffer (0x0023b058 -
+   0x0023b038 = 0x20), same "hardcoded original 32-bit address instead of
+   a symbolic reference" bug class fixed elsewhere all session, just
+   packed byte-by-byte instead of written as one literal. Populated once
+   below (not per-entry -- every entry that sets this field wants the
+   same target), read via the same per-entry lookup as the offset-9
+   table for consistency with how the field is indexed. */
+static char *g_dat0023aee0_realptr2[24];
+/* Only entries 0 and 1 (the player's own reaction slot, always populated
+   by seed_visibility_queue) are ever given a real pointer above -- a monster-free
+   dungeon has nothing to populate the other 14 with. But this queue's
+   chain-walk can still legitimately reach an unpopulated entry (its
+   "next" link byte isn't reliably reset to the 0xf end-of-chain sentinel
+   between frames), which would otherwise be a NULL-pointer crash. Route
+   an unset (NULL) table entry to this shared zeroed scratch record
+   instead of dereferencing NULL -- keeps the walk/arithmetic in this
+   subsystem well-defined without having to fully model every field an
+   empty slot could still be read through. */
+static char g_dat0023aee0_fallback[64];
+#define DAT0023AEE0_REALPTR(table, idx) \
+    ((table)[(idx)] != 0 ? (table)[(idx)] : g_dat0023aee0_fallback)
+/* Slot 16 (past the 0..15 nibble-addressable real entries) is a scratch
+   slot for merge_adjacent_reactions's acStack_28 -- a stack-local COPY of
+   a real entry that the un-stubbed reaction_advance_row / the spreading
+   branch walk in place. Its `(ptr - DAT_0023aee0_backing) / 0x15` index
+   would be a wild value, so reaction_entry_idx() folds any pointer
+   outside the backing array to this slot; merge_adjacent_reactions seeds
+   the slot from the source entry's real pointers right before the copy. */
+#define REACTION_SCRATCH_IDX 16
+static int reaction_entry_idx(const void *p) {
+    intptr_t off = (intptr_t)p - (intptr_t)DAT_0023aee0_backing;
+    if (off < 0 || off + 0x15 > (intptr_t)sizeof(DAT_0023aee0_backing))
+        return REACTION_SCRATCH_IDX;
+    return (int)(off / 0x15);
+}
+#define DAT_0023aee1 DAT_0023aee0_backing[1]
+#define DAT_0023aee3 DAT_0023aee0_backing[3]
+#define DAT_0023aee5 DAT_0023aee0_backing[5]
+#define DAT_0023aee6 DAT_0023aee0_backing[6]
+#define DAT_0023aee7 DAT_0023aee0_backing[7]
+#define DAT_0023aee8 DAT_0023aee0_backing[8]
+#define DAT_0023aee9 DAT_0023aee0_backing[9]
+#define DAT_0023aeea (*(undefined2 *)&DAT_0023aee0_backing[0xa])
+#define DAT_0023aeec DAT_0023aee0_backing[0xc]
+#define DAT_0023aeed DAT_0023aee0_backing[0xd]
+#define DAT_0023aeee (*(undefined2 *)&DAT_0023aee0_backing[0xe])
+#define DAT_0023aef0 DAT_0023aee0_backing[0x10]
+#define DAT_0023aef1 DAT_0023aee0_backing[0x11]
+#define DAT_0023aef5 DAT_0023aee0_backing[0x15]
+#define DAT_0023aef6 (*(undefined2 *)&DAT_0023aee0_backing[0x16])
+#define DAT_0023aef8 (*(undefined2 *)&DAT_0023aee0_backing[0x18])
+#define DAT_0023aefa DAT_0023aee0_backing[0x1a]
+#define DAT_0023aefb DAT_0023aee0_backing[0x1b]
+#define DAT_0023aefc DAT_0023aee0_backing[0x1c]
+#define DAT_0023aefd DAT_0023aee0_backing[0x1d]
+#define DAT_0023aefe (*(undefined2 *)&DAT_0023aee0_backing[0x1e])
+#define DAT_0023af00 (*(undefined2 *)&DAT_0023aee0_backing[0x20])
+#define DAT_0023af02 DAT_0023aee0_backing[0x22]
+/* Recovered from UU.exe .data at 0x86a00 (0x60 bytes). Was FOUR separate
+   silently-zero 64KB Ghidra backing arrays (DAT_00086a00/a02/a18/a20),
+   which also broke the relative addressing the code relies on -- e.g.
+   `*(short *)(&DAT_00086a00 + dir*6)` and `*(short *)(&DAT_00086a02 +
+   dir*6)` are meant to read the same table two bytes apart. Unified into
+   one region with the real bytes; the four symbols are offsets into it.
+
+     +0x00  per-facing tile-record stride pairs, indexed [dir*6] (via
+            &DAT_00086a00) and [dir*6] (via &DAT_00086a02, = +0x02):
+              dir 0..3  a00 = {+1, -64, -1, +64}
+                        a02 = {+64, +1, -64, -1}
+            i.e. the 90-degree rotation basis (tile index = x + y*64) that
+            walk_visible_tiles's automap reveal walk and the 3D tile-neighbour
+            sampling (FUN_0005bd9c &c, uw.c ~44695-44982) step tiles by.
+            All zero before this -> the reveal walk never advanced
+            (teleport+REVEAL only marked the player's own tile) and the
+            view geometry kept sampling one tile.
+     +0x18  four facing angles {0x0000, 0x4000, 0x8000, 0xc000}, [dir*2].
+     +0x20  four 10-entry tile-shape rotation remaps, one row (stride
+            0x10) per facing: identity, then the diagonal/slope types
+            (2-9) permuted for each 90-degree view rotation.
+     +0x60  DAT_00086a60: the tile-shape -> visibility-edge-flags table
+            compute_reaction_offset indexes as [shape*7 + sVar9] (shape
+            0..9, sVar9 0..~8; 80 bytes). This was a lone silently-zero
+            `undefined` scalar, so compute_reaction_offset's bVar6 came
+            out 0 for every cell -> it wrote 0 (never the 0x80 "visible"
+            bit) into the DAT_0023b038 output grid -> process_reaction_
+            queue marked NO tile visible -> empty 3D tile list (black
+            viewport) and only the un-gated automap reveal worked. */
+static const undefined1 DAT_00086a00_region[0xb0] = {
+  0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff,
+  0x01,0x00,0x40,0x00,0xff,0xff,0xc0,0xff, 0x00,0x00,0x00,0x40,0x00,0x80,0x00,0xc0,
+  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07, 0x08,0x09,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x01,0x04,0x02,0x05,0x03,0x09,0x08, 0x06,0x07,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x01,0x05,0x04,0x03,0x02,0x07,0x06, 0x09,0x08,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x01,0x03,0x05,0x02,0x04,0x08,0x09, 0x07,0x06,0x00,0x00,0x00,0x00,0x00,0x00,
+  /* +0x60  DAT_00086a60 */
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xb8, 0x98,0xb0,0x98,0xb0,0x98,0xb0,0xe4,0xc4,
+  0xe4,0xc4,0xe0,0xc4,0xe4,0xcd,0xcd,0xc5, 0xc9,0xc5,0xcd,0xc5,0xd6,0xd2,0x00,0xd6,
+  0x00,0xd6,0x00,0xd7,0x00,0xd3,0x00,0xd7, 0x00,0xd7,0xbc,0x9c,0xb4,0x9c,0xb4,0x9c,
+  0xb4,0xbd,0x9d,0xb5,0x9d,0xb5,0x9d,0xb5, 0xbe,0x9e,0xb6,0x9e,0xb6,0x9e,0xb6,0xbf,
+  0x9f,0xb7,0x9f,0xb7,0x9f,0xb7,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+};
+#define DAT_00086a00 (*(undefined1 *)(DAT_00086a00_region + 0x00))
+#define DAT_00086a02 (*(undefined1 *)(DAT_00086a00_region + 0x02))
+#define DAT_00086a18 (*(undefined1 *)(DAT_00086a00_region + 0x18))
+#define DAT_00086a20 (*(undefined1 *)(DAT_00086a00_region + 0x20))
+#define DAT_00086a60 (*(undefined1 *)(DAT_00086a00_region + 0x60))
+/* {0x10, 0x00}: compute_reaction_offset reads (&DAT_00086af0)[bool].
+   Was a silently-zero undefined4. */
+static const undefined1 DAT_00086af0_arr[4] = { 0x10, 0x00, 0x00, 0x00 };
+#define DAT_00086af0 (*(undefined1 *)DAT_00086af0_arr)
+/* Recovered from UU.exe .data at 0x86af8 (12 bytes = 6 int16). Was two
+   separate silently-zero 64KB Ghidra arrays (DAT_00086af8, DAT_00086b00)
+   plus a bare literal `0x86afc` deref in process_reaction_entry. These
+   are the per-view-orientation constants that function's visibility
+   flood-fill uses to decide whether a neighbour tile occludes the view;
+   with them all zero the fill's expansion tests (uw.c ~44965, ~44978,
+   ~45001) never fire, so process_reaction_queue drains after ~2 entries
+   and marks NO tile visible -> process_visible_tile_cell only ever takes its
+   un-gated automap-reveal path and never emits 3D tile geometry (black
+   viewport). Indexed [orient] with orient in {0,1}:
+     +0x00  DAT_00086af8 = {2, 4}    wall-edge bitmask (AND'd with DAT_000878d0[shape])
+     +0x04  DAT_00086afc = {2, 3}    expected shape id for the "aligned" case
+     +0x08  DAT_00086b00 = {-1, 1}   neighbour step sign */
+static const undefined1 DAT_00086af8_region[12] = {
+  0x02,0x00, 0x04,0x00, 0x02,0x00, 0x03,0x00, 0xff,0xff, 0x01,0x00,
+};
+#define DAT_00086af8 (*(undefined1 *)(DAT_00086af8_region + 0))
+#define DAT_00086afc (*(undefined1 *)(DAT_00086af8_region + 4))
+#define DAT_00086b00 (*(undefined1 *)(DAT_00086af8_region + 8))
 short DAT_0023b024;
 static undefined1 DAT_0023b038_backing[32768];
 #define DAT_0023b038 DAT_0023b038_backing[0]
 undefined DAT_00086b34;
 undefined2 DAT_00189578;
 short DAT_0023b810;
-undefined4 DAT_00086b38;
-undefined4 DAT_00086b40;
-undefined4 DAT_00086b48;
+/* Recovered from UU.exe .data at 0x86b38: three pairs of function
+   pointers, selected by an index (0 or 1, from DAT_00086b2c) in
+   walk_visible_tiles, loaded into DAT_0023b4f4 / DAT_0023b80c / DAT_0023b4d4,
+   and called by process_visible_tile_cell to emit a visible tile's 3D geometry
+   slice (wall / floor-or-ceiling / diagonal). Were silently-zero scalars,
+   so `(*DAT_0023b4f4)(...)` was a call through NULL the instant the
+   (now-working) visibility fill marked any tile visible. The six entries
+   are contiguous in .data: b38,b3c / b40,b44 / b48,b4c -- one array, the
+   symbols index it at 0..4. NOT const: FUN_0005d664 patches entries [1]
+   and [3] (b3c / b44) at runtime between FUN_0005dd84 and FUN_0005e12c. */
+static code *DAT_00086b38_fnptrs[6] = {
+  (code *)FUN_0005dd84, (code *)FUN_0005e12c,
+  (code *)FUN_0005debc, (code *)FUN_0005dd84,
+  (code *)FUN_0005dff4, (code *)FUN_0005e3c0,
+};
+#define DAT_00086b38 (DAT_00086b38_fnptrs[0])
+#define DAT_00086b3c (DAT_00086b38_fnptrs[1])
+#define DAT_00086b40 (DAT_00086b38_fnptrs[2])
+#define DAT_00086b44 (DAT_00086b38_fnptrs[3])
+#define DAT_00086b48 (DAT_00086b38_fnptrs[4])
 undefined4 DAT_0023b804;
 undefined2 DAT_00086b30;
 undefined DAT_0023b4dc;
@@ -2477,16 +3241,86 @@ code *DAT_0023b80c;
 code *DAT_0023b4d4;
 undefined2 DAT_00189582;
 ushort DAT_00189580;
-undefined *DAT_00086b44;
-undefined *DAT_00086b3c;
-static undefined1 DAT_00086b52_backing[65536];
-#define DAT_00086b52 DAT_00086b52_backing[0]
+/* DAT_00086b3c / DAT_00086b44 are entries [1] and [3] of
+   DAT_00086b38_fnptrs (see its comment) -- #define'd there. */
+
+/* Recovered from UU.exe .data: 0x86b50 .. 0x86bef (0xa0 bytes). A dense
+   cluster of small per-view-orientation / per-tile-shape byte tables
+   that process_visible_tile_cell reads while building a tile's vertex
+   set for the 3D view. Ghidra had scattered it across ~15 lone
+   `undefined`/`undefined1` scalars (DAT_00086b50, b52, b84, b88,
+   bb0..bb5, bc8..bcd) PLUS a dozen bare-literal `iVar + 0x86bXX`
+   dereferences -- all reading zero / wild. Unified into one region with
+   the real bytes; the scalars and literals now index into it.
+     +0x00 (b50) view-basis shorts, [facing*4] (walk_visible_tiles)
+     +0x10 (b60) 4x4 per-facing something
+     +0x20 (b70) vertex/height offset base, indexed via b84/b88 + n*4
+     +0x40 (b90) 6x5 per-(facing,slot) offsets
+     +0x60 (bb0) 6-entry group used by the billboard-vertex Ordinal_2032 calls
+     +0x78 (bc8) 6-entry group for the diagonal-tile path
+     +0x90 (be0) 3x4 cull-plane normal components (be0/be1/be2) */
+static const undefined1 DAT_00086b50_region[0xa0] = {
+  0x01,0x00,0x40,0x00,0xc0,0xff,0x01,0x00, 0xff,0xff,0xc0,0xff,0x40,0x00,0xff,0xff,
+  0x00,0x01,0x03,0x02,0x02,0x00,0x01,0x03, 0x03,0x02,0x00,0x01,0x01,0x03,0x02,0x00,
+  0x00,0x00,0x01,0x01,0x01,0x01,0x00,0x00, 0x00,0x01,0x00,0x01,0x01,0x00,0x01,0x00,
+  0x00,0x00,0x00,0x00,0x02,0x00,0x01,0x00, 0x00,0x01,0x03,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x01,0x00,0x00,0x01,0x00,0x00, 0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x01,
+  0x01,0x00,0x01,0x00,0x00,0x01,0x01,0x01, 0x00,0x01,0x01,0x01,0x00,0x00,0x00,0x00,
+  0x01,0x01,0x03,0x01,0x00,0x01,0x00,0x01, 0x02,0x01,0x01,0x03,0x00,0x00,0x00,0x00,
+  0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x01,0x01,0x01,0xff,0x00,0x01,
+  0x01,0x00,0xff,0xff,0x01,0x00,0x00,0x01, 0x01,0x01,0x01,0x01,0x00,0x00,0xff,0x01,
+  0x00,0x04,0xff,0x00,0x04,0x01,0xff,0x04, 0x00,0x01,0x04,0x00,0x00,0x00,0x00,0x00,
+};
+#define DAT_00086b50_at(off)  (*(const undefined1 *)(DAT_00086b50_region + (off)))
+#define DAT_00086b50  DAT_00086b50_at(0x00)
+#define DAT_00086b52  DAT_00086b50_at(0x02)
+#define DAT_00086b84  DAT_00086b50_at(0x34)
+#define DAT_00086b88  DAT_00086b50_at(0x38)
+#define DAT_00086bb0  DAT_00086b50_at(0x60)
+#define DAT_00086bb1  DAT_00086b50_at(0x61)
+#define DAT_00086bb2  DAT_00086b50_at(0x62)
+#define DAT_00086bb3  DAT_00086b50_at(0x63)
+#define DAT_00086bb4  DAT_00086b50_at(0x64)
+#define DAT_00086bb5  DAT_00086b50_at(0x65)
+#define DAT_00086bc8  DAT_00086b50_at(0x78)
+#define DAT_00086bc9  DAT_00086b50_at(0x79)
+#define DAT_00086bca  DAT_00086b50_at(0x7a)
+#define DAT_00086bcb  DAT_00086b50_at(0x7b)
+#define DAT_00086bcc  DAT_00086b50_at(0x7c)
+#define DAT_00086bcd  DAT_00086b50_at(0x7d)
+/* numeric base for the surviving `iVar + 0x86bXX` literal derefs:
+   substitute UW_B50_LIT(0x86bXX) for the literal so the arithmetic
+   lands in the recovered region instead of at absolute address 0x86bXX. */
+#define UW_B50_LIT(addr)  ((intptr_t)(const char *)DAT_00086b50_region + ((intptr_t)(addr) - 0x86b50))
+static const undefined1 DAT_00086c00_arr[8] = { 0x00,0x01,0x02,0x00,0x00,0x00,0x00,0x00 };
+#define DAT_00086c00 (*(const undefined1 *)DAT_00086c00_arr)
 undefined2 DAT_0023bc8c;
 undefined2 DAT_0023b8c0;
-static undefined1 DAT_00086b50_backing[65536];
-#define DAT_00086b50 DAT_00086b50_backing[0]
 byte *DAT_0023b4ec;
-undefined DAT_00086bf0;
+/* Was a lone `undefined` scalar; walk_visible_tiles/process_visible_tile_cell index it as
+   `(&DAT_00086bf0)[tile_type_nibble]`. Real bytes recovered from
+   UU.exe's .data at 0x86bf0 (confirmed 3 ways: reference search,
+   literal-pool value, disassembly of the `ldrb r2,[r2,r0]` read):
+   0a 0b 0c 0d 0e 0f 0b 0b 0b 0b 0a 0b 0c 0d 0e 0f.
+
+   NOTE: this table is now essentially unused. It turned out NOT to be
+   the real automap reveal-byte source -- the two ring-walk write sites
+   (walk_visible_tiles / process_visible_tile_cell) were changed to compute the reveal byte
+   the way process_visible_tile_cell's bit-0x80-SET branch always did:
+     `DAT_0023ae40[floor-texture index] low byte  |  tile shape nibble`
+   where DAT_0023ae40 is the per-level floor-texture property table
+   (loaded from the .ark). Water floors read 0x10 there -> reveal-byte
+   bit 4 set -> blue fill; every other floor reads 0 -> grey "explored"
+   shading. That's what makes ONLY water render blue (an all-`0x10|type`
+   reconstruction of THIS table made every floor blue, which was wrong).
+
+   Kept here as the raw recovered bytes; it's only hit now via a
+   `local_84 == 0` fallback in dead (bit-0x80-SET) code. */
+static const unsigned char DAT_00086bf0_real_table[16] = {
+  0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0b, 0x0b,
+  0x0b, 0x0b, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+};
+#define DAT_00086bf0 (*(undefined1 *)DAT_00086bf0_real_table)
 undefined1 DAT_0023b818;
 char *DAT_0023b4f0;
 undefined4 DAT_0023b808;
@@ -2505,104 +3339,9 @@ ushort DAT_0023b81c;
 ushort DAT_0023b4d8;
 undefined2 DAT_0023b4d0;
 byte DAT_0023b4e0;
-int DAT_000a85d4;
 char DAT_0023b834;
-undefined1 DAT_00086b84;
-undefined1 DAT_00086b88;
-undefined1 DAT_00086bb0;
-undefined1 DAT_00086bb1;
-undefined1 DAT_00086bb2;
-undefined1 DAT_00086bb3;
-undefined1 DAT_00086bb4;
-undefined1 DAT_00086bb5;
-undefined DAT_00086bc8;
-undefined DAT_00086bc9;
-undefined DAT_00086bca;
-undefined DAT_00086bcb;
-undefined DAT_00086bcc;
-undefined DAT_00086bcd;
-undefined1 DAT_00086c00;
-static undefined DAT_000a85d8_backing[32768];
-#define DAT_000a85d8 DAT_000a85d8_backing[0]
-undefined DAT_000a85d9;
-undefined DAT_000a85da;
-undefined DAT_000a85db;
-undefined DAT_000a85dc;
-undefined DAT_000a85dd;
-undefined DAT_000a85de;
-undefined DAT_000a85df;
-undefined DAT_000a85e0;
-undefined DAT_000a85e1;
-undefined DAT_000a85e2;
-undefined DAT_000a85e3;
-undefined DAT_000acde4;
-undefined DAT_000acde5;
-undefined DAT_000acde6;
-undefined DAT_000acde7;
-undefined DAT_000acde8;
-undefined DAT_000acde9;
-undefined DAT_000acdea;
-undefined DAT_000acdeb;
-undefined DAT_000acdec;
-undefined DAT_000acded;
-undefined DAT_000acdee;
-undefined DAT_000acdef;
-undefined DAT_000acdf0;
-undefined DAT_000acdf1;
-undefined DAT_000acdf2;
-undefined DAT_000acdf3;
-undefined DAT_000acdf4;
-undefined DAT_000acdf5;
-undefined DAT_000acdf6;
-undefined DAT_000acdf7;
-undefined DAT_000acdfc;
-undefined DAT_000acdfd;
-undefined DAT_000acdfe;
-undefined DAT_000acdff;
-undefined DAT_000ace00;
-undefined DAT_000ace01;
-undefined DAT_000ace02;
-undefined DAT_000ace03;
-undefined DAT_000ace04;
-undefined DAT_000ace05;
-undefined DAT_000ace06;
-undefined DAT_000ace07;
-undefined DAT_000ace08;
-undefined DAT_000ace09;
-undefined DAT_000ace0a;
-undefined DAT_000ace0b;
-undefined DAT_000ace0c;
-undefined DAT_000ace0d;
-undefined DAT_000ace0e;
-undefined DAT_000ace0f;
-undefined DAT_000ace10;
-undefined DAT_000ace11;
-undefined DAT_000ace12;
-undefined DAT_000ace13;
-undefined DAT_000ace14;
-undefined DAT_000ace15;
-undefined DAT_000ace16;
-undefined DAT_000ace17;
-undefined DAT_000ace18;
-undefined DAT_000ace19;
-undefined DAT_000ace1a;
-undefined DAT_000ace1b;
-undefined DAT_000ace1c;
-undefined DAT_000ace1d;
-undefined DAT_000ace1e;
-undefined DAT_000ace1f;
-undefined DAT_000ace20;
-undefined DAT_000ace21;
-undefined DAT_000ace22;
-undefined DAT_000ace23;
-undefined DAT_000ace24;
-undefined DAT_000ace25;
-undefined DAT_000ace26;
-undefined DAT_000ace27;
-undefined DAT_000ace30;
-undefined DAT_000ace31;
-undefined DAT_000ace32;
-undefined DAT_000ace33;
+/* DAT_00086b84/b88/bb0..bb5/bc8..bcd/c00 -> DAT_00086b50_region /
+   DAT_00086c00_arr, #define'd above. */
 short DAT_0023b8c4;
 ushort DAT_0023b904;
 ushort DAT_0023b920;
@@ -2646,8 +3385,18 @@ undefined1 DAT_0023bb98;
 undefined2 DAT_0023b848;
 undefined1 DAT_0023bb99;
 undefined1 DAT_0023bb9a;
-undefined DAT_00086d68;
-undefined DAT_00086d69;
+/* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view-
+   facing corner-index remap for a rotating quad: FUN_00065210 reads
+   `(&DAT_00086d68)[idx*2]` (low byte) and `(&DAT_00086d69)[idx*2]` (high
+   byte) with idx = (corner>>5) + facing*8. Were lone zero scalars. */
+static const undefined1 DAT_00086d68_region[64] = {
+  0x00,0x00,0x01,0x00,0x02,0x00,0x03,0x00, 0x04,0x00,0x05,0x00,0x06,0x00,0x07,0x00,
+  0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x03, 0x00,0x04,0x00,0x05,0x00,0x06,0x00,0x07,
+  0x07,0x00,0x06,0x00,0x05,0x00,0x04,0x00, 0x03,0x00,0x02,0x00,0x01,0x00,0x00,0x00,
+  0x00,0x07,0x00,0x06,0x00,0x05,0x00,0x04, 0x00,0x03,0x00,0x02,0x00,0x01,0x00,0x00,
+};
+#define DAT_00086d68 (*(const undefined1 *)DAT_00086d68_region)
+#define DAT_00086d69 (*(const undefined1 *)(DAT_00086d68_region + 1))
 undefined DAT_0023b92e;
 undefined1 DAT_0020330c;
 char DAT_00086db0;
@@ -2757,8 +3506,6 @@ char DAT_00086e84;
 int DAT_0023bf64;
 char DAT_0023bf60;
 uint DAT_0023bf5c;
-byte DAT_002048a5;
-undefined1 DAT_002048a6;
 undefined2 DAT_0023be9e;
 undefined2 DAT_0023be9c;
 undefined2 DAT_0023be9a;
@@ -2866,7 +3613,26 @@ undefined2 DAT_00087174;
 undefined2 DAT_000871b4;
 undefined2 DAT_000871d4;
 undefined2 DAT_000871d8;
-undefined *PTR_FUN_00087220;
+/* HUD-panel/tab dispatch table (13 entries), read as
+   `(&PTR_FUN_00087220)[index]` at 4 call sites (DAT_0023c1d4/DAT_0023c134
+   select the index -- which panel/tab is active). Same class of bug as
+   DAT_00085668 above: link-time-initialized data in the original binary
+   that nothing in this decompile ever writes, declared here as a single
+   never-populated pointer instead of the real array -- so every one of
+   those 4 calls jumped through NULL/garbage. Recovered the same way
+   (Ghidra, reading UU.exe's .data directly and matching addresses
+   against this file's own FUN_ names); index 3 is genuinely NULL in the
+   original data, not a recovery gap. Since this was already declared as
+   a bare pointer rather than a byte array, no caller-side index-math
+   needs to change -- `(&PTR_FUN_00087220)[i]` already scales by the
+   (now-real, 8-byte-on-this-host) pointer size. */
+static void (*const PTR_FUN_00087220_table[13])(void) = {
+  (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))FUN_0007830c, 0,
+  (void(*)(void))FUN_0006d4a4, (void(*)(void))FUN_0006d4a4, (void(*)(void))FUN_0006df70, (void(*)(void))FUN_0006e038,
+  (void(*)(void))FUN_0006d894, (void(*)(void))FUN_0006d894, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
+  (void(*)(void))FUN_0006e648,
+};
+#define PTR_FUN_00087220 (PTR_FUN_00087220_table[0])
 char s_panels_00087260[] = "panels";
 undefined1 DAT_0023c11c;
 undefined1 DAT_0023c12c;
@@ -2883,7 +3649,16 @@ ushort DAT_0023c1e0;
 undefined1 DAT_0023c11b;
 byte DAT_0023c12a;
 byte DAT_0023c150;
-undefined4 DAT_00087230;
+/* Was a lone `undefined4` scalar, but FUN_0006d284 indexes 9 entries
+   from it (`(&DAT_00087230)[0..8]`) as a function-pointer dispatch
+   table and calls through them -- same lone-scalar-instead-of-a-real-
+   array bug as everywhere else this project, except this one turned out
+   to need no new Ghidra archaeology: 0x87230 is exactly
+   PTR_FUN_00087220_table[4] (0x87220 + 4*4), and FUN_0006d284's 9-entry
+   range (0x87230..0x87250) is exactly that table's remaining entries
+   4-12 -- a stray duplicate alias into an already-recovered table, same
+   shape as DAT_000856a4 aliasing into DAT_00085668_backing. */
+#define DAT_00087230 (PTR_FUN_00087220_table[4])
 static undefined1 DAT_0023c1f0_backing[65536];
 #define DAT_0023c1f0 DAT_0023c1f0_backing[0]
 static undefined1 DAT_0023c1f8_backing[65536];
@@ -2969,7 +3744,14 @@ undefined2 DAT_0023c158;
 char s__DATA_shades_dat_000872a4[] = "\\DATA\\shades.dat";
 char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
 char s__DATA_light_dat_000872c8[] = "\\DATA\\light.dat";
-char DAT_000872a0;
+/* "currently-loaded shading level" for FUN_0006ff08's `if (DAT_000872a0
+   == param_1) return;` early-out. Ghidra dropped its initialiser (same
+   silently-zero link-time-init class as DAT_00086e68 &c); left at 0 the
+   first dungeon entry -- FUN_0006ff08(0) -- matched and returned without
+   ever reading SHADES.DAT, so the texture-LOD threshold DAT_00086b24
+   stayed 0 and every visible tile drew with the 16x16 low-detail
+   texture. Sentinel = no level loaded yet. */
+char DAT_000872a0 = -1;
 char s__DATA_xfer_dat_000872d8[] = "\\DATA\\xfer.dat";
 char s_cLightTabs_allocation_error_____000872e8[] = "cLightTabs_allocation_error_...";
 static undefined1 DAT_0024fa38_backing[3072];
@@ -3040,11 +3822,29 @@ static undefined DAT_0008762c_backing[8192];
 undefined DAT_00087630;
 undefined DAT_00087634;
 char *DAT_0023c3e8;
-int DAT_0023c3ec;
+/* Was `int`, truncating the real pointer assigned to it
+   (`DAT_0023c3e8 + 0x500`, a genuine 64-bit heap pointer on this host) --
+   every comparison against it (`DAT_0023c3ec <= someRealPointer`) then
+   always came out true regardless of the real slot table's size, so
+   FUN_00076078 (the HUD button-slot allocator) always believed the table
+   was full and returned -1 on its very first call, crashing the first
+   caller that tried to use that "slot". */
+char *DAT_0023c3ec;
 char *DAT_0023c40c;
-int DAT_0023c414;
+/* Same "was `int`, truncating a real pointer" bug as DAT_0023c3ec right
+   above -- assigned `DAT_0023c40c + 0x100` (a real 64-bit pointer) and
+   then compared against/derived into real `ushort *` locals throughout
+   FUN_00076508 and friends. */
+ushort *DAT_0023c414;
 char *DAT_0023c3e4;
-int DAT_0023c410;
+/* Same truncation bug as DAT_0023c414/DAT_0023c3ec above, though this one
+   is never read back anywhere in this decompile -- fixed for consistency
+   regardless. Its assignment (FUN_00075be0) computes it from
+   DAT_0023c40c + 0x100, the same expression as DAT_0023c414, rather than
+   from DAT_0023c3e4 (the buffer it's presumably meant to bound) -- looks
+   like a genuine bug already present in the original, not a decompile
+   artifact; left as-is since it's dead either way. */
+char *DAT_0023c410;
 undefined2 DAT_0023c41c;
 ushort DAT_0008763c;
 ushort DAT_0023c400;
@@ -3091,6 +3891,32 @@ static undefined1 DAT_0023cdb0_backing[32768];
 #define DAT_0023cdc0 (*(int *)(DAT_0023cdb0_backing + 0x10))
 static undefined1 DAT_0023ce10_backing[65536];
 #define DAT_0023ce10 DAT_0023ce10_backing[0]
+/* DAT_0023ce1c/28/34/40/4c/58/64 are the same GXGetDefaultKeys() struct's
+   remaining 7 button.vk fields (b/c/start/up/down/left/right, each 0xc
+   bytes after the previous one -- see gx_stub.c's GxKeyEntry) as
+   DAT_0023ce10 (the "a" button). Same bug DAT_0023cdb0's comment above
+   already describes for GXGetDisplayProperties: FUN_00077408 populates
+   this whole 0x60-byte struct with one sequential byte-copy loop
+   starting at `&DAT_0023ce10`, but every field past the first had been
+   declared as its own independent global instead of an alias into that
+   same backing buffer -- so the copy's bytes for b/c/start/up/down/
+   left/right all landed harmlessly in DAT_0023ce10_backing's own unused
+   tail (it's oversized, 65536 bytes, same as every other recovered-
+   table backing array in this file) while the real separate globals
+   stayed at their zero-initialized default forever. Concretely: pressing
+   Enter (VK_RETURN, the real start.vk) never matched `DAT_0023ce34` (a
+   permanent 0), so `handle_keyboard_message` fell through to the generic raw-vk
+   fallback instead of recognizing it as the "start button" movement
+   command -- silently breaking every A/B/C/Start-button-driven input
+   this whole session's demo scripts (which use Enter throughout) relied
+   on, though none of that was diagnosed until this fix. */
+#define DAT_0023ce1c (*(ushort *)(DAT_0023ce10_backing + 0xc))
+#define DAT_0023ce28 (*(ushort *)(DAT_0023ce10_backing + 0x18))
+#define DAT_0023ce34 (*(ushort *)(DAT_0023ce10_backing + 0x24))
+#define DAT_0023ce40 (*(ushort *)(DAT_0023ce10_backing + 0x30))
+#define DAT_0023ce4c (*(ushort *)(DAT_0023ce10_backing + 0x3c))
+#define DAT_0023ce58 (*(ushort *)(DAT_0023ce10_backing + 0x48))
+#define DAT_0023ce64 (*(ushort *)(DAT_0023ce10_backing + 0x54))
 HWND__ *DAT_0023c548;
 undefined *PTR_GXOpenDisplay_000841ec;
 undefined *PTR_GXOpenInput_000841f0;
@@ -3105,13 +3931,6 @@ static undefined1 UNK_000830b4_backing[65536];
 #define UNK_000830b4 UNK_000830b4_backing[0]
 undefined *PTR_GXCloseInput_000841e4;
 undefined *PTR_GXCloseDisplay_000841e8;
-ushort DAT_0023ce1c;
-ushort DAT_0023ce28;
-ushort DAT_0023ce34;
-ushort DAT_0023ce40;
-ushort DAT_0023ce4c;
-ushort DAT_0023ce58;
-ushort DAT_0023ce64;
 undefined *PTR_GXSuspend_000841dc;
 undefined *PTR_GXResume_000841f4;
 byte DAT_0024af80;
@@ -3392,7 +4211,9 @@ int param_4;
 
 
 
-void FUN_00011040(param_1,param_2,param_3,param_4)
+// was FUN_00011040 -- dirty-rect SET (overwrite the damaged-region
+// bounds to exact values; sibling of dirty_rect union FUN_00011000)
+void dirty_rect_set(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -3410,7 +4231,8 @@ undefined4 param_4;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00011060(param_1,param_2,param_3)
+// was FUN_00011060
+void draw_text_string(param_1,param_2,param_3)
 char * param_1;
 short param_2;
 short param_3;
@@ -3524,6 +4346,7 @@ short param_3;
   if (pcVar4 != (char *)0x0) {
     Ordinal_1018(pcVar4);
   }
+  debug_framebuffer_dump("draw_text_string");
   return;
 }
 
@@ -3538,7 +4361,7 @@ char * param_1;
   short sVar3;
 
   /* Was `Ordinal_1068()` with no argument, relying on register leftovers
-     to still hold param_1 (see FUN_00011060's matching fix/comment a
+     to still hold param_1 (see draw_text_string's matching fix/comment a
      few lines above -- same root bug, this is the more foundational of
      the two call sites since FUN_000112a0 is the general string pixel-
      width measurement used throughout the file). */
@@ -3547,7 +4370,7 @@ char * param_1;
   for (uVar2 = uVar2 & 0xffff; uVar2 != 0; uVar2 = uVar2 - 1) {
     cVar1 = *param_1;
     param_1 = param_1 + 1;
-    /* Same signed-char-indexing bug as FUN_00011060 above. */
+    /* Same signed-char-indexing bug as draw_text_string above. */
     sVar3 = sVar3 + (&DAT_000890b0)[(byte)cVar1];
   }
   return (int)sVar3;
@@ -3707,7 +4530,8 @@ void screen_backup_restore()
       iVar1 = iVar1 + 2;
     } while (iVar3 != 0);
   } while (iVar1 < 0x1f400);
-  FUN_00022f0c(1);
+  debug_framebuffer_dump("screen_backup_restore");
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -3750,6 +4574,7 @@ uint param_4;
       iVar4 = iVar4 + 0x140;
     } while ((int)param_2 < (int)(param_4 & 0xffff));
   }
+  debug_framebuffer_dump("screen_backup_restore_rect");
   return;
 }
 
@@ -3795,6 +4620,7 @@ uint param_3;
       iVar2 = iVar2 + 2;
     } while (iVar3 != 0);
   }
+  debug_framebuffer_dump("FUN_000116dc");
   return;
 }
 
@@ -3827,7 +4653,8 @@ void FUN_00011b34()
       iVar5 = iVar5 + 0x140;
     } while (iVar4 < 200 - iVar3);
   }
-  FUN_00022f0c(1);
+  debug_framebuffer_dump("FUN_00011b34");
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -3949,6 +4776,7 @@ short param_7;
       } while (iVar5 != 0);
     }
   }
+  debug_framebuffer_dump("FUN_00011c10");
   return;
 }
 
@@ -4028,18 +4856,20 @@ int param_8;
             } while (iVar7 < iVar2);
           }
           if (param_8 != 0) {
-            FUN_00022f0c(1);
+            flush_dirty_rect_to_display(1);
           }
         }
       }
     }
   }
+  debug_framebuffer_dump("FUN_000120c8");
   return;
 }
 
 
 
-void FUN_000122d4(param_1,param_2,param_3)
+// was FUN_000122d4
+void fade_in(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
 ushort *param_3;
@@ -4094,7 +4924,7 @@ ushort *param_3;
            uVar2 | (ushort)(((int)((*puVar6 & 0x1f) << 0xc) >> 6) * iVar5 >> 0x12);
       puVar6 = puVar6 + 1;
     } while (iVar7 != 0);
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     iVar9 = iVar9 + 1;
   } while (iVar9 < 9);
   iVar9 = 64000;
@@ -4104,15 +4934,17 @@ ushort *param_3;
     *(ushort *)(((intptr_t)param_3 - (intptr_t)puVar3) + (intptr_t)puVar6) = *puVar6;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
-  FUN_00022f0c(1);
-  DEBUG(TRACE, "[fade] FUN_000122d4 (fade-in) total elapsed=%ums", FUN_0002294c() - diag_t0);
+  flush_dirty_rect_to_display(1);
+  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", FUN_0002294c() - diag_t0);
+  debug_framebuffer_dump("fade_in");
   Ordinal_1018(puVar3);
   return;
 }
 
 
 
-void FUN_00012444(param_1,param_2,param_3)
+// was FUN_00012444
+void fade_out(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
 undefined2 * param_3;
@@ -4129,7 +4961,7 @@ undefined2 * param_3;
   int iVar9;
   int iVar10;
   int iVar11;
-  /* Same phantom in_stack_/unused-param_1,2 artifact as FUN_000122d4
+  /* Same phantom in_stack_/unused-param_1,2 artifact as fade_in
      right above -- see its comment. */
 
   puVar4 = (ushort *)Ordinal_1041(0x1f400);
@@ -4150,7 +4982,7 @@ undefined2 * param_3;
       iVar9 = iVar9 + -1;
       iVar1 = ((int)((*puVar7 & 0xf800) << 1) >> 6) * iVar6 >> 0x12;
       /* Same param_3/puVar4/puVar7 offset-reconstruction truncation as
-         FUN_000122d4 right above -- see its comment. */
+         fade_in right above -- see its comment. */
       puVar8 = (ushort *)(((intptr_t)param_3 - (intptr_t)puVar4) + (intptr_t)puVar7);
       *puVar8 = (ushort)((uint)(iVar1 << 0x1b) >> 0x10);
       uVar3 = (ushort)(iVar1 << 0xb) |
@@ -4160,15 +4992,16 @@ undefined2 * param_3;
       puVar7 = puVar7 + 1;
       *puVar8 = uVar3 | (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * iVar6 >> 0x12);
     } while (iVar9 != 0);
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     iVar11 = iVar11 + -1;
   } while (0 < iVar11);
   while (iVar10 = iVar10 + -1, -1 < iVar10) {
     *param_3 = 0;
     param_3 = param_3 + 1;
   }
-  FUN_00022f0c(1);
-  DEBUG(TRACE, "[fade] FUN_00012444 (fade-out) total elapsed=%ums", FUN_0002294c() - diag_t0);
+  flush_dirty_rect_to_display(1);
+  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", FUN_0002294c() - diag_t0);
+  debug_framebuffer_dump("fade_out");
   Ordinal_1018(puVar4);
   return;
 }
@@ -4180,7 +5013,11 @@ undefined2 * param_3;
 void FUN_000125a8(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 short param_1;
 short param_2;
-int param_3;
+/* Source-bitmap pointer -- was `int`, truncating the real `char *` the
+   caller (FUN_00040918) already reconstructed (iVar4 + 5). Same
+   bitmap_blit_to_framebuffer-shaped sprite blit, same pointer-truncation
+   class as everywhere else this session. */
+char *param_3;
 short param_4;
 short param_5;
 short param_6;
@@ -4293,6 +5130,7 @@ short param_7;
       } while (iVar4 < iVar11);
     }
   }
+  debug_framebuffer_dump("FUN_000125a8");
   return;
 }
 
@@ -4351,7 +5189,8 @@ short param_6;
         iVar7 = iVar10 + iVar7;
       } while (iVar9 < iVar4);
     }
-    FUN_00022f0c(1);
+    debug_framebuffer_dump("FUN_00012850");
+    flush_dirty_rect_to_display(1);
   }
   return;
 }
@@ -4369,7 +5208,7 @@ void FUN_00012948()
 void FUN_0001294c()
 
 {
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -4398,11 +5237,11 @@ undefined4 FUN_00012970()
   set_draw_color(0);
   rect_fill_or_save_restore(0x34,0x13,0xe0,0x83);
   FUN_0001de0c();
-  FUN_0001f370(0,0);
+  near_clip_visible_tiles(0,0);
   FUN_0001dfe8(&DAT_000a85d0);
   FUN_0001e274(&DAT_000a85d0);
-  FUN_0001f370(&DAT_000a85d0,1);
-  FUN_00020370();
+  near_clip_visible_tiles(&DAT_000a85d0,1);
+  render_visible_tile_list();
   FUN_0005b8ac();
   return 0;
 }
@@ -4476,7 +5315,7 @@ LAB_000130d0:
       return DAT_000b462c;
     }
     if (param_3 == '\x06') {
-      FUN_00013170(bVar2,6,2);
+      blit_sprite_row_remapped(bVar2,6,2);
       DAT_000b462c = pbVar4;
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
@@ -4534,7 +5373,7 @@ LAB_000130d0:
     else {
       if (param_3 != '\b') {
         if (param_3 == '\n') {
-          FUN_00013170(bVar2,10,1);
+          blit_sprite_row_remapped(bVar2,10,1);
           DAT_000b462c = pbVar4;
           DAT_000b4628 = pbVar4;
           DAT_000b461c = pbVar4;
@@ -4561,7 +5400,7 @@ LAB_000130d0:
         }
         goto LAB_000130d0;
       }
-      FUN_00013170(bVar2,8,1);
+      blit_sprite_row_remapped(bVar2,8,1);
       DAT_000b462c = pbVar4;
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
@@ -4636,7 +5475,8 @@ uint param_4;
 
 
 
-void FUN_00013170(param_1,param_2,param_3,param_4)
+// was FUN_00013170
+void blit_sprite_row_remapped(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
 uint param_3;
@@ -5058,7 +5898,8 @@ undefined4 * param_2;
 
 
 
-void FUN_00014294()
+// was build_shade_lut -- build the 160-entry distance-shade LUT DAT_000b5638
+void build_shade_lut()
 
 {
   undefined4 uVar1;
@@ -5104,14 +5945,18 @@ char param_1;
 
 
 
-void FUN_00014350(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
+// was FUN_00014350 -- textured-triangle driver: viewport-culls, sorts
+// the 3 verts by Y, builds 3 edges via raster_edge_setup, walks
+// scanlines stepping edges (raster_edge_step) and emitting spans
+// (raster_textured_span)
+void raster_triangle(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 undefined4 param_1;
-undefined4 param_2;
+void *param_2; /* was undefined4 -- the framebuffer base (g_uw_framebuffer) */
 undefined4 * param_3;
 undefined4 param_4;
 undefined4 param_5;
 undefined4 param_6;
-undefined4 param_7;
+intptr_t param_7; /* was undefined4 -- the tile's texture pixel data pointer */
 int * param_8;
 
 {
@@ -5126,13 +5971,22 @@ int * param_8;
   uint uVar9;
   undefined4 uVar10;
   undefined4 uVar11;
+  /* auStack_c4 / auStack_7c were 12-byte locals but raster_edge_setup (called
+     on each below) writes its edge record out to param_6[10] == byte
+     0x2b, overflowing them; Ghidra named the tail of each overflow
+     `local_b8` / `local_70` (the param_6[3] scanline-count field, byte
+     0xc). Widened to real 72-byte buffers like their siblings and
+     local_b8 / local_70 folded back in as element [3]. With them
+     undersized the edge-walk counts came back as stack garbage, so
+     raster_triangle's `while (local_70 != 0 && ...)` never ran the span
+     rasterizer raster_textured_span. */
   undefined1 auStack_154 [72];
   undefined1 auStack_10c [72];
-  undefined1 auStack_c4 [12];
-  int local_b8;
-  undefined1 auStack_7c [12];
-  int local_70;
-  
+  undefined1 auStack_c4 [72];
+  undefined1 auStack_7c [72];
+#define local_b8 (*(int *)(auStack_c4 + 0xc))
+#define local_70 (*(int *)(auStack_7c + 0xc))
+
   uVar8 = param_3[6];
   uVar10 = param_3[0xb];
   uVar6 = param_3[1];
@@ -5208,10 +6062,10 @@ LAB_0001467c:
   uVar4 = 2;
   uVar9 = 2;
 LAB_00014684:
-  FUN_000148c8(param_3,auStack_10c);
-  FUN_00014ef4(auStack_10c,param_3,uVar11,uVar4,param_8[1],auStack_154);
-  FUN_00014ef4(auStack_10c,param_3,uVar11,uVar1,param_8[1],auStack_c4);
-  FUN_00014ef4(auStack_10c,param_3,uVar1,uVar4,param_8[1],auStack_7c);
+  raster_triangle_perspective_setup(param_3,auStack_10c);
+  raster_edge_setup(auStack_10c,param_3,uVar11,uVar4,param_8[1],auStack_154);
+  raster_edge_setup(auStack_10c,param_3,uVar11,uVar1,param_8[1],auStack_c4);
+  raster_edge_setup(auStack_10c,param_3,uVar1,uVar4,param_8[1],auStack_7c);
   if (uVar9 < uVar7) {
     puVar3 = auStack_154;
     puVar5 = auStack_c4;
@@ -5231,15 +6085,27 @@ LAB_00014684:
         puVar3 = auStack_7c;
         puVar5 = auStack_154;
       }
-      while ((local_70 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
+      /* Second-half (mid vertex -> bottom vertex) scanline walk. Ghidra
+         collapsed the original's private loop counter into the memory
+         reference `local_70` -- which IS the short edge auStack_7c's
+         remaining-scanline field (byte +0xc) -- AND kept an explicit
+         `local_70--`. raster_edge_step(auStack_7c) already decrements that
+         same field every iteration, so the counter was consumed twice per
+         scanline and the bottom half of every triangle drew only half its
+         rows. That was the diagonal white seam splitting each tile quad
+         (and the ceiling "wedge" gaps). Mirror the first-half loop above:
+         count down a private copy, let raster_edge_step own the edge
+         field. */
+      iVar2 = local_70;
+      while ((iVar2 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
         if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) &&
            (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)) {
-          FUN_0001548c(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,
+          raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,
                        param_4);
         }
-        FUN_00014868(auStack_7c);
-        FUN_00014868(auStack_154);
-        local_70 = local_70 + -1;
+        raster_edge_step(auStack_7c);
+        raster_edge_step(auStack_154);
+        iVar2 = iVar2 + -1;
       }
       return;
     }
@@ -5247,23 +6113,26 @@ LAB_00014684:
     if (param_8[3] <= *(int *)(puVar3 + 8)) break;
     if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) && (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)
        ) {
-      FUN_0001548c(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,param_4
+      raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,param_4
                   );
     }
-    FUN_00014868(auStack_c4);
-    FUN_00014868(auStack_154);
+    raster_edge_step(auStack_c4);
+    raster_edge_step(auStack_154);
   }
   return;
 }
+#undef local_b8
+#undef local_70
 
 
 
-int FUN_00014868(param_1)
-int param_1;
+// was FUN_00014868 -- advance one scanline down an edge record
+int raster_edge_step(param_1)
+intptr_t param_1; /* was int -- edge-walk struct pointer */
 
 {
   int iVar1;
-  
+
   *(int *)(param_1 + 8) = *(int *)(param_1 + 8) + 1;
   iVar1 = *(int *)(param_1 + 0xc) + -1;
   *(int *)(param_1 + 0xc) = iVar1;
@@ -5276,7 +6145,10 @@ int param_1;
 
 
 
-void FUN_000148c8(param_1,param_2)
+// was FUN_000148c8 -- per-triangle perspective setup: 1/w, u/w, v/w per
+// vertex plus the screen-space interpolation gradients, into the
+// edge-coefficient array raster_edge_setup reads
+void raster_triangle_perspective_setup(param_1,param_2)
 undefined4 * param_1;
 undefined4 * param_2;
 
@@ -5387,9 +6259,11 @@ undefined4 * param_2;
 
 
 
-void FUN_00014ef4(param_1,param_2,param_3,param_4,param_5,param_6)
-int param_1;
-int param_2;
+// was FUN_00014ef4 -- per-edge setup: given two vertex indices, the
+// starting value and per-scanline step for x, u/w, v/w and 1/w
+void raster_edge_setup(param_1,param_2,param_3,param_4,param_5,param_6)
+intptr_t param_1; /* was int -- edge-coeff array pointer */
+intptr_t param_2; /* was int -- vertex array pointer (stride 0x14) */
 int param_3;
 int param_4;
 int param_5;
@@ -5509,15 +6383,18 @@ undefined4 * param_6;
 
 
 
-void FUN_0001548c(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
+// was FUN_0001548c -- the textured span rasterizer: for one scanline
+// span between two edges, perspective-divides per pixel, samples the
+// tile texture, shade-corrects and writes RGB565 into g_uw_framebuffer
+void raster_textured_span(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
 int param_1;
-int param_2;
-int param_3;
-int param_4;
-int param_5;
+intptr_t param_2; /* framebuffer base */
+intptr_t param_3; /* edge struct */
+intptr_t param_4; /* edge struct */
+intptr_t param_5; /* edge struct */
 int param_6;
 int param_7;
-int param_8;
+intptr_t param_8; /* texture pixel data */
 int * param_9;
 byte param_10;
 
@@ -5533,14 +6410,23 @@ byte param_10;
   int iVar9;
   ushort *puVar10;
   int iVar11;
-  char *iVar12;
+  /* Ghidra merged two different variables into one `char *iVar12`: the
+     DAT_0023cca0-based stencil-buffer walker (used up to the puVar13
+     init) and, inside the span loop, a plain signed texel index. As a
+     pointer type the guard `-1 < iVar12` and the wrap test
+     `param_7 < iVar12` were unsigned pointer compares -- `-1` became
+     0xFFFF...F so `-1 < iVar12` was ALWAYS false and the texel fetch
+     `bVar1 = *(byte*)(iVar12 + param_8)` never ran (every span sampled
+     the flat fallback colour 0 -> nothing drawn). Signed intptr_t makes
+     both roles behave. */
+  intptr_t iVar12;
   undefined1 *puVar13;
   int iVar14;
   int local_38;
   int local_34;
-  int local_4;
+  intptr_t local_4; /* fb row pointer */
   
-  iVar12 = DAT_0023cca0;
+  iVar12 = (intptr_t)DAT_0023cca0;
   uVar2 = *(uint *)(param_4 + 0x28);
   uVar8 = uVar2 & 0x3fff;
   if (uVar8 != 0) {
@@ -5635,14 +6521,34 @@ byte param_10;
 
 
 
-bool FUN_00015870(param_1)
+// was FUN_00015870
+/* param_2 was dropped entirely -- declared with only 1 parameter but
+   every caller passes 2 (the filename to open, e.g.
+   s__SAVE0_lev_ark_000842fc). `Ordinal_1063(local_120);` (a strcat-
+   shaped Ordinal used with an explicit 2-arg form everywhere else in
+   this file) was being called with just 1 visible argument, relying on
+   whatever the compiler happened to leave in the dropped argument's
+   register -- and `local_120` itself was never initialized first
+   either, so the "destination" that register leftover got appended
+   onto was uninitialized stack garbage, not an empty string. Confirmed
+   via lldb (this exact call site): this "worked" for the level-load
+   caller purely because the stack garbage there happened to already
+   read as an empty string, and broke for the automap-entry caller
+   (FUN_00016434, exercised for the first time by the new OPENMAP
+   demomode command) once different preceding activity left a stray
+   0x01 byte on the stack instead, producing a corrupt filename
+   ("\x01\SAVE0\lev.ark") and a failed file open. Fixed by copying
+   param_2 into local_120 directly instead of relying on either the
+   DAT_0023cca8 scratch-buffer copy or the dropped-argument concat --
+   neither was ever the real filename source. */
+bool open_level_archive(param_1,param_2)
 undefined1 * param_1;
+char * param_2;
 
 {
-  char stack0xffdc3238_buf [256];
-  char *stack0xffdc3238_ptr;
   char cVar1;
   char *pcVar2;
+  char *pcVar9;
   int iVar3;
   int iVar4;
   int iVar5;
@@ -5652,15 +6558,14 @@ undefined1 * param_1;
   ushort local_230 [4];
   char local_228 [264];
   char local_120 [260];
-  
-  pcVar2 = &DAT_0023cca8;
-    stack0xffdc3238_ptr = stack0xffdc3238_buf;
+
+  pcVar2 = param_2;
+  pcVar9 = local_120;
   do {
     cVar1 = *pcVar2;
-    *stack0xffdc3238_ptr = cVar1; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
+    *pcVar9 = cVar1; pcVar9 = pcVar9 + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(local_120);
   iVar3 = 0;
   do {
     pcVar2 = local_120 + iVar3;
@@ -5786,25 +6691,25 @@ uint param_4;
   
   iVar8 = (param_2 & 0xffff) * 4;
   uVar16 = 0;
-  uVar15 = *(uint *)(*(int *)((char *)param_1 + 10) + iVar8);
+  /* param_1+0xa..0xd held the literal 0x000b78b8 (&DAT_000b78b8's address
+     in the original 32-bit binary) as the .ark entry-offset table
+     pointer -- see FUN_0001613c's matching comment. The table is a fixed
+     global; use its real address. */
+  uVar15 = *(uint *)((char *)&DAT_000b78b8 + iVar8);
   if ((param_2 & 0xffff) <= (uint)*(ushort *)(param_1 + 2)) {
     if (uVar15 == 0) {
       uVar4 = FUN_00022850(*param_1,0,2);
       uVar15 = FUN_00022884(*param_1,param_3,param_4 & 0xffff);
       *(undefined1 *)((char *)param_1 + 0xe) = 1;
-      *(undefined4 *)
-       (CONCAT13(*(undefined1 *)((char *)param_1 + 0xd),
-                 CONCAT12(*(undefined1 *)(param_1 + 3),
-                          CONCAT11(*(undefined1 *)((char *)param_1 + 0xb),
-                                   *(undefined1 *)((char *)param_1 + 10)))) + iVar8) = uVar4;
+      *(undefined4 *)((char *)&DAT_000b78b8 + iVar8) = uVar4;
       return uVar15 == (param_4 & 0xffff);
     }
     iVar5 = FUN_00022850(*param_1,0,2);
-    uVar17 = iVar5 - *(int *)(*(int *)((char *)param_1 + 10) + iVar8);
+    uVar17 = iVar5 - *(int *)((char *)&DAT_000b78b8 + iVar8);
     if (*(ushort *)(param_1 + 2) != 0) {
       uVar12 = 0;
       do {
-        uVar6 = *(uint *)(*(int *)((char *)param_1 + 10) + uVar12 * 4);
+        uVar6 = *(uint *)((char *)&DAT_000b78b8 + uVar12 * 4);
         uVar13 = uVar6 - uVar15;
         if ((uVar15 < uVar6) && (uVar13 < uVar17)) {
           uVar17 = uVar13;
@@ -5842,7 +6747,7 @@ uint param_4;
       if (*(short *)(param_1 + 2) != 0) {
         uVar12 = 0;
         do {
-          puVar7 = (uint *)(*(int *)((char *)param_1 + 10) + uVar12 * 4);
+          puVar7 = (uint *)((char *)&DAT_000b78b8 + uVar12 * 4);
           uVar6 = *puVar7;
           if (uVar6 != 0 && uVar15 < uVar6) {
             *puVar7 = uVar6 - (uVar17 & 0xffff);
@@ -5852,7 +6757,7 @@ uint param_4;
       }
       pcVar14 = &DAT_000b98b8;
     wptr_4897 = acStack_b9ae8;
-      *(uint *)(*(int *)((char *)param_1 + 10) + iVar8) = uVar16;
+      *(uint *)((char *)&DAT_000b78b8 + iVar8) = uVar16;
       do {
         cVar1 = *pcVar14;
         *wptr_4897 = cVar1; wptr_4897 = wptr_4897 + 1;
@@ -5916,7 +6821,12 @@ uint param_4;
 undefined2 FUN_0001613c(param_1,param_2,param_3)
 undefined4 * param_1;
 uint param_2;
-undefined4 param_3;
+/* Was `undefined4`, truncating the real destination buffer pointer the
+   callers pass (FUN_000499c0: the malloc'd DAT_002029cc workspace;
+   FUN_000164e4: &DAT_000b99d0). Forwarded straight to FUN_0002285c
+   (uw_file_read), which needs a valid pointer -- the truncated value
+   segfaulted the level loader on the first real read. */
+void *param_3;
 
 {
   undefined2 uVar1;
@@ -5927,8 +6837,16 @@ undefined4 param_3;
   uint uVar6;
   uint uVar7;
   
+  /* param_1+10 (bytes 0xa..0xd) held the literal address 0x000b78b8 --
+     &DAT_000b78b8's location in the ORIGINAL 32-bit binary -- baked in by
+     open_level_archive as the .ark entry-offset table pointer. That table is a
+     single fixed global (open_level_archive/FUN_00015a58 read the archive
+     straight into &DAT_000b78b8), so on this recompile just use its real
+     address instead of the truncated literal (which dereferenced as
+     ~0xb78b8 and crashed the level loader). Same "hardcoded original-
+     binary address" bug class as FUN_0006bde0's -0x87020. */
   if (((uint)*(ushort *)(param_1 + 2) < (param_2 & 0xffff)) ||
-     (uVar6 = *(uint *)(*(int *)((char *)param_1 + 10) + (param_2 & 0xffff) * 4), uVar6 == 0)) {
+     (uVar6 = *(uint *)((char *)&DAT_000b78b8 + (param_2 & 0xffff) * 4), uVar6 == 0)) {
     uVar1 = 0;
   }
   else {
@@ -5937,7 +6855,7 @@ undefined4 param_3;
     if (*(ushort *)(param_1 + 2) != 0) {
       uVar5 = 0;
       do {
-        uVar3 = *(uint *)(*(int *)((char *)param_1 + 10) + uVar5 * 4);
+        uVar3 = *(uint *)((char *)&DAT_000b78b8 + uVar5 * 4);
         uVar4 = uVar3 - uVar6;
         if (uVar3 <= uVar6) {
           uVar4 = 0;
@@ -5995,18 +6913,19 @@ uint param_2;
 
 
 
-void FUN_00016354()
+// was FUN_00016354
+void enter_automap_screen()
 
 {
   if (DAT_000bbefc == 0) {
-    FUN_0004213c(0x1b,1,2,FUN_0003bcb8);
+    register_key_binding(0x1b,1,2,change_game_mode);
     DAT_000bbefc = 1;
   }
   FUN_000735b0(0xd);
   FUN_00073634();
   FUN_00016434(0,(int)DAT_00201b68);
-  FUN_00017908((int)DAT_00201b68);
-  DAT_000b99c0 = FUN_0004202c(0,200,0x13f,1,0,2,FUN_00016ef8);
+  draw_automap_screen((int)DAT_00201b68);
+  DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,FUN_00016ef8);
   FUN_00057788(0,199,0x13f,0);
   FUN_00057118();
   FUN_00057c5c(0x1078);
@@ -6031,7 +6950,7 @@ int param_2;
   undefined1 auStack_1c [16];
   
   if (param_1 == (undefined1 *)0x0) {
-    iVar2 = FUN_00015870(auStack_1c,s__SAVE0_lev_ark_000842fc);
+    iVar2 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc);
     if (iVar2 == 0) {
       return 0;
     }
@@ -6074,7 +6993,9 @@ int param_2;
 
 
 undefined4 FUN_000164e4(param_1,param_2)
-undefined4 param_1;
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before
+   FUN_0001613c. */
+undefined1 * param_1;
 int param_2;
 
 {
@@ -6090,18 +7011,19 @@ int param_2;
 
 
 
-void FUN_0001651c()
+// was FUN_0001651c
+void exit_automap_screen()
 
 {
   int iVar1;
   undefined1 auStack_1c [16];
   
   FUN_00057118();
-  FUN_0004221c((int)DAT_000b99c0);
+  unregister_key_binding((int)DAT_000b99c0);
   FUN_00057cac(0);
   FUN_00017768((int)DAT_000ba9d0);
   if ((DAT_000ba9d0 != DAT_00201b68) &&
-     (iVar1 = FUN_00015870(auStack_1c,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
+     (iVar1 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
     FUN_000164e4(auStack_1c,(int)DAT_00201b68);
     FUN_00015a58(auStack_1c);
   }
@@ -6124,7 +7046,8 @@ void FUN_000165bc()
 
 
 
-void FUN_000165d0()
+// was FUN_000165d0
+void draw_automap_tiles()
 
 {
   char cVar1;
@@ -6143,28 +7066,28 @@ void FUN_000165d0()
       uVar4 = (byte)(&DAT_000b99d0)[local_3c * 0x40 + iVar6] & 0xf;
       uVar5 = (uint)(short)uVar4;
       if ((uVar5 != 0) && (uVar5 < 10)) {
-        FUN_00016948(uVar4,iVar6,local_3c);
+        draw_automap_cell(uVar4,iVar6,local_3c);
         Ordinal_1047(local_34,0,0x10);
         if (((&DAT_000878d0)[uVar5] & 1) == 0) {
           iVar2 = 0;
           do {
-            iVar3 = FUN_000167d4(iVar2,iVar6,local_3c);
+            iVar3 = draw_automap_cell_edge(iVar2,iVar6,local_3c);
             local_34[iVar2] = iVar3;
             iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
           } while (iVar2 < 4);
         }
         else {
           cVar1 = (&DAT_000842f0)[(int)((uVar4 - 2) * 0x10000) >> 0x10];
-          iVar2 = FUN_000167d4((int)cVar1,iVar6,local_3c);
+          iVar2 = draw_automap_cell_edge((int)cVar1,iVar6,local_3c);
           local_34[(short)cVar1] = iVar2;
           uVar5 = (int)cVar1 + 1U & 3;
-          iVar2 = FUN_000167d4(uVar5,iVar6,local_3c);
+          iVar2 = draw_automap_cell_edge(uVar5,iVar6,local_3c);
           local_34[(short)uVar5] = iVar2;
         }
         uVar5 = 0;
         do {
           if ((local_34[uVar5] != 0) && (local_34[uVar5 + 1 & 3] != 0)) {
-            FUN_00016940((((int)((uVar5 & 2) * -0x20000) >> 0x10) +
+            darken_pixel((((int)((uVar5 & 2) * -0x20000) >> 0x10) +
                          ((iVar6 * 3 + 10) * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                          (((int)((uVar5 & 2) * -0x20000) >> 0x10) +
                          ((local_3c * 3 + 7) * 0x10000 >> 0x10)) * 0x10000 >> 0x10,3,2);
@@ -6181,7 +7104,8 @@ void FUN_000165d0()
 
 
 
-undefined4 FUN_000167d4(param_1,param_2,param_3)
+// was FUN_000167d4
+undefined4 draw_automap_cell_edge(param_1,param_2,param_3)
 short param_1;
 int param_2;
 int param_3;
@@ -6228,7 +7152,7 @@ int param_3;
 LAB_000168f8:
     iVar2 = 0;
     do {
-      FUN_00016940((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1,uVar4,uVar5);
+      darken_pixel((iVar2 + (iVar3 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,iVar7 + -1,uVar4,uVar5);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
   }
@@ -6244,7 +7168,7 @@ LAB_000168f8:
     }
     iVar2 = 0;
     do {
-      FUN_00016940(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10,uVar4,uVar5);
+      darken_pixel(iVar3 + -1,((iVar7 * 0x10000 >> 0x10) + iVar2) * 0x10000 >> 0x10,uVar4,uVar5);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
   }
@@ -6255,23 +7179,52 @@ LAB_000168f8:
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00016940(param_1,param_2)
+// was FUN_00016940
+void darken_pixel(param_1,param_2)
 uint param_1;
 int param_2;
 
 {
   ushort *puVar1;
-  
+
   puVar1 = (ushort *)
            ((g_uw_framebuffer) +
            ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
   *puVar1 = *puVar1 >> 1 & 0x7bef;
+  debug_framebuffer_dump("darken_pixel");
   return;
 }
 
 
 
-void FUN_00016948(param_1,param_2,param_3)
+/* Like darken_pixel but only a 25% cut (x 3/4 brightness) instead of a
+   halve: RGB565 (px>>1 & 0x7bef) + (px>>2 & 0x39e7).  Not in the
+   original binary -- the Pocket-PC automap 50%-darkens explored floor
+   via darken_pixel, which comes out far darker than the reference map
+   (whose explored floor is a light tint over the parchment).  Used
+   only for the draw_automap_cell floor fill; wall edges / accent
+   pixels keep the faithful darken_pixel. */
+void darken_pixel_light(param_1,param_2)
+uint param_1;
+int param_2;
+
+{
+  ushort *puVar1;
+  ushort uVar2;
+
+  puVar1 = (ushort *)
+           ((g_uw_framebuffer) +
+           ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
+  uVar2 = *puVar1;
+  *puVar1 = (uVar2 >> 1 & 0x7bef) + (uVar2 >> 2 & 0x39e7);
+  debug_framebuffer_dump("darken_pixel_light");
+  return;
+}
+
+
+
+// was FUN_00016948
+void draw_automap_cell(param_1,param_2,param_3)
 int param_1;
 int param_2;
 int param_3;
@@ -6310,22 +7263,27 @@ int param_3;
         if ((&DAT_000842c0)[(((param_1 + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
             '\x01') {
           if (bVar1 == 0) {
-            uVar7 = 3;
-            uVar4 = 2;
-            goto LAB_00016acc;
+            /* Normal explored floor. The binary calls darken_pixel
+               here (uVar4/uVar7 args are ignored by it) for a 50%
+               darken; that's much darker than the reference automap,
+               so use the 25% darken instead. Deliberate deviation. */
+            darken_pixel_light(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
+                       ((int)(short)uVar8 + (iVar11 * 0x10000 >> 0x10)) * 0x10000 >> 0x10);
+            goto LAB_00016b00;
           }
           if (bVar1 == 1) {
-            uVar4 = Ordinal_1053();
-            Ordinal_2005(2,uVar4);
-            iVar5 = extraout_r1_00 + 0xb1;
+            /* Water fill: (rand % 2) + 0xb1 -> a 2-tone dither between
+               palette 0xb1/0xb2, not a flat 0xb1. The original reads
+               the modulo from Ordinal_2005's r1 (remainder) leftover;
+               Ghidra lost that into an uninitialised `extraout_r1`, so
+               compute `& 1` on the rand directly. */
+            iVar5 = ((int)Ordinal_1053() & 1) + 0xb1;
           }
           else {
             if (bVar1 != 2) goto LAB_00016b00;
-            uVar4 = Ordinal_1053();
-            Ordinal_2005(2,uVar4);
-            iVar5 = extraout_r1 + 0xb5;
+            iVar5 = ((int)Ordinal_1053() & 1) + 0xb5;
           }
-          FUN_0007e9c4(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
+          plot_pixel(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar8) + 200,iVar5);
         }
         else if ((&DAT_000842c0)[(((param_1 + -1) * 0x10000 >> 0x10) * 3 + uVar12) * 3 + uVar13] ==
@@ -6333,7 +7291,7 @@ int param_3;
           uVar7 = 2;
           uVar4 = 6;
 LAB_00016acc:
-          FUN_00016940(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
+          darken_pixel(((int)(short)uVar9 + (iVar10 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,
                        ((int)(short)uVar8 + (iVar11 * 0x10000 >> 0x10)) * 0x10000 >> 0x10,uVar4,
                        uVar7);
         }
@@ -6345,7 +7303,7 @@ LAB_00016b00:
       uVar13 = uVar13 + 1 & 0xffff;
     } while (uVar13 < 3);
     if (bVar2 == 4) {
-      FUN_00016c70((int)(short)param_2,(int)(short)param_3,iVar10,iVar11);
+      draw_automap_door_edge((int)(short)param_2,(int)(short)param_3,iVar10,iVar11);
     }
     else if (bVar2 == 8) {
       uVar9 = 0;
@@ -6353,8 +7311,8 @@ LAB_00016b00:
         uVar13 = 0;
         uVar6 = 0;
         do {
-          sVar3 = FUN_00022910(3);
-          FUN_0007e9c4(uVar13 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
+          sVar3 = rand_below(3);
+          plot_pixel(uVar13 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
                        (((iVar11 * 0x10000 >> 0x10) * -0x10000 >> 0x10) - uVar9) + 200,sVar3 + 0xe9)
           ;
           uVar6 = uVar6 + 1;
@@ -6369,7 +7327,7 @@ LAB_00016b00:
         uVar13 = 0;
         uVar6 = 0;
         do {
-          FUN_00016940(uVar9 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
+          darken_pixel(uVar9 + (int)(short)((uint)(iVar10 * 0x10000) >> 0x10),
                        uVar13 + (int)(short)((uint)(iVar11 * 0x10000) >> 0x10),6,3);
           uVar6 = uVar6 + 1;
           uVar13 = (uint)uVar6;
@@ -6383,7 +7341,8 @@ LAB_00016b00:
 
 
 
-void FUN_00016c70(param_1,param_2,param_3,param_4)
+// was FUN_00016c70
+void draw_automap_door_edge(param_1,param_2,param_3,param_4)
 short param_1;
 short param_2;
 int param_3;
@@ -6395,7 +7354,7 @@ int param_4;
   
   param_4 = param_4 + 1;
   param_3 = param_3 + 1;
-  FUN_00016940(param_3,param_4,6,3);
+  darken_pixel(param_3,param_4,6,3);
   iVar2 = 0;
   DAT_000ba9d4 = '\0';
   while( true ) {
@@ -6412,9 +7371,9 @@ int param_4;
       return;
     }
   }
-  FUN_00016940(param_3 + (char)(&DAT_000842f4)[(char)iVar2],
+  darken_pixel(param_3 + (char)(&DAT_000842f4)[(char)iVar2],
                param_4 + (char)(&DAT_000842f8)[(char)iVar2],6,3);
-  FUN_00016940(param_3 - (char)(&DAT_000842f4)[DAT_000ba9d4],
+  darken_pixel(param_3 - (char)(&DAT_000842f4)[DAT_000ba9d4],
                param_4 - (char)(&DAT_000842f8)[DAT_000ba9d4],6,3);
   return;
 }
@@ -6541,7 +7500,7 @@ LAB_000170bc:
   }
   else {
     sVar2 = 0xff;
-    FUN_0003bcb8(1);
+    change_game_mode(1);
   }
   if (sVar2 == 0xfb) {
     if (0x62 < DAT_000ba9d0) goto LAB_0001764c;
@@ -6682,9 +7641,9 @@ LAB_000171d0:
     iVar4 = FUN_000112a0(local_58);
     iVar8 = *(short *)(&DAT_000baa0a + iVar7) + iVar4 + -1;
     FUN_00057590(*(short *)(&DAT_000baa0a + iVar7) + iVar4 + 9,local_60 + -0x12);
-    FUN_00011060(local_58,(int)*(short *)(&DAT_000baa0a + iVar7),
+    draw_text_string(local_58,(int)*(short *)(&DAT_000baa0a + iVar7),
                  (int)*(short *)(&DAT_000baa0c + iVar7));
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
   }
   goto LAB_000171bc;
 LAB_0001739c:
@@ -6699,13 +7658,13 @@ LAB_0001739c:
     } while (cVar1 != '\0');
     DAT_000bbef0 = DAT_000bbef0 + 1;
   }
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
 LAB_00017404:
   FUN_00057118();
   FUN_0001765c();
   FUN_00057590(iVar8 + 0x16,local_60 + -7);
   FUN_00057cac(2);
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   DAT_000bbef8 = 0;
   DAT_000bbef4 = 1;
   goto LAB_0001764c;
@@ -6752,7 +7711,7 @@ void FUN_0001765c()
           *wptr_5787 = cVar1; wptr_5787 = wptr_5787 + 1;
           pcVar3 = pcVar3 + 1;
         } while (cVar1 != '\0');
-        FUN_00011060(auStack_48,(int)sVar2,(int)*(short *)(&DAT_000baa0c + iVar4));
+        draw_text_string(auStack_48,(int)sVar2,(int)*(short *)(&DAT_000baa0c + iVar4));
         sVar6 = DAT_000bbef0;
       }
       iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
@@ -6793,7 +7752,7 @@ int param_1;
         } while (iVar4 < iVar2);
       }
       DAT_000bbef0 = sVar1;
-      iVar2 = FUN_00015870(auStack_2c,s__SAVE0_lev_ark_000842fc);
+      iVar2 = open_level_archive(auStack_2c,s__SAVE0_lev_ark_000842fc);
       if (iVar2 != 0) {
         FUN_00015b94(auStack_2c,param_1 + 0x23,&DAT_000ba9d8,(uint)(DAT_000bbef0 * 0x360000) >> 0x10
                     );
@@ -6816,7 +7775,7 @@ int param_1;
   
   DAT_000bbef0 = 0;
   DAT_000b99c8 = 0;
-  iVar2 = FUN_00015870(auStack_20,s__SAVE0_lev_ark_000842fc);
+  iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   if (iVar2 != 0) {
     uVar1 = FUN_0001613c(auStack_20,param_1 + 0x23,&DAT_000ba9d8);
     DAT_000b99c8 = Ordinal_2008(0x36,uVar1);
@@ -6829,7 +7788,15 @@ int param_1;
 
 
 
-void FUN_00017908(param_1)
+// was FUN_00017908
+/* uVar3 was `undefined4` (4 bytes), truncating Ordinal_1041's real
+   64-bit malloc'd pointer on this host -- same pointer-truncation
+   pattern fixed repeatedly this session. Confirmed via lldb: this is
+   why the automap screen loaded blnkmap.byt's file handle successfully
+   but FUN_0007ee4c (the actual read-into-buffer call) still failed --
+   it was reading 64000 real bytes into a wild, truncated destination
+   address instead of the buffer Ordinal_1041 actually allocated. */
+void draw_automap_screen(param_1)
 undefined4 param_1;
 
 {
@@ -6837,12 +7804,12 @@ undefined4 param_1;
   char *stack0xffdc323c_ptr;
   char cVar1;
   short sVar2;
-  undefined4 uVar3;
+  void *uVar3;
   char *pcVar4;
   int iVar5;
   undefined1 auStack_124 [8];
   char acStack_11c [260];
-  
+
   uVar3 = Ordinal_1041(64000);
   FUN_00057118();
   pcVar4 = &DAT_0023cca8;
@@ -6856,22 +7823,22 @@ undefined4 param_1;
   iVar5 = FUN_0007ee4c(acStack_11c,uVar3,64000);
   if (iVar5 == 0) {
     FUN_000570b4();
-    FUN_0001651c();
+    exit_automap_screen();
   }
   else {
     FUN_000116a4(0,0,0x13f,199);
-    FUN_00040efc(1);
+    set_palette_bank(1);
     bitmap_blit_to_framebuffer(0,1,uVar3,200,0x140,0,0,1);
-    FUN_000165d0();
+    draw_automap_tiles();
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
       DAT_00088960 = 1;
-      FUN_00040b0c(0x103f,((*(ushort *)(DAT_0023be64 + 0x16) >> 10) + 2) * 3,
+      draw_sprite_by_id(0x103f,((*(ushort *)(DAT_0023be64 + 0x16) >> 10) + 2) * 3,
                    (((*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
       DAT_00088960 = 0;
     }
     DAT_000ba9d0 = (short)param_1;
-    FUN_00040efc(1);
+    set_palette_bank(1);
     screen_backup_save();
     FUN_0001786c(param_1);
     *DAT_0008429c = 0x2d;
@@ -6883,7 +7850,7 @@ undefined4 param_1;
     if (iVar5 < 0) {
       iVar5 = iVar5 + 1;
     }
-    FUN_00011060(auStack_124,0x121 - (short)(iVar5 >> 1),6);
+    draw_text_string(auStack_124,0x121 - (short)(iVar5 >> 1),6);
     FUN_00040d00(s_font5x6p_sys_0008430c);
   }
   DAT_000bbef4 = 1;
@@ -6904,11 +7871,11 @@ undefined4 param_1;
   FUN_00017768((int)DAT_000ba9d0);
   FUN_000165bc();
   if (((short)param_1 < 9) &&
-     (iVar1 = FUN_00015870(auStack_18,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
+     (iVar1 = open_level_archive(auStack_18,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
     FUN_000164e4(auStack_18,param_1);
     FUN_00015a58(auStack_18);
   }
-  FUN_00017908(param_1);
+  draw_automap_screen(param_1);
   return;
 }
 
@@ -6977,8 +7944,8 @@ int param_1;
     iVar12 = (int)(short)iVar10;
     do {
       while (iVar5 <= sVar8) {
-        iVar5 = FUN_00068100(iVar9,iVar10);
-        puVar7 = (ushort *)FUN_00053514(iVar5 + 2);
+        iVar5 = tilemap_lookup(iVar9,iVar10);
+        puVar7 = (ushort *)resolve_object_link(iVar5 + 2);
         if (puVar7 != (ushort *)0x0) {
           do {
             if ((((*puVar7 & 0x1ff) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7[5] & 0x80) == 0)) &&
@@ -6987,7 +7954,7 @@ int param_1;
               *(char *)((char *)puVar7 + 0xd) = (char)uVar11;
               *(byte *)(puVar7 + 7) = (byte)(uVar11 >> 8) | (byte)(((uVar2 & 3) << 0xe) >> 8);
             }
-            puVar7 = (ushort *)FUN_00053514(puVar7 + 2);
+            puVar7 = (ushort *)resolve_object_link(puVar7 + 2);
           } while (puVar7 != (ushort *)0x0);
         }
         iVar9 = iVar9 + 1;
@@ -7064,13 +8031,13 @@ int param_1;
   if ((uVar2 & 0xffc0) != 0) {
     do {
       if ((uint)(uVar2 >> 6) == (int)(short)uVar3) break;
-      iVar8 = FUN_00053514();
+      iVar8 = resolve_object_link();
       puVar7 = (ushort *)(iVar8 + 4);
       uVar2 = *puVar7;
     } while ((uVar2 & 0xffc0) != 0);
   }
   if ((*puVar7 & 0xffc0) != 0) {
-    FUN_00053274(DAT_00100674 + 6,puVar4);
+    object_list_unlink(DAT_00100674 + 6,puVar4);
   }
   iVar8 = (int)(short)uVar5;
   if (iVar8 < 0) {
@@ -7085,7 +8052,7 @@ LAB_0001818c:
   else {
     if ((((0 < iVar8) && (iVar8 < 0x40)) && (iVar1 = (int)(short)uVar6, 0 < iVar1)) &&
        (iVar1 < 0x40)) {
-      pbVar9 = (byte *)FUN_00068100(uVar5,uVar6);
+      pbVar9 = (byte *)tilemap_lookup(uVar5,uVar6);
       uVar2 = *(ushort *)(puVar4 + 2);
       puVar4[2] = (byte)(uVar2 & 0xff80) | *pbVar9 >> 1 & 0x78;
       puVar4[3] = (char)((uVar2 & 0xff80) >> 8);
@@ -7093,7 +8060,7 @@ LAB_0001818c:
                            (iVar1 << 0x13) >> 0x10,(ushort)(*pbVar9 >> 4) << 3,1,
                            ((&DAT_00202c91)[(CONCAT11(puVar4[1],*puVar4) & 0x1ff) * 0xd] & 7) + 4);
       if (iVar8 != 0) {
-        FUN_000531a0(pbVar9 + 2,puVar4);
+        object_list_append_tail(pbVar9 + 2,puVar4);
         FUN_00055f98(puVar4,uVar5,uVar6,1);
         goto LAB_0001818c;
       }
@@ -7120,7 +8087,7 @@ int param_1;
   if (0 < sVar1) {
     do {
       if ((*puVar2 & 0xffc0) == 0) break;
-      iVar3 = FUN_00053514();
+      iVar3 = resolve_object_link();
       iVar4 = iVar4 + 1;
       puVar2 = (ushort *)(iVar3 + 4);
     } while (iVar4 * 0x10000 >> 0x10 < (int)sVar1);
@@ -7138,7 +8105,7 @@ int param_1;
   
   FUN_0001adc4((int)*(short *)(param_1 + -2));
   uVar1 = FUN_000535fc();
-  FUN_000531a0(DAT_00100674 + 6,uVar1);
+  object_list_append_tail(DAT_00100674 + 6,uVar1);
   return;
 }
 
@@ -7149,7 +8116,7 @@ void FUN_0001825c()
 {
   int iVar1;
   
-  iVar1 = FUN_00068100(*(ushort *)(DAT_00100674 + 0x16) >> 10,
+  iVar1 = tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
                        (*(ushort *)(DAT_00100674 + 0x16) & 0x3f0) >> 4);
   FUN_00053334(iVar1 + 2,DAT_00100674,1);
   return;
@@ -7230,7 +8197,7 @@ int param_1;
   
   uVar4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
   uVar5 = FUN_0001adc4((int)*(short *)(param_1 + -6));
-  local_24 = FUN_00068100(uVar5,uVar4);
+  local_24 = tilemap_lookup(uVar5,uVar4);
   local_24 = local_24 + 2;
   iVar6 = FUN_000537d0(&local_24,0,5,0,0xffff);
   if ((iVar6 == 0) && (iVar6 = FUN_000537d0(&local_24,0,7,0,0xf), iVar6 == 0)) {
@@ -7411,7 +8378,7 @@ int param_1;
         uVar8 = (uVar8 ^ *(ushort *)(iVar5 + 2)) & 0x7f ^ *(ushort *)(iVar5 + 2);
       }
       else {
-        pbVar6 = (byte *)FUN_00068100((int)(short)*puVar2,(int)*psVar3);
+        pbVar6 = (byte *)tilemap_lookup((int)(short)*puVar2,(int)*psVar3);
         uVar8 = *pbVar6 >> 1 & 0x78 | *(ushort *)(iVar5 + 2) & 0xff80;
       }
       *(char *)(iVar5 + 2) = (char)uVar8;
@@ -7785,7 +8752,7 @@ undefined4 param_2;
   FUN_00019660(param_2);
   DAT_000bbf30 = 0;
   DAT_000bbf20 = param_1;
-  iVar2 = FUN_00015870(auStack_20,param_1);
+  iVar2 = open_level_archive(auStack_20,param_1);
   if (iVar2 == 0) {
     FUN_0003c3c8(0x300a);
   }
@@ -7798,8 +8765,7 @@ undefined4 param_2;
     sVar1 = FUN_0001613c(auStack_20,DAT_001007c4);
     FUN_00015a58(auStack_20);
     if (sVar1 < 1) {
-      FUN_0007863c(0xe01);
-      FUN_0007f570();
+      FUN_0007f570(FUN_0007863c(0xe01)); // was two separate calls with FUN_0007f570()'s arg dropped; fresh Ghidra disassembly (0x44c90-0x44c94) shows no register load between the two `bl`s -- FUN_0007863c's return (char *) flows straight into FUN_0007f570 as its argument
       return 1;
     }
   }
@@ -7856,7 +8822,7 @@ int param_1;
   short sVar1;
   
   sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
-  sVar1 = FUN_00022910((int)sVar1);
+  sVar1 = rand_below((int)sVar1);
   return sVar1 + 1;
 }
 
@@ -8376,7 +9342,7 @@ undefined4 FUN_0001a1c8()
   if (*DAT_000bbf80 == 0x22) {
     sVar2 = 1;
     do {
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
       psVar7 = DAT_000bbf80 + DAT_000bbf74;
       switch(*psVar7) {
       case 0:
@@ -9227,13 +10193,13 @@ void FUN_0001b288()
     FUN_000798c4();
   }
   iVar13 = DAT_00100674 + 6;
-  puVar6 = (ushort *)FUN_00053514(iVar13);
+  puVar6 = (ushort *)resolve_object_link(iVar13);
   iVar12 = 0;
   puVar14 = (ushort *)0x0;
   while (((puVar6 != (ushort *)0x0 && (puVar6 != puVar14)) &&
          (iVar1 = (int)sVar11, sVar11 = (short)((uint)((iVar1 + 1) * 0x10000) >> 0x10), iVar1 < 0x28
          ))) {
-    puVar7 = (ushort *)FUN_00053514(puVar6 + 2);
+    puVar7 = (ushort *)resolve_object_link(puVar6 + 2);
     if ((((*puVar6 & 0x30) == 0) && (!bVar2)) ||
        ((*(short *)(&DAT_00202c95 + (*puVar6 & 0x1ff) * 0xd) == 0 ||
         ((bVar3 && (uVar8 = Ordinal_1053(), (uVar8 & 7) < 5)))))) {
@@ -9244,14 +10210,14 @@ void FUN_0001b288()
       }
     }
     else {
-      FUN_00053274(iVar13,puVar6);
+      object_list_unlink(iVar13,puVar6);
       psVar10 = &DAT_000bbfe8 + (short)iVar12;
       if (*psVar10 != 0) {
         if (puVar14 == (ushort *)0x0) {
           puVar14 = (ushort *)FUN_000535fc((int)*psVar10);
         }
         uVar9 = FUN_000535fc((int)*psVar10);
-        FUN_000530c4(DAT_00100674 + 6,uVar9);
+        object_list_insert_head(DAT_00100674 + 6,uVar9);
       }
       sVar5 = FUN_0005358c(puVar6);
       *psVar10 = sVar5;
@@ -9294,9 +10260,9 @@ void FUN_0001b474()
   iVar7 = 0;
   do {
     iVar1 = iVar7 * 4;
-    FUN_00076b8c((&DAT_000bc028)[iVar7],(int)*(short *)(&DAT_000845b8 + iVar1),
+    capture_framebuffer_rect_to_grtile((&DAT_000bc028)[iVar7],(int)*(short *)(&DAT_000845b8 + iVar1),
                  (int)*(short *)(&DAT_000845ba + iVar1),0x10,0x10);
-    FUN_00076b8c((&DAT_000bc010)[iVar7],(int)*(short *)(&DAT_000845d8 + iVar1),
+    capture_framebuffer_rect_to_grtile((&DAT_000bc010)[iVar7],(int)*(short *)(&DAT_000845d8 + iVar1),
                  (int)*(short *)(&DAT_000845da + iVar1),0x10,0x10);
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 4);
@@ -9526,14 +10492,14 @@ int param_4;
           iVar3 = (*(ushort *)(iVar2 + 6) & 0xffc0) + (*(ushort *)(iVar6 + 6) & 0xffc0);
           *(byte *)(iVar2 + 6) = (byte)iVar3 ^ (byte)*(ushort *)(iVar2 + 6) & 0x3f;
           *(char *)(iVar2 + 7) = (char)((uint)iVar3 >> 8);
-          FUN_00053274(iVar2 + 4,iVar6);
-          FUN_00053004(iVar6);
+          object_list_unlink(iVar2 + 4,iVar6);
+          free_object_slot(iVar6);
         }
         FUN_00078c80(0xfc);
         return;
       }
       if (iVar6 != 0 && iVar6 != iVar2) {
-        FUN_000530c4(iVar2 + 4,iVar6);
+        object_list_insert_head(iVar2 + 4,iVar6);
       }
       bVar7 = true;
       if ((iVar6 == 0) || (uVar5 = 1, iVar6 == iVar2)) {
@@ -9683,13 +10649,13 @@ short param_2;
   if (psVar2 == (short *)0x0) {
     FUN_00076e98((&DAT_000bc010)[iVar3]);
     if (sVar4 == 0) goto LAB_0001c1b4;
-    FUN_00040b0c(uVar9,(int)*(short *)(&DAT_000845d8 + iVar1),(int)*(short *)(&DAT_000845da + iVar1)
+    draw_sprite_by_id(uVar9,(int)*(short *)(&DAT_000845d8 + iVar1),(int)*(short *)(&DAT_000845da + iVar1)
                  ,0x10,0x10);
   }
   else {
     FUN_00076e98((&DAT_000bc028)[iVar3]);
     if (sVar4 == 0) goto LAB_0001c1b4;
-    FUN_00040b0c(uVar9,(int)*(short *)(&DAT_000845b8 + iVar1),(int)*(short *)(&DAT_000845ba + iVar1)
+    draw_sprite_by_id(uVar9,(int)*(short *)(&DAT_000845b8 + iVar1),(int)*(short *)(&DAT_000845ba + iVar1)
                  ,0x10,0x10);
   }
   if (sVar4 != 0) {
@@ -9710,7 +10676,7 @@ short param_2;
         uVar7 = Ordinal_1025(uVar8,auStack_2c,10);
         puVar10 = &DAT_000845b8;
       }
-      FUN_00011060(uVar7,*(short *)(puVar10 + iVar1) + 3,*(short *)((int)(puVar10 + iVar1) + 2) + 1)
+      draw_text_string(uVar7,*(short *)(puVar10 + iVar1) + 3,*(short *)((int)(puVar10 + iVar1) + 2) + 1)
       ;
       FUN_00040d00(s_font5x6p_sys_0008430c);
     }
@@ -9739,7 +10705,7 @@ int param_3;
   *psVar2 = 0;
   if (DAT_00202948 != (ushort *)0x0) {
     if (param_3 != 0) {
-      FUN_00053514(DAT_00202948 + 2);
+      resolve_object_link(DAT_00202948 + 2);
       sVar1 = FUN_0005358c();
       *psVar2 = sVar1;
     }
@@ -9815,7 +10781,7 @@ int param_4;
         iVar6 = (uVar3 & 0xffc0) + (uVar2 & 0xffc0);
         *(byte *)(puVar5 + 3) = (byte)iVar6 ^ (byte)uVar3 & 0x3f;
         *(char *)((char *)puVar5 + 7) = (char)((uint)iVar6 >> 8);
-        FUN_00053004(param_1);
+        free_object_slot(param_1);
         uVar8 = 1;
         goto LAB_0001c404;
       }
@@ -9860,11 +10826,11 @@ undefined ** param_2;
     uVar3 = 0xf1;
   }
   FUN_00057118();
-  FUN_0007e9c4((int)*(short *)param_2,(int)*(short *)((char *)param_2 + 2),uVar3);
-  FUN_0007e9c4(*(short *)param_2 + -1,(int)*(short *)((char *)param_2 + 2),uVar3);
-  FUN_0007e9c4(*(short *)param_2 + 1,(int)*(short *)((char *)param_2 + 2),uVar3);
-  FUN_0007e9c4((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + -1,uVar3);
-  FUN_0007e9c4((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + 1,uVar3);
+  plot_pixel((int)*(short *)param_2,(int)*(short *)((char *)param_2 + 2),uVar3);
+  plot_pixel(*(short *)param_2 + -1,(int)*(short *)((char *)param_2 + 2),uVar3);
+  plot_pixel(*(short *)param_2 + 1,(int)*(short *)((char *)param_2 + 2),uVar3);
+  plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + -1,uVar3);
+  plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + 1,uVar3);
   FUN_000570b4();
   FUN_0007ec50();
   return;
@@ -9991,7 +10957,7 @@ short param_1;
   do {
     if ((0 < (short)(&DAT_000bbfe8)[iVar2]) && ((param_1 == 0 || ((&DAT_000bbff0)[iVar2] == 0)))) {
       uVar1 = FUN_000535fc();
-      FUN_000530c4(DAT_00100674 + 6,uVar1);
+      object_list_insert_head(DAT_00100674 + 6,uVar1);
       FUN_00076e98((&DAT_000bc010)[iVar2]);
       (&DAT_000bbff0)[iVar2] = 0;
       (&DAT_000bbfe8)[iVar2] = 0;
@@ -10025,9 +10991,9 @@ void FUN_0001c85c()
     if (0 < *psVar5) {
       if (((&DAT_000bbf98)[local_28] != 0) && (sVar1 = FUN_0001dab8(), sVar1 != -1)) {
         puVar2 = (ushort *)FUN_000535fc((int)*psVar5);
-        puVar3 = (ushort *)FUN_00053514(DAT_00100674 + 6);
+        puVar3 = (ushort *)resolve_object_link(DAT_00100674 + 6);
         if ((*puVar2 & 0x1ff) == 0xa1) {
-          for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)FUN_00053514(puVar3 + 2)) {
+          for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)resolve_object_link(puVar3 + 2)) {
             if (((((*puVar2 & 0x8000) != 0) && ((*puVar3 & 0x8000) != 0)) &&
                 ((puVar2[3] & 0x8000) == 0)) &&
                ((((puVar3[3] & 0x8000) == 0 && (((*puVar3 ^ *puVar2) & 0x1ff) == 0)) &&
@@ -10035,14 +11001,14 @@ void FUN_0001c85c()
               iVar4 = (puVar3[3] & 0xffc0) + (puVar2[3] & 0xffc0);
               *(byte *)(puVar3 + 3) = (byte)iVar4 ^ (byte)puVar3[3] & 0x3f;
               *(char *)((char *)puVar3 + 7) = (char)((uint)iVar4 >> 8);
-              FUN_00053004(puVar2);
+              free_object_slot(puVar2);
               puVar2 = (ushort *)0x0;
               break;
             }
           }
         }
         if (puVar2 != (ushort *)0x0) {
-          FUN_000530c4(DAT_00100674 + 6,puVar2);
+          object_list_insert_head(DAT_00100674 + 6,puVar2);
         }
         FUN_00076e98((&DAT_000bc028)[local_28]);
         (&DAT_000bbf98)[local_28] = 0;
@@ -10344,7 +11310,7 @@ short param_3;
 {
   int iVar1;
   
-  iVar1 = FUN_00022910((int)param_3 - (int)param_2);
+  iVar1 = rand_below((int)param_3 - (int)param_2);
   iVar1 = Ordinal_2005(100,(iVar1 + param_2) * (int)param_1);
   return (iVar1 + param_1) * 0x10000 >> 0x10;
 }
@@ -10386,14 +11352,14 @@ ushort * param_1;
   
   if ((*param_1 & 0x1ff) == 0xa1) {
     puVar1 = (ushort *)(DAT_00100674 + 6);
-    while (puVar1 = (ushort *)FUN_00053514(puVar1), puVar1 != (ushort *)0x0) {
+    while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
       if (((((*param_1 & 0x8000) != 0) && ((*puVar1 & 0x8000) != 0)) && ((param_1[3] & 0x8000) == 0)
           ) && ((((puVar1[3] & 0x8000) == 0 && (((*puVar1 ^ *param_1) & 0x1ff) == 0)) &&
                 ((ushort)((puVar1[3] >> 6) + (param_1[3] >> 6)) < 999)))) {
         iVar2 = (puVar1[3] & 0xffc0) + (param_1[3] & 0xffc0);
         *(byte *)(puVar1 + 3) = (byte)iVar2 ^ (byte)puVar1[3] & 0x3f;
         *(char *)((char *)puVar1 + 7) = (char)((uint)iVar2 >> 8);
-        FUN_00053004(param_1);
+        free_object_slot(param_1);
         param_1 = (ushort *)0x0;
         break;
       }
@@ -10401,7 +11367,7 @@ ushort * param_1;
     }
   }
   if (param_1 != (ushort *)0x0) {
-    FUN_000530c4(DAT_00100674 + 6,param_1);
+    object_list_insert_head(DAT_00100674 + 6,param_1);
   }
   return;
 }
@@ -10442,15 +11408,15 @@ short param_1;
   int iVar2;
   
   iVar2 = DAT_00100674 + 6;
-  puVar1 = (ushort *)FUN_00053514(iVar2);
+  puVar1 = (ushort *)resolve_object_link(iVar2);
   if (puVar1 != (ushort *)0x0) {
     do {
       if ((*puVar1 & 0x1ff) == (int)param_1) {
-        FUN_00053274(iVar2,puVar1);
-        FUN_00053004(puVar1);
+        object_list_unlink(iVar2,puVar1);
+        free_object_slot(puVar1);
         return 1;
       }
-      puVar1 = (ushort *)FUN_00053514(puVar1 + 2);
+      puVar1 = (ushort *)resolve_object_link(puVar1 + 2);
     } while (puVar1 != (ushort *)0x0);
   }
   return 0;
@@ -10597,57 +11563,73 @@ void FUN_0001de0c()
   undefined4 uVar1;
   undefined4 uVar2;
   undefined4 uVar3;
-  undefined4 local_198;
-  undefined4 local_194;
-  undefined4 local_188;
-  undefined4 local_184;
-  undefined1 auStack_158 [20];
-  undefined4 local_144;
-  undefined4 local_140;
-  undefined4 local_134;
-  undefined4 local_130;
-  undefined4 local_118 [2];
-  undefined4 local_110;
-  undefined4 local_f8;
-  undefined4 local_f0;
-  undefined1 auStack_d8 [48];
-  undefined4 local_a8;
-  undefined4 local_a4;
-  undefined4 local_a0;
+  /* This function's four matrices (local_198.., auStack_158, local_118,
+     auStack_d8) were each declared as only as many bytes as this function
+     happens to name individual elements of, but FUN_0001422c (called on
+     each below) zeroes+identity-inits a real 0x40(64)-byte/16-element 4x4
+     float matrix at every one of these base pointers, and FUN_00013b8c
+     (the matrix multiply also called below) reads/writes the full 16
+     elements of whichever buffers it's given -- e.g. local_118 was only
+     `undefined4[2]` (8 bytes) despite being passed as a matrix-multiply
+     operand read up to element 10. That's a real stack-buffer overflow
+     (confirmed crashing with a __stack_chk_fail SIGABRT on a real run),
+     not just a decompiler cosmetic gap. Ghidra split each matrix into
+     these oddly-offset scalar names only because this function happens to
+     assign a handful of specific elements by name (a 2x2 rotation block
+     plus, for one matrix, a translation column) -- the untouched elements
+     still need to keep FUN_0001422c's identity-matrix values, which
+     requires them to actually share one real contiguous 64-byte buffer.
+     Widened all four to real 16-element arrays and switched every named
+     element write to an indexed one at its correct offset (verified
+     against each matrix's original Ghidra byte offset from its base). */
+  undefined4 local_198_mtx [16];
+  undefined1 auStack_158 [64];
+  undefined4 local_118 [16];
+  undefined1 auStack_d8 [64];
   undefined1 auStack_98 [64];
   undefined1 auStack_58 [64];
-  
+
+  /* FUN_0001dd2c fills the per-degree sin/cos tables (DAT_000d9ed8 /
+     DAT_000d9930) this function's rotation blocks read from. Ghidra
+     recovered no caller for it anywhere, so the tables stayed zero and
+     every view matrix came out degenerate (all vertices projected to
+     one screen point). Build them once, lazily, right before first use. */
+  {
+    static int dd2c_done = 0;
+    if (!dd2c_done) { dd2c_done = 1; FUN_0001dd2c(); }
+  }
+
   FUN_0001422c(auStack_d8);
   FUN_0001422c(auStack_158);
   FUN_0001422c(local_118);
-  FUN_0001422c(&local_198);
-  local_a8 = Ordinal_2023(DAT_000db438);
-  local_a4 = Ordinal_2023(DAT_000db43c);
-  local_a0 = Ordinal_2023(DAT_000db440);
+  FUN_0001422c(local_198_mtx);
+  ((undefined4 *)auStack_d8)[12] = Ordinal_2023(DAT_000db438);
+  ((undefined4 *)auStack_d8)[13] = Ordinal_2023(DAT_000db43c);
+  ((undefined4 *)auStack_d8)[14] = Ordinal_2023(DAT_000db440);
   uVar1 = (&DAT_000d9ed8)[DAT_000db448];
   uVar3 = (&DAT_000d9930)[DAT_000db448];
-  local_144 = uVar1;
-  local_140 = Ordinal_2023(uVar3);
+  ((undefined4 *)auStack_158)[5] = uVar1;
+  ((undefined4 *)auStack_158)[6] = Ordinal_2023(uVar3);
   Ordinal_2023(uVar3);
-  local_134 = Ordinal_2023();
+  ((undefined4 *)auStack_158)[9] = Ordinal_2023();
   uVar2 = (&DAT_000d9ed8)[DAT_000db44c];
   uVar3 = (&DAT_000d9930)[DAT_000db44c];
-  local_130 = uVar1;
+  ((undefined4 *)auStack_158)[10] = uVar1;
   local_118[0] = uVar2;
   Ordinal_2023(uVar3);
-  local_110 = Ordinal_2023();
-  local_f8 = Ordinal_2023(uVar3);
+  local_118[2] = Ordinal_2023();
+  local_118[8] = Ordinal_2023(uVar3);
   uVar1 = (&DAT_000d9ed8)[DAT_000db450];
   uVar3 = (&DAT_000d9930)[DAT_000db450];
-  local_198 = uVar1;
-  local_f0 = uVar2;
-  local_194 = Ordinal_2023(uVar3);
+  local_198_mtx[0] = uVar1;
+  local_118[10] = uVar2;
+  local_198_mtx[1] = Ordinal_2023(uVar3);
   Ordinal_2023(uVar3);
-  local_188 = Ordinal_2023();
-  local_184 = uVar1;
+  local_198_mtx[4] = Ordinal_2023();
+  local_198_mtx[5] = uVar1;
   FUN_00013b8c(auStack_d8,local_118,auStack_98);
   FUN_00013b8c(auStack_98,auStack_158,auStack_58);
-  FUN_00013b8c(auStack_58,&local_198,&DAT_000c8ac0);
+  FUN_00013b8c(auStack_58,local_198_mtx,&DAT_000c8ac0);
   return;
 }
 
@@ -11169,8 +12151,19 @@ int * param_2;
 
 
 
-void FUN_0001f370(param_1,param_2)
-int param_1;
+/* param_1 (and every local below that's assigned an address derived from
+   it -- iVar5/6/7/12/14, local_50) was `int`, truncating the real 64-bit
+   &DAT_000a85d0 pointer this is always called with. Confirmed crashing
+   (EXC_BAD_ACCESS, param_1 read back as a tiny ~1MB-range garbage value)
+   on a real run. iVar4/13/18/19 and the local_7c/78/74/64/4c/48 group stay
+   `int` -- they're genuinely counts/loop indices/array indices, never
+   dereferenced as addresses themselves (confirmed by reading every use).
+   Same pointer-truncation pattern fixed repeatedly this session. */
+// was FUN_0001f370 -- near-plane (w=DAT_00084608=5.0) Sutherland-Hodgman clip of
+// each visible tile quad; writes clipped positions + interpolated texcoords into
+// the 0x88-byte render records at DAT_000bc038 and the DAT_000c4838[] pointer table
+void near_clip_visible_tiles(param_1,param_2)
+intptr_t param_1;
 int param_2;
 
 {
@@ -11178,16 +12171,16 @@ int param_2;
   undefined1 uVar2;
   undefined1 uVar3;
   int iVar4;
-  int iVar5;
-  int iVar6;
-  int iVar7;
+  intptr_t iVar5;
+  intptr_t iVar6;
+  intptr_t iVar7;
   undefined4 *puVar8;
   undefined4 uVar9;
   undefined4 uVar10;
   undefined4 uVar11;
-  int iVar12;
+  intptr_t iVar12;
   int iVar13;
-  int iVar14;
+  intptr_t iVar14;
   undefined *puVar15;
   undefined *puVar16;
   undefined *puVar17;
@@ -11198,10 +12191,10 @@ int param_2;
   int local_78;
   int local_74;
   int local_64;
-  int local_50;
+  intptr_t local_50;
   int local_4c;
   int local_48;
-  
+
   if (param_2 == 0) {
     DAT_000c8c98 = 0;
   }
@@ -11287,7 +12280,7 @@ int param_2;
                   puVar15[6] = (char)((uint)uVar10 >> 0x10);
                   puVar15[7] = (char)((uint)uVar10 >> 0x18);
                   uVar10 = *(undefined4 *)(iVar5 + 0x300c);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c));
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
                   uVar9 = Ordinal_2026(uVar9,uVar11);
                   uVar10 = Ordinal_2051(uVar9,uVar10);
                   puVar15[8] = (char)uVar10;
@@ -11362,13 +12355,13 @@ int param_2;
                 }
               }
               else {
-                iVar6 = Ordinal_2038();
+                iVar6 = Ordinal_2038(uVar11,DAT_00084608); /* dropped args: is vert1 in front of the near plane? */
                 if (iVar6 == 0) {
                   uVar9 = Ordinal_2015(DAT_00084608,uVar10);
                   uVar10 = Ordinal_2015(uVar11,uVar10);
                   uVar11 = Ordinal_2047(uVar9,uVar10);
                   uVar10 = *(undefined4 *)(iVar5 + 0x3008);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x3008));
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x3008),uVar10); /* dropped 2nd arg (vert0 ref coord) */
                   uVar9 = Ordinal_2026(uVar9,uVar11);
                   uVar10 = Ordinal_2051(uVar9,uVar10);
                   puVar15[4] = (char)uVar10;
@@ -11376,7 +12369,7 @@ int param_2;
                   puVar15[6] = (char)((uint)uVar10 >> 0x10);
                   puVar15[7] = (char)((uint)uVar10 >> 0x18);
                   uVar10 = *(undefined4 *)(iVar5 + 0x300c);
-                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c));
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
                   uVar9 = Ordinal_2026(uVar9,uVar11);
                   uVar10 = Ordinal_2051(uVar9,uVar10);
                   puVar15[8] = (char)uVar10;
@@ -11453,6 +12446,10 @@ LAB_0002029c:
               (&DAT_000bc039)[iVar19] = (char)((uint)iVar18 >> 8);
               (&DAT_000bc03a)[iVar19] = (char)((uint)iVar18 >> 0x10);
               (&DAT_000c4838)[local_7c] = puVar20;
+              /* carry the real texture pointer from emit index to render index */
+              if ((unsigned)local_7c < UW_MAX_VIS_TILES && (unsigned)local_48 < UW_MAX_VIS_TILES) {
+                g_tile_texptr_out[local_7c] = g_tile_texptr_emit[local_48];
+              }
               local_7c = local_7c + 1;
               (&DAT_000bc03b)[iVar19] = (char)((uint)iVar18 >> 0x18);
               DAT_000c8c98 = local_7c;
@@ -11473,7 +12470,8 @@ LAB_0002029c:
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00020370()
+// was FUN_00020370
+void render_visible_tile_list()
 
 {
   int iVar1;
@@ -11493,33 +12491,48 @@ void FUN_00020370()
   int iVar15;
   int iVar16;
   int iVar17;
-  undefined4 *local_98;
+  void **local_98; // was `undefined4 *`, misaligning the DAT_000c4838 pointer-array walk below now that its elements are real 8-byte pointers
   int local_94;
-  undefined4 local_70;
-  undefined4 local_6c;
-  undefined4 local_68;
-  undefined4 local_64;
-  undefined4 local_60;
-  undefined4 local_5c;
-  undefined4 local_58;
-  undefined4 local_54;
-  undefined4 local_50;
-  undefined4 local_4c;
-  undefined4 local_48;
-  undefined4 local_44;
-  undefined4 local_40;
-  undefined4 local_3c;
-  undefined4 local_38;
-  undefined4 local_34;
-  undefined4 local_30;
-  undefined4 local_2c;
-  undefined4 local_28;
+  /* Ghidra named the 4 words of the viewport-clip-rect struct passed to
+     raster_triangle (as param_8) as 4 separate locals. The recompiler is
+     free to lay them out in any order / non-contiguously, so param_8[1..3]
+     read stack garbage and raster_triangle's `*(int*)(puVar3+8) < param_8[3]`
+     never let it call the span rasterizer. Real 4-int array. */
+  undefined4 local_70_rect[4];
+#define local_70 (local_70_rect[0])
+#define local_6c (local_70_rect[1])
+#define local_68 (local_70_rect[2])
+#define local_64 (local_70_rect[3])
+  /* Same bug as local_70_rect above: Ghidra named the 15 words of the
+     triangle-vertex struct passed to raster_triangle as param_3 (three
+     vertices x 5 floats: x, y, w, u, v) as 15 separate locals. The
+     recompiler lays them out non-contiguously, so raster_triangle_perspective_setup /
+     raster_edge_setup read stack garbage for every field past [0] -- every
+     transformed vertex came out (x,0,0) and the triangle setup produced
+     -inf/nan, so no texel was ever sampled. Real 15-float array. */
+  undefined4 local_60_arr[15];
+#define local_60 (local_60_arr[0])
+#define local_5c (local_60_arr[1])
+#define local_58 (local_60_arr[2])
+#define local_54 (local_60_arr[3])
+#define local_50 (local_60_arr[4])
+#define local_4c (local_60_arr[5])
+#define local_48 (local_60_arr[6])
+#define local_44 (local_60_arr[7])
+#define local_40 (local_60_arr[8])
+#define local_3c (local_60_arr[9])
+#define local_38 (local_60_arr[10])
+#define local_34 (local_60_arr[11])
+#define local_30 (local_60_arr[12])
+#define local_2c (local_60_arr[13])
+#define local_28 (local_60_arr[14])
   
   local_94 = 0;
   local_70 = DAT_0008462c;
   local_68 = DAT_00084634;
   local_6c = DAT_00084630;
   local_64 = DAT_00084638;
+  DEBUG(TRACE, "[tmap-diag] render_visible_tile_list: DAT_000c8c98 (visible-tile count) = %d", DAT_000c8c98);
   if (0 < DAT_000c8c98) {
     local_98 = &DAT_000c4838;
     iVar15 = DAT_000c8c98;
@@ -11531,6 +12544,7 @@ void FUN_00020370()
       local_54 = Ordinal_2032(piVar14[0x10]);
       local_50 = Ordinal_2032(piVar14[0x11]);
       iVar16 = 1;
+      DEBUG(TRACE, "[tmap-diag] record %d: *piVar14 (point count) = %d", local_94, *piVar14);
       if (1 < *piVar14 + -1) {
         uVar6 = Ordinal_2047(0x3f800000,iVar17);
         uVar7 = Ordinal_2026(iVar17,0x3a2ec33e);
@@ -11574,8 +12588,14 @@ void FUN_00020370()
           local_34 = Ordinal_2015(0x42a00000,uVar11);
           local_30 = Ordinal_2026(uVar5,0x3a2ec33e);
           DAT_000da47c = (undefined2)piVar14[0x1d];
-          FUN_00014350(0x140,g_uw_framebuffer,&local_60,piVar14[0x1e],
-                       piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],piVar14[0x1a],&local_70);
+          DEBUG(TRACE, "[tmap-diag] raster_triangle call: tex=0x%x x=%.0f y=%.0f w(0x1c)=%d stride(0x1b)=%d",
+                piVar14[0x1e], ((float*)local_60_arr)[0], ((float*)local_60_arr)[1], piVar14[0x1c], piVar14[0x1b]);
+          raster_triangle(0x140,g_uw_framebuffer,local_60_arr,piVar14[0x1e],
+                       piVar14[0x1b],piVar14[0x1c] * piVar14[0x1b],
+                       ((unsigned)local_94 < UW_MAX_VIS_TILES)
+                         ? (intptr_t)g_tile_texptr_out[local_94]
+                         : (intptr_t)piVar14[0x1a],
+                       local_70_rect);
           iVar16 = iVar16 + 1;
           iVar17 = iVar17 + 0xc;
           piVar14 = (int *)*local_98;
@@ -11586,8 +12606,28 @@ void FUN_00020370()
       local_98 = local_98 + 1;
     } while (local_94 < iVar15);
   }
+  debug_framebuffer_dump("render_visible_tile_list");
   return;
 }
+#undef local_70
+#undef local_6c
+#undef local_68
+#undef local_64
+#undef local_60
+#undef local_5c
+#undef local_58
+#undef local_54
+#undef local_50
+#undef local_4c
+#undef local_48
+#undef local_44
+#undef local_40
+#undef local_3c
+#undef local_38
+#undef local_34
+#undef local_30
+#undef local_2c
+#undef local_28
 
 
 
@@ -12656,22 +13696,20 @@ void FUN_000228d4()
 
 
 
-undefined4 FUN_00022910(param_1)
+/* Bounded random: rand() % param_1. The original takes the modulo from
+   Ordinal_2005's (idivmod's) r1 remainder leftover -- Ghidra lost that
+   into an uninitialised `extraout_r1`, so it always returned garbage
+   (and with Ordinal_1053 stubbed to 0, effectively always 0). Compute
+   the modulo directly. */
+// was FUN_00022910
+undefined4 rand_below(param_1)
 int param_1;
 
 {
-  undefined4 uVar1;
-  undefined4 extraout_r1;
-  
   if (param_1 == 0) {
-    uVar1 = 0;
+    return 0;
   }
-  else {
-    uVar1 = Ordinal_1053(param_1);
-    Ordinal_2005(param_1,uVar1);
-    uVar1 = extraout_r1;
-  }
-  return uVar1;
+  return (undefined4)((uint)Ordinal_1053() % (uint)param_1);
 }
 
 
@@ -12730,7 +13768,7 @@ undefined1 param_4;
      acStack_41[31 + x]. */
   char acStack_41 [33];
   /* param_2 - pcVar2 offset-reconstruction idiom (same pattern as
-     FUN_00022abc): `(int)param_2 - (int)pcVar2` truncated both real
+     expand_pals_bytes): `(int)param_2 - (int)pcVar2` truncated both real
      pointers before iVar3's later `pcVar2[iVar3]` re-addition. iVar3
      itself is reused for a plain int digit-counter earlier in this
      function, so this needs its own dedicated variable. */
@@ -12784,7 +13822,9 @@ undefined1 param_4;
 
 
 
-void FUN_00022abc(param_1,param_2,param_3)
+// was expand_pals_bytes -- expand PALS.DAT 6-bit channel bytes (param_2) to 8-bit into
+// param_1; param_3!=0 copies unscaled
+void expand_pals_bytes(param_1,param_2,param_3)
 char *param_1;
 char * param_2;
 int param_3;
@@ -12795,7 +13835,7 @@ int param_3;
   int iVar3;
 
   /* param_1 was declared `int` despite every caller passing a real
-     pointer (e.g. FUN_00040e24: `FUN_00022abc(auStack_318,param_2,0);`)
+     pointer (e.g. load_pals_bank: `expand_pals_bytes(auStack_318,param_2,0);`)
      -- truncating it on this 64-bit host. The `param_1 - (int)param_2`
      / `param_2 + param_1` dance below reconstructs param_1 as a
      relative *offset* from param_2 so the loop can address both
@@ -12831,7 +13871,9 @@ int param_3;
 
 
 
-void FUN_00022b54(param_1,param_2)
+// was build_rgb565_palette -- build g_palette_rgb565 from an RGB buffer (param_1; NULL =
+// built-in default). param_2==0 also builds the 21-level shade ramp DAT_00248418.
+void build_rgb565_palette(param_1,param_2)
 undefined1 * param_1;
 short param_2;
 
@@ -12858,7 +13900,7 @@ short param_2;
   ushort *puVar20;
   int iVar21;
 
-  DEBUG(TRACE, "[palette] FUN_00022b54 installing g_palette_rgb565, param_1=%s param_2=%d",
+  DEBUG(TRACE, "[palette] build_rgb565_palette installing g_palette_rgb565, param_1=%s param_2=%d",
         param_1 ? "buffer" : "NULL(default)", param_2);
   if (param_1 == (undefined1 *)0x0) {
     puVar20 = &g_palette_rgb565;
@@ -12982,7 +14024,7 @@ short param_2;
    chargen "text flashes then gets covered by a rectangle" bug (SS1
    shares this same Looking Glass dirty-rect heritage): the bounds are
    accumulate-only in the normal UI flow -- the only explicit reset
-   (FUN_00011040, setting them back to an empty/degenerate rect) is a
+   (dirty_rect_set, setting them back to an empty/degenerate rect) is a
    single call site elsewhere unrelated to chargen -- so nothing here
    makes the tracked region shrink or exclude an area once drawn to.
    Didn't find a bug in this function itself; the rapid-cycling
@@ -12990,7 +14032,8 @@ short param_2;
    gx_stub.c's uw_pump_events), but noting this in case the covered-
    rectangle symptom persists after that fix and this needs a second
    look. */
-void FUN_00022f0c()
+// was FUN_00022f0c
+void flush_dirty_rect_to_display()
 
 {
   undefined2 uVar1;
@@ -13087,7 +14130,10 @@ void FUN_00022f0c()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0002310c()
+// was FUN_0002310c -- near-identical twin of flush_dirty_rect_to_display
+// above, clamped to a 240px-tall dirty rect instead of 200px; likely a
+// different screen-height device variant of the same GX-hardware flush.
+void flush_dirty_rect_to_display_240()
 
 {
   undefined2 uVar1;
@@ -13361,20 +14407,26 @@ char *param_4;
       else {
         if (*pbVar4 != 1) {
           iVar3 = (int)sVar2;
+          /* Branch node in the skill tree: [count][id0][id1]...  Set the
+             skill record's on-screen item count to this sub-menu's choice
+             count and populate its string-id list with the choice names
+             (skill id + 0x1f = its string number in block 4), then return
+             1 so character_generator_loop keeps state 3 and shows the
+             sub-menu drawn from that list. */
           *(undefined1 *)(param_3 + 10) = *(undefined1 *)(iVar3 + param_4);
           *(undefined1 *)(param_3 + 0xb) = 0;
-          /* *(int*)(param_3+6) (the outer character record's +0x42
-             field) is never written anywhere in this decompile -- same
-             "unrecoverable, never-populated pointer field" class as
-             DAT_000fb880 above. The record is heap-allocated (not
-             zeroed), so this field holds arbitrary garbage rather than
-             a reliable 0 -- a `!= 0` guard isn't enough to catch it.
-             Skip unconditionally instead of writing through it. */
-          if (0) {
+          /* param_3+6 is the skill record's string-list field. Ghidra had
+             this as a bare absolute pointer (correct for the 32-bit
+             binary) and an earlier pass disabled the whole loop believing
+             the field was never populated -- but run_character_generator
+             (chargen.c) DOES write it, as a relative offset from
+             &DAT_000fb8f0 (same convention FUN_00023de8's read site uses).
+             Reconstruct the real pointer that way instead of skipping. */
+          {
+            char *list = (char *)&DAT_000fb8f0 + *(int *)(param_3 + 6);
             iVar5 = 0;
             do {
-              *(char *)(*(int *)(param_3 + 6) + iVar5 * 2) =
-                   *(char *)(iVar5 + iVar3 + param_4 + 1) + '\x1f';
+              list[iVar5 * 2] = *(char *)(iVar5 + iVar3 + param_4 + 1) + '\x1f';
               iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
             } while (iVar5 < (int)(uint)*(byte *)(iVar3 + param_4));
           }
@@ -13403,21 +14455,21 @@ void FUN_00023a00()
   rect_fill_or_save_restore(0x5d,0x32,0x8c,0x7a);
   screen_backup_restore();
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
-  FUN_00011060(&DAT_00084e58,0x5d,0x32);
+  draw_text_string(&DAT_00084e58,0x5d,0x32);
   iVar1 = FUN_000112a0(auStack_14);
-  FUN_00011060(auStack_14,0x8c - iVar1,0x32);
+  draw_text_string(auStack_14,0x8c - iVar1,0x32);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 6),auStack_14,10);
-  FUN_00011060(&DAT_00084e50,0x5d,0x44);
+  draw_text_string(&DAT_00084e50,0x5d,0x44);
   iVar1 = FUN_000112a0(auStack_14);
-  FUN_00011060(auStack_14,0x8c - iVar1,0x44);
+  draw_text_string(auStack_14,0x8c - iVar1,0x44);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 7),auStack_14,10);
-  FUN_00011060(&DAT_00084e48,0x5d,0x56);
+  draw_text_string(&DAT_00084e48,0x5d,0x56);
   iVar1 = FUN_000112a0(auStack_14);
-  FUN_00011060(auStack_14,0x8c - iVar1,0x56);
+  draw_text_string(auStack_14,0x8c - iVar1,0x56);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_14,10);
-  FUN_00011060(&DAT_00084e40,0x5d,0x68);
+  draw_text_string(&DAT_00084e40,0x5d,0x68);
   iVar1 = FUN_000112a0(auStack_14);
-  FUN_00011060(auStack_14,0x8c - iVar1,0x68);
+  draw_text_string(auStack_14,0x8c - iVar1,0x68);
   return;
 }
 
@@ -13452,9 +14504,9 @@ void FUN_00023b38()
       uVar3 = FUN_0007863c(iVar2 + 0x1fU | 0x400);
       FUN_000229e0(*(undefined1 *)(iVar1 + DAT_00086df8 + 0x21),auStack_24,10);
       iVar5 = iVar4 * 0xb + 0x85;
-      FUN_00011060(uVar3,0x1e,iVar5);
+      draw_text_string(uVar3,0x1e,iVar5);
       iVar2 = FUN_000112a0(auStack_24);
-      FUN_00011060(auStack_24,0x7d - iVar2,iVar5);
+      draw_text_string(auStack_24,0x7d - iVar2,iVar5);
       iVar4 = ((short)iVar4 + 1) * 0x10000 >> 0x10;
     }
     iVar2 = (iVar1 + 1) * 0x10000 >> 0x10;
@@ -13577,7 +14629,7 @@ short * param_1;
   short sVar7;
   /* Was `undefined4`, truncating FUN_0007863c's real char* return
      (a string-resource lookup) before it's passed to FUN_000112a0
-     (strlen-shaped) and FUN_00011060 (draw string). */
+     (strlen-shaped) and draw_text_string (draw string). */
   char *uVar8;
   int iVar9;
   int iVar10;
@@ -13683,11 +14735,11 @@ short * param_1;
       iVar11 = 0xa8;
       iVar9 = 0xa8;
     }
-    FUN_00011060(uVar8,iVar9,iVar10 + 3);
+    draw_text_string(uVar8,iVar9,iVar10 + 3);
     if (*param_1 == 7) {
-      FUN_00011060(s_Enter_your_name_and_00084e88,0xaa,0x3c);
-      FUN_00011060(s_then_press_the_Enter_00084e70,0xaa,0x46);
-      FUN_00011060(s_key_to_continue_00084e60,0xb9,0x50);
+      draw_text_string(s_Enter_your_name_and_00084e88,0xaa,0x3c);
+      draw_text_string(s_then_press_the_Enter_00084e70,0xaa,0x46);
+      draw_text_string(s_key_to_continue_00084e60,0xb9,0x50);
     }
   }
   if (*(int *)(param_1 + 3) != 0) {
@@ -13731,18 +14783,27 @@ short * param_1;
           if (iVar9 < 0) {
             iVar9 = iVar9 + 1;
           }
-          FUN_00011060(uVar8,iVar11 + (short)(iVar9 >> 1),iVar10 + 3);
+          draw_text_string(uVar8,iVar11 + (short)(iVar9 >> 1),iVar10 + 3);
         }
         else if (param_1[6] == 3) {
-          DAT_00088960 = 1;
-          bitmap_blit_to_framebuffer(iVar11,iVar10,
-                       (&DAT_000fb880)
-                       [(int)(((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) +
-                               ((int)((uint)*(byte *)((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3) + 1)
-                                      << 0x18) >> 0x10) +
-                              local_28) * 0x10000) >> 0x10] + DAT_000fb858,(int)(short)local_2c,
-                       sVar7,0,0,1);
-          DAT_00088960 = 0;
+          /* Portrait/head selector (chargen state 4). The DAT_000fb880
+             index Ghidra reconstructed here -- list[0] + sext(list[1]) +
+             local_28 -- evaluates to 1 + local_28 for this build's
+             CHRGEN.DAT (record 4's list is just {1}), which lands on
+             chrbtns entries 1-5 (button plates / armour tiles), not the
+             heads, and it has no sex term at all. chrbtns entries 7-16
+             are the ten head graphics (five male then five female);
+             character_generator_loop case 4 already indexes the matching
+             body figures as `17 + sexbit*5 + idx`. Use the same shape for
+             the heads: `7 + sexbit*5 + local_28`. */
+          {
+            int head_idx = 7 + ((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 5) + local_28;
+            DAT_00088960 = 1;
+            bitmap_blit_to_framebuffer(iVar11,iVar10,
+                         (&DAT_000fb880)[head_idx] + DAT_000fb858,(int)(short)local_2c,
+                         sVar7,0,0,1);
+            DAT_00088960 = 0;
+          }
         }
         local_28 = (local_28 + 1) * 0x10000 >> 0x10;
       } while (local_28 < param_1[5]);
@@ -13909,9 +14970,9 @@ uint param_2;
     local_4 = param_2;
     do {
       /* HACK: DAT_0023c63c (our click-hold flag -- see FUN_00077dd0's
-         HACK comment) blocks FUN_00022f0c's actual screen flush the
+         HACK comment) blocks flush_dirty_rect_to_display's actual screen flush the
          whole time a button is held, unless g_force_flush is set (see
-         its gate at FUN_00022f0c's top, and FUN_0005857c's matching
+         its gate at flush_dirty_rect_to_display's top, and FUN_0005857c's matching
          use of g_force_flush around its own single draw). Without this,
          every per-iteration redraw here updated the software
          framebuffer but the screen never actually presented it until
@@ -13919,7 +14980,7 @@ uint param_2;
          were invisible until mouse-up). Force the flush the same way
          FUN_0005857c does. */
       g_force_flush = 1;
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
       g_force_flush = 0;
       if (((short)uVar13 != (short)param_2) && ((short)uVar13 != -1)) {
         FUN_00057118();
@@ -13981,7 +15042,7 @@ undefined4 param_2;
      discarded here, with the very next line calling FUN_000112a0() with
      no argument -- relying on register leftovers to still hold that
      same return value (the "dropped argument" idiom, same root bug as
-     FUN_00011060/FUN_000112a0's own Ordinal_1068() fixes above). That
+     draw_text_string/FUN_000112a0's own Ordinal_1068() fixes above). That
      register doesn't reliably survive here either (confirmed: with it
      broken, the name-entry field's Ordinal_1417 gate always fell
      through to the "buffer full" branch regardless of the typed key,
@@ -14015,7 +15076,7 @@ undefined4 param_2;
     do {
       do {
         FUN_000735fc(uVar6,param_2);
-        FUN_00022f0c(1);
+        flush_dirty_rect_to_display(1);
         uVar14 = FUN_00057a70();
         param_2 = (undefined4)((ulonglong)uVar14 >> 0x20);
         uVar6 = (uint)uVar14;
@@ -14213,7 +15274,7 @@ LAB_00024dd4:
       sVar5 = FUN_00057a70();
       iVar11 = (int)sVar5;
       if (((iVar11 == 0xd) && (local_28 == 0)) || (iVar11 == 0x1b)) break;
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
       sVar3 = (short)iVar7;
       if (((iVar11 == -1) || (iVar8 = Ordinal_1417(iVar11,0x157), iVar8 == 0)) ||
          ((0x12d < sVar3 || (0x1c < (int)uVar13)))) {
@@ -14238,7 +15299,7 @@ LAB_00024dd4:
       else {
         local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),(char)sVar5);
         FUN_00057118();
-        FUN_00011060(local_2c,iVar7,iVar9 + 3);
+        draw_text_string(local_2c,iVar7,iVar9 + 3);
         FUN_000570b4();
         iVar7 = FUN_000112a0(local_2c);
         iVar7 = iVar7 + sVar3;
@@ -14258,7 +15319,9 @@ LAB_00024dd4:
 
 
 
-void FUN_000259c0(param_1,param_2,param_3)
+// was palette_cycle_range -- rotate a contiguous run of DAT_00088d98 palette entries by
+// one (torch-flicker / water-shimmer colour cycling)
+void palette_cycle_range(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
 int param_3;
@@ -14394,7 +15457,7 @@ short * param_1;
       puVar6 = (ushort *)FUN_000535fc();
       if ((((*puVar6 & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
          (((DAT_00100610 != 1 ||
-           ((iVar5 = FUN_00053728(puVar6), iVar5 == 0 ||
+           ((iVar5 = object_ptr_in_arena(puVar6), iVar5 == 0 ||
             ((*(byte *)((char *)puVar6 + 0x19) & 0x40) == 0)))) ||
           ((iVar10 == iVar9 + -1 && (iVar11 == 100000)))))) {
         uVar7 = (int)*(short *)(&DAT_00202c3c + iVar10 * 6) + (((int)*param_1 << 0x10) >> 0x13) &
@@ -14466,7 +15529,7 @@ byte * param_3;
   DAT_00202c6c[0xb] = 0;
   local_18 = (short)((uint)((int)*(short *)DAT_00202c6c << 0x14) >> 0x10);
   local_16 = (short)((uint)((int)*(short *)(DAT_00202c6c + 2) << 0x14) >> 0x10);
-  while (FUN_00050d78(0),
+  while (collision_build_height_field(0),
         ((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
     FUN_00069f2c(param_1,0x10,&local_18,&local_16);
     param_2 = param_2 + -1;
@@ -14502,11 +15565,11 @@ byte * param_3;
   uVar8 = FUN_0005358c(iVar7);
   sVar6 = FUN_00080ed4(uVar8,2,0,(int)sVar4 >> 3 & 0xff,(char)((int)sVar5 >> 3));
   if (sVar6 == -1) {
-    FUN_00053004(iVar7);
+    free_object_slot(iVar7);
     return;
   }
-  iVar9 = FUN_00068100((int)sVar4 >> 3,(int)sVar5 >> 3);
-  FUN_000531a0(iVar9 + 2,iVar7);
+  iVar9 = tilemap_lookup((int)sVar4 >> 3,(int)sVar5 >> 3);
+  object_list_append_tail(iVar9 + 2,iVar7);
   return;
 }
 
@@ -14554,9 +15617,9 @@ undefined4 FUN_00026194()
   local_3a = (short)((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
   iVar5 = ((byte)puVar6[0xc] & 0x1f) + ((puVar6[1] & 0x380) >> 2);
   FUN_00069f2c(iVar5,uVar7 + 3,&local_3c,&local_3a);
-  FUN_000518c0(0,1);
+  collision_height_envelope(0,1);
   if (*(char *)((char *)DAT_00202c6c + 0x14) == '\0') {
-    FUN_00050d78(0);
+    collision_build_height_field(0);
     if (((*(ushort *)((char *)DAT_00202c6c + 0xe) | *(ushort *)((char *)DAT_00202c6c + 0xc)) & 0x300) != 0
        ) {
       iVar4 = ((puVar6[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)puVar6 + 3) >> 5);
@@ -14647,7 +15710,7 @@ undefined4 param_2;
     }
   }
   else if (((param_1 == 1) && ((uVar6 & 0x1f0) == 0x140)) &&
-          (iVar3 = FUN_00022910(0xc), iVar3 < (int)(((byte)*puVar2 & 7) * 2))) {
+          (iVar3 = rand_below(0xc), iVar3 < (int)(((byte)*puVar2 & 7) * 2))) {
     bVar1 = *(byte *)(DAT_00086df8 + 100);
     uVar4 = FUN_0006a058(2,4);
     FUN_00046030(8 - (bVar1 & 1),uVar4,4,0,1);
@@ -14896,7 +15959,7 @@ undefined4 FUN_000270d0()
   else {
     if ((DAT_00100610 != 1) && (iVar1 = (int)DAT_00100620, DAT_00100620 != 1)) {
       FUN_000535fc();
-      iVar3 = FUN_00053728();
+      iVar3 = object_ptr_in_arena();
       iVar1 = 0;
       if (iVar3 != 0) {
         iVar3 = FUN_000535fc((int)DAT_00100620);
@@ -15267,7 +16330,7 @@ undefined1 param_7;
     FUN_00072f30(3,0,0);
   }
   else {
-    iVar3 = FUN_00053728(param_3);
+    iVar3 = object_ptr_in_arena(param_3);
     if (iVar3 != 0) {
       FUN_00072fc8(4,param_3,0);
     }
@@ -15492,7 +16555,7 @@ undefined4 FUN_000282ac()
   }
   else {
     puVar7 = puVar5 + 3;
-    while (puVar7 = (ushort *)FUN_00053514(puVar7), puVar7 != (ushort *)0x0) {
+    while (puVar7 = (ushort *)resolve_object_link(puVar7), puVar7 != (ushort *)0x0) {
       bVar3 = false;
       uVar2 = *puVar7;
       iVar8 = 0;
@@ -15582,7 +16645,7 @@ LAB_000285e4:
     Ordinal_1063(acStack_114,s__DATA_cnv_ark_00084fc8);
     sVar2 = FUN_0001629c(acStack_114,uVar6);
     if (0 < sVar2) {
-      FUN_0003bcb8(4);
+      change_game_mode(4);
       return;
     }
   }
@@ -15667,7 +16730,7 @@ void FUN_000286cc()
         *pcVar5 = cVar1;
         pcVar5 = pcVar5 + 1;
       } while (cVar1 != '\0');
-      FUN_00011060(local_44,0x90,3);
+      draw_text_string(local_44,0x90,3);
       DAT_00100670 = DAT_00100784;
       if (DAT_00100674[0x1a] == 0) {
         uVar6 = 2;
@@ -15687,7 +16750,7 @@ void FUN_000286cc()
       DAT_00088960 = 0;
       sVar2 = FUN_00078b18(local_44,DAT_00100674,0,0);
       if (sVar2 != 0) {
-        FUN_00011060(local_44,0x30,3);
+        draw_text_string(local_44,0x30,3);
       }
       DAT_001007c0 = DAT_00100784;
       FUN_0001b474();
@@ -15698,7 +16761,7 @@ void FUN_000286cc()
       FUN_0003fa1c(5);
       DAT_002020c0 = 0;
       FUN_00028c00(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
-      FUN_0003bcb8(1);
+      change_game_mode(1);
       return;
     }
   }
@@ -15812,7 +16875,7 @@ void FUN_00028ffc()
   char acStack_b9 [157];
   
   while (DAT_0010078c != 0) {
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     FUN_000735fc();
     if (DAT_00201c84 != 0) {
       FUN_00049818();
@@ -15842,7 +16905,7 @@ void FUN_00028ffc()
       FUN_0007f0e0();
       DAT_00250718 = 1;
     }
-    FUN_0004251c(DAT_00085a6c);
+    poll_input_bindings(DAT_00085a6c);
   }
   return;
 }
@@ -16896,7 +17959,7 @@ ushort param_3;
   undefined4 uVar7;
   int extraout_r1;
   
-  iVar4 = FUN_00068100(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
+  iVar4 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
   ;
   if (((param_2 & 0xff) != 0) &&
      (iVar5 = FUN_00068138((short)(param_2 & 0xff) + 0xd8,0), iVar5 != 0)) {
@@ -16914,7 +17977,7 @@ ushort param_3;
     uVar6 = CONCAT11(*(undefined1 *)(iVar5 + 5),*(undefined1 *)(iVar5 + 4)) & 0xffe8;
     *(byte *)(iVar5 + 4) = (byte)uVar6 | 0x28;
     *(char *)(iVar5 + 5) = (char)(uVar6 >> 8);
-    FUN_000530c4(iVar4 + 2,iVar5);
+    object_list_insert_head(iVar4 + 2,iVar5);
     FUN_00055f98(iVar5,(int)DAT_0010144c,(int)DAT_00101454,1);
   }
   if ((param_3 & 0xff) != 0) {
@@ -16941,7 +18004,7 @@ int FUN_0002b47c()
   
   if (((char)DAT_0010190c[4] == '\0') &&
      (((&DAT_00202c97)[(*DAT_0010190c & 0x1ff) * 0xd] & 0xc) < 0xc)) {
-    iVar2 = FUN_00068100(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
+    iVar2 = tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
     iVar2 = FUN_00053334(iVar2 + 2,DAT_0010190c,0);
     if (iVar2 == 0) {
       return 0;
@@ -17030,7 +18093,7 @@ ushort * param_1;
   DAT_00202c6c[3] = (char)((uint)iVar2 >> 8);
   DAT_00202c6c[4] = (byte)param_1[1] & 0x7f;
   DAT_00202c6c[5] = 0;
-  FUN_00050d78(8);
+  collision_build_height_field(8);
   return (int)(short)(*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc));
 }
 
@@ -17185,7 +18248,7 @@ int param_1;
 {
   *(char *)(param_1 + 0x12) = (char)(((*(byte *)(DAT_0010190c + 0x14) & 7) << 0x14) >> 0x10);
   *(undefined1 *)(param_1 + 0x13) = 0;
-  FUN_0005878c();
+  movement_collision_sweep();
   return 1;
 }
 
@@ -17193,7 +18256,16 @@ int param_1;
 
 // WARNING: Type propagation algorithm not settling
 
-undefined4 FUN_0002bdac(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10,param_11)
+// was FUN_0002bdac. Tests whether movement/sight between tile (param_1,
+// param_2) and tile (param_3,param_4) -- via intermediate tile (param_5,
+// param_6) -- is blocked by a wall, reading each tile's DAT_000878d0
+// direction-blocking bitmask (bits 2/4/8/0x10 = which of the 4 axis
+// directions that tile type blocks). Used by creature_find_path_to_tile's
+// wavefront pathfinding and by the line-of-sight scanner below it -- NOT
+// part of the 3D dungeon-view render chain (see memory.md's tmap-tiles
+// section: this whole subsystem is creature AI, a dead end for that
+// investigation, but a real, previously-unexamined one worth naming).
+undefined4 tile_pair_los_blocked(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10,param_11)
 byte param_1;
 byte param_2;
 byte param_3;
@@ -17234,10 +18306,10 @@ byte * param_11;
   DAT_00101440 = 0;
   bVar6 = false;
   bVar1 = false;
-  puVar7 = (ushort *)FUN_00068100(param_3,param_4);
-  pbVar8 = (byte *)FUN_00068100(param_1,param_2);
+  puVar7 = (ushort *)tilemap_lookup(param_3,param_4);
+  pbVar8 = (byte *)tilemap_lookup(param_1,param_2);
   uVar18 = (uint)param_5;
-  puVar9 = (ushort *)FUN_00068100(uVar18,param_6);
+  puVar9 = (ushort *)tilemap_lookup(uVar18,param_6);
   uVar19 = *puVar7 & 0xf;
   uVar11 = *puVar9 & 0xf;
   bVar3 = (byte)uVar11;
@@ -17295,7 +18367,7 @@ byte * param_11;
     uVar11 = 0;
     uVar2 = puVar7[1];
     while (((uVar2 & 0xffc0) != 0 && (uVar11 == 0))) {
-      puVar9 = (ushort *)FUN_00053514();
+      puVar9 = (ushort *)resolve_object_link();
       iVar13 = (*puVar9 & 0x1ff) * 0xd;
       if (((&DAT_00202c93)[iVar13] & 2) != 0) {
         uVar11 = (int)(((byte)puVar9[1] & 0x7f) + (uint)(byte)(&DAT_00202c90)[iVar13]) >> 3;
@@ -17372,7 +18444,7 @@ LAB_0002c220:
   uVar14 = puVar7[1];
   uVar11 = uVar15;
   while (((uVar14 & 0xffc0) != 0 && (local_50 == 0))) {
-    puVar10 = (ushort *)FUN_00053514();
+    puVar10 = (ushort *)resolve_object_link();
     uVar19 = (uint)*puVar10;
     iVar13 = (uVar19 & 0x1ff) * 0xd;
     if (((uVar19 & 0x1c0) != 0x140) || (((*puVar10 & 0x30) != 0 || (7 < (uVar19 & 0xf))))) {
@@ -17627,8 +18699,8 @@ byte param_7;
   uint uVar4;
   uint uVar5;
   
-  pbVar2 = (byte *)FUN_00068100(param_3,param_4);
-  puVar3 = (ushort *)FUN_00068100(param_5,param_6);
+  pbVar2 = (byte *)tilemap_lookup(param_3,param_4);
+  puVar3 = (ushort *)tilemap_lookup(param_5,param_6);
   uVar5 = *pbVar2 & 0xf;
   uVar4 = *puVar3 & 0xf;
   if ((param_1 == 0) || ((param_1 == param_3 && (param_2 == param_4)))) {
@@ -17683,7 +18755,14 @@ LAB_0002caa4:
 
 
 
-undefined4 FUN_0002cb14(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+// was FUN_0002cb14. BFS/wavefront pathfinder from tile (param_1,param_2)
+// toward tile (param_4,param_5), expanding outward one ring at a time
+// (DAT_0023cf08-family scratch arrays hold each visited tile's parent
+// direction/cost, capped at 0x20 rings) and using tile_pair_los_blocked
+// to test whether each candidate step is wall-blocked. Calls
+// FUN_0002d110 to reconstruct the path on success. Creature AI, not
+// part of the 3D render chain -- see tile_pair_los_blocked's comment.
+undefined4 creature_find_path_to_tile(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 undefined4 param_1;
 char param_2;
 undefined1 param_3;
@@ -17789,7 +18868,7 @@ undefined1 param_7;
     uVar2 = iVar7 * 0x1000000 >> 0x18;
     iVar8 = (uVar2 + uVar11 * 0x40) * 5;
     local_5c = 0;
-    iVar7 = FUN_0002bdac(0,0,param_1,param_2,uVar5,uVar6,*(undefined2 *)(DAT_00101438 + 4),
+    iVar7 = tile_pair_los_blocked(0,0,param_1,param_2,uVar5,uVar6,*(undefined2 *)(DAT_00101438 + 4),
                          *(undefined2 *)(DAT_00101438 + 6),param_3,&DAT_0023cf0a + iVar8,&local_5c);
     if (iVar7 != 0) {
       if ((uVar11 == local_48) && (uVar2 == local_44)) {
@@ -17844,7 +18923,7 @@ undefined1 param_7;
           local_5c = (byte)(&DAT_0023cf0b)[iVar18] >> 1;
           if (((byte)(&DAT_0023cf08)[iVar18] != uVar2) ||
              ((byte)(&DAT_0023cf09)[iVar18] != local_3c)) {
-            iVar9 = FUN_0002bdac((uint)(byte)(&DAT_0023cf08)[iVar18],(&DAT_0023cf09)[iVar18],iVar7,
+            iVar9 = tile_pair_los_blocked((uint)(byte)(&DAT_0023cf08)[iVar18],(&DAT_0023cf09)[iVar18],iVar7,
                                  iVar8,(char)iVar15,(char)iVar17,*(undefined2 *)(DAT_00101438 + 4),
                                  *(undefined2 *)(DAT_00101438 + 6),(&DAT_0023cf0a)[iVar18],&local_59
                                  ,&local_5c);
@@ -17877,7 +18956,7 @@ undefined1 param_7;
               }
               bVar14 = local_5b;
               if (((uVar2 == local_48) && (local_3c == local_44)) &&
-                 (iVar15 = FUN_0002bdac(iVar7,iVar8,iVar15,iVar17,0,0,
+                 (iVar15 = tile_pair_los_blocked(iVar7,iVar8,iVar15,iVar17,0,0,
                                         *(undefined2 *)(DAT_00101438 + 4),
                                         *(undefined2 *)(DAT_00101438 + 6),(&DAT_0023cf0a)[iVar19],
                                         &DAT_0023cf0a + iVar19,&local_5c), uVar11 = local_38,
@@ -17973,7 +19052,7 @@ short param_4;
   iVar7 = (int)(char)param_4 - (int)(char)param_2;
   local_34 = param_2;
   local_33 = param_1;
-  pbVar4 = (byte *)FUN_00068100();
+  pbVar4 = (byte *)tilemap_lookup();
   iVar5 = ((int)(char)param_3 - (int)(char)param_1) * 0x1000000;
   iVar1 = iVar5 >> 0x18;
   if (iVar1 == 0) {
@@ -18051,7 +19130,7 @@ LAB_0002d340:
     iVar5 = FUN_0002d9f4(uVar8,uVar10);
   }
   iVar5 = (uint)DAT_0010142c * 7;
-  sVar3 = FUN_0002bdac((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
+  sVar3 = tile_pair_los_blocked((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
                        (&DAT_0010173a)[iVar5],0,0,*(undefined2 *)(DAT_00101438 + 4),
                        *(undefined2 *)(DAT_00101438 + 6),*(undefined1 *)((intptr_t)&DAT_00101734 + iVar5)
                        ,(intptr_t)&DAT_00101734 + iVar5,auStack_30);
@@ -18288,13 +19367,13 @@ undefined1 param_2;
   DAT_0010142c = (byte)uVar3;
   if (uVar1 < 0x40) {
     if (uVar1 == 2) {
-      iVar2 = FUN_0002bdac(0,0,DAT_00101740,DAT_00101741,DAT_00101747,DAT_00101748,
+      iVar2 = tile_pair_los_blocked(0,0,DAT_00101740,DAT_00101741,DAT_00101747,DAT_00101748,
                            *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
                            DAT_00101742,&DAT_00101749,auStack_14);
     }
     else {
       iVar2 = uVar1 * 7;
-      iVar2 = FUN_0002bdac(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
+      iVar2 = tile_pair_los_blocked(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
                            *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2),(&DAT_00101732)[iVar2],
                            (&DAT_00101733)[iVar2],(&DAT_00101739)[iVar2],(&DAT_0010173a)[iVar2],
                            *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
@@ -18334,9 +19413,10 @@ undefined1 * param_1;
 void FUN_0002dba4()
 
 {
-  int iVar1;
+  /* Was `int`, truncating FUN_000535fc's real pointer return. */
+  char *iVar1;
   int iVar2;
-  
+
   iVar2 = 2;
   do {
     iVar1 = FUN_000535fc(iVar2);
@@ -18897,7 +19977,7 @@ LAB_0002ed50:
     iVar6 = FUN_0002db4c(local_40);
     if (iVar6 != 0) {
       uVar4 = FUN_0003431c();
-      iVar6 = FUN_0002cb14(DAT_00101918,DAT_001013f8,*(byte *)(DAT_0010190c + 2) >> 3 & 0xf,param_1,
+      iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,*(byte *)(DAT_0010190c + 2) >> 3 & 0xf,param_1,
                            param_2,param_3,uVar4);
       if (iVar6 != 0) {
         DAT_000853b8 = DAT_000853b8 & ~(ushort)(1 << (uint)local_40[0]);
@@ -18935,7 +20015,7 @@ undefined1 param_2;
   uint uVar5;
   
   if (DAT_00101914 == 0) {
-    pbVar2 = (byte *)FUN_00068100(param_1,param_2);
+    pbVar2 = (byte *)tilemap_lookup(param_1,param_2);
     uVar5 = *(byte *)(DAT_0010190c + 2) & 0x7f;
     uVar3 = (uint)(*pbVar2 >> 4) * 8 + 0x14;
     if (0x78 < uVar3) {
@@ -19036,7 +20116,7 @@ void FUN_0002f124()
     DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)(DAT_0010190c + 0x16) & 0xf));
     *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0x7f;
   }
-  pbVar2 = (byte *)FUN_00068100(DAT_00101918,DAT_001013f8);
+  pbVar2 = (byte *)tilemap_lookup(DAT_00101918,DAT_001013f8);
   if (DAT_00101734 == 0) {
     *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xf9 | 1;
     return;
@@ -19235,10 +20315,10 @@ void FUN_0002f818()
     iVar8 = Ordinal_2005((int)sVar4,
                          (((int)DAT_001013f8 - (int)(short)DAT_00101410) * 0x10000 >> 0x10) << 2);
     iVar8 = (iVar8 + iVar9) * 0x1000000;
-    iVar9 = FUN_00068100(cVar3,cVar2);
-    pbVar6 = (byte *)FUN_00068100((int)(iVar5) >> 0x18,iVar8 >> 0x18);
-    FUN_00053274(iVar9 + 2,DAT_0010190c);
-    FUN_000530c4(pbVar6 + 2,DAT_0010190c);
+    iVar9 = tilemap_lookup(cVar3,cVar2);
+    pbVar6 = (byte *)tilemap_lookup((int)(iVar5) >> 0x18,iVar8 >> 0x18);
+    object_list_unlink(iVar9 + 2,DAT_0010190c);
+    object_list_insert_head(pbVar6 + 2,DAT_0010190c);
     uVar7 = *(ushort *)(DAT_0010190c + 0x16) & 0x3ff;
     *(char *)(DAT_0010190c + 0x16) = (char)uVar7;
     *(byte *)(DAT_0010190c + 0x17) =
@@ -19280,7 +20360,7 @@ void FUN_0002fba8()
     iVar3 = ((int)DAT_0010173c - (int)DAT_001013f8) * 0x1000000 >> 0x18;
     uVar1 = (uint)(*(byte *)(DAT_00101404 + 0x1c) >> 4);
     if ((int)(uVar1 * uVar1) < iVar2 * iVar2 + iVar3 * iVar3) {
-      puVar4 = (ushort *)FUN_00068100(DAT_0010143c,DAT_0010173c);
+      puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
       FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
     }
     else {
@@ -20233,7 +21313,7 @@ void FUN_00031fa8()
       }
     }
     else {
-      puVar4 = (ushort *)FUN_00068100(DAT_0010143c,DAT_0010173c);
+      puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
       FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
     }
   }
@@ -20643,12 +21723,12 @@ LAB_00033830:
       FUN_0003a73c(DAT_0010190c,1);
       DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
       DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
-      iVar5 = FUN_00068100();
-      FUN_00053274(iVar5 + 2,DAT_0010190c);
+      iVar5 = tilemap_lookup();
+      object_list_unlink(iVar5 + 2,DAT_0010190c);
       FUN_000798c4(DAT_0010190c);
       FUN_0002b258(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
       FUN_0007931c(DAT_0010190c);
-      FUN_00053004(DAT_0010190c);
+      free_object_slot(DAT_0010190c);
       return 0;
     }
 LAB_00033810:
@@ -20868,7 +21948,7 @@ LAB_00033d18:
   case 0:
     goto LAB_00033e9c;
   case 1:
-    puVar8 = (ushort *)FUN_00068100(DAT_0010143c,DAT_0010173c);
+    puVar8 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
     FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar8 >> 4 & 0xf);
     break;
   case 2:
@@ -21444,7 +22524,7 @@ int param_2;
   iVar6 = ((byte)*param_1 & 0x3f) * 0x30;
   uVar9 = (uint)(param_1[0xb] >> 10);
   uVar11 = param_1[0xb] >> 4 & 0x3f;
-  local_28 = FUN_00068100(uVar9,uVar11);
+  local_28 = tilemap_lookup(uVar9,uVar11);
   if ((param_1[7] & 1) != 0) {
     FUN_000534a8(local_28 + 2,param_1);
     return;
@@ -21475,7 +22555,7 @@ int param_2;
 LAB_00034db4:
   uVar10 = (byte)param_1[2] & 0x3f;
   uVar8 = param_1[3] & 0x3f;
-  puVar4 = (ushort *)FUN_00068100(uVar10,uVar8);
+  puVar4 = (ushort *)tilemap_lookup(uVar10,uVar8);
   if (((uVar9 != uVar10) || (uVar11 != uVar8)) &&
      (iVar5 = FUN_00034ba8(*puVar4 & 0xf,&local_2c,local_2b), iVar5 != 0)) {
     if (((&DAT_001007da)[iVar6] & 0x80) == 0) {
@@ -21490,8 +22570,8 @@ LAB_00034db4:
                          (int)(((uint)local_2b[0] + uVar8 * 8) * 0x10000) >> 0x10,(short)uVar9,
                          (byte)(&DAT_001007da)[iVar6] >> 7,8);
     if (iVar6 != 0) {
-      FUN_00053274(local_28 + 2,param_1);
-      FUN_000530c4(puVar4 + 1,param_1);
+      object_list_unlink(local_28 + 2,param_1);
+      object_list_insert_head(puVar4 + 1,param_1);
       uVar8 = uVar8 | uVar10 << 6;
       *(byte *)(param_1 + 0xb) = (byte)param_1[0xb] & 0xf | (byte)(uVar8 << 4);
       *(byte *)((char *)param_1 + 0x17) = (byte)((uVar8 << 0x14) >> 0x18);
@@ -21525,11 +22605,11 @@ int param_1;
   uVar7 = (*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4;
   DAT_00101454 = (undefined2)uVar7;
   bVar2 = *(byte *)(param_1 + 3);
-  pbVar4 = (byte *)FUN_00068100();
+  pbVar4 = (byte *)tilemap_lookup();
   pbVar8 = pbVar4 + 2;
   iVar5 = FUN_00053334(pbVar8,param_1,0);
   if ((iVar5 != 0) && (iVar5 = FUN_0005596c(param_1), iVar5 != 0)) {
-    FUN_00053274(pbVar8,iVar5);
+    object_list_unlink(pbVar8,iVar5);
     DAT_00202c84 = 1;
     iVar6 = FUN_00052450(iVar5,(uint)(bVar1 >> 5) + (uint)bVar3 * 8,
                          ((bVar2 & 0x1c) >> 2) + uVar7 * 8,(uint)(*pbVar4 >> 4) << 3,6);
@@ -21537,7 +22617,7 @@ int param_1;
       uVar7 = *(ushort *)(iVar5 + 2) & 0xff80;
       *(byte *)(iVar5 + 2) = *pbVar4 >> 1 & 0x78 | (byte)uVar7;
       *(char *)(iVar5 + 3) = (char)(uVar7 >> 8);
-      FUN_000530c4(pbVar8,iVar5);
+      object_list_insert_head(pbVar8,iVar5);
     }
   }
   return 1;
@@ -21679,7 +22759,7 @@ ushort * param_3;
       if (((((iVar11 * 0x10000 >> 0x10) * (iVar11 * 0x10000 >> 0x10) +
             (iVar13 * 0x10000 >> 0x10) * (iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10 <=
             (int)(uVar9 * uVar9 * 3)) &&
-          (iVar11 = FUN_0002cb14((uint)DAT_00101918,(uint)DAT_001013f8,
+          (iVar11 = creature_find_path_to_tile((uint)DAT_00101918,(uint)DAT_001013f8,
                                  *(byte *)(DAT_0010190c + 2) >> 3 & 0xf,(uint)(uVar4 >> 10),
                                  CONCAT11(uVar16,(char)(uVar4 >> 4)) & 0xff3f,
                                  CONCAT31((int3)((uint)in_stack_ffffffd0 >> 8),
@@ -21690,16 +22770,16 @@ ushort * param_3;
           uVar12 = 0;
           do {
             iVar11 = uVar12 * 7;
-            uVar15 = FUN_00068100((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
+            uVar15 = tilemap_lookup((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
             uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
             for (puVar7 = (ushort *)((char *)uVar15 + 2); (*puVar7 & 0xffc0) != 0; puVar7 = puVar7 + 2)
             {
-              uVar15 = FUN_00053514(puVar7,uVar9);
+              uVar15 = resolve_object_link(puVar7,uVar9);
               uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
               puVar7 = (ushort *)uVar15;
               if ((((*puVar7 & 0x1c0) == 0x180) && ((*puVar7 & 0x30) == 0x20)) &&
                  ((puVar7[3] & 0xffc0) != 0)) {
-                puVar8 = (ushort *)FUN_00053514();
+                puVar8 = (ushort *)resolve_object_link();
                 uVar9 = (uint)*puVar8;
                 if ((uVar9 & 0x1c0) == 0x180) {
                   uVar10 = uVar9 & 0x30;
@@ -21720,7 +22800,7 @@ ushort * param_3;
         }
         bVar1 = (&DAT_00101733)[uVar9 * 7];
         bVar2 = (&DAT_00101732)[uVar9 * 7];
-        puVar7 = (ushort *)FUN_00068100((uint)bVar2,(uint)bVar1);
+        puVar7 = (ushort *)tilemap_lookup((uint)bVar2,(uint)bVar1);
         iVar11 = FUN_00034ba8(*puVar7 & 0xf,&local_28,local_27);
         if (iVar11 != 0) {
           bVar3 = (&DAT_0023cf0a)[((int)(short)(ushort)bVar1 + (short)(ushort)bVar2 * 0x40) * 5];
@@ -21731,9 +22811,9 @@ ushort * param_3;
                                  0x10,(ushort)((uint)bVar3 << 3) & 0xff,
                                 *(byte *)(DAT_00101404 + 10) >> 7,8);
           if (iVar11 != 0) {
-            iVar11 = FUN_00068100(DAT_00101918,DAT_001013f8);
-            FUN_00053274(iVar11 + 2,param_3);
-            FUN_000530c4(puVar7 + 1,param_3);
+            iVar11 = tilemap_lookup(DAT_00101918,DAT_001013f8);
+            object_list_unlink(iVar11 + 2,param_3);
+            object_list_insert_head(puVar7 + 1,param_3);
             uVar9 = bVar1 & 0x3f | (uint)bVar2 << 6;
             *(byte *)(param_3 + 0xb) = (byte)param_3[0xb] & 0xf | (byte)(uVar9 << 4);
             *(char *)((char *)param_3 + 0x17) = (char)(uVar9 >> 4);
@@ -22082,8 +23162,8 @@ ushort * param_1;
       iVar3 = Ordinal_2005(param_1[1],0x38e);
       if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*param_1)) {
         uVar2 = (1 - (uint)(byte)param_1[3]) + (uint)*(byte *)((char *)param_1 + 7);
-        FUN_000259c0((uint)(byte)param_1[3],uVar2,0);
-        FUN_0007e99c(uVar2 & 0xff,(char)param_1[3],1);
+        palette_cycle_range((uint)(byte)param_1[3],uVar2,0);
+        reinstall_active_palette(uVar2 & 0xff,(char)param_1[3],1);
         uVar1 = FUN_0002294c();
         *(char *)param_1 = (char)uVar1;
         *(char *)((char *)param_1 + 1) = (char)((ushort)uVar1 >> 8);
@@ -22461,7 +23541,7 @@ LAB_00036858:
       Ordinal_1044(local_b8,&DAT_00088d98,0x300);
       if (local_b9 == '\0') {
         in_stack_ffffff10 = CONCAT22((short)((uint)in_stack_ffffff10 >> 0x10),0x140);
-        FUN_00012444(0,0,g_uw_framebuffer,200,in_stack_ffffff10,0,0,
+        fade_out(0,0,g_uw_framebuffer,200,in_stack_ffffff10,0,0,
                      local_b8,2,0);
       }
       iVar10 = (int)acStack_d0[7];
@@ -22515,7 +23595,7 @@ LAB_00036858:
         } while (iVar10 != 0);
         local_64 = uVar14;
         FUN_00035fdc(uVar14 + 0x100,local_b8);
-        FUN_00022b54(local_b8,0xffffffff);
+        build_rgb565_palette(local_b8,0xffffffff);
         local_54 = FUN_0002294c();
         local_4c = local_54;
         FUN_00035e00(uVar14 + 0x500,*(undefined2 *)(uVar14 + 6),local_70);
@@ -22721,7 +23801,7 @@ LAB_00036ca4:
                       if (iVar19 < 0) {
                         iVar19 = iVar19 + 1;
                       }
-                      FUN_00011060(CONCAT13(*(undefined1 *)((int)&local_b4 + iVar13 + 3),
+                      draw_text_string(CONCAT13(*(undefined1 *)((int)&local_b4 + iVar13 + 3),
                                             CONCAT12(*(undefined1 *)((int)&local_b4 + iVar13 + 2),
                                                      CONCAT11(*(undefined1 *)
                                                                ((int)&local_b4 + iVar13 + 1),
@@ -22737,7 +23817,7 @@ LAB_00036ca4:
                   local_8f = -2;
                   local_8d = -1;
                 }
-                FUN_00022f0c(1);
+                flush_dirty_rect_to_display(1);
               }
               if ((((local_8b & 0x20) != 0) && ((local_8b & 0x40) == 0)) &&
                  ((-1 < local_91 && (local_91 < 999)))) {
@@ -22870,7 +23950,7 @@ LAB_00037a94:
       }
       if (local_b9 == '\0') {
         if (local_8d != -2) {
-          FUN_00012444(0,0,g_uw_framebuffer,200,CONCAT22(uVar24,0x140),0
+          fade_out(0,0,g_uw_framebuffer,200,CONCAT22(uVar24,0x140),0
                        ,0,local_b8,2,1);
         }
         FUN_00040df0();
@@ -22965,11 +24045,11 @@ uint param_1;
   }
   if (uVar1 < 0x100) {
     if (*(short *)(DAT_00085a6c + 8) == 1) {
-      FUN_0003bcb8(1);
+      change_game_mode(1);
       goto LAB_00037d3c;
     }
     if (*(short *)(DAT_00085a6c + 8) == 0) goto LAB_00037d3c;
-    FUN_00040efc(0);
+    set_palette_bank(0);
     uVar2 = 0x7ffe;
   }
   else {
@@ -23073,8 +24153,8 @@ int param_2;
      (local_18 = (ushort *)(param_1 + 6), (*local_18 & 0xffc0) != 0)) {
     iVar1 = FUN_000537d0(&local_18,1,4,0,0xf);
     while (iVar1 != 0) {
-      FUN_00053274(local_18,iVar1);
-      FUN_00053004(iVar1);
+      object_list_unlink(local_18,iVar1);
+      free_object_slot(iVar1);
       if (param_2 == 0) {
         return uVar2;
       }
@@ -23092,11 +24172,13 @@ int param_2;
 
 undefined4 FUN_00037fe8(param_1,param_2)
 undefined4 param_1;
-uint param_2;
+/* Object-record pointer -- was `uint`, truncating it (same class as
+   object_list_insert_head/object_list_append_tail below). */
+char *param_2;
 
 {
   int iVar1;
-  
+
   if (param_2 < DAT_002046c4) {
     *(undefined1 *)(param_2 + 8) = 0;
   }
@@ -23158,7 +24240,7 @@ LAB_00038100:
     else {
       if ((param_3 & 8) != 0) {
         if (((uVar1 & 0x1ff) == 0xd5) || ((uVar1 & 0x1ff) == 0xd6)) {
-          iVar3 = FUN_00068100(param_4,(int)param_5);
+          iVar3 = tilemap_lookup(param_4,(int)param_5);
           iVar3 = FUN_00037fe8(iVar3 + 2,param_1);
           if (iVar3 != 0) goto LAB_000382ac;
           uVar6 = 0xffffffff;
@@ -23168,7 +24250,7 @@ LAB_00038100:
           if ((uVar5 & 3) == 0) {
             uVar4 = FUN_0006a058(6,10);
             FUN_00081814(param_1,8,uVar4,0,0,sVar2,param_5);
-            sVar2 = FUN_00022910(2);
+            sVar2 = rand_below(2);
             uVar6 = (int)sVar2 + 0xd5;
           }
         }
@@ -23178,7 +24260,7 @@ LAB_00038100:
       }
     }
     if ((short)uVar6 < -1) {
-      sVar2 = FUN_00022910(2);
+      sVar2 = rand_below(2);
       uVar6 = (int)sVar2 + 0xd5;
     }
     if (-1 < (short)uVar6) {
@@ -23276,7 +24358,7 @@ undefined2 param_5;
   if ((((*param_1 & 0x2000) == 0) &&
       (uVar6 = ((byte)(&DAT_00202c97)[(*param_1 & 0x1ff) * 0xd] & 0xc) >> 2, (short)uVar6 != 3)) &&
      (iVar5 = (int)param_3 >> uVar6, 0 < (short)iVar5)) {
-    iVar4 = FUN_00053728(param_1);
+    iVar4 = object_ptr_in_arena(param_1);
     if (iVar4 == 0) {
       if ((0x13f < (*param_1 & 0x1ff)) && ((*param_1 & 0x1ff) < 0x148)) {
         uVar2 = param_1[3];
@@ -23498,7 +24580,13 @@ uint param_1;
 {
   int iVar1;
   char *iVar2;
-  
+
+  /* Same never-initialized-in-this-decompile DAT_00110fc8 issue documented
+     on its sibling function above (see that comment) -- guard this one the
+     same way instead of dereferencing NULL. */
+  if (DAT_00110fc8 == 0) {
+    return;
+  }
   iVar2 = DAT_00110fc8;
   param_1 = param_1 & 0xff;
   if (param_1 == 0xa0) {
@@ -23615,12 +24703,12 @@ int param_6;
     do {
       cVar21 = (local_a4 + local_a8 * 2)[1];
       cVar7 = local_a4[local_a8 * 2];
-      pbVar10 = (byte *)FUN_00068100((int)cVar7,(int)cVar21);
+      pbVar10 = (byte *)tilemap_lookup((int)cVar7,(int)cVar21);
       if (param_6 != 0) {
         for (puVar11 = (ushort *)(pbVar10 + 2); (*puVar11 & 0xffc0) != 0; puVar11 = puVar11 + 2) {
-          puVar11 = (ushort *)FUN_00053514();
+          puVar11 = (ushort *)resolve_object_link();
           if (((&DAT_00202c90)[(*puVar11 & 0x1ff) * 0xd] != '\0') ||
-             (iVar12 = FUN_00053728(puVar11), iVar12 != 0)) {
+             (iVar12 = object_ptr_in_arena(puVar11), iVar12 != 0)) {
             FUN_00053334(pbVar10 + 2,puVar11,0);
           }
         }
@@ -23860,7 +24948,7 @@ short param_9;
       if (sVar4 <= iVar2) {
         iVar12 = (int)(short)uVar13;
         do {
-          puVar7 = (ushort *)FUN_00068100((int)local_44,param_2);
+          puVar7 = (ushort *)tilemap_lookup((int)local_44,param_2);
           uVar10 = *puVar7 >> 4 & 0xf;
           if ((param_9 == 1) || (param_9 == 3)) {
             uVar13 = (uVar10 - (int)param_9) + 2;
@@ -23879,12 +24967,12 @@ LAB_0003987c:
           uVar3 = (uint)(short)uVar10;
           if (uVar3 < uVar11) {
             for (puVar8 = puVar7 + 1; (*puVar8 & 0xffc0) != 0; puVar8 = puVar8 + 2) {
-              puVar8 = (ushort *)FUN_00053514();
+              puVar8 = (ushort *)resolve_object_link();
               if (((*puVar8 & 0x1c0) != 0x180) && ((int)(puVar8[1] & 0x7f) < iVar12 * 8)) {
                 uVar10 = puVar8[1] & 0xff80;
                 *(byte *)(puVar8 + 1) = (byte)uVar10 | (byte)((uVar13 & 0xf) << 3);
                 *(char *)((char *)puVar8 + 3) = (char)(uVar10 >> 8);
-                iVar9 = FUN_00053728(puVar8);
+                iVar9 = object_ptr_in_arena(puVar8);
                 if ((iVar9 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
                   if (puVar8 == DAT_0023be64) {
                     DAT_00204884 = (undefined2)(iVar12 << 6);
@@ -23899,18 +24987,18 @@ LAB_0003987c:
           }
           else if (uVar11 < uVar3) {
             for (puVar8 = puVar7 + 1; (*puVar8 & 0xffc0) != 0; puVar8 = puVar8 + 2) {
-              uVar14 = FUN_00053514(puVar8,uVar10);
+              uVar14 = resolve_object_link(puVar8,uVar10);
               uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
               puVar8 = (ushort *)uVar14;
               if (((*puVar8 & 0x1c0) != 0x180) && ((puVar8[1] & 0x7f) == uVar3 * 8)) {
                 uVar10 = puVar8[1] & 0xff80;
                 *(byte *)(puVar8 + 1) = (byte)uVar10 | (byte)((uVar13 & 0xf) << 3);
                 *(char *)((char *)puVar8 + 3) = (char)(uVar10 >> 8);
-                uVar14 = FUN_00053728(puVar8);
+                uVar14 = object_ptr_in_arena(puVar8);
                 uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
                 if (((int)uVar14 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
                   if (puVar8 == DAT_0023be64) {
-                    FUN_0003c524(0x10);
+                    set_locomotion_state(0x10);
                     uVar10 = extraout_r1;
                   }
                 }
@@ -24029,7 +25117,7 @@ undefined4 FUN_00039d78()
   local_6 = DAT_00204880 >> 5;
   local_8 = DAT_00204882 >> 5;
   FUN_00069f2c((int)DAT_00201c70 >> 8,0xb,&local_6,&local_8);
-  puVar2 = (ushort *)FUN_00068100((int)local_6 >> 3,(int)local_8 >> 3);
+  puVar2 = (ushort *)tilemap_lookup((int)local_6 >> 3,(int)local_8 >> 3);
   uVar1 = *puVar2;
   if ((((uVar1 & 0xf) == 0) || (((&DAT_0023ae40)[uVar1 >> 10 & 0xf] & 0xfff0) != 0x10)) ||
      ((int)(*(byte *)(DAT_0023be64 + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
@@ -24162,7 +25250,7 @@ int param_3;
     cVar6 = -4;
     iVar3 = -4;
     do {
-      iVar2 = FUN_00068100(((short)param_2 + iVar1) * 0x10000 >> 0x10,
+      iVar2 = tilemap_lookup(((short)param_2 + iVar1) * 0x10000 >> 0x10,
                            ((short)param_3 + iVar3) * 0x10000 >> 0x10);
       iVar3 = (int)(char)iVar5;
       local_34[iVar3] = iVar2;
@@ -24182,11 +25270,11 @@ int param_3;
   } while (iVar1 < 5);
   if ((char)iVar5 == '\x04') {
     iVar5 = FUN_00068138(0xfd,0);
-    iVar1 = FUN_00068100(param_2,param_3 + 1);
+    iVar1 = tilemap_lookup(param_2,param_3 + 1);
     uVar4 = *(ushort *)(iVar5 + 2) & 0x380 | 0x6c40;
     *(char *)(iVar5 + 2) = (char)uVar4;
     *(char *)(iVar5 + 3) = (char)(uVar4 >> 8);
-    FUN_000530c4(iVar1 + 2,iVar5);
+    object_list_insert_head(iVar1 + 2,iVar5);
     FUN_00055f98(iVar5,param_2,param_3 + 1,1);
     iVar5 = 0;
     do {
@@ -24246,7 +25334,7 @@ void FUN_0003a398()
   int iVar2;
   int local_10;
   
-  local_10 = FUN_00068100(*(ushort *)(DAT_0023be64 + 0x16) >> 10,
+  local_10 = tilemap_lookup(*(ushort *)(DAT_0023be64 + 0x16) >> 10,
                           (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4);
   local_10 = local_10 + 2;
   iVar2 = FUN_000537d0(&local_10,1,4,1,4);
@@ -24278,7 +25366,7 @@ undefined4 param_3;
   int iVar2;
   int local_c;
   
-  local_c = FUN_00068100(param_2,param_3);
+  local_c = tilemap_lookup(param_2,param_3);
   local_c = local_c + 2;
   iVar2 = FUN_000537d0(&local_c,1,4,1,4);
   if (iVar2 != 0) {
@@ -24315,7 +25403,7 @@ void FUN_0003a57c()
   *(byte *)(iVar2 + 0xb) = (byte)uVar3 | 10;
   *(char *)(iVar2 + 0xc) = (char)(uVar3 >> 8);
   FUN_00028488();
-  FUN_00053004(iVar2);
+  free_object_slot(iVar2);
   return;
 }
 
@@ -24337,7 +25425,7 @@ int param_1;
 {
   int iVar1;
   
-  iVar1 = FUN_00068100(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
+  iVar1 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
   ;
   FUN_000534a8(iVar1 + 2,param_1);
   return 1;
@@ -24362,13 +25450,13 @@ void FUN_0003a654()
     FUN_00074be8(*(undefined1 *)(iVar4 + 0x85638),0,0,FUN_0003a604);
     iVar4 = (iVar4 + -1) * 0x1000000 >> 0x18;
   } while (0 < iVar4);
-  iVar4 = FUN_00068100(0x17,0x38);
-  puVar3 = (ushort *)FUN_00053514(iVar4 + 2);
+  iVar4 = tilemap_lookup(0x17,0x38);
+  puVar3 = (ushort *)resolve_object_link(iVar4 + 2);
   while (puVar2 = puVar3, puVar2 != (ushort *)0x0) {
-    puVar3 = (ushort *)FUN_00053514(puVar2 + 2);
+    puVar3 = (ushort *)resolve_object_link(puVar2 + 2);
     if ((*puVar2 & 0x1ff) == 0x1a0) {
-      FUN_00053274(iVar4 + 2,puVar2);
-      FUN_00053004(puVar2);
+      object_list_unlink(iVar4 + 2,puVar2);
+      free_object_slot(puVar2);
     }
   }
   return;
@@ -24610,7 +25698,7 @@ int param_3;
   iVar2 = FUN_0003a99c(param_1,param_2,local_6c);
   if (param_3 == 0) {
     if ((short)iVar2 == -2) {
-      iVar2 = FUN_00068100((int)DAT_002020a0,(int)DAT_002020a4);
+      iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
       FUN_00053334(iVar2 + 2,param_1,0);
     }
   }
@@ -24652,7 +25740,7 @@ ushort * param_1;
   int iVar2;
   uint uVar3;
   
-  iVar2 = FUN_00053728();
+  iVar2 = object_ptr_in_arena();
   if (iVar2 == 0) {
     uVar3 = *param_1 & 0x1c0;
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
@@ -24681,7 +25769,7 @@ void FUN_0003aea8()
     iVar3 = 0;
     do {
       if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
-        uVar1 = FUN_00053514();
+        uVar1 = resolve_object_link();
         FUN_00052af4(uVar1,FUN_0003ae00);
       }
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
@@ -25088,7 +26176,7 @@ void FUN_0003b820()
   FUN_0007ea44(2);
   FUN_0007856c();
   FUN_00049960();
-  FUN_00041f34();
+  input_bindings_init();
   FUN_0007ea30();
   FUN_00077868(DAT_0023c540);
   FUN_00037d50();
@@ -25145,14 +26233,14 @@ void FUN_0003b820()
   if (sVar2 != 0) {
     FUN_0003c3c8();
   }
-  FUN_0005b054();
+  reset_texture_id_lists();
   FUN_0005b828();
   FUN_00066e90();
   FUN_0002b63c();
   FUN_000232ec(0);
   FUN_00075be0();
   FUN_0003bb84();
-  FUN_00070118();
+  load_light_tables();
   FUN_00028004();
   iVar3 = FUN_0006bb64();
   if (iVar3 == 0) {
@@ -25184,7 +26272,7 @@ void FUN_0003b820()
     FUN_0003c3c8();
   }
   FUN_00040df0();
-  FUN_00040efc(5);
+  set_palette_bank(5);
   return;
 }
 
@@ -25200,7 +26288,7 @@ void FUN_0003baf4()
   char acStack_108 [260];
   
   thunk_FUN_00057118();
-  FUN_00041fe4();
+  input_bindings_free();
   FUN_0007eb34();
   FUN_000499a4();
   thunk_FUN_0006edb8();
@@ -25238,13 +26326,14 @@ void FUN_0003bb60()
 void FUN_0003bb84()
 
 {
-  FUN_0004213c(0x278,0,0xbd,FUN_0003bc08);
+  register_key_binding(0x278,0,0xbd,FUN_0003bc08);
   DAT_00201b6c = 1;
   DAT_00201c84 = 0x7fff;
   DAT_00201b60 = 0;
   DAT_00201b64 = 0xffff;
   *(undefined1 *)(DAT_00085a6c + 8) = 0;
   *(undefined1 *)(DAT_00085a6c + 9) = 0;
+  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
   return;
 }
 
@@ -25270,12 +26359,26 @@ void FUN_0003bc1c()
 
 
 
-void FUN_0003bc40(param_1)
+// was FUN_0003bc40
+void set_game_mode(param_1)
 undefined4 param_1;
 
 {
   *(char *)(DAT_00085a6c + 8) = (char)param_1;
   *(char *)(DAT_00085a6c + 9) = (char)((uint)param_1 >> 8);
+  /* The real game mode lives at BYTE offset 8 of the DAT_00085a6c struct
+     (== DAT_00085a6c[4] with its `short *` typing) -- that is what the
+     0x3bc40 disasm writes (`strb [buf,#8]` / `[buf,#9]`) and what the
+     keybinding dispatcher dispatch_key_binding reads (`ldrb [state,#8]`). Ghidra
+     typed DAT_00085a6c as `short *`, so the two `*(char *)(DAT_00085a6c +
+     8/9)` writes just above actually land at byte 16/18, and every
+     `*(short *)(DAT_00085a6c + 8) == N` mode check elsewhere reads byte
+     16 too -- self-consistent, so mode transitions still "work", but
+     dispatch_key_binding's byte-8 read then always saw 0, so NO keybinding's
+     mode mask ever matched and every table-dispatched key (the W/S/X/A/D
+     movement keys, ...) was dead. Mirror the mode to byte 8 as well so
+     the dispatcher sees it, without disturbing the byte-16 readers. */
+  DAT_00085a6c[4] = (short)param_1;
   DAT_00201b60 = (short)param_1;
   if ((short)DAT_00201b60 != 1) {
     if ((short)DAT_00201b60 == 2) {
@@ -25295,7 +26398,8 @@ LAB_0003bcb0:
 
 
 
-void FUN_0003bcb8(param_1)
+// was FUN_0003bcb8
+void change_game_mode(param_1)
 int param_1;
 
 {
@@ -25305,7 +26409,9 @@ int param_1;
   pcVar1 = (code *)(int)DAT_00201b64;
   bVar2 = pcVar1 != (code *)0xffffffff;
   if (bVar2) {
-    pcVar1 = *(code **)(&DAT_000856a4 + (int)pcVar1 * 0x40);
+    /* 0x80 = 16 entries/mode * 8 bytes/entry (real pointer size) -- was
+       0x40 (*4-byte entries), see DAT_00085668's comment. */
+    pcVar1 = *(code **)(&DAT_000856a4 + (int)pcVar1 * 0x80);
   }
   if (bVar2 && pcVar1 != (code *)0x0) {
     (*pcVar1)();
@@ -25316,9 +26422,10 @@ int param_1;
   else {
     DAT_00201c94 = (short)DAT_00201b60;
   }
-  FUN_0003bc40(param_1);
-  if (*(code **)(&DAT_00085668 + DAT_00201b64 * 0x40) != (code *)0x0) {
-    (**(code **)(&DAT_00085668 + DAT_00201b64 * 0x40))();
+  set_game_mode(param_1);
+  /* 0x80, see DAT_00085668's comment. */
+  if (*(code **)(&DAT_00085668 + DAT_00201b64 * 0x80) != (code *)0x0) {
+    (**(code **)(&DAT_00085668 + DAT_00201b64 * 0x80))();
   }
   if ((short)param_1 != 1) {
     FUN_00049924(0x7ffe);
@@ -25330,7 +26437,9 @@ int param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0003bd50()
+// was enter_dungeon_view -- 3D dungeon-view entry transition (fade out, load PALS.DAT
+// bank 0, redraw dungeon, fade in)
+void enter_dungeon_view()
 
 {
   char stack0xffdc2f3c_buf [256];
@@ -25346,8 +26455,19 @@ void FUN_0003bd50()
   FUN_000678e0();
   FUN_0005b758(0x34,0x14,0xab,0x70);
   Ordinal_1044(auStack_314,&DAT_00088d98,0x300);
-  FUN_00012444(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
-  FUN_00040e24(0,auStack_314);
+  fade_out(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
+  load_pals_bank(0,auStack_314);
+  /* load_pals_bank loads PALS.DAT bank 0 (the 3D dungeon-view palette --
+     cf. set_palette_bank(0) at the game-mode switch) into the local
+     auStack_314 and installs it, but leaves the global DAT_00088d98
+     holding whatever bank the main menu last loaded (bank 2). The torch
+     palette-cycle loop (palette_cycle_range -> reinstall_active_palette) then re-installs
+     g_palette_rgb565 straight from DAT_00088d98 on the very next redraw,
+     so the dungeon flips from its real bank-0 colours to the stale menu
+     palette (grey -> gold) after the first frame. Mirror the loaded
+     palette into DAT_00088d98 so the cycle loop keeps re-installing
+     bank 0. */
+  Ordinal_1044(&DAT_00088d98,auStack_314,0x300);
   Ordinal_1047(acStack_41c,0,0x104);
   pcVar2 = &DAT_0023cca8;
     stack0xffdc2f3c_ptr = acStack_41c;
@@ -25364,10 +26484,10 @@ void FUN_0003bd50()
   FUN_0003e44c();
   FUN_00049924(0x7dfe);
   FUN_000667cc();
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_0006fea4();
   FUN_000570b4();
-  FUN_000122d4(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
+  fade_in(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   return;
 }
 
@@ -25434,9 +26554,11 @@ short param_1;
     sVar1 = FUN_00057a70();
   } while (sVar1 < 0);
   FUN_0007fce8(1);
-  (**(code **)(&DAT_000856a4 + DAT_00201b64 * 0x40))();
+  /* 0x80, see DAT_00085668's comment. */
+  (**(code **)(&DAT_000856a4 + DAT_00201b64 * 0x80))();
   *(undefined1 *)(DAT_00085a6c + 8) = 0;
   *(undefined1 *)(DAT_00085a6c + 9) = 0;
+  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
   sVar1 = DAT_00201b64;
   DAT_00201b60 = 0;
   DAT_00201b64 = 0xffff;
@@ -25451,7 +26573,8 @@ short param_1;
   DAT_00201c98 = 1;
   DAT_00201b60 = (undefined2)(1 << ((int)sVar1 & 0xffU));
   DAT_00201b64 = sVar1;
-  (**(code **)(&DAT_00085668 + sVar1 * 0x40))();
+  /* 0x80, see DAT_00085668's comment. */
+  (**(code **)(&DAT_00085668 + sVar1 * 0x80))();
   return;
 }
 
@@ -25466,7 +26589,7 @@ undefined4 FUN_0003c194()
   
   if (0 < DAT_00201c90) {
     if ((DAT_00085730 & 1) != 0) {
-      FUN_0005bb5c();
+      full_dungeon_redraw();
       FUN_000411b8((int)DAT_0023bca0);
     }
     if (DAT_00201b68 != DAT_00201c7c) {
@@ -25489,9 +26612,9 @@ undefined4 FUN_0003c194()
     }
     DAT_00201c90 = local_20;
     DAT_00201c8c = local_1e;
-    FUN_0003cff8((int)local_20,(int)local_1e,1);
+    set_player_tile_position((int)local_20,(int)local_1e,1);
     if ((DAT_00085730 & 2) != 0) {
-      FUN_0005bb5c();
+      full_dungeon_redraw();
       FUN_000411cc((int)DAT_0023bca0);
     }
     DAT_00201c90 = 0;
@@ -25642,7 +26765,13 @@ ushort param_1;
 
 
 
-void FUN_0003c524(param_1,param_2)
+// was FUN_0003c524 -- set the player's locomotion state from a collision-state
+// mask (param_1): when it changes, pick the movement mode (walk / swim / fly /
+// fall) via FUN_0003dca4. While the airborne bit (0x10) is set it also keeps the
+// gravity fall armed each tick (DAT_00204890 = -4) and clamps the fall velocity
+// (DAT_0020488a) to terminal when DAT_0020208c & 2. Called every tick from
+// update_3d_sound_position with the current state byte DAT_002048a8.
+void set_locomotion_state(param_1,param_2)
 ushort param_1;
 int param_2;
 
@@ -25780,7 +26909,9 @@ LAB_0003c780:
 
 
 
-undefined4 FUN_0003c7f4(param_1)
+// was FUN_0003c7f4 -- translate a W/S/X/A/D direction arg (-2..2) into
+// movement-engine target state (heading-relative goal position/heading).
+undefined4 begin_directional_move(param_1)
 short param_1;
 
 {
@@ -25840,10 +26971,10 @@ LAB_0003c940:
       iVar7 = iVar9 * 0x10000 >> 0x10;
       if (iVar7 != iVar8) {
         if (iVar8 != -1) {
-          FUN_00053274(DAT_002029cc + iVar8 * 4 + 2,DAT_0023be64);
+          object_list_unlink(DAT_002029cc + iVar8 * 4 + 2,DAT_0023be64);
         }
         DAT_00202080 = (short)iVar9;
-        FUN_000530c4(DAT_002029cc + iVar7 * 4 + 2,DAT_0023be64);
+        object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,DAT_0023be64);
         uVar6 = DAT_00204880 & 0x3f00;
         uVar5 = *(ushort *)(DAT_0023be64 + 0x16) & 0x3ff;
         *(char *)(DAT_0023be64 + 0x16) = (char)uVar5;
@@ -25875,7 +27006,7 @@ LAB_0003c940:
       else if (DAT_00204890 == 0 && uVar5 == 0) {
         DAT_00204890 = -4;
       }
-      FUN_0003c524((int)DAT_00202c68,0);
+      set_locomotion_state((int)DAT_00202c68,0);
       uVar10 = FUN_0002294c();
       uVar5 = *(ushort *)(DAT_0023be64 + 0xb) & 0xfff;
       *(char *)(DAT_0023be64 + 0xb) = (char)uVar5;
@@ -25896,13 +27027,13 @@ LAB_0003c940:
       }
       local_3a = (undefined2)(iVar7 >> 5);
       local_38 = *(byte *)(DAT_0023be64 + 2) & 0x7f;
-      FUN_000518c0(0,0);
+      collision_height_envelope(0,0);
       FUN_00051dd0();
       iVar8 = (int)*(char *)(DAT_00202c6c + 0xb);
       iVar7 = (int)(short)*(char *)(DAT_00202c6c + 0xb);
       if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
         do {
-          uVar11 = FUN_00053514(&DAT_00202c3a + iVar7 * 6,iVar8);
+          uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6,iVar8);
           iVar8 = (int)((ulonglong)uVar11 >> 0x20);
           if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
             FUN_0007cdbc(DAT_0023be64,0,(ushort *)uVar11,0);
@@ -25950,7 +27081,8 @@ LAB_0003cdf8:
 
 
 
-void FUN_0003ce04(param_1)
+// was FUN_0003ce04
+void apply_heading_turn(param_1)
 undefined4 param_1;
 
 {
@@ -26017,7 +27149,8 @@ undefined4 param_1;
 
 
 
-void FUN_0003cff8(param_1,param_2)
+// was FUN_0003cff8
+void set_player_tile_position(param_1,param_2)
 uint param_1;
 uint param_2;
 
@@ -26028,7 +27161,7 @@ uint param_2;
   undefined1 local_3c [24];
   
   if (-1 < DAT_00202080) {
-    FUN_00053274(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
   }
   DAT_002048b8 = &LAB_0003d8e4;
   DAT_002048b2 = 0x1100;
@@ -26089,14 +27222,14 @@ uint param_2;
   iVar2 = (int)DAT_00204884;
   DAT_00202c6c[4] = (char)(iVar2 >> 3);
   DAT_00202c6c[5] = (char)((uint)(iVar2 >> 3) >> 8);
-  FUN_00050d78(DAT_002048a7);
+  collision_build_height_field(DAT_002048a7);
   DAT_002048a8 = FUN_0005a630((int)(short)(*(ushort *)(DAT_00202c6c + 0xe) |
                                           *(ushort *)(DAT_00202c6c + 0xc)));
-  FUN_0003c524(DAT_002048a8,0);
+  set_locomotion_state(DAT_002048a8,0);
   DAT_0023be98 = 0;
   FUN_0006907c();
   DAT_000858a0 = 1;
-  FUN_000530c4(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+  object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
   return;
 }
 
@@ -26104,7 +27237,8 @@ uint param_2;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0003d438()
+// was FUN_0003d438
+void update_3d_sound_position()
 
 {
   short sVar1;
@@ -26121,10 +27255,10 @@ void FUN_0003d438()
   iVar7 = iVar8 * 0x10000 >> 0x10;
   if (iVar7 != iVar2) {
     if (iVar2 != -1) {
-      FUN_00053274(DAT_002029cc + iVar2 * 4 + 2,DAT_0023be64);
+      object_list_unlink(DAT_002029cc + iVar2 * 4 + 2,DAT_0023be64);
     }
     DAT_00202080 = (short)iVar8;
-    FUN_000530c4(DAT_002029cc + iVar7 * 4 + 2,DAT_0023be64);
+    object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,DAT_0023be64);
     uVar5 = DAT_00204880 & 0x3f00;
     uVar3 = *(ushort *)(DAT_0023be64 + 0x16) & 0x3ff;
     *(char *)(DAT_0023be64 + 0x16) = (char)uVar3;
@@ -26201,7 +27335,7 @@ void FUN_0003d438()
     }
     _DAT_002048a9 = 0;
   }
-  FUN_0003c524(DAT_002048a8,0);
+  set_locomotion_state(DAT_002048a8,0);
   DAT_000858a0 = 0;
   return;
 }
@@ -26356,7 +27490,7 @@ int param_1;
 void FUN_0003dbd8()
 
 {
-  FUN_0003c524(DAT_002048a8,1);
+  set_locomotion_state(DAT_002048a8,1);
   DAT_000858a0 = 1;
   return;
 }
@@ -26594,12 +27728,12 @@ void FUN_0003e2a4()
 
 {
   DAT_000868d8 = 0;
-  DAT_00202090 = FUN_0004202c(8,0x74,0x20,0xfffffffa,0xffff,1,FUN_0003faa0);
-  DAT_00202090 = FUN_0004202c(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
-  DAT_002020c8 = FUN_0004202c(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
-  DAT_002020bc = FUN_0004202c(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
-  DAT_0020209c = FUN_0004202c(0x7a,0x97,0x98,0x88,0,1,FUN_0003df28);
-  DAT_002020b4 = FUN_0004202c(0xf4,0x9c,0x135,0x78,0,1,FUN_0003e0b4);
+  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,1,FUN_0003faa0);
+  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
+  DAT_002020c8 = register_click_region(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
+  DAT_002020bc = register_click_region(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
+  DAT_0020209c = register_click_region(0x7a,0x97,0x98,0x88,0,1,FUN_0003df28);
+  DAT_002020b4 = register_click_region(0xf4,0x9c,0x135,0x78,0,1,FUN_0003e0b4);
   return;
 }
 
@@ -26608,10 +27742,10 @@ void FUN_0003e2a4()
 void FUN_0003e404()
 
 {
-  FUN_0004221c((int)DAT_002020c8);
-  FUN_0004221c((int)DAT_002020bc);
-  FUN_0004221c((int)DAT_002020b4);
-  FUN_0004221c((int)DAT_0020209c);
+  unregister_key_binding((int)DAT_002020c8);
+  unregister_key_binding((int)DAT_002020bc);
+  unregister_key_binding((int)DAT_002020b4);
+  unregister_key_binding((int)DAT_0020209c);
   return;
 }
 
@@ -26753,7 +27887,7 @@ int param_1;
   
   uVar2 = 0xffffffff;
   puVar1 = (ushort *)(param_1 + 2);
-  while (puVar1 = (ushort *)FUN_00053514(puVar1), puVar1 != (ushort *)0x0) {
+  while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
     if ((*puVar1 & 0x1ff) == 0x164) {
       if ((short)uVar2 < (short)(puVar1[1] & 0x7f)) {
         uVar2 = (int)(short)puVar1[1] & 0x7f;
@@ -26790,7 +27924,7 @@ int param_2;
     uVar2 = *(ushort *)(DAT_0023be64 + 0x16) >> 10;
     uVar9 = (uint)uVar2;
     uVar10 = (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4;
-    iVar5 = FUN_00068100(uVar9,uVar10);
+    iVar5 = tilemap_lookup(uVar9,uVar10);
     uVar13 = (uint)DAT_002020a4;
     sVar4 = (&DAT_0023ae40)[*(byte *)(iVar5 + 1) >> 2 & 0xf];
     uVar12 = (uint)DAT_002020a0;
@@ -26839,7 +27973,7 @@ int param_2;
              ((0 < sVar8 && ((int)(short)uVar13 < (int)(uVar10 * 0x10000) >> 0x10)))) {
             uVar10 = uVar13;
           }
-          pbVar6 = (byte *)FUN_00068100(uVar9,uVar10);
+          pbVar6 = (byte *)tilemap_lookup(uVar9,uVar10);
           sVar7 = FUN_0003e83c();
           bVar1 = false;
           iVar14 = (int)sVar7;
@@ -26894,7 +28028,7 @@ ushort *FUN_0003ec00()
     puVar3 = (ushort *)FUN_000535fc(iVar2);
     DAT_002020a8 = DAT_002020b0 + 2;
     if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
-       (iVar2 = FUN_00053728(puVar3), iVar2 == 0)) {
+       (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;
       return puVar3;
     }
@@ -26943,7 +28077,7 @@ char *param_1;
 {
   if (DAT_002020ec != 0) {
     FUN_0007c2ec(DAT_0023be64,param_1,2,(int)DAT_002020a0,DAT_002020a4);
-    FUN_00053274(DAT_002020a8,param_1);
+    object_list_unlink(DAT_002020a8,param_1);
     FUN_00049924(2);
     DAT_002020ec = 0;
   }
@@ -26964,7 +28098,7 @@ void FUN_0003ee90()
   iVar2 = FUN_0003e8b0((int)DAT_000858c4,DAT_002020cc);
   if (DAT_002020ec == 0) {
     if (DAT_002020e0 != 0) {
-      iVar1 = FUN_00053728(DAT_002020cc);
+      iVar1 = object_ptr_in_arena(DAT_002020cc);
       if ((iVar1 != 0) && ((*DAT_002020cc & 0x1c0) == 0x40)) {
         FUN_0003f128();
         return;
@@ -26989,7 +28123,7 @@ void FUN_0003ee90()
           return;
         }
         if (puVar3 != DAT_002020cc) {
-          FUN_000530c4(DAT_002020cc + 2,puVar3);
+          object_list_insert_head(DAT_002020cc + 2,puVar3);
         }
       }
       iVar1 = FUN_00046358(DAT_002020cc);
@@ -26998,7 +28132,7 @@ void FUN_0003ee90()
           iVar1 = (DAT_002020cc[3] & 0xffc0) + (puVar3[3] & 0xffc0);
           *(byte *)(DAT_002020cc + 3) = (byte)iVar1 ^ (byte)DAT_002020cc[3] & 0x3f;
           *(char *)((char *)DAT_002020cc + 7) = (char)((uint)iVar1 >> 8);
-          FUN_00053274(DAT_002020cc + 2,puVar3);
+          object_list_unlink(DAT_002020cc + 2,puVar3);
         }
         FUN_00078c80(0x5f);
         return;
@@ -27457,7 +28591,7 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   DAT_00088960 = 1;
-  FUN_00040b0c((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
+  draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
   DAT_00088960 = 0;
   FUN_000570b4();
   return;
@@ -27478,7 +28612,7 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   DAT_00088960 = 1;
-  FUN_00040b0c((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
+  draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
   DAT_00088960 = 0;
   FUN_000570b4();
   return;
@@ -28146,7 +29280,8 @@ int param_1;
 
 
 
-void FUN_00040b0c(param_1,param_2,param_3,param_4,param_5)
+// was FUN_00040b0c
+void draw_sprite_by_id(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -28225,35 +29360,35 @@ short param_6;
 
 
 
-int FUN_00040c5c(param_1)
+/* Return type was `int`, truncating the real 64-bit pointer every
+   caller casts back to (byte *) and dereferences. */
+// was FUN_00040c5c
+void *get_texture_page(param_1)
 short param_1;
 
 {
   int iVar1;
-  int *piVar2;
-  
+  char **ppcVar2;
+
   iVar1 = (int)param_1;
   if (iVar1 < 0x30) {
-    iVar1 = DAT_0023ae38 + iVar1 * 0x1000;
+    return DAT_0023ae38 + iVar1 * 0x1000;
   }
-  else if (iVar1 < 0x3a) {
-    iVar1 = DAT_0023ae34 + (iVar1 + -0x30) * 0x400;
+  if (iVar1 < 0x3a) {
+    return DAT_0023ae34 + (iVar1 + -0x30) * 0x400;
+  }
+  if (iVar1 < 0x6a) {
+    iVar1 = iVar1 + -0x3a;
+    ppcVar2 = &DAT_0023ae3c;
   }
   else {
-    if (iVar1 < 0x6a) {
-      iVar1 = iVar1 + -0x3a;
-      piVar2 = &DAT_0023ae3c;
+    if (0x73 < iVar1) {
+      return 0;
     }
-    else {
-      if (0x73 < iVar1) {
-        return 0;
-      }
-      iVar1 = iVar1 + -0x6a;
-      piVar2 = &DAT_0023ae30;
-    }
-    iVar1 = *piVar2 + iVar1 * 0x100;
+    iVar1 = iVar1 + -0x6a;
+    ppcVar2 = &DAT_0023ae30;
   }
-  return iVar1;
+  return *ppcVar2 + iVar1 * 0x100;
 }
 
 
@@ -28352,7 +29487,9 @@ void FUN_00040df0()
 
 
 
-bool FUN_00040e24(param_1,param_2)
+// was load_pals_bank -- read PALS.DAT bank param_1 (768 raw bytes) into param_2 and
+// install it via build_rgb565_palette
+bool load_pals_bank(param_1,param_2)
 undefined4 param_1;
 void *param_2;
 
@@ -28366,7 +29503,7 @@ void *param_2;
   char acStack_420 [264];
   undefined1 auStack_318 [768];
 
-  DEBUG(TRACE, "[palette] FUN_00040e24 loading pals.dat index=%u", param_1);
+  DEBUG(TRACE, "[palette] load_pals_bank loading pals.dat index=%u", param_1);
   pcVar3 = &DAT_0023cca8;
     stack0xffdc2f38_ptr = acStack_420;
   do {
@@ -28380,23 +29517,25 @@ void *param_2;
   sVar2 = FUN_0002285c(uVar4,param_2,0x300);
   Ordinal_553(uVar4);
   if (sVar2 == 0x300) {
-    FUN_00022abc(auStack_318,param_2,0);
-    FUN_00022b54(auStack_318,param_1);
+    expand_pals_bytes(auStack_318,param_2,0);
+    build_rgb565_palette(auStack_318,param_1);
   }
   return sVar2 == 0x300;
 }
 
 
 
-bool FUN_00040efc(param_1)
+// was set_palette_bank -- switch active palette to PALS.DAT bank param_1 (load into
+// DAT_00088d98, install, reinstall_active_palette)
+bool set_palette_bank(param_1)
 undefined4 param_1;
 
 {
   int iVar1;
   
-  iVar1 = FUN_00040e24(param_1,&DAT_00088d98);
+  iVar1 = load_pals_bank(param_1,&DAT_00088d98);
   if (iVar1 != 0) {
-    FUN_0007e99c(0x100,0,0);
+    reinstall_active_palette(0x100,0,0);
   }
   return iVar1 != 0;
 }
@@ -28409,7 +29548,7 @@ undefined4 param_2;
 
 {
   Ordinal_1044(&DAT_00088d98,param_1,0x300);
-  FUN_0007e99c(0x100,0,param_2);
+  reinstall_active_palette(0x100,0,param_2);
   return;
 }
 
@@ -28538,16 +29677,16 @@ void FUN_000411e0()
 void FUN_00041210()
 
 {
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_00067d10(0xffffffff);
   FUN_000411b8(5);
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_000411cc(5);
   FUN_00057604(1);
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_000411b8(5);
   FUN_00067d10(1);
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_000411cc(5);
   return;
 }
@@ -28884,12 +30023,16 @@ char *param_1;
 
 void FUN_00041a18(param_1,param_2,param_3)
 short param_1;
-undefined4 param_2;
+/* Was `undefined4`, truncating the real resource-name string pointer
+   callers pass (e.g. FUN_0004638c's s_bodies_00085c58) before it reaches
+   FUN_000417b4's own `char *param_1`, which then crashed dereferencing
+   it. Same pointer-truncation class as everywhere else this session. */
+char *param_2;
 undefined4 param_3;
 
 {
   undefined2 uVar1;
-  
+
   uVar1 = DAT_00202744;
   DAT_00202744 = DAT_00202738 + param_1 + -0x2000;
   FUN_000417b4(param_2,param_3,1,&LAB_000416e8,FUN_00041770);
@@ -29043,7 +30186,8 @@ undefined4 param_1;
 
 
 
-void FUN_00041f34()
+// was FUN_00041f34 -- allocate/reset the keybinding + click-region tables.
+void input_bindings_init()
 
 {
   DAT_00202890 = Ordinal_1041(0x12);
@@ -29053,6 +30197,7 @@ void FUN_00041f34()
   }
   DAT_00202898 = 0;
   DAT_0020288c = 0;
+  g_keybind_handler_n = 0;   /* keybind table reset -- drop the real-handler side table too */
   DAT_00202894 = 1;
   DAT_00085a70 = 0xffff;
   *(undefined1 *)(DAT_00085a6c + 6) = 0;
@@ -29062,7 +30207,8 @@ void FUN_00041f34()
 
 
 
-void FUN_00041fe4()
+// was FUN_00041fe4 -- free the keybinding + click-region tables.
+void input_bindings_free()
 
 {
   if (DAT_00085a70 != -0x29a) {
@@ -29075,7 +30221,8 @@ void FUN_00041fe4()
 
 
 
-int FUN_0004202c(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+// was FUN_0004202c -- append a mouse click-region record to DAT_00202890.
+int register_click_region(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -29129,11 +30276,16 @@ undefined4 param_7;
 
 
 
-int FUN_0004213c(param_1,param_2,param_3,param_4)
+// was FUN_0004213c -- append a (keycode, arg, mode-mask, handler) record
+// to the DAT_0020289c keybinding table.
+int register_key_binding(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
-undefined4 param_4;
+void *param_4;   /* was undefined4 -- the handler function pointer; 32-bit
+                    truncated every real 64-bit callee address at the call
+                    site (move_key_directional_step etc.), so the side-table entry was
+                    an uncallable low-32-bits value. */
 
 {
   short sVar1;
@@ -29143,7 +30295,7 @@ undefined4 param_4;
 
   iVar2 = (int)DAT_0020288c;
   DAT_0020288c = (short)(iVar2 + 1);
-  /* See FUN_0004202c's identical fix -- Ordinal_1054 (realloc-shaped)
+  /* See register_click_region's identical fix -- Ordinal_1054 (realloc-shaped)
      returns a real pointer, iVar2 was truncating it. */
   pvVar4 = Ordinal_1054(DAT_0020289c,((iVar2 + 1) * 0x10000 >> 0x10) * 0xc);
   if (pvVar4 == 0) {
@@ -29152,17 +30304,22 @@ undefined4 param_4;
   sVar1 = DAT_00085a70;
   iVar3 = (char *)((char *)pvVar4 + DAT_0020288c * 0xc);
   DAT_0020289c = pvVar4;
+  /* real 64-bit handler, indexed by record position (iVar2 == old count) */
+  if ((uint)iVar2 < 512) {
+    g_keybind_handler[iVar2] = (void (*)(int))param_4;
+    if (iVar2 + 1 > g_keybind_handler_n) g_keybind_handler_n = iVar2 + 1;
+  }
   *(undefined1 *)(iVar3 + -0xc) = (char)DAT_00085a70;
   *(char *)(iVar3 + -0xb) = (char)((ushort)sVar1 >> 8);
   DAT_00085a70 = DAT_00085a70 + -1;
   *(char *)(iVar3 + -7) = (char)((uint)param_2 >> 8);
   *(char *)(iVar3 + -5) = (char)((uint)param_3 >> 8);
-  *(char *)(iVar3 + -3) = (char)((uint)param_4 >> 8);
+  *(char *)(iVar3 + -3) = (char)((uintptr_t)param_4 >> 8);
   *(char *)(iVar3 + -8) = (char)param_2;
-  *(char *)(iVar3 + -2) = (char)((uint)param_4 >> 0x10);
+  *(char *)(iVar3 + -2) = (char)((uintptr_t)param_4 >> 0x10);
   *(char *)(iVar3 + -6) = (char)param_3;
-  *(char *)(iVar3 + -4) = (char)param_4;
-  *(char *)(iVar3 + -1) = (char)((uint)param_4 >> 0x18);
+  *(char *)(iVar3 + -4) = (char)(uintptr_t)param_4;
+  *(char *)(iVar3 + -1) = (char)((uintptr_t)param_4 >> 0x18);
   *(char *)(iVar3 + -9) = (char)((uint)param_1 >> 8);
   *(char *)(iVar3 + -10) = (char)param_1;
   return (int)CONCAT11(*(undefined1 *)(iVar3 + -0xb),*(undefined1 *)(iVar3 + -0xc));
@@ -29170,7 +30327,9 @@ undefined4 param_4;
 
 
 
-void FUN_0004221c(param_1)
+// was FUN_0004221c -- remove a keybinding (and its mouse-region sibling)
+// by record id, compacting the table.
+void unregister_key_binding(param_1)
 short param_1;
 
 {
@@ -29209,6 +30368,13 @@ short param_1;
       return;
     }
     if (sVar6 < iVar5) {
+      /* the byte copy below moves the LAST record over the removed one;
+         mirror that move in the real-handler side table (found 0-based =
+         sVar6-1, last 0-based = iVar5-1, before iVar5 is reused as the
+         copy counter). */
+      if ((uint)(sVar6 - 1) < 512 && (uint)(iVar5 - 1) < 512) {
+        g_keybind_handler[sVar6 - 1] = g_keybind_handler[iVar5 - 1];
+      }
       iVar10 = 0xc;
       psVar8 = DAT_0020289c + iVar5 * 6 + -6;
       do {
@@ -29220,6 +30386,7 @@ short param_1;
         psVar7 = (short *)((char *)psVar7 + 1);
       } while (iVar5 != 0 && bVar1);
     }
+    if (g_keybind_handler_n > 0) g_keybind_handler_n--;
     sVar6 = DAT_0020288c;
     if (DAT_0020288c < 2) goto LAB_00042510;
     DAT_0020288c = (short)((uint)((DAT_0020288c + -1) * 0x10000) >> 0x10);
@@ -29296,17 +30463,30 @@ LAB_00042510:
 
 
 
-void FUN_0004251c(param_1)
+// was FUN_0004251c -- per-frame input pump: read the pending input code,
+// dispatch a mouse button to a click region or a key to a keybinding.
+void poll_input_bindings(param_1)
 undefined1 * param_1;
 
 {
   undefined4 uVar1;
-  int iVar2;
+  /* Was `int`, truncating the real DAT_00202890 pointer arithmetic result
+     below -- same pointer-truncation pattern already fixed in this
+     function's own sibling dispatch_key_binding (see its comment): DAT_00202890
+     is a genuine malloc'd 64-bit pointer (registered mouse-click-region
+     records, register_click_region's array), and this variable held one record's
+     address, not a plain offset. Confirmed crashing (EXC_BAD_ACCESS) the
+     first time this function's match-loop ever actually ran on this
+     recompile -- FUN_0003f420 (the 3D-viewport's own click-and-hold-to-
+     walk region, registered by FUN_0006764c) is only reachable through
+     here, and nothing in this whole project's testing had ever clicked
+     inside the viewport before. */
+  char *pcVar2;
   int iVar3;
   int iVar4;
   short local_28;
   short local_26;
-  
+
   uVar1 = FUN_00057a78();
   if (-1 < (short)uVar1) {
     if ((short)uVar1 < 4) {
@@ -29320,12 +30500,12 @@ undefined1 * param_1;
       iVar3 = iVar4 * 0x10000 >> 0x10;
       if (-1 < iVar3) {
         do {
-          iVar2 = iVar3 * 0x12 + DAT_00202890;
-          if ((((*(short *)(iVar2 + 6) <= local_28) && (local_26 <= *(short *)(iVar2 + 8))) &&
-              (local_28 <= *(short *)(iVar2 + 2))) &&
-             (((*(short *)(iVar2 + 4) <= local_26 &&
-               ((*(ushort *)(iVar2 + 0xc) & *(ushort *)(param_1 + 8)) != 0)) &&
-              (*(int *)(iVar2 + 0xe) != 0)))) {
+          pcVar2 = DAT_00202890 + iVar3 * 0x12;
+          if ((((*(short *)(pcVar2 + 6) <= local_28) && (local_26 <= *(short *)(pcVar2 + 8))) &&
+              (local_28 <= *(short *)(pcVar2 + 2))) &&
+             (((*(short *)(pcVar2 + 4) <= local_26 &&
+               ((*(ushort *)(pcVar2 + 0xc) & *(ushort *)(param_1 + 8)) != 0)) &&
+              (*(int *)(pcVar2 + 0xe) != 0)))) {
             iVar3 = (short)iVar4 * 0x12;
             iVar4 = (int)local_28 - (int)*(short *)(iVar3 + DAT_00202890 + 6);
             *param_1 = (char)iVar4;
@@ -29344,7 +30524,7 @@ undefined1 * param_1;
     else {
       param_1[4] = 0;
       param_1[5] = 0;
-      FUN_00042758(param_1,uVar1);
+      dispatch_key_binding(param_1,uVar1);
     }
   }
   return;
@@ -29352,23 +30532,32 @@ undefined1 * param_1;
 
 
 
-void FUN_00042758(param_1,param_2)
-int param_1;
+// was FUN_00042758 -- look up a pressed key in the DAT_0020289c table
+// (keycode + mode-mask match) and invoke its handler.
+void dispatch_key_binding(param_1,param_2)
+/* Was `int`, truncating the real pointer poll_input_bindings passes through
+   (its own param_1, e.g. DAT_00085a6c). */
+char *param_1;
 short param_2;
 
 {
-  int iVar1;
+  /* Was `int`; both double as a plain loop index (iVar2 only) and a real
+     pointer into the DAT_0020289c keybinding table (iVar1 always, iVar2
+     once more on the match path just before it returns) -- truncating
+     that pointer since DAT_0020289c is a genuine malloc'd 64-bit pointer.
+     Dedicated pointer variable for the record-address role. */
+  char *pcVar1;
   int iVar2;
-  
+
   iVar2 = 0;
   if (0 < DAT_0020288c) {
     do {
-      iVar1 = iVar2 * 0xc + DAT_0020289c;
-      if (((*(short *)(iVar1 + 2) == param_2) &&
-          ((*(ushort *)(iVar1 + 6) & *(ushort *)(param_1 + 8)) != 0)) && (*(int *)(iVar1 + 8) != 0))
+      pcVar1 = iVar2 * 0xc + DAT_0020289c;
+      if (((*(short *)(pcVar1 + 2) == param_2) &&
+          ((*(ushort *)(pcVar1 + 6) & *(ushort *)(param_1 + 8)) != 0)) &&
+          (((uint)iVar2 < 512 && g_keybind_handler[iVar2] != 0)))
       {
-        iVar2 = (short)iVar2 * 0xc + DAT_0020289c;
-        (**(code **)(iVar2 + 8))((int)*(short *)(iVar2 + 4));
+        g_keybind_handler[iVar2]((int)*(short *)(pcVar1 + 4));
         return;
       }
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
@@ -29393,7 +30582,7 @@ short param_1;
   if (7 < iVar2) {
     if (iVar2 < 10) {
       if (iVar2 == 9 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
-        puVar1 = (ushort *)FUN_00053514(&DAT_00202950 + (char)(&DAT_00085c38)[iVar2] * 2);
+        puVar1 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&DAT_00085c38)[iVar2] * 2);
         uVar3 = *puVar1 & 0x1ff;
         if (((((*puVar1 & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
            ((uVar3 == 0x1a || (uVar3 == 0x1f)))) {
@@ -29434,7 +30623,7 @@ short param_1;
       }
     }
   }
-  iVar2 = FUN_00053514(&DAT_00202950 + (char)(&DAT_00085c38)[iVar2] * 2);
+  iVar2 = resolve_object_link(&DAT_00202950 + (char)(&DAT_00085c38)[iVar2] * 2);
   if (iVar2 != 0) {
     FUN_00079984(DAT_0023be64,iVar2,1);
   }
@@ -29466,13 +30655,21 @@ int param_1;
 
 
 
+/* NOT YET FIXED (not on the crash path reached so far, but the same bug
+   class as everywhere else in this file): the body below reads/writes
+   through the literal `iVar1*4 + 0x202870`/`iVar10*4 + 0x202870` --
+   a hardcoded original-binary address, same "FUN_0006bde0 -0x87020"
+   class fixed elsewhere. 0x202870 is 8 bytes before DAT_00202878 (itself
+   only declared as a single `undefined` byte here, so also likely
+   undersized) -- revisit both together if/when this function's icon
+   save/restore path is actually exercised and crashes. */
 void FUN_00042aa8()
 
 {
   undefined1 uVar1;
   undefined3 uVar2;
   int iVar3;
-  
+
   if (DAT_00202994 != 0) {
     uVar2 = *(undefined3 *)(DAT_00202994 + 4);
     uVar1 = *(undefined1 *)(DAT_00202994 + 7);
@@ -29552,7 +30749,7 @@ void FUN_00042c5c()
       DAT_00202994[2] = 0;
       DAT_00202994[3] = 0;
       DAT_00202976 = *(undefined2 *)(DAT_00202994 + 8);
-      iVar1 = FUN_00053514();
+      iVar1 = resolve_object_link();
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
       FUN_00042e30();
       FUN_00042d70();
@@ -29574,9 +30771,9 @@ void FUN_00042d70()
   
   FUN_00057118();
   FUN_00048198(0xc,0x13);
-  iVar2 = FUN_00053514(&DAT_00202976);
+  iVar2 = resolve_object_link(&DAT_00202976);
   iVar2 = iVar2 + 6;
-  while ((iVar2 = FUN_00053514(iVar2), iVar2 != 0 && ((*(byte *)(iVar2 + 1) & 0x40) != 0))) {
+  while ((iVar2 = resolve_object_link(iVar2), iVar2 != 0 && ((*(byte *)(iVar2 + 1) & 0x40) != 0))) {
     iVar2 = iVar2 + 4;
   }
   sVar1 = FUN_0005358c();
@@ -29605,11 +30802,11 @@ void FUN_00042e30()
     if ((*(ushort *)(&DAT_00202950 + iVar6 * 2) & 0xffc0) != 0) break;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x1c);
-  iVar3 = FUN_00053514(&DAT_00202976);
-  iVar3 = FUN_00053514(iVar3 + 6);
+  iVar3 = resolve_object_link(&DAT_00202976);
+  iVar3 = resolve_object_link(iVar3 + 6);
   if ((short)iVar6 < 0x1c) {
     do {
-      iVar5 = FUN_00053514(&DAT_00202950 + (short)iVar6 * 2);
+      iVar5 = resolve_object_link(&DAT_00202950 + (short)iVar6 * 2);
       if (iVar3 == iVar5) {
         iVar6 = 0x14;
         do {
@@ -29621,13 +30818,13 @@ void FUN_00042e30()
             if ((*(byte *)(iVar3 + 1) & 0x40) != 0) {
               iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
             }
-            iVar3 = FUN_00053514(iVar3 + 4);
+            iVar3 = resolve_object_link(iVar3 + 4);
           }
           iVar6 = iVar6 + 1;
         } while (iVar6 * 0x10000 >> 0x10 < 0x1c);
         return;
       }
-      iVar3 = FUN_00053514(iVar3 + 4);
+      iVar3 = resolve_object_link(iVar3 + 4);
     } while (iVar3 != 0);
   }
   else {
@@ -29641,7 +30838,7 @@ void FUN_00042e30()
         if ((*(byte *)(iVar3 + 1) & 0x40) != 0) {
           iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
         }
-        iVar3 = FUN_00053514(iVar3 + 4);
+        iVar3 = resolve_object_link(iVar3 + 4);
       }
       iVar6 = iVar6 + 1;
     } while (iVar6 * 0x10000 >> 0x10 < 0x1c);
@@ -29664,7 +30861,7 @@ void FUN_00042e30()
           if ((*(byte *)(iVar3 + 1) & 0x40) != 0) {
             iVar6 = (iVar5 + -1) * 0x10000 >> 0x10;
           }
-          iVar3 = FUN_00053514(iVar3 + 4);
+          iVar3 = resolve_object_link(iVar3 + 4);
         }
       }
     }
@@ -29694,7 +30891,7 @@ short param_1;
   
   iVar1 = (int)param_1;
   puVar13 = (ushort *)(&DAT_00202950 + iVar1 * 2);
-  puVar7 = (ushort *)FUN_00053514(puVar13);
+  puVar7 = (ushort *)resolve_object_link(puVar13);
   uVar3 = *puVar7;
   if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
     if ((uVar3 & 0xf) == 0xf) {
@@ -29704,7 +30901,7 @@ short param_1;
       if (DAT_00202990 == (undefined4 *)0x0) {
         FUN_00057118();
         if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
-          FUN_00040b0c(0x2097,0xec,0x51,0x29,0x54);
+          draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
         }
         if (DAT_002028a0 == 0) {
           iVar10 = 0xc;
@@ -29713,7 +30910,7 @@ short param_1;
             uVar8 = FUN_00076a2c((&DAT_00085adc)[iVar11],(uint)(byte)(&DAT_00085add)[iVar11] << 1);
             sVar4 = (&DAT_00085ada)[iVar10 * 7];
             (&DAT_002028a0)[iVar10 + -0xc] = uVar8;
-            FUN_00076b8c(*(undefined4 *)(iVar10 * 4 + 0x202870),
+            capture_framebuffer_rect_to_grtile(*(undefined4 *)(iVar10 * 4 + 0x202870),
                          (int)(short)(&DAT_00085ad8)[iVar10 * 7],(int)sVar4,(&DAT_00085adc)[iVar11],
                          (&DAT_00085add)[iVar11]);
             iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
@@ -29780,9 +30977,9 @@ short param_1;
         *(char *)((char *)DAT_00202994 + 9) = (char)(uVar3 >> 8);
         DAT_00202976 = (DAT_00202976 ^ *(ushort *)(DAT_00202994 + 2)) & 0x3f ^
                        *(ushort *)(DAT_00202994 + 2);
-        iVar10 = FUN_00053514(&DAT_00202976);
-        iVar11 = FUN_00053514(iVar10 + 6);
-        iVar10 = FUN_00053514(&DAT_00202976);
+        iVar10 = resolve_object_link(&DAT_00202976);
+        iVar11 = resolve_object_link(iVar10 + 6);
+        iVar10 = resolve_object_link(&DAT_00202976);
         FUN_00043d40(iVar10 + 6,(undefined1 *)((char *)DAT_00202994 + 10));
         iVar10 = 0x14;
         do {
@@ -29795,11 +30992,11 @@ short param_1;
             if ((*(byte *)(iVar11 + 1) & 0x40) != 0) {
               iVar10 = (iVar2 + -1) * 0x10000 >> 0x10;
             }
-            iVar11 = FUN_00053514(iVar11 + 4);
+            iVar11 = resolve_object_link(iVar11 + 4);
           }
           iVar10 = iVar10 + 1;
         } while (iVar10 * 0x10000 >> 0x10 < 0x1c);
-        puVar7 = (ushort *)FUN_00053514(&DAT_00202976);
+        puVar7 = (ushort *)resolve_object_link(&DAT_00202976);
         uVar3 = *puVar7;
         if (((uVar3 & 0xf) < 0xc) && ((uVar3 & 1) == 0)) {
           *(byte *)puVar7 = ((char)(uVar3 & 0xf) + 1U ^ (byte)uVar3) & 0xf ^ (byte)uVar3;
@@ -29845,9 +31042,9 @@ void FUN_0004365c()
   int iVar5;
   
   if ((DAT_00202990 != 0) && (DAT_002029a0 != 0)) {
-    iVar2 = FUN_00053514(DAT_00202994 + 8);
-    iVar3 = FUN_00053514(iVar2 + 6);
-    iVar4 = FUN_00053514(&DAT_00202978);
+    iVar2 = resolve_object_link(DAT_00202994 + 8);
+    iVar3 = resolve_object_link(iVar2 + 6);
+    iVar4 = resolve_object_link(&DAT_00202978);
     iVar2 = iVar3;
     if (iVar3 != iVar4) {
       do {
@@ -29855,7 +31052,7 @@ void FUN_0004365c()
         iVar5 = 0;
         iVar2 = iVar3;
         do {
-          iVar2 = FUN_00053514(iVar2 + 4);
+          iVar2 = resolve_object_link(iVar2 + 4);
           if (iVar2 == 0) {
             return;
           }
@@ -29920,10 +31117,10 @@ LAB_0004386c:
     }
     else {
       if ((iVar10 == 0x13) && (iVar9 = *(int *)(DAT_00202994 + 4), iVar9 != 0)) {
-        puVar4 = (ushort *)FUN_00053514(iVar9 + 8);
+        puVar4 = (ushort *)resolve_object_link(iVar9 + 8);
       }
       else {
-        puVar4 = (ushort *)FUN_00053514(&DAT_00202950 + iVar10 * 2);
+        puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar10 * 2);
         iVar9 = DAT_00202994;
         if (iVar10 < 0x14) {
           local_28 = 0;
@@ -29952,7 +31149,7 @@ LAB_0004386c:
         *(char *)(iVar9 + 0xb) = (char)((uint)iVar8 >> 8);
       }
       puVar6 = puVar4 + 3;
-      while (puVar6 = (ushort *)FUN_00053514(puVar6), puVar6 != (ushort *)0x0) {
+      while (puVar6 = (ushort *)resolve_object_link(puVar6), puVar6 != (ushort *)0x0) {
         iVar10 = FUN_00047b38(param_1,puVar6);
         if (iVar10 != 0) {
           uVar2 = *puVar6;
@@ -29984,12 +31181,12 @@ LAB_0004386c:
                                     (CONCAT11(*(undefined1 *)((char *)puVar6 + 5),bVar1) & 0x3f)) >> 1)
                ) & 0x3f ^ bVar1;
           *(undefined1 *)((char *)puVar6 + 5) = *(undefined1 *)((char *)puVar6 + 5);
-          FUN_00053004(param_1);
+          free_object_slot(param_1);
           goto LAB_000439a0;
         }
         puVar6 = puVar6 + 2;
       }
-      FUN_000531a0(puVar4 + 3,param_1);
+      object_list_append_tail(puVar4 + 3,param_1);
       if (bVar11) {
         uVar7 = FUN_0005358c(param_1);
         iVar10 = (int)local_28;
@@ -30040,13 +31237,13 @@ undefined4 param_2;
   byte *pbVar9;
   ushort *puVar10;
   
-  iVar4 = FUN_00053514(DAT_00202994 + 8);
+  iVar4 = resolve_object_link(DAT_00202994 + 8);
   puVar10 = (ushort *)(iVar4 + 6);
   iVar4 = (short)param_2 * 2;
   pbVar9 = &DAT_00202950 + iVar4;
-  puVar5 = (ushort *)FUN_00053514(pbVar9);
+  puVar5 = (ushort *)resolve_object_link(pbVar9);
   while( true ) {
-    puVar6 = (ushort *)FUN_00053514(puVar10);
+    puVar6 = (ushort *)resolve_object_link(puVar10);
     if (puVar5 == puVar6) {
       FUN_00046ff4(param_2,0);
       sVar1 = FUN_000472c4(param_1,param_2);
@@ -30056,7 +31253,7 @@ undefined4 param_2;
         FUN_00057c5c(*DAT_00202948 & 0x1ff);
         param_1 = puVar5;
       }
-      FUN_000530c4(puVar10,param_1);
+      object_list_insert_head(puVar10,param_1);
       uVar7 = FUN_0005358c(param_1);
       *pbVar9 = *pbVar9 & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
       (&DAT_00202951)[iVar4] = (char)((uVar7 << 0x16) >> 0x18);
@@ -30095,7 +31292,7 @@ short * param_2;
   ushort uVar1;
   ushort *puVar2;
   
-  puVar2 = (ushort *)FUN_00053514();
+  puVar2 = (ushort *)resolve_object_link();
   while( true ) {
     if (puVar2 == (ushort *)0x0) {
       return;
@@ -30109,7 +31306,7 @@ short * param_2;
     *param_2 = (*(ushort *)(&DAT_00202c91 + (*puVar2 & 0x1ff) * 0xd) >> 4) * uVar1 + *param_2;
     FUN_00043d40(puVar2 + 2,param_2);
     if ((*puVar2 & 0x8000) != 0) break;
-    puVar2 = (ushort *)FUN_00053514(puVar2 + 3);
+    puVar2 = (ushort *)resolve_object_link(puVar2 + 3);
   }
   return;
 }
@@ -30236,7 +31433,7 @@ byte * param_2;
   undefined1 *puVar2;
   uint uVar3;
   
-  puVar1 = (undefined1 *)FUN_00053514();
+  puVar1 = (undefined1 *)resolve_object_link();
   while (puVar1 != (undefined1 *)0x0) {
     puVar2 = (undefined1 *)FUN_00044294();
     *puVar2 = *puVar1;
@@ -30256,7 +31453,7 @@ byte * param_2;
     if (((puVar1[1] & 0x80) == 0) && ((*(ushort *)(puVar1 + 6) & 0xffc0) != 0)) {
       FUN_000440d0(puVar1 + 6,puVar2 + 6);
     }
-    puVar1 = (undefined1 *)FUN_00053514(param_1);
+    puVar1 = (undefined1 *)resolve_object_link(param_1);
   }
   return;
 }
@@ -30355,7 +31552,7 @@ ushort * param_2;
   undefined1 *puVar3;
   
   while (puVar3 = (undefined1 *)FUN_000442bc(*param_2 >> 6), puVar3 != (undefined1 *)0x0) {
-    puVar1 = (undefined1 *)FUN_00052f28(0);
+    puVar1 = (undefined1 *)alloc_object_slot(0);
     *puVar1 = *puVar3;
     puVar1[1] = puVar3[1];
     puVar1[2] = puVar3[2];
@@ -30385,7 +31582,7 @@ undefined4 param_1;
 {
   int iVar1;
   
-  iVar1 = FUN_00053514();
+  iVar1 = resolve_object_link();
   if (iVar1 != 0) {
     if ((*(byte *)(iVar1 + 1) & 0x80) == 0) {
       if ((*(ushort *)(iVar1 + 6) & 0xffc0) != 0) {
@@ -30395,8 +31592,8 @@ undefined4 param_1;
     if ((*(ushort *)(iVar1 + 4) & 0xffc0) != 0) {
       FUN_000444b0();
     }
-    FUN_00053274(param_1,iVar1);
-    FUN_00053004(iVar1);
+    object_list_unlink(param_1,iVar1);
+    free_object_slot(iVar1);
   }
   return;
 }
@@ -30428,7 +31625,7 @@ undefined1 * param_1;
   } while (iVar5 != 0 && bVar1);
   FUN_00044398(DAT_0023be64 + 6,param_1 + 6);
   if (DAT_002020c4 == 1) {
-    puVar2 = (undefined1 *)FUN_00052f28(0);
+    puVar2 = (undefined1 *)alloc_object_slot(0);
     DAT_00202948 = puVar2;
     *puVar2 = param_1[0x1b];
     puVar2[1] = param_1[0x1c];
@@ -30461,7 +31658,7 @@ int param_1;
   
   uVar4 = 1;
   if ((param_1 != 0) && (-1 < DAT_00202080)) {
-    FUN_00053274(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
   }
   FUN_00066c90();
   if ((DAT_002028c8 == 0) && (DAT_002028c8 = Ordinal_1041(0x4000), DAT_002028c8 == 0)) {
@@ -30496,7 +31693,7 @@ LAB_00044730:
     DAT_002028c8 = 0;
   }
   if ((param_1 != 0) && (-1 < DAT_00202080)) {
-    FUN_000530c4(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+    object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
   }
   return uVar4;
 }
@@ -30517,7 +31714,7 @@ short * param_1;
     uVar3 = 0;
   }
   else {
-    FUN_00053004();
+    free_object_slot();
     iVar2 = DAT_00086df8 + (iVar2 >> 0x13);
     *(byte *)(iVar2 + 0x44) = (byte)(1 << (7 - (uVar1 & 7) & 0xff)) | *(byte *)(iVar2 + 0x44);
     uVar3 = 1;
@@ -30552,7 +31749,7 @@ uint param_1;
   FUN_00057118();
   iVar1 = ((int)(short)param_1 >> 2) * 0xf;
   iVar2 = (param_1 & 3) * 0x12;
-  FUN_00040b0c(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
+  draw_sprite_by_id(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
   FUN_000570b4();
   return;
 }
@@ -30827,12 +32024,21 @@ short param_1;
 
 
 
-undefined4 FUN_00045054(param_1)
+/* Was `resolve_object_link(...); return 0;` -- computing the real object-record
+   pointer and then discarding it in favor of a hardcoded 0, same
+   "dropped return value" idiom already fixed for FUN_00057a70 elsewhere
+   in this file. Every caller treats the return as the real result (e.g.
+   `puVar6 = (ushort *)FUN_00045054(iVar4); if (puVar6 != 0) ...`), so the
+   hardcoded 0 silently turned every one of those checks into "nothing
+   here" -- except the *upper* bits of the 8-byte-wide return register
+   this recompile reads were left uninitialized (the old `undefined4`
+   return type only ever set the low 32 bits), so callers actually read
+   garbage instead of a clean NULL and crashed dereferencing it. */
+void *FUN_00045054(param_1)
 short param_1;
 
 {
-  FUN_00053514(&DAT_00202950 + param_1 * 2);
-  return 0;
+  return resolve_object_link(&DAT_00202950 + param_1 * 2);
 }
 
 
@@ -30871,7 +32077,7 @@ short param_2;
     iVar3 = FUN_00046260(param_1);
     if (-1 < iVar1) {
       if (0x12 < iVar1) {
-        iVar4 = FUN_00053514(DAT_00202994 + 8);
+        iVar4 = resolve_object_link(DAT_00202994 + 8);
         for (iVar5 = DAT_00202994; iVar5 != 0;
             iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
                              CONCAT12(*(undefined1 *)(iVar5 + 6),
@@ -30886,7 +32092,7 @@ short param_2;
       (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar6 << 0x16) >> 0x18);
     }
-    FUN_000531a0(iVar4 + 6,param_1);
+    object_list_append_tail(iVar4 + 6,param_1);
     DAT_0023bcf2 = DAT_0023bcf2 + (short)iVar3;
     uVar8 = 1;
   }
@@ -30915,7 +32121,7 @@ int FUN_000451b0()
       if ((uint)(*puVar5 >> 6) == (int)(short)uVar2) {
         return (int)cVar1;
       }
-      puVar3 = (ushort *)FUN_00053514(puVar5);
+      puVar3 = (ushort *)resolve_object_link(puVar5);
       if (((((*puVar3 & 0x8000) == 0) && (DAT_00202994 == 0)) ||
           (((*puVar3 & 0x8000) == 0 && (((*(ushort *)(DAT_00202994 + 8) ^ *puVar5) & 0xffc0) != 0)))
           ) && (iVar4 = FUN_00053644(puVar3 + 3,1,uVar2), iVar4 != 0)) {
@@ -30952,7 +32158,7 @@ undefined2 * param_5;
   iVar7 = 0;
   do {
     uVar6 = (undefined2)iVar7;
-    puVar4 = (ushort *)FUN_00053514(&DAT_00202950 + iVar7 * 2);
+    puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar7 * 2);
     local_6c[iVar7] = (int)puVar4;
     sVar1 = (short)param_1;
     uVar2 = (ushort)param_2;
@@ -30966,7 +32172,7 @@ undefined2 * param_5;
   if (param_4 != 1) {
     iVar5 = (int)(short)((uint)iVar5 >> 0x10);
     while (uVar6 = (undefined2)iVar7, iVar5 < 0x13) {
-      puVar4 = (ushort *)FUN_00053514(&DAT_00202950 + iVar5 * 2);
+      puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar5 * 2);
       local_6c[iVar5] = (int)puVar4;
       if (((puVar4 != (ushort *)0x0) && ((sVar1 < 0 || ((*puVar4 >> 6 & 7) == (int)sVar1)))) &&
          ((((short)uVar2 < 0 || (((byte)((byte)*puVar4 >> 4) & 3) == uVar2)) &&
@@ -30980,7 +32186,7 @@ undefined2 * param_5;
         uVar6 = (undefined2)iVar7;
         iVar5 = local_6c[iVar7];
         if ((iVar5 != 0) && ((*(byte *)(iVar5 + 1) & 0x80) == 0)) {
-          local_74[0] = FUN_00053514(iVar5 + 6);
+          local_74[0] = resolve_object_link(iVar5 + 6);
           puVar4 = (ushort *)FUN_00045538(param_1,param_2,param_3,local_74);
           local_6c[iVar7] = (int)puVar4;
           if (puVar4 != (ushort *)0x0) {
@@ -31035,7 +32241,7 @@ LAB_00045668:
         if ((*puVar1 >> 6 & 7) == (int)(short)param_1) goto LAB_00045594;
       }
 LAB_000455f8:
-      if ((((uVar3 & 0x8000) == 0) && (local_1c = FUN_00053514(puVar1 + 3), local_1c != 0)) &&
+      if ((((uVar3 & 0x8000) == 0) && (local_1c = resolve_object_link(puVar1 + 3), local_1c != 0)) &&
          (iVar2 = FUN_00045538(param_1,param_2,param_3,&local_1c), iVar2 != 0)) {
         if (local_1c == 0) {
           return iVar2;
@@ -31043,7 +32249,7 @@ LAB_000455f8:
         *param_4 = local_1c;
         return iVar2;
       }
-      iVar2 = FUN_00053514(*param_4 + 4);
+      iVar2 = resolve_object_link(*param_4 + 4);
       *param_4 = iVar2;
     } while (iVar2 != 0);
   }
@@ -31080,7 +32286,7 @@ undefined4 FUN_00045708(param_1)
 short param_1;
 
 {
-  FUN_00053514(&DAT_00202950 + param_1 * 2);
+  resolve_object_link(&DAT_00202950 + param_1 * 2);
   return 0;
 }
 
@@ -31157,7 +32363,7 @@ uint param_2;
     if (((0 < sVar1) && ((puVar5[1] & 0x80) != 0)) && ((*(ushort *)(puVar5 + 6) & 0x8000) == 0)) {
       uVar2 = *(ushort *)(puVar5 + 6) >> 6;
       if ((1 < uVar2) && (sVar1 < (short)uVar2)) {
-        puVar6 = (undefined1 *)FUN_00052f28(0);
+        puVar6 = (undefined1 *)alloc_object_slot(0);
         *puVar6 = *puVar5;
         puVar6[1] = puVar5[1];
         puVar6[2] = puVar5[2];
@@ -31171,10 +32377,10 @@ uint param_2;
         puVar6[7] = (char)((uVar9 & 0x3ffffff) >> 2);
         puVar5[6] = puVar5[6] & 0x3f | (byte)((param_2 & 0x3ff) << 6);
         puVar5[7] = (char)((param_2 << 0x16) >> 0x18);
-        FUN_000530c4(puVar5 + 4,puVar6);
+        object_list_insert_head(puVar5 + 4,puVar6);
       }
     }
-    FUN_00053274(DAT_002046b4,puVar5);
+    object_list_unlink(DAT_002046b4,puVar5);
     DAT_0023bcf2 = DAT_0023bcf2 - (short)iVar3;
     FUN_00046eec(0x13);
     FUN_000667cc();
@@ -31192,7 +32398,7 @@ undefined4 FUN_000459d8()
   short in_r3;
   
   uVar1 = FUN_00045b20();
-  puVar2 = (ushort *)FUN_00053514(&DAT_00202950 + in_r3 * 2);
+  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + in_r3 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (DAT_00202994 != 0)) {
     FUN_00042e30();
@@ -31213,7 +32419,7 @@ undefined4 FUN_00045a7c()
   short in_r3;
   
   uVar1 = FUN_00045b20();
-  puVar2 = (ushort *)FUN_00053514(&DAT_00202950 + in_r3 * 2);
+  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + in_r3 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (DAT_00202994 != 0)) {
     FUN_00042e30();
@@ -31262,13 +32468,13 @@ ushort param_5;
   iVar4 = (int)param_4;
   pbVar11 = &DAT_00202950 + iVar4 * 2;
   pbVar10 = (byte *)0x0;
-  puVar3 = (ushort *)FUN_00053514(pbVar11);
+  puVar3 = (ushort *)resolve_object_link(pbVar11);
   if (puVar3 != (ushort *)0x0) {
     if (iVar4 < 0x13) {
       local_28 = DAT_0023be64;
     }
     else {
-      local_28 = FUN_00053514(DAT_00202994 + 8);
+      local_28 = resolve_object_link(DAT_00202994 + 8);
     }
     uVar6 = (uint)(short)param_1;
     uVar7 = (ushort)param_2;
@@ -31282,7 +32488,7 @@ ushort param_5;
       if (((param_5 != 0) && ((*puVar3 & 0x8000) != 0)) && ((puVar3[3] & 0x8000) == 0)) {
         uVar7 = puVar3[3] >> 6;
         if ((1 < uVar7) && ((short)param_5 < (short)uVar7)) {
-          pbVar10 = (byte *)FUN_00052f28(0);
+          pbVar10 = (byte *)alloc_object_slot(0);
           *pbVar10 = (byte)*puVar3;
           pbVar10[1] = *(byte *)((char *)puVar3 + 1);
           pbVar10[2] = (byte)puVar3[1];
@@ -31297,7 +32503,7 @@ ushort param_5;
           pbVar10[7] = (byte)((uVar8 & 0x3ffffff) >> 2);
           *(byte *)(puVar3 + 3) = (byte)puVar3[3] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
           *(byte *)((char *)puVar3 + 7) = (byte)((uVar6 << 0x16) >> 0x18);
-          FUN_000530c4(puVar3 + 2,pbVar10);
+          object_list_insert_head(puVar3 + 2,pbVar10);
         }
       }
       if ((local_28 == DAT_0023be64) || (0x13 < iVar4)) {
@@ -31311,7 +32517,7 @@ ushort param_5;
         *pbVar11 = (byte)uVar7;
         (&DAT_00202951)[iVar4 * 2] = (char)(uVar7 >> 8);
       }
-      FUN_00053274(local_28 + 6,puVar3);
+      object_list_unlink(local_28 + 6,puVar3);
       iVar4 = FUN_00046260(puVar3);
       DAT_0023bcf2 = DAT_0023bcf2 - (short)iVar4;
       if (DAT_00202994 == 0) {
@@ -31430,7 +32636,7 @@ int param_5;
   }
   else {
     if (param_5 != 0) {
-      sVar4 = FUN_00022910(2);
+      sVar4 = rand_below(2);
       uVar7 = FUN_00068138(sVar4 + 0xd5,0);
       FUN_000523d0(DAT_0023be64,uVar7,6,0);
     }
@@ -31522,7 +32728,7 @@ void FUN_0004638c()
                (int)(short)((int)((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 10) >> 1));
   iVar1 = 1;
   do {
-    *(undefined1 *)(iVar1 + 0x202988) = 0;
+    *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 6);
   return;
@@ -31554,28 +32760,39 @@ void FUN_00046414()
     DAT_002028ec = FUN_00076a2c(0x54,0x52);
     iVar5 = 6;
     do {
+      /* iVar5==10/11 were hardcoded original-binary literal addresses
+         (0x85b5c/0x85b6a, plus the standalone DAT_00085b64/DAT_00085b72
+         symbols) instead of the same &DAT_00085ad0/&DAT_00085ad8 +
+         iVar5*stride expression every other iteration already uses --
+         same "hardcoded address" bug class as FUN_0006bde0's -0x87020.
+         Confirmed identical by address arithmetic (0x85ad0 + 10*0xe =
+         0x85b5c, 0x85ad8 + 10*7 shorts = 0x85b64, etc.); rewritten to the
+         general form so these two icons resolve against our recompiled
+         symbols instead of the original binary's fixed layout. The
+         +5/-5 adjustments are the only real difference from the general
+         case and are kept as-is. */
       if (iVar5 == 10) {
-        puVar2 = (undefined1 *)0x85b5c;
-        iVar3 = DAT_00085b64 + 5;
+        puVar2 = &DAT_00085ad0 + iVar5 * 0xe;
+        iVar3 = (&DAT_00085ad8)[iVar5 * 7] + 5;
 LAB_000464c8:
         uVar4 = (byte)puVar2[0xc] - 5;
       }
       else {
         if (iVar5 == 0xb) {
-          puVar2 = (undefined1 *)0x85b6a;
-          iVar3 = (int)CONCAT11(((undefined1)(DAT_00085b72 >> 8)),(undefined1)DAT_00085b72);
+          puVar2 = &DAT_00085ad0 + iVar5 * 0xe;
+          iVar3 = (&DAT_00085ad8)[iVar5 * 7];
           goto LAB_000464c8;
         }
         puVar2 = &DAT_00085ad0 + iVar5 * 0xe;
         iVar3 = (int)(short)(&DAT_00085ad8)[iVar5 * 7];
         uVar4 = (uint)(byte)(&DAT_00085adc)[iVar5 * 0xe];
       }
-      FUN_00076b8c((&DAT_002028e8)[iVar5],iVar3,(int)*(short *)(puVar2 + 10),uVar4,puVar2[0xd]);
+      capture_framebuffer_rect_to_grtile((&DAT_002028e8)[iVar5],iVar3,(int)*(short *)(puVar2 + 10),uVar4,puVar2[0xd]);
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 0x17);
-    FUN_00076b8c(DAT_002028ec,0xec,0x51,0x54,0x29);
-    FUN_00076b8c(DAT_002028e8,299,0x3b,0x10,10);
-    DAT_00202998 = FUN_0004202c(0xf0,0x76,0x13b,0xb,0,5,FUN_0003f95c);
+    capture_framebuffer_rect_to_grtile(DAT_002028ec,0xec,0x51,0x54,0x29);
+    capture_framebuffer_rect_to_grtile(DAT_002028e8,299,0x3b,0x10,10);
+    DAT_00202998 = register_click_region(0xf0,0x76,0x13b,0xb,0,5,FUN_0003f95c);
   }
   return;
 }
@@ -31595,7 +32812,7 @@ void FUN_000465c8()
   } while (iVar1 < 0x1c);
   iVar1 = 1;
   do {
-    *(undefined1 *)(iVar1 + 0x202988) = 0;
+    *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 6);
   DAT_00202990 = 0;
@@ -31643,7 +32860,7 @@ short param_1;
         return;
       }
       if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = FUN_000576d0(1), iVar6 != 0)) {
-        puVar7 = (ushort *)FUN_00053514(&DAT_00202950 + iVar9 * 2);
+        puVar7 = (ushort *)resolve_object_link(&DAT_00202950 + iVar9 * 2);
         uVar3 = *puVar7;
         if (((uVar3 & 0x8000) == 0) || ((puVar7[3] & 0x8000) != 0)) {
           if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
@@ -31653,7 +32870,7 @@ short param_1;
               return;
             }
             for (; puVar4 != (undefined4 *)0x0; puVar4 = (undefined4 *)*puVar4) {
-              puVar8 = (ushort *)FUN_00053514(puVar4 + 2);
+              puVar8 = (ushort *)resolve_object_link(puVar4 + 2);
               if (puVar8 == puVar7) {
                 return;
               }
@@ -31666,7 +32883,7 @@ short param_1;
             return;
           }
           if (puVar10 != puVar7) {
-            FUN_000530c4(puVar7 + 2,puVar10);
+            object_list_insert_head(puVar7 + 2,puVar10);
           }
         }
         bVar11 = true;
@@ -31828,12 +33045,12 @@ void FUN_00046bfc()
       screen_backup_restore_rect(0xf0,0xb,0x13b,0x76);
     }
     DAT_00088960 = 1;
-    FUN_00040b0c(0x2091,(int)DAT_00085ad8,(int)DAT_00085ada,DAT_00085add,DAT_00085adc);
+    draw_sprite_by_id(0x2091,(int)DAT_00085ad8,(int)DAT_00085ada,DAT_00085add,DAT_00085adc);
     iVar4 = 1;
     DAT_00088960 = 1;
     do {
       if ((*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar4] * 2) & 0xffc0) != 0) {
-        pbVar1 = (byte *)FUN_00053514();
+        pbVar1 = (byte *)resolve_object_link();
         uVar3 = *pbVar1 & 0x1f;
         if ((uint)(int)(short)uVar3 < 0xf) {
           uVar2 = (pbVar1[4] & 0x30) >> 4;
@@ -31841,20 +33058,20 @@ void FUN_00046bfc()
         else {
           uVar2 = 3;
         }
-        if (((int)(short)uVar3 + 1U != (int)*(char *)(iVar4 + 0x202988)) ||
-           ((short)uVar2 + 1 != (int)*(char *)(iVar4 + 0x2028e0))) {
-          *(char *)(iVar4 + 0x202988) = (char)uVar3 + '\x01';
-          *(char *)(iVar4 + 0x2028e0) = (char)uVar2 + '\x01';
+        if (((int)(short)uVar3 + 1U != (int)*(char *)((char *)&DAT_00202988 + iVar4)) ||
+           ((short)uVar2 + 1 != (int)*(char *)((char *)&DAT_002028e0 + iVar4))) {
+          *(char *)((char *)&DAT_00202988 + iVar4) = (char)uVar3 + '\x01';
+          *(char *)((char *)&DAT_002028e0 + iVar4) = (char)uVar2 + '\x01';
           FUN_00046b88(iVar4,uVar2 * 0xf + uVar3);
         }
-        FUN_00040b0c(iVar4 + 0x2091,(int)(&DAT_00085ad8)[iVar4 * 7],(int)(&DAT_00085ada)[iVar4 * 7],
+        draw_sprite_by_id(iVar4 + 0x2091,(int)(&DAT_00085ad8)[iVar4 * 7],(int)(&DAT_00085ada)[iVar4 * 7],
                      (&DAT_00085add)[iVar4 * 0xe],(&DAT_00085adc)[iVar4 * 0xe]);
       }
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 6);
     DAT_00088960 = 0;
-    FUN_00076b8c(DAT_00202914,(int)DAT_00085b72,(int)DAT_00085b74,DAT_00085b76 - 5,DAT_00085b77);
-    FUN_00076b8c(DAT_00202910,DAT_00085b64 + 5,(int)DAT_00085b66,DAT_00085b68 - 5,DAT_00085b69);
+    capture_framebuffer_rect_to_grtile(DAT_00202914,(int)DAT_00085b72,(int)DAT_00085b74,DAT_00085b76 - 5,DAT_00085b77);
+    capture_framebuffer_rect_to_grtile(DAT_00202910,DAT_00085b64 + 5,(int)DAT_00085b66,DAT_00085b68 - 5,DAT_00085b69);
     if (((DAT_00202962 & 0xffc0) != 0) || ((DAT_00202964 & 0xffc0) != 0)) {
       FUN_00048198(10,0xb);
     }
@@ -31903,7 +33120,7 @@ undefined4 param_1;
       }
       if (-1 < (short)uVar2) {
         DAT_00088960 = 1;
-        FUN_00040b0c(uVar2,(int)(short)(&DAT_00085ad8)[iVar1 * 7],
+        draw_sprite_by_id(uVar2,(int)(short)(&DAT_00085ad8)[iVar1 * 7],
                      (int)(short)(&DAT_00085ada)[iVar1 * 7],(&DAT_00085add)[iVar1 * 0xe],
                      (&DAT_00085adc)[iVar1 * 0xe]);
         DAT_00088960 = 0;
@@ -31931,7 +33148,7 @@ int param_2;
   }
   else {
     iVar1 = FUN_00045054(param_1);
-    FUN_00053514(iVar1 + 4);
+    resolve_object_link(iVar1 + 4);
     uVar2 = FUN_0005358c();
   }
   DAT_00202948 = (ushort *)FUN_00045b48(0xffffffff,0xffffffff,0xffffffff,param_1,0);
@@ -31991,7 +33208,7 @@ undefined1 * param_1;
     FUN_0007f570(&DAT_0008522c);
     if (((int)(short)uVar5 != 0) &&
        (puVar4 = param_1, (int)(short)uVar5 != (uint)(*(ushort *)(param_1 + 6) >> 6))) {
-      puVar4 = (undefined1 *)FUN_00052f28(0);
+      puVar4 = (undefined1 *)alloc_object_slot(0);
       *puVar4 = *param_1;
       puVar4[1] = param_1[1];
       puVar4[2] = param_1[2];
@@ -32070,16 +33287,16 @@ undefined4 param_2;
     }
     puVar10 = (undefined1 *)(*(int *)(DAT_00202994 + 4) + 8);
 LAB_00047474:
-    puVar11 = (ushort *)FUN_00053514(puVar10);
+    puVar11 = (ushort *)resolve_object_link(puVar10);
   }
   else {
     if (iVar15 < 0x14) {
       puVar10 = &DAT_00202950 + iVar15 * 2;
       goto LAB_00047474;
     }
-    puVar11 = (ushort *)FUN_00053514(&DAT_00202950 + iVar15 * 2);
+    puVar11 = (ushort *)resolve_object_link(&DAT_00202950 + iVar15 * 2);
     if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
-      puVar11 = (ushort *)FUN_00053514(&DAT_00202976);
+      puVar11 = (ushort *)resolve_object_link(&DAT_00202976);
     }
   }
   if (iVar15 < 5) {
@@ -32178,7 +33395,7 @@ LAB_00047a0c:
   bVar7 = 1;
   if (0x13 < iVar15) {
     for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(int *)(iVar12 + 4)) {
-      pbVar13 = (byte *)FUN_00053514(iVar12 + 8);
+      pbVar13 = (byte *)resolve_object_link(iVar12 + 8);
       if (((short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3] == 0) ||
          (bVar7 = 0,
          (int)*(short *)(iVar12 + 10) + (int)local_54[0] <=
@@ -32363,7 +33580,7 @@ uint param_2;
   
   iVar1 = (int)(short)param_2;
   uVar11 = 0;
-  puVar4 = (ushort *)FUN_00053514(&DAT_00202950 + iVar1 * 2);
+  puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar1 * 2);
   if (((*puVar4 & 0x1c0) == 0x80) && ((*puVar4 & 0x30) == 0)) {
     uVar11 = FUN_00043734(param_1,param_2);
     FUN_000667cc();
@@ -32460,7 +33677,7 @@ uint param_2;
                               (CONCAT11(*(undefined1 *)((char *)puVar4 + 5),bVar2) & 0x3f)) >> 1)) &
          0x3f ^ bVar2;
     *(undefined1 *)((char *)puVar4 + 5) = *(undefined1 *)((char *)puVar4 + 5);
-    FUN_00053004(param_1);
+    free_object_slot(param_1);
     uVar11 = 1;
   }
   FUN_00046eec((int)(char)(&DAT_00085c18)[iVar1]);
@@ -32478,7 +33695,7 @@ void FUN_00048110()
       FUN_00076e98(DAT_002028ec);
     }
     else {
-      FUN_00040b0c(0x2097,0xec,0x51,0x29,0x54);
+      draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
     }
     FUN_00048198(6,0x16);
   }
@@ -32522,8 +33739,8 @@ joined_r0x00048308:
           auStack_54[iVar6] = 1;
           if (iVar6 < 0x15) {
             if ((*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2) & 0xffc0) != 0) {
-              puVar7 = (ushort *)FUN_00053514();
-              FUN_00040b0c(*puVar7 & 0x1ff,(int)(short)(&DAT_00085ad8)[iVar6 * 7],
+              puVar7 = (ushort *)resolve_object_link();
+              draw_sprite_by_id(*puVar7 & 0x1ff,(int)(short)(&DAT_00085ad8)[iVar6 * 7],
                            (int)(short)(&DAT_00085ada)[iVar6 * 7],(&DAT_00085add)[iVar6 * 0xe],
                            (&DAT_00085adc)[iVar6 * 0xe]);
               if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
@@ -32547,7 +33764,7 @@ joined_r0x00048308:
         for (; iVar1 <= iVar2; iVar1 = (iVar1 + 1) * 0x10000 >> 0x10) {
           if (1 < (short)auStack_54[iVar1]) {
             uVar8 = Ordinal_1025((int)(short)auStack_54[iVar1],auStack_60,10);
-            FUN_00011060(uVar8,(short)(&DAT_00085ad8)[iVar1 * 7] + 3,
+            draw_text_string(uVar8,(short)(&DAT_00085ad8)[iVar1 * 7] + 3,
                          (short)(&DAT_00085ada)[iVar1 * 7] + 1);
           }
         }
@@ -32561,8 +33778,8 @@ joined_r0x00048308:
       FUN_00076e98(DAT_00202938);
       local_2c = 1;
       if ((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0) {
-        puVar7 = (ushort *)FUN_00053514();
-        FUN_00040b0c(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
+        puVar7 = (ushort *)resolve_object_link();
+        draw_sprite_by_id(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                      DAT_00085bf5,DAT_00085bf4);
         if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
            (uVar4 = puVar7[3] >> 6, 1 < uVar4)) {
@@ -32604,7 +33821,7 @@ int param_1;
     if (iVar4 < 0) {
       iVar4 = iVar4 + 1;
     }
-    FUN_00011060(auStack_24,0x131 - (short)(iVar4 >> 1),0x3c);
+    draw_text_string(auStack_24,0x131 - (short)(iVar4 >> 1),0x3c);
   }
   return bVar5;
 }
@@ -33289,15 +34506,18 @@ LAB_000497a0:
 
 
 
-void FUN_000497cc()
+// was FUN_000497cc -- runs once per in-game main-loop iteration: resets
+// the dirty rect to a degenerate {100,100,100,100}, redraws the small
+// HUD/cursor element, and flushes that to the display
+void main_loop_hud_flush()
 
 {
-  FUN_00011040(100,100,100,100);
+  dirty_rect_set(100,100,100,100);
   if (DAT_00201c84 != 0) {
     FUN_00049818();
   }
-  FUN_0004251c(DAT_00085a6c);
-  FUN_00022f0c(1);
+  poll_input_bindings(DAT_00085a6c);
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -33319,8 +34539,10 @@ void FUN_00049818()
     do {
       if ((DAT_00201c84 & uVar4) != 0) {
         DAT_00201c84 = DAT_00201c84 & ~uVar4;
-        if (*(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 4) != (code *)0x0) {
-          (**(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 4))();
+        /* *8 (real pointer size), see DAT_00085668's comment; *0x10 stays
+           -- that's the 16-entries-per-mode count, not a byte stride. */
+        if (*(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 8) != (code *)0x0) {
+          (**(code **)(&DAT_00085668 + (uVar3 + sVar1 * 0x10) * 8))();
           sVar1 = DAT_00201b64;
         }
       }
@@ -33433,7 +34655,7 @@ int param_2;
   undefined1 auStack_20 [16];
   
   if (param_1 == (undefined1 *)0x0) {
-    iVar3 = FUN_00015870(auStack_20,s__SAVE0_lev_ark_000842fc);
+    iVar3 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
     if (iVar3 == 0) {
       return 0;
     }
@@ -33460,6 +34682,10 @@ int param_2;
     DAT_0020469c = DAT_002046bc + *(short *)(iVar3 + 0x7c04) * 2;
     DAT_002046c8 = DAT_002046c0 + *(short *)(iVar3 + 0x7c00);
     DAT_002029d0 = 0;
+    /* Debug tool (UW_DEBUG_DUMP_TMAP): dump this level's 64x64 tile map
+       right after a real load, magic marker and all -- see gx_stub.h's
+       comment. */
+    uw_debug_dump_tmap(param_2, (unsigned char *)iVar3);
   }
   else {
     FUN_0003c3c8(3);
@@ -33489,7 +34715,7 @@ int param_2;
   undefined1 auStack_20 [16];
   
   if (param_1 == (undefined1 *)0x0) {
-    iVar4 = FUN_00015870(auStack_20,s__SAVE0_lev_ark_000842fc);
+    iVar4 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
     if (iVar4 == 0) {
       return 0;
     }
@@ -33563,7 +34789,8 @@ int param_3;
 
 
 
-void FUN_00049ce8(param_1,param_2,param_3)
+// was FUN_00049ce8
+void angle_to_screen_delta(param_1,param_2,param_3)
 uint param_1;
 undefined1 * param_2;
 undefined1 * param_3;
@@ -33768,7 +34995,7 @@ short param_1;
           *(byte *)(puVar6 + 0xd) = (byte)(puVar7[1] >> 7) & 7;
         }
       }
-      FUN_00053004();
+      free_object_slot();
     }
     if ((iVar1 == 9) || (iVar1 == 10)) {
       FUN_00072f30(9,0x40,0);
@@ -33876,7 +35103,7 @@ int param_2;
       if (((*param_1 & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(*param_1 & 0x1ff) * 0xd] & 3) != 2)) {
         *(byte *)(puVar5 + 0xd) = (byte)(param_1[1] >> 7) & 7;
       }
-      FUN_00053004(param_1);
+      free_object_slot(param_1);
       param_1 = (ushort *)0x0;
     }
   }
@@ -33906,7 +35133,7 @@ int param_2;
     }
     iVar7 = (int)(short)local_28;
     iVar8 = (int)(short)local_26;
-    iVar4 = FUN_00068100(iVar7 >> 3,iVar8 >> 3);
+    iVar4 = tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
     if (bVar3) {
       if (param_2 != 0) {
         FUN_00078c80(0xfd);
@@ -33919,7 +35146,7 @@ int param_2;
     *(byte *)((char *)param_1 + 3) =
          (byte)((uVar2 & 0x3ff) >> 8) |
          (byte)(((local_26 & 7 | (local_28 & 0x1fff) << 3) << 10) >> 8);
-    FUN_000531a0(iVar4 + 2,param_1);
+    object_list_append_tail(iVar4 + 2,param_1);
     uVar2 = *param_1;
     if ((((uVar2 & 0x1f0) == 0x90) && (3 < (uVar2 & 0xf))) && ((uVar2 & 0xf) < 7)) {
       bVar1 = (byte)uVar2;
@@ -33967,7 +35194,7 @@ ushort *FUN_0004ad10()
   int iVar8;
   ushort uVar9;
   
-  puVar6 = (ushort *)FUN_00052f28(1);
+  puVar6 = (ushort *)alloc_object_slot(1);
   if (puVar6 == (ushort *)0x0) {
 LAB_0004b06c:
     puVar6 = (ushort *)0x0;
@@ -34023,7 +35250,7 @@ LAB_0004b06c:
       }
       iVar8 = FUN_0004b288(puVar6,DAT_00202a44);
       if (iVar8 == 0) {
-        FUN_00053004(puVar6);
+        free_object_slot(puVar6);
         goto LAB_0004b06c;
       }
     }
@@ -34053,8 +35280,8 @@ LAB_0004b06c:
       *(char *)(puVar6 + 3) = (char)(uVar9 & 0xffc0);
       *(char *)((char *)puVar6 + 7) = (char)((uVar9 & 0xffc0) >> 8);
     }
-    iVar8 = FUN_00068100(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
-    FUN_000530c4(iVar8 + 2,puVar6);
+    iVar8 = tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
+    object_list_insert_head(iVar8 + 2,puVar6);
     FUN_00072fc8(10,puVar6,0);
   }
   return puVar6;
@@ -34098,8 +35325,8 @@ ushort * param_2;
                DAT_00202c6c + 1);
   *(byte *)(DAT_00202c6c + 2) = (byte)param_1[1] & 0x7f;
   *(byte *)((char *)DAT_00202c6c + 5) = 0;
-  FUN_000518c0(0,1);
-  FUN_00050d78(0);
+  collision_height_envelope(0,1);
+  collision_build_height_field(0);
   if (((local_2a | local_2c) & 0x300) == 0) {
     if ((byte)DAT_00202c6c[10] != 0) {
       FUN_00051dd0();
@@ -37438,7 +38665,11 @@ undefined1 * param_1;
 
 
 
-uint FUN_00050984(param_1,param_2)
+// was FUN_00050984 -- sample the floor height at one tile corner (type 0 solid -> 0x80)
+// PHYSICS: floor height source -- returns the standable height at corner param_1
+// of the current tile: 0x80 (= tile top, "no floor / solid") for a rock tile,
+// height*8 for flat floor, and interpolated values for slopes/diagonals.
+uint collision_sample_floor_height(param_1,param_2)
 uint param_1;
 undefined4 * param_2;
 
@@ -37447,10 +38678,11 @@ undefined4 * param_2;
   short sVar2;
   uint uVar3;
   int iVar4;
-  
+
   iVar4 = (param_1 & 0xff) * 5;
   sVar2 = *(short *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2);
   *param_2 = 0;
+  // PHYSICS: floor height -- (corner height nibble) * 8; refined per shape below
   uVar3 = (int)sVar2 >> 1 & 0x78;
   switch(*(ushort *)(&DAT_00202c70 + (uint)(byte)(&DAT_00202bf8)[iVar4] * 2) & 0xf) {
   case 0:
@@ -37540,7 +38772,7 @@ uint param_2;
   int iVar5;
   int local_20;
   
-  bVar2 = FUN_00050984(param_1,&local_20);
+  bVar2 = collision_sample_floor_height(param_1,&local_20);
   iVar1 = DAT_00202c6c;
   uVar3 = (uint)bVar2;
   if (uVar3 == 0x80) {
@@ -37569,7 +38801,8 @@ uint param_2;
 
 
 
-bool FUN_00050c18(param_1)
+// was FUN_00050c18 -- per-corner slope/blocked flag word from the packed tile height DAT_00202c78
+bool collision_corner_flags(param_1)
 uint param_1;
 
 {
@@ -37581,7 +38814,7 @@ uint param_1;
   
   *(byte *)(DAT_00202c6c + 0xc) = (byte)(DAT_00202c78 >> 8) & 3;
   *(undefined1 *)(DAT_00202c6c + 0xd) = 0;
-  uVar2 = FUN_00050984(4,&local_14);
+  uVar2 = collision_sample_floor_height(4,&local_14);
   *(undefined1 *)(DAT_00202c6c + 0x10) = uVar2;
   uVar3 = (uint)*(byte *)(DAT_00202c6c + 0x10);
   if (uVar3 == 0x80) {
@@ -37615,7 +38848,22 @@ uint param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00050d78(param_1)
+/* Recovered from UU.exe .data at 0x86878 (28 real bytes, then the
+   "\DATA\comobj.dat" string literal). collision_build_height_field's four
+   `*(char *)(bVarNN + 0x86878)` derefs are a bare hardcoded original-
+   32-bit address -- unmapped on this port, so a keyboard forward step
+   (the first thing that ever reached this animated-shade recompute for
+   a moving wall) faulted here. The index bytes bVar11..bVar14 stay
+   small in practice; pad to 256 with 0 so a wrapped byte reads a
+   defined 0 instead of the string bytes the original would have hit. */
+static const signed char DAT_00086878_arr[256] = {
+  -0x41,-0x40,-0x3f,-1, 0,1,0x3f,0x40, 0x41,0,0,0, 1,-1,-1,1,
+  5,4,3,6, 9,2,7,0, 1,0,0,0,
+};
+#define DAT_00086878_IDX(b) DAT_00086878_arr[(unsigned char)(b)]
+
+// was FUN_00050d78 -- build the per-corner tile height field the sweep collides against
+void collision_build_height_field(param_1)
 uint param_1;
 
 {
@@ -37649,7 +38897,13 @@ uint param_1;
   } while (iVar7 != 0);
   _DAT_00202c34 =
        (ushort *)
-       FUN_00068100((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+       tilemap_lookup((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+  /* off-map tile -- this function derefs _DAT_00202c34 below and assumes a
+     valid record; the sweep collision-revert path can reach here out of
+     bounds. */
+  if (_DAT_00202c34 == (ushort *)0x0) {
+    return;
+  }
   bVar11 = 4;
   bVar12 = *DAT_00202c6c;
   bVar13 = DAT_00202c6c[2];
@@ -37661,7 +38915,7 @@ uint param_1;
     DAT_00202c78 = (uVar3 & 0xf) +
                    (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10;
   }
-  FUN_00050c18(param_1);
+  collision_corner_flags(param_1);
   pbVar1 = DAT_00202c6c + 0xc;
   DAT_00202c6c[0xe] = (byte)*(undefined2 *)pbVar1;
   DAT_00202c6c[0xf] = (byte)((ushort)*(undefined2 *)pbVar1 >> 8);
@@ -37700,25 +38954,25 @@ uint param_1;
     DAT_00202c07 = bVar14;
     DAT_00202c09 = DAT_00202c04;
     if (*(short *)(&DAT_00202c70 + (uint)bVar11 * 2) == 0x1111) {
-      uVar3 = _DAT_00202c34[*(char *)(bVar11 + 0x86878) * 2];
+      uVar3 = _DAT_00202c34[DAT_00086878_IDX(bVar11) * 2];
       *(ushort *)(&DAT_00202c70 + (uint)bVar11 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar12 * 2) == 0x1111) {
-      uVar3 = puVar2[*(char *)(bVar12 + 0x86878) * 2];
+      uVar3 = puVar2[DAT_00086878_IDX(bVar12) * 2];
       *(ushort *)(&DAT_00202c70 + (uint)bVar12 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar13 * 2) == 0x1111) {
-      uVar3 = puVar2[*(char *)(bVar13 + 0x86878) * 2];
+      uVar3 = puVar2[DAT_00086878_IDX(bVar13) * 2];
       *(ushort *)(&DAT_00202c70 + (uint)bVar13 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar14 * 2) == 0x1111) {
-      uVar3 = puVar2[*(char *)(bVar14 + 0x86878) * 2];
+      uVar3 = puVar2[DAT_00086878_IDX(bVar14) * 2];
       *(ushort *)(&DAT_00202c70 + (uint)bVar14 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
@@ -37989,7 +39243,8 @@ int param_5;
 
 
 
-void FUN_000518c0(param_1,param_2)
+// was FUN_000518c0 -- reduce the height field to floor/ceiling envelope + block flags
+void collision_height_envelope(param_1,param_2)
 int param_1;
 int param_2;
 
@@ -37998,7 +39253,11 @@ int param_2;
   int iVar2;
   ushort uVar3;
   byte bVar4;
-  int iVar5;
+  intptr_t iVar5;  /* was int -- holds the void* tilemap_lookup returns (a
+                      real 64-bit tile-array pointer); truncated to 32
+                      bits it made `*(ushort *)(iVar5 + ...)` a wild
+                      deref -- the crash the first time a keyboard
+                      forward step actually dispatched. */
   ushort *puVar6;
   ushort *puVar7;
   short sVar8;
@@ -38011,10 +39270,19 @@ int param_2;
   int local_3c;
   
   local_3c = 0;
-  iVar5 = FUN_00068100((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+  iVar5 = tilemap_lookup((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+  /* off-map tile (DAT_00202c6c position outside 0..63): this function assumes
+     a valid tile record and derefs iVar5 + offsets below. The sweep's
+     collision revert path (sweep_step(-1)) can reach here with an out-of-
+     bounds position. */
+  if (iVar5 == 0) {
+    return;
+  }
   if (*(short *)(DAT_00202c6c + 10) != 0) {
     puVar6 = (ushort *)FUN_000535fc();
-    if ((*puVar6 & 0x1c0) == 0x40) {
+    /* Ghidra dropped FUN_000535fc's argument here (an object slot id), so it
+       can hand back garbage / NULL. Guard the deref. */
+    if (puVar6 != (ushort *)0x0 && (*puVar6 & 0x1c0) == 0x40) {
       local_3c = 1;
     }
     else {
@@ -38078,7 +39346,7 @@ int param_2;
             sVar8 = (short)iVar10;
             if (0x3f < sVar8) break;
             if ((uint)(uVar3 >> 6) != (int)*(short *)(pbVar13 + 10)) {
-              puVar7 = (ushort *)FUN_00053514(puVar6);
+              puVar7 = (ushort *)resolve_object_link(puVar6);
               iVar10 = (*puVar7 & 0x1ff) * 0xd;
               if ((((local_3c == 0) || (((&DAT_00202c93)[iVar10] & 4) == 0)) &&
                   (((&DAT_00202c90)[iVar10] != '\0' || (puVar7 < DAT_002046c4)))) &&
@@ -38088,9 +39356,16 @@ int param_2;
                 FUN_00051658(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
               }
             }
-            iVar10 = FUN_00053514(puVar6);
+            /* was `iVar10 = resolve_object_link(...); puVar6 = (ushort
+               *)(iVar10 + 4);` -- iVar10 is `int`, truncating the real
+               64-bit object-record pointer resolve_object_link returns,
+               so the very next `*puVar6` was a wild deref (the second
+               crash a keyboard forward step hits). Keep the pointer in
+               its own width; iVar10 is reset to the loop counter right
+               after anyway. */
+            { intptr_t _objp = (intptr_t)resolve_object_link(puVar6);
+              puVar6 = (ushort *)(_objp + 4); }
             iVar2 = (sVar8 + 1) * 0x10000;
-            puVar6 = (ushort *)(iVar10 + 4);
             iVar10 = iVar2 >> 0x10;
             sVar8 = (short)((uint)iVar2 >> 0x10);
             pbVar13 = DAT_00202c6c;
@@ -38249,7 +39524,7 @@ byte param_7;
     local_3c = param_3;
     local_3a = param_4;
     local_32 = param_2;
-    FUN_00050d78(uVar8);
+    collision_build_height_field(uVar8);
     if (((DAT_00202c6c[7] | DAT_00202c6c[6]) & 0x300) == 0) {
       bVar1 = *(byte *)((char *)DAT_00202c6c + 0x11);
       if ((int)(uVar8 + (int)(short)DAT_00202c6c[2]) < (int)(uint)bVar1) {
@@ -38270,7 +39545,7 @@ byte param_7;
       if ((DAT_00202c68 == 0x10) || (uVar3 = 1, param_2 < 0x100)) {
         uVar3 = 0;
       }
-      FUN_000518c0(uVar3,1);
+      collision_height_envelope(uVar3,1);
       if (*(char *)(DAT_00202c6c + 10) != '\0') {
         iVar9 = -1;
         sVar7 = -1;
@@ -38292,7 +39567,7 @@ byte param_7;
           } while (iVar6 < *(char *)(DAT_00202c6c + 0xb));
         }
         if (-1 < sVar7) {
-          puVar4 = (ushort *)FUN_00053514(&DAT_00202c3a + sVar7 * 6);
+          puVar4 = (ushort *)resolve_object_link(&DAT_00202c3a + sVar7 * 6);
           if (((&DAT_00202c93)[(*puVar4 & 0x1ff) * 0xd] & 2) == 0) {
             DAT_00202c6c = (undefined2 *)uVar2;
             return 0;
@@ -38337,8 +39612,8 @@ int param_6;
     *(char *)(param_4 + 2) = (char)uVar2;
     *(byte *)(param_4 + 3) =
          (byte)(uVar2 >> 8) | (byte)(((param_2 & 7 | (param_1 & 0x1fff) << 3) << 10) >> 8);
-    iVar1 = FUN_00068100((int)(short)param_1 >> 3,(int)(short)param_2 >> 3);
-    FUN_000530c4(iVar1 + 2,param_4);
+    iVar1 = tilemap_lookup((int)(short)param_1 >> 3,(int)(short)param_2 >> 3);
+    object_list_insert_head(iVar1 + 2,param_4);
   }
   return 1;
 }
@@ -38399,14 +39674,14 @@ short param_5;
       return 0;
     }
   }
-  iVar5 = FUN_00068100((int)uVar4 >> 3,(int)uVar6 >> 3);
+  iVar5 = tilemap_lookup((int)uVar4 >> 3,(int)uVar6 >> 3);
   uVar1 = param_1[1];
   bVar3 = (byte)(uVar1 & 0x3ff);
   *(byte *)(param_1 + 1) = (bVar3 ^ (byte)param_4) & 0x7f ^ bVar3;
   *(byte *)((char *)param_1 + 3) =
        (byte)((uVar1 & 0x3ff) >> 8) | (byte)(((uVar6 & 7 | (uVar4 & 0x1fff) << 3) << 10) >> 8);
-  FUN_000531a0(iVar5 + 2,param_1);
-  iVar5 = FUN_00053728(param_1);
+  object_list_append_tail(iVar5 + 2,param_1);
+  iVar5 = object_ptr_in_arena(param_1);
   if (iVar5 == 0) {
     FUN_00055f98(param_1,(int)uVar4 >> 3,(int)uVar6 >> 3,1);
   }
@@ -38590,14 +39865,14 @@ codeval * param_2;
       return 1;
     }
     if (((*(byte *)(param_1 + 1) & 0x80) == 0) && ((*(ushort *)(param_1 + 6) & 0xffc0) != 0)) {
-      uVar2 = FUN_00053514();
+      uVar2 = resolve_object_link();
       iVar1 = FUN_00052af4(uVar2,param_2);
       if (iVar1 != 0) {
         return 1;
       }
     }
     if ((*(ushort *)(param_1 + 4) & 0xffc0) == 0) break;
-    param_1 = FUN_00053514();
+    param_1 = resolve_object_link();
     iVar1 = (*param_2)();
   }
   return 0;
@@ -38651,20 +39926,20 @@ int param_2;
   
   if (param_2 != 0) {
     if (param_1 != 0) {
-      sVar1 = FUN_00022910(3);
+      sVar1 = rand_below(3);
       param_1 = param_1 + sVar1;
     }
     DAT_002046b0 = param_1;
     iVar2 = FUN_00052bac(param_2);
     if (iVar2 == 0) {
       if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
-        uVar3 = FUN_00053514();
+        uVar3 = resolve_object_link();
         iVar2 = FUN_00052af4(uVar3,FUN_00052bac);
         if (iVar2 != 0) {
           return 0;
         }
       }
-      iVar2 = FUN_00022910(10);
+      iVar2 = rand_below(10);
       if (iVar2 < DAT_002046b0) {
         return 1;
       }
@@ -38683,7 +39958,7 @@ ushort * param_2;
   undefined4 uVar1;
   
   if ((*param_2 & 0xffc0) != 0) {
-    uVar1 = FUN_00053514(param_2);
+    uVar1 = resolve_object_link(param_2);
     FUN_00052c5c(param_1,uVar1);
   }
   return 0;
@@ -38727,7 +40002,7 @@ short param_2;
       if (local_30 < (int)(local_34 + ((local_38 - iVar8 ^ uVar1) - uVar1))) {
         for (local_3c[0] = *(ushort *)(iVar9 + 2); (local_3c[0] & 0xffc0) != 0;
             local_3c[0] = local_3c[0] & 0x3f | uVar3 & 0xffc0) {
-          iVar4 = FUN_00053514(local_3c);
+          iVar4 = resolve_object_link(local_3c);
           uVar3 = *(ushort *)(iVar4 + 4);
           iVar4 = FUN_00052d24(param_1,local_3c);
           if (iVar4 != 0) {
@@ -38750,20 +40025,34 @@ short param_2;
 
 
 
-int FUN_00052f28(param_1)
+/* was FUN_00052f28. Was `int FUN_00052f28(...)` with a local `int iVar1`
+   holding the computed slot address (`DAT_002046b8/DAT_002046c4 +
+   offset`, both real pointers) -- truncated the pointer to 32 bits on
+   this 64-bit host. Every call site casts the return value straight to
+   a pointer type (e.g. `(ushort *)alloc_object_slot(...)`), so the
+   caller got a wild address with zeroed-out upper 32 bits. This is the
+   confirmed root cause of the crash the new TELEPORT demomode command
+   exposed: the player object's slot, handed out by this function once
+   already during chargen, had its upper bits silently dropped, and the
+   second set_player_tile_position call (via
+   object_list_unlink/resolve_object_link, walking the tile's object
+   chain to unlink the player before its move) dereferenced that
+   truncated address and crashed (EXC_BAD_ACCESS on an address matching
+   the low 32 bits of a real heap pointer, upper 32 bits zero). */
+void *alloc_object_slot(param_1)
 int param_1;
 
 {
-  int iVar1;
+  void *pvVar1;
   ushort *puVar2;
   undefined4 *puVar3;
-  
+
   if (param_1 == 0) {
     puVar3 = &DAT_0020469c;
     if ((DAT_0020469c < DAT_002046bc) && (FUN_00052d68(3,10), DAT_0020469c < DAT_002046bc)) {
       return 0;
     }
-    iVar1 = DAT_002046c4 + (*DAT_0020469c - 0x100) * 8;
+    pvVar1 = DAT_002046c4 + (*DAT_0020469c - 0x100) * 8;
     puVar2 = DAT_0020469c;
   }
   else {
@@ -38772,16 +40061,17 @@ int param_1;
       return 0;
     }
     FUN_00053750((int)(short)*DAT_002046a8);
-    iVar1 = (uint)*DAT_002046a8 * 0x1b + DAT_002046b8;
+    pvVar1 = (uint)*DAT_002046a8 * 0x1b + DAT_002046b8;
     puVar2 = DAT_002046a8;
   }
   *puVar3 = puVar2 + -1;
-  return iVar1;
+  return pvVar1;
 }
 
 
 
-void FUN_00053004(param_1)
+// was FUN_00053004
+void free_object_slot(param_1)
 char *param_1;
 
 {
@@ -38807,22 +40097,26 @@ char *param_1;
 
 
 
-void FUN_000530c4(param_1,param_2)
+// was FUN_000530c4
+void object_list_insert_head(param_1,param_2)
 byte * param_1;
-uint param_2;
+/* Object-record pointer -- was `uint`, truncating it (e.g. set_player_tile_position
+   passes the real DAT_0023be64 player-object pointer here; truncated it
+   crashed placing the player into the level). */
+char *param_2;
 
 {
   undefined2 uVar1;
   byte bVar2;
   short sVar3;
   ushort uVar4;
-  
+
   uVar1 = *(undefined2 *)param_1;
   bVar2 = (byte)uVar1;
   *(byte *)(param_2 + 4) = (*(byte *)(param_2 + 4) ^ bVar2) & 0x3f ^ bVar2;
   *(char *)(param_2 + 5) = (char)((ushort)uVar1 >> 8);
   if (param_2 < DAT_002046c4) {
-    sVar3 = Ordinal_2005(0x1b,param_2 - (uint)(uintptr_t)DAT_002046b8);
+    sVar3 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
     uVar4 = *param_1 & 0x3f | sVar3 << 6;
   }
   else {
@@ -38835,22 +40129,29 @@ uint param_2;
 
 
 
-void FUN_000531a0(param_1,param_2)
+// was FUN_000531a0
+void object_list_append_tail(param_1,param_2)
 byte * param_1;
-uint param_2;
+/* Object-record pointer -- was `uint`, truncating it (same class as
+   object_list_insert_head above). */
+char *param_2;
 
 {
   short sVar1;
-  int iVar2;
+  byte *pbVar2;
   ushort uVar3;
-  
-  while (iVar2 = FUN_00053514(param_1), iVar2 != 0) {
-    param_1 = (byte *)(iVar2 + 4);
+
+  /* iVar2 was `int`, truncating resolve_object_link's real pointer return --
+     same tile/object-chain-walk bug as object_list_unlink (see there), just
+     never exercised yet (this walks a different list, e.g. a
+     container's contents, to append param_2 at its tail). */
+  while (pbVar2 = (byte *)resolve_object_link(param_1), pbVar2 != 0) {
+    param_1 = pbVar2 + 4;
   }
   *(byte *)(param_2 + 4) = *(byte *)(param_2 + 4) & 0x3f;
   *(undefined1 *)(param_2 + 5) = 0;
   if (param_2 < DAT_002046c4) {
-    sVar1 = Ordinal_2005(0x1b,param_2 - (uint)(uintptr_t)DAT_002046b8);
+    sVar1 = Ordinal_2005(0x1b,param_2 - DAT_002046b8);
     uVar3 = *param_1 & 0x3f | sVar1 << 6;
   }
   else {
@@ -38863,22 +40164,37 @@ uint param_2;
 
 
 
-void FUN_00053274(param_1,param_2)
+/* param_2 was `int`, and the local holding resolve_object_link's return value
+   was `int iVar4` -- both truncating real pointers on this 64-bit host.
+   Confirmed crashing (EXC_BAD_ACCESS on a wild ~32-bit address) the
+   first time this got called with DAT_00202080 already set from a
+   prior call (i.e. calling set_player_tile_position/set-player-position a SECOND
+   time in one run) -- every demo script this whole session only ever
+   called it once per process, so this path had never actually run
+   before the new TELEPORT demomode command exercised it. This is a
+   linked-list walk (resolve_object_link returns "next node", searching for
+   the node matching param_2); same pointer-truncation pattern fixed
+   repeatedly this session. Retyped both to real pointers; left the
+   30+ other call sites' own argument variables unaudited since only
+   this one (DAT_0023be64, already a real pointer, needs no caller-side
+   change) has actually been exercised and confirmed fixed. */
+// was FUN_00053274
+void object_list_unlink(param_1,param_2)
 byte * param_1;
-int param_2;
+byte * param_2;
 
 {
   short sVar1;
   undefined2 uVar2;
   byte bVar3;
-  int iVar4;
+  byte *pbVar4;
   int iVar5;
-  
+
   iVar5 = 0;
   if (param_2 != 0) {
     while( true ) {
-      iVar4 = FUN_00053514(param_1);
-      if (iVar4 == 0) {
+      pbVar4 = (byte *)resolve_object_link(param_1);
+      if (pbVar4 == 0) {
         return;
       }
       sVar1 = (short)iVar5;
@@ -38886,8 +40202,8 @@ int param_2;
       if (0x400 < sVar1) {
         return;
       }
-      if (iVar4 == param_2) break;
-      param_1 = (byte *)(iVar4 + 4);
+      if (pbVar4 == param_2) break;
+      param_1 = pbVar4 + 4;
     }
     uVar2 = *(undefined2 *)(param_2 + 4);
     bVar3 = (byte)uVar2;
@@ -38936,7 +40252,7 @@ undefined4 param_1;
 {
   ushort *puVar1;
   
-  puVar1 = (ushort *)FUN_00053514();
+  puVar1 = (ushort *)resolve_object_link();
   if (puVar1 != (ushort *)0x0) {
     if ((*puVar1 & 0x1c0) == 0x180) {
       FUN_0007e610(param_1,puVar1);
@@ -38950,8 +40266,8 @@ undefined4 param_1;
           FUN_000533e4();
         }
       }
-      FUN_00053274(param_1,puVar1);
-      FUN_00053004(puVar1);
+      object_list_unlink(param_1,puVar1);
+      free_object_slot(puVar1);
     }
   }
   return;
@@ -38968,20 +40284,24 @@ int param_2;
     FUN_000533e4();
   }
   if (param_1 != 0) {
-    FUN_00053274(param_1,param_2);
+    object_list_unlink(param_1,param_2);
   }
-  FUN_00053004(param_2);
+  free_object_slot(param_2);
   return;
 }
 
 
 
-int FUN_00053514(param_1)
+// was FUN_00053514
+/* Was `int`, truncating the same DAT_002046b8/DAT_002046c4 object-record
+   pointer arithmetic as FUN_000535fc above (fixed earlier this session)
+   -- same fix. */
+void *resolve_object_link(param_1)
 ushort * param_1;
 
 {
   ushort uVar1;
-  
+
   if (param_1 != (ushort *)0x0) {
     uVar1 = *param_1;
     if ((uVar1 & 0xffc0) != 0) {
@@ -39018,23 +40338,31 @@ char *param_1;
 
 
 
-int FUN_000535fc(param_1)
+/* The fundamental "object slot index -> record pointer" accessor (70 call
+   sites): slots 0-0xff are 0x1b-byte records in the DAT_002046b8 table,
+   slots >=0x100 are 8-byte records in the DAT_002046c4 table. Was `int`,
+   truncating the real pointer arithmetic below on this 64-bit host --
+   many callers already store the result through a pointer-typed local
+   (e.g. `puVar4 = (undefined1 *)FUN_000535fc()`), so they got a
+   truncated pointer back regardless of their own care. Confirmed as a
+   crash source in FUN_0002dba4 (level-load object-table reset). */
+void *FUN_000535fc(param_1)
 short param_1;
 
 {
-  int iVar1;
-  
+  intptr_t iVar1;
+
   iVar1 = (int)param_1;
   if (iVar1 == 0) {
     iVar1 = 0;
   }
   else if (iVar1 < 0x100) {
-    iVar1 = iVar1 * 0x1b + DAT_002046b8;
+    iVar1 = iVar1 * 0x1b + (intptr_t)DAT_002046b8;
   }
   else {
-    iVar1 = DAT_002046c4 + (iVar1 + -0x100) * 8;
+    iVar1 = (intptr_t)DAT_002046c4 + (iVar1 + -0x100) * 8;
   }
-  return iVar1;
+  return (void *)iVar1;
 }
 
 
@@ -39057,13 +40385,13 @@ LAB_00053720:
   }
   else {
     DAT_002046b4 = param_1;
-    iVar3 = FUN_00053514();
+    iVar3 = resolve_object_link();
     while ((sVar2 = FUN_0005358c(), iVar4 = iVar3, puVar1 = param_1, sVar2 != (short)param_3 &&
            ((((*(byte *)(iVar3 + 1) & 0x80) != 0 || ((*(ushort *)(iVar3 + 6) & 0xffc0) == 0)) ||
             (iVar4 = FUN_00053644((ushort *)(iVar3 + 6),param_2,param_3), puVar1 = DAT_002046b4,
             iVar4 == 0))))) {
       if ((*(ushort *)(iVar3 + 4) & 0xffc0) == 0) goto LAB_00053720;
-      iVar3 = FUN_00053514();
+      iVar3 = resolve_object_link();
     }
   }
   DAT_002046b4 = puVar1;
@@ -39072,7 +40400,8 @@ LAB_00053720:
 
 
 
-undefined4 FUN_00053728(param_1)
+// was FUN_00053728
+undefined4 object_ptr_in_arena(param_1)
 char *param_1;
 
 {
@@ -39134,7 +40463,7 @@ short param_5;
   uint uVar3;
   ushort *local_28;
   
-  puVar1 = (ushort *)FUN_00053514(*param_1);
+  puVar1 = (ushort *)resolve_object_link(*param_1);
   if (puVar1 != (ushort *)0x0) {
     do {
       if ((((int)(short)param_3 == 0xffffffff) ||
@@ -39156,7 +40485,7 @@ short param_5;
         *param_1 = local_28;
         return puVar2;
       }
-      puVar1 = (ushort *)FUN_00053514(puVar1 + 2);
+      puVar1 = (ushort *)resolve_object_link(puVar1 + 2);
     } while (puVar1 != (ushort *)0x0);
   }
   return (ushort *)0x0;
@@ -39886,12 +41215,12 @@ ushort * param_2;
   bool bVar11;
   
   if (((short)*param_2 >> 8 != DAT_0010144c) || ((short)param_2[1] >> 8 != DAT_00101454)) {
-    iVar5 = FUN_00068100();
-    FUN_00053274(iVar5 + 2,param_1);
+    iVar5 = tilemap_lookup();
+    object_list_unlink(iVar5 + 2,param_1);
     DAT_0010144c = (ushort)(char)(*param_2 >> 8);
     DAT_00101454 = (short)(char)(param_2[1] >> 8);
-    iVar5 = FUN_00068100();
-    FUN_000530c4(iVar5 + 2,param_1);
+    iVar5 = tilemap_lookup();
+    object_list_insert_head(iVar5 + 2,param_1);
   }
   uVar7 = (uint)param_1[1];
   bVar9 = (byte)((int)(((int)(short)param_2[2] & 0x3f8U) << 0x10) >> 0x13);
@@ -40025,8 +41354,8 @@ ushort * param_1;
   int iVar1;
   ushort *puVar2;
   
-  iVar1 = FUN_00068100((int)DAT_0010144c,(int)DAT_00101454);
-  puVar2 = (ushort *)FUN_00052f28(1);
+  iVar1 = tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
+  puVar2 = (ushort *)alloc_object_slot(1);
   if (puVar2 == (ushort *)0x0) {
     puVar2 = (ushort *)0x0;
   }
@@ -40047,9 +41376,9 @@ ushort * param_1;
     if ((*puVar2 & 0x1c0) == 0x1c0) {
       FUN_00080e00(puVar2,param_1);
     }
-    FUN_00053274(iVar1 + 2,param_1);
-    FUN_00053004(param_1);
-    FUN_000530c4(iVar1 + 2,puVar2);
+    object_list_unlink(iVar1 + 2,param_1);
+    free_object_slot(param_1);
+    object_list_insert_head(iVar1 + 2,puVar2);
   }
   return puVar2;
 }
@@ -40185,9 +41514,9 @@ ushort * param_1;
   if (DAT_00201b68 == 9) {
     bVar3 = false;
   }
-  iVar8 = FUN_00068100((int)DAT_0010144c,(int)DAT_00101454);
+  iVar8 = tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
   iVar8 = iVar8 + 2;
-  if ((bVar3) && (puVar9 = (ushort *)FUN_00052f28(0), puVar9 != (ushort *)0x0)) {
+  if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
     *(byte *)puVar9 = (byte)*param_1;
     *(byte *)((char *)puVar9 + 1) = *(byte *)((char *)param_1 + 1);
     *(byte *)(puVar9 + 1) = (byte)param_1[1];
@@ -40233,7 +41562,7 @@ ushort * param_1;
   }
   FUN_00053334(iVar8,param_1,1);
   if (puVar9 != (ushort *)0x0) {
-    FUN_000530c4(iVar8,puVar9);
+    object_list_insert_head(iVar8,puVar9);
   }
   if ((bVar13 == 9) &&
      (iVar10 = FUN_000816e0(puVar9,(int)DAT_0010144c,(int)DAT_00101454,local_2c), iVar10 == 0)) {
@@ -40317,12 +41646,12 @@ int param_4;
     iVar12 = param_3 * 8 + ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2);
     DAT_00202c6c[2] = (char)iVar12;
     DAT_00202c6c[3] = (char)((uint)iVar12 >> 8);
-    FUN_00050d78(DAT_00202c6c[8]);
+    collision_build_height_field(DAT_00202c6c[8]);
     if (((int)((uint)(byte)DAT_00202c6c[8] + (uint)(byte)DAT_00202c6c[0x10]) <
          (int)*(short *)(DAT_00202c6c + 4)) || (iVar12 = 1, bVar1)) {
       iVar12 = 0;
     }
-    FUN_000518c0(iVar12,1);
+    collision_height_envelope(iVar12,1);
     FUN_00051dd0();
     DAT_00086998 = -1;
     if (((DAT_00202c6c[0x15] == '\0') && (iVar11 = (int)(char)DAT_00202c6c[0x16], 0 < iVar11)) &&
@@ -40334,7 +41663,7 @@ int param_4;
         if ((cVar4 < 0) ||
            ((ushort)(byte)(&DAT_00202c38)[cVar4 * 6] != *(ushort *)(DAT_00202c6c + 4))) break;
         DAT_00086998 = cVar4;
-        psVar7 = (short *)FUN_00053514(&DAT_00202c3a + cVar4 * 6);
+        psVar7 = (short *)resolve_object_link(&DAT_00202c3a + cVar4 * 6);
         uVar8 = (int)*psVar7 & 0x1ff;
         DAT_00086999 = (undefined1)uVar8;
         DAT_0008699a = (undefined1)(uVar8 >> 8);
@@ -40359,7 +41688,7 @@ LAB_000564d0:
         return param_1;
       }
 LAB_000564d8:
-      iVar12 = FUN_00068100((int)param_2,(int)param_3);
+      iVar12 = tilemap_lookup((int)param_2,(int)param_3);
       puVar9 = (ushort *)FUN_00053334(iVar12 + 2,param_1,0);
       return puVar9;
     }
@@ -40436,7 +41765,7 @@ short param_1;
       sVar1 = FUN_00057a70();
       if (-1 < sVar1) break;
       FUN_000735fc();
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
     }
     if (sVar1 < 0x8e) {
       if (sVar1 == 0x8d) {
@@ -40497,7 +41826,7 @@ undefined4 param_1;
 
 {
   FUN_00041a18(0x20eb,s_optbtns_00086954,param_1);
-  FUN_00040b0c(0x20eb,4,0xb,0x6c,0x23);
+  draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   return;
 }
 
@@ -40509,7 +41838,7 @@ undefined4 param_2;
 
 {
   FUN_00041a18(0x20ec,s_optbtns_00086954,param_2);
-  FUN_00040b0c(0x20ec,5,param_1 * -0xf + 0x67,0xe,0x1f);
+  draw_sprite_by_id(0x20ec,5,param_1 * -0xf + 0x67,0xe,0x1f);
   return;
 }
 
@@ -40538,7 +41867,7 @@ void FUN_00056724()
   DAT_000868d8 = 0;
   DAT_000868dc = 7;
   FUN_00041a18(0x20eb,s_optbtns_00086954,0);
-  FUN_00040b0c(0x20eb,4,0xb,0x6c,0x23);
+  draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   if (0 < DAT_002020c0) {
     FUN_0003f99c();
   }
@@ -40651,7 +41980,7 @@ void FUN_0005693c()
   DAT_002046f0 = 0xffff;
   FUN_00056640(5);
   FUN_00041a18(0x20ed,s_optbtns_00086954,uVar1 + 0x35);
-  FUN_00040b0c(0x20ed,5,10,0x12,0x22);
+  draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
   FUN_000566dc(4 - uVar1,(uVar1 + 0x13) * 2);
   return;
 }
@@ -40729,10 +42058,10 @@ int param_1;
          (byte)(((param_1 + 4) * 0x10000 >> 0x10 & 0xfU) << 4) |
          *(byte *)(DAT_00086df8 + 0xb5) & 0xf;
     FUN_0005d2b0();
-    FUN_0005bb5c();
+    full_dungeon_redraw();
     FUN_0006fea4();
     FUN_00041a18(0x20ed,s_optbtns_00086954,param_1 + 0x39);
-    FUN_00040b0c(0x20ed,5,10,0x12,0x22);
+    draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
     FUN_000566dc(4 - (param_1 + 4),(param_1 + 0x17) * 2);
   }
   if (sVar1 == 0) {
@@ -41021,7 +42350,7 @@ int FUN_00056fe8()
     rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     DAT_00204848 = 0;
     iVar1 = DAT_00204844;
   }
@@ -41312,7 +42641,7 @@ int param_1;
   while( true ) {
     sVar3 = FUN_000575c4(auStack_10);
     if ((sVar3 == 0) || (iVar4 != 0)) break;
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     if (param_1 != 0) {
       FUN_00049818();
     }
@@ -41941,10 +43270,10 @@ void FUN_0005857c()
 LAB_00058674:
   DAT_00088960 = 1;
   g_force_flush = 1;
-  FUN_00040b0c((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
+  draw_sprite_by_id((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
                ((int)g_mouse_y - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
                DAT_00204784);
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   DAT_00088960 = 0;
   g_force_flush = 0;
   set_draw_color(0);
@@ -41980,9 +43309,18 @@ uint FUN_00058738()
 
 
 
-void FUN_0005878c(param_1,param_2)
-int param_1;
-undefined4 param_2;
+/* param_1/param_2 were `int`/`undefined4`, truncating the real pointers
+   this is always called with (&DAT_00204880, &DAT_002048b0) -- confirmed
+   crashing (EXC_BAD_ACCESS, param_1 read back truncated to ~12MB) on a
+   real run even after widening the callee-side globals, because the
+   truncation was happening right here at the call boundary. DAT_00086978/
+   DAT_00204874 (assigned from these) are already real pointer-typed
+   globals, confirming the intent. Same pointer-truncation pattern fixed
+   repeatedly this session. */
+// was FUN_0005878c -- per-tick movement + collision sweep (from apply_movement_tick)
+void movement_collision_sweep(param_1,param_2)
+char *param_1;
+char *param_2;
 
 {
   int iVar1;
@@ -41990,13 +43328,16 @@ undefined4 param_2;
   char cVar3;
   
   cVar3 = '\0';
-  DAT_00086978 = param_1 + 6;
+  DAT_00086978 = (short *)(param_1 + 6);
   DAT_002049c0 = *(undefined1 *)(param_1 + 0x28);
   DAT_002049bc = 0;
   DAT_00204874 = param_1;
   DAT_002048bc = param_2;
-  iVar1 = FUN_00058e08(1,1);
+  // PHYSICS: set up this tick's velocity, sub-step count and target heights
+  iVar1 = movement_sweep_setup(1,1);
   if (iVar1 != 0) {
+    // PHYSICS: sub-tile sweep -- advance the move DAT_00086990+1 sub-steps,
+    // colliding (floor/wall/ceiling) at each one; capped at 16 iterations
     while ((int)DAT_00086996 < DAT_00086990 + 1) {
       cVar2 = cVar3 + '\x01';
       if (cVar3 == '\x10') {
@@ -42008,20 +43349,24 @@ undefined4 param_2;
         *(undefined1 *)(DAT_00204874 + 0x15) = 0;
         return;
       }
-      iVar1 = FUN_0005a550(1);
+      // PHYSICS: integrate one sub-step (horizontal, or vertical if falling/climbing)
+      iVar1 = sweep_step(1);
       cVar3 = cVar2;
       if (iVar1 != 0) {
-        FUN_0005ad18();
+        // PHYSICS: this sub-step crossed a cell boundary -- run collision resolution
+        sweep_apply_collision();
       }
     }
-    FUN_00059488();
+    // PHYSICS: commit the swept X/Y/Z back into the player movement block
+    sweep_writeback_position();
   }
   return;
 }
 
 
 
-void FUN_00058878()
+// was FUN_00058878 -- init the per-tick collision-sweep working set from the movement block
+void sweep_init_position()
 
 {
   DAT_00202c6c = &DAT_002049c8;
@@ -42042,7 +43387,8 @@ void FUN_00058878()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0005898c()
+// was FUN_0005898c -- pick the object under the view reticle (-> DAT_00086998 slot, DAT_00086999/9a tile x/y)
+void reticle_object_pick()
 
 {
   byte bVar1;
@@ -42060,7 +43406,7 @@ void FUN_0005898c()
   if (*(short *)(DAT_00204874 + 10) < 1) {
     if (*(short *)(DAT_00204874 + 10) == 0) {
       bVar1 = DAT_002049d9;
-      if ((int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)(DAT_0008697c + 4)) <
+      if ((int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)DAT_0008697c + 4)) <
           (int)(uint)DAT_002049d9) {
         bVar1 = DAT_002049d8;
       }
@@ -42074,7 +43420,10 @@ void FUN_0005898c()
         do {
           iVar6 = iVar4 * 6;
           puVar2 = (ushort *)FUN_000535fc(*(ushort *)(&DAT_00202c3a + iVar6) >> 6);
-          if (((&DAT_00202c97)[(*puVar2 & 0x1ff) * 0xd] & 1) != 0) {
+          /* FUN_000535fc returns NULL for an empty slot (id bits clear).
+             Ghidra dropped the guard; with forward movement now working this
+             loop runs (via sweep_collision_flags) and hit the NULL deref. */
+          if (puVar2 != (ushort *)0x0 && ((&DAT_00202c97)[(*puVar2 & 0x1ff) * 0xd] & 1) != 0) {
             if (iVar4 < (char)DAT_002049de) {
               if ((bVar7) &&
                  (bVar1 = (&DAT_00202c38)[iVar6], (short)_DAT_0008699b <= (short)(ushort)bVar1)) {
@@ -42124,7 +43473,13 @@ void FUN_0005898c()
   }
   if (DAT_002049dc == 0) {
 LAB_00058a64:
-    _DAT_0008699b = 0x80 - *(byte *)(DAT_00204874 + 0x26);
+    /* No slope/step feature at this sub-position: the target foot height is
+       just the tile's flat floor (DAT_002049d9). Ghidra's `0x80 - height`
+       (tiletop minus the player's height) is the "no floor at all" sentinel;
+       used as the default it left a player who had walked off a ledge
+       floating near the ceiling instead of falling to the floor below, and
+       made the swept foot height oscillate when blocked beside a drop. */
+    _DAT_0008699b = (ushort)DAT_002049d9;
   }
   else {
     iVar4 = (uint)DAT_002049dd + (int)(char)DAT_002049de;
@@ -42134,23 +43489,38 @@ LAB_00058a64:
          (ushort)(byte)(&DAT_00202c39)[iVar4 * 6] - (ushort)*(byte *)(DAT_00204874 + 0x26);
   }
   DAT_00204878 = 0;
-  if ((int)((uint)*(byte *)(DAT_00204874 + 0x25) + (int)*(short *)(DAT_0008697c + 4)) <
+  if ((int)((uint)*(byte *)(DAT_00204874 + 0x25) + (int)*(short *)((char *)DAT_0008697c + 4)) <
       (int)(uint)DAT_002049d9) {
     _DAT_0008699b = (ushort)DAT_002049d9;
     DAT_00204878 = 1;
   }
 LAB_00058db4:
   if (DAT_00086998 != -1) {
-    psVar3 = (short *)FUN_00053514(&DAT_00202c3a + DAT_00086998 * 6);
-    DAT_00086999 = (undefined1)((int)*psVar3 & 0x1ffU);
-    DAT_0008699a = (undefined1)(((int)*psVar3 & 0x1ffU) >> 8);
+    psVar3 = (short *)resolve_object_link(&DAT_00202c3a + DAT_00086998 * 6);
+    /* resolve_object_link returns NULL when the picked slot carries no object
+       link (id bits 6..15 clear).  The slot-selection loop above only tests a
+       tile flag via FUN_000535fc(id >> 6), so a slot with id < 0x40 passes the
+       filter yet resolves to NULL here.  The ARM original guarded this deref;
+       the Ghidra decompile dropped the check, so a turn tick whose reticle pick
+       lands on such a slot segfaults in this per-frame path
+       (reticle_object_pick <- movement_sweep_setup <- movement_collision_sweep <- apply_movement_tick),
+       which is what made scripted in-dungeon turning die mid-spin.  Treat a
+       NULL resolve as "nothing under the reticle". */
+    if (psVar3 == (short *)0x0) {
+      DAT_00086998 = -1;
+    }
+    else {
+      DAT_00086999 = (undefined1)((int)*psVar3 & 0x1ffU);
+      DAT_0008699a = (undefined1)(((int)*psVar3 & 0x1ffU) >> 8);
+    }
   }
   return;
 }
 
 
 
-undefined4 FUN_00058e08(param_1,param_2)
+// was FUN_00058e08 -- set up the movement/collision sweep (screen deltas, step DDA state)
+undefined4 movement_sweep_setup(param_1,param_2)
 int param_1;
 int param_2;
 
@@ -42170,7 +43540,7 @@ int param_2;
   short local_20;
   short local_1e;
   
-  FUN_00049ce8((int)*(short *)(DAT_00204874 + 0x21),&local_20,&local_1e);
+  angle_to_screen_delta((int)*(short *)(DAT_00204874 + 0x21),&local_20,&local_1e);
   iVar10 = (int)*(short *)(DAT_00204874 + 0x14) * (int)local_20 >> 0xf;
   *(char *)(DAT_00204874 + 6) = (char)iVar10;
   *(char *)(DAT_00204874 + 7) = (char)((uint)iVar10 >> 8);
@@ -42187,7 +43557,7 @@ int param_2;
     return 0;
   }
   if (param_1 != 0) {
-    FUN_00058878(psVar11);
+    sweep_init_position(psVar11);
   }
   iVar8 = DAT_00204874;
   psVar11 = DAT_00086978;
@@ -42197,12 +43567,18 @@ int param_2;
           (int)(((int)*(short *)(DAT_00204874 + 8) ^ uVar2) - uVar2);
   DAT_0008698c = (ushort)bVar3;
   iVar10 = (int)(short)(ushort)bVar3;
-  Ordinal_2005(2,iVar10 + 1);
   uVar5 = 0x20;
   if (psVar11[iVar10] < 1) {
     uVar5 = 0xe0;
   }
-  DAT_0008698e = extraout_r1;
+  /* DAT_0008698e is the OTHER movement axis (DAT_0008698c is the dominant one,
+     0=X or 1=Y). Ghidra dropped the `Ordinal_2005(2, iVar10+1)` whose result
+     it wanted and read `extraout_r1` (the division remainder register
+     leftover), which is 0 for iVar10 in {0,1} -- so the secondary axis was
+     always X and turning never changed the direction of travel. Compute it
+     directly: `(iVar10 + 1) % 2` == `1 - iVar10`. (Same register-leftover
+     pattern the reaction-queue code documents at ~uw.c:45585.) */
+  DAT_0008698e = (short)((iVar10 + 1) % 2);
   (&DAT_00086986)[iVar10 * 2] = 0;
   (&DAT_00086987)[iVar10 * 2] = uVar5;
   if (DAT_00086978[(short)DAT_0008698c] == 0) {
@@ -42239,20 +43615,27 @@ int param_2;
     DAT_00086994 = ((ushort)uVar6 ^ uVar4) - uVar4;
   }
   DAT_00086996 = 0;
+  // PHYSICS: build the destination tile's floor/ceiling height field for collision
   if (((DAT_002049d2 == 1) || (psVar11[2] != 0)) && (param_2 != 0)) {
-    FUN_00050d78(*(undefined1 *)(iVar8 + 0x27));
-    FUN_000518c0(0,0);
+    collision_build_height_field(*(undefined1 *)(iVar8 + 0x27));
+    collision_height_envelope(0,0);
     psVar11 = DAT_00086978;
   }
+  // PHYSICS: gravity gate -- psVar11[2] (== DAT_0020488a, the vertical velocity
+  // input) must be non-zero to run any vertical integration this sweep. It is
+  // only set for scripted vertical motion (jump / knockback / slope step); a
+  // plain walk off a ledge never sets it, so no gravity accumulates and the
+  // step resolver snaps the foot down in one tick.
   if (psVar11[2] == 0) {
     DAT_0008698a = 0;
     return 1;
   }
+  // PHYSICS: seed the vertical velocity, sign from the requested direction
   DAT_0008698a = 0x800;
   if (psVar11[2] < 1) {
     DAT_0008698a = -0x800;
   }
-  FUN_0005898c(param_2);
+  reticle_object_pick(param_2);
   psVar11 = DAT_00086978;
   if (DAT_00086978[(short)DAT_0008698c] != 0) {
     iVar10 = (int)*(short *)(&DAT_00086986 + (short)DAT_0008698c * 2);
@@ -42275,6 +43658,8 @@ int param_2;
   uVar1 = iVar10 >> 0x1f;
   uVar9 = (undefined2)(((iVar10 >> 5 ^ uVar1) - uVar1) * 0x10000 >> 0x10);
 LAB_000592f8:
+  // PHYSICS: gravity/climb rate -- _DAT_000869a1 (DAT_000869a1/a2) is the vertical
+  // speed the integrator (sweep_step_vertical) accelerates by each sub-step this sweep
   DAT_000869a2 = (char)((ushort)uVar9 >> 8);
   DAT_000869a1 = (char)uVar9;
   return 1;
@@ -42282,7 +43667,10 @@ LAB_000592f8:
 
 
 
-void FUN_0005932c(param_1)
+// was FUN_0005932c -- re-seed the sweep for the distance still left (after a
+// block/redirect): recompute the remaining-distance field (+0x12), re-run
+// movement_sweep_setup, and end the tick if nothing is left or setup fails
+void sweep_restart_remaining(param_1)
 undefined4 param_1;
 
 {
@@ -42291,7 +43679,7 @@ undefined4 param_1;
   iVar1 = ((int)*(short *)(DAT_00204874 + 0x12) - (int)DAT_00086996 * (int)DAT_00086994) * 0x10000;
   *(char *)(DAT_00204874 + 0x12) = (char)((uint)iVar1 >> 0x10);
   *(char *)(DAT_00204874 + 0x13) = (char)((uint)iVar1 >> 0x18);
-  if ((*(short *)(DAT_00204874 + 0x12) < 1) || (iVar1 = FUN_00058e08(0,param_1), iVar1 == 0)) {
+  if ((*(short *)(DAT_00204874 + 0x12) < 1) || (iVar1 = movement_sweep_setup(0,param_1), iVar1 == 0)) {
     DAT_00086996 = DAT_00086990 + 1;
   }
   return;
@@ -42299,7 +43687,11 @@ undefined4 param_1;
 
 
 
-void FUN_000593c0()
+// was FUN_000593c0
+// PHYSICS: kill all velocity -- zero the horizontal (+6/+8/+0xc/+0xe) and
+// vertical (+0xa/+0x10) velocity/accumulator fields and end the sweep. Called
+// on a hard blocking hit (0x4000) so the player stops instead of bouncing.
+void sweep_kill_velocity()
 
 {
   *(undefined1 *)(DAT_00204874 + 8) = 0;
@@ -42322,40 +43714,50 @@ void FUN_000593c0()
 
 
 
-void FUN_00059488()
+// was FUN_00059488 -- write the swept X/Y/Z position + heading back into the movement block
+void sweep_writeback_position()
 
 {
   uint uVar1;
   undefined2 uVar2;
   int iVar3;
   
-  iVar3 = *DAT_0008697c * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18);
-  *(char *)DAT_00204874 = (char)iVar3;
-  *(char *)((char *)DAT_00204874 + 1) = (char)((uint)iVar3 >> 8);
-  iVar3 = DAT_0008697c[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18);
-  *(char *)(DAT_00204874 + 1) = (char)iVar3;
-  *(char *)((char *)DAT_00204874 + 3) = (char)((uint)iVar3 >> 8);
-  iVar3 = DAT_0008697c[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18);
-  *(char *)(DAT_00204874 + 2) = (char)iVar3;
-  *(char *)((char *)DAT_00204874 + 5) = (char)((uint)iVar3 >> 8);
+  /* Ghidra split three 16-bit stores of the reconstructed player position
+     (X at +0, Y at +2, Z at +4 of the movement block) into byte pairs and
+     botched the low-byte offset of the 2nd and 3rd: Y-low went to +1 (X's
+     high byte) and Z-low to +2 (Y's low byte), while the high bytes stayed
+     at the correct +3 / +5. Result: one forward step scrambled X and Y and
+     threw the player off the map. Restore proper halfword stores. */
+  // PHYSICS: commit swept X (+0), Y (+2) and Z/foot height (+4) to the movement block
+  *(short *)(DAT_00204874 + 0) =
+       (short)(*DAT_0008697c * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18));
+  *(short *)(DAT_00204874 + 2) =
+       (short)(DAT_0008697c[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18));
+  *(short *)(DAT_00204874 + 4) =
+       (short)(DAT_0008697c[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18));
   if (((((DAT_002049d4 & 0x2000) != 0) &&
        (uVar1 = (int)((int)DAT_0008697c[2] - (uint)DAT_002049d8) >> 0x1f,
        (int)(((int)DAT_0008697c[2] - (uint)DAT_002049d8 ^ uVar1) - uVar1) <=
        (int)(uint)*(byte *)((char *)DAT_00204874 + 0x25))) && (DAT_002049d2 == 1)) &&
-     (DAT_00204874[5] == 0)) {
-    uVar2 = FUN_00050aa8((int)*DAT_00204874,(int)DAT_00204874[1]);
-    *(char *)(DAT_00204874 + 2) = (char)uVar2;
-    *(char *)((char *)DAT_00204874 + 5) = (char)((ushort)uVar2 >> 8);
+     (*(char *)(DAT_00204874 + 5) == 0)) {
+    /* re-snap Z (bytes +4..+5) to the floor height. FUN_00050aa8 wants the
+       tile X and Y as halfwords; Ghidra rendered the args as X's two bytes
+       and stored the result's low byte to +2 (Y-low) instead of +4. */
+    uVar2 = FUN_00050aa8(*(short *)(DAT_00204874 + 0),*(short *)(DAT_00204874 + 2));
+    *(short *)(DAT_00204874 + 4) = (short)uVar2;
   }
-  uVar2 = DAT_002049ce;
-  *(char *)((char *)DAT_00204874 + 0x21) = (char)DAT_002049ce;
-  *(char *)(DAT_00204874 + 0x11) = (char)((ushort)uVar2 >> 8);
+  /* heading is the halfword at +0x21; Ghidra put the high byte at +0x11
+     (DAT_00204890's high byte), clobbering the Z-force accumulator. */
+  *(short *)(DAT_00204874 + 0x21) = DAT_002049ce;
   return;
 }
 
 
 
-int FUN_000595d4(param_1,param_2)
+// was FUN_000595d4 -- integrate one sub-tile step of the movement/collision sweep
+// PHYSICS: horizontal integrator -- advances the swept X/Y (DAT_0008697c[0/1])
+// along the dominant/secondary axes and carries the sub-cell remainders
+int sweep_integrate_substep(param_1,param_2)
 short param_1;
 short param_2;
 
@@ -42439,7 +43841,10 @@ short param_2;
 
 
 
-undefined4 FUN_0005989c(param_1)
+// was FUN_0005989c -- deflect the move's heading against the wall normal it
+// hit (DAT_002049ce) so it slides along the face; returns 0 when the move
+// cannot be deflected (dead stop). Used by the slide path.
+undefined4 sweep_deflect_heading(param_1)
 uint param_1;
 
 {
@@ -42532,7 +43937,10 @@ LAB_000599b0:
 
 
 
-void FUN_00059b7c(param_1)
+// was FUN_00059b7c -- PHYSICS: wall collision (slide). Reverts the blocked
+// sub-step, deflects the heading along the hit face (sweep_deflect_heading)
+// and either resumes the remaining move or ends the tick.
+void sweep_slide_along_wall(param_1)
 int param_1;
 
 {
@@ -42540,7 +43948,7 @@ int param_1;
   ushort uVar2;
   
   if ('\0' < DAT_002049bc) {
-    FUN_0005a550(0xffffffff);
+    sweep_step(0xffffffff);
     DAT_00086996 = DAT_00086990 + 1;
     return;
   }
@@ -42551,13 +43959,13 @@ int param_1;
   }
   uVar2 = DAT_0008698c << 1;
 LAB_00059be4:
-  FUN_0005a550(0xffffffff);
-  iVar1 = FUN_0005989c(*(undefined2 *)(&DAT_000869a8 + (short)uVar2 * 2));
+  sweep_step(0xffffffff);
+  iVar1 = sweep_deflect_heading(*(undefined2 *)(&DAT_000869a8 + (short)uVar2 * 2));
   if (iVar1 == 0) {
     DAT_00086996 = DAT_00086990 + 1;
   }
   else {
-    FUN_0005932c(1);
+    sweep_restart_remaining(1);
     DAT_002049bc = '\x02';
   }
   return;
@@ -42565,7 +43973,10 @@ LAB_00059be4:
 
 
 
-void FUN_00059c38()
+// was FUN_00059c38 -- PHYSICS: recoil. Seeds a downward vertical velocity
+// (+0xa = -0x15, +0x10 = -4) and shoves the facing (+0x21) back by ~0x3000
+// plus a random amount -- the stagger/knockback when a move is hard-blocked.
+void sweep_apply_knockback()
 
 {
   undefined4 uVar1;
@@ -42596,7 +44007,12 @@ void FUN_00059c38()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00059d20()
+// was FUN_00059d20
+// PHYSICS: landing / surface contact -- called when the vertical integrator
+// crosses the target height. Derives a landing-impact value (bob/thump on the
+// camera via DAT_00204874+9), snaps the foot Z to _DAT_0008699b, clears the
+// vertical remainder, and if this was a floor landing kills the fall velocity.
+void sweep_land_on_surface()
 
 {
   byte *pbVar1;
@@ -42620,7 +44036,7 @@ void FUN_00059d20()
     sVar4 = 0;
   }
   else {
-    uVar11 = (int)*(short *)(DAT_0008697c + 4) - (int)_DAT_0008699b;
+    uVar11 = (int)*(short *)((char *)DAT_0008697c + 4) - (int)_DAT_0008699b;
     uVar8 = (int)uVar11 >> 0x1f;
     if (iVar12 < 0) {
       iVar12 = iVar12 + 3;
@@ -42632,13 +44048,29 @@ void FUN_00059d20()
   }
   *(char *)(DAT_00204874 + 9) = (char)sVar4;
   *(char *)((char *)DAT_00204874 + 0x13) = (char)((ushort)sVar4 >> 8);
-  *(short *)(DAT_0008697c + 4) = _DAT_0008699b;
+  // PHYSICS: floor/ceiling collision -- snap the foot exactly onto the surface
+  // and zero the vertical sub-unit accumulator so gravity restarts from rest
+  *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
   psVar9 = DAT_00204874;
   DAT_00086984 = 0;
+  /* PHYSICS: fall ended -- clear the accumulated downward velocity (+0xa) and the
+     gravity-accel field (+0x10), and drop the airborne locomotion state byte
+     (+0x28 == DAT_002048a8) back to "walking" (8). Without the last step
+     set_locomotion_state (called every tick from update_3d_sound_position) sees the stale
+     airborne state and re-arms +0x10 = -4, so the fall integrator re-enters and
+     "lands" every tick forever, freezing the player on the floor. Only when we
+     were moving downward, so a jump's own apex handling is left untouched. */
+  if (*(short *)(DAT_00204874 + 10) < 0) {
+    *(short *)(DAT_00204874 + 10) = 0;
+    *(short *)(DAT_00204874 + 0x10) = 0;
+    if (*(byte *)(DAT_00204874 + 0x28) == 0x10) {
+      *(undefined1 *)(DAT_00204874 + 0x28) = 8;
+    }
+  }
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
-      ((int)*(short *)(DAT_0008697c + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
+      ((int)*(short *)((char *)DAT_0008697c + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
      (DAT_00204874[5] < 0)) {
-    FUN_000593c0();
+    sweep_kill_velocity();
     *(undefined1 *)(DAT_00204874 + 0x14) = 2;
     uVar3 = Ordinal_2005(0x32,(short)(uVar2 >> 4) + -600);
     FUN_00072c74(5,(int)*DAT_00204874 >> 5,(int)DAT_00204874[1] >> 5,uVar3);
@@ -42653,7 +44085,7 @@ void FUN_00059d20()
   psVar9 = DAT_00204874;
   if ((uVar8 & 0x18) != 0) {
     if ((uVar8 & 0x10) != 0) {
-      FUN_000593c0();
+      sweep_kill_velocity();
       return;
     }
     DAT_00086996 = DAT_00086990 + 1;
@@ -42703,7 +44135,7 @@ void FUN_00059d20()
   *(undefined1 *)(DAT_00204874 + 8) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0x11) = 0;
   if (DAT_00086998 == -1) {
-    if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)(DAT_0008697c + 4)) {
+    if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)DAT_0008697c + 4)) {
       puVar7 = (ushort *)FUN_000535fc((int)*(short *)((char *)DAT_00204874 + 0x23));
       if ((*puVar7 & 0x1c0) != 0x40) goto LAB_0005a238;
       if ((DAT_002049d6 & 0x10) == 0) {
@@ -42729,10 +44161,10 @@ LAB_0005a2d0:
       goto LAB_0005a33c;
     }
 LAB_0005a238:
-    FUN_00059c38();
+    sweep_apply_knockback();
   }
 LAB_0005a33c:
-  FUN_0005932c(0);
+  sweep_restart_remaining(0);
   return;
 }
 
@@ -42740,7 +44172,14 @@ LAB_0005a33c:
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-undefined4 FUN_0005a348(param_1,param_2)
+// was FUN_0005a348
+// PHYSICS: vertical integrator -- applies gravity/climb to the swept foot Z
+// (DAT_0008697c[2]) and resolves floor + ceiling contact. Only reached from
+// sweep_step when the "vertical motion active" flag *(DAT_00204874+10) is set.
+// _DAT_000869a1 = per-tick vertical rate (gravity accel / climb speed),
+// DAT_0008698a = signed vertical velocity, DAT_00086984 = sub-unit remainder,
+// _DAT_0008699b = target surface height (floor when falling, ceiling when rising).
+undefined4 sweep_step_vertical(param_1,param_2)
 undefined4 param_1;
 short param_2;
 
@@ -42751,15 +44190,19 @@ short param_2;
   short sVar4;
   uint uVar5;
   int iVar6;
-  
+
   iVar2 = (int)param_2;
   if ((int)DAT_00086996 < (int)((uint)(iVar2 == -1) + (int)DAT_00086990)) {
+    // PHYSICS: gravity -- accelerate the vertical velocity by _DAT_000869a1*32 per
+    // sub-step; sign follows the current velocity (downward when falling/resting)
     iVar6 = _DAT_000869a1 * 0x20;
     if (DAT_0008698a * iVar2 < 1) {
       iVar6 = _DAT_000869a1 * -0x20;
     }
   }
   else {
+    // PHYSICS: final partial sub-step -- vertical displacement from the current
+    // velocity, scaled by the horizontal distance covered (DAT_00086992)
     iVar6 = (int)DAT_0008698a;
     if (DAT_00086992 == 0) {
       if (iVar6 < 0) {
@@ -42795,35 +44238,43 @@ short param_2;
   }
   DAT_00086984 = (ushort)(uVar3 * 0x10000 >> 0x10) & 0x7ff;
   if (iVar2 == -1) {
-    *(short *)(DAT_0008697c + 4) = *(short *)(DAT_0008697c + 4) + sVar4;
+    // PHYSICS: revert path -- just back the foot Z out by the computed delta
+    *(short *)((char *)DAT_0008697c + 4) = *(short *)((char *)DAT_0008697c + 4) + sVar4;
   }
   else {
     iVar2 = (int)sVar4;
     if (iVar2 < 1) {
       if (-1 < iVar2) goto LAB_0005a4ac;
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
-      iVar2 = iVar2 + *(short *)(DAT_0008697c + 4);
+      // PHYSICS: floor collision -- falling; if this step would drop the foot
+      // below the target floor height, stop and snap to it (sweep_land_on_surface)
+      iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
       if (iVar2 < _DAT_0008699b) goto LAB_0005a4f8;
     }
     else {
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
-      iVar2 = iVar2 + *(short *)(DAT_0008697c + 4);
+      // PHYSICS: ceiling collision -- rising; if this step would push the foot
+      // above the target height, stop and snap to it
+      iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
       if (_DAT_0008699b < iVar2) {
 LAB_0005a4f8:
-        FUN_00059d20();
+        sweep_land_on_surface();
         return 0;
       }
     }
-    *(short *)(DAT_0008697c + 4) = (short)iVar2;
+    // PHYSICS: no surface hit this step -- commit the new foot Z
+    *(short *)((char *)DAT_0008697c + 4) = (short)iVar2;
   }
 LAB_0005a4ac:
-  uVar1 = FUN_000595d4();
+  // PHYSICS: after the vertical step, run the horizontal sub-tile integrator for the same direction
+  uVar1 = sweep_integrate_substep(0,param_2);
   return uVar1;
 }
 
 
 
-undefined4 FUN_0005a550(param_1)
+// was FUN_0005a550 -- advance the sweep one step (param_1==-1 commits the move)
+undefined4 sweep_step(param_1)
 undefined4 param_1;
 
 {
@@ -42833,8 +44284,8 @@ undefined4 param_1;
   
   bVar1 = false;
   if ((short)param_1 == -1) {
-    FUN_000518c0(0,0);
-    FUN_0005898c(0);
+    collision_height_envelope(0,0);
+    reticle_object_pick(0);
     *(undefined1 *)(DAT_00204874 + 0x28) = DAT_002049c0;
     if (DAT_00204870 != 0) {
       bVar1 = true;
@@ -42844,13 +44295,20 @@ undefined4 param_1;
     DAT_002049bc = DAT_002049bc + -1;
   }
   if (*(short *)(DAT_00204874 + 10) == 0) {
-    uVar3 = FUN_000595d4(0,param_1);
+    // PHYSICS: no vertical motion this step -> integrate the horizontal sub-tile move only
+    uVar3 = sweep_integrate_substep(0,param_1);
   }
   else {
-    uVar3 = FUN_0005a348();
+    /* PHYSICS: vertical motion active (falling / climbing a slope) -> run the
+       gravity + floor/ceiling integrator. Ghidra dropped both args here, so
+       sweep_step_vertical ran with a garbage `param_2` direction/scale -- one call
+       overshot the target height and snapped, which is why a drop resolved
+       in a single tick instead of accelerating over several. Forward the
+       sweep direction like the horizontal path above. */
+    uVar3 = sweep_step_vertical(0,param_1);
   }
   if (bVar1) {
-    FUN_0005a6bc();
+    sweep_collision_flags();
     DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
     uVar2 = FUN_0005a630();
     *(undefined1 *)(DAT_00204874 + 0x28) = uVar2;
@@ -42903,7 +44361,8 @@ short param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-uint FUN_0005a6bc()
+// was FUN_0005a6bc -- compute blocked/step-up flags for the sweep's current sub-position
+uint sweep_collision_flags()
 
 {
   ushort uVar1;
@@ -42920,9 +44379,26 @@ uint FUN_0005a6bc()
   bVar7 = (DAT_002048bc[2] & 0x80) == 0;
   uVar1 = *DAT_002048bc;
   DAT_00204870 = 0;
-  FUN_00050d78(*(undefined1 *)(DAT_00204874 + 0x27));
-  FUN_000518c0(0,0);
-  FUN_0005898c(0);
+  /* Sync the collision working block's X/Y (DAT_00202c6c[+0/+2], i.e.
+     DAT_002049c8/ca) to the sweep's live sub-tile position before the tile
+     lookups in collision_build_height_field / collision_height_envelope.  sweep_init_position copies the
+     heading/height fields into this block but never the position, and Ghidra
+     dropped whatever kept it current -- so DAT_002049c8/ca sat at (0,0) and
+     every collision test hit tile (0,0), letting the player walk straight
+     through solid walls and off the map.  DAT_0008697c is the live position
+     in the same 1/8-tile units these readers expect (>>3 -> tile). */
+  DAT_002049c8 = DAT_0008697c[0];
+  DAT_002049ca = DAT_0008697c[1];
+  if (tilemap_lookup((short)((int)DAT_0008697c[0] >> 3),(short)((int)DAT_0008697c[1] >> 3)) ==
+      (void *)0x0) {
+    /* stepped outside the 64x64 map -- the border is always solid; report a
+       hard block so sweep_apply_collision backs the move out. (Also stops
+       collision_build_height_field dereferencing a NULL tile pointer.) */
+    return 0xffff8000;
+  }
+  collision_build_height_field(*(undefined1 *)(DAT_00204874 + 0x27));
+  collision_height_envelope(0,0);
+  reticle_object_pick(0);
   local_3c = DAT_002049d6 | DAT_002049d4;
   bVar8 = (local_3c & DAT_002048bc[2]) == 0;
   if ((DAT_002049dc != '\0') &&
@@ -42941,7 +44417,9 @@ uint FUN_0005a6bc()
       iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
     } while (iVar6 < (int)((uint)DAT_002049dd + (int)DAT_002049de));
   }
-  iVar4 = (int)*(short *)(DAT_0008697c + 4);
+  // PHYSICS: floor collision -- compare the foot Z against the destination
+  // tile's floor height _DAT_0008699b to decide level / step-up / step-down / fall
+  iVar4 = (int)*(short *)((char *)DAT_0008697c + 4);
   iVar6 = (int)_DAT_0008699b;
   iVar5 = (int)DAT_00086998;
   if (iVar4 == iVar6) {
@@ -42951,23 +44429,41 @@ uint FUN_0005a6bc()
   }
   else {
     if ((iVar5 == -1) && (bVar8)) {
+      // PHYSICS: floor step -- if the height change is within the step limit
+      // (byte 0x27), OR the tile is a walkable auto-stick floor (DAT_002049d4 & 4)
+      // and no vertical motion is active, snap straight to it instead of falling.
+      //
+      // The `iVar4 - iVar6 <= step limit` guard on the auto-stick clause is
+      // added: without it, a walk off a real ledge onto a walkable floor far
+      // below still auto-sticks (foot Z snapped down in one tick). Restricting
+      // the auto-stick to drops within the step-down limit lets a bigger drop
+      // fall through to the "blocked" resolution below, where sweep_apply_collision
+      // arms a gravity fall (+0x10 = -4) and sweep_step_vertical plays it out over
+      // several ticks, ending in sweep_land_on_surface. An upward step
+      // (iVar4 - iVar6 < 0) always satisfies the guard, so auto-stick up a slope
+      // is unchanged.
       uVar3 = iVar4 - iVar6 >> 0x1f;
       if (((int)((iVar4 - iVar6 ^ uVar3) - uVar3) <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)) ||
-         (((*(short *)(DAT_00204874 + 10) == 0 && ((DAT_002049d6 & 0x800) == 0)) &&
-          ((DAT_002049d4 & 4) != 0)))) {
+         (((((*(short *)(DAT_00204874 + 10) == 0 && ((DAT_002049d6 & 0x800) == 0)) &&
+            ((DAT_002049d4 & 4) != 0)) &&
+           (iVar4 - iVar6 <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)))))) {
 LAB_0005a970:
         if ((DAT_00204878 != 0) && ((uVar1 & 0x1000) == 0)) {
           bVar2 = true;
           if (CONCAT11(DAT_000869a0,DAT_0008699f) <= iVar6) {
             local_3c = local_3c & 0xfeff;
           }
+          // PHYSICS: ceiling clearance -- target floor + player height (byte 0x26)
+          // must fit under the ceiling clearance value; if not, treat as a wall
           iVar6 = iVar6 + (uint)*(byte *)(DAT_00204874 + 0x26);
           if (iVar6 < 0x80) {
             if ((iVar5 != -1) || (iVar6 <= CONCAT11(DAT_000869a0,DAT_0008699f))) {
               if ((((local_3c & 0x400) != 0) || (iVar5 == -1)) ||
                  ((((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) != 0 && (bVar7)))) {
                 DAT_00204870 = 1;
-                *(short *)(DAT_0008697c + 4) = _DAT_0008699b;
+                // PHYSICS: floor collision -- step resolved: snap the foot Z onto
+                // this tile's floor in a single tick (no gravity for small steps)
+                *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
                 uVar3 = (int)((int)_DAT_0008699b - (uint)DAT_002049d8) >> 0x1f;
                 if ((int)(uint)*(byte *)(DAT_00204874 + 0x25) <
                     (int)(((int)_DAT_0008699b - (uint)DAT_002049d8 ^ uVar3) - uVar3)) {
@@ -43026,22 +44522,30 @@ LAB_0005abe4:
     local_3c = local_3c & 0xf7ff;
   }
   uVar1 = local_3c;
-  if (((((DAT_002049d6 & 0x100) != 0) && (bVar8)) && (*(short *)(DAT_00204874 + 10) == 0)) &&
+  // PHYSICS: no-feature fallback snap -- pull the foot down onto the flat floor
+  // when there is no slope/step feature. Also suppressed once a gravity fall is
+  // armed (+0x10) so the fall integrator owns the descent.
+  if ((((((DAT_002049d6 & 0x100) != 0) && (bVar8)) && (*(short *)(DAT_00204874 + 10) == 0)) &&
+      (*(short *)(DAT_00204874 + 0x10) == 0)) &&
      ((int)(uint)DAT_002049d9 <=
-      (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)(DAT_0008697c + 4)))) {
-    *(ushort *)(DAT_0008697c + 4) = (ushort)DAT_002049d9;
+      (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)DAT_0008697c + 4)))) {
+    *(ushort *)((char *)DAT_0008697c + 4) = (ushort)DAT_002049d9;
     uVar1 = local_3c & 0xfeff | 4;
-    if (*(ushort *)(DAT_0008697c + 4) != (ushort)DAT_002049d8) {
+    if (*(ushort *)((char *)DAT_0008697c + 4) != (ushort)DAT_002049d8) {
       uVar1 = local_3c & 0xfefb;
     }
   }
   local_3c = uVar1;
+  // PHYSICS: wall collision -- no floor/step bit resolved this move: mark it
+  // blocked (0x1000) so sweep_apply_collision stops the horizontal advance
   if ((local_3c & 0xfc) == 0) {
     local_3c = local_3c | 0x1000;
   }
+  // PHYSICS: wall collision -- also blocked if the foot sits far enough above
+  // this tile's floor that it is a wall face, not a step
   if (((local_3c & 0x80) == 0) &&
      ((int)(uint)DAT_002049d9 <
-      (int)((int)*(short *)(DAT_0008697c + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
+      (int)((int)*(short *)((char *)DAT_0008697c + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
     local_3c = local_3c | 0x1000;
   }
   return (int)(short)local_3c;
@@ -43049,7 +44553,8 @@ LAB_0005abe4:
 
 
 
-void FUN_0005ad18()
+// was FUN_0005ad18 -- act on sweep_collision_flags (stop/slide/step the move)
+void sweep_apply_collision()
 
 {
   undefined1 uVar1;
@@ -43057,7 +44562,8 @@ void FUN_0005ad18()
   bool bVar3;
   ushort local_14 [2];
   
-  local_14[0] = FUN_0005a6bc();
+  // PHYSICS: collide this sub-step and act on the result flags
+  local_14[0] = sweep_collision_flags();
   DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
   uVar1 = FUN_0005a630();
   *(undefined1 *)(DAT_00204874 + 0x28) = uVar1;
@@ -43068,27 +44574,34 @@ void FUN_0005ad18()
     }
     if (((local_14[0] & DAT_002048bc[1]) == 0) ||
        (iVar2 = (**(codeval **)(DAT_002048bc + 4))(local_14), iVar2 == 0)) {
+      // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
+      // slide the move along it (sweep_slide_along_wall) instead of stopping dead
       bVar3 = (local_14[0] & 0x700) != 0;
       if (bVar3) {
-        FUN_00059b7c((local_14[0] & 0x400) == 0);
+        sweep_slide_along_wall((local_14[0] & 0x400) == 0);
       }
+      // PHYSICS: wall collision -- 0x1000 = fully blocked: end the sub-tile sweep
       if ((local_14[0] & 0x1000) == 0) {
         return;
       }
       if (*(short *)(DAT_00204874 + 0x10) != 0) {
         return;
       }
+      // PHYSICS: wall collision -- arm the vertical path (DAT_00204874+0x10) and
+      // hand off to sweep_restart_remaining to finish/redirect the blocked move
       *(undefined1 *)(DAT_00204874 + 0x10) = 0xfc;
       *(undefined1 *)(DAT_00204874 + 0x11) = 0xff;
-      FUN_0005932c(bVar3);
+      sweep_restart_remaining(bVar3);
       return;
     }
-    FUN_0005a550(0xffffffff);
+    // PHYSICS: soft block resolved -- back the sub-step out (sweep_step(-1))
+    sweep_step(0xffffffff);
   }
   else {
-    FUN_0005a550(0xffffffff);
+    // PHYSICS: hard block (0xc000) -- revert the sub-step and, on 0x4000, kill velocity
+    sweep_step(0xffffffff);
     if ((local_14[0] & 0x4000) != 0) {
-      FUN_000593c0();
+      sweep_kill_velocity();
       return;
     }
   }
@@ -43113,7 +44626,7 @@ byte * param_2;
   iVar6 = 0;
   if (DAT_002049dd != 0) {
     do {
-      puVar2 = (ushort *)FUN_00053514(&DAT_00202c3a + (iVar6 + DAT_002049de) * 6);
+      puVar2 = (ushort *)resolve_object_link(&DAT_00202c3a + (iVar6 + DAT_002049de) * 6);
       uVar1 = *puVar2;
       uVar3 = (uint)(byte)(&DAT_00202c3c)[(iVar6 + DAT_002049de) * 6] +
               ((int)DAT_002049c8 >> 3 & 0xffU) & 0x3f;
@@ -43125,7 +44638,7 @@ byte * param_2;
       }
       *param_2 = (char)(iVar5 >> 6) + (char)(DAT_002049ca >> 3) & 0x3f;
       if (((uVar1 & 0x1f0) == 0x140) && ((uVar1 & 0xf) < 8)) {
-        uVar4 = FUN_00053514(&DAT_00202c3a + ((int)DAT_002049de + (int)(short)iVar6) * 6);
+        uVar4 = resolve_object_link(&DAT_00202c3a + ((int)DAT_002049de + (int)(short)iVar6) * 6);
         return uVar4;
       }
       iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
@@ -43145,14 +44658,15 @@ undefined4 FUN_0005b010()
     uVar1 = 0;
   }
   else {
-    uVar1 = FUN_00053514(&DAT_00202c3a + DAT_002049de * 6);
+    uVar1 = resolve_object_link(&DAT_00202c3a + DAT_002049de * 6);
   }
   return uVar1;
 }
 
 
 
-undefined4 FUN_0005b054()
+// was FUN_0005b054 -- reset texture id lists to identity + default counts (0x30 wall, 10 floor)
+undefined4 reset_texture_id_lists()
 
 {
   int iVar1;
@@ -43205,8 +44719,11 @@ undefined4 FUN_0005b054()
 
 
 
-bool FUN_0005b188(param_1,param_2)
-undefined4 param_1;
+// was FUN_0005b188 -- read the level's 0x7a-byte tmap-id block (48 wall + 10 floor + 3) from the .ark
+bool load_level_texture_ids(param_1,param_2)
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before
+   FUN_0001613c. */
+undefined1 * param_1;
 int param_2;
 
 {
@@ -43214,11 +44731,17 @@ int param_2;
   undefined2 uVar2;
   short sVar3;
   int iVar4;
-  undefined2 local_90 [48];
-  undefined2 local_30 [10];
-  undefined2 local_1c [6];
-  
-  sVar3 = FUN_0001613c(param_1,param_2 + 0x11,local_90);
+  /* local_90[48] / local_30[10] / local_1c[6] were separate Ghidra
+     locals whose names encode adjacent stack offsets (-0x90, -0x30,
+     -0x1c) -- one contiguous 128-byte / 64-short region. FUN_0001613c
+     reads exactly 0x7a = 122 bytes into it (96 + 20 + 6), overflowing
+     local_90 into the other two by design. As separate arrays with a
+     stack canary between them that read smashed the canary (SIGABRT).
+     Merged: local_90[i] -> [i], local_30[i] -> [48+i], local_1c[i] ->
+     [58+i]. */
+  undefined2 local_tmap_buf [64];
+
+  sVar3 = FUN_0001613c(param_1,param_2 + 0x11,local_tmap_buf);
   if (sVar3 != 0x7a) {
     FUN_0007ea34(s_bad_tmap_ids_size_000869b7 + 1);
   }
@@ -43226,20 +44749,20 @@ int param_2;
   do {
     (&DAT_0023add0)[iVar4] = 0;
     iVar1 = (iVar4 + 1) * 0x10000 >> 0x10;
-    (&DAT_0023ae58)[iVar4] = local_90[iVar4];
+    (&DAT_0023ae58)[iVar4] = local_tmap_buf[iVar4];
     iVar4 = iVar1;
   } while (iVar1 < 0x30);
   iVar4 = 0;
   do {
     (&DAT_0023ae40)[iVar4] = 0;
     iVar1 = (iVar4 + 1) * 0x10000 >> 0x10;
-    (&DAT_0023adb8)[iVar4] = local_30[iVar4];
+    (&DAT_0023adb8)[iVar4] = local_tmap_buf[48 + iVar4];
     iVar4 = iVar1;
   } while (iVar1 < 10);
-  FUN_0005b660();
+  load_terrain_texture_props((char *)&DAT_0023ae58,(char *)&DAT_0023adb8);
   iVar4 = 0;
   do {
-    uVar2 = local_1c[iVar4];
+    uVar2 = local_tmap_buf[58 + iVar4];
     (&DAT_0023b840)[iVar4 * 2] = (char)uVar2;
     (&DAT_0023b841)[iVar4 * 2] = (char)((ushort)uVar2 >> 8);
     iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
@@ -43251,7 +44774,9 @@ int param_2;
 
 
 undefined4 FUN_0005b298(param_1,param_2)
-undefined4 param_1;
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before
+   FUN_00015b94. */
+undefined1 * param_1;
 int param_2;
 
 {
@@ -43300,18 +44825,25 @@ void FUN_0005b36c()
   char *wptr_42265;
   char *wptr_42273;
   char *wptr_42281;
-  char stack0xffdc3244_buf [256];
   char *stack0xffdc3244_ptr;
   char cVar1;
   char *pcVar2;
   int iVar3;
-  char acStack_86af8 [8];
-  char acStack_86af0 [8];
-  char acStack_86ae8 [8];
-  char acStack_86ae0 [551364];
   short local_11c [4];
   char acStack_114 [260];
-  
+  /* acStack_86af8 / _86af0 / _86ae8 / _86ae0 were four separate stack
+     locals (8, 8, 8, 551364 bytes), but every use is `<base> + iVar3`
+     where iVar3 is strlen(acStack_114) after the "\DATA\" prefix -- i.e.
+     the code appends each texture filename at path + strlen(path). They
+     are all really acStack_114 (the path buffer); Ghidra split the
+     `+ iVar3` writes onto per-file base names. Same "one buffer, many
+     Ghidra names" bug as FUN_0001de0c's matrices. With them separate,
+     the filename suffix was written to a stray 8-byte local, so
+     load_texture_arena opened the bare "...\DATA\" directory and the whole
+     texture / shade / colour-light arena (DAT_002049e0) stayed zero --
+     which is why the (now-running) 3D span rasterizer drew nothing.
+     Fixed by pointing all four `+ iVar3` writes at acStack_114. */
+
   DAT_0023ae38 = &DAT_002049e0;
   Ordinal_1047(acStack_114,0,0x104);
   pcVar2 = &DAT_0023cca8;
@@ -43324,56 +44856,62 @@ void FUN_0005b36c()
   Ordinal_1063(acStack_114,s__DATA__00085970);
   iVar3 = Ordinal_1068(acStack_114);
   pcVar2 = &DAT_000869e4;
-    wptr_42257 = (acStack_86af8 + iVar3);
+    wptr_42257 = (acStack_114 + iVar3);
   do {
     cVar1 = *pcVar2;
     *wptr_42257 = cVar1; wptr_42257 = wptr_42257 + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   local_11c[0] = DAT_0023adb0;
-  FUN_0005b514(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae38);
+  load_texture_arena(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae38);
   pcVar2 = &DAT_000869dc;
-    wptr_42265 = (acStack_86af0 + iVar3);
+    wptr_42265 = (acStack_114 + iVar3);
   do {
     cVar1 = *pcVar2;
     *wptr_42265 = cVar1; wptr_42265 = wptr_42265 + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   DAT_0023ae34 = DAT_0023ae38 + DAT_0023adb0 * 0x1000;
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
   pcVar2 = &DAT_000869d4;
-    wptr_42273 = (acStack_86ae8 + iVar3);
+    wptr_42273 = (acStack_114 + iVar3);
   do {
     cVar1 = *pcVar2;
     *wptr_42273 = cVar1; wptr_42273 = wptr_42273 + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   DAT_0023ae3c = DAT_0023ae34 + DAT_0023aeb8 * 0x400;
-  FUN_0005b514(acStack_114,&DAT_0023ae58,local_11c);
+  load_texture_arena(acStack_114,&DAT_0023ae58,local_11c,DAT_0023ae3c);
   pcVar2 = &DAT_000869cc;
-    wptr_42281 = (acStack_86ae0 + iVar3);
+    wptr_42281 = (acStack_114 + iVar3);
   do {
     cVar1 = *pcVar2;
     *wptr_42281 = cVar1; wptr_42281 = wptr_42281 + 1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
   FUN_00041db0();
   return;
 }
 
 
 
-void FUN_0005b514(param_1,param_2,param_3,param_4)
+/* param_2 (a short* remap/index table) and param_4 (the destination
+   arena region) were `int`, truncating the real pointers -- fread'ing
+   texture data through a chopped &DAT_002049e0 segfaulted the moment
+   the .tr files actually opened. Three of the four call sites also had
+   param_4 dropped by Ghidra (stale-register reuse); restored. */
+// was FUN_0005b514 -- load selected entries of a .tr texture file (ids in list param_2) into an arena
+void load_texture_arena(param_1,param_2,param_3,param_4)
 char *param_1;
-int param_2;
+short *param_2;
 short * param_3;
-int param_4;
+char *param_4;
 
 {
   int iVar1;
-  int iVar2;
+  char *iVar2; /* was int -- Ordinal_1346() offset-table allocation */
   int iVar3;
   int iVar4;
   int iVar5;
@@ -43413,7 +44951,14 @@ int param_4;
     if (0 < *param_3) {
       iVar3 = 0;
       do {
-        iVar4 = (int)*(short *)(param_2 + iVar3 * 2);
+        /* Ghidra kept a byte *2 scale from the original `*(short*)((char*)base
+           + i*2)` but also retyped param_2 as short* -- the two compound, so
+           this read every OTHER id (idlist[0], idlist[2], idlist[4]...). That
+           loaded F32.TR[7,42,5,29,16,0,0,0,0,0] into the 10-slot arena instead
+           of F32.TR[7,4,42,1,5,0,29,12,16,15], so floor slot 9 (= the ceiling,
+           get_texture_page(0x39)) came out F32.TR[0] (cobblestone) rather than
+           the level's real ceiling id 15. Read ids consecutively. */
+        iVar4 = (int)param_2[iVar3];
         if (iVar4 < 0) break;
         FUN_00022850(iVar1,*(undefined4 *)(iVar2 + iVar4 * 4),0);
         iVar4 = FUN_0002285c(iVar1,param_4,iVar5);
@@ -43433,9 +44978,15 @@ int param_4;
 
 
 
-void FUN_0005b660(param_1,param_2)
-int param_1;
-int param_2;
+// was FUN_0005b660 -- load TERRAIN.DAT texture-property words -> DAT_0023add0 (wall) / DAT_0023ae40 (floor)
+void load_terrain_texture_props(param_1,param_2)
+/* Both are bases into the tmap-id arrays load_level_texture_ids fills
+   (&DAT_0023ae58 and &DAT_0023adb8) -- Ghidra dropped both args at the
+   lone call site and typed them `int`, so the reads below hit a bogus
+   address and segfaulted level init. Kept as byte-addressed pointers so
+   the existing `iVar4 * 2 + paramN` arithmetic stays correct. */
+char *param_1;
+char *param_2;
 
 {
   char stack0xffdc3238_buf [256];
@@ -43516,7 +45067,7 @@ void FUN_0005b828()
   DAT_0023aed0 = DAT_00110fc0;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_0005bdcc(8);
+  build_visibility_light_grid(8);
   DAT_0023b49c = DAT_00250650;
   return;
 }
@@ -43580,12 +45131,13 @@ void FUN_0005bac0()
 
 
 
-void FUN_0005bb5c()
+// was FUN_0005bb5c
+void full_dungeon_redraw()
 
 {
   FUN_0005bc38();
   FUN_0005b890();
-  FUN_0005d290();
+  rebuild_dungeon_view();
   FUN_00038c14(0xa0);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -43616,7 +45168,7 @@ void FUN_0005bbe0()
   iVar8 = FUN_0005bc38();
   if (iVar8 != 0) {
     FUN_0005b890();
-    FUN_0005d290();
+    rebuild_dungeon_view();
     FUN_00038c14(0xa0);
     *DAT_00110fc0 = 0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -43668,7 +45220,7 @@ undefined4 FUN_0005bc38()
   FUN_00069470();
   DAT_00101938 = (short)(char)((ushort)*(undefined2 *)(DAT_00086e6c + 10) >> 8);
   DAT_0010193c = (short)(char)((ushort)*(undefined2 *)(DAT_00086e6c + 0x12) >> 8);
-  DAT_0023aecc = FUN_00068100();
+  DAT_0023aecc = tilemap_lookup(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
   bVar3 = (byte)((short)(*(ushort *)(DAT_00086e6c + 0x2c) >> 0xd) + 1 >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
   Ordinal_2005(2);
@@ -43702,7 +45254,8 @@ LAB_0005bd98:
 
 
 
-void FUN_0005bdcc(param_1)
+// was FUN_0005bdcc
+void build_visibility_light_grid(param_1)
 short param_1;
 
 {
@@ -43758,9 +45311,19 @@ short param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0005bf40()
+// was FUN_0005bf40
+void seed_visibility_queue()
 
 {
+  /* DAT_0023aecc is the player's current tile record; it is NULL when the
+     player position is outside the 64x64 map. That should not happen (the
+     collision sweep is meant to keep the player in bounds) but a residual
+     movement bug can still push them off the edge -- skip the visibility
+     seed rather than segfaulting the whole game. */
+  if (DAT_0023aecc == (char *)0x0) {
+    DAT_0023b030 = 0xf;
+    return;
+  }
   if ((*DAT_0023aecc & 0xf) == 0) {
     DAT_0023b030 = 0xf;
   }
@@ -43776,6 +45339,7 @@ void FUN_0005bf40()
     DAT_0023aeed = 0x58;
     DAT_0023aeee = 0x23b0;
     DAT_0023aef0 = 0;
+    g_dat0023aee0_realptr2[0] = (char *)&DAT_0023b038_backing[0x20]; // real-pointer side channel for the offset+0xd field -- see g_dat0023aee0_realptr2's comment
     DAT_0023aef5 = 0xf;
     DAT_0023aefa = 0;
     DAT_0023aefc = 0;
@@ -43784,11 +45348,25 @@ void FUN_0005bf40()
     DAT_0023aefe = SUB42(DAT_0023aecc,0);
     DAT_0023af00 = (undefined2)((uint)DAT_0023aecc >> 0x10);
     _DAT_0023af02 = 0x23b058;
+    g_dat0023aee0_realptr2[1] = (char *)&DAT_0023b038_backing[0x20]; // same real-pointer side channel, entry 1
     DAT_0023aee9 = (char)DAT_0023aecc;
-    FUN_00049ce8(*(short *)(DAT_00086e6c + 0x2c) + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
-    FUN_00049ce8(*(short *)(DAT_00086e6c + 0x2c) + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
-    _DAT_0023aee1 = _DAT_0023aee1 >> 4;
-    _DAT_0023aee3 = _DAT_0023aee3 >> 4;
+    g_dat0023aee0_realptr[0] = DAT_0023aecc; // real-pointer side channel for process_reaction_entry -- see g_dat0023aee0_realptr's comment
+    g_dat0023aee0_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
+    angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
+    angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
+    /* angle_to_screen_delta writes a 2-byte X delta at DAT_0023aee1 and a
+       2-byte Y delta at DAT_0023aee3, and every downstream reader
+       (process_reaction_entry's `*(short *)(param_1 + 1)` / `+ 3`) treats
+       them as separate signed shorts -- exactly like the DAT_0023aef6 /
+       aef8 pair two lines down. Ghidra had `DAT_0023aee1` as a lone byte
+       so an earlier fix pass widened the `>>4` to `_DAT_0023aee1`, a
+       4-byte view spanning BOTH deltas (bytes 1..4): the shift then bled
+       the Y delta's low nibble into the X delta's high bits and dropped
+       X's low 4 bits, so the left frustum edge came out garbage
+       (X ~= 31338 vs the right edge's ~1465) and the beam-trace only
+       ever marked one tile visible. Shift each 16-bit delta on its own. */
+    *(short *)&DAT_0023aee0_backing[1] = (short)(*(short *)&DAT_0023aee0_backing[1] >> 4);
+    *(short *)&DAT_0023aee0_backing[3] = (short)(*(short *)&DAT_0023aee0_backing[3] >> 4);
     DAT_0023aef6 = DAT_0023aef6 >> 4;
     DAT_0023aef8 = DAT_0023aef8 >> 4;
   }
@@ -43797,12 +45375,18 @@ void FUN_0005bf40()
 
 
 
-void FUN_0005c0c4(param_1)
-int param_1;
+// Was FUN_0005c0c4. Same param_1-truncation + packed-pointer-arithmetic fix as its mirror-image sibling reaction_retreat_tile.
+void reaction_advance_tile(param_1)
+intptr_t param_1;
 
 {
   int iVar1;
-  
+  int entry_idx;
+
+  entry_idx = reaction_entry_idx(param_1);
+  g_dat0023aee0_realptr[entry_idx] =
+       DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
+  g_dat0023aee0_realptr2[entry_idx] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx) + 2;
   *(char *)(param_1 + 5) = *(char *)(param_1 + 5) + '\x01';
   iVar1 = *(int *)(param_1 + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
   *(char *)(param_1 + 9) = (char)iVar1;
@@ -43822,12 +45406,27 @@ int param_1;
 
 
 
-void FUN_0005c16c(param_1)
-int param_1;
+/* Was FUN_0005c16c. param_1 was `int`, truncating the real record pointer (same fix as its
+   siblings process_reaction_entry/compute_reaction_offset). This function does pointer
+   ARITHMETIC on the two packed-pointer fields (advance-to-neighbor-tile
+   at offset 9, step-back-2 at offset 0xd) by reading their packed bytes
+   as a plain 32-bit value, adjusting, and writing the bytes back --
+   which only ever worked because the original pointers were genuinely
+   32-bit. Do the same arithmetic on the real 64-bit pointers in the two
+   side tables instead; the packed-byte writes are left in place as
+   harmless dead state (nothing safely reads a pointer back out of them
+   any more -- see g_dat0023aee0_realptr's comment). */
+void reaction_retreat_tile(param_1)
+intptr_t param_1;
 
 {
   int iVar1;
-  
+  int entry_idx;
+
+  entry_idx = reaction_entry_idx(param_1);
+  g_dat0023aee0_realptr[entry_idx] =
+       DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
+  g_dat0023aee0_realptr2[entry_idx] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx) + -2;
   *(char *)(param_1 + 5) = *(char *)(param_1 + 5) + -1;
   iVar1 = *(int *)(param_1 + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
   *(char *)(param_1 + 9) = (char)iVar1;
@@ -43847,8 +45446,12 @@ int param_1;
 
 
 
-undefined4 FUN_0005c214(param_1,param_2,param_3)
-int param_1;
+/* Was FUN_0005c214. param_1 was `int`, truncating the real record pointer every caller
+   passes -- same fix as process_reaction_entry. Its two packed-pointer field reads
+   (offsets 0xd and 9) go through the same real-pointer side tables that
+   function uses too, for the same reason (see their comments). */
+undefined4 compute_reaction_offset(param_1,param_2,param_3)
+intptr_t param_1;
 char param_2;
 char param_3;
 
@@ -43866,12 +45469,14 @@ char param_3;
   uint uVar11;
   int iVar12;
   int iVar13;
-  
-  pbVar2 = *(byte **)(param_1 + 0xd);
+  int entry_idx;
+
+  entry_idx = reaction_entry_idx(param_1);
+  pbVar2 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx);
   iVar12 = (int)DAT_0023b4a0;
   bVar7 = pbVar2[1] & 0xf;
   iVar5 = iVar12 * 0x10;
-  pbVar3 = *(byte **)(param_1 + 9);
+  pbVar3 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx);
   bVar1 = *pbVar3;
   uVar10 = (uint)*(char *)(param_1 + 5);
   if (uVar10 == 0) {
@@ -43948,23 +45553,22 @@ char param_3;
       }
     }
     *pbVar2 = bVar6;
-    *(byte *)(*(int *)(param_1 + 0xd) + 1) = bVar7;
+    pbVar2[1] = bVar7; // was `*(byte *)(*(int *)(param_1 + 0xd) + 1)` -- pbVar2 already IS that pointer now
     if ((param_2 != '\0') &&
        (((uVar11 = (uint)param_3,
          ((byte)(&DAT_000878d0)
                 [(byte)(&DAT_00086a20)
-                       [(*(byte *)(*(int *)(param_1 + 9) +
-                                  *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6) * 4) & 0xf) +
+                       [(pbVar3[*(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6) * 4] & 0xf) +
                         DAT_0023b4a0 * 0x10]] & 8) == uVar11 &&
          (((byte)(&DAT_000878d0)[uVar10] & 0x10) == (&DAT_00086af0)[uVar11 == 8])) ||
         ((((byte)(&DAT_000878d0)[uVar10] & 1) == 1 &&
          (((byte)(&DAT_000878d0)[uVar10] & 0x10) == (&DAT_00086af0)[uVar11 == 0])))))) {
       if (param_2 == '\x01') {
-        FUN_0005c0c4();
+        reaction_advance_tile(param_1); // dropped arg; sibling call right below (reaction_retreat_tile(param_1)) shows the intended shape
         uVar8 = 0;
       }
       else {
-        FUN_0005c16c(param_1);
+        reaction_retreat_tile(param_1);
         uVar8 = 0xff;
       }
       *(undefined1 *)(param_1 + 6) = uVar8;
@@ -43976,9 +45580,28 @@ char param_3;
 
 
 
-undefined4 FUN_0005c70c(param_1,param_2)
-int param_1;
-int param_2;
+/* Was FUN_0005c70c, and was mis-named `reactions_should_merge` until the
+   un-stub below showed what it does. Un-stubbed 2026-09-05: this is NOT a
+   "should these merge" predicate -- it is the row-advance / cone-
+   continuation step that keeps the beam-trace visibility flood alive past
+   row 0. Each call bumps
+   the entry's per-pass counter (offset 7), and while that stays under 16
+   AND the entry's visibility-grid cursor hasn't hit an end-of-chain
+   nibble, it steps the entry ONE ROW forward -- the tile-data cursor by
+   DAT_00086a02[facing]*4, the visibility-grid cursor by 0x42 -- re-walks
+   that row via reaction_advance_tile / compute_reaction_offset, and
+   returns 1. merge_adjacent_reactions's `iVar3 != 0` branch then keeps
+   the queue head off the 0xf sentinel, so process_reaction_queue makes
+   another pass and DAT_0023b024 (== view depth) grows. Stubbing it to
+   `return 0` (done in a much earlier session while the whole viewport
+   was still black) is why only row 0 was ever flooded -> only 1-2 tiles
+   visible. The two packed 32-bit pointer fields (offsets 9 and 0xd) are
+   carried in g_dat0023aee0_realptr / _realptr2 on this 64-bit port; the
+   original's byte-packed writes are kept as harmless dead state. Verified
+   against the 0x5c70c disasm. */
+undefined4 reaction_advance_row(param_1,param_2)
+byte * param_1;
+byte * param_2;
 
 {
   uint uVar1;
@@ -43989,12 +45612,19 @@ int param_2;
   uint uVar6;
   uint uVar7;
   int iVar8;
-  
+  int idx1;
+  int idx2;
+  short row_stride;
+
+  idx1 = reaction_entry_idx(param_1);
+  idx2 = reaction_entry_idx(param_2);
+  row_stride = *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6);
+
   iVar5 = *(char *)(param_1 + 7) + 1;
   *(char *)(param_1 + 7) = (char)iVar5;
   if (iVar5 * 0x1000000 >> 0x18 < 0x11) {
     do {
-      if ((*(byte *)(*(int *)(param_1 + 0xd) + 0x43) & 0xf) != 0xf) {
+      if ((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx1)[0x43] & 0xf) != 0xf) {
         cVar3 = *(char *)(param_1 + 7);
         if (('\x01' < cVar3) ||
            (uVar7 = (uint)*(byte *)(param_1 + 6) - (int)*(short *)(DAT_00086e6c + 10),
@@ -44014,24 +45644,13 @@ int param_2;
           *(char *)(param_1 + 3) = (char)iVar5;
           *(char *)(param_1 + 4) = (char)((uint)iVar5 >> 8);
         }
-        sVar4 = *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6);
         *(undefined1 *)(param_1 + 8) = 0;
-        iVar5 = CONCAT13(*(undefined1 *)(param_1 + 0xc),*(undefined3 *)(param_1 + 9)) + sVar4 * 4;
-        *(char *)(param_1 + 9) = (char)iVar5;
-        *(char *)(param_1 + 10) = (char)((uint)iVar5 >> 8);
-        *(char *)(param_1 + 0xb) = (char)((uint)iVar5 >> 0x10);
-        *(char *)(param_1 + 0xc) = (char)((uint)iVar5 >> 0x18);
-        iVar5 = CONCAT13(*(undefined1 *)(param_1 + 0x10),
-                         CONCAT12(*(undefined1 *)(param_1 + 0xf),
-                                  CONCAT11(*(undefined1 *)(param_1 + 0xe),
-                                           *(undefined1 *)(param_1 + 0xd)))) + 0x42;
-        *(char *)(param_1 + 0xd) = (char)iVar5;
-        *(char *)(param_1 + 0xe) = (char)((uint)iVar5 >> 8);
-        *(char *)(param_1 + 0xf) = (char)((uint)iVar5 >> 0x10);
-        *(char *)(param_1 + 0x10) = (char)((uint)iVar5 >> 0x18);
+        /* one row forward: tile-data cursor += row_stride*4, grid cursor += 0x42 */
+        g_dat0023aee0_realptr[idx1] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, idx1) + row_stride * 4;
+        g_dat0023aee0_realptr2[idx1] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx1) + 0x42;
         *(char *)(param_2 + 7) = *(char *)(param_2 + 7) + '\x01';
         do {
-          if ((*(byte *)(*(int *)(param_2 + 0xd) + 0x43) & 0xf) != 0xf) {
+          if ((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx2)[0x43] & 0xf) != 0xf) {
             cVar3 = *(char *)(param_2 + 7);
             if (('\x01' < cVar3) ||
                (uVar7 = (uint)*(byte *)(param_2 + 6) - (int)*(short *)(DAT_00086e6c + 10),
@@ -44052,33 +45671,19 @@ int param_2;
               *(char *)(param_2 + 4) = (char)((uint)iVar5 >> 8);
             }
             *(undefined1 *)(param_2 + 8) = 0;
-            iVar5 = CONCAT13(*(undefined1 *)(param_2 + 0x10),
-                             CONCAT12(*(undefined1 *)(param_2 + 0xf),*(undefined2 *)(param_2 + 0xd))
-                            ) + 0x42;
-            *(char *)(param_2 + 0xd) = (char)iVar5;
-            *(char *)(param_2 + 0xe) = (char)((uint)iVar5 >> 8);
-            *(char *)(param_2 + 0xf) = (char)((uint)iVar5 >> 0x10);
-            *(char *)(param_2 + 0x10) = (char)((uint)iVar5 >> 0x18);
-            iVar5 = CONCAT13(*(undefined1 *)(param_2 + 0xc),
-                             CONCAT12(*(undefined1 *)(param_2 + 0xb),
-                                      CONCAT11(*(undefined1 *)(param_2 + 10),
-                                               *(undefined1 *)(param_2 + 9)))) +
-                    *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6) * 4;
-            *(char *)(param_2 + 9) = (char)iVar5;
-            *(char *)(param_2 + 10) = (char)((uint)iVar5 >> 8);
-            *(char *)(param_2 + 0xb) = (char)((uint)iVar5 >> 0x10);
-            *(char *)(param_2 + 0xc) = (char)((uint)iVar5 >> 0x18);
+            g_dat0023aee0_realptr2[idx2] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx2) + 0x42;
+            g_dat0023aee0_realptr[idx2] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, idx2) + row_stride * 4;
             return 1;
           }
-          FUN_0005c16c(param_2);
+          reaction_retreat_tile(param_2);
           *(undefined1 *)(param_2 + 6) = 0xff;
-          FUN_0005c214(param_2,0,0);
+          compute_reaction_offset((intptr_t)param_2,0,0);
         } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
         return 0;
       }
-      FUN_0005c0c4(param_1);
+      reaction_advance_tile((intptr_t)param_1);
       *(undefined1 *)(param_1 + 6) = 0;
-      FUN_0005c214(param_1,0,0);
+      compute_reaction_offset((intptr_t)param_1,0,0);
     } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
   }
   return 0;
@@ -44086,7 +45691,8 @@ int param_2;
 
 
 
-void FUN_0005cacc(param_1)
+// Was FUN_0005cacc.
+void process_reaction_entry(param_1)
 byte * param_1;
 
 {
@@ -44100,10 +45706,8 @@ byte * param_1;
   byte *pbVar8;
   char cVar9;
   short *psVar10;
-  char extraout_r1;
-  int extraout_r1_00;
-  int extraout_r1_01;
   int iVar11;
+  int iVar12;
   char cVar12;
   ushort local_32;
   int local_30;
@@ -44130,7 +45734,14 @@ byte * param_1;
        (int)((0x100 - (uint)param_1[8]) * (int)*(short *)(&DAT_00086b00 + iVar3 * 2) * iVar2))))) {
     do {
       iVar11 = (int)DAT_0023b4a0;
-      pbVar8 = *(byte **)(param_1 + 9);
+      /* Was `*(byte **)(param_1 + 9)` -- reassembling a pointer from raw
+         bytes the original 32-bit binary packed at this offset (see
+         seed_visibility_queue's DAT_0023aee9/aeea/aeec writes), which only ever
+         captured the low 32 bits even before this port's 64-bit
+         truncation, and the 8-byte-wide read here also swallows 4 bytes
+         of the next field. Real pointer tracked separately instead --
+         see g_dat0023aee0_realptr's comment. */
+      pbVar8 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, reaction_entry_idx(param_1));
       iVar2 = iVar11 * 0x10;
       cVar9 = (&DAT_00086a20)[(*pbVar8 & 0xf) + iVar2];
       if ((*(ushort *)(&DAT_00086af8 + iVar3 * 2) & (ushort)(byte)(&DAT_000878d0)[cVar9]) != 0) {
@@ -44138,43 +45749,52 @@ LAB_0005cf04:
         param_1[8] = 0xff;
         if ((((ushort)(byte)(&DAT_000878d0)[cVar9] & *(ushort *)(&DAT_00086af8 + iVar3 * 2)) ==
              *(ushort *)(&DAT_00086af8 + iVar3 * 2)) &&
-           ((int)cVar9 == (int)*(short *)(iVar3 * 2 + 0x86afc))) {
-          Ordinal_2005(2,iVar3 + 1);
-          cVar12 = extraout_r1;
+           ((int)cVar9 == (int)*(short *)((char *)&DAT_00086afc + iVar3 * 2))) {
+          /* Was reading the division helper's remainder back via the
+             extraout_r1 register-leftover trick (see Ordinal_2005's
+             comment) -- computed directly instead, same fix as
+             FUN_000229e0's identical pattern. The quotient this call
+             also produced was never used (its return value was
+             discarded here too), so the call itself is gone. */
+          cVar12 = (char)((iVar3 + 1) % 2);
         }
         param_1[6] = -cVar12;
         goto LAB_0005ce50;
       }
       psVar10 = (short *)(&DAT_00086b00 + iVar3 * 2);
       sVar6 = *psVar10;
-      Ordinal_2005(2,iVar3 + 1);
-      if ((*(ushort *)(&DAT_00086af8 + extraout_r1_00 * 2) &
+      /* Was `Ordinal_2005(2,iVar3+1);` followed by two extraout_r1_00
+         reads of its division remainder -- same register-leftover
+         pattern as above, computed directly instead. */
+      iVar12 = (iVar3 + 1) % 2;
+      if ((*(ushort *)(&DAT_00086af8 + iVar12 * 2) &
           (ushort)(byte)(&DAT_000878d0)
                         [(byte)(&DAT_00086a20)
                                [(pbVar8[(int)*(short *)(&DAT_00086a00 + iVar11 * 6) * (int)sVar6 * 4
                                        ] & 0xf) + iVar2]]) != 0) goto LAB_0005cf04;
       cVar9 = Ordinal_2005((int)*(short *)(param_1 + 1) * (int)sVar6,(short)local_32 * local_30);
       param_1[8] = cVar9 + param_1[8];
-      param_1[6] = -(char)extraout_r1_00;
+      param_1[6] = -(char)iVar12;
       local_32 = 0x100;
       if ((*param_1 & 0x80) == uVar1) {
-        FUN_0005c214(param_1,0,0);
+        compute_reaction_offset(param_1,0,0);
       }
       if (*psVar10 == 1) {
-        FUN_0005c0c4();
+        reaction_advance_tile(param_1); // dropped arg; sibling call right below shows the intended shape
       }
       else {
-        FUN_0005c16c(param_1);
+        reaction_retreat_tile(param_1);
       }
-      if (((*(byte *)(*(int *)(param_1 + 0xd) + 1) & 0xf) == 0xf) ||
+      if (((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, reaction_entry_idx(param_1))[1] & 0xf) == 0xf) ||
          (uVar4 = (int)(char)param_1[5] >> 0x1f,
          0x10 < (int)(((int)(char)param_1[5] ^ uVar4) - uVar4))) {
-        Ordinal_2005(2,iVar3 + 1);
-        if (*(short *)(&DAT_00086b00 + extraout_r1_01 * 2) == 1) {
-          FUN_0005c0c4();
+        /* Same extraout_r1 register-leftover division-remainder pattern
+           as above, computed directly instead. */
+        if (*(short *)(&DAT_00086b00 + ((iVar3 + 1) % 2) * 2) == 1) {
+          reaction_advance_tile(param_1); // dropped arg; sibling call right below shows the intended shape
         }
         else {
-          FUN_0005c16c(param_1);
+          reaction_retreat_tile(param_1);
         }
         param_1[6] = -cVar12;
         param_1[8] = 0xff;
@@ -44206,9 +45826,15 @@ LAB_0005ce60:
 
 
 
-void FUN_0005cf74(param_1,param_2)
-undefined4 * param_1;
-int * param_2;
+/* Was FUN_0005cf74. param_1/param_2 were `undefined4 *`/`int *`, truncating the real
+   pointers process_reaction_queue always calls this with (`&local_20`/`&local_24`,
+   both real `byte*`/`undefined1*` locals) -- same fix as this record
+   array's other consumers. `*param_2`'s assignment below is this same
+   record's offset+0xd/0x11 packed-pointer field again, routed through
+   the shared real-pointer side table. */
+void merge_adjacent_reactions(param_1,param_2)
+byte ** param_1;
+undefined1 ** param_2;
 
 {
   bool bVar1;
@@ -44220,17 +45846,28 @@ int * param_2;
   char *pcVar7;
   byte *pbVar8;
   char *pcVar9;
+  /* acStack_28/local_23 were separate locals sized 5+1=6 bytes, but the
+     copy loop just below writes a full 0x15(21)-byte record into
+     acStack_28 (`iVar3 = 0x15; ... *pcVar7 = *pcVar6; ...`) -- a genuine
+     stack-buffer overflow (confirmed crashing, EXC_BAD_ACCESS with a
+     corrupted pcVar9, the classic signature of a stack smash landing on
+     an adjacent local) every single time this function runs, regardless
+     of which branch follows. Same "locals declared as whatever fragment
+     Ghidra individually named instead of the real buffer a copy/init
+     needs" bug as FUN_0001de0c's matrices earlier this session, just for
+     a stack array instead of a global one. local_23 was the record's own
+     byte offset+5 (0x28-0x23=5) -- folded into the real-sized array as
+     acStack_28[5], its declaration removed. */
+  char acStack_28 [0x15];
   int iVar10;
-  char acStack_28 [5];
-  char local_23;
-  
+
   iVar10 = ((int)*(char *)*param_1 & 0xfU) * 0x15;
   pcVar9 = &DAT_0023aee0 + iVar10;
   iVar5 = ((int)*pcVar9 & 0xfU) * 0x15;
   pbVar8 = &DAT_0023aee0 + iVar5;
-  *param_2 = *(int *)(&DAT_0023aef1 + iVar5) + 2;
+  *param_2 = (undefined1 *)(DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, iVar5 / 0x15) + 2);
   while( true ) {
-    iVar3 = FUN_0005c214(pcVar9,1,8);
+    iVar3 = compute_reaction_offset(pcVar9,1,8);
     if (iVar3 == 0) break;
     if ((int)((uint)(byte)(&DAT_0023aee6)[iVar5] + (char)(&DAT_0023aee5)[iVar5] * 0x100) <
         (int)((uint)(byte)(&DAT_0023aee6)[iVar10] + (char)(&DAT_0023aee5)[iVar10] * 0x100))
@@ -44238,7 +45875,7 @@ int * param_2;
   }
   if ((int)(char)(&DAT_0023aee5)[iVar10] < (int)(char)(&DAT_0023aee5)[iVar5]) {
     do {
-      iVar3 = FUN_0005c214(pbVar8,0xffffffff,8);
+      iVar3 = compute_reaction_offset(pbVar8,0xffffffff,8);
     } while (iVar3 != 0);
   }
   iVar3 = 0x15;
@@ -44252,7 +45889,16 @@ int * param_2;
     pcVar6 = pcVar6 + 1;
     pcVar7 = pcVar7 + 1;
   } while (iVar4 != 0 && bVar1);
-  iVar3 = FUN_0005c70c(pcVar9,pbVar8);
+  /* acStack_28 is a byte-copy of entry pcVar9; seed the scratch
+     real-pointer slot (16) from that entry so reaction_advance_tile /
+     compute_reaction_offset on acStack_28 -- whose in-backing-array index
+     would be a wild value -- resolve through reaction_entry_idx() to a
+     valid grid cursor instead of indexing the side table out of bounds. */
+  g_dat0023aee0_realptr[REACTION_SCRATCH_IDX]  =
+      DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, iVar10 / 0x15);
+  g_dat0023aee0_realptr2[REACTION_SCRATCH_IDX] =
+      DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, iVar10 / 0x15);
+  iVar3 = reaction_advance_row(pcVar9,pbVar8);
   if (iVar3 == 0) {
 LAB_0005d064:
     bVar2 = *(byte *)*param_1;
@@ -44261,24 +45907,28 @@ LAB_0005d064:
     *pbVar8 = 0;
   }
   else {
+    /* reaction_advance_row returned "keep spreading". The walk below
+       operates on acStack_28 (the stack copy) and marks tiles via
+       compute_reaction_offset; its side-table pointers live in the
+       scratch slot seeded just above. */
     *param_1 = pbVar8;
     if ((&DAT_0023aee5)[iVar10] != (&DAT_0023aee5)[iVar5]) {
       do {
-        FUN_0005c0c4(acStack_28);
+        reaction_advance_tile(acStack_28);
         do {
-          if ((char)(&DAT_0023aee5)[iVar5] <= local_23) {
+          if ((char)(&DAT_0023aee5)[iVar5] <= acStack_28[5]) {
             return;
           }
           do {
-            iVar10 = FUN_0005c214(acStack_28,1,0);
+            iVar10 = compute_reaction_offset(acStack_28,1,0);
             if (iVar10 == 0) break;
-          } while (local_23 < (char)(&DAT_0023aee5)[iVar5]);
-        } while ((char)(&DAT_0023aee5)[iVar5] <= local_23);
-        FUN_0005c0c4(acStack_28);
+          } while (acStack_28[5] < (char)(&DAT_0023aee5)[iVar5]);
+        } while ((char)(&DAT_0023aee5)[iVar5] <= acStack_28[5]);
+        reaction_advance_tile(acStack_28);
         do {
-          iVar10 = FUN_0005c214(acStack_28,1,8);
+          iVar10 = compute_reaction_offset(acStack_28,1,8);
           if (iVar10 == 0) break;
-        } while (local_23 < (char)(&DAT_0023aee5)[iVar5]);
+        } while (acStack_28[5] < (char)(&DAT_0023aee5)[iVar5]);
       } while( true );
     }
   }
@@ -44287,7 +45937,8 @@ LAB_0005d064:
 
 
 
-void FUN_0005d13c()
+// Was FUN_0005d13c.
+void process_reaction_queue()
 
 {
   byte bVar1;
@@ -44308,7 +45959,7 @@ void FUN_0005d13c()
     bVar1 = DAT_0023b030;
     while ((bVar1 & 0xf) != 0xf) {
       pbVar5 = &DAT_0023aee0 + ((int)(char)*local_20 & 0xfU) * 0x15;
-      FUN_0005cacc(pbVar5);
+      process_reaction_entry(pbVar5);
       puVar2 = local_24;
       local_20 = pbVar5;
       bVar1 = *pbVar5;
@@ -44317,13 +45968,18 @@ void FUN_0005d13c()
     puVar3 = puVar2;
     bVar1 = DAT_0023b030;
     while (uVar4 = (uint)(char)bVar1, (uVar4 & 0xf) != 0xf) {
-      while (puVar3 < *(undefined1 **)(&DAT_0023aef1 + uVar4 * 0x15)) {
+      /* Was `*(undefined1 **)(&DAT_0023aef1 + uVar4 * 0x15)` -- same
+         packed-pointer-reassembly bug as process_reaction_entry's offset+9/0xd
+         fields (this is that same offset-0xd/0x11 field, just indexed
+         relative to DAT_0023aef1 instead of DAT_0023aee0+0xd), routed
+         through the same real-pointer side table. */
+      while (puVar3 < (undefined1 *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, uVar4 & 0xf)) {
         *puVar3 = 0;
         uVar4 = (uint)(char)*local_20;
         puVar3 = local_24 + 2;
         local_24 = puVar3;
       }
-      FUN_0005cf74(&local_20,&local_24);
+      merge_adjacent_reactions(&local_20,&local_24);
       puVar3 = local_24;
       bVar1 = *local_20;
     }
@@ -44333,6 +45989,29 @@ void FUN_0005d13c()
       local_24 = puVar3;
     }
   } while (DAT_0023b030 != 0xf);
+
+  /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): DAT_0023b024 is the
+     row depth of walk_visible_tiles's reveal/visibility walk -- it starts at
+     row &DAT_0023b038 + DAT_0023b024*0x42 and sweeps back to row 0, and
+     equals (reaction-queue passes made) - 1. With a small visible set it
+     comes out 0, so a demomode TELEPORT+REVEAL only marks a thin strip.
+     Forcing it larger widens the automap reveal fan for testing, BUT it
+     also decouples the walk from process_reaction_queue's real output
+     rows (which now genuinely carry visibility bits -- see the table
+     recoveries this session), so it is opt-in and off by default. When
+     enabled, the upper rows are zeroed first so process_visible_tile_cell reads them
+     as "not visible" and takes the plain automap-reveal path rather than
+     stale bytes. DAT_0023b038_backing is 32768 bytes (0x42 stride) so 8
+     rows is well in bounds. */
+  if (getenv("UW_HACK_REVEAL_DEPTH")) {
+    if (getenv("UW_HACK_REVEAL_DEPTH_ZERO")) {
+      int hack_row;
+      for (hack_row = 0x42; hack_row < 0x42 * 9; hack_row = hack_row + 1) {
+        DAT_0023b038_backing[hack_row] = 0;
+      }
+    }
+    if (DAT_0023b024 < 8) DAT_0023b024 = 8;
+  }
   return;
 }
 
@@ -44341,7 +46020,8 @@ void FUN_0005d13c()
 // WARNING: Heritage AFTER dead removal. Example location: r0x0023b4dc : 0x0005d664
 // WARNING: Restarted to delay deadcode elimination for space: ram
 
-void FUN_0005d290()
+// was FUN_0005d290
+void rebuild_dungeon_view()
 
 {
   undefined2 uVar1;
@@ -44350,8 +46030,22 @@ void FUN_0005d290()
   int iVar4;
   bool bVar5;
   
-  FUN_0005bf40();
-  FUN_0005d13c();
+  seed_visibility_queue();
+  /* Re-enabled again: DAT_0023b038 (the buffer walk_visible_tiles's ring-walk
+     reads per-tile visibility/occlusion data from via process_visible_tile_cell,
+     offset DAT_0023b820) is the SAME 0x42-byte-stride buffer this
+     function builds its creature-reaction display list into
+     (`&DAT_0023b038`, confirmed same base address, same stride) -- a
+     whole-binary Ghidra reference search found NO OTHER writer of this
+     memory anywhere, so an earlier attempt that hardcoded DAT_0023b024
+     while skipping this call was also skipping its only real populator.
+     Finishing the retrofit properly instead of hardcoding around it.
+     NOTE: DAT_0023b024 (this function's own loop counter) legitimately
+     computes to 0 with no creatures present -- see memory.md's tmap-
+     tiles section for why that rules out "DAT_0023b024 is a general
+     tile-scan radius" as the explanation for the still-black viewport;
+     the real renderer is still being searched for. */
+  process_reaction_queue();
   FUN_00058438(0);
   uVar1 = DAT_00086b30;
   DAT_0023b804 = 0;
@@ -44436,7 +46130,7 @@ void FUN_0005d290()
   DAT_00110fc0 = DAT_00110fc0 + 1;
   FUN_0005d2ac(1);
   DAT_0023b810 = 0;
-  FUN_0005d9cc();
+  walk_visible_tiles();
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
       (DAT_00201b68 != 9)) &&
      (sVar3 = Ordinal_2005(10,(int)DAT_0023b810 * (int)DAT_00201b68), sVar3 != 0)) {
@@ -44578,13 +46272,67 @@ void FUN_0005d704()
   FUN_0005d2ac(2);
   DAT_0023bc8c = *(undefined2 *)(&DAT_00086b50 + DAT_0023b4a0 * 4);
   DAT_0023b8c0 = *(undefined2 *)(&DAT_00086b52 + DAT_0023b4a0 * 4);
-  FUN_0005d9cc();
+  walk_visible_tiles();
   return;
 }
 
 
 
-void FUN_0005d9cc()
+/* Compute the automap reveal byte for a just-explored tile.
+
+   tile_rec points at this tile's 4-byte record. Bits:
+     0-3  shape nibble  (tile type: 0 solid, 1 open, 2-5 diag, 6-9 slope)
+     4-5  fill style, consumed by draw_automap_cell:
+            0 = shaded "explored" floor
+            1/2 = blue water dither
+            3 = leave parchment (floor not painted at all)
+
+   Built as DAT_0023ae40[floor_tex_index] | shape, matching the
+   Pocket-PC disasm.  DAT_0023ae40 is the per-level floor-texture
+   property table (loaded from the .ark): water textures read 0x10
+   there (-> fill style 1 -> blue), everything else reads 0 (-> fill
+   style 0 -> shaded floor).  floor-tex index is tile-record byte 1
+   bits 2-5.  The simple ring-walk was instead using DAT_00086bf0[type],
+   which has no floor-texture info and so couldn't tell water from
+   normal floor.  (The floor being *too dark* vs the reference is a
+   separate issue, fixed in draw_automap_cell by using a 25% darken
+   for the fill instead of darken_pixel's 50%.) */
+static byte automap_reveal_byte(byte *tile_rec)
+{
+  return (byte)DAT_0023ae40_backing[tile_rec[1] >> 2 & 0xf] |
+         (*tile_rec & 0xf);
+}
+
+/* Reveal every walkable tile of the current level's automap in a single
+   pass -- no ring-walk, no dungeon redraw. Not part of the original
+   game; demomode's REVEALALL uses it to fill the whole map at once
+   (the per-tile TELEPORT+REVEAL sweep in demo_automap.txt exists only
+   because ordinary movement never reconnects to the reveal ring-walk).
+   Uses the same reveal-byte encoding as the ring-walk. */
+void automap_reveal_all_tiles(void)
+{
+  int x;
+  int y;
+  int shape;
+  byte *rec;
+  byte *dst;
+
+  for (y = 0; y < 64; y = y + 1) {
+    for (x = 0; x < 64; x = x + 1) {
+      rec = (byte *)(DAT_002029cc + (x + y * 0x40) * 4);
+      shape = *rec & 0xf;
+      if ((shape >= 1) && (shape < 10)) {
+        dst = (byte *)(&DAT_000b99d0) + (y * 0x40 + x);
+        if (*dst == 0) {
+          *dst = automap_reveal_byte(rec);
+        }
+      }
+    }
+  }
+}
+
+// was FUN_0005d9cc
+void walk_visible_tiles()
 
 {
   short sVar1;
@@ -44598,15 +46346,15 @@ void FUN_0005d9cc()
   undefined1 *puVar9;
   
   DAT_0023b818 = 0xe0;
-  DAT_0023b4f0 = DAT_0023b4a0 * 4 + 0x86b60;
+  DAT_0023b4f0 = DAT_0023b4a0 * 4 + UW_B50_LIT(0x86b60);
   iVar4 = DAT_0023b4a0 * 6;
   sVar2 = *(short *)(&DAT_00086a00 + iVar4);
   iVar7 = (int)sVar2;
   sVar3 = *(short *)(&DAT_00086a02 + iVar4);
   puVar9 = &DAT_0023b038 + DAT_0023b024 * 0x42;
   pbVar8 = (byte *)(DAT_0023aecc + ((int)sVar3 * (int)DAT_0023b024 + iVar7 * -0x10) * 4);
-  DAT_0023b814 = FUN_00068100(0,0);
-  DAT_0023b808 = FUN_00068100(0x3f,0x3f);
+  DAT_0023b814 = tilemap_lookup(0,0);
+  DAT_0023b808 = tilemap_lookup(0x3f,0x3f);
   DAT_0023b83c = 0;
   uVar6 = (uint)(short)((int)pbVar8 - (int)DAT_0023b814 >> 2);
   DAT_0023b838 = 0;
@@ -44625,7 +46373,7 @@ void FUN_0005d9cc()
       DAT_0023b4ec = pbVar8;
       do {
         if ((uVar6 & 0xf000) == 0) {
-          FUN_0005e604(&DAT_000b99d0 + (short)uVar6);
+          process_visible_tile_cell(&DAT_000b99d0 + (short)uVar6);
         }
         DAT_0023b4e4 = DAT_0023b4e4 + 1;
         DAT_0023b4ec = DAT_0023b4ec + iVar7 * 4;
@@ -44640,7 +46388,7 @@ void FUN_0005d9cc()
       uVar6 = ((int)sVar1 + iVar7 * 0x20) * 0x10000 >> 0x10;
       do {
         if ((uVar6 & 0xf000) == 0) {
-          FUN_0005e604(&DAT_000b99d0 + (short)uVar6);
+          process_visible_tile_cell(&DAT_000b99d0 + (short)uVar6);
           iVar4 = (int)DAT_0023b4e4;
         }
         DAT_0023b4ec = DAT_0023b4ec + iVar7 * -4;
@@ -44651,7 +46399,7 @@ void FUN_0005d9cc()
       } while (0x10 < iVar4 * 0x10000 >> 0x10);
       FUN_00064d34(0);
       if ((uVar6 * 0x10000 & 0xf0000000) == 0) {
-        FUN_0005e604(&DAT_000b99d0 + ((int)(uVar6 * 0x10000) >> 0x10));
+        process_visible_tile_cell(&DAT_000b99d0 + ((int)(uVar6 * 0x10000) >> 0x10));
       }
       puVar9 = puVar9 + -0x42;
       *DAT_00110fc0 = 0xb0;
@@ -44667,7 +46415,7 @@ void FUN_0005d9cc()
   DAT_0023b4e4 = 0;
   do {
     if (((uVar6 & 0xf000) == 0) && (*pcVar5 == '\0')) {
-      *pcVar5 = (&DAT_00086bf0)[*DAT_0023b4ec & 0xf];
+      *pcVar5 = automap_reveal_byte(DAT_0023b4ec);
     }
     DAT_0023b4e4 = DAT_0023b4e4 + 1;
     DAT_0023b4ec = DAT_0023b4ec + iVar7 * 4;
@@ -44688,7 +46436,7 @@ ushort param_3;
   byte *pbVar1;
   
   if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)FUN_00040c5c((param_3 & 0xff) + 0x6a);
+    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
     DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
                                     DAT_0024fa2c);
   }
@@ -44726,7 +46474,7 @@ uint param_3;
   byte *pbVar1;
   
   if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)FUN_00040c5c((param_3 & 0xff) + 0x6a);
+    pbVar1 = (byte *)get_texture_page((param_3 & 0xff) + 0x6a);
     DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
                                     DAT_0024fa2c);
   }
@@ -44765,7 +46513,7 @@ ushort param_4;
   byte *pbVar1;
   
   if (DAT_0023b830 == '\0') {
-    pbVar1 = (byte *)FUN_00040c5c((param_4 & 0xff) + 0x3a);
+    pbVar1 = (byte *)get_texture_page((param_4 & 0xff) + 0x3a);
     DAT_0023b7f8 = (ushort)*(byte *)((uint)*pbVar1 + (int)DAT_00086b30 * (param_2 & 0xff) * 0x100 +
                                     DAT_0024fa2c);
   }
@@ -44950,7 +46698,8 @@ ushort param_4;
 
 
 
-void FUN_0005e604(param_1)
+// was FUN_0005e604
+void process_visible_tile_cell(param_1)
 byte * param_1;
 
 {
@@ -44969,7 +46718,7 @@ byte * param_1;
   undefined1 uVar13;
   undefined1 uVar14;
   byte bVar15;
-  int iVar16;
+  intptr_t iVar16; /* was int -- also holds the DAT_00086e6c view-record pointer */
   undefined4 uVar17;
   int iVar18;
   int iVar19;
@@ -45012,18 +46761,44 @@ byte * param_1;
   local_48 = (uint)(short)(ushort)bVar25;
   if ((local_48 & 0x80) == 0) {
     if (*param_1 == 0) {
-      *param_1 = (&DAT_00086bf0)[(byte)*DAT_0023b4ec & 0xf];
+      /* Same floor-texture-aware reveal encoding as walk_visible_tiles's
+         ring-walk. Was DAT_00086bf0[type], which made every floor the
+         same (all blue, with the earlier reconstruction). */
+      *param_1 = automap_reveal_byte(DAT_0023b4ec);
       DAT_0023b810 = DAT_0023b810 + 1;
     }
     FUN_00065348();
     return;
+  }
+  /* This branch emits a visible tile's 3D geometry slice for the dungeon
+     viewport. It now renders a real textured room end to end -- the
+     visibility flood-fill (process_reaction_queue / process_reaction_
+     entry / compute_reaction_offset / reaction_advance_row) and the
+     software span rasterizer (raster_triangle / raster_textured_span)
+     were resurrected across this session's commits (see git tags
+     milestone-3d-tiles-render, milestone-3d-room). Enabled by default;
+     set UW_DISABLE_3D_GEOMETRY to fall back to the automap-reveal-only
+     path (the old behaviour). */
+  { static int _disabled = -1;
+    if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_GEOMETRY") != NULL);
+    if (_disabled) {
+      if (*param_1 == 0) {
+        *param_1 = automap_reveal_byte(DAT_0023b4ec);
+        DAT_0023b810 = DAT_0023b810 + 1;
+      }
+      return;
+    }
   }
   DAT_0023b4d0 = 200;
   bVar15 = (byte)*DAT_0023b4ec >> 4;
   uVar1 = (uint)bVar15;
   DAT_0023b4e0 = DAT_0023b820[1] & 0xf;
   if (DAT_0023b4e0 < 8) {
-    local_84 = *(byte *)(&DAT_0023ae40 + (*DAT_0023b4ec >> 10 & 0xf)) | (byte)*DAT_0023b4ec & 0xf;
+    /* `*DAT_0023b4ec >> 10` decompiled from a 16-bit tile-record read
+       but DAT_0023b4ec is a byte* here, so as written it always read
+       DAT_0023ae40[0]. floor-tex index is byte 1 bits 2-5. Shared
+       helper with walk_visible_tiles's ring-walk. */
+    local_84 = automap_reveal_byte(DAT_0023b4ec);
   }
   else {
     local_84 = *param_1;
@@ -45039,7 +46814,7 @@ byte * param_1;
     local_4c = 4;
   }
   iVar33 = local_4c * 4;
-  pbVar35 = (byte *)(iVar33 + 0x86b70);
+  pbVar35 = (byte *)(iVar33 + UW_B50_LIT(0x86b70));
   if (local_4c == 4) {
     if (*(short *)(&DAT_00085d20 + uVar1 * 2) < *(short *)(DAT_00086e6c + 0xe)) {
 LAB_0005e988:
@@ -45050,11 +46825,11 @@ LAB_0005e988:
   else {
     iVar16 = local_4c * 3;
     if (((int)*(short *)(&DAT_00085d20 + (uVar1 + *pbVar35) * 2) -
-        (int)*(short *)(DAT_00086e6c + 0xe)) * (int)*(char *)(iVar16 + 0x86be1) +
+        (int)*(short *)(DAT_00086e6c + 0xe)) * (int)*(char *)(UW_B50_LIT(0x86be1) + iVar16) +
         (DAT_0023b4e8 * 0x100 - (int)*(short *)(DAT_00086e6c + 0x12)) *
-        (int)*(char *)(iVar16 + 0x86be2) +
+        (int)*(char *)(UW_B50_LIT(0x86be2) + iVar16) +
         ((DAT_0023b4e4 + -0x10) * 0x100 - (int)*(short *)(DAT_00086e6c + 10)) *
-        (int)*(char *)(iVar16 + 0x86be0) < 0) goto LAB_0005e988;
+        (int)*(char *)(UW_B50_LIT(0x86be0) + iVar16) < 0) goto LAB_0005e988;
   }
   bVar39 = false;
 LAB_0005e7e0:
@@ -45091,7 +46866,7 @@ LAB_0005e7e0:
     (&DAT_000ace05)[iVar32] = 0;
     (&DAT_000ace06)[iVar32] = 0;
     (&DAT_000ace07)[iVar32] = 0;
-    uVar17 = FUN_00040c5c(iVar16);
+    { void *_tp = get_texture_page(iVar16); if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) g_tile_texptr_emit[DAT_0023b83c] = _tp; uVar17 = (undefined4)(uintptr_t)_tp; }
     iVar32 = DAT_0023b83c;
     iVar30 = DAT_0023b83c * 0x60;
     (&DAT_000acdfc)[iVar30] = (char)uVar17;
@@ -45124,7 +46899,7 @@ LAB_0005e7e0:
     (&DAT_000a85e2)[iVar34] = uVar6;
     uVar7 = (undefined1)((uint)uVar20 >> 0x18);
     (&DAT_000a85e3)[iVar34] = uVar7;
-    uVar21 = Ordinal_2032((uVar1 + *(byte *)(iVar33 + 0x86b72)) * 0x40);
+    uVar21 = Ordinal_2032((uVar1 + *(byte *)(UW_B50_LIT(0x86b72) + iVar33)) * 0x40);
     (&DAT_000a85dc)[iVar34] = (char)uVar21;
     (&DAT_000a85dd)[iVar34] = (char)((uint)uVar21 >> 8);
     (&DAT_000a85de)[iVar34] = (char)((uint)uVar21 >> 0x10);
@@ -45193,7 +46968,7 @@ LAB_0005e7e0:
     (&DAT_000a85e1)[iVar18] = uVar24;
     (&DAT_000a85e2)[iVar18] = uVar3;
     (&DAT_000a85e3)[iVar18] = uVar4;
-    uVar17 = Ordinal_2032((uVar1 + *(byte *)(iVar33 + 0x86b71)) * 0x40);
+    uVar17 = Ordinal_2032((uVar1 + *(byte *)(UW_B50_LIT(0x86b71) + iVar33)) * 0x40);
     (&DAT_000a85dc)[iVar18] = (char)uVar17;
     (&DAT_000a85dd)[iVar18] = (char)((uint)uVar17 >> 8);
     (&DAT_000a85de)[iVar18] = (char)((uint)uVar17 >> 0x10);
@@ -45221,7 +46996,7 @@ LAB_0005e7e0:
     (&DAT_000a85e1)[iVar18] = uVar5;
     (&DAT_000a85e2)[iVar18] = uVar6;
     (&DAT_000a85e3)[iVar18] = uVar7;
-    uVar17 = Ordinal_2032((uVar1 + *(byte *)(iVar33 + 0x86b73)) * 0x40);
+    uVar17 = Ordinal_2032((uVar1 + *(byte *)(UW_B50_LIT(0x86b73) + iVar33)) * 0x40);
     (&DAT_000a85dc)[iVar18] = (char)uVar17;
     (&DAT_000a85dd)[iVar18] = (char)((uint)uVar17 >> 8);
     DAT_000a85d0 = iVar16 + 4;
@@ -45278,7 +47053,7 @@ LAB_0005e7e0:
     (&DAT_000ace05)[iVar33] = 0;
     (&DAT_000ace06)[iVar33] = 0;
     (&DAT_000ace07)[iVar33] = 0;
-    uVar17 = FUN_00040c5c(uVar17);
+    { void *_tp = get_texture_page(uVar17); if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) g_tile_texptr_emit[DAT_0023b83c] = _tp; uVar17 = (undefined4)(uintptr_t)_tp; }
     iVar19 = DAT_0023b83c * 0x60;
     (&DAT_000acdfc)[iVar19] = (char)uVar17;
     (&DAT_000acdfd)[iVar19] = (char)((uint)uVar17 >> 8);
@@ -45439,7 +47214,7 @@ LAB_0005e7e0:
       if ((DAT_0023b820[1] & uVar27) == 0) {
         local_81 = 0x10;
         local_80 = 0x10;
-        iVar16 = ((-uVar1 & 0xff) - (uint)*(byte *)(local_54 * 5 + local_4c + 0x86b90)) + 0x10;
+        iVar16 = ((-uVar1 & 0xff) - (uint)*(byte *)(UW_B50_LIT(0x86b90) + local_54 * 5 + local_4c)) + 0x10;
       }
       else {
         local_81 = (byte)puVar23[*(short *)(&DAT_00086a00 +
@@ -45459,17 +47234,23 @@ LAB_0005e7e0:
           uVar28 = 4;
         }
         uVar28 = uVar28 & 0xff;
-        iVar16 = (((uint)*(byte *)((local_54 + 3) * 5 + uVar28 + 0x86b90) -
-                  (uint)*(byte *)(local_54 * 5 + local_4c + 0x86b90)) - uVar1) + (uint)local_81;
-        local_80 = *(char *)((uint)(byte)(&DAT_00086b88)[local_54] + uVar28 * 4 + 0x86b70) +
+        iVar16 = (((uint)*(byte *)(UW_B50_LIT(0x86b90) + (local_54 + 3) * 5 + uVar28) -
+                  (uint)*(byte *)(UW_B50_LIT(0x86b90) + local_54 * 5 + local_4c)) - uVar1) + (uint)local_81;
+        local_80 = *(char *)((uint)(byte)(&DAT_00086b88)[local_54] + uVar28 * 4 + UW_B50_LIT(0x86b70)) +
                    local_81;
-        local_81 = *(char *)((uint)(byte)(&DAT_00086b84)[local_54] + uVar28 * 4 + 0x86b70) +
+        local_81 = *(char *)((uint)(byte)(&DAT_00086b84)[local_54] + uVar28 * 4 + UW_B50_LIT(0x86b70)) +
                    local_81;
         bVar25 = local_83;
       }
-      (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[1] & 0x3f);
+      /* UW1 tile word2 (bytes 2-3) bits 0-5 = wall texture index; word1's
+         high byte (byte 1) holds the floor texture / height and was almost
+         always 0 here, so every wall drew arena slot 0 (plain grey) instead
+         of the level's real -- often mossy -- wall texture. Ghidra read the
+         wrong byte. (automap_reveal_byte / the floor path correctly take the
+         floor index from byte 1 bits 2-5.) */
+      (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[2] & 0x3f);
       uVar26 = (ushort)DAT_0023b4e0;
-      bVar25 = (byte)DAT_0023b4ec[1] & 0x3f;
+      bVar25 = (byte)DAT_0023b4ec[2] & 0x3f;
       if ((short)uVar26 < DAT_00086b24) {
         DAT_0023b81c = 4;
         if ((uVar26 != 0) || (DAT_00087938 != 'd')) {
@@ -45508,7 +47289,7 @@ LAB_0005e7e0:
       (&DAT_000ace05)[iVar16] = 0;
       (&DAT_000ace06)[iVar16] = 0;
       (&DAT_000ace07)[iVar16] = 0;
-      uVar17 = FUN_00040c5c(bVar25);
+      { void *_tp = get_texture_page(bVar25); if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) g_tile_texptr_emit[DAT_0023b83c] = _tp; uVar17 = (undefined4)(uintptr_t)_tp; }
       iVar32 = DAT_0023b83c;
       iVar18 = DAT_0023b83c * 0x60;
       (&DAT_000acdfc)[iVar18] = (char)uVar17;
@@ -45714,9 +47495,11 @@ LAB_0005e7e0:
         (int)(char)(&DAT_00086bcc)[iVar33] +
         (((int)(char)(&DAT_00086bc9)[iVar33] + (int)DAT_0023b4e8) * 0x100 -
         (int)*(short *)(iVar16 + 0x12)) * (int)(char)(&DAT_00086bcd)[iVar33] < 0) {
-      (*DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[1] & 0x3f);
+      /* diagonal-wall face: same wall-texture-index byte fix as the
+         orthogonal branch above (word2 byte 2 bits 0-5, not byte 1). */
+      (*DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[2] & 0x3f);
       uVar27 = (ushort)DAT_0023b4e0;
-      bVar25 = (byte)DAT_0023b4ec[1] & 0x3f;
+      bVar25 = (byte)DAT_0023b4ec[2] & 0x3f;
       if ((short)uVar27 < DAT_00086b24) {
         DAT_0023b81c = 4;
         if ((uVar27 != 0) || (DAT_00087938 != 'd')) {
@@ -45755,7 +47538,7 @@ LAB_0005e7e0:
       (&DAT_000ace05)[iVar16] = 0;
       (&DAT_000ace06)[iVar16] = 0;
       (&DAT_000ace07)[iVar16] = 0;
-      uVar17 = FUN_00040c5c(bVar25);
+      { void *_tp = get_texture_page(bVar25); if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) g_tile_texptr_emit[DAT_0023b83c] = _tp; uVar17 = (undefined4)(uintptr_t)_tp; }
       iVar34 = DAT_0023b83c * 0x60;
       (&DAT_000acdfc)[iVar34] = (char)uVar17;
       (&DAT_000acdfd)[iVar34] = (char)((uint)uVar17 >> 8);
@@ -45794,7 +47577,15 @@ LAB_0005e7e0:
       (&DAT_000ace0a)[iVar34] = 0;
       (&DAT_000ace0b)[iVar34] = 0;
       iVar19 = DAT_0023b824 + -1;
-      uVar17 = Ordinal_2032();
+      /* Ghidra dropped the argument: this is Ordinal_2032(iVar19), the
+         int->float of (texture_size - 1) used as the V-texcoord scale for
+         all four corners of this tile-emit branch -- exactly as the sibling
+         branch does at the `Ordinal_2032(iVar38 + -1)` site above. Left
+         no-arg, uVar17 took a stale register (the 512.0f / 1024.0f literal
+         bit pattern from the projection scratch), so every V texcoord this
+         branch emitted came out as ~1.14e9 -> the back-wall dither and
+         part of the ceiling breakup in the 3D view. */
+      uVar17 = Ordinal_2032(iVar19);
       uVar20 = Ordinal_2015(0x44800000,*(undefined4 *)(&DAT_000a85dc + iVar32));
       uVar20 = Ordinal_2026(uVar20,0x3b800000);
       Ordinal_2026(uVar20,uVar17);
@@ -45917,7 +47708,16 @@ LAB_0005e7e0:
       puVar23 = DAT_0023b4ec;
     }
   }
-  FUN_00065394(puVar23 + 1);
+  /* Hack - Disabled: FUN_00065394 renders this tile's animated features
+     and the objects sitting on it (doors, switches, bridges, item
+     billboards). With object processing off it walks a bogus object
+     count and dereferences a NULL slot from FUN_000535fc. The wall /
+     floor / diagonal geometry for the tile was already emitted above
+     (the DAT_0023b4f4/b80c/b4d4 calls), so skip this for now. Set
+     UW_ENABLE_TILE_FEATURES to run it. */
+  if (getenv("UW_ENABLE_TILE_FEATURES") != NULL) {
+    FUN_00065394(puVar23 + 1);
+  }
   cVar2 = DAT_0023b834;
   if (((puVar23 + 1 != (ushort *)0x0) && (DAT_0023b834 != '\0')) &&
      (DAT_0023b834 = '\0', DAT_0023b4e0 < 8)) {
@@ -45996,7 +47796,7 @@ ushort * param_1;
       DAT_0023b830 = 1;
     }
   }
-  iVar17 = FUN_00053728(param_1);
+  iVar17 = object_ptr_in_arena(param_1);
   if ((iVar17 != 0) && ((*param_1 & 0x1c0) != 0x40)) {
     bVar13 = *(byte *)((char *)param_1 + 0xb);
     bVar1 = *(byte *)((char *)param_1 + 0xd);
@@ -46495,7 +48295,9 @@ LAB_00060f54:
 
 void FUN_00061e60(param_1,param_2,param_3,param_4)
 byte param_1;
-uint param_2;
+/* Object-record pointer -- was `uint`, truncating it (same class as
+   object_list_insert_head above). */
+char *param_2;
 char param_3;
 short param_4;
 
@@ -46612,7 +48414,7 @@ short param_4;
     }
   }
   else {
-    local_58 = (byte *)FUN_00040c5c((int)param_4);
+    local_58 = (byte *)get_texture_page((int)param_4);
     bVar5 = *local_58;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -47666,9 +49468,11 @@ LAB_000651ec:
 
 
 
+/* param_1 (out record) and param_2 (src record) were `int`, truncating
+   the real pointers FUN_00065394 passes. */
 void FUN_00065210(param_1,param_2)
-int param_1;
-int param_2;
+byte *param_1;
+byte *param_2;
 
 {
   *(undefined *)(param_1 + 1) =
@@ -47795,7 +49599,7 @@ ushort * param_1;
     Ordinal_1044(&DAT_0023b940 + DAT_0023b4e4 * 0x12,&DAT_0023b928,2);
   }
   DAT_0023b928 = 0;
-  puVar5 = (ushort *)FUN_00053514(param_1);
+  puVar5 = (ushort *)resolve_object_link(param_1);
   do {
     sVar3 = (short)iVar13;
     if ((puVar5 == (ushort *)0x0) || (local_30 = (int)(short)iVar16, 0x3b < local_30)) {
@@ -47838,7 +49642,7 @@ ushort * param_1;
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e8 << 0x13) >> 0x10)) * 0x20 + 0x10;
-          if (((*puVar5 & 0x1c0) == 0x40) || (iVar16 = FUN_00053728(puVar5), iVar16 == 0)) {
+          if (((*puVar5 & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
             DAT_0023b91c = ((byte)puVar5[1] & 0x7f) << 3;
           }
           else {
@@ -47964,7 +49768,7 @@ LAB_000657f4:
       iVar13 = (int)local_38;
     }
     param_1 = puVar5 + 2;
-    puVar5 = (ushort *)FUN_00053514();
+    puVar5 = (ushort *)resolve_object_link();
     iVar16 = (local_30 + 1) * 0x10000 >> 0x10;
   } while( true );
 }
@@ -48101,7 +49905,7 @@ byte param_1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_114,s__DATA_f32_tr_00086de8);
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
   Ordinal_1047(acStack_114,0,0x104);
   do {
     cVar1 = *pcVar3;
@@ -48109,7 +49913,7 @@ byte param_1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_114,s__DATA_f16_tr_00086dd8);
-  FUN_0005b514(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
   return;
 }
 
@@ -48126,7 +49930,7 @@ int param_1;
   if (param_1 == 0) {
     if (-1 < DAT_00086db4) {
       if (DAT_00086db4 == '\x01') {
-        FUN_00040efc(0);
+        set_palette_bank(0);
       }
       else if (DAT_00086db4 == '\x02') {
         FUN_00070224(0);
@@ -48146,7 +49950,7 @@ int param_1;
     }
     if (DAT_00086db4 == '\x01') {
       uVar1 = Ordinal_1053();
-      FUN_00040efc(uVar1 & 7);
+      set_palette_bank(uVar1 & 7);
     }
     else if (DAT_00086db4 == '\x02') {
       FUN_00070224(1);
@@ -48523,7 +50327,12 @@ LAB_000669a8:
   do {
     puVar6 = DAT_00202948;
     if (!bVar12) {
-      puVar6 = (ushort *)FUN_00045054();
+      /* Dropped argument (Ghidra relied on a register leftover that
+         doesn't hold the right value on this recompile) -- every other
+         call to this function in this loop nest passes the current slot
+         index (see the identically-shaped loop at line ~48762 below);
+         iVar4 is that same index here. */
+      puVar6 = (ushort *)FUN_00045054(iVar4);
     }
     DAT_00204690 = puVar6;
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
@@ -48670,6 +50479,18 @@ void FUN_00066e90()
   DAT_00201c70 = 0;
   DAT_0023beb4 = 0;
   DAT_0023beb8 = 0;
+  /* Command-input mode. When set, handle_keyboard_message folds a WM_CHAR
+     letter to its uppercase code before dropping it in DAT_0023c448, so
+     the movement key bindings registered just below (W/S/X/A/D = VK
+     codes 0x57/0x53/0x58/0x41/0x44) actually match a keypress, and the
+     main loop ramps the hold-acceleration counter faster. It is a
+     link-time-initialised flag whose real setup Ghidra dropped (same
+     silently-zero class as DAT_00086e68 / DAT_0008589c etc.): left at 0
+     the keyboard movement keys were dead. Toggled off again by the
+     Caps-Lock key (VK 0x14) in handle_keyboard_message; text-entry
+     screens that need raw lowercase (chargen name entry) run before this
+     function. */
+  DAT_0024af60 = 1;
   DAT_00201b68 = 1;
   DAT_002048a7 = 8;
   DAT_002048a3 = 1;
@@ -48688,75 +50509,81 @@ void FUN_00066e90()
   if (DAT_00201c74 == 0) {
     DAT_00201c74 = FUN_0007873c(DAT_00086df8,0x7d);
   }
-  FUN_0004213c(0x3f,0xe,1,FUN_000682f0);
-  FUN_0004213c(0x8d,5,1,FUN_000682f0);
-  FUN_0004213c(0x8f,3,1,FUN_000682f0);
-  FUN_0004213c(0x91,4,1,FUN_000682f0);
-  FUN_0004213c(0x3f,0xe,1,FUN_000682f0);
-  FUN_0004213c(0x8d,5,1,FUN_000682f0);
-  FUN_0004213c(0x8f,3,1,FUN_000682f0);
-  FUN_0004213c(0x91,4,1,FUN_000682f0);
-  FUN_0004213c(0x7a,9,1,FUN_000682f0);
-  FUN_0004213c(99,10,1,FUN_000682f0);
-  FUN_0004213c(0x93,8,1,FUN_000682f0);
-  FUN_0004213c(0x6c,0xc,0x1b,FUN_000682f0);
-  FUN_0004213c(0x6b,0xd,0x1b,FUN_000682f0);
-  FUN_0004213c(0x41,0xffffffff,1,FUN_00068884);
-  FUN_0004213c(0x44,1,1,FUN_00068884);
-  FUN_0004213c(0x53,0,1,FUN_00068884);
-  FUN_0004213c(0x58,0xfffffffe,1,FUN_00068884);
-  FUN_0004213c(0x57,2,1,FUN_00068884);
-  FUN_0004202c(0x6b,0xa7,0x7b,0x99,0xffff,1,FUN_00068884);
-  FUN_0004202c(0x82,0xa9,0x92,0x9c,0,1,FUN_00068884);
-  FUN_0004202c(0x9b,0xa7,0xaa,0x99,1,1,FUN_00068884);
-  FUN_0004213c(0x33,1,0x11,&LAB_000680d0);
-  FUN_0004213c(0x31,0xffffffff,0x11,&LAB_000680d0);
-  FUN_0004213c(0x32,0,0x11,&LAB_000680d0);
-  FUN_0004213c(0x6a,7,0x1b,FUN_000682f0);
-  FUN_0004213c(0x4a,6,0x1b,FUN_000682f0);
-  FUN_0004213c(0x86,0,0x1b,FUN_0003def4);
-  FUN_0004213c(0x89,0,0x1b,&LAB_00071ac4);
-  FUN_0004213c(0x88,2,0x1b,&LAB_0007036c);
-  FUN_0004213c(0x87,1,0x1b,FUN_00044d14);
-  FUN_0004213c(0x173,0x173,1,FUN_00056ebc);
-  FUN_0004213c(0x172,0x172,1,FUN_00056ebc);
-  FUN_0004213c(0x16d,0x16d,1,FUN_00056ebc);
-  FUN_0004213c(0x166,0x166,1,FUN_00056ebc);
-  FUN_0004213c(0x164,0x164,1,FUN_00056ebc);
-  FUN_0004213c(0x171,0x171,1,FUN_00056ebc);
-  FUN_0004213c(0x80,5,1,FUN_0003faa0);
-  FUN_0004213c(0x81,4,1,FUN_0003faa0);
-  FUN_0004213c(0x82,3,1,FUN_0003faa0);
-  FUN_0004213c(0x83,2,1,FUN_0003faa0);
-  FUN_0004213c(0x83,2,4,FUN_0003faa0);
-  FUN_0004213c(0x84,1,1,FUN_0003faa0);
-  FUN_0004213c(0x85,0,1,FUN_0003faa0);
-  FUN_0004213c(0x70,9,1,FUN_00027708);
-  FUN_0004213c(0x2e,3,1,FUN_00027708);
-  FUN_0004213c(0x3b,6,1,FUN_00027708);
-  FUN_0004213c(0x4a3,0x4a3,7,FUN_00058734);
-  FUN_0004213c(9,9,7,FUN_00058734);
-  FUN_0004213c(0x8d,0x8d,7,FUN_00058734);
-  FUN_0004213c(0x93,0x93,7,FUN_00058734);
-  FUN_0004213c(0x8f,0x8f,7,FUN_00058734);
-  FUN_0004213c(0x91,0x91,7,FUN_00058734);
-  FUN_0004213c(0x8c,0x8c,7,FUN_00058734);
-  FUN_0004213c(0x8e,0x8e,7,FUN_00058734);
-  FUN_0004213c(0x92,0x92,7,FUN_00058734);
-  FUN_0004213c(0x94,0x94,7,FUN_00058734);
-  FUN_0004213c(0x95,0x95,7,FUN_00058734);
-  FUN_0004213c(0x96,0x96,7,FUN_00058734);
-  FUN_0004213c(0x1b,4,4,&DAT_00028bfc);
-  FUN_0004213c(0x31,1,4,FUN_000295b4);
-  FUN_0004213c(0x32,2,4,FUN_000295b4);
-  FUN_0004213c(0x33,3,4,FUN_000295b4);
-  FUN_0004213c(0x34,4,4,FUN_000295b4);
-  FUN_0004202c(0x52,0x30,0x88,10,4,4,FUN_0001baa0);
-  FUN_0004202c(0x8b,0x30,0xc1,10,4,4,FUN_0001b89c);
-  FUN_0004202c(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
-  FUN_0004202c(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
-  FUN_0004213c(0x286,0,0x1b,FUN_000679f4);
-  FUN_0004213c(0x30,0,0x1b,FUN_00067950);
+  register_key_binding(0x3f,0xe,1,move_command_dispatch);
+  register_key_binding(0x8d,5,1,move_command_dispatch);
+  register_key_binding(0x8f,3,1,move_command_dispatch);
+  register_key_binding(0x91,4,1,move_command_dispatch);
+  register_key_binding(0x3f,0xe,1,move_command_dispatch);
+  register_key_binding(0x8d,5,1,move_command_dispatch);
+  register_key_binding(0x8f,3,1,move_command_dispatch);
+  register_key_binding(0x91,4,1,move_command_dispatch);
+  /* Z / C strafe: the original registered these as raw lowercase ascii
+     (0x7a 'z', 0x63 'c'), but every other letter movement key here uses
+     the uppercase VK code (W=0x57 ...) and handle_keyboard_message
+     upper-cases letters in command mode -- so as shipped the lowercase
+     entries could never match. Use the uppercase VK codes (VK_Z 0x5a,
+     VK_C 0x43) for consistency with W/S/X/A/D. */
+  register_key_binding(0x5a,9,1,move_command_dispatch);
+  register_key_binding(0x43,10,1,move_command_dispatch);
+  register_key_binding(0x93,8,1,move_command_dispatch);
+  register_key_binding(0x6c,0xc,0x1b,move_command_dispatch);
+  register_key_binding(0x6b,0xd,0x1b,move_command_dispatch);
+  register_key_binding(0x41,0xffffffff,1,move_key_directional_step);
+  register_key_binding(0x44,1,1,move_key_directional_step);
+  register_key_binding(0x53,0,1,move_key_directional_step);
+  register_key_binding(0x58,0xfffffffe,1,move_key_directional_step);
+  register_key_binding(0x57,2,1,move_key_directional_step);
+  register_click_region(0x6b,0xa7,0x7b,0x99,0xffff,1,move_key_directional_step);
+  register_click_region(0x82,0xa9,0x92,0x9c,0,1,move_key_directional_step);
+  register_click_region(0x9b,0xa7,0xaa,0x99,1,1,move_key_directional_step);
+  register_key_binding(0x33,1,0x11,&LAB_000680d0);
+  register_key_binding(0x31,0xffffffff,0x11,&LAB_000680d0);
+  register_key_binding(0x32,0,0x11,&LAB_000680d0);
+  register_key_binding(0x6a,7,0x1b,move_command_dispatch);
+  register_key_binding(0x4a,6,0x1b,move_command_dispatch);
+  register_key_binding(0x86,0,0x1b,FUN_0003def4);
+  register_key_binding(0x89,0,0x1b,&LAB_00071ac4);
+  register_key_binding(0x88,2,0x1b,&LAB_0007036c);
+  register_key_binding(0x87,1,0x1b,FUN_00044d14);
+  register_key_binding(0x173,0x173,1,FUN_00056ebc);
+  register_key_binding(0x172,0x172,1,FUN_00056ebc);
+  register_key_binding(0x16d,0x16d,1,FUN_00056ebc);
+  register_key_binding(0x166,0x166,1,FUN_00056ebc);
+  register_key_binding(0x164,0x164,1,FUN_00056ebc);
+  register_key_binding(0x171,0x171,1,FUN_00056ebc);
+  register_key_binding(0x80,5,1,FUN_0003faa0);
+  register_key_binding(0x81,4,1,FUN_0003faa0);
+  register_key_binding(0x82,3,1,FUN_0003faa0);
+  register_key_binding(0x83,2,1,FUN_0003faa0);
+  register_key_binding(0x83,2,4,FUN_0003faa0);
+  register_key_binding(0x84,1,1,FUN_0003faa0);
+  register_key_binding(0x85,0,1,FUN_0003faa0);
+  register_key_binding(0x70,9,1,FUN_00027708);
+  register_key_binding(0x2e,3,1,FUN_00027708);
+  register_key_binding(0x3b,6,1,FUN_00027708);
+  register_key_binding(0x4a3,0x4a3,7,FUN_00058734);
+  register_key_binding(9,9,7,FUN_00058734);
+  register_key_binding(0x8d,0x8d,7,FUN_00058734);
+  register_key_binding(0x93,0x93,7,FUN_00058734);
+  register_key_binding(0x8f,0x8f,7,FUN_00058734);
+  register_key_binding(0x91,0x91,7,FUN_00058734);
+  register_key_binding(0x8c,0x8c,7,FUN_00058734);
+  register_key_binding(0x8e,0x8e,7,FUN_00058734);
+  register_key_binding(0x92,0x92,7,FUN_00058734);
+  register_key_binding(0x94,0x94,7,FUN_00058734);
+  register_key_binding(0x95,0x95,7,FUN_00058734);
+  register_key_binding(0x96,0x96,7,FUN_00058734);
+  register_key_binding(0x1b,4,4,&DAT_00028bfc);
+  register_key_binding(0x31,1,4,FUN_000295b4);
+  register_key_binding(0x32,2,4,FUN_000295b4);
+  register_key_binding(0x33,3,4,FUN_000295b4);
+  register_key_binding(0x34,4,4,FUN_000295b4);
+  register_click_region(0x52,0x30,0x88,10,4,4,FUN_0001baa0);
+  register_click_region(0x8b,0x30,0xc1,10,4,4,FUN_0001b89c);
+  register_click_region(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
+  register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
+  register_key_binding(0x286,0,0x1b,FUN_000679f4);
+  register_key_binding(0x30,0,0x1b,FUN_00067950);
   return;
 }
 
@@ -48780,7 +50607,7 @@ int param_4;
   int iVar9;
   int iVar10;
   
-  FUN_0004221c((int)DAT_0023be8c);
+  unregister_key_binding((int)DAT_0023be8c);
   iVar9 = (param_2 - param_4) + 1;
   sVar2 = (short)param_1;
   iVar10 = param_1 + param_3 + -1;
@@ -48791,7 +50618,7 @@ int param_4;
   DAT_0023be5c = sVar2;
   DAT_0023be80 = sVar3;
   DAT_0023be88 = sVar5;
-  DAT_0023be8c = FUN_0004202c(param_1,param_2,iVar10,iVar9,0,0x1b,FUN_0003f420);
+  DAT_0023be8c = register_click_region(param_1,param_2,iVar10,iVar9,0,0x1b,FUN_0003f420);
   iVar6 = Ordinal_2005(0xf,sVar5 * 3);
   iVar6 = (sVar3 - iVar6) * 0x10000 >> 0x10;
   iVar7 = Ordinal_2005(0xf,sVar4 * 5);
@@ -48815,7 +50642,7 @@ int param_4;
 void FUN_000678e0()
 
 {
-  FUN_0004221c((int)DAT_0023be8c);
+  unregister_key_binding((int)DAT_0023be8c);
   DAT_0023be8c = 0;
   FUN_00057bb0((int)DAT_0023be6c);
   FUN_00057bb0((int)DAT_0023be68);
@@ -48923,7 +50750,7 @@ void FUN_00067b98()
   iVar4 = (uint)DAT_0023bf00 + ((uVar3 & 0xffff) + 0x3f) * 0x400;
   DAT_0023bf00 = (ushort)iVar4;
   if (sVar2 != 1) {
-    FUN_00049ce8(iVar4,&local_14,&local_12);
+    angle_to_screen_delta(iVar4,&local_14,&local_12);
     DAT_0023be90 = (short)cStack_13 * (sVar2 + -1) + DAT_0023be90;
     DAT_0023be92 = (short)cStack_11 * (sVar2 + -1) + DAT_0023be92;
   }
@@ -49078,13 +50905,16 @@ void FUN_00067f1c()
 
 
 
-int FUN_00068100(param_1,param_2)
+// Was `int`, truncating the real DAT_002029cc pointer arithmetic result below
+// (same pointer-truncation pattern fixed elsewhere this session).
+// was FUN_00068100 -- (tileX,tileY) -> 4-byte tile record ptr in the level map, NULL if either coord is outside 0..63
+void *tilemap_lookup(param_1,param_2)
 short param_1;
 short param_2;
 
 {
-  int iVar1;
-  
+  char *iVar1;
+
   if (((int)param_2 & 0xffffffc0U) + ((int)param_1 & 0xffffffc0U) == 0) {
     iVar1 = DAT_002029cc + ((int)param_1 + param_2 * 0x40) * 4;
   }
@@ -49107,7 +50937,7 @@ undefined4 param_2;
   uint uVar4;
   uint uVar5;
   
-  puVar3 = (undefined1 *)FUN_00052f28(param_2);
+  puVar3 = (undefined1 *)alloc_object_slot(param_2);
   if (puVar3 != (undefined1 *)0x0) {
     puVar3[2] = 0;
     puVar3[3] = 0x6c;
@@ -49145,7 +50975,7 @@ void FUN_00068260()
 
 {
   if (DAT_002020d8 == 0) {
-    FUN_000682f0(0xffffffff);
+    move_command_dispatch(0xffffffff);
     if (DAT_0023bf0c == '\0') {
       FUN_00057788((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
                    ((int)DAT_0023be80 - (int)DAT_0023be88) + 1);
@@ -49160,7 +50990,11 @@ void FUN_00068260()
 
 
 
-void FUN_000682f0(param_1)
+// was FUN_000682f0 -- discrete movement-command handler: keyboard Z/C
+// (strafe left/right), the 4 GAPI hardware buttons (0x8d/0x8f/0x91/0x93),
+// and the mouse click-and-hold walk (param_1 < 0). Routes via
+// decode_movement_command.
+void move_command_dispatch(param_1)
 short param_1;
 
 {
@@ -49217,7 +51051,7 @@ short param_1;
   }
   else {
     DAT_0023bf50 = 1;
-    FUN_000685e8();
+    decode_movement_command();
     if (param_1 == 0) {
       DAT_0023bf1c = param_1;
       DAT_0023bf48 = 0;
@@ -49241,7 +51075,8 @@ short param_1;
 
 
 
-void FUN_000685e8()
+// was FUN_000685e8
+void decode_movement_command()
 
 {
   DAT_0023bf48 = 0;
@@ -49369,7 +51204,10 @@ LAB_000687fc:
 
 
 
-void FUN_00068884(param_1)
+// was FUN_00068884 -- keyboard directional-move handler bound to W/S/X/A/D
+// (run-forward / walk-forward / walk-back / turn-left / turn-right); calls
+// begin_directional_move then movement_tick, then paces one held-key frame.
+void move_key_directional_step(param_1)
 undefined4 param_1;
 
 {
@@ -49378,7 +51216,7 @@ undefined4 param_1;
   ushort uVar3;
   
   iVar1 = FUN_0002294c();
-  iVar2 = FUN_0003c7f4(param_1);
+  iVar2 = begin_directional_move(param_1);
   if (iVar2 != 0) {
     DAT_0023bf54 = FUN_0002294c();
     DAT_0023bf58 = DAT_0023bf58 + 4;
@@ -49401,7 +51239,7 @@ undefined4 param_1;
       DAT_0023bf58 = DAT_0023bf58 & 1;
       uVar3 = (short)uVar3 >> 1;
     }
-    FUN_00068ad4(0x40,uVar3,1);
+    movement_tick(0x40,uVar3,1);
     FUN_00049924(10);
   }
   do {
@@ -49413,7 +51251,8 @@ undefined4 param_1;
 
 
 
-void FUN_000689a0()
+// was FUN_000689a0
+void movement_pacing_handler()
 
 {
   byte bVar1;
@@ -49463,13 +51302,14 @@ void FUN_000689a0()
   }
   bVar1 = DAT_0023bf58;
   DAT_0023bf58 = bVar2;
-  FUN_00068ad4(uVar6 & 0xffff,bVar1,0);
+  movement_tick(uVar6 & 0xffff,bVar1,0);
   return;
 }
 
 
 
-void FUN_00068ad4(param_1,param_2,param_3)
+// was FUN_00068ad4
+void movement_tick(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
 int param_3;
@@ -49492,12 +51332,12 @@ int param_3;
   DAT_0023be98 = 0;
   DAT_0023bf18 = (char)param_1 + DAT_0023bf18;
   if (DAT_0023bf1c == 0) {
-    FUN_000685e8();
+    decode_movement_command();
   }
   if ((((((DAT_0023bf1c != 0) || (DAT_00204894 != 0)) || (DAT_0020488a != 0)) ||
        ((DAT_00204890 != 0 || (DAT_0020488e != 0)))) || ((DAT_0020488c != 0 || (DAT_000858a0 != 0)))
       ) && (param_3 == 0)) {
-    FUN_00068cac(param_1);
+    apply_movement_tick(param_1);
   }
   if (((DAT_00086dfc != 0) && (DAT_002020d0 == 0)) && ((short)param_2 != 0)) {
     FUN_000349bc(param_2);
@@ -49575,29 +51415,41 @@ void FUN_00068c1c()
   DAT_0023bf1c = 0;
   while ((((DAT_00204894 != 0 || (DAT_0020488a != 0)) || (DAT_00204890 != 0)) ||
          (((DAT_0020488e != 0 || (DAT_0020488c != 0)) || (DAT_000858a0 != 0))))) {
-    FUN_00068cac(0x40);
+    apply_movement_tick(0x40);
   }
   return;
 }
 
 
 
-void FUN_00068cac()
+// was FUN_00068cac
+/* Was called with no args from both call sites (movement_tick's real
+   time-delta param_1, and FUN_00068c1c's literal 0x40) -- dropped
+   argument, same pattern as apply_heading_turn below (which this
+   function itself calls with no args, same bug one level deeper).
+   Confirmed this matters now that the DAT_00204880-relative struct
+   fields are correctly aliased (see that fix's comment): apply_heading_turn
+   writes this forwarded value into DAT_00204892 (struct offset 0x12,
+   the "speed" field movement_sweep_setup's movement engine reads), so losing
+   it here meant that field could never become the real per-tick delta
+   even once the aliasing bug was fixed. */
+void apply_movement_tick(param_1)
+undefined4 param_1;
 
 {
   byte bVar1;
   char cVar2;
   char cVar3;
   short sVar4;
-  
+
   DAT_002048a5 = (&DAT_00202c91)[(*DAT_0023be64 & 0x1ff) * 0xd] & 7;
   DAT_002048a6 = (&DAT_00202c90)[(*DAT_0023be64 & 0x1ff) * 0xd];
   DAT_0023be9e = 0;
   DAT_0023be9c = 0;
   DAT_0023be9a = 0;
-  FUN_0003ce04();
-  FUN_0005878c(&DAT_00204880,&DAT_002048b0);
-  FUN_0003d438();
+  apply_heading_turn(param_1);
+  movement_collision_sweep(&DAT_00204880,&DAT_002048b0);
+  update_3d_sound_position();
   FUN_00049924(10);
   sVar4 = DAT_0023bf1c;
   bVar1 = DAT_0023bf18;
@@ -49808,7 +51660,7 @@ LAB_00069910:
         if (DAT_0023b82c != DAT_002046b8 - 0x36) {
           return;
         }
-        FUN_00049ce8(DAT_0023bea4,&local_a,&local_c);
+        angle_to_screen_delta(DAT_0023bea4,&local_a,&local_c);
         iVar1 = (int)((0x40 - (uint)DAT_0023bf08) * 0x10000) >> 0x10;
         iVar5 = (int)local_a;
         if (iVar5 < 0) {
@@ -49844,7 +51696,7 @@ LAB_00069910:
         sVar4 = DAT_0023bf08 << 0xb;
         goto LAB_00069910;
       }
-      FUN_00049ce8((int)DAT_00201c70,&local_c,&local_a);
+      angle_to_screen_delta((int)DAT_00201c70,&local_c,&local_a);
       *(short *)(DAT_00086e6c + 10) = DAT_00204880 - (local_c >> 7);
       *(short *)(DAT_00086e6c + 0x12) = DAT_00204882 - (local_a >> 7);
       *(short *)(DAT_00086e6c + 0xe) = DAT_00204884 + 0x148;
@@ -49865,13 +51717,13 @@ void FUN_00069938()
   char cVar1;
   ushort uVar2;
   ushort uVar3;
-  int iVar4;
+  intptr_t iVar4; // holds DAT_00086e6c (a real pointer); was `int`, truncating it
   ushort uVar5;
   int iVar6;
   ushort uVar7;
   short sVar8;
   ushort local_20;
-  
+
   cVar1 = DAT_0023b4a0;
   iVar4 = DAT_00086e6c;
   sVar8 = 0;
@@ -49916,6 +51768,13 @@ void FUN_00069938()
     }
     DAT_000db448 = (iVar6 >> 8) + (int)DAT_0023bf3c;
   }
+  /* Hack - Testing: UW_HACK_PITCH overrides the camera pitch angle
+     (index into the sin/cos tables, 0..360). DAT_0023beb4 / DAT_0023bf3c
+     come out 0 with nothing driving the look-up/down, so the 3D view
+     looks dead level and the floor you are standing on projects entirely
+     below the viewport. A downward pitch (~300-340) brings it into view
+     for testing -- the real look pitch source is still unrecovered. */
+  { const char *_p = getenv("UW_HACK_PITCH"); if (_p) DAT_000db448 = atoi(_p); }
   if (cVar1 == '\0') {
     sVar8 = *(short *)(iVar4 + 0x2c);
   }
@@ -49929,11 +51788,16 @@ void FUN_00069938()
     sVar8 = *(short *)(iVar4 + 0x2c) + 0x4000;
   }
   if (sVar8 < 1) {
-    iVar4 = Ordinal_2005(0xb4);
+    /* Ghidra dropped the dividend: this is the 16-bit view angle sVar8
+       converted to degrees, angle / 180 (0xb4). Without sVar8 passed
+       the divide ran on a leftover register -> yaw came out 0/360 ->
+       identity view rotation -> every tile projected behind the near
+       plane. */
+    iVar4 = Ordinal_2005(0xb4, (int)sVar8);
     DAT_000db44c = iVar4 + DAT_0023bf40 + 0x168;
   }
   else {
-    iVar4 = Ordinal_2005();
+    iVar4 = Ordinal_2005(0xb4, (int)sVar8);
     DAT_000db44c = iVar4 + DAT_0023bf40;
   }
   return;
@@ -50178,7 +52042,7 @@ short param_2;
   if ((0 < param_2) && (iVar2 = (int)(short)param_1, 0 < iVar2)) {
     do {
       iVar2 = (iVar2 + -1) * 0x10000 >> 0x10;
-      sVar1 = FUN_00022910((int)param_2);
+      sVar1 = rand_below((int)param_2);
       param_1 = param_1 + sVar1;
     } while (iVar2 != 0);
   }
@@ -50223,11 +52087,31 @@ void FUN_0006a168()
   
   uVar1 = FUN_0002294c();
   if (0xd < (int)((uVar1 & 0xffff) - (uint)DAT_0023bf74)) {
-    FUN_000259c0(0x40,0x40,1);
-    FUN_0007e99c(0x40,0x40,0);
+    palette_cycle_range(0x40,0x40,1);
+    reinstall_active_palette(0x40,0x40,0);
+    /* Palette-cycle animation on the menu's "Ultima Underworld" title (and
+       the copyright line): palette_cycle_range rotates PALS entries
+       0x40..0x7f -- the gold gradient ramp -- and reinstall_active_palette
+       rebuilds g_palette_rgb565. On the original 8bpp target the hardware
+       palette swap animated the screen for free; this port draws straight
+       to RGB565, so the already-composited pixels have to be recoloured
+       here. Re-blit exactly the pixels whose OPSCR source index is in the
+       cycled range (0x40..0x7f) -- that hits the title/copyright and never
+       the menu buttons (drawn on top, over non-gold stone). */
+    if (DAT_0023bf70 != (char *)0x0) {
+      unsigned char *_src = (unsigned char *)DAT_0023bf70;
+      unsigned short *_dst = (unsigned short *)g_uw_framebuffer;
+      unsigned short *_lut = &g_palette_rgb565;
+      int _i;
+      for (_i = 0; _i < 0x140 * 200; _i++) {
+        unsigned char _ix = _src[_i];
+        if ((_ix & 0xc0) == 0x40) _dst[_i] = _lut[_ix];
+      }
+      FUN_00011000(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
+    }
     DAT_0023bf74 = FUN_0002294c();
   }
-  FUN_00022f0c(1);
+  flush_dirty_rect_to_display(1);
   return;
 }
 
@@ -50318,7 +52202,7 @@ short param_4;
         if (iVar2 < 0) {
           iVar2 = iVar2 + 1;
         }
-        FUN_00011060(*ppcVar5,0xa0 - (short)(iVar2 >> 1),iVar4 * 0x16 + 100);
+        draw_text_string(*ppcVar5,0xa0 - (short)(iVar2 >> 1),iVar4 * 0x16 + 100);
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
       } while (iVar4 < param_1);
     }
@@ -50445,7 +52329,8 @@ char param_3;
 
 
 
-int FUN_0006af3c(param_1,param_2,param_3,param_4)
+// was FUN_0006af3c
+int menu_button_list_navigate(param_1,param_2,param_3,param_4)
 int param_1;
 char *param_2;
 undefined1 param_3;
@@ -50465,8 +52350,14 @@ int param_4;
     FUN_0006a200(param_1,param_2,param_3,param_4);
     FUN_00040d00(s_font5x6p_sys_0008430c);
     while (sVar2 = FUN_00057a70(), sVar2 < 0) {
+      ushort _cyc_t = DAT_0023bf74;
       FUN_000735fc();
       FUN_0006a168();
+      /* FUN_0006a168 rotated the gold gradient palette (indices 0x40..0x7f)
+         this tick and re-blitted the OPSCR title; recolour the menu-item
+         bitmaps too so they shimmer in step with the title, the way the
+         original's hardware palette swap did. */
+      if (DAT_0023bf74 != _cyc_t) FUN_0006a200(param_1,param_2,param_3,param_4);
     }
     sVar1 = (short)param_1;
     iVar3 = param_4;
@@ -50629,7 +52520,7 @@ undefined4 FUN_0006b178()
     }
     uVar7 = (int)((uVar7 + 1) * 0x10000) >> 0x10;
   } while ((int)uVar7 < 4);
-  sVar2 = FUN_0006af3c(iVar4,local_1d0,1,0);
+  sVar2 = menu_button_list_navigate(iVar4,local_1d0,1,0);
   if (sVar2 < 0) {
     uVar5 = 0;
   }
@@ -50663,7 +52554,7 @@ undefined4 FUN_0006b178()
     if (iVar8 < 0) {
       iVar8 = -(int)sVar2 + 0x141;
     }
-    FUN_00011060(uVar5,(short)(iVar8 >> 1) + 10,0x5a);
+    draw_text_string(uVar5,(short)(iVar8 >> 1) + 10,0x5a);
     FUN_00040d00(s_font5x6p_sys_0008430c);
     iVar4 = FUN_0006c0c0(iVar4 + 1);
     if (iVar4 == 0) {
@@ -51018,7 +52909,7 @@ undefined4 param_1;
   if (-1 < DAT_00202080) {
     DAT_00202080 = -1;
   }
-  iVar2 = FUN_00015870(auStack_1c,s__SAVE0_lev_ark_000842fc);
+  iVar2 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc);
   if (iVar2 == 0) {
     iVar2 = 0;
   }
@@ -51027,7 +52918,7 @@ undefined4 param_1;
     iVar2 = (int)sVar1;
     FUN_00044624(0);
     if (0 < iVar2) {
-      FUN_0005b188(auStack_1c,param_1);
+      load_level_texture_ids(auStack_1c,param_1);
       FUN_000165bc();
       FUN_0002dba4();
       FUN_000359f4();
@@ -51054,13 +52945,13 @@ undefined4 param_1;
   FUN_00043fd8(0);
   FUN_000444b0(DAT_0023be64 + 3);
   if (-1 < DAT_00202080) {
-    FUN_00053274(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
   }
   DAT_00202080 = 0xffff;
   uVar1 = *DAT_0023be64;
   *(char *)DAT_0023be64 = (char)(uVar1 & 0xfe3f);
   *(char *)((char *)DAT_0023be64 + 1) = (char)((uVar1 & 0xfe3f) >> 8);
-  iVar2 = FUN_00015870(auStack_20,s__SAVE0_lev_ark_000842fc);
+  iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   uVar3 = 0;
   if (iVar2 != 0) {
     iVar2 = FUN_00049b04(auStack_20,param_1);
@@ -51603,11 +53494,11 @@ int param_3;
       }
       FUN_000116a4(0,0,0x13f,199);
       if (-1 < (short)param_1) {
-        FUN_00040efc(param_1);
+        set_palette_bank(param_1);
       }
       bitmap_blit_to_framebuffer(0,0,iVar1,200,0x140,0,0,0);
       if (param_3 != 0) {
-        FUN_00022f0c(1);
+        flush_dirty_rect_to_display(1);
       }
     }
     Ordinal_1018(iVar1);
@@ -51644,7 +53535,7 @@ short param_1;
     }
     iVar4 = 0x2025;
   }
-  FUN_00040b0c(0x2057,(int)*(short *)(&DAT_000870ec + iVar1 * 2),0x7e,1,1);
+  draw_sprite_by_id(0x2057,(int)*(short *)(&DAT_000870ec + iVar1 * 2),0x7e,1,1);
   iVar3 = 0;
   pbVar5 = &DAT_0023c118 + iVar1;
   if (*pbVar5 != 0) {
@@ -52742,7 +54633,9 @@ bool FUN_0006e89c()
 
 
 void FUN_0006e96c(param_1)
-int param_1;
+/* Was `int`, truncating the real pointer callers pass (DAT_00086df8 +
+   0x47, DAT_00086df8 being a genuine `char *`). */
+char *param_1;
 
 {
   undefined4 uVar1;
@@ -52776,7 +54669,8 @@ int param_1;
 
 
 void FUN_0006ea54(param_1)
-int param_1;
+/* Same truncation bug as its sibling FUN_0006e96c above. */
+char *param_1;
 
 {
   undefined4 uVar1;
@@ -52889,7 +54783,7 @@ void FUN_0006ed0c()
     bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
     (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
     set_draw_color(0x1a);
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     FUN_000570b4();
   }
   return;
@@ -53117,8 +55011,8 @@ bool FUN_0006edfc()
         }
       }
     }
-    FUN_00040b0c(DAT_0023c208 + 0x20b8,0x110,4,1,1);
-    FUN_00040b0c(DAT_0023c208 + 0x20b0,0x110,0x7a,1,1);
+    draw_sprite_by_id(DAT_0023c208 + 0x20b8,0x110,4,1,1);
+    draw_sprite_by_id(DAT_0023c208 + 0x20b0,0x110,0x7a,1,1);
     FUN_000570b4();
     goto LAB_0006f6c8;
   }
@@ -53128,8 +55022,8 @@ bool FUN_0006edfc()
     FUN_00057118();
     set_draw_color(0xf1);
     rect_fill_or_save_restore(0xec,8,0x13f,0x7a);
-    FUN_00040b0c(0x20bc,0x110,4,1,1);
-    FUN_00040b0c(0x20b4,0x110,0x7a,1,1);
+    draw_sprite_by_id(0x20bc,0x110,4,1,1);
+    draw_sprite_by_id(0x20b4,0x110,0x7a,1,1);
     bitmap_blit_to_framebuffer(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
 LAB_0006f008:
     FUN_000570b4();
@@ -53148,8 +55042,8 @@ LAB_0006f008:
       (*(code *)(&PTR_FUN_00087220)[DAT_0023c134])();
       screen_backup_save();
       DAT_0023c1d4 = uVar1;
-      FUN_00040b0c(0x20b8,0x110,4,1,1);
-      FUN_00040b0c(0x20b0,0x110,0x7a,1,1);
+      draw_sprite_by_id(0x20b8,0x110,4,1,1);
+      draw_sprite_by_id(0x20b0,0x110,0x7a,1,1);
       set_draw_color(0x1a);
       rect_fill_or_save_restore(0xec,8,0x13e,0x79);
       goto LAB_0006f008;
@@ -53459,12 +55353,21 @@ char param_1;
   char *pcVar2;
   int iVar3;
   char *pcVar4;
-  short local_12c;
-  undefined2 local_12a;
-  undefined2 local_128;
-  short local_126;
-  undefined2 local_124;
-  undefined2 local_122;
+  /* Ghidra modelled the 12-byte SHADES.DAT per-level header as six
+     separate `short` locals that FUN_0002285c(&local_12c, 0xc) reads
+     into as one contiguous block -- but the C compiler is free to lay
+     them out non-contiguously / reorder them, so only local_12c landed
+     where the read wrote and local_12a..local_122 read stack garbage
+     (observed: DAT_00086b24, the texture-LOD distance threshold, came
+     out 0 instead of the file's 16 -> every visible tile fell to the
+     16x16 low-detail texture, walls included). Real 6-short array. */
+  short _shades_hdr[6];
+#define local_12c (_shades_hdr[0])
+#define local_12a (_shades_hdr[1])
+#define local_128 (_shades_hdr[2])
+#define local_126 (_shades_hdr[3])
+#define local_124 (_shades_hdr[4])
+#define local_122 (_shades_hdr[5])
   char acStack_11c [260];
   
   if (DAT_000872a0 == param_1) {
@@ -53513,7 +55416,7 @@ LAB_0006fff4:
   iVar3 = FUN_000227d4(acStack_11c);
   if (iVar3 != -1) {
     FUN_00022850(iVar3,param_1 * 0xc0000 >> 0x10,0);
-    FUN_0002285c(iVar3,&local_12c,0xc);
+    FUN_0002285c(iVar3,_shades_hdr,0xc);
     DAT_0025063c = local_12c;
     if (local_12c < 2) {
       DAT_0025063c = 1;
@@ -53524,15 +55427,22 @@ LAB_0006fff4:
     DAT_00086b28 = local_124;
     DAT_00086b24 = local_122;
     Ordinal_553(iVar3);
-    FUN_0005bdcc((int)DAT_0023bca0);
+    build_visibility_light_grid((int)DAT_0023bca0);
     FUN_00049924(2);
   }
   return;
 }
+#undef local_12c
+#undef local_12a
+#undef local_128
+#undef local_126
+#undef local_124
+#undef local_122
 
 
 
-void FUN_00070118()
+// was FUN_00070118
+void load_light_tables()
 
 {
   char stack0xffdc323c_buf [256];
@@ -53738,7 +55648,7 @@ short param_1;
   cVar3 = Ordinal_2005(uVar6,uVar2);
   *(char *)(pcVar_df8 + 0x21) = cVar3 + *(char *)(pcVar_df8 + 0x21);
   iVar5 = (int)sVar7;
-  cVar3 = FUN_00022910(iVar5);
+  cVar3 = rand_below(iVar5);
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
   if (iVar5 != 0) {
     do {
@@ -53985,7 +55895,7 @@ LAB_00070c78:
         iVar7 = 7;
       }
       else {
-        iVar7 = FUN_00022910(cVar11);
+        iVar7 = rand_below(cVar11);
         iVar7 = (sVar13 + iVar7) * 0x1000000 >> 0x18;
       }
       iVar9 = FUN_0007067c(iVar7);
@@ -54023,7 +55933,7 @@ void FUN_00070c90()
      this 64-bit host -- same bug class as the other FUN_0007863c
      truncation fixes this session (e.g. character_generator_loop's uVar10). Used
      consistently as a string pointer everywhere else in this function
-     (FUN_00011060's first arg, Ordinal_1063's second arg), so retyping
+     (draw_text_string's first arg, Ordinal_1063's second arg), so retyping
      is a straightforward drop-in fix. */
   char *uVar7;
   char *pcVar8;
@@ -54045,7 +55955,7 @@ void FUN_00070c90()
   *DAT_00084298 = 0x5c;
   *DAT_0008429c = 0x5c;
   uVar7 = FUN_0007863c((int)DAT_00201c74);
-  /* Was `FUN_000112a0()` with no argument -- see FUN_00011060/
+  /* Was `FUN_000112a0()` with no argument -- see draw_text_string/
      FUN_000112a0's own comments above for the root "dropped argument"
      bug this matches; uVar7 (the string FUN_0007863c just returned) is
      right here, so pass it explicitly instead of hoping it's still
@@ -54055,7 +55965,7 @@ void FUN_00070c90()
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
   }
-  FUN_00011060(uVar7,0xa0 - (short)((int)(iVar12) >> 1),0x14);
+  draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),0x14);
   pcVar8 = (char *)FUN_0007863c(699);
   pcVar11 = local_58;
   do {
@@ -54084,7 +55994,7 @@ void FUN_00070c90()
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
   }
-  FUN_00011060(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
+  draw_text_string(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   uVar7 = FUN_0007863c(700);
   iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
   sVar6 = FUN_000112a0(uVar7);
@@ -54092,7 +56002,7 @@ void FUN_00070c90()
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
   }
-  FUN_00011060(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
+  draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   sVar6 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
   sVar6 = Ordinal_2005(0xc,(int)sVar6);
   pcVar8 = (char *)FUN_0007863c(0x2bd);
@@ -54113,7 +56023,7 @@ void FUN_00070c90()
     iVar12 = iVar12 + 1;
   }
   iVar13 = CONCAT11(*(undefined1 *)(DAT_000879b0 + 7),*(undefined1 *)(DAT_000879b0 + 6)) + iVar13;
-  FUN_00011060(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
+  draw_text_string(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   iVar12 = 0;
   iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
   do {
@@ -54148,8 +56058,8 @@ void FUN_00070c90()
 LAB_00071110:
     local_70 = (short)((uint)(iVar13 * 0x10000) >> 0x10);
     iVar14 = (int)extraout_r1_01 * (int)sVar2 + (int)local_70;
-    FUN_00011060(uVar7,(int)sVar6,iVar14);
-    FUN_00011060(local_58,sVar6 + 0x2d,iVar14);
+    draw_text_string(uVar7,(int)sVar6,iVar14);
+    draw_text_string(local_58,sVar6 + 0x2d,iVar14);
     iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
     if (5 < iVar12) {
       iVar12 = 0;
@@ -54179,12 +56089,12 @@ LAB_00071110:
           iVar13 = *(short *)(iVar14 + 6) + iVar13;
         }
         iVar14 = (short)extraout_r1_02 * 0x4a + 0x32;
-        FUN_00011060(uVar7,iVar14,iVar13);
+        draw_text_string(uVar7,iVar14,iVar13);
         iVar9 = FUN_000112a0(local_58);
-        FUN_00011060(local_58,(iVar14 - iVar9) + 0x46,iVar13);
+        draw_text_string(local_58,(iVar14 - iVar9) + 0x46,iVar13);
         iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
       } while (iVar12 < 0x14);
-      FUN_00022f0c(1);
+      flush_dirty_rect_to_display(1);
       return;
     }
   } while( true );
@@ -54296,7 +56206,7 @@ short param_1;
   bVar2 = true;
   if (param_1 < 0) {
 LAB_0007158c:
-    FUN_0005bb5c();
+    full_dungeon_redraw();
     FUN_000735b0(0xd);
     FUN_00073634();
     FUN_000411b8(5);
@@ -54421,7 +56331,7 @@ LAB_0007158c:
       DAT_00204888 = 0;
       DAT_00204886 = 0;
       FUN_00078550();
-      FUN_0005bb5c();
+      full_dungeon_redraw();
       FUN_000735c0();
       if (bVar2) {
         FUN_000411cc(5);
@@ -54511,16 +56421,16 @@ void FUN_00071b94()
         *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar2 >> 8) | 0x80;
         *(byte *)(puVar5 + 3) = *(byte *)(puVar5 + 3) & 0x3f;
         *(undefined1 *)((char *)puVar5 + 7) = 0xb0;
-        iVar6 = FUN_00068100(0x20,0x20);
+        iVar6 = tilemap_lookup(0x20,0x20);
         local_11c = iVar6 + 2;
-        FUN_000531a0(local_11c,puVar5);
+        object_list_append_tail(local_11c,puVar5);
       }
       FUN_00078c80(0x117);
       FUN_00067f1c(0xffffffff);
       FUN_000411b8(5);
       if (puVar5 != (undefined2 *)0x0) {
-        FUN_00053274(local_11c,puVar5);
-        FUN_00053004(puVar5);
+        object_list_unlink(local_11c,puVar5);
+        free_object_slot(puVar5);
       }
       FUN_000396a0(DAT_0023be64,0x1b,0x17,9);
       *(undefined1 *)(DAT_00086df8 + 0x6d) = 0xff;
@@ -54534,6 +56444,7 @@ void FUN_00071b94()
     FUN_00011000(0,200,0,0x140);
     *(undefined1 *)(DAT_00085a6c + 8) = 0;
     *(undefined1 *)(DAT_00085a6c + 9) = 0;
+  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
     DAT_000868d8 = 2;
     FUN_00037c14(1);
     FUN_00057118();
@@ -54596,7 +56507,7 @@ undefined4 FUN_00071e20()
     local_16 = DAT_00204880 >> 5;
     local_18 = DAT_00204882 >> 5;
     FUN_00069f2c((int)DAT_00201c70 >> 8,0xb,&local_16,&local_18);
-    puVar5 = (ushort *)FUN_00068100((int)(short)local_16 >> 3,(int)(short)local_18 >> 3);
+    puVar5 = (ushort *)tilemap_lookup((int)(short)local_16 >> 3,(int)(short)local_18 >> 3);
     uVar1 = *puVar5;
     if (((uVar1 & 0xf) == 1) &&
        (((((sVar3 = (&DAT_0023adb8)[uVar1 >> 10 & 0xf], 4 < sVar3 && (sVar3 < 0xc)) ||
@@ -54625,10 +56536,10 @@ undefined4 FUN_00071e20()
         if (sVar3 != 0) {
           *(byte *)(DAT_00086df8 + 0x5e) =
                (byte)(((int)DAT_00201b68 & 0xfU) << 4) | *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
-          FUN_000530c4(puVar5 + 1,puVar7);
+          object_list_insert_head(puVar5 + 1,puVar7);
           return 1;
         }
-        FUN_00053004(puVar7);
+        free_object_slot(puVar7);
       }
     }
     uVar4 = 0;
@@ -54675,7 +56586,7 @@ void FUN_0007213c()
       *(byte *)(DAT_0023be64 + 8) = *(byte *)(DAT_0023be74 + 4);
     }
     else {
-      cVar1 = FUN_00022910(3);
+      cVar1 = rand_below(3);
       *(char *)(DAT_0023be64 + 8) = (-2 - cVar1) + *(char *)(DAT_0023be74 + 4);
     }
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
@@ -54718,7 +56629,7 @@ void FUN_00072288()
   thunk_FUN_00072c44();
   FUN_00072910(10,1);
   FUN_00069bd0((int)((uint)(*(uint3 *)(DAT_00086df8 + 0x4e) >> 3) * -0x10000) >> 0x10);
-  FUN_0005bb5c();
+  full_dungeon_redraw();
   FUN_000411b8(5);
   FUN_00027694();
   if (DAT_00202948 != 0) {
@@ -54786,7 +56697,7 @@ undefined4 param_2;
       (local_c = (ushort *)(param_1 + 6), (*local_c & 0xffc0) != 0)) &&
      (pbVar1 = (byte *)FUN_000537d0(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
     if (0x1f < (*pbVar1 & 0x30)) {
-      pbVar1 = (byte *)FUN_00053514();
+      pbVar1 = (byte *)resolve_object_link();
     }
     if ((*pbVar1 & 0x3f) < 3) {
       uVar2 = FUN_00069b68(param_2,8);
@@ -54828,7 +56739,7 @@ undefined4 param_2;
         pbVar4 = pbVar3;
       }
       else {
-        pbVar4 = (byte *)FUN_00053514(pbVar3 + 6);
+        pbVar4 = (byte *)resolve_object_link(pbVar3 + 6);
         pbVar7 = pbVar3;
       }
       if ((*pbVar4 & 0x3f) < 3) {
@@ -55387,7 +57298,7 @@ short param_1;
     uVar4 = FUN_00057a70();
     uVar1 = (ushort)uVar4;
     if (uVar1 == 0x1b) break;
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     if (((uVar1 != 0) && (0x2f < (short)(uVar1 & 0xfcff))) && ((short)(uVar1 & 0xfcff) < 0x3a)) {
       uVar2 = (uVar4 & 0xff) - 0x30;
       if ((uVar2 & 0xff) == 0) {
@@ -55750,7 +57661,7 @@ byte FUN_00073b18()
 {
   int iVar1;
   
-  iVar1 = FUN_00068100();
+  iVar1 = tilemap_lookup();
   return *(byte *)(iVar1 + 1) >> 6 & 1;
 }
 
@@ -56109,10 +58020,10 @@ undefined1 param_5;
   Ordinal_2005(4,uVar3);
   sVar1 = FUN_00080ed4(uVar4,4,extraout_r1 & 0xff,param_1 & 0xff,uVar5);
   if (sVar1 == -1) {
-    FUN_00053004(uVar2);
+    free_object_slot(uVar2);
   }
   else {
-    FUN_000530c4(param_4 + 2,uVar2);
+    object_list_insert_head(param_4 + 2,uVar2);
   }
   return 1;
 }
@@ -56140,10 +58051,10 @@ undefined1 param_5;
   uVar3 = FUN_0005358c(uVar2);
   sVar1 = FUN_00080ed4(uVar3,4,0,param_1 & 0xff,(char)param_2);
   if (sVar1 == -1) {
-    FUN_00053004(uVar2);
+    free_object_slot(uVar2);
   }
   else {
-    FUN_000530c4(param_4 + 2,uVar2);
+    object_list_insert_head(param_4 + 2,uVar2);
     FUN_00081388(uVar2,param_1,param_2);
   }
   return 1;
@@ -56353,7 +58264,7 @@ char param_8;
       if ((0 < iVar1) && (iVar8 = (int)cVar11, 0 < iVar8)) {
         iVar12 = (int)param_6;
         iVar10 = (int)param_5;
-        iVar16 = FUN_00068100(iVar10,iVar12);
+        iVar16 = tilemap_lookup(iVar10,iVar12);
         iVar9 = iVar1 + param_5;
         do {
           local_60 = (short)iVar10;
@@ -56382,7 +58293,7 @@ char param_8;
                     }
                     else {
                       puVar13 = (ushort *)(pbVar14 + 2);
-                      puVar6 = (ushort *)FUN_00053514(puVar13);
+                      puVar6 = (ushort *)resolve_object_link(puVar13);
                       while (puVar6 != (ushort *)0x0) {
                         uVar2 = *puVar13;
                         if (param_4 == -0x80) {
@@ -56408,7 +58319,7 @@ LAB_000749bc:
                         if (*puVar13 >> 6 == uVar2 >> 6) {
                           puVar13 = puVar6 + 2;
                         }
-                        puVar6 = (ushort *)FUN_00053514(puVar13);
+                        puVar6 = (ushort *)resolve_object_link(puVar13);
                       }
                     }
                   }
@@ -56583,7 +58494,7 @@ char param_2;
     }
   }
   else {
-    pbVar5 = (byte *)FUN_00068100();
+    pbVar5 = (byte *)tilemap_lookup();
     local_30 = (ushort)(*pbVar5 >> 4) << 3;
     local_28 = pbVar5;
     if (param_2 == '\x01') {
@@ -56669,7 +58580,7 @@ char param_2;
       bVar1 = (byte)uVar7;
       *(byte *)(iVar8 + 2) = (bVar1 ^ (byte)local_30) & 0x7f ^ bVar1;
       *(char *)(iVar8 + 3) = (char)((ushort)uVar7 >> 8);
-      FUN_000530c4(pbVar5 + 2,iVar8);
+      object_list_insert_head(pbVar5 + 2,iVar8);
       if (param_2 == '\x04') {
         return;
       }
@@ -56708,7 +58619,7 @@ int param_2;
   *(byte *)(iVar4 + 2) = (byte)uVar6 | 0x6e;
   *(char *)(iVar4 + 3) = (char)(uVar6 >> 8);
   iVar5 = FUN_000522f0(param_1 * 8 + 3,param_2 * 8 + 3,0x6e,iVar4,0,0);
-  if ((iVar5 != 0) && (iVar5 = FUN_00053728(iVar4), iVar5 != 0)) {
+  if ((iVar5 != 0) && (iVar5 = object_ptr_in_arena(iVar4), iVar5 != 0)) {
     bVar1 = Ordinal_1053();
     *(byte *)(iVar4 + 0x13) =
          ((bVar1 & 3) + 2 ^ *(byte *)(iVar4 + 0x13)) & 0x7f ^ *(byte *)(iVar4 + 0x13);
@@ -56932,7 +58843,7 @@ LAB_0007588c:
     else {
       DAT_00201c9c = &LAB_00072268;
       FUN_000396a0(DAT_0023be64,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
-      FUN_0003cff8(0,0,0);
+      set_player_tile_position(0,0,0);
       FUN_00049924(0x7ffe);
     }
     break;
@@ -56974,11 +58885,11 @@ undefined1 param_4;
   
   bVar5 = param_3 - 1;
   if (param_3 != '\0') {
-    iVar2 = FUN_00068100(param_1);
-    iVar2 = FUN_00053514(iVar2 + 2);
+    iVar2 = tilemap_lookup(param_1);
+    iVar2 = resolve_object_link(iVar2 + 2);
     if (iVar2 != 0) {
       do {
-        iVar3 = FUN_00053514(iVar2 + 4);
+        iVar3 = resolve_object_link(iVar2 + 4);
         uVar1 = FUN_0006a058((&DAT_0008762c)[bVar5],(&DAT_00087630)[bVar5]);
         uVar4 = FUN_000535fc(param_4);
         FUN_00038374(iVar2,uVar4,param_1,(int)param_2,uVar1,(&DAT_00087634)[bVar5]);
@@ -57215,8 +59126,11 @@ undefined2 param_5;
 
 {
   undefined4 uVar1;
-  int iVar2;
-  
+  /* Was `int`, truncating the real DAT_0023c3e8 slot-record pointer
+     computed here (same bug as its sibling functions FUN_00076338 and
+     FUN_0007699c below, which compute the identical expression). */
+  char * iVar2;
+
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
     *(char *)(iVar2 + 6) = (char)param_4;
@@ -57245,7 +59159,7 @@ undefined4 param_3;
 
 {
   undefined4 uVar1;
-  int iVar2;
+  char * iVar2;
   
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
@@ -57399,7 +59313,7 @@ void FUN_00076508()
               *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
             }
             else {
-              FUN_00076b8c(*(undefined4 *)(puVar3 + 8),(int)(short)puVar3[1],(int)(short)puVar3[2],
+              capture_framebuffer_rect_to_grtile(*(undefined4 *)(puVar3 + 8),(int)(short)puVar3[1],(int)(short)puVar3[2],
                            (int)(short)puVar3[3],puVar3[4]);
             }
             puVar4 = puVar4 + 1;
@@ -57414,14 +59328,14 @@ void FUN_00076508()
               if (puVar4[5] == 0) {
                 DAT_00088960 = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
-                  FUN_00040b0c((int)(short)puVar4[7],
+                  draw_sprite_by_id((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
                                puVar4[3]);
                 }
                 else {
-                  FUN_00040b0c((int)(short)puVar4[7],
+                  draw_sprite_by_id((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
@@ -57471,7 +59385,7 @@ undefined4 param_2;
 
 {
   undefined4 uVar1;
-  int iVar2;
+  char * iVar2;
   
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
@@ -57515,7 +59429,7 @@ uint param_2;
      packed byte-by-byte into the record below as an opaque 4-byte
      identity key, and *that* truncated key -- not the real pointer -- is
      what this function returns and what all 11 of its other callers
-     store/compare/pass into FUN_00076e98/FUN_00076b8c ("does this key
+     store/compare/pass into FUN_00076e98/capture_framebuffer_rect_to_grtile ("does this key
      match a record's stored key"): self-consistent lookups that don't
      need the real address, so leave this alone. The one caller that DOES
      need the real, dereferenceable pointer (FUN_00041708, feeding a
@@ -57535,11 +59449,11 @@ uint param_2;
   }
   iVar3 = (param_1 & 0xffff) * (param_2 & 0xffff);
   uVar1 = Ordinal_1041(iVar3);
-  /* FUN_00076b8c (one of the "11 other callers" mentioned above) turns
+  /* capture_framebuffer_rect_to_grtile (one of the "11 other callers" mentioned above) turns
      out to ALSO need the real pointer -- it renders glyph pixels
      directly into this buffer, not just compare-by-key -- so track the
      real address alongside the truncated key, indexed the same way
-     FUN_00076b8c's own search loop does (record position / 0x11). A
+     capture_framebuffer_rect_to_grtile's own search loop does (record position / 0x11). A
      real 64-bit heap address can't be losslessly recovered from the
      low-32-bits-only identity key on this host. */
   g_grtile_real_ptrs[((char *)puVar2 - (char *)DAT_0023c3fc) / 0x11] = uVar1;
@@ -57605,7 +59519,8 @@ int param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-undefined4 FUN_00076b8c(param_1,param_2,param_3,param_4,param_5)
+// was FUN_00076b8c
+undefined4 capture_framebuffer_rect_to_grtile(param_1,param_2,param_3,param_4,param_5)
 short * param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -57755,7 +59670,7 @@ short * param_1;
   int iVar6;
   int iVar7;
   /* param_1 is FUN_00076a2c's opaque truncated identity key, not a
-     real pointer -- same issue as FUN_00076b8c above. Read glyph
+     real pointer -- same issue as capture_framebuffer_rect_to_grtile above. Read glyph
      pixels back through the real pointer tracked in
      g_grtile_real_ptrs instead of dereferencing the key directly. */
   short *psVar_target;
@@ -57799,6 +59714,7 @@ short * param_1;
       iVar6 = iVar6 + (0x140 - iVar1);
     } while (iVar5 < iVar3);
   }
+  debug_framebuffer_dump("FUN_00076e98");
   return 0;
 }
 
@@ -58076,7 +59992,7 @@ undefined4 FUN_000778fc()
     if (DAT_0023cdbc < 0) {
       iVar5 = DAT_0023cdbc + 1;
     }
-    /* Same DAT_0023c430 (framebuffer pointer) truncation as FUN_00022b54
+    /* Same DAT_0023c430 (framebuffer pointer) truncation as build_rgb565_palette
        above -- see its comment. */
     puVar3 = (undefined2 *)((iVar4 >> 1) * 400 + (intptr_t)DAT_0023c430);
     do {
@@ -58086,7 +60002,7 @@ undefined4 FUN_000778fc()
       do {
         puVar1 = puVar1 + (iVar5 >> 1);
         iVar8 = iVar8 + -1;
-        /* Bounds-guard: see the identical loop in FUN_00022b54. */
+        /* Bounds-guard: see the identical loop in build_rgb565_palette. */
         if ((char *)puVar1 >= (char *)DAT_0023c430 &&
             (char *)(puVar1 + 1) <= (char *)DAT_0023c430 + 153600) {
           *puVar1 = *puVar6;
@@ -58151,7 +60067,8 @@ undefined4 FUN_00077a38()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-undefined4 FUN_00077b2c(param_1,param_2,param_3)
+// was FUN_00077b2c
+undefined4 handle_keyboard_message(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
 uint param_3;
@@ -58262,7 +60179,7 @@ LAB_00077d70:
 /* Recovered from a message-dispatch table baked into the original binary's
    .rdata (0x830e4-0x83144) that routes WM_MOUSEMOVE/WM_LBUTTONDOWN/
    WM_LBUTTONUP/WM_RBUTTONDOWN/WM_RBUTTONUP (msg 0x200/0x201/0x202/0x204/
-   0x205) to this handler -- entirely separate from FUN_00077b2c's table
+   0x205) to this handler -- entirely separate from handle_keyboard_message's table
    entries (msg 0x100-0x107, keyboard only). Ghidra never resolved this
    address into a named function since it's only ever reached through that
    table, never a direct call -- same "orphaned callback" pattern as
@@ -58280,7 +60197,7 @@ LAB_00077d70:
    strip (the chargen name-entry on-screen keyboard, see DAT_00087650's
    comment) via FUN_00057a80 and re-dispatches the resulting button ID as
    a synthetic WM_CHAR (letters/digits) or WM_KEYDOWN (backspace/enter/
-   space/0x14) through Ordinal_868 (PostMessage) -> FUN_00077b2c, the same
+   space/0x14) through Ordinal_868 (PostMessage) -> handle_keyboard_message, the same
    path real keyboard input already uses. Taps outside that strip instead
    set DAT_00204844, a general click-pending flag consumed elsewhere
    (main game world / inventory click handling, not chargen). */
@@ -58362,10 +60279,10 @@ void FUN_00077f30()
   if (iVar4 < 0) {
     iVar4 = -(int)sVar2 + 0x49;
   }
-  FUN_00011060(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
+  draw_text_string(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
   FUN_0007863c((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400);
   uVar3 = Ordinal_1416();
-  FUN_00011060(uVar3,0xf2,0x16);
+  draw_text_string(uVar3,0xf2,0x16);
   FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
   cVar1 = *(byte *)(DAT_00086df8 + 0x3d) - 1;
   if (3 < *(byte *)(DAT_00086df8 + 0x3d)) {
@@ -58376,7 +60293,7 @@ void FUN_00077f30()
      (see FUN_00041304 for the same pattern) -- skipped rather than
      guessed, this is cosmetic HUD text formatting. */
   iVar4 = FUN_000112a0(auStack_28);
-  FUN_00011060(auStack_28,0x138 - iVar4,0x16);
+  draw_text_string(auStack_28,0x138 - iVar4,0x16);
   return;
 }
 
@@ -58391,7 +60308,7 @@ uint param_1;
   
   FUN_000229e0(*(undefined1 *)((param_1 & 0xff) + DAT_0023be74 + 5),auStack_c,10);
   iVar1 = FUN_000112a0(auStack_c);
-  FUN_00011060(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
+  draw_text_string(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
   return;
 }
 
@@ -58409,7 +60326,7 @@ void FUN_00078088()
   auStack_c[sVar1] = 0x2f;
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
   iVar2 = FUN_000112a0(auStack_c);
-  FUN_00011060(auStack_c,0x138 - iVar2,0x32);
+  draw_text_string(auStack_c,0x138 - iVar2,0x32);
   return;
 }
 
@@ -58428,7 +60345,7 @@ void FUN_00078118()
   FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_10 + ((sVar1 + 1) * 0x10000 >> 0x10),10)
   ;
   iVar2 = FUN_000112a0(auStack_10);
-  FUN_00011060(auStack_10,0x138 - iVar2,0x39);
+  draw_text_string(auStack_10,0x138 - iVar2,0x39);
   return;
 }
 
@@ -58444,7 +60361,7 @@ void FUN_000781a0()
   uVar1 = Ordinal_2008(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
   Ordinal_1039(uVar1,auStack_18,10);
   iVar2 = FUN_000112a0(auStack_18);
-  FUN_00011060(auStack_18,0x138 - iVar2,0x40);
+  draw_text_string(auStack_18,0x138 - iVar2,0x40);
   return;
 }
 
@@ -58467,9 +60384,9 @@ uint param_1;
   FUN_0007863c((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400);
   uVar1 = Ordinal_1416();
   iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
-  FUN_00011060(uVar1,0xf2,iVar4);
+  draw_text_string(uVar1,0xf2,iVar4);
   iVar2 = FUN_000112a0(auStack_18);
-  FUN_00011060(auStack_18,0x138 - iVar2,iVar4);
+  draw_text_string(auStack_18,0x138 - iVar2,iVar4);
   return;
 }
 
@@ -58483,11 +60400,11 @@ void FUN_0007830c()
   if (DAT_0024af88 == 0) {
     DAT_0024af88 = FUN_00076a2c(0x96,0x2b);
     if (DAT_0024af88 != 0) {
-      FUN_00076b8c(DAT_0024af88,0xf0,0x47,0x4b,0x2b);
+      capture_framebuffer_rect_to_grtile(DAT_0024af88,0xf0,0x47,0x4b,0x2b);
     }
     DAT_0024af8c = FUN_00076a2c(0x46,0x15);
     if (DAT_0024af8c != 0) {
-      FUN_00076b8c(DAT_0024af8c,0x115,0x32,0x23,0x15);
+      capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
   }
   *DAT_0008429c = 0xf1;
@@ -58652,7 +60569,7 @@ ushort param_1;
     /* Was `FUN_00078e60(uVar1)` -- called with only one explicit
        argument, relying on a register-leftover idiom for the second
        (the "dropped argument" pattern used throughout this file, e.g.
-       Ordinal_1068/FUN_00011060 earlier this session) to still hold
+       Ordinal_1068/draw_text_string earlier this session) to still hold
        the string's sub-index within this page. That register doesn't
        reliably survive here either (confirmed: string lookups that
        should succeed -- e.g. chargen field labels -- came back as
@@ -58904,8 +60821,7 @@ void FUN_00078c80(param_1)
 uint param_1;
 
 {
-  FUN_0007863c(param_1 | 0x200);
-  FUN_0007f570();
+  FUN_0007f570(FUN_0007863c(param_1 | 0x200)); // was two separate calls with FUN_0007f570()'s arg dropped; see uw.c ~7961's sibling call and its comment
   return;
 }
 
@@ -59156,10 +61072,10 @@ short param_2;
     uVar6 = 0;
   }
   else {
-    iVar4 = FUN_00053514();
+    iVar4 = resolve_object_link();
     *(byte *)(param_1 + 3) = (byte)param_1[3] & 0x3f;
     *(undefined1 *)((char *)param_1 + 7) = 0;
-    iVar5 = FUN_00053728(param_1);
+    iVar5 = object_ptr_in_arena(param_1);
     if (iVar5 == 0) {
       uVar7 = (uint)DAT_002020a0;
       uVar8 = (uint)DAT_002020a4;
@@ -59170,7 +61086,7 @@ short param_2;
     }
     uVar1 = param_1[1];
     while (iVar4 != 0) {
-      iVar5 = FUN_00053514(iVar4 + 4);
+      iVar5 = resolve_object_link(iVar4 + 4);
       if ((param_2 != 0) && (((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0)) {
         uVar2 = param_1[3];
         bVar3 = (byte)uVar2;
@@ -59263,7 +61179,7 @@ int param_1;
       iVar8 = FUN_00068138((short)cVar4 + 0xa0,0);
       *(byte *)(iVar8 + 6) = *(byte *)(iVar8 + 6) & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
       *(char *)(iVar8 + 7) = (char)((uVar2 << 0x16) >> 0x18);
-      FUN_000530c4(param_1 + 6,iVar8);
+      object_list_insert_head(param_1 + 6,iVar8);
     }
   }
   return;
@@ -59284,7 +61200,7 @@ int param_1;
   Ordinal_2005(0x10,uVar2);
   if (extraout_r1 < (int)(bVar1 & 0xf)) {
     uVar2 = FUN_00068138((bVar1 >> 4) + 0xb0,0);
-    FUN_000530c4(param_1 + 6,uVar2);
+    object_list_insert_head(param_1 + 6,uVar2);
   }
   return;
 }
@@ -59339,7 +61255,7 @@ int param_1;
           pbVar4[7] = (byte)(uVar7 >> 2);
         }
       }
-      FUN_000530c4(param_1 + 6,pbVar4);
+      object_list_insert_head(param_1 + 6,pbVar4);
     }
     uVar8 = uVar8 + 1 & 0xff;
   } while (uVar8 < 2);
@@ -59389,7 +61305,7 @@ int param_1;
       bVar3 = (byte)uVar2;
       *(byte *)(iVar6 + 4) = (bVar3 ^ bVar7) & 0x3f ^ bVar3;
       *(char *)(iVar6 + 5) = (char)((ushort)uVar2 >> 8);
-      FUN_000530c4(param_1 + 6,iVar6);
+      object_list_insert_head(param_1 + 6,iVar6);
     }
     uVar8 = uVar8 + 1 & 0xff;
   } while (uVar8 < 2);
@@ -59528,7 +61444,7 @@ int param_3;
         goto LAB_00079cb8;
       }
       if (((param_2[2] & 0xffc0) == 0) ||
-         (puVar6 = (ushort *)FUN_00053514(), (*puVar6 & 0x1ff) != 0x12e)) goto LAB_00079cb8;
+         (puVar6 = (ushort *)resolve_object_link(), (*puVar6 & 0x1ff) != 0x12e)) goto LAB_00079cb8;
     }
     FUN_0007b72c(param_1,puVar6,param_3);
   }
@@ -59552,7 +61468,7 @@ undefined4 param_3;
   ushort local_14 [2];
   
   if (param_2 == 0) {
-    iVar2 = FUN_00068100((int)DAT_002020a0,(int)DAT_002020a4);
+    iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
     uVar3 = FUN_0005358c(param_1);
     iVar2 = FUN_00053644(iVar2 + 2,1,uVar3);
     if (iVar2 == 0) {
@@ -59786,8 +61702,8 @@ undefined4 param_2;
       local_1e = local_1e | 0xc0;
       local_12 = 0x1b;
       FUN_00028488(local_2c);
-      iVar2 = FUN_00068100(0x36,0x34);
-      iVar2 = FUN_00053514(iVar2 + 2);
+      iVar2 = tilemap_lookup(0x36,0x34);
+      iVar2 = resolve_object_link(iVar2 + 2);
       if (iVar2 != 0) {
         FUN_0007cdbc(DAT_0023be64,0,iVar2,0);
       }
@@ -59913,7 +61829,7 @@ int param_2;
       FUN_00079d08(DAT_00202098,param_2,1);
     }
     FUN_00081814(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
-    iVar2 = FUN_00068100((int)DAT_002020a0,(int)DAT_002020a4);
+    iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
     FUN_00053334(iVar2 + 2,param_1,1);
     DAT_002020a0 = -1;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
@@ -60193,7 +62109,7 @@ LAB_0007ae1c:
         if (uVar8 == 0xb8) {
           sVar4 = FUN_00069b68(*(undefined1 *)(DAT_0023be74 + 7),0x14);
           if (sVar4 != 0) {
-            iVar11 = FUN_00022910(3);
+            iVar11 = rand_below(3);
             FUN_00073e14(DAT_0023be64,iVar11 * -0x1000000 >> 0x18);
           }
           uVar9 = *(ushort *)(DAT_00086df8 + 0x61);
@@ -60321,7 +62237,7 @@ LAB_0007b2e0:
       if (sVar4 == 0) {
         Ordinal_1063(acStack_7c,s_UNNAMED_00084f24);
       }
-      iVar11 = FUN_00022910(0x14);
+      iVar11 = rand_below(0x14);
       iVar11 = ((byte)param_2[2] & 0x3f) + iVar11;
       if (iVar11 < 0) {
         iVar11 = iVar11 + 0xf;
@@ -60392,8 +62308,8 @@ int param_3;
       }
       else {
         FUN_00078c80(0x87);
-        iVar7 = FUN_00068100((int)DAT_002020a0,(int)DAT_002020a4);
-        sVar4 = FUN_00022910(2);
+        iVar7 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
+        sVar4 = rand_below(2);
         iVar6 = ((int)sVar4 - uVar11) + 0x156;
         while( true ) {
           iVar6 = iVar6 * 0x10000 >> 0x10;
@@ -60406,7 +62322,7 @@ int param_3;
           *(undefined1 *)((char *)puVar8 + 5) = *(undefined1 *)((char *)param_1 + 5);
           *(char *)(puVar8 + 3) = (char)param_1[3];
           *(undefined1 *)((char *)puVar8 + 7) = *(undefined1 *)((char *)param_1 + 7);
-          sVar4 = FUN_00022910(2);
+          sVar4 = rand_below(2);
           uVar9 = uVar11 + (int)sVar4 + 1;
           if (0x156 < (int)(uVar9 * 0x10000) >> 0x10) {
             uVar9 = 0x10;
@@ -60665,7 +62581,7 @@ int param_2;
     uVar2 = *param_1;
     if ((uVar2 & 0x1ff) == 0x13b) {
       if (*(short *)(DAT_00085a6c + 8) == 1) {
-        FUN_0003bcb8(2);
+        change_game_mode(2);
       }
     }
     else if (((uVar2 & 0x1000) == 0) || ((uVar2 & 0x1c0) == 0x140)) {
@@ -60829,8 +62745,8 @@ short param_3;
 LAB_0007c130:
       FUN_0007c2ec(param_1,param_2,6,(int)DAT_002020a0,DAT_002020a4);
       if ((*puVar4 & 0x400) == 0) {
-        FUN_00053274(local_18,puVar4);
-        FUN_00053004(puVar4);
+        object_list_unlink(local_18,puVar4);
+        free_object_slot(puVar4);
       }
       else {
         uVar6 = *puVar4 & 0xfdff;
@@ -61185,7 +63101,7 @@ uint * param_4;
         return 0;
       }
       if ((((param_1[2] & 0x3f) == 0) && (DAT_0024cfcc == 0)) &&
-         (iVar3 = FUN_00022910(10), iVar3 < 4)) {
+         (iVar3 = rand_below(10), iVar3 < 4)) {
         return 0;
       }
     }
@@ -61272,10 +63188,10 @@ int param_1;
       (iVar3 = FUN_000537d0(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
     uVar1 = *(ushort *)(iVar3 + 4);
     if ((uVar1 & 0x3f) == 0) {
-      iVar4 = FUN_00022910(10);
+      iVar4 = rand_below(10);
       if (iVar4 < 4) {
-        FUN_00053274(local_c,iVar3);
-        FUN_00053004(iVar3);
+        object_list_unlink(local_c,iVar3);
+        free_object_slot(iVar3);
       }
     }
     else {
@@ -61343,10 +63259,10 @@ ushort param_4;
       }
       break;
     }
-    param_3 = (ushort *)FUN_00053514();
+    param_3 = (ushort *)resolve_object_link();
     bVar6 = (byte)*param_3;
   }
-  iVar3 = FUN_00053514(param_3 + 3);
+  iVar3 = resolve_object_link(param_3 + 3);
   bVar6 = (byte)param_3[2] & 0x3f;
   bVar7 = (byte)param_3[3] & 0x3f;
   if (iVar3 == 0) {
@@ -61355,7 +63271,7 @@ ushort param_4;
   uVar4 = FUN_0007d074(param_1,param_2,iVar3,bVar6,bVar7);
   if ((*param_3 & 0x400) == 0) {
     if ((param_3[3] & 0xffc0) != 0) {
-      iVar5 = FUN_00068100(bVar6,bVar7);
+      iVar5 = tilemap_lookup(bVar6,bVar7);
       FUN_0007dfd8(iVar5 + 2,iVar3);
       return uVar4 | 0x20;
     }
@@ -61424,7 +63340,7 @@ uint param_3;
   iVar16 = 2;
   switch(*param_1 & 0x3f) {
   case 0:
-    iVar16 = FUN_00022910(10);
+    iVar16 = rand_below(10);
     uVar6 = 2;
     if (6 < iVar16) {
       uVar6 = 0;
@@ -61465,24 +63381,24 @@ uint param_3;
                           CONCAT22(uVar21,(ushort)(byte)param_1[3]) & 0xffff003f);
     break;
   case 7:
-    iVar16 = FUN_00022910(0x3f);
+    iVar16 = rand_below(0x3f);
     if (iVar16 < (int)((byte)param_1[2] & 0x3f)) {
       return 2;
     }
     if ((*param_1 & 0x8000) != 0) {
       return 2;
     }
-    puVar12 = (ushort *)FUN_00053514(param_1 + 3);
+    puVar12 = (ushort *)resolve_object_link(param_1 + 3);
     if (puVar12 == (ushort *)0x0) {
       return 2;
     }
     if (((*puVar12 & 0x1c0) == 0x40) && (iVar16 = FUN_0007e694(puVar12), iVar16 != 0)) {
       return 2;
     }
-    FUN_00053728(puVar12);
-    puVar8 = (ushort *)FUN_00052f28();
+    object_ptr_in_arena(puVar12);
+    puVar8 = (ushort *)alloc_object_slot();
     if (puVar8 != (ushort *)0x0) {
-      iVar16 = FUN_00053728(puVar12);
+      iVar16 = object_ptr_in_arena(puVar12);
       if (iVar16 == 0) {
         *(char *)puVar8 = (char)*puVar12;
         *(undefined1 *)((char *)puVar8 + 1) = *(undefined1 *)((char *)puVar12 + 1);
@@ -61513,7 +63429,7 @@ uint param_3;
       DAT_00202c84 = 0;
       if (local_30 != 0) {
         if ((((*puVar8 & 0x8000) == 0) && ((puVar8[3] & 0xffc0) != 0)) &&
-           (puVar9 = (undefined1 *)FUN_00052f28(0), puVar9 != (undefined1 *)0x0)) {
+           (puVar9 = (undefined1 *)alloc_object_slot(0), puVar9 != (undefined1 *)0x0)) {
           puVar10 = (undefined1 *)FUN_000535fc(puVar8[3] >> 6);
           *puVar9 = *puVar10;
           puVar9[1] = puVar10[1];
@@ -61543,7 +63459,7 @@ uint param_3;
     }
     return 2;
   case 8:
-    local_34 = FUN_00068100(param_2,param_3);
+    local_34 = tilemap_lookup(param_2,param_3);
     local_34 = local_34 + 2;
     iVar16 = FUN_000537d0(&local_34,0,5,0,CONCAT22(uVar20,0xffff));
     DAT_002020a0 = (undefined2)param_2;
@@ -61571,12 +63487,12 @@ uint param_3;
       local_34 = iVar16 + 6;
       iVar11 = FUN_000537d0(&local_34,0,4,0,0xf);
       if (iVar11 != 0) {
-        FUN_00053274(local_34,iVar11);
-        FUN_00053004(iVar11);
+        object_list_unlink(local_34,iVar11);
+        free_object_slot(iVar11);
       }
       if (((*param_1 & 0x8000) == 0) && ((param_1[3] & 0xffc0) != 0)) {
-        puVar9 = (undefined1 *)FUN_00053514();
-        puVar10 = (undefined1 *)FUN_00052f28(0);
+        puVar9 = (undefined1 *)resolve_object_link();
+        puVar10 = (undefined1 *)alloc_object_slot(0);
         if (puVar10 != (undefined1 *)0x0) {
           *puVar10 = *puVar9;
           puVar10[1] = puVar9[1];
@@ -61586,7 +63502,7 @@ uint param_3;
           puVar10[5] = puVar9[5];
           puVar10[6] = puVar9[6];
           puVar10[7] = puVar9[7];
-          FUN_000530c4(local_34);
+          object_list_insert_head(local_34);
         }
       }
       uVar4 = param_1[2] & 0x3f;
@@ -61615,7 +63531,7 @@ LAB_0007dce4:
     if (((param_1[2] & 0x3f) != 0x3f) && (((*DAT_0024cff4 & 0xf ^ param_1[2]) & 0x3f) != 0)) {
       return 2;
     }
-    sVar3 = FUN_00022910(*(undefined1 *)(DAT_00086df8 + 0x2a));
+    sVar3 = rand_below(*(undefined1 *)(DAT_00086df8 + 0x2a));
     uVar6 = FUN_0007863c(0x2f5);
     FUN_0007ed20(uVar6,*(ushort *)(DAT_0023be64 + 0x16) >> 10,
                  (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4,0,
@@ -61625,9 +63541,9 @@ LAB_0007dce4:
     iVar16 = FUN_00039bd8(uVar6,sVar3 + 3,4,0);
     return iVar16;
   case 0xb:
-    local_34 = FUN_00068100(param_1[2] & 0x3f,(byte)param_1[3] & 0x3f);
+    local_34 = tilemap_lookup(param_1[2] & 0x3f,(byte)param_1[3] & 0x3f);
     local_34 = local_34 + 2;
-    uVar6 = FUN_00053514(param_1 + 3);
+    uVar6 = resolve_object_link(param_1 + 3);
     FUN_000534a8(local_34,uVar6);
     FUN_00049924(2);
     return 2;
@@ -61729,11 +63645,11 @@ LAB_0007d460:
     if (((ushort)uVar14 !=
          (ushort)(uVar4 >> 10 & 7 | (param_1[3] & 0x3f | ((byte)param_1[2] & 0x3f) << 5) << 3)) &&
        ((param_1[3] & 0xffc0) != 0)) {
-      iVar16 = FUN_00053514(param_1 + 3);
+      iVar16 = resolve_object_link(param_1 + 3);
       if ((*(ushort *)(iVar16 + 4) & 0xffc0) == 0) {
         return 2;
       }
-      uVar6 = FUN_00053514();
+      uVar6 = resolve_object_link();
       iVar16 = FUN_0007cdbc(DAT_0024cff4,DAT_0024cff0,uVar6,0xffffffff);
       return iVar16;
     }
@@ -61748,7 +63664,7 @@ LAB_0007d460:
     }
   }
   if ((param_1[3] & 0xffc0) != 0) {
-    puVar12 = (ushort *)FUN_00053514();
+    puVar12 = (ushort *)resolve_object_link();
     if ((*puVar12 & 0x1c0) == 0x180) {
       if ((*puVar12 & 0x30) < 0x20) {
         uVar4 = FUN_0007d0b0(puVar12,param_2,param_3);
@@ -61770,11 +63686,11 @@ undefined4 param_1;
 {
   ushort *puVar1;
   
-  for (puVar1 = (ushort *)FUN_00053514(); puVar1 != (ushort *)0x0;
-      puVar1 = (ushort *)FUN_00053514(puVar1 + 2)) {
+  for (puVar1 = (ushort *)resolve_object_link(); puVar1 != (ushort *)0x0;
+      puVar1 = (ushort *)resolve_object_link(puVar1 + 2)) {
     if (((*puVar1 & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(puVar1[3] >> 6))) {
-      FUN_00053274(param_1,puVar1);
-      FUN_00053004(puVar1);
+      object_list_unlink(param_1,puVar1);
+      free_object_slot(puVar1);
       *(byte *)(puVar1 + 3) = (byte)puVar1[3] & 0x3f;
       *(undefined1 *)((char *)puVar1 + 7) = 0;
       DAT_0024cfd8 = DAT_0024cfd8 + -1;
@@ -61913,11 +63829,11 @@ uint param_3;
   uint uVar10;
   uint uVar11;
   
-  puVar4 = (ushort *)FUN_00052f28(0);
+  puVar4 = (ushort *)alloc_object_slot(0);
   if (puVar4 != (ushort *)0x0) {
-    puVar5 = (ushort *)FUN_00052f28(0);
+    puVar5 = (ushort *)alloc_object_slot(0);
     if (puVar5 != (ushort *)0x0) {
-      pbVar6 = (byte *)FUN_00068100(param_1,param_2);
+      pbVar6 = (byte *)tilemap_lookup(param_1,param_2);
       uVar2 = *puVar4;
       uVar7 = uVar2 & 0xffa0 | 0x61a0;
       *(char *)puVar4 = (char)uVar7;
@@ -61942,7 +63858,7 @@ uint param_3;
       *(char *)((char *)puVar4 + 5) = (char)(uVar2 >> 8);
       *(byte *)(puVar4 + 3) = (bVar3 ^ (byte)param_2) & 0x3f ^ bVar3;
       *(char *)((char *)puVar4 + 7) = (char)((uint)iVar1 >> 8);
-      FUN_000530c4(pbVar6 + 2,puVar4);
+      object_list_insert_head(pbVar6 + 2,puVar4);
       uVar7 = *puVar5 & 0xff8f | 0x180;
       uVar11 = (uVar7 ^ param_3) & 0xf ^ uVar7;
       *(char *)puVar5 = (char)uVar11;
@@ -61962,11 +63878,11 @@ uint param_3;
       uVar11 = uVar11 & 0xe3ff;
       *(char *)puVar5 = (char)uVar11;
       *(byte *)((char *)puVar5 + 1) = (byte)(uVar11 >> 8) | 0xe2;
-      FUN_000530c4(pbVar6 + 2,puVar5);
+      object_list_insert_head(pbVar6 + 2,puVar5);
       uVar8 = FUN_0005358c(puVar4);
       return uVar8;
     }
-    FUN_00053004(puVar4);
+    free_object_slot(puVar4);
   }
   return 0;
 }
@@ -61984,19 +63900,19 @@ int param_2;
   ushort *puVar4;
   int iVar5;
   
-  puVar4 = (ushort *)FUN_00053514(param_2 + 6);
+  puVar4 = (ushort *)resolve_object_link(param_2 + 6);
   uVar2 = *puVar4;
   uVar1 = (uVar2 & 0x1e00) >> 9;
   if ((short)uVar1 == 1) {
-    iVar5 = FUN_00068100(*(byte *)(param_2 + 4) & 0x3f,*(ushort *)(param_2 + 6) & 0x3f);
+    iVar5 = tilemap_lookup(*(byte *)(param_2 + 4) & 0x3f,*(ushort *)(param_2 + 6) & 0x3f);
     FUN_0007dfd8(iVar5 + 2,puVar4);
   }
   else {
     bVar3 = (byte)(uVar2 >> 8);
     *(char *)puVar4 = (char)uVar2;
     *(byte *)((char *)puVar4 + 1) = ((byte)(uVar1 * 0x200 + -1 >> 8) ^ bVar3) & 0x1e ^ bVar3;
-    FUN_00053274(param_1,param_2);
-    FUN_00053004(param_2);
+    object_list_unlink(param_1,param_2);
+    free_object_slot(param_2);
   }
   return;
 }
@@ -62069,8 +63985,8 @@ undefined4 param_1;
   iVar2 = FUN_000539b0(6,0,7,&local_14,&local_12);
   while (iVar2 != 0) {
     if ((*(byte *)(iVar2 + 1) & 0x1e) == 0) {
-      iVar3 = FUN_00053514(iVar2 + 6);
-      iVar4 = FUN_00053728();
+      iVar3 = resolve_object_link(iVar2 + 6);
+      iVar4 = object_ptr_in_arena();
       if (iVar4 != 0) {
         uVar1 = *(undefined2 *)(iVar3 + 0xd);
         *(char *)(iVar3 + 0xd) = (char)uVar1;
@@ -62102,9 +64018,9 @@ int param_1;
   local_1a = 0;
   pbVar1 = (byte *)FUN_000539b0(5,0,0xffffffff,&local_1c,&local_1a);
   while (pbVar1 != (byte *)0x0) {
-    iVar2 = FUN_00068100((int)local_1c,(int)local_1a);
+    iVar2 = tilemap_lookup((int)local_1c,(int)local_1a);
     if ((((*(byte *)(iVar2 + 1) & 0x80) == 0) && (7 < (*pbVar1 & 0xf))) &&
-       (iVar2 = FUN_00022910(10), iVar2 < 3)) {
+       (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
       DAT_002020a4 = local_1a;
       iVar2 = FUN_0007e6e0(param_1);
@@ -62135,29 +64051,31 @@ void FUN_0007e998()
 
 
 
-void FUN_0007e99c()
+// was reinstall_active_palette -- re-expand DAT_00088d98 into DAT_00088640 and re-install it as
+// g_palette_rgb565 (real light-level/tint args dropped by Ghidra)
+void reinstall_active_palette()
 
 {
-  /* FUN_00022abc's 3rd argument was dropped here -- confirmed via real
-     ARM disassembly: this call site (`bl FUN_00022abc` right after
+  /* expand_pals_bytes's 3rd argument was dropped here -- confirmed via real
+     ARM disassembly: this call site (`bl expand_pals_bytes` right after
      loading only r0/r1) never sets r2 itself, so it silently used
      whatever was left over in that register from the caller's own
-     context. FUN_00022abc's param_3 controls whether it scales each
+     context. expand_pals_bytes's param_3 controls whether it scales each
      raw palette byte up from PALS.DAT's 6-bit-per-channel storage
      (param_3==0, `<<2`) or copies it unscaled (param_3!=0) -- and
      DAT_00088d98 (the source here) always holds the RAW, unscaled bytes
-     FUN_00040e24 loaded (it only produces the *scaled* version in its
+     load_pals_bank loaded (it only produces the *scaled* version in its
      own local stack buffer, which doesn't survive past that call). With
      a leftover-nonzero r2, this installed the unscaled (very dark)
      values into g_palette_rgb565 instead of the real palette -- confirmed:
      this is what made the whole screen go dark after wiring
-     main_menu_loop through FUN_00040efc (which calls this function on
+     main_menu_loop through set_palette_bank (which calls this function on
      every palette load, unlike the rarer hover-timer-only path this
      bug previously hid behind). Pass 0 explicitly, matching
-     FUN_00040e24's own established convention for this exact source
+     load_pals_bank's own established convention for this exact source
      format. */
-  FUN_00022abc(&DAT_00088640,&DAT_00088d98,0);
-  FUN_00022b54(&DAT_00088640,0xffffffff);
+  expand_pals_bytes(&DAT_00088640,&DAT_00088d98,0);
+  build_rgb565_palette(&DAT_00088640,0xffffffff);
   return;
 }
 
@@ -62165,7 +64083,8 @@ void FUN_0007e99c()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0007e9c4(param_1,param_2,param_3)
+// was FUN_0007e9c4
+void plot_pixel(param_1,param_2,param_3)
 short param_1;
 short param_2;
 short param_3;
@@ -62178,6 +64097,7 @@ short param_3;
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
        (&g_palette_rgb565)[param_3];
   FUN_00011000(iVar1,iVar1,(int)param_1);
+  debug_framebuffer_dump("plot_pixel");
   return;
 }
 
@@ -62635,7 +64555,7 @@ uint param_2;
   do {
     sVar2 = FUN_00057a70();
     if (sVar1 != sVar2) break;
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
   } while ((param_1 == 0) || (uVar4 = FUN_0002294c(), uVar4 <= (uint)(param_1 + iVar3)));
   FUN_00057604(1);
   FUN_0007f094();
@@ -62652,8 +64572,8 @@ undefined4 FUN_0007f208()
 {
   int iVar1;
   
-  FUN_00040b0c(DAT_00250724 + 0x20d5,0xb,0xa9,0x1c,4);
-  FUN_00040b0c(DAT_00250724 + 0x20da,0x132,0xa9,0x1c,4);
+  draw_sprite_by_id(DAT_00250724 + 0x20d5,0xb,0xa9,0x1c,4);
+  draw_sprite_by_id(DAT_00250724 + 0x20da,0x132,0xa9,0x1c,4);
   iVar1 = (int)DAT_00250724;
   DAT_00250724 = (short)(iVar1 + 1);
   if ((iVar1 + 1) * 0x10000 >> 0x10 == 5) {
@@ -62673,8 +64593,8 @@ undefined4 FUN_0007f290()
   iVar1 = 0;
   do {
     iVar2 = iVar1 * 0x1b + 0x34;
-    FUN_00040b0c(DAT_00250728 + 0x20df,0x34,iVar2,0x1b,5);
-    FUN_00040b0c(DAT_00250728 + 0x20e5,0xdc,iVar2,0x1b,5);
+    draw_sprite_by_id(DAT_00250728 + 0x20df,0x34,iVar2,0x1b,5);
+    draw_sprite_by_id(DAT_00250728 + 0x20e5,0xdc,iVar2,0x1b,5);
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 3);
   iVar1 = (int)DAT_00250728;
@@ -62727,7 +64647,7 @@ void FUN_0007f454()
   sVar3 = *(short *)(DAT_00250704 + 10);
   uVar2 = *DAT_0008429c;
   *DAT_0008429c = 0xd4;
-  FUN_00011060(s__MORE__00087994,(int)*(short *)(DAT_00250704 + 0xc),(int)sVar3);
+  draw_text_string(s__MORE__00087994,(int)*(short *)(DAT_00250704 + 0xc),(int)sVar3);
   FUN_0007f170(0,1);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 0xc),(int)sVar3,*(undefined2 *)(DAT_00250704 + 6),
@@ -62862,7 +64782,22 @@ undefined4 param_2;
   char *iVar5;
   undefined1 uVar6;
   int iVar7;
-  
+  /* Recursion-depth safety valve for the FUN_0007f7cc<->FUN_0007fb2c word-
+     wrap pair: FUN_0007fb2c's search-for-a-space-to-split-on has no
+     fallback once the remainder is down to a single character/space that
+     still doesn't fit the remaining line width (its own retry at
+     LAB_0007fc64 hands the SAME unshrinkable string straight back here),
+     which is a genuine stack-overflow-via-infinite-recursion for that
+     input, not a symptom of any pointer/memory bug already fixed this
+     session (confirmed: reached with param_1==" " on a real run after
+     every other known corruption source was already fixed). Rather than
+     reverse-engineer the exact original cursor-reset semantics for that
+     edge case, force this call to take the normal "print it" path once
+     recursion goes needlessly deep -- printing slightly past the margin
+     beats crashing the whole game over HUD message text. */
+  static int s_wrap_recursion_depth = 0;
+  s_wrap_recursion_depth++;
+
   iVar5 = 0;
   if ((DAT_00087990 != 0) && (*param_1 == '\\')) {
     cVar2 = param_1[1];
@@ -62942,7 +64877,8 @@ LAB_0007f9ac:
 LAB_0007fa30:
   iVar7 = FUN_000112a0(param_1);
   iVar5 = DAT_00250704;
-  if ((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
+  if (((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
+      || (32 < s_wrap_recursion_depth))
   {
     uVar4 = Ordinal_1068(param_1);
     if (param_1[(int)(((uVar4 & 0xffff) - 1) * 0x10000) >> 0x10] == '\n') {
@@ -62953,7 +64889,7 @@ LAB_0007fa30:
       *(undefined1 *)(DAT_00250704 + 0x13) = 0;
       iVar5 = DAT_00250704;
     }
-    FUN_00011060(param_1,(int)*(short *)(iVar5 + 8),(int)*(short *)(iVar5 + 10));
+    draw_text_string(param_1,(int)*(short *)(iVar5 + 8),(int)*(short *)(iVar5 + 10));
     iVar5 = FUN_000112a0(param_1);
     iVar5 = *(short *)(DAT_00250704 + 8) + iVar5;
     *(char *)(DAT_00250704 + 8) = (char)iVar5;
@@ -62962,6 +64898,7 @@ LAB_0007fa30:
   else {
     FUN_0007fb2c(param_1,param_2);
   }
+  s_wrap_recursion_depth--;
   return;
 }
 
@@ -62978,7 +64915,22 @@ undefined4 param_2;
   char *pcVar4;
   int iVar5;
   char cVar6;
-  
+
+  /* Guard against infinite FUN_0007f7cc<->FUN_0007fb2c recursion on an
+     empty string: FUN_0007f7cc sends param_1 here whenever its pixel width
+     doesn't fit the remaining line width, but an empty string has zero
+     width and can never be split any narrower -- every one of this
+     function's exits below hands param_1 straight back to FUN_0007f7cc
+     unchanged, which (if the line is already full) sends it right back
+     here forever. There's nothing to wrap for an empty string, so just
+     stop. Confirmed via a real crash: reached with param_1="" once (this
+     session) the actual upstream bug (a lone-scalar DAT_00248418 palette
+     table smashing ~10KB of adjacent memory on every palette install,
+     since fixed) had already been eliminated, so this is a genuine
+     separate edge case, not just a symptom of that corruption. */
+  if (Ordinal_1068(param_1) == 0) {
+    return;
+  }
   pcVar3 = (char *)Ordinal_1407(param_1,0x20);
   if (pcVar3 != (char *)0x0) {
     cVar6 = ' ';
@@ -63218,7 +65170,7 @@ short param_5;
         rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
         uVar13 = Ordinal_1068(acStack_a1 + 1);
         if ((uint)(int)sVar5 < uVar13) {
-          FUN_00011060(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
+          draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
       }
       FUN_000570b4();
@@ -63250,7 +65202,7 @@ short param_5;
       }
       return uVar8;
     }
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     iVar7 = 0;
     do {
       cVar1 = acStack_a1[iVar7 + 1];
@@ -63268,7 +65220,7 @@ short param_5;
         rect_fill_or_save_restore(iVar7,iVar14,iVar7 + 4,(uint)*(ushort *)(DAT_000879b0 + 6) + iVar14 + -1);
         uVar9 = Ordinal_1068(acStack_a1 + 1);
         if (uVar11 < uVar9) {
-          FUN_00011060(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
+          draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
       }
     }
@@ -63399,7 +65351,7 @@ LAB_0008062c:
       rect_fill_or_save_restore((int)DAT_0025070c,*(short *)(DAT_00250704 + 10),*(undefined2 *)(DAT_00250704 + 6)
                    ,*(short *)(DAT_000879b0 + 6) + *(short *)(DAT_00250704 + 10));
       *DAT_0008429c = *(undefined1 *)(DAT_00250704 + 0x16);
-      FUN_00011060(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
+      draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
     }
     sVar5 = (short)uVar13;
     uVar8 = FUN_00057a70();
@@ -63455,7 +65407,7 @@ int * param_3;
       }
       return uVar3;
     }
-    FUN_00022f0c(1);
+    flush_dirty_rect_to_display(1);
     if (sVar1 == 0x4e) break;
     if (sVar1 == 0x59) goto LAB_0008090c;
     if (sVar1 == 0x6e) break;
@@ -63483,10 +65435,10 @@ short param_1;
   int iVar2;
   
   iVar2 = param_1 * 6;
-  uVar1 = FUN_00053514(&DAT_00250778 + iVar2);
-  iVar2 = FUN_00068100((&DAT_0025077c)[iVar2],(&DAT_0025077d)[iVar2]);
-  FUN_00053274(iVar2 + 2,uVar1);
-  FUN_00053004(uVar1);
+  uVar1 = resolve_object_link(&DAT_00250778 + iVar2);
+  iVar2 = tilemap_lookup((&DAT_0025077c)[iVar2],(&DAT_0025077d)[iVar2]);
+  object_list_unlink(iVar2 + 2,uVar1);
+  free_object_slot(uVar1);
   return;
 }
 
@@ -63549,7 +65501,7 @@ undefined4 param_1;
   bool bVar11;
   
   iVar9 = (short)param_1 * 6;
-  puVar4 = (ushort *)FUN_00053514(&DAT_00250778 + iVar9);
+  puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + iVar9);
   uVar5 = (byte)*puVar4 & 0xf;
   uVar1 = *(ushort *)(&DAT_00250730 + uVar5 * 4);
   bVar11 = (uVar1 & 0x80) == 0;
@@ -63682,7 +65634,7 @@ undefined1 param_5;
     (&DAT_0025077b)[iVar4] = (char)((uint)param_2 >> 8);
     (&DAT_0025077c)[iVar4] = param_4;
     (&DAT_0025077d)[iVar4] = param_5;
-    pbVar3 = (byte *)FUN_00053514();
+    pbVar3 = (byte *)resolve_object_link();
     iVar4 = (*pbVar3 & 0xf) * 4;
     cVar1 = (&DAT_00250732)[iVar4];
     if (-1 < cVar1) {
@@ -63725,7 +65677,7 @@ int param_2;
   ushort uVar7;
   ushort uVar8;
   
-  puVar4 = (ushort *)FUN_00053514(&DAT_00250778 + (short)param_1 * 6);
+  puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + (short)param_1 * 6);
   if ((*puVar4 & 0x1f0) == 0x1c0) {
     iVar1 = (*puVar4 & 0xf) * 4;
     uVar3 = 1;
@@ -63857,7 +65809,7 @@ undefined4 param_3;
   iVar7 = extraout_r1 + 2;
   sVar1 = (short)iVar7;
   while (-1 < iVar7 * 0x10000 >> 0x10) {
-    puVar8 = (ushort *)FUN_00052f28(0);
+    puVar8 = (ushort *)alloc_object_slot(0);
     *(undefined1 *)puVar8 = *param_1;
     *(undefined1 *)((char *)puVar8 + 1) = param_1[1];
     *(undefined1 *)(puVar8 + 1) = param_1[2];
@@ -63901,8 +65853,8 @@ undefined4 param_3;
     bVar3 = (byte)uVar2;
     *(byte *)(puVar8 + 1) = (((bVar4 & 0xf) + bVar3) - 8 ^ bVar3) & 0x7f ^ bVar3;
     *(char *)((char *)puVar8 + 3) = (char)(uVar2 >> 8);
-    iVar7 = FUN_00068100(param_2,param_3);
-    FUN_000530c4(iVar7 + 2,puVar8);
+    iVar7 = tilemap_lookup(param_2,param_3);
+    object_list_insert_head(iVar7 + 2,puVar8);
     uVar6 = Ordinal_1053();
     Ordinal_2005(3,uVar6);
     uVar6 = Ordinal_1053();
@@ -63913,9 +65865,9 @@ undefined4 param_3;
     sVar5 = FUN_00080ed4(uVar11,((int)extraout_r1_03 - (int)extraout_r1_02) + 2,(int)extraout_r1_02,
                          param_2 & 0xff,uVar12,uVar13);
     if (sVar5 == -1) {
-      iVar7 = FUN_00068100(param_2,param_3);
-      FUN_00053274(iVar7 + 2,puVar8);
-      FUN_00053004(puVar8);
+      iVar7 = tilemap_lookup(param_2,param_3);
+      object_list_unlink(iVar7 + 2,puVar8);
+      free_object_slot(puVar8);
       iVar7 = -1;
     }
     else {
@@ -64027,11 +65979,11 @@ LAB_00081980:
   uVar7 = FUN_0005358c(iVar5);
   sVar4 = FUN_00080ed4(uVar7,param_3,param_4,(int)param_6 & 0xff,(char)param_7);
   if (sVar4 == -1) {
-    FUN_00053004(iVar5);
+    free_object_slot(iVar5);
     return 0;
   }
-  iVar8 = FUN_00068100((int)param_6,(int)param_7);
-  FUN_000531a0(iVar8 + 2,iVar5);
+  iVar8 = tilemap_lookup((int)param_6,(int)param_7);
+  object_list_append_tail(iVar8 + 2,iVar5);
   return 1;
 }
 
@@ -64119,7 +66071,7 @@ int param_2;
   
   iVar8 = param_1 * 6;
   iVar10 = 5;
-  puVar2 = (ushort *)FUN_00053514(&DAT_00250778 + iVar8);
+  puVar2 = (ushort *)resolve_object_link(&DAT_00250778 + iVar8);
   uVar7 = (ushort)(byte)puVar2[3];
   DAT_0010144c = (ushort)(byte)(&DAT_0025077c)[iVar8];
   uVar9 = (byte)puVar2[1] & 0x7f;
@@ -64164,7 +66116,9 @@ int param_2;
 
 
 undefined4 FUN_00081ce4(param_1,param_2)
-undefined4 param_1;
+/* .ark handle-struct pointer -- was `undefined4`, truncating the stack
+   struct FUN_000499c0 passes and crashing FUN_0001613c below. */
+undefined1 * param_1;
 int param_2;
 
 {

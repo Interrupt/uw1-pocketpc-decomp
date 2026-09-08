@@ -6,10 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <math.h>
 #include <SDL.h>
 
 void uw_pump_events(void);
-unsigned int FUN_00077b2c(void *param_1, unsigned int param_2, unsigned int param_3);
+unsigned int handle_keyboard_message(void *param_1, unsigned int param_2, unsigned int param_3);
 int uw_take_mouse_event_pending(void);
 
 long Ordinal_4()
@@ -317,6 +318,20 @@ long Ordinal_464()
 long Ordinal_496(unsigned int ms)
 {
     DEBUG(TRACE, "[sleep] Ordinal_496 requested ms=%u", ms);
+    /* UW_FAST_SLEEP: debug-only switch to skip the real delay below (splash
+     * dwells, app_main_loop's startup pause, etc. otherwise add up to real
+     * wall-clock seconds every run) so automated/demo-driven test runs reach
+     * gameplay quickly. Still pumps events once so the window doesn't look
+     * dead. Checked once and cached -- this is a debug hook, not something
+     * that should read the environment on every call. */
+    static int fast = -1;
+    if (fast < 0) {
+        fast = getenv("UW_FAST_SLEEP") != NULL;
+    }
+    if (fast) {
+        SDL_PumpEvents();
+        return 0;
+    }
     /* HACK: a single long SDL_Delay(ms) blocks this thread for the whole
      * duration without ever pumping SDL's event queue, which on macOS
      * (and likely other platforms) stops the window from actually
@@ -360,7 +375,7 @@ long Ordinal_533()
  * hardcoded 0, meaning every FUN_0002294c() (this file's Ordinal_535()
  * >> 2) call across the whole game always read "0 elapsed" -- silently
  * breaking every timing check built on it, not just the one that
- * exposed it (FUN_000122d4's fade-in-from-black transition measured
+ * exposed it (fade_in's fade-in-from-black transition measured
  * 0ms end to end with this stubbed out, confirming the fade logic
  * itself was intact and only the time source was missing). */
 long Ordinal_535()
@@ -419,7 +434,7 @@ long Ordinal_859()
 }
 
 /* DAT_0023c448 is uw.c's real "pending input event" flags word, set
- * directly by FUN_00077b2c() from uw_pump_events()'s real SDL key
+ * directly by handle_keyboard_message() from uw_pump_events()'s real SDL key
  * events (not through a faked MSG struct). */
 extern unsigned short DAT_0023c448;
 
@@ -465,12 +480,12 @@ long Ordinal_866()
  * mouse handler (FUN_00077dd0 in uw.c) makes to re-dispatch a stylus tap
  * on the chargen on-screen keyboard as a synthetic WM_CHAR/WM_KEYDOWN.
  * This port never builds a real Win32 MSG queue (see Ordinal_864's
- * comment -- FUN_00077b2c is driven directly from DAT_0023c448), so
+ * comment -- handle_keyboard_message is driven directly from DAT_0023c448), so
  * dispatch synchronously into the same handler real keyboard input
  * already reaches instead of queuing. */
 int Ordinal_868(void *hwnd, unsigned int msg, unsigned int wparam, int lparam)
 {
-    return (int)FUN_00077b2c(hwnd, msg, wparam);
+    return (int)handle_keyboard_message(hwnd, msg, wparam);
 }
 
 long Ordinal_870()
@@ -498,9 +513,19 @@ long Ordinal_993()
     return 0;
 }
 
-long Ordinal_1004()
+/* cos(x): x is a double bit-pattern arriving in the return/first-arg
+   register (chained from Ordinal_2021 in FUN_0001dd2c, which builds the
+   renderer's per-degree cos table DAT_000d9ed8). Was a return-0 stub,
+   which left the whole view matrix zero -> every 3D vertex projected to
+   a single point. */
+long Ordinal_1004(x)
+unsigned long long x;
 {
-    return 0;
+    double d;
+    memcpy(&d, &x, 8);
+    d = cos(d);
+    memcpy(&x, &d, 8);
+    return (long)x;
 }
 
 void Ordinal_1018(ptr)
@@ -552,9 +577,14 @@ void *Ordinal_1047(void *ptr, int val, unsigned int n)
     return ptr;
 }
 
+/* COREDLL ordinal 1053 = rand(). Was stubbed to always return 0, which
+   silently killed every randomized effect in the game -- e.g. the
+   automap water/lava fill collapsed from its intended 2-/3-tone dither
+   to a flat single color. Real rand(); deterministic (no srand) so
+   scripted runs stay reproducible. */
 long Ordinal_1053()
 {
-    return 0;
+    return rand();
 }
 
 void *Ordinal_1054(void *ptr, unsigned int size)
@@ -563,9 +593,18 @@ void *Ordinal_1054(void *ptr, unsigned int size)
     return realloc(ptr, size);
 }
 
-long Ordinal_1058()
+/* sin(x): x is a double bit-pattern split across the first two arg
+   registers (FUN_0001dd2c passes it as two ints). Builds DAT_000d9930. */
+long Ordinal_1058(lo, hi)
+unsigned int lo;
+unsigned int hi;
 {
-    return 0;
+    unsigned long long b = (unsigned long long)lo | ((unsigned long long)hi << 32);
+    double d;
+    memcpy(&d, &b, 8);
+    d = sin(d);
+    memcpy(&b, &d, 8);
+    return (long)b;
 }
 
 long Ordinal_1061()
@@ -668,9 +707,17 @@ int Ordinal_1118(void *f)
     return fclose((FILE *)f);
 }
 
-long Ordinal_1346()
+/* Zeroing allocator, called as Ordinal_1346(elem_size, count) at every
+   site (e.g. the .tr texture loader's offset table, load_texture_arena). Was a
+   no-op stub that returned NULL -> FUN_0003c3c8(0x1008) fatal the moment
+   the texture files actually started loading. */
+void *Ordinal_1346(elem_size, count)
+unsigned int elem_size;
+unsigned int count;
 {
-    return 0;
+    if (elem_size == 0) elem_size = 1;
+    if (count == 0) count = 1;
+    return calloc(count, elem_size);
 }
 
 long Ordinal_1407()
@@ -749,9 +796,18 @@ long Ordinal_2008()
     return 0;
 }
 
-long Ordinal_2015()
+static float ordfloat_bits_to_float(unsigned int bits);
+static unsigned int ordfloat_float_to_bits(float f);
+
+/* Softfloat single-precision SUBTRACT: a - b (IEEE-754 bit patterns in,
+   bit pattern out). Was a no-op stub, which zeroed every subtraction in
+   the 3D vertex-clip / projection math (near_clip_visible_tiles &c). Sibling of the
+   already-real Ordinal_2026 (multiply) / Ordinal_2032 (int->float). */
+long Ordinal_2015(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) - ordfloat_bits_to_float(b));
 }
 
 long Ordinal_2016()
@@ -802,14 +858,35 @@ unsigned int x;
     return (long)ordfloat_bits_to_float(x);
 }
 
-long Ordinal_2021()
+/* Softfloat float -> double: single-precision bit pattern in the
+   first-arg register (chained), returns the double bit pattern. Was a
+   return-0 stub -- part of FUN_0001dd2c's sin/cos table build. */
+long Ordinal_2021(x)
+unsigned long long x;
 {
-    return 0;
+    unsigned int fbits = (unsigned int)x;
+    float f;
+    double d;
+    memcpy(&f, &fbits, 4);
+    d = (double)f;
+    memcpy(&x, &d, 8);
+    return (long)x;
 }
 
-long Ordinal_2023()
+/* Softfloat single-precision NEGATE: -x. Called both with an explicit
+   arg and no-arg (chained). FUN_0001de0c uses it for a view matrix's
+   translation column (-camera_pos) and the -sin entries of its rotation
+   blocks; it also appears in the sprite/billboard transform. Was a
+   return-0 stub -> the view matrix had zero rotation and zero
+   translation, so every transformed vertex collapsed to the origin. */
+long Ordinal_2023(x)
+unsigned int x;
 {
-    return 0;
+    float f;
+    memcpy(&f, &x, 4);
+    f = -f;
+    memcpy(&x, &f, 4);
+    return (long)x;
 }
 
 long Ordinal_2026(a, b)
@@ -819,19 +896,43 @@ unsigned int b;
     return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) * ordfloat_bits_to_float(b));
 }
 
-long Ordinal_2027()
+/* Softfloat double MULTIPLY: a * b, each passed as a lo/hi int pair.
+   FUN_0001dd2c multiplies (double)degrees by the constant
+   0x3f91df45a50de271 == PI/180. Was a return-0 stub. */
+long Ordinal_2027(alo, ahi, blo, bhi)
+unsigned int alo;
+unsigned int ahi;
+unsigned int blo;
+unsigned int bhi;
 {
-    return 0;
+    unsigned long long ab = (unsigned long long)alo | ((unsigned long long)ahi << 32);
+    unsigned long long bb = (unsigned long long)blo | ((unsigned long long)bhi << 32);
+    double a, b, r;
+    memcpy(&a, &ab, 8);
+    memcpy(&b, &bb, 8);
+    r = a * b;
+    memcpy(&ab, &r, 8);
+    return (long)ab;
 }
 
-long Ordinal_2028()
+/* Softfloat single-precision COMPARE: returns 1 when a <  b, else 0.
+   Paired with 2030 (<=), 2036 (>), 2038 (>=) -- inferred from the
+   viewport-cull tests in raster_triangle (all verts left of x0 -> cull uses
+   2028; all verts right of x1 -> cull uses 2036). Earlier no-op stub made
+   every triangle survive culling with degenerate edges. */
+long Ordinal_2028(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return ordfloat_bits_to_float(a) < ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
-long Ordinal_2030()
+/* Softfloat single-precision COMPARE: returns 1 when a <= b, else 0. */
+long Ordinal_2030(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return ordfloat_bits_to_float(a) <= ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
 long Ordinal_2032(x)
@@ -845,19 +946,39 @@ long Ordinal_2033()
     return 0;
 }
 
-long Ordinal_2036()
+/* Softfloat single-precision COMPARE: returns 1 when a >  b, else 0. */
+long Ordinal_2036(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return ordfloat_bits_to_float(a) > ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
-long Ordinal_2038()
+/* Softfloat single-precision COMPARE for the 3D near-plane clip test:
+   returns 1 when a >= b, else 0. Call sites read it as
+   `if (Ordinal_2038(vertex_z, near_plane) == 0) { ...clip... }`. Was a
+   no-op stub (always "clip"), so every vertex was treated as behind the
+   near plane -> no visible geometry survived. */
+long Ordinal_2038(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return ordfloat_bits_to_float(a) >= ordfloat_bits_to_float(b) ? 1 : 0;
 }
 
-long Ordinal_2044()
+/* Softfloat double -> float: double bit pattern in the first-arg
+   register (chained), returns the single-precision bit pattern. Was a
+   return-0 stub -- the final step feeding DAT_000d9ed8 / DAT_000d9930. */
+long Ordinal_2044(x)
+unsigned long long x;
 {
-    return 0;
+    double d;
+    float f;
+    unsigned int r;
+    memcpy(&d, &x, 8);
+    f = (float)d;
+    memcpy(&r, &f, 4);
+    return (long)r;
 }
 
 long Ordinal_2046()
@@ -865,9 +986,16 @@ long Ordinal_2046()
     return 0;
 }
 
-long Ordinal_2047()
+/* Softfloat single-precision DIVIDE: a / b. Used for the near-plane
+   clip interpolation factor ((near - z0) / (z1 - z0)) in near_clip_visible_tiles.
+   Was a no-op stub. */
+long Ordinal_2047(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    float fb = ordfloat_bits_to_float(b);
+    if (fb == 0.0f) return 0;
+    return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) / fb);
 }
 
 long Ordinal_2048()
@@ -875,9 +1003,15 @@ long Ordinal_2048()
     return 0;
 }
 
-long Ordinal_2051()
+/* Softfloat single-precision ADD: a + b. The workhorse of the 3D
+   matrix-multiply / vertex-transform math (FUN_0001e274, FUN_0001dfe8,
+   near_clip_visible_tiles). Was a no-op stub -> every transformed vertex came out
+   0 -> nothing to draw. */
+long Ordinal_2051(a, b)
+unsigned int a;
+unsigned int b;
 {
-    return 0;
+    return (long)ordfloat_float_to_bits(ordfloat_bits_to_float(a) + ordfloat_bits_to_float(b));
 }
 
 long Ordinal_2053()

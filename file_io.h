@@ -23,4 +23,8 @@ int uw_file_close(int handle);
  * caller uses it with fscanf, not the integer-handle CreateFile family. */
 void *uw_file_fopen(const char *win_path, const char *mode);
 
+/* Byte-for-byte file copy between two Windows-style game paths (backs the
+ * CopyFileW-shaped coredll ordinal). Returns 1 on success, 0 on failure. */
+int uw_file_copy(const char *win_src, const char *win_dst);
+
 #endif

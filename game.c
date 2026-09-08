@@ -39,11 +39,11 @@ undefined4 param_4;
       FUN_0003af28(param_1,0xca,uVar3);
       FUN_00011000(0,0xf0,0,0x140);
       Ordinal_1044(g_uw_framebuffer,uVar3,0x25800);
-      FUN_0002310c();
+      flush_dirty_rect_to_display_240();
       Ordinal_496(2000);
       Ordinal_1018(uVar3);
-      FUN_00022b54(0,0xffffffff);
-      FUN_00014294();
+      build_rgb565_palette(0,0xffffffff);
+      build_shade_lut();
       DAT_0023c44c = Ordinal_1041(0x4cce);
       DAT_0023cca0 = Ordinal_1041(64000);
       DAT_0023cef0 = Ordinal_1041(0x7fff);
@@ -97,7 +97,7 @@ undefined4 param_4;
           Ordinal_870(auStack_40);
           Ordinal_859(auStack_40);
         }
-        FUN_000497cc();
+        main_loop_hud_flush();
       }
       uVar3 = FUN_00077860(param_1,local_38);
       return uVar3;
@@ -155,7 +155,7 @@ undefined4 param_1;
      as other dual-purpose-variable fixes elsewhere in this file. */
   void *pvVar_buf10000;
   /* Declared as a lone 4-byte scalar, but `&local_82c` is handed to
-     DAT_0023bf6c and then read back through FUN_0006a200/FUN_0006af3c
+     DAT_0023bf6c and then read back through FUN_0006a200/menu_button_list_navigate
      as an array of up to 4 (param_1) 0x10-byte-stride records (plus an
      overlapping 4-byte-stride array access) -- another undersized-local
      table, confirmed via ASAN stack-buffer-overflow. Widened directly.
@@ -250,24 +250,24 @@ undefined4 param_1;
       DEBUG(TRACE, "blitting %s", s__DATA_opscr_byt_00086eec);
       FUN_0007ee4c(acStack_7ec,pvVar_buf10000,64000);
       FUN_00057118();
-      // HACK: deviation from the real binary -- was FUN_00040e24(2, temp_buf),
+      // HACK: deviation from the real binary -- was load_pals_bank(2, temp_buf),
       /* confirmed via ARM disassembly of the original UU.exe
-         (main_menu_loop == FUN_0006a3d8, calls FUN_00040e24 directly at
-         both its own palette-load points, never through FUN_00040efc).
+         (main_menu_loop == FUN_0006a3d8, calls load_pals_bank directly at
+         both its own palette-load points, never through set_palette_bank).
          That's a genuine shipped bug, not a decompile artifact:
-         FUN_00040e24 installs g_palette_rgb565 correctly for the menu's own
+         load_pals_bank installs g_palette_rgb565 correctly for the menu's own
          draw, but never syncs DAT_00088d98 -- the buffer
-         FUN_0007e99c() (called periodically by the menu's own hover-
+         reinstall_active_palette() (called periodically by the menu's own hover-
          loop timer, FUN_0006a168) always reinstalls from. Since nothing
          else keeps DAT_00088d98 current for the menu screen, it holds
          whatever palette some other screen last loaded via
-         FUN_00040efc, and the timer clobbers the menu's correct
+         set_palette_bank, and the timer clobbers the menu's correct
          palette back to that stale one on the very next hover/redraw
          (confirmed via UW_DEBUG_LEVEL=TRACE: g_palette_rgb565 flips from
-         pals.dat index 2 to a leftover index 5). Using FUN_00040efc(2)
+         pals.dat index 2 to a leftover index 5). Using set_palette_bank(2)
          here instead keeps DAT_00088d98 in sync, so that clobber
          reinstalls the *same* correct palette instead of a stale one. */
-      FUN_00040efc(2);
+      set_palette_bank(2);
       iVar10 = 0;
       do {
         iVar6 = 0;
@@ -279,6 +279,7 @@ undefined4 param_1;
         } while (iVar6 < 0x140);
         iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
       } while (iVar10 < 200);
+      debug_framebuffer_dump("main_menu_loop");
       FUN_000570b4();
       if ((DAT_0023bf70 == 0) ||
          /* Was a literal 0 here (an earlier fix pass believed this
@@ -300,11 +301,11 @@ undefined4 param_1;
         FUN_0006a200(uVar8,DAT_0023bf6c,0,uVar2);
         // HACK: same DAT_00088d98-sync deviation as this function's other
         // palette-load point above -- see that comment.
-        FUN_00040efc(2);
-        FUN_000122d4(0,0,g_uw_framebuffer,200);
+        set_palette_bank(2);
+        fade_in(0,0,g_uw_framebuffer,200);
       }
     }
-    sVar3 = FUN_0006af3c(uVar8,DAT_0023bf6c,0,uVar2);
+    sVar3 = menu_button_list_navigate(uVar8,DAT_0023bf6c,0,uVar2);
     local_838 = (int)sVar3;
     if (local_838 == -1) {
       FUN_0003baf4(0);
@@ -315,7 +316,7 @@ undefined4 param_1;
     }
     else if (local_838 == 1) {
       DAT_0024af74 = 1;
-      FUN_00012444(0,0,g_uw_framebuffer,200);
+      fade_out(0,0,g_uw_framebuffer,200);
       iVar4 = character_generator_start();
       if (iVar4 != 0) {
         Ordinal_1047(acStack_6e4,0,0x104);
@@ -350,7 +351,17 @@ undefined4 param_1;
         Ordinal_1063(acStack_5dc,s__SAVE0_lev_ark_000842fc);
         uVar7 = FUN_0002295c(acStack_5dc);
         Ordinal_61(auStack_434,uVar7);
+        /* The original does CopyFileW(auStack_22c, auStack_434) here to
+           seed the new game's world from the pristine template. That path
+           relies on the coredll wide-string ordinals (Ordinal_196/61/164),
+           which are no-op stubs -- and the pointer FUN_0002295c returns
+           gets truncated through this function's `undefined4` locals, so
+           making them real would crash. Do the copy directly against the
+           game paths instead: without it \SAVE0\lev.ark never exists and
+           FUN_0006bc28 below fails, bouncing straight back to the menu
+           instead of entering the dungeon. */
         Ordinal_164(auStack_22c,auStack_434,0);
+        uw_file_copy(s__DATA_lev_ark_00085734, s__SAVE0_lev_ark_000842fc);
         sVar3 = FUN_00019120();
         if (sVar3 != 0) {
           FUN_0003c3c8();
@@ -361,7 +372,7 @@ undefined4 param_1;
         }
         else {
           bVar11 = true;
-          FUN_0003cff8(0x20,2,1);
+          set_player_tile_position(0x20,2,1);
           FUN_0006c834(1,0);
         }
       }
@@ -438,7 +449,7 @@ undefined4 param_1;
         if (iVar4 < 0) {
           iVar4 = iVar4 + 1;
         }
-        FUN_00011060(uVar7,0xa0 - (short)(iVar4 >> 1),0x5a);
+        draw_text_string(uVar7,0xa0 - (short)(iVar4 >> 1),0x5a);
         FUN_000570b4();
         while (sVar3 = FUN_00057a70(), sVar3 < 0) {
           FUN_0006a168();
@@ -453,7 +464,7 @@ undefined4 param_1;
   } while (!bVar11);
   FUN_00057cac(3);
   FUN_000570b4();
-  FUN_0003bc40(1);
+  set_game_mode(1);
   FUN_00049924(0x7ffe);
   DAT_000868d8 = 0;
   return;

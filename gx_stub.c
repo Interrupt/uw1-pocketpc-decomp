@@ -10,11 +10,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #define GX_W 320
 #define GX_H 240
 
-/* The game's own screen-flush routines (FUN_00022f0c/FUN_0002310c in
+/* The game's own screen-flush routines (flush_dirty_rect_to_display/flush_dirty_rect_to_display_240 in
  * uw.c) always blit by transposing rows<->columns from the software
  * framebuffer into whatever GXBeginDraw() returns, using the pitch
  * values from GXGetDisplayProperties() -- i.e. the code unconditionally
@@ -62,6 +63,11 @@ typedef struct {
 #define VK_SPACE 0x20
 #define VK_CONTROL 0x11
 #define VK_ESCAPE 0x1B
+/* WinCE app-launch button virtual-key. Real GAPI hands the game codes
+ * like this for the hardware A/B/C/Start buttons -- never ASCII keys --
+ * so mapping "button A" to one keeps the spacebar free to type a literal
+ * space in the name-entry field. */
+#define VK_APP1 0xC1
 
 static SDL_Window *g_win;
 static SDL_Renderer *g_ren;
@@ -126,7 +132,13 @@ static int translate_vk(SDL_Keycode sym) {
         case SDLK_LEFT: return VK_LEFT;
         case SDLK_RIGHT: return VK_RIGHT;
         case SDLK_RETURN: return VK_RETURN;
-        case SDLK_SPACE: return VK_SPACE;
+        /* SDLK_SPACE is deliberately NOT mapped here: the spacebar must
+         * reach the game only as a WM_CHAR (0x20) via SDL_TEXTINPUT so it
+         * types a literal space in the name-entry field. Sending a
+         * WM_KEYDOWN for it too made handle_keyboard_message match it against the
+         * "button A" key (see GXGetDefaultKeys) and emit event 0x91,
+         * which that field handles as delete -- so every space deleted
+         * the character before it. */
         case SDLK_LCTRL:
         case SDLK_RCTRL: return VK_CONTROL;
         case SDLK_ESCAPE: return VK_ESCAPE;
@@ -178,19 +190,19 @@ void uw_pump_events(void) {
                 int vk = translate_vk(ev.key.keysym.sym);
                 if (vk != 0) {
                     unsigned int msg = (ev.type == SDL_KEYDOWN) ? 0x100u : 0x101u;
-                    FUN_00077b2c(0, msg, (unsigned int)vk);
+                    handle_keyboard_message(0, msg, (unsigned int)vk);
                 }
                 /* Backspace/Enter don't come through SDL_TEXTINPUT (that
                  * event only fires for printable characters), but the
-                 * game's WM_CHAR handler (FUN_00077b2c, message 0x102)
+                 * game's WM_CHAR handler (handle_keyboard_message, message 0x102)
                  * treats any raw byte value the same way regardless of
                  * how it arrived, so send them here as the real
                  * control-character bytes a Windows WM_CHAR would carry. */
                 if (ev.type == SDL_KEYDOWN) {
                     if (ev.key.keysym.sym == SDLK_BACKSPACE) {
-                        FUN_00077b2c(0, 0x102u, 0x08u);
+                        handle_keyboard_message(0, 0x102u, 0x08u);
                     } else if (ev.key.keysym.sym == SDLK_RETURN) {
-                        FUN_00077b2c(0, 0x102u, 0x0Du);
+                        handle_keyboard_message(0, 0x102u, 0x0Du);
                     }
                 }
                 /* Real Windows delivers WM_KEYDOWN and WM_CHAR as
@@ -214,13 +226,13 @@ void uw_pump_events(void) {
             case SDL_TEXTINPUT: {
                 /* Real typed characters (respects keyboard layout/shift
                  * state) -- forwarded as WM_CHAR (0x102), matching
-                 * FUN_00077b2c's real-text-input path. Only ever one
+                 * handle_keyboard_message's real-text-input path. Only ever one
                  * pending-input slot is read per poll (see the keydown
                  * case above), so stop after this event too. */
                 for (const char *p = ev.text.text; *p; p++) {
                     unsigned char c = (unsigned char)*p;
                     if (c < 0x80) {
-                        FUN_00077b2c(0, 0x102u, (unsigned int)c);
+                        handle_keyboard_message(0, 0x102u, (unsigned int)c);
                     }
                 }
                 return;
@@ -233,7 +245,7 @@ void uw_pump_events(void) {
                  * (see the HW_W/HW_H comment up top), packed as a real
                  * Windows lParam (y<<16)|x -- FUN_00077dd0 (recovered from
                  * the original binary's mouse message-dispatch table,
-                 * separate from FUN_00077b2c's keyboard-only table) does
+                 * separate from handle_keyboard_message's keyboard-only table) does
                  * its own portrait Y flip internally, so just convert SDL's
                  * landscape window coordinates into the same un-rotated
                  * portrait space GXEndDraw's blit reads from:
@@ -299,9 +311,9 @@ void uw_pump_events(void) {
             }
             case SDL_WINDOWEVENT:
                 if (ev.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-                    FUN_00077b2c(0, 7, 0);
+                    handle_keyboard_message(0, 7, 0);
                 else if (ev.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
-                    FUN_00077b2c(0, 8, 0);
+                    handle_keyboard_message(0, 8, 0);
                 break;
         }
     }
@@ -347,11 +359,11 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
     }
     SDL_StartTextInput();
     /* VSYNC matters beyond just avoiding tearing here: several original
-     * routines (e.g. FUN_000122d4's fade-in-from-black transition) pace
+     * routines (e.g. fade_in's fade-in-from-black transition) pace
      * themselves purely by how long each GXEndDraw-equivalent present
      * call naturally takes, with no explicit delay of their own -- real
      * WinCE hardware's slow per-pixel math and real hardware blit made
-     * that implicitly visible (confirmed: FUN_000122d4's 8-step fade
+     * that implicitly visible (confirmed: fade_in's 8-step fade
      * plus final restore pass completed in 0ms without this, i.e.
      * instantly/imperceptibly, on modern hardware). Real display refresh
      * pacing via vsync restores roughly the intended per-step timing
@@ -531,6 +543,125 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
     SDL_FreeSurface(surf);
 }
 
+void uw_debug_dump_tmap(int level, const unsigned char *tile_data) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DUMP_TMAP");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+
+    /* One directory per run (same convention as debug_framebuffer_dump's
+       drawdumps/<ts>/), created lazily. */
+    static char run_dir[300];
+    static int run_dir_ready = 0;
+    if (!run_dir_ready) {
+        time_t now = time(NULL);
+        struct tm tm_now;
+        localtime_r(&now, &tm_now);
+        char ts[32];
+        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
+        snprintf(run_dir, sizeof(run_dir), "debug/tmap/%s", ts);
+        debug_mkdir_p(run_dir);
+        run_dir_ready = 1;
+    }
+
+    static unsigned int counter = 0;
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%03u_level%02d.bmp", run_dir, counter++, level);
+
+    /* 64x64, one pixel per tile: index = x + y*64 (see set_player_tile_position's
+       `param_1 + param_2*0x40` tile-index arithmetic in uw.c -- x is the
+       fast-varying/column axis, y the row). 4 bytes per tile; only byte 0's
+       low nibble (the tile-type field) matters here -- 0 is the classic UW
+       "solid rock, no floor" type, 1-9 are open floor and its diagonal/
+       slope variants (all "not solid" for this dump's purposes). */
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, 64, 64, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!surf) {
+        fprintf(stderr, "[tmap-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+    SDL_Color colors[256] = {0};
+    colors[0].r = colors[0].g = colors[0].b = 0;   /* solid -> black */
+    colors[1].r = colors[1].g = colors[1].b = 255; /* everything else -> white */
+    SDL_SetPaletteColors(surf->format->palette, colors, 0, 2);
+
+    unsigned char *pixels = (unsigned char *)surf->pixels;
+    for (int y = 0; y < 64; y++) {
+        unsigned char *row = pixels + y * surf->pitch;
+        for (int x = 0; x < 64; x++) {
+            int tile_type = tile_data[(x + y * 64) * 4] & 0xf;
+            row[x] = (tile_type == 0) ? 0 : 1;
+        }
+    }
+
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[tmap-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    } else {
+        fprintf(stderr, "[tmap-dump] wrote %s\n", path);
+    }
+    SDL_FreeSurface(surf);
+}
+
+void debug_framebuffer_dump(const char *tag) {
+    static int enabled = -1;
+    static unsigned int every = 1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DRAW");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+        /* UW_DEBUG_DRAW_EVERY=N: only actually write every Nth dump
+           (still counting all of them, so filenames stay a stable
+           stride). Lets a huge sequence -- e.g. a full-level automap
+           fill, ~30k pixel ops -- be sampled down to a manageable
+           number of BMPs. Unset / <=1 means dump every call. */
+        const char *ev = getenv("UW_DEBUG_DRAW_EVERY");
+        if (ev && ev[0]) {
+            long n = strtol(ev, NULL, 10);
+            if (n > 1) every = (unsigned int)n;
+        }
+    }
+    if (!enabled) return;
+
+    static unsigned int call_no = 0;
+    if ((call_no++ % every) != 0) return;
+
+    /* One directory per run, named for when the run started; every dump
+       this process makes lands under it. Created lazily so a run that
+       never draws doesn't leave an empty folder behind. */
+    static char run_dir[300];
+    static int run_dir_ready = 0;
+    if (!run_dir_ready) {
+        time_t now = time(NULL);
+        struct tm tm_now;
+        localtime_r(&now, &tm_now);
+        char ts[32];
+        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
+        snprintf(run_dir, sizeof(run_dir), "debug/drawdumps/%s", ts);
+        debug_mkdir_p(run_dir);
+        run_dir_ready = 1;
+    }
+
+    static unsigned int counter = 0;
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", run_dir, counter++, tag ? tag : "draw");
+
+    /* g_uw_framebuffer is the game's internal 320x240 RGB565 software
+       framebuffer that every graphics.c draw primitive writes into (see
+       its declaration comment in uw.c) -- already landscape-oriented, no
+       rotation needed (unlike g_framebuffer/g_display_buf below, which are
+       the portrait "hardware" buffer this gets flushed to later). */
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, GX_W, GX_H, 16, SDL_PIXELFORMAT_RGB565);
+    if (!surf) {
+        fprintf(stderr, "[draw-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+    memcpy(surf->pixels, g_uw_framebuffer, (size_t)GX_W * GX_H * 2);
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[draw-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    }
+    SDL_FreeSurface(surf);
+}
+
 int GXCloseDisplay(void) {
     fprintf(stderr, "[gx] GXCloseDisplay\n");
     if (g_tex) { SDL_DestroyTexture(g_tex); g_tex = NULL; }
@@ -566,14 +697,63 @@ int GXEndDraw(void) {
     SDL_RenderCopy(g_ren, g_tex, NULL, NULL);
     SDL_RenderPresent(g_ren);
 
+    /* UW_DEBUG_TIMELAPSE=<ms>: save a numbered frame every <ms> of
+       wall-clock time (min 1, "1" or empty -> 250ms) into
+       debug/timelapse/<run-timestamp>/. Pairs with UW_DEMO_DELAY_MS to
+       pace a scripted demo into an even timelapse -- assemble the BMPs
+       into a GIF afterwards. Captures g_uw_framebuffer directly (the
+       game's live 320xGX_H RGB565 software buffer that every draw writes
+       into) rather than the SDL renderer's last present -- the 3D
+       viewport only reaches the renderer on a dirty-rect flush, so a
+       renderer read goes stale between redraws (e.g. while turning). */
+    {
+        static int tl_ms = -1;
+        static Uint32 tl_next = 0;
+        static char tl_dir[300];
+        static unsigned tl_n = 0;
+        if (tl_ms < 0) {
+            const char *e = getenv("UW_DEBUG_TIMELAPSE");
+            if (e && e[0] && strcmp(e, "0") != 0) {
+                long v = strtol(e, NULL, 10);
+                tl_ms = (v > 1) ? (int)v : 250;
+                time_t now = time(NULL);
+                struct tm tm_now;
+                localtime_r(&now, &tm_now);
+                char ts[32];
+                strftime(ts, sizeof ts, "%Y%m%d_%H%M%S", &tm_now);
+                snprintf(tl_dir, sizeof tl_dir, "debug/timelapse/%s", ts);
+                debug_mkdir_p(tl_dir);
+                tl_next = SDL_GetTicks();
+                fprintf(stderr, "[timelapse] every %dms -> %s/\n", tl_ms, tl_dir);
+            } else {
+                tl_ms = 0;
+            }
+        }
+        if (tl_ms > 0) {
+            Uint32 now = SDL_GetTicks();
+            if (now >= tl_next && g_uw_framebuffer) {
+                char p[360];
+                snprintf(p, sizeof p, "%s/%05u.bmp", tl_dir, tl_n++);
+                SDL_Surface *tls = SDL_CreateRGBSurfaceWithFormat(
+                    0, GX_W, GX_H, 16, SDL_PIXELFORMAT_RGB565);
+                if (tls) {
+                    memcpy(tls->pixels, g_uw_framebuffer, (size_t)GX_W * GX_H * 2);
+                    SDL_SaveBMP(tls, p);
+                    SDL_FreeSurface(tls);
+                }
+                tl_next = now + (Uint32)tl_ms;
+            }
+        }
+    }
+
     /* Real GAPI hardware's GXEndDraw blocked until the next display
      * refresh -- that's what gave the whole game its effective 60Hz
      * tick rate (every polling/redraw loop in the game funnels through
-     * here via FUN_00022f0c), with no explicit frame-rate code of its
+     * here via flush_dirty_rect_to_display), with no explicit frame-rate code of its
      * own anywhere in the decompile. SDL_RENDERER_PRESENTVSYNC alone
      * doesn't reliably reproduce that on this host -- desktop GPU
      * drivers can queue/batch several presents before actually blocking
-     * on a vsync (confirmed: FUN_000122d4's fade-in, which calls
+     * on a vsync (confirmed: fade_in's fade-in, which calls
      * GXEndDraw 8 times in a tight loop, measured only ~19ms total
      * instead of something near 8 * 16.67ms). Explicitly cap how often
      * a call here can complete, so every present -- not just whichever
@@ -613,12 +793,18 @@ void *GXGetDisplayProperties(void) {
 }
 
 void *GXGetDefaultKeys(void *outBuffer) {
-    fprintf(stderr, "[gx] GXGetDefaultKeys: mapping arrows/space/ctrl/esc/enter to the game's "
-                    "D-pad and A/B/C/Start buttons\n");
+    fprintf(stderr, "[gx] GXGetDefaultKeys: mapping arrows/ctrl/esc/enter to the game's "
+                    "D-pad and B/C/Start buttons (A left unbound -- see below)\n");
     GxKeyList *kl = (GxKeyList *)outBuffer;
     if (!kl) return outBuffer;
     memset(kl, 0, sizeof(*kl));
-    kl->a.vk = VK_SPACE;
+    /* Button A was VK_SPACE, which collided with typing a space in the
+     * name-entry field (handle_keyboard_message turns a button-A keydown into event
+     * 0x91 = delete-previous-char). Use a WinCE app-button VK instead --
+     * the shape real GAPI returns -- so the spacebar is free. Desktop
+     * "activate" is the mouse click, so leaving A without a keyboard
+     * binding costs nothing here. */
+    kl->a.vk = VK_APP1;
     kl->b.vk = VK_CONTROL;
     kl->c.vk = VK_ESCAPE;
     kl->start.vk = VK_RETURN;

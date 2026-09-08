@@ -102,7 +102,7 @@ void Ordinal_1102(const char *fmt, ...);
 void *Ordinal_1113(void *path, void *mode);
 int Ordinal_1114(void *f, const char *fmt, ...);
 int Ordinal_1118(void *f);
-long Ordinal_1346();
+void *Ordinal_1346();
 long Ordinal_1407();
 long Ordinal_1415();
 long Ordinal_1416();
