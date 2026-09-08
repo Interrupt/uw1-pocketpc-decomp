@@ -2084,7 +2084,7 @@ short DAT_0023bf4c;
    DAT_00085728: nothing in this decompile ever writes it, and an
    exhaustive whole-binary Ghidra reference search confirms that's true
    of the real UU.exe too -- every one of its 4 references, in
-   FUN_0003d94c/FUN_0003dca4/apply_heading_turn, is a read). Left as a
+   resolve_move_vector/FUN_0003dca4/apply_heading_turn, is a read). Left as a
    bare zero-initialized global, this turn-rate constant (multiplied
    into every heading-step computation in apply_heading_turn's case-1
    branch) made every turn compute to a zero step no matter how long a
@@ -27173,7 +27173,7 @@ undefined4 param_1;
   short local_18 [2];
   
   local_18[0] = 0;
-  if ((DAT_00204890 == 0) && (FUN_0003d94c((int)DAT_0023bf1c,param_1,local_18), DAT_00204890 == 0))
+  if ((DAT_00204890 == 0) && (resolve_move_vector((int)DAT_0023bf1c,param_1,local_18), DAT_00204890 == 0))
   {
     iVar5 = (int)local_18[0] - (int)DAT_00204894;
     uVar1 = iVar5 * 0x10000 >> 0x10;
@@ -27421,7 +27421,13 @@ void update_3d_sound_position()
 
 
 
-void FUN_0003d94c(param_1,param_2,param_3)
+// was FUN_0003d94c -- resolve a movement mode (param_1 = DAT_0023bf1c) into
+// a travel direction (DAT_00201c78) + step magnitude (*param_3):
+//   0   stop            1     analog move/turn (DAT_0023bf48/4c rates)
+//   6/7 jump            8     move + face 180
+//   9   sidestep left   10    sidestep right  (heading -/+ 0x4000, face kept)
+//   0xc/0xd  fly up / down (DAT_0020488a vertical velocity)
+void resolve_move_vector(param_1,param_2,param_3)
 undefined2 param_1;
 short param_2;
 short * param_3;
@@ -50695,7 +50701,7 @@ void FUN_00066e90()
   register_key_binding(0x43,10,1,move_command_dispatch);
   /* Sidestep: the DOS "," / "." strafe keys. decode_movement_command
      already turns input codes 0x2c / 0x2e into DAT_0023bf1c 9 / 10
-     (FUN_0003d94c cases 9/10 = move at heading -/+ 90 degrees, facing
+     (resolve_move_vector cases 9/10 = move at heading -/+ 90 degrees, facing
      unchanged), but nothing routed those codes here -- move_command_dispatch
      with arg 9/10 just re-runs decode_movement_command and returns. The
      gx_stub Z/C keyboard poll feeds 0x2c / 0x2e. */

@@ -879,7 +879,7 @@ undefined4 begin_directional_move();
 void apply_heading_turn();
 void set_player_tile_position();
 void update_3d_sound_position();
-void FUN_0003d94c();
+void resolve_move_vector();
 void FUN_0003dba0();
 void FUN_0003dbd8();
 void FUN_0003dc04();
