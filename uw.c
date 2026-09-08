@@ -30641,6 +30641,16 @@ undefined1 * param_1;
       FUN_00057528(&local_28,&local_26);
       param_1[6] = (char)uVar1;
       param_1[7] = (char)((uint)uVar1 >> 8);
+      /* The mouse-button-state field of the DAT_00085a6c struct is at
+         BYTE offset 12: every reader (FUN_0003f420's click-and-hold walk,
+         FUN_00068138, ...) does `*(ushort *)(DAT_00085a6c + 6)`, which is
+         byte 12 because DAT_00085a6c is typed `short *`, and the reset
+         (input_bindings_init) clears byte 12 too. param_1 here is a plain
+         byte pointer, so param_1[6] above wrote byte 6 -- a dead field no
+         one reads, which is why a click in the 3D viewport reached
+         FUN_0003f420 but never walked. Write byte 12 as well. */
+      param_1[12] = (char)uVar1;
+      param_1[13] = (char)((uint)uVar1 >> 8);
       FUN_00057528(&local_28,&local_26);
       param_1[4] = 1;
       param_1[5] = 0;
