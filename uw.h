@@ -1702,7 +1702,15 @@ undefined4 FUN_000824f0();
 #define _DAT_00202c00 (*(unsigned short*)(DAT_00202bf8_backing + 0x08))
 #define _DAT_00202c05 (*(unsigned short*)(DAT_00202bf8_backing + 0x0d))
 #define _DAT_002035cf (*(uint*)&DAT_002035cf)
-#define _DAT_002048a1 (*(uint*)&DAT_002048a1)
+/* The travel-direction stash the movement sweep compares against
+   DAT_00201c78: apply_heading_turn writes it as two bytes (DAT_002048a1
+   low, DAT_002048a2 high) of that 16-bit angle, so read it back as a
+   signed 16-bit -- not a 32-bit word that also pulls in DAT_002048a3/a4
+   (junk here) and, with the sign mismatch vs the short DAT_00201c78, made
+   the "!=" test fire every frame. That spurious mismatch ran the
+   auto-straighten branch on sidestep release and nudged the facing by
+   +/-0x400 (the "tiny rotation on strafe release"). */
+#define _DAT_002048a1 (*(short*)&DAT_002048a1)
 #define _DAT_002048a9 (*(uint*)&DAT_002048a9)
 #define _DAT_002048c2 (*(uint*)&DAT_002048c2)
 #define _DAT_00204980 (*(uint*)&DAT_00204980)
