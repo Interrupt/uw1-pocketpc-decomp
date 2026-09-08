@@ -1073,6 +1073,13 @@ static undefined2 DAT_00248418_backing[20 * 256];
 #define DAT_00248418 DAT_00248418_backing[0]
 short DAT_00084f10;
 int g_force_flush;
+/* Set by the force-3D-redraw hack in main_loop_hud_flush around its
+   per-frame full_dungeon_redraw() call: tells rebuild_dungeon_view to skip
+   its passive experience-point trickle (FUN_00069bd0), which otherwise
+   fires once per redraw and -- called with a dropped arg (garbage XP
+   amount) -- walks into the level-up message path and crashes. A cosmetic
+   forced repaint must not touch game state anyway. */
+int g_force_redraw_no_xp;
 short DAT_0023c63c;
 undefined4 DAT_0023c638;
 static undefined DAT_00084e40_backing[8192];
@@ -34624,23 +34631,24 @@ void main_loop_hud_flush()
     static int _force = -1;
     if (_force < 0) _force = (getenv("UW_NO_FORCE_3D_REDRAW") == NULL);
     if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0) {
-      /* Re-rasterise the 3D dungeon view every main-loop iteration. Setting
-         dirty bit 3 (-> dungeon_view_anim_tick) is not enough: that handler only
-         redraws while a step/turn animation is in progress (0 < DAT_00201c90),
-         so it does nothing while the player is idle -- which is exactly why
-         the 3D view froze after the first frame under ./run.sh.
-         We only re-run the pure rasteriser render_dungeon_view() over the
-         geometry the normal (movement-driven) path already built; we do NOT
-         call build_frame_draw_list()/rebuild_dungeon_view() here, since
-         rebuild_dungeon_view() also steps game simulation (triggers, message
-         log, ...) and must not fire spuriously. This mirrors the branch of
-         render_dungeon_frame_timed() taken when build_frame_draw_list()
-         reports no change. Skipped while an animation owns the view
-         (DAT_00201c90 != 0). Set UW_NO_FORCE_3D_REDRAW to restore the
-         motion-gated behaviour. */
-      set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
-      render_dungeon_view();
-      set_viewport_clip_rect(0,0,0x13f,199);
+      /* Rebuild AND re-rasterise the 3D dungeon view every main-loop
+         iteration. An earlier version called only render_dungeon_view()
+         over the existing geometry -- but the camera globals it reads
+         (DAT_000db438.. position / DAT_000db448.. angles) are only synced
+         from the player object by build_frame_draw_list(), and the visible
+         -tile geometry only by walk_visible_tiles() inside
+         rebuild_dungeon_view(). Skipping both meant the view never changed
+         as the player moved or turned -- the exact symptom being fixed.
+         full_dungeon_redraw() is the same wrapper the demo REVEAL command
+         runs (confirmed to update the view correctly); g_force_redraw_no_xp
+         suppresses its one unwanted side effect (a per-redraw XP trickle
+         that also happens to crash on a dropped arg). dirty_rect_union then
+         marks the viewport so flush_dirty_rect_to_display(1) below blits it.
+         Skipped while an animation owns the view (DAT_00201c90 != 0). Set
+         UW_NO_FORCE_3D_REDRAW to restore the motion-gated behaviour. */
+      g_force_redraw_no_xp = 1;
+      full_dungeon_redraw();
+      g_force_redraw_no_xp = 0;
       dirty_rect_union(0x13,0x84,0x34,0xe0);
     }
   }
@@ -46268,7 +46276,9 @@ void rebuild_dungeon_view()
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
       (DAT_00201b68 != 9)) &&
      (sVar3 = Ordinal_2005(10,(int)DAT_0023b810 * (int)DAT_00201b68), sVar3 != 0)) {
-    FUN_00069bd0();
+    if (g_force_redraw_no_xp == 0) {
+      FUN_00069bd0();
+    }
   }
   if (DAT_00201b68 == 9) {
     DAT_00086b30 = uVar1;
