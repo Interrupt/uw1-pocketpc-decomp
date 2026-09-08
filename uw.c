@@ -44047,6 +44047,20 @@ void sweep_land_on_surface()
   *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
   psVar9 = DAT_00204874;
   DAT_00086984 = 0;
+  /* PHYSICS: fall ended -- clear the accumulated downward velocity (+0xa) and the
+     gravity-accel field (+0x10), and drop the airborne locomotion state byte
+     (+0x28 == DAT_002048a8) back to "walking" (8). Without the last step
+     FUN_0003c524 (called every tick from update_3d_sound_position) sees the stale
+     airborne state and re-arms +0x10 = -4, so the fall integrator re-enters and
+     "lands" every tick forever, freezing the player on the floor. Only when we
+     were moving downward, so a jump's own apex handling is left untouched. */
+  if (*(short *)(DAT_00204874 + 10) < 0) {
+    *(short *)(DAT_00204874 + 10) = 0;
+    *(short *)(DAT_00204874 + 0x10) = 0;
+    if (*(byte *)(DAT_00204874 + 0x28) == 0x10) {
+      *(undefined1 *)(DAT_00204874 + 0x28) = 8;
+    }
+  }
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
       ((int)*(short *)((char *)DAT_0008697c + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
      (DAT_00204874[5] < 0)) {
@@ -44412,13 +44426,21 @@ uint sweep_collision_flags()
       // PHYSICS: floor step -- if the height change is within the step limit
       // (byte 0x27), OR the tile is a walkable auto-stick floor (DAT_002049d4 & 4)
       // and no vertical motion is active, snap straight to it instead of falling.
-      // A drop larger than the step limit on a non-auto-stick tile falls through
-      // here without setting the airborne flag -- that is why a ledge drop is
-      // resolved in one tick rather than a multi-tick fall.
+      //
+      // The `iVar4 - iVar6 <= step limit` guard on the auto-stick clause is
+      // added: without it, a walk off a real ledge onto a walkable floor far
+      // below still auto-sticks (foot Z snapped down in one tick). Restricting
+      // the auto-stick to drops within the step-down limit lets a bigger drop
+      // fall through to the "blocked" resolution below, where sweep_apply_collision
+      // arms a gravity fall (+0x10 = -4) and sweep_step_vertical plays it out over
+      // several ticks, ending in sweep_land_on_surface. An upward step
+      // (iVar4 - iVar6 < 0) always satisfies the guard, so auto-stick up a slope
+      // is unchanged.
       uVar3 = iVar4 - iVar6 >> 0x1f;
       if (((int)((iVar4 - iVar6 ^ uVar3) - uVar3) <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)) ||
-         (((*(short *)(DAT_00204874 + 10) == 0 && ((DAT_002049d6 & 0x800) == 0)) &&
-          ((DAT_002049d4 & 4) != 0)))) {
+         (((((*(short *)(DAT_00204874 + 10) == 0 && ((DAT_002049d6 & 0x800) == 0)) &&
+            ((DAT_002049d4 & 4) != 0)) &&
+           (iVar4 - iVar6 <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)))))) {
 LAB_0005a970:
         if ((DAT_00204878 != 0) && ((uVar1 & 0x1000) == 0)) {
           bVar2 = true;
@@ -44494,7 +44516,11 @@ LAB_0005abe4:
     local_3c = local_3c & 0xf7ff;
   }
   uVar1 = local_3c;
-  if (((((DAT_002049d6 & 0x100) != 0) && (bVar8)) && (*(short *)(DAT_00204874 + 10) == 0)) &&
+  // PHYSICS: no-feature fallback snap -- pull the foot down onto the flat floor
+  // when there is no slope/step feature. Also suppressed once a gravity fall is
+  // armed (+0x10) so the fall integrator owns the descent.
+  if ((((((DAT_002049d6 & 0x100) != 0) && (bVar8)) && (*(short *)(DAT_00204874 + 10) == 0)) &&
+      (*(short *)(DAT_00204874 + 0x10) == 0)) &&
      ((int)(uint)DAT_002049d9 <=
       (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)DAT_0008697c + 4)))) {
     *(ushort *)((char *)DAT_0008697c + 4) = (ushort)DAT_002049d9;
