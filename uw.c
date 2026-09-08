@@ -46584,6 +46584,15 @@ void walk_visible_tiles()
   DAT_0023b83c = 0;
   uVar6 = (uint)(short)((int)pbVar8 - (int)DAT_0023b814 >> 2);
   DAT_0023b838 = 0;
+  /* Also clear the arena's own count fields (offset 0 = vertex count,
+     offset 4 = record count). process_visible_tile_cell normally keeps
+     them in step with DAT_0023b838 / DAT_0023b83c as it emits, but a
+     frame where it emits nothing (all tiles culled, or the overflow
+     guard trips for every tile) would otherwise leave last frame's stale
+     counts for near_clip_visible_tiles / render_visible_tile_list to
+     re-draw -- the "view stuck on the tiles from the overflow frame" bug. */
+  *(int *)((char *)DAT_000a85d0_backing + 0) = 0;
+  *(int *)((char *)DAT_000a85d0_backing + 4) = 0;
   if (0x2000 < (int)uVar6) {
     uVar6 = uVar6 - 0x4000;
   }
@@ -47011,16 +47020,18 @@ byte * param_1;
        camera-space and projected vertex arrays at 0x8 / 0x1808 / 0x3008
        (0xc stride), and near_clip_visible_tiles reads a record's stored
        vertex index as `idx*0xc + base + 0x3010` -- so once the vertex
-       count (DAT_000a85d0, == DAT_0023b838) passes ~512 the projected
-       coords run into the 0x4814 record region and near_clip then
-       dereferences a garbage vertex index (wild-pointer crash / black
-       view when looking down a long open hallway). Records likewise cap
-       near 490 (0x60 apart from 0x4814 to the 64KB end). One tile emits
-       up to ~28 verts / ~6 records, so stop emitting geometry for further
-       tiles well before that; walk_visible_tiles rings outward from the
-       camera, so it's the farthest tiles that drop. */
+       count passes ~512 the projected coords run into the 0x4814 record
+       region and near_clip then dereferences a garbage vertex index
+       (wild-pointer crash / black view when looking down a long open
+       hallway). Records likewise cap near 490. One tile emits up to ~28
+       verts / ~6 records, so stop emitting geometry for further tiles
+       well before that; walk_visible_tiles rings outward from the camera,
+       so it's the farthest tiles that drop. Test DAT_0023b838 /
+       DAT_0023b83c -- the working counters walk_visible_tiles resets each
+       frame -- NOT the arena's offset-0 count (which persists and would
+       make the guard latch on forever after one overflow). */
     if (_disabled
-        || (int)*(int *)((char *)DAT_000a85d0_backing) >= 512 - 28
+        || (int)(uint)DAT_0023b838 >= 512 - 28
         || (int)DAT_0023b83c >= 490 - 6) {
       if (*param_1 == 0) {
         *param_1 = automap_reveal_byte(DAT_0023b4ec);
