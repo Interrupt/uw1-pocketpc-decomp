@@ -34785,6 +34785,53 @@ LAB_000497a0:
 
 
 
+/* Debug view (UW_DEBUG_PICK_VIEW): paint the per-pixel object-pick buffer
+   DAT_0023cca0 over the 3D viewport instead of the rendered dungeon, so
+   the pick/stencil coverage is directly visible. Call *after* a pick-mode
+   render pass (FUN_0005bac0) has populated the buffer. Colour key:
+     0x00           empty (no geometry)      -> dark blue
+     0x01..0xbe     object slot id           -> bright cycling colour
+     0xc0..0xfa     wall texture (v-0xbf)    -> grey ramp
+     other          -> magenta
+   Plus a yellow crosshair at the cursor. Viewport rect is x[52,276)
+   y[19,150) (the rect_fill the renderer clears each frame). */
+static void uw_debug_blit_pick_buffer(void)
+{
+  /* 16 distinct colours for object slot ids; deliberately excludes the
+     crosshair yellow (0xFFE0) and the out-of-range magenta (0xF81F). */
+  static const unsigned short obj_pal[16] = {
+    0xF800, 0x07E0, 0x001F, 0x07FF, 0xFC00, 0xFD20, 0x8400, 0x0410,
+    0x001A, 0x8010, 0xAFE5, 0x05FF, 0xF7B0, 0x7BEF, 0xFAE0, 0x39C7,
+  };
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int x, y;
+  if (fb == 0 || DAT_0023cca0 == 0) return;
+  for (y = 19; y < 150; y++) {
+    const unsigned char *row = (const unsigned char *)DAT_0023cca0 + y * 0x140;
+    unsigned short *frow = fb + y * 0x140;
+    for (x = 52; x < 276; x++) {
+      unsigned int v = row[x];
+      unsigned short c;
+      if (v == 0)                 c = 0x0008;                 /* near-black blue */
+      else if (v >= 0xc0 && v < 0xfb) {
+        unsigned int g = ((v - 0xbf) * 5) & 0x3f;             /* 0..0x3f grey ramp */
+        c = (unsigned short)(((g >> 1) << 11) | (g << 5) | (g >> 1));
+      }
+      else if (v < 0xc0)          c = obj_pal[v & 0xf];
+      else                        c = 0xF81F;                 /* magenta: out of range */
+      frow[x] = c;
+    }
+  }
+  /* cursor crosshair */
+  { int cx = (int)g_mouse_x, cy = (int)g_mouse_y, i;
+    for (i = -4; i <= 4; i++) {
+      int px = cx + i, py = cy + i;
+      if (cy >= 0 && cy < 240 && cx + i >= 0 && cx + i < 320) fb[cy * 0x140 + px] = 0xFFE0;
+      if (cx >= 0 && cx < 320 && cy + i >= 0 && cy + i < 240) fb[py * 0x140 + cx] = 0xFFE0;
+    }
+  }
+}
+
 // was FUN_000497cc -- runs once per in-game main-loop iteration: resets
 // the dirty rect to a degenerate {100,100,100,100}, redraws the small
 // HUD/cursor element, and flushes that to the display
@@ -34820,6 +34867,13 @@ void main_loop_hud_flush()
          UW_NO_FORCE_3D_REDRAW to restore the motion-gated behaviour. */
       g_force_redraw_no_xp = 1;
       full_dungeon_redraw();
+      /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
+         buffer, then paint it over the viewport (see
+         uw_debug_blit_pick_buffer). */
+      { static int _pv = -1;
+        if (_pv < 0) _pv = (getenv("UW_DEBUG_PICK_VIEW") != NULL);
+        if (_pv) { FUN_0005bac0(); uw_debug_blit_pick_buffer(); }
+      }
       g_force_redraw_no_xp = 0;
       dirty_rect_union(0x13,0x84,0x34,0xe0);
     }
