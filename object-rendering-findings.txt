@@ -1,11 +1,12 @@
 UW1 PORT -- OBJECT RENDERING IN THE 3D DUNGEON VIEW
 (branch `objects`. Companion to tile-rendering-findings.txt.)
 
-STATUS: not rendering yet, but the path is traced end to end. The object pass
-runs, builds real geometry records, they survive the near-clip -- and then
-rasterise with a null texture because the object geom-record counter is out
-of sync with the render list's record index. Details below under
-"WHY THE BILLBOARDS ARE INVISIBLE".
+STATUS: not on screen yet. Objects now load their real 16x16 OBJECTS.GR
+sprites and their billboard quads project onto the 3D viewport with a valid
+texture, but paint no pixels -- the quad carries no U/V texcoords so the
+span sampler only ever hits texel (0,0) (transparent). See "STATUS ... (2)"
+at the bottom for the current, corrected picture; the two middle sections
+("WHY THE BILLBOARDS ARE INVISIBLE" texptr theory) are superseded.
 
 ═══════════════════════════════════════════════════════════════════════════
 WHERE OBJECTS WOULD RENDER
@@ -128,7 +129,45 @@ DAT_002022f8 = sprite w x h and a -6/-4 * 0.5 offset), and depth ordering
 vs tiles (painter's order -- objects emitted after tiles should draw on
 top).
 
-DONE on this branch (commit widening DAT_0023c7a0):
+═══════════════════════════════════════════════════════════════════════════
+STATUS 2026-09-07 (2): sprites load + project, still no pixels
+═══════════════════════════════════════════════════════════════════════════
+DONE this pass:
 - DAT_0023c7a0 undefined4 -> void*[0x140]. FUN_00040770's Ordinal_1041
-  sprite buffer was truncated to 32 bits; the memcpy into it and the
-  per-frame free both hit a bogus address.
+  sprite buffer was truncated to 32 bits.
+- LAB_000415d0 / LAB_00041610 / LAB_00041670 -- FUN_000417b4's per-entry
+  post-process callbacks -- were no-op `return 1` stubs. They are the
+  REGISTRARS: every .GR loaded through them (QUESTION/VIEWS/ANIMO/BUTTONS/
+  CURSORS/3DWIN/OBJECTS/TMFLAT/TMOBJ) was read into a malloc'd buffer that
+  was never put into DAT_0024e090[] (FUN_000408fc's table). Implemented
+  them to register at DAT_0024e090[(base + entry_idx)*8] like FUN_00041708.
+- FUN_00040770: forward the two dropped args (sprite id, shade); resolve
+  the id via FUN_00040aa8; publish the decoded buffer through
+  g_tile_texptr_emit[DAT_0023b83c] (the record index IS DAT_0023b83c --
+  the "out of sync" note above was a misread of a >=70-filtered trace).
+- FUN_00040aa8: the id<0x1000 branch indexed DAT_0024d090, an object-type
+  remap table never populated in this decompile -> return the id directly
+  (OBJECTS.GR is registered at absolute frame indices; frame N == type N).
+
+Now: in-view objects decode their real 16x16 OBJECTS.GR sprites (bag =
+type 0x80, format 8 RLE, palette 3) and FUN_00060aa0 class-0 builds a
+billboard quad that near_clip_visible_tiles projects onto the viewport
+(traced: rec 68 verts (202,109)(202,151)(248,151)(248,109) -- a clean
+on-screen 46x42 quad with a valid sprite texptr). raster_triangle is
+called for it. Still zero pixels: ON == OFF screenshot byte-for-byte.
+
+LAST GAP -- texture coordinates. render_visible_tile_list samples the
+sprite via per-vertex texcoords the near_clip output record carries at
+piVar14[0x10..0x13]. For tiles, process_visible_tile_cell writes each
+vertex's src texcoord into the DAT_000a85d8[]-region float triple
+(offsets +0,+4,+8 of the 0xc-byte vertex: x, ?, y) and near_clip
+interpolates +0x3008 / +0x300c (projected x' / a ref coord) through the
+clip. FUN_00060aa0 class-0/1 writes each billboard vertex's x/y/depth but
+NO u,v -- so raster_textured_span samples only texel (0,0), which for an
+OBJECTS.GR sprite is the transparent corner -> whole quad transparent.
+
+Next: work out the exact vertex-record layout near_clip expects for the
+texcoord (compare a tile vertex write in process_visible_tile_cell around
+uw.c:46960-47010 with the FUN_00060aa0 class-0 write around
+uw.c:47955-48110), and set (0,0)-(w,h) uv on the four billboard corners.
+Also verify winding vs raster_triangle and painter's-order depth.
