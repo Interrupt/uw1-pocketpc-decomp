@@ -3379,12 +3379,25 @@ static undefined DAT_0023b90a_backing[8192];
 #define DAT_0023b90a DAT_0023b90a_backing[0]
 static undefined1 DAT_0023b940_backing[65536];
 #define DAT_0023b940 DAT_0023b940_backing[0]
-undefined1 DAT_0023b8c8;
-undefined1 DAT_0023b8c9;
-undefined1 DAT_0023bb98;
-undefined2 DAT_0023b848;
-undefined1 DAT_0023bb99;
-undefined1 DAT_0023bb9a;
+/* Object/feature-draw sort scratch (FUN_00065394 and helpers FUN_00064e3c/
+   ec8/508c/5128/65210/652e8, ~uw.c:49340-49766). Ghidra split each of
+   these into a lone scalar, but the code indexes them as arrays:
+   - DAT_0023b848[i]            u16, object slot ids,  i in 0..8
+   - DAT_0023b8c8[i]/[i+1]      bytes, adjacent-swap sort order (b8c9 == b8c8[1])
+   - DAT_0023bb98[i*4 + 0/1/2]  bytes, per-object billboard X/Y/Z offsets
+                                (bb99 == bb98[1], bb9a == bb98[2]), i in 0..0x3b
+   Recompiled as separate scalars the indexed writes and reads land on
+   different memory (NULL slot deref crash). Back them with real arrays;
+   all uses are confined to that function span, no external refs. */
+static undefined2 DAT_0023b848_backing[64];
+#define DAT_0023b848 DAT_0023b848_backing[0]
+static undefined1 DAT_0023b8c8_backing[128];
+#define DAT_0023b8c8 DAT_0023b8c8_backing[0]
+#define DAT_0023b8c9 DAT_0023b8c8_backing[1]
+static undefined1 DAT_0023bb98_backing[512];
+#define DAT_0023bb98 DAT_0023bb98_backing[0]
+#define DAT_0023bb99 DAT_0023bb98_backing[1]
+#define DAT_0023bb9a DAT_0023bb98_backing[2]
 /* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view-
    facing corner-index remap for a rotating quad: FUN_00065210 reads
    `(&DAT_00086d68)[idx*2]` (low byte) and `(&DAT_00086d69)[idx*2]` (high
