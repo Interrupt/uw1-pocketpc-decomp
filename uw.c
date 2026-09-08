@@ -2284,30 +2284,46 @@ unsigned int param_1;
      the underlying file read succeeded. */
   return Ordinal_1041(param_1);
 }
-undefined4 LAB_000415d0()
-
+/* FUN_000417b4's post-process callback: (decoded_buffer, byte_size,
+   entry_index). Ghidra lost the real body (indirect-jump target); the old
+   no-op stub read every .GR file but never REGISTERED the loaded buffers,
+   so FUN_000408fc's DAT_0024e090[] pointer table stayed empty for every
+   resource loaded through here (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/
+   3DWIN/OBJECTS/TMFLAT/TMOBJ). Only FUN_00041708 (flasks/compass/...) was
+   a real registrar. Register the buffer the same way FUN_00041708 does:
+   at DAT_0024e090[(base + entry_index) * 8]. */
+#define UW_DAT_0024E090_SLOTS (524288 / 8)
+static void uw_register_gr_entry(unsigned base, void *buf, int idx)
 {
-  /* Ghidra couldn't resolve this address into a proper function; used as
-     FUN_000417b4's post-process callback for the allocator above. Its
-     real per-item behavior (e.g. registering the buffer somewhere) is not
-     recoverable from this decompile, but returning 0 here failed the
-     whole load batch despite the data having been read successfully --
-     report success so loading can proceed; see LAB_000415b0. */
+  unsigned slot = base + (unsigned)idx;
+  if (slot < UW_DAT_0024E090_SLOTS) {
+    *(void **)(&DAT_0024e090 + (unsigned long)slot * 8) = buf;
+  }
+}
+undefined4 LAB_000415d0(void *buf, unsigned size, int idx)
+{
+  /* Caller FUN_00041910 loads at the running cursor DAT_00202744 and
+     advances it by the file's entry count afterwards. */
+  (void)size;
+  uw_register_gr_entry((unsigned)DAT_00202744, buf, idx);
   return 1;
 }
-undefined4 LAB_00041610()
-
+undefined4 LAB_00041610(void *buf, unsigned size, int idx)
 {
-  /* See LAB_000415d0 -- same callback role, different caller
-     (FUN_00041960). */
+  /* Caller FUN_00041960 (OBJECTS.GR) -- does not advance the cursor; the
+     next file resets DAT_00202744 to 0x1c0, so OBJECTS.GR occupies the
+     absolute [0, entry_count) range (frame N == object type N). */
+  (void)size;
+  uw_register_gr_entry(0, buf, idx);
   return 1;
 }
 undefined2 DAT_000859a8;
-undefined4 LAB_00041670()
-
+undefined4 LAB_00041670(void *buf, unsigned size, int idx)
 {
-  /* See LAB_000415d0 -- same callback role, different caller
-     (FUN_00041990). */
+  /* Caller FUN_00041990 (TMFLAT.GR) with a fixed base stashed in
+     DAT_000859a8 (0x170). */
+  (void)size;
+  uw_register_gr_entry((unsigned)DAT_000859a8, buf, idx);
   return 1;
 }
 void *LAB_000416e8(param_1)
@@ -29136,7 +29152,15 @@ short param_5;
 
 
 
-undefined4 FUN_00040770()
+/* param_1 = object sprite id, param_2 = shade -- both were dropped by
+   Ghidra at the FUN_00060aa0 call site AND on the FUN_00040aa8 /
+   FUN_000408fc calls below, so the sprite loader ran with a garbage id
+   and FUN_000408fc handed back its zeroed dummy glyph -> every object
+   billboard decoded to a 0x0 texture (invisible). Forward the id, and
+   resolve it through FUN_00040aa8 the way draw_sprite_by_id does. */
+undefined4 FUN_00040770(param_1,param_2)
+short param_1;
+uint param_2;
 
 {
   byte bVar1;
@@ -29144,9 +29168,11 @@ undefined4 FUN_00040770()
   char *pcVar3;
   void *buf;
   int iVar5;
+  int resolved;
 
-  FUN_00040aa8();
-  pcVar3 = (char *)FUN_000408fc();
+  (void)param_2;
+  resolved = FUN_00040aa8(param_1);
+  pcVar3 = (char *)FUN_000408fc(resolved);
   bVar1 = pcVar3[1];
   bVar2 = pcVar3[2];
   if (*pcVar3 == '\x04') {
@@ -29166,13 +29192,15 @@ undefined4 FUN_00040770()
   DAT_002022fc = (int)(intptr_t)buf;
   DAT_00202508 = (ushort)bVar1;
   DAT_002022f8 = (ushort)bVar2;
-  /* TODO(objects): render_visible_tile_list reads the per-record texture
-     from the g_tile_texptr_out[] side channel, not this buffer -- object
-     billboards still rasterise with a null texture. Publishing `buf` here
-     via g_tile_texptr_emit[DAT_0023b83c] is not enough: DAT_0023b83c at
-     this point (small, e.g. 6/19/22) does not match the record's final
-     index in near_clip_visible_tiles' list (70+). The object geom-record
-     counter is out of sync with DAT_000a85d4 -- see object-rendering-findings.txt. */
+  /* render_visible_tile_list reads each record's texture from the
+     g_tile_texptr_out[] side channel (the in-record field is 4 bytes and
+     truncates on 64-bit). process_visible_tile_cell writes
+     g_tile_texptr_emit[DAT_0023b83c] for tiles; do the same for this
+     object record so its billboard gets its sprite instead of a stale
+     tile texture. DAT_0023b83c here is the object's own record index. */
+  if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) {
+    g_tile_texptr_emit[DAT_0023b83c] = buf;
+  }
   return 1;
 }
 
@@ -29318,7 +29346,10 @@ int param_1;
   iVar1 = (int)(short)param_1;
   if (iVar1 < 0x2000) {
     if (iVar1 < 0x1000) {
-      uVar2 = (int)*(short *)(&DAT_0024d090 + iVar1 * 4) & 0x3ff;
+      /* DAT_0024d090 (an object-type -> OBJECTS.GR frame remap) is never
+         populated in this decompile. OBJECTS.GR is now registered at
+         absolute frame indices (LAB_00041610), so the id IS the frame. */
+      uVar2 = (uint)(ushort)param_1;
     }
     else {
       uVar2 = ((uint)DAT_00202730 + param_1) - 0x1000;
