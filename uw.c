@@ -34609,6 +34609,19 @@ void main_loop_hud_flush()
 
 {
   dirty_rect_set(100,100,100,100);
+  /* HACK: force the 3D-view redraw dirty bit on every main-loop iteration.
+     Normally bit 3 (-> FUN_0003c194 -> full_dungeon_redraw) is only set by
+     apply_movement_tick's FUN_00049924(10), which runs solely while a
+     motion flag is live -- so the dungeon view freezes the instant the
+     player is idle (and never repaints for anything that changes in view
+     without the player moving). Keep the flag armed so the view redraws
+     continuously. Set UW_NO_FORCE_3D_REDRAW to restore the original
+     motion-gated behaviour. */
+  {
+    static int _force = -1;
+    if (_force < 0) _force = (getenv("UW_NO_FORCE_3D_REDRAW") == NULL);
+    if (_force && DAT_00201b64 == 0) DAT_00201c84 = DAT_00201c84 | 8;
+  }
   if (DAT_00201c84 != 0) {
     FUN_00049818();
   }
