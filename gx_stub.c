@@ -124,7 +124,7 @@ static int g_mouseup_deferred_lparam = 0;
  * above: a *real* held click (any actual wall-clock gap between press
  * and release, which is every real click) means several poll calls
  * happen while the button is down but nothing NEW has arrived from SDL.
- * Ordinal_864/FUN_000579e4 treat "no new message this call" as "no
+ * Ordinal_864/poll_input_event treat "no new message this call" as "no
  * message at all" and return early without ever reading DAT_0023c448 or
  * calling poll_mouse_event() -- so DAT_0023c63c (still 1, genuinely
  * held) never even gets checked, and character_generator_touch_select's
@@ -260,7 +260,7 @@ void uw_pump_events(void) {
                 }
                 /* Real Windows delivers WM_KEYDOWN and WM_CHAR as
                  * separate messages, polled one at a time -- the game's
-                 * input loop (FUN_000579e4 et al) clears its single
+                 * input loop (poll_input_event et al) clears its single
                  * pending-input slot (DAT_0023c448) and re-reads it
                  * fresh on every poll. SDL instead reports a keydown and
                  * its matching SDL_TEXTINPUT in the same batch; draining

@@ -446,7 +446,7 @@ int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigne
      * assumption that every caller only branches on the message
      * contents when this is nonzero and that driving input via
      * DAT_0023c448 directly was independent of that. That's wrong for
-     * FUN_000579e4 (uw.c) -- the real keyboard-polling function used by
+     * poll_input_event (uw.c) -- the real keyboard-polling function used by
      * every menu/input-wait loop in the game -- which only reads
      * DAT_0023c448 *inside* the branch gated on this return value being
      * nonzero. With this always 0, DAT_0023c448 was never read at all,
@@ -460,7 +460,7 @@ int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigne
      * uw_pump_events (FUN_00077dd0 finishes with each one immediately),
      * leaving no "pending" state for DAT_0023c448 to hold the way
      * keyboard input does. Without also checking
-     * uw_take_mouse_event_pending(), FUN_000579e4 never falls through to
+     * uw_take_mouse_event_pending(), poll_input_event never falls through to
      * poll_mouse_event()/update_mouse_state() for mouse-only activity
      * (no keyboard event pending at the same moment), so g_mouse_x/
      * g_mouse_y never track the real cursor and the game's own

@@ -392,7 +392,7 @@ undefined4 param_1;
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT1_BYT_00086ed0);
         FUN_0006c98c(2,acStack_7ec,1);
         iVar10 = FUN_0002294c();
-        sVar3 = FUN_00057a70();
+        sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       iVar4 = FUN_0002294c();
       do {
@@ -407,7 +407,7 @@ undefined4 param_1;
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT2_BYT_00086ebc);
         FUN_0006c98c(2,acStack_7ec,1);
         iVar10 = FUN_0002294c();
-        sVar3 = FUN_00057a70();
+        sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       iVar4 = FUN_0002294c();
       do {
@@ -422,7 +422,7 @@ undefined4 param_1;
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT3_BYT_00086ea8);
         FUN_0006c98c(2,acStack_7ec,1);
         iVar10 = FUN_0002294c();
-        sVar3 = FUN_00057a70();
+        sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       FUN_00049924(0x7ffe);
     }
@@ -451,7 +451,7 @@ undefined4 param_1;
         }
         draw_text_string(uVar7,0xa0 - (short)(iVar4 >> 1),0x5a);
         FUN_000570b4();
-        while (sVar3 = FUN_00057a70(), sVar3 < 0) {
+        while (sVar3 = next_input_event(), sVar3 < 0) {
           FUN_0006a168();
         }
         FUN_00040d00(s_FONT5X6P_SYS_00084e9c);

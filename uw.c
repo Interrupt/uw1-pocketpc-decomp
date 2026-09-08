@@ -7545,7 +7545,7 @@ LAB_000170bc:
       FUN_00057c5c(0x1079);
       FUN_000570b4();
       do {
-        sVar3 = FUN_00057a70();
+        sVar3 = next_input_event();
       } while (sVar3 != 1);
       FUN_00057504(&local_5e,&local_60);
       FUN_00057788(0,199,0x13f,0);
@@ -7632,7 +7632,7 @@ LAB_000170bc:
         iVar8 = *(short *)(&DAT_000baa0a + iVar7) + -1;
         FUN_00057590(*(short *)(&DAT_000baa0a + iVar7) + 9,local_60 + -0x12);
 LAB_000171bc:
-        sVar2 = FUN_000579e4(0);
+        sVar2 = poll_input_event(0);
         if (sVar2 < 0) goto LAB_000171a4;
         goto LAB_000171d0;
       }
@@ -15018,7 +15018,7 @@ uint param_2;
   if (iVar9 < 0) {
     iVar9 = iVar1 + 0xc9;
   }
-  sVar4 = FUN_00057a70();
+  sVar4 = next_input_event();
   uVar13 = param_2;
   if (0 < sVar4) {
     local_38 = (int)(((int)sVar5 + (uint)bVar2) * 0x10000) >> 0x10;
@@ -15073,7 +15073,7 @@ LAB_000247f8:
         if (((int)(short)local_3c <= iVar12 * 0x10000 >> 0x10) ||
            (local_30 <= iVar8 * 0x10000 >> 0x10)) goto LAB_000247f8;
       }
-      sVar7 = FUN_00057a70();
+      sVar7 = next_input_event();
       param_2 = (uint)(short)local_4;
     } while (0 < sVar7);
   }
@@ -15136,7 +15136,7 @@ undefined4 param_2;
       do {
         FUN_000735fc(uVar6,param_2);
         flush_dirty_rect_to_display(1);
-        uVar14 = FUN_00057a70();
+        uVar14 = next_input_event();
         param_2 = (undefined4)((ulonglong)uVar14 >> 0x20);
         uVar6 = (uint)uVar14;
       } while ((short)uVar14 < 0);
@@ -15330,7 +15330,7 @@ LAB_00024dd4:
     }
     local_2c[0] = local_2c[0] & 0xff;
     while( true ) {
-      sVar5 = FUN_00057a70();
+      sVar5 = next_input_event();
       iVar11 = (int)sVar5;
       if (((iVar11 == 0xd) && (local_28 == 0)) || (iVar11 == 0x1b)) break;
       flush_dirty_rect_to_display(1);
@@ -23800,7 +23800,7 @@ LAB_00036ca4:
                   sVar6 = -1;
                   do {
                     sVar20 = sVar6;
-                    sVar6 = FUN_00057a70();
+                    sVar6 = next_input_event();
                   } while (3 < sVar6);
                   if ((-1 < sVar6) && (sVar6 < 4)) {
                     sVar20 = sVar6;
@@ -23949,7 +23949,7 @@ LAB_00036ca4:
                   }
                   do {
                     sVar20 = sVar6;
-                    sVar6 = FUN_00057a70();
+                    sVar6 = next_input_event();
                     uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10);
                   } while (3 < sVar6);
                   if ((-1 < sVar6) && (sVar6 < 4)) {
@@ -26388,7 +26388,7 @@ void FUN_0003bb60()
   short sVar1;
   
   do {
-    sVar1 = FUN_00057a70();
+    sVar1 = next_input_event();
   } while (3 < sVar1);
   FUN_00037c14(9);
   return;
@@ -26624,7 +26624,7 @@ short param_1;
     Ordinal_496(2000);
   }
   do {
-    sVar1 = FUN_00057a70();
+    sVar1 = next_input_event();
   } while (sVar1 < 0);
   FUN_0007fce8(1);
   /* 0x80, see DAT_00085668's comment. */
@@ -30596,7 +30596,7 @@ undefined1 * param_1;
   short local_28;
   short local_26;
 
-  uVar1 = FUN_00057a78();
+  uVar1 = peek_input_event();
   if (-1 < (short)uVar1) {
     if ((short)uVar1 < 4) {
       FUN_00057528(&local_28,&local_26);
@@ -32135,7 +32135,7 @@ short param_1;
 
 /* Was `resolve_object_link(...); return 0;` -- computing the real object-record
    pointer and then discarding it in favor of a hardcoded 0, same
-   "dropped return value" idiom already fixed for FUN_00057a70 elsewhere
+   "dropped return value" idiom already fixed for next_input_event elsewhere
    in this file. Every caller treats the return as the real result (e.g.
    `puVar6 = (ushort *)FUN_00045054(iVar4); if (puVar6 != 0) ...`), so the
    hardcoded 0 silently turned every one of those checks into "nothing
@@ -41901,7 +41901,7 @@ short param_1;
   DAT_002046f8 = 0;
   do {
     while( true ) {
-      sVar1 = FUN_00057a70();
+      sVar1 = next_input_event();
       if (-1 < sVar1) break;
       FUN_000735fc();
       flush_dirty_rect_to_display(1);
@@ -42742,7 +42742,7 @@ int param_1;
     sVar2 = 2;
   }
   while( true ) {
-    sVar1 = FUN_00057a78();
+    sVar1 = peek_input_event();
     if (((((int)sVar2 | 0xfffcU) & (int)sVar1) != (int)sVar2) || (DAT_0008696e != -1)) break;
     if (param_1 != 0) {
       FUN_00049818();
@@ -42784,7 +42784,7 @@ int param_1;
     if (param_1 != 0) {
       FUN_00049818();
     }
-    FUN_000579e4(0);
+    poll_input_event(0);
     FUN_00057904(1);
     FUN_00058734();
     update_mouse_state();
@@ -42927,7 +42927,12 @@ int param_1;
 
 
 
-uint FUN_000579e4(param_1)
+// was FUN_000579e4 -- pump input, then return the pending event code:
+// the keyboard code latched in DAT_0023c448 (set by handle_keyboard_message),
+// or a poll_mouse_event() code, or 0xffffffff if nothing is pending.
+// param_1 == 0 clears DAT_0023c448 first (consume); != 0 leaves it (peek),
+// which is what makes a held key repeat every frame.
+uint poll_input_event(param_1)
 int param_1;
 
 {
@@ -42958,25 +42963,29 @@ int param_1;
 
 
 
-undefined4 FUN_00057a70()
+// was FUN_00057a70 -- poll_input_event(0): consume and return the next
+// input event code (used by the menu / prompt input-wait loops).
+undefined4 next_input_event()
 
 {
-  /* Was `FUN_000579e4(0); return 0;` -- computing the real event code and
+  /* Was `poll_input_event(0); return 0;` -- computing the real event code and
      then discarding it in favor of a hardcoded 0. Every caller treats this
      return value as a signed event/key code (`sVar2 < 0` == no event yet,
      specific positive values == button/key IDs), so always returning 0
      made every caller believe "event 0" arrived on the very first poll,
      short-circuiting input-wait loops instantly instead of actually
      waiting for input. */
-  return FUN_000579e4(0);
+  return poll_input_event(0);
 }
 
 
 
-undefined4 FUN_00057a78()
+// was FUN_00057a78 -- poll_input_event(1): return the pending input event
+// code without consuming it (used by the per-frame keybinding poll).
+undefined4 peek_input_event()
 
 {
-  return FUN_000579e4(1);
+  return poll_input_event(1);
 }
 
 
@@ -52407,7 +52416,7 @@ char param_3;
   bVar2 = true;
   sVar5 = (short)param_1;
   if (param_3 == '\0') {
-    sVar4 = FUN_00057a70();
+    sVar4 = next_input_event();
     if (0 < sVar4) {
       iVar1 = (int)sVar5;
       bVar2 = bVar3;
@@ -52436,13 +52445,13 @@ char param_3;
         if (((short)iVar8 == iVar1) && (bVar2 = true, (short)iVar9 != -1)) {
           bVar2 = false;
         }
-        sVar4 = FUN_00057a70();
+        sVar4 = next_input_event();
       } while (0 < sVar4);
     }
   }
   else {
     FUN_00040d00(s_fontbig_sys_0008432c);
-    sVar4 = FUN_00057a70();
+    sVar4 = next_input_event();
     bVar2 = bVar3;
     if (0 < sVar4) {
       iVar1 = (int)sVar5;
@@ -52477,7 +52486,7 @@ char param_3;
         if (((short)iVar8 == iVar1) && (bVar2 = true, (short)iVar9 != -1)) {
           bVar2 = false;
         }
-        sVar4 = FUN_00057a70();
+        sVar4 = next_input_event();
       } while (0 < sVar4);
     }
     FUN_00040d00(s_FONT5X6P_SYS_00084e9c);
@@ -52510,7 +52519,7 @@ int param_4;
     FUN_00040d00(s_fontbig_sys_0008432c);
     FUN_0006a200(param_1,param_2,param_3,param_4);
     FUN_00040d00(s_font5x6p_sys_0008430c);
-    while (sVar2 = FUN_00057a70(), sVar2 < 0) {
+    while (sVar2 = next_input_event(), sVar2 < 0) {
       ushort _cyc_t = DAT_0023bf74;
       FUN_000735fc();
       FUN_0006a168();
@@ -56638,7 +56647,7 @@ void FUN_00071b94()
     dirty_rect_union(0,200,0,0x140);
     FUN_00070c90();
     do {
-      sVar3 = FUN_00057a70();
+      sVar3 = next_input_event();
     } while (sVar3 < 0);
     FUN_0003c038(0);
     DAT_0023c27c = '\0';
@@ -57459,7 +57468,7 @@ short param_1;
   uVar7 = 0;
   FUN_00078c80(0xfa);
   while( true ) {
-    uVar4 = FUN_00057a70();
+    uVar4 = next_input_event();
     uVar1 = (ushort)uVar4;
     if (uVar1 == 0x1b) break;
     flush_dirty_rect_to_display(1);
@@ -64711,13 +64720,13 @@ uint param_2;
   uint uVar4;
   
   FUN_00057604(1);
-  sVar1 = FUN_00057a70();
+  sVar1 = next_input_event();
   iVar3 = FUN_0002294c();
   if (DAT_00250708 != 0 && param_2 != 0) {
     FUN_000570b4();
   }
   do {
-    sVar2 = FUN_00057a70();
+    sVar2 = next_input_event();
     if (sVar1 != sVar2) break;
     flush_dirty_rect_to_display(1);
   } while ((param_1 == 0) || (uVar4 = FUN_0002294c(), uVar4 <= (uint)(param_1 + iVar3)));
@@ -65325,7 +65334,7 @@ short param_5;
   iVar14 = (int)*(short *)(DAT_00250704 + 10);
   FUN_00057118();
   FUN_00057604(0);
-  uVar8 = FUN_00057a70();
+  uVar8 = next_input_event();
   sVar4 = (short)uVar8;
   do {
     iVar12 = (int)sVar4;
@@ -65520,7 +65529,7 @@ LAB_0008062c:
       draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
     }
     sVar5 = (short)uVar13;
-    uVar8 = FUN_00057a70();
+    uVar8 = next_input_event();
     sVar4 = (short)uVar8;
   } while( true );
 }
@@ -65559,7 +65568,7 @@ int * param_3;
   FUN_00057118();
   FUN_00057604(0);
   while( true ) {
-    uVar3 = FUN_00057a70();
+    uVar3 = next_input_event();
     sVar1 = (short)uVar3;
     if ((((sVar1 == 0xd) || (sVar1 == 0x1b)) || (sVar1 == 1)) || ((sVar1 == 2 || (sVar1 == 3)))) {
       FUN_000570b4();
