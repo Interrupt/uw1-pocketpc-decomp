@@ -26849,7 +26849,7 @@ ushort param_1;
 // fall) via FUN_0003dca4. While the airborne bit (0x10) is set it also keeps the
 // gravity fall armed each tick (DAT_00204890 = -4) and clamps the fall velocity
 // (DAT_0020488a) to terminal when DAT_0020208c & 2. Called every tick from
-// update_3d_sound_position with the current state byte DAT_002048a8.
+// commit_player_move with the current state byte DAT_002048a8.
 void set_locomotion_state(param_1,param_2)
 ushort param_1;
 int param_2;
@@ -27316,8 +27316,16 @@ uint param_2;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-// was FUN_0003d438
-void update_3d_sound_position()
+// was FUN_0003d438 (previously mis-guessed as "update_3d_sound_position"
+// from its trailing sound call). Per-tick commit of the freshly-integrated
+// player position/facing back into the world: recompute the tile index and
+// relink the player object between tile object lists on a tile change,
+// pack sub-tile position / height / facing into the player object record
+// (DAT_0023be64 +2/+3/+0x16/+0x17/+0x18), auto-straighten the facing
+// toward the travel direction, then handle a pending landing impact
+// (fall damage FUN_00038374 + thud FUN_00072f30) and refresh the
+// locomotion pose. Called every tick from apply_movement_tick.
+void commit_player_move()
 
 {
   short sVar1;
@@ -44210,7 +44218,7 @@ void sweep_land_on_surface()
   /* PHYSICS: fall ended -- clear the accumulated downward velocity (+0xa) and the
      gravity-accel field (+0x10), and drop the airborne locomotion state byte
      (+0x28 == DAT_002048a8) back to "walking" (8). Without the last step
-     set_locomotion_state (called every tick from update_3d_sound_position) sees the stale
+     set_locomotion_state (called every tick from commit_player_move) sees the stale
      airborne state and re-arms +0x10 = -4, so the fall integrator re-enters and
      "lands" every tick forever, freezing the player on the floor. Only when we
      were moving downward, so a jump's own apex handling is left untouched. */
@@ -51631,7 +51639,7 @@ undefined4 param_1;
   DAT_0023be9a = 0;
   apply_heading_turn(param_1);
   movement_collision_sweep(&DAT_00204880,&DAT_002048b0);
-  update_3d_sound_position();
+  commit_player_move();
   FUN_00049924(10);
   sVar4 = DAT_0023bf1c;
   bVar1 = DAT_0023bf18;
