@@ -65407,7 +65407,13 @@ LAB_0007f9ac:
   }
   else {
     if (iVar7 <= iVar5) goto LAB_0007f9ac;
-    msg_scroll_scroll_up_line();
+    /* Ghidra dropped msg_scroll_scroll_up_line's argument here: it's the
+       bottom Y of the block to shift up -- cursor_y + line_h, i.e. uVar3
+       as computed at the top of this function (FUN_0007f454's own call
+       passes the identical expression). Without it the scroll ran with a
+       garbage height and the last line was overwritten in place instead
+       of the panel scrolling up. */
+    msg_scroll_scroll_up_line((int)(short)uVar3);
     uVar3 = *(undefined2 *)(DAT_00250704 + 10);
     DAT_00250710 = DAT_00250710 + -1;
   }
