@@ -77,4 +77,11 @@ int uw_inject_mouse_click(int window_x, int window_y);
 int uw_inject_mouse_down(int window_x, int window_y);
 int uw_inject_mouse_up(int window_x, int window_y);
 
+/* Push a genuine SDL_KEYDOWN (+ SDL_TEXTINPUT for a printable key) / SDL_KEYUP
+   for the given SDL_Keycode, so scripted tests exercise uw_pump_events()'s
+   real keyboard path (demomode's SDLHOLD command). Returns 1, or 0 if
+   there's no window yet. */
+int uw_inject_key_down(int sdl_keycode);
+int uw_inject_key_up(int sdl_keycode);
+
 #endif

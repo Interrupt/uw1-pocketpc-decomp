@@ -69,6 +69,20 @@ typedef struct {
  * space in the name-entry field. */
 #define VK_APP1 0xC1
 
+/* The game binds the letters W/S/X/A/D to run-forward / walk-forward /
+   walk-back / turn-left / turn-right (uw.c move_key_directional_step,
+   keyed off WM_CHAR codes landing in DAT_0023c448). SDL only re-delivers
+   a held letter as SDL_TEXTINPUT at the OS key-repeat cadence (a ~0.5s
+   initial delay, then ~30Hz) and the game consumes each WM_CHAR after a
+   single step -- so holding A or D turned in visible jerks. We take over
+   the repeat for these keys while in the 3D view: track their physical
+   held state here and re-feed the WM_CHAR once per pump (see
+   uw_pump_events), matching the smooth per-frame repeat a held VK
+   (arrows / Ctrl) already gets. */
+extern unsigned short DAT_00201b64;   /* game mode; 0 == in-game 3D dungeon view */
+static unsigned char g_move_char_held[256];
+#define UW_MOVE_LETTERS "wsxad"
+
 static SDL_Window *g_win;
 static SDL_Renderer *g_ren;
 static SDL_Texture *g_tex;
@@ -151,6 +165,18 @@ void uw_pump_events(void) {
     if (!g_win) return;
     demomode_pump();
 
+    /* Re-feed every held W/S/X/A/D movement letter once per pump so a held
+       turn/step key repeats smoothly instead of at the OS key-repeat
+       cadence (see g_move_char_held). Only in the 3D view -- held letters
+       must still type normally in menus / the name-entry field. */
+    if (DAT_00201b64 == 0) {
+        for (const char *m = UW_MOVE_LETTERS; *m; m++) {
+            if (g_move_char_held[(unsigned char)*m]) {
+                handle_keyboard_message(0, 0x102u, (unsigned int)(unsigned char)*m);
+            }
+        }
+    }
+
     if (g_mouseup_deferred) {
         /* See g_mouseup_deferred's comment. Dispatch the button-up we
          * held back last call now, one full poll cycle after the
@@ -174,6 +200,33 @@ void uw_pump_events(void) {
                 break;
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
+                /* W/S/X/A/D movement letters: take over their key-repeat
+                 * so a held turn/step is smooth (see g_move_char_held).
+                 * The release is always honoured -- even if the game mode
+                 * changed while the key was held -- so the flag can't get
+                 * stuck; the WM_KEYUP makes the game drop the latched
+                 * action. In the 3D view the press just marks the key
+                 * held (the per-pump re-feed above drives it) and its
+                 * SDL_TEXTINPUT is suppressed below; in menus it falls
+                 * through to normal typing. */
+                {
+                    SDL_Keycode msym = ev.key.keysym.sym;
+                    if (msym >= 32 && msym < 127 &&
+                        strchr(UW_MOVE_LETTERS, (int)msym) != NULL) {
+                        unsigned char mc = (unsigned char)msym;
+                        if (ev.type == SDL_KEYUP) {
+                            if (g_move_char_held[mc]) {
+                                g_move_char_held[mc] = 0;
+                                handle_keyboard_message(0, 0x101u, 0);
+                            }
+                            return;
+                        }
+                        if (DAT_00201b64 == 0) {
+                            if (!ev.key.repeat) g_move_char_held[mc] = 1;
+                            return;
+                        }
+                    }
+                }
                 /* SDL auto-repeats a held key as a stream of SDL_KEYDOWN
                  * events; the game's menu/chargen "wait for one keypress"
                  * loops (e.g. FUN_00024840) treat every keydown as a
@@ -231,7 +284,10 @@ void uw_pump_events(void) {
                  * case above), so stop after this event too. */
                 for (const char *p = ev.text.text; *p; p++) {
                     unsigned char c = (unsigned char)*p;
-                    if (c < 0x80) {
+                    /* A movement letter we're already driving per-pump
+                       (see g_move_char_held) must not also come through
+                       here at the OS repeat cadence. */
+                    if (c < 0x80 && !g_move_char_held[c]) {
                         handle_keyboard_message(0, 0x102u, (unsigned int)c);
                     }
                 }
@@ -439,6 +495,44 @@ int uw_inject_mouse_click(int window_x, int window_y) {
      * fully representative of a real click's timing. */
     if (!uw_inject_mouse_down(window_x, window_y)) return 0;
     return uw_inject_mouse_up(window_x, window_y);
+}
+
+int uw_inject_key_down(int sdl_keycode) {
+    /* For scripted testing of the keyboard path: push a genuine
+     * SDL_KEYDOWN (repeat=0) and, for a printable key, the matching
+     * SDL_TEXTINPUT -- exactly what a real key press produces -- so
+     * uw_pump_events()'s full key handling runs (unlike demomode's HOLD,
+     * which calls handle_keyboard_message directly). Pair with
+     * uw_inject_key_up after a real multi-poll gap. */
+    if (!g_win) return 0;
+    SDL_Event kd = {0};
+    kd.type = SDL_KEYDOWN;
+    kd.key.state = SDL_PRESSED;
+    kd.key.repeat = 0;
+    kd.key.keysym.sym = (SDL_Keycode)sdl_keycode;
+    kd.key.keysym.scancode = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    SDL_PushEvent(&kd);
+    if (sdl_keycode >= 32 && sdl_keycode < 127) {
+        SDL_Event ti = {0};
+        ti.type = SDL_TEXTINPUT;
+        ti.text.text[0] = (char)sdl_keycode;
+        ti.text.text[1] = '\0';
+        SDL_PushEvent(&ti);
+    }
+    return 1;
+}
+
+int uw_inject_key_up(int sdl_keycode) {
+    /* See uw_inject_key_down. */
+    if (!g_win) return 0;
+    SDL_Event ku = {0};
+    ku.type = SDL_KEYUP;
+    ku.key.state = SDL_RELEASED;
+    ku.key.repeat = 0;
+    ku.key.keysym.sym = (SDL_Keycode)sdl_keycode;
+    ku.key.keysym.scancode = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    SDL_PushEvent(&ku);
+    return 1;
 }
 
 int uw_save_screenshot(const char *path) {

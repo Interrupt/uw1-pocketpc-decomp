@@ -91,9 +91,14 @@ static const char *g_demo_type_pos;
 
 /* HOLD <KEY> <ticks> state: g_demo_hold_vk is the VK code currently
  * "held" (0 = nothing), g_demo_hold_ticks is how many more idle pump
- * ticks to wait before releasing it. */
+ * ticks to wait before releasing it. g_demo_hold_is_sdl distinguishes a
+ * SDLHOLD (real SDL_KEYDOWN/KEYUP pushed through uw_pump_events, so the
+ * gx_stub key path -- key-repeat takeover, TEXTINPUT, etc -- is
+ * exercised) from a plain HOLD (handle_keyboard_message called directly).
+ * For SDLHOLD g_demo_hold_vk carries the SDL_Keycode, not a Windows VK. */
 static int g_demo_hold_vk;
 static int g_demo_hold_ticks;
+static int g_demo_hold_is_sdl;
 
 /* WAIT <ticks> state: how many more idle pump ticks to burn with no
  * input at all before reading the next line. */
@@ -173,9 +178,15 @@ void demomode_pump(void) {
             g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
             return;
         }
-        fprintf(stderr, "[demo] releasing held key vk=0x%x\n", g_demo_hold_vk);
-        handle_keyboard_message(0, 0x101u, (unsigned int)g_demo_hold_vk);
+        fprintf(stderr, "[demo] releasing held key %s=0x%x\n",
+                g_demo_hold_is_sdl ? "sdlkey" : "vk", g_demo_hold_vk);
+        if (g_demo_hold_is_sdl) {
+            uw_inject_key_up(g_demo_hold_vk);
+        } else {
+            handle_keyboard_message(0, 0x101u, (unsigned int)g_demo_hold_vk);
+        }
         g_demo_hold_vk = 0;
+        g_demo_hold_is_sdl = 0;
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
@@ -251,6 +262,48 @@ void demomode_pump(void) {
         fprintf(stderr, "[demo] holding %s (vk=0x%x) for %d ticks\n", keyname, vk, ticks);
         handle_keyboard_message(0, 0x100u, (unsigned int)vk);
         g_demo_hold_vk = vk;
+        g_demo_hold_is_sdl = 0;
+        g_demo_hold_ticks = ticks;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLHOLD ", 8) == 0) {
+        /* Like HOLD, but pushes a real SDL_KEYDOWN (+ SDL_TEXTINPUT for a
+         * printable key) now and a real SDL_KEYUP after <ticks>, so the
+         * whole gx_stub.c key path runs -- unlike HOLD, which calls
+         * handle_keyboard_message directly. Use it to test the held
+         * W/S/X/A/D movement-letter repeat takeover. Key is a single
+         * character (its lowercase ASCII == SDL_Keycode) or one of
+         * LEFT/RIGHT/UP/DOWN/RETURN/ESCAPE/SPACE. */
+        char keyname[32];
+        int ticks = 0;
+        if (sscanf(p + 8, "%31s %d", keyname, &ticks) != 2 || ticks < 0) {
+            fprintf(stderr, "[demo] malformed SDLHOLD line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        int kc = 0;
+        if (keyname[0] && keyname[1] == '\0') {
+            unsigned char c = (unsigned char)keyname[0];
+            if (c >= 'A' && c <= 'Z') c = (unsigned char)(c - 'A' + 'a');
+            kc = c;
+        } else if (strcasecmp(keyname, "LEFT") == 0)   kc = SDLK_LEFT;
+        else if (strcasecmp(keyname, "RIGHT") == 0)    kc = SDLK_RIGHT;
+        else if (strcasecmp(keyname, "UP") == 0)       kc = SDLK_UP;
+        else if (strcasecmp(keyname, "DOWN") == 0)     kc = SDLK_DOWN;
+        else if (strcasecmp(keyname, "RETURN") == 0 || strcasecmp(keyname, "ENTER") == 0) kc = SDLK_RETURN;
+        else if (strcasecmp(keyname, "ESCAPE") == 0 || strcasecmp(keyname, "ESC") == 0)   kc = SDLK_ESCAPE;
+        else if (strcasecmp(keyname, "SPACE") == 0)    kc = SDLK_SPACE;
+        if (kc == 0) {
+            fprintf(stderr, "[demo] SDLHOLD: unrecognized key '%s', skipping\n", keyname);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] SDL-holding %s (sdlkey=0x%x) for %d ticks\n", keyname, kc, ticks);
+        uw_inject_key_down(kc);
+        g_demo_hold_vk = kc;
+        g_demo_hold_is_sdl = 1;
         g_demo_hold_ticks = ticks;
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
