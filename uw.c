@@ -2198,26 +2198,31 @@ short DAT_0023be88;
 short DAT_0023bd80;
 /* Was a lone `undefined *` -- the real thing is a small function-pointer
    dispatch table for the 3D-view right-click "interact" modes, indexed by
-   FUN_0003f420 as `(&PTR_FUN_000858c8)[uVar2]` where uVar2 = cursor mode
-   (DAT_002020c0) - 1, or 2 when no mode is selected. Link-time-init data
-   the decompile never populated, so every right-click on an object jumped
-   through garbage. Reconstructed from the five no-arg handlers defined
-   just above FUN_0003f420 that each act on the picked object DAT_002020cc
-   (see their bodies): index 2 (default / "hand") -> interact_default, the
-   use/get/activate super-handler that itself routes to look vs talk by
-   object type. Ordering of the fight/talk/look/[4] slots is a best guess
-   -- if right-click does the wrong action, reorder these. */
+   FUN_0003f420 as `table[uVar2]` where uVar2 = cursor mode
+   (DAT_002020c0) - 1. Link-time-init data the decompile never populated,
+   so every right-click on an object jumped through garbage. Roles read
+   from the five handler bodies:
+     0  FUN_0003f14c      look / examine  ("You see ..." via
+                          thunk_FUN_00048764; also a use/get fallback
+                          when FUN_000576d0() says so)
+     1  FUN_0003f2c4      converse (FUN_00079984 start-conversation)
+     2  interact_default  get / use context handler
+     3  FUN_0003f128      talk to NPC (FUN_00028488)
+     4  FUN_0003f368      attack (swing toward the cursor)
+   With no cursor mode selected FUN_0003f420 now dispatches index 0
+   (look), so a bare right-click on an object reads "You see a <name>"
+   instead of the get handler's "You cannot pick that up." */
 extern void interact_default(void);
 extern void FUN_0003f128(void);
 extern void FUN_0003f14c(void);
 extern void FUN_0003f2c4(void);
 extern void FUN_0003f368(void);
 static void (*const PTR_FUN_000858c8_table[5])(void) = {
-  FUN_0003f14c,   /* 0: fight  */
-  FUN_0003f2c4,   /* 1: talk   */
-  interact_default,   /* 2: default / get-use */
-  FUN_0003f128,   /* 3: look   */
-  FUN_0003f368,   /* 4:        */
+  FUN_0003f14c,       /* 0: look / examine */
+  FUN_0003f2c4,       /* 1: converse       */
+  interact_default,   /* 2: get / use      */
+  FUN_0003f128,       /* 3: talk to NPC    */
+  FUN_0003f368,       /* 4: attack         */
 };
 #define PTR_FUN_000858c8 (PTR_FUN_000858c8_table[0])
 code *DAT_002020b8;
@@ -28611,12 +28616,20 @@ void FUN_0003f420()
     return;
   }
   if (DAT_002020c4 == 0) {
+    uint _dispatch;
     if (DAT_002020c0 == 0) {
       uVar2 = 2;
     }
     else {
       uVar2 = ((int)DAT_002020c0 & 0xffU) - 1;
     }
+    /* With no cursor mode selected, a right-click on an object defaults
+       to "look" (table[3], FUN_0003f128 -> "You see a <name>"), not the
+       get/use handler at table[2]. uVar2 itself stays 2 so the
+       describe_picked_terrain() call below still takes its hardcoded
+       mode-2 "You see <terrain>" path when the click misses every
+       object. */
+    _dispatch = (DAT_002020c0 == 0) ? 0 : uVar2;
     if ((uVar2 & 0xff) != 1) {
       if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
         DAT_002020cc = 0;
@@ -28628,8 +28641,8 @@ void FUN_0003f420()
         goto LAB_0003f584;
       }
     }
-    if ((uVar2 & 0xff) < 5 && PTR_FUN_000858c8_table[uVar2 & 0xff] != 0) {
-      PTR_FUN_000858c8_table[uVar2 & 0xff]();
+    if ((_dispatch & 0xff) < 5 && PTR_FUN_000858c8_table[_dispatch & 0xff] != 0) {
+      PTR_FUN_000858c8_table[_dispatch & 0xff]();
     }
   }
   else {
@@ -28836,6 +28849,9 @@ short param_1;
   byte bVar3;
   char cVar4;
   short sVar5;
+  if (getenv("UW_DEBUG_MODEBTN"))
+    fprintf(stderr, "[modebtn] FUN_0003faa0 in: param_1=%d rel_y=%d cursor_mode=%d\n",
+            (int)param_1, (int)DAT_00085a6c[1], (int)DAT_002020c0);
   uint uVar6;
   int iVar7;
   
