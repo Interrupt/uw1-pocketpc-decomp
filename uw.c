@@ -18028,7 +18028,7 @@ char *param_1;
   *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
   FUN_0001afe4(s_new_player_exp_0008527c,&local_10,1);
   if (local_10 != 0) {
-    grant_experience_points();
+    grant_experience_points((int)(short)local_10);   /* dropped arg: the parsed exp value */
   }
   return bVar4;
 }
@@ -46390,9 +46390,14 @@ void rebuild_dungeon_view()
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
       (DAT_00201b68 != 9)) &&
      (sVar3 = Ordinal_2005(10,(int)DAT_0023b810 * (int)DAT_00201b68), sVar3 != 0)) {
-    if (g_force_redraw_no_xp == 0) {
-      grant_experience_points();
-    }
+    /* Disabled: grant_experience_points() here is called with a dropped
+       argument (Ghidra lost it) AND from a nonsensical spot -- a dungeon
+       -view rebuild -- so it granted a garbage XP amount on essentially
+       every redraw (spam of "You have attained experience level"). No
+       view rebuild should touch XP; the g_force_redraw_no_xp guard used
+       to only cover the forced-redraw hack, but the game's own
+       movement-driven redraw hit it too. */
+    (void)sVar3;
   }
   if (DAT_00201b68 == 9) {
     DAT_00086b30 = uVar1;
@@ -65329,12 +65334,38 @@ int param_4;
 int param_5;
 
 {
+  char *ctx;
+
   if (param_5 != 0) {
     set_draw_color(0xf1);
     rect_fill_or_save_restore(param_1 + 0xe,param_2 + 1,param_3 + -0xf,param_4 + -1);
   }
   set_draw_color(0x2a);
   rect_fill_or_save_restore(param_1,param_2,param_3,param_4);
+
+  /* Populate the message-scroll context struct (DAT_00250704 ->
+     DAT_00087960) from the region rectangle. The decompile lost this:
+     FUN_0007fc8c only drew the panel background, so every scroll field
+     (word-wrap left/right edges at +4/+6, the draw cursor at +8/+0xa,
+     the new-line margin at +0xc, the scroll-blit top at +0xe) stayed 0
+     -- FUN_0007f7cc's width test then never fit, it recursed into
+     word-wrap, and draw_text_string (if reached) drew at (0,0). Called
+     once from FUN_0007f044 during in-game HUD init with
+     (0xf,0xa9,0x131,200,0). */
+  ctx = (char *)DAT_00250704;
+  if (ctx != (char *)0x0) {
+    *(short *)(ctx + 0x02) = (short)param_4;   /* bottom y             */
+    *(short *)(ctx + 0x04) = (short)param_1;   /* left x               */
+    *(short *)(ctx + 0x06) = (short)param_3;   /* right x              */
+    *(short *)(ctx + 0x08) = (short)param_1;   /* draw cursor x        */
+    *(short *)(ctx + 0x0a) = (short)(param_2 + 4); /* draw cursor y (small top margin) */
+    *(short *)(ctx + 0x0c) = (short)param_1;   /* new-line left margin */
+    *(short *)(ctx + 0x0e) = (short)param_2;   /* top y (scroll blit)  */
+    *(int   *)(ctx + 0x10) = 0;                /* pending-newline flag */
+    *(short *)(ctx + 0x14) = 0;                /* lines printed        */
+    ctx[0x16] = 0x60;                          /* default text colour  */
+    ctx[0x17] = 0;
+  }
   return;
 }
 
