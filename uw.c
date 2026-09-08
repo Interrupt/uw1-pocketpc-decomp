@@ -2202,27 +2202,27 @@ short DAT_0023bd80;
    (DAT_002020c0) - 1. Link-time-init data the decompile never populated,
    so every right-click on an object jumped through garbage. Roles read
    from the five handler bodies:
-     0  FUN_0003f14c      look / examine  ("You see ..." via
+     0  interact_look      look / examine  ("You see ..." via
                           thunk_FUN_00048764; also a use/get fallback
                           when FUN_000576d0() says so)
-     1  FUN_0003f2c4      converse (FUN_00079984 start-conversation)
+     1  interact_converse      converse (FUN_00079984 start-conversation)
      2  interact_default  get / use context handler
-     3  FUN_0003f128      talk to NPC (FUN_00028488)
-     4  FUN_0003f368      attack (swing toward the cursor)
+     3  interact_talk_npc      talk to NPC (FUN_00028488)
+     4  interact_attack      attack (swing toward the cursor)
    With no cursor mode selected FUN_0003f420 now dispatches index 0
    (look), so a bare right-click on an object reads "You see a <name>"
    instead of the get handler's "You cannot pick that up." */
 extern void interact_default(void);
-extern void FUN_0003f128(void);
-extern void FUN_0003f14c(void);
-extern void FUN_0003f2c4(void);
-extern void FUN_0003f368(void);
+extern void interact_talk_npc(void);
+extern void interact_look(void);
+extern void interact_converse(void);
+extern void interact_attack(void);
 static void (*const PTR_FUN_000858c8_table[5])(void) = {
-  FUN_0003f14c,       /* 0: look / examine */
-  FUN_0003f2c4,       /* 1: converse       */
+  interact_look,       /* 0: look / examine */
+  interact_converse,       /* 1: converse       */
   interact_default,   /* 2: get / use      */
-  FUN_0003f128,       /* 3: talk to NPC    */
-  FUN_0003f368,       /* 4: attack         */
+  interact_talk_npc,       /* 3: talk to NPC    */
+  interact_attack,       /* 4: attack         */
 };
 #define PTR_FUN_000858c8 (PTR_FUN_000858c8_table[0])
 code *DAT_002020b8;
@@ -27909,7 +27909,7 @@ void FUN_0003e2a4()
 
 {
   DAT_000868d8 = 0;
-  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,1,FUN_0003faa0);
+  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,1,cursor_mode_button_click);
   DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
   DAT_002020c8 = register_click_region(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
   DAT_002020bc = register_click_region(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
@@ -28311,10 +28311,10 @@ void interact_default()
     if (DAT_002020e0 != 0) {
       iVar1 = object_ptr_in_arena(DAT_002020cc);
       if ((iVar1 != 0) && ((*DAT_002020cc & 0x1c0) == 0x40)) {
-        FUN_0003f128();
+        interact_talk_npc();
         return;
       }
-      FUN_0003f2c4();
+      interact_converse();
       return;
     }
     if ((*DAT_002020cc & 0x1ff) == 0x1ca) {
@@ -28368,7 +28368,8 @@ LAB_0003f11c:
 
 
 
-void FUN_0003f128()
+// was FUN_0003f128
+void interact_talk_npc()
 
 {
   FUN_00057604(1);
@@ -28500,7 +28501,8 @@ LAB_00048b58:
 
 
 
-void FUN_0003f14c()
+// was FUN_0003f14c
+void interact_look()
 
 {
   short sVar1;
@@ -28547,7 +28549,8 @@ void FUN_0003f14c()
 
 
 
-void FUN_0003f2c4()
+// was FUN_0003f2c4
+void interact_converse()
 
 {
   int iVar1;
@@ -28567,7 +28570,8 @@ void FUN_0003f2c4()
 
 
 
-void FUN_0003f368()
+// was FUN_0003f368
+void interact_attack()
 
 {
   short *psVar1;
@@ -28607,7 +28611,7 @@ void FUN_0003f420()
     if (DAT_002020cc == 0) {
       return;
     }
-    FUN_0003f2c4();
+    interact_converse();
     return;
   }
   DAT_002020cc = 0;
@@ -28624,7 +28628,7 @@ void FUN_0003f420()
       uVar2 = ((int)DAT_002020c0 & 0xffU) - 1;
     }
     /* With no cursor mode selected, a right-click on an object defaults
-       to "look" (table[3], FUN_0003f128 -> "You see a <name>"), not the
+       to "look" (table[3], interact_talk_npc -> "You see a <name>"), not the
        get/use handler at table[2]. uVar2 itself stays 2 so the
        describe_picked_terrain() call below still takes its hardcoded
        mode-2 "You see <terrain>" path when the click misses every
@@ -28840,7 +28844,8 @@ int param_1;
 
 
 
-void FUN_0003faa0(param_1)
+// was FUN_0003faa0
+void cursor_mode_button_click(param_1)
 short param_1;
 
 {
@@ -28850,7 +28855,7 @@ short param_1;
   char cVar4;
   short sVar5;
   if (getenv("UW_DEBUG_MODEBTN"))
-    fprintf(stderr, "[modebtn] FUN_0003faa0 in: param_1=%d rel_y=%d cursor_mode=%d\n",
+    fprintf(stderr, "[modebtn] cursor_mode_button_click in: param_1=%d rel_y=%d cursor_mode=%d\n",
             (int)param_1, (int)DAT_00085a6c[1], (int)DAT_002020c0);
   uint uVar6;
   int iVar7;
@@ -51045,13 +51050,13 @@ void FUN_00066e90()
   register_key_binding(0x166,0x166,1,FUN_00056ebc);
   register_key_binding(0x164,0x164,1,FUN_00056ebc);
   register_key_binding(0x171,0x171,1,FUN_00056ebc);
-  register_key_binding(0x80,5,1,FUN_0003faa0);
-  register_key_binding(0x81,4,1,FUN_0003faa0);
-  register_key_binding(0x82,3,1,FUN_0003faa0);
-  register_key_binding(0x83,2,1,FUN_0003faa0);
-  register_key_binding(0x83,2,4,FUN_0003faa0);
-  register_key_binding(0x84,1,1,FUN_0003faa0);
-  register_key_binding(0x85,0,1,FUN_0003faa0);
+  register_key_binding(0x80,5,1,cursor_mode_button_click);
+  register_key_binding(0x81,4,1,cursor_mode_button_click);
+  register_key_binding(0x82,3,1,cursor_mode_button_click);
+  register_key_binding(0x83,2,1,cursor_mode_button_click);
+  register_key_binding(0x83,2,4,cursor_mode_button_click);
+  register_key_binding(0x84,1,1,cursor_mode_button_click);
+  register_key_binding(0x85,0,1,cursor_mode_button_click);
   register_key_binding(0x70,9,1,FUN_00027708);
   register_key_binding(0x2e,3,1,FUN_00027708);
   register_key_binding(0x3b,6,1,FUN_00027708);
@@ -65165,7 +65170,8 @@ int param_1;
 
 
 
-void FUN_0007f454()
+// was FUN_0007f454
+void msg_scroll_more_prompt()
 
 {
   undefined2 *puVar1;
@@ -65377,7 +65383,7 @@ LAB_0007f894:
         FUN_0007f170(iVar5 + 200,1);
       }
       else if (cVar2 == 'm') {
-        FUN_0007f454();
+        msg_scroll_more_prompt();
       }
       else if (cVar2 == 'p') {
         iVar5 = 400;
@@ -65395,7 +65401,7 @@ LAB_0007f8b8:
   iVar5 = *(short *)(DAT_00250704 + 2) + 1;
   if ((int)DAT_00250710 - (int)(short)param_2 < 0) {
     if (iVar5 < iVar7) {
-      FUN_0007f454();
+      msg_scroll_more_prompt();
       uVar3 = *(undefined2 *)(DAT_00250704 + 10);
     }
     else {
@@ -65409,7 +65415,7 @@ LAB_0007f9ac:
     if (iVar7 <= iVar5) goto LAB_0007f9ac;
     /* Ghidra dropped msg_scroll_scroll_up_line's argument here: it's the
        bottom Y of the block to shift up -- cursor_y + line_h, i.e. uVar3
-       as computed at the top of this function (FUN_0007f454's own call
+       as computed at the top of this function (msg_scroll_more_prompt's own call
        passes the identical expression). Without it the scroll ran with a
        garbage height and the last line was overwritten in place instead
        of the panel scrolling up. */

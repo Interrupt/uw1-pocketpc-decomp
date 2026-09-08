@@ -365,6 +365,8 @@ void demomode_pump(void) {
          * only ever seeing the single reveal mark from dungeon entry. */
         fprintf(stderr, "[demo] forcing a full dungeon redraw (automap reveal update)\n");
         {
+            /* Print the player's tile so a scripted TELEPORT/REVEAL sweep
+               can be correlated with what's on screen. */
             extern void *DAT_0023be64;
             unsigned short *pl = (unsigned short *)DAT_0023be64;
             if (pl)
