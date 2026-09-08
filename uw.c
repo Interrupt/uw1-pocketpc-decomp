@@ -34609,18 +34609,34 @@ void main_loop_hud_flush()
 
 {
   dirty_rect_set(100,100,100,100);
-  /* HACK: force the 3D-view redraw dirty bit on every main-loop iteration.
-     Normally bit 3 (-> FUN_0003c194 -> full_dungeon_redraw) is only set by
-     apply_movement_tick's FUN_00049924(10), which runs solely while a
-     motion flag is live -- so the dungeon view freezes the instant the
-     player is idle (and never repaints for anything that changes in view
-     without the player moving). Keep the flag armed so the view redraws
-     continuously. Set UW_NO_FORCE_3D_REDRAW to restore the original
-     motion-gated behaviour. */
+  /* HACK: redraw the 3D dungeon view on every main-loop iteration.
+     Normally the redraw is driven off dirty bit 3, which apply_movement_tick
+     only sets while a motion flag is live -- so the dungeon view freezes the
+     instant the player is idle (and never repaints for anything that changes
+     in view without the player moving). */
   {
     static int _force = -1;
     if (_force < 0) _force = (getenv("UW_NO_FORCE_3D_REDRAW") == NULL);
-    if (_force && DAT_00201b64 == 0) DAT_00201c84 = DAT_00201c84 | 8;
+    if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0) {
+      /* Re-rasterise the 3D dungeon view every main-loop iteration. Setting
+         dirty bit 3 (-> FUN_0003c194) is not enough: that handler only
+         redraws while a step/turn animation is in progress (0 < DAT_00201c90),
+         so it does nothing while the player is idle -- which is exactly why
+         the 3D view froze after the first frame under ./run.sh.
+         We only re-run the pure rasteriser render_dungeon_view() over the
+         geometry the normal (movement-driven) path already built; we do NOT
+         call build_frame_draw_list()/rebuild_dungeon_view() here, since
+         rebuild_dungeon_view() also steps game simulation (triggers, message
+         log, ...) and must not fire spuriously. This mirrors the branch of
+         render_dungeon_frame_timed() taken when build_frame_draw_list()
+         reports no change. Skipped while an animation owns the view
+         (DAT_00201c90 != 0). Set UW_NO_FORCE_3D_REDRAW to restore the
+         motion-gated behaviour. */
+      set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
+      render_dungeon_view();
+      set_viewport_clip_rect(0,0,0x13f,199);
+      dirty_rect_union(0x13,0x84,0x34,0xe0);
+    }
   }
   if (DAT_00201c84 != 0) {
     FUN_00049818();
