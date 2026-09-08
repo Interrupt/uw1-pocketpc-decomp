@@ -2166,7 +2166,7 @@ undefined4 DAT_002020ec;
    selected in walk_visible_tiles / emit_hud_draw_commands, called at
    process_visible_tile_cell), and from byte 4 on a short[] of per-pick-
    slot tile offsets, indexed `slot*2 + 2` (slot 1 -> byte 4) by the
-   object-pick ID assignment (FUN_00060aa0) and read back by pick_object_under_cursor.
+   object-pick ID assignment (emit_tile_objects) and read back by pick_object_under_cursor.
    On a 64-bit host the pointer is 8 bytes, so those short writes landed
    *inside* the pointer and corrupted it -> wild call in
    process_visible_tile_cell the moment pick IDs were being assigned
@@ -3461,7 +3461,7 @@ static undefined DAT_0023b90a_backing[8192];
 #define DAT_0023b90a DAT_0023b90a_backing[0]
 static undefined1 DAT_0023b940_backing[65536];
 #define DAT_0023b940 DAT_0023b940_backing[0]
-/* Object/feature-draw sort scratch (FUN_00065394 and helpers FUN_00064e3c/
+/* Object/feature-draw sort scratch (emit_tile_features and helpers FUN_00064e3c/
    ec8/508c/5128/65210/652e8, ~uw.c:49340-49766). Ghidra split each of
    these into a lone scalar, but the code indexes them as arrays:
    - DAT_0023b848[i]            u16, object slot ids,  i in 0..8
@@ -11617,12 +11617,13 @@ LAB_0001dbcc:
 
 
 /* Ghidra lost the return value (literal `return 0`), so the sole caller
-   (FUN_00061e60) dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the
+   (emit_object_billboard) dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the
    moment an animated tile object (door, etc.) came into view. The
    function ticks animation record `param_1` in place; it returns that
    record's base, &DAT_00189590 + param_1*0x3c2c (== piVar2 before the
    loop walks it). */
-void *FUN_0001dc04(param_1)
+// was FUN_0001dc04
+void *tick_anim_record(param_1)
 short param_1;
 
 {
@@ -29301,7 +29302,7 @@ short param_5;
 
 
 /* param_1 = object sprite id, param_2 = shade -- both were dropped by
-   Ghidra at the FUN_00060aa0 call site AND on the FUN_00040aa8 /
+   Ghidra at the emit_tile_objects call site AND on the FUN_00040aa8 /
    FUN_000408fc calls below, so the sprite loader ran with a garbage id
    and FUN_000408fc handed back its zeroed dummy glyph -> every object
    billboard decoded to a 0x0 texture (invisible). Forward the id, and
@@ -48140,7 +48141,7 @@ LAB_0005e7e0:
       puVar23 = DAT_0023b4ec;
     }
   }
-  /* FUN_00065394 renders this tile's animated features and the objects
+  /* emit_tile_features renders this tile's animated features and the objects
      sitting on it (doors, switches, bridges, item billboards). It used to
      walk a bogus object count and deref a NULL slot from FUN_000535fc
      because of dropped-arg bugs in it and its callees; those are fixed, so
@@ -48152,7 +48153,7 @@ LAB_0005e7e0:
     if (_tile_features < 0)
       _tile_features = (getenv("UW_DISABLE_TILE_FEATURES") == NULL);
     if (_tile_features) {
-      FUN_00065394(puVar23 + 1);
+      emit_tile_features(puVar23 + 1);
     }
   }
   cVar2 = DAT_0023b834;
@@ -48168,7 +48169,8 @@ LAB_0005e7e0:
 
 
 
-void FUN_00060aa0(param_1)
+// was FUN_00060aa0
+void emit_tile_objects(param_1)
 ushort * param_1;
 
 {
@@ -48647,7 +48649,7 @@ LAB_00061d34:
   }
   if (bVar13 == 2) {
     if ((uVar27 & 0x30) == 0) {
-      FUN_00064384(uVar27 & 0x3f,param_1);
+      emit_anim_object_frames(uVar27 & 0x3f,param_1);
       return;
     }
     iVar17 = (int)(((uVar27 & 0x3f) - 0x10) * 0x10000) >> 0x10;
@@ -48657,7 +48659,7 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    FUN_00061e60(*(ushort *)(&DAT_00086c80 + iVar17 * 2) & 0xff,param_1,0xffffffff,0xffffffff);
+    emit_object_billboard(*(ushort *)(&DAT_00086c80 + iVar17 * 2) & 0xff,param_1,0xffffffff,0xffffffff);
     return;
   }
   if (bVar13 != 3) {
@@ -48674,7 +48676,7 @@ LAB_00061d34:
       DAT_00110fc0 = DAT_00110fc0 + 1;
       DAT_00189580 = 0;
     }
-    FUN_00061e60(0x14,param_1,0xffffffff,(uVar27 & 0xf) + (uint)DAT_00202734);
+    emit_object_billboard(0x14,param_1,0xffffffff,(uVar27 & 0xf) + (uint)DAT_00202734);
     if (DAT_0023b830 != 0 || DAT_00086b2c != 0) {
       return;
     }
@@ -48717,7 +48719,7 @@ LAB_00060f54:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     DAT_00189580 = 0;
   }
-  FUN_00061e60(0x16,param_1,0xffffffff,(byte)param_1[3] & 0x3f);
+  emit_object_billboard(0x16,param_1,0xffffffff,(byte)param_1[3] & 0x3f);
   if (!bVar14) {
     return;
   }
@@ -48736,7 +48738,8 @@ LAB_00060f54:
 
 // WARNING: Removing unreachable block (ram,0x00064024)
 
-void FUN_00061e60(param_1,param_2,param_3,param_4)
+// was FUN_00061e60
+void emit_object_billboard(param_1,param_2,param_3,param_4)
 byte param_1;
 /* Object-record pointer -- was `uint`, truncating it (same class as
    object_list_insert_head above). */
@@ -48861,7 +48864,7 @@ short param_4;
     local_58 = (byte *)get_texture_page((int)param_4);
     if (local_58 == (byte *)0x0) {
       /* param_4 out of get_texture_page's 0..0x73 range -- reached with
-         (uVar27 & 0xf) + DAT_00202734 (~0x2b8) from FUN_00060aa0's
+         (uVar27 & 0xf) + DAT_00202734 (~0x2b8) from emit_tile_objects's
          `(*param_1 & 0x30) == 0x30` branch, i.e. a special animated
          object (door frame etc.) whose texture lives in a different bank
          than the wall/floor tile pages this helper knows. Rather than
@@ -49045,7 +49048,7 @@ short param_4;
     uVar11 = DAT_0023b824;
     uVar12 = DAT_0023b824;
   }
-  _anim = (char *)FUN_0001dc04(param_1);
+  _anim = (char *)tick_anim_record(param_1);
   local_48 = *(int *)(_anim + 4);
   iVar16 = local_48 + -1;
   if (-1 < iVar16) {
@@ -49474,7 +49477,8 @@ LAB_000640ec:
 
 // WARNING: Removing unreachable block (ram,0x000647ac)
 
-void FUN_00064384(param_1,param_2)
+// was FUN_00064384
+void emit_anim_object_frames(param_1,param_2)
 uint param_1;
 ushort * param_2;
 
@@ -49650,7 +49654,7 @@ LAB_000647e4:
         uVar9 = 1;
         uVar11 = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
 LAB_00064cdc:
-        FUN_00061e60(uVar9,param_2,(param_2[1] >> 7 & 7) << 1,uVar11);
+        emit_object_billboard(uVar9,param_2,(param_2[1] >> 7 & 7) << 1,uVar11);
       }
       else {
         if (DAT_0023b830 != 0) {
@@ -49687,7 +49691,7 @@ LAB_00064cdc:
           goto LAB_00064cdc;
         }
         DAT_0023b91c = local_34;
-        FUN_00061e60(0xc,param_2,(param_2[1] >> 7 & 7) << 1,0);
+        emit_object_billboard(0xc,param_2,(param_2[1] >> 7 & 7) << 1,0);
         DAT_0023b91c = local_32;
       }
       local_30 = (char)uVar10;
@@ -49800,7 +49804,8 @@ short param_1;
 
 
 
-void FUN_00064f10(param_1,param_2,param_3,param_4,param_5,param_6)
+// was FUN_00064f10
+void sprite_partition_step(param_1,param_2,param_3,param_4,param_5,param_6)
 int param_1;
 short * param_2;
 short param_3;
@@ -49860,9 +49865,10 @@ short param_6;
 
 
 
-void FUN_0006508c(param_1,param_2,param_3)
+// was FUN_0006508c
+void sprite_partition_tmap(param_1,param_2,param_3)
 undefined4 param_1;
-short *param_2;   /* was undefined4 -- FUN_00064f10 writes through it (*param_2 = ...) */
+short *param_2;   /* was undefined4 -- sprite_partition_step writes through it (*param_2 = ...) */
 undefined4 param_3;
 
 {
@@ -49871,15 +49877,16 @@ undefined4 param_3;
 
   _o = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[(short)param_1]);  /* was `int iVar1` */
   bVar2 = *(byte *)(_o + 2) & 0x7f;
-  FUN_00064f10((*(byte *)(DAT_0023be64 + 2) & 0x7f) < bVar2,param_2,param_1,param_3,bVar2,0);
+  sprite_partition_step((*(byte *)(DAT_0023be64 + 2) & 0x7f) < bVar2,param_2,param_1,param_3,bVar2,0);
   return;
 }
 
 
 
-void FUN_00065128(param_1,param_2,param_3)
+// was FUN_00065128
+void sprite_partition_by_depth(param_1,param_2,param_3)
 undefined4 param_1;
-short *param_2;   /* was undefined4 -- FUN_00064f10 dereferences it (*param_2 = ...) */
+short *param_2;   /* was undefined4 -- sprite_partition_step dereferences it (*param_2 = ...) */
 undefined4 param_3;
 
 {
@@ -49916,14 +49923,14 @@ LAB_000651b0:
     uVar6 = 0;
   }
 LAB_000651ec:
-  FUN_00064f10(uVar6,param_2,param_1,param_3,sVar7,uVar8);
+  sprite_partition_step(uVar6,param_2,param_1,param_3,sVar7,uVar8);
   return;
 }
 
 
 
 /* param_1 (out record) and param_2 (src record) were `int`, truncating
-   the real pointers FUN_00065394 passes. */
+   the real pointers emit_tile_features passes. */
 void FUN_00065210(param_1,param_2)
 byte *param_1;
 byte *param_2;
@@ -49969,17 +49976,18 @@ void FUN_00065348()
 
 {
   if (*(short *)(&DAT_0023b940 + DAT_0023b4e4 * 0x12) != 0) {
-    FUN_00065394(0);
+    emit_tile_features(0);
   }
   if (DAT_0023b928 != 0) {
-    FUN_00065394(0);
+    emit_tile_features(0);
   }
   return;
 }
 
 
 
-void FUN_00065394(param_1)
+// was FUN_00065394
+void emit_tile_features(param_1)
 ushort * param_1;
 
 {
@@ -50077,10 +50085,10 @@ ushort * param_1;
         uVar9 = (ushort)local_34 & 0x3f;
         local_34 = uVar10;
         if (((ushort)local_34 & 0xffc0) == 0x5900) {
-          FUN_0006508c(uVar9,&local_36,iVar13);  /* args dropped by Ghidra; mirrors the FUN_00065128 call below */
+          sprite_partition_tmap(uVar9,&local_36,iVar13);  /* args dropped by Ghidra; mirrors the sprite_partition_by_depth call below */
         }
         else {
-          FUN_00065128(uVar9,&local_36,iVar13);
+          sprite_partition_by_depth(uVar9,&local_36,iVar13);
         }
         iVar15 = (int)local_36;
         if (1 < local_36) {
@@ -50142,7 +50150,7 @@ ushort * param_1;
             DAT_0023b8c4 = ((short)(iVar16 >> 3) + -8) * DAT_0023bc8c +
                            (short)(iVar7 >> 3) * DAT_0023b8c0;
           }
-          FUN_00060aa0(puVar5);
+          emit_tile_objects(puVar5);
           iVar15 = (iVar15 + 1) * 0x10000 >> 0x10;
         } while (iVar15 < (int)local_34);
       }
