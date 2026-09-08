@@ -50693,6 +50693,14 @@ void FUN_00066e90()
      VK_C 0x43) for consistency with W/S/X/A/D. */
   register_key_binding(0x5a,9,1,move_command_dispatch);
   register_key_binding(0x43,10,1,move_command_dispatch);
+  /* Sidestep: the DOS "," / "." strafe keys. decode_movement_command
+     already turns input codes 0x2c / 0x2e into DAT_0023bf1c 9 / 10
+     (FUN_0003d94c cases 9/10 = move at heading -/+ 90 degrees, facing
+     unchanged), but nothing routed those codes here -- move_command_dispatch
+     with arg 9/10 just re-runs decode_movement_command and returns. The
+     gx_stub Z/C keyboard poll feeds 0x2c / 0x2e. */
+  register_key_binding(0x2c,9,1,move_command_dispatch);
+  register_key_binding(0x2e,10,1,move_command_dispatch);
   register_key_binding(0x93,8,1,move_command_dispatch);
   register_key_binding(0x6c,0xc,0x1b,move_command_dispatch);
   register_key_binding(0x6b,0xd,0x1b,move_command_dispatch);

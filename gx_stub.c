@@ -225,8 +225,8 @@ static void poll_dungeon_movement_keys(void) {
     else if (right && !left)    code = 0x91;   /* turn right  */
     else if (fwd)               code = 0x8d;   /* forward     */
     else if (back)              code = 0x93;   /* backward / turn-around */
-    else if (strafeL && !strafeR) code = 0x6b; /* strafe left  (if DAT_0020208c allows) */
-    else if (strafeR && !strafeL) code = 0x6c; /* strafe right (if DAT_0020208c allows) */
+    else if (strafeL && !strafeR) code = 0x2c; /* sidestep left  (DOS ",") */
+    else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
 
     if (code) {
         if (!active) { DAT_0024af6c = 0x14; active = 1; }  /* re-arm accel on press edge */
