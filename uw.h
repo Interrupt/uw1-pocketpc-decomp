@@ -866,7 +866,7 @@ void change_game_mode();
 void enter_dungeon_view();
 void FUN_0003bee4();
 void FUN_0003c038();
-undefined4 FUN_0003c194();
+undefined4 dungeon_view_anim_tick();
 void FUN_0003c310();
 void FUN_0003c318();
 void FUN_0003c3b4();

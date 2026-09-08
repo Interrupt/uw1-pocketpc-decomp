@@ -2021,7 +2021,7 @@ short DAT_00201c94;
    see each site's own comment). */
 static void (*const DAT_00085668_real_table[48])(void) = {
   /* mode 0 (in-game/dungeon view) */
-  (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))FUN_0003c194,
+  (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))dungeon_view_anim_tick,
   0, 0, 0, 0,
   0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))movement_pacing_handler,
   (void(*)(void))FUN_0003e4cc, (void(*)(void))FUN_0006d284, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
@@ -26646,7 +26646,13 @@ short param_1;
 
 
 
-undefined4 FUN_0003c194()
+// was FUN_0003c194 -- mode-0 dirty-bit-3 handler: advance the in-progress
+// step/turn view animation one tick (interpolate the player tile position
+// via FUN_00038d4c) and redraw the dungeon view around it. Does nothing
+// unless an animation is queued (0 < DAT_00201c90). DAT_00085730 bit 0
+// gates the mid-animation full_dungeon_redraw, bit 1 the on-completion
+// redraw + FUN_00049924(0x7ffe).
+undefined4 dungeon_view_anim_tick()
 
 {
   int iVar1;
@@ -34619,7 +34625,7 @@ void main_loop_hud_flush()
     if (_force < 0) _force = (getenv("UW_NO_FORCE_3D_REDRAW") == NULL);
     if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0) {
       /* Re-rasterise the 3D dungeon view every main-loop iteration. Setting
-         dirty bit 3 (-> FUN_0003c194) is not enough: that handler only
+         dirty bit 3 (-> dungeon_view_anim_tick) is not enough: that handler only
          redraws while a step/turn animation is in progress (0 < DAT_00201c90),
          so it does nothing while the player is idle -- which is exactly why
          the 3D view froze after the first frame under ./run.sh.
@@ -56574,7 +56580,7 @@ void FUN_00071b94()
       *(undefined1 *)(DAT_00086df8 + 0x6d) = 0xff;
       FUN_00078c80(0x118);
       DAT_00085730 = DAT_00085730 & 0xfe;
-      FUN_0003c194();
+      dungeon_view_anim_tick();
       DAT_00085730 = DAT_00085730 | 1;
     }
   }
@@ -56807,7 +56813,7 @@ LAB_00072374:
     FUN_000396a0(DAT_0023be64,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
     DAT_00201c9c = FUN_0007213c;
     DAT_00085730 = 0;
-    iVar6 = FUN_0003c194();
+    iVar6 = dungeon_view_anim_tick();
     DAT_00085730 = 3;
     if (iVar6 != 0) {
       FUN_00037c14(0x102);
