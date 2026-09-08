@@ -77,7 +77,7 @@ int DAT_00088960;
 undefined *PTR_Ordinal_2032_00084010;
 undefined *PTR_Ordinal_2026_00084014;
 undefined *PTR_Ordinal_2020_00084018;
-/* Was a lone `undefined4` scalar, but FUN_0001dfe8/FUN_0001e274/
+/* Was a lone `undefined4` scalar, but translate_verts_to_camera_space/project_verts_through_view_matrix/
    near_clip_visible_tiles (the vertex/geometry-transform pipeline feeding tile/sprite
    rendering) all take `&DAT_000a85d0` as a base pointer into a large
    per-record transform-cache struct, reading/writing offsets up to
@@ -94,15 +94,15 @@ undefined *PTR_Ordinal_2020_00084018;
    Ghidra fragmented one contiguous ~0x4900-byte structure into a
    64KB backing array plus ~80 lone scalars and a second 32KB array,
    each independently addressed -- so process_visible_tile_cell wrote
-   the geometry records into the scalars while FUN_0001dfe8 /
-   FUN_0001e274 / near_clip_visible_tiles read them as `&DAT_000a85d0 + off`,
+   the geometry records into the scalars while translate_verts_to_camera_space /
+   project_verts_through_view_matrix / near_clip_visible_tiles read them as `&DAT_000a85d0 + off`,
    and the two never met (DAT_000c8c98 stayed 0). All the pieces are
    now byte offsets into the one DAT_000a85d0_backing array.
      +0x00      first-list (raw vertex) record count / cursor
      +0x04      DAT_000a85d4  second-list (visible-tile) record count
      +0x08..13  DAT_000a85d8.. first-list vertex record 0 fields (0xc stride)
      +0x4814..  DAT_000acde4.. second-list record 0 fields (0x60 stride)
-   FUN_0001dfe8 seeds each second-list record's +0x486c flag = 1. */
+   translate_verts_to_camera_space seeds each second-list record's +0x486c flag = 1. */
 /* Real-pointer side channel for the per-visible-tile texture pointer.
    process_visible_tile_cell packs get_texture_page()'s result into a
    4-byte record field (DAT_000acdfc) -> truncated on 64-bit. We stash
@@ -508,7 +508,7 @@ int DAT_000db44c;
 int DAT_000db450;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
-   view/camera matrix -- FUN_0001de0c writes the whole matrix in one shot
+   view/camera matrix -- build_view_matrix writes the whole matrix in one shot
    via `FUN_00013b8c(...,...,&DAT_000c8ac0)`, a matrix-multiply that treats
    its output as one contiguous 64-byte buffer starting at DAT_000c8ac0
    (including the 4 never-individually-named "column 3" slots at
@@ -609,7 +609,7 @@ static void *DAT_000c4838_backing[4096];
 #define DAT_000c4838 DAT_000c4838_backing[0]
 /* Recovered from UU.exe .data at 0x8462c: the 3D viewport clip rect
    {x0=0x34, y0=0x13, w=0xe0, h=0x84} == {52, 19, 224, 132}, matching
-   FUN_00012970's `rect_fill(0x34,0x13,0xe0,0x83)`. render_visible_tile_
+   render_dungeon_view's `rect_fill(0x34,0x13,0xe0,0x83)`. render_visible_tile_
    list copies these into a local passed to raster_triangle as param_8;
    raster_triangle only calls the span rasterizer raster_textured_span inside
    `while (param_8[0] != 0 && ...)`. All zero -> that loop never ran ->
@@ -4187,7 +4187,8 @@ undefined *PTR_Ordinal_34_000841d0;
 undefined *PTR_Ordinal_33_000841d4;
 undefined *PTR_Ordinal_35_000841cc;
 
-void FUN_00011000(param_1,param_2,param_3,param_4)
+// was FUN_00011000 -- expand the damaged-region bounds (DAT_00088950..5c) to include the given rect; sibling of dirty_rect_set
+void dirty_rect_union(param_1,param_2,param_3,param_4)
 int param_1;
 int param_2;
 int param_3;
@@ -4212,7 +4213,7 @@ int param_4;
 
 
 // was FUN_00011040 -- dirty-rect SET (overwrite the damaged-region
-// bounds to exact values; sibling of dirty_rect union FUN_00011000)
+// bounds to exact values; sibling of dirty_rect union dirty_rect_union)
 void dirty_rect_set(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
@@ -4316,7 +4317,7 @@ short param_3;
   iVar11 = (int)param_2;
   iVar7 = uVar10 + iVar2;
   iVar12 = iVar11 + (uVar3 & 0xffff);
-  FUN_00011000(iVar2,iVar7,iVar11,iVar12);
+  dirty_rect_union(iVar2,iVar7,iVar11,iVar12);
   if (iVar2 < iVar7) {
     iVar6 = iVar2 * 0x140;
     pcVar8 = pcVar4;
@@ -4517,7 +4518,7 @@ void screen_backup_restore()
   short *psVar2;
   int iVar3;
   
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   iVar1 = 0;
   do {
     iVar3 = 0x140;
@@ -4553,7 +4554,7 @@ uint param_4;
   short *psVar3;
   int iVar4;
   
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   param_2 = param_2 & 0xffff;
   if (param_2 < (param_4 & 0xffff)) {
     iVar4 = param_2 * 0x140;
@@ -4578,7 +4579,8 @@ uint param_4;
   return;
 }
 
-void FUN_000116a4(param_1,param_2,param_3,param_4)
+// was FUN_000116a4 -- set the active viewport/clip rectangle (DAT_000a85c4/c8 top-left, DAT_000842a4/a8 bottom-right)
+void set_viewport_clip_rect(param_1,param_2,param_3,param_4)
 undefined2 param_1;
 undefined2 param_2;
 undefined2 param_3;
@@ -4609,7 +4611,7 @@ uint param_3;
   param_2 = param_2 & 0xffff;
   uVar1 = param_1 & 0xffff;
   param_3 = param_3 & 0xffff;
-  FUN_00011000(param_2,param_2,uVar1,param_3);
+  dirty_rect_union(param_2,param_2,uVar1,param_3);
   if (uVar1 < param_3) {
     iVar3 = param_3 - uVar1;
     iVar2 = (param_2 * 0x140 + (param_1 & 0xffff)) * 2;
@@ -4720,7 +4722,7 @@ short param_7;
   if (200 < iVar2) {
     sVar12 = (short)iVar6 + -200;
   }
-  FUN_00011000(iVar13,iVar2,iVar7);
+  dirty_rect_union(iVar13,iVar2,iVar7);
   iVar3 = (int)local_30;
   if (DAT_00088960 == 0) {
     iVar5 = iVar5 - sVar12;
@@ -4827,7 +4829,7 @@ int param_8;
           }
           iVar1 = (int)param_5;
           iVar2 = (int)param_4;
-          FUN_00011000(iVar7,iVar2 + iVar7,iVar4,iVar1 + iVar4);
+          dirty_rect_union(iVar7,iVar2 + iVar7,iVar4,iVar1 + iVar4);
           iVar4 = iVar7 * 0x140 + iVar4;
           pbVar5 = (byte *)(param_7 * 0x140 + (int)param_6 + param_3);
           iVar7 = 0;
@@ -5068,7 +5070,7 @@ short param_7;
     local_34 = param_2 + sVar1 + -200;
   }
   param_3 = param_7 * iVar2 + iVar13 + param_3;
-  FUN_00011000(iVar6,iVar6 + iVar3,iVar14);
+  dirty_rect_union(iVar6,iVar6 + iVar3,iVar14);
   if (DAT_00088960 == 0) {
     iVar11 = (int)local_3c;
     iVar4 = iVar3 - local_34;
@@ -5164,7 +5166,7 @@ short param_6;
     iVar5 = (int)param_3;
     pvVar_buf25800 = g_uw_framebuffer;
     iVar10 = 0x140 - iVar5;
-    FUN_00011000(200 - iVar4,iVar4 + (200 - iVar4),iVar10,iVar7 + iVar10);
+    dirty_rect_union(200 - iVar4,iVar4 + (200 - iVar4),iVar10,iVar7 + iVar10);
     iVar6 = param_6 * 0x140 + (int)param_5;
     iVar7 = iVar7 * 0x140 + (int)param_1;
     iVar9 = 0;
@@ -5225,24 +5227,25 @@ void thunk_FUN_0003c310()
 void FUN_00012958()
 
 {
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,0x13f,199);
   return;
 }
 
 
 
-undefined4 FUN_00012970()
+// was FUN_00012970 -- 3D dungeon-view frame driver: clears the viewport then runs the whole pipeline (view matrix, visibility walk, vertex transform, near-clip, rasterize, cleanup)
+undefined4 render_dungeon_view()
 
 {
   set_draw_color(0);
   rect_fill_or_save_restore(0x34,0x13,0xe0,0x83);
-  FUN_0001de0c();
+  build_view_matrix();
   near_clip_visible_tiles(0,0);
-  FUN_0001dfe8(&DAT_000a85d0);
-  FUN_0001e274(&DAT_000a85d0);
+  translate_verts_to_camera_space(&DAT_000a85d0);
+  project_verts_through_view_matrix(&DAT_000a85d0);
   near_clip_visible_tiles(&DAT_000a85d0,1);
   render_visible_tile_list();
-  FUN_0005b8ac();
+  free_frame_geometry_buffers();
   return 0;
 }
 
@@ -7826,7 +7829,7 @@ undefined4 param_1;
     exit_automap_screen();
   }
   else {
-    FUN_000116a4(0,0,0x13f,199);
+    set_viewport_clip_rect(0,0,0x13f,199);
     set_palette_bank(1);
     bitmap_blit_to_framebuffer(0,1,uVar3,200,0x140,0,0,1);
     draw_automap_tiles();
@@ -11557,7 +11560,8 @@ void FUN_0001dd2c()
 
 
 
-void FUN_0001de0c()
+// was FUN_0001de0c -- build the view/camera matrix into DAT_000c8ac0 from the camera translation (DAT_000db438/43c/440) and 3 axis rotations (DAT_000db448/44c/450)
+void build_view_matrix()
 
 {
   undefined4 uVar1;
@@ -11635,7 +11639,8 @@ void FUN_0001de0c()
 
 
 
-void FUN_0001dfe8(param_1)
+// was FUN_0001dfe8 -- per visible-tile vertex: subtract the camera position (Ordinal_2051) to get camera-relative coords; also clears the per-tile visible flags
+void translate_verts_to_camera_space(param_1)
 int * param_1;
 
 {
@@ -11687,7 +11692,8 @@ int * param_1;
 
 
 
-void FUN_0001e274(param_1)
+// was FUN_0001e274 -- per vertex: multiply-accumulate the camera-relative coord through the 4x4 view matrix DAT_000c8ac0 (Ordinal_2026 mul, Ordinal_2051 add) -> projected x,y,z,w
+void project_verts_through_view_matrix(param_1)
 int * param_1;
 
 {
@@ -11822,7 +11828,8 @@ undefined4 param_4;
 
 
 
-void FUN_0001e848(param_1,param_2,param_3,param_4)
+// was FUN_0001e848 -- identity-init then compose up to 3 axis rotation matrices from angle-table indices (DAT_000d9ed8 sin / DAT_000d9930 cos); used by an object/effect transform, not the tile pipeline
+void build_euler_rotation_matrix(param_1,param_2,param_3,param_4)
 int * param_1;
 int param_2;
 int param_3;
@@ -12003,7 +12010,8 @@ LAB_0001ea18:
 
 
 
-void FUN_0001ecb0(param_1,param_2)
+// was FUN_0001ecb0 -- apply a matrix built by build_euler_rotation_matrix to a point/vertex list
+void transform_points_by_matrix(param_1,param_2)
 int * param_1;
 int * param_2;
 
@@ -14016,7 +14024,7 @@ short param_2;
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 /* This is the game's dirty-rect blit: DAT_00088954/5c/50/58 (top/
-   bottom/left/right) accumulate via FUN_00011000, called from every
+   bottom/left/right) accumulate via dirty_rect_union, called from every
    draw (rect fill, text draw, sprite blit, ...) to grow the damaged
    region -- clamped here, then blitted from the software buffer
    (g_uw_framebuffer) into GXBeginDraw()'s real framebuffer and
@@ -16682,7 +16690,7 @@ void FUN_000286cc()
   DAT_00100784 = Ordinal_1041(0x10000);
   Ordinal_1047(DAT_00100784,0,0x10000);
   FUN_00057118();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,0x13f,199);
   DAT_00100670 = DAT_00100784;
   uVar6 = 2;
   iVar3 = FUN_000417b4(s_converse_00084ff4,0,0xffffffff,&LAB_00028688,&LAB_000286a4);
@@ -23464,7 +23472,7 @@ short param_5;
   local_78 = (int *)0x0;
   local_80 = 0;
   local_64 = 0;
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   pcVar8 = &DAT_00085448;
     wptr_21485 = acStackY_85518;
   do {
@@ -26451,7 +26459,7 @@ void enter_dungeon_view()
   undefined1 auStack_314 [768];
   
   FUN_00057118();
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   FUN_000678e0();
   FUN_0005b758(0x34,0x14,0xab,0x70);
   Ordinal_1044(auStack_314,&DAT_00088d98,0x300);
@@ -29292,7 +29300,7 @@ short param_5;
   bool bVar1;
   undefined4 uVar2;
   
-  FUN_00011000((int)(short)param_3,(int)(short)param_3 + (int)(short)param_4,(int)(short)param_2,
+  dirty_rect_union((int)(short)param_3,(int)(short)param_3 + (int)(short)param_4,(int)(short)param_2,
                (int)(short)param_2 + (int)param_5);
   if (((short)param_1 < 0x101b) || (0x101e < (short)param_1)) {
     bVar1 = false;
@@ -29478,7 +29486,7 @@ void FUN_00040df0()
 
 {
   FUN_00057118();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,0x13f,199);
   set_draw_color(0);
   FUN_00011b34();
   FUN_000570b4();
@@ -42456,9 +42464,9 @@ void FUN_0005721c()
           iVar3 = (int)DAT_000a85c8;
           iVar5 = (int)DAT_000842a4;
           iVar6 = (int)DAT_000842a8;
-          FUN_000116a4(0,0,0x13f,199);
+          set_viewport_clip_rect(0,0,0x13f,199);
           FUN_00057118();
-          FUN_000116a4(iVar4,iVar3,iVar5,iVar6);
+          set_viewport_clip_rect(iVar4,iVar3,iVar5,iVar6);
         }
       }
       if ((DAT_00204840 == 1) && (DAT_00202948 == 0)) {
@@ -42497,9 +42505,9 @@ void FUN_00057460()
     iVar2 = (int)DAT_000a85c8;
     iVar3 = (int)DAT_000842a4;
     iVar4 = (int)DAT_000842a8;
-    FUN_000116a4(0,0,0x13f,199);
+    set_viewport_clip_rect(0,0,0x13f,199);
     FUN_000570b4();
-    FUN_000116a4(iVar1,iVar2,iVar3,iVar4);
+    set_viewport_clip_rect(iVar1,iVar2,iVar3,iVar4);
   }
   return;
 }
@@ -43156,7 +43164,7 @@ void update_mouse_state()
     sVar2 = local_28;
     sVar3 = local_28;
     if (DAT_0020485c != 0) {
-      FUN_000116a4(0,0,0x13f,199);
+      set_viewport_clip_rect(0,0,0x13f,199);
       local_28 = sVar6;
       sVar1 = sVar7;
       sVar2 = sVar4;
@@ -43192,7 +43200,7 @@ void update_mouse_state()
       FUN_0005857c();
     }
     if (DAT_0020485c != 0) {
-      FUN_000116a4((int)local_28,(int)sVar1,(int)sVar2,(int)sVar3);
+      set_viewport_clip_rect((int)local_28,(int)sVar1,(int)sVar2,(int)sVar3);
     }
   }
   return;
@@ -44837,7 +44845,7 @@ void FUN_0005b36c()
      the code appends each texture filename at path + strlen(path). They
      are all really acStack_114 (the path buffer); Ghidra split the
      `+ iVar3` writes onto per-file base names. Same "one buffer, many
-     Ghidra names" bug as FUN_0001de0c's matrices. With them separate,
+     Ghidra names" bug as build_view_matrix's matrices. With them separate,
      the filename suffix was written to a stray 8-byte local, so
      load_texture_arena opened the bare "...\DATA\" directory and the whole
      texture / shade / colour-light arena (DAT_002049e0) stayed zero --
@@ -45074,7 +45082,8 @@ void FUN_0005b828()
 
 
 
-void FUN_0005b890()
+// was FUN_0005b890 -- reset the draw-command list write cursor DAT_00110fc0 back to its base DAT_0023aed0
+void draw_command_list_rewind()
 
 {
   DAT_00110fc0 = DAT_0023aed0;
@@ -45083,7 +45092,8 @@ void FUN_0005b890()
 
 
 
-void FUN_0005b8ac()
+// was FUN_0005b8ac -- per-frame teardown: free the scratch geometry / clip-vertex lists (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via Ordinal_1018
+void free_frame_geometry_buffers()
 
 {
   int *piVar1;
@@ -45117,15 +45127,15 @@ void FUN_0005b8ac()
 void FUN_0005bac0()
 
 {
-  FUN_0005b890();
-  FUN_0005d704();
+  draw_command_list_rewind();
+  emit_hud_draw_commands();
   FUN_00038c14(0xa0);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_000116a4(0,0,DAT_0023b020 + -1,DAT_0023aed4 + -1);
-  FUN_000116a4(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
-  FUN_00012970();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,DAT_0023b020 + -1,DAT_0023aed4 + -1);
+  set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
+  render_dungeon_view();
+  set_viewport_clip_rect(0,0,0x13f,199);
   return;
 }
 
@@ -45135,21 +45145,22 @@ void FUN_0005bac0()
 void full_dungeon_redraw()
 
 {
-  FUN_0005bc38();
-  FUN_0005b890();
+  build_frame_draw_list();
+  draw_command_list_rewind();
   rebuild_dungeon_view();
   FUN_00038c14(0xa0);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_000116a4(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
-  FUN_00012970();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
+  render_dungeon_view();
+  set_viewport_clip_rect(0,0,0x13f,199);
   return;
 }
 
 
 
-void FUN_0005bbe0()
+// was FUN_0005bbe0 -- timed dungeon-view redraw: rebuild the draw list if needed, run render_dungeon_view, measure it (FUN_0002294c) and feed an adaptive-quality value
+void render_dungeon_frame_timed()
 
 {
   short sVar1;
@@ -45165,19 +45176,19 @@ void FUN_0005bbe0()
   undefined1 auStack_60 [60];
   
   DAT_0023aec8 = FUN_0002294c();
-  iVar8 = FUN_0005bc38();
+  iVar8 = build_frame_draw_list();
   if (iVar8 != 0) {
-    FUN_0005b890();
+    draw_command_list_rewind();
     rebuild_dungeon_view();
     FUN_00038c14(0xa0);
     *DAT_00110fc0 = 0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
   }
-  FUN_000116a4(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
-  FUN_00011000(0x13,0x84,0x34,0xe0);
+  set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
+  dirty_rect_union(0x13,0x84,0x34,0xe0);
   iVar8 = FUN_0002294c();
   iVar8 = iVar8 - DAT_0023aec8;
-  iVar4 = FUN_00012970();
+  iVar4 = render_dungeon_view();
   iVar5 = FUN_0002294c();
   if (DAT_0023b01c != 0) {
     FUN_0006fcb0();
@@ -45185,7 +45196,7 @@ void FUN_0005bbe0()
   FUN_0005721c();
   FUN_0001294c();
   FUN_00057460();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,0x13f,199);
   iVar6 = FUN_0002294c();
   iVar7 = (iVar6 - iVar5) + iVar4 + iVar8;
   if (iVar7 == 0) {
@@ -45209,7 +45220,8 @@ void FUN_0005bbe0()
 
 
 
-undefined4 FUN_0005bc38()
+// was FUN_0005bc38 -- build the per-frame HUD + world draw-command list (opcodes into DAT_00110fc0) and run the visibility pass walk_visible_tiles; returns nonzero if it rebuilt
+undefined4 build_frame_draw_list()
 
 {
   short sVar1;
@@ -45854,7 +45866,7 @@ undefined1 ** param_2;
      an adjacent local) every single time this function runs, regardless
      of which branch follows. Same "locals declared as whatever fragment
      Ghidra individually named instead of the real buffer a copy/init
-     needs" bug as FUN_0001de0c's matrices earlier this session, just for
+     needs" bug as build_view_matrix's matrices earlier this session, just for
      a stack array instead of a global one. local_23 was the record's own
      byte offset+5 (0x28-0x23=5) -- folded into the real-sized array as
      acStack_28[5], its declaration removed. */
@@ -46128,7 +46140,7 @@ void rebuild_dungeon_view()
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = (ushort)DAT_0023b4dc;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_0005d2ac(1);
+  dungeon_view_prepass_stub(1);
   DAT_0023b810 = 0;
   walk_visible_tiles();
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
@@ -46144,7 +46156,8 @@ void rebuild_dungeon_view()
 
 
 
-void FUN_0005d2ac()
+// was FUN_0005d2ac -- empty hook called before the visibility walk in build_frame_draw_list (disabled / never recovered)
+void dungeon_view_prepass_stub()
 
 {
   return;
@@ -46199,7 +46212,8 @@ void FUN_0005d2b0()
 
 
 
-void FUN_0005d704()
+// was FUN_0005d704 -- append the fixed HUD draw-command opcode sequence (compass, panels, sprite ids from FUN_00038a8c) to the draw-command list DAT_00110fc0
+void emit_hud_draw_commands()
 
 {
   short sVar1;
@@ -46269,7 +46283,7 @@ void FUN_0005d704()
   DAT_0023b4f4 = DAT_00086b38;
   DAT_0023b80c = DAT_00086b40;
   DAT_0023b4d4 = DAT_00086b48;
-  FUN_0005d2ac(2);
+  dungeon_view_prepass_stub(2);
   DAT_0023bc8c = *(undefined2 *)(&DAT_00086b50 + DAT_0023b4a0 * 4);
   DAT_0023b8c0 = *(undefined2 *)(&DAT_00086b52 + DAT_0023b4a0 * 4);
   walk_visible_tiles();
@@ -48985,8 +48999,8 @@ LAB_000640ec:
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
   }
-  FUN_0001e848(iVar29,0,(int)sVar13,0);
-  FUN_0001ecb0(&DAT_000a85d0,iVar29);
+  build_euler_rotation_matrix(iVar29,0,(int)sVar13,0);
+  transform_points_by_matrix(&DAT_000a85d0,iVar29);
   DAT_0023b83c = DAT_000a85d4;
   DAT_0023b838 = DAT_000a85d0;
   if (local_7a != 0xffff) {
@@ -50893,7 +50907,7 @@ void FUN_00067f1c()
   DAT_0023bea4 = FUN_00049fb4((int)sVar4,(int)sVar3);
   DAT_0023bf08 = 0;
   do {
-    FUN_0005bbe0();
+    render_dungeon_frame_timed();
     DAT_0023bea4 = DAT_0023bea4 + 0xccb;
     sVar3 = DAT_0023bf08 + 1;
     uVar2 = DAT_0023bf08 + 1;
@@ -52107,7 +52121,7 @@ void FUN_0006a168()
         unsigned char _ix = _src[_i];
         if ((_ix & 0xc0) == 0x40) _dst[_i] = _lut[_ix];
       }
-      FUN_00011000(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
+      dirty_rect_union(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
     }
     DAT_0023bf74 = FUN_0002294c();
   }
@@ -53492,7 +53506,7 @@ int param_3;
       if (-1 < (short)param_1) {
         FUN_00040df0();
       }
-      FUN_000116a4(0,0,0x13f,199);
+      set_viewport_clip_rect(0,0,0x13f,199);
       if (-1 < (short)param_1) {
         set_palette_bank(param_1);
       }
@@ -55316,7 +55330,7 @@ void FUN_0006fea4()
   if (DAT_0023b01c != 0) {
     FUN_0006fcb0();
   }
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   return;
 }
 
@@ -56441,7 +56455,7 @@ void FUN_00071b94()
     }
   }
   else {
-    FUN_00011000(0,200,0,0x140);
+    dirty_rect_union(0,200,0,0x140);
     *(undefined1 *)(DAT_00085a6c + 8) = 0;
     *(undefined1 *)(DAT_00085a6c + 9) = 0;
   DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
@@ -56462,7 +56476,7 @@ void FUN_00071b94()
     Ordinal_1063(acStack_114,s__DATA_win1_byt_00087350);
     FUN_0006c98c(7,acStack_114,1);
     Ordinal_496(3000);
-    FUN_00011000(0,200,0,0x140);
+    dirty_rect_union(0,200,0,0x140);
     Ordinal_1047(acStack_114,0,0x104);
     do {
       cVar1 = *pcVar7;
@@ -56471,7 +56485,7 @@ void FUN_00071b94()
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_114,s__DATA_win2_byt_00087340);
     FUN_0006c98c(0xffffffff,acStack_114,1);
-    FUN_00011000(0,200,0,0x140);
+    dirty_rect_union(0,200,0,0x140);
     FUN_00070c90();
     do {
       sVar3 = FUN_00057a70();
@@ -59619,7 +59633,7 @@ short param_5;
           if (bVar3) {
             iVar7 = (int)sVar10;
             iVar2 = (int)param_5;
-            FUN_00011000(iVar9,iVar9 + iVar2,iVar12,iVar12 + iVar7);
+            dirty_rect_union(iVar9,iVar9 + iVar2,iVar12,iVar12 + iVar7);
             iVar12 = iVar9 * 0x140 + iVar12;
             iVar9 = 0;
             if (0 < iVar2) {
@@ -59690,7 +59704,7 @@ short * param_1;
   iVar1 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xd);
   iVar3 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xf);
   iVar6 = iVar7 * 0x140 + iVar5;
-  FUN_00011000(iVar7,iVar3 + iVar7,iVar5,iVar1 + iVar5);
+  dirty_rect_union(iVar7,iVar3 + iVar7,iVar5,iVar1 + iVar5);
   iVar5 = 0;
   if (0 < iVar3) {
     do {
@@ -60015,7 +60029,7 @@ undefined4 FUN_000778fc()
     } while (iVar7 != 0);
     GXEndDraw();
   }
-  FUN_00011000(0,0xf0,0,0x140);
+  dirty_rect_union(0,0xf0,0,0x140);
   return 0;
 }
 
@@ -64096,7 +64110,7 @@ short param_3;
   *(undefined2 *)
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
        (&g_palette_rgb565)[param_3];
-  FUN_00011000(iVar1,iVar1,(int)param_1);
+  dirty_rect_union(iVar1,iVar1,(int)param_1);
   debug_framebuffer_dump("plot_pixel");
   return;
 }

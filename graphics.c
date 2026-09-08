@@ -59,7 +59,7 @@ short param_4;
   iVar4 = (int)(short)param_2;
   iVar15 = (param_4 - iVar4) * 0x10000;
   iVar12 = iVar15 >> 0x10;
-  FUN_00011000(param_2 & 0xffff,param_4,param_1,param_3);
+  dirty_rect_union(param_2 & 0xffff,param_4,param_1,param_3);
   if ((int)(short)DAT_000a85c4 <= iVar11 + iVar14 + -1) {
     if (iVar14 < (short)DAT_000a85c4) {
       iVar14 = (int)(short)DAT_000a85c4;
@@ -244,7 +244,7 @@ short param_7;
   if (200 < iVar7 + iVar2) {
     sVar12 = param_2 + sVar1 + -200;
   }
-  FUN_00011000(iVar7,iVar7 + iVar2,iVar8);
+  dirty_rect_union(iVar7,iVar7 + iVar2,iVar8);
   iVar5 = (int)sVar14;
   if (DAT_00088960 == 0) {
     if (iVar5 < iVar2 - sVar12) {

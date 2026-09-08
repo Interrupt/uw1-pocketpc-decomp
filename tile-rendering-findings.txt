@@ -5,14 +5,15 @@ memory.md UPDATEs 6-18 and milestone-3d-tiles-render for the fix history.)
 ═══════════════════════════════════════════════════════════════════════════
 3D DUNGEON VIEW -- per-frame pipeline
 ═══════════════════════════════════════════════════════════════════════════
-FUN_00012970                     3D-view frame driver: clears the viewport rect
-                                 then runs the whole pipeline below. Called from
-                                 full_dungeon_redraw / FUN_0005bbe0 / FUN_0005bc38.
-  FUN_0001de0c                   build the view/camera matrix -> DAT_000c8ac0:
-                                 identity-init 4 matrices, load a translation
-                                 (camera pos DAT_000db438/43c/440) and 3 axis
-                                 rotations (angles DAT_000db448/44c/450 into the
-                                 per-degree sin/cos tables), multiply them all.
+render_dungeon_view              (was FUN_00012970) 3D-view frame driver: clears
+                                 the viewport rect, then runs the whole pipeline
+                                 below. Called from render_dungeon_frame_timed /
+                                 full_dungeon_redraw.
+  build_view_matrix              (was FUN_0001de0c) build the view/camera matrix
+                                 -> DAT_000c8ac0: identity-init 4 matrices, load a
+                                 translation (camera pos DAT_000db438/43c/440) and
+                                 3 axis rotations (angles DAT_000db448/44c/450 into
+                                 the per-degree sin/cos tables), multiply them all.
   walk_visible_tiles             (was FUN_0005d9cc) visibility flood/beam-trace
                                  from the camera tile; for each tile it decides
                                  is visible, calls process_visible_tile_cell.
@@ -20,30 +21,39 @@ FUN_00012970                     3D-view frame driver: clears the viewport rect
                                  geometry: floor/ceiling/wall quads, each with a
                                  texture page (get_texture_page) and per-vertex
                                  U/V, into the geometry buffer (count DAT_000c8c98).
-  FUN_0001dfe8                   per vertex: tile/world coords -> eye space
-                                 (translate by camera pos via Ordinal_2051) and
-                                 clear the per-tile "visible" flags.
-  FUN_0001e274                   per vertex: eye space -> clip/projected space,
-                                 multiply-add through the view matrix DAT_000c8ac0
-                                 (Ordinal_2026 mul, Ordinal_2051 add) -> x,y,z,w.
+  translate_verts_to_camera_space (was FUN_0001dfe8) per vertex: subtract the
+                                 camera position (Ordinal_2051) to get camera-
+                                 relative coords; also clears the per-tile
+                                 "visible" flags.
+  project_verts_through_view_matrix (was FUN_0001e274) per vertex: multiply-add
+                                 the camera-relative coord through the 4x4 view
+                                 matrix DAT_000c8ac0 (Ordinal_2026 mul,
+                                 Ordinal_2051 add) -> projected x,y,z,w.
   near_clip_visible_tiles        (was FUN_0001f370) param_2==0: reset the visible
                                  -tile count. param_2==1: near-plane
                                  (w = DAT_00084608 = 5.0f) Sutherland-Hodgman clip
                                  of each visible tile polygon; writes clipped
                                  vertices + their Z for render_visible_tile_list.
-    FUN_0001e848 / FUN_0001ecb0  clip/emit helpers used by near_clip: interpolate
-                                 a new vertex on a clipped edge / append a polygon.
   render_visible_tile_list       (was FUN_00020370) for every surviving tile poly:
                                  perspective divide (Ordinal_2047), per-triangle
                                  and per-edge gradient setup, then rasterize as
                                  textured triangles (2 per quad) via raster_triangle.
-  FUN_0005b8ac                   per-frame teardown: free the scratch geometry /
-                                 clip-vertex buffers (DAT_0023c7a0[0x140],
-                                 DAT_002020f8[0x80]) via Ordinal_1018.
+  free_frame_geometry_buffers    (was FUN_0005b8ac) per-frame teardown: free the
+                                 scratch geometry / clip-vertex lists
+                                 (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via
+                                 Ordinal_1018.
 
 enter_dungeon_view               (was FUN_0003bd50) enter the 3D-view game mode:
                                  loads PALS.DAT bank 0 (the real 3D palette) and
                                  mirrors it into DAT_00088d98; installs the HUD.
+
+(not in the tile pipeline -- a separate object/effect transform, listed here
+only because they are adjacent in the file and were previously misfiled:)
+build_euler_rotation_matrix      (was FUN_0001e848) identity-init then compose up
+                                 to 3 axis rotation matrices from angle-table
+                                 indices (DAT_000d9ed8 sin / DAT_000d9930 cos).
+transform_points_by_matrix       (was FUN_0001ecb0) apply a matrix built by
+                                 build_euler_rotation_matrix to a point list.
 
 ═══════════════════════════════════════════════════════════════════════════
 SOFTWARE RASTERIZER  (perspective-correct textured spans)
@@ -66,13 +76,15 @@ raster_textured_span             (was FUN_0001548c) inner loop: for one scanline
 ═══════════════════════════════════════════════════════════════════════════
 TEXTURES & PALETTE
 ═══════════════════════════════════════════════════════════════════════════
-FUN_0005b054                     (was) reset the wall/floor texture-id lists to
-                                 identity + default counts (0x30 wall, 10 floor).
+reset_texture_id_lists           (was FUN_0005b054) reset the wall/floor texture-
+                                 id lists to identity + default counts (0x30 wall,
+                                 10 floor).
 load_texture_arena               (was FUN_0005b514) load the selected entries of a
                                  .tr texture file (ids in the list arg) into the
                                  decoded-texture arena; called 4x (W64/F32/W16/F16).
-FUN_0005b660                     (was) load TERRAIN.DAT texture-property words ->
-                                 DAT_0023add0 (wall) / DAT_0023ae40 (floor).
+load_terrain_texture_props       (was FUN_0005b660) load TERRAIN.DAT texture-
+                                 property words -> DAT_0023add0 (wall) /
+                                 DAT_0023ae40 (floor).
 get_texture_page                 (was FUN_00040c5c) map a tile's texture index to
                                  the arena page number process_visible_tile_cell
                                  packs into each emitted vertex.
@@ -98,22 +110,40 @@ draw_sprite_by_id                (was FUN_00040b0c) blit a .GR sprite by id at
 blit_sprite_row_remapped         (was FUN_00013170) blit one row of a sprite,
                                  applying a per-pixel remap/skip.
 draw_text_string                 (was FUN_00011060) draw a font string at x,y.
-FUN_00011040                     (was) dirty-rect SET (overwrite the damaged region).
-FUN_00011060                     (was) dirty-rect MERGE (union with the damaged region).
+dirty_rect_set                   (was FUN_00011040) overwrite the damaged-region
+                                 bounds (DAT_00088950..5c) to exact values.
+dirty_rect_union                 (was FUN_00011000) expand the damaged-region
+                                 bounds to include the given rect.
 flush_dirty_rect_to_display      push the damaged region to the GX/SDL surface;
-FUN_0002310c                     is a near-identical twin of it.
-FUN_000116a4 / FUN_00011000      viewport rect fill / save-restore helpers used
-                                 around the 3D-view draw.
+                                 flush_dirty_rect_to_display_240 (was FUN_0002310c)
+                                 is a near-identical twin of it.
+set_viewport_clip_rect           (was FUN_000116a4) set the active viewport/clip
+                                 rectangle (DAT_000a85c4/c8 top-left,
+                                 DAT_000842a4/a8 bottom-right).
 
 ═══════════════════════════════════════════════════════════════════════════
 REDRAW WRAPPERS
 ═══════════════════════════════════════════════════════════════════════════
 full_dungeon_redraw              (was FUN_0005bb5c) force a complete HUD + 3D-view
                                  redraw (used by the demo REVEAL command).
-FUN_0005bbe0                     timed 3D-view redraw (measures FUN_00012970 cost).
-FUN_0005bc38                     build the HUD draw-command list then
-                                 walk_visible_tiles (world + objects pass).
-FUN_0005b890 / FUN_0005d704 / FUN_0005d2ac   HUD/panel and command-list setup.
+rebuild_dungeon_view             (was FUN_0005d290) rebuild the level geometry /
+                                 texture set for the current position.
+render_dungeon_frame_timed       (was FUN_0005bbe0) timed dungeon-view redraw:
+                                 rebuild the draw list if needed, run
+                                 render_dungeon_view, measure it (FUN_0002294c),
+                                 feed an adaptive-quality value.
+build_frame_draw_list            (was FUN_0005bc38) build the per-frame HUD +
+                                 world draw-command list (opcodes into
+                                 DAT_00110fc0) and run walk_visible_tiles;
+                                 returns nonzero if it rebuilt.
+emit_hud_draw_commands           (was FUN_0005d704) append the fixed HUD draw-
+                                 command opcode sequence (compass, panels, sprite
+                                 ids from FUN_00038a8c) to DAT_00110fc0.
+draw_command_list_rewind         (was FUN_0005b890) reset the draw-command list
+                                 write cursor DAT_00110fc0 back to base DAT_0023aed0.
+dungeon_view_prepass_stub        (was FUN_0005d2ac) empty hook called before the
+                                 visibility walk in build_frame_draw_list
+                                 (disabled / never recovered).
 
 ═══════════════════════════════════════════════════════════════════════════
 SOFTFLOAT ORDINALS  (ordinal_stubs.c -- the ARM __e32/mathlib the port needs)
