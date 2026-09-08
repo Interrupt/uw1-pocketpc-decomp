@@ -11616,7 +11616,13 @@ LAB_0001dbcc:
 
 
 
-undefined4 FUN_0001dc04(param_1)
+/* Ghidra lost the return value (literal `return 0`), so the sole caller
+   (FUN_00061e60) dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the
+   moment an animated tile object (door, etc.) came into view. The
+   function ticks animation record `param_1` in place; it returns that
+   record's base, &DAT_00189590 + param_1*0x3c2c (== piVar2 before the
+   loop walks it). */
+void *FUN_0001dc04(param_1)
 short param_1;
 
 {
@@ -11625,9 +11631,11 @@ short param_1;
   undefined *puVar3;
   int iVar4;
   int iVar5;
-  
+  void *rec_base;
+
   iVar4 = param_1 * 0x3c2c;
   piVar2 = (int *)(&DAT_00189590 + iVar4);
+  rec_base = piVar2;
   iVar5 = *piVar2;
   if (0 < iVar5) {
     puVar3 = &DAT_00110ff0 + iVar4;
@@ -11653,7 +11661,7 @@ short param_1;
       iVar4 = iVar4 + 0xc;
     } while (iVar5 != 0);
   }
-  return 0;
+  return rec_base;
 }
 
 
@@ -48770,6 +48778,7 @@ short param_4;
   int iVar27;
   undefined4 *puVar28;
   int iVar29;
+  char *_anim;
   int iVar30;
   undefined4 *puVar31;
   undefined4 *puVar32;
@@ -48850,6 +48859,16 @@ short param_4;
   }
   else {
     local_58 = (byte *)get_texture_page((int)param_4);
+    if (local_58 == (byte *)0x0) {
+      /* param_4 out of get_texture_page's 0..0x73 range -- reached with
+         (uVar27 & 0xf) + DAT_00202734 (~0x2b8) from FUN_00060aa0's
+         `(*param_1 & 0x30) == 0x30` branch, i.e. a special animated
+         object (door frame etc.) whose texture lives in a different bank
+         than the wall/floor tile pages this helper knows. Rather than
+         dereference NULL (crash the instant such a tile comes into view),
+         skip this object's textured billboard. */
+      return;
+    }
     bVar5 = *local_58;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -49026,8 +49045,8 @@ short param_4;
     uVar11 = DAT_0023b824;
     uVar12 = DAT_0023b824;
   }
-  iVar29 = FUN_0001dc04(param_1);
-  local_48 = *(int *)(iVar29 + 4);
+  _anim = (char *)FUN_0001dc04(param_1);
+  local_48 = *(int *)(_anim + 4);
   iVar16 = local_48 + -1;
   if (-1 < iVar16) {
     iVar2 = (int)(short)uVar11;
@@ -49036,7 +49055,7 @@ short param_4;
     local_58 = (byte *)(iVar16 * 0x18);
     do {
       sVar7 = DAT_000da47c;
-      iVar16 = iVar22 + iVar29 + 0xc14;
+      iVar16 = iVar22 + _anim + 0xc14;
       *(char *)(iVar16 + 0x4c) = (char)DAT_000da47c;
       *(char *)(iVar16 + 0x4d) = (char)((ushort)sVar7 >> 8);
       cVar9 = (char)(sVar7 >> 0xf);
@@ -49080,13 +49099,13 @@ short param_4;
         local_60 = 0;
         do {
           iVar27 = (int)(short)DAT_0023b91c;
-          iVar30 = *(int *)(iVar29 + 0xc14 + ((int)local_58 + local_60) * 4 + 4);
+          iVar30 = *(int *)(_anim + 0xc14 + ((int)local_58 + local_60) * 4 + 4);
           uVar17 = Ordinal_2032(iVar27);
-          uVar17 = Ordinal_2051(*(undefined4 *)(iVar30 * 0xc + iVar29 + 0xc),uVar17);
+          uVar17 = Ordinal_2051(*(undefined4 *)(iVar30 * 0xc + _anim + 0xc),uVar17);
           iVar18 = Ordinal_2036(uVar17,0x44800000);
           if (iVar18 != 0) {
             uVar17 = Ordinal_2032(0x400 - iVar27);
-            puVar24 = (undefined1 *)((iVar30 + 1) * 0xc + iVar29);
+            puVar24 = (undefined1 *)((iVar30 + 1) * 0xc + _anim);
             *puVar24 = (char)uVar17;
             puVar24[1] = (char)((uint)uVar17 >> 8);
             puVar24[2] = (char)((uint)uVar17 >> 0x10);
@@ -49094,9 +49113,9 @@ short param_4;
           }
           local_60 = (local_60 + 1) * 0x10000 >> 0x10;
         } while (local_60 < 4);
-        iVar30 = *(int *)(iVar16 + 8) * 0xc + iVar29;
+        iVar30 = *(int *)(iVar16 + 8) * 0xc + _anim;
         uVar17 = Ordinal_2032(iVar2 + -1);
-        puVar26 = (undefined4 *)(iVar29 + 0x3c1c);
+        puVar26 = (undefined4 *)(_anim + 0x3c1c);
         uVar19 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar19 = Ordinal_2026(uVar19,0x3b800000);
         Ordinal_2026(uVar19,uVar17);
@@ -49106,7 +49125,7 @@ short param_4;
         *(char *)(iVar16 + 0x26) = (char)((uint)uVar19 >> 0x10);
         *(char *)(iVar16 + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
-        puVar28 = (undefined4 *)(iVar29 + 0x3c24);
+        puVar28 = (undefined4 *)(_anim + 0x3c24);
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
@@ -49118,7 +49137,7 @@ short param_4;
         iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 7),
                           CONCAT12(*(undefined1 *)(iVar16 + 6),
                                    CONCAT11(*(undefined1 *)(iVar16 + 5),*(undefined1 *)(iVar16 + 4))
-                                  )) * 0xc + iVar29;
+                                  )) * 0xc + _anim;
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar17);
@@ -49138,7 +49157,7 @@ short param_4;
         iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0x13),
                           CONCAT12(*(undefined1 *)(iVar16 + 0x12),
                                    CONCAT11(*(undefined1 *)(iVar16 + 0x11),
-                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + iVar29;
+                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + _anim;
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar17);
@@ -49158,7 +49177,7 @@ short param_4;
         iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0xf),
                           CONCAT12(*(undefined1 *)(iVar16 + 0xe),
                                    CONCAT11(*(undefined1 *)(iVar16 + 0xd),
-                                            *(undefined1 *)(iVar16 + 0xc)))) * 0xc + iVar29;
+                                            *(undefined1 *)(iVar16 + 0xc)))) * 0xc + _anim;
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar17);
@@ -49173,11 +49192,11 @@ short param_4;
         uVar17 = Ordinal_2020();
       }
       else if (((uVar14 == 0xe) || (uVar14 == 0xf)) || (uVar14 == 0x13)) {
-        iVar30 = *(int *)(iVar16 + 0xc) * 0xc + iVar29;
+        iVar30 = *(int *)(iVar16 + 0xc) * 0xc + _anim;
         uVar17 = Ordinal_2032(iVar2 + -1);
-        puVar26 = (undefined4 *)(iVar29 + 0x3c1c);
+        puVar26 = (undefined4 *)(_anim + 0x3c1c);
         uVar19 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
-        puVar28 = (undefined4 *)(iVar29 + 0x3c20);
+        puVar28 = (undefined4 *)(_anim + 0x3c20);
         uVar19 = Ordinal_2047(uVar19,*puVar28);
         Ordinal_2026(uVar19,uVar17);
         uVar19 = Ordinal_2020();
@@ -49186,9 +49205,9 @@ short param_4;
         *(char *)(iVar16 + 0x26) = (char)((uint)uVar19 >> 0x10);
         *(char *)(iVar16 + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
-        puVar31 = (undefined4 *)(iVar29 + 0x3c24);
+        puVar31 = (undefined4 *)(_anim + 0x3c24);
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
-        puVar32 = (undefined4 *)(iVar29 + 0x3c28);
+        puVar32 = (undefined4 *)(_anim + 0x3c28);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -49199,7 +49218,7 @@ short param_4;
         iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0x13),
                           CONCAT12(*(undefined1 *)(iVar16 + 0x12),
                                    CONCAT11(*(undefined1 *)(iVar16 + 0x11),
-                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + iVar29;
+                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + _anim;
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
@@ -49219,7 +49238,7 @@ short param_4;
         iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 7),
                           CONCAT12(*(undefined1 *)(iVar16 + 6),
                                    CONCAT11(*(undefined1 *)(iVar16 + 5),*(undefined1 *)(iVar16 + 4))
-                                  )) * 0xc + iVar29;
+                                  )) * 0xc + _anim;
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
@@ -49239,7 +49258,7 @@ short param_4;
         iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0xb),
                           CONCAT12(*(undefined1 *)(iVar16 + 10),
                                    CONCAT11(*(undefined1 *)(iVar16 + 9),*(undefined1 *)(iVar16 + 8))
-                                  )) * 0xc + iVar29;
+                                  )) * 0xc + _anim;
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
@@ -49254,11 +49273,11 @@ short param_4;
         uVar17 = Ordinal_2020();
       }
       else {
-        iVar30 = *(int *)(iVar16 + 8) * 0xc + iVar29;
+        iVar30 = *(int *)(iVar16 + 8) * 0xc + _anim;
         uVar17 = Ordinal_2032(iVar2 + -1);
-        puVar26 = (undefined4 *)(iVar29 + 0x3c1c);
+        puVar26 = (undefined4 *)(_anim + 0x3c1c);
         uVar19 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
-        puVar28 = (undefined4 *)(iVar29 + 0x3c20);
+        puVar28 = (undefined4 *)(_anim + 0x3c20);
         uVar19 = Ordinal_2047(uVar19,*puVar28);
         Ordinal_2026(uVar19,uVar17);
         uVar19 = Ordinal_2020();
@@ -49267,9 +49286,9 @@ short param_4;
         *(char *)(iVar16 + 0x26) = (char)((uint)uVar19 >> 0x10);
         *(char *)(iVar16 + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
-        puVar31 = (undefined4 *)(iVar29 + 0x3c24);
+        puVar31 = (undefined4 *)(_anim + 0x3c24);
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
-        puVar32 = (undefined4 *)(iVar29 + 0x3c28);
+        puVar32 = (undefined4 *)(_anim + 0x3c28);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -49280,7 +49299,7 @@ short param_4;
         iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 7),
                           CONCAT12(*(undefined1 *)(iVar16 + 6),
                                    CONCAT11(*(undefined1 *)(iVar16 + 5),*(undefined1 *)(iVar16 + 4))
-                                  )) * 0xc + iVar29;
+                                  )) * 0xc + _anim;
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
@@ -49300,7 +49319,7 @@ short param_4;
         iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0x13),
                           CONCAT12(*(undefined1 *)(iVar16 + 0x12),
                                    CONCAT11(*(undefined1 *)(iVar16 + 0x11),
-                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + iVar29;
+                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + _anim;
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
@@ -49320,7 +49339,7 @@ short param_4;
         iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0xf),
                           CONCAT12(*(undefined1 *)(iVar16 + 0xe),
                                    CONCAT11(*(undefined1 *)(iVar16 + 0xd),
-                                            *(undefined1 *)(iVar16 + 0xc)))) * 0xc + iVar29;
+                                            *(undefined1 *)(iVar16 + 0xc)))) * 0xc + _anim;
         uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
@@ -49344,20 +49363,20 @@ short param_4;
     } while (local_48 != 0);
   }
   uVar17 = Ordinal_2032((int)(short)DAT_0023b904);
-  *(char *)(iVar29 + 0xc08) = (char)uVar17;
-  *(char *)(iVar29 + 0xc09) = (char)((uint)uVar17 >> 8);
-  *(char *)(iVar29 + 0xc0a) = (char)((uint)uVar17 >> 0x10);
-  *(char *)(iVar29 + 0xc0b) = (char)((uint)uVar17 >> 0x18);
+  *(char *)(_anim + 0xc08) = (char)uVar17;
+  *(char *)(_anim + 0xc09) = (char)((uint)uVar17 >> 8);
+  *(char *)(_anim + 0xc0a) = (char)((uint)uVar17 >> 0x10);
+  *(char *)(_anim + 0xc0b) = (char)((uint)uVar17 >> 0x18);
   uVar17 = Ordinal_2032((int)(short)DAT_0023b91c);
-  *(char *)(iVar29 + 0xc0c) = (char)uVar17;
-  *(char *)(iVar29 + 0xc0d) = (char)((uint)uVar17 >> 8);
-  *(char *)(iVar29 + 0xc0e) = (char)((uint)uVar17 >> 0x10);
-  *(char *)(iVar29 + 0xc0f) = (char)((uint)uVar17 >> 0x18);
+  *(char *)(_anim + 0xc0c) = (char)uVar17;
+  *(char *)(_anim + 0xc0d) = (char)((uint)uVar17 >> 8);
+  *(char *)(_anim + 0xc0e) = (char)((uint)uVar17 >> 0x10);
+  *(char *)(_anim + 0xc0f) = (char)((uint)uVar17 >> 0x18);
   uVar17 = Ordinal_2032((int)(short)DAT_0023b920);
-  *(char *)(iVar29 + 0xc10) = (char)uVar17;
-  *(char *)(iVar29 + 0xc11) = (char)((uint)uVar17 >> 8);
-  *(char *)(iVar29 + 0xc12) = (char)((uint)uVar17 >> 0x10);
-  *(char *)(iVar29 + 0xc13) = (char)((uint)uVar17 >> 0x18);
+  *(char *)(_anim + 0xc10) = (char)uVar17;
+  *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
+  *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
+  *(char *)(_anim + 0xc13) = (char)((uint)uVar17 >> 0x18);
   if (((uVar14 != 0xe) && (uVar14 != 0xf)) && (uVar14 != 0xc)) goto LAB_000640ec;
   uVar21 = (int)((*(ushort *)(param_2 + 2) >> 7 & 7) + 1) >> 1;
   if (3 < uVar21) {
@@ -49395,16 +49414,16 @@ LAB_0006409c:
   uVar19 = (&DAT_00086ce4)[uVar21 * 8];
   uVar17 = (&DAT_00086ce0)[uVar21 * 8];
 LAB_000640c0:
-  FUN_0001e594(iVar29,uVar17,0,uVar19);
+  FUN_0001e594(_anim,uVar17,0,uVar19);
 switchD_00064038_default:
-  FUN_0001e6f0(iVar29,0x3f800000,0x3f99999a,0x3f800000);
+  FUN_0001e6f0(_anim,0x3f800000,0x3f99999a,0x3f800000);
 LAB_000640ec:
   if (sVar13 < 0) {
     if (uVar14 == 7) {
-      FUN_0001e6f0(iVar29,0x40200000,0x40200000,0x40200000);
+      FUN_0001e6f0(_anim,0x40200000,0x40200000,0x40200000);
     }
     if ((sVar13 < 0) && ((uVar14 == 0x1b || (uVar14 == 0x19)))) {
-      FUN_0001e6f0(iVar29,0x40000000,0x40000000,0x40000000);
+      FUN_0001e6f0(_anim,0x40000000,0x40000000,0x40000000);
     }
   }
   if ((uVar14 == 0xe) || (uVar14 == 0xf)) {
@@ -49420,8 +49439,8 @@ LAB_000640ec:
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
   }
-  build_euler_rotation_matrix(iVar29,0,(int)sVar13,0);
-  transform_points_by_matrix(&DAT_000a85d0,iVar29);
+  build_euler_rotation_matrix(_anim,0,(int)sVar13,0);
+  transform_points_by_matrix(&DAT_000a85d0,_anim);
   DAT_0023b83c = DAT_000a85d4;
   DAT_0023b838 = DAT_000a85d0;
   if (local_7a != 0xffff) {
@@ -49816,8 +49835,8 @@ short param_6;
       iVar1 = (int)(short)iVar5;
       if (iVar1 != param_3) {
         if (param_6 == 0) {
-          iVar3 = FUN_000535fc((int)(short)(&DAT_0023b848)[iVar1]);
-          uVar2 = *(byte *)(iVar3 + 2) & 0x7f;
+          char *_o = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[iVar1]);
+          uVar2 = *(byte *)(_o + 2) & 0x7f;   /* was `int iVar3` -- truncated the object pointer */
         }
         else {
           uVar2 = (ushort)(char)(&DAT_0023bb98)[(int)param_6 + iVar1 * 4];
@@ -49843,15 +49862,15 @@ short param_6;
 
 void FUN_0006508c(param_1,param_2,param_3)
 undefined4 param_1;
-undefined4 param_2;
+short *param_2;   /* was undefined4 -- FUN_00064f10 writes through it (*param_2 = ...) */
 undefined4 param_3;
 
 {
-  int iVar1;
+  char *_o;
   byte bVar2;
-  
-  iVar1 = FUN_000535fc((int)(short)(&DAT_0023b848)[(short)param_1]);
-  bVar2 = *(byte *)(iVar1 + 2) & 0x7f;
+
+  _o = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[(short)param_1]);  /* was `int iVar1` */
+  bVar2 = *(byte *)(_o + 2) & 0x7f;
   FUN_00064f10((*(byte *)(DAT_0023be64 + 2) & 0x7f) < bVar2,param_2,param_1,param_3,bVar2,0);
   return;
 }
@@ -49860,7 +49879,7 @@ undefined4 param_3;
 
 void FUN_00065128(param_1,param_2,param_3)
 undefined4 param_1;
-undefined4 param_2;
+short *param_2;   /* was undefined4 -- FUN_00064f10 dereferences it (*param_2 = ...) */
 undefined4 param_3;
 
 {
@@ -49868,14 +49887,14 @@ undefined4 param_3;
   char cVar2;
   undefined2 uVar3;
   short sVar4;
-  int iVar5;
+  char *_o;   /* was `int iVar5` -- truncated the FUN_000535fc object pointer */
   undefined4 uVar6;
   short sVar7;
   undefined2 uVar8;
-  
-  iVar5 = FUN_000535fc((int)(short)(&DAT_0023b848)[(short)param_1]);
+
+  _o = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[(short)param_1]);
   iVar1 = (short)param_1 * 4;
-  if (((*(ushort *)(iVar5 + 2) >> 7) + DAT_0023b4a0 * -2 & 3) == 0) {
+  if (((*(ushort *)(_o + 2) >> 7) + DAT_0023b4a0 * -2 & 3) == 0) {
     uVar3 = 2;
     sVar4 = (short)(char)(&DAT_0023bb9a)[iVar1];
 LAB_000651b0:
@@ -50058,7 +50077,7 @@ ushort * param_1;
         uVar9 = (ushort)local_34 & 0x3f;
         local_34 = uVar10;
         if (((ushort)local_34 & 0xffc0) == 0x5900) {
-          FUN_0006508c();
+          FUN_0006508c(uVar9,&local_36,iVar13);  /* args dropped by Ghidra; mirrors the FUN_00065128 call below */
         }
         else {
           FUN_00065128(uVar9,&local_36,iVar13);

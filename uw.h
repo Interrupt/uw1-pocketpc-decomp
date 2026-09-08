@@ -622,7 +622,7 @@ void FUN_0001d3ac();
 undefined4 FUN_0001da00();
 undefined4 FUN_0001da88();
 undefined4 FUN_0001dab8();
-undefined4 FUN_0001dc04();
+void *FUN_0001dc04();
 void FUN_0001dd2c();
 void build_view_matrix();
 void translate_verts_to_camera_space();

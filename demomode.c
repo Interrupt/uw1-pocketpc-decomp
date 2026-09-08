@@ -364,6 +364,13 @@ void demomode_pump(void) {
          * script can force that update at each TELEPORT stop instead of
          * only ever seeing the single reveal mark from dungeon entry. */
         fprintf(stderr, "[demo] forcing a full dungeon redraw (automap reveal update)\n");
+        {
+            extern void *DAT_0023be64;
+            unsigned short *pl = (unsigned short *)DAT_0023be64;
+            if (pl)
+                fprintf(stderr, "[demo] player tile = (%d,%d)\n",
+                        pl[0x16/2] >> 10, (pl[0x16/2] & 0x3f0) >> 4);
+        }
         full_dungeon_redraw();
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
