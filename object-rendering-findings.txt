@@ -171,3 +171,26 @@ texcoord (compare a tile vertex write in process_visible_tile_cell around
 uw.c:46960-47010 with the FUN_00060aa0 class-0 write around
 uw.c:47955-48110), and set (0,0)-(w,h) uv on the four billboard corners.
 Also verify winding vs raster_triangle and painter's-order depth.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-07 (3): objects render
+═══════════════════════════════════════════════════════════════════════════
+FUN_00040770 also dropped FUN_000129f8's 3rd arg -- the .GR entry
+compression mode (*pcVar3, 6/8/0xa). The decoder took its param_3==0 path
+and returned an all-transparent bitmap (traced: bag = 0/256 nonzero
+bytes). Forwarding `*pcVar3` fixes it. Commit 19d98ce.
+
+The spawn container/bag (object type 0x80) now paints on the floor at the
+lower-right of the 3D viewport with UW_ENABLE_TILE_FEATURES=1. See
+milestones/objects-render-in-3d-view.bmp.
+
+REMAINING (quality, not blocking):
+- No explicit U/V on the billboard quad -> raster_textured_span samples by
+  projected screen position, so the sprite looks blocky/stretched rather
+  than a crisp 16x16. Add (0,0)-(w,h) uv to FUN_00060aa0's class-0/1 quad
+  corners in the layout near_clip carries at output-record [0x10..0x17].
+- Object depth vs walls (painter's order) not verified.
+- Render classes 1-3 (doors/switches/bridges) and the 0xae draw-command
+  path still untested -- only class 0 (item billboards) confirmed.
+- UW_ENABLE_TILE_FEATURES is still a gate; flip it on by default once
+  classes 1-3 and depth are checked.
