@@ -29179,7 +29179,12 @@ uint param_2;
     pcVar3 = pcVar3 + 5;
   }
   else {
-    pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
+    /* Ghidra dropped FUN_000129f8's 3rd arg, the .GR entry's compression
+       mode (*pcVar3 -- 6/8/0xa RLE variants). Without it the decoder took
+       its param_3==0 path and produced an all-zero (fully transparent)
+       bitmap, so every object billboard sampled nothing. */
+    pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,
+                                  *pcVar3);
   }
   iVar5 = (int)(short)(ushort)bVar2 * (int)(short)(ushort)bVar1;
   /* decode this object's sprite into a fresh per-record buffer (keep the
