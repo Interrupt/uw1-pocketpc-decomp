@@ -63331,7 +63331,7 @@ LAB_0007c2b8:
 
 void FUN_0007c2ec(param_1,param_2,param_3,param_4,param_5)
 char *param_1;
-int param_2;
+char *param_2;   /* was int -- the picked object (DAT_002020cc etc.), deref'd at param_2+1 / param_2+6 */
 undefined4 param_3;
 undefined4 param_4;
 undefined2 param_5;

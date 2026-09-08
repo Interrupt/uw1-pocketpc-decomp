@@ -437,7 +437,24 @@ void uw_pump_events(void) {
                     /* Right-click = interact (FUN_0003f420's right-button
                        branch). Dispatch down and up straight through --
                        none of the left button's click-hold-to-walk
-                       deferral machinery applies. */
+                       deferral machinery applies.
+
+                       But keep g_mouse_button_held set for the whole hold
+                       so the tail of uw_pump_events re-arms
+                       g_mouse_event_pending every pump: FUN_00077dd0's
+                       WM_RBUTTONDOWN only latches DAT_002506ab, and the
+                       one-shot g_mouse_event_pending it sets here can be
+                       consumed+cleared by an unrelated Ordinal_864 caller
+                       (a redraw/flush) before main_loop_hud_flush's
+                       poll_input_bindings ever peeks -- then, with no
+                       further SDL event until release, the interact never
+                       fires (the "right-click only registers if I also
+                       move the mouse" symptom: motion events were what
+                       kept re-signalling). */
+                    if (ev.type == SDL_MOUSEBUTTONDOWN)
+                        g_mouse_button_held = 1;
+                    else
+                        g_mouse_button_held = 0;
                     g_mouse_event_pending = 1;
                     FUN_00077dd0(0, msg, 0, lparam);
                     return;
