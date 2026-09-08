@@ -1,9 +1,11 @@
 UW1 PORT -- OBJECT RENDERING IN THE 3D DUNGEON VIEW
 (branch `objects`. Companion to tile-rendering-findings.txt.)
 
-STATUS: not rendering yet. The per-tile object/feature pass now runs without
-crashing; billboards are emitted into the draw-command list but nothing draws
-them in the viewport.
+STATUS: not rendering yet, but the path is traced end to end. The object pass
+runs, builds real geometry records, they survive the near-clip -- and then
+rasterise with a null texture because the object geom-record counter is out
+of sync with the render list's record index. Details below under
+"WHY THE BILLBOARDS ARE INVISIBLE".
 
 ═══════════════════════════════════════════════════════════════════════════
 WHERE OBJECTS WOULD RENDER
@@ -54,28 +56,79 @@ FIXED ON THIS BRANCH (commits 73c8b73, 7647424)
   field #defines (uw.c ~line 3382).
 
 Result: `UW_ENABLE_TILE_FEATURES=1` + demo_dungeon_room runs clean
-(regression-clean), but the ON/OFF screenshots are byte-identical --
-nothing consumes the 0xae billboard commands in the 3D viewport.
+(regression-clean). ON/OFF screenshots are byte-identical -- see the
+"WHY THE BILLBOARDS ARE INVISIBLE" section below for the traced reason
+(it is NOT the 0xae draw-command list; class-0 objects render through the
+same DAT_000a85d8[] mesh list as tiles).
 
 ═══════════════════════════════════════════════════════════════════════════
 OPEN / NEXT STEPS
 ═══════════════════════════════════════════════════════════════════════════
-1. Find the draw-command-list interpreter: something must walk
-   DAT_0023aed0..DAT_00110fc0 and dispatch opcodes (0xae billboard, plus
-   the HUD opcodes 0x38/0x2200/0x400/0x1100/0x3300 from
-   emit_hud_draw_commands). DAT_0023aed0 is currently only written/rewound
-   -- the consumer was not located. Candidates: the HUD/panel compositor
-   that also draws emit_hud_draw_commands output; DAT_00110fc8 (list base?)
-   consumers around uw.c:24500-24630.
-2. Confirm 0xae billboard handling exists and blits a scaled sprite into
-   the 3D viewport rect using DAT_0023b904/b920/b91c + DAT_0023bc88.
-3. DAT_0023b4f4 is a function pointer (tile-geometry emit callback) set
-   from DAT_00086b38 -- verify it is non-NULL when features run (there is
-   a prior note about `(*DAT_0023b4f4)(...)` being a call through NULL).
-4. Test at a spot with a guaranteed visible object (wall torch, item,
-   Lizardman) -- the natural spawn room may simply have none in view.
-5. Pre-existing latent bugs in the way of ASan testing this area:
+1. Fix the object per-record texture pointer -- see "WHY THE BILLBOARDS ARE
+   INVISIBLE". Pin down which counter indexes the DAT_000a85d8[] record
+   near_clip_visible_tiles reads, and publish FUN_00040770's decoded sprite
+   buffer through g_tile_texptr_emit[] at that index.
+2. The 0xae / draw-command list (DAT_0023aed0..DAT_00110fc0) is a SEPARATE
+   channel FUN_00060aa0 also feeds (opcodes 0x7a, 0xae, 0xb2, 2). Its
+   consumer was not located -- likely only matters for render classes 1-3
+   (class 0, the spawn objects incl. the bag, uses the mesh list). Not
+   needed for the first objects on screen.
+3. Once the texptr is correct, verify object quad screen coords / winding /
+   size (class-0 scales by DAT_00202508 x DAT_002022f8 = sprite w x h) and
+   painter's-order depth vs tiles.
+4. Pre-existing latent bugs in the way of ASan testing this area:
    - set_player_tile_position uw.c:~27199: object_list_unlink on
      DAT_002029cc + DAT_00202080*4 + 2 faults (BUS) from main_menu_loop
      when DAT_00202080 is uninitialised-positive; needs a real range guard.
    The non-ASan build tolerates both; ASan does not.
+
+═══════════════════════════════════════════════════════════════════════════
+WHY THE BILLBOARDS ARE INVISIBLE  (traced 2026-09-07)
+═══════════════════════════════════════════════════════════════════════════
+Instrumented demo_dungeon_room at the natural spawn (UW_ENABLE_TILE_FEATURES=1):
+
+- FUN_00065394 is called for ~75 visible tiles; many have objects (tile
+  (16,0) has 4). All objects at spawn are render class 0
+  ((&DAT_00202c9a)[type*0xd] & 3 == 0): type 0x80 (the bag), 0xc1-0xd5,
+  0x140, 0x177.
+- FUN_00060aa0's class-0 branch runs for each: emits opcode 0x7a + screen
+  X/Y/Z into DAT_00110fc0, calls FUN_00040770 to decode the sprite, then
+  builds a 4-vertex quad into DAT_000a85d8[] and bumps the geom record
+  count (DAT_000a85d4 / DAT_0023b83c).
+- render_dungeon_view: geom records 70 (tiles only, OFF) -> 84 (ON), and
+  near_clip_visible_tiles keeps 70 -> 80. So ~10 object quads DO reach
+  render_visible_tile_list.
+- render_visible_tile_list rasterises all 80. Screenshot ON == OFF
+  byte-for-byte -> the 10 object quads draw NOTHING.
+
+Root cause: the per-record texture pointer. render_visible_tile_list reads
+`g_tile_texptr_out[record]` (the side channel added because the in-record
+4-byte texture field truncates on 64-bit). process_visible_tile_cell writes
+`g_tile_texptr_emit[DAT_0023b83c] = get_texture_page(...)` for tiles.
+FUN_00060aa0 / FUN_00040770 do NOT write that side channel for objects, so
+object records read a stale/tile texptr (or null) -> null-texture span ->
+no pixels.
+
+The obvious fix (publish FUN_00040770's decoded sprite buffer via
+g_tile_texptr_emit[DAT_0023b83c]) does NOT work as-is: at FUN_00040770 time
+DAT_0023b83c is small (observed 6, 19, 22, 29, 38, 45, 61) while the same
+object record shows up in near_clip's list at emit-index 70+. So there are
+(at least) two record counters that have diverged:
+  DAT_0023b83c  -- bumped by process_visible_tile_cell AND FUN_00060aa0
+  DAT_000a85d4  -- the count near_clip_visible_tiles iterates
+FUN_00060aa0 keeps them "in sync" with `DAT_0023b83c = DAT_000a85d4 = X+1`
+at the end of class 0/1, but the value seen mid-function is not the list
+index. Need to pin down exactly which counter indexes the DAT_000a85d8[]
+record that near_clip reads, and write g_tile_texptr_emit at THAT index
+(and confirm near_clip's emit->out remap carries it).
+
+Once the texptr is correct, also verify: object quad screen coords /
+winding / size are sane (the class-0 path scales by DAT_00202508 x
+DAT_002022f8 = sprite w x h and a -6/-4 * 0.5 offset), and depth ordering
+vs tiles (painter's order -- objects emitted after tiles should draw on
+top).
+
+DONE on this branch (commit widening DAT_0023c7a0):
+- DAT_0023c7a0 undefined4 -> void*[0x140]. FUN_00040770's Ordinal_1041
+  sprite buffer was truncated to 32 bits; the memcpy into it and the
+  per-frame free both hit a bogus address.
