@@ -1,0 +1,81 @@
+UW1 PORT -- OBJECT RENDERING IN THE 3D DUNGEON VIEW
+(branch `objects`. Companion to tile-rendering-findings.txt.)
+
+STATUS: not rendering yet. The per-tile object/feature pass now runs without
+crashing; billboards are emitted into the draw-command list but nothing draws
+them in the viewport.
+
+═══════════════════════════════════════════════════════════════════════════
+WHERE OBJECTS WOULD RENDER
+═══════════════════════════════════════════════════════════════════════════
+render_dungeon_view (was FUN_00012970) draws TILE geometry only -- view
+matrix, visibility walk, vertex transform, near-clip, render_visible_tile_list.
+There is NO object pass in it.
+
+Objects are meant to be emitted from process_visible_tile_cell (was
+FUN_0005e604), which for each visible tile calls:
+
+    if (getenv("UW_ENABLE_TILE_FEATURES") != NULL) {
+      FUN_00065394(puVar23 + 1);       // <-- was hard-disabled
+    }
+
+FUN_00065394 = "render this tile's animated features and the objects sitting
+on it (doors, switches, bridges, item billboards)". It:
+  1. drains a deferred-object queue (DAT_0023b940[...]),
+  2. walks the tile's object chain (resolve_object_link(param_1)),
+     classifying each object and deferring some to adjacent tiles,
+  3. sorts the survivors by depth (FUN_00064ec8 / FUN_00064e3c /
+     FUN_00065128 / FUN_0006508c -- insertion/bubble sort on DAT_0023b8c8[]),
+  4. for each, computes screen X/Y/Z (DAT_0023b904 / DAT_0023b920 /
+     DAT_0023b91c) and a shade byte (DAT_0023bc88), then calls
+     FUN_00060aa0(object) to emit the billboard.
+
+FUN_00060aa0 (~uw.c:47775) appends draw opcode 0xae + slot + sprite/pos data
+into the draw-command list DAT_00110fc0 (cursor; base DAT_0023aed0, rewound
+by draw_command_list_rewind). It also fills parallel slot tables
+DAT_0023b676[] / DAT_0023b4f4[] indexed by the billboard counter DAT_0023b830.
+
+═══════════════════════════════════════════════════════════════════════════
+FIXED ON THIS BRANCH (commits 73c8b73, 7647424)
+═══════════════════════════════════════════════════════════════════════════
+- FUN_00065394: two dropped Ghidra call args
+    * `FUN_000535fc()` in the deferred loop  -> FUN_000535fc(slot id)
+      (defaulted to 0 -> NULL record -> FUN_00065210 NULL deref)
+    * `resolve_object_link()` at the loop tail -> resolve_object_link(param_1)
+      (object chain was never advanced)
+- FUN_0003671c + 3 siblings: `pcVar[-0x13ad30] = c` copy of DAT_0023c698 ->
+  DAT_00101968 -- baked global-delta constant, a wild pointer in the
+  recompile. Replaced with a bounded indexed strcpy. (Was blocking ASan
+  testing of this whole area -- demo_dungeon_room hit it deterministically.)
+- DAT_0023b848 / DAT_0023b8c8(+c9) / DAT_0023bb98(+99+9a): Ghidra split
+  these object-sort scratch arrays into lone scalars; the indexed
+  writes/reads landed on different memory -> EXC_BAD_ACCESS the instant
+  UW_ENABLE_TILE_FEATURES was set. Now backed with real `static` arrays +
+  field #defines (uw.c ~line 3382).
+
+Result: `UW_ENABLE_TILE_FEATURES=1` + demo_dungeon_room runs clean
+(regression-clean), but the ON/OFF screenshots are byte-identical --
+nothing consumes the 0xae billboard commands in the 3D viewport.
+
+═══════════════════════════════════════════════════════════════════════════
+OPEN / NEXT STEPS
+═══════════════════════════════════════════════════════════════════════════
+1. Find the draw-command-list interpreter: something must walk
+   DAT_0023aed0..DAT_00110fc0 and dispatch opcodes (0xae billboard, plus
+   the HUD opcodes 0x38/0x2200/0x400/0x1100/0x3300 from
+   emit_hud_draw_commands). DAT_0023aed0 is currently only written/rewound
+   -- the consumer was not located. Candidates: the HUD/panel compositor
+   that also draws emit_hud_draw_commands output; DAT_00110fc8 (list base?)
+   consumers around uw.c:24500-24630.
+2. Confirm 0xae billboard handling exists and blits a scaled sprite into
+   the 3D viewport rect using DAT_0023b904/b920/b91c + DAT_0023bc88.
+3. DAT_0023b4f4 is a function pointer (tile-geometry emit callback) set
+   from DAT_00086b38 -- verify it is non-NULL when features run (there is
+   a prior note about `(*DAT_0023b4f4)(...)` being a call through NULL).
+4. Test at a spot with a guaranteed visible object (wall torch, item,
+   Lizardman) -- the natural spawn room may simply have none in view.
+5. Pre-existing latent bugs in the way of ASan testing this area:
+   - set_player_tile_position uw.c:~27199: object_list_unlink on
+     DAT_002029cc + DAT_00202080*4 + 2 faults (BUS) from main_menu_loop
+     when DAT_00202080 is uninitialised-positive; needs a real range guard.
+   The non-ASan build tolerates both; ASan does not.
