@@ -200,7 +200,8 @@ static void poll_dungeon_movement_keys(void) {
     #define UW_HELD(sc) (ks[(sc)] || g_synth_scancode_held[(sc)])
     int left    = UW_HELD(SDL_SCANCODE_A);
     int right   = UW_HELD(SDL_SCANCODE_D);
-    int fwd     = UW_HELD(SDL_SCANCODE_W) || UW_HELD(SDL_SCANCODE_S);
+    int run     = UW_HELD(SDL_SCANCODE_W);   /* W = run forward  */
+    int walk    = UW_HELD(SDL_SCANCODE_S);   /* S = walk forward (slower) */
     int back    = UW_HELD(SDL_SCANCODE_X);
     int strafeL = UW_HELD(SDL_SCANCODE_Z);
     int strafeR = UW_HELD(SDL_SCANCODE_C);
@@ -225,16 +226,24 @@ static void poll_dungeon_movement_keys(void) {
     /* One latched code; turning takes priority so free-look always works.
        (The keyboard decoder is single-axis -- diagonal move+turn would
        need the analog rates set directly.) */
-    int code = 0;
+    int code = 0, walk_slow = 0;
     if (left && !right)         code = 0x8f;   /* turn left   */
     else if (right && !left)    code = 0x91;   /* turn right  */
-    else if (fwd)               code = 0x8d;   /* forward     */
+    else if (run)              code = 0x8d;                     /* W: run  -- let the accelerator ramp */
+    else if (walk)             { code = 0x8d; walk_slow = 1; }  /* S: walk -- pin accelerator below the step clamp */
     else if (back)              code = 0x93;   /* backward / turn-around */
     else if (strafeL && !strafeR) code = 0x2c; /* sidestep left  (DOS ",") */
     else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
 
     if (code) {
         if (!active) { DAT_0024af6c = 0x14; active = 1; }  /* re-arm accel on press edge */
+        if (walk_slow) {
+            /* keep S's forward rate below decode_movement_command's per-tick
+               step clamp so it is a genuine slow walk, not a clamped run. */
+            static int _wa = -1;
+            if (_wa < 0) { const char *e = getenv("UW_WALK_ACCEL"); _wa = e ? atoi(e) : 0x30; }
+            DAT_0024af6c = (short)_wa;
+        }
         DAT_0023c448 = (unsigned short)code;
         DAT_000876c8 = 0;
     } else if (active) {

@@ -39464,9 +39464,11 @@ int param_2;
     return;
   }
   if (*(short *)(DAT_00202c6c + 10) != 0) {
-    puVar6 = (ushort *)FUN_000535fc();
-    /* Ghidra dropped FUN_000535fc's argument here (an object slot id), so it
-       can hand back garbage / NULL. Guard the deref. */
+    /* Ghidra dropped FUN_000535fc's argument -- it's the object-slot id
+       this branch just tested non-zero (classic `if ((id=..)!=0) rec=f(id)`);
+       without it f() ran on a leftover register and handed back a wild
+       pointer that passed the != 0 guard and crashed on deref. */
+    puVar6 = (ushort *)FUN_000535fc((int)*(short *)(DAT_00202c6c + 10));
     if (puVar6 != (ushort *)0x0 && (*puVar6 & 0x1c0) == 0x40) {
       local_3c = 1;
     }
@@ -51297,7 +51299,11 @@ short param_1;
 
 
 
-// was FUN_000685e8
+// was FUN_000685e8 -- turn the latched input code (DAT_0023c448) into the
+// analog forward rate DAT_0023bf48 / turn rate DAT_0023bf4c, scaled by the
+// held-key accelerator DAT_0024af6c. NOTE: DAT_0024af6c ramps to ~0x140 in
+// this recompile, so the rate multiplies (esp. run's 0x700000) overflowed
+// int32 and produced a negative rate -- widened to 64-bit below.
 void decode_movement_command()
 
 {
@@ -51335,7 +51341,7 @@ void decode_movement_command()
     if (DAT_0023c448 < 0x20) {
       if (DAT_0023c448 == 0x1f) {
 LAB_000687cc:
-        DAT_0023bf48 = Ordinal_2005(100,DAT_0024af6c * 0x500000 >> 0x10);
+        DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10));
         DAT_0023bf1c = 1;
         return;
       }
@@ -51348,14 +51354,14 @@ LAB_000687cc:
             return;
           }
 LAB_000686a8:
-          DAT_0023bf4c = Ordinal_2005(100,DAT_0024af6c * -0x5a0000 >> 0x10);
+          DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * -0x5a0000 >> 0x10));
           DAT_0023bf1c = 1;
           return;
         }
         goto LAB_000687fc;
       }
 LAB_00068844:
-      DAT_0023bf48 = Ordinal_2005(100,DAT_0024af6c * 0x700000 >> 0x10);
+      DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x700000 >> 0x10));
       DAT_0023bf1c = 1;
       return;
     }
@@ -51419,7 +51425,7 @@ LAB_000687fc:
       return;
     }
   }
-  DAT_0023bf4c = Ordinal_2005(100,DAT_0024af6c * 0x5a0000 >> 0x10);
+  DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x5a0000 >> 0x10));
   DAT_0023bf1c = 1;
   return;
 }
