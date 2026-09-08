@@ -34683,10 +34683,12 @@ void main_loop_hud_flush()
      only sets while a motion flag is live -- so the dungeon view freezes the
      instant the player is idle (and never repaints for anything that changes
      in view without the player moving). */
+  int _did_force_redraw = 0;
   {
     static int _force = -1;
     if (_force < 0) _force = (getenv("UW_NO_FORCE_3D_REDRAW") == NULL);
     if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0) {
+      _did_force_redraw = 1;
       /* Rebuild AND re-rasterise the 3D dungeon view every main-loop
          iteration. An earlier version called only render_dungeon_view()
          over the existing geometry -- but the camera globals it reads
@@ -34712,7 +34714,18 @@ void main_loop_hud_flush()
     FUN_00049818();
   }
   poll_input_bindings(DAT_00085a6c);
-  flush_dirty_rect_to_display(1);
+  /* When the forced 3D redraw ran this frame, push it through even if a
+     mouse button is being held in the viewport: DAT_0023c63c (the
+     click-hold flag) otherwise blocks flush_dirty_rect_to_display's real
+     screen flush for the whole hold, so a click-and-hold-to-walk froze
+     the view. */
+  if (_did_force_redraw) {
+    g_force_flush = 1;
+    flush_dirty_rect_to_display(1);
+    g_force_flush = 0;
+  } else {
+    flush_dirty_rect_to_display(1);
+  }
   return;
 }
 
