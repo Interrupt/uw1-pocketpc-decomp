@@ -24998,7 +24998,7 @@ LAB_0003987c:
                 uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
                 if (((int)uVar14 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
                   if (puVar8 == DAT_0023be64) {
-                    FUN_0003c524(0x10);
+                    set_locomotion_state(0x10);
                     uVar10 = extraout_r1;
                   }
                 }
@@ -26765,7 +26765,13 @@ ushort param_1;
 
 
 
-void FUN_0003c524(param_1,param_2)
+// was FUN_0003c524 -- set the player's locomotion state from a collision-state
+// mask (param_1): when it changes, pick the movement mode (walk / swim / fly /
+// fall) via FUN_0003dca4. While the airborne bit (0x10) is set it also keeps the
+// gravity fall armed each tick (DAT_00204890 = -4) and clamps the fall velocity
+// (DAT_0020488a) to terminal when DAT_0020208c & 2. Called every tick from
+// update_3d_sound_position with the current state byte DAT_002048a8.
+void set_locomotion_state(param_1,param_2)
 ushort param_1;
 int param_2;
 
@@ -27000,7 +27006,7 @@ LAB_0003c940:
       else if (DAT_00204890 == 0 && uVar5 == 0) {
         DAT_00204890 = -4;
       }
-      FUN_0003c524((int)DAT_00202c68,0);
+      set_locomotion_state((int)DAT_00202c68,0);
       uVar10 = FUN_0002294c();
       uVar5 = *(ushort *)(DAT_0023be64 + 0xb) & 0xfff;
       *(char *)(DAT_0023be64 + 0xb) = (char)uVar5;
@@ -27219,7 +27225,7 @@ uint param_2;
   collision_build_height_field(DAT_002048a7);
   DAT_002048a8 = FUN_0005a630((int)(short)(*(ushort *)(DAT_00202c6c + 0xe) |
                                           *(ushort *)(DAT_00202c6c + 0xc)));
-  FUN_0003c524(DAT_002048a8,0);
+  set_locomotion_state(DAT_002048a8,0);
   DAT_0023be98 = 0;
   FUN_0006907c();
   DAT_000858a0 = 1;
@@ -27329,7 +27335,7 @@ void update_3d_sound_position()
     }
     _DAT_002048a9 = 0;
   }
-  FUN_0003c524(DAT_002048a8,0);
+  set_locomotion_state(DAT_002048a8,0);
   DAT_000858a0 = 0;
   return;
 }
@@ -27484,7 +27490,7 @@ int param_1;
 void FUN_0003dbd8()
 
 {
-  FUN_0003c524(DAT_002048a8,1);
+  set_locomotion_state(DAT_002048a8,1);
   DAT_000858a0 = 1;
   return;
 }
@@ -44050,7 +44056,7 @@ void sweep_land_on_surface()
   /* PHYSICS: fall ended -- clear the accumulated downward velocity (+0xa) and the
      gravity-accel field (+0x10), and drop the airborne locomotion state byte
      (+0x28 == DAT_002048a8) back to "walking" (8). Without the last step
-     FUN_0003c524 (called every tick from update_3d_sound_position) sees the stale
+     set_locomotion_state (called every tick from update_3d_sound_position) sees the stale
      airborne state and re-arms +0x10 = -4, so the fall integrator re-enters and
      "lands" every tick forever, freezing the player on the floor. Only when we
      were moving downward, so a jump's own apex handling is left untouched. */

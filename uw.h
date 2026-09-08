@@ -872,7 +872,7 @@ void FUN_0003c3b4();
 void FUN_0003c3c8();
 void FUN_0003c4a8();
 bool FUN_0003c4dc();
-void FUN_0003c524();
+void set_locomotion_state();
 void FUN_0003c6ac();
 undefined4 begin_directional_move();
 void apply_heading_turn();
