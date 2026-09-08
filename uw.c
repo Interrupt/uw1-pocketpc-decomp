@@ -47863,15 +47863,20 @@ LAB_0005e7e0:
       puVar23 = DAT_0023b4ec;
     }
   }
-  /* Hack - Disabled: FUN_00065394 renders this tile's animated features
-     and the objects sitting on it (doors, switches, bridges, item
-     billboards). With object processing off it walks a bogus object
-     count and dereferences a NULL slot from FUN_000535fc. The wall /
-     floor / diagonal geometry for the tile was already emitted above
-     (the DAT_0023b4f4/b80c/b4d4 calls), so skip this for now. Set
-     UW_ENABLE_TILE_FEATURES to run it. */
-  if (getenv("UW_ENABLE_TILE_FEATURES") != NULL) {
-    FUN_00065394(puVar23 + 1);
+  /* FUN_00065394 renders this tile's animated features and the objects
+     sitting on it (doors, switches, bridges, item billboards). It used to
+     walk a bogus object count and deref a NULL slot from FUN_000535fc
+     because of dropped-arg bugs in it and its callees; those are fixed, so
+     it now runs by default. Set UW_DISABLE_TILE_FEATURES to skip it (the
+     wall / floor / diagonal geometry for the tile is already emitted above
+     via the DAT_0023b4f4/b80c/b4d4 calls). */
+  {
+    static int _tile_features = -1;
+    if (_tile_features < 0)
+      _tile_features = (getenv("UW_DISABLE_TILE_FEATURES") == NULL);
+    if (_tile_features) {
+      FUN_00065394(puVar23 + 1);
+    }
   }
   cVar2 = DAT_0023b834;
   if (((puVar23 + 1 != (ushort *)0x0) && (DAT_0023b834 != '\0')) &&
