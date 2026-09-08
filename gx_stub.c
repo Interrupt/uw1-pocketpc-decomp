@@ -415,16 +415,32 @@ void uw_pump_events(void) {
                 int portrait_x = landscape_y;
                 int portrait_y = (HW_H - 1) - landscape_x;
                 int lparam = (portrait_y << 16) | (portrait_x & 0xffff);
-                unsigned int msg = (ev.type == SDL_MOUSEBUTTONDOWN) ? 0x201u
-                                  : (ev.type == SDL_MOUSEBUTTONUP) ? 0x202u
-                                  : 0x200u;
+                int is_right = (ev.type != SDL_MOUSEMOTION &&
+                                ev.button.button == SDL_BUTTON_RIGHT);
+                unsigned int msg =
+                      (ev.type == SDL_MOUSEMOTION)     ? 0x200u
+                    : is_right
+                        ? ((ev.type == SDL_MOUSEBUTTONDOWN) ? 0x204u : 0x205u)   /* WM_RBUTTON* */
+                        : ((ev.type == SDL_MOUSEBUTTONDOWN) ? 0x201u : 0x202u);  /* WM_LBUTTON* */
                 if (ev.type == SDL_MOUSEBUTTONDOWN) {
-                    fprintf(stderr, "[mouse] click win=(%d,%d) landscape=(%d,%d) portrait=(%d,%d) %s\n",
+                    fprintf(stderr, "[mouse] %s click win=(%d,%d) landscape=(%d,%d) portrait=(%d,%d) %s\n",
+                            is_right ? "right" : "left",
                             win_x, win_y, landscape_x, landscape_y, portrait_x, portrait_y,
                             (portrait_x > 200 && portrait_x < 0xf0) ? "IN on-screen-keyboard strip" : "outside keyboard strip");
                 }
-                if (ev.type != SDL_MOUSEMOTION && ev.button.button != SDL_BUTTON_LEFT) {
+                if (ev.type != SDL_MOUSEMOTION &&
+                    ev.button.button != SDL_BUTTON_LEFT &&
+                    ev.button.button != SDL_BUTTON_RIGHT) {
                     break;
+                }
+                if (is_right) {
+                    /* Right-click = interact (FUN_0003f420's right-button
+                       branch). Dispatch down and up straight through --
+                       none of the left button's click-hold-to-walk
+                       deferral machinery applies. */
+                    g_mouse_event_pending = 1;
+                    FUN_00077dd0(0, msg, 0, lparam);
+                    return;
                 }
                 if (ev.type == SDL_MOUSEBUTTONUP) {
                     /* Hold this back one poll cycle -- see
@@ -578,6 +594,23 @@ int uw_inject_mouse_click(int window_x, int window_y) {
      * fully representative of a real click's timing. */
     if (!uw_inject_mouse_down(window_x, window_y)) return 0;
     return uw_inject_mouse_up(window_x, window_y);
+}
+
+int uw_inject_mouse_rclick(int window_x, int window_y) {
+    /* Right-button down+up (interact). See uw_inject_mouse_down. */
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
+    for (int up = 0; up < 2; up++) {
+        SDL_Event e = {0};
+        e.type = up ? SDL_MOUSEBUTTONUP : SDL_MOUSEBUTTONDOWN;
+        e.button.button = SDL_BUTTON_RIGHT;
+        e.button.which = UW_SYNTH_MOUSE;
+        e.button.x = window_x;
+        e.button.y = window_y;
+        SDL_PushEvent(&e);
+    }
+    return 1;
 }
 
 int uw_inject_key_down(int sdl_keycode) {

@@ -71,6 +71,9 @@ int uw_take_mouse_event_pending(void);
    yet. */
 int uw_inject_mouse_click(int window_x, int window_y);
 
+/* Right-button click (interact). Down+up queued together. */
+int uw_inject_mouse_rclick(int window_x, int window_y);
+
 /* Split halves of uw_inject_mouse_click, for tests that need a real
    multi-poll gap between button-down and button-up (matching an actual
    held click's timing) rather than both queued instantaneously. */

@@ -2176,7 +2176,30 @@ undefined DAT_00202c9b;
 char s_belonging_to_00085c90[] = "belonging_to";
 short DAT_0023be88;
 short DAT_0023bd80;
-undefined *PTR_FUN_000858c8;
+/* Was a lone `undefined *` -- the real thing is a small function-pointer
+   dispatch table for the 3D-view right-click "interact" modes, indexed by
+   FUN_0003f420 as `(&PTR_FUN_000858c8)[uVar2]` where uVar2 = cursor mode
+   (DAT_002020c0) - 1, or 2 when no mode is selected. Link-time-init data
+   the decompile never populated, so every right-click on an object jumped
+   through garbage. Reconstructed from the five no-arg handlers defined
+   just above FUN_0003f420 that each act on the picked object DAT_002020cc
+   (see their bodies): index 2 (default / "hand") -> FUN_0003ee90, the
+   use/get/activate super-handler that itself routes to look vs talk by
+   object type. Ordering of the fight/talk/look/[4] slots is a best guess
+   -- if right-click does the wrong action, reorder these. */
+extern void FUN_0003ee90(void);
+extern void FUN_0003f128(void);
+extern void FUN_0003f14c(void);
+extern void FUN_0003f2c4(void);
+extern void FUN_0003f368(void);
+static void (*const PTR_FUN_000858c8_table[5])(void) = {
+  FUN_0003f14c,   /* 0: fight  */
+  FUN_0003f2c4,   /* 1: talk   */
+  FUN_0003ee90,   /* 2: default / get-use */
+  FUN_0003f128,   /* 3: look   */
+  FUN_0003f368,   /* 4:        */
+};
+#define PTR_FUN_000858c8 (PTR_FUN_000858c8_table[0])
 code *DAT_002020b8;
 static undefined1 DAT_000858a8_backing[65536];
 #define DAT_000858a8 DAT_000858a8_backing[0]
@@ -28108,8 +28131,18 @@ ushort *FUN_0003ec00()
   int iVar2;
   ushort *puVar3;
   uint uVar4;
-  
-  FUN_0005bac0();
+  /* FUN_0005bac0() re-renders the whole HUD+3D view to refresh the
+     per-pixel pick/stencil buffer DAT_0023cca0 that this function reads
+     below. This port's rasterizer never writes that buffer (the read
+     always comes back 0 -> DAT_0023b830 stays 0 -> no object is ever
+     picked here anyway), so the re-render buys nothing and, with tile
+     features on, its object-billboard pass can crash -- a right-click
+     would then take the game down. Skip it until the pick buffer is
+     actually implemented. Set UW_PICK_RERENDER to restore the call. */
+  { static int _rr = -1;
+    if (_rr < 0) _rr = (getenv("UW_PICK_RERENDER") != NULL);
+    if (_rr) FUN_0005bac0();
+  }
   iVar2 = 0;
   DAT_002020ac = 0;
   bVar1 = *(byte *)(g_mouse_y * 0x140 + (int)g_mouse_x + DAT_0023cca0);
@@ -28484,7 +28517,6 @@ void FUN_0003f420()
 {
   int iVar1;
   uint uVar2;
-  
   if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
     FUN_00068260();
   }
@@ -28525,7 +28557,9 @@ void FUN_0003f420()
         goto LAB_0003f584;
       }
     }
-    (*(code *)(&PTR_FUN_000858c8)[uVar2 & 0xff])();
+    if ((uVar2 & 0xff) < 5 && PTR_FUN_000858c8_table[uVar2 & 0xff] != 0) {
+      PTR_FUN_000858c8_table[uVar2 & 0xff]();
+    }
   }
   else {
     if (DAT_002020c4 == 1) {
@@ -60548,6 +60582,22 @@ int param_4;
     *DAT_000876c0 = 0;
     DAT_0023c63c = 0;
   }
+  /* Right button (WM_RBUTTONDOWN/UP). The real binary's dispatch table
+     routes these here too, but the hand-recovered body only did the left
+     button. FUN_00058738 reports the right button as bit 1 (value 2) of
+     the mouse state via DAT_002506ab -- which nothing else ever writes --
+     and poll_input_bindings then feeds code 2 to the viewport click
+     region, whose handler FUN_0003f420 runs its interact branch on
+     `state & 2`. Cursor position was already stored at the top. */
+  if (param_2 == 0x204) {
+    *DAT_000876c4 = 1;
+    DAT_002506ab = 1;
+  }
+  if (param_2 == 0x205) {
+    DAT_002506ab = 0;
+    *DAT_000876bc = 0;
+    *DAT_000876c0 = 0;
+  }
   return 0;
 }
 
@@ -65049,13 +65099,16 @@ undefined4 param_2;
 
 {
   char cVar1;
-  int iVar2;
-  
+  char *iVar2;   /* was `int` -- Ordinal_1064 (strchr) returns a real
+                    64-bit pointer; truncating it made `*(char *)(iVar2+1)`
+                    a wild deref, e.g. crashing "You see nothing." on a
+                    right-click. */
+
   while ((iVar2 = Ordinal_1064(param_1,10), iVar2 != 0 &&
-         (cVar1 = *(char *)(iVar2 + 1), cVar1 != '\0'))) {
-    *(undefined1 *)(iVar2 + 1) = 0;
+         (cVar1 = iVar2[1], cVar1 != '\0'))) {
+    iVar2[1] = 0;
     FUN_0007f7cc(param_1,1);
-    param_1 = (char *)(iVar2 + 1);
+    param_1 = iVar2 + 1;
     *param_1 = cVar1;
   }
   FUN_0007f7cc(param_1,param_2);

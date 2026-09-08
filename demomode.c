@@ -411,6 +411,16 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strncasecmp(p, "SDLRCLICK ", 10) == 0) {
+        /* SDLRCLICK <window_x> <window_y> -- right-button click (interact). */
+        int wx = 0, wy = 0;
+        sscanf(p + 10, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLRCLICK window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_rclick(wx, wy);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     if (strncasecmp(p, "SDLDOWN ", 8) == 0) {
         /* SDLDOWN/SDLUP <window_x> <window_y> -- split halves of
          * SDLCLICK, for testing a click with a real multi-tick gap
