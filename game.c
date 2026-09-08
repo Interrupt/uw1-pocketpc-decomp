@@ -37,7 +37,7 @@ undefined4 param_4;
       g_uw_framebuffer = uVar3;
       uVar3 = Ordinal_1041(0x25800);
       FUN_0003af28(param_1,0xca,uVar3);
-      FUN_00011000(0,0xf0,0,0x140);
+      dirty_rect_union(0,0xf0,0,0x140);
       Ordinal_1044(g_uw_framebuffer,uVar3,0x25800);
       flush_dirty_rect_to_display_240();
       Ordinal_496(2000);
@@ -48,12 +48,12 @@ undefined4 param_4;
       DAT_0023cca0 = Ordinal_1041(64000);
       DAT_0023cef0 = Ordinal_1041(0x7fff);
       Ordinal_1047(DAT_0023c44c,0,0x4cce);
-      iVar2 = 0x140;
-      puVar4 = &DAT_0023c7a0;
-      while (iVar2 = iVar2 + -1, -1 < iVar2) {
-        *puVar4 = 0;
-        puVar4 = puVar4 + 1;
+      /* DAT_0023c7a0 is now a real void*[] (widened from Ghidra's
+         `undefined4`); zero it as one so the whole 8-byte slots clear. */
+      for (iVar2 = 0; iVar2 < 0x140; iVar2++) {
+        DAT_0023c7a0_arr[iVar2] = 0;
       }
+      (void)puVar4;
       Ordinal_1047(DAT_0023cca0,0,64000);
       Ordinal_1047(DAT_0023cef0,0,0x7fff);
       DAT_0023cca4 = DAT_0023c44c;
@@ -215,7 +215,7 @@ undefined4 param_1;
   *(short *)(local_82c + 0x3a) = 0x9a;
   *(short *)(local_82c + 0x3c) = 1;
   *(short *)(local_82c + 0x3e) = 1;
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   DAT_0023bf6c = &local_82c;
   FUN_0006bde0(auStack_4d4,local_83c);
   uVar8 = 3;

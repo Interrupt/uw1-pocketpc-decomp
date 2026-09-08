@@ -389,7 +389,7 @@ void demomode_pump(void) {
          * reads back. Force a full-screen flush the same way FUN_0005857c
          * and the click-hold redraw path force their own. */
         { extern int g_force_flush; extern void flush_dirty_rect_to_display();
-          FUN_00011000(0, 200, 0, 0x140);
+          dirty_rect_union(0, 200, 0, 0x140);
           g_force_flush = 1;
           flush_dirty_rect_to_display(1);
           g_force_flush = 0; }

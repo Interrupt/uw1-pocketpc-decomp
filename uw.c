@@ -77,7 +77,7 @@ int DAT_00088960;
 undefined *PTR_Ordinal_2032_00084010;
 undefined *PTR_Ordinal_2026_00084014;
 undefined *PTR_Ordinal_2020_00084018;
-/* Was a lone `undefined4` scalar, but FUN_0001dfe8/FUN_0001e274/
+/* Was a lone `undefined4` scalar, but translate_verts_to_camera_space/project_verts_through_view_matrix/
    near_clip_visible_tiles (the vertex/geometry-transform pipeline feeding tile/sprite
    rendering) all take `&DAT_000a85d0` as a base pointer into a large
    per-record transform-cache struct, reading/writing offsets up to
@@ -94,15 +94,15 @@ undefined *PTR_Ordinal_2020_00084018;
    Ghidra fragmented one contiguous ~0x4900-byte structure into a
    64KB backing array plus ~80 lone scalars and a second 32KB array,
    each independently addressed -- so process_visible_tile_cell wrote
-   the geometry records into the scalars while FUN_0001dfe8 /
-   FUN_0001e274 / near_clip_visible_tiles read them as `&DAT_000a85d0 + off`,
+   the geometry records into the scalars while translate_verts_to_camera_space /
+   project_verts_through_view_matrix / near_clip_visible_tiles read them as `&DAT_000a85d0 + off`,
    and the two never met (DAT_000c8c98 stayed 0). All the pieces are
    now byte offsets into the one DAT_000a85d0_backing array.
      +0x00      first-list (raw vertex) record count / cursor
      +0x04      DAT_000a85d4  second-list (visible-tile) record count
      +0x08..13  DAT_000a85d8.. first-list vertex record 0 fields (0xc stride)
      +0x4814..  DAT_000acde4.. second-list record 0 fields (0x60 stride)
-   FUN_0001dfe8 seeds each second-list record's +0x486c flag = 1. */
+   translate_verts_to_camera_space seeds each second-list record's +0x486c flag = 1. */
 /* Real-pointer side channel for the per-visible-tile texture pointer.
    process_visible_tile_cell packs get_texture_page()'s result into a
    4-byte record field (DAT_000acdfc) -> truncated on 64-bit. We stash
@@ -508,7 +508,7 @@ int DAT_000db44c;
 int DAT_000db450;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
-   view/camera matrix -- FUN_0001de0c writes the whole matrix in one shot
+   view/camera matrix -- build_view_matrix writes the whole matrix in one shot
    via `FUN_00013b8c(...,...,&DAT_000c8ac0)`, a matrix-multiply that treats
    its output as one contiguous 64-byte buffer starting at DAT_000c8ac0
    (including the 4 never-individually-named "column 3" slots at
@@ -609,7 +609,7 @@ static void *DAT_000c4838_backing[4096];
 #define DAT_000c4838 DAT_000c4838_backing[0]
 /* Recovered from UU.exe .data at 0x8462c: the 3D viewport clip rect
    {x0=0x34, y0=0x13, w=0xe0, h=0x84} == {52, 19, 224, 132}, matching
-   FUN_00012970's `rect_fill(0x34,0x13,0xe0,0x83)`. render_visible_tile_
+   render_dungeon_view's `rect_fill(0x34,0x13,0xe0,0x83)`. render_visible_tile_
    list copies these into a local passed to raster_triangle as param_8;
    raster_triangle only calls the span rasterizer raster_textured_span inside
    `while (param_8[0] != 0 && ...)`. All zero -> that loop never ran ->
@@ -2214,7 +2214,14 @@ undefined4 DAT_00202308;
 int DAT_0023b83c;
 static undefined1 DAT_00202520_backing[1024];
 #define DAT_00202520 DAT_00202520_backing[0]
-undefined4 DAT_0023c7a0;
+/* Per-geometry-record decoded-sprite pixel buffers, one malloc per visible
+   object, freed each frame by free_frame_geometry_buffers. Ghidra typed it
+   `undefined4` (4 bytes), truncating the 64-bit Ordinal_1041 pointer -- the
+   memcpy into it (Ordinal_1044) would fault. Widened to a real pointer
+   array; only FUN_00040770, free_frame_geometry_buffers and app_main_loop's
+   startup zero-fill touch it. */
+void *DAT_0023c7a0_arr[0x140];
+#define DAT_0023c7a0 DAT_0023c7a0_arr[0]
 undefined1 DAT_0023ce71;
 /* Actually a large table of 4-byte glyph/resource-pointer slots indexed
    by font/char id (see FUN_000408fc and its populator around line
@@ -2277,30 +2284,46 @@ unsigned int param_1;
      the underlying file read succeeded. */
   return Ordinal_1041(param_1);
 }
-undefined4 LAB_000415d0()
-
+/* FUN_000417b4's post-process callback: (decoded_buffer, byte_size,
+   entry_index). Ghidra lost the real body (indirect-jump target); the old
+   no-op stub read every .GR file but never REGISTERED the loaded buffers,
+   so FUN_000408fc's DAT_0024e090[] pointer table stayed empty for every
+   resource loaded through here (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/
+   3DWIN/OBJECTS/TMFLAT/TMOBJ). Only FUN_00041708 (flasks/compass/...) was
+   a real registrar. Register the buffer the same way FUN_00041708 does:
+   at DAT_0024e090[(base + entry_index) * 8]. */
+#define UW_DAT_0024E090_SLOTS (524288 / 8)
+static void uw_register_gr_entry(unsigned base, void *buf, int idx)
 {
-  /* Ghidra couldn't resolve this address into a proper function; used as
-     FUN_000417b4's post-process callback for the allocator above. Its
-     real per-item behavior (e.g. registering the buffer somewhere) is not
-     recoverable from this decompile, but returning 0 here failed the
-     whole load batch despite the data having been read successfully --
-     report success so loading can proceed; see LAB_000415b0. */
+  unsigned slot = base + (unsigned)idx;
+  if (slot < UW_DAT_0024E090_SLOTS) {
+    *(void **)(&DAT_0024e090 + (unsigned long)slot * 8) = buf;
+  }
+}
+undefined4 LAB_000415d0(void *buf, unsigned size, int idx)
+{
+  /* Caller FUN_00041910 loads at the running cursor DAT_00202744 and
+     advances it by the file's entry count afterwards. */
+  (void)size;
+  uw_register_gr_entry((unsigned)DAT_00202744, buf, idx);
   return 1;
 }
-undefined4 LAB_00041610()
-
+undefined4 LAB_00041610(void *buf, unsigned size, int idx)
 {
-  /* See LAB_000415d0 -- same callback role, different caller
-     (FUN_00041960). */
+  /* Caller FUN_00041960 (OBJECTS.GR) -- does not advance the cursor; the
+     next file resets DAT_00202744 to 0x1c0, so OBJECTS.GR occupies the
+     absolute [0, entry_count) range (frame N == object type N). */
+  (void)size;
+  uw_register_gr_entry(0, buf, idx);
   return 1;
 }
 undefined2 DAT_000859a8;
-undefined4 LAB_00041670()
-
+undefined4 LAB_00041670(void *buf, unsigned size, int idx)
 {
-  /* See LAB_000415d0 -- same callback role, different caller
-     (FUN_00041990). */
+  /* Caller FUN_00041990 (TMFLAT.GR) with a fixed base stashed in
+     DAT_000859a8 (0x170). */
+  (void)size;
+  uw_register_gr_entry((unsigned)DAT_000859a8, buf, idx);
   return 1;
 }
 void *LAB_000416e8(param_1)
@@ -3379,12 +3402,25 @@ static undefined DAT_0023b90a_backing[8192];
 #define DAT_0023b90a DAT_0023b90a_backing[0]
 static undefined1 DAT_0023b940_backing[65536];
 #define DAT_0023b940 DAT_0023b940_backing[0]
-undefined1 DAT_0023b8c8;
-undefined1 DAT_0023b8c9;
-undefined1 DAT_0023bb98;
-undefined2 DAT_0023b848;
-undefined1 DAT_0023bb99;
-undefined1 DAT_0023bb9a;
+/* Object/feature-draw sort scratch (FUN_00065394 and helpers FUN_00064e3c/
+   ec8/508c/5128/65210/652e8, ~uw.c:49340-49766). Ghidra split each of
+   these into a lone scalar, but the code indexes them as arrays:
+   - DAT_0023b848[i]            u16, object slot ids,  i in 0..8
+   - DAT_0023b8c8[i]/[i+1]      bytes, adjacent-swap sort order (b8c9 == b8c8[1])
+   - DAT_0023bb98[i*4 + 0/1/2]  bytes, per-object billboard X/Y/Z offsets
+                                (bb99 == bb98[1], bb9a == bb98[2]), i in 0..0x3b
+   Recompiled as separate scalars the indexed writes and reads land on
+   different memory (NULL slot deref crash). Back them with real arrays;
+   all uses are confined to that function span, no external refs. */
+static undefined2 DAT_0023b848_backing[64];
+#define DAT_0023b848 DAT_0023b848_backing[0]
+static undefined1 DAT_0023b8c8_backing[128];
+#define DAT_0023b8c8 DAT_0023b8c8_backing[0]
+#define DAT_0023b8c9 DAT_0023b8c8_backing[1]
+static undefined1 DAT_0023bb98_backing[512];
+#define DAT_0023bb98 DAT_0023bb98_backing[0]
+#define DAT_0023bb99 DAT_0023bb98_backing[1]
+#define DAT_0023bb9a DAT_0023bb98_backing[2]
 /* Recovered from UU.exe .data at 0x86d68 (64 bytes = 32 int16). Per-view-
    facing corner-index remap for a rotating quad: FUN_00065210 reads
    `(&DAT_00086d68)[idx*2]` (low byte) and `(&DAT_00086d69)[idx*2]` (high
@@ -4187,7 +4223,8 @@ undefined *PTR_Ordinal_34_000841d0;
 undefined *PTR_Ordinal_33_000841d4;
 undefined *PTR_Ordinal_35_000841cc;
 
-void FUN_00011000(param_1,param_2,param_3,param_4)
+// was FUN_00011000 -- expand the damaged-region bounds (DAT_00088950..5c) to include the given rect; sibling of dirty_rect_set
+void dirty_rect_union(param_1,param_2,param_3,param_4)
 int param_1;
 int param_2;
 int param_3;
@@ -4212,7 +4249,7 @@ int param_4;
 
 
 // was FUN_00011040 -- dirty-rect SET (overwrite the damaged-region
-// bounds to exact values; sibling of dirty_rect union FUN_00011000)
+// bounds to exact values; sibling of dirty_rect union dirty_rect_union)
 void dirty_rect_set(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
@@ -4316,7 +4353,7 @@ short param_3;
   iVar11 = (int)param_2;
   iVar7 = uVar10 + iVar2;
   iVar12 = iVar11 + (uVar3 & 0xffff);
-  FUN_00011000(iVar2,iVar7,iVar11,iVar12);
+  dirty_rect_union(iVar2,iVar7,iVar11,iVar12);
   if (iVar2 < iVar7) {
     iVar6 = iVar2 * 0x140;
     pcVar8 = pcVar4;
@@ -4517,7 +4554,7 @@ void screen_backup_restore()
   short *psVar2;
   int iVar3;
   
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   iVar1 = 0;
   do {
     iVar3 = 0x140;
@@ -4553,7 +4590,7 @@ uint param_4;
   short *psVar3;
   int iVar4;
   
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   param_2 = param_2 & 0xffff;
   if (param_2 < (param_4 & 0xffff)) {
     iVar4 = param_2 * 0x140;
@@ -4578,7 +4615,8 @@ uint param_4;
   return;
 }
 
-void FUN_000116a4(param_1,param_2,param_3,param_4)
+// was FUN_000116a4 -- set the active viewport/clip rectangle (DAT_000a85c4/c8 top-left, DAT_000842a4/a8 bottom-right)
+void set_viewport_clip_rect(param_1,param_2,param_3,param_4)
 undefined2 param_1;
 undefined2 param_2;
 undefined2 param_3;
@@ -4609,7 +4647,7 @@ uint param_3;
   param_2 = param_2 & 0xffff;
   uVar1 = param_1 & 0xffff;
   param_3 = param_3 & 0xffff;
-  FUN_00011000(param_2,param_2,uVar1,param_3);
+  dirty_rect_union(param_2,param_2,uVar1,param_3);
   if (uVar1 < param_3) {
     iVar3 = param_3 - uVar1;
     iVar2 = (param_2 * 0x140 + (param_1 & 0xffff)) * 2;
@@ -4720,7 +4758,7 @@ short param_7;
   if (200 < iVar2) {
     sVar12 = (short)iVar6 + -200;
   }
-  FUN_00011000(iVar13,iVar2,iVar7);
+  dirty_rect_union(iVar13,iVar2,iVar7);
   iVar3 = (int)local_30;
   if (DAT_00088960 == 0) {
     iVar5 = iVar5 - sVar12;
@@ -4827,7 +4865,7 @@ int param_8;
           }
           iVar1 = (int)param_5;
           iVar2 = (int)param_4;
-          FUN_00011000(iVar7,iVar2 + iVar7,iVar4,iVar1 + iVar4);
+          dirty_rect_union(iVar7,iVar2 + iVar7,iVar4,iVar1 + iVar4);
           iVar4 = iVar7 * 0x140 + iVar4;
           pbVar5 = (byte *)(param_7 * 0x140 + (int)param_6 + param_3);
           iVar7 = 0;
@@ -5068,7 +5106,7 @@ short param_7;
     local_34 = param_2 + sVar1 + -200;
   }
   param_3 = param_7 * iVar2 + iVar13 + param_3;
-  FUN_00011000(iVar6,iVar6 + iVar3,iVar14);
+  dirty_rect_union(iVar6,iVar6 + iVar3,iVar14);
   if (DAT_00088960 == 0) {
     iVar11 = (int)local_3c;
     iVar4 = iVar3 - local_34;
@@ -5164,7 +5202,7 @@ short param_6;
     iVar5 = (int)param_3;
     pvVar_buf25800 = g_uw_framebuffer;
     iVar10 = 0x140 - iVar5;
-    FUN_00011000(200 - iVar4,iVar4 + (200 - iVar4),iVar10,iVar7 + iVar10);
+    dirty_rect_union(200 - iVar4,iVar4 + (200 - iVar4),iVar10,iVar7 + iVar10);
     iVar6 = param_6 * 0x140 + (int)param_5;
     iVar7 = iVar7 * 0x140 + (int)param_1;
     iVar9 = 0;
@@ -5225,24 +5263,25 @@ void thunk_FUN_0003c310()
 void FUN_00012958()
 
 {
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,0x13f,199);
   return;
 }
 
 
 
-undefined4 FUN_00012970()
+// was FUN_00012970 -- 3D dungeon-view frame driver: clears the viewport then runs the whole pipeline (view matrix, visibility walk, vertex transform, near-clip, rasterize, cleanup)
+undefined4 render_dungeon_view()
 
 {
   set_draw_color(0);
   rect_fill_or_save_restore(0x34,0x13,0xe0,0x83);
-  FUN_0001de0c();
+  build_view_matrix();
   near_clip_visible_tiles(0,0);
-  FUN_0001dfe8(&DAT_000a85d0);
-  FUN_0001e274(&DAT_000a85d0);
+  translate_verts_to_camera_space(&DAT_000a85d0);
+  project_verts_through_view_matrix(&DAT_000a85d0);
   near_clip_visible_tiles(&DAT_000a85d0,1);
   render_visible_tile_list();
-  FUN_0005b8ac();
+  free_frame_geometry_buffers();
   return 0;
 }
 
@@ -5427,6 +5466,14 @@ LAB_000130d0:
     DAT_000b5630 = pbVar4;
     DAT_000b4628 = pbVar5;
     DAT_000b461c = pbVar5;
+    /* blit_sprite_row_remapped above resets DAT_000b4610 to the scratch
+       DAT_000842ac (memset to 0x0a) on the way out, but FUN_000132c4's RLE
+       fill looks its run colours up through DAT_000b4610 -- for the RLE
+       formats (6/8/0xa) that table is the auxiliary palette passed in
+       param_2 (nibble -> 8-bit palette index). Ghidra dropped the setup;
+       point it there so the sprite decodes to real colours instead of a
+       flat 0x0a. */
+    DAT_000b4610 = (byte *)param_2;
     FUN_000132c4(uVar7,param_3,uVar8);
     DAT_000b462c = DAT_000b4628;
   }
@@ -7826,7 +7873,7 @@ undefined4 param_1;
     exit_automap_screen();
   }
   else {
-    FUN_000116a4(0,0,0x13f,199);
+    set_viewport_clip_rect(0,0,0x13f,199);
     set_palette_bank(1);
     bitmap_blit_to_framebuffer(0,1,uVar3,200,0x140,0,0,1);
     draw_automap_tiles();
@@ -11557,7 +11604,8 @@ void FUN_0001dd2c()
 
 
 
-void FUN_0001de0c()
+// was FUN_0001de0c -- build the view/camera matrix into DAT_000c8ac0 from the camera translation (DAT_000db438/43c/440) and 3 axis rotations (DAT_000db448/44c/450)
+void build_view_matrix()
 
 {
   undefined4 uVar1;
@@ -11635,7 +11683,8 @@ void FUN_0001de0c()
 
 
 
-void FUN_0001dfe8(param_1)
+// was FUN_0001dfe8 -- per visible-tile vertex: subtract the camera position (Ordinal_2051) to get camera-relative coords; also clears the per-tile visible flags
+void translate_verts_to_camera_space(param_1)
 int * param_1;
 
 {
@@ -11687,7 +11736,8 @@ int * param_1;
 
 
 
-void FUN_0001e274(param_1)
+// was FUN_0001e274 -- per vertex: multiply-accumulate the camera-relative coord through the 4x4 view matrix DAT_000c8ac0 (Ordinal_2026 mul, Ordinal_2051 add) -> projected x,y,z,w
+void project_verts_through_view_matrix(param_1)
 int * param_1;
 
 {
@@ -11822,7 +11872,8 @@ undefined4 param_4;
 
 
 
-void FUN_0001e848(param_1,param_2,param_3,param_4)
+// was FUN_0001e848 -- identity-init then compose up to 3 axis rotation matrices from angle-table indices (DAT_000d9ed8 sin / DAT_000d9930 cos); used by an object/effect transform, not the tile pipeline
+void build_euler_rotation_matrix(param_1,param_2,param_3,param_4)
 int * param_1;
 int param_2;
 int param_3;
@@ -12003,7 +12054,8 @@ LAB_0001ea18:
 
 
 
-void FUN_0001ecb0(param_1,param_2)
+// was FUN_0001ecb0 -- apply a matrix built by build_euler_rotation_matrix to a point/vertex list
+void transform_points_by_matrix(param_1,param_2)
 int * param_1;
 int * param_2;
 
@@ -14016,7 +14068,7 @@ short param_2;
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 /* This is the game's dirty-rect blit: DAT_00088954/5c/50/58 (top/
-   bottom/left/right) accumulate via FUN_00011000, called from every
+   bottom/left/right) accumulate via dirty_rect_union, called from every
    draw (rect fill, text draw, sprite blit, ...) to grow the damaged
    region -- clamped here, then blitted from the software buffer
    (g_uw_framebuffer) into GXBeginDraw()'s real framebuffer and
@@ -16682,7 +16734,7 @@ void FUN_000286cc()
   DAT_00100784 = Ordinal_1041(0x10000);
   Ordinal_1047(DAT_00100784,0,0x10000);
   FUN_00057118();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,0x13f,199);
   DAT_00100670 = DAT_00100784;
   uVar6 = 2;
   iVar3 = FUN_000417b4(s_converse_00084ff4,0,0xffffffff,&LAB_00028688,&LAB_000286a4);
@@ -23297,12 +23349,17 @@ int param_2;
   *(byte *)(param_2 + 8) = ((byte)(param_1[1] >> 3) & 7) + 0x30;
   *(byte *)(param_2 + 9) = ((byte)param_1[1] & 7) + 0x30;
   Ordinal_1047(&DAT_00101968,0,0x104);
-  pcVar2 = &DAT_0023c698;
-  do {
-    cVar1 = *pcVar2;
-    pcVar2[-0x13ad30] = cVar1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
+  /* strcpy(&DAT_00101968, &DAT_0023c698). Ghidra baked the delta between
+     the two globals as -0x13ad30, which only resolves in the original
+     0x00xx_xxxx address space -- in the recompile pcVar2[-0x13ad30] is a
+     wild pointer (ASan: global-buffer-overflow). Bounded indexed copy. */
+  {
+    int _i = 0;
+    while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
+      (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+    }
+    (&DAT_00101968)[_i] = '\0';
+  }
   Ordinal_1063(&DAT_00101968,param_2);
   return 2;
 }
@@ -23464,7 +23521,7 @@ short param_5;
   local_78 = (int *)0x0;
   local_80 = 0;
   local_64 = 0;
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   pcVar8 = &DAT_00085448;
     wptr_21485 = acStackY_85518;
   do {
@@ -23518,13 +23575,16 @@ LAB_00036858:
   acStack_d0[8] = '\0';
   local_44 = puVar11;
   Ordinal_1047(&DAT_00101968,0,0x104);
-  pcVar8 = &DAT_0023c698;
   local_3c = -0x13ad30;
-  do {
-    cVar5 = *pcVar8;
-    pcVar8[-0x13ad30] = cVar5;
-    pcVar8 = pcVar8 + 1;
-  } while (cVar5 != '\0');
+  /* strcpy(&DAT_00101968, &DAT_0023c698) -- see the note at the sibling
+     copy above; the -0x13ad30 baked delta is a wild pointer here. */
+  {
+    int _i = 0;
+    while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
+      (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+    }
+    (&DAT_00101968)[_i] = '\0';
+  }
   Ordinal_1063(&DAT_00101968,acStack_d0);
   iVar12 = FUN_000227d4(&DAT_00101968);
   local_5c = iVar12;
@@ -23551,12 +23611,15 @@ LAB_00036858:
         acStack_d0[6] = acStack_d0[6] + '\x01';
       }
       Ordinal_1047(&DAT_00101968,0,0x104);
-      pcVar8 = &DAT_0023c698;
-      do {
-        cVar5 = *pcVar8;
-        pcVar8[-0x13ad30] = cVar5;
-        pcVar8 = pcVar8 + 1;
-      } while (cVar5 != '\0');
+      /* strcpy(&DAT_00101968, &DAT_0023c698) -- baked -0x13ad30 delta is
+         a wild pointer in the recompile; bounded indexed copy. */
+      {
+        int _i = 0;
+        while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
+          (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+        }
+        (&DAT_00101968)[_i] = '\0';
+      }
       Ordinal_1063(&DAT_00101968,acStack_d0);
       uVar2 = *puVar11;
       puVar21 = local_84;
@@ -23607,12 +23670,15 @@ LAB_00036858:
           acStack_d0[7] = '0';
         }
         Ordinal_1047(&DAT_00101968,0,0x104);
-        pcVar8 = &DAT_0023c698;
-        do {
-          cVar5 = *pcVar8;
-          pcVar8[local_3c] = cVar5;
-          pcVar8 = pcVar8 + 1;
-        } while (cVar5 != '\0');
+        /* strcpy(&DAT_00101968, &DAT_0023c698) -- local_3c is the baked
+           -0x13ad30 delta, a wild pointer here; bounded indexed copy. */
+        {
+          int _i = 0;
+          while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
+            (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+          }
+          (&DAT_00101968)[_i] = '\0';
+        }
         Ordinal_1063(&DAT_00101968,acStack_d0);
         local_9b = 0;
 LAB_00036ca4:
@@ -26451,7 +26517,7 @@ void enter_dungeon_view()
   undefined1 auStack_314 [768];
   
   FUN_00057118();
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   FUN_000678e0();
   FUN_0005b758(0x34,0x14,0xab,0x70);
   Ordinal_1044(auStack_314,&DAT_00088d98,0x300);
@@ -29094,33 +29160,60 @@ short param_5;
 
 
 
-undefined4 FUN_00040770()
+/* param_1 = object sprite id, param_2 = shade -- both were dropped by
+   Ghidra at the FUN_00060aa0 call site AND on the FUN_00040aa8 /
+   FUN_000408fc calls below, so the sprite loader ran with a garbage id
+   and FUN_000408fc handed back its zeroed dummy glyph -> every object
+   billboard decoded to a 0x0 texture (invisible). Forward the id, and
+   resolve it through FUN_00040aa8 the way draw_sprite_by_id does. */
+undefined4 FUN_00040770(param_1,param_2)
+short param_1;
+uint param_2;
 
 {
   byte bVar1;
   byte bVar2;
   char *pcVar3;
-  undefined4 uVar4;
+  void *buf;
   int iVar5;
-  
-  FUN_00040aa8();
-  pcVar3 = (char *)FUN_000408fc();
+  int resolved;
+
+  (void)param_2;
+  resolved = FUN_00040aa8(param_1);
+  pcVar3 = (char *)FUN_000408fc(resolved);
   bVar1 = pcVar3[1];
   bVar2 = pcVar3[2];
   if (*pcVar3 == '\x04') {
     pcVar3 = pcVar3 + 5;
   }
   else {
-    pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
+    /* Ghidra dropped FUN_000129f8's 3rd arg, the .GR entry's compression
+       mode (*pcVar3 -- 6/8/0xa RLE variants). Without it the decoder took
+       its param_3==0 path and produced an all-zero (fully transparent)
+       bitmap, so every object billboard sampled nothing. */
+    pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,
+                                  *pcVar3);
   }
   iVar5 = (int)(short)(ushort)bVar2 * (int)(short)(ushort)bVar1;
-  uVar4 = Ordinal_1041(iVar5);
-  (&DAT_0023c7a0)[DAT_0023b83c] = uVar4;
-  Ordinal_1047(uVar4,0,iVar5);
-  Ordinal_1044((&DAT_0023c7a0)[DAT_0023b83c],pcVar3,iVar5);
-  DAT_002022fc = (&DAT_0023c7a0)[DAT_0023b83c];
+  /* decode this object's sprite into a fresh per-record buffer (keep the
+     full 64-bit pointer -- Ordinal_1041's result was truncated through the
+     `undefined4` DAT_0023c7a0). */
+  buf = Ordinal_1041(iVar5);
+  (&DAT_0023c7a0)[DAT_0023b83c] = buf;
+  Ordinal_1047(buf,0,iVar5);
+  Ordinal_1044(buf,pcVar3,iVar5);
+  DAT_002022fc = (int)(intptr_t)buf;
   DAT_00202508 = (ushort)bVar1;
   DAT_002022f8 = (ushort)bVar2;
+  /* render_visible_tile_list reads each record's texture from the
+     g_tile_texptr_out[] side channel (the in-record field is 4 bytes and
+     truncates on 64-bit). process_visible_tile_cell writes
+     g_tile_texptr_emit[DAT_0023b83c] for tiles; do the same for this
+     object record so its billboard gets its sprite instead of a stale
+     tile texture. DAT_0023b83c here is the object's own record index. */
+  if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) {
+    g_tile_texptr_emit[DAT_0023b83c] = buf;
+  }
   return 1;
 }
 
@@ -29266,7 +29359,10 @@ int param_1;
   iVar1 = (int)(short)param_1;
   if (iVar1 < 0x2000) {
     if (iVar1 < 0x1000) {
-      uVar2 = (int)*(short *)(&DAT_0024d090 + iVar1 * 4) & 0x3ff;
+      /* DAT_0024d090 (an object-type -> OBJECTS.GR frame remap) is never
+         populated in this decompile. OBJECTS.GR is now registered at
+         absolute frame indices (LAB_00041610), so the id IS the frame. */
+      uVar2 = (uint)(ushort)param_1;
     }
     else {
       uVar2 = ((uint)DAT_00202730 + param_1) - 0x1000;
@@ -29292,7 +29388,7 @@ short param_5;
   bool bVar1;
   undefined4 uVar2;
   
-  FUN_00011000((int)(short)param_3,(int)(short)param_3 + (int)(short)param_4,(int)(short)param_2,
+  dirty_rect_union((int)(short)param_3,(int)(short)param_3 + (int)(short)param_4,(int)(short)param_2,
                (int)(short)param_2 + (int)param_5);
   if (((short)param_1 < 0x101b) || (0x101e < (short)param_1)) {
     bVar1 = false;
@@ -29478,7 +29574,7 @@ void FUN_00040df0()
 
 {
   FUN_00057118();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,0x13f,199);
   set_draw_color(0);
   FUN_00011b34();
   FUN_000570b4();
@@ -34513,6 +34609,19 @@ void main_loop_hud_flush()
 
 {
   dirty_rect_set(100,100,100,100);
+  /* HACK: force the 3D-view redraw dirty bit on every main-loop iteration.
+     Normally bit 3 (-> FUN_0003c194 -> full_dungeon_redraw) is only set by
+     apply_movement_tick's FUN_00049924(10), which runs solely while a
+     motion flag is live -- so the dungeon view freezes the instant the
+     player is idle (and never repaints for anything that changes in view
+     without the player moving). Keep the flag armed so the view redraws
+     continuously. Set UW_NO_FORCE_3D_REDRAW to restore the original
+     motion-gated behaviour. */
+  {
+    static int _force = -1;
+    if (_force < 0) _force = (getenv("UW_NO_FORCE_3D_REDRAW") == NULL);
+    if (_force && DAT_00201b64 == 0) DAT_00201c84 = DAT_00201c84 | 8;
+  }
   if (DAT_00201c84 != 0) {
     FUN_00049818();
   }
@@ -42456,9 +42565,9 @@ void FUN_0005721c()
           iVar3 = (int)DAT_000a85c8;
           iVar5 = (int)DAT_000842a4;
           iVar6 = (int)DAT_000842a8;
-          FUN_000116a4(0,0,0x13f,199);
+          set_viewport_clip_rect(0,0,0x13f,199);
           FUN_00057118();
-          FUN_000116a4(iVar4,iVar3,iVar5,iVar6);
+          set_viewport_clip_rect(iVar4,iVar3,iVar5,iVar6);
         }
       }
       if ((DAT_00204840 == 1) && (DAT_00202948 == 0)) {
@@ -42497,9 +42606,9 @@ void FUN_00057460()
     iVar2 = (int)DAT_000a85c8;
     iVar3 = (int)DAT_000842a4;
     iVar4 = (int)DAT_000842a8;
-    FUN_000116a4(0,0,0x13f,199);
+    set_viewport_clip_rect(0,0,0x13f,199);
     FUN_000570b4();
-    FUN_000116a4(iVar1,iVar2,iVar3,iVar4);
+    set_viewport_clip_rect(iVar1,iVar2,iVar3,iVar4);
   }
   return;
 }
@@ -43156,7 +43265,7 @@ void update_mouse_state()
     sVar2 = local_28;
     sVar3 = local_28;
     if (DAT_0020485c != 0) {
-      FUN_000116a4(0,0,0x13f,199);
+      set_viewport_clip_rect(0,0,0x13f,199);
       local_28 = sVar6;
       sVar1 = sVar7;
       sVar2 = sVar4;
@@ -43192,7 +43301,7 @@ void update_mouse_state()
       FUN_0005857c();
     }
     if (DAT_0020485c != 0) {
-      FUN_000116a4((int)local_28,(int)sVar1,(int)sVar2,(int)sVar3);
+      set_viewport_clip_rect((int)local_28,(int)sVar1,(int)sVar2,(int)sVar3);
     }
   }
   return;
@@ -44837,7 +44946,7 @@ void FUN_0005b36c()
      the code appends each texture filename at path + strlen(path). They
      are all really acStack_114 (the path buffer); Ghidra split the
      `+ iVar3` writes onto per-file base names. Same "one buffer, many
-     Ghidra names" bug as FUN_0001de0c's matrices. With them separate,
+     Ghidra names" bug as build_view_matrix's matrices. With them separate,
      the filename suffix was written to a stray 8-byte local, so
      load_texture_arena opened the bare "...\DATA\" directory and the whole
      texture / shade / colour-light arena (DAT_002049e0) stayed zero --
@@ -45074,7 +45183,8 @@ void FUN_0005b828()
 
 
 
-void FUN_0005b890()
+// was FUN_0005b890 -- reset the draw-command list write cursor DAT_00110fc0 back to its base DAT_0023aed0
+void draw_command_list_rewind()
 
 {
   DAT_00110fc0 = DAT_0023aed0;
@@ -45083,22 +45193,22 @@ void FUN_0005b890()
 
 
 
-void FUN_0005b8ac()
+// was FUN_0005b8ac -- per-frame teardown: free the scratch geometry / clip-vertex lists (DAT_0023c7a0[0x140], DAT_002020f8[0x80]) via Ordinal_1018
+void free_frame_geometry_buffers()
 
 {
   int *piVar1;
   int iVar2;
-  
-  piVar1 = &DAT_0023c7a0;
-  iVar2 = 0x140;
-  do {
-    if (*piVar1 != 0) {
-      Ordinal_1018();
-      *piVar1 = 0;
+
+  /* DAT_0023c7a0 is now a real void*[] (see its declaration); walk it as
+     one so whole 8-byte slots clear (the old int* stride freed/zeroed only
+     the low half of each pointer). */
+  {
+    int _i;
+    for (_i = 0; _i < 0x140; _i++) {
+      if (DAT_0023c7a0_arr[_i] != 0) { Ordinal_1018(); DAT_0023c7a0_arr[_i] = 0; }
     }
-    iVar2 = iVar2 + -1;
-    piVar1 = piVar1 + 1;
-  } while (iVar2 != 0);
+  }
   piVar1 = &DAT_002020f8;
   iVar2 = 0x80;
   do {
@@ -45117,15 +45227,15 @@ void FUN_0005b8ac()
 void FUN_0005bac0()
 
 {
-  FUN_0005b890();
-  FUN_0005d704();
+  draw_command_list_rewind();
+  emit_hud_draw_commands();
   FUN_00038c14(0xa0);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_000116a4(0,0,DAT_0023b020 + -1,DAT_0023aed4 + -1);
-  FUN_000116a4(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
-  FUN_00012970();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,DAT_0023b020 + -1,DAT_0023aed4 + -1);
+  set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
+  render_dungeon_view();
+  set_viewport_clip_rect(0,0,0x13f,199);
   return;
 }
 
@@ -45135,21 +45245,22 @@ void FUN_0005bac0()
 void full_dungeon_redraw()
 
 {
-  FUN_0005bc38();
-  FUN_0005b890();
+  build_frame_draw_list();
+  draw_command_list_rewind();
   rebuild_dungeon_view();
   FUN_00038c14(0xa0);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_000116a4(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
-  FUN_00012970();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
+  render_dungeon_view();
+  set_viewport_clip_rect(0,0,0x13f,199);
   return;
 }
 
 
 
-void FUN_0005bbe0()
+// was FUN_0005bbe0 -- timed dungeon-view redraw: rebuild the draw list if needed, run render_dungeon_view, measure it (FUN_0002294c) and feed an adaptive-quality value
+void render_dungeon_frame_timed()
 
 {
   short sVar1;
@@ -45165,19 +45276,19 @@ void FUN_0005bbe0()
   undefined1 auStack_60 [60];
   
   DAT_0023aec8 = FUN_0002294c();
-  iVar8 = FUN_0005bc38();
+  iVar8 = build_frame_draw_list();
   if (iVar8 != 0) {
-    FUN_0005b890();
+    draw_command_list_rewind();
     rebuild_dungeon_view();
     FUN_00038c14(0xa0);
     *DAT_00110fc0 = 0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
   }
-  FUN_000116a4(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
-  FUN_00011000(0x13,0x84,0x34,0xe0);
+  set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
+  dirty_rect_union(0x13,0x84,0x34,0xe0);
   iVar8 = FUN_0002294c();
   iVar8 = iVar8 - DAT_0023aec8;
-  iVar4 = FUN_00012970();
+  iVar4 = render_dungeon_view();
   iVar5 = FUN_0002294c();
   if (DAT_0023b01c != 0) {
     FUN_0006fcb0();
@@ -45185,7 +45296,7 @@ void FUN_0005bbe0()
   FUN_0005721c();
   FUN_0001294c();
   FUN_00057460();
-  FUN_000116a4(0,0,0x13f,199);
+  set_viewport_clip_rect(0,0,0x13f,199);
   iVar6 = FUN_0002294c();
   iVar7 = (iVar6 - iVar5) + iVar4 + iVar8;
   if (iVar7 == 0) {
@@ -45209,7 +45320,8 @@ void FUN_0005bbe0()
 
 
 
-undefined4 FUN_0005bc38()
+// was FUN_0005bc38 -- build the per-frame HUD + world draw-command list (opcodes into DAT_00110fc0) and run the visibility pass walk_visible_tiles; returns nonzero if it rebuilt
+undefined4 build_frame_draw_list()
 
 {
   short sVar1;
@@ -45854,7 +45966,7 @@ undefined1 ** param_2;
      an adjacent local) every single time this function runs, regardless
      of which branch follows. Same "locals declared as whatever fragment
      Ghidra individually named instead of the real buffer a copy/init
-     needs" bug as FUN_0001de0c's matrices earlier this session, just for
+     needs" bug as build_view_matrix's matrices earlier this session, just for
      a stack array instead of a global one. local_23 was the record's own
      byte offset+5 (0x28-0x23=5) -- folded into the real-sized array as
      acStack_28[5], its declaration removed. */
@@ -46128,7 +46240,7 @@ void rebuild_dungeon_view()
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = (ushort)DAT_0023b4dc;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  FUN_0005d2ac(1);
+  dungeon_view_prepass_stub(1);
   DAT_0023b810 = 0;
   walk_visible_tiles();
   if ((((*(byte *)(DAT_00086df8 + 0x3d) != 0) && (*(byte *)(DAT_00086df8 + 0x3d) < 0x10)) &&
@@ -46144,7 +46256,8 @@ void rebuild_dungeon_view()
 
 
 
-void FUN_0005d2ac()
+// was FUN_0005d2ac -- empty hook called before the visibility walk in build_frame_draw_list (disabled / never recovered)
+void dungeon_view_prepass_stub()
 
 {
   return;
@@ -46199,7 +46312,8 @@ void FUN_0005d2b0()
 
 
 
-void FUN_0005d704()
+// was FUN_0005d704 -- append the fixed HUD draw-command opcode sequence (compass, panels, sprite ids from FUN_00038a8c) to the draw-command list DAT_00110fc0
+void emit_hud_draw_commands()
 
 {
   short sVar1;
@@ -46269,7 +46383,7 @@ void FUN_0005d704()
   DAT_0023b4f4 = DAT_00086b38;
   DAT_0023b80c = DAT_00086b40;
   DAT_0023b4d4 = DAT_00086b48;
-  FUN_0005d2ac(2);
+  dungeon_view_prepass_stub(2);
   DAT_0023bc8c = *(undefined2 *)(&DAT_00086b50 + DAT_0023b4a0 * 4);
   DAT_0023b8c0 = *(undefined2 *)(&DAT_00086b52 + DAT_0023b4a0 * 4);
   walk_visible_tiles();
@@ -48985,8 +49099,8 @@ LAB_000640ec:
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
   }
-  FUN_0001e848(iVar29,0,(int)sVar13,0);
-  FUN_0001ecb0(&DAT_000a85d0,iVar29);
+  build_euler_rotation_matrix(iVar29,0,(int)sVar13,0);
+  transform_points_by_matrix(&DAT_000a85d0,iVar29);
   DAT_0023b83c = DAT_000a85d4;
   DAT_0023b838 = DAT_000a85d0;
   if (local_7a != 0xffff) {
@@ -49549,7 +49663,7 @@ ushort * param_1;
   short local_36;
   undefined4 local_34;
   int local_30;
-  
+
   local_34 = local_34 & 0xffff0000;
   iVar13 = 0;
   local_36 = -1;
@@ -49563,7 +49677,12 @@ ushort * param_1;
       if (8 < iVar1) break;
       uVar9 = *(ushort *)(&DAT_0023b940 + (iVar15 * 9 + (int)(short)iVar7) * 2);
       (&DAT_0023b848)[iVar1] = uVar9 & 0x3ff;
-      uVar4 = FUN_000535fc();
+      /* Ghidra dropped the object-slot arg -- with it defaulting to 0,
+         FUN_000535fc returned NULL and FUN_00065210 below dereferenced it,
+         which is why the whole tile-features/object pass was disabled.
+         Pass the slot id just stored, like the other FUN_000535fc call
+         sites in this function. */
+      uVar4 = FUN_000535fc((int)(short)(&DAT_0023b848)[iVar1]);
       iVar15 = iVar1 * 4;
       pcVar14 = &DAT_0023bb98 + iVar15;
       FUN_00065210(pcVar14,uVar4);
@@ -49768,7 +49887,10 @@ LAB_000657f4:
       iVar13 = (int)local_38;
     }
     param_1 = puVar5 + 2;
-    puVar5 = (ushort *)resolve_object_link();
+    /* Ghidra dropped the arg -- advance to the next object in the tile's
+       chain via the link field at puVar5+2 (== param_1), same as the
+       resolve_object_link(param_1) call that primes this loop. */
+    puVar5 = (ushort *)resolve_object_link(param_1);
     iVar16 = (local_30 + 1) * 0x10000 >> 0x10;
   } while( true );
 }
@@ -50893,7 +51015,7 @@ void FUN_00067f1c()
   DAT_0023bea4 = FUN_00049fb4((int)sVar4,(int)sVar3);
   DAT_0023bf08 = 0;
   do {
-    FUN_0005bbe0();
+    render_dungeon_frame_timed();
     DAT_0023bea4 = DAT_0023bea4 + 0xccb;
     sVar3 = DAT_0023bf08 + 1;
     uVar2 = DAT_0023bf08 + 1;
@@ -52107,7 +52229,7 @@ void FUN_0006a168()
         unsigned char _ix = _src[_i];
         if ((_ix & 0xc0) == 0x40) _dst[_i] = _lut[_ix];
       }
-      FUN_00011000(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
+      dirty_rect_union(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
     }
     DAT_0023bf74 = FUN_0002294c();
   }
@@ -53492,7 +53614,7 @@ int param_3;
       if (-1 < (short)param_1) {
         FUN_00040df0();
       }
-      FUN_000116a4(0,0,0x13f,199);
+      set_viewport_clip_rect(0,0,0x13f,199);
       if (-1 < (short)param_1) {
         set_palette_bank(param_1);
       }
@@ -55316,7 +55438,7 @@ void FUN_0006fea4()
   if (DAT_0023b01c != 0) {
     FUN_0006fcb0();
   }
-  FUN_00011000(0,200,0,0x140);
+  dirty_rect_union(0,200,0,0x140);
   return;
 }
 
@@ -56441,7 +56563,7 @@ void FUN_00071b94()
     }
   }
   else {
-    FUN_00011000(0,200,0,0x140);
+    dirty_rect_union(0,200,0,0x140);
     *(undefined1 *)(DAT_00085a6c + 8) = 0;
     *(undefined1 *)(DAT_00085a6c + 9) = 0;
   DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
@@ -56462,7 +56584,7 @@ void FUN_00071b94()
     Ordinal_1063(acStack_114,s__DATA_win1_byt_00087350);
     FUN_0006c98c(7,acStack_114,1);
     Ordinal_496(3000);
-    FUN_00011000(0,200,0,0x140);
+    dirty_rect_union(0,200,0,0x140);
     Ordinal_1047(acStack_114,0,0x104);
     do {
       cVar1 = *pcVar7;
@@ -56471,7 +56593,7 @@ void FUN_00071b94()
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_114,s__DATA_win2_byt_00087340);
     FUN_0006c98c(0xffffffff,acStack_114,1);
-    FUN_00011000(0,200,0,0x140);
+    dirty_rect_union(0,200,0,0x140);
     FUN_00070c90();
     do {
       sVar3 = FUN_00057a70();
@@ -59619,7 +59741,7 @@ short param_5;
           if (bVar3) {
             iVar7 = (int)sVar10;
             iVar2 = (int)param_5;
-            FUN_00011000(iVar9,iVar9 + iVar2,iVar12,iVar12 + iVar7);
+            dirty_rect_union(iVar9,iVar9 + iVar2,iVar12,iVar12 + iVar7);
             iVar12 = iVar9 * 0x140 + iVar12;
             iVar9 = 0;
             if (0 < iVar2) {
@@ -59690,7 +59812,7 @@ short * param_1;
   iVar1 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xd);
   iVar3 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xf);
   iVar6 = iVar7 * 0x140 + iVar5;
-  FUN_00011000(iVar7,iVar3 + iVar7,iVar5,iVar1 + iVar5);
+  dirty_rect_union(iVar7,iVar3 + iVar7,iVar5,iVar1 + iVar5);
   iVar5 = 0;
   if (0 < iVar3) {
     do {
@@ -60015,7 +60137,7 @@ undefined4 FUN_000778fc()
     } while (iVar7 != 0);
     GXEndDraw();
   }
-  FUN_00011000(0,0xf0,0,0x140);
+  dirty_rect_union(0,0xf0,0,0x140);
   return 0;
 }
 
@@ -64096,7 +64218,7 @@ short param_3;
   *(undefined2 *)
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
        (&g_palette_rgb565)[param_3];
-  FUN_00011000(iVar1,iVar1,(int)param_1);
+  dirty_rect_union(iVar1,iVar1,(int)param_1);
   debug_framebuffer_dump("plot_pixel");
   return;
 }

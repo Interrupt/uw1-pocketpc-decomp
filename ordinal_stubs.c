@@ -874,7 +874,7 @@ unsigned long long x;
 }
 
 /* Softfloat single-precision NEGATE: -x. Called both with an explicit
-   arg and no-arg (chained). FUN_0001de0c uses it for a view matrix's
+   arg and no-arg (chained). build_view_matrix uses it for a view matrix's
    translation column (-camera_pos) and the -sin entries of its rotation
    blocks; it also appears in the sprite/billboard transform. Was a
    return-0 stub -> the view matrix had zero rotation and zero
@@ -1004,7 +1004,7 @@ long Ordinal_2048()
 }
 
 /* Softfloat single-precision ADD: a + b. The workhorse of the 3D
-   matrix-multiply / vertex-transform math (FUN_0001e274, FUN_0001dfe8,
+   matrix-multiply / vertex-transform math (project_verts_through_view_matrix, translate_verts_to_camera_space,
    near_clip_visible_tiles). Was a no-op stub -> every transformed vertex came out
    0 -> nothing to draw. */
 long Ordinal_2051(a, b)
