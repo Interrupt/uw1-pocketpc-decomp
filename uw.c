@@ -3709,8 +3709,29 @@ undefined2 DAT_0023c224;
 byte DAT_0023c11a;
 short DAT_0023c228;
 short DAT_0023c22c;
-undefined2 DAT_00087130;
-undefined2 DAT_00087150;
+/* FIXME[hud-compass-layout]: .data 0x87130 -- compass-needle X position,
+   one short per compass heading. Indexed by the current heading
+   (DAT_0023c11a / DAT_0023c12a, masked `& 0xf` at FUN_0006df70:54803, so
+   16 entries). Read as `(&DAT_00087130)[heading]` and passed as the X arg
+   of FUN_00076338 (FUN_0006cb74:54108, FUN_0006df70:54805) and, for
+   element [0] only, FUN_000762c4 (FUN_0006cca8:54179) for the compass
+   needle sprite DAT_0023c22c (sprite size 3x4). Ghidra never recovered
+   the .data contents so every entry reads 0 and the needle is stuck at
+   x=0 (part of the black block in the HUD top-left). Fill in[0..15] with
+   the real per-heading X from the UW1 compass layout. */
+static short DAT_00087130_arr[16] = {
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+#define DAT_00087130 DAT_00087130_arr[0]
+/* FIXME[hud-compass-layout]: .data 0x87150 -- compass-needle Y position,
+   one short per compass heading, paired 1:1 with DAT_00087130. Same 16
+   entries, same call sites (Y arg of FUN_00076338 / FUN_000762c4 for
+   DAT_0023c22c). Reads 0 -> needle stuck at y=0. Fill in[0..15] with the
+   real per-heading Y. */
+static short DAT_00087150_arr[16] = {
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+#define DAT_00087150 DAT_00087150_arr[0]
 short DAT_0023c1e8;
 short DAT_0023c1ea;
 undefined2 DAT_0023c1e6;
@@ -3725,11 +3746,53 @@ int DAT_0023c23c;
 short DAT_0023c21c;
 /* Same fix as DAT_00248410 above -- see its comment. */
 char *DAT_0023cca4;
-undefined2 DAT_00087170;
-undefined2 DAT_00087174;
-undefined2 DAT_000871b4;
-undefined2 DAT_000871d4;
-undefined2 DAT_000871d8;
+/* The three FIXME[hud-dragon-layout] tables below all position the
+   two dragons.gr decorations that frame the compass -- index 0 = left
+   dragon, index 1 = right dragon -- built once in FUN_0006cca8
+   (54155-54198). Each dragon is drawn as three sprite-list sub-sprites
+   (head, body, wing/tail), created at fixed Y with X taken from these
+   tables; Ghidra never recovered the .data so every X reads 0 and both
+   dragons pile up at the screen's left edge as a black rectangle over
+   the 3D view + HUD. (The black is dragons.gr's colour-0 key showing
+   through -- the sprite-list compositor FUN_00076508 not honouring it is
+   a separate bug.) Fill each pair [left, right] with the real X. */
+
+/* FIXME[hud-dragon-layout]: .data 0x87170 -- X of the dragon HEAD
+   sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076194(2,0xd,10)
+   into DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
+   0xd x 10 (FUN_0006cca8:54161); animation frame set from DAT_000871d4
+   (54190). */
+static short DAT_00087170_arr[2] = { 0, 0 };
+#define DAT_00087170 DAT_00087170_arr[0]
+/* FIXME[hud-dragon-layout]: .data 0x87174 -- X of the dragon BODY
+   sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076194(2,0x25,0x17)
+   into DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
+   0x25 x 0x17 (FUN_0006cca8:54166); frame from DAT_000871d8 (54191). */
+static short DAT_00087174_arr[2] = { 0, 0 };
+#define DAT_00087174 DAT_00087174_arr[0]
+/* FIXME[hud-dragon-layout]: .data 0x871b4 -- X of the dragon WING/TAIL
+   sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076078(0) into
+   DAT_0023c238[side], placed at ((&DAT_000871b4)[side], 0x42), size
+   0xc x 0x1c (FUN_0006cca8:54169); frame is a literal 0x207b (left) /
+   0x208d (right) at 54196, NOT from a table. */
+static short DAT_000871b4_arr[2] = { 0, 0 };
+#define DAT_000871b4 DAT_000871b4_arr[0]
+
+/* FIXME[hud-dragon-frames]: .data 0x871d4 -- initial dragons.GR frame id
+   for the dragon HEAD sub-sprite, [0]=left [1]=right. Read as
+   `(&DAT_000871d4)[side]` and passed to FUN_00076390 as the frame arg for
+   DAT_0023c230[side] (FUN_0006cca8:54190). dragons.GR ids are in the
+   0x20xx range (cf. the wing's literal 0x207b/0x208d); reads 0 now. Fill
+   with the real left/right head-frame ids. */
+static unsigned short DAT_000871d4_arr[2] = { 0, 0 };
+#define DAT_000871d4 DAT_000871d4_arr[0]
+/* FIXME[hud-dragon-frames]: .data 0x871d8 -- initial dragons.GR frame id
+   for the dragon BODY sub-sprite, [0]=left [1]=right. Read as
+   `(&DAT_000871d8)[side]`, frame arg to FUN_00076390 for DAT_0023c234[side]
+   (FUN_0006cca8:54191, also FUN_0006dbe4:54753). Fill with the real
+   left/right body-frame ids. */
+static unsigned short DAT_000871d8_arr[2] = { 0, 0 };
+#define DAT_000871d8 DAT_000871d8_arr[0]
 /* HUD-panel/tab dispatch table (13 entries), read as
    `(&PTR_FUN_00087220)[index]` at 4 call sites (DAT_0023c1d4/DAT_0023c134
    select the index -- which panel/tab is active). Same class of bug as
