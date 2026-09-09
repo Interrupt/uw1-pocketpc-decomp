@@ -51,11 +51,24 @@
  *                    rotation, what's actually on screen) as a BMP,
  *                    so a scripted run -- or Claude -- can see what a
  *                    screen looks like without a human taking one
+ *   RAWKEY <KEY>   -- pushes one UNTAGGED SDL_KEYDOWN+KEYUP, i.e. what a
+ *                    human at the keyboard produces (SDLHOLD's injections
+ *                    are tagged so demo-control shortcuts ignore them;
+ *                    RAWKEY's are not). RAWKEY ESCAPE therefore aborts
+ *                    the rest of the demo file -- the same thing hitting
+ *                    the physical ESC key does. KEY name as for SDLHOLD.
  * Pacing is controlled by the UW_DEMO_DELAY_MS env var (default 250ms
  * between inputs). Once the file runs out, the process exits (making
  * scripted test runs self-terminating for fast feedback loops); set
  * UW_DEMO_KEEP_RUNNING=1 to keep the window open and just stop feeding
- * synthetic events instead. */
+ * synthetic events instead.
+ *
+ * Pressing the physical ESC key while a demo is playing aborts playback
+ * immediately (any in-progress HOLD is released, the file is closed) and
+ * hands control back to the live keyboard/mouse without exiting -- so a
+ * demo that's driving toward a bad state can be stopped and the result
+ * poked at by hand. That ESC is swallowed; it does not also reach the
+ * game. With no demo running, ESC behaves normally. */
 #include "demomode.h"
 #include "uw.h"
 
@@ -154,6 +167,37 @@ void demomode_init(void) {
     g_demo_active = 1;
     g_demo_next_tick = SDL_GetTicks() + (Uint32)g_demo_delay_ms;
     fprintf(stderr, "[demo] playing back input from %s (delay=%dms)\n", path, g_demo_delay_ms);
+}
+
+int demomode_active(void) {
+    return g_demo_active && !g_demo_done;
+}
+
+void demomode_abort(const char *reason) {
+    if (!g_demo_active || g_demo_done) return;
+
+    /* If a HOLD left a key pressed, release it now so the game doesn't
+     * think it's still down after playback stops. (A SDLHOLD's KEYUP is
+     * skipped -- an abort is an abort, and the synthetic keyup would just
+     * re-enter this same event path.) */
+    if (g_demo_hold_vk != 0 && !g_demo_hold_is_sdl) {
+        handle_keyboard_message(0, 0x101u, (unsigned int)g_demo_hold_vk);
+    }
+    g_demo_hold_vk = 0;
+    g_demo_hold_is_sdl = 0;
+    g_demo_hold_ticks = 0;
+    g_demo_type_pos = NULL;
+    g_demo_type_buf[0] = '\0';
+    g_demo_wait_ticks = 0;
+
+    g_demo_done = 1;
+    g_demo_active = 0;
+    if (g_demo_file) {
+        fclose(g_demo_file);
+        g_demo_file = NULL;
+    }
+    fprintf(stderr, "[demo] aborted (%s) -- playback stopped, window still live\n",
+            reason ? reason : "requested");
 }
 
 void demomode_pump(void) {
@@ -307,6 +351,52 @@ void demomode_pump(void) {
         g_demo_hold_vk = kc;
         g_demo_hold_is_sdl = 1;
         g_demo_hold_ticks = ticks;
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "RAWKEY ", 7) == 0) {
+        /* Push a single UNTAGGED SDL_KEYDOWN+SDL_KEYUP -- i.e. exactly
+         * what a human at the keyboard produces, with no UW_SYNTH_KEY
+         * stamp. Unlike SDLHOLD (scripted-injection, tagged so it can't
+         * trip demo-control shortcuts), a RAWKEY ESCAPE is treated as the
+         * player hitting ESC and therefore aborts the rest of the demo
+         * file -- which is what this command exists to exercise. Key name
+         * as for SDLHOLD. */
+        char keyname[32];
+        if (sscanf(p + 7, "%31s", keyname) != 1) {
+            fprintf(stderr, "[demo] malformed RAWKEY line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        int kc = 0;
+        if (keyname[0] && keyname[1] == '\0') {
+            unsigned char c = (unsigned char)keyname[0];
+            if (c >= 'A' && c <= 'Z') c = (unsigned char)(c - 'A' + 'a');
+            kc = c;
+        } else if (strcasecmp(keyname, "LEFT") == 0)   kc = SDLK_LEFT;
+        else if (strcasecmp(keyname, "RIGHT") == 0)    kc = SDLK_RIGHT;
+        else if (strcasecmp(keyname, "UP") == 0)       kc = SDLK_UP;
+        else if (strcasecmp(keyname, "DOWN") == 0)     kc = SDLK_DOWN;
+        else if (strcasecmp(keyname, "RETURN") == 0 || strcasecmp(keyname, "ENTER") == 0) kc = SDLK_RETURN;
+        else if (strcasecmp(keyname, "ESCAPE") == 0 || strcasecmp(keyname, "ESC") == 0)   kc = SDLK_ESCAPE;
+        else if (strcasecmp(keyname, "SPACE") == 0)    kc = SDLK_SPACE;
+        if (kc == 0) {
+            fprintf(stderr, "[demo] RAWKEY: unrecognized key '%s', skipping\n", keyname);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] RAWKEY %s (sdlkey=0x%x)\n", keyname, kc);
+        SDL_Event e = {0};
+        e.type = SDL_KEYDOWN;
+        e.key.state = SDL_PRESSED;
+        e.key.repeat = 0;
+        e.key.keysym.sym = (SDL_Keycode)kc;
+        e.key.keysym.scancode = SDL_GetScancodeFromKey((SDL_Keycode)kc);
+        SDL_PushEvent(&e);
+        e.type = SDL_KEYUP;
+        e.key.state = SDL_RELEASED;
+        SDL_PushEvent(&e);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

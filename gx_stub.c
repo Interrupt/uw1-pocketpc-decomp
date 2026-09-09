@@ -73,6 +73,11 @@ typedef struct {
    uw_pump_events takes the event's own coords (the GetGlobalMouseState
    warp is a no-op under the dummy video driver). */
 #define UW_SYNTH_MOUSE 0x55570001u
+/* Stamped into keysym.unused (a spare Uint32 that survives SDL's event
+   queue memcpy) on keydown/keyup events pushed by uw_inject_key_* so the
+   physical-ESC "abort the running demo" check can tell a real keypress
+   from a demo's own SDLHOLD injection. */
+#define UW_SYNTH_KEY 0x55570002u
 
 /* Dungeon-view (3D) player movement is polled from the physical keyboard
    state every pump (poll_dungeon_movement_keys), DOS-style, rather than
@@ -281,6 +286,19 @@ void uw_pump_events(void) {
                 break;
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
+                /* Physical ESC aborts a running demo file (and is then
+                 * swallowed -- it does NOT also reach the game). Only a
+                 * real keypress does this: uw_inject_key_* stamps
+                 * UW_SYNTH_KEY into keysym.unused, so a demo's own
+                 * "SDLHOLD ESCAPE" won't self-cancel. With no demo
+                 * playing, ESC falls through to the game as normal. */
+                if (ev.type == SDL_KEYDOWN && !ev.key.repeat &&
+                    ev.key.keysym.sym == SDLK_ESCAPE &&
+                    ev.key.keysym.unused != UW_SYNTH_KEY &&
+                    demomode_active()) {
+                    demomode_abort("physical ESC key");
+                    return;
+                }
                 /* In the 3D view (no SHIFT) the WASD / ZXC / 1-3 keys are
                  * handled by poll_dungeon_movement_keys() from the physical
                  * key state, not as discrete events -- swallow their key
@@ -648,6 +666,7 @@ int uw_inject_key_down(int sdl_keycode) {
     kd.key.repeat = 0;
     kd.key.keysym.sym = (SDL_Keycode)sdl_keycode;
     kd.key.keysym.scancode = sc;
+    kd.key.keysym.unused = UW_SYNTH_KEY;
     SDL_PushEvent(&kd);
     if (sdl_keycode >= 32 && sdl_keycode < 127) {
         SDL_Event ti = {0};
@@ -670,6 +689,7 @@ int uw_inject_key_up(int sdl_keycode) {
     ku.key.repeat = 0;
     ku.key.keysym.sym = (SDL_Keycode)sdl_keycode;
     ku.key.keysym.scancode = sc;
+    ku.key.keysym.unused = UW_SYNTH_KEY;
     SDL_PushEvent(&ku);
     return 1;
 }
