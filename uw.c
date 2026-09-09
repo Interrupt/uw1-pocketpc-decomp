@@ -8326,12 +8326,11 @@ int param_1;
   undefined4 uVar4;
   undefined4 uVar5;
   int iVar6;
-  int local_24;
-  
+  ushort *local_24;   /* was int -- holds tilemap_lookup()+2, a 64-bit ptr */
+
   uVar4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
   uVar5 = FUN_0001adc4((int)*(short *)(param_1 + -6));
-  local_24 = tilemap_lookup(uVar5,uVar4);
-  local_24 = local_24 + 2;
+  local_24 = (ushort *)((char *)tilemap_lookup(uVar5,uVar4) + 2);
   iVar6 = FUN_000537d0(&local_24,0,5,0,0xffff);
   if ((iVar6 == 0) && (iVar6 = FUN_000537d0(&local_24,0,7,0,0xf), iVar6 == 0)) {
     uVar4 = 0;
@@ -25398,12 +25397,20 @@ int param_3;
   int aiStackY_234 [89];
   char acStackY_d0 [4];
   char acStackY_cc [108];
-  int local_54;
+  /* local_34[] / local_44[] / local_54 held 64-bit tile-record and
+     object-list pointers -- Ghidra typed them `int`, truncating every one
+     (tilemap_lookup / FUN_000537d0 / FUN_00068138 results are all real
+     pointers). local_54's address is handed to FUN_000537d0 (now
+     ushort **), so it must be pointer-sized or that call scribbles past
+     the slot. */
+  void *local_54;
   char local_50 [4];
   char local_4c [8];
-  int local_44 [4];
-  int local_34 [4];
-  
+  void *local_44 [4];
+  void *local_34 [4];
+  char *pTile;
+  char *pNew;
+
   iVar5 = 0;
   cVar7 = -4;
   iVar1 = -4;
@@ -25411,14 +25418,13 @@ int param_3;
     cVar6 = -4;
     iVar3 = -4;
     do {
-      iVar2 = tilemap_lookup(((short)param_2 + iVar1) * 0x10000 >> 0x10,
+      pTile = (char *)tilemap_lookup(((short)param_2 + iVar1) * 0x10000 >> 0x10,
                            ((short)param_3 + iVar3) * 0x10000 >> 0x10);
       iVar3 = (int)(char)iVar5;
-      local_34[iVar3] = iVar2;
-      local_54 = iVar2 + 2;
-      iVar2 = FUN_000537d0(&local_54,0,2,2,7);
-      local_44[iVar3] = iVar2;
-      if (iVar2 != 0) {
+      local_34[iVar3] = pTile;
+      local_54 = pTile + 2;
+      local_44[iVar3] = FUN_000537d0((ushort **)&local_54,0,2,2,7);
+      if (local_44[iVar3] != 0) {
         local_50[iVar3] = cVar7 + (char)param_2;
         local_4c[iVar3] = cVar6 + (char)param_3;
         iVar5 = (iVar3 + 1) * 0x1000000 >> 0x18;
@@ -25430,16 +25436,16 @@ int param_3;
     iVar1 = (int)cVar7;
   } while (iVar1 < 5);
   if ((char)iVar5 == '\x04') {
-    iVar5 = FUN_00068138(0xfd,0);
-    iVar1 = tilemap_lookup(param_2,param_3 + 1);
-    uVar4 = *(ushort *)(iVar5 + 2) & 0x380 | 0x6c40;
-    *(char *)(iVar5 + 2) = (char)uVar4;
-    *(char *)(iVar5 + 3) = (char)(uVar4 >> 8);
-    object_list_insert_head(iVar1 + 2,iVar5);
-    FUN_00055f98(iVar5,param_2,param_3 + 1,1);
+    pNew = (char *)FUN_00068138(0xfd,0);
+    pTile = (char *)tilemap_lookup(param_2,param_3 + 1);
+    uVar4 = *(ushort *)(pNew + 2) & 0x380 | 0x6c40;
+    *(char *)(pNew + 2) = (char)uVar4;
+    *(char *)(pNew + 3) = (char)(uVar4 >> 8);
+    object_list_insert_head(pTile + 2,pNew);
+    FUN_00055f98(pNew,param_2,param_3 + 1,1);
     iVar5 = 0;
     do {
-      FUN_00053334(local_34[iVar5] + 2,local_44[iVar5],1);
+      FUN_00053334((char *)local_34[iVar5] + 2,local_44[iVar5],1);
       iVar5 = (iVar5 + 1) * 0x1000000 >> 0x18;
     } while (iVar5 < 4);
   }
@@ -25493,11 +25499,10 @@ void FUN_0003a398()
 {
   undefined4 uVar1;
   int iVar2;
-  int local_10;
-  
-  local_10 = tilemap_lookup(*(ushort *)(DAT_0023be64 + 0x16) >> 10,
-                          (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4);
-  local_10 = local_10 + 2;
+  ushort *local_10;   /* was int -- tilemap_lookup()+2 (64-bit ptr) */
+
+  local_10 = (ushort *)((char *)tilemap_lookup(*(ushort *)(DAT_0023be64 + 0x16) >> 10,
+                          (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4) + 2);
   iVar2 = FUN_000537d0(&local_10,1,4,1,4);
   if (iVar2 != 0) {
     message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
@@ -25525,10 +25530,9 @@ undefined4 param_3;
 {
   undefined4 uVar1;
   int iVar2;
-  int local_c;
-  
-  local_c = tilemap_lookup(param_2,param_3);
-  local_c = local_c + 2;
+  ushort *local_c;   /* was int -- tilemap_lookup()+2 (64-bit ptr) */
+
+  local_c = (ushort *)((char *)tilemap_lookup(param_2,param_3) + 2);
   iVar2 = FUN_000537d0(&local_c,1,4,1,4);
   if (iVar2 != 0) {
     message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
@@ -28489,8 +28493,12 @@ LAB_000489fc:
   if (((((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     Ordinal_1063(acStack_7c,s_belonging_to_00085c90);
-    uVar11 = FUN_0007863c((bVar1 & 0x1f) + 0x172 | 0x200);
-    Ordinal_1063(acStack_7c,uVar11);
+    /* uVar11 is `undefined4` (reused as a flag above); assigning FUN_0007863c's
+       char* to it truncated the pointer -> Ordinal_1063 (strcat) walked a wild
+       address, crashing a right-click "look" at any owned container (the
+       spawn-room sack). Use the char* local. */
+    pcVar6 = FUN_0007863c((bVar1 & 0x1f) + 0x172 | 0x200);
+    Ordinal_1063(acStack_7c,pcVar6);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
   message_scroll_print_wrapped(acStack_7c);
@@ -34283,8 +34291,12 @@ LAB_000489fc:
   if (((((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     Ordinal_1063(acStack_7c,s_belonging_to_00085c90);
-    uVar11 = FUN_0007863c((bVar1 & 0x1f) + 0x172 | 0x200);
-    Ordinal_1063(acStack_7c,uVar11);
+    /* uVar11 is `undefined4` (reused as a flag above); assigning FUN_0007863c's
+       char* to it truncated the pointer -> Ordinal_1063 (strcat) walked a wild
+       address, crashing a right-click "look" at any owned container (the
+       spawn-room sack). Use the char* local. */
+    pcVar6 = FUN_0007863c((bVar1 & 0x1f) + 0x172 | 0x200);
+    Ordinal_1063(acStack_7c,pcVar6);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
   message_scroll_print_wrapped(acStack_7c);
@@ -34296,9 +34308,9 @@ LAB_00048b58:
 
 
 undefined4 FUN_00048b6c(param_1,param_2,param_3)
-undefined4 param_1;
+ushort *param_1;   /* was undefined4 -- object ptr into FUN_0007ca50 */
 short param_2;
-undefined4 param_3;
+char *param_3;     /* was undefined4 -- caller's stack buffer for Ordinal_1063 */
 
 {
   int iVar1;
@@ -34333,7 +34345,7 @@ undefined4 param_3;
 undefined4 FUN_00048bf0(param_1,param_2,param_3)
 byte * param_1;
 short param_2;
-int param_3;
+char *param_3;   /* was int -- caller's stack buffer for Ordinal_1063/1044/1068 */
 
 {
   char cVar1;
@@ -34653,7 +34665,10 @@ short param_2;
 
 void FUN_00049404(param_1,param_2)
 ushort * param_1;
-undefined4 param_2;
+char *param_2;   /* was undefined4 -- the caller's stack description buffer
+                    (acStack_7c); Ordinal_1063/message_scroll_print_wrapped
+                    write through it, so truncating it crashed a right-click
+                    "look" at a creature (the "vitality is N out of N" path). */
 
 {
   byte bVar1;
@@ -40858,8 +40873,13 @@ char param_1;
 
 
 
+/* param_1 was `undefined4 *`, so `resolve_object_link(*param_1)` and
+   `*param_1 = local_28` truncated the 64-bit object-list pointer the
+   callers hand in by address (crashing e.g. a right-click "look" at the
+   spawn-room sack: FUN_0007c2ec -> here -> resolve_object_link(garbage)).
+   It's a pointer-to-pointer -- ushort **. */
 ushort *FUN_000537d0(param_1,param_2,param_3,param_4,param_5)
-undefined4 * param_1;
+ushort ** param_1;
 int param_2;
 undefined4 param_3;
 undefined4 param_4;
@@ -61368,7 +61388,8 @@ uint param_3;
 {
   char cVar1;
   char *pcVar2;
-  undefined4 uVar3;
+  char *uVar3;   /* was undefined4 -- FUN_0007863c returns char*; truncating
+                    it fed Ordinal_1063 (strcat) a wild src pointer */
   char *pcVar4;
   char local_10c [256];
   
