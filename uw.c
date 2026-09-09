@@ -2520,11 +2520,32 @@ static undefined DAT_00202978_backing[8192];
 #define DAT_00202978 DAT_00202978_backing[0]
 ushort DAT_00202986;
 undefined1 DAT_00202951;
-undefined2 DAT_00085ad8;
-undefined2 DAT_00085ada;
-static undefined1 DAT_00085adc_backing[8192];
-#define DAT_00085adc DAT_00085adc_backing[0]
-undefined1 DAT_00085add;
+/* .data 0x85ad0: the HUD hotspot / layout table -- 0x17 records of 0xe
+   bytes: [+0..+7] short click-rect x1,y1,x2,y2 (read by FUN_000485f4);
+   [+8/+0xa] short draw x,y; [+0xc/+0xd] byte dirty w,h. Ghidra split it
+   into lone scalars (DAT_00085ad0/d2/d4/d6/d8/da/dd + an 8KB backing for
+   dc) and never recovered its .data contents, so every field read 0 and
+   the inventory paperdoll body drew at (0,0) instead of the right-hand
+   panel. UU.exe's .data doesn't map cleanly to Ghidra's addresses here
+   (confirmed: file offset lands on 3D-model-parser strings), so the
+   record positions can't be lifted from the binary. Back it with a real
+   array and seed record 0 (the body) from the panel rect the redraw path
+   clears -- rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76). Records 1..5
+   (worn armour overlays) and 6..0x16 (inventory grid hotspots) stay zero
+   for now -- armour only draws when equipped, and the grid hotspots were
+   already dead. */
+static unsigned char DAT_00085ad0_backing[0x17 * 0xe + 2] = {
+  /* rec 0: click x1,y1,x2,y2 = f0,0b,13b,76 ; draw x,y = f0,0b ; dirty w,h = 50,6c */
+  0xf0,0x00, 0x0b,0x00, 0x3b,0x01, 0x76,0x00,  0xf0,0x00, 0x0b,0x00,  0x50,0x6c,
+};
+#define DAT_00085ad0 DAT_00085ad0_backing[0x0]
+#define DAT_00085ad2 DAT_00085ad0_backing[0x2]
+#define DAT_00085ad4 DAT_00085ad0_backing[0x4]
+#define DAT_00085ad6 DAT_00085ad0_backing[0x6]
+#define DAT_00085ad8 (*(unsigned short *)&DAT_00085ad0_backing[0x8])
+#define DAT_00085ada (*(unsigned short *)&DAT_00085ad0_backing[0xa])
+#define DAT_00085adc DAT_00085ad0_backing[0xc]
+#define DAT_00085add DAT_00085ad0_backing[0xd]
 undefined DAT_00085c18;
 undefined2 DAT_00202980;
 short DAT_0023bcf2;
@@ -2554,7 +2575,6 @@ int DAT_002029a4;
 short DAT_00085b64;
 undefined2 DAT_00085b72;
 undefined2 DAT_00202998;
-undefined1 DAT_00085ad0;
 undefined2 DAT_00085c50;
 char s_armor_f_00085c60[] = "armor_f";
 undefined1 DAT_00085b77;
@@ -2584,9 +2604,6 @@ undefined1 DAT_00085bf2;
 undefined DAT_00085bf0;
 short DAT_0023be5c;
 short DAT_0023be80;
-undefined1 DAT_00085ad2;
-undefined1 DAT_00085ad4;
-undefined1 DAT_00085ad6;
 char s_cursed_00085ca0[] = "cursed";
 char s_magical_00085ca8[] = "magical";
 char s_full_charge_00085cb8[] = "full_charge";
