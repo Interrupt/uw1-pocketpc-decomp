@@ -360,10 +360,8 @@ static undefined DAT_001007d9_backing[8192];
 #define DAT_001007d9 DAT_001007d9_backing[0]
 char *DAT_00086df8;
 undefined4 DAT_00202c84;
-undefined DAT_00202c91;
 undefined2 DAT_002020a0;
 undefined2 DAT_002020a4;
-undefined1 DAT_00202c9a;
 uint *DAT_000bbf04;
 undefined1 DAT_00000004;
 undefined1 DAT_00000005;
@@ -433,7 +431,6 @@ static undefined DAT_000845a8_backing[8192];
 #define DAT_000845a8 DAT_000845a8_backing[0]
 char s_respond_000845ac[] = "respond";
 undefined2 DAT_000bbfe8;
-undefined DAT_00202c95;
 undefined2 DAT_000bbfd8;
 undefined2 DAT_000bbfdc;
 undefined1 DAT_000bc008;
@@ -1317,6 +1314,14 @@ static undefined1 DAT_00202c39_backing[8192];
 #define DAT_00202c39 DAT_00202c39_backing[0]
 static undefined1 DAT_00202c90_backing[65536];
 #define DAT_00202c90 DAT_00202c90_backing[0]
+undefined1 DAT_00202c9b;
+undefined1 DAT_00202c9a;
+undefined1 DAT_00202c99;
+undefined1 DAT_00202c98;
+undefined1 DAT_00202c97;
+undefined1 DAT_00202c95;
+undefined1 DAT_00202c93;
+undefined1 DAT_00202c91;
 short DAT_0010061c;
 undefined1 DAT_0010060c;
 undefined DAT_001007da;
@@ -1606,8 +1611,6 @@ short DAT_0010144c;
 ushort *DAT_0010190c;
 static undefined2 DAT_002049a0_backing[8192];
 #define DAT_002049a0 DAT_002049a0_backing[0]
-undefined DAT_00202c93;
-undefined DAT_00202c97;
 static undefined DAT_00204920_backing[8192];
 #define DAT_00204920 DAT_00204920_backing[0]
 undefined2 DAT_002048cc;
@@ -1745,7 +1748,6 @@ short DAT_00202a3c;
 undefined DAT_000853d8;
 static undefined DAT_002027d1_backing[8192];
 #define DAT_002027d1 DAT_002027d1_backing[0]
-undefined DAT_00202c99;
 short DAT_00101938;
 short DAT_0010193c;
 byte DAT_0010192c;
@@ -1763,7 +1765,6 @@ undefined4 DAT_00101950;
 byte DAT_0010195c;
 ushort *DAT_00101958;
 undefined DAT_001007ee;
-undefined DAT_00202c98;
 undefined2 DAT_00101960;
 undefined1 DAT_0024d008;
 undefined1 DAT_0024fa10;
@@ -2192,7 +2193,6 @@ static undefined2 DAT_0023ae58_backing[8192];
 short DAT_000858c4;
 ushort *DAT_002020cc;
 int DAT_002020e0;
-undefined DAT_00202c9b;
 char s_belonging_to_00085c90[] = "belonging_to";
 short DAT_0023be88;
 short DAT_0023bd80;
@@ -6006,26 +6006,22 @@ undefined4 * param_1;
 
 
 
+/* Copy a 4x4 matrix param_1 -> param_2. param_1 was `int`, and the body
+   computed the source address as `(param_1 - (int)param_2) + (int)puVar1`
+   -- a 32-bit byte delta -- so on a 64-bit host both the source pointer
+   and the delta truncated (wild read; crashed build_euler_rotation_matrix
+   once the object-render path started calling it with real property
+   data). It's just element-wise `param_2[i] = param_1[i]` for i in 0..15. */
 void FUN_00014258(param_1,param_2)
-int param_1;
+undefined4 * param_1;
 undefined4 * param_2;
 
 {
-  undefined4 *puVar1;
-  int iVar2;
-  int iVar3;
-  
-  iVar3 = 4;
-  puVar1 = param_2;
-  do {
-    iVar2 = 4;
-    do {
-      iVar2 = iVar2 + -1;
-      *puVar1 = *(undefined4 *)((param_1 - (int)param_2) + (int)puVar1);
-      puVar1 = puVar1 + 1;
-    } while (iVar2 != 0);
-    iVar3 = iVar3 + -1;
-  } while (iVar3 != 0);
+  int i;
+
+  for (i = 0; i < 16; i = i + 1) {
+    param_2[i] = param_1[i];
+  }
   return;
 }
 
