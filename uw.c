@@ -8951,14 +8951,23 @@ undefined4 FUN_00019120()
   int iVar6;
   int iVar7;
   char *pcVar8;
-  /* Declared 2 bytes but used as a 4-byte read/write buffer just below
-     (`FUN_0002285c(iVar4,auStack_124,4)` etc.) -- another Ghidra
-     undersized-local artifact, this time on the stack rather than a
-     global. Widened directly since local_122 (a separate value, read
-     independently elsewhere in this function) isn't accessed via
-     pointer arithmetic off this array. */
-  undefined1 auStack_124 [4];
-  short local_122;
+  /* Was `undefined1 auStack_124[4]; short local_122;` -- a previous fix
+     widened auStack_124 to the 4 bytes FUN_0002285c/FUN_00022884 read
+     and write as one blob, but left local_122 as its own, separately-
+     declared local that's never actually assigned anywhere in this
+     function (only ever read, at `local_122 * 2` / `(int)local_122<<1`
+     below) -- genuinely uninitialized stack garbage, which is exactly
+     the "size" that overflowed file_io.c's write-size guard and, before
+     that guard existed, silently corrupted the heap (confirmed via ASAN/
+     a malloc-guard abort on an unrelated thread). The sibling function
+     right below this one (FUN_0001927c) declares the equivalent pair as
+     two contiguous shorts (`short local_124; short local_122;`), which
+     is what this record header actually is: two 16-bit fields read by
+     one 4-byte call, the second being the following record's real
+     length. Restored that shape as a real 2-element array so the write-
+     through and the length read see the same bytes. */
+  short auStack_124 [2];
+#define local_122 auStack_124[1]
   char acStack_11c [260];
   
   Ordinal_1047(acStack_11c,0,0x104);
@@ -9007,6 +9016,7 @@ LAB_00019240:
   }
   return uVar5;
 }
+#undef local_122
 
 
 
@@ -65321,7 +65331,11 @@ short param_4;
 int FUN_0007ef78(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 byte param_2;
-int param_3;
+char *param_3;  /* was `int` -- truncated the real DAT_00086df8 pointer
+                   FUN_00065b90 passes in, latent until something
+                   (FUN_00043fd8, the player.dat writer) actually called
+                   FUN_00065b90 -- previously only reachable from the
+                   Load Game path */
 short param_4;
 
 {
