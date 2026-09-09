@@ -3845,7 +3845,7 @@ static short DAT_00087174_arr[2] = { 0, 0};
    DAT_0023c238[side], placed at ((&DAT_000871b4)[side], 0x42), size
    0xc x 0x1c (FUN_0006cca8:54169); frame is a literal 0x207b (left) /
    0x208d (right) at 54196, NOT from a table. */
-static short DAT_000871b4_arr[2] = { 0, 0};
+static short DAT_000871b4_arr[4] = { 0, 0};
 #define DAT_000871b4 DAT_000871b4_arr[0]
 
 /* FIXME[hud-dragon-frames]: .data 0x871d4 -- initial dragons.GR frame id
