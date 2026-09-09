@@ -1314,14 +1314,28 @@ static undefined1 DAT_00202c39_backing[8192];
 #define DAT_00202c39 DAT_00202c39_backing[0]
 static undefined1 DAT_00202c90_backing[65536];
 #define DAT_00202c90 DAT_00202c90_backing[0]
-undefined1 DAT_00202c9b;
-undefined1 DAT_00202c9a;
-undefined1 DAT_00202c99;
-undefined1 DAT_00202c98;
-undefined1 DAT_00202c97;
-undefined1 DAT_00202c95;
-undefined1 DAT_00202c93;
-undefined1 DAT_00202c91;
+/* Were lone `undefined1` scalars, but every use (dozens of call sites
+   throughout uw.c) is `(&DAT_00202c9X)[objid*0xd]` -- fields of the
+   0xd-byte comobj.dat per-object-type property record that DAT_00202c90
+   (offset 0, already fixed) is itself the base of. With these as
+   standalone globals, indexing past element 0 read whatever neighboring
+   BSS happened to follow each one (always 0 in practice), so every
+   "does this object type have property X" check silently saw "no" for
+   every real object -- notably `(&DAT_00202c9b)[id] & 0x10` in
+   thunk_FUN_00048764 (the right-click "look" description gate), which is
+   why Look never printed "You see a <name>" for anything, the Sack
+   included. Re-aliased into DAT_00202c90's own backing array at their
+   real record offsets (0x1,0x3,0x5,0x7,0x8,0x9,0xa,0xb -- confirmed by
+   the `*(short*)(&DAT_00202c95+...)` 2-byte read elsewhere, which needs
+   offset 6 to be DAT_00202c95's second byte, not a separate slot). */
+#define DAT_00202c91 DAT_00202c90_backing[1]
+#define DAT_00202c93 DAT_00202c90_backing[3]
+#define DAT_00202c95 DAT_00202c90_backing[5]
+#define DAT_00202c97 DAT_00202c90_backing[7]
+#define DAT_00202c98 DAT_00202c90_backing[8]
+#define DAT_00202c99 DAT_00202c90_backing[9]
+#define DAT_00202c9a DAT_00202c90_backing[0xa]
+#define DAT_00202c9b DAT_00202c90_backing[0xb]
 short DAT_0010061c;
 undefined1 DAT_0010060c;
 undefined DAT_001007da;
@@ -12038,7 +12052,10 @@ int * param_1;
 
 
 void FUN_0001e594(param_1,param_2,param_3,param_4)
-int param_1;
+char *param_1;  /* was `int` -- truncated the real _anim pointer
+                   emit_object_billboard passes in, latent until the
+                   DAT_00202c9X object-property fix let real property
+                   data reach a nonzero case here */
 undefined4 param_2;
 undefined4 param_3;
 undefined4 param_4;
@@ -12140,36 +12157,64 @@ int param_4;
   undefined4 uVar12;
   int iVar13;
   uint uVar14;
-  undefined4 local_164;
-  undefined4 local_160;
-  undefined4 local_15c;
-  undefined4 local_154;
-  undefined4 local_150;
-  undefined4 local_14c;
-  undefined4 local_144;
-  undefined4 local_140;
-  undefined4 local_13c;
-  undefined4 auStack_124 [5];
-  undefined4 local_110;
-  undefined4 local_10c;
-  undefined4 local_100;
-  undefined4 local_fc;
-  undefined4 local_e4;
-  undefined4 local_e0;
-  undefined4 local_d4;
-  undefined4 local_d0;
-  undefined4 local_a4 [2];
-  undefined4 local_9c;
-  undefined4 local_84;
-  undefined4 local_7c;
+  /* This whole local block was a run of individually-named scalars
+     (local_164, local_160, ... auStack_124[5], local_a4[2], ...) instead
+     of the real 4x4 (16-`undefined4`/64-byte) matrix buffers
+     FUN_0001422c/FUN_00013b8c/FUN_00014258 actually read and write --
+     same "split-symbol matrix" bug class as FUN_00014258's own pointer-
+     truncation fix (see its comment), just on the caller's stack instead
+     of a global. Every one of those calls overflowed by 20-60+ bytes
+     into whatever locals or padding happened to follow, corrupting the
+     stack canary -- latent for as long as build_euler_rotation_matrix's
+     only real caller (emit_object_billboard's animation-rotation path)
+     never had real per-object-type property data reaching it with a
+     nonzero angle; became a guaranteed `__stack_chk_fail` abort the
+     moment the DAT_00202c9X object-property fix above let that happen
+     (confirmed via ASAN + a stack-canary abort in exactly this
+     function). Restructured into four real 16-element matrix buffers
+     (one per FUN_0001422c call site: the unconditional one, then one per
+     param_2/3/4 branch), with each formerly-named scalar mapped to its
+     real row-major slot -- confirmed against FUN_0001422c's own identity
+     writes (indices 0/5/10/15, the standard 4x4 diagonal): the named
+     locals for each cluster line up exactly on a 4-wide row stride
+     (e.g. local_164/154/144 are 0x10 apart = row 0/1/2 of column 0),
+     landing the two clusters' surviving diagonal writes (auStack_124's
+     local_fc, local_a4's local_7c) on index 10 as expected. param_2's
+     and param_4's branches are dead in every real call (the only call
+     site always passes 0 for both) so their exact rotation math wasn't
+     re-derived beyond making them memory-safe. */
+  undefined4 local_164_arr [16];
+  undefined4 auStack_124 [16];
+  undefined4 local_e4_arr [16];
+  undefined4 local_a4 [16];
   undefined4 auStack_64 [16];
-  
+#define local_164 local_164_arr[0]
+#define local_160 local_164_arr[1]
+#define local_15c local_164_arr[2]
+#define local_154 local_164_arr[4]
+#define local_150 local_164_arr[5]
+#define local_14c local_164_arr[6]
+#define local_144 local_164_arr[8]
+#define local_140 local_164_arr[9]
+#define local_13c local_164_arr[10]
+#define local_110 auStack_124[5]
+#define local_10c auStack_124[6]
+#define local_100 auStack_124[9]
+#define local_fc auStack_124[10]
+#define local_e4 local_e4_arr[0]
+#define local_e0 local_e4_arr[1]
+#define local_d4 local_e4_arr[4]
+#define local_d0 local_e4_arr[5]
+#define local_9c local_a4[2]
+#define local_84 local_a4[8]
+#define local_7c local_a4[10]
+
   uVar11 = 0;
   uVar14 = 0;
   if (((param_2 == 0) && (param_3 == 0)) && (param_4 == 0)) {
     return;
   }
-  FUN_0001422c(&local_164);
+  FUN_0001422c(local_164_arr);
   uVar8 = extraout_r3;
   if (param_2 != 0) {
     FUN_0001422c(auStack_124);
@@ -12193,7 +12238,7 @@ int param_4;
     local_7c = uVar10;
   }
   if (param_4 != 0) {
-    FUN_0001422c(&local_e4);
+    FUN_0001422c(local_e4_arr);
     uVar10 = (&DAT_000d9ed8)[param_4];
     local_e0 = (&DAT_000d9930)[param_4];
     local_e4 = uVar10;
@@ -12291,6 +12336,26 @@ LAB_0001ea18:
       piVar9 = piVar9 + 3;
     } while (iVar13 < *param_1);
   }
+#undef local_164
+#undef local_160
+#undef local_15c
+#undef local_154
+#undef local_150
+#undef local_14c
+#undef local_144
+#undef local_140
+#undef local_13c
+#undef local_110
+#undef local_10c
+#undef local_100
+#undef local_fc
+#undef local_e4
+#undef local_e0
+#undef local_d4
+#undef local_d0
+#undef local_9c
+#undef local_84
+#undef local_7c
   return;
 }
 
