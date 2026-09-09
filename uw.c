@@ -8354,7 +8354,20 @@ int param_1;
   if ((uVar2 & 0xffc0) != 0) {
     do {
       if ((uint)(uVar2 >> 6) == (int)(short)uVar3) break;
-      iVar8 = resolve_object_link();
+      /* Was called with no argument (also true at ~30 other call sites
+         throughout this file) -- verified against real ARM disassembly
+         (Ghidra, UU.exe) that every one of them DOES set up a real r0
+         argument in the compiled binary; Ghidra's decompiler just failed
+         to show it, most likely because resolve_object_link's own
+         inferred prototype has 0 params. The argument is always the same
+         ushort* whose `& 0xffc0` link-bits were just tested (or, for a
+         loop's very first iteration, the enclosing function's own object-
+         pointer parameter) -- confirmed individually via disassembly for
+         a representative sample of these sites (this one, FUN_00052af4,
+         FUN_00052c5c, FUN_00043d40, FUN_000440d0, FUN_00072598,
+         FUN_0007deec, FUN_00080ed4, FUN_000181a4), and applied by the
+         same pattern to the rest. */
+      iVar8 = resolve_object_link(puVar7);
       puVar7 = (ushort *)(iVar8 + 4);
       uVar2 = *puVar7;
     } while ((uVar2 & 0xffc0) != 0);
@@ -8410,7 +8423,7 @@ int param_1;
   if (0 < sVar1) {
     do {
       if ((*puVar2 & 0xffc0) == 0) break;
-      iVar3 = resolve_object_link();
+      iVar3 = resolve_object_link(puVar2);
       iVar4 = iVar4 + 1;
       puVar2 = (ushort *)(iVar3 + 4);
     } while (iVar4 * 0x10000 >> 0x10 < (int)sVar1);
@@ -18764,7 +18777,7 @@ byte * param_11;
     uVar11 = 0;
     uVar2 = puVar7[1];
     while (((uVar2 & 0xffc0) != 0 && (uVar11 == 0))) {
-      puVar9 = (ushort *)resolve_object_link();
+      puVar9 = (ushort *)resolve_object_link(puVar7 + 1);
       iVar13 = (*puVar9 & 0x1ff) * 0xd;
       if (((&DAT_00202c93)[iVar13] & 2) != 0) {
         uVar11 = (int)(((byte)puVar9[1] & 0x7f) + (uint)(byte)(&DAT_00202c90)[iVar13]) >> 3;
@@ -18841,7 +18854,7 @@ LAB_0002c220:
   uVar14 = puVar7[1];
   uVar11 = uVar15;
   while (((uVar14 & 0xffc0) != 0 && (local_50 == 0))) {
-    puVar10 = (ushort *)resolve_object_link();
+    puVar10 = (ushort *)resolve_object_link(puVar7 + 1);
     uVar19 = (uint)*puVar10;
     iVar13 = (uVar19 & 0x1ff) * 0xd;
     if (((uVar19 & 0x1c0) != 0x140) || (((*puVar10 & 0x30) != 0 || (7 < (uVar19 & 0xf))))) {
@@ -23176,7 +23189,7 @@ ushort * param_3;
               puVar7 = (ushort *)uVar15;
               if ((((*puVar7 & 0x1c0) == 0x180) && ((*puVar7 & 0x30) == 0x20)) &&
                  ((puVar7[3] & 0xffc0) != 0)) {
-                puVar8 = (ushort *)resolve_object_link();
+                puVar8 = (ushort *)resolve_object_link(puVar7 + 3);
                 uVar9 = (uint)*puVar8;
                 if ((uVar9 & 0x1c0) == 0x180) {
                   uVar10 = uVar9 & 0x30;
@@ -25117,7 +25130,7 @@ int param_6;
       pbVar10 = (byte *)tilemap_lookup((int)cVar7,(int)cVar21);
       if (param_6 != 0) {
         for (puVar11 = (ushort *)(pbVar10 + 2); (*puVar11 & 0xffc0) != 0; puVar11 = puVar11 + 2) {
-          puVar11 = (ushort *)resolve_object_link();
+          puVar11 = (ushort *)resolve_object_link(puVar11);
           if (((&DAT_00202c90)[(*puVar11 & 0x1ff) * 0xd] != '\0') ||
              (iVar12 = object_ptr_in_arena(puVar11), iVar12 != 0)) {
             FUN_00053334(pbVar10 + 2,puVar11,0);
@@ -25378,7 +25391,7 @@ LAB_0003987c:
           uVar3 = (uint)(short)uVar10;
           if (uVar3 < uVar11) {
             for (puVar8 = puVar7 + 1; (*puVar8 & 0xffc0) != 0; puVar8 = puVar8 + 2) {
-              puVar8 = (ushort *)resolve_object_link();
+              puVar8 = (ushort *)resolve_object_link(puVar8);
               if (((*puVar8 & 0x1c0) != 0x180) && ((int)(puVar8[1] & 0x7f) < iVar12 * 8)) {
                 uVar10 = puVar8[1] & 0xff80;
                 *(byte *)(puVar8 + 1) = (byte)uVar10 | (byte)((uVar13 & 0xf) << 3);
@@ -26185,7 +26198,7 @@ void FUN_0003aea8()
     iVar3 = 0;
     do {
       if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
-        uVar1 = resolve_object_link();
+        uVar1 = resolve_object_link((ushort *)(iVar2 + 2));
         FUN_00052af4(uVar1,FUN_0003ae00);
       }
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
@@ -31317,7 +31330,7 @@ void FUN_00042c5c()
       DAT_00202994[2] = 0;
       DAT_00202994[3] = 0;
       DAT_00202976 = *(undefined2 *)(DAT_00202994 + 8);
-      iVar1 = resolve_object_link();
+      iVar1 = resolve_object_link((ushort *)(DAT_00202994 + 8));
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
       FUN_00042e30();
       FUN_00042d70();
@@ -31853,14 +31866,17 @@ undefined4 param_2;
 
 
 void FUN_00043d40(param_1,param_2)
-undefined4 param_1;
+ushort *param_1;  /* was `undefined4` -- truncated the real object-record
+                     pointer (passed straight to resolve_object_link, and
+                     to itself recursively as `puVar2+2`), latent until
+                     that call started actually using its argument */
 short * param_2;
 
 {
   ushort uVar1;
   ushort *puVar2;
   
-  puVar2 = (ushort *)resolve_object_link();
+  puVar2 = (ushort *)resolve_object_link(param_1);
   while( true ) {
     if (puVar2 == (ushort *)0x0) {
       return;
@@ -32001,7 +32017,7 @@ byte * param_2;
   undefined1 *puVar2;
   uint uVar3;
   
-  puVar1 = (undefined1 *)resolve_object_link();
+  puVar1 = (undefined1 *)resolve_object_link(param_1);
   while (puVar1 != (undefined1 *)0x0) {
     puVar2 = (undefined1 *)FUN_00044294();
     *puVar2 = *puVar1;
@@ -32145,20 +32161,24 @@ ushort * param_2;
 
 
 void FUN_000444b0(param_1)
-undefined4 param_1;
+char *param_1;  /* was `undefined4` -- truncated the real DAT_0023be64+6
+                   pointer FUN_00066c90 passes in. Pre-existing bug, but
+                   never bit until resolve_object_link (this function's
+                   own first call) started actually using its argument
+                   instead of being called with no argument at all. */
 
 {
   int iVar1;
   
-  iVar1 = resolve_object_link();
+  iVar1 = resolve_object_link(param_1);
   if (iVar1 != 0) {
     if ((*(byte *)(iVar1 + 1) & 0x80) == 0) {
       if ((*(ushort *)(iVar1 + 6) & 0xffc0) != 0) {
-        FUN_000444b0();
+        FUN_000444b0(iVar1 + 6); /* was called with no argument; confirmed via ARM disassembly, 0x44500 */
       }
     }
     if ((*(ushort *)(iVar1 + 4) & 0xffc0) != 0) {
-      FUN_000444b0();
+      FUN_000444b0(iVar1 + 4); /* was called with no argument; confirmed via ARM disassembly, 0x4451c */
     }
     object_list_unlink(param_1,iVar1);
     free_object_slot(iVar1);
@@ -33623,7 +33643,7 @@ void FUN_00046bfc()
     DAT_00088960 = 1;
     do {
       if ((*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar4] * 2) & 0xffc0) != 0) {
-        pbVar1 = (byte *)resolve_object_link();
+        pbVar1 = (byte *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar4] * 2));
         uVar3 = *pbVar1 & 0x1f;
         if ((uint)(int)(short)uVar3 < 0xf) {
           uVar2 = (pbVar1[4] & 0x30) >> 4;
@@ -34312,7 +34332,7 @@ joined_r0x00048308:
           auStack_54[iVar6] = 1;
           if (iVar6 < 0x15) {
             if ((*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2) & 0xffc0) != 0) {
-              puVar7 = (ushort *)resolve_object_link();
+              puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2));
               draw_sprite_by_id(*puVar7 & 0x1ff,(int)(short)(&DAT_00085ad8)[iVar6 * 7],
                            (int)(short)(&DAT_00085ada)[iVar6 * 7],(&DAT_00085add)[iVar6 * 0xe],
                            (&DAT_00085adc)[iVar6 * 0xe]);
@@ -34351,7 +34371,7 @@ joined_r0x00048308:
       FUN_00076e98(DAT_00202938);
       local_2c = 1;
       if ((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0) {
-        puVar7 = (ushort *)resolve_object_link();
+        puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + DAT_00085c4c * 2));
         draw_sprite_by_id(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                      DAT_00085bf5,DAT_00085bf4);
         if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
@@ -40531,7 +40551,10 @@ void FUN_00052960()
 
 
 undefined4 FUN_00052af4(param_1,param_2)
-int param_1;
+char *param_1;  /* was `int` -- truncated the real object-record pointer
+                   (dereferenced throughout this function via casts, and
+                   passed to resolve_object_link/itself), latent until
+                   those calls started actually using their arguments */
 codeval * param_2;
 
 {
@@ -40544,14 +40567,14 @@ codeval * param_2;
       return 1;
     }
     if (((*(byte *)(param_1 + 1) & 0x80) == 0) && ((*(ushort *)(param_1 + 6) & 0xffc0) != 0)) {
-      uVar2 = resolve_object_link();
+      uVar2 = resolve_object_link(param_1 + 6); /* confirmed via ARM disassembly, 0x52b54 */
       iVar1 = FUN_00052af4(uVar2,param_2);
       if (iVar1 != 0) {
         return 1;
       }
     }
     if ((*(ushort *)(param_1 + 4) & 0xffc0) == 0) break;
-    param_1 = resolve_object_link();
+    param_1 = resolve_object_link(param_1 + 4); /* confirmed via ARM disassembly, 0x52b84 */
     iVar1 = (*param_2)();
   }
   return 0;
@@ -40596,7 +40619,10 @@ ushort * param_1;
 
 undefined4 FUN_00052c5c(param_1,param_2)
 short param_1;
-int param_2;
+char *param_2;  /* was `int` -- truncated the real object-record pointer
+                   (dereferenced via casts, passed to resolve_object_link
+                   and FUN_00052bac), latent until those calls started
+                   actually using their arguments */
 
 {
   short sVar1;
@@ -40612,7 +40638,7 @@ int param_2;
     iVar2 = FUN_00052bac(param_2);
     if (iVar2 == 0) {
       if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
-        uVar3 = resolve_object_link();
+        uVar3 = resolve_object_link(param_2 + 6); /* confirmed via ARM disassembly, 0x52ce8 */
         iVar2 = FUN_00052af4(uVar3,FUN_00052bac);
         if (iVar2 != 0) {
           return 0;
@@ -40926,12 +40952,14 @@ int param_3;
 
 
 void FUN_000533e4(param_1)
-undefined4 param_1;
+char *param_1;  /* was `undefined4` -- truncated the real object-record
+                   pointer (passed straight to resolve_object_link),
+                   latent until that call started actually using it */
 
 {
   ushort *puVar1;
   
-  puVar1 = (ushort *)resolve_object_link();
+  puVar1 = (ushort *)resolve_object_link(param_1); /* confirmed via ARM disassembly, 0x533e4 */
   if (puVar1 != (ushort *)0x0) {
     if ((*puVar1 & 0x1c0) == 0x180) {
       FUN_0007e610(param_1,puVar1);
@@ -41064,13 +41092,13 @@ LAB_00053720:
   }
   else {
     DAT_002046b4 = param_1;
-    iVar3 = resolve_object_link();
+    iVar3 = resolve_object_link(param_1);
     while ((sVar2 = FUN_0005358c(), iVar4 = iVar3, puVar1 = param_1, sVar2 != (short)param_3 &&
            ((((*(byte *)(iVar3 + 1) & 0x80) != 0 || ((*(ushort *)(iVar3 + 6) & 0xffc0) == 0)) ||
             (iVar4 = FUN_00053644((ushort *)(iVar3 + 6),param_2,param_3), puVar1 = DAT_002046b4,
             iVar4 == 0))))) {
       if ((*(ushort *)(iVar3 + 4) & 0xffc0) == 0) goto LAB_00053720;
-      iVar3 = resolve_object_link();
+      iVar3 = resolve_object_link((ushort *)(iVar3 + 4));
     }
   }
   DAT_002046b4 = puVar1;
@@ -57554,7 +57582,7 @@ undefined4 param_2;
       (local_c = (ushort *)(param_1 + 6), (*local_c & 0xffc0) != 0)) &&
      (pbVar1 = (byte *)FUN_000537d0(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
     if (0x1f < (*pbVar1 & 0x30)) {
-      pbVar1 = (byte *)resolve_object_link();
+      pbVar1 = (byte *)resolve_object_link((ushort *)(pbVar1 + 6)); /* confirmed via ARM disassembly, 0x72628 */
     }
     if ((*pbVar1 & 0x3f) < 3) {
       uVar2 = FUN_00069b68(param_2,8);
@@ -61967,7 +61995,7 @@ short param_2;
     uVar6 = 0;
   }
   else {
-    iVar4 = resolve_object_link();
+    iVar4 = resolve_object_link(param_1 + 3);
     *(byte *)(param_1 + 3) = (byte)param_1[3] & 0x3f;
     *(undefined1 *)((char *)param_1 + 7) = 0;
     iVar5 = object_ptr_in_arena(param_1);
@@ -62339,7 +62367,7 @@ int param_3;
         goto LAB_00079cb8;
       }
       if (((param_2[2] & 0xffc0) == 0) ||
-         (puVar6 = (ushort *)resolve_object_link(), (*puVar6 & 0x1ff) != 0x12e)) goto LAB_00079cb8;
+         (puVar6 = (ushort *)resolve_object_link(param_2 + 2), (*puVar6 & 0x1ff) != 0x12e)) goto LAB_00079cb8;
     }
     FUN_0007b72c(param_1,puVar6,param_3);
   }
@@ -64154,7 +64182,7 @@ ushort param_4;
       }
       break;
     }
-    param_3 = (ushort *)resolve_object_link();
+    param_3 = (ushort *)resolve_object_link(param_3 + 2);
     bVar6 = (byte)*param_3;
   }
   iVar3 = resolve_object_link(param_3 + 3);
@@ -64386,7 +64414,7 @@ uint param_3;
         free_object_slot(iVar11);
       }
       if (((*param_1 & 0x8000) == 0) && ((param_1[3] & 0xffc0) != 0)) {
-        puVar9 = (undefined1 *)resolve_object_link();
+        puVar9 = (undefined1 *)resolve_object_link(param_1 + 3);
         puVar10 = (undefined1 *)alloc_object_slot(0);
         if (puVar10 != (undefined1 *)0x0) {
           *puVar10 = *puVar9;
@@ -64544,7 +64572,7 @@ LAB_0007d460:
       if ((*(ushort *)(iVar16 + 4) & 0xffc0) == 0) {
         return 2;
       }
-      uVar6 = resolve_object_link();
+      uVar6 = resolve_object_link((ushort *)(iVar16 + 4));
       iVar16 = FUN_0007cdbc(DAT_0024cff4,DAT_0024cff0,uVar6,0xffffffff);
       return iVar16;
     }
@@ -64559,7 +64587,7 @@ LAB_0007d460:
     }
   }
   if ((param_1[3] & 0xffc0) != 0) {
-    puVar12 = (ushort *)resolve_object_link();
+    puVar12 = (ushort *)resolve_object_link(param_1 + 3);
     if ((*puVar12 & 0x1c0) == 0x180) {
       if ((*puVar12 & 0x30) < 0x20) {
         uVar4 = FUN_0007d0b0(puVar12,param_2,param_3);
@@ -64576,12 +64604,15 @@ LAB_0007d460:
 
 
 void FUN_0007deec(param_1)
-undefined4 param_1;
+ushort *param_1;  /* was `undefined4` -- truncated the real object-record
+                     pointer (passed to resolve_object_link and to itself
+                     recursively as `puVar1+3`), latent until those calls
+                     started actually using their arguments */
 
 {
   ushort *puVar1;
   
-  for (puVar1 = (ushort *)resolve_object_link(); puVar1 != (ushort *)0x0;
+  for (puVar1 = (ushort *)resolve_object_link(param_1); puVar1 != (ushort *)0x0; /* confirmed via ARM disassembly, 0x7deec */
       puVar1 = (ushort *)resolve_object_link(puVar1 + 2)) {
     if (((*puVar1 & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(puVar1[3] >> 6))) {
       object_list_unlink(param_1,puVar1);
@@ -64591,7 +64622,7 @@ undefined4 param_1;
       DAT_0024cfd8 = DAT_0024cfd8 + -1;
     }
     if (((*puVar1 & 0x8000) == 0) && ((puVar1[3] & 0xffc0) != 0)) {
-      FUN_0007deec();
+      FUN_0007deec(puVar1 + 3); /* was called with no argument; confirmed via ARM disassembly, 0x7dfbc */
     }
   }
   return;
@@ -64616,7 +64647,7 @@ int param_2;
     sVar3 = DAT_0024cfd8;
     for (uVar4 = 0; (0 < sVar3 && (uVar4 < 0x1000)); uVar4 = uVar4 + 1) {
       if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
-        FUN_0007deec();
+        FUN_0007deec(iVar2 + 2); /* was called with no argument, same bug class as resolve_object_link's */
         sVar3 = DAT_0024cfd8;
       }
       iVar2 = iVar2 + 4;
@@ -65291,7 +65322,11 @@ int param_3;
 short FUN_0007ee9c(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 byte param_2;
-int param_3;
+char *param_3;  /* was `int` -- same DAT_00086df8-pointer truncation bug
+                   as its sibling FUN_0007ef78 (see that function's
+                   comment); this one is reached from the save-slot-copy
+                   path (FUN_00065d4c <- FUN_00044624) rather than
+                   FUN_00065b90's caller */
 short param_4;
 
 {
@@ -66584,7 +66619,7 @@ undefined1 param_5;
     (&DAT_0025077b)[iVar4] = (char)((uint)param_2 >> 8);
     (&DAT_0025077c)[iVar4] = param_4;
     (&DAT_0025077d)[iVar4] = param_5;
-    pbVar3 = (byte *)resolve_object_link();
+    pbVar3 = (byte *)resolve_object_link((ushort *)(&DAT_00250778 + iVar4)); /* confirmed via ARM disassembly, 0x80f50 */
     iVar4 = (*pbVar3 & 0xf) * 4;
     cVar1 = (&DAT_00250732)[iVar4];
     if (-1 < cVar1) {
