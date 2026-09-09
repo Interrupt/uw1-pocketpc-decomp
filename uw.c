@@ -2956,8 +2956,64 @@ static undefined DAT_00087038_backing[8192];
 #define DAT_00087038 DAT_00087038_backing[0]
 char s__6_Save_Game_Descriptions_0008703c[] = "\\6_Save_Game_Descriptions";
 int DAT_002046fc;
-undefined *PTR_FUN_000868e0;
-undefined *PTR_FUN_00086900;
+/* Were lone `undefined *` -- the real thing is a pair of function-pointer
+   dispatch tables for the in-game pause menu, indexed by menu "state"
+   (DAT_000868dc, 0..6): PTR_FUN_000868e0 is the no-arg "draw this state's
+   screen" table (FUN_00056cc8 calls table[state]()); PTR_FUN_00086900 is
+   the "handle a click/button-index within this state" table (FUN_00056cf8
+   calls table[state](clicked_index)). Link-time-init data the decompile
+   never populated -> clicking the top-left panel's "menu" button (which
+   calls FUN_000564f8 -> FUN_00056cc8(6), the top-level list) jumped
+   through a null pointer. Roles cross-referenced from the target
+   functions' own bodies and FUN_00056b48's state-transition targets (item
+   0->5, item1->return to game directly, item2->4, item3->3, item4->2,
+   item5->1 iff FUN_00040130 "can save", item6->0 iff FUN_000400dc "can
+   load"):
+     0  load-game slot list  (FUN_000567ec draw, shared w/ save;
+                              FUN_00056bdc click, DAT_000868dc==1 gates
+                              the save-only "extra slot" bits)
+     1  save-game slot list  (same pair as 0)
+     2  sound on/off toggle  (FUN_00056864 draw / FUN_000569c0 click)
+     3  music on/off toggle  (FUN_00056864 draw / FUN_00056a18 click)
+     4  quit-game confirm    (FUN_00056838 draw / FUN_00056c88 click)
+     5  torch brightness     (FUN_0005693c draw / FUN_00056a70 click)
+     6  top-level menu list  (FUN_000567c0 draw / FUN_00056b48 click)
+   Index 7 is never dispatched (DAT_000868dc==7 is FUN_00056724's
+   "menu closing" sentinel, checked directly rather than redrawn) but
+   both tables are sized 8 with a null-safe entry there for defense. */
+extern void FUN_000567c0(void);
+extern void FUN_000567ec(void);
+extern void FUN_00056838(void);
+extern void FUN_00056864(void);
+extern void FUN_0005693c(void);
+extern void FUN_00056bdc(int);
+extern void FUN_000569c0(int);
+extern void FUN_00056a18(int);
+extern void FUN_00056c88(int);
+extern void FUN_00056a70(int);
+extern void FUN_00056b48(int);
+static void (*const PTR_FUN_000868e0_table[8])(void) = {
+  FUN_000567ec,  /* 0: load slot list */
+  FUN_000567ec,  /* 1: save slot list */
+  FUN_00056864,  /* 2: sound toggle   */
+  FUN_00056864,  /* 3: music toggle   */
+  FUN_00056838,  /* 4: quit confirm   */
+  FUN_0005693c,  /* 5: brightness     */
+  FUN_000567c0,  /* 6: top-level list */
+  0,
+};
+#define PTR_FUN_000868e0 (PTR_FUN_000868e0_table[0])
+static void (*const PTR_FUN_00086900_table[8])(int) = {
+  FUN_00056bdc,  /* 0: load slot list */
+  FUN_00056bdc,  /* 1: save slot list */
+  FUN_000569c0,  /* 2: sound toggle   */
+  FUN_00056a18,  /* 3: music toggle   */
+  FUN_00056c88,  /* 4: quit confirm   */
+  FUN_00056a70,  /* 5: brightness     */
+  FUN_00056b48,  /* 6: top-level list */
+  0,
+};
+#define PTR_FUN_00086900 (PTR_FUN_00086900_table[0])
 undefined2 DAT_00204710;
 undefined2 DAT_0020470c;
 undefined2 DAT_00204830;
@@ -42287,6 +42343,8 @@ short param_1;
       FUN_000735fc();
       flush_dirty_rect_to_display(1);
     }
+    if (getenv("UW_DEBUG_PAUSEMENU"))
+      fprintf(stderr, "[pausemenu] loop event=0x%x\n", (int)sVar1);
     if (sVar1 < 0x8e) {
       if (sVar1 == 0x8d) {
 LAB_00056638:
@@ -42300,11 +42358,20 @@ LAB_00056638:
           iVar4 = (int)local_a;
           local_c = (short)(iVar3 + -4);
           local_a = (short)(0x76 - iVar4);
+          if (getenv("UW_DEBUG_PAUSEMENU"))
+            fprintf(stderr, "[pausemenu] click event=%d raw=(%d,%d) rel=(%d,%d)\n",
+                    (int)sVar1, iVar3, iVar4, (int)local_c, (int)local_a);
           iVar3 = (iVar3 + -4) * 0x10000 >> 0x10;
           if ((-1 < iVar3) && (iVar3 < 0x24)) {
             iVar3 = (0x76 - iVar4) * 0x10000 >> 0x10;
             if ((-1 < iVar3) && (iVar3 < 0x6d)) {
-              FUN_00056d38();
+              /* Was called with both args dropped (same missing-argument
+                 idiom as elsewhere in this file) -- FUN_00056d38 only
+                 actually uses its 2nd (Y) argument, but the sibling call
+                 site in cursor_mode_button_click passes (x,y) in this
+                 order, so match it here with the just-computed
+                 region-relative click position. */
+              FUN_00056d38(local_c, local_a);
             }
           }
         }
@@ -42707,7 +42774,11 @@ short param_1;
 
 {
   DAT_000868dc = param_1;
-  (*(code *)(&PTR_FUN_000868e0)[param_1])();
+  if (getenv("UW_DEBUG_PAUSEMENU"))
+    fprintf(stderr, "[pausemenu] FUN_00056cc8: entering state=%d\n", (int)param_1);
+  if ((uint)param_1 < 8 && PTR_FUN_000868e0_table[param_1] != 0) {
+    PTR_FUN_000868e0_table[param_1]();
+  }
   return;
 }
 
@@ -42718,7 +42789,12 @@ undefined4 param_1;
 
 {
   FUN_00057118();
-  (*(code *)(&PTR_FUN_00086900)[DAT_000868dc])(param_1);
+  if (getenv("UW_DEBUG_PAUSEMENU"))
+    fprintf(stderr, "[pausemenu] FUN_00056cf8: state=%d clicked_index=%d\n",
+            (int)DAT_000868dc, (int)param_1);
+  if ((uint)DAT_000868dc < 8 && PTR_FUN_00086900_table[DAT_000868dc] != 0) {
+    PTR_FUN_00086900_table[DAT_000868dc](param_1);
+  }
   FUN_000570b4();
   FUN_00057604(0);
   return;
