@@ -4048,16 +4048,32 @@ char *DAT_0023c3e4;
    artifact; left as-is since it's dead either way. */
 char *DAT_0023c410;
 undefined2 DAT_0023c41c;
-ushort DAT_0008763c;
+/* Sprite-list record status-word bit flags (.data ~0x87638). Ghidra
+   split these off as lone `ushort` scalars and never recovered their
+   values, so they were all 0 -- which made the whole sprite-list
+   compositor (FUN_00076508 & helpers: FUN_00076078/76194 slot alloc,
+   FUN_00076390 frame set, FUN_00075cb8 bucketing) inert: the free-slot
+   scan `(DAT_00087638 & status) == 0` always matched slot 0, and the
+   compositor's draw gate `(status & DAT_0008763c) != 0` was never true,
+   so the HUD compass + dragon.GR decorations were never drawn at all.
+   Reconstructed as 5 distinct high bits (exact original values aren't
+   recoverable -- UU.exe's .data doesn't map to these Ghidra addresses --
+   but only their distinctness and the mask complements below matter). */
+#define DAT_00087638 0x8000u   /* slot allocated / in use */
+#define DAT_0008763c 0x4000u   /* slot has a frame set -> compositor draws it */
+#define DAT_00087640 0x2000u   /* slot freshly created -> needs bg-restore setup */
+#define DAT_00087644 0x1000u   /* slot's background captured -> restore pending */
+#define DAT_00087648 0x0800u   /* alt-draw path / created while transparent-mode */
 ushort DAT_0023c400;
 short DAT_0023c3f4;
-ushort DAT_00087638;
-ushort DAT_00087640;
-ushort DAT_00087648;
-ushort DAT_0023c418;
-ushort DAT_0023c408;
-ushort DAT_00087644;
-ushort DAT_0023c3f0;
+/* AND-mask complements of the flags above -- each used once, to clear one
+   status bit (FUN_00076488 hide: clear "has frame"; compositor loop 1:
+   clear "needs restore setup" / "restore pending"). .bss, never
+   initialised in this decompile -> were 0 -> those clears wiped the
+   whole status word. */
+#define DAT_0023c418 ((ushort)~0x4000u)   /* ~DAT_0008763c */
+#define DAT_0023c408 ((ushort)~0x2000u)   /* ~DAT_00087640 */
+#define DAT_0023c3f0 ((ushort)~0x1000u)   /* ~DAT_00087644 */
 char *DAT_0023c3fc;
 undefined4 *DAT_0023c404;
 undefined2 DAT_0023c59e;
@@ -59545,7 +59561,16 @@ ushort param_1;
 {
   uint uVar1;
   ushort *puVar2;
-  int iVar3;
+  /* Was `int`, truncating `slot*0x14 + DAT_0023c3e8` -- DAT_0023c3e8 is
+     the real 64-bit sprite-list record heap block -- and every deref
+     below (`*(ushort *)(iVar3 + 2)` .. `+ 0xc`) then read a bounding box
+     out of a wild address, so the "which dirty-region buckets does this
+     sprite overlap" test in the sprite-list compositor's helper failed
+     and no dragon/compass sprite ever got queued for drawing (or, on a
+     different heap layout, got queued opaque garbage -- the "black
+     rectangle" over the HUD). Same pointer-truncation class as the rest
+     of this compositor (FUN_000762c4 / sprite_list_set_lifetime). */
+  char *iVar3;
   uint uVar4;
   ushort *puVar5;
   ushort uVar6;
@@ -59755,7 +59780,7 @@ undefined2 param_5;
     *(char *)(iVar2 + 3) = (char)((uint)param_2 >> 8);
     *(char *)(iVar2 + 5) = (char)((uint)param_3 >> 8);
     *(char *)(iVar2 + 9) = (char)((ushort)param_5 >> 8);
-    FUN_00075cb8();
+    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -59781,7 +59806,7 @@ undefined4 param_3;
     *(char *)(iVar2 + 4) = (char)param_3;
     *(char *)(iVar2 + 3) = (char)((uint)param_2 >> 8);
     *(char *)(iVar2 + 5) = (char)((uint)param_3 >> 8);
-    FUN_00075cb8();
+    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -59808,7 +59833,7 @@ undefined4 param_2;
     uVar1 = *puVar3 | DAT_0008763c;
     *(char *)puVar3 = (char)uVar1;
     *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
-    FUN_00075cb8();
+    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar2 = 0;
   }
   else {
@@ -59835,7 +59860,7 @@ undefined4 param_2;
     uVar1 = *puVar3 | DAT_00087648 | DAT_0008763c;
     *(char *)puVar3 = (char)uVar1;
     *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
-    FUN_00075cb8();
+    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar2 = 0;
   }
   else {
@@ -59939,6 +59964,17 @@ void FUN_00076508()
             puVar4 = (ushort *)((uint)*puVar7 * 0x14 + DAT_0023c3e8);
             uVar1 = *puVar4;
             if ((uVar1 & DAT_0008763c) != 0) {
+              /* UW_DIAG_SPRLIST: one line per sprite the HUD sprite-list
+                 compositor draws -- id / x / y / w / h -- handy for
+                 filling in the still-zero compass/dragon layout tables
+                 (see the FIXME[hud-*-layout] blocks). */
+              if (getenv("UW_DIAG_SPRLIST"))
+                fprintf(stderr, "[sprlist] slot=%u id=0x%x x=%d y=%d w=%d h=%d path=%s\n",
+                        (unsigned)*puVar7, (unsigned)(short)puVar4[7],
+                        (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
+                        (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
+                        (int)(ushort)puVar4[3], (int)(ushort)puVar4[4],
+                        puVar4[5] == 0 ? "draw_sprite_by_id" : "FUN_00040be0");
               if (puVar4[5] == 0) {
                 DAT_00088960 = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
@@ -60006,7 +60042,7 @@ undefined4 param_2;
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
     *(char *)(iVar2 + 10) = (char)param_2;
     *(char *)(iVar2 + 0xb) = (char)((uint)param_2 >> 8);
-    FUN_00075cb8();
+    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
