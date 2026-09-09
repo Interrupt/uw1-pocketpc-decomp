@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <math.h>
+#include <stdint.h>
+#include <sys/stat.h>
 #include <SDL.h>
 
 void uw_pump_events(void);
@@ -122,14 +124,54 @@ long Ordinal_164()
     return 0;
 }
 
-long Ordinal_165()
+/* uw.c is riddled with call sites that pass a real pointer through an
+ * `undefined4`/`int`-typed local (this file's single most common bug
+ * class -- truncates to 32 bits on this 64-bit build), and both of these
+ * ordinals used to be no-op stubs that never dereferenced their
+ * arguments, so any such truncation feeding them was harmless/dormant.
+ * Now that they actually touch the string, guard against the obviously-
+ * truncated case: a real pointer on this platform is never this small. */
+static int looks_like_real_pointer(const void *p)
 {
-    return 0;
+    return (uintptr_t)p >= 0x10000;
 }
 
-long Ordinal_167()
+/* CreateDirectory-shaped. Its one real call site (FUN_0006c560, the
+ * save-slot-directory creator -- was calling this with the argument
+ * dropped entirely) treats "the directory is there" as success whether
+ * or not it already existed, so uw_ensure_directory's EEXIST-tolerant
+ * mkdir matches the intent better than a strict CreateDirectory would. */
+long Ordinal_165(void *path_ptr)
 {
-    return 0;
+    if (!looks_like_real_pointer(path_ptr)) return 0;
+    return uw_ensure_directory((const char *)path_ptr) ? 1 : 0;
+}
+
+/* FindFirstFile-shaped. Every known caller only ever checks the return
+ * value against -1 (not found) and, for the one caller that cares
+ * (FUN_0006c560), reads back dwFileAttributes (the struct's first field)
+ * to test FILE_ATTRIBUTE_DIRECTORY (0x10) -- none read the filename
+ * fields a real WIN32_FIND_DATA also carries, so implemented against
+ * stat() rather than a full opendir/readdir enumeration. Treats its
+ * first argument as a plain path string (this port's Ordinal_196/197
+ * "wide" conversions are ANSI passthroughs -- see their comments) and
+ * strips a trailing wildcard component (e.g. "\*.*", appended by
+ * FUN_0006c560 before calling this) since stat() doesn't understand
+ * wildcards. */
+long Ordinal_167(void *path_ptr, unsigned int *out_attrs)
+{
+    const char *win_path = (const char *)path_ptr;
+    if (!win_path || !looks_like_real_pointer(path_ptr)) return -1;
+    char pattern[1024];
+    snprintf(pattern, sizeof(pattern), "%s", win_path);
+    char *slash = strrchr(pattern, '\\');
+    if (slash && strchr(slash, '*')) *slash = '\0';
+    char real[4096];
+    if (!uw_resolve_win_path(pattern, real, sizeof(real))) return -1;
+    struct stat st;
+    if (stat(real, &st) != 0) return -1;
+    if (out_attrs) out_attrs[0] = S_ISDIR(st.st_mode) ? 0x10u : 0u;
+    return 1;
 }
 
 long Ordinal_168()

@@ -2003,8 +2003,19 @@ char s_Not_enough_disk_space_for_save_g_00085744[] = "Not_enough_disk_space_for_
 char s__DATA_COPYRIGHT_BYT_0008576c[] = "\\DATA\\COPYRIGHT.BYT";
 char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
 /* Not `static` -- also used by game.c (app_main_loop, main_menu_loop);
-   see the extern declaration and DAT_000857a0 macro alias in uw.h. */
-undefined1 DAT_000857a0_backing[32768];
+   see the extern declaration and DAT_000857a0 macro alias in uw.h.
+   Was zero-initialized -- an "unrecoverable string constant" Ghidra never
+   populated (same class of bug as the CHRBTNS/opbtn resource-name fixes),
+   but unlike those it has NO writer anywhere in uw.c or game.c either, so
+   it's a real compile-time constant, not a runtime-built buffer. Every
+   reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
+   bglobals.dat, desc) alongside already-recovered sibling constants that
+   spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
+   and FUN_0006bde0/FUN_0006c0c0 both search the built path for a literal
+   '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
+   supplies one. Recovered as "\SAVE0"; kept the oversized backing array
+   since nothing else relies on its exact size. */
+undefined1 DAT_000857a0_backing[32768] = "\\SAVE0";
 undefined2 DAT_00201b6c;
 undefined2 DAT_00201b60;
 undefined2 DAT_00201b64;
@@ -2568,7 +2579,14 @@ undefined1 *DAT_002028c4;
 static undefined2 DAT_002028cc_backing[8192];
 #define DAT_002028cc DAT_002028cc_backing[0]
 char *DAT_002028c8;
-char s_player_dat_00085a74[] = "player.dat";
+/* Was missing its leading backslash -- both call sites append this
+   straight onto a directory path built with no trailing separator (e.g.
+   FUN_00044624 builds "<root>\SAVE0" then appends this), so the file name
+   ran into the directory name with nothing between them
+   ("...\SAVE0player.dat"). A leading "\\" here is harmless even for a
+   caller whose own prefix already ends in one (resolve_path collapses
+   repeated separators). */
+char s_player_dat_00085a74[] = "\\player.dat";
 int DAT_002028d0;
 char s_Not_a_spell_00085a80[] = "Not_a_spell";
 byte DAT_002028d4;
@@ -3759,14 +3777,24 @@ unsigned short u_UUWI_00087014[] = u"UUWI";
 static undefined DAT_0023bf78_backing[8192];
 #define DAT_0023bf78 DAT_0023bf78_backing[0]
 char s__not_used_yet__00087020[] = "<not_used_yet>";
-static undefined DAT_00087030_backing[8192];
+/* Was zero-initialized -- see DAT_000857a0's comment above. FUN_0006bde0
+   appends this to DAT_000857a0 ("\SAVE0") to build each save-slot probe
+   path, then substitutes the '0' with '1'..'4'; the already-recovered
+   s__SAVE0_desc_00087078 == "\SAVE0\desc" spells out exactly what that
+   concatenation should produce, confirming this suffix is "\desc". */
+static undefined DAT_00087030_backing[8192] = "\\desc";
 #define DAT_00087030 DAT_00087030_backing[0]
 char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
 char s_Please_enter_a_Save_Game_file_an_00087094[] = "Please_enter_a_Save_Game_file_an";
 char s__SAVE0_desc_00087078[] = "\\SAVE0\\desc";
 static undefined DAT_00087084_backing[8192];
 #define DAT_00087084 DAT_00087084_backing[0]
-static undefined DAT_000870c8_backing[8192];
+/* Was zero-initialized -- see DAT_000857a0's comment above. FUN_0006c560
+   appends this to a directory path before scanning it with the
+   Ordinal_167/181 FindFirstFile/FindNextFile-shaped ordinals, matching
+   the universal Win32 "\*.*" wildcard idiom for "list everything in this
+   directory". */
+static undefined DAT_000870c8_backing[8192] = "\\*.*";
 #define DAT_000870c8 DAT_000870c8_backing[0]
 static undefined DAT_000870cc_backing[8192];
 #define DAT_000870cc DAT_000870cc_backing[0]
@@ -32175,7 +32203,12 @@ undefined1 * param_1;
 
 
 undefined4 FUN_00044624(param_1)
-int param_1;
+char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
+                   FUN_0006c0c0 passes in (the save-slot-copy path), which
+                   only started actually running once the save-directory-
+                   creation fixes above stopped it from bailing out
+                   earlier. Every other call site passes 0/NULL, so this
+                   was latent until now. */
 
 {
   char stack0xffdc3234_buf [256];
@@ -53824,7 +53857,20 @@ undefined4 param_2;
       iVar2 = 5;
     }
   }
-  else if ((1 << ((int)(short)param_2 - 1U & 0xff) & (int)local_b4[0]) == 0) {
+  else if (false) {
+    /* Was `(1 << (param_2-1) & local_b4[0]) == 0` -- local_b4[0] is the
+       bitmask FUN_0006bde0 just built of which of the 4 numbered slots
+       already HAVE a save (bit set = a real "\SAVEn\desc" was found on
+       disk), so this required the chosen slot to already be occupied
+       before allowing a save into it -- meaning a brand new slot (the
+       common case: no prior saves exist at all, so this bitmask is all
+       zero) could never be saved to. The LOAD branch just above has no
+       equivalent gate (it tries FUN_0006c264 unconditionally and lets it
+       fail for an empty slot), so this looks like an inverted/leftover
+       guard rather than an intentional "can't create new saves" limit.
+       Disabled so save always proceeds; kept as dead code (rather than
+       deleted) in case real disassembly turns up a legitimate reason for
+       it (e.g. a distinct "overwrite?" confirmation this decompile lost). */
     iVar2 = 1;
   }
   else {
@@ -53877,6 +53923,20 @@ char param_1;
     *wptr_50330 = cVar1; wptr_50330 = wptr_50330 + 1;
     pcVar6 = pcVar6 + 1;
   } while (cVar1 != '\0');
+  /* Ghidra never emitted the copy of DAT_000857a0 into acStack_650 before
+     searching it below -- acStack_650 was read while still uninitialized
+     stack garbage, so the '0' substitution below found a random byte (or
+     nothing) instead of the real "SAVE0" digit. Same idea as the copy
+     just above into acStack_85df0 (which this function doesn't otherwise
+     use for the digit search), mirrored here to match FUN_0006bde0's
+     working copy-then-strchr pattern. */
+  pcVar6 = &DAT_000857a0;
+  wptr_50330 = acStack_650;
+  do {
+    cVar1 = *pcVar6;
+    *wptr_50330 = cVar1; wptr_50330 = wptr_50330 + 1;
+    pcVar6 = pcVar6 + 1;
+  } while (cVar1 != '\0');
   pcVar6 = (char *)Ordinal_1064(acStack_650,0x30);
   pcVar5 = &DAT_0023cca8;
     stack0xffdc2e30_ptr = stack0xffdc2e30_buf;
@@ -53897,6 +53957,19 @@ char param_1;
   Ordinal_1063(acStack_630,&DAT_000857a0);
   uVar3 = FUN_0002295c(acStack_630);
   Ordinal_61(auStack_420,uVar3);
+  /* Was `stack0xffdc2e30_ptr = stack0xffdc2e30_buf;` above -- a stack
+     slot Ghidra split into two names (same bug class as the acStack_650
+     fix above), so this copy of DAT_0023cca8 landed in a buffer
+     (stack0xffdc2e30_buf) that acStack_528 below never reads, leaving
+     acStack_528 uninitialized when the strcat below appended to it.
+     Point the copy at acStack_528 directly, matching how the sibling
+     acStack_630 copy a few lines up already does this correctly. That
+     makes acStack_630/auStack_420 (unsubstituted "\SAVE0") the copy
+     SOURCE and acStack_528/auStack_218 (digit-substituted "\SAVE<n>")
+     the copy DESTINATION for FUN_0006c670 below -- i.e. "Save Game"
+     snapshot-copies the live SAVE0 session into the chosen numbered
+     slot. */
+  stack0xffdc2e30_ptr = acStack_528;
   do {
     cVar1 = *pcVar5;
     *stack0xffdc2e30_ptr = cVar1; stack0xffdc2e30_ptr = stack0xffdc2e30_ptr + 1;
@@ -54053,7 +54126,9 @@ char * param_1;
   char cVar1;
   short sVar2;
   int iVar3;
-  undefined4 uVar4;
+  char *uVar4;  /* was undefined4 -- truncated the real FUN_0002295c()
+                   pointer to 32 bits, which Ordinal_167 now actually
+                   dereferences (used to be a harmless no-op stub) */
   int iVar5;
   char *pcVar6;
   int iVar7;
@@ -54063,7 +54138,7 @@ char * param_1;
   char acStack_348 [264];
   int local_240 [10];
   undefined1 auStack_218 [520];
-  
+
   bVar9 = true;
   iVar3 = -(int)param_1;
   do {
@@ -54084,22 +54159,23 @@ char * param_1;
   bVar9 = false;
 LAB_0006c5f8:
   if (bVar9) {
-    do {
-      pcVar6 = (char *)FUN_00022998(auStack_218);
-      pcVar8 = acStack_348 + iVar3;
-      do {
-        cVar1 = *pcVar6;
-        pcVar6 = pcVar6 + 1;
-        *pcVar8 = cVar1;
-        pcVar8 = pcVar8 + 1;
-      } while (cVar1 != '\0');
-      FUN_0002295c(acStack_348);
-      iVar7 = Ordinal_165();
-      if (iVar7 == 0) {
-        return 0;
-      }
-      sVar2 = Ordinal_181(iVar5,local_240);
-    } while (sVar2 != 0);
+    /* Was a `do { ... } while (sVar2 != 0)` loop rebuilding the path from
+       `FUN_00022998(auStack_218)` each pass -- auStack_218 is never
+       written anywhere in this function, so that read uninitialized
+       stack memory as a string, and the loop's own exit condition
+       (`Ordinal_181` against `iVar5`, a handle already exhausted by the
+       while-loop above) meant it could only ever run once anyway even if
+       that read were meaningful. Simplified to the one real step this
+       was trying to do: undo the "\*.*" suffix appended above (acStack_348
+       was NUL-terminated at its original length `iVar3` before the
+       suffix) and create that plain directory. Also fixes `Ordinal_165()`
+       being called with no arguments -- every other CreateDirectory-shaped
+       call in this file takes the path it's creating. */
+    acStack_348[iVar3] = '\0';
+    iVar7 = Ordinal_165(acStack_348);
+    if (iVar7 == 0) {
+      return 0;
+    }
   }
   return 1;
 }

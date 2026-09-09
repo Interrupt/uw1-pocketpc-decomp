@@ -248,3 +248,18 @@ int uw_file_copy(const char *win_src, const char *win_dst) {
     DEBUG(ERR, "[fileio] copy %s: %s -> %s\n", ok ? "ok" : "FAILED", src, dst);
     return ok;
 }
+
+int uw_resolve_win_path(const char *win_path, char *out, unsigned int out_sz) {
+    return resolve_path(win_path, out, out_sz);
+}
+
+int uw_ensure_directory(const char *win_path) {
+    char real[4096];
+    if (!resolve_path(win_path, real, sizeof(real))) return 0;
+    if (mkdir(real, 0755) == 0 || errno == EEXIST) {
+        DEBUG(INFO, "[fileio] mkdir ok: %s -> %s\n", win_path, real);
+        return 1;
+    }
+    DEBUG(ERR, "[fileio] mkdir FAILED: %s -> %s (errno %d)\n", win_path, real, errno);
+    return 0;
+}

@@ -27,4 +27,16 @@ void *uw_file_fopen(const char *win_path, const char *mode);
  * CopyFileW-shaped coredll ordinal). Returns 1 on success, 0 on failure. */
 int uw_file_copy(const char *win_src, const char *win_dst);
 
+/* Translate a Windows-style game path ("\SAVE1\desc") into a real path
+ * under UW_DATA_DIR (see resolve_path()'s comment in file_io.c). Returns
+ * 1 on success (out filled), 0 if UW_DATA_DIR isn't set. Exposed for the
+ * CreateDirectory/FindFirstFile-shaped ordinals in ordinal_stubs.c, which
+ * need the same path resolution as the CreateFile family. */
+int uw_resolve_win_path(const char *win_path, char *out, unsigned int out_sz);
+
+/* mkdir -p-ish: create the directory at this Windows-style game path if it
+ * doesn't already exist. Returns 1 on success (created or already there),
+ * 0 on a real failure. Backs the CreateDirectory-shaped coredll ordinal. */
+int uw_ensure_directory(const char *win_path);
+
 #endif
