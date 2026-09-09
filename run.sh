@@ -11,4 +11,4 @@ clang -std=gnu11 -g -O0 \
   -o build/uw_dbg uw.c graphics.c game.c chargen.c main.c gx_stub.c ordinal_stubs.c file_io.c demomode.c debug.c \
   $(sdl2-config --libs)
 
-UW_DATA_DIR="$(pwd)/data" ./build/uw_dbg
+UW_DATA_DIR="$(pwd)/data" UW_DEBUG_LEVEL=INFO ./build/uw_dbg

@@ -3762,20 +3762,20 @@ char *DAT_0023cca4;
    into DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
    0xd x 10 (FUN_0006cca8:54161); animation frame set from DAT_000871d4
    (54190). */
-static short DAT_00087170_arr[2] = { 5, 300 };
+static short DAT_00087170_arr[2] = { 0, 0};
 #define DAT_00087170 DAT_00087170_arr[0]
 /* FIXME[hud-dragon-layout]: .data 0x87174 -- X of the dragon BODY
    sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076194(2,0x25,0x17)
    into DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
    0x25 x 0x17 (FUN_0006cca8:54166); frame from DAT_000871d8 (54191). */
-static short DAT_00087174_arr[2] = { 5, 300 };
+static short DAT_00087174_arr[2] = { 0, 0};
 #define DAT_00087174 DAT_00087174_arr[0]
 /* FIXME[hud-dragon-layout]: .data 0x871b4 -- X of the dragon WING/TAIL
    sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076078(0) into
    DAT_0023c238[side], placed at ((&DAT_000871b4)[side], 0x42), size
    0xc x 0x1c (FUN_0006cca8:54169); frame is a literal 0x207b (left) /
    0x208d (right) at 54196, NOT from a table. */
-static short DAT_000871b4_arr[2] = { 5, 300 };
+static short DAT_000871b4_arr[2] = { 0, 0};
 #define DAT_000871b4 DAT_000871b4_arr[0]
 
 /* FIXME[hud-dragon-frames]: .data 0x871d4 -- initial dragons.GR frame id
@@ -3784,14 +3784,14 @@ static short DAT_000871b4_arr[2] = { 5, 300 };
    DAT_0023c230[side] (FUN_0006cca8:54190). dragons.GR ids are in the
    0x20xx range (cf. the wing's literal 0x207b/0x208d); reads 0 now. Fill
    with the real left/right head-frame ids. */
-static unsigned short DAT_000871d4_arr[2] = { 1, 19 };
+static unsigned short DAT_000871d4_arr[2] = { 0, 0 };
 #define DAT_000871d4 DAT_000871d4_arr[0]
 /* FIXME[hud-dragon-frames]: .data 0x871d8 -- initial dragons.GR frame id
    for the dragon BODY sub-sprite, [0]=left [1]=right. Read as
    `(&DAT_000871d8)[side]`, frame arg to FUN_00076390 for DAT_0023c234[side]
    (FUN_0006cca8:54191, also FUN_0006dbe4:54753). Fill with the real
    left/right body-frame ids. */
-static unsigned short DAT_000871d8_arr[2] = { 14, 32 };
+static unsigned short DAT_000871d8_arr[2] = { 0, 0 };
 #define DAT_000871d8 DAT_000871d8_arr[0]
 /* HUD-panel/tab dispatch table (13 entries), read as
    `(&PTR_FUN_00087220)[index]` at 4 call sites (DAT_0023c1d4/DAT_0023c134
@@ -54212,7 +54212,9 @@ void FUN_0006cca8()
   undefined4 uVar1;
   int iVar2;
   int iVar3;
-  
+
+  DEBUG(INFO, "[hud] Setting up hud graphics?\n");
+
   if (DAT_0023c23c == 0) {
     iVar3 = 0;
     do {
