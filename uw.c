@@ -29677,13 +29677,28 @@ uint param_2;
   int resolved;
 
   (void)param_2;
-  resolved = FUN_00040aa8(param_1);
+  if (param_1 < 0) {
+    /* Escape hatch: a negative param_1 names an ABSOLUTE frame directly
+       (-param_1), bypassing FUN_00040aa8's id-range resolution entirely.
+       Needed for TMOBJ signs (emit_tile_objects's class-2 branch):
+       FUN_00040aa8's ">= 0x2000 -> DAT_00202738 + id - 0x2000" TMOBJ
+       convention assumes DAT_00202738 is TMOBJ's own starting base, but
+       it's actually snapshotted right AFTER TMOBJ's own
+       FUN_00041910(s_tmobj) call finishes -- confirmed by instrumenting
+       the loader directly (DAT_00202744 went 643 -> 681 across that one
+       call, so TMOBJ's real 38 frames are absolute 643-680, and
+       DAT_00202738=681 is the NEXT resource's base). No non-negative
+       encoding through FUN_00040aa8's existing branches can reach frames
+       *before* DAT_00202738, so bypass it here instead of reworking the
+       shared id convention every other caller (OBJECTS/ANIMO ids) relies
+       on. */
+    resolved = -(int)param_1;
+  } else {
+    resolved = FUN_00040aa8(param_1);
+  }
   pcVar3 = (char *)FUN_000408fc(resolved);
   bVar1 = pcVar3[1];
   bVar2 = pcVar3[2];
-  if (getenv("UW_DEBUG_OBJPOS") && param_1 >= 0x2000)
-    fprintf(stderr, "[tmobjtex] requested_id=0x%x resolved_frame=%d entry_type=%d w=%d h=%d\n",
-            (int)(unsigned short)param_1, resolved, (int)(signed char)*pcVar3, (int)bVar1, (int)bVar2);
   if (*pcVar3 == '\x04') {
     pcVar3 = pcVar3 + 5;
   }
@@ -30730,6 +30745,13 @@ undefined4 FUN_00041aac()
     uVar11 = FUN_00041910(s_3dwin_00085a14);
     DAT_00202734 = DAT_00202744;
     uVar12 = FUN_00041990(s_tmflat_00085a0c,0x170,0x10);
+    /* DAT_00202738 is snapshotted AFTER this call, i.e. it's the base for
+       whatever loads NEXT, not TMOBJ's own base -- confirmed by
+       instrumenting this exact spot (DAT_00202744 went 643 -> 681 across
+       the FUN_00041910 call below), so TMOBJ's real 38 frames are
+       absolute indices 643-680. See emit_tile_objects's class-2 sign
+       branch and FUN_00040770's negative-param_1 comment for where this
+       matters. */
     uVar13 = FUN_00041910(s_tmobj_00085a04);
     DAT_00202738 = DAT_00202744;
     uVar14 = FUN_000419c8(&DAT_000859fc);
@@ -49228,28 +49250,39 @@ LAB_00061d34:
        "orphaned data table" class as DAT_00086c08/09/0b, the PTR_FUN_
        dispatch tables, etc. fixed elsewhere this session) -- it's always
        all-zero, so every sign/TMOBJ variant below was resolving to frame 0
-       regardless of `iVar17`. Real per-variant frame numbers aren't
-       recoverable from the binary (this is missing DATA, not a dropped
-       argument/call -- no amount of disassembly recovers content that was
-       never in this decompile's static initializers).
-       An identity mapping (slot i -> TMOBJ frame i) seemed like the
-       obvious default (matching FUN_00040aa8's own "id IS the frame"
-       fallback for OBJECTS.GR), but empirically TMOBJ.GR's frame table
-       (checked via UW_DEBUG_OBJPOS's [tmobjscan] dump, DAT_00202738-based)
-       is EMPTY for frames 0-37 -- real, non-degenerate (nonzero w/h)
-       content only starts at relative frame 38, running through ~170.
-       Since `iVar17` here is hard-capped to 0-31 by the bounds check right
-       below (code-side constant, not data-driven), an identity mapping can
-       *never* reach real content regardless of which 0-31 value it picks.
-       Offset into the known-populated block instead so every variant at
-       least shows a real graphic (still not the correct PER-VARIANT one --
-       that mapping is genuinely lost data -- but no longer blank). */
+       regardless of `iVar17`. Real per-variant frame numbers for every
+       possible sign sub-type aren't recoverable from the binary (missing
+       DATA, not a dropped argument/call), BUT the user identified via
+       direct inspection that TMOBJ.GR itself only has 38 real entries
+       total, with entries 25-28 (zero-based) being actual "message/
+       plaque" graphics -- confirmed by instrumenting the resource loader
+       directly (DAT_00202744 went 643 -> 681 across TMOBJ's own
+       FUN_00041910 call, so TMOBJ's 38 real frames are absolute indices
+       643-680; entries 25-28 = absolute 668-671, dimensions 16x16/16x16/
+       16x16/16x32 -- plausible plaque/rune-tablet graphics, distinct from
+       the small flame-flicker-shaped frames earlier in the file and the
+       larger multi-purpose icons after it). Cycle every sign sub-type
+       through these 4 real message frames instead of one arbitrary
+       constant -- still not a true per-instance mapping (that data is
+       genuinely gone), but now always a real message graphic rather
+       than a guess landing outside TMOBJ.GR's actual 38-entry range
+       entirely (which is what the previous "38+i" default did --
+       DAT_00202738 is the NEXT resource's base, not TMOBJ's own, so
+       that default always missed TMOBJ.GR into whatever loads after
+       it). */
     { static int _tmobj_ids_inited = 0;
       if (!_tmobj_ids_inited) {
         _tmobj_ids_inited = 1;
         int _i;
+        /* Fixed to TMOBJ.GR entry 25 (absolute frame 643+25=668) for
+           every variant -- was cycling through entries 25-28 (668-671)
+           by sign sub-type, but confirmed live in-game this picked
+           entry 27 (670) for the one visible sign, and per user
+           feedback that's off by (at least) one from the right one.
+           Single fixed choice until/unless a real per-variant mapping
+           is found. */
         for (_i = 0; _i < 0x20; _i++) {
-          *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)(38 + _i);
+          *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)668;
         }
       }
     }
@@ -49260,34 +49293,28 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    /* STEP 1 (sprite fixup): this used to call
-       emit_object_billboard(*(ushort*)(&DAT_00086c80+iVar17*2) & 0xff, ...),
-       feeding a real TMOBJ.GR frame index into emit_object_billboard as if
-       it were a slot in DAT_00086c08 -- a small (~64-entry) curated
-       billboard catalogue meant for a fixed set of hand-picked effects
-       (thrown weapons, muzzle flashes, etc; see its other callers' literal
-       0x14/0x16/0xc slot ids), not an arbitrary data-driven frame number.
-       That's a completely unrelated graphic, not merely "billboard instead
-       of decal".
+    /* This used to call emit_object_billboard(*(ushort*)(&DAT_00086c80+
+       iVar17*2) & 0xff, ...), feeding a TMOBJ.GR frame index into
+       emit_object_billboard as if it were a slot in DAT_00086c08 -- a
+       small (~64-entry) curated billboard catalogue meant for a fixed
+       set of hand-picked effects (thrown weapons, muzzle flashes, etc;
+       see its other callers' literal 0x14/0x16/0xc slot ids), not an
+       arbitrary data-driven frame number. That's a completely unrelated
+       graphic, not merely "billboard instead of decal".
        DAT_00202c9a's own game data puts wall signs/plaques (e.g. real
-       object type 0x166) in this exact (class 2, id&0x30 != 0) branch --
-       DAT_00086c80[iVar17] is genuinely a per-sign-variant TMOBJ.GR frame
-       number, resolved through the same `0x2000 + frame` -> FUN_00040aa8
-       -> DAT_00202738 (TMOBJ's real load-time base index) convention every
-       other TMOBJ/ANIMO/OBJECTS reference in this file uses. Route it
-       through the same real, working sprite-decode + mesh-quad path class
-       0 uses (proven correct for the sack etc. this session) instead of
-       emit_object_billboard, by overriding uVar27 to the resolved TMOBJ id
-       and jumping into that code directly -- it doesn't care whether the
-       id names an OBJECTS or TMOBJ frame, FUN_00040770/FUN_00040aa8
-       already resolve either.
+       object type 0x166) in this exact (class 2, id&0x30 != 0) branch.
+       Route the real absolute TMOBJ frame through FUN_00040770's
+       negative-param_1 "direct absolute frame" escape hatch (see its own
+       comment -- FUN_00040aa8's normal id-range convention can't reach
+       frames before DAT_00202738 at all) into the same real, working
+       sprite-decode + mesh-quad path class 0 uses (proven correct for
+       the sack etc. this session) instead of emit_object_billboard, by
+       overriding uVar27 and jumping into that code directly.
        This still projects as a camera-facing quad rather than flush
        against the wall face (the real fix for that -- projecting it like
        a wall polygon instead -- is a separate, larger follow-up); this
-       step only fixes it showing the actual sign graphic instead of
-       whatever unrelated billboard-catalogue entry the old index
-       collided with. */
-    uVar27 = 0x2000 + (uint)*(ushort *)(&DAT_00086c80 + iVar17 * 2);
+       fixes which graphic shows, not its projection. */
+    uVar27 = (uint)(ushort)(-(short)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
     goto LAB_emit_mesh_sprite_quad;
   }
   if (bVar13 != 3) {
