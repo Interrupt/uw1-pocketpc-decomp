@@ -27425,6 +27425,10 @@ short param_1;
   undefined1 local_33;
   undefined2 local_32;
   
+  if (getenv("UW_DEBUG_STEPHEIGHT"))
+    fprintf(stderr, "[bdm-entry] param_1=%d DAT_00204890=%d DAT_00204894=%d DAT_00085890=%d z=%d guard=%d\n",
+            (int)param_1, (int)DAT_00204890, (int)DAT_00204894, (int)DAT_00085890, (int)DAT_00204884,
+            (DAT_00204890 == 0) && (DAT_00204894 < DAT_00085890));
   if ((DAT_00204890 == 0) && (DAT_00204894 < DAT_00085890)) {
     uVar10 = 0;
     if (param_1 == -2) {
@@ -27484,6 +27488,10 @@ LAB_0003c940:
       *(char *)(DAT_0023be64 + 2) = (char)uVar3;
       *(byte *)(DAT_0023be64 + 3) =
            (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 10) >> 8);
+      if (getenv("UW_DEBUG_STEPHEIGHT"))
+        fprintf(stderr, "[stepsnap] uVar10=%u uVar5=%u cur_z=%d DAT_00202c30=%d snap=%d\n",
+                uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,
+                (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)));
       if (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)) {
         uVar1 = *(undefined2 *)(DAT_0023be64 + 2);
         bVar2 = (byte)uVar1;
@@ -27583,6 +27591,9 @@ LAB_0003c920:
 LAB_0003cdf8:
     uVar4 = 0;
   }
+  if (getenv("UW_DEBUG_STEPHEIGHT"))
+    fprintf(stderr, "[bdm-exit] moved=%d z=%d DAT_00204890=%d bea8=%d be98=%d\n",
+            (int)uVar4, (int)DAT_00204884, (int)DAT_00204890, (int)DAT_0023bea8, (int)DAT_0023be98);
   return uVar4;
 }
 
@@ -40539,6 +40550,11 @@ byte param_7;
       if ((int)(uVar8 + (int)(short)DAT_00202c6c[2]) < (int)(uint)bVar1) {
         bVar1 = *(byte *)(DAT_00202c6c + 8);
       }
+      if (getenv("UW_DEBUG_STEPHEIGHT"))
+        fprintf(stderr, "[stepheight] uVar8=%u c6c2=%d c6c8=%d c6c11=%d c6c6=%d c6c7=%d -> DAT_00202c30=%d cur_z=%d\n",
+                uVar8, (int)(short)DAT_00202c6c[2], (int)*(byte *)(DAT_00202c6c + 8),
+                (int)*(byte *)((char *)DAT_00202c6c + 0x11), (int)DAT_00202c6c[6], (int)DAT_00202c6c[7],
+                (int)bVar1, (int)DAT_00204884);
       DAT_00202c30 = (ushort)bVar1;
       uVar5 = (uint)*(byte *)(DAT_00202c6c + 4);
       if ((uint)(int)(short)(ushort)*(byte *)(DAT_00202c6c + 4) < uVar8) {
@@ -52674,6 +52690,27 @@ undefined4 param_1;
       uVar3 = (short)uVar3 >> 1;
     }
     movement_tick(0x40,uVar3,1);
+    /* movement_tick can come out of that one call with DAT_0023bea8=1 (a
+       "climbing a step" eye-height bob in progress -- see
+       FUN_00069470/sync_camera_from_player's own comment on
+       DAT_0023bea8/be98) if DAT_0023bf1c happened to read as one of the
+       climb-triggering values on this tick. For continuous analog
+       movement (holding a movement letter) that's fine: movement_tick
+       runs again every subsequent tick and naturally settles it back to
+       0 as the climb finishes. A discrete SHIFT+<dir> step calls
+       movement_tick exactly this one time then stops -- nothing ever
+       ticks the bob back down again, so the camera keeps rendering
+       DAT_00204884 + 0xa4 + that stale delta forever after, even though
+       DAT_00204884 (the real height) is already correct. Confirmed live
+       and via a direct before/after screenshot comparison: standing
+       still (bea8=0) shows a normal floor-level view; after a few
+       SHIFT+W steps (bea8 stuck at 1) the exact same spot renders as if
+       the camera were pressed up near the ceiling -- matching the
+       reported "shift+w puts you at the ceiling a lot, plain w
+       doesn't". Clear it here so a discrete step never leaves a stale
+       bob applied once it's done. */
+    DAT_0023bea8 = 0;
+    DAT_0023be98 = 0;
     FUN_00049924(10);
   }
   do {
@@ -53057,6 +53094,10 @@ void FUN_00069470()
     if (DAT_0023bea8 == 0) {
       return;
     }
+    if (getenv("UW_DEBUG_EYEHEIGHT"))
+      fprintf(stderr, "[eyeheight] bea8=%d be98=%d base=%d -> %d\n",
+              (int)DAT_0023bea8, (int)DAT_0023be98, (int)*(short *)(DAT_00086e6c + 0xe),
+              (int)(*(short *)(DAT_00086e6c + 0xe) + DAT_0023be98));
     *(short *)(DAT_00086e6c + 0xe) = *(short *)(DAT_00086e6c + 0xe) + DAT_0023be98;
     if (1000 < *(short *)(DAT_00086e6c + 0xe)) {
       *(undefined2 *)(DAT_00086e6c + 0xe) = 1000;
