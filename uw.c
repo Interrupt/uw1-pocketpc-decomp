@@ -28639,6 +28639,10 @@ short param_2;
     FUN_0007863c(uVar2 | 0x1400);
     message_scroll_print_wrapped();
     message_scroll_print_wrapped(&DAT_00084f20);
+    /* Same missing-newline issue as thunk_FUN_00048764/FUN_00048764's own
+       fix -- back-to-back terrain Looks (e.g. the ceiling, wall signs)
+       otherwise all land on the same visible scroll line. */
+    message_scroll_print_wrapped("\n");
   }
   return;
 }
@@ -28869,6 +28873,13 @@ LAB_000489fc:
     Ordinal_1063(acStack_7c,pcVar6);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
+  /* No trailing newline was ever appended, so back-to-back Looks (the
+     scroll's own line-break logic, FUN_0007f770, only breaks on an
+     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
+     line: confirmed live, 3 Looks at the sack rendered as one run-on
+     "You see a sackYou see a sackYou see a sack" instead of 3 separate
+     lines. */
+  Ordinal_1063(acStack_7c,"\n");
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   FUN_000495d0(param_1,param_2);
@@ -34734,6 +34745,13 @@ LAB_000489fc:
     Ordinal_1063(acStack_7c,pcVar6);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
+  /* No trailing newline was ever appended, so back-to-back Looks (the
+     scroll's own line-break logic, FUN_0007f770, only breaks on an
+     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
+     line: confirmed live, 3 Looks at the sack rendered as one run-on
+     "You see a sackYou see a sackYou see a sack" instead of 3 separate
+     lines. */
+  Ordinal_1063(acStack_7c,"\n");
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   FUN_000495d0(param_1,param_2);
@@ -35177,6 +35195,10 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
     Ordinal_1063(param_2,uVar7);
   }
   Ordinal_1063(param_2,&DAT_00084f20);
+  /* Same missing-newline issue as thunk_FUN_00048764/FUN_00048764's own
+     fix -- back-to-back Looks at a creature otherwise all land on the
+     same visible scroll line. */
+  Ordinal_1063(param_2,"\n");
   message_scroll_print_wrapped(param_2);
   return;
 }
