@@ -2302,7 +2302,7 @@ static undefined1 DAT_0023ce70_backing[8192];
 #define DAT_0023ce70 DAT_0023ce70_backing[0]
 static undefined1 DAT_0024ac18_backing[256];
 #define DAT_0024ac18 DAT_0024ac18_backing[0]
-/* Real string, recovered via Ghidra disassembly of FUN_000404a0
+/* Real string, recovered via Ghidra disassembly of decode_critter_sprite_page
    (the caching "\CRIT\CR<pp>PAGE.N<nn>" per-page critter-animation
    resource loader): the decompile showed DAT_00085928/29/30/31 as four
    unrelated lone chars, and its own two-arg Ordinal_1063 (strcat) call
@@ -2330,7 +2330,7 @@ unsigned short u_INVALID_HANDLE_VALUE_00085944[] = u"INVALID_HANDLE_VALUE";
    FUN_00077a38's matching 0x80-iteration cleanup loop for DAT_00202308),
    same "lone undefined4 scalar indexed as an array" bug as DAT_0023c7a0
    right above (already fixed): each slot holds a real malloc'd buffer
-   pointer (FUN_000404a0/emit_object_billboard's per-page glyph decode),
+   pointer (decode_critter_sprite_page/emit_object_billboard's per-page glyph decode),
    so a 4-byte-stride int[] truncates/corrupts every other slot's pointer
    on this 64-bit host. Sized generously past the documented 0x80 like
    this file's other such tables. */
@@ -29665,7 +29665,14 @@ void FUN_00040440()
 
 
 
-undefined4 FUN_000404a0(param_1,param_2,param_3,param_4,param_5)
+/* was FUN_000404a0. Loads (and page-caches) a \CRIT\CRnnPAGE.Nnn sprite
+   page and decodes one frame's glyph into a fresh palette-indexed bitmap.
+   Repurposes the same page-cache/glyph-index machinery as the font/glyph
+   renderer (hence the "[glyphpage]" log tag) -- param_1=critter type
+   index, param_2=animation tier, param_3=direction, param_4=frame count
+   for this direction, param_5=frame index. Sets DAT_00202508/DAT_002022f8
+   (w/h) and DAT_002022fc (bitmap pointer) on success. */
+undefined4 decode_critter_sprite_page(param_1,param_2,param_3,param_4,param_5)
 int param_1;
 int param_2;
 short param_3;
@@ -29712,14 +29719,14 @@ short param_5;
     Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920);
     iVar5 = FUN_000227d4(stack0xffdc3238_buf);
     if (getenv("UW_DEBUG_CRITTER"))
-      fprintf(stderr, "[critter] FUN_000404a0: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
+      fprintf(stderr, "[critter] decode_critter_sprite_page: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
               iVar1, param_1, param_2, stack0xffdc3238_buf, iVar5 == -1 ? "FAIL" : "ok");
     if (iVar5 == -1) {
       /* Missing/unopenable per-page resource file -- was an unconditional
          FUN_00082388(0xffffffff) hard exit (only reachable for a real
          object, class 1, that no object in the previously-tested level
          area happened to use -- confirmed via lldb backtrace: reached
-         from emit_tile_objects's class-1 branch via FUN_0004083c, one
+         from emit_tile_objects's class-1 branch via resolve_critter_sprite_tier, one
          specific door ~17 tiles from spawn). Same "graceful skip instead
          of crash" treatment already used for other missing/unregistered
          resources this session (FUN_000408fc, FUN_00040918) -- return the
@@ -29750,7 +29757,7 @@ short param_5;
     return 0;
   }
   if (getenv("UW_DEBUG_CRITTER"))
-    fprintf(stderr, "[critter] FUN_000404a0: page_base=%d iVar9(glyph_idx)=%d pbVar11[iVar9]=%d(0x%x) param_4(frame_count?)=%d\n",
+    fprintf(stderr, "[critter] decode_critter_sprite_page: page_base=%d iVar9(glyph_idx)=%d pbVar11[iVar9]=%d(0x%x) param_4(frame_count?)=%d\n",
             (int)*pbVar11, iVar9, (int)pbVar11[iVar9], (int)pbVar11[iVar9], (int)param_4);
   if (pbVar11[iVar9] != 0xff) {
     pbVar6 = pbVar11 + (short)(ushort)pbVar11[1] + 2;
@@ -29764,7 +29771,7 @@ short param_5;
       uVar3 = 0;
     }
     if (getenv("UW_DEBUG_CRITTER"))
-      fprintf(stderr, "[critter] FUN_000404a0: frame-check param_4=%d *pbVar8(frame_count)=%d %s\n",
+      fprintf(stderr, "[critter] decode_critter_sprite_page: frame-check param_4=%d *pbVar8(frame_count)=%d %s\n",
               (int)param_4, (int)(uint)*pbVar8, (int)param_4 <= (int)(uint)*pbVar8 ? "PASS" : "FAIL(returns 0, no decode)");
     if ((int)param_4 <= (int)(uint)*pbVar8) {
       iVar9 = (uint)*pbVar8 * 0x20 + 3;
@@ -29776,11 +29783,11 @@ short param_5;
       DAT_00202300 = (ushort)pbVar11[2];
       DAT_00202304 = (ushort)pbVar11[3];
       if (getenv("UW_DEBUG_CRITTER"))
-        fprintf(stderr, "[critter] FUN_000404a0: w=%d h=%d comp_type(pbVar11[4])=%d\n",
+        fprintf(stderr, "[critter] decode_critter_sprite_page: w=%d h=%d comp_type(pbVar11[4])=%d\n",
                 (int)(short)DAT_002022f8, (int)(short)DAT_00202508, (int)pbVar11[4]);
       uVar7 = FUN_000129f8(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
       if (getenv("UW_DEBUG_CRITTER") && uVar7) {
-        fprintf(stderr, "[critter] FUN_000404a0: decoded row bytes[0..15]:");
+        fprintf(stderr, "[critter] decode_critter_sprite_page: decoded row bytes[0..15]:");
         for (int _i = 0; _i < 16; _i++) fprintf(stderr, " %02x", (unsigned char)uVar7[_i]);
         fprintf(stderr, "\n");
       }
@@ -29797,10 +29804,10 @@ short param_5;
         int _total = _w * _h;
         int _hist[256] = {0};
         for (int _i = 0; _i < _total; _i++) _hist[_gb[_i]]++;
-        fprintf(stderr, "[critter] FUN_000404a0: glyphbuf w=%d h=%d total=%d nonzero-value-histogram:", _w, _h, _total);
+        fprintf(stderr, "[critter] decode_critter_sprite_page: glyphbuf w=%d h=%d total=%d nonzero-value-histogram:", _w, _h, _total);
         for (int _i = 0; _i < 256; _i++) if (_hist[_i]) fprintf(stderr, " [%d]=%d", _i, _hist[_i]);
         fprintf(stderr, "\n");
-        fprintf(stderr, "[critter] FUN_000404a0: middle row (%d) bytes:", _h/2);
+        fprintf(stderr, "[critter] decode_critter_sprite_page: middle row (%d) bytes:", _h/2);
         for (int _i = 0; _i < _w && _i < 48; _i++) fprintf(stderr, " %02x", _gb[(_h/2)*_w + _i]);
         fprintf(stderr, "\n");
       }
@@ -29809,7 +29816,7 @@ short param_5;
         /* render_visible_tile_list reads each record's texture from the
            g_tile_texptr_out[] side channel (the in-record field is 4 bytes
            and truncates on 64-bit) -- same fix already applied to the
-           class-0 item billboard decoder just above FUN_0004083c. Without
+           class-0 item billboard decoder just above resolve_critter_sprite_tier. Without
            this, a critter/door billboard's record kept whatever truncated
            32-bit pointer bits got stuffed into DAT_000acdfc, so the
            renderer sampled a wild/bogus texture and every glyph pixel
@@ -29905,7 +29912,15 @@ uint param_2;
 
 
 
-undefined4 FUN_0004083c(param_1,param_2,param_3)
+/* was FUN_0004083c. Called from emit_tile_objects's render-class-1
+   (camera-facing billboard, used for both critters and doors) branch.
+   param_1=critter type index (object id & 0x3f), param_2=direction index,
+   param_3=frame. Looks up the type in the \CRIT\assoc.anm-derived
+   DAT_0023ce70 table, picks an animation tier from DAT_0023c460's
+   per-type threshold table based on param_2, and hands off to
+   decode_critter_sprite_page. Returns 0 (no-op) for a type with no
+   assoc-table entry (0xff sentinel). */
+undefined4 resolve_critter_sprite_tier(param_1,param_2,param_3)
 short param_1;
 undefined4 param_2;
 short param_3;
@@ -29922,7 +29937,7 @@ short param_3;
   }
   uVar4 = (uint)(byte)(&DAT_0023ce70)[param_1 * 2];
   if (getenv("UW_DEBUG_CRITTER"))
-    fprintf(stderr, "[critter] FUN_0004083c: param_1(type_idx)=%d param_2(dir)=%d param_3(frame)=%d -> assoc[%d]=%u (0x%x)\n",
+    fprintf(stderr, "[critter] resolve_critter_sprite_tier: param_1(type_idx)=%d param_2(dir)=%d param_3(frame)=%d -> assoc[%d]=%u (0x%x)\n",
             (int)param_1, (int)(short)param_2, (int)param_3, (int)param_1 * 2, uVar4, uVar4);
   if (0xff < (short)param_2) {
     param_2 = 0;
@@ -29940,7 +29955,7 @@ short param_3;
       iVar5 = iVar5 + -1;
       bVar1 = *pbVar3;
     } while (0 < iVar5);
-    FUN_000404a0(uVar4,3 - (short)iVar5,param_2,(&DAT_0023ce71)[param_1 * 2],param_3);
+    decode_critter_sprite_page(uVar4,3 - (short)iVar5,param_2,(&DAT_0023ce71)[param_1 * 2],param_3);
     uVar2 = 1;
   }
   return uVar2;
@@ -49484,7 +49499,7 @@ LAB_00061d34:
     else {
       uVar29 = (uint)bVar13 + (uVar29 - 0x1c) * 8;
     }
-    FUN_0004083c(uVar27 & 0x3f,uVar29,(byte)param_1[6] >> 4,(uint)DAT_0023bc88 * (int)DAT_00086b30);
+    resolve_critter_sprite_tier(uVar27 & 0x3f,uVar29,(byte)param_1[6] >> 4,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     uVar30 = (&DAT_000d9ed8)[DAT_000db44c];
     uVar18 = Ordinal_2023((&DAT_000d9930)[DAT_000db44c]);
     iVar32 = (int)DAT_00202508;
