@@ -48667,7 +48667,7 @@ ushort * param_1;
                                         : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
             ushort _w = *(ushort *)_rec;
             int _id = _w & 0x1ff;
-            if (_id >= 0x160 && _id <= 0x16f) {
+            if ((_id >= 0x160 && _id <= 0x16f) || _id == 0x140 || _id == 0x141) {
               fprintf(stderr, "[objdump] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x\n",
                       _tx, _ty, _slot, _id, (unsigned)_w);
             }
