@@ -29619,6 +29619,9 @@ uint param_2;
   pcVar3 = (char *)FUN_000408fc(resolved);
   bVar1 = pcVar3[1];
   bVar2 = pcVar3[2];
+  if (getenv("UW_DEBUG_OBJPOS") && param_1 >= 0x2000)
+    fprintf(stderr, "[tmobjtex] requested_id=0x%x resolved_frame=%d entry_type=%d w=%d h=%d\n",
+            (int)(unsigned short)param_1, resolved, (int)(signed char)*pcVar3, (int)bVar1, (int)bVar2);
   if (*pcVar3 == '\x04') {
     pcVar3 = pcVar3 + 5;
   }
@@ -48894,6 +48897,13 @@ LAB_00061d34:
     DAT_0023b83c = DAT_0023b83c + 1;
     DAT_000a85d4 = DAT_0023b83c;
     DAT_000a85d0 = iVar17 + 1;
+    if (getenv("UW_DEBUG_OBJPOS") && (*param_1 & 0x1ff) == 0x166) {
+      float _fx, _fy, _fz;
+      unsigned int _bx = (unsigned int)uVar22, _by = (unsigned int)uVar19, _bz = (unsigned int)uVar25;
+      memcpy(&_fx, &_bx, 4); memcpy(&_fy, &_by, 4); memcpy(&_fz, &_bz, 4);
+      fprintf(stderr, "[objpos-final] id=0x166 uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f\n",
+              uVar27, _fx, _fy, _fz);
+    }
     return;
   }
   if (bVar13 == 1) {
@@ -49081,16 +49091,25 @@ LAB_00061d34:
        regardless of `iVar17`. Real per-variant frame numbers aren't
        recoverable from the binary (this is missing DATA, not a dropped
        argument/call -- no amount of disassembly recovers content that was
-       never in this decompile's static initializers), so default to the
-       same "id IS the frame" identity convention already established for
-       OBJECTS.GR by FUN_00040aa8's own comment, rather than collapsing
-       every sign to one identical graphic. */
+       never in this decompile's static initializers).
+       An identity mapping (slot i -> TMOBJ frame i) seemed like the
+       obvious default (matching FUN_00040aa8's own "id IS the frame"
+       fallback for OBJECTS.GR), but empirically TMOBJ.GR's frame table
+       (checked via UW_DEBUG_OBJPOS's [tmobjscan] dump, DAT_00202738-based)
+       is EMPTY for frames 0-37 -- real, non-degenerate (nonzero w/h)
+       content only starts at relative frame 38, running through ~170.
+       Since `iVar17` here is hard-capped to 0-31 by the bounds check right
+       below (code-side constant, not data-driven), an identity mapping can
+       *never* reach real content regardless of which 0-31 value it picks.
+       Offset into the known-populated block instead so every variant at
+       least shows a real graphic (still not the correct PER-VARIANT one --
+       that mapping is genuinely lost data -- but no longer blank). */
     { static int _tmobj_ids_inited = 0;
       if (!_tmobj_ids_inited) {
         _tmobj_ids_inited = 1;
         int _i;
         for (_i = 0; _i < 0x20; _i++) {
-          *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)_i;
+          *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)(38 + _i);
         }
       }
     }
@@ -50574,6 +50593,10 @@ ushort * param_1;
           cVar8 = (&DAT_0023b8c8)[iVar15];
           puVar5 = (ushort *)FUN_000535fc((int)(short)(&DAT_0023b848)[cVar8]);
           iVar7 = cVar8 * 4;
+          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (*puVar5 & 0x1ff) == 0x166)
+            fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
+                    (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
+                    (int)DAT_0023b4e4, (int)DAT_0023b4e8);
           DAT_0023b904 = ((short)(char)(&DAT_0023bb99)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
