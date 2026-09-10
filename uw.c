@@ -34804,6 +34804,15 @@ short param_2;
   short sVar10;
   char local_128 [8];
   char acStack_120 [260];
+  /* iVar5 above is a real int (file handle) for the uVar8==5/grave.dat
+     branch's FUN_000227d4/Ordinal_553 calls -- but is reused later in the
+     shared tail (untouched by that branch, e.g. the sign/TMOBJ uVar8==6
+     case) to hold FUN_0007863c's real `char *` return, truncating it on
+     this 64-bit host. Confirmed via lldb: right-clicking a rendered sign
+     (object type 0x166) crashed in strchr with a wild pointer, called
+     from FUN_00078bfc(iVar5,...) here. Separate real-pointer local so
+     each use keeps its own type. */
+  char *pcVar_str;
   
   local_128[0] = '\0';
   sVar10 = 0x160;
@@ -34865,16 +34874,16 @@ short param_2;
         return;
       }
     }
-    iVar5 = FUN_0007863c(uVar9 | 0x1000);
-    if (iVar5 != 0 && local_128[0] != '\0') {
+    pcVar_str = (char *)FUN_0007863c(uVar9 | 0x1000);
+    if (pcVar_str != (char *)0x0 && local_128[0] != '\0') {
       FUN_0007fce8(1);
     }
     if (((*param_1 & 0xf) == 6) || (local_128[0] == '\0')) {
       FUN_0007863c((*param_1 >> 9 & 0xf) + sVar10 | 0x1000);
       message_scroll_print_wrapped();
     }
-    if (iVar5 != 0) {
-      FUN_00078bfc(iVar5,1,0);
+    if (pcVar_str != (char *)0x0) {
+      FUN_00078bfc(pcVar_str,1,0);
       message_scroll_print_wrapped();
       message_scroll_print_wrapped(&DAT_0008522c);
     }
