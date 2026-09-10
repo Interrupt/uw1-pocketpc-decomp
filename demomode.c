@@ -57,6 +57,11 @@
  *                    RAWKEY's are not). RAWKEY ESCAPE therefore aborts
  *                    the rest of the demo file -- the same thing hitting
  *                    the physical ESC key does. KEY name as for SDLHOLD.
+ *   SDLHOLD SHIFT+<KEY> <ticks>  -- like SDLHOLD, but holds SDLK_LSHIFT
+ *                    down for the same duration. Real UW controls use
+ *                    SHIFT+turn-key for a sharp, discrete 45-degree snap
+ *                    turn (a bare turn-key free-turns instead); see
+ *                    in_dungeon_freelook()'s comment in gx_stub.c.
  * Pacing is controlled by the UW_DEMO_DELAY_MS env var (default 250ms
  * between inputs). Once the file runs out, the process exits (making
  * scripted test runs self-terminating for fast feedback loops); set
@@ -112,6 +117,16 @@ static const char *g_demo_type_pos;
 static int g_demo_hold_vk;
 static int g_demo_hold_ticks;
 static int g_demo_hold_is_sdl;
+
+/* Set when the current SDLHOLD is a "SHIFT+<key>" combo (see SDLHOLD
+ * parsing below) -- SDLK_LSHIFT was injected down alongside g_demo_hold_vk
+ * and needs releasing alongside it, in the same up/abort paths. Real UW
+ * controls use SHIFT+turn-key for a sharp 45-degree snap turn (plain
+ * turn-key alone free-turns); in_dungeon_freelook() in gx_stub.c checks
+ * g_synth_scancode_held for the shift scancode, which is what makes an
+ * injected SDLK_LSHIFT actually register as "held" for that check
+ * (SDL_GetModState() alone does not see synthetic/pushed events). */
+static int g_demo_hold_shift;
 
 /* WAIT <ticks> state: how many more idle pump ticks to burn with no
  * input at all before reading the next line. */
@@ -183,8 +198,12 @@ void demomode_abort(const char *reason) {
     if (g_demo_hold_vk != 0 && !g_demo_hold_is_sdl) {
         handle_keyboard_message(0, 0x101u, (unsigned int)g_demo_hold_vk);
     }
+    if (g_demo_hold_shift) {
+        uw_clear_synth_scancode(SDLK_LSHIFT);
+    }
     g_demo_hold_vk = 0;
     g_demo_hold_is_sdl = 0;
+    g_demo_hold_shift = 0;
     g_demo_hold_ticks = 0;
     g_demo_type_pos = NULL;
     g_demo_type_buf[0] = '\0';
@@ -231,8 +250,13 @@ void demomode_pump(void) {
         } else {
             handle_keyboard_message(0, 0x101u, (unsigned int)g_demo_hold_vk);
         }
+        if (g_demo_hold_shift) {
+            fprintf(stderr, "[demo] releasing held SHIFT\n");
+            uw_inject_key_up(SDLK_LSHIFT);
+        }
         g_demo_hold_vk = 0;
         g_demo_hold_is_sdl = 0;
+        g_demo_hold_shift = 0;
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
@@ -257,8 +281,16 @@ void demomode_pump(void) {
         /* Quitting here (instead of idling with the window still open)
          * makes scripted test runs self-terminating -- set
          * UW_DEMO_KEEP_RUNNING=1 to keep the window open after playback
-         * finishes (e.g. to keep manually poking at the resulting state). */
-        if (!getenv("UW_DEMO_KEEP_RUNNING")) {
+         * finishes (e.g. to keep manually poking at the resulting state).
+         * Checked by VALUE, not just presence -- UW_DEMO_KEEP_RUNNING=0
+         * (as opposed to leaving it unset) is a common explicit "don't keep
+         * running" from a test harness/script, and getenv() alone can't
+         * tell that apart from =1. */
+        const char *keep_running = getenv("UW_DEMO_KEEP_RUNNING");
+        int keep = keep_running && *keep_running != '\0' &&
+                   strcmp(keep_running, "0") != 0 &&
+                   strcasecmp(keep_running, "false") != 0;
+        if (!keep) {
             fprintf(stderr, "[demo] end of input, exiting\n");
             exit(0);
         }
@@ -321,13 +353,29 @@ void demomode_pump(void) {
          * handle_keyboard_message directly. Use it to test the held
          * W/S/X/A/D movement-letter repeat takeover. Key is a single
          * character (its lowercase ASCII == SDL_Keycode) or one of
-         * LEFT/RIGHT/UP/DOWN/RETURN/ESCAPE/SPACE. */
+         * LEFT/RIGHT/UP/DOWN/RETURN/ESCAPE/SPACE.
+         * A "SHIFT+<key>" key holds SDLK_LSHIFT down first -- real UW
+         * controls use SHIFT+turn-key for a sharp 45-degree snap turn
+         * (plain turn-key alone free-turns via poll_dungeon_movement_keys);
+         * see in_dungeon_freelook()'s comment in gx_stub.c. */
         char keyname[32];
         int ticks = 0;
         if (sscanf(p + 8, "%31s %d", keyname, &ticks) != 2 || ticks < 0) {
             fprintf(stderr, "[demo] malformed SDLHOLD line '%s', skipping\n", p);
             g_demo_next_tick = now;
             return;
+        }
+        int want_shift = 0;
+        char *plus = strchr(keyname, '+');
+        if (plus) {
+            *plus = '\0';
+            if (strcasecmp(keyname, "SHIFT") != 0) {
+                fprintf(stderr, "[demo] SDLHOLD: unrecognized modifier '%s', skipping\n", keyname);
+                g_demo_next_tick = now;
+                return;
+            }
+            want_shift = 1;
+            memmove(keyname, plus + 1, strlen(plus + 1) + 1);
         }
         int kc = 0;
         if (keyname[0] && keyname[1] == '\0') {
@@ -346,10 +394,16 @@ void demomode_pump(void) {
             g_demo_next_tick = now;
             return;
         }
-        fprintf(stderr, "[demo] SDL-holding %s (sdlkey=0x%x) for %d ticks\n", keyname, kc, ticks);
+        if (want_shift) {
+            fprintf(stderr, "[demo] SDL-holding SHIFT+%s (sdlkey=0x%x) for %d ticks\n", keyname, kc, ticks);
+            uw_inject_key_down(SDLK_LSHIFT);
+        } else {
+            fprintf(stderr, "[demo] SDL-holding %s (sdlkey=0x%x) for %d ticks\n", keyname, kc, ticks);
+        }
         uw_inject_key_down(kc);
         g_demo_hold_vk = kc;
         g_demo_hold_is_sdl = 1;
+        g_demo_hold_shift = want_shift;
         g_demo_hold_ticks = ticks;
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;

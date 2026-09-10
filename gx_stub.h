@@ -86,5 +86,6 @@ int uw_inject_mouse_up(int window_x, int window_y);
    there's no window yet. */
 int uw_inject_key_down(int sdl_keycode);
 int uw_inject_key_up(int sdl_keycode);
+void uw_clear_synth_scancode(int sdl_keycode);
 
 #endif

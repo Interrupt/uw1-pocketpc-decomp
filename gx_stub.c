@@ -186,7 +186,16 @@ static int translate_vk(SDL_Keycode sym) {
    as in the DOS controls. */
 static int in_dungeon_freelook(void) {
     if (DAT_00201b64 != 0) return 0;
-    return (SDL_GetModState() & KMOD_SHIFT) == 0;
+    /* SDL_GetModState() only reflects modifier keys that came through the
+     * real OS input backend -- a demo-injected SDLK_LSHIFT (uw_inject_key_down,
+     * which SDL_PushEvent()s the event rather than feeding it through SDL's
+     * own keyboard backend) never sets it, the same reason plain letter keys
+     * need g_synth_scancode_held below. Check that too so a scripted
+     * "SDLHOLD SHIFT+D" reproduces a real held-shift stepped turn. */
+    int shift_held = (SDL_GetModState() & KMOD_SHIFT) != 0 ||
+                      g_synth_scancode_held[SDL_SCANCODE_LSHIFT] ||
+                      g_synth_scancode_held[SDL_SCANCODE_RSHIFT];
+    return !shift_held;
 }
 
 /* DOS-style: poll the physical keyboard each pump and drive the analog
@@ -692,6 +701,19 @@ int uw_inject_key_up(int sdl_keycode) {
     ku.key.keysym.unused = UW_SYNTH_KEY;
     SDL_PushEvent(&ku);
     return 1;
+}
+
+void uw_clear_synth_scancode(int sdl_keycode) {
+    /* Clear a synthetic "held" scancode without pushing a real KEYUP event
+     * -- for demomode_abort(), which deliberately skips uw_inject_key_up on
+     * an aborted SDLHOLD (see its own comment: the synthetic keyup would
+     * just re-enter this same event path). Without this, aborting mid-hold
+     * leaves g_synth_scancode_held[sc] stuck set (most visibly, a SHIFT
+     * held via a "SDLHOLD SHIFT+<key>" combo would permanently disable
+     * in_dungeon_freelook() for the rest of the run). */
+    if (!g_win) return;
+    SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    if (sc > 0 && sc < SDL_NUM_SCANCODES) g_synth_scancode_held[sc] = 0;
 }
 
 int uw_save_screenshot(const char *path) {
