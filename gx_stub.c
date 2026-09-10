@@ -781,7 +781,7 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
        bytes3-4 unknown, then width*height raw palette-index pixels.
        Confirmed via bitmap_blit_to_framebuffer's real param semantics
        (its param_4/height arg is clipped against 200, param_5/width arg
-       against 0x140=320) traced back through FUN_0006a200's blit call
+       against 0x140=320) traced back through draw_menu_item_list's blit call
        and FUN_0006a0c8's header-byte-to-record-field assignment -- a
        width<->height swap here previously produced transposed BMPs for
        every non-square entry. */

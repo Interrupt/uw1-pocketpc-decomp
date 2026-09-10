@@ -45,7 +45,7 @@ char *param_3;
   short sVar8;
   uint uVar9;
   /* Was `undefined4`, truncating FUN_0007863c's real char* return
-     before FUN_000112a0/draw_text_string use it as a pointer. */
+     before measure_text_width/draw_text_string use it as a pointer. */
   char *uVar10;
   int iVar11;
   undefined4 extraout_r1;
@@ -176,7 +176,7 @@ LAB_00025468:
         }
         DAT_001005c0 = FUN_00023c90(0,local_5c_buf + 4);
         FUN_00057118();
-        iVar12 = FUN_000112a0(uVar10);
+        iVar12 = measure_text_width(uVar10);
         draw_text_string(uVar10,0x8f - iVar12,0x16);
         FUN_00023a00();
         capture_framebuffer_rect_to_grtile(local_60,0x1e,0x85,0x5f,0x37);
@@ -246,7 +246,7 @@ LAB_00025468:
       case 6:
         pcVar5 = g_chargen_textfield_buf;
         FUN_00057118();
-        sVar8 = FUN_000112a0(pcVar5);
+        sVar8 = measure_text_width(pcVar5);
         iVar12 = -(int)sVar8 + 0x7e;
         if (iVar12 < 0) {
           iVar12 = -(int)sVar8 + 0x7f;
@@ -287,7 +287,7 @@ LAB_00025468:
       DAT_000fb858 = DAT_001005c8;
       screen_backup_restore();
       bitmap_blit_to_framebuffer(0,0,DAT_000fb858,200,0x140,0,0,1);
-      sVar8 = FUN_000112a0(auStack_4c);
+      sVar8 = measure_text_width(auStack_4c);
       iVar12 = -(int)sVar8 + 0xa0;
       if (iVar12 < 0) {
         iVar12 = -(int)sVar8 + 0xa1;
@@ -295,7 +295,7 @@ LAB_00025468:
       draw_text_string(auStack_4c,(short)(iVar12 >> 1) + 0xa0,
                    0x62 - CONCAT11(*(undefined1 *)(DAT_000879b0 + 7),
                                    *(undefined1 *)(DAT_000879b0 + 6)));
-      sVar8 = FUN_000112a0(uVar10);
+      sVar8 = measure_text_width(uVar10);
       iVar12 = -(int)sVar8 + 0xa0;
       if (iVar12 < 0) {
         iVar12 = -(int)sVar8 + 0xa1;
@@ -383,7 +383,7 @@ int run_character_generator()
              is really `puVar8 + 0xa0` (a fixed offset past the point
              puVar8 already starts at, within the same DAT_000fb8f0
              buffer). Same "hardcoded original-binary address" bug class
-             as FUN_0006bde0's `-0x87020` fix earlier this session. */
+             as probe_save_slots's `-0x87020` fix earlier this session. */
           pcVar3 = (char *)puVar8 + 0xa0;
           iVar4 = 0;
           do {
@@ -405,8 +405,8 @@ int run_character_generator()
             iVar4 = ((int)iVar4 + 1) * 0x10000 >> 0x10;
             pcVar3 = pcVar6 + 4;
           } while (iVar4 < 8);
-          FUN_00040d00(s_FONTCHAR_SYS_00084ec0);
-          *DAT_0008429c = 0x49;
+          select_active_font(s_FONTCHAR_SYS_00084ec0);
+          *g_draw_color_index = 0x49;
           *DAT_00084298 = 0x49;
           FUN_00035df8(1);
           iVar4 = DAT_001005c8;
@@ -424,7 +424,7 @@ int run_character_generator()
             FUN_00057118();
             bitmap_blit_to_framebuffer(0,0,iVar4,200,CONCAT22(uVar10,0x140),0,0,0);
             iVar4 = character_generator_loop(DAT_000fb858,&DAT_000fb8f0,puVar8);
-            FUN_00040d00(s_FONT5X6P_SYS_00084e9c);
+            select_active_font(s_FONT5X6P_SYS_00084e9c);
             if (DAT_00201c98 != 0) {
               FUN_0005b36c();
             }

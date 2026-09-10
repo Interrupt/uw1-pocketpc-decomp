@@ -23,7 +23,12 @@ undefined DAT_0023c5ac;
    this 64-bit host and segfaulting the first time Ordinal_1044 actually
    did real memmove work. */
 void *g_uw_framebuffer;
-undefined2 DAT_0024ae20;
+// was DAT_0024ae20. Flat RGB565 ink color draw_text_string uses when
+// g_text_use_palette_color is 0 -- never written anywhere, silently 0
+// (black). Fine as the default on message-scroll's light parchment
+// background; menu screens with a dark backdrop need the palette-
+// indexed path instead (force g_text_use_palette_color there).
+undefined2 g_text_flat_color;
 static undefined2 DAT_000890b0_backing[32768];
 #define DAT_000890b0 DAT_000890b0_backing[0]
 /* Not `static` -- referenced from graphics.c (bitmap_blit_to_framebuffer,
@@ -31,17 +36,34 @@ static undefined2 DAT_000890b0_backing[32768];
    g_palette_rgb565 macro alias both live in uw.h now so both files see the
    same thing. */
 undefined2 g_palette_rgb565_backing[32768];
-ushort DAT_0008909c;
-short DAT_0008894c;
+// was DAT_0008909c. Line height (pixels) of the currently-active font,
+// read from its header by load_font_metrics; 0 would make
+// draw_text_string allocate/draw nothing.
+ushort g_font_line_height;
+// was DAT_0008894c. Per-glyph row stride (bytes) of the currently-active
+// font, also from load_font_metrics; selects unpack_glyph_bitmap's 8- vs
+// 16-bit-per-row decode.
+short g_font_row_stride;
 short DAT_000a85b8;
 /* Was `int`, truncating the real char* pointer (DAT_000890a4) assigned
    into it -- used as a glyph-bitmap-data base address in byte-pointer
-   arithmetic passed to FUN_000112fc. */
-char *DAT_00088940;
-int DAT_0024af74;
+   arithmetic passed to unpack_glyph_bitmap. */
+char *g_font_glyph_data_base;
+// was DAT_0024af74. Nonzero: draw_text_string colors glyph pixels via
+// the palette index *g_draw_color_index; zero (the default -- nothing
+// else in this decompile ever sets it) uses the flat g_text_flat_color
+// instead. A reentrancy/mode flag set only around one unrelated dialog-
+// box drawing routine (FUN_00037c14), so callers elsewhere that want
+// palette-indexed text (e.g. draw_menu_item_list's highlighted save-slot
+// labels) must force it themselves for the duration of the draw.
+int g_text_use_palette_color;
 int DAT_0023c5b0;
-byte DAT_0008429c_backing[128];
-byte *DAT_0008429c = DAT_0008429c_backing;
+// was DAT_0008429c_backing/DAT_0008429c. Current draw-color palette
+// index, written before nearly every text/UI draw call across the file
+// and read back by draw_text_string (when g_text_use_palette_color is
+// set) and various fill/blit routines.
+byte g_draw_color_index_backing[128];
+byte *g_draw_color_index = g_draw_color_index_backing;
 char *DAT_000879b0;
 undefined2 DAT_000a85b0;
 char *DAT_000890a4;
@@ -2052,7 +2074,7 @@ char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
    reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
    bglobals.dat, desc) alongside already-recovered sibling constants that
    spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
-   and FUN_0006bde0/FUN_0006c0c0 both search the built path for a literal
+   and probe_save_slots/FUN_0006c0c0 both search the built path for a literal
    '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
    supplies one. Recovered as "\SAVE0"; kept the oversized backing array
    since nothing else relies on its exact size. */
@@ -3831,11 +3853,11 @@ ushort DAT_0023bf74;
    loaded button bitmap's real pointer into 4 bytes and pack it directly
    into DAT_0023bf6c's record array -- fine for a 32-bit pointer on the
    original binary, but silently truncates a real 64-bit pointer here
-   (confirmed via ASAN: FUN_0006a200 dereferencing the reassembled
+   (confirmed via ASAN: draw_menu_item_list dereferencing the reassembled
    low-32-bits-only value, SEGV). Same "route the real pointer through a
    dedicated global instead of packing it into an undersized field"
    pattern as g_chargen_textfield_buf. Index formula (shared by
-   FUN_0006a0c8/FUN_0006a200) is (selected?1:0) + button_index*4 -- a
+   FUN_0006a0c8/draw_menu_item_list) is (selected?1:0) + button_index*4 -- a
    stride of 4 per button, not 2, so up to 4 buttons needs slots through
    index 13 (1 + 3*4); sized generously to 16. */
 static char *g_menu_button_bitmaps[16];
@@ -3872,7 +3894,7 @@ unsigned short u_UUWI_00087014[] = u"UUWI";
 static undefined DAT_0023bf78_backing[8192];
 #define DAT_0023bf78 DAT_0023bf78_backing[0]
 char s__not_used_yet__00087020[] = "<not_used_yet>";
-/* Was zero-initialized -- see DAT_000857a0's comment above. FUN_0006bde0
+/* Was zero-initialized -- see DAT_000857a0's comment above. probe_save_slots
    appends this to DAT_000857a0 ("\SAVE0") to build each save-slot probe
    path, then substitutes the '0' with '1'..'4'; the already-recovered
    s__SAVE0_desc_00087078 == "\SAVE0\desc" spells out exactly what that
@@ -4686,16 +4708,16 @@ short param_3;
      caller's actual buffer, e.g. FUN_00024840's 4-byte `local_2c`
      scratch string, causing a stack-buffer-overflow read here). iVar2
      is provably meant to be strlen(param_1) -- the very next line
-     computes the same length via FUN_000112a0(param_1), and the
+     computes the same length via measure_text_width(param_1), and the
      allocation size below (`uVar3 * uVar10`) only makes sense if the
      inner loop below (which runs iVar2 times) walks exactly that many
      characters of param_1. Pass it explicitly instead of relying on
      register leftovers. */
   iVar2 = Ordinal_1068(param_1);
-  uVar3 = FUN_000112a0(param_1);
-  uVar10 = (uint)DAT_0008909c;
+  uVar3 = measure_text_width(param_1);
+  uVar10 = (uint)g_font_line_height;
   if (getenv("UW_DIAG_TEXT"))
-    fprintf(stderr, "[diag11060] measured_width=%u line_height(DAT_0008909c)=%u alloc=%u\n",
+    fprintf(stderr, "[diag11060] measured_width=%u line_height(g_font_line_height)=%u alloc=%u\n",
             uVar3, uVar10, (uVar3 & 0xffff) * uVar10);
   pcVar4 = (char *)Ordinal_1041((uVar3 & 0xffff) * uVar10);
   iVar11 = 0;
@@ -4716,13 +4738,13 @@ short param_3;
              semantics. */
           sVar1 = (&DAT_000890b0)[(byte)*pcVar9];
           {
-            int _fmt = (int)DAT_0008894c << 3;
-            undefined4 _r = FUN_000112fc(auStack_40,
-                       (DAT_000a85b8 + 1) * (int)*pcVar9 + DAT_0008894c * iVar11 + DAT_00088940,
+            int _fmt = (int)g_font_row_stride << 3;
+            undefined4 _r = unpack_glyph_bitmap(auStack_40,
+                       (DAT_000a85b8 + 1) * (int)*pcVar9 + g_font_row_stride * iVar11 + g_font_glyph_data_base,
                        _fmt);
             if (getenv("UW_DIAG_TEXT"))
-              fprintf(stderr, "[diag11060] glyph '%c' fmt=%d(0x%x) rowbytes(DAT_0008894c)=%d ret=%d width(sVar1)=%d auStack_40[0..3]=%d,%d,%d,%d\n",
-                      *pcVar9, _fmt, _fmt, (int)DAT_0008894c, (int)_r, (int)sVar1,
+              fprintf(stderr, "[diag11060] glyph '%c' fmt=%d(0x%x) rowbytes(g_font_row_stride)=%d ret=%d width(sVar1)=%d auStack_40[0..3]=%d,%d,%d,%d\n",
+                      *pcVar9, _fmt, _fmt, (int)g_font_row_stride, (int)_r, (int)sVar1,
                       (int)auStack_40[0], (int)auStack_40[1], (int)auStack_40[2], (int)auStack_40[3]);
           }
           Ordinal_1044(pcVar8,auStack_40,(int)sVar1);
@@ -4748,13 +4770,13 @@ short param_3;
       if (63999 < iVar6) break;
       for (; (iVar5 < iVar12 && (iVar5 < 0x140)); iVar5 = iVar5 + 1) {
         if (*pcVar8 == '\x01') {
-          if (DAT_0024af74 == 0) {
+          if (g_text_use_palette_color == 0) {
             *(undefined2 *)((g_uw_framebuffer) + (iVar6 + iVar5) * 2) =
-                 DAT_0024ae20;
+                 g_text_flat_color;
           }
           else {
             *(undefined2 *)((g_uw_framebuffer) + (iVar6 + iVar5) * 2) =
-                 (&g_palette_rgb565)[*DAT_0008429c];
+                 (&g_palette_rgb565)[*g_draw_color_index];
             pcVar8 = local_48;
           }
         }
@@ -4774,7 +4796,8 @@ short param_3;
 
 
 
-int FUN_000112a0(param_1)
+// was FUN_000112a0
+int measure_text_width(param_1)
 char * param_1;
 
 {
@@ -4785,7 +4808,7 @@ char * param_1;
   /* Was `Ordinal_1068()` with no argument, relying on register leftovers
      to still hold param_1 (see draw_text_string's matching fix/comment a
      few lines above -- same root bug, this is the more foundational of
-     the two call sites since FUN_000112a0 is the general string pixel-
+     the two call sites since measure_text_width is the general string pixel-
      width measurement used throughout the file). */
   uVar2 = Ordinal_1068(param_1);
   sVar3 = 0;
@@ -4800,7 +4823,8 @@ char * param_1;
 
 
 
-undefined4 FUN_000112fc(param_1,param_2,param_3)
+// was FUN_000112fc
+undefined4 unpack_glyph_bitmap(param_1,param_2,param_3)
 undefined1 * param_1;
 byte * param_2;
 short param_3;
@@ -4849,7 +4873,8 @@ short param_3;
 
 
 
-void FUN_000113b4()
+// was FUN_000113b4
+void load_font_metrics()
 
 {
   int iVar1;
@@ -4858,11 +4883,11 @@ void FUN_000113b4()
   int iVar4;
   ushort *puVar5;
   
-  DAT_0008909c = *(undefined2 *)(DAT_000879b0 + 6);
-  DAT_0008894c = *(undefined2 *)(DAT_000879b0 + 8);
+  g_font_line_height = *(undefined2 *)(DAT_000879b0 + 6);
+  g_font_row_stride = *(undefined2 *)(DAT_000879b0 + 8);
   DAT_000a85b0 = *(undefined2 *)(DAT_000879b0 + 10);
   DAT_000a85b8 = *(short *)(DAT_000879b0 + 2);
-  DAT_00088940 = DAT_000890a4;
+  g_font_glyph_data_base = DAT_000890a4;
   iVar1 = (int)DAT_000a85b8;
   puVar5 = &DAT_000890b0;
   pbVar3 = (byte *)(DAT_000890a4 + iVar1);
@@ -7272,7 +7297,7 @@ void *param_3;
      straight into &DAT_000b78b8), so on this recompile just use its real
      address instead of the truncated literal (which dereferenced as
      ~0xb78b8 and crashed the level loader). Same "hardcoded original-
-     binary address" bug class as FUN_0006bde0's -0x87020. */
+     binary address" bug class as probe_save_slots's -0x87020. */
   if (((uint)*(ushort *)(param_1 + 2) < (param_2 & 0xffff)) ||
      (uVar6 = *(uint *)((char *)&DAT_000b78b8 + (param_2 & 0xffff) * 4), uVar6 == 0)) {
     uVar1 = 0;
@@ -7836,7 +7861,7 @@ short param_4;
       pcVar7[(int)(acStack_50 + -(int)param_1)] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
-    sVar6 = FUN_000112a0(acStack_50);
+    sVar6 = measure_text_width(acStack_50);
     iVar8 = (int)sVar6;
     if (iVar8 < 0) {
       iVar8 = iVar8 + 1;
@@ -7851,7 +7876,7 @@ short param_4;
       pcVar7[(int)(acStack_50 + -(int)param_2)] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
-    sVar6 = FUN_000112a0(acStack_50);
+    sVar6 = measure_text_width(acStack_50);
     iVar8 = (int)sVar6;
     if (iVar8 < 0) {
       iVar8 = iVar8 + 1;
@@ -7892,7 +7917,7 @@ void FUN_00016ef8()
   short local_5a;
   char local_58 [52];
   
-  *DAT_0008429c = 0x2d;
+  *g_draw_color_index = 0x2d;
   *DAT_00084298 = 0x2d;
   local_5e = *DAT_00085a6c;
   local_60 = 200 - DAT_00085a6c[1];
@@ -7950,7 +7975,7 @@ LAB_000170bc:
               pcVar6[(int)(local_58 + -(int)pcVar9)] = cVar1;
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
-            sVar2 = FUN_000112a0(local_58);
+            sVar2 = measure_text_width(local_58);
             if (((int)*(short *)(&DAT_000baa0a + iVar8) <= (int)local_5e) &&
                ((int)local_5e <= (int)*(short *)(&DAT_000baa0a + iVar8) + (int)sVar2)) {
               if (((int)local_60 <= *(short *)(&DAT_000baa0c + iVar8) + 5) &&
@@ -7969,7 +7994,7 @@ LAB_000170bc:
               pcVar6[(int)(local_58 + -(int)pcVar5)] = cVar1;
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
-            iVar10 = FUN_000112a0(local_58);
+            iVar10 = measure_text_width(local_58);
             set_draw_color(0x1a);
             rect_fill_or_save_restore((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
                          (uint)*(ushort *)(pcVar5 + 0x32) + iVar10,*(ushort *)(pcVar5 + 0x34) + 5);
@@ -7995,7 +8020,7 @@ LAB_000170bc:
       local_5c[1] = 0;
       if (DAT_000bbef0 != 100) {
         iVar7 = DAT_000bbef0 * 0x36;
-        FUN_00040d00(s_font4x5p_sys_0008431c);
+        select_active_font(s_font4x5p_sys_0008431c);
         FUN_00057c5c(0x107a);
         iVar10 = -1;
         (&DAT_000baa0a)[iVar7] = (char)local_5e;
@@ -8031,7 +8056,7 @@ LAB_000171d0:
         if (iVar10 * 0x10000 >> 0x10 < -1) {
           iVar10 = -1;
         }
-        iVar8 = FUN_000112a0(local_58);
+        iVar8 = measure_text_width(local_58);
         if (0 < (short)iVar8) {
           set_draw_color(0x1a);
           rect_fill_or_save_restore((uint)*(ushort *)(&DAT_000baa0a + iVar7),
@@ -8047,8 +8072,8 @@ LAB_000171d0:
     }
     else {
       local_5c[0] = Ordinal_1091();
-      sVar2 = FUN_000112a0(local_58);
-      sVar3 = FUN_000112a0(local_5c);
+      sVar2 = measure_text_width(local_58);
+      sVar3 = measure_text_width(local_5c);
       if ((((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10) + (int)*(short *)(&DAT_000baa0a + iVar7) <
           0x13c) {
         iVar8 = (iVar10 + 1) * 0x10000 >> 0x10;
@@ -8066,7 +8091,7 @@ LAB_000171d0:
       }
     }
     local_58[(short)iVar10 + 1] = '\0';
-    iVar4 = FUN_000112a0(local_58);
+    iVar4 = measure_text_width(local_58);
     iVar8 = *(short *)(&DAT_000baa0a + iVar7) + iVar4 + -1;
     FUN_00057590(*(short *)(&DAT_000baa0a + iVar7) + iVar4 + 9,local_60 + -0x12);
     draw_text_string(local_58,(int)*(short *)(&DAT_000baa0a + iVar7),
@@ -8075,7 +8100,7 @@ LAB_000171d0:
   }
   goto LAB_000171bc;
 LAB_0001739c:
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   if (local_58[0] != '\0') {
     DAT_000b99c4 = 1;
     pcVar5 = local_58;
@@ -8115,8 +8140,8 @@ void FUN_0001765c()
   char acStack_baa20 [764376];
   undefined1 auStack_48 [52];
   
-  FUN_00040d00(s_font4x5p_sys_0008431c);
-  *DAT_0008429c = 0x2d;
+  select_active_font(s_font4x5p_sys_0008431c);
+  *g_draw_color_index = 0x2d;
   *DAT_00084298 = 0x2d;
   if (0 < DAT_000bbef0) {
     iVar7 = 0;
@@ -8145,7 +8170,7 @@ void FUN_0001765c()
       iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
     } while (iVar7 < sVar6);
   }
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   return;
 }
 
@@ -8269,17 +8294,17 @@ undefined4 param_1;
     set_palette_bank(1);
     screen_backup_save();
     FUN_0001786c(param_1);
-    *DAT_0008429c = 0x2d;
+    *g_draw_color_index = 0x2d;
     *DAT_00084298 = 0x2d;
-    FUN_00040d00(s_fontbig_sys_0008432c);
+    select_active_font(s_fontbig_sys_0008432c);
     FUN_000229e0(iVar5,auStack_124,10);
-    sVar2 = FUN_000112a0(auStack_124);
+    sVar2 = measure_text_width(auStack_124);
     iVar5 = (int)sVar2;
     if (iVar5 < 0) {
       iVar5 = iVar5 + 1;
     }
     draw_text_string(auStack_124,0x121 - (short)(iVar5 >> 1),6);
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_font5x6p_sys_0008430c);
   }
   DAT_000bbef4 = 1;
   FUN_000570b4();
@@ -11117,8 +11142,8 @@ short param_2;
     }
     DAT_00088960 = 0;
     if (1 < uVar8) {
-      FUN_00040d00(s_font4x5p_sys_0008431c);
-      *DAT_0008429c = 0x60;
+      select_active_font(s_font4x5p_sys_0008431c);
+      *g_draw_color_index = 0x60;
       if (psVar2 == (short *)0x0) {
         uVar7 = Ordinal_1025(uVar8,auStack_2c,10);
       }
@@ -11128,7 +11153,7 @@ short param_2;
       }
       draw_text_string(uVar7,*(short *)(puVar10 + iVar1) + 3,*(short *)((int)(puVar10 + iVar1) + 2) + 1)
       ;
-      FUN_00040d00(s_font5x6p_sys_0008430c);
+      select_active_font(s_font5x6p_sys_0008430c);
     }
   }
 LAB_0001c1b4:
@@ -14971,19 +14996,19 @@ void FUN_00023a00()
   screen_backup_restore();
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
   draw_text_string(&DAT_00084e58,0x5d,0x32);
-  iVar1 = FUN_000112a0(auStack_14);
+  iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x32);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 6),auStack_14,10);
   draw_text_string(&DAT_00084e50,0x5d,0x44);
-  iVar1 = FUN_000112a0(auStack_14);
+  iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x44);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 7),auStack_14,10);
   draw_text_string(&DAT_00084e48,0x5d,0x56);
-  iVar1 = FUN_000112a0(auStack_14);
+  iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x56);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_14,10);
   draw_text_string(&DAT_00084e40,0x5d,0x68);
-  iVar1 = FUN_000112a0(auStack_14);
+  iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x68);
   return;
 }
@@ -15020,7 +15045,7 @@ void FUN_00023b38()
       FUN_000229e0(*(undefined1 *)(iVar1 + DAT_00086df8 + 0x21),auStack_24,10);
       iVar5 = iVar4 * 0xb + 0x85;
       draw_text_string(uVar3,0x1e,iVar5);
-      iVar2 = FUN_000112a0(auStack_24);
+      iVar2 = measure_text_width(auStack_24);
       draw_text_string(auStack_24,0x7d - iVar2,iVar5);
       iVar4 = ((short)iVar4 + 1) * 0x10000 >> 0x10;
     }
@@ -15143,7 +15168,7 @@ short * param_1;
   undefined2 uVar6;
   short sVar7;
   /* Was `undefined4`, truncating FUN_0007863c's real char* return
-     (a string-resource lookup) before it's passed to FUN_000112a0
+     (a string-resource lookup) before it's passed to measure_text_width
      (strlen-shaped) and draw_text_string (draw string). */
   char *uVar8;
   int iVar9;
@@ -15238,7 +15263,7 @@ short * param_1;
        why it must stay a narrow 4-byte read (widening it to 8 bytes
        pulls in unrelated file data from other records and misfires). */
     if (*(int *)(param_1 + 1) == 0) {
-      sVar7 = FUN_000112a0(uVar8);
+      sVar7 = measure_text_width(uVar8);
       iVar9 = -(int)sVar7 + 0x91;
       if (iVar9 < 0) {
         iVar9 = -(int)sVar7 + 0x92;
@@ -15293,7 +15318,7 @@ short * param_1;
              offset from &DAT_000fb8f0, not an absolute pointer -- see
              the write site in run_character_generator. Reconstruct before use. */
           uVar8 = FUN_0007863c(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + local_28 * 2) | 0x400);
-          sVar5 = FUN_000112a0(uVar8);
+          sVar5 = measure_text_width(uVar8);
           iVar9 = (int)sVar7 - (int)sVar5;
           if (iVar9 < 0) {
             iVar9 = iVar9 + 1;
@@ -15554,10 +15579,10 @@ undefined4 param_2;
   short sVar5;
   uint uVar6;
   /* FUN_0007863c's return (the label string for this field) was
-     discarded here, with the very next line calling FUN_000112a0() with
+     discarded here, with the very next line calling measure_text_width() with
      no argument -- relying on register leftovers to still hold that
      same return value (the "dropped argument" idiom, same root bug as
-     draw_text_string/FUN_000112a0's own Ordinal_1068() fixes above). That
+     draw_text_string/measure_text_width's own Ordinal_1068() fixes above). That
      register doesn't reliably survive here either (confirmed: with it
      broken, the name-entry field's Ordinal_1417 gate always fell
      through to the "buffer full" branch regardless of the typed key,
@@ -15724,12 +15749,12 @@ LAB_00024dd4:
   }
   else {
     pcVar_str = FUN_0007863c(uVar6 | 0x400);
-    iVar7 = FUN_000112a0(pcVar_str);
+    iVar7 = measure_text_width(pcVar_str);
     /* FUN_0007863c's compressed-string decoder (FUN_0007907c and its
        tree-walk helpers) has a separate, deeper bug -- confirmed via
        diagnostics that this field's label lookup returns a fragment of
        an unrelated, much longer string instead of the short intended
-       label, giving FUN_000112a0 a huge nonsensical pixel width
+       label, giving measure_text_width a huge nonsensical pixel width
        (observed: 1743, vs. a real short label's ~10-60). That fed
        straight into this text-entry loop's "does the cursor still fit
        in the field" bounds check below (`0x12d < sVar3`), which starts
@@ -15801,7 +15826,7 @@ LAB_00024dd4:
             uVar13 = uVar13 - 1;
             local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),*(undefined1 *)(g_chargen_textfield_buf + uVar13)
                                   );
-            sVar5 = FUN_000112a0(local_2c);
+            sVar5 = measure_text_width(local_2c);
             iVar11 = ((int)sVar3 - (int)sVar5) * 0x10000;
             iVar7 = iVar11 >> 0x10;
             FUN_00057118();
@@ -15816,7 +15841,7 @@ LAB_00024dd4:
         FUN_00057118();
         draw_text_string(local_2c,iVar7,iVar9 + 3);
         FUN_000570b4();
-        iVar7 = FUN_000112a0(local_2c);
+        iVar7 = measure_text_width(local_2c);
         iVar7 = iVar7 + sVar3;
         local_28 = 0;
         *(char *)(g_chargen_textfield_buf + uVar13) = (char)sVar5;
@@ -15858,7 +15883,7 @@ int param_3;
     /* Was `(undefined *)(... + 0x88d95)` -- a literal original-binary
        address (0x88d95 = &DAT_00088d98's real address there, minus 3)
        instead of real pointer arithmetic against the actual (relocated)
-       global -- same bug class as FUN_0006bde0's `-0x87020` fix and
+       global -- same bug class as probe_save_slots's `-0x87020` fix and
        run_character_generator's pcVar3 fix elsewhere this session.
        Never exercised until Ordinal_535 (GetTickCount) stopped being a
        hardcoded 0 (see its comment): this branch (param_3!=0) is only
@@ -17225,9 +17250,9 @@ void FUN_000286cc()
     FUN_0007fce8(0);
     FUN_0007f110();
     FUN_0007fce8(0);
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_font5x6p_sys_0008430c);
     uVar6 = 2;
-    *DAT_0008429c = 0x65;
+    *g_draw_color_index = 0x65;
     *DAT_00084298 = 0x65;
     DAT_00100670 = DAT_00100784;
     iVar3 = FUN_000417b4(s_heads_00084fec,
@@ -23744,7 +23769,7 @@ int param_2;
         do {
           iVar3 = Ordinal_1064(puVar4,0x20);
           if (iVar3 == 0) {
-            sVar2 = FUN_000112a0(puVar4);
+            sVar2 = measure_text_width(puVar4);
             iVar3 = (int)sVar2;
             puVar10 = (undefined1 *)0x0;
             if (iVar3 + iVar9 < 0x141) {
@@ -23762,7 +23787,7 @@ int param_2;
             puVar10 = (undefined1 *)(iVar3 + 1);
             uVar1 = *puVar10;
             *puVar10 = 0;
-            sVar2 = FUN_000112a0(puVar4);
+            sVar2 = measure_text_width(puVar4);
             *puVar10 = uVar1;
             iVar3 = (int)sVar2;
           }
@@ -24316,7 +24341,7 @@ LAB_00036ca4:
               Ordinal_496(10);
               if ((local_8b & 1) != 0) {
                 if (0 < local_9b) {
-                  *DAT_0008429c = local_9c;
+                  *g_draw_color_index = local_9c;
                   *DAT_00084298 = local_9c;
                   iVar10 = ((local_bf * -0x10000 >> 0x10) -
                            (int)*(short *)(DAT_000879b0 + 6) * (int)local_9b) + (int)local_bb + 0xc5
@@ -24325,7 +24350,7 @@ LAB_00036ca4:
                     iVar9 = 0;
                     do {
                       iVar13 = iVar9 * 4;
-                      sVar6 = FUN_000112a0((&local_b4)[iVar9]);
+                      sVar6 = measure_text_width((&local_b4)[iVar9]);
                       iVar19 = ((int)local_bd - (int)sVar6) + (int)local_c1;
                       if (iVar19 < 0) {
                         iVar19 = iVar19 + 1;
@@ -24555,7 +24580,7 @@ uint param_1;
   else {
     uVar2 = 0x34;
   }
-  DAT_0024af74 = 1;
+  g_text_use_palette_color = 1;
   if (uVar1 >= 0x100) {
     unaff_r6 = 0xb5;
     unaff_r7 = 0xac;
@@ -24564,11 +24589,11 @@ uint param_1;
   if (((uVar1 == 1) || (uVar1 == 2)) || (uVar1 == 3)) {
     FUN_00072910(4,1);
   }
-  FUN_00040d00(s_FONTBIG_SYS_00085454);
+  select_active_font(s_FONTBIG_SYS_00085454);
   DAT_0024cfac = (short)param_1 + 0xc00;
   FUN_00057118();
   FUN_0003671c(param_1,uVar2,unaff_r6,unaff_r7,unaff_r8);
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   if (DAT_00201c98 != 0) {
     FUN_0005b36c();
   }
@@ -24587,7 +24612,7 @@ uint param_1;
   FUN_00049924(uVar2);
 LAB_00037d3c:
   FUN_000570b4();
-  DAT_0024af74 = 0;
+  g_text_use_palette_color = 0;
   return;
 }
 
@@ -30308,17 +30333,18 @@ short param_1;
 undefined4 FUN_00040cd4()
 
 {
-  /* Ghidra dropped FUN_00040d00's return value here and always returned 0
+  /* Ghidra dropped select_active_font's return value here and always returned 0
      (failure) regardless -- the font file loads successfully, but the
      caller (FUN_0003b820) treats a 0 return as fatal and calls the
      "Underworld can no longer run" handler unconditionally. Propagate the
      real result. */
-  return FUN_00040d00(s_FONT5X6P_SYS_00084e9c);
+  return select_active_font(s_FONT5X6P_SYS_00084e9c);
 }
 
 
 
-bool FUN_00040d00(param_1)
+// was FUN_00040d00
+bool select_active_font(param_1)
 char *param_1;
 
 {
@@ -30345,11 +30371,11 @@ char *param_1;
     /* Was `((int)DAT_000879b0[1] + (int)*DAT_000879b0) * 0x80` -- reads
        header bytes 0 and 1 (both always 1 and 0 across every font file
        checked) giving a constant 128-byte read regardless of the font.
-       FUN_000113b4 (called right after) walks this buffer with a real
+       load_font_metrics (called right after) walks this buffer with a real
        per-glyph stride of (height+1) for 128 glyphs -- e.g. FONTCHAR.SYS
        needs ~2667 bytes (its real on-disk size minus the 12-byte
        header), FONTBIG.SYS needs ~3937 -- so the actual glyph data was
-       >90% truncated, leaving FUN_000113b4 reading uninitialized malloc
+       >90% truncated, leaving load_font_metrics reading uninitialized malloc
        memory as "widths" (observed: a bogus width of 190, causing a
        downstream buffer overflow, and more generally wrong/zero widths
        silently keeping characters undrawn). DAT_000890a4's own buffer
@@ -30359,7 +30385,7 @@ char *param_1;
        files. */
     FUN_0002285c(iVar3,DAT_000890a4,0x1080);
     Ordinal_553(iVar3);
-    FUN_000113b4();
+    load_font_metrics();
   }
   return iVar3 != -1;
 }
@@ -31631,7 +31657,7 @@ int param_1;
 /* NOT YET FIXED (not on the crash path reached so far, but the same bug
    class as everywhere else in this file): the body below reads/writes
    through the literal `iVar1*4 + 0x202870`/`iVar10*4 + 0x202870` --
-   a hardcoded original-binary address, same "FUN_0006bde0 -0x87020"
+   a hardcoded original-binary address, same "probe_save_slots -0x87020"
    class fixed elsewhere. 0x202870 is 8 bytes before DAT_00202878 (itself
    only declared as a single `undefined` byte here, so also likely
    undersized) -- revisit both together if/when this function's icon
@@ -32172,7 +32198,7 @@ LAB_000439a0:
          (sVar3 = FUN_0005358c(puVar4), (int)sVar3 != (uint)(*(ushort *)(DAT_00202994 + 8) >> 6))) {
         iVar10 = FUN_00048514(1);
         if (iVar10 != 0) {
-          FUN_00040d00(s_font5x6p_sys_0008430c);
+          select_active_font(s_font5x6p_sys_0008430c);
         }
       }
       else {
@@ -33749,7 +33775,7 @@ void FUN_00046414()
          (0x85b5c/0x85b6a, plus the standalone DAT_00085b64/DAT_00085b72
          symbols) instead of the same &DAT_00085ad0/&DAT_00085ad8 +
          iVar5*stride expression every other iteration already uses --
-         same "hardcoded address" bug class as FUN_0006bde0's -0x87020.
+         same "hardcoded address" bug class as probe_save_slots's -0x87020.
          Confirmed identical by address arithmetic (0x85ad0 + 10*0xe =
          0x85b5c, 0x85ad8 + 10*7 shorts = 0x85b64, etc.); rewritten to the
          general form so these two icons resolve against our recompiled
@@ -34068,7 +34094,7 @@ void FUN_00046bfc()
     }
     iVar4 = FUN_00048514(1);
     if (iVar4 != 0) {
-      FUN_00040d00(s_font5x6p_sys_0008430c);
+      select_active_font(s_font5x6p_sys_0008430c);
     }
     FUN_000570b4();
   }
@@ -34744,8 +34770,8 @@ joined_r0x00048308:
       }
       DAT_00088960 = 0;
       if (bVar5) {
-        FUN_00040d00(s_font4x5p_sys_0008431c);
-        *DAT_0008429c = 0x60;
+        select_active_font(s_font4x5p_sys_0008431c);
+        *g_draw_color_index = 0x60;
         for (; iVar1 <= iVar2; iVar1 = (iVar1 + 1) * 0x10000 >> 0x10) {
           if (1 < (short)auStack_54[iVar1]) {
             uVar8 = Ordinal_1025((int)(short)auStack_54[iVar1],auStack_60,10);
@@ -34753,7 +34779,7 @@ joined_r0x00048308:
                          (short)(&DAT_00085ada)[iVar1 * 7] + 1);
           }
         }
-        FUN_00040d00(s_font5x6p_sys_0008430c);
+        select_active_font(s_font5x6p_sys_0008430c);
       }
       FUN_00048514(0);
       FUN_000570b4();
@@ -34798,10 +34824,10 @@ int param_1;
     FUN_00076e98(DAT_002028e8);
     DAT_00085c50 = (short)((uint)iVar4 >> 0x10);
     bVar5 = param_1 != 0;
-    *DAT_0008429c = 0xe0;
+    *g_draw_color_index = 0xe0;
     uVar3 = Ordinal_2005(10,iVar1);
     FUN_000229e0(uVar3,auStack_24,10);
-    sVar2 = FUN_000112a0(auStack_24);
+    sVar2 = measure_text_width(auStack_24);
     iVar4 = (int)sVar2;
     if (iVar4 < 0) {
       iVar4 = iVar4 + 1;
@@ -43249,7 +43275,7 @@ void FUN_000567ec()
   local_bc[2] = s_III__00087064;
   local_bc[3] = &DAT_0008705c;
   FUN_0007fce8(1);
-  FUN_0006bde0(auStack_ac,auStack_c4);
+  probe_save_slots(auStack_ac,auStack_c4);
   message_scroll_print_wrapped(s__6_Save_Game_Descriptions_0008703c);
   iVar1 = 0;
   DAT_00087990 = 0;
@@ -53699,17 +53725,17 @@ void FUN_00069e30()
 
 {
   if (DAT_0023c1d4 == '\x02') {
-    *DAT_0008429c = 0xf1;
+    *g_draw_color_index = 0xf1;
     *DAT_00084298 = 0xf1;
     FUN_00057118();
-    FUN_00040d00(s_font5x6i_sys_00086e98);
+    select_active_font(s_font5x6i_sys_00086e98);
     if (DAT_0024af8c != 0) {
       FUN_00076e98();
     }
     FUN_00078088();
     FUN_00078118();
     FUN_000781a0();
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_font5x6p_sys_0008430c);
     FUN_000570b4();
   }
   return;
@@ -53912,7 +53938,7 @@ short param_1;
   short local_ac [4];
   undefined1 auStack_a4 [160];
   
-  if ((param_1 != 0) && (FUN_0006bde0(auStack_a4,local_ac), local_ac[0] == 0)) {
+  if ((param_1 != 0) && (probe_save_slots(auStack_a4,local_ac), local_ac[0] == 0)) {
     FUN_00037c14(0);
   }
   return;
@@ -53920,7 +53946,12 @@ short param_1;
 
 
 
-void FUN_0006a200(param_1,param_2,param_3,param_4)
+// was FUN_0006a200. Draws one frame of a menu_button_list_navigate
+// list: param_3==0 blits pre-rendered bitmap buttons (the title screen's
+// Introduction/Create Character/.../Journey Onward), param_3!=0 draws
+// plain text items (e.g. journey_onward_load_slot_menu's save-slot
+// descriptions), highlighting whichever index equals param_4.
+void draw_menu_item_list(param_1,param_2,param_3,param_4)
 short param_1;
 char *param_2;
 char param_3;
@@ -53940,7 +53971,7 @@ short param_4;
      value (`iVar2`/`iVar6`, both plain `int`) to hold the string pointer
      itself -- correct on the original 32-bit binary where a pointer IS
      4 bytes, but truncating here on 64-bit. Widened to a real char**
-     with 8-byte stride (see local_1d0 in FUN_0006b178, the only
+     with 8-byte stride (see local_1d0 in journey_onward_load_slot_menu, the only
      populator of this array) and a dedicated pointer variable for the
      string-pointer role; iVar2 keeps its separate int (strlen/measurement)
      role below. */
@@ -53970,31 +54001,31 @@ short param_4;
   else {
     FUN_00057118();
     iVar4 = 0;
-    /* draw_text_string only honours *DAT_0008429c (the palette index this
+    /* draw_text_string only honours *g_draw_color_index (the palette index this
        loop sets to 0xa2/0xaa to highlight the selected item) when
-       DAT_0024af74 is nonzero; otherwise it falls back to the flat
-       DAT_0024ae20 color, which nothing in the whole decompile ever
+       g_text_use_palette_color is nonzero; otherwise it falls back to the flat
+       g_text_flat_color color, which nothing in the whole decompile ever
        writes (silently 0/black) -- fine as a default ink color for
        message-scroll text on its light parchment background, but
        invisible against this screen's dark title-art backdrop. Force
        the palette-indexed path for the duration of this draw, matching
-       what setting *DAT_0008429c here clearly intends. */
-    int _saved_af74 = DAT_0024af74;
-    DAT_0024af74 = 1;
+       what setting *g_draw_color_index here clearly intends. */
+    int _saved_af74 = g_text_use_palette_color;
+    g_text_use_palette_color = 1;
     if (0 < param_1) {
       do {
         uVar3 = 0xa2;
         if (iVar4 != param_4) {
           uVar3 = 0xaa;
         }
-        *DAT_0008429c = uVar3;
+        *g_draw_color_index = uVar3;
         *DAT_00084298 = uVar3;
         ppcVar5 = (char **)(param_2 + iVar4 * 8);
         pcVar_str = *ppcVar5;
         if (getenv("UW_DEBUG_TITLEMENU"))
-          fprintf(stderr, "[titlemenu] FUN_0006a200 text branch: item=%d/%d ptr=%p str='%s'\n",
+          fprintf(stderr, "[titlemenu] draw_menu_item_list text branch: item=%d/%d ptr=%p str='%s'\n",
                   iVar4, (int)param_1, (void *)pcVar_str, pcVar_str ? pcVar_str : "(null)");
-        while (sVar1 = FUN_000112a0(pcVar_str), 0x13e < sVar1) {
+        while (sVar1 = measure_text_width(pcVar_str), 0x13e < sVar1) {
           pcVar_str = *ppcVar5;
           iVar2 = Ordinal_1068(pcVar_str);
           pcVar_str[iVar2 - 1] = 0;
@@ -54008,7 +54039,7 @@ short param_4;
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
       } while (iVar4 < param_1);
     }
-    DAT_0024af74 = _saved_af74;
+    g_text_use_palette_color = _saved_af74;
   }
   FUN_000570b4();
   return;
@@ -54066,7 +54097,7 @@ char param_3;
                  && ((int)*(short *)(pcVar_rec + 10) <= (int)local_2e)) {
                 bVar2 = true;
                 if ((short)iVar8 != (short)iVar9) {
-                  FUN_0006a200(param_1,param_2,0,iVar8);
+                  draw_menu_item_list(param_1,param_2,0,iVar8);
                   iVar9 = iVar8;
                 }
                 break;
@@ -54083,7 +54114,7 @@ char param_3;
     }
   }
   else {
-    FUN_00040d00(s_fontbig_sys_0008432c);
+    select_active_font(s_fontbig_sys_0008432c);
     sVar4 = next_input_event();
     bVar2 = bVar3;
     if (0 < sVar4) {
@@ -54095,7 +54126,7 @@ char param_3;
         if (0 < iVar1) {
           iVar8 = 0;
           do {
-            sVar4 = FUN_000112a0(*(char **)(param_2 + iVar8 * 8));
+            sVar4 = measure_text_width(*(char **)(param_2 + iVar8 * 8));
             iVar6 = -(int)sVar4;
             iVar7 = iVar6 + 0x140;
             if (iVar7 < 0) {
@@ -54107,7 +54138,7 @@ char param_3;
               if ((iVar6 <= local_2e) && ((int)local_2e < iVar6 + *(short *)(DAT_000879b0 + 6))) {
                 bVar2 = true;
                 if ((short)iVar8 != (short)iVar9) {
-                  FUN_0006a200(param_1,param_2,param_3,iVar8);
+                  draw_menu_item_list(param_1,param_2,param_3,iVar8);
                   iVar9 = iVar8;
                 }
                 break;
@@ -54122,7 +54153,7 @@ char param_3;
         sVar4 = next_input_event();
       } while (0 < sVar4);
     }
-    FUN_00040d00(s_FONT5X6P_SYS_00084e9c);
+    select_active_font(s_FONT5X6P_SYS_00084e9c);
   }
   if (bVar2) {
     sVar5 = 0;
@@ -54149,9 +54180,9 @@ int param_4;
   
   iVar4 = -2;
   do {
-    FUN_00040d00(s_fontbig_sys_0008432c);
-    FUN_0006a200(param_1,param_2,param_3,param_4);
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_fontbig_sys_0008432c);
+    draw_menu_item_list(param_1,param_2,param_3,param_4);
+    select_active_font(s_font5x6p_sys_0008430c);
     while (sVar2 = next_input_event(), sVar2 < 0) {
       ushort _cyc_t = DAT_0023bf74;
       FUN_000735fc();
@@ -54160,7 +54191,7 @@ int param_4;
          this tick and re-blitted the OPSCR title; recolour the menu-item
          bitmaps too so they shimmer in step with the title, the way the
          original's hardware palette swap did. */
-      if (DAT_0023bf74 != _cyc_t) FUN_0006a200(param_1,param_2,param_3,param_4);
+      if (DAT_0023bf74 != _cyc_t) draw_menu_item_list(param_1,param_2,param_3,param_4);
     }
     if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x param_4=%d\n", (int)sVar2, (int)param_4);
     sVar1 = (short)param_1;
@@ -54270,7 +54301,12 @@ LAB_0006b144:
 
 
 
-undefined4 FUN_0006b178()
+// was FUN_0006b178. Title screen's "Journey Onward" entry point: shows
+// the save-slot picker (via probe_save_slots + menu_button_list_navigate)
+// and, on a real selection, copies that slot into \SAVE0 and enters
+// gameplay -- see the tail's own comment for why it does a direct file
+// copy rather than reusing the in-game Save/Load paths.
+undefined4 journey_onward_load_slot_menu()
 
 {
   char stack0xffdc3198_buf [256];
@@ -54294,13 +54330,13 @@ undefined4 FUN_0006b178()
   undefined4 auStack_201d0 [32766];
   short local_1d8 [4];
   /* Was `undefined4 local_1d0 [4]`, storing real char* pointers into
-     4-byte slots (see FUN_0006a200's param_3!=0 branch, which reads this
+     4-byte slots (see draw_menu_item_list's param_3!=0 branch, which reads this
      array as an 8-byte-stride char** table). Widened to match. */
   char *local_1d0 [4];
   char acStack_1c0 [264];
   /* Was `char acStack_b8 [38]` -- another Ghidra stack-frame-size
      miscalculation (same bug class fixed elsewhere this session).
-     FUN_0006bde0 unconditionally writes 4 fixed-width 0x28(40)-byte
+     probe_save_slots unconditionally writes 4 fixed-width 0x28(40)-byte
      records into whatever buffer its param_1 points at (uVar5*0x28 +
      charindex, for uVar5 = 0..3), i.e. it needs 0xA0 (160) bytes -- and
      both its other call sites (FUN_000567ec's auStack_ac, FUN_0006a1c4's
@@ -54327,7 +54363,7 @@ undefined4 FUN_0006b178()
   Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
   FUN_0006c98c(0xffffffff,acStack_1c0,1);
   FUN_000570b4();
-  FUN_0006bde0(acStack_b8,local_1d8);
+  probe_save_slots(acStack_b8,local_1d8);
   iVar4 = 0;
   uVar10 = (uint)local_1d8[0];
   uVar7 = 0;
@@ -54335,7 +54371,7 @@ undefined4 FUN_0006b178()
     if ((uVar10 & 1 << (uVar7 & 0xff)) != 0) {
       /* Was `local_92 + uVar7 * 0x28` -- local_92 is a separate,
          never-written 122-byte stack local (too small for this indexing
-         past uVar7==2 anyway), while FUN_0006bde0 actually wrote the 4
+         past uVar7==2 anyway), while probe_save_slots actually wrote the 4
          real 0x28-byte slot-description records into acStack_b8 (see its
          own declaration comment). Also, this loop is meant to walk
          BACKWARD from the END of the 40-byte record over trailing
@@ -54389,16 +54425,16 @@ undefined4 FUN_0006b178()
        already fixed elsewhere this session -- see dispatch_object_action's
        uVar11 comment). Use a real pointer local instead. */
     pcVar_str = (char *)FUN_0007863c(0x301);
-    FUN_00040d00(s_fontbig_sys_0008432c);
-    *DAT_0008429c = 0xa2;
+    select_active_font(s_fontbig_sys_0008432c);
+    *g_draw_color_index = 0xa2;
     *DAT_00084298 = 0xa2;
-    sVar2 = FUN_000112a0(pcVar_str);
+    sVar2 = measure_text_width(pcVar_str);
     iVar8 = -(int)sVar2 + 0x140;
     if (iVar8 < 0) {
       iVar8 = -(int)sVar2 + 0x141;
     }
     draw_text_string(pcVar_str,(short)(iVar8 >> 1) + 10,0x5a);
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_font5x6p_sys_0008430c);
     /* Was `FUN_0006c0c0(iVar4 + 1)` -- FUN_0006c0c0 is "Save Game"
        (copies the live \SAVE0 session INTO the chosen slot), which makes
        no sense from the title screen where no game is running yet: this
@@ -54853,7 +54889,10 @@ LAB_0006bdbc:
 
 
 
-void FUN_0006bde0(param_1,param_2)
+// was FUN_0006bde0. Fills param_1 with 4 fixed-width 0x28-byte records
+// (each slot's "desc" file text, space-padded, or a "not used yet"
+// placeholder) and *param_2 with a bitmask of which slots are real.
+void probe_save_slots(param_1,param_2)
 char *param_1;
 ushort * param_2;
 
@@ -54897,7 +54936,7 @@ ushort * param_2;
     iVar4 = FUN_000226e8(acStack_128,0);
     if ((iVar4 != -1) && (iVar4 = FUN_000227d4(acStack_128), iVar4 != -1)) {
       /* Pad the record with spaces before reading the real "desc" file
-         text over the front of it -- FUN_0006b178's caller trims
+         text over the front of it -- journey_onward_load_slot_menu's caller trims
          trailing spaces off this record to find where the real text
          ends, which only works if anything past the file's own (short)
          content is a space rather than whatever stack garbage happened
@@ -54945,7 +54984,7 @@ undefined4 param_2;
   short local_b4 [4];
   undefined1 auStack_ac [160];
   
-  FUN_0006bde0(auStack_ac,local_b4);
+  probe_save_slots(auStack_ac,local_b4);
   if (param_1 == 0) {
     iVar1 = FUN_0006c264(param_2,auStack_d4 + (short)param_2 * 0x28);
     iVar2 = 4;
@@ -54955,7 +54994,7 @@ undefined4 param_2;
   }
   else if (false) {
     /* Was `(1 << (param_2-1) & local_b4[0]) == 0` -- local_b4[0] is the
-       bitmask FUN_0006bde0 just built of which of the 4 numbered slots
+       bitmask probe_save_slots just built of which of the 4 numbered slots
        already HAVE a save (bit set = a real "\SAVEn\desc" was found on
        disk), so this required the chosen slot to already be occupied
        before allowing a save into it -- meaning a brand new slot (the
@@ -55024,7 +55063,7 @@ char param_1;
      stack garbage, so the '0' substitution below found a random byte (or
      nothing) instead of the real "SAVE0" digit. Same idea as the copy
      just above into acStack_85df0 (which this function doesn't otherwise
-     use for the digit search), mirrored here to match FUN_0006bde0's
+     use for the digit search), mirrored here to match probe_save_slots's
      working copy-then-strchr pattern. */
   pcVar6 = &DAT_000857a0;
   wptr_50330 = acStack_650;
@@ -55036,7 +55075,7 @@ char param_1;
   pcVar6 = (char *)Ordinal_1064(acStack_650,0x30);
   pcVar5 = &DAT_0023cca8;
     stack0xffdc2e30_ptr = stack0xffdc2e30_buf;
-  /* Same DAT_000857a0-is-unrecoverable NULL risk as FUN_0006bde0 above
+  /* Same DAT_000857a0-is-unrecoverable NULL risk as probe_save_slots above
      -- see its comment. Here the digit is a save-slot number (SAVE0,
      SAVE1, ...), so a NULL means this path build silently keeps
      whatever acStack_650 already had instead of crashing. */
@@ -55094,7 +55133,7 @@ char param_1;
          already stored), and building that whole text-entry flow from
          scratch is out of scope here. Write a real, useful description
          anyway -- the current dungeon level -- so a save actually shows
-         up as "used" (FUN_0006bde0 probes for this file's existence) and
+         up as "used" (probe_save_slots probes for this file's existence) and
          the Load list has something meaningful to show instead of
          staying blank forever. */
       {
@@ -55160,7 +55199,7 @@ undefined4 param_2;
   } while (cVar1 != '\0');
   Ordinal_1063(local_530,&DAT_000857a0);
   pcVar3 = (char *)Ordinal_1064(local_530,0x30);
-  /* Same DAT_000857a0-is-unrecoverable NULL risk as FUN_0006bde0 above. */
+  /* Same DAT_000857a0-is-unrecoverable NULL risk as probe_save_slots above. */
   if (pcVar3 != (char *)0x0) {
   *pcVar3 = param_1 + '0';
   pcVar3[1] = '\0';
@@ -57920,16 +57959,16 @@ void FUN_00070c90()
   undefined1 auStack_68 [16];
   char local_58 [52];
 
-  FUN_00040d00(s_fontchar_sys_00087330);
+  select_active_font(s_fontchar_sys_00087330);
   *DAT_00084298 = 0x5c;
-  *DAT_0008429c = 0x5c;
+  *g_draw_color_index = 0x5c;
   uVar7 = FUN_0007863c((int)DAT_00201c74);
-  /* Was `FUN_000112a0()` with no argument -- see draw_text_string/
-     FUN_000112a0's own comments above for the root "dropped argument"
+  /* Was `measure_text_width()` with no argument -- see draw_text_string/
+     measure_text_width's own comments above for the root "dropped argument"
      bug this matches; uVar7 (the string FUN_0007863c just returned) is
      right here, so pass it explicitly instead of hoping it's still
      sitting in the right register. */
-  sVar6 = FUN_000112a0(uVar7);
+  sVar6 = measure_text_width(uVar7);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
@@ -57958,7 +57997,7 @@ void FUN_00070c90()
   uVar7 = FUN_0007863c((*(byte *)(iVar12 + 100) >> 5) + 0x17 | 0x400);
   Ordinal_1063(local_58,uVar7);
   iVar13 = *(short *)(DAT_000879b0 + 6) + 0x14;
-  sVar6 = FUN_000112a0(local_58);
+  sVar6 = measure_text_width(local_58);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
@@ -57966,7 +58005,7 @@ void FUN_00070c90()
   draw_text_string(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   uVar7 = FUN_0007863c(700);
   iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
-  sVar6 = FUN_000112a0(uVar7);
+  sVar6 = measure_text_width(uVar7);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
@@ -57986,7 +58025,7 @@ void FUN_00070c90()
   Ordinal_1063(local_58,uVar7);
   uVar7 = FUN_0007863c(0x2be);
   Ordinal_1063(local_58,uVar7);
-  sVar6 = FUN_000112a0(local_58);
+  sVar6 = measure_text_width(local_58);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
@@ -58059,7 +58098,7 @@ LAB_00071110:
         }
         iVar14 = (short)extraout_r1_02 * 0x4a + 0x32;
         draw_text_string(uVar7,iVar14,iVar13);
-        iVar9 = FUN_000112a0(local_58);
+        iVar9 = measure_text_width(local_58);
         draw_text_string(local_58,(iVar14 - iVar9) + 0x46,iVar13);
         iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
       } while (iVar12 < 0x14);
@@ -62280,7 +62319,7 @@ void FUN_00077f30()
   Ordinal_1071(auStack_28,DAT_00086df8,0xf);
   local_a = 0;
   Ordinal_1416(auStack_28);
-  sVar2 = FUN_000112a0(auStack_28);
+  sVar2 = measure_text_width(auStack_28);
   iVar4 = -(int)sVar2 + 0x48;
   if (iVar4 < 0) {
     iVar4 = -(int)sVar2 + 0x49;
@@ -62298,7 +62337,7 @@ void FUN_00077f30()
      fixed original-binary address Ghidra never recovered contents for
      (see FUN_00041304 for the same pattern) -- skipped rather than
      guessed, this is cosmetic HUD text formatting. */
-  iVar4 = FUN_000112a0(auStack_28);
+  iVar4 = measure_text_width(auStack_28);
   draw_text_string(auStack_28,0x138 - iVar4,0x16);
   return;
 }
@@ -62313,7 +62352,7 @@ uint param_1;
   undefined1 auStack_c [4];
   
   FUN_000229e0(*(undefined1 *)((param_1 & 0xff) + DAT_0023be74 + 5),auStack_c,10);
-  iVar1 = FUN_000112a0(auStack_c);
+  iVar1 = measure_text_width(auStack_c);
   draw_text_string(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
   return;
 }
@@ -62331,7 +62370,7 @@ void FUN_00078088()
   sVar1 = Ordinal_1068(auStack_c);
   auStack_c[sVar1] = 0x2f;
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
-  iVar2 = FUN_000112a0(auStack_c);
+  iVar2 = measure_text_width(auStack_c);
   draw_text_string(auStack_c,0x138 - iVar2,0x32);
   return;
 }
@@ -62350,7 +62389,7 @@ void FUN_00078118()
   auStack_10[sVar1] = 0x2f;
   FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_10 + ((sVar1 + 1) * 0x10000 >> 0x10),10)
   ;
-  iVar2 = FUN_000112a0(auStack_10);
+  iVar2 = measure_text_width(auStack_10);
   draw_text_string(auStack_10,0x138 - iVar2,0x39);
   return;
 }
@@ -62366,7 +62405,7 @@ void FUN_000781a0()
   
   uVar1 = Ordinal_2008(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
   Ordinal_1039(uVar1,auStack_18,10);
-  iVar2 = FUN_000112a0(auStack_18);
+  iVar2 = measure_text_width(auStack_18);
   draw_text_string(auStack_18,0x138 - iVar2,0x40);
   return;
 }
@@ -62391,7 +62430,7 @@ uint param_1;
   uVar1 = Ordinal_1416();
   iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
   draw_text_string(uVar1,0xf2,iVar4);
-  iVar2 = FUN_000112a0(auStack_18);
+  iVar2 = measure_text_width(auStack_18);
   draw_text_string(auStack_18,0x138 - iVar2,iVar4);
   return;
 }
@@ -62413,10 +62452,10 @@ void FUN_0007830c()
       capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
   }
-  *DAT_0008429c = 0xf1;
+  *g_draw_color_index = 0xf1;
   *DAT_00084298 = 0xf1;
   FUN_00057118();
-  FUN_00040d00(s_font5x6i_sys_00086e98);
+  select_active_font(s_font5x6i_sys_00086e98);
   FUN_00077f30();
   bVar1 = 0;
   do {
@@ -62427,13 +62466,13 @@ void FUN_0007830c()
   FUN_00078118();
   FUN_000781a0();
   bVar1 = 0;
-  *DAT_0008429c = 0x68;
+  *g_draw_color_index = 0x68;
   *DAT_00084298 = 0x68;
   do {
     FUN_0007821c(bVar1);
     bVar1 = bVar1 + 1;
   } while (bVar1 < 6);
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   FUN_000570b4();
   return;
 }
@@ -62448,8 +62487,8 @@ void FUN_00078434()
   uint uVar3;
   ushort local_c [2];
   
-  FUN_00040d00(s_font5x6i_sys_00086e98);
-  *DAT_0008429c = 0x68;
+  select_active_font(s_font5x6i_sys_00086e98);
+  *g_draw_color_index = 0x68;
   *DAT_00084298 = 0x68;
   if (DAT_00085a6c[1] < 8) {
     local_c[0] = (ushort)DAT_0024af80;
@@ -62475,7 +62514,7 @@ void FUN_00078434()
       FUN_000570b4();
     }
   }
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   FUN_00057604(1);
   return;
 }
@@ -66670,14 +66709,14 @@ void msg_scroll_more_prompt()
   msg_scroll_scroll_up_line(((int)*(short *)(DAT_000879b0 + 6) + (int)*(short *)(DAT_00250704 + 10)) * 0x10000 >>
                0x10);
   sVar3 = *(short *)(DAT_00250704 + 10);
-  uVar2 = *DAT_0008429c;
-  *DAT_0008429c = 0xd4;
+  uVar2 = *g_draw_color_index;
+  *g_draw_color_index = 0xd4;
   draw_text_string(s__MORE__00087994,(int)*(short *)(DAT_00250704 + 0xc),(int)sVar3);
   FUN_0007f170(0,1);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 0xc),(int)sVar3,*(undefined2 *)(DAT_00250704 + 6),
                *(undefined2 *)(DAT_00250704 + 2));
-  *DAT_0008429c = uVar2;
+  *g_draw_color_index = uVar2;
   DAT_00250710 = *(short *)(DAT_00250704 + 0x14) + -1;
   puVar1 = (undefined2 *)(DAT_00250704 + 0xc);
   *(char *)(DAT_00250704 + 8) = (char)*puVar1;
@@ -66746,7 +66785,7 @@ char *param_1;
     }
     DAT_00250710 = *(undefined2 *)(DAT_00250704 + 0x14);
     DAT_0025071c = 0;
-    *DAT_0008429c = *(undefined1 *)(DAT_00250704 + 0x16);
+    *g_draw_color_index = *(undefined1 *)(DAT_00250704 + 0x16);
     *DAT_00084298 = 0x2a;
     uVar3 = Ordinal_1068(param_1);
     for (uVar3 = uVar3 & 0xffff; 0x31 < (uVar3 & 0xffff);
@@ -66878,7 +66917,7 @@ LAB_0007f860:
         uVar6 = 0xb4;
       }
 LAB_0007f8b0:
-      *DAT_0008429c = uVar6;
+      *g_draw_color_index = uVar6;
     }
     else {
       if (cVar2 == '6') {
@@ -66898,7 +66937,7 @@ LAB_0007f894:
       }
     }
 LAB_0007f8b8:
-    *(undefined1 *)(DAT_00250704 + 0x16) = *DAT_0008429c;
+    *(undefined1 *)(DAT_00250704 + 0x16) = *g_draw_color_index;
     *(undefined1 *)(DAT_00250704 + 0x17) = 0;
   }
   if (*(int *)(DAT_00250704 + 0x10) == 0) goto LAB_0007fa30;
@@ -66940,7 +66979,7 @@ LAB_0007f9ac:
   *(undefined1 *)(DAT_00250704 + 0x12) = 0;
   *(undefined1 *)(DAT_00250704 + 0x13) = 0;
 LAB_0007fa30:
-  iVar7 = FUN_000112a0(param_1);
+  iVar7 = measure_text_width(param_1);
   iVar5 = DAT_00250704;
   if (((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
       || (32 < s_wrap_recursion_depth))
@@ -66955,7 +66994,7 @@ LAB_0007fa30:
       iVar5 = DAT_00250704;
     }
     draw_text_string(param_1,(int)*(short *)(iVar5 + 8),(int)*(short *)(iVar5 + 10));
-    iVar5 = FUN_000112a0(param_1);
+    iVar5 = measure_text_width(param_1);
     iVar5 = *(short *)(DAT_00250704 + 8) + iVar5;
     *(char *)(DAT_00250704 + 8) = (char)iVar5;
     *(char *)(DAT_00250704 + 9) = (char)((uint)iVar5 >> 8);
@@ -67001,7 +67040,7 @@ undefined4 param_2;
     cVar6 = ' ';
     do {
       *pcVar3 = '\0';
-      sVar2 = FUN_000112a0(param_1);
+      sVar2 = measure_text_width(param_1);
       if ((int)*(short *)(DAT_00250704 + 8) + (int)sVar2 < (int)*(short *)(DAT_00250704 + 6))
       goto LAB_0007fc2c;
       pcVar4 = (char *)Ordinal_1407(param_1,0x20);
@@ -67021,7 +67060,7 @@ undefined4 param_2;
       FUN_0007f7cc(&DAT_0008522c,1);
       goto LAB_0007fc64;
     }
-    sVar2 = FUN_000112a0(param_1);
+    sVar2 = measure_text_width(param_1);
   } while ((int)*(short *)(DAT_00250704 + 6) <= (int)*(short *)(DAT_00250704 + 8) + (int)sVar2);
 LAB_0007fc2c:
   *pcVar3 = cVar6;
@@ -67139,7 +67178,7 @@ short param_1;
   iVar2 = (int)DAT_0025070c;
   sVar1 = *(short *)(DAT_00250704 + 10);
   FUN_0007f0e0();
-  *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(iVar2,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
                (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
@@ -67163,7 +67202,7 @@ int param_1;
   iVar3 = (int)DAT_0025070c;
   sVar1 = *(short *)(DAT_00250704 + 10);
   FUN_0007f0e0();
-  *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(iVar3,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
                (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
@@ -67212,14 +67251,14 @@ short param_5;
     param_5 = 0x32;
   }
   FUN_0007f0e0();
-  *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   if (param_1 == (undefined *)0x0) {
-    sVar3 = FUN_000112a0(&DAT_000879a8);
+    sVar3 = measure_text_width(&DAT_000879a8);
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
     param_1 = &DAT_000879a8;
   }
   else {
-    sVar3 = FUN_000112a0(param_1);
+    sVar3 = measure_text_width(param_1);
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
   }
   sVar2 = *(short *)(DAT_00250704 + 6);
@@ -67245,7 +67284,7 @@ short param_5;
   uVar11 = (int)sVar5 >> 0x1f;
   acStack_a1[(((int)sVar5 ^ uVar11) - uVar11) + 1] = '\0';
   local_a8 = 3000;
-  sVar4 = FUN_000112a0(acStack_a1 + 1);
+  sVar4 = measure_text_width(acStack_a1 + 1);
   iVar7 = ((int)sVar4 + (int)DAT_0025070c) * 0x10000 >> 0x10;
   iVar14 = (int)*(short *)(DAT_00250704 + 10);
   FUN_00057118();
@@ -67302,7 +67341,7 @@ short param_5;
     } while (cVar1 != '\0');
     uVar11 = (uint)sVar5;
     local_68[(uVar11 ^ (int)uVar11 >> 0x1f) - ((int)uVar11 >> 0x1f)] = '\0';
-    sVar5 = FUN_000112a0(local_68);
+    sVar5 = measure_text_width(local_68);
     iVar7 = ((int)sVar5 + (int)DAT_0025070c) * 0x10000 >> 0x10;
     if ((local_a8 < 2000) || (3999 < local_a8)) {
       if (local_a8 == 4000) {
@@ -67422,7 +67461,7 @@ LAB_000804d0:
             uVar13 = 0;
           }
           if (((((iVar12 != -1) && (iVar10 = Ordinal_1417(iVar12,0x157), iVar10 != 0)) &&
-               (sVar5 = FUN_000112a0(acStack_a1 + 1), sVar5 < (short)(sVar3 + -0x14 + sVar2))) &&
+               (sVar5 = measure_text_width(acStack_a1 + 1), sVar5 < (short)(sVar3 + -0x14 + sVar2))) &&
               (uVar11 = Ordinal_1068(acStack_a1 + 1), uVar11 < (uint)(int)param_5)) &&
              ((param_4 != 0 || (iVar12 = Ordinal_1417(iVar12,4), iVar12 != 0)))) {
             sVar5 = Ordinal_1068(acStack_a1 + 1);
@@ -67441,7 +67480,7 @@ LAB_0008062c:
       set_draw_color(0x2a);
       rect_fill_or_save_restore((int)DAT_0025070c,*(short *)(DAT_00250704 + 10),*(undefined2 *)(DAT_00250704 + 6)
                    ,*(short *)(DAT_000879b0 + 6) + *(short *)(DAT_00250704 + 10));
-      *DAT_0008429c = *(undefined1 *)(DAT_00250704 + 0x16);
+      *g_draw_color_index = *(undefined1 *)(DAT_00250704 + 0x16);
       draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
     }
     sVar5 = (short)uVar13;
@@ -67466,7 +67505,7 @@ int * param_3;
   
   iVar5 = *param_3;
   FUN_0007f0e0();
-  *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   if (param_1 == 0) {
     FUN_00078c80(param_2);
   }
