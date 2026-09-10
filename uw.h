@@ -879,7 +879,7 @@ undefined4 begin_directional_move();
 void apply_heading_turn();
 void set_player_tile_position();
 void commit_player_move();
-void demo_set_player_pos(double x, double y, double yaw_deg, double pitch_deg);
+void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg);
 void resolve_move_vector();
 void FUN_0003dba0();
 void FUN_0003dbd8();

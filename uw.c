@@ -27834,8 +27834,11 @@ void commit_player_move()
 // and commit_player_move (to pack the final fine position/yaw back into the
 // player object record DAT_0023be64) so this goes through the same object-
 // sync paths real movement does, instead of duplicating them. x/y are tile
-// coordinates with a fractional part (e.g. 32.5); yaw/pitch are degrees.
-void demo_set_player_pos(double x, double y, double yaw_deg, double pitch_deg)
+// coordinates with a fractional part (e.g. 32.5); z is the same raw height
+// unit sync_camera_from_player's [playerpos] print shows (DAT_00204884,
+// e.g. z=768 at spawn) -- pass back a value read from that print to land on
+// an exact remembered spot; yaw/pitch are degrees.
+void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg)
 {
   set_player_tile_position((int)floor(x), (int)floor(y));
   /* Clear any in-flight smooth-turn interpolation (FUN_00069470's
@@ -27851,6 +27854,11 @@ void demo_set_player_pos(double x, double y, double yaw_deg, double pitch_deg)
   DAT_0023bea8 = 0;
   DAT_00204880 = (short)lround(x * 256.0);
   DAT_00204882 = (short)lround(y * 256.0);
+  /* set_player_tile_position just computed a default DAT_00204884 from the
+     destination tile's own floor-height table lookup; override it with the
+     caller's exact value (e.g. to stand at a specific mid-air/step height,
+     not just "on the floor of this tile"). */
+  DAT_00204884 = (short)lround(z);
   DAT_00201c70 = (short)lround(yaw_deg * (65536.0 / 360.0));
   DAT_0023beb4 = (short)lround(pitch_deg * 256.0);
   DAT_00201c78 = DAT_00201c70;

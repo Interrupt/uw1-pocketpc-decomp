@@ -26,8 +26,11 @@
  *                    the ring-walk that marks automap tiles revealed --
  *                    TELEPORT and ordinary movement don't trigger this
  *                    on their own.
- *   SETPLAYERPOS <x> <y> <yaw> <pitch>  -- like TELEPORT but fine-grained:
+ *   SETPLAYERPOS <x> <y> <z> <yaw> <pitch>  -- like TELEPORT but fine-grained:
  *                    x/y take a fractional tile position (e.g. "32.5 2.25"),
+ *                    z is the raw height unit the [playerpos] print's own
+ *                    "z=" value uses (not a tile coordinate -- copy a value
+ *                    straight from that print to land on the same height),
  *                    and yaw/pitch (degrees) set the player's facing/look
  *                    angle directly, via demo_set_player_pos. Goes through
  *                    the same object-sync path as TELEPORT (set_player_tile_
@@ -494,15 +497,15 @@ void demomode_pump(void) {
     }
 
     if (strncasecmp(p, "SETPLAYERPOS ", 13) == 0) {
-        double x = 0, y = 0, yaw = 0, pitch = 0;
-        if (sscanf(p + 13, "%lf %lf %lf %lf", &x, &y, &yaw, &pitch) != 4) {
+        double x = 0, y = 0, z = 0, yaw = 0, pitch = 0;
+        if (sscanf(p + 13, "%lf %lf %lf %lf %lf", &x, &y, &z, &yaw, &pitch) != 5) {
             fprintf(stderr, "[demo] malformed SETPLAYERPOS line '%s', skipping\n", p);
             g_demo_next_tick = now;
             return;
         }
-        fprintf(stderr, "[demo] SETPLAYERPOS tile=(%.3f,%.3f) yaw=%.1f pitch=%.1f\n",
-                x, y, yaw, pitch);
-        demo_set_player_pos(x, y, yaw, pitch);
+        fprintf(stderr, "[demo] SETPLAYERPOS tile=(%.3f,%.3f) z=%.0f yaw=%.1f pitch=%.1f\n",
+                x, y, z, yaw, pitch);
+        demo_set_player_pos(x, y, z, yaw, pitch);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
