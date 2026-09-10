@@ -29776,6 +29776,15 @@ short param_5;
             (int)*pbVar11, iVar9, (int)pbVar11[iVar9], (int)pbVar11[iVar9], (int)param_4);
   if (pbVar11[iVar9] != 0xff) {
     pbVar6 = pbVar11 + (short)(ushort)pbVar11[1] + 2;
+    if (getenv("UW_DEBUG_CRITTER") && param_1 == 26) {
+      static int _dumped26 = 0;
+      if (!_dumped26) {
+        _dumped26 = 1;
+        fprintf(stderr, "[critter26] pbVar11[1]=%d *pbVar6=%d pbVar6[0..79]:", (int)pbVar11[1], (int)*pbVar6);
+        for (int _i = 0; _i < 80; _i++) fprintf(stderr, " %02x", pbVar6[_i]);
+        fprintf(stderr, "\n");
+      }
+    }
     uVar3 = (ushort)pbVar6[(((int)param_5 +
                             ((int)((uint)pbVar11[iVar9] << 0x13) >> 0x10)) * 0x10000 >> 0x10)
                            + 1];
@@ -29785,12 +29794,16 @@ short param_5;
                       << 0x13) >> 0x10)) * 0x10000 >> 0x10) + 1] == 0xff) {
       uVar3 = 0;
     }
-    if (getenv("UW_DEBUG_CRITTER"))
-      fprintf(stderr, "[critter] decode_critter_sprite_page: frame-check param_4=%d *pbVar8(frame_count)=%d %s\n",
-              (int)param_4, (int)(uint)*pbVar8, (int)param_4 <= (int)(uint)*pbVar8 ? "PASS" : "FAIL(returns 0, no decode)");
+    if (getenv("UW_DEBUG_CRITTER") && param_1 == 26)
+      fprintf(stderr, "[critter26] frame-check type=%d tier=%d dir=%d frame=%d tierbyte=%d uVar3(glyph_sel)=%d quality=%d *pbVar8(frame_count)=%d %s\n",
+              (int)param_1, (int)param_2, (int)param_3, (int)param_5, (int)pbVar11[iVar9], (int)(short)uVar3, (int)param_4, (int)(uint)*pbVar8, (int)param_4 <= (int)(uint)*pbVar8 ? "PASS" : "FAIL(returns 0, no decode)");
     if ((int)param_4 <= (int)(uint)*pbVar8) {
       iVar9 = (uint)*pbVar8 * 0x20 + 3;
       iVar5 = ((int)(short)uVar3 << 0x11) >> 0x10;
+      if (getenv("UW_DEBUG_CRITTER") && param_1 == 26)
+        fprintf(stderr, "[critter26] iVar5(glyph_sel_signed)=%d iVar9(table_base)=%d final_offset_bytes=[%d,%d] -> glyph_ptr_offset=%u\n",
+                iVar5, iVar9, (int)pbVar8[iVar5+iVar9], (int)pbVar8[iVar5+iVar9+1],
+                (unsigned)(((uint)pbVar8[iVar5 + iVar9] + (uint)pbVar8[iVar5 + iVar9 + 1] * 0x100)));
       pbVar11 = pbVar11 + ((int)(((uint)pbVar8[iVar5 + iVar9] +
                                  (uint)pbVar8[iVar5 + iVar9 + 1] * 0x100) * 0x10000) >> 0x10);
       DAT_00202508 = (ushort)*pbVar11;
@@ -29935,10 +29948,26 @@ uint param_2;
    per-type threshold table based on param_2, and hands off to
    decode_critter_sprite_page. Returns 0 (no-op) for a type with no
    assoc-table entry (0xff sentinel). */
-undefined4 resolve_critter_sprite_tier(param_1,param_2,param_3)
+/* Ghidra dropped this function's real 4th argument -- the caller in
+   emit_tile_objects passes `(uint)DAT_0023bc88 * (int)DAT_00086b30`
+   (the same distance/lighting "shade" term the class-0 item path passes
+   to FUN_00040770) as a 4th arg, but this definition only declared 3
+   params, so that shade value was silently discarded and the tier
+   threshold search below compared against `param_2` (the VIEWING
+   DIRECTION) instead. That made the level-of-detail tier depend on which
+   way you were looking at a critter rather than how close it was --
+   confirmed via UW_DEBUG_CRITTER: tier stayed pinned at 0 for every
+   direction at a fixed test distance, and pbVar11[iVar9] (the real
+   per-direction tier-table byte) turned out to only gate a same-image
+   selector at that tier, giving the appearance of a critter always
+   facing the camera regardless of orbit angle. Restored the 4th param
+   and use it (not direction) for the tier search, matching the
+   class-0 sibling's shade-based convention. */
+undefined4 resolve_critter_sprite_tier(param_1,param_2,param_3,param_4)
 short param_1;
 undefined4 param_2;
 short param_3;
+uint param_4;
 
 {
   byte bVar1;
@@ -29946,14 +29975,14 @@ short param_3;
   byte *pbVar3;
   uint uVar4;
   int iVar5;
-  
+
   if (0x60 < param_3) {
     param_3 = 0;
   }
   uVar4 = (uint)(byte)(&DAT_0023ce70)[param_1 * 2];
   if (getenv("UW_DEBUG_CRITTER"))
-    fprintf(stderr, "[critter] resolve_critter_sprite_tier: param_1(type_idx)=%d param_2(dir)=%d param_3(frame)=%d -> assoc[%d]=%u (0x%x)\n",
-            (int)param_1, (int)(short)param_2, (int)param_3, (int)param_1 * 2, uVar4, uVar4);
+    fprintf(stderr, "[critter] resolve_critter_sprite_tier: param_1(type_idx)=%d param_2(dir)=%d param_3(frame)=%d param_4(shade)=%d -> assoc[%d]=%u (0x%x)\n",
+            (int)param_1, (int)(short)param_2, (int)param_3, (int)param_4, (int)param_1 * 2, uVar4, uVar4);
   if (0xff < (short)param_2) {
     param_2 = 0;
   }
@@ -29966,10 +29995,14 @@ short param_3;
     iVar5 = 3;
     do {
       pbVar3 = pbVar3 + 1;
-      if ((short)param_2 < (short)(ushort)bVar1) break;
+      if ((short)param_4 < (short)(ushort)bVar1) break;
       iVar5 = iVar5 + -1;
       bVar1 = *pbVar3;
     } while (0 < iVar5);
+    if (getenv("UW_DEBUG_CRITTER"))
+      fprintf(stderr, "[critter] resolve_critter_sprite_tier: tier-search shade=%d thresholds=[%d,%d,%d] -> tier=%d\n",
+              (int)param_4, (int)(&DAT_0023c460)[uVar4*3], (int)(&DAT_0023c460)[uVar4*3+1],
+              (int)(&DAT_0023c460)[uVar4*3+2], 3 - (int)iVar5);
     decode_critter_sprite_page(uVar4,3 - (short)iVar5,param_2,(&DAT_0023ce71)[param_1 * 2],param_3);
     uVar2 = 1;
   }
@@ -49515,8 +49548,9 @@ LAB_00061d34:
                  ((int)((int)_col_angle +
                         (uint)*(ushort *)(&DAT_00086a18 + DAT_0023b4a0 * 2)) >> 0xb)) + 0x20;
       bVar13 = (&DAT_00086cc0)[((_dm % 0x20) + 0x20) % 0x20];
-      if (getenv("UW_DEBUG_CRITTER") && (uVar27 & 0x1ff) == 0x5a)
-        fprintf(stderr, "[critter] dirtable: col_angle=%d quad_term=%d sum=%d shifted=%d _dm=%d bVar13=%d\n",
+      if (getenv("UW_DEBUG_CRITTER"))
+        fprintf(stderr, "[critter] dirtable: id=0x%03x own_heading_bits=%d col_angle=%d quad_term=%d sum=%d shifted=%d _dm=%d bVar13=%d\n",
+                uVar27 & 0x1ff, (int)(param_1[1] >> 5 & 0x1c),
                 (int)_col_angle, (int)_quad_term, (int)_col_angle + (int)(unsigned short)_quad_term,
                 (int)((int)((int)_col_angle + (uint)(unsigned short)_quad_term) >> 0xb), _dm, (int)bVar13);
     }
