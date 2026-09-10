@@ -503,6 +503,18 @@ undefined4 DAT_000db440;
 int DAT_000db448;
 int DAT_000db44c;
 int DAT_000db450;
+/* Set (0-359) by emit_tile_objects's class-2 TMOBJ/sign branch right
+   before jumping into the shared class-0 mesh-quad code, to make a
+   wall-mounted decal extend along the WALL's own fixed facing angle
+   instead of the camera's (DAT_000db44c, "yaw... from the player
+   object" per its own comment a few thousand lines down) -- see the
+   quad-build code's own comment for why. -1 = no override (normal
+   camera-facing item billboard, the class-0 default). Self-clearing:
+   read and reset back to -1 the moment it's consumed, since
+   DAT_000db44c is a real per-FRAME camera value shared by every object
+   processed after this one -- an override left set would face every
+   later billboard this frame the wrong way. */
+int g_billboard_angle_override_deg = -1;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
    view/camera matrix -- build_view_matrix writes the whole matrix in one shot
@@ -48881,8 +48893,26 @@ LAB_emit_mesh_sprite_quad:
     *DAT_00110fc0 = 0x7f8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     FUN_00040770(uVar27,(uint)DAT_0023bc88 * (int)DAT_00086b30);
-    uVar30 = (&DAT_000d9ed8)[DAT_000db44c];
-    uVar18 = Ordinal_2023((&DAT_000d9930)[DAT_000db44c]);
+    /* DAT_000d9ed8/DAT_000d9930[angle] = sin/cos(angle degrees) (see
+       FUN_0001dd2c). Normally angle = DAT_000db44c, the CAMERA's yaw,
+       which is what makes this quad extend along the camera's own
+       right-vector -- i.e. always face the camera, a real billboard.
+       A wall-mounted decal (emit_tile_objects's TMOBJ/sign branch)
+       sets g_billboard_angle_override_deg to the WALL's own fixed
+       facing angle instead, so the quad extends along the wall's
+       plane and stays flush against it regardless of camera angle. */
+    { int _angle_idx = DAT_000db44c;
+      int _overridden = (g_billboard_angle_override_deg >= 0);
+      if (_overridden) {
+        _angle_idx = g_billboard_angle_override_deg;
+        g_billboard_angle_override_deg = -1;
+      }
+      if (getenv("UW_DEBUG_OBJPOS") && (*param_1 & 0x1ff) == 0x166)
+        fprintf(stderr, "[decalangle] overridden=%d angle_idx=%d cam_yaw=%d\n",
+                _overridden, _angle_idx, (int)DAT_000db44c);
+      uVar30 = (&DAT_000d9ed8)[_angle_idx];
+      uVar18 = Ordinal_2023((&DAT_000d9930)[_angle_idx]);
+    }
     iVar32 = (int)DAT_00202508;
     uVar19 = Ordinal_2032(iVar32 * -6);
     uVar19 = Ordinal_2026(uVar19,0x3f000000);
@@ -49311,12 +49341,23 @@ LAB_00061d34:
        frames before DAT_00202738 at all) into the same real, working
        sprite-decode + mesh-quad path class 0 uses (proven correct for
        the sack etc. this session) instead of emit_object_billboard, by
-       overriding uVar27 and jumping into that code directly.
-       This still projects as a camera-facing quad rather than flush
-       against the wall face (the real fix for that -- projecting it like
-       a wall polygon instead -- is a separate, larger follow-up); this
-       fixes which graphic shows, not its projection. */
+       overriding uVar27 and jumping into that code directly. */
     uVar27 = (uint)(ushort)(-(short)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
+    /* Make it a wall-flush decal instead of a camera-facing billboard:
+       the quad-build code below extends this sprite along a "right
+       vector" looked up from a sin/cos table by angle DAT_000db44c
+       (the CAMERA's own yaw -- see its comment), which is exactly what
+       makes an ordinary item billboard always face the camera. Override
+       that lookup with the object's own stored heading (param_1[1]>>6&7,
+       one of 8 compass directions * 45 degrees) instead, so the quad
+       extends along the WALL's own fixed facing direction and stays
+       flush against it regardless of camera angle. Self-clearing (see
+       g_billboard_angle_override_deg's own comment). */
+    /* +1 (45 degrees): confirmed live in-game the decal drew with a real
+       fixed orientation (not camera-facing) as soon as this override
+       existed, but 45 degrees off from flush -- one compass step
+       correction, wrapped back into the table's 0-360 range. */
+    g_billboard_angle_override_deg = (((int)(param_1[1] >> 6 & 7) + 1) & 7) * 45;
     goto LAB_emit_mesh_sprite_quad;
   }
   if (bVar13 != 3) {
@@ -52946,6 +52987,32 @@ void sync_camera_from_player()
   else {
     iVar4 = Ordinal_2005(0xb4, (int)sVar8);
     DAT_000db44c = iVar4 + DAT_0023bf40;
+  }
+  /* Always-on (no env var) position/heading debug print, for correlating
+     a live playtester's exact standing spot/facing with what the
+     decompile is doing -- e.g. pinning down the wall-decal depth/
+     parallax issue. DAT_000db438/440 (this function's own camera
+     translation X/Y) turned out to be camera-quadrant-relative, not a
+     stable world position (same "not a fixed reference frame" issue as
+     DAT_0023b4e4 elsewhere this session) -- tile X/Y instead read
+     DAT_0023be64 (the player object) the same proven way demomode.c's
+     own "player tile" TELEPORT/REVEAL debug print already does. Yaw/
+     pitch are degrees, 0-360, indices into the DAT_000d9ed8/
+     DAT_000d9930 sin/cos tables (same convention emit_tile_objects's
+     decal-angle override uses). Throttled to print only on change.
+     Set UW_QUIET_POSDEBUG=1 to silence it. */
+  if (!getenv("UW_QUIET_POSDEBUG")) {
+    static int _last_tx = -1, _last_ty = -1, _last_yaw = -1, _last_pitch = -1;
+    unsigned short *_pl = (unsigned short *)DAT_0023be64;
+    int _tx = _pl ? (_pl[0x16/2] >> 10) : -1;
+    int _ty = _pl ? ((_pl[0x16/2] & 0x3f0) >> 4) : -1;
+    if (_tx != _last_tx || _ty != _last_ty ||
+        DAT_000db44c != _last_yaw || DAT_000db448 != _last_pitch) {
+      _last_tx = _tx; _last_ty = _ty;
+      _last_yaw = DAT_000db44c; _last_pitch = DAT_000db448;
+      fprintf(stderr, "[playerpos] tile=(%d,%d) yaw=%d pitch=%d\n",
+              _tx, _ty, (int)DAT_000db44c, (int)DAT_000db448);
+    }
   }
   return;
 }
