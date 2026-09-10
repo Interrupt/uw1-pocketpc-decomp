@@ -34933,12 +34933,19 @@ short param_2;
       FUN_0007fce8(1);
     }
     if (((*param_1 & 0xf) == 6) || (local_128[0] == '\0')) {
-      FUN_0007863c((*param_1 >> 9 & 0xf) + sVar10 | 0x1000);
-      message_scroll_print_wrapped();
+      /* was two separate calls with message_scroll_print_wrapped()'s arg
+         dropped -- same pattern already fixed at line ~9137: FUN_0007863c's
+         return (char *) flows straight into message_scroll_print_wrapped
+         as its argument. Confirmed via UW_DEBUG_OBJPOS: this is the
+         sign/plaque "The writing reads: " lead-in line. */
+      message_scroll_print_wrapped((char *)FUN_0007863c((*param_1 >> 9 & 0xf) + sVar10 | 0x1000));
     }
     if (pcVar_str != (char *)0x0) {
-      FUN_00078bfc(pcVar_str,1,0);
-      message_scroll_print_wrapped();
+      /* Same dropped-argument pattern: FUN_00078bfc's real `undefined1 *`
+         return (pcVar_str word-wrapped for the message scroll) is the
+         actual real sign/inscription text ("We attacked the entrance
+         with all manner of tools..."), confirmed via UW_DEBUG_OBJPOS. */
+      message_scroll_print_wrapped((char *)FUN_00078bfc(pcVar_str,1,0));
       message_scroll_print_wrapped(&DAT_0008522c);
     }
     if (local_128[0] != '\0') {
@@ -65905,9 +65912,25 @@ char *param_1;
   undefined1 *puVar4;
   int extraout_r3;
   int extraout_r3_00;
-  undefined1 auStack_54 [49];
-  undefined1 local_23 [3];
-  
+  /* Ghidra split these into two locals (their own stack-offset names,
+     0x54 and 0x23, differ by exactly 0x31 = sizeof(auStack_54)) -- same
+     "adjacent stack locals are really one buffer" pattern fixed
+     elsewhere this session. They ARE meant to be contiguous: when the
+     word-wrap loop below finds no space within a 49-byte chunk,
+     Ordinal_1407 returns NULL and the fallback `puVar4 = local_23`
+     is meant to NUL-terminate right at auStack_54's own end (offset 49)
+     -- not a separate, unrelated 3-byte buffer the C compiler is free to
+     place anywhere. Without the merge, that terminator write misses
+     auStack_54 entirely, so FUN_0007f6fc prints past its real content
+     into whatever stack garbage follows until it happens to hit a zero
+     byte -- confirmed via a real inscription message ("The writing
+     reads: We attacked the entrance...") long enough to need this
+     no-space-found fallback: it printed correctly up to the wrap point
+     then trailed into garbage characters. */
+  undefined1 auStack_54_backing [52];
+  #define auStack_54 auStack_54_backing
+  #define local_23 (auStack_54_backing + 49)
+
   iVar2 = (int)(short)DAT_00201b60;
   /* Debug: log every string handed to the message scroll. UW_DEBUG_SCROLL
      to enable. param_1 is NULL at the call sites that only flush a pending
@@ -65967,6 +65990,8 @@ char *param_1;
   }
   return iVar2;
 }
+#undef auStack_54
+#undef local_23
 
 
 
