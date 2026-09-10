@@ -4694,6 +4694,9 @@ short param_3;
   iVar2 = Ordinal_1068(param_1);
   uVar3 = FUN_000112a0(param_1);
   uVar10 = (uint)DAT_0008909c;
+  if (getenv("UW_DIAG_TEXT"))
+    fprintf(stderr, "[diag11060] measured_width=%u line_height(DAT_0008909c)=%u alloc=%u\n",
+            uVar3, uVar10, (uVar3 & 0xffff) * uVar10);
   pcVar4 = (char *)Ordinal_1041((uVar3 & 0xffff) * uVar10);
   iVar11 = 0;
   pcVar8 = pcVar4;
@@ -4712,9 +4715,16 @@ short param_3;
              Cast to byte (unsigned char) to match the original
              semantics. */
           sVar1 = (&DAT_000890b0)[(byte)*pcVar9];
-          FUN_000112fc(auStack_40,
+          {
+            int _fmt = (int)DAT_0008894c << 3;
+            undefined4 _r = FUN_000112fc(auStack_40,
                        (DAT_000a85b8 + 1) * (int)*pcVar9 + DAT_0008894c * iVar11 + DAT_00088940,
-                       (int)DAT_0008894c << 3);
+                       _fmt);
+            if (getenv("UW_DIAG_TEXT"))
+              fprintf(stderr, "[diag11060] glyph '%c' fmt=%d(0x%x) rowbytes(DAT_0008894c)=%d ret=%d width(sVar1)=%d auStack_40[0..3]=%d,%d,%d,%d\n",
+                      *pcVar9, _fmt, _fmt, (int)DAT_0008894c, (int)_r, (int)sVar1,
+                      (int)auStack_40[0], (int)auStack_40[1], (int)auStack_40[2], (int)auStack_40[3]);
+          }
           Ordinal_1044(pcVar8,auStack_40,(int)sVar1);
           iVar7 = iVar7 + -1;
           pcVar8 = pcVar8 + sVar1;
@@ -53960,6 +53970,17 @@ short param_4;
   else {
     FUN_00057118();
     iVar4 = 0;
+    /* draw_text_string only honours *DAT_0008429c (the palette index this
+       loop sets to 0xa2/0xaa to highlight the selected item) when
+       DAT_0024af74 is nonzero; otherwise it falls back to the flat
+       DAT_0024ae20 color, which nothing in the whole decompile ever
+       writes (silently 0/black) -- fine as a default ink color for
+       message-scroll text on its light parchment background, but
+       invisible against this screen's dark title-art backdrop. Force
+       the palette-indexed path for the duration of this draw, matching
+       what setting *DAT_0008429c here clearly intends. */
+    int _saved_af74 = DAT_0024af74;
+    DAT_0024af74 = 1;
     if (0 < param_1) {
       do {
         uVar3 = 0xa2;
@@ -53970,6 +53991,9 @@ short param_4;
         *DAT_00084298 = uVar3;
         ppcVar5 = (char **)(param_2 + iVar4 * 8);
         pcVar_str = *ppcVar5;
+        if (getenv("UW_DEBUG_TITLEMENU"))
+          fprintf(stderr, "[titlemenu] FUN_0006a200 text branch: item=%d/%d ptr=%p str='%s'\n",
+                  iVar4, (int)param_1, (void *)pcVar_str, pcVar_str ? pcVar_str : "(null)");
         while (sVar1 = FUN_000112a0(pcVar_str), 0x13e < sVar1) {
           pcVar_str = *ppcVar5;
           iVar2 = Ordinal_1068(pcVar_str);
@@ -53984,6 +54008,7 @@ short param_4;
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
       } while (iVar4 < param_1);
     }
+    DAT_0024af74 = _saved_af74;
   }
   FUN_000570b4();
   return;
@@ -54308,7 +54333,22 @@ undefined4 FUN_0006b178()
   uVar7 = 0;
   do {
     if ((uVar10 & 1 << (uVar7 & 0xff)) != 0) {
-      for (pcVar3 = local_92 + uVar7 * 0x28;
+      /* Was `local_92 + uVar7 * 0x28` -- local_92 is a separate,
+         never-written 122-byte stack local (too small for this indexing
+         past uVar7==2 anyway), while FUN_0006bde0 actually wrote the 4
+         real 0x28-byte slot-description records into acStack_b8 (see its
+         own declaration comment). Also, this loop is meant to walk
+         BACKWARD from the END of the 40-byte record over trailing
+         padding spaces to find where the real text ends -- but Ghidra
+         dropped the "+0x27" (last-byte) offset from the starting point,
+         so `pcVar3` started at the record's FIRST byte instead. Since
+         the loop condition requires strictly greater-than the record
+         start to keep scanning backward, that made it a zero-iteration
+         loop every time, and `pcVar3[1] = '\0'` right below always
+         chopped the label down to its first character regardless of
+         content (confirmed via UW_DEBUG_TITLEMENU: "Level 1" -> "L").
+         Start from the record's real last byte instead. */
+      for (pcVar3 = acStack_b8 + uVar7 * 0x28 + 0x27;
           (*pcVar3 == ' ' && (acStack_b8 + uVar7 * 0x28 < pcVar3)); pcVar3 = pcVar3 + -1) {
       }
       pcVar3[1] = '\0';
@@ -54856,6 +54896,15 @@ ushort * param_2;
     }
     iVar4 = FUN_000226e8(acStack_128,0);
     if ((iVar4 != -1) && (iVar4 = FUN_000227d4(acStack_128), iVar4 != -1)) {
+      /* Pad the record with spaces before reading the real "desc" file
+         text over the front of it -- FUN_0006b178's caller trims
+         trailing spaces off this record to find where the real text
+         ends, which only works if anything past the file's own (short)
+         content is a space rather than whatever stack garbage happened
+         to be here. Dropped from this decompile; without it a save
+         slot's button label ran into garbage bytes following its real
+         description. */
+      Ordinal_1047(uVar5 * 0x28 + param_1,0x20,0x28);
       FUN_0002285c(iVar4,uVar5 * 0x28 + param_1,0x27);
       *param_2 = *param_2 | (ushort)(1 << (uVar5 & 0xff));
       Ordinal_553(iVar4);
