@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "gx_stub.h"
 #include <dlfcn.h>
+#include <math.h>
 #include <stdarg.h>
 
 
@@ -27821,6 +27822,44 @@ void commit_player_move()
 
 
 
+// New (not decompiled from the binary): a debug/testing entry point for
+// demomode.c's SETPLAYERPOS command. Directly sets the fine-grained player
+// position (DAT_00204880/82, format (tile<<8)|fine, 256 units/tile -- see
+// commit_player_move's own tile-index derivation), persistent yaw
+// (DAT_00201c70, 65536 units/360 degrees -- confirmed via the 0x2000 =
+// 45-degree turn-step increments in apply_heading_turn) and pitch
+// (DAT_0023beb4, signed 1/256-degree units -- see sync_camera_from_player's
+// own >>8 use of it), then reuses set_player_tile_position (for the integer
+// tile part: object-list relink, collision height field, locomotion state)
+// and commit_player_move (to pack the final fine position/yaw back into the
+// player object record DAT_0023be64) so this goes through the same object-
+// sync paths real movement does, instead of duplicating them. x/y are tile
+// coordinates with a fractional part (e.g. 32.5); yaw/pitch are degrees.
+void demo_set_player_pos(double x, double y, double yaw_deg, double pitch_deg)
+{
+  set_player_tile_position((int)floor(x), (int)floor(y));
+  /* Clear any in-flight smooth-turn interpolation (FUN_00069470's
+     DAT_0023bea8-gated add-on to DAT_00086e6c+0x2c): if a turn animation
+     was still mid-flight when this runs, FUN_00069470 would add its
+     leftover per-tick delta (DAT_0023be9a) on top of the DAT_00201c70
+     we're about to set below, so sync_camera_from_player's very next
+     [playerpos] print would show a transient, wrong yaw for one frame
+     until the animation finished on its own. Confirmed via testing: two
+     back-to-back SETPLAYERPOS calls, the first (right after spawn, an
+     interpolation still pending) showed the old yaw, the second (nothing
+     pending any more) matched exactly. */
+  DAT_0023bea8 = 0;
+  DAT_00204880 = (short)lround(x * 256.0);
+  DAT_00204882 = (short)lround(y * 256.0);
+  DAT_00201c70 = (short)lround(yaw_deg * (65536.0 / 360.0));
+  DAT_0023beb4 = (short)lround(pitch_deg * 256.0);
+  DAT_00201c78 = DAT_00201c70;
+  _DAT_002048a1 = DAT_00201c70;
+  commit_player_move();
+}
+
+
+
 // was FUN_0003d94c -- resolve a movement mode (param_1 = DAT_0023bf1c) into
 // a travel direction (DAT_00201c78) + step magnitude (*param_3):
 //   0   stop            1     analog move/turn (DAT_0023bf48/4c rates)
@@ -41163,8 +41202,18 @@ ushort * param_1;
     char *_lo = DAT_002046b8 - 0x4000;
     char *_hi = DAT_002046c4 + 0x1800;
     if ((char *)param_1 < _lo || (char *)param_1 >= _hi) {
-      DEBUG(ERR, "[resolve_object_link] param_1=%p out of expected range [%p,%p), returning NULL\n",
-            (void *)param_1, (void *)_lo, (void *)_hi);
+      /* Throttled: this guard also fires every idle tick before any level
+         is loaded (DAT_002046b8/DAT_002046c4 aren't set up yet, so
+         everything looks "out of range"), and logging it unthrottled was
+         observed to slow real-time/demo playback to a crawl (dozens of
+         lines per tick). Log only the first hit and then one reminder
+         every 500 more, instead of every single call. */
+      static unsigned _warn_count = 0;
+      _warn_count++;
+      if (_warn_count == 1 || (_warn_count % 500) == 0) {
+        DEBUG(ERR, "[resolve_object_link] param_1=%p out of expected range [%p,%p), returning NULL (x%u so far)\n",
+              (void *)param_1, (void *)_lo, (void *)_hi, _warn_count);
+      }
       return 0;
     }
     uVar1 = *param_1;
@@ -52991,27 +53040,28 @@ void sync_camera_from_player()
   /* Always-on (no env var) position/heading debug print, for correlating
      a live playtester's exact standing spot/facing with what the
      decompile is doing -- e.g. pinning down the wall-decal depth/
-     parallax issue. DAT_000db438/440 (this function's own camera
-     translation X/Y) turned out to be camera-quadrant-relative, not a
-     stable world position (same "not a fixed reference frame" issue as
-     DAT_0023b4e4 elsewhere this session) -- tile X/Y instead read
-     DAT_0023be64 (the player object) the same proven way demomode.c's
-     own "player tile" TELEPORT/REVEAL debug print already does. Yaw/
-     pitch are degrees, 0-360, indices into the DAT_000d9ed8/
-     DAT_000d9930 sin/cos tables (same convention emit_tile_objects's
-     decal-angle override uses). Throttled to print only on change.
-     Set UW_QUIET_POSDEBUG=1 to silence it. */
+     parallax issue. First cut read the coarse per-tile position cached in
+     DAT_0023be64 (the player object, +0x16, only updated on tile-boundary
+     crossings) the same way demomode.c's own "player tile" TELEPORT/REVEAL
+     print does -- not fine-grained enough (whole tiles only). Switched to
+     DAT_00204880/82 (X/Y) and DAT_00204884 (Z), the true continuously-
+     updated fine-grained player position, format (tile<<8)|fine, 256
+     units/tile -- confirmed via commit_player_move's own tile-index
+     derivation from these exact fields. Yaw/pitch are degrees, 0-360,
+     indices into the DAT_000d9ed8/DAT_000d9930 sin/cos tables (same
+     convention emit_tile_objects's decal-angle override uses). Throttled
+     to print only on change. Set UW_QUIET_POSDEBUG=1 to silence it. */
   if (!getenv("UW_QUIET_POSDEBUG")) {
-    static int _last_tx = -1, _last_ty = -1, _last_yaw = -1, _last_pitch = -1;
-    unsigned short *_pl = (unsigned short *)DAT_0023be64;
-    int _tx = _pl ? (_pl[0x16/2] >> 10) : -1;
-    int _ty = _pl ? ((_pl[0x16/2] & 0x3f0) >> 4) : -1;
-    if (_tx != _last_tx || _ty != _last_ty ||
+    static int _last_x = -1, _last_y = -1, _last_z = -1, _last_yaw = -1, _last_pitch = -1;
+    int _x = (unsigned short)DAT_00204880;
+    int _y = (unsigned short)DAT_00204882;
+    int _z = (short)DAT_00204884;
+    if (_x != _last_x || _y != _last_y || _z != _last_z ||
         DAT_000db44c != _last_yaw || DAT_000db448 != _last_pitch) {
-      _last_tx = _tx; _last_ty = _ty;
+      _last_x = _x; _last_y = _y; _last_z = _z;
       _last_yaw = DAT_000db44c; _last_pitch = DAT_000db448;
-      fprintf(stderr, "[playerpos] tile=(%d,%d) yaw=%d pitch=%d\n",
-              _tx, _ty, (int)DAT_000db44c, (int)DAT_000db448);
+      fprintf(stderr, "[playerpos] tile=(%.2f,%.2f) z=%d yaw=%d pitch=%d\n",
+              _x / 256.0, _y / 256.0, _z, (int)DAT_000db44c, (int)DAT_000db448);
     }
   }
   return;
@@ -53576,6 +53626,7 @@ int param_4;
          original's hardware palette swap did. */
       if (DAT_0023bf74 != _cyc_t) FUN_0006a200(param_1,param_2,param_3,param_4);
     }
+    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x param_4=%d\n", (int)sVar2, (int)param_4);
     sVar1 = (short)param_1;
     iVar3 = param_4;
     iVar5 = iVar4;

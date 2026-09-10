@@ -4,6 +4,8 @@
  * were confirmed. */
 #include "headers/game.h"
 #include "debug.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 
 
@@ -307,6 +309,7 @@ undefined4 param_1;
     }
     sVar3 = menu_button_list_navigate(uVar8,DAT_0023bf6c,0,uVar2);
     local_838 = (int)sVar3;
+    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] uVar8=%d uVar2=%d navigate->%d\n", (int)uVar8, (int)uVar2, local_838);
     if (local_838 == -1) {
       FUN_0003baf4(0);
       FUN_00082388(1);

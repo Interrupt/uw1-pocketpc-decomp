@@ -26,6 +26,19 @@
  *                    the ring-walk that marks automap tiles revealed --
  *                    TELEPORT and ordinary movement don't trigger this
  *                    on their own.
+ *   SETPLAYERPOS <x> <y> <yaw> <pitch>  -- like TELEPORT but fine-grained:
+ *                    x/y take a fractional tile position (e.g. "32.5 2.25"),
+ *                    and yaw/pitch (degrees) set the player's facing/look
+ *                    angle directly, via demo_set_player_pos. Goes through
+ *                    the same object-sync path as TELEPORT (set_player_tile_
+ *                    position for the integer tile part, then
+ *                    commit_player_move to pack the exact fine position/
+ *                    yaw back into the player object) rather than the
+ *                    movement/collision engine. For pinning the player to
+ *                    an exact spot/facing to reproduce something
+ *                    position-dependent (e.g. the wall-decal depth issue) --
+ *                    pair with the always-on [playerpos] console print in
+ *                    sync_camera_from_player to read back where this landed.
  *   REVEALALL     -- marks every walkable tile of the current level's
  *                    automap revealed in one pass (automap_reveal_all_tiles),
  *                    no per-tile teleport/redraw. For exercising the
@@ -476,6 +489,20 @@ void demomode_pump(void) {
         }
         fprintf(stderr, "[demo] teleporting to tile (%d,%d)\n", tx, ty);
         set_player_tile_position(tx, ty);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SETPLAYERPOS ", 13) == 0) {
+        double x = 0, y = 0, yaw = 0, pitch = 0;
+        if (sscanf(p + 13, "%lf %lf %lf %lf", &x, &y, &yaw, &pitch) != 4) {
+            fprintf(stderr, "[demo] malformed SETPLAYERPOS line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] SETPLAYERPOS tile=(%.3f,%.3f) yaw=%.1f pitch=%.1f\n",
+                x, y, yaw, pitch);
+        demo_set_player_pos(x, y, yaw, pitch);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
