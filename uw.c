@@ -1604,11 +1604,24 @@ static undefined1 DAT_00085238_backing[32768];
 static undefined1 DAT_0008523c_backing[32768];
 #define DAT_0008523c DAT_0008523c_backing[0]
 short DAT_001007bc;
-static undefined DAT_00085240_backing[8192];
+/* DAT_00085240/44/48 are the look-text word-separator/article
+   constants (" ", "a ", "an ") used by thunk_FUN_00048764/FUN_00048764
+   and FUN_00049404 to glue "a"/"an" + adjective + noun [+ "named" +
+   proper name] together -- none had a writer anywhere in this decompile
+   (same "orphaned data" class as DAT_00086cc0 etc.), so every look-text
+   sentence silently ran its words together with no article at all, e.g.
+   "You see mellowoutcastnamedBragit" instead of "You see a mellow
+   outcast named Bragit" (found investigating a creature-look crash).
+   The real recovered string is lost like several others this session,
+   but the correct content is unambiguous from every call site's usage
+   -- give them real values instead of leaving them silently empty. */
+static char DAT_00085240_backing[8192] = " ";
 #define DAT_00085240 DAT_00085240_backing[0]
-static undefined1 DAT_00085244_backing[32768];
+/* Selected when the following word starts with a vowel (see the callers'
+   own vowel checks) -- so this one is "an ", not "a ". */
+static char DAT_00085244_backing[32768] = "an ";
 #define DAT_00085244 DAT_00085244_backing[0]
-static undefined1 DAT_00085248_backing[32768];
+static char DAT_00085248_backing[32768] = "a ";
 #define DAT_00085248 DAT_00085248_backing[0]
 byte *DAT_00204690;
 undefined *DAT_001007c8;
@@ -2701,7 +2714,12 @@ static undefined DAT_00085ce0_backing[8192];
 char s_You_read_the_00085ce8[] = "You_read_the";
 char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 char s_an_adventurer__00085d08[] = "an_adventurer.";
-char s_named_00085d18[] = "named";
+/* Was "named" with no surrounding spaces -- FUN_00049404 (creature look
+   text) appends it directly between the description and the proper name
+   with no separator of its own, so a named creature's look text ran
+   the words together: "You see an mellow outcastnamedBragit" instead of
+   "You see a mellow outcast named Bragit". */
+char s_named_00085d18[] = " named ";
 /* Per-mode "sticky redraw bits" mask read by FUN_00049818 right after it
    finishes dispatching DAT_00201c84's currently-set bits through
    DAT_00085668: `DAT_00201c84 = DAT_00085728[mode] | DAT_00201c84;` re-arms
@@ -28829,8 +28847,17 @@ int param_2;
   undefined1 auStack_b4 [8];
   char acStack_ac [16];
   char acStack_9c [32];
-  char acStack_7c [80];
-  
+  /* Was 80 bytes -- FUN_00049404's creature-look text ("You see " +
+     article + description + " named " + proper name + suffix + "\n")
+     can run well past that for a creature with a real name, overflowing
+     acStack_7c and taking the fortified strcat (Ordinal_1063) down with
+     a SIGSEGV. Reproduced via a right-click "look" at a creature (real
+     UW_PICK_FORCE_SLOT-driven repro, not previously exercised since no
+     creature in the earlier-tested area had a real name to overflow
+     into). Widened generously, matching this session's established
+     "resize the too-small stack buffer" fix pattern. */
+  char acStack_7c [256];
+
   uVar11 = 0;
   if (param_1 == (ushort *)0x0) {
     return;
@@ -34824,7 +34851,9 @@ int param_2;
   undefined1 auStack_b4 [8];
   char local_ac [16];
   char local_9c [32];
-  char acStack_7c [80];
+  /* Same too-small stack buffer fixed in this function's duplicate,
+     thunk_FUN_00048764 -- see the comment there. */
+  char acStack_7c [256];
   
   uVar11 = 0;
   if (param_1 == (ushort *)0x0) {
@@ -35323,20 +35352,33 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
   char *pcVar5;
   int iVar6;
   undefined4 uVar7;
+  /* FUN_00078bfc's real return type is `undefined1 *` -- was captured
+     into `uVar7` (undefined4/int), which also does double duty as a
+     plain 0/1 flag a few lines down. On this 64-bit host that truncated
+     the real pointer to 32 bits before handing it to Ordinal_1063
+     (strcat), so appending a creature's description/name here crashed
+     inside the fortified strcat on a wild source pointer -- reproduced
+     via a real right-click "look" at a named creature (repro needed
+     UW_PICK_FORCE_SLOT since no object in the previously-tested area
+     had a real name to overflow through). Separate real pointer local
+     for the string result, keeping uVar7 for its flag use. */
+  char *pcVar_desc;
   undefined1 *puVar8;
-  
+
   pcVar3 = (char *)FUN_0007863c(*param_1 & 0x1ff | 0x800);
   bVar1 = (byte)param_1[0xd];
-  if (*pcVar3 == '\0') {
+  if ((pcVar3 == (char *)0x0) || (*pcVar3 == '\0')) {
     pcVar3 = (char *)0x0;
   }
   if (((0xef < bVar1) && (bVar1 != 0xff)) ||
-     (pcVar4 = (char *)FUN_0007863c((byte)((byte)param_1[7] >> 6) + 0x60 | 0xa00), *pcVar4 == '\0'))
+     (pcVar4 = (char *)FUN_0007863c((byte)((byte)param_1[7] >> 6) + 0x60 | 0xa00),
+      pcVar4 == (char *)0x0 || *pcVar4 == '\0'))
   {
     pcVar4 = (char *)0x0;
   }
   if ((bVar1 == 0) ||
-     (pcVar5 = (char *)FUN_0007863c((int)(short)(ushort)bVar1 + 0x10U | 0xe00), *pcVar5 == '\0')) {
+     (pcVar5 = (char *)FUN_0007863c((int)(short)(ushort)bVar1 + 0x10U | 0xe00),
+      pcVar5 == (char *)0x0 || *pcVar5 == '\0')) {
     pcVar5 = (char *)0x0;
   }
   if (pcVar3 != (char *)0x0) {
@@ -35354,8 +35396,10 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
       Ordinal_1063(param_2,&DAT_00085240);
     }
     if ((pcVar5 == (char *)0x0) || (iVar6 = Ordinal_1417((int)*pcVar5,1), iVar6 != 0)) {
-      uVar7 = FUN_00078bfc(pcVar3,pcVar4 == (char *)0x0,0);
-      Ordinal_1063(param_2,uVar7);
+      pcVar_desc = (char *)FUN_00078bfc(pcVar3,pcVar4 == (char *)0x0,0);
+      if (pcVar_desc != (char *)0x0) {
+        Ordinal_1063(param_2,pcVar_desc);
+      }
     }
   }
   if (pcVar5 != (char *)0x0) {
@@ -35367,8 +35411,10 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
       }
       uVar7 = 0;
     }
-    uVar7 = FUN_00078bfc(pcVar5,uVar7,0);
-    Ordinal_1063(param_2,uVar7);
+    pcVar_desc = (char *)FUN_00078bfc(pcVar5,uVar7,0);
+    if (pcVar_desc != (char *)0x0) {
+      Ordinal_1063(param_2,pcVar_desc);
+    }
   }
   Ordinal_1063(param_2,&DAT_00084f20);
   /* Same missing-newline issue as thunk_FUN_00048764/FUN_00048764's own
