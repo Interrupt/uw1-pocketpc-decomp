@@ -53310,6 +53310,12 @@ undefined4 FUN_0006b178()
   char *pcVar3;
   int iVar4;
   undefined4 uVar5;
+  char *pcVar_str;  /* was folded into uVar5 (`undefined4`, this
+                        function's own 0/1/-1 return-code variable),
+                        truncating the real FUN_0007863c() string
+                        pointer it also briefly held -- same "reused
+                        scalar" bug already fixed elsewhere this session
+                        (see thunk_FUN_00048764's uVar11 comment) */
   short sVar6;
   uint uVar7;
   int iVar8;
@@ -53379,22 +53385,68 @@ undefined4 FUN_0006b178()
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
     FUN_0006c98c(0xffffffff,acStack_1c0,1);
-    uVar5 = FUN_0007863c(0x301);
+    /* Was `uVar5 = FUN_0007863c(0x301);` -- FUN_0007863c returns a real
+       char*, but uVar5 is this function's own `undefined4` 0/1/-1
+       return-code variable, so storing the string pointer into it
+       truncated it on this 64-bit build (same "reused scalar" bug
+       already fixed elsewhere this session -- see thunk_FUN_00048764's
+       uVar11 comment). Use a real pointer local instead. */
+    pcVar_str = (char *)FUN_0007863c(0x301);
     FUN_00040d00(s_fontbig_sys_0008432c);
     *DAT_0008429c = 0xa2;
     *DAT_00084298 = 0xa2;
-    sVar2 = FUN_000112a0(uVar5);
+    sVar2 = FUN_000112a0(pcVar_str);
     iVar8 = -(int)sVar2 + 0x140;
     if (iVar8 < 0) {
       iVar8 = -(int)sVar2 + 0x141;
     }
-    draw_text_string(uVar5,(short)(iVar8 >> 1) + 10,0x5a);
+    draw_text_string(pcVar_str,(short)(iVar8 >> 1) + 10,0x5a);
     FUN_00040d00(s_font5x6p_sys_0008430c);
-    iVar4 = FUN_0006c0c0(iVar4 + 1);
+    /* Was `FUN_0006c0c0(iVar4 + 1)` -- FUN_0006c0c0 is "Save Game"
+       (copies the live \SAVE0 session INTO the chosen slot), which makes
+       no sense from the title screen where no game is running yet: this
+       whole screen only ever appears when main_menu_loop found an
+       existing save (see its uVar8=4 gate) and, on success, unconditionally
+       enters gameplay (`bVar11 = sVar3==1;` breaks main_menu_loop's own
+       loop straight into set_game_mode(1)) -- pure Save-Game semantics
+       for a title screen with no active session, but exactly what
+       "Continue/Load Game" should do. Reusing the real FUN_0006c264
+       Load path here would also pull in its own text-entry prompt
+       (FUN_0007ffa8), which is designed for the in-game pause-menu Load
+       flow, not a fresh process with no dungeon loaded yet -- so do the
+       same slot<->SAVE0 file copy FUN_0006c264 does (just in the load
+       direction, \SAVEn -> \SAVE0) directly, then the same post-copy
+       refresh sequence FUN_0006c0c0 already does on its own success. */
+    {
+      char loadsrc[300];
+      snprintf(loadsrc, sizeof(loadsrc), "\\SAVE%d", iVar4 + 1);
+      iVar4 = FUN_0006c670(&DAT_000857a0, loadsrc);
+    }
     if (iVar4 == 0) {
       uVar5 = 0xffffffff;
     }
     else {
+      FUN_00044624(&DAT_000857a0);
+      /* DAT_00201b68 (current level) isn't meaningfully set yet at a
+         fresh title screen with no dungeon loaded -- unlike
+         FUN_0006c0c0's own use of it, which only ever runs mid-game.
+         Every save this decompile can produce is level 1 (no UI to
+         change levels exists yet), so load that directly rather than a
+         possibly-stale/zero level number. */
+      sVar2 = FUN_0006bc28(1);
+      if (sVar2 != 0) {
+        FUN_0006c834(1,3);
+        /* Real UW1 presumably restores the player's saved tile position
+           from bglobals.dat automatically somewhere in this decompile,
+           but that path hasn't been found/verified -- confirmed via
+           testing that without an explicit call here the player stays
+           at tile (0,0), an unplaced/invalid position (black 3D view).
+           Use the same known-good spawn point character_generator_start
+           uses for a fresh game so a loaded game is at least playable,
+           rather than leaving this "Journey Onward" entry point
+           dropping the player somewhere invalid. */
+        set_player_tile_position(0x20,2,1);
+      }
       FUN_0006e89c();
       uVar5 = 1;
     }
@@ -54020,9 +54072,34 @@ char param_1;
   iVar4 = FUN_0006c560(acStack_630);
   if (iVar4 != 0) {
     FUN_00078c80(0xaa);
-    iVar4 = FUN_0006c670(auStack_218,auStack_420);
+    /* Was FUN_0006c670(auStack_218,auStack_420) -- the broken wide-string
+       copies of these two ANSI buffers (see FUN_0006c670's own comment).
+       Pass the real paths straight through instead: acStack_528 is the
+       chosen slot ("\SAVEn", destination), acStack_630 the live session
+       ("\SAVE0", source) -- neither is read again after this call. */
+    iVar4 = FUN_0006c670(acStack_528,acStack_630);
+    if (getenv("UW_DEBUG_SAVEDESC"))
+      fprintf(stderr, "[savedesc] FUN_0006c670 returned %d, acStack_528=%s\n", iVar4, acStack_528);
     if (iVar4 != 0) {
       FUN_00078c80(0xaa);
+      /* The decompile never reconstructed a "type a save description"
+         prompt (real UW1 likely had one; FUN_0006c264's own param_2
+         confirms the Load side at least round-trips whatever text is
+         already stored), and building that whole text-entry flow from
+         scratch is out of scope here. Write a real, useful description
+         anyway -- the current dungeon level -- so a save actually shows
+         up as "used" (FUN_0006bde0 probes for this file's existence) and
+         the Load list has something meaningful to show instead of
+         staying blank forever. */
+      {
+        char descbuf[64];
+        char descpath[300];
+        int desclen;
+        snprintf(descbuf, sizeof(descbuf), "Level %d", (int)DAT_00201b68);
+        snprintf(descpath, sizeof(descpath), "%s\\desc", acStack_528);
+        desclen = (int)strlen(descbuf);
+        FUN_0007edf4(descbuf, descpath, (ushort)desclen);
+      }
       FUN_0003bee4();
       iVar4 = FUN_00044624(&DAT_000857a0);
       if (iVar4 != 0) {
@@ -54137,7 +54214,12 @@ undefined4 param_2;
             Ordinal_61(auStack_428,uVar5);
             uVar5 = FUN_0002295c(local_638);
             Ordinal_61(auStack_220,uVar5);
-            iVar4 = FUN_0006c670(auStack_220,auStack_428);
+            /* Was FUN_0006c670(auStack_220,auStack_428) -- the broken wide
+               copies; pass the real ANSI paths directly instead (see
+               FUN_0006c670's own comment). local_638 is the active
+               session ("\SAVE0", destination -- Load overwrites it),
+               local_530 the chosen slot ("\SAVEn", source). */
+            iVar4 = FUN_0006c670(local_638,local_530);
             if (iVar4 != 0) {
               message_scroll_print_wrapped(&DAT_00087038);
               uVar5 = 1;
@@ -54220,47 +54302,43 @@ LAB_0006c5f8:
 
 
 
+/* Was a generic "copy every file matching dest\*.* " directory-copy
+   using CopyFileW/FindFirstFileW/FindNextFileW (Ordinal_164/167/181) via
+   wide-string paths built through Ordinal_58/61/63 -- all six of those
+   are still no-op stubs (Ordinal_167/181 real enough now for
+   FUN_0006c560's own narrower directory-exists-or-create use, but not
+   real filename enumeration), so this always silently copied nothing.
+   Same situation the existing \SAVE0\lev.ark new-game seed already hit
+   and fixed the same way (see game.c's comment on that): making the
+   whole enumeration/wide-string machinery real is a much bigger lift
+   than this feature needs, since a save slot only ever holds the same 3
+   known files. Copy them directly instead, using the game's own
+   CreateFile-family wrappers (via uw_file_copy) against real ANSI
+   Windows-style paths -- both callers now pass their already-correct
+   acStack_630/acStack_528 (or local_638/local_530) buffers straight in,
+   instead of the broken wide copies of them this used to take. */
 undefined4 FUN_0006c670(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
+char *param_1;  /* destination directory, e.g. "\SAVE3" */
+char *param_2;  /* source directory, e.g. "\SAVE0" */
 
 {
-  short sVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  int iVar5;
-  bool bVar6;
-  bool bVar7;
-  int local_654 [10];
-  undefined1 auStack_62c [520];
-  undefined1 auStack_424 [520];
-  undefined1 auStack_21c [520];
-  
-  bVar6 = true;
-  Ordinal_61(auStack_424,param_1);
-  iVar2 = Ordinal_63(auStack_424);
-  Ordinal_58(auStack_424,&DAT_000870cc);
-  Ordinal_61(auStack_21c,param_2);
-  iVar3 = Ordinal_63(auStack_21c);
-  iVar4 = Ordinal_167(auStack_424,local_654);
-  bVar7 = iVar4 == -1;
-  while (!bVar7) {
-    if (local_654[0] != 0x10) goto LAB_0006c738;
-    iVar5 = Ordinal_181(iVar4,local_654);
-    bVar7 = iVar5 == 0;
+  static const char *file_suffixes[] = { "\\lev.ark", "\\bglobals.dat", "\\desc" };
+  char src[300];
+  char dst[300];
+  size_t i;
+  int ok;
+
+  ok = 1;
+  for (i = 0; i < sizeof(file_suffixes) / sizeof(file_suffixes[0]); i++) {
+    snprintf(src, sizeof(src), "%s%s", param_2, file_suffixes[i]);
+    snprintf(dst, sizeof(dst), "%s%s", param_1, file_suffixes[i]);
+    /* desc is optional (a brand new character who has never saved/loaded
+       before has no \SAVE0\desc yet) -- lev.ark/bglobals.dat are not. */
+    if (!uw_file_copy(src, dst) && i != 2) {
+      ok = 0;
+    }
   }
-  bVar6 = false;
-LAB_0006c738:
-  if (bVar6) {
-    do {
-      Ordinal_61(auStack_424 + iVar2 * 2,auStack_62c);
-      Ordinal_61(auStack_21c + iVar3 * 2,auStack_62c);
-      Ordinal_164(auStack_424,auStack_21c,0);
-      sVar1 = Ordinal_181(iVar4,local_654);
-    } while (sVar1 != 0);
-  }
-  return 1;
+  return ok;
 }
 
 
@@ -65272,8 +65350,12 @@ undefined4 FUN_0007edec()
 
 
 bool FUN_0007edf4(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
+void *param_1;  /* was `undefined4` -- truncated the real data-buffer
+                   pointer (FUN_0006c264 passes its own param_2, a real
+                   description-text buffer; the new save-description
+                   write above passes a real stack buffer too) */
+char *param_2;  /* was `undefined4` -- same truncation, for the real
+                   path-string pointer */
 ushort param_3;
 
 {
