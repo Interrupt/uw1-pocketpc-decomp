@@ -28710,13 +28710,21 @@ int param_2;
   if (((short)param_2 == 3) && (iVar5 = FUN_000496b0(param_1,&DAT_00202c90 + iVar9), iVar5 != 0)) {
     return;
   }
-  pcVar6 = s_You_see_000858fc;
-    wptr_26120 = acStack_85978;
-  do {
-    cVar10 = *pcVar6;
-    *wptr_26120 = cVar10; wptr_26120 = wptr_26120 + 1;
-    pcVar6 = pcVar6 + 1;
-  } while (cVar10 != '\0');
+  /* This copied "You see " into acStack_85978 (a wildly oversized,
+     547012-byte local Ghidra apparently misattributed here -- almost
+     certainly a stack-frame-size miscalculation artifact, not a real
+     array in the original binary), but nothing ever reads
+     acStack_85978 again: the real assembled message below builds up in
+     acStack_7c instead, which never got this prefix. Confirmed by the
+     user: "Look" on an ordinary item (e.g. the sack) printed just "a
+     sack" instead of "You see a sack." acStack_7c was also never
+     NUL-terminated before its first strcat (Ordinal_1063) below, so
+     leftover content from a PREVIOUS look call's stack frame could
+     survive and get concatenated onto -- "Multiple Looks will also
+     print them together like 'a sackasack'". Fix both: clear acStack_7c
+     and seed it with the real "You see " prefix here instead. */
+  acStack_7c[0] = '\0';
+  Ordinal_1063(acStack_7c, s_You_see_000858fc);
   acStack_ac[0] = '\0';
   iVar5 = FUN_00048b6c(param_1,param_2,acStack_ac);
   cVar10 = '\0';
