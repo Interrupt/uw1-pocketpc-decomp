@@ -48950,22 +48950,36 @@ ushort * param_1;
       uVar27 = 0xe0;
     }
 LAB_emit_mesh_sprite_quad:
-    /* Push a wall-mounted decal's anchor from the tile's generic per-slot
-       floor position (DAT_0023bb99/9a's table, meant for scattering
-       ordinary floor items around a tile) out to the actual wall surface,
-       along the wall's own normal (perpendicular to the facing direction
-       g_billboard_angle_override_deg's tangent extrusion already uses).
-       Without this the quad is correctly oriented flush-with-the-wall
-       (proven via [decalangle]'s 100%-constant angle_idx) but anchored
-       somewhere in the open floor area of the tile instead of at the
-       wall plane -- looks "in the room, not on the wall" face-on, and
-       nearly vanishes to a sliver/speckle viewed close to edge-on, both
-       confirmed live. Tunable via UW_DECAL_PUSH (magnitude, default 16 =
-       half a tile in DAT_0023b904/920's *0x20-per-tile units) and
-       UW_DECAL_PUSH_SIGN (+1/-1, default +1) while calibrating -- applied
-       here (before the DAT_00110fc0 pick/collision copy just below) so
-       picking matches the pushed visual position too. */
     if (g_billboard_angle_override_deg >= 0) {
+      /* A wall-mounted decal's anchor (DAT_0023b904/920) came out of
+         emit_tile_features' generic per-slot floor-object table
+         (DAT_0023bb99/9a[cVar8*4]) -- cVar8 is this object's position in
+         a depth-*sorted* list of everything in the tile, so which slot
+         (and therefore which sub-tile offset) THIS object lands in
+         depends on where the camera is standing, not on the object
+         itself. Confirmed live: the exact same object (identical
+         param_1[1]=0x1770 raw record) got assigned bb99/bb9a=(0,5) from
+         one standing spot (rendered flush) and (5,7) from two others
+         (rendered rotated 90 degrees / invisible) -- same sign, jittering
+         between different anchors depending on viewpoint. Floor items are
+         fine with that (it's how multiple items in one tile avoid fully
+         overlapping); a wall decal needs a fixed anchor. Round back down
+         to the tile's own center (clear the low 5 bits -- one tile is
+         0x20 units -- then re-add the +0x10 half-tile constant
+         emit_tile_features' own formula ends with) to undo whatever
+         sub-tile jitter this frame's slot happened to contribute, before
+         pushing out to the wall surface along the wall's own normal
+         (perpendicular to the facing direction g_billboard_angle_
+         override_deg's tangent extrusion already uses). Without the push
+         the quad is correctly oriented flush-with-the-wall (proven via
+         [decalangle]'s 100%-constant angle_idx) but anchored in the open
+         floor area of the tile instead of at the wall plane. Tunable via
+         UW_DECAL_PUSH (magnitude, default 16 = half a tile) and
+         UW_DECAL_PUSH_SIGN (+1/-1, default +1) while calibrating --
+         applied here (before the DAT_00110fc0 pick/collision copy just
+         below) so picking matches the pushed visual position too. */
+      DAT_0023b904 = (DAT_0023b904 & ~0x1f) | 0x10;
+      DAT_0023b920 = (DAT_0023b920 & ~0x1f) | 0x10;
       double _rad = (g_billboard_angle_override_deg + 90) * (3.14159265358979 / 180.0);
       int _mag = 16;
       int _sign = 1;
@@ -49450,6 +49464,9 @@ LAB_00061d34:
        existed, but 45 degrees off from flush -- one compass step
        correction, wrapped back into the table's 0-360 range. */
     g_billboard_angle_override_deg = (((int)(param_1[1] >> 6 & 7) + 1) & 7) * 45;
+    if (getenv("UW_DEBUG_OBJPOS"))
+      fprintf(stderr, "[signheading] param_1[1]=0x%04x raw_heading=%d angle_deg=%d\n",
+              (unsigned)param_1[1], (int)(param_1[1] >> 6 & 7), g_billboard_angle_override_deg);
     goto LAB_emit_mesh_sprite_quad;
   }
   if (bVar13 != 3) {
