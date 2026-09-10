@@ -2279,18 +2279,42 @@ static undefined1 DAT_0023ce70_backing[8192];
 #define DAT_0023ce70 DAT_0023ce70_backing[0]
 static undefined1 DAT_0024ac18_backing[256];
 #define DAT_0024ac18 DAT_0024ac18_backing[0]
-char DAT_00085928;
-char DAT_00085929;
-char DAT_00085930;
-char DAT_00085931;
+/* Real string, recovered via Ghidra disassembly of FUN_000404a0
+   (the caching "\CRIT\CR<pp>PAGE.N<nn>" per-page critter-animation
+   resource loader): the decompile showed DAT_00085928/29/30/31 as four
+   unrelated lone chars, and its own two-arg Ordinal_1063 (strcat) call
+   right after them dropped BOTH arguments (same class of bug as
+   resolve_object_link's ~30 call sites fixed earlier this session).
+   The real ARM passes `Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920)`
+   -- concatenating this template (its "00"/"00" digit pairs already
+   patched with the real page numbers by the writes at +8/+9 and
+   +0x10/+0x11) onto the copied install-dir path -- then opens THAT
+   buffer, not the never-populated `acStack_120` the decompile shows. */
+char DAT_00085920_backing[20] = "\\CRIT\\CR00PAGE.N00";
+#define DAT_00085920 DAT_00085920_backing[0]
+#define DAT_00085928 DAT_00085920_backing[8]
+#define DAT_00085929 DAT_00085920_backing[9]
+#define DAT_00085930 DAT_00085920_backing[0x10]
+#define DAT_00085931 DAT_00085920_backing[0x11]
 ushort DAT_00202508;
 ushort DAT_002022f8;
 ushort DAT_00202300;
 ushort DAT_00202304;
 int DAT_002022fc;
 unsigned short u_INVALID_HANDLE_VALUE_00085944[] = u"INVALID_HANDLE_VALUE";
-undefined4 DAT_002020f8;
-undefined4 DAT_00202308;
+/* Both real 0x80-element pointer-cache arrays (per free_frame_geometry_buffers's
+   own comment -- "DAT_0023c7a0[0x140], DAT_002020f8[0x80]" -- and
+   FUN_00077a38's matching 0x80-iteration cleanup loop for DAT_00202308),
+   same "lone undefined4 scalar indexed as an array" bug as DAT_0023c7a0
+   right above (already fixed): each slot holds a real malloc'd buffer
+   pointer (FUN_000404a0/emit_object_billboard's per-page glyph decode),
+   so a 4-byte-stride int[] truncates/corrupts every other slot's pointer
+   on this 64-bit host. Sized generously past the documented 0x80 like
+   this file's other such tables. */
+void *DAT_002020f8_arr[256];
+#define DAT_002020f8 DAT_002020f8_arr[0]
+void *DAT_00202308_arr[256];
+#define DAT_00202308 DAT_00202308_arr[0]
 int DAT_0023b83c;
 static undefined1 DAT_00202520_backing[1024];
 #define DAT_00202520 DAT_00202520_backing[0]
@@ -29522,13 +29546,19 @@ short param_5;
   char *pcVar4;
   int iVar5;
   byte *pbVar6;
-  undefined4 uVar7;
+  char *uVar7; /* FUN_000129f8's real return type -- was undefined4, truncating it */
   byte *pbVar8;
   int iVar9;
   int iVar10;
   byte *pbVar11;
-  int *piVar12;
+  void **piVar12;
   char acStack_120 [260];
+  /* iVar5 above is a real int (file handle) for FUN_000227d4's return,
+     reused later in this same function as if it held Ordinal_1041's
+     `void *` return (the decoded glyph buffer) -- same "reused scalar"
+     bug already fixed in FUN_00049008 this session. Separate real
+     pointer local for that use. */
+  void *pvVar_glyphbuf;
   
   iVar1 = (param_2 + param_1 * 4) * 0x10000 >> 0x10;
   pbVar11 = (byte *)(&DAT_00202308)[iVar1];
@@ -29544,27 +29574,51 @@ short param_5;
       *stack0xffdc3238_ptr = cVar2; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
       pcVar4 = pcVar4 + 1;
     } while (cVar2 != '\0');
-    Ordinal_1063(acStack_120);
-    iVar5 = FUN_000227d4(acStack_120);
+    Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920);
+    iVar5 = FUN_000227d4(stack0xffdc3238_buf);
     if (iVar5 == -1) {
-      Ordinal_858(0,u_INVALID_HANDLE_VALUE_00085944,0,0);
-      Ordinal_516();
-      FUN_00082388(0xffffffff);
+      /* Missing/unopenable per-page resource file -- was an unconditional
+         FUN_00082388(0xffffffff) hard exit (only reachable for a real
+         object, class 1, that no object in the previously-tested level
+         area happened to use -- confirmed via lldb backtrace: reached
+         from emit_tile_objects's class-1 branch via FUN_0004083c, one
+         specific door ~17 tiles from spawn). Same "graceful skip instead
+         of crash" treatment already used for other missing/unregistered
+         resources this session (FUN_000408fc, FUN_00040918) -- return the
+         shared dummy_glyph-shaped sentinel instead of taking the whole
+         game down over one unavailable page file. */
+      DEBUG(ERR, "[glyphpage] open FAILED, skipping: %s (param_1=%d param_2=%d)\n",
+            stack0xffdc3238_buf, param_1, param_2);
+      static undefined1 dummy_page[8];
+      return dummy_page;
     }
     pbVar11 = (byte *)Ordinal_1041(0x7fff);
     (&DAT_00202308)[iVar1] = pbVar11;
     FUN_0002285c(iVar5,pbVar11,0x7fff);
     Ordinal_553(iVar5);
   }
-  if (pbVar11[((int)(((int)param_3 - (uint)*pbVar11) * 0x10000) >> 0x10) + 2] != 0xff) {
+  iVar9 = ((int)(((int)param_3 - (uint)*pbVar11) * 0x10000) >> 0x10) + 2;
+  if ((unsigned int)iVar9 >= 0x7ffd) {
+    /* Out-of-range glyph/character code for this page (this whole
+       class-1/font-page path was unexercised before this session --
+       nothing in the previously-tested level area used it -- so an
+       out-of-bounds `param_3` relative to the page's own base char code
+       (`*pbVar11`) was never hardened against. `pbVar11` is a real
+       0x7fff-byte Ordinal_1041 allocation; -3 keeps every access below
+       reading pbVar11[iVar9] and pbVar11[iVar9+1] in bounds. Skip
+       drawing this glyph rather than reading wildly out of the buffer. */
+    DEBUG(ERR, "[glyphpage] index %d out of range for page base %d (param_3=%d), skipping\n",
+          iVar9, (int)*pbVar11, (int)param_3);
+    return 0;
+  }
+  if (pbVar11[iVar9] != 0xff) {
     pbVar6 = pbVar11 + (short)(ushort)pbVar11[1] + 2;
     uVar3 = (ushort)pbVar6[(((int)param_5 +
-                            ((int)((uint)pbVar11[((int)(((int)param_3 - (uint)*pbVar11) * 0x10000)
-                                                 >> 0x10) + 2] << 0x13) >> 0x10)) * 0x10000 >> 0x10)
+                            ((int)((uint)pbVar11[iVar9] << 0x13) >> 0x10)) * 0x10000 >> 0x10)
                            + 1];
     pbVar8 = pbVar6 + (((int)(short)(ushort)*pbVar6 << 0x13) >> 0x10) + 1;
     if (pbVar6[(((int)param_5 +
-                ((int)((uint)pbVar11[((int)(((int)param_3 - (uint)*pbVar11) * 0x10000) >> 0x10) + 2]
+                ((int)((uint)pbVar11[iVar9]
                       << 0x13) >> 0x10)) * 0x10000 >> 0x10) + 1] == 0xff) {
       uVar3 = 0;
     }
@@ -29578,15 +29632,15 @@ short param_5;
       DAT_00202300 = (ushort)pbVar11[2];
       DAT_00202304 = (ushort)pbVar11[3];
       uVar7 = FUN_000129f8(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
-      iVar5 = Ordinal_1041((int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
+      pvVar_glyphbuf = Ordinal_1041((int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
       iVar10 = (int)(short)DAT_002022f8;
       iVar9 = (int)(short)DAT_00202508;
       piVar12 = &DAT_002020f8 + iVar1;
-      *piVar12 = iVar5;
-      Ordinal_1047(iVar5,0,iVar10 * iVar9);
+      *piVar12 = pvVar_glyphbuf;
+      Ordinal_1047(pvVar_glyphbuf,0,iVar10 * iVar9);
       Ordinal_1044(*piVar12,uVar7,(int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
       if (*piVar12 != 0) {
-        DAT_002022fc = *piVar12;
+        DAT_002022fc = (intptr_t)*piVar12;
       }
       return 1;
     }
@@ -45843,12 +45897,14 @@ void draw_command_list_rewind()
 void free_frame_geometry_buffers()
 
 {
-  int *piVar1;
+  void **piVar1;
   int iVar2;
 
   /* DAT_0023c7a0 is now a real void*[] (see its declaration); walk it as
      one so whole 8-byte slots clear (the old int* stride freed/zeroed only
-     the low half of each pointer). */
+     the low half of each pointer). Same fix applied to DAT_002020f8
+     below (was still `int *piVar1`, missed when DAT_0023c7a0 got this
+     treatment -- both are real void*[] now, see their declarations). */
   {
     int _i;
     for (_i = 0; _i < 0x140; _i++) {
@@ -61165,8 +61221,8 @@ undefined4 FUN_00077a38()
 
 {
   int iVar1;
-  int *piVar2;
-  
+  void **piVar2;
+
   FUN_000232b0();
   if (DAT_0023c44c != 0) {
     Ordinal_1018();
