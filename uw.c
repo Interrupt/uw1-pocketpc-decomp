@@ -30593,9 +30593,30 @@ undefined4 param_2;
 short param_3;
 
 {
-  /* See FUN_00041708 -- same param_1/DAT_0024e090 truncation fix. */
-  Ordinal_1044(*(void **)(&DAT_0024e090 + ((uint)DAT_00202744 + (int)param_3) * 8),param_1,
+  /* See FUN_00041708 -- same param_1/DAT_0024e090 truncation fix.
+     This "overwrite an already-allocated slot" path blindly memcpy'd
+     width*height bytes into whatever pointer DAT_0024e090's table
+     already held for this slot -- fine as long as that's still the SAME
+     size it was originally allocated at, but nothing guarantees that:
+     confirmed via AddressSanitizer, a real heap-buffer-overflow, 100%
+     reproducible opening the in-game options/pause menu and picking
+     Save or Load. The existing 888-byte allocation there came from an
+     unrelated resource loaded into this same slot at startup
+     (app_main_loop's initial preload); the save/load menu's own level
+     reload (FUN_00044624 -> FUN_0004638c -> ... -> here) later reuses
+     the slot for a bigger (2484-byte) one, overflowing it. Rather than
+     assume the existing allocation is still big enough, allocate a
+     fresh one sized for THIS write (same sizing FUN_00041708 uses for
+     a brand new slot) and replace the table pointer -- the old
+     allocation leaks, but that beats corrupting the heap. */
+  void *pvVar1 = uw_alloc_grtile(*(byte *)((char *)param_1 + 1),
+                                  (uint)*(byte *)((char *)param_1 + 2) + 1);
+  if (pvVar1 == 0) {
+    return 0;
+  }
+  Ordinal_1044(pvVar1,param_1,
                (uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
+  *(void **)(&DAT_0024e090 + ((uint)DAT_00202744 + (int)param_3) * 8) = pvVar1;
   return 1;
 }
 
@@ -53883,7 +53904,19 @@ undefined4 FUN_0006b178()
      array as an 8-byte-stride char** table). Widened to match. */
   char *local_1d0 [4];
   char acStack_1c0 [264];
-  char acStack_b8 [38];
+  /* Was `char acStack_b8 [38]` -- another Ghidra stack-frame-size
+     miscalculation (same bug class fixed elsewhere this session).
+     FUN_0006bde0 unconditionally writes 4 fixed-width 0x28(40)-byte
+     records into whatever buffer its param_1 points at (uVar5*0x28 +
+     charindex, for uVar5 = 0..3), i.e. it needs 0xA0 (160) bytes -- and
+     both its other call sites (FUN_000567ec's auStack_ac, FUN_0006a1c4's
+     auStack_a4) already correctly declare exactly that. Only this one
+     was wrong, at less than a quarter the required size. Confirmed via
+     AddressSanitizer: a real stack-buffer-overflow, reproducibly
+     crashing (SIGABRT, corrupted heap free-list, surfacing later and
+     unpredictably depending on stack layout) as soon as the in-game
+     options/pause menu opens, since that's this function's own caller. */
+  char acStack_b8 [160];
   char local_92 [122];
   
   FUN_00057118();
