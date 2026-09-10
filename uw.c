@@ -49462,11 +49462,27 @@ LAB_00061d34:
     /* +1 (45 degrees): confirmed live in-game the decal drew with a real
        fixed orientation (not camera-facing) as soon as this override
        existed, but 45 degrees off from flush -- one compass step
-       correction, wrapped back into the table's 0-360 range. */
-    g_billboard_angle_override_deg = (((int)(param_1[1] >> 6 & 7) + 1) & 7) * 45;
-    if (getenv("UW_DEBUG_OBJPOS"))
-      fprintf(stderr, "[signheading] param_1[1]=0x%04x raw_heading=%d angle_deg=%d\n",
-              (unsigned)param_1[1], (int)(param_1[1] >> 6 & 7), g_billboard_angle_override_deg);
+       correction, wrapped back into the table's 0-360 range.
+       Also compensate for DAT_0023b4a0, the screen-rotation quadrant
+       computed from the CAMERA's current view angle (see
+       sync_camera_from_player's own comment on it): this same file
+       rotates every OTHER object's stored orientation-ish fields by it
+       (see emit_tile_objects' own sub-position remap a few hundred lines
+       above -- (x,y) rotated 90*quadrant degrees per quadrant 0-3) before
+       treating them as real-world directions, but this heading read
+       never did -- confirmed live (and reproducibly) that the same sign
+       renders correctly (quadrant 0) from one standing spot and broken
+       (90 degrees / invisible, both quadrant 3) from two others, with the
+       raw heading and computed angle identical every time. Apply the
+       same 90-degrees-per-quadrant rotation to the heading (2 compass
+       steps = 90 degrees) before the existing +1 correction. */
+    { int _raw_heading = (int)(param_1[1] >> 6 & 7);
+      int _quadrant_heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
+      g_billboard_angle_override_deg = ((_quadrant_heading + 1) & 7) * 45;
+      if (getenv("UW_DEBUG_OBJPOS"))
+        fprintf(stderr, "[signheading] param_1[1]=0x%04x raw_heading=%d quadrant=%d angle_deg=%d\n",
+                (unsigned)param_1[1], _raw_heading, (int)DAT_0023b4a0, g_billboard_angle_override_deg);
+    }
     goto LAB_emit_mesh_sprite_quad;
   }
   if (bVar13 != 3) {
