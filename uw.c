@@ -29711,6 +29711,9 @@ short param_5;
     } while (cVar2 != '\0');
     Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920);
     iVar5 = FUN_000227d4(stack0xffdc3238_buf);
+    if (getenv("UW_DEBUG_CRITTER"))
+      fprintf(stderr, "[critter] FUN_000404a0: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
+              iVar1, param_1, param_2, stack0xffdc3238_buf, iVar5 == -1 ? "FAIL" : "ok");
     if (iVar5 == -1) {
       /* Missing/unopenable per-page resource file -- was an unconditional
          FUN_00082388(0xffffffff) hard exit (only reachable for a real
@@ -29746,6 +29749,9 @@ short param_5;
           iVar9, (int)*pbVar11, (int)param_3);
     return 0;
   }
+  if (getenv("UW_DEBUG_CRITTER"))
+    fprintf(stderr, "[critter] FUN_000404a0: page_base=%d iVar9(glyph_idx)=%d pbVar11[iVar9]=%d(0x%x) param_4(frame_count?)=%d\n",
+            (int)*pbVar11, iVar9, (int)pbVar11[iVar9], (int)pbVar11[iVar9], (int)param_4);
   if (pbVar11[iVar9] != 0xff) {
     pbVar6 = pbVar11 + (short)(ushort)pbVar11[1] + 2;
     uVar3 = (ushort)pbVar6[(((int)param_5 +
@@ -29757,6 +29763,9 @@ short param_5;
                       << 0x13) >> 0x10)) * 0x10000 >> 0x10) + 1] == 0xff) {
       uVar3 = 0;
     }
+    if (getenv("UW_DEBUG_CRITTER"))
+      fprintf(stderr, "[critter] FUN_000404a0: frame-check param_4=%d *pbVar8(frame_count)=%d %s\n",
+              (int)param_4, (int)(uint)*pbVar8, (int)param_4 <= (int)(uint)*pbVar8 ? "PASS" : "FAIL(returns 0, no decode)");
     if ((int)param_4 <= (int)(uint)*pbVar8) {
       iVar9 = (uint)*pbVar8 * 0x20 + 3;
       iVar5 = ((int)(short)uVar3 << 0x11) >> 0x10;
@@ -29766,7 +29775,15 @@ short param_5;
       DAT_002022f8 = (ushort)pbVar11[1];
       DAT_00202300 = (ushort)pbVar11[2];
       DAT_00202304 = (ushort)pbVar11[3];
+      if (getenv("UW_DEBUG_CRITTER"))
+        fprintf(stderr, "[critter] FUN_000404a0: w=%d h=%d comp_type(pbVar11[4])=%d\n",
+                (int)(short)DAT_002022f8, (int)(short)DAT_00202508, (int)pbVar11[4]);
       uVar7 = FUN_000129f8(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
+      if (getenv("UW_DEBUG_CRITTER") && uVar7) {
+        fprintf(stderr, "[critter] FUN_000404a0: decoded row bytes[0..15]:");
+        for (int _i = 0; _i < 16; _i++) fprintf(stderr, " %02x", (unsigned char)uVar7[_i]);
+        fprintf(stderr, "\n");
+      }
       pvVar_glyphbuf = Ordinal_1041((int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
       iVar10 = (int)(short)DAT_002022f8;
       iVar9 = (int)(short)DAT_00202508;
@@ -29774,8 +29791,34 @@ short param_5;
       *piVar12 = pvVar_glyphbuf;
       Ordinal_1047(pvVar_glyphbuf,0,iVar10 * iVar9);
       Ordinal_1044(*piVar12,uVar7,(int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
+      if (getenv("UW_DEBUG_CRITTER")) {
+        unsigned char *_gb = (unsigned char *)*piVar12;
+        int _w = (int)(short)DAT_002022f8, _h = (int)(short)DAT_00202508;
+        int _total = _w * _h;
+        int _hist[256] = {0};
+        for (int _i = 0; _i < _total; _i++) _hist[_gb[_i]]++;
+        fprintf(stderr, "[critter] FUN_000404a0: glyphbuf w=%d h=%d total=%d nonzero-value-histogram:", _w, _h, _total);
+        for (int _i = 0; _i < 256; _i++) if (_hist[_i]) fprintf(stderr, " [%d]=%d", _i, _hist[_i]);
+        fprintf(stderr, "\n");
+        fprintf(stderr, "[critter] FUN_000404a0: middle row (%d) bytes:", _h/2);
+        for (int _i = 0; _i < _w && _i < 48; _i++) fprintf(stderr, " %02x", _gb[(_h/2)*_w + _i]);
+        fprintf(stderr, "\n");
+      }
       if (*piVar12 != 0) {
         DAT_002022fc = (intptr_t)*piVar12;
+        /* render_visible_tile_list reads each record's texture from the
+           g_tile_texptr_out[] side channel (the in-record field is 4 bytes
+           and truncates on 64-bit) -- same fix already applied to the
+           class-0 item billboard decoder just above FUN_0004083c. Without
+           this, a critter/door billboard's record kept whatever truncated
+           32-bit pointer bits got stuffed into DAT_000acdfc, so the
+           renderer sampled a wild/bogus texture and every glyph pixel
+           came back near-0 (rendered as a dark silhouette instead of the
+           real creature bitmap). DAT_0023b83c is this object's own record
+           index, same convention as the sibling fix. */
+        if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) {
+          g_tile_texptr_emit[DAT_0023b83c] = *piVar12;
+        }
       }
       return 1;
     }
@@ -29878,6 +29921,9 @@ short param_3;
     param_3 = 0;
   }
   uVar4 = (uint)(byte)(&DAT_0023ce70)[param_1 * 2];
+  if (getenv("UW_DEBUG_CRITTER"))
+    fprintf(stderr, "[critter] FUN_0004083c: param_1(type_idx)=%d param_2(dir)=%d param_3(frame)=%d -> assoc[%d]=%u (0x%x)\n",
+            (int)param_1, (int)(short)param_2, (int)param_3, (int)param_1 * 2, uVar4, uVar4);
   if (0xff < (short)param_2) {
     param_2 = 0;
   }
