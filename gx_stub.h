@@ -31,6 +31,28 @@ int uw_save_screenshot(const char *path);
 void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
                              const unsigned char *entry_data, int entry_size);
 
+/* Debug tool: if UW_DEBUG_DUMP_CRIT is set (and not "0"), dumps every
+   critter/NPC sprite frame decode_critter_sprite_page produces to a BMP
+   under debug/crit/type<N>/tier<T>/dir<D>_frame<F>.bmp, colored with the
+   currently-installed game palette (decode happens mid-level, so the
+   right CRIT palette is already live the same way most .GR dumps are).
+   Meant to inspect how many of a given creature's 8 relative-viewing-
+   angle directions actually have distinct art in the real game data,
+   the same way UW_DEBUG_DUMP_GR is used to inspect .GR sprite sheets.
+   pixels is a plain type_width*type_height palette-index buffer (no
+   header, unlike a .GR entry). No-op (cheap check) when the env var is
+   unset.
+
+   At native 1:1 pixel scale these sprites look heavily dithered/noisy
+   up close -- confirmed (by cropping a real in-game screenshot to the
+   same native scale) that this matches the actual on-screen art, not a
+   dump bug; it reads as a coherent shaded creature once composited into
+   a full scene. UW_DEBUG_DUMP_CRIT_ALL (any value) disables the
+   dedupe-by-(type,tier,direction,frame) so every decode gets written
+   instead of just the first one seen. */
+void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
+                                   const unsigned char *pixels, int width, int height);
+
 /* Debug tool: if UW_DEBUG_DRAW is set (and not "0"), dumps the internal
    320x240 RGB565 software framebuffer (g_uw_framebuffer) to a BMP after
    every draw call that goes through graphics.c's rect_fill_or_save_restore

@@ -29897,6 +29897,9 @@ short param_5;
       *piVar12 = pvVar_glyphbuf;
       Ordinal_1047(pvVar_glyphbuf,0,iVar10 * iVar9);
       Ordinal_1044(*piVar12,uVar7,(int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
+      uw_debug_dump_critter_sprite(param_1,param_2,(int)param_3,(int)param_5,
+                                    (unsigned char *)*piVar12,
+                                    (int)(short)DAT_002022f8,(int)(short)DAT_00202508);
       if (getenv("UW_DEBUG_CRITTER")) {
         unsigned char *_gb = (unsigned char *)*piVar12;
         int _w = (int)(short)DAT_002022f8, _h = (int)(short)DAT_00202508;

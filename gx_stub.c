@@ -829,6 +829,76 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
     SDL_FreeSurface(surf);
 }
 
+void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
+                                   const unsigned char *pixels, int width, int height) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DUMP_CRIT");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+    if (width <= 0 || height <= 0 || !pixels) return;
+
+    /* decode_critter_sprite_page re-decodes the same (type,tier,direction,
+       frame) combo every single frame it's on screen -- dedupe by key so
+       a normal play session doesn't rewrite the same file thousands of
+       times. */
+    static int seen_keys[4096];
+    static int seen_count = 0;
+    int key = ((type & 0xff) << 24) ^ ((tier & 0xff) << 16) ^ ((direction & 0xff) << 8) ^ (frame & 0xff);
+    if (!getenv("UW_DEBUG_DUMP_CRIT_ALL")) {
+        for (int i = 0; i < seen_count; i++) {
+            if (seen_keys[i] == key) return;
+        }
+        if (seen_count < (int)(sizeof(seen_keys) / sizeof(seen_keys[0]))) {
+            seen_keys[seen_count++] = key;
+        }
+    }
+
+    char dir[280];
+    snprintf(dir, sizeof(dir), "debug/crit/type%02d/tier%d", type, tier);
+    debug_mkdir_p(dir);
+
+    char path[320];
+    snprintf(path, sizeof(path), "%s/dir%d_frame%d.bmp", dir, direction, frame);
+
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, width, height, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!surf) {
+        fprintf(stderr, "[crit-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    unsigned char *pal = uw_get_default_palette("crit");
+    if (getenv("UW_DEBUG_DUMP_CRIT_PAL")) {
+        int idxs[] = {0,1,131,133,148,152,154,156,158,169,171,187,229,233};
+        fprintf(stderr, "[crit-dump] palette sample:");
+        for (size_t i = 0; i < sizeof(idxs)/sizeof(idxs[0]); i++) {
+            int k = idxs[i];
+            fprintf(stderr, " [%d]=(%d,%d,%d)", k, pal[k*3], pal[k*3+1], pal[k*3+2]);
+        }
+        fprintf(stderr, "\n");
+    }
+    SDL_Color colors[256];
+    for (int i = 0; i < 256; i++) {
+        colors[i].r = pal[i * 3 + 0];
+        colors[i].g = pal[i * 3 + 1];
+        colors[i].b = pal[i * 3 + 2];
+        colors[i].a = 255;
+    }
+    SDL_SetPaletteColors(surf->format->palette, colors, 0, 256);
+
+    for (int y = 0; y < height; y++) {
+        memcpy((unsigned char *)surf->pixels + y * surf->pitch, pixels + y * width, width);
+    }
+
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[crit-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    } else {
+        fprintf(stderr, "[crit-dump] wrote %s (%dx%d)\n", path, width, height);
+    }
+    SDL_FreeSurface(surf);
+}
+
 void uw_debug_dump_tmap(int level, const unsigned char *tile_data) {
     static int enabled = -1;
     if (enabled < 0) {
