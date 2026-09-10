@@ -40526,16 +40526,39 @@ byte param_7;
   int iVar6;
   short sVar7;
   uint uVar8;
-  undefined2 local_3c;
-  undefined2 local_3a;
-  short local_38;
-  byte local_34;
-  byte local_33;
-  short local_32;
+  /* Was 6 independent locals (local_3c/3a/38/34/33/32) with
+     DAT_00202c6c = &local_3c, and every DAT_00202c6c[N] access
+     throughout this file (collision_build_height_field,
+     collision_corner_flags, collision_height_envelope, etc.) assuming
+     they're one contiguous record at their Ghidra-stack-offset-implied
+     byte positions (0/2/4/8/9/0xa -- 0x3c-0x3a=2, 0x3a-0x38=2,
+     0x38-0x34=4, 0x34-0x33=1, 0x33-0x32=1). That layout only held in
+     the original 32-bit ARM binary's own stack frame; as independent
+     C locals here, this compiler is free to place them in any order
+     with any padding, so nearly every DAT_00202c6c[N] read was
+     whatever adjacent stack byte happened to land there instead of the
+     intended field -- confirmed via a direct struct dump: param_4 (Y,
+     expected at offset 2-3) printed 24, but DAT_00202c6c[2] read back
+     8, not 24. This is what fed collision_height_envelope's floor-
+     height selection (DAT_00202c30) garbage, causing a discrete
+     SHIFT+<dir> step to occasionally place the player's height at a
+     wildly wrong value (reported as "ends up at the ceiling"). Same
+     "split-symbol cluster" bug class fixed elsewhere this session for
+     globals (e.g. DAT_00204880_backing); here as a real backing array
+     since these are genuinely local to one call. Sized generously
+     (0x20) past the highest offset (0x13) any reader/writer touches. */
+  undefined1 local_pos_record[0x20];
+#define local_3c (*(undefined2 *)(local_pos_record + 0))
+#define local_3a (*(undefined2 *)(local_pos_record + 2))
+#define local_38 (*(short *)(local_pos_record + 4))
+#define local_34 (local_pos_record[8])
+#define local_33 (local_pos_record[9])
+#define local_32 (*(short *)(local_pos_record + 0xa))
   int iVar9;
-  
+
   uVar2 = DAT_00202c6c;
-  DAT_00202c6c = &local_3c;
+  Ordinal_1047(local_pos_record, 0, sizeof(local_pos_record));
+  DAT_00202c6c = local_pos_record;
   local_33 = (&DAT_00202c90)[param_1 * 0xd];
   local_34 = (&DAT_00202c91)[param_1 * 0xd] & 7;
   local_38 = param_5;
@@ -40544,7 +40567,17 @@ byte param_7;
     local_3c = param_3;
     local_3a = param_4;
     local_32 = param_2;
+    if (getenv("UW_DEBUG_STEPHEIGHT"))
+      fprintf(stderr, "[fa0-params] p1=%d p2=%d p3=%d p4=%d p5=%u p6=%d p7=%u local33=%d local34=%d\n",
+              (int)param_1, (int)param_2, (int)(short)param_3, (int)(short)param_4,
+              (unsigned)param_5, (int)param_6, (unsigned)param_7, (int)local_33, (int)local_34);
     collision_build_height_field(uVar8);
+    if (getenv("UW_DEBUG_STEPHEIGHT")) {
+      int _i;
+      fprintf(stderr, "[fa0-struct]");
+      for (_i = 0; _i < 0x14; _i++) fprintf(stderr, " [%x]=%d", _i, (int)(unsigned char)DAT_00202c6c[_i]);
+      fprintf(stderr, "\n");
+    }
     if (((DAT_00202c6c[7] | DAT_00202c6c[6]) & 0x300) == 0) {
       bVar1 = *(byte *)((char *)DAT_00202c6c + 0x11);
       if ((int)(uVar8 + (int)(short)DAT_00202c6c[2]) < (int)(uint)bVar1) {
@@ -40612,6 +40645,12 @@ byte param_7;
   DAT_00202c6c = (undefined2 *)uVar2;
   return 0;
 }
+#undef local_3c
+#undef local_3a
+#undef local_38
+#undef local_34
+#undef local_33
+#undef local_32
 
 
 
