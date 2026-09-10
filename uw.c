@@ -40129,6 +40129,16 @@ int param_2;
             if (0x3f < sVar8) break;
             if ((uint)(uVar3 >> 6) != (int)*(short *)(pbVar13 + 10)) {
               puVar7 = (ushort *)resolve_object_link(puVar6);
+              /* resolve_object_link can now return NULL for an
+                 out-of-range link (see its own comment) where this loop's
+                 `while ((uVar3 & 0xffc0) != 0)` condition alone used to
+                 guarantee success -- and since the chain-advance below
+                 uses this same puVar6 through the same function, a NULL
+                 here means the chain itself is unsafe to keep walking
+                 (advancing anyway would resolve against address 4).
+                 Give up on this tile's object chain instead of
+                 dereferencing NULL or walking into near-NULL memory. */
+              if (puVar7 == (ushort *)0x0) break;
               iVar10 = (*puVar7 & 0x1ff) * 0xd;
               if ((((local_3c == 0) || (((&DAT_00202c93)[iVar10] & 4) == 0)) &&
                   (((&DAT_00202c90)[iVar10] != '\0' || (puVar7 < DAT_002046c4)))) &&
@@ -41092,7 +41102,37 @@ ushort * param_1;
 {
   ushort uVar1;
 
+  /* Defensive range check -- param_1 should always be either a
+     tile-array-relative link cell or an object-record-relative "next"
+     field, both within the level blob's fixed object-table span. Base
+     the check on DAT_002046b8 (computed ONCE at level load as
+     DAT_002029cc+0x4000, see FUN_00052960) rather than re-reading the
+     LIVE DAT_002029cc: there's an existing, previously-documented,
+     never-root-caused bug (see FUN_00066e90's own comment a few
+     thousand lines down) where some stray write elsewhere in this file
+     corrupts DAT_002029cc's storage well after level load -- confirmed
+     here too (the live DAT_002029cc no longer matched the base
+     DAT_002046b8/DAT_002046c4 were actually derived from), so
+     recomputing "expected range" from the live value validates against
+     the wrong base and passes through an address that's actually
+     unmapped/unrelated memory. DAT_002046b8/DAT_002046c4 are
+     independent globals, stored once and not observed corrupted the
+     same way. A caller that chains through resolve_object_link's own
+     result repeatedly (collision_height_envelope's neighbouring-tile
+     scan) can otherwise walk this into unrelated memory -- confirmed
+     via lldb: EXC_BAD_ACCESS reading *param_1 with a wild address,
+     reproduced by a mapped movement sequence (12x forward, turn, 3x
+     forward, turn, 5x forward). Treat an out-of-range param_1 as "no
+     object" instead of crashing, same defensive posture as this file's
+     other guards against a data-dependent wild pointer. */
   if (param_1 != (ushort *)0x0) {
+    char *_lo = DAT_002046b8 - 0x4000;
+    char *_hi = DAT_002046c4 + 0x1800;
+    if ((char *)param_1 < _lo || (char *)param_1 >= _hi) {
+      DEBUG(ERR, "[resolve_object_link] param_1=%p out of expected range [%p,%p), returning NULL\n",
+            (void *)param_1, (void *)_lo, (void *)_hi);
+      return 0;
+    }
     uVar1 = *param_1;
     if ((uVar1 & 0xffc0) != 0) {
       if (0x3fff < (uVar1 & 0xffc0)) {
@@ -41146,11 +41186,31 @@ short param_1;
   if (iVar1 == 0) {
     iVar1 = 0;
   }
+  else if (iVar1 < 0) {
+    /* No caller has ever legitimately passed a negative slot -- a real
+       UW1 level has exactly 1024 object slots (0-0x3ff), 256 static +
+       768 mobile -- but nothing bounded the input, and a corrupted/
+       garbage caller-side read (e.g. collision_height_envelope reading
+       *(short*)(DAT_00202c6c+10) as this slot) can hand one in.
+       Confirmed via lldb: this exact case crashed dereferencing the
+       resulting wild pointer, reproduced by the same mapped movement
+       sequence as resolve_object_link's own bounds fix (12x forward,
+       turn, 3x forward, turn, 5x forward). */
+    DEBUG(ERR, "[FUN_000535fc] negative slot %d, returning NULL\n", (int)param_1);
+    iVar1 = 0;
+  }
   else if (iVar1 < 0x100) {
     iVar1 = iVar1 * 0x1b + (intptr_t)DAT_002046b8;
   }
-  else {
+  else if (iVar1 < 0x400) {
     iVar1 = (intptr_t)DAT_002046c4 + (iVar1 + -0x100) * 8;
+  }
+  else {
+    /* >= 1024: past the real 768-slot mobile-object table
+       (DAT_002046c4..+0x1800) -- same corrupted/out-of-range slot class
+       as the negative case above. */
+    DEBUG(ERR, "[FUN_000535fc] slot %d exceeds 0x3ff, returning NULL\n", (int)param_1);
+    iVar1 = 0;
   }
   return (void *)iVar1;
 }
