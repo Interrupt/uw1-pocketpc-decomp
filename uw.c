@@ -49274,13 +49274,15 @@ LAB_00061d34:
       if (!_tmobj_ids_inited) {
         _tmobj_ids_inited = 1;
         int _i;
-        /* Fixed to TMOBJ.GR entry 25 (absolute frame 643+25=668) for
-           every variant -- was cycling through entries 25-28 (668-671)
-           by sign sub-type, but confirmed live in-game this picked
-           entry 27 (670) for the one visible sign, and per user
-           feedback that's off by (at least) one from the right one.
-           Single fixed choice until/unless a real per-variant mapping
-           is found. */
+        // HACK: hand-picked constant, not recovered/derived data. The real
+        // per-sign-variant -> TMOBJ.GR frame mapping (what DAT_00086c80 was
+        // for) is genuinely lost -- not present anywhere in this binary or
+        // its data files, so it can't be recovered by further disassembly
+        // or file analysis. 668 (TMOBJ.GR entry 25) is just the
+        // least-wrong of the 4 real "message/plaque"-shaped frames (25-28)
+        // found by manual inspection, used for every sign regardless of
+        // its real intended variant. Revisit if the real mapping ever
+        // turns up (e.g. a different original data file/version).
         for (_i = 0; _i < 0x20; _i++) {
           *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)668;
         }
