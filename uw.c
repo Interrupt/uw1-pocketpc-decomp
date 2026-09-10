@@ -1345,7 +1345,7 @@ static undefined1 DAT_00202c90_backing[65536];
    BSS happened to follow each one (always 0 in practice), so every
    "does this object type have property X" check silently saw "no" for
    every real object -- notably `(&DAT_00202c9b)[id] & 0x10` in
-   thunk_FUN_00048764 (the right-click "look" description gate), which is
+   dispatch_object_action (the right-click "look" description gate), which is
    why Look never printed "You see a <name>" for anything, the Sack
    included. Re-aliased into DAT_00202c90's own backing array at their
    real record offsets (0x1,0x3,0x5,0x7,0x8,0x9,0xa,0xb -- confirmed by
@@ -1605,8 +1605,8 @@ static undefined1 DAT_0008523c_backing[32768];
 #define DAT_0008523c DAT_0008523c_backing[0]
 short DAT_001007bc;
 /* DAT_00085240/44/48 are the look-text word-separator/article
-   constants (" ", "a ", "an ") used by thunk_FUN_00048764/FUN_00048764
-   and FUN_00049404 to glue "a"/"an" + adjective + noun [+ "named" +
+   constants (" ", "a ", "an ") used by dispatch_object_action/dispatch_object_action_dup
+   and build_creature_look_text to glue "a"/"an" + adjective + noun [+ "named" +
    proper name] together -- none had a writer anywhere in this decompile
    (same "orphaned data" class as DAT_00086cc0 etc.), so every look-text
    sentence silently ran its words together with no article at all, e.g.
@@ -2264,7 +2264,7 @@ short DAT_0023bd80;
    so every right-click on an object jumped through garbage. Roles read
    from the five handler bodies:
      0  interact_look      look / examine  ("You see ..." via
-                          thunk_FUN_00048764; also a use/get fallback
+                          dispatch_object_action; also a use/get fallback
                           when FUN_000576d0() says so)
      1  interact_converse      converse (FUN_00079984 start-conversation)
      2  interact_default  get / use context handler
@@ -2714,7 +2714,7 @@ static undefined DAT_00085ce0_backing[8192];
 char s_You_read_the_00085ce8[] = "You_read_the";
 char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 char s_an_adventurer__00085d08[] = "an_adventurer.";
-/* Was "named" with no surrounding spaces -- FUN_00049404 (creature look
+/* Was "named" with no surrounding spaces -- build_creature_look_text (creature look
    text) appends it directly between the description and the proper name
    with no separator of its own, so a named creature's look text ran
    the words together: "You see an mellow outcastnamedBragit" instead of
@@ -10972,7 +10972,7 @@ int param_4;
           iVar6 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x29),0xf);
           iVar6 = iVar6 + 1;
         }
-        thunk_FUN_00048764(uVar5,iVar6);
+        dispatch_object_action(uVar5,iVar6);
       }
       else {
         puVar4 = (uint *)(local_4 + (short)local_c * 4);
@@ -28718,7 +28718,7 @@ short param_2;
     FUN_0007863c(uVar2 | 0x1400);
     message_scroll_print_wrapped();
     message_scroll_print_wrapped(&DAT_00084f20);
-    /* Same missing-newline issue as thunk_FUN_00048764/FUN_00048764's own
+    /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
        fix -- back-to-back terrain Looks (e.g. the ceiling, wall signs)
        otherwise all land on the same visible scroll line. */
     message_scroll_print_wrapped("\n");
@@ -28826,7 +28826,7 @@ void interact_talk_npc()
 
 
 
-void thunk_FUN_00048764(param_1,param_2)
+void dispatch_object_action(param_1,param_2)
 ushort * param_1;
 int param_2;
 
@@ -28847,7 +28847,7 @@ int param_2;
   undefined1 auStack_b4 [8];
   char acStack_ac [16];
   char acStack_9c [32];
-  /* Was 80 bytes -- FUN_00049404's creature-look text ("You see " +
+  /* Was 80 bytes -- build_creature_look_text's creature-look text ("You see " +
      article + description + " named " + proper name + suffix + "\n")
      can run well past that for a creature with a real name, overflowing
      acStack_7c and taking the fortified strcat (Ordinal_1063) down with
@@ -28895,7 +28895,7 @@ int param_2;
   }
   acStack_9c[0] = '\0';
   if ((*param_1 & 0x1c0) == 0x40) {
-    FUN_00049404(param_1,acStack_7c);
+    build_creature_look_text(param_1,acStack_7c);
     return;
   }
   iVar5 = 0;
@@ -28989,7 +28989,7 @@ void interact_look()
   if ((iVar2 == 0) || (uVar3 = 1, DAT_002020ec != 0)) {
     uVar3 = 0;
   }
-  thunk_FUN_00048764(DAT_002020cc,uVar3);
+  dispatch_object_action(DAT_002020cc,uVar3);
   if (DAT_002020c0 == 3) {
     sVar1 = FUN_00072598(DAT_002020cc,*(undefined1 *)(DAT_00086df8 + 0x2c));
     if (0 < sVar1) {
@@ -29201,7 +29201,7 @@ LAB_0003f69c:
   }
   uVar2 = 1;
 LAB_0003f7cc:
-  thunk_FUN_00048764(DAT_002020cc,uVar2);
+  dispatch_object_action(DAT_002020cc,uVar2);
   FUN_00046698(0xffffffff);
   return;
 }
@@ -32808,7 +32808,7 @@ void FUN_0004497c()
         else {
           local_20[0] = ((short)iVar6 + 0xe8U ^ local_20[0]) & 0x1ff ^ local_20[0];
           local_1a = 0;
-          FUN_00048764(local_20,0);
+          dispatch_object_action_dup(local_20,0);
         }
       }
     }
@@ -34830,7 +34830,7 @@ short param_2;
 
 
 
-void FUN_00048764(param_1,param_2)
+void dispatch_object_action_dup(param_1,param_2)
 ushort * param_1;
 int param_2;
 
@@ -34852,7 +34852,7 @@ int param_2;
   char local_ac [16];
   char local_9c [32];
   /* Same too-small stack buffer fixed in this function's duplicate,
-     thunk_FUN_00048764 -- see the comment there. */
+     dispatch_object_action -- see the comment there. */
   char acStack_7c [256];
   
   uVar11 = 0;
@@ -34884,7 +34884,7 @@ int param_2;
   }
   local_9c[0] = '\0';
   if ((*param_1 & 0x1c0) == 0x40) {
-    FUN_00049404(param_1,acStack_7c);
+    build_creature_look_text(param_1,acStack_7c);
     return;
   }
   iVar5 = 0;
@@ -35187,7 +35187,7 @@ short param_2;
      case) to hold FUN_0007863c's real `char *` return, truncating it on
      this 64-bit host. Confirmed via lldb: right-clicking a rendered sign
      (object type 0x166) crashed in strchr with a wild pointer, called
-     from FUN_00078bfc(iVar5,...) here. Separate real-pointer local so
+     from format_object_display_name(iVar5,...) here. Separate real-pointer local so
      each use keeps its own type. */
   char *pcVar_str;
   
@@ -35264,11 +35264,11 @@ short param_2;
       message_scroll_print_wrapped((char *)FUN_0007863c((*param_1 >> 9 & 0xf) + sVar10 | 0x1000));
     }
     if (pcVar_str != (char *)0x0) {
-      /* Same dropped-argument pattern: FUN_00078bfc's real `undefined1 *`
+      /* Same dropped-argument pattern: format_object_display_name's real `undefined1 *`
          return (pcVar_str word-wrapped for the message scroll) is the
          actual real sign/inscription text ("We attacked the entrance
          with all manner of tools..."), confirmed via UW_DEBUG_OBJPOS. */
-      message_scroll_print_wrapped((char *)FUN_00078bfc(pcVar_str,1,0));
+      message_scroll_print_wrapped((char *)format_object_display_name(pcVar_str,1,0));
       message_scroll_print_wrapped(&DAT_0008522c);
     }
     if (local_128[0] != '\0') {
@@ -35337,7 +35337,7 @@ short param_2;
 
 
 
-void FUN_00049404(param_1,param_2)
+void build_creature_look_text(param_1,param_2)
 ushort * param_1;
 char *param_2;   /* was undefined4 -- the caller's stack description buffer
                     (acStack_7c); Ordinal_1063/message_scroll_print_wrapped
@@ -35352,7 +35352,7 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
   char *pcVar5;
   int iVar6;
   undefined4 uVar7;
-  /* FUN_00078bfc's real return type is `undefined1 *` -- was captured
+  /* format_object_display_name's real return type is `undefined1 *` -- was captured
      into `uVar7` (undefined4/int), which also does double duty as a
      plain 0/1 flag a few lines down. On this 64-bit host that truncated
      the real pointer to 32 bits before handing it to Ordinal_1063
@@ -35396,7 +35396,7 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
       Ordinal_1063(param_2,&DAT_00085240);
     }
     if ((pcVar5 == (char *)0x0) || (iVar6 = Ordinal_1417((int)*pcVar5,1), iVar6 != 0)) {
-      pcVar_desc = (char *)FUN_00078bfc(pcVar3,pcVar4 == (char *)0x0,0);
+      pcVar_desc = (char *)format_object_display_name(pcVar3,pcVar4 == (char *)0x0,0);
       if (pcVar_desc != (char *)0x0) {
         Ordinal_1063(param_2,pcVar_desc);
       }
@@ -35411,13 +35411,13 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
       }
       uVar7 = 0;
     }
-    pcVar_desc = (char *)FUN_00078bfc(pcVar5,uVar7,0);
+    pcVar_desc = (char *)format_object_display_name(pcVar5,uVar7,0);
     if (pcVar_desc != (char *)0x0) {
       Ordinal_1063(param_2,pcVar_desc);
     }
   }
   Ordinal_1063(param_2,&DAT_00084f20);
-  /* Same missing-newline issue as thunk_FUN_00048764/FUN_00048764's own
+  /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
      fix -- back-to-back Looks at a creature otherwise all land on the
      same visible scroll line. */
   Ordinal_1063(param_2,"\n");
@@ -54251,7 +54251,7 @@ undefined4 FUN_0006b178()
                         truncating the real FUN_0007863c() string
                         pointer it also briefly held -- same "reused
                         scalar" bug already fixed elsewhere this session
-                        (see thunk_FUN_00048764's uVar11 comment) */
+                        (see dispatch_object_action's uVar11 comment) */
   short sVar6;
   uint uVar7;
   int iVar8;
@@ -54337,7 +54337,7 @@ undefined4 FUN_0006b178()
        char*, but uVar5 is this function's own `undefined4` 0/1/-1
        return-code variable, so storing the string pointer into it
        truncated it on this 64-bit build (same "reused scalar" bug
-       already fixed elsewhere this session -- see thunk_FUN_00048764's
+       already fixed elsewhere this session -- see dispatch_object_action's
        uVar11 comment). Use a real pointer local instead. */
     pcVar_str = (char *)FUN_0007863c(0x301);
     FUN_00040d00(s_fontbig_sys_0008432c);
@@ -60666,7 +60666,7 @@ ushort * param_1;
     }
   }
   else if ((short)DAT_00202094 == 4) {
-    FUN_00048764(param_1,3);
+    dispatch_object_action_dup(param_1,3);
     uVar4 = *param_1 & 0x1c0;
     if (((uVar4 != 0x140) && (uVar4 != 0x40)) &&
        (((&DAT_00202c9a)[(*param_1 & 0x1ff) * 0xd] & 3) != 2)) {
@@ -62715,7 +62715,7 @@ undefined4 param_4;
     if (*pcVar3 == '\0') {
       return 0;
     }
-    pcVar3 = (char *)FUN_00078bfc(pcVar3,param_3,param_4);
+    pcVar3 = (char *)format_object_display_name(pcVar3,param_3,param_4);
     do {
       cVar1 = *pcVar3;
       pcVar3 = pcVar3 + 1;
@@ -62728,7 +62728,7 @@ undefined4 param_4;
 
 
 
-undefined1 *FUN_00078bfc(param_1,param_2,param_3)
+undefined1 *format_object_display_name(param_1,param_2,param_3)
 undefined1 * param_1;
 int param_2;
 int param_3;
