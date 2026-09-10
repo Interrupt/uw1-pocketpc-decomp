@@ -27852,6 +27852,17 @@ void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pi
      interpolation still pending) showed the old yaw, the second (nothing
      pending any more) matched exactly. */
   DAT_0023bea8 = 0;
+  /* Force the camera to track the player object right now. FUN_00069470
+     (the function that actually copies DAT_00201c70/DAT_00204880 etc. into
+     the camera-facing DAT_00086e6c record sync_camera_from_player reads)
+     only does that when DAT_0023b82c -- "whichever object the camera is
+     currently tracking" -- equals DAT_0023be64, the player object; normally
+     true, but right after spawn/chargen it can still be unset/stale for a
+     frame, so the very first SETPLAYERPOS call of a run would appear to
+     not take effect (confirmed live: first call's yaw didn't show up,
+     second did). Setting it here makes this reliable regardless of when
+     it's called. */
+  DAT_0023b82c = DAT_0023be64;
   DAT_00204880 = (short)lround(x * 256.0);
   DAT_00204882 = (short)lround(y * 256.0);
   /* set_player_tile_position just computed a default DAT_00204884 from the
