@@ -40580,12 +40580,31 @@ byte param_7;
     }
     if (((DAT_00202c6c[7] | DAT_00202c6c[6]) & 0x300) == 0) {
       bVar1 = *(byte *)((char *)DAT_00202c6c + 0x11);
-      if ((int)(uVar8 + (int)(short)DAT_00202c6c[2]) < (int)(uint)bVar1) {
+      /* Was `DAT_00202c6c[2]` -- offset 2 is local_3a, the LOW byte of
+         param_4 (the destination tile's Y coordinate, in eighths of a
+         tile), not a height/clearance value at all -- mixing an
+         absolute position into a "how much vertical room is there"
+         check made this pick the wrong branch essentially at random
+         depending on where in the map the step landed. Every OTHER use
+         of "the player's own clearance" in this same function (the
+         guard above, and the very next line below) reads offset 4
+         (local_38 = param_5, the player's current sub-tile height byte)
+         -- use that instead, matching them. Confirmed via a live struct
+         dump + before/after comparison at the exact reported repro: with
+         the offset-2 bug, DAT_00202c30 picked a near-zero garbage
+         candidate and the discrete step armed a bogus "start falling"
+         state, which a later per-tick gravity integration turned into a
+         wrong, large height jump (e.g. 768 -> 1024, reported as "ends up
+         at the ceiling"); with offset 4, the height field's own valid
+         floor-height candidate (e.g. 96, i.e. DAT_00204884=768) is kept
+         instead, matching what continuous analog movement already
+         computes correctly for the same tile. */
+      if ((int)(uVar8 + (int)(short)DAT_00202c6c[4]) < (int)(uint)bVar1) {
         bVar1 = *(byte *)(DAT_00202c6c + 8);
       }
       if (getenv("UW_DEBUG_STEPHEIGHT"))
-        fprintf(stderr, "[stepheight] uVar8=%u c6c2=%d c6c8=%d c6c11=%d c6c6=%d c6c7=%d -> DAT_00202c30=%d cur_z=%d\n",
-                uVar8, (int)(short)DAT_00202c6c[2], (int)*(byte *)(DAT_00202c6c + 8),
+        fprintf(stderr, "[stepheight] uVar8=%u c6c4=%d c6c8=%d c6c11=%d c6c6=%d c6c7=%d -> DAT_00202c30=%d cur_z=%d\n",
+                uVar8, (int)(short)DAT_00202c6c[4], (int)*(byte *)(DAT_00202c6c + 8),
                 (int)*(byte *)((char *)DAT_00202c6c + 0x11), (int)DAT_00202c6c[6], (int)DAT_00202c6c[7],
                 (int)bVar1, (int)DAT_00204884);
       DAT_00202c30 = (ushort)bVar1;
@@ -44717,6 +44736,11 @@ int param_2;
   DAT_00086978[1] =
        DAT_00086978[1] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xe);
   psVar11 = DAT_00086978;
+  if (getenv("UW_DEBUG_STEPHEIGHT"))
+    fprintf(stderr, "[sweepsetup] speed(0x12)=%d fallflag(0x10)=%d vvel_before=%d -> delta=%d\n",
+            (int)*(short *)(DAT_00204874 + 0x12), (int)*(short *)(DAT_00204874 + 0x10),
+            (int)DAT_00086978[2],
+            (int)(*(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10)));
   DAT_00086978[2] =
        DAT_00086978[2] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10);
   if ((DAT_00086978[1] == 0 && DAT_00086978[2] == 0) && *DAT_00086978 == 0) {
