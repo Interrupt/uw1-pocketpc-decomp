@@ -48950,6 +48950,30 @@ ushort * param_1;
       uVar27 = 0xe0;
     }
 LAB_emit_mesh_sprite_quad:
+    /* Push a wall-mounted decal's anchor from the tile's generic per-slot
+       floor position (DAT_0023bb99/9a's table, meant for scattering
+       ordinary floor items around a tile) out to the actual wall surface,
+       along the wall's own normal (perpendicular to the facing direction
+       g_billboard_angle_override_deg's tangent extrusion already uses).
+       Without this the quad is correctly oriented flush-with-the-wall
+       (proven via [decalangle]'s 100%-constant angle_idx) but anchored
+       somewhere in the open floor area of the tile instead of at the
+       wall plane -- looks "in the room, not on the wall" face-on, and
+       nearly vanishes to a sliver/speckle viewed close to edge-on, both
+       confirmed live. Tunable via UW_DECAL_PUSH (magnitude, default 16 =
+       half a tile in DAT_0023b904/920's *0x20-per-tile units) and
+       UW_DECAL_PUSH_SIGN (+1/-1, default +1) while calibrating -- applied
+       here (before the DAT_00110fc0 pick/collision copy just below) so
+       picking matches the pushed visual position too. */
+    if (g_billboard_angle_override_deg >= 0) {
+      double _rad = (g_billboard_angle_override_deg + 90) * (3.14159265358979 / 180.0);
+      int _mag = 16;
+      int _sign = 1;
+      { const char *_p = getenv("UW_DECAL_PUSH"); if (_p) _mag = atoi(_p); }
+      { const char *_p = getenv("UW_DECAL_PUSH_SIGN"); if (_p) _sign = atoi(_p); }
+      DAT_0023b904 = DAT_0023b904 + (short)lround(_sign * _mag * sin(_rad));
+      DAT_0023b920 = DAT_0023b920 + (short)lround(_sign * _mag * cos(_rad));
+    }
     *DAT_00110fc0 = 0x7a;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_0023b904;
@@ -53066,21 +53090,44 @@ void sync_camera_from_player()
      DAT_00204880/82 (X/Y) and DAT_00204884 (Z), the true continuously-
      updated fine-grained player position, format (tile<<8)|fine, 256
      units/tile -- confirmed via commit_player_move's own tile-index
-     derivation from these exact fields. Yaw/pitch are degrees, 0-360,
-     indices into the DAT_000d9ed8/DAT_000d9930 sin/cos tables (same
-     convention emit_tile_objects's decal-angle override uses). Throttled
-     to print only on change. Set UW_QUIET_POSDEBUG=1 to silence it. */
+     derivation from these exact fields. Pitch is degrees, 0-360, an index
+     into the DAT_000d9ed8/DAT_000d9930 sin/cos tables (same convention
+     emit_tile_objects's decal-angle override uses).
+     Yaw is NOT read from DAT_000db44c (this function's own "camera yaw"
+     local a few lines up) -- confirmed live (both by a full real-turning
+     sweep and by direct screenshot diffing at yaw 0/90/180/270, which
+     render as 4 genuinely different views despite DAT_000db44c reporting
+     near-identical values for all of them) that DAT_000db44c is only the
+     small residual *within* whichever 90-degree quadrant DAT_0023b4a0
+     already rotated the camera's world-space axes into a few lines above
+     (cVar1's branches) -- not the true compass heading. DAT_0023bf40, the
+     field that would need to add the quadrant's own 90*n back in to
+     reconstruct the full angle, has no writer anywhere in this decompile
+     (permanently 0), so DAT_000db44c alone folds every quarter-turn back
+     on top of the others. The renderer itself works around this by also
+     pre-rotating world-space positions via that same DAT_0023b4a0 (see
+     this function's own uVar3/uVar7 swaps above) rather than relying on
+     DAT_000db44c for the coarse direction, which is why the actual 3D
+     view rotates correctly even though DAT_000db44c doesn't reflect it --
+     but anything that reads DAT_000db44c directly as if it *were* the
+     full yaw (this print, previously) reports nonsense above/below one
+     quadrant. DAT_00201c70 (the player's own persistent yaw, 65536
+     units/360 degrees -- the same field SETPLAYERPOS writes and ordinary
+     turning increments by 0x2000/45 degrees) is the real, un-folded full
+     compass heading; convert it directly instead. Throttled to print
+     only on change. Set UW_QUIET_POSDEBUG=1 to silence it. */
   if (!getenv("UW_QUIET_POSDEBUG")) {
     static int _last_x = -1, _last_y = -1, _last_z = -1, _last_yaw = -1, _last_pitch = -1;
     int _x = (unsigned short)DAT_00204880;
     int _y = (unsigned short)DAT_00204882;
     int _z = (short)DAT_00204884;
+    int _yaw = (int)lround(fmod((double)(unsigned short)DAT_00201c70 * (360.0 / 65536.0), 360.0));
     if (_x != _last_x || _y != _last_y || _z != _last_z ||
-        DAT_000db44c != _last_yaw || DAT_000db448 != _last_pitch) {
+        _yaw != _last_yaw || DAT_000db448 != _last_pitch) {
       _last_x = _x; _last_y = _y; _last_z = _z;
-      _last_yaw = DAT_000db44c; _last_pitch = DAT_000db448;
+      _last_yaw = _yaw; _last_pitch = DAT_000db448;
       fprintf(stderr, "[playerpos] tile=(%.2f,%.2f) z=%d yaw=%d pitch=%d\n",
-              _x / 256.0, _y / 256.0, _z, (int)DAT_000db44c, (int)DAT_000db448);
+              _x / 256.0, _y / 256.0, _z, _yaw, (int)DAT_000db448);
     }
   }
   return;
