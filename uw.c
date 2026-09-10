@@ -1322,7 +1322,17 @@ short DAT_0023beb4;
 char DAT_001005dc;
 undefined2 DAT_00100624;
 ushort DAT_00100620;
-undefined1 DAT_00202c38;
+/* Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below,
+   already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of
+   a repeating 6-byte-stride per-candidate record in
+   collision_height_envelope/FUN_00051dd0's up-to-256-entry collision
+   candidate list. Indexing past element 0 read/wrote whatever memory
+   happened to follow this single byte in the link order -- confirmed via
+   a real crash (a plain, non-debugger run walking toward a critter;
+   the same bug reproduced fine under lldb/ASan since they lay out
+   globals differently, masking it there). */
+static undefined1 DAT_00202c38_backing[8192];
+#define DAT_00202c38 DAT_00202c38_backing[0]
 static undefined1 DAT_00202c39_backing[8192];
 #define DAT_00202c39 DAT_00202c39_backing[0]
 static undefined1 DAT_00202c90_backing[65536];
@@ -2866,10 +2876,16 @@ char DAT_00202c24;
 char DAT_00202c2c;
 char DAT_00202c18;
 char DAT_00202c1c;
-undefined1 DAT_00202c3b;
-undefined DAT_00202c3d;
-undefined1 DAT_00202c3e;
-undefined DAT_00202c3f;
+/* Same lone-scalar-used-as-a-stride-6-array bug as DAT_00202c38 above,
+   for the remaining fields of the same collision-candidate record. */
+static undefined1 DAT_00202c3b_backing[8192];
+#define DAT_00202c3b DAT_00202c3b_backing[0]
+static undefined1 DAT_00202c3d_backing[8192];
+#define DAT_00202c3d DAT_00202c3d_backing[0]
+static undefined1 DAT_00202c3e_backing[8192];
+#define DAT_00202c3e DAT_00202c3e_backing[0]
+static undefined1 DAT_00202c3f_backing[8192];
+#define DAT_00202c3f DAT_00202c3f_backing[0]
 undefined4 LAB_0001582c()
 
 {
@@ -27506,7 +27522,26 @@ LAB_0003c940:
       if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
         do {
           uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6,iVar8);
-          iVar8 = (int)((ulonglong)uVar11 >> 0x20);
+          /* Was `iVar8 = (int)((ulonglong)uVar11 >> 0x20);` -- a leftover
+             from the original 32-bit ARM ABI, where resolve_object_link's
+             caller apparently re-read some other value out of r1 right
+             after the call (Ghidra folded it into a fake 64-bit return
+             value, r0:r1). On this 64-bit recompile resolve_object_link
+             returns a real, single 64-bit pointer with no second value
+             riding along in its "upper half" -- (ulonglong)uVar11 >> 0x20
+             was just the pointer's own high address bits, reinterpreted
+             as iVar8 and clobbering this loop's own bound (iVar8 is the
+             loop's own upper limit, from DAT_00202c6c+0xb/0x15) with
+             garbage every single iteration after the first. That let
+             iVar7 walk arbitrarily far past the real candidate range,
+             feeding wild indices into resolve_object_link on later
+             iterations -- confirmed via the very "negative slot"/"exceeds
+             0x3ff" FUN_000535fc warnings logged just before this crash.
+             Also add the missing NULL guard resolve_object_link's other
+             call sites already needed: an out-of-range link now returns
+             NULL, and this dereferenced it unconditionally (confirmed via
+             lldb, EXC_BAD_ACCESS at address 0). */
+          if (uVar11 == 0) break;
           if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
             FUN_0007cdbc(DAT_0023be64,0,(ushort *)uVar11,0);
             iVar8 = extraout_r1;
@@ -40185,7 +40220,9 @@ int param_2;
   int local_3c;
   
   local_3c = 0;
-  iVar5 = tilemap_lookup((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+  int _px = (int)*(short *)DAT_00202c6c >> 3;
+  int _py = (int)*(short *)(DAT_00202c6c + 2) >> 3;
+  iVar5 = tilemap_lookup(_px, _py);
   /* off-map tile (DAT_00202c6c position outside 0..63): this function assumes
      a valid tile record and derefs iVar5 + offsets below. The sweep's
      collision revert path (sweep_step(-1)) can reach here with an out-of-
@@ -40254,11 +40291,31 @@ int param_2;
       iVar14 = (int)cVar1;
       if (cVar1 <= iVar11) {
         do {
-          puVar6 = (ushort *)
-                   (iVar5 + (((int)(char)iVar12 + (char)iVar14 * 0x40) * 0x10000 >> 0x10) * 4 + 2);
+          /* Was raw pointer arithmetic straight off iVar5 (the CURRENT
+             tile's own record, from tilemap_lookup(_px,_py)):
+             `iVar5 + (dx + dy*0x40)*4 + 2` -- algebraically the right way
+             to reach a neighbouring tile's record in a flat 64x64 array
+             (base + ((_px+dx)+(_py+dy)*64)*4), but with none of
+             tilemap_lookup's own bounds check that a plain
+             tilemap_lookup(_px+dx,_py+dy) call gets for free. This scan's
+             dx/dy (iVar12/iVar14) range up to +-11 tiles, so anywhere
+             within ~11 tiles of the map edge -- confirmed via lldb,
+             walking toward a critter near tile (17,7) -- (_px+dx) or
+             (_py+dy) goes negative or >=64, landing this "neighbour"
+             pointer far outside the real DAT_002029cc array and crashing
+             on the very next dereference. Route through tilemap_lookup
+             so an out-of-map neighbour is treated as "no object here"
+             instead. */
+          void *_ntile = tilemap_lookup(_px + (char)iVar12, _py + (char)iVar14);
           iVar10 = 0;
           sVar8 = 0;
-          uVar3 = *puVar6;
+          if (_ntile == 0) {
+            puVar6 = 0;
+            uVar3 = 0;
+          } else {
+            puVar6 = (ushort *)((char *)_ntile + 2);
+            uVar3 = *puVar6;
+          }
           while ((uVar3 & 0xffc0) != 0) {
             sVar8 = (short)iVar10;
             if (0x3f < sVar8) break;
@@ -40291,6 +40348,16 @@ int param_2;
                its own width; iVar10 is reset to the loop counter right
                after anyway. */
             { intptr_t _objp = (intptr_t)resolve_object_link(puVar6);
+              /* Same missing-NULL-guard bug as the first resolve_object_link
+                 call above, just on the chain-advance itself instead of the
+                 per-object handling: resolve_object_link can return NULL
+                 for an out-of-range link, and this unconditionally turned
+                 that into puVar6 = (ushort*)4, dereferenced by `uVar3 =
+                 *puVar6` a few lines down (or, if that near-NULL address
+                 happened to be mapped, silently kept walking a chain from
+                 garbage). Confirmed via lldb: EXC_BAD_ACCESS right here,
+                 walking into an obstacle (e.g. standing next to a critter). */
+              if (_objp == 0) break;
               puVar6 = (ushort *)(_objp + 4); }
             iVar2 = (sVar8 + 1) * 0x10000;
             iVar10 = iVar2 >> 0x10;
@@ -40370,7 +40437,20 @@ void FUN_00051dd0()
       for (iVar3 = uVar2 - 2; iVar3 = iVar3 * 0x1000000 >> 0x18, iVar7 <= iVar3; iVar3 = iVar3 + -1)
       {
         if ((byte)(&DAT_00202c3e)[iVar3 * 6] < (byte)(&DAT_00202c38)[iVar3 * 6]) {
-          FUN_00051cf8();
+          /* Ghidra dropped the swap index argument: this is an insertion-
+             sort pass over up to 255 collision candidates, swapping the
+             pair at iVar3/iVar3+1 when out of order. Called with no
+             argument, FUN_00051cf8's param_1 read whatever garbage was
+             left in the argument register, swapping (and reading/
+             writing) an arbitrary 6-byte record pair instead of the
+             intended one -- the real data at iVar3 never actually got
+             sorted, so the loop's own termination condition kept
+             re-triggering: confirmed via `sample` showing 100% of a
+             hung process's time stuck in this exact function, walking
+             into an obstacle (e.g. standing next to a critter) near
+             tile (17,7). Also a wild write whenever the garbage index
+             landed outside the real ~255-entry table. */
+          FUN_00051cf8(iVar3);
           iVar5 = DAT_00202c6c;
         }
       }
@@ -40387,7 +40467,9 @@ void FUN_00051dd0()
       for (iVar4 = uVar2 - 2; iVar4 = iVar4 * 0x1000000 >> 0x18, iVar6 <= iVar4; iVar4 = iVar4 + -1)
       {
         if ((byte)(&DAT_00202c3f)[iVar4 * 6] < (byte)(&DAT_00202c39)[iVar4 * 6]) {
-          FUN_00051cf8();
+          /* Same dropped-argument fix as the X-axis sort pass above --
+             this is the Y-axis pass, swap index is iVar4. */
+          FUN_00051cf8(iVar4);
           iVar5 = DAT_00202c6c;
         }
       }
