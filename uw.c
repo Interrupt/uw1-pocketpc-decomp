@@ -1977,11 +1977,11 @@ undefined1 DAT_0023c3d8;
    a real backing buffer for that crash, but originally only 80/82/84
    were pointed at it -- every other field was left as its own
    independent global, so `apply_heading_turn`/`apply_movement_tick` and
-   friends, which write these fields BY NAME (e.g. `DAT_00204894 = ...`
+   friends, which write these fields BY NAME (e.g. `g_jump_ascent_timer = ...`
    for heading), were updating completely different memory than what
    movement_collision_sweep's collision/movement engine reads via
    `*(short *)(DAT_00204874 + 0x14)` pointer arithmetic (real address
-   0x204894) -- confirmed via lldb: DAT_00204894 demonstrably changed on
+   0x204894) -- confirmed via lldb: g_jump_ascent_timer demonstrably changed on
    turn input, while `*(short*)(DAT_00204874+0x14)` read 0 on every
    single check all session. This -- not a dropped call anywhere -- is
    why position/heading never visibly changed despite the movement-
@@ -2000,12 +2000,17 @@ static undefined1 DAT_00204880_backing[128];
 #define DAT_00204884 (*(short *)&DAT_00204880_backing[4])
 #define DAT_00204886 (*(short *)&DAT_00204880_backing[6])
 #define DAT_00204888 (*(short *)&DAT_00204880_backing[8])
-#define DAT_0020488a (*(short *)&DAT_00204880_backing[0xa])
+#define g_vertical_velocity (*(short *)&DAT_00204880_backing[0xa]) // was DAT_0020488a
 #define DAT_0020488c (*(short *)&DAT_00204880_backing[0xc])
 #define DAT_0020488e (*(short *)&DAT_00204880_backing[0xe])
-#define DAT_00204890 (*(short *)&DAT_00204880_backing[0x10])
+// was DAT_00204890. Gravity acceleration applied to g_vertical_velocity
+// each tick while nonzero (negative = falling/jumping); 0 = grounded.
+#define g_fall_accel (*(short *)&DAT_00204880_backing[0x10])
 #define DAT_00204892 (*(short *)&DAT_00204880_backing[0x12])
-#define DAT_00204894 (*(short *)&DAT_00204880_backing[0x14])
+// was DAT_00204894. Set by resolve_move_vector's jump mode (6) to guard
+// against re-triggering a jump before the current one lands; also read
+// as a generic "airborne/mid-jump" gate elsewhere.
+#define g_jump_ascent_timer (*(short *)&DAT_00204880_backing[0x14])
 #define DAT_00204896 DAT_00204880_backing[0x16]
 #define DAT_00204897 DAT_00204880_backing[0x17]
 #define DAT_002048a1 DAT_00204880_backing[0x21]
@@ -2139,7 +2144,11 @@ short DAT_00202c68;
 short DAT_00202c30;
 undefined2 DAT_00203304;
 undefined1 DAT_00203303;
-short DAT_0023bf1c;
+// was DAT_0023bf1c. Requested movement mode consumed by
+// resolve_move_vector -- see its header comment for the full mode list
+// (0 stop, 1 analog move/turn, 6/7 jump, 8 move+face-180, 9/10
+// sidestep, 0xc/0xd fly up/down).
+short g_movement_mode;
 short DAT_00202078;
 short DAT_0023bf4c;
 /* Link-time-initialized read-only data (same situation as DAT_00085668/
@@ -3197,7 +3206,7 @@ char *DAT_002048bc;
    `DAT_00086978[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
    shorts at offsets 2,4 -- and every copy (`psVar11 = DAT_00086978`) is
    already `short *`, confirming the intent. The byte misread made `[2]`
-   (meant: the Z/vertical velocity DAT_0020488a, 0 for level movement) return
+   (meant: the Z/vertical velocity g_vertical_velocity, 0 for level movement) return
    the low byte of the forward velocity DAT_00204888, so plain forward
    movement took the "vertical movement" path (collision_build_height_field / collision_height_envelope)
    which corrupts DAT_00204880 -- one forward step overflowed the player X to
@@ -27289,8 +27298,8 @@ ushort param_1;
 // was FUN_0003c524 -- set the player's locomotion state from a collision-state
 // mask (param_1): when it changes, pick the movement mode (walk / swim / fly /
 // fall) via FUN_0003dca4. While the airborne bit (0x10) is set it also keeps the
-// gravity fall armed each tick (DAT_00204890 = -4) and clamps the fall velocity
-// (DAT_0020488a) to terminal when DAT_0020208c & 2. Called every tick from
+// gravity fall armed each tick (g_fall_accel = -4) and clamps the fall velocity
+// (g_vertical_velocity) to terminal when DAT_0020208c & 2. Called every tick from
 // commit_player_move with the current state byte DAT_002048a8.
 void set_locomotion_state(param_1,param_2)
 ushort param_1;
@@ -27339,31 +27348,31 @@ int param_2;
   }
   if ((uVar1 & 0x10) != 0) {
     if ((DAT_0020208c & 0x14) == 0) {
-      if (DAT_00204890 == 0) {
-        DAT_00204890 = -4;
+      if (g_fall_accel == 0) {
+        g_fall_accel = -4;
       }
-      if (((DAT_0020208c & 2) != 0) && (DAT_0020488a < -0x5d)) {
-        DAT_0020488a = -0x5e;
-        iVar3 = (int)DAT_00204894;
+      if (((DAT_0020208c & 2) != 0) && (g_vertical_velocity < -0x5d)) {
+        g_vertical_velocity = -0x5e;
+        iVar3 = (int)g_jump_ascent_timer;
         if (iVar3 < 0x15) {
-          DAT_00204894 = 0;
+          g_jump_ascent_timer = 0;
         }
         else {
           if (iVar3 < 0) {
             iVar3 = iVar3 + 1;
           }
-          DAT_00204894 = (short)(iVar3 >> 1);
+          g_jump_ascent_timer = (short)(iVar3 >> 1);
         }
       }
     }
     else {
-      DAT_00204890 = 0;
-      uVar1 = (uint)DAT_0020488a;
+      g_fall_accel = 0;
+      uVar1 = (uint)g_vertical_velocity;
       if ((int)((uVar1 ^ (int)uVar1 >> 0x1f) - ((int)uVar1 >> 0x1f)) < 0xb) {
-        DAT_0020488a = 0;
+        g_vertical_velocity = 0;
       }
       else {
-        DAT_0020488a = Ordinal_2005(5,uVar1 << 2);
+        g_vertical_velocity = Ordinal_2005(5,uVar1 << 2);
       }
     }
   }
@@ -27459,10 +27468,10 @@ short param_1;
   undefined2 local_32;
   
   if (getenv("UW_DEBUG_STEPHEIGHT"))
-    fprintf(stderr, "[bdm-entry] param_1=%d DAT_00204890=%d DAT_00204894=%d DAT_00085890=%d z=%d guard=%d\n",
-            (int)param_1, (int)DAT_00204890, (int)DAT_00204894, (int)DAT_00085890, (int)DAT_00204884,
-            (DAT_00204890 == 0) && (DAT_00204894 < DAT_00085890));
-  if ((DAT_00204890 == 0) && (DAT_00204894 < DAT_00085890)) {
+    fprintf(stderr, "[bdm-entry] param_1=%d g_fall_accel=%d g_jump_ascent_timer=%d DAT_00085890=%d z=%d guard=%d\n",
+            (int)param_1, (int)g_fall_accel, (int)g_jump_ascent_timer, (int)DAT_00085890, (int)DAT_00204884,
+            (g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890));
+  if ((g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890)) {
     uVar10 = 0;
     if (param_1 == -2) {
       uVar4 = 0x40;
@@ -27532,8 +27541,8 @@ LAB_0003c940:
         *(char *)(DAT_0023be64 + 3) = (char)((ushort)uVar1 >> 8);
         DAT_00204884 = DAT_00202c30 << 3;
       }
-      else if (DAT_00204890 == 0 && uVar5 == 0) {
-        DAT_00204890 = -4;
+      else if (g_fall_accel == 0 && uVar5 == 0) {
+        g_fall_accel = -4;
       }
       set_locomotion_state((int)DAT_00202c68,0);
       uVar10 = FUN_0002294c();
@@ -27625,8 +27634,8 @@ LAB_0003cdf8:
     uVar4 = 0;
   }
   if (getenv("UW_DEBUG_STEPHEIGHT"))
-    fprintf(stderr, "[bdm-exit] moved=%d z=%d DAT_00204890=%d bea8=%d be98=%d\n",
-            (int)uVar4, (int)DAT_00204884, (int)DAT_00204890, (int)DAT_0023bea8, (int)DAT_0023be98);
+    fprintf(stderr, "[bdm-exit] moved=%d z=%d g_fall_accel=%d bea8=%d be98=%d\n",
+            (int)uVar4, (int)DAT_00204884, (int)g_fall_accel, (int)DAT_0023bea8, (int)DAT_0023be98);
   return uVar4;
 }
 
@@ -27645,9 +27654,9 @@ undefined4 param_1;
   short local_18 [2];
   
   local_18[0] = 0;
-  if ((DAT_00204890 == 0) && (resolve_move_vector((int)DAT_0023bf1c,param_1,local_18), DAT_00204890 == 0))
+  if ((g_fall_accel == 0) && (resolve_move_vector((int)g_movement_mode,param_1,local_18), g_fall_accel == 0))
   {
-    iVar5 = (int)local_18[0] - (int)DAT_00204894;
+    iVar5 = (int)local_18[0] - (int)g_jump_ascent_timer;
     uVar1 = iVar5 * 0x10000 >> 0x10;
     uVar2 = iVar5 * 0x10000 >> 0x1f;
     if ((int)DAT_00085890 < (int)((uVar1 ^ uVar2) - uVar2)) {
@@ -27657,14 +27666,14 @@ undefined4 param_1;
       }
       iVar5 = (int)sVar4 * (int)DAT_00085890;
     }
-    iVar5 = DAT_00204894 + iVar5;
+    iVar5 = g_jump_ascent_timer + iVar5;
     iVar3 = iVar5 * 0x10000 >> 0x10;
-    DAT_00204894 = DAT_00202078;
-    if ((iVar3 <= DAT_00202078) && (DAT_00204894 = (short)iVar5, iVar3 < 0)) {
-      DAT_00204894 = 0;
+    g_jump_ascent_timer = DAT_00202078;
+    if ((iVar3 <= DAT_00202078) && (g_jump_ascent_timer = (short)iVar5, iVar3 < 0)) {
+      g_jump_ascent_timer = 0;
     }
   }
-  if (DAT_00204890 != 0) {
+  if (g_fall_accel != 0) {
     iVar5 = (int)DAT_0023bf4c;
     if (iVar5 < 0) {
       iVar5 = iVar5 + 3;
@@ -27678,11 +27687,11 @@ undefined4 param_1;
   DAT_00204892 = (short)param_1;
   DAT_00204896 = 5;
   DAT_00204897 = 0;
-  if ((DAT_00204890 == 0 && DAT_0020488e == 0) && DAT_0020488c == 0) {
+  if ((g_fall_accel == 0 && DAT_0020488e == 0) && DAT_0020488c == 0) {
     DAT_00204897 = 0x80;
   }
   sVar4 = DAT_00201c70;
-  if (DAT_00204894 != 0) {
+  if (g_jump_ascent_timer != 0) {
     sVar4 = DAT_00201c78;
   }
   DAT_00201c78 = sVar4;
@@ -27717,11 +27726,11 @@ uint param_2;
   DAT_002048b8 = &LAB_0003d8e4;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
-  DAT_00204894 = 0;
-  DAT_00204890 = 0;
+  g_jump_ascent_timer = 0;
+  g_fall_accel = 0;
   DAT_0020488e = 0;
   DAT_0020488c = 0;
-  DAT_0020488a = 0;
+  g_vertical_velocity = 0;
   DAT_00204888 = 0;
   DAT_00204886 = 0;
   DAT_00204880 = (short)((uint)((int)(short)param_1 << 0x18) >> 0x10) + 0x80;
@@ -27847,7 +27856,7 @@ void commit_player_move()
   *(char *)(DAT_0023be64 + 0xb) = (char)uVar4;
   *(byte *)(DAT_0023be64 + 0xc) = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
   if ((_DAT_002048a9 != 0) && (_DAT_002048a1 == DAT_00201c78)) {
-    DAT_00204894 = 0;
+    g_jump_ascent_timer = 0;
   }
   uVar5 = DAT_00201c70;
   if (_DAT_002048a1 != DAT_00201c78) {
@@ -27872,10 +27881,10 @@ void commit_player_move()
     if (DAT_00204896 != '\0') {
       uVar3 = (uint)(_DAT_002048a9 >> 8);
       iVar7 = 0;
-      if (DAT_0020488a != 0) {
+      if (g_vertical_velocity != 0) {
         iVar7 = uVar3 << 0x10;
       }
-      if (DAT_0020488a != 0) {
+      if (g_vertical_velocity != 0) {
         uVar3 = ((iVar7 >> 0x10) << 0x11) >> 0x10;
       }
       sVar1 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x32),((int)(short)uVar3 << 0x11) >> 0x10)
@@ -27958,12 +27967,12 @@ void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pi
 
 
 
-// was FUN_0003d94c -- resolve a movement mode (param_1 = DAT_0023bf1c) into
+// was FUN_0003d94c -- resolve a movement mode (param_1 = g_movement_mode) into
 // a travel direction (DAT_00201c78) + step magnitude (*param_3):
 //   0   stop            1     analog move/turn (DAT_0023bf48/4c rates)
 //   6/7 jump            8     move + face 180
 //   9   sidestep left   10    sidestep right  (heading -/+ 0x4000, face kept)
-//   0xc/0xd  fly up / down (DAT_0020488a vertical velocity)
+//   0xc/0xd  fly up / down (g_vertical_velocity vertical velocity)
 void resolve_move_vector(param_1,param_2,param_3)
 undefined2 param_1;
 short param_2;
@@ -28015,15 +28024,15 @@ short * param_3;
     sVar3 = DAT_00201c70;
     break;
   case 6:
-    if (DAT_0020488a != 0) {
+    if (g_vertical_velocity != 0) {
       DAT_00201c78 = DAT_00201c70;
       return;
     }
-    if (DAT_00204890 != 0) {
+    if (g_fall_accel != 0) {
       DAT_00201c78 = DAT_00201c70;
       return;
     }
-    if (DAT_00204894 != 0) {
+    if (g_jump_ascent_timer != 0) {
       DAT_00201c78 = DAT_00201c70;
       return;
     }
@@ -28032,32 +28041,32 @@ short * param_3;
     if (iVar4 < 0) {
       iVar4 = iVar4 + 1;
     }
-    DAT_00204894 = (short)(iVar4 >> 1);
-    *param_3 = DAT_00204894;
+    g_jump_ascent_timer = (short)(iVar4 >> 1);
+    *param_3 = g_jump_ascent_timer;
     DAT_00202088 = 0;
     goto LAB_0003dafc;
   case 7:
 LAB_0003dafc:
-    DAT_0020488a = 0x263;
+    g_vertical_velocity = 0x263;
     iVar2 = (int)DAT_00204884;
     bVar6 = SBORROW4(iVar2,0x280);
     iVar4 = iVar2 + -0x280;
     bVar5 = iVar2 == 0x280;
     if (0x280 < iVar2) {
-      DAT_0020488a = 0x1fd;
+      g_vertical_velocity = 0x1fd;
       bVar6 = SBORROW4(iVar2,0x2c0);
       iVar4 = iVar2 + -0x2c0;
       bVar5 = iVar2 == 0x2c0;
     }
     if (!bVar5 && iVar4 < 0 == bVar6) {
-      DAT_0020488a = 0x153;
+      g_vertical_velocity = 0x153;
     }
     sVar3 = DAT_00201c78;
     if ((DAT_0020208c & 1) == 0) {
-      DAT_00204890 = -4;
+      g_fall_accel = -4;
     }
     else {
-      DAT_00204890 = -2;
+      g_fall_accel = -2;
     }
     break;
   case 8:
@@ -28079,13 +28088,13 @@ LAB_0003da74:
     sVar3 = DAT_00201c70;
     break;
   case 0xc:
-    DAT_0020488a = 0x8d;
+    g_vertical_velocity = 0x8d;
     goto LAB_0003db80;
   case 0xd:
-    DAT_0020488a = -0x8d;
+    g_vertical_velocity = -0x8d;
 LAB_0003db80:
     DAT_00202088 = 0;
-    DAT_00204890 = 0;
+    g_fall_accel = 0;
     sVar3 = DAT_00201c70;
   }
   DAT_00201c78 = sVar3;
@@ -28100,9 +28109,9 @@ int param_1;
 {
   if (param_1 == DAT_0023be64) {
     if ((DAT_002048a8 & 0x10) == 0) {
-      DAT_0020488a = 0x8d;
+      g_vertical_velocity = 0x8d;
     }
-    DAT_00204890 = 0;
+    g_fall_accel = 0;
   }
   return;
 }
@@ -28125,14 +28134,14 @@ short param_1;
 {
   int iVar1;
   
-  if (DAT_00204890 != -4) {
-    DAT_00204890 = -2;
+  if (g_fall_accel != -4) {
+    g_fall_accel = -2;
   }
   iVar1 = param_1 * 0x2f;
   if (iVar1 < 0) {
     iVar1 = iVar1 + 3;
   }
-  DAT_0020488a = (short)(iVar1 >> 2);
+  g_vertical_velocity = (short)(iVar1 >> 2);
   iVar1 = (int)DAT_00204886;
   if (iVar1 < 0) {
     iVar1 = iVar1 + 1;
@@ -44966,7 +44975,7 @@ int param_2;
     collision_height_envelope(0,0);
     psVar11 = DAT_00086978;
   }
-  // PHYSICS: gravity gate -- psVar11[2] (== DAT_0020488a, the vertical velocity
+  // PHYSICS: gravity gate -- psVar11[2] (== g_vertical_velocity, the vertical velocity
   // input) must be non-zero to run any vertical integration this sweep. It is
   // only set for scripted vertical motion (jump / knockback / slope step); a
   // plain walk off a ledge never sets it, so no gravity accumulates and the
@@ -45092,7 +45101,7 @@ void sweep_writeback_position()
     *(short *)(DAT_00204874 + 4) = (short)uVar2;
   }
   /* heading is the halfword at +0x21; Ghidra put the high byte at +0x11
-     (DAT_00204890's high byte), clobbering the Z-force accumulator. */
+     (g_fall_accel's high byte), clobbering the Z-force accumulator. */
   *(short *)(DAT_00204874 + 0x21) = DAT_002049ce;
   return;
 }
@@ -52201,7 +52210,7 @@ void FUN_00066e90()
   register_key_binding(0x5a,9,1,move_command_dispatch);
   register_key_binding(0x43,10,1,move_command_dispatch);
   /* Sidestep: the DOS "," / "." strafe keys. decode_movement_command
-     already turns input codes 0x2c / 0x2e into DAT_0023bf1c 9 / 10
+     already turns input codes 0x2c / 0x2e into g_movement_mode 9 / 10
      (resolve_move_vector cases 9/10 = move at heading -/+ 90 degrees, facing
      unchanged), but nothing routed those codes here -- move_command_dispatch
      with arg 9/10 just re-runs decode_movement_command and returns. The
@@ -52698,14 +52707,14 @@ short param_1;
         return;
       }
       if ((DAT_002048a8 & 0x10) != 0) {
-        DAT_0023bf1c = 1;
+        g_movement_mode = 1;
         return;
       }
       if (*(char *)(DAT_00086df8 + 0xb8) == '\x01') {
-        DAT_0023bf1c = 1;
+        g_movement_mode = 1;
         return;
       }
-      DAT_0023bf1c = 7;
+      g_movement_mode = 7;
       return;
     }
     DAT_0023bf4c = 0;
@@ -52715,7 +52724,7 @@ short param_1;
     iVar3 = Ordinal_2005(5,iVar5);
     if (sVar1 < iVar3) {
       iVar3 = Ordinal_2005((int)DAT_0023bd80,*psVar2 * 3);
-      DAT_0023bf1c = (ushort)(byte)(&DAT_00086e70)[iVar3];
+      g_movement_mode = (ushort)(byte)(&DAT_00086e70)[iVar3];
       return;
     }
     iVar4 = (int)DAT_0023bd80;
@@ -52736,7 +52745,7 @@ short param_1;
     DAT_0023bf50 = 1;
     decode_movement_command();
     if (param_1 == 0) {
-      DAT_0023bf1c = param_1;
+      g_movement_mode = param_1;
       DAT_0023bf48 = 0;
       DAT_0023bf4c = 0;
       return;
@@ -52748,11 +52757,11 @@ short param_1;
       return;
     }
     if (((DAT_002048a8 & 0x10) == 0) && (*(char *)(DAT_00086df8 + 0xb8) != '\x01')) {
-      DAT_0023bf1c = param_1;
+      g_movement_mode = param_1;
       return;
     }
   }
-  DAT_0023bf1c = 1;
+  g_movement_mode = 1;
   return;
 }
 
@@ -52792,7 +52801,7 @@ void decode_movement_command()
   }
   if (DAT_0023c448 < 0x2f) {
     if (DAT_0023c448 == 0x2e) {
-      DAT_0023bf1c = 10;
+      g_movement_mode = 10;
       DAT_0023bf48 = 0;
       DAT_0023bf4c = 0;
       return;
@@ -52801,7 +52810,7 @@ void decode_movement_command()
       if (DAT_0023c448 == 0x1f) {
 LAB_000687cc:
         DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10));
-        DAT_0023bf1c = 1;
+        g_movement_mode = 1;
         return;
       }
       if (DAT_0023c448 == 0x10) goto LAB_00068820;
@@ -52814,25 +52823,25 @@ LAB_000687cc:
           }
 LAB_000686a8:
           DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * -0x5a0000 >> 0x10));
-          DAT_0023bf1c = 1;
+          g_movement_mode = 1;
           return;
         }
         goto LAB_000687fc;
       }
 LAB_00068844:
       DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x700000 >> 0x10));
-      DAT_0023bf1c = 1;
+      g_movement_mode = 1;
       return;
     }
     if (DAT_0023c448 != 0x20) {
       if (DAT_0023c448 == 0x2c) {
-        DAT_0023bf1c = 9;
+        g_movement_mode = 9;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
       }
       if (DAT_0023c448 == 0x2d) {
-        DAT_0023bf1c = 8;
+        g_movement_mode = 8;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
@@ -52847,12 +52856,12 @@ LAB_00068844:
     if (DAT_0023c448 == 0x6b) {
 LAB_00068820:
       if ((DAT_0020208c & 0x14) == 0) {
-        DAT_0023bf1c = 0;
+        g_movement_mode = 0;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
       }
-      DAT_0023bf1c = 0xd;
+      g_movement_mode = 0xd;
       DAT_0023bf48 = 0;
       DAT_0023bf4c = 0;
       return;
@@ -52860,12 +52869,12 @@ LAB_00068820:
     if (DAT_0023c448 == 0x6c) {
 LAB_000687fc:
       if ((DAT_0020208c & 0x14) == 0) {
-        DAT_0023bf1c = 0;
+        g_movement_mode = 0;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
       }
-      DAT_0023bf1c = 0xc;
+      g_movement_mode = 0xc;
       DAT_0023bf48 = 0;
       DAT_0023bf4c = 0;
       return;
@@ -52874,7 +52883,7 @@ LAB_000687fc:
     if (DAT_0023c448 == 0x8f) goto LAB_000686a8;
     if (DAT_0023c448 != 0x91) {
       if (DAT_0023c448 == 0x93) {
-        DAT_0023bf1c = 8;
+        g_movement_mode = 8;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
@@ -52885,7 +52894,7 @@ LAB_000687fc:
     }
   }
   DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x5a0000 >> 0x10));
-  DAT_0023bf1c = 1;
+  g_movement_mode = 1;
   return;
 }
 
@@ -52907,7 +52916,7 @@ undefined4 param_1;
   if (iVar2 != 0) {
     DAT_0023bf54 = FUN_0002294c();
     DAT_0023bf58 = DAT_0023bf58 + 4;
-    DAT_00204894 = 0;
+    g_jump_ascent_timer = 0;
     if (DAT_000879ac != 0) {
       FUN_0008128c(1);
     }
@@ -52930,7 +52939,7 @@ undefined4 param_1;
     /* movement_tick can come out of that one call with DAT_0023bea8=1 (a
        "climbing a step" eye-height bob in progress -- see
        FUN_00069470/sync_camera_from_player's own comment on
-       DAT_0023bea8/be98) if DAT_0023bf1c happened to read as one of the
+       DAT_0023bea8/be98) if g_movement_mode happened to read as one of the
        climb-triggering values on this tick. For continuous analog
        movement (holding a movement letter) that's fine: movement_tick
        runs again every subsequent tick and naturally settles it back to
@@ -53039,11 +53048,11 @@ int param_3;
   DAT_0023bea8 = 0;
   DAT_0023be98 = 0;
   DAT_0023bf18 = (char)param_1 + DAT_0023bf18;
-  if (DAT_0023bf1c == 0) {
+  if (g_movement_mode == 0) {
     decode_movement_command();
   }
-  if ((((((DAT_0023bf1c != 0) || (DAT_00204894 != 0)) || (DAT_0020488a != 0)) ||
-       ((DAT_00204890 != 0 || (DAT_0020488e != 0)))) || ((DAT_0020488c != 0 || (DAT_000858a0 != 0)))
+  if ((((((g_movement_mode != 0) || (g_jump_ascent_timer != 0)) || (g_vertical_velocity != 0)) ||
+       ((g_fall_accel != 0 || (DAT_0020488e != 0)))) || ((DAT_0020488c != 0 || (DAT_000858a0 != 0)))
       ) && (param_3 == 0)) {
     apply_movement_tick(param_1);
   }
@@ -53060,7 +53069,7 @@ int param_3;
     }
     if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) == 0) && ((DAT_002048a8 & 0x10) == 0)) {
       if (param_3 == 0) {
-        if (DAT_00204894 != 0) {
+        if (g_jump_ascent_timer != 0) {
           uVar7 = FUN_0002294c();
           uVar4 = (undefined4)((ulonglong)uVar7 >> 0x20);
           if (DAT_0023bf5c < (uint)uVar7) {
@@ -53072,9 +53081,9 @@ int param_3;
               uVar4 = 0x38;
               uVar6 = 2;
             }
-            FUN_00072f30(uVar6,uVar4,((int)DAT_00204894 >> 5 & 0xffU) - 0x10);
+            FUN_00072f30(uVar6,uVar4,((int)g_jump_ascent_timer >> 5 & 0xffU) - 0x10);
             DAT_0023bf60 = DAT_0023bf60 == '\0';
-            sVar1 = Ordinal_2005(((int)DAT_00204894 >> 2) + 1,6000);
+            sVar1 = Ordinal_2005(((int)g_jump_ascent_timer >> 2) + 1,6000);
             uVar5 = sVar1 + 0x40;
             if (200 < uVar5) {
               uVar5 = 200;
@@ -53090,7 +53099,7 @@ int param_3;
         if ((bool)uVar6) {
           iVar3 = 0x48;
         }
-        uVar2 = (int)DAT_00204894 >> 5 & 0xff;
+        uVar2 = (int)g_jump_ascent_timer >> 5 & 0xff;
         if (!(bool)uVar6) {
           iVar3 = 0x38;
           uVar6 = 2;
@@ -53120,8 +53129,8 @@ int param_3;
 void FUN_00068c1c()
 
 {
-  DAT_0023bf1c = 0;
-  while ((((DAT_00204894 != 0 || (DAT_0020488a != 0)) || (DAT_00204890 != 0)) ||
+  g_movement_mode = 0;
+  while ((((g_jump_ascent_timer != 0 || (g_vertical_velocity != 0)) || (g_fall_accel != 0)) ||
          (((DAT_0020488e != 0 || (DAT_0020488c != 0)) || (DAT_000858a0 != 0))))) {
     apply_movement_tick(0x40);
   }
@@ -53159,11 +53168,11 @@ undefined4 param_1;
   movement_collision_sweep(&DAT_00204880,&DAT_002048b0);
   commit_player_move();
   FUN_00049924(10);
-  sVar4 = DAT_0023bf1c;
+  sVar4 = g_movement_mode;
   bVar1 = DAT_0023bf18;
   if ((DAT_002048a8 & 0x10) == 0) {
-    if (((int)DAT_00202078 >> 2 < (int)DAT_00204894) && (DAT_0023bf1c == 1)) {
-      cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)DAT_00204894 << 2);
+    if (((int)DAT_00202078 >> 2 < (int)g_jump_ascent_timer) && (g_movement_mode == 1)) {
+      cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)g_jump_ascent_timer << 2);
       cVar3 = (char)(cVar2 + -1);
       DAT_0023bea8 = 1;
       if ((cVar2 + -1) * 0x1000000 >> 0x18 < 2) {
@@ -53182,7 +53191,7 @@ undefined4 param_1;
       DAT_0023be98 = (short)(char)(&DAT_00086e48)[bVar1 >> 4] << 1;
     }
   }
-  DAT_0023bf1c = 0;
+  g_movement_mode = 0;
   return;
 }
 
@@ -53213,7 +53222,7 @@ void FUN_0006907c()
   if (((*(byte *)(DAT_00086df8 + 0xb8) & 0x11) != 0) &&
      (sVar9 = -(ushort)*(byte *)(DAT_00086df8 + 0xb9), DAT_0023be98 = sVar9,
      0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
-    iVar7 = (int)DAT_00204894;
+    iVar7 = (int)g_jump_ascent_timer;
     cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)(iVar7) << 2);
     cVar3 = (char)(cVar2 + -3);
     if ((cVar2 + -3) * 0x1000000 >> 0x18 < 1) {
@@ -57185,11 +57194,11 @@ void FUN_0006fcb0()
   DAT_00088960 = 1;
   if ((((DAT_0023c130 != 6) && (DAT_000870e4 < 0x1c)) && (-1 < DAT_000870dc)) && (DAT_0008725c != 0)
      ) {
-    if (DAT_00204894 == 0) {
+    if (g_jump_ascent_timer == 0) {
       sVar1 = 0;
     }
     else {
-      sVar1 = Ordinal_2005(799,(int)DAT_00204894 << 1);
+      sVar1 = Ordinal_2005(799,(int)g_jump_ascent_timer << 1);
       sVar1 = sVar1 + 1;
     }
     FUN_0006e554((int)sVar1);
@@ -58234,11 +58243,11 @@ LAB_0007158c:
       }
       FUN_000667cc();
       FUN_00040440();
-      DAT_00204894 = 0;
-      DAT_00204890 = 0;
+      g_jump_ascent_timer = 0;
+      g_fall_accel = 0;
       DAT_0020488e = 0;
       DAT_0020488c = 0;
-      DAT_0020488a = 0;
+      g_vertical_velocity = 0;
       DAT_00204888 = 0;
       DAT_00204886 = 0;
       FUN_00078550();
@@ -58253,7 +58262,7 @@ LAB_0007158c:
     }
   }
   else {
-    if ((((*(byte *)(DAT_00086df8 + 0xb8) & 0x1b) == 0) && (DAT_00204890 == 0)) &&
+    if ((((*(byte *)(DAT_00086df8 + 0xb8) & 0x1b) == 0) && (g_fall_accel == 0)) &&
        (DAT_00201b68 != 9)) {
       iVar4 = FUN_00035340();
       if (iVar4 == 0) {
