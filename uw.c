@@ -28503,6 +28503,8 @@ ushort *pick_object_under_cursor()
   }
   else {
     puVar3 = (ushort *)FUN_000535fc(iVar2);
+    if (getenv("UW_PICK_DIAG") && puVar3)
+      fprintf(stderr, "[pick] resolved slot=%u -> objid=0x%03x\n", uVar4, (unsigned)(*puVar3 & 0x1ff));
     DAT_002020a8 = DAT_002020b0 + 2;
     if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
        (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
@@ -48606,9 +48608,83 @@ ushort * param_1;
     DAT_0023b904 = (DAT_0023b904 & 0xff00) + local_54;
     DAT_0023b920 = (DAT_0023b920 & 0xff00) + uVar16;
   }
+  if (getenv("UW_LOOK_SLOT")) {
+    static int _done = 0;
+    if (!_done) {
+      _done = 1;
+      int _slot = atoi(getenv("UW_LOOK_SLOT"));
+      ushort *_rec = (ushort *)(_slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
+                                               : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8));
+      ushort _w0 = *_rec;
+      int _id = _w0 & 0x1ff;
+      int _iv = _id * 0xd;
+      int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
+      int _qual = (byte)_rec[2] & 0x3f;
+      int _off = 0;
+      if (_qual != 0) {
+        _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)_rec[2] >> 4 & 3) + 1);
+      }
+      char *_nm = (char *)FUN_0007863c(_grp * 6 + _off | 0xa00);
+      fprintf(stderr, "[lookslot] slot=%d id=0x%03x flags=0x%04x has_lookbit=%d namegrp=%d name='%s'\n",
+              _slot, _id, (unsigned)_w0, ((&DAT_00202c9b)[_iv] & 0x10) != 0, _grp, _nm ? _nm : "(null)");
+    }
+  }
+  if (getenv("UW_DUMP_OBJECTS")) {
+    static int _dumped = 0;
+    if (!_dumped) {
+      _dumped = 1;
+      /* Walk every tile's object chain (tile record = 4 bytes at
+       * DAT_002029cc[tile_idx*4], chain head = ushort at +2, matching
+       * set_player_tile_position's object_list_unlink(DAT_002029cc +
+       * tile_idx*4 + 2, ...)) so found objects come with real tile
+       * coordinates, rather than scanning the raw slot table blind. Each
+       * object record's own "next in this tile's chain" link is a
+       * separate ushort at +6 within the record (not the type word at
+       * +0 -- confirmed by the `resolve_object_link(param_1 + 6)` call
+       * sites fixed earlier this session), both encoding the next slot
+       * as (link >> 6). */
+      int _tx, _ty;
+      for (_ty = 0; _ty < 0x40; _ty++) {
+        for (_tx = 0; _tx < 0x40; _tx++) {
+          int _tidx = _tx + _ty * 0x40;
+          ushort _head = *(ushort *)((intptr_t)DAT_002029cc + _tidx * 4 + 2);
+          int _slot = (_head & 0xffc0) != 0 ? _head >> 6 : 0;
+          int _guard = 0;
+          while (_slot != 0 && _guard++ < 64) {
+            void *_rec = _slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
+                                        : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
+            ushort _w = *(ushort *)_rec;
+            int _id = _w & 0x1ff;
+            if (_id >= 0x160 && _id <= 0x16f) {
+              fprintf(stderr, "[objdump] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x\n",
+                      _tx, _ty, _slot, _id, (unsigned)_w);
+            }
+            ushort _nextw = *(ushort *)((char *)_rec + 6);
+            _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
+          }
+        }
+      }
+      fprintf(stderr, "[objdump] scan complete\n");
+    }
+  }
   uVar27 = (uint)*param_1;
   bVar1 = (&DAT_00202c9a)[(uVar27 & 0x1ff) * 0xd];
   bVar13 = bVar1 & 3;
+  if (getenv("UW_DEBUG_OBJCLASS")) {
+    int _iv = (uVar27 & 0x1ff) * 0xd;
+    int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
+    fprintf(stderr, "[objclass] id=0x%03x renderclass=%d prop_byte=0x%02x quality=%d heading=%d namegrp=%d scrx=%d scry=%d scrz=%d names=",
+            (int)(uVar27 & 0x1ff), (int)bVar13, (int)bVar1,
+            (int)((byte)param_1[3] & 0x3f), (int)(param_1[1] >> 6 & 7), _grp,
+            (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c);
+    { int _k;
+      for (_k = 0; _k < 6; _k++) {
+        char *_n = (char *)FUN_0007863c(_grp * 6 + _k | 0xa00);
+        fprintf(stderr, "[%d]='%s' ", _k, _n ? _n : "(null)");
+      }
+    }
+    fprintf(stderr, "\n");
+  }
   if ((uVar27 & 0x1c0) == 0x1c0) {
     DAT_0023b804 = 1;
     uVar27 = (byte)param_1[3] & 0x3f;
@@ -48628,6 +48704,7 @@ ushort * param_1;
     if ((((ushort)uVar27 & 0x1e0) == 0xe0) && ((uVar27 & 0x18) != 0)) {
       uVar27 = 0xe0;
     }
+LAB_emit_mesh_sprite_quad:
     *DAT_00110fc0 = 0x7a;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_0023b904;
@@ -48997,6 +49074,26 @@ LAB_00061d34:
       emit_anim_object_frames(uVar27 & 0x3f,param_1);
       return;
     }
+    /* DAT_00086c80_backing has no writer anywhere in this decompile (same
+       "orphaned data table" class as DAT_00086c08/09/0b, the PTR_FUN_
+       dispatch tables, etc. fixed elsewhere this session) -- it's always
+       all-zero, so every sign/TMOBJ variant below was resolving to frame 0
+       regardless of `iVar17`. Real per-variant frame numbers aren't
+       recoverable from the binary (this is missing DATA, not a dropped
+       argument/call -- no amount of disassembly recovers content that was
+       never in this decompile's static initializers), so default to the
+       same "id IS the frame" identity convention already established for
+       OBJECTS.GR by FUN_00040aa8's own comment, rather than collapsing
+       every sign to one identical graphic. */
+    { static int _tmobj_ids_inited = 0;
+      if (!_tmobj_ids_inited) {
+        _tmobj_ids_inited = 1;
+        int _i;
+        for (_i = 0; _i < 0x20; _i++) {
+          *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)_i;
+        }
+      }
+    }
     iVar17 = (int)(((uVar27 & 0x3f) - 0x10) * 0x10000) >> 0x10;
     if ((short)*(ushort *)(&DAT_00086c80 + iVar17 * 2) < 0) {
       return;
@@ -49004,8 +49101,35 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    emit_object_billboard(*(ushort *)(&DAT_00086c80 + iVar17 * 2) & 0xff,param_1,0xffffffff,0xffffffff);
-    return;
+    /* STEP 1 (sprite fixup): this used to call
+       emit_object_billboard(*(ushort*)(&DAT_00086c80+iVar17*2) & 0xff, ...),
+       feeding a real TMOBJ.GR frame index into emit_object_billboard as if
+       it were a slot in DAT_00086c08 -- a small (~64-entry) curated
+       billboard catalogue meant for a fixed set of hand-picked effects
+       (thrown weapons, muzzle flashes, etc; see its other callers' literal
+       0x14/0x16/0xc slot ids), not an arbitrary data-driven frame number.
+       That's a completely unrelated graphic, not merely "billboard instead
+       of decal".
+       DAT_00202c9a's own game data puts wall signs/plaques (e.g. real
+       object type 0x166) in this exact (class 2, id&0x30 != 0) branch --
+       DAT_00086c80[iVar17] is genuinely a per-sign-variant TMOBJ.GR frame
+       number, resolved through the same `0x2000 + frame` -> FUN_00040aa8
+       -> DAT_00202738 (TMOBJ's real load-time base index) convention every
+       other TMOBJ/ANIMO/OBJECTS reference in this file uses. Route it
+       through the same real, working sprite-decode + mesh-quad path class
+       0 uses (proven correct for the sack etc. this session) instead of
+       emit_object_billboard, by overriding uVar27 to the resolved TMOBJ id
+       and jumping into that code directly -- it doesn't care whether the
+       id names an OBJECTS or TMOBJ frame, FUN_00040770/FUN_00040aa8
+       already resolve either.
+       This still projects as a camera-facing quad rather than flush
+       against the wall face (the real fix for that -- projecting it like
+       a wall polygon instead -- is a separate, larger follow-up); this
+       step only fixes it showing the actual sign graphic instead of
+       whatever unrelated billboard-catalogue entry the old index
+       collided with. */
+    uVar27 = 0x2000 + (uint)*(ushort *)(&DAT_00086c80 + iVar17 * 2);
+    goto LAB_emit_mesh_sprite_quad;
   }
   if (bVar13 != 3) {
     return;
