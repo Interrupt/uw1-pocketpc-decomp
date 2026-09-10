@@ -29884,6 +29884,26 @@ short param_5;
       if (getenv("UW_DEBUG_CRITTER"))
         fprintf(stderr, "[critter] decode_critter_sprite_page: w=%d h=%d comp_type(pbVar11[4])=%d\n",
                 (int)(short)DAT_002022f8, (int)(short)DAT_00202508, (int)pbVar11[4]);
+      /* pbVar11 here has already been re-pointed via pbVar8[iVar5+iVar9]
+         (a tier-byte-derived offset, no bounds check against pbVar8's
+         real extent) -- for a tier-byte well outside the small range
+         this offset scheme was confirmed correct for (0-7, see
+         resolve_critter_sprite_tier's own tier-search table), that reads
+         wild/unrelated bytes from elsewhere in the page and
+         misinterprets them as a glyph header (observed: a real NPC's
+         direction 129 producing "w=16 h=241", an impossible sprite size,
+         with pbVar11[4] landing on an unsupported unpack_glyph_bitmap
+         format too). Every other creature sprite actually seen this
+         session is under 64px in both dimensions; skip decoding rather
+         than allocate/decode from a header that clearly isn't real
+         glyph data. This is a stopgap, not a fix for the underlying
+         tier-byte interpretation -- the real page-format semantics for
+         tier-bytes outside 0-7 are still unknown. */
+      if ((unsigned short)DAT_00202508 > 64 || (unsigned short)DAT_002022f8 > 64) {
+        DEBUG(ERR, "[critter] decode_critter_sprite_page: implausible header w=%d h=%d for type=%d tier=%d dir=%d, skipping\n",
+              (int)(short)DAT_002022f8, (int)(short)DAT_00202508, param_1, param_2, (int)param_3);
+        return 0;
+      }
       uVar7 = FUN_000129f8(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
       if (getenv("UW_DEBUG_CRITTER") && uVar7) {
         fprintf(stderr, "[critter] decode_critter_sprite_page: decoded row bytes[0..15]:");
