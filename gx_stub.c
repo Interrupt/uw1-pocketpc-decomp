@@ -63,6 +63,12 @@ typedef struct {
 #define VK_SPACE 0x20
 #define VK_CONTROL 0x11
 #define VK_ESCAPE 0x1B
+/* Win32 VK codes for letter keys are just their uppercase ASCII value,
+   same as the game's own register_key_binding(0x4a, 6, 0x1b,
+   move_command_dispatch) jump binding (see poll_input_bindings init)
+   already expects -- that binding just never had a real key reach it,
+   since translate_vk had no case producing 0x4a. */
+#define VK_J 0x4A
 /* WinCE app-launch button virtual-key. Real GAPI hands the game codes
  * like this for the hardware A/B/C/Start buttons -- never ASCII keys --
  * so mapping "button A" to one keeps the spacebar free to type a literal
@@ -176,6 +182,11 @@ static int translate_vk(SDL_Keycode sym) {
         case SDLK_LCTRL:
         case SDLK_RCTRL: return VK_CONTROL;
         case SDLK_ESCAPE: return VK_ESCAPE;
+        /* Jump. Real UW controls bind this to J; the game's own
+           register_key_binding(0x4a, ...) table entry already expects it
+           (see VK_J above) -- it just never had a live key mapped to it
+           in this port. */
+        case SDLK_j: return VK_J;
         default: return 0;
     }
 }
