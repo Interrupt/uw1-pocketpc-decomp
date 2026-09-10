@@ -3594,7 +3594,22 @@ ushort DAT_0023b91c;
 byte DAT_0023bc88;
 static undefined1 DAT_00086c80_backing[65536];
 #define DAT_00086c80 DAT_00086c80_backing[0]
-undefined DAT_00086cc0;
+/* Was a lone `undefined` scalar -- another silently-zero "orphaned data
+   table" (same class as DAT_00086c80's TMOBJ frame table, see
+   [[object-render-class-and-tmobj-signs]]). resolve_critter_sprite_tier's
+   caller indexes it `(&DAT_00086cc0)[(_dm % 0x20 + 0x20) % 0x20]` to
+   quantize a 32-step relative camera/object angle down to an 8-way
+   octant -- with it silently zero, every critter/door billboard always
+   resolved to octant 0 regardless of true viewing angle, so orbiting one
+   never changed its displayed sprite frame. The real recovered-from-UU.exe
+   content for this table is lost (same situation as DAT_00086c80), so
+   reconstruct it with the natural identity quantization -- 4 consecutive
+   steps per octant -- rather than leave it degenerate. */
+static const undefined1 DAT_00086cc0_arr[32] = {
+  0,0,0,0, 1,1,1,1, 2,2,2,2, 3,3,3,3,
+  4,4,4,4, 5,5,5,5, 6,6,6,6, 7,7,7,7,
+};
+#define DAT_00086cc0 (DAT_00086cc0_arr[0])
 short DAT_00189584;
 undefined2 DAT_00189586;
 ushort DAT_0018957a;
@@ -49169,6 +49184,14 @@ ushort * param_1;
               fprintf(stderr, "[objdump] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x\n",
                       _tx, _ty, _slot, _id, (unsigned)_w);
             }
+            {
+              int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
+              if (_rc == 1) {
+                unsigned char *_recb = (unsigned char *)_rec;
+                fprintf(stderr, "[objdump-critter] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x b6=0x%02x\n",
+                        _tx, _ty, _slot, _id, (unsigned)_w, (unsigned)_recb[6]);
+              }
+            }
             ushort _nextw = *(ushort *)((char *)_rec + 6);
             _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
           }
@@ -49486,10 +49509,16 @@ LAB_00061d34:
        DAT_00086cc0 direction table (crash when an object first came into
        view down a long hallway). It is (that dividend) % 0x20. */
     {
+      short _col_angle = *(short *)(DAT_00086e6c + 0x2c);
+      short _quad_term = *(short *)(&DAT_00086a18 + DAT_0023b4a0 * 2);
       int _dm = ((param_1[1] >> 5 & 0x1c) -
-                 ((int)((int)*(short *)(DAT_00086e6c + 0x2c) +
+                 ((int)((int)_col_angle +
                         (uint)*(ushort *)(&DAT_00086a18 + DAT_0023b4a0 * 2)) >> 0xb)) + 0x20;
       bVar13 = (&DAT_00086cc0)[((_dm % 0x20) + 0x20) % 0x20];
+      if (getenv("UW_DEBUG_CRITTER") && (uVar27 & 0x1ff) == 0x5a)
+        fprintf(stderr, "[critter] dirtable: col_angle=%d quad_term=%d sum=%d shifted=%d _dm=%d bVar13=%d\n",
+                (int)_col_angle, (int)_quad_term, (int)_col_angle + (int)(unsigned short)_quad_term,
+                (int)((int)((int)_col_angle + (uint)(unsigned short)_quad_term) >> 0xb), _dm, (int)bVar13);
     }
     if ((ushort)uVar29 < 0x20) {
       if (((ushort)uVar29 != 0xc) && (2 < (bVar13 - 3 & 7))) {
@@ -49499,6 +49528,10 @@ LAB_00061d34:
     else {
       uVar29 = (uint)bVar13 + (uVar29 - 0x1c) * 8;
     }
+    if (getenv("UW_DEBUG_CRITTER"))
+      fprintf(stderr, "[critter] emit_tile_objects: id=0x%03x raw_slot=%d own_heading_bits=%d cam_yaw=%d quadrant=%d dir(uVar29)=%d\n",
+              uVar27 & 0x1ff, *(byte *)((char *)param_1 + 0x15) & 0x3f,
+              (int)(param_1[1] >> 5 & 0x1c), (int)DAT_000db44c, (int)DAT_0023b4a0, (int)uVar29);
     resolve_critter_sprite_tier(uVar27 & 0x3f,uVar29,(byte)param_1[6] >> 4,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     uVar30 = (&DAT_000d9ed8)[DAT_000db44c];
     uVar18 = Ordinal_2023((&DAT_000d9930)[DAT_000db44c]);
