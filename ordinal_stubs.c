@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <math.h>
+#include <stdint.h>
+#include <sys/stat.h>
 #include <SDL.h>
 
 void uw_pump_events(void);
@@ -122,14 +124,54 @@ long Ordinal_164()
     return 0;
 }
 
-long Ordinal_165()
+/* uw.c is riddled with call sites that pass a real pointer through an
+ * `undefined4`/`int`-typed local (this file's single most common bug
+ * class -- truncates to 32 bits on this 64-bit build), and both of these
+ * ordinals used to be no-op stubs that never dereferenced their
+ * arguments, so any such truncation feeding them was harmless/dormant.
+ * Now that they actually touch the string, guard against the obviously-
+ * truncated case: a real pointer on this platform is never this small. */
+static int looks_like_real_pointer(const void *p)
 {
-    return 0;
+    return (uintptr_t)p >= 0x10000;
 }
 
-long Ordinal_167()
+/* CreateDirectory-shaped. Its one real call site (FUN_0006c560, the
+ * save-slot-directory creator -- was calling this with the argument
+ * dropped entirely) treats "the directory is there" as success whether
+ * or not it already existed, so uw_ensure_directory's EEXIST-tolerant
+ * mkdir matches the intent better than a strict CreateDirectory would. */
+long Ordinal_165(void *path_ptr)
 {
-    return 0;
+    if (!looks_like_real_pointer(path_ptr)) return 0;
+    return uw_ensure_directory((const char *)path_ptr) ? 1 : 0;
+}
+
+/* FindFirstFile-shaped. Every known caller only ever checks the return
+ * value against -1 (not found) and, for the one caller that cares
+ * (FUN_0006c560), reads back dwFileAttributes (the struct's first field)
+ * to test FILE_ATTRIBUTE_DIRECTORY (0x10) -- none read the filename
+ * fields a real WIN32_FIND_DATA also carries, so implemented against
+ * stat() rather than a full opendir/readdir enumeration. Treats its
+ * first argument as a plain path string (this port's Ordinal_196/197
+ * "wide" conversions are ANSI passthroughs -- see their comments) and
+ * strips a trailing wildcard component (e.g. "\*.*", appended by
+ * FUN_0006c560 before calling this) since stat() doesn't understand
+ * wildcards. */
+long Ordinal_167(void *path_ptr, unsigned int *out_attrs)
+{
+    const char *win_path = (const char *)path_ptr;
+    if (!win_path || !looks_like_real_pointer(path_ptr)) return -1;
+    char pattern[1024];
+    snprintf(pattern, sizeof(pattern), "%s", win_path);
+    char *slash = strrchr(pattern, '\\');
+    if (slash && strchr(slash, '*')) *slash = '\0';
+    char real[4096];
+    if (!uw_resolve_win_path(pattern, real, sizeof(real))) return -1;
+    struct stat st;
+    if (stat(real, &st) != 0) return -1;
+    if (out_attrs) out_attrs[0] = S_ISDIR(st.st_mode) ? 0x10u : 0u;
+    return 1;
 }
 
 long Ordinal_168()
@@ -446,7 +488,7 @@ int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigne
      * assumption that every caller only branches on the message
      * contents when this is nonzero and that driving input via
      * DAT_0023c448 directly was independent of that. That's wrong for
-     * FUN_000579e4 (uw.c) -- the real keyboard-polling function used by
+     * poll_input_event (uw.c) -- the real keyboard-polling function used by
      * every menu/input-wait loop in the game -- which only reads
      * DAT_0023c448 *inside* the branch gated on this return value being
      * nonzero. With this always 0, DAT_0023c448 was never read at all,
@@ -460,7 +502,7 @@ int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigne
      * uw_pump_events (FUN_00077dd0 finishes with each one immediately),
      * leaving no "pending" state for DAT_0023c448 to hold the way
      * keyboard input does. Without also checking
-     * uw_take_mouse_event_pending(), FUN_000579e4 never falls through to
+     * uw_take_mouse_event_pending(), poll_input_event never falls through to
      * poll_mouse_event()/update_mouse_state() for mouse-only activity
      * (no keyboard event pending at the same moment), so g_mouse_x/
      * g_mouse_y never track the real cursor and the game's own

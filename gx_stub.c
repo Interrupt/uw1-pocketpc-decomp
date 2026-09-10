@@ -69,6 +69,40 @@ typedef struct {
  * space in the name-entry field. */
 #define VK_APP1 0xC1
 
+/* SDL_Event.*.which value tagging a click injected by uw_inject_mouse_* so
+   uw_pump_events takes the event's own coords (the GetGlobalMouseState
+   warp is a no-op under the dummy video driver). */
+#define UW_SYNTH_MOUSE 0x55570001u
+/* Stamped into keysym.unused (a spare Uint32 that survives SDL's event
+   queue memcpy) on keydown/keyup events pushed by uw_inject_key_* so the
+   physical-ESC "abort the running demo" check can tell a real keypress
+   from a demo's own SDLHOLD injection. */
+#define UW_SYNTH_KEY 0x55570002u
+
+/* Dungeon-view (3D) player movement is polled from the physical keyboard
+   state every pump (poll_dungeon_movement_keys), DOS-style, rather than
+   driven off discrete key events. UW binds W/S/X/A/D to a *stepped*
+   45-degree turn / one-tile move (uw.c move_key_directional_step); the
+   GAPI hardware buttons instead feed the *analog* movement decoder
+   (move_command_dispatch -> decode_movement_command) via the latched
+   input code DAT_0023c448 -- 0x8d forward, 0x8f turn-left, 0x91
+   turn-right -- scaled by the held-repeat accelerator DAT_0024af6c. We
+   route plain WASD into that analog path for smooth free rotation and
+   motion; SHIFT+WASD is left alone so it still reaches the game's stepped
+   move handler at the key-repeat cadence, matching the DOS controls.
+   Keys 1 / 2 / 3 pitch the view up / centre / down (DAT_0023beb4; the
+   game's own handler for these, LAB_000680d0, is a lost jump-table stub). */
+extern unsigned short DAT_00201b64;   /* game mode; 0 == in-game 3D dungeon view */
+extern unsigned short DAT_0023c448;   /* latched pending input code */
+extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears DAT_0023c448 */
+extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move rate scale) */
+extern short DAT_0023beb4;            /* view pitch (1/256 deg); sync_camera_from_player -> DAT_000db448 */
+
+/* OR'd into the real SDL_GetKeyboardState() so scripted tests (SDLHOLD /
+   uw_inject_key_down/up) can drive the same movement path -- SDL_PushEvent
+   does not update SDL's own keyboard-state array. Indexed by SDL scancode. */
+static unsigned char g_synth_scancode_held[SDL_NUM_SCANCODES];
+
 static SDL_Window *g_win;
 static SDL_Renderer *g_ren;
 static SDL_Texture *g_tex;
@@ -110,7 +144,7 @@ static int g_mouseup_deferred_lparam = 0;
  * above: a *real* held click (any actual wall-clock gap between press
  * and release, which is every real click) means several poll calls
  * happen while the button is down but nothing NEW has arrived from SDL.
- * Ordinal_864/FUN_000579e4 treat "no new message this call" as "no
+ * Ordinal_864/poll_input_event treat "no new message this call" as "no
  * message at all" and return early without ever reading DAT_0023c448 or
  * calling poll_mouse_event() -- so DAT_0023c63c (still 1, genuinely
  * held) never even gets checked, and character_generator_touch_select's
@@ -146,10 +180,97 @@ static int translate_vk(SDL_Keycode sym) {
     }
 }
 
+/* True while the game is showing the interactive 3D dungeon view and the
+   WASD/1-3 poller should own those keys. SHIFT+WASD is excluded so it
+   still drives the game's stepped (tile-based, key-repeat) move handler,
+   as in the DOS controls. */
+static int in_dungeon_freelook(void) {
+    if (DAT_00201b64 != 0) return 0;
+    /* SDL_GetModState() only reflects modifier keys that came through the
+     * real OS input backend -- a demo-injected SDLK_LSHIFT (uw_inject_key_down,
+     * which SDL_PushEvent()s the event rather than feeding it through SDL's
+     * own keyboard backend) never sets it, the same reason plain letter keys
+     * need g_synth_scancode_held below. Check that too so a scripted
+     * "SDLHOLD SHIFT+D" reproduces a real held-shift stepped turn. */
+    int shift_held = (SDL_GetModState() & KMOD_SHIFT) != 0 ||
+                      g_synth_scancode_held[SDL_SCANCODE_LSHIFT] ||
+                      g_synth_scancode_held[SDL_SCANCODE_RSHIFT];
+    return !shift_held;
+}
+
+/* DOS-style: poll the physical keyboard each pump and drive the analog
+   movement decoder while in the 3D dungeon view. plain WASD -> free
+   rotation / forward-back; 1/2/3 -> look up / centre / down; released ->
+   stop. SHIFT+WASD and all of this in menus fall through untouched. */
+static void poll_dungeon_movement_keys(void) {
+    static int active = 0;
+
+    if (!in_dungeon_freelook()) {     /* menu, or SHIFT held */
+        if (active) { DAT_000876c8 = 1; active = 0; }
+        return;
+    }
+
+    const Uint8 *ks = SDL_GetKeyboardState(NULL);
+    #define UW_HELD(sc) (ks[(sc)] || g_synth_scancode_held[(sc)])
+    int left    = UW_HELD(SDL_SCANCODE_A);
+    int right   = UW_HELD(SDL_SCANCODE_D);
+    int run     = UW_HELD(SDL_SCANCODE_W);   /* W = run forward  */
+    int walk    = UW_HELD(SDL_SCANCODE_S);   /* S = walk forward (slower) */
+    int back    = UW_HELD(SDL_SCANCODE_X);
+    int strafeL = UW_HELD(SDL_SCANCODE_Z);
+    int strafeR = UW_HELD(SDL_SCANCODE_C);
+    int lookUp  = UW_HELD(SDL_SCANCODE_1);
+    int lookCtr = UW_HELD(SDL_SCANCODE_2);
+    int lookDn  = UW_HELD(SDL_SCANCODE_3);
+    #undef UW_HELD
+
+    /* View pitch: keys 1 / 2 / 3. DAT_0023beb4 is a signed 1/256-degree
+       pitch the camera build reads; negative looks up. It is never
+       auto-recentred, so ramp it while held and snap on 2. */
+    if (lookCtr) {
+        DAT_0023beb4 = 0;
+    } else if (lookUp && !lookDn) {
+        int p = (int)DAT_0023beb4 - 0x120;
+        DAT_0023beb4 = (short)(p < -0x1800 ? -0x1800 : p);
+    } else if (lookDn && !lookUp) {
+        int p = (int)DAT_0023beb4 + 0x120;
+        DAT_0023beb4 = (short)(p > 0x1800 ? 0x1800 : p);
+    }
+
+    /* One latched code; turning takes priority so free-look always works.
+       (The keyboard decoder is single-axis -- diagonal move+turn would
+       need the analog rates set directly.) */
+    int code = 0, walk_slow = 0;
+    if (left && !right)         code = 0x8f;   /* turn left   */
+    else if (right && !left)    code = 0x91;   /* turn right  */
+    else if (run)              code = 0x8d;                     /* W: run  -- let the accelerator ramp */
+    else if (walk)             { code = 0x8d; walk_slow = 1; }  /* S: walk -- pin accelerator below the step clamp */
+    else if (back)              code = 0x93;   /* backward / turn-around */
+    else if (strafeL && !strafeR) code = 0x2c; /* sidestep left  (DOS ",") */
+    else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
+
+    if (code) {
+        if (!active) { DAT_0024af6c = 0x14; active = 1; }  /* re-arm accel on press edge */
+        if (walk_slow) {
+            /* keep S's forward rate below decode_movement_command's per-tick
+               step clamp so it is a genuine slow walk, not a clamped run. */
+            static int _wa = -1;
+            if (_wa < 0) { const char *e = getenv("UW_WALK_ACCEL"); _wa = e ? atoi(e) : 0x30; }
+            DAT_0024af6c = (short)_wa;
+        }
+        DAT_0023c448 = (unsigned short)code;
+        DAT_000876c8 = 0;
+    } else if (active) {
+        DAT_000876c8 = 1;   /* release: main loop clears DAT_0023c448 -> stop */
+        active = 0;
+    }
+}
+
 void uw_pump_events(void) {
     SDL_Event ev;
     if (!g_win) return;
     demomode_pump();
+    poll_dungeon_movement_keys();
 
     if (g_mouseup_deferred) {
         /* See g_mouseup_deferred's comment. Dispatch the button-up we
@@ -174,6 +295,34 @@ void uw_pump_events(void) {
                 break;
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
+                /* Physical ESC aborts a running demo file (and is then
+                 * swallowed -- it does NOT also reach the game). Only a
+                 * real keypress does this: uw_inject_key_* stamps
+                 * UW_SYNTH_KEY into keysym.unused, so a demo's own
+                 * "SDLHOLD ESCAPE" won't self-cancel. With no demo
+                 * playing, ESC falls through to the game as normal. */
+                if (ev.type == SDL_KEYDOWN && !ev.key.repeat &&
+                    ev.key.keysym.sym == SDLK_ESCAPE &&
+                    ev.key.keysym.unused != UW_SYNTH_KEY &&
+                    demomode_active()) {
+                    demomode_abort("physical ESC key");
+                    return;
+                }
+                /* In the 3D view (no SHIFT) the WASD / ZXC / 1-3 keys are
+                 * handled by poll_dungeon_movement_keys() from the physical
+                 * key state, not as discrete events -- swallow their key
+                 * events (and their SDL_TEXTINPUT, below) so they neither
+                 * type nor hit the game's stepped move / look handlers.
+                 * With SHIFT held, or in menus, they fall through. */
+                if (in_dungeon_freelook()) {
+                    SDL_Keycode msym = ev.key.keysym.sym;
+                    if (msym == SDLK_a || msym == SDLK_d || msym == SDLK_w ||
+                        msym == SDLK_s || msym == SDLK_x || msym == SDLK_z ||
+                        msym == SDLK_c || msym == SDLK_1 || msym == SDLK_2 ||
+                        msym == SDLK_3) {
+                        return;
+                    }
+                }
                 /* SDL auto-repeats a held key as a stream of SDL_KEYDOWN
                  * events; the game's menu/chargen "wait for one keypress"
                  * loops (e.g. FUN_00024840) treat every keydown as a
@@ -207,7 +356,7 @@ void uw_pump_events(void) {
                 }
                 /* Real Windows delivers WM_KEYDOWN and WM_CHAR as
                  * separate messages, polled one at a time -- the game's
-                 * input loop (FUN_000579e4 et al) clears its single
+                 * input loop (poll_input_event et al) clears its single
                  * pending-input slot (DAT_0023c448) and re-reads it
                  * fresh on every poll. SDL instead reports a keydown and
                  * its matching SDL_TEXTINPUT in the same batch; draining
@@ -231,6 +380,15 @@ void uw_pump_events(void) {
                  * case above), so stop after this event too. */
                 for (const char *p = ev.text.text; *p; p++) {
                     unsigned char c = (unsigned char)*p;
+                    /* In 3D free-look the WASD/ZXC/1-3 keys are polled by
+                       poll_dungeon_movement_keys(), not typed. (SHIFT+WASD
+                       makes in_dungeon_freelook() false, so uppercase
+                       WASD still reaches the stepped move handler.) */
+                    if (in_dungeon_freelook() &&
+                        (c=='a'||c=='d'||c=='w'||c=='s'||c=='x'||c=='z'||c=='c'||
+                         c=='1'||c=='2'||c=='3')) {
+                        continue;
+                    }
                     if (c < 0x80) {
                         handle_keyboard_message(0, 0x102u, (unsigned int)c);
                     }
@@ -265,7 +423,13 @@ void uw_pump_events(void) {
                  * which does NOT show the same halving. Use that instead
                  * of the raw event fields. */
                 int win_x, win_y;
-                {
+                if (ev.button.which == UW_SYNTH_MOUSE) {
+                    /* injected click (uw_inject_mouse_*): the SDL_GetGlobalMouseState
+                       warp does not work under the dummy video driver, so take the
+                       event's own window-point coords directly. */
+                    win_x = (ev.type == SDL_MOUSEMOTION) ? ev.motion.x : ev.button.x;
+                    win_y = (ev.type == SDL_MOUSEMOTION) ? ev.motion.y : ev.button.y;
+                } else {
                     int gx = 0, gy = 0, wx = 0, wy = 0;
                     SDL_GetGlobalMouseState(&gx, &gy);
                     SDL_GetWindowPosition(g_win, &wx, &wy);
@@ -278,16 +442,49 @@ void uw_pump_events(void) {
                 int portrait_x = landscape_y;
                 int portrait_y = (HW_H - 1) - landscape_x;
                 int lparam = (portrait_y << 16) | (portrait_x & 0xffff);
-                unsigned int msg = (ev.type == SDL_MOUSEBUTTONDOWN) ? 0x201u
-                                  : (ev.type == SDL_MOUSEBUTTONUP) ? 0x202u
-                                  : 0x200u;
+                int is_right = (ev.type != SDL_MOUSEMOTION &&
+                                ev.button.button == SDL_BUTTON_RIGHT);
+                unsigned int msg =
+                      (ev.type == SDL_MOUSEMOTION)     ? 0x200u
+                    : is_right
+                        ? ((ev.type == SDL_MOUSEBUTTONDOWN) ? 0x204u : 0x205u)   /* WM_RBUTTON* */
+                        : ((ev.type == SDL_MOUSEBUTTONDOWN) ? 0x201u : 0x202u);  /* WM_LBUTTON* */
                 if (ev.type == SDL_MOUSEBUTTONDOWN) {
-                    fprintf(stderr, "[mouse] click win=(%d,%d) landscape=(%d,%d) portrait=(%d,%d) %s\n",
+                    fprintf(stderr, "[mouse] %s click win=(%d,%d) landscape=(%d,%d) portrait=(%d,%d) %s\n",
+                            is_right ? "right" : "left",
                             win_x, win_y, landscape_x, landscape_y, portrait_x, portrait_y,
                             (portrait_x > 200 && portrait_x < 0xf0) ? "IN on-screen-keyboard strip" : "outside keyboard strip");
                 }
-                if (ev.type != SDL_MOUSEMOTION && ev.button.button != SDL_BUTTON_LEFT) {
+                if (ev.type != SDL_MOUSEMOTION &&
+                    ev.button.button != SDL_BUTTON_LEFT &&
+                    ev.button.button != SDL_BUTTON_RIGHT) {
                     break;
+                }
+                if (is_right) {
+                    /* Right-click = interact (FUN_0003f420's right-button
+                       branch). Dispatch down and up straight through --
+                       none of the left button's click-hold-to-walk
+                       deferral machinery applies.
+
+                       But keep g_mouse_button_held set for the whole hold
+                       so the tail of uw_pump_events re-arms
+                       g_mouse_event_pending every pump: FUN_00077dd0's
+                       WM_RBUTTONDOWN only latches DAT_002506ab, and the
+                       one-shot g_mouse_event_pending it sets here can be
+                       consumed+cleared by an unrelated Ordinal_864 caller
+                       (a redraw/flush) before main_loop_hud_flush's
+                       poll_input_bindings ever peeks -- then, with no
+                       further SDL event until release, the interact never
+                       fires (the "right-click only registers if I also
+                       move the mouse" symptom: motion events were what
+                       kept re-signalling). */
+                    if (ev.type == SDL_MOUSEBUTTONDOWN)
+                        g_mouse_button_held = 1;
+                    else
+                        g_mouse_button_held = 0;
+                    g_mouse_event_pending = 1;
+                    FUN_00077dd0(0, msg, 0, lparam);
+                    return;
                 }
                 if (ev.type == SDL_MOUSEBUTTONUP) {
                     /* Hold this back one poll cycle -- see
@@ -413,6 +610,7 @@ int uw_inject_mouse_down(int window_x, int window_y) {
     SDL_Event down = {0};
     down.type = SDL_MOUSEBUTTONDOWN;
     down.button.button = SDL_BUTTON_LEFT;
+    down.button.which = UW_SYNTH_MOUSE;
     down.button.x = window_x;
     down.button.y = window_y;
     SDL_PushEvent(&down);
@@ -427,6 +625,7 @@ int uw_inject_mouse_up(int window_x, int window_y) {
     SDL_Event up = {0};
     up.type = SDL_MOUSEBUTTONUP;
     up.button.button = SDL_BUTTON_LEFT;
+    up.button.which = UW_SYNTH_MOUSE;
     up.button.x = window_x;
     up.button.y = window_y;
     SDL_PushEvent(&up);
@@ -439,6 +638,82 @@ int uw_inject_mouse_click(int window_x, int window_y) {
      * fully representative of a real click's timing. */
     if (!uw_inject_mouse_down(window_x, window_y)) return 0;
     return uw_inject_mouse_up(window_x, window_y);
+}
+
+int uw_inject_mouse_rclick(int window_x, int window_y) {
+    /* Right-button down+up (interact). See uw_inject_mouse_down. */
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
+    for (int up = 0; up < 2; up++) {
+        SDL_Event e = {0};
+        e.type = up ? SDL_MOUSEBUTTONUP : SDL_MOUSEBUTTONDOWN;
+        e.button.button = SDL_BUTTON_RIGHT;
+        e.button.which = UW_SYNTH_MOUSE;
+        e.button.x = window_x;
+        e.button.y = window_y;
+        SDL_PushEvent(&e);
+    }
+    return 1;
+}
+
+int uw_inject_key_down(int sdl_keycode) {
+    /* For scripted testing of the keyboard path: push a genuine
+     * SDL_KEYDOWN (repeat=0) and, for a printable key, the matching
+     * SDL_TEXTINPUT -- exactly what a real key press produces -- so
+     * uw_pump_events()'s full key handling runs (unlike demomode's HOLD,
+     * which calls handle_keyboard_message directly). Pair with
+     * uw_inject_key_up after a real multi-poll gap. Also marks the key
+     * held in g_synth_scancode_held, since SDL_PushEvent does not update
+     * SDL_GetKeyboardState() (which poll_dungeon_movement_keys reads). */
+    if (!g_win) return 0;
+    SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    if (sc > 0 && sc < SDL_NUM_SCANCODES) g_synth_scancode_held[sc] = 1;
+    SDL_Event kd = {0};
+    kd.type = SDL_KEYDOWN;
+    kd.key.state = SDL_PRESSED;
+    kd.key.repeat = 0;
+    kd.key.keysym.sym = (SDL_Keycode)sdl_keycode;
+    kd.key.keysym.scancode = sc;
+    kd.key.keysym.unused = UW_SYNTH_KEY;
+    SDL_PushEvent(&kd);
+    if (sdl_keycode >= 32 && sdl_keycode < 127) {
+        SDL_Event ti = {0};
+        ti.type = SDL_TEXTINPUT;
+        ti.text.text[0] = (char)sdl_keycode;
+        ti.text.text[1] = '\0';
+        SDL_PushEvent(&ti);
+    }
+    return 1;
+}
+
+int uw_inject_key_up(int sdl_keycode) {
+    /* See uw_inject_key_down. */
+    if (!g_win) return 0;
+    SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    if (sc > 0 && sc < SDL_NUM_SCANCODES) g_synth_scancode_held[sc] = 0;
+    SDL_Event ku = {0};
+    ku.type = SDL_KEYUP;
+    ku.key.state = SDL_RELEASED;
+    ku.key.repeat = 0;
+    ku.key.keysym.sym = (SDL_Keycode)sdl_keycode;
+    ku.key.keysym.scancode = sc;
+    ku.key.keysym.unused = UW_SYNTH_KEY;
+    SDL_PushEvent(&ku);
+    return 1;
+}
+
+void uw_clear_synth_scancode(int sdl_keycode) {
+    /* Clear a synthetic "held" scancode without pushing a real KEYUP event
+     * -- for demomode_abort(), which deliberately skips uw_inject_key_up on
+     * an aborted SDLHOLD (see its own comment: the synthetic keyup would
+     * just re-enter this same event path). Without this, aborting mid-hold
+     * leaves g_synth_scancode_held[sc] stuck set (most visibly, a SHIFT
+     * held via a "SDLHOLD SHIFT+<key>" combo would permanently disable
+     * in_dungeon_freelook() for the rest of the run). */
+    if (!g_win) return;
+    SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)sdl_keycode);
+    if (sc > 0 && sc < SDL_NUM_SCANCODES) g_synth_scancode_held[sc] = 0;
 }
 
 int uw_save_screenshot(const char *path) {

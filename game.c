@@ -329,6 +329,20 @@ undefined4 param_1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_6e4,&DAT_000857a0);
         FUN_0006c560(acStack_6e4);
+        /* FUN_0006c0c0 (the numbered-save-slot "Save Game" path) reads
+           \SAVE0\player.dat before duplicating SAVE0 into the chosen
+           slot, but nothing ever created that file for a freshly-started
+           character. FUN_00043fd8 is the only other writer (confirmed by
+           its body: malloc+serialize+CreateFile+WriteFile) -- called here
+           too, alongside the \SAVE0\lev.ark seed a few lines down. First
+           attempt chased a red herring: this newly reaches
+           FUN_00065b90->FUN_0007ef78 with a genuinely truncated pointer
+           (fixed, FUN_0007ef78's param_3), but the *fatal* oversized-
+           write abort seen afterward was a false trail from a completely
+           unrelated, pre-existing bug in FUN_00019120 (also fixed, see
+           its own comment) that this code path happens to run right
+           past. */
+        FUN_00043fd8(acStack_6e4);
         Ordinal_1047(acStack_6e4,0,0x104);
         pcVar5 = &DAT_0023cca8;
         pcVar_dst = acStack_6e4;
@@ -392,7 +406,7 @@ undefined4 param_1;
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT1_BYT_00086ed0);
         FUN_0006c98c(2,acStack_7ec,1);
         iVar10 = FUN_0002294c();
-        sVar3 = FUN_00057a70();
+        sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       iVar4 = FUN_0002294c();
       do {
@@ -407,7 +421,7 @@ undefined4 param_1;
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT2_BYT_00086ebc);
         FUN_0006c98c(2,acStack_7ec,1);
         iVar10 = FUN_0002294c();
-        sVar3 = FUN_00057a70();
+        sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       iVar4 = FUN_0002294c();
       do {
@@ -422,7 +436,7 @@ undefined4 param_1;
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT3_BYT_00086ea8);
         FUN_0006c98c(2,acStack_7ec,1);
         iVar10 = FUN_0002294c();
-        sVar3 = FUN_00057a70();
+        sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       FUN_00049924(0x7ffe);
     }
@@ -451,7 +465,7 @@ undefined4 param_1;
         }
         draw_text_string(uVar7,0xa0 - (short)(iVar4 >> 1),0x5a);
         FUN_000570b4();
-        while (sVar3 = FUN_00057a70(), sVar3 < 0) {
+        while (sVar3 = next_input_event(), sVar3 < 0) {
           FUN_0006a168();
         }
         FUN_00040d00(s_FONT5X6P_SYS_00084e9c);

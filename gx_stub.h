@@ -71,10 +71,21 @@ int uw_take_mouse_event_pending(void);
    yet. */
 int uw_inject_mouse_click(int window_x, int window_y);
 
+/* Right-button click (interact). Down+up queued together. */
+int uw_inject_mouse_rclick(int window_x, int window_y);
+
 /* Split halves of uw_inject_mouse_click, for tests that need a real
    multi-poll gap between button-down and button-up (matching an actual
    held click's timing) rather than both queued instantaneously. */
 int uw_inject_mouse_down(int window_x, int window_y);
 int uw_inject_mouse_up(int window_x, int window_y);
+
+/* Push a genuine SDL_KEYDOWN (+ SDL_TEXTINPUT for a printable key) / SDL_KEYUP
+   for the given SDL_Keycode, so scripted tests exercise uw_pump_events()'s
+   real keyboard path (demomode's SDLHOLD command). Returns 1, or 0 if
+   there's no window yet. */
+int uw_inject_key_down(int sdl_keycode);
+int uw_inject_key_up(int sdl_keycode);
+void uw_clear_synth_scancode(int sdl_keycode);
 
 #endif

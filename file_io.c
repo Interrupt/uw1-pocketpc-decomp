@@ -1,5 +1,6 @@
 #include "file_io.h"
 
+#include "debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,9 +19,9 @@ static const char *data_dir(void) {
         dir = getenv("UW_DATA_DIR");
         looked_up = 1;
         if (dir) {
-            fprintf(stderr, "[fileio] UW_DATA_DIR = %s\n", dir);
+            DEBUG(INFO, "[fileio] UW_DATA_DIR = %s\n", dir);
         } else {
-            fprintf(stderr, "[fileio] UW_DATA_DIR not set -- game data file "
+            DEBUG(ERR, "[fileio] UW_DATA_DIR not set -- game data file "
                             "loads will fail\n");
         }
     }
@@ -99,7 +100,7 @@ static void ensure_parent_dir(const char *path) {
     if (!slash || slash == dir) return;
     *slash = '\0';
     if (mkdir(dir, 0755) != 0 && errno != EEXIST) {
-        fprintf(stderr, "[fileio] mkdir FAILED: %s (errno %d)\n", dir, errno);
+        DEBUG(ERR, "[fileio] mkdir FAILED: %s (errno %d)\n", dir, errno);
     }
 }
 
@@ -127,16 +128,16 @@ int uw_file_open_read(const char *win_path) {
      * every subsequent read). */
     struct stat st;
     if (stat(real, &st) == 0 && S_ISDIR(st.st_mode)) {
-        fprintf(stderr, "[fileio] open-read FAILED (is a directory): %s -> %s\n", win_path, real);
+        DEBUG(WARN, "[fileio] open-read FAILED (is a directory): %s -> %s\n", win_path, real);
         return -1;
     }
     FILE *f = fopen(real, "rb");
     if (!f) {
-        fprintf(stderr, "[fileio] open-read FAILED: %s -> %s\n", win_path, real);
+        DEBUG(ERR, "[fileio] open-read FAILED: %s -> %s\n", win_path, real);
         return -1;
     }
     int h = alloc_handle(f);
-    fprintf(stderr, "[fileio] open-read: %s -> %s (handle %d)\n", win_path, real, h);
+    DEBUG(INFO, "[fileio] open-read: %s -> %s (handle %d)\n", win_path, real, h);
     return h;
 }
 
@@ -145,13 +146,13 @@ void *uw_file_fopen(const char *win_path, const char *mode) {
     if (!resolve_path(win_path, real, sizeof(real))) return NULL;
     struct stat st;
     if (stat(real, &st) == 0 && S_ISDIR(st.st_mode)) {
-        fprintf(stderr, "[fileio] fopen FAILED (is a directory): %s -> %s\n", win_path, real);
+        DEBUG(ERR, "[fileio] fopen FAILED (is a directory): %s -> %s\n", win_path, real);
         return NULL;
     }
     if (!mode || !mode[0]) mode = "r";
     if (mode[0] == 'w' || mode[0] == 'a') ensure_parent_dir(real);
     FILE *f = fopen(real, mode);
-    fprintf(stderr, "[fileio] fopen: %s -> %s (mode %s) %s\n", win_path, real, mode, f ? "ok" : "FAILED");
+    DEBUG(INFO, "[fileio] fopen: %s -> %s (mode %s) %s\n", win_path, real, mode, f ? "ok" : "FAILED");
     return f;
 }
 
@@ -163,11 +164,11 @@ int uw_file_open_write(const char *win_path, int create_always) {
     FILE *f = fopen(real, mode);
     if (!f && !create_always) f = fopen(real, "wb+");
     if (!f) {
-        fprintf(stderr, "[fileio] open-write FAILED: %s -> %s\n", win_path, real);
+        DEBUG(ERR, "[fileio] open-write FAILED: %s -> %s\n", win_path, real);
         return -1;
     }
     int h = alloc_handle(f);
-    fprintf(stderr, "[fileio] open-write: %s -> %s (handle %d)\n", win_path, real, h);
+    DEBUG(INFO, "[fileio] open-write: %s -> %s (handle %d)\n", win_path, real, h);
     return h;
 }
 
@@ -179,7 +180,7 @@ static FILE *lookup(int handle) {
 int uw_file_read(int handle, void *buf, unsigned int size) {
     FILE *f = lookup(handle);
     if (!f || !buf) {
-        fprintf(stderr, "[fileio] read: handle %d invalid or null buf, size=%u\n", handle, size);
+        DEBUG(ERR, "[fileio] read: handle %d invalid or null buf, size=%u\n", handle, size);
         return 0;
     }
     int n = (int)fread(buf, 1, size, f);
@@ -190,7 +191,7 @@ int uw_file_read(int handle, void *buf, unsigned int size) {
 int uw_file_write(int handle, const void *buf, unsigned int size) {
     FILE *f = lookup(handle);
     if (!f || !buf || size > (64u * 1024u * 1024u)) {
-        fprintf(stderr, "[fileio] write: handle %d invalid/null-buf/oversized, size=%u\n", handle, size);
+        DEBUG(ERR, "[fileio] write: handle %d invalid/null-buf/oversized, size=%u\n", handle, size);
         return 0;
     }
     int n = (int)fwrite(buf, 1, size, f);
@@ -225,13 +226,13 @@ int uw_file_copy(const char *win_src, const char *win_dst) {
     }
     FILE *in = fopen(src, "rb");
     if (!in) {
-        fprintf(stderr, "[fileio] copy FAILED (no source): %s -> %s\n", win_src, src);
+        DEBUG(ERR, "[fileio] copy FAILED (no source): %s -> %s\n", win_src, src);
         return 0;
     }
     ensure_parent_dir(dst);
     FILE *out = fopen(dst, "wb");
     if (!out) {
-        fprintf(stderr, "[fileio] copy FAILED (cannot create dest): %s -> %s\n", win_dst, dst);
+        DEBUG(ERR, "[fileio] copy FAILED (cannot create dest): %s -> %s\n", win_dst, dst);
         fclose(in);
         return 0;
     }
@@ -244,6 +245,21 @@ int uw_file_copy(const char *win_src, const char *win_dst) {
     if (ferror(in)) ok = 0;
     fclose(in);
     if (fclose(out) != 0) ok = 0;
-    fprintf(stderr, "[fileio] copy %s: %s -> %s\n", ok ? "ok" : "FAILED", src, dst);
+    DEBUG(ERR, "[fileio] copy %s: %s -> %s\n", ok ? "ok" : "FAILED", src, dst);
     return ok;
+}
+
+int uw_resolve_win_path(const char *win_path, char *out, unsigned int out_sz) {
+    return resolve_path(win_path, out, out_sz);
+}
+
+int uw_ensure_directory(const char *win_path) {
+    char real[4096];
+    if (!resolve_path(win_path, real, sizeof(real))) return 0;
+    if (mkdir(real, 0755) == 0 || errno == EEXIST) {
+        DEBUG(INFO, "[fileio] mkdir ok: %s -> %s\n", win_path, real);
+        return 1;
+    }
+    DEBUG(ERR, "[fileio] mkdir FAILED: %s -> %s (errno %d)\n", win_path, real, errno);
+    return 0;
 }
