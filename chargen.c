@@ -342,7 +342,7 @@ int run_character_generator()
   iVar4 = DAT_001005c4;
   uVar10 = 2;
   DAT_000fb858 = DAT_001005c4;
-  iVar2 = FUN_000417b4(s_chrbtns_00084ef8,0,0xffffffff,&LAB_000255b4,&LAB_000255d0);
+  iVar2 = load_gr_resource_entries(s_chrbtns_00084ef8,0,0xffffffff,&LAB_000255b4,&LAB_000255d0);
   if (iVar2 != 0) {
     DAT_000fb858 = iVar4;
     Ordinal_1047(acStack_128,0,0x104);

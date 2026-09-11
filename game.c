@@ -296,7 +296,7 @@ undefined4 param_1;
             callback bug class as LAB_000255d0 was, just already
             decompiled as a named function instead of staying raw
             undecompiled ARM. */
-         (iVar10 = FUN_000417b4(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,&FUN_0006a0c8), iVar10 == 0)) {
+         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,&FUN_0006a0c8), iVar10 == 0)) {
         FUN_0003c3c8(0x300d);
       }
       if (local_838 != 3) {

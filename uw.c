@@ -1184,7 +1184,7 @@ undefined1 DAT_000fb8f0_backing[1680];
 int DAT_00201c98;
 /* Ghidra's auto-analysis never recognized LAB_000255b4/LAB_000255d0 as
    real functions -- they're only reached indirectly (passed as callback
-   pointers to FUN_000417b4 at run_character_generator's call site below), so no
+   pointers to load_gr_resource_entries at run_character_generator's call site below), so no
    `bl` ever pointed at them for the analyzer to follow, and they were
    left as raw undecompiled ARM code, previously stubbed here as no-ops.
    That silently made DAT_000fb858/DAT_000fb880 stay permanently
@@ -1216,7 +1216,7 @@ int param_1;
    then table[idx+1] = table[idx] + param_2 each call -- a cumulative
    per-entry byte-offset table (matches every read site indexing it by
    a record's portrait/race selector). Returns 0 when param_2==0
-   (signals "empty entry"/no more data to the FUN_000417b4 driver),
+   (signals "empty entry"/no more data to the load_gr_resource_entries driver),
    else 1. */
 undefined4 LAB_000255d0(param_1,param_2,param_3)
 int param_1;
@@ -1238,12 +1238,12 @@ char s__DATA_chrgen_dat_00084ed0[] = "\\DATA\\chrgen.dat";
 char s__DATA_skills_dat_00084ee4[] = "\\DATA\\skills.dat";
 /* Was a zero-initialized array standing in for an unrecovered string
    constant (Ghidra had no content at this address, just a dangling
-   reference -- see FUN_000417b4's comment). Recovered by dumping the
+   reference -- see load_gr_resource_entries's comment). Recovered by dumping the
    real bytes at this address directly from the original UU.exe via
    Ghidra's headless analyzer: the string "chrbtns" (character-gen
    button/portrait graphics, matching its neighboring resource-name
    constants here). Leaving this as an all-zero buffer made
-   FUN_000417b4's `param_1[0] == '\0'` empty-name check always true, so
+   load_gr_resource_entries's `param_1[0] == '\0'` empty-name check always true, so
    it always took the "nothing to load" early-return path and never
    invoked its per-item callbacks (LAB_000255b4/LAB_000255d0) at all --
    the real root cause of DAT_000fb880 staying empty despite those
@@ -1470,7 +1470,7 @@ undefined4 DAT_001007c0;
 undefined1 DAT_0023bf0c;
 undefined2 DAT_002020c0;
 /* Recovered by disassembling the original UU.exe (same method as
-   LAB_000255b4/LAB_000255d0 -- see their comment): FUN_000417b4's
+   LAB_000255b4/LAB_000255d0 -- see their comment): load_gr_resource_entries's
    allocator callback for the "heads"/"converse"/"genhead"/"charhead"
    resource loads. Bumps DAT_00100670 (the cursor into the DAT_00100784
    buffer) by param_1 bytes and returns the pre-advance position. */
@@ -1482,11 +1482,11 @@ int param_1;
   return old;
 }
 
-/* Recovered the same way: FUN_000417b4's post-process callback for the
+/* Recovered the same way: load_gr_resource_entries's post-process callback for the
    same resource loads. Stores the allocated buffer pointer (skipping a
    5-byte per-item header) into DAT_00100728[idx], where idx is
    param_3's low 16 bits sign-extended (the item index, matching
-   FUN_000417b4's `(*param_5)(pvVar_buf,iVar4,iVar5)` call shape).
+   load_gr_resource_entries's `(*param_5)(pvVar_buf,iVar4,iVar5)` call shape).
    Returns 0 when param_2 (item byte size) == 0, else 1. */
 undefined4 LAB_000286a4(param_1,param_2,param_3)
 char *param_1;
@@ -2447,15 +2447,15 @@ unsigned int param_1;
 {
   /* Ghidra couldn't resolve this address into a proper function (an
      indirect-jump/jumptable target it gave up on). Traced from its use in
-     FUN_000417b4: called as (*param_4)(itemByteSize) and the result is
+     load_gr_resource_entries: called as (*param_4)(itemByteSize) and the result is
      used as the destination buffer for reading that item's data, then
      passed on to the post-process callback -- i.e. an allocator. A no-op
-     stub returning 0 here made FUN_000417b4 treat every real resource
+     stub returning 0 here made load_gr_resource_entries treat every real resource
      load as a failure (the batch-AND check in FUN_00041aac), even though
      the underlying file read succeeded. */
   return Ordinal_1041(param_1);
 }
-/* FUN_000417b4's post-process callback: (decoded_buffer, byte_size,
+/* load_gr_resource_entries's post-process callback: (decoded_buffer, byte_size,
    entry_index). Ghidra lost the real body (indirect-jump target); the old
    no-op stub read every .GR file but never REGISTERED the loaded buffers,
    so FUN_000408fc's DAT_0024e090[] pointer table stayed empty for every
@@ -2547,7 +2547,8 @@ char s_views_00085a3c[] = "views";
 char s_question_00085a44[] = "question";
 char s__DATA_allpals_dat_00085a50[] = "\\DATA\\allpals.dat";
 undefined2 DAT_00202748;
-void *LAB_000415b4(param_1)
+// was LAB_000415b4
+void *alloc_door_frame_buffer(param_1)
 unsigned int param_1;
 
 {
@@ -2555,9 +2556,9 @@ unsigned int param_1;
      indirect-jump/jumptable target it gave up on). Was stubbed as a
      bare `return 0;`, on the (wrong) assumption that it's "used purely
      as a callback pointer elsewhere" -- it's actually passed as
-     FUN_00041db0's (doors.GR) allocator callback, the exact same role
+     load_door_frames's (doors.GR) allocator callback, the exact same role
      as LAB_000415b0/LAB_000416e8/LAB_000416f8 (see LAB_000415b0's own
-     comment: a no-op allocator here makes FUN_000417b4 treat every real
+     comment: a no-op allocator here makes load_gr_resource_entries treat every real
      resource load as a failure even though the file read itself
      succeeds) -- confirmed live via UW_DEBUG_DOOR: every one of doors.GR's
      6 entries opened and read its header fine, then failed right at the
@@ -3885,7 +3886,7 @@ unsigned int param_1;
 
 {
   /* Same allocator-callback role as LAB_000415b0/LAB_000416e8/
-     LAB_000416f8 (FUN_000417b4's param_4, "Ghidra couldn't resolve this
+     LAB_000416f8 (load_gr_resource_entries's param_4, "Ghidra couldn't resolve this
      address" -- see their comments): a no-op stub returning 0 here
      failed the whole "opbtn" resource batch even though the underlying
      OPBTN.GR file loaded successfully, which was fatal
@@ -17234,7 +17235,7 @@ void FUN_000286cc()
   set_viewport_clip_rect(0,0,0x13f,199);
   DAT_00100670 = DAT_00100784;
   uVar6 = 2;
-  iVar3 = FUN_000417b4(s_converse_00084ff4,0,0xffffffff,&LAB_00028688,&LAB_000286a4);
+  iVar3 = load_gr_resource_entries(s_converse_00084ff4,0,0xffffffff,&LAB_00028688,&LAB_000286a4);
   if (iVar3 != 0) {
     set_draw_color(0xf1);
     rect_fill_or_save_restore(0x2a,1,0xc2,0x2f);
@@ -17264,7 +17265,7 @@ void FUN_000286cc()
     *g_draw_color_index = 0x65;
     *DAT_00084298 = 0x65;
     DAT_00100670 = DAT_00100784;
-    iVar3 = FUN_000417b4(s_heads_00084fec,
+    iVar3 = load_gr_resource_entries(s_heads_00084fec,
                          (*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * '\x05' +
                          (*(byte *)(DAT_00086df8 + 100) >> 2 & 7),1,&LAB_00028688,&LAB_000286a4);
     if (iVar3 != 0) {
@@ -17283,15 +17284,15 @@ void FUN_000286cc()
       DAT_00100670 = DAT_00100784;
       if (DAT_00100674[0x1a] == 0) {
         uVar6 = 2;
-        FUN_000417b4(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
+        load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
       }
       else {
         uVar6 = 2;
-        iVar3 = FUN_000417b4(s_charhead_00084fe0,DAT_00100674[0x1a] - 1,1,&LAB_00028688,
+        iVar3 = load_gr_resource_entries(s_charhead_00084fe0,DAT_00100674[0x1a] - 1,1,&LAB_00028688,
                              &LAB_000286a4);
         if (iVar3 == 0) {
           uVar6 = 2;
-          FUN_000417b4(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
+          load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
         }
       }
       DAT_00088960 = 1;
@@ -30691,7 +30692,8 @@ LAB_000412d8:
 
 
 
-undefined4 FUN_00041304(param_1,param_2)
+// was FUN_00041304
+undefined4 open_gr_resource_file(param_1,param_2)
 char * param_1;
 char param_2;
 
@@ -30746,11 +30748,11 @@ char param_2;
   }
   DAT_00202514 = FUN_000227d4(local_114);
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] FUN_00041304: path='%s' param_2=%d open_handle=%d\n", local_114, (int)param_2, (int)DAT_00202514);
+    fprintf(stderr, "[door] open_gr_resource_file: path='%s' param_2=%d open_handle=%d\n", local_114, (int)param_2, (int)DAT_00202514);
   if (DAT_00202514 != -1) {
     iVar3 = FUN_0002285c(DAT_00202514,local_11c,1);
     if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] FUN_00041304: header_read=%d header_byte=%d expected=%d\n", iVar3, (int)local_11c[0], (int)uVar1);
+      fprintf(stderr, "[door] open_gr_resource_file: header_read=%d header_byte=%d expected=%d\n", iVar3, (int)local_11c[0], (int)uVar1);
     if (((((iVar3 == 1) && (local_11c[0] == uVar1)) &&
          ((uVar1 != 2 || (iVar3 = FUN_0002285c(DAT_00202514,&DAT_00202518,1), iVar3 == 1)))) &&
         (iVar3 = FUN_0002285c(DAT_00202514,&DAT_00202728,2), iVar3 == 2)) &&
@@ -30835,7 +30837,7 @@ short param_3;
 {
   void *pvVar1;
 
-  /* param_1 (a real buffer pointer, from FUN_000417b4's allocator
+  /* param_1 (a real buffer pointer, from load_gr_resource_entries's allocator
      callback) was declared int here and silently truncated to 32 bits on
      dereference -- see uw_alloc_grtile()'s comment for why this uses that
      helper instead of FUN_00076a2c directly. DAT_0024e090 is an 8-byte-
@@ -30885,7 +30887,8 @@ short param_3;
 
 
 
-uint FUN_000417b4(param_1,param_2,param_3,param_4,param_5)
+// was FUN_000417b4
+uint load_gr_resource_entries(param_1,param_2,param_3,param_4,param_5)
 char *param_1;
 int param_2;
 short param_3;
@@ -30918,7 +30921,7 @@ codeval * param_5;
        resource-preload batch this participates in. */
     return uVar6;
   }
-  iVar1 = FUN_00041304(param_1,1);
+  iVar1 = open_gr_resource_file(param_1,1);
   if (iVar1 == 0) {
     uVar6 = 0;
   }
@@ -30974,7 +30977,7 @@ char *param_1;
 
 {
   undefined4 uVar1;
-  uVar1 = FUN_000417b4(param_1,0,0xffffffff,&LAB_000415b0,&LAB_000415d0);
+  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_000415d0);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
   return uVar1;
 }
@@ -30985,7 +30988,7 @@ undefined4 FUN_00041960(param_1)
 char *param_1;
 
 {
-  return FUN_000417b4(param_1,0,0xffffffff,&LAB_000415b0,&LAB_00041610);
+  return load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_00041610);
 }
 
 
@@ -30997,7 +31000,7 @@ undefined4 param_3;
 
 {
   DAT_000859a8 = param_2;
-  return FUN_000417b4(param_1,0,param_3,&LAB_000415b0,&LAB_00041670);
+  return load_gr_resource_entries(param_1,0,param_3,&LAB_000415b0,&LAB_00041670);
 }
 
 
@@ -31006,10 +31009,10 @@ undefined4 FUN_000419c8(param_1)
 char *param_1;
 
 {
-  /* Ghidra dropped FUN_000417b4's result and always returned failure
+  /* Ghidra dropped load_gr_resource_entries's result and always returned failure
      (see FUN_00040cd4 for the same pattern); propagate the real result. */
   undefined4 uVar1;
-  uVar1 = FUN_000417b4(param_1,0,0xffffffff,&LAB_000416e8,FUN_00041708);
+  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000416e8,FUN_00041708);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
   return uVar1;
 }
@@ -31020,7 +31023,7 @@ void FUN_00041a18(param_1,param_2,param_3)
 short param_1;
 /* Was `undefined4`, truncating the real resource-name string pointer
    callers pass (e.g. FUN_0004638c's s_bodies_00085c58) before it reaches
-   FUN_000417b4's own `char *param_1`, which then crashed dereferencing
+   load_gr_resource_entries's own `char *param_1`, which then crashed dereferencing
    it. Same pointer-truncation class as everywhere else this session. */
 char *param_2;
 undefined4 param_3;
@@ -31030,7 +31033,7 @@ undefined4 param_3;
 
   uVar1 = DAT_00202744;
   DAT_00202744 = DAT_00202738 + param_1 + -0x2000;
-  FUN_000417b4(param_2,param_3,1,&LAB_000416e8,FUN_00041770);
+  load_gr_resource_entries(param_2,param_3,1,&LAB_000416e8,FUN_00041770);
   DAT_00202744 = uVar1;
   return;
 }
@@ -31044,7 +31047,7 @@ undefined4 param_3;
 
 {
   DAT_00202510 = param_3;
-  FUN_000417b4(param_1,param_2,1,&LAB_000416f8,0);
+  load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,0);
   return 0;
 }
 
@@ -31152,7 +31155,8 @@ undefined4 FUN_00041aac()
 
 
 
-void FUN_00041db0()
+// was FUN_00041db0
+void load_door_frames()
 
 {
   undefined2 uVar1;
@@ -31173,9 +31177,9 @@ void FUN_00041db0()
        needed here: register at the running cursor DAT_00202744, which
        this loop already manages by hand the same way FUN_00041910's
        caller does. */
-    uint _ok = FUN_000417b4(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&LAB_000415b4,&LAB_000415d0);
+    uint _ok = load_gr_resource_entries(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&alloc_door_frame_buffer,&LAB_000415d0);
     if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] FUN_00041db0: loading doors[%d] slot=%d -> DAT_00202744=%d ok=%u\n",
+      fprintf(stderr, "[door] load_door_frames: loading doors[%d] slot=%d -> DAT_00202744=%d ok=%u\n",
               iVar3, (int)(&DAT_0023b840)[iVar3], (int)DAT_00202744, _ok);
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     DAT_00202744 = DAT_00202744 + 1;
@@ -46330,8 +46334,8 @@ void FUN_0005b36c()
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] FUN_0005b36c: about to call FUN_00041db0 (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
-  FUN_00041db0();
+    fprintf(stderr, "[door] FUN_0005b36c: about to call load_door_frames (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
+  load_door_frames();
   return;
 }
 
@@ -46363,7 +46367,7 @@ char *param_4;
     /* param_1 is built from "\DATA\" (s__DATA__00085970) with no filename
        ever appended -- Ghidra dropped whatever Ordinal_1063 call(s) would
        have added the actual texture-LUT filename (same unrecoverable-
-       string-reference class as the .GR extension fix in FUN_00041304,
+       string-reference class as the .GR extension fix in open_gr_resource_file,
        but here the reference vanished entirely rather than resolving to
        a wrong guess, and none of the candidate DATA files match the
        expected "byte 0 == 2" format header, so there's nothing to guess
@@ -56520,7 +56524,7 @@ byte FUN_0006e3ac()
     DAT_000870dc = DAT_000870d8;
     if ((DAT_000870d8 < '\x04') && (-1 < DAT_000870d8)) {
       DAT_0023c210 = 0;
-      bVar2 = FUN_000417b4(s_weapons_0008727c,
+      bVar2 = load_gr_resource_entries(s_weapons_0008727c,
                            ((int)DAT_000870d8 + (*(byte *)(DAT_00086df8 + 100) & 1) * -4 + 4) * 0x1c
                            ,0x1c,&LAB_0006e2f4,&LAB_0006e324);
       iVar8 = (int)DAT_000870d8;
@@ -62446,7 +62450,7 @@ void FUN_00077f30()
   }
   /* Originally `cVar1 * 3 + 0x878b0`: index into a small string table at a
      fixed original-binary address Ghidra never recovered contents for
-     (see FUN_00041304 for the same pattern) -- skipped rather than
+     (see open_gr_resource_file for the same pattern) -- skipped rather than
      guessed, this is cosmetic HUD text formatting. */
   iVar4 = measure_text_width(auStack_28);
   draw_text_string(auStack_28,0x138 - iVar4,0x16);

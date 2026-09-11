@@ -96,7 +96,7 @@ typedef void *codeptr();
 void *uw_alloc_grtile();
 
 /* Forward declaration needed because main_menu_loop (now in game.c) takes
-   this LAB_ callback's address to pass to FUN_000417b4; its own
+   this LAB_ callback's address to pass to load_gr_resource_entries; its own
    definition stays in uw.c (see LAB_000415b0/LAB_000416e8's matching
    comment for what this callback family does). */
 void *LAB_0006a0ac();
@@ -447,7 +447,7 @@ extern char *DAT_001005c8;
 extern char *g_chargen_textfield_buf;
 /* LAB_000255b4/LAB_000255d0: orphaned callbacks Ghidra never recognized
    as real functions (only reached indirectly, via addresses passed to
-   FUN_000417b4) -- their definitions stay in uw.c (see their own comment
+   load_gr_resource_entries) -- their definitions stay in uw.c (see their own comment
    there for the full recovery story), forward-declared here because
    run_character_generator (chargen.c) takes their addresses. */
 char *LAB_000255b4();
@@ -946,12 +946,12 @@ void FUN_000411cc();
 void FUN_000411e0();
 void FUN_00041210();
 undefined4 FUN_00041260();
-undefined4 FUN_00041304();
+undefined4 open_gr_resource_file();
 void FUN_000414c8();
 uint FUN_000414f4();
 bool FUN_00041708();
 undefined4 FUN_00041770();
-uint FUN_000417b4();
+uint load_gr_resource_entries();
 unsigned char *uw_get_default_palette(const char *gr_name);
 undefined4 FUN_00041910();
 undefined4 FUN_00041960();
@@ -960,7 +960,7 @@ undefined4 FUN_000419c8();
 void FUN_00041a18();
 undefined4 FUN_00041a78();
 undefined4 FUN_00041aac();
-void FUN_00041db0();
+void load_door_frames();
 void FUN_00041e40();
 void input_bindings_init();
 void input_bindings_free();
