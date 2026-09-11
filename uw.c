@@ -2285,7 +2285,7 @@ static undefined2 DAT_0023ae58_backing[8192];
 short DAT_000858c4;
 ushort *DAT_002020cc;
 int DAT_002020e0;
-char s_belonging_to_00085c90[] = "belonging_to";
+char s_belonging_to_00085c90[] = "belonging to ";
 short DAT_0023be88;
 short DAT_0023bd80;
 /* Was a lone `undefined *` -- the real thing is a small function-pointer
@@ -27367,6 +27367,10 @@ int param_2;
   int iVar3;
   
   uVar1 = (uint)(short)param_1;
+  if (getenv("UW_DEBUG_LOCO"))
+    fprintf(stderr, "[loco] param_1=0x%x param_2=%d DAT_00202084(old)=0x%x fallflag=%d vvel=%d\n",
+            (unsigned)param_1, param_2, (unsigned)DAT_00202084,
+            (int)g_fall_accel, (int)g_vertical_velocity);
   if ((DAT_00202084 != uVar1) || (param_2 != 0)) {
     iVar3 = 0;
     uVar2 = 0;
@@ -27394,9 +27398,25 @@ int param_2;
       }
     }
     else if ((DAT_0020208c & 8) == 0) {
-      iVar3 = FUN_0003c4dc();
+      /* Was `FUN_0003c4dc()` with no argument -- FUN_0003c4dc reads its
+         `param_1 & 2` to decide between the two swim/wade sub-states
+         (byte DAT_00086df8+0xb9 = 0x10 vs 0x60, the latter also firing
+         FUN_00040004 -- almost certainly the wading/swim splash sound or
+         pose). The dropped argument is the same collision-state mask
+         `param_1` this whole function was just called with (the only
+         value in scope that plausibly belongs here, matching the pattern
+         of every other dropped-argument bug fixed this session), so
+         "swim vs wade" was being decided from whatever garbage happened
+         to be sitting in a register rather than the real mask -- likely
+         why water/wading looked broken (undefined behavior, not
+         necessarily changed by any particular commit). Pass it
+         explicitly. */
+      iVar3 = FUN_0003c4dc(param_1);
       uVar2 = 1;
     }
+    if (getenv("UW_DEBUG_LOCO"))
+      fprintf(stderr, "[loco] -> uVar2(anim mode)=%d iVar3=%d DAT_0020208c=0x%x\n",
+              (int)uVar2, iVar3, (unsigned)DAT_0020208c);
     FUN_0003dca4(uVar2);
     if (iVar3 == 0) {
       *(undefined1 *)(DAT_00086df8 + 0xb9) = 0;
@@ -44914,6 +44934,10 @@ void reticle_object_pick()
     }
     else {
       _DAT_0008699b = (ushort)DAT_002049d9;
+      if (getenv("UW_DEBUG_WALL"))
+        fprintf(stderr, "[reticle-falling] DAT_002049d9=%d DAT_002049de=%d DAT_002049dc=%d foot_z=%d vvel=%d\n",
+                (int)DAT_002049d9, (int)(char)DAT_002049de, (int)DAT_002049dc,
+                (int)*(short *)((char *)g_sweep_foot_pos + 4), (int)*(short *)(DAT_00204874 + 10));
       iVar4 = (int)(char)DAT_002049de;
       if (0 < iVar4) {
         uVar5 = (uint)DAT_002049dc;
@@ -45029,6 +45053,11 @@ int param_2;
   short local_20;
   short local_1e;
   
+  if (getenv("UW_DEBUG_WALL"))
+    fprintf(stderr, "[sweepsetup-wall] off0c=%d off0e=%d off14=%d off12(speed)=%d x_before=%d y_before=%d\n",
+            (int)*(short *)(DAT_00204874 + 0xc), (int)*(short *)(DAT_00204874 + 0xe),
+            (int)*(short *)(DAT_00204874 + 0x14), (int)*(short *)(DAT_00204874 + 0x12),
+            (int)*(short *)(DAT_00204874 + 6), (int)*(short *)(DAT_00204874 + 8));
   angle_to_screen_delta((int)*(short *)(DAT_00204874 + 0x21),&local_20,&local_1e);
   iVar10 = (int)*(short *)(DAT_00204874 + 0x14) * (int)local_20 >> 0xf;
   *(char *)(DAT_00204874 + 6) = (char)iVar10;
@@ -45827,9 +45856,15 @@ undefined4 param_1;
     uVar3 = sweep_step_vertical(0,param_1);
   }
   if (bVar1) {
-    sweep_collision_flags();
+    /* Was `sweep_collision_flags();` with its return discarded, then
+       `FUN_0005a630()` called with no argument -- the same dropped-
+       argument pattern fixed in sweep_apply_collision just below (see
+       its comment): FUN_0005a630 wants sweep_collision_flags()'s own
+       result, not whatever happens to be left in a register. Capture and
+       forward it explicitly. */
+    ushort uVar4 = sweep_collision_flags();
     DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
-    uVar2 = FUN_0005a630();
+    uVar2 = FUN_0005a630(uVar4);
     *(undefined1 *)(DAT_00204874 + 0x28) = uVar2;
   }
   return uVar3;
@@ -46115,7 +46150,18 @@ void sweep_apply_collision()
             (unsigned)local_14[0], (unsigned)(local_14[0] & ~*DAT_002048bc),
             (unsigned)(unsigned char)*DAT_002048bc);
   DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
-  uVar1 = FUN_0005a630();
+  /* Was `FUN_0005a630()` with no argument, relying on local_14[0] still
+     sitting in the same register FUN_0005a630's declared `short param_1`
+     reads it from -- undefined behavior, latent since this line predates
+     any work this session. Adding the UW_DEBUG_JUMP fprintf/getenv calls
+     just above (real function calls, clobbering caller-saved registers)
+     broke whatever register-leftover coincidence made this "work" before,
+     which is almost certainly what silently broke water/swim-mode
+     detection (set_locomotion_state's `param_1 & 0x22` swim check reads
+     this exact byte) -- confirmed this was already a dropped-argument bug
+     matching this whole session's recurring class; pass local_14[0]
+     explicitly instead of relying on whatever's left in the register. */
+  uVar1 = FUN_0005a630(local_14[0]);
   *(undefined1 *)(DAT_00204874 + 0x28) = uVar1;
   if ((local_14[0] & 0xc000) == 0) {
     local_14[0] = local_14[0] & ~*DAT_002048bc;
