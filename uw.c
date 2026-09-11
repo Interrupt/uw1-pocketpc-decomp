@@ -45078,30 +45078,30 @@ int param_2;
     collision_height_envelope(0,0);
     psVar11 = DAT_00086978;
   }
-  // PHYSICS: gravity gate -- psVar11[2] is DAT_00086978[2], this tick's
-  // accumulated speed*g_fall_accel delta (NOT g_vertical_velocity, despite
-  // an earlier comment here claiming otherwise -- confirmed by tracing
-  // movement_sweep_setup's own [sweepsetup] print, which computes exactly
-  // this accumulator from speed(0x12)*fallflag(0x10)). Must be non-zero to
-  // run any vertical integration this sweep. It is only set for scripted
-  // vertical motion (jump / knockback / slope step); a plain walk off a
-  // ledge never sets it, so no gravity accumulates and the step resolver
-  // snaps the foot down in one tick.
+  // PHYSICS: gravity gate -- psVar11[2] is DAT_00086978[2], which (DAT_00086978
+  // == (short*)(DAT_00204874+6)) is *(short*)(DAT_00204874+0xa) -- the exact
+  // same memory as g_vertical_velocity itself, just reached through a
+  // different pointer/name. So this really is checking g_vertical_velocity
+  // directly, and the accumulation a few lines up in this same function
+  // (DAT_00086978[2] += speed*g_fall_accel) is the ordinary "velocity +=
+  // accel*dt" integration -- confirmed against the #define at uw.c:2025.
+  // Must be non-zero to run any vertical integration this sweep. It is only
+  // set for scripted vertical motion (jump / knockback / slope step); a
+  // plain walk off a ledge never sets it, so no gravity accumulates and the
+  // step resolver snaps the foot down in one tick.
   if (psVar11[2] == 0) {
     DAT_0008698a = 0;
     return 1;
   }
-  /* PHYSICS: seed the vertical velocity, sign from the requested direction.
-     Tried sourcing this from g_vertical_velocity's own sign instead (so the
-     fine integrator's direction would match the player's real, currently-
-     decaying velocity rather than the constant gravity-accel sign) --
-     UW_DEBUG_JUMP2 showed it made no measurable difference to the actual
-     foot-Z trace: this quantity ends up reverted almost every single tick
-     (a same-magnitude opposite-sign sweep_step_vertical(-1) call right
-     after, part of sweep_apply_collision's own soft-block backout) for a
-     reason unrelated to this sign -- see [[jump-vertical-integrator-open]].
-     Reverted to the original psVar11[2]-sign form to avoid an unproven
-     behavior change while that deeper issue stays open. */
+  /* PHYSICS: seed the vertical direction for the fine sub-integrator from
+     the current velocity's sign. (Tried this explicitly via
+     g_vertical_velocity instead of psVar11[2] under UW_DEBUG_JUMP2 -- no
+     measurable change, because they're the same memory, per the note
+     above; this is not an independent alternative, just documenting that
+     equivalence was checked.) This does NOT explain why the jump's fine
+     vertical integrator (DAT_0008698a/_DAT_000869a1, in sweep_step_vertical)
+     barely accumulates net foot-Z movement during a real jump -- that
+     remains open, see [[jump-physics-fix-and-open-integrator-issue]]. */
   DAT_0008698a = 0x800;
   if (psVar11[2] < 1) {
     DAT_0008698a = -0x800;
