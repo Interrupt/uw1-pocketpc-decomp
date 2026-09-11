@@ -44949,41 +44949,11 @@ void reticle_object_pick()
       }
     }
     else {
-      /* DAT_002049d9 (copied from DAT_002049d8, itself
-         collision_sample_floor_height's return) is 0x80 whenever the
-         sampled corner's tile type is 0 (solid rock) -- confirmed by
-         collision_sample_floor_height's own `case 0: uVar3 = 0x80;`, the
-         same "no real floor" sentinel collision_corner_flags itself
-         special-cases (`if (uVar3 == 0x80) uVar4 |= 0x200;`). Left as-is,
-         a wall-slide that samples a solid neighbour here defaults the
-         fall target straight to that sentinel, and with no slope/step
-         candidates to override it (DAT_002049dc==0), sweep_step_vertical's
-         falling check ("if next step drops below the target, land")
-         immediately "lands" the player AT height 0x80 -- confirmed live
-         via UW_DEBUG_WALL sliding into a wall corner: DAT_002049d9=128
-         with the player's own actual tile a perfectly normal, open type-1
-         floor, teleporting the player's Z far upward instead of just
-         continuing to fall. Guard it: a solid-tile sample means "no floor
-         detected here," not "the floor is at height 128" -- fall through
-         to it (0, the lowest possible height) instead, so this spurious
-         reading can never satisfy the landing check and the player just
-         keeps falling normally until a real floor is found (or the
-         separate horizontal collision resolution redirects them away
-         from the wall on a later tick). */
-      _DAT_0008699b = (DAT_002049d9 == 0x80) ? 0 : (ushort)DAT_002049d9;
-      if (getenv("UW_DEBUG_WALL")) {
-        int _tx = g_sweep_foot_pos[0] >> 3, _ty = g_sweep_foot_pos[1] >> 3;
-        unsigned char *_trec = (unsigned char *)tilemap_lookup((short)_tx, (short)_ty);
-        fprintf(stderr, "[reticle-falling] DAT_002049d9=%d DAT_002049de=%d DAT_002049dc=%d foot_z=%d vvel=%d "
-                "tile=(%d,%d) subxy=(%d,%d) tiletype=%d rad25=%d height26=%d step27=%d\n",
+      _DAT_0008699b = (ushort)DAT_002049d9;
+      if (getenv("UW_DEBUG_WALL"))
+        fprintf(stderr, "[reticle-falling] DAT_002049d9=%d DAT_002049de=%d DAT_002049dc=%d foot_z=%d vvel=%d\n",
                 (int)DAT_002049d9, (int)(char)DAT_002049de, (int)DAT_002049dc,
-                (int)*(short *)((char *)g_sweep_foot_pos + 4), (int)*(short *)(DAT_00204874 + 10),
-                _tx, _ty, (int)(g_sweep_foot_pos[0] & 7), (int)(g_sweep_foot_pos[1] & 7),
-                _trec ? (_trec[0] & 0xf) : -1,
-                (int)(unsigned char)*(byte *)(DAT_00204874 + 0x25),
-                (int)(unsigned char)*(byte *)(DAT_00204874 + 0x26),
-                (int)(unsigned char)*(byte *)(DAT_00204874 + 0x27));
-      }
+                (int)*(short *)((char *)g_sweep_foot_pos + 4), (int)*(short *)(DAT_00204874 + 10));
       iVar4 = (int)(char)DAT_002049de;
       if (0 < iVar4) {
         uVar5 = (uint)DAT_002049dc;
