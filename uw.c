@@ -49985,7 +49985,26 @@ ushort * param_1;
   {
     const ModelMapEntry *_me = lookup_object_model(uVar27 & 0x1ff);
     if (_me && !getenv("UW_DISABLE_MODEL_RENDER")) {
-      int _heading = (int)(param_1[1] >> 6 & 7);
+      /* Raw stored heading is in a fixed world-compass frame, but this
+         whole rendering pipeline (tile walk, wall/floor geometry, and the
+         object world anchor DAT_0023b904/91c/920 this function's own
+         vertices are placed relative to) operates in a frame pre-rotated
+         by DAT_0023b4a0 -- the camera's current 90-degree screen-rotation
+         quadrant (0-3, recomputed every frame from the camera's own yaw
+         in build_frame_draw_list). The door/sign billboard-angle-override
+         code a few hundred lines below already had to learn this the hard
+         way (see its own comment: "this same file rotates every OTHER
+         object's stored orientation-ish fields by it... but this heading
+         read never did" -- confirmed live to cause 90-degree-off/invisible
+         rendering from certain camera stances) -- apply the identical
+         `(raw - 2*quadrant) & 7` compensation here, or these models will
+         only ever look correctly oriented from whichever one camera
+         quadrant they happened to be calibrated in. */
+      int _raw_heading = (int)(param_1[1] >> 6 & 7);
+      int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
+      if (getenv("UW_DEBUG_MODEL"))
+        fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d compensated=%d\n",
+                (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _heading);
       emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0);
       if (_me->model2) {
         emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2);

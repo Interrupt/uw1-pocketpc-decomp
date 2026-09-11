@@ -536,3 +536,51 @@ but worth remembering before trying to derive absolute world position
 from it directly.
 
 New/changed debug hooks: UW_DEBUG_FLOORZ, UW_MODEL_YCLIP.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (3): MODEL HEADING WAS MISSING THE CAMERA-QUADRANT FIX
+═══════════════════════════════════════════════════════════════════════════
+User question: "doors can have different directions, is the object heading
+wired up for models?" Short answer at the time: heading WAS read and used
+to rotate the model (param_1[1]>>6&7, the same field critters/signs/doors
+all read elsewhere), but it was missing a correction this exact codebase
+already had to learn was necessary for this exact field, in the sibling
+door/sign billboard-angle-override code (class-2 branch, uw.c ~50536-50550
+and ~50647-50653): the raw stored heading is in a fixed world-compass
+frame, but the whole rendering pipeline (tile walk, wall/floor geometry,
+AND the object world anchor DAT_0023b904/91c/920 this session's model code
+places its vertices relative to) operates in a frame pre-rotated by
+DAT_0023b4a0 -- the camera's current 90-degree screen-rotation quadrant
+(0-3, recomputed every frame in build_frame_draw_list from the camera's
+own yaw). That existing code's own comment: "this same file rotates every
+OTHER object's stored orientation-ish fields by it... but this heading
+read never did" -- confirmed live at the time to cause 90-degree-off /
+invisible rendering depending on camera stance. This session's new model
+code reproduced the identical class of bug.
+
+FIX: `_heading = (_raw_heading - 2*(int)DAT_0023b4a0) & 7` at the model
+interception point in emit_tile_objects (uw.c, right before both
+emit_model_object calls), matching the sibling code's formula (without
+its extra "+1 compass step" -- that correction was specific to the
+billboard quad's own sin/cos lookup-table convention for extending a 2D
+quad, not obviously applicable to a real 3D rotation matrix; not applied
+here since nothing so far indicates a 45-degree-off symptom for the 3D
+models -- revisit if one shows up).
+
+VERIFIED via UW_DEBUG_MODEL's new heading log line
+([model-heading] id=... raw=... quadrant=... compensated=...): the SAME
+physical door (id 0x140 at tile 24,7) logged raw=5/quadrant=0 and
+raw=1/quadrant=2 in the same demo run (quadrant fluctuated briefly while
+the camera settled after SETPLAYERPOS) -- both resolve to the SAME
+compensated=5 after the fix, confirming the door's apparent orientation
+is now stable regardless of which camera quadrant it's viewed from,
+rather than silently flipping depending on incidental camera state (the
+bug this fix removes). Boulder regression-checked too (same shared code
+path applies to every model family, not just doors): its heading is
+usually raw=0 (default, unrotated per its .E authoring) but came out
+compensated=4 (180 degrees) at the boulder repro position, since the
+camera happened to be in quadrant 2 there -- screenshot confirms it still
+renders as a plausible, undistorted 3D rock, just a different facet
+silhouette than before (expected and harmless for an asymmetric loose
+rock; would matter more for a wall-aligned object like a door, which is
+exactly where this was found).
