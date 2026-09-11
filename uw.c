@@ -29891,9 +29891,24 @@ short param_5;
       DAT_002022f8 = (ushort)pbVar11[1];
       DAT_00202300 = (ushort)pbVar11[2];
       DAT_00202304 = (ushort)pbVar11[3];
+      /* DAT_00202508 is WIDTH, DAT_002022f8 is HEIGHT -- confirmed
+         against the class-0 item decoder's identical header read a few
+         lines below (`bVar1 = pcVar3[1]` = the real .GR "byte1=width"
+         per uw_debug_dump_gr_entry's own documented format, assigned to
+         this same DAT_00202508; `bVar2 = pcVar3[2]` = "byte2=height"
+         assigned to this same DAT_002022f8). Every w=/h= label and the
+         uw_debug_dump_critter_sprite call below had these backwards
+         until now -- harmless for the real on-screen renderer (which
+         only ever uses them as a product, or correctly by role a few
+         hundred lines down in emit_tile_objects's own quad-vertex math),
+         but it silently fed the debug dump tool a swapped width/height,
+         so every dumped BMP read each row at the wrong stride and came
+         out looking like scrambled noise (reported live, spotted by the
+         user as "the pixel pitch ... looks off" on the dumped images --
+         not a rendering bug, a diagnostics-only one). */
       if (getenv("UW_DEBUG_CRITTER"))
         fprintf(stderr, "[critter] decode_critter_sprite_page: w=%d h=%d comp_type(pbVar11[4])=%d\n",
-                (int)(short)DAT_002022f8, (int)(short)DAT_00202508, (int)pbVar11[4]);
+                (int)(short)DAT_00202508, (int)(short)DAT_002022f8, (int)pbVar11[4]);
       /* pbVar11 here has already been re-pointed via pbVar8[iVar5+iVar9]
          (a tier-byte-derived offset, no bounds check against pbVar8's
          real extent) -- for a tier-byte well outside the small range
@@ -29901,17 +29916,17 @@ short param_5;
          resolve_critter_sprite_tier's own tier-search table), that reads
          wild/unrelated bytes from elsewhere in the page and
          misinterprets them as a glyph header (observed: a real NPC's
-         direction 129 producing "w=16 h=241", an impossible sprite size,
-         with pbVar11[4] landing on an unsupported unpack_glyph_bitmap
-         format too). Every other creature sprite actually seen this
-         session is under 64px in both dimensions; skip decoding rather
-         than allocate/decode from a header that clearly isn't real
-         glyph data. This is a stopgap, not a fix for the underlying
-         tier-byte interpretation -- the real page-format semantics for
-         tier-bytes outside 0-7 are still unknown. */
+         direction 129 producing a 241x16 header, an impossible sprite
+         size, with pbVar11[4] landing on an unsupported
+         unpack_glyph_bitmap format too). Every other creature sprite
+         actually seen this session is under 64px in both dimensions;
+         skip decoding rather than allocate/decode from a header that
+         clearly isn't real glyph data. This is a stopgap, not a fix for
+         the underlying tier-byte interpretation -- the real page-format
+         semantics for tier-bytes outside 0-7 are still unknown. */
       if ((unsigned short)DAT_00202508 > 64 || (unsigned short)DAT_002022f8 > 64) {
         DEBUG(ERR, "[critter] decode_critter_sprite_page: implausible header w=%d h=%d for type=%d tier=%d dir=%d, skipping\n",
-              (int)(short)DAT_002022f8, (int)(short)DAT_00202508, param_1, param_2, (int)param_3);
+              (int)(short)DAT_00202508, (int)(short)DAT_002022f8, param_1, param_2, (int)param_3);
         return 0;
       }
       uVar7 = FUN_000129f8(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
@@ -29929,10 +29944,10 @@ short param_5;
       Ordinal_1044(*piVar12,uVar7,(int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
       uw_debug_dump_critter_sprite(param_1,param_2,(int)param_3,(int)param_5,
                                     (unsigned char *)*piVar12,
-                                    (int)(short)DAT_002022f8,(int)(short)DAT_00202508);
+                                    (int)(short)DAT_00202508,(int)(short)DAT_002022f8);
       if (getenv("UW_DEBUG_CRITTER")) {
         unsigned char *_gb = (unsigned char *)*piVar12;
-        int _w = (int)(short)DAT_002022f8, _h = (int)(short)DAT_00202508;
+        int _w = (int)(short)DAT_00202508, _h = (int)(short)DAT_002022f8;
         int _total = _w * _h;
         int _hist[256] = {0};
         for (int _i = 0; _i < _total; _i++) _hist[_gb[_i]]++;
@@ -49682,7 +49697,7 @@ LAB_00061d34:
       float _fx, _fy, _fz;
       unsigned int _bx = (unsigned int)uVar22, _by = (unsigned int)uVar19, _bz = (unsigned int)uVar25;
       memcpy(&_fx, &_bx, 4); memcpy(&_fy, &_by, 4); memcpy(&_fz, &_bz, 4);
-      fprintf(stderr, "[objpos-final] id=0x%03x uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f DAT_00202508(h)=%d DAT_002022f8(w)=%d\n",
+      fprintf(stderr, "[objpos-final] id=0x%03x uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f DAT_00202508(w)=%d DAT_002022f8(h)=%d\n",
               (unsigned)(*param_1 & 0x1ff), uVar27, _fx, _fy, _fz, (int)(short)DAT_00202508, (int)(short)DAT_002022f8);
     }
     return;
@@ -49717,8 +49732,33 @@ LAB_00061d34:
                 (int)((int)((int)_col_angle + (uint)(unsigned short)_quad_term) >> 0xb), _dm, (int)bVar13);
     }
     if ((ushort)uVar29 < 0x20) {
-      if (((ushort)uVar29 != 0xc) && (2 < (bVar13 - 3 & 7))) {
-        uVar29 = bVar13 + 0x20;
+      /* Was missing its `else` -- when the mirror test (see below) came
+         out false, uVar29 was left at its ORIGINAL value (the object's
+         own raw animation-state byte, e.g. 0 for "idle"), never updated
+         to the just-computed octant bVar13. Since that raw value gets
+         fed straight into resolve_critter_sprite_tier as "direction",
+         an object whose raw state happens to equal some OTHER state's
+         real direction/frame index (confirmed live: idle state 0 vs.
+         attack frames living at nearby indices in the same page) shows
+         a completely wrong, unrelated frame from certain viewing
+         angles -- looking like the animation itself changed based on
+         camera angle. This mirroring scheme is the classic "5 real
+         images cover 8 octants via horizontal flip" trick: the mirror
+         test true (`2 < (bVar13-3&7)`, i.e. bVar13 in {0,1,2,6,7} --
+         back/side views) reuses a flipped image via the +0x20 flag;
+         false (bVar13 in {3,4,5} -- front-ish views) should show the
+         real, un-mirrored image for that octant directly, which means
+         uVar29 must become bVar13 -- not stay unchanged. The uVar29==0xc
+         special case (left alone either way -- likely a "dead/corpse"
+         state that doesn't animate by direction) is preserved exactly
+         as before. */
+      if ((ushort)uVar29 != 0xc) {
+        if (2 < (bVar13 - 3 & 7)) {
+          uVar29 = bVar13 + 0x20;
+        }
+        else {
+          uVar29 = bVar13;
+        }
       }
     }
     else {

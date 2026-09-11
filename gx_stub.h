@@ -43,13 +43,24 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
    header, unlike a .GR entry). No-op (cheap check) when the env var is
    unset.
 
-   At native 1:1 pixel scale these sprites look heavily dithered/noisy
-   up close -- confirmed (by cropping a real in-game screenshot to the
-   same native scale) that this matches the actual on-screen art, not a
-   dump bug; it reads as a coherent shaded creature once composited into
-   a full scene. UW_DEBUG_DUMP_CRIT_ALL (any value) disables the
-   dedupe-by-(type,tier,direction,frame) so every decode gets written
-   instead of just the first one seen. */
+   UW_DEBUG_DUMP_CRIT_ALL (any value) disables the dedupe-by-
+   (type,tier,direction,frame) so every decode gets written instead of
+   just the first one seen.
+
+   width/height MUST be passed as (DAT_00202508, DAT_002022f8) in that
+   order -- DAT_00202508 is the real width, DAT_002022f8 the real height
+   (confirmed against the class-0 item decoder's identical header read:
+   `bVar1 = pcVar3[1]` = the .GR format's documented "byte1=width",
+   assigned to this same DAT_00202508). An earlier version of the caller
+   had these backwards, which doesn't affect the real on-screen renderer
+   (only ever used as a w*h product, or correctly by role in
+   emit_tile_objects's own quad math) but silently fed this dump tool a
+   swapped width/height, so every dumped BMP read each row at the wrong
+   stride and came out as scrambled noise -- initially mistaken for
+   real in-game dithering (a cropped real screenshot looked similarly
+   noisy at 1:1 scale, which seemed to confirm it) until the user
+   correctly flagged the dump tool's own pixel pitch as the real
+   suspect. Fixed; a correctly-oriented sprite comes out clean. */
 void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
                                    const unsigned char *pixels, int width, int height);
 
