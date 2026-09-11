@@ -27332,12 +27332,17 @@ char *param_1;
 
 
 
-bool FUN_0003c4dc(param_1)
+// was FUN_0003c4dc -- set the player's swim/wade sub-pose byte
+// (DAT_00086df8+0xb9) from the collision-state mask's "in liquid, how deep"
+// bit (0x2): shallow (0x10) vs deep/wading (0x60, also firing FUN_00040004,
+// almost certainly the splash sound or pose swap). Returns true for the
+// deep case. Only ever called from set_locomotion_state's swim branch.
+bool apply_swim_wade_pose(param_1)
 ushort param_1;
 
 {
   bool bVar1;
-  
+
   bVar1 = (param_1 & 2) == 0;
   if (bVar1) {
     *(undefined1 *)(DAT_00086df8 + 0xb9) = 0x10;
@@ -27398,7 +27403,7 @@ int param_2;
       }
     }
     else if ((DAT_0020208c & 8) == 0) {
-      /* Was `FUN_0003c4dc()` with no argument -- FUN_0003c4dc reads its
+      /* Was `apply_swim_wade_pose()` with no argument -- apply_swim_wade_pose reads its
          `param_1 & 2` to decide between the two swim/wade sub-states
          (byte DAT_00086df8+0xb9 = 0x10 vs 0x60, the latter also firing
          FUN_00040004 -- almost certainly the wading/swim splash sound or
@@ -27411,7 +27416,7 @@ int param_2;
          why water/wading looked broken (undefined behavior, not
          necessarily changed by any particular commit). Pass it
          explicitly. */
-      iVar3 = FUN_0003c4dc(param_1);
+      iVar3 = apply_swim_wade_pose(param_1);
       uVar2 = 1;
     }
     if (getenv("UW_DEBUG_LOCO"))
@@ -27859,7 +27864,7 @@ uint param_2;
   DAT_00202c6c[4] = (char)(iVar2 >> 3);
   DAT_00202c6c[5] = (char)((uint)(iVar2 >> 3) >> 8);
   collision_build_height_field(DAT_002048a7);
-  DAT_002048a8 = FUN_0005a630((int)(short)(*(ushort *)(DAT_00202c6c + 0xe) |
+  DAT_002048a8 = collision_flags_to_locomotion_code((int)(short)(*(ushort *)(DAT_00202c6c + 0xe) |
                                           *(ushort *)(DAT_00202c6c + 0xc)));
   set_locomotion_state(DAT_002048a8,0);
   DAT_0023be98 = 0;
@@ -45857,14 +45862,14 @@ undefined4 param_1;
   }
   if (bVar1) {
     /* Was `sweep_collision_flags();` with its return discarded, then
-       `FUN_0005a630()` called with no argument -- the same dropped-
+       `collision_flags_to_locomotion_code()` called with no argument -- the same dropped-
        argument pattern fixed in sweep_apply_collision just below (see
-       its comment): FUN_0005a630 wants sweep_collision_flags()'s own
+       its comment): collision_flags_to_locomotion_code wants sweep_collision_flags()'s own
        result, not whatever happens to be left in a register. Capture and
        forward it explicitly. */
     ushort uVar4 = sweep_collision_flags();
     DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
-    uVar2 = FUN_0005a630(uVar4);
+    uVar2 = collision_flags_to_locomotion_code(uVar4);
     *(undefined1 *)(DAT_00204874 + 0x28) = uVar2;
   }
   return uVar3;
@@ -45872,7 +45877,13 @@ undefined4 param_1;
 
 
 
-uint FUN_0005a630(param_1)
+// was FUN_0005a630 -- map a raw sweep_collision_flags() bitmask into the
+// small locomotion-state code (1/2/4/8/0x10/0x20) set_locomotion_state
+// reads from the movement block's +0x28 byte to pick walk/swim/fly/fall
+// animation and physics. Always called right after sweep_collision_flags()
+// with its return value (both call sites had this dropped by Ghidra --
+// fixed this session, see [[water-wading-and-wall-slide-findings]]).
+uint collision_flags_to_locomotion_code(param_1)
 short param_1;
 
 {
@@ -46150,8 +46161,8 @@ void sweep_apply_collision()
             (unsigned)local_14[0], (unsigned)(local_14[0] & ~*DAT_002048bc),
             (unsigned)(unsigned char)*DAT_002048bc);
   DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
-  /* Was `FUN_0005a630()` with no argument, relying on local_14[0] still
-     sitting in the same register FUN_0005a630's declared `short param_1`
+  /* Was `collision_flags_to_locomotion_code()` with no argument, relying on local_14[0] still
+     sitting in the same register collision_flags_to_locomotion_code's declared `short param_1`
      reads it from -- undefined behavior, latent since this line predates
      any work this session. Adding the UW_DEBUG_JUMP fprintf/getenv calls
      just above (real function calls, clobbering caller-saved registers)
@@ -46161,7 +46172,7 @@ void sweep_apply_collision()
      this exact byte) -- confirmed this was already a dropped-argument bug
      matching this whole session's recurring class; pass local_14[0]
      explicitly instead of relying on whatever's left in the register. */
-  uVar1 = FUN_0005a630(local_14[0]);
+  uVar1 = collision_flags_to_locomotion_code(local_14[0]);
   *(undefined1 *)(DAT_00204874 + 0x28) = uVar1;
   if ((local_14[0] & 0xc000) == 0) {
     local_14[0] = local_14[0] & ~*DAT_002048bc;
