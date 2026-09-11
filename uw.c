@@ -50002,6 +50002,29 @@ ushort * param_1;
          quadrant they happened to be calibrated in. */
       int _raw_heading = (int)(param_1[1] >> 6 & 7);
       int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
+      /* The sign/door billboard-angle-override code (uw.c ~50670-50680)
+         needed a further "+1 compass step" (45 degrees) on top of the
+         quadrant compensation above, confirmed live in that code's own
+         comment. Assumed at first that the same +1 would carry over here
+         -- it does NOT. A/B-tested all 8 possible offsets against the
+         door repro screenshot (tile 24,7): offset 0 and +1 both rendered
+         as a thin, mostly edge-on sliver (the frame's broad face turned
+         almost perpendicular to the camera); +2 was a visibly skewed
+         parallelogram; -1 was the only one that came out as a clean,
+         axis-aligned rectangle flush with the doorway, matching the
+         surrounding wall geometry; -2/-3 were skewed/thin again. So the
+         correction is real (the user was right to ask), but its SIGN is
+         opposite the billboard code's -- expected, since that code
+         rotates a 2D quad-extension direction via a sin/cos lookup table,
+         while this code applies a real rotation matrix directly to 3D
+         model-space vertices; the two conventions don't share a rotation
+         sense, so the billboard fix's constant doesn't transfer as-is.
+         UW_MODEL_HEADING_OFFSET (compass steps, default -1) overrides
+         this for further tuning if a different model family disagrees. */
+      { int _step = -1;
+        const char *_s = getenv("UW_MODEL_HEADING_OFFSET"); if (_s) _step = atoi(_s);
+        _heading = (_heading + _step) & 7;
+      }
       if (getenv("UW_DEBUG_MODEL"))
         fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d compensated=%d\n",
                 (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _heading);

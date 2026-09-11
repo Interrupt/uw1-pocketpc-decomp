@@ -584,3 +584,56 @@ renders as a plausible, undistorted 3D rock, just a different facet
 silhouette than before (expected and harmless for an asymmetric loose
 rock; would matter more for a wall-aligned object like a door, which is
 exactly where this was found).
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (4): MODELS ALSO NEEDED A 45-DEGREE STEP, BUT THE OPPOSITE SIGN FROM SIGNS/DOORS
+═══════════════════════════════════════════════════════════════════════════
+User question: "does the model heading need the same +1 compass-step fix
+signs/doors needed?" Good instinct -- yes, but the sign was wrong to
+assume it'd be the SAME correction.
+
+The sign/door billboard-angle-override code (uw.c ~50670-50680) applies
+`((quadrant_heading + 1) & 7) * 45` -- a "+1 compass step" on top of the
+quadrant compensation, confirmed live in that code's own comment ("45
+degrees off from flush -- one compass step correction"). Assumed at
+first this would carry over unchanged to the new 3D model code. Tested
+it properly instead of assuming: added a temporary UW_MODEL_HEADING_
+OFFSET env override and screenshotted the door repro (tile 24,7) across
+all 8 possible compass-step offsets (-3 through +2 tested explicitly,
+the rest by symmetry). Result: offset 0 and +1 (the sign/door value)
+BOTH rendered as a thin, nearly edge-on sliver -- the frame's broad face
+turned almost perpendicular to the camera, barely visible; +2 was a
+visibly skewed parallelogram; -2/-3 were skewed or thin again; -1 was
+the ONLY offset that produced a clean, axis-aligned rectangle flush with
+the doorway, matching the surrounding wall geometry exactly.
+
+So the correction is real (confirms the user's instinct), but its SIGN
+is the opposite of the billboard code's +1 -- makes sense once you
+think about WHY: the billboard code rotates a 2D quad-extension
+direction through a sin/cos LOOKUP TABLE (DAT_000d9ed8/DAT_000d9930),
+while this session's model code applies a real rotation MATRIX
+(cos/sin computed directly) to actual 3D model-space vertices. Those
+are two different rotation conventions/senses that happen to share the
+same underlying "quadrant compensation" need but not the same fixed
+offset on top of it -- porting the sign code's exact constant without
+re-testing would have been wrong. Baked in as the new default (`_step =
+-1` in the model heading block, uw.c, right after the quadrant
+compensation), with UW_MODEL_HEADING_OFFSET still available as an
+override for future tuning. Boulder and bridge regression-checked with
+the new default -- both still render as plausible, undistorted shapes
+(expected: boulder is asymmetric so any rotation looks like "a rock";
+bridge's own heading happened to not visibly change orientation at its
+repro spot).
+
+Tried to also confirm on a second, independently-placed door (tile 9,10,
+a different raw stored heading than the repro door) as a generalization
+check -- inconclusive, not a contradiction: the debug log showed multiple
+different raw heading values for "the same" id 0x140 within one static
+demo run, which is more likely 2+ separate door objects in view at that
+busier corridor position (not tracked apart in the quick test) than a
+real per-frame heading change, and no obvious door silhouette was visible
+in that screenshot at all (possibly occluded/edge-on from that specific
+stance). Given the first test's result was unambiguous across a clean,
+isolated single-object sweep, treated that as sufficient rather than
+chasing a messier second repro -- but this is the natural next thing to
+verify if a differently-oriented door ever looks wrong.
