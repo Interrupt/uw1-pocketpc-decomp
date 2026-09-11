@@ -46200,27 +46200,34 @@ void sweep_apply_collision()
        (iVar2 = (**(codeval **)(DAT_002048bc + 4))(local_14), iVar2 == 0)) {
       // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
       // slide the move along it (sweep_slide_along_wall) instead of stopping dead.
-      /* Gated on g_fall_accel==0: 0x100 (one of the 0x700 bits) isn't only
-         set by a real horizontal wall hit -- sweep_collision_flags also
-         ORs it in from the destination tile's own baseline property flags
-         (DAT_002049d6|DAT_002049d4) and from an unrelated "iVar4 <
-         DAT_002049d9" height check, neither of which means "hit an angled
-         face". Confirmed live via UW_DEBUG_JUMP/JUMP2: a comfortably
-         airborne, purely vertical jump (foot_z=98, floor_z=96, no
-         horizontal motion at all) got local_14[0]=0x1100 every tick from
-         that baseline alone, which sweep_slide_along_wall's `sweep_step
-         (-1)` then reverted -- undoing that entire tick's vertical
-         integration (the same-magnitude, opposite-sign [jump-vert] pairs)
-         and pinning the coarse foot Z near the jump's initial peak for
-         dozens of ticks while g_vertical_velocity ran away deeply
-         negative, before an eventual abrupt sweep_land_on_surface catch-
-         up. sweep_slide_along_wall exists to redirect a blocked
-         *horizontal* step; while a real gravity fall/jump (g_fall_accel
-         != 0) is in progress there is no horizontal step to redirect (see
-         movement_sweep_setup's own gravity gate), so skip it and let
-         sweep_step_vertical's own floor/ceiling check keep governing the
-         landing. */
-      bVar3 = (local_14[0] & 0x700) != 0 && *(short *)(DAT_00204874 + 0x10) == 0;
+      /* Narrowed from the full 0x700 mask to 0x600 (0x200|0x400): 0x100
+         (the bit this drops) isn't only set by a real horizontal wall hit
+         -- sweep_collision_flags also ORs it in from the destination
+         tile's own baseline property flags (DAT_002049d6|DAT_002049d4)
+         and from an unrelated "iVar4 < DAT_002049d9" height check,
+         neither of which means "hit an angled face". 0x200/0x400 come
+         from the genuine "ceiling clearance" check a few lines up in
+         sweep_collision_flags (target floor + player height doesn't fit
+         under the tile top) -- a real geometric obstruction, unlike the
+         coincidental 0x100 baseline bit.
+         Confirmed live via UW_DEBUG_JUMP/JUMP2: a comfortably airborne,
+         purely vertical jump (foot_z=98, floor_z=96, no horizontal motion
+         at all) got local_14[0]=0x1100 (ONLY the 0x100 bit, never 0x200/
+         0x400) every tick from that baseline alone, which sweep_slide_
+         along_wall's `sweep_step(-1)` then reverted -- undoing that
+         entire tick's vertical integration and pinning the coarse foot Z
+         near the jump's initial peak for dozens of ticks.
+         Two narrower gates were tried and reverted first: g_fall_accel==0
+         (also goes nonzero for perfectly ordinary walking once a step/
+         fall gets armed a few lines below, letting a player walk straight
+         through a wall with zero resistance once gravity got armed -- see
+         [[water-wading-and-wall-slide-findings]]) and DAT_00086990==0
+         (turned out to be 0 in both the jump AND the broken wall-walk
+         repro alike, so it didn't discriminate at all -- reintroduced the
+         jump regression without fixing the wall one). Checking which
+         SPECIFIC bits are set, rather than gating on unrelated player
+         state, cleanly distinguishes the two live-tested cases above. */
+      bVar3 = (local_14[0] & 0x600) != 0;
       if (bVar3) {
         sweep_slide_along_wall((local_14[0] & 0x400) == 0);
       }
