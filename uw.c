@@ -49517,7 +49517,7 @@ LAB_0005e7e0:
 // rendering) with a flat shade byte -- deliberately not textured, per the
 // project's "flat-shaded is a fine first cut" bar; a real UV/material
 // path (EXTENDED_COLORS in the .E format) is future work.
-static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local)
+static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, void *texptr)
 {
   int npts = *(int *)model;
   int nparts = *(int *)(model + 4);
@@ -49599,8 +49599,20 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
     *(int *)(&DAT_000acdec + rb) = base_vtx + v1;
     *(int *)(&DAT_000acdf0 + rb) = base_vtx + v2;
     *(int *)(&DAT_000acdf4 + rb) = base_vtx + v3;
-    *(int *)(&DAT_000ace00 + rb) = 0;
-    *(int *)(&DAT_000ace04 + rb) = 0;
+    /* Real wall-rendering code (uw.c ~49025-49032, right above
+       emit_tile_objects) writes the texture's tile size (DAT_0023b824 --
+       0x10=16 for the wall-sized arena slot, 0x40=64 for floor/ceiling)
+       into BOTH of these fields, not zero -- confirmed this is what was
+       missing for texturing: with these left at 0, a textured record
+       drew as a perfectly flat, uniform color (both the wall-textured
+       frame and, before that experiment was reverted, the sprite-
+       textured leaf) instead of showing any real per-pixel texture
+       variation, even though the texture pointer itself decoded real
+       image data (checked via a nonzero-pixel histogram). 16 matches the
+       wall-sized convention since these are all wall-scale surfaces. */
+    int _texsize = texptr ? 16 : 0;
+    *(int *)(&DAT_000ace00 + rb) = _texsize;
+    *(int *)(&DAT_000ace04 + rb) = _texsize;
     *(int *)(&DAT_000ace08 + rb) = 0;
     *(int *)(&DAT_000ace0c + rb) = 0;
     *(int *)(&DAT_000ace10 + rb) = 0;
@@ -49609,7 +49621,16 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
     *(int *)(&DAT_000ace1c + rb) = 0;
     *(int *)(&DAT_000ace20 + rb) = 0;
     *(int *)(&DAT_000ace24 + rb) = 0;
+    /* Same truncated-in-record-field problem every other texture
+       consumer in this file already worked around (the field is 4
+       bytes, a real pointer is 8 on this host): publish through the
+       g_tile_texptr_emit[] side channel render_visible_tile_list
+       actually reads from (via near_clip's out-index remap), keyed by
+       this record's own index, same convention as tile walls and the
+       object billboard sprite decoder. texptr==0 keeps the existing
+       flat-shaded fallback (raster_triangle already handles tex=0x0). */
     *(int *)(&DAT_000acdfc + rb) = 0;
+    if (texptr && (unsigned)rec < UW_MAX_VIS_TILES) g_tile_texptr_emit[rec] = texptr;
     short shade = (short)DAT_000da47c;
     *(short *)(&DAT_000ace30 + rb) = shade;
     *(short *)(&DAT_000ace32 + rb) = (short)(shade >> 15);
@@ -50042,9 +50063,80 @@ ushort * param_1;
       if (getenv("UW_DEBUG_MODEL"))
         fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d compensated=%d\n",
                 (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _heading);
-      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0);
+      /* Frame texture: the tile's own real wall texture. DAT_0023b4ec is
+         the raw tile record currently being walked (confirmed by the
+         wall-rendering code just above emit_tile_objects in this same
+         function, uw.c ~48986: "UW1 tile word2 (bytes 2-3) bits 0-5 =
+         wall texture index" -- `(byte)DAT_0023b4ec[2] & 0x3f`). That
+         same wall-rendering code adds 0x3a before calling
+         get_texture_page() for the WALL-sized (16x16 arena slot) case
+         specifically (as opposed to the unmodified value used for the
+         64x64 floor/ceiling case a few lines earlier) -- reuse that
+         exact wall-slot formula since a door frame is architecturally a
+         wall surface, not a floor/ceiling one. DAT_0023b4ec stays valid
+         here because object emission for a tile's objects happens while
+         that same tile is still the "current" one being walked (objects
+         are emitted right after that tile's own wall/floor geometry,
+         within the same per-tile pass) -- not verified against a second,
+         differently-textured tile yet, flagged in the findings writeup. */
+      /* Only door frames (the id family with a model2 leaf) get the wall
+         texture -- boulders/bridge/shrine aren't wall-mounted, so the
+         tile they happen to be standing on has no bearing on how they
+         should look; leave them at texptr=0 (flat-shaded, unchanged). */
+      void *_frame_tex = 0;
+      if (_me->model2) { byte _wall_tex_id = (DAT_0023b4ec[2] & 0x3f) + 0x3a;
+        _frame_tex = get_texture_page(_wall_tex_id);
+        if (getenv("UW_DEBUG_MODEL"))
+          fprintf(stderr, "[model-frame-tex] id=0x%03x wall_tex_id=%d tex=%p\n",
+                  (int)(uVar27 & 0x1ff), (int)_wall_tex_id, _frame_tex);
+      }
+      /* Leaf texture: reuse the door's own already-resolved OBJECTS.GR
+         sprite frame formula (DAT_00202734 + (type&7) + 0x30 -- the same
+         expression the class-2 door billboard branch below uses,
+         confirmed live via UW_DEBUG_DOOR to match emit_anim_object_
+         frames's own computation) and decode it through FUN_00040770,
+         the same real sprite decoder the billboard path uses. That
+         function publishes the decoded buffer through g_tile_texptr_
+         emit[DAT_0023b83c] itself (same side channel every texture
+         consumer in this file uses, keyed by record index) -- capture it
+         right after the call rather than relying on index timing, then
+         hand it to emit_model_object explicitly so it can stamp it onto
+         every record THIS model actually creates (a leaf is several
+         faces/records, not one). texptr==0 (untextured, current
+         behavior) if there's no leaf for this id (open doors). */
+      void *_leaf_tex = 0;
       if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
-        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2);
+        int _sprite_frame = DAT_00202734 + (uVar27 & 7) + 0x30;
+        FUN_00040770((short)_sprite_frame, 0);
+        if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) _leaf_tex = g_tile_texptr_emit[DAT_0023b83c];
+        if (getenv("UW_DEBUG_MODEL")) {
+          int _w = (int)(short)DAT_00202508, _h = (int)(short)DAT_002022f8;
+          int _nz = 0, _tot = _w*_h;
+          if (_leaf_tex) { unsigned char *_b = (unsigned char *)_leaf_tex; for (int _k=0;_k<_tot;_k++) if (_b[_k]) _nz++; }
+          fprintf(stderr, "[model-leaf-tex] id=0x%03x sprite_frame=%d tex=%p w=%d h=%d nonzero=%d/%d\n",
+                  (int)(uVar27 & 0x1ff), _sprite_frame, _leaf_tex, _w, _h, _nz, _tot);
+        }
+      }
+      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0, _frame_tex);
+      if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
+        /* _leaf_tex decodes fine (confirmed via UW_DEBUG_MODEL's
+           nonzero-pixel count -- real sprite content, not garbage) but
+           applying it makes the leaf disappear rather than show the
+           sprite: render_visible_tile_list generates each vertex's
+           texcoord from its PROJECTED SCREEN POSITION (near_clip_visible_
+           tiles, offsets +0x3008/+0x300c), not a real per-vertex UV --
+           the same mechanism object-rendering-findings.txt's "LAST GAP"
+           section already documented as broken for 2D sprite billboards
+           for the identical reason (works for a world-fixed wall texture
+           that tiles across the whole screen-space range; a small finite
+           sprite bitmap mostly samples out of its own bounds -> reads as
+           transparent). Solving this needs a real per-vertex UV system
+           this codebase doesn't have for ANY object yet, sprite or model
+           -- out of scope for this pass. Defaulting to untextured (0)
+           until that exists; UW_MODEL_LEAF_TEXTURE=1 applies it anyway,
+           for experimenting with the actual failure mode. */
+        void *_apply_tex = getenv("UW_MODEL_LEAF_TEXTURE") ? _leaf_tex : 0;
+        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2, _apply_tex);
       }
       return;
     }

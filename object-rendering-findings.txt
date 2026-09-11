@@ -700,3 +700,111 @@ number that looked okay"). Documented as an approximation, not a real
 per-tile lookup, since no such field was found -- a genuinely tall or
 multi-level room would still cap short at this height; worth revisiting
 if that's ever observed.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (6): TEXTURING MODELS -- REAL TEXTURE DATA, ZERO VISIBLE DETAIL
+═══════════════════════════════════════════════════════════════════════════
+Next-work ask: "use the object's sprite as the door model texture; use
+the tile's wall texture as the frame model's texture." Wired both up
+using the exact mechanisms already proven correct elsewhere in this file
+-- got real, valid texture data into the pipeline for both -- but NEITHER
+produces visible texture detail on screen. This section is a full record
+of what was tried and what was learned, because the actual blocker turned
+out to be much deeper than "wire up a texture pointer."
+
+WHAT WAS BUILT:
+- emit_model_object gained a `texptr` parameter. Each record it creates
+  now publishes through g_tile_texptr_emit[rec] (the same side-channel
+  array every other texture consumer in this file already uses to work
+  around the in-record field truncating a 64-bit pointer to 4 bytes) --
+  texptr==0 keeps the old flat-shaded fallback unchanged.
+- LEAF (door): reused the closed-door billboard branch's own already-
+  correct sprite frame formula, `DAT_00202734 + (raw_type_word & 7) +
+  0x30`, fed through FUN_00040770 (the same real sprite decoder the 2D
+  billboard path uses) to decode it, then captured the resulting buffer
+  from g_tile_texptr_emit[DAT_0023b83c] right after the call (rather than
+  relying on index timing) so it could be stamped onto every record the
+  leaf's several faces create, not just one.
+- FRAME (door): found the tile's OWN real wall-texture index by reading
+  DAT_0023b4ec[2] & 0x3f (DAT_0023b4ec is the raw tile record currently
+  being walked; this exact field is documented a few hundred lines above
+  emit_tile_objects, in the tile-wall-rendering code itself: "UW1 tile
+  word2 (bytes 2-3) bits 0-5 = wall texture index"), added 0x3a (the same
+  offset that same wall-rendering code adds before calling
+  get_texture_page() for the 16x16 wall-sized arena slot specifically, as
+  opposed to the unmodified value used for the 64x64 floor/ceiling case),
+  and called get_texture_page() with it -- the identical call the real
+  wall renderer makes for this exact tile.
+
+BOTH TEXTURE POINTERS ARE GENUINELY VALID. Added a debug pixel-histogram
+check (same technique the critter sprite decoder's own UW_DEBUG_CRITTER
+hook already used) -- the leaf's decoded sprite came back 1408/2048
+nonzero pixels, a real 32x64 door graphic, not garbage or an empty
+buffer. The frame's wall texture pointer resolved to a real, non-null
+get_texture_page() result too.
+
+RESULT: applying the leaf's sprite texture made the leaf DISAPPEAR
+entirely (worse than flat-shaded) -- consistent with object-rendering-
+findings.txt's own much older "LAST GAP" finding (top of this file, from
+the original 2D sprite-billboard work): render_visible_tile_list derives
+each vertex's texture-sample coordinate from its PROJECTED SCREEN
+POSITION (near_clip_visible_tiles, offsets +0x3008/+0x300c off a per-
+vertex projected-coordinate cache), not a real per-vertex UV. That
+happens to look fine for a large, continuously-tiling WALL texture
+(screen position lands somewhere valid no matter what), but a small
+finite sprite bitmap mostly samples outside its own bounds -> reads as
+transparent -> the whole leaf vanishes. This is the SAME root cause the
+2D billboard sprite path has always had, just newly confirmed to affect
+3D models too, since they ride the identical rendering pipeline. Reverted
+to opt-in only (UW_MODEL_LEAF_TEXTURE=1); default stays untextured
+(unchanged from before this session's texture work).
+
+Applying the frame's wall texture did NOT make it disappear (a wall
+texture is large enough that screen-position sampling always lands
+somewhere valid) -- but it also didn't show any real texture DETAIL: a
+zoomed crop of the rendered header and leaf both show perfectly flat,
+uniform color, no brick/stone graining at all, before and after the
+texture was applied. Chased one specific lead: real wall-rendering code
+(uw.c ~49025-49032, literally the block right before emit_tile_objects
+in this same function) writes the texture's tile size (DAT_0023b824 --
+16 for walls, 64 for floor/ceiling) into two record fields (rb+0x0,
+rb+0x4) that emit_model_object was unconditionally zeroing. Fixed that
+(now writes 16 for any textured record) -- no visible change. Went one
+step further and read the SAME wall-rendering code's actual raw-VERTEX
+writes (uw.c ~49048-49060) expecting to confirm the vertex's 2nd/3rd
+float fields are plain world Y/Z (what emit_model_object assumes and
+what already works correctly for position) -- they are NOT, for walls:
+those fields are computed as `Ordinal_2032((position + DAT_00086bb0/
+bb1[wall_segment_index]) * 0x100)`, blending the position with a texture-
+repeat lookup table indexed by which wall segment this is. Wall geometry
+has its OWN specialized vertex-encoding scheme with texture-tiling baked
+directly into the position fields via that table -- it is not a generic
+"any 3D triangle can be textured this way" mechanism, and does not appear
+to generalize to arbitrary-oriented model geometry (which needs its raw
+X/Y/Z to stay literal world coordinates for POSITION to keep working,
+which it does, confirmed by every model screenshot in this file).
+
+CONCLUSION: texturing arbitrary 3D model geometry in this renderer is a
+substantially deeper problem than "find the right texture pointer and
+publish it" -- every existing texture consumer in this codebase (tile
+walls, floor/ceiling, 2D object billboards) is tightly special-cased to
+its own geometry shape, and none of those special cases were built to
+generalize. Solving it for real would mean reverse-engineering how
+near_clip_visible_tiles' projected-coordinate cache (+0x3008/+0x300c)
+actually turns into a texture sample for the RASTERIZER'S span-drawing
+code (not yet traced this session), likely requiring either a genuinely
+new per-vertex UV field nothing currently writes, or replicating wall
+geometry's position/texture-blending trick for a rotated model (which
+doesn't obviously make sense for non-axis-aligned surfaces). This is
+project-sized work on the same order as the original "get 3D models
+rendering at all" investigation, not a small follow-up -- flagging
+clearly rather than continuing to guess-and-check further this session.
+
+CURRENT STATE: the frame's wall-texture wiring is left ACTIVE (harmless
+-- visually identical to the untextured flat-shade fallback it already
+had, and the plumbing -- g_tile_texptr_emit publishing, the texsize
+field fix -- is real, correct infrastructure worth keeping even though
+it doesn't yet produce a visible result). The leaf's sprite-texture
+wiring is left build-time-present but OPT-IN via UW_MODEL_LEAF_
+TEXTURE=1 (default off), because applying it actively regresses (leaf
+disappears) rather than merely failing to improve.
