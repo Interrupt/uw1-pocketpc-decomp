@@ -45078,16 +45078,30 @@ int param_2;
     collision_height_envelope(0,0);
     psVar11 = DAT_00086978;
   }
-  // PHYSICS: gravity gate -- psVar11[2] (== g_vertical_velocity, the vertical velocity
-  // input) must be non-zero to run any vertical integration this sweep. It is
-  // only set for scripted vertical motion (jump / knockback / slope step); a
-  // plain walk off a ledge never sets it, so no gravity accumulates and the
-  // step resolver snaps the foot down in one tick.
+  // PHYSICS: gravity gate -- psVar11[2] is DAT_00086978[2], this tick's
+  // accumulated speed*g_fall_accel delta (NOT g_vertical_velocity, despite
+  // an earlier comment here claiming otherwise -- confirmed by tracing
+  // movement_sweep_setup's own [sweepsetup] print, which computes exactly
+  // this accumulator from speed(0x12)*fallflag(0x10)). Must be non-zero to
+  // run any vertical integration this sweep. It is only set for scripted
+  // vertical motion (jump / knockback / slope step); a plain walk off a
+  // ledge never sets it, so no gravity accumulates and the step resolver
+  // snaps the foot down in one tick.
   if (psVar11[2] == 0) {
     DAT_0008698a = 0;
     return 1;
   }
-  // PHYSICS: seed the vertical velocity, sign from the requested direction
+  /* PHYSICS: seed the vertical velocity, sign from the requested direction.
+     Tried sourcing this from g_vertical_velocity's own sign instead (so the
+     fine integrator's direction would match the player's real, currently-
+     decaying velocity rather than the constant gravity-accel sign) --
+     UW_DEBUG_JUMP2 showed it made no measurable difference to the actual
+     foot-Z trace: this quantity ends up reverted almost every single tick
+     (a same-magnitude opposite-sign sweep_step_vertical(-1) call right
+     after, part of sweep_apply_collision's own soft-block backout) for a
+     reason unrelated to this sign -- see [[jump-vertical-integrator-open]].
+     Reverted to the original psVar11[2]-sign form to avoid an unproven
+     behavior change while that deeper issue stays open. */
   DAT_0008698a = 0x800;
   if (psVar11[2] < 1) {
     DAT_0008698a = -0x800;
@@ -45694,6 +45708,10 @@ short param_2;
     sVar4 = (short)((int)uVar5 >> 0xb);
   }
   DAT_00086984 = (ushort)(uVar3 * 0x10000 >> 0x10) & 0x7ff;
+  if (getenv("UW_DEBUG_JUMP2"))
+    fprintf(stderr, "[jump-vert] dat8698a=%d rate(869a1)=%d iVar6=%d uVar3=%u sVar4=%d frac(86984)=%u foot_z_before=%d\n",
+            (int)DAT_0008698a, (int)_DAT_000869a1, iVar6, uVar3, (int)sVar4,
+            (unsigned)DAT_00086984, (int)*(short *)((char *)DAT_0008697c + 4));
   if (iVar2 == -1) {
     // PHYSICS: revert path -- just back the foot Z out by the computed delta
     *(short *)((char *)DAT_0008697c + 4) = *(short *)((char *)DAT_0008697c + 4) + sVar4;
@@ -45900,7 +45918,30 @@ uint sweep_collision_flags()
       // (iVar4 - iVar6 < 0) always satisfies the guard, so auto-stick up a slope
       // is unchanged.
       uVar3 = iVar4 - iVar6 >> 0x1f;
-      if (((int)((iVar4 - iVar6 ^ uVar3) - uVar3) <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)) ||
+      if (getenv("UW_DEBUG_JUMP"))
+        fprintf(stderr, "[jump-collision] foot_z=%d floor_z=%d diff=%d step_limit=%d fallflag(0x10)=%d vvel(0xa)=%d\n",
+                iVar4, iVar6, iVar4 - iVar6, (int)(uint)*(byte *)(DAT_00204874 + 0x27),
+                (int)*(short *)(DAT_00204874 + 0x10), (int)*(short *)(DAT_00204874 + 0xa));
+      /* The "within step limit" clause below was unconditional -- unlike
+         the auto-stick clause right next to it, which correctly requires
+         g_vertical_velocity==0 (offset 0xa, "no vertical motion is
+         active" per the comment above) before snapping. A jump's whole
+         ascent (and the tail of its descent) passes through foot-Z
+         values within a few units of the floor's while g_fall_accel
+         (offset 0x10) is nonzero and g_vertical_velocity is large and
+         real -- confirmed live via UW_DEBUG_JUMP: foot_z=98 floor_z=96
+         diff=2 step_limit=8, comfortably "within limit", while
+         g_fall_accel=-4 and g_vertical_velocity=267, i.e. clearly
+         mid-jump, not standing on a small ledge. That silently snapped
+         the player straight back onto the floor a few ticks into every
+         jump, before it could climb high enough to look like it left
+         the ground. Add the same g_fall_accel==0 gate here: no real
+         gravity arc in progress (matches the comment's own claim that
+         ordinary small steps involve "no gravity" at all, so this
+         should never fire while a real jump/fall is live) means this is
+         genuinely just an ordinary walked step, safe to snap instantly. */
+      if ((*(short *)(DAT_00204874 + 0x10) == 0 &&
+           (int)((iVar4 - iVar6 ^ uVar3) - uVar3) <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)) ||
          (((((*(short *)(DAT_00204874 + 10) == 0 && ((DAT_002049d6 & 0x800) == 0)) &&
             ((DAT_002049d4 & 4) != 0)) &&
            (iVar4 - iVar6 <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)))))) {
