@@ -28021,6 +28021,10 @@ void commit_player_move()
 void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg)
 {
   set_player_tile_position((int)floor(x), (int)floor(y));
+  if (getenv("UW_DEBUG_FLOORZ")) {
+    fprintf(stderr, "[floorz] tile=(%d,%d) natural z (from set_player_tile_position) = %d, overriding to %g\n",
+            (int)floor(x), (int)floor(y), (int)DAT_00204884, z);
+  }
   /* Clear any in-flight smooth-turn interpolation (FUN_00069470's
      DAT_0023bea8-gated add-on to DAT_00086e6c+0x2c): if a turn animation
      was still mid-flight when this runs, FUN_00069470 would add its
@@ -49513,25 +49517,24 @@ LAB_0005e7e0:
 // rendering) with a flat shade byte -- deliberately not textured, per the
 // project's "flat-shaded is a fine first cut" bar; a real UV/material
 // path (EXTENDED_COLORS in the .E format) is future work.
-static void emit_model_object(unsigned char *model, int heading)
+static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local)
 {
   int npts = *(int *)model;
   int nparts = *(int *)(model + 4);
   if (npts <= 0 || npts > 600 || nparts <= 0) return;
 
-  double scale = 8.0;
-  { const char *_s = getenv("UW_MODEL_SCALE"); if (_s) scale = atof(_s); }
   /* The object's own world anchor height (DAT_0023b91c) appears to be a
      ceiling-relative or otherwise offset reference rather than the tile's
      floor height -- adding model-local Y (which is >=0, model-space "up"
      from each model's own local origin) directly on top of it left the
-     rock floating up near the ceiling. -200 empirically drops it back
-     onto the floor for this test position; this is a real calibration gap
-     (same class as the open "calibration still open" note on the tmap-
-     tile milestone) worth revisiting once more model objects are wired up
-     and can be cross-checked against each other. */
-  double yoff = -200.0;
+     rock floating up near the ceiling. A per-model yoff (g_model_map,
+     caller-supplied) empirically drops each model back onto the floor;
+     this is a real calibration gap (same class as the open "calibration
+     still open" note on the tmap-tile milestone), not a derivation from
+     the tile's real floor-height field -- see object-rendering-findings.txt. */
+  { const char *_s = getenv("UW_MODEL_SCALE"); if (_s) scale = atof(_s); }
   { const char *_s = getenv("UW_MODEL_YOFF"); if (_s) yoff = atof(_s); }
+  { const char *_s = getenv("UW_MODEL_YCLIP"); if (_s) y_clip = atof(_s); }
   double ang = heading * 45.0 * (3.14159265358979 / 180.0);
   double ca = cos(ang), sa = sin(ang);
 
@@ -49548,7 +49551,7 @@ static void emit_model_object(unsigned char *model, int heading)
   int base_vtx = DAT_0023b838;
   int i;
   for (i = 0; i < npts; i++) {
-    float mx = *(float *)(model + 8 + i*0xc);
+    float mx = *(float *)(model + 8 + i*0xc) + (float)xoff_local;
     float my = *(float *)(model + 8 + i*0xc + 4);
     float mz = *(float *)(model + 8 + i*0xc + 8);
     double rx = mx*ca - mz*sa;
@@ -49571,6 +49574,20 @@ static void emit_model_object(unsigned char *model, int heading)
     int v2 = *(int *)(model + pbase + 12);
     int v3 = (vcount == 4) ? *(int *)(model + pbase + 16) : v2;
     if (v0 < 0 || v0 >= npts || v1 < 0 || v1 >= npts || v2 < 0 || v2 >= npts || v3 < 0 || v3 >= npts) continue;
+    if (y_clip > 0) {
+      // Some .E models (DFRAME.E in particular) include deliberately
+      // over-tall geometry -- local Y running well past any real room's
+      // ceiling -- presumably so the original renderer could clip it
+      // against the room's actual ceiling height and never show a gap.
+      // We don't have that clip, so instead drop whole faces whose
+      // vertices exceed a per-model cutoff (set in g_model_map) rather
+      // than draw the oversized geometry unclipped.
+      float y0 = *(float *)(model + 8 + v0*0xc + 4);
+      float y1 = *(float *)(model + 8 + v1*0xc + 4);
+      float y2 = *(float *)(model + 8 + v2*0xc + 4);
+      float y3 = *(float *)(model + 8 + v3*0xc + 4);
+      if (y0 > y_clip || y1 > y_clip || y2 > y_clip || y3 > y_clip) continue;
+    }
 
     int rec = DAT_0023b83c;
     int rb = rec * 0x60;
@@ -49603,22 +49620,98 @@ static void emit_model_object(unsigned char *model, int heading)
   }
 }
 
-// Small object-id -> DATA3D model buffer lookup for the boulder family
-// (id "a_large boulder"=0x153/0x154, "a_boulder"=0x155, "a_small
-// boulder"=0x156 -- found via a brute-force scan of the page-4 object
-// name strings, comobj.dat's own per-type property record has no such
-// field -- see emit_model_object's doc comment). Extend this table (same
-// shape) to wire up other DATA3D-eligible objects (doors/chests/tables/
-// etc, see FUN_00038680's load order for their buffer addresses) later.
-static unsigned char *lookup_boulder_model(int id)
+// Object-id -> DATA3D model lookup. comobj.dat has no id->model field
+// anywhere (confirmed by the due-diligence Ghidra searches in this
+// session's Models milestone -- see memory.md/object-rendering-findings.txt),
+// so every row here is hand-found the same way: UW_DUMP_NAMES to resolve
+// page-4 object names, cross-checked against UW_DUMP_OBJECTS_FILE to see
+// real placed ids on a level. scale/yoff/y_clip are per-entry because each
+// model's own local-unit convention differs, confirmed by actually reading
+// each .E file's POINTS range rather than assuming one scale fits all:
+// ROCKSMAL/MED/BIG's local points span roughly -20..25 on every axis (an
+// organic model authored in some smaller, model-specific unit -- empirically
+// needs scale=8 to read as a plausible rock size), while FBRIDGE/SHRINE/
+// DFRAME's points already span close to real tile-sized ranges (e.g.
+// FBRIDGE's X/Z run -128..128, exactly one 256-unit tile) -- architectural
+// models appear to be authored directly in world units, scale=1. DFRAME.E
+// additionally contains two Y ranges: a real frame (local Y 0..208, a
+// plausible door height) and separate "riser" parts extending to local Y
+// 1024 (4x a room's height) -- presumably meant to be clipped against each
+// room's real ceiling by whatever the original renderer's ceiling-clip step
+// was; we don't have that, so y_clip drops whole faces above the cutoff
+// instead of drawing the oversized risers unclipped (see emit_model_object).
+// Tuned visually per family via screenshots at known repro tiles, same
+// process as the original boulder calibration -- not derived from the
+// tile's real floor-height field (open item, see object-rendering-
+// findings.txt). UW_MODEL_SCALE/UW_MODEL_YOFF/UW_MODEL_YCLIP override every
+// entry at once, for interactive re-tuning.
+typedef struct {
+  int id;
+  void *model;
+  const char *name;
+  double scale;
+  double yoff;
+  double y_clip; // 0 = no clip
+  void *model2;  // optional second model composited at the same anchor
+                 // (the door family's leaf, DOOR.E, alongside its frame)
+  const char *name2;
+  double x_off2; // model2's local-space X shift before rotation, to
+                  // center it in model 1's opening
+} ModelMapEntry;
+
+static const ModelMapEntry g_model_map[] = {
+  // Boulders ("a_large boulder"=0x153/0x154, "a_boulder"=0x155,
+  // "a_small boulder"=0x156) -- calibrated at the original repro tile.
+  { 0x153, &DAT_0012b524, "ROCKBIG",  8.0, -200.0, 0, 0, 0, 0 },
+  { 0x154, &DAT_0012b524, "ROCKBIG",  8.0, -200.0, 0, 0, 0, 0 },
+  { 0x155, &DAT_001278f8, "ROCKMED",  8.0, -200.0, 0, 0, 0, 0 },
+  { 0x156, &DAT_00123ccc, "ROCKSMAL", 8.0, -200.0, 0, 0, 0, 0 },
+  // "a_bridge" = 0x164 (single id, no size variants found in the name
+  // table or any placed level).
+  { 0x164, &DAT_00118848, "FBRIDGE",  1.0, -100.0, 0, 0, 0, 0 },
+  // "a_shrine" = 0x157. Emits real geometry (confirmed via UW_DEBUG_MODEL,
+  // ~76 of 77 faces) but not yet visually confirmed on screen -- every
+  // standing tile/heading tried around its one placed instance on the
+  // test level showed ordinary walls, not the shrine (see object-
+  // rendering-findings.txt). Left wired (same treatment as the
+  // architectural models above) since the failure looks positional/
+  // occlusion-related, not a scale or Y problem -- open item.
+  { 0x157, &DAT_0013a5d4, "SHRINE",   1.0, -100.0, 0, 0, 0, 0 },
+  // Door family: DFRAME.E (the frame) plus DOOR.E (the leaf, model2) --
+  // DOOR.E's own local X (0..128) is shifted by x_off2=-64 to sit
+  // centered in DFRAME's inner opening (which spans local X -64..64,
+  // exactly DOOR.E's own width). Closed ids ("a_door" 0x140-0x145,
+  // "a_secret door" 0x147) get both frame+leaf; open ids ("an_open door"
+  // 0x148-0x14d, open "a_secret door" 0x14f) get the frame only -- we
+  // don't have the real open-door swing angle/pivot, so the least-wrong
+  // approximation is an empty doorway rather than a leaf floating in the
+  // wrong place. 0x146/0x14e have no resolved name (likely unused slots)
+  // and are deliberately left out. "a_door trap" (0x188) is a trigger
+  // object, not physical architecture -- not included.
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
+};
+#define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
+
+static const ModelMapEntry *lookup_object_model(int id)
 {
-  switch (id) {
-    case 0x156: return (unsigned char *)&DAT_00123ccc; // ROCKSMAL
-    case 0x155: return (unsigned char *)&DAT_001278f8; // ROCKMED
-    case 0x153:
-    case 0x154: return (unsigned char *)&DAT_0012b524; // ROCKBIG
-    default: return 0;
+  int i;
+  for (i = 0; i < UW_MODEL_MAP_COUNT; i++) {
+    if (g_model_map[i].id == id) return &g_model_map[i];
   }
+  return 0;
 }
 
 // was FUN_00060aa0
@@ -49852,12 +49945,15 @@ ushort * param_1;
               // session's findings) -- not the quality-adjective group
               // table UW_LOOK_SLOT resolves via namegrp*6+offset.
               char *_name = (char *)FUN_0007863c(0x800 | _id);
-              const char *_model = lookup_boulder_model(_id) ? (
-                  _id == 0x156 ? "ROCKSMAL" :
-                  _id == 0x155 ? "ROCKMED"  : "ROCKBIG") : "";
+              const ModelMapEntry *_me = lookup_object_model(_id);
+              char _modelbuf[32] = "";
+              if (_me) {
+                if (_me->model2) snprintf(_modelbuf, sizeof(_modelbuf), "%s+%s", _me->name, _me->name2);
+                else snprintf(_modelbuf, sizeof(_modelbuf), "%s", _me->name);
+              }
               fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%s\t%d\t%d\t0x%04x\n",
                       _tx, _ty, _id, (_name && _name[0]) ? _name : "(unnamed)",
-                      _rc, _model, _heading, _quality, (unsigned)_w);
+                      _rc, _modelbuf, _heading, _quality, (unsigned)_w);
               _count++;
               ushort _nextw = *(ushort *)((char *)_rec + 6);
               _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
@@ -49887,9 +49983,13 @@ ushort * param_1;
   }
   uVar27 = (uint)*param_1;
   {
-    unsigned char *_model = lookup_boulder_model(uVar27 & 0x1ff);
-    if (_model && !getenv("UW_DISABLE_MODEL_RENDER")) {
-      emit_model_object(_model, (int)(param_1[1] >> 6 & 7));
+    const ModelMapEntry *_me = lookup_object_model(uVar27 & 0x1ff);
+    if (_me && !getenv("UW_DISABLE_MODEL_RENDER")) {
+      int _heading = (int)(param_1[1] >> 6 & 7);
+      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0);
+      if (_me->model2) {
+        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2);
+      }
       return;
     }
   }

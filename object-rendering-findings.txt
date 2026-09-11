@@ -444,3 +444,95 @@ OPEN / ROUGH FOR NEXT TIME:
   that the buffer format is documented in code, kept for future
   model-family work), UW_DEBUG_MODEL, UW_MODEL_SCALE, UW_MODEL_YOFF,
   UW_DISABLE_MODEL_RENDER.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (2): BRIDGES, SHRINE, DOOR FRAMES+LEAVES WIRED UP
+═══════════════════════════════════════════════════════════════════════════
+Extended the boulder mechanism (previous section) to 3 more families.
+lookup_boulder_model -> lookup_object_model, now table-driven
+(g_model_map[]: id, model buffer, name, per-entry scale/yoff/y_clip, plus
+an optional second model+local-X-offset for composites) instead of a bare
+switch, so the render dispatch and UW_DUMP_OBJECTS_FILE's "model" column
+share one source of truth. Ids found via UW_DUMP_OBJECTS_FILE (much
+faster than the old stderr scans): 0x164="a_bridge", 0x157="a_shrine",
+0x140-0x145/0x147="a_door"/"a_secret door" (closed), 0x148-0x14d/0x14f=
+"an_open door"/open secret door.
+
+KEY LESSON -- scale is NOT universal, read each .E file's real POINTS
+range before guessing: boulders needed scale=8 (local points span roughly
+-20..25 on every axis, a model-specific small unit); FBRIDGE/SHRINE/
+DFRAME/DOOR's points already span real tile-sized ranges (FBRIDGE's X/Z
+run exactly -128..128 = one 256-unit tile; DOOR.E's 128-unit width
+matches DFRAME's inner opening exactly) -- these are authored directly in
+world units, scale=1. Confirmed empirically: scale=8 on DFRAME (which has
+POINTS up to local Y=1024) made it ~32 tiles tall and rendered as
+nothing; scale=1 immediately gave a plausible door-sized shape.
+
+DFRAME.E ALSO has deliberately over-tall "riser" parts (2 of 11, local Y
+up to 1024 vs the real frame's Y 0-208) -- likely meant to be clipped
+against each room's real ceiling by the original renderer so the frame
+never shows a gap regardless of room height. No ceiling clip here, so
+emit_model_object gained a y_clip param (UW_MODEL_YCLIP to override):
+drops whole faces if any vertex's LOCAL Y exceeds the cutoff, rather than
+drawing the risers unclipped. 300 for DFRAME, 0 (disabled) elsewhere.
+
+COMPOSITE OBJECTS -- user feedback mid-session: a door is really two
+DATA3D models, not one. DFRAME.E (frame) + DOOR.E (leaf), the latter
+loaded twice by FUN_00038680 (indices 13/14, identical content --
+presumably two runtime instances of one leaf mesh). emit_model_object
+gained xoff_local (added to each vertex's local X before rotation):
+DOOR.E's own points span local X 0..128, DFRAME's inner opening spans
+-64..64 (also 128 wide) -- xoff_local=-64 centers the leaf in the frame's
+gap. ModelMapEntry gained optional model2/name2/x_off2; closed door ids
+get both frame+leaf, open ids get the frame only (no real swing-angle/
+pivot data for an opened leaf -- an empty doorway is less wrong than a
+leaf floating in the frame's own plane).
+
+RESULT: door screenshot at tile (24,7) shows real geometry filling the
+doorway (vs. plain dark passage with UW_DISABLE_MODEL_RENDER=1) -- though
+adding the DOOR.E leaf visibly changed the silhouette from one solid
+panel to a smaller shape near the bottom, most likely z-fighting between
+the frame's and leaf's coplanar/overlapping faces (no depth bias
+implemented). Bridge confirmed clearly -- a recognizable flat railing/
+deck structure, visible from an oblique downward angle (the head-on view
+faced an unlit chasm beyond the bridge and correctly rendered black, not
+a bug -- verified by checking 4 headings from the same spot, only the
+one facing away from the chasm showed a lit corridor).
+
+SHRINE (0x157): wired identically, confirmed EMITTING real geometry
+(UW_DEBUG_MODEL: 76/77 faces from a 101-point model, matching SHRINE.E's
+real size) but never visually confirmed on screen. Tried 8 headings from
+one adjacent tile, a second standing tile on the opposite side, and 5
+different UW_MODEL_YOFF values (-50..-400, each producing a different,
+non-identical screenshot but never showing the shrine) -- a pure Y
+miscalibration should have swept through some visible position across
+that range, so the likely explanation is the standing tile picked from
+the object census just doesn't have real line-of-sight to the shrine's
+tile (tile adjacency in the census doesn't guarantee an open wall
+between them). Needs a real walk-there-and-look repro next time instead
+of more SETPLAYERPOS-from-adjacency guessing.
+
+NEW DEBUG HOOK: UW_DEBUG_FLOORZ (demo_set_player_pos) prints a tile's
+real floor-derived Z before SETPLAYERPOS's explicit Z overrides it.
+Building repro positions by guessing Z (like the original boulder repro's
+z=64, which turned out to be specific to that one room) doesn't
+generalize -- this session's door/bridge/shrine repros all used the real
+per-tile value from this hook; the earlier attempts at a guessed z=64 for
+the door/bridge rendered solid black (camera underground/in a wall at the
+wrong height) until switching to the tile's real floor z fixed it
+immediately.
+
+ALSO OBSERVED, NOT EXPLAINED: the object world anchor (DAT_0023b904/91c/
+920) landed within roughly 4200-4500 on the X axis across every test
+this session (boulder, door, shrine, bridge), despite those objects' real
+tile X coordinates ranging from 9 to 46 -- reinforces the existing "not a
+plausible absolute pixel column" note from the boulder milestone, and
+suggests these are camera/scan-relative values recomputed fresh per
+object per frame rather than translatable to a tile number by any simple
+formula. Didn't block this session (relative placement between objects
+in the same frame was still correct -- three adjacent bridge segments'
+anchors differed by exactly 256, matching their real one-tile spacing)
+but worth remembering before trying to derive absolute world position
+from it directly.
+
+New/changed debug hooks: UW_DEBUG_FLOORZ, UW_MODEL_YCLIP.
