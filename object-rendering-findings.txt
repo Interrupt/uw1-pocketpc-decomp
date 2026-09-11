@@ -231,3 +231,216 @@ REMAINING:
 - Object vs wall depth (painter's order) not verified.
 - Render classes 1-3 (doors as geometry / switches / bridges) still only
   lightly exercised.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11: THE RENDER-CLASS DISPATCH MECHANISM, PRECISELY
+═══════════════════════════════════════════════════════════════════════════
+This has come up enough times above ("render classes 1-3", "class-0 objects
+render through the mesh list") that it's worth nailing down exactly what
+decides which code path an object takes. Short answer: it is a static
+per-object-*type* property table, NOT a function-pointer table -- a
+different mechanism from the frame/mode dispatch tables this project found
+hidden elsewhere (DAT_00085668, DAT_00085728, PTR_FUN_00087220 -- see
+memory.md's "HOW WE GOT THE DISPATCH TABLES POPULATED"). Don't conflate the
+two; this one really is just an if-chain reading a data field, confirmed
+fresh from Ghidra, not a lost jump table.
+
+THE TABLE: comobj.dat, loaded once at startup into DAT_00202c90 (uw.c
+~41163-41184). 512 fixed records, one per object *type* ID (0x000-0x1ff),
+indexed directly as `(&DAT_00202c9X)[type_id * 0xd]`. On disk each record
+is 11 bytes; in memory the stride is 13 (0xd) bytes, so offsets 4 and 0xc
+are real, permanent padding (confirmed: comobj.dat is exactly 512*11+2 =
+5634 bytes; the loader's own read calls only ever touch 11 of the 13
+bytes per iteration, uw.c ~41173-41181). This is a PER-TYPE table --
+separate from each individual placed object's own live record (tile
+position, heading, quality/flags), which is walked from each tile's object
+chain and holds per-*instance* state. Rendering always needs both: the type
+record says what KIND of thing this is and how to draw it; the instance
+record says where.
+
+THE DISPATCH FIELD: byte offset 0xa of the type record (DAT_00202c9a). Its
+low 2 bits are the "render class" read at the top of emit_tile_objects
+(was FUN_00060aa0), uw.c ~49659 (`bVar13 = (&DAT_00202c9a)[(id&0x1ff)*0xd]
+& 3`):
+  0 -- mesh/sprite billboard quad (LAB_emit_mesh_sprite_quad) -- the
+       default path; ordinary items, the spawn sack, and (as of this
+       session) the OLD boulder behavior before it got its own special
+       case.
+  1 -- critter: animated, direction-octant sprite via CRxxPAGE.Nxx +
+       ASSOC.ANM (resolve_critter_sprite_tier / decode_critter_sprite_page).
+  2 -- door / wall-sign -- both rerouted into the SAME class-0 quad path
+       (`goto LAB_emit_mesh_sprite_quad`), split apart *inside* that branch
+       by the object's own `id & 0x30` (door vs TMOBJ sign/plaque), not by
+       anything in comobj.dat.
+  3 -- light/quantity-flagged special billboards (torches, thrown-weapon /
+       muzzle-flash effects) via emit_object_billboard(0x14 or 0x16, ...).
+Bits 2-5 of this SAME byte are read elsewhere (uw.c:41305, `>>2 & 0xf`) for
+an apparently unrelated purpose (looks light-radius-shaped) -- the byte is
+multiplexed, "render class" is only ever its bottom two bits.
+
+ONE FUNCTION, NOT SEVERAL: before touching any of this for the Models work
+below, got a FRESH Ghidra decompile of the real emit_tile_objects
+(FUN_00060aa0) specifically to check whether the class dispatch was secretly
+a jump/function-pointer table Ghidra had collapsed into an if-chain (the
+exact bug class DAT_00085668 turned out to be). It is not -- the real
+binary's dispatch is a genuine, exhaustive 2-bit if/else, matching our
+recovered uw.c exactly, no drift from past sessions' editing. So in this
+codebase, "different object types get dispatched to different render
+functions" really means: ONE function, called once per object as each
+visible tile's chain is walked, branching internally on this 2-bit field,
+with FURTHER hardcoded object-ID special cases layered inside each branch
+on top of that (id 0x160-0x16f == TMOBJ signs; id & 0x30 == door vs sign;
+id 0x153-0x156 == boulder-model lookup, added this session, see below).
+There is no clean single table that fully answers "what renders this
+object" -- it's the comobj.dat class byte PLUS a growing pile of id-range
+checks hardcoded directly in emit_tile_objects.
+
+THE NEGATIVE FINDING THAT MATTERS MOST: this 2-bit field tops out at 4
+values, and there is no 5th "true 3D model" case anywhere in this Pocket PC
+build -- not a lost/masked bit, genuinely absent (see the Models
+investigation below, which checked this thoroughly rather than assuming
+it). Whatever mechanism the original PC version may have used to select
+real vertex-model objects, this WinCE port's object dispatch never had
+that case; everything funnels into one of the four billboard-shaped paths
+above. Reviving true 3D model rendering therefore could not be "find the
+dropped case" -- it required bolting on a brand new object-id special case
+that intercepts specific IDs before this dispatch even runs.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-11: MODELS -- FIRST REAL 3D-MODEL OBJECT ON SCREEN
+(boulder family; companion investigation to the class-dispatch writeup above)
+═══════════════════════════════════════════════════════════════════════════
+Repro used throughout: `SETPLAYERPOS 9.53 3.66 64 181 16` in a demo script
+(a real position captured live via sync_camera_from_player's always-on
+`[playerpos]` console print) -- a boulder is supposed to sit in front of
+the player here; the 3D viewport showed only an empty dead-end alcove.
+
+FINDING THE BOULDER: `UW_DUMP_NAMES=1` (new debug hook, brute-forces every
+(page,id) pair through FUN_0007863c and prints non-empty results) found
+page 4 is the real object-name table (comobj.dat's own "name" data is just
+damage-adjective prefixes like "ruined"/"broken" -- a dead end): 0x153/
+0x154 = "a_large boulder", 0x155 = "a_boulder", 0x156 = "a_small boulder".
+A companion `UW_DUMP_ALL_OBJECTS=1` hook (every object's tile/id/flags/full
+13-byte comobj.dat row) found id=0x154 sitting right at the repro tile with
+renderclass=2 -- routed through the door/sign quad reroute and projecting
+to scrx=4208, wildly outside the ~224px viewport. Invisible, not absent.
+
+DUE DILIGENCE BEFORE BUILDING ANYTHING NEW: data/DATA3D/*.E holds 29 real
+3D-model files (text format: BEGIN/POINTS/PARTS/.../END), already parsed at
+startup by FUN_00038680 (uw.c ~24980) calling FUN_00020a74 (uw.c ~13195)
+into 29 persistent buffers (DAT_00114c1c..DAT_0017e0ec) -- but nothing in
+this decompile ever read them afterward. Rather than assume "dead code,
+build a renderer from scratch," did the same due diligence this project's
+history says to do for suspiciously-dead data (see the DAT_00085668 writeup
+in memory.md): a real Ghidra reference search against UU.exe found ZERO
+consumers of any of the 29 buffer addresses anywhere in the binary except
+the loader (InspectModelBuffers.java, scratchpad); a raw-byte-pattern scan
+across every initialized memory block for those same 29 addresses (in case
+a compile-time pointer table held them without a Ghidra-recognized
+reference -- the exact DAT_00085668 bug class) found nothing
+(FindPointerTables.java); a full .text undefined-byte-gap scan found zero
+gaps larger than 16 bytes anywhere in the executable region, so there's no
+room for an undiscovered consumer function either (CheckUndefinedGaps.java);
+the fresh emit_tile_objects decompile above ruled out a collapsed dispatch
+case; and comobj.dat's loader (see the dispatch writeup above) confirmed
+its "extra" padding bytes are real padding, not a dropped model-index
+field. CONCLUSION, checked rather than assumed: this Pocket PC port shipped
+the model loader but never wired a renderer to it. Reviving it meant
+writing a real consumer, not unstubbing a hidden one.
+
+A REAL BUG FOUND ALONG THE WAY: while instrumenting the loaded buffers
+(UW_DUMP_MODEL_RAW=1) to reverse-engineer the output format, every parsed
+point's first float came out as a constant 3.0 while Y/Z matched the
+source .E text exactly. Root cause: FUN_00020a74's POINTS-parsing loop
+calls Ordinal_2032() (int->float) for X with the argument dropped, while
+the next two lines convert Y and Z correctly -- the same "dropped
+argument, ARM register-leftover idiom doesn't survive a literal recompile"
+bug class as everywhere else in this file, just never caught before
+because nothing consumed the output. Fixed (uw.c ~13427). This had been
+silently corrupting the X coordinate of every point in all 29 loaded
+models the whole time, independent of whether a renderer existed.
+
+FUN_00020a74's OUTPUT BUFFER LAYOUT (recovered empirically, by dumping and
+diffing against the real .E text, after the X-coordinate fix): offset 0 =
+point count (int); offset 4 = part count (int, with an occasional spurious
+trailing 1-vertex entry -- filtered by requiring 3 <= vcount <= 4); points
+at `8 + i*0xc` as 3 back-to-back little-endian floats (X, Y-up, Z-depth,
+matching the .E file's own axis order); parts at `0xc14 + p*0x60`: a vertex
+count (int) then that many vertex-index ints (into the points array)
+starting at `+4`.
+
+THE RENDERER: emit_model_object (new, uw.c, just above emit_tile_objects)
+pushes each model FACE as its own record into the shared
+DAT_000a85d0_backing arena (doc comment ~uw.c:116) that tile wall/floor
+geometry already uses, and lets the EXISTING
+translate_verts_to_camera_space / project_verts_through_view_matrix /
+near_clip_visible_tiles / render_visible_tile_list pipeline do real
+per-vertex 3D transform and N-gon-fan rasterization -- confirmed
+render_visible_tile_list was already generic over a record's point count,
+not hardcoded to 4 (quads), so this needed zero rasterizer changes. This
+reuses the real 3D transform pipeline rather than extending the
+class-0 quad path's screen-space billboard-extrusion trick (which only
+ever places one flat rectangle around an already-projected 2D anchor, and
+would not have given genuine per-vertex 3D projection at different
+distances/angles).
+
+Model points are rotated by the object's heading (0-7, 45-degree steps)
+and added to the object's already-computed world anchor (DAT_0023b904/
+91c/920 -- despite being printed as "scrx/scry/scrz" by an earlier debug
+hook, these are pre-translate WORLD-ish coordinates in the same
+256-units/tile scale as tile geometry, not final screen pixels) in the
+same (X, height, depth) field order process_visible_tile_cell uses for
+real tile vertices. UW_MODEL_SCALE (default 8.0) converts the model's
+small local .E units (a rock spans roughly -18..24) into that world scale.
+Faces render texture-less (texptr left 0, a flat constant shade) rather
+than solving real UV/material mapping in this pass -- see "LAST GAP" above
+(the still-open 2D-sprite UV problem) and Open below; both need the same
+fix eventually.
+
+Object-id -> model lookup (lookup_boulder_model, small switch, same shape
+as the existing door/sign id-based special-casing in emit_tile_objects's
+class-2 branch): 0x156 "a_small boulder" -> ROCKSMAL, 0x155 "a_boulder" ->
+ROCKMED, 0x153/0x154 "a_large boulder" -> ROCKBIG. No id->model field
+exists anywhere in comobj.dat or the binary (see due diligence above) --
+this is a hand-built table, not a recovered one, intercepted at the very
+top of emit_tile_objects (right after the object id is read) so boulders
+skip the normal render-class dispatch entirely. UW_DISABLE_MODEL_RENDER=1
+reverts to the old billboard-quad behavior for comparison.
+
+RESULT: screenshot at the exact repro position (defaults only, no env
+overrides) shows a real, recognizable, flat-shaded polygonal boulder
+resting in the room ahead of the player -- multiple facets at different
+angles and shading, not a flat billboard. Zero crashes across the repro
+run or the full .E-model-loading startup sequence. UW_DEBUG_MODEL=1 prints
+each model emission's heading, anchor, point/part counts, and how many
+faces passed the vertex-index sanity check (52/53 for the ROCKBIG boulder
+used in the repro, one part filtered for an out-of-range vertex count).
+Committed a89ae5a on branch `objects`.
+
+OPEN / ROUGH FOR NEXT TIME:
+- Height calibration is a hand-tuned constant (UW_MODEL_YOFF, default
+  -200), not derived from the tile's real floor-height field the way tile
+  geometry computes it (process_visible_tile_cell's `*(byte*)(...)*0x40`
+  lookup, uw.c ~48621-48624). Untested at a second boulder / different
+  floor height -- don't trust -200 as universal yet.
+- No texture/material. Every face is flat, untextured, one shade.
+  EXTENDED_COLORS in the .E format (a per-part RGB triple) is parsed by
+  FUN_00020a74 into scratch memory but never carried into the per-model
+  output buffer this session traced -- needs its own offset-recovery pass,
+  same technique as points/parts above. Solving this and the still-open
+  2D-sprite UV gap ("LAST GAP" section above) likely share a fix.
+- Only the boulder family is wired. lookup_boulder_model is a 4-entry
+  table; extending it to doors/chests/tables/beds/etc (all 29 loaded .E
+  files, load order in FUN_00038680, uw.c ~24980) is a small table
+  addition using the same mechanism -- but each family needs its own
+  UW_DUMP_NAMES + UW_DUMP_ALL_OBJECTS id-hunting pass (no id->model field
+  exists anywhere to just read off) and possibly its own height offset.
+- Arena headroom: emit_model_object guards the same ~512-vertex/~490-record
+  arena cap the tile/quad paths already do, sized to the specific model's
+  real point/part counts rather than a fixed budget -- untested with
+  multiple model objects visible in the same room at once.
+- Debug hooks added this session, env-gated, safe to leave in place:
+  UW_DUMP_ALL_OBJECTS, UW_DUMP_NAMES, UW_DUMP_MODEL_RAW (superseded now
+  that the buffer format is documented in code, kept for future
+  model-family work), UW_DEBUG_MODEL, UW_MODEL_SCALE, UW_MODEL_YOFF,
+  UW_DISABLE_MODEL_RENDER.
