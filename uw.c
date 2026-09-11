@@ -49810,6 +49810,65 @@ ushort * param_1;
       fprintf(stderr, "[objdumpall] scan complete\n");
     }
   }
+  // Level-load object census for debugging: every placed object's tile
+  // position, id, resolved name, render class, and (if applicable) which
+  // DATA3D model it now draws as. Gated the same way every other UW_DEBUG_*/
+  // UW_DUMP_* hook in this file is: off by default so a normal run doesn't
+  // pay for a 64x64-tile scan + file write on every level entry, and so
+  // this file's exact wording is opt-in rather than something a screenshot-
+  // diffing regression test would have to account for. Set to a file path
+  // to enable; fires once, on the first object walked after level load.
+  if (getenv("UW_DUMP_OBJECTS_FILE")) {
+    static int _dumped_census = 0;
+    if (!_dumped_census) {
+      _dumped_census = 1;
+      const char *_path = getenv("UW_DUMP_OBJECTS_FILE");
+      FILE *_f = fopen(_path, "w");
+      if (_f == NULL) {
+        fprintf(stderr, "[objcensus] failed to open '%s' for writing\n", _path);
+      } else {
+        fprintf(_f, "tile_x\ttile_y\tid\tname\trenderclass\tmodel\theading\tquality\tflags\n");
+        int _tx, _ty, _count = 0;
+        for (_ty = 0; _ty < 0x40; _ty++) {
+          for (_tx = 0; _tx < 0x40; _tx++) {
+            int _tidx = _tx + _ty * 0x40;
+            ushort _head = *(ushort *)((intptr_t)DAT_002029cc + _tidx * 4 + 2);
+            int _slot = (_head & 0xffc0) != 0 ? _head >> 6 : 0;
+            int _guard = 0;
+            while (_slot != 0 && _guard++ < 64) {
+              ushort *_rec = _slot < 0x100 ? (ushort *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
+                                            : (ushort *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
+              ushort _w = _rec[0];
+              int _id = _w & 0x1ff;
+              // Same field reads emit_tile_objects itself uses (not the
+              // objdumpall hook above, which indexed the wrong property
+              // byte for render class -- see its own "rc=" column, offset
+              // 0 instead of the real 0xa).
+              int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
+              int _heading = (_rec[1] >> 6) & 7;
+              int _quality = _rec[3] & 0x3f;
+              // Page 4 of comobj's string data is the base object-name
+              // table, indexed directly by id (see UW_DUMP_NAMES/this
+              // session's findings) -- not the quality-adjective group
+              // table UW_LOOK_SLOT resolves via namegrp*6+offset.
+              char *_name = (char *)FUN_0007863c(0x800 | _id);
+              const char *_model = lookup_boulder_model(_id) ? (
+                  _id == 0x156 ? "ROCKSMAL" :
+                  _id == 0x155 ? "ROCKMED"  : "ROCKBIG") : "";
+              fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%s\t%d\t%d\t0x%04x\n",
+                      _tx, _ty, _id, (_name && _name[0]) ? _name : "(unnamed)",
+                      _rc, _model, _heading, _quality, (unsigned)_w);
+              _count++;
+              ushort _nextw = *(ushort *)((char *)_rec + 6);
+              _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
+            }
+          }
+        }
+        fclose(_f);
+        fprintf(stderr, "[objcensus] wrote %d objects to '%s'\n", _count, _path);
+      }
+    }
+  }
   if (getenv("UW_DUMP_NAMES")) {
     static int _dumped3 = 0;
     if (!_dumped3) {
