@@ -637,3 +637,66 @@ stance). Given the first test's result was unambiguous across a clean,
 isolated single-object sweep, treated that as sufficient rather than
 chasing a messier second repro -- but this is the natural next thing to
 verify if a differently-oriented door ever looks wrong.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (5): DOOR FRAME WAS MISSING ITS CONNECTING HEADER -- CLAMP, DON'T DROP
+═══════════════════════════════════════════════════════════════════════════
+User: "the door frame locations look off. Test what they look like with
+just the door frame, without the door." Added UW_MODEL_NO_LEAF=1 (skips
+model2 only) to isolate DFRAME.E from DOOR.E and screenshotted it alone.
+Result made the bug obvious: two short, disconnected grey blocks sitting
+at floor level in the left/right of the opening, with plain background
+wall visible above AND between them -- not a real archway. Raising the
+whole thing 32 units (UW_MODEL_YOFF=-68) just floated both stumps up
+slightly with a new gap opening at the floor; they still never connected
+at the top, which ruled out a simple vertical-offset problem.
+
+ROOT CAUSE: the y_clip mechanism added in UPDATE (2) dropped a whole PART
+if ANY of its vertices exceeded the cutoff -- but DFRAME.E's two "riser"
+parts (indices 4-5) aren't purely over-tall junk: their BOTTOM edge sits
+at local Y=208 (exactly the top of the real frame posts) and their TOP
+edge at Y=1024 (the over-tall part). That bottom edge is the header panel
+that visually connects the two posts across the top of the doorway.
+Dropping the whole face because of its (correctly excluded) top edge also
+silently deleted the (wanted) connecting geometry -- explains the
+disconnected-stumps look exactly.
+
+FIX: clamp each vertex's local Y to the cutoff during the vertex-transform
+pass (before parts are built), instead of skip-testing whole faces in the
+parts loop. Safe per-vertex here because DFRAME.E's Y=1024 points aren't
+shared with any other, correctly-sized part. Result: emitted face count
+back to 11/12 (was 9/12 with the drop approach), and the frame now
+screenshots as a real connected archway -- a header spanning the top of
+the opening with the passage clearly open below it, not two floating
+stumps. Composite (with DOOR.E leaf restored) now reads as an actual
+door: header up top, leaf filling most of the opening beneath it.
+
+User follow-up: "those header pieces should stretch to the tile height --
+set the y_clip heights to the ceiling height" instead of the arbitrary
+300 guess from UPDATE (2). Looked for a real per-tile ceiling-height field
+to read instead of a constant: collision code's floor-height sampler
+(collision_sample_floor_height, uw.c ~39962) and the tile-height envelope
+function (collision_height_envelope, uw.c ~40537) both only ever compute
+FLOOR height from per-tile/per-corner data; the "ceiling clearance"
+concept that does exist (_DAT_0008699f, reticle_object_pick) is a
+movement/physics headroom check seeded from a large sentinel (0x7f) and
+narrowed only by specific nearby overhead objects, not a per-tile
+geometry field. Cross-checked against this project's own earlier tile-
+rendering investigation (memory.md, UPDATE 18): "UW1's ceiling is a fixed
+per-level texture, no per-tile ceiling bits" -- and the same investigation's
+collision work found floor-height bytes read per-tile as "open ~80-96,
+solid rock 128" in a raw sub-unit scale. No per-tile ceiling HEIGHT field
+exists anywhere in this decompile to read -- matches the texture finding
+that ceilings aren't a per-tile geometry concept in this game's format at
+all, presumably a uniform one-slab-per-level height instead.
+
+Given that, used the best-grounded proxy available rather than another
+arbitrary guess: one full tile height (256 world units -- the same scale
+confirmed via FBRIDGE.E's own X/Z point range running exactly -128..128)
+divided by the model's own scale factor. For DFRAME (scale=1.0) that's
+y_clip=256.0, replacing the old 300.0 guess (visually near-identical, but
+now traceable to the game's actual world-unit convention instead of "a
+number that looked okay"). Documented as an approximation, not a real
+per-tile lookup, since no such field was found -- a genuinely tall or
+multi-level room would still cap short at this height; worth revisiting
+if that's ever observed.

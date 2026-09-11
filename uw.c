@@ -49554,6 +49554,23 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
     float mx = *(float *)(model + 8 + i*0xc) + (float)xoff_local;
     float my = *(float *)(model + 8 + i*0xc + 4);
     float mz = *(float *)(model + 8 + i*0xc + 8);
+    /* Clamp, don't drop. DFRAME.E's two "riser" faces aren't just
+       oversized junk above the real frame -- their BOTTOM edge (local Y
+       208) is the header panel connecting the two doorposts across the
+       top, and only their TOP edge (Y 1024) is the over-tall part
+       presumably meant for a ceiling clip we don't have. An earlier
+       version of this cutoff dropped the whole FACE if any vertex
+       exceeded y_clip, which silently deleted that connecting header
+       too -- confirmed visually (UW_MODEL_NO_LEAF=1 screenshot) as two
+       disconnected, floor-level post stumps with open background wall
+       showing between and above them, not a real archway. Clamping each
+       vertex's local Y to the cutoff instead keeps the connecting
+       geometry, just capping its height at a plausible ceiling rather
+       than drawing it unclipped to 4x a room's real height. Safe to
+       clamp per-vertex (not per-face) here because the affected points
+       (DFRAME.E's Y=1024 set) aren't shared with any other, unclipped
+       part. */
+    if (y_clip > 0 && my > y_clip) my = (float)y_clip;
     double rx = mx*ca - mz*sa;
     double rz = mx*sa + mz*ca;
     float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + i)*0xc);
@@ -49574,20 +49591,6 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
     int v2 = *(int *)(model + pbase + 12);
     int v3 = (vcount == 4) ? *(int *)(model + pbase + 16) : v2;
     if (v0 < 0 || v0 >= npts || v1 < 0 || v1 >= npts || v2 < 0 || v2 >= npts || v3 < 0 || v3 >= npts) continue;
-    if (y_clip > 0) {
-      // Some .E models (DFRAME.E in particular) include deliberately
-      // over-tall geometry -- local Y running well past any real room's
-      // ceiling -- presumably so the original renderer could clip it
-      // against the room's actual ceiling height and never show a gap.
-      // We don't have that clip, so instead drop whole faces whose
-      // vertices exceed a per-model cutoff (set in g_model_map) rather
-      // than draw the oversized geometry unclipped.
-      float y0 = *(float *)(model + 8 + v0*0xc + 4);
-      float y1 = *(float *)(model + 8 + v1*0xc + 4);
-      float y2 = *(float *)(model + 8 + v2*0xc + 4);
-      float y3 = *(float *)(model + 8 + v3*0xc + 4);
-      if (y0 > y_clip || y1 > y_clip || y2 > y_clip || y3 > y_clip) continue;
-    }
 
     int rec = DAT_0023b83c;
     int rb = rec * 0x60;
@@ -49680,7 +49683,18 @@ static const ModelMapEntry g_model_map[] = {
   // Door family: DFRAME.E (the frame) plus DOOR.E (the leaf, model2) --
   // DOOR.E's own local X (0..128) is shifted by x_off2=-64 to sit
   // centered in DFRAME's inner opening (which spans local X -64..64,
-  // exactly DOOR.E's own width). Closed ids ("a_door" 0x140-0x145,
+  // exactly DOOR.E's own width). y_clip=256.0: DFRAME.E's "riser" faces
+  // (see emit_model_object's own comment) get clamped at local Y 256
+  // rather than an arbitrary guess -- this is one tile's world height
+  // (256 units/tile, confirmed via FBRIDGE.E's own X/Z point range
+  // running exactly -128..128) divided by this entry's scale (1.0). Not
+  // a real per-tile ceiling lookup (no such field was found -- see
+  // object-rendering-findings.txt's due-diligence notes and memory.md's
+  // own "UW1's ceiling is a fixed per-level texture, no per-tile ceiling
+  // bits" finding from the earlier tmap-tile work); this assumes the
+  // common one-slab-per-level case rather than reading each room's real
+  // height, so a tall/multi-level room could still look capped short.
+  // Closed ids ("a_door" 0x140-0x145,
   // "a_secret door" 0x147) get both frame+leaf; open ids ("an_open door"
   // 0x148-0x14d, open "a_secret door" 0x14f) get the frame only -- we
   // don't have the real open-door swing angle/pivot, so the least-wrong
@@ -49688,20 +49702,20 @@ static const ModelMapEntry g_model_map[] = {
   // wrong place. 0x146/0x14e have no resolved name (likely unused slots)
   // and are deliberately left out. "a_door trap" (0x188) is a trigger
   // object, not physical architecture -- not included.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 300.0, 0, 0, 0 },
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
 };
 #define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
 
@@ -50029,7 +50043,7 @@ ushort * param_1;
         fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d compensated=%d\n",
                 (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _heading);
       emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0);
-      if (_me->model2) {
+      if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
         emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2);
       }
       return;
