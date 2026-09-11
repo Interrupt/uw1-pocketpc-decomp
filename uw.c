@@ -28766,8 +28766,11 @@ ushort *pick_object_under_cursor()
   }
   else {
     puVar3 = (ushort *)FUN_000535fc(iVar2);
-    if (getenv("UW_PICK_DIAG") && puVar3)
-      fprintf(stderr, "[pick] resolved slot=%u -> objid=0x%03x\n", uVar4, (unsigned)(*puVar3 & 0x1ff));
+
+    if(puVar3) {
+      DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(*puVar3 & 0x1ff));
+    }
+
     DAT_002020a8 = DAT_002020b0 + 2;
     if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
        (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
@@ -29074,6 +29077,8 @@ void interact_look()
   int iVar2;
   undefined4 uVar3;
   uint local_18;
+
+  DEBUG(INFO, "Interact Look");
   
   iVar2 = target_in_range(0x48,DAT_002020cc,DAT_002020b0);
   if ((iVar2 == 0) || (uVar3 = 1, DAT_002020ec != 0)) {
@@ -29120,6 +29125,8 @@ void interact_converse()
 {
   int iVar1;
   
+  DEBUG(INFO, "Interact converse");
+  
   FUN_00057604(1);
   iVar1 = target_in_range((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
   if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,DAT_002020cc), iVar1 != 0)) {
@@ -29143,6 +29150,8 @@ void interact_attack()
   short sVar2;
   short sVar3;
   int iVar4;
+
+  DEBUG(INFO, "Interact attack");
   
   psVar1 = DAT_00085a6c;
   sVar2 = Ordinal_2005(DAT_0023be88 + 2,DAT_00085a6c[1] * 3);
@@ -35338,6 +35347,8 @@ short param_2;
      from format_object_display_name(iVar5,...) here. Separate real-pointer local so
      each use keeps its own type. */
   char *pcVar_str;
+
+  DEBUG(INFO, "Look mode object interact?");
   
   local_128[0] = '\0';
   sVar10 = 0x160;
@@ -67100,17 +67111,17 @@ char *param_1;
   #define local_23 (auStack_54_backing + 49)
 
   iVar2 = (int)(short)DAT_00201b60;
-  /* Debug: log every string handed to the message scroll. UW_DEBUG_SCROLL
-     to enable. param_1 is NULL at the call sites that only flush a pending
+  /* Debug: log every string handed to the message scroll.
+     param_1 is NULL at the call sites that only flush a pending
      inline graphic token (FUN_0007863c). DAT_00201b60 (1 or 4) is the
      "message scroll is the active text sink" gate -- anything else is
      dropped on the floor, so note that too. */
-  if (getenv("UW_DEBUG_SCROLL")) {
-    fprintf(stderr, "[scroll] add %s\"%s\" (mode=%d)\n",
+
+    DEBUG(INFO, "[scroll] add %s\"%s\" (mode=%d)\n",
             (iVar2 == 1 || iVar2 == 4) ? "" : "DROPPED ",
             (param_1 != (char *)0x0) ? param_1 : "(inline-graphic)",
             iVar2);
-  }
+
   if (iVar2 == 1 || iVar2 == 4) {
     FUN_0007f094(iVar2);
     iVar2 = extraout_r3;
