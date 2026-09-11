@@ -3233,23 +3233,34 @@ int DAT_0020485c;
 char DAT_002506aa;
 char DAT_002506ab;
 char *DAT_002048bc;
-/* The three 16-bit velocity components of the movement block
-   (&DAT_00204886/88/8a). Ghidra typed this `char *`, so movement_sweep_setup's
-   `DAT_00086978[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
-   shorts at offsets 2,4 -- and every copy (`psVar11 = DAT_00086978`) is
+// was DAT_00086978. The three 16-bit velocity components of the movement block
+/* (&DAT_00204886/88/8a). Ghidra typed this `char *`, so movement_sweep_setup's
+   `g_sweep_velocity[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
+   shorts at offsets 2,4 -- and every copy (`psVar11 = g_sweep_velocity`) is
    already `short *`, confirming the intent. The byte misread made `[2]`
    (meant: the Z/vertical velocity g_vertical_velocity, 0 for level movement) return
    the low byte of the forward velocity DAT_00204888, so plain forward
    movement took the "vertical movement" path (collision_build_height_field / collision_height_envelope)
    which corrupts DAT_00204880 -- one forward step overflowed the player X to
-   the map edge and wedged them there. */
-short *DAT_00086978;
+   the map edge and wedged them there.
+   g_sweep_velocity[2] is *(short*)(DAT_00204874+0xa) -- the exact same
+   memory as g_vertical_velocity (see its #define, uw.c:2025), just reached
+   through this pointer instead; movement_sweep_setup's own accumulation
+   `g_sweep_velocity[2] += speed*g_fall_accel` is the ordinary velocity +=
+   accel*dt integration step, not a separate quantity (confirmed while
+   investigating the jump-arc bug, see
+   [[jump-physics-fix-and-open-integrator-issue]]). */
+short *g_sweep_velocity;
 undefined1 DAT_002049c0;
 undefined1 DAT_002049bc;
 short DAT_00086990;
 short DAT_00086996;
-short DAT_0008697c_backing[128];
-short *DAT_0008697c = DAT_0008697c_backing;
+// was DAT_0008697c_backing/DAT_0008697c -- the swept working foot position
+// (coarse X/Y/Z, tile-eighths / eighth-fine units) collision math operates
+// on each sub-step before sweep_writeback_position commits it back to the
+// real player position.
+short g_sweep_foot_pos_backing[128];
+short *g_sweep_foot_pos = g_sweep_foot_pos_backing;
 short DAT_00086980;
 short DAT_00086982;
 short DAT_00086984;
@@ -44765,7 +44776,7 @@ uint FUN_00058738()
    this is always called with (&DAT_00204880, &DAT_002048b0) -- confirmed
    crashing (EXC_BAD_ACCESS, param_1 read back truncated to ~12MB) on a
    real run even after widening the callee-side globals, because the
-   truncation was happening right here at the call boundary. DAT_00086978/
+   truncation was happening right here at the call boundary. g_sweep_velocity/
    DAT_00204874 (assigned from these) are already real pointer-typed
    globals, confirming the intent. Same pointer-truncation pattern fixed
    repeatedly this session. */
@@ -44780,7 +44791,7 @@ char *param_2;
   char cVar3;
   
   cVar3 = '\0';
-  DAT_00086978 = (short *)(param_1 + 6);
+  g_sweep_velocity = (short *)(param_1 + 6);
   DAT_002049c0 = *(undefined1 *)(param_1 + 0x28);
   DAT_002049bc = 0;
   DAT_00204874 = param_1;
@@ -44826,9 +44837,9 @@ void sweep_init_position()
   DAT_002049d0 = DAT_00204874[0x25];
   DAT_002049d1 = DAT_00204874[0x26];
   DAT_002049d2 = *(undefined2 *)(DAT_00204874 + 0x23);
-  *DAT_0008697c = *(short *)DAT_00204874 >> 5;
-  DAT_0008697c[1] = *(short *)(DAT_00204874 + 2) >> 5;
-  DAT_0008697c[2] = *(short *)(DAT_00204874 + 4) >> 3;
+  *g_sweep_foot_pos = *(short *)DAT_00204874 >> 5;
+  g_sweep_foot_pos[1] = *(short *)(DAT_00204874 + 2) >> 5;
+  g_sweep_foot_pos[2] = *(short *)(DAT_00204874 + 4) >> 3;
   DAT_00086980 = (*DAT_00204874 & 0x1f) << 8;
   DAT_00086982 = (DAT_00204874[2] & 0x1f) << 8;
   DAT_00086984 = (DAT_00204874[4] & 7) << 8;
@@ -44858,7 +44869,7 @@ void reticle_object_pick()
   if (*(short *)(DAT_00204874 + 10) < 1) {
     if (*(short *)(DAT_00204874 + 10) == 0) {
       bVar1 = DAT_002049d9;
-      if ((int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)DAT_0008697c + 4)) <
+      if ((int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)g_sweep_foot_pos + 4)) <
           (int)(uint)DAT_002049d9) {
         bVar1 = DAT_002049d8;
       }
@@ -44941,7 +44952,7 @@ LAB_00058a64:
          (ushort)(byte)(&DAT_00202c39)[iVar4 * 6] - (ushort)*(byte *)(DAT_00204874 + 0x26);
   }
   DAT_00204878 = 0;
-  if ((int)((uint)*(byte *)(DAT_00204874 + 0x25) + (int)*(short *)((char *)DAT_0008697c + 4)) <
+  if ((int)((uint)*(byte *)(DAT_00204874 + 0x25) + (int)*(short *)((char *)g_sweep_foot_pos + 4)) <
       (int)(uint)DAT_002049d9) {
     _DAT_0008699b = (ushort)DAT_002049d9;
     DAT_00204878 = 1;
@@ -44999,25 +45010,25 @@ int param_2;
   iVar10 = (int)*(short *)(DAT_00204874 + 0x14) * (int)local_1e >> 0xf;
   *(char *)(DAT_00204874 + 8) = (char)iVar10;
   *(char *)(DAT_00204874 + 9) = (char)((uint)iVar10 >> 8);
-  *DAT_00086978 = *DAT_00086978 + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xc);
-  DAT_00086978[1] =
-       DAT_00086978[1] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xe);
-  psVar11 = DAT_00086978;
+  *g_sweep_velocity = *g_sweep_velocity + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xc);
+  g_sweep_velocity[1] =
+       g_sweep_velocity[1] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xe);
+  psVar11 = g_sweep_velocity;
   if (getenv("UW_DEBUG_STEPHEIGHT"))
     fprintf(stderr, "[sweepsetup] speed(0x12)=%d fallflag(0x10)=%d vvel_before=%d -> delta=%d\n",
             (int)*(short *)(DAT_00204874 + 0x12), (int)*(short *)(DAT_00204874 + 0x10),
-            (int)DAT_00086978[2],
+            (int)g_sweep_velocity[2],
             (int)(*(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10)));
-  DAT_00086978[2] =
-       DAT_00086978[2] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10);
-  if ((DAT_00086978[1] == 0 && DAT_00086978[2] == 0) && *DAT_00086978 == 0) {
+  g_sweep_velocity[2] =
+       g_sweep_velocity[2] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10);
+  if ((g_sweep_velocity[1] == 0 && g_sweep_velocity[2] == 0) && *g_sweep_velocity == 0) {
     return 0;
   }
   if (param_1 != 0) {
     sweep_init_position(psVar11);
   }
   iVar8 = DAT_00204874;
-  psVar11 = DAT_00086978;
+  psVar11 = g_sweep_velocity;
   uVar1 = (int)*(short *)(DAT_00204874 + 6) >> 0x1f;
   uVar2 = (int)*(short *)(DAT_00204874 + 8) >> 0x1f;
   bVar3 = (int)(((int)*(short *)(DAT_00204874 + 6) ^ uVar1) - uVar1) <=
@@ -45038,7 +45049,7 @@ int param_2;
   DAT_0008698e = (short)((iVar10 + 1) % 2);
   (&DAT_00086986)[iVar10 * 2] = 0;
   (&DAT_00086987)[iVar10 * 2] = uVar5;
-  if (DAT_00086978[(short)DAT_0008698c] == 0) {
+  if (g_sweep_velocity[(short)DAT_0008698c] == 0) {
     iVar10 = (int)DAT_0008698e;
     (&DAT_00086986)[iVar10 * 2] = 1;
     (&DAT_00086987)[iVar10 * 2] = 0;
@@ -45048,7 +45059,7 @@ int param_2;
     DAT_00086990 = 0;
     DAT_00086992 = 0;
     DAT_00086994 = *(short *)(iVar8 + 0x12);
-    psVar11 = DAT_00086978;
+    psVar11 = g_sweep_velocity;
   }
   else {
     iVar10 = (int)DAT_0008698e;
@@ -45056,18 +45067,18 @@ int param_2;
     if (iVar7 < 0) {
       iVar7 = iVar7 + 0xff;
     }
-    uVar5 = Ordinal_2005((int)DAT_00086978[(short)DAT_0008698c],
-                         (iVar7 >> 8) * (int)DAT_00086978[iVar10]);
+    uVar5 = Ordinal_2005((int)g_sweep_velocity[(short)DAT_0008698c],
+                         (iVar7 >> 8) * (int)g_sweep_velocity[iVar10]);
     iVar10 = iVar10 * 2;
     (&DAT_00086986)[iVar10] = 0;
     (&DAT_00086987)[iVar10] = uVar5;
-    psVar11 = DAT_00086978;
-    iVar10 = (int)*(short *)(iVar8 + 0x12) * (int)DAT_00086978[(short)DAT_0008698c] * 0x10000;
+    psVar11 = g_sweep_velocity;
+    iVar10 = (int)*(short *)(iVar8 + 0x12) * (int)g_sweep_velocity[(short)DAT_0008698c] * 0x10000;
     uVar1 = iVar10 >> 0x1f;
     iVar10 = (iVar10 >> 0x10 ^ uVar1) - uVar1;
     DAT_00086992 = (ushort)((uint)(iVar10 * 0x10000) >> 0x10) & 0x1fff;
     DAT_00086990 = (undefined2)(iVar10 >> 0xd);
-    uVar6 = Ordinal_2005((int)DAT_00086978[(short)DAT_0008698c],0x2000);
+    uVar6 = Ordinal_2005((int)g_sweep_velocity[(short)DAT_0008698c],0x2000);
     uVar4 = (ushort)((int)uVar6 >> 0x1f);
     DAT_00086994 = ((ushort)uVar6 ^ uVar4) - uVar4;
   }
@@ -45076,14 +45087,14 @@ int param_2;
   if (((DAT_002049d2 == 1) || (psVar11[2] != 0)) && (param_2 != 0)) {
     collision_build_height_field(*(undefined1 *)(iVar8 + 0x27));
     collision_height_envelope(0,0);
-    psVar11 = DAT_00086978;
+    psVar11 = g_sweep_velocity;
   }
-  // PHYSICS: gravity gate -- psVar11[2] is DAT_00086978[2], which (DAT_00086978
+  // PHYSICS: gravity gate -- psVar11[2] is g_sweep_velocity[2], which (g_sweep_velocity
   // == (short*)(DAT_00204874+6)) is *(short*)(DAT_00204874+0xa) -- the exact
   // same memory as g_vertical_velocity itself, just reached through a
   // different pointer/name. So this really is checking g_vertical_velocity
   // directly, and the accumulation a few lines up in this same function
-  // (DAT_00086978[2] += speed*g_fall_accel) is the ordinary "velocity +=
+  // (g_sweep_velocity[2] += speed*g_fall_accel) is the ordinary "velocity +=
   // accel*dt" integration -- confirmed against the #define at uw.c:2025.
   // Must be non-zero to run any vertical integration this sweep. It is only
   // set for scripted vertical motion (jump / knockback / slope step); a
@@ -45107,8 +45118,8 @@ int param_2;
     DAT_0008698a = -0x800;
   }
   reticle_object_pick(param_2);
-  psVar11 = DAT_00086978;
-  if (DAT_00086978[(short)DAT_0008698c] != 0) {
+  psVar11 = g_sweep_velocity;
+  if (g_sweep_velocity[(short)DAT_0008698c] != 0) {
     iVar10 = (int)*(short *)(&DAT_00086986 + (short)DAT_0008698c * 2);
     if (iVar10 < 0) {
       iVar10 = iVar10 + 0x1fff;
@@ -45117,8 +45128,8 @@ int param_2;
     if (iVar8 < 0) {
       iVar8 = iVar8 + 0x7ff;
     }
-    iVar10 = Ordinal_2005(((int)(iVar8) >> 0xb) * (int)DAT_00086978[(short)DAT_0008698c],
-                          (iVar10 >> 0xd) * (int)DAT_00086978[2] * 0x100);
+    iVar10 = Ordinal_2005(((int)(iVar8) >> 0xb) * (int)g_sweep_velocity[(short)DAT_0008698c],
+                          (iVar10 >> 0xd) * (int)g_sweep_velocity[2] * 0x100);
     if ((iVar10 < 0x8000) && (-0x8001 < iVar10)) {
       uVar9 = (undefined2)iVar10;
       goto LAB_000592f8;
@@ -45201,14 +45212,14 @@ void sweep_writeback_position()
      threw the player off the map. Restore proper halfword stores. */
   // PHYSICS: commit swept X (+0), Y (+2) and Z/foot height (+4) to the movement block
   *(short *)(DAT_00204874 + 0) =
-       (short)(*DAT_0008697c * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18));
+       (short)(*g_sweep_foot_pos * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18));
   *(short *)(DAT_00204874 + 2) =
-       (short)(DAT_0008697c[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18));
+       (short)(g_sweep_foot_pos[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18));
   *(short *)(DAT_00204874 + 4) =
-       (short)(DAT_0008697c[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18));
+       (short)(g_sweep_foot_pos[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18));
   if (((((DAT_002049d4 & 0x2000) != 0) &&
-       (uVar1 = (int)((int)DAT_0008697c[2] - (uint)DAT_002049d8) >> 0x1f,
-       (int)(((int)DAT_0008697c[2] - (uint)DAT_002049d8 ^ uVar1) - uVar1) <=
+       (uVar1 = (int)((int)g_sweep_foot_pos[2] - (uint)DAT_002049d8) >> 0x1f,
+       (int)(((int)g_sweep_foot_pos[2] - (uint)DAT_002049d8 ^ uVar1) - uVar1) <=
        (int)(uint)*(byte *)((char *)DAT_00204874 + 0x25))) && (DAT_002049d2 == 1)) &&
      (*(char *)(DAT_00204874 + 5) == 0)) {
     /* re-snap Z (bytes +4..+5) to the floor height. FUN_00050aa8 wants the
@@ -45226,7 +45237,7 @@ void sweep_writeback_position()
 
 
 // was FUN_000595d4 -- integrate one sub-tile step of the movement/collision sweep
-// PHYSICS: horizontal integrator -- advances the swept X/Y (DAT_0008697c[0/1])
+// PHYSICS: horizontal integrator -- advances the swept X/Y (g_sweep_foot_pos[0/1])
 // along the dominant/secondary axes and carries the sub-cell remainders
 int sweep_integrate_substep(param_1,param_2)
 short param_1;
@@ -45247,21 +45258,21 @@ short param_2;
     (&DAT_00086980)[iVar1] = sVar3 + (&DAT_00086980)[iVar1];
     iVar1 = (int)DAT_0008698c;
     if (*(short *)(&DAT_00086986 + iVar1 * 2) * iVar2 < 1) {
-      sVar3 = DAT_0008697c[iVar1] + -1;
+      sVar3 = g_sweep_foot_pos[iVar1] + -1;
     }
     else {
-      sVar3 = DAT_0008697c[iVar1] + 1;
+      sVar3 = g_sweep_foot_pos[iVar1] + 1;
     }
-    DAT_0008697c[iVar1] = sVar3;
+    g_sweep_foot_pos[iVar1] = sVar3;
     iVar2 = (int)DAT_0008698e;
     if (((&DAT_00086980)[iVar2] & 0xe000) != 0) {
       if ((short)(&DAT_00086980)[iVar2] < 1) {
-        sVar3 = DAT_0008697c[iVar2] + -1;
+        sVar3 = g_sweep_foot_pos[iVar2] + -1;
       }
       else {
-        sVar3 = DAT_0008697c[iVar2] + 1;
+        sVar3 = g_sweep_foot_pos[iVar2] + 1;
       }
-      DAT_0008697c[iVar2] = sVar3;
+      g_sweep_foot_pos[iVar2] = sVar3;
       iVar2 = (int)DAT_0008698e;
       sVar3 = (&DAT_00086980)[iVar2];
       *(char *)(&DAT_00086980 + iVar2) = (char)((int)sVar3 & 0x1fffU);
@@ -45285,23 +45296,23 @@ short param_2;
     if ((DAT_00086980 & 0xe000) != 0) {
       param_1 = 1;
       if ((short)DAT_00086980 < 1) {
-        sVar3 = *DAT_0008697c + -1;
+        sVar3 = *g_sweep_foot_pos + -1;
       }
       else {
-        sVar3 = *DAT_0008697c + 1;
+        sVar3 = *g_sweep_foot_pos + 1;
       }
-      *DAT_0008697c = sVar3;
+      *g_sweep_foot_pos = sVar3;
       DAT_00086980 = DAT_00086980 & 0x1fff;
     }
     if ((DAT_00086982 & 0xe000) != 0) {
       param_1 = 1;
       if ((short)DAT_00086982 < 1) {
-        sVar3 = DAT_0008697c[1] + -1;
+        sVar3 = g_sweep_foot_pos[1] + -1;
       }
       else {
-        sVar3 = DAT_0008697c[1] + 1;
+        sVar3 = g_sweep_foot_pos[1] + 1;
       }
-      DAT_0008697c[1] = sVar3;
+      g_sweep_foot_pos[1] = sVar3;
       DAT_00086982 = DAT_00086982 & 0x1fff;
     }
     iVar2 = (int)param_1;
@@ -45507,7 +45518,7 @@ void sweep_land_on_surface()
     sVar4 = 0;
   }
   else {
-    uVar11 = (int)*(short *)((char *)DAT_0008697c + 4) - (int)_DAT_0008699b;
+    uVar11 = (int)*(short *)((char *)g_sweep_foot_pos + 4) - (int)_DAT_0008699b;
     uVar8 = (int)uVar11 >> 0x1f;
     if (iVar12 < 0) {
       iVar12 = iVar12 + 3;
@@ -45521,7 +45532,7 @@ void sweep_land_on_surface()
   *(char *)((char *)DAT_00204874 + 0x13) = (char)((ushort)sVar4 >> 8);
   // PHYSICS: floor/ceiling collision -- snap the foot exactly onto the surface
   // and zero the vertical sub-unit accumulator so gravity restarts from rest
-  *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
+  *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
   psVar9 = DAT_00204874;
   DAT_00086984 = 0;
   /* PHYSICS: fall ended -- clear the accumulated downward velocity (+0xa) and the
@@ -45539,7 +45550,7 @@ void sweep_land_on_surface()
     }
   }
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
-      ((int)*(short *)((char *)DAT_0008697c + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
+      ((int)*(short *)((char *)g_sweep_foot_pos + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
      (DAT_00204874[5] < 0)) {
     sweep_kill_velocity();
     *(undefined1 *)(DAT_00204874 + 0x14) = 2;
@@ -45606,7 +45617,7 @@ void sweep_land_on_surface()
   *(undefined1 *)(DAT_00204874 + 8) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0x11) = 0;
   if (DAT_00086998 == -1) {
-    if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)DAT_0008697c + 4)) {
+    if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)g_sweep_foot_pos + 4)) {
       puVar7 = (ushort *)FUN_000535fc((int)*(short *)((char *)DAT_00204874 + 0x23));
       if ((*puVar7 & 0x1c0) != 0x40) goto LAB_0005a238;
       if ((DAT_002049d6 & 0x10) == 0) {
@@ -45645,7 +45656,7 @@ LAB_0005a33c:
 
 // was FUN_0005a348
 // PHYSICS: vertical integrator -- applies gravity/climb to the swept foot Z
-// (DAT_0008697c[2]) and resolves floor + ceiling contact. Only reached from
+// (g_sweep_foot_pos[2]) and resolves floor + ceiling contact. Only reached from
 // sweep_step when the "vertical motion active" flag *(DAT_00204874+10) is set.
 // _DAT_000869a1 = per-tick vertical rate (gravity accel / climb speed),
 // DAT_0008698a = signed vertical velocity, DAT_00086984 = sub-unit remainder,
@@ -45711,10 +45722,10 @@ short param_2;
   if (getenv("UW_DEBUG_JUMP2"))
     fprintf(stderr, "[jump-vert] dat8698a=%d rate(869a1)=%d iVar6=%d uVar3=%u sVar4=%d frac(86984)=%u foot_z_before=%d\n",
             (int)DAT_0008698a, (int)_DAT_000869a1, iVar6, uVar3, (int)sVar4,
-            (unsigned)DAT_00086984, (int)*(short *)((char *)DAT_0008697c + 4));
+            (unsigned)DAT_00086984, (int)*(short *)((char *)g_sweep_foot_pos + 4));
   if (iVar2 == -1) {
     // PHYSICS: revert path -- just back the foot Z out by the computed delta
-    *(short *)((char *)DAT_0008697c + 4) = *(short *)((char *)DAT_0008697c + 4) + sVar4;
+    *(short *)((char *)g_sweep_foot_pos + 4) = *(short *)((char *)g_sweep_foot_pos + 4) + sVar4;
   }
   else {
     iVar2 = (int)sVar4;
@@ -45723,14 +45734,14 @@ short param_2;
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
       // PHYSICS: floor collision -- falling; if this step would drop the foot
       // below the target floor height, stop and snap to it (sweep_land_on_surface)
-      iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
+      iVar2 = iVar2 + *(short *)((char *)g_sweep_foot_pos + 4);
       if (iVar2 < _DAT_0008699b) goto LAB_0005a4f8;
     }
     else {
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
       // PHYSICS: ceiling collision -- rising; if this step would push the foot
       // above the target height, stop and snap to it
-      iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
+      iVar2 = iVar2 + *(short *)((char *)g_sweep_foot_pos + 4);
       if (_DAT_0008699b < iVar2) {
 LAB_0005a4f8:
         sweep_land_on_surface();
@@ -45738,7 +45749,7 @@ LAB_0005a4f8:
       }
     }
     // PHYSICS: no surface hit this step -- commit the new foot Z
-    *(short *)((char *)DAT_0008697c + 4) = (short)iVar2;
+    *(short *)((char *)g_sweep_foot_pos + 4) = (short)iVar2;
   }
 LAB_0005a4ac:
   // PHYSICS: after the vertical step, run the horizontal sub-tile integrator for the same direction
@@ -45860,11 +45871,11 @@ uint sweep_collision_flags()
      heading/height fields into this block but never the position, and Ghidra
      dropped whatever kept it current -- so DAT_002049c8/ca sat at (0,0) and
      every collision test hit tile (0,0), letting the player walk straight
-     through solid walls and off the map.  DAT_0008697c is the live position
+     through solid walls and off the map.  g_sweep_foot_pos is the live position
      in the same 1/8-tile units these readers expect (>>3 -> tile). */
-  DAT_002049c8 = DAT_0008697c[0];
-  DAT_002049ca = DAT_0008697c[1];
-  if (tilemap_lookup((short)((int)DAT_0008697c[0] >> 3),(short)((int)DAT_0008697c[1] >> 3)) ==
+  DAT_002049c8 = g_sweep_foot_pos[0];
+  DAT_002049ca = g_sweep_foot_pos[1];
+  if (tilemap_lookup((short)((int)g_sweep_foot_pos[0] >> 3),(short)((int)g_sweep_foot_pos[1] >> 3)) ==
       (void *)0x0) {
     /* stepped outside the 64x64 map -- the border is always solid; report a
        hard block so sweep_apply_collision backs the move out. (Also stops
@@ -45894,7 +45905,7 @@ uint sweep_collision_flags()
   }
   // PHYSICS: floor collision -- compare the foot Z against the destination
   // tile's floor height _DAT_0008699b to decide level / step-up / step-down / fall
-  iVar4 = (int)*(short *)((char *)DAT_0008697c + 4);
+  iVar4 = (int)*(short *)((char *)g_sweep_foot_pos + 4);
   iVar6 = (int)_DAT_0008699b;
   iVar5 = (int)DAT_00086998;
   if (iVar4 == iVar6) {
@@ -45961,7 +45972,7 @@ LAB_0005a970:
                 DAT_00204870 = 1;
                 // PHYSICS: floor collision -- step resolved: snap the foot Z onto
                 // this tile's floor in a single tick (no gravity for small steps)
-                *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
+                *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
                 uVar3 = (int)((int)_DAT_0008699b - (uint)DAT_002049d8) >> 0x1f;
                 if ((int)(uint)*(byte *)(DAT_00204874 + 0x25) <
                     (int)(((int)_DAT_0008699b - (uint)DAT_002049d8 ^ uVar3) - uVar3)) {
@@ -46026,10 +46037,10 @@ LAB_0005abe4:
   if ((((((DAT_002049d6 & 0x100) != 0) && (bVar8)) && (*(short *)(DAT_00204874 + 10) == 0)) &&
       (*(short *)(DAT_00204874 + 0x10) == 0)) &&
      ((int)(uint)DAT_002049d9 <=
-      (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)DAT_0008697c + 4)))) {
-    *(ushort *)((char *)DAT_0008697c + 4) = (ushort)DAT_002049d9;
+      (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)g_sweep_foot_pos + 4)))) {
+    *(ushort *)((char *)g_sweep_foot_pos + 4) = (ushort)DAT_002049d9;
     uVar1 = local_3c & 0xfeff | 4;
-    if (*(ushort *)((char *)DAT_0008697c + 4) != (ushort)DAT_002049d8) {
+    if (*(ushort *)((char *)g_sweep_foot_pos + 4) != (ushort)DAT_002049d8) {
       uVar1 = local_3c & 0xfefb;
     }
   }
@@ -46043,7 +46054,7 @@ LAB_0005abe4:
   // this tile's floor that it is a wall face, not a step
   if (((local_3c & 0x80) == 0) &&
      ((int)(uint)DAT_002049d9 <
-      (int)((int)*(short *)((char *)DAT_0008697c + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
+      (int)((int)*(short *)((char *)g_sweep_foot_pos + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
     local_3c = local_3c | 0x1000;
   }
   return (int)(short)local_3c;
