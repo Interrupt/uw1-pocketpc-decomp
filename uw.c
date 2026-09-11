@@ -2547,14 +2547,23 @@ char s_views_00085a3c[] = "views";
 char s_question_00085a44[] = "question";
 char s__DATA_allpals_dat_00085a50[] = "\\DATA\\allpals.dat";
 undefined2 DAT_00202748;
-undefined4 LAB_000415b4()
+void *LAB_000415b4(param_1)
+unsigned int param_1;
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  /* Ghidra couldn't resolve this address into a proper function (an
+     indirect-jump/jumptable target it gave up on). Was stubbed as a
+     bare `return 0;`, on the (wrong) assumption that it's "used purely
+     as a callback pointer elsewhere" -- it's actually passed as
+     FUN_00041db0's (doors.GR) allocator callback, the exact same role
+     as LAB_000415b0/LAB_000416e8/LAB_000416f8 (see LAB_000415b0's own
+     comment: a no-op allocator here makes FUN_000417b4 treat every real
+     resource load as a failure even though the file read itself
+     succeeds) -- confirmed live via UW_DEBUG_DOOR: every one of doors.GR's
+     6 entries opened and read its header fine, then failed right at the
+     allocate-a-destination-buffer step. Real allocator like its
+     siblings. */
+  return Ordinal_1041(param_1);
 }
 char s_doors_00085a64[] = "doors";
 static undefined1 DAT_0023b840_backing[8192];
@@ -30736,8 +30745,12 @@ char param_2;
     }
   }
   DAT_00202514 = FUN_000227d4(local_114);
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] FUN_00041304: path='%s' param_2=%d open_handle=%d\n", local_114, (int)param_2, (int)DAT_00202514);
   if (DAT_00202514 != -1) {
     iVar3 = FUN_0002285c(DAT_00202514,local_11c,1);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] FUN_00041304: header_read=%d header_byte=%d expected=%d\n", iVar3, (int)local_11c[0], (int)uVar1);
     if (((((iVar3 == 1) && (local_11c[0] == uVar1)) &&
          ((uVar1 != 2 || (iVar3 = FUN_0002285c(DAT_00202514,&DAT_00202518,1), iVar3 == 1)))) &&
         (iVar3 = FUN_0002285c(DAT_00202514,&DAT_00202728,2), iVar3 == 2)) &&
@@ -31151,7 +31164,19 @@ void FUN_00041db0()
   iVar3 = 0;
   DAT_00202744 = DAT_00202734 + 0x30;
   do {
-    FUN_000417b4(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&LAB_000415b4,0);
+    /* Was passed `0` for the post-process/registration callback (param_5)
+       -- with no registrar, even a successful allocate+read never stores
+       the decoded buffer into FUN_000408fc's DAT_0024e090[] pointer
+       table, so every door frame stayed permanently unresolved (0x0
+       width/height, drawing nothing). LAB_000415d0 (FUN_00041910/
+       QUESTION-VIEWS-etc.'s own registrar) already does exactly what's
+       needed here: register at the running cursor DAT_00202744, which
+       this loop already manages by hand the same way FUN_00041910's
+       caller does. */
+    uint _ok = FUN_000417b4(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&LAB_000415b4,&LAB_000415d0);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] FUN_00041db0: loading doors[%d] slot=%d -> DAT_00202744=%d ok=%u\n",
+              iVar3, (int)(&DAT_0023b840)[iVar3], (int)DAT_00202744, _ok);
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     DAT_00202744 = DAT_00202744 + 1;
   } while (iVar3 < 6);
@@ -46304,6 +46329,8 @@ void FUN_0005b36c()
   } while (cVar1 != '\0');
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] FUN_0005b36c: about to call FUN_00041db0 (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
   FUN_00041db0();
   return;
 }
@@ -49385,6 +49412,22 @@ ushort * param_1;
       uVar27 = 0xe0;
     }
 LAB_emit_mesh_sprite_quad:
+    /* Same arena-overflow risk as the tile-geometry guard a few hundred
+       lines above this function (see its own comment for the full
+       explanation of the ~512-vert/~490-record cap on DAT_000a85d0_backing)
+       -- that guard only accounts for wall/floor geometry, not the
+       object quad this label builds (4 verts / 1 record). Doors newly
+       reaching this path (previously a dead end -- see the door-reroute
+       comment above) add more objects than any single room exercised
+       before, so guard this shared tail defensively too rather than
+       assume the tile-level guard alone always leaves enough headroom.
+       (A wild-Y-coordinate crash chased while testing this turned out
+       to be an unrelated, pre-existing map-edge bug -- see
+       [[map-edge-y-wraparound-crash]] -- not caused by this change; this
+       guard is still worth keeping on its own merits.) */
+    if ((int)(uint)DAT_0023b838 >= 512 - 4 || (int)DAT_0023b83c >= 490 - 1) {
+      return;
+    }
     if (g_billboard_angle_override_deg >= 0) {
       /* A wall-mounted decal's anchor (DAT_0023b904/920) came out of
          emit_tile_features' generic per-slot floor-object table
@@ -49630,12 +49673,13 @@ LAB_00061d34:
     DAT_0023b83c = DAT_0023b83c + 1;
     DAT_000a85d4 = DAT_0023b83c;
     DAT_000a85d0 = iVar17 + 1;
-    if (getenv("UW_DEBUG_OBJPOS") && (*param_1 & 0x1ff) == 0x166) {
+    if ((getenv("UW_DEBUG_OBJPOS") && (*param_1 & 0x1ff) == 0x166) ||
+        (getenv("UW_DEBUG_DOOR") && (*param_1 & 0x1ff) == 0x140)) {
       float _fx, _fy, _fz;
       unsigned int _bx = (unsigned int)uVar22, _by = (unsigned int)uVar19, _bz = (unsigned int)uVar25;
       memcpy(&_fx, &_bx, 4); memcpy(&_fy, &_by, 4); memcpy(&_fz, &_bz, 4);
-      fprintf(stderr, "[objpos-final] id=0x166 uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f\n",
-              uVar27, _fx, _fy, _fz);
+      fprintf(stderr, "[objpos-final] id=0x%03x uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f DAT_00202508(h)=%d DAT_002022f8(w)=%d\n",
+              (unsigned)(*param_1 & 0x1ff), uVar27, _fx, _fy, _fz, (int)(short)DAT_00202508, (int)(short)DAT_002022f8);
     }
     return;
   }
@@ -49825,8 +49869,43 @@ LAB_00061d34:
   }
   if (bVar13 == 2) {
     if ((uVar27 & 0x30) == 0) {
-      emit_anim_object_frames(uVar27 & 0x3f,param_1);
-      return;
+      /* Doors. emit_anim_object_frames (the "real" handler for this
+         branch) draws entirely through emit_object_billboard, which
+         gates its behavior on DAT_00086c08[catalog_idx*4] -- a lone
+         `undefined` scalar (same "orphaned data table" class as
+         DAT_00086c80, fixed for TMOBJ signs below) with no writer
+         anywhere in this decompile. Reading it at a real door's
+         catalog index (confirmed live: 14) walks off into whatever
+         unrelated static byte happens to follow it in memory, so the
+         whole draw path runs on garbage flag bits -- net effect,
+         nothing ever reached a real screen pixel (confirmed: a door
+         6 tiles from spawn rendered as a plain, empty corridor).
+         Route the door's own already-resolved absolute OBJECTS.GR
+         frame (DAT_00202734 + (type&7) + 0x30, confirmed live via
+         UW_DEBUG_DOOR to match emit_anim_object_frames's own
+         computation) through the same real, working sprite-decode +
+         mesh-quad path class 0 uses, exactly like the TMOBJ sign fix
+         a few lines below -- this only handles the door "leaf"
+         sprite itself, not emit_anim_object_frames's separate static
+         frame/jamb overlay (uVar10==0 iteration) or its open-door
+         swing animation (param_1==6 case); those are still open. */
+      uVar27 = DAT_00202734 + (uVar27 & 7) + 0x30;
+      /* >>6, not >>7 -- >>7 is what emit_anim_object_frames itself reads
+         here, but that's fed to emit_object_billboard's own catalog-
+         driven rotation math, not a plain compass heading. >>6&7 matches
+         both the TMOBJ sign's own heading extraction just below and this
+         exact door's own DAT_00202c9a property-table heading value
+         (confirmed live: UW_DEBUG_OBJCLASS reports heading=5 for this
+         door; raw_b2/b3=0x50/0xaf -> (0xaf50>>6)&7 = 5, while >>7&7 gives
+         a different, wrong value). */
+      { int _raw_heading = (int)(*(short *)((char *)param_1 + 2) >> 6 & 7);
+        int _quadrant_heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
+        g_billboard_angle_override_deg = ((_quadrant_heading + 1) & 7) * 45;
+        if (getenv("UW_DEBUG_DOOR"))
+          fprintf(stderr, "[door] emit_tile_objects: frame=%d raw_heading=%d quadrant=%d angle_deg=%d\n",
+                  uVar27, _raw_heading, (int)DAT_0023b4a0, g_billboard_angle_override_deg);
+      }
+      goto LAB_emit_mesh_sprite_quad;
     }
     /* DAT_00086c80_backing has no writer anywhere in this decompile (same
        "orphaned data table" class as DAT_00086c08/09/0b, the PTR_FUN_
@@ -50064,6 +50143,9 @@ short param_4;
   uVar14 = (uint)param_1;
   iVar1 = uVar14 * 4;
   bVar4 = (&DAT_00086c08)[iVar1];
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] emit_object_billboard: catalog_idx=%d param_3(heading)=%d param_4(frame_or_id)=%d DAT_00086c08[idx]=0x%02x\n",
+            (int)param_1, (int)param_3, (int)param_4, (unsigned)bVar4);
   *DAT_00110fc0 = 2;
   local_7a = 0xffff;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -50773,6 +50855,9 @@ ushort * param_2;
   short sVar2;
   
   param_1 = param_1 & 7;
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] emit_anim_object_frames: param_1(cond_idx)=%d rec_word0=0x%04x rec_b1=0x%02x\n",
+            param_1, (unsigned)*param_2, (unsigned)*(byte *)((char *)param_2 + 1));
   local_38 = '\0';
   local_37 = '\x01';
   local_34 = -1;
@@ -50957,6 +51042,9 @@ LAB_00064cdc:
             uVar11 = DAT_00202734 + param_1 + 0x30;
             uVar9 = 0xe;
           }
+          if (getenv("UW_DEBUG_DOOR"))
+            fprintf(stderr, "[door] emit_anim_object_frames: local_34=%d local_28=%d -> emit_object_billboard(catalog=%d, heading=%d, frame_or_id=%d)\n",
+                    (int)local_34, (int)local_28, (int)uVar9, (int)((param_2[1] >> 7 & 7) << 1), (int)uVar11);
           goto LAB_00064cdc;
         }
         DAT_0023b91c = local_34;
