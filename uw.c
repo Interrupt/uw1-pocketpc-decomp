@@ -44936,13 +44936,39 @@ void reticle_object_pick()
   }
   if (DAT_002049dc == 0) {
 LAB_00058a64:
-    /* No slope/step feature at this sub-position: the target foot height is
-       just the tile's flat floor (DAT_002049d9). Ghidra's `0x80 - height`
-       (tiletop minus the player's height) is the "no floor at all" sentinel;
-       used as the default it left a player who had walked off a ledge
-       floating near the ceiling instead of falling to the floor below, and
-       made the swept foot height oscillate when blocked beside a drop. */
-    _DAT_0008699b = (ushort)DAT_002049d9;
+    /* No slope/step feature at this sub-position. This whole block (44937-
+       44959) is ONLY reached from the *rising* branch (g_vertical_velocity
+       >= 1, the `if (*(short*)(DAT_00204874+10) < 1) {...} else {this}`
+       split above) -- the falling/at-rest case has its own, separate
+       target-height logic a few lines up and never falls through to here.
+       So _DAT_0008699b here plays the role of "ceiling", per
+       sweep_step_vertical's own header comment ("target surface height --
+       floor when falling, ceiling when rising").
+       Was `DAT_002049d9` (the tile's flat FLOOR) -- with no real
+       overhead feature to define a ceiling, that fed the floor height
+       into the "rising -- hit the ceiling if foot > target" check in
+       sweep_step_vertical, so a jump's very first upward step (foot Z
+       barely above the floor already) immediately registered as hitting
+       the "ceiling" and called sweep_land_on_surface(), landing the jump
+       before it could rise more than a couple of units -- confirmed live
+       via UW_DEBUG_JUMP2 (a rising jump-vert step landing at foot_z=98,
+       one unit above floor_z=96, is nowhere near a real ceiling).
+       Use `0x80 - player_height` instead -- the same "room's own physical
+       top, minus how tall the player is" sentinel already used a few
+       lines below as the upper bound for a real candidate ceiling height
+       (0x104 area) and elsewhere as the "no floor at all" sentinel -- so
+       with no real overhead obstruction, rising is only stopped by the
+       room's actual ceiling, not by the floor underfoot.
+       NOTE: an earlier comment here claimed this exact substitution had
+       already been tried and reverted for making a ledge-walk-off
+       "float near the ceiling" and "oscillate beside a drop" -- but
+       walking off a ledge only ever *falls* (velocity <= 0), which can
+       never reach this rising-only branch, so that regression (if real)
+       must have come from elsewhere. Regression-tested this change
+       against demo_ceiling_walk2/demo_ceiling_repro/demo_analog_walk3/
+       demo_critter_deep/demo_sack_final/demo_save_test/demo_realturn_full
+       -- all clean; see [[jump-physics-fix-and-open-integrator-issue]]. */
+    _DAT_0008699b = (ushort)(0x80 - (uint)*(byte *)(DAT_00204874 + 0x26));
   }
   else {
     iVar4 = (uint)DAT_002049dd + (int)(char)DAT_002049de;
@@ -45217,6 +45243,11 @@ void sweep_writeback_position()
        (short)(g_sweep_foot_pos[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18));
   *(short *)(DAT_00204874 + 4) =
        (short)(g_sweep_foot_pos[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18));
+  if (getenv("UW_DEBUG_JUMP"))
+    fprintf(stderr, "[writeback] z_after_commit=%d sweep_z=%d d49d4=0x%x d49d8=%d d49d2=%d byte5=%d fallflag=%d vvel=%d\n",
+            (int)*(short *)(DAT_00204874 + 4), (int)g_sweep_foot_pos[2], (unsigned)DAT_002049d4,
+            (int)DAT_002049d8, (int)DAT_002049d2, (int)*(char *)(DAT_00204874 + 5),
+            (int)*(short *)(DAT_00204874 + 0x10), (int)*(short *)(DAT_00204874 + 0xa));
   if (((((DAT_002049d4 & 0x2000) != 0) &&
        (uVar1 = (int)((int)g_sweep_foot_pos[2] - (uint)DAT_002049d8) >> 0x1f,
        (int)(((int)g_sweep_foot_pos[2] - (uint)DAT_002049d8 ^ uVar1) - uVar1) <=
@@ -45226,6 +45257,8 @@ void sweep_writeback_position()
        tile X and Y as halfwords; Ghidra rendered the args as X's two bytes
        and stored the result's low byte to +2 (Y-low) instead of +4. */
     uVar2 = FUN_00050aa8(*(short *)(DAT_00204874 + 0),*(short *)(DAT_00204874 + 2));
+    if (getenv("UW_DEBUG_JUMP"))
+      fprintf(stderr, "[writeback] *** RE-SNAP FIRED *** new_z=%d\n", (int)(short)uVar2);
     *(short *)(DAT_00204874 + 4) = (short)uVar2;
   }
   /* heading is the halfword at +0x21; Ghidra put the high byte at +0x11
@@ -45908,6 +45941,10 @@ uint sweep_collision_flags()
   iVar4 = (int)*(short *)((char *)g_sweep_foot_pos + 4);
   iVar6 = (int)_DAT_0008699b;
   iVar5 = (int)DAT_00086998;
+  if (getenv("UW_DEBUG_JUMP"))
+    fprintf(stderr, "[collision-flags] iVar4(footz)=%d iVar6(floorz)=%d iVar5(slot)=%d bVar7=%d bVar8=%d local_3c=0x%x DAT_00086990=%d DAT_00086996=%d\n",
+            iVar4, iVar6, iVar5, (int)bVar7, (int)bVar8, (unsigned)local_3c,
+            (int)DAT_00086990, (int)DAT_00086996);
   if (iVar4 == iVar6) {
     if (((iVar5 != -1) && (((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) == 2)) && (bVar7)) {
       local_3c = local_3c & 0xfffb | 0x80;
@@ -46073,41 +46110,82 @@ void sweep_apply_collision()
   
   // PHYSICS: collide this sub-step and act on the result flags
   local_14[0] = sweep_collision_flags();
+  if (getenv("UW_DEBUG_JUMP"))
+    fprintf(stderr, "[apply-collision] raw_flags=0x%x masked=0x%x mask(DAT_002048bc)=0x%x\n",
+            (unsigned)local_14[0], (unsigned)(local_14[0] & ~*DAT_002048bc),
+            (unsigned)(unsigned char)*DAT_002048bc);
   DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
   uVar1 = FUN_0005a630();
   *(undefined1 *)(DAT_00204874 + 0x28) = uVar1;
   if ((local_14[0] & 0xc000) == 0) {
     local_14[0] = local_14[0] & ~*DAT_002048bc;
     if (local_14[0] == 0) {
+      if (getenv("UW_DEBUG_JUMP"))
+        fprintf(stderr, "[apply-collision] -> clean resolve (no flags after mask)\n");
       return;
     }
+    if (getenv("UW_DEBUG_JUMP"))
+      fprintf(stderr, "[apply-collision] cond1(local_14&bc[1]==0)=%d bc[1]=0x%x fnptr=%p\n",
+              (int)((local_14[0] & DAT_002048bc[1]) == 0), (unsigned)(unsigned char)DAT_002048bc[1],
+              *(void **)(DAT_002048bc + 4));
     if (((local_14[0] & DAT_002048bc[1]) == 0) ||
        (iVar2 = (**(codeval **)(DAT_002048bc + 4))(local_14), iVar2 == 0)) {
       // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
-      // slide the move along it (sweep_slide_along_wall) instead of stopping dead
-      bVar3 = (local_14[0] & 0x700) != 0;
+      // slide the move along it (sweep_slide_along_wall) instead of stopping dead.
+      /* Gated on g_fall_accel==0: 0x100 (one of the 0x700 bits) isn't only
+         set by a real horizontal wall hit -- sweep_collision_flags also
+         ORs it in from the destination tile's own baseline property flags
+         (DAT_002049d6|DAT_002049d4) and from an unrelated "iVar4 <
+         DAT_002049d9" height check, neither of which means "hit an angled
+         face". Confirmed live via UW_DEBUG_JUMP/JUMP2: a comfortably
+         airborne, purely vertical jump (foot_z=98, floor_z=96, no
+         horizontal motion at all) got local_14[0]=0x1100 every tick from
+         that baseline alone, which sweep_slide_along_wall's `sweep_step
+         (-1)` then reverted -- undoing that entire tick's vertical
+         integration (the same-magnitude, opposite-sign [jump-vert] pairs)
+         and pinning the coarse foot Z near the jump's initial peak for
+         dozens of ticks while g_vertical_velocity ran away deeply
+         negative, before an eventual abrupt sweep_land_on_surface catch-
+         up. sweep_slide_along_wall exists to redirect a blocked
+         *horizontal* step; while a real gravity fall/jump (g_fall_accel
+         != 0) is in progress there is no horizontal step to redirect (see
+         movement_sweep_setup's own gravity gate), so skip it and let
+         sweep_step_vertical's own floor/ceiling check keep governing the
+         landing. */
+      bVar3 = (local_14[0] & 0x700) != 0 && *(short *)(DAT_00204874 + 0x10) == 0;
       if (bVar3) {
         sweep_slide_along_wall((local_14[0] & 0x400) == 0);
       }
       // PHYSICS: wall collision -- 0x1000 = fully blocked: end the sub-tile sweep
       if ((local_14[0] & 0x1000) == 0) {
+        if (getenv("UW_DEBUG_JUMP"))
+          fprintf(stderr, "[apply-collision] -> slide/no-block, return (0x1000 not set)\n");
         return;
       }
       if (*(short *)(DAT_00204874 + 0x10) != 0) {
+        if (getenv("UW_DEBUG_JUMP"))
+          fprintf(stderr, "[apply-collision] -> fully blocked, g_fall_accel already active, return\n");
         return;
       }
       // PHYSICS: wall collision -- arm the vertical path (DAT_00204874+0x10) and
       // hand off to sweep_restart_remaining to finish/redirect the blocked move
       *(undefined1 *)(DAT_00204874 + 0x10) = 0xfc;
       *(undefined1 *)(DAT_00204874 + 0x11) = 0xff;
+      if (getenv("UW_DEBUG_JUMP"))
+        fprintf(stderr, "[apply-collision] -> fully blocked, arming g_fall_accel=0xfc and restarting\n");
       sweep_restart_remaining(bVar3);
       return;
     }
     // PHYSICS: soft block resolved -- back the sub-step out (sweep_step(-1))
+    if (getenv("UW_DEBUG_JUMP"))
+      fprintf(stderr, "[apply-collision] -> SOFT BLOCK: reverting this sub-step (sweep_step(-1))\n");
     sweep_step(0xffffffff);
   }
   else {
     // PHYSICS: hard block (0xc000) -- revert the sub-step and, on 0x4000, kill velocity
+    if (getenv("UW_DEBUG_JUMP"))
+      fprintf(stderr, "[apply-collision] -> HARD BLOCK (0x%x): reverting%s\n",
+              (unsigned)local_14[0], (local_14[0] & 0x4000) != 0 ? " + killing velocity" : "");
     sweep_step(0xffffffff);
     if ((local_14[0] & 0x4000) != 0) {
       sweep_kill_velocity();
