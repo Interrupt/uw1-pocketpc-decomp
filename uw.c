@@ -13424,7 +13424,18 @@ LAB_00022604:
             (&DAT_000d2ac1)[iVar6] = 0;
             (&DAT_000d2ac2)[iVar6] = 0;
             (&DAT_000d2ac3)[iVar6] = 0;
-            uVar7 = Ordinal_2032();
+            /* Was `Ordinal_2032()` with the argument dropped -- the two
+               sibling conversions right below it (Y=local_224, Z=local_214)
+               both pass their value explicitly; this one, the X coordinate,
+               did not. Confirmed via a raw memory dump of the parsed
+               ROCKSMAL.E buffer: every point's first float came out as a
+               constant 3.0 (Ordinal_2032((float)x)'s bit pattern for x=3,
+               whatever this build's calling convention happened to leave in
+               the argument register) while Y/Z matched the source file
+               exactly. Same "dropped argument, register-leftover idiom
+               doesn't survive a literal recompile" bug class as everywhere
+               else in this file. */
+            uVar7 = Ordinal_2032(local_204);
             param_2[iVar19 * 0xc + 8] = (char)uVar7;
             param_2[iVar19 * 0xc + 9] = (char)((uint)uVar7 >> 8);
             param_2[iVar19 * 0xc + 10] = (char)((uint)uVar7 >> 0x10);
@@ -46725,6 +46736,29 @@ void FUN_0005b828()
 {
   FUN_00012958();
   FUN_00038680();
+  if (getenv("UW_DUMP_MODEL_RAW")) {
+    unsigned char *_b = (unsigned char *)&DAT_00123ccc;
+    int _k;
+    int _npts = *(int *)_b;
+    int _nparts = *(int *)(_b + 4);
+    fprintf(stderr, "[modelraw] npts=%d nparts=%d\n", _npts, _nparts);
+    for (_k = 0; _k < _npts; _k++) {
+      float x = *(float *)(_b + 8 + _k*0xc);
+      float y = *(float *)(_b + 8 + _k*0xc + 4);
+      float z = *(float *)(_b + 8 + _k*0xc + 8);
+      fprintf(stderr, "[modelraw] pt[%d] = (%g,%g,%g)\n", _k, x, y, z);
+    }
+    for (_k = 0; _k < _nparts && _k < 40; _k++) {
+      int base = 0xc14 + _k*0x60;
+      int vcount = *(int *)(_b + base);
+      fprintf(stderr, "[modelraw] part[%d] vcount=%d verts=", _k, vcount);
+      int j;
+      for (j = 0; j < vcount && j < 8; j++) {
+        fprintf(stderr, "%d ", *(int *)(_b + base + 4 + j*4));
+      }
+      fprintf(stderr, "\n");
+    }
+  }
   FUN_0003894c();
   FUN_00038acc();
   FUN_00038ab0();
@@ -49439,6 +49473,154 @@ LAB_0005e7e0:
 
 
 
+// New (not decompiled from the binary): revives the ".E" 3D model data
+// FUN_00038680/FUN_00020a74 already load at startup (data/DATA3D/*.E --
+// see uw.c ~24980) into 29 never-consumed buffers. Confirmed via a real
+// Ghidra reference search against UU.exe (whole-binary XREFs to all 29
+// buffer addresses, plus a raw byte-pattern data-table scan, plus a full
+// .text undefined-gap scan showing zero room for an undiscovered function)
+// that this WinCE port genuinely never wired a model renderer to this
+// data -- there is no hidden consumer to find, this is new code.
+//
+// Buffer layout (empirically confirmed against ROCKSMAL.E's real point/
+// part text, after fixing FUN_00020a74's own dropped-argument X-coordinate
+// bug -- see that fix's comment): offset 0 = point count (int), offset 4 =
+// part count (int, occasionally one spurious trailing entry with vcount<3
+// -- filtered below), points at offset 8 + i*0xc as 3 LE floats (X, Y-up,
+// Z-depth, matching the file's own axis order), parts at offset 0xc14 +
+// p*0x60: vertex count (int) then that many vertex-index ints (into the
+// points array) starting at +4.
+//
+// Rendering approach: this pushes each model FACE as its own record into
+// the shared tile/object geometry arena (DAT_000a85d0_backing, see its own
+// doc comment ~uw.c:116), reusing render_visible_tile_list's existing
+// N-gon fan rasterization. Model points are transformed by the object's
+// heading (0-7, 45-degree steps) and added to the object's already-
+// computed world anchor (DAT_0023b904/91c/920 -- despite the "scr" naming
+// from an earlier session's debug print, these are pre-translate world-ish
+// raw coordinates in the same 256-units/tile scale as tile geometry, NOT
+// final screen pixels -- confirmed by the boulder's observed anchor X of
+// 4208 matching tile ~16.4, not a plausible pixel column) in the same
+// (X, height, depth) field order process_visible_tile_cell uses for tile
+// vertices, then left for translate_verts_to_camera_space /
+// project_verts_through_view_matrix to camera-transform and project
+// exactly like tile geometry -- genuine per-vertex 3D projection, not a
+// screen-space billboard shortcut. UW_MODEL_SCALE (default 8.0) converts
+// the model's small local units (a rock spans roughly -18..24) into that
+// world scale; tune visually, same spirit as the existing UW_DECAL_PUSH
+// knob. Faces render texture-less (texptr left 0, matching how tile
+// raster_triangle calls with tex=0x0 already show up during normal
+// rendering) with a flat shade byte -- deliberately not textured, per the
+// project's "flat-shaded is a fine first cut" bar; a real UV/material
+// path (EXTENDED_COLORS in the .E format) is future work.
+static void emit_model_object(unsigned char *model, int heading)
+{
+  int npts = *(int *)model;
+  int nparts = *(int *)(model + 4);
+  if (npts <= 0 || npts > 600 || nparts <= 0) return;
+
+  double scale = 8.0;
+  { const char *_s = getenv("UW_MODEL_SCALE"); if (_s) scale = atof(_s); }
+  /* The object's own world anchor height (DAT_0023b91c) appears to be a
+     ceiling-relative or otherwise offset reference rather than the tile's
+     floor height -- adding model-local Y (which is >=0, model-space "up"
+     from each model's own local origin) directly on top of it left the
+     rock floating up near the ceiling. -200 empirically drops it back
+     onto the floor for this test position; this is a real calibration gap
+     (same class as the open "calibration still open" note on the tmap-
+     tile milestone) worth revisiting once more model objects are wired up
+     and can be cross-checked against each other. */
+  double yoff = -200.0;
+  { const char *_s = getenv("UW_MODEL_YOFF"); if (_s) yoff = atof(_s); }
+  double ang = heading * 45.0 * (3.14159265358979 / 180.0);
+  double ca = cos(ang), sa = sin(ang);
+
+  short ax = (short)DAT_0023b904;
+  short ah = (short)DAT_0023b91c;
+  short az = (short)DAT_0023b920;
+
+  /* Same ~512-vertex/~490-record arena cap the tile/quad paths already
+     guard (see that comment above LAB_emit_mesh_sprite_quad) -- sized here
+     for this specific model's real point/part counts rather than a fixed
+     4-vertex/1-record budget. */
+  if (DAT_0023b838 + npts >= 512 - 4 || DAT_0023b83c + nparts >= 490 - 1) return;
+
+  int base_vtx = DAT_0023b838;
+  int i;
+  for (i = 0; i < npts; i++) {
+    float mx = *(float *)(model + 8 + i*0xc);
+    float my = *(float *)(model + 8 + i*0xc + 4);
+    float mz = *(float *)(model + 8 + i*0xc + 8);
+    double rx = mx*ca - mz*sa;
+    double rz = mx*sa + mz*ca;
+    float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + i)*0xc);
+    vf[0] = (float)(ax + rx*scale);
+    vf[1] = (float)(ah + my*scale + yoff);
+    vf[2] = (float)(az + rz*scale);
+  }
+  DAT_0023b838 = base_vtx + npts;
+  DAT_000a85d0 = DAT_0023b838;
+
+  int emitted = 0;
+  for (i = 0; i < nparts; i++) {
+    int pbase = 0xc14 + i*0x60;
+    int vcount = *(int *)(model + pbase);
+    if (vcount < 3 || vcount > 4) continue;
+    int v0 = *(int *)(model + pbase + 4);
+    int v1 = *(int *)(model + pbase + 8);
+    int v2 = *(int *)(model + pbase + 12);
+    int v3 = (vcount == 4) ? *(int *)(model + pbase + 16) : v2;
+    if (v0 < 0 || v0 >= npts || v1 < 0 || v1 >= npts || v2 < 0 || v2 >= npts || v3 < 0 || v3 >= npts) continue;
+
+    int rec = DAT_0023b83c;
+    int rb = rec * 0x60;
+    *(int *)(&DAT_000acde4 + rb) = 4;
+    *(int *)(&DAT_000acde8 + rb) = base_vtx + v0;
+    *(int *)(&DAT_000acdec + rb) = base_vtx + v1;
+    *(int *)(&DAT_000acdf0 + rb) = base_vtx + v2;
+    *(int *)(&DAT_000acdf4 + rb) = base_vtx + v3;
+    *(int *)(&DAT_000ace00 + rb) = 0;
+    *(int *)(&DAT_000ace04 + rb) = 0;
+    *(int *)(&DAT_000ace08 + rb) = 0;
+    *(int *)(&DAT_000ace0c + rb) = 0;
+    *(int *)(&DAT_000ace10 + rb) = 0;
+    *(int *)(&DAT_000ace14 + rb) = 0;
+    *(int *)(&DAT_000ace18 + rb) = 0;
+    *(int *)(&DAT_000ace1c + rb) = 0;
+    *(int *)(&DAT_000ace20 + rb) = 0;
+    *(int *)(&DAT_000ace24 + rb) = 0;
+    *(int *)(&DAT_000acdfc + rb) = 0;
+    short shade = (short)DAT_000da47c;
+    *(short *)(&DAT_000ace30 + rb) = shade;
+    *(short *)(&DAT_000ace32 + rb) = (short)(shade >> 15);
+    DAT_0023b83c = rec + 1;
+    DAT_000a85d4 = DAT_0023b83c;
+    emitted++;
+  }
+  if (getenv("UW_DEBUG_MODEL")) {
+    fprintf(stderr, "[model] heading=%d anchor=(%d,%d,%d) npts=%d nparts=%d emitted=%d base_vtx=%d\n",
+            heading, ax, ah, az, npts, nparts, emitted, base_vtx);
+  }
+}
+
+// Small object-id -> DATA3D model buffer lookup for the boulder family
+// (id "a_large boulder"=0x153/0x154, "a_boulder"=0x155, "a_small
+// boulder"=0x156 -- found via a brute-force scan of the page-4 object
+// name strings, comobj.dat's own per-type property record has no such
+// field -- see emit_model_object's doc comment). Extend this table (same
+// shape) to wire up other DATA3D-eligible objects (doors/chests/tables/
+// etc, see FUN_00038680's load order for their buffer addresses) later.
+static unsigned char *lookup_boulder_model(int id)
+{
+  switch (id) {
+    case 0x156: return (unsigned char *)&DAT_00123ccc; // ROCKSMAL
+    case 0x155: return (unsigned char *)&DAT_001278f8; // ROCKMED
+    case 0x153:
+    case 0x154: return (unsigned char *)&DAT_0012b524; // ROCKBIG
+    default: return 0;
+  }
+}
+
 // was FUN_00060aa0
 void emit_tile_objects(param_1)
 ushort * param_1;
@@ -49598,7 +49780,60 @@ ushort * param_1;
       fprintf(stderr, "[objdump] scan complete\n");
     }
   }
+  if (getenv("UW_DUMP_ALL_OBJECTS")) {
+    static int _dumped2 = 0;
+    if (!_dumped2) {
+      _dumped2 = 1;
+      int _tx, _ty;
+      for (_ty = 0; _ty < 0x40; _ty++) {
+        for (_tx = 0; _tx < 0x40; _tx++) {
+          int _tidx = _tx + _ty * 0x40;
+          ushort _head = *(ushort *)((intptr_t)DAT_002029cc + _tidx * 4 + 2);
+          int _slot = (_head & 0xffc0) != 0 ? _head >> 6 : 0;
+          int _guard = 0;
+          while (_slot != 0 && _guard++ < 64) {
+            void *_rec = _slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
+                                        : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
+            ushort _w = *(ushort *)_rec;
+            int _id = _w & 0x1ff;
+            int _iv = _id * 0xd;
+            unsigned char *_prop = (unsigned char *)&DAT_00202c90_backing[_iv];
+            fprintf(stderr, "[objdumpall] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x rc=%d prop=%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                    _tx, _ty, _slot, _id, (unsigned)_w, _prop[0] & 3,
+                    _prop[0], _prop[1], _prop[2], _prop[3], _prop[4], _prop[5], _prop[6],
+                    _prop[7], _prop[8], _prop[9], _prop[0xa], _prop[0xb], _prop[0xc]);
+            ushort _nextw = *(ushort *)((char *)_rec + 6);
+            _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
+          }
+        }
+      }
+      fprintf(stderr, "[objdumpall] scan complete\n");
+    }
+  }
+  if (getenv("UW_DUMP_NAMES")) {
+    static int _dumped3 = 0;
+    if (!_dumped3) {
+      _dumped3 = 1;
+      int _id, _pg;
+      for (_pg = 0; _pg < 16; _pg++) {
+        for (_id = 0; _id < 0x200; _id++) {
+          char *_nm = (char *)FUN_0007863c((_pg << 9) | _id);
+          if (_nm && _nm[0]) {
+            fprintf(stderr, "[names] page=%d id=0x%03x name='%s'\n", _pg, _id, _nm);
+          }
+        }
+      }
+      fprintf(stderr, "[names] scan complete\n");
+    }
+  }
   uVar27 = (uint)*param_1;
+  {
+    unsigned char *_model = lookup_boulder_model(uVar27 & 0x1ff);
+    if (_model && !getenv("UW_DISABLE_MODEL_RENDER")) {
+      emit_model_object(_model, (int)(param_1[1] >> 6 & 7));
+      return;
+    }
+  }
   bVar1 = (&DAT_00202c9a)[(uVar27 & 0x1ff) * 0xd];
   bVar13 = bVar1 & 3;
   if (getenv("UW_DEBUG_OBJCLASS")) {
