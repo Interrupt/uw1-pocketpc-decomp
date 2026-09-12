@@ -506,8 +506,15 @@ static undefined2 DAT_000bbfb0_backing[8192];
 #define DAT_000bbfb0 DAT_000bbfb0_backing[0]
 char *DAT_0023be74;
 char s_npc_attitude_000845f8[] = "npc_attitude";
+// g_monster_max_stats_table was DAT_001007d4: a per-monster-class stat
+// table (indexed by the low 6 bits of a monster object's own type id,
+// 0x30-byte stride per class); byte 0 of each entry is that class's
+// max HP, used to clamp regen (restore_stat_capped). NOT valid for the
+// player object -- the player's type id (0x7f) happens to index this
+// table's unused last slot, which is zeroed; see restore_stat_capped's
+// own fix for why callers must special-case the player instead.
 static undefined DAT_001007d4_backing[8192];
-#define DAT_001007d4 DAT_001007d4_backing[0]
+#define g_monster_max_stats_table DAT_001007d4_backing[0]
 /* Widened from 32768: FUN_00038680 does
    `Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
    memmove, confirmed by ASAN global-buffer-overflow), matching
@@ -3134,8 +3141,12 @@ undefined DAT_00086260;
 undefined DAT_00086264;
 static undefined1 DAT_002029d8_backing[256];
 #define DAT_002029d8 DAT_002029d8_backing[0]
+// g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
+// object id's low nibble) effect/quality byte table, loaded at runtime
+// (FUN_0002285c) and read by use_food_item to decide a food item's
+// flavor text and whether it's harmful.
 static undefined1 DAT_00202a28_backing[256];
-#define DAT_00202a28 DAT_00202a28_backing[0]
+#define g_food_effect_table DAT_00202a28_backing[0]
 short DAT_00202a40;
 ushort DAT_00202a48;
 short DAT_00202a38;
@@ -3304,7 +3315,7 @@ undefined4 LAB_00073b10()
    both `char *`) stored through a 32-bit global truncate them on this
    host. DAT_002046a0 feeds DAT_002046c0/DAT_002046c8's own bases
    (used by FUN_00053750's message-buffer write), confirmed live as
-   the next crash in the FUN_00068138 "spawn object" chain once the
+   the next crash in the spawn_new_object "spawn object" chain once the
    earlier truncations in that same chain were fixed. */
 char *DAT_002046ac;
 char *DAT_002046a0;
@@ -8830,7 +8841,7 @@ int param_1;
   iVar8 = (int)(short)uVar5;
   if (iVar8 < 0) {
     DAT_00202c84 = 1;
-    FUN_000522f0(*(ushort *)(g_player_object + 0x16) >> 7 & 0x1f8,
+    place_object_in_world(*(ushort *)(g_player_object + 0x16) >> 7 & 0x1f8,
                  *(ushort *)(g_player_object + 0x16) >> 1 & 0x1f8,*(byte *)(g_player_object + 2) & 0x7f,
                  puVar4,6,1);
     DAT_00202c84 = 0;
@@ -11121,12 +11132,12 @@ void FUN_0001b7c0()
   do {
     if (0 < (short)(&DAT_000bbfd0)[iVar2]) {
       uVar1 = FUN_000535fc();
-      FUN_000523d0(g_player_object,uVar1,5,0);
+      drop_object_near_target(g_player_object,uVar1,5,0);
       FUN_00076e98((&DAT_000bc028)[iVar2]);
     }
     if (0 < (short)(&DAT_000bbfe8)[iVar2]) {
       uVar1 = FUN_000535fc();
-      FUN_000523d0(DAT_00100674,uVar1,5,0);
+      drop_object_near_target(DAT_00100674,uVar1,5,0);
       FUN_00076e98((&DAT_000bc010)[iVar2]);
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
@@ -11863,7 +11874,7 @@ int param_1;
   sVar5 = Ordinal_2005(6,*(undefined1 *)(iVar12 + 0x30));
   bVar3 = *(byte *)(iVar12 + 0x3d);
   sVar6 = FUN_0001cf20(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc8,DAT_000bbfbc);
-  uVar8 = (uint)(byte)(&DAT_001007d4)[(*DAT_00100674 & 0x3f) * 0x30];
+  uVar8 = (uint)(byte)(&g_monster_max_stats_table)[(*DAT_00100674 & 0x3f) * 0x30];
   if (uVar8 == 0) {
     iVar12 = 1;
   }
@@ -16403,7 +16414,7 @@ byte * param_3;
   short sVar4;
   short sVar5;
   short sVar6;
-  char *iVar7;  /* was `int` -- truncated FUN_00068138's real object
+  char *iVar7;  /* was `int` -- truncated spawn_new_object's real object
                    pointer, latent while that function always returned 0 */
   undefined4 uVar8;
   int iVar9;
@@ -16430,7 +16441,7 @@ byte * param_3;
       return;
     }
   }
-  iVar7 = (char *)FUN_00068138(0x1cb,0);
+  iVar7 = (char *)spawn_new_object(0x1cb,0);
   if (iVar7 == (char *)0x0) {
     return;
   }
@@ -16710,11 +16721,11 @@ undefined1 param_1;
     else {
       if (uVar5 == 0x40) {
         if (sVar2 == 1) {
-          if ((&DAT_001007d4)[(uVar1 & 0x3f) * 0x30] == '\0') {
+          if ((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30] == '\0') {
             iVar11 = 0;
           }
           else {
-            sVar3 = Ordinal_2005((&DAT_001007d4)[(uVar1 & 0x3f) * 0x30],(uint)(byte)puVar6[4] * 3);
+            sVar3 = Ordinal_2005((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30],(uint)(byte)puVar6[4] * 3);
             iVar11 = (int)sVar3;
           }
           if (2 < (short)iVar11) {
@@ -17394,7 +17405,7 @@ undefined4 FUN_0002822c(param_1)
 short param_1;
 
 {
-  FUN_00068138((int)*(short *)(&DAT_00100634 + param_1 * 6),0);
+  spawn_new_object((int)*(short *)(&DAT_00100634 + param_1 * 6),0);
   return 0;
 }
 
@@ -18340,7 +18351,7 @@ int param_1;
   }
   uVar3 = 0xffffffff;
 LAB_00029efc:
-  iVar4 = FUN_00045730(iVar2,uVar3);
+  iVar4 = reduce_object_count(iVar2,uVar3);
   if (iVar4 == 0) {
     uVar1 = 0;
   }
@@ -18674,11 +18685,11 @@ ushort * param_1;
     local_20[0] = 0xc0;
   }
   FUN_0001aebc(s_npc_hunger_00085394,local_20,1);
-  if ((&DAT_001007d4)[iVar3] == '\0') {
+  if ((&g_monster_max_stats_table)[iVar3] == '\0') {
     local_20[0] = 0x80;
   }
   else {
-    local_20[0] = Ordinal_2005((&DAT_001007d4)[iVar3],(uint)(byte)param_1[4] << 8);
+    local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[iVar3],(uint)(byte)param_1[4] << 8);
   }
   FUN_0001aebc(s_npc_health_00085388,local_20,1);
   local_20[0] = (ushort)(byte)param_1[4];
@@ -18724,11 +18735,11 @@ ushort * param_1;
   bVar1 = *g_player_object;
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x39);
   FUN_0001aebc(s_play_hunger_00085304,local_20,1);
-  if ((&DAT_001007d4)[(bVar1 & 0x3f) * 0x30] == '\0') {
+  if ((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30] == '\0') {
     local_20[0] = 0x80;
   }
   else {
-    local_20[0] = Ordinal_2005((&DAT_001007d4)[(bVar1 & 0x3f) * 0x30],(uint)g_player_object[8] << 8);
+    local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)g_player_object[8] << 8);
   }
   FUN_0001aebc(s_play_health_000852f8,local_20,1);
   local_20[0] = (ushort)g_player_object[8];
@@ -18847,13 +18858,13 @@ ushort param_3;
   undefined4 uVar7;
   int extraout_r1;
   char *pDropObj;  /* was `int iVar5`/reused `int iVar4` -- truncated
-                       FUN_00068138's real object pointer in both of
+                       spawn_new_object's real object pointer in both of
                        this function's drop branches */
 
   iVar4 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
   ;
   if (((param_2 & 0xff) != 0) &&
-     (pDropObj = (char *)FUN_00068138((short)(param_2 & 0xff) + 0xd8,0), pDropObj != NULL)) {
+     (pDropObj = (char *)spawn_new_object((short)(param_2 & 0xff) + 0xd8,0), pDropObj != NULL)) {
     uVar6 = (*(ushort *)(pDropObj + 2) ^ *(ushort *)(param_1 + 2)) & 0x1fff ^
             (uint)*(ushort *)(param_1 + 2);
     bVar1 = (byte)uVar6;
@@ -18875,12 +18886,12 @@ ushort param_3;
     uVar7 = Ordinal_1053();
     Ordinal_2005(0x10,uVar7);
     if ((extraout_r1 < 7) &&
-       (pDropObj = (char *)FUN_00068138((short)(param_3 & 0xff) + 0xc0,0), pDropObj != NULL)) {
+       (pDropObj = (char *)spawn_new_object((short)(param_3 & 0xff) + 0xc0,0), pDropObj != NULL)) {
       uVar3 = *(undefined2 *)(pDropObj + 6);
       bVar1 = (byte)uVar3;
       *(byte *)(pDropObj + 6) = (*param_1 ^ bVar1) & 0x3f ^ bVar1;
       *(char *)(pDropObj + 7) = (char)((ushort)uVar3 >> 8);
-      FUN_000523d0(param_1,pDropObj,4,0);
+      drop_object_near_target(param_1,pDropObj,4,0);
     }
   }
   return;
@@ -23226,7 +23237,7 @@ ushort * param_3;
     }
   }
   if (uVar2 == 1) {
-    sVar1 = Ordinal_2005((byte)(&DAT_001007d4)[iVar5] + 1,(uint)(byte)param_1[4] << 6);
+    sVar1 = Ordinal_2005((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)(byte)param_1[4] << 6);
     uVar4 = 5;
   }
   else {
@@ -23427,9 +23438,9 @@ int param_2;
   uVar8 = param_1[1] & 0xfc7f | (extraout_r1 & 7) << 7;
   *(byte *)(param_1 + 1) = (byte)uVar8;
   *(byte *)((char *)param_1 + 3) = (byte)(uVar8 >> 8);
-  if (((uint)(byte)param_1[4] < (uint)(byte)(&DAT_001007d4)[iVar6]) && ((param_1[7] & 2) == 0)) {
+  if (((uint)(byte)param_1[4] < (uint)(byte)(&g_monster_max_stats_table)[iVar6]) && ((param_1[7] & 2) == 0)) {
     *(byte *)(param_1 + 4) =
-         (byte)((int)((uint)(byte)param_1[4] + (uint)(byte)(&DAT_001007d4)[iVar6]) >> 1);
+         (byte)((int)((uint)(byte)param_1[4] + (uint)(byte)(&g_monster_max_stats_table)[iVar6]) >> 1);
   }
   if ((param_1[5] & 0x80) == 0) {
     bVar1 = (byte)param_1[7] >> 6;
@@ -23503,7 +23514,7 @@ int param_1;
   if ((iVar5 != 0) && (iVar5 = FUN_0005596c(param_1), iVar5 != 0)) {
     object_list_unlink(pbVar8,iVar5);
     DAT_00202c84 = 1;
-    iVar6 = FUN_00052450(iVar5,(uint)(bVar1 >> 5) + (uint)bVar3 * 8,
+    iVar6 = find_object_placement(iVar5,(uint)(bVar1 >> 5) + (uint)bVar3 * 8,
                          ((bVar2 & 0x1c) >> 2) + uVar7 * 8,(uint)(*pbVar4 >> 4) << 3,6);
     if (iVar6 == 0) {
       uVar7 = *(ushort *)(iVar5 + 2) & 0xff80;
@@ -26145,7 +26156,7 @@ int param_3;
   char acStackY_cc [108];
   /* local_34[] / local_44[] / local_54 held 64-bit tile-record and
      object-list pointers -- Ghidra typed them `int`, truncating every one
-     (tilemap_lookup / FUN_000537d0 / FUN_00068138 results are all real
+     (tilemap_lookup / FUN_000537d0 / spawn_new_object results are all real
      pointers). local_54's address is handed to FUN_000537d0 (now
      ushort **), so it must be pointer-sized or that call scribbles past
      the slot. */
@@ -26182,7 +26193,7 @@ int param_3;
     iVar1 = (int)cVar7;
   } while (iVar1 < 5);
   if ((char)iVar5 == '\x04') {
-    pNew = (char *)FUN_00068138(0xfd,0);
+    pNew = (char *)spawn_new_object(0xfd,0);
     pTile = (char *)tilemap_lookup(param_2,param_3 + 1);
     uVar4 = *(ushort *)(pNew + 2) & 0x380 | 0x6c40;
     *(char *)(pNew + 2) = (char)uVar4;
@@ -26258,7 +26269,7 @@ void FUN_0003a398()
     *(char *)(DAT_00086df8 + 0x67) = (char)((uint)uVar1 >> 0x10);
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
     FUN_00074028(g_player_object,3);
-    FUN_00045728(iVar2);
+    decrement_object_count(iVar2);
     FUN_00053334(0,iVar2,1);
     FUN_00048110();
     FUN_000667cc();
@@ -26288,7 +26299,7 @@ undefined4 param_3;
     *(char *)(DAT_00086df8 + 0x67) = (char)((uint)uVar1 >> 0x10);
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
     FUN_00074028(g_player_object,3);
-    FUN_00045728(iVar2);
+    decrement_object_count(iVar2);
     FUN_00053334(0,iVar2,1);
     FUN_00048110();
     FUN_000667cc();
@@ -26302,10 +26313,10 @@ void FUN_0003a57c()
 
 {
   undefined2 uVar1;
-  char *iVar2;  /* was `int` -- truncated FUN_00068138's real pointer */
+  char *iVar2;  /* was `int` -- truncated spawn_new_object's real pointer */
   uint uVar3;
 
-  iVar2 = (char *)FUN_00068138(0x40,1);
+  iVar2 = (char *)spawn_new_object(0x40,1);
   *(undefined1 *)(iVar2 + 0x1a) = 0x19;
   uVar1 = *(undefined2 *)(iVar2 + 0xd);
   *(char *)(iVar2 + 0xd) = (char)uVar1;
@@ -26626,7 +26637,7 @@ int param_3;
         iVar2 = 0;
       }
       else {
-        FUN_00045728(param_1);
+        decrement_object_count(param_1);
         FUN_00053334(0,param_1,1);
       }
     }
@@ -31991,7 +32002,7 @@ undefined1 * param_1;
       param_1[7] = (char)((uint)uVar1 >> 8);
       /* The mouse-button-state field of the DAT_00085a6c struct is at
          BYTE offset 12: every reader (FUN_0003f420's click-and-hold walk,
-         FUN_00068138, ...) does `*(ushort *)(DAT_00085a6c + 6)`, which is
+         spawn_new_object, ...) does `*(ushort *)(DAT_00085a6c + 6)`, which is
          byte 12 because DAT_00085a6c is typed `short *`, and the reset
          (input_bindings_init) clears byte 12 too. param_1 here is a plain
          byte pointer, so param_1[6] above wrote byte 6 -- a dead field no
@@ -33980,33 +33991,36 @@ short param_1;
 
 
 
-void FUN_00045720(param_1)
+// was FUN_00045720
+void deplete_object_count(param_1)
 undefined4 param_1;
 
 {
-  FUN_00045730(param_1,0xffffffff);
+  reduce_object_count(param_1,0xffffffff);
   return;
 }
 
 
 
-void FUN_00045728(param_1)
+// was FUN_00045728
+void decrement_object_count(param_1)
 /* Was `undefined4 param_1` -- a real object-record pointer (forwarded
-   straight to FUN_00045730, which dereferences it via
+   straight to reduce_object_count, which dereferences it via
    encode_object_slot_index/FUN_00046260), truncated to 32 bits on this
    host -- same class as many other fixes this session. */
 ushort *param_1;
 
 {
-  FUN_00045730(param_1,1);
+  reduce_object_count(param_1,1);
   return;
 }
 
 
 
-undefined4 FUN_00045730(param_1,param_2)
+// was FUN_00045730
+undefined4 reduce_object_count(param_1,param_2)
 /* Was `undefined4 param_1` -- same truncated-object-pointer bug as
-   FUN_00045728's own fix just above it (its only caller here). */
+   decrement_object_count's own fix just above it (its only caller here). */
 ushort *param_1;
 uint param_2;
 
@@ -34312,7 +34326,7 @@ int param_5;
   char *pcVar8;
   char *pcVar9;
   char *pDropObj;  /* was `uVar7` (undefined4) for this use -- truncated
-                       FUN_00068138's real object pointer; uVar7 itself
+                       spawn_new_object's real object pointer; uVar7 itself
                        is only reused as a 0/1 message-select flag right
                        after, so this needed a separate typed local */
   char acStackY_85aec [547480];
@@ -34348,10 +34362,10 @@ int param_5;
   else {
     if (param_5 != 0) {
       sVar4 = rand_below(2);
-      pDropObj = (char *)FUN_00068138(sVar4 + 0xd5,0);
-      FUN_000523d0(g_player_object,pDropObj,6,0);
+      pDropObj = (char *)spawn_new_object(sVar4 + 0xd5,0);
+      drop_object_near_target(g_player_object,pDropObj,6,0);
     }
-    FUN_00045728(puVar5);
+    decrement_object_count(puVar5);
     FUN_00053334(0,puVar5,1);
     FUN_000667cc();
     pcVar9 = s_destroyed__00085ab4;
@@ -35062,7 +35076,7 @@ LAB_00047474:
       if (iVar15 != 0) {
         return 0;
       }
-      sVar9 = FUN_0007acd4(g_player_object,param_1,0);
+      sVar9 = use_food_item(g_player_object,param_1,0);
       if (sVar9 < 1) {
         return 0;
       }
@@ -35405,7 +35419,7 @@ uint param_2;
         if (iVar5 == 0) {
           place_held_item_in_empty_slot(puVar7,param_2);
         }
-        FUN_00045720(puVar4);
+        deplete_object_count(puVar4);
         FUN_00053334(0,puVar4,1);
       }
       uVar11 = 0;
@@ -36845,7 +36859,7 @@ undefined4 param_1;
 {
   FUN_0002285c(param_1,&DAT_002029f8,0x30);
   FUN_0002285c(param_1,&DAT_002029d8,0x20);
-  FUN_0002285c(param_1,&DAT_00202a28,0x10);
+  FUN_0002285c(param_1,&g_food_effect_table,0x10);
   return;
 }
 
@@ -41688,12 +41702,13 @@ byte param_7;
 
 
 
-undefined4 FUN_000522f0(param_1,param_2,param_3,param_4,param_5,param_6)
+// was FUN_000522f0
+undefined4 place_object_in_world(param_1,param_2,param_3,param_4,param_5,param_6)
 /* param_4 was `int` -- a real object pointer (forwarded to
-   FUN_00052450, which already declares its own param_1 as `ushort *`)
-   truncated to 32 bits on this host. Confirmed live: FUN_00068138 now
+   find_object_placement, which already declares its own param_1 as `ushort *`)
+   truncated to 32 bits on this host. Confirmed live: spawn_new_object now
    actually returns a live pointer instead of always 0 (see its fix),
-   and this truncation crashed FUN_00052450 the first time this
+   and this truncation crashed find_object_placement the first time this
    never-before-exercised path ran with a real object. */
 uint param_1;
 uint param_2;
@@ -41706,7 +41721,7 @@ int param_6;
   int iVar1;
   uint uVar2;
   
-  iVar1 = FUN_00052450(param_4,param_1,param_2,param_3,param_5);
+  iVar1 = find_object_placement(param_4,param_1,param_2,param_3,param_5);
   if (iVar1 == 0) {
     if ((param_6 == 0) && (iVar1 = FUN_00052c5c(10,param_4), iVar1 != 0)) {
       FUN_000534a8(0,param_4);
@@ -41724,12 +41739,13 @@ int param_6;
 
 
 
-void FUN_000523d0(param_1,param_2,param_3,param_4)
+// was FUN_000523d0
+void drop_object_near_target(param_1,param_2,param_3,param_4)
 /* param_2 was `undefined4` -- a real object pointer forwarded straight
-   into FUN_000522f0's own (now char*) param_4, truncated to 32 bits on
-   this host. Same class as FUN_000522f0/FUN_00068138's other fixes;
+   into place_object_in_world's own (now char*) param_4, truncated to 32 bits on
+   this host. Same class as place_object_in_world/spawn_new_object's other fixes;
    all of this function's callers already pass real object pointers
-   (g_selected_object, or FUN_00068138's freshly-allocated object). */
+   (g_selected_object, or spawn_new_object's freshly-allocated object). */
 char *param_1;
 char *param_2;
 undefined2 param_3;
@@ -41739,7 +41755,7 @@ undefined4 param_4;
   ushort uVar1;
   
   uVar1 = *(ushort *)(param_1 + 2);
-  FUN_000522f0((*(ushort *)(param_1 + 0x16) >> 7 & 0x1f8) + (uVar1 >> 0xd),
+  place_object_in_world((*(ushort *)(param_1 + 0x16) >> 7 & 0x1f8) + (uVar1 >> 0xd),
                (*(ushort *)(param_1 + 0x16) >> 1 & 0x1f8) + ((uVar1 & 0x1c00) >> 10),uVar1 & 0x7f,
                param_2,param_3,param_4);
   return;
@@ -41747,7 +41763,8 @@ undefined4 param_4;
 
 
 
-undefined4 FUN_00052450(param_1,param_2,param_3,param_4,param_5)
+// was FUN_00052450
+undefined4 find_object_placement(param_1,param_2,param_3,param_4,param_5)
 ushort * param_1;
 uint param_2;
 uint param_3;
@@ -42198,8 +42215,8 @@ int param_1;
      the very first allocation. Every later call then read a bogus,
      low (<4GB-looking) "pointer" back out of the corrupted global,
      producing exactly the unmapped, oddly-small addresses (e.g.
-     0x3e8b37a0) seen crashing FUN_00052450 on the first-ever exercise
-     of this dead-until-now object-spawn path (FUN_00068138 always
+     0x3e8b37a0) seen crashing find_object_placement on the first-ever exercise
+     of this dead-until-now object-spawn path (spawn_new_object always
      returning 0 previously masked this entirely). Also fixed the two
      `*DAT_xxx` reads immediately below: DAT_0020469c/DAT_002046a8 are
      byte pointers into a `short` array (confirmed by the manual `* 2`
@@ -42244,7 +42261,7 @@ char *param_1;
      by one BYTE instead of one short-element (2 bytes), the mirror
      image of alloc_object_slot's own "-1" pop bug, and the bare
      `*DAT_xxx` reads below truncated the stored slot index to one
-     byte. Left uncaught until FUN_00068138 (which calls this on the
+     byte. Left uncaught until spawn_new_object (which calls this on the
      retry path) started actually running instead of always failing. */
   if (param_1 < DAT_002046c4) {
     psVar2 = (short *)(DAT_002046a8 + 2);
@@ -42941,7 +42958,7 @@ void FUN_00053c74()
   }
   if (DAT_002046cc != 0) {
     if ((DAT_002046cc & 1) != 0) {
-      FUN_00073ec0(g_player_object,0xffffffff);
+      adjust_player_hp(g_player_object,0xffffffff);
     }
     if ((DAT_002046cc & 2) != 0) {
       FUN_00073e14(g_player_object,0xffffffff);
@@ -42995,7 +43012,7 @@ void FUN_00053c74()
     } while ((int)(iVar10) * 0x10000 >> 0x10 < 3);
     sVar5 = FUN_00069b68(*(undefined1 *)(DAT_0023be74 + 5),0xf);
     if (0 < sVar5) {
-      FUN_00073ec0(g_player_object,0xffffffff);
+      adjust_player_hp(g_player_object,0xffffffff);
     }
     DAT_002046d0 = 0;
   }
@@ -53976,7 +53993,7 @@ void FUN_00066e90()
   FUN_00066cb4();
   iVar1 = (*g_player_object & 0x3f) * 0x30;
   DAT_0023be74 = &DAT_001007d0 + iVar1;
-  g_player_object[8] = (&DAT_001007d4)[iVar1];
+  g_player_object[8] = (&g_monster_max_stats_table)[iVar1];
   if (DAT_00201c74 == 0) {
     DAT_00201c74 = FUN_0007873c(DAT_00086df8,0x7d);
   }
@@ -54405,7 +54422,8 @@ short param_2;
 
 
 
-void *FUN_00068138(param_1,param_2)
+// was FUN_00068138
+void *spawn_new_object(param_1,param_2)
 /* Was `undefined4 FUN_00068138(...)` ending in a hardcoded `return 0;`
    that discarded the freshly-allocated object pointer (puVar3) on every
    call, even on success. Every call site dereferences the return value
@@ -54414,7 +54432,7 @@ void *FUN_00068138(param_1,param_2)
    non-null, so this whole "spawn a new object" path -- used for
    monster death drops among other things -- was silently dead code.
    Confirmed live: FUN_00072288's per-turn call passed the always-zero
-   result straight into FUN_000522f0 -> FUN_00052450, which dereferenced
+   result straight into place_object_in_world -> find_object_placement, which dereferenced
    the resulting NULL pointer and crashed the first time this
    never-before-exercised turn-processing branch actually ran (hit by
    simply clicking an item -- Bread -- inside an open container). */
@@ -60068,7 +60086,7 @@ LAB_0007158c:
           FUN_00038374(g_player_object,0,0,0,2,0);
         }
         else {
-          FUN_00073ec0(g_player_object,(((short)iVar4 + 1) * (int)sVar3 * 0x1000000 >> 0x18) + -1);
+          adjust_player_hp(g_player_object,(((short)iVar4 + 1) * (int)sVar3 * 0x1000000 >> 0x18) + -1);
           FUN_00073e14(g_player_object,0xfffffffa);
           FUN_00073e14(g_player_object,((char)sVar3 + 1) * (int)(char)iVar4 + (int)(char)sVar3 + -1);
         }
@@ -60175,7 +60193,7 @@ short param_1;
       if (8 < bVar3) {
         bVar3 = 8;
       }
-      FUN_00073f60(g_player_object,bVar3);
+      restore_stat_capped(g_player_object,bVar3);
       *(undefined1 *)(DAT_00086df8 + 0x3b) = 0;
     }
     uVar4 = 1;
@@ -60205,7 +60223,7 @@ void FUN_00071b94()
   
   if (DAT_0023c27c == '\0') {
     if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
-      puVar5 = (undefined2 *)FUN_00068138(0x15a,0);
+      puVar5 = (undefined2 *)spawn_new_object(0x15a,0);
       if (puVar5 != (undefined2 *)0x0) {
         uVar2 = *puVar5;
         *(char *)puVar5 = (char)uVar2;
@@ -60309,7 +60327,7 @@ undefined4 FUN_00071e20()
       iVar6 = FUN_00051fa0(0x1ca,0,(int)(short)local_16,(int)(short)local_18,uVar9,0,0);
       uVar10 = (undefined1)((ushort)uVar9 >> 8);
       if (iVar6 != 0) {
-        puVar7 = (undefined1 *)FUN_00068138(0x1ca,0);
+        puVar7 = (undefined1 *)spawn_new_object(0x1ca,0);
         uVar1 = *(ushort *)(puVar7 + 2);
         uVar8 = (uVar1 ^ uVar8) & 0x7f ^ (uint)uVar1;
         puVar7[2] = (char)uVar8;
@@ -60426,7 +60444,7 @@ void FUN_00072288()
   FUN_00027694();
   if (g_selected_object != 0) {
     if ((g_cursor_holding_state == 1) || (g_cursor_holding_state == 0)) {
-      FUN_000523d0(g_player_object,g_selected_object,6,0);
+      drop_object_near_target(g_player_object,g_selected_object,6,0);
     }
     else if (g_cursor_holding_state != 2) goto LAB_00072374;
     g_cursor_holding_state = 0;
@@ -60436,13 +60454,13 @@ void FUN_00072288()
 LAB_00072374:
   uVar5 = Ordinal_1053();
   Ordinal_2005(5,uVar5);
-  /* Was `iVar6 = FUN_00068138(...)` (plain int) -- FUN_00068138 now
+  /* Was `iVar6 = spawn_new_object(...)` (plain int) -- spawn_new_object now
      really returns a fresh object pointer (see its fix) instead of
      always 0, so storing it in a 32-bit int truncates it on this 64-bit
      host. New pNewObj local rather than retyping iVar6, which is reused
      below for dungeon_view_anim_tick()'s unrelated int result. */
-  pNewObj = (char *)FUN_00068138(extraout_r1 + 0xc2,0);
-  iVar7 = FUN_000522f0((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,
+  pNewObj = (char *)spawn_new_object(extraout_r1 + 0xc2,0);
+  iVar7 = place_object_in_world((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,
                        pNewObj,0,1);
   if (iVar7 != 0) {
     uVar4 = *(undefined2 *)(pNewObj + 2);
@@ -61609,7 +61627,8 @@ char param_2;
 
 
 
-void FUN_00073ec0(param_1,param_2)
+// was FUN_00073ec0
+void adjust_player_hp(param_1,param_2)
 char *param_1;
 char param_2;
 
@@ -61640,7 +61659,8 @@ char param_2;
 
 
 
-void FUN_00073f60(param_1,param_2)
+// was FUN_00073f60
+void restore_stat_capped(param_1,param_2)
 byte * param_1;
 uint param_2;
 
@@ -61649,7 +61669,7 @@ uint param_2;
   byte bVar2;
 
   uVar1 = (param_2 & 0xff) + (uint)param_1[8];
-  /* Was an unconditional `(&DAT_001007d4)[(*param_1 & 0x3f) * 0x30]` cap
+  /* Was an unconditional `(&g_monster_max_stats_table)[(*param_1 & 0x3f) * 0x30]` cap
      -- that table is the per-monster-class max-stat table, indexed by
      the low 6 bits of a monster object's own type id (a valid index
      for any real monster, 0x40-0x7f). But this function is also called
@@ -61659,14 +61679,14 @@ uint param_2;
      player's object type happens to be 0x7f, whose low 6 bits (0x3f)
      index the table's last, unused/zeroed entry. That zero cap then
      clamped the player's HP down to 0 every time -- confirmed live via
-     UW_DEBUG_INV: "FUN_00073f60 *param_1=0x7f class=0x3f cap=0
+     UW_DEBUG_INV: "restore_stat_capped *param_1=0x7f class=0x3f cap=0
      uVar1=42 hp_before=34" immediately followed by the player's death
      sequence after simply eating a loaf of bread. Use the real player
-     max-HP stat (DAT_0023be74+4, the same source FUN_00073ec0 already
+     max-HP stat (DAT_0023be74+4, the same source adjust_player_hp already
      uses for player HP capping) instead of the monster table when the
      target is the player. */
   bVar2 = (param_1 == g_player_object) ? *(byte *)(DAT_0023be74 + 4) :
-          (&DAT_001007d4)[(*param_1 & 0x3f) * 0x30];
+          (&g_monster_max_stats_table)[(*param_1 & 0x3f) * 0x30];
   if (bVar2 < uVar1) {
     param_1[8] = bVar2;
   }
@@ -61697,7 +61717,7 @@ char param_2;
       cVar1 = FUN_0006a058((int)param_2,8);
       iVar2 = (int)cVar1;
     }
-    FUN_00073f60(param_1,iVar2);
+    restore_stat_capped(param_1,iVar2);
   }
   return;
 }
@@ -61761,7 +61781,7 @@ char param_2;
 
 
 void *FUN_00074150(param_1,param_2)
-/* Was `int FUN_00074150(...)` -- returned FUN_00068138's real object
+/* Was `int FUN_00074150(...)` -- returned spawn_new_object's real object
    pointer through a 32-bit int, truncated on this host; both callers
    (FUN_000742c0, FUN_00074380) also stored it into a 32-bit undefined4
    before dereferencing it via encode_object_slot_index/
@@ -61778,7 +61798,7 @@ byte * param_2;
   char extraout_r1;
   byte bVar6;
 
-  iVar4 = (char *)FUN_00068138(param_1,0);
+  iVar4 = (char *)spawn_new_object(param_1,0);
   bVar6 = (*param_2 >> 4) * '\b';
   uVar1 = (int)((uint)(*param_2 >> 4) << 0x13) >> 0x10;
   if (uVar1 < 0x80) {
@@ -62283,7 +62303,7 @@ char param_2;
   int iVar9;
   uint uVar10;
   undefined4 uVar11;
-  char *pObj;  /* was reuse of `iVar8` (int) -- truncated FUN_00068138's
+  char *pObj;  /* was reuse of `iVar8` (int) -- truncated spawn_new_object's
                   real pointer; iVar8 itself stays int for its earlier,
                   unrelated uses above */
   ushort local_34;
@@ -62343,7 +62363,7 @@ char param_2;
           Ordinal_2005(uVar6,uVar4);
           uVar10 = (extraout_r1_01 & 0xffff) + uVar6 + 0x40;
           iVar8 = (uVar10 & 0xfe3f) * 0x30;
-        } while ((&DAT_001007d4)[iVar8] == '\0');
+        } while ((&g_monster_max_stats_table)[iVar8] == '\0');
       } while ((((((&DAT_001007da)[iVar8] & 2) != 0) || ((uVar10 & 0xffff) == 0x7b)) ||
                ((uVar10 & 0xffff) == 0x7c)) || (((&DAT_001007da)[iVar8] & 0x40) != 0));
     }
@@ -62352,7 +62372,7 @@ char param_2;
     }
     iVar8 = FUN_00051fa0(uVar10,0,(int)(short)local_34,(int)(short)local_32,local_30,1,8);
     if (iVar8 != 0) {
-      pObj = (char *)FUN_00068138(uVar10,param_2 == '\x04');
+      pObj = (char *)spawn_new_object(uVar10,param_2 == '\x04');
       uVar2 = *(ushort *)(pObj + 2);
       uVar6 = uVar2 & 0x1fff;
       bVar1 = (byte)(((local_34 & 7) << 0xd) >> 8);
@@ -62430,7 +62450,7 @@ int param_2;
   byte bVar1;
   undefined1 uVar2;
   undefined4 uVar3;
-  char *iVar4;  /* was `int` -- truncated FUN_00068138's real pointer */
+  char *iVar4;  /* was `int` -- truncated spawn_new_object's real pointer */
   int iVar5;
   char extraout_r1;
   short extraout_r1_00;
@@ -62438,11 +62458,11 @@ int param_2;
 
   uVar3 = Ordinal_1053();
   Ordinal_2005(3,uVar3);
-  iVar4 = (char *)FUN_00068138(extraout_r1_00 + 0x154,0);
+  iVar4 = (char *)spawn_new_object(extraout_r1_00 + 0x154,0);
   uVar6 = *(ushort *)(iVar4 + 2) & 0xffee;
   *(byte *)(iVar4 + 2) = (byte)uVar6 | 0x6e;
   *(char *)(iVar4 + 3) = (char)(uVar6 >> 8);
-  iVar5 = FUN_000522f0(param_1 * 8 + 3,param_2 * 8 + 3,0x6e,iVar4,0,0);
+  iVar5 = place_object_in_world(param_1 * 8 + 3,param_2 * 8 + 3,0x6e,iVar4,0,0);
   if ((iVar5 != 0) && (iVar5 = object_ptr_in_arena(iVar4), iVar5 != 0)) {
     bVar1 = Ordinal_1053();
     *(byte *)(iVar4 + 0x13) =
@@ -64955,7 +64975,7 @@ short param_2;
         *(byte *)(param_1 + 3) = (bVar3 ^ (byte)param_2) & 0x3f ^ bVar3;
         *(char *)((char *)param_1 + 7) = (char)(uVar2 >> 8);
       }
-      FUN_000522f0((uint)(uVar1 >> 0xd) + uVar7 * 8,((uVar1 & 0x1c00) >> 10) + uVar8 * 8,
+      place_object_in_world((uint)(uVar1 >> 0xd) + uVar7 * 8,((uVar1 & 0x1c00) >> 10) + uVar8 * 8,
                    uVar1 & 0x7f,iVar4,6,0);
       iVar4 = iVar5;
     }
@@ -64992,7 +65012,7 @@ int param_1;
   int extraout_r1_01;
   int iVar8;
   char *pObj;  /* was reuse of `iVar8` (int) -- truncated
-                  FUN_00068138's real pointer */
+                  spawn_new_object's real pointer */
 
   bVar3 = *(byte *)(DAT_0024cfc4 + 0x26);
   uVar7 = Ordinal_1053();
@@ -65040,7 +65060,7 @@ int param_1;
     }
     uVar2 = (uint)cVar5;
     if (0 < (int)uVar2) {
-      pObj = (char *)FUN_00068138((short)cVar4 + 0xa0,0);
+      pObj = (char *)spawn_new_object((short)cVar4 + 0xa0,0);
       *(byte *)(pObj + 6) = *(byte *)(pObj + 6) & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
       *(char *)(pObj + 7) = (char)((uVar2 << 0x16) >> 0x18);
       object_list_insert_head(param_1 + 6,pObj);
@@ -65059,13 +65079,13 @@ int param_1;
   undefined4 uVar2;
   int extraout_r1;
   char *pObj;  /* was reuse of `uVar2` (undefined4) -- truncated
-                  FUN_00068138's real pointer */
+                  spawn_new_object's real pointer */
 
   bVar1 = *(byte *)(DAT_0024cfc4 + 0x27);
   uVar2 = Ordinal_1053();
   Ordinal_2005(0x10,uVar2);
   if (extraout_r1 < (int)(bVar1 & 0xf)) {
-    pObj = (char *)FUN_00068138((bVar1 >> 4) + 0xb0,0);
+    pObj = (char *)spawn_new_object((bVar1 >> 4) + 0xb0,0);
     object_list_insert_head(param_1 + 6,pObj);
   }
   return;
@@ -65094,7 +65114,7 @@ int param_1;
   do {
     bVar6 = *(byte *)(uVar8 + DAT_0024cfc4 + 0x20);
     if ((bVar6 & 1) != 0) {
-      pbVar4 = (byte *)FUN_00068138((bVar6 >> 1 & 0xf) + (bVar6 >> 5 & 3) * '\x10',0);
+      pbVar4 = (byte *)spawn_new_object((bVar6 >> 1 & 0xf) + (bVar6 >> 5 & 3) * '\x10',0);
       uVar5 = Ordinal_1053();
       Ordinal_2005(2,uVar5);
       if (extraout_r1_01 == 0) {
@@ -65139,7 +65159,7 @@ int param_1;
   byte bVar3;
   short sVar4;
   undefined4 uVar5;
-  char *iVar6;  /* was `int` -- truncated FUN_00068138's real pointer */
+  char *iVar6;  /* was `int` -- truncated spawn_new_object's real pointer */
   char extraout_r1;
   byte bVar7;
   byte extraout_r1_00;
@@ -65153,7 +65173,7 @@ int param_1;
     uVar1 = *(ushort *)(DAT_0024cfc4 + uVar8 * 2 + 0x22);
     Ordinal_2005(0x10,uVar5);
     if (extraout_r1_01 < (int)(uVar1 & 0xf)) {
-      iVar6 = (char *)FUN_00068138(uVar1 >> 4,0);
+      iVar6 = (char *)spawn_new_object(uVar1 >> 4,0);
       uVar5 = Ordinal_1053();
       Ordinal_2005(2,uVar5);
       if (extraout_r1_02 == 0) {
@@ -65249,7 +65269,7 @@ int param_3;
         FUN_0007abbc(param_2,param_3);
         return param_2;
       }
-      /* Dropped arguments: FUN_0007a990 (light/extinguish a light
+      /* Dropped arguments: use_light_source (light/extinguish a light
          source) declares two params it dereferences immediately, but
          was called bare here -- leftover ARM register garbage stood in
          for the real torch object and mode. Confirmed live: clicking
@@ -65257,10 +65277,10 @@ int param_3;
          `param_1[2] & 0x3f` (the torch's real fuel/charges field) and
          almost always happened to read 0, printing "That light is
          already used up" regardless of the torch's actual fuel. */
-      FUN_0007a990(param_2,param_3);
+      use_light_source(param_2,param_3);
     }
     else if (uVar1 == 3) {
-      FUN_0007acd4(param_1,param_2,param_3);
+      use_food_item(param_1,param_2,param_3);
       return param_2;
     }
   }
@@ -65300,7 +65320,7 @@ int param_3;
       uVar7 = uVar7 & 0xf;
       if (uVar7 != 9) {
         if (uVar7 == 10) {
-          iVar4 = FUN_00079d08(param_2,param_3,1);
+          iVar4 = finish_object_use(param_2,param_3,1);
           if (iVar4 != 0) {
             FUN_00078c80(9);
             puVar5 = (undefined2 *)FUN_00079dec(0,0x122);
@@ -65334,9 +65354,10 @@ LAB_00079cb8:
 
 
 
-bool FUN_00079d08(param_1,param_2,param_3)
+// was FUN_00079d08
+bool finish_object_use(param_1,param_2,param_3)
 /* Was `undefined4 param_1` -- a real object-record pointer (forwarded
-   to FUN_00045728/FUN_00053334, which both dereference it), truncated
+   to decrement_object_count/FUN_00053334, which both dereference it), truncated
    to 32 bits on this host -- same class as many other fixes this
    session. */
 ushort *param_1;
@@ -65365,10 +65386,10 @@ undefined4 param_3;
     }
   }
   else {
-    /* Dropped argument: FUN_00045728 declares one param (the object)
+    /* Dropped argument: decrement_object_count declares one param (the object)
        and forwards it on -- called bare here, same idiom as its own
        fix. */
-    FUN_00045728(param_1);
+    decrement_object_count(param_1);
     iVar2 = FUN_00053334(0,param_1,param_3);
   }
   return iVar2 == 0;
@@ -65383,7 +65404,7 @@ uint param_2;
 {
   if (g_selected_object == (short *)0x0) {
     if (param_1 == (short *)0x0) {
-      param_1 = (short *)FUN_00068138(param_2,0);
+      param_1 = (short *)spawn_new_object(param_2,0);
     }
     else {
       param_2 = (int)*param_1 & 0x1ff;
@@ -65528,7 +65549,7 @@ ushort * param_1;
     uVar1 = param_1[3];
     *(byte *)(param_1 + 3) = (byte)uVar1 | 0x3f;
     *(char *)((char *)param_1 + 7) = (char)(uVar1 >> 8);
-    FUN_00079d08(DAT_00202098,1,1);
+    finish_object_use(DAT_00202098,1,1);
   }
   FUN_00057cac(3);
   g_selected_object = 0;
@@ -65596,7 +65617,7 @@ undefined4 param_2;
     else {
       FUN_00078c80(0x86);
     }
-    FUN_00079d08(DAT_00202098,param_2,1);
+    finish_object_use(DAT_00202098,param_2,1);
   }
   else {
     uVar3 = 0x84;
@@ -65664,7 +65685,7 @@ int param_2;
         if (((uVar1 != 0xd9) && (uVar1 != 0xce)) && (uVar1 != 0xcf)) {
           return;
         }
-        FUN_0007acd4(g_player_object,param_1,param_2);
+        use_food_item(g_player_object,param_1,param_2);
         return;
       }
       DAT_0023bc94 = 1;
@@ -65711,7 +65732,7 @@ int param_2;
   if ((*param_1 & 0x1ff) == 0x117) {
     FUN_00078c80(0x85);
     if (param_2 != 0) {
-      FUN_00079d08(DAT_00202098,param_2,1);
+      finish_object_use(DAT_00202098,param_2,1);
     }
     FUN_00081814(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
     iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
@@ -65746,7 +65767,7 @@ undefined4 param_2;
   g_selected_object = 0;
   g_cursor_holding_state = 0;
   if (((*param_1 & 0x1ff) == 0x16e) && (((&DAT_0023add0)[(byte)param_1[3] & 0x3f] & 0xff) == 0xb)) {
-    FUN_00079d08(DAT_00202098,param_2,1);
+    finish_object_use(DAT_00202098,param_2,1);
     FUN_0007c2ec(g_player_object,param_1,7,(int)DAT_002020a0,DAT_002020a4);
     return;
   }
@@ -65806,14 +65827,15 @@ int param_3;
     }
   }
   else if (uVar3 == 0x11b) {
-    FUN_0007acd4(param_1,param_2,param_3);
+    use_food_item(param_1,param_2,param_3);
   }
   return;
 }
 
 
 
-void FUN_0007a990(param_1,param_2)
+// was FUN_0007a990
+void use_light_source(param_1,param_2)
 ushort * param_1;
 int param_2;
 
@@ -65866,7 +65888,7 @@ int param_2;
             uVar5 = 0xf6;
             goto LAB_0007ab1c;
           }
-          FUN_00045728(param_1);
+          decrement_object_count(param_1);
           place_object_in_backpack_slot(param_1,iVar6);
           FUN_00048110();
         }
@@ -65929,7 +65951,8 @@ uint param_2;
 
 
 
-undefined4 FUN_0007acd4(param_1,param_2,param_3)
+// was FUN_0007acd4
+undefined4 use_food_item(param_1,param_2,param_3)
 char *param_1;
 ushort * param_2;
 int param_3;
@@ -65988,12 +66011,12 @@ int param_3;
   bVar13 = uVar10 == 0xb0;
   puVar7 = g_selected_object;
   if (bVar13) {
-    puVar7 = (ushort *)&DAT_00202a28;
+    puVar7 = (ushort *)&g_food_effect_table;
     uVar10 = uVar8 & 0xf;
   }
   uVar8 = uVar8 & 0x1ff;
   if (bVar13) {
-    /* Was `(int)puVar7` -- round-tripping a real pointer (&DAT_00202a28,
+    /* Was `(int)puVar7` -- round-tripping a real pointer (&g_food_effect_table,
        a static global whose real address can be anywhere in this
        64-bit process, not just the low 32 bits) through a 32-bit int
        truncates it before the offset is even added back, same class as
@@ -66001,7 +66024,7 @@ int param_3;
        item (id class 0xb0, e.g. the bread inside an open backpack
        container) crashed here reading an essentially random address.
        Do the offset arithmetic in the real pointer type instead.
-       Also was `*(char *)` (signed) -- DAT_00202a28 is declared
+       Also was `*(char *)` (signed) -- g_food_effect_table is declared
        `undefined1` (unsigned char), and the sentinel check just below
        (`(short)iVar12 == 0xff`) only makes sense if a stored byte of
        0xff reads back as +255, not -1. Reading it signed sign-extended
@@ -66118,7 +66141,7 @@ LAB_0007af3c:
           if (sVar4 != 0) {
             if (sVar4 == 2) {
               FUN_00078c80(0xf2);
-              FUN_00073ec0(g_player_object,0xfffffffe);
+              adjust_player_hp(g_player_object,0xfffffffe);
             }
             goto LAB_0007b254;
           }
@@ -66177,7 +66200,7 @@ LAB_0007b254:
   uVar14 = 0;
   FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,param_1,param_2,1);
   FUN_0007c2ec(param_1,param_2,4,(int)DAT_002020a0,CONCAT22(uVar14,DAT_002020a4));
-  iVar11 = FUN_00079d08(param_2,param_3,1);
+  iVar11 = finish_object_use(param_2,param_3,1);
   if ((iVar11 != 0) && (g_cursor_holding_state == 1)) {
     g_selected_object = (ushort *)0x0;
   }
@@ -66223,7 +66246,7 @@ int param_3;
         iVar6 = ((int)sVar4 - uVar11) + 0x156;
         while( true ) {
           iVar6 = iVar6 * 0x10000 >> 0x10;
-          if ((iVar6 < 1) || (puVar8 = (ushort *)FUN_00068138(1,0), puVar8 == (ushort *)0x0)) break;
+          if ((iVar6 < 1) || (puVar8 = (ushort *)spawn_new_object(1,0), puVar8 == (ushort *)0x0)) break;
           *(char *)puVar8 = (char)*param_1;
           *(undefined1 *)((char *)puVar8 + 1) = *(undefined1 *)((char *)param_1 + 1);
           *(char *)(puVar8 + 1) = (char)param_1[1];
@@ -66252,7 +66275,7 @@ int param_3;
             *(char *)((char *)puVar8 + 7) = (char)(uVar9 >> 2);
           }
           uVar3 = param_1[1];
-          FUN_000522f0((uint)(uVar3 >> 0xd) + DAT_002020a0 * 8,
+          place_object_in_world((uint)(uVar3 >> 0xd) + DAT_002020a0 * 8,
                        ((uVar3 & 0x1c00) >> 10) + DAT_002020a4 * 8,uVar3 & 0x7f,puVar8,6,0);
           iVar6 = iVar6 + -1;
         }
@@ -66299,7 +66322,7 @@ int param_3;
           *(char *)(param_1 + 2) = (char)uVar2;
           *(char *)((char *)param_1 + 5) = (char)(uVar2 >> 8);
           FUN_00078c80(iVar1 + 0xb3);
-          FUN_00079d08(DAT_00202098,param_2,1);
+          finish_object_use(DAT_00202098,param_2,1);
           return;
         }
         iVar4 = iVar1 + 0xb4;
@@ -66311,7 +66334,7 @@ int param_3;
     }
     else {
       FUN_00078c80(0xb5);
-      FUN_00079d08(DAT_00202098,param_2,1);
+      finish_object_use(DAT_00202098,param_2,1);
       uVar2 = *param_1;
       *(undefined1 *)param_1 = 0x91;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8) & 0xfe;
@@ -66381,7 +66404,7 @@ int param_3;
       else if (local_20[0] == 2) {
         FUN_00042d70();
       }
-      FUN_00079d08(param_2,0,1);
+      finish_object_use(param_2,0,1);
       return;
     }
     if (uVar1 == 0x12e) {
@@ -66414,7 +66437,7 @@ int param_3;
     if (iVar2 == -1) {
 LAB_0007b894:
       iVar3 = iVar3 + 1;
-      FUN_00079d08(param_2,param_3,1);
+      finish_object_use(param_2,param_3,1);
     }
     else if (iVar2 != 0) {
       if (iVar2 != 1) goto LAB_0007b9b8;
@@ -66436,7 +66459,7 @@ LAB_0007b7e4:
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar6;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar6 >> 8);
     FUN_00074028(g_player_object,2);
-    FUN_00079d08(param_2,param_3,1);
+    finish_object_use(param_2,param_3,1);
     iVar3 = 0xe0;
     goto LAB_0007b9b8;
   case 0x126:
@@ -66481,7 +66504,7 @@ int param_2;
   ushort uVar2;
   short sVar3;
   int iVar5;
-  /* Same split-buffer decompile artifact fixed in FUN_0007acd4 (see its
+  /* Same split-buffer decompile artifact fixed in use_food_item (see its
      comment) and in build_creature_look_text: the "You read the "
      prefix was copied into a phantom, oversized acStackY_85d64 buffer
      that nothing else ever reads, leaving the real acStack_7c (read by
@@ -66523,7 +66546,7 @@ int param_2;
     else {
       FUN_0007c2ec(g_player_object,param_1,4,(int)DAT_002020a0,DAT_002020a4);
       FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
-      FUN_00079d08(param_1,param_2,0);
+      finish_object_use(param_1,param_2,0);
     }
   }
   return;
@@ -67339,7 +67362,7 @@ uint param_3;
       }
       DAT_00202c84 = 1;
       uVar4 = puVar8[1];
-      local_30 = FUN_000522f0((uint)(uVar4 >> 0xd) + param_2 * 8,
+      local_30 = place_object_in_world((uint)(uVar4 >> 0xd) + param_2 * 8,
                               ((uVar4 & 0x1c00) >> 10) + param_3 * 8,uVar4 & 0x7f,puVar8,
                               CONCAT22(uVar20,4),0);
       DAT_00202c84 = 0;
@@ -69940,13 +69963,13 @@ short param_7;
   byte bVar2;
   undefined2 uVar3;
   short sVar4;
-  char *iVar5;  /* was `int` -- truncated FUN_00068138's real pointer */
+  char *iVar5;  /* was `int` -- truncated spawn_new_object's real pointer */
   uint uVar6;
   undefined4 uVar7;
   int iVar8;
   byte bVar9;
 
-  iVar5 = (char *)FUN_00068138(param_2 + 0x1c0,0);
+  iVar5 = (char *)spawn_new_object(param_2 + 0x1c0,0);
   if (iVar5 == (char *)0x0) {
     return 0;
   }
