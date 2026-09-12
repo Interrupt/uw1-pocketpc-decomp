@@ -2838,6 +2838,19 @@ static unsigned char DAT_00085ad0_backing[0x17 * 0xe + 2] = {
   /* rec 0: click x1,y1,x2,y2 = f0,0b,13b,50 (narrowed, see comment above) ; draw x,y = f0,0b ; dirty w,h = 50,6c */
   0x04,0x01, 0x0b,0x00, 0x3b,0x01, 0x50,0x00,  0x04,0x01, 0x0b,0x00,  0x50,0x6c,
 
+  [1*14+0] =
+  /* rec 1: the "open container" icon + leave-container button, ~40
+     screen px (20 panel-local units) above grid slot 1 (record 12's
+     own draw x,y, f1,51/241,81, minus 20 on y = f1,3d/241,61) -- per
+     direct playtest feedback describing the real game's container-view
+     layout. Same x as slot 1 (an earlier attempt shifted x left too,
+     clipping off the panel's own left edge at x=0xf0/240 -- confirmed
+     live). Repurposes a currently-unused "worn armour overlay" record
+     (1-5, still zero/unimplemented otherwise) since this table has no
+     spare slots; revisit if armour rendering is ever implemented and
+     needs record 1 back. click f0,34,103,46 ; draw f1,3d */
+  0xf0,0x00, 0x34,0x00, 0x03,0x01, 0x46,0x00,  0xf1,0x00, 0x3d,0x00,  0x14,0x14,
+
   [12*14+0] =
   /* rec 12 (row1,col1): click f0,50,103,63 ; draw f1,51 */
   0xf0,0x00, 0x50,0x00, 0x03,0x01, 0x63,0x00,  0xf1,0x00, 0x51,0x00,  0x14,0x14,
@@ -32135,12 +32148,16 @@ LAB_00042a10:
 
 
 void FUN_00042a44(param_1)
-int param_1;
+/* Was `int param_1` -- every call site passes DAT_00202994, a real
+   64-bit pointer, which this narrower type truncates to 32 bits --
+   same class as several other fixes this session (search "narrow
+   local/parameter for a pointer"). */
+char *param_1;
 
 {
   ushort uVar1;
   ushort *puVar2;
-  
+
   puVar2 = (ushort *)FUN_000535fc(*(ushort *)(param_1 + 8) >> 6);
   uVar1 = *puVar2;
   if (((uVar1 & 0xf) < 0xc) && ((uVar1 & 1) != 0)) {
@@ -32173,14 +32190,24 @@ void FUN_00042aa8()
     while( true ) {
       iVar3 = CONCAT13(uVar1,uVar2);
       if (iVar3 == 0) break;
-      FUN_00042a44();
+      /* Dropped argument: FUN_00042a44's declared signature takes the
+         open-container tracking record being freed -- DAT_00202994,
+         the current one, before it's overwritten by iVar3 below --
+         same "wrapper forgot to forward its own argument" idiom as
+         this whole session's other fixes. Never triggered before
+         because closing a container (this whole function) was
+         unreachable until this session's chain of fixes leading up to
+         it -- confirmed live: leaving a container crashed here
+         dereferencing the leftover-register garbage this left in
+         param_1's place. */
+      FUN_00042a44((char *)DAT_00202994);
       Ordinal_1018(DAT_00202994);
       uVar2 = *(undefined3 *)(iVar3 + 4);
       uVar1 = *(undefined1 *)(iVar3 + 7);
       DAT_00202994 = iVar3;
     }
     DAT_00202990 = 0;
-    FUN_00042a44();
+    FUN_00042a44((char *)DAT_00202994);
     Ordinal_1018(DAT_00202994);
     DAT_00202994 = 0;
   }
@@ -32222,12 +32249,29 @@ void FUN_00042b38()
     DAT_002029a0 = 0;
     DAT_0020299c = 0;
     /* Missing piece, matching FUN_00043100's own fix: nothing here
-       actually redraws the 8 backpack-grid widgets after the mapping
-       above (via the DAT_00085c39 alias) is restored back to the
-       player's own backpack (slots 11-18) -- confirmed live, closing a
-       container left the panel showing the container's contents,
-       frozen, with no "leave" affordance ever needed since the panel
-       never visually left in the first place. */
+       actually redraws the panel after leaving a container -- confirmed
+       live, closing left the dark background rect and the container's
+       icon frozen on screen. FUN_00043100 painted over the paperdoll's
+       lower half and the grid's circle background (see its own
+       comment); the cheapest reliable way to undo that without
+       reverse-engineering a partial-restore path is to just redo the
+       whole HUD/panel setup draw (background art, paperdoll body,
+       compass, dragons) the same way it's drawn once at load, then
+       redraw the 8 backpack-grid widgets on top so the player's own
+       items reappear (the mapping above, via the DAT_00085c39 alias,
+       is already restored back to slots 11-18 by this point).
+
+       FUN_0006cca8's own background blit (of this same DAT_0023cca4
+       panel art) runs with transparency on, so it skips whatever
+       palette-index-0 pixels the source art has in the leave-icon's
+       specific spot (record 1, likely a genuinely transparent corner
+       of the art rather than solid leather) -- leaving that one icon
+       behind even after the "full" redraw below (confirmed live). Do
+       one extra fully OPAQUE pass of the same blit first so every
+       pixel there gets overwritten regardless. */
+    g_blit_transparent_mode = 0;
+    bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+    FUN_0006cca8();
     FUN_00048198(0xc,0x13);
     FUN_00046eec(0x15);
     FUN_00046eec(0x16);
@@ -32249,7 +32293,9 @@ void FUN_00042c5c()
       FUN_00042b38();
     }
     else {
-      FUN_00042a44();
+      /* Same dropped argument as FUN_00042aa8's own fix -- forward the
+         current DAT_00202994 before it's overwritten below. */
+      FUN_00042a44((char *)DAT_00202994);
       DAT_00202994 = *(undefined1 **)(DAT_00202994 + 4);
       Ordinal_1018();
       *DAT_00202994 = 0;
@@ -32411,6 +32457,27 @@ short param_1;
         if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
           draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
         }
+        /* Missing container-view chrome, per direct playtest feedback
+           describing the real game's layout (none of this exists
+           anywhere in the decompiled body -- the 0x2097 sprite draw
+           just above is the closest existing candidate, but it drew
+           nothing visible in testing, likely a never-recovered/empty
+           .GR resource slot, same story as the scroll-edge decoration
+           sprites documented in FUN_00040918's own comment):
+           1. A darker rectangle over the whole 8-cell grid area,
+              replacing the plain panel-background circles while a
+              container's contents are shown there instead of the
+              player's own backpack.
+           2. The open container's own icon, drawn ~40 screen px (20
+              panel-local units) above grid slot 1 at DAT_00085ad0
+              record 1's new draw position (see its own comment) --
+              clicking it (wired in FUN_00046698) leaves the container. */
+        set_draw_color(0);
+        rect_fill_or_save_restore(0xf0,0x50,0x13c,0x76);
+        g_blit_transparent_mode = 1;
+        draw_sprite_by_id(uVar3 & 0x1ff,(int)(short)(&DAT_00085ad8)[1 * 7],
+                     (int)(short)(&DAT_00085ada)[1 * 7],16,16);
+        g_blit_transparent_mode = 0;
         if (DAT_002028a0 == 0) {
           iVar10 = 0xc;
           do {
@@ -34440,6 +34507,17 @@ short param_1;
     fprintf(stderr, "[inv] FUN_00046698 click test: panel_x=%d panel_y=%d -> widget_id=%d\n",
             (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]), (int)(short)uVar5);
   iVar9 = (int)(short)uVar5;
+  /* Leave-container click: widget 1 (repurposed from an unimplemented
+     worn-armour overlay slot -- see DAT_00085ad0's own comment) is the
+     open-container icon drawn above the grid. No such affordance
+     exists anywhere in the decompiled body; added per direct playtest
+     feedback describing the real game's layout. Only active while a
+     container is actually open, so a plain click here does nothing
+     once armour rendering claims this record back in a future pass. */
+  if ((iVar9 == 1) && (DAT_00202994 != 0)) {
+    FUN_00042b38();
+    return;
+  }
   if ((0 < iVar9) && (iVar9 < 0x15)) {
     cVar2 = (&DAT_00085c38)[iVar9];
     if (DAT_00202948 == 0) {

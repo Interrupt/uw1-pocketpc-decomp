@@ -40,3 +40,6 @@ SCREENSHOT /tmp/bagtest_04_dropped.bmp
 SDLCLICK 522 195
 WAIT 2
 SCREENSHOT /tmp/bagtest_05_opened.bmp
+SDLCLICK 482 122
+WAIT 2
+SCREENSHOT /tmp/bagtest_06_closed.bmp
