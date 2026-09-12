@@ -2739,7 +2739,7 @@ static unsigned char DAT_00085ad0_backing[0x17 * 0xe + 2] = {
 #define DAT_00085add DAT_00085ad0_backing[0xd]
 undefined DAT_00085c18;
 undefined2 DAT_00202980;
-short DAT_0023bcf2;
+short g_player_carry_weight;
 undefined1 *DAT_002028c0;
 undefined1 *DAT_002028c4;
 static undefined2 DAT_002028cc_backing[8192];
@@ -2767,7 +2767,50 @@ static undefined1 DAT_00085aa0_backing[32768];
 #define DAT_00085aa0 DAT_00085aa0_backing[0]
 char s_damaged__00085aa8[] = "damaged.";
 char s_destroyed__00085ab4[] = "destroyed.";
-ushort DAT_0023bcf4;
+// was DAT_0023bcf4, offset +0x4c of the "large fixed-offset record"
+// based at DAT_0023bca8 (see that array's own declaration comment a few
+// hundred lines up -- a "device/config-ish struct, not yet fully
+// identified" that a prior session already had to widen to a real 8192-
+// byte backing array after catching an unrelated overflow into it).
+// g_player_carry_weight (was DAT_0023bcf2, "+0x4a", the sibling field 2
+// bytes before this one) is that struct's actively-maintained "current
+// carried weight" running total.
+//
+// Two things worth ruling out before assuming a hardcoded default is
+// the right call, both checked directly rather than assumed:
+// - NOT part of the player.dat save/load blob: that save path (uw.c
+//   ~32660) serializes the player's OBJECT graph (walking
+//   resolve_object_link), not this stats struct -- no overlap, so this
+//   isn't a save/load wiring gap.
+// - NOT a split-symbol/should-be-one-array bug either, despite living
+//   inside that same not-fully-identified struct: a whole-binary
+//   instruction-pattern scan (every "str/strh/strb ..., [reg, #0x4c]"
+//   in the binary, not just literal-address xrefs, specifically to also
+//   catch a write reached via the DAT_00086df8 struct-pointer indirection
+//   the way FUN_000232ec's already-documented overflow into this same
+//   struct was) found zero halfword writes to +0x4c anywhere, by any
+//   addressing pattern. Every real writer of the sibling +0x4a field
+//   also resolves through a literal constant address, not the pointer
+//   indirection, matching how this file already represents both fields
+//   as flat globals -- so unifying them into an explicit array wouldn't
+//   change reachability here the way it has for other DAT_0023bca8-
+//   adjacent fields elsewhere in this file.
+// - Confirmed via a real Ghidra reference search against UU.exe (not
+//   just this decompile): every access to +0x4c anywhere in the shipped
+//   binary is a READ (FUN_00046358's "can I pick this up" check, and
+//   FUN_00048514, apparently a HUD burden/encumbrance display) -- there
+//   is no write to it ANYWHERE, so it stays at its zero BSS default for
+//   the life of the process. Net effect: every pickup attempt failed
+//   with "too heavy" regardless of the item (confirmed live: a 30-unit
+//   sack, well within any plausible real capacity, was rejected).
+//
+// Whatever real formula (almost certainly Strength-derived) originally
+// populated this is not recoverable from this binary -- it's a genuinely
+// dead computation in the shipped game, not a decompile gap. Seeding a
+// generous, clearly-provisional default here so carrying items functions
+// at all rather than being permanently broken -- revisit if the real
+// per-character formula (or its expected value range) ever turns up.
+ushort g_player_max_carry_weight = 200;
 char s_bodies_00085c58[] = "bodies";
 int DAT_002029a4;
 short DAT_00085b64;
@@ -30392,7 +30435,18 @@ undefined4 param_3;
         pcVar3 = pcVar3 + 5;
       }
       else {
-        pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
+        /* Same dropped 3rd argument (the .GR entry's compression mode,
+           6/8/0xa) already root-caused and fixed in FUN_00040770's
+           identical call (see object-rendering-findings.txt's
+           "MILESTONE: objects render" section) -- without it,
+           FUN_000129f8 takes its param_3==0 path, which for this call
+           site returns NULL instead of an all-transparent buffer
+           (unlike FUN_00040770's case), and the caller here has no
+           NULL-guard on the result -- confirmed live: picking up the
+           starting sack and calling FUN_00046a94 to attach it to the
+           cursor crashed here with a NULL source pointer reaching
+           bitmap_blit_to_framebuffer. */
+        pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
       }
       bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,0);
     }
@@ -32392,7 +32446,7 @@ LAB_0004386c:
     }
     else {
       iVar10 = FUN_00046260(param_1);
-      DAT_0023bcf2 = DAT_0023bcf2 + (short)iVar10;
+      g_player_carry_weight = g_player_carry_weight + (short)iVar10;
       for (; iVar9 != 0;
           iVar9 = CONCAT13(*(undefined1 *)(iVar9 + 7),
                            CONCAT12(*(undefined1 *)(iVar9 + 6),
@@ -32523,7 +32577,7 @@ undefined4 param_2;
         *(char *)(iVar4 + 0xb) = (char)((uint)iVar8 >> 8);
       }
       sVar2 = FUN_00046260(param_1);
-      DAT_0023bcf2 = DAT_0023bcf2 + sVar2;
+      g_player_carry_weight = g_player_carry_weight + sVar2;
       FUN_000667cc();
       FUN_00042e30();
       FUN_00048198((int)(char)(&DAT_00085c18)[(short)param_2],
@@ -33359,7 +33413,7 @@ short param_2;
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar6 << 0x16) >> 0x18);
     }
     object_list_append_tail(iVar4 + 6,param_1);
-    DAT_0023bcf2 = DAT_0023bcf2 + (short)iVar3;
+    g_player_carry_weight = g_player_carry_weight + (short)iVar3;
     uVar8 = 1;
   }
   FUN_000667cc();
@@ -33647,7 +33701,7 @@ uint param_2;
       }
     }
     object_list_unlink(DAT_002046b4,puVar5);
-    DAT_0023bcf2 = DAT_0023bcf2 - (short)iVar3;
+    g_player_carry_weight = g_player_carry_weight - (short)iVar3;
     FUN_00046eec(0x13);
     FUN_000667cc();
   }
@@ -33785,7 +33839,7 @@ ushort param_5;
       }
       object_list_unlink(local_28 + 6,puVar3);
       iVar4 = FUN_00046260(puVar3);
-      DAT_0023bcf2 = DAT_0023bcf2 - (short)iVar4;
+      g_player_carry_weight = g_player_carry_weight - (short)iVar4;
       if (DAT_00202994 == 0) {
         return puVar3;
       }
@@ -33971,13 +34025,31 @@ ushort * param_1;
 
 
 
-bool FUN_00046358()
+// Dropped argument: both real call sites (uw.c:11074 `FUN_00046358(iVar2)`,
+// and interact_default's own `FUN_00046358(DAT_002020cc)` -- the object
+// being picked up) pass an object pointer, but this function's own
+// recovered signature took none, so it silently called FUN_00046260()
+// bare too instead of forwarding it -- FUN_00046260's very first line
+// unconditionally dereferences its parameter, so with nothing passed
+// through, it dereferenced whatever ARM register-leftover garbage was
+// sitting there and crashed. Confirmed live: interact_default's "grab
+// the sack" call reached exactly this line and segfaulted (bt: interact_
+// default -> FUN_00046358 -> SIGSEGV). This is a "can the object being
+// picked up fit in the backpack" weight/capacity check -- same "wrapper
+// forgot to forward its own argument" idiom as FUN_00045054 elsewhere in
+// this file, just a missing forward instead of a hardcoded return.
+bool FUN_00046358(param_1)
+ushort *param_1;
 
 {
   short sVar1;
-  
-  sVar1 = FUN_00046260();
-  return (int)((int)sVar1 + (uint)DAT_0023bcf2) <= (int)(uint)DAT_0023bcf4;
+
+  sVar1 = FUN_00046260(param_1);
+  if (getenv("UW_DEBUG_WEIGHT"))
+    fprintf(stderr, "[weight] objid=0x%03x item_weight=%d current_load=%u max_capacity=%u fits=%d\n",
+            (int)(*param_1 & 0x1ff), (int)sVar1, (unsigned)g_player_carry_weight, (unsigned)g_player_max_carry_weight,
+            (int)sVar1 + (uint)g_player_carry_weight <= (uint)g_player_max_carry_weight);
+  return (int)((int)sVar1 + (uint)g_player_carry_weight) <= (int)(uint)g_player_max_carry_weight;
 }
 
 
@@ -34932,7 +35004,7 @@ uint param_2;
         *(char *)(iVar5 + 0xb) = (char)((uint)iVar10 >> 8);
       }
     }
-    DAT_0023bcf2 = DAT_0023bcf2 + (short)iVar8;
+    g_player_carry_weight = g_player_carry_weight + (short)iVar8;
     FUN_000667cc();
     iVar5 = (puVar4[3] & 0xffc0) + param_2 * 0x40;
     bVar2 = (byte)puVar4[2];
@@ -35073,7 +35145,7 @@ int param_1;
   undefined1 auStack_24 [8];
   
   bVar5 = false;
-  iVar4 = ((int)DAT_0023bcf4 - (int)DAT_0023bcf2) * 0x10000;
+  iVar4 = ((int)g_player_max_carry_weight - (int)g_player_carry_weight) * 0x10000;
   iVar1 = iVar4 >> 0x10;
   if (DAT_00085c50 != iVar1) {
     FUN_00076e98(DAT_002028e8);
@@ -61919,7 +61991,7 @@ LAB_00075a0c:
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
     *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x10;
     *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
-    DAT_0023bcf2 = 0;
+    g_player_carry_weight = 0;
     FUN_000667cc();
     FUN_0006ed0c();
   }

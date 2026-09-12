@@ -63,6 +63,19 @@
  *                    genuine SDL mouse events, exercising the full
  *                    uw_pump_events() path (unlike CLICK above, which
  *                    bypasses it entirely)
+ *   SDLRCLICK <window_x> <window_y>  -- right-button version of SDLCLICK
+ *                    (interact)
+ *   SDLDOWN/SDLUP <window_x> <window_y>  -- split halves of SDLCLICK, for
+ *                    a real multi-tick gap between button-down and
+ *                    button-up instead of both queued instantaneously
+ *   SDLRDOWN/SDLRUP <window_x> <window_y>  -- right-button versions of
+ *                    SDLDOWN/SDLUP -- combine with SDLMOVE to script a
+ *                    real drag (e.g. SDLRDOWN on a world object, WAIT,
+ *                    SDLMOVE toward the target, WAIT, SDLRUP over the
+ *                    inventory HUD, to test grabbing and dropping an item)
+ *   SDLMOVE <window_x> <window_y>  -- warps the cursor and pushes a
+ *                    genuine SDL_MOUSEMOTION with no button-state change,
+ *                    the "move while held" middle of a drag
  *   SCREENSHOT <path>  -- saves the current window contents (post-
  *                    rotation, what's actually on screen) as a BMP,
  *                    so a scripted run -- or Claude -- can see what a
@@ -622,6 +635,36 @@ void demomode_pump(void) {
         sscanf(p + 6, "%d %d", &wx, &wy);
         fprintf(stderr, "[demo] SDLUP window=(%d,%d)\n", wx, wy);
         uw_inject_mouse_up(wx, wy);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLRDOWN ", 9) == 0) {
+        /* SDLRDOWN/SDLMOVE/SDLRUP -- right-button drag primitives (grab
+         * an object, hold, move the cursor, release elsewhere -- e.g.
+         * dragging a picked-up item onto the inventory HUD). */
+        int wx = 0, wy = 0;
+        sscanf(p + 9, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLRDOWN window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_rdown(wx, wy);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLRUP ", 7) == 0) {
+        int wx = 0, wy = 0;
+        sscanf(p + 7, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLRUP window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_rup(wx, wy);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLMOVE ", 8) == 0) {
+        int wx = 0, wy = 0;
+        sscanf(p + 8, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLMOVE window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_motion(wx, wy);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

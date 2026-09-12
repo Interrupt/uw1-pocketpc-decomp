@@ -668,6 +668,51 @@ int uw_inject_mouse_rclick(int window_x, int window_y) {
     return 1;
 }
 
+int uw_inject_mouse_rdown(int window_x, int window_y) {
+    /* Right-button half of uw_inject_mouse_rdown/rup, split the same way
+       uw_inject_mouse_down/up split the left-button click, for testing a
+       real held right-button drag (grab an object, hold, move, release
+       elsewhere) instead of an instantaneous click. */
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
+    SDL_Event down = {0};
+    down.type = SDL_MOUSEBUTTONDOWN;
+    down.button.button = SDL_BUTTON_RIGHT;
+    down.button.which = UW_SYNTH_MOUSE;
+    down.button.x = window_x;
+    down.button.y = window_y;
+    SDL_PushEvent(&down);
+    return 1;
+}
+
+int uw_inject_mouse_rup(int window_x, int window_y) {
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
+    SDL_Event up = {0};
+    up.type = SDL_MOUSEBUTTONUP;
+    up.button.button = SDL_BUTTON_RIGHT;
+    up.button.which = UW_SYNTH_MOUSE;
+    up.button.x = window_x;
+    up.button.y = window_y;
+    SDL_PushEvent(&up);
+    return 1;
+}
+
+int uw_inject_mouse_motion(int window_x, int window_y) {
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
+    SDL_Event motion = {0};
+    motion.type = SDL_MOUSEMOTION;
+    motion.motion.which = UW_SYNTH_MOUSE;
+    motion.motion.x = window_x;
+    motion.motion.y = window_y;
+    SDL_PushEvent(&motion);
+    return 1;
+}
+
 int uw_inject_key_down(int sdl_keycode) {
     /* For scripted testing of the keyboard path: push a genuine
      * SDL_KEYDOWN (repeat=0) and, for a printable key, the matching

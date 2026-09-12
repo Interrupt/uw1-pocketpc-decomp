@@ -113,6 +113,22 @@ int uw_inject_mouse_rclick(int window_x, int window_y);
 int uw_inject_mouse_down(int window_x, int window_y);
 int uw_inject_mouse_up(int window_x, int window_y);
 
+/* Right-button split halves of uw_inject_mouse_rclick, for testing a real
+   right-button DRAG (down over one object, hold across a real multi-poll
+   gap, move, then release somewhere else -- e.g. grabbing a world object
+   and dragging it onto the inventory HUD) rather than an instantaneous
+   click. */
+int uw_inject_mouse_rdown(int window_x, int window_y);
+int uw_inject_mouse_rup(int window_x, int window_y);
+
+/* Warp the cursor and push a genuine SDL_MOUSEMOTION event with no button
+   state change -- the "move while held" middle of a drag. Warping alone
+   may or may not synthesize a motion event depending on the video
+   backend, so this pushes one explicitly for tests that need the game to
+   actually see intermediate movement (not just a teleported cursor)
+   while a button is held down. */
+int uw_inject_mouse_motion(int window_x, int window_y);
+
 /* Push a genuine SDL_KEYDOWN (+ SDL_TEXTINPUT for a printable key) / SDL_KEYUP
    for the given SDL_Keycode, so scripted tests exercise uw_pump_events()'s
    real keyboard path (demomode's SDLHOLD command). Returns 1, or 0 if
