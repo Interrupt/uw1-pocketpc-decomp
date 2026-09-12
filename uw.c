@@ -56674,7 +56674,27 @@ void FUN_0006cca8()
   FUN_00076390((int)DAT_0023c21c,0x20a6);
   FUN_0006e96c(DAT_00086df8 + 0x47);
   FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
+  /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
+     parameter -- it reads the global DAT_00088960 instead (see its own
+     definition in graphics.c: DAT_00088960==0 draws every source byte
+     opaquely via the palette, nonzero skips byte==0 as the transparent
+     key). Every OTHER caller in this file that wants transparency sets
+     this global around the call (draw_sprite_by_id, FUN_0003f99c,
+     FUN_0003fa1c all do `DAT_00088960 = 1; ...; DAT_00088960 = 0;`) --
+     this call's own trailing literal `1` argument clearly intended the
+     same thing (it's not a real parameter bitmap_blit_to_framebuffer
+     reads at all, just a leftover Ghidra also emitted at the other
+     sites where it happens to coincide with the real fix), but nothing
+     here ever sets the global, so this panel background blit ran
+     opaque -- painting every transparent-keyed pixel in the panels.GR
+     source (byte value 0) as solid black instead of leaving the
+     background visible underneath. This is the inventory-area "black
+     box" bug (uw.c's own DAT_0023cca4 decode is real panels.GR pixel
+     data, confirmed via UW_DEBUG_DRAW framebuffer dumps -- the missing
+     piece was purely this transparency-mode flag). */
+  DAT_00088960 = 1;
   bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+  DAT_00088960 = 0;
   (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
   FUN_00076508();
   return;
