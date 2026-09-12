@@ -3300,8 +3300,14 @@ undefined4 LAB_00073b10()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-int DAT_002046ac;
-int DAT_002046a0;
+/* Both were `int` -- real 64-bit pointers (DAT_002046a8/DAT_0020469c,
+   both `char *`) stored through a 32-bit global truncate them on this
+   host. DAT_002046a0 feeds DAT_002046c0/DAT_002046c8's own bases
+   (used by FUN_00053750's message-buffer write), confirmed live as
+   the next crash in the FUN_00068138 "spawn object" chain once the
+   earlier truncations in that same chain were fixed. */
+char *DAT_002046ac;
+char *DAT_002046a0;
 undefined1 DAT_00250770;
 short DAT_002046b0;
 byte DAT_002046d0;
@@ -16397,13 +16403,14 @@ byte * param_3;
   short sVar4;
   short sVar5;
   short sVar6;
-  int iVar7;
+  char *iVar7;  /* was `int` -- truncated FUN_00068138's real object
+                   pointer, latent while that function always returned 0 */
   undefined4 uVar8;
   int iVar9;
   uint uVar10;
   short local_18;
   short local_16;
-  
+
   param_2 = param_2 + 1;
   DAT_00202c6c = param_3;
   param_3[8] = 1;
@@ -16423,8 +16430,8 @@ byte * param_3;
       return;
     }
   }
-  iVar7 = FUN_00068138(0x1cb,0);
-  if (iVar7 == 0) {
+  iVar7 = (char *)FUN_00068138(0x1cb,0);
+  if (iVar7 == (char *)0x0) {
     return;
   }
   uVar3 = *(ushort *)(iVar7 + 2);
@@ -18836,41 +18843,44 @@ ushort param_3;
   byte bVar2;
   undefined2 uVar3;
   int iVar4;
-  int iVar5;
   uint uVar6;
   undefined4 uVar7;
   int extraout_r1;
-  
+  char *pDropObj;  /* was `int iVar5`/reused `int iVar4` -- truncated
+                       FUN_00068138's real object pointer in both of
+                       this function's drop branches */
+
   iVar4 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
   ;
   if (((param_2 & 0xff) != 0) &&
-     (iVar5 = FUN_00068138((short)(param_2 & 0xff) + 0xd8,0), iVar5 != 0)) {
-    uVar6 = (*(ushort *)(iVar5 + 2) ^ *(ushort *)(param_1 + 2)) & 0x1fff ^
+     (pDropObj = (char *)FUN_00068138((short)(param_2 & 0xff) + 0xd8,0), pDropObj != NULL)) {
+    uVar6 = (*(ushort *)(pDropObj + 2) ^ *(ushort *)(param_1 + 2)) & 0x1fff ^
             (uint)*(ushort *)(param_1 + 2);
     bVar1 = (byte)uVar6;
-    *(byte *)(iVar5 + 2) = bVar1;
+    *(byte *)(pDropObj + 2) = bVar1;
     bVar2 = (byte)(uVar6 >> 8);
-    *(byte *)(iVar5 + 3) = bVar2;
+    *(byte *)(pDropObj + 3) = bVar2;
     bVar2 = (param_1[3] ^ bVar2) & 0x1c ^ bVar2;
-    *(byte *)(iVar5 + 2) = bVar1;
-    *(byte *)(iVar5 + 3) = bVar2;
-    *(byte *)(iVar5 + 2) = (param_1[2] ^ bVar1) & 0x7f ^ bVar1;
-    *(byte *)(iVar5 + 3) = bVar2;
-    uVar6 = CONCAT11(*(undefined1 *)(iVar5 + 5),*(undefined1 *)(iVar5 + 4)) & 0xffe8;
-    *(byte *)(iVar5 + 4) = (byte)uVar6 | 0x28;
-    *(char *)(iVar5 + 5) = (char)(uVar6 >> 8);
-    object_list_insert_head(iVar4 + 2,iVar5);
-    FUN_00055f98(iVar5,(int)DAT_0010144c,(int)DAT_00101454,1);
+    *(byte *)(pDropObj + 2) = bVar1;
+    *(byte *)(pDropObj + 3) = bVar2;
+    *(byte *)(pDropObj + 2) = (param_1[2] ^ bVar1) & 0x7f ^ bVar1;
+    *(byte *)(pDropObj + 3) = bVar2;
+    uVar6 = CONCAT11(*(undefined1 *)(pDropObj + 5),*(undefined1 *)(pDropObj + 4)) & 0xffe8;
+    *(byte *)(pDropObj + 4) = (byte)uVar6 | 0x28;
+    *(char *)(pDropObj + 5) = (char)(uVar6 >> 8);
+    object_list_insert_head(iVar4 + 2,pDropObj);
+    FUN_00055f98(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
   }
   if ((param_3 & 0xff) != 0) {
     uVar7 = Ordinal_1053();
     Ordinal_2005(0x10,uVar7);
-    if ((extraout_r1 < 7) && (iVar4 = FUN_00068138((short)(param_3 & 0xff) + 0xc0,0), iVar4 != 0)) {
-      uVar3 = *(undefined2 *)(iVar4 + 6);
+    if ((extraout_r1 < 7) &&
+       (pDropObj = (char *)FUN_00068138((short)(param_3 & 0xff) + 0xc0,0), pDropObj != NULL)) {
+      uVar3 = *(undefined2 *)(pDropObj + 6);
       bVar1 = (byte)uVar3;
-      *(byte *)(iVar4 + 6) = (*param_1 ^ bVar1) & 0x3f ^ bVar1;
-      *(char *)(iVar4 + 7) = (char)((ushort)uVar3 >> 8);
-      FUN_000523d0(param_1,iVar4,4,0);
+      *(byte *)(pDropObj + 6) = (*param_1 ^ bVar1) & 0x3f ^ bVar1;
+      *(char *)(pDropObj + 7) = (char)((ushort)uVar3 >> 8);
+      FUN_000523d0(param_1,pDropObj,4,0);
     }
   }
   return;
@@ -26292,10 +26302,10 @@ void FUN_0003a57c()
 
 {
   undefined2 uVar1;
-  int iVar2;
+  char *iVar2;  /* was `int` -- truncated FUN_00068138's real pointer */
   uint uVar3;
-  
-  iVar2 = FUN_00068138(0x40,1);
+
+  iVar2 = (char *)FUN_00068138(0x40,1);
   *(undefined1 *)(iVar2 + 0x1a) = 0x19;
   uVar1 = *(undefined2 *)(iVar2 + 0xd);
   *(char *)(iVar2 + 0xd) = (char)uVar1;
@@ -33981,7 +33991,11 @@ undefined4 param_1;
 
 
 void FUN_00045728(param_1)
-undefined4 param_1;
+/* Was `undefined4 param_1` -- a real object-record pointer (forwarded
+   straight to FUN_00045730, which dereferences it via
+   encode_object_slot_index/FUN_00046260), truncated to 32 bits on this
+   host -- same class as many other fixes this session. */
+ushort *param_1;
 
 {
   FUN_00045730(param_1,1);
@@ -33991,7 +34005,9 @@ undefined4 param_1;
 
 
 undefined4 FUN_00045730(param_1,param_2)
-undefined4 param_1;
+/* Was `undefined4 param_1` -- same truncated-object-pointer bug as
+   FUN_00045728's own fix just above it (its only caller here). */
+ushort *param_1;
 uint param_2;
 
 {
@@ -34004,8 +34020,15 @@ uint param_2;
   int iVar7;
   int iVar8;
   uint uVar9;
-  
-  iVar3 = FUN_00046260();
+  char *pObj;
+
+  /* Dropped argument: FUN_00046260 dereferences its own declared
+     param_1 immediately -- called bare here, same idiom as this whole
+     session's other fixes. Confirmed live (UW_DEBUG_INV +
+     demo_container_click_test.txt): clicking a food item (bread)
+     inside an open backpack container crashed here on first use of
+     this never-before-exercised "use item" dispatch path. */
+  iVar3 = FUN_00046260(param_1);
   uVar4 = encode_object_slot_index(param_1);
   iVar7 = 0;
   do {
@@ -34022,14 +34045,20 @@ uint param_2;
     else {
       FUN_00042e30();
       FUN_00042d70();
-      for (iVar7 = g_current_container_record; iVar7 != 0;
-          iVar7 = CONCAT13(*(undefined1 *)(iVar7 + 7),
-                           CONCAT12(*(undefined1 *)(iVar7 + 6),
-                                    CONCAT11(*(undefined1 *)(iVar7 + 5),*(undefined1 *)(iVar7 + 4)))
-                          )) {
-        iVar8 = *(short *)(iVar7 + 10) - iVar3;
-        *(char *)(iVar7 + 10) = (char)iVar8;
-        *(char *)(iVar7 + 0xb) = (char)((uint)iVar8 >> 8);
+      /* Was `for (iVar7 = g_current_container_record; ...)` -- truncated
+         g_current_container_record (a real char* global) into a 32-bit
+         int, then rebuilt a bogus "next" address out of raw bytes at
+         iVar7+4..+7 instead of resolving the object's real next-link via
+         resolve_object_link, same idiom as FUN_00052af4's chain walk.
+         Confirmed live (UW_DEBUG_INV + demo_container_click_test.txt):
+         this crashed on the first-ever exercise of the food-item "use"
+         path (clicking Bread inside an open container). */
+      for (pObj = g_current_container_record; pObj != NULL;
+          pObj = (*(ushort *)(pObj + 4) & 0xffc0) == 0 ? NULL :
+                 (char *)resolve_object_link((ushort *)(pObj + 4))) {
+        iVar8 = *(short *)(pObj + 10) - iVar3;
+        *(char *)(pObj + 10) = (char)iVar8;
+        *(char *)(pObj + 0xb) = (char)((uint)iVar8 >> 8);
       }
     }
   }
@@ -34282,6 +34311,10 @@ int param_5;
   undefined4 uVar7;
   char *pcVar8;
   char *pcVar9;
+  char *pDropObj;  /* was `uVar7` (undefined4) for this use -- truncated
+                       FUN_00068138's real object pointer; uVar7 itself
+                       is only reused as a 0/1 message-select flag right
+                       after, so this needed a separate typed local */
   char acStackY_85aec [547480];
   char acStack_4d [53];
   
@@ -34315,8 +34348,8 @@ int param_5;
   else {
     if (param_5 != 0) {
       sVar4 = rand_below(2);
-      uVar7 = FUN_00068138(sVar4 + 0xd5,0);
-      FUN_000523d0(g_player_object,uVar7,6,0);
+      pDropObj = (char *)FUN_00068138(sVar4 + 0xd5,0);
+      FUN_000523d0(g_player_object,pDropObj,6,0);
     }
     FUN_00045728(puVar5);
     FUN_00053334(0,puVar5,1);
@@ -41656,10 +41689,16 @@ byte param_7;
 
 
 undefined4 FUN_000522f0(param_1,param_2,param_3,param_4,param_5,param_6)
+/* param_4 was `int` -- a real object pointer (forwarded to
+   FUN_00052450, which already declares its own param_1 as `ushort *`)
+   truncated to 32 bits on this host. Confirmed live: FUN_00068138 now
+   actually returns a live pointer instead of always 0 (see its fix),
+   and this truncation crashed FUN_00052450 the first time this
+   never-before-exercised path ran with a real object. */
 uint param_1;
 uint param_2;
 undefined4 param_3;
-int param_4;
+char *param_4;
 undefined2 param_5;
 int param_6;
 
@@ -41686,8 +41725,13 @@ int param_6;
 
 
 void FUN_000523d0(param_1,param_2,param_3,param_4)
+/* param_2 was `undefined4` -- a real object pointer forwarded straight
+   into FUN_000522f0's own (now char*) param_4, truncated to 32 bits on
+   this host. Same class as FUN_000522f0/FUN_00068138's other fixes;
+   all of this function's callers already pass real object pointers
+   (g_selected_object, or FUN_00068138's freshly-allocated object). */
 char *param_1;
-undefined4 param_2;
+char *param_2;
 undefined2 param_3;
 undefined4 param_4;
 
@@ -41719,7 +41763,10 @@ short param_5;
   uint uVar4;
   int iVar5;
   uint uVar6;
-  
+  char *pTile;  /* was reuse of `iVar5` (int) -- truncated
+                   tilemap_lookup's real pointer; iVar5 itself stays int
+                   for its other, unrelated uses in this function */
+
   bVar3 = 0;
   while( true ) {
     if ((bVar3 != 0) || (uVar4 = param_2, uVar6 = param_3, DAT_00202c84 == 0)) {
@@ -41739,13 +41786,13 @@ short param_5;
       return 0;
     }
   }
-  iVar5 = tilemap_lookup((int)uVar4 >> 3,(int)uVar6 >> 3);
+  pTile = (char *)tilemap_lookup((int)uVar4 >> 3,(int)uVar6 >> 3);
   uVar1 = param_1[1];
   bVar3 = (byte)(uVar1 & 0x3ff);
   *(byte *)(param_1 + 1) = (bVar3 ^ (byte)param_4) & 0x7f ^ bVar3;
   *(byte *)((char *)param_1 + 3) =
        (byte)((uVar1 & 0x3ff) >> 8) | (byte)(((uVar6 & 7 | (uVar4 & 0x1fff) << 3) << 10) >> 8);
-  object_list_append_tail(iVar5 + 2,param_1);
+  object_list_append_tail(pTile + 2,param_1);
   iVar5 = object_ptr_in_arena(param_1);
   if (iVar5 == 0) {
     FUN_00055f98(param_1,(int)uVar4 >> 3,(int)uVar6 >> 3,1);
@@ -42144,26 +42191,41 @@ int param_1;
 {
   void *pvVar1;
   ushort *puVar2;
-  undefined4 *puVar3;
+  /* Was `undefined4 *puVar3` -- a 32-bit-wide alias onto DAT_0020469c/
+     DAT_002046a8 (both real 64-bit `char *` globals). The write-back
+     below (`*puVar3 = puVar2 + -1`) only ever stored the low 32 bits of
+     the decremented free-list-top pointer, zeroing its upper half on
+     the very first allocation. Every later call then read a bogus,
+     low (<4GB-looking) "pointer" back out of the corrupted global,
+     producing exactly the unmapped, oddly-small addresses (e.g.
+     0x3e8b37a0) seen crashing FUN_00052450 on the first-ever exercise
+     of this dead-until-now object-spawn path (FUN_00068138 always
+     returning 0 previously masked this entirely). Also fixed the two
+     `*DAT_xxx` reads immediately below: DAT_0020469c/DAT_002046a8 are
+     byte pointers into a `short` array (confirmed by the manual `* 2`
+     / `>> 1` scaling used elsewhere in this file for the same globals),
+     so reading through them as `char` truncated the stored slot index
+     to one byte instead of two. */
+  char **puVar3;
 
   if (param_1 == 0) {
     puVar3 = &DAT_0020469c;
     if ((DAT_0020469c < DAT_002046bc) && (FUN_00052d68(3,10), DAT_0020469c < DAT_002046bc)) {
       return 0;
     }
-    pvVar1 = DAT_002046c4 + (*DAT_0020469c - 0x100) * 8;
-    puVar2 = DAT_0020469c;
+    pvVar1 = DAT_002046c4 + (*(short *)DAT_0020469c - 0x100) * 8;
+    puVar2 = (ushort *)DAT_0020469c;
   }
   else {
     puVar3 = &DAT_002046a8;
     if ((DAT_002046a8 < DAT_002046a4) && (FUN_00052d68(3,5), DAT_002046a8 < DAT_002046a4)) {
       return 0;
     }
-    FUN_00053750((int)(short)*DAT_002046a8);
-    pvVar1 = (uint)*DAT_002046a8 * 0x1b + DAT_002046b8;
-    puVar2 = DAT_002046a8;
+    FUN_00053750((int)*(short *)DAT_002046a8);
+    pvVar1 = (uint)*(ushort *)DAT_002046a8 * 0x1b + DAT_002046b8;
+    puVar2 = (ushort *)DAT_002046a8;
   }
-  *puVar3 = puVar2 + -1;
+  *puVar3 = (char *)(puVar2 + -1);
   return pvVar1;
 }
 
@@ -42176,20 +42238,27 @@ char *param_1;
 {
   short sVar1;
   short *psVar2;
-  
+
+  /* DAT_002046a8/DAT_0020469c are byte pointers into a `short` array
+     (see alloc_object_slot's matching fix) -- `+ 1` only advanced them
+     by one BYTE instead of one short-element (2 bytes), the mirror
+     image of alloc_object_slot's own "-1" pop bug, and the bare
+     `*DAT_xxx` reads below truncated the stored slot index to one
+     byte. Left uncaught until FUN_00068138 (which calls this on the
+     retry path) started actually running instead of always failing. */
   if (param_1 < DAT_002046c4) {
-    psVar2 = DAT_002046a8 + 1;
-    DAT_002046a8 = psVar2;
+    psVar2 = (short *)(DAT_002046a8 + 2);
+    DAT_002046a8 = (char *)psVar2;
     sVar1 = Ordinal_2005(0x1b,param_1 - DAT_002046b8);
     *psVar2 = sVar1;
     if (param_1 == DAT_0023b82c) {
-      FUN_00067e2c((int)*DAT_002046a8);
+      FUN_00067e2c((int)*(short *)DAT_002046a8);
     }
-    FUN_00053774((int)*DAT_002046a8);
+    FUN_00053774((int)*(short *)DAT_002046a8);
   }
   else {
-    DAT_0020469c = DAT_0020469c + 1;
-    *DAT_0020469c = (short)((int)(param_1 - DAT_002046c4) >> 3) + 0x100;
+    DAT_0020469c = DAT_0020469c + 2;
+    *(short *)DAT_0020469c = (short)((int)(param_1 - DAT_002046c4) >> 3) + 0x100;
   }
   return;
 }
@@ -43551,10 +43620,10 @@ ushort *FUN_00055610(param_1)
 ushort * param_1;
 
 {
-  int iVar1;
+  char *iVar1;  /* was `int` -- truncated tilemap_lookup's real pointer */
   ushort *puVar2;
-  
-  iVar1 = tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
+
+  iVar1 = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
   puVar2 = (ushort *)alloc_object_slot(1);
   if (puVar2 == (ushort *)0x0) {
     puVar2 = (ushort *)0x0;
@@ -54336,7 +54405,19 @@ short param_2;
 
 
 
-undefined4 FUN_00068138(param_1,param_2)
+void *FUN_00068138(param_1,param_2)
+/* Was `undefined4 FUN_00068138(...)` ending in a hardcoded `return 0;`
+   that discarded the freshly-allocated object pointer (puVar3) on every
+   call, even on success. Every call site dereferences the return value
+   as a pointer (e.g. FUN_0002b258's `iVar5+2`/`+3`/`+4`/`+5` writes,
+   object_list_insert_head(iVar4+2,iVar5)) and gates on it being
+   non-null, so this whole "spawn a new object" path -- used for
+   monster death drops among other things -- was silently dead code.
+   Confirmed live: FUN_00072288's per-turn call passed the always-zero
+   result straight into FUN_000522f0 -> FUN_00052450, which dereferenced
+   the resulting NULL pointer and crashed the first time this
+   never-before-exercised turn-processing branch actually ran (hit by
+   simply clicking an item -- Bread -- inside an open container). */
 uint param_1;
 undefined4 param_2;
 
@@ -54376,7 +54457,7 @@ undefined4 param_2;
       puVar3[7] = 0;
     }
   }
-  return 0;
+  return puVar3;
 }
 
 
@@ -60331,7 +60412,8 @@ void FUN_00072288()
   int iVar7;
   uint uVar8;
   short extraout_r1;
-  
+  char *pNewObj;
+
   if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
     *(undefined1 *)(g_player_object + 8) = 4;
     return;
@@ -60354,26 +60436,31 @@ void FUN_00072288()
 LAB_00072374:
   uVar5 = Ordinal_1053();
   Ordinal_2005(5,uVar5);
-  iVar6 = FUN_00068138(extraout_r1 + 0xc2,0);
-  iVar7 = FUN_000522f0((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,iVar6,0,
-                       1);
+  /* Was `iVar6 = FUN_00068138(...)` (plain int) -- FUN_00068138 now
+     really returns a fresh object pointer (see its fix) instead of
+     always 0, so storing it in a 32-bit int truncates it on this 64-bit
+     host. New pNewObj local rather than retyping iVar6, which is reused
+     below for dungeon_view_anim_tick()'s unrelated int result. */
+  pNewObj = (char *)FUN_00068138(extraout_r1 + 0xc2,0);
+  iVar7 = FUN_000522f0((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,
+                       pNewObj,0,1);
   if (iVar7 != 0) {
-    uVar4 = *(undefined2 *)(iVar6 + 2);
+    uVar4 = *(undefined2 *)(pNewObj + 2);
     bVar1 = (byte)uVar4;
-    *(byte *)(iVar6 + 2) = (*(byte *)(g_player_object + 2) ^ bVar1) & 0x7f ^ bVar1;
-    *(char *)(iVar6 + 3) = (char)((ushort)uVar4 >> 8);
-    *(byte *)(iVar6 + 6) = *(byte *)(iVar6 + 6) | 0x3f;
-    *(undefined1 *)(iVar6 + 7) = *(undefined1 *)(iVar6 + 7);
-    uVar8 = (*(ushort *)(iVar6 + 2) ^ *(ushort *)(g_player_object + 2)) & 0x1fff ^
+    *(byte *)(pNewObj + 2) = (*(byte *)(g_player_object + 2) ^ bVar1) & 0x7f ^ bVar1;
+    *(char *)(pNewObj + 3) = (char)((ushort)uVar4 >> 8);
+    *(byte *)(pNewObj + 6) = *(byte *)(pNewObj + 6) | 0x3f;
+    *(undefined1 *)(pNewObj + 7) = *(undefined1 *)(pNewObj + 7);
+    uVar8 = (*(ushort *)(pNewObj + 2) ^ *(ushort *)(g_player_object + 2)) & 0x1fff ^
             (uint)*(ushort *)(g_player_object + 2);
     uVar2 = (undefined1)uVar8;
-    *(undefined1 *)(iVar6 + 2) = uVar2;
+    *(undefined1 *)(pNewObj + 2) = uVar2;
     bVar3 = (byte)(uVar8 >> 8);
-    *(byte *)(iVar6 + 3) = bVar3;
+    *(byte *)(pNewObj + 3) = bVar3;
     bVar1 = *(byte *)(g_player_object + 3);
-    *(undefined1 *)(iVar6 + 2) = uVar2;
-    *(byte *)(iVar6 + 3) = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
-    FUN_00055f98(iVar6,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
+    *(undefined1 *)(pNewObj + 2) = uVar2;
+    *(byte *)(pNewObj + 3) = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
+    FUN_00055f98(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
     FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
@@ -61559,10 +61646,29 @@ uint param_2;
 
 {
   uint uVar1;
-  
+  byte bVar2;
+
   uVar1 = (param_2 & 0xff) + (uint)param_1[8];
-  if ((byte)(&DAT_001007d4)[(*param_1 & 0x3f) * 0x30] < uVar1) {
-    param_1[8] = (&DAT_001007d4)[(*param_1 & 0x3f) * 0x30];
+  /* Was an unconditional `(&DAT_001007d4)[(*param_1 & 0x3f) * 0x30]` cap
+     -- that table is the per-monster-class max-stat table, indexed by
+     the low 6 bits of a monster object's own type id (a valid index
+     for any real monster, 0x40-0x7f). But this function is also called
+     with param_1 == g_player_object (see FUN_00071b08's food-digestion
+     "restore a resting bonus" call, and this function's own existing
+     `if (param_1 == g_player_object)` special case just below), and the
+     player's object type happens to be 0x7f, whose low 6 bits (0x3f)
+     index the table's last, unused/zeroed entry. That zero cap then
+     clamped the player's HP down to 0 every time -- confirmed live via
+     UW_DEBUG_INV: "FUN_00073f60 *param_1=0x7f class=0x3f cap=0
+     uVar1=42 hp_before=34" immediately followed by the player's death
+     sequence after simply eating a loaf of bread. Use the real player
+     max-HP stat (DAT_0023be74+4, the same source FUN_00073ec0 already
+     uses for player HP capping) instead of the monster table when the
+     target is the player. */
+  bVar2 = (param_1 == g_player_object) ? *(byte *)(DAT_0023be74 + 4) :
+          (&DAT_001007d4)[(*param_1 & 0x3f) * 0x30];
+  if (bVar2 < uVar1) {
+    param_1[8] = bVar2;
   }
   else {
     param_1[8] = (byte)uVar1;
@@ -61654,7 +61760,12 @@ char param_2;
 
 
 
-int FUN_00074150(param_1,param_2)
+void *FUN_00074150(param_1,param_2)
+/* Was `int FUN_00074150(...)` -- returned FUN_00068138's real object
+   pointer through a 32-bit int, truncated on this host; both callers
+   (FUN_000742c0, FUN_00074380) also stored it into a 32-bit undefined4
+   before dereferencing it via encode_object_slot_index/
+   object_list_insert_head, same class of fix applied there too. */
 undefined4 param_1;
 byte * param_2;
 
@@ -61662,12 +61773,12 @@ byte * param_2;
   uint uVar1;
   undefined2 uVar2;
   byte bVar3;
-  int iVar4;
+  char *iVar4;
   undefined4 uVar5;
   char extraout_r1;
   byte bVar6;
-  
-  iVar4 = FUN_00068138(param_1,0);
+
+  iVar4 = (char *)FUN_00068138(param_1,0);
   bVar6 = (*param_2 >> 4) * '\b';
   uVar1 = (int)((uint)(*param_2 >> 4) << 0x13) >> 0x10;
   if (uVar1 < 0x80) {
@@ -61716,13 +61827,13 @@ undefined1 param_5;
 
 {
   short sVar1;
-  undefined4 uVar2;
+  char *uVar2;  /* was `undefined4` -- truncated FUN_00074150's pointer */
   undefined4 uVar3;
   undefined4 uVar4;
   uint extraout_r1;
   undefined1 uVar5;
-  
-  uVar2 = FUN_00074150(0x1c5,param_4);
+
+  uVar2 = (char *)FUN_00074150(0x1c5,param_4);
   FUN_00075a88(param_1,param_2,2,param_5);
   uVar3 = Ordinal_1053();
   uVar4 = encode_object_slot_index(uVar2);
@@ -61749,10 +61860,10 @@ undefined1 param_5;
 
 {
   short sVar1;
-  undefined4 uVar2;
+  char *uVar2;  /* was `undefined4` -- truncated FUN_00074150's pointer */
   undefined4 uVar3;
-  
-  uVar2 = FUN_00074150(0x1c2,param_4);
+
+  uVar2 = (char *)FUN_00074150(0x1c2,param_4);
   FUN_00075a88(param_1,param_2,1,param_5);
   FUN_00075a88(param_1 + 1,param_2,1,param_5);
   FUN_00075a88(param_1 - 1,param_2,1,param_5);
@@ -62172,6 +62283,9 @@ char param_2;
   int iVar9;
   uint uVar10;
   undefined4 uVar11;
+  char *pObj;  /* was reuse of `iVar8` (int) -- truncated FUN_00068138's
+                  real pointer; iVar8 itself stays int for its earlier,
+                  unrelated uses above */
   ushort local_34;
   ushort local_32;
   short local_30;
@@ -62238,23 +62352,23 @@ char param_2;
     }
     iVar8 = FUN_00051fa0(uVar10,0,(int)(short)local_34,(int)(short)local_32,local_30,1,8);
     if (iVar8 != 0) {
-      iVar8 = FUN_00068138(uVar10,param_2 == '\x04');
-      uVar2 = *(ushort *)(iVar8 + 2);
+      pObj = (char *)FUN_00068138(uVar10,param_2 == '\x04');
+      uVar2 = *(ushort *)(pObj + 2);
       uVar6 = uVar2 & 0x1fff;
       bVar1 = (byte)(((local_34 & 7) << 0xd) >> 8);
-      *(char *)(iVar8 + 2) = (char)uVar6;
-      *(byte *)(iVar8 + 3) = (byte)(uVar6 >> 8) | bVar1;
+      *(char *)(pObj + 2) = (char)uVar6;
+      *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1;
       uVar6 = uVar2 & 0x3ff;
-      *(char *)(iVar8 + 2) = (char)uVar6;
-      *(byte *)(iVar8 + 3) = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
+      *(char *)(pObj + 2) = (char)uVar6;
+      *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
       uVar4 = DAT_00204690;
       if (param_2 == '\x04') {
-        DAT_00204690 = iVar8;
+        DAT_00204690 = (byte *)pObj;
         FUN_0002a35c();
         uVar6 = local_2e & 0x3f | (local_2c & 0x3ff) << 6;
-        DAT_00204690 = uVar4;
-        *(byte *)(iVar8 + 0x16) = *(byte *)(iVar8 + 0x16) & 0xf | (byte)(uVar6 << 4);
-        *(char *)(iVar8 + 0x17) = (char)(uVar6 >> 4);
+        DAT_00204690 = (byte *)uVar4;
+        *(byte *)(pObj + 0x16) = *(byte *)(pObj + 0x16) & 0xf | (byte)(uVar6 << 4);
+        *(char *)(pObj + 0x17) = (char)(uVar6 >> 4);
         if (((&DAT_001007da)[(uVar10 & 0xfe3f) * 0x30] & 0x80) != 0) {
           iVar9 = local_30 + 0x80;
           if (iVar9 < 0) {
@@ -62264,37 +62378,37 @@ char param_2;
         }
         pbVar5 = local_28;
         if (param_1 == g_player_object) {
-          *(byte *)(iVar8 + 0x19) = *(byte *)(iVar8 + 0x19) | 0x40;
+          *(byte *)(pObj + 0x19) = *(byte *)(pObj + 0x19) | 0x40;
         }
         else {
-          uVar10 = *(ushort *)(iVar8 + 0xd) & 0x3fff;
-          *(char *)(iVar8 + 0xd) = (char)uVar10;
-          *(char *)(iVar8 + 0xe) = (char)(uVar10 >> 8);
-          *(byte *)(iVar8 + 0x19) = *(byte *)(iVar8 + 0x19) | 1;
-          uVar2 = *(ushort *)(iVar8 + 0xf);
+          uVar10 = *(ushort *)(pObj + 0xd) & 0x3fff;
+          *(char *)(pObj + 0xd) = (char)uVar10;
+          *(char *)(pObj + 0xe) = (char)(uVar10 >> 8);
+          *(byte *)(pObj + 0x19) = *(byte *)(pObj + 0x19) | 1;
+          uVar2 = *(ushort *)(pObj + 0xf);
           uVar10 = uVar2 & 0xffc0;
           bVar1 = *(byte *)(g_player_object + 0x17) >> 2;
-          *(byte *)(iVar8 + 0xf) = (byte)uVar10 | bVar1;
-          *(char *)(iVar8 + 0x10) = (char)(uVar10 >> 8);
+          *(byte *)(pObj + 0xf) = (byte)uVar10 | bVar1;
+          *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
           uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (*(ushort *)(g_player_object + 0x16) & 0x3f0) << 2;
-          *(char *)(iVar8 + 0xf) = (char)uVar10;
-          *(char *)(iVar8 + 0x10) = (char)(uVar10 >> 8);
+          *(char *)(pObj + 0xf) = (char)uVar10;
+          *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
         }
       }
       else {
-        uVar7 = *(undefined2 *)(iVar8 + 4);
-        *(byte *)(iVar8 + 4) = (byte)uVar7 | 0x3f;
-        *(char *)(iVar8 + 5) = (char)((ushort)uVar7 >> 8);
+        uVar7 = *(undefined2 *)(pObj + 4);
+        *(byte *)(pObj + 4) = (byte)uVar7 | 0x3f;
+        *(char *)(pObj + 5) = (char)((ushort)uVar7 >> 8);
       }
-      uVar7 = *(undefined2 *)(iVar8 + 2);
+      uVar7 = *(undefined2 *)(pObj + 2);
       bVar1 = (byte)uVar7;
-      *(byte *)(iVar8 + 2) = (bVar1 ^ (byte)local_30) & 0x7f ^ bVar1;
-      *(char *)(iVar8 + 3) = (char)((ushort)uVar7 >> 8);
-      object_list_insert_head(pbVar5 + 2,iVar8);
+      *(byte *)(pObj + 2) = (bVar1 ^ (byte)local_30) & 0x7f ^ bVar1;
+      *(char *)(pObj + 3) = (char)((ushort)uVar7 >> 8);
+      object_list_insert_head(pbVar5 + 2,pObj);
       if (param_2 == '\x04') {
         return;
       }
-      FUN_00055f98(iVar8,(int)(short)local_2c,(int)(short)local_2e,1);
+      FUN_00055f98(pObj,(int)(short)local_2c,(int)(short)local_2e,1);
       return;
     }
     if (param_1 != g_player_object) {
@@ -62316,15 +62430,15 @@ int param_2;
   byte bVar1;
   undefined1 uVar2;
   undefined4 uVar3;
-  int iVar4;
+  char *iVar4;  /* was `int` -- truncated FUN_00068138's real pointer */
   int iVar5;
   char extraout_r1;
   short extraout_r1_00;
   uint uVar6;
-  
+
   uVar3 = Ordinal_1053();
   Ordinal_2005(3,uVar3);
-  iVar4 = FUN_00068138(extraout_r1_00 + 0x154,0);
+  iVar4 = (char *)FUN_00068138(extraout_r1_00 + 0x154,0);
   uVar6 = *(ushort *)(iVar4 + 2) & 0xffee;
   *(byte *)(iVar4 + 2) = (byte)uVar6 | 0x6e;
   *(char *)(iVar4 + 3) = (char)(uVar6 >> 8);
@@ -64877,7 +64991,9 @@ int param_1;
   int extraout_r1_00;
   int extraout_r1_01;
   int iVar8;
-  
+  char *pObj;  /* was reuse of `iVar8` (int) -- truncated
+                  FUN_00068138's real pointer */
+
   bVar3 = *(byte *)(DAT_0024cfc4 + 0x26);
   uVar7 = Ordinal_1053();
   Ordinal_2005(0x10,uVar7);
@@ -64924,10 +65040,10 @@ int param_1;
     }
     uVar2 = (uint)cVar5;
     if (0 < (int)uVar2) {
-      iVar8 = FUN_00068138((short)cVar4 + 0xa0,0);
-      *(byte *)(iVar8 + 6) = *(byte *)(iVar8 + 6) & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
-      *(char *)(iVar8 + 7) = (char)((uVar2 << 0x16) >> 0x18);
-      object_list_insert_head(param_1 + 6,iVar8);
+      pObj = (char *)FUN_00068138((short)cVar4 + 0xa0,0);
+      *(byte *)(pObj + 6) = *(byte *)(pObj + 6) & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
+      *(char *)(pObj + 7) = (char)((uVar2 << 0x16) >> 0x18);
+      object_list_insert_head(param_1 + 6,pObj);
     }
   }
   return;
@@ -64942,13 +65058,15 @@ int param_1;
   byte bVar1;
   undefined4 uVar2;
   int extraout_r1;
-  
+  char *pObj;  /* was reuse of `uVar2` (undefined4) -- truncated
+                  FUN_00068138's real pointer */
+
   bVar1 = *(byte *)(DAT_0024cfc4 + 0x27);
   uVar2 = Ordinal_1053();
   Ordinal_2005(0x10,uVar2);
   if (extraout_r1 < (int)(bVar1 & 0xf)) {
-    uVar2 = FUN_00068138((bVar1 >> 4) + 0xb0,0);
-    object_list_insert_head(param_1 + 6,uVar2);
+    pObj = (char *)FUN_00068138((bVar1 >> 4) + 0xb0,0);
+    object_list_insert_head(param_1 + 6,pObj);
   }
   return;
 }
@@ -65021,21 +65139,21 @@ int param_1;
   byte bVar3;
   short sVar4;
   undefined4 uVar5;
-  int iVar6;
+  char *iVar6;  /* was `int` -- truncated FUN_00068138's real pointer */
   char extraout_r1;
   byte bVar7;
   byte extraout_r1_00;
   int extraout_r1_01;
   int extraout_r1_02;
   uint uVar8;
-  
+
   uVar8 = 0;
   do {
     uVar5 = Ordinal_1053();
     uVar1 = *(ushort *)(DAT_0024cfc4 + uVar8 * 2 + 0x22);
     Ordinal_2005(0x10,uVar5);
     if (extraout_r1_01 < (int)(uVar1 & 0xf)) {
-      iVar6 = FUN_00068138(uVar1 >> 4,0);
+      iVar6 = (char *)FUN_00068138(uVar1 >> 4,0);
       uVar5 = Ordinal_1053();
       Ordinal_2005(2,uVar5);
       if (extraout_r1_02 == 0) {
@@ -65131,7 +65249,15 @@ int param_3;
         FUN_0007abbc(param_2,param_3);
         return param_2;
       }
-      FUN_0007a990();
+      /* Dropped arguments: FUN_0007a990 (light/extinguish a light
+         source) declares two params it dereferences immediately, but
+         was called bare here -- leftover ARM register garbage stood in
+         for the real torch object and mode. Confirmed live: clicking
+         the Torch inside an open backpack container read garbage for
+         `param_1[2] & 0x3f` (the torch's real fuel/charges field) and
+         almost always happened to read 0, printing "That light is
+         already used up" regardless of the torch's actual fuel. */
+      FUN_0007a990(param_2,param_3);
     }
     else if (uVar1 == 3) {
       FUN_0007acd4(param_1,param_2,param_3);
@@ -65209,7 +65335,11 @@ LAB_00079cb8:
 
 
 bool FUN_00079d08(param_1,param_2,param_3)
-undefined4 param_1;
+/* Was `undefined4 param_1` -- a real object-record pointer (forwarded
+   to FUN_00045728/FUN_00053334, which both dereference it), truncated
+   to 32 bits on this host -- same class as many other fixes this
+   session. */
+ushort *param_1;
 int param_2;
 undefined4 param_3;
 
@@ -65235,7 +65365,10 @@ undefined4 param_3;
     }
   }
   else {
-    FUN_00045728();
+    /* Dropped argument: FUN_00045728 declares one param (the object)
+       and forwards it on -- called bare here, same idiom as its own
+       fix. */
+    FUN_00045728(param_1);
     iVar2 = FUN_00053334(0,param_1,param_3);
   }
   return iVar2 == 0;
@@ -65802,13 +65935,10 @@ ushort * param_2;
 int param_3;
 
 {
-  char *wptr_59263;
   int iVar1;
-  char cVar2;
   byte bVar3;
   short sVar4;
   undefined4 uVar5;
-  char *pcVar6;
   ushort *puVar7;
   uint uVar8;
   ushort uVar9;
@@ -65816,9 +65946,25 @@ int param_3;
   int iVar11;
   int iVar12;
   bool bVar13;
-  char acStackY_87970 [555248];
   undefined2 uVar14;
-  char acStack_7c [76];
+  /* Was 76 bytes with a separate 555248-byte `acStackY_87970` "prefix"
+     buffer that a copy loop wrote "That " into -- but the very next
+     lines (Ordinal_1068/FUN_00078b18) read and append to acStack_7c,
+     which never got that prefix, so it started from stale/uninitialized
+     stack content. Same split-buffer decompile artifact already fixed
+     in build_creature_look_text's acStack_7c (see its comment): the
+     giant acStackY_* array is a phantom Ghidra stack-frame-miscalc, and
+     the real buffer is acStack_7c. Confirmed live: eating the bread
+     inside an open container printed a message built from garbage
+     stack bytes and, via Ordinal_1068 returning a wild "current length"
+     into that garbage, FUN_00078b18 wrote the object's name out of
+     bounds of the 76-byte buffer -- corrupting the stack badly enough
+     to zero the player's HP field, immediately killing the character
+     (a UW_DEBUG_INV hp-debug trace showed HP was still 34 right before
+     this code ran and 0 immediately after). Fixed by seeding acStack_7c
+     directly with the prefix instead, and widened generously like the
+     other fix. */
+  char acStack_7c [256];
   
   iVar11 = 0;
   iVar12 = 0xff;
@@ -65847,7 +65993,24 @@ int param_3;
   }
   uVar8 = uVar8 & 0x1ff;
   if (bVar13) {
-    iVar12 = (int)*(char *)(uVar10 + (int)puVar7);
+    /* Was `(int)puVar7` -- round-tripping a real pointer (&DAT_00202a28,
+       a static global whose real address can be anywhere in this
+       64-bit process, not just the low 32 bits) through a 32-bit int
+       truncates it before the offset is even added back, same class as
+       many other fixes this session. Confirmed live: clicking a food
+       item (id class 0xb0, e.g. the bread inside an open backpack
+       container) crashed here reading an essentially random address.
+       Do the offset arithmetic in the real pointer type instead.
+       Also was `*(char *)` (signed) -- DAT_00202a28 is declared
+       `undefined1` (unsigned char), and the sentinel check just below
+       (`(short)iVar12 == 0xff`) only makes sense if a stored byte of
+       0xff reads back as +255, not -1. Reading it signed sign-extended
+       any byte >= 0x80 into a negative iVar12, which the code below
+       misreads as "this food is poisonous" and applies lethal damage
+       for what should be an ordinary, harmless nutrition value -- the
+       cause of a fresh character dying instantly from eating the bread
+       once the crash above was fixed. */
+    iVar12 = (int)*(byte *)((char *)puVar7 + uVar10);
   }
   if (uVar8 < 0xbf) {
     if (uVar8 == 0xbe) {
@@ -65977,13 +66140,8 @@ LAB_0007b2e0:
       return 0;
     }
     if ((short)iVar11 == 0) {
-      pcVar6 = s_That_000878f4;
-    wptr_59263 = acStackY_87970;
-      do {
-        cVar2 = *pcVar6;
-        *wptr_59263 = cVar2; wptr_59263 = wptr_59263 + 1;
-        pcVar6 = pcVar6 + 1;
-      } while (cVar2 != '\0');
+      acStack_7c[0] = '\0';
+      Ordinal_1063(acStack_7c, s_That_000878f4);
       iVar11 = Ordinal_1068(acStack_7c);
       sVar4 = FUN_00078b18(acStack_7c + iVar11,param_2,0,0);
       if (sVar4 == 0) {
@@ -66320,14 +66478,16 @@ ushort * param_1;
 int param_2;
 
 {
-  char *wptr_59623;
-  char cVar1;
   ushort uVar2;
   short sVar3;
-  char *pcVar4;
   int iVar5;
-  char acStackY_85d64 [548068];
-  char acStack_7c [100];
+  /* Same split-buffer decompile artifact fixed in FUN_0007acd4 (see its
+     comment) and in build_creature_look_text: the "You read the "
+     prefix was copied into a phantom, oversized acStackY_85d64 buffer
+     that nothing else ever reads, leaving the real acStack_7c (read by
+     Ordinal_1068 just below) uninitialized. Fixed the same way: seed
+     acStack_7c directly, widened for safety. */
+  char acStack_7c [256];
   
   if (param_2 != 0) {
     uVar2 = *param_1;
@@ -66339,13 +66499,8 @@ int param_2;
     else if (((uVar2 & 0x1000) == 0) || ((uVar2 & 0x1c0) == 0x140)) {
       if ((uVar2 & 0x400) == 0) {
         if ((param_1[3] & 0x7fc0) < 0x4000) {
-          pcVar4 = s_You_read_the_00085ce8;
-    wptr_59623 = acStackY_85d64;
-          do {
-            cVar1 = *pcVar4;
-            *wptr_59623 = cVar1; wptr_59623 = wptr_59623 + 1;
-            pcVar4 = pcVar4 + 1;
-          } while (cVar1 != '\0');
+          acStack_7c[0] = '\0';
+          Ordinal_1063(acStack_7c, s_You_read_the_00085ce8);
           iVar5 = Ordinal_1068(acStack_7c);
           sVar3 = FUN_00078b18(acStack_7c + iVar5,param_1,0,0);
           if (sVar3 == 0) {
@@ -69785,14 +69940,14 @@ short param_7;
   byte bVar2;
   undefined2 uVar3;
   short sVar4;
-  int iVar5;
+  char *iVar5;  /* was `int` -- truncated FUN_00068138's real pointer */
   uint uVar6;
   undefined4 uVar7;
   int iVar8;
   byte bVar9;
-  
-  iVar5 = FUN_00068138(param_2 + 0x1c0,0);
-  if (iVar5 == 0) {
+
+  iVar5 = (char *)FUN_00068138(param_2 + 0x1c0,0);
+  if (iVar5 == (char *)0x0) {
     return 0;
   }
   if (param_1 != (ushort *)0x0) {
