@@ -89,6 +89,15 @@ void debug_framebuffer_dump(const char *tag);
    unset. */
 void uw_debug_dump_tmap(int level, const unsigned char *tile_data);
 
+/* Debug tool: if UW_DEBUG_DUMP_REVEALMAP is set (and not "0"), dumps the
+   current level's 64x64 automap-reveal byte array (DAT_000b99d0 in uw.c,
+   one byte per tile, nonzero = revealed) to a BMP -- unrevealed black,
+   revealed white -- every time it's called. Meant to be called once from
+   draw_automap_screen so opening the map (OPENMAP in a demo script)
+   produces a BMP directly comparable to uw_debug_dump_tmap's solid/open
+   layout, to check the reveal logic against the real level geometry. */
+void uw_debug_dump_revealmap(const unsigned char *reveal_data);
+
 /* Returns 1 and clears the flag if a mouse event (move/click) was
    processed since the last call, 0 otherwise. One-shot "was there a
    pending mouse message" signal for Ordinal_864 (PeekMessage) -- see its

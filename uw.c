@@ -8615,6 +8615,7 @@ undefined4 param_1;
     set_viewport_clip_rect(0,0,0x13f,199);
     set_palette_bank(1);
     bitmap_blit_to_framebuffer(0,1,uVar3,200,0x140,0,0,1);
+    uw_debug_dump_revealmap((unsigned char *)&DAT_000b99d0);
     draw_automap_tiles();
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
@@ -53008,7 +53009,14 @@ ushort * param_1;
   int iVar1;
   uint uVar2;
   short sVar3;
-  undefined4 uVar4;
+  char *puVar4;  /* was `undefined4 uVar4` -- truncated FUN_000535fc's
+                    real pointer before forwarding it into
+                    FUN_00065210, which dereferences it (offset+2/+3).
+                    Confirmed live: the automap full-level sweep
+                    (demo_automap.txt) crashed here on tile (23,8), the
+                    first tile whose feature-object slot value made
+                    FUN_000535fc actually resolve to a real, non-null
+                    pointer. */
   ushort *puVar5;
   ushort *puVar6;
   int iVar7;
@@ -53044,10 +53052,20 @@ ushort * param_1;
          which is why the whole tile-features/object pass was disabled.
          Pass the slot id just stored, like the other FUN_000535fc call
          sites in this function. */
-      uVar4 = FUN_000535fc((int)(short)(&DAT_0023b848)[iVar1]);
+      puVar4 = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[iVar1]);
       iVar15 = iVar1 * 4;
       pcVar14 = &DAT_0023bb98 + iVar15;
-      FUN_00065210(pcVar14,uVar4);
+      /* FUN_000535fc legitimately returns NULL for a slot value that
+         isn't a currently-populated object (unlike the dropped-arg bug
+         fixed just above, this is a real "nothing here" case, not a
+         truncation/garbage-argument one) -- FUN_00065210 dereferences
+         its second argument immediately, so skip it rather than
+         crashing. Confirmed live: demo_automap.txt's full-level sweep
+         crashed here on tile (30,17), the first tile whose feature
+         slot resolved to a genuinely empty object. */
+      if (puVar4 != NULL) {
+        FUN_00065210(pcVar14,puVar4);
+      }
       if ((uVar9 & 0x1000) != 0) {
         if ((uVar9 & 0x2000) == 0) {
           cVar8 = (&DAT_0023bb99)[iVar15] + '\b';
@@ -53118,6 +53136,14 @@ ushort * param_1;
         do {
           cVar8 = (&DAT_0023b8c8)[iVar15];
           puVar5 = (ushort *)FUN_000535fc((int)(short)(&DAT_0023b848)[cVar8]);
+          /* Same "FUN_000535fc can legitimately return NULL for an
+             empty slot" case as the fix above -- this loop dereferences
+             puVar5 immediately below (and passes it to
+             emit_tile_objects), so skip this index instead of crashing. */
+          if (puVar5 == (ushort *)0x0) {
+            iVar15 = (iVar15 + 1) * 0x10000 >> 0x10;
+            continue;
+          }
           iVar7 = cVar8 * 4;
           if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (*puVar5 & 0x1ff) == 0x166)
             fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
