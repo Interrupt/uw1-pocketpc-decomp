@@ -659,22 +659,55 @@ undefined4 DAT_00084638 = 0x84;
 undefined4 DAT_00084610 = 100u;
 undefined1 *DAT_000db45c;
 int DAT_000db458;
-int DAT_000d91d0;
+// was DAT_000d91d0 -- running point count while parse_e_model_file reads
+// a .E model's POINTS block (bounded at 600, see the "Too many points"
+// error); indexes both the point-scratch arrays and the final per-model
+// output buffer's points array.
+int g_model_parse_point_count;
 int DAT_000db4fc;
 int *DAT_000c8b00;
-int DAT_000db430;
+// was DAT_000db430 -- running part (face) count while parse_e_model_file
+// reads a .E model's PARTS block (bounded at 0x15e=350, see the "Too many
+// polys" error); indexes both the part-scratch arrays and the final
+// per-model output buffer's parts array.
+int g_model_parse_part_count;
 int DAT_00084660;
 int DAT_0008465c;
 int DAT_00084670;
 int DAT_0008466c;
+// DAT_000db480/DAT_000db470: gate the PARTS block's 'A' (auto-backside)
+// handling and an INTERSECTIONS-vs-other-block branch, but neither is
+// ever WRITTEN anywhere in this decompile -- always BSS-zero here, which
+// makes the 'A' backside-generation code (see vec3_cross's caller,
+// parse_e_model_file's "making backside of %d %d" branch) and the
+// INTERSECTIONS default path unconditionally taken as if these flags are
+// always off. Not renamed: unclear whether that's really how the
+// original binary behaves (a hidden writer elsewhere, not yet checked
+// via Ghidra the way DAT_00085668 and friends were) or a genuine
+// decompile gap, so a confident name isn't warranted yet.
 int DAT_000db480;
 int DAT_000db470;
 int DAT_000db4d4;
 int DAT_000db4d8;
 int DAT_000db4d0;
+// DAT_000db494: gates whether parse_e_model_file resolves each PARTS
+// entry's EXTENDED_COLORS index against g_model_known_ext_colors (and the
+// function's own final scratch-to-scratch color-inheritance pass). Same
+// "never written anywhere in this decompile" situation as DAT_000db480/
+// DAT_000db470 just above -- always reads BSS-zero here, so this whole
+// resolution path is presently dead code for every model regardless of
+// whether the file actually has an EXTENDED_COLORS block. Not renamed
+// for the same reason.
 int DAT_000db494;
 int DAT_000db4e0;
-undefined4 DAT_00084678;
+// was DAT_00084678 -- a fixed table of up to 32 known 24-bit RGB values
+// (0x00RRGGBB-shaped ints) that parse_e_model_file's EXTENDED_COLORS
+// handling linearly searches to turn each entry's literal RGB (e.g.
+// "545454" in ROCKSMAL.E) into a small index, stored per-part -- a
+// palette-index lookup, not a raw-color passthrough. Gated dead by
+// DAT_000db494 above, so this table is currently never actually
+// consulted despite being real, meaningful data.
+undefined4 g_model_known_ext_colors;
 char s_unexpected_EOF___no_END_statemen_000846f8[] = "unexpected_EOF_-_no_END_statemen";
 char s________c_0008471c[] = "%*[^}]%c";
 char s___d__00084728[] = "(%d)";
@@ -686,14 +719,14 @@ char s_ANIMATE_00084760[] = "ANIMATE";
 char s_Error__extended_color_for_part___00084768[] = "Error:_extended_color_for_part_%";
 /* Was "%lx%1s" -- correct as recovered from the original 32-bit binary,
    where 'long' and 'int' are both 4 bytes, matching the destination
-   (FUN_00020a74's `int local_208;`). On this 64-bit host 'long' is 8
+   (parse_e_model_file's `int local_208;`). On this 64-bit host 'long' is 8
    bytes, so vfscanf wrote a full 8-byte value through Ordinal_1114 into
    that 4-byte stack slot -- a real stack-buffer-overflow (confirmed via
    ASAN), not a truncation-in-the-other-direction case like most of this
    file's other pointer/int-width bugs. Fixed by dropping the 'l' length
    modifier to match the 32-bit-correct destination width instead of
    widening the destination, since every other use of this value in
-   FUN_00020a74 treats it as a plain 4-byte int. */
+   parse_e_model_file treats it as a plain 4-byte int. */
 char s__lx_1s_000847a4[] = "%x%1s";
 char s_EXTENDED_COLORS_000847ac[] = "EXTENDED_COLORS";
 char s_INTERSECTIONS_000847bc[] = "INTERSECTIONS";
@@ -751,7 +784,7 @@ char s_VERSION_000849b0[] = "VERSION";
 char s_error___s__c_000849b8[] = "error:_%s,%c";
 /* Unrecoverable string constant (Ghidra never recovered its content) --
    confirmed "END" by inspecting a real .E model file (DATA3D/DFRAME.E):
-   the game's text script parser (FUN_00020a74) brackets every model with
+   the game's text script parser (parse_e_model_file) brackets every model with
    a BEGIN...END pair (see s_BEGIN_00084a14/s_Input_file_error...), and
    this is the only unresolved string used as the closing-token
    comparison (Ordinal_1065(token,&DAT_000849c8) / Ordinal_1070 with
@@ -773,7 +806,7 @@ char s_BEGIN_00084a14[] = "BEGIN";
 char s__100s_00084a1c[] = "%100s";
 static undefined DAT_00084a24_backing[8192];
 #define DAT_00084a24 DAT_00084a24_backing[0]
-/* DAT_000c4c38 (a vertex-data scratch buffer, see FUN_00020a74's ".E"
+/* DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's ".E"
    model parser: `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor
    there and walks it forward one 4-byte slot at a time while parsing
    PARTS) was declared as a lone undefined4 scalar -- Ghidra only saw the
@@ -796,13 +829,13 @@ static char DAT_000c4c38_backing[0x3e58];
 static undefined1 DAT_000c8b08_backing[65536];
 #define DAT_000c8b08 DAT_000c8b08_backing[0]
 /* Base of a growing per-cluster-connection undefined4 array in
-   FUN_00020a74's CLUSTERS block (`puVar8 = &DAT_000c8ca0; ... *puVar8 =
+   parse_e_model_file's CLUSTERS block (`puVar8 = &DAT_000c8ca0; ... *puVar8 =
    local_1d8; puVar8 = puVar8 + 1;`) -- same undersized-scalar bug as
    DAT_000da868/DAT_000dab90 right above, for the same block. */
 static undefined1 DAT_000c8ca0_backing[65536];
 #define DAT_000c8ca0 DAT_000c8ca0_backing[0]
 /* DAT_000c9540..DAT_000c9555 (22 fields): another per-record byte-field
-   cluster in FUN_00020a74's ".E" model parser (NODES block), same
+   cluster in parse_e_model_file's ".E" model parser (NODES block), same
    undersized-scalar bug as DAT_000d2ab0/DAT_000c9dd8/DAT_000c8ca0/
    DAT_000da868/DAT_000dab90 above -- found via a systematic scan of
    every `(&DAT_x)[idx]` pattern in this function after the POINTS/PARTS/
@@ -854,9 +887,9 @@ static undefined1 DAT_000c9554_backing[65536];
 static undefined1 DAT_000c9555_backing[65536];
 #define DAT_000c9555 DAT_000c9555_backing[0]
 /* DAT_000c9dd8 through DAT_000c9de3 (12 globals) are byte fields of a
-   0x67(103)-byte-stride per-PART record in FUN_00020a74's ".E" model
-   parser (`iVar5 = DAT_000db430 * 0x67; (&DAT_000c9ddc)[iVar5] = ...`),
-   bounded by `if (0x15e < DAT_000db430)` (350 parts) -- same undersized-
+   0x67(103)-byte-stride per-PART record in parse_e_model_file's ".E" model
+   parser (`iVar5 = g_model_parse_part_count * 0x67; (&DAT_000c9ddc)[iVar5] = ...`),
+   bounded by `if (0x15e < g_model_parse_part_count)` (350 parts) -- same undersized-
    scalar-instead-of-real-table bug as the DAT_000d2ab0-family POINTS
    record right above, just for PARTS. Widened the same way. */
 static undefined1 DAT_000c9dd8_backing[65536];
@@ -948,9 +981,9 @@ static undefined1 DAT_000c9e3d_backing[65536];
 static undefined1 DAT_000c9e3e_backing[65536];
 #define DAT_000c9e3e DAT_000c9e3e_backing[0]
 /* DAT_000d2ab0 through DAT_000d2ad3 (28 globals) are individual byte
-   fields of a 0x2c(44)-byte-stride per-POINT record in FUN_00020a74's
-   ".E" model parser (`iVar6 = DAT_000d91d0 * 0x2c; (&DAT_000d2ab0)[iVar6]
-   = ...;`, bounded by `if (600 < DAT_000d91d0)`) -- up to 600 points *
+   fields of a 0x2c(44)-byte-stride per-POINT record in parse_e_model_file's
+   ".E" model parser (`iVar6 = g_model_parse_point_count * 0x2c; (&DAT_000d2ab0)[iVar6]
+   = ...;`, bounded by `if (600 < g_model_parse_point_count)`) -- up to 600 points *
    44 bytes = 26400 bytes needed per field, but each was declared as a
    lone `undefined1` scalar. A watchpoint confirmed this overflow
    corrupting an unrelated global (DAT_002029cc, ~26KB+ away) during a
@@ -1064,7 +1097,7 @@ static undefined1 DAT_000d98c8_backing[32768];
 static undefined1 DAT_000da480_backing[65536];
 #define DAT_000da480 DAT_000da480_backing[0]
 /* Per-CLUSTER pointer/index slot in the same ".E" model parser
-   (FUN_00020a74's CLUSTERS block) as DAT_000dab90 right below, same
+   (parse_e_model_file's CLUSTERS block) as DAT_000dab90 right below, same
    "declared as a lone scalar, actually a large indexed table" bug --
    `*(undefined **)(&DAT_000da868 + iVar4) = local_258;` where iVar4
    grows per cluster. Widened the same way, matching DAT_000dab90's
@@ -6180,7 +6213,14 @@ int param_1;
 
 
 
-void FUN_000137c0(param_1,param_2,param_3)
+// was FUN_000137c0 -- elementwise 3-float vector subtract, param_3 = param_2
+// - param_1. Confirmed by tracing its two call sites in parse_e_model_file
+// (was FUN_00020a74): both feed a shared vertex-position array (the
+// model's own POINTS, 0xc-byte stride) and the results go straight into
+// vec3_cross (was FUN_00013904) as the two edge vectors of a real
+// per-face normal computation -- see vec3_cross's own comment for why
+// that computed normal never actually gets used.
+void vec3_sub(param_1,param_2,param_3)
 undefined4 * param_1;
 undefined4 * param_2;
 undefined1 * param_3;
@@ -6208,7 +6248,24 @@ undefined1 * param_3;
 
 
 
-void FUN_00013904(param_1,param_2,param_3)
+// was FUN_00013904 -- standard 3-float cross product, param_3 = param_1 x
+// param_2 (confirmed component-by-component, including the Y term's sign
+// flip the textbook formula requires). Its one real caller,
+// parse_e_model_file (was FUN_00020a74), uses it to compute each PARTS
+// face's real normal (two vec3_sub edge vectors, v1-v0 and v2-v0, crossed
+// together) right after reading that face's vertex-index list -- a
+// genuine, deliberate per-face normal computation. Traced the real ARM
+// disassembly at its call site (0x00021aa4, not just this decompile) to
+// rule out a dropped-store decompile bug: the instruction immediately
+// after `bl 0x00013904` is unrelated vertex-count bookkeeping, with no
+// store of the result anywhere in between. The original shipped binary
+// computes this normal and then genuinely never uses it -- not a
+// decompile loss, a real dead computation in the original game. See
+// object-rendering-findings.txt's UPDATE (7) ("THE .E PARSER COMPUTES A
+// REAL FACE NORMAL -- AND THROWS IT AWAY") for the full writeup, and
+// UPDATE (8) for the companion finding that UV data doesn't exist in
+// this format at all (never computed, unlike this normal).
+void vec3_cross(param_1,param_2,param_3)
 undefined4 * param_1;
 undefined4 * param_2;
 undefined1 * param_3;
@@ -13192,7 +13249,22 @@ void render_visible_tile_list()
 
 
 
-void FUN_00020a74(param_1,param_2)
+// was FUN_00020a74 -- parses one DATA3D/*.E text-format 3D model script
+// (param_1 = file path, param_2 = ~16KB per-model output buffer) into
+// point positions and per-part (per-face) vertex-index lists. Called 29
+// times from FUN_00038680 at startup, once per model file. Point count
+// lives at output offset 0, part count at offset 4, points at
+// `8 + i*0xc` (3 back-to-back floats), parts at `0xc14 + p*0x60` (a
+// vertex count then that many vertex-index ints from offset +4) -- see
+// emit_model_object's own use of this layout. Despite computing a real
+// per-face normal (vec3_sub + vec3_cross, see vec3_cross's comment) and
+// resolving per-face color (EXTENDED_COLORS against g_model_known_ext_
+// colors), neither survives into this output buffer -- confirmed by
+// tracing the whole function, including the real ARM disassembly at the
+// normal's call site, not just this decompile. Only point positions and
+// vertex-index lists persist. Full writeup: object-rendering-findings.txt
+// UPDATE (7)/(8).
+void parse_e_model_file(param_1,param_2)
 char *param_1;
 undefined1 * param_2;
 
@@ -13375,15 +13447,15 @@ LAB_00022604:
         if (iVar4 == 0) {
           iVar5 = -10000;
           iVar3 = 10000;
-          DAT_000d91d0 = 0;
+          g_model_parse_point_count = 0;
           iVar4 = iVar3;
           iVar10 = iVar5;
           while( true ) {
             pppppuVar21 = (undefined4 *****)&local_214;
             iVar6 = Ordinal_1114(local_25c,s__d__d__d__00084980,&local_204,&local_224,pppppuVar21);
-            iVar19 = DAT_000d91d0;
+            iVar19 = g_model_parse_point_count;
             if (iVar6 != 3) break;
-            iVar6 = DAT_000d91d0 * 0x2c;
+            iVar6 = g_model_parse_point_count * 0x2c;
             (&DAT_000d2ab0)[iVar6] = (char)local_204;
             if (local_204 < iVar4) {
               iVar4 = local_204;
@@ -13441,25 +13513,25 @@ LAB_00022604:
             param_2[iVar19 * 0xc + 10] = (char)((uint)uVar7 >> 0x10);
             param_2[iVar19 * 0xc + 0xb] = (char)((uint)uVar7 >> 0x18);
             uVar7 = Ordinal_2032(local_224);
-            puVar13 = param_2 + (DAT_000d91d0 + 1) * 0xc;
+            puVar13 = param_2 + (g_model_parse_point_count + 1) * 0xc;
             *puVar13 = (char)uVar7;
             puVar13[1] = (char)((uint)uVar7 >> 8);
             puVar13[2] = (char)((uint)uVar7 >> 0x10);
             puVar13[3] = (char)((uint)uVar7 >> 0x18);
             uVar7 = Ordinal_2032(local_214);
-            iVar19 = DAT_000d91d0;
-            param_2[DAT_000d91d0 * 0xc + 0x10] = (char)uVar7;
+            iVar19 = g_model_parse_point_count;
+            param_2[g_model_parse_point_count * 0xc + 0x10] = (char)uVar7;
             param_2[iVar19 * 0xc + 0x11] = (char)((uint)uVar7 >> 8);
             param_2[iVar19 * 0xc + 0x12] = (char)((uint)uVar7 >> 0x10);
             param_2[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
-            DAT_000d91d0 = DAT_000d91d0 + 1;
-            if (600 < DAT_000d91d0) {
+            g_model_parse_point_count = g_model_parse_point_count + 1;
+            if (600 < g_model_parse_point_count) {
               Ordinal_1102(s_Too_many_points___d__00084968);
               goto LAB_0002263c;
             }
           }
-          DAT_000db4fc = DAT_000d91d0;
-          param_2[1] = (char)((uint)DAT_000d91d0 >> 8);
+          DAT_000db4fc = g_model_parse_point_count;
+          param_2[1] = (char)((uint)g_model_parse_point_count >> 8);
           *param_2 = (char)iVar19;
           param_2[2] = (char)((uint)iVar19 >> 0x10);
           param_2[3] = (char)((uint)iVar19 >> 0x18);
@@ -13490,7 +13562,7 @@ LAB_00022604:
         iVar4 = Ordinal_1065(auStack_1c8,s_PARTS_00084960);
         if (iVar4 == 0) {
           DAT_000c8b00 = &DAT_000c4c38;
-          DAT_000db430 = 0;
+          g_model_parse_part_count = 0;
           do {
             iVar5 = Ordinal_1114(pvVar_fh,s___c_1____00084954,local_260);
             iVar4 = 1;
@@ -13499,8 +13571,8 @@ LAB_00022604:
               pppppuVar21 = (undefined4 *****)&local_1dc;
               Ordinal_1114(pvVar_fh,s__d__1s__d__x__00084944,&local_23c,&local_254,pppppuVar21,puVar13)
               ;
-              iVar4 = DAT_000db430;
-              iVar5 = DAT_000db430 * 0x67;
+              iVar4 = g_model_parse_part_count;
+              iVar5 = g_model_parse_part_count * 0x67;
               (&DAT_000c9e2f)[iVar5] = (char)local_1dc;
               (&DAT_000c9e30)[iVar5] = (char)((uint)local_1dc >> 8);
               (&DAT_000c9e31)[iVar5] = (char)((uint)local_1dc >> 0x10);
@@ -13522,13 +13594,13 @@ LAB_00022604:
               param_2[iVar4 * 0x60 + 0xc6d] = 0;
               param_2[iVar4 * 0x60 + 0xc6e] = 0;
               param_2[iVar4 * 0x60 + 0xc6f] = 0;
-              puVar14 = param_2 + (DAT_000db430 + 0x21) * 0x60;
+              puVar14 = param_2 + (g_model_parse_part_count + 0x21) * 0x60;
               *puVar14 = 0xe0;
               puVar14[1] = 0;
               puVar14[2] = 0;
               puVar14[3] = 0;
-              iVar4 = DAT_000db430;
-              iVar5 = DAT_000db430 * 0x67;
+              iVar4 = g_model_parse_part_count;
+              iVar5 = g_model_parse_part_count * 0x67;
               if (local_23c == 4) {
                 (&DAT_000c9e2b)[iVar5] = local_21c[0];
                 (&DAT_000c9e2c)[iVar5] = local_21c[1];
@@ -13539,7 +13611,7 @@ LAB_00022604:
                 (&DAT_000c9de2)[iVar5] = 0xff;
                 (&DAT_000c9de3)[iVar5] = 0xff;
                 Ordinal_1102(s_got_bitmap__d___d_00084930);
-                iVar4 = DAT_000db430;
+                iVar4 = g_model_parse_part_count;
               }
               else {
                 (&DAT_000c9e29)[iVar5] = local_21c[1];
@@ -13593,33 +13665,33 @@ LAB_000218b8:
                   iVar3 = iVar19 + 1;
                   *DAT_000c8b00 = local_210;
                   DAT_000c8b00 = DAT_000c8b00 + 1;
-                  iVar10 = DAT_000db430 * 0x18 + iVar5;
+                  iVar10 = g_model_parse_part_count * 0x18 + iVar5;
                   iVar5 = iVar5 + 1;
                   puVar13 = param_2 + (iVar10 + 0x306) * 4;
                   *puVar13 = (char)local_210;
                   puVar13[1] = (char)((uint)local_210 >> 8);
                   puVar13[2] = (char)((uint)local_210 >> 0x10);
                   puVar13[3] = (char)((uint)local_210 >> 0x18);
-                  iVar10 = DAT_000db430;
+                  iVar10 = g_model_parse_part_count;
                 } while (local_260[0] == ',');
-                param_2[DAT_000db430 * 0x60 + 0xc14] = (char)iVar5;
+                param_2[g_model_parse_part_count * 0x60 + 0xc14] = (char)iVar5;
                 param_2[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
                 param_2[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
                 param_2[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
-                iVar5 = *(int *)(param_2 + DAT_000db430 * 0x60 + 0xc18);
-                iVar10 = *(int *)(param_2 + DAT_000db430 * 0x60 + 0xc20);
-                FUN_000137c0(param_2 + iVar5 * 0xc + 8,
-                             param_2 + *(int *)(param_2 + DAT_000db430 * 0x60 + 0xc1c) * 0xc + 8,
+                iVar5 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc18);
+                iVar10 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc20);
+                vec3_sub(param_2 + iVar5 * 0xc + 8,
+                             param_2 + *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc1c) * 0xc + 8,
                              auStack_150);
-                FUN_000137c0(param_2 + iVar5 * 0xc + 8,param_2 + iVar10 * 0xc + 8,auStack_160);
-                FUN_00013904(auStack_160,auStack_150,auStack_140);
+                vec3_sub(param_2 + iVar5 * 0xc + 8,param_2 + iVar10 * 0xc + 8,auStack_160);
+                vec3_cross(auStack_160,auStack_150,auStack_140);
                 if ((local_23c == 4) && (iVar3 != 4)) {
-                  Ordinal_1102(s_Error__polygon__d__bitmap_must_h_00084898,DAT_000db430);
+                  Ordinal_1102(s_Error__polygon__d__bitmap_must_h_00084898,g_model_parse_part_count);
                 }
                 if (iVar3 < 3) {
-                  Ordinal_1102(s_Error__Part__d_is_a_polygon_with_00084868,DAT_000db430,iVar3);
+                  Ordinal_1102(s_Error__Part__d_is_a_polygon_with_00084868,g_model_parse_part_count,iVar3);
                 }
-                iVar5 = DAT_000db430 * 0x67;
+                iVar5 = g_model_parse_part_count * 0x67;
                 (&DAT_000c9ddc)[iVar5] = (char)iVar3;
                 (&DAT_000c9ddd)[iVar5] = (char)((uint)iVar3 >> 8);
                 (&DAT_000c9dde)[iVar5] = (char)((uint)iVar3 >> 0x10);
@@ -13633,9 +13705,9 @@ LAB_000218b8:
                   iVar5 = iVar5 >> 1;
                   if (iVar5 != 0) {
                     puVar11 = (undefined4 *)
-                              (*(int *)(&DAT_000c9dd8 + DAT_000db430 * 0x67) + iVar5 * 4);
+                              (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + iVar5 * 4);
                     puVar8 = (undefined4 *)
-                             (*(int *)(&DAT_000c9dd8 + DAT_000db430 * 0x67) + (iVar3 - iVar5) * 4);
+                             (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + (iVar3 - iVar5) * 4);
                     do {
                       iVar5 = iVar5 + -1;
                       uVar7 = puVar11[-1];
@@ -13646,8 +13718,8 @@ LAB_000218b8:
                     } while (iVar5 != 0);
                   }
                 }
-                DAT_000db430 = DAT_000db430 + 1;
-                if (0x15e < DAT_000db430) {
+                g_model_parse_part_count = g_model_parse_part_count + 1;
+                if (0x15e < g_model_parse_part_count) {
                   Ordinal_1102(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
                 }
@@ -13662,13 +13734,13 @@ LAB_000218b8:
                 iVar4 = Ordinal_1114(pvVar_fh,s__d__d_000848d0,&local_1e0,&local_20c,pppppuVar21,
                                      puVar13);
                 piVar17 = DAT_000c8b00;
-                iVar5 = DAT_000db430 * 0x67;
+                iVar5 = g_model_parse_part_count * 0x67;
                 (&DAT_000c9ddc)[iVar5] = 2;
                 (&DAT_000c9ddd)[iVar5] = 0;
                 (&DAT_000c9dde)[iVar5] = 0;
                 (&DAT_000c9ddf)[iVar5] = 0;
                 *piVar17 = 2;
-                iVar5 = DAT_000db430 * 0x67;
+                iVar5 = g_model_parse_part_count * 0x67;
                 piVar17 = DAT_000c8b00 + 1;
                 DAT_000c8b00 = piVar17;
                 (&DAT_000c9dd8)[iVar5] = (char)piVar17;
@@ -13685,8 +13757,8 @@ LAB_00021838:
                   Ordinal_1102(s_Out_of_vertex_list_space_00084908);
                   goto LAB_0002263c;
                 }
-                DAT_000db430 = DAT_000db430 + 1;
-                if (0x15e < DAT_000db430) {
+                g_model_parse_part_count = g_model_parse_part_count + 1;
+                if (0x15e < g_model_parse_part_count) {
                   Ordinal_1102(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
                 }
@@ -13705,7 +13777,7 @@ LAB_00021838:
                     else {
                       Ordinal_1114(pvVar_fh,&DAT_000848f4,&local_218,puVar16,pppppuVar21,puVar13);
                       Ordinal_1102(s_got_sphere__d_000848e4,local_218);
-                      iVar4 = DAT_000db430 * 0x67;
+                      iVar4 = g_model_parse_part_count * 0x67;
                       puVar14 = &DAT_000c9dd8 + iVar4;
                       (&DAT_000c9e3b)[iVar4] = (char)local_218;
                       (&DAT_000c9e3c)[iVar4] = (char)((uint)local_218 >> 8);
@@ -13715,13 +13787,13 @@ LAB_00021838:
                     iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849ac,&local_1f4,puVar14,pppppuVar21,puVar13)
                     ;
                     piVar17 = DAT_000c8b00;
-                    iVar5 = DAT_000db430 * 0x67;
+                    iVar5 = g_model_parse_part_count * 0x67;
                     (&DAT_000c9ddc)[iVar5] = 1;
                     (&DAT_000c9ddd)[iVar5] = 0;
                     (&DAT_000c9dde)[iVar5] = 0;
                     (&DAT_000c9ddf)[iVar5] = 0;
                     *piVar17 = 1;
-                    iVar5 = DAT_000db430 * 0x67;
+                    iVar5 = g_model_parse_part_count * 0x67;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
                     (&DAT_000c9dd8)[iVar5] = (char)DAT_000c8b00;
                     (&DAT_000c9dd9)[iVar5] = (char)((uint)DAT_000c8b00 >> 8);
@@ -13763,13 +13835,13 @@ LAB_00021838:
                     if (iVar3 < DAT_0008466c) {
                       DAT_0008466c = iVar3;
                     }
-                    iVar3 = DAT_000db430 * 0x67;
+                    iVar3 = g_model_parse_part_count * 0x67;
                     (&DAT_000c9ddc)[iVar3] = 2;
                     (&DAT_000c9ddd)[iVar3] = 0;
                     (&DAT_000c9dde)[iVar3] = 0;
                     (&DAT_000c9ddf)[iVar3] = 0;
                     *piVar17 = 2;
-                    iVar3 = DAT_000db430 * 0x67;
+                    iVar3 = g_model_parse_part_count * 0x67;
                     piVar17 = DAT_000c8b00 + 1;
                     DAT_000c8b00 = piVar17;
                     (&DAT_000c9dd8)[iVar3] = (char)piVar17;
@@ -13779,9 +13851,9 @@ LAB_00021838:
                     *piVar17 = local_1fc;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
                     *DAT_000c8b00 = (int)local_1d4;
-                    iVar3 = DAT_000db430;
+                    iVar3 = g_model_parse_part_count;
                     piVar17 = DAT_000c8b00 + 1;
-                    iVar5 = DAT_000db430 * 0x67;
+                    iVar5 = g_model_parse_part_count * 0x67;
                     DAT_000c8b00 = piVar17;
                     (&DAT_000c9e33)[iVar5] = (char)local_228;
                     (&DAT_000c9e34)[iVar5] = (char)((uint)local_228 >> 8);
@@ -13794,11 +13866,11 @@ LAB_00021838:
                     if (&DAT_000c8a90 < piVar17) {
                       Ordinal_1102(s_Out_of_vertex_list_space_00084908);
                       goto LAB_0002263c;
-                      iVar3 = DAT_000db430;
+                      iVar3 = g_model_parse_part_count;
                     }
-                    DAT_000db430 = iVar3 + 1;
+                    g_model_parse_part_count = iVar3 + 1;
                     uVar7 = 0x15e;
-                    if (0x15e < DAT_000db430) {
+                    if (0x15e < g_model_parse_part_count) {
                       Ordinal_1102(s_Too_many_polys_000848f8);
                       goto LAB_0002263c;
                       uVar7 = extraout_r3_00;
@@ -13813,22 +13885,22 @@ LAB_00021838:
               }
             }
 LAB_00021bec:
-            iVar5 = DAT_000db430;
+            iVar5 = g_model_parse_part_count;
           } while (local_260[0] == ';');
           iVar10 = 0;
-          param_2[5] = (char)((uint)DAT_000db430 >> 8);
+          param_2[5] = (char)((uint)g_model_parse_part_count >> 8);
           param_2[4] = (char)iVar5;
           param_2[6] = (char)((uint)iVar5 >> 0x10);
           param_2[7] = (char)((uint)iVar5 >> 0x18);
-          iVar3 = DAT_000db430;
-          iVar5 = DAT_000db430;
+          iVar3 = g_model_parse_part_count;
+          iVar5 = g_model_parse_part_count;
           piVar17 = piVar20;
-          if (0 < DAT_000db430) {
+          if (0 < g_model_parse_part_count) {
             do {
               if (((((char)piVar17[0x14] == 'A') && (DAT_000db480 == 0)) && (DAT_000db470 == 0)) &&
                  (iVar19 = piVar17[1], 2 < iVar19)) {
                 Ordinal_1102(s_making_backside_of__d_____d_00084848,iVar10,iVar5);
-                iVar6 = DAT_000db430 * 0x67;
+                iVar6 = g_model_parse_part_count * 0x67;
                 iVar5 = piVar17[2];
                 (&DAT_000c9de0)[iVar6] = (char)iVar5;
                 (&DAT_000c9de1)[iVar6] = (char)((uint)iVar5 >> 8);
@@ -13852,10 +13924,10 @@ LAB_00021bec:
                 (&DAT_000c9e26)[iVar6] = 0;
                 iVar5 = *piVar17;
                 *DAT_000c8b00 = iVar19;
-                iVar6 = DAT_000db430;
+                iVar6 = g_model_parse_part_count;
                 piVar12 = (int *)(iVar5 + iVar19 * 4);
                 piVar9 = DAT_000c8b00 + 1;
-                iVar5 = DAT_000db430 * 0x67;
+                iVar5 = g_model_parse_part_count * 0x67;
                 DAT_000c8b00 = piVar9;
                 (&DAT_000c9dd8)[iVar5] = (char)piVar9;
                 (&DAT_000c9dd9)[iVar5] = (char)((uint)piVar9 >> 8);
@@ -13866,14 +13938,14 @@ LAB_00021bec:
                   *piVar9 = *piVar12;
                   piVar9 = DAT_000c8b00 + 1;
                   DAT_000c8b00 = piVar9;
-                  iVar6 = DAT_000db430;
+                  iVar6 = g_model_parse_part_count;
                 }
-                DAT_000db430 = iVar6 + 1;
-                iVar5 = DAT_000db430;
-                if (0x15e < DAT_000db430) {
+                g_model_parse_part_count = iVar6 + 1;
+                iVar5 = g_model_parse_part_count;
+                if (0x15e < g_model_parse_part_count) {
                   Ordinal_1102(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
-                  iVar5 = DAT_000db430;
+                  iVar5 = g_model_parse_part_count;
                 }
               }
               iVar10 = iVar10 + 1;
@@ -13901,7 +13973,7 @@ LAB_0002226c:
               do {
                 iVar4 = Ordinal_1114(pvVar_fh,s__lx_1s_000847a4,&local_208,local_260);
                 if (DAT_000db494 != 0) {
-                  piVar12 = &DAT_00084678;
+                  piVar12 = &g_model_known_ext_colors;
                   iVar10 = 0;
                   do {
                     if (local_208 == *piVar12) {
@@ -14001,7 +14073,7 @@ LAB_0002226c:
               puVar16 = local_258;
               if ((iVar4 != 1) || (iVar4 = 1, local_260[0] != '}')) {
                 iVar4 = DAT_000db4d4 * 4;
-                if (DAT_000db4d4 + DAT_000db430 < DAT_000db458) {
+                if (DAT_000db4d4 + g_model_parse_part_count < DAT_000db458) {
                   *(undefined **)(&DAT_000da868 + iVar4) = local_258;
                   iVar5 = Ordinal_1068(local_258);
                   local_258 = puVar16 + iVar5 + 1;
@@ -14109,8 +14181,8 @@ LAB_0002263c:
      reliably holding the handle by this point even before the
      local_25c/pvVar_fh pointer-width fix), should be the real handle. */
   Ordinal_1118(local_25c);
-  iVar3 = DAT_000db430;
-  if ((DAT_000db494 != 0) && (iVar4 = 0, 0 < DAT_000db430)) {
+  iVar3 = g_model_parse_part_count;
+  if ((DAT_000db494 != 0) && (iVar4 = 0, 0 < g_model_parse_part_count)) {
     do {
       if (*(int *)((char *)piVar20 + 0x36) != iVar4) {
         uVar7 = *(undefined4 *)(&DAT_000c9de0 + *(int *)((char *)piVar20 + 0x36) * 0x67);
@@ -24991,35 +25063,35 @@ undefined2 param_5;
 void FUN_00038680()
 
 {
-  FUN_00020a74(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c);
-  FUN_00020a74(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848);
-  FUN_00020a74(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474);
-  FUN_00020a74(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0);
-  FUN_00020a74(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc);
-  FUN_00020a74(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8);
-  FUN_00020a74(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524);
-  FUN_00020a74(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150);
-  FUN_00020a74(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c);
-  FUN_00020a74(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8);
-  FUN_00020a74(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4);
-  FUN_00020a74(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200);
-  FUN_00020a74(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c);
-  FUN_00020a74(s__DATA3D_DOOR_E_00085540,&DAT_00145a58);
-  FUN_00020a74(s__DATA3D_DOOR_E_00085540,&DAT_00149684);
-  FUN_00020a74(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0);
-  FUN_00020a74(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc);
-  FUN_00020a74(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08);
-  FUN_00020a74(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734);
-  FUN_00020a74(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360);
-  FUN_00020a74(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c);
-  FUN_00020a74(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8);
-  FUN_00020a74(s__DATA3D_GATE_E_000854e4,&DAT_001677e4);
-  FUN_00020a74(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410);
-  FUN_00020a74(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c);
-  FUN_00020a74(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68);
-  FUN_00020a74(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894);
-  FUN_00020a74(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0);
-  FUN_00020a74(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec);
+  parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c);
+  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848);
+  parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474);
+  parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0);
+  parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc);
+  parse_e_model_file(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8);
+  parse_e_model_file(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524);
+  parse_e_model_file(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150);
+  parse_e_model_file(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c);
+  parse_e_model_file(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8);
+  parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08);
+  parse_e_model_file(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360);
+  parse_e_model_file(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c);
+  parse_e_model_file(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8);
+  parse_e_model_file(s__DATA3D_GATE_E_000854e4,&DAT_001677e4);
+  parse_e_model_file(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410);
+  parse_e_model_file(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c);
+  parse_e_model_file(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68);
+  parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894);
+  parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0);
+  parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec);
   Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);
   return;
 }
@@ -49478,7 +49550,7 @@ LAB_0005e7e0:
 
 
 // New (not decompiled from the binary): revives the ".E" 3D model data
-// FUN_00038680/FUN_00020a74 already load at startup (data/DATA3D/*.E --
+// FUN_00038680/parse_e_model_file already load at startup (data/DATA3D/*.E --
 // see uw.c ~24980) into 29 never-consumed buffers. Confirmed via a real
 // Ghidra reference search against UU.exe (whole-binary XREFs to all 29
 // buffer addresses, plus a raw byte-pattern data-table scan, plus a full
@@ -49487,7 +49559,7 @@ LAB_0005e7e0:
 // data -- there is no hidden consumer to find, this is new code.
 //
 // Buffer layout (empirically confirmed against ROCKSMAL.E's real point/
-// part text, after fixing FUN_00020a74's own dropped-argument X-coordinate
+// part text, after fixing parse_e_model_file's own dropped-argument X-coordinate
 // bug -- see that fix's comment): offset 0 = point count (int), offset 4 =
 // part count (int, occasionally one spurious trailing entry with vcount<3
 // -- filtered below), points at offset 8 + i*0xc as 3 LE floats (X, Y-up,

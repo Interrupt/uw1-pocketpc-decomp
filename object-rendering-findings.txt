@@ -808,3 +808,89 @@ it doesn't yet produce a visible result). The leaf's sprite-texture
 wiring is left build-time-present but OPT-IN via UW_MODEL_LEAF_
 TEXTURE=1 (default off), because applying it actively regresses (leaf
 disappears) rather than merely failing to improve.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (7): THE .E PARSER COMPUTES A REAL FACE NORMAL -- AND THROWS IT AWAY
+═══════════════════════════════════════════════════════════════════════════
+Traced parse_e_model_file (was FUN_00020a74) end to end looking for
+per-face normal data, prompted by the texturing dead-end above. Right
+after reading each PARTS entry's vertex-index list, the parser calls:
+
+    vec3_sub(P[v0], P[v1], edge1);    // was FUN_000137c0
+    vec3_sub(P[v0], P[v2], edge2);
+    vec3_cross(edge2, edge1, normal); // was FUN_00013904, real cross product
+
+confirmed via the exact formula each helper computes (vec3_sub =
+elementwise param_2-param_1; vec3_cross = the textbook 3-float cross
+product, including the Y term's required sign flip) -- a genuine,
+deliberate per-face normal computation, not a coincidence.
+
+That result is never referenced again anywhere in the function. To rule
+out a dropped-store decompile bug (this project's most common bug class),
+pulled the REAL ARM disassembly from UU.exe at the call site
+(0x00021aa4): `bl 0x00013904` is immediately followed by unrelated
+vertex-count bookkeeping (`ldr r3,[sp,#0x38]; cmp r3,#0x4...`), no store
+of the result anywhere in between. This is the real shipped binary, not
+a decompile artifact -- the original game computes this normal and then
+genuinely never uses it. There is no per-face normal data anywhere in
+the final parsed model buffer emit_model_object reads from.
+
+Separately confirmed while in there: the existing shading pipeline has
+no per-face-normal concept to plug one into anyway -- every writer of the
+render record's shade byte across this whole file (tile walls, floors,
+doors, signs, emit_model_object) pulls from one shared ambient/light-
+proximity global (DAT_000da47c), never anything geometry-derived. Real
+per-face lighting variation would be new behavior, not a gap-fill.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (8): NO UV DATA EITHER -- THE FORMAT WAS NEVER TEXTURE-MAPPED
+═══════════════════════════════════════════════════════════════════════════
+Same investigation, extended to UV/texture coordinates (the direct
+follow-up to UPDATE (6)'s texturing dead-end). Read the rest of
+parse_e_model_file (PARTS through EXTENDED_COLORS/CLUSTERS/NODES/ANIMATE
+and its final cleanup pass) end to end. Conclusion: no UV data exists
+anywhere, in the file format or the parser -- more clear-cut than the
+normal, which was at least computed.
+
+- The .E format's only blocks, across every model file in DATA3D/: BEGIN/
+  VERSION/NAMES/POINTS/PARTS/CLUSTERS/NODES/EXTENDED_COLORS/SCALE_SHIFT/
+  END. No UV/TEXCOORD/MAPPING block anywhere.
+- Each PARTS line has exactly 4 header fields before the vertex-index
+  list: a flag (always 0 in every real file -- a `local_23c==4` "got
+  bitmap" branch exists for a nonzero flag but is dead in practice),
+  a 1-character code, a sequential part index, and a color value. No room
+  for texture coordinates. The 1-character code is NOT UV-related either
+  -- confirmed via the parser's own debug string: 'A' triggers a "making
+  backside of %d %d" branch that duplicates a face with reversed winding
+  (a double-sided-face flag), 'N' is the ordinary default. ('F'/'X' are
+  two more recognized codes seen earlier in the function, for reversed
+  vertex order and an unused "explicit bitmap" escape hatch respectively
+  -- also not UV.)
+- Went further than the normal check: even per-face COLOR -- both the raw
+  hex material index and the EXTENDED_COLORS RGB entry (matched against
+  g_model_known_ext_colors, was DAT_00084678, a 32-entry known-RGB table)
+  -- suffers the identical fate as the normal. Traced the function's
+  literal last operation before it returns (a scratch-to-scratch color-
+  inheritance pass for parts that share a color with another part,
+  gated by DAT_000db494) -- it writes back into scratch memory, never
+  into the final output buffer. The only things that survive into what
+  emit_model_object actually reads are point positions and each part's
+  vertex-index list; normal, color, and (never-attempted) UV are all
+  absent from the persisted model data.
+
+Reframes the UPDATE (6) texturing dead-end: this was very likely never a
+texture-mapped format to begin with. Its real design intent looks like
+flat-per-face color (refined by the EXTENDED_COLORS palette-index
+system), the way low-poly models from this era commonly worked, not
+bitmap UV mapping. That's consistent with why chasing a UV system for it
+hit a wall -- there was never one to find, not a bug to fix.
+
+Also noted, not chased further (flagged rather than renamed): DAT_000db480,
+DAT_000db470, and DAT_000db494 (the flags gating the 'A' backside logic
+and the EXTENDED_COLORS resolution) have NO WRITER anywhere in this
+decompile -- always BSS-zero, making that whole EXTENDED_COLORS-resolution
+path dead code today regardless of whether a model file has the block.
+Same "hidden writer, not yet Ghidra-checked" shape as DAT_00085668 and
+friends from earlier in this project, but not run down this session --
+worth a real Ghidra reference/byte-pattern search before trusting either
+"always off" or "a real writer exists" as the answer.
