@@ -201,7 +201,7 @@ LAB_00025468:
         }
         break;
       case 4:
-        DAT_00088960 = 1;
+        g_blit_transparent_mode = 1;
         iVar14 = *(int *)(&DAT_000fb8c4 + ((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 5 + uVar1) * 4
                          );
         FUN_00035df8(0);
@@ -233,7 +233,7 @@ LAB_00025468:
                      bVar2,0,0,1);
         FUN_000570b4();
         uVar15 = CONCAT44(extraout_r1,DAT_00086df8);
-        DAT_00088960 = 0;
+        g_blit_transparent_mode = 0;
         sVar8 = 5;
         *(byte *)(DAT_00086df8 + 100) =
              *(byte *)(DAT_00086df8 + 100) & 0xe3 | (byte)((uVar9 & 7) << 2);

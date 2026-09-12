@@ -246,7 +246,7 @@ short param_7;
   }
   dirty_rect_union(iVar7,iVar7 + iVar2,iVar8);
   iVar5 = (int)sVar14;
-  if (DAT_00088960 == 0) {
+  if (g_blit_transparent_mode == 0) {
     if (iVar5 < iVar2 - sVar12) {
       iVar3 = (int)sVar15;
       iVar8 = (iVar7 + iVar5) * 0x140 + iVar8;

@@ -373,7 +373,7 @@ extern undefined2 DAT_000a85c8;
 extern undefined2 DAT_000842a4;
 extern undefined2 DAT_000842a8;
 extern int DAT_00204848;
-extern int DAT_00088960;
+extern int g_blit_transparent_mode;
 /* Globals defined in uw.c but also used by functions that now live in
    game.c (app_main_loop, main_menu_loop) -- extern'd here so both
    translation units see the same storage. */

@@ -96,7 +96,22 @@ undefined2 DAT_000a85c8;
 undefined2 DAT_000842a4;
 undefined2 DAT_000842a8;
 int DAT_00204848;
-int DAT_00088960;
+// was DAT_00088960 -- global toggle every sprite/bitmap-blit primitive in
+// this file (bitmap_blit_to_framebuffer in graphics.c, and this file's
+// own sibling blit routines, e.g. ~uw.c:5244/5591/62096) reads instead of
+// taking a real "transparent mode" parameter: 0 draws every source pixel
+// opaquely through the palette (so a transparent-keyed pixel, byte value
+// 0, paints as palette index 0 -- typically black), nonzero skips
+// byte==0 pixels for real transparency. Callers that want a transparent
+// blit set this to 1 immediately before the call and reset it to 0
+// right after (draw_sprite_by_id, FUN_0003f99c/FUN_0003fa1c, etc). Named
+// after root-causing the inventory-panel "black box" bug: FUN_0006cca8's
+// panels.GR background blit had a trailing literal `1` argument that
+// clearly intended transparency but never actually set this global,
+// so it silently ran opaque -- see that fix's own comment for the full
+// story (uw.c, FUN_0006cca8, search "DAT_00088960" in git history/
+// memory.md for the writeup predating this rename).
+int g_blit_transparent_mode;
 undefined *PTR_Ordinal_2032_00084010;
 undefined *PTR_Ordinal_2026_00084014;
 undefined *PTR_Ordinal_2020_00084018;
@@ -5241,7 +5256,7 @@ short param_7;
   }
   dirty_rect_union(iVar13,iVar2,iVar7);
   iVar3 = (int)local_30;
-  if (DAT_00088960 == 0) {
+  if (g_blit_transparent_mode == 0) {
     iVar5 = iVar5 - sVar12;
     if (iVar3 < iVar5) {
       iVar6 = (int)sVar11;
@@ -5359,7 +5374,7 @@ int param_8;
                   if (0x13f < iVar6) break;
                   bVar3 = *pbVar5;
                   pbVar5 = pbVar5 + 1;
-                  if ((DAT_00088960 & bVar3 == 0) == 0) {
+                  if ((g_blit_transparent_mode & bVar3 == 0) == 0) {
                     *(undefined2 *)((g_uw_framebuffer) + iVar4 * 2) =
                          (&g_palette_rgb565)[bVar3];
                   }
@@ -5588,7 +5603,7 @@ short param_7;
   }
   param_3 = param_7 * iVar2 + iVar13 + param_3;
   dirty_rect_union(iVar6,iVar6 + iVar3,iVar14);
-  if (DAT_00088960 == 0) {
+  if (g_blit_transparent_mode == 0) {
     iVar11 = (int)local_3c;
     iVar4 = iVar3 - local_34;
     if (iVar11 < iVar4) {
@@ -8380,10 +8395,10 @@ undefined4 param_1;
     draw_automap_tiles();
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       draw_sprite_by_id(0x103f,((*(ushort *)(DAT_0023be64 + 0x16) >> 10) + 2) * 3,
                    (((*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
     }
     DAT_000ba9d0 = (short)param_1;
     set_palette_bank(1);
@@ -10819,7 +10834,7 @@ void FUN_0001b474()
   
   iVar7 = 0;
   iVar6 = (*DAT_00100674 & 0x3f) * 0x30;
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   do {
     uVar5 = FUN_00076a2c(0x10,0x20);
     (&DAT_000bc028)[iVar7] = uVar5;
@@ -11197,7 +11212,7 @@ short param_2;
   
   FUN_00057118();
   psVar2 = (short *)(int)param_1;
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   if (psVar2 == (short *)0x0) {
     puVar5 = &DAT_000bbfe8;
   }
@@ -11235,7 +11250,7 @@ short param_2;
     else {
       uVar8 = (ushort)psVar6[3] >> 6;
     }
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
     if (1 < uVar8) {
       select_active_font(s_font4x5p_sys_0008431c);
       *g_draw_color_index = 0x60;
@@ -15404,7 +15419,7 @@ short * param_1;
     }
   }
   if (*(int *)(param_1 + 3) != 0) {
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
     FUN_00035df8(0);
     DAT_000fb858 = DAT_001005c4;
     if (0 < param_1[5]) {
@@ -15459,11 +15474,11 @@ short * param_1;
              the heads: `7 + sexbit*5 + local_28`. */
           {
             int head_idx = 7 + ((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 5) + local_28;
-            DAT_00088960 = 1;
+            g_blit_transparent_mode = 1;
             bitmap_blit_to_framebuffer(iVar11,iVar10,
                          (&DAT_000fb880)[head_idx] + DAT_000fb858,(int)(short)local_2c,
                          sVar7,0,0,1);
-            DAT_00088960 = 0;
+            g_blit_transparent_mode = 0;
           }
         }
         local_28 = (local_28 + 1) * 0x10000 >> 0x10;
@@ -15550,7 +15565,7 @@ byte param_3;
         FUN_00057118();
         FUN_00035df8(0);
         DAT_000fb858 = DAT_001005c4;
-        DAT_00088960 = 1;
+        g_blit_transparent_mode = 1;
         bitmap_blit_to_framebuffer((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
                      (int)sVar3 * (bVar1 + 4) + iVar5,pcVar_fb858 + iVar7,(uint)bVar1,bVar2,0,0,1);
         FUN_000570b4();
@@ -15558,7 +15573,7 @@ byte param_3;
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
     } while (iVar9 < 2);
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
   }
   return 0;
 }
@@ -17380,9 +17395,9 @@ void FUN_000286cc()
                          (*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * '\x05' +
                          (*(byte *)(DAT_00086df8 + 100) >> 2 & 7),1,&LAB_00028688,&LAB_000286a4);
     if (iVar3 != 0) {
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       bitmap_blit_to_framebuffer(0xc5,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
       pcVar4 = (char *)FUN_0007863c((int)DAT_00201c74);
       pcVar5 = local_44;
       do {
@@ -17406,9 +17421,9 @@ void FUN_000286cc()
           load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
         }
       }
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       bitmap_blit_to_framebuffer(0x2d,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
       sVar2 = FUN_00078b18(local_44,DAT_00100674,0,0);
       if (sVar2 != 0) {
         draw_text_string(local_44,0x30,3);
@@ -29492,12 +29507,12 @@ int param_1;
   sVar2 = *(short *)(&DAT_000858a8 + iVar1 * 2);
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] FUN_0003f99c (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
             param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
-  DAT_00088960 = 0;
+  g_blit_transparent_mode = 0;
   FUN_000570b4();
   return;
 }
@@ -29516,12 +29531,12 @@ int param_1;
   sVar2 = *(short *)(&DAT_000858a8 + iVar1 * 2);
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] FUN_0003fa1c (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
             param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
-  DAT_00088960 = 0;
+  g_blit_transparent_mode = 0;
   FUN_000570b4();
   return;
 }
@@ -30452,12 +30467,12 @@ short param_5;
   }
   else {
     bVar1 = true;
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
   }
   uVar2 = FUN_00040aa8(param_1);
   FUN_00040918(uVar2,param_2,param_3,param_4,param_5);
   if (bVar1) {
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
   }
   return;
 }
@@ -33016,9 +33031,9 @@ void FUN_000448a8()
   uVar1 = 0;
   do {
     if ((*(byte *)(DAT_00086df8 + ((int)uVar1 >> 3) + 0x44) >> (7 - (uVar1 & 7) & 0xff) & 1) != 0) {
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       FUN_00044848(uVar1);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
     }
     uVar1 = (int)((uVar1 + 1) * 0x10000) >> 0x10;
   } while ((int)uVar1 < 0x18);
@@ -33998,7 +34013,7 @@ void FUN_00046414()
   
   if (DAT_002029a4 == 0) {
     DAT_002029a4 = 1;
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
     FUN_0004638c();
     iVar5 = 6;
     do {
@@ -34295,10 +34310,10 @@ void FUN_00046bfc()
       rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76);
       screen_backup_restore_rect(0xf0,0xb,0x13b,0x76);
     }
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
     draw_sprite_by_id(0x2091,(int)DAT_00085ad8,(int)DAT_00085ada,DAT_00085add,DAT_00085adc);
     iVar4 = 1;
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
     do {
       if ((*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar4] * 2) & 0xffc0) != 0) {
         pbVar1 = (byte *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar4] * 2));
@@ -34320,7 +34335,7 @@ void FUN_00046bfc()
       }
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 6);
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
     capture_framebuffer_rect_to_grtile(DAT_00202914,(int)DAT_00085b72,(int)DAT_00085b74,DAT_00085b76 - 5,DAT_00085b77);
     capture_framebuffer_rect_to_grtile(DAT_00202910,DAT_00085b64 + 5,(int)DAT_00085b66,DAT_00085b68 - 5,DAT_00085b69);
     if (((DAT_00202962 & 0xffc0) != 0) || ((DAT_00202964 & 0xffc0) != 0)) {
@@ -34370,11 +34385,11 @@ undefined4 param_1;
         uVar2 = 0x101c;
       }
       if (-1 < (short)uVar2) {
-        DAT_00088960 = 1;
+        g_blit_transparent_mode = 1;
         draw_sprite_by_id(uVar2,(int)(short)(&DAT_00085ad8)[iVar1 * 7],
                      (int)(short)(&DAT_00085ada)[iVar1 * 7],(&DAT_00085add)[iVar1 * 0xe],
                      (&DAT_00085adc)[iVar1 * 0xe]);
-        DAT_00088960 = 0;
+        g_blit_transparent_mode = 0;
       }
     }
   }
@@ -34978,7 +34993,7 @@ short param_2;
   FUN_00057118();
   iVar1 = (int)(short)param_1;
   iVar2 = (int)param_2;
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   iVar3 = iVar1;
   do {
     iVar6 = iVar1;
@@ -35008,7 +35023,7 @@ joined_r0x00048308:
         param_1 = (iVar6 + 1) * 0x10000 >> 0x10;
         iVar6 = param_1;
       }
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
       if (bVar5) {
         select_active_font(s_font4x5p_sys_0008431c);
         *g_draw_color_index = 0x60;
@@ -44895,13 +44910,13 @@ void FUN_0005857c()
   }
   FUN_000584c0();
 LAB_00058674:
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   g_force_flush = 1;
   draw_sprite_by_id((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
                ((int)g_mouse_y - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
                DAT_00204784);
   flush_dirty_rect_to_display(1);
-  DAT_00088960 = 0;
+  g_blit_transparent_mode = 0;
   g_force_flush = 0;
   set_draw_color(0);
   return;
@@ -56633,10 +56648,10 @@ void FUN_0006cca8()
       uVar1 = FUN_00076194(2,0xd,10);
       (&DAT_0023c230)[iVar3] = (short)uVar1;
       FUN_000762c4(uVar1,(int)(short)(&DAT_00087170)[iVar3],0x87,0xd,10);
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       uVar1 = FUN_00076194(2,0x25,0x17);
       (&DAT_0023c234)[iVar3] = (short)uVar1;
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
       FUN_000762c4(uVar1,(int)(short)(&DAT_00087174)[iVar3],0x92,0x25,0x17);
       uVar1 = FUN_00076078(0);
       (&DAT_0023c238)[iVar3] = (short)uVar1;
@@ -56675,12 +56690,12 @@ void FUN_0006cca8()
   FUN_0006e96c(DAT_00086df8 + 0x47);
   FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
   /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
-     parameter -- it reads the global DAT_00088960 instead (see its own
-     definition in graphics.c: DAT_00088960==0 draws every source byte
+     parameter -- it reads the global g_blit_transparent_mode instead (see its own
+     definition in graphics.c: g_blit_transparent_mode==0 draws every source byte
      opaquely via the palette, nonzero skips byte==0 as the transparent
      key). Every OTHER caller in this file that wants transparency sets
      this global around the call (draw_sprite_by_id, FUN_0003f99c,
-     FUN_0003fa1c all do `DAT_00088960 = 1; ...; DAT_00088960 = 0;`) --
+     FUN_0003fa1c all do `g_blit_transparent_mode = 1; ...; g_blit_transparent_mode = 0;`) --
      this call's own trailing literal `1` argument clearly intended the
      same thing (it's not a real parameter bitmap_blit_to_framebuffer
      reads at all, just a leftover Ghidra also emitted at the other
@@ -56692,9 +56707,9 @@ void FUN_0006cca8()
      box" bug (uw.c's own DAT_0023cca4 decode is real panels.GR pixel
      data, confirmed via UW_DEBUG_DRAW framebuffer dumps -- the missing
      piece was purely this transparency-mode flag). */
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
-  DAT_00088960 = 0;
+  g_blit_transparent_mode = 0;
   (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
   FUN_00076508();
   return;
@@ -57075,9 +57090,9 @@ int param_1;
   iVar1 = iVar6 * 2;
   psVar11 = &DAT_0023c1e8 + iVar6;
   if (*psVar11 == 0) {
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
     sVar4 = FUN_00076194(3,0x28,0x18);
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
     *psVar11 = sVar4;
   }
   piVar10 = (int *)(&DAT_0023c1f8 + iVar6 * 4);
@@ -57683,14 +57698,14 @@ char *param_1;
   
   if (DAT_0023c268 == 0) {
     iVar2 = 0;
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
     do {
       uVar1 = FUN_00076194(1,0x10,0x10);
       (&DAT_0023c268)[iVar2] = (short)uVar1;
       FUN_000762c4(uVar1,(int)(short)(&DAT_00087210)[iVar2],0x8b,0x10,0x10);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
   }
   iVar2 = 0;
   do {
@@ -57719,14 +57734,14 @@ char *param_1;
   if (*(short *)(DAT_00085a6c + 8) == 1) {
     if (DAT_0023c270 == 0) {
       iVar2 = 0;
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       do {
         uVar1 = FUN_00076194(1,0x10,0x12);
         (&DAT_0023c270)[iVar2] = (short)uVar1;
         FUN_000762c4(uVar1,(int)(short)(&DAT_00087218)[iVar2],0x89,0x10,0x12);
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
       } while (iVar2 < 3);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
     }
     iVar2 = 0;
     do {
@@ -58314,7 +58329,7 @@ void FUN_0006fcb0()
   short sVar1;
   undefined4 uVar2;
   
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   if ((((DAT_0023c130 != 6) && (DAT_000870e4 < 0x1c)) && (-1 < DAT_000870dc)) && (DAT_0008725c != 0)
      ) {
     if (g_jump_ascent_timer == 0) {
@@ -58344,7 +58359,7 @@ void FUN_0006fcb0()
   FUN_00040bc0(0x107f,0x3e,3);
   FUN_00040bc0(0x1080,0,0xd);
   FUN_00040bc0(0x1081,0xab,0xd);
-  DAT_00088960 = 0;
+  g_blit_transparent_mode = 0;
   return;
 }
 
@@ -62093,7 +62108,7 @@ undefined4 param_1;
   uVar1 = DAT_00087640 | DAT_00087638;
   *(char *)puVar4 = (char)uVar1;
   *(char *)((char *)puVar4 + 1) = (char)(uVar1 >> 8);
-  bVar6 = DAT_00088960 != 0;
+  bVar6 = g_blit_transparent_mode != 0;
   uVar5 = (uint)uVar1;
   uVar2 = 0;
   if (bVar6) {
@@ -62142,7 +62157,7 @@ int param_3;
   uVar1 = DAT_00087640 | DAT_00087638;
   *(char *)puVar5 = (char)uVar1;
   *(char *)((char *)puVar5 + 1) = (char)(uVar1 >> 8);
-  bVar6 = DAT_00088960 != 0;
+  bVar6 = g_blit_transparent_mode != 0;
   uVar4 = 0;
   if (bVar6) {
     uVar4 = (undefined1)((uVar1 | DAT_00087648) >> 8);
@@ -62389,7 +62404,7 @@ void FUN_00076508()
                         (int)(ushort)puVar4[3], (int)(ushort)puVar4[4],
                         puVar4[5] == 0 ? "draw_sprite_by_id" : "FUN_00040be0");
               if (puVar4[5] == 0) {
-                DAT_00088960 = 1;
+                g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
                   draw_sprite_by_id((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
@@ -62406,7 +62421,7 @@ void FUN_00076508()
                 }
               }
               else {
-                DAT_00088960 = 1;
+                g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
                   FUN_00040be0((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
@@ -62424,7 +62439,7 @@ void FUN_00076508()
                   ;
                 }
               }
-              DAT_00088960 = 0;
+              g_blit_transparent_mode = 0;
             }
             puVar7 = puVar7 + 1;
           }
@@ -62699,7 +62714,7 @@ short param_5;
                     sVar10 = *(short *)((g_uw_framebuffer) + iVar12 * 2)
                     ;
                     iVar12 = iVar12 + 1;
-                    if ((DAT_00088960 & sVar10 == 0) == 0) {
+                    if ((g_blit_transparent_mode & sVar10 == 0) == 0) {
                       *psVar_target = sVar10;
                     }
                     psVar_target = psVar_target + 1;
@@ -62768,7 +62783,7 @@ short * param_1;
           sVar2 = *psVar_target;
           iVar7 = iVar7 + 1;
           psVar_target = psVar_target + 1;
-          if ((DAT_00088960 & sVar2 == 0) == 0) {
+          if ((g_blit_transparent_mode & sVar2 == 0) == 0) {
             *(short *)((g_uw_framebuffer) + iVar6 * 2) = sVar2;
           }
           iVar6 = iVar6 + 1;
