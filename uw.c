@@ -32081,6 +32081,8 @@ short param_1;
 
   bVar4 = DAT_00202948 != 0;
   iVar2 = (int)param_1;
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] FUN_00042870 entry: param_1=%d DAT_00202948=%p\n", (int)param_1, (void *)DAT_00202948);
   if (7 < iVar2) {
     if (iVar2 < 10) {
       if (iVar2 == 9 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
@@ -32574,6 +32576,9 @@ short param_1;
                        *(ushort *)(DAT_00202994 + 2);
         iVar10 = resolve_object_link(&DAT_00202976);
         iVar11 = resolve_object_link(iVar10 + 6);
+        if (getenv("UW_DEBUG_INV"))
+          fprintf(stderr, "[inv] FUN_00043100 open: container=%p contents_head=%p\n",
+                  (void *)iVar10, (void *)iVar11);
         iVar10 = resolve_object_link(&DAT_00202976);
         FUN_00043d40(iVar10 + 6,(undefined1 *)((char *)DAT_00202994 + 10));
         iVar10 = 0x14;
@@ -37013,7 +37018,19 @@ int param_2;
     iVar7 = (int)(short)local_28;
     iVar8 = (int)(short)local_26;
     iVar4 = tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
-    if (bVar3) {
+    /* tilemap_lookup returns NULL for any tile coordinate outside
+       0-63 (see its own bounds check) -- confirmed live: dragging an
+       item out of an open backpack slot and dropping it back into the
+       3D view crashed in object_list_append_tail(iVar4+2, ...), i.e.
+       exactly a NULL+2 wild pointer. This is the same unguarded-
+       tilemap_lookup-result class as this file's other "wild tilemap
+       access" crash (see the map-edge Y-wraparound note in memory.md);
+       here it wasn't a real map-edge case, just a computed nearby-drop
+       tile (local_28/local_26, from FUN_00069f2c just above) that
+       apparently isn't always guaranteed to land in range. Treat it
+       the same as the "no room to drop it" (bVar3) failure just below
+       instead of dereferencing a wild pointer. */
+    if ((bVar3) || (iVar4 == 0)) {
       if (param_2 != 0) {
         FUN_00078c80(0xfd);
       }
