@@ -29838,6 +29838,8 @@ short param_1;
           FUN_0003fa1c(g_cursor_mode);
         }
         g_cursor_mode = (short)((uint)iVar7 >> 0x10);
+        if (getenv("UW_DEBUG_MODEBTN"))
+          fprintf(stderr, "[modebtn] resulting g_cursor_mode=%d\n", (int)g_cursor_mode);
         if (iVar1 == 2) {
           if ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0) {
             uVar2 = *(undefined2 *)(DAT_00086df8 + 0x5f);
@@ -36987,6 +36989,18 @@ int param_2;
   int iVar7;
   int iVar8;
   char cVar9;
+  /* iVar4 is reused earlier in this function as a plain int (return
+     codes from FUN_0004a110/FUN_00051fa0) -- real uses, left alone --
+     but also held tilemap_lookup's real 64-bit pointer return,
+     truncating it to 32 bits on this host. The NULL check added
+     earlier (see below) only ever caught a truly-NULL result; a
+     non-NULL-but-truncated pointer still reached
+     object_list_append_tail(iVar4+2, ...) with a wild address.
+     Confirmed live (UW_DEBUG_INV + demo_dropback_test.txt): dragging
+     an item out of the backpack and dropping it in the 3D view
+     crashed here even with that guard in place. New, properly-typed
+     local for just this final pointer use. */
+  char *pDropTile;
   ushort local_28;
   ushort local_26;
   
@@ -37050,12 +37064,12 @@ int param_2;
     }
     iVar7 = (int)(short)local_28;
     iVar8 = (int)(short)local_26;
-    iVar4 = tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
+    pDropTile = (char *)tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
     /* tilemap_lookup returns NULL for any tile coordinate outside
        0-63 (see its own bounds check) -- confirmed live: dragging an
        item out of an open backpack slot and dropping it back into the
-       3D view crashed in object_list_append_tail(iVar4+2, ...), i.e.
-       exactly a NULL+2 wild pointer. This is the same unguarded-
+       3D view crashed in object_list_append_tail(pDropTile+2, ...),
+       i.e. exactly a NULL+2 wild pointer. This is the same unguarded-
        tilemap_lookup-result class as this file's other "wild tilemap
        access" crash (see the map-edge Y-wraparound note in memory.md);
        here it wasn't a real map-edge case, just a computed nearby-drop
@@ -37063,7 +37077,7 @@ int param_2;
        apparently isn't always guaranteed to land in range. Treat it
        the same as the "no room to drop it" (bVar3) failure just below
        instead of dereferencing a wild pointer. */
-    if ((bVar3) || (iVar4 == 0)) {
+    if ((bVar3) || (pDropTile == NULL)) {
       if (param_2 != 0) {
         FUN_00078c80(0xfd);
       }
@@ -37075,7 +37089,7 @@ int param_2;
     *(byte *)((char *)param_1 + 3) =
          (byte)((uVar2 & 0x3ff) >> 8) |
          (byte)(((local_26 & 7 | (local_28 & 0x1fff) << 3) << 10) >> 8);
-    object_list_append_tail(iVar4 + 2,param_1);
+    object_list_append_tail((byte *)(pDropTile + 2),(char *)param_1);
     uVar2 = *param_1;
     if ((((uVar2 & 0x1f0) == 0x90) && (3 < (uVar2 & 0xf))) && ((uVar2 & 0xf) < 7)) {
       bVar1 = (byte)uVar2;
@@ -41922,23 +41936,35 @@ codeval * param_2;
 
 {
   int iVar1;
-  undefined4 uVar2;
-  
-  iVar1 = (*param_2)();
+  char *pcVar2;
+
+  /* Dropped argument (both call sites below): param_2 is a callback
+     (FUN_00052bac at every call site reached so far) that declares one
+     parameter -- the object/link being tested, i.e. this function's
+     own param_1 -- but was invoked bare, leaving FUN_00052bac's own
+     param_1 as leftover-register garbage. Same idiom as this whole
+     session's other dropped-argument fixes; confirmed live
+     (UW_DEBUG_INV + demo_dropback_test.txt) crashing in FUN_00052bac's
+     first dereference the moment this never-before-exercised
+     drop-into-world path actually ran. */
+  iVar1 = (*param_2)(param_1);
   while( true ) {
     if (iVar1 != 0) {
       return 1;
     }
     if (((*(byte *)(param_1 + 1) & 0x80) == 0) && ((*(ushort *)(param_1 + 6) & 0xffc0) != 0)) {
-      uVar2 = resolve_object_link(param_1 + 6); /* confirmed via ARM disassembly, 0x52b54 */
-      iVar1 = FUN_00052af4(uVar2,param_2);
+      /* Was `undefined4 uVar2` -- truncated resolve_object_link's real
+         pointer return before forwarding it into the recursive call
+         just below, same class as param_1 itself above. */
+      pcVar2 = (char *)resolve_object_link((ushort *)(param_1 + 6)); /* confirmed via ARM disassembly, 0x52b54 */
+      iVar1 = FUN_00052af4(pcVar2,param_2);
       if (iVar1 != 0) {
         return 1;
       }
     }
     if ((*(ushort *)(param_1 + 4) & 0xffc0) == 0) break;
-    param_1 = resolve_object_link(param_1 + 4); /* confirmed via ARM disassembly, 0x52b84 */
-    iVar1 = (*param_2)();
+    param_1 = (char *)resolve_object_link((ushort *)(param_1 + 4)); /* confirmed via ARM disassembly, 0x52b84 */
+    iVar1 = (*param_2)(param_1);
   }
   return 0;
 }
@@ -41990,8 +42016,13 @@ char *param_2;  /* was `int` -- truncated the real object-record pointer
 {
   short sVar1;
   int iVar2;
-  undefined4 uVar3;
-  
+  /* Was `undefined4 uVar3` -- truncated resolve_object_link's real
+     pointer return before forwarding it into FUN_00052af4 just below,
+     same class as this whole never-before-exercised drop-into-world
+     path's other fixes. Confirmed live: FUN_00052af4 received a NULL/
+     garbage param_1 and crashed the moment it dereferenced it. */
+  char *pcVar3;
+
   if (param_2 != 0) {
     if (param_1 != 0) {
       sVar1 = rand_below(3);
@@ -42001,8 +42032,8 @@ char *param_2;  /* was `int` -- truncated the real object-record pointer
     iVar2 = FUN_00052bac(param_2);
     if (iVar2 == 0) {
       if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
-        uVar3 = resolve_object_link(param_2 + 6); /* confirmed via ARM disassembly, 0x52ce8 */
-        iVar2 = FUN_00052af4(uVar3,FUN_00052bac);
+        pcVar3 = (char *)resolve_object_link((ushort *)(param_2 + 6)); /* confirmed via ARM disassembly, 0x52ce8 */
+        iVar2 = FUN_00052af4(pcVar3,FUN_00052bac);
         if (iVar2 != 0) {
           return 0;
         }
@@ -42286,7 +42317,11 @@ byte * param_2;
 
 
 ushort *FUN_00053334(param_1,param_2,param_3)
-int param_1;
+/* Was `int param_1` -- a real object-record pointer (drop_held_object_
+   near_player passes pDropTile+2, a resolve_object_link-style address)
+   truncated to 32 bits on this 64-bit host, same class as several
+   other fixes this session. */
+char *param_1;
 ushort * param_2;
 int param_3;
 
@@ -42294,8 +42329,17 @@ int param_3;
   ushort uVar1;
   int iVar2;
   ushort local_10 [2];
-  
-  if ((param_3 != 0) || (iVar2 = FUN_00052c5c(10), iVar2 != 0)) {
+
+  /* Dropped argument: FUN_00052c5c's declared signature takes
+     (short, char*) and dereferences its second parameter -- but it was
+     called here with only the literal 10, leaving the real argument
+     (param_2, the object being placed) as leftover-register garbage.
+     Confirmed live (UW_DEBUG_INV + demo_dropback_test.txt): dropping
+     an item out of the backpack into the 3D view crashed several
+     frames deeper (FUN_00052af4/FUN_00052bac) dereferencing that
+     garbage pointer -- this whole collision/placement path had never
+     been exercised by any earlier fix or test this session. */
+  if ((param_3 != 0) || (iVar2 = FUN_00052c5c(10,(char *)param_2), iVar2 != 0)) {
     uVar1 = encode_object_slot_index(param_2);
     local_10[0] = local_10[0] & 0x3f | uVar1 << 6;
     if ((*param_2 & 0x1c0) == 0x1c0) {
@@ -42346,15 +42390,28 @@ char *param_1;  /* was `undefined4` -- truncated the real object-record
 
 
 void FUN_000534a8(param_1,param_2)
-int param_1;
-int param_2;
+/* Was `int param_1; int param_2;` -- both real object-record pointers
+   (param_2 is dereferenced directly; both are forwarded to
+   object_list_unlink/free_object_slot, which already declare pointer
+   params), truncated to 32 bits on this host -- same class as several
+   other fixes this session, in the same never-before-exercised
+   drop-into-world path. */
+char *param_1;
+char *param_2;
 
 {
+  /* Dropped argument: FUN_000533e4 takes the address of a link field
+     to recursively free (its own declared param_1) -- here that's
+     param_2's own "contains" field (+6, this file's standard
+     container-contents offset) -- but it was called bare, same idiom
+     as FUN_000533e4's own two internal self-recursive calls just above
+     this function (not touched: not reached by this session's specific
+     repro, and FUN_000533e4 already tolerates a NULL resolve safely). */
   if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
-    FUN_000533e4();
+    FUN_000533e4(param_2 + 6);
   }
   if (param_1 != 0) {
-    object_list_unlink(param_1,param_2);
+    object_list_unlink((byte *)param_1,(byte *)param_2);
   }
   free_object_slot(param_2);
   return;
@@ -43764,6 +43821,15 @@ int param_4;
   char extraout_r1;
   int iVar11;
   int iVar12;
+  /* iVar12 is reused throughout this function as a plain int (bitfield
+     math, array indices) -- real uses, left alone -- but the one use at
+     LAB_000564d8 held tilemap_lookup's real 64-bit pointer return,
+     truncating it on this host (same class as drop_held_object_near_
+     player's own identical bug just above it in this file). New,
+     properly-typed local for just that one pointer use; every other
+     iVar12 use is separated from it by an early `return`, so this
+     doesn't touch any of them. */
+  char *pDropTile;
   undefined1 local_4c [24];
   
   DAT_002046d4 = 0;
@@ -43831,8 +43897,8 @@ LAB_000564d0:
         return param_1;
       }
 LAB_000564d8:
-      iVar12 = tilemap_lookup((int)param_2,(int)param_3);
-      puVar9 = (ushort *)FUN_00053334(iVar12 + 2,param_1,0);
+      pDropTile = (char *)tilemap_lookup((int)param_2,(int)param_3);
+      puVar9 = (ushort *)FUN_00053334(pDropTile + 2,param_1,0);
       return puVar9;
     }
     if ((uVar2 & 7) == 5) goto LAB_000564d8;
