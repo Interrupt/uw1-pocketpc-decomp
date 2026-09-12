@@ -2662,9 +2662,56 @@ undefined2 DAT_00202898;
 undefined2 DAT_0020288c;
 undefined2 DAT_00202894;
 undefined2 DAT_00085a70;
-undefined1 DAT_00085c38;
-static undefined1 DAT_00202950_backing[8192];
-#define DAT_00202950 DAT_00202950_backing[0]
+/* .data 0x85c38: widget-id -> DAT_00202950 slot-array-index lookup (read
+   as `(&DAT_00085c38)[widget_id]` for widget ids 0-0x16, i.e. one byte
+   per record of the DAT_00085ad0 hotspot table). Ghidra left this as a
+   lone scalar -- same split-array pattern as DAT_00085ad0 itself (see
+   its own comment) -- and the real .data contents aren't recoverable
+   here either, so every widget aliased slot 0. Backed with a real array;
+   identity-mapped for widget ids 6..13 (the 8 backpack-grid cells this
+   session gave real click rects, see DAT_00085ad0_backing) so each grid
+   cell reads/writes its own slot instead of colliding on slot 0. Ids
+   1-5 (worn-armor overlays) and 14-22 stay 0 -- their real mapping is
+   still unrecovered and out of scope for this pass. */
+static unsigned char DAT_00085c38_backing[0x17] = {
+  0,0,0,0,0,0, 6,7,8,9,10,11,12,13, 0,0,0,0,0,0,0,0,0,
+};
+#define DAT_00085c38 DAT_00085c38_backing[0]
+/* DAT_00202950 (28 2-byte "backpack/equipment slot" object-link
+   records -- see DAT_00085c38's own comment) was a bare scalar Ghidra
+   never gave real backing to. A plain standalone static array is NOT
+   enough, though: every reader/writer passes `&DAT_00202950 + idx*2`
+   straight to resolve_object_link (or gets it back from
+   FUN_0005358c's matching encode step), and resolve_object_link
+   refuses to decode through any address outside the level's own
+   object-arena buffer (the [DAT_002046b8-0x4000, DAT_002046c4+0x1800)
+   range it guards against wild pointers -- see its own comment). A
+   separate global will never fall inside that malloc'd range, so
+   every resolve came back NULL -- confirmed live: a freshly-placed
+   backpack item's own slot read back a null object and segfaulted the
+   very next slot redraw (FUN_00048198). In the original 32-bit binary
+   this table's fixed low address plausibly sat inside the same static
+   region the "dynamic" arena pointers were themselves offset from;
+   here that arena is a real runtime allocation (FUN_00049960's
+   `Ordinal_1041(0x7c08)`), so this table now lives inside that SAME
+   buffer instead -- g_backpack_slot_table is pointed at its unused
+   tail (offset 0x7b00, 28*2=56 bytes, well inside the buffer's real
+   0x7c08 size) by FUN_00052960 at level load, and
+   resolve_object_link's own valid-range upper bound is widened by the
+   same 0x38 bytes so this new tail is actually accepted (see both of
+   their own comments). */
+char *g_backpack_slot_table;
+#define DAT_00202950 g_backpack_slot_table[0]
+#define DAT_00202951 g_backpack_slot_table[1]
+void uw_debug_dump_inventory_state(void) {
+  int occupied = 0;
+  if (g_backpack_slot_table) {
+    for (int i = 0; i < 28; i++)
+      if (*(unsigned short *)&g_backpack_slot_table[i*2] & 0xffc0) occupied++;
+  }
+  fprintf(stderr, "[demo] post-screenshot state: DAT_002020c4(holding)=%d occupied_slots=%d\n",
+          (int)DAT_002020c4, occupied);
+}
 undefined4 DAT_00202990;
 undefined1 DAT_00085c39;
 /* Was a lone `undefined4` scalar, but indexed as `(&DAT_002028a0)[i]` for
@@ -2686,8 +2733,16 @@ static undefined4 DAT_002028a0_backing[64];
    Widened with a safety margin. */
 static undefined4 DAT_002028e8_backing[64];
 #define DAT_002028e8 DAT_002028e8_backing[0]
-static ushort DAT_00202976_backing[8192];
-#define DAT_00202976 DAT_00202976_backing[0]
+/* Same "resolve_object_link needs an in-arena address" issue as
+   DAT_00202950 (see its own, much longer comment) -- a standalone
+   backing array's address will never fall inside the level's object
+   arena, so every resolve_object_link(&DAT_00202976) call (the "item
+   currently in the process of being combined/used" single-object
+   link) returned NULL. Routed through g_backpack_slot_table's same
+   arena reservation instead, right after its 28 backpack slots (see
+   FUN_00052960/FUN_00049960/resolve_object_link's own updated
+   comments -- all four move together). */
+#define DAT_00202976 (*(ushort *)&g_backpack_slot_table[56])
 /* DAT_002028ec's address (0x2028ec) is exactly one element (4 bytes)
    past DAT_002028e8's (0x2028e8) -- not a separate global, an alias into
    the same array at index 1 (same relationship as the DAT_000fb880
@@ -2710,7 +2765,6 @@ undefined1 DAT_002028e0_backing[16];
 static undefined DAT_00202978_backing[8192];
 #define DAT_00202978 DAT_00202978_backing[0]
 ushort DAT_00202986;
-undefined1 DAT_00202951;
 /* .data 0x85ad0: the HUD hotspot / layout table -- 0x17 records of 0xe
    bytes: [+0..+7] short click-rect x1,y1,x2,y2 (read by FUN_000485f4);
    [+8/+0xa] short draw x,y; [+0xc/+0xd] byte dirty w,h. Ghidra split it
@@ -2721,13 +2775,51 @@ undefined1 DAT_00202951;
    (confirmed: file offset lands on 3D-model-parser strings), so the
    record positions can't be lifted from the binary. Back it with a real
    array and seed record 0 (the body) from the panel rect the redraw path
-   clears -- rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76). Records 1..5
-   (worn armour overlays) and 6..0x16 (inventory grid hotspots) stay zero
-   for now -- armour only draws when equipped, and the grid hotspots were
-   already dead. */
+   clears -- rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76) for its DRAW
+   position/size (needed as-is: FUN_00046eec draws the paperdoll body
+   sprite from these exact fields). Its CLICK rect's bottom edge is
+   narrowed to y2=0x50 (80) instead of the full 0x76 (118), so it only
+   covers the paperdoll area above the backpack grid -- otherwise, since
+   FUN_000485f4 returns the FIRST matching record and record 0's rect is
+   a superset of every grid cell below it, every backpack-grid click
+   would keep resolving to record 0 (widget id 0, a no-op sentinel
+   throughout this file) instead of ever reaching records 6-13. Records
+   1..5 (worn armour overlays) stay zero for now -- armour only draws
+   when equipped, out of scope for this pass.
+
+   Records 6..13 (the 8-cell backpack grid, 4 cols x 2 rows) are now
+   populated too, needed to make Grab-mode drops and backpack clicks
+   actually land on a specific slot instead of always falling through to
+   record 0's whole-panel body rect (see FUN_00046698/FUN_000485f4).
+   Like record 0, the real per-cell .data can't be recovered from the
+   binary, so these are reconstructed from the rendered panel's own
+   on-screen grid (screenshot pixel-measured, panel-local = screen/2,
+   matching record 0's own scale), not lifted from original data: an
+   even 4x2 grid spanning the same x:0xf0-0x13c / y:0x50-0x76 area
+   visible below the paperdoll. Draw x,y is each cell's top-left +1px
+   inset; dirty w,h is 0x11x0x11 (17x17), just under one cell. Records
+   14..0x16 stay zero -- unrecovered, out of scope. */
 static unsigned char DAT_00085ad0_backing[0x17 * 0xe + 2] = {
-  /* rec 0: click x1,y1,x2,y2 = f0,0b,13b,76 ; draw x,y = f0,0b ; dirty w,h = 50,6c */
-  0xf0,0x00, 0x0b,0x00, 0x3b,0x01, 0x76,0x00,  0xf0,0x00, 0x0b,0x00,  0x50,0x6c,
+  /* rec 0: click x1,y1,x2,y2 = f0,0b,13b,50 (narrowed, see comment above) ; draw x,y = f0,0b ; dirty w,h = 50,6c */
+  0xf0,0x00, 0x0b,0x00, 0x3b,0x01, 0x50,0x00,  0xf0,0x00, 0x0b,0x00,  0x50,0x6c,
+
+  [6*14+0] =
+  /* rec 6  (row1,col1): click f0,50,103,63 ; draw f1,51 */
+  0xf0,0x00, 0x50,0x00, 0x03,0x01, 0x63,0x00,  0xf1,0x00, 0x51,0x00,  0x11,0x11,
+  /* rec 7  (row1,col2): click 103,50,116,63 ; draw 104,51 */
+  0x03,0x01, 0x50,0x00, 0x16,0x01, 0x63,0x00,  0x04,0x01, 0x51,0x00,  0x11,0x11,
+  /* rec 8  (row1,col3): click 116,50,129,63 ; draw 117,51 */
+  0x16,0x01, 0x50,0x00, 0x29,0x01, 0x63,0x00,  0x17,0x01, 0x51,0x00,  0x11,0x11,
+  /* rec 9  (row1,col4): click 129,50,13c,63 ; draw 12a,51 */
+  0x29,0x01, 0x50,0x00, 0x3c,0x01, 0x63,0x00,  0x2a,0x01, 0x51,0x00,  0x11,0x11,
+  /* rec 10 (row2,col1): click f0,63,103,76 ; draw f1,64 */
+  0xf0,0x00, 0x63,0x00, 0x03,0x01, 0x76,0x00,  0xf1,0x00, 0x64,0x00,  0x11,0x11,
+  /* rec 11 (row2,col2): click 103,63,116,76 ; draw 104,64 */
+  0x03,0x01, 0x63,0x00, 0x16,0x01, 0x76,0x00,  0x04,0x01, 0x64,0x00,  0x11,0x11,
+  /* rec 12 (row2,col3): click 116,63,129,76 ; draw 117,64 */
+  0x16,0x01, 0x63,0x00, 0x29,0x01, 0x76,0x00,  0x17,0x01, 0x64,0x00,  0x11,0x11,
+  /* rec 13 (row2,col4): click 129,63,13c,76 ; draw 12a,64 */
+  0x29,0x01, 0x63,0x00, 0x3c,0x01, 0x76,0x00,  0x2a,0x01, 0x64,0x00,  0x11,0x11,
 };
 #define DAT_00085ad0 DAT_00085ad0_backing[0x0]
 #define DAT_00085ad2 DAT_00085ad0_backing[0x2]
@@ -2737,7 +2829,23 @@ static unsigned char DAT_00085ad0_backing[0x17 * 0xe + 2] = {
 #define DAT_00085ada (*(unsigned short *)&DAT_00085ad0_backing[0xa])
 #define DAT_00085adc DAT_00085ad0_backing[0xc]
 #define DAT_00085add DAT_00085ad0_backing[0xd]
-undefined DAT_00085c18;
+/* .data 0x85c18: array-slot-index -> widget-id lookup, the inverse of
+   DAT_00085c38 (see its own comment) -- read as `(&DAT_00085c18)[slot]`
+   to find which widget/grid-cell to redraw after a slot's contents
+   change (FUN_00046eec/FUN_00048198 callers throughout this file).
+   Same lone-scalar split-array pattern as DAT_00085c38, same
+   unrecoverable-real-data story. Backed here with the literal inverse
+   of DAT_00085c38's identity mapping for slots 6..13 (the same 8
+   backpack-grid cells): each slot maps back to its own widget id, so a
+   drop into slot N correctly redraws grid cell N instead of resolving
+   to widget id 0 (a "not a spell" message code, observed live: without
+   this, placing an item successfully updated the data but the grid
+   stayed visually empty and printed an unrelated spell-error message
+   on refresh). Other indices stay 0, matching prior (dead) behavior. */
+static unsigned char DAT_00085c18_backing[0x17] = {
+  0,0,0,0,0,0, 6,7,8,9,10,11,12,13, 0,0,0,0,0,0,0,0,0,
+};
+#define DAT_00085c18 DAT_00085c18_backing[0]
 undefined2 DAT_00202980;
 short g_player_carry_weight;
 undefined1 *DAT_002028c0;
@@ -28906,6 +29014,25 @@ ushort *pick_object_under_cursor()
   }
   iVar2 = 0;
   DAT_002020ac = 0;
+  /* Guard never present in the decompile: nothing bounds-checked
+     g_mouse_x/g_mouse_y against the 3D viewport's own registered rect
+     (DAT_0023be5c/DAT_0023bd80 x-range, DAT_0023be80-DAT_0023be88..
+     DAT_0023be80 y-range -- the same rect FUN_0006764c registers for
+     FUN_0003f420 and FUN_000485f4 already reuses for its own 0x17
+     special case) before indexing the pick stencil DAT_0023cca0. That
+     was harmless while every right-click interact stayed inside the
+     viewport, but a held drag whose release lands elsewhere (e.g. the
+     inventory panel) still routes through here -- see FUN_0003f420,
+     called every tick a mouse button is held regardless of the
+     cursor's current position -- and reads/interprets whatever stale
+     byte happens to sit at that (out-of-viewport) stencil offset as a
+     real object slot, corrupting interact_default's pick and crashing
+     deep in FUN_0004506c/FUN_000472c4 (found wiring up backpack-slot
+     drops). Treat anything outside the viewport as "no object". */
+  if ((g_mouse_x < DAT_0023be5c) || (DAT_0023be5c + DAT_0023bd80 <= g_mouse_x) ||
+      (g_mouse_y < (short)(DAT_0023be80 - DAT_0023be88)) || (DAT_0023be80 <= g_mouse_y)) {
+    return (ushort *)0x0;
+  }
   bVar1 = *(byte *)(g_mouse_y * 0x140 + (int)g_mouse_x + DAT_0023cca0);
   uVar4 = (uint)bVar1;
   { const char *_f = getenv("UW_PICK_FORCE_SLOT");   /* debug: force the object branch */
@@ -29005,8 +29132,11 @@ void interact_default()
   int iVar1;
   int iVar2;
   ushort *puVar3;
-  
+
   puVar3 = (ushort *)0x0;
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] interact_default entry: DAT_002020cc=%p DAT_002020c4=%d DAT_002020ec=%d DAT_002020e0=%d\n",
+            (void *)DAT_002020cc, (int)DAT_002020c4, (int)DAT_002020ec, (int)DAT_002020e0);
   iVar1 = target_in_range((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
   iVar2 = target_line_of_sight((int)DAT_000858c4,DAT_002020cc);
   if (DAT_002020ec == 0) {
@@ -29474,8 +29604,12 @@ void FUN_0003f7e0()
 {
   short sVar1;
   undefined4 uVar2;
-  
+
   DAT_002020cc = 0;
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] FUN_0003f7e0 called: DAT_002020c4=%d DAT_00202948=%p DAT_00085a6c[3]=%d panel_x=%d panel_y=%d\n",
+            (int)DAT_002020c4, (void *)DAT_00202948, (int)DAT_00085a6c[3],
+            (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]));
   if (DAT_002020c4 == 0) {
     if ((DAT_00202948 == 0) && (sVar1 = DAT_00085a6c[3], sVar1 != 1)) {
       if (sVar1 == 2) {
@@ -31882,9 +32016,10 @@ short param_1;
 {
   ushort *puVar1;
   int iVar2;
+  ushort *puVar2;
   ushort uVar3;
   bool bVar4;
-  
+
   bVar4 = DAT_00202948 != 0;
   iVar2 = (int)param_1;
   if (7 < iVar2) {
@@ -31931,9 +32066,17 @@ short param_1;
       }
     }
   }
-  iVar2 = resolve_object_link(&DAT_00202950 + (char)(&DAT_00085c38)[iVar2] * 2);
-  if (iVar2 != 0) {
-    FUN_00079984(DAT_0023be64,iVar2,1);
+  /* Was reusing `iVar2` (an `int`) for resolve_object_link's real
+     pointer return, truncating it to 32 bits on this 64-bit host --
+     same "narrow local for a pointer" idiom already fixed at several
+     call sites this session. Only reached once a click actually landed
+     on an occupied backpack slot for the first time (see the arena
+     storage fix a few functions up), immediately segfaulting one frame
+     further in on FUN_00079984's own dereference of the same
+     truncated value. */
+  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&DAT_00085c38)[iVar2] * 2);
+  if (puVar2 != 0) {
+    FUN_00079984(DAT_0023be64,puVar2,1);
   }
 LAB_00042a10:
   if ((bVar4) && (DAT_00202948 == 0)) {
@@ -32218,22 +32361,42 @@ short param_1;
             uVar8 = FUN_00076a2c((&DAT_00085adc)[iVar11],(uint)(byte)(&DAT_00085add)[iVar11] << 1);
             sVar4 = (&DAT_00085ada)[iVar10 * 7];
             (&DAT_002028a0)[iVar10 + -0xc] = uVar8;
-            capture_framebuffer_rect_to_grtile(*(undefined4 *)(iVar10 * 4 + 0x202870),
+            /* Was a hardcoded original-binary literal address
+               (0x202870 = &DAT_002028a0 - 0xc*4 in the original 32-bit
+               address space) instead of the general symbolic form the
+               write just above already uses for this same array --
+               same "hardcoded address" bug class as the iVar5==10/11
+               case a few thousand lines up (search "probe_save_slots's
+               -0x87020"). Reads back the uVar8 just written one line
+               above; never triggered before because nothing reached
+               this never-before-exercised container-interact path
+               until this session's chain of fixes leading up to it. */
+            capture_framebuffer_rect_to_grtile((&DAT_002028a0)[iVar10 + -0xc],
                          (int)(short)(&DAT_00085ad8)[iVar10 * 7],(int)sVar4,(&DAT_00085adc)[iVar11],
                          (&DAT_00085add)[iVar11]);
             iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
           } while (iVar10 < 0x14);
         }
         FUN_000570b4();
-        iVar10 = 0x14;
-        do {
-          *(char *)(iVar10 + 0x85c30) = (char)iVar10;
-          iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
-        } while (iVar10 < 0x1c);
+        /* Was a hardcoded original-binary literal address (0x85c30) --
+           same bug class as this function's own 0x202870 fix just
+           above -- but unlike that one, nothing anywhere else in this
+           file ever reads address 0x85c30 back symbolically or
+           otherwise (confirmed via a whole-file grep), so whatever
+           real array this once identity-filled is both unrecoverable
+           and provably dead. On this 64-bit host 0x85c30 is just an
+           unmapped low address, so left as-is this writes 8 bytes
+           (iVar10=0x14..0x1b) into unmapped memory and crashes --
+           never triggered before since nothing reached this
+           never-before-exercised path this session's earlier fixes.
+           Dropped instead of guessing at backing storage nothing reads. */
         iVar10 = 0xc;
         do {
           uVar8 = (&DAT_002028e8)[iVar10];
-          (&DAT_002028e8)[iVar10] = *(undefined4 *)(iVar10 * 4 + 0x202870);
+          /* Same hardcoded-original-address bug as this function's
+             other 0x202870 fix above (0x202870 = &DAT_002028a0 -
+             0xc*4). */
+          (&DAT_002028e8)[iVar10] = (&DAT_002028a0)[iVar10 + -0xc];
           (&DAT_002028a0)[iVar10 + -0xc] = uVar8;
           iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
         } while (iVar10 < 0x14);
@@ -32401,7 +32564,9 @@ short param_2;
   short local_28;
   
   bVar11 = false;
-  sVar3 = FUN_000472c4();
+  /* Dropped arguments -- same bare call as FUN_0004506c's identical
+     fix just above (search "FUN_000472c4's declared signature"). */
+  sVar3 = FUN_000472c4(param_1, param_2);
   if (sVar3 == 0) {
 LAB_000438ac:
     uVar5 = 0;
@@ -33364,7 +33529,12 @@ short param_1;
 
 
 undefined4 FUN_0004506c(param_1,param_2)
-undefined4 param_1;
+/* Was `undefined4 param_1` -- same 64-bit-pointer-truncated-through-a-
+   32-bit-typedef-parameter bug as FUN_00047ae0's identical fix just
+   above (and FUN_00043d40's, elsewhere in this file): param_1 is
+   dereferenced further down (FUN_00046260(param_1), etc.) as a real
+   object pointer. */
+ushort *param_1;
 short param_2;
 
 {
@@ -33376,7 +33546,7 @@ short param_2;
   uint uVar6;
   int iVar7;
   undefined4 uVar8;
-  
+
   iVar4 = DAT_0023be64;
   iVar1 = (int)param_2;
   uVar8 = param_1;
@@ -33386,7 +33556,15 @@ short param_2;
   sVar2 = (short)uVar8;
   uVar8 = 0;
   if (iVar1 != -1) {
-    sVar2 = FUN_000472c4();
+    /* Dropped arguments: FUN_000472c4's declared signature is
+       (object, slot_index) and dereferences its first argument
+       immediately -- called bare here (same idiom as the
+       FUN_00047a7c/FUN_00047ae0 chain just above it), so with a real
+       slot index now actually reaching this far (see FUN_00047a7c's own
+       fix), the leftover-register param_1 it got instead was frequently
+       NULL/garbage, segfaulting on first dereference the moment a real
+       backpack-slot placement was attempted. */
+    sVar2 = FUN_000472c4(param_1, param_2);
   }
   if (sVar2 < 1) {
     if (sVar2 == -1) {
@@ -34185,6 +34363,9 @@ short param_1;
   puVar10 = (ushort *)0x0;
   bVar11 = DAT_00202948 != 0;
   uVar5 = FUN_000485f4(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] FUN_00046698 click test: panel_x=%d panel_y=%d -> widget_id=%d\n",
+            (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]), (int)(short)uVar5);
   iVar9 = (int)(short)uVar5;
   if ((0 < iVar9) && (iVar9 < 0x15)) {
     cVar2 = (&DAT_00085c38)[iVar9];
@@ -34315,6 +34496,9 @@ ushort * param_1;
   if ((local_14 != 0) && (FUN_00057604(1), DAT_00202948 != (ushort *)0x0)) {
     FUN_00057504(local_10,&local_12);
     sVar2 = FUN_000485f4((int)local_10[0],(int)local_12);
+    if (getenv("UW_DEBUG_INV"))
+      fprintf(stderr, "[inv] FUN_00046a94 click test: gx=%d gy=%d -> widget_id=%d\n",
+              (int)local_10[0], (int)local_12, (int)sVar2);
     iVar1 = (int)sVar2;
     if (0 < iVar1) {
       DAT_002020c4 = 1;
@@ -34493,6 +34677,8 @@ int param_2;
   if (DAT_00202948 != (ushort *)0x0) {
     if (param_2 != 0) {
       iVar1 = (int)(short)param_1;
+      if (getenv("UW_DEBUG_INV"))
+        fprintf(stderr, "[inv] FUN_00046ff4 writing arr_idx=%d objid=0x%03x\n", iVar1, uVar2 & 0x1ff);
       (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar2 << 0x16) >> 0x18);
       FUN_000667cc();
@@ -34590,7 +34776,17 @@ undefined4 param_2;
   char *pcVar14;
   int iVar15;
   bool bVar16;
-  char acStack_84f64 [544528];
+  /* Was 544528 bytes -- same Ghidra stack-frame-size-miscalculation
+     artifact already fixed in dispatch_object_action's acStack_85978
+     (see its own comment): this is just a scratch copy of the short
+     "UNNAMED" string (s_UNNAMED_00084f24) that's never read back
+     afterward (only acStack_40 feeds the real message_scroll_print_wrapped
+     calls below). Never triggered before because nothing reached this
+     deep into FUN_000472c4 until the FUN_00047a7c/FUN_0004506c dropped
+     arguments were forwarded correctly (see their own fixes) -- with a
+     real object now reaching here, allocating the huge frame crashed on
+     entry (SIGSEGV touching the stack guard page). Shrunk to a sane size. */
+  char acStack_84f64 [64];
   short local_54 [2];
   int local_50;
   uint local_4c;
@@ -34808,12 +35004,22 @@ short param_1;
 
 {
   int iVar1;
-  
+
+  /* Dropped arguments: both branches call a 2-param function with only
+     one arg -- FUN_00047ae0/FUN_00047cfc's own declared signatures take
+     (held_object, slot_index), but this wrapper only forwards
+     DAT_00202948 (the held object) and drops its own param_1 (the slot
+     index that FUN_000485f4 just resolved from the click). Same
+     "wrapper forgot to forward its own argument" idiom as
+     FUN_00046358/FUN_00040918 earlier this session -- traced by hand
+     while wiring up backpack-slot placement (the click hit-boxes and
+     widget-to-slot mapping in DAT_00085ad0/DAT_00085c38 were the other
+     missing pieces, see their own comments). */
   if ((*(ushort *)(&DAT_00202950 + param_1 * 2) & 0xffc0) == 0) {
-    iVar1 = FUN_00047ae0();
+    iVar1 = FUN_00047ae0(DAT_00202948, param_1);
   }
   else {
-    iVar1 = FUN_00047cfc(DAT_00202948);
+    iVar1 = FUN_00047cfc(DAT_00202948, param_1);
   }
   if (iVar1 != 0) {
     DAT_00202948 = 0;
@@ -34824,7 +35030,14 @@ short param_1;
 
 
 undefined4 FUN_00047ae0(param_1,param_2)
-undefined4 param_1;
+/* Was `undefined4 param_1` -- a 64-bit pointer truncates to its low 32
+   bits the moment a caller passes it to a function whose own signature
+   declares this narrower type (matches FUN_00043d40's identical fix
+   elsewhere in this file). Latent until FUN_00047a7c's dropped argument
+   was fixed and a real DAT_00202948 object pointer started actually
+   reaching here -- then this truncated pointer segfaulted three frames
+   further down in FUN_000472c4's first dereference. */
+ushort *param_1;
 short param_2;
 
 {
@@ -34838,7 +35051,12 @@ short param_2;
     uVar3 = 0;
   }
   else {
-    iVar2 = FUN_0004506c(param_1);
+    /* Dropped argument: FUN_0004506c's own declared signature takes
+       (object, slot_index) and writes the object's link into
+       &DAT_00202950 + slot_index*2 -- the real "place held item into
+       this backpack slot" primitive -- but slot_index was never
+       forwarded here, so it placed nothing at a real slot. */
+    iVar2 = FUN_0004506c(param_1, param_2);
     if (iVar2 != 0) {
       if (iVar1 < 0x13) {
         FUN_00046eec((int)(char)(&DAT_00085c18)[iVar1]);
@@ -35075,9 +35293,24 @@ joined_r0x00048308:
         if (iVar6 != 0x14) {
           FUN_00076e98((&DAT_002028e8)[iVar6]);
           auStack_54[iVar6] = 1;
+          if (getenv("UW_DEBUG_INV"))
+            fprintf(stderr, "[inv] FUN_00048198 loop iVar6=%d slot_arr_idx=%d arr_val=0x%04x\n",
+                    iVar6, (char)(&DAT_00085c38)[iVar6],
+                    (unsigned)*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2));
           if (iVar6 < 0x15) {
             if ((*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2) & 0xffc0) != 0) {
+              if (getenv("UW_DEBUG_INV"))
+                fprintf(stderr, "[inv] resolve addr=%p table=%p lo=%p hi=%p\n",
+                        (void *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2),
+                        (void *)g_backpack_slot_table, (void *)(DAT_002046b8 - 0x4000),
+                        (void *)(DAT_002046c4 + 0x1800 + 0x38));
               puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2));
+              if (puVar7 == 0) goto skip_slot_draw_iVar6;
+              if (getenv("UW_DEBUG_INV"))
+                fprintf(stderr, "[inv] slot widget_id=%d slot_arr_idx=%d objid=0x%03x draw_x=%d draw_y=%d w=%d h=%d\n",
+                        iVar6, (char)(&DAT_00085c38)[iVar6], *puVar7 & 0x1ff,
+                        (int)(short)(&DAT_00085ad8)[iVar6 * 7], (int)(short)(&DAT_00085ada)[iVar6 * 7],
+                        (int)(&DAT_00085add)[iVar6 * 0xe], (int)(&DAT_00085adc)[iVar6 * 0xe]);
               draw_sprite_by_id(*puVar7 & 0x1ff,(int)(short)(&DAT_00085ad8)[iVar6 * 7],
                            (int)(short)(&DAT_00085ada)[iVar6 * 7],(&DAT_00085add)[iVar6 * 0xe],
                            (&DAT_00085adc)[iVar6 * 0xe]);
@@ -35086,6 +35319,7 @@ joined_r0x00048308:
                 auStack_54[iVar6] = uVar4;
                 bVar5 = true;
               }
+              skip_slot_draw_iVar6:;
             }
           }
           else {
@@ -36108,7 +36342,11 @@ undefined4 FUN_00049960()
 
 {
   if (DAT_002029cc == 0) {
-    DAT_002029cc = Ordinal_1041(0x7c08);
+    /* Widened by 0x3a bytes: 28 backpack/equipment slots * 2 bytes
+       (0x38) plus DAT_00202976's own 2 bytes, both now reserved at
+       this buffer's tail -- see FUN_00052960 and DAT_00202950's/
+       DAT_00202976's own comments. */
+    DAT_002029cc = Ordinal_1041(0x7c08 + 0x3a);
     if (DAT_002029cc == 0) {
       FUN_0003c3b4(0x1002);
     }
@@ -41439,6 +41677,17 @@ void FUN_00052960()
   DAT_002046a8 = DAT_002029cc + 0x74fa;
   DAT_002046bc = DAT_002029cc + 0x74fc;
   DAT_0020469c = DAT_002029cc + 0x7afa;
+  /* g_backpack_slot_table lives in this same arena buffer, in the 0x38
+     bytes FUN_00049960 added past the buffer's old real end (0x7c08 --
+     note that's past this function's own highest touched offset,
+     0x7b00, and past resolve_object_link's old checked upper bound,
+     DAT_002046c4+0x1800=0x7300 -- both already-spoken-for, so the new
+     reservation goes after the *entire* old buffer instead of trying
+     to squeeze into either gap). resolve_object_link's valid-range
+     upper bound is widened to this same new true end (0x7c08+0x38) --
+     see its own comment -- so this table is both physically present
+     and accepted by resolve_object_link's guard. */
+  g_backpack_slot_table = DAT_002029cc + 0x7c08;
   iVar3 = 2;
   DAT_002046a0 = DAT_0020469c;
   DAT_002046a4 = puVar1;
@@ -41947,7 +42196,15 @@ ushort * param_1;
      other guards against a data-dependent wild pointer. */
   if (param_1 != (ushort *)0x0) {
     char *_lo = DAT_002046b8 - 0x4000;
-    char *_hi = DAT_002046c4 + 0x1800;
+    /* (DAT_002046b8-0x4000) is this arena buffer's own base (aliased as
+       _lo just above); +0x7c08+0x3a is its new true end, covering
+       g_backpack_slot_table's reservation there (28 slots + DAT_00202976,
+       see both their comments) -- the buffer itself was widened by the
+       same 0x3a bytes in FUN_00049960. This replaces the narrower
+       DAT_002046c4+0x1800 the original binary's own object table alone
+       would need -- the new reservation sits well past that, in
+       previously-unallocated space, not inside it. */
+    char *_hi = (DAT_002046b8 - 0x4000) + 0x7c08 + 0x3a;
     if ((char *)param_1 < _lo || (char *)param_1 >= _hi) {
       /* Throttled: this guard also fires every idle tick before any level
          is loaded (DAT_002046b8/DAT_002046c4 aren't set up yet, so
@@ -64505,7 +64762,11 @@ ushort * param_1;
 
 
 ushort *FUN_00079984(param_1,param_2,param_3)
-int param_1;
+/* Was `int param_1` -- every call site passes a real object pointer
+   (DAT_0023be64, the player object, at most sites), truncating it to
+   32 bits on this 64-bit host. Same class as FUN_00042870's `iVar2`
+   fix just above this function's own callers. */
+ushort *param_1;
 ushort * param_2;
 int param_3;
 
@@ -66195,8 +66456,13 @@ int param_2;
 
 
 void FUN_0007c93c(param_1,param_2,param_3)
-int param_1;
-undefined4 param_2;
+/* Was `int param_1; undefined4 param_2;` -- both real object pointers
+   (matching FUN_0007bf38's own param_1/param_2 types, forwarded to it
+   unchanged just below), truncated to 32 bits on this 64-bit host.
+   Same class as FUN_00079984/FUN_00042870's fixes just above it in
+   this same never-before-exercised container-interact call chain. */
+char *param_1;
+ushort *param_2;
 int param_3;
 
 {
@@ -66204,7 +66470,11 @@ int param_3;
   char cVar1;
   short sVar2;
   char *pcVar3;
-  char acStack_84f48 [544548];
+  /* Was 544548 bytes -- same Ghidra stack-frame-size-miscalculation
+     artifact already fixed twice this session (FUN_000472c4,
+     dispatch_object_action): a scratch copy of the short "UNNAMED"
+     string that's never read back afterward. */
+  char acStack_84f48 [64];
   char acStack_24 [20];
   
   sVar2 = FUN_0007bf38(param_1,param_2,0);

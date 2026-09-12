@@ -1,0 +1,42 @@
+ENTER
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+TYPE Avatar
+UP
+UP
+UP
+UP
+UP
+SETPLAYERPOS 33.5 2.5 768 0 20
+WAIT 1
+SCREENSHOT /tmp/bagtest_00_before.bmp
+SDLCLICK 20 150
+WAIT 2
+SCREENSHOT /tmp/bagtest_01_grabmode.bmp
+SDLRDOWN 200 200
+WAIT 2
+SCREENSHOT /tmp/bagtest_02_picked.bmp
+SDLMOVE 400 200
+WAIT 2
+SCREENSHOT /tmp/bagtest_03_dragging.bmp
+SDLRUP 520 195
+WAIT 2
+SCREENSHOT /tmp/bagtest_04_dropped.bmp
+SDLCLICK 522 195
+WAIT 2
+SCREENSHOT /tmp/bagtest_05_opened.bmp

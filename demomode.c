@@ -685,6 +685,10 @@ void demomode_pump(void) {
           flush_dirty_rect_to_display(1);
           g_force_flush = 0; }
         uw_save_screenshot(path);
+        if (getenv("UW_DEBUG_INV")) {
+            extern void uw_debug_dump_inventory_state(void);
+            uw_debug_dump_inventory_state();
+        }
         g_demo_next_tick = now;
         return;
     }
