@@ -32444,6 +32444,14 @@ short param_1;
   int iVar11;
   uint uVar12;
   ushort *puVar13;
+  /* iVar10/iVar11 are reused elsewhere in this function as plain int
+     loop counters (0xc..0x13 etc) -- real uses, left alone -- but the
+     container-open sequence below also stored real 64-bit
+     resolve_object_link() pointers into them, truncating to 32 bits on
+     this host (same class as many other fixes this session). New,
+     properly-typed locals for just that pointer use. */
+  ushort *puVar14;
+  ushort *puVar15;
   
   iVar1 = (int)param_1;
   puVar13 = (ushort *)(&DAT_00202950 + iVar1 * 2);
@@ -32572,27 +32580,52 @@ short param_1;
         bVar5 = (byte)uVar3;
         *(byte *)(DAT_00202994 + 2) = (*(byte *)(DAT_00202994 + 2) ^ bVar5) & 0x3f ^ bVar5;
         *(char *)((char *)DAT_00202994 + 9) = (char)(uVar3 >> 8);
-        DAT_00202976 = (DAT_00202976 ^ *(ushort *)(DAT_00202994 + 2)) & 0x3f ^
-                       *(ushort *)(DAT_00202994 + 2);
-        iVar10 = resolve_object_link(&DAT_00202976);
-        iVar11 = resolve_object_link(iVar10 + 6);
+        /* Was `DAT_00202976 = (DAT_00202976 ^ *(ushort*)(DAT_00202994+2))
+           & 0x3f ^ *(ushort*)(DAT_00202994+2)` -- a "keep bits inside
+           the mask from the left operand, take bits outside the mask
+           from the right operand" idiom, matching this file's usual
+           bit-assignment style elsewhere. But the right operand here
+           (offset+2/+3 of the fresh tracking record) only ever holds
+           bVar5 -- uVar3's own LOW BYTE -- with its own low 6 bits
+           already zeroed by the line just above, so at most 2 real
+           bits of uVar3 (bits 6-7) ever survive into DAT_00202976; the
+           object link's real identifying bits (the whole upper byte,
+           uVar3>>8, encoding which arena and slot the container lives
+           in) never reach it at all. Confirmed live with real numbers
+           (UW_DEBUG_INV): uVar3=0xeb80 (a real, valid high-arena
+           object link, the same value puVar13 -> puVar7 already
+           resolved correctly moments earlier) produced
+           DAT_00202976=0x0080 -- decodes as low-arena slot 2, a
+           completely different, essentially garbage object -- so every
+           container this ever ran on read back an unrelated object's
+           (empty) contents instead of its own. The starting-room sack
+           genuinely has 6 items in the level data (confirmed via the
+           new UW_DUMP_CONTAINERS_FILE tool), so the "empty contents"
+           result in this whole feature's earlier testing was this bug,
+           not empty source data. Fix: DAT_00202976 only needs to be a
+           second copy of the exact same link value puVar13 already
+           held (same encoding, resolve_object_link doesn't care which
+           address you point it at) -- drop the broken partial-bit
+           idiom and just copy it directly. */
+        DAT_00202976 = uVar3;
+        puVar14 = (ushort *)resolve_object_link(&DAT_00202976);
+        puVar15 = (ushort *)resolve_object_link((ushort *)((char *)puVar14 + 6));
         if (getenv("UW_DEBUG_INV"))
           fprintf(stderr, "[inv] FUN_00043100 open: container=%p contents_head=%p\n",
-                  (void *)iVar10, (void *)iVar11);
-        iVar10 = resolve_object_link(&DAT_00202976);
-        FUN_00043d40(iVar10 + 6,(undefined1 *)((char *)DAT_00202994 + 10));
+                  (void *)puVar14, (void *)puVar15);
+        FUN_00043d40((ushort *)((char *)puVar14 + 6),(undefined1 *)((char *)DAT_00202994 + 10));
         iVar10 = 0x14;
         do {
-          uVar12 = FUN_0005358c(iVar11);
+          uVar12 = FUN_0005358c(puVar15);
           iVar2 = (int)(short)iVar10;
           (&DAT_00202950)[iVar2 * 2] =
                (&DAT_00202950)[iVar2 * 2] & 0x3f | (byte)((uVar12 & 0x3ff) << 6);
           (&DAT_00202951)[iVar2 * 2] = (char)((uVar12 << 0x16) >> 0x18);
-          if (iVar11 != 0) {
-            if ((*(byte *)(iVar11 + 1) & 0x40) != 0) {
+          if (puVar15 != NULL) {
+            if ((*(byte *)((char *)puVar15 + 1) & 0x40) != 0) {
               iVar10 = (iVar2 + -1) * 0x10000 >> 0x10;
             }
-            iVar11 = resolve_object_link(iVar11 + 4);
+            puVar15 = (ushort *)resolve_object_link((ushort *)((char *)puVar15 + 4));
           }
           iVar10 = iVar10 + 1;
         } while (iVar10 * 0x10000 >> 0x10 < 0x1c);
@@ -50622,6 +50655,62 @@ ushort * param_1;
         }
         fclose(_f);
         fprintf(stderr, "[objcensus] wrote %d objects to '%s'\n", _count, _path);
+      }
+    }
+  }
+  // Debug tool (UW_DUMP_CONTAINERS_FILE): scan every tile's object chain
+  // (correctly, via resolve_object_link + the real "next" field at
+  // offset+4 -- NOT UW_DUMP_OBJECTS_FILE's own +6, which is actually the
+  // "first item inside this container" field, not "next object on this
+  // tile"; that census tool's re-use of +6 for both purposes is its own,
+  // separate, lower-priority bug, left alone here since it's debug-only)
+  // and lists every container's real contents. Written to verify whether
+  // level load correctly preserves container contents end to end -- see
+  // memory.md's "sack contents" finding.
+  if (getenv("UW_DUMP_CONTAINERS_FILE")) {
+    static int _dumped_containers = 0;
+    if (!_dumped_containers) {
+      _dumped_containers = 1;
+      const char *_path = getenv("UW_DUMP_CONTAINERS_FILE");
+      FILE *_f = fopen(_path, "w");
+      if (_f == NULL) {
+        fprintf(stderr, "[containercensus] failed to open '%s' for writing\n", _path);
+      } else {
+        fprintf(_f, "tile_x\ttile_y\tid\tname\tnum_items\titems\n");
+        int _tx, _ty, _count = 0;
+        for (_ty = 0; _ty < 0x40; _ty++) {
+          for (_tx = 0; _tx < 0x40; _tx++) {
+            int _tidx = _tx + _ty * 0x40;
+            ushort *_headp = (ushort *)((char *)DAT_002029cc + _tidx * 4 + 2);
+            ushort *_rec = (ushort *)resolve_object_link(_headp);
+            int _guard = 0;
+            while (_rec != NULL && _guard++ < 64) {
+              ushort _w = *_rec;
+              int _id = _w & 0x1ff;
+              if ((_w & 0x1c0) == 0x80) {
+                ushort *_item = (ushort *)resolve_object_link((ushort *)((char *)_rec + 6));
+                char _names[256];
+                _names[0] = '\0';
+                int _n = 0, _guard2 = 0;
+                while (_item != NULL && _guard2++ < 32) {
+                  int _iid = *_item & 0x1ff;
+                  char *_iname = (char *)FUN_0007863c(0x800 | _iid);
+                  strncat(_names, (_iname && _iname[0]) ? _iname : "?", sizeof(_names) - strlen(_names) - 2);
+                  strncat(_names, ",", sizeof(_names) - strlen(_names) - 1);
+                  _n++;
+                  _item = (ushort *)resolve_object_link((ushort *)((char *)_item + 4));
+                }
+                char *_name = (char *)FUN_0007863c(0x800 | _id);
+                fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%s\n", _tx, _ty, _id,
+                        (_name && _name[0]) ? _name : "(unnamed)", _n, _names);
+                _count++;
+              }
+              _rec = (ushort *)resolve_object_link((ushort *)((char *)_rec + 4));
+            }
+          }
+        }
+        fclose(_f);
+        fprintf(stderr, "[containercensus] wrote %d containers to '%s'\n", _count, _path);
       }
     }
   }
