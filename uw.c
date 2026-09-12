@@ -48227,6 +48227,7 @@ byte * param_1;
   int iVar11;
   int iVar12;
   char cVar12;
+  int local_atten_step;
   ushort local_32;
   int local_30;
   
@@ -48290,8 +48291,40 @@ LAB_0005cf04:
                         [(byte)(&DAT_00086a20)
                                [(pbVar8[(int)*(short *)(&DAT_00086a00 + iVar11 * 6) * (int)sVar6 * 4
                                        ] & 0xf) + iVar2]]) != 0) goto LAB_0005cf04;
-      cVar9 = Ordinal_2005((int)*(short *)(param_1 + 1) * (int)sVar6,(short)local_32 * local_30);
-      param_1[8] = cVar9 + param_1[8];
+      /* Was `cVar9 = Ordinal_2005(...); param_1[8] = cVar9 + param_1[8];`
+         -- param_1[8] is a 0-255 accumulated light-attenuation counter
+         (saturates the ring-walk's expansion once it hits 0xff -- see
+         the `param_1[8] = 0xff` "hit a wall" sets above and the
+         `(0x100 - param_1[8])` remaining-light checks below), but the
+         per-step increment was routed through a SIGNED 8-bit `cVar9`.
+         For a nearby/strong ray the real quotient legitimately exceeds
+         127 (confirmed live via a UW_DEBUG_INV trace: divisor=134
+         dividend=32512 -> true quotient 242), which wrapped to a
+         NEGATIVE char (-14) instead of correctly saturating hard for
+         that close-range step. Real, verified overflow bug -- but NOT
+         the cause of the automap's over-reveal-at-spawn report: checked
+         with lldb (breakpoint on process_reaction_queue's exit) that
+         DAT_0023b024 (the ring-walk depth) and the dumped reveal bitmap
+         are BOTH byte-for-byte identical before and after this fix for
+         that repro, because the flood there terminates on real walls
+         well before this accumulator ever nears saturation. Left fixed
+         since it's a genuine bug (matters for any long open, wall-less
+         span longer than a few tiles), but the actual over-reveal cause
+         is elsewhere (doorway tiles read as plain open floor regardless
+         of the door object's open/closed state -- see memory.md).
+         Compute and accumulate in a wide int and clamp to the byte's
+         real 0-255 range instead of truncating through a signed 8-bit
+         type. */
+      local_atten_step = (int)Ordinal_2005((int)*(short *)(param_1 + 1) * (int)sVar6,
+                                            (short)local_32 * local_30);
+      local_atten_step = local_atten_step + (int)(byte)param_1[8];
+      if (local_atten_step < 0) {
+        local_atten_step = 0;
+      }
+      else if (0xff < local_atten_step) {
+        local_atten_step = 0xff;
+      }
+      param_1[8] = (byte)local_atten_step;
       param_1[6] = -(char)iVar12;
       local_32 = 0x100;
       if ((*param_1 & 0x80) == uVar1) {
