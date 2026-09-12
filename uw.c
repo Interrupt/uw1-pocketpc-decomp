@@ -2351,10 +2351,27 @@ static void (*const PTR_FUN_000858c8_table[5])(void) = {
 };
 #define PTR_FUN_000858c8 (PTR_FUN_000858c8_table[0])
 code *DAT_002020b8;
-static undefined1 DAT_000858a8_backing[65536];
-#define DAT_000858a8 DAT_000858a8_backing[0]
-static undefined1 DAT_000858b8_backing[65536];
-#define DAT_000858b8 DAT_000858b8_backing[0]
+/* Real, compile-time-baked data recovered directly from UU.exe (same
+   technique/precedent as DAT_00085668 -- see memory.md's "HOW WE GOT THE
+   DISPATCH TABLES POPULATED"), not something a runtime populator ever
+   writes. Confirmed via Ghidra: 0x858a8 holds 8 real int16 X coordinates
+   {8,8,6,6,7,8,0,0}, immediately followed at 0x858b8 by 8 real int16 Y
+   coordinates {100,81,66,48,28,11,144,0}, immediately followed at 0x858c8
+   by PTR_FUN_000858c8 (the very next declared symbol in this file) --
+   a clean, unambiguous 8-short/8-short layout with no gap. These are the
+   6 in-game HUD cursor-mode icon buttons' (Look/Use/Talk/etc, drawn by
+   FUN_0003f99c/FUN_0003fa1c via draw_sprite_by_id) screen positions;
+   only indices 0-5 are ever read (cursor_mode_button_click bounds-checks
+   at 5), the remaining 2 slots are unused padding in the original data.
+   Declaring these as plain zero-filled arrays (as a prior session had
+   them) meant every highlight/unhighlight icon drew at (0,0) instead of
+   its real button position -- part of the "door image on mode-icon
+   click" bug (see cursor_mode_button_click's own comment for the other
+   half, a dropped FUN_0003fa1c argument). */
+static const unsigned short DAT_000858a8_real[8] = {8,8,6,6,7,8,0,0};
+#define DAT_000858a8 (*(undefined1 *)DAT_000858a8_real)
+static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
+#define DAT_000858b8 (*(undefined1 *)DAT_000858b8_real)
 ushort DAT_0024fa18;
 char DAT_00085910;
 char DAT_00085911;
@@ -29476,6 +29493,9 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   DAT_00088960 = 1;
+  if (getenv("UW_DEBUG_MODEICON"))
+    fprintf(stderr, "[modeicon] FUN_0003f99c (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
+            param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
   DAT_00088960 = 0;
   FUN_000570b4();
@@ -29497,6 +29517,9 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   DAT_00088960 = 1;
+  if (getenv("UW_DEBUG_MODEICON"))
+    fprintf(stderr, "[modeicon] FUN_0003fa1c (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
+            param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
   DAT_00088960 = 0;
   FUN_000570b4();
@@ -29549,12 +29572,23 @@ short param_1;
       iVar7 = (iVar7 + 1) * 0x10000;
       iVar1 = iVar7 >> 0x10;
       if (iVar1 == DAT_002020c0) {
-        FUN_0003fa1c();
+        /* Dropped argument (Ghidra emitted a bare call despite
+           FUN_0003fa1c's own body using param_1 throughout) -- confirmed
+           by this same function's sibling call sites elsewhere in the
+           file (FUN_0003fa1c(2), FUN_0003fa1c(5)) using the correct
+           explicit-argument convention. FUN_0003fa1c un-highlights
+           whichever mode icon is currently selected, so it needs the
+           OLD DAT_002020c0 value (read here, before it's overwritten
+           below) -- this is the exact "door image" bug: without it, the
+           call ran on register-leftover garbage, resolving to a wild,
+           essentially random absolute sprite frame instead of the
+           intended icon. */
+        FUN_0003fa1c(DAT_002020c0);
         DAT_002020c0 = 0;
       }
       else {
         if (DAT_002020c0 != 0) {
-          FUN_0003fa1c();
+          FUN_0003fa1c(DAT_002020c0);
         }
         DAT_002020c0 = (short)((uint)iVar7 >> 0x10);
         if (iVar1 == 2) {
@@ -29629,12 +29663,14 @@ short param_1;
       iVar5 = (iVar5 + 1) * 0x10000;
       iVar1 = iVar5 >> 0x10;
       if (iVar1 == DAT_002020c0) {
-        FUN_0003fa1c();
+        /* Same dropped-argument bug as cursor_mode_button_click's own
+           two identical sites above -- see that comment. */
+        FUN_0003fa1c(DAT_002020c0);
         DAT_002020c0 = 0;
       }
       else if (iVar1 == 3) {
         if (DAT_002020c0 != 0) {
-          FUN_0003fa1c();
+          FUN_0003fa1c(DAT_002020c0);
         }
         DAT_002020c0 = (short)((uint)iVar5 >> 0x10);
         FUN_0003f99c(3);
@@ -29664,7 +29700,8 @@ void FUN_0003ff10()
       FUN_00057cac(3);
     }
     if (DAT_002020c0 != 0) {
-      FUN_0003fa1c();
+      /* Same dropped-argument bug as cursor_mode_button_click's sites. */
+      FUN_0003fa1c(DAT_002020c0);
     }
     DAT_002020c0 = 2;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
@@ -30313,6 +30350,10 @@ undefined4 param_3;
      the pcVar3+5 idiom in the branch right above it), so it's retyped
      from int to char* rather than truncated through a 4-byte read. */
   iVar4 = *(char **)(&DAT_0024e090 + param_1 * 8);
+  if (getenv("UW_DEBUG_MODEICON"))
+    fprintf(stderr, "[modeicon] FUN_00040918: resolved_frame=%d DAT_00202738=%d slot_ptr=%p branch=%s\n",
+            (int)param_1, (int)(uint)DAT_00202738, (void *)iVar4,
+            (int)param_1 < (int)(uint)DAT_00202738 ? "registered-resource(FUN_000408fc)" : "absolute-frame-table(DAT_0024e090)");
   if (iVar4 == (char *)0x0) {
     /* Table slot never populated. Four .GR resource names in the preload
        sequence around SCRLEDGE.GR (FUN_00041ca8: the &DAT_000859fc /
