@@ -2668,13 +2668,21 @@ undefined2 DAT_00085a70;
    lone scalar -- same split-array pattern as DAT_00085ad0 itself (see
    its own comment) -- and the real .data contents aren't recoverable
    here either, so every widget aliased slot 0. Backed with a real array;
-   identity-mapped for widget ids 6..13 (the 8 backpack-grid cells this
-   session gave real click rects, see DAT_00085ad0_backing) so each grid
-   cell reads/writes its own slot instead of colliding on slot 0. Ids
-   1-5 (worn-armor overlays) and 14-22 stay 0 -- their real mapping is
-   still unrecovered and out of scope for this pass. */
+   mapped for widget ids 12..19 (the 8 backpack-grid cells this session
+   gave real click rects, see DAT_00085ad0_backing) as widget N -> slot
+   N-1, i.e. slots 11..18 -- NOT identity. That mapping (and the widget
+   range itself, corrected from an earlier session's arbitrary 6..13)
+   comes from FUN_00042b38 (the close-container function), which resets
+   `(&DAT_00085c39)[0xb..0x12]` to identity on close; DAT_00085c39 is an
+   alias one byte into this same backing (see its own comment), so that
+   reset really targets backing[12..19] = 11..18. FUN_00043100 (opening
+   a container) remaps this same backing[12..19] to 20..27 instead --
+   the container's own contents, written to those slots -- while a
+   container is open (see its own comment), and FUN_00042b38 restores it
+   back to 11..18 on close. Ids 1-5 (worn-armor overlays) and 6-11/20-22
+   stay 0 -- their real mapping is still unrecovered and out of scope. */
 static unsigned char DAT_00085c38_backing[0x17] = {
-  0,0,0,0,0,0, 6,7,8,9,10,11,12,13, 0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0, 0,0,0,0,0,0,11,12,13,14,15,16,17,18, 0,0,0,
 };
 #define DAT_00085c38 DAT_00085c38_backing[0]
 /* DAT_00202950 (28 2-byte "backpack/equipment slot" object-link
@@ -2713,7 +2721,17 @@ void uw_debug_dump_inventory_state(void) {
           (int)DAT_002020c4, occupied);
 }
 undefined4 DAT_00202990;
-undefined1 DAT_00085c39;
+/* DAT_00085c39's address (0x85c39) is exactly one byte past
+   DAT_00085c38's (0x85c38) -- not a separate byte, an alias into the
+   same backing array (same relationship as DAT_002028ec/DAT_002028e8,
+   DAT_00202951/DAT_00202950 elsewhere in this file). FUN_00042b38 (the
+   close-container function) indexes it as `(&DAT_00085c39)[0xb..0x12]`
+   (11..18), which through this alias lands at
+   DAT_00085c38_backing[12..19] -- exactly the 8 backpack-grid widgets,
+   restoring their default N -> N-1 slot mapping on close (see
+   DAT_00085c38's own comment). As a standalone scalar this instead
+   silently corrupted 18 bytes of whatever the linker placed after it. */
+#define DAT_00085c39 DAT_00085c38_backing[1]
 /* Was a lone `undefined4` scalar, but indexed as `(&DAT_002028a0)[i]` for
    i up to 7 (FUN_00042aa8's icon save/restore swap) -- classic
    "undersized global used as an array" bug (same class as
@@ -2787,7 +2805,7 @@ ushort DAT_00202986;
    1..5 (worn armour overlays) stay zero for now -- armour only draws
    when equipped, out of scope for this pass.
 
-   Records 6..13 (the 8-cell backpack grid, 4 cols x 2 rows) are now
+   Records 12..19 (the 8-cell backpack grid, 4 cols x 2 rows) are now
    populated too, needed to make Grab-mode drops and backpack clicks
    actually land on a specific slot instead of always falling through to
    record 0's whole-panel body rect (see FUN_00046698/FUN_000485f4).
@@ -2797,29 +2815,46 @@ ushort DAT_00202986;
    matching record 0's own scale), not lifted from original data: an
    even 4x2 grid spanning the same x:0xf0-0x13c / y:0x50-0x76 area
    visible below the paperdoll. Draw x,y is each cell's top-left +1px
-   inset; dirty w,h is 0x11x0x11 (17x17), just under one cell. Records
-   14..0x16 stay zero -- unrecovered, out of scope. */
+   inset; dirty w,h is 0x14x0x14 (20x20), safely covering the real 16x16
+   icon sprite (confirmed via UW_DEBUG_INV) with margin -- draw_sprite_
+   by_id's w/h args only feed its dirty_rect_union call, gating what
+   region gets flushed to the display each frame; the actual blit
+   always uses the sprite's own real .GR-header size regardless. A
+   live playtest (unlike this project's screenshot-based testing, which
+   forces a full-screen flush every capture and so can't catch this)
+   showed incomplete redraws with the original tighter 0x11 (17x17).
+
+   Widget ids 12..19 (not 6..13, an earlier arbitrary choice corrected
+   here) were chosen to match hard evidence from FUN_00042b38 (the
+   close-container function): it resets `(&DAT_00085c39)[0xb..0x12]`
+   (11..18) to identity, and DAT_00085c39's address is exactly one byte
+   past DAT_00085c38's -- the same split-symbol relationship as
+   DAT_00202951/DAT_00202950 -- so that write really lands at
+   DAT_00085c38_backing[12..19], resetting widgets 12-19's slot mapping
+   back to 11-18 (widget N -> slot N-1) after a container closes. That
+   in turn implies the *normal* (no container open) mapping is also
+   N -> N-1, not identity -- see DAT_00085c38's own updated comment. */
 static unsigned char DAT_00085ad0_backing[0x17 * 0xe + 2] = {
   /* rec 0: click x1,y1,x2,y2 = f0,0b,13b,50 (narrowed, see comment above) ; draw x,y = f0,0b ; dirty w,h = 50,6c */
   0x04,0x01, 0x0b,0x00, 0x3b,0x01, 0x50,0x00,  0x04,0x01, 0x0b,0x00,  0x50,0x6c,
 
-  [6*14+0] =
-  /* rec 6  (row1,col1): click f0,50,103,63 ; draw f1,51 */
-  0xf0,0x00, 0x50,0x00, 0x03,0x01, 0x63,0x00,  0xf1,0x00, 0x51,0x00,  0x21,0x11,
-  /* rec 7  (row1,col2): click 103,50,116,63 ; draw 104,51 */
-  0x03,0x01, 0x50,0x00, 0x16,0x01, 0x63,0x00,  0x04,0x01, 0x51,0x00,  0x11,0x11,
-  /* rec 8  (row1,col3): click 116,50,129,63 ; draw 117,51 */
-  0x16,0x01, 0x50,0x00, 0x29,0x01, 0x63,0x00,  0x17,0x01, 0x51,0x00,  0x11,0x11,
-  /* rec 9  (row1,col4): click 129,50,13c,63 ; draw 12a,51 */
-  0x29,0x01, 0x50,0x00, 0x3c,0x01, 0x63,0x00,  0x2a,0x01, 0x51,0x00,  0x11,0x11,
-  /* rec 10 (row2,col1): click f0,63,103,76 ; draw f1,64 */
-  0xf0,0x00, 0x63,0x00, 0x03,0x01, 0x76,0x00,  0xf1,0x00, 0x64,0x00,  0x11,0x11,
-  /* rec 11 (row2,col2): click 103,63,116,76 ; draw 104,64 */
-  0x03,0x01, 0x63,0x00, 0x16,0x01, 0x76,0x00,  0x04,0x01, 0x64,0x00,  0x11,0x11,
-  /* rec 12 (row2,col3): click 116,63,129,76 ; draw 117,64 */
-  0x16,0x01, 0x63,0x00, 0x29,0x01, 0x76,0x00,  0x17,0x01, 0x64,0x00,  0x11,0x11,
-  /* rec 13 (row2,col4): click 129,63,13c,76 ; draw 12a,64 */
-  0x29,0x01, 0x63,0x00, 0x3c,0x01, 0x76,0x00,  0x2a,0x01, 0x64,0x00,  0x11,0x11,
+  [12*14+0] =
+  /* rec 12 (row1,col1): click f0,50,103,63 ; draw f1,51 */
+  0xf0,0x00, 0x50,0x00, 0x03,0x01, 0x63,0x00,  0xf1,0x00, 0x51,0x00,  0x14,0x14,
+  /* rec 13 (row1,col2): click 103,50,116,63 ; draw 104,51 */
+  0x03,0x01, 0x50,0x00, 0x16,0x01, 0x63,0x00,  0x04,0x01, 0x51,0x00,  0x14,0x14,
+  /* rec 14 (row1,col3): click 116,50,129,63 ; draw 117,51 */
+  0x16,0x01, 0x50,0x00, 0x29,0x01, 0x63,0x00,  0x17,0x01, 0x51,0x00,  0x14,0x14,
+  /* rec 15 (row1,col4): click 129,50,13c,63 ; draw 12a,51 */
+  0x29,0x01, 0x50,0x00, 0x3c,0x01, 0x63,0x00,  0x2a,0x01, 0x51,0x00,  0x14,0x14,
+  /* rec 16 (row2,col1): click f0,63,103,76 ; draw f1,64 */
+  0xf0,0x00, 0x63,0x00, 0x03,0x01, 0x76,0x00,  0xf1,0x00, 0x64,0x00,  0x14,0x14,
+  /* rec 17 (row2,col2): click 103,63,116,76 ; draw 104,64 */
+  0x03,0x01, 0x63,0x00, 0x16,0x01, 0x76,0x00,  0x04,0x01, 0x64,0x00,  0x14,0x14,
+  /* rec 18 (row2,col3): click 116,63,129,76 ; draw 117,64 */
+  0x16,0x01, 0x63,0x00, 0x29,0x01, 0x76,0x00,  0x17,0x01, 0x64,0x00,  0x14,0x14,
+  /* rec 19 (row2,col4): click 129,63,13c,76 ; draw 12a,64 */
+  0x29,0x01, 0x63,0x00, 0x3c,0x01, 0x76,0x00,  0x2a,0x01, 0x64,0x00,  0x14,0x14,
 };
 #define DAT_00085ad0 DAT_00085ad0_backing[0x0]
 #define DAT_00085ad2 DAT_00085ad0_backing[0x2]
@@ -2835,15 +2870,22 @@ static unsigned char DAT_00085ad0_backing[0x17 * 0xe + 2] = {
    change (FUN_00046eec/FUN_00048198 callers throughout this file).
    Same lone-scalar split-array pattern as DAT_00085c38, same
    unrecoverable-real-data story. Backed here with the literal inverse
-   of DAT_00085c38's identity mapping for slots 6..13 (the same 8
-   backpack-grid cells): each slot maps back to its own widget id, so a
-   drop into slot N correctly redraws grid cell N instead of resolving
-   to widget id 0 (a "not a spell" message code, observed live: without
-   this, placing an item successfully updated the data but the grid
-   stayed visually empty and printed an unrelated spell-error message
-   on refresh). Other indices stay 0, matching prior (dead) behavior. */
+   of DAT_00085c38's N -> N-1 mapping: slots 11..18 (the backpack
+   region behind the 8 grid widgets 12..19) map back to widgets 12..19,
+   so a drop into slot N correctly redraws grid cell N+1 instead of
+   resolving to widget id 0 (a "not a spell" message code, observed
+   live: without this, placing an item successfully updated the data
+   but the grid stayed visually empty and printed an unrelated
+   spell-error message on refresh). Other indices stay 0, matching
+   prior (dead) behavior. Note FUN_00043100 treats any mapped widget
+   id >= 0xb (11) as "handled by a wider grid redraw elsewhere,
+   nothing to do here" -- with these now-correct values (12-19) that
+   guard always takes the "elsewhere" branch for backpack-grid slots,
+   which is why entering/leaving a container needs its own explicit
+   whole-grid redraw call (see FUN_00043100/FUN_00042b38's own
+   comments) rather than relying on this single-widget path. */
 static unsigned char DAT_00085c18_backing[0x17] = {
-  0,0,0,0,0,0, 6,7,8,9,10,11,12,13, 0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0, 12,13,14,15,16,17,18,19, 0,0,0,0,
 };
 #define DAT_00085c18 DAT_00085c18_backing[0]
 undefined2 DAT_00202980;
@@ -30565,6 +30607,10 @@ undefined4 param_3;
     if (pcVar3 != (char *)0x0) {
       cVar1 = pcVar3[1];
       cVar2 = pcVar3[2];
+      if (getenv("UW_DEBUG_INV"))
+        fprintf(stderr, "[inv] FUN_00040918 real sprite size: frame=%d w(cVar2)=%d h(cVar1)=%d at x=%d y=%d\n",
+                (int)param_1, (int)(unsigned char)cVar2, (int)(unsigned char)cVar1,
+                (int)(short)(intptr_t)param_2, (int)(short)(intptr_t)param_3);
       if (*pcVar3 == '\x04') {
         pcVar3 = pcVar3 + 5;
       }
@@ -32160,7 +32206,10 @@ void FUN_00042b38()
     iVar1 = 0xc;
     do {
       uVar2 = (&DAT_002028e8)[iVar1];
-      (&DAT_002028e8)[iVar1] = *(undefined4 *)(iVar1 * 4 + 0x202870);
+      /* Same hardcoded-original-address bug already fixed in
+         FUN_00043100 (0x202870 = &DAT_002028a0 - 0xc*4) -- a second,
+         separate occurrence in this sibling function. */
+      (&DAT_002028e8)[iVar1] = (&DAT_002028a0)[iVar1 + -0xc];
       (&DAT_002028a0)[iVar1 + -0xc] = uVar2;
       iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
     } while (iVar1 < 0x14);
@@ -32172,6 +32221,14 @@ void FUN_00042b38()
     FUN_000570b4();
     DAT_002029a0 = 0;
     DAT_0020299c = 0;
+    /* Missing piece, matching FUN_00043100's own fix: nothing here
+       actually redraws the 8 backpack-grid widgets after the mapping
+       above (via the DAT_00085c39 alias) is restored back to the
+       player's own backpack (slots 11-18) -- confirmed live, closing a
+       container left the panel showing the container's contents,
+       frozen, with no "leave" affordance ever needed since the panel
+       never visually left in the first place. */
+    FUN_00048198(0xc,0x13);
     FUN_00046eec(0x15);
     FUN_00046eec(0x16);
   }
@@ -32467,6 +32524,22 @@ short param_1;
           }
           iVar10 = iVar10 + 1;
         } while (iVar10 * 0x10000 >> 0x10 < 0x1c);
+        /* Missing piece, not present anywhere in the decompiled body:
+           the container's contents are now sitting in slots 20-27, but
+           nothing ever repointed the 8 visible grid widgets (12-19) at
+           them -- they still map to 11-18 (the player's own backpack,
+           via DAT_00085c38's default N -> N-1), so the panel kept
+           showing the backpack, unchanged, after "opening" a container
+           (confirmed live: no visual change on click). Remap widgets
+           12-19 -> slots 20-27 (N -> N+8) for as long as this container
+           stays open -- FUN_00042b38 (close) already resets this same
+           table back to its default 11-18 via DAT_00085c39 -- and
+           redraw all 8 cells so the container's contents actually
+           appear. */
+        for (iVar10 = 0xc; iVar10 < 0x14; iVar10 = iVar10 + 1) {
+          (&DAT_00085c38)[iVar10] = (char)(iVar10 + 8);
+        }
+        FUN_00048198(0xc,0x13);
         puVar7 = (ushort *)resolve_object_link(&DAT_00202976);
         uVar3 = *puVar7;
         if (((uVar3 & 0xf) < 0xc) && ((uVar3 & 1) == 0)) {
