@@ -375,7 +375,7 @@ undefined4 param_1;
            gets truncated through this function's `undefined4` locals, so
            making them real would crash. Do the copy directly against the
            game paths instead: without it \SAVE0\lev.ark never exists and
-           FUN_0006bc28 below fails, bouncing straight back to the menu
+           load_level below fails, bouncing straight back to the menu
            instead of entering the dungeon. */
         Ordinal_164(auStack_22c,auStack_434,0);
         uw_file_copy(s__DATA_lev_ark_00085734, s__SAVE0_lev_ark_000842fc);
@@ -383,7 +383,7 @@ undefined4 param_1;
         if (sVar3 != 0) {
           FUN_0003c3c8();
         }
-        sVar3 = FUN_0006bc28(1);
+        sVar3 = load_level(1);
         if (sVar3 < 1) {
           bVar11 = false;
         }

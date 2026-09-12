@@ -554,8 +554,8 @@ void demomode_pump(void) {
         {
             /* Print the player's tile so a scripted TELEPORT/REVEAL sweep
                can be correlated with what's on screen. */
-            extern void *DAT_0023be64;
-            unsigned short *pl = (unsigned short *)DAT_0023be64;
+            extern void *g_player_object;
+            unsigned short *pl = (unsigned short *)g_player_object;
             if (pl)
                 fprintf(stderr, "[demo] player tile = (%d,%d)\n",
                         pl[0x16/2] >> 10, (pl[0x16/2] & 0x3f0) >> 4);
