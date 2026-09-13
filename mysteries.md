@@ -74,7 +74,38 @@ result for this specific compiled target.
 
 ---
 
-## Mystery 2: How was the automap wired to player view distance — and did light level ever actually limit it?
+## Mystery 2: How was the automap wired to player view distance — and did light level ever actually limit it? (RESOLVED, see update below)
+
+**UPDATE (resolved):** point 2 below (the "hard-coded ceiling of 16
+passes... verified this is original... byte-for-byte identical...
+flat constant with no reference to light") was **wrong** — or at least
+incomplete. User-supplied evidence (real bytes read straight out of
+`SHADES.DAT`) showed record 0 is six 16-bit fields `56, 5, -3, 3, 16,
+16`, and field 3 (value 3) is exactly the per-level view-distance
+default already being parsed correctly by `FUN_0006ff08` into
+`DAT_0023bca0` — it was just never *consumed* anywhere meaningful
+before now (its only two call sites were the dead
+`build_visibility_light_grid` and two dropped-argument calls). Fields
+4/5 (both 16) are a separate, already-fixed pair of texture-LOD
+distance thresholds — easy to conflate with the ring-pass ceiling
+since they're also 16, but they're a different field entirely.
+Renamed `DAT_0023bca0` to `g_visibility_max_ring_passes` and wired it
+into `extend_visibility_ray_row`'s ring-pass check in place of the
+flat `0x11`. Verified live: passes now cap at 4 (field value 3, +1 for
+the pre-incremented counter) instead of running to 16, and a single
+`REVEAL` from spawn now lights a small bounded patch instead of a
+sprawling room cluster. Commit `59f9aa7`.
+
+This does NOT fully explain the original "reveals a whole room
+cluster" symptom described below (point 3 already identified that the
+dominant cause, in the level-1 spawn room specifically, was doorway
+tiles being ordinary open floor regardless of door state, since real
+walls stopped the flood at ring depth 8, well under the old 16-pass
+ceiling). The ring-pass ceiling fix mainly matters in *larger* open
+areas where the flood would otherwise run past the intended per-level
+distance before hitting a wall at all. The rest of this section's
+findings (light-grid is still fully dead code, no torch wiring exists)
+are unaffected by this correction and remain accurate.
 
 **The question:** the automap's "reveal" flood currently marks an
 entire connected, wall-bounded room cluster the instant you enter it —
@@ -91,13 +122,14 @@ automap-reveal sections and the git log around commit `97fe3e6`):
 
 1. **Real walls.** The flood is a genuine portal/beam-trace walk over
    the level's static wall geometry. It correctly stops at solid walls.
-2. **A hard-coded ceiling of 16 passes**, in `extend_visibility_ray_row`
-   (`if (iVar5 * 0x1000000 >> 0x18 < 0x11)`, i.e. count < 17). **Verified
-   this is original**, not something introduced by any fix this
-   session: it's byte-for-byte identical in `989ae23`, the very first
-   raw Ghidra baseline commit before any decompile fixes at all. It's a
-   flat constant with no reference to light, torches, or any other game
-   state anywhere in the function.
+2. **A ceiling on ring-passes** in `extend_visibility_ray_row`. This WAS
+   a hard-coded `0x11` (16, i.e. count < 17), confirmed byte-for-byte
+   identical back to `989ae23` (the raw Ghidra baseline) -- but that
+   turned out to be a case of "the literal really is in the
+   disassembly" while missing that it should have been a *read of a
+   per-level config value* instead, per the RESOLVED update above. Now
+   reads `g_visibility_max_ring_passes`, loaded per-level from
+   `SHADES.DAT` (commit `59f9aa7`).
 3. **Nothing else.** In this specific level-1 spawn-room repro, real
    walls stop the flood well before the 16-pass ceiling would ever
    matter (measured ring depth: 8). The over-reveal comes from doorway
