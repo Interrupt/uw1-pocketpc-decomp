@@ -4346,7 +4346,7 @@ static void (*const PTR_FUN_00087220_table[13])(void) = {
   (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))FUN_0007830c, 0,
   (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))FUN_0006df70, (void(*)(void))FUN_0006e038,
   (void(*)(void))hud_damage_flash_tick, (void(*)(void))hud_damage_flash_tick, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
-  (void(*)(void))FUN_0006e648,
+  (void(*)(void))advance_action_animation_frame,
 };
 #define PTR_FUN_00087220 (PTR_FUN_00087220_table[0])
 char s_panels_00087260[] = "panels";
@@ -4430,11 +4430,11 @@ byte DAT_0023c25c;
    indirect-jump/jumptable target it gave up on). Was stubbed as a bare
    `return 0;` -- same wrong assumption already corrected once for
    alloc_door_frame_buffer (see its own comment): this is
-   FUN_0006e3ac's (weapons.GR loader) registrar callback (param_5),
+   load_weapon_swing_sprites's (weapons.GR loader) registrar callback (param_5),
    called once per loaded weapon-swing sprite frame. A no-op here makes
    load_gr_resource_entries's overall result always fail even after the
    allocator below is fixed (`uVar6 = uVar6 & uVar3` with uVar3 always
-   0), and FUN_0006e3ac's own caller (FUN_0006e648) never checks that
+   0), and load_weapon_swing_sprites's own caller (advance_action_animation_frame) never checks that
    result anyway -- so this doesn't gate any currently-reachable
    behavior. Real per-frame storage (where a decoded weapon-swing
    sprite should live so something can later draw it during a swing)
@@ -4458,7 +4458,7 @@ char *DAT_0023c210;
    indirect-jump/jumptable target it gave up on). Was stubbed as a bare
    `return 0;`, the exact same wrong assumption already found and fixed
    once in this file for alloc_door_frame_buffer (see its own comment)
-   -- this is FUN_0006e3ac's (weapons.GR loader, called when the
+   -- this is load_weapon_swing_sprites's (weapons.GR loader, called when the
    player's weapon-hand contents change -- including empty-handed,
    which resolves to category 3/"fist") allocator callback (param_4).
    Confirmed live via UW_DEBUG_COMBAT: weapons.GR's header and every
@@ -53942,7 +53942,7 @@ void FUN_000667cc()
   }
   iVar4 = 3;
 LAB_000669a8:
-  FUN_0006e360(iVar4);
+  request_weapon_swing_graphic(iVar4);
   DAT_0023be74[0x12] = DAT_0023be74[0x12] + (*(byte *)(DAT_00086df8 + (short)uVar11 + 0x21) >> 1);
   FUN_00065eb4();
   iVar5 = 0;
@@ -58313,12 +58313,18 @@ LAB_0006e244:
 
 
 
-void FUN_0006e360(param_1)
+// was FUN_0006e360 -- sets the weapon-swing animation "category" to
+// load (0-3, from the weapon-hand item's melee-weapon-stats byte 6, or
+// 3 for empty-handed/fist -- see request_weapon_swing_graphic's own
+// caller in FUN_000667cc) and marks the redraw-dirty bit that
+// hud_panel_redraw_dispatch/advance_action_animation_frame eventually
+// act on to actually load the sprite set (load_weapon_swing_sprites).
+void request_weapon_swing_graphic(param_1)
 char param_1;
 
 {
   if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[weapon-gfx] FUN_0006e360(param_1=%d) DAT_000870dc(loaded)=%d\n", (int)param_1, (int)DAT_000870dc);
+    fprintf(stderr, "[weapon-gfx] request_weapon_swing_graphic(param_1=%d) DAT_000870dc(loaded)=%d\n", (int)param_1, (int)DAT_000870dc);
   }
   DAT_000870d8 = param_1;
   if (((-1 < param_1) && (param_1 < '\x04')) || (DAT_000870dc != param_1)) {
@@ -58329,7 +58335,14 @@ char param_1;
 
 
 
-byte FUN_0006e3ac()
+// was FUN_0006e3ac -- loads WEAPONS.GR's 28-frame swing-animation
+// sprite set for the requested weapon-swing category (DAT_000870d8,
+// set by request_weapon_swing_graphic) plus its matching 28-byte
+// timing/hit-data rows from WEAPONS.DAT, short-circuiting to success
+// if that category is already loaded. Called from
+// advance_action_animation_frame whenever the requested category
+// changes.
+byte load_weapon_swing_sprites()
 
 {
   char stack0xffdc3240_buf [256];
@@ -58346,7 +58359,7 @@ byte FUN_0006e3ac()
   char acStack_118 [260];
   
   if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[weapon-gfx] FUN_0006e3ac ENTRY: DAT_000870dc(loaded)=%d DAT_000870d8(requested)=%d\n",
+    fprintf(stderr, "[weapon-gfx] load_weapon_swing_sprites ENTRY: DAT_000870dc(loaded)=%d DAT_000870d8(requested)=%d\n",
             (int)DAT_000870dc, (int)DAT_000870d8);
   }
   if (DAT_000870dc == DAT_000870d8) {
@@ -58394,7 +58407,7 @@ byte FUN_0006e3ac()
     }
   }
   if (getenv("UW_DEBUG_COMBAT")) {
-    fprintf(stderr, "[weapon-gfx] FUN_0006e3ac RESULT: bVar2=%d\n", (int)bVar2);
+    fprintf(stderr, "[weapon-gfx] load_weapon_swing_sprites RESULT: bVar2=%d\n", (int)bVar2);
   }
   return bVar2;
 }
@@ -58449,7 +58462,20 @@ short param_1;
 
 
 
-void FUN_0006e648()
+// was FUN_0006e648 -- shared player-action animation state machine
+// (weapon raise/ready, among others): reads the requested action type
+// (DAT_0023c120, set via FUN_0006cff4(8,N)), drives the current-action
+// state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4),
+// and calls load_weapon_swing_sprites once a weapon-category change
+// needs new sprites. Only reachable via hud_panel_redraw_dispatch's
+// dirty-bit-gated dispatch table (PTR_FUN_00087220_table[12]), which
+// IS wired into the real per-frame dispatch (DAT_00085668, mode 0) --
+// confirmed live via UW_DEBUG_COMBAT that this runs continuously during
+// normal play, not dead code. DAT_000870e4 is also read (separately,
+// for different meaning) by the attack-swing state machine
+// (FUN_00027708) once armed -- the exact interaction between the two
+// during a live swing is still not fully understood (see memory.md).
+void advance_action_animation_frame()
 
 {
   byte bVar1;
@@ -58522,7 +58548,7 @@ LAB_0006e704:
     }
     if (DAT_0023c130 == 6) {
       if (DAT_000870d8 != DAT_000870dc) {
-        FUN_0006e3ac();
+        load_weapon_swing_sprites();
         DAT_0023c120 = DAT_000870e0;
         DAT_000870e0 = 6;
         return;
