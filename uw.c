@@ -27542,7 +27542,7 @@ void FUN_0003bee4()
   DAT_00086b20 = 1;
   FUN_0006cbf0();
   DAT_00201c94 = 0;
-  FUN_00040004();
+  unready_weapon();
   DAT_000868d8 = 2;
   if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
     FUN_00057cac(3);
@@ -27787,9 +27787,10 @@ char *param_1;
 
 // was FUN_0003c4dc -- set the player's swim/wade sub-pose byte
 // (DAT_00086df8+0xb9) from the collision-state mask's "in liquid, how deep"
-// bit (0x2): shallow (0x10) vs deep/wading (0x60, also firing FUN_00040004,
-// almost certainly the splash sound or pose swap). Returns true for the
-// deep case. Only ever called from set_locomotion_state's swim branch.
+// bit (0x2): shallow (0x10) vs deep/wading (0x60, also force-leaving
+// combat stance via unready_weapon -- can't hold a weapon ready while
+// swimming). Returns true for the deep case. Only ever called from
+// set_locomotion_state's swim branch.
 bool apply_swim_wade_pose(param_1)
 ushort param_1;
 
@@ -27802,7 +27803,7 @@ ushort param_1;
   }
   else {
     *(undefined1 *)(DAT_00086df8 + 0xb9) = 0x60;
-    FUN_00040004();
+    unready_weapon();
   }
   return !bVar1;
 }
@@ -27859,7 +27860,7 @@ int param_2;
       /* Was `apply_swim_wade_pose()` with no argument -- apply_swim_wade_pose reads its
          `param_1 & 2` to decide between the two swim/wade sub-states
          (byte DAT_00086df8+0xb9 = 0x10 vs 0x60, the latter also firing
-         FUN_00040004 -- almost certainly the wading/swim splash sound or
+         unready_weapon -- almost certainly the wading/swim splash sound or
          pose). The dropped argument is the same collision-state mask
          `param_1` this whole function was just called with (the only
          value in scope that plausibly belongs here, matching the pattern
@@ -30081,12 +30082,18 @@ short param_1;
 
 
 
-void FUN_0003ff10()
+// was FUN_0003ff10 -- enters combat stance: readies the weapon in the
+// player's hand (called from handle_object_drop_target when the
+// weapon-hand paperdoll slot is clicked, via toggle_weapon_ready), sets
+// flags5f bit 2 (FUN_00027708's attack-swing "start new swing" gate)
+// and requests advance_action_animation_frame raise the weapon
+// (DAT_0023c120 = 4).
+void ready_weapon()
 
 {
   undefined2 uVar1;
   byte bVar2;
-  
+
   if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 2) && ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0)) {
     if ((g_cursor_mode == 1) || ((g_cursor_mode == 3 || (g_cursor_mode == 4)))) {
       FUN_00057cac(3);
@@ -30099,6 +30106,22 @@ void FUN_0003ff10()
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar1 | 2;
     *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar1 >> 8);
+    /* Was missing entirely -- g_weapon_overlay_enabled (see its own
+       comment) defaults to 0 and, before this, was only ever set by
+       three unrelated screen-wipe utility functions, so
+       weapon_swing_draw_tick's top-level gate suppressed the overlay's
+       blit for the entire time combat stance was active, even though
+       the animation state machine below correctly cycled through
+       "raise" (state 4) and, on leave, the multi-tick "lower" animation
+       (state 5, see unready_weapon) before finally settling at the
+       already-excluded idle state 6. Confirmed live via
+       UW_DEBUG_COMBAT/UW_DEBUG_TOGGLE_READY tracing: the state machine
+       itself was always correct end to end, only this flag was never
+       set. unready_weapon does NOT need its own clear -- state 6's
+       existing exclusion in weapon_swing_draw_tick already hides the
+       overlay once the lower animation finishes, matching "disabled
+       when you leave combat mode, but with an animation delay". */
+    g_weapon_overlay_enabled = 1;
     FUN_0006cff4(8,4);
     FUN_0003f99c((int)g_cursor_mode);
     bVar2 = FUN_00072b2c();
@@ -30112,11 +30135,20 @@ void FUN_0003ff10()
 
 
 
-void FUN_00040004()
+// was FUN_00040004 -- leaves combat stance: requests
+// advance_action_animation_frame lower the weapon (DAT_0023c120 = 6,
+// playing the raise animation in reverse over several ticks -- the
+// "animation delay as you leave" -- before settling at idle state 6).
+// Deliberately does NOT clear g_weapon_overlay_enabled itself: state
+// 6's existing exclusion in weapon_swing_draw_tick already stops the
+// overlay once that settle completes, so clearing bit 2 here is enough
+// (matches ready_weapon not needing to touch cursor mode either, past
+// resetting it to 0).
+void unready_weapon()
 
 {
   uint uVar1;
-  
+
   if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) {
     FUN_0006cff4(8,6);
     uVar1 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfffd;
@@ -30134,14 +30166,17 @@ void FUN_00040004()
 
 
 
-void FUN_000400a0()
+// was FUN_000400a0 -- toggles combat stance on/off; the weapon-hand
+// paperdoll slot's click handler (handle_object_drop_target) calls
+// this.
+void toggle_weapon_ready()
 
 {
   if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
-    FUN_0003ff10();
+    ready_weapon();
   }
   else {
-    FUN_00040004();
+    unready_weapon();
   }
   return;
 }
@@ -30812,7 +30847,15 @@ char * param_1;
     param_1 = param_1 + 5;
   }
   else {
-    param_1 = (char *)FUN_000129f8(param_1 + 4,&DAT_00202520 + (uint)(byte)param_1[3] * 0x10);
+    /* Dropped 3rd argument (the .GR entry's own compression-mode byte,
+       *param_1) -- same bug already found and fixed twice elsewhere in
+       this file for this identical FUN_000129f8 call shape (see
+       object-rendering-findings.txt's "MILESTONE: objects render").
+       Without it, FUN_000129f8 took its param_3==0 path and returned
+       NULL for every weapon-swing frame, so weapon_swing_draw_tick's
+       blit never actually ran despite resolving a real frame pointer
+       and correct width/height. Confirmed live via UW_DEBUG_COMBAT. */
+    param_1 = (char *)FUN_000129f8(param_1 + 4,&DAT_00202520 + (uint)(byte)param_1[3] * 0x10,*param_1);
   }
   return param_1;
 }
@@ -32241,7 +32284,7 @@ short param_1;
         uVar3 = *puVar1 & 0x1ff;
         if (((((*puVar1 & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
            ((uVar3 == 0x1a || (uVar3 == 0x1f)))) {
-          FUN_000400a0();
+          toggle_weapon_ready();
           goto LAB_00042a10;
         }
       }
@@ -34746,7 +34789,7 @@ short param_1;
       iVar9 = (int)(short)cVar2;
       if ((*(ushort *)(&DAT_00202950 + iVar9 * 2) & 0xffc0) == 0) {
         if (iVar9 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
-          FUN_000400a0();
+          toggle_weapon_ready();
         }
         FUN_00057604(1);
         return;
@@ -44605,7 +44648,7 @@ int param_1;
       FUN_0006bfec(DAT_000868dc == 1,iVar2);
       if (DAT_000868dc == 1) {
         g_cursor_mode = 0;
-        FUN_00040004();
+        unready_weapon();
       }
     }
     FUN_00056724();
@@ -59341,19 +59384,22 @@ undefined1 * param_2;
 // viewport for the current frame of advance_action_animation_frame's
 // state machine, gated on g_dungeon_view_active/g_weapon_overlay_enabled.
 // Called from render_dungeon_frame_timed, right after
-// render_dungeon_view() itself -- but render_dungeon_frame_timed's own
-// only current call site is FUN_00067f1c's one-shot scripted-event
-// spin effect (see its own comment), NOT the normal per-tick
-// walking/turning redraw path (dungeon_view_anim_tick ->
-// full_dungeon_redraw, which never reaches this). So even with the
-// draw logic itself now correct, the weapon overlay is not currently
-// wired to appear during ordinary movement or combat -- only during
-// that one rare event.
+// render_dungeon_view() itself; render_dungeon_frame_timed is now
+// wired into the normal per-tick render path too (see
+// main_loop_hud_flush's forced-redraw hack).
 void weapon_swing_draw_tick()
 
 {
   short sVar1;
-  undefined4 uVar2;
+  /* Was `undefined4` -- decode_gr_entry_bitmap returns a real 64-bit
+     bitmap pointer, truncated on this 64-bit host before being passed
+     on to bitmap_blit_to_framebuffer. Same pointer-truncation class as
+     nearly every other bug in this project; confirmed live (crashed
+     inside bitmap_blit_to_framebuffer on the truncated address the
+     moment the two bugs upstream -- the missing frame storage and the
+     dropped decode argument -- were both fixed and a real decode
+     finally succeeded). */
+  char *uVar2;
 
   g_blit_transparent_mode = 1;
   if ((((DAT_0023c130 != 6) && (DAT_000870e4 < 0x1c)) && (-1 < DAT_000870dc)) &&

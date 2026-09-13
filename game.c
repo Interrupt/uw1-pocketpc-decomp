@@ -474,7 +474,7 @@ undefined4 param_1;
         select_active_font(s_FONT5X6P_SYS_00084e9c);
       }
       else if (bVar11) {
-        FUN_00040004();
+        unready_weapon();
       }
     }
     Ordinal_1018(local_834);
