@@ -318,7 +318,7 @@ static const unsigned char DAT_000842f0_real_table[4] = { 0x01, 0x02, 0x00, 0x03
 #define DAT_000842f0 (*(undefined1 *)DAT_000842f0_real_table)
 /* Was a lone 1-byte scalar, but indexed throughout this file as a
    tile-type-flags lookup table (nibble-masked indices in most call sites,
-   but some -- e.g. process_reaction_entry -- index it with an unmasked byte value
+   but some -- e.g. advance_visibility_ray -- index it with an unmasked byte value
    read from another table). The prior fix widened it to 256 bytes but
    never filled it -- so it read all-zero, and in particular
    draw_automap_tiles' `DAT_000878d0[shape] & 1` was always false,
@@ -1155,7 +1155,7 @@ static undefined2 DAT_00242010_backing[32768];
    showed this exact write clobbering it into a huge garbage value, which
    then produced a wild out-of-bounds array read/UAF-style crash much later
    in FUN_0007863c's string lookup. Same lone-scalar-used-as-array pattern
-   fixed repeatedly this session (DAT_002028e8, DAT_0023aee0, etc). */
+   fixed repeatedly this session (DAT_002028e8, g_visibility_ray_table, etc). */
 static undefined2 DAT_00248418_backing[20 * 256];
 #define DAT_00248418 DAT_00248418_backing[0]
 short DAT_00084f10;
@@ -3074,8 +3074,8 @@ char *DAT_0020469c;
    Both were silently-zero 64KB Ghidra backing arrays, so angle_to_screen_delta
    (angle -> screen delta) returned {0,0} for every angle. That zeroed
    the entry-0 direction vector seed_visibility_queue seeds the visibility
-   flood-fill with, so process_reaction_entry did no expansion,
-   process_reaction_queue marked no tile visible, and the 3D tile list
+   flood-fill with, so advance_visibility_ray did no expansion,
+   run_visibility_flood marked no tile visible, and the 3D tile list
    came out empty (black viewport). It also broke every other bit of
    angle math in the projection code. Four trailing pad shorts each
    (angle_to_screen_delta interpolates to table[idx+1], so idx can reach 256).
@@ -3648,48 +3648,51 @@ short DAT_0025064c;
    overflow source found reaching that same global). Widened. */
 static undefined1 DAT_0023b039_backing[4096];
 #define DAT_0023b039 DAT_0023b039_backing[0]
-undefined1 DAT_0023b030;
-/* DAT_0023aee0-family: ~20 separately-declared globals that are really
-   one 16-entry x 0x15(21)-byte creature-reaction/sound-cue queue record
-   array (seed_visibility_queue/process_reaction_entry/merge_adjacent_reactions/process_reaction_queue index it via
-   `&DAT_0023aee0 + entry*0x15`). As lone scalars, out-of-bounds record
+undefined1 g_visibility_ring_done;
+/* g_visibility_ray_table-family: ~20 separately-declared globals that are really
+   one 16-entry x 0x15(21)-byte per-ray record array for the dungeon's
+   geometric beam-trace visibility flood (NOT a creature-reaction/sound-cue
+   queue -- that was this subsystem's original, later-disproven name; see
+   extend_visibility_ray_row's and run_visibility_flood's own comments)
+   (seed_visibility_queue/advance_visibility_ray/merge_adjacent_visibility_rays/run_visibility_flood index it via
+   `&g_visibility_ray_table + entry*0x15`). As lone scalars, out-of-bounds record
    writes/reads walked off into whatever memory happened to follow in
-   declaration order -- confirmed: DAT_0023b030 (declared right after,
-   and genuinely 0x150=336=16*21 bytes past DAT_0023aee0 in the real
+   declaration order -- confirmed: g_visibility_ring_done (declared right after,
+   and genuinely 0x150=336=16*21 bytes past g_visibility_ray_table in the real
    address map) was getting corrupted by exactly this, which is why the
-   queue never looked empty. This subsystem also computes DAT_0023b024,
+   queue never looked empty. This subsystem also computes g_visibility_ring_depth,
    which turns out to double as the tile-visibility scan radius consumed
    by walk_visible_tiles's dungeon-geometry walk -- NOT optional creature/object
-   bookkeeping as first assessed (see process_reaction_queue's since-removed
+   bookkeeping as first assessed (see run_visibility_flood's since-removed
    `// Hack - Disabled`); skipping it left the 3D viewport permanently
    empty. Real backing array + aliases at each element's correct offset,
    generous margin past the 16*21=336-byte minimum. */
-static undefined1 DAT_0023aee0_backing[1024];
-#define DAT_0023aee0 DAT_0023aee0_backing[0]
+static undefined1 g_visibility_ray_table_backing[1024];
+#define g_visibility_ray_table g_visibility_ray_table_backing[0]
 /* Real-pointer side table for this record array's "back pointer" field
    (offsets 9/0xa-0xb/0xc), which the original 32-bit binary packed as raw
-   bytes -- see process_reaction_entry's comment on why that can't be reassembled
+   bytes -- see advance_visibility_ray's comment on why that can't be reassembled
    into a real 64-bit pointer on this port. Only entry 0 (the player's own
-   reaction slot, the only one seed_visibility_queue ever populates in a
+   visibility-ray slot, the only one seed_visibility_queue ever populates in a
    monster-free dungeon) is written; other entries stay NULL, matching
-   the "unpopulated" state process_reaction_entry's own `(*param_1 & 0x80) == uVar1`
+   the "unpopulated" state advance_visibility_ray's own `(*param_1 & 0x80) == uVar1`
    guard already treats as "nothing to look up" for a zeroed record. */
-static char *g_dat0023aee0_realptr[24];
+static char *g_visibility_ray_realptr[24];
 /* Second real-pointer side table, for this record's OTHER packed pointer
    field (offsets 0xd and its byte-mirrored copy at 0x11-0x14 -- see
    seed_visibility_queue's DAT_0023aeed/aeee/aef0 writes). Unlike the offset-9
    field, this one is always the SAME fixed original-binary address
    (0x0023b058, confirmed identical for entry 0's 3-field pack and
    entry 1's combined `_DAT_0023af02` write) -- a hardcoded literal
-   pointer into the shared DAT_0023b038 output-list buffer (0x0023b058 -
+   pointer into the shared g_visibility_ring_buffer output-list buffer (0x0023b058 -
    0x0023b038 = 0x20), same "hardcoded original 32-bit address instead of
    a symbolic reference" bug class fixed elsewhere all session, just
    packed byte-by-byte instead of written as one literal. Populated once
    below (not per-entry -- every entry that sets this field wants the
    same target), read via the same per-entry lookup as the offset-9
    table for consistency with how the field is indexed. */
-static char *g_dat0023aee0_realptr2[24];
-/* Only entries 0 and 1 (the player's own reaction slot, always populated
+static char *g_visibility_ray_realptr2[24];
+/* Only entries 0 and 1 (the player's own visibility-ray slot, always populated
    by seed_visibility_queue) are ever given a real pointer above -- a monster-free
    dungeon has nothing to populate the other 14 with. But this queue's
    chain-walk can still legitimately reach an unpopulated entry (its
@@ -3699,46 +3702,46 @@ static char *g_dat0023aee0_realptr2[24];
    instead of dereferencing NULL -- keeps the walk/arithmetic in this
    subsystem well-defined without having to fully model every field an
    empty slot could still be read through. */
-static char g_dat0023aee0_fallback[64];
-#define DAT0023AEE0_REALPTR(table, idx) \
-    ((table)[(idx)] != 0 ? (table)[(idx)] : g_dat0023aee0_fallback)
+static char g_visibility_ray_fallback[64];
+#define VISIBILITY_RAY_REALPTR(table, idx) \
+    ((table)[(idx)] != 0 ? (table)[(idx)] : g_visibility_ray_fallback)
 /* Slot 16 (past the 0..15 nibble-addressable real entries) is a scratch
-   slot for merge_adjacent_reactions's acStack_28 -- a stack-local COPY of
-   a real entry that the un-stubbed reaction_advance_row / the spreading
-   branch walk in place. Its `(ptr - DAT_0023aee0_backing) / 0x15` index
-   would be a wild value, so reaction_entry_idx() folds any pointer
-   outside the backing array to this slot; merge_adjacent_reactions seeds
+   slot for merge_adjacent_visibility_rays's acStack_28 -- a stack-local COPY of
+   a real entry that the un-stubbed extend_visibility_ray_row / the spreading
+   branch walk in place. Its `(ptr - g_visibility_ray_table_backing) / 0x15` index
+   would be a wild value, so visibility_ray_idx() folds any pointer
+   outside the backing array to this slot; merge_adjacent_visibility_rays seeds
    the slot from the source entry's real pointers right before the copy. */
-#define REACTION_SCRATCH_IDX 16
-static int reaction_entry_idx(const void *p) {
-    intptr_t off = (intptr_t)p - (intptr_t)DAT_0023aee0_backing;
-    if (off < 0 || off + 0x15 > (intptr_t)sizeof(DAT_0023aee0_backing))
-        return REACTION_SCRATCH_IDX;
+#define VISIBILITY_RAY_SCRATCH_IDX 16
+static int visibility_ray_idx(const void *p) {
+    intptr_t off = (intptr_t)p - (intptr_t)g_visibility_ray_table_backing;
+    if (off < 0 || off + 0x15 > (intptr_t)sizeof(g_visibility_ray_table_backing))
+        return VISIBILITY_RAY_SCRATCH_IDX;
     return (int)(off / 0x15);
 }
-#define DAT_0023aee1 DAT_0023aee0_backing[1]
-#define DAT_0023aee3 DAT_0023aee0_backing[3]
-#define DAT_0023aee5 DAT_0023aee0_backing[5]
-#define DAT_0023aee6 DAT_0023aee0_backing[6]
-#define DAT_0023aee7 DAT_0023aee0_backing[7]
-#define DAT_0023aee8 DAT_0023aee0_backing[8]
-#define DAT_0023aee9 DAT_0023aee0_backing[9]
-#define DAT_0023aeea (*(undefined2 *)&DAT_0023aee0_backing[0xa])
-#define DAT_0023aeec DAT_0023aee0_backing[0xc]
-#define DAT_0023aeed DAT_0023aee0_backing[0xd]
-#define DAT_0023aeee (*(undefined2 *)&DAT_0023aee0_backing[0xe])
-#define DAT_0023aef0 DAT_0023aee0_backing[0x10]
-#define DAT_0023aef1 DAT_0023aee0_backing[0x11]
-#define DAT_0023aef5 DAT_0023aee0_backing[0x15]
-#define DAT_0023aef6 (*(undefined2 *)&DAT_0023aee0_backing[0x16])
-#define DAT_0023aef8 (*(undefined2 *)&DAT_0023aee0_backing[0x18])
-#define DAT_0023aefa DAT_0023aee0_backing[0x1a]
-#define DAT_0023aefb DAT_0023aee0_backing[0x1b]
-#define DAT_0023aefc DAT_0023aee0_backing[0x1c]
-#define DAT_0023aefd DAT_0023aee0_backing[0x1d]
-#define DAT_0023aefe (*(undefined2 *)&DAT_0023aee0_backing[0x1e])
-#define DAT_0023af00 (*(undefined2 *)&DAT_0023aee0_backing[0x20])
-#define DAT_0023af02 DAT_0023aee0_backing[0x22]
+#define DAT_0023aee1 g_visibility_ray_table_backing[1]
+#define DAT_0023aee3 g_visibility_ray_table_backing[3]
+#define DAT_0023aee5 g_visibility_ray_table_backing[5]
+#define DAT_0023aee6 g_visibility_ray_table_backing[6]
+#define DAT_0023aee7 g_visibility_ray_table_backing[7]
+#define DAT_0023aee8 g_visibility_ray_table_backing[8]
+#define DAT_0023aee9 g_visibility_ray_table_backing[9]
+#define DAT_0023aeea (*(undefined2 *)&g_visibility_ray_table_backing[0xa])
+#define DAT_0023aeec g_visibility_ray_table_backing[0xc]
+#define DAT_0023aeed g_visibility_ray_table_backing[0xd]
+#define DAT_0023aeee (*(undefined2 *)&g_visibility_ray_table_backing[0xe])
+#define DAT_0023aef0 g_visibility_ray_table_backing[0x10]
+#define DAT_0023aef1 g_visibility_ray_table_backing[0x11]
+#define DAT_0023aef5 g_visibility_ray_table_backing[0x15]
+#define DAT_0023aef6 (*(undefined2 *)&g_visibility_ray_table_backing[0x16])
+#define DAT_0023aef8 (*(undefined2 *)&g_visibility_ray_table_backing[0x18])
+#define DAT_0023aefa g_visibility_ray_table_backing[0x1a]
+#define DAT_0023aefb g_visibility_ray_table_backing[0x1b]
+#define DAT_0023aefc g_visibility_ray_table_backing[0x1c]
+#define DAT_0023aefd g_visibility_ray_table_backing[0x1d]
+#define DAT_0023aefe (*(undefined2 *)&g_visibility_ray_table_backing[0x1e])
+#define DAT_0023af00 (*(undefined2 *)&g_visibility_ray_table_backing[0x20])
+#define DAT_0023af02 g_visibility_ray_table_backing[0x22]
 /* Recovered from UU.exe .data at 0x86a00 (0x60 bytes). Was FOUR separate
    silently-zero 64KB Ghidra backing arrays (DAT_00086a00/a02/a18/a20),
    which also broke the relative addressing the code relies on -- e.g.
@@ -3761,11 +3764,11 @@ static int reaction_entry_idx(const void *p) {
             0x10) per facing: identity, then the diagonal/slope types
             (2-9) permuted for each 90-degree view rotation.
      +0x60  DAT_00086a60: the tile-shape -> visibility-edge-flags table
-            compute_reaction_offset indexes as [shape*7 + sVar9] (shape
+            compute_visibility_ray_offset indexes as [shape*7 + sVar9] (shape
             0..9, sVar9 0..~8; 80 bytes). This was a lone silently-zero
-            `undefined` scalar, so compute_reaction_offset's bVar6 came
+            `undefined` scalar, so compute_visibility_ray_offset's bVar6 came
             out 0 for every cell -> it wrote 0 (never the 0x80 "visible"
-            bit) into the DAT_0023b038 output grid -> process_reaction_
+            bit) into the g_visibility_ring_buffer output grid -> process_reaction_
             queue marked NO tile visible -> empty 3D tile list (black
             viewport) and only the un-gated automap reveal worked. */
 static const undefined1 DAT_00086a00_region[0xb0] = {
@@ -3787,17 +3790,17 @@ static const undefined1 DAT_00086a00_region[0xb0] = {
 #define DAT_00086a18 (*(undefined1 *)(DAT_00086a00_region + 0x18))
 #define DAT_00086a20 (*(undefined1 *)(DAT_00086a00_region + 0x20))
 #define DAT_00086a60 (*(undefined1 *)(DAT_00086a00_region + 0x60))
-/* {0x10, 0x00}: compute_reaction_offset reads (&DAT_00086af0)[bool].
+/* {0x10, 0x00}: compute_visibility_ray_offset reads (&DAT_00086af0)[bool].
    Was a silently-zero undefined4. */
 static const undefined1 DAT_00086af0_arr[4] = { 0x10, 0x00, 0x00, 0x00 };
 #define DAT_00086af0 (*(undefined1 *)DAT_00086af0_arr)
 /* Recovered from UU.exe .data at 0x86af8 (12 bytes = 6 int16). Was two
    separate silently-zero 64KB Ghidra arrays (DAT_00086af8, DAT_00086b00)
-   plus a bare literal `0x86afc` deref in process_reaction_entry. These
+   plus a bare literal `0x86afc` deref in advance_visibility_ray. These
    are the per-view-orientation constants that function's visibility
    flood-fill uses to decide whether a neighbour tile occludes the view;
    with them all zero the fill's expansion tests (uw.c ~44965, ~44978,
-   ~45001) never fire, so process_reaction_queue drains after ~2 entries
+   ~45001) never fire, so run_visibility_flood drains after ~2 entries
    and marks NO tile visible -> process_visible_tile_cell only ever takes its
    un-gated automap-reveal path and never emits 3D tile geometry (black
    viewport). Indexed [orient] with orient in {0,1}:
@@ -3810,9 +3813,9 @@ static const undefined1 DAT_00086af8_region[12] = {
 #define DAT_00086af8 (*(undefined1 *)(DAT_00086af8_region + 0))
 #define DAT_00086afc (*(undefined1 *)(DAT_00086af8_region + 4))
 #define DAT_00086b00 (*(undefined1 *)(DAT_00086af8_region + 8))
-short DAT_0023b024;
-static undefined1 DAT_0023b038_backing[32768];
-#define DAT_0023b038 DAT_0023b038_backing[0]
+short g_visibility_ring_depth;
+static undefined1 g_visibility_ring_buffer_backing[32768];
+#define g_visibility_ring_buffer g_visibility_ring_buffer_backing[0]
 undefined DAT_00086b34;
 undefined2 DAT_00189578;
 short DAT_0023b810;
@@ -45942,7 +45945,7 @@ int param_2;
      leftover), which is 0 for iVar10 in {0,1} -- so the secondary axis was
      always X and turning never changed the direction of travel. Compute it
      directly: `(iVar10 + 1) % 2` == `1 - iVar10`. (Same register-leftover
-     pattern the reaction-queue code documents at ~uw.c:45585.) */
+     pattern the visibility-flood code documents at ~uw.c:45585.) */
   DAT_0008698e = (short)((iVar10 + 1) % 2);
   (&DAT_00086986)[iVar10 * 2] = 0;
   (&DAT_00086987)[iVar10 * 2] = uVar5;
@@ -47839,15 +47842,15 @@ void seed_visibility_queue()
      movement bug can still push them off the edge -- skip the visibility
      seed rather than segfaulting the whole game. */
   if (DAT_0023aecc == (char *)0x0) {
-    DAT_0023b030 = 0xf;
+    g_visibility_ring_done = 0xf;
     return;
   }
   if ((*DAT_0023aecc & 0xf) == 0) {
-    DAT_0023b030 = 0xf;
+    g_visibility_ring_done = 0xf;
   }
   else {
-    DAT_0023b030 = 0;
-    DAT_0023aee0 = 0x81;
+    g_visibility_ring_done = 0;
+    g_visibility_ray_table = 0x81;
     DAT_0023aee5 = 0;
     DAT_0023aee7 = 0;
     DAT_0023aee6 = (undefined1)*(undefined2 *)(DAT_00086e6c + 10);
@@ -47857,7 +47860,7 @@ void seed_visibility_queue()
     DAT_0023aeed = 0x58;
     DAT_0023aeee = 0x23b0;
     DAT_0023aef0 = 0;
-    g_dat0023aee0_realptr2[0] = (char *)&DAT_0023b038_backing[0x20]; // real-pointer side channel for the offset+0xd field -- see g_dat0023aee0_realptr2's comment
+    g_visibility_ray_realptr2[0] = (char *)&g_visibility_ring_buffer_backing[0x20]; // real-pointer side channel for the offset+0xd field -- see g_visibility_ray_realptr2's comment
     DAT_0023aef5 = 0xf;
     DAT_0023aefa = 0;
     DAT_0023aefc = 0;
@@ -47866,15 +47869,15 @@ void seed_visibility_queue()
     DAT_0023aefe = SUB42(DAT_0023aecc,0);
     DAT_0023af00 = (undefined2)((uint)DAT_0023aecc >> 0x10);
     _DAT_0023af02 = 0x23b058;
-    g_dat0023aee0_realptr2[1] = (char *)&DAT_0023b038_backing[0x20]; // same real-pointer side channel, entry 1
+    g_visibility_ray_realptr2[1] = (char *)&g_visibility_ring_buffer_backing[0x20]; // same real-pointer side channel, entry 1
     DAT_0023aee9 = (char)DAT_0023aecc;
-    g_dat0023aee0_realptr[0] = DAT_0023aecc; // real-pointer side channel for process_reaction_entry -- see g_dat0023aee0_realptr's comment
-    g_dat0023aee0_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
+    g_visibility_ray_realptr[0] = DAT_0023aecc; // real-pointer side channel for advance_visibility_ray -- see g_visibility_ray_realptr's comment
+    g_visibility_ray_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
     angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
     angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
     /* angle_to_screen_delta writes a 2-byte X delta at DAT_0023aee1 and a
        2-byte Y delta at DAT_0023aee3, and every downstream reader
-       (process_reaction_entry's `*(short *)(param_1 + 1)` / `+ 3`) treats
+       (advance_visibility_ray's `*(short *)(param_1 + 1)` / `+ 3`) treats
        them as separate signed shorts -- exactly like the DAT_0023aef6 /
        aef8 pair two lines down. Ghidra had `DAT_0023aee1` as a lone byte
        so an earlier fix pass widened the `>>4` to `_DAT_0023aee1`, a
@@ -47883,8 +47886,8 @@ void seed_visibility_queue()
        X's low 4 bits, so the left frustum edge came out garbage
        (X ~= 31338 vs the right edge's ~1465) and the beam-trace only
        ever marked one tile visible. Shift each 16-bit delta on its own. */
-    *(short *)&DAT_0023aee0_backing[1] = (short)(*(short *)&DAT_0023aee0_backing[1] >> 4);
-    *(short *)&DAT_0023aee0_backing[3] = (short)(*(short *)&DAT_0023aee0_backing[3] >> 4);
+    *(short *)&g_visibility_ray_table_backing[1] = (short)(*(short *)&g_visibility_ray_table_backing[1] >> 4);
+    *(short *)&g_visibility_ray_table_backing[3] = (short)(*(short *)&g_visibility_ray_table_backing[3] >> 4);
     DAT_0023aef6 = DAT_0023aef6 >> 4;
     DAT_0023aef8 = DAT_0023aef8 >> 4;
   }
@@ -47893,18 +47896,18 @@ void seed_visibility_queue()
 
 
 
-// Was FUN_0005c0c4. Same param_1-truncation + packed-pointer-arithmetic fix as its mirror-image sibling reaction_retreat_tile.
-void reaction_advance_tile(param_1)
+// Was FUN_0005c0c4. Same param_1-truncation + packed-pointer-arithmetic fix as its mirror-image sibling visibility_ray_step_backward.
+void visibility_ray_step_forward(param_1)
 intptr_t param_1;
 
 {
   int iVar1;
   int entry_idx;
 
-  entry_idx = reaction_entry_idx(param_1);
-  g_dat0023aee0_realptr[entry_idx] =
-       DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
-  g_dat0023aee0_realptr2[entry_idx] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx) + 2;
+  entry_idx = visibility_ray_idx(param_1);
+  g_visibility_ray_realptr[entry_idx] =
+       VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
+  g_visibility_ray_realptr2[entry_idx] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, entry_idx) + 2;
   *(char *)(param_1 + 5) = *(char *)(param_1 + 5) + '\x01';
   iVar1 = *(int *)(param_1 + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * 4;
   *(char *)(param_1 + 9) = (char)iVar1;
@@ -47925,7 +47928,7 @@ intptr_t param_1;
 
 
 /* Was FUN_0005c16c. param_1 was `int`, truncating the real record pointer (same fix as its
-   siblings process_reaction_entry/compute_reaction_offset). This function does pointer
+   siblings advance_visibility_ray/compute_visibility_ray_offset). This function does pointer
    ARITHMETIC on the two packed-pointer fields (advance-to-neighbor-tile
    at offset 9, step-back-2 at offset 0xd) by reading their packed bytes
    as a plain 32-bit value, adjusting, and writing the bytes back --
@@ -47933,18 +47936,18 @@ intptr_t param_1;
    32-bit. Do the same arithmetic on the real 64-bit pointers in the two
    side tables instead; the packed-byte writes are left in place as
    harmless dead state (nothing safely reads a pointer back out of them
-   any more -- see g_dat0023aee0_realptr's comment). */
-void reaction_retreat_tile(param_1)
+   any more -- see g_visibility_ray_realptr's comment). */
+void visibility_ray_step_backward(param_1)
 intptr_t param_1;
 
 {
   int iVar1;
   int entry_idx;
 
-  entry_idx = reaction_entry_idx(param_1);
-  g_dat0023aee0_realptr[entry_idx] =
-       DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
-  g_dat0023aee0_realptr2[entry_idx] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx) + -2;
+  entry_idx = visibility_ray_idx(param_1);
+  g_visibility_ray_realptr[entry_idx] =
+       VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, entry_idx) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
+  g_visibility_ray_realptr2[entry_idx] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, entry_idx) + -2;
   *(char *)(param_1 + 5) = *(char *)(param_1 + 5) + -1;
   iVar1 = *(int *)(param_1 + 9) + *(short *)(&DAT_00086a00 + DAT_0023b4a0 * 6) * -4;
   *(char *)(param_1 + 9) = (char)iVar1;
@@ -47965,10 +47968,10 @@ intptr_t param_1;
 
 
 /* Was FUN_0005c214. param_1 was `int`, truncating the real record pointer every caller
-   passes -- same fix as process_reaction_entry. Its two packed-pointer field reads
+   passes -- same fix as advance_visibility_ray. Its two packed-pointer field reads
    (offsets 0xd and 9) go through the same real-pointer side tables that
    function uses too, for the same reason (see their comments). */
-undefined4 compute_reaction_offset(param_1,param_2,param_3)
+undefined4 compute_visibility_ray_offset(param_1,param_2,param_3)
 intptr_t param_1;
 char param_2;
 char param_3;
@@ -47989,12 +47992,12 @@ char param_3;
   int iVar13;
   int entry_idx;
 
-  entry_idx = reaction_entry_idx(param_1);
-  pbVar2 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, entry_idx);
+  entry_idx = visibility_ray_idx(param_1);
+  pbVar2 = (byte *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, entry_idx);
   iVar12 = (int)DAT_0023b4a0;
   bVar7 = pbVar2[1] & 0xf;
   iVar5 = iVar12 * 0x10;
-  pbVar3 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, entry_idx);
+  pbVar3 = (byte *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, entry_idx);
   bVar1 = *pbVar3;
   uVar10 = (uint)*(char *)(param_1 + 5);
   if (uVar10 == 0) {
@@ -48082,11 +48085,11 @@ char param_3;
         ((((byte)(&DAT_000878d0)[uVar10] & 1) == 1 &&
          (((byte)(&DAT_000878d0)[uVar10] & 0x10) == (&DAT_00086af0)[uVar11 == 0])))))) {
       if (param_2 == '\x01') {
-        reaction_advance_tile(param_1); // dropped arg; sibling call right below (reaction_retreat_tile(param_1)) shows the intended shape
+        visibility_ray_step_forward(param_1); // dropped arg; sibling call right below (visibility_ray_step_backward(param_1)) shows the intended shape
         uVar8 = 0;
       }
       else {
-        reaction_retreat_tile(param_1);
+        visibility_ray_step_backward(param_1);
         uVar8 = 0xff;
       }
       *(undefined1 *)(param_1 + 6) = uVar8;
@@ -48107,17 +48110,17 @@ char param_3;
    AND the entry's visibility-grid cursor hasn't hit an end-of-chain
    nibble, it steps the entry ONE ROW forward -- the tile-data cursor by
    DAT_00086a02[facing]*4, the visibility-grid cursor by 0x42 -- re-walks
-   that row via reaction_advance_tile / compute_reaction_offset, and
-   returns 1. merge_adjacent_reactions's `iVar3 != 0` branch then keeps
-   the queue head off the 0xf sentinel, so process_reaction_queue makes
-   another pass and DAT_0023b024 (== view depth) grows. Stubbing it to
+   that row via visibility_ray_step_forward / compute_visibility_ray_offset, and
+   returns 1. merge_adjacent_visibility_rays's `iVar3 != 0` branch then keeps
+   the queue head off the 0xf sentinel, so run_visibility_flood makes
+   another pass and g_visibility_ring_depth (== view depth) grows. Stubbing it to
    `return 0` (done in a much earlier session while the whole viewport
    was still black) is why only row 0 was ever flooded -> only 1-2 tiles
    visible. The two packed 32-bit pointer fields (offsets 9 and 0xd) are
-   carried in g_dat0023aee0_realptr / _realptr2 on this 64-bit port; the
+   carried in g_visibility_ray_realptr / _realptr2 on this 64-bit port; the
    original's byte-packed writes are kept as harmless dead state. Verified
    against the 0x5c70c disasm. */
-undefined4 reaction_advance_row(param_1,param_2)
+undefined4 extend_visibility_ray_row(param_1,param_2)
 byte * param_1;
 byte * param_2;
 
@@ -48134,15 +48137,15 @@ byte * param_2;
   int idx2;
   short row_stride;
 
-  idx1 = reaction_entry_idx(param_1);
-  idx2 = reaction_entry_idx(param_2);
+  idx1 = visibility_ray_idx(param_1);
+  idx2 = visibility_ray_idx(param_2);
   row_stride = *(short *)(&DAT_00086a02 + DAT_0023b4a0 * 6);
 
   iVar5 = *(char *)(param_1 + 7) + 1;
   *(char *)(param_1 + 7) = (char)iVar5;
   if (iVar5 * 0x1000000 >> 0x18 < 0x11) {
     do {
-      if ((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx1)[0x43] & 0xf) != 0xf) {
+      if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx1)[0x43] & 0xf) != 0xf) {
         cVar3 = *(char *)(param_1 + 7);
         if (('\x01' < cVar3) ||
            (uVar7 = (uint)*(byte *)(param_1 + 6) - (int)*(short *)(DAT_00086e6c + 10),
@@ -48164,11 +48167,11 @@ byte * param_2;
         }
         *(undefined1 *)(param_1 + 8) = 0;
         /* one row forward: tile-data cursor += row_stride*4, grid cursor += 0x42 */
-        g_dat0023aee0_realptr[idx1] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, idx1) + row_stride * 4;
-        g_dat0023aee0_realptr2[idx1] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx1) + 0x42;
+        g_visibility_ray_realptr[idx1] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, idx1) + row_stride * 4;
+        g_visibility_ray_realptr2[idx1] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx1) + 0x42;
         *(char *)(param_2 + 7) = *(char *)(param_2 + 7) + '\x01';
         do {
-          if ((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx2)[0x43] & 0xf) != 0xf) {
+          if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx2)[0x43] & 0xf) != 0xf) {
             cVar3 = *(char *)(param_2 + 7);
             if (('\x01' < cVar3) ||
                (uVar7 = (uint)*(byte *)(param_2 + 6) - (int)*(short *)(DAT_00086e6c + 10),
@@ -48189,19 +48192,19 @@ byte * param_2;
               *(char *)(param_2 + 4) = (char)((uint)iVar5 >> 8);
             }
             *(undefined1 *)(param_2 + 8) = 0;
-            g_dat0023aee0_realptr2[idx2] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, idx2) + 0x42;
-            g_dat0023aee0_realptr[idx2] = DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, idx2) + row_stride * 4;
+            g_visibility_ray_realptr2[idx2] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx2) + 0x42;
+            g_visibility_ray_realptr[idx2] = VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, idx2) + row_stride * 4;
             return 1;
           }
-          reaction_retreat_tile(param_2);
+          visibility_ray_step_backward(param_2);
           *(undefined1 *)(param_2 + 6) = 0xff;
-          compute_reaction_offset((intptr_t)param_2,0,0);
+          compute_visibility_ray_offset((intptr_t)param_2,0,0);
         } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
         return 0;
       }
-      reaction_advance_tile((intptr_t)param_1);
+      visibility_ray_step_forward((intptr_t)param_1);
       *(undefined1 *)(param_1 + 6) = 0;
-      compute_reaction_offset((intptr_t)param_1,0,0);
+      compute_visibility_ray_offset((intptr_t)param_1,0,0);
     } while (*(char *)(param_1 + 5) <= *(char *)(param_2 + 5));
   }
   return 0;
@@ -48210,7 +48213,7 @@ byte * param_2;
 
 
 // Was FUN_0005cacc.
-void process_reaction_entry(param_1)
+void advance_visibility_ray(param_1)
 byte * param_1;
 
 {
@@ -48259,8 +48262,8 @@ byte * param_1;
          captured the low 32 bits even before this port's 64-bit
          truncation, and the 8-byte-wide read here also swallows 4 bytes
          of the next field. Real pointer tracked separately instead --
-         see g_dat0023aee0_realptr's comment. */
-      pbVar8 = (byte *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, reaction_entry_idx(param_1));
+         see g_visibility_ray_realptr's comment. */
+      pbVar8 = (byte *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, visibility_ray_idx(param_1));
       iVar2 = iVar11 * 0x10;
       cVar9 = (&DAT_00086a20)[(*pbVar8 & 0xf) + iVar2];
       if ((*(ushort *)(&DAT_00086af8 + iVar3 * 2) & (ushort)(byte)(&DAT_000878d0)[cVar9]) != 0) {
@@ -48303,8 +48306,8 @@ LAB_0005cf04:
          NEGATIVE char (-14) instead of correctly saturating hard for
          that close-range step. Real, verified overflow bug -- but NOT
          the cause of the automap's over-reveal-at-spawn report: checked
-         with lldb (breakpoint on process_reaction_queue's exit) that
-         DAT_0023b024 (the ring-walk depth) and the dumped reveal bitmap
+         with lldb (breakpoint on run_visibility_flood's exit) that
+         g_visibility_ring_depth (the ring-walk depth) and the dumped reveal bitmap
          are BOTH byte-for-byte identical before and after this fix for
          that repro, because the flood there terminates on real walls
          well before this accumulator ever nears saturation. Left fixed
@@ -48328,24 +48331,24 @@ LAB_0005cf04:
       param_1[6] = -(char)iVar12;
       local_32 = 0x100;
       if ((*param_1 & 0x80) == uVar1) {
-        compute_reaction_offset(param_1,0,0);
+        compute_visibility_ray_offset(param_1,0,0);
       }
       if (*psVar10 == 1) {
-        reaction_advance_tile(param_1); // dropped arg; sibling call right below shows the intended shape
+        visibility_ray_step_forward(param_1); // dropped arg; sibling call right below shows the intended shape
       }
       else {
-        reaction_retreat_tile(param_1);
+        visibility_ray_step_backward(param_1);
       }
-      if (((DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, reaction_entry_idx(param_1))[1] & 0xf) == 0xf) ||
+      if (((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, visibility_ray_idx(param_1))[1] & 0xf) == 0xf) ||
          (uVar4 = (int)(char)param_1[5] >> 0x1f,
          0x10 < (int)(((int)(char)param_1[5] ^ uVar4) - uVar4))) {
         /* Same extraout_r1 register-leftover division-remainder pattern
            as above, computed directly instead. */
         if (*(short *)(&DAT_00086b00 + ((iVar3 + 1) % 2) * 2) == 1) {
-          reaction_advance_tile(param_1); // dropped arg; sibling call right below shows the intended shape
+          visibility_ray_step_forward(param_1); // dropped arg; sibling call right below shows the intended shape
         }
         else {
-          reaction_retreat_tile(param_1);
+          visibility_ray_step_backward(param_1);
         }
         param_1[6] = -cVar12;
         param_1[8] = 0xff;
@@ -48378,12 +48381,12 @@ LAB_0005ce60:
 
 
 /* Was FUN_0005cf74. param_1/param_2 were `undefined4 *`/`int *`, truncating the real
-   pointers process_reaction_queue always calls this with (`&local_20`/`&local_24`,
+   pointers run_visibility_flood always calls this with (`&local_20`/`&local_24`,
    both real `byte*`/`undefined1*` locals) -- same fix as this record
    array's other consumers. `*param_2`'s assignment below is this same
    record's offset+0xd/0x11 packed-pointer field again, routed through
    the shared real-pointer side table. */
-void merge_adjacent_reactions(param_1,param_2)
+void merge_adjacent_visibility_rays(param_1,param_2)
 byte ** param_1;
 undefined1 ** param_2;
 
@@ -48413,12 +48416,12 @@ undefined1 ** param_2;
   int iVar10;
 
   iVar10 = ((int)*(char *)*param_1 & 0xfU) * 0x15;
-  pcVar9 = &DAT_0023aee0 + iVar10;
+  pcVar9 = &g_visibility_ray_table + iVar10;
   iVar5 = ((int)*pcVar9 & 0xfU) * 0x15;
-  pbVar8 = &DAT_0023aee0 + iVar5;
-  *param_2 = (undefined1 *)(DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, iVar5 / 0x15) + 2);
+  pbVar8 = &g_visibility_ray_table + iVar5;
+  *param_2 = (undefined1 *)(VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, iVar5 / 0x15) + 2);
   while( true ) {
-    iVar3 = compute_reaction_offset(pcVar9,1,8);
+    iVar3 = compute_visibility_ray_offset(pcVar9,1,8);
     if (iVar3 == 0) break;
     if ((int)((uint)(byte)(&DAT_0023aee6)[iVar5] + (char)(&DAT_0023aee5)[iVar5] * 0x100) <
         (int)((uint)(byte)(&DAT_0023aee6)[iVar10] + (char)(&DAT_0023aee5)[iVar10] * 0x100))
@@ -48426,7 +48429,7 @@ undefined1 ** param_2;
   }
   if ((int)(char)(&DAT_0023aee5)[iVar10] < (int)(char)(&DAT_0023aee5)[iVar5]) {
     do {
-      iVar3 = compute_reaction_offset(pbVar8,0xffffffff,8);
+      iVar3 = compute_visibility_ray_offset(pbVar8,0xffffffff,8);
     } while (iVar3 != 0);
   }
   iVar3 = 0x15;
@@ -48441,15 +48444,15 @@ undefined1 ** param_2;
     pcVar7 = pcVar7 + 1;
   } while (iVar4 != 0 && bVar1);
   /* acStack_28 is a byte-copy of entry pcVar9; seed the scratch
-     real-pointer slot (16) from that entry so reaction_advance_tile /
-     compute_reaction_offset on acStack_28 -- whose in-backing-array index
-     would be a wild value -- resolve through reaction_entry_idx() to a
+     real-pointer slot (16) from that entry so visibility_ray_step_forward /
+     compute_visibility_ray_offset on acStack_28 -- whose in-backing-array index
+     would be a wild value -- resolve through visibility_ray_idx() to a
      valid grid cursor instead of indexing the side table out of bounds. */
-  g_dat0023aee0_realptr[REACTION_SCRATCH_IDX]  =
-      DAT0023AEE0_REALPTR(g_dat0023aee0_realptr, iVar10 / 0x15);
-  g_dat0023aee0_realptr2[REACTION_SCRATCH_IDX] =
-      DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, iVar10 / 0x15);
-  iVar3 = reaction_advance_row(pcVar9,pbVar8);
+  g_visibility_ray_realptr[VISIBILITY_RAY_SCRATCH_IDX]  =
+      VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr, iVar10 / 0x15);
+  g_visibility_ray_realptr2[VISIBILITY_RAY_SCRATCH_IDX] =
+      VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, iVar10 / 0x15);
+  iVar3 = extend_visibility_ray_row(pcVar9,pbVar8);
   if (iVar3 == 0) {
 LAB_0005d064:
     bVar2 = *(byte *)*param_1;
@@ -48458,26 +48461,26 @@ LAB_0005d064:
     *pbVar8 = 0;
   }
   else {
-    /* reaction_advance_row returned "keep spreading". The walk below
+    /* extend_visibility_ray_row returned "keep spreading". The walk below
        operates on acStack_28 (the stack copy) and marks tiles via
-       compute_reaction_offset; its side-table pointers live in the
+       compute_visibility_ray_offset; its side-table pointers live in the
        scratch slot seeded just above. */
     *param_1 = pbVar8;
     if ((&DAT_0023aee5)[iVar10] != (&DAT_0023aee5)[iVar5]) {
       do {
-        reaction_advance_tile(acStack_28);
+        visibility_ray_step_forward(acStack_28);
         do {
           if ((char)(&DAT_0023aee5)[iVar5] <= acStack_28[5]) {
             return;
           }
           do {
-            iVar10 = compute_reaction_offset(acStack_28,1,0);
+            iVar10 = compute_visibility_ray_offset(acStack_28,1,0);
             if (iVar10 == 0) break;
           } while (acStack_28[5] < (char)(&DAT_0023aee5)[iVar5]);
         } while ((char)(&DAT_0023aee5)[iVar5] <= acStack_28[5]);
-        reaction_advance_tile(acStack_28);
+        visibility_ray_step_forward(acStack_28);
         do {
-          iVar10 = compute_reaction_offset(acStack_28,1,8);
+          iVar10 = compute_visibility_ray_offset(acStack_28,1,8);
           if (iVar10 == 0) break;
         } while (acStack_28[5] < (char)(&DAT_0023aee5)[iVar5]);
       } while( true );
@@ -48489,7 +48492,7 @@ LAB_0005d064:
 
 
 // Was FUN_0005d13c.
-void process_reaction_queue()
+void run_visibility_flood()
 
 {
   byte bVar1;
@@ -48500,37 +48503,37 @@ void process_reaction_queue()
   undefined1 *local_24;
   byte *local_20;
   
-  puVar3 = &DAT_0023b038;
-  DAT_0023b024 = -1;
-  local_24 = &DAT_0023b038;
+  puVar3 = &g_visibility_ring_buffer;
+  g_visibility_ring_depth = -1;
+  local_24 = &g_visibility_ring_buffer;
   do {
-    local_20 = &DAT_0023b030;
-    DAT_0023b024 = DAT_0023b024 + 1;
+    local_20 = &g_visibility_ring_done;
+    g_visibility_ring_depth = g_visibility_ring_depth + 1;
     puVar2 = puVar3;
-    bVar1 = DAT_0023b030;
+    bVar1 = g_visibility_ring_done;
     while ((bVar1 & 0xf) != 0xf) {
-      pbVar5 = &DAT_0023aee0 + ((int)(char)*local_20 & 0xfU) * 0x15;
-      process_reaction_entry(pbVar5);
+      pbVar5 = &g_visibility_ray_table + ((int)(char)*local_20 & 0xfU) * 0x15;
+      advance_visibility_ray(pbVar5);
       puVar2 = local_24;
       local_20 = pbVar5;
       bVar1 = *pbVar5;
     }
-    local_20 = &DAT_0023b030;
+    local_20 = &g_visibility_ring_done;
     puVar3 = puVar2;
-    bVar1 = DAT_0023b030;
+    bVar1 = g_visibility_ring_done;
     while (uVar4 = (uint)(char)bVar1, (uVar4 & 0xf) != 0xf) {
       /* Was `*(undefined1 **)(&DAT_0023aef1 + uVar4 * 0x15)` -- same
-         packed-pointer-reassembly bug as process_reaction_entry's offset+9/0xd
+         packed-pointer-reassembly bug as advance_visibility_ray's offset+9/0xd
          fields (this is that same offset-0xd/0x11 field, just indexed
-         relative to DAT_0023aef1 instead of DAT_0023aee0+0xd), routed
+         relative to DAT_0023aef1 instead of g_visibility_ray_table+0xd), routed
          through the same real-pointer side table. */
-      while (puVar3 < (undefined1 *)DAT0023AEE0_REALPTR(g_dat0023aee0_realptr2, uVar4 & 0xf)) {
+      while (puVar3 < (undefined1 *)VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, uVar4 & 0xf)) {
         *puVar3 = 0;
         uVar4 = (uint)(char)*local_20;
         puVar3 = local_24 + 2;
         local_24 = puVar3;
       }
-      merge_adjacent_reactions(&local_20,&local_24);
+      merge_adjacent_visibility_rays(&local_20,&local_24);
       puVar3 = local_24;
       bVar1 = *local_20;
     }
@@ -48539,29 +48542,29 @@ void process_reaction_queue()
       puVar3 = local_24 + 2;
       local_24 = puVar3;
     }
-  } while (DAT_0023b030 != 0xf);
+  } while (g_visibility_ring_done != 0xf);
 
-  /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): DAT_0023b024 is the
+  /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): g_visibility_ring_depth is the
      row depth of walk_visible_tiles's reveal/visibility walk -- it starts at
-     row &DAT_0023b038 + DAT_0023b024*0x42 and sweeps back to row 0, and
-     equals (reaction-queue passes made) - 1. With a small visible set it
+     row &g_visibility_ring_buffer + g_visibility_ring_depth*0x42 and sweeps back to row 0, and
+     equals (visibility-flood passes made) - 1. With a small visible set it
      comes out 0, so a demomode TELEPORT+REVEAL only marks a thin strip.
      Forcing it larger widens the automap reveal fan for testing, BUT it
-     also decouples the walk from process_reaction_queue's real output
+     also decouples the walk from run_visibility_flood's real output
      rows (which now genuinely carry visibility bits -- see the table
      recoveries this session), so it is opt-in and off by default. When
      enabled, the upper rows are zeroed first so process_visible_tile_cell reads them
      as "not visible" and takes the plain automap-reveal path rather than
-     stale bytes. DAT_0023b038_backing is 32768 bytes (0x42 stride) so 8
+     stale bytes. g_visibility_ring_buffer_backing is 32768 bytes (0x42 stride) so 8
      rows is well in bounds. */
   if (getenv("UW_HACK_REVEAL_DEPTH")) {
     if (getenv("UW_HACK_REVEAL_DEPTH_ZERO")) {
       int hack_row;
       for (hack_row = 0x42; hack_row < 0x42 * 9; hack_row = hack_row + 1) {
-        DAT_0023b038_backing[hack_row] = 0;
+        g_visibility_ring_buffer_backing[hack_row] = 0;
       }
     }
-    if (DAT_0023b024 < 8) DAT_0023b024 = 8;
+    if (g_visibility_ring_depth < 8) g_visibility_ring_depth = 8;
   }
   return;
 }
@@ -48582,21 +48585,21 @@ void rebuild_dungeon_view()
   bool bVar5;
   
   seed_visibility_queue();
-  /* Re-enabled again: DAT_0023b038 (the buffer walk_visible_tiles's ring-walk
+  /* Re-enabled again: g_visibility_ring_buffer (the buffer walk_visible_tiles's ring-walk
      reads per-tile visibility/occlusion data from via process_visible_tile_cell,
      offset DAT_0023b820) is the SAME 0x42-byte-stride buffer this
      function builds its creature-reaction display list into
-     (`&DAT_0023b038`, confirmed same base address, same stride) -- a
+     (`&g_visibility_ring_buffer`, confirmed same base address, same stride) -- a
      whole-binary Ghidra reference search found NO OTHER writer of this
-     memory anywhere, so an earlier attempt that hardcoded DAT_0023b024
+     memory anywhere, so an earlier attempt that hardcoded g_visibility_ring_depth
      while skipping this call was also skipping its only real populator.
      Finishing the retrofit properly instead of hardcoding around it.
-     NOTE: DAT_0023b024 (this function's own loop counter) legitimately
+     NOTE: g_visibility_ring_depth (this function's own loop counter) legitimately
      computes to 0 with no creatures present -- see memory.md's tmap-
-     tiles section for why that rules out "DAT_0023b024 is a general
+     tiles section for why that rules out "g_visibility_ring_depth is a general
      tile-scan radius" as the explanation for the still-black viewport;
      the real renderer is still being searched for. */
-  process_reaction_queue();
+  run_visibility_flood();
   FUN_00058438(0);
   uVar1 = DAT_00086b30;
   DAT_0023b804 = 0;
@@ -48911,8 +48914,8 @@ void walk_visible_tiles()
   sVar2 = *(short *)(&DAT_00086a00 + iVar4);
   iVar7 = (int)sVar2;
   sVar3 = *(short *)(&DAT_00086a02 + iVar4);
-  puVar9 = &DAT_0023b038 + DAT_0023b024 * 0x42;
-  pbVar8 = (byte *)(DAT_0023aecc + ((int)sVar3 * (int)DAT_0023b024 + iVar7 * -0x10) * 4);
+  puVar9 = &g_visibility_ring_buffer + g_visibility_ring_depth * 0x42;
+  pbVar8 = (byte *)(DAT_0023aecc + ((int)sVar3 * (int)g_visibility_ring_depth + iVar7 * -0x10) * 4);
   DAT_0023b814 = tilemap_lookup(0,0);
   DAT_0023b808 = tilemap_lookup(0x3f,0x3f);
   DAT_0023b83c = 0;
@@ -48931,8 +48934,8 @@ void walk_visible_tiles()
     uVar6 = uVar6 - 0x4000;
   }
   FUN_00064d34(0xfffffff6);
-  DAT_0023b4e8 = DAT_0023b024;
-  if (-1 < DAT_0023b024) {
+  DAT_0023b4e8 = g_visibility_ring_depth;
+  if (-1 < g_visibility_ring_depth) {
     do {
       FUN_00064d34(2);
       sVar1 = (short)uVar6;
@@ -49341,8 +49344,8 @@ byte * param_1;
   }
   /* This branch emits a visible tile's 3D geometry slice for the dungeon
      viewport. It now renders a real textured room end to end -- the
-     visibility flood-fill (process_reaction_queue / process_reaction_
-     entry / compute_reaction_offset / reaction_advance_row) and the
+     visibility flood-fill (run_visibility_flood / process_reaction_
+     entry / compute_visibility_ray_offset / extend_visibility_ray_row) and the
      software span rasterizer (raster_triangle / raster_textured_span)
      were resurrected across this session's commits (see git tags
      milestone-3d-tiles-render, milestone-3d-room). Enabled by default;
