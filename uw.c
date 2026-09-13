@@ -1469,7 +1469,19 @@ undefined DAT_00202878;
 undefined DAT_00084eff;
 static undefined DAT_001007d5_backing[8192];
 #define DAT_001007d5 DAT_001007d5_backing[0]
-undefined2 DAT_0010062c;
+/* Was `undefined2` (unsigned short) -- every real use in FUN_00027708/
+   FUN_000275e0/FUN_0002764c/FUN_00027694 (the attack-swing state
+   machine) treats this as a signed negative countdown (assigned
+   literal bit patterns like 0xfff6/-10, 0xfffb/-5, and compared with
+   `< 0`, `< -4`, `< -9`, `< -10`). With an unsigned type, a stored
+   0xffff (-1) reads back as +65535, so `DAT_0010062c < 1` (the guard
+   that gates this function's entire body) is permanently false and
+   the whole state machine can never advance past its "armed, wind-up
+   under way" state -- confirmed live: a real attack starts (weapon
+   raises, a real non-null swing record resolves) but then freezes at
+   DAT_000870e4==3 forever, no matter how long the button is held or
+   how long real time elapses afterward. */
+short DAT_0010062c;
 undefined4 DAT_001005ec;
 short DAT_00100618;
 short DAT_000870e4;
@@ -16562,7 +16574,16 @@ byte * param_3;
   char *iVar7;  /* was `int` -- truncated spawn_new_object's real object
                    pointer, latent while that function always returned 0 */
   undefined4 uVar8;
-  int iVar9;
+  char *iVar9;  /* was `int` -- truncated tilemap_lookup's real `void *`
+                   return (same class as iVar7 above and this whole
+                   file's dominant bug). Latent for a long time since
+                   this whole "resolve impact" swing code path was
+                   unreachable until a separate signedness bug on
+                   DAT_0010062c was fixed -- confirmed crashing
+                   (EXC_BAD_ACCESS in object_list_append_tail,
+                   dereferencing the truncated `iVar9 + 2` as a wild
+                   32-bit address) the first time a real attack swing
+                   ever reached this far. */
   uint uVar10;
   short local_18;
   short local_16;
@@ -17258,9 +17279,9 @@ short param_1;
 LAB_00027754:
   pRecord = DAT_001005e4;
   if (getenv("UW_DEBUG_COMBAT") && (param_1 != 0 || DAT_000870e4 != -1 || DAT_0010062c != 0)) {
-    fprintf(stderr, "[swing] param_1=%d flags5f=0x%x DAT_000870e4=%d DAT_0010062c=%d bVar2=%d pRecord=%p\n",
+    fprintf(stderr, "[swing] param_1=%d flags5f=0x%x DAT_000870e4=%d DAT_0010062c=%d bVar2=%d pRecord=%p DAT_00100618=%d DAT_001005ec=%u DAT_001005e8=%d\n",
             (int)param_1, (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)DAT_000870e4,
-            (int)DAT_0010062c, (int)bVar2, (void *)pRecord);
+            (int)DAT_0010062c, (int)bVar2, (void *)pRecord, (int)DAT_00100618, DAT_001005ec, (int)DAT_001005e8);
   }
   if (DAT_0010062c < 1) {
     if (DAT_0010062c < 0) {
@@ -36759,6 +36780,30 @@ void main_loop_hud_flush()
   }
   if (DAT_00201c84 != 0) {
     FUN_00049818();
+  }
+  /* HACK: drive the attack-swing state machine (FUN_00027708) every
+     main-loop tick. Its own body is a real, correct state machine
+     (wind-up -> resolve-impact -> follow-through -> return-to-idle,
+     gated on DAT_0010062c/DAT_000870e4 and a real-elapsed-time
+     accumulator read via FUN_0002294c()), but interact_attack only
+     ever calls it ONCE, with a nonzero param_1, to arm the swing
+     (DAT_0010062c set to a negative wind-up countdown). Nothing else
+     in the normal per-tick path calls FUN_00027708(0) to let that
+     countdown actually progress -- its only two "continue" (param_1==0)
+     call sites are one-shot level-load/save-load edge cases, not a
+     per-frame driver. Confirmed live: a real attack arms correctly
+     (weapon raises, [swing] trace shows a real wind-up countdown) but
+     then sits frozen forever, since nothing ever asks it to advance
+     past that point. Matches this same file's DAT_00085668 per-frame
+     dispatch table being link-time data Ghidra couldn't recover (see
+     its own comment) -- FUN_00027708(0) was almost certainly one of
+     that table's real entries originally. Calling it here is cheap
+     when idle (a couple of int compares) and exactly mirrors the
+     already-fixed render_dungeon_frame_timed hack above. Set
+     UW_NO_FORCE_SWING_TICK to restore the (broken) original behaviour. */
+  { static int _swing_tick = -1;
+    if (_swing_tick < 0) _swing_tick = (getenv("UW_NO_FORCE_SWING_TICK") == NULL);
+    if (_swing_tick) FUN_00027708(0);
   }
   poll_input_bindings(DAT_00085a6c);
   /* When the forced 3D redraw ran this frame, push it through even if a
@@ -70115,20 +70160,32 @@ undefined1 param_5;
     (&DAT_0025077c)[iVar4] = param_4;
     (&DAT_0025077d)[iVar4] = param_5;
     pbVar3 = (byte *)resolve_object_link((ushort *)(&DAT_00250778 + iVar4)); /* confirmed via ARM disassembly, 0x80f50 */
-    iVar4 = (*pbVar3 & 0xf) * 4;
-    cVar1 = (&DAT_00250732)[iVar4];
-    if (-1 < cVar1) {
-      if ((&DAT_00250733)[iVar4] == '\0') {
-        uVar5 = ((ushort)(byte)*(ushort *)(pbVar3 + 6) ^ (short)cVar1) & 0x3f ^
-                *(ushort *)(pbVar3 + 6);
+    /* resolve_object_link legitimately returns NULL (every other one of
+       this file's 140+ call sites guards for it -- e.g. the
+       `!= (ushort*)0x0` checks throughout this file). This call site
+       had no guard at all: confirmed live via a real attack swing that
+       finally reached this "resolve impact" code path for the first
+       time this session (previously unreachable due to a separate
+       signedness bug in DAT_0010062c, now fixed) -- swinging at empty
+       air/a wall (no creature under the swing zone) resolves to NULL
+       here and crashed (EXC_BAD_ACCESS dereferencing *pbVar3). Skip the
+       target-highlight update when there's nothing real to update. */
+    if (pbVar3 != (byte *)0x0) {
+      iVar4 = (*pbVar3 & 0xf) * 4;
+      cVar1 = (&DAT_00250732)[iVar4];
+      if (-1 < cVar1) {
+        if ((&DAT_00250733)[iVar4] == '\0') {
+          uVar5 = ((ushort)(byte)*(ushort *)(pbVar3 + 6) ^ (short)cVar1) & 0x3f ^
+                  *(ushort *)(pbVar3 + 6);
+        }
+        else {
+          uVar5 = *(ushort *)(pbVar3 + 6);
+          Ordinal_2005((&DAT_00250733)[iVar4],param_3);
+          uVar5 = (cVar1 + extraout_r1 ^ uVar5) & 0x3f ^ uVar5;
+        }
+        pbVar3[6] = (byte)uVar5;
+        pbVar3[7] = (byte)(uVar5 >> 8);
       }
-      else {
-        uVar5 = *(ushort *)(pbVar3 + 6);
-        Ordinal_2005((&DAT_00250733)[iVar4],param_3);
-        uVar5 = (cVar1 + extraout_r1 ^ uVar5) & 0x3f ^ uVar5;
-      }
-      pbVar3[6] = (byte)uVar5;
-      pbVar3[7] = (byte)(uVar5 >> 8);
     }
     DAT_0023b804 = 1;
     DAT_00250770 = DAT_00250770 + 1;
