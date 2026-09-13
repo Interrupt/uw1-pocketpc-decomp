@@ -30049,25 +30049,7 @@ short param_1;
         g_cursor_mode = (short)((uint)iVar7 >> 0x10);
         if (getenv("UW_DEBUG_MODEBTN"))
           fprintf(stderr, "[modebtn] resulting g_cursor_mode=%d\n", (int)g_cursor_mode);
-        /* Was `if (iVar1 == 2)` only -- arming flags5f bit 2 (the
-           attack-swing "start new swing" gate, see FUN_00027708) and
-           requesting the raise-weapon animation (FUN_0006cff4(8,4))
-           makes sense for mode 2 (whatever needs a "targeting" cursor)
-           but ALSO, obviously, for mode 5 (Attack) -- and mode 5 was
-           excluded entirely, going through the bare-highlight `else`
-           below instead. Since ready_weapon (the paperdoll click's own
-           equivalent of this exact arm sequence) hardcodes
-           g_cursor_mode to 2, it can't be reused here without undoing
-           the mode-5 selection this function just made -- extending
-           this existing, already-mode-aware branch to mode 5 too
-           (reusing g_cursor_mode, already set above, for the
-           FUN_0003f99c highlight call either way) is the minimal fix.
-           Confirmed live: without this, selecting Attack mode from the
-           icon bar never armed anything, so interact_attack's own
-           swing (FUN_00027708) never actually started -- matching the
-           bare-hand/bare-shoulder click path (handle_object_drop_target/
-           handle_inventory_panel_click) that already worked. */
-        if ((iVar1 == 2) || (iVar1 == 5)) {
+        if (iVar1 == 2) {
           if ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0) {
             uVar2 = *(undefined2 *)(DAT_00086df8 + 0x5f);
             *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar2 | 2;
@@ -30185,7 +30167,21 @@ void ready_weapon()
       /* Same dropped-argument bug as cursor_mode_button_click's sites. */
       FUN_0003fa1c(g_cursor_mode);
     }
-    g_cursor_mode = 2;
+    /* Was `g_cursor_mode = 2` -- readying the weapon-hand item is
+       exactly "enter combat stance", so the cursor mode it selects
+       should be 5 (Attack), the one FUN_0003f420 dispatches a 3D-view
+       right-click to interact_attack for -- not 2 (Converse, table[1],
+       which never touches combat at all; confirmed by reading its own
+       body). Whichever mode this used to be, FUN_0003f99c(g_cursor_mode)
+       a few lines down highlights whatever icon g_cursor_mode names --
+       so this alone was drawing the WRONG icon (mode 2's) every time a
+       weapon was readied, and left right-clicking dispatch to
+       interact_converse instead of interact_attack. Set to 5 so
+       readying a weapon (from the paperdoll, or bare-handed via
+       handle_inventory_panel_click's own empty-slot branch) puts the
+       player directly into a working attack stance, no separate icon
+       click needed. */
+    g_cursor_mode = 5;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar1 | 2;
     *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar1 >> 8);
@@ -30238,7 +30234,11 @@ void unready_weapon()
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar1 >> 8);
     if (DAT_000868d8 == 0) {
-      FUN_0003fa1c(2);
+      /* Was a hardcoded `FUN_0003fa1c(2)` -- un-highlight needs to name
+         whichever mode ready_weapon actually highlighted (5, Attack,
+         see its own comment), not the old mode-2 value this was
+         presumably copied from. */
+      FUN_0003fa1c(5);
     }
     g_cursor_mode = 0;
     FUN_00027694();
@@ -36698,49 +36698,6 @@ static void uw_debug_blit_pick_buffer(void)
 void main_loop_hud_flush()
 
 {
-  /* HACK: auto-ready the player's weapon and select Attack mode a
-     couple seconds after the dungeon view comes up -- purely a
-     zero-click testing/playability convenience at this point, NOT
-     compensating for a missing feature. Both real triggers now
-     genuinely work on their own:
-     - Clicking the weapon-hand paperdoll slot (widget 8/9,
-       g_inventory_hotspot_table records 6-11) arms it via
-       toggle_weapon_ready, confirmed live both with a real
-       weapon-class item in the slot (handle_object_drop_target) and
-       bare-handed with the slot empty (handle_inventory_panel_click's
-       own separate, pre-existing `slot == 8-lefthand_bit` branch).
-     - Selecting Attack mode from the icon bar now ALSO arms it:
-       cursor_mode_button_click's arm-on-select branch used to only
-       fire for mode 2, unconditionally clearing flags5f bit 2 for
-       every OTHER mode including 5 (Attack) -- so selecting Attack
-       could never itself lead to a working interact_attack swing.
-       Extended that branch to mode 5 too (see its own comment).
-     - Separately, interact_attack itself doesn't read
-       g_interact_target at all (it swings from raw mouse position),
-       but FUN_0003f420 required a successful pick_object_under_cursor
-       before ever reaching the dispatch table -- so even with
-       everything above fixed, right-clicking anywhere that wasn't
-       precisely on a pickable object never called interact_attack.
-       Fixed by letting attack (uVar2==4) fall through regardless (see
-       FUN_0003f420's own comment).
-     Verified live end to end with NONE of the above hacks: chargen ->
-     click the Attack icon -> right-click anywhere in the 3D view
-     (including empty air/a wall) -> interact_attack fires ->
-     FUN_00027708 arms a real swing with a real (non-truncated)
-     pRecord pointer, no crash. Set UW_NO_FORCE_WEAPON_READY to
-     disable this hack and exercise that real sequence directly. */
-  {
-    static int _force_ready = -1;
-    if (_force_ready < 0) _force_ready = (getenv("UW_NO_FORCE_WEAPON_READY") == NULL);
-    if (_force_ready && DAT_00201b64 == 0) {
-      static int _n = 0;
-      _n++;
-      if (_n == 60) {
-        ready_weapon();
-        g_cursor_mode = 5;
-      }
-    }
-  }
   dirty_rect_set(100,100,100,100);
   /* HACK: redraw the 3D dungeon view on every main-loop iteration.
      Normally the redraw is driven off dirty bit 3, which apply_movement_tick
