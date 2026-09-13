@@ -29978,10 +29978,25 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   g_blit_transparent_mode = 1;
+  /* Was `(param_1-1)*-2 + 0x200b` -- a spurious doubling that pushed
+     this id out of the 0x1000-0x1fff range (which FUN_00040aa8
+     resolves via DAT_00202730, BUTTONS.GR's own real base, snapshotted
+     right before BUTTONS.GR loads -- see its declaration comment) and
+     into the 0x2000+ range instead, which resolves via DAT_00202738.
+     DAT_00202738 is NOT the icon resource's base at all -- confirmed
+     via this file's own TMOBJ investigation (see FUN_00040770's
+     comment) that DAT_00202738 is snapshotted right after TMOBJ.GR
+     loads, i.e. it's whatever resource loads NEXT's base. Depending on
+     what's actually been decoded into those absolute frame slots by
+     the time a mode icon is clicked, this drew garbage, a blank
+     fallback, or -- per the user's report -- a real door sprite if a
+     door had been rendered recently enough to populate that same
+     slot range. Dropping the doubling lands this back in BUTTONS.GR's
+     own real frame range. */
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] FUN_0003f99c (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
-            param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
-  draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
+            param_1, iVar1, 0x1006 - (param_1 + -1), (int)sVar2, (int)sVar3);
+  draw_sprite_by_id(0x1006 - (param_1 + -1),(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
   FUN_000570b4();
   return;
@@ -30002,10 +30017,14 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   g_blit_transparent_mode = 1;
+  /* Was `(0x1005 - (param_1-1)) * 2` -- same spurious-doubling bug as
+     FUN_0003f99c's own id right above (see its comment); dropping the
+     doubling keeps this in BUTTONS.GR's own 0x1000-range instead of
+     drifting into DAT_00202738's unrelated range. */
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] FUN_0003fa1c (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
-            param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
-  draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
+            param_1, iVar1, 0x1005 - (param_1 + -1), (int)sVar2, (int)sVar3);
+  draw_sprite_by_id(0x1005 - (param_1 + -1),(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
   FUN_000570b4();
   return;
@@ -31047,9 +31066,23 @@ undefined4 param_3;
   char *pcVar3;
   undefined4 unaff_r4;
   undefined4 unaff_r5;
-  
-  FUN_00040aa8();
-  pcVar3 = (char *)FUN_000408fc();
+  uint resolved;
+
+  /* Dropped arguments (2 calls) -- same idiom as the identical
+     `resolved = FUN_00040aa8(param_1); FUN_000408fc(resolved);` pair
+     used correctly elsewhere in this file (see e.g. the call site
+     right above this function). Both calls here ran bare, so the
+     resolved icon graphic came from whatever register happened to be
+     left over from the PREVIOUS call instead of this call's own
+     param_1 -- three icon draws happen back-to-back every single
+     frame from weapon_swing_draw_tick (ids 0x107f/0x1080/0x1081), so
+     with this bug each one actually drew whatever the icon 2 calls
+     earlier resolved to, and the leftover register value alternated
+     between two stale states frame to frame. Confirmed live: this
+     produced a real 2-frame-period flicker in exactly that HUD icon
+     area during a held wind-up. */
+  resolved = FUN_00040aa8(param_1);
+  pcVar3 = (char *)FUN_000408fc(resolved);
   cVar1 = pcVar3[1];
   cVar2 = pcVar3[2];
   if (*pcVar3 == '\x04') {
@@ -59598,11 +59631,19 @@ void weapon_swing_draw_tick()
        needs the raw entry buffer just resolved above; without it, it
        dereferenced whatever register happened to be lying around. */
     uVar2 = (g_weapon_swing_current_frame == 0) ? 0 : decode_gr_entry_bitmap(g_weapon_swing_current_frame);
+    if (getenv("UW_DEBUG_COMBAT")) {
+      fprintf(stderr, "[wswing] DAT_0023c130=%d DAT_000870e4=%d sVar1=%d frame=%p drawn=%d\n",
+              (int)DAT_0023c130, (int)DAT_000870e4, (int)sVar1, (void *)g_weapon_swing_current_frame,
+              uVar2 != 0);
+    }
     if (uVar2 != 0) {
       bitmap_blit_to_framebuffer((uint)(byte)(&g_weapon_swing_frame_x_offset)[sVar1] + (int)DAT_0023c1ec + 0x34,
                    0x83 - (uint)(byte)(&g_weapon_swing_frame_y_offset)[sVar1],uVar2,*(undefined1 *)(g_weapon_swing_current_frame + 2),
                    *(undefined1 *)(g_weapon_swing_current_frame + 1),0,0,1);
     }
+  } else if (getenv("UW_DEBUG_COMBAT")) {
+    fprintf(stderr, "[wswing] SKIPPED: DAT_0023c130=%d DAT_000870e4=%d DAT_000870dc=%d g_weapon_overlay_enabled=%d\n",
+            (int)DAT_0023c130, (int)DAT_000870e4, (int)DAT_000870dc, (int)g_weapon_overlay_enabled);
   }
   FUN_00040bc0(0x107f,0x3e,3);
   FUN_00040bc0(0x1080,0,0xd);
