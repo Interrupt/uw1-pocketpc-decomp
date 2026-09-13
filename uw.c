@@ -29758,7 +29758,19 @@ void FUN_0003f420()
         return;
       }
       g_interact_target = pick_object_under_cursor(2);
-      if (g_interact_target == 0) {
+      /* Was an unconditional bail (describe the terrain and skip the
+         dispatch table entirely) whenever nothing was directly under
+         the cursor. Fine for Look/Get/Talk (table[0]/[2]/[3]), which
+         all genuinely need g_interact_target -- but interact_attack
+         (table[4], uVar2==4) never reads g_interact_target at all; it
+         only uses the raw mouse position (DAT_00085a6c) to pick a
+         swing zone. Requiring a precise pixel-perfect pick before a
+         melee swing can even start doesn't match that -- confirmed
+         live this was the reason interact_attack was never reached at
+         all when swinging at anything not dead-center under the
+         cursor (a wall, empty air, an off-center creature). Let attack
+         fall through to the dispatch table regardless. */
+      if ((g_interact_target == 0) && (uVar2 != 4)) {
         describe_picked_terrain(uVar2,(int)DAT_002020ac);
         goto LAB_0003f584;
       }
@@ -30037,7 +30049,25 @@ short param_1;
         g_cursor_mode = (short)((uint)iVar7 >> 0x10);
         if (getenv("UW_DEBUG_MODEBTN"))
           fprintf(stderr, "[modebtn] resulting g_cursor_mode=%d\n", (int)g_cursor_mode);
-        if (iVar1 == 2) {
+        /* Was `if (iVar1 == 2)` only -- arming flags5f bit 2 (the
+           attack-swing "start new swing" gate, see FUN_00027708) and
+           requesting the raise-weapon animation (FUN_0006cff4(8,4))
+           makes sense for mode 2 (whatever needs a "targeting" cursor)
+           but ALSO, obviously, for mode 5 (Attack) -- and mode 5 was
+           excluded entirely, going through the bare-highlight `else`
+           below instead. Since ready_weapon (the paperdoll click's own
+           equivalent of this exact arm sequence) hardcodes
+           g_cursor_mode to 2, it can't be reused here without undoing
+           the mode-5 selection this function just made -- extending
+           this existing, already-mode-aware branch to mode 5 too
+           (reusing g_cursor_mode, already set above, for the
+           FUN_0003f99c highlight call either way) is the minimal fix.
+           Confirmed live: without this, selecting Attack mode from the
+           icon bar never armed anything, so interact_attack's own
+           swing (FUN_00027708) never actually started -- matching the
+           bare-hand/bare-shoulder click path (handle_object_drop_target/
+           handle_inventory_panel_click) that already worked. */
+        if ((iVar1 == 2) || (iVar1 == 5)) {
           if ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0) {
             uVar2 = *(undefined2 *)(DAT_00086df8 + 0x5f);
             *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar2 | 2;
@@ -36669,35 +36699,36 @@ void main_loop_hud_flush()
 
 {
   /* HACK: auto-ready the player's weapon and select Attack mode a
-     couple seconds after the dungeon view comes up.
-
-     The real trigger -- clicking the weapon-hand paperdoll slot
-     (widget 8 or 9, depending on handedness) -- now genuinely works,
-     hit rect and all: g_inventory_hotspot_table records 6-11 are wired
-     up, and confirmed live TWO ways: (1) via
-     handle_object_drop_target's widget-8/9 branch when the slot
-     already holds a real weapon-class item, and (2) via
-     handle_inventory_panel_click's own separate, pre-existing
-     empty-slot branch (`slot == 8-lefthand_bit` while the slot has
-     nothing in it), which calls the exact same toggle_weapon_ready --
-     i.e. bare-handed combat stance is already fully supported by
-     clicking the (still empty, for a fresh character) weapon hand,
-     no weapon pickup/equip needed at all. So this half of the hack is
-     now pure convenience, not compensating for a missing feature.
-
-     What's still genuinely missing: selecting Attack mode (cursor mode
-     5, needed for a 3D-view right-click to reach interact_attack at
-     all) via the icon bar unconditionally clears flags5f bit 2 first
-     (cursor_mode_button_click's own top-of-function behaviour, for
-     every mode it selects) -- so clicking the Attack icon AFTER
-     readying immediately un-readies it again, and ready_weapon's own
-     body leaves cursor mode at 2 (Converse), not 5. There's no
-     confirmed real sequence of UI actions that reaches interact_attack
-     with flags5f bit 2 still set; forcing g_cursor_mode here
-     sidesteps that unresolved tension rather than solving it. Set
-     UW_NO_FORCE_WEAPON_READY to disable this and restore the real
-     (currently: stuck in this same catch-22) behavior -- e.g. to
-     specifically chase that gap. */
+     couple seconds after the dungeon view comes up -- purely a
+     zero-click testing/playability convenience at this point, NOT
+     compensating for a missing feature. Both real triggers now
+     genuinely work on their own:
+     - Clicking the weapon-hand paperdoll slot (widget 8/9,
+       g_inventory_hotspot_table records 6-11) arms it via
+       toggle_weapon_ready, confirmed live both with a real
+       weapon-class item in the slot (handle_object_drop_target) and
+       bare-handed with the slot empty (handle_inventory_panel_click's
+       own separate, pre-existing `slot == 8-lefthand_bit` branch).
+     - Selecting Attack mode from the icon bar now ALSO arms it:
+       cursor_mode_button_click's arm-on-select branch used to only
+       fire for mode 2, unconditionally clearing flags5f bit 2 for
+       every OTHER mode including 5 (Attack) -- so selecting Attack
+       could never itself lead to a working interact_attack swing.
+       Extended that branch to mode 5 too (see its own comment).
+     - Separately, interact_attack itself doesn't read
+       g_interact_target at all (it swings from raw mouse position),
+       but FUN_0003f420 required a successful pick_object_under_cursor
+       before ever reaching the dispatch table -- so even with
+       everything above fixed, right-clicking anywhere that wasn't
+       precisely on a pickable object never called interact_attack.
+       Fixed by letting attack (uVar2==4) fall through regardless (see
+       FUN_0003f420's own comment).
+     Verified live end to end with NONE of the above hacks: chargen ->
+     click the Attack icon -> right-click anywhere in the 3D view
+     (including empty air/a wall) -> interact_attack fires ->
+     FUN_00027708 arms a real swing with a real (non-truncated)
+     pRecord pointer, no crash. Set UW_NO_FORCE_WEAPON_READY to
+     disable this hack and exercise that real sequence directly. */
   {
     static int _force_ready = -1;
     if (_force_ready < 0) _force_ready = (getenv("UW_NO_FORCE_WEAPON_READY") == NULL);
