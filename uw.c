@@ -29978,25 +29978,15 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   g_blit_transparent_mode = 1;
-  /* Was `(param_1-1)*-2 + 0x200b` -- a spurious doubling that pushed
-     this id out of the 0x1000-0x1fff range (which FUN_00040aa8
-     resolves via DAT_00202730, BUTTONS.GR's own real base, snapshotted
-     right before BUTTONS.GR loads -- see its declaration comment) and
-     into the 0x2000+ range instead, which resolves via DAT_00202738.
-     DAT_00202738 is NOT the icon resource's base at all -- confirmed
-     via this file's own TMOBJ investigation (see FUN_00040770's
-     comment) that DAT_00202738 is snapshotted right after TMOBJ.GR
-     loads, i.e. it's whatever resource loads NEXT's base. Depending on
-     what's actually been decoded into those absolute frame slots by
-     the time a mode icon is clicked, this drew garbage, a blank
-     fallback, or -- per the user's report -- a real door sprite if a
-     door had been rendered recently enough to populate that same
-     slot range. Dropping the doubling lands this back in BUTTONS.GR's
-     own real frame range. */
+  /* Confirmed via real ARM disassembly (0x3f99c: `mov r0,#0x2000;
+     orr r0,r0,#0xb; sub r0,r0,r4,lsl #0x1`) that `(param_1-1)*-2 +
+     0x200b` is exactly what the original compiled code computes --
+     NOT a decompile artifact. The "door sprite" bug is NOT here; see
+     FUN_00040aa8/the resource loader instead. */
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] FUN_0003f99c (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
-            param_1, iVar1, 0x1006 - (param_1 + -1), (int)sVar2, (int)sVar3);
-  draw_sprite_by_id(0x1006 - (param_1 + -1),(int)sVar2,(int)sVar3,1,1);
+            param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
+  draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
   FUN_000570b4();
   return;
@@ -30017,14 +30007,16 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   g_blit_transparent_mode = 1;
-  /* Was `(0x1005 - (param_1-1)) * 2` -- same spurious-doubling bug as
-     FUN_0003f99c's own id right above (see its comment); dropping the
-     doubling keeps this in BUTTONS.GR's own 0x1000-range instead of
-     drifting into DAT_00202738's unrelated range. */
+  /* Confirmed via real ARM disassembly (0x3fa1c: `mov r0,#0x1000;
+     orr r0,r0,#0x5; sub r0,r0,r4; mov r0,r0,lsl #0x1`) that
+     `(0x1005-(param_1-1))*2` is exactly what the original compiled
+     code computes -- NOT a decompile artifact. Reverted an earlier
+     incorrect "fix" that dropped this doubling; see FUN_00040aa8/the
+     resource loader for the real "door sprite" bug instead. */
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] FUN_0003fa1c (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
-            param_1, iVar1, 0x1005 - (param_1 + -1), (int)sVar2, (int)sVar3);
-  draw_sprite_by_id(0x1005 - (param_1 + -1),(int)sVar2,(int)sVar3,1,1);
+            param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
+  draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
   FUN_000570b4();
   return;
