@@ -2699,10 +2699,18 @@ undefined2 DAT_00085a70;
    a container) remaps this same backing[12..19] to 20..27 instead --
    the container's own contents, written to those slots -- while a
    container is open (see its own comment), and close_backpack_container restores it
-   back to 11..18 on close. Ids 1-5 (worn-armor overlays) and 6-11/20-22
-   stay 0 -- their real mapping is still unrecovered and out of scope. */
+   back to 11..18 on close, confirming the *normal* (no container open)
+   mapping is also N -> N-1, not identity. Extended the same N -> N-1
+   rule to widget ids 6..11 (the worn-hand/shoulder/finger paperdoll
+   slots -- see g_inventory_hotspot_table's matching comment): slots
+   5..10, matching this table's only other confirmed data point
+   exactly and leaving slots 0..4 free of any currently-wired widget
+   (plausibly the still-unimplemented torso/legs/feet/head armor slots,
+   ids 1-5, out of scope for this pass -- see that comment). Ids
+   1-5/20-22 stay 0 -- their real mapping is still unrecovered and out
+   of scope. */
 static unsigned char g_backpack_widget_to_slot_backing[0x17] = {
-  0,0,0,0,0,0, 0,0,0,0,0,0,11,12,13,14,15,16,17,18, 0,0,0,
+  0,0,0,0,0,0, 5,6,7,8,9,10,11,12,13,14,15,16,17,18, 0,0,0,
 };
 #define g_backpack_widget_to_slot g_backpack_widget_to_slot_backing[0]
 /* DAT_00202950 (28 2-byte "backpack/equipment slot" object-link
@@ -2821,9 +2829,31 @@ ushort DAT_00202986;
    hit_test_inventory_widget returns the FIRST matching record and record 0's rect is
    a superset of every grid cell below it, every backpack-grid click
    would keep resolving to record 0 (widget id 0, a no-op sentinel
-   throughout this file) instead of ever reaching records 6-13. Records
-   1..5 (worn armour overlays) stay zero for now -- armour only draws
+   throughout this file) instead of ever reaching records 6-19. Its
+   CLICK rect's x-range is ALSO narrowed (to a central 0x108-0x122
+   torso strip, down from the full 0xf0-0x13b body width) for the exact
+   same reason, now that records 6-11 (below) cover the flanking
+   shoulder/hand/finger columns the un-narrowed rect used to swallow --
+   record 0 itself is still a no-op if clicked, so shrinking its
+   reachable area has no other effect. Records 2..5 (worn torso/legs/
+   feet/head armour overlays) stay zero for now -- armour only draws
    when equipped, out of scope for this pass.
+
+   Records 6..11 (the worn weapon-hand/shoulder/finger paperdoll slots)
+   are populated too, reconstructed the same not-lifted-from-original-
+   data way as records 1/12-19 below: two mirrored columns flanking the
+   body sprite (screen-left = the character's own right side, since the
+   paperdoll faces the viewer), shoulder above hand above finger/ring,
+   sized to roughly match the body art without overlapping the head
+   (above) or the backpack grid (below, y<0x50). Widget assignment
+   within each column follows handle_object_drop_target's own confirmed
+   selector (`9 - lefthand_bit`, i.e. widget 9 is the active weapon hand
+   when NOT left-handed): widget 9 = right hand (default-active),
+   widget 8 = left hand, and shoulders/fingers grouped into the same
+   column as their matching hand (7/11 with 9's column, 6/10 with 8's).
+   This positioning is a first-pass reconstruction (no on-screen
+   equipped-item sprite existed to measure against, unlike the
+   backpack-grid icons) -- revisit if a live playtest shows it's off.
 
    Records 12..19 (the 8-cell backpack grid, 4 cols x 2 rows) are now
    populated too, needed to make Grab-mode drops and backpack clicks
@@ -2855,8 +2885,10 @@ ushort DAT_00202986;
    in turn implies the *normal* (no container open) mapping is also
    N -> N-1, not identity -- see g_backpack_widget_to_slot's own updated comment. */
 static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
-  /* rec 0: click x1,y1,x2,y2 = f0,0b,13b,50 (narrowed, see comment above) ; draw x,y = f0,0b ; dirty w,h = 50,6c */
-  0x04,0x01, 0x0b,0x00, 0x3b,0x01, 0x50,0x00,  0x04,0x01, 0x0b,0x00,  0x50,0x6c,
+  /* rec 0: click x1,y1,x2,y2 = 108,0b,122,50 (narrowed to a central
+     torso strip, see comment above -- draw x,y unchanged/untouched) ;
+     draw x,y = f0,0b ; dirty w,h = 50,6c */
+  0x08,0x01, 0x0b,0x00, 0x22,0x01, 0x50,0x00,  0x04,0x01, 0x0b,0x00,  0x50,0x6c,
 
   [1*14+0] =
   /* rec 1: the "open container" icon + leave-container button, ~40
@@ -2870,6 +2902,27 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
      spare slots; revisit if armour rendering is ever implemented and
      needs record 1 back. click f0,34,103,46 ; draw f1,3d */
   0xf0,0x00, 0x34,0x00, 0x03,0x01, 0x46,0x00,  0xf1,0x00, 0x3d,0x00,  0x14,0x14,
+
+  [6*14+0] =
+  /* rec 6 (left shoulder, screen-right column): click 125,14,135,20 ; draw 126,15 */
+  0x25,0x01, 0x14,0x00, 0x35,0x01, 0x20,0x00,  0x26,0x01, 0x15,0x00,  0x10,0x10,
+  /* rec 7 (right shoulder, screen-left column): click f2,14,102,20 ; draw f3,15 */
+  0xf2,0x00, 0x14,0x00, 0x02,0x01, 0x20,0x00,  0xf3,0x00, 0x15,0x00,  0x10,0x10,
+  /* rec 8 (left hand, screen-right column): click 125,22,139,32 ; draw 126,23.
+     Y-range raised from an earlier 2e-44 attempt -- that overlapped
+     record 1's f0,34-103,46 (container icon) click rect, which is
+     checked first and so always won the overlap; confirmed live
+     (clicking here resolved to widget 1, not 8/9, before this fix). */
+  0x25,0x01, 0x22,0x00, 0x39,0x01, 0x32,0x00,  0x26,0x01, 0x23,0x00,  0x14,0x10,
+  /* rec 9 (right hand, screen-left column -- the default/active weapon
+     hand per handle_object_drop_target's `9 - lefthand_bit` check):
+     click f2,22,106,32 ; draw f3,23 */
+  0xf2,0x00, 0x22,0x00, 0x06,0x01, 0x32,0x00,  0xf3,0x00, 0x23,0x00,  0x14,0x10,
+  /* rec 10 (left hand's finger/ring slot): click 129,47,135,50 ; draw 12a,48
+     (Y-range also moved, same record-1-overlap reason as the hands.) */
+  0x29,0x01, 0x47,0x00, 0x35,0x01, 0x50,0x00,  0x2a,0x01, 0x48,0x00,  0x0c,0x09,
+  /* rec 11 (right hand's finger/ring slot): click f6,47,102,50 ; draw f7,48 */
+  0xf6,0x00, 0x47,0x00, 0x02,0x01, 0x50,0x00,  0xf7,0x00, 0x48,0x00,  0x0c,0x09,
 
   [12*14+0] =
   /* rec 12 (row1,col1): click f0,50,103,63 ; draw f1,51 */
@@ -30172,12 +30225,16 @@ void unready_weapon()
 void toggle_weapon_ready()
 
 {
+  if (getenv("UW_DEBUG_COMBAT"))
+    fprintf(stderr, "[weapon-ready] toggle_weapon_ready CALLED: flags5f=0x%x\n", (unsigned)*(byte *)(DAT_00086df8 + 0x5f));
   if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
     ready_weapon();
   }
   else {
     unready_weapon();
   }
+  if (getenv("UW_DEBUG_COMBAT"))
+    fprintf(stderr, "[weapon-ready] toggle_weapon_ready DONE: flags5f=0x%x g_cursor_mode=%d\n", (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)g_cursor_mode);
   return;
 }
 
@@ -32281,9 +32338,18 @@ short param_1;
     if (iVar2 < 10) {
       if (iVar2 == 9 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
         puVar1 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
-        uVar3 = *puVar1 & 0x1ff;
-        if (((((*puVar1 & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
-           ((uVar3 == 0x1a || (uVar3 == 0x1f)))) {
+        /* Was missing a NULL check -- resolve_object_link legitimately
+           returns 0 for an empty slot (its own link word has no
+           object-table bits set, see its own comment), and every fresh
+           character's weapon-hand slot IS empty by default (confirmed
+           live). Widgets 8/9 had no click rect at all before this round
+           (see g_inventory_hotspot_table's comment), so this branch was
+           never reachable, and the bug went unnoticed. Now that the
+           click rect exists, clicking an empty weapon hand would
+           otherwise crash here on the very first try. */
+        if ((puVar1 != 0) && (uVar3 = *puVar1 & 0x1ff,
+           ((((*puVar1 & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
+           ((uVar3 == 0x1a || (uVar3 == 0x1f))))) {
           toggle_weapon_ready();
           goto LAB_00042a10;
         }
@@ -36603,26 +36669,35 @@ void main_loop_hud_flush()
 
 {
   /* HACK: auto-ready the player's weapon and select Attack mode a
-     couple seconds after the dungeon view comes up. The real trigger
-     is clicking the weapon-hand paperdoll slot (ready_weapon, via
-     toggle_weapon_ready) -- but that slot has no hit-test rect wired
-     up at all yet (g_inventory_hotspot_table records 6-11 are all-
-     zero; see memory.md's combat-mode gap (a)), so nothing in the game
-     can ever reach ready_weapon through the UI. Everything downstream
-     of "the player has readied a weapon" is otherwise fully fixed and
-     verified (attack-swing pointer truncation, the weapon-swing
-     graphics load+draw pipeline, the g_weapon_overlay_enabled flag,
-     and wiring weapon_swing_draw_tick into the real per-tick render
-     path -- see memory.md's combat follow-up rounds 1-4, commits
-     f8636e8/4853757/aa2a880/c1a240d/e8dff64/d82fc08). Force it on here
-     so combat is actually reachable/testable/playable for now, without
-     needing the real paperdoll click rect first. Setting g_cursor_mode
-     to 5 (Attack) is needed too: readying a weapon on its own leaves
-     cursor mode at 2 (a side effect of ready_weapon's own body, see
-     its comment), and only mode 5 dispatches a 3D-view right-click to
-     interact_attack. Set UW_NO_FORCE_WEAPON_READY to disable this and
-     restore the real (currently: never-armed) behavior -- e.g. to
-     specifically exercise/fix gap (a) itself. */
+     couple seconds after the dungeon view comes up.
+
+     The real trigger -- clicking the weapon-hand paperdoll slot
+     (widget 8 or 9, depending on handedness) -- now genuinely works,
+     hit rect and all: g_inventory_hotspot_table records 6-11 are wired
+     up, and confirmed live TWO ways: (1) via
+     handle_object_drop_target's widget-8/9 branch when the slot
+     already holds a real weapon-class item, and (2) via
+     handle_inventory_panel_click's own separate, pre-existing
+     empty-slot branch (`slot == 8-lefthand_bit` while the slot has
+     nothing in it), which calls the exact same toggle_weapon_ready --
+     i.e. bare-handed combat stance is already fully supported by
+     clicking the (still empty, for a fresh character) weapon hand,
+     no weapon pickup/equip needed at all. So this half of the hack is
+     now pure convenience, not compensating for a missing feature.
+
+     What's still genuinely missing: selecting Attack mode (cursor mode
+     5, needed for a 3D-view right-click to reach interact_attack at
+     all) via the icon bar unconditionally clears flags5f bit 2 first
+     (cursor_mode_button_click's own top-of-function behaviour, for
+     every mode it selects) -- so clicking the Attack icon AFTER
+     readying immediately un-readies it again, and ready_weapon's own
+     body leaves cursor mode at 2 (Converse), not 5. There's no
+     confirmed real sequence of UI actions that reaches interact_attack
+     with flags5f bit 2 still set; forcing g_cursor_mode here
+     sidesteps that unresolved tension rather than solving it. Set
+     UW_NO_FORCE_WEAPON_READY to disable this and restore the real
+     (currently: stuck in this same catch-22) behavior -- e.g. to
+     specifically chase that gap. */
   {
     static int _force_ready = -1;
     if (_force_ready < 0) _force_ready = (getenv("UW_NO_FORCE_WEAPON_READY") == NULL);
