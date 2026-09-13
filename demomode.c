@@ -26,6 +26,22 @@
  *                    the ring-walk that marks automap tiles revealed --
  *                    TELEPORT and ordinary movement don't trigger this
  *                    on their own.
+ *   SETPLAYERPOS <x> <y> <z> <yaw> <pitch>  -- like TELEPORT but fine-grained:
+ *                    x/y take a fractional tile position (e.g. "32.5 2.25"),
+ *                    z is the raw height unit the [playerpos] print's own
+ *                    "z=" value uses (not a tile coordinate -- copy a value
+ *                    straight from that print to land on the same height),
+ *                    and yaw/pitch (degrees) set the player's facing/look
+ *                    angle directly, via demo_set_player_pos. Goes through
+ *                    the same object-sync path as TELEPORT (set_player_tile_
+ *                    position for the integer tile part, then
+ *                    commit_player_move to pack the exact fine position/
+ *                    yaw back into the player object) rather than the
+ *                    movement/collision engine. For pinning the player to
+ *                    an exact spot/facing to reproduce something
+ *                    position-dependent (e.g. the wall-decal depth issue) --
+ *                    pair with the always-on [playerpos] console print in
+ *                    sync_camera_from_player to read back where this landed.
  *   REVEALALL     -- marks every walkable tile of the current level's
  *                    automap revealed in one pass (automap_reveal_all_tiles),
  *                    no per-tile teleport/redraw. For exercising the
@@ -47,6 +63,19 @@
  *                    genuine SDL mouse events, exercising the full
  *                    uw_pump_events() path (unlike CLICK above, which
  *                    bypasses it entirely)
+ *   SDLRCLICK <window_x> <window_y>  -- right-button version of SDLCLICK
+ *                    (interact)
+ *   SDLDOWN/SDLUP <window_x> <window_y>  -- split halves of SDLCLICK, for
+ *                    a real multi-tick gap between button-down and
+ *                    button-up instead of both queued instantaneously
+ *   SDLRDOWN/SDLRUP <window_x> <window_y>  -- right-button versions of
+ *                    SDLDOWN/SDLUP -- combine with SDLMOVE to script a
+ *                    real drag (e.g. SDLRDOWN on a world object, WAIT,
+ *                    SDLMOVE toward the target, WAIT, SDLRUP over the
+ *                    inventory HUD, to test grabbing and dropping an item)
+ *   SDLMOVE <window_x> <window_y>  -- warps the cursor and pushes a
+ *                    genuine SDL_MOUSEMOTION with no button-state change,
+ *                    the "move while held" middle of a drag
  *   SCREENSHOT <path>  -- saves the current window contents (post-
  *                    rotation, what's actually on screen) as a BMP,
  *                    so a scripted run -- or Claude -- can see what a
@@ -480,6 +509,20 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strncasecmp(p, "SETPLAYERPOS ", 13) == 0) {
+        double x = 0, y = 0, z = 0, yaw = 0, pitch = 0;
+        if (sscanf(p + 13, "%lf %lf %lf %lf %lf", &x, &y, &z, &yaw, &pitch) != 5) {
+            fprintf(stderr, "[demo] malformed SETPLAYERPOS line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] SETPLAYERPOS tile=(%.3f,%.3f) z=%.0f yaw=%.1f pitch=%.1f\n",
+                x, y, z, yaw, pitch);
+        demo_set_player_pos(x, y, z, yaw, pitch);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     if (strcasecmp(p, "OPENMAP") == 0) {
         /* set_game_mode(2) is the real mode switch: DAT_00201b60 = 2 maps
          * to game-mode index DAT_00201b64 = 1 (the automap), whose entry
@@ -511,8 +554,8 @@ void demomode_pump(void) {
         {
             /* Print the player's tile so a scripted TELEPORT/REVEAL sweep
                can be correlated with what's on screen. */
-            extern void *DAT_0023be64;
-            unsigned short *pl = (unsigned short *)DAT_0023be64;
+            extern void *g_player_object;
+            unsigned short *pl = (unsigned short *)g_player_object;
             if (pl)
                 fprintf(stderr, "[demo] player tile = (%d,%d)\n",
                         pl[0x16/2] >> 10, (pl[0x16/2] & 0x3f0) >> 4);
@@ -596,6 +639,36 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strncasecmp(p, "SDLRDOWN ", 9) == 0) {
+        /* SDLRDOWN/SDLMOVE/SDLRUP -- right-button drag primitives (grab
+         * an object, hold, move the cursor, release elsewhere -- e.g.
+         * dragging a picked-up item onto the inventory HUD). */
+        int wx = 0, wy = 0;
+        sscanf(p + 9, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLRDOWN window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_rdown(wx, wy);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLRUP ", 7) == 0) {
+        int wx = 0, wy = 0;
+        sscanf(p + 7, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLRUP window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_rup(wx, wy);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLMOVE ", 8) == 0) {
+        int wx = 0, wy = 0;
+        sscanf(p + 8, "%d %d", &wx, &wy);
+        fprintf(stderr, "[demo] SDLMOVE window=(%d,%d)\n", wx, wy);
+        uw_inject_mouse_motion(wx, wy);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     if (strncasecmp(p, "SCREENSHOT ", 11) == 0) {
         const char *path = p + 11;
         /* Push the whole software framebuffer to the display before
@@ -612,6 +685,10 @@ void demomode_pump(void) {
           flush_dirty_rect_to_display(1);
           g_force_flush = 0; }
         uw_save_screenshot(path);
+        if (getenv("UW_DEBUG_INV")) {
+            extern void uw_debug_dump_inventory_state(void);
+            uw_debug_dump_inventory_state();
+        }
         g_demo_next_tick = now;
         return;
     }

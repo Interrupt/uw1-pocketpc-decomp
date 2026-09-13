@@ -4,6 +4,8 @@
  * were confirmed. */
 #include "headers/game.h"
 #include "debug.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 
 
@@ -155,7 +157,7 @@ undefined4 param_1;
      as other dual-purpose-variable fixes elsewhere in this file. */
   void *pvVar_buf10000;
   /* Declared as a lone 4-byte scalar, but `&local_82c` is handed to
-     DAT_0023bf6c and then read back through FUN_0006a200/menu_button_list_navigate
+     DAT_0023bf6c and then read back through draw_menu_item_list/menu_button_list_navigate
      as an array of up to 4 (param_1) 0x10-byte-stride records (plus an
      overlapping 4-byte-stride array access) -- another undersized-local
      table, confirmed via ASAN stack-buffer-overflow. Widened directly.
@@ -173,7 +175,7 @@ undefined4 param_1;
      (placeholder, overwritten by FUN_0006a0c8), 2-byte H (same)].
      Confirmed: their X/Y values (e.g. (0x62,0x52), (0x51,0x69),
      (0x48,0x81), (0x55,0x9a)) are exactly the button position data
-     FUN_0006a200 reads back out at pcVar_rec+8/+10 -- previously always
+     draw_menu_item_list reads back out at pcVar_rec+8/+10 -- previously always
      zero because these locals never actually reached local_82c's
      memory, which is why every button rendered stacked at (0,0). Merged
      directly into offset-based writes into local_82c below instead of
@@ -217,7 +219,7 @@ undefined4 param_1;
   *(short *)(local_82c + 0x3e) = 1;
   dirty_rect_union(0,200,0,0x140);
   DAT_0023bf6c = &local_82c;
-  FUN_0006bde0(auStack_4d4,local_83c);
+  probe_save_slots(auStack_4d4,local_83c);
   uVar8 = 3;
   if (local_83c[0] != 0) {
     uVar8 = 4;
@@ -288,17 +290,17 @@ undefined4 param_1;
             exactly the postprocess_cb this resource load needs: same
             3-arg shape as chargen's LAB_000255d0 (see its comment near
             DAT_000fb880), and it writes the per-button bitmap-pointer/
-            width/height fields FUN_0006a200 reads out of DAT_0023bf6c's
+            width/height fields draw_menu_item_list reads out of DAT_0023bf6c's
             record table -- which is otherwise only ever zeroed
             (local_82c's memset above), never populated. Same orphaned-
             callback bug class as LAB_000255d0 was, just already
             decompiled as a named function instead of staying raw
             undecompiled ARM. */
-         (iVar10 = FUN_000417b4(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,&FUN_0006a0c8), iVar10 == 0)) {
+         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,&FUN_0006a0c8), iVar10 == 0)) {
         FUN_0003c3c8(0x300d);
       }
       if (local_838 != 3) {
-        FUN_0006a200(uVar8,DAT_0023bf6c,0,uVar2);
+        draw_menu_item_list(uVar8,DAT_0023bf6c,0,uVar2);
         // HACK: same DAT_00088d98-sync deviation as this function's other
         // palette-load point above -- see that comment.
         set_palette_bank(2);
@@ -307,6 +309,7 @@ undefined4 param_1;
     }
     sVar3 = menu_button_list_navigate(uVar8,DAT_0023bf6c,0,uVar2);
     local_838 = (int)sVar3;
+    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] uVar8=%d uVar2=%d navigate->%d\n", (int)uVar8, (int)uVar2, local_838);
     if (local_838 == -1) {
       FUN_0003baf4(0);
       FUN_00082388(1);
@@ -315,7 +318,7 @@ undefined4 param_1;
       FUN_00037c14(0);
     }
     else if (local_838 == 1) {
-      DAT_0024af74 = 1;
+      g_text_use_palette_color = 1;
       fade_out(0,0,g_uw_framebuffer,200);
       iVar4 = character_generator_start();
       if (iVar4 != 0) {
@@ -372,7 +375,7 @@ undefined4 param_1;
            gets truncated through this function's `undefined4` locals, so
            making them real would crash. Do the copy directly against the
            game paths instead: without it \SAVE0\lev.ark never exists and
-           FUN_0006bc28 below fails, bouncing straight back to the menu
+           load_level below fails, bouncing straight back to the menu
            instead of entering the dungeon. */
         Ordinal_164(auStack_22c,auStack_434,0);
         uw_file_copy(s__DATA_lev_ark_00085734, s__SAVE0_lev_ark_000842fc);
@@ -380,7 +383,7 @@ undefined4 param_1;
         if (sVar3 != 0) {
           FUN_0003c3c8();
         }
-        sVar3 = FUN_0006bc28(1);
+        sVar3 = load_level(1);
         if (sVar3 < 1) {
           bVar11 = false;
         }
@@ -390,7 +393,7 @@ undefined4 param_1;
           FUN_0006c834(1,0);
         }
       }
-      DAT_0024af74 = 0;
+      g_text_use_palette_color = 0;
     }
     else if (local_838 == 2) {
       iVar4 = FUN_0002294c();
@@ -441,7 +444,7 @@ undefined4 param_1;
       FUN_00049924(0x7ffe);
     }
     else if (local_838 == 3) {
-      sVar3 = FUN_0006b178();
+      sVar3 = journey_onward_load_slot_menu();
       bVar11 = sVar3 == 1;
       if (sVar3 == -1) {
         uVar7 = FUN_0007863c(0x2a9);
@@ -455,10 +458,10 @@ undefined4 param_1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_opscr_byt_00086eec);
         FUN_0006c98c(0xffffffff,acStack_7ec,1);
-        FUN_00040d00(s_FONTBIG_SYS_00085454);
-        *DAT_0008429c = 0xa2;
+        select_active_font(s_FONTBIG_SYS_00085454);
+        *g_draw_color_index = 0xa2;
         *DAT_00084298 = 0xa2;
-        sVar3 = FUN_000112a0(uVar7);
+        sVar3 = measure_text_width(uVar7);
         iVar4 = (int)sVar3;
         if (iVar4 < 0) {
           iVar4 = iVar4 + 1;
@@ -468,7 +471,7 @@ undefined4 param_1;
         while (sVar3 = next_input_event(), sVar3 < 0) {
           FUN_0006a168();
         }
-        FUN_00040d00(s_FONT5X6P_SYS_00084e9c);
+        select_active_font(s_FONT5X6P_SYS_00084e9c);
       }
       else if (bVar11) {
         FUN_00040004();

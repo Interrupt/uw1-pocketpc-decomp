@@ -31,6 +31,39 @@ int uw_save_screenshot(const char *path);
 void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
                              const unsigned char *entry_data, int entry_size);
 
+/* Debug tool: if UW_DEBUG_DUMP_CRIT is set (and not "0"), dumps every
+   critter/NPC sprite frame decode_critter_sprite_page produces to a BMP
+   under debug/crit/type<N>/tier<T>/dir<D>_frame<F>.bmp, colored with the
+   currently-installed game palette (decode happens mid-level, so the
+   right CRIT palette is already live the same way most .GR dumps are).
+   Meant to inspect how many of a given creature's 8 relative-viewing-
+   angle directions actually have distinct art in the real game data,
+   the same way UW_DEBUG_DUMP_GR is used to inspect .GR sprite sheets.
+   pixels is a plain type_width*type_height palette-index buffer (no
+   header, unlike a .GR entry). No-op (cheap check) when the env var is
+   unset.
+
+   UW_DEBUG_DUMP_CRIT_ALL (any value) disables the dedupe-by-
+   (type,tier,direction,frame) so every decode gets written instead of
+   just the first one seen.
+
+   width/height MUST be passed as (DAT_00202508, DAT_002022f8) in that
+   order -- DAT_00202508 is the real width, DAT_002022f8 the real height
+   (confirmed against the class-0 item decoder's identical header read:
+   `bVar1 = pcVar3[1]` = the .GR format's documented "byte1=width",
+   assigned to this same DAT_00202508). An earlier version of the caller
+   had these backwards, which doesn't affect the real on-screen renderer
+   (only ever used as a w*h product, or correctly by role in
+   emit_tile_objects's own quad math) but silently fed this dump tool a
+   swapped width/height, so every dumped BMP read each row at the wrong
+   stride and came out as scrambled noise -- initially mistaken for
+   real in-game dithering (a cropped real screenshot looked similarly
+   noisy at 1:1 scale, which seemed to confirm it) until the user
+   correctly flagged the dump tool's own pixel pitch as the real
+   suspect. Fixed; a correctly-oriented sprite comes out clean. */
+void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
+                                   const unsigned char *pixels, int width, int height);
+
 /* Debug tool: if UW_DEBUG_DRAW is set (and not "0"), dumps the internal
    320x240 RGB565 software framebuffer (g_uw_framebuffer) to a BMP after
    every draw call that goes through graphics.c's rect_fill_or_save_restore
@@ -79,6 +112,22 @@ int uw_inject_mouse_rclick(int window_x, int window_y);
    held click's timing) rather than both queued instantaneously. */
 int uw_inject_mouse_down(int window_x, int window_y);
 int uw_inject_mouse_up(int window_x, int window_y);
+
+/* Right-button split halves of uw_inject_mouse_rclick, for testing a real
+   right-button DRAG (down over one object, hold across a real multi-poll
+   gap, move, then release somewhere else -- e.g. grabbing a world object
+   and dragging it onto the inventory HUD) rather than an instantaneous
+   click. */
+int uw_inject_mouse_rdown(int window_x, int window_y);
+int uw_inject_mouse_rup(int window_x, int window_y);
+
+/* Warp the cursor and push a genuine SDL_MOUSEMOTION event with no button
+   state change -- the "move while held" middle of a drag. Warping alone
+   may or may not synthesize a motion event depending on the video
+   backend, so this pushes one explicitly for tests that need the game to
+   actually see intermediate movement (not just a teleported cursor)
+   while a button is held down. */
+int uw_inject_mouse_motion(int window_x, int window_y);
 
 /* Push a genuine SDL_KEYDOWN (+ SDL_TEXTINPUT for a printable key) / SDL_KEYUP
    for the given SDL_Keycode, so scripted tests exercise uw_pump_events()'s

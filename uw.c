@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "gx_stub.h"
 #include <dlfcn.h>
+#include <math.h>
 #include <stdarg.h>
 
 
@@ -22,7 +23,12 @@ undefined DAT_0023c5ac;
    this 64-bit host and segfaulting the first time Ordinal_1044 actually
    did real memmove work. */
 void *g_uw_framebuffer;
-undefined2 DAT_0024ae20;
+// was DAT_0024ae20. Flat RGB565 ink color draw_text_string uses when
+// g_text_use_palette_color is 0 -- never written anywhere, silently 0
+// (black). Fine as the default on message-scroll's light parchment
+// background; menu screens with a dark backdrop need the palette-
+// indexed path instead (force g_text_use_palette_color there).
+undefined2 g_text_flat_color;
 static undefined2 DAT_000890b0_backing[32768];
 #define DAT_000890b0 DAT_000890b0_backing[0]
 /* Not `static` -- referenced from graphics.c (bitmap_blit_to_framebuffer,
@@ -30,17 +36,34 @@ static undefined2 DAT_000890b0_backing[32768];
    g_palette_rgb565 macro alias both live in uw.h now so both files see the
    same thing. */
 undefined2 g_palette_rgb565_backing[32768];
-ushort DAT_0008909c;
-short DAT_0008894c;
+// was DAT_0008909c. Line height (pixels) of the currently-active font,
+// read from its header by load_font_metrics; 0 would make
+// draw_text_string allocate/draw nothing.
+ushort g_font_line_height;
+// was DAT_0008894c. Per-glyph row stride (bytes) of the currently-active
+// font, also from load_font_metrics; selects unpack_glyph_bitmap's 8- vs
+// 16-bit-per-row decode.
+short g_font_row_stride;
 short DAT_000a85b8;
 /* Was `int`, truncating the real char* pointer (DAT_000890a4) assigned
    into it -- used as a glyph-bitmap-data base address in byte-pointer
-   arithmetic passed to FUN_000112fc. */
-char *DAT_00088940;
-int DAT_0024af74;
+   arithmetic passed to unpack_glyph_bitmap. */
+char *g_font_glyph_data_base;
+// was DAT_0024af74. Nonzero: draw_text_string colors glyph pixels via
+// the palette index *g_draw_color_index; zero (the default -- nothing
+// else in this decompile ever sets it) uses the flat g_text_flat_color
+// instead. A reentrancy/mode flag set only around one unrelated dialog-
+// box drawing routine (FUN_00037c14), so callers elsewhere that want
+// palette-indexed text (e.g. draw_menu_item_list's highlighted save-slot
+// labels) must force it themselves for the duration of the draw.
+int g_text_use_palette_color;
 int DAT_0023c5b0;
-byte DAT_0008429c_backing[128];
-byte *DAT_0008429c = DAT_0008429c_backing;
+// was DAT_0008429c_backing/DAT_0008429c. Current draw-color palette
+// index, written before nearly every text/UI draw call across the file
+// and read back by draw_text_string (when g_text_use_palette_color is
+// set) and various fill/blit routines.
+byte g_draw_color_index_backing[128];
+byte *g_draw_color_index = g_draw_color_index_backing;
 char *DAT_000879b0;
 undefined2 DAT_000a85b0;
 char *DAT_000890a4;
@@ -73,7 +96,22 @@ undefined2 DAT_000a85c8;
 undefined2 DAT_000842a4;
 undefined2 DAT_000842a8;
 int DAT_00204848;
-int DAT_00088960;
+// was DAT_00088960 -- global toggle every sprite/bitmap-blit primitive in
+// this file (bitmap_blit_to_framebuffer in graphics.c, and this file's
+// own sibling blit routines, e.g. ~uw.c:5244/5591/62096) reads instead of
+// taking a real "transparent mode" parameter: 0 draws every source pixel
+// opaquely through the palette (so a transparent-keyed pixel, byte value
+// 0, paints as palette index 0 -- typically black), nonzero skips
+// byte==0 pixels for real transparency. Callers that want a transparent
+// blit set this to 1 immediately before the call and reset it to 0
+// right after (draw_sprite_by_id, FUN_0003f99c/FUN_0003fa1c, etc). Named
+// after root-causing the inventory-panel "black box" bug: redraw_hud_panels's
+// panels.GR background blit had a trailing literal `1` argument that
+// clearly intended transparency but never actually set this global,
+// so it silently ran opaque -- see that fix's own comment for the full
+// story (uw.c, redraw_hud_panels, search "DAT_00088960" in git history/
+// memory.md for the writeup predating this rename).
+int g_blit_transparent_mode;
 undefined *PTR_Ordinal_2032_00084010;
 undefined *PTR_Ordinal_2026_00084014;
 undefined *PTR_Ordinal_2020_00084018;
@@ -345,7 +383,7 @@ undefined2 DAT_000b99c8;
 undefined *PTR_Ordinal_2008_00084060;
 char s_fontbig_sys_0008432c[] = "fontbig.sys";
 char s__DATA_blnkmap_byt_00084338[] = "\\DATA\\blnkmap.byt";
-char *DAT_0023be64;
+char *g_player_object;
 undefined4 LAB_00017ba8()
 
 {
@@ -457,8 +495,8 @@ undefined4 DAT_000bc028;
 undefined DAT_001007dd;
 static undefined DAT_001007de_backing[8192];
 #define DAT_001007de DAT_001007de_backing[0]
-char *DAT_00202948;
-undefined2 DAT_002020c4;
+char *g_selected_object;
+undefined2 g_cursor_holding_state;
 undefined *PTR_DAT_000845c8;
 static undefined1 DAT_000845e8_backing[65536];
 #define DAT_000845e8 DAT_000845e8_backing[0]
@@ -503,6 +541,18 @@ undefined4 DAT_000db440;
 int DAT_000db448;
 int DAT_000db44c;
 int DAT_000db450;
+/* Set (0-359) by emit_tile_objects's class-2 TMOBJ/sign branch right
+   before jumping into the shared class-0 mesh-quad code, to make a
+   wall-mounted decal extend along the WALL's own fixed facing angle
+   instead of the camera's (DAT_000db44c, "yaw... from the player
+   object" per its own comment a few thousand lines down) -- see the
+   quad-build code's own comment for why. -1 = no override (normal
+   camera-facing item billboard, the class-0 default). Self-clearing:
+   read and reset back to -1 the moment it's consumed, since
+   DAT_000db44c is a real per-FRAME camera value shared by every object
+   processed after this one -- an override left set would face every
+   later billboard this frame the wrong way. */
+int g_billboard_angle_override_deg = -1;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
    view/camera matrix -- build_view_matrix writes the whole matrix in one shot
@@ -624,22 +674,55 @@ undefined4 DAT_00084638 = 0x84;
 undefined4 DAT_00084610 = 100u;
 undefined1 *DAT_000db45c;
 int DAT_000db458;
-int DAT_000d91d0;
+// was DAT_000d91d0 -- running point count while parse_e_model_file reads
+// a .E model's POINTS block (bounded at 600, see the "Too many points"
+// error); indexes both the point-scratch arrays and the final per-model
+// output buffer's points array.
+int g_model_parse_point_count;
 int DAT_000db4fc;
 int *DAT_000c8b00;
-int DAT_000db430;
+// was DAT_000db430 -- running part (face) count while parse_e_model_file
+// reads a .E model's PARTS block (bounded at 0x15e=350, see the "Too many
+// polys" error); indexes both the part-scratch arrays and the final
+// per-model output buffer's parts array.
+int g_model_parse_part_count;
 int DAT_00084660;
 int DAT_0008465c;
 int DAT_00084670;
 int DAT_0008466c;
+// DAT_000db480/DAT_000db470: gate the PARTS block's 'A' (auto-backside)
+// handling and an INTERSECTIONS-vs-other-block branch, but neither is
+// ever WRITTEN anywhere in this decompile -- always BSS-zero here, which
+// makes the 'A' backside-generation code (see vec3_cross's caller,
+// parse_e_model_file's "making backside of %d %d" branch) and the
+// INTERSECTIONS default path unconditionally taken as if these flags are
+// always off. Not renamed: unclear whether that's really how the
+// original binary behaves (a hidden writer elsewhere, not yet checked
+// via Ghidra the way DAT_00085668 and friends were) or a genuine
+// decompile gap, so a confident name isn't warranted yet.
 int DAT_000db480;
 int DAT_000db470;
 int DAT_000db4d4;
 int DAT_000db4d8;
 int DAT_000db4d0;
+// DAT_000db494: gates whether parse_e_model_file resolves each PARTS
+// entry's EXTENDED_COLORS index against g_model_known_ext_colors (and the
+// function's own final scratch-to-scratch color-inheritance pass). Same
+// "never written anywhere in this decompile" situation as DAT_000db480/
+// DAT_000db470 just above -- always reads BSS-zero here, so this whole
+// resolution path is presently dead code for every model regardless of
+// whether the file actually has an EXTENDED_COLORS block. Not renamed
+// for the same reason.
 int DAT_000db494;
 int DAT_000db4e0;
-undefined4 DAT_00084678;
+// was DAT_00084678 -- a fixed table of up to 32 known 24-bit RGB values
+// (0x00RRGGBB-shaped ints) that parse_e_model_file's EXTENDED_COLORS
+// handling linearly searches to turn each entry's literal RGB (e.g.
+// "545454" in ROCKSMAL.E) into a small index, stored per-part -- a
+// palette-index lookup, not a raw-color passthrough. Gated dead by
+// DAT_000db494 above, so this table is currently never actually
+// consulted despite being real, meaningful data.
+undefined4 g_model_known_ext_colors;
 char s_unexpected_EOF___no_END_statemen_000846f8[] = "unexpected_EOF_-_no_END_statemen";
 char s________c_0008471c[] = "%*[^}]%c";
 char s___d__00084728[] = "(%d)";
@@ -651,14 +734,14 @@ char s_ANIMATE_00084760[] = "ANIMATE";
 char s_Error__extended_color_for_part___00084768[] = "Error:_extended_color_for_part_%";
 /* Was "%lx%1s" -- correct as recovered from the original 32-bit binary,
    where 'long' and 'int' are both 4 bytes, matching the destination
-   (FUN_00020a74's `int local_208;`). On this 64-bit host 'long' is 8
+   (parse_e_model_file's `int local_208;`). On this 64-bit host 'long' is 8
    bytes, so vfscanf wrote a full 8-byte value through Ordinal_1114 into
    that 4-byte stack slot -- a real stack-buffer-overflow (confirmed via
    ASAN), not a truncation-in-the-other-direction case like most of this
    file's other pointer/int-width bugs. Fixed by dropping the 'l' length
    modifier to match the 32-bit-correct destination width instead of
    widening the destination, since every other use of this value in
-   FUN_00020a74 treats it as a plain 4-byte int. */
+   parse_e_model_file treats it as a plain 4-byte int. */
 char s__lx_1s_000847a4[] = "%x%1s";
 char s_EXTENDED_COLORS_000847ac[] = "EXTENDED_COLORS";
 char s_INTERSECTIONS_000847bc[] = "INTERSECTIONS";
@@ -716,7 +799,7 @@ char s_VERSION_000849b0[] = "VERSION";
 char s_error___s__c_000849b8[] = "error:_%s,%c";
 /* Unrecoverable string constant (Ghidra never recovered its content) --
    confirmed "END" by inspecting a real .E model file (DATA3D/DFRAME.E):
-   the game's text script parser (FUN_00020a74) brackets every model with
+   the game's text script parser (parse_e_model_file) brackets every model with
    a BEGIN...END pair (see s_BEGIN_00084a14/s_Input_file_error...), and
    this is the only unresolved string used as the closing-token
    comparison (Ordinal_1065(token,&DAT_000849c8) / Ordinal_1070 with
@@ -738,7 +821,7 @@ char s_BEGIN_00084a14[] = "BEGIN";
 char s__100s_00084a1c[] = "%100s";
 static undefined DAT_00084a24_backing[8192];
 #define DAT_00084a24 DAT_00084a24_backing[0]
-/* DAT_000c4c38 (a vertex-data scratch buffer, see FUN_00020a74's ".E"
+/* DAT_000c4c38 (a vertex-data scratch buffer, see parse_e_model_file's ".E"
    model parser: `DAT_000c8b00 = &DAT_000c4c38;` starts a write cursor
    there and walks it forward one 4-byte slot at a time while parsing
    PARTS) was declared as a lone undefined4 scalar -- Ghidra only saw the
@@ -761,13 +844,13 @@ static char DAT_000c4c38_backing[0x3e58];
 static undefined1 DAT_000c8b08_backing[65536];
 #define DAT_000c8b08 DAT_000c8b08_backing[0]
 /* Base of a growing per-cluster-connection undefined4 array in
-   FUN_00020a74's CLUSTERS block (`puVar8 = &DAT_000c8ca0; ... *puVar8 =
+   parse_e_model_file's CLUSTERS block (`puVar8 = &DAT_000c8ca0; ... *puVar8 =
    local_1d8; puVar8 = puVar8 + 1;`) -- same undersized-scalar bug as
    DAT_000da868/DAT_000dab90 right above, for the same block. */
 static undefined1 DAT_000c8ca0_backing[65536];
 #define DAT_000c8ca0 DAT_000c8ca0_backing[0]
 /* DAT_000c9540..DAT_000c9555 (22 fields): another per-record byte-field
-   cluster in FUN_00020a74's ".E" model parser (NODES block), same
+   cluster in parse_e_model_file's ".E" model parser (NODES block), same
    undersized-scalar bug as DAT_000d2ab0/DAT_000c9dd8/DAT_000c8ca0/
    DAT_000da868/DAT_000dab90 above -- found via a systematic scan of
    every `(&DAT_x)[idx]` pattern in this function after the POINTS/PARTS/
@@ -819,9 +902,9 @@ static undefined1 DAT_000c9554_backing[65536];
 static undefined1 DAT_000c9555_backing[65536];
 #define DAT_000c9555 DAT_000c9555_backing[0]
 /* DAT_000c9dd8 through DAT_000c9de3 (12 globals) are byte fields of a
-   0x67(103)-byte-stride per-PART record in FUN_00020a74's ".E" model
-   parser (`iVar5 = DAT_000db430 * 0x67; (&DAT_000c9ddc)[iVar5] = ...`),
-   bounded by `if (0x15e < DAT_000db430)` (350 parts) -- same undersized-
+   0x67(103)-byte-stride per-PART record in parse_e_model_file's ".E" model
+   parser (`iVar5 = g_model_parse_part_count * 0x67; (&DAT_000c9ddc)[iVar5] = ...`),
+   bounded by `if (0x15e < g_model_parse_part_count)` (350 parts) -- same undersized-
    scalar-instead-of-real-table bug as the DAT_000d2ab0-family POINTS
    record right above, just for PARTS. Widened the same way. */
 static undefined1 DAT_000c9dd8_backing[65536];
@@ -913,9 +996,9 @@ static undefined1 DAT_000c9e3d_backing[65536];
 static undefined1 DAT_000c9e3e_backing[65536];
 #define DAT_000c9e3e DAT_000c9e3e_backing[0]
 /* DAT_000d2ab0 through DAT_000d2ad3 (28 globals) are individual byte
-   fields of a 0x2c(44)-byte-stride per-POINT record in FUN_00020a74's
-   ".E" model parser (`iVar6 = DAT_000d91d0 * 0x2c; (&DAT_000d2ab0)[iVar6]
-   = ...;`, bounded by `if (600 < DAT_000d91d0)`) -- up to 600 points *
+   fields of a 0x2c(44)-byte-stride per-POINT record in parse_e_model_file's
+   ".E" model parser (`iVar6 = g_model_parse_point_count * 0x2c; (&DAT_000d2ab0)[iVar6]
+   = ...;`, bounded by `if (600 < g_model_parse_point_count)`) -- up to 600 points *
    44 bytes = 26400 bytes needed per field, but each was declared as a
    lone `undefined1` scalar. A watchpoint confirmed this overflow
    corrupting an unrelated global (DAT_002029cc, ~26KB+ away) during a
@@ -1029,7 +1112,7 @@ static undefined1 DAT_000d98c8_backing[32768];
 static undefined1 DAT_000da480_backing[65536];
 #define DAT_000da480 DAT_000da480_backing[0]
 /* Per-CLUSTER pointer/index slot in the same ".E" model parser
-   (FUN_00020a74's CLUSTERS block) as DAT_000dab90 right below, same
+   (parse_e_model_file's CLUSTERS block) as DAT_000dab90 right below, same
    "declared as a lone scalar, actually a large indexed table" bug --
    `*(undefined **)(&DAT_000da868 + iVar4) = local_258;` where iVar4
    grows per cluster. Widened the same way, matching DAT_000dab90's
@@ -1149,7 +1232,7 @@ undefined1 DAT_000fb8f0_backing[1680];
 int DAT_00201c98;
 /* Ghidra's auto-analysis never recognized LAB_000255b4/LAB_000255d0 as
    real functions -- they're only reached indirectly (passed as callback
-   pointers to FUN_000417b4 at run_character_generator's call site below), so no
+   pointers to load_gr_resource_entries at run_character_generator's call site below), so no
    `bl` ever pointed at them for the analyzer to follow, and they were
    left as raw undecompiled ARM code, previously stubbed here as no-ops.
    That silently made DAT_000fb858/DAT_000fb880 stay permanently
@@ -1181,7 +1264,7 @@ int param_1;
    then table[idx+1] = table[idx] + param_2 each call -- a cumulative
    per-entry byte-offset table (matches every read site indexing it by
    a record's portrait/race selector). Returns 0 when param_2==0
-   (signals "empty entry"/no more data to the FUN_000417b4 driver),
+   (signals "empty entry"/no more data to the load_gr_resource_entries driver),
    else 1. */
 undefined4 LAB_000255d0(param_1,param_2,param_3)
 int param_1;
@@ -1203,12 +1286,12 @@ char s__DATA_chrgen_dat_00084ed0[] = "\\DATA\\chrgen.dat";
 char s__DATA_skills_dat_00084ee4[] = "\\DATA\\skills.dat";
 /* Was a zero-initialized array standing in for an unrecovered string
    constant (Ghidra had no content at this address, just a dangling
-   reference -- see FUN_000417b4's comment). Recovered by dumping the
+   reference -- see load_gr_resource_entries's comment). Recovered by dumping the
    real bytes at this address directly from the original UU.exe via
    Ghidra's headless analyzer: the string "chrbtns" (character-gen
    button/portrait graphics, matching its neighboring resource-name
    constants here). Leaving this as an all-zero buffer made
-   FUN_000417b4's `param_1[0] == '\0'` empty-name check always true, so
+   load_gr_resource_entries's `param_1[0] == '\0'` empty-name check always true, so
    it always took the "nothing to load" early-return path and never
    invoked its per-item callbacks (LAB_000255b4/LAB_000255d0) at all --
    the real root cause of DAT_000fb880 staying empty despite those
@@ -1291,7 +1374,7 @@ ushort DAT_00100610;
 /* Base address of a 0x1b(27)-byte-stride record table (every use is
    `offset * 0x1b + DAT_002046b8`, cast to a pointer type) -- was `int`
    despite being assigned a real malloc'd address plus an offset
-   (FUN_00052960: `DAT_002046b8 = DAT_002029cc + 0x4000;`), truncating it
+   (reset_level_object_arena: `DAT_002046b8 = DAT_002029cc + 0x4000;`), truncating it
    on this 64-bit host and feeding a garbage near-zero base pointer to
    every reader, including a real crash (Ordinal_1047/memset on the
    resulting ~0x1b address) in FUN_00066cb4. */
@@ -1309,7 +1392,17 @@ short DAT_0023beb4;
 char DAT_001005dc;
 undefined2 DAT_00100624;
 ushort DAT_00100620;
-undefined1 DAT_00202c38;
+/* Was a lone `undefined1` scalar, but (like DAT_00202c39/3a/3c below,
+   already fixed) every real use is `(&DAT_00202c38)[i*6]` -- one field of
+   a repeating 6-byte-stride per-candidate record in
+   collision_height_envelope/FUN_00051dd0's up-to-256-entry collision
+   candidate list. Indexing past element 0 read/wrote whatever memory
+   happened to follow this single byte in the link order -- confirmed via
+   a real crash (a plain, non-debugger run walking toward a critter;
+   the same bug reproduced fine under lldb/ASan since they lay out
+   globals differently, masking it there). */
+static undefined1 DAT_00202c38_backing[8192];
+#define DAT_00202c38 DAT_00202c38_backing[0]
 static undefined1 DAT_00202c39_backing[8192];
 #define DAT_00202c39 DAT_00202c39_backing[0]
 static undefined1 DAT_00202c90_backing[65536];
@@ -1322,7 +1415,7 @@ static undefined1 DAT_00202c90_backing[65536];
    BSS happened to follow each one (always 0 in practice), so every
    "does this object type have property X" check silently saw "no" for
    every real object -- notably `(&DAT_00202c9b)[id] & 0x10` in
-   thunk_FUN_00048764 (the right-click "look" description gate), which is
+   dispatch_object_action (the right-click "look" description gate), which is
    why Look never printed "You see a <name>" for anything, the Sack
    included. Re-aliased into DAT_00202c90's own backing array at their
    real record offsets (0x1,0x3,0x5,0x7,0x8,0x9,0xa,0xb -- confirmed by
@@ -1347,9 +1440,9 @@ undefined DAT_001007d8;
 byte DAT_001005fc;
 char DAT_00084f1c;
 /* Was `int` despite being assigned real pointer values derived from
-   DAT_002046b8 (see there) and itself assigned into DAT_0023be64
+   DAT_002046b8 (see there) and itself assigned into g_player_object
    (`char *`) -- truncating on this 64-bit host, part of the same crash
-   chain (FUN_00066cb4's Ordinal_1047 call reading DAT_0023be64). */
+   chain (FUN_00066cb4's Ordinal_1047 call reading g_player_object). */
 char *DAT_0023b82c;
 static undefined1 DAT_001007d0_backing[6144];
 #define DAT_001007d0 DAT_001007d0_backing[0]
@@ -1392,7 +1485,7 @@ char s_checking_if__d_and__d_are_combin_00084f90[] = "checking_if_%d_and_%d_are_
 static undefined1 DAT_00100634_backing[65536];
 #define DAT_00100634 DAT_00100634_backing[0]
 undefined2 DAT_00100632;
-char *DAT_00202994;
+char *g_current_container_record;
 char s__DATA_cnv_ark_00084fc8[] = "\\DATA\\cnv.ark";
 static undefined2 DAT_0023add0_backing[8192];
 #define DAT_0023add0 DAT_0023add0_backing[0]
@@ -1423,9 +1516,9 @@ undefined4 DAT_00085c54;
 short DAT_00201c74;
 undefined4 DAT_001007c0;
 undefined1 DAT_0023bf0c;
-undefined2 DAT_002020c0;
+undefined2 g_cursor_mode;
 /* Recovered by disassembling the original UU.exe (same method as
-   LAB_000255b4/LAB_000255d0 -- see their comment): FUN_000417b4's
+   LAB_000255b4/LAB_000255d0 -- see their comment): load_gr_resource_entries's
    allocator callback for the "heads"/"converse"/"genhead"/"charhead"
    resource loads. Bumps DAT_00100670 (the cursor into the DAT_00100784
    buffer) by param_1 bytes and returns the pre-advance position. */
@@ -1437,11 +1530,11 @@ int param_1;
   return old;
 }
 
-/* Recovered the same way: FUN_000417b4's post-process callback for the
+/* Recovered the same way: load_gr_resource_entries's post-process callback for the
    same resource loads. Stores the allocated buffer pointer (skipping a
    5-byte per-item header) into DAT_00100728[idx], where idx is
    param_3's low 16 bits sign-extended (the item index, matching
-   FUN_000417b4's `(*param_5)(pvVar_buf,iVar4,iVar5)` call shape).
+   load_gr_resource_entries's `(*param_5)(pvVar_buf,iVar4,iVar5)` call shape).
    Returns 0 when param_2 (item byte size) == 0, else 1. */
 undefined4 LAB_000286a4(param_1,param_2,param_3)
 char *param_1;
@@ -1581,11 +1674,24 @@ static undefined1 DAT_00085238_backing[32768];
 static undefined1 DAT_0008523c_backing[32768];
 #define DAT_0008523c DAT_0008523c_backing[0]
 short DAT_001007bc;
-static undefined DAT_00085240_backing[8192];
+/* DAT_00085240/44/48 are the look-text word-separator/article
+   constants (" ", "a ", "an ") used by dispatch_object_action/dispatch_object_action_dup
+   and build_creature_look_text to glue "a"/"an" + adjective + noun [+ "named" +
+   proper name] together -- none had a writer anywhere in this decompile
+   (same "orphaned data" class as DAT_00086cc0 etc.), so every look-text
+   sentence silently ran its words together with no article at all, e.g.
+   "You see mellowoutcastnamedBragit" instead of "You see a mellow
+   outcast named Bragit" (found investigating a creature-look crash).
+   The real recovered string is lost like several others this session,
+   but the correct content is unambiguous from every call site's usage
+   -- give them real values instead of leaving them silently empty. */
+static char DAT_00085240_backing[8192] = " ";
 #define DAT_00085240 DAT_00085240_backing[0]
-static undefined1 DAT_00085244_backing[32768];
+/* Selected when the following word starts with a vowel (see the callers'
+   own vowel checks) -- so this one is "an ", not "a ". */
+static char DAT_00085244_backing[32768] = "an ";
 #define DAT_00085244 DAT_00085244_backing[0]
-static undefined1 DAT_00085248_backing[32768];
+static char DAT_00085248_backing[32768] = "a ";
 #define DAT_00085248 DAT_00085248_backing[0]
 byte *DAT_00204690;
 undefined *DAT_001007c8;
@@ -1800,7 +1906,7 @@ char *DAT_002506ec;
 static undefined1 DAT_00085460_backing[32768];
 #define DAT_00085460 DAT_00085460_backing[0]
 /* Was `uint`, truncating the real pointer this holds (`DAT_002029cc +
-   0x5b00`, assigned in FUN_00052960 -- see there) on this 64-bit host.
+   0x5b00`, assigned in reset_level_object_arena -- see there) on this 64-bit host.
    Most uses are pointer<->pointer comparisons or subtractions between
    two pointers sharing the same upper 32 bits, which happen to come out
    right either way -- but resolve_object_link's high-array branch and
@@ -1941,11 +2047,11 @@ undefined1 DAT_0023c3d8;
    a real backing buffer for that crash, but originally only 80/82/84
    were pointed at it -- every other field was left as its own
    independent global, so `apply_heading_turn`/`apply_movement_tick` and
-   friends, which write these fields BY NAME (e.g. `DAT_00204894 = ...`
+   friends, which write these fields BY NAME (e.g. `g_jump_ascent_timer = ...`
    for heading), were updating completely different memory than what
    movement_collision_sweep's collision/movement engine reads via
    `*(short *)(DAT_00204874 + 0x14)` pointer arithmetic (real address
-   0x204894) -- confirmed via lldb: DAT_00204894 demonstrably changed on
+   0x204894) -- confirmed via lldb: g_jump_ascent_timer demonstrably changed on
    turn input, while `*(short*)(DAT_00204874+0x14)` read 0 on every
    single check all session. This -- not a dropped call anywhere -- is
    why position/heading never visibly changed despite the movement-
@@ -1964,12 +2070,17 @@ static undefined1 DAT_00204880_backing[128];
 #define DAT_00204884 (*(short *)&DAT_00204880_backing[4])
 #define DAT_00204886 (*(short *)&DAT_00204880_backing[6])
 #define DAT_00204888 (*(short *)&DAT_00204880_backing[8])
-#define DAT_0020488a (*(short *)&DAT_00204880_backing[0xa])
+#define g_vertical_velocity (*(short *)&DAT_00204880_backing[0xa]) // was DAT_0020488a
 #define DAT_0020488c (*(short *)&DAT_00204880_backing[0xc])
 #define DAT_0020488e (*(short *)&DAT_00204880_backing[0xe])
-#define DAT_00204890 (*(short *)&DAT_00204880_backing[0x10])
+// was DAT_00204890. Gravity acceleration applied to g_vertical_velocity
+// each tick while nonzero (negative = falling/jumping); 0 = grounded.
+#define g_fall_accel (*(short *)&DAT_00204880_backing[0x10])
 #define DAT_00204892 (*(short *)&DAT_00204880_backing[0x12])
-#define DAT_00204894 (*(short *)&DAT_00204880_backing[0x14])
+// was DAT_00204894. Set by resolve_move_vector's jump mode (6) to guard
+// against re-triggering a jump before the current one lands; also read
+// as a generic "airborne/mid-jump" gate elsewhere.
+#define g_jump_ascent_timer (*(short *)&DAT_00204880_backing[0x14])
 #define DAT_00204896 DAT_00204880_backing[0x16]
 #define DAT_00204897 DAT_00204880_backing[0x17]
 #define DAT_002048a1 DAT_00204880_backing[0x21]
@@ -2011,7 +2122,7 @@ char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
    reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
    bglobals.dat, desc) alongside already-recovered sibling constants that
    spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
-   and FUN_0006bde0/FUN_0006c0c0 both search the built path for a literal
+   and probe_save_slots/FUN_0006c0c0 both search the built path for a literal
    '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
    supplies one. Recovered as "\SAVE0"; kept the oversized backing array
    since nothing else relies on its exact size. */
@@ -2103,7 +2214,11 @@ short DAT_00202c68;
 short DAT_00202c30;
 undefined2 DAT_00203304;
 undefined1 DAT_00203303;
-short DAT_0023bf1c;
+// was DAT_0023bf1c. Requested movement mode consumed by
+// resolve_move_vector -- see its header comment for the full mode list
+// (0 stop, 1 analog move/turn, 6/7 jump, 8 move+face-180, 9/10
+// sidestep, 0xc/0xd fly up/down).
+short g_movement_mode;
 short DAT_00202078;
 short DAT_0023bf4c;
 /* Link-time-initialized read-only data (same situation as DAT_00085668/
@@ -2216,21 +2331,21 @@ static undefined1 DAT_0023ad58_backing[65536];
 static undefined2 DAT_0023ae58_backing[8192];
 #define DAT_0023ae58 DAT_0023ae58_backing[0]
 short DAT_000858c4;
-ushort *DAT_002020cc;
+ushort *g_interact_target;
 int DAT_002020e0;
-char s_belonging_to_00085c90[] = "belonging_to";
+char s_belonging_to_00085c90[] = "belonging to ";
 short DAT_0023be88;
 short DAT_0023bd80;
 /* Was a lone `undefined *` -- the real thing is a small function-pointer
    dispatch table for the 3D-view right-click "interact" modes, indexed by
    FUN_0003f420 as `table[uVar2]` where uVar2 = cursor mode
-   (DAT_002020c0) - 1. Link-time-init data the decompile never populated,
+   (g_cursor_mode) - 1. Link-time-init data the decompile never populated,
    so every right-click on an object jumped through garbage. Roles read
    from the five handler bodies:
      0  interact_look      look / examine  ("You see ..." via
-                          thunk_FUN_00048764; also a use/get fallback
+                          dispatch_object_action; also a use/get fallback
                           when FUN_000576d0() says so)
-     1  interact_converse      converse (FUN_00079984 start-conversation)
+     1  interact_converse      converse (use_object_on_target start-conversation)
      2  interact_default  get / use context handler
      3  interact_talk_npc      talk to NPC (FUN_00028488)
      4  interact_attack      attack (swing toward the cursor)
@@ -2251,10 +2366,27 @@ static void (*const PTR_FUN_000858c8_table[5])(void) = {
 };
 #define PTR_FUN_000858c8 (PTR_FUN_000858c8_table[0])
 code *DAT_002020b8;
-static undefined1 DAT_000858a8_backing[65536];
-#define DAT_000858a8 DAT_000858a8_backing[0]
-static undefined1 DAT_000858b8_backing[65536];
-#define DAT_000858b8 DAT_000858b8_backing[0]
+/* Real, compile-time-baked data recovered directly from UU.exe (same
+   technique/precedent as DAT_00085668 -- see memory.md's "HOW WE GOT THE
+   DISPATCH TABLES POPULATED"), not something a runtime populator ever
+   writes. Confirmed via Ghidra: 0x858a8 holds 8 real int16 X coordinates
+   {8,8,6,6,7,8,0,0}, immediately followed at 0x858b8 by 8 real int16 Y
+   coordinates {100,81,66,48,28,11,144,0}, immediately followed at 0x858c8
+   by PTR_FUN_000858c8 (the very next declared symbol in this file) --
+   a clean, unambiguous 8-short/8-short layout with no gap. These are the
+   6 in-game HUD cursor-mode icon buttons' (Look/Use/Talk/etc, drawn by
+   FUN_0003f99c/FUN_0003fa1c via draw_sprite_by_id) screen positions;
+   only indices 0-5 are ever read (cursor_mode_button_click bounds-checks
+   at 5), the remaining 2 slots are unused padding in the original data.
+   Declaring these as plain zero-filled arrays (as a prior session had
+   them) meant every highlight/unhighlight icon drew at (0,0) instead of
+   its real button position -- part of the "door image on mode-icon
+   click" bug (see cursor_mode_button_click's own comment for the other
+   half, a dropped FUN_0003fa1c argument). */
+static const unsigned short DAT_000858a8_real[8] = {8,8,6,6,7,8,0,0};
+#define DAT_000858a8 (*(undefined1 *)DAT_000858a8_real)
+static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
+#define DAT_000858b8 (*(undefined1 *)DAT_000858b8_real)
 ushort DAT_0024fa18;
 char DAT_00085910;
 char DAT_00085911;
@@ -2279,7 +2411,7 @@ static undefined1 DAT_0023ce70_backing[8192];
 #define DAT_0023ce70 DAT_0023ce70_backing[0]
 static undefined1 DAT_0024ac18_backing[256];
 #define DAT_0024ac18 DAT_0024ac18_backing[0]
-/* Real string, recovered via Ghidra disassembly of FUN_000404a0
+/* Real string, recovered via Ghidra disassembly of decode_critter_sprite_page
    (the caching "\CRIT\CR<pp>PAGE.N<nn>" per-page critter-animation
    resource loader): the decompile showed DAT_00085928/29/30/31 as four
    unrelated lone chars, and its own two-arg Ordinal_1063 (strcat) call
@@ -2307,7 +2439,7 @@ unsigned short u_INVALID_HANDLE_VALUE_00085944[] = u"INVALID_HANDLE_VALUE";
    FUN_00077a38's matching 0x80-iteration cleanup loop for DAT_00202308),
    same "lone undefined4 scalar indexed as an array" bug as DAT_0023c7a0
    right above (already fixed): each slot holds a real malloc'd buffer
-   pointer (FUN_000404a0/emit_object_billboard's per-page glyph decode),
+   pointer (decode_critter_sprite_page/emit_object_billboard's per-page glyph decode),
    so a 4-byte-stride int[] truncates/corrupts every other slot's pointer
    on this 64-bit host. Sized generously past the documented 0x80 like
    this file's other such tables. */
@@ -2334,7 +2466,7 @@ undefined1 DAT_0023ce71;
 
    It's a table of *pointer*-sized slots (each holds a resource buffer
    address, written by FUN_00041708/FUN_00041770 and read back by
-   FUN_000408fc/FUN_00040918/FUN_00040be0), but every access site strided
+   FUN_000408fc/blit_object_sprite_by_frame/FUN_00040be0), but every access site strided
    it by 4 bytes and read/wrote it as 'int'/'undefined4' -- correct on the
    original 32-bit binary where a pointer IS 4 bytes, truncating on this
    64-bit host. Widened to an 8-byte stride (buffer doubled to match) and
@@ -2380,15 +2512,15 @@ unsigned int param_1;
 {
   /* Ghidra couldn't resolve this address into a proper function (an
      indirect-jump/jumptable target it gave up on). Traced from its use in
-     FUN_000417b4: called as (*param_4)(itemByteSize) and the result is
+     load_gr_resource_entries: called as (*param_4)(itemByteSize) and the result is
      used as the destination buffer for reading that item's data, then
      passed on to the post-process callback -- i.e. an allocator. A no-op
-     stub returning 0 here made FUN_000417b4 treat every real resource
+     stub returning 0 here made load_gr_resource_entries treat every real resource
      load as a failure (the batch-AND check in FUN_00041aac), even though
      the underlying file read succeeded. */
   return Ordinal_1041(param_1);
 }
-/* FUN_000417b4's post-process callback: (decoded_buffer, byte_size,
+/* load_gr_resource_entries's post-process callback: (decoded_buffer, byte_size,
    entry_index). Ghidra lost the real body (indirect-jump target); the old
    no-op stub read every .GR file but never REGISTERED the loaded buffers,
    so FUN_000408fc's DAT_0024e090[] pointer table stayed empty for every
@@ -2480,14 +2612,24 @@ char s_views_00085a3c[] = "views";
 char s_question_00085a44[] = "question";
 char s__DATA_allpals_dat_00085a50[] = "\\DATA\\allpals.dat";
 undefined2 DAT_00202748;
-undefined4 LAB_000415b4()
+// was LAB_000415b4
+void *alloc_door_frame_buffer(param_1)
+unsigned int param_1;
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  /* Ghidra couldn't resolve this address into a proper function (an
+     indirect-jump/jumptable target it gave up on). Was stubbed as a
+     bare `return 0;`, on the (wrong) assumption that it's "used purely
+     as a callback pointer elsewhere" -- it's actually passed as
+     load_door_frames's (doors.GR) allocator callback, the exact same role
+     as LAB_000415b0/LAB_000416e8/LAB_000416f8 (see LAB_000415b0's own
+     comment: a no-op allocator here makes load_gr_resource_entries treat every real
+     resource load as a failure even though the file read itself
+     succeeds) -- confirmed live via UW_DEBUG_DOOR: every one of doors.GR's
+     6 entries opened and read its header fine, then failed right at the
+     allocate-a-destination-buffer step. Real allocator like its
+     siblings. */
+  return Ordinal_1041(param_1);
 }
 char s_doors_00085a64[] = "doors";
 static undefined1 DAT_0023b840_backing[8192];
@@ -2520,32 +2662,105 @@ undefined2 DAT_00202898;
 undefined2 DAT_0020288c;
 undefined2 DAT_00202894;
 undefined2 DAT_00085a70;
-undefined1 DAT_00085c38;
-static undefined1 DAT_00202950_backing[8192];
-#define DAT_00202950 DAT_00202950_backing[0]
-undefined4 DAT_00202990;
-undefined1 DAT_00085c39;
+/* .data 0x85c38: widget-id -> DAT_00202950 slot-array-index lookup (read
+   as `(&g_backpack_widget_to_slot)[widget_id]` for widget ids 0-0x16, i.e. one byte
+   per record of the g_inv_hotspot_click_x1 hotspot table). Ghidra left this as a
+   lone scalar -- same split-array pattern as g_inv_hotspot_click_x1 itself (see
+   its own comment) -- and the real .data contents aren't recoverable
+   here either, so every widget aliased slot 0. Backed with a real array;
+   mapped for widget ids 12..19 (the 8 backpack-grid cells this session
+   gave real click rects, see g_inventory_hotspot_table) as widget N -> slot
+   N-1, i.e. slots 11..18 -- NOT identity. That mapping (and the widget
+   range itself, corrected from an earlier session's arbitrary 6..13)
+   comes from close_backpack_container (the close-container function), which resets
+   `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]` to identity on close; g_backpack_widget_to_slot_plus1 is an
+   alias one byte into this same backing (see its own comment), so that
+   reset really targets backing[12..19] = 11..18. open_backpack_container (opening
+   a container) remaps this same backing[12..19] to 20..27 instead --
+   the container's own contents, written to those slots -- while a
+   container is open (see its own comment), and close_backpack_container restores it
+   back to 11..18 on close. Ids 1-5 (worn-armor overlays) and 6-11/20-22
+   stay 0 -- their real mapping is still unrecovered and out of scope. */
+static unsigned char g_backpack_widget_to_slot_backing[0x17] = {
+  0,0,0,0,0,0, 0,0,0,0,0,0,11,12,13,14,15,16,17,18, 0,0,0,
+};
+#define g_backpack_widget_to_slot g_backpack_widget_to_slot_backing[0]
+/* DAT_00202950 (28 2-byte "backpack/equipment slot" object-link
+   records -- see g_backpack_widget_to_slot's own comment) was a bare scalar Ghidra
+   never gave real backing to. A plain standalone static array is NOT
+   enough, though: every reader/writer passes `&DAT_00202950 + idx*2`
+   straight to resolve_object_link (or gets it back from
+   encode_object_slot_index's matching encode step), and resolve_object_link
+   refuses to decode through any address outside the level's own
+   object-arena buffer (the [DAT_002046b8-0x4000, DAT_002046c4+0x1800)
+   range it guards against wild pointers -- see its own comment). A
+   separate global will never fall inside that malloc'd range, so
+   every resolve came back NULL -- confirmed live: a freshly-placed
+   backpack item's own slot read back a null object and segfaulted the
+   very next slot redraw (redraw_inventory_widget_range). In the original 32-bit binary
+   this table's fixed low address plausibly sat inside the same static
+   region the "dynamic" arena pointers were themselves offset from;
+   here that arena is a real runtime allocation (init_level_object_arena's
+   `Ordinal_1041(0x7c08)`), so this table now lives inside that SAME
+   buffer instead -- g_backpack_slot_table is pointed at its unused
+   tail (offset 0x7b00, 28*2=56 bytes, well inside the buffer's real
+   0x7c08 size) by reset_level_object_arena at level load, and
+   resolve_object_link's own valid-range upper bound is widened by the
+   same 0x38 bytes so this new tail is actually accepted (see both of
+   their own comments). */
+char *g_backpack_slot_table;
+#define DAT_00202950 g_backpack_slot_table[0]
+#define DAT_00202951 g_backpack_slot_table[1]
+void uw_debug_dump_inventory_state(void) {
+  int occupied = 0;
+  if (g_backpack_slot_table) {
+    for (int i = 0; i < 28; i++)
+      if (*(unsigned short *)&g_backpack_slot_table[i*2] & 0xffc0) occupied++;
+  }
+  fprintf(stderr, "[demo] post-screenshot state: g_cursor_holding_state(holding)=%d occupied_slots=%d\n",
+          (int)g_cursor_holding_state, occupied);
+}
+undefined4 g_open_container_list;
+/* g_backpack_widget_to_slot_plus1's address (0x85c39) is exactly one byte past
+   g_backpack_widget_to_slot's (0x85c38) -- not a separate byte, an alias into the
+   same backing array (same relationship as DAT_002028ec/DAT_002028e8,
+   DAT_00202951/DAT_00202950 elsewhere in this file). close_backpack_container (the
+   close-container function) indexes it as `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]`
+   (11..18), which through this alias lands at
+   g_backpack_widget_to_slot_backing[12..19] -- exactly the 8 backpack-grid widgets,
+   restoring their default N -> N-1 slot mapping on close (see
+   g_backpack_widget_to_slot's own comment). As a standalone scalar this instead
+   silently corrupted 18 bytes of whatever the linker placed after it. */
+#define g_backpack_widget_to_slot_plus1 g_backpack_widget_to_slot_backing[1]
 /* Was a lone `undefined4` scalar, but indexed as `(&DAT_002028a0)[i]` for
-   i up to 7 (FUN_00042aa8's icon save/restore swap) -- classic
+   i up to 7 (free_open_container_chain's icon save/restore swap) -- classic
    "undersized global used as an array" bug (same class as
    DAT_0024bfa0/DAT_000891b0 etc.), and it happened to corrupt whatever
    real global the linker/compiler placed a few slots further along --
    confirmed via an lldb watchpoint that this exact write
    (`(&DAT_002028e8)[iVar5] = uVar1` in FUN_00046414, a sibling of this
-   same bug one array over) was clobbering DAT_00202948 (a real, load-
+   same bug one array over) was clobbering g_selected_object (a real, load-
    bearing `char *`), corrupting an equipped-item lookup and crashing
    FUN_000667cc on the very first in-game frame. Widened with a safety
    margin. */
 static undefined4 DAT_002028a0_backing[64];
 #define DAT_002028a0 DAT_002028a0_backing[0]
 /* Same bug: indexed as `(&DAT_002028e8)[i]` for i up to 0x16 (22) in
-   FUN_00046414/FUN_00042aa8/etc. -- this is the specific array whose
-   overflow was landing on and corrupting DAT_00202948 (see above).
+   FUN_00046414/free_open_container_chain/etc. -- this is the specific array whose
+   overflow was landing on and corrupting g_selected_object (see above).
    Widened with a safety margin. */
 static undefined4 DAT_002028e8_backing[64];
 #define DAT_002028e8 DAT_002028e8_backing[0]
-static ushort DAT_00202976_backing[8192];
-#define DAT_00202976 DAT_00202976_backing[0]
+/* Same "resolve_object_link needs an in-arena address" issue as
+   DAT_00202950 (see its own, much longer comment) -- a standalone
+   backing array's address will never fall inside the level's object
+   arena, so every resolve_object_link(&g_current_container_link) call (the "item
+   currently in the process of being combined/used" single-object
+   link) returned NULL. Routed through g_backpack_slot_table's same
+   arena reservation instead, right after its 28 backpack slots (see
+   reset_level_object_arena/init_level_object_arena/resolve_object_link's own updated
+   comments -- all four move together). */
+#define g_current_container_link (*(ushort *)&g_backpack_slot_table[56])
 /* DAT_002028ec's address (0x2028ec) is exactly one element (4 bytes)
    past DAT_002028e8's (0x2028e8) -- not a separate global, an alias into
    the same array at index 1 (same relationship as the DAT_000fb880
@@ -2568,36 +2783,126 @@ undefined1 DAT_002028e0_backing[16];
 static undefined DAT_00202978_backing[8192];
 #define DAT_00202978 DAT_00202978_backing[0]
 ushort DAT_00202986;
-undefined1 DAT_00202951;
 /* .data 0x85ad0: the HUD hotspot / layout table -- 0x17 records of 0xe
-   bytes: [+0..+7] short click-rect x1,y1,x2,y2 (read by FUN_000485f4);
+   bytes: [+0..+7] short click-rect x1,y1,x2,y2 (read by hit_test_inventory_widget);
    [+8/+0xa] short draw x,y; [+0xc/+0xd] byte dirty w,h. Ghidra split it
-   into lone scalars (DAT_00085ad0/d2/d4/d6/d8/da/dd + an 8KB backing for
+   into lone scalars (g_inv_hotspot_click_x1/d2/d4/d6/d8/da/dd + an 8KB backing for
    dc) and never recovered its .data contents, so every field read 0 and
    the inventory paperdoll body drew at (0,0) instead of the right-hand
    panel. UU.exe's .data doesn't map cleanly to Ghidra's addresses here
    (confirmed: file offset lands on 3D-model-parser strings), so the
    record positions can't be lifted from the binary. Back it with a real
    array and seed record 0 (the body) from the panel rect the redraw path
-   clears -- rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76). Records 1..5
-   (worn armour overlays) and 6..0x16 (inventory grid hotspots) stay zero
-   for now -- armour only draws when equipped, and the grid hotspots were
-   already dead. */
-static unsigned char DAT_00085ad0_backing[0x17 * 0xe + 2] = {
-  /* rec 0: click x1,y1,x2,y2 = f0,0b,13b,76 ; draw x,y = f0,0b ; dirty w,h = 50,6c */
-  0xf0,0x00, 0x0b,0x00, 0x3b,0x01, 0x76,0x00,  0xf0,0x00, 0x0b,0x00,  0x50,0x6c,
+   clears -- rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76) for its DRAW
+   position/size (needed as-is: redraw_inventory_widget draws the paperdoll body
+   sprite from these exact fields). Its CLICK rect's bottom edge is
+   narrowed to y2=0x50 (80) instead of the full 0x76 (118), so it only
+   covers the paperdoll area above the backpack grid -- otherwise, since
+   hit_test_inventory_widget returns the FIRST matching record and record 0's rect is
+   a superset of every grid cell below it, every backpack-grid click
+   would keep resolving to record 0 (widget id 0, a no-op sentinel
+   throughout this file) instead of ever reaching records 6-13. Records
+   1..5 (worn armour overlays) stay zero for now -- armour only draws
+   when equipped, out of scope for this pass.
+
+   Records 12..19 (the 8-cell backpack grid, 4 cols x 2 rows) are now
+   populated too, needed to make Grab-mode drops and backpack clicks
+   actually land on a specific slot instead of always falling through to
+   record 0's whole-panel body rect (see handle_inventory_panel_click/hit_test_inventory_widget).
+   Like record 0, the real per-cell .data can't be recovered from the
+   binary, so these are reconstructed from the rendered panel's own
+   on-screen grid (screenshot pixel-measured, panel-local = screen/2,
+   matching record 0's own scale), not lifted from original data: an
+   even 4x2 grid spanning the same x:0xf0-0x13c / y:0x50-0x76 area
+   visible below the paperdoll. Draw x,y is each cell's top-left +1px
+   inset; dirty w,h is 0x14x0x14 (20x20), safely covering the real 16x16
+   icon sprite (confirmed via UW_DEBUG_INV) with margin -- draw_sprite_
+   by_id's w/h args only feed its dirty_rect_union call, gating what
+   region gets flushed to the display each frame; the actual blit
+   always uses the sprite's own real .GR-header size regardless. A
+   live playtest (unlike this project's screenshot-based testing, which
+   forces a full-screen flush every capture and so can't catch this)
+   showed incomplete redraws with the original tighter 0x11 (17x17).
+
+   Widget ids 12..19 (not 6..13, an earlier arbitrary choice corrected
+   here) were chosen to match hard evidence from close_backpack_container (the
+   close-container function): it resets `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]`
+   (11..18) to identity, and g_backpack_widget_to_slot_plus1's address is exactly one byte
+   past g_backpack_widget_to_slot's -- the same split-symbol relationship as
+   DAT_00202951/DAT_00202950 -- so that write really lands at
+   g_backpack_widget_to_slot_backing[12..19], resetting widgets 12-19's slot mapping
+   back to 11-18 (widget N -> slot N-1) after a container closes. That
+   in turn implies the *normal* (no container open) mapping is also
+   N -> N-1, not identity -- see g_backpack_widget_to_slot's own updated comment. */
+static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
+  /* rec 0: click x1,y1,x2,y2 = f0,0b,13b,50 (narrowed, see comment above) ; draw x,y = f0,0b ; dirty w,h = 50,6c */
+  0x04,0x01, 0x0b,0x00, 0x3b,0x01, 0x50,0x00,  0x04,0x01, 0x0b,0x00,  0x50,0x6c,
+
+  [1*14+0] =
+  /* rec 1: the "open container" icon + leave-container button, ~40
+     screen px (20 panel-local units) above grid slot 1 (record 12's
+     own draw x,y, f1,51/241,81, minus 20 on y = f1,3d/241,61) -- per
+     direct playtest feedback describing the real game's container-view
+     layout. Same x as slot 1 (an earlier attempt shifted x left too,
+     clipping off the panel's own left edge at x=0xf0/240 -- confirmed
+     live). Repurposes a currently-unused "worn armour overlay" record
+     (1-5, still zero/unimplemented otherwise) since this table has no
+     spare slots; revisit if armour rendering is ever implemented and
+     needs record 1 back. click f0,34,103,46 ; draw f1,3d */
+  0xf0,0x00, 0x34,0x00, 0x03,0x01, 0x46,0x00,  0xf1,0x00, 0x3d,0x00,  0x14,0x14,
+
+  [12*14+0] =
+  /* rec 12 (row1,col1): click f0,50,103,63 ; draw f1,51 */
+  0xf0,0x00, 0x50,0x00, 0x03,0x01, 0x63,0x00,  0xf1,0x00, 0x51,0x00,  0x14,0x14,
+  /* rec 13 (row1,col2): click 103,50,116,63 ; draw 104,51 */
+  0x03,0x01, 0x50,0x00, 0x16,0x01, 0x63,0x00,  0x04,0x01, 0x51,0x00,  0x14,0x14,
+  /* rec 14 (row1,col3): click 116,50,129,63 ; draw 117,51 */
+  0x16,0x01, 0x50,0x00, 0x29,0x01, 0x63,0x00,  0x17,0x01, 0x51,0x00,  0x14,0x14,
+  /* rec 15 (row1,col4): click 129,50,13c,63 ; draw 12a,51 */
+  0x29,0x01, 0x50,0x00, 0x3c,0x01, 0x63,0x00,  0x2a,0x01, 0x51,0x00,  0x14,0x14,
+  /* rec 16 (row2,col1): click f0,63,103,76 ; draw f1,64 */
+  0xf0,0x00, 0x63,0x00, 0x03,0x01, 0x76,0x00,  0xf1,0x00, 0x64,0x00,  0x14,0x14,
+  /* rec 17 (row2,col2): click 103,63,116,76 ; draw 104,64 */
+  0x03,0x01, 0x63,0x00, 0x16,0x01, 0x76,0x00,  0x04,0x01, 0x64,0x00,  0x14,0x14,
+  /* rec 18 (row2,col3): click 116,63,129,76 ; draw 117,64 */
+  0x16,0x01, 0x63,0x00, 0x29,0x01, 0x76,0x00,  0x17,0x01, 0x64,0x00,  0x14,0x14,
+  /* rec 19 (row2,col4): click 129,63,13c,76 ; draw 12a,64 */
+  0x29,0x01, 0x63,0x00, 0x3c,0x01, 0x76,0x00,  0x2a,0x01, 0x64,0x00,  0x14,0x14,
 };
-#define DAT_00085ad0 DAT_00085ad0_backing[0x0]
-#define DAT_00085ad2 DAT_00085ad0_backing[0x2]
-#define DAT_00085ad4 DAT_00085ad0_backing[0x4]
-#define DAT_00085ad6 DAT_00085ad0_backing[0x6]
-#define DAT_00085ad8 (*(unsigned short *)&DAT_00085ad0_backing[0x8])
-#define DAT_00085ada (*(unsigned short *)&DAT_00085ad0_backing[0xa])
-#define DAT_00085adc DAT_00085ad0_backing[0xc]
-#define DAT_00085add DAT_00085ad0_backing[0xd]
-undefined DAT_00085c18;
+#define g_inv_hotspot_click_x1 g_inventory_hotspot_table[0x0]
+#define g_inv_hotspot_click_y1 g_inventory_hotspot_table[0x2]
+#define g_inv_hotspot_click_x2 g_inventory_hotspot_table[0x4]
+#define g_inv_hotspot_click_y2 g_inventory_hotspot_table[0x6]
+#define g_inv_hotspot_draw_x (*(unsigned short *)&g_inventory_hotspot_table[0x8])
+#define g_inv_hotspot_draw_y (*(unsigned short *)&g_inventory_hotspot_table[0xa])
+#define g_inv_hotspot_dirty_w g_inventory_hotspot_table[0xc]
+#define g_inv_hotspot_dirty_h g_inventory_hotspot_table[0xd]
+/* .data 0x85c18: array-slot-index -> widget-id lookup, the inverse of
+   g_backpack_widget_to_slot (see its own comment) -- read as `(&g_backpack_slot_to_widget)[slot]`
+   to find which widget/grid-cell to redraw after a slot's contents
+   change (redraw_inventory_widget/redraw_inventory_widget_range callers throughout this file).
+   Same lone-scalar split-array pattern as g_backpack_widget_to_slot, same
+   unrecoverable-real-data story. Backed here with the literal inverse
+   of g_backpack_widget_to_slot's N -> N-1 mapping: slots 11..18 (the backpack
+   region behind the 8 grid widgets 12..19) map back to widgets 12..19,
+   so a drop into slot N correctly redraws grid cell N+1 instead of
+   resolving to widget id 0 (a "not a spell" message code, observed
+   live: without this, placing an item successfully updated the data
+   but the grid stayed visually empty and printed an unrelated
+   spell-error message on refresh). Other indices stay 0, matching
+   prior (dead) behavior. Note open_backpack_container treats any mapped widget
+   id >= 0xb (11) as "handled by a wider grid redraw elsewhere,
+   nothing to do here" -- with these now-correct values (12-19) that
+   guard always takes the "elsewhere" branch for backpack-grid slots,
+   which is why entering/leaving a container needs its own explicit
+   whole-grid redraw call (see open_backpack_container/close_backpack_container's own
+   comments) rather than relying on this single-widget path. */
+static unsigned char g_backpack_slot_to_widget_backing[0x17] = {
+  0,0,0,0,0,0,0,0,0,0,0, 12,13,14,15,16,17,18,19, 0,0,0,0,
+};
+#define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
 undefined2 DAT_00202980;
-short DAT_0023bcf2;
+short g_player_carry_weight;
 undefined1 *DAT_002028c0;
 undefined1 *DAT_002028c4;
 static undefined2 DAT_002028cc_backing[8192];
@@ -2625,7 +2930,50 @@ static undefined1 DAT_00085aa0_backing[32768];
 #define DAT_00085aa0 DAT_00085aa0_backing[0]
 char s_damaged__00085aa8[] = "damaged.";
 char s_destroyed__00085ab4[] = "destroyed.";
-ushort DAT_0023bcf4;
+// was DAT_0023bcf4, offset +0x4c of the "large fixed-offset record"
+// based at DAT_0023bca8 (see that array's own declaration comment a few
+// hundred lines up -- a "device/config-ish struct, not yet fully
+// identified" that a prior session already had to widen to a real 8192-
+// byte backing array after catching an unrelated overflow into it).
+// g_player_carry_weight (was DAT_0023bcf2, "+0x4a", the sibling field 2
+// bytes before this one) is that struct's actively-maintained "current
+// carried weight" running total.
+//
+// Two things worth ruling out before assuming a hardcoded default is
+// the right call, both checked directly rather than assumed:
+// - NOT part of the player.dat save/load blob: that save path (uw.c
+//   ~32660) serializes the player's OBJECT graph (walking
+//   resolve_object_link), not this stats struct -- no overlap, so this
+//   isn't a save/load wiring gap.
+// - NOT a split-symbol/should-be-one-array bug either, despite living
+//   inside that same not-fully-identified struct: a whole-binary
+//   instruction-pattern scan (every "str/strh/strb ..., [reg, #0x4c]"
+//   in the binary, not just literal-address xrefs, specifically to also
+//   catch a write reached via the DAT_00086df8 struct-pointer indirection
+//   the way FUN_000232ec's already-documented overflow into this same
+//   struct was) found zero halfword writes to +0x4c anywhere, by any
+//   addressing pattern. Every real writer of the sibling +0x4a field
+//   also resolves through a literal constant address, not the pointer
+//   indirection, matching how this file already represents both fields
+//   as flat globals -- so unifying them into an explicit array wouldn't
+//   change reachability here the way it has for other DAT_0023bca8-
+//   adjacent fields elsewhere in this file.
+// - Confirmed via a real Ghidra reference search against UU.exe (not
+//   just this decompile): every access to +0x4c anywhere in the shipped
+//   binary is a READ (check_object_carry_weight's "can I pick this up" check, and
+//   FUN_00048514, apparently a HUD burden/encumbrance display) -- there
+//   is no write to it ANYWHERE, so it stays at its zero BSS default for
+//   the life of the process. Net effect: every pickup attempt failed
+//   with "too heavy" regardless of the item (confirmed live: a 30-unit
+//   sack, well within any plausible real capacity, was rejected).
+//
+// Whatever real formula (almost certainly Strength-derived) originally
+// populated this is not recoverable from this binary -- it's a genuinely
+// dead computation in the shipped game, not a decompile gap. Seeding a
+// generous, clearly-provisional default here so carrying items functions
+// at all rather than being permanently broken -- revisit if the real
+// per-character formula (or its expected value range) ever turns up.
+ushort g_player_max_carry_weight = 200;
 char s_bodies_00085c58[] = "bodies";
 int DAT_002029a4;
 short DAT_00085b64;
@@ -2678,7 +3026,12 @@ static undefined DAT_00085ce0_backing[8192];
 char s_You_read_the_00085ce8[] = "You_read_the";
 char s__DATA_grave_dat_00085cf8[] = "\\DATA\\grave.dat";
 char s_an_adventurer__00085d08[] = "an_adventurer.";
-char s_named_00085d18[] = "named";
+/* Was "named" with no surrounding spaces -- build_creature_look_text (creature look
+   text) appends it directly between the description and the proper name
+   with no separator of its own, so a named creature's look text ran
+   the words together: "You see an mellow outcastnamedBragit" instead of
+   "You see a mellow outcast named Bragit". */
+char s_named_00085d18[] = " named ";
 /* Per-mode "sticky redraw bits" mask read by FUN_00049818 right after it
    finishes dispatching DAT_00201c84's currently-set bits through
    DAT_00085668: `DAT_00201c84 = DAT_00085728[mode] | DAT_00201c84;` re-arms
@@ -2853,10 +3206,16 @@ char DAT_00202c24;
 char DAT_00202c2c;
 char DAT_00202c18;
 char DAT_00202c1c;
-undefined1 DAT_00202c3b;
-undefined DAT_00202c3d;
-undefined1 DAT_00202c3e;
-undefined DAT_00202c3f;
+/* Same lone-scalar-used-as-a-stride-6-array bug as DAT_00202c38 above,
+   for the remaining fields of the same collision-candidate record. */
+static undefined1 DAT_00202c3b_backing[8192];
+#define DAT_00202c3b DAT_00202c3b_backing[0]
+static undefined1 DAT_00202c3d_backing[8192];
+#define DAT_00202c3d DAT_00202c3d_backing[0]
+static undefined1 DAT_00202c3e_backing[8192];
+#define DAT_00202c3e DAT_00202c3e_backing[0]
+static undefined1 DAT_00202c3f_backing[8192];
+#define DAT_00202c3f DAT_00202c3f_backing[0]
 undefined4 LAB_0001582c()
 
 {
@@ -3145,23 +3504,34 @@ int DAT_0020485c;
 char DAT_002506aa;
 char DAT_002506ab;
 char *DAT_002048bc;
-/* The three 16-bit velocity components of the movement block
-   (&DAT_00204886/88/8a). Ghidra typed this `char *`, so movement_sweep_setup's
-   `DAT_00086978[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
-   shorts at offsets 2,4 -- and every copy (`psVar11 = DAT_00086978`) is
+// was DAT_00086978. The three 16-bit velocity components of the movement block
+/* (&DAT_00204886/88/8a). Ghidra typed this `char *`, so movement_sweep_setup's
+   `g_sweep_velocity[1]` / `[2]` read single BYTES (offsets 7,8) instead of the
+   shorts at offsets 2,4 -- and every copy (`psVar11 = g_sweep_velocity`) is
    already `short *`, confirming the intent. The byte misread made `[2]`
-   (meant: the Z/vertical velocity DAT_0020488a, 0 for level movement) return
+   (meant: the Z/vertical velocity g_vertical_velocity, 0 for level movement) return
    the low byte of the forward velocity DAT_00204888, so plain forward
    movement took the "vertical movement" path (collision_build_height_field / collision_height_envelope)
    which corrupts DAT_00204880 -- one forward step overflowed the player X to
-   the map edge and wedged them there. */
-short *DAT_00086978;
+   the map edge and wedged them there.
+   g_sweep_velocity[2] is *(short*)(DAT_00204874+0xa) -- the exact same
+   memory as g_vertical_velocity (see its #define, uw.c:2025), just reached
+   through this pointer instead; movement_sweep_setup's own accumulation
+   `g_sweep_velocity[2] += speed*g_fall_accel` is the ordinary velocity +=
+   accel*dt integration step, not a separate quantity (confirmed while
+   investigating the jump-arc bug, see
+   [[jump-physics-fix-and-open-integrator-issue]]). */
+short *g_sweep_velocity;
 undefined1 DAT_002049c0;
 undefined1 DAT_002049bc;
 short DAT_00086990;
 short DAT_00086996;
-short DAT_0008697c_backing[128];
-short *DAT_0008697c = DAT_0008697c_backing;
+// was DAT_0008697c_backing/DAT_0008697c -- the swept working foot position
+// (coarse X/Y/Z, tile-eighths / eighth-fine units) collision math operates
+// on each sub-step before sweep_writeback_position commits it back to the
+// real player position.
+short g_sweep_foot_pos_backing[128];
+short *g_sweep_foot_pos = g_sweep_foot_pos_backing;
 short DAT_00086980;
 short DAT_00086982;
 short DAT_00086984;
@@ -3565,7 +3935,22 @@ ushort DAT_0023b91c;
 byte DAT_0023bc88;
 static undefined1 DAT_00086c80_backing[65536];
 #define DAT_00086c80 DAT_00086c80_backing[0]
-undefined DAT_00086cc0;
+/* Was a lone `undefined` scalar -- another silently-zero "orphaned data
+   table" (same class as DAT_00086c80's TMOBJ frame table, see
+   [[object-render-class-and-tmobj-signs]]). resolve_critter_sprite_tier's
+   caller indexes it `(&DAT_00086cc0)[(_dm % 0x20 + 0x20) % 0x20]` to
+   quantize a 32-step relative camera/object angle down to an 8-way
+   octant -- with it silently zero, every critter/door billboard always
+   resolved to octant 0 regardless of true viewing angle, so orbiting one
+   never changed its displayed sprite frame. The real recovered-from-UU.exe
+   content for this table is lost (same situation as DAT_00086c80), so
+   reconstruct it with the natural identity quantization -- 4 consecutive
+   steps per octant -- rather than leave it degenerate. */
+static const undefined1 DAT_00086cc0_arr[32] = {
+  0,0,0,0, 1,1,1,1, 2,2,2,2, 3,3,3,3,
+  4,4,4,4, 5,5,5,5, 6,6,6,6, 7,7,7,7,
+};
+#define DAT_00086cc0 (DAT_00086cc0_arr[0])
 short DAT_00189584;
 undefined2 DAT_00189586;
 ushort DAT_0018957a;
@@ -3760,11 +4145,11 @@ ushort DAT_0023bf74;
    loaded button bitmap's real pointer into 4 bytes and pack it directly
    into DAT_0023bf6c's record array -- fine for a 32-bit pointer on the
    original binary, but silently truncates a real 64-bit pointer here
-   (confirmed via ASAN: FUN_0006a200 dereferencing the reassembled
+   (confirmed via ASAN: draw_menu_item_list dereferencing the reassembled
    low-32-bits-only value, SEGV). Same "route the real pointer through a
    dedicated global instead of packing it into an undersized field"
    pattern as g_chargen_textfield_buf. Index formula (shared by
-   FUN_0006a0c8/FUN_0006a200) is (selected?1:0) + button_index*4 -- a
+   FUN_0006a0c8/draw_menu_item_list) is (selected?1:0) + button_index*4 -- a
    stride of 4 per button, not 2, so up to 4 buttons needs slots through
    index 13 (1 + 3*4); sized generously to 16. */
 static char *g_menu_button_bitmaps[16];
@@ -3783,7 +4168,7 @@ unsigned int param_1;
 
 {
   /* Same allocator-callback role as LAB_000415b0/LAB_000416e8/
-     LAB_000416f8 (FUN_000417b4's param_4, "Ghidra couldn't resolve this
+     LAB_000416f8 (load_gr_resource_entries's param_4, "Ghidra couldn't resolve this
      address" -- see their comments): a no-op stub returning 0 here
      failed the whole "opbtn" resource batch even though the underlying
      OPBTN.GR file loaded successfully, which was fatal
@@ -3801,7 +4186,7 @@ unsigned short u_UUWI_00087014[] = u"UUWI";
 static undefined DAT_0023bf78_backing[8192];
 #define DAT_0023bf78 DAT_0023bf78_backing[0]
 char s__not_used_yet__00087020[] = "<not_used_yet>";
-/* Was zero-initialized -- see DAT_000857a0's comment above. FUN_0006bde0
+/* Was zero-initialized -- see DAT_000857a0's comment above. probe_save_slots
    appends this to DAT_000857a0 ("\SAVE0") to build each save-slot probe
    path, then substitutes the '0' with '1'..'4'; the already-recovered
    s__SAVE0_desc_00087078 == "\SAVE0\desc" spells out exactly what that
@@ -3836,7 +4221,7 @@ short DAT_0023c22c;
    (DAT_0023c11a / DAT_0023c12a, masked `& 0xf` at FUN_0006df70:54803, so
    16 entries). Read as `(&DAT_00087130)[heading]` and passed as the X arg
    of FUN_00076338 (FUN_0006cb74:54108, FUN_0006df70:54805) and, for
-   element [0] only, FUN_000762c4 (FUN_0006cca8:54179) for the compass
+   element [0] only, FUN_000762c4 (redraw_hud_panels:54179) for the compass
    needle sprite DAT_0023c22c (sprite size 3x4). Ghidra never recovered
    the .data contents so every entry reads 0 and the needle is stuck at
    x=0 (part of the black block in the HUD top-left). Fill in[0..15] with
@@ -3870,7 +4255,7 @@ short DAT_0023c21c;
 char *DAT_0023cca4;
 /* The three FIXME[hud-dragon-layout] tables below all position the
    two dragons.gr decorations that frame the compass -- index 0 = left
-   dragon, index 1 = right dragon -- built once in FUN_0006cca8
+   dragon, index 1 = right dragon -- built once in redraw_hud_panels
    (54155-54198). Each dragon is drawn as three sprite-list sub-sprites
    (head, body, wing/tail), created at fixed Y with X taken from these
    tables; Ghidra never recovered the .data so every X reads 0 and both
@@ -3882,20 +4267,20 @@ char *DAT_0023cca4;
 /* FIXME[hud-dragon-layout]: .data 0x87170 -- X of the dragon HEAD
    sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076194(2,0xd,10)
    into DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
-   0xd x 10 (FUN_0006cca8:54161); animation frame set from DAT_000871d4
+   0xd x 10 (redraw_hud_panels:54161); animation frame set from DAT_000871d4
    (54190). */
 static short DAT_00087170_arr[2] = { 0, 0};
 #define DAT_00087170 DAT_00087170_arr[0]
 /* FIXME[hud-dragon-layout]: .data 0x87174 -- X of the dragon BODY
    sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076194(2,0x25,0x17)
    into DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
-   0x25 x 0x17 (FUN_0006cca8:54166); frame from DAT_000871d8 (54191). */
+   0x25 x 0x17 (redraw_hud_panels:54166); frame from DAT_000871d8 (54191). */
 static short DAT_00087174_arr[2] = { 0, 0};
 #define DAT_00087174 DAT_00087174_arr[0]
 /* FIXME[hud-dragon-layout]: .data 0x871b4 -- X of the dragon WING/TAIL
    sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076078(0) into
    DAT_0023c238[side], placed at ((&DAT_000871b4)[side], 0x42), size
-   0xc x 0x1c (FUN_0006cca8:54169); frame is a literal 0x207b (left) /
+   0xc x 0x1c (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
    0x208d (right) at 54196, NOT from a table. */
 static short DAT_000871b4_arr[4] = { 0, 0};
 #define DAT_000871b4 DAT_000871b4_arr[0]
@@ -3903,7 +4288,7 @@ static short DAT_000871b4_arr[4] = { 0, 0};
 /* FIXME[hud-dragon-frames]: .data 0x871d4 -- initial dragons.GR frame id
    for the dragon HEAD sub-sprite, [0]=left [1]=right. Read as
    `(&DAT_000871d4)[side]` and passed to FUN_00076390 as the frame arg for
-   DAT_0023c230[side] (FUN_0006cca8:54190). dragons.GR ids are in the
+   DAT_0023c230[side] (redraw_hud_panels:54190). dragons.GR ids are in the
    0x20xx range (cf. the wing's literal 0x207b/0x208d); reads 0 now. Fill
    with the real left/right head-frame ids. */
 static unsigned short DAT_000871d4_arr[2] = { 0, 0 };
@@ -3911,7 +4296,7 @@ static unsigned short DAT_000871d4_arr[2] = { 0, 0 };
 /* FIXME[hud-dragon-frames]: .data 0x871d8 -- initial dragons.GR frame id
    for the dragon BODY sub-sprite, [0]=left [1]=right. Read as
    `(&DAT_000871d8)[side]`, frame arg to FUN_00076390 for DAT_0023c234[side]
-   (FUN_0006cca8:54191, also FUN_0006dbe4:54753). Fill with the real
+   (redraw_hud_panels:54191, also FUN_0006dbe4:54753). Fill with the real
    left/right body-frame ids. */
 static unsigned short DAT_000871d8_arr[2] = { 0, 0 };
 #define DAT_000871d8 DAT_000871d8_arr[0]
@@ -4615,14 +5000,17 @@ short param_3;
      caller's actual buffer, e.g. FUN_00024840's 4-byte `local_2c`
      scratch string, causing a stack-buffer-overflow read here). iVar2
      is provably meant to be strlen(param_1) -- the very next line
-     computes the same length via FUN_000112a0(param_1), and the
+     computes the same length via measure_text_width(param_1), and the
      allocation size below (`uVar3 * uVar10`) only makes sense if the
      inner loop below (which runs iVar2 times) walks exactly that many
      characters of param_1. Pass it explicitly instead of relying on
      register leftovers. */
   iVar2 = Ordinal_1068(param_1);
-  uVar3 = FUN_000112a0(param_1);
-  uVar10 = (uint)DAT_0008909c;
+  uVar3 = measure_text_width(param_1);
+  uVar10 = (uint)g_font_line_height;
+  if (getenv("UW_DIAG_TEXT"))
+    fprintf(stderr, "[diag11060] measured_width=%u line_height(g_font_line_height)=%u alloc=%u\n",
+            uVar3, uVar10, (uVar3 & 0xffff) * uVar10);
   pcVar4 = (char *)Ordinal_1041((uVar3 & 0xffff) * uVar10);
   iVar11 = 0;
   pcVar8 = pcVar4;
@@ -4641,9 +5029,16 @@ short param_3;
              Cast to byte (unsigned char) to match the original
              semantics. */
           sVar1 = (&DAT_000890b0)[(byte)*pcVar9];
-          FUN_000112fc(auStack_40,
-                       (DAT_000a85b8 + 1) * (int)*pcVar9 + DAT_0008894c * iVar11 + DAT_00088940,
-                       (int)DAT_0008894c << 3);
+          {
+            int _fmt = (int)g_font_row_stride << 3;
+            undefined4 _r = unpack_glyph_bitmap(auStack_40,
+                       (DAT_000a85b8 + 1) * (int)*pcVar9 + g_font_row_stride * iVar11 + g_font_glyph_data_base,
+                       _fmt);
+            if (getenv("UW_DIAG_TEXT"))
+              fprintf(stderr, "[diag11060] glyph '%c' fmt=%d(0x%x) rowbytes(g_font_row_stride)=%d ret=%d width(sVar1)=%d auStack_40[0..3]=%d,%d,%d,%d\n",
+                      *pcVar9, _fmt, _fmt, (int)g_font_row_stride, (int)_r, (int)sVar1,
+                      (int)auStack_40[0], (int)auStack_40[1], (int)auStack_40[2], (int)auStack_40[3]);
+          }
           Ordinal_1044(pcVar8,auStack_40,(int)sVar1);
           iVar7 = iVar7 + -1;
           pcVar8 = pcVar8 + sVar1;
@@ -4667,13 +5062,13 @@ short param_3;
       if (63999 < iVar6) break;
       for (; (iVar5 < iVar12 && (iVar5 < 0x140)); iVar5 = iVar5 + 1) {
         if (*pcVar8 == '\x01') {
-          if (DAT_0024af74 == 0) {
+          if (g_text_use_palette_color == 0) {
             *(undefined2 *)((g_uw_framebuffer) + (iVar6 + iVar5) * 2) =
-                 DAT_0024ae20;
+                 g_text_flat_color;
           }
           else {
             *(undefined2 *)((g_uw_framebuffer) + (iVar6 + iVar5) * 2) =
-                 (&g_palette_rgb565)[*DAT_0008429c];
+                 (&g_palette_rgb565)[*g_draw_color_index];
             pcVar8 = local_48;
           }
         }
@@ -4693,7 +5088,8 @@ short param_3;
 
 
 
-int FUN_000112a0(param_1)
+// was FUN_000112a0
+int measure_text_width(param_1)
 char * param_1;
 
 {
@@ -4704,7 +5100,7 @@ char * param_1;
   /* Was `Ordinal_1068()` with no argument, relying on register leftovers
      to still hold param_1 (see draw_text_string's matching fix/comment a
      few lines above -- same root bug, this is the more foundational of
-     the two call sites since FUN_000112a0 is the general string pixel-
+     the two call sites since measure_text_width is the general string pixel-
      width measurement used throughout the file). */
   uVar2 = Ordinal_1068(param_1);
   sVar3 = 0;
@@ -4719,7 +5115,8 @@ char * param_1;
 
 
 
-undefined4 FUN_000112fc(param_1,param_2,param_3)
+// was FUN_000112fc
+undefined4 unpack_glyph_bitmap(param_1,param_2,param_3)
 undefined1 * param_1;
 byte * param_2;
 short param_3;
@@ -4768,7 +5165,8 @@ short param_3;
 
 
 
-void FUN_000113b4()
+// was FUN_000113b4
+void load_font_metrics()
 
 {
   int iVar1;
@@ -4777,11 +5175,11 @@ void FUN_000113b4()
   int iVar4;
   ushort *puVar5;
   
-  DAT_0008909c = *(undefined2 *)(DAT_000879b0 + 6);
-  DAT_0008894c = *(undefined2 *)(DAT_000879b0 + 8);
+  g_font_line_height = *(undefined2 *)(DAT_000879b0 + 6);
+  g_font_row_stride = *(undefined2 *)(DAT_000879b0 + 8);
   DAT_000a85b0 = *(undefined2 *)(DAT_000879b0 + 10);
   DAT_000a85b8 = *(short *)(DAT_000879b0 + 2);
-  DAT_00088940 = DAT_000890a4;
+  g_font_glyph_data_base = DAT_000890a4;
   iVar1 = (int)DAT_000a85b8;
   puVar5 = &DAT_000890b0;
   pbVar3 = (byte *)(DAT_000890a4 + iVar1);
@@ -5064,7 +5462,7 @@ short param_7;
   }
   dirty_rect_union(iVar13,iVar2,iVar7);
   iVar3 = (int)local_30;
-  if (DAT_00088960 == 0) {
+  if (g_blit_transparent_mode == 0) {
     iVar5 = iVar5 - sVar12;
     if (iVar3 < iVar5) {
       iVar6 = (int)sVar11;
@@ -5182,7 +5580,7 @@ int param_8;
                   if (0x13f < iVar6) break;
                   bVar3 = *pbVar5;
                   pbVar5 = pbVar5 + 1;
-                  if ((DAT_00088960 & bVar3 == 0) == 0) {
+                  if ((g_blit_transparent_mode & bVar3 == 0) == 0) {
                     *(undefined2 *)((g_uw_framebuffer) + iVar4 * 2) =
                          (&g_palette_rgb565)[bVar3];
                   }
@@ -5356,7 +5754,7 @@ void FUN_000125a8(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 short param_1;
 short param_2;
 /* Source-bitmap pointer -- was `int`, truncating the real `char *` the
-   caller (FUN_00040918) already reconstructed (iVar4 + 5). Same
+   caller (blit_object_sprite_by_frame) already reconstructed (iVar4 + 5). Same
    bitmap_blit_to_framebuffer-shaped sprite blit, same pointer-truncation
    class as everywhere else this session. */
 char *param_3;
@@ -5411,7 +5809,7 @@ short param_7;
   }
   param_3 = param_7 * iVar2 + iVar13 + param_3;
   dirty_rect_union(iVar6,iVar6 + iVar3,iVar14);
-  if (DAT_00088960 == 0) {
+  if (g_blit_transparent_mode == 0) {
     iVar11 = (int)local_3c;
     iVar4 = iVar3 - local_34;
     if (iVar11 < iVar4) {
@@ -6053,7 +6451,14 @@ int param_1;
 
 
 
-void FUN_000137c0(param_1,param_2,param_3)
+// was FUN_000137c0 -- elementwise 3-float vector subtract, param_3 = param_2
+// - param_1. Confirmed by tracing its two call sites in parse_e_model_file
+// (was FUN_00020a74): both feed a shared vertex-position array (the
+// model's own POINTS, 0xc-byte stride) and the results go straight into
+// vec3_cross (was FUN_00013904) as the two edge vectors of a real
+// per-face normal computation -- see vec3_cross's own comment for why
+// that computed normal never actually gets used.
+void vec3_sub(param_1,param_2,param_3)
 undefined4 * param_1;
 undefined4 * param_2;
 undefined1 * param_3;
@@ -6081,7 +6486,24 @@ undefined1 * param_3;
 
 
 
-void FUN_00013904(param_1,param_2,param_3)
+// was FUN_00013904 -- standard 3-float cross product, param_3 = param_1 x
+// param_2 (confirmed component-by-component, including the Y term's sign
+// flip the textbook formula requires). Its one real caller,
+// parse_e_model_file (was FUN_00020a74), uses it to compute each PARTS
+// face's real normal (two vec3_sub edge vectors, v1-v0 and v2-v0, crossed
+// together) right after reading that face's vertex-index list -- a
+// genuine, deliberate per-face normal computation. Traced the real ARM
+// disassembly at its call site (0x00021aa4, not just this decompile) to
+// rule out a dropped-store decompile bug: the instruction immediately
+// after `bl 0x00013904` is unrelated vertex-count bookkeeping, with no
+// store of the result anywhere in between. The original shipped binary
+// computes this normal and then genuinely never uses it -- not a
+// decompile loss, a real dead computation in the original game. See
+// object-rendering-findings.txt's UPDATE (7) ("THE .E PARSER COMPUTES A
+// REAL FACE NORMAL -- AND THROWS IT AWAY") for the full writeup, and
+// UPDATE (8) for the companion finding that UV data doesn't exist in
+// this format at all (never computed, unlike this normal).
+void vec3_cross(param_1,param_2,param_3)
 undefined4 * param_1;
 undefined4 * param_2;
 undefined1 * param_3;
@@ -7040,7 +7462,7 @@ uint param_4;
   uVar16 = 0;
   /* param_1+0xa..0xd held the literal 0x000b78b8 (&DAT_000b78b8's address
      in the original 32-bit binary) as the .ark entry-offset table
-     pointer -- see FUN_0001613c's matching comment. The table is a fixed
+     pointer -- see read_archive_entry's matching comment. The table is a fixed
      global; use its real address. */
   uVar15 = *(uint *)((char *)&DAT_000b78b8 + iVar8);
   if ((param_2 & 0xffff) <= (uint)*(ushort *)(param_1 + 2)) {
@@ -7165,11 +7587,11 @@ uint param_4;
 
 
 
-undefined2 FUN_0001613c(param_1,param_2,param_3)
+undefined2 read_archive_entry(param_1,param_2,param_3)
 undefined4 * param_1;
 uint param_2;
 /* Was `undefined4`, truncating the real destination buffer pointer the
-   callers pass (FUN_000499c0: the malloc'd DAT_002029cc workspace;
+   callers pass (load_level_object_table: the malloc'd DAT_002029cc workspace;
    FUN_000164e4: &DAT_000b99d0). Forwarded straight to FUN_0002285c
    (uw_file_read), which needs a valid pointer -- the truncated value
    segfaulted the level loader on the first real read. */
@@ -7191,7 +7613,7 @@ void *param_3;
      straight into &DAT_000b78b8), so on this recompile just use its real
      address instead of the truncated literal (which dereferenced as
      ~0xb78b8 and crashed the level loader). Same "hardcoded original-
-     binary address" bug class as FUN_0006bde0's -0x87020. */
+     binary address" bug class as probe_save_slots's -0x87020. */
   if (((uint)*(ushort *)(param_1 + 2) < (param_2 & 0xffff)) ||
      (uVar6 = *(uint *)((char *)&DAT_000b78b8 + (param_2 & 0xffff) * 4), uVar6 == 0)) {
     uVar1 = 0;
@@ -7341,7 +7763,7 @@ int param_2;
 
 undefined4 FUN_000164e4(param_1,param_2)
 /* .ark handle-struct pointer -- was `undefined4`, truncating it before
-   FUN_0001613c. */
+   read_archive_entry. */
 undefined1 * param_1;
 int param_2;
 
@@ -7349,7 +7771,7 @@ int param_2;
   short sVar1;
   undefined4 uVar2;
   
-  sVar1 = FUN_0001613c(param_1,param_2 + 0x1a,&DAT_000b99d0);
+  sVar1 = read_archive_entry(param_1,param_2 + 0x1a,&DAT_000b99d0);
   if ((sVar1 == 0) || (uVar2 = 0, sVar1 == 0x1000)) {
     uVar2 = 1;
   }
@@ -7755,7 +8177,7 @@ short param_4;
       pcVar7[(int)(acStack_50 + -(int)param_1)] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
-    sVar6 = FUN_000112a0(acStack_50);
+    sVar6 = measure_text_width(acStack_50);
     iVar8 = (int)sVar6;
     if (iVar8 < 0) {
       iVar8 = iVar8 + 1;
@@ -7770,7 +8192,7 @@ short param_4;
       pcVar7[(int)(acStack_50 + -(int)param_2)] = cVar5;
       pcVar7 = pcVar7 + 1;
     } while (cVar5 != '\0');
-    sVar6 = FUN_000112a0(acStack_50);
+    sVar6 = measure_text_width(acStack_50);
     iVar8 = (int)sVar6;
     if (iVar8 < 0) {
       iVar8 = iVar8 + 1;
@@ -7811,7 +8233,7 @@ void FUN_00016ef8()
   short local_5a;
   char local_58 [52];
   
-  *DAT_0008429c = 0x2d;
+  *g_draw_color_index = 0x2d;
   *DAT_00084298 = 0x2d;
   local_5e = *DAT_00085a6c;
   local_60 = 200 - DAT_00085a6c[1];
@@ -7869,7 +8291,7 @@ LAB_000170bc:
               pcVar6[(int)(local_58 + -(int)pcVar9)] = cVar1;
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
-            sVar2 = FUN_000112a0(local_58);
+            sVar2 = measure_text_width(local_58);
             if (((int)*(short *)(&DAT_000baa0a + iVar8) <= (int)local_5e) &&
                ((int)local_5e <= (int)*(short *)(&DAT_000baa0a + iVar8) + (int)sVar2)) {
               if (((int)local_60 <= *(short *)(&DAT_000baa0c + iVar8) + 5) &&
@@ -7888,7 +8310,7 @@ LAB_000170bc:
               pcVar6[(int)(local_58 + -(int)pcVar5)] = cVar1;
               pcVar6 = pcVar6 + 1;
             } while (cVar1 != '\0');
-            iVar10 = FUN_000112a0(local_58);
+            iVar10 = measure_text_width(local_58);
             set_draw_color(0x1a);
             rect_fill_or_save_restore((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
                          (uint)*(ushort *)(pcVar5 + 0x32) + iVar10,*(ushort *)(pcVar5 + 0x34) + 5);
@@ -7914,7 +8336,7 @@ LAB_000170bc:
       local_5c[1] = 0;
       if (DAT_000bbef0 != 100) {
         iVar7 = DAT_000bbef0 * 0x36;
-        FUN_00040d00(s_font4x5p_sys_0008431c);
+        select_active_font(s_font4x5p_sys_0008431c);
         FUN_00057c5c(0x107a);
         iVar10 = -1;
         (&DAT_000baa0a)[iVar7] = (char)local_5e;
@@ -7950,7 +8372,7 @@ LAB_000171d0:
         if (iVar10 * 0x10000 >> 0x10 < -1) {
           iVar10 = -1;
         }
-        iVar8 = FUN_000112a0(local_58);
+        iVar8 = measure_text_width(local_58);
         if (0 < (short)iVar8) {
           set_draw_color(0x1a);
           rect_fill_or_save_restore((uint)*(ushort *)(&DAT_000baa0a + iVar7),
@@ -7966,8 +8388,8 @@ LAB_000171d0:
     }
     else {
       local_5c[0] = Ordinal_1091();
-      sVar2 = FUN_000112a0(local_58);
-      sVar3 = FUN_000112a0(local_5c);
+      sVar2 = measure_text_width(local_58);
+      sVar3 = measure_text_width(local_5c);
       if ((((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10) + (int)*(short *)(&DAT_000baa0a + iVar7) <
           0x13c) {
         iVar8 = (iVar10 + 1) * 0x10000 >> 0x10;
@@ -7985,7 +8407,7 @@ LAB_000171d0:
       }
     }
     local_58[(short)iVar10 + 1] = '\0';
-    iVar4 = FUN_000112a0(local_58);
+    iVar4 = measure_text_width(local_58);
     iVar8 = *(short *)(&DAT_000baa0a + iVar7) + iVar4 + -1;
     FUN_00057590(*(short *)(&DAT_000baa0a + iVar7) + iVar4 + 9,local_60 + -0x12);
     draw_text_string(local_58,(int)*(short *)(&DAT_000baa0a + iVar7),
@@ -7994,7 +8416,7 @@ LAB_000171d0:
   }
   goto LAB_000171bc;
 LAB_0001739c:
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   if (local_58[0] != '\0') {
     DAT_000b99c4 = 1;
     pcVar5 = local_58;
@@ -8034,8 +8456,8 @@ void FUN_0001765c()
   char acStack_baa20 [764376];
   undefined1 auStack_48 [52];
   
-  FUN_00040d00(s_font4x5p_sys_0008431c);
-  *DAT_0008429c = 0x2d;
+  select_active_font(s_font4x5p_sys_0008431c);
+  *g_draw_color_index = 0x2d;
   *DAT_00084298 = 0x2d;
   if (0 < DAT_000bbef0) {
     iVar7 = 0;
@@ -8064,7 +8486,7 @@ void FUN_0001765c()
       iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
     } while (iVar7 < sVar6);
   }
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   return;
 }
 
@@ -8124,7 +8546,7 @@ int param_1;
   DAT_000b99c8 = 0;
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   if (iVar2 != 0) {
-    uVar1 = FUN_0001613c(auStack_20,param_1 + 0x23,&DAT_000ba9d8);
+    uVar1 = read_archive_entry(auStack_20,param_1 + 0x23,&DAT_000ba9d8);
     DAT_000b99c8 = Ordinal_2008(0x36,uVar1);
     DAT_000bbef0 = DAT_000b99c8;
     FUN_0001765c();
@@ -8179,26 +8601,26 @@ undefined4 param_1;
     draw_automap_tiles();
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
-      DAT_00088960 = 1;
-      draw_sprite_by_id(0x103f,((*(ushort *)(DAT_0023be64 + 0x16) >> 10) + 2) * 3,
-                   (((*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 1;
+      draw_sprite_by_id(0x103f,((*(ushort *)(g_player_object + 0x16) >> 10) + 2) * 3,
+                   (((*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
+      g_blit_transparent_mode = 0;
     }
     DAT_000ba9d0 = (short)param_1;
     set_palette_bank(1);
     screen_backup_save();
     FUN_0001786c(param_1);
-    *DAT_0008429c = 0x2d;
+    *g_draw_color_index = 0x2d;
     *DAT_00084298 = 0x2d;
-    FUN_00040d00(s_fontbig_sys_0008432c);
+    select_active_font(s_fontbig_sys_0008432c);
     FUN_000229e0(iVar5,auStack_124,10);
-    sVar2 = FUN_000112a0(auStack_124);
+    sVar2 = measure_text_width(auStack_124);
     iVar5 = (int)sVar2;
     if (iVar5 < 0) {
       iVar5 = iVar5 + 1;
     }
     draw_text_string(auStack_124,0x121 - (short)(iVar5 >> 1),6);
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_font5x6p_sys_0008430c);
   }
   DAT_000bbef4 = 1;
   FUN_000570b4();
@@ -8388,7 +8810,7 @@ int param_1;
          loop's very first iteration, the enclosing function's own object-
          pointer parameter) -- confirmed individually via disassembly for
          a representative sample of these sites (this one, FUN_00052af4,
-         FUN_00052c5c, FUN_00043d40, FUN_000440d0, FUN_00072598,
+         FUN_00052c5c, sum_container_weight, FUN_000440d0, FUN_00072598,
          FUN_0007deec, FUN_00080ed4, FUN_000181a4), and applied by the
          same pattern to the rest. */
       iVar8 = resolve_object_link(puVar7);
@@ -8402,8 +8824,8 @@ int param_1;
   iVar8 = (int)(short)uVar5;
   if (iVar8 < 0) {
     DAT_00202c84 = 1;
-    FUN_000522f0(*(ushort *)(DAT_0023be64 + 0x16) >> 7 & 0x1f8,
-                 *(ushort *)(DAT_0023be64 + 0x16) >> 1 & 0x1f8,*(byte *)(DAT_0023be64 + 2) & 0x7f,
+    FUN_000522f0(*(ushort *)(g_player_object + 0x16) >> 7 & 0x1f8,
+                 *(ushort *)(g_player_object + 0x16) >> 1 & 0x1f8,*(byte *)(g_player_object + 2) & 0x7f,
                  puVar4,6,1);
     DAT_00202c84 = 0;
 LAB_0001818c:
@@ -9131,7 +9553,7 @@ undefined4 param_2;
       FUN_0003c3c8(4);
     }
     local_28 = DAT_000bbf18;
-    sVar1 = FUN_0001613c(auStack_20,DAT_001007c4);
+    sVar1 = read_archive_entry(auStack_20,DAT_001007c4);
     FUN_00015a58(auStack_20);
     if (sVar1 < 1) {
       message_scroll_print_wrapped(FUN_0007863c(0xe01)); // was two separate calls with message_scroll_print_wrapped()'s arg dropped; fresh Ghidra disassembly (0x44c90-0x44c94) shows no register load between the two `bl`s -- FUN_0007863c's return (char *) flows straight into message_scroll_print_wrapped as its argument
@@ -10588,7 +11010,7 @@ void FUN_0001b288()
         uVar9 = FUN_000535fc((int)*psVar10);
         object_list_insert_head(DAT_00100674 + 6,uVar9);
       }
-      sVar5 = FUN_0005358c(puVar6);
+      sVar5 = encode_object_slot_index(puVar6);
       *psVar10 = sVar5;
       FUN_0001bf9c(0,iVar12);
       iVar12 = ((short)iVar12 + 1) * 0x10000 >> 0x10;
@@ -10618,7 +11040,7 @@ void FUN_0001b474()
   
   iVar7 = 0;
   iVar6 = (*DAT_00100674 & 0x3f) * 0x30;
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   do {
     uVar5 = FUN_00076a2c(0x10,0x20);
     (&DAT_000bc028)[iVar7] = uVar5;
@@ -10652,7 +11074,7 @@ void FUN_0001b474()
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 4);
   DAT_000bc008 = 0;
-  uVar3 = FUN_0005358c(DAT_00100674);
+  uVar3 = encode_object_slot_index(DAT_00100674);
   Ordinal_1061(uVar3);
   DAT_000bc024 = FUN_0001d170(((&DAT_001007de)[iVar6] & 0xf) * '\x06',0xffffffe7,0x19);
   DAT_000bc004 = FUN_0001d170(*(ushort *)(&DAT_001007dd + iVar6) >> 0xc,0xffffffec,100);
@@ -10693,7 +11115,7 @@ void FUN_0001b7c0()
   do {
     if (0 < (short)(&DAT_000bbfd0)[iVar2]) {
       uVar1 = FUN_000535fc();
-      FUN_000523d0(DAT_0023be64,uVar1,5,0);
+      FUN_000523d0(g_player_object,uVar1,5,0);
       FUN_00076e98((&DAT_000bc028)[iVar2]);
     }
     if (0 < (short)(&DAT_000bbfe8)[iVar2]) {
@@ -10835,7 +11257,7 @@ int param_4;
   int local_4;
   
   iVar6 = 0;
-  bVar7 = DAT_00202948 != 0;
+  bVar7 = g_selected_object != 0;
   local_10 = param_1;
   local_c = param_2;
   local_8 = param_3;
@@ -10855,7 +11277,7 @@ int param_4;
       {
         return;
       }
-      iVar3 = FUN_00046358(iVar2);
+      iVar3 = check_object_carry_weight(iVar2);
       if (iVar3 == 0) {
         if ((iVar6 != 0) && (iVar6 != iVar2)) {
           iVar3 = (*(ushort *)(iVar2 + 6) & 0xffc0) + (*(ushort *)(iVar6 + 6) & 0xffc0);
@@ -10880,23 +11302,23 @@ int param_4;
       (&DAT_000bbfa8)[(short)local_c] = 0xffff;
       (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
       FUN_0001c420((int)(short)local_10);
-      if (DAT_00202948 == 0) {
+      if (g_selected_object == 0) {
         return;
       }
       if (iVar6 != 0) {
-        DAT_002020c4 = 1;
+        g_cursor_holding_state = 1;
         return;
       }
       FUN_00057604(1);
       FUN_00057504(&local_36,&local_38);
       sVar1 = FUN_0001bef4((int)local_36,(int)local_38,&local_10,&local_c,&local_8,&local_4);
       if (sVar1 == 0) {
-        DAT_002020c4 = 1;
-        FUN_00046698(0xffffffff);
+        g_cursor_holding_state = 1;
+        handle_inventory_panel_click(0xffffffff);
         return;
       }
     }
-    if (DAT_00202948 == 0) {
+    if (g_selected_object == 0) {
       if ((*(ushort *)(DAT_00085a6c + 6) & 1) == 0) {
         iVar6 = 1;
         uVar5 = FUN_000535fc((int)*(short *)(local_8 + (short)local_c * 2));
@@ -10910,7 +11332,7 @@ int param_4;
           iVar6 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x29),0xf);
           iVar6 = iVar6 + 1;
         }
-        thunk_FUN_00048764(uVar5,iVar6);
+        dispatch_object_action(uVar5,iVar6);
       }
       else {
         puVar4 = (uint *)(local_4 + (short)local_c * 4);
@@ -10921,9 +11343,9 @@ int param_4;
     }
   }
   FUN_00057604(1);
-  DAT_002020c4 = 1;
+  g_cursor_holding_state = 1;
   if ((short)local_10 == 0) {
-    DAT_002020c4 = 1;
+    g_cursor_holding_state = 1;
     return;
   }
   FUN_0001c268((int)(short)local_10,(int)(short)local_c,local_8);
@@ -10933,9 +11355,9 @@ int param_4;
   (&DAT_000bbfa8)[(short)local_c] = 0xffff;
   (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
 LAB_0001bec8:
-  if ((bVar7) && (DAT_00202948 == 0)) {
+  if ((bVar7) && (g_selected_object == 0)) {
     FUN_00057cac(3);
-    DAT_002020c4 = 0;
+    g_cursor_holding_state = 0;
   }
   return;
 }
@@ -10996,7 +11418,7 @@ short param_2;
   
   FUN_00057118();
   psVar2 = (short *)(int)param_1;
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   if (psVar2 == (short *)0x0) {
     puVar5 = &DAT_000bbfe8;
   }
@@ -11034,10 +11456,10 @@ short param_2;
     else {
       uVar8 = (ushort)psVar6[3] >> 6;
     }
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
     if (1 < uVar8) {
-      FUN_00040d00(s_font4x5p_sys_0008431c);
-      *DAT_0008429c = 0x60;
+      select_active_font(s_font4x5p_sys_0008431c);
+      *g_draw_color_index = 0x60;
       if (psVar2 == (short *)0x0) {
         uVar7 = Ordinal_1025(uVar8,auStack_2c,10);
       }
@@ -11047,7 +11469,7 @@ short param_2;
       }
       draw_text_string(uVar7,*(short *)(puVar10 + iVar1) + 3,*(short *)((int)(puVar10 + iVar1) + 2) + 1)
       ;
-      FUN_00040d00(s_font5x6p_sys_0008430c);
+      select_active_font(s_font5x6p_sys_0008430c);
     }
   }
 LAB_0001c1b4:
@@ -11069,20 +11491,20 @@ int param_3;
   bool bVar3;
   
   psVar2 = (short *)(param_2 + param_1 * 2);
-  bVar3 = DAT_00202948 != (ushort *)0x0;
-  DAT_00202948 = (ushort *)FUN_000535fc((int)*psVar2);
+  bVar3 = g_selected_object != (ushort *)0x0;
+  g_selected_object = (ushort *)FUN_000535fc((int)*psVar2);
   *psVar2 = 0;
-  if (DAT_00202948 != (ushort *)0x0) {
+  if (g_selected_object != (ushort *)0x0) {
     if (param_3 != 0) {
-      resolve_object_link(DAT_00202948 + 2);
-      sVar1 = FUN_0005358c();
+      resolve_object_link(g_selected_object + 2);
+      sVar1 = encode_object_slot_index();
       *psVar2 = sVar1;
     }
     FUN_00057118();
     if (bVar3) {
       FUN_00057cac(0);
     }
-    FUN_00057c5c(*DAT_00202948 & 0x1ff);
+    FUN_00057c5c(*g_selected_object & 0x1ff);
     FUN_000570b4();
     FUN_0007ec50();
   }
@@ -11103,16 +11525,16 @@ int param_3;
   
   psVar3 = (short *)(param_3 + (short)param_2 * 2);
   if (*psVar3 == 0) {
-    sVar1 = FUN_0005358c(DAT_00202948);
+    sVar1 = encode_object_slot_index(g_selected_object);
     *psVar3 = sVar1;
   }
   else {
-    iVar2 = FUN_0001c2c4(DAT_00202948,param_1,param_2,param_3);
+    iVar2 = FUN_0001c2c4(g_selected_object,param_1,param_2,param_3);
     if (iVar2 == 0) {
       return;
     }
   }
-  DAT_00202948 = 0;
+  g_selected_object = 0;
   return;
 }
 
@@ -11156,7 +11578,7 @@ int param_4;
       }
     }
   }
-  sVar4 = FUN_0005358c(DAT_00202948);
+  sVar4 = encode_object_slot_index(g_selected_object);
   FUN_0001c1c8(param_3,param_4,0);
   *psVar7 = sVar4;
 LAB_0001c404:
@@ -11427,7 +11849,7 @@ int param_1;
   }
   else {
     sVar5 = Ordinal_2005(*(char *)(DAT_0023be74 + 4),
-                         ((uint)*(byte *)(DAT_0023be64 + 8) - (uint)*(byte *)(DAT_00086df8 + 0x36))
+                         ((uint)*(byte *)(g_player_object + 8) - (uint)*(byte *)(DAT_00086df8 + 0x36))
                          * 2);
     iVar11 = sVar5 + 2;
   }
@@ -13065,7 +13487,22 @@ void render_visible_tile_list()
 
 
 
-void FUN_00020a74(param_1,param_2)
+// was FUN_00020a74 -- parses one DATA3D/*.E text-format 3D model script
+// (param_1 = file path, param_2 = ~16KB per-model output buffer) into
+// point positions and per-part (per-face) vertex-index lists. Called 29
+// times from FUN_00038680 at startup, once per model file. Point count
+// lives at output offset 0, part count at offset 4, points at
+// `8 + i*0xc` (3 back-to-back floats), parts at `0xc14 + p*0x60` (a
+// vertex count then that many vertex-index ints from offset +4) -- see
+// emit_model_object's own use of this layout. Despite computing a real
+// per-face normal (vec3_sub + vec3_cross, see vec3_cross's comment) and
+// resolving per-face color (EXTENDED_COLORS against g_model_known_ext_
+// colors), neither survives into this output buffer -- confirmed by
+// tracing the whole function, including the real ARM disassembly at the
+// normal's call site, not just this decompile. Only point positions and
+// vertex-index lists persist. Full writeup: object-rendering-findings.txt
+// UPDATE (7)/(8).
+void parse_e_model_file(param_1,param_2)
 char *param_1;
 undefined1 * param_2;
 
@@ -13248,15 +13685,15 @@ LAB_00022604:
         if (iVar4 == 0) {
           iVar5 = -10000;
           iVar3 = 10000;
-          DAT_000d91d0 = 0;
+          g_model_parse_point_count = 0;
           iVar4 = iVar3;
           iVar10 = iVar5;
           while( true ) {
             pppppuVar21 = (undefined4 *****)&local_214;
             iVar6 = Ordinal_1114(local_25c,s__d__d__d__00084980,&local_204,&local_224,pppppuVar21);
-            iVar19 = DAT_000d91d0;
+            iVar19 = g_model_parse_point_count;
             if (iVar6 != 3) break;
-            iVar6 = DAT_000d91d0 * 0x2c;
+            iVar6 = g_model_parse_point_count * 0x2c;
             (&DAT_000d2ab0)[iVar6] = (char)local_204;
             if (local_204 < iVar4) {
               iVar4 = local_204;
@@ -13297,31 +13734,42 @@ LAB_00022604:
             (&DAT_000d2ac1)[iVar6] = 0;
             (&DAT_000d2ac2)[iVar6] = 0;
             (&DAT_000d2ac3)[iVar6] = 0;
-            uVar7 = Ordinal_2032();
+            /* Was `Ordinal_2032()` with the argument dropped -- the two
+               sibling conversions right below it (Y=local_224, Z=local_214)
+               both pass their value explicitly; this one, the X coordinate,
+               did not. Confirmed via a raw memory dump of the parsed
+               ROCKSMAL.E buffer: every point's first float came out as a
+               constant 3.0 (Ordinal_2032((float)x)'s bit pattern for x=3,
+               whatever this build's calling convention happened to leave in
+               the argument register) while Y/Z matched the source file
+               exactly. Same "dropped argument, register-leftover idiom
+               doesn't survive a literal recompile" bug class as everywhere
+               else in this file. */
+            uVar7 = Ordinal_2032(local_204);
             param_2[iVar19 * 0xc + 8] = (char)uVar7;
             param_2[iVar19 * 0xc + 9] = (char)((uint)uVar7 >> 8);
             param_2[iVar19 * 0xc + 10] = (char)((uint)uVar7 >> 0x10);
             param_2[iVar19 * 0xc + 0xb] = (char)((uint)uVar7 >> 0x18);
             uVar7 = Ordinal_2032(local_224);
-            puVar13 = param_2 + (DAT_000d91d0 + 1) * 0xc;
+            puVar13 = param_2 + (g_model_parse_point_count + 1) * 0xc;
             *puVar13 = (char)uVar7;
             puVar13[1] = (char)((uint)uVar7 >> 8);
             puVar13[2] = (char)((uint)uVar7 >> 0x10);
             puVar13[3] = (char)((uint)uVar7 >> 0x18);
             uVar7 = Ordinal_2032(local_214);
-            iVar19 = DAT_000d91d0;
-            param_2[DAT_000d91d0 * 0xc + 0x10] = (char)uVar7;
+            iVar19 = g_model_parse_point_count;
+            param_2[g_model_parse_point_count * 0xc + 0x10] = (char)uVar7;
             param_2[iVar19 * 0xc + 0x11] = (char)((uint)uVar7 >> 8);
             param_2[iVar19 * 0xc + 0x12] = (char)((uint)uVar7 >> 0x10);
             param_2[iVar19 * 0xc + 0x13] = (char)((uint)uVar7 >> 0x18);
-            DAT_000d91d0 = DAT_000d91d0 + 1;
-            if (600 < DAT_000d91d0) {
+            g_model_parse_point_count = g_model_parse_point_count + 1;
+            if (600 < g_model_parse_point_count) {
               Ordinal_1102(s_Too_many_points___d__00084968);
               goto LAB_0002263c;
             }
           }
-          DAT_000db4fc = DAT_000d91d0;
-          param_2[1] = (char)((uint)DAT_000d91d0 >> 8);
+          DAT_000db4fc = g_model_parse_point_count;
+          param_2[1] = (char)((uint)g_model_parse_point_count >> 8);
           *param_2 = (char)iVar19;
           param_2[2] = (char)((uint)iVar19 >> 0x10);
           param_2[3] = (char)((uint)iVar19 >> 0x18);
@@ -13352,7 +13800,7 @@ LAB_00022604:
         iVar4 = Ordinal_1065(auStack_1c8,s_PARTS_00084960);
         if (iVar4 == 0) {
           DAT_000c8b00 = &DAT_000c4c38;
-          DAT_000db430 = 0;
+          g_model_parse_part_count = 0;
           do {
             iVar5 = Ordinal_1114(pvVar_fh,s___c_1____00084954,local_260);
             iVar4 = 1;
@@ -13361,8 +13809,8 @@ LAB_00022604:
               pppppuVar21 = (undefined4 *****)&local_1dc;
               Ordinal_1114(pvVar_fh,s__d__1s__d__x__00084944,&local_23c,&local_254,pppppuVar21,puVar13)
               ;
-              iVar4 = DAT_000db430;
-              iVar5 = DAT_000db430 * 0x67;
+              iVar4 = g_model_parse_part_count;
+              iVar5 = g_model_parse_part_count * 0x67;
               (&DAT_000c9e2f)[iVar5] = (char)local_1dc;
               (&DAT_000c9e30)[iVar5] = (char)((uint)local_1dc >> 8);
               (&DAT_000c9e31)[iVar5] = (char)((uint)local_1dc >> 0x10);
@@ -13384,13 +13832,13 @@ LAB_00022604:
               param_2[iVar4 * 0x60 + 0xc6d] = 0;
               param_2[iVar4 * 0x60 + 0xc6e] = 0;
               param_2[iVar4 * 0x60 + 0xc6f] = 0;
-              puVar14 = param_2 + (DAT_000db430 + 0x21) * 0x60;
+              puVar14 = param_2 + (g_model_parse_part_count + 0x21) * 0x60;
               *puVar14 = 0xe0;
               puVar14[1] = 0;
               puVar14[2] = 0;
               puVar14[3] = 0;
-              iVar4 = DAT_000db430;
-              iVar5 = DAT_000db430 * 0x67;
+              iVar4 = g_model_parse_part_count;
+              iVar5 = g_model_parse_part_count * 0x67;
               if (local_23c == 4) {
                 (&DAT_000c9e2b)[iVar5] = local_21c[0];
                 (&DAT_000c9e2c)[iVar5] = local_21c[1];
@@ -13401,7 +13849,7 @@ LAB_00022604:
                 (&DAT_000c9de2)[iVar5] = 0xff;
                 (&DAT_000c9de3)[iVar5] = 0xff;
                 Ordinal_1102(s_got_bitmap__d___d_00084930);
-                iVar4 = DAT_000db430;
+                iVar4 = g_model_parse_part_count;
               }
               else {
                 (&DAT_000c9e29)[iVar5] = local_21c[1];
@@ -13455,33 +13903,33 @@ LAB_000218b8:
                   iVar3 = iVar19 + 1;
                   *DAT_000c8b00 = local_210;
                   DAT_000c8b00 = DAT_000c8b00 + 1;
-                  iVar10 = DAT_000db430 * 0x18 + iVar5;
+                  iVar10 = g_model_parse_part_count * 0x18 + iVar5;
                   iVar5 = iVar5 + 1;
                   puVar13 = param_2 + (iVar10 + 0x306) * 4;
                   *puVar13 = (char)local_210;
                   puVar13[1] = (char)((uint)local_210 >> 8);
                   puVar13[2] = (char)((uint)local_210 >> 0x10);
                   puVar13[3] = (char)((uint)local_210 >> 0x18);
-                  iVar10 = DAT_000db430;
+                  iVar10 = g_model_parse_part_count;
                 } while (local_260[0] == ',');
-                param_2[DAT_000db430 * 0x60 + 0xc14] = (char)iVar5;
+                param_2[g_model_parse_part_count * 0x60 + 0xc14] = (char)iVar5;
                 param_2[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
                 param_2[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
                 param_2[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
-                iVar5 = *(int *)(param_2 + DAT_000db430 * 0x60 + 0xc18);
-                iVar10 = *(int *)(param_2 + DAT_000db430 * 0x60 + 0xc20);
-                FUN_000137c0(param_2 + iVar5 * 0xc + 8,
-                             param_2 + *(int *)(param_2 + DAT_000db430 * 0x60 + 0xc1c) * 0xc + 8,
+                iVar5 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc18);
+                iVar10 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc20);
+                vec3_sub(param_2 + iVar5 * 0xc + 8,
+                             param_2 + *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc1c) * 0xc + 8,
                              auStack_150);
-                FUN_000137c0(param_2 + iVar5 * 0xc + 8,param_2 + iVar10 * 0xc + 8,auStack_160);
-                FUN_00013904(auStack_160,auStack_150,auStack_140);
+                vec3_sub(param_2 + iVar5 * 0xc + 8,param_2 + iVar10 * 0xc + 8,auStack_160);
+                vec3_cross(auStack_160,auStack_150,auStack_140);
                 if ((local_23c == 4) && (iVar3 != 4)) {
-                  Ordinal_1102(s_Error__polygon__d__bitmap_must_h_00084898,DAT_000db430);
+                  Ordinal_1102(s_Error__polygon__d__bitmap_must_h_00084898,g_model_parse_part_count);
                 }
                 if (iVar3 < 3) {
-                  Ordinal_1102(s_Error__Part__d_is_a_polygon_with_00084868,DAT_000db430,iVar3);
+                  Ordinal_1102(s_Error__Part__d_is_a_polygon_with_00084868,g_model_parse_part_count,iVar3);
                 }
-                iVar5 = DAT_000db430 * 0x67;
+                iVar5 = g_model_parse_part_count * 0x67;
                 (&DAT_000c9ddc)[iVar5] = (char)iVar3;
                 (&DAT_000c9ddd)[iVar5] = (char)((uint)iVar3 >> 8);
                 (&DAT_000c9dde)[iVar5] = (char)((uint)iVar3 >> 0x10);
@@ -13495,9 +13943,9 @@ LAB_000218b8:
                   iVar5 = iVar5 >> 1;
                   if (iVar5 != 0) {
                     puVar11 = (undefined4 *)
-                              (*(int *)(&DAT_000c9dd8 + DAT_000db430 * 0x67) + iVar5 * 4);
+                              (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + iVar5 * 4);
                     puVar8 = (undefined4 *)
-                             (*(int *)(&DAT_000c9dd8 + DAT_000db430 * 0x67) + (iVar3 - iVar5) * 4);
+                             (*(int *)(&DAT_000c9dd8 + g_model_parse_part_count * 0x67) + (iVar3 - iVar5) * 4);
                     do {
                       iVar5 = iVar5 + -1;
                       uVar7 = puVar11[-1];
@@ -13508,8 +13956,8 @@ LAB_000218b8:
                     } while (iVar5 != 0);
                   }
                 }
-                DAT_000db430 = DAT_000db430 + 1;
-                if (0x15e < DAT_000db430) {
+                g_model_parse_part_count = g_model_parse_part_count + 1;
+                if (0x15e < g_model_parse_part_count) {
                   Ordinal_1102(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
                 }
@@ -13524,13 +13972,13 @@ LAB_000218b8:
                 iVar4 = Ordinal_1114(pvVar_fh,s__d__d_000848d0,&local_1e0,&local_20c,pppppuVar21,
                                      puVar13);
                 piVar17 = DAT_000c8b00;
-                iVar5 = DAT_000db430 * 0x67;
+                iVar5 = g_model_parse_part_count * 0x67;
                 (&DAT_000c9ddc)[iVar5] = 2;
                 (&DAT_000c9ddd)[iVar5] = 0;
                 (&DAT_000c9dde)[iVar5] = 0;
                 (&DAT_000c9ddf)[iVar5] = 0;
                 *piVar17 = 2;
-                iVar5 = DAT_000db430 * 0x67;
+                iVar5 = g_model_parse_part_count * 0x67;
                 piVar17 = DAT_000c8b00 + 1;
                 DAT_000c8b00 = piVar17;
                 (&DAT_000c9dd8)[iVar5] = (char)piVar17;
@@ -13547,8 +13995,8 @@ LAB_00021838:
                   Ordinal_1102(s_Out_of_vertex_list_space_00084908);
                   goto LAB_0002263c;
                 }
-                DAT_000db430 = DAT_000db430 + 1;
-                if (0x15e < DAT_000db430) {
+                g_model_parse_part_count = g_model_parse_part_count + 1;
+                if (0x15e < g_model_parse_part_count) {
                   Ordinal_1102(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
                 }
@@ -13567,7 +14015,7 @@ LAB_00021838:
                     else {
                       Ordinal_1114(pvVar_fh,&DAT_000848f4,&local_218,puVar16,pppppuVar21,puVar13);
                       Ordinal_1102(s_got_sphere__d_000848e4,local_218);
-                      iVar4 = DAT_000db430 * 0x67;
+                      iVar4 = g_model_parse_part_count * 0x67;
                       puVar14 = &DAT_000c9dd8 + iVar4;
                       (&DAT_000c9e3b)[iVar4] = (char)local_218;
                       (&DAT_000c9e3c)[iVar4] = (char)((uint)local_218 >> 8);
@@ -13577,13 +14025,13 @@ LAB_00021838:
                     iVar4 = Ordinal_1114(pvVar_fh,&DAT_000849ac,&local_1f4,puVar14,pppppuVar21,puVar13)
                     ;
                     piVar17 = DAT_000c8b00;
-                    iVar5 = DAT_000db430 * 0x67;
+                    iVar5 = g_model_parse_part_count * 0x67;
                     (&DAT_000c9ddc)[iVar5] = 1;
                     (&DAT_000c9ddd)[iVar5] = 0;
                     (&DAT_000c9dde)[iVar5] = 0;
                     (&DAT_000c9ddf)[iVar5] = 0;
                     *piVar17 = 1;
-                    iVar5 = DAT_000db430 * 0x67;
+                    iVar5 = g_model_parse_part_count * 0x67;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
                     (&DAT_000c9dd8)[iVar5] = (char)DAT_000c8b00;
                     (&DAT_000c9dd9)[iVar5] = (char)((uint)DAT_000c8b00 >> 8);
@@ -13625,13 +14073,13 @@ LAB_00021838:
                     if (iVar3 < DAT_0008466c) {
                       DAT_0008466c = iVar3;
                     }
-                    iVar3 = DAT_000db430 * 0x67;
+                    iVar3 = g_model_parse_part_count * 0x67;
                     (&DAT_000c9ddc)[iVar3] = 2;
                     (&DAT_000c9ddd)[iVar3] = 0;
                     (&DAT_000c9dde)[iVar3] = 0;
                     (&DAT_000c9ddf)[iVar3] = 0;
                     *piVar17 = 2;
-                    iVar3 = DAT_000db430 * 0x67;
+                    iVar3 = g_model_parse_part_count * 0x67;
                     piVar17 = DAT_000c8b00 + 1;
                     DAT_000c8b00 = piVar17;
                     (&DAT_000c9dd8)[iVar3] = (char)piVar17;
@@ -13641,9 +14089,9 @@ LAB_00021838:
                     *piVar17 = local_1fc;
                     DAT_000c8b00 = DAT_000c8b00 + 1;
                     *DAT_000c8b00 = (int)local_1d4;
-                    iVar3 = DAT_000db430;
+                    iVar3 = g_model_parse_part_count;
                     piVar17 = DAT_000c8b00 + 1;
-                    iVar5 = DAT_000db430 * 0x67;
+                    iVar5 = g_model_parse_part_count * 0x67;
                     DAT_000c8b00 = piVar17;
                     (&DAT_000c9e33)[iVar5] = (char)local_228;
                     (&DAT_000c9e34)[iVar5] = (char)((uint)local_228 >> 8);
@@ -13656,11 +14104,11 @@ LAB_00021838:
                     if (&DAT_000c8a90 < piVar17) {
                       Ordinal_1102(s_Out_of_vertex_list_space_00084908);
                       goto LAB_0002263c;
-                      iVar3 = DAT_000db430;
+                      iVar3 = g_model_parse_part_count;
                     }
-                    DAT_000db430 = iVar3 + 1;
+                    g_model_parse_part_count = iVar3 + 1;
                     uVar7 = 0x15e;
-                    if (0x15e < DAT_000db430) {
+                    if (0x15e < g_model_parse_part_count) {
                       Ordinal_1102(s_Too_many_polys_000848f8);
                       goto LAB_0002263c;
                       uVar7 = extraout_r3_00;
@@ -13675,22 +14123,22 @@ LAB_00021838:
               }
             }
 LAB_00021bec:
-            iVar5 = DAT_000db430;
+            iVar5 = g_model_parse_part_count;
           } while (local_260[0] == ';');
           iVar10 = 0;
-          param_2[5] = (char)((uint)DAT_000db430 >> 8);
+          param_2[5] = (char)((uint)g_model_parse_part_count >> 8);
           param_2[4] = (char)iVar5;
           param_2[6] = (char)((uint)iVar5 >> 0x10);
           param_2[7] = (char)((uint)iVar5 >> 0x18);
-          iVar3 = DAT_000db430;
-          iVar5 = DAT_000db430;
+          iVar3 = g_model_parse_part_count;
+          iVar5 = g_model_parse_part_count;
           piVar17 = piVar20;
-          if (0 < DAT_000db430) {
+          if (0 < g_model_parse_part_count) {
             do {
               if (((((char)piVar17[0x14] == 'A') && (DAT_000db480 == 0)) && (DAT_000db470 == 0)) &&
                  (iVar19 = piVar17[1], 2 < iVar19)) {
                 Ordinal_1102(s_making_backside_of__d_____d_00084848,iVar10,iVar5);
-                iVar6 = DAT_000db430 * 0x67;
+                iVar6 = g_model_parse_part_count * 0x67;
                 iVar5 = piVar17[2];
                 (&DAT_000c9de0)[iVar6] = (char)iVar5;
                 (&DAT_000c9de1)[iVar6] = (char)((uint)iVar5 >> 8);
@@ -13714,10 +14162,10 @@ LAB_00021bec:
                 (&DAT_000c9e26)[iVar6] = 0;
                 iVar5 = *piVar17;
                 *DAT_000c8b00 = iVar19;
-                iVar6 = DAT_000db430;
+                iVar6 = g_model_parse_part_count;
                 piVar12 = (int *)(iVar5 + iVar19 * 4);
                 piVar9 = DAT_000c8b00 + 1;
-                iVar5 = DAT_000db430 * 0x67;
+                iVar5 = g_model_parse_part_count * 0x67;
                 DAT_000c8b00 = piVar9;
                 (&DAT_000c9dd8)[iVar5] = (char)piVar9;
                 (&DAT_000c9dd9)[iVar5] = (char)((uint)piVar9 >> 8);
@@ -13728,14 +14176,14 @@ LAB_00021bec:
                   *piVar9 = *piVar12;
                   piVar9 = DAT_000c8b00 + 1;
                   DAT_000c8b00 = piVar9;
-                  iVar6 = DAT_000db430;
+                  iVar6 = g_model_parse_part_count;
                 }
-                DAT_000db430 = iVar6 + 1;
-                iVar5 = DAT_000db430;
-                if (0x15e < DAT_000db430) {
+                g_model_parse_part_count = iVar6 + 1;
+                iVar5 = g_model_parse_part_count;
+                if (0x15e < g_model_parse_part_count) {
                   Ordinal_1102(s_Too_many_polys_000848f8);
                   goto LAB_0002263c;
-                  iVar5 = DAT_000db430;
+                  iVar5 = g_model_parse_part_count;
                 }
               }
               iVar10 = iVar10 + 1;
@@ -13763,7 +14211,7 @@ LAB_0002226c:
               do {
                 iVar4 = Ordinal_1114(pvVar_fh,s__lx_1s_000847a4,&local_208,local_260);
                 if (DAT_000db494 != 0) {
-                  piVar12 = &DAT_00084678;
+                  piVar12 = &g_model_known_ext_colors;
                   iVar10 = 0;
                   do {
                     if (local_208 == *piVar12) {
@@ -13863,7 +14311,7 @@ LAB_0002226c:
               puVar16 = local_258;
               if ((iVar4 != 1) || (iVar4 = 1, local_260[0] != '}')) {
                 iVar4 = DAT_000db4d4 * 4;
-                if (DAT_000db4d4 + DAT_000db430 < DAT_000db458) {
+                if (DAT_000db4d4 + g_model_parse_part_count < DAT_000db458) {
                   *(undefined **)(&DAT_000da868 + iVar4) = local_258;
                   iVar5 = Ordinal_1068(local_258);
                   local_258 = puVar16 + iVar5 + 1;
@@ -13971,8 +14419,8 @@ LAB_0002263c:
      reliably holding the handle by this point even before the
      local_25c/pvVar_fh pointer-width fix), should be the real handle. */
   Ordinal_1118(local_25c);
-  iVar3 = DAT_000db430;
-  if ((DAT_000db494 != 0) && (iVar4 = 0, 0 < DAT_000db430)) {
+  iVar3 = g_model_parse_part_count;
+  if ((DAT_000db494 != 0) && (iVar4 = 0, 0 < g_model_parse_part_count)) {
     do {
       if (*(int *)((char *)piVar20 + 0x36) != iVar4) {
         uVar7 = *(undefined4 *)(&DAT_000c9de0 + *(int *)((char *)piVar20 + 0x36) * 0x67);
@@ -14511,7 +14959,7 @@ void flush_dirty_rect_to_display()
   iVar10 = 0x140 - DAT_00088958;
   iVar11 = 0x140 - DAT_00088950;
   if (((0 < DAT_00084f10) ||
-      (((DAT_00202948 == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0)))))
+      (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0)))))
       ) && ((DAT_0023cdc0 == 0x10 && (DAT_0023c430 = GXBeginDraw(), DAT_0023c430 != (void *)0x0))))
   {
     iVar6 = DAT_0023cdb8;
@@ -14802,7 +15250,7 @@ int param_1;
   *(undefined1 *)(DAT_00086df8 + 0x4b) = 0;
   uVar4 = Ordinal_1053();
   Ordinal_2005(6,uVar4);
-  *(char *)(DAT_0023be64 + 8) = (-6 - extraout_r1) + *(char *)(DAT_0023be74 + 4);
+  *(char *)(g_player_object + 8) = (-6 - extraout_r1) + *(char *)(DAT_0023be74 + 4);
   DAT_00201b68 = 1;
   FUN_000667cc();
   return;
@@ -14890,19 +15338,19 @@ void FUN_00023a00()
   screen_backup_restore();
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
   draw_text_string(&DAT_00084e58,0x5d,0x32);
-  iVar1 = FUN_000112a0(auStack_14);
+  iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x32);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 6),auStack_14,10);
   draw_text_string(&DAT_00084e50,0x5d,0x44);
-  iVar1 = FUN_000112a0(auStack_14);
+  iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x44);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 7),auStack_14,10);
   draw_text_string(&DAT_00084e48,0x5d,0x56);
-  iVar1 = FUN_000112a0(auStack_14);
+  iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x56);
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_14,10);
   draw_text_string(&DAT_00084e40,0x5d,0x68);
-  iVar1 = FUN_000112a0(auStack_14);
+  iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x68);
   return;
 }
@@ -14939,7 +15387,7 @@ void FUN_00023b38()
       FUN_000229e0(*(undefined1 *)(iVar1 + DAT_00086df8 + 0x21),auStack_24,10);
       iVar5 = iVar4 * 0xb + 0x85;
       draw_text_string(uVar3,0x1e,iVar5);
-      iVar2 = FUN_000112a0(auStack_24);
+      iVar2 = measure_text_width(auStack_24);
       draw_text_string(auStack_24,0x7d - iVar2,iVar5);
       iVar4 = ((short)iVar4 + 1) * 0x10000 >> 0x10;
     }
@@ -15016,7 +15464,7 @@ void FUN_00023cdc()
     *(byte *)(DAT_0023be74 + extraout_r1 + 5) = (char)uVar3 + bVar1;
   }
   FUN_000703a0(1);
-  *(undefined1 *)(DAT_0023be64 + 8) = *(undefined1 *)(DAT_0023be74 + 4);
+  *(undefined1 *)(g_player_object + 8) = *(undefined1 *)(DAT_0023be74 + 4);
   return;
 }
 
@@ -15062,7 +15510,7 @@ short * param_1;
   undefined2 uVar6;
   short sVar7;
   /* Was `undefined4`, truncating FUN_0007863c's real char* return
-     (a string-resource lookup) before it's passed to FUN_000112a0
+     (a string-resource lookup) before it's passed to measure_text_width
      (strlen-shaped) and draw_text_string (draw string). */
   char *uVar8;
   int iVar9;
@@ -15157,7 +15605,7 @@ short * param_1;
        why it must stay a narrow 4-byte read (widening it to 8 bytes
        pulls in unrelated file data from other records and misfires). */
     if (*(int *)(param_1 + 1) == 0) {
-      sVar7 = FUN_000112a0(uVar8);
+      sVar7 = measure_text_width(uVar8);
       iVar9 = -(int)sVar7 + 0x91;
       if (iVar9 < 0) {
         iVar9 = -(int)sVar7 + 0x92;
@@ -15177,7 +15625,7 @@ short * param_1;
     }
   }
   if (*(int *)(param_1 + 3) != 0) {
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
     FUN_00035df8(0);
     DAT_000fb858 = DAT_001005c4;
     if (0 < param_1[5]) {
@@ -15212,7 +15660,7 @@ short * param_1;
              offset from &DAT_000fb8f0, not an absolute pointer -- see
              the write site in run_character_generator. Reconstruct before use. */
           uVar8 = FUN_0007863c(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + local_28 * 2) | 0x400);
-          sVar5 = FUN_000112a0(uVar8);
+          sVar5 = measure_text_width(uVar8);
           iVar9 = (int)sVar7 - (int)sVar5;
           if (iVar9 < 0) {
             iVar9 = iVar9 + 1;
@@ -15232,11 +15680,11 @@ short * param_1;
              the heads: `7 + sexbit*5 + local_28`. */
           {
             int head_idx = 7 + ((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 5) + local_28;
-            DAT_00088960 = 1;
+            g_blit_transparent_mode = 1;
             bitmap_blit_to_framebuffer(iVar11,iVar10,
                          (&DAT_000fb880)[head_idx] + DAT_000fb858,(int)(short)local_2c,
                          sVar7,0,0,1);
-            DAT_00088960 = 0;
+            g_blit_transparent_mode = 0;
           }
         }
         local_28 = (local_28 + 1) * 0x10000 >> 0x10;
@@ -15323,7 +15771,7 @@ byte param_3;
         FUN_00057118();
         FUN_00035df8(0);
         DAT_000fb858 = DAT_001005c4;
-        DAT_00088960 = 1;
+        g_blit_transparent_mode = 1;
         bitmap_blit_to_framebuffer((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
                      (int)sVar3 * (bVar1 + 4) + iVar5,pcVar_fb858 + iVar7,(uint)bVar1,bVar2,0,0,1);
         FUN_000570b4();
@@ -15331,7 +15779,7 @@ byte param_3;
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
     } while (iVar9 < 2);
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
   }
   return 0;
 }
@@ -15473,10 +15921,10 @@ undefined4 param_2;
   short sVar5;
   uint uVar6;
   /* FUN_0007863c's return (the label string for this field) was
-     discarded here, with the very next line calling FUN_000112a0() with
+     discarded here, with the very next line calling measure_text_width() with
      no argument -- relying on register leftovers to still hold that
      same return value (the "dropped argument" idiom, same root bug as
-     draw_text_string/FUN_000112a0's own Ordinal_1068() fixes above). That
+     draw_text_string/measure_text_width's own Ordinal_1068() fixes above). That
      register doesn't reliably survive here either (confirmed: with it
      broken, the name-entry field's Ordinal_1417 gate always fell
      through to the "buffer full" branch regardless of the typed key,
@@ -15643,12 +16091,12 @@ LAB_00024dd4:
   }
   else {
     pcVar_str = FUN_0007863c(uVar6 | 0x400);
-    iVar7 = FUN_000112a0(pcVar_str);
+    iVar7 = measure_text_width(pcVar_str);
     /* FUN_0007863c's compressed-string decoder (FUN_0007907c and its
        tree-walk helpers) has a separate, deeper bug -- confirmed via
        diagnostics that this field's label lookup returns a fragment of
        an unrelated, much longer string instead of the short intended
-       label, giving FUN_000112a0 a huge nonsensical pixel width
+       label, giving measure_text_width a huge nonsensical pixel width
        (observed: 1743, vs. a real short label's ~10-60). That fed
        straight into this text-entry loop's "does the cursor still fit
        in the field" bounds check below (`0x12d < sVar3`), which starts
@@ -15720,7 +16168,7 @@ LAB_00024dd4:
             uVar13 = uVar13 - 1;
             local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),*(undefined1 *)(g_chargen_textfield_buf + uVar13)
                                   );
-            sVar5 = FUN_000112a0(local_2c);
+            sVar5 = measure_text_width(local_2c);
             iVar11 = ((int)sVar3 - (int)sVar5) * 0x10000;
             iVar7 = iVar11 >> 0x10;
             FUN_00057118();
@@ -15735,7 +16183,7 @@ LAB_00024dd4:
         FUN_00057118();
         draw_text_string(local_2c,iVar7,iVar9 + 3);
         FUN_000570b4();
-        iVar7 = FUN_000112a0(local_2c);
+        iVar7 = measure_text_width(local_2c);
         iVar7 = iVar7 + sVar3;
         local_28 = 0;
         *(char *)(g_chargen_textfield_buf + uVar13) = (char)sVar5;
@@ -15777,7 +16225,7 @@ int param_3;
     /* Was `(undefined *)(... + 0x88d95)` -- a literal original-binary
        address (0x88d95 = &DAT_00088d98's real address there, minus 3)
        instead of real pointer arithmetic against the actual (relocated)
-       global -- same bug class as FUN_0006bde0's `-0x87020` fix and
+       global -- same bug class as probe_save_slots's `-0x87020` fix and
        run_character_generator's pcVar3 fix elsewhere this session.
        Never exercised until Ordinal_535 (GetTickCount) stopped being a
        hardcoded 0 (see its comment): this branch (param_3!=0) is only
@@ -15996,7 +16444,7 @@ byte * param_3;
   if (DAT_00100610 == 1) {
     FUN_00072c74(7,*(undefined2 *)DAT_00202c6c,*(undefined2 *)(DAT_00202c6c + 2),0);
   }
-  uVar8 = FUN_0005358c(iVar7);
+  uVar8 = encode_object_slot_index(iVar7);
   sVar6 = FUN_00080ed4(uVar8,2,0,(int)sVar4 >> 3 & 0xff,(char)((int)sVar5 >> 3));
   if (sVar6 == -1) {
     free_object_slot(iVar7);
@@ -16538,7 +16986,7 @@ short param_3;
     DAT_0010061c = sVar4 + sVar5 + 4;
   }
   else {
-    sVar4 = Ordinal_2005(9,(&DAT_001007d5)[(*DAT_0023be64 & 0x3f) * 0x30]);
+    sVar4 = Ordinal_2005(9,(&DAT_001007d5)[(*g_player_object & 0x3f) * 0x30]);
     DAT_0010061c = (ushort)*(byte *)(param_1 + (uint)(byte)(&DAT_00084eff)[param_3]) + sVar4;
   }
   DAT_00100610 = 1;
@@ -16563,7 +17011,7 @@ void FUN_000275e0()
   DAT_0010062c = 0xfff6;
   DAT_00084f10 = 0xffff;
   FUN_0006cff4(3,0);
-  DAT_002020c4 = DAT_002020c4 + -4;
+  g_cursor_holding_state = g_cursor_holding_state + -4;
   FUN_00057cac(3);
   FUN_0006cff4(8,4);
   DAT_001005ec = 0;
@@ -16592,7 +17040,7 @@ void FUN_00027694()
 
 {
   if ((DAT_001005ec != 0) && (DAT_00100618 == 0)) {
-    DAT_002020c4 = DAT_002020c4 + -4;
+    g_cursor_holding_state = g_cursor_holding_state + -4;
     FUN_00057cac(3);
   }
   FUN_0002764c();
@@ -16664,7 +17112,7 @@ LAB_00027754:
             }
             FUN_0006cff4(3,9);
             DAT_00100618 = 0;
-            DAT_002020c4 = DAT_002020c4 + 4;
+            g_cursor_holding_state = g_cursor_holding_state + 4;
             FUN_00057c5c(0x1075);
             return;
           }
@@ -16753,14 +17201,14 @@ undefined1 param_7;
   DAT_001005fc = 0x80;
   DAT_00100600 = param_4;
   DAT_00100610 = param_1;
-  DAT_00100620 = FUN_0005358c(param_3);
+  DAT_00100620 = encode_object_slot_index(param_3);
   uVar4 = (byte)param_2[1] & 0x7f;
   uVar2 = (byte)param_3[1] & 0x7f;
   sVar1 = FUN_00025a98(uVar2,(byte)(&DAT_00202c90)[(*param_3 & 0x1ff) * 0xd] + uVar2,uVar4,
                        (byte)(&DAT_00202c90)[(*param_2 & 0x1ff) * 0xd] + uVar4);
   DAT_00100624 = sVar1 + 4;
   DAT_0010061c = param_6;
-  if (param_3 == DAT_0023be64) {
+  if (param_3 == g_player_object) {
     FUN_00072f30(3,0,0);
   }
   else {
@@ -16794,7 +17242,7 @@ short param_5;
   uint uVar7;
   
   DAT_001005f4 = 2;
-  DAT_00100610 = FUN_0005358c(param_1);
+  DAT_00100610 = encode_object_slot_index(param_1);
   iVar6 = (*param_1 & 0x3f) * 0x30;
   iVar5 = param_4 * 3 + iVar6;
   bVar1 = (&DAT_001007d0)[iVar5 + 0x14];
@@ -16816,7 +17264,7 @@ short param_5;
   iVar5 = FUN_000270d0();
   if ((iVar5 != 0) && (DAT_00100620 == 1)) {
     if (((short)(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) < param_5) &&
-       (cVar2 = FUN_000382cc(DAT_0023be64,1,0x10), cVar2 != '\0')) {
+       (cVar2 = FUN_000382cc(g_player_object,1,0x10), cVar2 != '\0')) {
       uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
       *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar7 | (byte)(((int)param_5 & 0xfU) << 2);
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
@@ -17009,9 +17457,9 @@ undefined4 FUN_000282ac()
       iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
     } while (iVar8 < 3);
     if (bVar3) {
-      sVar4 = FUN_0005358c(puVar5);
-      if ((uint)(*(ushort *)(DAT_00202994 + 8) >> 6) == (int)sVar4) {
-        FUN_00042c5c();
+      sVar4 = encode_object_slot_index(puVar5);
+      if ((uint)(*(ushort *)(g_current_container_record + 8) >> 6) == (int)sVar4) {
+        leave_nested_container_level();
       }
       FUN_000533e4(puVar5 + 3);
       uVar9 = *puVar5 & 0xff1b | 0x11b;
@@ -17119,7 +17567,7 @@ void FUN_000286cc()
   set_viewport_clip_rect(0,0,0x13f,199);
   DAT_00100670 = DAT_00100784;
   uVar6 = 2;
-  iVar3 = FUN_000417b4(s_converse_00084ff4,0,0xffffffff,&LAB_00028688,&LAB_000286a4);
+  iVar3 = load_gr_resource_entries(s_converse_00084ff4,0,0xffffffff,&LAB_00028688,&LAB_000286a4);
   if (iVar3 != 0) {
     set_draw_color(0xf1);
     rect_fill_or_save_restore(0x2a,1,0xc2,0x2f);
@@ -17144,18 +17592,18 @@ void FUN_000286cc()
     FUN_0007fce8(0);
     FUN_0007f110();
     FUN_0007fce8(0);
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_font5x6p_sys_0008430c);
     uVar6 = 2;
-    *DAT_0008429c = 0x65;
+    *g_draw_color_index = 0x65;
     *DAT_00084298 = 0x65;
     DAT_00100670 = DAT_00100784;
-    iVar3 = FUN_000417b4(s_heads_00084fec,
+    iVar3 = load_gr_resource_entries(s_heads_00084fec,
                          (*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * '\x05' +
                          (*(byte *)(DAT_00086df8 + 100) >> 2 & 7),1,&LAB_00028688,&LAB_000286a4);
     if (iVar3 != 0) {
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       bitmap_blit_to_framebuffer(0xc5,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
       pcVar4 = (char *)FUN_0007863c((int)DAT_00201c74);
       pcVar5 = local_44;
       do {
@@ -17168,20 +17616,20 @@ void FUN_000286cc()
       DAT_00100670 = DAT_00100784;
       if (DAT_00100674[0x1a] == 0) {
         uVar6 = 2;
-        FUN_000417b4(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
+        load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
       }
       else {
         uVar6 = 2;
-        iVar3 = FUN_000417b4(s_charhead_00084fe0,DAT_00100674[0x1a] - 1,1,&LAB_00028688,
+        iVar3 = load_gr_resource_entries(s_charhead_00084fe0,DAT_00100674[0x1a] - 1,1,&LAB_00028688,
                              &LAB_000286a4);
         if (iVar3 == 0) {
           uVar6 = 2;
-          FUN_000417b4(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
+          load_gr_resource_entries(s_genhead_00084fd8,*DAT_00100674 & 0x3f,1,&LAB_00028688,&LAB_000286a4);
         }
       }
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       bitmap_blit_to_framebuffer(0x2d,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
       sVar2 = FUN_00078b18(local_44,DAT_00100674,0,0);
       if (sVar2 != 0) {
         draw_text_string(local_44,0x30,3);
@@ -17193,7 +17641,7 @@ void FUN_000286cc()
       DAT_0023bf0c = 0;
       FUN_000577f0();
       FUN_0003fa1c(5);
-      DAT_002020c0 = 0;
+      g_cursor_mode = 0;
       FUN_00028c00(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
       change_game_mode(1);
       return;
@@ -17922,7 +18370,7 @@ int param_1;
   
   sVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   uVar4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  local_10 = DAT_0023be64;
+  local_10 = g_player_object;
   if ((sVar3 == 0) && (local_10 = DAT_00100674, (*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0)) {
     FUN_000798c4();
     local_10 = DAT_00100674;
@@ -17938,7 +18386,7 @@ int param_1;
     uVar2 = 0xffff;
   }
   FUN_000537d0(&local_10,1,iVar1,uVar4 & 3,uVar2);
-  FUN_0005358c();
+  encode_object_slot_index();
   return;
 }
 
@@ -18266,17 +18714,17 @@ ushort * param_1;
     local_20[0] = 6;
   }
   FUN_0001aebc(s_npc_attitude_000845f8,local_20,1);
-  bVar1 = *DAT_0023be64;
+  bVar1 = *g_player_object;
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x39);
   FUN_0001aebc(s_play_hunger_00085304,local_20,1);
   if ((&DAT_001007d4)[(bVar1 & 0x3f) * 0x30] == '\0') {
     local_20[0] = 0x80;
   }
   else {
-    local_20[0] = Ordinal_2005((&DAT_001007d4)[(bVar1 & 0x3f) * 0x30],(uint)DAT_0023be64[8] << 8);
+    local_20[0] = Ordinal_2005((&DAT_001007d4)[(bVar1 & 0x3f) * 0x30],(uint)g_player_object[8] << 8);
   }
   FUN_0001aebc(s_play_health_000852f8,local_20,1);
-  local_20[0] = (ushort)DAT_0023be64[8];
+  local_20[0] = (ushort)g_player_object[8];
   FUN_0001aebc(s_play_hp_000852f0,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x1e) + (ushort)*(byte *)(DAT_00086df8 + 0x21);
   FUN_0001aebc(s_play_arms_000852e4,local_20,1);
@@ -18362,7 +18810,7 @@ char *param_1;
   FUN_0001afe4(s_play_hunger_00085304,&local_10,1);
   *(char *)(DAT_00086df8 + 0x39) = (char)local_10;
   FUN_0001afe4(s_play_hp_000852f0,&local_10,1);
-  *(char *)(DAT_0023be64 + 8) = (char)local_10;
+  *(char *)(g_player_object + 8) = (char)local_10;
   FUN_0001afe4(s_play_mana_000852cc,&local_10,1);
   *(char *)(DAT_00086df8 + 0x37) = (char)local_10;
   FUN_0001afe4(s_play_poison_00085264,&local_10,1);
@@ -18514,7 +18962,7 @@ ushort * param_1;
   undefined1 local_24 [24];
   
   DAT_00202c6c = local_24;
-  uVar1 = FUN_0005358c(param_1);
+  uVar1 = encode_object_slot_index(param_1);
   DAT_00202c6c[10] = (char)uVar1;
   DAT_00202c6c[0xb] = (char)((ushort)uVar1 >> 8);
   DAT_00202c6c[8] = (&DAT_00202c91)[(*param_1 & 0x1ff) * 0xd] & 7;
@@ -20489,14 +20937,14 @@ ushort * param_1;
     if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
       DAT_002020a0 = (ushort)DAT_00101424;
       DAT_002020a4 = (ushort)DAT_00101428;
-      FUN_00079984(DAT_0010190c,param_1,0);
+      use_object_on_target(DAT_0010190c,param_1,0);
     }
     if (((*param_1 & 0x1f0) == 0x140) && ((*param_1 & 0xf) < 8)) {
       if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
         uVar1 = Ordinal_1053();
         Ordinal_2005(2,uVar1);
         if (extraout_r1_00 != 0) {
-          FUN_0007bf38(DAT_0010190c,param_1,
+          check_object_combination(DAT_0010190c,param_1,
                        (int)((uint)*(byte *)(DAT_00101404 + 0x2e) * -0x10000) >> 0x10);
           return;
         }
@@ -21656,7 +22104,7 @@ void FUN_00031a94()
       *(char *)(DAT_0010190c + 3) = (char)(uVar5 >> 8);
       *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
       if (uVar6 < 0x90) {
-        Ordinal_2005(8,((*(ushort *)(DAT_0023be64 + 2) >> 7 & 7) - (uVar7 & 0xff)) + 8);
+        Ordinal_2005(8,((*(ushort *)(g_player_object + 2) >> 7 & 7) - (uVar7 & 0xff)) + 8);
         if (('\x02' < extraout_r1) && (extraout_r1 < '\x06')) {
           DAT_0023bf0c = 0;
           FUN_000577f0();
@@ -21996,7 +22444,7 @@ ushort * param_1;
   int iVar3;
   
   DAT_0010190c = param_1;
-  DAT_00101738 = FUN_0005358c();
+  DAT_00101738 = encode_object_slot_index();
   iVar3 = ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101404 = &DAT_001007d0 + iVar3;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
@@ -22050,7 +22498,7 @@ undefined4 FUN_00032d38()
   uint uVar10;
   ushort *puVar11;
   
-  DAT_00101738 = FUN_0005358c(DAT_0010190c);
+  DAT_00101738 = encode_object_slot_index(DAT_0010190c);
   DAT_00101404 = &DAT_001007d0 + ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
   DAT_001013f8 = (byte)(DAT_0010190c[0xb] >> 4) & 0x3f;
@@ -22341,9 +22789,9 @@ LAB_000339fc:
             uVar11 = *(ushort *)(DAT_0010190c + 0xd) & 0x3fff;
             *(char *)(DAT_0010190c + 0xd) = (char)uVar11;
             *(char *)(DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
-            FUN_0002e454(*(ushort *)(DAT_0023be64 + 0x16) >> 10,
-                         *(ushort *)(DAT_0023be64 + 0x16) >> 4 & 0x3f,
-                         *(byte *)(DAT_0023be64 + 2) >> 3 & 0xf);
+            FUN_0002e454(*(ushort *)(g_player_object + 0x16) >> 10,
+                         *(ushort *)(g_player_object + 0x16) >> 4 & 0x3f,
+                         *(byte *)(g_player_object + 2) >> 3 & 0xf);
             *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) | 1;
           }
           if ((DAT_00101900 < 3) ||
@@ -22728,7 +23176,7 @@ ushort * param_3;
   *(byte *)((char *)param_1 + 0x11) = *(char *)((char *)param_1 + 0x11) + param_2;
   if (!bVar6) {
     if ((*param_3 & 0x1c0) == 0x40) {
-      sVar1 = FUN_0005358c();
+      sVar1 = encode_object_slot_index();
       uVar2 = (uint)sVar1;
       if (0xff < (int)uVar2) {
         uVar2 = 0;
@@ -22745,7 +23193,7 @@ ushort * param_3;
   }
   if ((uVar2 == 1) && ((param_1[5] & 0x80) == 0)) {
     DAT_000853d0 = (&DAT_001007d9)[iVar5];
-    DAT_0010194c = FUN_0005358c(param_1);
+    DAT_0010194c = encode_object_slot_index(param_1);
     DAT_0010192c = *(byte *)((char *)param_1 + 0x17) >> 2;
     DAT_00101930 = (byte)(param_1[0xb] >> 4) & 0x3f;
     DAT_00101934 = (byte)param_1[1] >> 3 & 0xf;
@@ -22753,7 +23201,7 @@ ushort * param_3;
   }
   if (param_2 < (byte)param_1[4]) {
     *(byte *)(param_1 + 4) = (byte)param_1[4] - param_2;
-    if (param_1 == DAT_0023be64) {
+    if (param_1 == g_player_object) {
       FUN_00069e30();
     }
   }
@@ -22772,13 +23220,13 @@ ushort * param_3;
     uVar4 = 5;
   }
   else {
-    if (param_1 != DAT_0023be64) {
+    if (param_1 != g_player_object) {
       return 0;
     }
     if (uVar2 == 0) {
       return 0;
     }
-    sVar1 = Ordinal_2005(*(byte *)(DAT_0023be74 + 4) + 1,(uint)(byte)DAT_0023be64[4] << 6);
+    sVar1 = Ordinal_2005(*(byte *)(DAT_0023be74 + 4) + 1,(uint)(byte)g_player_object[4] << 6);
     uVar4 = 7;
   }
   if (0xf < sVar1) {
@@ -22998,7 +23446,7 @@ LAB_00034db4:
     else {
       uVar9 = (int)(((byte)((byte)*puVar4 >> 4) + 0x10) * 8) >> 1;
     }
-    uVar2 = FUN_0005358c(param_1);
+    uVar2 = encode_object_slot_index(param_1);
     iVar6 = FUN_00051fa0(*param_1 & 0x1ff,uVar2,
                          (int)(((uint)local_2c + uVar10 * 8) * 0x10000) >> 0x10,
                          (int)(((uint)local_2b[0] + uVar8 * 8) * 0x10000) >> 0x10,(short)uVar9,
@@ -23129,7 +23577,7 @@ int param_3;
   byte bVar1;
   short sVar2;
   
-  sVar2 = FUN_0005358c(param_3);
+  sVar2 = encode_object_slot_index(param_3);
   if (((sVar2 != 1) &&
       (((bVar1 = *(byte *)(param_3 + 0xb) & 0xf, bVar1 == 5 || (bVar1 == 4)) || (bVar1 == 9)))) &&
      ((*(byte *)(param_3 + 0x19) & 1) != 0)) {
@@ -23144,7 +23592,7 @@ undefined4 FUN_00035340()
 
 {
   DAT_00101954 = 0;
-  FUN_00074ad0(DAT_0023be64,0x7f,FUN_000352d0,0,0,2);
+  FUN_00074ad0(g_player_object,0x7f,FUN_000352d0,0,0,2);
   return DAT_00101954;
 }
 
@@ -23180,13 +23628,13 @@ ushort * param_3;
   byte local_27 [3];
   
   uVar16 = (undefined1)((ushort)in_stack_ffffffcc >> 8);
-  sVar5 = FUN_0005358c(param_3);
+  sVar5 = encode_object_slot_index(param_3);
   if ((sVar5 != 1) && ((param_3[7] & 0xc0) == 0)) {
     uVar6 = Ordinal_1053();
     Ordinal_2005(2,uVar6);
     if (extraout_r1 != 0) {
       FUN_00032aa4(param_3);
-      uVar4 = *(ushort *)(DAT_0023be64 + 0x16);
+      uVar4 = *(ushort *)(g_player_object + 0x16);
       iVar13 = (uint)DAT_001013f8 - ((uVar4 & 0x3f0) >> 4);
       iVar11 = (uint)DAT_00101918 - (uint)(uVar4 >> 10);
       uVar9 = (uint)(*(byte *)(DAT_00101404 + 0x1c) >> 4);
@@ -23197,7 +23645,7 @@ ushort * param_3;
                                  *(byte *)(DAT_0010190c + 2) >> 3 & 0xf,(uint)(uVar4 >> 10),
                                  CONCAT11(uVar16,(char)(uVar4 >> 4)) & 0xff3f,
                                  CONCAT31((int3)((uint)in_stack_ffffffd0 >> 8),
-                                          *(byte *)(DAT_0023be64 + 2) >> 3) & 0xffffff0f,0),
+                                          *(byte *)(g_player_object + 2) >> 3) & 0xffffff0f,0),
           iVar11 != 0)) && (1 < DAT_0010142c)) {
         uVar9 = 0;
         if (DAT_0010142c != 0) {
@@ -23238,7 +23686,7 @@ ushort * param_3;
         iVar11 = FUN_00034ba8(*puVar7 & 0xf,&local_28,local_27);
         if (iVar11 != 0) {
           bVar3 = (&DAT_0023cf0a)[((int)(short)(ushort)bVar1 + (short)(ushort)bVar2 * 0x40) * 5];
-          uVar6 = FUN_0005358c(param_3);
+          uVar6 = encode_object_slot_index(param_3);
           iVar11 = FUN_00051fa0(*param_3 & 0x1ff,uVar6,
                                 (int)(((uint)local_28 + (short)(ushort)bVar2 * 8) * 0x10000) >> 0x10
                                 ,(int)(((uint)local_27[0] + (short)(ushort)bVar1 * 8) * 0x10000) >>
@@ -23256,9 +23704,9 @@ ushort * param_3;
             *(char *)(param_3 + 1) = (char)uVar9;
             *(char *)((char *)param_3 + 3) = (char)(uVar9 >> 8);
             *(byte *)((char *)param_3 + 0x19) = *(byte *)((char *)param_3 + 0x19) | 1;
-            FUN_0002e454(*(ushort *)(DAT_0023be64 + 0x16) >> 10,
-                         *(ushort *)(DAT_0023be64 + 0x16) >> 4 & 0x3f,
-                         *(byte *)(DAT_0023be64 + 2) >> 3 & 0xf);
+            FUN_0002e454(*(ushort *)(g_player_object + 0x16) >> 10,
+                         *(ushort *)(g_player_object + 0x16) >> 4 & 0x3f,
+                         *(byte *)(g_player_object + 2) >> 3 & 0xf);
             DAT_00101950 = 1;
             return 1;
           }
@@ -23275,7 +23723,7 @@ undefined4 FUN_00035894()
 
 {
   DAT_00101950 = 0;
-  FUN_00074ad0(DAT_0023be64,1,FUN_00035394,0,0,8);
+  FUN_00074ad0(g_player_object,1,FUN_00035394,0,0,8);
   return DAT_00101950;
 }
 
@@ -23663,7 +24111,7 @@ int param_2;
         do {
           iVar3 = Ordinal_1064(puVar4,0x20);
           if (iVar3 == 0) {
-            sVar2 = FUN_000112a0(puVar4);
+            sVar2 = measure_text_width(puVar4);
             iVar3 = (int)sVar2;
             puVar10 = (undefined1 *)0x0;
             if (iVar3 + iVar9 < 0x141) {
@@ -23681,7 +24129,7 @@ int param_2;
             puVar10 = (undefined1 *)(iVar3 + 1);
             uVar1 = *puVar10;
             *puVar10 = 0;
-            sVar2 = FUN_000112a0(puVar4);
+            sVar2 = measure_text_width(puVar4);
             *puVar10 = uVar1;
             iVar3 = (int)sVar2;
           }
@@ -24235,7 +24683,7 @@ LAB_00036ca4:
               Ordinal_496(10);
               if ((local_8b & 1) != 0) {
                 if (0 < local_9b) {
-                  *DAT_0008429c = local_9c;
+                  *g_draw_color_index = local_9c;
                   *DAT_00084298 = local_9c;
                   iVar10 = ((local_bf * -0x10000 >> 0x10) -
                            (int)*(short *)(DAT_000879b0 + 6) * (int)local_9b) + (int)local_bb + 0xc5
@@ -24244,7 +24692,7 @@ LAB_00036ca4:
                     iVar9 = 0;
                     do {
                       iVar13 = iVar9 * 4;
-                      sVar6 = FUN_000112a0((&local_b4)[iVar9]);
+                      sVar6 = measure_text_width((&local_b4)[iVar9]);
                       iVar19 = ((int)local_bd - (int)sVar6) + (int)local_c1;
                       if (iVar19 < 0) {
                         iVar19 = iVar19 + 1;
@@ -24474,7 +24922,7 @@ uint param_1;
   else {
     uVar2 = 0x34;
   }
-  DAT_0024af74 = 1;
+  g_text_use_palette_color = 1;
   if (uVar1 >= 0x100) {
     unaff_r6 = 0xb5;
     unaff_r7 = 0xac;
@@ -24483,11 +24931,11 @@ uint param_1;
   if (((uVar1 == 1) || (uVar1 == 2)) || (uVar1 == 3)) {
     FUN_00072910(4,1);
   }
-  FUN_00040d00(s_FONTBIG_SYS_00085454);
+  select_active_font(s_FONTBIG_SYS_00085454);
   DAT_0024cfac = (short)param_1 + 0xc00;
   FUN_00057118();
   FUN_0003671c(param_1,uVar2,unaff_r6,unaff_r7,unaff_r8);
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   if (DAT_00201c98 != 0) {
     FUN_0005b36c();
   }
@@ -24506,7 +24954,7 @@ uint param_1;
   FUN_00049924(uVar2);
 LAB_00037d3c:
   FUN_000570b4();
-  DAT_0024af74 = 0;
+  g_text_use_palette_color = 0;
   return;
 }
 
@@ -24678,7 +25126,7 @@ LAB_00038100:
       DAT_002020a4 = param_5;
       DAT_002020a0 = sVar2;
       FUN_00037f1c(param_1,0);
-      FUN_0007c93c(0,param_1,0);
+      try_combine_or_stow_object(0,param_1,0);
     }
     else if ((uVar1 & 0x1f0) == 0x80) {
       iVar3 = FUN_00052c5c(10,param_1);
@@ -24853,35 +25301,35 @@ undefined2 param_5;
 void FUN_00038680()
 
 {
-  FUN_00020a74(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c);
-  FUN_00020a74(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848);
-  FUN_00020a74(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474);
-  FUN_00020a74(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0);
-  FUN_00020a74(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc);
-  FUN_00020a74(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8);
-  FUN_00020a74(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524);
-  FUN_00020a74(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150);
-  FUN_00020a74(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c);
-  FUN_00020a74(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8);
-  FUN_00020a74(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4);
-  FUN_00020a74(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200);
-  FUN_00020a74(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c);
-  FUN_00020a74(s__DATA3D_DOOR_E_00085540,&DAT_00145a58);
-  FUN_00020a74(s__DATA3D_DOOR_E_00085540,&DAT_00149684);
-  FUN_00020a74(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0);
-  FUN_00020a74(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc);
-  FUN_00020a74(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08);
-  FUN_00020a74(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734);
-  FUN_00020a74(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360);
-  FUN_00020a74(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c);
-  FUN_00020a74(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8);
-  FUN_00020a74(s__DATA3D_GATE_E_000854e4,&DAT_001677e4);
-  FUN_00020a74(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410);
-  FUN_00020a74(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c);
-  FUN_00020a74(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68);
-  FUN_00020a74(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894);
-  FUN_00020a74(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0);
-  FUN_00020a74(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec);
+  parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c);
+  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848);
+  parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474);
+  parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0);
+  parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc);
+  parse_e_model_file(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8);
+  parse_e_model_file(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524);
+  parse_e_model_file(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150);
+  parse_e_model_file(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c);
+  parse_e_model_file(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8);
+  parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08);
+  parse_e_model_file(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360);
+  parse_e_model_file(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c);
+  parse_e_model_file(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8);
+  parse_e_model_file(s__DATA3D_GATE_E_000854e4,&DAT_001677e4);
+  parse_e_model_file(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410);
+  parse_e_model_file(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c);
+  parse_e_model_file(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68);
+  parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894);
+  parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0);
+  parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec);
   Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);
   return;
 }
@@ -25165,7 +25613,7 @@ int param_6;
       if (((&DAT_000878d0)[*pbVar10 & 0xf] & 0x20) == 0) {
         cVar18 = '\0';
       }
-      uVar13 = FUN_0005358c(param_1);
+      uVar13 = encode_object_slot_index(param_1);
       iVar12 = (int)(short)cVar21;
       iVar2 = (int)(short)cVar7;
       iVar14 = FUN_00051fa0(*param_1 & 0x1ff,uVar13,((iVar2 << 0x13) >> 0x10) + 3,
@@ -25331,7 +25779,7 @@ short param_4;
   short local_1a;
   
   sVar1 = DAT_00201b68;
-  if ((param_4 == DAT_00201b68) || (param_1 == DAT_0023be64)) {
+  if ((param_4 == DAT_00201b68) || (param_1 == g_player_object)) {
     if (((param_4 == 0) || (param_4 == DAT_00201b68)) &&
        (((short)param_2 != 0x3f && ((short)param_3 != 0x3f)))) {
       iVar2 = FUN_00038d4c(param_1,param_2,param_3,&local_1c,&local_1a,0);
@@ -25340,7 +25788,7 @@ short param_4;
       param_3 = (int)local_1a;
       param_4 = sVar1;
     }
-    if (param_1 == DAT_0023be64) {
+    if (param_1 == g_player_object) {
       DAT_00201c90 = (undefined2)param_2;
       DAT_00201c8c = (undefined2)param_3;
       DAT_00201c7c = param_4;
@@ -25422,7 +25870,7 @@ LAB_0003987c:
                 *(char *)((char *)puVar8 + 3) = (char)(uVar10 >> 8);
                 iVar9 = object_ptr_in_arena(puVar8);
                 if ((iVar9 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
-                  if (puVar8 == DAT_0023be64) {
+                  if (puVar8 == g_player_object) {
                     DAT_00204884 = (undefined2)(iVar12 << 6);
                   }
                 }
@@ -25445,7 +25893,7 @@ LAB_0003987c:
                 uVar14 = object_ptr_in_arena(puVar8);
                 uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
                 if (((int)uVar14 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
-                  if (puVar8 == DAT_0023be64) {
+                  if (puVar8 == g_player_object) {
                     set_locomotion_state(0x10);
                     uVar10 = extraout_r1;
                   }
@@ -25504,10 +25952,10 @@ uint param_2;
   iVar2 = FUN_000535fc();
   iVar3 = (int)sVar4;
   if (iVar3 < 0) {
-    if (iVar2 == DAT_0023be64) {
+    if (iVar2 == g_player_object) {
       uVar5 = *(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf;
       if ((-uVar5 != iVar3 && (int)uVar5 <= -iVar3) &&
-         (cVar1 = FUN_000382cc(DAT_0023be64,1,0x10), cVar1 != '\0')) {
+         (cVar1 = FUN_000382cc(g_player_object,1,0x10), cVar1 != '\0')) {
         uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
         *(byte *)(DAT_00086df8 + 0x5f) =
              (byte)uVar5 | (byte)(((param_2 & 0xffff) * -0x10000 >> 0x10 & 0xf) << 2);
@@ -25568,7 +26016,7 @@ undefined4 FUN_00039d78()
   puVar2 = (ushort *)tilemap_lookup((int)local_6 >> 3,(int)local_8 >> 3);
   uVar1 = *puVar2;
   if ((((uVar1 & 0xf) == 0) || (((&DAT_0023ae40)[uVar1 >> 10 & 0xf] & 0xfff0) != 0x10)) ||
-     ((int)(*(byte *)(DAT_0023be64 + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
+     ((int)(*(byte *)(g_player_object + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
     uVar3 = 0x65;
   }
   else {
@@ -25746,7 +26194,7 @@ void FUN_0003a29c(param_1)
 undefined1 param_1;
 
 {
-  FUN_00035cb0(DAT_0023be64,param_1);
+  FUN_00035cb0(g_player_object,param_1);
   return;
 }
 
@@ -25789,8 +26237,8 @@ void FUN_0003a398()
   int iVar2;
   ushort *local_10;   /* was int -- tilemap_lookup()+2 (64-bit ptr) */
 
-  local_10 = (ushort *)((char *)tilemap_lookup(*(ushort *)(DAT_0023be64 + 0x16) >> 10,
-                          (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4) + 2);
+  local_10 = (ushort *)((char *)tilemap_lookup(*(ushort *)(g_player_object + 0x16) >> 10,
+                          (*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4) + 2);
   iVar2 = FUN_000537d0(&local_10,1,4,1,4);
   if (iVar2 != 0) {
     message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
@@ -25799,7 +26247,7 @@ void FUN_0003a398()
     *(byte *)(DAT_00086df8 + 0x66) = (byte)((uint)uVar1 >> 8) | 1;
     *(char *)(DAT_00086df8 + 0x67) = (char)((uint)uVar1 >> 0x10);
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
-    FUN_00074028(DAT_0023be64,3);
+    FUN_00074028(g_player_object,3);
     FUN_00045728(iVar2);
     FUN_00053334(0,iVar2,1);
     FUN_00048110();
@@ -25829,7 +26277,7 @@ undefined4 param_3;
     *(byte *)(DAT_00086df8 + 0x66) = (byte)((uint)uVar1 >> 8) | 1;
     *(char *)(DAT_00086df8 + 0x67) = (char)((uint)uVar1 >> 0x10);
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
-    FUN_00074028(DAT_0023be64,3);
+    FUN_00074028(g_player_object,3);
     FUN_00045728(iVar2);
     FUN_00053334(0,iVar2,1);
     FUN_00048110();
@@ -26628,7 +27076,7 @@ void FUN_0003b820()
   
   FUN_0007ea44(2);
   FUN_0007856c();
-  FUN_00049960();
+  init_level_object_arena();
   input_bindings_init();
   FUN_0007ea30();
   FUN_00077868(DAT_0023c540);
@@ -26804,7 +27252,7 @@ void FUN_0003bc08()
 void FUN_0003bc1c()
 
 {
-  FUN_00052960();
+  reset_level_object_arena();
   FUN_00049924(2);
   DAT_00202080 = 0xffff;
   return;
@@ -26953,10 +27401,10 @@ void FUN_0003bee4()
   
   FUN_00066c90();
   FUN_000667cc();
-  uVar1 = *(ushort *)(DAT_0023be64 + 2) & 0xfc7f;
-  *(char *)(DAT_0023be64 + 2) = (char)uVar1;
-  *(char *)(DAT_0023be64 + 3) = (char)(uVar1 >> 8);
-  *(byte *)(DAT_0023be64 + 0x18) = *(byte *)(DAT_0023be64 + 0x18) & 0xe0;
+  uVar1 = *(ushort *)(g_player_object + 2) & 0xfc7f;
+  *(char *)(g_player_object + 2) = (char)uVar1;
+  *(char *)(g_player_object + 3) = (char)(uVar1 >> 8);
+  *(byte *)(g_player_object + 0x18) = *(byte *)(g_player_object + 0x18) & 0xe0;
   DAT_00201c70 = 0;
   DAT_00201c78 = 0;
   DAT_00086b20 = 1;
@@ -26964,20 +27412,20 @@ void FUN_0003bee4()
   DAT_00201c94 = 0;
   FUN_00040004();
   DAT_000868d8 = 2;
-  if (((DAT_002020c0 == 1) || (DAT_002020c0 == 3)) || (DAT_002020c0 == 4)) {
+  if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
     FUN_00057cac(3);
   }
-  DAT_002020c0 = 0;
+  g_cursor_mode = 0;
   DAT_0024cfc8 = 0;
   DAT_002028d8 = 0;
-  if (DAT_002020c4 != 0) {
-    if (DAT_002020c4 < 4) {
+  if (g_cursor_holding_state != 0) {
+    if (g_cursor_holding_state < 4) {
       FUN_00057cac(3);
-      DAT_00202948 = 0;
-      DAT_002020c4 = 0;
+      g_selected_object = 0;
+      g_cursor_holding_state = 0;
     }
     else {
-      DAT_002020c4 = 0;
+      g_cursor_holding_state = 0;
       FUN_00067d10(1);
     }
   }
@@ -27061,12 +27509,12 @@ undefined4 dungeon_view_anim_tick()
     if (DAT_00201c9c != (code *)0x0) {
       (*DAT_00201c9c)();
     }
-    iVar1 = FUN_00038d4c(DAT_0023be64,(int)DAT_00201c90,(int)DAT_00201c8c,&local_20,&local_1e,0);
+    iVar1 = FUN_00038d4c(g_player_object,(int)DAT_00201c90,(int)DAT_00201c8c,&local_20,&local_1e,0);
     if ((iVar1 == 0) &&
-       (iVar1 = FUN_00038d4c(DAT_0023be64,(int)DAT_00201c90,(int)DAT_00201c8c,&local_20,&local_1e,1)
+       (iVar1 = FUN_00038d4c(g_player_object,(int)DAT_00201c90,(int)DAT_00201c8c,&local_20,&local_1e,1)
        , iVar1 == 0)) {
       DAT_00201c90 = 0;
-      *(undefined1 *)(DAT_0023be64 + 8) = 0;
+      *(undefined1 *)(g_player_object + 8) = 0;
       return 0;
     }
     DAT_00201c90 = local_20;
@@ -27205,12 +27653,17 @@ char *param_1;
 
 
 
-bool FUN_0003c4dc(param_1)
+// was FUN_0003c4dc -- set the player's swim/wade sub-pose byte
+// (DAT_00086df8+0xb9) from the collision-state mask's "in liquid, how deep"
+// bit (0x2): shallow (0x10) vs deep/wading (0x60, also firing FUN_00040004,
+// almost certainly the splash sound or pose swap). Returns true for the
+// deep case. Only ever called from set_locomotion_state's swim branch.
+bool apply_swim_wade_pose(param_1)
 ushort param_1;
 
 {
   bool bVar1;
-  
+
   bVar1 = (param_1 & 2) == 0;
   if (bVar1) {
     *(undefined1 *)(DAT_00086df8 + 0xb9) = 0x10;
@@ -27227,8 +27680,8 @@ ushort param_1;
 // was FUN_0003c524 -- set the player's locomotion state from a collision-state
 // mask (param_1): when it changes, pick the movement mode (walk / swim / fly /
 // fall) via FUN_0003dca4. While the airborne bit (0x10) is set it also keeps the
-// gravity fall armed each tick (DAT_00204890 = -4) and clamps the fall velocity
-// (DAT_0020488a) to terminal when DAT_0020208c & 2. Called every tick from
+// gravity fall armed each tick (g_fall_accel = -4) and clamps the fall velocity
+// (g_vertical_velocity) to terminal when DAT_0020208c & 2. Called every tick from
 // commit_player_move with the current state byte DAT_002048a8.
 void set_locomotion_state(param_1,param_2)
 ushort param_1;
@@ -27240,6 +27693,10 @@ int param_2;
   int iVar3;
   
   uVar1 = (uint)(short)param_1;
+  if (getenv("UW_DEBUG_LOCO"))
+    fprintf(stderr, "[loco] param_1=0x%x param_2=%d DAT_00202084(old)=0x%x fallflag=%d vvel=%d\n",
+            (unsigned)param_1, param_2, (unsigned)DAT_00202084,
+            (int)g_fall_accel, (int)g_vertical_velocity);
   if ((DAT_00202084 != uVar1) || (param_2 != 0)) {
     iVar3 = 0;
     uVar2 = 0;
@@ -27267,9 +27724,25 @@ int param_2;
       }
     }
     else if ((DAT_0020208c & 8) == 0) {
-      iVar3 = FUN_0003c4dc();
+      /* Was `apply_swim_wade_pose()` with no argument -- apply_swim_wade_pose reads its
+         `param_1 & 2` to decide between the two swim/wade sub-states
+         (byte DAT_00086df8+0xb9 = 0x10 vs 0x60, the latter also firing
+         FUN_00040004 -- almost certainly the wading/swim splash sound or
+         pose). The dropped argument is the same collision-state mask
+         `param_1` this whole function was just called with (the only
+         value in scope that plausibly belongs here, matching the pattern
+         of every other dropped-argument bug fixed this session), so
+         "swim vs wade" was being decided from whatever garbage happened
+         to be sitting in a register rather than the real mask -- likely
+         why water/wading looked broken (undefined behavior, not
+         necessarily changed by any particular commit). Pass it
+         explicitly. */
+      iVar3 = apply_swim_wade_pose(param_1);
       uVar2 = 1;
     }
+    if (getenv("UW_DEBUG_LOCO"))
+      fprintf(stderr, "[loco] -> uVar2(anim mode)=%d iVar3=%d DAT_0020208c=0x%x\n",
+              (int)uVar2, iVar3, (unsigned)DAT_0020208c);
     FUN_0003dca4(uVar2);
     if (iVar3 == 0) {
       *(undefined1 *)(DAT_00086df8 + 0xb9) = 0;
@@ -27277,31 +27750,31 @@ int param_2;
   }
   if ((uVar1 & 0x10) != 0) {
     if ((DAT_0020208c & 0x14) == 0) {
-      if (DAT_00204890 == 0) {
-        DAT_00204890 = -4;
+      if (g_fall_accel == 0) {
+        g_fall_accel = -4;
       }
-      if (((DAT_0020208c & 2) != 0) && (DAT_0020488a < -0x5d)) {
-        DAT_0020488a = -0x5e;
-        iVar3 = (int)DAT_00204894;
+      if (((DAT_0020208c & 2) != 0) && (g_vertical_velocity < -0x5d)) {
+        g_vertical_velocity = -0x5e;
+        iVar3 = (int)g_jump_ascent_timer;
         if (iVar3 < 0x15) {
-          DAT_00204894 = 0;
+          g_jump_ascent_timer = 0;
         }
         else {
           if (iVar3 < 0) {
             iVar3 = iVar3 + 1;
           }
-          DAT_00204894 = (short)(iVar3 >> 1);
+          g_jump_ascent_timer = (short)(iVar3 >> 1);
         }
       }
     }
     else {
-      DAT_00204890 = 0;
-      uVar1 = (uint)DAT_0020488a;
+      g_fall_accel = 0;
+      uVar1 = (uint)g_vertical_velocity;
       if ((int)((uVar1 ^ (int)uVar1 >> 0x1f) - ((int)uVar1 >> 0x1f)) < 0xb) {
-        DAT_0020488a = 0;
+        g_vertical_velocity = 0;
       }
       else {
-        DAT_0020488a = Ordinal_2005(5,uVar1 << 2);
+        g_vertical_velocity = Ordinal_2005(5,uVar1 << 2);
       }
     }
   }
@@ -27326,7 +27799,7 @@ void FUN_0003c6ac()
   byte bVar6;
   
   FUN_000411e0(0xb5);
-  bVar6 = *(byte *)(DAT_0023be64 + 8);
+  bVar6 = *(byte *)(g_player_object + 8);
   uVar1 = (uint)(short)(ushort)bVar6;
   if (uVar1 < 0x65) {
     if (uVar1 < 0x33) {
@@ -27353,7 +27826,7 @@ void FUN_0003c6ac()
   }
   bVar6 = bVar6 - cVar5;
 LAB_0003c780:
-  *(byte *)(DAT_0023be64 + 8) = bVar6;
+  *(byte *)(g_player_object + 8) = bVar6;
   uVar3 = Ordinal_1053();
   Ordinal_2005(0xc,uVar3);
   if (extraout_r1_02 != 0) {
@@ -27396,7 +27869,11 @@ short param_1;
   undefined1 local_33;
   undefined2 local_32;
   
-  if ((DAT_00204890 == 0) && (DAT_00204894 < DAT_00085890)) {
+  if (getenv("UW_DEBUG_STEPHEIGHT"))
+    fprintf(stderr, "[bdm-entry] param_1=%d g_fall_accel=%d g_jump_ascent_timer=%d DAT_00085890=%d z=%d guard=%d\n",
+            (int)param_1, (int)g_fall_accel, (int)g_jump_ascent_timer, (int)DAT_00085890, (int)DAT_00204884,
+            (g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890));
+  if ((g_fall_accel == 0) && (g_jump_ascent_timer < DAT_00085890)) {
     uVar10 = 0;
     if (param_1 == -2) {
       uVar4 = 0x40;
@@ -27419,7 +27896,7 @@ LAB_0003c940:
         iVar7 = iVar7 + 0x1f;
       }
       iVar7 = FUN_00051fa0(0x7f,1,(int)(short)(iVar7 >> 5),(int)(short)(iVar8 >> 5),
-                           *(byte *)(DAT_0023be64 + 2) & 0x7f,uVar5 | uVar10,8);
+                           *(byte *)(g_player_object + 2) & 0x7f,uVar5 | uVar10,8);
       if ((iVar7 == 0) ||
          ((((uVar10 == 0 && (uVar3 = (uint)DAT_00202c68, uVar3 != 1)) && (uVar3 != DAT_00202084)) &&
           ((uVar3 != 0x10 || (uVar5 == 0)))))) goto LAB_0003cdf8;
@@ -27430,46 +27907,50 @@ LAB_0003c940:
       iVar7 = iVar9 * 0x10000 >> 0x10;
       if (iVar7 != iVar8) {
         if (iVar8 != -1) {
-          object_list_unlink(DAT_002029cc + iVar8 * 4 + 2,DAT_0023be64);
+          object_list_unlink(DAT_002029cc + iVar8 * 4 + 2,g_player_object);
         }
         DAT_00202080 = (short)iVar9;
-        object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,DAT_0023be64);
+        object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
         uVar6 = DAT_00204880 & 0x3f00;
-        uVar5 = *(ushort *)(DAT_0023be64 + 0x16) & 0x3ff;
-        *(char *)(DAT_0023be64 + 0x16) = (char)uVar5;
-        *(byte *)(DAT_0023be64 + 0x17) =
+        uVar5 = *(ushort *)(g_player_object + 0x16) & 0x3ff;
+        *(char *)(g_player_object + 0x16) = (char)uVar5;
+        *(byte *)(g_player_object + 0x17) =
              (byte)(uVar5 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 8) << 10) >> 8);
-        uVar5 = *(ushort *)(DAT_0023be64 + 0x16) & 0xfc0f |
+        uVar5 = *(ushort *)(g_player_object + 0x16) & 0xfc0f |
                 ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
-        *(char *)(DAT_0023be64 + 0x16) = (char)uVar5;
-        *(char *)(DAT_0023be64 + 0x17) = (char)(uVar5 >> 8);
+        *(char *)(g_player_object + 0x16) = (char)uVar5;
+        *(char *)(g_player_object + 0x17) = (char)(uVar5 >> 8);
         uVar5 = local_40;
       }
       uVar6 = DAT_00204880 & 0xe0;
-      uVar3 = *(ushort *)(DAT_0023be64 + 2) & 0x1fff;
-      *(char *)(DAT_0023be64 + 2) = (char)uVar3;
-      *(byte *)(DAT_0023be64 + 3) =
+      uVar3 = *(ushort *)(g_player_object + 2) & 0x1fff;
+      *(char *)(g_player_object + 2) = (char)uVar3;
+      *(byte *)(g_player_object + 3) =
            (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 0xd) >> 8);
       uVar6 = DAT_00204882 & 0xe0;
-      uVar3 = *(ushort *)(DAT_0023be64 + 2) & 0xe3ff;
-      *(char *)(DAT_0023be64 + 2) = (char)uVar3;
-      *(byte *)(DAT_0023be64 + 3) =
+      uVar3 = *(ushort *)(g_player_object + 2) & 0xe3ff;
+      *(char *)(g_player_object + 2) = (char)uVar3;
+      *(byte *)(g_player_object + 3) =
            (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 10) >> 8);
+      if (getenv("UW_DEBUG_STEPHEIGHT"))
+        fprintf(stderr, "[stepsnap] uVar10=%u uVar5=%u cur_z=%d DAT_00202c30=%d snap=%d\n",
+                uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,
+                (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)));
       if (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)) {
-        uVar1 = *(undefined2 *)(DAT_0023be64 + 2);
+        uVar1 = *(undefined2 *)(g_player_object + 2);
         bVar2 = (byte)uVar1;
-        *(byte *)(DAT_0023be64 + 2) = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
-        *(char *)(DAT_0023be64 + 3) = (char)((ushort)uVar1 >> 8);
+        *(byte *)(g_player_object + 2) = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
+        *(char *)(g_player_object + 3) = (char)((ushort)uVar1 >> 8);
         DAT_00204884 = DAT_00202c30 << 3;
       }
-      else if (DAT_00204890 == 0 && uVar5 == 0) {
-        DAT_00204890 = -4;
+      else if (g_fall_accel == 0 && uVar5 == 0) {
+        g_fall_accel = -4;
       }
       set_locomotion_state((int)DAT_00202c68,0);
       uVar10 = FUN_0002294c();
-      uVar5 = *(ushort *)(DAT_0023be64 + 0xb) & 0xfff;
-      *(char *)(DAT_0023be64 + 0xb) = (char)uVar5;
-      *(byte *)(DAT_0023be64 + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
+      uVar5 = *(ushort *)(g_player_object + 0xb) & 0xfff;
+      *(char *)(g_player_object + 0xb) = (char)uVar5;
+      *(byte *)(g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
       uVar4 = DAT_00202c6c;
       DAT_00202c6c = &local_3c;
       local_32 = 1;
@@ -27485,7 +27966,7 @@ LAB_0003c940:
         iVar7 = iVar7 + 0x1f;
       }
       local_3a = (undefined2)(iVar7 >> 5);
-      local_38 = *(byte *)(DAT_0023be64 + 2) & 0x7f;
+      local_38 = *(byte *)(g_player_object + 2) & 0x7f;
       collision_height_envelope(0,0);
       FUN_00051dd0();
       iVar8 = (int)*(char *)(DAT_00202c6c + 0xb);
@@ -27493,9 +27974,28 @@ LAB_0003c940:
       if (iVar7 < (int)(iVar8 + (uint)*(byte *)((char *)DAT_00202c6c + 0x15))) {
         do {
           uVar11 = resolve_object_link(&DAT_00202c3a + iVar7 * 6,iVar8);
-          iVar8 = (int)((ulonglong)uVar11 >> 0x20);
+          /* Was `iVar8 = (int)((ulonglong)uVar11 >> 0x20);` -- a leftover
+             from the original 32-bit ARM ABI, where resolve_object_link's
+             caller apparently re-read some other value out of r1 right
+             after the call (Ghidra folded it into a fake 64-bit return
+             value, r0:r1). On this 64-bit recompile resolve_object_link
+             returns a real, single 64-bit pointer with no second value
+             riding along in its "upper half" -- (ulonglong)uVar11 >> 0x20
+             was just the pointer's own high address bits, reinterpreted
+             as iVar8 and clobbering this loop's own bound (iVar8 is the
+             loop's own upper limit, from DAT_00202c6c+0xb/0x15) with
+             garbage every single iteration after the first. That let
+             iVar7 walk arbitrarily far past the real candidate range,
+             feeding wild indices into resolve_object_link on later
+             iterations -- confirmed via the very "negative slot"/"exceeds
+             0x3ff" FUN_000535fc warnings logged just before this crash.
+             Also add the missing NULL guard resolve_object_link's other
+             call sites already needed: an out-of-range link now returns
+             NULL, and this dereferenced it unconditionally (confirmed via
+             lldb, EXC_BAD_ACCESS at address 0). */
+          if (uVar11 == 0) break;
           if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
-            FUN_0007cdbc(DAT_0023be64,0,(ushort *)uVar11,0);
+            FUN_0007cdbc(g_player_object,0,(ushort *)uVar11,0);
             iVar8 = extraout_r1;
           }
           iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
@@ -27520,12 +28020,12 @@ LAB_0003c920:
       else {
         DAT_00201c70 = (DAT_00201c70 & 0xe000) + (ushort)(0 < param_1) * 0x2000;
       }
-      uVar10 = *(ushort *)(DAT_0023be64 + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-      *(char *)(DAT_0023be64 + 2) = (char)uVar10;
-      *(char *)(DAT_0023be64 + 3) = (char)(uVar10 >> 8);
-      *(byte *)(DAT_0023be64 + 0x18) =
-           ((byte)(DAT_00201c70 >> 8) ^ *(byte *)(DAT_0023be64 + 0x18)) & 0x1f ^
-           *(byte *)(DAT_0023be64 + 0x18);
+      uVar10 = *(ushort *)(g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
+      *(char *)(g_player_object + 2) = (char)uVar10;
+      *(char *)(g_player_object + 3) = (char)(uVar10 >> 8);
+      *(byte *)(g_player_object + 0x18) =
+           ((byte)(DAT_00201c70 >> 8) ^ *(byte *)(g_player_object + 0x18)) & 0x1f ^
+           *(byte *)(g_player_object + 0x18);
       uVar4 = DAT_00202c6c;
     }
     DAT_00202c6c = (undefined2 *)uVar4;
@@ -27535,6 +28035,9 @@ LAB_0003c920:
 LAB_0003cdf8:
     uVar4 = 0;
   }
+  if (getenv("UW_DEBUG_STEPHEIGHT"))
+    fprintf(stderr, "[bdm-exit] moved=%d z=%d g_fall_accel=%d bea8=%d be98=%d\n",
+            (int)uVar4, (int)DAT_00204884, (int)g_fall_accel, (int)DAT_0023bea8, (int)DAT_0023be98);
   return uVar4;
 }
 
@@ -27553,9 +28056,9 @@ undefined4 param_1;
   short local_18 [2];
   
   local_18[0] = 0;
-  if ((DAT_00204890 == 0) && (resolve_move_vector((int)DAT_0023bf1c,param_1,local_18), DAT_00204890 == 0))
+  if ((g_fall_accel == 0) && (resolve_move_vector((int)g_movement_mode,param_1,local_18), g_fall_accel == 0))
   {
-    iVar5 = (int)local_18[0] - (int)DAT_00204894;
+    iVar5 = (int)local_18[0] - (int)g_jump_ascent_timer;
     uVar1 = iVar5 * 0x10000 >> 0x10;
     uVar2 = iVar5 * 0x10000 >> 0x1f;
     if ((int)DAT_00085890 < (int)((uVar1 ^ uVar2) - uVar2)) {
@@ -27565,14 +28068,14 @@ undefined4 param_1;
       }
       iVar5 = (int)sVar4 * (int)DAT_00085890;
     }
-    iVar5 = DAT_00204894 + iVar5;
+    iVar5 = g_jump_ascent_timer + iVar5;
     iVar3 = iVar5 * 0x10000 >> 0x10;
-    DAT_00204894 = DAT_00202078;
-    if ((iVar3 <= DAT_00202078) && (DAT_00204894 = (short)iVar5, iVar3 < 0)) {
-      DAT_00204894 = 0;
+    g_jump_ascent_timer = DAT_00202078;
+    if ((iVar3 <= DAT_00202078) && (g_jump_ascent_timer = (short)iVar5, iVar3 < 0)) {
+      g_jump_ascent_timer = 0;
     }
   }
-  if (DAT_00204890 != 0) {
+  if (g_fall_accel != 0) {
     iVar5 = (int)DAT_0023bf4c;
     if (iVar5 < 0) {
       iVar5 = iVar5 + 3;
@@ -27586,11 +28089,11 @@ undefined4 param_1;
   DAT_00204892 = (short)param_1;
   DAT_00204896 = 5;
   DAT_00204897 = 0;
-  if ((DAT_00204890 == 0 && DAT_0020488e == 0) && DAT_0020488c == 0) {
+  if ((g_fall_accel == 0 && DAT_0020488e == 0) && DAT_0020488c == 0) {
     DAT_00204897 = 0x80;
   }
   sVar4 = DAT_00201c70;
-  if (DAT_00204894 != 0) {
+  if (g_jump_ascent_timer != 0) {
     sVar4 = DAT_00201c78;
   }
   DAT_00201c78 = sVar4;
@@ -27620,16 +28123,16 @@ uint param_2;
   undefined1 local_3c [24];
   
   if (-1 < DAT_00202080) {
-    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   DAT_002048b8 = &LAB_0003d8e4;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
-  DAT_00204894 = 0;
-  DAT_00204890 = 0;
+  g_jump_ascent_timer = 0;
+  g_fall_accel = 0;
   DAT_0020488e = 0;
   DAT_0020488c = 0;
-  DAT_0020488a = 0;
+  g_vertical_velocity = 0;
   DAT_00204888 = 0;
   DAT_00204886 = 0;
   DAT_00204880 = (short)((uint)((int)(short)param_1 << 0x18) >> 0x10) + 0x80;
@@ -27644,30 +28147,30 @@ uint param_2;
   if (((&DAT_000878d0)[*(byte *)(DAT_002029cc + iVar2 * 4) & 0xf] & 0x20) != 0) {
     DAT_00204884 = DAT_00204884 + 0x20;
   }
-  uVar3 = *(ushort *)(DAT_0023be64 + 2) & 0xff80;
-  *(byte *)(DAT_0023be64 + 2) =
+  uVar3 = *(ushort *)(g_player_object + 2) & 0xff80;
+  *(byte *)(g_player_object + 2) =
        (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  *(char *)(DAT_0023be64 + 3) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)(DAT_0023be64 + 0x16) & 0x3ff;
-  *(char *)(DAT_0023be64 + 0x16) = (char)uVar3;
-  *(byte *)(DAT_0023be64 + 0x17) = (byte)(uVar3 >> 8) | (byte)(((param_1 & 0x3f) << 10) >> 8);
-  uVar3 = *(ushort *)(DAT_0023be64 + 0x16) & 0xfc0f | (param_2 & 0x3f) << 4;
-  *(char *)(DAT_0023be64 + 0x16) = (char)uVar3;
-  *(char *)(DAT_0023be64 + 0x17) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)(DAT_0023be64 + 2) & 0x1fff;
-  *(char *)(DAT_0023be64 + 2) = (char)uVar3;
-  *(byte *)(DAT_0023be64 + 3) = (byte)(uVar3 >> 8) | 0x60;
-  uVar3 = *(ushort *)(DAT_0023be64 + 2) & 0xefff;
-  *(char *)(DAT_0023be64 + 2) = (char)uVar3;
-  *(byte *)(DAT_0023be64 + 3) = (byte)(uVar3 >> 8) | 0xc;
-  *(byte *)(DAT_0023be64 + 0x15) = *(byte *)(DAT_0023be64 + 0x15) & 0xec | 0x2c;
-  uVar3 = *(ushort *)(DAT_0023be64 + 4) & 0xffc0;
-  *(char *)(DAT_0023be64 + 4) = (char)uVar3;
-  *(char *)(DAT_0023be64 + 5) = (char)(uVar3 >> 8);
-  *(byte *)(DAT_0023be64 + 4) = *(byte *)(DAT_0023be64 + 4) & 0x3f;
-  *(undefined1 *)(DAT_0023be64 + 5) = 0;
+  *(char *)(g_player_object + 3) = (char)(uVar3 >> 8);
+  uVar3 = *(ushort *)(g_player_object + 0x16) & 0x3ff;
+  *(char *)(g_player_object + 0x16) = (char)uVar3;
+  *(byte *)(g_player_object + 0x17) = (byte)(uVar3 >> 8) | (byte)(((param_1 & 0x3f) << 10) >> 8);
+  uVar3 = *(ushort *)(g_player_object + 0x16) & 0xfc0f | (param_2 & 0x3f) << 4;
+  *(char *)(g_player_object + 0x16) = (char)uVar3;
+  *(char *)(g_player_object + 0x17) = (char)(uVar3 >> 8);
+  uVar3 = *(ushort *)(g_player_object + 2) & 0x1fff;
+  *(char *)(g_player_object + 2) = (char)uVar3;
+  *(byte *)(g_player_object + 3) = (byte)(uVar3 >> 8) | 0x60;
+  uVar3 = *(ushort *)(g_player_object + 2) & 0xefff;
+  *(char *)(g_player_object + 2) = (char)uVar3;
+  *(byte *)(g_player_object + 3) = (byte)(uVar3 >> 8) | 0xc;
+  *(byte *)(g_player_object + 0x15) = *(byte *)(g_player_object + 0x15) & 0xec | 0x2c;
+  uVar3 = *(ushort *)(g_player_object + 4) & 0xffc0;
+  *(char *)(g_player_object + 4) = (char)uVar3;
+  *(char *)(g_player_object + 5) = (char)(uVar3 >> 8);
+  *(byte *)(g_player_object + 4) = *(byte *)(g_player_object + 4) & 0x3f;
+  *(undefined1 *)(g_player_object + 5) = 0;
   DAT_00202c6c = local_3c;
-  uVar1 = FUN_0005358c(DAT_0023be64);
+  uVar1 = encode_object_slot_index(g_player_object);
   DAT_00202c6c[10] = (char)uVar1;
   DAT_00202c6c[0xb] = (char)((ushort)uVar1 >> 8);
   DAT_00202c6c[8] = (byte)DAT_00203304 & 7;
@@ -27682,13 +28185,13 @@ uint param_2;
   DAT_00202c6c[4] = (char)(iVar2 >> 3);
   DAT_00202c6c[5] = (char)((uint)(iVar2 >> 3) >> 8);
   collision_build_height_field(DAT_002048a7);
-  DAT_002048a8 = FUN_0005a630((int)(short)(*(ushort *)(DAT_00202c6c + 0xe) |
+  DAT_002048a8 = collision_flags_to_locomotion_code((int)(short)(*(ushort *)(DAT_00202c6c + 0xe) |
                                           *(ushort *)(DAT_00202c6c + 0xc)));
   set_locomotion_state(DAT_002048a8,0);
   DAT_0023be98 = 0;
   FUN_0006907c();
   DAT_000858a0 = 1;
-  object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+  object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   return;
 }
 
@@ -27701,7 +28204,7 @@ uint param_2;
 // player position/facing back into the world: recompute the tile index and
 // relink the player object between tile object lists on a tile change,
 // pack sub-tile position / height / facing into the player object record
-// (DAT_0023be64 +2/+3/+0x16/+0x17/+0x18), auto-straighten the facing
+// (g_player_object +2/+3/+0x16/+0x17/+0x18), auto-straighten the facing
 // toward the travel direction, then handle a pending landing impact
 // (fall damage FUN_00038374 + thud FUN_00072f30) and refresh the
 // locomotion pose. Called every tick from apply_movement_tick.
@@ -27722,40 +28225,40 @@ void commit_player_move()
   iVar7 = iVar8 * 0x10000 >> 0x10;
   if (iVar7 != iVar2) {
     if (iVar2 != -1) {
-      object_list_unlink(DAT_002029cc + iVar2 * 4 + 2,DAT_0023be64);
+      object_list_unlink(DAT_002029cc + iVar2 * 4 + 2,g_player_object);
     }
     DAT_00202080 = (short)iVar8;
-    object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,DAT_0023be64);
+    object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
     uVar5 = DAT_00204880 & 0x3f00;
-    uVar3 = *(ushort *)(DAT_0023be64 + 0x16) & 0x3ff;
-    *(char *)(DAT_0023be64 + 0x16) = (char)uVar3;
-    *(byte *)(DAT_0023be64 + 0x17) =
+    uVar3 = *(ushort *)(g_player_object + 0x16) & 0x3ff;
+    *(char *)(g_player_object + 0x16) = (char)uVar3;
+    *(byte *)(g_player_object + 0x17) =
          (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 8) << 10) >> 8);
-    uVar3 = *(ushort *)(DAT_0023be64 + 0x16) & 0xfc0f |
+    uVar3 = *(ushort *)(g_player_object + 0x16) & 0xfc0f |
             ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
-    *(char *)(DAT_0023be64 + 0x16) = (char)uVar3;
-    *(char *)(DAT_0023be64 + 0x17) = (char)(uVar3 >> 8);
+    *(char *)(g_player_object + 0x16) = (char)uVar3;
+    *(char *)(g_player_object + 0x17) = (char)(uVar3 >> 8);
   }
   uVar5 = DAT_00204880 & 0xe0;
-  uVar3 = *(ushort *)(DAT_0023be64 + 2) & 0x1fff;
-  *(char *)(DAT_0023be64 + 2) = (char)uVar3;
-  *(byte *)(DAT_0023be64 + 3) =
+  uVar3 = *(ushort *)(g_player_object + 2) & 0x1fff;
+  *(char *)(g_player_object + 2) = (char)uVar3;
+  *(byte *)(g_player_object + 3) =
        (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 0xd) >> 8);
   uVar5 = DAT_00204882 & 0xe0;
-  uVar3 = *(ushort *)(DAT_0023be64 + 2) & 0xe3ff;
-  *(char *)(DAT_0023be64 + 2) = (char)uVar3;
-  *(byte *)(DAT_0023be64 + 3) =
+  uVar3 = *(ushort *)(g_player_object + 2) & 0xe3ff;
+  *(char *)(g_player_object + 2) = (char)uVar3;
+  *(byte *)(g_player_object + 3) =
        (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 10) >> 8);
-  uVar3 = *(ushort *)(DAT_0023be64 + 2) & 0xff80;
-  *(byte *)(DAT_0023be64 + 2) =
+  uVar3 = *(ushort *)(g_player_object + 2) & 0xff80;
+  *(byte *)(g_player_object + 2) =
        (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  *(char *)(DAT_0023be64 + 3) = (char)(uVar3 >> 8);
+  *(char *)(g_player_object + 3) = (char)(uVar3 >> 8);
   uVar3 = FUN_0002294c();
-  uVar4 = *(ushort *)(DAT_0023be64 + 0xb) & 0xfff;
-  *(char *)(DAT_0023be64 + 0xb) = (char)uVar4;
-  *(byte *)(DAT_0023be64 + 0xc) = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
+  uVar4 = *(ushort *)(g_player_object + 0xb) & 0xfff;
+  *(char *)(g_player_object + 0xb) = (char)uVar4;
+  *(byte *)(g_player_object + 0xc) = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
   if ((_DAT_002048a9 != 0) && (_DAT_002048a1 == DAT_00201c78)) {
-    DAT_00204894 = 0;
+    g_jump_ascent_timer = 0;
   }
   uVar5 = DAT_00201c70;
   if (_DAT_002048a1 != DAT_00201c78) {
@@ -27770,20 +28273,20 @@ void commit_player_move()
     }
   }
   DAT_00201c70 = uVar5;
-  uVar3 = *(ushort *)(DAT_0023be64 + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-  *(char *)(DAT_0023be64 + 2) = (char)uVar3;
-  *(char *)(DAT_0023be64 + 3) = (char)(uVar3 >> 8);
-  *(byte *)(DAT_0023be64 + 0x18) =
-       ((byte)(DAT_00201c70 >> 8) ^ *(byte *)(DAT_0023be64 + 0x18)) & 0x1f ^
-       *(byte *)(DAT_0023be64 + 0x18);
+  uVar3 = *(ushort *)(g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
+  *(char *)(g_player_object + 2) = (char)uVar3;
+  *(char *)(g_player_object + 3) = (char)(uVar3 >> 8);
+  *(byte *)(g_player_object + 0x18) =
+       ((byte)(DAT_00201c70 >> 8) ^ *(byte *)(g_player_object + 0x18)) & 0x1f ^
+       *(byte *)(g_player_object + 0x18);
   if (_DAT_002048a9 != 0) {
     if (DAT_00204896 != '\0') {
       uVar3 = (uint)(_DAT_002048a9 >> 8);
       iVar7 = 0;
-      if (DAT_0020488a != 0) {
+      if (g_vertical_velocity != 0) {
         iVar7 = uVar3 << 0x10;
       }
-      if (DAT_0020488a != 0) {
+      if (g_vertical_velocity != 0) {
         uVar3 = ((iVar7 >> 0x10) << 0x11) >> 0x10;
       }
       sVar1 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x32),((int)(short)uVar3 << 0x11) >> 0x10)
@@ -27794,7 +28297,7 @@ void commit_player_move()
         uVar3 = (uint)sVar1;
       }
       if (3 < (short)uVar3) {
-        FUN_00038374(DAT_0023be64,0,0,0,(char)uVar3,0);
+        FUN_00038374(g_player_object,0,0,0,(char)uVar3,0);
       }
       if ((1 < (short)uVar3) || ((DAT_002048a8 & 0x10) != 0)) {
         FUN_00072f30(0xf,0x40,((uVar3 & 0xff) + 0x31) * 4);
@@ -27809,12 +28312,73 @@ void commit_player_move()
 
 
 
-// was FUN_0003d94c -- resolve a movement mode (param_1 = DAT_0023bf1c) into
+// New (not decompiled from the binary): a debug/testing entry point for
+// demomode.c's SETPLAYERPOS command. Directly sets the fine-grained player
+// position (DAT_00204880/82, format (tile<<8)|fine, 256 units/tile -- see
+// commit_player_move's own tile-index derivation), persistent yaw
+// (DAT_00201c70, 65536 units/360 degrees -- confirmed via the 0x2000 =
+// 45-degree turn-step increments in apply_heading_turn) and pitch
+// (DAT_0023beb4, signed 1/256-degree units -- see sync_camera_from_player's
+// own >>8 use of it), then reuses set_player_tile_position (for the integer
+// tile part: object-list relink, collision height field, locomotion state)
+// and commit_player_move (to pack the final fine position/yaw back into the
+// player object record g_player_object) so this goes through the same object-
+// sync paths real movement does, instead of duplicating them. x/y are tile
+// coordinates with a fractional part (e.g. 32.5); z is the same raw height
+// unit sync_camera_from_player's [playerpos] print shows (DAT_00204884,
+// e.g. z=768 at spawn) -- pass back a value read from that print to land on
+// an exact remembered spot; yaw/pitch are degrees.
+void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pitch_deg)
+{
+  set_player_tile_position((int)floor(x), (int)floor(y));
+  if (getenv("UW_DEBUG_FLOORZ")) {
+    fprintf(stderr, "[floorz] tile=(%d,%d) natural z (from set_player_tile_position) = %d, overriding to %g\n",
+            (int)floor(x), (int)floor(y), (int)DAT_00204884, z);
+  }
+  /* Clear any in-flight smooth-turn interpolation (FUN_00069470's
+     DAT_0023bea8-gated add-on to DAT_00086e6c+0x2c): if a turn animation
+     was still mid-flight when this runs, FUN_00069470 would add its
+     leftover per-tick delta (DAT_0023be9a) on top of the DAT_00201c70
+     we're about to set below, so sync_camera_from_player's very next
+     [playerpos] print would show a transient, wrong yaw for one frame
+     until the animation finished on its own. Confirmed via testing: two
+     back-to-back SETPLAYERPOS calls, the first (right after spawn, an
+     interpolation still pending) showed the old yaw, the second (nothing
+     pending any more) matched exactly. */
+  DAT_0023bea8 = 0;
+  /* Force the camera to track the player object right now. FUN_00069470
+     (the function that actually copies DAT_00201c70/DAT_00204880 etc. into
+     the camera-facing DAT_00086e6c record sync_camera_from_player reads)
+     only does that when DAT_0023b82c -- "whichever object the camera is
+     currently tracking" -- equals g_player_object, the player object; normally
+     true, but right after spawn/chargen it can still be unset/stale for a
+     frame, so the very first SETPLAYERPOS call of a run would appear to
+     not take effect (confirmed live: first call's yaw didn't show up,
+     second did). Setting it here makes this reliable regardless of when
+     it's called. */
+  DAT_0023b82c = g_player_object;
+  DAT_00204880 = (short)lround(x * 256.0);
+  DAT_00204882 = (short)lround(y * 256.0);
+  /* set_player_tile_position just computed a default DAT_00204884 from the
+     destination tile's own floor-height table lookup; override it with the
+     caller's exact value (e.g. to stand at a specific mid-air/step height,
+     not just "on the floor of this tile"). */
+  DAT_00204884 = (short)lround(z);
+  DAT_00201c70 = (short)lround(yaw_deg * (65536.0 / 360.0));
+  DAT_0023beb4 = (short)lround(pitch_deg * 256.0);
+  DAT_00201c78 = DAT_00201c70;
+  _DAT_002048a1 = DAT_00201c70;
+  commit_player_move();
+}
+
+
+
+// was FUN_0003d94c -- resolve a movement mode (param_1 = g_movement_mode) into
 // a travel direction (DAT_00201c78) + step magnitude (*param_3):
 //   0   stop            1     analog move/turn (DAT_0023bf48/4c rates)
 //   6/7 jump            8     move + face 180
 //   9   sidestep left   10    sidestep right  (heading -/+ 0x4000, face kept)
-//   0xc/0xd  fly up / down (DAT_0020488a vertical velocity)
+//   0xc/0xd  fly up / down (g_vertical_velocity vertical velocity)
 void resolve_move_vector(param_1,param_2,param_3)
 undefined2 param_1;
 short param_2;
@@ -27866,15 +28430,15 @@ short * param_3;
     sVar3 = DAT_00201c70;
     break;
   case 6:
-    if (DAT_0020488a != 0) {
+    if (g_vertical_velocity != 0) {
       DAT_00201c78 = DAT_00201c70;
       return;
     }
-    if (DAT_00204890 != 0) {
+    if (g_fall_accel != 0) {
       DAT_00201c78 = DAT_00201c70;
       return;
     }
-    if (DAT_00204894 != 0) {
+    if (g_jump_ascent_timer != 0) {
       DAT_00201c78 = DAT_00201c70;
       return;
     }
@@ -27883,32 +28447,32 @@ short * param_3;
     if (iVar4 < 0) {
       iVar4 = iVar4 + 1;
     }
-    DAT_00204894 = (short)(iVar4 >> 1);
-    *param_3 = DAT_00204894;
+    g_jump_ascent_timer = (short)(iVar4 >> 1);
+    *param_3 = g_jump_ascent_timer;
     DAT_00202088 = 0;
     goto LAB_0003dafc;
   case 7:
 LAB_0003dafc:
-    DAT_0020488a = 0x263;
+    g_vertical_velocity = 0x263;
     iVar2 = (int)DAT_00204884;
     bVar6 = SBORROW4(iVar2,0x280);
     iVar4 = iVar2 + -0x280;
     bVar5 = iVar2 == 0x280;
     if (0x280 < iVar2) {
-      DAT_0020488a = 0x1fd;
+      g_vertical_velocity = 0x1fd;
       bVar6 = SBORROW4(iVar2,0x2c0);
       iVar4 = iVar2 + -0x2c0;
       bVar5 = iVar2 == 0x2c0;
     }
     if (!bVar5 && iVar4 < 0 == bVar6) {
-      DAT_0020488a = 0x153;
+      g_vertical_velocity = 0x153;
     }
     sVar3 = DAT_00201c78;
     if ((DAT_0020208c & 1) == 0) {
-      DAT_00204890 = -4;
+      g_fall_accel = -4;
     }
     else {
-      DAT_00204890 = -2;
+      g_fall_accel = -2;
     }
     break;
   case 8:
@@ -27930,13 +28494,13 @@ LAB_0003da74:
     sVar3 = DAT_00201c70;
     break;
   case 0xc:
-    DAT_0020488a = 0x8d;
+    g_vertical_velocity = 0x8d;
     goto LAB_0003db80;
   case 0xd:
-    DAT_0020488a = -0x8d;
+    g_vertical_velocity = -0x8d;
 LAB_0003db80:
     DAT_00202088 = 0;
-    DAT_00204890 = 0;
+    g_fall_accel = 0;
     sVar3 = DAT_00201c70;
   }
   DAT_00201c78 = sVar3;
@@ -27949,11 +28513,11 @@ void FUN_0003dba0(param_1)
 int param_1;
 
 {
-  if (param_1 == DAT_0023be64) {
+  if (param_1 == g_player_object) {
     if ((DAT_002048a8 & 0x10) == 0) {
-      DAT_0020488a = 0x8d;
+      g_vertical_velocity = 0x8d;
     }
-    DAT_00204890 = 0;
+    g_fall_accel = 0;
   }
   return;
 }
@@ -27976,14 +28540,14 @@ short param_1;
 {
   int iVar1;
   
-  if (DAT_00204890 != -4) {
-    DAT_00204890 = -2;
+  if (g_fall_accel != -4) {
+    g_fall_accel = -2;
   }
   iVar1 = param_1 * 0x2f;
   if (iVar1 < 0) {
     iVar1 = iVar1 + 3;
   }
-  DAT_0020488a = (short)(iVar1 >> 2);
+  g_vertical_velocity = (short)(iVar1 >> 2);
   iVar1 = (int)DAT_00204886;
   if (iVar1 < 0) {
     iVar1 = iVar1 + 1;
@@ -28170,7 +28734,7 @@ void FUN_0003e0b4()
         pcVar4 = pcVar4 + 1;
       } while (cVar1 != '\0');
       if (*DAT_00085a6c < 0x1e) {
-        FUN_000229e0(*(undefined1 *)(DAT_0023be64 + 8),auStack_94,10);
+        FUN_000229e0(*(undefined1 *)(g_player_object + 8),auStack_94,10);
         FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
         if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
           sVar2 = Ordinal_2005(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
@@ -28233,7 +28797,7 @@ void FUN_0003e44c()
   FUN_00072aac();
   FUN_0003e2a4();
   if (DAT_000868d8 == 0) {
-    if (DAT_002020c0 != 0) {
+    if (g_cursor_mode != 0) {
       FUN_0003f99c();
     }
   }
@@ -28241,7 +28805,7 @@ void FUN_0003e44c()
     FUN_000564f8(1);
   }
   FUN_0003e4cc();
-  FUN_0006cca8();
+  redraw_hud_panels();
   return;
 }
 
@@ -28255,20 +28819,20 @@ void FUN_0003e4cc()
   uint uVar3;
   
   FUN_00027708(0);
-  bVar2 = *(byte *)(DAT_0023be64 + 8);
+  bVar2 = *(byte *)(g_player_object + 8);
   FUN_0006cff4(0,bVar2);
-  if (((uint)DAT_001013a4 < (uint)*(byte *)(DAT_0023be64 + 0x11) * 4) ||
-     ((bVar2 < 0x10 && (*(byte *)(DAT_0023be64 + 0x11) != 0)))) {
+  if (((uint)DAT_001013a4 < (uint)*(byte *)(g_player_object + 0x11) * 4) ||
+     ((bVar2 < 0x10 && (*(byte *)(g_player_object + 0x11) != 0)))) {
     FUN_0006cff4(4,3);
   }
-  *(undefined1 *)(DAT_0023be64 + 0x11) = 0;
+  *(undefined1 *)(g_player_object + 0x11) = 0;
   FUN_0006cff4(1,*(undefined1 *)(DAT_00086df8 + 0x37));
   if (DAT_00201b68 != 9) {
-    FUN_0006cff4(2,(ushort)(((int)(((*(byte *)(DAT_0023be64 + 0x18) & 0x1f) +
-                                   ((*(ushort *)(DAT_0023be64 + 2) & 0x380) >> 2)) * 0x10000) >>
+    FUN_0006cff4(2,(ushort)(((int)(((*(byte *)(g_player_object + 0x18) & 0x1f) +
+                                   ((*(ushort *)(g_player_object + 2) & 0x380) >> 2)) * 0x10000) >>
                             0x10) + 8 >> 4) & 0xf);
   }
-  if (*(char *)(DAT_0023be64 + 8) == '\0') {
+  if (*(char *)(g_player_object + 8) == '\0') {
     FUN_00072288();
   }
   uVar3 = FUN_0002294c();
@@ -28305,7 +28869,7 @@ void FUN_0003e644()
 
 
 
-/* param_2 (the picked object, DAT_002020cc -- a real ushort*) and param_3
+/* param_2 (the picked object, g_interact_target -- a real ushort*) and param_3
    (DAT_002020b0 -- a tilemap byte address) were both declared `int`,
    truncating the 64-bit pointers every caller passes; param_2 is then
    dereferenced at `*(ushort *)(param_2 + 2)` and param_3 differenced
@@ -28336,12 +28900,12 @@ char *param_3;
     uVar7 = 1;
   }
   else {
-    uVar5 = *(ushort *)(DAT_0023be64 + 2);
+    uVar5 = *(ushort *)(g_player_object + 2);
     uVar6 = *(ushort *)(param_2 + 2);
-    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(*(ushort *)(DAT_0023be64 + 0x16) >> 10) * -8) -
+    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(*(ushort *)(g_player_object + 0x16) >> 10) * -8) -
              (uint)(uVar5 >> 0xd)) + uVar8 * 8) * 0x10000;
     uVar8 = iVar2 >> 0x1f;
-    iVar3 = (((((uVar6 & 0x1c00) >> 10) + ((*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4) * -8) -
+    iVar3 = (((((uVar6 & 0x1c00) >> 10) + ((*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4) * -8) -
              ((uVar5 & 0x1c00) >> 10)) + iVar3 * 8) * 0x10000;
     uVar4 = iVar3 >> 0x1f;
     iVar2 = (int)(((iVar2 >> 0x10 ^ uVar8) - uVar8) * 0x10000) >> 0x10;
@@ -28384,7 +28948,7 @@ char *param_1;   /* was int -- truncated the tile-record pointer target_line_of_
 // was FUN_0003e8b0
 undefined4 target_line_of_sight(param_1,param_2)
 short param_1;
-char *param_2;  /* was int -- truncated DAT_002020cc; deref'd at param_2+2 */
+char *param_2;  /* was int -- truncated g_interact_target; deref'd at param_2+2 */
 
 {
   bool bVar1;
@@ -28403,9 +28967,9 @@ char *param_2;  /* was int -- truncated DAT_002020cc; deref'd at param_2+2 */
   int iVar14;
   
   if (param_1 != 0) {
-    uVar2 = *(ushort *)(DAT_0023be64 + 0x16) >> 10;
+    uVar2 = *(ushort *)(g_player_object + 0x16) >> 10;
     uVar9 = (uint)uVar2;
-    uVar10 = (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4;
+    uVar10 = (*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4;
     /* tilemap_lookup returns a 64-bit tile-record pointer; `int iVar5`
        truncated it and the very next line dereferenced the result. Use
        the byte* local this function already has for the same call later. */
@@ -28436,7 +29000,7 @@ char *param_2;  /* was int -- truncated DAT_002020cc; deref'd at param_2+2 */
         }
       }
       iVar5 = ((DAT_0023bc94 + 1) * 0x10000 >> 0x10) << 0x13;
-      uVar2 = *(byte *)(DAT_0023be64 + 2) & 0x7f;
+      uVar2 = *(byte *)(g_player_object + 2) & 0x7f;
       if (iVar5 >> 0x10 < (int)(short)uVar2) {
         sVar7 = uVar2 - (short)((uint)iVar5 >> 0x10);
       }
@@ -28505,6 +29069,25 @@ ushort *pick_object_under_cursor()
   }
   iVar2 = 0;
   DAT_002020ac = 0;
+  /* Guard never present in the decompile: nothing bounds-checked
+     g_mouse_x/g_mouse_y against the 3D viewport's own registered rect
+     (DAT_0023be5c/DAT_0023bd80 x-range, DAT_0023be80-DAT_0023be88..
+     DAT_0023be80 y-range -- the same rect FUN_0006764c registers for
+     FUN_0003f420 and hit_test_inventory_widget already reuses for its own 0x17
+     special case) before indexing the pick stencil DAT_0023cca0. That
+     was harmless while every right-click interact stayed inside the
+     viewport, but a held drag whose release lands elsewhere (e.g. the
+     inventory panel) still routes through here -- see FUN_0003f420,
+     called every tick a mouse button is held regardless of the
+     cursor's current position -- and reads/interprets whatever stale
+     byte happens to sit at that (out-of-viewport) stencil offset as a
+     real object slot, corrupting interact_default's pick and crashing
+     deep in place_object_in_backpack_slot/check_object_fits_in_slot (found wiring up backpack-slot
+     drops). Treat anything outside the viewport as "no object". */
+  if ((g_mouse_x < DAT_0023be5c) || (DAT_0023be5c + DAT_0023bd80 <= g_mouse_x) ||
+      (g_mouse_y < (short)(DAT_0023be80 - DAT_0023be88)) || (DAT_0023be80 <= g_mouse_y)) {
+    return (ushort *)0x0;
+  }
   bVar1 = *(byte *)(g_mouse_y * 0x140 + (int)g_mouse_x + DAT_0023cca0);
   uVar4 = (uint)bVar1;
   { const char *_f = getenv("UW_PICK_FORCE_SLOT");   /* debug: force the object branch */
@@ -28527,8 +29110,11 @@ ushort *pick_object_under_cursor()
   }
   else {
     puVar3 = (ushort *)FUN_000535fc(iVar2);
-    if (getenv("UW_PICK_DIAG") && puVar3)
-      fprintf(stderr, "[pick] resolved slot=%u -> objid=0x%03x\n", uVar4, (unsigned)(*puVar3 & 0x1ff));
+
+    if(puVar3) {
+      DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(*puVar3 & 0x1ff));
+    }
+
     DAT_002020a8 = DAT_002020b0 + 2;
     if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
        (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
@@ -28569,6 +29155,10 @@ short param_2;
     FUN_0007863c(uVar2 | 0x1400);
     message_scroll_print_wrapped();
     message_scroll_print_wrapped(&DAT_00084f20);
+    /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
+       fix -- back-to-back terrain Looks (e.g. the ceiling, wall signs)
+       otherwise all land on the same visible scroll line. */
+    message_scroll_print_wrapped("\n");
   }
   return;
 }
@@ -28580,7 +29170,7 @@ char *param_1;
 
 {
   if (DAT_002020ec != 0) {
-    FUN_0007c2ec(DAT_0023be64,param_1,2,(int)DAT_002020a0,DAT_002020a4);
+    FUN_0007c2ec(g_player_object,param_1,2,(int)DAT_002020a0,DAT_002020a4);
     object_list_unlink(DAT_002020a8,param_1);
     FUN_00049924(2);
     DAT_002020ec = 0;
@@ -28597,23 +29187,26 @@ void interact_default()
   int iVar1;
   int iVar2;
   ushort *puVar3;
-  
+
   puVar3 = (ushort *)0x0;
-  iVar1 = target_in_range((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
-  iVar2 = target_line_of_sight((int)DAT_000858c4,DAT_002020cc);
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] interact_default entry: g_interact_target=%p g_cursor_holding_state=%d DAT_002020ec=%d DAT_002020e0=%d\n",
+            (void *)g_interact_target, (int)g_cursor_holding_state, (int)DAT_002020ec, (int)DAT_002020e0);
+  iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
+  iVar2 = target_line_of_sight((int)DAT_000858c4,g_interact_target);
   if (DAT_002020ec == 0) {
     if (DAT_002020e0 != 0) {
-      iVar1 = object_ptr_in_arena(DAT_002020cc);
-      if ((iVar1 != 0) && ((*DAT_002020cc & 0x1c0) == 0x40)) {
+      iVar1 = object_ptr_in_arena(g_interact_target);
+      if ((iVar1 != 0) && ((*g_interact_target & 0x1c0) == 0x40)) {
         interact_talk_npc();
         return;
       }
       interact_converse();
       return;
     }
-    if ((*DAT_002020cc & 0x1ff) == 0x1ca) {
+    if ((*g_interact_target & 0x1ff) == 0x1ca) {
       if ((iVar1 != 0) && (iVar2 == 0)) {
-        FUN_00079984(DAT_0023be64,DAT_002020cc,0);
+        use_object_on_target(g_player_object,g_interact_target,0);
       }
       goto LAB_0003f11c;
     }
@@ -28621,35 +29214,35 @@ void interact_default()
   }
   else {
     if ((iVar1 != 0) && (iVar2 == 0)) {
-      if (((*DAT_002020cc & 0x8000) != 0) &&
-         (((DAT_002020cc[3] & 0x8000) == 0 && ((DAT_002020cc[3] & 0xffc0) != 0x40)))) {
+      if (((*g_interact_target & 0x8000) != 0) &&
+         (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
         puVar3 = (ushort *)FUN_000470fc();
         if (puVar3 == (ushort *)0x0) {
           return;
         }
-        if (puVar3 != DAT_002020cc) {
-          object_list_insert_head(DAT_002020cc + 2,puVar3);
+        if (puVar3 != g_interact_target) {
+          object_list_insert_head(g_interact_target + 2,puVar3);
         }
       }
-      iVar1 = FUN_00046358(DAT_002020cc);
+      iVar1 = check_object_carry_weight(g_interact_target);
       if (iVar1 == 0) {
-        if ((puVar3 != (ushort *)0x0) && (puVar3 != DAT_002020cc)) {
-          iVar1 = (DAT_002020cc[3] & 0xffc0) + (puVar3[3] & 0xffc0);
-          *(byte *)(DAT_002020cc + 3) = (byte)iVar1 ^ (byte)DAT_002020cc[3] & 0x3f;
-          *(char *)((char *)DAT_002020cc + 7) = (char)((uint)iVar1 >> 8);
-          object_list_unlink(DAT_002020cc + 2,puVar3);
+        if ((puVar3 != (ushort *)0x0) && (puVar3 != g_interact_target)) {
+          iVar1 = (g_interact_target[3] & 0xffc0) + (puVar3[3] & 0xffc0);
+          *(byte *)(g_interact_target + 3) = (byte)iVar1 ^ (byte)g_interact_target[3] & 0x3f;
+          *(char *)((char *)g_interact_target + 7) = (char)((uint)iVar1 >> 8);
+          object_list_unlink(g_interact_target + 2,puVar3);
         }
         FUN_00078c80(0x5f);
         return;
       }
-      iVar1 = FUN_00053920(DAT_002020cc,0x126);
+      iVar1 = FUN_00053920(g_interact_target,0x126);
       if (iVar1 != 0) {
         *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf0;
       }
-      FUN_00035cb0(DAT_002020cc,0);
-      FUN_0003ee10(DAT_002020cc);
-      DAT_002020c4 = 1;
-      FUN_00046a94(DAT_002020cc);
+      FUN_00035cb0(g_interact_target,0);
+      FUN_0003ee10(g_interact_target);
+      g_cursor_holding_state = 1;
+      attach_picked_up_object_to_cursor(g_interact_target);
       return;
     }
     iVar1 = (short)iVar1 + 0x5d;
@@ -28667,13 +29260,13 @@ void interact_talk_npc()
 
 {
   FUN_00057604(1);
-  FUN_00028488(DAT_002020cc);
+  FUN_00028488(g_interact_target);
   return;
 }
 
 
 
-void thunk_FUN_00048764(param_1,param_2)
+void dispatch_object_action(param_1,param_2)
 ushort * param_1;
 int param_2;
 
@@ -28694,8 +29287,17 @@ int param_2;
   undefined1 auStack_b4 [8];
   char acStack_ac [16];
   char acStack_9c [32];
-  char acStack_7c [80];
-  
+  /* Was 80 bytes -- build_creature_look_text's creature-look text ("You see " +
+     article + description + " named " + proper name + suffix + "\n")
+     can run well past that for a creature with a real name, overflowing
+     acStack_7c and taking the fortified strcat (Ordinal_1063) down with
+     a SIGSEGV. Reproduced via a right-click "look" at a creature (real
+     UW_PICK_FORCE_SLOT-driven repro, not previously exercised since no
+     creature in the earlier-tested area had a real name to overflow
+     into). Widened generously, matching this session's established
+     "resize the too-small stack buffer" fix pattern. */
+  char acStack_7c [256];
+
   uVar11 = 0;
   if (param_1 == (ushort *)0x0) {
     return;
@@ -28710,13 +29312,21 @@ int param_2;
   if (((short)param_2 == 3) && (iVar5 = FUN_000496b0(param_1,&DAT_00202c90 + iVar9), iVar5 != 0)) {
     return;
   }
-  pcVar6 = s_You_see_000858fc;
-    wptr_26120 = acStack_85978;
-  do {
-    cVar10 = *pcVar6;
-    *wptr_26120 = cVar10; wptr_26120 = wptr_26120 + 1;
-    pcVar6 = pcVar6 + 1;
-  } while (cVar10 != '\0');
+  /* This copied "You see " into acStack_85978 (a wildly oversized,
+     547012-byte local Ghidra apparently misattributed here -- almost
+     certainly a stack-frame-size miscalculation artifact, not a real
+     array in the original binary), but nothing ever reads
+     acStack_85978 again: the real assembled message below builds up in
+     acStack_7c instead, which never got this prefix. Confirmed by the
+     user: "Look" on an ordinary item (e.g. the sack) printed just "a
+     sack" instead of "You see a sack." acStack_7c was also never
+     NUL-terminated before its first strcat (Ordinal_1063) below, so
+     leftover content from a PREVIOUS look call's stack frame could
+     survive and get concatenated onto -- "Multiple Looks will also
+     print them together like 'a sackasack'". Fix both: clear acStack_7c
+     and seed it with the real "You see " prefix here instead. */
+  acStack_7c[0] = '\0';
+  Ordinal_1063(acStack_7c, s_You_see_000858fc);
   acStack_ac[0] = '\0';
   iVar5 = FUN_00048b6c(param_1,param_2,acStack_ac);
   cVar10 = '\0';
@@ -28725,7 +29335,7 @@ int param_2;
   }
   acStack_9c[0] = '\0';
   if ((*param_1 & 0x1c0) == 0x40) {
-    FUN_00049404(param_1,acStack_7c);
+    build_creature_look_text(param_1,acStack_7c);
     return;
   }
   iVar5 = 0;
@@ -28791,6 +29401,13 @@ LAB_000489fc:
     Ordinal_1063(acStack_7c,pcVar6);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
+  /* No trailing newline was ever appended, so back-to-back Looks (the
+     scroll's own line-break logic, FUN_0007f770, only breaks on an
+     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
+     line: confirmed live, 3 Looks at the sack rendered as one run-on
+     "You see a sackYou see a sackYou see a sack" instead of 3 separate
+     lines. */
+  Ordinal_1063(acStack_7c,"\n");
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   FUN_000495d0(param_1,param_2);
@@ -28807,14 +29424,16 @@ void interact_look()
   int iVar2;
   undefined4 uVar3;
   uint local_18;
+
+  DEBUG(INFO, "Interact Look");
   
-  iVar2 = target_in_range(0x48,DAT_002020cc,DAT_002020b0);
+  iVar2 = target_in_range(0x48,g_interact_target,DAT_002020b0);
   if ((iVar2 == 0) || (uVar3 = 1, DAT_002020ec != 0)) {
     uVar3 = 0;
   }
-  thunk_FUN_00048764(DAT_002020cc,uVar3);
-  if (DAT_002020c0 == 3) {
-    sVar1 = FUN_00072598(DAT_002020cc,*(undefined1 *)(DAT_00086df8 + 0x2c));
+  dispatch_object_action(g_interact_target,uVar3);
+  if (g_cursor_mode == 3) {
+    sVar1 = FUN_00072598(g_interact_target,*(undefined1 *)(DAT_00086df8 + 0x2c));
     if (0 < sVar1) {
       local_18 = 1;
       sVar1 = FUN_00080828(0,0xf4,&local_18);
@@ -28824,15 +29443,15 @@ void interact_look()
       }
       message_scroll_print_wrapped(&DAT_0008522c);
       if (local_18 != 0) {
-        FUN_0007266c(DAT_002020cc,*(undefined1 *)(DAT_00086df8 + 0x2b));
+        FUN_0007266c(g_interact_target,*(undefined1 *)(DAT_00086df8 + 0x2b));
       }
     }
   }
   else {
     DAT_002020e0 = 1;
   }
-  FUN_0007c2ec(DAT_0023be64,DAT_002020cc,5,(int)DAT_002020a0,DAT_002020a4);
-  if (DAT_002020c0 == 3) {
+  FUN_0007c2ec(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
+  if (g_cursor_mode == 3) {
     FUN_00057604(1);
   }
   else {
@@ -28853,15 +29472,17 @@ void interact_converse()
 {
   int iVar1;
   
+  DEBUG(INFO, "Interact converse");
+  
   FUN_00057604(1);
-  iVar1 = target_in_range((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
-  if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,DAT_002020cc), iVar1 != 0)) {
-    if ((*DAT_002020cc & 0x1fe) != 0x16e) {
+  iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
+  if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,g_interact_target), iVar1 != 0)) {
+    if ((*g_interact_target & 0x1fe) != 0x16e) {
       FUN_00078c80(0xb9);
     }
   }
   else {
-    FUN_00079984(DAT_0023be64,DAT_002020cc,0);
+    use_object_on_target(g_player_object,g_interact_target,0);
   }
   return;
 }
@@ -28876,6 +29497,8 @@ void interact_attack()
   short sVar2;
   short sVar3;
   int iVar4;
+
+  DEBUG(INFO, "Interact attack");
   
   psVar1 = DAT_00085a6c;
   sVar2 = Ordinal_2005(DAT_0023be88 + 2,DAT_00085a6c[1] * 3);
@@ -28905,25 +29528,25 @@ void FUN_0003f420()
     if (*(short *)(DAT_00085a6c + 6) != 2) {
       return;
     }
-    DAT_002020cc = pick_object_under_cursor(2);
-    if (DAT_002020cc == 0) {
+    g_interact_target = pick_object_under_cursor(2);
+    if (g_interact_target == 0) {
       return;
     }
     interact_converse();
     return;
   }
-  DAT_002020cc = 0;
+  g_interact_target = 0;
   if ((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) {
-    DAT_002020cc = 0;
+    g_interact_target = 0;
     return;
   }
-  if (DAT_002020c4 == 0) {
+  if (g_cursor_holding_state == 0) {
     uint _dispatch;
-    if (DAT_002020c0 == 0) {
+    if (g_cursor_mode == 0) {
       uVar2 = 2;
     }
     else {
-      uVar2 = ((int)DAT_002020c0 & 0xffU) - 1;
+      uVar2 = ((int)g_cursor_mode & 0xffU) - 1;
     }
     /* With no cursor mode selected, a right-click on an object defaults
        to "look" (table[3], interact_talk_npc -> "You see a <name>"), not the
@@ -28931,14 +29554,14 @@ void FUN_0003f420()
        describe_picked_terrain() call below still takes its hardcoded
        mode-2 "You see <terrain>" path when the click misses every
        object. */
-    _dispatch = (DAT_002020c0 == 0) ? 0 : uVar2;
+    _dispatch = (g_cursor_mode == 0) ? 0 : uVar2;
     if ((uVar2 & 0xff) != 1) {
       if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
-        DAT_002020cc = 0;
+        g_interact_target = 0;
         return;
       }
-      DAT_002020cc = pick_object_under_cursor(2);
-      if (DAT_002020cc == 0) {
+      g_interact_target = pick_object_under_cursor(2);
+      if (g_interact_target == 0) {
         describe_picked_terrain(uVar2,(int)DAT_002020ac);
         goto LAB_0003f584;
       }
@@ -28948,32 +29571,32 @@ void FUN_0003f420()
     }
   }
   else {
-    if (DAT_002020c4 == 1) {
-      FUN_00042870(0x17);
+    if (g_cursor_holding_state == 1) {
+      handle_object_drop_target(0x17);
     }
     else {
-      if (DAT_002020c4 != 2) {
-        if (DAT_002020c4 != 3) {
-          DAT_002020cc = 0;
+      if (g_cursor_holding_state != 2) {
+        if (g_cursor_holding_state != 3) {
+          g_interact_target = 0;
           return;
         }
         FUN_0007ca0c();
         return;
       }
-      DAT_002020cc = pick_object_under_cursor(2);
-      if (DAT_002020cc != 0) {
-        iVar1 = target_in_range((int)DAT_000858c4,DAT_002020cc,DAT_002020b0);
-        if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,DAT_002020cc), iVar1 != 0)) {
+      g_interact_target = pick_object_under_cursor(2);
+      if (g_interact_target != 0) {
+        iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
+        if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,g_interact_target), iVar1 != 0)) {
           FUN_00078c80(0x5e);
         }
         else {
-          (*DAT_002020b8)(DAT_002020cc,1,0);
+          (*DAT_002020b8)(g_interact_target,1,0);
         }
       }
-      if (DAT_00202948 != 0) {
+      if (g_selected_object != 0) {
         FUN_00057cac(3);
-        DAT_00202948 = 0;
-        DAT_002020c4 = 0;
+        g_selected_object = 0;
+        g_cursor_holding_state = 0;
       }
     }
 LAB_0003f584:
@@ -28991,17 +29614,17 @@ void FUN_0003f648()
   uint uVar2;
   uint uVar3;
   
-  FUN_0007c2ec(DAT_0023be64,DAT_002020cc,5,(int)DAT_002020a0,DAT_002020a4);
-  if (DAT_002020cc == (ushort *)0x0) {
-    DAT_002020cc = (ushort *)FUN_00045678(2);
-    if (DAT_002020cc != (ushort *)0x0) goto LAB_0003f69c;
+  FUN_0007c2ec(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
+  if (g_interact_target == (ushort *)0x0) {
+    g_interact_target = (ushort *)FUN_00045678(2);
+    if (g_interact_target != (ushort *)0x0) goto LAB_0003f69c;
   }
   else {
 LAB_0003f69c:
-    uVar3 = *DAT_002020cc & 0x1c0;
+    uVar3 = *g_interact_target & 0x1c0;
     if (((uVar3 != 0x140) && (uVar3 != 0x180)) &&
-       (((&DAT_00202c9a)[(*DAT_002020cc & 0x1ff) * 0xd] & 3) != 2)) {
-      uVar3 = (DAT_002020cc[1] & 0x380) >> 7;
+       (((&DAT_00202c9a)[(*g_interact_target & 0x1ff) * 0xd] & 3) != 2)) {
+      uVar3 = (g_interact_target[1] & 0x380) >> 7;
       if ((uVar3 & 4) == 0) {
         iVar1 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x29),10);
         uVar2 = iVar1 + 1;
@@ -29011,10 +29634,10 @@ LAB_0003f69c:
         if ((short)uVar2 < (short)((ushort)uVar3 & 3)) {
           uVar2 = uVar3 & 3;
         }
-        uVar3 = CONCAT11(*(undefined1 *)((char *)DAT_002020cc + 3),(char)DAT_002020cc[1]) & 0xfe7f |
+        uVar3 = CONCAT11(*(undefined1 *)((char *)g_interact_target + 3),(char)g_interact_target[1]) & 0xfe7f |
                 (uVar2 & 3 | 4) << 7;
-        *(char *)(DAT_002020cc + 1) = (char)uVar3;
-        *(char *)((char *)DAT_002020cc + 3) = (char)(uVar3 >> 8);
+        *(char *)(g_interact_target + 1) = (char)uVar3;
+        *(char *)((char *)g_interact_target + 3) = (char)(uVar3 >> 8);
       }
       else {
         uVar2 = uVar3 & 3;
@@ -29024,70 +29647,74 @@ LAB_0003f69c:
   }
   uVar2 = 1;
 LAB_0003f7cc:
-  thunk_FUN_00048764(DAT_002020cc,uVar2);
-  FUN_00046698(0xffffffff);
+  dispatch_object_action(g_interact_target,uVar2);
+  handle_inventory_panel_click(0xffffffff);
   return;
 }
 
 
 
-void FUN_0003f7e0()
+void handle_inventory_panel_normal_click()
 
 {
   short sVar1;
   undefined4 uVar2;
-  
-  DAT_002020cc = 0;
-  if (DAT_002020c4 == 0) {
-    if ((DAT_00202948 == 0) && (sVar1 = DAT_00085a6c[3], sVar1 != 1)) {
+
+  g_interact_target = 0;
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] handle_inventory_panel_normal_click called: g_cursor_holding_state=%d g_selected_object=%p DAT_00085a6c[3]=%d panel_x=%d panel_y=%d\n",
+            (int)g_cursor_holding_state, (void *)g_selected_object, (int)DAT_00085a6c[3],
+            (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]));
+  if (g_cursor_holding_state == 0) {
+    if ((g_selected_object == 0) && (sVar1 = DAT_00085a6c[3], sVar1 != 1)) {
       if (sVar1 == 2) {
-        if ((DAT_002020c0 != 1) || (DAT_00085a6c[4] == 4)) {
+        if ((g_cursor_mode != 1) || (DAT_00085a6c[4] == 4)) {
           uVar2 = 0xfffffffe;
           goto LAB_0003f91c;
         }
       }
       else if (sVar1 != 3) {
-        DAT_002020cc = 0;
+        g_interact_target = 0;
         return;
       }
     }
     uVar2 = 0;
   }
-  else if (DAT_002020c4 == 1) {
+  else if (g_cursor_holding_state == 1) {
     uVar2 = 4;
   }
   else {
-    if (DAT_002020c4 != 2) {
-      DAT_002020cc = 0;
+    if (g_cursor_holding_state != 2) {
+      g_interact_target = 0;
       return;
     }
-    sVar1 = FUN_000485f4(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
+    sVar1 = hit_test_inventory_widget(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
     if ((sVar1 != 0x15) && (sVar1 != 0x16)) {
-      DAT_002020cc = FUN_00045678(2);
-      if (DAT_002020cc != 0) {
-        (*DAT_002020b8)(DAT_002020cc,1,1);
+      g_interact_target = FUN_00045678(2);
+      if (g_interact_target != 0) {
+        (*DAT_002020b8)(g_interact_target,1,1);
         FUN_00057604(1);
         return;
       }
       FUN_00057cac(3);
-      DAT_002020c4 = 0;
-      DAT_00202948 = 0;
+      g_cursor_holding_state = 0;
+      g_selected_object = 0;
       return;
     }
     uVar2 = 1;
   }
 LAB_0003f91c:
-  FUN_00046698(uVar2);
+  handle_inventory_panel_click(uVar2);
   return;
 }
 
 
 
-void FUN_0003f95c()
+void inventory_panel_click_region()
 
 {
   if (DAT_0023c1d4 == '\0') {
-    FUN_0003f7e0();
+    handle_inventory_panel_normal_click();
   }
   else if (DAT_0023c1d4 == '\x01') {
     FUN_0004497c();
@@ -29112,9 +29739,12 @@ int param_1;
   sVar2 = *(short *)(&DAT_000858a8 + iVar1 * 2);
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
+  if (getenv("UW_DEBUG_MODEICON"))
+    fprintf(stderr, "[modeicon] FUN_0003f99c (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
+            param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
-  DAT_00088960 = 0;
+  g_blit_transparent_mode = 0;
   FUN_000570b4();
   return;
 }
@@ -29133,9 +29763,12 @@ int param_1;
   sVar2 = *(short *)(&DAT_000858a8 + iVar1 * 2);
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
+  if (getenv("UW_DEBUG_MODEICON"))
+    fprintf(stderr, "[modeicon] FUN_0003fa1c (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
+            param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
-  DAT_00088960 = 0;
+  g_blit_transparent_mode = 0;
   FUN_000570b4();
   return;
 }
@@ -29154,11 +29787,11 @@ short param_1;
   short sVar5;
   if (getenv("UW_DEBUG_MODEBTN"))
     fprintf(stderr, "[modebtn] cursor_mode_button_click in: param_1=%d rel_y=%d cursor_mode=%d\n",
-            (int)param_1, (int)DAT_00085a6c[1], (int)DAT_002020c0);
+            (int)param_1, (int)DAT_00085a6c[1], (int)g_cursor_mode);
   uint uVar6;
   int iVar7;
   
-  if ((DAT_002020c4 == 0) && ((short)DAT_00201b60 == 1)) {
+  if ((g_cursor_holding_state == 0) && ((short)DAT_00201b60 == 1)) {
     iVar7 = (int)param_1;
     if (iVar7 == -1) {
       if (DAT_000868d8 == 0) {
@@ -29180,34 +29813,47 @@ short param_1;
       uVar6 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfffd;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar6;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar6 >> 8);
-      if (((DAT_002020c0 == 1) || (DAT_002020c0 == 3)) || (DAT_002020c0 == 4)) {
+      if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
         FUN_00057cac(3);
       }
       iVar7 = (iVar7 + 1) * 0x10000;
       iVar1 = iVar7 >> 0x10;
-      if (iVar1 == DAT_002020c0) {
-        FUN_0003fa1c();
-        DAT_002020c0 = 0;
+      if (iVar1 == g_cursor_mode) {
+        /* Dropped argument (Ghidra emitted a bare call despite
+           FUN_0003fa1c's own body using param_1 throughout) -- confirmed
+           by this same function's sibling call sites elsewhere in the
+           file (FUN_0003fa1c(2), FUN_0003fa1c(5)) using the correct
+           explicit-argument convention. FUN_0003fa1c un-highlights
+           whichever mode icon is currently selected, so it needs the
+           OLD g_cursor_mode value (read here, before it's overwritten
+           below) -- this is the exact "door image" bug: without it, the
+           call ran on register-leftover garbage, resolving to a wild,
+           essentially random absolute sprite frame instead of the
+           intended icon. */
+        FUN_0003fa1c(g_cursor_mode);
+        g_cursor_mode = 0;
       }
       else {
-        if (DAT_002020c0 != 0) {
-          FUN_0003fa1c();
+        if (g_cursor_mode != 0) {
+          FUN_0003fa1c(g_cursor_mode);
         }
-        DAT_002020c0 = (short)((uint)iVar7 >> 0x10);
+        g_cursor_mode = (short)((uint)iVar7 >> 0x10);
+        if (getenv("UW_DEBUG_MODEBTN"))
+          fprintf(stderr, "[modebtn] resulting g_cursor_mode=%d\n", (int)g_cursor_mode);
         if (iVar1 == 2) {
           if ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0) {
             uVar2 = *(undefined2 *)(DAT_00086df8 + 0x5f);
             *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar2 | 2;
             *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar2 >> 8);
             FUN_0006cff4(8,4);
-            FUN_0003f99c((int)DAT_002020c0);
+            FUN_0003f99c((int)g_cursor_mode);
             bVar3 = FUN_00072b2c();
             if ((bVar3 < 5) || (bVar3 = FUN_00072b2c(), 7 < bVar3)) {
               FUN_000735b0(8);
             }
           }
           else {
-            DAT_002020c0 = 0;
+            g_cursor_mode = 0;
           }
         }
         else {
@@ -29218,7 +29864,7 @@ short param_1;
         FUN_000735c0();
       }
       FUN_00057604(1);
-      if (((DAT_002020c0 == 1) || (DAT_002020c0 == 3)) || (DAT_002020c0 == 4)) {
+      if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
         FUN_00057c5c(0x1077);
       }
     }
@@ -29238,7 +29884,7 @@ short param_1;
   uint uVar4;
   int iVar5;
   
-  if ((DAT_002020c4 == 0) && ((short)DAT_00201b60 == 1)) {
+  if ((g_cursor_holding_state == 0) && ((short)DAT_00201b60 == 1)) {
     iVar5 = (int)param_1;
     if (iVar5 == -1) {
       if (DAT_000868d8 == 0) {
@@ -29260,27 +29906,29 @@ short param_1;
       uVar4 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfffd;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar4;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar4 >> 8);
-      if (((DAT_002020c0 == 1) || (DAT_002020c0 == 3)) || (DAT_002020c0 == 4)) {
+      if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
         FUN_00057cac(3);
       }
       iVar5 = (iVar5 + 1) * 0x10000;
       iVar1 = iVar5 >> 0x10;
-      if (iVar1 == DAT_002020c0) {
-        FUN_0003fa1c();
-        DAT_002020c0 = 0;
+      if (iVar1 == g_cursor_mode) {
+        /* Same dropped-argument bug as cursor_mode_button_click's own
+           two identical sites above -- see that comment. */
+        FUN_0003fa1c(g_cursor_mode);
+        g_cursor_mode = 0;
       }
       else if (iVar1 == 3) {
-        if (DAT_002020c0 != 0) {
-          FUN_0003fa1c();
+        if (g_cursor_mode != 0) {
+          FUN_0003fa1c(g_cursor_mode);
         }
-        DAT_002020c0 = (short)((uint)iVar5 >> 0x10);
+        g_cursor_mode = (short)((uint)iVar5 >> 0x10);
         FUN_0003f99c(3);
       }
       if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar2 = FUN_00072b2c(), cVar2 == '\b')) {
         FUN_000735c0();
       }
       FUN_00057604(1);
-      if (((DAT_002020c0 == 1) || (DAT_002020c0 == 3)) || (DAT_002020c0 == 4)) {
+      if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
         FUN_00057c5c(0x1077);
       }
     }
@@ -29297,18 +29945,19 @@ void FUN_0003ff10()
   byte bVar2;
   
   if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 2) && ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0)) {
-    if ((DAT_002020c0 == 1) || ((DAT_002020c0 == 3 || (DAT_002020c0 == 4)))) {
+    if ((g_cursor_mode == 1) || ((g_cursor_mode == 3 || (g_cursor_mode == 4)))) {
       FUN_00057cac(3);
     }
-    if (DAT_002020c0 != 0) {
-      FUN_0003fa1c();
+    if (g_cursor_mode != 0) {
+      /* Same dropped-argument bug as cursor_mode_button_click's sites. */
+      FUN_0003fa1c(g_cursor_mode);
     }
-    DAT_002020c0 = 2;
+    g_cursor_mode = 2;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar1 | 2;
     *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar1 >> 8);
     FUN_0006cff4(8,4);
-    FUN_0003f99c((int)DAT_002020c0);
+    FUN_0003f99c((int)g_cursor_mode);
     bVar2 = FUN_00072b2c();
     if ((4 < bVar2) && (bVar2 = FUN_00072b2c(), bVar2 < 8)) {
       return;
@@ -29333,7 +29982,7 @@ void FUN_00040004()
     if (DAT_000868d8 == 0) {
       FUN_0003fa1c(2);
     }
-    DAT_002020c0 = 0;
+    g_cursor_mode = 0;
     FUN_00027694();
     FUN_000735c0();
   }
@@ -29362,7 +30011,7 @@ bool FUN_000400dc()
   short sVar1;
   
   sVar1 = 0;
-  if (DAT_002020c4 != 0) {
+  if (g_cursor_holding_state != 0) {
     sVar1 = 0xa0;
   }
   if (DAT_00201b68 == 9) {
@@ -29379,8 +30028,8 @@ bool FUN_000400dc()
 undefined4 FUN_00040130()
 
 {
-  if (DAT_002020c4 != 0) {
-    DAT_002020c4 = 0;
+  if (g_cursor_holding_state != 0) {
+    g_cursor_holding_state = 0;
     FUN_00057cac(0);
   }
   return 1;
@@ -29530,7 +30179,14 @@ void FUN_00040440()
 
 
 
-undefined4 FUN_000404a0(param_1,param_2,param_3,param_4,param_5)
+/* was FUN_000404a0. Loads (and page-caches) a \CRIT\CRnnPAGE.Nnn sprite
+   page and decodes one frame's glyph into a fresh palette-indexed bitmap.
+   Repurposes the same page-cache/glyph-index machinery as the font/glyph
+   renderer (hence the "[glyphpage]" log tag) -- param_1=critter type
+   index, param_2=animation tier, param_3=direction, param_4=frame count
+   for this direction, param_5=frame index. Sets DAT_00202508/DAT_002022f8
+   (w/h) and DAT_002022fc (bitmap pointer) on success. */
+undefined4 decode_critter_sprite_page(param_1,param_2,param_3,param_4,param_5)
 int param_1;
 int param_2;
 short param_3;
@@ -29576,15 +30232,18 @@ short param_5;
     } while (cVar2 != '\0');
     Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920);
     iVar5 = FUN_000227d4(stack0xffdc3238_buf);
+    if (getenv("UW_DEBUG_CRITTER"))
+      fprintf(stderr, "[critter] decode_critter_sprite_page: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
+              iVar1, param_1, param_2, stack0xffdc3238_buf, iVar5 == -1 ? "FAIL" : "ok");
     if (iVar5 == -1) {
       /* Missing/unopenable per-page resource file -- was an unconditional
          FUN_00082388(0xffffffff) hard exit (only reachable for a real
          object, class 1, that no object in the previously-tested level
          area happened to use -- confirmed via lldb backtrace: reached
-         from emit_tile_objects's class-1 branch via FUN_0004083c, one
+         from emit_tile_objects's class-1 branch via resolve_critter_sprite_tier, one
          specific door ~17 tiles from spawn). Same "graceful skip instead
          of crash" treatment already used for other missing/unregistered
-         resources this session (FUN_000408fc, FUN_00040918) -- return the
+         resources this session (FUN_000408fc, blit_object_sprite_by_frame) -- return the
          shared dummy_glyph-shaped sentinel instead of taking the whole
          game down over one unavailable page file. */
       DEBUG(ERR, "[glyphpage] open FAILED, skipping: %s (param_1=%d param_2=%d)\n",
@@ -29611,8 +30270,20 @@ short param_5;
           iVar9, (int)*pbVar11, (int)param_3);
     return 0;
   }
+  if (getenv("UW_DEBUG_CRITTER"))
+    fprintf(stderr, "[critter] decode_critter_sprite_page: page_base=%d iVar9(glyph_idx)=%d pbVar11[iVar9]=%d(0x%x) param_4(frame_count?)=%d\n",
+            (int)*pbVar11, iVar9, (int)pbVar11[iVar9], (int)pbVar11[iVar9], (int)param_4);
   if (pbVar11[iVar9] != 0xff) {
     pbVar6 = pbVar11 + (short)(ushort)pbVar11[1] + 2;
+    if (getenv("UW_DEBUG_CRITTER") && param_1 == 26) {
+      static int _dumped26 = 0;
+      if (!_dumped26) {
+        _dumped26 = 1;
+        fprintf(stderr, "[critter26] pbVar11[1]=%d *pbVar6=%d pbVar6[0..79]:", (int)pbVar11[1], (int)*pbVar6);
+        for (int _i = 0; _i < 80; _i++) fprintf(stderr, " %02x", pbVar6[_i]);
+        fprintf(stderr, "\n");
+      }
+    }
     uVar3 = (ushort)pbVar6[(((int)param_5 +
                             ((int)((uint)pbVar11[iVar9] << 0x13) >> 0x10)) * 0x10000 >> 0x10)
                            + 1];
@@ -29622,16 +30293,66 @@ short param_5;
                       << 0x13) >> 0x10)) * 0x10000 >> 0x10) + 1] == 0xff) {
       uVar3 = 0;
     }
+    if (getenv("UW_DEBUG_CRITTER") && param_1 == 26)
+      fprintf(stderr, "[critter26] frame-check type=%d tier=%d dir=%d frame=%d tierbyte=%d uVar3(glyph_sel)=%d quality=%d *pbVar8(frame_count)=%d %s\n",
+              (int)param_1, (int)param_2, (int)param_3, (int)param_5, (int)pbVar11[iVar9], (int)(short)uVar3, (int)param_4, (int)(uint)*pbVar8, (int)param_4 <= (int)(uint)*pbVar8 ? "PASS" : "FAIL(returns 0, no decode)");
     if ((int)param_4 <= (int)(uint)*pbVar8) {
       iVar9 = (uint)*pbVar8 * 0x20 + 3;
       iVar5 = ((int)(short)uVar3 << 0x11) >> 0x10;
+      if (getenv("UW_DEBUG_CRITTER") && param_1 == 26)
+        fprintf(stderr, "[critter26] iVar5(glyph_sel_signed)=%d iVar9(table_base)=%d final_offset_bytes=[%d,%d] -> glyph_ptr_offset=%u\n",
+                iVar5, iVar9, (int)pbVar8[iVar5+iVar9], (int)pbVar8[iVar5+iVar9+1],
+                (unsigned)(((uint)pbVar8[iVar5 + iVar9] + (uint)pbVar8[iVar5 + iVar9 + 1] * 0x100)));
       pbVar11 = pbVar11 + ((int)(((uint)pbVar8[iVar5 + iVar9] +
                                  (uint)pbVar8[iVar5 + iVar9 + 1] * 0x100) * 0x10000) >> 0x10);
       DAT_00202508 = (ushort)*pbVar11;
       DAT_002022f8 = (ushort)pbVar11[1];
       DAT_00202300 = (ushort)pbVar11[2];
       DAT_00202304 = (ushort)pbVar11[3];
+      /* DAT_00202508 is WIDTH, DAT_002022f8 is HEIGHT -- confirmed
+         against the class-0 item decoder's identical header read a few
+         lines below (`bVar1 = pcVar3[1]` = the real .GR "byte1=width"
+         per uw_debug_dump_gr_entry's own documented format, assigned to
+         this same DAT_00202508; `bVar2 = pcVar3[2]` = "byte2=height"
+         assigned to this same DAT_002022f8). Every w=/h= label and the
+         uw_debug_dump_critter_sprite call below had these backwards
+         until now -- harmless for the real on-screen renderer (which
+         only ever uses them as a product, or correctly by role a few
+         hundred lines down in emit_tile_objects's own quad-vertex math),
+         but it silently fed the debug dump tool a swapped width/height,
+         so every dumped BMP read each row at the wrong stride and came
+         out looking like scrambled noise (reported live, spotted by the
+         user as "the pixel pitch ... looks off" on the dumped images --
+         not a rendering bug, a diagnostics-only one). */
+      if (getenv("UW_DEBUG_CRITTER"))
+        fprintf(stderr, "[critter] decode_critter_sprite_page: w=%d h=%d comp_type(pbVar11[4])=%d\n",
+                (int)(short)DAT_00202508, (int)(short)DAT_002022f8, (int)pbVar11[4]);
+      /* pbVar11 here has already been re-pointed via pbVar8[iVar5+iVar9]
+         (a tier-byte-derived offset, no bounds check against pbVar8's
+         real extent) -- for a tier-byte well outside the small range
+         this offset scheme was confirmed correct for (0-7, see
+         resolve_critter_sprite_tier's own tier-search table), that reads
+         wild/unrelated bytes from elsewhere in the page and
+         misinterprets them as a glyph header (observed: a real NPC's
+         direction 129 producing a 241x16 header, an impossible sprite
+         size, with pbVar11[4] landing on an unsupported
+         unpack_glyph_bitmap format too). Every other creature sprite
+         actually seen this session is under 64px in both dimensions;
+         skip decoding rather than allocate/decode from a header that
+         clearly isn't real glyph data. This is a stopgap, not a fix for
+         the underlying tier-byte interpretation -- the real page-format
+         semantics for tier-bytes outside 0-7 are still unknown. */
+      if ((unsigned short)DAT_00202508 > 64 || (unsigned short)DAT_002022f8 > 64) {
+        DEBUG(ERR, "[critter] decode_critter_sprite_page: implausible header w=%d h=%d for type=%d tier=%d dir=%d, skipping\n",
+              (int)(short)DAT_00202508, (int)(short)DAT_002022f8, param_1, param_2, (int)param_3);
+        return 0;
+      }
       uVar7 = FUN_000129f8(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
+      if (getenv("UW_DEBUG_CRITTER") && uVar7) {
+        fprintf(stderr, "[critter] decode_critter_sprite_page: decoded row bytes[0..15]:");
+        for (int _i = 0; _i < 16; _i++) fprintf(stderr, " %02x", (unsigned char)uVar7[_i]);
+        fprintf(stderr, "\n");
+      }
       pvVar_glyphbuf = Ordinal_1041((int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
       iVar10 = (int)(short)DAT_002022f8;
       iVar9 = (int)(short)DAT_00202508;
@@ -29639,8 +30360,37 @@ short param_5;
       *piVar12 = pvVar_glyphbuf;
       Ordinal_1047(pvVar_glyphbuf,0,iVar10 * iVar9);
       Ordinal_1044(*piVar12,uVar7,(int)(short)DAT_002022f8 * (int)(short)DAT_00202508);
+      uw_debug_dump_critter_sprite(param_1,param_2,(int)param_3,(int)param_5,
+                                    (unsigned char *)*piVar12,
+                                    (int)(short)DAT_00202508,(int)(short)DAT_002022f8);
+      if (getenv("UW_DEBUG_CRITTER")) {
+        unsigned char *_gb = (unsigned char *)*piVar12;
+        int _w = (int)(short)DAT_00202508, _h = (int)(short)DAT_002022f8;
+        int _total = _w * _h;
+        int _hist[256] = {0};
+        for (int _i = 0; _i < _total; _i++) _hist[_gb[_i]]++;
+        fprintf(stderr, "[critter] decode_critter_sprite_page: glyphbuf w=%d h=%d total=%d nonzero-value-histogram:", _w, _h, _total);
+        for (int _i = 0; _i < 256; _i++) if (_hist[_i]) fprintf(stderr, " [%d]=%d", _i, _hist[_i]);
+        fprintf(stderr, "\n");
+        fprintf(stderr, "[critter] decode_critter_sprite_page: middle row (%d) bytes:", _h/2);
+        for (int _i = 0; _i < _w && _i < 48; _i++) fprintf(stderr, " %02x", _gb[(_h/2)*_w + _i]);
+        fprintf(stderr, "\n");
+      }
       if (*piVar12 != 0) {
         DAT_002022fc = (intptr_t)*piVar12;
+        /* render_visible_tile_list reads each record's texture from the
+           g_tile_texptr_out[] side channel (the in-record field is 4 bytes
+           and truncates on 64-bit) -- same fix already applied to the
+           class-0 item billboard decoder just above resolve_critter_sprite_tier. Without
+           this, a critter/door billboard's record kept whatever truncated
+           32-bit pointer bits got stuffed into DAT_000acdfc, so the
+           renderer sampled a wild/bogus texture and every glyph pixel
+           came back near-0 (rendered as a dark silhouette instead of the
+           real creature bitmap). DAT_0023b83c is this object's own record
+           index, same convention as the sibling fix. */
+        if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) {
+          g_tile_texptr_emit[DAT_0023b83c] = *piVar12;
+        }
       }
       return 1;
     }
@@ -29669,13 +30419,28 @@ uint param_2;
   int resolved;
 
   (void)param_2;
-  resolved = FUN_00040aa8(param_1);
+  if (param_1 < 0) {
+    /* Escape hatch: a negative param_1 names an ABSOLUTE frame directly
+       (-param_1), bypassing FUN_00040aa8's id-range resolution entirely.
+       Needed for TMOBJ signs (emit_tile_objects's class-2 branch):
+       FUN_00040aa8's ">= 0x2000 -> DAT_00202738 + id - 0x2000" TMOBJ
+       convention assumes DAT_00202738 is TMOBJ's own starting base, but
+       it's actually snapshotted right AFTER TMOBJ's own
+       FUN_00041910(s_tmobj) call finishes -- confirmed by instrumenting
+       the loader directly (DAT_00202744 went 643 -> 681 across that one
+       call, so TMOBJ's real 38 frames are absolute 643-680, and
+       DAT_00202738=681 is the NEXT resource's base). No non-negative
+       encoding through FUN_00040aa8's existing branches can reach frames
+       *before* DAT_00202738, so bypass it here instead of reworking the
+       shared id convention every other caller (OBJECTS/ANIMO ids) relies
+       on. */
+    resolved = -(int)param_1;
+  } else {
+    resolved = FUN_00040aa8(param_1);
+  }
   pcVar3 = (char *)FUN_000408fc(resolved);
   bVar1 = pcVar3[1];
   bVar2 = pcVar3[2];
-  if (getenv("UW_DEBUG_OBJPOS") && param_1 >= 0x2000)
-    fprintf(stderr, "[tmobjtex] requested_id=0x%x resolved_frame=%d entry_type=%d w=%d h=%d\n",
-            (int)(unsigned short)param_1, resolved, (int)(signed char)*pcVar3, (int)bVar1, (int)bVar2);
   if (*pcVar3 == '\x04') {
     pcVar3 = pcVar3 + 5;
   }
@@ -29712,10 +30477,34 @@ uint param_2;
 
 
 
-undefined4 FUN_0004083c(param_1,param_2,param_3)
+/* was FUN_0004083c. Called from emit_tile_objects's render-class-1
+   (camera-facing billboard, used for both critters and doors) branch.
+   param_1=critter type index (object id & 0x3f), param_2=direction index,
+   param_3=frame. Looks up the type in the \CRIT\assoc.anm-derived
+   DAT_0023ce70 table, picks an animation tier from DAT_0023c460's
+   per-type threshold table based on param_2, and hands off to
+   decode_critter_sprite_page. Returns 0 (no-op) for a type with no
+   assoc-table entry (0xff sentinel). */
+/* Ghidra dropped this function's real 4th argument -- the caller in
+   emit_tile_objects passes `(uint)DAT_0023bc88 * (int)DAT_00086b30`
+   (the same distance/lighting "shade" term the class-0 item path passes
+   to FUN_00040770) as a 4th arg, but this definition only declared 3
+   params, so that shade value was silently discarded and the tier
+   threshold search below compared against `param_2` (the VIEWING
+   DIRECTION) instead. That made the level-of-detail tier depend on which
+   way you were looking at a critter rather than how close it was --
+   confirmed via UW_DEBUG_CRITTER: tier stayed pinned at 0 for every
+   direction at a fixed test distance, and pbVar11[iVar9] (the real
+   per-direction tier-table byte) turned out to only gate a same-image
+   selector at that tier, giving the appearance of a critter always
+   facing the camera regardless of orbit angle. Restored the 4th param
+   and use it (not direction) for the tier search, matching the
+   class-0 sibling's shade-based convention. */
+undefined4 resolve_critter_sprite_tier(param_1,param_2,param_3,param_4)
 short param_1;
 undefined4 param_2;
 short param_3;
+uint param_4;
 
 {
   byte bVar1;
@@ -29723,11 +30512,14 @@ short param_3;
   byte *pbVar3;
   uint uVar4;
   int iVar5;
-  
+
   if (0x60 < param_3) {
     param_3 = 0;
   }
   uVar4 = (uint)(byte)(&DAT_0023ce70)[param_1 * 2];
+  if (getenv("UW_DEBUG_CRITTER"))
+    fprintf(stderr, "[critter] resolve_critter_sprite_tier: param_1(type_idx)=%d param_2(dir)=%d param_3(frame)=%d param_4(shade)=%d -> assoc[%d]=%u (0x%x)\n",
+            (int)param_1, (int)(short)param_2, (int)param_3, (int)param_4, (int)param_1 * 2, uVar4, uVar4);
   if (0xff < (short)param_2) {
     param_2 = 0;
   }
@@ -29740,11 +30532,15 @@ short param_3;
     iVar5 = 3;
     do {
       pbVar3 = pbVar3 + 1;
-      if ((short)param_2 < (short)(ushort)bVar1) break;
+      if ((short)param_4 < (short)(ushort)bVar1) break;
       iVar5 = iVar5 + -1;
       bVar1 = *pbVar3;
     } while (0 < iVar5);
-    FUN_000404a0(uVar4,3 - (short)iVar5,param_2,(&DAT_0023ce71)[param_1 * 2],param_3);
+    if (getenv("UW_DEBUG_CRITTER"))
+      fprintf(stderr, "[critter] resolve_critter_sprite_tier: tier-search shade=%d thresholds=[%d,%d,%d] -> tier=%d\n",
+              (int)param_4, (int)(&DAT_0023c460)[uVar4*3], (int)(&DAT_0023c460)[uVar4*3+1],
+              (int)(&DAT_0023c460)[uVar4*3+2], 3 - (int)iVar5);
+    decode_critter_sprite_page(uVar4,3 - (short)iVar5,param_2,(&DAT_0023ce71)[param_1 * 2],param_3);
     uVar2 = 1;
   }
   return uVar2;
@@ -29787,7 +30583,7 @@ short param_1;
 
 
 
-void FUN_00040918(param_1,param_2,param_3)
+void blit_object_sprite_by_frame(param_1,param_2,param_3)
 short param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -29803,6 +30599,10 @@ undefined4 param_3;
      the pcVar3+5 idiom in the branch right above it), so it's retyped
      from int to char* rather than truncated through a 4-byte read. */
   iVar4 = *(char **)(&DAT_0024e090 + param_1 * 8);
+  if (getenv("UW_DEBUG_MODEICON"))
+    fprintf(stderr, "[modeicon] blit_object_sprite_by_frame: resolved_frame=%d DAT_00202738=%d slot_ptr=%p branch=%s\n",
+            (int)param_1, (int)(uint)DAT_00202738, (void *)iVar4,
+            (int)param_1 < (int)(uint)DAT_00202738 ? "registered-resource(FUN_000408fc)" : "absolute-frame-table(DAT_0024e090)");
   if (iVar4 == (char *)0x0) {
     /* Table slot never populated. Four .GR resource names in the preload
        sequence around SCRLEDGE.GR (FUN_00041ca8: the &DAT_000859fc /
@@ -29822,11 +30622,26 @@ undefined4 param_3;
     if (pcVar3 != (char *)0x0) {
       cVar1 = pcVar3[1];
       cVar2 = pcVar3[2];
+      if (getenv("UW_DEBUG_INV"))
+        fprintf(stderr, "[inv] blit_object_sprite_by_frame real sprite size: frame=%d w(cVar2)=%d h(cVar1)=%d at x=%d y=%d\n",
+                (int)param_1, (int)(unsigned char)cVar2, (int)(unsigned char)cVar1,
+                (int)(short)(intptr_t)param_2, (int)(short)(intptr_t)param_3);
       if (*pcVar3 == '\x04') {
         pcVar3 = pcVar3 + 5;
       }
       else {
-        pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
+        /* Same dropped 3rd argument (the .GR entry's compression mode,
+           6/8/0xa) already root-caused and fixed in FUN_00040770's
+           identical call (see object-rendering-findings.txt's
+           "MILESTONE: objects render" section) -- without it,
+           FUN_000129f8 takes its param_3==0 path, which for this call
+           site returns NULL instead of an all-transparent buffer
+           (unlike FUN_00040770's case), and the caller here has no
+           NULL-guard on the result -- confirmed live: picking up the
+           starting sack and calling attach_picked_up_object_to_cursor to attach it to the
+           cursor crashed here with a NULL source pointer reaching
+           bitmap_blit_to_framebuffer. */
+        pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
       }
       bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,0);
     }
@@ -29901,12 +30716,12 @@ short param_5;
   }
   else {
     bVar1 = true;
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
   }
   uVar2 = FUN_00040aa8(param_1);
-  FUN_00040918(uVar2,param_2,param_3,param_4,param_5);
+  blit_object_sprite_by_frame(uVar2,param_2,param_3,param_4,param_5);
   if (bVar1) {
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
   }
   return;
 }
@@ -29954,11 +30769,11 @@ short param_6;
   
   sVar1 = FUN_00040aa8();
   /* DAT_0024e090 is an 8-byte-stride pointer table -- see its declaration
-     comment; mirrors the iVar4+5 idiom in FUN_00040918. */
+     comment; mirrors the iVar4+5 idiom in blit_object_sprite_by_frame. */
   {
     static char dummy_sprite[8];
     char *spr = *(char **)(&DAT_0024e090 + sVar1 * 8);
-    if (spr == (char *)0x0) spr = dummy_sprite;  /* unregistered slot -- see FUN_00040918 */
+    if (spr == (char *)0x0) spr = dummy_sprite;  /* unregistered slot -- see blit_object_sprite_by_frame */
     FUN_000125a8(param_2,param_3,spr + 5,
                  ((int)param_4 + (int)param_6) * 0x10000 >> 0x10,param_5,0,param_6,1);
   }
@@ -30003,17 +30818,18 @@ short param_1;
 undefined4 FUN_00040cd4()
 
 {
-  /* Ghidra dropped FUN_00040d00's return value here and always returned 0
+  /* Ghidra dropped select_active_font's return value here and always returned 0
      (failure) regardless -- the font file loads successfully, but the
      caller (FUN_0003b820) treats a 0 return as fatal and calls the
      "Underworld can no longer run" handler unconditionally. Propagate the
      real result. */
-  return FUN_00040d00(s_FONT5X6P_SYS_00084e9c);
+  return select_active_font(s_FONT5X6P_SYS_00084e9c);
 }
 
 
 
-bool FUN_00040d00(param_1)
+// was FUN_00040d00
+bool select_active_font(param_1)
 char *param_1;
 
 {
@@ -30040,11 +30856,11 @@ char *param_1;
     /* Was `((int)DAT_000879b0[1] + (int)*DAT_000879b0) * 0x80` -- reads
        header bytes 0 and 1 (both always 1 and 0 across every font file
        checked) giving a constant 128-byte read regardless of the font.
-       FUN_000113b4 (called right after) walks this buffer with a real
+       load_font_metrics (called right after) walks this buffer with a real
        per-glyph stride of (height+1) for 128 glyphs -- e.g. FONTCHAR.SYS
        needs ~2667 bytes (its real on-disk size minus the 12-byte
        header), FONTBIG.SYS needs ~3937 -- so the actual glyph data was
-       >90% truncated, leaving FUN_000113b4 reading uninitialized malloc
+       >90% truncated, leaving load_font_metrics reading uninitialized malloc
        memory as "widths" (observed: a bogus width of 190, causing a
        downstream buffer overflow, and more generally wrong/zero widths
        silently keeping characters undrawn). DAT_000890a4's own buffer
@@ -30054,7 +30870,7 @@ char *param_1;
        files. */
     FUN_0002285c(iVar3,DAT_000890a4,0x1080);
     Ordinal_553(iVar3);
-    FUN_000113b4();
+    load_font_metrics();
   }
   return iVar3 != -1;
 }
@@ -30328,7 +31144,8 @@ LAB_000412d8:
 
 
 
-undefined4 FUN_00041304(param_1,param_2)
+// was FUN_00041304
+undefined4 open_gr_resource_file(param_1,param_2)
 char * param_1;
 char param_2;
 
@@ -30382,8 +31199,12 @@ char param_2;
     }
   }
   DAT_00202514 = FUN_000227d4(local_114);
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] open_gr_resource_file: path='%s' param_2=%d open_handle=%d\n", local_114, (int)param_2, (int)DAT_00202514);
   if (DAT_00202514 != -1) {
     iVar3 = FUN_0002285c(DAT_00202514,local_11c,1);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] open_gr_resource_file: header_read=%d header_byte=%d expected=%d\n", iVar3, (int)local_11c[0], (int)uVar1);
     if (((((iVar3 == 1) && (local_11c[0] == uVar1)) &&
          ((uVar1 != 2 || (iVar3 = FUN_0002285c(DAT_00202514,&DAT_00202518,1), iVar3 == 1)))) &&
         (iVar3 = FUN_0002285c(DAT_00202514,&DAT_00202728,2), iVar3 == 2)) &&
@@ -30468,7 +31289,7 @@ short param_3;
 {
   void *pvVar1;
 
-  /* param_1 (a real buffer pointer, from FUN_000417b4's allocator
+  /* param_1 (a real buffer pointer, from load_gr_resource_entries's allocator
      callback) was declared int here and silently truncated to 32 bits on
      dereference -- see uw_alloc_grtile()'s comment for why this uses that
      helper instead of FUN_00076a2c directly. DAT_0024e090 is an 8-byte-
@@ -30489,15 +31310,37 @@ undefined4 param_2;
 short param_3;
 
 {
-  /* See FUN_00041708 -- same param_1/DAT_0024e090 truncation fix. */
-  Ordinal_1044(*(void **)(&DAT_0024e090 + ((uint)DAT_00202744 + (int)param_3) * 8),param_1,
+  /* See FUN_00041708 -- same param_1/DAT_0024e090 truncation fix.
+     This "overwrite an already-allocated slot" path blindly memcpy'd
+     width*height bytes into whatever pointer DAT_0024e090's table
+     already held for this slot -- fine as long as that's still the SAME
+     size it was originally allocated at, but nothing guarantees that:
+     confirmed via AddressSanitizer, a real heap-buffer-overflow, 100%
+     reproducible opening the in-game options/pause menu and picking
+     Save or Load. The existing 888-byte allocation there came from an
+     unrelated resource loaded into this same slot at startup
+     (app_main_loop's initial preload); the save/load menu's own level
+     reload (FUN_00044624 -> FUN_0004638c -> ... -> here) later reuses
+     the slot for a bigger (2484-byte) one, overflowing it. Rather than
+     assume the existing allocation is still big enough, allocate a
+     fresh one sized for THIS write (same sizing FUN_00041708 uses for
+     a brand new slot) and replace the table pointer -- the old
+     allocation leaks, but that beats corrupting the heap. */
+  void *pvVar1 = uw_alloc_grtile(*(byte *)((char *)param_1 + 1),
+                                  (uint)*(byte *)((char *)param_1 + 2) + 1);
+  if (pvVar1 == 0) {
+    return 0;
+  }
+  Ordinal_1044(pvVar1,param_1,
                (uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
+  *(void **)(&DAT_0024e090 + ((uint)DAT_00202744 + (int)param_3) * 8) = pvVar1;
   return 1;
 }
 
 
 
-uint FUN_000417b4(param_1,param_2,param_3,param_4,param_5)
+// was FUN_000417b4
+uint load_gr_resource_entries(param_1,param_2,param_3,param_4,param_5)
 char *param_1;
 int param_2;
 short param_3;
@@ -30530,7 +31373,7 @@ codeval * param_5;
        resource-preload batch this participates in. */
     return uVar6;
   }
-  iVar1 = FUN_00041304(param_1,1);
+  iVar1 = open_gr_resource_file(param_1,1);
   if (iVar1 == 0) {
     uVar6 = 0;
   }
@@ -30586,7 +31429,7 @@ char *param_1;
 
 {
   undefined4 uVar1;
-  uVar1 = FUN_000417b4(param_1,0,0xffffffff,&LAB_000415b0,&LAB_000415d0);
+  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_000415d0);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
   return uVar1;
 }
@@ -30597,7 +31440,7 @@ undefined4 FUN_00041960(param_1)
 char *param_1;
 
 {
-  return FUN_000417b4(param_1,0,0xffffffff,&LAB_000415b0,&LAB_00041610);
+  return load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_00041610);
 }
 
 
@@ -30609,7 +31452,7 @@ undefined4 param_3;
 
 {
   DAT_000859a8 = param_2;
-  return FUN_000417b4(param_1,0,param_3,&LAB_000415b0,&LAB_00041670);
+  return load_gr_resource_entries(param_1,0,param_3,&LAB_000415b0,&LAB_00041670);
 }
 
 
@@ -30618,10 +31461,10 @@ undefined4 FUN_000419c8(param_1)
 char *param_1;
 
 {
-  /* Ghidra dropped FUN_000417b4's result and always returned failure
+  /* Ghidra dropped load_gr_resource_entries's result and always returned failure
      (see FUN_00040cd4 for the same pattern); propagate the real result. */
   undefined4 uVar1;
-  uVar1 = FUN_000417b4(param_1,0,0xffffffff,&LAB_000416e8,FUN_00041708);
+  uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000416e8,FUN_00041708);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
   return uVar1;
 }
@@ -30632,7 +31475,7 @@ void FUN_00041a18(param_1,param_2,param_3)
 short param_1;
 /* Was `undefined4`, truncating the real resource-name string pointer
    callers pass (e.g. FUN_0004638c's s_bodies_00085c58) before it reaches
-   FUN_000417b4's own `char *param_1`, which then crashed dereferencing
+   load_gr_resource_entries's own `char *param_1`, which then crashed dereferencing
    it. Same pointer-truncation class as everywhere else this session. */
 char *param_2;
 undefined4 param_3;
@@ -30642,7 +31485,7 @@ undefined4 param_3;
 
   uVar1 = DAT_00202744;
   DAT_00202744 = DAT_00202738 + param_1 + -0x2000;
-  FUN_000417b4(param_2,param_3,1,&LAB_000416e8,FUN_00041770);
+  load_gr_resource_entries(param_2,param_3,1,&LAB_000416e8,FUN_00041770);
   DAT_00202744 = uVar1;
   return;
 }
@@ -30656,7 +31499,7 @@ undefined4 param_3;
 
 {
   DAT_00202510 = param_3;
-  FUN_000417b4(param_1,param_2,1,&LAB_000416f8,0);
+  load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,0);
   return 0;
 }
 
@@ -30722,6 +31565,13 @@ undefined4 FUN_00041aac()
     uVar11 = FUN_00041910(s_3dwin_00085a14);
     DAT_00202734 = DAT_00202744;
     uVar12 = FUN_00041990(s_tmflat_00085a0c,0x170,0x10);
+    /* DAT_00202738 is snapshotted AFTER this call, i.e. it's the base for
+       whatever loads NEXT, not TMOBJ's own base -- confirmed by
+       instrumenting this exact spot (DAT_00202744 went 643 -> 681 across
+       the FUN_00041910 call below), so TMOBJ's real 38 frames are
+       absolute indices 643-680. See emit_tile_objects's class-2 sign
+       branch and FUN_00040770's negative-param_1 comment for where this
+       matters. */
     uVar13 = FUN_00041910(s_tmobj_00085a04);
     DAT_00202738 = DAT_00202744;
     uVar14 = FUN_000419c8(&DAT_000859fc);
@@ -30757,7 +31607,8 @@ undefined4 FUN_00041aac()
 
 
 
-void FUN_00041db0()
+// was FUN_00041db0
+void load_door_frames()
 
 {
   undefined2 uVar1;
@@ -30769,7 +31620,19 @@ void FUN_00041db0()
   iVar3 = 0;
   DAT_00202744 = DAT_00202734 + 0x30;
   do {
-    FUN_000417b4(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&LAB_000415b4,0);
+    /* Was passed `0` for the post-process/registration callback (param_5)
+       -- with no registrar, even a successful allocate+read never stores
+       the decoded buffer into FUN_000408fc's DAT_0024e090[] pointer
+       table, so every door frame stayed permanently unresolved (0x0
+       width/height, drawing nothing). LAB_000415d0 (FUN_00041910/
+       QUESTION-VIEWS-etc.'s own registrar) already does exactly what's
+       needed here: register at the running cursor DAT_00202744, which
+       this loop already manages by hand the same way FUN_00041910's
+       caller does. */
+    uint _ok = load_gr_resource_entries(s_doors_00085a64,(&DAT_0023b840)[iVar3],1,&alloc_door_frame_buffer,&LAB_000415d0);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] load_door_frames: loading doors[%d] slot=%d -> DAT_00202744=%d ok=%u\n",
+              iVar3, (int)(&DAT_0023b840)[iVar3], (int)DAT_00202744, _ok);
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     DAT_00202744 = DAT_00202744 + 1;
   } while (iVar3 < 6);
@@ -31208,21 +32071,24 @@ short param_2;
 
 
 
-void FUN_00042870(param_1)
+void handle_object_drop_target(param_1)
 short param_1;
 
 {
   ushort *puVar1;
   int iVar2;
+  ushort *puVar2;
   ushort uVar3;
   bool bVar4;
-  
-  bVar4 = DAT_00202948 != 0;
+
+  bVar4 = g_selected_object != 0;
   iVar2 = (int)param_1;
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] handle_object_drop_target entry: param_1=%d g_selected_object=%p\n", (int)param_1, (void *)g_selected_object);
   if (7 < iVar2) {
     if (iVar2 < 10) {
       if (iVar2 == 9 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
-        puVar1 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&DAT_00085c38)[iVar2] * 2);
+        puVar1 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
         uVar3 = *puVar1 & 0x1ff;
         if (((((*puVar1 & 0x1f0) == 0) || (uVar3 == 0x18)) || (uVar3 == 0x19)) ||
            ((uVar3 == 0x1a || (uVar3 == 0x1f)))) {
@@ -31233,7 +32099,7 @@ short param_1;
     }
     else {
       if (iVar2 == 0x14) {
-        FUN_00042c5c();
+        leave_nested_container_level();
         goto LAB_00042a10;
       }
       if (iVar2 == 0x15) {
@@ -31245,14 +32111,14 @@ short param_1;
         goto LAB_00042a10;
       }
       if (iVar2 == 0x17) {
-        if ((DAT_00202948 != 0) && (iVar2 = FUN_0004a69c(DAT_00202948,1), iVar2 != 0)) {
-          iVar2 = FUN_00053920(DAT_00202948,0x126);
+        if ((g_selected_object != 0) && (iVar2 = drop_held_object_near_player(g_selected_object,1), iVar2 != 0)) {
+          iVar2 = FUN_00053920(g_selected_object,0x126);
           if (iVar2 != 0) {
             *(byte *)(DAT_00086df8 + 0x5e) =
                  ((byte)DAT_00201b68 ^ *(byte *)(DAT_00086df8 + 0x5e)) & 0xf ^
                  *(byte *)(DAT_00086df8 + 0x5e);
           }
-          DAT_00202948 = 0;
+          g_selected_object = 0;
           FUN_000667cc();
         }
         goto LAB_00042a10;
@@ -31263,27 +32129,39 @@ short param_1;
       }
     }
   }
-  iVar2 = resolve_object_link(&DAT_00202950 + (char)(&DAT_00085c38)[iVar2] * 2);
-  if (iVar2 != 0) {
-    FUN_00079984(DAT_0023be64,iVar2,1);
+  /* Was reusing `iVar2` (an `int`) for resolve_object_link's real
+     pointer return, truncating it to 32 bits on this 64-bit host --
+     same "narrow local for a pointer" idiom already fixed at several
+     call sites this session. Only reached once a click actually landed
+     on an occupied backpack slot for the first time (see the arena
+     storage fix a few functions up), immediately segfaulting one frame
+     further in on use_object_on_target's own dereference of the same
+     truncated value. */
+  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
+  if (puVar2 != 0) {
+    use_object_on_target(g_player_object,puVar2,1);
   }
 LAB_00042a10:
-  if ((bVar4) && (DAT_00202948 == 0)) {
+  if ((bVar4) && (g_selected_object == 0)) {
     FUN_00057cac(3);
-    DAT_002020c4 = 0;
+    g_cursor_holding_state = 0;
   }
   return;
 }
 
 
 
-void FUN_00042a44(param_1)
-int param_1;
+void release_container_reference(param_1)
+/* Was `int param_1` -- every call site passes g_current_container_record, a real
+   64-bit pointer, which this narrower type truncates to 32 bits --
+   same class as several other fixes this session (search "narrow
+   local/parameter for a pointer"). */
+char *param_1;
 
 {
   ushort uVar1;
   ushort *puVar2;
-  
+
   puVar2 = (ushort *)FUN_000535fc(*(ushort *)(param_1 + 8) >> 6);
   uVar1 = *puVar2;
   if (((uVar1 & 0xf) < 0xc) && ((uVar1 & 1) != 0)) {
@@ -31298,58 +32176,71 @@ int param_1;
 /* NOT YET FIXED (not on the crash path reached so far, but the same bug
    class as everywhere else in this file): the body below reads/writes
    through the literal `iVar1*4 + 0x202870`/`iVar10*4 + 0x202870` --
-   a hardcoded original-binary address, same "FUN_0006bde0 -0x87020"
+   a hardcoded original-binary address, same "probe_save_slots -0x87020"
    class fixed elsewhere. 0x202870 is 8 bytes before DAT_00202878 (itself
    only declared as a single `undefined` byte here, so also likely
    undersized) -- revisit both together if/when this function's icon
    save/restore path is actually exercised and crashes. */
-void FUN_00042aa8()
+void free_open_container_chain()
 
 {
   undefined1 uVar1;
   undefined3 uVar2;
   int iVar3;
 
-  if (DAT_00202994 != 0) {
-    uVar2 = *(undefined3 *)(DAT_00202994 + 4);
-    uVar1 = *(undefined1 *)(DAT_00202994 + 7);
+  if (g_current_container_record != 0) {
+    uVar2 = *(undefined3 *)(g_current_container_record + 4);
+    uVar1 = *(undefined1 *)(g_current_container_record + 7);
     while( true ) {
       iVar3 = CONCAT13(uVar1,uVar2);
       if (iVar3 == 0) break;
-      FUN_00042a44();
-      Ordinal_1018(DAT_00202994);
+      /* Dropped argument: release_container_reference's declared signature takes the
+         open-container tracking record being freed -- g_current_container_record,
+         the current one, before it's overwritten by iVar3 below --
+         same "wrapper forgot to forward its own argument" idiom as
+         this whole session's other fixes. Never triggered before
+         because closing a container (this whole function) was
+         unreachable until this session's chain of fixes leading up to
+         it -- confirmed live: leaving a container crashed here
+         dereferencing the leftover-register garbage this left in
+         param_1's place. */
+      release_container_reference((char *)g_current_container_record);
+      Ordinal_1018(g_current_container_record);
       uVar2 = *(undefined3 *)(iVar3 + 4);
       uVar1 = *(undefined1 *)(iVar3 + 7);
-      DAT_00202994 = iVar3;
+      g_current_container_record = iVar3;
     }
-    DAT_00202990 = 0;
-    FUN_00042a44();
-    Ordinal_1018(DAT_00202994);
-    DAT_00202994 = 0;
+    g_open_container_list = 0;
+    release_container_reference((char *)g_current_container_record);
+    Ordinal_1018(g_current_container_record);
+    g_current_container_record = 0;
   }
   return;
 }
 
 
 
-void FUN_00042b38()
+void close_backpack_container()
 
 {
   int iVar1;
   undefined4 uVar2;
   
-  if (DAT_00202994 != 0) {
-    FUN_00042aa8();
-    DAT_00202976 = DAT_00202976 & 0x3f;
+  if (g_current_container_record != 0) {
+    free_open_container_chain();
+    g_current_container_link = g_current_container_link & 0x3f;
     iVar1 = 0xb;
     do {
-      (&DAT_00085c39)[iVar1] = (char)iVar1;
+      (&g_backpack_widget_to_slot_plus1)[iVar1] = (char)iVar1;
       iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
     } while (iVar1 < 0x13);
     iVar1 = 0xc;
     do {
       uVar2 = (&DAT_002028e8)[iVar1];
-      (&DAT_002028e8)[iVar1] = *(undefined4 *)(iVar1 * 4 + 0x202870);
+      /* Same hardcoded-original-address bug already fixed in
+         open_backpack_container (0x202870 = &DAT_002028a0 - 0xc*4) -- a second,
+         separate occurrence in this sibling function. */
+      (&DAT_002028e8)[iVar1] = (&DAT_002028a0)[iVar1 + -0xc];
       (&DAT_002028a0)[iVar1 + -0xc] = uVar2;
       iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
     } while (iVar1 < 0x14);
@@ -31361,8 +32252,33 @@ void FUN_00042b38()
     FUN_000570b4();
     DAT_002029a0 = 0;
     DAT_0020299c = 0;
-    FUN_00046eec(0x15);
-    FUN_00046eec(0x16);
+    /* Missing piece, matching open_backpack_container's own fix: nothing here
+       actually redraws the panel after leaving a container -- confirmed
+       live, closing left the dark background rect and the container's
+       icon frozen on screen. open_backpack_container painted over the paperdoll's
+       lower half and the grid's circle background (see its own
+       comment); the cheapest reliable way to undo that without
+       reverse-engineering a partial-restore path is to just redo the
+       whole HUD/panel setup draw (background art, paperdoll body,
+       compass, dragons) the same way it's drawn once at load, then
+       redraw the 8 backpack-grid widgets on top so the player's own
+       items reappear (the mapping above, via the g_backpack_widget_to_slot_plus1 alias,
+       is already restored back to slots 11-18 by this point).
+
+       redraw_hud_panels's own background blit (of this same DAT_0023cca4
+       panel art) runs with transparency on, so it skips whatever
+       palette-index-0 pixels the source art has in the leave-icon's
+       specific spot (record 1, likely a genuinely transparent corner
+       of the art rather than solid leather) -- leaving that one icon
+       behind even after the "full" redraw below (confirmed live). Do
+       one extra fully OPAQUE pass of the same blit first so every
+       pixel there gets overwritten regardless. */
+    g_blit_transparent_mode = 0;
+    bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+    redraw_hud_panels();
+    redraw_inventory_widget_range(0xc,0x13);
+    redraw_inventory_widget(0x15);
+    redraw_inventory_widget(0x16);
   }
   return;
 }
@@ -31371,29 +32287,31 @@ void FUN_00042b38()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00042c5c()
+void leave_nested_container_level()
 
 {
   int iVar1;
   
-  if (DAT_00202990 != 0) {
-    if (*(int *)(DAT_00202994 + 4) == 0) {
-      FUN_00042b38();
+  if (g_open_container_list != 0) {
+    if (*(int *)(g_current_container_record + 4) == 0) {
+      close_backpack_container();
     }
     else {
-      FUN_00042a44();
-      DAT_00202994 = *(undefined1 **)(DAT_00202994 + 4);
+      /* Same dropped argument as free_open_container_chain's own fix -- forward the
+         current g_current_container_record before it's overwritten below. */
+      release_container_reference((char *)g_current_container_record);
+      g_current_container_record = *(undefined1 **)(g_current_container_record + 4);
       Ordinal_1018();
-      *DAT_00202994 = 0;
-      DAT_00202994[1] = 0;
-      DAT_00202994[2] = 0;
-      DAT_00202994[3] = 0;
-      DAT_00202976 = *(undefined2 *)(DAT_00202994 + 8);
-      iVar1 = resolve_object_link((ushort *)(DAT_00202994 + 8));
+      *g_current_container_record = 0;
+      g_current_container_record[1] = 0;
+      g_current_container_record[2] = 0;
+      g_current_container_record[3] = 0;
+      g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
+      iVar1 = resolve_object_link((ushort *)(g_current_container_record + 8));
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
       FUN_00042e30();
       FUN_00042d70();
-      FUN_00048198(0x14,0x14);
+      redraw_inventory_widget_range(0x14,0x14);
     }
   }
   return;
@@ -31410,17 +32328,17 @@ void FUN_00042d70()
   int iVar2;
   
   FUN_00057118();
-  FUN_00048198(0xc,0x13);
-  iVar2 = resolve_object_link(&DAT_00202976);
+  redraw_inventory_widget_range(0xc,0x13);
+  iVar2 = resolve_object_link(&g_current_container_link);
   iVar2 = iVar2 + 6;
   while ((iVar2 = resolve_object_link(iVar2), iVar2 != 0 && ((*(byte *)(iVar2 + 1) & 0x40) != 0))) {
     iVar2 = iVar2 + 4;
   }
-  sVar1 = FUN_0005358c();
+  sVar1 = encode_object_slot_index();
   DAT_002029a0 = (uint)((uint)(_DAT_00202978 >> 6) != (int)sVar1);
   DAT_0020299c = (uint)((DAT_00202986 & 0xffc0) != 0);
-  FUN_00046eec(0x15);
-  FUN_00046eec(0x16);
+  redraw_inventory_widget(0x15);
+  redraw_inventory_widget(0x16);
   FUN_000570b4();
   return;
 }
@@ -31442,7 +32360,7 @@ void FUN_00042e30()
     if ((*(ushort *)(&DAT_00202950 + iVar6 * 2) & 0xffc0) != 0) break;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x1c);
-  iVar3 = resolve_object_link(&DAT_00202976);
+  iVar3 = resolve_object_link(&g_current_container_link);
   iVar3 = resolve_object_link(iVar3 + 6);
   if ((short)iVar6 < 0x1c) {
     do {
@@ -31450,7 +32368,7 @@ void FUN_00042e30()
       if (iVar3 == iVar5) {
         iVar6 = 0x14;
         do {
-          uVar4 = FUN_0005358c(iVar3);
+          uVar4 = encode_object_slot_index(iVar3);
           iVar5 = (short)iVar6 * 2;
           (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
           (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
@@ -31470,7 +32388,7 @@ void FUN_00042e30()
   else {
     iVar6 = 0x14;
     do {
-      uVar4 = FUN_0005358c(iVar3);
+      uVar4 = encode_object_slot_index(iVar3);
       iVar5 = (short)iVar6 * 2;
       (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
       (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
@@ -31493,7 +32411,7 @@ void FUN_00042e30()
         iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
       } while (iVar6 < 0x18);
       for (; iVar5 = (int)(short)iVar6, iVar5 < 0x1c; iVar6 = iVar6 + 1) {
-        uVar4 = FUN_0005358c(iVar3);
+        uVar4 = encode_object_slot_index(iVar3);
         (&DAT_00202950)[iVar5 * 2] =
              (&DAT_00202950)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
         (&DAT_00202951)[iVar5 * 2] = (char)((uVar4 << 0x16) >> 0x18);
@@ -31511,7 +32429,7 @@ void FUN_00042e30()
 
 
 
-void FUN_00043100(param_1)
+void open_backpack_container(param_1)
 short param_1;
 
 {
@@ -31528,6 +32446,14 @@ short param_1;
   int iVar11;
   uint uVar12;
   ushort *puVar13;
+  /* iVar10/iVar11 are reused elsewhere in this function as plain int
+     loop counters (0xc..0x13 etc) -- real uses, left alone -- but the
+     container-open sequence below also stored real 64-bit
+     resolve_object_link() pointers into them, truncating to 32 bits on
+     this host (same class as many other fixes this session). New,
+     properly-typed locals for just that pointer use. */
+  ushort *puVar14;
+  ushort *puVar15;
   
   iVar1 = (int)param_1;
   puVar13 = (ushort *)(&DAT_00202950 + iVar1 * 2);
@@ -31538,114 +32464,199 @@ short param_1;
       FUN_0006cff4(6,1);
     }
     else {
-      if (DAT_00202990 == (undefined4 *)0x0) {
+      if (g_open_container_list == (undefined4 *)0x0) {
         FUN_00057118();
         if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
           draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
         }
+        /* Missing container-view chrome, per direct playtest feedback
+           describing the real game's layout (none of this exists
+           anywhere in the decompiled body -- the 0x2097 sprite draw
+           just above is the closest existing candidate, but it drew
+           nothing visible in testing, likely a never-recovered/empty
+           .GR resource slot, same story as the scroll-edge decoration
+           sprites documented in blit_object_sprite_by_frame's own comment):
+           1. A darker rectangle over the whole 8-cell grid area,
+              replacing the plain panel-background circles while a
+              container's contents are shown there instead of the
+              player's own backpack.
+           2. The open container's own icon, drawn ~40 screen px (20
+              panel-local units) above grid slot 1 at g_inv_hotspot_click_x1
+              record 1's new draw position (see its own comment) --
+              clicking it (wired in handle_inventory_panel_click) leaves the container. */
+        set_draw_color(0);
+        rect_fill_or_save_restore(0xf0,0x50,0x13c,0x76);
+        g_blit_transparent_mode = 1;
+        draw_sprite_by_id(uVar3 & 0x1ff,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
+                     (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
+        g_blit_transparent_mode = 0;
         if (DAT_002028a0 == 0) {
           iVar10 = 0xc;
           do {
             iVar11 = iVar10 * 0xe;
-            uVar8 = FUN_00076a2c((&DAT_00085adc)[iVar11],(uint)(byte)(&DAT_00085add)[iVar11] << 1);
-            sVar4 = (&DAT_00085ada)[iVar10 * 7];
+            uVar8 = FUN_00076a2c((&g_inv_hotspot_dirty_w)[iVar11],(uint)(byte)(&g_inv_hotspot_dirty_h)[iVar11] << 1);
+            sVar4 = (&g_inv_hotspot_draw_y)[iVar10 * 7];
             (&DAT_002028a0)[iVar10 + -0xc] = uVar8;
-            capture_framebuffer_rect_to_grtile(*(undefined4 *)(iVar10 * 4 + 0x202870),
-                         (int)(short)(&DAT_00085ad8)[iVar10 * 7],(int)sVar4,(&DAT_00085adc)[iVar11],
-                         (&DAT_00085add)[iVar11]);
+            /* Was a hardcoded original-binary literal address
+               (0x202870 = &DAT_002028a0 - 0xc*4 in the original 32-bit
+               address space) instead of the general symbolic form the
+               write just above already uses for this same array --
+               same "hardcoded address" bug class as the iVar5==10/11
+               case a few thousand lines up (search "probe_save_slots's
+               -0x87020"). Reads back the uVar8 just written one line
+               above; never triggered before because nothing reached
+               this never-before-exercised container-interact path
+               until this session's chain of fixes leading up to it. */
+            capture_framebuffer_rect_to_grtile((&DAT_002028a0)[iVar10 + -0xc],
+                         (int)(short)(&g_inv_hotspot_draw_x)[iVar10 * 7],(int)sVar4,(&g_inv_hotspot_dirty_w)[iVar11],
+                         (&g_inv_hotspot_dirty_h)[iVar11]);
             iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
           } while (iVar10 < 0x14);
         }
         FUN_000570b4();
-        iVar10 = 0x14;
-        do {
-          *(char *)(iVar10 + 0x85c30) = (char)iVar10;
-          iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
-        } while (iVar10 < 0x1c);
+        /* Was a hardcoded original-binary literal address (0x85c30) --
+           same bug class as this function's own 0x202870 fix just
+           above -- but unlike that one, nothing anywhere else in this
+           file ever reads address 0x85c30 back symbolically or
+           otherwise (confirmed via a whole-file grep), so whatever
+           real array this once identity-filled is both unrecoverable
+           and provably dead. On this 64-bit host 0x85c30 is just an
+           unmapped low address, so left as-is this writes 8 bytes
+           (iVar10=0x14..0x1b) into unmapped memory and crashes --
+           never triggered before since nothing reached this
+           never-before-exercised path this session's earlier fixes.
+           Dropped instead of guessing at backing storage nothing reads. */
         iVar10 = 0xc;
         do {
           uVar8 = (&DAT_002028e8)[iVar10];
-          (&DAT_002028e8)[iVar10] = *(undefined4 *)(iVar10 * 4 + 0x202870);
+          /* Same hardcoded-original-address bug as this function's
+             other 0x202870 fix above (0x202870 = &DAT_002028a0 -
+             0xc*4). */
+          (&DAT_002028e8)[iVar10] = (&DAT_002028a0)[iVar10 + -0xc];
           (&DAT_002028a0)[iVar10 + -0xc] = uVar8;
           iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
         } while (iVar10 < 0x14);
       }
       else {
-        puVar9 = DAT_00202990;
+        puVar9 = g_open_container_list;
         do {
           if (((*(ushort *)(puVar9 + 2) ^ *puVar13) & 0xffc0) == 0) {
-            FUN_00042b38();
+            close_backpack_container();
             return;
           }
           puVar9 = (undefined4 *)*puVar9;
         } while (puVar9 != (undefined4 *)0x0);
         if (iVar1 < 0xb) {
-          FUN_00042aa8();
+          free_open_container_chain();
         }
       }
       puVar9 = (undefined4 *)Ordinal_1041(0xc);
       if (puVar9 != (undefined4 *)0x0) {
-        if (DAT_00202990 == (undefined4 *)0x0) {
-          DAT_00202990 = puVar9;
-          DAT_00202994 = puVar9;
+        if (g_open_container_list == (undefined4 *)0x0) {
+          g_open_container_list = puVar9;
+          g_current_container_record = puVar9;
           *(undefined1 *)(puVar9 + 1) = 0;
           *(undefined1 *)((char *)puVar9 + 5) = 0;
           *(undefined1 *)((char *)puVar9 + 6) = 0;
           *(undefined1 *)((char *)puVar9 + 7) = 0;
         }
         else {
-          *(char *)DAT_00202994 = (char)puVar9;
-          *(char *)((char *)DAT_00202994 + 1) = (char)((uint)puVar9 >> 8);
-          *(char *)((char *)DAT_00202994 + 2) = (char)((uint)puVar9 >> 0x10);
-          *(char *)((char *)DAT_00202994 + 3) = (char)((uint)puVar9 >> 0x18);
-          puVar6 = DAT_00202994;
-          *(char *)(puVar9 + 1) = (char)DAT_00202994;
+          *(char *)g_current_container_record = (char)puVar9;
+          *(char *)((char *)g_current_container_record + 1) = (char)((uint)puVar9 >> 8);
+          *(char *)((char *)g_current_container_record + 2) = (char)((uint)puVar9 >> 0x10);
+          *(char *)((char *)g_current_container_record + 3) = (char)((uint)puVar9 >> 0x18);
+          puVar6 = g_current_container_record;
+          *(char *)(puVar9 + 1) = (char)g_current_container_record;
           *(char *)((char *)puVar9 + 5) = (char)((uint)puVar6 >> 8);
           *(char *)((char *)puVar9 + 6) = (char)((uint)puVar6 >> 0x10);
           *(char *)((char *)puVar9 + 7) = (char)((uint)puVar6 >> 0x18);
-          DAT_00202994 = (undefined4 *)*DAT_00202994;
+          g_current_container_record = (undefined4 *)*g_current_container_record;
         }
-        *(undefined1 *)DAT_00202994 = 0;
-        *(undefined1 *)((char *)DAT_00202994 + 1) = 0;
-        *(undefined1 *)((char *)DAT_00202994 + 2) = 0;
-        *(undefined1 *)((char *)DAT_00202994 + 3) = 0;
-        *(undefined1 *)((char *)DAT_00202994 + 10) = 0;
-        *(undefined1 *)((char *)DAT_00202994 + 0xb) = 0;
+        *(undefined1 *)g_current_container_record = 0;
+        *(undefined1 *)((char *)g_current_container_record + 1) = 0;
+        *(undefined1 *)((char *)g_current_container_record + 2) = 0;
+        *(undefined1 *)((char *)g_current_container_record + 3) = 0;
+        *(undefined1 *)((char *)g_current_container_record + 10) = 0;
+        *(undefined1 *)((char *)g_current_container_record + 0xb) = 0;
         uVar3 = *puVar13;
         bVar5 = (byte)uVar3;
-        *(byte *)(DAT_00202994 + 2) = (*(byte *)(DAT_00202994 + 2) ^ bVar5) & 0x3f ^ bVar5;
-        *(char *)((char *)DAT_00202994 + 9) = (char)(uVar3 >> 8);
-        DAT_00202976 = (DAT_00202976 ^ *(ushort *)(DAT_00202994 + 2)) & 0x3f ^
-                       *(ushort *)(DAT_00202994 + 2);
-        iVar10 = resolve_object_link(&DAT_00202976);
-        iVar11 = resolve_object_link(iVar10 + 6);
-        iVar10 = resolve_object_link(&DAT_00202976);
-        FUN_00043d40(iVar10 + 6,(undefined1 *)((char *)DAT_00202994 + 10));
+        *(byte *)(g_current_container_record + 2) = (*(byte *)(g_current_container_record + 2) ^ bVar5) & 0x3f ^ bVar5;
+        *(char *)((char *)g_current_container_record + 9) = (char)(uVar3 >> 8);
+        /* Was `g_current_container_link = (g_current_container_link ^ *(ushort*)(g_current_container_record+2))
+           & 0x3f ^ *(ushort*)(g_current_container_record+2)` -- a "keep bits inside
+           the mask from the left operand, take bits outside the mask
+           from the right operand" idiom, matching this file's usual
+           bit-assignment style elsewhere. But the right operand here
+           (offset+2/+3 of the fresh tracking record) only ever holds
+           bVar5 -- uVar3's own LOW BYTE -- with its own low 6 bits
+           already zeroed by the line just above, so at most 2 real
+           bits of uVar3 (bits 6-7) ever survive into g_current_container_link; the
+           object link's real identifying bits (the whole upper byte,
+           uVar3>>8, encoding which arena and slot the container lives
+           in) never reach it at all. Confirmed live with real numbers
+           (UW_DEBUG_INV): uVar3=0xeb80 (a real, valid high-arena
+           object link, the same value puVar13 -> puVar7 already
+           resolved correctly moments earlier) produced
+           g_current_container_link=0x0080 -- decodes as low-arena slot 2, a
+           completely different, essentially garbage object -- so every
+           container this ever ran on read back an unrelated object's
+           (empty) contents instead of its own. The starting-room sack
+           genuinely has 6 items in the level data (confirmed via the
+           new UW_DUMP_CONTAINERS_FILE tool), so the "empty contents"
+           result in this whole feature's earlier testing was this bug,
+           not empty source data. Fix: g_current_container_link only needs to be a
+           second copy of the exact same link value puVar13 already
+           held (same encoding, resolve_object_link doesn't care which
+           address you point it at) -- drop the broken partial-bit
+           idiom and just copy it directly. */
+        g_current_container_link = uVar3;
+        puVar14 = (ushort *)resolve_object_link(&g_current_container_link);
+        puVar15 = (ushort *)resolve_object_link((ushort *)((char *)puVar14 + 6));
+        if (getenv("UW_DEBUG_INV"))
+          fprintf(stderr, "[inv] open_backpack_container open: container=%p contents_head=%p\n",
+                  (void *)puVar14, (void *)puVar15);
+        sum_container_weight((ushort *)((char *)puVar14 + 6),(undefined1 *)((char *)g_current_container_record + 10));
         iVar10 = 0x14;
         do {
-          uVar12 = FUN_0005358c(iVar11);
+          uVar12 = encode_object_slot_index(puVar15);
           iVar2 = (int)(short)iVar10;
           (&DAT_00202950)[iVar2 * 2] =
                (&DAT_00202950)[iVar2 * 2] & 0x3f | (byte)((uVar12 & 0x3ff) << 6);
           (&DAT_00202951)[iVar2 * 2] = (char)((uVar12 << 0x16) >> 0x18);
-          if (iVar11 != 0) {
-            if ((*(byte *)(iVar11 + 1) & 0x40) != 0) {
+          if (puVar15 != NULL) {
+            if ((*(byte *)((char *)puVar15 + 1) & 0x40) != 0) {
               iVar10 = (iVar2 + -1) * 0x10000 >> 0x10;
             }
-            iVar11 = resolve_object_link(iVar11 + 4);
+            puVar15 = (ushort *)resolve_object_link((ushort *)((char *)puVar15 + 4));
           }
           iVar10 = iVar10 + 1;
         } while (iVar10 * 0x10000 >> 0x10 < 0x1c);
-        puVar7 = (ushort *)resolve_object_link(&DAT_00202976);
+        /* Missing piece, not present anywhere in the decompiled body:
+           the container's contents are now sitting in slots 20-27, but
+           nothing ever repointed the 8 visible grid widgets (12-19) at
+           them -- they still map to 11-18 (the player's own backpack,
+           via g_backpack_widget_to_slot's default N -> N-1), so the panel kept
+           showing the backpack, unchanged, after "opening" a container
+           (confirmed live: no visual change on click). Remap widgets
+           12-19 -> slots 20-27 (N -> N+8) for as long as this container
+           stays open -- close_backpack_container (close) already resets this same
+           table back to its default 11-18 via g_backpack_widget_to_slot_plus1 -- and
+           redraw all 8 cells so the container's contents actually
+           appear. */
+        for (iVar10 = 0xc; iVar10 < 0x14; iVar10 = iVar10 + 1) {
+          (&g_backpack_widget_to_slot)[iVar10] = (char)(iVar10 + 8);
+        }
+        redraw_inventory_widget_range(0xc,0x13);
+        puVar7 = (ushort *)resolve_object_link(&g_current_container_link);
         uVar3 = *puVar7;
         if (((uVar3 & 0xf) < 0xc) && ((uVar3 & 1) == 0)) {
           *(byte *)puVar7 = ((char)(uVar3 & 0xf) + 1U ^ (byte)uVar3) & 0xf ^ (byte)uVar3;
           *(byte *)((char *)puVar7 + 1) = (byte)(uVar3 >> 8);
         }
         FUN_00042d70();
-        FUN_00048198(0x14,0x14);
-        if ((char)(&DAT_00085c18)[iVar1] < '\v') {
-          FUN_00046eec((int)(char)(&DAT_00085c18)[iVar1]);
+        redraw_inventory_widget_range(0x14,0x14);
+        if ((char)(&g_backpack_slot_to_widget)[iVar1] < '\v') {
+          redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
         }
       }
     }
@@ -31660,7 +32671,7 @@ short param_1;
 void FUN_00043614()
 
 {
-  if ((DAT_00202990 != 0) && (DAT_0020299c != 0)) {
+  if ((g_open_container_list != 0) && (DAT_0020299c != 0)) {
     _DAT_00202978 = DAT_00202980;
     FUN_00042e30();
     FUN_00042d70();
@@ -31681,8 +32692,8 @@ void FUN_0004365c()
   int iVar4;
   int iVar5;
   
-  if ((DAT_00202990 != 0) && (DAT_002029a0 != 0)) {
-    iVar2 = resolve_object_link(DAT_00202994 + 8);
+  if ((g_open_container_list != 0) && (DAT_002029a0 != 0)) {
+    iVar2 = resolve_object_link(g_current_container_record + 8);
     iVar3 = resolve_object_link(iVar2 + 6);
     iVar4 = resolve_object_link(&DAT_00202978);
     iVar2 = iVar3;
@@ -31702,7 +32713,7 @@ void FUN_0004365c()
       } while( true );
     }
 LAB_00043700:
-    sVar1 = FUN_0005358c(iVar3);
+    sVar1 = encode_object_slot_index(iVar3);
     _DAT_00202978 = _DAT_00202978 & 0x3f | sVar1 << 6;
     FUN_00042e30();
     FUN_00042d70();
@@ -31714,7 +32725,7 @@ LAB_00043700:
 
 // WARNING: Removing unreachable block (ram,0x00043adc)
 
-undefined4 FUN_00043734(param_1,param_2)
+undefined4 auto_place_in_container(param_1,param_2)
 ushort * param_1;
 short param_2;
 
@@ -31733,14 +32744,16 @@ short param_2;
   short local_28;
   
   bVar11 = false;
-  sVar3 = FUN_000472c4();
+  /* Dropped arguments -- same bare call as place_object_in_backpack_slot's identical
+     fix just above (search "check_object_fits_in_slot's declared signature"). */
+  sVar3 = check_object_fits_in_slot(param_1, param_2);
   if (sVar3 == 0) {
 LAB_000438ac:
     uVar5 = 0;
   }
   else {
     iVar10 = (int)param_2;
-    if ((iVar10 == 0x13) && (*(int *)(DAT_00202994 + 4) == 0)) {
+    if ((iVar10 == 0x13) && (*(int *)(g_current_container_record + 4) == 0)) {
       iVar10 = 0xb;
       do {
         if ((*(ushort *)(&DAT_00202950 + iVar10 * 2) & 0xffc0) == 0) {
@@ -31750,18 +32763,18 @@ LAB_000438ac:
         iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
       } while (iVar10 < 0x13);
       local_28 = (short)iVar10;
-      puVar4 = DAT_0023be64;
+      puVar4 = g_player_object;
       if (0x12 < local_28) goto LAB_000438ac;
 LAB_0004386c:
       iVar9 = 0;
     }
     else {
-      if ((iVar10 == 0x13) && (iVar9 = *(int *)(DAT_00202994 + 4), iVar9 != 0)) {
+      if ((iVar10 == 0x13) && (iVar9 = *(int *)(g_current_container_record + 4), iVar9 != 0)) {
         puVar4 = (ushort *)resolve_object_link(iVar9 + 8);
       }
       else {
         puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar10 * 2);
-        iVar9 = DAT_00202994;
+        iVar9 = g_current_container_record;
         if (iVar10 < 0x14) {
           local_28 = 0;
           goto LAB_0004386c;
@@ -31778,7 +32791,7 @@ LAB_0004386c:
     }
     else {
       iVar10 = FUN_00046260(param_1);
-      DAT_0023bcf2 = DAT_0023bcf2 + (short)iVar10;
+      g_player_carry_weight = g_player_carry_weight + (short)iVar10;
       for (; iVar9 != 0;
           iVar9 = CONCAT13(*(undefined1 *)(iVar9 + 7),
                            CONCAT12(*(undefined1 *)(iVar9 + 6),
@@ -31828,23 +32841,23 @@ LAB_0004386c:
       }
       object_list_append_tail(puVar4 + 3,param_1);
       if (bVar11) {
-        uVar7 = FUN_0005358c(param_1);
+        uVar7 = encode_object_slot_index(param_1);
         iVar10 = (int)local_28;
         (&DAT_00202950)[iVar10 * 2] =
              (&DAT_00202950)[iVar10 * 2] & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
         (&DAT_00202951)[iVar10 * 2] = (char)((uVar7 << 0x16) >> 0x18);
       }
 LAB_000439a0:
-      if ((DAT_00202994 == 0) ||
-         (sVar3 = FUN_0005358c(puVar4), (int)sVar3 != (uint)(*(ushort *)(DAT_00202994 + 8) >> 6))) {
+      if ((g_current_container_record == 0) ||
+         (sVar3 = encode_object_slot_index(puVar4), (int)sVar3 != (uint)(*(ushort *)(g_current_container_record + 8) >> 6))) {
         iVar10 = FUN_00048514(1);
         if (iVar10 != 0) {
-          FUN_00040d00(s_font5x6p_sys_0008430c);
+          select_active_font(s_font5x6p_sys_0008430c);
         }
       }
       else {
         FUN_00042e30();
-        FUN_00048198(0xc,0x13);
+        redraw_inventory_widget_range(0xc,0x13);
       }
       uVar2 = *param_1;
       if ((0x93 < (uVar2 & 0x1ff)) && ((uVar2 & 0x1ff) < 0x98)) {
@@ -31877,7 +32890,7 @@ undefined4 param_2;
   byte *pbVar9;
   ushort *puVar10;
   
-  iVar4 = resolve_object_link(DAT_00202994 + 8);
+  iVar4 = resolve_object_link(g_current_container_record + 8);
   puVar10 = (ushort *)(iVar4 + 6);
   iVar4 = (short)param_2 * 2;
   pbVar9 = &DAT_00202950 + iVar4;
@@ -31885,21 +32898,21 @@ undefined4 param_2;
   while( true ) {
     puVar6 = (ushort *)resolve_object_link(puVar10);
     if (puVar5 == puVar6) {
-      FUN_00046ff4(param_2,0);
-      sVar1 = FUN_000472c4(param_1,param_2);
+      swap_cursor_and_slot_item(param_2,0);
+      sVar1 = check_object_fits_in_slot(param_1,param_2);
       if (sVar1 == 0) {
-        DAT_00202948 = param_1;
+        g_selected_object = param_1;
         FUN_00057cac(3);
-        FUN_00057c5c(*DAT_00202948 & 0x1ff);
+        FUN_00057c5c(*g_selected_object & 0x1ff);
         param_1 = puVar5;
       }
       object_list_insert_head(puVar10,param_1);
-      uVar7 = FUN_0005358c(param_1);
+      uVar7 = encode_object_slot_index(param_1);
       *pbVar9 = *pbVar9 & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
       (&DAT_00202951)[iVar4] = (char)((uVar7 << 0x16) >> 0x18);
       sVar2 = FUN_00046260(param_1);
       sVar3 = FUN_00046260(puVar5);
-      for (iVar4 = DAT_00202994; iVar4 != 0;
+      for (iVar4 = g_current_container_record; iVar4 != 0;
           iVar4 = CONCAT13(*(undefined1 *)(iVar4 + 7),
                            CONCAT12(*(undefined1 *)(iVar4 + 6),
                                     CONCAT11(*(undefined1 *)(iVar4 + 5),*(undefined1 *)(iVar4 + 4)))
@@ -31909,11 +32922,11 @@ undefined4 param_2;
         *(char *)(iVar4 + 0xb) = (char)((uint)iVar8 >> 8);
       }
       sVar2 = FUN_00046260(param_1);
-      DAT_0023bcf2 = DAT_0023bcf2 + sVar2;
+      g_player_carry_weight = g_player_carry_weight + sVar2;
       FUN_000667cc();
       FUN_00042e30();
-      FUN_00048198((int)(char)(&DAT_00085c18)[(short)param_2],
-                   (int)(char)(&DAT_00085c18)[(short)param_2]);
+      redraw_inventory_widget_range((int)(char)(&g_backpack_slot_to_widget)[(short)param_2],
+                   (int)(char)(&g_backpack_slot_to_widget)[(short)param_2]);
       return sVar1 != 0;
     }
     if (puVar6 == (ushort *)0x0) break;
@@ -31924,7 +32937,7 @@ undefined4 param_2;
 
 
 
-void FUN_00043d40(param_1,param_2)
+void sum_container_weight(param_1,param_2)
 ushort *param_1;  /* was `undefined4` -- truncated the real object-record
                      pointer (passed straight to resolve_object_link, and
                      to itself recursively as `puVar2+2`), latent until
@@ -31947,7 +32960,7 @@ short * param_2;
       uVar1 = puVar2[3] >> 6;
     }
     *param_2 = (*(ushort *)(&DAT_00202c91 + (*puVar2 & 0x1ff) * 0xd) >> 4) * uVar1 + *param_2;
-    FUN_00043d40(puVar2 + 2,param_2);
+    sum_container_weight(puVar2 + 2,param_2);
     if ((*puVar2 & 0x8000) != 0) break;
     puVar2 = (ushort *)resolve_object_link(puVar2 + 3);
   }
@@ -31971,8 +32984,8 @@ undefined1 * param_1;
   byte *pbVar9;
   ushort local_14 [2];
   
-  FUN_00042b38();
-  puVar4 = DAT_0023be64;
+  close_backpack_container();
+  puVar4 = g_player_object;
   iVar6 = 0x1b;
   puVar7 = param_1;
   do {
@@ -31999,10 +33012,10 @@ undefined1 * param_1;
     pbVar9[1] = 0;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x13);
-  FUN_000440d0(DAT_0023be64 + 6,param_1 + 6);
-  puVar4 = DAT_00202948;
-  if (DAT_002020c4 == 1) {
-    param_1[0x1b] = *DAT_00202948;
+  FUN_000440d0(g_player_object + 6,param_1 + 6);
+  puVar4 = g_selected_object;
+  if (g_cursor_holding_state == 1) {
+    param_1[0x1b] = *g_selected_object;
     param_1[0x1c] = puVar4[1];
     param_1[0x1d] = puVar4[2];
     param_1[0x1e] = puVar4[3];
@@ -32010,10 +33023,10 @@ undefined1 * param_1;
     param_1[0x20] = puVar4[5];
     param_1[0x21] = puVar4[6];
     param_1[0x22] = puVar4[7];
-    if ((DAT_00202948[1] & 0x80) == 0) {
-      FUN_000440d0(DAT_00202948 + 6,param_1 + 0x21);
+    if ((g_selected_object[1] & 0x80) == 0) {
+      FUN_000440d0(g_selected_object + 6,param_1 + 0x21);
     }
-    sVar3 = FUN_0005358c(DAT_00202948);
+    sVar3 = encode_object_slot_index(g_selected_object);
     local_14[0] = local_14[0] & 0x3f | sVar3 << 6;
     FUN_000533e4(local_14);
   }
@@ -32204,7 +33217,7 @@ ushort * param_2;
     puVar1[5] = puVar3[5];
     puVar1[6] = puVar3[6];
     puVar1[7] = puVar3[7];
-    uVar2 = FUN_0005358c();
+    uVar2 = encode_object_slot_index();
     *param_1 = *param_1 & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
     param_1[1] = (byte)((uVar2 << 0x16) >> 0x18);
     FUN_000442dc(param_1,param_2);
@@ -32220,7 +33233,7 @@ ushort * param_2;
 
 
 void FUN_000444b0(param_1)
-char *param_1;  /* was `undefined4` -- truncated the real DAT_0023be64+6
+char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
                    pointer FUN_00066c90 passes in. Pre-existing bug, but
                    never bit until resolve_object_link (this function's
                    own first call) started actually using its argument
@@ -32259,7 +33272,7 @@ undefined1 * param_1;
   
   DAT_002028c0 = param_1 + 0x23;
   DAT_002028c4 = param_1 + 0x5b;
-  puVar2 = DAT_0023be64;
+  puVar2 = g_player_object;
   puVar3 = param_1;
   iVar4 = 0x1b;
   do {
@@ -32270,10 +33283,10 @@ undefined1 * param_1;
     puVar3 = puVar3 + 1;
     iVar4 = iVar5;
   } while (iVar5 != 0 && bVar1);
-  FUN_00044398(DAT_0023be64 + 6,param_1 + 6);
-  if (DAT_002020c4 == 1) {
+  FUN_00044398(g_player_object + 6,param_1 + 6);
+  if (g_cursor_holding_state == 1) {
     puVar2 = (undefined1 *)alloc_object_slot(0);
-    DAT_00202948 = puVar2;
+    g_selected_object = puVar2;
     *puVar2 = param_1[0x1b];
     puVar2[1] = param_1[0x1c];
     puVar2[2] = param_1[0x1d];
@@ -32283,7 +33296,7 @@ undefined1 * param_1;
     puVar2[6] = param_1[0x21];
     puVar2[7] = param_1[0x22];
     if ((param_1[0x1c] & 0x80) == 0) {
-      FUN_00044398(DAT_00202948 + 6,param_1 + 0x21);
+      FUN_00044398(g_selected_object + 6,param_1 + 0x21);
     }
   }
   return;
@@ -32310,7 +33323,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
   
   uVar4 = 1;
   if ((param_1 != 0) && (-1 < DAT_00202080)) {
-    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   FUN_00066c90();
   if ((DAT_002028c8 == 0) && (DAT_002028c8 = Ordinal_1041(0x4000), DAT_002028c8 == 0)) {
@@ -32345,7 +33358,7 @@ LAB_00044730:
     DAT_002028c8 = 0;
   }
   if ((param_1 != 0) && (-1 < DAT_00202080)) {
-    object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+    object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   return uVar4;
 }
@@ -32417,9 +33430,9 @@ void FUN_000448a8()
   uVar1 = 0;
   do {
     if ((*(byte *)(DAT_00086df8 + ((int)uVar1 >> 3) + 0x44) >> (7 - (uVar1 & 7) & 0xff) & 1) != 0) {
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       FUN_00044848(uVar1);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
     }
     uVar1 = (int)((uVar1 + 1) * 0x10000) >> 0x10;
   } while ((int)uVar1 < 0x18);
@@ -32459,7 +33472,7 @@ void FUN_0004497c()
   undefined2 local_1a;
   
   psVar3 = DAT_00085a6c;
-  if (DAT_002020c4 == 0) {
+  if (g_cursor_holding_state == 0) {
     if (DAT_00085a6c[1] < 0x12) {
       FUN_00044920();
     }
@@ -32494,7 +33507,7 @@ void FUN_0004497c()
         else {
           local_20[0] = ((short)iVar6 + 0xe8U ^ local_20[0]) & 0x1ff ^ local_20[0];
           local_1a = 0;
-          FUN_00048764(local_20,0);
+          dispatch_object_action_dup(local_20,0);
         }
       }
     }
@@ -32522,7 +33535,7 @@ void FUN_00044bd8()
   short local_10;
   byte abStack_e [6];
   
-  if ((DAT_002020c4 < 1) || (3 < DAT_002020c4)) {
+  if ((g_cursor_holding_state < 1) || (3 < g_cursor_holding_state)) {
     iVar2 = 2 - ((int)*DAT_00085a6c >> 4);
     local_10 = (short)iVar2;
     if (iVar2 * 0x10000 >> 0x10 < (int)(*(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf)) {
@@ -32562,7 +33575,7 @@ short param_1;
 {
   int iVar1;
   
-  if (DAT_002020c4 == 0) {
+  if (g_cursor_holding_state == 0) {
     if (((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) || (param_1 != 0)) {
       DAT_002028d0 = 1;
       if (*(uint *)(DAT_00086df8 + 0xce) < (uint)DAT_002028d4 + DAT_002028d8) {
@@ -32651,7 +33664,7 @@ uint param_1;
         *(byte *)(DAT_00086df8 + 0x37) = *(char *)(DAT_00086df8 + 0x37) + bVar6 * -3;
         DAT_0023c3e0 = '\0';
       }
-      iVar5 = FUN_00073b74(bVar7,bVar1,DAT_0023be64,DAT_0023be64);
+      iVar5 = FUN_00073b74(bVar7,bVar1,g_player_object,g_player_object);
       if (iVar5 != 0) {
         FUN_00072f30(0x10,0x40,0);
         return 1;
@@ -32670,7 +33683,7 @@ void FUN_0004503c(param_1)
 short param_1;
 
 {
-  FUN_00046eec((int)(char)(&DAT_00085c18)[param_1]);
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_1]);
   return;
 }
 
@@ -32695,8 +33708,13 @@ short param_1;
 
 
 
-undefined4 FUN_0004506c(param_1,param_2)
-undefined4 param_1;
+undefined4 place_object_in_backpack_slot(param_1,param_2)
+/* Was `undefined4 param_1` -- same 64-bit-pointer-truncated-through-a-
+   32-bit-typedef-parameter bug as place_held_item_in_empty_slot's identical fix just
+   above (and sum_container_weight's, elsewhere in this file): param_1 is
+   dereferenced further down (FUN_00046260(param_1), etc.) as a real
+   object pointer. */
+ushort *param_1;
 short param_2;
 
 {
@@ -32708,8 +33726,8 @@ short param_2;
   uint uVar6;
   int iVar7;
   undefined4 uVar8;
-  
-  iVar4 = DAT_0023be64;
+
+  iVar4 = g_player_object;
   iVar1 = (int)param_2;
   uVar8 = param_1;
   if (iVar1 == -1) {
@@ -32718,7 +33736,15 @@ short param_2;
   sVar2 = (short)uVar8;
   uVar8 = 0;
   if (iVar1 != -1) {
-    sVar2 = FUN_000472c4();
+    /* Dropped arguments: check_object_fits_in_slot's declared signature is
+       (object, slot_index) and dereferences its first argument
+       immediately -- called bare here (same idiom as the
+       handle_backpack_slot_click/place_held_item_in_empty_slot chain just above it), so with a real
+       slot index now actually reaching this far (see handle_backpack_slot_click's own
+       fix), the leftover-register param_1 it got instead was frequently
+       NULL/garbage, segfaulting on first dereference the moment a real
+       backpack-slot placement was attempted. */
+    sVar2 = check_object_fits_in_slot(param_1, param_2);
   }
   if (sVar2 < 1) {
     if (sVar2 == -1) {
@@ -32729,8 +33755,8 @@ short param_2;
     iVar3 = FUN_00046260(param_1);
     if (-1 < iVar1) {
       if (0x12 < iVar1) {
-        iVar4 = resolve_object_link(DAT_00202994 + 8);
-        for (iVar5 = DAT_00202994; iVar5 != 0;
+        iVar4 = resolve_object_link(g_current_container_record + 8);
+        for (iVar5 = g_current_container_record; iVar5 != 0;
             iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
                              CONCAT12(*(undefined1 *)(iVar5 + 6),
                                       CONCAT11(*(undefined1 *)(iVar5 + 5),*(undefined1 *)(iVar5 + 4)
@@ -32740,12 +33766,12 @@ short param_2;
           *(char *)(iVar5 + 0xb) = (char)((uint)iVar7 >> 8);
         }
       }
-      uVar6 = FUN_0005358c(param_1);
+      uVar6 = encode_object_slot_index(param_1);
       (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar6 << 0x16) >> 0x18);
     }
     object_list_append_tail(iVar4 + 6,param_1);
-    DAT_0023bcf2 = DAT_0023bcf2 + (short)iVar3;
+    g_player_carry_weight = g_player_carry_weight + (short)iVar3;
     uVar8 = 1;
   }
   FUN_000667cc();
@@ -32764,18 +33790,18 @@ int FUN_000451b0()
   ushort *puVar5;
   int iVar6;
   
-  uVar2 = FUN_0005358c();
+  uVar2 = encode_object_slot_index();
   iVar6 = 0;
   do {
-    cVar1 = (&DAT_00085c38)[iVar6];
+    cVar1 = (&g_backpack_widget_to_slot)[iVar6];
     puVar5 = (ushort *)(&DAT_00202950 + (short)cVar1 * 2);
     if ((*puVar5 & 0xffc0) != 0) {
       if ((uint)(*puVar5 >> 6) == (int)(short)uVar2) {
         return (int)cVar1;
       }
       puVar3 = (ushort *)resolve_object_link(puVar5);
-      if (((((*puVar3 & 0x8000) == 0) && (DAT_00202994 == 0)) ||
-          (((*puVar3 & 0x8000) == 0 && (((*(ushort *)(DAT_00202994 + 8) ^ *puVar5) & 0xffc0) != 0)))
+      if (((((*puVar3 & 0x8000) == 0) && (g_current_container_record == 0)) ||
+          (((*puVar3 & 0x8000) == 0 && (((*(ushort *)(g_current_container_record + 8) ^ *puVar5) & 0xffc0) != 0)))
           ) && (iVar4 = FUN_00053644(puVar3 + 3,1,uVar2), iVar4 != 0)) {
         return (short)cVar1 * -0x10000 >> 0x10;
       }
@@ -32918,16 +33944,16 @@ short param_1;
   short sVar2;
   undefined4 uVar3;
   
-  sVar2 = FUN_000485f4(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
+  sVar2 = hit_test_inventory_widget(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
   iVar1 = (int)sVar2;
   if ((iVar1 < 0) || (0x13 < iVar1)) {
     uVar3 = 0;
   }
   else if (param_1 == 2) {
-    uVar3 = FUN_00045708((int)(char)(&DAT_00085c38)[iVar1]);
+    uVar3 = FUN_00045708((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
   }
   else {
-    uVar3 = FUN_000459d8(0xffffffff,0xffffffff,0xffffffff,(int)(char)(&DAT_00085c38)[iVar1]);
+    uVar3 = FUN_000459d8(0xffffffff,0xffffffff,0xffffffff,(int)(char)(&g_backpack_widget_to_slot)[iVar1]);
   }
   return uVar3;
 }
@@ -32980,7 +34006,7 @@ uint param_2;
   uint uVar9;
   
   iVar3 = FUN_00046260();
-  uVar4 = FUN_0005358c(param_1);
+  uVar4 = encode_object_slot_index(param_1);
   iVar7 = 0;
   do {
     if ((uint)(*(ushort *)(&DAT_00202950 + iVar7 * 2) >> 6) == (int)(short)uVar4) break;
@@ -32991,12 +34017,12 @@ uint param_2;
   if (iVar8 < 0x1c) {
     FUN_00045b20(0xffffffff,0xffffffff,0xffffffff,iVar7,sVar1);
     if (iVar8 < 0x13) {
-      FUN_00046eec((int)(char)(&DAT_00085c18)[iVar8]);
+      redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar8]);
     }
     else {
       FUN_00042e30();
       FUN_00042d70();
-      for (iVar7 = DAT_00202994; iVar7 != 0;
+      for (iVar7 = g_current_container_record; iVar7 != 0;
           iVar7 = CONCAT13(*(undefined1 *)(iVar7 + 7),
                            CONCAT12(*(undefined1 *)(iVar7 + 6),
                                     CONCAT11(*(undefined1 *)(iVar7 + 5),*(undefined1 *)(iVar7 + 4)))
@@ -33008,7 +34034,7 @@ uint param_2;
     }
   }
   else {
-    puVar5 = (undefined1 *)FUN_00053644(DAT_0023be64 + 6,1,uVar4);
+    puVar5 = (undefined1 *)FUN_00053644(g_player_object + 6,1,uVar4);
     if (puVar5 == (undefined1 *)0x0) {
       return 0;
     }
@@ -33033,8 +34059,8 @@ uint param_2;
       }
     }
     object_list_unlink(DAT_002046b4,puVar5);
-    DAT_0023bcf2 = DAT_0023bcf2 - (short)iVar3;
-    FUN_00046eec(0x13);
+    g_player_carry_weight = g_player_carry_weight - (short)iVar3;
+    redraw_inventory_widget(0x13);
     FUN_000667cc();
   }
   return 1;
@@ -33052,12 +34078,12 @@ undefined4 FUN_000459d8()
   uVar1 = FUN_00045b20();
   puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + in_r3 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
-     (DAT_00202994 != 0)) {
+     (g_current_container_record != 0)) {
     FUN_00042e30();
     FUN_00042d70();
     return uVar1;
   }
-  FUN_00046eec((int)(char)(&DAT_00085c18)[in_r3]);
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[in_r3]);
   return uVar1;
 }
 
@@ -33073,12 +34099,12 @@ undefined4 FUN_00045a7c()
   uVar1 = FUN_00045b20();
   puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + in_r3 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
-     (DAT_00202994 != 0)) {
+     (g_current_container_record != 0)) {
     FUN_00042e30();
     FUN_00042d70();
     return uVar1;
   }
-  FUN_00046eec((int)(char)(&DAT_00085c18)[in_r3]);
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[in_r3]);
   return uVar1;
 }
 
@@ -33123,10 +34149,10 @@ ushort param_5;
   puVar3 = (ushort *)resolve_object_link(pbVar11);
   if (puVar3 != (ushort *)0x0) {
     if (iVar4 < 0x13) {
-      local_28 = DAT_0023be64;
+      local_28 = g_player_object;
     }
     else {
-      local_28 = resolve_object_link(DAT_00202994 + 8);
+      local_28 = resolve_object_link(g_current_container_record + 8);
     }
     uVar6 = (uint)(short)param_1;
     uVar7 = (ushort)param_2;
@@ -33158,12 +34184,12 @@ ushort param_5;
           object_list_insert_head(puVar3 + 2,pbVar10);
         }
       }
-      if ((local_28 == DAT_0023be64) || (0x13 < iVar4)) {
+      if ((local_28 == g_player_object) || (0x13 < iVar4)) {
         if (pbVar10 == (byte *)0x0) {
           uVar7 = *pbVar11 & 0x3f;
         }
         else {
-          sVar2 = FUN_0005358c(pbVar10);
+          sVar2 = encode_object_slot_index(pbVar10);
           uVar7 = *pbVar11 & 0x3f | sVar2 << 6;
         }
         *pbVar11 = (byte)uVar7;
@@ -33171,15 +34197,15 @@ ushort param_5;
       }
       object_list_unlink(local_28 + 6,puVar3);
       iVar4 = FUN_00046260(puVar3);
-      DAT_0023bcf2 = DAT_0023bcf2 - (short)iVar4;
-      if (DAT_00202994 == 0) {
+      g_player_carry_weight = g_player_carry_weight - (short)iVar4;
+      if (g_current_container_record == 0) {
         return puVar3;
       }
-      sVar2 = FUN_0005358c(local_28);
-      if ((uint)(*(ushort *)(DAT_00202994 + 8) >> 6) != (int)sVar2) {
+      sVar2 = encode_object_slot_index(local_28);
+      if ((uint)(*(ushort *)(g_current_container_record + 8) >> 6) != (int)sVar2) {
         return puVar3;
       }
-      sVar2 = FUN_0005358c(puVar3);
+      sVar2 = encode_object_slot_index(puVar3);
       iVar9 = 0x14;
       do {
         if ((uint)(*(ushort *)(&DAT_00202950 + iVar9 * 2) >> 6) == (int)sVar2) {
@@ -33187,13 +34213,13 @@ ushort param_5;
             uVar6 = 0;
           }
           else {
-            sVar2 = FUN_0005358c(pbVar10);
+            sVar2 = encode_object_slot_index(pbVar10);
             uVar6 = (uint)sVar2;
           }
           iVar9 = (int)(short)iVar9;
           (&DAT_00202950)[iVar9 * 2] =
                (&DAT_00202950)[iVar9 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
-          iVar5 = DAT_00202994;
+          iVar5 = g_current_container_record;
           (&DAT_00202951)[iVar9 * 2] = (char)((uVar6 << 0x16) >> 0x18);
           for (; iVar5 != 0;
               iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
@@ -33290,7 +34316,7 @@ int param_5;
     if (param_5 != 0) {
       sVar4 = rand_below(2);
       uVar7 = FUN_00068138(sVar4 + 0xd5,0);
-      FUN_000523d0(DAT_0023be64,uVar7,6,0);
+      FUN_000523d0(g_player_object,uVar7,6,0);
     }
     FUN_00045728(puVar5);
     FUN_00053334(0,puVar5,1);
@@ -33305,7 +34331,7 @@ int param_5;
     *wptr_30396 = cVar2; wptr_30396 = wptr_30396 + 1;
     pcVar8 = pcVar8 + 1;
   } while (cVar2 != '\0');
-  if (puVar5 == DAT_0023be64) {
+  if (puVar5 == g_player_object) {
     uVar3 = *puVar5;
     *(undefined1 *)puVar5 = 0xf;
     *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar3 >> 8) & 0xfe;
@@ -33344,7 +34370,7 @@ ushort * param_1;
     uVar2 = (uint)local_8[0];
     if ((uVar1 & 0x8000) == 0) {
       if ((param_1[3] & 0xffc0) != 0) {
-        FUN_00043d40(param_1 + 3,local_8);
+        sum_container_weight(param_1 + 3,local_8);
         uVar2 = (uint)(short)local_8[0];
       }
     }
@@ -33357,13 +34383,31 @@ ushort * param_1;
 
 
 
-bool FUN_00046358()
+// Dropped argument: both real call sites (uw.c:11074 `check_object_carry_weight(iVar2)`,
+// and interact_default's own `check_object_carry_weight(g_interact_target)` -- the object
+// being picked up) pass an object pointer, but this function's own
+// recovered signature took none, so it silently called FUN_00046260()
+// bare too instead of forwarding it -- FUN_00046260's very first line
+// unconditionally dereferences its parameter, so with nothing passed
+// through, it dereferenced whatever ARM register-leftover garbage was
+// sitting there and crashed. Confirmed live: interact_default's "grab
+// the sack" call reached exactly this line and segfaulted (bt: interact_
+// default -> check_object_carry_weight -> SIGSEGV). This is a "can the object being
+// picked up fit in the backpack" weight/capacity check -- same "wrapper
+// forgot to forward its own argument" idiom as FUN_00045054 elsewhere in
+// this file, just a missing forward instead of a hardcoded return.
+bool check_object_carry_weight(param_1)
+ushort *param_1;
 
 {
   short sVar1;
-  
-  sVar1 = FUN_00046260();
-  return (int)((int)sVar1 + (uint)DAT_0023bcf2) <= (int)(uint)DAT_0023bcf4;
+
+  sVar1 = FUN_00046260(param_1);
+  if (getenv("UW_DEBUG_WEIGHT"))
+    fprintf(stderr, "[weight] objid=0x%03x item_weight=%d current_load=%u max_capacity=%u fits=%d\n",
+            (int)(*param_1 & 0x1ff), (int)sVar1, (unsigned)g_player_carry_weight, (unsigned)g_player_max_carry_weight,
+            (int)sVar1 + (uint)g_player_carry_weight <= (uint)g_player_max_carry_weight);
+  return (int)((int)sVar1 + (uint)g_player_carry_weight) <= (int)(uint)g_player_max_carry_weight;
 }
 
 
@@ -33399,12 +34443,12 @@ void FUN_00046414()
   
   if (DAT_002029a4 == 0) {
     DAT_002029a4 = 1;
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
     FUN_0004638c();
     iVar5 = 6;
     do {
-      uVar1 = FUN_00076a2c((&DAT_00085adc)[iVar5 * 0xe],
-                           (uint)(byte)(&DAT_00085add)[iVar5 * 0xe] << 1);
+      uVar1 = FUN_00076a2c((&g_inv_hotspot_dirty_w)[iVar5 * 0xe],
+                           (uint)(byte)(&g_inv_hotspot_dirty_h)[iVar5 * 0xe] << 1);
       (&DAT_002028e8)[iVar5] = uVar1;
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 0x17);
@@ -33414,9 +34458,9 @@ void FUN_00046414()
     do {
       /* iVar5==10/11 were hardcoded original-binary literal addresses
          (0x85b5c/0x85b6a, plus the standalone DAT_00085b64/DAT_00085b72
-         symbols) instead of the same &DAT_00085ad0/&DAT_00085ad8 +
+         symbols) instead of the same &g_inv_hotspot_click_x1/&g_inv_hotspot_draw_x +
          iVar5*stride expression every other iteration already uses --
-         same "hardcoded address" bug class as FUN_0006bde0's -0x87020.
+         same "hardcoded address" bug class as probe_save_slots's -0x87020.
          Confirmed identical by address arithmetic (0x85ad0 + 10*0xe =
          0x85b5c, 0x85ad8 + 10*7 shorts = 0x85b64, etc.); rewritten to the
          general form so these two icons resolve against our recompiled
@@ -33424,27 +34468,27 @@ void FUN_00046414()
          +5/-5 adjustments are the only real difference from the general
          case and are kept as-is. */
       if (iVar5 == 10) {
-        puVar2 = &DAT_00085ad0 + iVar5 * 0xe;
-        iVar3 = (&DAT_00085ad8)[iVar5 * 7] + 5;
+        puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
+        iVar3 = (&g_inv_hotspot_draw_x)[iVar5 * 7] + 5;
 LAB_000464c8:
         uVar4 = (byte)puVar2[0xc] - 5;
       }
       else {
         if (iVar5 == 0xb) {
-          puVar2 = &DAT_00085ad0 + iVar5 * 0xe;
-          iVar3 = (&DAT_00085ad8)[iVar5 * 7];
+          puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
+          iVar3 = (&g_inv_hotspot_draw_x)[iVar5 * 7];
           goto LAB_000464c8;
         }
-        puVar2 = &DAT_00085ad0 + iVar5 * 0xe;
-        iVar3 = (int)(short)(&DAT_00085ad8)[iVar5 * 7];
-        uVar4 = (uint)(byte)(&DAT_00085adc)[iVar5 * 0xe];
+        puVar2 = &g_inv_hotspot_click_x1 + iVar5 * 0xe;
+        iVar3 = (int)(short)(&g_inv_hotspot_draw_x)[iVar5 * 7];
+        uVar4 = (uint)(byte)(&g_inv_hotspot_dirty_w)[iVar5 * 0xe];
       }
       capture_framebuffer_rect_to_grtile((&DAT_002028e8)[iVar5],iVar3,(int)*(short *)(puVar2 + 10),uVar4,puVar2[0xd]);
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 0x17);
     capture_framebuffer_rect_to_grtile(DAT_002028ec,0xec,0x51,0x54,0x29);
     capture_framebuffer_rect_to_grtile(DAT_002028e8,299,0x3b,0x10,10);
-    DAT_00202998 = register_click_region(0xf0,0x76,0x13b,0xb,0,5,FUN_0003f95c);
+    DAT_00202998 = register_click_region(0xf0,0x76,0x13b,0xb,0,5,inventory_panel_click_region);
   }
   return;
 }
@@ -33467,18 +34511,18 @@ void FUN_000465c8()
     *(undefined1 *)((char *)&DAT_00202988 + iVar1) = 0;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 6);
-  DAT_00202990 = 0;
-  DAT_00202994 = 0;
+  g_open_container_list = 0;
+  g_current_container_record = 0;
   DAT_002029a0 = 0;
   DAT_0020299c = 0;
-  DAT_00202948 = 0;
+  g_selected_object = 0;
   DAT_00085c50 = 0xffff;
   return;
 }
 
 
 
-void FUN_00046698(param_1)
+void handle_inventory_panel_click(param_1)
 short param_1;
 
 {
@@ -33497,12 +34541,26 @@ short param_1;
   short local_2e;
   
   puVar10 = (ushort *)0x0;
-  bVar11 = DAT_00202948 != 0;
-  uVar5 = FUN_000485f4(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
+  bVar11 = g_selected_object != 0;
+  uVar5 = hit_test_inventory_widget(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] handle_inventory_panel_click click test: panel_x=%d panel_y=%d -> widget_id=%d\n",
+            (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]), (int)(short)uVar5);
   iVar9 = (int)(short)uVar5;
+  /* Leave-container click: widget 1 (repurposed from an unimplemented
+     worn-armour overlay slot -- see g_inv_hotspot_click_x1's own comment) is the
+     open-container icon drawn above the grid. No such affordance
+     exists anywhere in the decompiled body; added per direct playtest
+     feedback describing the real game's layout. Only active while a
+     container is actually open, so a plain click here does nothing
+     once armour rendering claims this record back in a future pass. */
+  if ((iVar9 == 1) && (g_current_container_record != 0)) {
+    close_backpack_container();
+    return;
+  }
   if ((0 < iVar9) && (iVar9 < 0x15)) {
-    cVar2 = (&DAT_00085c38)[iVar9];
-    if (DAT_00202948 == 0) {
+    cVar2 = (&g_backpack_widget_to_slot)[iVar9];
+    if (g_selected_object == 0) {
       iVar9 = (int)(short)cVar2;
       if ((*(ushort *)(&DAT_00202950 + iVar9 * 2) & 0xffc0) == 0) {
         if (iVar9 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
@@ -33516,7 +34574,7 @@ short param_1;
         uVar3 = *puVar7;
         if (((uVar3 & 0x8000) == 0) || ((puVar7[3] & 0x8000) != 0)) {
           if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
-            puVar4 = DAT_00202990;
+            puVar4 = g_open_container_list;
             if ((DAT_00085a6c[4] == 4) && ((uVar3 & 0xf) != 0xf)) {
               FUN_00078c80(0xba);
               return;
@@ -33542,10 +34600,10 @@ short param_1;
         if ((puVar10 == (ushort *)0x0) || (uVar5 = 1, puVar10 == puVar7)) {
           uVar5 = 0;
         }
-        FUN_00046ff4((int)cVar2,uVar5);
-        iVar6 = DAT_00202994;
+        swap_cursor_and_slot_item((int)cVar2,uVar5);
+        iVar6 = g_current_container_record;
         if (iVar9 < 0x14) {
-          FUN_00046eec((int)(char)(&DAT_00085c18)[iVar9]);
+          redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar9]);
         }
         else {
           for (; iVar6 != 0;
@@ -33561,25 +34619,25 @@ short param_1;
           FUN_00042e30();
           FUN_00042d70();
         }
-        if (DAT_00202948 == 0) {
+        if (g_selected_object == 0) {
           return;
         }
         if (puVar10 != (ushort *)0x0) {
-          DAT_002020c4 = 1;
+          g_cursor_holding_state = 1;
           return;
         }
       }
     }
     FUN_00057604(1);
     FUN_00057504(&local_2e,&local_30);
-    uVar5 = FUN_000485f4((int)local_2e,(int)local_30);
+    uVar5 = hit_test_inventory_widget((int)local_2e,(int)local_30);
   }
   FUN_00057604(1);
   sVar1 = (short)uVar5;
-  if ((DAT_00202948 == 0) || (DAT_002020c4 == 2)) {
+  if ((g_selected_object == 0) || (g_cursor_holding_state == 2)) {
     if (0 < sVar1) {
       if (-1 < param_1) {
-        FUN_00042870(uVar5);
+        handle_object_drop_target(uVar5);
         return;
       }
       if (param_1 == -2) {
@@ -33588,32 +34646,32 @@ short param_1;
     }
   }
   else {
-    DAT_002020c4 = 1;
+    g_cursor_holding_state = 1;
     if ((DAT_0023c1d4 != '\0') && (sVar1 != 0x17)) {
-      DAT_002020c4 = 1;
+      g_cursor_holding_state = 1;
       return;
     }
     iVar9 = (int)sVar1;
     if (0 < iVar9) {
       if (iVar9 < 0x15) {
-        FUN_00047a7c((int)(char)(&DAT_00085c38)[iVar9]);
+        handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar9]);
       }
       else {
-        FUN_00042870(uVar5);
+        handle_object_drop_target(uVar5);
         bVar11 = false;
       }
     }
   }
-  if ((bVar11) && (DAT_00202948 == 0)) {
+  if ((bVar11) && (g_selected_object == 0)) {
     FUN_00057cac(3);
-    DAT_002020c4 = 0;
+    g_cursor_holding_state = 0;
   }
   return;
 }
 
 
 
-void FUN_00046a94(param_1)
+void attach_picked_up_object_to_cursor(param_1)
 ushort * param_1;
 
 {
@@ -33623,25 +34681,28 @@ ushort * param_1;
   short local_12;
   short local_10 [2];
   
-  DAT_00202948 = param_1;
+  g_selected_object = param_1;
   FUN_00057c5c(*param_1 & 0x1ff);
   FUN_000575c4(&local_14);
-  if ((local_14 != 0) && (FUN_00057604(1), DAT_00202948 != (ushort *)0x0)) {
+  if ((local_14 != 0) && (FUN_00057604(1), g_selected_object != (ushort *)0x0)) {
     FUN_00057504(local_10,&local_12);
-    sVar2 = FUN_000485f4((int)local_10[0],(int)local_12);
+    sVar2 = hit_test_inventory_widget((int)local_10[0],(int)local_12);
+    if (getenv("UW_DEBUG_INV"))
+      fprintf(stderr, "[inv] attach_picked_up_object_to_cursor click test: gx=%d gy=%d -> widget_id=%d\n",
+              (int)local_10[0], (int)local_12, (int)sVar2);
     iVar1 = (int)sVar2;
     if (0 < iVar1) {
-      DAT_002020c4 = 1;
+      g_cursor_holding_state = 1;
       if ((DAT_0023c1d4 == '\0') || (iVar1 == 0x17)) {
         if (iVar1 < 0x15) {
-          FUN_00047a7c((int)(char)(&DAT_00085c38)[iVar1]);
-          if (DAT_00202948 == (ushort *)0x0) {
-            DAT_002020c4 = 0;
+          handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
+          if (g_selected_object == (ushort *)0x0) {
+            g_cursor_holding_state = 0;
             FUN_00057cac(3);
           }
         }
         else {
-          FUN_00042870();
+          handle_object_drop_target();
         }
       }
     }
@@ -33696,13 +34757,13 @@ void FUN_00046bfc()
       rect_fill_or_save_restore(0xf0,0xb,0x13b,0x76);
       screen_backup_restore_rect(0xf0,0xb,0x13b,0x76);
     }
-    DAT_00088960 = 1;
-    draw_sprite_by_id(0x2091,(int)DAT_00085ad8,(int)DAT_00085ada,DAT_00085add,DAT_00085adc);
+    g_blit_transparent_mode = 1;
+    draw_sprite_by_id(0x2091,(int)g_inv_hotspot_draw_x,(int)g_inv_hotspot_draw_y,g_inv_hotspot_dirty_h,g_inv_hotspot_dirty_w);
     iVar4 = 1;
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
     do {
-      if ((*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar4] * 2) & 0xffc0) != 0) {
-        pbVar1 = (byte *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar4] * 2));
+      if ((*(ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar4] * 2) & 0xffc0) != 0) {
+        pbVar1 = (byte *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar4] * 2));
         uVar3 = *pbVar1 & 0x1f;
         if ((uint)(int)(short)uVar3 < 0xf) {
           uVar2 = (pbVar1[4] & 0x30) >> 4;
@@ -33716,16 +34777,16 @@ void FUN_00046bfc()
           *(char *)((char *)&DAT_002028e0 + iVar4) = (char)uVar2 + '\x01';
           FUN_00046b88(iVar4,uVar2 * 0xf + uVar3);
         }
-        draw_sprite_by_id(iVar4 + 0x2091,(int)(&DAT_00085ad8)[iVar4 * 7],(int)(&DAT_00085ada)[iVar4 * 7],
-                     (&DAT_00085add)[iVar4 * 0xe],(&DAT_00085adc)[iVar4 * 0xe]);
+        draw_sprite_by_id(iVar4 + 0x2091,(int)(&g_inv_hotspot_draw_x)[iVar4 * 7],(int)(&g_inv_hotspot_draw_y)[iVar4 * 7],
+                     (&g_inv_hotspot_dirty_h)[iVar4 * 0xe],(&g_inv_hotspot_dirty_w)[iVar4 * 0xe]);
       }
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 6);
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
     capture_framebuffer_rect_to_grtile(DAT_00202914,(int)DAT_00085b72,(int)DAT_00085b74,DAT_00085b76 - 5,DAT_00085b77);
     capture_framebuffer_rect_to_grtile(DAT_00202910,DAT_00085b64 + 5,(int)DAT_00085b66,DAT_00085b68 - 5,DAT_00085b69);
     if (((DAT_00202962 & 0xffc0) != 0) || ((DAT_00202964 & 0xffc0) != 0)) {
-      FUN_00048198(10,0xb);
+      redraw_inventory_widget_range(10,0xb);
     }
     if (DAT_00085c54 != 0) {
       screen_backup_save();
@@ -33735,7 +34796,7 @@ void FUN_00046bfc()
     }
     iVar4 = FUN_00048514(1);
     if (iVar4 != 0) {
-      FUN_00040d00(s_font5x6p_sys_0008430c);
+      select_active_font(s_font5x6p_sys_0008430c);
     }
     FUN_000570b4();
   }
@@ -33744,7 +34805,7 @@ void FUN_00046bfc()
 
 
 
-void FUN_00046eec(param_1)
+void redraw_inventory_widget(param_1)
 undefined4 param_1;
 
 {
@@ -33758,7 +34819,7 @@ undefined4 param_1;
       FUN_00046bfc();
     }
     else if (iVar1 < 0x15) {
-      FUN_00048198(param_1,param_1);
+      redraw_inventory_widget_range(param_1,param_1);
     }
     else {
       FUN_00076e98((&DAT_002028e8)[iVar1]);
@@ -33771,11 +34832,11 @@ undefined4 param_1;
         uVar2 = 0x101c;
       }
       if (-1 < (short)uVar2) {
-        DAT_00088960 = 1;
-        draw_sprite_by_id(uVar2,(int)(short)(&DAT_00085ad8)[iVar1 * 7],
-                     (int)(short)(&DAT_00085ada)[iVar1 * 7],(&DAT_00085add)[iVar1 * 0xe],
-                     (&DAT_00085adc)[iVar1 * 0xe]);
-        DAT_00088960 = 0;
+        g_blit_transparent_mode = 1;
+        draw_sprite_by_id(uVar2,(int)(short)(&g_inv_hotspot_draw_x)[iVar1 * 7],
+                     (int)(short)(&g_inv_hotspot_draw_y)[iVar1 * 7],(&g_inv_hotspot_dirty_h)[iVar1 * 0xe],
+                     (&g_inv_hotspot_dirty_w)[iVar1 * 0xe]);
+        g_blit_transparent_mode = 0;
       }
     }
   }
@@ -33784,7 +34845,7 @@ undefined4 param_1;
 
 
 
-void FUN_00046ff4(param_1,param_2)
+void swap_cursor_and_slot_item(param_1,param_2)
 undefined4 param_1;
 int param_2;
 
@@ -33794,19 +34855,21 @@ int param_2;
   bool bVar3;
   short local_20;
   
-  bVar3 = DAT_00202948 != (ushort *)0x0;
+  bVar3 = g_selected_object != (ushort *)0x0;
   if (param_2 == 0) {
     uVar2 = (uint)local_20;
   }
   else {
     iVar1 = FUN_00045054(param_1);
     resolve_object_link(iVar1 + 4);
-    uVar2 = FUN_0005358c();
+    uVar2 = encode_object_slot_index();
   }
-  DAT_00202948 = (ushort *)FUN_00045b48(0xffffffff,0xffffffff,0xffffffff,param_1,0);
-  if (DAT_00202948 != (ushort *)0x0) {
+  g_selected_object = (ushort *)FUN_00045b48(0xffffffff,0xffffffff,0xffffffff,param_1,0);
+  if (g_selected_object != (ushort *)0x0) {
     if (param_2 != 0) {
       iVar1 = (int)(short)param_1;
+      if (getenv("UW_DEBUG_INV"))
+        fprintf(stderr, "[inv] swap_cursor_and_slot_item writing arr_idx=%d objid=0x%03x\n", iVar1, uVar2 & 0x1ff);
       (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar2 << 0x16) >> 0x18);
       FUN_000667cc();
@@ -33815,7 +34878,7 @@ int param_2;
     if (bVar3) {
       FUN_00057cac(0);
     }
-    FUN_00057c5c(*DAT_00202948 & 0x1ff);
+    FUN_00057c5c(*g_selected_object & 0x1ff);
     FUN_000570b4();
     FUN_000667cc();
   }
@@ -33882,7 +34945,7 @@ undefined1 * param_1;
 
 
 
-uint FUN_000472c4(param_1,param_2)
+uint check_object_fits_in_slot(param_1,param_2)
 ushort * param_1;
 undefined4 param_2;
 
@@ -33904,7 +34967,17 @@ undefined4 param_2;
   char *pcVar14;
   int iVar15;
   bool bVar16;
-  char acStack_84f64 [544528];
+  /* Was 544528 bytes -- same Ghidra stack-frame-size-miscalculation
+     artifact already fixed in dispatch_object_action's acStack_85978
+     (see its own comment): this is just a scratch copy of the short
+     "UNNAMED" string (s_UNNAMED_00084f24) that's never read back
+     afterward (only acStack_40 feeds the real message_scroll_print_wrapped
+     calls below). Never triggered before because nothing reached this
+     deep into check_object_fits_in_slot until the handle_backpack_slot_click/place_object_in_backpack_slot dropped
+     arguments were forwarded correctly (see their own fixes) -- with a
+     real object now reaching here, allocating the huge frame crashed on
+     entry (SIGSEGV touching the stack guard page). Shrunk to a sane size. */
+  char acStack_84f64 [64];
   short local_54 [2];
   int local_50;
   uint local_4c;
@@ -33919,10 +34992,10 @@ undefined4 param_2;
   iVar15 = (int)(short)param_2;
   DAT_00204690 = param_1;
   if (iVar15 == 0x13) {
-    if (DAT_00202994 == 0) {
+    if (g_current_container_record == 0) {
       return 0;
     }
-    if (*(int *)(DAT_00202994 + 4) == 0) {
+    if (*(int *)(g_current_container_record + 4) == 0) {
       iVar15 = 0xb;
       do {
         if ((*(ushort *)(&DAT_00202950 + iVar15 * 2) & 0xffc0) == 0) break;
@@ -33937,7 +35010,7 @@ undefined4 param_2;
       }
       return 0;
     }
-    puVar10 = (undefined1 *)(*(int *)(DAT_00202994 + 4) + 8);
+    puVar10 = (undefined1 *)(*(int *)(g_current_container_record + 4) + 8);
 LAB_00047474:
     puVar11 = (ushort *)resolve_object_link(puVar10);
   }
@@ -33948,7 +35021,7 @@ LAB_00047474:
     }
     puVar11 = (ushort *)resolve_object_link(&DAT_00202950 + iVar15 * 2);
     if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
-      puVar11 = (ushort *)resolve_object_link(&DAT_00202976);
+      puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
     }
   }
   if (iVar15 < 5) {
@@ -33956,7 +35029,7 @@ LAB_00047474:
       if (iVar15 != 0) {
         return 0;
       }
-      sVar9 = FUN_0007acd4(DAT_0023be64,param_1,0);
+      sVar9 = FUN_0007acd4(g_player_object,param_1,0);
       if (sVar9 < 1) {
         return 0;
       }
@@ -34025,7 +35098,7 @@ LAB_00047a68:
       *(byte *)param_1 = (bVar4 - 4 ^ bVar6) & 0xf ^ bVar6;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar1 >> 8);
       FUN_0001433c(0);
-      sVar9 = FUN_000472c4(param_1,param_2);
+      sVar9 = check_object_fits_in_slot(param_1,param_2);
       if (sVar9 != 0) {
         return 1;
       }
@@ -34043,7 +35116,7 @@ LAB_00047a0c:
   }
   bVar6 = 1;
   local_54[0] = FUN_00046260(param_1);
-  iVar12 = DAT_00202994;
+  iVar12 = g_current_container_record;
   bVar7 = 1;
   if (0x13 < iVar15) {
     for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(int *)(iVar12 + 4)) {
@@ -34057,7 +35130,7 @@ LAB_00047a0c:
       bVar7 = bVar6 & bVar7;
     }
   }
-  FUN_00043d40(puVar11 + 3,local_54);
+  sum_container_weight(puVar11 + 3,local_54);
   uVar8 = local_4c;
   iVar15 = ((byte)*puVar11 & 0xf) * 3;
   if (((byte)(&DAT_002029f8)[iVar15] == 0) ||
@@ -34117,28 +35190,45 @@ LAB_000479c0:
 
 
 
-void FUN_00047a7c(param_1)
+void handle_backpack_slot_click(param_1)
 short param_1;
 
 {
   int iVar1;
-  
+
+  /* Dropped arguments: both branches call a 2-param function with only
+     one arg -- place_held_item_in_empty_slot/handle_backpack_slot_interact's own declared signatures take
+     (held_object, slot_index), but this wrapper only forwards
+     g_selected_object (the held object) and drops its own param_1 (the slot
+     index that hit_test_inventory_widget just resolved from the click). Same
+     "wrapper forgot to forward its own argument" idiom as
+     check_object_carry_weight/blit_object_sprite_by_frame earlier this session -- traced by hand
+     while wiring up backpack-slot placement (the click hit-boxes and
+     widget-to-slot mapping in g_inv_hotspot_click_x1/g_backpack_widget_to_slot were the other
+     missing pieces, see their own comments). */
   if ((*(ushort *)(&DAT_00202950 + param_1 * 2) & 0xffc0) == 0) {
-    iVar1 = FUN_00047ae0();
+    iVar1 = place_held_item_in_empty_slot(g_selected_object, param_1);
   }
   else {
-    iVar1 = FUN_00047cfc(DAT_00202948);
+    iVar1 = handle_backpack_slot_interact(g_selected_object, param_1);
   }
   if (iVar1 != 0) {
-    DAT_00202948 = 0;
+    g_selected_object = 0;
   }
   return;
 }
 
 
 
-undefined4 FUN_00047ae0(param_1,param_2)
-undefined4 param_1;
+undefined4 place_held_item_in_empty_slot(param_1,param_2)
+/* Was `undefined4 param_1` -- a 64-bit pointer truncates to its low 32
+   bits the moment a caller passes it to a function whose own signature
+   declares this narrower type (matches sum_container_weight's identical fix
+   elsewhere in this file). Latent until handle_backpack_slot_click's dropped argument
+   was fixed and a real g_selected_object object pointer started actually
+   reaching here -- then this truncated pointer segfaulted three frames
+   further down in check_object_fits_in_slot's first dereference. */
+ushort *param_1;
 short param_2;
 
 {
@@ -34152,10 +35242,15 @@ short param_2;
     uVar3 = 0;
   }
   else {
-    iVar2 = FUN_0004506c(param_1);
+    /* Dropped argument: place_object_in_backpack_slot's own declared signature takes
+       (object, slot_index) and writes the object's link into
+       &DAT_00202950 + slot_index*2 -- the real "place held item into
+       this backpack slot" primitive -- but slot_index was never
+       forwarded here, so it placed nothing at a real slot. */
+    iVar2 = place_object_in_backpack_slot(param_1, param_2);
     if (iVar2 != 0) {
       if (iVar1 < 0x13) {
-        FUN_00046eec((int)(char)(&DAT_00085c18)[iVar1]);
+        redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
       }
       else {
         FUN_00042e30();
@@ -34212,7 +35307,7 @@ ushort * param_2;
 
 // WARNING: Removing unreachable block (ram,0x00047f40)
 
-undefined4 FUN_00047cfc(param_1,param_2)
+undefined4 handle_backpack_slot_interact(param_1,param_2)
 ushort * param_1;
 uint param_2;
 
@@ -34234,7 +35329,7 @@ uint param_2;
   uVar11 = 0;
   puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar1 * 2);
   if (((*puVar4 & 0x1c0) == 0x80) && ((*puVar4 & 0x30) == 0)) {
-    uVar11 = FUN_00043734(param_1,param_2);
+    uVar11 = auto_place_in_container(param_1,param_2);
     FUN_000667cc();
     return uVar11;
   }
@@ -34244,15 +35339,15 @@ uint param_2;
     if ((short)uVar6 < 0) {
       if (iVar1 < 0x13) {
         puVar4 = (ushort *)FUN_00045b20(0xffffffff,0xffffffff,0xffffffff,param_2,0);
-        iVar5 = FUN_00047ae0(param_1,param_2);
+        iVar5 = place_held_item_in_empty_slot(param_1,param_2);
         if (iVar5 == 0) {
-          FUN_00047ae0(puVar4,param_2);
-          puVar4 = DAT_00202948;
+          place_held_item_in_empty_slot(puVar4,param_2);
+          puVar4 = g_selected_object;
         }
-        DAT_00202948 = puVar4;
-        if (DAT_00202948 != (ushort *)0x0) {
+        g_selected_object = puVar4;
+        if (g_selected_object != (ushort *)0x0) {
           FUN_00057cac(0);
-          FUN_00057c5c(*DAT_00202948 & 0x1ff);
+          FUN_00057c5c(*g_selected_object & 0x1ff);
         }
       }
       else {
@@ -34267,15 +35362,15 @@ uint param_2;
       iVar5 = FUN_00028254(param_1,uVar6);
       if (iVar5 == 1) {
         FUN_00053334(0,param_1,1);
-        DAT_002020c4 = 1;
-        DAT_00202948 = puVar7;
+        g_cursor_holding_state = 1;
+        g_selected_object = puVar7;
         FUN_00057cac(3);
-        FUN_00057c5c(*DAT_00202948 & 0x1ff);
+        FUN_00057c5c(*g_selected_object & 0x1ff);
       }
       iVar8 = FUN_00028254(puVar4,uVar6);
       if (iVar8 != 0) {
         if (iVar5 == 0) {
-          FUN_00047ae0(puVar7,param_2);
+          place_held_item_in_empty_slot(puVar7,param_2);
         }
         FUN_00045720(puVar4);
         FUN_00053334(0,puVar4,1);
@@ -34284,7 +35379,7 @@ uint param_2;
     }
   }
   else {
-    sVar3 = FUN_000472c4(param_1,param_2);
+    sVar3 = check_object_fits_in_slot(param_1,param_2);
     if (sVar3 != 1) {
       return 0;
     }
@@ -34306,7 +35401,7 @@ uint param_2;
       *(undefined1 *)((char *)puVar4 + 7) = 0;
     }
     iVar8 = (*(ushort *)(&DAT_00202c91 + (*param_1 & 0x1ff) * 0xd) >> 4) * param_2;
-    iVar5 = DAT_00202994;
+    iVar5 = g_current_container_record;
     if (0x13 < iVar1) {
       for (; iVar5 != 0;
           iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
@@ -34318,7 +35413,7 @@ uint param_2;
         *(char *)(iVar5 + 0xb) = (char)((uint)iVar10 >> 8);
       }
     }
-    DAT_0023bcf2 = DAT_0023bcf2 + (short)iVar8;
+    g_player_carry_weight = g_player_carry_weight + (short)iVar8;
     FUN_000667cc();
     iVar5 = (puVar4[3] & 0xffc0) + param_2 * 0x40;
     bVar2 = (byte)puVar4[2];
@@ -34332,7 +35427,7 @@ uint param_2;
     free_object_slot(param_1);
     uVar11 = 1;
   }
-  FUN_00046eec((int)(char)(&DAT_00085c18)[iVar1]);
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
   return uVar11;
 }
 
@@ -34343,13 +35438,13 @@ void FUN_00048110()
 {
   if (DAT_0023c1d4 == '\0') {
     DAT_00085c50 = 0xffff;
-    if (DAT_00202994 == 0) {
+    if (g_current_container_record == 0) {
       FUN_00076e98(DAT_002028ec);
     }
     else {
       draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
     }
-    FUN_00048198(6,0x16);
+    redraw_inventory_widget_range(6,0x16);
   }
   return;
 }
@@ -34358,7 +35453,7 @@ void FUN_00048110()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00048198(param_1,param_2)
+void redraw_inventory_widget_range(param_1,param_2)
 int param_1;
 short param_2;
 
@@ -34379,7 +35474,7 @@ short param_2;
   FUN_00057118();
   iVar1 = (int)(short)param_1;
   iVar2 = (int)param_2;
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   iVar3 = iVar1;
   do {
     iVar6 = iVar1;
@@ -34389,38 +35484,54 @@ joined_r0x00048308:
         if (iVar6 != 0x14) {
           FUN_00076e98((&DAT_002028e8)[iVar6]);
           auStack_54[iVar6] = 1;
+          if (getenv("UW_DEBUG_INV"))
+            fprintf(stderr, "[inv] redraw_inventory_widget_range loop iVar6=%d slot_arr_idx=%d arr_val=0x%04x\n",
+                    iVar6, (char)(&g_backpack_widget_to_slot)[iVar6],
+                    (unsigned)*(ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
           if (iVar6 < 0x15) {
-            if ((*(ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2) & 0xffc0) != 0) {
-              puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&DAT_00085c38)[iVar6] * 2));
-              draw_sprite_by_id(*puVar7 & 0x1ff,(int)(short)(&DAT_00085ad8)[iVar6 * 7],
-                           (int)(short)(&DAT_00085ada)[iVar6 * 7],(&DAT_00085add)[iVar6 * 0xe],
-                           (&DAT_00085adc)[iVar6 * 0xe]);
+            if ((*(ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2) & 0xffc0) != 0) {
+              if (getenv("UW_DEBUG_INV"))
+                fprintf(stderr, "[inv] resolve addr=%p table=%p lo=%p hi=%p\n",
+                        (void *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2),
+                        (void *)g_backpack_slot_table, (void *)(DAT_002046b8 - 0x4000),
+                        (void *)(DAT_002046c4 + 0x1800 + 0x38));
+              puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
+              if (puVar7 == 0) goto skip_slot_draw_iVar6;
+              if (getenv("UW_DEBUG_INV"))
+                fprintf(stderr, "[inv] slot widget_id=%d slot_arr_idx=%d objid=0x%03x draw_x=%d draw_y=%d w=%d h=%d\n",
+                        iVar6, (char)(&g_backpack_widget_to_slot)[iVar6], *puVar7 & 0x1ff,
+                        (int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7], (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],
+                        (int)(&g_inv_hotspot_dirty_h)[iVar6 * 0xe], (int)(&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
+              draw_sprite_by_id(*puVar7 & 0x1ff,(int)(short)(&g_inv_hotspot_draw_x)[iVar6 * 7],
+                           (int)(short)(&g_inv_hotspot_draw_y)[iVar6 * 7],(&g_inv_hotspot_dirty_h)[iVar6 * 0xe],
+                           (&g_inv_hotspot_dirty_w)[iVar6 * 0xe]);
               if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
                  (uVar4 = puVar7[3] >> 6, 1 < uVar4)) {
                 auStack_54[iVar6] = uVar4;
                 bVar5 = true;
               }
+              skip_slot_draw_iVar6:;
             }
           }
           else {
-            FUN_00046eec(param_1);
+            redraw_inventory_widget(param_1);
           }
         }
         param_1 = (iVar6 + 1) * 0x10000 >> 0x10;
         iVar6 = param_1;
       }
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
       if (bVar5) {
-        FUN_00040d00(s_font4x5p_sys_0008431c);
-        *DAT_0008429c = 0x60;
+        select_active_font(s_font4x5p_sys_0008431c);
+        *g_draw_color_index = 0x60;
         for (; iVar1 <= iVar2; iVar1 = (iVar1 + 1) * 0x10000 >> 0x10) {
           if (1 < (short)auStack_54[iVar1]) {
             uVar8 = Ordinal_1025((int)(short)auStack_54[iVar1],auStack_60,10);
-            draw_text_string(uVar8,(short)(&DAT_00085ad8)[iVar1 * 7] + 3,
-                         (short)(&DAT_00085ada)[iVar1 * 7] + 1);
+            draw_text_string(uVar8,(short)(&g_inv_hotspot_draw_x)[iVar1 * 7] + 3,
+                         (short)(&g_inv_hotspot_draw_y)[iVar1 * 7] + 1);
           }
         }
-        FUN_00040d00(s_font5x6p_sys_0008430c);
+        select_active_font(s_font5x6p_sys_0008430c);
       }
       FUN_00048514(0);
       FUN_000570b4();
@@ -34459,16 +35570,16 @@ int param_1;
   undefined1 auStack_24 [8];
   
   bVar5 = false;
-  iVar4 = ((int)DAT_0023bcf4 - (int)DAT_0023bcf2) * 0x10000;
+  iVar4 = ((int)g_player_max_carry_weight - (int)g_player_carry_weight) * 0x10000;
   iVar1 = iVar4 >> 0x10;
   if (DAT_00085c50 != iVar1) {
     FUN_00076e98(DAT_002028e8);
     DAT_00085c50 = (short)((uint)iVar4 >> 0x10);
     bVar5 = param_1 != 0;
-    *DAT_0008429c = 0xe0;
+    *g_draw_color_index = 0xe0;
     uVar3 = Ordinal_2005(10,iVar1);
     FUN_000229e0(uVar3,auStack_24,10);
-    sVar2 = FUN_000112a0(auStack_24);
+    sVar2 = measure_text_width(auStack_24);
     iVar4 = (int)sVar2;
     if (iVar4 < 0) {
       iVar4 = iVar4 + 1;
@@ -34480,7 +35591,7 @@ int param_1;
 
 
 
-int FUN_000485f4(param_1,param_2)
+int hit_test_inventory_widget(param_1,param_2)
 short param_1;
 short param_2;
 
@@ -34502,10 +35613,10 @@ short param_2;
     }
   }
   iVar3 = 0;
-  while (((iVar2 = iVar3 * 0xe, iVar1 < *(short *)(&DAT_00085ad0 + iVar2) ||
-          (*(short *)(&DAT_00085ad4 + iVar2) < iVar1)) ||
-         ((*(short *)(&DAT_00085ad6 + iVar2) < param_2 ||
-          (param_2 < *(short *)(&DAT_00085ad2 + iVar2)))))) {
+  while (((iVar2 = iVar3 * 0xe, iVar1 < *(short *)(&g_inv_hotspot_click_x1 + iVar2) ||
+          (*(short *)(&g_inv_hotspot_click_x2 + iVar2) < iVar1)) ||
+         ((*(short *)(&g_inv_hotspot_click_y2 + iVar2) < param_2 ||
+          (param_2 < *(short *)(&g_inv_hotspot_click_y1 + iVar2)))))) {
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     if (0x16 < iVar3) {
       return -1;
@@ -34516,7 +35627,7 @@ short param_2;
 
 
 
-void FUN_00048764(param_1,param_2)
+void dispatch_object_action_dup(param_1,param_2)
 ushort * param_1;
 int param_2;
 
@@ -34537,7 +35648,9 @@ int param_2;
   undefined1 auStack_b4 [8];
   char local_ac [16];
   char local_9c [32];
-  char acStack_7c [80];
+  /* Same too-small stack buffer fixed in this function's duplicate,
+     dispatch_object_action -- see the comment there. */
+  char acStack_7c [256];
   
   uVar11 = 0;
   if (param_1 == (ushort *)0x0) {
@@ -34568,7 +35681,7 @@ int param_2;
   }
   local_9c[0] = '\0';
   if ((*param_1 & 0x1c0) == 0x40) {
-    FUN_00049404(param_1,acStack_7c);
+    build_creature_look_text(param_1,acStack_7c);
     return;
   }
   iVar5 = 0;
@@ -34634,6 +35747,13 @@ LAB_000489fc:
     Ordinal_1063(acStack_7c,pcVar6);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
+  /* No trailing newline was ever appended, so back-to-back Looks (the
+     scroll's own line-break logic, FUN_0007f770, only breaks on an
+     embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
+     line: confirmed live, 3 Looks at the sack rendered as one run-on
+     "You see a sackYou see a sackYou see a sack" instead of 3 separate
+     lines. */
+  Ordinal_1063(acStack_7c,"\n");
   message_scroll_print_wrapped(acStack_7c);
 LAB_00048b58:
   FUN_000495d0(param_1,param_2);
@@ -34864,9 +35984,11 @@ short param_2;
      case) to hold FUN_0007863c's real `char *` return, truncating it on
      this 64-bit host. Confirmed via lldb: right-clicking a rendered sign
      (object type 0x166) crashed in strchr with a wild pointer, called
-     from FUN_00078bfc(iVar5,...) here. Separate real-pointer local so
+     from format_object_display_name(iVar5,...) here. Separate real-pointer local so
      each use keeps its own type. */
   char *pcVar_str;
+
+  DEBUG(INFO, "Look mode object interact?");
   
   local_128[0] = '\0';
   sVar10 = 0x160;
@@ -34941,11 +36063,11 @@ short param_2;
       message_scroll_print_wrapped((char *)FUN_0007863c((*param_1 >> 9 & 0xf) + sVar10 | 0x1000));
     }
     if (pcVar_str != (char *)0x0) {
-      /* Same dropped-argument pattern: FUN_00078bfc's real `undefined1 *`
+      /* Same dropped-argument pattern: format_object_display_name's real `undefined1 *`
          return (pcVar_str word-wrapped for the message scroll) is the
          actual real sign/inscription text ("We attacked the entrance
          with all manner of tools..."), confirmed via UW_DEBUG_OBJPOS. */
-      message_scroll_print_wrapped((char *)FUN_00078bfc(pcVar_str,1,0));
+      message_scroll_print_wrapped((char *)format_object_display_name(pcVar_str,1,0));
       message_scroll_print_wrapped(&DAT_0008522c);
     }
     if (local_128[0] != '\0') {
@@ -35014,7 +36136,7 @@ short param_2;
 
 
 
-void FUN_00049404(param_1,param_2)
+void build_creature_look_text(param_1,param_2)
 ushort * param_1;
 char *param_2;   /* was undefined4 -- the caller's stack description buffer
                     (acStack_7c); Ordinal_1063/message_scroll_print_wrapped
@@ -35029,20 +36151,33 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
   char *pcVar5;
   int iVar6;
   undefined4 uVar7;
+  /* format_object_display_name's real return type is `undefined1 *` -- was captured
+     into `uVar7` (undefined4/int), which also does double duty as a
+     plain 0/1 flag a few lines down. On this 64-bit host that truncated
+     the real pointer to 32 bits before handing it to Ordinal_1063
+     (strcat), so appending a creature's description/name here crashed
+     inside the fortified strcat on a wild source pointer -- reproduced
+     via a real right-click "look" at a named creature (repro needed
+     UW_PICK_FORCE_SLOT since no object in the previously-tested area
+     had a real name to overflow through). Separate real pointer local
+     for the string result, keeping uVar7 for its flag use. */
+  char *pcVar_desc;
   undefined1 *puVar8;
-  
+
   pcVar3 = (char *)FUN_0007863c(*param_1 & 0x1ff | 0x800);
   bVar1 = (byte)param_1[0xd];
-  if (*pcVar3 == '\0') {
+  if ((pcVar3 == (char *)0x0) || (*pcVar3 == '\0')) {
     pcVar3 = (char *)0x0;
   }
   if (((0xef < bVar1) && (bVar1 != 0xff)) ||
-     (pcVar4 = (char *)FUN_0007863c((byte)((byte)param_1[7] >> 6) + 0x60 | 0xa00), *pcVar4 == '\0'))
+     (pcVar4 = (char *)FUN_0007863c((byte)((byte)param_1[7] >> 6) + 0x60 | 0xa00),
+      pcVar4 == (char *)0x0 || *pcVar4 == '\0'))
   {
     pcVar4 = (char *)0x0;
   }
   if ((bVar1 == 0) ||
-     (pcVar5 = (char *)FUN_0007863c((int)(short)(ushort)bVar1 + 0x10U | 0xe00), *pcVar5 == '\0')) {
+     (pcVar5 = (char *)FUN_0007863c((int)(short)(ushort)bVar1 + 0x10U | 0xe00),
+      pcVar5 == (char *)0x0 || *pcVar5 == '\0')) {
     pcVar5 = (char *)0x0;
   }
   if (pcVar3 != (char *)0x0) {
@@ -35060,8 +36195,10 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
       Ordinal_1063(param_2,&DAT_00085240);
     }
     if ((pcVar5 == (char *)0x0) || (iVar6 = Ordinal_1417((int)*pcVar5,1), iVar6 != 0)) {
-      uVar7 = FUN_00078bfc(pcVar3,pcVar4 == (char *)0x0,0);
-      Ordinal_1063(param_2,uVar7);
+      pcVar_desc = (char *)format_object_display_name(pcVar3,pcVar4 == (char *)0x0,0);
+      if (pcVar_desc != (char *)0x0) {
+        Ordinal_1063(param_2,pcVar_desc);
+      }
     }
   }
   if (pcVar5 != (char *)0x0) {
@@ -35073,10 +36210,16 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
       }
       uVar7 = 0;
     }
-    uVar7 = FUN_00078bfc(pcVar5,uVar7,0);
-    Ordinal_1063(param_2,uVar7);
+    pcVar_desc = (char *)format_object_display_name(pcVar5,uVar7,0);
+    if (pcVar_desc != (char *)0x0) {
+      Ordinal_1063(param_2,pcVar_desc);
+    }
   }
   Ordinal_1063(param_2,&DAT_00084f20);
+  /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
+     fix -- back-to-back Looks at a creature otherwise all land on the
+     same visible scroll line. */
+  Ordinal_1063(param_2,"\n");
   message_scroll_print_wrapped(param_2);
   return;
 }
@@ -35386,16 +36529,20 @@ void FUN_0004995c()
 
 
 
-undefined4 FUN_00049960()
+undefined4 init_level_object_arena()
 
 {
   if (DAT_002029cc == 0) {
-    DAT_002029cc = Ordinal_1041(0x7c08);
+    /* Widened by 0x3a bytes: 28 backpack/equipment slots * 2 bytes
+       (0x38) plus g_current_container_link's own 2 bytes, both now reserved at
+       this buffer's tail -- see reset_level_object_arena and DAT_00202950's/
+       g_current_container_link's own comments. */
+    DAT_002029cc = Ordinal_1041(0x7c08 + 0x3a);
     if (DAT_002029cc == 0) {
       FUN_0003c3b4(0x1002);
     }
   }
-  FUN_00052960();
+  reset_level_object_arena();
   return 1;
 }
 
@@ -35412,7 +36559,7 @@ void FUN_000499a4()
 
 
 
-int FUN_000499c0(param_1,param_2)
+int load_level_object_table(param_1,param_2)
 undefined1 * param_1;
 int param_2;
 
@@ -35448,7 +36595,7 @@ int param_2;
   iVar3 = DAT_002029cc;
   psVar7 = (short *)(DAT_002029cc + 0x7c06);
   *psVar7 = 0;
-  FUN_0001613c(auStack_20,param_2 + -1,DAT_002029cc);
+  read_archive_entry(auStack_20,param_2 + -1,DAT_002029cc);
   if (*psVar7 == 0x7577) {
     DAT_002046a8 = DAT_002046a4 + *(short *)(iVar3 + 0x7c02) * 2;
     DAT_0020469c = DAT_002046bc + *(short *)(iVar3 + 0x7c04) * 2;
@@ -35733,9 +36880,9 @@ short param_1;
     cVar3 = (&DAT_002027d2)[iVar1 * 3];
     DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[(short)cVar3 * 3];
     DAT_00202a38 = cVar3 + 0x10;
-    DAT_00202a4c = (ushort)(*(byte *)(DAT_0023be64 + 0x17) >> 2);
-    DAT_00202a44 = DAT_0023be64;
-    DAT_00202a50 = (undefined2)((*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4);
+    DAT_00202a4c = (ushort)(*(byte *)(g_player_object + 0x17) >> 2);
+    DAT_00202a44 = g_player_object;
+    DAT_00202a50 = (undefined2)((*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4);
     DAT_00202a54 = 1;
     FUN_0004a110();
     puVar6 = (ushort *)FUN_0004ad10();
@@ -35810,7 +36957,7 @@ short param_2;
   DAT_00202a50 = (ushort)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
   DAT_00202a54 = 1;
   DAT_00202a44 = param_1;
-  if (param_1 == DAT_0023be64) {
+  if (param_1 == g_player_object) {
     FUN_0004a110();
   }
   else {
@@ -35828,7 +36975,7 @@ short param_2;
 
 
 
-undefined4 FUN_0004a69c(param_1,param_2)
+undefined4 drop_held_object_near_player(param_1,param_2)
 ushort * param_1;
 int param_2;
 
@@ -35842,14 +36989,26 @@ int param_2;
   int iVar7;
   int iVar8;
   char cVar9;
+  /* iVar4 is reused earlier in this function as a plain int (return
+     codes from FUN_0004a110/FUN_00051fa0) -- real uses, left alone --
+     but also held tilemap_lookup's real 64-bit pointer return,
+     truncating it to 32 bits on this host. The NULL check added
+     earlier (see below) only ever caught a truly-NULL result; a
+     non-NULL-but-truncated pointer still reached
+     object_list_append_tail(iVar4+2, ...) with a wild address.
+     Confirmed live (UW_DEBUG_INV + demo_dropback_test.txt): dragging
+     an item out of the backpack and dropping it in the 3D view
+     crashed here even with that guard in place. New, properly-typed
+     local for just this final pointer use. */
+  char *pDropTile;
   ushort local_28;
   ushort local_26;
   
-  DAT_00202a4c = (ushort)(*(byte *)((char *)DAT_0023be64 + 0x17) >> 2);
-  DAT_00202a50 = (short)((DAT_0023be64[0xb] & 0x3f0) >> 4);
+  DAT_00202a4c = (ushort)(*(byte *)((char *)g_player_object + 0x17) >> 2);
+  DAT_00202a50 = (short)((g_player_object[0xb] & 0x3f0) >> 4);
   if ((*(short *)(DAT_00085a6c + 8) == 1) && (iVar4 = FUN_0004a110(), iVar4 != 0)) {
     DAT_00202a54 = 1;
-    DAT_00202a44 = DAT_0023be64;
+    DAT_00202a44 = g_player_object;
     DAT_00202a38 = *param_1 & 0x1ff;
     DAT_00202a48 = 0xf;
     puVar5 = (ushort *)FUN_0004ad10();
@@ -35880,24 +37039,24 @@ int param_2;
     }
   }
   if (param_1 != (ushort *)0x0) {
-    local_28 = (ushort)(*(byte *)((char *)DAT_0023be64 + 3) >> 5) + DAT_00202a4c * 8;
-    local_26 = (short)((*(byte *)((char *)DAT_0023be64 + 3) & 0x1c) >> 2) + DAT_00202a50 * 8;
-    *(byte *)(param_1 + 1) = ((byte)DAT_0023be64[1] ^ (byte)param_1[1]) & 0x7f ^ (byte)param_1[1];
+    local_28 = (ushort)(*(byte *)((char *)g_player_object + 3) >> 5) + DAT_00202a4c * 8;
+    local_26 = (short)((*(byte *)((char *)g_player_object + 3) & 0x1c) >> 2) + DAT_00202a50 * 8;
+    *(byte *)(param_1 + 1) = ((byte)g_player_object[1] ^ (byte)param_1[1]) & 0x7f ^ (byte)param_1[1];
     *(byte *)((char *)param_1 + 3) = *(byte *)((char *)param_1 + 3);
     cVar9 = ((&DAT_00202c91)[(CONCAT11(*(byte *)((char *)param_1 + 1),(byte)*param_1) & 0x1ff) * 0xd] &
-            7) + ((&DAT_00202c91)[(*DAT_0023be64 & 0x1ff) * 0xd] & 7) + '\x01';
-    FUN_00069f2c(((byte)DAT_0023be64[0xc] & 0x1f) + ((DAT_0023be64[1] & 0x380) >> 2),cVar9,&local_28
+            7) + ((&DAT_00202c91)[(*g_player_object & 0x1ff) * 0xd] & 7) + '\x01';
+    FUN_00069f2c(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),cVar9,&local_28
                  ,&local_26);
     iVar4 = FUN_00051fa0(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
-                         (byte)DAT_0023be64[1] & 0x7f,1,cVar9);
+                         (byte)g_player_object[1] & 0x7f,1,cVar9);
     if (iVar4 == 0) {
       bVar3 = true;
     }
     else {
-      FUN_00069f2c(((byte)DAT_0023be64[0xc] & 0x1f) + ((DAT_0023be64[1] & 0x380) >> 2),3,&local_28,
+      FUN_00069f2c(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),3,&local_28,
                    &local_26);
       iVar4 = FUN_00051fa0(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
-                           (byte)DAT_0023be64[1] & 0x7f,1,cVar9);
+                           (byte)g_player_object[1] & 0x7f,1,cVar9);
       bVar3 = true;
       if (iVar4 != 0) {
         bVar3 = false;
@@ -35905,8 +37064,20 @@ int param_2;
     }
     iVar7 = (int)(short)local_28;
     iVar8 = (int)(short)local_26;
-    iVar4 = tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
-    if (bVar3) {
+    pDropTile = (char *)tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
+    /* tilemap_lookup returns NULL for any tile coordinate outside
+       0-63 (see its own bounds check) -- confirmed live: dragging an
+       item out of an open backpack slot and dropping it back into the
+       3D view crashed in object_list_append_tail(pDropTile+2, ...),
+       i.e. exactly a NULL+2 wild pointer. This is the same unguarded-
+       tilemap_lookup-result class as this file's other "wild tilemap
+       access" crash (see the map-edge Y-wraparound note in memory.md);
+       here it wasn't a real map-edge case, just a computed nearby-drop
+       tile (local_28/local_26, from FUN_00069f2c just above) that
+       apparently isn't always guaranteed to land in range. Treat it
+       the same as the "no room to drop it" (bVar3) failure just below
+       instead of dereferencing a wild pointer. */
+    if ((bVar3) || (pDropTile == NULL)) {
       if (param_2 != 0) {
         FUN_00078c80(0xfd);
       }
@@ -35918,7 +37089,7 @@ int param_2;
     *(byte *)((char *)param_1 + 3) =
          (byte)((uVar2 & 0x3ff) >> 8) |
          (byte)(((local_26 & 7 | (local_28 & 0x1fff) << 3) << 10) >> 8);
-    object_list_append_tail(iVar4 + 2,param_1);
+    object_list_append_tail((byte *)(pDropTile + 2),(char *)param_1);
     uVar2 = *param_1;
     if ((((uVar2 & 0x1f0) == 0x90) && (3 < (uVar2 & 0xf))) && ((uVar2 & 0xf) < 7)) {
       bVar1 = (byte)uVar2;
@@ -36013,7 +37184,7 @@ LAB_0004b06c:
       bVar3 = (cVar4 + (char)DAT_00202a3c * '\x02' + (bVar1 & 0x7f) ^ bVar1) & 0x7f ^ bVar1;
       *(byte *)(puVar6 + 1) = bVar3;
       *(byte *)((char *)puVar6 + 3) = bVar2;
-      if ((DAT_00202a44 == DAT_0023be64) && (0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
+      if ((DAT_00202a44 == g_player_object) && (0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
         *(byte *)(puVar6 + 1) =
              (((char)DAT_00202a3c * '\x02' - (*(byte *)(DAT_00086df8 + 0xb9) >> 3)) +
               (&DAT_00202c90)[(*DAT_00202a44 & 0x1ff) * 0xd] + (bVar1 & 0x7f) ^ bVar3) & 0x7f ^
@@ -36037,7 +37208,7 @@ LAB_0004b06c:
       iVar8 = ((byte)puVar6[1] & 0x7f) << 3;
       *(char *)((char *)puVar6 + 0xf) = (char)iVar8;
       *(char *)(puVar6 + 8) = (char)((uint)iVar8 >> 8);
-      if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = FUN_0005358c(), 0xff < sVar5)) {
+      if (((*DAT_00202a44 & 0x1c0) == 0x40) && (sVar5 = encode_object_slot_index(), 0xff < sVar5)) {
         sVar5 = 0;
       }
       *(char *)(puVar6 + 9) = (char)sVar5;
@@ -36079,7 +37250,7 @@ ushort * param_2;
   
   DAT_00202c6c = local_38;
   uVar2 = *param_1;
-  uVar3 = FUN_0005358c(param_1);
+  uVar3 = encode_object_slot_index(param_1);
   *(byte *)(DAT_00202c6c + 5) = (byte)uVar3;
   *(byte *)((char *)DAT_00202c6c + 0xb) = (byte)((ushort)uVar3 >> 8);
   iVar5 = (short)(uVar2 & 0x1ff) * 0xd;
@@ -40042,7 +41213,9 @@ int param_2;
   int local_3c;
   
   local_3c = 0;
-  iVar5 = tilemap_lookup((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
+  int _px = (int)*(short *)DAT_00202c6c >> 3;
+  int _py = (int)*(short *)(DAT_00202c6c + 2) >> 3;
+  iVar5 = tilemap_lookup(_px, _py);
   /* off-map tile (DAT_00202c6c position outside 0..63): this function assumes
      a valid tile record and derefs iVar5 + offsets below. The sweep's
      collision revert path (sweep_step(-1)) can reach here with an out-of-
@@ -40111,16 +41284,46 @@ int param_2;
       iVar14 = (int)cVar1;
       if (cVar1 <= iVar11) {
         do {
-          puVar6 = (ushort *)
-                   (iVar5 + (((int)(char)iVar12 + (char)iVar14 * 0x40) * 0x10000 >> 0x10) * 4 + 2);
+          /* Was raw pointer arithmetic straight off iVar5 (the CURRENT
+             tile's own record, from tilemap_lookup(_px,_py)):
+             `iVar5 + (dx + dy*0x40)*4 + 2` -- algebraically the right way
+             to reach a neighbouring tile's record in a flat 64x64 array
+             (base + ((_px+dx)+(_py+dy)*64)*4), but with none of
+             tilemap_lookup's own bounds check that a plain
+             tilemap_lookup(_px+dx,_py+dy) call gets for free. This scan's
+             dx/dy (iVar12/iVar14) range up to +-11 tiles, so anywhere
+             within ~11 tiles of the map edge -- confirmed via lldb,
+             walking toward a critter near tile (17,7) -- (_px+dx) or
+             (_py+dy) goes negative or >=64, landing this "neighbour"
+             pointer far outside the real DAT_002029cc array and crashing
+             on the very next dereference. Route through tilemap_lookup
+             so an out-of-map neighbour is treated as "no object here"
+             instead. */
+          void *_ntile = tilemap_lookup(_px + (char)iVar12, _py + (char)iVar14);
           iVar10 = 0;
           sVar8 = 0;
-          uVar3 = *puVar6;
+          if (_ntile == 0) {
+            puVar6 = 0;
+            uVar3 = 0;
+          } else {
+            puVar6 = (ushort *)((char *)_ntile + 2);
+            uVar3 = *puVar6;
+          }
           while ((uVar3 & 0xffc0) != 0) {
             sVar8 = (short)iVar10;
             if (0x3f < sVar8) break;
             if ((uint)(uVar3 >> 6) != (int)*(short *)(pbVar13 + 10)) {
               puVar7 = (ushort *)resolve_object_link(puVar6);
+              /* resolve_object_link can now return NULL for an
+                 out-of-range link (see its own comment) where this loop's
+                 `while ((uVar3 & 0xffc0) != 0)` condition alone used to
+                 guarantee success -- and since the chain-advance below
+                 uses this same puVar6 through the same function, a NULL
+                 here means the chain itself is unsafe to keep walking
+                 (advancing anyway would resolve against address 4).
+                 Give up on this tile's object chain instead of
+                 dereferencing NULL or walking into near-NULL memory. */
+              if (puVar7 == (ushort *)0x0) break;
               iVar10 = (*puVar7 & 0x1ff) * 0xd;
               if ((((local_3c == 0) || (((&DAT_00202c93)[iVar10] & 4) == 0)) &&
                   (((&DAT_00202c90)[iVar10] != '\0' || (puVar7 < DAT_002046c4)))) &&
@@ -40138,6 +41341,16 @@ int param_2;
                its own width; iVar10 is reset to the loop counter right
                after anyway. */
             { intptr_t _objp = (intptr_t)resolve_object_link(puVar6);
+              /* Same missing-NULL-guard bug as the first resolve_object_link
+                 call above, just on the chain-advance itself instead of the
+                 per-object handling: resolve_object_link can return NULL
+                 for an out-of-range link, and this unconditionally turned
+                 that into puVar6 = (ushort*)4, dereferenced by `uVar3 =
+                 *puVar6` a few lines down (or, if that near-NULL address
+                 happened to be mapped, silently kept walking a chain from
+                 garbage). Confirmed via lldb: EXC_BAD_ACCESS right here,
+                 walking into an obstacle (e.g. standing next to a critter). */
+              if (_objp == 0) break;
               puVar6 = (ushort *)(_objp + 4); }
             iVar2 = (sVar8 + 1) * 0x10000;
             iVar10 = iVar2 >> 0x10;
@@ -40217,7 +41430,20 @@ void FUN_00051dd0()
       for (iVar3 = uVar2 - 2; iVar3 = iVar3 * 0x1000000 >> 0x18, iVar7 <= iVar3; iVar3 = iVar3 + -1)
       {
         if ((byte)(&DAT_00202c3e)[iVar3 * 6] < (byte)(&DAT_00202c38)[iVar3 * 6]) {
-          FUN_00051cf8();
+          /* Ghidra dropped the swap index argument: this is an insertion-
+             sort pass over up to 255 collision candidates, swapping the
+             pair at iVar3/iVar3+1 when out of order. Called with no
+             argument, FUN_00051cf8's param_1 read whatever garbage was
+             left in the argument register, swapping (and reading/
+             writing) an arbitrary 6-byte record pair instead of the
+             intended one -- the real data at iVar3 never actually got
+             sorted, so the loop's own termination condition kept
+             re-triggering: confirmed via `sample` showing 100% of a
+             hung process's time stuck in this exact function, walking
+             into an obstacle (e.g. standing next to a critter) near
+             tile (17,7). Also a wild write whenever the garbage index
+             landed outside the real ~255-entry table. */
+          FUN_00051cf8(iVar3);
           iVar5 = DAT_00202c6c;
         }
       }
@@ -40234,7 +41460,9 @@ void FUN_00051dd0()
       for (iVar4 = uVar2 - 2; iVar4 = iVar4 * 0x1000000 >> 0x18, iVar6 <= iVar4; iVar4 = iVar4 + -1)
       {
         if ((byte)(&DAT_00202c3f)[iVar4 * 6] < (byte)(&DAT_00202c39)[iVar4 * 6]) {
-          FUN_00051cf8();
+          /* Same dropped-argument fix as the X-axis sort pass above --
+             this is the Y-axis pass, swap index is iVar4. */
+          FUN_00051cf8(iVar4);
           iVar5 = DAT_00202c6c;
         }
       }
@@ -40280,16 +41508,39 @@ byte param_7;
   int iVar6;
   short sVar7;
   uint uVar8;
-  undefined2 local_3c;
-  undefined2 local_3a;
-  short local_38;
-  byte local_34;
-  byte local_33;
-  short local_32;
+  /* Was 6 independent locals (local_3c/3a/38/34/33/32) with
+     DAT_00202c6c = &local_3c, and every DAT_00202c6c[N] access
+     throughout this file (collision_build_height_field,
+     collision_corner_flags, collision_height_envelope, etc.) assuming
+     they're one contiguous record at their Ghidra-stack-offset-implied
+     byte positions (0/2/4/8/9/0xa -- 0x3c-0x3a=2, 0x3a-0x38=2,
+     0x38-0x34=4, 0x34-0x33=1, 0x33-0x32=1). That layout only held in
+     the original 32-bit ARM binary's own stack frame; as independent
+     C locals here, this compiler is free to place them in any order
+     with any padding, so nearly every DAT_00202c6c[N] read was
+     whatever adjacent stack byte happened to land there instead of the
+     intended field -- confirmed via a direct struct dump: param_4 (Y,
+     expected at offset 2-3) printed 24, but DAT_00202c6c[2] read back
+     8, not 24. This is what fed collision_height_envelope's floor-
+     height selection (DAT_00202c30) garbage, causing a discrete
+     SHIFT+<dir> step to occasionally place the player's height at a
+     wildly wrong value (reported as "ends up at the ceiling"). Same
+     "split-symbol cluster" bug class fixed elsewhere this session for
+     globals (e.g. DAT_00204880_backing); here as a real backing array
+     since these are genuinely local to one call. Sized generously
+     (0x20) past the highest offset (0x13) any reader/writer touches. */
+  undefined1 local_pos_record[0x20];
+#define local_3c (*(undefined2 *)(local_pos_record + 0))
+#define local_3a (*(undefined2 *)(local_pos_record + 2))
+#define local_38 (*(short *)(local_pos_record + 4))
+#define local_34 (local_pos_record[8])
+#define local_33 (local_pos_record[9])
+#define local_32 (*(short *)(local_pos_record + 0xa))
   int iVar9;
-  
+
   uVar2 = DAT_00202c6c;
-  DAT_00202c6c = &local_3c;
+  Ordinal_1047(local_pos_record, 0, sizeof(local_pos_record));
+  DAT_00202c6c = local_pos_record;
   local_33 = (&DAT_00202c90)[param_1 * 0xd];
   local_34 = (&DAT_00202c91)[param_1 * 0xd] & 7;
   local_38 = param_5;
@@ -40298,12 +41549,46 @@ byte param_7;
     local_3c = param_3;
     local_3a = param_4;
     local_32 = param_2;
+    if (getenv("UW_DEBUG_STEPHEIGHT"))
+      fprintf(stderr, "[fa0-params] p1=%d p2=%d p3=%d p4=%d p5=%u p6=%d p7=%u local33=%d local34=%d\n",
+              (int)param_1, (int)param_2, (int)(short)param_3, (int)(short)param_4,
+              (unsigned)param_5, (int)param_6, (unsigned)param_7, (int)local_33, (int)local_34);
     collision_build_height_field(uVar8);
+    if (getenv("UW_DEBUG_STEPHEIGHT")) {
+      int _i;
+      fprintf(stderr, "[fa0-struct]");
+      for (_i = 0; _i < 0x14; _i++) fprintf(stderr, " [%x]=%d", _i, (int)(unsigned char)DAT_00202c6c[_i]);
+      fprintf(stderr, "\n");
+    }
     if (((DAT_00202c6c[7] | DAT_00202c6c[6]) & 0x300) == 0) {
       bVar1 = *(byte *)((char *)DAT_00202c6c + 0x11);
-      if ((int)(uVar8 + (int)(short)DAT_00202c6c[2]) < (int)(uint)bVar1) {
+      /* Was `DAT_00202c6c[2]` -- offset 2 is local_3a, the LOW byte of
+         param_4 (the destination tile's Y coordinate, in eighths of a
+         tile), not a height/clearance value at all -- mixing an
+         absolute position into a "how much vertical room is there"
+         check made this pick the wrong branch essentially at random
+         depending on where in the map the step landed. Every OTHER use
+         of "the player's own clearance" in this same function (the
+         guard above, and the very next line below) reads offset 4
+         (local_38 = param_5, the player's current sub-tile height byte)
+         -- use that instead, matching them. Confirmed via a live struct
+         dump + before/after comparison at the exact reported repro: with
+         the offset-2 bug, DAT_00202c30 picked a near-zero garbage
+         candidate and the discrete step armed a bogus "start falling"
+         state, which a later per-tick gravity integration turned into a
+         wrong, large height jump (e.g. 768 -> 1024, reported as "ends up
+         at the ceiling"); with offset 4, the height field's own valid
+         floor-height candidate (e.g. 96, i.e. DAT_00204884=768) is kept
+         instead, matching what continuous analog movement already
+         computes correctly for the same tile. */
+      if ((int)(uVar8 + (int)(short)DAT_00202c6c[4]) < (int)(uint)bVar1) {
         bVar1 = *(byte *)(DAT_00202c6c + 8);
       }
+      if (getenv("UW_DEBUG_STEPHEIGHT"))
+        fprintf(stderr, "[stepheight] uVar8=%u c6c4=%d c6c8=%d c6c11=%d c6c6=%d c6c7=%d -> DAT_00202c30=%d cur_z=%d\n",
+                uVar8, (int)(short)DAT_00202c6c[4], (int)*(byte *)(DAT_00202c6c + 8),
+                (int)*(byte *)((char *)DAT_00202c6c + 0x11), (int)DAT_00202c6c[6], (int)DAT_00202c6c[7],
+                (int)bVar1, (int)DAT_00204884);
       DAT_00202c30 = (ushort)bVar1;
       uVar5 = (uint)*(byte *)(DAT_00202c6c + 4);
       if ((uint)(int)(short)(ushort)*(byte *)(DAT_00202c6c + 4) < uVar8) {
@@ -40361,6 +41646,12 @@ byte param_7;
   DAT_00202c6c = (undefined2 *)uVar2;
   return 0;
 }
+#undef local_3c
+#undef local_3a
+#undef local_38
+#undef local_34
+#undef local_33
+#undef local_32
 
 
 
@@ -40440,7 +41731,7 @@ short param_5;
       uVar4 = ((int)extraout_r1 - (int)param_5) + param_2;
       uVar6 = ((int)extraout_r1_00 - (int)param_5) + param_3;
     }
-    uVar2 = FUN_0005358c(param_1);
+    uVar2 = encode_object_slot_index(param_1);
     iVar5 = FUN_00051fa0(*param_1 & 0x1ff,uVar2,uVar4,uVar6,param_4,1,0);
     if (iVar5 != 0) break;
     bVar3 = bVar3 + 1;
@@ -40580,7 +41871,7 @@ undefined4 FUN_000528a8()
 
 
 
-void FUN_00052960()
+void reset_level_object_arena()
 
 {
   undefined2 *puVar1;
@@ -40601,6 +41892,17 @@ void FUN_00052960()
   DAT_002046a8 = DAT_002029cc + 0x74fa;
   DAT_002046bc = DAT_002029cc + 0x74fc;
   DAT_0020469c = DAT_002029cc + 0x7afa;
+  /* g_backpack_slot_table lives in this same arena buffer, in the 0x38
+     bytes init_level_object_arena added past the buffer's old real end (0x7c08 --
+     note that's past this function's own highest touched offset,
+     0x7b00, and past resolve_object_link's old checked upper bound,
+     DAT_002046c4+0x1800=0x7300 -- both already-spoken-for, so the new
+     reservation goes after the *entire* old buffer instead of trying
+     to squeeze into either gap). resolve_object_link's valid-range
+     upper bound is widened to this same new true end (0x7c08+0x38) --
+     see its own comment -- so this table is both physically present
+     and accepted by resolve_object_link's guard. */
+  g_backpack_slot_table = DAT_002029cc + 0x7c08;
   iVar3 = 2;
   DAT_002046a0 = DAT_0020469c;
   DAT_002046a4 = puVar1;
@@ -40610,11 +41912,11 @@ void FUN_00052960()
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     puVar1 = puVar1 + 1;
   } while (iVar3 < 0x400);
-  if (DAT_0023be64 != 0) {
-    *(byte *)(DAT_0023be64 + 4) = *(byte *)(DAT_0023be64 + 4) & 0x3f;
-    *(undefined1 *)(DAT_0023be64 + 5) = 0;
-    *(byte *)(DAT_0023be64 + 6) = *(byte *)(DAT_0023be64 + 6) & 0x3f;
-    *(undefined1 *)(DAT_0023be64 + 7) = 0;
+  if (g_player_object != 0) {
+    *(byte *)(g_player_object + 4) = *(byte *)(g_player_object + 4) & 0x3f;
+    *(undefined1 *)(g_player_object + 5) = 0;
+    *(byte *)(g_player_object + 6) = *(byte *)(g_player_object + 6) & 0x3f;
+    *(undefined1 *)(g_player_object + 7) = 0;
     FUN_000465c8();
   }
   DAT_00250770 = 0;
@@ -40634,23 +41936,35 @@ codeval * param_2;
 
 {
   int iVar1;
-  undefined4 uVar2;
-  
-  iVar1 = (*param_2)();
+  char *pcVar2;
+
+  /* Dropped argument (both call sites below): param_2 is a callback
+     (FUN_00052bac at every call site reached so far) that declares one
+     parameter -- the object/link being tested, i.e. this function's
+     own param_1 -- but was invoked bare, leaving FUN_00052bac's own
+     param_1 as leftover-register garbage. Same idiom as this whole
+     session's other dropped-argument fixes; confirmed live
+     (UW_DEBUG_INV + demo_dropback_test.txt) crashing in FUN_00052bac's
+     first dereference the moment this never-before-exercised
+     drop-into-world path actually ran. */
+  iVar1 = (*param_2)(param_1);
   while( true ) {
     if (iVar1 != 0) {
       return 1;
     }
     if (((*(byte *)(param_1 + 1) & 0x80) == 0) && ((*(ushort *)(param_1 + 6) & 0xffc0) != 0)) {
-      uVar2 = resolve_object_link(param_1 + 6); /* confirmed via ARM disassembly, 0x52b54 */
-      iVar1 = FUN_00052af4(uVar2,param_2);
+      /* Was `undefined4 uVar2` -- truncated resolve_object_link's real
+         pointer return before forwarding it into the recursive call
+         just below, same class as param_1 itself above. */
+      pcVar2 = (char *)resolve_object_link((ushort *)(param_1 + 6)); /* confirmed via ARM disassembly, 0x52b54 */
+      iVar1 = FUN_00052af4(pcVar2,param_2);
       if (iVar1 != 0) {
         return 1;
       }
     }
     if ((*(ushort *)(param_1 + 4) & 0xffc0) == 0) break;
-    param_1 = resolve_object_link(param_1 + 4); /* confirmed via ARM disassembly, 0x52b84 */
-    iVar1 = (*param_2)();
+    param_1 = (char *)resolve_object_link((ushort *)(param_1 + 4)); /* confirmed via ARM disassembly, 0x52b84 */
+    iVar1 = (*param_2)(param_1);
   }
   return 0;
 }
@@ -40702,8 +42016,13 @@ char *param_2;  /* was `int` -- truncated the real object-record pointer
 {
   short sVar1;
   int iVar2;
-  undefined4 uVar3;
-  
+  /* Was `undefined4 uVar3` -- truncated resolve_object_link's real
+     pointer return before forwarding it into FUN_00052af4 just below,
+     same class as this whole never-before-exercised drop-into-world
+     path's other fixes. Confirmed live: FUN_00052af4 received a NULL/
+     garbage param_1 and crashed the moment it dereferenced it. */
+  char *pcVar3;
+
   if (param_2 != 0) {
     if (param_1 != 0) {
       sVar1 = rand_below(3);
@@ -40713,8 +42032,8 @@ char *param_2;  /* was `int` -- truncated the real object-record pointer
     iVar2 = FUN_00052bac(param_2);
     if (iVar2 == 0) {
       if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
-        uVar3 = resolve_object_link(param_2 + 6); /* confirmed via ARM disassembly, 0x52ce8 */
-        iVar2 = FUN_00052af4(uVar3,FUN_00052bac);
+        pcVar3 = (char *)resolve_object_link((ushort *)(param_2 + 6)); /* confirmed via ARM disassembly, 0x52ce8 */
+        iVar2 = FUN_00052af4(pcVar3,FUN_00052bac);
         if (iVar2 != 0) {
           return 0;
         }
@@ -40768,7 +42087,7 @@ short param_2;
   
   iVar10 = 0;
   iVar7 = 0;
-  uVar2 = *(ushort *)(DAT_0023be64 + 0x16);
+  uVar2 = *(ushort *)(g_player_object + 0x16);
   local_38 = (int)(short)(uVar2 >> 10);
   local_30 = 10 - (short)param_1;
   iVar9 = DAT_002029cc;
@@ -40881,7 +42200,7 @@ char *param_1;
 void object_list_insert_head(param_1,param_2)
 byte * param_1;
 /* Object-record pointer -- was `uint`, truncating it (e.g. set_player_tile_position
-   passes the real DAT_0023be64 player-object pointer here; truncated it
+   passes the real g_player_object player-object pointer here; truncated it
    crashed placing the player into the level). */
 char *param_2;
 
@@ -40956,7 +42275,7 @@ char *param_2;
    the node matching param_2); same pointer-truncation pattern fixed
    repeatedly this session. Retyped both to real pointers; left the
    30+ other call sites' own argument variables unaudited since only
-   this one (DAT_0023be64, already a real pointer, needs no caller-side
+   this one (g_player_object, already a real pointer, needs no caller-side
    change) has actually been exercised and confirmed fixed. */
 // was FUN_00053274
 void object_list_unlink(param_1,param_2)
@@ -40998,7 +42317,11 @@ byte * param_2;
 
 
 ushort *FUN_00053334(param_1,param_2,param_3)
-int param_1;
+/* Was `int param_1` -- a real object-record pointer (drop_held_object_
+   near_player passes pDropTile+2, a resolve_object_link-style address)
+   truncated to 32 bits on this 64-bit host, same class as several
+   other fixes this session. */
+char *param_1;
 ushort * param_2;
 int param_3;
 
@@ -41006,9 +42329,18 @@ int param_3;
   ushort uVar1;
   int iVar2;
   ushort local_10 [2];
-  
-  if ((param_3 != 0) || (iVar2 = FUN_00052c5c(10), iVar2 != 0)) {
-    uVar1 = FUN_0005358c(param_2);
+
+  /* Dropped argument: FUN_00052c5c's declared signature takes
+     (short, char*) and dereferences its second parameter -- but it was
+     called here with only the literal 10, leaving the real argument
+     (param_2, the object being placed) as leftover-register garbage.
+     Confirmed live (UW_DEBUG_INV + demo_dropback_test.txt): dropping
+     an item out of the backpack into the 3D view crashed several
+     frames deeper (FUN_00052af4/FUN_00052bac) dereferencing that
+     garbage pointer -- this whole collision/placement path had never
+     been exercised by any earlier fix or test this session. */
+  if ((param_3 != 0) || (iVar2 = FUN_00052c5c(10,(char *)param_2), iVar2 != 0)) {
+    uVar1 = encode_object_slot_index(param_2);
     local_10[0] = local_10[0] & 0x3f | uVar1 << 6;
     if ((*param_2 & 0x1c0) == 0x1c0) {
       FUN_000809cc(uVar1 & 0x3ff);
@@ -41058,15 +42390,28 @@ char *param_1;  /* was `undefined4` -- truncated the real object-record
 
 
 void FUN_000534a8(param_1,param_2)
-int param_1;
-int param_2;
+/* Was `int param_1; int param_2;` -- both real object-record pointers
+   (param_2 is dereferenced directly; both are forwarded to
+   object_list_unlink/free_object_slot, which already declare pointer
+   params), truncated to 32 bits on this host -- same class as several
+   other fixes this session, in the same never-before-exercised
+   drop-into-world path. */
+char *param_1;
+char *param_2;
 
 {
+  /* Dropped argument: FUN_000533e4 takes the address of a link field
+     to recursively free (its own declared param_1) -- here that's
+     param_2's own "contains" field (+6, this file's standard
+     container-contents offset) -- but it was called bare, same idiom
+     as FUN_000533e4's own two internal self-recursive calls just above
+     this function (not touched: not reached by this session's specific
+     repro, and FUN_000533e4 already tolerates a NULL resolve safely). */
   if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
-    FUN_000533e4();
+    FUN_000533e4(param_2 + 6);
   }
   if (param_1 != 0) {
-    object_list_unlink(param_1,param_2);
+    object_list_unlink((byte *)param_1,(byte *)param_2);
   }
   free_object_slot(param_2);
   return;
@@ -41084,7 +42429,55 @@ ushort * param_1;
 {
   ushort uVar1;
 
+  /* Defensive range check -- param_1 should always be either a
+     tile-array-relative link cell or an object-record-relative "next"
+     field, both within the level blob's fixed object-table span. Base
+     the check on DAT_002046b8 (computed ONCE at level load as
+     DAT_002029cc+0x4000, see reset_level_object_arena) rather than re-reading the
+     LIVE DAT_002029cc: there's an existing, previously-documented,
+     never-root-caused bug (see FUN_00066e90's own comment a few
+     thousand lines down) where some stray write elsewhere in this file
+     corrupts DAT_002029cc's storage well after level load -- confirmed
+     here too (the live DAT_002029cc no longer matched the base
+     DAT_002046b8/DAT_002046c4 were actually derived from), so
+     recomputing "expected range" from the live value validates against
+     the wrong base and passes through an address that's actually
+     unmapped/unrelated memory. DAT_002046b8/DAT_002046c4 are
+     independent globals, stored once and not observed corrupted the
+     same way. A caller that chains through resolve_object_link's own
+     result repeatedly (collision_height_envelope's neighbouring-tile
+     scan) can otherwise walk this into unrelated memory -- confirmed
+     via lldb: EXC_BAD_ACCESS reading *param_1 with a wild address,
+     reproduced by a mapped movement sequence (12x forward, turn, 3x
+     forward, turn, 5x forward). Treat an out-of-range param_1 as "no
+     object" instead of crashing, same defensive posture as this file's
+     other guards against a data-dependent wild pointer. */
   if (param_1 != (ushort *)0x0) {
+    char *_lo = DAT_002046b8 - 0x4000;
+    /* (DAT_002046b8-0x4000) is this arena buffer's own base (aliased as
+       _lo just above); +0x7c08+0x3a is its new true end, covering
+       g_backpack_slot_table's reservation there (28 slots + g_current_container_link,
+       see both their comments) -- the buffer itself was widened by the
+       same 0x3a bytes in init_level_object_arena. This replaces the narrower
+       DAT_002046c4+0x1800 the original binary's own object table alone
+       would need -- the new reservation sits well past that, in
+       previously-unallocated space, not inside it. */
+    char *_hi = (DAT_002046b8 - 0x4000) + 0x7c08 + 0x3a;
+    if ((char *)param_1 < _lo || (char *)param_1 >= _hi) {
+      /* Throttled: this guard also fires every idle tick before any level
+         is loaded (DAT_002046b8/DAT_002046c4 aren't set up yet, so
+         everything looks "out of range"), and logging it unthrottled was
+         observed to slow real-time/demo playback to a crawl (dozens of
+         lines per tick). Log only the first hit and then one reminder
+         every 500 more, instead of every single call. */
+      static unsigned _warn_count = 0;
+      _warn_count++;
+      if (_warn_count == 1 || (_warn_count % 500) == 0) {
+        DEBUG(ERR, "[resolve_object_link] param_1=%p out of expected range [%p,%p), returning NULL (x%u so far)\n",
+              (void *)param_1, (void *)_lo, (void *)_hi, _warn_count);
+      }
+      return 0;
+    }
     uVar1 = *param_1;
     if ((uVar1 & 0xffc0) != 0) {
       if (0x3fff < (uVar1 & 0xffc0)) {
@@ -41098,7 +42491,7 @@ ushort * param_1;
 
 
 
-int FUN_0005358c(param_1)
+int encode_object_slot_index(param_1)
 char *param_1;
 
 {
@@ -41138,11 +42531,31 @@ short param_1;
   if (iVar1 == 0) {
     iVar1 = 0;
   }
+  else if (iVar1 < 0) {
+    /* No caller has ever legitimately passed a negative slot -- a real
+       UW1 level has exactly 1024 object slots (0-0x3ff), 256 static +
+       768 mobile -- but nothing bounded the input, and a corrupted/
+       garbage caller-side read (e.g. collision_height_envelope reading
+       *(short*)(DAT_00202c6c+10) as this slot) can hand one in.
+       Confirmed via lldb: this exact case crashed dereferencing the
+       resulting wild pointer, reproduced by the same mapped movement
+       sequence as resolve_object_link's own bounds fix (12x forward,
+       turn, 3x forward, turn, 5x forward). */
+    DEBUG(ERR, "[FUN_000535fc] negative slot %d, returning NULL\n", (int)param_1);
+    iVar1 = 0;
+  }
   else if (iVar1 < 0x100) {
     iVar1 = iVar1 * 0x1b + (intptr_t)DAT_002046b8;
   }
-  else {
+  else if (iVar1 < 0x400) {
     iVar1 = (intptr_t)DAT_002046c4 + (iVar1 + -0x100) * 8;
+  }
+  else {
+    /* >= 1024: past the real 768-slot mobile-object table
+       (DAT_002046c4..+0x1800) -- same corrupted/out-of-range slot class
+       as the negative case above. */
+    DEBUG(ERR, "[FUN_000535fc] slot %d exceeds 0x3ff, returning NULL\n", (int)param_1);
+    iVar1 = 0;
   }
   return (void *)iVar1;
 }
@@ -41168,7 +42581,7 @@ LAB_00053720:
   else {
     DAT_002046b4 = param_1;
     iVar3 = resolve_object_link(param_1);
-    while ((sVar2 = FUN_0005358c(), iVar4 = iVar3, puVar1 = param_1, sVar2 != (short)param_3 &&
+    while ((sVar2 = encode_object_slot_index(), iVar4 = iVar3, puVar1 = param_1, sVar2 != (short)param_3 &&
            ((((*(byte *)(iVar3 + 1) & 0x80) != 0 || ((*(ushort *)(iVar3 + 6) & 0xffc0) == 0)) ||
             (iVar4 = FUN_00053644((ushort *)(iVar3 + 6),param_2,param_3), puVar1 = DAT_002046b4,
             iVar4 == 0))))) {
@@ -41459,10 +42872,10 @@ void FUN_00053c74()
   }
   if (DAT_002046cc != 0) {
     if ((DAT_002046cc & 1) != 0) {
-      FUN_00073ec0(DAT_0023be64,0xffffffff);
+      FUN_00073ec0(g_player_object,0xffffffff);
     }
     if ((DAT_002046cc & 2) != 0) {
-      FUN_00073e14(DAT_0023be64,0xffffffff);
+      FUN_00073e14(g_player_object,0xffffffff);
     }
   }
   if (0x50 < *(byte *)(DAT_00086df8 + 0xb9)) {
@@ -41476,12 +42889,12 @@ void FUN_00053c74()
       bVar1 = (byte)uVar3;
       *(byte *)(iVar10 + 0x5f) = ((bVar1 & 0xfc) - 1 ^ bVar1) & 0x3c ^ bVar1;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
-      FUN_00038374(DAT_0023be64,0,0,0,(char)((uVar3 & 0x3c) >> 2),0x10);
+      FUN_00038374(g_player_object,0,0,0,(char)((uVar3 & 0x3c) >> 2),0x10);
       iVar10 = DAT_00086df8;
     }
     sVar5 = FUN_00069b68(*(undefined1 *)(iVar10 + 0x28),10);
     if (0 < sVar5) {
-      FUN_00073e14(DAT_0023be64,sVar5 * -0x1000000 >> 0x18);
+      FUN_00073e14(g_player_object,sVar5 * -0x1000000 >> 0x18);
     }
   }
   Ordinal_2005(0x18,DAT_002046d0);
@@ -41513,7 +42926,7 @@ void FUN_00053c74()
     } while ((int)(iVar10) * 0x10000 >> 0x10 < 3);
     sVar5 = FUN_00069b68(*(undefined1 *)(DAT_0023be74 + 5),0xf);
     if (0 < sVar5) {
-      FUN_00073ec0(DAT_0023be64,0xffffffff);
+      FUN_00073ec0(g_player_object,0xffffffff);
     }
     DAT_002046d0 = 0;
   }
@@ -41605,7 +43018,7 @@ void FUN_000541d0()
       FUN_000411e0(0xc6);
       FUN_00049924(2);
       uVar1 = FUN_0006a058(2,-(int)iVar3 + 4);
-      FUN_00038374(DAT_0023be64,0,0,0,uVar1,0);
+      FUN_00038374(g_player_object,0,0,0,uVar1,0);
     }
   }
   return;
@@ -41828,7 +43241,7 @@ LAB_000548b8:
       DAT_002020a4 = (ushort)DAT_002046dc;
       DAT_002046e8 = 0;
       DAT_002020a0 = uVar3;
-      FUN_00079984(puVar4,puVar5,0);
+      use_object_on_target(puVar4,puVar5,0);
     }
   }
   if (bVar9 == 0) {
@@ -41838,7 +43251,7 @@ LAB_000548b8:
     DAT_002020a0 = (ushort)DAT_002046e0;
     DAT_002020a4 = (ushort)DAT_002046e4;
     DAT_002046e8 = 1;
-    FUN_00079984(puVar5,puVar4,0);
+    use_object_on_target(puVar5,puVar4,0);
     if ((short)DAT_002020a0 < 0) {
       return 0x10;
     }
@@ -41865,7 +43278,7 @@ byte * param_2;
   
   bVar8 = true;
   iVar5 = (*param_1 & 0x1ff) * 0xd;
-  uVar2 = FUN_0005358c(param_1);
+  uVar2 = encode_object_slot_index(param_1);
   param_2[0x23] = (byte)uVar2;
   param_2[0x24] = (byte)((ushort)uVar2 >> 8);
   uVar1 = *(ushort *)(&DAT_00202c91 + iVar5);
@@ -42254,7 +43667,7 @@ ushort * param_1;
            uVar12 = (int)((int)DAT_00101454 - 0x20U) >> 0x1f,
            (int)((((int)DAT_00101454 - 0x20U ^ uVar12) - uVar12) +
                 (((int)DAT_0010144c - 0x20U ^ uVar11) - uVar11)) < 6 &&
-           (*(char *)(DAT_0023be64 + 8) != '\0')))) {
+           (*(char *)(g_player_object + 8) != '\0')))) {
     if ((*(byte *)(DAT_00086df8 + 0x62) & 4) == 0) {
       uVar2 = *(undefined2 *)(DAT_00086df8 + 0x6e);
       *(byte *)(DAT_00086df8 + 0x6e) = (byte)uVar2 | 8;
@@ -42408,13 +43821,22 @@ int param_4;
   char extraout_r1;
   int iVar11;
   int iVar12;
+  /* iVar12 is reused throughout this function as a plain int (bitfield
+     math, array indices) -- real uses, left alone -- but the one use at
+     LAB_000564d8 held tilemap_lookup's real 64-bit pointer return,
+     truncating it on this host (same class as drop_held_object_near_
+     player's own identical bug just above it in this file). New,
+     properly-typed local for just that one pointer use; every other
+     iVar12 use is separated from it by an early `return`, so this
+     doesn't touch any of them. */
+  char *pDropTile;
   undefined1 local_4c [24];
   
   DAT_002046d4 = 0;
   DAT_002046ec = 0;
   DAT_00202c6c = local_4c;
   bVar1 = false;
-  uVar6 = FUN_0005358c(param_1);
+  uVar6 = encode_object_slot_index(param_1);
   DAT_00202c6c[10] = (char)uVar6;
   DAT_00202c6c[0xb] = (char)((ushort)uVar6 >> 8);
   iVar12 = (*param_1 & 0x1ff) * 0xd;
@@ -42475,8 +43897,8 @@ LAB_000564d0:
         return param_1;
       }
 LAB_000564d8:
-      iVar12 = tilemap_lookup((int)param_2,(int)param_3);
-      puVar9 = (ushort *)FUN_00053334(iVar12 + 2,param_1,0);
+      pDropTile = (char *)tilemap_lookup((int)param_2,(int)param_3);
+      puVar9 = (ushort *)FUN_00053334(pDropTile + 2,param_1,0);
       return puVar9;
     }
     if ((uVar2 & 7) == 5) goto LAB_000564d8;
@@ -42517,7 +43939,7 @@ LAB_000564d8:
     }
     DAT_00202c6c = local_4c;
     bVar1 = true;
-    uVar6 = FUN_0005358c(param_1);
+    uVar6 = encode_object_slot_index(param_1);
     DAT_00202c6c[10] = (char)uVar6;
     DAT_00202c6c[0xb] = (char)((ushort)uVar6 >> 8);
     iVar12 = (*param_1 & 0x1ff) * 0xd;
@@ -42666,7 +44088,7 @@ void FUN_00056724()
   DAT_000868dc = 7;
   FUN_00041a18(0x20eb,s_optbtns_00086954,0);
   draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
-  if (0 < DAT_002020c0) {
+  if (0 < g_cursor_mode) {
     FUN_0003f99c();
   }
   DAT_002046f8 = 1;
@@ -42706,7 +44128,7 @@ void FUN_000567ec()
   local_bc[2] = s_III__00087064;
   local_bc[3] = &DAT_0008705c;
   FUN_0007fce8(1);
-  FUN_0006bde0(auStack_ac,auStack_c4);
+  probe_save_slots(auStack_ac,auStack_c4);
   message_scroll_print_wrapped(s__6_Save_Game_Descriptions_0008703c);
   iVar1 = 0;
   DAT_00087990 = 0;
@@ -42950,7 +44372,7 @@ int param_1;
       }
       FUN_0006bfec(DAT_000868dc == 1,iVar2);
       if (DAT_000868dc == 1) {
-        DAT_002020c0 = 0;
+        g_cursor_mode = 0;
         FUN_00040004();
       }
     }
@@ -43098,7 +44520,7 @@ LAB_00056ddc:
 void FUN_00056ebc()
 
 {
-  if (DAT_002020c4 == 0) {
+  if (g_cursor_holding_state == 0) {
     DAT_002046fc = 1;
     DAT_000868dc = 6;
     FUN_00056d6c();
@@ -43268,7 +44690,7 @@ void FUN_0005721c()
           set_viewport_clip_rect(iVar4,iVar3,iVar5,iVar6);
         }
       }
-      if ((DAT_00204840 == 1) && (DAT_00202948 == 0)) {
+      if ((DAT_00204840 == 1) && (g_selected_object == 0)) {
         FUN_0005857c();
         return;
       }
@@ -44053,14 +45475,14 @@ void FUN_000584c0()
 void FUN_0005857c()
 
 {
-  if (DAT_00202948 == 0) {
+  if (g_selected_object == 0) {
     if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0)) {
       return;
     }
     if (DAT_000868dc != 7) {
       return;
     }
-    if ((((ushort)DAT_00201b60 & 4) != 0) && (DAT_002020c0 == 3)) {
+    if ((((ushort)DAT_00201b60 & 4) != 0) && (g_cursor_mode == 3)) {
       return;
     }
     if ((((ushort)DAT_00201b60 & 2) != 0) && (DAT_0023c63c != 0)) {
@@ -44080,17 +45502,17 @@ void FUN_0005857c()
         return;
       }
     }
-    if (DAT_002020c0 != 0) goto LAB_00058674;
+    if (g_cursor_mode != 0) goto LAB_00058674;
   }
   FUN_000584c0();
 LAB_00058674:
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   g_force_flush = 1;
   draw_sprite_by_id((int)DAT_00204788,((int)g_mouse_x - (int)DAT_0020471c) * 0x10000 >> 0x10,
                ((int)g_mouse_y - (int)DAT_00204748) * 0x10000 >> 0x10,(int)DAT_002047a4,
                DAT_00204784);
   flush_dirty_rect_to_display(1);
-  DAT_00088960 = 0;
+  g_blit_transparent_mode = 0;
   g_force_flush = 0;
   set_draw_color(0);
   return;
@@ -44129,7 +45551,7 @@ uint FUN_00058738()
    this is always called with (&DAT_00204880, &DAT_002048b0) -- confirmed
    crashing (EXC_BAD_ACCESS, param_1 read back truncated to ~12MB) on a
    real run even after widening the callee-side globals, because the
-   truncation was happening right here at the call boundary. DAT_00086978/
+   truncation was happening right here at the call boundary. g_sweep_velocity/
    DAT_00204874 (assigned from these) are already real pointer-typed
    globals, confirming the intent. Same pointer-truncation pattern fixed
    repeatedly this session. */
@@ -44144,7 +45566,7 @@ char *param_2;
   char cVar3;
   
   cVar3 = '\0';
-  DAT_00086978 = (short *)(param_1 + 6);
+  g_sweep_velocity = (short *)(param_1 + 6);
   DAT_002049c0 = *(undefined1 *)(param_1 + 0x28);
   DAT_002049bc = 0;
   DAT_00204874 = param_1;
@@ -44190,9 +45612,9 @@ void sweep_init_position()
   DAT_002049d0 = DAT_00204874[0x25];
   DAT_002049d1 = DAT_00204874[0x26];
   DAT_002049d2 = *(undefined2 *)(DAT_00204874 + 0x23);
-  *DAT_0008697c = *(short *)DAT_00204874 >> 5;
-  DAT_0008697c[1] = *(short *)(DAT_00204874 + 2) >> 5;
-  DAT_0008697c[2] = *(short *)(DAT_00204874 + 4) >> 3;
+  *g_sweep_foot_pos = *(short *)DAT_00204874 >> 5;
+  g_sweep_foot_pos[1] = *(short *)(DAT_00204874 + 2) >> 5;
+  g_sweep_foot_pos[2] = *(short *)(DAT_00204874 + 4) >> 3;
   DAT_00086980 = (*DAT_00204874 & 0x1f) << 8;
   DAT_00086982 = (DAT_00204874[2] & 0x1f) << 8;
   DAT_00086984 = (DAT_00204874[4] & 7) << 8;
@@ -44222,7 +45644,7 @@ void reticle_object_pick()
   if (*(short *)(DAT_00204874 + 10) < 1) {
     if (*(short *)(DAT_00204874 + 10) == 0) {
       bVar1 = DAT_002049d9;
-      if ((int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)DAT_0008697c + 4)) <
+      if ((int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)g_sweep_foot_pos + 4)) <
           (int)(uint)DAT_002049d9) {
         bVar1 = DAT_002049d8;
       }
@@ -44267,6 +45689,10 @@ void reticle_object_pick()
     }
     else {
       _DAT_0008699b = (ushort)DAT_002049d9;
+      if (getenv("UW_DEBUG_WALL"))
+        fprintf(stderr, "[reticle-falling] DAT_002049d9=%d DAT_002049de=%d DAT_002049dc=%d foot_z=%d vvel=%d\n",
+                (int)DAT_002049d9, (int)(char)DAT_002049de, (int)DAT_002049dc,
+                (int)*(short *)((char *)g_sweep_foot_pos + 4), (int)*(short *)(DAT_00204874 + 10));
       iVar4 = (int)(char)DAT_002049de;
       if (0 < iVar4) {
         uVar5 = (uint)DAT_002049dc;
@@ -44289,13 +45715,39 @@ void reticle_object_pick()
   }
   if (DAT_002049dc == 0) {
 LAB_00058a64:
-    /* No slope/step feature at this sub-position: the target foot height is
-       just the tile's flat floor (DAT_002049d9). Ghidra's `0x80 - height`
-       (tiletop minus the player's height) is the "no floor at all" sentinel;
-       used as the default it left a player who had walked off a ledge
-       floating near the ceiling instead of falling to the floor below, and
-       made the swept foot height oscillate when blocked beside a drop. */
-    _DAT_0008699b = (ushort)DAT_002049d9;
+    /* No slope/step feature at this sub-position. This whole block (44937-
+       44959) is ONLY reached from the *rising* branch (g_vertical_velocity
+       >= 1, the `if (*(short*)(DAT_00204874+10) < 1) {...} else {this}`
+       split above) -- the falling/at-rest case has its own, separate
+       target-height logic a few lines up and never falls through to here.
+       So _DAT_0008699b here plays the role of "ceiling", per
+       sweep_step_vertical's own header comment ("target surface height --
+       floor when falling, ceiling when rising").
+       Was `DAT_002049d9` (the tile's flat FLOOR) -- with no real
+       overhead feature to define a ceiling, that fed the floor height
+       into the "rising -- hit the ceiling if foot > target" check in
+       sweep_step_vertical, so a jump's very first upward step (foot Z
+       barely above the floor already) immediately registered as hitting
+       the "ceiling" and called sweep_land_on_surface(), landing the jump
+       before it could rise more than a couple of units -- confirmed live
+       via UW_DEBUG_JUMP2 (a rising jump-vert step landing at foot_z=98,
+       one unit above floor_z=96, is nowhere near a real ceiling).
+       Use `0x80 - player_height` instead -- the same "room's own physical
+       top, minus how tall the player is" sentinel already used a few
+       lines below as the upper bound for a real candidate ceiling height
+       (0x104 area) and elsewhere as the "no floor at all" sentinel -- so
+       with no real overhead obstruction, rising is only stopped by the
+       room's actual ceiling, not by the floor underfoot.
+       NOTE: an earlier comment here claimed this exact substitution had
+       already been tried and reverted for making a ledge-walk-off
+       "float near the ceiling" and "oscillate beside a drop" -- but
+       walking off a ledge only ever *falls* (velocity <= 0), which can
+       never reach this rising-only branch, so that regression (if real)
+       must have come from elsewhere. Regression-tested this change
+       against demo_ceiling_walk2/demo_ceiling_repro/demo_analog_walk3/
+       demo_critter_deep/demo_sack_final/demo_save_test/demo_realturn_full
+       -- all clean; see [[jump-physics-fix-and-open-integrator-issue]]. */
+    _DAT_0008699b = (ushort)(0x80 - (uint)*(byte *)(DAT_00204874 + 0x26));
   }
   else {
     iVar4 = (uint)DAT_002049dd + (int)(char)DAT_002049de;
@@ -44305,7 +45757,7 @@ LAB_00058a64:
          (ushort)(byte)(&DAT_00202c39)[iVar4 * 6] - (ushort)*(byte *)(DAT_00204874 + 0x26);
   }
   DAT_00204878 = 0;
-  if ((int)((uint)*(byte *)(DAT_00204874 + 0x25) + (int)*(short *)((char *)DAT_0008697c + 4)) <
+  if ((int)((uint)*(byte *)(DAT_00204874 + 0x25) + (int)*(short *)((char *)g_sweep_foot_pos + 4)) <
       (int)(uint)DAT_002049d9) {
     _DAT_0008699b = (ushort)DAT_002049d9;
     DAT_00204878 = 1;
@@ -44356,6 +45808,11 @@ int param_2;
   short local_20;
   short local_1e;
   
+  if (getenv("UW_DEBUG_WALL"))
+    fprintf(stderr, "[sweepsetup-wall] off0c=%d off0e=%d off14=%d off12(speed)=%d x_before=%d y_before=%d\n",
+            (int)*(short *)(DAT_00204874 + 0xc), (int)*(short *)(DAT_00204874 + 0xe),
+            (int)*(short *)(DAT_00204874 + 0x14), (int)*(short *)(DAT_00204874 + 0x12),
+            (int)*(short *)(DAT_00204874 + 6), (int)*(short *)(DAT_00204874 + 8));
   angle_to_screen_delta((int)*(short *)(DAT_00204874 + 0x21),&local_20,&local_1e);
   iVar10 = (int)*(short *)(DAT_00204874 + 0x14) * (int)local_20 >> 0xf;
   *(char *)(DAT_00204874 + 6) = (char)iVar10;
@@ -44363,20 +45820,25 @@ int param_2;
   iVar10 = (int)*(short *)(DAT_00204874 + 0x14) * (int)local_1e >> 0xf;
   *(char *)(DAT_00204874 + 8) = (char)iVar10;
   *(char *)(DAT_00204874 + 9) = (char)((uint)iVar10 >> 8);
-  *DAT_00086978 = *DAT_00086978 + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xc);
-  DAT_00086978[1] =
-       DAT_00086978[1] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xe);
-  psVar11 = DAT_00086978;
-  DAT_00086978[2] =
-       DAT_00086978[2] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10);
-  if ((DAT_00086978[1] == 0 && DAT_00086978[2] == 0) && *DAT_00086978 == 0) {
+  *g_sweep_velocity = *g_sweep_velocity + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xc);
+  g_sweep_velocity[1] =
+       g_sweep_velocity[1] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0xe);
+  psVar11 = g_sweep_velocity;
+  if (getenv("UW_DEBUG_STEPHEIGHT"))
+    fprintf(stderr, "[sweepsetup] speed(0x12)=%d fallflag(0x10)=%d vvel_before=%d -> delta=%d\n",
+            (int)*(short *)(DAT_00204874 + 0x12), (int)*(short *)(DAT_00204874 + 0x10),
+            (int)g_sweep_velocity[2],
+            (int)(*(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10)));
+  g_sweep_velocity[2] =
+       g_sweep_velocity[2] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10);
+  if ((g_sweep_velocity[1] == 0 && g_sweep_velocity[2] == 0) && *g_sweep_velocity == 0) {
     return 0;
   }
   if (param_1 != 0) {
     sweep_init_position(psVar11);
   }
   iVar8 = DAT_00204874;
-  psVar11 = DAT_00086978;
+  psVar11 = g_sweep_velocity;
   uVar1 = (int)*(short *)(DAT_00204874 + 6) >> 0x1f;
   uVar2 = (int)*(short *)(DAT_00204874 + 8) >> 0x1f;
   bVar3 = (int)(((int)*(short *)(DAT_00204874 + 6) ^ uVar1) - uVar1) <=
@@ -44397,7 +45859,7 @@ int param_2;
   DAT_0008698e = (short)((iVar10 + 1) % 2);
   (&DAT_00086986)[iVar10 * 2] = 0;
   (&DAT_00086987)[iVar10 * 2] = uVar5;
-  if (DAT_00086978[(short)DAT_0008698c] == 0) {
+  if (g_sweep_velocity[(short)DAT_0008698c] == 0) {
     iVar10 = (int)DAT_0008698e;
     (&DAT_00086986)[iVar10 * 2] = 1;
     (&DAT_00086987)[iVar10 * 2] = 0;
@@ -44407,7 +45869,7 @@ int param_2;
     DAT_00086990 = 0;
     DAT_00086992 = 0;
     DAT_00086994 = *(short *)(iVar8 + 0x12);
-    psVar11 = DAT_00086978;
+    psVar11 = g_sweep_velocity;
   }
   else {
     iVar10 = (int)DAT_0008698e;
@@ -44415,18 +45877,18 @@ int param_2;
     if (iVar7 < 0) {
       iVar7 = iVar7 + 0xff;
     }
-    uVar5 = Ordinal_2005((int)DAT_00086978[(short)DAT_0008698c],
-                         (iVar7 >> 8) * (int)DAT_00086978[iVar10]);
+    uVar5 = Ordinal_2005((int)g_sweep_velocity[(short)DAT_0008698c],
+                         (iVar7 >> 8) * (int)g_sweep_velocity[iVar10]);
     iVar10 = iVar10 * 2;
     (&DAT_00086986)[iVar10] = 0;
     (&DAT_00086987)[iVar10] = uVar5;
-    psVar11 = DAT_00086978;
-    iVar10 = (int)*(short *)(iVar8 + 0x12) * (int)DAT_00086978[(short)DAT_0008698c] * 0x10000;
+    psVar11 = g_sweep_velocity;
+    iVar10 = (int)*(short *)(iVar8 + 0x12) * (int)g_sweep_velocity[(short)DAT_0008698c] * 0x10000;
     uVar1 = iVar10 >> 0x1f;
     iVar10 = (iVar10 >> 0x10 ^ uVar1) - uVar1;
     DAT_00086992 = (ushort)((uint)(iVar10 * 0x10000) >> 0x10) & 0x1fff;
     DAT_00086990 = (undefined2)(iVar10 >> 0xd);
-    uVar6 = Ordinal_2005((int)DAT_00086978[(short)DAT_0008698c],0x2000);
+    uVar6 = Ordinal_2005((int)g_sweep_velocity[(short)DAT_0008698c],0x2000);
     uVar4 = (ushort)((int)uVar6 >> 0x1f);
     DAT_00086994 = ((ushort)uVar6 ^ uVar4) - uVar4;
   }
@@ -44435,25 +45897,39 @@ int param_2;
   if (((DAT_002049d2 == 1) || (psVar11[2] != 0)) && (param_2 != 0)) {
     collision_build_height_field(*(undefined1 *)(iVar8 + 0x27));
     collision_height_envelope(0,0);
-    psVar11 = DAT_00086978;
+    psVar11 = g_sweep_velocity;
   }
-  // PHYSICS: gravity gate -- psVar11[2] (== DAT_0020488a, the vertical velocity
-  // input) must be non-zero to run any vertical integration this sweep. It is
-  // only set for scripted vertical motion (jump / knockback / slope step); a
+  // PHYSICS: gravity gate -- psVar11[2] is g_sweep_velocity[2], which (g_sweep_velocity
+  // == (short*)(DAT_00204874+6)) is *(short*)(DAT_00204874+0xa) -- the exact
+  // same memory as g_vertical_velocity itself, just reached through a
+  // different pointer/name. So this really is checking g_vertical_velocity
+  // directly, and the accumulation a few lines up in this same function
+  // (g_sweep_velocity[2] += speed*g_fall_accel) is the ordinary "velocity +=
+  // accel*dt" integration -- confirmed against the #define at uw.c:2025.
+  // Must be non-zero to run any vertical integration this sweep. It is only
+  // set for scripted vertical motion (jump / knockback / slope step); a
   // plain walk off a ledge never sets it, so no gravity accumulates and the
   // step resolver snaps the foot down in one tick.
   if (psVar11[2] == 0) {
     DAT_0008698a = 0;
     return 1;
   }
-  // PHYSICS: seed the vertical velocity, sign from the requested direction
+  /* PHYSICS: seed the vertical direction for the fine sub-integrator from
+     the current velocity's sign. (Tried this explicitly via
+     g_vertical_velocity instead of psVar11[2] under UW_DEBUG_JUMP2 -- no
+     measurable change, because they're the same memory, per the note
+     above; this is not an independent alternative, just documenting that
+     equivalence was checked.) This does NOT explain why the jump's fine
+     vertical integrator (DAT_0008698a/_DAT_000869a1, in sweep_step_vertical)
+     barely accumulates net foot-Z movement during a real jump -- that
+     remains open, see [[jump-physics-fix-and-open-integrator-issue]]. */
   DAT_0008698a = 0x800;
   if (psVar11[2] < 1) {
     DAT_0008698a = -0x800;
   }
   reticle_object_pick(param_2);
-  psVar11 = DAT_00086978;
-  if (DAT_00086978[(short)DAT_0008698c] != 0) {
+  psVar11 = g_sweep_velocity;
+  if (g_sweep_velocity[(short)DAT_0008698c] != 0) {
     iVar10 = (int)*(short *)(&DAT_00086986 + (short)DAT_0008698c * 2);
     if (iVar10 < 0) {
       iVar10 = iVar10 + 0x1fff;
@@ -44462,8 +45938,8 @@ int param_2;
     if (iVar8 < 0) {
       iVar8 = iVar8 + 0x7ff;
     }
-    iVar10 = Ordinal_2005(((int)(iVar8) >> 0xb) * (int)DAT_00086978[(short)DAT_0008698c],
-                          (iVar10 >> 0xd) * (int)DAT_00086978[2] * 0x100);
+    iVar10 = Ordinal_2005(((int)(iVar8) >> 0xb) * (int)g_sweep_velocity[(short)DAT_0008698c],
+                          (iVar10 >> 0xd) * (int)g_sweep_velocity[2] * 0x100);
     if ((iVar10 < 0x8000) && (-0x8001 < iVar10)) {
       uVar9 = (undefined2)iVar10;
       goto LAB_000592f8;
@@ -44546,24 +46022,31 @@ void sweep_writeback_position()
      threw the player off the map. Restore proper halfword stores. */
   // PHYSICS: commit swept X (+0), Y (+2) and Z/foot height (+4) to the movement block
   *(short *)(DAT_00204874 + 0) =
-       (short)(*DAT_0008697c * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18));
+       (short)(*g_sweep_foot_pos * 0x20 + (((int)DAT_00086980 << 0x10) >> 0x18));
   *(short *)(DAT_00204874 + 2) =
-       (short)(DAT_0008697c[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18));
+       (short)(g_sweep_foot_pos[1] * 0x20 + (((int)DAT_00086982 << 0x10) >> 0x18));
   *(short *)(DAT_00204874 + 4) =
-       (short)(DAT_0008697c[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18));
+       (short)(g_sweep_foot_pos[2] * 8 + (((int)DAT_00086984 << 0x10) >> 0x18));
+  if (getenv("UW_DEBUG_JUMP"))
+    fprintf(stderr, "[writeback] z_after_commit=%d sweep_z=%d d49d4=0x%x d49d8=%d d49d2=%d byte5=%d fallflag=%d vvel=%d\n",
+            (int)*(short *)(DAT_00204874 + 4), (int)g_sweep_foot_pos[2], (unsigned)DAT_002049d4,
+            (int)DAT_002049d8, (int)DAT_002049d2, (int)*(char *)(DAT_00204874 + 5),
+            (int)*(short *)(DAT_00204874 + 0x10), (int)*(short *)(DAT_00204874 + 0xa));
   if (((((DAT_002049d4 & 0x2000) != 0) &&
-       (uVar1 = (int)((int)DAT_0008697c[2] - (uint)DAT_002049d8) >> 0x1f,
-       (int)(((int)DAT_0008697c[2] - (uint)DAT_002049d8 ^ uVar1) - uVar1) <=
+       (uVar1 = (int)((int)g_sweep_foot_pos[2] - (uint)DAT_002049d8) >> 0x1f,
+       (int)(((int)g_sweep_foot_pos[2] - (uint)DAT_002049d8 ^ uVar1) - uVar1) <=
        (int)(uint)*(byte *)((char *)DAT_00204874 + 0x25))) && (DAT_002049d2 == 1)) &&
      (*(char *)(DAT_00204874 + 5) == 0)) {
     /* re-snap Z (bytes +4..+5) to the floor height. FUN_00050aa8 wants the
        tile X and Y as halfwords; Ghidra rendered the args as X's two bytes
        and stored the result's low byte to +2 (Y-low) instead of +4. */
     uVar2 = FUN_00050aa8(*(short *)(DAT_00204874 + 0),*(short *)(DAT_00204874 + 2));
+    if (getenv("UW_DEBUG_JUMP"))
+      fprintf(stderr, "[writeback] *** RE-SNAP FIRED *** new_z=%d\n", (int)(short)uVar2);
     *(short *)(DAT_00204874 + 4) = (short)uVar2;
   }
   /* heading is the halfword at +0x21; Ghidra put the high byte at +0x11
-     (DAT_00204890's high byte), clobbering the Z-force accumulator. */
+     (g_fall_accel's high byte), clobbering the Z-force accumulator. */
   *(short *)(DAT_00204874 + 0x21) = DAT_002049ce;
   return;
 }
@@ -44571,7 +46054,7 @@ void sweep_writeback_position()
 
 
 // was FUN_000595d4 -- integrate one sub-tile step of the movement/collision sweep
-// PHYSICS: horizontal integrator -- advances the swept X/Y (DAT_0008697c[0/1])
+// PHYSICS: horizontal integrator -- advances the swept X/Y (g_sweep_foot_pos[0/1])
 // along the dominant/secondary axes and carries the sub-cell remainders
 int sweep_integrate_substep(param_1,param_2)
 short param_1;
@@ -44592,21 +46075,21 @@ short param_2;
     (&DAT_00086980)[iVar1] = sVar3 + (&DAT_00086980)[iVar1];
     iVar1 = (int)DAT_0008698c;
     if (*(short *)(&DAT_00086986 + iVar1 * 2) * iVar2 < 1) {
-      sVar3 = DAT_0008697c[iVar1] + -1;
+      sVar3 = g_sweep_foot_pos[iVar1] + -1;
     }
     else {
-      sVar3 = DAT_0008697c[iVar1] + 1;
+      sVar3 = g_sweep_foot_pos[iVar1] + 1;
     }
-    DAT_0008697c[iVar1] = sVar3;
+    g_sweep_foot_pos[iVar1] = sVar3;
     iVar2 = (int)DAT_0008698e;
     if (((&DAT_00086980)[iVar2] & 0xe000) != 0) {
       if ((short)(&DAT_00086980)[iVar2] < 1) {
-        sVar3 = DAT_0008697c[iVar2] + -1;
+        sVar3 = g_sweep_foot_pos[iVar2] + -1;
       }
       else {
-        sVar3 = DAT_0008697c[iVar2] + 1;
+        sVar3 = g_sweep_foot_pos[iVar2] + 1;
       }
-      DAT_0008697c[iVar2] = sVar3;
+      g_sweep_foot_pos[iVar2] = sVar3;
       iVar2 = (int)DAT_0008698e;
       sVar3 = (&DAT_00086980)[iVar2];
       *(char *)(&DAT_00086980 + iVar2) = (char)((int)sVar3 & 0x1fffU);
@@ -44630,23 +46113,23 @@ short param_2;
     if ((DAT_00086980 & 0xe000) != 0) {
       param_1 = 1;
       if ((short)DAT_00086980 < 1) {
-        sVar3 = *DAT_0008697c + -1;
+        sVar3 = *g_sweep_foot_pos + -1;
       }
       else {
-        sVar3 = *DAT_0008697c + 1;
+        sVar3 = *g_sweep_foot_pos + 1;
       }
-      *DAT_0008697c = sVar3;
+      *g_sweep_foot_pos = sVar3;
       DAT_00086980 = DAT_00086980 & 0x1fff;
     }
     if ((DAT_00086982 & 0xe000) != 0) {
       param_1 = 1;
       if ((short)DAT_00086982 < 1) {
-        sVar3 = DAT_0008697c[1] + -1;
+        sVar3 = g_sweep_foot_pos[1] + -1;
       }
       else {
-        sVar3 = DAT_0008697c[1] + 1;
+        sVar3 = g_sweep_foot_pos[1] + 1;
       }
-      DAT_0008697c[1] = sVar3;
+      g_sweep_foot_pos[1] = sVar3;
       DAT_00086982 = DAT_00086982 & 0x1fff;
     }
     iVar2 = (int)param_1;
@@ -44852,7 +46335,7 @@ void sweep_land_on_surface()
     sVar4 = 0;
   }
   else {
-    uVar11 = (int)*(short *)((char *)DAT_0008697c + 4) - (int)_DAT_0008699b;
+    uVar11 = (int)*(short *)((char *)g_sweep_foot_pos + 4) - (int)_DAT_0008699b;
     uVar8 = (int)uVar11 >> 0x1f;
     if (iVar12 < 0) {
       iVar12 = iVar12 + 3;
@@ -44866,7 +46349,7 @@ void sweep_land_on_surface()
   *(char *)((char *)DAT_00204874 + 0x13) = (char)((ushort)sVar4 >> 8);
   // PHYSICS: floor/ceiling collision -- snap the foot exactly onto the surface
   // and zero the vertical sub-unit accumulator so gravity restarts from rest
-  *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
+  *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
   psVar9 = DAT_00204874;
   DAT_00086984 = 0;
   /* PHYSICS: fall ended -- clear the accumulated downward velocity (+0xa) and the
@@ -44884,7 +46367,7 @@ void sweep_land_on_surface()
     }
   }
   if ((((DAT_00086998 == -1) && ((DAT_002049d4 & 1) != 0)) &&
-      ((int)*(short *)((char *)DAT_0008697c + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
+      ((int)*(short *)((char *)g_sweep_foot_pos + 4) <= (int)((uint)DAT_002049d0 + (uint)DAT_002049d8))) &&
      (DAT_00204874[5] < 0)) {
     sweep_kill_velocity();
     *(undefined1 *)(DAT_00204874 + 0x14) = 2;
@@ -44951,7 +46434,7 @@ void sweep_land_on_surface()
   *(undefined1 *)(DAT_00204874 + 8) = 0;
   *(undefined1 *)((char *)DAT_00204874 + 0x11) = 0;
   if (DAT_00086998 == -1) {
-    if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)DAT_0008697c + 4)) {
+    if ((int)((uint)DAT_002049d0 + (uint)DAT_002049d8) < (int)*(short *)((char *)g_sweep_foot_pos + 4)) {
       puVar7 = (ushort *)FUN_000535fc((int)*(short *)((char *)DAT_00204874 + 0x23));
       if ((*puVar7 & 0x1c0) != 0x40) goto LAB_0005a238;
       if ((DAT_002049d6 & 0x10) == 0) {
@@ -44990,7 +46473,7 @@ LAB_0005a33c:
 
 // was FUN_0005a348
 // PHYSICS: vertical integrator -- applies gravity/climb to the swept foot Z
-// (DAT_0008697c[2]) and resolves floor + ceiling contact. Only reached from
+// (g_sweep_foot_pos[2]) and resolves floor + ceiling contact. Only reached from
 // sweep_step when the "vertical motion active" flag *(DAT_00204874+10) is set.
 // _DAT_000869a1 = per-tick vertical rate (gravity accel / climb speed),
 // DAT_0008698a = signed vertical velocity, DAT_00086984 = sub-unit remainder,
@@ -45053,9 +46536,13 @@ short param_2;
     sVar4 = (short)((int)uVar5 >> 0xb);
   }
   DAT_00086984 = (ushort)(uVar3 * 0x10000 >> 0x10) & 0x7ff;
+  if (getenv("UW_DEBUG_JUMP2"))
+    fprintf(stderr, "[jump-vert] dat8698a=%d rate(869a1)=%d iVar6=%d uVar3=%u sVar4=%d frac(86984)=%u foot_z_before=%d\n",
+            (int)DAT_0008698a, (int)_DAT_000869a1, iVar6, uVar3, (int)sVar4,
+            (unsigned)DAT_00086984, (int)*(short *)((char *)g_sweep_foot_pos + 4));
   if (iVar2 == -1) {
     // PHYSICS: revert path -- just back the foot Z out by the computed delta
-    *(short *)((char *)DAT_0008697c + 4) = *(short *)((char *)DAT_0008697c + 4) + sVar4;
+    *(short *)((char *)g_sweep_foot_pos + 4) = *(short *)((char *)g_sweep_foot_pos + 4) + sVar4;
   }
   else {
     iVar2 = (int)sVar4;
@@ -45064,14 +46551,14 @@ short param_2;
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
       // PHYSICS: floor collision -- falling; if this step would drop the foot
       // below the target floor height, stop and snap to it (sweep_land_on_surface)
-      iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
+      iVar2 = iVar2 + *(short *)((char *)g_sweep_foot_pos + 4);
       if (iVar2 < _DAT_0008699b) goto LAB_0005a4f8;
     }
     else {
       *(undefined1 *)(DAT_00204874 + 0x28) = 0x10;
       // PHYSICS: ceiling collision -- rising; if this step would push the foot
       // above the target height, stop and snap to it
-      iVar2 = iVar2 + *(short *)((char *)DAT_0008697c + 4);
+      iVar2 = iVar2 + *(short *)((char *)g_sweep_foot_pos + 4);
       if (_DAT_0008699b < iVar2) {
 LAB_0005a4f8:
         sweep_land_on_surface();
@@ -45079,7 +46566,7 @@ LAB_0005a4f8:
       }
     }
     // PHYSICS: no surface hit this step -- commit the new foot Z
-    *(short *)((char *)DAT_0008697c + 4) = (short)iVar2;
+    *(short *)((char *)g_sweep_foot_pos + 4) = (short)iVar2;
   }
 LAB_0005a4ac:
   // PHYSICS: after the vertical step, run the horizontal sub-tile integrator for the same direction
@@ -45124,9 +46611,15 @@ undefined4 param_1;
     uVar3 = sweep_step_vertical(0,param_1);
   }
   if (bVar1) {
-    sweep_collision_flags();
+    /* Was `sweep_collision_flags();` with its return discarded, then
+       `collision_flags_to_locomotion_code()` called with no argument -- the same dropped-
+       argument pattern fixed in sweep_apply_collision just below (see
+       its comment): collision_flags_to_locomotion_code wants sweep_collision_flags()'s own
+       result, not whatever happens to be left in a register. Capture and
+       forward it explicitly. */
+    ushort uVar4 = sweep_collision_flags();
     DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
-    uVar2 = FUN_0005a630();
+    uVar2 = collision_flags_to_locomotion_code(uVar4);
     *(undefined1 *)(DAT_00204874 + 0x28) = uVar2;
   }
   return uVar3;
@@ -45134,7 +46627,13 @@ undefined4 param_1;
 
 
 
-uint FUN_0005a630(param_1)
+// was FUN_0005a630 -- map a raw sweep_collision_flags() bitmask into the
+// small locomotion-state code (1/2/4/8/0x10/0x20) set_locomotion_state
+// reads from the movement block's +0x28 byte to pick walk/swim/fly/fall
+// animation and physics. Always called right after sweep_collision_flags()
+// with its return value (both call sites had this dropped by Ghidra --
+// fixed this session, see [[water-wading-and-wall-slide-findings]]).
+uint collision_flags_to_locomotion_code(param_1)
 short param_1;
 
 {
@@ -45201,11 +46700,11 @@ uint sweep_collision_flags()
      heading/height fields into this block but never the position, and Ghidra
      dropped whatever kept it current -- so DAT_002049c8/ca sat at (0,0) and
      every collision test hit tile (0,0), letting the player walk straight
-     through solid walls and off the map.  DAT_0008697c is the live position
+     through solid walls and off the map.  g_sweep_foot_pos is the live position
      in the same 1/8-tile units these readers expect (>>3 -> tile). */
-  DAT_002049c8 = DAT_0008697c[0];
-  DAT_002049ca = DAT_0008697c[1];
-  if (tilemap_lookup((short)((int)DAT_0008697c[0] >> 3),(short)((int)DAT_0008697c[1] >> 3)) ==
+  DAT_002049c8 = g_sweep_foot_pos[0];
+  DAT_002049ca = g_sweep_foot_pos[1];
+  if (tilemap_lookup((short)((int)g_sweep_foot_pos[0] >> 3),(short)((int)g_sweep_foot_pos[1] >> 3)) ==
       (void *)0x0) {
     /* stepped outside the 64x64 map -- the border is always solid; report a
        hard block so sweep_apply_collision backs the move out. (Also stops
@@ -45235,9 +46734,13 @@ uint sweep_collision_flags()
   }
   // PHYSICS: floor collision -- compare the foot Z against the destination
   // tile's floor height _DAT_0008699b to decide level / step-up / step-down / fall
-  iVar4 = (int)*(short *)((char *)DAT_0008697c + 4);
+  iVar4 = (int)*(short *)((char *)g_sweep_foot_pos + 4);
   iVar6 = (int)_DAT_0008699b;
   iVar5 = (int)DAT_00086998;
+  if (getenv("UW_DEBUG_JUMP"))
+    fprintf(stderr, "[collision-flags] iVar4(footz)=%d iVar6(floorz)=%d iVar5(slot)=%d bVar7=%d bVar8=%d local_3c=0x%x DAT_00086990=%d DAT_00086996=%d\n",
+            iVar4, iVar6, iVar5, (int)bVar7, (int)bVar8, (unsigned)local_3c,
+            (int)DAT_00086990, (int)DAT_00086996);
   if (iVar4 == iVar6) {
     if (((iVar5 != -1) && (((&DAT_00202c93)[_DAT_00086999 * 0xd] & 2) == 2)) && (bVar7)) {
       local_3c = local_3c & 0xfffb | 0x80;
@@ -45259,7 +46762,30 @@ uint sweep_collision_flags()
       // (iVar4 - iVar6 < 0) always satisfies the guard, so auto-stick up a slope
       // is unchanged.
       uVar3 = iVar4 - iVar6 >> 0x1f;
-      if (((int)((iVar4 - iVar6 ^ uVar3) - uVar3) <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)) ||
+      if (getenv("UW_DEBUG_JUMP"))
+        fprintf(stderr, "[jump-collision] foot_z=%d floor_z=%d diff=%d step_limit=%d fallflag(0x10)=%d vvel(0xa)=%d\n",
+                iVar4, iVar6, iVar4 - iVar6, (int)(uint)*(byte *)(DAT_00204874 + 0x27),
+                (int)*(short *)(DAT_00204874 + 0x10), (int)*(short *)(DAT_00204874 + 0xa));
+      /* The "within step limit" clause below was unconditional -- unlike
+         the auto-stick clause right next to it, which correctly requires
+         g_vertical_velocity==0 (offset 0xa, "no vertical motion is
+         active" per the comment above) before snapping. A jump's whole
+         ascent (and the tail of its descent) passes through foot-Z
+         values within a few units of the floor's while g_fall_accel
+         (offset 0x10) is nonzero and g_vertical_velocity is large and
+         real -- confirmed live via UW_DEBUG_JUMP: foot_z=98 floor_z=96
+         diff=2 step_limit=8, comfortably "within limit", while
+         g_fall_accel=-4 and g_vertical_velocity=267, i.e. clearly
+         mid-jump, not standing on a small ledge. That silently snapped
+         the player straight back onto the floor a few ticks into every
+         jump, before it could climb high enough to look like it left
+         the ground. Add the same g_fall_accel==0 gate here: no real
+         gravity arc in progress (matches the comment's own claim that
+         ordinary small steps involve "no gravity" at all, so this
+         should never fire while a real jump/fall is live) means this is
+         genuinely just an ordinary walked step, safe to snap instantly. */
+      if ((*(short *)(DAT_00204874 + 0x10) == 0 &&
+           (int)((iVar4 - iVar6 ^ uVar3) - uVar3) <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)) ||
          (((((*(short *)(DAT_00204874 + 10) == 0 && ((DAT_002049d6 & 0x800) == 0)) &&
             ((DAT_002049d4 & 4) != 0)) &&
            (iVar4 - iVar6 <= (int)(uint)*(byte *)(DAT_00204874 + 0x27)))))) {
@@ -45279,7 +46805,7 @@ LAB_0005a970:
                 DAT_00204870 = 1;
                 // PHYSICS: floor collision -- step resolved: snap the foot Z onto
                 // this tile's floor in a single tick (no gravity for small steps)
-                *(short *)((char *)DAT_0008697c + 4) = _DAT_0008699b;
+                *(short *)((char *)g_sweep_foot_pos + 4) = _DAT_0008699b;
                 uVar3 = (int)((int)_DAT_0008699b - (uint)DAT_002049d8) >> 0x1f;
                 if ((int)(uint)*(byte *)(DAT_00204874 + 0x25) <
                     (int)(((int)_DAT_0008699b - (uint)DAT_002049d8 ^ uVar3) - uVar3)) {
@@ -45344,10 +46870,10 @@ LAB_0005abe4:
   if ((((((DAT_002049d6 & 0x100) != 0) && (bVar8)) && (*(short *)(DAT_00204874 + 10) == 0)) &&
       (*(short *)(DAT_00204874 + 0x10) == 0)) &&
      ((int)(uint)DAT_002049d9 <=
-      (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)DAT_0008697c + 4)))) {
-    *(ushort *)((char *)DAT_0008697c + 4) = (ushort)DAT_002049d9;
+      (int)((uint)*(byte *)(DAT_00204874 + 0x27) + (int)*(short *)((char *)g_sweep_foot_pos + 4)))) {
+    *(ushort *)((char *)g_sweep_foot_pos + 4) = (ushort)DAT_002049d9;
     uVar1 = local_3c & 0xfeff | 4;
-    if (*(ushort *)((char *)DAT_0008697c + 4) != (ushort)DAT_002049d8) {
+    if (*(ushort *)((char *)g_sweep_foot_pos + 4) != (ushort)DAT_002049d8) {
       uVar1 = local_3c & 0xfefb;
     }
   }
@@ -45361,7 +46887,7 @@ LAB_0005abe4:
   // this tile's floor that it is a wall face, not a step
   if (((local_3c & 0x80) == 0) &&
      ((int)(uint)DAT_002049d9 <
-      (int)((int)*(short *)((char *)DAT_0008697c + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
+      (int)((int)*(short *)((char *)g_sweep_foot_pos + 4) - (uint)*(byte *)(DAT_00204874 + 0x25)))) {
     local_3c = local_3c | 0x1000;
   }
   return (int)(short)local_3c;
@@ -45380,41 +46906,100 @@ void sweep_apply_collision()
   
   // PHYSICS: collide this sub-step and act on the result flags
   local_14[0] = sweep_collision_flags();
+  if (getenv("UW_DEBUG_JUMP"))
+    fprintf(stderr, "[apply-collision] raw_flags=0x%x masked=0x%x mask(DAT_002048bc)=0x%x\n",
+            (unsigned)local_14[0], (unsigned)(local_14[0] & ~*DAT_002048bc),
+            (unsigned)(unsigned char)*DAT_002048bc);
   DAT_002049c0 = *(undefined1 *)(DAT_00204874 + 0x28);
-  uVar1 = FUN_0005a630();
+  /* Was `collision_flags_to_locomotion_code()` with no argument, relying on local_14[0] still
+     sitting in the same register collision_flags_to_locomotion_code's declared `short param_1`
+     reads it from -- undefined behavior, latent since this line predates
+     any work this session. Adding the UW_DEBUG_JUMP fprintf/getenv calls
+     just above (real function calls, clobbering caller-saved registers)
+     broke whatever register-leftover coincidence made this "work" before,
+     which is almost certainly what silently broke water/swim-mode
+     detection (set_locomotion_state's `param_1 & 0x22` swim check reads
+     this exact byte) -- confirmed this was already a dropped-argument bug
+     matching this whole session's recurring class; pass local_14[0]
+     explicitly instead of relying on whatever's left in the register. */
+  uVar1 = collision_flags_to_locomotion_code(local_14[0]);
   *(undefined1 *)(DAT_00204874 + 0x28) = uVar1;
   if ((local_14[0] & 0xc000) == 0) {
     local_14[0] = local_14[0] & ~*DAT_002048bc;
     if (local_14[0] == 0) {
+      if (getenv("UW_DEBUG_JUMP"))
+        fprintf(stderr, "[apply-collision] -> clean resolve (no flags after mask)\n");
       return;
     }
+    if (getenv("UW_DEBUG_JUMP"))
+      fprintf(stderr, "[apply-collision] cond1(local_14&bc[1]==0)=%d bc[1]=0x%x fnptr=%p\n",
+              (int)((local_14[0] & DAT_002048bc[1]) == 0), (unsigned)(unsigned char)DAT_002048bc[1],
+              *(void **)(DAT_002048bc + 4));
     if (((local_14[0] & DAT_002048bc[1]) == 0) ||
        (iVar2 = (**(codeval **)(DAT_002048bc + 4))(local_14), iVar2 == 0)) {
       // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
-      // slide the move along it (sweep_slide_along_wall) instead of stopping dead
-      bVar3 = (local_14[0] & 0x700) != 0;
+      // slide the move along it (sweep_slide_along_wall) instead of stopping dead.
+      /* Narrowed from the full 0x700 mask to 0x600 (0x200|0x400): 0x100
+         (the bit this drops) isn't only set by a real horizontal wall hit
+         -- sweep_collision_flags also ORs it in from the destination
+         tile's own baseline property flags (DAT_002049d6|DAT_002049d4)
+         and from an unrelated "iVar4 < DAT_002049d9" height check,
+         neither of which means "hit an angled face". 0x200/0x400 come
+         from the genuine "ceiling clearance" check a few lines up in
+         sweep_collision_flags (target floor + player height doesn't fit
+         under the tile top) -- a real geometric obstruction, unlike the
+         coincidental 0x100 baseline bit.
+         Confirmed live via UW_DEBUG_JUMP/JUMP2: a comfortably airborne,
+         purely vertical jump (foot_z=98, floor_z=96, no horizontal motion
+         at all) got local_14[0]=0x1100 (ONLY the 0x100 bit, never 0x200/
+         0x400) every tick from that baseline alone, which sweep_slide_
+         along_wall's `sweep_step(-1)` then reverted -- undoing that
+         entire tick's vertical integration and pinning the coarse foot Z
+         near the jump's initial peak for dozens of ticks.
+         Two narrower gates were tried and reverted first: g_fall_accel==0
+         (also goes nonzero for perfectly ordinary walking once a step/
+         fall gets armed a few lines below, letting a player walk straight
+         through a wall with zero resistance once gravity got armed -- see
+         [[water-wading-and-wall-slide-findings]]) and DAT_00086990==0
+         (turned out to be 0 in both the jump AND the broken wall-walk
+         repro alike, so it didn't discriminate at all -- reintroduced the
+         jump regression without fixing the wall one). Checking which
+         SPECIFIC bits are set, rather than gating on unrelated player
+         state, cleanly distinguishes the two live-tested cases above. */
+      bVar3 = (local_14[0] & 0x600) != 0;
       if (bVar3) {
         sweep_slide_along_wall((local_14[0] & 0x400) == 0);
       }
       // PHYSICS: wall collision -- 0x1000 = fully blocked: end the sub-tile sweep
       if ((local_14[0] & 0x1000) == 0) {
+        if (getenv("UW_DEBUG_JUMP"))
+          fprintf(stderr, "[apply-collision] -> slide/no-block, return (0x1000 not set)\n");
         return;
       }
       if (*(short *)(DAT_00204874 + 0x10) != 0) {
+        if (getenv("UW_DEBUG_JUMP"))
+          fprintf(stderr, "[apply-collision] -> fully blocked, g_fall_accel already active, return\n");
         return;
       }
       // PHYSICS: wall collision -- arm the vertical path (DAT_00204874+0x10) and
       // hand off to sweep_restart_remaining to finish/redirect the blocked move
       *(undefined1 *)(DAT_00204874 + 0x10) = 0xfc;
       *(undefined1 *)(DAT_00204874 + 0x11) = 0xff;
+      if (getenv("UW_DEBUG_JUMP"))
+        fprintf(stderr, "[apply-collision] -> fully blocked, arming g_fall_accel=0xfc and restarting\n");
       sweep_restart_remaining(bVar3);
       return;
     }
     // PHYSICS: soft block resolved -- back the sub-step out (sweep_step(-1))
+    if (getenv("UW_DEBUG_JUMP"))
+      fprintf(stderr, "[apply-collision] -> SOFT BLOCK: reverting this sub-step (sweep_step(-1))\n");
     sweep_step(0xffffffff);
   }
   else {
     // PHYSICS: hard block (0xc000) -- revert the sub-step and, on 0x4000, kill velocity
+    if (getenv("UW_DEBUG_JUMP"))
+      fprintf(stderr, "[apply-collision] -> HARD BLOCK (0x%x): reverting%s\n",
+              (unsigned)local_14[0], (local_14[0] & 0x4000) != 0 ? " + killing velocity" : "");
     sweep_step(0xffffffff);
     if ((local_14[0] & 0x4000) != 0) {
       sweep_kill_velocity();
@@ -45538,7 +47123,7 @@ undefined4 reset_texture_id_lists()
 // was FUN_0005b188 -- read the level's 0x7a-byte tmap-id block (48 wall + 10 floor + 3) from the .ark
 bool load_level_texture_ids(param_1,param_2)
 /* .ark handle-struct pointer -- was `undefined4`, truncating it before
-   FUN_0001613c. */
+   read_archive_entry. */
 undefined1 * param_1;
 int param_2;
 
@@ -45549,7 +47134,7 @@ int param_2;
   int iVar4;
   /* local_90[48] / local_30[10] / local_1c[6] were separate Ghidra
      locals whose names encode adjacent stack offsets (-0x90, -0x30,
-     -0x1c) -- one contiguous 128-byte / 64-short region. FUN_0001613c
+     -0x1c) -- one contiguous 128-byte / 64-short region. read_archive_entry
      reads exactly 0x7a = 122 bytes into it (96 + 20 + 6), overflowing
      local_90 into the other two by design. As separate arrays with a
      stack canary between them that read smashed the canary (SIGABRT).
@@ -45557,7 +47142,7 @@ int param_2;
      [58+i]. */
   undefined2 local_tmap_buf [64];
 
-  sVar3 = FUN_0001613c(param_1,param_2 + 0x11,local_tmap_buf);
+  sVar3 = read_archive_entry(param_1,param_2 + 0x11,local_tmap_buf);
   if (sVar3 != 0x7a) {
     FUN_0007ea34(s_bad_tmap_ids_size_000869b7 + 1);
   }
@@ -45707,7 +47292,9 @@ void FUN_0005b36c()
   } while (cVar1 != '\0');
   DAT_0023ae30 = DAT_0023ae3c + local_11c[0] * 0x100;
   load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
-  FUN_00041db0();
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] FUN_0005b36c: about to call load_door_frames (door loader), DAT_00202734=%d\n", (int)DAT_00202734);
+  load_door_frames();
   return;
 }
 
@@ -45739,7 +47326,7 @@ char *param_4;
     /* param_1 is built from "\DATA\" (s__DATA__00085970) with no filename
        ever appended -- Ghidra dropped whatever Ordinal_1063 call(s) would
        have added the actual texture-LUT filename (same unrecoverable-
-       string-reference class as the .GR extension fix in FUN_00041304,
+       string-reference class as the .GR extension fix in open_gr_resource_file,
        but here the reference vanished entirely rather than resolving to
        a wrong guess, and none of the candidate DATA files match the
        expected "byte 0 == 2" format header, so there's nothing to guess
@@ -45877,6 +47464,29 @@ void FUN_0005b828()
 {
   FUN_00012958();
   FUN_00038680();
+  if (getenv("UW_DUMP_MODEL_RAW")) {
+    unsigned char *_b = (unsigned char *)&DAT_00123ccc;
+    int _k;
+    int _npts = *(int *)_b;
+    int _nparts = *(int *)(_b + 4);
+    fprintf(stderr, "[modelraw] npts=%d nparts=%d\n", _npts, _nparts);
+    for (_k = 0; _k < _npts; _k++) {
+      float x = *(float *)(_b + 8 + _k*0xc);
+      float y = *(float *)(_b + 8 + _k*0xc + 4);
+      float z = *(float *)(_b + 8 + _k*0xc + 8);
+      fprintf(stderr, "[modelraw] pt[%d] = (%g,%g,%g)\n", _k, x, y, z);
+    }
+    for (_k = 0; _k < _nparts && _k < 40; _k++) {
+      int base = 0xc14 + _k*0x60;
+      int vcount = *(int *)(_b + base);
+      fprintf(stderr, "[modelraw] part[%d] vcount=%d verts=", _k, vcount);
+      int j;
+      for (j = 0; j < vcount && j < 8; j++) {
+        fprintf(stderr, "%d ", *(int *)(_b + base + 4 + j*4));
+      }
+      fprintf(stderr, "\n");
+    }
+  }
   FUN_0003894c();
   FUN_00038acc();
   FUN_00038ab0();
@@ -48591,6 +50201,278 @@ LAB_0005e7e0:
 
 
 
+// New (not decompiled from the binary): revives the ".E" 3D model data
+// FUN_00038680/parse_e_model_file already load at startup (data/DATA3D/*.E --
+// see uw.c ~24980) into 29 never-consumed buffers. Confirmed via a real
+// Ghidra reference search against UU.exe (whole-binary XREFs to all 29
+// buffer addresses, plus a raw byte-pattern data-table scan, plus a full
+// .text undefined-gap scan showing zero room for an undiscovered function)
+// that this WinCE port genuinely never wired a model renderer to this
+// data -- there is no hidden consumer to find, this is new code.
+//
+// Buffer layout (empirically confirmed against ROCKSMAL.E's real point/
+// part text, after fixing parse_e_model_file's own dropped-argument X-coordinate
+// bug -- see that fix's comment): offset 0 = point count (int), offset 4 =
+// part count (int, occasionally one spurious trailing entry with vcount<3
+// -- filtered below), points at offset 8 + i*0xc as 3 LE floats (X, Y-up,
+// Z-depth, matching the file's own axis order), parts at offset 0xc14 +
+// p*0x60: vertex count (int) then that many vertex-index ints (into the
+// points array) starting at +4.
+//
+// Rendering approach: this pushes each model FACE as its own record into
+// the shared tile/object geometry arena (DAT_000a85d0_backing, see its own
+// doc comment ~uw.c:116), reusing render_visible_tile_list's existing
+// N-gon fan rasterization. Model points are transformed by the object's
+// heading (0-7, 45-degree steps) and added to the object's already-
+// computed world anchor (DAT_0023b904/91c/920 -- despite the "scr" naming
+// from an earlier session's debug print, these are pre-translate world-ish
+// raw coordinates in the same 256-units/tile scale as tile geometry, NOT
+// final screen pixels -- confirmed by the boulder's observed anchor X of
+// 4208 matching tile ~16.4, not a plausible pixel column) in the same
+// (X, height, depth) field order process_visible_tile_cell uses for tile
+// vertices, then left for translate_verts_to_camera_space /
+// project_verts_through_view_matrix to camera-transform and project
+// exactly like tile geometry -- genuine per-vertex 3D projection, not a
+// screen-space billboard shortcut. UW_MODEL_SCALE (default 8.0) converts
+// the model's small local units (a rock spans roughly -18..24) into that
+// world scale; tune visually, same spirit as the existing UW_DECAL_PUSH
+// knob. Faces render texture-less (texptr left 0, matching how tile
+// raster_triangle calls with tex=0x0 already show up during normal
+// rendering) with a flat shade byte -- deliberately not textured, per the
+// project's "flat-shaded is a fine first cut" bar; a real UV/material
+// path (EXTENDED_COLORS in the .E format) is future work.
+static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, void *texptr)
+{
+  int npts = *(int *)model;
+  int nparts = *(int *)(model + 4);
+  if (npts <= 0 || npts > 600 || nparts <= 0) return;
+
+  /* The object's own world anchor height (DAT_0023b91c) appears to be a
+     ceiling-relative or otherwise offset reference rather than the tile's
+     floor height -- adding model-local Y (which is >=0, model-space "up"
+     from each model's own local origin) directly on top of it left the
+     rock floating up near the ceiling. A per-model yoff (g_model_map,
+     caller-supplied) empirically drops each model back onto the floor;
+     this is a real calibration gap (same class as the open "calibration
+     still open" note on the tmap-tile milestone), not a derivation from
+     the tile's real floor-height field -- see object-rendering-findings.txt. */
+  { const char *_s = getenv("UW_MODEL_SCALE"); if (_s) scale = atof(_s); }
+  { const char *_s = getenv("UW_MODEL_YOFF"); if (_s) yoff = atof(_s); }
+  { const char *_s = getenv("UW_MODEL_YCLIP"); if (_s) y_clip = atof(_s); }
+  double ang = heading * 45.0 * (3.14159265358979 / 180.0);
+  double ca = cos(ang), sa = sin(ang);
+
+  short ax = (short)DAT_0023b904;
+  short ah = (short)DAT_0023b91c;
+  short az = (short)DAT_0023b920;
+
+  /* Same ~512-vertex/~490-record arena cap the tile/quad paths already
+     guard (see that comment above LAB_emit_mesh_sprite_quad) -- sized here
+     for this specific model's real point/part counts rather than a fixed
+     4-vertex/1-record budget. */
+  if (DAT_0023b838 + npts >= 512 - 4 || DAT_0023b83c + nparts >= 490 - 1) return;
+
+  int base_vtx = DAT_0023b838;
+  int i;
+  for (i = 0; i < npts; i++) {
+    float mx = *(float *)(model + 8 + i*0xc) + (float)xoff_local;
+    float my = *(float *)(model + 8 + i*0xc + 4);
+    float mz = *(float *)(model + 8 + i*0xc + 8);
+    /* Clamp, don't drop. DFRAME.E's two "riser" faces aren't just
+       oversized junk above the real frame -- their BOTTOM edge (local Y
+       208) is the header panel connecting the two doorposts across the
+       top, and only their TOP edge (Y 1024) is the over-tall part
+       presumably meant for a ceiling clip we don't have. An earlier
+       version of this cutoff dropped the whole FACE if any vertex
+       exceeded y_clip, which silently deleted that connecting header
+       too -- confirmed visually (UW_MODEL_NO_LEAF=1 screenshot) as two
+       disconnected, floor-level post stumps with open background wall
+       showing between and above them, not a real archway. Clamping each
+       vertex's local Y to the cutoff instead keeps the connecting
+       geometry, just capping its height at a plausible ceiling rather
+       than drawing it unclipped to 4x a room's real height. Safe to
+       clamp per-vertex (not per-face) here because the affected points
+       (DFRAME.E's Y=1024 set) aren't shared with any other, unclipped
+       part. */
+    if (y_clip > 0 && my > y_clip) my = (float)y_clip;
+    double rx = mx*ca - mz*sa;
+    double rz = mx*sa + mz*ca;
+    float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + i)*0xc);
+    vf[0] = (float)(ax + rx*scale);
+    vf[1] = (float)(ah + my*scale + yoff);
+    vf[2] = (float)(az + rz*scale);
+  }
+  DAT_0023b838 = base_vtx + npts;
+  DAT_000a85d0 = DAT_0023b838;
+
+  int emitted = 0;
+  for (i = 0; i < nparts; i++) {
+    int pbase = 0xc14 + i*0x60;
+    int vcount = *(int *)(model + pbase);
+    if (vcount < 3 || vcount > 4) continue;
+    int v0 = *(int *)(model + pbase + 4);
+    int v1 = *(int *)(model + pbase + 8);
+    int v2 = *(int *)(model + pbase + 12);
+    int v3 = (vcount == 4) ? *(int *)(model + pbase + 16) : v2;
+    if (v0 < 0 || v0 >= npts || v1 < 0 || v1 >= npts || v2 < 0 || v2 >= npts || v3 < 0 || v3 >= npts) continue;
+
+    int rec = DAT_0023b83c;
+    int rb = rec * 0x60;
+    *(int *)(&DAT_000acde4 + rb) = 4;
+    *(int *)(&DAT_000acde8 + rb) = base_vtx + v0;
+    *(int *)(&DAT_000acdec + rb) = base_vtx + v1;
+    *(int *)(&DAT_000acdf0 + rb) = base_vtx + v2;
+    *(int *)(&DAT_000acdf4 + rb) = base_vtx + v3;
+    /* Real wall-rendering code (uw.c ~49025-49032, right above
+       emit_tile_objects) writes the texture's tile size (DAT_0023b824 --
+       0x10=16 for the wall-sized arena slot, 0x40=64 for floor/ceiling)
+       into BOTH of these fields, not zero -- confirmed this is what was
+       missing for texturing: with these left at 0, a textured record
+       drew as a perfectly flat, uniform color (both the wall-textured
+       frame and, before that experiment was reverted, the sprite-
+       textured leaf) instead of showing any real per-pixel texture
+       variation, even though the texture pointer itself decoded real
+       image data (checked via a nonzero-pixel histogram). 16 matches the
+       wall-sized convention since these are all wall-scale surfaces. */
+    int _texsize = texptr ? 16 : 0;
+    *(int *)(&DAT_000ace00 + rb) = _texsize;
+    *(int *)(&DAT_000ace04 + rb) = _texsize;
+    *(int *)(&DAT_000ace08 + rb) = 0;
+    *(int *)(&DAT_000ace0c + rb) = 0;
+    *(int *)(&DAT_000ace10 + rb) = 0;
+    *(int *)(&DAT_000ace14 + rb) = 0;
+    *(int *)(&DAT_000ace18 + rb) = 0;
+    *(int *)(&DAT_000ace1c + rb) = 0;
+    *(int *)(&DAT_000ace20 + rb) = 0;
+    *(int *)(&DAT_000ace24 + rb) = 0;
+    /* Same truncated-in-record-field problem every other texture
+       consumer in this file already worked around (the field is 4
+       bytes, a real pointer is 8 on this host): publish through the
+       g_tile_texptr_emit[] side channel render_visible_tile_list
+       actually reads from (via near_clip's out-index remap), keyed by
+       this record's own index, same convention as tile walls and the
+       object billboard sprite decoder. texptr==0 keeps the existing
+       flat-shaded fallback (raster_triangle already handles tex=0x0). */
+    *(int *)(&DAT_000acdfc + rb) = 0;
+    if (texptr && (unsigned)rec < UW_MAX_VIS_TILES) g_tile_texptr_emit[rec] = texptr;
+    short shade = (short)DAT_000da47c;
+    *(short *)(&DAT_000ace30 + rb) = shade;
+    *(short *)(&DAT_000ace32 + rb) = (short)(shade >> 15);
+    DAT_0023b83c = rec + 1;
+    DAT_000a85d4 = DAT_0023b83c;
+    emitted++;
+  }
+  if (getenv("UW_DEBUG_MODEL")) {
+    fprintf(stderr, "[model] heading=%d anchor=(%d,%d,%d) npts=%d nparts=%d emitted=%d base_vtx=%d\n",
+            heading, ax, ah, az, npts, nparts, emitted, base_vtx);
+  }
+}
+
+// Object-id -> DATA3D model lookup. comobj.dat has no id->model field
+// anywhere (confirmed by the due-diligence Ghidra searches in this
+// session's Models milestone -- see memory.md/object-rendering-findings.txt),
+// so every row here is hand-found the same way: UW_DUMP_NAMES to resolve
+// page-4 object names, cross-checked against UW_DUMP_OBJECTS_FILE to see
+// real placed ids on a level. scale/yoff/y_clip are per-entry because each
+// model's own local-unit convention differs, confirmed by actually reading
+// each .E file's POINTS range rather than assuming one scale fits all:
+// ROCKSMAL/MED/BIG's local points span roughly -20..25 on every axis (an
+// organic model authored in some smaller, model-specific unit -- empirically
+// needs scale=8 to read as a plausible rock size), while FBRIDGE/SHRINE/
+// DFRAME's points already span close to real tile-sized ranges (e.g.
+// FBRIDGE's X/Z run -128..128, exactly one 256-unit tile) -- architectural
+// models appear to be authored directly in world units, scale=1. DFRAME.E
+// additionally contains two Y ranges: a real frame (local Y 0..208, a
+// plausible door height) and separate "riser" parts extending to local Y
+// 1024 (4x a room's height) -- presumably meant to be clipped against each
+// room's real ceiling by whatever the original renderer's ceiling-clip step
+// was; we don't have that, so y_clip drops whole faces above the cutoff
+// instead of drawing the oversized risers unclipped (see emit_model_object).
+// Tuned visually per family via screenshots at known repro tiles, same
+// process as the original boulder calibration -- not derived from the
+// tile's real floor-height field (open item, see object-rendering-
+// findings.txt). UW_MODEL_SCALE/UW_MODEL_YOFF/UW_MODEL_YCLIP override every
+// entry at once, for interactive re-tuning.
+typedef struct {
+  int id;
+  void *model;
+  const char *name;
+  double scale;
+  double yoff;
+  double y_clip; // 0 = no clip
+  void *model2;  // optional second model composited at the same anchor
+                 // (the door family's leaf, DOOR.E, alongside its frame)
+  const char *name2;
+  double x_off2; // model2's local-space X shift before rotation, to
+                  // center it in model 1's opening
+} ModelMapEntry;
+
+static const ModelMapEntry g_model_map[] = {
+  // Boulders ("a_large boulder"=0x153/0x154, "a_boulder"=0x155,
+  // "a_small boulder"=0x156) -- calibrated at the original repro tile.
+  { 0x153, &DAT_0012b524, "ROCKBIG",  8.0, -200.0, 0, 0, 0, 0 },
+  { 0x154, &DAT_0012b524, "ROCKBIG",  8.0, -200.0, 0, 0, 0, 0 },
+  { 0x155, &DAT_001278f8, "ROCKMED",  8.0, -200.0, 0, 0, 0, 0 },
+  { 0x156, &DAT_00123ccc, "ROCKSMAL", 8.0, -200.0, 0, 0, 0, 0 },
+  // "a_bridge" = 0x164 (single id, no size variants found in the name
+  // table or any placed level).
+  { 0x164, &DAT_00118848, "FBRIDGE",  1.0, -100.0, 0, 0, 0, 0 },
+  // "a_shrine" = 0x157. Emits real geometry (confirmed via UW_DEBUG_MODEL,
+  // ~76 of 77 faces) but not yet visually confirmed on screen -- every
+  // standing tile/heading tried around its one placed instance on the
+  // test level showed ordinary walls, not the shrine (see object-
+  // rendering-findings.txt). Left wired (same treatment as the
+  // architectural models above) since the failure looks positional/
+  // occlusion-related, not a scale or Y problem -- open item.
+  { 0x157, &DAT_0013a5d4, "SHRINE",   1.0, -100.0, 0, 0, 0, 0 },
+  // Door family: DFRAME.E (the frame) plus DOOR.E (the leaf, model2) --
+  // DOOR.E's own local X (0..128) is shifted by x_off2=-64 to sit
+  // centered in DFRAME's inner opening (which spans local X -64..64,
+  // exactly DOOR.E's own width). y_clip=256.0: DFRAME.E's "riser" faces
+  // (see emit_model_object's own comment) get clamped at local Y 256
+  // rather than an arbitrary guess -- this is one tile's world height
+  // (256 units/tile, confirmed via FBRIDGE.E's own X/Z point range
+  // running exactly -128..128) divided by this entry's scale (1.0). Not
+  // a real per-tile ceiling lookup (no such field was found -- see
+  // object-rendering-findings.txt's due-diligence notes and memory.md's
+  // own "UW1's ceiling is a fixed per-level texture, no per-tile ceiling
+  // bits" finding from the earlier tmap-tile work); this assumes the
+  // common one-slab-per-level case rather than reading each room's real
+  // height, so a tall/multi-level room could still look capped short.
+  // Closed ids ("a_door" 0x140-0x145,
+  // "a_secret door" 0x147) get both frame+leaf; open ids ("an_open door"
+  // 0x148-0x14d, open "a_secret door" 0x14f) get the frame only -- we
+  // don't have the real open-door swing angle/pivot, so the least-wrong
+  // approximation is an empty doorway rather than a leaf floating in the
+  // wrong place. 0x146/0x14e have no resolved name (likely unused slots)
+  // and are deliberately left out. "a_door trap" (0x188) is a trigger
+  // object, not physical architecture -- not included.
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+};
+#define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
+
+static const ModelMapEntry *lookup_object_model(int id)
+{
+  int i;
+  for (i = 0; i < UW_MODEL_MAP_COUNT; i++) {
+    if (g_model_map[i].id == id) return &g_model_map[i];
+  }
+  return 0;
+}
+
 // was FUN_00060aa0
 void emit_tile_objects(param_1)
 ushort * param_1;
@@ -48634,7 +50516,7 @@ ushort * param_1;
   int iVar35;
   ushort local_54;
   
-  if (param_1 == DAT_0023be64) {
+  if (param_1 == g_player_object) {
     return;
   }
   if ((*param_1 & 0x4000) == 0x4000) {
@@ -48643,7 +50525,7 @@ ushort * param_1;
   if (DAT_0023b830 != 0) {
     *(short *)((intptr_t)g_pick_tile_off_backing + (uint)DAT_0023b830 * 2 + 2) =
          DAT_0023b8c4 + (short)(DAT_0023b4ec - DAT_0023b814 >> 2);
-    uVar15 = FUN_0005358c(param_1);
+    uVar15 = encode_object_slot_index(param_1);
     puVar12 = DAT_00110fc0;
     *(undefined2 *)(&DAT_0023b676 + (uint)DAT_0023b830 * 2) = uVar15;
     *puVar12 = 0xae;
@@ -48734,6 +50616,14 @@ ushort * param_1;
               fprintf(stderr, "[objdump] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x\n",
                       _tx, _ty, _slot, _id, (unsigned)_w);
             }
+            {
+              int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
+              if (_rc == 1) {
+                unsigned char *_recb = (unsigned char *)_rec;
+                fprintf(stderr, "[objdump-critter] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x b6=0x%02x\n",
+                        _tx, _ty, _slot, _id, (unsigned)_w, (unsigned)_recb[6]);
+              }
+            }
             ushort _nextw = *(ushort *)((char *)_rec + 6);
             _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
           }
@@ -48742,7 +50632,295 @@ ushort * param_1;
       fprintf(stderr, "[objdump] scan complete\n");
     }
   }
+  if (getenv("UW_DUMP_ALL_OBJECTS")) {
+    static int _dumped2 = 0;
+    if (!_dumped2) {
+      _dumped2 = 1;
+      int _tx, _ty;
+      for (_ty = 0; _ty < 0x40; _ty++) {
+        for (_tx = 0; _tx < 0x40; _tx++) {
+          int _tidx = _tx + _ty * 0x40;
+          ushort _head = *(ushort *)((intptr_t)DAT_002029cc + _tidx * 4 + 2);
+          int _slot = (_head & 0xffc0) != 0 ? _head >> 6 : 0;
+          int _guard = 0;
+          while (_slot != 0 && _guard++ < 64) {
+            void *_rec = _slot < 0x100 ? (void *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
+                                        : (void *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
+            ushort _w = *(ushort *)_rec;
+            int _id = _w & 0x1ff;
+            int _iv = _id * 0xd;
+            unsigned char *_prop = (unsigned char *)&DAT_00202c90_backing[_iv];
+            fprintf(stderr, "[objdumpall] tile=(%d,%d) slot=%d id=0x%03x flags=0x%04x rc=%d prop=%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                    _tx, _ty, _slot, _id, (unsigned)_w, _prop[0] & 3,
+                    _prop[0], _prop[1], _prop[2], _prop[3], _prop[4], _prop[5], _prop[6],
+                    _prop[7], _prop[8], _prop[9], _prop[0xa], _prop[0xb], _prop[0xc]);
+            ushort _nextw = *(ushort *)((char *)_rec + 6);
+            _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
+          }
+        }
+      }
+      fprintf(stderr, "[objdumpall] scan complete\n");
+    }
+  }
+  // Level-load object census for debugging: every placed object's tile
+  // position, id, resolved name, render class, and (if applicable) which
+  // DATA3D model it now draws as. Gated the same way every other UW_DEBUG_*/
+  // UW_DUMP_* hook in this file is: off by default so a normal run doesn't
+  // pay for a 64x64-tile scan + file write on every level entry, and so
+  // this file's exact wording is opt-in rather than something a screenshot-
+  // diffing regression test would have to account for. Set to a file path
+  // to enable; fires once, on the first object walked after level load.
+  if (getenv("UW_DUMP_OBJECTS_FILE")) {
+    static int _dumped_census = 0;
+    if (!_dumped_census) {
+      _dumped_census = 1;
+      const char *_path = getenv("UW_DUMP_OBJECTS_FILE");
+      FILE *_f = fopen(_path, "w");
+      if (_f == NULL) {
+        fprintf(stderr, "[objcensus] failed to open '%s' for writing\n", _path);
+      } else {
+        fprintf(_f, "tile_x\ttile_y\tid\tname\trenderclass\tmodel\theading\tquality\tflags\n");
+        int _tx, _ty, _count = 0;
+        for (_ty = 0; _ty < 0x40; _ty++) {
+          for (_tx = 0; _tx < 0x40; _tx++) {
+            int _tidx = _tx + _ty * 0x40;
+            ushort _head = *(ushort *)((intptr_t)DAT_002029cc + _tidx * 4 + 2);
+            int _slot = (_head & 0xffc0) != 0 ? _head >> 6 : 0;
+            int _guard = 0;
+            while (_slot != 0 && _guard++ < 64) {
+              ushort *_rec = _slot < 0x100 ? (ushort *)((intptr_t)_slot * 0x1b + (intptr_t)DAT_002046b8)
+                                            : (ushort *)((intptr_t)DAT_002046c4 + (intptr_t)(_slot - 0x100) * 8);
+              ushort _w = _rec[0];
+              int _id = _w & 0x1ff;
+              // Same field reads emit_tile_objects itself uses (not the
+              // objdumpall hook above, which indexed the wrong property
+              // byte for render class -- see its own "rc=" column, offset
+              // 0 instead of the real 0xa).
+              int _rc = (&DAT_00202c9a)[_id * 0xd] & 3;
+              int _heading = (_rec[1] >> 6) & 7;
+              int _quality = _rec[3] & 0x3f;
+              // Page 4 of comobj's string data is the base object-name
+              // table, indexed directly by id (see UW_DUMP_NAMES/this
+              // session's findings) -- not the quality-adjective group
+              // table UW_LOOK_SLOT resolves via namegrp*6+offset.
+              char *_name = (char *)FUN_0007863c(0x800 | _id);
+              const ModelMapEntry *_me = lookup_object_model(_id);
+              char _modelbuf[32] = "";
+              if (_me) {
+                if (_me->model2) snprintf(_modelbuf, sizeof(_modelbuf), "%s+%s", _me->name, _me->name2);
+                else snprintf(_modelbuf, sizeof(_modelbuf), "%s", _me->name);
+              }
+              fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%s\t%d\t%d\t0x%04x\n",
+                      _tx, _ty, _id, (_name && _name[0]) ? _name : "(unnamed)",
+                      _rc, _modelbuf, _heading, _quality, (unsigned)_w);
+              _count++;
+              ushort _nextw = *(ushort *)((char *)_rec + 6);
+              _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
+            }
+          }
+        }
+        fclose(_f);
+        fprintf(stderr, "[objcensus] wrote %d objects to '%s'\n", _count, _path);
+      }
+    }
+  }
+  // Debug tool (UW_DUMP_CONTAINERS_FILE): scan every tile's object chain
+  // (correctly, via resolve_object_link + the real "next" field at
+  // offset+4 -- NOT UW_DUMP_OBJECTS_FILE's own +6, which is actually the
+  // "first item inside this container" field, not "next object on this
+  // tile"; that census tool's re-use of +6 for both purposes is its own,
+  // separate, lower-priority bug, left alone here since it's debug-only)
+  // and lists every container's real contents. Written to verify whether
+  // level load correctly preserves container contents end to end -- see
+  // memory.md's "sack contents" finding.
+  if (getenv("UW_DUMP_CONTAINERS_FILE")) {
+    static int _dumped_containers = 0;
+    if (!_dumped_containers) {
+      _dumped_containers = 1;
+      const char *_path = getenv("UW_DUMP_CONTAINERS_FILE");
+      FILE *_f = fopen(_path, "w");
+      if (_f == NULL) {
+        fprintf(stderr, "[containercensus] failed to open '%s' for writing\n", _path);
+      } else {
+        fprintf(_f, "tile_x\ttile_y\tid\tname\tnum_items\titems\n");
+        int _tx, _ty, _count = 0;
+        for (_ty = 0; _ty < 0x40; _ty++) {
+          for (_tx = 0; _tx < 0x40; _tx++) {
+            int _tidx = _tx + _ty * 0x40;
+            ushort *_headp = (ushort *)((char *)DAT_002029cc + _tidx * 4 + 2);
+            ushort *_rec = (ushort *)resolve_object_link(_headp);
+            int _guard = 0;
+            while (_rec != NULL && _guard++ < 64) {
+              ushort _w = *_rec;
+              int _id = _w & 0x1ff;
+              if ((_w & 0x1c0) == 0x80) {
+                ushort *_item = (ushort *)resolve_object_link((ushort *)((char *)_rec + 6));
+                char _names[256];
+                _names[0] = '\0';
+                int _n = 0, _guard2 = 0;
+                while (_item != NULL && _guard2++ < 32) {
+                  int _iid = *_item & 0x1ff;
+                  char *_iname = (char *)FUN_0007863c(0x800 | _iid);
+                  strncat(_names, (_iname && _iname[0]) ? _iname : "?", sizeof(_names) - strlen(_names) - 2);
+                  strncat(_names, ",", sizeof(_names) - strlen(_names) - 1);
+                  _n++;
+                  _item = (ushort *)resolve_object_link((ushort *)((char *)_item + 4));
+                }
+                char *_name = (char *)FUN_0007863c(0x800 | _id);
+                fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%s\n", _tx, _ty, _id,
+                        (_name && _name[0]) ? _name : "(unnamed)", _n, _names);
+                _count++;
+              }
+              _rec = (ushort *)resolve_object_link((ushort *)((char *)_rec + 4));
+            }
+          }
+        }
+        fclose(_f);
+        fprintf(stderr, "[containercensus] wrote %d containers to '%s'\n", _count, _path);
+      }
+    }
+  }
+  if (getenv("UW_DUMP_NAMES")) {
+    static int _dumped3 = 0;
+    if (!_dumped3) {
+      _dumped3 = 1;
+      int _id, _pg;
+      for (_pg = 0; _pg < 16; _pg++) {
+        for (_id = 0; _id < 0x200; _id++) {
+          char *_nm = (char *)FUN_0007863c((_pg << 9) | _id);
+          if (_nm && _nm[0]) {
+            fprintf(stderr, "[names] page=%d id=0x%03x name='%s'\n", _pg, _id, _nm);
+          }
+        }
+      }
+      fprintf(stderr, "[names] scan complete\n");
+    }
+  }
   uVar27 = (uint)*param_1;
+  {
+    const ModelMapEntry *_me = lookup_object_model(uVar27 & 0x1ff);
+    if (_me && !getenv("UW_DISABLE_MODEL_RENDER")) {
+      /* Raw stored heading is in a fixed world-compass frame, but this
+         whole rendering pipeline (tile walk, wall/floor geometry, and the
+         object world anchor DAT_0023b904/91c/920 this function's own
+         vertices are placed relative to) operates in a frame pre-rotated
+         by DAT_0023b4a0 -- the camera's current 90-degree screen-rotation
+         quadrant (0-3, recomputed every frame from the camera's own yaw
+         in build_frame_draw_list). The door/sign billboard-angle-override
+         code a few hundred lines below already had to learn this the hard
+         way (see its own comment: "this same file rotates every OTHER
+         object's stored orientation-ish fields by it... but this heading
+         read never did" -- confirmed live to cause 90-degree-off/invisible
+         rendering from certain camera stances) -- apply the identical
+         `(raw - 2*quadrant) & 7` compensation here, or these models will
+         only ever look correctly oriented from whichever one camera
+         quadrant they happened to be calibrated in. */
+      int _raw_heading = (int)(param_1[1] >> 6 & 7);
+      int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
+      /* The sign/door billboard-angle-override code (uw.c ~50670-50680)
+         needed a further "+1 compass step" (45 degrees) on top of the
+         quadrant compensation above, confirmed live in that code's own
+         comment. Assumed at first that the same +1 would carry over here
+         -- it does NOT. A/B-tested all 8 possible offsets against the
+         door repro screenshot (tile 24,7): offset 0 and +1 both rendered
+         as a thin, mostly edge-on sliver (the frame's broad face turned
+         almost perpendicular to the camera); +2 was a visibly skewed
+         parallelogram; -1 was the only one that came out as a clean,
+         axis-aligned rectangle flush with the doorway, matching the
+         surrounding wall geometry; -2/-3 were skewed/thin again. So the
+         correction is real (the user was right to ask), but its SIGN is
+         opposite the billboard code's -- expected, since that code
+         rotates a 2D quad-extension direction via a sin/cos lookup table,
+         while this code applies a real rotation matrix directly to 3D
+         model-space vertices; the two conventions don't share a rotation
+         sense, so the billboard fix's constant doesn't transfer as-is.
+         UW_MODEL_HEADING_OFFSET (compass steps, default -1) overrides
+         this for further tuning if a different model family disagrees. */
+      { int _step = -1;
+        const char *_s = getenv("UW_MODEL_HEADING_OFFSET"); if (_s) _step = atoi(_s);
+        _heading = (_heading + _step) & 7;
+      }
+      if (getenv("UW_DEBUG_MODEL"))
+        fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d compensated=%d\n",
+                (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _heading);
+      /* Frame texture: the tile's own real wall texture. DAT_0023b4ec is
+         the raw tile record currently being walked (confirmed by the
+         wall-rendering code just above emit_tile_objects in this same
+         function, uw.c ~48986: "UW1 tile word2 (bytes 2-3) bits 0-5 =
+         wall texture index" -- `(byte)DAT_0023b4ec[2] & 0x3f`). That
+         same wall-rendering code adds 0x3a before calling
+         get_texture_page() for the WALL-sized (16x16 arena slot) case
+         specifically (as opposed to the unmodified value used for the
+         64x64 floor/ceiling case a few lines earlier) -- reuse that
+         exact wall-slot formula since a door frame is architecturally a
+         wall surface, not a floor/ceiling one. DAT_0023b4ec stays valid
+         here because object emission for a tile's objects happens while
+         that same tile is still the "current" one being walked (objects
+         are emitted right after that tile's own wall/floor geometry,
+         within the same per-tile pass) -- not verified against a second,
+         differently-textured tile yet, flagged in the findings writeup. */
+      /* Only door frames (the id family with a model2 leaf) get the wall
+         texture -- boulders/bridge/shrine aren't wall-mounted, so the
+         tile they happen to be standing on has no bearing on how they
+         should look; leave them at texptr=0 (flat-shaded, unchanged). */
+      void *_frame_tex = 0;
+      if (_me->model2) { byte _wall_tex_id = (DAT_0023b4ec[2] & 0x3f) + 0x3a;
+        _frame_tex = get_texture_page(_wall_tex_id);
+        if (getenv("UW_DEBUG_MODEL"))
+          fprintf(stderr, "[model-frame-tex] id=0x%03x wall_tex_id=%d tex=%p\n",
+                  (int)(uVar27 & 0x1ff), (int)_wall_tex_id, _frame_tex);
+      }
+      /* Leaf texture: reuse the door's own already-resolved OBJECTS.GR
+         sprite frame formula (DAT_00202734 + (type&7) + 0x30 -- the same
+         expression the class-2 door billboard branch below uses,
+         confirmed live via UW_DEBUG_DOOR to match emit_anim_object_
+         frames's own computation) and decode it through FUN_00040770,
+         the same real sprite decoder the billboard path uses. That
+         function publishes the decoded buffer through g_tile_texptr_
+         emit[DAT_0023b83c] itself (same side channel every texture
+         consumer in this file uses, keyed by record index) -- capture it
+         right after the call rather than relying on index timing, then
+         hand it to emit_model_object explicitly so it can stamp it onto
+         every record THIS model actually creates (a leaf is several
+         faces/records, not one). texptr==0 (untextured, current
+         behavior) if there's no leaf for this id (open doors). */
+      void *_leaf_tex = 0;
+      if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
+        int _sprite_frame = DAT_00202734 + (uVar27 & 7) + 0x30;
+        FUN_00040770((short)_sprite_frame, 0);
+        if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) _leaf_tex = g_tile_texptr_emit[DAT_0023b83c];
+        if (getenv("UW_DEBUG_MODEL")) {
+          int _w = (int)(short)DAT_00202508, _h = (int)(short)DAT_002022f8;
+          int _nz = 0, _tot = _w*_h;
+          if (_leaf_tex) { unsigned char *_b = (unsigned char *)_leaf_tex; for (int _k=0;_k<_tot;_k++) if (_b[_k]) _nz++; }
+          fprintf(stderr, "[model-leaf-tex] id=0x%03x sprite_frame=%d tex=%p w=%d h=%d nonzero=%d/%d\n",
+                  (int)(uVar27 & 0x1ff), _sprite_frame, _leaf_tex, _w, _h, _nz, _tot);
+        }
+      }
+      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0, _frame_tex);
+      if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
+        /* _leaf_tex decodes fine (confirmed via UW_DEBUG_MODEL's
+           nonzero-pixel count -- real sprite content, not garbage) but
+           applying it makes the leaf disappear rather than show the
+           sprite: render_visible_tile_list generates each vertex's
+           texcoord from its PROJECTED SCREEN POSITION (near_clip_visible_
+           tiles, offsets +0x3008/+0x300c), not a real per-vertex UV --
+           the same mechanism object-rendering-findings.txt's "LAST GAP"
+           section already documented as broken for 2D sprite billboards
+           for the identical reason (works for a world-fixed wall texture
+           that tiles across the whole screen-space range; a small finite
+           sprite bitmap mostly samples out of its own bounds -> reads as
+           transparent). Solving this needs a real per-vertex UV system
+           this codebase doesn't have for ANY object yet, sprite or model
+           -- out of scope for this pass. Defaulting to untextured (0)
+           until that exists; UW_MODEL_LEAF_TEXTURE=1 applies it anyway,
+           for experimenting with the actual failure mode. */
+        void *_apply_tex = getenv("UW_MODEL_LEAF_TEXTURE") ? _leaf_tex : 0;
+        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2, _apply_tex);
+      }
+      return;
+    }
+  }
   bVar1 = (&DAT_00202c9a)[(uVar27 & 0x1ff) * 0xd];
   bVar13 = bVar1 & 3;
   if (getenv("UW_DEBUG_OBJCLASS")) {
@@ -48780,6 +50958,60 @@ ushort * param_1;
       uVar27 = 0xe0;
     }
 LAB_emit_mesh_sprite_quad:
+    /* Same arena-overflow risk as the tile-geometry guard a few hundred
+       lines above this function (see its own comment for the full
+       explanation of the ~512-vert/~490-record cap on DAT_000a85d0_backing)
+       -- that guard only accounts for wall/floor geometry, not the
+       object quad this label builds (4 verts / 1 record). Doors newly
+       reaching this path (previously a dead end -- see the door-reroute
+       comment above) add more objects than any single room exercised
+       before, so guard this shared tail defensively too rather than
+       assume the tile-level guard alone always leaves enough headroom.
+       (A wild-Y-coordinate crash chased while testing this turned out
+       to be an unrelated, pre-existing map-edge bug -- see
+       [[map-edge-y-wraparound-crash]] -- not caused by this change; this
+       guard is still worth keeping on its own merits.) */
+    if ((int)(uint)DAT_0023b838 >= 512 - 4 || (int)DAT_0023b83c >= 490 - 1) {
+      return;
+    }
+    if (g_billboard_angle_override_deg >= 0) {
+      /* A wall-mounted decal's anchor (DAT_0023b904/920) came out of
+         emit_tile_features' generic per-slot floor-object table
+         (DAT_0023bb99/9a[cVar8*4]) -- cVar8 is this object's position in
+         a depth-*sorted* list of everything in the tile, so which slot
+         (and therefore which sub-tile offset) THIS object lands in
+         depends on where the camera is standing, not on the object
+         itself. Confirmed live: the exact same object (identical
+         param_1[1]=0x1770 raw record) got assigned bb99/bb9a=(0,5) from
+         one standing spot (rendered flush) and (5,7) from two others
+         (rendered rotated 90 degrees / invisible) -- same sign, jittering
+         between different anchors depending on viewpoint. Floor items are
+         fine with that (it's how multiple items in one tile avoid fully
+         overlapping); a wall decal needs a fixed anchor. Round back down
+         to the tile's own center (clear the low 5 bits -- one tile is
+         0x20 units -- then re-add the +0x10 half-tile constant
+         emit_tile_features' own formula ends with) to undo whatever
+         sub-tile jitter this frame's slot happened to contribute, before
+         pushing out to the wall surface along the wall's own normal
+         (perpendicular to the facing direction g_billboard_angle_
+         override_deg's tangent extrusion already uses). Without the push
+         the quad is correctly oriented flush-with-the-wall (proven via
+         [decalangle]'s 100%-constant angle_idx) but anchored in the open
+         floor area of the tile instead of at the wall plane. Tunable via
+         UW_DECAL_PUSH (magnitude, default 16 = half a tile) and
+         UW_DECAL_PUSH_SIGN (+1/-1, default +1) while calibrating --
+         applied here (before the DAT_00110fc0 pick/collision copy just
+         below) so picking matches the pushed visual position too. */
+      DAT_0023b904 = (DAT_0023b904 & ~0x1f) | 0x10;
+      DAT_0023b920 = (DAT_0023b920 & ~0x1f) | 0x10;
+      double _rad = (g_billboard_angle_override_deg + 90) * (3.14159265358979 / 180.0);
+      int _mag = 16;
+      int _sign = 1;
+      { const char *_p = getenv("UW_DECAL_PUSH"); if (_p) _mag = atoi(_p); }
+      { const char *_p = getenv("UW_DECAL_PUSH_SIGN"); if (_p) _sign = atoi(_p); }
+      DAT_0023b904 = DAT_0023b904 + (short)lround(_sign * _mag * sin(_rad));
+      DAT_0023b920 = DAT_0023b920 + (short)lround(_sign * _mag * cos(_rad));
+    }
     *DAT_00110fc0 = 0x7a;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_0023b904;
@@ -48791,8 +51023,26 @@ LAB_emit_mesh_sprite_quad:
     *DAT_00110fc0 = 0x7f8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     FUN_00040770(uVar27,(uint)DAT_0023bc88 * (int)DAT_00086b30);
-    uVar30 = (&DAT_000d9ed8)[DAT_000db44c];
-    uVar18 = Ordinal_2023((&DAT_000d9930)[DAT_000db44c]);
+    /* DAT_000d9ed8/DAT_000d9930[angle] = sin/cos(angle degrees) (see
+       FUN_0001dd2c). Normally angle = DAT_000db44c, the CAMERA's yaw,
+       which is what makes this quad extend along the camera's own
+       right-vector -- i.e. always face the camera, a real billboard.
+       A wall-mounted decal (emit_tile_objects's TMOBJ/sign branch)
+       sets g_billboard_angle_override_deg to the WALL's own fixed
+       facing angle instead, so the quad extends along the wall's
+       plane and stays flush against it regardless of camera angle. */
+    { int _angle_idx = DAT_000db44c;
+      int _overridden = (g_billboard_angle_override_deg >= 0);
+      if (_overridden) {
+        _angle_idx = g_billboard_angle_override_deg;
+        g_billboard_angle_override_deg = -1;
+      }
+      if (getenv("UW_DEBUG_OBJPOS") && (*param_1 & 0x1ff) == 0x166)
+        fprintf(stderr, "[decalangle] overridden=%d angle_idx=%d cam_yaw=%d\n",
+                _overridden, _angle_idx, (int)DAT_000db44c);
+      uVar30 = (&DAT_000d9ed8)[_angle_idx];
+      uVar18 = Ordinal_2023((&DAT_000d9930)[_angle_idx]);
+    }
     iVar32 = (int)DAT_00202508;
     uVar19 = Ordinal_2032(iVar32 * -6);
     uVar19 = Ordinal_2026(uVar19,0x3f000000);
@@ -48969,12 +51219,13 @@ LAB_00061d34:
     DAT_0023b83c = DAT_0023b83c + 1;
     DAT_000a85d4 = DAT_0023b83c;
     DAT_000a85d0 = iVar17 + 1;
-    if (getenv("UW_DEBUG_OBJPOS") && (*param_1 & 0x1ff) == 0x166) {
+    if ((getenv("UW_DEBUG_OBJPOS") && (*param_1 & 0x1ff) == 0x166) ||
+        (getenv("UW_DEBUG_DOOR") && (*param_1 & 0x1ff) == 0x140)) {
       float _fx, _fy, _fz;
       unsigned int _bx = (unsigned int)uVar22, _by = (unsigned int)uVar19, _bz = (unsigned int)uVar25;
       memcpy(&_fx, &_bx, 4); memcpy(&_fy, &_by, 4); memcpy(&_fz, &_bz, 4);
-      fprintf(stderr, "[objpos-final] id=0x166 uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f\n",
-              uVar27, _fx, _fy, _fz);
+      fprintf(stderr, "[objpos-final] id=0x%03x uVar27(sprite_id)=0x%x vtx_x(float)=%f vtx_y(float)=%f vtx_z(float)=%f DAT_00202508(w)=%d DAT_002022f8(h)=%d\n",
+              (unsigned)(*param_1 & 0x1ff), uVar27, _fx, _fy, _fz, (int)(short)DAT_00202508, (int)(short)DAT_002022f8);
     }
     return;
   }
@@ -48995,20 +51246,56 @@ LAB_00061d34:
        DAT_00086cc0 direction table (crash when an object first came into
        view down a long hallway). It is (that dividend) % 0x20. */
     {
+      short _col_angle = *(short *)(DAT_00086e6c + 0x2c);
+      short _quad_term = *(short *)(&DAT_00086a18 + DAT_0023b4a0 * 2);
       int _dm = ((param_1[1] >> 5 & 0x1c) -
-                 ((int)((int)*(short *)(DAT_00086e6c + 0x2c) +
+                 ((int)((int)_col_angle +
                         (uint)*(ushort *)(&DAT_00086a18 + DAT_0023b4a0 * 2)) >> 0xb)) + 0x20;
       bVar13 = (&DAT_00086cc0)[((_dm % 0x20) + 0x20) % 0x20];
+      if (getenv("UW_DEBUG_CRITTER"))
+        fprintf(stderr, "[critter] dirtable: id=0x%03x own_heading_bits=%d col_angle=%d quad_term=%d sum=%d shifted=%d _dm=%d bVar13=%d\n",
+                uVar27 & 0x1ff, (int)(param_1[1] >> 5 & 0x1c),
+                (int)_col_angle, (int)_quad_term, (int)_col_angle + (int)(unsigned short)_quad_term,
+                (int)((int)((int)_col_angle + (uint)(unsigned short)_quad_term) >> 0xb), _dm, (int)bVar13);
     }
     if ((ushort)uVar29 < 0x20) {
-      if (((ushort)uVar29 != 0xc) && (2 < (bVar13 - 3 & 7))) {
-        uVar29 = bVar13 + 0x20;
+      /* Was missing its `else` -- when the mirror test (see below) came
+         out false, uVar29 was left at its ORIGINAL value (the object's
+         own raw animation-state byte, e.g. 0 for "idle"), never updated
+         to the just-computed octant bVar13. Since that raw value gets
+         fed straight into resolve_critter_sprite_tier as "direction",
+         an object whose raw state happens to equal some OTHER state's
+         real direction/frame index (confirmed live: idle state 0 vs.
+         attack frames living at nearby indices in the same page) shows
+         a completely wrong, unrelated frame from certain viewing
+         angles -- looking like the animation itself changed based on
+         camera angle. This mirroring scheme is the classic "5 real
+         images cover 8 octants via horizontal flip" trick: the mirror
+         test true (`2 < (bVar13-3&7)`, i.e. bVar13 in {0,1,2,6,7} --
+         back/side views) reuses a flipped image via the +0x20 flag;
+         false (bVar13 in {3,4,5} -- front-ish views) should show the
+         real, un-mirrored image for that octant directly, which means
+         uVar29 must become bVar13 -- not stay unchanged. The uVar29==0xc
+         special case (left alone either way -- likely a "dead/corpse"
+         state that doesn't animate by direction) is preserved exactly
+         as before. */
+      if ((ushort)uVar29 != 0xc) {
+        if (2 < (bVar13 - 3 & 7)) {
+          uVar29 = bVar13 + 0x20;
+        }
+        else {
+          uVar29 = bVar13;
+        }
       }
     }
     else {
       uVar29 = (uint)bVar13 + (uVar29 - 0x1c) * 8;
     }
-    FUN_0004083c(uVar27 & 0x3f,uVar29,(byte)param_1[6] >> 4,(uint)DAT_0023bc88 * (int)DAT_00086b30);
+    if (getenv("UW_DEBUG_CRITTER"))
+      fprintf(stderr, "[critter] emit_tile_objects: id=0x%03x raw_slot=%d own_heading_bits=%d cam_yaw=%d quadrant=%d dir(uVar29)=%d\n",
+              uVar27 & 0x1ff, *(byte *)((char *)param_1 + 0x15) & 0x3f,
+              (int)(param_1[1] >> 5 & 0x1c), (int)DAT_000db44c, (int)DAT_0023b4a0, (int)uVar29);
+    resolve_critter_sprite_tier(uVar27 & 0x3f,uVar29,(byte)param_1[6] >> 4,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     uVar30 = (&DAT_000d9ed8)[DAT_000db44c];
     uVar18 = Ordinal_2023((&DAT_000d9930)[DAT_000db44c]);
     iVar32 = (int)DAT_00202508;
@@ -49153,35 +51440,83 @@ LAB_00061d34:
   }
   if (bVar13 == 2) {
     if ((uVar27 & 0x30) == 0) {
-      emit_anim_object_frames(uVar27 & 0x3f,param_1);
-      return;
+      /* Doors. emit_anim_object_frames (the "real" handler for this
+         branch) draws entirely through emit_object_billboard, which
+         gates its behavior on DAT_00086c08[catalog_idx*4] -- a lone
+         `undefined` scalar (same "orphaned data table" class as
+         DAT_00086c80, fixed for TMOBJ signs below) with no writer
+         anywhere in this decompile. Reading it at a real door's
+         catalog index (confirmed live: 14) walks off into whatever
+         unrelated static byte happens to follow it in memory, so the
+         whole draw path runs on garbage flag bits -- net effect,
+         nothing ever reached a real screen pixel (confirmed: a door
+         6 tiles from spawn rendered as a plain, empty corridor).
+         Route the door's own already-resolved absolute OBJECTS.GR
+         frame (DAT_00202734 + (type&7) + 0x30, confirmed live via
+         UW_DEBUG_DOOR to match emit_anim_object_frames's own
+         computation) through the same real, working sprite-decode +
+         mesh-quad path class 0 uses, exactly like the TMOBJ sign fix
+         a few lines below -- this only handles the door "leaf"
+         sprite itself, not emit_anim_object_frames's separate static
+         frame/jamb overlay (uVar10==0 iteration) or its open-door
+         swing animation (param_1==6 case); those are still open. */
+      uVar27 = DAT_00202734 + (uVar27 & 7) + 0x30;
+      /* >>6, not >>7 -- >>7 is what emit_anim_object_frames itself reads
+         here, but that's fed to emit_object_billboard's own catalog-
+         driven rotation math, not a plain compass heading. >>6&7 matches
+         both the TMOBJ sign's own heading extraction just below and this
+         exact door's own DAT_00202c9a property-table heading value
+         (confirmed live: UW_DEBUG_OBJCLASS reports heading=5 for this
+         door; raw_b2/b3=0x50/0xaf -> (0xaf50>>6)&7 = 5, while >>7&7 gives
+         a different, wrong value). */
+      { int _raw_heading = (int)(*(short *)((char *)param_1 + 2) >> 6 & 7);
+        int _quadrant_heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
+        g_billboard_angle_override_deg = ((_quadrant_heading + 1) & 7) * 45;
+        if (getenv("UW_DEBUG_DOOR"))
+          fprintf(stderr, "[door] emit_tile_objects: frame=%d raw_heading=%d quadrant=%d angle_deg=%d\n",
+                  uVar27, _raw_heading, (int)DAT_0023b4a0, g_billboard_angle_override_deg);
+      }
+      goto LAB_emit_mesh_sprite_quad;
     }
     /* DAT_00086c80_backing has no writer anywhere in this decompile (same
        "orphaned data table" class as DAT_00086c08/09/0b, the PTR_FUN_
        dispatch tables, etc. fixed elsewhere this session) -- it's always
        all-zero, so every sign/TMOBJ variant below was resolving to frame 0
-       regardless of `iVar17`. Real per-variant frame numbers aren't
-       recoverable from the binary (this is missing DATA, not a dropped
-       argument/call -- no amount of disassembly recovers content that was
-       never in this decompile's static initializers).
-       An identity mapping (slot i -> TMOBJ frame i) seemed like the
-       obvious default (matching FUN_00040aa8's own "id IS the frame"
-       fallback for OBJECTS.GR), but empirically TMOBJ.GR's frame table
-       (checked via UW_DEBUG_OBJPOS's [tmobjscan] dump, DAT_00202738-based)
-       is EMPTY for frames 0-37 -- real, non-degenerate (nonzero w/h)
-       content only starts at relative frame 38, running through ~170.
-       Since `iVar17` here is hard-capped to 0-31 by the bounds check right
-       below (code-side constant, not data-driven), an identity mapping can
-       *never* reach real content regardless of which 0-31 value it picks.
-       Offset into the known-populated block instead so every variant at
-       least shows a real graphic (still not the correct PER-VARIANT one --
-       that mapping is genuinely lost data -- but no longer blank). */
+       regardless of `iVar17`. Real per-variant frame numbers for every
+       possible sign sub-type aren't recoverable from the binary (missing
+       DATA, not a dropped argument/call), BUT the user identified via
+       direct inspection that TMOBJ.GR itself only has 38 real entries
+       total, with entries 25-28 (zero-based) being actual "message/
+       plaque" graphics -- confirmed by instrumenting the resource loader
+       directly (DAT_00202744 went 643 -> 681 across TMOBJ's own
+       FUN_00041910 call, so TMOBJ's 38 real frames are absolute indices
+       643-680; entries 25-28 = absolute 668-671, dimensions 16x16/16x16/
+       16x16/16x32 -- plausible plaque/rune-tablet graphics, distinct from
+       the small flame-flicker-shaped frames earlier in the file and the
+       larger multi-purpose icons after it). Cycle every sign sub-type
+       through these 4 real message frames instead of one arbitrary
+       constant -- still not a true per-instance mapping (that data is
+       genuinely gone), but now always a real message graphic rather
+       than a guess landing outside TMOBJ.GR's actual 38-entry range
+       entirely (which is what the previous "38+i" default did --
+       DAT_00202738 is the NEXT resource's base, not TMOBJ's own, so
+       that default always missed TMOBJ.GR into whatever loads after
+       it). */
     { static int _tmobj_ids_inited = 0;
       if (!_tmobj_ids_inited) {
         _tmobj_ids_inited = 1;
         int _i;
+        // HACK: hand-picked constant, not recovered/derived data. The real
+        // per-sign-variant -> TMOBJ.GR frame mapping (what DAT_00086c80 was
+        // for) is genuinely lost -- not present anywhere in this binary or
+        // its data files, so it can't be recovered by further disassembly
+        // or file analysis. 668 (TMOBJ.GR entry 25) is just the
+        // least-wrong of the 4 real "message/plaque"-shaped frames (25-28)
+        // found by manual inspection, used for every sign regardless of
+        // its real intended variant. Revisit if the real mapping ever
+        // turns up (e.g. a different original data file/version).
         for (_i = 0; _i < 0x20; _i++) {
-          *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)(38 + _i);
+          *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)668;
         }
       }
     }
@@ -49192,34 +51527,58 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    /* STEP 1 (sprite fixup): this used to call
-       emit_object_billboard(*(ushort*)(&DAT_00086c80+iVar17*2) & 0xff, ...),
-       feeding a real TMOBJ.GR frame index into emit_object_billboard as if
-       it were a slot in DAT_00086c08 -- a small (~64-entry) curated
-       billboard catalogue meant for a fixed set of hand-picked effects
-       (thrown weapons, muzzle flashes, etc; see its other callers' literal
-       0x14/0x16/0xc slot ids), not an arbitrary data-driven frame number.
-       That's a completely unrelated graphic, not merely "billboard instead
-       of decal".
+    /* This used to call emit_object_billboard(*(ushort*)(&DAT_00086c80+
+       iVar17*2) & 0xff, ...), feeding a TMOBJ.GR frame index into
+       emit_object_billboard as if it were a slot in DAT_00086c08 -- a
+       small (~64-entry) curated billboard catalogue meant for a fixed
+       set of hand-picked effects (thrown weapons, muzzle flashes, etc;
+       see its other callers' literal 0x14/0x16/0xc slot ids), not an
+       arbitrary data-driven frame number. That's a completely unrelated
+       graphic, not merely "billboard instead of decal".
        DAT_00202c9a's own game data puts wall signs/plaques (e.g. real
-       object type 0x166) in this exact (class 2, id&0x30 != 0) branch --
-       DAT_00086c80[iVar17] is genuinely a per-sign-variant TMOBJ.GR frame
-       number, resolved through the same `0x2000 + frame` -> FUN_00040aa8
-       -> DAT_00202738 (TMOBJ's real load-time base index) convention every
-       other TMOBJ/ANIMO/OBJECTS reference in this file uses. Route it
-       through the same real, working sprite-decode + mesh-quad path class
-       0 uses (proven correct for the sack etc. this session) instead of
-       emit_object_billboard, by overriding uVar27 to the resolved TMOBJ id
-       and jumping into that code directly -- it doesn't care whether the
-       id names an OBJECTS or TMOBJ frame, FUN_00040770/FUN_00040aa8
-       already resolve either.
-       This still projects as a camera-facing quad rather than flush
-       against the wall face (the real fix for that -- projecting it like
-       a wall polygon instead -- is a separate, larger follow-up); this
-       step only fixes it showing the actual sign graphic instead of
-       whatever unrelated billboard-catalogue entry the old index
-       collided with. */
-    uVar27 = 0x2000 + (uint)*(ushort *)(&DAT_00086c80 + iVar17 * 2);
+       object type 0x166) in this exact (class 2, id&0x30 != 0) branch.
+       Route the real absolute TMOBJ frame through FUN_00040770's
+       negative-param_1 "direct absolute frame" escape hatch (see its own
+       comment -- FUN_00040aa8's normal id-range convention can't reach
+       frames before DAT_00202738 at all) into the same real, working
+       sprite-decode + mesh-quad path class 0 uses (proven correct for
+       the sack etc. this session) instead of emit_object_billboard, by
+       overriding uVar27 and jumping into that code directly. */
+    uVar27 = (uint)(ushort)(-(short)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
+    /* Make it a wall-flush decal instead of a camera-facing billboard:
+       the quad-build code below extends this sprite along a "right
+       vector" looked up from a sin/cos table by angle DAT_000db44c
+       (the CAMERA's own yaw -- see its comment), which is exactly what
+       makes an ordinary item billboard always face the camera. Override
+       that lookup with the object's own stored heading (param_1[1]>>6&7,
+       one of 8 compass directions * 45 degrees) instead, so the quad
+       extends along the WALL's own fixed facing direction and stays
+       flush against it regardless of camera angle. Self-clearing (see
+       g_billboard_angle_override_deg's own comment). */
+    /* +1 (45 degrees): confirmed live in-game the decal drew with a real
+       fixed orientation (not camera-facing) as soon as this override
+       existed, but 45 degrees off from flush -- one compass step
+       correction, wrapped back into the table's 0-360 range.
+       Also compensate for DAT_0023b4a0, the screen-rotation quadrant
+       computed from the CAMERA's current view angle (see
+       sync_camera_from_player's own comment on it): this same file
+       rotates every OTHER object's stored orientation-ish fields by it
+       (see emit_tile_objects' own sub-position remap a few hundred lines
+       above -- (x,y) rotated 90*quadrant degrees per quadrant 0-3) before
+       treating them as real-world directions, but this heading read
+       never did -- confirmed live (and reproducibly) that the same sign
+       renders correctly (quadrant 0) from one standing spot and broken
+       (90 degrees / invisible, both quadrant 3) from two others, with the
+       raw heading and computed angle identical every time. Apply the
+       same 90-degrees-per-quadrant rotation to the heading (2 compass
+       steps = 90 degrees) before the existing +1 correction. */
+    { int _raw_heading = (int)(param_1[1] >> 6 & 7);
+      int _quadrant_heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
+      g_billboard_angle_override_deg = ((_quadrant_heading + 1) & 7) * 45;
+      if (getenv("UW_DEBUG_OBJPOS"))
+        fprintf(stderr, "[signheading] param_1[1]=0x%04x raw_heading=%d quadrant=%d angle_deg=%d\n",
+                (unsigned)param_1[1], _raw_heading, (int)DAT_0023b4a0, g_billboard_angle_override_deg);
+    }
     goto LAB_emit_mesh_sprite_quad;
   }
   if (bVar13 != 3) {
@@ -49355,6 +51714,9 @@ short param_4;
   uVar14 = (uint)param_1;
   iVar1 = uVar14 * 4;
   bVar4 = (&DAT_00086c08)[iVar1];
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] emit_object_billboard: catalog_idx=%d param_3(heading)=%d param_4(frame_or_id)=%d DAT_00086c08[idx]=0x%02x\n",
+            (int)param_1, (int)param_3, (int)param_4, (unsigned)bVar4);
   *DAT_00110fc0 = 2;
   local_7a = 0xffff;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -49945,7 +52307,7 @@ short param_4;
   if (3 < uVar21) {
     uVar21 = 0;
   }
-  switch(*(ushort *)(DAT_0023be64 + 2) >> 7 & 7) {
+  switch(*(ushort *)(g_player_object + 2) >> 7 & 7) {
   case 0:
     break;
   case 1:
@@ -50064,6 +52426,9 @@ ushort * param_2;
   short sVar2;
   
   param_1 = param_1 & 7;
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] emit_anim_object_frames: param_1(cond_idx)=%d rec_word0=0x%04x rec_b1=0x%02x\n",
+            param_1, (unsigned)*param_2, (unsigned)*(byte *)((char *)param_2 + 1));
   local_38 = '\0';
   local_37 = '\x01';
   local_34 = -1;
@@ -50248,6 +52613,9 @@ LAB_00064cdc:
             uVar11 = DAT_00202734 + param_1 + 0x30;
             uVar9 = 0xe;
           }
+          if (getenv("UW_DEBUG_DOOR"))
+            fprintf(stderr, "[door] emit_anim_object_frames: local_34=%d local_28=%d -> emit_object_billboard(catalog=%d, heading=%d, frame_or_id=%d)\n",
+                    (int)local_34, (int)local_28, (int)uVar9, (int)((param_2[1] >> 7 & 7) << 1), (int)uVar11);
           goto LAB_00064cdc;
         }
         DAT_0023b91c = local_34;
@@ -50437,7 +52805,7 @@ undefined4 param_3;
 
   _o = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[(short)param_1]);  /* was `int iVar1` */
   bVar2 = *(byte *)(_o + 2) & 0x7f;
-  sprite_partition_step((*(byte *)(DAT_0023be64 + 2) & 0x7f) < bVar2,param_2,param_1,param_3,bVar2,0);
+  sprite_partition_step((*(byte *)(g_player_object + 2) & 0x7f) < bVar2,param_2,param_1,param_3,bVar2,0);
   return;
 }
 
@@ -50822,7 +53190,7 @@ undefined4 param_1;
   DAT_00086df8[0x1e] = *(byte *)(DAT_0023be74 + 5);
   DAT_00086df8[0x1f] = *(byte *)(DAT_0023be74 + 6);
   DAT_00086df8[0x20] = *(byte *)(DAT_0023be74 + 7);
-  DAT_00086df8[0x35] = *(byte *)(DAT_0023be64 + 8);
+  DAT_00086df8[0x35] = *(byte *)(g_player_object + 8);
   DAT_00086df8[0x36] = *(byte *)(DAT_0023be74 + 4);
   uVar1 = DAT_00204880;
   DAT_00086df8[0x54] = (byte)DAT_00204880;
@@ -50864,7 +53232,7 @@ undefined4 param_1;
   *(undefined1 *)(DAT_0023be74 + 5) = *(undefined1 *)(DAT_00086df8 + 0x1e);
   *(undefined1 *)(DAT_0023be74 + 6) = *(undefined1 *)(DAT_00086df8 + 0x1f);
   *(undefined1 *)(DAT_0023be74 + 7) = *(undefined1 *)(DAT_00086df8 + 0x20);
-  *(undefined1 *)(DAT_0023be64 + 8) = *(undefined1 *)(DAT_00086df8 + 0x35);
+  *(undefined1 *)(g_player_object + 8) = *(undefined1 *)(DAT_00086df8 + 0x35);
   *(undefined1 *)(DAT_0023be74 + 4) = *(undefined1 *)(DAT_00086df8 + 0x36);
   DAT_00204880 = *(undefined2 *)(DAT_00086df8 + 0x54);
   DAT_00204882 = *(undefined2 *)(DAT_00086df8 + 0x56);
@@ -51061,7 +53429,7 @@ LAB_00066290:
   case 8:
     break;
   case 9:
-    FUN_00074028(DAT_0023be64);
+    FUN_00074028(g_player_object);
     break;
   case 10:
     break;
@@ -51359,7 +53727,7 @@ LAB_000669a8:
   iVar4 = 0;
   bVar12 = false;
   do {
-    puVar6 = DAT_00202948;
+    puVar6 = g_selected_object;
     if (!bVar12) {
       /* Dropped argument (Ghidra relied on a register leftover that
          doesn't hold the right value on this recompile) -- every other
@@ -51435,8 +53803,8 @@ LAB_000669a8:
 void FUN_00066c90()
 
 {
-  FUN_00042b38();
-  FUN_000444b0(DAT_0023be64 + 6);
+  close_backpack_container();
+  FUN_000444b0(g_player_object + 6);
   FUN_000465c8();
   return;
 }
@@ -51448,37 +53816,37 @@ void FUN_00066cb4()
 {
   ushort uVar1;
   
-  Ordinal_1047(DAT_0023be64,0,0x1b);
-  *(byte *)(DAT_0023be64 + 3) = (byte)DAT_0023be64[3] & 0x3f;
-  *(undefined1 *)((char *)DAT_0023be64 + 7) = 0;
-  *(undefined1 *)(DAT_0023be64 + 0xd) = 0xfd;
-  uVar1 = *DAT_0023be64;
-  *(char *)DAT_0023be64 = (char)(uVar1 & 0x7fff);
-  *(char *)((char *)DAT_0023be64 + 1) = (char)((uVar1 & 0x7fff) >> 8);
-  uVar1 = *DAT_0023be64;
-  *(char *)DAT_0023be64 = (char)uVar1;
-  *(byte *)((char *)DAT_0023be64 + 1) = (byte)(uVar1 >> 8) | 0x20;
-  uVar1 = *DAT_0023be64;
-  *(char *)DAT_0023be64 = (char)(uVar1 & 0xbfff);
-  *(char *)((char *)DAT_0023be64 + 1) = (char)((uVar1 & 0xbfff) >> 8);
-  uVar1 = DAT_0023be64[1];
-  *(char *)(DAT_0023be64 + 1) = (char)(uVar1 & 0xfc7f);
-  *(char *)((char *)DAT_0023be64 + 3) = (char)((uVar1 & 0xfc7f) >> 8);
-  *(byte *)(DAT_0023be64 + 0xc) = (byte)DAT_0023be64[0xc] & 0xe0;
-  uVar1 = DAT_0023be64[2];
-  *(char *)(DAT_0023be64 + 2) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)DAT_0023be64 + 5) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)(DAT_0023be64 + 2) = (byte)DAT_0023be64[2] & 0x3f;
-  *(undefined1 *)((char *)DAT_0023be64 + 5) = 0;
-  uVar1 = DAT_0023be64[3];
-  *(char *)(DAT_0023be64 + 3) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)DAT_0023be64 + 7) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)(DAT_0023be64 + 3) = (byte)DAT_0023be64[3] & 0x3f;
-  *(undefined1 *)((char *)DAT_0023be64 + 7) = 0;
-  *(undefined1 *)((char *)DAT_0023be64 + 0x11) = 0;
-  uVar1 = *DAT_0023be64;
-  *(undefined1 *)DAT_0023be64 = 0x7f;
-  *(byte *)((char *)DAT_0023be64 + 1) = (byte)(uVar1 >> 8) & 0xfe;
+  Ordinal_1047(g_player_object,0,0x1b);
+  *(byte *)(g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
+  *(undefined1 *)((char *)g_player_object + 7) = 0;
+  *(undefined1 *)(g_player_object + 0xd) = 0xfd;
+  uVar1 = *g_player_object;
+  *(char *)g_player_object = (char)(uVar1 & 0x7fff);
+  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0x7fff) >> 8);
+  uVar1 = *g_player_object;
+  *(char *)g_player_object = (char)uVar1;
+  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) | 0x20;
+  uVar1 = *g_player_object;
+  *(char *)g_player_object = (char)(uVar1 & 0xbfff);
+  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xbfff) >> 8);
+  uVar1 = g_player_object[1];
+  *(char *)(g_player_object + 1) = (char)(uVar1 & 0xfc7f);
+  *(char *)((char *)g_player_object + 3) = (char)((uVar1 & 0xfc7f) >> 8);
+  *(byte *)(g_player_object + 0xc) = (byte)g_player_object[0xc] & 0xe0;
+  uVar1 = g_player_object[2];
+  *(char *)(g_player_object + 2) = (char)(uVar1 & 0xffc0);
+  *(char *)((char *)g_player_object + 5) = (char)((uVar1 & 0xffc0) >> 8);
+  *(byte *)(g_player_object + 2) = (byte)g_player_object[2] & 0x3f;
+  *(undefined1 *)((char *)g_player_object + 5) = 0;
+  uVar1 = g_player_object[3];
+  *(char *)(g_player_object + 3) = (char)(uVar1 & 0xffc0);
+  *(char *)((char *)g_player_object + 7) = (char)((uVar1 & 0xffc0) >> 8);
+  *(byte *)(g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
+  *(undefined1 *)((char *)g_player_object + 7) = 0;
+  *(undefined1 *)((char *)g_player_object + 0x11) = 0;
+  uVar1 = *g_player_object;
+  *(undefined1 *)g_player_object = 0x7f;
+  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) & 0xfe;
   return;
 }
 
@@ -51489,7 +53857,7 @@ void FUN_00066e90()
 {
   int iVar1;
 
-  /* DAT_002029cc is set once, early (FUN_00049960/FUN_00052960: a real
+  /* DAT_002029cc is set once, early (init_level_object_arena/reset_level_object_arena: a real
      malloc'd pointer via Ordinal_1041), and DAT_002046b8/DAT_002046c4
      are derived from it and never touched again. By the time this
      function runs, though, DAT_002029cc has been observed (via a
@@ -51532,14 +53900,14 @@ void FUN_00066e90()
   DAT_002048b8 = &LAB_0003d8e4;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
-  DAT_0023be64 = DAT_0023b82c;
+  g_player_object = DAT_0023b82c;
   FUN_0006ff08(0);
   DAT_0023be8c = 0;
   DAT_00086df8 = &DAT_0023bca8;
   FUN_00066cb4();
-  iVar1 = (*DAT_0023be64 & 0x3f) * 0x30;
+  iVar1 = (*g_player_object & 0x3f) * 0x30;
   DAT_0023be74 = &DAT_001007d0 + iVar1;
-  DAT_0023be64[8] = (&DAT_001007d4)[iVar1];
+  g_player_object[8] = (&DAT_001007d4)[iVar1];
   if (DAT_00201c74 == 0) {
     DAT_00201c74 = FUN_0007873c(DAT_00086df8,0x7d);
   }
@@ -51560,7 +53928,7 @@ void FUN_00066e90()
   register_key_binding(0x5a,9,1,move_command_dispatch);
   register_key_binding(0x43,10,1,move_command_dispatch);
   /* Sidestep: the DOS "," / "." strafe keys. decode_movement_command
-     already turns input codes 0x2c / 0x2e into DAT_0023bf1c 9 / 10
+     already turns input codes 0x2c / 0x2e into g_movement_mode 9 / 10
      (resolve_move_vector cases 9/10 = move at heading -/+ 90 degrees, facing
      unchanged), but nothing routed those codes here -- move_command_dispatch
      with arg 9/10 just re-runs decode_movement_command and returns. The
@@ -51831,7 +54199,7 @@ short param_1;
     if (DAT_000db500 == 0) {
       return;
     }
-    sVar2 = FUN_0005358c();
+    sVar2 = encode_object_slot_index();
     iVar1 = (int)sVar2;
     if (iVar1 == 0) {
       return;
@@ -51845,10 +54213,10 @@ short param_1;
     DAT_0023b82c = iVar1 * 0x1b + DAT_002046b8;
   }
   else if (param_1 == 1) {
-    if (DAT_0023b82c == DAT_0023be64) {
+    if (DAT_0023b82c == g_player_object) {
       return;
     }
-    DAT_0023b82c = DAT_0023be64;
+    DAT_0023b82c = g_player_object;
   }
   else {
     if (param_1 != 2) {
@@ -52057,14 +54425,14 @@ short param_1;
         return;
       }
       if ((DAT_002048a8 & 0x10) != 0) {
-        DAT_0023bf1c = 1;
+        g_movement_mode = 1;
         return;
       }
       if (*(char *)(DAT_00086df8 + 0xb8) == '\x01') {
-        DAT_0023bf1c = 1;
+        g_movement_mode = 1;
         return;
       }
-      DAT_0023bf1c = 7;
+      g_movement_mode = 7;
       return;
     }
     DAT_0023bf4c = 0;
@@ -52074,7 +54442,7 @@ short param_1;
     iVar3 = Ordinal_2005(5,iVar5);
     if (sVar1 < iVar3) {
       iVar3 = Ordinal_2005((int)DAT_0023bd80,*psVar2 * 3);
-      DAT_0023bf1c = (ushort)(byte)(&DAT_00086e70)[iVar3];
+      g_movement_mode = (ushort)(byte)(&DAT_00086e70)[iVar3];
       return;
     }
     iVar4 = (int)DAT_0023bd80;
@@ -52095,7 +54463,7 @@ short param_1;
     DAT_0023bf50 = 1;
     decode_movement_command();
     if (param_1 == 0) {
-      DAT_0023bf1c = param_1;
+      g_movement_mode = param_1;
       DAT_0023bf48 = 0;
       DAT_0023bf4c = 0;
       return;
@@ -52107,11 +54475,11 @@ short param_1;
       return;
     }
     if (((DAT_002048a8 & 0x10) == 0) && (*(char *)(DAT_00086df8 + 0xb8) != '\x01')) {
-      DAT_0023bf1c = param_1;
+      g_movement_mode = param_1;
       return;
     }
   }
-  DAT_0023bf1c = 1;
+  g_movement_mode = 1;
   return;
 }
 
@@ -52151,7 +54519,7 @@ void decode_movement_command()
   }
   if (DAT_0023c448 < 0x2f) {
     if (DAT_0023c448 == 0x2e) {
-      DAT_0023bf1c = 10;
+      g_movement_mode = 10;
       DAT_0023bf48 = 0;
       DAT_0023bf4c = 0;
       return;
@@ -52160,7 +54528,7 @@ void decode_movement_command()
       if (DAT_0023c448 == 0x1f) {
 LAB_000687cc:
         DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10));
-        DAT_0023bf1c = 1;
+        g_movement_mode = 1;
         return;
       }
       if (DAT_0023c448 == 0x10) goto LAB_00068820;
@@ -52173,25 +54541,25 @@ LAB_000687cc:
           }
 LAB_000686a8:
           DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * -0x5a0000 >> 0x10));
-          DAT_0023bf1c = 1;
+          g_movement_mode = 1;
           return;
         }
         goto LAB_000687fc;
       }
 LAB_00068844:
       DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x700000 >> 0x10));
-      DAT_0023bf1c = 1;
+      g_movement_mode = 1;
       return;
     }
     if (DAT_0023c448 != 0x20) {
       if (DAT_0023c448 == 0x2c) {
-        DAT_0023bf1c = 9;
+        g_movement_mode = 9;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
       }
       if (DAT_0023c448 == 0x2d) {
-        DAT_0023bf1c = 8;
+        g_movement_mode = 8;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
@@ -52206,12 +54574,12 @@ LAB_00068844:
     if (DAT_0023c448 == 0x6b) {
 LAB_00068820:
       if ((DAT_0020208c & 0x14) == 0) {
-        DAT_0023bf1c = 0;
+        g_movement_mode = 0;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
       }
-      DAT_0023bf1c = 0xd;
+      g_movement_mode = 0xd;
       DAT_0023bf48 = 0;
       DAT_0023bf4c = 0;
       return;
@@ -52219,12 +54587,12 @@ LAB_00068820:
     if (DAT_0023c448 == 0x6c) {
 LAB_000687fc:
       if ((DAT_0020208c & 0x14) == 0) {
-        DAT_0023bf1c = 0;
+        g_movement_mode = 0;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
       }
-      DAT_0023bf1c = 0xc;
+      g_movement_mode = 0xc;
       DAT_0023bf48 = 0;
       DAT_0023bf4c = 0;
       return;
@@ -52233,7 +54601,7 @@ LAB_000687fc:
     if (DAT_0023c448 == 0x8f) goto LAB_000686a8;
     if (DAT_0023c448 != 0x91) {
       if (DAT_0023c448 == 0x93) {
-        DAT_0023bf1c = 8;
+        g_movement_mode = 8;
         DAT_0023bf48 = 0;
         DAT_0023bf4c = 0;
         return;
@@ -52244,7 +54612,7 @@ LAB_000687fc:
     }
   }
   DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x5a0000 >> 0x10));
-  DAT_0023bf1c = 1;
+  g_movement_mode = 1;
   return;
 }
 
@@ -52266,7 +54634,7 @@ undefined4 param_1;
   if (iVar2 != 0) {
     DAT_0023bf54 = FUN_0002294c();
     DAT_0023bf58 = DAT_0023bf58 + 4;
-    DAT_00204894 = 0;
+    g_jump_ascent_timer = 0;
     if (DAT_000879ac != 0) {
       FUN_0008128c(1);
     }
@@ -52286,6 +54654,27 @@ undefined4 param_1;
       uVar3 = (short)uVar3 >> 1;
     }
     movement_tick(0x40,uVar3,1);
+    /* movement_tick can come out of that one call with DAT_0023bea8=1 (a
+       "climbing a step" eye-height bob in progress -- see
+       FUN_00069470/sync_camera_from_player's own comment on
+       DAT_0023bea8/be98) if g_movement_mode happened to read as one of the
+       climb-triggering values on this tick. For continuous analog
+       movement (holding a movement letter) that's fine: movement_tick
+       runs again every subsequent tick and naturally settles it back to
+       0 as the climb finishes. A discrete SHIFT+<dir> step calls
+       movement_tick exactly this one time then stops -- nothing ever
+       ticks the bob back down again, so the camera keeps rendering
+       DAT_00204884 + 0xa4 + that stale delta forever after, even though
+       DAT_00204884 (the real height) is already correct. Confirmed live
+       and via a direct before/after screenshot comparison: standing
+       still (bea8=0) shows a normal floor-level view; after a few
+       SHIFT+W steps (bea8 stuck at 1) the exact same spot renders as if
+       the camera were pressed up near the ceiling -- matching the
+       reported "shift+w puts you at the ceiling a lot, plain w
+       doesn't". Clear it here so a discrete step never leaves a stale
+       bob applied once it's done. */
+    DAT_0023bea8 = 0;
+    DAT_0023be98 = 0;
     FUN_00049924(10);
   }
   do {
@@ -52377,11 +54766,11 @@ int param_3;
   DAT_0023bea8 = 0;
   DAT_0023be98 = 0;
   DAT_0023bf18 = (char)param_1 + DAT_0023bf18;
-  if (DAT_0023bf1c == 0) {
+  if (g_movement_mode == 0) {
     decode_movement_command();
   }
-  if ((((((DAT_0023bf1c != 0) || (DAT_00204894 != 0)) || (DAT_0020488a != 0)) ||
-       ((DAT_00204890 != 0 || (DAT_0020488e != 0)))) || ((DAT_0020488c != 0 || (DAT_000858a0 != 0)))
+  if ((((((g_movement_mode != 0) || (g_jump_ascent_timer != 0)) || (g_vertical_velocity != 0)) ||
+       ((g_fall_accel != 0 || (DAT_0020488e != 0)))) || ((DAT_0020488c != 0 || (DAT_000858a0 != 0)))
       ) && (param_3 == 0)) {
     apply_movement_tick(param_1);
   }
@@ -52398,7 +54787,7 @@ int param_3;
     }
     if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) == 0) && ((DAT_002048a8 & 0x10) == 0)) {
       if (param_3 == 0) {
-        if (DAT_00204894 != 0) {
+        if (g_jump_ascent_timer != 0) {
           uVar7 = FUN_0002294c();
           uVar4 = (undefined4)((ulonglong)uVar7 >> 0x20);
           if (DAT_0023bf5c < (uint)uVar7) {
@@ -52410,9 +54799,9 @@ int param_3;
               uVar4 = 0x38;
               uVar6 = 2;
             }
-            FUN_00072f30(uVar6,uVar4,((int)DAT_00204894 >> 5 & 0xffU) - 0x10);
+            FUN_00072f30(uVar6,uVar4,((int)g_jump_ascent_timer >> 5 & 0xffU) - 0x10);
             DAT_0023bf60 = DAT_0023bf60 == '\0';
-            sVar1 = Ordinal_2005(((int)DAT_00204894 >> 2) + 1,6000);
+            sVar1 = Ordinal_2005(((int)g_jump_ascent_timer >> 2) + 1,6000);
             uVar5 = sVar1 + 0x40;
             if (200 < uVar5) {
               uVar5 = 200;
@@ -52428,7 +54817,7 @@ int param_3;
         if ((bool)uVar6) {
           iVar3 = 0x48;
         }
-        uVar2 = (int)DAT_00204894 >> 5 & 0xff;
+        uVar2 = (int)g_jump_ascent_timer >> 5 & 0xff;
         if (!(bool)uVar6) {
           iVar3 = 0x38;
           uVar6 = 2;
@@ -52458,8 +54847,8 @@ int param_3;
 void FUN_00068c1c()
 
 {
-  DAT_0023bf1c = 0;
-  while ((((DAT_00204894 != 0 || (DAT_0020488a != 0)) || (DAT_00204890 != 0)) ||
+  g_movement_mode = 0;
+  while ((((g_jump_ascent_timer != 0 || (g_vertical_velocity != 0)) || (g_fall_accel != 0)) ||
          (((DAT_0020488e != 0 || (DAT_0020488c != 0)) || (DAT_000858a0 != 0))))) {
     apply_movement_tick(0x40);
   }
@@ -52488,8 +54877,8 @@ undefined4 param_1;
   char cVar3;
   short sVar4;
 
-  DAT_002048a5 = (&DAT_00202c91)[(*DAT_0023be64 & 0x1ff) * 0xd] & 7;
-  DAT_002048a6 = (&DAT_00202c90)[(*DAT_0023be64 & 0x1ff) * 0xd];
+  DAT_002048a5 = (&DAT_00202c91)[(*g_player_object & 0x1ff) * 0xd] & 7;
+  DAT_002048a6 = (&DAT_00202c90)[(*g_player_object & 0x1ff) * 0xd];
   DAT_0023be9e = 0;
   DAT_0023be9c = 0;
   DAT_0023be9a = 0;
@@ -52497,11 +54886,11 @@ undefined4 param_1;
   movement_collision_sweep(&DAT_00204880,&DAT_002048b0);
   commit_player_move();
   FUN_00049924(10);
-  sVar4 = DAT_0023bf1c;
+  sVar4 = g_movement_mode;
   bVar1 = DAT_0023bf18;
   if ((DAT_002048a8 & 0x10) == 0) {
-    if (((int)DAT_00202078 >> 2 < (int)DAT_00204894) && (DAT_0023bf1c == 1)) {
-      cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)DAT_00204894 << 2);
+    if (((int)DAT_00202078 >> 2 < (int)g_jump_ascent_timer) && (g_movement_mode == 1)) {
+      cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)g_jump_ascent_timer << 2);
       cVar3 = (char)(cVar2 + -1);
       DAT_0023bea8 = 1;
       if ((cVar2 + -1) * 0x1000000 >> 0x18 < 2) {
@@ -52520,7 +54909,7 @@ undefined4 param_1;
       DAT_0023be98 = (short)(char)(&DAT_00086e48)[bVar1 >> 4] << 1;
     }
   }
-  DAT_0023bf1c = 0;
+  g_movement_mode = 0;
   return;
 }
 
@@ -52551,7 +54940,7 @@ void FUN_0006907c()
   if (((*(byte *)(DAT_00086df8 + 0xb8) & 0x11) != 0) &&
      (sVar9 = -(ushort)*(byte *)(DAT_00086df8 + 0xb9), DAT_0023be98 = sVar9,
      0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
-    iVar7 = (int)DAT_00204894;
+    iVar7 = (int)g_jump_ascent_timer;
     cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)(iVar7) << 2);
     cVar3 = (char)(cVar2 + -3);
     if ((cVar2 + -3) * 0x1000000 >> 0x18 < 1) {
@@ -52577,7 +54966,7 @@ void FUN_0006907c()
     uVar5 = Ordinal_1053();
     Ordinal_2005(5,uVar5);
     if (extraout_r1 == 0) {
-      FUN_00038374(DAT_0023be64,0,0,0,1,8);
+      FUN_00038374(g_player_object,0,0,0,1,8);
     }
   }
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 8) != 0) {
@@ -52659,7 +55048,7 @@ void FUN_00069470()
   short local_c;
   short local_a;
   
-  if (DAT_0023b82c == DAT_0023be64) {
+  if (DAT_0023b82c == g_player_object) {
     *(short *)(DAT_00086e6c + 10) = DAT_00204880;
     *(short *)(DAT_00086e6c + 0x12) = DAT_00204882;
     *(short *)(DAT_00086e6c + 0xe) = DAT_00204884 + 0xa4;
@@ -52669,6 +55058,10 @@ void FUN_00069470()
     if (DAT_0023bea8 == 0) {
       return;
     }
+    if (getenv("UW_DEBUG_EYEHEIGHT"))
+      fprintf(stderr, "[eyeheight] bea8=%d be98=%d base=%d -> %d\n",
+              (int)DAT_0023bea8, (int)DAT_0023be98, (int)*(short *)(DAT_00086e6c + 0xe),
+              (int)(*(short *)(DAT_00086e6c + 0xe) + DAT_0023be98));
     *(short *)(DAT_00086e6c + 0xe) = *(short *)(DAT_00086e6c + 0xe) + DAT_0023be98;
     if (1000 < *(short *)(DAT_00086e6c + 0xe)) {
       *(undefined2 *)(DAT_00086e6c + 0xe) = 1000;
@@ -52850,6 +55243,56 @@ void sync_camera_from_player()
     iVar4 = Ordinal_2005(0xb4, (int)sVar8);
     DAT_000db44c = iVar4 + DAT_0023bf40;
   }
+  /* Always-on (no env var) position/heading debug print, for correlating
+     a live playtester's exact standing spot/facing with what the
+     decompile is doing -- e.g. pinning down the wall-decal depth/
+     parallax issue. First cut read the coarse per-tile position cached in
+     g_player_object (the player object, +0x16, only updated on tile-boundary
+     crossings) the same way demomode.c's own "player tile" TELEPORT/REVEAL
+     print does -- not fine-grained enough (whole tiles only). Switched to
+     DAT_00204880/82 (X/Y) and DAT_00204884 (Z), the true continuously-
+     updated fine-grained player position, format (tile<<8)|fine, 256
+     units/tile -- confirmed via commit_player_move's own tile-index
+     derivation from these exact fields. Pitch is degrees, 0-360, an index
+     into the DAT_000d9ed8/DAT_000d9930 sin/cos tables (same convention
+     emit_tile_objects's decal-angle override uses).
+     Yaw is NOT read from DAT_000db44c (this function's own "camera yaw"
+     local a few lines up) -- confirmed live (both by a full real-turning
+     sweep and by direct screenshot diffing at yaw 0/90/180/270, which
+     render as 4 genuinely different views despite DAT_000db44c reporting
+     near-identical values for all of them) that DAT_000db44c is only the
+     small residual *within* whichever 90-degree quadrant DAT_0023b4a0
+     already rotated the camera's world-space axes into a few lines above
+     (cVar1's branches) -- not the true compass heading. DAT_0023bf40, the
+     field that would need to add the quadrant's own 90*n back in to
+     reconstruct the full angle, has no writer anywhere in this decompile
+     (permanently 0), so DAT_000db44c alone folds every quarter-turn back
+     on top of the others. The renderer itself works around this by also
+     pre-rotating world-space positions via that same DAT_0023b4a0 (see
+     this function's own uVar3/uVar7 swaps above) rather than relying on
+     DAT_000db44c for the coarse direction, which is why the actual 3D
+     view rotates correctly even though DAT_000db44c doesn't reflect it --
+     but anything that reads DAT_000db44c directly as if it *were* the
+     full yaw (this print, previously) reports nonsense above/below one
+     quadrant. DAT_00201c70 (the player's own persistent yaw, 65536
+     units/360 degrees -- the same field SETPLAYERPOS writes and ordinary
+     turning increments by 0x2000/45 degrees) is the real, un-folded full
+     compass heading; convert it directly instead. Throttled to print
+     only on change. Set UW_QUIET_POSDEBUG=1 to silence it. */
+  if (!getenv("UW_QUIET_POSDEBUG")) {
+    static int _last_x = -1, _last_y = -1, _last_z = -1, _last_yaw = -1, _last_pitch = -1;
+    int _x = (unsigned short)DAT_00204880;
+    int _y = (unsigned short)DAT_00204882;
+    int _z = (short)DAT_00204884;
+    int _yaw = (int)lround(fmod((double)(unsigned short)DAT_00201c70 * (360.0 / 65536.0), 360.0));
+    if (_x != _last_x || _y != _last_y || _z != _last_z ||
+        _yaw != _last_yaw || DAT_000db448 != _last_pitch) {
+      _last_x = _x; _last_y = _y; _last_z = _z;
+      _last_yaw = _yaw; _last_pitch = DAT_000db448;
+      fprintf(stderr, "[playerpos] tile=(%.2f,%.2f) z=%d yaw=%d pitch=%d\n",
+              _x / 256.0, _y / 256.0, _z, _yaw, (int)DAT_000db448);
+    }
+  }
   return;
 }
 
@@ -52964,17 +55407,17 @@ void FUN_00069e30()
 
 {
   if (DAT_0023c1d4 == '\x02') {
-    *DAT_0008429c = 0xf1;
+    *g_draw_color_index = 0xf1;
     *DAT_00084298 = 0xf1;
     FUN_00057118();
-    FUN_00040d00(s_font5x6i_sys_00086e98);
+    select_active_font(s_font5x6i_sys_00086e98);
     if (DAT_0024af8c != 0) {
       FUN_00076e98();
     }
     FUN_00078088();
     FUN_00078118();
     FUN_000781a0();
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_font5x6p_sys_0008430c);
     FUN_000570b4();
   }
   return;
@@ -53177,7 +55620,7 @@ short param_1;
   short local_ac [4];
   undefined1 auStack_a4 [160];
   
-  if ((param_1 != 0) && (FUN_0006bde0(auStack_a4,local_ac), local_ac[0] == 0)) {
+  if ((param_1 != 0) && (probe_save_slots(auStack_a4,local_ac), local_ac[0] == 0)) {
     FUN_00037c14(0);
   }
   return;
@@ -53185,7 +55628,12 @@ short param_1;
 
 
 
-void FUN_0006a200(param_1,param_2,param_3,param_4)
+// was FUN_0006a200. Draws one frame of a menu_button_list_navigate
+// list: param_3==0 blits pre-rendered bitmap buttons (the title screen's
+// Introduction/Create Character/.../Journey Onward), param_3!=0 draws
+// plain text items (e.g. journey_onward_load_slot_menu's save-slot
+// descriptions), highlighting whichever index equals param_4.
+void draw_menu_item_list(param_1,param_2,param_3,param_4)
 short param_1;
 char *param_2;
 char param_3;
@@ -53205,7 +55653,7 @@ short param_4;
      value (`iVar2`/`iVar6`, both plain `int`) to hold the string pointer
      itself -- correct on the original 32-bit binary where a pointer IS
      4 bytes, but truncating here on 64-bit. Widened to a real char**
-     with 8-byte stride (see local_1d0 in FUN_0006b178, the only
+     with 8-byte stride (see local_1d0 in journey_onward_load_slot_menu, the only
      populator of this array) and a dedicated pointer variable for the
      string-pointer role; iVar2 keeps its separate int (strlen/measurement)
      role below. */
@@ -53235,17 +55683,31 @@ short param_4;
   else {
     FUN_00057118();
     iVar4 = 0;
+    /* draw_text_string only honours *g_draw_color_index (the palette index this
+       loop sets to 0xa2/0xaa to highlight the selected item) when
+       g_text_use_palette_color is nonzero; otherwise it falls back to the flat
+       g_text_flat_color color, which nothing in the whole decompile ever
+       writes (silently 0/black) -- fine as a default ink color for
+       message-scroll text on its light parchment background, but
+       invisible against this screen's dark title-art backdrop. Force
+       the palette-indexed path for the duration of this draw, matching
+       what setting *g_draw_color_index here clearly intends. */
+    int _saved_af74 = g_text_use_palette_color;
+    g_text_use_palette_color = 1;
     if (0 < param_1) {
       do {
         uVar3 = 0xa2;
         if (iVar4 != param_4) {
           uVar3 = 0xaa;
         }
-        *DAT_0008429c = uVar3;
+        *g_draw_color_index = uVar3;
         *DAT_00084298 = uVar3;
         ppcVar5 = (char **)(param_2 + iVar4 * 8);
         pcVar_str = *ppcVar5;
-        while (sVar1 = FUN_000112a0(pcVar_str), 0x13e < sVar1) {
+        if (getenv("UW_DEBUG_TITLEMENU"))
+          fprintf(stderr, "[titlemenu] draw_menu_item_list text branch: item=%d/%d ptr=%p str='%s'\n",
+                  iVar4, (int)param_1, (void *)pcVar_str, pcVar_str ? pcVar_str : "(null)");
+        while (sVar1 = measure_text_width(pcVar_str), 0x13e < sVar1) {
           pcVar_str = *ppcVar5;
           iVar2 = Ordinal_1068(pcVar_str);
           pcVar_str[iVar2 - 1] = 0;
@@ -53259,6 +55721,7 @@ short param_4;
         iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
       } while (iVar4 < param_1);
     }
+    g_text_use_palette_color = _saved_af74;
   }
   FUN_000570b4();
   return;
@@ -53316,7 +55779,7 @@ char param_3;
                  && ((int)*(short *)(pcVar_rec + 10) <= (int)local_2e)) {
                 bVar2 = true;
                 if ((short)iVar8 != (short)iVar9) {
-                  FUN_0006a200(param_1,param_2,0,iVar8);
+                  draw_menu_item_list(param_1,param_2,0,iVar8);
                   iVar9 = iVar8;
                 }
                 break;
@@ -53333,7 +55796,7 @@ char param_3;
     }
   }
   else {
-    FUN_00040d00(s_fontbig_sys_0008432c);
+    select_active_font(s_fontbig_sys_0008432c);
     sVar4 = next_input_event();
     bVar2 = bVar3;
     if (0 < sVar4) {
@@ -53345,7 +55808,7 @@ char param_3;
         if (0 < iVar1) {
           iVar8 = 0;
           do {
-            sVar4 = FUN_000112a0(*(char **)(param_2 + iVar8 * 8));
+            sVar4 = measure_text_width(*(char **)(param_2 + iVar8 * 8));
             iVar6 = -(int)sVar4;
             iVar7 = iVar6 + 0x140;
             if (iVar7 < 0) {
@@ -53357,7 +55820,7 @@ char param_3;
               if ((iVar6 <= local_2e) && ((int)local_2e < iVar6 + *(short *)(DAT_000879b0 + 6))) {
                 bVar2 = true;
                 if ((short)iVar8 != (short)iVar9) {
-                  FUN_0006a200(param_1,param_2,param_3,iVar8);
+                  draw_menu_item_list(param_1,param_2,param_3,iVar8);
                   iVar9 = iVar8;
                 }
                 break;
@@ -53372,7 +55835,7 @@ char param_3;
         sVar4 = next_input_event();
       } while (0 < sVar4);
     }
-    FUN_00040d00(s_FONT5X6P_SYS_00084e9c);
+    select_active_font(s_FONT5X6P_SYS_00084e9c);
   }
   if (bVar2) {
     sVar5 = 0;
@@ -53399,9 +55862,9 @@ int param_4;
   
   iVar4 = -2;
   do {
-    FUN_00040d00(s_fontbig_sys_0008432c);
-    FUN_0006a200(param_1,param_2,param_3,param_4);
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_fontbig_sys_0008432c);
+    draw_menu_item_list(param_1,param_2,param_3,param_4);
+    select_active_font(s_font5x6p_sys_0008430c);
     while (sVar2 = next_input_event(), sVar2 < 0) {
       ushort _cyc_t = DAT_0023bf74;
       FUN_000735fc();
@@ -53410,8 +55873,9 @@ int param_4;
          this tick and re-blitted the OPSCR title; recolour the menu-item
          bitmaps too so they shimmer in step with the title, the way the
          original's hardware palette swap did. */
-      if (DAT_0023bf74 != _cyc_t) FUN_0006a200(param_1,param_2,param_3,param_4);
+      if (DAT_0023bf74 != _cyc_t) draw_menu_item_list(param_1,param_2,param_3,param_4);
     }
+    if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x param_4=%d\n", (int)sVar2, (int)param_4);
     sVar1 = (short)param_1;
     iVar3 = param_4;
     iVar5 = iVar4;
@@ -53519,7 +55983,12 @@ LAB_0006b144:
 
 
 
-undefined4 FUN_0006b178()
+// was FUN_0006b178. Title screen's "Journey Onward" entry point: shows
+// the save-slot picker (via probe_save_slots + menu_button_list_navigate)
+// and, on a real selection, copies that slot into \SAVE0 and enters
+// gameplay -- see the tail's own comment for why it does a direct file
+// copy rather than reusing the in-game Save/Load paths.
+undefined4 journey_onward_load_slot_menu()
 
 {
   char stack0xffdc3198_buf [256];
@@ -53534,7 +56003,7 @@ undefined4 FUN_0006b178()
                         truncating the real FUN_0007863c() string
                         pointer it also briefly held -- same "reused
                         scalar" bug already fixed elsewhere this session
-                        (see thunk_FUN_00048764's uVar11 comment) */
+                        (see dispatch_object_action's uVar11 comment) */
   short sVar6;
   uint uVar7;
   int iVar8;
@@ -53543,11 +56012,23 @@ undefined4 FUN_0006b178()
   undefined4 auStack_201d0 [32766];
   short local_1d8 [4];
   /* Was `undefined4 local_1d0 [4]`, storing real char* pointers into
-     4-byte slots (see FUN_0006a200's param_3!=0 branch, which reads this
+     4-byte slots (see draw_menu_item_list's param_3!=0 branch, which reads this
      array as an 8-byte-stride char** table). Widened to match. */
   char *local_1d0 [4];
   char acStack_1c0 [264];
-  char acStack_b8 [38];
+  /* Was `char acStack_b8 [38]` -- another Ghidra stack-frame-size
+     miscalculation (same bug class fixed elsewhere this session).
+     probe_save_slots unconditionally writes 4 fixed-width 0x28(40)-byte
+     records into whatever buffer its param_1 points at (uVar5*0x28 +
+     charindex, for uVar5 = 0..3), i.e. it needs 0xA0 (160) bytes -- and
+     both its other call sites (FUN_000567ec's auStack_ac, FUN_0006a1c4's
+     auStack_a4) already correctly declare exactly that. Only this one
+     was wrong, at less than a quarter the required size. Confirmed via
+     AddressSanitizer: a real stack-buffer-overflow, reproducibly
+     crashing (SIGABRT, corrupted heap free-list, surfacing later and
+     unpredictably depending on stack layout) as soon as the in-game
+     options/pause menu opens, since that's this function's own caller. */
+  char acStack_b8 [160];
   char local_92 [122];
   
   FUN_00057118();
@@ -53564,13 +56045,28 @@ undefined4 FUN_0006b178()
   Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
   FUN_0006c98c(0xffffffff,acStack_1c0,1);
   FUN_000570b4();
-  FUN_0006bde0(acStack_b8,local_1d8);
+  probe_save_slots(acStack_b8,local_1d8);
   iVar4 = 0;
   uVar10 = (uint)local_1d8[0];
   uVar7 = 0;
   do {
     if ((uVar10 & 1 << (uVar7 & 0xff)) != 0) {
-      for (pcVar3 = local_92 + uVar7 * 0x28;
+      /* Was `local_92 + uVar7 * 0x28` -- local_92 is a separate,
+         never-written 122-byte stack local (too small for this indexing
+         past uVar7==2 anyway), while probe_save_slots actually wrote the 4
+         real 0x28-byte slot-description records into acStack_b8 (see its
+         own declaration comment). Also, this loop is meant to walk
+         BACKWARD from the END of the 40-byte record over trailing
+         padding spaces to find where the real text ends -- but Ghidra
+         dropped the "+0x27" (last-byte) offset from the starting point,
+         so `pcVar3` started at the record's FIRST byte instead. Since
+         the loop condition requires strictly greater-than the record
+         start to keep scanning backward, that made it a zero-iteration
+         loop every time, and `pcVar3[1] = '\0'` right below always
+         chopped the label down to its first character regardless of
+         content (confirmed via UW_DEBUG_TITLEMENU: "Level 1" -> "L").
+         Start from the record's real last byte instead. */
+      for (pcVar3 = acStack_b8 + uVar7 * 0x28 + 0x27;
           (*pcVar3 == ' ' && (acStack_b8 + uVar7 * 0x28 < pcVar3)); pcVar3 = pcVar3 + -1) {
       }
       pcVar3[1] = '\0';
@@ -53608,19 +56104,19 @@ undefined4 FUN_0006b178()
        char*, but uVar5 is this function's own `undefined4` 0/1/-1
        return-code variable, so storing the string pointer into it
        truncated it on this 64-bit build (same "reused scalar" bug
-       already fixed elsewhere this session -- see thunk_FUN_00048764's
+       already fixed elsewhere this session -- see dispatch_object_action's
        uVar11 comment). Use a real pointer local instead. */
     pcVar_str = (char *)FUN_0007863c(0x301);
-    FUN_00040d00(s_fontbig_sys_0008432c);
-    *DAT_0008429c = 0xa2;
+    select_active_font(s_fontbig_sys_0008432c);
+    *g_draw_color_index = 0xa2;
     *DAT_00084298 = 0xa2;
-    sVar2 = FUN_000112a0(pcVar_str);
+    sVar2 = measure_text_width(pcVar_str);
     iVar8 = -(int)sVar2 + 0x140;
     if (iVar8 < 0) {
       iVar8 = -(int)sVar2 + 0x141;
     }
     draw_text_string(pcVar_str,(short)(iVar8 >> 1) + 10,0x5a);
-    FUN_00040d00(s_font5x6p_sys_0008430c);
+    select_active_font(s_font5x6p_sys_0008430c);
     /* Was `FUN_0006c0c0(iVar4 + 1)` -- FUN_0006c0c0 is "Save Game"
        (copies the live \SAVE0 session INTO the chosen slot), which makes
        no sense from the title screen where no game is running yet: this
@@ -53652,7 +56148,7 @@ undefined4 FUN_0006b178()
          Every save this decompile can produce is level 1 (no UI to
          change levels exists yet), so load that directly rather than a
          possibly-stale/zero level number. */
-      sVar2 = FUN_0006bc28(1);
+      sVar2 = load_level(1);
       if (sVar2 != 0) {
         FUN_0006c834(1,3);
         /* Real UW1 presumably restores the player's saved tile position
@@ -54002,7 +56498,7 @@ undefined4 FUN_0006bb64()
 
 
 
-int FUN_0006bc28(param_1)
+int load_level(param_1)
 undefined4 param_1;
 
 {
@@ -54019,7 +56515,7 @@ undefined4 param_1;
     iVar2 = 0;
   }
   else {
-    sVar1 = FUN_000499c0(auStack_1c,param_1);
+    sVar1 = load_level_object_table(auStack_1c,param_1);
     iVar2 = (int)sVar1;
     FUN_00044624(0);
     if (0 < iVar2) {
@@ -54048,14 +56544,14 @@ undefined4 param_1;
   undefined1 auStack_20 [16];
   
   FUN_00043fd8(0);
-  FUN_000444b0(DAT_0023be64 + 3);
+  FUN_000444b0(g_player_object + 3);
   if (-1 < DAT_00202080) {
-    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,DAT_0023be64);
+    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   DAT_00202080 = 0xffff;
-  uVar1 = *DAT_0023be64;
-  *(char *)DAT_0023be64 = (char)(uVar1 & 0xfe3f);
-  *(char *)((char *)DAT_0023be64 + 1) = (char)((uVar1 & 0xfe3f) >> 8);
+  uVar1 = *g_player_object;
+  *(char *)g_player_object = (char)(uVar1 & 0xfe3f);
+  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xfe3f) >> 8);
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
   uVar3 = 0;
   if (iVar2 != 0) {
@@ -54075,7 +56571,10 @@ LAB_0006bdbc:
 
 
 
-void FUN_0006bde0(param_1,param_2)
+// was FUN_0006bde0. Fills param_1 with 4 fixed-width 0x28-byte records
+// (each slot's "desc" file text, space-padded, or a "not used yet"
+// placeholder) and *param_2 with a bitmask of which slots are real.
+void probe_save_slots(param_1,param_2)
 char *param_1;
 ushort * param_2;
 
@@ -54118,6 +56617,15 @@ ushort * param_2;
     }
     iVar4 = FUN_000226e8(acStack_128,0);
     if ((iVar4 != -1) && (iVar4 = FUN_000227d4(acStack_128), iVar4 != -1)) {
+      /* Pad the record with spaces before reading the real "desc" file
+         text over the front of it -- journey_onward_load_slot_menu's caller trims
+         trailing spaces off this record to find where the real text
+         ends, which only works if anything past the file's own (short)
+         content is a space rather than whatever stack garbage happened
+         to be here. Dropped from this decompile; without it a save
+         slot's button label ran into garbage bytes following its real
+         description. */
+      Ordinal_1047(uVar5 * 0x28 + param_1,0x20,0x28);
       FUN_0002285c(iVar4,uVar5 * 0x28 + param_1,0x27);
       *param_2 = *param_2 | (ushort)(1 << (uVar5 & 0xff));
       Ordinal_553(iVar4);
@@ -54158,7 +56666,7 @@ undefined4 param_2;
   short local_b4 [4];
   undefined1 auStack_ac [160];
   
-  FUN_0006bde0(auStack_ac,local_b4);
+  probe_save_slots(auStack_ac,local_b4);
   if (param_1 == 0) {
     iVar1 = FUN_0006c264(param_2,auStack_d4 + (short)param_2 * 0x28);
     iVar2 = 4;
@@ -54168,7 +56676,7 @@ undefined4 param_2;
   }
   else if (false) {
     /* Was `(1 << (param_2-1) & local_b4[0]) == 0` -- local_b4[0] is the
-       bitmask FUN_0006bde0 just built of which of the 4 numbered slots
+       bitmask probe_save_slots just built of which of the 4 numbered slots
        already HAVE a save (bit set = a real "\SAVEn\desc" was found on
        disk), so this required the chosen slot to already be occupied
        before allowing a save into it -- meaning a brand new slot (the
@@ -54191,7 +56699,7 @@ undefined4 param_2;
       FUN_0006e89c();
       iVar2 = 2;
       FUN_0003e4cc();
-      FUN_0006cca8();
+      redraw_hud_panels();
       FUN_0003dca4(0xffffffff);
       DAT_000858a0 = 1;
       FUN_00049924(0x7ffe);
@@ -54237,7 +56745,7 @@ char param_1;
      stack garbage, so the '0' substitution below found a random byte (or
      nothing) instead of the real "SAVE0" digit. Same idea as the copy
      just above into acStack_85df0 (which this function doesn't otherwise
-     use for the digit search), mirrored here to match FUN_0006bde0's
+     use for the digit search), mirrored here to match probe_save_slots's
      working copy-then-strchr pattern. */
   pcVar6 = &DAT_000857a0;
   wptr_50330 = acStack_650;
@@ -54249,7 +56757,7 @@ char param_1;
   pcVar6 = (char *)Ordinal_1064(acStack_650,0x30);
   pcVar5 = &DAT_0023cca8;
     stack0xffdc2e30_ptr = stack0xffdc2e30_buf;
-  /* Same DAT_000857a0-is-unrecoverable NULL risk as FUN_0006bde0 above
+  /* Same DAT_000857a0-is-unrecoverable NULL risk as probe_save_slots above
      -- see its comment. Here the digit is a save-slot number (SAVE0,
      SAVE1, ...), so a NULL means this path build silently keeps
      whatever acStack_650 already had instead of crashing. */
@@ -54307,7 +56815,7 @@ char param_1;
          already stored), and building that whole text-entry flow from
          scratch is out of scope here. Write a real, useful description
          anyway -- the current dungeon level -- so a save actually shows
-         up as "used" (FUN_0006bde0 probes for this file's existence) and
+         up as "used" (probe_save_slots probes for this file's existence) and
          the Load list has something meaningful to show instead of
          staying blank forever. */
       {
@@ -54323,7 +56831,7 @@ char param_1;
       iVar4 = FUN_00044624(&DAT_000857a0);
       if (iVar4 != 0) {
         FUN_00078c80(0xaa);
-        sVar2 = FUN_0006bc28((int)DAT_00201b68);
+        sVar2 = load_level((int)DAT_00201b68);
         if (sVar2 != 0) {
           FUN_0006c834((int)DAT_00201b68,3);
           FUN_00078c80(0xaa);
@@ -54373,7 +56881,7 @@ undefined4 param_2;
   } while (cVar1 != '\0');
   Ordinal_1063(local_530,&DAT_000857a0);
   pcVar3 = (char *)Ordinal_1064(local_530,0x30);
-  /* Same DAT_000857a0-is-unrecoverable NULL risk as FUN_0006bde0 above. */
+  /* Same DAT_000857a0-is-unrecoverable NULL risk as probe_save_slots above. */
   if (pcVar3 != (char *)0x0) {
   *pcVar3 = param_1 + '0';
   pcVar3[1] = '\0';
@@ -54572,16 +57080,16 @@ undefined4 param_2;
   int iVar3;
   
   FUN_00027694();
-  if ((DAT_002020c4 == 2) && (DAT_00202948 != 0)) {
-    DAT_002020c4 = 0;
-    DAT_00202948 = 0;
+  if ((g_cursor_holding_state == 2) && (g_selected_object != 0)) {
+    g_cursor_holding_state = 0;
+    g_selected_object = 0;
     FUN_00057cac(3);
   }
   FUN_0006c834(param_1,1);
   iVar2 = FUN_0006bcd4(param_1);
   iVar3 = 0;
   if (iVar2 != 0) {
-    sVar1 = FUN_0006bc28(param_2);
+    sVar1 = load_level(param_2);
     iVar3 = (int)sVar1;
     if (iVar3 == 0) {
       iVar3 = 0;
@@ -54774,7 +57282,7 @@ void FUN_0006cbf0()
 
 
 
-void FUN_0006cca8()
+void redraw_hud_panels()
 
 {
   undefined4 uVar1;
@@ -54792,10 +57300,10 @@ void FUN_0006cca8()
       uVar1 = FUN_00076194(2,0xd,10);
       (&DAT_0023c230)[iVar3] = (short)uVar1;
       FUN_000762c4(uVar1,(int)(short)(&DAT_00087170)[iVar3],0x87,0xd,10);
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       uVar1 = FUN_00076194(2,0x25,0x17);
       (&DAT_0023c234)[iVar3] = (short)uVar1;
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
       FUN_000762c4(uVar1,(int)(short)(&DAT_00087174)[iVar3],0x92,0x25,0x17);
       uVar1 = FUN_00076078(0);
       (&DAT_0023c238)[iVar3] = (short)uVar1;
@@ -54833,7 +57341,27 @@ void FUN_0006cca8()
   FUN_00076390((int)DAT_0023c21c,0x20a6);
   FUN_0006e96c(DAT_00086df8 + 0x47);
   FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
+  /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
+     parameter -- it reads the global g_blit_transparent_mode instead (see its own
+     definition in graphics.c: g_blit_transparent_mode==0 draws every source byte
+     opaquely via the palette, nonzero skips byte==0 as the transparent
+     key). Every OTHER caller in this file that wants transparency sets
+     this global around the call (draw_sprite_by_id, FUN_0003f99c,
+     FUN_0003fa1c all do `g_blit_transparent_mode = 1; ...; g_blit_transparent_mode = 0;`) --
+     this call's own trailing literal `1` argument clearly intended the
+     same thing (it's not a real parameter bitmap_blit_to_framebuffer
+     reads at all, just a leftover Ghidra also emitted at the other
+     sites where it happens to coincide with the real fix), but nothing
+     here ever sets the global, so this panel background blit ran
+     opaque -- painting every transparent-keyed pixel in the panels.GR
+     source (byte value 0) as solid black instead of leaving the
+     background visible underneath. This is the inventory-area "black
+     box" bug (uw.c's own DAT_0023cca4 decode is real panels.GR pixel
+     data, confirmed via UW_DEBUG_DRAW framebuffer dumps -- the missing
+     piece was purely this transparency-mode flag). */
+  g_blit_transparent_mode = 1;
   bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+  g_blit_transparent_mode = 0;
   (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
   FUN_00076508();
   return;
@@ -55214,9 +57742,9 @@ int param_1;
   iVar1 = iVar6 * 2;
   psVar11 = &DAT_0023c1e8 + iVar6;
   if (*psVar11 == 0) {
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
     sVar4 = FUN_00076194(3,0x28,0x18);
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
     *psVar11 = sVar4;
   }
   piVar10 = (int *)(&DAT_0023c1f8 + iVar6 * 4);
@@ -55583,7 +58111,7 @@ byte FUN_0006e3ac()
     DAT_000870dc = DAT_000870d8;
     if ((DAT_000870d8 < '\x04') && (-1 < DAT_000870d8)) {
       DAT_0023c210 = 0;
-      bVar2 = FUN_000417b4(s_weapons_0008727c,
+      bVar2 = load_gr_resource_entries(s_weapons_0008727c,
                            ((int)DAT_000870d8 + (*(byte *)(DAT_00086df8 + 100) & 1) * -4 + 4) * 0x1c
                            ,0x1c,&LAB_0006e2f4,&LAB_0006e324);
       iVar8 = (int)DAT_000870d8;
@@ -55822,14 +58350,14 @@ char *param_1;
   
   if (DAT_0023c268 == 0) {
     iVar2 = 0;
-    DAT_00088960 = 1;
+    g_blit_transparent_mode = 1;
     do {
       uVar1 = FUN_00076194(1,0x10,0x10);
       (&DAT_0023c268)[iVar2] = (short)uVar1;
       FUN_000762c4(uVar1,(int)(short)(&DAT_00087210)[iVar2],0x8b,0x10,0x10);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
-    DAT_00088960 = 0;
+    g_blit_transparent_mode = 0;
   }
   iVar2 = 0;
   do {
@@ -55858,14 +58386,14 @@ char *param_1;
   if (*(short *)(DAT_00085a6c + 8) == 1) {
     if (DAT_0023c270 == 0) {
       iVar2 = 0;
-      DAT_00088960 = 1;
+      g_blit_transparent_mode = 1;
       do {
         uVar1 = FUN_00076194(1,0x10,0x12);
         (&DAT_0023c270)[iVar2] = (short)uVar1;
         FUN_000762c4(uVar1,(int)(short)(&DAT_00087218)[iVar2],0x89,0x10,0x12);
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
       } while (iVar2 < 3);
-      DAT_00088960 = 0;
+      g_blit_transparent_mode = 0;
     }
     iVar2 = 0;
     do {
@@ -56453,14 +58981,14 @@ void FUN_0006fcb0()
   short sVar1;
   undefined4 uVar2;
   
-  DAT_00088960 = 1;
+  g_blit_transparent_mode = 1;
   if ((((DAT_0023c130 != 6) && (DAT_000870e4 < 0x1c)) && (-1 < DAT_000870dc)) && (DAT_0008725c != 0)
      ) {
-    if (DAT_00204894 == 0) {
+    if (g_jump_ascent_timer == 0) {
       sVar1 = 0;
     }
     else {
-      sVar1 = Ordinal_2005(799,(int)DAT_00204894 << 1);
+      sVar1 = Ordinal_2005(799,(int)g_jump_ascent_timer << 1);
       sVar1 = sVar1 + 1;
     }
     FUN_0006e554((int)sVar1);
@@ -56483,7 +59011,7 @@ void FUN_0006fcb0()
   FUN_00040bc0(0x107f,0x3e,3);
   FUN_00040bc0(0x1080,0,0xd);
   FUN_00040bc0(0x1081,0xab,0xd);
-  DAT_00088960 = 0;
+  g_blit_transparent_mode = 0;
   return;
 }
 
@@ -57024,8 +59552,8 @@ LAB_000709e0:
     if (iVar6 == 0x14) {
       if ((*(byte *)(DAT_00086df8 + 0x60) & 0x80) == 0) {
         uVar4 = FUN_0007863c(0x223);
-        FUN_0007ed20(uVar4,*(ushort *)(DAT_0023be64 + 0x16) >> 10,
-                     (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4,(int)DAT_00201b68,0x18,0x2d,3,4
+        FUN_0007ed20(uVar4,*(ushort *)(g_player_object + 0x16) >> 10,
+                     (*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4,(int)DAT_00201b68,0x18,0x2d,3,4
                     );
       }
 LAB_00070c78:
@@ -57133,16 +59661,16 @@ void FUN_00070c90()
   undefined1 auStack_68 [16];
   char local_58 [52];
 
-  FUN_00040d00(s_fontchar_sys_00087330);
+  select_active_font(s_fontchar_sys_00087330);
   *DAT_00084298 = 0x5c;
-  *DAT_0008429c = 0x5c;
+  *g_draw_color_index = 0x5c;
   uVar7 = FUN_0007863c((int)DAT_00201c74);
-  /* Was `FUN_000112a0()` with no argument -- see draw_text_string/
-     FUN_000112a0's own comments above for the root "dropped argument"
+  /* Was `measure_text_width()` with no argument -- see draw_text_string/
+     measure_text_width's own comments above for the root "dropped argument"
      bug this matches; uVar7 (the string FUN_0007863c just returned) is
      right here, so pass it explicitly instead of hoping it's still
      sitting in the right register. */
-  sVar6 = FUN_000112a0(uVar7);
+  sVar6 = measure_text_width(uVar7);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
@@ -57171,7 +59699,7 @@ void FUN_00070c90()
   uVar7 = FUN_0007863c((*(byte *)(iVar12 + 100) >> 5) + 0x17 | 0x400);
   Ordinal_1063(local_58,uVar7);
   iVar13 = *(short *)(DAT_000879b0 + 6) + 0x14;
-  sVar6 = FUN_000112a0(local_58);
+  sVar6 = measure_text_width(local_58);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
@@ -57179,7 +59707,7 @@ void FUN_00070c90()
   draw_text_string(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   uVar7 = FUN_0007863c(700);
   iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
-  sVar6 = FUN_000112a0(uVar7);
+  sVar6 = measure_text_width(uVar7);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
@@ -57199,7 +59727,7 @@ void FUN_00070c90()
   Ordinal_1063(local_58,uVar7);
   uVar7 = FUN_0007863c(0x2be);
   Ordinal_1063(local_58,uVar7);
-  sVar6 = FUN_000112a0(local_58);
+  sVar6 = measure_text_width(local_58);
   iVar12 = (int)sVar6;
   if (iVar12 < 0) {
     iVar12 = iVar12 + 1;
@@ -57272,7 +59800,7 @@ LAB_00071110:
         }
         iVar14 = (short)extraout_r1_02 * 0x4a + 0x32;
         draw_text_string(uVar7,iVar14,iVar13);
-        iVar9 = FUN_000112a0(local_58);
+        iVar9 = measure_text_width(local_58);
         draw_text_string(local_58,(iVar14 - iVar9) + 0x46,iVar13);
         iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
       } while (iVar12 < 0x14);
@@ -57351,7 +59879,7 @@ void FUN_0007141c()
   undefined1 uVar2;
   
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
-    FUN_00038374(DAT_0023be64,0,0,0,0xff,0);
+    FUN_00038374(g_player_object,0,0,0,0xff,0);
   }
   FUN_000667cc();
   FUN_00068c1c();
@@ -57359,10 +59887,10 @@ void FUN_0007141c()
     uVar1 = Ordinal_1053();
     uVar2 = 0x10;
     Ordinal_2005(6,uVar1);
-    FUN_00038374(DAT_0023be64,0,0,0,extraout_r1 * '\n' + '\f',uVar2);
+    FUN_00038374(g_player_object,0,0,0,extraout_r1 * '\n' + '\f',uVar2);
   }
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
-    FUN_00038374(DAT_0023be64,0,0,0,0xff,0);
+    FUN_00038374(g_player_object,0,0,0,0xff,0);
   }
   return;
 }
@@ -57414,7 +59942,7 @@ LAB_0007158c:
     FUN_0005404c(iVar8 * 0xb4,0);
     if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
       uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) >> 2 & 0xf;
-      FUN_00038374(DAT_0023be64,0,0,0,(char)((int)((uVar7 + 1) * uVar7) >> 1),0x10);
+      FUN_00038374(g_player_object,0,0,0,(char)((int)((uVar7 + 1) * uVar7) >> 1),0x10);
       uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar7;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
@@ -57422,7 +59950,7 @@ LAB_0007158c:
     if (param_1 < 0) {
       FUN_0007141c();
     }
-    if (*(char *)(DAT_0023be64 + 8) == '\0') {
+    if (*(char *)(g_player_object + 8) == '\0') {
       FUN_000735c0();
     }
     else {
@@ -57433,7 +59961,7 @@ LAB_0007158c:
         uVar5 = Ordinal_1053();
         Ordinal_2005(4,uVar5);
         iVar4 = (extraout_r1_00 - iVar8) + 7;
-        if (*(byte *)(DAT_0023be64 + 8) < 10) {
+        if (*(byte *)(g_player_object + 8) < 10) {
           uVar5 = Ordinal_1053();
           Ordinal_2005(2,uVar5);
           iVar4 = iVar4 + extraout_r1_01 + 1;
@@ -57456,12 +59984,12 @@ LAB_0007158c:
         }
         if (*(char *)(DAT_00086df8 + 0x39) == '\0') {
           FUN_00078c80(0x11);
-          FUN_00038374(DAT_0023be64,0,0,0,2,0);
+          FUN_00038374(g_player_object,0,0,0,2,0);
         }
         else {
-          FUN_00073ec0(DAT_0023be64,(((short)iVar4 + 1) * (int)sVar3 * 0x1000000 >> 0x18) + -1);
-          FUN_00073e14(DAT_0023be64,0xfffffffa);
-          FUN_00073e14(DAT_0023be64,((char)sVar3 + 1) * (int)(char)iVar4 + (int)(char)sVar3 + -1);
+          FUN_00073ec0(g_player_object,(((short)iVar4 + 1) * (int)sVar3 * 0x1000000 >> 0x18) + -1);
+          FUN_00073e14(g_player_object,0xfffffffa);
+          FUN_00073e14(g_player_object,((char)sVar3 + 1) * (int)(char)iVar4 + (int)(char)sVar3 + -1);
         }
         sVar3 = Ordinal_1053();
         FUN_00071b08(-0x18 - ((int)sVar3 & 0x1fU));
@@ -57505,11 +60033,11 @@ LAB_0007158c:
       }
       FUN_000667cc();
       FUN_00040440();
-      DAT_00204894 = 0;
-      DAT_00204890 = 0;
+      g_jump_ascent_timer = 0;
+      g_fall_accel = 0;
       DAT_0020488e = 0;
       DAT_0020488c = 0;
-      DAT_0020488a = 0;
+      g_vertical_velocity = 0;
       DAT_00204888 = 0;
       DAT_00204886 = 0;
       FUN_00078550();
@@ -57524,7 +60052,7 @@ LAB_0007158c:
     }
   }
   else {
-    if ((((*(byte *)(DAT_00086df8 + 0xb8) & 0x1b) == 0) && (DAT_00204890 == 0)) &&
+    if ((((*(byte *)(DAT_00086df8 + 0xb8) & 0x1b) == 0) && (g_fall_accel == 0)) &&
        (DAT_00201b68 != 9)) {
       iVar4 = FUN_00035340();
       if (iVar4 == 0) {
@@ -57566,7 +60094,7 @@ short param_1;
       if (8 < bVar3) {
         bVar3 = 8;
       }
-      FUN_00073f60(DAT_0023be64,bVar3);
+      FUN_00073f60(g_player_object,bVar3);
       *(undefined1 *)(DAT_00086df8 + 0x3b) = 0;
     }
     uVar4 = 1;
@@ -57614,7 +60142,7 @@ void FUN_00071b94()
         object_list_unlink(local_11c,puVar5);
         free_object_slot(puVar5);
       }
-      FUN_000396a0(DAT_0023be64,0x1b,0x17,9);
+      FUN_000396a0(g_player_object,0x1b,0x17,9);
       *(undefined1 *)(DAT_00086df8 + 0x6d) = 0xff;
       FUN_00078c80(0x118);
       DAT_00085730 = DAT_00085730 & 0xfe;
@@ -57712,7 +60240,7 @@ undefined4 FUN_00071e20()
         puVar7[3] = (byte)((uVar8 & 0x3ff) >> 8) | bVar2 | (byte)(((local_18 & 7) << 10) >> 8);
         *puVar7 = *puVar7;
         puVar7[1] = puVar7[1] | 0x20;
-        uVar4 = FUN_0005358c(puVar7);
+        uVar4 = encode_object_slot_index(puVar7);
         sVar3 = FUN_00080ed4(uVar4,0xffffffff,0,(short)local_16 >> 3 & 0xff,
                              CONCAT11(uVar10,(char)((short)local_18 >> 3)));
         if (sVar3 != 0) {
@@ -57765,18 +60293,18 @@ void FUN_0007213c()
   iVar2 = FUN_00072084(*(byte *)(DAT_00086df8 + 0x5e) >> 4,0x1ca);
   if (iVar2 != 0) {
     if (*(byte *)(DAT_0023be74 + 4) < 9) {
-      *(byte *)(DAT_0023be64 + 8) = *(byte *)(DAT_0023be74 + 4);
+      *(byte *)(g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
     }
     else {
       cVar1 = rand_below(3);
-      *(char *)(DAT_0023be64 + 8) = (-2 - cVar1) + *(char *)(DAT_0023be74 + 4);
+      *(char *)(g_player_object + 8) = (-2 - cVar1) + *(char *)(DAT_0023be74 + 4);
     }
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
     if (8 < *(byte *)(DAT_00086df8 + 0x38)) {
       *(byte *)(DAT_00086df8 + 0x37) =
            (-2 - (*(byte *)(DAT_00086df8 + 0x38) >> 3)) + *(char *)(DAT_00086df8 + 0x37);
     }
-    *(byte *)(DAT_0023be64 + 0x15) = *(byte *)(DAT_0023be64 + 0x15) & 0xec | 0x2c;
+    *(byte *)(g_player_object + 0x15) = *(byte *)(g_player_object + 0x15) & 0xec | 0x2c;
     uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
@@ -57805,7 +60333,7 @@ void FUN_00072288()
   short extraout_r1;
   
   if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
-    *(undefined1 *)(DAT_0023be64 + 8) = 4;
+    *(undefined1 *)(g_player_object + 8) = 4;
     return;
   }
   thunk_FUN_00072c44();
@@ -57814,13 +60342,13 @@ void FUN_00072288()
   full_dungeon_redraw();
   FUN_000411b8(5);
   FUN_00027694();
-  if (DAT_00202948 != 0) {
-    if ((DAT_002020c4 == 1) || (DAT_002020c4 == 0)) {
-      FUN_000523d0(DAT_0023be64,DAT_00202948,6,0);
+  if (g_selected_object != 0) {
+    if ((g_cursor_holding_state == 1) || (g_cursor_holding_state == 0)) {
+      FUN_000523d0(g_player_object,g_selected_object,6,0);
     }
-    else if (DAT_002020c4 != 2) goto LAB_00072374;
-    DAT_002020c4 = 0;
-    DAT_00202948 = 0;
+    else if (g_cursor_holding_state != 2) goto LAB_00072374;
+    g_cursor_holding_state = 0;
+    g_selected_object = 0;
     FUN_00057cac(3);
   }
 LAB_00072374:
@@ -57832,23 +60360,23 @@ LAB_00072374:
   if (iVar7 != 0) {
     uVar4 = *(undefined2 *)(iVar6 + 2);
     bVar1 = (byte)uVar4;
-    *(byte *)(iVar6 + 2) = (*(byte *)(DAT_0023be64 + 2) ^ bVar1) & 0x7f ^ bVar1;
+    *(byte *)(iVar6 + 2) = (*(byte *)(g_player_object + 2) ^ bVar1) & 0x7f ^ bVar1;
     *(char *)(iVar6 + 3) = (char)((ushort)uVar4 >> 8);
     *(byte *)(iVar6 + 6) = *(byte *)(iVar6 + 6) | 0x3f;
     *(undefined1 *)(iVar6 + 7) = *(undefined1 *)(iVar6 + 7);
-    uVar8 = (*(ushort *)(iVar6 + 2) ^ *(ushort *)(DAT_0023be64 + 2)) & 0x1fff ^
-            (uint)*(ushort *)(DAT_0023be64 + 2);
+    uVar8 = (*(ushort *)(iVar6 + 2) ^ *(ushort *)(g_player_object + 2)) & 0x1fff ^
+            (uint)*(ushort *)(g_player_object + 2);
     uVar2 = (undefined1)uVar8;
     *(undefined1 *)(iVar6 + 2) = uVar2;
     bVar3 = (byte)(uVar8 >> 8);
     *(byte *)(iVar6 + 3) = bVar3;
-    bVar1 = *(byte *)(DAT_0023be64 + 3);
+    bVar1 = *(byte *)(g_player_object + 3);
     *(undefined1 *)(iVar6 + 2) = uVar2;
     *(byte *)(iVar6 + 3) = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
     FUN_00055f98(iVar6,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
-    FUN_000396a0(DAT_0023be64,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
+    FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
     DAT_00201c9c = FUN_0007213c;
     DAT_00085730 = 0;
     iVar6 = dungeon_view_anim_tick();
@@ -57942,11 +60470,11 @@ undefined4 param_2;
             message_scroll_print_wrapped(acStack_2c);
             message_scroll_print_wrapped(&DAT_00084f20);
             if (pbVar7 == (byte *)0x0) {
-              FUN_0007d074(DAT_0023be64,param_1,pbVar4,(int)DAT_002020a0,DAT_002020a4);
+              FUN_0007d074(g_player_object,param_1,pbVar4,(int)DAT_002020a0,DAT_002020a4);
               FUN_0007dfd8(local_34[0],pbVar4);
             }
             else {
-              FUN_0007cdbc(DAT_0023be64,param_1,pbVar7,0xffffffff);
+              FUN_0007cdbc(g_player_object,param_1,pbVar7,0xffffffff);
             }
           }
           else {
@@ -58206,11 +60734,11 @@ LAB_00072f24:
   else {
     iVar10 = (param_1 & 0xff) * 5;
     uVar9 = (int)param_2 -
-            ((int)(((*(ushort *)(DAT_0023be64 + 0x16) >> 7 & 0x1f8) +
-                   (uint)(*(byte *)(DAT_0023be64 + 3) >> 5)) * 0x10000) >> 0x10);
+            ((int)(((*(ushort *)(g_player_object + 0x16) >> 7 & 0x1f8) +
+                   (uint)(*(byte *)(g_player_object + 3) >> 5)) * 0x10000) >> 0x10);
     uVar8 = (int)param_3 -
-            ((int)(((*(ushort *)(DAT_0023be64 + 0x16) >> 1 & 0x1f8) +
-                   ((*(byte *)(DAT_0023be64 + 3) & 0x1c) >> 2)) * 0x10000) >> 0x10);
+            ((int)(((*(ushort *)(g_player_object + 0x16) >> 1 & 0x1f8) +
+                   ((*(byte *)(g_player_object + 3) & 0x1c) >> 2)) * 0x10000) >> 0x10);
     uVar3 = FUN_00013774(uVar8 * uVar8 + uVar9 * uVar9);
     uVar3 = uVar3 & 0xffff;
     if (uVar3 == 0) {
@@ -58236,8 +60764,8 @@ LAB_00072f24:
       else {
         sVar2 = Ordinal_2005(uVar3,uVar9 * 0x80);
       }
-      FUN_00049c64(((0x40 - (*(byte *)(DAT_0023be64 + 0x18) & 0x1f)) * 4 -
-                   ((int)*(short *)(DAT_0023be64 + 2) & 0x380U)) * 0x40,&local_28,&local_26);
+      FUN_00049c64(((0x40 - (*(byte *)(g_player_object + 0x18) & 0x1f)) * 4 -
+                   ((int)*(short *)(g_player_object + 2) & 0x380U)) * 0x40,&local_28,&local_26);
       iVar5 = (int)local_28;
       iVar6 = (int)local_26;
       local_28 = (short)(char)((ushort)local_28 >> 8);
@@ -58508,9 +61036,9 @@ short param_1;
     }
   }
   if ((((param_1 == 1) && (DAT_00201b68 == 3)) &&
-      (uVar4 = (*(ushort *)(DAT_0023be64 + 0x16) >> 10) - 0x18, uVar7 = (int)uVar4 >> 0x1f,
+      (uVar4 = (*(ushort *)(g_player_object + 0x16) >> 10) - 0x18, uVar7 = (int)uVar4 >> 0x1f,
       (int)((uVar4 ^ uVar7) - uVar7) < 3)) &&
-     ((uVar4 = (*(ushort *)(DAT_0023be64 + 0x16) >> 4 & 0x3f) - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
+     ((uVar4 = (*(ushort *)(g_player_object + 0x16) >> 4 & 0x3f) - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
       (int)((uVar4 ^ uVar7) - uVar7) < 3 && (iVar6 = FUN_00073474(local_2c), iVar6 != 0)))) {
     return;
   }
@@ -58903,7 +61431,7 @@ int param_4;
     goto LAB_00073c90;
   case 3:
 LAB_00073c90:
-    if ((param_3 != DAT_0023be64) ||
+    if ((param_3 != g_player_object) ||
        (iVar2 = FUN_000542f8(param_1,param_2 & 0x3f,param_2 & 0xc0), iVar2 == 0)) {
       return 0;
     }
@@ -58915,10 +61443,10 @@ LAB_00073c90:
     FUN_00073fc4(param_4,param_2);
     return 1;
   case 5:
-    if (param_3 == DAT_0023be64) {
-      DAT_002020c4 = 3;
+    if (param_3 == g_player_object) {
+      g_cursor_holding_state = 3;
       DAT_00202094 = param_2 & 0xff;
-      DAT_00202098 = DAT_0023be64;
+      DAT_00202098 = g_player_object;
       FUN_00057c5c(0x1075);
     }
     else {
@@ -58973,7 +61501,7 @@ char param_2;
 {
   short sVar1;
   
-  if (param_1 == DAT_0023be64) {
+  if (param_1 == g_player_object) {
     if (param_2 < '\x01') {
       param_2 = *(char *)(DAT_00086df8 + 0x37) - param_2;
     }
@@ -59002,21 +61530,21 @@ char param_2;
   ushort uVar1;
   short sVar2;
   
-  if (param_1 == DAT_0023be64) {
+  if (param_1 == g_player_object) {
     if (param_2 < '\x01') {
-      sVar2 = (ushort)*(byte *)(DAT_0023be64 + 8) - (short)param_2;
+      sVar2 = (ushort)*(byte *)(g_player_object + 8) - (short)param_2;
     }
     else {
       uVar1 = Ordinal_1053();
-      sVar2 = (ushort)*(byte *)(DAT_0023be64 + 8) +
+      sVar2 = (ushort)*(byte *)(g_player_object + 8) +
               ((short)(((uVar1 & 3) + (short)param_2) * (ushort)*(byte *)(DAT_0023be74 + 4)) >> 4) +
               1;
     }
     if ((short)(ushort)*(byte *)(DAT_0023be74 + 4) < sVar2) {
-      *(byte *)(DAT_0023be64 + 8) = *(byte *)(DAT_0023be74 + 4);
+      *(byte *)(g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
     }
     else {
-      *(char *)(DAT_0023be64 + 8) = (char)sVar2;
+      *(char *)(g_player_object + 8) = (char)sVar2;
     }
     FUN_00069e30();
   }
@@ -59039,7 +61567,7 @@ uint param_2;
   else {
     param_1[8] = (byte)uVar1;
   }
-  if (param_1 == DAT_0023be64) {
+  if (param_1 == g_player_object) {
     FUN_00069e30();
   }
   return;
@@ -59089,7 +61617,7 @@ char param_2;
         cVar2 = bVar1 - cVar2;
       }
       *(char *)(param_1 + 4) = cVar2;
-      if (param_1 == DAT_0023be64) {
+      if (param_1 == g_player_object) {
         FUN_000411e0(0xa8);
       }
     }
@@ -59112,7 +61640,7 @@ char param_2;
   auStack_d[3] = 4;
   auStack_d[4] = 6;
   iVar1 = FUN_0004a588(param_1,auStack_d[param_2]);
-  if (param_1 == DAT_0023be64) {
+  if (param_1 == g_player_object) {
     if (iVar1 == 0) {
       FUN_00078c80(0xff);
     }
@@ -59170,7 +61698,7 @@ ushort * param_3;
       ((*param_3 & 0x1c0) != 0x180)) && (iVar2 = FUN_000537d0(&local_14,0,6,2,3), iVar2 != 0)) {
     uVar1 = *(undefined1 *)(DAT_00086df8 + 0x2c);
     *(undefined1 *)(DAT_00086df8 + 0x2c) = 0x2d;
-    FUN_0007cdbc(DAT_0023be64,param_3,iVar2,5);
+    FUN_0007cdbc(g_player_object,param_3,iVar2,5);
     *(undefined1 *)(DAT_00086df8 + 0x2c) = uVar1;
     return 1;
   }
@@ -59197,7 +61725,7 @@ undefined1 param_5;
   uVar2 = FUN_00074150(0x1c5,param_4);
   FUN_00075a88(param_1,param_2,2,param_5);
   uVar3 = Ordinal_1053();
-  uVar4 = FUN_0005358c(uVar2);
+  uVar4 = encode_object_slot_index(uVar2);
   uVar5 = (undefined1)param_2;
   Ordinal_2005(4,uVar3);
   sVar1 = FUN_00080ed4(uVar4,4,extraout_r1 & 0xff,param_1 & 0xff,uVar5);
@@ -59230,7 +61758,7 @@ undefined1 param_5;
   FUN_00075a88(param_1 - 1,param_2,1,param_5);
   FUN_00075a88(param_1,param_2 + 1,1,param_5);
   FUN_00075a88(param_1,param_2 + -1,1,param_5);
-  uVar3 = FUN_0005358c(uVar2);
+  uVar3 = encode_object_slot_index(uVar2);
   sVar1 = FUN_00080ed4(uVar3,4,0,param_1 & 0xff,(char)param_2);
   if (sVar1 == -1) {
     free_object_slot(uVar2);
@@ -59489,7 +62017,7 @@ LAB_000749c4:
                         }
                         else if (param_4 == '\0') {
                           if ((*puVar6 & 0x1c0) == 0x40) {
-                            uVar3 = FUN_0005358c(puVar6);
+                            uVar3 = encode_object_slot_index(puVar6);
                             if (uVar3 != param_2) goto LAB_000749c4;
                             goto LAB_000749bc;
                           }
@@ -59542,7 +62070,7 @@ char param_6;
   ushort local_1c;
   ushort local_1a;
   
-  uVar2 = FUN_0005358c();
+  uVar2 = encode_object_slot_index();
   uVar3 = *(ushort *)(param_1 + 2) & 0x380;
   if ((short)uVar2 < 0x100) {
     uVar2 = uVar2 & 0xff;
@@ -59616,7 +62144,7 @@ int param_1;
 uint param_2;
 
 {
-  if (param_1 == DAT_0023be64) {
+  if (param_1 == g_player_object) {
     FUN_00074ad0(param_1,1,(&PTR_FUN_00087614)[param_2 & 0x3f],param_2 & 0xc0,4,2);
   }
   return;
@@ -59671,7 +62199,7 @@ char param_2;
     if (sVar3 != 0) {
       uVar11 = 0x114;
     }
-    if (param_1 != DAT_0023be64) {
+    if (param_1 != g_player_object) {
       return;
     }
   }
@@ -59685,7 +62213,7 @@ char param_2;
       uVar10 = (extraout_r1_02 & 0xffff) + 0xb0;
     }
     else if (param_2 == '\x04') {
-      if (param_1 == DAT_0023be64) {
+      if (param_1 == g_player_object) {
         uVar6 = (uint)*(byte *)(DAT_00086df8 + 0x2a);
       }
       else {
@@ -59735,7 +62263,7 @@ char param_2;
           local_30 = (short)(iVar9 >> 1);
         }
         pbVar5 = local_28;
-        if (param_1 == DAT_0023be64) {
+        if (param_1 == g_player_object) {
           *(byte *)(iVar8 + 0x19) = *(byte *)(iVar8 + 0x19) | 0x40;
         }
         else {
@@ -59745,10 +62273,10 @@ char param_2;
           *(byte *)(iVar8 + 0x19) = *(byte *)(iVar8 + 0x19) | 1;
           uVar2 = *(ushort *)(iVar8 + 0xf);
           uVar10 = uVar2 & 0xffc0;
-          bVar1 = *(byte *)(DAT_0023be64 + 0x17) >> 2;
+          bVar1 = *(byte *)(g_player_object + 0x17) >> 2;
           *(byte *)(iVar8 + 0xf) = (byte)uVar10 | bVar1;
           *(char *)(iVar8 + 0x10) = (char)(uVar10 >> 8);
-          uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) << 2;
+          uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (*(ushort *)(g_player_object + 0x16) & 0x3f0) << 2;
           *(char *)(iVar8 + 0xf) = (char)uVar10;
           *(char *)(iVar8 + 0x10) = (char)(uVar10 >> 8);
         }
@@ -59769,7 +62297,7 @@ char param_2;
       FUN_00055f98(iVar8,(int)(short)local_2c,(int)(short)local_2e,1);
       return;
     }
-    if (param_1 != DAT_0023be64) {
+    if (param_1 != g_player_object) {
       return;
     }
     uVar11 = 0x115;
@@ -59856,7 +62384,7 @@ undefined4 param_2;
   byte local_2c [8];
   
   Ordinal_1047(local_2c,0,8);
-  uVar2 = *(ushort *)(DAT_0023be64 + 0x16);
+  uVar2 = *(ushort *)(g_player_object + 0x16);
   for (pbVar10 = DAT_002046c0; pbVar10 < DAT_002046c8; pbVar10 = pbVar10 + 1) {
     puVar5 = (ushort *)((uint)*pbVar10 * 0x1b + DAT_002046b8);
     uVar13 = (uint)*puVar5;
@@ -59937,7 +62465,7 @@ ushort * param_1;
     }
   }
   else if ((short)DAT_00202094 == 4) {
-    FUN_00048764(param_1,3);
+    dispatch_object_action_dup(param_1,3);
     uVar4 = *param_1 & 0x1c0;
     if (((uVar4 != 0x140) && (uVar4 != 0x40)) &&
        (((&DAT_00202c9a)[(*param_1 & 0x1ff) * 0xd] & 3) != 2)) {
@@ -59947,7 +62475,7 @@ ushort * param_1;
     }
   }
   else if ((short)DAT_00202094 == 5) {
-    sVar2 = FUN_0007bf38(DAT_0023be64,param_1,0xffffffd3);
+    sVar2 = check_object_combination(g_player_object,param_1,0xffffffd3);
     if (sVar2 == 3) {
       uVar3 = 0x10e;
     }
@@ -59957,7 +62485,7 @@ ushort * param_1;
     FUN_00078c80(uVar3);
   }
   FUN_00057cac(3);
-  DAT_002020c4 = 0;
+  g_cursor_holding_state = 0;
   FUN_00057604(1);
   return;
 }
@@ -59975,7 +62503,7 @@ char param_3;
   undefined4 uVar3;
   uint uVar4;
   
-  if (param_1 != DAT_0023be64) {
+  if (param_1 != g_player_object) {
     return;
   }
   switch((int)param_3) {
@@ -59993,8 +62521,8 @@ char param_3;
     goto LAB_0007588c;
   case 5:
 LAB_0007588c:
-    DAT_002020c4 = 2;
-    DAT_00202098 = DAT_0023be64;
+    g_cursor_holding_state = 2;
+    DAT_00202098 = g_player_object;
     DAT_002020b8 = FUN_000756c8;
     DAT_00202094 = (int)param_3;
     FUN_00057c5c(0x1076);
@@ -60024,7 +62552,7 @@ LAB_0007588c:
     }
     else {
       DAT_00201c9c = &LAB_00072268;
-      FUN_000396a0(DAT_0023be64,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
+      FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
       set_player_tile_position(0,0,0);
       FUN_00049924(0x7ffe);
     }
@@ -60035,7 +62563,7 @@ LAB_00075a0c:
     FUN_000542f8(0xb,uVar3,param_2);
     break;
   case 0xc:
-    FUN_000444b0(DAT_0023be64 + 6);
+    FUN_000444b0(g_player_object + 6);
     FUN_0003bc1c(0);
     FUN_00044814();
     FUN_00044920();
@@ -60043,7 +62571,7 @@ LAB_00075a0c:
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
     *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x10;
     *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
-    DAT_0023bcf2 = 0;
+    g_player_carry_weight = 0;
     FUN_000667cc();
     FUN_0006ed0c();
   }
@@ -60232,7 +62760,7 @@ undefined4 param_1;
   uVar1 = DAT_00087640 | DAT_00087638;
   *(char *)puVar4 = (char)uVar1;
   *(char *)((char *)puVar4 + 1) = (char)(uVar1 >> 8);
-  bVar6 = DAT_00088960 != 0;
+  bVar6 = g_blit_transparent_mode != 0;
   uVar5 = (uint)uVar1;
   uVar2 = 0;
   if (bVar6) {
@@ -60281,7 +62809,7 @@ int param_3;
   uVar1 = DAT_00087640 | DAT_00087638;
   *(char *)puVar5 = (char)uVar1;
   *(char *)((char *)puVar5 + 1) = (char)(uVar1 >> 8);
-  bVar6 = DAT_00088960 != 0;
+  bVar6 = g_blit_transparent_mode != 0;
   uVar4 = 0;
   if (bVar6) {
     uVar4 = (undefined1)((uVar1 | DAT_00087648) >> 8);
@@ -60528,7 +63056,7 @@ void FUN_00076508()
                         (int)(ushort)puVar4[3], (int)(ushort)puVar4[4],
                         puVar4[5] == 0 ? "draw_sprite_by_id" : "FUN_00040be0");
               if (puVar4[5] == 0) {
-                DAT_00088960 = 1;
+                g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
                   draw_sprite_by_id((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
@@ -60545,7 +63073,7 @@ void FUN_00076508()
                 }
               }
               else {
-                DAT_00088960 = 1;
+                g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
                   FUN_00040be0((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
@@ -60563,7 +63091,7 @@ void FUN_00076508()
                   ;
                 }
               }
-              DAT_00088960 = 0;
+              g_blit_transparent_mode = 0;
             }
             puVar7 = puVar7 + 1;
           }
@@ -60838,7 +63366,7 @@ short param_5;
                     sVar10 = *(short *)((g_uw_framebuffer) + iVar12 * 2)
                     ;
                     iVar12 = iVar12 + 1;
-                    if ((DAT_00088960 & sVar10 == 0) == 0) {
+                    if ((g_blit_transparent_mode & sVar10 == 0) == 0) {
                       *psVar_target = sVar10;
                     }
                     psVar_target = psVar_target + 1;
@@ -60907,7 +63435,7 @@ short * param_1;
           sVar2 = *psVar_target;
           iVar7 = iVar7 + 1;
           psVar_target = psVar_target + 1;
-          if ((DAT_00088960 & sVar2 == 0) == 0) {
+          if ((g_blit_transparent_mode & sVar2 == 0) == 0) {
             *(short *)((g_uw_framebuffer) + iVar6 * 2) = sVar2;
           }
           iVar6 = iVar6 + 1;
@@ -61435,7 +63963,7 @@ int param_4;
     }
     else {
       DAT_00204844 = 1;
-      if ((DAT_002020c0 != 0) || (DAT_002020c4 != 0)) {
+      if ((g_cursor_mode != 0) || (g_cursor_holding_state != 0)) {
         DAT_00204844 = 2;
       }
       // HACK: same dead-plumbing story as DAT_000876c4 above -- FUN_00058738
@@ -61452,7 +63980,7 @@ int param_4;
   }
   if (param_2 == 0x202) {
     DAT_00204844 = 0;
-    if ((DAT_00202948 == 0) && ((DAT_00201b60 & 2) == 0)) {
+    if ((g_selected_object == 0) && ((DAT_00201b60 & 2) == 0)) {
       DAT_00204844 = 0;
     }
     *DAT_000876bc = 0;
@@ -61493,7 +64021,7 @@ void FUN_00077f30()
   Ordinal_1071(auStack_28,DAT_00086df8,0xf);
   local_a = 0;
   Ordinal_1416(auStack_28);
-  sVar2 = FUN_000112a0(auStack_28);
+  sVar2 = measure_text_width(auStack_28);
   iVar4 = -(int)sVar2 + 0x48;
   if (iVar4 < 0) {
     iVar4 = -(int)sVar2 + 0x49;
@@ -61509,9 +64037,9 @@ void FUN_00077f30()
   }
   /* Originally `cVar1 * 3 + 0x878b0`: index into a small string table at a
      fixed original-binary address Ghidra never recovered contents for
-     (see FUN_00041304 for the same pattern) -- skipped rather than
+     (see open_gr_resource_file for the same pattern) -- skipped rather than
      guessed, this is cosmetic HUD text formatting. */
-  iVar4 = FUN_000112a0(auStack_28);
+  iVar4 = measure_text_width(auStack_28);
   draw_text_string(auStack_28,0x138 - iVar4,0x16);
   return;
 }
@@ -61526,7 +64054,7 @@ uint param_1;
   undefined1 auStack_c [4];
   
   FUN_000229e0(*(undefined1 *)((param_1 & 0xff) + DAT_0023be74 + 5),auStack_c,10);
-  iVar1 = FUN_000112a0(auStack_c);
+  iVar1 = measure_text_width(auStack_c);
   draw_text_string(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
   return;
 }
@@ -61540,11 +64068,11 @@ void FUN_00078088()
   int iVar2;
   undefined1 auStack_c [8];
   
-  FUN_000229e0(*(undefined1 *)(DAT_0023be64 + 8),auStack_c,10);
+  FUN_000229e0(*(undefined1 *)(g_player_object + 8),auStack_c,10);
   sVar1 = Ordinal_1068(auStack_c);
   auStack_c[sVar1] = 0x2f;
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
-  iVar2 = FUN_000112a0(auStack_c);
+  iVar2 = measure_text_width(auStack_c);
   draw_text_string(auStack_c,0x138 - iVar2,0x32);
   return;
 }
@@ -61563,7 +64091,7 @@ void FUN_00078118()
   auStack_10[sVar1] = 0x2f;
   FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_10 + ((sVar1 + 1) * 0x10000 >> 0x10),10)
   ;
-  iVar2 = FUN_000112a0(auStack_10);
+  iVar2 = measure_text_width(auStack_10);
   draw_text_string(auStack_10,0x138 - iVar2,0x39);
   return;
 }
@@ -61579,7 +64107,7 @@ void FUN_000781a0()
   
   uVar1 = Ordinal_2008(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
   Ordinal_1039(uVar1,auStack_18,10);
-  iVar2 = FUN_000112a0(auStack_18);
+  iVar2 = measure_text_width(auStack_18);
   draw_text_string(auStack_18,0x138 - iVar2,0x40);
   return;
 }
@@ -61604,7 +64132,7 @@ uint param_1;
   uVar1 = Ordinal_1416();
   iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
   draw_text_string(uVar1,0xf2,iVar4);
-  iVar2 = FUN_000112a0(auStack_18);
+  iVar2 = measure_text_width(auStack_18);
   draw_text_string(auStack_18,0x138 - iVar2,iVar4);
   return;
 }
@@ -61626,10 +64154,10 @@ void FUN_0007830c()
       capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
   }
-  *DAT_0008429c = 0xf1;
+  *g_draw_color_index = 0xf1;
   *DAT_00084298 = 0xf1;
   FUN_00057118();
-  FUN_00040d00(s_font5x6i_sys_00086e98);
+  select_active_font(s_font5x6i_sys_00086e98);
   FUN_00077f30();
   bVar1 = 0;
   do {
@@ -61640,13 +64168,13 @@ void FUN_0007830c()
   FUN_00078118();
   FUN_000781a0();
   bVar1 = 0;
-  *DAT_0008429c = 0x68;
+  *g_draw_color_index = 0x68;
   *DAT_00084298 = 0x68;
   do {
     FUN_0007821c(bVar1);
     bVar1 = bVar1 + 1;
   } while (bVar1 < 6);
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   FUN_000570b4();
   return;
 }
@@ -61661,8 +64189,8 @@ void FUN_00078434()
   uint uVar3;
   ushort local_c [2];
   
-  FUN_00040d00(s_font5x6i_sys_00086e98);
-  *DAT_0008429c = 0x68;
+  select_active_font(s_font5x6i_sys_00086e98);
+  *g_draw_color_index = 0x68;
   *DAT_00084298 = 0x68;
   if (DAT_00085a6c[1] < 8) {
     local_c[0] = (ushort)DAT_0024af80;
@@ -61688,7 +64216,7 @@ void FUN_00078434()
       FUN_000570b4();
     }
   }
-  FUN_00040d00(s_font5x6p_sys_0008430c);
+  select_active_font(s_font5x6p_sys_0008430c);
   FUN_00057604(1);
   return;
 }
@@ -61986,7 +64514,7 @@ undefined4 param_4;
     if (*pcVar3 == '\0') {
       return 0;
     }
-    pcVar3 = (char *)FUN_00078bfc(pcVar3,param_3,param_4);
+    pcVar3 = (char *)format_object_display_name(pcVar3,param_3,param_4);
     do {
       cVar1 = *pcVar3;
       pcVar3 = pcVar3 + 1;
@@ -61999,7 +64527,7 @@ undefined4 param_4;
 
 
 
-undefined1 *FUN_00078bfc(param_1,param_2,param_3)
+undefined1 *format_object_display_name(param_1,param_2,param_3)
 undefined1 * param_1;
 int param_2;
 int param_3;
@@ -62556,8 +65084,12 @@ ushort * param_1;
 
 
 
-ushort *FUN_00079984(param_1,param_2,param_3)
-int param_1;
+ushort *use_object_on_target(param_1,param_2,param_3)
+/* Was `int param_1` -- every call site passes a real object pointer
+   (g_player_object, the player object, at most sites), truncating it to
+   32 bits on this 64-bit host. Same class as handle_object_drop_target's `iVar2`
+   fix just above this function's own callers. */
+ushort *param_1;
 ushort * param_2;
 int param_3;
 
@@ -62592,7 +65124,7 @@ int param_3;
   }
   else if (uVar3 == 2) {
     if (uVar1 == 0) {
-      FUN_0007c93c(param_1,param_2,param_3);
+      try_combine_or_stow_object(param_1,param_2,param_3);
     }
     else if (uVar1 == 1) {
       if (7 < (uVar7 & 0xf)) {
@@ -62689,10 +65221,10 @@ undefined4 param_3;
   
   if (param_2 == 0) {
     iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
-    uVar3 = FUN_0005358c(param_1);
+    uVar3 = encode_object_slot_index(param_1);
     iVar2 = FUN_00053644(iVar2 + 2,1,uVar3);
     if (iVar2 == 0) {
-      sVar1 = FUN_0005358c(param_1);
+      sVar1 = encode_object_slot_index(param_1);
       local_14[0] = local_14[0] & 0x3f | sVar1 << 6;
       FUN_000533e4(local_14);
       iVar2 = 0;
@@ -62716,15 +65248,15 @@ short * param_1;
 uint param_2;
 
 {
-  if (DAT_00202948 == (short *)0x0) {
+  if (g_selected_object == (short *)0x0) {
     if (param_1 == (short *)0x0) {
       param_1 = (short *)FUN_00068138(param_2,0);
     }
     else {
       param_2 = (int)*param_1 & 0x1ff;
     }
-    DAT_002020c4 = 1;
-    DAT_00202948 = param_1;
+    g_cursor_holding_state = 1;
+    g_selected_object = param_1;
     FUN_00057c5c(param_2);
   }
   else {
@@ -62745,9 +65277,9 @@ int param_2;
   
   if (param_2 != 0) {
     FUN_00057cac(3);
-    DAT_00202948 = 0;
-    DAT_002020c4 = 0;
-    sVar1 = FUN_0007bf38(DAT_0023be64,param_1,
+    g_selected_object = 0;
+    g_cursor_holding_state = 0;
+    sVar1 = check_object_combination(g_player_object,param_1,
                          (int)((uint)*(byte *)(DAT_00086df8 + 0x31) * -0x10000) >> 0x10);
     if (sVar1 == 0) {
       uVar2 = 0x78;
@@ -62778,9 +65310,9 @@ int param_2;
   
   if (param_2 != 0) {
     FUN_00057cac(3);
-    DAT_00202948 = 0;
-    DAT_002020c4 = 0;
-    iVar1 = FUN_0007bf38(DAT_0023be64,param_1,*(ushort *)(DAT_00202098 + 6) & 0x3f);
+    g_selected_object = 0;
+    g_cursor_holding_state = 0;
+    iVar1 = check_object_combination(g_player_object,param_1,*(ushort *)(DAT_00202098 + 6) & 0x3f);
     FUN_00078c80(iVar1 + 2);
   }
   return;
@@ -62840,8 +65372,8 @@ undefined4 param_2;
   Ordinal_1063(acStack_34,s_on_what__000878e0);
   message_scroll_print_wrapped(acStack_34);
   FUN_00057c5c(*param_1 & 0x1ff);
-  DAT_00202948 = param_1;
-  DAT_002020c4 = 2;
+  g_selected_object = param_1;
+  g_cursor_holding_state = 2;
   DAT_00202098 = param_1;
   DAT_002020b8 = param_2;
   return;
@@ -62866,8 +65398,8 @@ ushort * param_1;
     FUN_00079d08(DAT_00202098,1,1);
   }
   FUN_00057cac(3);
-  DAT_00202948 = 0;
-  DAT_002020c4 = 0;
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
   return;
 }
 
@@ -62900,8 +65432,8 @@ undefined4 param_2;
   undefined1 local_12;
   
   FUN_00057cac(3);
-  DAT_00202948 = 0;
-  DAT_002020c4 = 0;
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
   if ((*param_1 & 0x1ff) == 0x165) {
     if ((*(byte *)(DAT_00202098 + 6) & 0x3f) == 0x3e) {
       if ((((*param_1 & 0x8000) == 0) || ((param_1[3] & 0x8000) == 0)) ||
@@ -62925,7 +65457,7 @@ undefined4 param_2;
       iVar2 = tilemap_lookup(0x36,0x34);
       iVar2 = resolve_object_link(iVar2 + 2);
       if (iVar2 != 0) {
-        FUN_0007cdbc(DAT_0023be64,0,iVar2,0);
+        FUN_0007cdbc(g_player_object,0,iVar2,0);
       }
     }
     else {
@@ -62951,7 +65483,7 @@ ushort * param_1;
   FUN_000667cc();
   if ((*param_1 & 0x1f0) == 0x170) {
     FUN_00078c80(0x9d);
-    FUN_00079984(DAT_0023be64,param_1,0);
+    use_object_on_target(g_player_object,param_1,0);
   }
   else {
     FUN_00078c80(0x9e);
@@ -62969,8 +65501,8 @@ int param_3;
 {
   if ((param_2 != 0) && (param_3 != 0)) {
     FUN_00057cac(3);
-    DAT_00202948 = 0;
-    DAT_002020c4 = 0;
+    g_selected_object = 0;
+    g_cursor_holding_state = 0;
     FUN_0003ab90(param_1,*(undefined1 *)(DAT_00086df8 + 0x2f),1);
   }
   return;
@@ -62999,7 +65531,7 @@ int param_2;
         if (((uVar1 != 0xd9) && (uVar1 != 0xce)) && (uVar1 != 0xcf)) {
           return;
         }
-        FUN_0007acd4(DAT_0023be64,param_1,param_2);
+        FUN_0007acd4(g_player_object,param_1,param_2);
         return;
       }
       DAT_0023bc94 = 1;
@@ -63062,10 +65594,10 @@ int param_2;
   else if (param_2 != 0) {
     FUN_00078c80(0x84);
   }
-  if (DAT_00202948 != 0) {
+  if (g_selected_object != 0) {
     FUN_00057cac(3);
-    DAT_00202948 = 0;
-    DAT_002020c4 = 0;
+    g_selected_object = 0;
+    g_cursor_holding_state = 0;
   }
   return;
 }
@@ -63078,11 +65610,11 @@ undefined4 param_2;
 
 {
   FUN_00057cac(3);
-  DAT_00202948 = 0;
-  DAT_002020c4 = 0;
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
   if (((*param_1 & 0x1ff) == 0x16e) && (((&DAT_0023add0)[(byte)param_1[3] & 0x3f] & 0xff) == 0xb)) {
     FUN_00079d08(DAT_00202098,param_2,1);
-    FUN_0007c2ec(DAT_0023be64,param_1,7,(int)DAT_002020a0,DAT_002020a4);
+    FUN_0007c2ec(g_player_object,param_1,7,(int)DAT_002020a0,DAT_002020a4);
     return;
   }
   FUN_00078c80(0x84);
@@ -63202,7 +65734,7 @@ int param_2;
             goto LAB_0007ab1c;
           }
           FUN_00045728(param_1);
-          FUN_0004506c(param_1,iVar6);
+          place_object_in_backpack_slot(param_1,iVar6);
           FUN_00048110();
         }
       }
@@ -63243,8 +65775,8 @@ uint param_2;
   byte *local_1c;
   
   if ((param_2 != 0) && (((*param_1 & 0xf) < 0xc || (0xf < (*param_1 & 0xf))))) {
-    FUN_0007c2ec(DAT_0023be64,param_1,4,(int)DAT_002020a0,DAT_002020a4);
-    FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,DAT_0023be64,param_1,param_2);
+    FUN_0007c2ec(g_player_object,param_1,4,(int)DAT_002020a0,DAT_002020a4);
+    FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
     if ((param_1[1] & 0x80) == 0) {
       local_1c = param_1 + 6;
       iVar3 = FUN_000537d0(&local_1c,0,4,2,param_2 & 0xffff0000);
@@ -63297,7 +65829,7 @@ int param_3;
   else {
     uVar9 = param_2[3] >> 6;
   }
-  if (param_2 == DAT_00202948) {
+  if (param_2 == g_selected_object) {
     if (1 < uVar9) {
       FUN_00078c80(0x77);
       return 0xfffffffe;
@@ -63308,7 +65840,7 @@ int param_3;
   }
   uVar10 = uVar8 & 0x1f0;
   bVar13 = uVar10 == 0xb0;
-  puVar7 = DAT_00202948;
+  puVar7 = g_selected_object;
   if (bVar13) {
     puVar7 = (ushort *)&DAT_00202a28;
     uVar10 = uVar8 & 0xf;
@@ -63330,7 +65862,7 @@ LAB_0007ae1c:
           sVar4 = FUN_00069b68(*(undefined1 *)(DAT_0023be74 + 7),0x14);
           if (sVar4 != 0) {
             iVar11 = rand_below(3);
-            FUN_00073e14(DAT_0023be64,iVar11 * -0x1000000 >> 0x18);
+            FUN_00073e14(g_player_object,iVar11 * -0x1000000 >> 0x18);
           }
           uVar9 = *(ushort *)(DAT_00086df8 + 0x61);
           if ((uVar9 & 0xc) < 0xc) {
@@ -63414,7 +65946,7 @@ LAB_0007af3c:
         if (sVar4 == -1) {
           FUN_00078c80(0xf1);
           FUN_00071510(0xfffffffe);
-          if (*(char *)(DAT_0023be64 + 8) == '\0') goto LAB_0007b254;
+          if (*(char *)(g_player_object + 8) == '\0') goto LAB_0007b254;
           FUN_00078c80(0xf3);
           uVar8 = Ordinal_2005(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
           uVar8 = (uVar8 & 0xff) + 10;
@@ -63423,7 +65955,7 @@ LAB_0007af3c:
           if (sVar4 != 0) {
             if (sVar4 == 2) {
               FUN_00078c80(0xf2);
-              FUN_00073ec0(DAT_0023be64,0xfffffffe);
+              FUN_00073ec0(g_player_object,0xfffffffe);
             }
             goto LAB_0007b254;
           }
@@ -63488,8 +66020,8 @@ LAB_0007b254:
   FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,param_1,param_2,1);
   FUN_0007c2ec(param_1,param_2,4,(int)DAT_002020a0,CONCAT22(uVar14,DAT_002020a4));
   iVar11 = FUN_00079d08(param_2,param_3,1);
-  if ((iVar11 != 0) && (DAT_002020c4 == 1)) {
-    DAT_00202948 = (ushort *)0x0;
+  if ((iVar11 != 0) && (g_cursor_holding_state == 1)) {
+    g_selected_object = (ushort *)0x0;
   }
   return 1;
 }
@@ -63516,11 +66048,11 @@ int param_3;
   uint uVar11;
   
   FUN_00057cac(3);
-  DAT_00202948 = 0;
-  DAT_002020c4 = 0;
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
   if ((param_2 != 0) && (param_3 == 0)) {
-    uVar5 = FUN_0005358c(param_1);
-    iVar6 = FUN_00053644(DAT_0023be64 + 6,1,uVar5);
+    uVar5 = encode_object_slot_index(param_1);
+    iVar6 = FUN_00053644(g_player_object + 6,1,uVar5);
     if (iVar6 == 0) {
       uVar11 = (int)*param_1 & 0x1ff;
       if (((ushort)uVar11 < 0x153) || (0x156 < (ushort)uVar11)) {
@@ -63593,8 +66125,8 @@ int param_3;
   }
   iVar1 = (int)sVar3;
   FUN_00057cac(3);
-  DAT_00202948 = 0;
-  DAT_002020c4 = 0;
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
   if ((param_2 != 0) && (param_3 != 0)) {
     if ((uVar2 < 0xcc) || (0xcd < uVar2)) {
       if ((uVar2 == 0x90) || (uVar2 == 0x91)) {
@@ -63657,10 +66189,10 @@ int param_3;
   if (param_3 == 0) {
     uVar1 = *param_2 & 0x1ff;
     if (uVar1 == 0x129) {
-      if (param_1 != DAT_0023be64) {
+      if (param_1 != g_player_object) {
         return;
       }
-      if ((DAT_00202948 == (ushort *)0x0) || ((*DAT_00202948 & 0x1ff) != 0x129)) {
+      if ((g_selected_object == (ushort *)0x0) || ((*g_selected_object & 0x1ff) != 0x129)) {
         puVar4 = (ushort *)FUN_000452dc(4,2,9,2,&local_22);
         if (puVar4 == (ushort *)0x0) {
           puVar4 = (ushort *)FUN_000452dc(4,2,9,4,&local_22);
@@ -63677,7 +66209,7 @@ int param_3;
       }
       else {
         local_20[0] = 0;
-        puVar4 = DAT_00202948;
+        puVar4 = g_selected_object;
       }
       if (puVar4 == (ushort *)0x0) {
         return;
@@ -63745,7 +66277,7 @@ LAB_0007b7e4:
     uVar6 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar6;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar6 >> 8);
-    FUN_00074028(DAT_0023be64,2);
+    FUN_00074028(g_player_object,2);
     FUN_00079d08(param_2,param_3,1);
     iVar3 = 0xe0;
     goto LAB_0007b9b8;
@@ -63834,8 +66366,8 @@ int param_2;
       }
     }
     else {
-      FUN_0007c2ec(DAT_0023be64,param_1,4,(int)DAT_002020a0,DAT_002020a4);
-      FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,DAT_0023be64,param_1,param_2);
+      FUN_0007c2ec(g_player_object,param_1,4,(int)DAT_002020a0,DAT_002020a4);
+      FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
       FUN_00079d08(param_1,param_2,0);
     }
   }
@@ -63862,7 +66394,7 @@ ushort * param_2;
   uVar4 = uVar5 >> 4 & 3;
   if ((uVar5 >> 4 & 3) == 0) {
     if ((uVar5 & 0xf) < 8) {
-      sVar2 = FUN_0007bf38(param_1,param_2,0);
+      sVar2 = check_object_combination(param_1,param_2,0);
       if (sVar2 == 0) {
         if ((*param_1 & 0x1ff) == 0x7f) {
           sVar2 = FUN_00078b18(acStack_20,param_2,0,0);
@@ -63880,7 +66412,7 @@ ushort * param_2;
           message_scroll_print_wrapped(s_is_locked__000878fc);
         }
       }
-      else if ((param_1 == DAT_0023be64) || ((param_2[3] & 1) == 0)) {
+      else if ((param_1 == g_player_object) || ((param_2[3] & 1) == 0)) {
         FUN_0007c580(param_1,param_2);
       }
     }
@@ -63894,7 +66426,7 @@ ushort * param_2;
       FUN_000708bc(0);
     }
     else if (((uVar4 == 0xb) || (uVar4 == 0xd)) && ((uVar5 & 0x8000) == 0)) {
-      FUN_0007c93c(param_1,param_2,0);
+      try_combine_or_stow_object(param_1,param_2,0);
     }
   }
   else {
@@ -63921,7 +66453,7 @@ ushort * param_2;
 
 
 
-undefined4 FUN_0007bf38(param_1,param_2,param_3)
+undefined4 check_object_combination(param_1,param_2,param_3)
 char *param_1;
 ushort * param_2;
 short param_3;
@@ -64001,7 +66533,7 @@ int param_5;
   if ((iVar1 != 0) && (local_18 != 0)) {
     if (param_5 == 0) {
       puVar2 = param_4;
-      if (((param_3 != DAT_0023be64) || ((*param_4 & 0x1ff) < 0x98)) || (0x9b < (*param_4 & 0x1ff)))
+      if (((param_3 != g_player_object) || ((*param_4 & 0x1ff) < 0x98)) || (0x9b < (*param_4 & 0x1ff)))
       goto LAB_0007c2b8;
     }
     else {
@@ -64023,7 +66555,7 @@ LAB_0007c2b8:
 
 void FUN_0007c2ec(param_1,param_2,param_3,param_4,param_5)
 char *param_1;
-char *param_2;   /* was int -- the picked object (DAT_002020cc etc.), deref'd at param_2+1 / param_2+6 */
+char *param_2;   /* was int -- the picked object (g_interact_target etc.), deref'd at param_2+1 / param_2+6 */
 undefined4 param_3;
 undefined4 param_4;
 undefined2 param_5;
@@ -64075,7 +66607,7 @@ ushort * param_1;
   uVar5 = uVar1 & 0xffcf | 0x1cf;
   *(char *)param_1 = (char)uVar5;
   *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
-  uVar4 = FUN_0005358c();
+  uVar4 = encode_object_slot_index();
   FUN_00080ed4(uVar4,uVar6,0,(undefined1)DAT_002020a0,(char)DAT_002020a4);
   return;
 }
@@ -64246,9 +66778,14 @@ int param_2;
 
 
 
-void FUN_0007c93c(param_1,param_2,param_3)
-int param_1;
-undefined4 param_2;
+void try_combine_or_stow_object(param_1,param_2,param_3)
+/* Was `int param_1; undefined4 param_2;` -- both real object pointers
+   (matching check_object_combination's own param_1/param_2 types, forwarded to it
+   unchanged just below), truncated to 32 bits on this 64-bit host.
+   Same class as use_object_on_target/handle_object_drop_target's fixes just above it in
+   this same never-before-exercised container-interact call chain. */
+char *param_1;
+ushort *param_2;
 int param_3;
 
 {
@@ -64256,10 +66793,14 @@ int param_3;
   char cVar1;
   short sVar2;
   char *pcVar3;
-  char acStack_84f48 [544548];
+  /* Was 544548 bytes -- same Ghidra stack-frame-size-miscalculation
+     artifact already fixed twice this session (check_object_fits_in_slot,
+     dispatch_object_action): a scratch copy of the short "UNNAMED"
+     string that's never read back afterward. */
+  char acStack_84f48 [64];
   char acStack_24 [20];
   
-  sVar2 = FUN_0007bf38(param_1,param_2,0);
+  sVar2 = check_object_combination(param_1,param_2,0);
   if (sVar2 == 0) {
     sVar2 = FUN_00078b18(acStack_24,param_2,0,0);
     if (sVar2 == 0) {
@@ -64276,11 +66817,11 @@ int param_3;
     message_scroll_print_wrapped(s_is_locked__000878fc);
   }
   else if (param_3 == 0) {
-    FUN_0007c84c(param_2,param_1 == DAT_0023be64);
+    FUN_0007c84c(param_2,param_1 == g_player_object);
   }
   else {
     FUN_000451b0(param_2);
-    FUN_00043100();
+    open_backpack_container();
   }
   return;
 }
@@ -64291,7 +66832,7 @@ void FUN_0007ca0c()
 
 {
   FUN_000740b0(DAT_00202098,(int)(char)DAT_00202094);
-  DAT_002020c4 = 0;
+  g_cursor_holding_state = 0;
   FUN_00057cac(3);
   FUN_00057604(1);
   return;
@@ -64569,7 +67110,7 @@ uint param_3;
     if ((param_1[3] & 0x3f) == 0) {
       sVar3 = 1;
     }
-    uVar7 = FUN_0005358c(DAT_0024cff4);
+    uVar7 = encode_object_slot_index(DAT_0024cff4);
     iVar16 = FUN_00039bd8(uVar7,((byte)param_1[2] & 0x3f) * (int)sVar3,4,uVar6);
     break;
   case 1:
@@ -64659,7 +67200,7 @@ uint param_3;
           puVar9[5] = puVar10[5];
           puVar9[6] = puVar10[6];
           puVar9[7] = puVar10[7];
-          uVar14 = FUN_0005358c(puVar9);
+          uVar14 = encode_object_slot_index(puVar9);
           *(byte *)(puVar8 + 3) = (byte)puVar8[3] & 0x3f | (byte)((uVar14 & 0x3ff) << 6);
           *(char *)((char *)puVar8 + 7) = (char)((uVar14 << 0x16) >> 0x18);
           if ((*(ushort *)(puVar9 + 4) & 0xffc0) != 0) {
@@ -64672,7 +67213,7 @@ uint param_3;
           }
         }
         if ((*puVar8 & 0x1c0) == 0x1c0) {
-          uVar6 = FUN_0005358c(puVar8);
+          uVar6 = encode_object_slot_index(puVar8);
           FUN_00080ed4(uVar6,0xffffffff,0,param_2 & 0xff,param_3 & 0xff);
         }
       }
@@ -64753,11 +67294,11 @@ LAB_0007dce4:
     }
     sVar3 = rand_below(*(undefined1 *)(DAT_00086df8 + 0x2a));
     uVar6 = FUN_0007863c(0x2f5);
-    FUN_0007ed20(uVar6,*(ushort *)(DAT_0023be64 + 0x16) >> 10,
-                 (*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4,0,
+    FUN_0007ed20(uVar6,*(ushort *)(g_player_object + 0x16) >> 10,
+                 (*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4,0,
                  CONCAT22(uVar20,*(ushort *)(DAT_0024cff4 + 0x16) >> 10),
                  CONCAT22(uVar21,(*(ushort *)(DAT_0024cff4 + 0x16) & 0x3f0) >> 4),0,0);
-    uVar6 = FUN_0005358c(DAT_0024cff4);
+    uVar6 = encode_object_slot_index(DAT_0024cff4);
     iVar16 = FUN_00039bd8(uVar6,sVar3 + 3,4,0);
     return iVar16;
   case 0xb:
@@ -64939,7 +67480,7 @@ int param_2;
   
   DAT_0024cfd8 = (short)((*(byte *)(param_2 + 1) & 0x1e) >> 1);
   if (DAT_0024cfd8 != 0) {
-    DAT_0024cfd0 = FUN_0005358c(param_2);
+    DAT_0024cfd0 = encode_object_slot_index(param_2);
     iVar2 = DAT_002029cc;
     sVar3 = DAT_0024cfd8;
     for (uVar4 = 0; (0 < sVar3 && (uVar4 < 0x1000)); uVar4 = uVar4 + 1) {
@@ -64950,7 +67491,7 @@ int param_2;
       iVar2 = iVar2 + 4;
     }
   }
-  uVar1 = FUN_0005358c(param_2);
+  uVar1 = encode_object_slot_index(param_2);
   iVar2 = FUN_00053644(param_1,1,uVar1);
   if (iVar2 != 0) {
     FUN_000534a8(DAT_002046b4);
@@ -65020,7 +67561,7 @@ undefined4 param_3;
   }
   else if (0x3b < uVar1) {
     if (uVar1 < 0x3f) {
-      if (DAT_0024cff4 == DAT_0023be64) {
+      if (DAT_0024cff4 == g_player_object) {
         FUN_0003dc78((*(ushort *)(param_1 + 4) & 0x3f) - 0x3b,*(ushort *)(param_1 + 6) & 0x3f);
       }
     }
@@ -65072,7 +67613,7 @@ uint param_3;
       *(byte *)((char *)puVar4 + 1) = (byte)(uVar7 >> 8) | 0x90;
       *(undefined1 *)(puVar4 + 2) = 0;
       *(undefined1 *)((char *)puVar4 + 5) = 0;
-      uVar7 = FUN_0005358c(puVar5);
+      uVar7 = encode_object_slot_index(puVar5);
       iVar1 = (uVar7 & 0x3ff) << 6;
       bVar3 = (byte)puVar4[3] & 0x3f | (byte)iVar1;
       uVar2 = puVar4[2];
@@ -65102,7 +67643,7 @@ uint param_3;
       *(char *)puVar5 = (char)uVar11;
       *(byte *)((char *)puVar5 + 1) = (byte)(uVar11 >> 8) | 0xe2;
       object_list_insert_head(pbVar6 + 2,puVar5);
-      uVar8 = FUN_0005358c(puVar4);
+      uVar8 = encode_object_slot_index(puVar4);
       return uVar8;
     }
     free_object_slot(puVar4);
@@ -65181,9 +67722,9 @@ short param_3;
   uint uVar3;
   
   if (((param_1 == 0) ||
-      (uVar3 = (int)(short)(*(ushort *)(DAT_0023be64 + 0x16) >> 10) - (int)param_2,
+      (uVar3 = (int)(short)(*(ushort *)(g_player_object + 0x16) >> 10) - (int)param_2,
       uVar1 = (int)uVar3 >> 0x1f, 7 < (int)((uVar3 ^ uVar1) - uVar1))) ||
-     (uVar3 = (int)(short)((*(ushort *)(DAT_0023be64 + 0x16) & 0x3f0) >> 4) - (int)param_3,
+     (uVar3 = (int)(short)((*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4) - (int)param_3,
      uVar1 = (int)uVar3 >> 0x1f, uVar2 = 0, 7 < (int)((uVar3 ^ uVar1) - uVar1))) {
     uVar2 = 1;
   }
@@ -65883,14 +68424,14 @@ void msg_scroll_more_prompt()
   msg_scroll_scroll_up_line(((int)*(short *)(DAT_000879b0 + 6) + (int)*(short *)(DAT_00250704 + 10)) * 0x10000 >>
                0x10);
   sVar3 = *(short *)(DAT_00250704 + 10);
-  uVar2 = *DAT_0008429c;
-  *DAT_0008429c = 0xd4;
+  uVar2 = *g_draw_color_index;
+  *g_draw_color_index = 0xd4;
   draw_text_string(s__MORE__00087994,(int)*(short *)(DAT_00250704 + 0xc),(int)sVar3);
   FUN_0007f170(0,1);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 0xc),(int)sVar3,*(undefined2 *)(DAT_00250704 + 6),
                *(undefined2 *)(DAT_00250704 + 2));
-  *DAT_0008429c = uVar2;
+  *g_draw_color_index = uVar2;
   DAT_00250710 = *(short *)(DAT_00250704 + 0x14) + -1;
   puVar1 = (undefined2 *)(DAT_00250704 + 0xc);
   *(char *)(DAT_00250704 + 8) = (char)*puVar1;
@@ -65932,17 +68473,17 @@ char *param_1;
   #define local_23 (auStack_54_backing + 49)
 
   iVar2 = (int)(short)DAT_00201b60;
-  /* Debug: log every string handed to the message scroll. UW_DEBUG_SCROLL
-     to enable. param_1 is NULL at the call sites that only flush a pending
+  /* Debug: log every string handed to the message scroll.
+     param_1 is NULL at the call sites that only flush a pending
      inline graphic token (FUN_0007863c). DAT_00201b60 (1 or 4) is the
      "message scroll is the active text sink" gate -- anything else is
      dropped on the floor, so note that too. */
-  if (getenv("UW_DEBUG_SCROLL")) {
-    fprintf(stderr, "[scroll] add %s\"%s\" (mode=%d)\n",
+
+    DEBUG(INFO, "[scroll] add %s\"%s\" (mode=%d)\n",
             (iVar2 == 1 || iVar2 == 4) ? "" : "DROPPED ",
             (param_1 != (char *)0x0) ? param_1 : "(inline-graphic)",
             iVar2);
-  }
+
   if (iVar2 == 1 || iVar2 == 4) {
     FUN_0007f094(iVar2);
     iVar2 = extraout_r3;
@@ -65959,7 +68500,7 @@ char *param_1;
     }
     DAT_00250710 = *(undefined2 *)(DAT_00250704 + 0x14);
     DAT_0025071c = 0;
-    *DAT_0008429c = *(undefined1 *)(DAT_00250704 + 0x16);
+    *g_draw_color_index = *(undefined1 *)(DAT_00250704 + 0x16);
     *DAT_00084298 = 0x2a;
     uVar3 = Ordinal_1068(param_1);
     for (uVar3 = uVar3 & 0xffff; 0x31 < (uVar3 & 0xffff);
@@ -66091,7 +68632,7 @@ LAB_0007f860:
         uVar6 = 0xb4;
       }
 LAB_0007f8b0:
-      *DAT_0008429c = uVar6;
+      *g_draw_color_index = uVar6;
     }
     else {
       if (cVar2 == '6') {
@@ -66111,7 +68652,7 @@ LAB_0007f894:
       }
     }
 LAB_0007f8b8:
-    *(undefined1 *)(DAT_00250704 + 0x16) = *DAT_0008429c;
+    *(undefined1 *)(DAT_00250704 + 0x16) = *g_draw_color_index;
     *(undefined1 *)(DAT_00250704 + 0x17) = 0;
   }
   if (*(int *)(DAT_00250704 + 0x10) == 0) goto LAB_0007fa30;
@@ -66153,7 +68694,7 @@ LAB_0007f9ac:
   *(undefined1 *)(DAT_00250704 + 0x12) = 0;
   *(undefined1 *)(DAT_00250704 + 0x13) = 0;
 LAB_0007fa30:
-  iVar7 = FUN_000112a0(param_1);
+  iVar7 = measure_text_width(param_1);
   iVar5 = DAT_00250704;
   if (((*(short *)(DAT_00250704 + 8) + iVar7) * 0x10000 >> 0x10 < (int)*(short *)(DAT_00250704 + 6))
       || (32 < s_wrap_recursion_depth))
@@ -66168,7 +68709,7 @@ LAB_0007fa30:
       iVar5 = DAT_00250704;
     }
     draw_text_string(param_1,(int)*(short *)(iVar5 + 8),(int)*(short *)(iVar5 + 10));
-    iVar5 = FUN_000112a0(param_1);
+    iVar5 = measure_text_width(param_1);
     iVar5 = *(short *)(DAT_00250704 + 8) + iVar5;
     *(char *)(DAT_00250704 + 8) = (char)iVar5;
     *(char *)(DAT_00250704 + 9) = (char)((uint)iVar5 >> 8);
@@ -66214,7 +68755,7 @@ undefined4 param_2;
     cVar6 = ' ';
     do {
       *pcVar3 = '\0';
-      sVar2 = FUN_000112a0(param_1);
+      sVar2 = measure_text_width(param_1);
       if ((int)*(short *)(DAT_00250704 + 8) + (int)sVar2 < (int)*(short *)(DAT_00250704 + 6))
       goto LAB_0007fc2c;
       pcVar4 = (char *)Ordinal_1407(param_1,0x20);
@@ -66234,7 +68775,7 @@ undefined4 param_2;
       FUN_0007f7cc(&DAT_0008522c,1);
       goto LAB_0007fc64;
     }
-    sVar2 = FUN_000112a0(param_1);
+    sVar2 = measure_text_width(param_1);
   } while ((int)*(short *)(DAT_00250704 + 6) <= (int)*(short *)(DAT_00250704 + 8) + (int)sVar2);
 LAB_0007fc2c:
   *pcVar3 = cVar6;
@@ -66352,7 +68893,7 @@ short param_1;
   iVar2 = (int)DAT_0025070c;
   sVar1 = *(short *)(DAT_00250704 + 10);
   FUN_0007f0e0();
-  *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(iVar2,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
                (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
@@ -66376,7 +68917,7 @@ int param_1;
   iVar3 = (int)DAT_0025070c;
   sVar1 = *(short *)(DAT_00250704 + 10);
   FUN_0007f0e0();
-  *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(iVar3,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
                (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
@@ -66425,14 +68966,14 @@ short param_5;
     param_5 = 0x32;
   }
   FUN_0007f0e0();
-  *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   if (param_1 == (undefined *)0x0) {
-    sVar3 = FUN_000112a0(&DAT_000879a8);
+    sVar3 = measure_text_width(&DAT_000879a8);
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
     param_1 = &DAT_000879a8;
   }
   else {
-    sVar3 = FUN_000112a0(param_1);
+    sVar3 = measure_text_width(param_1);
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
   }
   sVar2 = *(short *)(DAT_00250704 + 6);
@@ -66458,7 +68999,7 @@ short param_5;
   uVar11 = (int)sVar5 >> 0x1f;
   acStack_a1[(((int)sVar5 ^ uVar11) - uVar11) + 1] = '\0';
   local_a8 = 3000;
-  sVar4 = FUN_000112a0(acStack_a1 + 1);
+  sVar4 = measure_text_width(acStack_a1 + 1);
   iVar7 = ((int)sVar4 + (int)DAT_0025070c) * 0x10000 >> 0x10;
   iVar14 = (int)*(short *)(DAT_00250704 + 10);
   FUN_00057118();
@@ -66515,7 +69056,7 @@ short param_5;
     } while (cVar1 != '\0');
     uVar11 = (uint)sVar5;
     local_68[(uVar11 ^ (int)uVar11 >> 0x1f) - ((int)uVar11 >> 0x1f)] = '\0';
-    sVar5 = FUN_000112a0(local_68);
+    sVar5 = measure_text_width(local_68);
     iVar7 = ((int)sVar5 + (int)DAT_0025070c) * 0x10000 >> 0x10;
     if ((local_a8 < 2000) || (3999 < local_a8)) {
       if (local_a8 == 4000) {
@@ -66635,7 +69176,7 @@ LAB_000804d0:
             uVar13 = 0;
           }
           if (((((iVar12 != -1) && (iVar10 = Ordinal_1417(iVar12,0x157), iVar10 != 0)) &&
-               (sVar5 = FUN_000112a0(acStack_a1 + 1), sVar5 < (short)(sVar3 + -0x14 + sVar2))) &&
+               (sVar5 = measure_text_width(acStack_a1 + 1), sVar5 < (short)(sVar3 + -0x14 + sVar2))) &&
               (uVar11 = Ordinal_1068(acStack_a1 + 1), uVar11 < (uint)(int)param_5)) &&
              ((param_4 != 0 || (iVar12 = Ordinal_1417(iVar12,4), iVar12 != 0)))) {
             sVar5 = Ordinal_1068(acStack_a1 + 1);
@@ -66654,7 +69195,7 @@ LAB_0008062c:
       set_draw_color(0x2a);
       rect_fill_or_save_restore((int)DAT_0025070c,*(short *)(DAT_00250704 + 10),*(undefined2 *)(DAT_00250704 + 6)
                    ,*(short *)(DAT_000879b0 + 6) + *(short *)(DAT_00250704 + 10));
-      *DAT_0008429c = *(undefined1 *)(DAT_00250704 + 0x16);
+      *g_draw_color_index = *(undefined1 *)(DAT_00250704 + 0x16);
       draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
     }
     sVar5 = (short)uVar13;
@@ -66679,7 +69220,7 @@ int * param_3;
   
   iVar5 = *param_3;
   FUN_0007f0e0();
-  *DAT_0008429c = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   if (param_1 == 0) {
     FUN_00078c80(param_2);
   }
@@ -66831,7 +69372,7 @@ undefined4 param_1;
       if ((uVar5 & 7) != 6) {
         uVar8 = uVar8 - 0x18;
       }
-      uVar6 = FUN_0005358c(puVar4);
+      uVar6 = encode_object_slot_index(puVar4);
       iVar7 = FUN_00051fa0(uVar5 + (uVar10 + 0x14) * 0x10,uVar6,
                            (uint)(*(byte *)((char *)puVar4 + 3) >> 5) + (short)DAT_0010144c * 8,
                            ((*(byte *)((char *)puVar4 + 3) & 0x1c) >> 2) + (short)DAT_00101454 * 8,
@@ -66896,8 +69437,8 @@ undefined4 param_2;
   uint uVar2;
   int iVar3;
   
-  uVar2 = FUN_0005358c();
-  sVar1 = FUN_0005358c(param_2);
+  uVar2 = encode_object_slot_index();
+  sVar1 = encode_object_slot_index(param_2);
   iVar3 = 0;
   if (DAT_00250770 != 0) {
     do {
@@ -67162,7 +69703,7 @@ undefined4 param_3;
     uVar6 = Ordinal_1053();
     Ordinal_2005(3,uVar6);
     uVar6 = Ordinal_1053();
-    uVar11 = FUN_0005358c(puVar8);
+    uVar11 = encode_object_slot_index(puVar8);
     uVar12 = (undefined1)param_3;
     uVar13 = (undefined1)extraout_r1_02;
     Ordinal_2005(3,uVar6);
@@ -67215,7 +69756,7 @@ undefined4 param_4;
     uVar5 = (local_24[iVar1 + 2] ^ uVar2) & 0x1ff ^ (uint)uVar2;
     *(char *)param_1 = (char)uVar5;
     *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
-    uVar4 = FUN_0005358c(param_1);
+    uVar4 = encode_object_slot_index(param_1);
     sVar3 = FUN_00080ed4(uVar4,4,0,param_2 & 0xff,(char)param_3);
     if (sVar3 != -1) {
       if (iVar1 == 0) {
@@ -67280,7 +69821,7 @@ short param_7;
   *(byte *)(iVar5 + 2) = bVar9 & 0x7f ^ (byte)uVar3;
   *(char *)(iVar5 + 3) = (char)((ushort)uVar3 >> 8);
 LAB_00081980:
-  uVar7 = FUN_0005358c(iVar5);
+  uVar7 = encode_object_slot_index(iVar5);
   sVar4 = FUN_00080ed4(uVar7,param_3,param_4,(int)param_6 & 0xff,(char)param_7);
   if (sVar4 == -1) {
     free_object_slot(iVar5);
@@ -67301,7 +69842,7 @@ int FUN_000819f0()
   uint uVar3;
   int iVar4;
   
-  sVar1 = FUN_0005358c();
+  sVar1 = encode_object_slot_index();
   iVar4 = 0;
   uVar3 = (uint)DAT_00250770;
   if (uVar3 != 0) {
@@ -67383,7 +69924,7 @@ int param_2;
   if ((uVar7 & 7) != 6) {
     uVar9 = uVar9 - 0x18;
   }
-  uVar3 = FUN_0005358c(puVar2);
+  uVar3 = encode_object_slot_index(puVar2);
   iVar4 = FUN_00051fa0((uVar7 & 0x30) + (uVar7 & 0xf) + 0x140,uVar3,
                        (uint)(*(byte *)((char *)puVar2 + 3) >> 5) + (short)DAT_0010144c * 8,
                        ((*(byte *)((char *)puVar2 + 3) & 0x1c) >> 2) + (short)DAT_00101454 * 8,uVar9,1,
@@ -67421,7 +69962,7 @@ int param_2;
 
 undefined4 FUN_00081ce4(param_1,param_2)
 /* .ark handle-struct pointer -- was `undefined4`, truncating the stack
-   struct FUN_000499c0 passes and crashing FUN_0001613c below. */
+   struct load_level_object_table passes and crashing read_archive_entry below. */
 undefined1 * param_1;
 int param_2;
 
@@ -67432,7 +69973,7 @@ int param_2;
   ushort *puVar4;
   
   puVar4 = (ushort *)&DAT_00250778;
-  sVar1 = FUN_0001613c(param_1,param_2 + 8,&DAT_00250778);
+  sVar1 = read_archive_entry(param_1,param_2 + 8,&DAT_00250778);
   if (sVar1 == 0x180) {
     DAT_00250770 = '\0';
     iVar3 = 0;

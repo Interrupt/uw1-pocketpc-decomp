@@ -231,3 +231,666 @@ REMAINING:
 - Object vs wall depth (painter's order) not verified.
 - Render classes 1-3 (doors as geometry / switches / bridges) still only
   lightly exercised.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11: THE RENDER-CLASS DISPATCH MECHANISM, PRECISELY
+═══════════════════════════════════════════════════════════════════════════
+This has come up enough times above ("render classes 1-3", "class-0 objects
+render through the mesh list") that it's worth nailing down exactly what
+decides which code path an object takes. Short answer: it is a static
+per-object-*type* property table, NOT a function-pointer table -- a
+different mechanism from the frame/mode dispatch tables this project found
+hidden elsewhere (DAT_00085668, DAT_00085728, PTR_FUN_00087220 -- see
+memory.md's "HOW WE GOT THE DISPATCH TABLES POPULATED"). Don't conflate the
+two; this one really is just an if-chain reading a data field, confirmed
+fresh from Ghidra, not a lost jump table.
+
+THE TABLE: comobj.dat, loaded once at startup into DAT_00202c90 (uw.c
+~41163-41184). 512 fixed records, one per object *type* ID (0x000-0x1ff),
+indexed directly as `(&DAT_00202c9X)[type_id * 0xd]`. On disk each record
+is 11 bytes; in memory the stride is 13 (0xd) bytes, so offsets 4 and 0xc
+are real, permanent padding (confirmed: comobj.dat is exactly 512*11+2 =
+5634 bytes; the loader's own read calls only ever touch 11 of the 13
+bytes per iteration, uw.c ~41173-41181). This is a PER-TYPE table --
+separate from each individual placed object's own live record (tile
+position, heading, quality/flags), which is walked from each tile's object
+chain and holds per-*instance* state. Rendering always needs both: the type
+record says what KIND of thing this is and how to draw it; the instance
+record says where.
+
+THE DISPATCH FIELD: byte offset 0xa of the type record (DAT_00202c9a). Its
+low 2 bits are the "render class" read at the top of emit_tile_objects
+(was FUN_00060aa0), uw.c ~49659 (`bVar13 = (&DAT_00202c9a)[(id&0x1ff)*0xd]
+& 3`):
+  0 -- mesh/sprite billboard quad (LAB_emit_mesh_sprite_quad) -- the
+       default path; ordinary items, the spawn sack, and (as of this
+       session) the OLD boulder behavior before it got its own special
+       case.
+  1 -- critter: animated, direction-octant sprite via CRxxPAGE.Nxx +
+       ASSOC.ANM (resolve_critter_sprite_tier / decode_critter_sprite_page).
+  2 -- door / wall-sign -- both rerouted into the SAME class-0 quad path
+       (`goto LAB_emit_mesh_sprite_quad`), split apart *inside* that branch
+       by the object's own `id & 0x30` (door vs TMOBJ sign/plaque), not by
+       anything in comobj.dat.
+  3 -- light/quantity-flagged special billboards (torches, thrown-weapon /
+       muzzle-flash effects) via emit_object_billboard(0x14 or 0x16, ...).
+Bits 2-5 of this SAME byte are read elsewhere (uw.c:41305, `>>2 & 0xf`) for
+an apparently unrelated purpose (looks light-radius-shaped) -- the byte is
+multiplexed, "render class" is only ever its bottom two bits.
+
+ONE FUNCTION, NOT SEVERAL: before touching any of this for the Models work
+below, got a FRESH Ghidra decompile of the real emit_tile_objects
+(FUN_00060aa0) specifically to check whether the class dispatch was secretly
+a jump/function-pointer table Ghidra had collapsed into an if-chain (the
+exact bug class DAT_00085668 turned out to be). It is not -- the real
+binary's dispatch is a genuine, exhaustive 2-bit if/else, matching our
+recovered uw.c exactly, no drift from past sessions' editing. So in this
+codebase, "different object types get dispatched to different render
+functions" really means: ONE function, called once per object as each
+visible tile's chain is walked, branching internally on this 2-bit field,
+with FURTHER hardcoded object-ID special cases layered inside each branch
+on top of that (id 0x160-0x16f == TMOBJ signs; id & 0x30 == door vs sign;
+id 0x153-0x156 == boulder-model lookup, added this session, see below).
+There is no clean single table that fully answers "what renders this
+object" -- it's the comobj.dat class byte PLUS a growing pile of id-range
+checks hardcoded directly in emit_tile_objects.
+
+THE NEGATIVE FINDING THAT MATTERS MOST: this 2-bit field tops out at 4
+values, and there is no 5th "true 3D model" case anywhere in this Pocket PC
+build -- not a lost/masked bit, genuinely absent (see the Models
+investigation below, which checked this thoroughly rather than assuming
+it). Whatever mechanism the original PC version may have used to select
+real vertex-model objects, this WinCE port's object dispatch never had
+that case; everything funnels into one of the four billboard-shaped paths
+above. Reviving true 3D model rendering therefore could not be "find the
+dropped case" -- it required bolting on a brand new object-id special case
+that intercepts specific IDs before this dispatch even runs.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-11: MODELS -- FIRST REAL 3D-MODEL OBJECT ON SCREEN
+(boulder family; companion investigation to the class-dispatch writeup above)
+═══════════════════════════════════════════════════════════════════════════
+Repro used throughout: `SETPLAYERPOS 9.53 3.66 64 181 16` in a demo script
+(a real position captured live via sync_camera_from_player's always-on
+`[playerpos]` console print) -- a boulder is supposed to sit in front of
+the player here; the 3D viewport showed only an empty dead-end alcove.
+
+FINDING THE BOULDER: `UW_DUMP_NAMES=1` (new debug hook, brute-forces every
+(page,id) pair through FUN_0007863c and prints non-empty results) found
+page 4 is the real object-name table (comobj.dat's own "name" data is just
+damage-adjective prefixes like "ruined"/"broken" -- a dead end): 0x153/
+0x154 = "a_large boulder", 0x155 = "a_boulder", 0x156 = "a_small boulder".
+A companion `UW_DUMP_ALL_OBJECTS=1` hook (every object's tile/id/flags/full
+13-byte comobj.dat row) found id=0x154 sitting right at the repro tile with
+renderclass=2 -- routed through the door/sign quad reroute and projecting
+to scrx=4208, wildly outside the ~224px viewport. Invisible, not absent.
+
+DUE DILIGENCE BEFORE BUILDING ANYTHING NEW: data/DATA3D/*.E holds 29 real
+3D-model files (text format: BEGIN/POINTS/PARTS/.../END), already parsed at
+startup by FUN_00038680 (uw.c ~24980) calling FUN_00020a74 (uw.c ~13195)
+into 29 persistent buffers (DAT_00114c1c..DAT_0017e0ec) -- but nothing in
+this decompile ever read them afterward. Rather than assume "dead code,
+build a renderer from scratch," did the same due diligence this project's
+history says to do for suspiciously-dead data (see the DAT_00085668 writeup
+in memory.md): a real Ghidra reference search against UU.exe found ZERO
+consumers of any of the 29 buffer addresses anywhere in the binary except
+the loader (InspectModelBuffers.java, scratchpad); a raw-byte-pattern scan
+across every initialized memory block for those same 29 addresses (in case
+a compile-time pointer table held them without a Ghidra-recognized
+reference -- the exact DAT_00085668 bug class) found nothing
+(FindPointerTables.java); a full .text undefined-byte-gap scan found zero
+gaps larger than 16 bytes anywhere in the executable region, so there's no
+room for an undiscovered consumer function either (CheckUndefinedGaps.java);
+the fresh emit_tile_objects decompile above ruled out a collapsed dispatch
+case; and comobj.dat's loader (see the dispatch writeup above) confirmed
+its "extra" padding bytes are real padding, not a dropped model-index
+field. CONCLUSION, checked rather than assumed: this Pocket PC port shipped
+the model loader but never wired a renderer to it. Reviving it meant
+writing a real consumer, not unstubbing a hidden one.
+
+A REAL BUG FOUND ALONG THE WAY: while instrumenting the loaded buffers
+(UW_DUMP_MODEL_RAW=1) to reverse-engineer the output format, every parsed
+point's first float came out as a constant 3.0 while Y/Z matched the
+source .E text exactly. Root cause: FUN_00020a74's POINTS-parsing loop
+calls Ordinal_2032() (int->float) for X with the argument dropped, while
+the next two lines convert Y and Z correctly -- the same "dropped
+argument, ARM register-leftover idiom doesn't survive a literal recompile"
+bug class as everywhere else in this file, just never caught before
+because nothing consumed the output. Fixed (uw.c ~13427). This had been
+silently corrupting the X coordinate of every point in all 29 loaded
+models the whole time, independent of whether a renderer existed.
+
+FUN_00020a74's OUTPUT BUFFER LAYOUT (recovered empirically, by dumping and
+diffing against the real .E text, after the X-coordinate fix): offset 0 =
+point count (int); offset 4 = part count (int, with an occasional spurious
+trailing 1-vertex entry -- filtered by requiring 3 <= vcount <= 4); points
+at `8 + i*0xc` as 3 back-to-back little-endian floats (X, Y-up, Z-depth,
+matching the .E file's own axis order); parts at `0xc14 + p*0x60`: a vertex
+count (int) then that many vertex-index ints (into the points array)
+starting at `+4`.
+
+THE RENDERER: emit_model_object (new, uw.c, just above emit_tile_objects)
+pushes each model FACE as its own record into the shared
+DAT_000a85d0_backing arena (doc comment ~uw.c:116) that tile wall/floor
+geometry already uses, and lets the EXISTING
+translate_verts_to_camera_space / project_verts_through_view_matrix /
+near_clip_visible_tiles / render_visible_tile_list pipeline do real
+per-vertex 3D transform and N-gon-fan rasterization -- confirmed
+render_visible_tile_list was already generic over a record's point count,
+not hardcoded to 4 (quads), so this needed zero rasterizer changes. This
+reuses the real 3D transform pipeline rather than extending the
+class-0 quad path's screen-space billboard-extrusion trick (which only
+ever places one flat rectangle around an already-projected 2D anchor, and
+would not have given genuine per-vertex 3D projection at different
+distances/angles).
+
+Model points are rotated by the object's heading (0-7, 45-degree steps)
+and added to the object's already-computed world anchor (DAT_0023b904/
+91c/920 -- despite being printed as "scrx/scry/scrz" by an earlier debug
+hook, these are pre-translate WORLD-ish coordinates in the same
+256-units/tile scale as tile geometry, not final screen pixels) in the
+same (X, height, depth) field order process_visible_tile_cell uses for
+real tile vertices. UW_MODEL_SCALE (default 8.0) converts the model's
+small local .E units (a rock spans roughly -18..24) into that world scale.
+Faces render texture-less (texptr left 0, a flat constant shade) rather
+than solving real UV/material mapping in this pass -- see "LAST GAP" above
+(the still-open 2D-sprite UV problem) and Open below; both need the same
+fix eventually.
+
+Object-id -> model lookup (lookup_boulder_model, small switch, same shape
+as the existing door/sign id-based special-casing in emit_tile_objects's
+class-2 branch): 0x156 "a_small boulder" -> ROCKSMAL, 0x155 "a_boulder" ->
+ROCKMED, 0x153/0x154 "a_large boulder" -> ROCKBIG. No id->model field
+exists anywhere in comobj.dat or the binary (see due diligence above) --
+this is a hand-built table, not a recovered one, intercepted at the very
+top of emit_tile_objects (right after the object id is read) so boulders
+skip the normal render-class dispatch entirely. UW_DISABLE_MODEL_RENDER=1
+reverts to the old billboard-quad behavior for comparison.
+
+RESULT: screenshot at the exact repro position (defaults only, no env
+overrides) shows a real, recognizable, flat-shaded polygonal boulder
+resting in the room ahead of the player -- multiple facets at different
+angles and shading, not a flat billboard. Zero crashes across the repro
+run or the full .E-model-loading startup sequence. UW_DEBUG_MODEL=1 prints
+each model emission's heading, anchor, point/part counts, and how many
+faces passed the vertex-index sanity check (52/53 for the ROCKBIG boulder
+used in the repro, one part filtered for an out-of-range vertex count).
+Committed a89ae5a on branch `objects`.
+
+OPEN / ROUGH FOR NEXT TIME:
+- Height calibration is a hand-tuned constant (UW_MODEL_YOFF, default
+  -200), not derived from the tile's real floor-height field the way tile
+  geometry computes it (process_visible_tile_cell's `*(byte*)(...)*0x40`
+  lookup, uw.c ~48621-48624). Untested at a second boulder / different
+  floor height -- don't trust -200 as universal yet.
+- No texture/material. Every face is flat, untextured, one shade.
+  EXTENDED_COLORS in the .E format (a per-part RGB triple) is parsed by
+  FUN_00020a74 into scratch memory but never carried into the per-model
+  output buffer this session traced -- needs its own offset-recovery pass,
+  same technique as points/parts above. Solving this and the still-open
+  2D-sprite UV gap ("LAST GAP" section above) likely share a fix.
+- Only the boulder family is wired. lookup_boulder_model is a 4-entry
+  table; extending it to doors/chests/tables/beds/etc (all 29 loaded .E
+  files, load order in FUN_00038680, uw.c ~24980) is a small table
+  addition using the same mechanism -- but each family needs its own
+  UW_DUMP_NAMES + UW_DUMP_ALL_OBJECTS id-hunting pass (no id->model field
+  exists anywhere to just read off) and possibly its own height offset.
+- Arena headroom: emit_model_object guards the same ~512-vertex/~490-record
+  arena cap the tile/quad paths already do, sized to the specific model's
+  real point/part counts rather than a fixed budget -- untested with
+  multiple model objects visible in the same room at once.
+- Debug hooks added this session, env-gated, safe to leave in place:
+  UW_DUMP_ALL_OBJECTS, UW_DUMP_NAMES, UW_DUMP_MODEL_RAW (superseded now
+  that the buffer format is documented in code, kept for future
+  model-family work), UW_DEBUG_MODEL, UW_MODEL_SCALE, UW_MODEL_YOFF,
+  UW_DISABLE_MODEL_RENDER.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (2): BRIDGES, SHRINE, DOOR FRAMES+LEAVES WIRED UP
+═══════════════════════════════════════════════════════════════════════════
+Extended the boulder mechanism (previous section) to 3 more families.
+lookup_boulder_model -> lookup_object_model, now table-driven
+(g_model_map[]: id, model buffer, name, per-entry scale/yoff/y_clip, plus
+an optional second model+local-X-offset for composites) instead of a bare
+switch, so the render dispatch and UW_DUMP_OBJECTS_FILE's "model" column
+share one source of truth. Ids found via UW_DUMP_OBJECTS_FILE (much
+faster than the old stderr scans): 0x164="a_bridge", 0x157="a_shrine",
+0x140-0x145/0x147="a_door"/"a_secret door" (closed), 0x148-0x14d/0x14f=
+"an_open door"/open secret door.
+
+KEY LESSON -- scale is NOT universal, read each .E file's real POINTS
+range before guessing: boulders needed scale=8 (local points span roughly
+-20..25 on every axis, a model-specific small unit); FBRIDGE/SHRINE/
+DFRAME/DOOR's points already span real tile-sized ranges (FBRIDGE's X/Z
+run exactly -128..128 = one 256-unit tile; DOOR.E's 128-unit width
+matches DFRAME's inner opening exactly) -- these are authored directly in
+world units, scale=1. Confirmed empirically: scale=8 on DFRAME (which has
+POINTS up to local Y=1024) made it ~32 tiles tall and rendered as
+nothing; scale=1 immediately gave a plausible door-sized shape.
+
+DFRAME.E ALSO has deliberately over-tall "riser" parts (2 of 11, local Y
+up to 1024 vs the real frame's Y 0-208) -- likely meant to be clipped
+against each room's real ceiling by the original renderer so the frame
+never shows a gap regardless of room height. No ceiling clip here, so
+emit_model_object gained a y_clip param (UW_MODEL_YCLIP to override):
+drops whole faces if any vertex's LOCAL Y exceeds the cutoff, rather than
+drawing the risers unclipped. 300 for DFRAME, 0 (disabled) elsewhere.
+
+COMPOSITE OBJECTS -- user feedback mid-session: a door is really two
+DATA3D models, not one. DFRAME.E (frame) + DOOR.E (leaf), the latter
+loaded twice by FUN_00038680 (indices 13/14, identical content --
+presumably two runtime instances of one leaf mesh). emit_model_object
+gained xoff_local (added to each vertex's local X before rotation):
+DOOR.E's own points span local X 0..128, DFRAME's inner opening spans
+-64..64 (also 128 wide) -- xoff_local=-64 centers the leaf in the frame's
+gap. ModelMapEntry gained optional model2/name2/x_off2; closed door ids
+get both frame+leaf, open ids get the frame only (no real swing-angle/
+pivot data for an opened leaf -- an empty doorway is less wrong than a
+leaf floating in the frame's own plane).
+
+RESULT: door screenshot at tile (24,7) shows real geometry filling the
+doorway (vs. plain dark passage with UW_DISABLE_MODEL_RENDER=1) -- though
+adding the DOOR.E leaf visibly changed the silhouette from one solid
+panel to a smaller shape near the bottom, most likely z-fighting between
+the frame's and leaf's coplanar/overlapping faces (no depth bias
+implemented). Bridge confirmed clearly -- a recognizable flat railing/
+deck structure, visible from an oblique downward angle (the head-on view
+faced an unlit chasm beyond the bridge and correctly rendered black, not
+a bug -- verified by checking 4 headings from the same spot, only the
+one facing away from the chasm showed a lit corridor).
+
+SHRINE (0x157): wired identically, confirmed EMITTING real geometry
+(UW_DEBUG_MODEL: 76/77 faces from a 101-point model, matching SHRINE.E's
+real size) but never visually confirmed on screen. Tried 8 headings from
+one adjacent tile, a second standing tile on the opposite side, and 5
+different UW_MODEL_YOFF values (-50..-400, each producing a different,
+non-identical screenshot but never showing the shrine) -- a pure Y
+miscalibration should have swept through some visible position across
+that range, so the likely explanation is the standing tile picked from
+the object census just doesn't have real line-of-sight to the shrine's
+tile (tile adjacency in the census doesn't guarantee an open wall
+between them). Needs a real walk-there-and-look repro next time instead
+of more SETPLAYERPOS-from-adjacency guessing.
+
+NEW DEBUG HOOK: UW_DEBUG_FLOORZ (demo_set_player_pos) prints a tile's
+real floor-derived Z before SETPLAYERPOS's explicit Z overrides it.
+Building repro positions by guessing Z (like the original boulder repro's
+z=64, which turned out to be specific to that one room) doesn't
+generalize -- this session's door/bridge/shrine repros all used the real
+per-tile value from this hook; the earlier attempts at a guessed z=64 for
+the door/bridge rendered solid black (camera underground/in a wall at the
+wrong height) until switching to the tile's real floor z fixed it
+immediately.
+
+ALSO OBSERVED, NOT EXPLAINED: the object world anchor (DAT_0023b904/91c/
+920) landed within roughly 4200-4500 on the X axis across every test
+this session (boulder, door, shrine, bridge), despite those objects' real
+tile X coordinates ranging from 9 to 46 -- reinforces the existing "not a
+plausible absolute pixel column" note from the boulder milestone, and
+suggests these are camera/scan-relative values recomputed fresh per
+object per frame rather than translatable to a tile number by any simple
+formula. Didn't block this session (relative placement between objects
+in the same frame was still correct -- three adjacent bridge segments'
+anchors differed by exactly 256, matching their real one-tile spacing)
+but worth remembering before trying to derive absolute world position
+from it directly.
+
+New/changed debug hooks: UW_DEBUG_FLOORZ, UW_MODEL_YCLIP.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (3): MODEL HEADING WAS MISSING THE CAMERA-QUADRANT FIX
+═══════════════════════════════════════════════════════════════════════════
+User question: "doors can have different directions, is the object heading
+wired up for models?" Short answer at the time: heading WAS read and used
+to rotate the model (param_1[1]>>6&7, the same field critters/signs/doors
+all read elsewhere), but it was missing a correction this exact codebase
+already had to learn was necessary for this exact field, in the sibling
+door/sign billboard-angle-override code (class-2 branch, uw.c ~50536-50550
+and ~50647-50653): the raw stored heading is in a fixed world-compass
+frame, but the whole rendering pipeline (tile walk, wall/floor geometry,
+AND the object world anchor DAT_0023b904/91c/920 this session's model code
+places its vertices relative to) operates in a frame pre-rotated by
+DAT_0023b4a0 -- the camera's current 90-degree screen-rotation quadrant
+(0-3, recomputed every frame in build_frame_draw_list from the camera's
+own yaw). That existing code's own comment: "this same file rotates every
+OTHER object's stored orientation-ish fields by it... but this heading
+read never did" -- confirmed live at the time to cause 90-degree-off /
+invisible rendering depending on camera stance. This session's new model
+code reproduced the identical class of bug.
+
+FIX: `_heading = (_raw_heading - 2*(int)DAT_0023b4a0) & 7` at the model
+interception point in emit_tile_objects (uw.c, right before both
+emit_model_object calls), matching the sibling code's formula (without
+its extra "+1 compass step" -- that correction was specific to the
+billboard quad's own sin/cos lookup-table convention for extending a 2D
+quad, not obviously applicable to a real 3D rotation matrix; not applied
+here since nothing so far indicates a 45-degree-off symptom for the 3D
+models -- revisit if one shows up).
+
+VERIFIED via UW_DEBUG_MODEL's new heading log line
+([model-heading] id=... raw=... quadrant=... compensated=...): the SAME
+physical door (id 0x140 at tile 24,7) logged raw=5/quadrant=0 and
+raw=1/quadrant=2 in the same demo run (quadrant fluctuated briefly while
+the camera settled after SETPLAYERPOS) -- both resolve to the SAME
+compensated=5 after the fix, confirming the door's apparent orientation
+is now stable regardless of which camera quadrant it's viewed from,
+rather than silently flipping depending on incidental camera state (the
+bug this fix removes). Boulder regression-checked too (same shared code
+path applies to every model family, not just doors): its heading is
+usually raw=0 (default, unrotated per its .E authoring) but came out
+compensated=4 (180 degrees) at the boulder repro position, since the
+camera happened to be in quadrant 2 there -- screenshot confirms it still
+renders as a plausible, undistorted 3D rock, just a different facet
+silhouette than before (expected and harmless for an asymmetric loose
+rock; would matter more for a wall-aligned object like a door, which is
+exactly where this was found).
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (4): MODELS ALSO NEEDED A 45-DEGREE STEP, BUT THE OPPOSITE SIGN FROM SIGNS/DOORS
+═══════════════════════════════════════════════════════════════════════════
+User question: "does the model heading need the same +1 compass-step fix
+signs/doors needed?" Good instinct -- yes, but the sign was wrong to
+assume it'd be the SAME correction.
+
+The sign/door billboard-angle-override code (uw.c ~50670-50680) applies
+`((quadrant_heading + 1) & 7) * 45` -- a "+1 compass step" on top of the
+quadrant compensation, confirmed live in that code's own comment ("45
+degrees off from flush -- one compass step correction"). Assumed at
+first this would carry over unchanged to the new 3D model code. Tested
+it properly instead of assuming: added a temporary UW_MODEL_HEADING_
+OFFSET env override and screenshotted the door repro (tile 24,7) across
+all 8 possible compass-step offsets (-3 through +2 tested explicitly,
+the rest by symmetry). Result: offset 0 and +1 (the sign/door value)
+BOTH rendered as a thin, nearly edge-on sliver -- the frame's broad face
+turned almost perpendicular to the camera, barely visible; +2 was a
+visibly skewed parallelogram; -2/-3 were skewed or thin again; -1 was
+the ONLY offset that produced a clean, axis-aligned rectangle flush with
+the doorway, matching the surrounding wall geometry exactly.
+
+So the correction is real (confirms the user's instinct), but its SIGN
+is the opposite of the billboard code's +1 -- makes sense once you
+think about WHY: the billboard code rotates a 2D quad-extension
+direction through a sin/cos LOOKUP TABLE (DAT_000d9ed8/DAT_000d9930),
+while this session's model code applies a real rotation MATRIX
+(cos/sin computed directly) to actual 3D model-space vertices. Those
+are two different rotation conventions/senses that happen to share the
+same underlying "quadrant compensation" need but not the same fixed
+offset on top of it -- porting the sign code's exact constant without
+re-testing would have been wrong. Baked in as the new default (`_step =
+-1` in the model heading block, uw.c, right after the quadrant
+compensation), with UW_MODEL_HEADING_OFFSET still available as an
+override for future tuning. Boulder and bridge regression-checked with
+the new default -- both still render as plausible, undistorted shapes
+(expected: boulder is asymmetric so any rotation looks like "a rock";
+bridge's own heading happened to not visibly change orientation at its
+repro spot).
+
+Tried to also confirm on a second, independently-placed door (tile 9,10,
+a different raw stored heading than the repro door) as a generalization
+check -- inconclusive, not a contradiction: the debug log showed multiple
+different raw heading values for "the same" id 0x140 within one static
+demo run, which is more likely 2+ separate door objects in view at that
+busier corridor position (not tracked apart in the quick test) than a
+real per-frame heading change, and no obvious door silhouette was visible
+in that screenshot at all (possibly occluded/edge-on from that specific
+stance). Given the first test's result was unambiguous across a clean,
+isolated single-object sweep, treated that as sufficient rather than
+chasing a messier second repro -- but this is the natural next thing to
+verify if a differently-oriented door ever looks wrong.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (5): DOOR FRAME WAS MISSING ITS CONNECTING HEADER -- CLAMP, DON'T DROP
+═══════════════════════════════════════════════════════════════════════════
+User: "the door frame locations look off. Test what they look like with
+just the door frame, without the door." Added UW_MODEL_NO_LEAF=1 (skips
+model2 only) to isolate DFRAME.E from DOOR.E and screenshotted it alone.
+Result made the bug obvious: two short, disconnected grey blocks sitting
+at floor level in the left/right of the opening, with plain background
+wall visible above AND between them -- not a real archway. Raising the
+whole thing 32 units (UW_MODEL_YOFF=-68) just floated both stumps up
+slightly with a new gap opening at the floor; they still never connected
+at the top, which ruled out a simple vertical-offset problem.
+
+ROOT CAUSE: the y_clip mechanism added in UPDATE (2) dropped a whole PART
+if ANY of its vertices exceeded the cutoff -- but DFRAME.E's two "riser"
+parts (indices 4-5) aren't purely over-tall junk: their BOTTOM edge sits
+at local Y=208 (exactly the top of the real frame posts) and their TOP
+edge at Y=1024 (the over-tall part). That bottom edge is the header panel
+that visually connects the two posts across the top of the doorway.
+Dropping the whole face because of its (correctly excluded) top edge also
+silently deleted the (wanted) connecting geometry -- explains the
+disconnected-stumps look exactly.
+
+FIX: clamp each vertex's local Y to the cutoff during the vertex-transform
+pass (before parts are built), instead of skip-testing whole faces in the
+parts loop. Safe per-vertex here because DFRAME.E's Y=1024 points aren't
+shared with any other, correctly-sized part. Result: emitted face count
+back to 11/12 (was 9/12 with the drop approach), and the frame now
+screenshots as a real connected archway -- a header spanning the top of
+the opening with the passage clearly open below it, not two floating
+stumps. Composite (with DOOR.E leaf restored) now reads as an actual
+door: header up top, leaf filling most of the opening beneath it.
+
+User follow-up: "those header pieces should stretch to the tile height --
+set the y_clip heights to the ceiling height" instead of the arbitrary
+300 guess from UPDATE (2). Looked for a real per-tile ceiling-height field
+to read instead of a constant: collision code's floor-height sampler
+(collision_sample_floor_height, uw.c ~39962) and the tile-height envelope
+function (collision_height_envelope, uw.c ~40537) both only ever compute
+FLOOR height from per-tile/per-corner data; the "ceiling clearance"
+concept that does exist (_DAT_0008699f, reticle_object_pick) is a
+movement/physics headroom check seeded from a large sentinel (0x7f) and
+narrowed only by specific nearby overhead objects, not a per-tile
+geometry field. Cross-checked against this project's own earlier tile-
+rendering investigation (memory.md, UPDATE 18): "UW1's ceiling is a fixed
+per-level texture, no per-tile ceiling bits" -- and the same investigation's
+collision work found floor-height bytes read per-tile as "open ~80-96,
+solid rock 128" in a raw sub-unit scale. No per-tile ceiling HEIGHT field
+exists anywhere in this decompile to read -- matches the texture finding
+that ceilings aren't a per-tile geometry concept in this game's format at
+all, presumably a uniform one-slab-per-level height instead.
+
+Given that, used the best-grounded proxy available rather than another
+arbitrary guess: one full tile height (256 world units -- the same scale
+confirmed via FBRIDGE.E's own X/Z point range running exactly -128..128)
+divided by the model's own scale factor. For DFRAME (scale=1.0) that's
+y_clip=256.0, replacing the old 300.0 guess (visually near-identical, but
+now traceable to the game's actual world-unit convention instead of "a
+number that looked okay"). Documented as an approximation, not a real
+per-tile lookup, since no such field was found -- a genuinely tall or
+multi-level room would still cap short at this height; worth revisiting
+if that's ever observed.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (6): TEXTURING MODELS -- REAL TEXTURE DATA, ZERO VISIBLE DETAIL
+═══════════════════════════════════════════════════════════════════════════
+Next-work ask: "use the object's sprite as the door model texture; use
+the tile's wall texture as the frame model's texture." Wired both up
+using the exact mechanisms already proven correct elsewhere in this file
+-- got real, valid texture data into the pipeline for both -- but NEITHER
+produces visible texture detail on screen. This section is a full record
+of what was tried and what was learned, because the actual blocker turned
+out to be much deeper than "wire up a texture pointer."
+
+WHAT WAS BUILT:
+- emit_model_object gained a `texptr` parameter. Each record it creates
+  now publishes through g_tile_texptr_emit[rec] (the same side-channel
+  array every other texture consumer in this file already uses to work
+  around the in-record field truncating a 64-bit pointer to 4 bytes) --
+  texptr==0 keeps the old flat-shaded fallback unchanged.
+- LEAF (door): reused the closed-door billboard branch's own already-
+  correct sprite frame formula, `DAT_00202734 + (raw_type_word & 7) +
+  0x30`, fed through FUN_00040770 (the same real sprite decoder the 2D
+  billboard path uses) to decode it, then captured the resulting buffer
+  from g_tile_texptr_emit[DAT_0023b83c] right after the call (rather than
+  relying on index timing) so it could be stamped onto every record the
+  leaf's several faces create, not just one.
+- FRAME (door): found the tile's OWN real wall-texture index by reading
+  DAT_0023b4ec[2] & 0x3f (DAT_0023b4ec is the raw tile record currently
+  being walked; this exact field is documented a few hundred lines above
+  emit_tile_objects, in the tile-wall-rendering code itself: "UW1 tile
+  word2 (bytes 2-3) bits 0-5 = wall texture index"), added 0x3a (the same
+  offset that same wall-rendering code adds before calling
+  get_texture_page() for the 16x16 wall-sized arena slot specifically, as
+  opposed to the unmodified value used for the 64x64 floor/ceiling case),
+  and called get_texture_page() with it -- the identical call the real
+  wall renderer makes for this exact tile.
+
+BOTH TEXTURE POINTERS ARE GENUINELY VALID. Added a debug pixel-histogram
+check (same technique the critter sprite decoder's own UW_DEBUG_CRITTER
+hook already used) -- the leaf's decoded sprite came back 1408/2048
+nonzero pixels, a real 32x64 door graphic, not garbage or an empty
+buffer. The frame's wall texture pointer resolved to a real, non-null
+get_texture_page() result too.
+
+RESULT: applying the leaf's sprite texture made the leaf DISAPPEAR
+entirely (worse than flat-shaded) -- consistent with object-rendering-
+findings.txt's own much older "LAST GAP" finding (top of this file, from
+the original 2D sprite-billboard work): render_visible_tile_list derives
+each vertex's texture-sample coordinate from its PROJECTED SCREEN
+POSITION (near_clip_visible_tiles, offsets +0x3008/+0x300c off a per-
+vertex projected-coordinate cache), not a real per-vertex UV. That
+happens to look fine for a large, continuously-tiling WALL texture
+(screen position lands somewhere valid no matter what), but a small
+finite sprite bitmap mostly samples outside its own bounds -> reads as
+transparent -> the whole leaf vanishes. This is the SAME root cause the
+2D billboard sprite path has always had, just newly confirmed to affect
+3D models too, since they ride the identical rendering pipeline. Reverted
+to opt-in only (UW_MODEL_LEAF_TEXTURE=1); default stays untextured
+(unchanged from before this session's texture work).
+
+Applying the frame's wall texture did NOT make it disappear (a wall
+texture is large enough that screen-position sampling always lands
+somewhere valid) -- but it also didn't show any real texture DETAIL: a
+zoomed crop of the rendered header and leaf both show perfectly flat,
+uniform color, no brick/stone graining at all, before and after the
+texture was applied. Chased one specific lead: real wall-rendering code
+(uw.c ~49025-49032, literally the block right before emit_tile_objects
+in this same function) writes the texture's tile size (DAT_0023b824 --
+16 for walls, 64 for floor/ceiling) into two record fields (rb+0x0,
+rb+0x4) that emit_model_object was unconditionally zeroing. Fixed that
+(now writes 16 for any textured record) -- no visible change. Went one
+step further and read the SAME wall-rendering code's actual raw-VERTEX
+writes (uw.c ~49048-49060) expecting to confirm the vertex's 2nd/3rd
+float fields are plain world Y/Z (what emit_model_object assumes and
+what already works correctly for position) -- they are NOT, for walls:
+those fields are computed as `Ordinal_2032((position + DAT_00086bb0/
+bb1[wall_segment_index]) * 0x100)`, blending the position with a texture-
+repeat lookup table indexed by which wall segment this is. Wall geometry
+has its OWN specialized vertex-encoding scheme with texture-tiling baked
+directly into the position fields via that table -- it is not a generic
+"any 3D triangle can be textured this way" mechanism, and does not appear
+to generalize to arbitrary-oriented model geometry (which needs its raw
+X/Y/Z to stay literal world coordinates for POSITION to keep working,
+which it does, confirmed by every model screenshot in this file).
+
+CONCLUSION: texturing arbitrary 3D model geometry in this renderer is a
+substantially deeper problem than "find the right texture pointer and
+publish it" -- every existing texture consumer in this codebase (tile
+walls, floor/ceiling, 2D object billboards) is tightly special-cased to
+its own geometry shape, and none of those special cases were built to
+generalize. Solving it for real would mean reverse-engineering how
+near_clip_visible_tiles' projected-coordinate cache (+0x3008/+0x300c)
+actually turns into a texture sample for the RASTERIZER'S span-drawing
+code (not yet traced this session), likely requiring either a genuinely
+new per-vertex UV field nothing currently writes, or replicating wall
+geometry's position/texture-blending trick for a rotated model (which
+doesn't obviously make sense for non-axis-aligned surfaces). This is
+project-sized work on the same order as the original "get 3D models
+rendering at all" investigation, not a small follow-up -- flagging
+clearly rather than continuing to guess-and-check further this session.
+
+CURRENT STATE: the frame's wall-texture wiring is left ACTIVE (harmless
+-- visually identical to the untextured flat-shade fallback it already
+had, and the plumbing -- g_tile_texptr_emit publishing, the texsize
+field fix -- is real, correct infrastructure worth keeping even though
+it doesn't yet produce a visible result). The leaf's sprite-texture
+wiring is left build-time-present but OPT-IN via UW_MODEL_LEAF_
+TEXTURE=1 (default off), because applying it actively regresses (leaf
+disappears) rather than merely failing to improve.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (7): THE .E PARSER COMPUTES A REAL FACE NORMAL -- AND THROWS IT AWAY
+═══════════════════════════════════════════════════════════════════════════
+Traced parse_e_model_file (was FUN_00020a74) end to end looking for
+per-face normal data, prompted by the texturing dead-end above. Right
+after reading each PARTS entry's vertex-index list, the parser calls:
+
+    vec3_sub(P[v0], P[v1], edge1);    // was FUN_000137c0
+    vec3_sub(P[v0], P[v2], edge2);
+    vec3_cross(edge2, edge1, normal); // was FUN_00013904, real cross product
+
+confirmed via the exact formula each helper computes (vec3_sub =
+elementwise param_2-param_1; vec3_cross = the textbook 3-float cross
+product, including the Y term's required sign flip) -- a genuine,
+deliberate per-face normal computation, not a coincidence.
+
+That result is never referenced again anywhere in the function. To rule
+out a dropped-store decompile bug (this project's most common bug class),
+pulled the REAL ARM disassembly from UU.exe at the call site
+(0x00021aa4): `bl 0x00013904` is immediately followed by unrelated
+vertex-count bookkeeping (`ldr r3,[sp,#0x38]; cmp r3,#0x4...`), no store
+of the result anywhere in between. This is the real shipped binary, not
+a decompile artifact -- the original game computes this normal and then
+genuinely never uses it. There is no per-face normal data anywhere in
+the final parsed model buffer emit_model_object reads from.
+
+Separately confirmed while in there: the existing shading pipeline has
+no per-face-normal concept to plug one into anyway -- every writer of the
+render record's shade byte across this whole file (tile walls, floors,
+doors, signs, emit_model_object) pulls from one shared ambient/light-
+proximity global (DAT_000da47c), never anything geometry-derived. Real
+per-face lighting variation would be new behavior, not a gap-fill.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-11 (8): NO UV DATA EITHER -- THE FORMAT WAS NEVER TEXTURE-MAPPED
+═══════════════════════════════════════════════════════════════════════════
+Same investigation, extended to UV/texture coordinates (the direct
+follow-up to UPDATE (6)'s texturing dead-end). Read the rest of
+parse_e_model_file (PARTS through EXTENDED_COLORS/CLUSTERS/NODES/ANIMATE
+and its final cleanup pass) end to end. Conclusion: no UV data exists
+anywhere, in the file format or the parser -- more clear-cut than the
+normal, which was at least computed.
+
+- The .E format's only blocks, across every model file in DATA3D/: BEGIN/
+  VERSION/NAMES/POINTS/PARTS/CLUSTERS/NODES/EXTENDED_COLORS/SCALE_SHIFT/
+  END. No UV/TEXCOORD/MAPPING block anywhere.
+- Each PARTS line has exactly 4 header fields before the vertex-index
+  list: a flag (always 0 in every real file -- a `local_23c==4` "got
+  bitmap" branch exists for a nonzero flag but is dead in practice),
+  a 1-character code, a sequential part index, and a color value. No room
+  for texture coordinates. The 1-character code is NOT UV-related either
+  -- confirmed via the parser's own debug string: 'A' triggers a "making
+  backside of %d %d" branch that duplicates a face with reversed winding
+  (a double-sided-face flag), 'N' is the ordinary default. ('F'/'X' are
+  two more recognized codes seen earlier in the function, for reversed
+  vertex order and an unused "explicit bitmap" escape hatch respectively
+  -- also not UV.)
+- Went further than the normal check: even per-face COLOR -- both the raw
+  hex material index and the EXTENDED_COLORS RGB entry (matched against
+  g_model_known_ext_colors, was DAT_00084678, a 32-entry known-RGB table)
+  -- suffers the identical fate as the normal. Traced the function's
+  literal last operation before it returns (a scratch-to-scratch color-
+  inheritance pass for parts that share a color with another part,
+  gated by DAT_000db494) -- it writes back into scratch memory, never
+  into the final output buffer. The only things that survive into what
+  emit_model_object actually reads are point positions and each part's
+  vertex-index list; normal, color, and (never-attempted) UV are all
+  absent from the persisted model data.
+
+Reframes the UPDATE (6) texturing dead-end: this was very likely never a
+texture-mapped format to begin with. Its real design intent looks like
+flat-per-face color (refined by the EXTENDED_COLORS palette-index
+system), the way low-poly models from this era commonly worked, not
+bitmap UV mapping. That's consistent with why chasing a UV system for it
+hit a wall -- there was never one to find, not a bug to fix.
+
+Also noted, not chased further (flagged rather than renamed): DAT_000db480,
+DAT_000db470, and DAT_000db494 (the flags gating the 'A' backside logic
+and the EXTENDED_COLORS resolution) have NO WRITER anywhere in this
+decompile -- always BSS-zero, making that whole EXTENDED_COLORS-resolution
+path dead code today regardless of whether a model file has the block.
+Same "hidden writer, not yet Ghidra-checked" shape as DAT_00085668 and
+friends from earlier in this project, but not run down this session --
+worth a real Ghidra reference/byte-pattern search before trusting either
+"always off" or "a real writer exists" as the answer.

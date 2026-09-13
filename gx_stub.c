@@ -63,6 +63,12 @@ typedef struct {
 #define VK_SPACE 0x20
 #define VK_CONTROL 0x11
 #define VK_ESCAPE 0x1B
+/* Win32 VK codes for letter keys are just their uppercase ASCII value,
+   same as the game's own register_key_binding(0x4a, 6, 0x1b,
+   move_command_dispatch) jump binding (see poll_input_bindings init)
+   already expects -- that binding just never had a real key reach it,
+   since translate_vk had no case producing 0x4a. */
+#define VK_J 0x4A
 /* WinCE app-launch button virtual-key. Real GAPI hands the game codes
  * like this for the hardware A/B/C/Start buttons -- never ASCII keys --
  * so mapping "button A" to one keeps the spacebar free to type a literal
@@ -176,6 +182,11 @@ static int translate_vk(SDL_Keycode sym) {
         case SDLK_LCTRL:
         case SDLK_RCTRL: return VK_CONTROL;
         case SDLK_ESCAPE: return VK_ESCAPE;
+        /* Jump. Real UW controls bind this to J; the game's own
+           register_key_binding(0x4a, ...) table entry already expects it
+           (see VK_J above) -- it just never had a live key mapped to it
+           in this port. */
+        case SDLK_j: return VK_J;
         default: return 0;
     }
 }
@@ -657,6 +668,51 @@ int uw_inject_mouse_rclick(int window_x, int window_y) {
     return 1;
 }
 
+int uw_inject_mouse_rdown(int window_x, int window_y) {
+    /* Right-button half of uw_inject_mouse_rdown/rup, split the same way
+       uw_inject_mouse_down/up split the left-button click, for testing a
+       real held right-button drag (grab an object, hold, move, release
+       elsewhere) instead of an instantaneous click. */
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
+    SDL_Event down = {0};
+    down.type = SDL_MOUSEBUTTONDOWN;
+    down.button.button = SDL_BUTTON_RIGHT;
+    down.button.which = UW_SYNTH_MOUSE;
+    down.button.x = window_x;
+    down.button.y = window_y;
+    SDL_PushEvent(&down);
+    return 1;
+}
+
+int uw_inject_mouse_rup(int window_x, int window_y) {
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
+    SDL_Event up = {0};
+    up.type = SDL_MOUSEBUTTONUP;
+    up.button.button = SDL_BUTTON_RIGHT;
+    up.button.which = UW_SYNTH_MOUSE;
+    up.button.x = window_x;
+    up.button.y = window_y;
+    SDL_PushEvent(&up);
+    return 1;
+}
+
+int uw_inject_mouse_motion(int window_x, int window_y) {
+    if (!g_win) return 0;
+    SDL_WarpMouseInWindow(g_win, window_x, window_y);
+    SDL_PumpEvents();
+    SDL_Event motion = {0};
+    motion.type = SDL_MOUSEMOTION;
+    motion.motion.which = UW_SYNTH_MOUSE;
+    motion.motion.x = window_x;
+    motion.motion.y = window_y;
+    SDL_PushEvent(&motion);
+    return 1;
+}
+
 int uw_inject_key_down(int sdl_keycode) {
     /* For scripted testing of the keyboard path: push a genuine
      * SDL_KEYDOWN (repeat=0) and, for a printable key, the matching
@@ -770,7 +826,7 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
        bytes3-4 unknown, then width*height raw palette-index pixels.
        Confirmed via bitmap_blit_to_framebuffer's real param semantics
        (its param_4/height arg is clipped against 200, param_5/width arg
-       against 0x140=320) traced back through FUN_0006a200's blit call
+       against 0x140=320) traced back through draw_menu_item_list's blit call
        and FUN_0006a0c8's header-byte-to-record-field assignment -- a
        width<->height swap here previously produced transposed BMPs for
        every non-square entry. */
@@ -814,6 +870,76 @@ void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,
 
     if (SDL_SaveBMP(surf, path) != 0) {
         fprintf(stderr, "[gr-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    }
+    SDL_FreeSurface(surf);
+}
+
+void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
+                                   const unsigned char *pixels, int width, int height) {
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("UW_DEBUG_DUMP_CRIT");
+        enabled = (env && env[0] && strcmp(env, "0") != 0);
+    }
+    if (!enabled) return;
+    if (width <= 0 || height <= 0 || !pixels) return;
+
+    /* decode_critter_sprite_page re-decodes the same (type,tier,direction,
+       frame) combo every single frame it's on screen -- dedupe by key so
+       a normal play session doesn't rewrite the same file thousands of
+       times. */
+    static int seen_keys[4096];
+    static int seen_count = 0;
+    int key = ((type & 0xff) << 24) ^ ((tier & 0xff) << 16) ^ ((direction & 0xff) << 8) ^ (frame & 0xff);
+    if (!getenv("UW_DEBUG_DUMP_CRIT_ALL")) {
+        for (int i = 0; i < seen_count; i++) {
+            if (seen_keys[i] == key) return;
+        }
+        if (seen_count < (int)(sizeof(seen_keys) / sizeof(seen_keys[0]))) {
+            seen_keys[seen_count++] = key;
+        }
+    }
+
+    char dir[280];
+    snprintf(dir, sizeof(dir), "debug/crit/type%02d/tier%d", type, tier);
+    debug_mkdir_p(dir);
+
+    char path[320];
+    snprintf(path, sizeof(path), "%s/dir%d_frame%d.bmp", dir, direction, frame);
+
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, width, height, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!surf) {
+        fprintf(stderr, "[crit-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    unsigned char *pal = uw_get_default_palette("crit");
+    if (getenv("UW_DEBUG_DUMP_CRIT_PAL")) {
+        int idxs[] = {0,1,131,133,148,152,154,156,158,169,171,187,229,233};
+        fprintf(stderr, "[crit-dump] palette sample:");
+        for (size_t i = 0; i < sizeof(idxs)/sizeof(idxs[0]); i++) {
+            int k = idxs[i];
+            fprintf(stderr, " [%d]=(%d,%d,%d)", k, pal[k*3], pal[k*3+1], pal[k*3+2]);
+        }
+        fprintf(stderr, "\n");
+    }
+    SDL_Color colors[256];
+    for (int i = 0; i < 256; i++) {
+        colors[i].r = pal[i * 3 + 0];
+        colors[i].g = pal[i * 3 + 1];
+        colors[i].b = pal[i * 3 + 2];
+        colors[i].a = 255;
+    }
+    SDL_SetPaletteColors(surf->format->palette, colors, 0, 256);
+
+    for (int y = 0; y < height; y++) {
+        memcpy((unsigned char *)surf->pixels + y * surf->pitch, pixels + y * width, width);
+    }
+
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[crit-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    } else {
+        fprintf(stderr, "[crit-dump] wrote %s (%dx%d)\n", path, width, height);
     }
     SDL_FreeSurface(surf);
 }
