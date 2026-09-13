@@ -2511,7 +2511,11 @@ char s__DATA__00085970[] = "\\DATA\\";
 short DAT_00204840;
 undefined4 DAT_00204844;
 char s__DATA_pals_dat_00085978[] = "\\DATA\\pals.dat";
-undefined4 DAT_0008725c;
+// was DAT_0008725c -- gates weapon_swing_draw_tick's blit; temporarily
+// cleared during full-screen wipe/dissolve transitions (level loads,
+// screen fades) so the weapon overlay doesn't glitch mid-transition,
+// then restored once the transition finishes.
+undefined4 g_weapon_overlay_enabled;
 undefined4 DAT_00202514;
 int DAT_00202720_backing[128];
 int *DAT_00202720 = DAT_00202720_backing;
@@ -3621,7 +3625,11 @@ static const char DAT_000869e4_str[] = "w64.tr";
 static undefined1 DAT_002049e0_backing[0x100000];
 #define DAT_002049e0 DAT_002049e0_backing[0]
 char s__DATA_terrain_dat_000869ec[] = "\\DATA\\terrain.dat";
-undefined4 DAT_0023b01c;
+// was DAT_0023b01c -- set by the 3D-viewport setup function
+// (FUN_0005b758) whenever the real in-game dungeon-view mode (game
+// mode bit 0, not a menu/conversation overlay) is active; gates
+// weapon_overlay_and_full_redraw's weapon-overlay draw.
+undefined4 g_dungeon_view_active;
 undefined2 DAT_0023b020;
 undefined2 DAT_0023aed4;
 undefined2 DAT_0023aed8;
@@ -4426,48 +4434,91 @@ char DAT_0023c12e;
 int DAT_0023c20c;
 byte DAT_0023c12f;
 byte DAT_0023c25c;
-/* Ghidra couldn't resolve this address into a proper function (an
-   indirect-jump/jumptable target it gave up on). Was stubbed as a bare
-   `return 0;` -- same wrong assumption already corrected once for
-   alloc_door_frame_buffer (see its own comment): this is
-   load_weapon_swing_sprites's (weapons.GR loader) registrar callback (param_5),
-   called once per loaded weapon-swing sprite frame. A no-op here makes
-   load_gr_resource_entries's overall result always fail even after the
-   allocator below is fixed (`uVar6 = uVar6 & uVar3` with uVar3 always
-   0), and load_weapon_swing_sprites's own caller (advance_action_animation_frame) never checks that
-   result anyway -- so this doesn't gate any currently-reachable
-   behavior. Real per-frame storage (where a decoded weapon-swing
-   sprite should live so something can later draw it during a swing)
-   is still unimplemented -- no consumer for it exists yet, unlike
-   doors' DAT_0024e090[] table. Return success so the loader doesn't
-   spuriously report failure; revisit with real storage once the
-   weapon-in-hand draw call site is found. */
-undefined4 LAB_0006e324()
+/* Real per-frame storage for the currently-loaded weapon-swing sprite
+   set -- found by tracing weapon_swing_draw_tick's dropped argument
+   to decode_gr_entry_bitmap forward: it needs the raw (still-
+   compressed) .GR entry buffer for the frame currently being drawn,
+   which nothing was ever storing anywhere before this. */
+#define UW_WEAPON_SWING_FRAME_COUNT 28
+void *g_weapon_swing_raw_frames[UW_WEAPON_SWING_FRAME_COUNT];
+// was LAB_0006e324 -- load_weapon_swing_sprites's (weapons.GR loader)
+// registrar callback (param_5), called once per loaded weapon-swing
+// sprite frame with its raw (still-compressed) entry buffer, byte
+// size, and 0-27 frame index. Ghidra couldn't resolve this address
+// into a proper function (an indirect-jump/jumptable target it gave
+// up on) and it was stubbed as a bare `return 0;` -- same wrong
+// assumption already corrected once for alloc_door_frame_buffer (see
+// its own comment). A no-op here made load_gr_resource_entries's
+// overall result always fail even after the allocator below was
+// fixed, AND meant nothing ever stored the loaded frames anywhere:
+// weapon_swing_draw_tick (was FUN_0006fcb0) needs exactly this raw
+// buffer per frame to decode and blit during a swing (see
+// g_weapon_swing_raw_frames), matching doors' equivalent
+// DAT_0024e090[] table one-for-one. Register it there instead of
+// discarding it.
+undefined4 weapon_swing_frame_loaded(void *buf, unsigned size, int idx)
 
 {
+  (void)size;
+  if ((unsigned)idx < UW_WEAPON_SWING_FRAME_COUNT) {
+    g_weapon_swing_raw_frames[idx] = buf;
+  }
   return 1;
 }
 char s__DATA_weapons_dat_00087268[] = "\\DATA\\weapons.dat";
 char s_weapons_0008727c[] = "weapons";
-static undefined1 DAT_0023c198_backing[256];
-#define DAT_0023c198 DAT_0023c198_backing[0]
-static undefined1 DAT_0023c1b8_backing[256];
-#define DAT_0023c1b8 DAT_0023c1b8_backing[0]
-char *DAT_0023c210;
-/* Ghidra couldn't resolve this address into a proper function (an
-   indirect-jump/jumptable target it gave up on). Was stubbed as a bare
-   `return 0;`, the exact same wrong assumption already found and fixed
-   once in this file for alloc_door_frame_buffer (see its own comment)
-   -- this is load_weapon_swing_sprites's (weapons.GR loader, called when the
-   player's weapon-hand contents change -- including empty-handed,
-   which resolves to category 3/"fist") allocator callback (param_4).
-   Confirmed live via UW_DEBUG_COMBAT: weapons.GR's header and every
-   requested frame's directory entry read fine (real, valid, non-zero
-   sizes for all 28 frames of every category including the unarmed
-   one), but load_gr_resource_entries failed immediately at the
-   allocate-a-destination-buffer step on the very first frame, because
-   this stub always returned NULL. Real allocator like its sibling. */
-void *LAB_0006e2f4(param_1)
+// was DAT_0023c198/DAT_0023c1b8 (.data 0x87198/0x871b8) -- per-frame
+// Y/X screen-offset tables (one signed byte per frame, 28 frames) for
+// the weapon-swing sprite set, read straight from weapons.dat by
+// load_weapon_swing_sprites and consumed by weapon_swing_draw_tick to
+// position each frame relative to the 3D viewport.
+static undefined1 g_weapon_swing_frame_y_offset_backing[256];
+#define g_weapon_swing_frame_y_offset g_weapon_swing_frame_y_offset_backing[0]
+static undefined1 g_weapon_swing_frame_x_offset_backing[256];
+#define g_weapon_swing_frame_x_offset g_weapon_swing_frame_x_offset_backing[0]
+// was DAT_0023c210 -- the current frame's raw .GR entry pointer (see
+// g_weapon_swing_raw_frames), set by weapon_swing_draw_tick right
+// before decoding it -- was computed as `DAT_0023c214 +
+// (short)(&DAT_0023c158)[frame]`. `DAT_0023c158` was declared as a
+// lone 2-byte scalar despite being indexed up to 27 -- the same
+// "Ghidra couldn't recover this table's real .data contents" shape as
+// g_inventory_hotspot_table/DAT_00085668/etc. elsewhere in this file
+// -- so that part of the expression read garbage for every frame but
+// the first. `DAT_0023c214` (see its own declaration, just below) is
+// real, but the intended packing scheme it and the lost offset table
+// together addressed isn't recoverable, so this now points directly
+// at g_weapon_swing_raw_frames[frame] instead -- one real per-frame
+// allocation apiece rather than packed offsets into one shared
+// buffer, matching how the file's other raw-GR-entry consumer
+// (blit_object_sprite_by_frame) already reads a frame's real
+// width/height straight from its own header bytes (entry[1]/entry[2])
+// regardless of storage scheme.
+char *g_weapon_swing_current_frame;
+/* was DAT_0023c214, `int`-typed in both its own uw.h extern
+   declaration and here -- app_main_loop (game.c) assigns it a real
+   64000-byte Ordinal_1041 allocation (the same one it hands
+   g_weapon_swing_current_frame right beside it, before per-frame use
+   overwrites that one), truncating the pointer on this 64-bit host
+   exactly like every other pointer-in-a-narrow-global bug in this
+   project. Fixed the type; the buffer itself is otherwise unused now
+   that g_weapon_swing_current_frame is resolved via
+   g_weapon_swing_raw_frames instead (see that comment) -- kept only
+   because app_main_loop still allocates and assigns it. */
+char *g_weapon_swing_startup_scratch_buffer;
+// was LAB_0006e2f4 -- load_weapon_swing_sprites's (weapons.GR loader,
+// called when the player's weapon-hand contents change -- including
+// empty-handed, which resolves to category 3/"fist") allocator
+// callback (param_4). Ghidra couldn't resolve this address into a
+// proper function (an indirect-jump/jumptable target it gave up on),
+// the exact same wrong assumption already found and fixed once in
+// this file for alloc_door_frame_buffer (see its own comment).
+// Confirmed live via UW_DEBUG_COMBAT: weapons.GR's header and every
+// requested frame's directory entry read fine (real, valid, non-zero
+// sizes for all 28 frames of every category including the unarmed
+// one), but load_gr_resource_entries failed immediately at the
+// allocate-a-destination-buffer step on the very first frame, because
+// this stub always returned NULL. Real allocator like its sibling.
+void *weapon_swing_frame_alloc(param_1)
 unsigned int param_1;
 
 {
@@ -4499,8 +4550,6 @@ short DAT_0023c138;
 short DAT_0023c13c;
 short DAT_0023c110;
 unsigned short u_dgijjjigd_G__000871e0[] = u"dgijjjigd\\G&";
-int DAT_0023c214;
-undefined2 DAT_0023c158;
 char s__DATA_shades_dat_000872a4[] = "\\DATA\\shades.dat";
 char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
 char s__DATA_light_dat_000872c8[] = "\\DATA\\light.dat";
@@ -27469,7 +27518,7 @@ void enter_dungeon_view()
   FUN_00049924(0x7dfe);
   FUN_000667cc();
   full_dungeon_redraw();
-  FUN_0006fea4();
+  weapon_overlay_and_full_redraw();
   FUN_000570b4();
   fade_in(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   return;
@@ -30749,7 +30798,13 @@ undefined4 param_3;
 
 
 
-char *FUN_000409f8(param_1)
+// was FUN_000409f8 -- decodes a raw (still-compressed) .GR entry
+// buffer into a real bitmap: entries whose own header byte is 4 are
+// already stored raw (just skip the 5-byte header), anything else
+// goes through FUN_000129f8's palette-shifted decompressor. Same
+// shape as the sibling decode inlined in blit_object_sprite_by_frame
+// (see its own comment) -- called by weapon_swing_draw_tick.
+char *decode_gr_entry_bitmap(param_1)
 char * param_1;
 
 {
@@ -31138,16 +31193,16 @@ void FUN_000411b8()
   int iVar1;
   
   FUN_00057118();
-  DAT_0008725c = 0;
+  g_weapon_overlay_enabled = 0;
   iVar1 = 0;
   do {
     FUN_00012948(iVar1);
-    FUN_0006fea4();
+    weapon_overlay_and_full_redraw();
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 0xd);
   thunk_FUN_0003c310(0xf1);
-  FUN_0006fea4();
-  DAT_0008725c = 1;
+  weapon_overlay_and_full_redraw();
+  g_weapon_overlay_enabled = 1;
   FUN_000570b4();
   return;
 }
@@ -31163,14 +31218,14 @@ void FUN_000411cc()
   FUN_00057118(0xc,FUN_00012948,0xf1);
   uVar1 = Ordinal_1041(0x4bec);
   Ordinal_1044(uVar1,DAT_00248410,0x4bec);
-  DAT_0008725c = 0;
-  FUN_0006fea4();
+  g_weapon_overlay_enabled = 0;
+  weapon_overlay_and_full_redraw();
   for (iVar2 = 0xc; 0 < iVar2; iVar2 = (iVar2 + -1) * 0x10000 >> 0x10) {
-    FUN_0006fea4();
+    weapon_overlay_and_full_redraw();
     Ordinal_1044(DAT_00248410,uVar1,0x4bec);
   }
-  FUN_0006fea4();
-  DAT_0008725c = 1;
+  weapon_overlay_and_full_redraw();
+  g_weapon_overlay_enabled = 1;
   FUN_000570b4();
   return;
 }
@@ -31182,9 +31237,9 @@ void FUN_000411e0()
 {
   thunk_FUN_0003c310();
   FUN_00057118();
-  DAT_0008725c = 0;
-  FUN_0006fea4();
-  DAT_0008725c = 1;
+  g_weapon_overlay_enabled = 0;
+  weapon_overlay_and_full_redraw();
+  g_weapon_overlay_enabled = 1;
   FUN_000570b4();
   return;
 }
@@ -44445,7 +44500,7 @@ int param_1;
          *(byte *)(DAT_00086df8 + 0xb5) & 0xf;
     FUN_0005d2b0();
     full_dungeon_redraw();
-    FUN_0006fea4();
+    weapon_overlay_and_full_redraw();
     FUN_00041a18(0x20ed,s_optbtns_00086954,param_1 + 0x39);
     draw_sprite_by_id(0x20ed,5,10,0x12,0x22);
     FUN_000566dc(4 - (param_1 + 4),(param_1 + 0x17) * 2);
@@ -47602,7 +47657,7 @@ undefined4 param_3;
 int param_4;
 
 {
-  DAT_0023b01c = 0;
+  g_dungeon_view_active = 0;
   DAT_0023b020 = (undefined2)param_3;
   DAT_0023aed4 = (undefined2)param_4;
   FUN_000129d4(param_1);
@@ -47613,7 +47668,7 @@ int param_4;
       DAT_0023aed8 = 0x7ed2;
     }
     else {
-      DAT_0023b01c = 1;
+      g_dungeon_view_active = 1;
       DAT_0023aed8 = 25000;
     }
   }
@@ -47775,8 +47830,8 @@ void render_dungeon_frame_timed()
   iVar8 = iVar8 - DAT_0023aec8;
   iVar4 = render_dungeon_view();
   iVar5 = FUN_0002294c();
-  if (DAT_0023b01c != 0) {
-    FUN_0006fcb0();
+  if (g_dungeon_view_active != 0) {
+    weapon_swing_draw_tick();
   }
   FUN_0005721c();
   FUN_0001294c();
@@ -54502,6 +54557,19 @@ short param_3;
 
 
 
+// was FUN_00067f1c -- spins the view through a full rotation over 64
+// substeps (DAT_0023bea4, a rotation-like value, accumulates by a
+// fixed 0xccb step each call), redrawing via render_dungeon_frame_timed
+// every substep. Its only current call site (FUN_00067dc4-area, ~line
+// 60497) is a rare one-shot scripted event, not ordinary player
+// turning -- which also makes render_dungeon_frame_timed (and, in
+// turn, weapon_swing_draw_tick, the only thing that actually draws the
+// weapon-swing overlay) unreachable from normal per-tick gameplay:
+// walking/turning redraws via dungeon_view_anim_tick -> full_dungeon_redraw,
+// which never calls either. Called with an unused `0xffffffff`
+// argument this K&R declaration doesn't accept -- harmless (K&R
+// ignores extra args) but not yet understood; flagging rather than
+// guessing.
 void FUN_00067f1c()
 
 {
@@ -58368,10 +58436,10 @@ byte load_weapon_swing_sprites()
   else {
     DAT_000870dc = DAT_000870d8;
     if ((DAT_000870d8 < '\x04') && (-1 < DAT_000870d8)) {
-      DAT_0023c210 = 0;
+      g_weapon_swing_current_frame = 0;
       bVar2 = load_gr_resource_entries(s_weapons_0008727c,
                            ((int)DAT_000870d8 + (*(byte *)(DAT_00086df8 + 100) & 1) * -4 + 4) * 0x1c
-                           ,0x1c,&LAB_0006e2f4,&LAB_0006e324);
+                           ,0x1c,&weapon_swing_frame_alloc,&weapon_swing_frame_loaded);
       iVar8 = (int)DAT_000870d8;
       bVar3 = *(byte *)(DAT_00086df8 + 100);
       pcVar5 = &DAT_0023cca8;
@@ -58396,8 +58464,8 @@ byte load_weapon_swing_sprites()
            expression. */
         iSeekResult = FUN_00022850(iVar6,(int)((iVar8 + (bVar3 & 1) * -4 + 4) * 0x380000) >> 0x10,0);
         bVar3 = iSeekResult != -1;
-        iVar8 = FUN_0002285c(iVar6,&DAT_0023c1b8,0x1c);
-        iVar7 = FUN_0002285c(iVar6,&DAT_0023c198,0x1c);
+        iVar8 = FUN_0002285c(iVar6,&g_weapon_swing_frame_x_offset,0x1c);
+        iVar7 = FUN_0002285c(iVar6,&g_weapon_swing_frame_y_offset,0x1c);
         bVar4 = Ordinal_553(iVar6);
         bVar2 = iVar7 == 0x1c & bVar4 & bVar2 & bVar3 & iVar8 == 0x1c;
       }
@@ -59258,15 +59326,27 @@ undefined1 * param_2;
 
 
 
-void FUN_0006fcb0()
+// was FUN_0006fcb0 -- draws the weapon-swing sprite over the 3D
+// viewport for the current frame of advance_action_animation_frame's
+// state machine, gated on g_dungeon_view_active/g_weapon_overlay_enabled.
+// Called from render_dungeon_frame_timed, right after
+// render_dungeon_view() itself -- but render_dungeon_frame_timed's own
+// only current call site is FUN_00067f1c's one-shot scripted-event
+// spin effect (see its own comment), NOT the normal per-tick
+// walking/turning redraw path (dungeon_view_anim_tick ->
+// full_dungeon_redraw, which never reaches this). So even with the
+// draw logic itself now correct, the weapon overlay is not currently
+// wired to appear during ordinary movement or combat -- only during
+// that one rare event.
+void weapon_swing_draw_tick()
 
 {
   short sVar1;
   undefined4 uVar2;
-  
+
   g_blit_transparent_mode = 1;
-  if ((((DAT_0023c130 != 6) && (DAT_000870e4 < 0x1c)) && (-1 < DAT_000870dc)) && (DAT_0008725c != 0)
-     ) {
+  if ((((DAT_0023c130 != 6) && (DAT_000870e4 < 0x1c)) && (-1 < DAT_000870dc)) &&
+     (g_weapon_overlay_enabled != 0)) {
     if (g_jump_ascent_timer == 0) {
       sVar1 = 0;
     }
@@ -59285,11 +59365,21 @@ void FUN_0006fcb0()
       DAT_0023c1ec = 0;
       sVar1 = (ushort)DAT_0023c130 * 9 + DAT_000870e4;
     }
-    DAT_0023c210 = DAT_0023c214 + (short)(&DAT_0023c158)[sVar1];
-    uVar2 = FUN_000409f8();
-    bitmap_blit_to_framebuffer((uint)(byte)(&DAT_0023c1b8)[sVar1] + (int)DAT_0023c1ec + 0x34,
-                 0x83 - (uint)(byte)(&DAT_0023c198)[sVar1],uVar2,*(undefined1 *)(DAT_0023c210 + 2),
-                 *(undefined1 *)(DAT_0023c210 + 1),0,0,1);
+    /* Was `DAT_0023c214 + (short)(&DAT_0023c158)[sVar1]` -- see
+       g_weapon_swing_current_frame's own comment. */
+    g_weapon_swing_current_frame = ((unsigned)(ushort)sVar1 < UW_WEAPON_SWING_FRAME_COUNT) ?
+                   g_weapon_swing_raw_frames[sVar1] : 0;
+    /* Was `FUN_000409f8()` -- dropped argument (same "ARM register-
+       leftover doesn't survive a literal recompile" idiom as every
+       other dropped-argument bug in this file). decode_gr_entry_bitmap
+       needs the raw entry buffer just resolved above; without it, it
+       dereferenced whatever register happened to be lying around. */
+    uVar2 = (g_weapon_swing_current_frame == 0) ? 0 : decode_gr_entry_bitmap(g_weapon_swing_current_frame);
+    if (uVar2 != 0) {
+      bitmap_blit_to_framebuffer((uint)(byte)(&g_weapon_swing_frame_x_offset)[sVar1] + (int)DAT_0023c1ec + 0x34,
+                   0x83 - (uint)(byte)(&g_weapon_swing_frame_y_offset)[sVar1],uVar2,*(undefined1 *)(g_weapon_swing_current_frame + 2),
+                   *(undefined1 *)(g_weapon_swing_current_frame + 1),0,0,1);
+    }
   }
   FUN_00040bc0(0x107f,0x3e,3);
   FUN_00040bc0(0x1080,0,0xd);
@@ -59300,11 +59390,16 @@ void FUN_0006fcb0()
 
 
 
-void FUN_0006fea4()
+// was FUN_0006fea4 -- full-screen "hard refresh" utility: draws the
+// weapon-swing overlay (if the dungeon view is active) then marks the
+// entire screen dirty. Called after level loads/respawns/full
+// redraws, not from the normal per-frame render path (that's
+// render_dungeon_frame_timed calling weapon_swing_draw_tick directly).
+void weapon_overlay_and_full_redraw()
 
 {
-  if (DAT_0023b01c != 0) {
-    FUN_0006fcb0();
+  if (g_dungeon_view_active != 0) {
+    weapon_swing_draw_tick();
   }
   dirty_rect_union(0,200,0,0x140);
   return;
@@ -60330,7 +60425,7 @@ LAB_0007158c:
         FUN_000411cc(5);
       }
       else {
-        FUN_0006fea4();
+        weapon_overlay_and_full_redraw();
       }
     }
   }
