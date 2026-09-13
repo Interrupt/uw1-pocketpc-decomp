@@ -4426,14 +4426,26 @@ char DAT_0023c12e;
 int DAT_0023c20c;
 byte DAT_0023c12f;
 byte DAT_0023c25c;
+/* Ghidra couldn't resolve this address into a proper function (an
+   indirect-jump/jumptable target it gave up on). Was stubbed as a bare
+   `return 0;` -- same wrong assumption already corrected once for
+   alloc_door_frame_buffer (see its own comment): this is
+   FUN_0006e3ac's (weapons.GR loader) registrar callback (param_5),
+   called once per loaded weapon-swing sprite frame. A no-op here makes
+   load_gr_resource_entries's overall result always fail even after the
+   allocator below is fixed (`uVar6 = uVar6 & uVar3` with uVar3 always
+   0), and FUN_0006e3ac's own caller (FUN_0006e648) never checks that
+   result anyway -- so this doesn't gate any currently-reachable
+   behavior. Real per-frame storage (where a decoded weapon-swing
+   sprite should live so something can later draw it during a swing)
+   is still unimplemented -- no consumer for it exists yet, unlike
+   doors' DAT_0024e090[] table. Return success so the loader doesn't
+   spuriously report failure; revisit with real storage once the
+   weapon-in-hand draw call site is found. */
 undefined4 LAB_0006e324()
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  return 1;
 }
 char s__DATA_weapons_dat_00087268[] = "\\DATA\\weapons.dat";
 char s_weapons_0008727c[] = "weapons";
@@ -4442,14 +4454,24 @@ static undefined1 DAT_0023c198_backing[256];
 static undefined1 DAT_0023c1b8_backing[256];
 #define DAT_0023c1b8 DAT_0023c1b8_backing[0]
 char *DAT_0023c210;
-undefined4 LAB_0006e2f4()
+/* Ghidra couldn't resolve this address into a proper function (an
+   indirect-jump/jumptable target it gave up on). Was stubbed as a bare
+   `return 0;`, the exact same wrong assumption already found and fixed
+   once in this file for alloc_door_frame_buffer (see its own comment)
+   -- this is FUN_0006e3ac's (weapons.GR loader, called when the
+   player's weapon-hand contents change -- including empty-handed,
+   which resolves to category 3/"fist") allocator callback (param_4).
+   Confirmed live via UW_DEBUG_COMBAT: weapons.GR's header and every
+   requested frame's directory entry read fine (real, valid, non-zero
+   sizes for all 28 frames of every category including the unarmed
+   one), but load_gr_resource_entries failed immediately at the
+   allocate-a-destination-buffer step on the very first frame, because
+   this stub always returned NULL. Real allocator like its sibling. */
+void *LAB_0006e2f4(param_1)
+unsigned int param_1;
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  return Ordinal_1041(param_1);
 }
 short DAT_0023c1ec;
 undefined2 DAT_000870e8;
@@ -57726,7 +57748,7 @@ void hud_panel_redraw_dispatch()
   int iVar7;
   bool bVar8;
   int iVar9;
-  
+
   bVar2 = FUN_0002294c();
   bVar8 = false;
   if (DAT_0023c1e0 != 0) {
@@ -58295,6 +58317,9 @@ void FUN_0006e360(param_1)
 char param_1;
 
 {
+  if (getenv("UW_DEBUG_COMBAT")) {
+    fprintf(stderr, "[weapon-gfx] FUN_0006e360(param_1=%d) DAT_000870dc(loaded)=%d\n", (int)param_1, (int)DAT_000870dc);
+  }
   DAT_000870d8 = param_1;
   if (((-1 < param_1) && (param_1 < '\x04')) || (DAT_000870dc != param_1)) {
     DAT_0023c1dc = DAT_0023c1dc | 0x100;
@@ -58312,6 +58337,7 @@ byte FUN_0006e3ac()
   char cVar1;
   byte bVar2;
   byte bVar3;
+  int iSeekResult;
   byte bVar4;
   char *pcVar5;
   int iVar6;
@@ -58319,6 +58345,10 @@ byte FUN_0006e3ac()
   int iVar8;
   char acStack_118 [260];
   
+  if (getenv("UW_DEBUG_COMBAT")) {
+    fprintf(stderr, "[weapon-gfx] FUN_0006e3ac ENTRY: DAT_000870dc(loaded)=%d DAT_000870d8(requested)=%d\n",
+            (int)DAT_000870dc, (int)DAT_000870d8);
+  }
   if (DAT_000870dc == DAT_000870d8) {
     bVar2 = 1;
   }
@@ -58342,7 +58372,17 @@ byte FUN_0006e3ac()
       iVar6 = FUN_000227d4(acStack_118);
       bVar2 = bVar2 & iVar6 != -1;
       if (iVar6 != -1) {
-        bVar3 = FUN_00022850(iVar6,(int)((iVar8 + (bVar3 & 1) * -4 + 4) * 0x380000) >> 0x10,0);
+        /* Was `bVar3 = FUN_00022850(...)` truncated straight to a byte
+           and then bitwise-&'d into bVar2's overall success flag below --
+           FUN_00022850 (SetFilePointer-shaped, see uw_file_seek) returns
+           the real new file offset on success (fits fine in a byte here,
+           but is not itself a 0/1 boolean) or -1 on failure, so `& 1`
+           against an arbitrary offset like 136 (0x88, bit 0 clear) zeroed
+           the whole AND chain even on a successful seek. Normalize to a
+           real boolean first, matching every other success flag in this
+           expression. */
+        iSeekResult = FUN_00022850(iVar6,(int)((iVar8 + (bVar3 & 1) * -4 + 4) * 0x380000) >> 0x10,0);
+        bVar3 = iSeekResult != -1;
         iVar8 = FUN_0002285c(iVar6,&DAT_0023c1b8,0x1c);
         iVar7 = FUN_0002285c(iVar6,&DAT_0023c198,0x1c);
         bVar4 = Ordinal_553(iVar6);
@@ -58352,6 +58392,9 @@ byte FUN_0006e3ac()
     else {
       bVar2 = 0;
     }
+  }
+  if (getenv("UW_DEBUG_COMBAT")) {
+    fprintf(stderr, "[weapon-gfx] FUN_0006e3ac RESULT: bVar2=%d\n", (int)bVar2);
   }
   return bVar2;
 }
@@ -58411,7 +58454,6 @@ void FUN_0006e648()
 {
   byte bVar1;
   int iVar2;
-  
   FUN_00049924(2);
   if (6 < DAT_0023c120) {
     DAT_0023c120 = 6;
