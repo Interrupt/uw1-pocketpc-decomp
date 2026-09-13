@@ -32164,6 +32164,13 @@ short param_1;
      truncated value. */
   puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
   if (puVar2 != 0) {
+    /* Page 4 of comobj's string data is the base object-name table,
+       indexed directly by id (0x800 | id) -- same lookup the
+       UW_DUMP_OBJECTS_FILE census tool already uses. */
+    char *_useName = (char *)FUN_0007863c(0x800 | (*puVar2 & 0x1ff));
+    DEBUG(INFO, "[inv] use item: id=0x%03x type=0x%03x name=\"%s\"\n",
+          (unsigned)(*puVar2 & 0x1ff), (unsigned)(*puVar2 & 0x1f0),
+          (_useName && _useName[0]) ? _useName : "(unnamed)");
     use_object_on_target(g_player_object,puVar2,1);
   }
 LAB_00042a10:
