@@ -36602,6 +36602,39 @@ static void uw_debug_blit_pick_buffer(void)
 void main_loop_hud_flush()
 
 {
+  /* HACK: auto-ready the player's weapon and select Attack mode a
+     couple seconds after the dungeon view comes up. The real trigger
+     is clicking the weapon-hand paperdoll slot (ready_weapon, via
+     toggle_weapon_ready) -- but that slot has no hit-test rect wired
+     up at all yet (g_inventory_hotspot_table records 6-11 are all-
+     zero; see memory.md's combat-mode gap (a)), so nothing in the game
+     can ever reach ready_weapon through the UI. Everything downstream
+     of "the player has readied a weapon" is otherwise fully fixed and
+     verified (attack-swing pointer truncation, the weapon-swing
+     graphics load+draw pipeline, the g_weapon_overlay_enabled flag,
+     and wiring weapon_swing_draw_tick into the real per-tick render
+     path -- see memory.md's combat follow-up rounds 1-4, commits
+     f8636e8/4853757/aa2a880/c1a240d/e8dff64/d82fc08). Force it on here
+     so combat is actually reachable/testable/playable for now, without
+     needing the real paperdoll click rect first. Setting g_cursor_mode
+     to 5 (Attack) is needed too: readying a weapon on its own leaves
+     cursor mode at 2 (a side effect of ready_weapon's own body, see
+     its comment), and only mode 5 dispatches a 3D-view right-click to
+     interact_attack. Set UW_NO_FORCE_WEAPON_READY to disable this and
+     restore the real (currently: never-armed) behavior -- e.g. to
+     specifically exercise/fix gap (a) itself. */
+  {
+    static int _force_ready = -1;
+    if (_force_ready < 0) _force_ready = (getenv("UW_NO_FORCE_WEAPON_READY") == NULL);
+    if (_force_ready && DAT_00201b64 == 0) {
+      static int _n = 0;
+      _n++;
+      if (_n == 60) {
+        ready_weapon();
+        g_cursor_mode = 5;
+      }
+    }
+  }
   dirty_rect_set(100,100,100,100);
   /* HACK: redraw the 3D dungeon view on every main-loop iteration.
      Normally the redraw is driven off dirty bit 3, which apply_movement_tick
