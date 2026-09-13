@@ -207,11 +207,19 @@ int uw_file_seek(int handle, int distance, int method) {
     return (int)ftell(f);
 }
 
+/* CloseHandle-shaped (Ordinal_553): callers that check the return value
+ * (uw.c:7717, 25111, 36182, 58401 as of this writing) all treat it as
+ * "nonzero = success", matching uw_file_copy's own documented Win32
+ * convention just below -- was returning 0 on success/-1 on failure
+ * (POSIX close() convention instead), so every one of those checks was
+ * unconditionally false. Confirmed live: FUN_0006e3ac (weapons.GR
+ * loader) failed its own "did everything succeed" check purely because
+ * of this, even after its separate allocator-callback bug was fixed. */
 int uw_file_close(int handle) {
-    if (handle <= 0 || handle >= MAX_HANDLES || !g_handles[handle]) return -1;
+    if (handle <= 0 || handle >= MAX_HANDLES || !g_handles[handle]) return 0;
     fclose(g_handles[handle]);
     g_handles[handle] = NULL;
-    return 0;
+    return 1;
 }
 
 /* Byte-for-byte copy of one game-path file to another (CopyFile-shaped).

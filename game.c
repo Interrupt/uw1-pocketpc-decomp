@@ -67,9 +67,9 @@ undefined4 param_4;
       Ordinal_1047(DAT_0024af7c,0,0x1800);
       DAT_000879b0 = Ordinal_1041(0xc);
       DAT_000890a4 = Ordinal_1041(0x1080);
-      DAT_0023c210 = Ordinal_1041(64000);
-      Ordinal_1047(DAT_0023c210,0,64000);
-      DAT_0023c214 = DAT_0023c210;
+      g_weapon_swing_current_frame = Ordinal_1041(64000);
+      Ordinal_1047(g_weapon_swing_current_frame,0,64000);
+      g_weapon_swing_startup_scratch_buffer = g_weapon_swing_current_frame;
       *DAT_000876bc = 0;
       *DAT_000876c0 = 0;
       FUN_000228d4();
@@ -474,7 +474,7 @@ undefined4 param_1;
         select_active_font(s_FONT5X6P_SYS_00084e9c);
       }
       else if (bVar11) {
-        FUN_00040004();
+        unready_weapon();
       }
     }
     Ordinal_1018(local_834);
