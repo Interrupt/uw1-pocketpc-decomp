@@ -1473,7 +1473,16 @@ undefined2 DAT_0010062c;
 undefined4 DAT_001005ec;
 short DAT_00100618;
 short DAT_000870e4;
-undefined4 DAT_001005e4;
+/* Was `undefined4` -- FUN_000272c0 writes a real static-global address
+   through this (via its own `int *param_1`, truncating with an
+   explicit `(int)`/`(intptr_t)` cast at all 3 of its assignments), and
+   FUN_00027708 reads it back and dereferences it as a pointer
+   (`*(byte*)(iVar5+3)` etc.) once the attack-swing state machine
+   reaches its "resolve impact" phase (DAT_000870e4==3). Confirmed live:
+   right-clicking to start an attack in Combat mode crashes a few ticks
+   later, once the swing reaches that phase, dereferencing the
+   truncated pointer. */
+char *DAT_001005e4;
 char DAT_001005e0_backing[128];
 char *DAT_001005e0 = DAT_001005e0_backing;
 short DAT_001005e8;
@@ -16930,9 +16939,18 @@ short param_1;
 
 
 
+/* param_1 was `int *` -- every store through it (`&DAT_002027d0 +
+   iVar5`, `&DAT_00202800 + ...`, `&DAT_00202878`) is a real static-
+   global address explicitly cast down to `(int)`/`(intptr_t)`,
+   truncating it on this 64-bit host before the caller (FUN_00027708)
+   reads it back and dereferences it as a pointer. param_2 had the
+   same problem one level removed: it points at DAT_001005e0 (a real
+   `char *`), but was declared `undefined4 *` (4 bytes), so `*param_2 =
+   puVar4` only ever wrote the low 32 bits of FUN_00045054's real
+   pointer into the first half of that 8-byte slot. */
 undefined4 FUN_000272c0(param_1,param_2)
-int * param_1;
-undefined4 * param_2;
+char * * param_1;
+char * * param_2;
 
 {
   uint uVar1;
@@ -16940,10 +16958,10 @@ undefined4 * param_2;
   short sVar3;
   ushort *puVar4;
   int iVar5;
-  
+
   *param_1 = 0;
   puVar4 = (ushort *)FUN_00045054(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
-  *param_2 = puVar4;
+  *param_2 = (char *)puVar4;
   if (puVar4 != (ushort *)0x0) {
     uVar2 = *puVar4;
     uVar1 = (uint)(short)(uVar2 & 0x1ff);
@@ -16955,17 +16973,17 @@ undefined4 * param_2;
           FUN_00057604(1);
           return 0xffffffff;
         }
-        *param_1 = (int)(&DAT_002027d0 + iVar5);
+        *param_1 = &DAT_002027d0 + iVar5;
         return 0;
       }
     }
     else if ((uVar2 & 0x1f0) == 0) {
-      *param_1 = (int)(&DAT_00202800 + (uVar1 & 0xf) * 8);
+      *param_1 = &DAT_00202800 + (uVar1 & 0xf) * 8;
       DAT_001005f4 = (byte)(&DAT_00202c91)[uVar1 * 0xd] & 7;
     }
   }
   if (*param_1 == 0) {
-    *param_1 = (intptr_t)&DAT_00202878;
+    *param_1 = &DAT_00202878;
     DAT_001005f4 = DAT_00202d54 & 7;
   }
   return 1;
@@ -16973,9 +16991,14 @@ undefined4 * param_2;
 
 
 
+/* param_1/param_2 were `int` -- both real object-record pointers
+   (FUN_00027708 passes the now-fixed DAT_001005e4-derived pointer and
+   DAT_001005e0, both `char *`), truncated to 32 bits on this 64-bit
+   host before being dereferenced here and forwarded to FUN_0007ca50
+   (which already declares its own params as real pointers). */
 void FUN_000273f8(param_1,param_2,param_3)
-int param_1;
-int param_2;
+char * param_1;
+char * param_2;
 short param_3;
 
 {
@@ -17085,7 +17108,15 @@ short param_1;
   int iVar5;
   int iVar6;
   undefined2 local_20 [2];
-  
+  /* Was folded into `iVar5` (int) -- the pointer DAT_001005e4 now
+     carries (see its own fix) needs to stay a real 64-bit pointer
+     across this function's two dereference sites below (~17130 and
+     ~17180). iVar5 itself keeps its OTHER, disjoint int uses further
+     down (FUN_000571c0's result, and the whole "start a new swing"
+     else-if branch) -- those never run in the same call as these
+     dereferences, so they're left as plain int. */
+  char *pRecord;
+
   if (((short)DAT_00084f10 < 1) || ((&DAT_00250658)[(short)DAT_00084f10] == '\0')) {
     uVar3 = FUN_000575c4(local_20);
     bVar2 = false;
@@ -17093,7 +17124,12 @@ short param_1;
   }
   bVar2 = true;
 LAB_00027754:
-  iVar5 = DAT_001005e4;
+  pRecord = DAT_001005e4;
+  if (getenv("UW_DEBUG_COMBAT") && (param_1 != 0 || DAT_000870e4 != -1 || DAT_0010062c != 0)) {
+    fprintf(stderr, "[swing] param_1=%d flags5f=0x%x DAT_000870e4=%d DAT_0010062c=%d bVar2=%d pRecord=%p\n",
+            (int)param_1, (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)DAT_000870e4,
+            (int)DAT_0010062c, (int)bVar2, (void *)pRecord);
+  }
   if (DAT_0010062c < 1) {
     if (DAT_0010062c < 0) {
       if ((-1 < DAT_000870e4) || (-10 < DAT_0010062c)) {
@@ -17109,13 +17145,13 @@ LAB_00027754:
               return;
             }
             FUN_0006cff4(3,0);
-            local_20[0] = Ordinal_2005(100,((int)(((uint)*(byte *)(iVar5 + 5) -
-                                                  (uint)*(byte *)(iVar5 + 3)) * 0x10000) >> 0x10) *
+            local_20[0] = Ordinal_2005(100,((int)(((uint)*(byte *)(pRecord + 5) -
+                                                  (uint)*(byte *)(pRecord + 3)) * 0x10000) >> 0x10) *
                                            (uint)DAT_00100614);
-            DAT_00100614 = *(char *)(iVar5 + 3) + (char)local_20[0];
+            DAT_00100614 = *(char *)(pRecord + 3) + (char)local_20[0];
             *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) | 0xf;
             DAT_001005fc = DAT_00100614;
-            FUN_000273f8(iVar5,DAT_001005e0,(int)DAT_00100618);
+            FUN_000273f8(pRecord,DAT_001005e0,(int)DAT_00100618);
             FUN_000270d0();
             DAT_0010062c = 0xfff6;
             return;
@@ -17159,7 +17195,7 @@ LAB_00027754:
             return;
           }
           do {
-            DAT_00100614 = DAT_00100614 + *(char *)(iVar5 + 4);
+            DAT_00100614 = DAT_00100614 + *(char *)(pRecord + 4);
             if (100 < DAT_00100614) {
               DAT_00100614 = 100;
             }
@@ -29543,6 +29579,10 @@ void FUN_0003f420()
 {
   int iVar1;
   uint uVar2;
+  if (getenv("UW_DEBUG_COMBAT")) {
+    fprintf(stderr, "[combat] FUN_0003f420 entry: mode=%d btnstate=0x%x\n",
+            (int)*(short *)(DAT_00085a6c + 8), (unsigned)*(ushort *)(DAT_00085a6c + 6));
+  }
   if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
     FUN_00068260();
   }
@@ -29561,6 +29601,10 @@ void FUN_0003f420()
     return;
   }
   g_interact_target = 0;
+  if (getenv("UW_DEBUG_COMBAT")) {
+    fprintf(stderr, "[combat] FUN_0003f420 past mode gate: DAT_00085a6c[6]=0x%x g_cursor_mode=%d g_cursor_holding_state=%d\n",
+            (unsigned)*(ushort *)(DAT_00085a6c + 6), (int)g_cursor_mode, (int)g_cursor_holding_state);
+  }
   if ((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) {
     g_interact_target = 0;
     return;
@@ -29572,6 +29616,9 @@ void FUN_0003f420()
     }
     else {
       uVar2 = ((int)g_cursor_mode & 0xffU) - 1;
+    }
+    if (getenv("UW_DEBUG_COMBAT")) {
+      fprintf(stderr, "[combat] uVar2=%u bit1=0x%x\n", uVar2, (unsigned)(*(ushort *)(DAT_00085a6c + 6) & 1));
     }
     /* With no cursor mode selected, a right-click on an object defaults
        to "look" (table[3], interact_talk_npc -> "You see a <name>"), not the
