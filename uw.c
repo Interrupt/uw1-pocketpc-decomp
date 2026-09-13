@@ -2212,7 +2212,15 @@ undefined2 DAT_00201c78;
 undefined4 DAT_00086b20;
 char s_You_died_000857b8[] = "You_died";
 byte DAT_00085730;
-short DAT_0023bca0;
+// was DAT_0023bca0 -- per-level view-distance default, loaded from
+// SHADES.DAT's per-record field 3 by FUN_0006ff08 (see its own
+// comment) and, since this session, consumed by
+// extend_visibility_ray_row as the automap-reveal flood's real
+// max-ring-passes limit (was a flat hardcoded 16). Also still passed
+// (dropped-argument bug, unrelated, not fixed here) to
+// FUN_000411b8/FUN_000411cc, and to the otherwise-dead
+// build_visibility_light_grid.
+short g_visibility_max_ring_passes;
 code *DAT_00201c9c;
 char s_Error_code_XXXX___000857c8[] = "Error_code_XXXX_$";
 char s_Out_of_Low_Memory___000857dc[] = "Out_of_Low_Memory.$";
@@ -27682,7 +27690,7 @@ undefined4 dungeon_view_anim_tick()
   if (0 < DAT_00201c90) {
     if ((DAT_00085730 & 1) != 0) {
       full_dungeon_redraw();
-      FUN_000411b8((int)DAT_0023bca0);
+      FUN_000411b8((int)g_visibility_max_ring_passes);
     }
     if (DAT_00201b68 != DAT_00201c7c) {
       iVar1 = FUN_0006c79c();
@@ -27707,7 +27715,7 @@ undefined4 dungeon_view_anim_tick()
     set_player_tile_position((int)local_20,(int)local_1e,1);
     if ((DAT_00085730 & 2) != 0) {
       full_dungeon_redraw();
-      FUN_000411cc((int)DAT_0023bca0);
+      FUN_000411cc((int)g_visibility_max_ring_passes);
     }
     DAT_00201c90 = 0;
     if ((DAT_00085730 & 2) != 0) {
@@ -48424,7 +48432,24 @@ byte * param_2;
 
   iVar5 = *(char *)(param_1 + 7) + 1;
   *(char *)(param_1 + 7) = (char)iVar5;
-  if (iVar5 * 0x1000000 >> 0x18 < 0x11) {
+  /* Was a hardcoded `< 0x11` (16 allowed ring-passes) -- confirmed
+     against the real disassembly in an earlier round as a literal, not
+     an obvious variable read, so it was left alone (see this
+     function's own header comment and mysteries.md's "hard-coded
+     ceiling of 16 passes" writeup). User-supplied evidence points at
+     SHADES.DAT instead: its 6-field-per-record layout (field 3 is the
+     per-level view-distance default) is already parsed correctly by
+     FUN_0006ff08 into g_visibility_max_ring_passes (was DAT_0023bca0)
+     -- confirmed live, and against the raw file bytes, that record 0's
+     field 3 really is 3, not 16 (fields 4/5, the texture-LOD
+     thresholds, both really are 16 -- easy to conflate). Whatever the
+     original compiled form of this check really was, using the
+     already-correctly-loaded per-level value here instead of the flat
+     16 is well-motivated and makes this global (previously read only
+     by two dead/tangential call sites) finally meaningful. +1 because
+     this counter starts at 1 after the pre-increment above, so a
+     field-3 value of N should allow N total ring-passes, not N-1. */
+  if (iVar5 * 0x1000000 >> 0x18 < (int)g_visibility_max_ring_passes + 1) {
     do {
       if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx1)[0x43] & 0xf) != 0xf) {
         cVar3 = *(char *)(param_1 + 7);
@@ -59661,11 +59686,11 @@ LAB_0006fff4:
     }
     DAT_0025064c = local_12a;
     DAT_002506dc = local_128;
-    DAT_0023bca0 = local_126;
+    g_visibility_max_ring_passes = local_126;
     DAT_00086b28 = local_124;
     DAT_00086b24 = local_122;
     Ordinal_553(iVar3);
-    build_visibility_light_grid((int)DAT_0023bca0);
+    build_visibility_light_grid((int)g_visibility_max_ring_passes);
     FUN_00049924(2);
   }
   return;
