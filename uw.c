@@ -31703,7 +31703,34 @@ codeval * param_5;
        original address were never recovered by Ghidra (no content, just
        a dangling address -- see README "Unrecoverable string tables").
        Treat "nothing to load" as success rather than failing the whole
-       resource-preload batch this participates in. */
+       resource-preload batch this participates in.
+
+       BUG (found tracing the mode-icon "door sprite" report): this
+       early return never touches DAT_00202728 (the just-loaded
+       resource's frame count), so it's left holding whatever the
+       PREVIOUS real load set it to. FUN_00041910/FUN_000419c8's
+       callers unconditionally do `DAT_00202744 += DAT_00202728`
+       right after calling this regardless of success/failure -- so
+       every one of these "nothing to load" resources silently
+       RE-ADDS the previous resource's frame count to the running
+       absolute-frame counter instead of contributing zero. Confirmed
+       live via UW_DEBUG_DUMP_GR: all 4 unrecovered resource names in
+       the post-TMOBJ preload chain (this project's own prior
+       "Unrecoverable string tables" investigation already knew these
+       fail to load, but not that the failure corrupts every
+       subsequent resource's frame numbering) each duplicate the
+       immediately-preceding real resource's exact frame count
+       (e.g. the one right after TMOBJ.GR claims TMOBJ's own 38
+       frames a second time). This is why the mode-icon highlight
+       (which indexes into this same running counter, expecting the
+       resource that comes right after TMOBJ) actually landed on
+       TMOBJ's OWN leftover frame data (a wall-mounted decorative tile
+       object) instead of whatever the missing resource's real icon
+       content should have been -- a door/gate-like TMOBJ decoration,
+       matching the user's report exactly. Zero the count so a missing
+       resource correctly contributes no frames instead of duplicating
+       the previous one. */
+    DAT_00202728 = 0;
     return uVar6;
   }
   iVar1 = open_gr_resource_file(param_1,1);
@@ -31762,8 +31789,14 @@ char *param_1;
 
 {
   undefined4 uVar1;
+  short _dbg_before;
+  _dbg_before = DAT_00202744;
   uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_000415d0);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
+  if (getenv("UW_DEBUG_DUMP_GR")) {
+    fprintf(stderr, "[dumpgr] FUN_00041910(\"%s\") frames [%d, %d) count=%d ok=%d\n",
+            param_1, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
+  }
   return uVar1;
 }
 
@@ -31797,8 +31830,14 @@ char *param_1;
   /* Ghidra dropped load_gr_resource_entries's result and always returned failure
      (see FUN_00040cd4 for the same pattern); propagate the real result. */
   undefined4 uVar1;
+  short _dbg_before;
+  _dbg_before = DAT_00202744;
   uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000416e8,FUN_00041708);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
+  if (getenv("UW_DEBUG_DUMP_GR")) {
+    fprintf(stderr, "[dumpgr] FUN_000419c8(\"%s\") frames [%d, %d) count=%d ok=%d\n",
+            param_1, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
+  }
   return uVar1;
 }
 
