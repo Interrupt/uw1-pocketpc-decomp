@@ -2626,21 +2626,38 @@ undefined2 DAT_00202734;
 char DAT_00085988;
 char DAT_0024d000;
 char DAT_0024fa28;
-static undefined DAT_000859ac_backing[8192];
-#define DAT_000859ac DAT_000859ac_backing[0]
+/* Was `static undefined DAT_000859ac_backing[8192]` -- Ghidra never
+   recognized this as a string reference (no cross-reference to label
+   it), but the raw bytes at this address in the real binary spell out
+   "optb\0" plainly -- confirmed via direct memory dump (Ghidra
+   headless, `mem.getBytes`), matching OPTB.GR in data/DATA/. This and
+   its 3 siblings below were the "Unrecoverable string tables" this
+   file's own comments referenced; all 4 turned out to be perfectly
+   readable, just never labeled. Recovering them fixes the frame-
+   counter corruption bug documented at load_gr_resource_entries's own
+   "nothing to load" branch (each of these 4 was previously read as an
+   empty string, silently re-adding the previous resource's frame
+   count instead of contributing OPTB.GR's/etc.'s own real frames). */
+char s_optb_000859ac[] = "optb";
 char s_scrledge_000859b4[] = "scrledge";
 char s_spells_000859c0[] = "spells";
 char s_chains_000859c8[] = "chains";
-static undefined DAT_000859d0_backing[8192];
-#define DAT_000859d0 DAT_000859d0_backing[0]
+/* Was `static undefined DAT_000859d0_backing[8192]` -- real bytes
+   spell "eyes\0", matching EYES.GR. See s_optb_000859ac's comment. */
+char s_eyes_000859d0[] = "eyes";
 char s_power_000859d8[] = "power";
-static undefined DAT_000859e0_backing[8192];
-#define DAT_000859e0 DAT_000859e0_backing[0]
+/* Was `static undefined DAT_000859e0_backing[8192]` -- real bytes
+   spell "inv\0", matching INV.GR. See s_optb_000859ac's comment. */
+char s_inv_000859e0[] = "inv";
 char s_dragons_000859e4[] = "dragons";
 char s_compass_000859ec[] = "compass";
 char s_flasks_000859f4[] = "flasks";
-static undefined DAT_000859fc_backing[8192];
-#define DAT_000859fc DAT_000859fc_backing[0]
+/* Was `static undefined DAT_000859fc_backing[8192]` -- real bytes
+   spell "lfti\0", matching LFTI.GR. See s_optb_000859ac's comment.
+   This is the one loaded right after TMOBJ.GR -- the resource the
+   mode-icon highlight (FUN_0003f99c/FUN_0003fa1c) actually indexes
+   into. */
+char s_lfti_000859fc[] = "lfti";
 char s_tmobj_00085a04[] = "tmobj";
 char s_tmflat_00085a0c[] = "tmflat";
 char s_3dwin_00085a14[] = "3dwin";
@@ -30909,15 +30926,16 @@ undefined4 param_3;
             (int)param_1, (int)(uint)DAT_00202738, (void *)iVar4,
             (int)param_1 < (int)(uint)DAT_00202738 ? "registered-resource(FUN_000408fc)" : "absolute-frame-table(DAT_0024e090)");
   if (iVar4 == (char *)0x0) {
-    /* Table slot never populated. Four .GR resource names in the preload
-       sequence around SCRLEDGE.GR (FUN_00041ca8: the &DAT_000859fc /
-       &DAT_000859e0 / &DAT_000859d0 / &DAT_000859ac calls) were never
-       recovered by Ghidra -- empty strings -> those files don't load ->
-       the running slot cursor is short, so the scroll-edge decoration
-       sprites (ids 0x20d5..0x20e5, drawn by msg_scroll_draw_edges/FUN_0007f290
-       every time the message scroll advances a line) land on empty
-       slots. Draw nothing rather than dereferencing NULL and taking the
-       game down mid-message. Same safe-fallback shape as FUN_000408fc. */
+    /* Table slot never populated. This used to be caused by 4 .GR
+       resource names in the preload sequence around SCRLEDGE.GR
+       (LFTI/INV/EYES/OPTB, see s_lfti_000859fc's own comment) reading
+       as empty strings and silently corrupting the running frame
+       counter for everything loaded after each one -- now fixed (both
+       the string recovery and the underlying counter-corruption bug
+       in load_gr_resource_entries). Kept as a defensive fallback for
+       any other still-unpopulated slot: draw nothing rather than
+       dereferencing NULL and taking the game down mid-message. Same
+       safe-fallback shape as FUN_000408fc. */
     static char dummy_sprite[8];
     iVar4 = dummy_sprite;
   }
@@ -31938,25 +31956,25 @@ undefined4 FUN_00041aac()
     DAT_00202734 = DAT_00202744;
     uVar12 = FUN_00041990(s_tmflat_00085a0c,0x170,0x10);
     /* DAT_00202738 is snapshotted AFTER this call, i.e. it's the base for
-       whatever loads NEXT, not TMOBJ's own base -- confirmed by
-       instrumenting this exact spot (DAT_00202744 went 643 -> 681 across
-       the FUN_00041910 call below), so TMOBJ's real 38 frames are
-       absolute indices 643-680. See emit_tile_objects's class-2 sign
-       branch and FUN_00040770's negative-param_1 comment for where this
-       matters. */
+       whatever loads NEXT (LFTI.GR, see s_lfti_000859fc), not TMOBJ's own
+       base -- confirmed by instrumenting this exact spot (DAT_00202744
+       went 643 -> 681 across the FUN_00041910 call below), so TMOBJ's
+       real 38 frames are absolute indices 643-680. See
+       emit_tile_objects's class-2 sign branch and FUN_00040770's
+       negative-param_1 comment for where this matters. */
     uVar13 = FUN_00041910(s_tmobj_00085a04);
     DAT_00202738 = DAT_00202744;
-    uVar14 = FUN_000419c8(&DAT_000859fc);
+    uVar14 = FUN_000419c8(s_lfti_000859fc);
     uVar15 = FUN_000419c8(s_flasks_000859f4);
     uVar16 = FUN_000419c8(s_compass_000859ec);
     uVar17 = FUN_000419c8(s_dragons_000859e4);
-    uVar18 = FUN_000419c8(&DAT_000859e0);
+    uVar18 = FUN_000419c8(s_inv_000859e0);
     uVar19 = FUN_000419c8(s_power_000859d8);
-    uVar20 = FUN_000419c8(&DAT_000859d0);
+    uVar20 = FUN_000419c8(s_eyes_000859d0);
     uVar21 = FUN_000419c8(s_chains_000859c8);
     uVar22 = FUN_000419c8(s_spells_000859c0);
     uVar23 = FUN_000419c8(s_scrledge_000859b4);
-    uVar24 = FUN_000419c8(&DAT_000859ac);
+    uVar24 = FUN_000419c8(s_optb_000859ac);
     if ((uVar23 & uVar24 & uVar22 & uVar21 & uVar20 & uVar19 & uVar18 & uVar17 & uVar16 & uVar15 &
          uVar14 & uVar13 & uVar12 & uVar11 & uVar10 & uVar9 & uVar8 & uVar7 & uVar6 & uVar5 & 1) ==
         0) {
@@ -58552,6 +58570,11 @@ void FUN_0006df70()
     }
     uVar4 = uVar3 & 0xf;
     FUN_00076390((int)DAT_0023c228,(uVar3 & 3) + 0x2059);
+    if (getenv("UW_DEBUG_COMPASS")) {
+      fprintf(stderr, "[compass] heading=%u x=%d y=%d frame_id=0x%x\n", uVar4,
+              (int)(short)(&DAT_00087130)[(short)uVar4], (int)(short)(&DAT_00087150)[(short)uVar4],
+              (unsigned)uVar4 + 0x205d);
+    }
     FUN_00076338((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)uVar4],
                  (int)(short)(&DAT_00087150)[(short)uVar4]);
     FUN_00076390((int)DAT_0023c22c,uVar4 + 0x205d);
