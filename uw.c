@@ -4343,27 +4343,34 @@ undefined2 DAT_0023c224;
 byte DAT_0023c11a;
 short DAT_0023c228;
 short DAT_0023c22c;
-/* FIXME[hud-compass-layout]: .data 0x87130 -- compass-needle X position,
-   one short per compass heading. Indexed by the current heading
-   (DAT_0023c11a / DAT_0023c12a, masked `& 0xf` at FUN_0006df70:54803, so
-   16 entries). Read as `(&DAT_00087130)[heading]` and passed as the X arg
-   of FUN_00076338 (FUN_0006cb74:54108, FUN_0006df70:54805) and, for
-   element [0] only, FUN_000762c4 (redraw_hud_panels:54179) for the compass
-   needle sprite DAT_0023c22c (sprite size 3x4). Ghidra never recovered
-   the .data contents so every entry reads 0 and the needle is stuck at
-   x=0 (part of the black block in the HUD top-left). Fill in[0..15] with
-   the real per-heading X from the UW1 compass layout. */
+/* Was `FIXME[hud-compass-layout]: .data 0x87130 -- ... Ghidra never
+   recovered the .data contents so every entry reads 0 and the needle
+   is stuck at x=0 (part of the black block in the HUD top-left)`.
+   Same class of gap as the 4 "unrecoverable" resource-name strings
+   (see s_lfti_000859fc's comment) -- Ghidra just never created a
+   labeled cross-reference to this .data, but the real bytes are
+   perfectly intact in the binary. Recovered via direct memory dump
+   (Ghidra headless, `mem.getShort`): 16 real values tracing a clean
+   small ellipse (112-160), confirming this is genuine per-heading
+   compass-needle X data, not padding. Combined with DAT_00087150
+   below, the ellipse is centered around (136,142) in native
+   (320x200-ish) coordinates -- right at the bottom edge of the 3D
+   viewport (registered at native (52,20)-(223,132), see
+   FUN_0005b758's caller), exactly where the "pedestal" decoration
+   sits in a real reference screenshot of the shipping game. Verified
+   live: with these real values, the needle no longer appears at the
+   top-left corner (the previous x=0/y=0 bug); it now subtly cycles
+   position on the pedestal as the player turns, matching the
+   reference. */
 static short DAT_00087130_arr[16] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  136, 128, 120, 116, 112, 112, 116, 124, 136, 144, 156, 160, 160, 156, 152, 144,
 };
 #define DAT_00087130 DAT_00087130_arr[0]
-/* FIXME[hud-compass-layout]: .data 0x87150 -- compass-needle Y position,
-   one short per compass heading, paired 1:1 with DAT_00087130. Same 16
-   entries, same call sites (Y arg of FUN_00076338 / FUN_000762c4 for
-   DAT_0023c22c). Reads 0 -> needle stuck at y=0. Fill in[0..15] with the
-   real per-heading Y. */
+/* Was `FIXME[hud-compass-layout]: .data 0x87150 -- ...`. See
+   DAT_00087130's comment -- real Y data recovered the same way,
+   16 values tracing the same ellipse (132-153). */
 static short DAT_00087150_arr[16] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  132, 134, 135, 138, 142, 146, 148, 151, 153, 151, 148, 146, 142, 138, 135, 134,
 };
 #define DAT_00087150 DAT_00087150_arr[0]
 short DAT_0023c1e8;
@@ -4380,36 +4387,41 @@ int DAT_0023c23c;
 short DAT_0023c21c;
 /* Same fix as DAT_00248410 above -- see its comment. */
 char *DAT_0023cca4;
-/* The three FIXME[hud-dragon-layout] tables below all position the
-   two dragons.gr decorations that frame the compass -- index 0 = left
-   dragon, index 1 = right dragon -- built once in redraw_hud_panels
-   (54155-54198). Each dragon is drawn as three sprite-list sub-sprites
-   (head, body, wing/tail), created at fixed Y with X taken from these
-   tables; Ghidra never recovered the .data so every X reads 0 and both
-   dragons pile up at the screen's left edge as a black rectangle over
-   the 3D view + HUD. (The black is dragons.gr's colour-0 key showing
-   through -- the sprite-list compositor FUN_00076508 not honouring it is
-   a separate bug.) Fill each pair [left, right] with the real X. */
+/* The three tables below all position the two dragons.gr decorations
+   that frame the compass -- index 0 = left dragon, index 1 = right
+   dragon -- built once in redraw_hud_panels (54155-54198). Each
+   dragon is drawn as three sprite-list sub-sprites (head, body,
+   wing/tail), created at fixed Y with X taken from these tables. Was
+   `FIXME[hud-dragon-layout]: Ghidra never recovered the .data so
+   every X reads 0 and both dragons pile up at the screen's left edge
+   as a black rectangle` -- same class of gap as the compass-needle
+   tables right above (see DAT_00087130's comment) and the 4
+   "unrecoverable" resource-name strings (s_lfti_000859fc's comment):
+   Ghidra just never labeled a cross-reference to this .data. Real
+   values recovered via direct memory dump (Ghidra headless,
+   `mem.getShort`). (The color-0-key transparency issue this comment
+   used to also mention, in the sprite-list compositor FUN_00076508,
+   is a separate, still-open bug -- unrelated to position.) */
 
-/* FIXME[hud-dragon-layout]: .data 0x87170 -- X of the dragon HEAD
-   sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076194(2,0xd,10)
-   into DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
+/* .data 0x87170 -- X of the dragon HEAD sub-sprite, [0]=left
+   [1]=right. Sprite made by FUN_00076194(2,0xd,10) into
+   DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
    0xd x 10 (redraw_hud_panels:54161); animation frame set from DAT_000871d4
    (54190). */
-static short DAT_00087170_arr[2] = { 0, 0};
+static short DAT_00087170_arr[2] = { 36, 228};
 #define DAT_00087170 DAT_00087170_arr[0]
-/* FIXME[hud-dragon-layout]: .data 0x87174 -- X of the dragon BODY
-   sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076194(2,0x25,0x17)
-   into DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
+/* .data 0x87174 -- X of the dragon BODY sub-sprite, [0]=left
+   [1]=right. Sprite made by FUN_00076194(2,0x25,0x17) into
+   DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
    0x25 x 0x17 (redraw_hud_panels:54166); frame from DAT_000871d8 (54191). */
-static short DAT_00087174_arr[2] = { 0, 0};
+static short DAT_00087174_arr[2] = { 36, 204};
 #define DAT_00087174 DAT_00087174_arr[0]
-/* FIXME[hud-dragon-layout]: .data 0x871b4 -- X of the dragon WING/TAIL
-   sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076078(0) into
-   DAT_0023c238[side], placed at ((&DAT_000871b4)[side], 0x42), size
-   0xc x 0x1c (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
+/* .data 0x871b4 -- X of the dragon WING/TAIL sub-sprite, [0]=left
+   [1]=right. Sprite made by FUN_00076078(0) into DAT_0023c238[side],
+   placed at ((&DAT_000871b4)[side], 0x42), size 0xc x 0x1c
+   (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
    0x208d (right) at 54196, NOT from a table. */
-static short DAT_000871b4_arr[4] = { 0, 0};
+static short DAT_000871b4_arr[4] = { 40, 224};
 #define DAT_000871b4 DAT_000871b4_arr[0]
 
 /* FIXME[hud-dragon-frames]: .data 0x871d4 -- initial dragons.GR frame id
@@ -57924,6 +57936,10 @@ void redraw_hud_panels()
     FUN_000762c4(uVar1,0x70,0x84,0x38,0x20);
     uVar1 = FUN_00076078(0);
     DAT_0023c22c = (undefined2)uVar1;
+    if (getenv("UW_DEBUG_COMPASS")) {
+      fprintf(stderr, "[compass] redraw_hud_panels init: sprite_handle=%d x=%d y=%d\n",
+              (int)uVar1, (int)DAT_00087130, (int)DAT_00087150);
+    }
     FUN_000762c4(uVar1,(int)DAT_00087130,(int)DAT_00087150,3,4);
     uVar1 = FUN_00076078(0);
     DAT_0023c21c = (short)uVar1;
@@ -63583,6 +63599,10 @@ undefined2 param_5;
 
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
+    if (getenv("UW_DEBUG_COMPASS") && (int)param_4 == 0x38) {
+      fprintf(stderr, "[compass] FUN_000762c4 create: slot=%d x=%d y=%d w=%d h=%d\n",
+              (int)param_1, (int)param_2, (int)param_3, (int)param_4, (int)param_5);
+    }
     *(char *)(iVar2 + 6) = (char)param_4;
     *(char *)(iVar2 + 7) = (char)((uint)param_4 >> 8);
     *(char *)(iVar2 + 2) = (char)param_2;
