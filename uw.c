@@ -4444,20 +4444,21 @@ static short DAT_00087174_arr[2] = { 36, 204};
 static short DAT_000871b4_arr[4] = { 40, 224};
 #define DAT_000871b4 DAT_000871b4_arr[0]
 
-/* FIXME[hud-dragon-frames]: .data 0x871d4 -- initial dragons.GR frame id
-   for the dragon HEAD sub-sprite, [0]=left [1]=right. Read as
-   `(&DAT_000871d4)[side]` and passed to FUN_00076390 as the frame arg for
-   DAT_0023c230[side] (redraw_hud_panels:54190). dragons.GR ids are in the
-   0x20xx range (cf. the wing's literal 0x207b/0x208d); reads 0 now. Fill
-   with the real left/right head-frame ids. */
-static unsigned short DAT_000871d4_arr[2] = { 0, 0 };
+/* Was `FIXME[hud-dragon-frames]: .data 0x871d4 -- ... reads 0 now`.
+   Same class of gap as the position tables above -- recovered via
+   direct memory dump. Real values 0x206d (left) / 0x207f (right); the
+   +0x12 left/right delta matches the wing/tail sub-sprite's own
+   literal 0x207b/0x208d pair exactly, confirming this is the real
+   dragons.GR left/right frame convention, not a guess. Read as
+   `(&DAT_000871d4)[side]` and passed to FUN_00076390 as the frame arg
+   for DAT_0023c230[side] (redraw_hud_panels:54190). */
+static unsigned short DAT_000871d4_arr[2] = { 0x206d, 0x207f };
 #define DAT_000871d4 DAT_000871d4_arr[0]
-/* FIXME[hud-dragon-frames]: .data 0x871d8 -- initial dragons.GR frame id
-   for the dragon BODY sub-sprite, [0]=left [1]=right. Read as
-   `(&DAT_000871d8)[side]`, frame arg to FUN_00076390 for DAT_0023c234[side]
-   (redraw_hud_panels:54191, also FUN_0006dbe4:54753). Fill with the real
-   left/right body-frame ids. */
-static unsigned short DAT_000871d8_arr[2] = { 0, 0 };
+/* Was `FIXME[hud-dragon-frames]: .data 0x871d8 -- ... reads 0 now`.
+   Real values 0x206e (left) / 0x2080 (right), same +0x12 delta.
+   Frame arg to FUN_00076390 for DAT_0023c234[side] (redraw_hud_panels
+   :54191, also FUN_0006dbe4:54753). */
+static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
 #define DAT_000871d8 DAT_000871d8_arr[0]
 /* HUD-panel/tab dispatch table (13 entries), read as
    `(&PTR_FUN_00087220)[index]` at 4 call sites (DAT_0023c1d4/DAT_0023c134
@@ -4480,11 +4481,35 @@ static void (*const PTR_FUN_00087220_table[13])(void) = {
 };
 #define PTR_FUN_00087220 (PTR_FUN_00087220_table[0])
 char s_panels_00087260[] = "panels";
-undefined1 DAT_0023c11c;
-undefined1 DAT_0023c12c;
-undefined2 DAT_0023c230;
-undefined2 DAT_0023c234;
-undefined2 DAT_0023c238;
+/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
+   DAT_0023c224/DAT_0023c230 etc. above: both are used throughout as
+   real 2-element byte arrays (`(&DAT_0023c11c)[iVar6]`/
+   `(&DAT_0023c12c)[iVar6]` for index 0 AND 1, including redraw_hud_
+   panels's own creation loop). Fixed the same way. */
+static undefined1 DAT_0023c11c_arr[2];
+#define DAT_0023c11c DAT_0023c11c_arr[0]
+static undefined1 DAT_0023c12c_arr[2];
+#define DAT_0023c12c DAT_0023c12c_arr[0]
+/* Was 3 lone `undefined2` scalars (DAT_0023c230/234/238) -- same
+   "split symbol" bug as DAT_0023c224 (see its own comment for the
+   full writeup): each is used throughout as a real 2-element array
+   (`(&DAT_0023c23X)[iVar3]`/`[iVar6]` for index 0 AND 1, including
+   redraw_hud_panels's own creation loop, which assigns both elements
+   for all three in sequence). The real per-side addresses in the
+   original binary are exactly 4 bytes apart (0x230/0x234/0x238),
+   confirming each one really is a 2-element short array back to back,
+   not 3 independent scalars -- so as lone scalars in this build, index
+   [1] on each reads/writes whatever the compiler happened to place
+   next, with no guarantee of matching the original layout (exactly
+   the aliasing that stomped the compass background sprite via
+   DAT_0023c224). Same "left dragon head/body/wing pile-up" report
+   this affects -- fixed the same way, real 2-element arrays. */
+static short DAT_0023c230_arr[2];
+#define DAT_0023c230 DAT_0023c230_arr[0]
+static short DAT_0023c234_arr[2];
+#define DAT_0023c234 DAT_0023c234_arr[0]
+static short DAT_0023c238_arr[2];
+#define DAT_0023c238 DAT_0023c238_arr[0]
 undefined2 DAT_0023c200;
 char DAT_000870dc;
 char DAT_000870d8;
