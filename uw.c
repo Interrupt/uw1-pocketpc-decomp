@@ -4568,7 +4568,16 @@ static undefined1 DAT_0023c1f0_backing[65536];
 #define DAT_0023c1f0 DAT_0023c1f0_backing[0]
 static undefined1 DAT_0023c1f8_backing[65536];
 #define DAT_0023c1f8 DAT_0023c1f8_backing[0]
-undefined2 DAT_00087254;
+/* Was `undefined2 DAT_00087254;` -- split-symbol bug: real ARM code
+   (confirmed via disassembly of FUN_0006d4a4/hud_vitals_bar_tick)
+   computes `&DAT_00087254 + uVar2*2` for the mana slot, so this is a
+   genuine 2-element short array (0=health, 1=mana shimmer/wraparound
+   state), not a lone scalar. Also not zero-init bss like it looked --
+   raw memory dump (Ghidra headless) showed real .data here: 0x2019
+   (health) / 0x2032 (mana), i.e. each side starts equal to its OWN
+   `local_2c` shimmer-reset constant (a "settled" starting state). */
+static short DAT_00087254_arr[2] = { 0x2019, 0x2032 };
+#define DAT_00087254 DAT_00087254_arr[0]
 /* Was `static undefined1 DAT_000870f0_backing[65536]` (oversized,
    never populated) -- real per-step Y offset for the FLASK fill-level
    animation sprite in `hud_vitals_bar_tick`/`FUN_0006ca4c` (the
@@ -4602,6 +4611,12 @@ static undefined1 DAT_00087112_backing[32] = {
   5,0, 4,0, 4,0, 4,0, 4,0, 0,0, 0,0, 0,0,
 };
 #define DAT_00087112 DAT_00087112_backing[0]
+/* Real ARM code (hud_vitals_bar_tick's decreasing branch) reads this
+   table at `&DAT_00087112 + iVar3*2 + 2`, i.e. one short PAST what the
+   decompiler wrote as `(&DAT_00087112)[iVar3]` -- same "+2" sibling
+   pattern as DAT_000870f2 vs DAT_000870f0, just not caught until
+   verified against disassembly. */
+#define DAT_00087114 (*(short *)(DAT_00087112_backing + 2))
 /* .bss 0x23c240..0x23c24f: four short[2] rows of sprite handles for the
    HUD flask/vitals animation (hud_vitals_bar_tick / hud_damage_flash_tick), indexed
    `&row + param*2` with param in {0,1}. Ghidra split the region into four
@@ -58386,7 +58401,7 @@ short param_1;
       iVar3 = (int)(short)uVar8;
       sVar5 = (&DAT_000870f2)[iVar3];
       FUN_000762c4((int)*psVar11,(int)sVar4,(int)sVar5,0x18,
-                   *(undefined2 *)(&DAT_00087112 + iVar3 * 2));
+                   (&DAT_00087114)[iVar3]);
       sprite_list_set_lifetime((int)*psVar11,sVar5 + -0x7e);
       FUN_00076390((int)*psVar11,0x2057);
       if (iVar3 != 0) {
@@ -58422,7 +58437,7 @@ short param_1;
                    (int)*psVar10);
       sVar4 = *(short *)(&DAT_0023c240 + iVar1);
       *psVar11 = *psVar11 + 1;
-      FUN_00076390((int)sVar4);
+      FUN_00076390((int)sVar4,(int)*psVar11);
       psVar11 = (short *)(&DAT_0023c248 + iVar1);
       sprite_list_set_lifetime((int)*psVar11,*psVar10 + -0x7e);
       FUN_00076338((int)*psVar11,(int)*(short *)(&DAT_000870ec + iVar1),(int)*psVar10);
