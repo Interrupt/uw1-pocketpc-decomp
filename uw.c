@@ -4339,7 +4339,27 @@ static undefined1 DAT_000870ec_backing[65536];
 undefined2 DAT_000870f2;
 undefined1 DAT_0023c118;
 undefined1 DAT_0023c128;
-undefined2 DAT_0023c224;
+/* Was a lone `undefined2 DAT_0023c224;` -- but used as a real 2-element
+   array throughout (`(&DAT_0023c224)[iVar1]`/`[uVar2]` for index 0 AND
+   1, including the creation loop in redraw_hud_panels that assigns
+   BOTH elements). Same "split symbol" bug class as this project's
+   other reconstructed tables (see e.g. DAT_00087130's own history) --
+   index [1] read/wrote whatever global happened to sit 2 bytes past
+   this one in OUR build's memory layout, which is not guaranteed (or
+   even likely) to match the original binary's fixed layout. Confirmed
+   live via a sprite-position trace: with the lone-scalar declaration,
+   `(&DAT_0023c224)[1]` resolved to slot 8 -- the COMPASS BACKGROUND
+   sprite's own real slot handle (DAT_0023c228, created a few
+   statements later) -- so any code exercising the second status-icon
+   slot (uVar2==1 in the two functions above) stomped the compass
+   background's position to whatever it happened to pass for its own
+   icon (typically (0,0), since that icon's own position table --
+   DAT_000870ec/DAT_000870f2 -- is a separate, still-unrecovered gap).
+   This was the real cause of the compass background staying stuck at
+   (0,0) despite being created with the correct position. Real fix:
+   make this a genuine 2-element array. */
+static short DAT_0023c224_arr[2];
+#define DAT_0023c224 DAT_0023c224_arr[0]
 byte DAT_0023c11a;
 short DAT_0023c228;
 short DAT_0023c22c;
@@ -63599,8 +63619,8 @@ undefined2 param_5;
 
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
-    if (getenv("UW_DEBUG_COMPASS") && (int)param_4 == 0x38) {
-      fprintf(stderr, "[compass] FUN_000762c4 create: slot=%d x=%d y=%d w=%d h=%d\n",
+    if (getenv("UW_DEBUG_SPRPOS")) {
+      fprintf(stderr, "[sprpos] FUN_000762c4 create: slot=%d x=%d y=%d w=%d h=%d\n",
               (int)param_1, (int)param_2, (int)param_3, (int)param_4, (int)param_5);
     }
     *(char *)(iVar2 + 6) = (char)param_4;
@@ -63633,6 +63653,9 @@ undefined4 param_3;
   
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
+    if (getenv("UW_DEBUG_SPRPOS")) {
+      fprintf(stderr, "[sprpos] FUN_00076338 slot=%d x=%d y=%d\n", (int)param_1, (int)param_2, (int)param_3);
+    }
     *(char *)(iVar2 + 2) = (char)param_2;
     *(char *)(iVar2 + 4) = (char)param_3;
     *(char *)(iVar2 + 3) = (char)((uint)param_2 >> 8);
