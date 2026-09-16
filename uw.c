@@ -4334,11 +4334,44 @@ static undefined DAT_000870c8_backing[8192] = "\\*.*";
 #define DAT_000870c8 DAT_000870c8_backing[0]
 static undefined DAT_000870cc_backing[8192];
 #define DAT_000870cc DAT_000870cc_backing[0]
-static undefined1 DAT_000870ec_backing[65536];
+/* Was `static undefined1 DAT_000870ec_backing[65536]` (an oversized,
+   never-populated byte buffer) -- real per-flask X position for
+   `hud_vitals_bar_tick` (the health/mana FLASK bar update function),
+   [0]=health [1]=mana. Read via byte-scaled pointer arithmetic at
+   every call site (`&DAT_000870ec + iVar1` where iVar1 is already a
+   pre-scaled byte offset of 0 or 2, or `&DAT_000870ec + iVar1*2` in
+   FUN_0006ca4c where iVar1 is a plain 0/1 element index) -- kept
+   byte-typed here rather than a natural short array, matching every
+   existing call site instead of needing them all rewritten.
+   Recovered via direct memory dump (Ghidra headless, `mem.getShort`):
+   real values 248 (health) / 284 (mana), byte-encoded little-endian
+   below. */
+static undefined1 DAT_000870ec_backing[4] = { 248,0, 28,1 };  /* 248, 284 */
 #define DAT_000870ec DAT_000870ec_backing[0]
-undefined2 DAT_000870f2;
-undefined1 DAT_0023c118;
-undefined1 DAT_0023c128;
+/* Was a lone `undefined2 DAT_000870f2;` -- real data confirms this is
+   simply index [1] of DAT_000870f0's own real array (0x870f2 ==
+   0x870f0+2) -- see DAT_000870f0's comment below for the full table
+   and writeup. Alias into it (as a real short lvalue at that byte
+   offset) instead of a separate declaration, so `(&DAT_000870f2)
+   [iVar3]`'s existing natural-short-array indexing at its own call
+   sites keeps working unchanged. */
+#define DAT_000870f2 (*(short *)(DAT_000870f0_backing + 2))
+/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
+   DAT_0023c224/DAT_0023c230 etc. (see DAT_0023c224's comment for the
+   full writeup). DAT_0023c118/DAT_0023c128 are `hud_vitals_bar_tick`'s
+   (the real health/mana FLASK bar update function) own current/target
+   fill-level counters per flask (index 0=health, 1=mana), used
+   throughout as `(&DAT_0023c118)[uVar2]`/`(&DAT_0023c128)[uVar2]`.
+   With these as lone scalars, index [1] on each aliased the next
+   global in this build's layout -- DAT_0023c118[1] read/wrote
+   DAT_0023c128[0]'s own byte, and DAT_0023c128[1] read/wrote
+   DAT_0023c224's first byte -- so the mana flask's fill-level
+   tracking was corrupting the health flask's, and the compass-icon
+   cluster besides. Fixed the same way, real 2-element arrays. */
+static undefined1 DAT_0023c118_arr[2];
+#define DAT_0023c118 DAT_0023c118_arr[0]
+static undefined1 DAT_0023c128_arr[2];
+#define DAT_0023c128 DAT_0023c128_arr[0]
 /* Was a lone `undefined2 DAT_0023c224;` -- but used as a real 2-element
    array throughout (`(&DAT_0023c224)[iVar1]`/`[uVar2]` for index 0 AND
    1, including the creation loop in redraw_hud_panels that assigns
@@ -4353,9 +4386,10 @@ undefined1 DAT_0023c128;
    statements later) -- so any code exercising the second status-icon
    slot (uVar2==1 in the two functions above) stomped the compass
    background's position to whatever it happened to pass for its own
-   icon (typically (0,0), since that icon's own position table --
-   DAT_000870ec/DAT_000870f2 -- is a separate, still-unrecovered gap).
-   This was the real cause of the compass background staying stuck at
+   icon (typically (0,0), before DAT_000870ec/DAT_000870f2 -- the real
+   FLASK X/Y tables -- were themselves recovered, see their own
+   comments above). This was the real cause of the compass background
+   staying stuck at
    (0,0) despite being created with the correct position. Real fix:
    make this a genuine 2-element array. */
 static short DAT_0023c224_arr[2];
@@ -4535,9 +4569,38 @@ static undefined1 DAT_0023c1f0_backing[65536];
 static undefined1 DAT_0023c1f8_backing[65536];
 #define DAT_0023c1f8 DAT_0023c1f8_backing[0]
 undefined2 DAT_00087254;
-static undefined1 DAT_000870f0_backing[65536];
+/* Was `static undefined1 DAT_000870f0_backing[65536]` (oversized,
+   never populated) -- real per-step Y offset for the FLASK fill-level
+   animation sprite in `hud_vitals_bar_tick`/`FUN_0006ca4c` (the
+   health/mana flask bar update), read via explicit byte-scaled
+   pointer arithmetic (`&DAT_000870f0 + N*2`) at every call site, so
+   kept byte-typed here rather than converting to a natural short
+   array (would need editing 5 call sites for no behavioural gain).
+   Recovered via direct memory dump (Ghidra headless, `mem.getShort`):
+   14 real entries forming a smooth descending curve (liquid Y rises
+   as fill increases), byte-encoded little-endian below (all values
+   fit in one byte, high byte always 0):
+     [0]=156 [1]=152 [2]=150 [3]=148 [4]=146 [5]=144 [6]=142 [7]=141
+     [8]=140 [9]=139 [10]=137 [11]=135 [12]=133 [13]=131 [14..]=0
+   `DAT_000870f2` (see its own comment) is simply this same array's
+   real index [1]. */
+static undefined1 DAT_000870f0_backing[32] = {
+  156,0, 152,0, 150,0, 148,0, 146,0, 144,0, 142,0, 141,0,
+  140,0, 139,0, 137,0, 135,0, 133,0, 131,0, 0,0, 0,0,
+};
 #define DAT_000870f0 DAT_000870f0_backing[0]
-static undefined1 DAT_00087112_backing[65536];
+/* Was `static undefined1 DAT_00087112_backing[65536]` (oversized,
+   never populated) -- real per-step HEIGHT for the same flask
+   fill-level animation sprite (paired with DAT_000870f0's Y), read
+   the same byte-scaled way (`&DAT_00087112 + N*2`). Recovered the
+   same way: 13 real entries, a small rise-then-fall curve (the fill
+   bubble growing then settling), byte-encoded little-endian:
+     [0]=4 [1]=5 [2]=6 [3]=7 [4]=7 [5]=7 [6]=7 [7]=6
+     [8]=5 [9]=4 [10]=4 [11]=4 [12]=4 [13..]=0 */
+static undefined1 DAT_00087112_backing[32] = {
+  4,0, 5,0, 6,0, 7,0, 7,0, 7,0, 7,0, 6,0,
+  5,0, 4,0, 4,0, 4,0, 4,0, 0,0, 0,0, 0,0,
+};
 #define DAT_00087112 DAT_00087112_backing[0]
 /* .bss 0x23c240..0x23c24f: four short[2] rows of sprite handles for the
    HUD flask/vitals animation (hud_vitals_bar_tick / hud_damage_flash_tick), indexed
