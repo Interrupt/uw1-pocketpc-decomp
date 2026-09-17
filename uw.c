@@ -31252,8 +31252,20 @@ short param_6;
 
 {
   short sVar1;
-  
-  sVar1 = FUN_00040aa8();
+
+  /* Dropped argument (confirmed via disassembly of 0x40be0: `bl
+     0x40aa8` executes before this function's prologue ever touches
+     r0, so the real ARM code passes this function's own param_1
+     through to FUN_00040aa8 via register reuse -- same idiom already
+     fixed for the identical pair of calls in the sibling function
+     FUN_00040bc0, just missed here). Without it, sVar1 came from
+     whatever register was left over from an unrelated recent call,
+     resolving to a stale/wrong slot in the absolute-frame table
+     (DAT_0024e090) -- e.g. showing whatever sprite (a door, etc.) had
+     most recently been decoded into that slot, matching this
+     project's established "mode icon draws a door sprite" bug
+     pattern, just via a different dropped call site. */
+  sVar1 = FUN_00040aa8(param_1);
   /* DAT_0024e090 is an 8-byte-stride pointer table -- see its declaration
      comment; mirrors the iVar4+5 idiom in blit_object_sprite_by_frame. */
   {
