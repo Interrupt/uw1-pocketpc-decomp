@@ -29165,7 +29165,13 @@ void FUN_0003e44c()
   FUN_0003e2a4();
   if (DAT_000868d8 == 0) {
     if (g_cursor_mode != 0) {
-      FUN_0003f99c();
+      /* Dropped argument (confirmed via disassembly of 0x3e44c: r0
+         holds g_cursor_mode, untouched since the guard's own load,
+         right up to `bl 0x3f99c`) -- the real ARM code passes
+         g_cursor_mode through via register reuse. Without it, the
+         mode icon's initial highlight on entering the dungeon view
+         drew with whatever id happened to be left over in r0. */
+      FUN_0003f99c((int)g_cursor_mode);
     }
   }
   else {
@@ -44762,7 +44768,12 @@ void FUN_00056724()
   FUN_00041a18(0x20eb,s_optbtns_00086954,0);
   draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   if (0 < g_cursor_mode) {
-    FUN_0003f99c();
+    /* Dropped argument -- same idiom as the identical bug in
+       FUN_0003e44c right above this function's sibling call (see its
+       comment); confirmed via disassembly of 0x56724 the same way:
+       r0 holds g_cursor_mode, untouched from the guard's own load
+       through to `blgt 0x3f99c`. */
+    FUN_0003f99c((int)g_cursor_mode);
   }
   DAT_002046f8 = 1;
   FUN_000570b4();
