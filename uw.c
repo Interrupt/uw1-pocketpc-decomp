@@ -104,7 +104,7 @@ int DAT_00204848;
 // 0, paints as palette index 0 -- typically black), nonzero skips
 // byte==0 pixels for real transparency. Callers that want a transparent
 // blit set this to 1 immediately before the call and reset it to 0
-// right after (draw_sprite_by_id, FUN_0003f99c/FUN_0003fa1c, etc). Named
+// right after (draw_sprite_by_id, mode_icon_highlight_on/mode_icon_highlight_off, etc). Named
 // after root-causing the inventory-panel "black box" bug: redraw_hud_panels's
 // panels.GR background blit had a trailing literal `1` argument that
 // clearly intended transparency but never actually set this global,
@@ -2196,7 +2196,7 @@ static void (*const DAT_00085668_real_table[48])(void) = {
   (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))dungeon_view_anim_tick,
   0, 0, 0, 0,
   0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))movement_pacing_handler,
-  (void(*)(void))FUN_0003e4cc, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
+  (void(*)(void))sync_player_stats_to_hud, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
   /* mode 1 */
   0, (void(*)(void))enter_automap_screen, 0, 0,
   0, 0, 0, 0,
@@ -2411,14 +2411,14 @@ code *DAT_002020b8;
    by PTR_FUN_000858c8 (the very next declared symbol in this file) --
    a clean, unambiguous 8-short/8-short layout with no gap. These are the
    6 in-game HUD cursor-mode icon buttons' (Look/Use/Talk/etc, drawn by
-   FUN_0003f99c/FUN_0003fa1c via draw_sprite_by_id) screen positions;
+   mode_icon_highlight_on/mode_icon_highlight_off via draw_sprite_by_id) screen positions;
    only indices 0-5 are ever read (cursor_mode_button_click bounds-checks
    at 5), the remaining 2 slots are unused padding in the original data.
    Declaring these as plain zero-filled arrays (as a prior session had
    them) meant every highlight/unhighlight icon drew at (0,0) instead of
    its real button position -- part of the "door image on mode-icon
    click" bug (see cursor_mode_button_click's own comment for the other
-   half, a dropped FUN_0003fa1c argument). */
+   half, a dropped mode_icon_highlight_off argument). */
 static const unsigned short DAT_000858a8_real[8] = {8,8,6,6,7,8,0,0};
 #define DAT_000858a8 (*(undefined1 *)DAT_000858a8_real)
 static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
@@ -2502,7 +2502,7 @@ undefined1 DAT_0023ce71;
 
    It's a table of *pointer*-sized slots (each holds a resource buffer
    address, written by FUN_00041708/FUN_00041770 and read back by
-   FUN_000408fc/blit_object_sprite_by_frame/FUN_00040be0), but every access site strided
+   FUN_000408fc/blit_object_sprite_by_frame/sprite_list_flush_blit_raw), but every access site strided
    it by 4 bytes and read/wrote it as 'int'/'undefined4' -- correct on the
    original 32-bit binary where a pointer IS 4 bytes, truncating on this
    64-bit host. Widened to an 8-byte stride (buffer doubled to match) and
@@ -2655,7 +2655,7 @@ char s_flasks_000859f4[] = "flasks";
 /* Was `static undefined DAT_000859fc_backing[8192]` -- real bytes
    spell "lfti\0", matching LFTI.GR. See s_optb_000859ac's comment.
    This is the one loaded right after TMOBJ.GR -- the resource the
-   mode-icon highlight (FUN_0003f99c/FUN_0003fa1c) actually indexes
+   mode-icon highlight (mode_icon_highlight_on/mode_icon_highlight_off) actually indexes
    into. */
 char s_lfti_000859fc[] = "lfti";
 char s_tmobj_00085a04[] = "tmobj";
@@ -3156,7 +3156,7 @@ char s_named_00085d18[] = " named ";
    then silently stopped, no matter how many frames/inputs followed.
    Recovered the same way: read UU.exe's real .data bytes at 0x85728
    directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
-   movement_pacing_handler/FUN_0003e4cc/hud_panel_redraw_dispatch; mode 1 = 0x1000 = bit 12 =
+   movement_pacing_handler/sync_player_stats_to_hud/hud_panel_redraw_dispatch; mode 1 = 0x1000 = bit 12 =
    exit_automap_screen; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
    mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
    bytes immediately after are the next struct over (a `\DATA\lev.ark`
@@ -3513,7 +3513,7 @@ int DAT_002046fc;
      4  quit-game confirm    (FUN_00056838 draw / FUN_00056c88 click)
      5  torch brightness     (FUN_0005693c draw / FUN_00056a70 click)
      6  top-level menu list  (FUN_000567c0 draw / FUN_00056b48 click)
-   Index 7 is never dispatched (DAT_000868dc==7 is FUN_00056724's
+   Index 7 is never dispatched (DAT_000868dc==7 is close_ui_panel_return_to_game's
    "menu closing" sentinel, checked directly rather than redrawn) but
    both tables are sized 8 with a null-safe entry there for defense. */
 extern void FUN_000567c0(void);
@@ -4340,7 +4340,7 @@ static undefined DAT_000870cc_backing[8192];
    [0]=health [1]=mana. Read via byte-scaled pointer arithmetic at
    every call site (`&DAT_000870ec + iVar1` where iVar1 is already a
    pre-scaled byte offset of 0 or 2, or `&DAT_000870ec + iVar1*2` in
-   FUN_0006ca4c where iVar1 is a plain 0/1 element index) -- kept
+   hud_vitals_threshold_shake where iVar1 is a plain 0/1 element index) -- kept
    byte-typed here rather than a natural short array, matching every
    existing call site instead of needing them all rewritten.
    Recovered via direct memory dump (Ghidra headless, `mem.getShort`):
@@ -4580,7 +4580,7 @@ static short DAT_00087254_arr[2] = { 0x2019, 0x2032 };
 #define DAT_00087254 DAT_00087254_arr[0]
 /* Was `static undefined1 DAT_000870f0_backing[65536]` (oversized,
    never populated) -- real per-step Y offset for the FLASK fill-level
-   animation sprite in `hud_vitals_bar_tick`/`FUN_0006ca4c` (the
+   animation sprite in `hud_vitals_bar_tick`/`hud_vitals_threshold_shake` (the
    health/mana flask bar update), read via explicit byte-scaled
    pointer arithmetic (`&DAT_000870f0 + N*2`) at every call site, so
    kept byte-typed here rather than converting to a natural short
@@ -6075,7 +6075,14 @@ undefined2 * param_3;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_000125a8(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+// was FUN_000125a8 -- lowest-level raw (already-decoded, uncompressed)
+// sprite blit primitive: draws a pre-decoded pixel buffer (param_3,
+// the "absolute frame table" entry's payload, header already
+// skipped by the caller) at (param_1,param_2) sized (param_4,param_5)
+// with edge clipping against the framebuffer bounds. Used by
+// blit_object_sprite_by_frame's absolute-frame-table branch and by
+// sprite_list_flush_blit_raw.
+void blit_raw_sprite_clipped(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 short param_1;
 short param_2;
 /* Source-bitmap pointer -- was `int`, truncating the real `char *` the
@@ -6195,7 +6202,7 @@ short param_7;
       } while (iVar4 < iVar11);
     }
   }
-  debug_framebuffer_dump("FUN_000125a8");
+  debug_framebuffer_dump("blit_raw_sprite_clipped");
   return;
 }
 
@@ -17049,7 +17056,7 @@ undefined1 param_1;
           if (2 < (short)iVar11) {
             iVar11 = 2;
           }
-          FUN_0006cff4(7,3 - iVar11);
+          set_hud_status_value(7,3 - iVar11);
           uVar8 = DAT_00100624;
           cVar10 = DAT_001005dc;
         }
@@ -17360,10 +17367,10 @@ void FUN_000275e0()
 {
   DAT_0010062c = 0xfff6;
   DAT_00084f10 = 0xffff;
-  FUN_0006cff4(3,0);
+  set_hud_status_value(3,0);
   g_cursor_holding_state = g_cursor_holding_state + -4;
   FUN_00057cac(3);
-  FUN_0006cff4(8,4);
+  set_hud_status_value(8,4);
   DAT_001005ec = 0;
   return;
 }
@@ -17379,8 +17386,8 @@ void FUN_0002764c()
   if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
     uVar1 = 6;
   }
-  FUN_0006cff4(8,uVar1);
-  FUN_0006cff4(3,0);
+  set_hud_status_value(8,uVar1);
+  set_hud_status_value(3,0);
   return;
 }
 
@@ -17449,7 +17456,7 @@ LAB_00027754:
             if (DAT_0010062c < -9) {
               return;
             }
-            FUN_0006cff4(3,0);
+            set_hud_status_value(3,0);
             local_20[0] = Ordinal_2005(100,((int)(((uint)*(byte *)(pRecord + 5) -
                                                   (uint)*(byte *)(pRecord + 3)) * 0x10000) >> 0x10) *
                                            (uint)DAT_00100614);
@@ -17473,7 +17480,7 @@ LAB_00027754:
             if (-1 < DAT_00100618) {
               return;
             }
-            FUN_0006cff4(3,9);
+            set_hud_status_value(3,9);
             DAT_00100618 = 0;
             g_cursor_holding_state = g_cursor_holding_state + 4;
             FUN_00057c5c(0x1075);
@@ -17483,7 +17490,7 @@ LAB_00027754:
             if (DAT_0010062c < -4) {
               return;
             }
-            FUN_0006cff4(8,-1 - DAT_0010062c);
+            set_hud_status_value(8,-1 - DAT_0010062c);
             DAT_0010062c = 0xfffb;
             return;
           }
@@ -17505,7 +17512,7 @@ LAB_00027754:
               DAT_00100614 = 100;
             }
             sVar4 = Ordinal_2005(0xc,DAT_00100614);
-            FUN_0006cff4(3,sVar4 + 1);
+            set_hud_status_value(3,sVar4 + 1);
             iVar6 = (int)DAT_001005e8;
             DAT_001005e8 = (short)(iVar6 + -0x10);
           } while (0x10 < (iVar6 + -0x10) * 0x10000 >> 0x10);
@@ -17531,8 +17538,8 @@ LAB_00027754:
       DAT_0010062c = (short)(-1 - (uint)bVar1);
       iVar5 = Ordinal_2005(3,iVar5);
       DAT_00084f10 = (ushort)(byte)(&DAT_00084f0b)[iVar5];
-      FUN_0006cff4(8,-1 - (-1 - (uint)bVar1));
-      FUN_0006cff4(3,1);
+      set_hud_status_value(8,-1 - (-1 - (uint)bVar1));
+      set_hud_status_value(3,1);
       DAT_001005e8 = -1;
       DAT_00100614 = 0;
     }
@@ -17648,7 +17655,7 @@ ushort * param_1;
   int extraout_r1;
   
   if ((*param_1 & 0x1c0) == 0x40) {
-    FUN_0006cff4(4,2);
+    set_hud_status_value(4,2);
     FUN_000735b0(9);
     sVar1 = *(short *)(&DAT_001007f8 + ((byte)*param_1 & 0x3f) * 0x30);
     iVar2 = FUN_0006a058(2,(int)sVar1);
@@ -18003,7 +18010,7 @@ void FUN_000286cc()
       FUN_000570b4();
       DAT_0023bf0c = 0;
       FUN_000577f0();
-      FUN_0003fa1c(5);
+      mode_icon_highlight_off(5);
       g_cursor_mode = 0;
       FUN_00028c00(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
       change_game_mode(1);
@@ -27748,7 +27755,7 @@ void enter_dungeon_view()
   if (iVar3 == 0) {
     FUN_0003c3c8(0x300b);
   }
-  FUN_0003e44c();
+  enter_dungeon_view_hud_init();
   FUN_00049924(0x7dfe);
   FUN_000667cc();
   full_dungeon_redraw();
@@ -27810,9 +27817,9 @@ short param_1;
   DAT_0023bf0c = 0;
   FUN_000577f0();
   if (param_1 == 1) {
-    FUN_0006cff4(2,0);
+    set_hud_status_value(2,0);
     FUN_0006cb74();
-    FUN_0006ca4c(0);
+    hud_vitals_threshold_shake(0);
     message_scroll_print_wrapped(s_You_died_000857b8);
     FUN_00037c14(0x103);
     Ordinal_496(2000);
@@ -28202,7 +28209,7 @@ LAB_0003c780:
     FUN_00069424(0x40,(extraout_r1_03 & 0xff) + 0xf);
   }
   uVar2 = Ordinal_1053();
-  FUN_0006cff4(2,uVar2 & 0xf);
+  set_hud_status_value(2,uVar2 & 0xf);
   return;
 }
 
@@ -29037,7 +29044,7 @@ void FUN_0003def4()
     }
     uVar1 = 0;
   }
-  FUN_0006cff4(6,uVar1);
+  set_hud_status_value(6,uVar1);
   return;
 }
 
@@ -29133,7 +29140,7 @@ void FUN_0003e2a4()
 {
   DAT_000868d8 = 0;
   DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,1,cursor_mode_button_click);
-  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
+  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
   DAT_002020c8 = register_click_region(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
   DAT_002020bc = register_click_region(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
   DAT_0020209c = register_click_region(0x7a,0x97,0x98,0x88,0,1,FUN_0003df28);
@@ -29155,7 +29162,14 @@ void FUN_0003e404()
 
 
 
-void FUN_0003e44c()
+// was FUN_0003e44c -- per-frame(ish) HUD/gameplay-mode refresh, called
+// from enter_dungeon_view (chargen completion, returning from a menu,
+// etc.); re-establishes the mode-icon highlight if a mode is already
+// selected, then calls sync_player_stats_to_hud. Its first call
+// passes s_init_gamedisp_goes_000858e8 ("init_gamedisp goes..."), a
+// leftover original-build debug string strongly suggesting this
+// function's real name was closer to init_gamedisp.
+void enter_dungeon_view_hud_init()
 
 {
   FUN_0007ea34(s_init_gamedisp_goes_000858e8);
@@ -29171,20 +29185,24 @@ void FUN_0003e44c()
          g_cursor_mode through via register reuse. Without it, the
          mode icon's initial highlight on entering the dungeon view
          drew with whatever id happened to be left over in r0. */
-      FUN_0003f99c((int)g_cursor_mode);
+      mode_icon_highlight_on((int)g_cursor_mode);
     }
   }
   else {
     FUN_000564f8(1);
   }
-  FUN_0003e4cc();
+  sync_player_stats_to_hud();
   redraw_hud_panels();
   return;
 }
 
 
 
-void FUN_0003e4cc()
+// was FUN_0003e4cc -- reads the player object's current HP/MP/etc.
+// and pushes them into the HUD via set_hud_status_value, one call per
+// status slot (0=health, 1=mana, 2=hunger-ish, 4=poison flash, ...).
+// Called once per HUD refresh from enter_dungeon_view_hud_init.
+void sync_player_stats_to_hud()
 
 {
   int iVar1;
@@ -29193,15 +29211,15 @@ void FUN_0003e4cc()
   
   FUN_00027708(0);
   bVar2 = *(byte *)(g_player_object + 8);
-  FUN_0006cff4(0,bVar2);
+  set_hud_status_value(0,bVar2);
   if (((uint)DAT_001013a4 < (uint)*(byte *)(g_player_object + 0x11) * 4) ||
      ((bVar2 < 0x10 && (*(byte *)(g_player_object + 0x11) != 0)))) {
-    FUN_0006cff4(4,3);
+    set_hud_status_value(4,3);
   }
   *(undefined1 *)(g_player_object + 0x11) = 0;
-  FUN_0006cff4(1,*(undefined1 *)(DAT_00086df8 + 0x37));
+  set_hud_status_value(1,*(undefined1 *)(DAT_00086df8 + 0x37));
   if (DAT_00201b68 != 9) {
-    FUN_0006cff4(2,(ushort)(((int)(((*(byte *)(g_player_object + 0x18) & 0x1f) +
+    set_hud_status_value(2,(ushort)(((int)(((*(byte *)(g_player_object + 0x18) & 0x1f) +
                                    ((*(ushort *)(g_player_object + 2) & 0x380) >> 2)) * 0x10000) >>
                             0x10) + 8 >> 4) & 0xf);
   }
@@ -30123,7 +30141,14 @@ void inventory_panel_click_region()
 
 
 
-void FUN_0003f99c(param_1)
+// was FUN_0003f99c -- draws the "selected" state for mode icon
+// param_1 (1-based) by blitting LFTI.GR's per-icon highlight frame
+// (id (param_1-1)*-2+0x200b) at that icon's registered position
+// (DAT_000858a8/DAT_000858b8). Called both from
+// cursor_mode_button_click's own click handling and from
+// enter_dungeon_view_hud_init/close_ui_panel_return_to_game to
+// re-establish the highlight when a mode is already selected.
+void mode_icon_highlight_on(param_1)
 int param_1;
 
 {
@@ -30140,9 +30165,9 @@ int param_1;
      orr r0,r0,#0xb; sub r0,r0,r4,lsl #0x1`) that `(param_1-1)*-2 +
      0x200b` is exactly what the original compiled code computes --
      NOT a decompile artifact. The "door sprite" bug is NOT here; see
-     FUN_00040aa8/the resource loader instead. */
+     resolve_sprite_id_to_frame/the resource loader instead. */
   if (getenv("UW_DEBUG_MODEICON"))
-    fprintf(stderr, "[modeicon] FUN_0003f99c (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
+    fprintf(stderr, "[modeicon] mode_icon_highlight_on (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
             param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
@@ -30152,7 +30177,10 @@ int param_1;
 
 
 
-void FUN_0003fa1c(param_1)
+// was FUN_0003fa1c -- un-highlights mode icon param_1 (1-based),
+// mode_icon_highlight_on's counterpart: draws LFTI.GR's adjacent
+// "unselected" frame (id (0x1005-(param_1-1))*2) at the same position.
+void mode_icon_highlight_off(param_1)
 int param_1;
 
 {
@@ -30169,10 +30197,10 @@ int param_1;
      orr r0,r0,#0x5; sub r0,r0,r4; mov r0,r0,lsl #0x1`) that
      `(0x1005-(param_1-1))*2` is exactly what the original compiled
      code computes -- NOT a decompile artifact. Reverted an earlier
-     incorrect "fix" that dropped this doubling; see FUN_00040aa8/the
+     incorrect "fix" that dropped this doubling; see resolve_sprite_id_to_frame/the
      resource loader for the real "door sprite" bug instead. */
   if (getenv("UW_DEBUG_MODEICON"))
-    fprintf(stderr, "[modeicon] FUN_0003fa1c (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
+    fprintf(stderr, "[modeicon] mode_icon_highlight_off (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
             param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
@@ -30216,7 +30244,7 @@ short param_1;
       FUN_000564f8(1);
     }
     else {
-      FUN_0006cff4(8,6);
+      set_hud_status_value(8,6);
       uVar6 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfffd;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar6;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar6 >> 8);
@@ -30227,22 +30255,22 @@ short param_1;
       iVar1 = iVar7 >> 0x10;
       if (iVar1 == g_cursor_mode) {
         /* Dropped argument (Ghidra emitted a bare call despite
-           FUN_0003fa1c's own body using param_1 throughout) -- confirmed
+           mode_icon_highlight_off's own body using param_1 throughout) -- confirmed
            by this same function's sibling call sites elsewhere in the
-           file (FUN_0003fa1c(2), FUN_0003fa1c(5)) using the correct
-           explicit-argument convention. FUN_0003fa1c un-highlights
+           file (mode_icon_highlight_off(2), mode_icon_highlight_off(5)) using the correct
+           explicit-argument convention. mode_icon_highlight_off un-highlights
            whichever mode icon is currently selected, so it needs the
            OLD g_cursor_mode value (read here, before it's overwritten
            below) -- this is the exact "door image" bug: without it, the
            call ran on register-leftover garbage, resolving to a wild,
            essentially random absolute sprite frame instead of the
            intended icon. */
-        FUN_0003fa1c(g_cursor_mode);
+        mode_icon_highlight_off(g_cursor_mode);
         g_cursor_mode = 0;
       }
       else {
         if (g_cursor_mode != 0) {
-          FUN_0003fa1c(g_cursor_mode);
+          mode_icon_highlight_off(g_cursor_mode);
         }
         g_cursor_mode = (short)((uint)iVar7 >> 0x10);
         if (getenv("UW_DEBUG_MODEBTN"))
@@ -30252,8 +30280,8 @@ short param_1;
             uVar2 = *(undefined2 *)(DAT_00086df8 + 0x5f);
             *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar2 | 2;
             *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar2 >> 8);
-            FUN_0006cff4(8,4);
-            FUN_0003f99c((int)g_cursor_mode);
+            set_hud_status_value(8,4);
+            mode_icon_highlight_on((int)g_cursor_mode);
             bVar3 = FUN_00072b2c();
             if ((bVar3 < 5) || (bVar3 = FUN_00072b2c(), 7 < bVar3)) {
               FUN_000735b0(8);
@@ -30264,7 +30292,7 @@ short param_1;
           }
         }
         else {
-          FUN_0003f99c(iVar1);
+          mode_icon_highlight_on(iVar1);
         }
       }
       if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar4 = FUN_00072b2c(), cVar4 == '\b')) {
@@ -30281,7 +30309,13 @@ short param_1;
 
 
 
-void FUN_0003fd14(param_1)
+// was FUN_0003fd14 -- registered over the same mode-icon-bar click
+// rect as cursor_mode_button_click but under a different active-mask
+// bit (4, not 1), so it's live in a different input context. Near-
+// identical body, but only lets the click force-select mode 3 (any
+// other resolved index besides toggling the current mode back off is
+// ignored) -- a restricted variant of the normal click handler.
+void cursor_mode_button_click_restricted(param_1)
 short param_1;
 
 {
@@ -30309,7 +30343,7 @@ short param_1;
       FUN_000564f8(1);
     }
     else {
-      FUN_0006cff4(8,6);
+      set_hud_status_value(8,6);
       uVar4 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfffd;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar4;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar4 >> 8);
@@ -30321,15 +30355,15 @@ short param_1;
       if (iVar1 == g_cursor_mode) {
         /* Same dropped-argument bug as cursor_mode_button_click's own
            two identical sites above -- see that comment. */
-        FUN_0003fa1c(g_cursor_mode);
+        mode_icon_highlight_off(g_cursor_mode);
         g_cursor_mode = 0;
       }
       else if (iVar1 == 3) {
         if (g_cursor_mode != 0) {
-          FUN_0003fa1c(g_cursor_mode);
+          mode_icon_highlight_off(g_cursor_mode);
         }
         g_cursor_mode = (short)((uint)iVar5 >> 0x10);
-        FUN_0003f99c(3);
+        mode_icon_highlight_on(3);
       }
       if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar2 = FUN_00072b2c(), cVar2 == '\b')) {
         FUN_000735c0();
@@ -30363,14 +30397,14 @@ void ready_weapon()
     }
     if (g_cursor_mode != 0) {
       /* Same dropped-argument bug as cursor_mode_button_click's sites. */
-      FUN_0003fa1c(g_cursor_mode);
+      mode_icon_highlight_off(g_cursor_mode);
     }
     /* Was `g_cursor_mode = 2` -- readying the weapon-hand item is
        exactly "enter combat stance", so the cursor mode it selects
        should be 5 (Attack), the one FUN_0003f420 dispatches a 3D-view
        right-click to interact_attack for -- not 2 (Converse, table[1],
        which never touches combat at all; confirmed by reading its own
-       body). Whichever mode this used to be, FUN_0003f99c(g_cursor_mode)
+       body). Whichever mode this used to be, mode_icon_highlight_on(g_cursor_mode)
        a few lines down highlights whatever icon g_cursor_mode names --
        so this alone was drawing the WRONG icon (mode 2's) every time a
        weapon was readied, and left right-clicking dispatch to
@@ -30399,8 +30433,8 @@ void ready_weapon()
        overlay once the lower animation finishes, matching "disabled
        when you leave combat mode, but with an animation delay". */
     g_weapon_overlay_enabled = 1;
-    FUN_0006cff4(8,4);
-    FUN_0003f99c((int)g_cursor_mode);
+    set_hud_status_value(8,4);
+    mode_icon_highlight_on((int)g_cursor_mode);
     bVar2 = FUN_00072b2c();
     if ((4 < bVar2) && (bVar2 = FUN_00072b2c(), bVar2 < 8)) {
       return;
@@ -30427,16 +30461,16 @@ void unready_weapon()
   uint uVar1;
 
   if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) {
-    FUN_0006cff4(8,6);
+    set_hud_status_value(8,6);
     uVar1 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfffd;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar1 >> 8);
     if (DAT_000868d8 == 0) {
-      /* Was a hardcoded `FUN_0003fa1c(2)` -- un-highlight needs to name
+      /* Was a hardcoded `mode_icon_highlight_off(2)` -- un-highlight needs to name
          whichever mode ready_weapon actually highlighted (5, Attack,
          see its own comment), not the old mode-2 value this was
          presumably copied from. */
-      FUN_0003fa1c(5);
+      mode_icon_highlight_off(5);
     }
     g_cursor_mode = 0;
     FUN_00027694();
@@ -30864,11 +30898,11 @@ short param_5;
 
 
 /* param_1 = object sprite id, param_2 = shade -- both were dropped by
-   Ghidra at the emit_tile_objects call site AND on the FUN_00040aa8 /
+   Ghidra at the emit_tile_objects call site AND on the resolve_sprite_id_to_frame /
    FUN_000408fc calls below, so the sprite loader ran with a garbage id
    and FUN_000408fc handed back its zeroed dummy glyph -> every object
    billboard decoded to a 0x0 texture (invisible). Forward the id, and
-   resolve it through FUN_00040aa8 the way draw_sprite_by_id does. */
+   resolve it through resolve_sprite_id_to_frame the way draw_sprite_by_id does. */
 undefined4 FUN_00040770(param_1,param_2)
 short param_1;
 uint param_2;
@@ -30884,22 +30918,22 @@ uint param_2;
   (void)param_2;
   if (param_1 < 0) {
     /* Escape hatch: a negative param_1 names an ABSOLUTE frame directly
-       (-param_1), bypassing FUN_00040aa8's id-range resolution entirely.
+       (-param_1), bypassing resolve_sprite_id_to_frame's id-range resolution entirely.
        Needed for TMOBJ signs (emit_tile_objects's class-2 branch):
-       FUN_00040aa8's ">= 0x2000 -> DAT_00202738 + id - 0x2000" TMOBJ
+       resolve_sprite_id_to_frame's ">= 0x2000 -> DAT_00202738 + id - 0x2000" TMOBJ
        convention assumes DAT_00202738 is TMOBJ's own starting base, but
        it's actually snapshotted right AFTER TMOBJ's own
        FUN_00041910(s_tmobj) call finishes -- confirmed by instrumenting
        the loader directly (DAT_00202744 went 643 -> 681 across that one
        call, so TMOBJ's real 38 frames are absolute 643-680, and
        DAT_00202738=681 is the NEXT resource's base). No non-negative
-       encoding through FUN_00040aa8's existing branches can reach frames
+       encoding through resolve_sprite_id_to_frame's existing branches can reach frames
        *before* DAT_00202738, so bypass it here instead of reworking the
        shared id convention every other caller (OBJECTS/ANIMO ids) relies
        on. */
     resolved = -(int)param_1;
   } else {
-    resolved = FUN_00040aa8(param_1);
+    resolved = resolve_sprite_id_to_frame(param_1);
   }
   pcVar3 = (char *)FUN_000408fc(resolved);
   bVar1 = pcVar3[1];
@@ -31111,7 +31145,7 @@ undefined4 param_3;
     }
   }
   else {
-    FUN_000125a8(param_2,param_3,iVar4 + 5,*(undefined1 *)(iVar4 + 2),*(undefined1 *)(iVar4 + 1),0,0
+    blit_raw_sprite_clipped(param_2,param_3,iVar4 + 5,*(undefined1 *)(iVar4 + 2),*(undefined1 *)(iVar4 + 1),0,0
                  ,0);
   }
   return;
@@ -31148,7 +31182,15 @@ char * param_1;
 
 
 
-uint FUN_00040aa8(param_1)
+// was FUN_00040aa8 -- the central symbolic-id -> absolute-frame
+// resolver used throughout the HUD/object draw paths: id<0x1000 is
+// already an absolute OBJECTS.GR frame, 0x1000<=id<0x2000 resolves
+// via DAT_00202730 (BUTTONS.GR's base), id>=0x2000 resolves via
+// DAT_00202738 (LFTI's base, i.e. "whatever preloaded resource comes
+// right after TMOBJ.GR" -- see that global's own comment). Same
+// formula this whole session's HUD work reconstructed independently
+// as "resolved = base + (id - range_start)".
+uint resolve_sprite_id_to_frame(param_1)
 int param_1;
 
 {
@@ -31196,7 +31238,7 @@ short param_5;
     bVar1 = true;
     g_blit_transparent_mode = 1;
   }
-  uVar2 = FUN_00040aa8(param_1);
+  uVar2 = resolve_sprite_id_to_frame(param_1);
   blit_object_sprite_by_frame(uVar2,param_2,param_3,param_4,param_5);
   if (bVar1) {
     g_blit_transparent_mode = 0;
@@ -31220,7 +31262,7 @@ undefined4 param_3;
   uint resolved;
 
   /* Dropped arguments (2 calls) -- same idiom as the identical
-     `resolved = FUN_00040aa8(param_1); FUN_000408fc(resolved);` pair
+     `resolved = resolve_sprite_id_to_frame(param_1); FUN_000408fc(resolved);` pair
      used correctly elsewhere in this file (see e.g. the call site
      right above this function). Both calls here ran bare, so the
      resolved icon graphic came from whatever register happened to be
@@ -31232,7 +31274,7 @@ undefined4 param_3;
      between two stale states frame to frame. Confirmed live: this
      produced a real 2-frame-period flicker in exactly that HUD icon
      area during a held wind-up. */
-  resolved = FUN_00040aa8(param_1);
+  resolved = resolve_sprite_id_to_frame(param_1);
   pcVar3 = (char *)FUN_000408fc(resolved);
   cVar1 = pcVar3[1];
   cVar2 = pcVar3[2];
@@ -31248,7 +31290,13 @@ undefined4 param_3;
 
 
 
-void FUN_00040be0(param_1,param_2,param_3,param_4,param_5,param_6)
+// was FUN_00040be0 -- the sprite-list compositor flush loop's second
+// draw path ("path=FUN_00040be0" in UW_DIAG_SPRLIST output, taken for
+// entries with puVar4[5]!=0), a sibling of draw_sprite_by_id: resolves
+// param_1 via resolve_sprite_id_to_frame then blits straight through
+// blit_raw_sprite_clipped, skipping draw_sprite_by_id's own id-range
+// transparent-mode toggle.
+void sprite_list_flush_blit_raw(param_1,param_2,param_3,param_4,param_5,param_6)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -31262,7 +31310,7 @@ short param_6;
   /* Dropped argument (confirmed via disassembly of 0x40be0: `bl
      0x40aa8` executes before this function's prologue ever touches
      r0, so the real ARM code passes this function's own param_1
-     through to FUN_00040aa8 via register reuse -- same idiom already
+     through to resolve_sprite_id_to_frame via register reuse -- same idiom already
      fixed for the identical pair of calls in the sibling function
      FUN_00040bc0, just missed here). Without it, sVar1 came from
      whatever register was left over from an unrelated recent call,
@@ -31271,14 +31319,14 @@ short param_6;
      most recently been decoded into that slot, matching this
      project's established "mode icon draws a door sprite" bug
      pattern, just via a different dropped call site. */
-  sVar1 = FUN_00040aa8(param_1);
+  sVar1 = resolve_sprite_id_to_frame(param_1);
   /* DAT_0024e090 is an 8-byte-stride pointer table -- see its declaration
      comment; mirrors the iVar4+5 idiom in blit_object_sprite_by_frame. */
   {
     static char dummy_sprite[8];
     char *spr = *(char **)(&DAT_0024e090 + sVar1 * 8);
     if (spr == (char *)0x0) spr = dummy_sprite;  /* unregistered slot -- see blit_object_sprite_by_frame */
-    FUN_000125a8(param_2,param_3,spr + 5,
+    blit_raw_sprite_clipped(param_2,param_3,spr + 5,
                  ((int)param_4 + (int)param_6) * 0x10000 >> 0x10,param_5,0,param_6,1);
   }
   return;
@@ -33040,7 +33088,7 @@ short param_1;
   uVar3 = *puVar7;
   if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
     if ((uVar3 & 0xf) == 0xf) {
-      FUN_0006cff4(6,1);
+      set_hud_status_value(6,1);
     }
     else {
       if (g_open_container_list == (undefined4 *)0x0) {
@@ -44696,7 +44744,7 @@ LAB_00056638:
             bVar5 = sVar1 == 0x20;
             goto LAB_0005659c;
           }
-          FUN_00056724();
+          close_ui_panel_return_to_game();
         }
       }
     }
@@ -44759,7 +44807,12 @@ int param_2;
 
 
 
-void FUN_00056724()
+// was FUN_00056724 -- closes whatever UI panel/popup is currently
+// open (DAT_000868d8 = 0) and redraws the icon-bar's "options button"
+// background (OPTBTNS.GR), re-establishing the mode-icon highlight if
+// a mode is already selected. Called on Escape and other panel-close
+// paths.
+void close_ui_panel_return_to_game()
 
 {
   FUN_00057118();
@@ -44769,11 +44822,11 @@ void FUN_00056724()
   draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   if (0 < g_cursor_mode) {
     /* Dropped argument -- same idiom as the identical bug in
-       FUN_0003e44c right above this function's sibling call (see its
+       enter_dungeon_view_hud_init right above this function's sibling call (see its
        comment); confirmed via disassembly of 0x56724 the same way:
        r0 holds g_cursor_mode, untouched from the guard's own load
        through to `blgt 0x3f99c`. */
-    FUN_0003f99c((int)g_cursor_mode);
+    mode_icon_highlight_on((int)g_cursor_mode);
   }
   DAT_002046f8 = 1;
   FUN_000570b4();
@@ -44913,7 +44966,7 @@ LAB_000569ec:
     }
   }
   else {
-    FUN_00056724();
+    close_ui_panel_return_to_game();
   }
   return;
 }
@@ -44942,7 +44995,7 @@ LAB_00056a44:
     }
   }
   else {
-    FUN_00056724();
+    close_ui_panel_return_to_game();
   }
   return;
 }
@@ -44973,7 +45026,7 @@ int param_1;
       FUN_00056cc8(6);
     }
     else {
-      FUN_00056724();
+      close_ui_panel_return_to_game();
     }
   }
   return;
@@ -44993,7 +45046,7 @@ short param_1;
   }
   else {
     if (param_1 == 1) {
-      FUN_00056724();
+      close_ui_panel_return_to_game();
       return;
     }
     if (param_1 == 2) {
@@ -45060,7 +45113,7 @@ int param_1;
         unready_weapon();
       }
     }
-    FUN_00056724();
+    close_ui_panel_return_to_game();
   }
   return;
 }
@@ -45080,7 +45133,7 @@ short param_1;
     FUN_0003bc08(0);
     FUN_00057118();
   }
-  FUN_00056724();
+  close_ui_panel_return_to_game();
   return;
 }
 
@@ -45927,12 +45980,12 @@ undefined4 param_1;
 
 {
   /* FUN_000408fc's argument is dropped by Ghidra at this call site;
-     forwarding param_1 matches the FUN_00040aa8(param_1) call right
+     forwarding param_1 matches the resolve_sprite_id_to_frame(param_1) call right
      above it and FUN_000408fc's own DAT_0024e090-indexed-by-id shape. */
   char *iVar1;
 
   FUN_00056fe8();
-  FUN_00040aa8(param_1);
+  resolve_sprite_id_to_frame(param_1);
   iVar1 = FUN_000408fc(param_1);
   DAT_00204784 = (ushort)*(byte *)(iVar1 + 1);
   DAT_002047a4 = (ushort)*(byte *)(iVar1 + 2);
@@ -52279,7 +52332,7 @@ LAB_00061d34:
        object type 0x166) in this exact (class 2, id&0x30 != 0) branch.
        Route the real absolute TMOBJ frame through FUN_00040770's
        negative-param_1 "direct absolute frame" escape hatch (see its own
-       comment -- FUN_00040aa8's normal id-range convention can't reach
+       comment -- resolve_sprite_id_to_frame's normal id-range convention can't reach
        frames before DAT_00202738 at all) into the same real, working
        sprite-decode + mesh-quad path class 0 uses (proven correct for
        the sack etc. this session) instead of emit_object_billboard, by
@@ -54760,7 +54813,7 @@ void FUN_00066e90()
   register_click_region(0x52,0x30,0x88,10,4,4,FUN_0001baa0);
   register_click_region(0x8b,0x30,0xc1,10,4,4,FUN_0001b89c);
   register_click_region(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
-  register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
+  register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
   register_key_binding(0x286,0,0x1b,FUN_000679f4);
   register_key_binding(0x30,0,0x1b,FUN_00067950);
   return;
@@ -57493,7 +57546,7 @@ undefined4 param_2;
     else {
       FUN_0006e89c();
       iVar2 = 2;
-      FUN_0003e4cc();
+      sync_player_stats_to_hud();
       redraw_hud_panels();
       FUN_0003dca4(0xffffffff);
       DAT_000858a0 = 1;
@@ -57986,7 +58039,12 @@ int param_3;
 
 
 
-void FUN_0006ca4c(param_1)
+// was FUN_0006ca4c -- brief "shake" animation played on a flask's
+// shared decoration slot ((&DAT_0023c224)[iVar1]) when
+// hud_vitals_bar_tick's health-poisoned or mana threshold check
+// crosses over; param_1 selects health(0)/mana(1) and picks which of
+// the 3 literal id ranges (0x200c/0x203e/0x2025) to animate through.
+void hud_vitals_threshold_shake(param_1)
 short param_1;
 
 {
@@ -58126,7 +58184,7 @@ void redraw_hud_panels()
   }
   iVar3 = 0;
   do {
-    FUN_0006ca4c(iVar3);
+    hud_vitals_threshold_shake(iVar3);
     FUN_00076390((int)(short)(&DAT_0023c230)[iVar3],(&DAT_000871d4)[iVar3]);
     FUN_00076390((int)(short)(&DAT_0023c234)[iVar3],(&DAT_000871d8)[iVar3]);
     iVar2 = 0x12;
@@ -58145,8 +58203,8 @@ void redraw_hud_panels()
      definition in graphics.c: g_blit_transparent_mode==0 draws every source byte
      opaquely via the palette, nonzero skips byte==0 as the transparent
      key). Every OTHER caller in this file that wants transparency sets
-     this global around the call (draw_sprite_by_id, FUN_0003f99c,
-     FUN_0003fa1c all do `g_blit_transparent_mode = 1; ...; g_blit_transparent_mode = 0;`) --
+     this global around the call (draw_sprite_by_id, mode_icon_highlight_on,
+     mode_icon_highlight_off all do `g_blit_transparent_mode = 1; ...; g_blit_transparent_mode = 0;`) --
      this call's own trailing literal `1` argument clearly intended the
      same thing (it's not a real parameter bitmap_blit_to_framebuffer
      reads at all, just a leftover Ghidra also emitted at the other
@@ -58186,7 +58244,14 @@ void thunk_FUN_0006edb8()
 
 
 
-void FUN_0006cff4(param_1,param_2)
+// was FUN_0006cff4 -- generic "set HUD status slot param_1 to
+// param_2" dispatcher: negative param_1 writes a raw byte value
+// directly, 0/1 compute a health/mana fill tier (0-12) from the
+// player object via Ordinal_2005 (see hud_vitals_bar_tick), and other
+// small param_1 values (2,3,4,6,7,8 -- seen at this session's various
+// call sites) drive other HUD indicators (compass heading, action-
+// animation frame, poison flash, etc.) each with their own encoding.
+void set_hud_status_value(param_1,param_2)
 byte param_1;
 ushort param_2;
 
@@ -58407,7 +58472,7 @@ short param_1;
       local_2c = 0x2019;
       local_2e = 0x2024;
       if ((0x204a < DAT_00087254) && (DAT_00087254 < 0x2057)) {
-        FUN_0006ca4c(0);
+        hud_vitals_threshold_shake(0);
         DAT_00087254 = DAT_00087254 + -0x32;
       }
     }
@@ -58416,7 +58481,7 @@ short param_1;
       local_2c = 0x204b;
       local_2e = 0x2056;
       if ((0x2018 < DAT_00087254) && (DAT_00087254 < 0x2025)) {
-        FUN_0006ca4c(0);
+        hud_vitals_threshold_shake(0);
         DAT_00087254 = DAT_00087254 + 0x32;
       }
     }
@@ -59031,7 +59096,7 @@ short param_1;
 
 // was FUN_0006e648 -- shared player-action animation state machine
 // (weapon raise/ready, among others): reads the requested action type
-// (DAT_0023c120, set via FUN_0006cff4(8,N)), drives the current-action
+// (DAT_0023c120, set via set_hud_status_value(8,N)), drives the current-action
 // state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4),
 // and calls load_weapon_swing_sprites once a weapon-category change
 // needs new sprites. Only reachable via hud_panel_redraw_dispatch's
@@ -63984,7 +64049,7 @@ void FUN_00076508()
                         (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                         (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                         (int)(ushort)puVar4[3], (int)(ushort)puVar4[4],
-                        puVar4[5] == 0 ? "draw_sprite_by_id" : "FUN_00040be0");
+                        puVar4[5] == 0 ? "draw_sprite_by_id" : "sprite_list_flush_blit_raw");
               if (puVar4[5] == 0) {
                 g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
@@ -64005,7 +64070,7 @@ void FUN_00076508()
               else {
                 g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
-                  FUN_00040be0((int)(short)puVar4[7],
+                  sprite_list_flush_blit_raw((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                                (int)(short)puVar4[4],
@@ -64013,7 +64078,7 @@ void FUN_00076508()
                   ;
                 }
                 else {
-                  FUN_00040be0((int)(short)puVar4[7],
+                  sprite_list_flush_blit_raw((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                                (int)(short)puVar4[4],
@@ -69376,7 +69441,7 @@ int param_1;
   rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 4),*(undefined2 *)(DAT_00250704 + 10),
                *(undefined2 *)(DAT_00250704 + 6),param_1 + 1);
   if (DAT_00250704 == &DAT_00087960) {
-    FUN_0006cff4(4,1);
+    set_hud_status_value(4,1);
     msg_scroll_draw_edges();
   }
   else {
@@ -69838,7 +69903,7 @@ int param_1;
   *(undefined1 *)(DAT_00250704 + 10) = 0;
   *(undefined1 *)((char *)DAT_00250704 + 0x15) = 0;
   if (DAT_00250704 == (undefined2 *)&DAT_00087960) {
-    FUN_0006cff4(4,1);
+    set_hud_status_value(4,1);
     iVar2 = msg_scroll_draw_edges();
   }
   else {
