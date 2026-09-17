@@ -32155,7 +32155,27 @@ void load_door_frames()
   uVar2 = DAT_00202748;
   uVar1 = DAT_00202744;
   iVar3 = 0;
-  DAT_00202744 = DAT_00202734 + 0x30;
+  /* Was `DAT_00202734 + 0x30` -- confirmed via real ARM disassembly
+     (0x41dcc: `add r0,r0,#0x30`) that this is genuinely what the
+     original binary computes, not a decompiler artifact. With
+     DAT_00202734==643 (TMOBJ's own start, see its declaration
+     comment), that lands this loop's 6 scratch slots at absolute
+     691-696 -- overlapping LFTI's own last 2 entries (691-692) AND
+     FLASKS' first 4 (693-696), which have already been correctly
+     registered by the time a door is first loaded. Since
+     DAT_00202744 gets restored right after this loop, these 6 slots
+     are only ever meant to be scratch space, but the original game's
+     chosen offset was too small to clear the whole HUD-icon preload
+     range (LFTI/FLASKS/COMPASS/DRAGONS/INV/POWER/EYES/CHAINS/SPELLS/
+     SCRLEDGE/OPTB, ending at 919) -- a genuine bug in the shipped
+     1994 binary, confirmed live: it silently overwrites the flask's
+     own first 4 animation frames with door-sized (32x64) data,
+     visible as a spurious door image under the health/mana flasks.
+     Deliberately deviating from the original's exact (buggy) value
+     here per user direction: picked a fixed scratch base far past
+     every real resource range this project has identified, so this
+     temporary borrow can never collide with anything real again. */
+  DAT_00202744 = 60000;
   do {
     /* Was passed `0` for the post-process/registration callback (param_5)
        -- with no registrar, even a successful allocate+read never stores
@@ -51589,7 +51609,11 @@ ushort * param_1;
          behavior) if there's no leaf for this id (open doors). */
       void *_leaf_tex = 0;
       if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
-        int _sprite_frame = DAT_00202734 + (uVar27 & 7) + 0x30;
+        /* Was `DAT_00202734 + (uVar27 & 7) + 0x30` -- matches
+           load_door_frames's own (fixed) scratch base; see that
+           function's comment for why the original binary's formula
+           collided with the HUD icon preload range. */
+        int _sprite_frame = 60000 + (uVar27 & 7);
         FUN_00040770((short)_sprite_frame, 0);
         if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) _leaf_tex = g_tile_texptr_emit[DAT_0023b83c];
         if (getenv("UW_DEBUG_MODEL")) {
@@ -52155,15 +52179,17 @@ LAB_00061d34:
          nothing ever reached a real screen pixel (confirmed: a door
          6 tiles from spawn rendered as a plain, empty corridor).
          Route the door's own already-resolved absolute OBJECTS.GR
-         frame (DAT_00202734 + (type&7) + 0x30, confirmed live via
-         UW_DEBUG_DOOR to match emit_anim_object_frames's own
-         computation) through the same real, working sprite-decode +
-         mesh-quad path class 0 uses, exactly like the TMOBJ sign fix
+         frame through the same real, working sprite-decode + mesh-
+         quad path class 0 uses, exactly like the TMOBJ sign fix
          a few lines below -- this only handles the door "leaf"
          sprite itself, not emit_anim_object_frames's separate static
          frame/jamb overlay (uVar10==0 iteration) or its open-door
-         swing animation (param_1==6 case); those are still open. */
-      uVar27 = DAT_00202734 + (uVar27 & 7) + 0x30;
+         swing animation (param_1==6 case); those are still open.
+         Formula was `DAT_00202734 + (type&7) + 0x30` -- matches
+         load_door_frames's own (fixed) scratch base; see that
+         function's comment for why the original binary's formula
+         collided with the HUD icon preload range. */
+      uVar27 = 60000 + (uVar27 & 7);
       /* >>6, not >>7 -- >>7 is what emit_anim_object_frames itself reads
          here, but that's fed to emit_object_billboard's own catalog-
          driven rotation math, not a plain compass heading. >>6&7 matches
@@ -53313,7 +53339,11 @@ LAB_00064cdc:
             uVar11 = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
           }
           else {
-            uVar11 = DAT_00202734 + param_1 + 0x30;
+            /* Was `DAT_00202734 + param_1 + 0x30` -- matches
+               load_door_frames's own (fixed) scratch base; see that
+               function's comment for why the original binary's
+               formula collided with the HUD icon preload range. */
+            uVar11 = 60000 + param_1;
             uVar9 = 0xe;
           }
           if (getenv("UW_DEBUG_DOOR"))
