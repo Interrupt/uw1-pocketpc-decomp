@@ -4690,8 +4690,32 @@ static char PTR_DAT_000871a8_arr[16] = {14,0, 16,0, 23,0, 14,0, 16,0, 23,0, 0,0,
 #define DAT_00087188 DAT_00087188_arr[0]
 #define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
 #define PTR_DAT_000871a8 PTR_DAT_000871a8_arr[0]
-static undefined1 DAT_000871b8_backing[65536];
-#define DAT_000871b8 DAT_000871b8_backing[0]
+/* Was a 64KB never-populated scratch buffer -- same "oversized
+   placeholder" pattern as most of this file's other unrecovered .data
+   gaps, just missed in the earlier pass that fixed the sibling
+   DAT_00087178/DAT_00087188/PTR_DAT_00087198/PTR_DAT_000871a8 rect
+   table right above (they're read/write neighbors in
+   hud_dragon_reaction_tick, but this one's own comment never got
+   written, so it stayed zero-filled while the others got fixed).
+   `hud_dragon_reaction_tick` reads this as `*(short *)(&DAT_000871b8 +
+   (iVar6*7+iVar5)*2)` -- iVar6=0/1 left/right dragon, iVar5=DAT_0023c250
+   cycling 0-6 -- to pick the dragon WING sub-sprite's frame id for each
+   step of its flap animation. With this at 0 the id resolved through
+   resolve_sprite_id_to_frame's `id<0x1000` branch as an absolute
+   OBJECTS.GR frame instead of the intended LFTI.GR-relative id,
+   drawing whatever object happens to sit at that low absolute frame
+   index (confirmed live: a red-key-shaped inventory item sprite,
+   reported by the user, instead of the dragon wing). Recovered the
+   real values the same way as the rect table (Ghidra headless,
+   mem.getShort at 0x871b8): 7 frames per side, left dragon ramping
+   0x207b->0x207e and back, right dragon 0x208d->0x2090 and back --
+   matches the ramp-up/ramp-down flap shape DAT_0023c250's own 0-6
+   cycling implies. */
+static const unsigned short DAT_000871b8_arr[14] = {
+  0x207b, 0x207c, 0x207d, 0x207e, 0x207d, 0x207c, 0x207b,
+  0x208d, 0x208e, 0x208f, 0x2090, 0x208f, 0x208e, 0x208d,
+};
+#define DAT_000871b8 (*(undefined1 *)DAT_000871b8_arr)
 undefined DAT_0023c124;
 short DAT_0023c254;
 short DAT_00087258;
