@@ -42448,7 +42448,22 @@ byte param_7;
         }
         if (-1 < sVar7) {
           puVar4 = (ushort *)resolve_object_link(&DAT_00202c3a + sVar7 * 6);
-          if (((&DAT_00202c93)[(*puVar4 & 0x1ff) * 0xd] & 2) == 0) {
+          /* Was an unguarded `*puVar4` -- resolve_object_link legitimately
+             returns NULL when the candidate slot (&DAT_00202c3a +
+             sVar7*6) has no object linked there at all, same class as
+             FUN_00080ed4's own already-fixed missing NULL guard
+             (swinging at empty air/a wall). Confirmed live: this
+             crashed 100% of the time emptying the starting-room sack's
+             contents via Use mode -- empty_container_into_world's
+             randomized scatter (find_object_placement) lands an item
+             on a tile whose best-height candidate slot (sVar7, chosen
+             just above) has no object registered, and this was the
+             first path to ever dereference that NULL. No object linked
+             here means there's nothing to check the "blocks passage"
+             flag on, so treat it as NOT blocking (skip the `return 0`)
+             rather than crash. */
+          if ((puVar4 != (ushort *)0x0) &&
+             (((&DAT_00202c93)[(*puVar4 & 0x1ff) * 0xd] & 2) == 0)) {
             DAT_00202c6c = (undefined2 *)uVar2;
             return 0;
           }
