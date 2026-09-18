@@ -42548,8 +42548,6 @@ short param_5;
 {
   ushort uVar1;
   undefined4 uVar2;
-  short extraout_r1;
-  short extraout_r1_00;
   byte bVar3;
   uint uVar4;
   int iVar5;
@@ -42562,12 +42560,26 @@ short param_5;
   while( true ) {
     if ((bVar3 != 0) || (uVar4 = param_2, uVar6 = param_3, DAT_00202c84 == 0)) {
       iVar5 = (int)(short)(param_5 * 2 + 1);
+      /* Was `Ordinal_2005(iVar5,uVar2); ... (int)extraout_r1 ...` (twice)
+         -- bare calls whose result was read back via Ghidra's
+         extraout_r1 idiom, always uninitialized garbage on this host
+         (there's no way to read a second register out of a normal C
+         call). Ordinal_2005 is COREDLL's div/mod ordinal
+         (divisor,dividend): the quotient is its real C return value,
+         but this caller wants the REMAINDER -- confirmed by
+         ordinal_stubs.c's own comment on Ordinal_2005 documenting
+         exactly this "extraout_r1 reads want the remainder" idiom.
+         Compute it directly instead of reading a nonexistent second
+         return value: this crashed 100% of the time using Use mode on
+         a container (find_object_placement is how try_combine_or_
+         stow_object scatters emptied contents onto the ground),
+         confirmed live, because uVar4/uVar6 below were built from
+         garbage stack memory, sending object placement to a wild
+         tile. */
       uVar2 = Ordinal_1053();
-      Ordinal_2005(iVar5,uVar2);
+      uVar4 = (((int)uVar2 % iVar5) - (int)param_5) + param_2;
       uVar2 = Ordinal_1053();
-      Ordinal_2005(iVar5,uVar2);
-      uVar4 = ((int)extraout_r1 - (int)param_5) + param_2;
-      uVar6 = ((int)extraout_r1_00 - (int)param_5) + param_3;
+      uVar6 = (((int)uVar2 % iVar5) - (int)param_5) + param_3;
     }
     uVar2 = encode_object_slot_index(param_1);
     iVar5 = FUN_00051fa0(*param_1 & 0x1ff,uVar2,uVar4,uVar6,param_4,1,0);
@@ -66066,12 +66078,24 @@ short param_2;
   ushort uVar1;
   ushort uVar2;
   byte bVar3;
-  int iVar4;
+  /* Was `int iVar4;` -- truncated resolve_object_link's real 64-bit
+     pointer return, then handed straight to place_object_in_world's
+     own param_4 (already `char *`, fixed in an earlier pass -- see
+     its own comment) as a garbage-high-bits address. This loop walks
+     a container's contents chain emptying it into the world (the
+     real behavior behind "Use mode on a container empties its
+     contents onto the nearby ground"); this is that chain's own
+     never-before-exercised path, so the truncation was never hit
+     until now. Confirmed live: 100% reproducible SIGSEGV in
+     find_object_placement's first dereference of the wild pointer
+     the moment this loop ran with a real, non-empty container. */
+  char *iVar4;
   int iVar5;
   undefined4 uVar6;
   uint uVar7;
   uint uVar8;
-  
+  char *pNextLink;
+
   if ((param_1[3] & 0xffc0) == 0) {
     uVar6 = 0;
   }
@@ -66090,7 +66114,7 @@ short param_2;
     }
     uVar1 = param_1[1];
     while (iVar4 != 0) {
-      iVar5 = resolve_object_link(iVar4 + 4);
+      pNextLink = resolve_object_link(iVar4 + 4);
       if ((param_2 != 0) && (((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0)) {
         uVar2 = param_1[3];
         bVar3 = (byte)uVar2;
@@ -66099,7 +66123,7 @@ short param_2;
       }
       place_object_in_world((uint)(uVar1 >> 0xd) + uVar7 * 8,((uVar1 & 0x1c00) >> 10) + uVar8 * 8,
                    uVar1 & 0x7f,iVar4,6,0);
-      iVar4 = iVar5;
+      iVar4 = pNextLink;
     }
     uVar6 = 1;
   }
