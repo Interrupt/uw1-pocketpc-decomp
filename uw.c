@@ -33115,23 +33115,24 @@ short param_1;
         if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
           draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
         }
-        /* Missing container-view chrome, per direct playtest feedback
-           describing the real game's layout (none of this exists
-           anywhere in the decompiled body -- the 0x2097 sprite draw
-           just above is the closest existing candidate, but it drew
-           nothing visible in testing, likely a never-recovered/empty
-           .GR resource slot, same story as the scroll-edge decoration
-           sprites documented in blit_object_sprite_by_frame's own comment):
-           1. A darker rectangle over the whole 8-cell grid area,
-              replacing the plain panel-background circles while a
-              container's contents are shown there instead of the
-              player's own backpack.
-           2. The open container's own icon, drawn ~40 screen px (20
-              panel-local units) above grid slot 1 at g_inv_hotspot_click_x1
-              record 1's new draw position (see its own comment) --
-              clicking it (wired in handle_inventory_panel_click) leaves the container. */
-        set_draw_color(0);
-        rect_fill_or_save_restore(0xf0,0x50,0x13c,0x76);
+        /* Was also followed by a hand-added `set_draw_color(0);
+           rect_fill_or_save_restore(0xf0,0x50,0x13c,0x76);` -- a flat
+           dark rectangle painted over the whole 8-cell grid area,
+           standing in for the container-view background because the
+           real 0x2097 sprite draw just above "drew nothing visible in
+           testing, likely a never-recovered/empty .GR resource slot"
+           (same class as the scroll-edge decoration gap this whole
+           session's resource-corruption fixes, see
+           mode-icon-and-hud-icon-flicker-fixes.md, were chasing).
+           That gap is closed now: confirmed live (UW_DEBUG_INV
+           instrumentation on blit_object_sprite_by_frame's
+           absolute-frame-table branch) that id 0x2097 resolves to
+           frame 832, a real non-null slot with genuine 41x85
+           dimensions -- not the dummy/empty fallback this hack was
+           written to paper over. Dropped the rectangle; the real
+           sprite draw above now supplies the container-view
+           background on its own, matching direct playtest
+           confirmation that it renders correctly in real gameplay. */
         g_blit_transparent_mode = 1;
         draw_sprite_by_id(uVar3 & 0x1ff,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
                      (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
