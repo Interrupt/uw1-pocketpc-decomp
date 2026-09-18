@@ -1009,7 +1009,7 @@ void *FUN_00045054();
 undefined4 place_object_in_backpack_slot();
 int FUN_000451b0();
 ushort *FUN_000452dc();
-int FUN_00045538();
+char *FUN_00045538();
 undefined4 FUN_00045678();
 undefined4 FUN_00045708();
 void deplete_object_count();

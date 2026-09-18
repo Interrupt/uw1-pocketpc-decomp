@@ -34588,7 +34588,11 @@ undefined2 * param_5;
   int iVar5;
   undefined2 uVar6;
   int iVar7;
-  undefined4 local_74 [2];
+  /* Was `undefined4 local_74 [2];` -- element [0] holds a real 64-bit
+     object pointer passed by address into FUN_00045538 (see that
+     function's own fix comment); [1] is unused padding from the
+     original 32-bit stack layout. */
+  char *local_74 [2];
   int local_6c [19];
   ushort uVar2;
   ushort uVar3;
@@ -34642,18 +34646,27 @@ LAB_0004552c:
 
 
 
-int FUN_00045538(param_1,param_2,param_3,param_4)
+char *FUN_00045538(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
-int * param_4;
+/* Was `int * param_4;` -- the caller-supplied slot always holds a real
+   64-bit object-record pointer (see FUN_000452dc's own local_74 and
+   FUN_00045b48's own local_28, both fixed alongside this one), but this
+   function only ever read/wrote its low 4 bytes through an `int *` view,
+   truncating the pointer on every pass. Confirmed live (regression suite,
+   demo_inventory_container_torch_use_test.txt): using a torch crashed
+   dereferencing a truncated object pointer at `uVar3 = (uint)*puVar1;`
+   (this function's own line, EXC_BAD_ACCESS at the low 32 bits of a real
+   object address). */
+char **param_4;
 
 {
   ushort *puVar1;
-  int iVar2;
+  char *iVar2;
   uint uVar3;
-  int local_1c;
-  
+  char *local_1c;
+
   if (*param_4 != 0) {
     do {
       if ((short)param_1 < 0) {
