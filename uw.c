@@ -4064,10 +4064,79 @@ static const undefined1 DAT_00086cc0_arr[32] = {
 short DAT_00189584;
 undefined2 DAT_00189586;
 ushort DAT_0018957a;
-undefined DAT_00086c08;
-undefined DAT_00086c09;
-undefined DAT_00086c0a;
-undefined DAT_00086c0b;
+/* Were four lone `undefined` scalars with no writer anywhere in this
+   decompile (same "orphaned data table" class as DAT_00086c80/comobj.dat
+   before their own fixes) -- traced (at the user's request) against the
+   DOS decompile (~/Github/uw1-decomp) to find out what really populates
+   the equivalent table there, rather than guess again. Found in the real,
+   decompiled `dialog_action_object` (docs/decompilation/functions/
+   dialog_action_object.c:20): `bVar1 = *(byte*)(param_1*4 + 0x60a);` --
+   this is the EXACT same access shape as this file's own
+   `(&DAT_00086c08)[param_1*4]` in emit_object_billboard, for the same
+   32-row x 4-byte table (`DGROUP:0x60a`, i.e. `uw1_view_model_row[][4]` in
+   port/uw1_view_models.c) already fully recovered and used for the
+   pillar/lever/switch/writing/gravestone fixes elsewhere in this file --
+   this port's `emit_object_billboard` and its class-2 sign branch are two
+   different WinCE-decompiled call shapes of the SAME original function
+   and the SAME original table, not two separate mechanisms. Confirmed
+   bit-for-bit against dialog_action_object's own body: byte 0 bit 0x20 =
+   texture-page/field mode, bit 0x80 = direction-dependent animation, bits
+   0-2 = frame count (both branches read `bVar1 & 7`, matching this file's
+   own `bVar4 & 7` exactly); byte 3 (`+0x60d` = row+3) feeds the identical
+   `(b3&0x1f) + flags%((b3>>5)+1)` image formula already used for the
+   decal fixes. Every current caller (catalog ids 1, 0xc, 0xe, 0xf for
+   doors' jamb overlay/open-swing frames, 0x14/0x16 for the TMFLAT/TMAP
+   decal families) was reading this as all-zero -> 0 frames -> the
+   `if (count != 0)` guard skipping the whole frame-build loop, so all of
+   them likely drew nothing. Since nothing currently draws through this
+   table, populating it with the real bytes can only fix things, not
+   regress a working path. Full 32 rows, verbatim from
+   uw1_view_models.c's `uw1_view_model_row[][4]` (rows use at most 3
+   frame-count slots in practice, confirmed by checking every row's own
+   `byte0&7` against the 3 declared follower bytes, so no row spills past
+   its own 4-byte slot into the next row's -- but this is still declared
+   as one flat 128-byte region, not four discrete named bytes, to stay
+   faithful to the real DGROUP:0x60a layout for any row this project
+   hasn't exercised yet). */
+static const undefined1 DAT_00086c08_backing[32 * 4] = {
+  /* row      byte0 byte1 byte2 byte3   bank */
+  /* 0x00 */  0x01, 0xec, 0x00, 0x00, /* 0x60 */
+  /* 0x01 */  0x21, 0xeb, 0x00, 0x00, /* 0x61 doorway */
+  /* 0x02 */  0x11, 0xec, 0x00, 0x3e, /* 0x62 bridge */
+  /* 0x03 */  0x01, 0xe4, 0x00, 0x00, /* 0x63 */
+  /* 0x04 */  0x02, 0xb6, 0xb0, 0x00, /* 0x64 */
+  /* 0x05 */  0x02, 0x64, 0x6c, 0x00, /* 0x65 small boulder */
+  /* 0x06 */  0x02, 0x64, 0x6c, 0x00, /* 0x66 boulder */
+  /* 0x07 */  0x02, 0x64, 0x6c, 0x00, /* 0x67 large boulder */
+  /* 0x08 */  0x42, 0xe8, 0xb8, 0x00, /* 0x68 */
+  /* 0x09 */  0x01, 0xe4, 0x00, 0x00, /* 0x69 */
+  /* 0x0a */  0x19, 0xe4, 0x00, 0x60, /* 0x6a pillar */
+  /* 0x0b */  0x03, 0xa3, 0xa4, 0xa6, /* 0x6b shrine */
+  /* 0x0c */  0x01, 0x68, 0x00, 0x00, /* 0x6c */
+  /* 0x0d */  0x01, 0x68, 0x00, 0x00, /* 0x6d */
+  /* 0x0e */  0x11, 0xec, 0x00, 0x00, /* 0x6e door leaf */
+  /* 0x0f */  0x21, 0xec, 0x00, 0x00, /* 0x6f */
+  /* 0x10 */  0x51, 0xb0, 0x00, 0xe4, /* 0x70 lever */
+  /* 0x11 */  0x51, 0xb0, 0x00, 0xec, /* 0x71 switch */
+  /* 0x12 */  0x11, 0xb0, 0x00, 0xf4, /* 0x72 some_writing */
+  /* 0x13 */  0x11, 0x6a, 0x00, 0x3c, /* 0x73 gravestone */
+  /* 0x14 */  0x51, 0xb0, 0x00, 0x00, /* 0x74 TMFLAT (0x170-0x17f) */
+  /* 0x15 */  0x11, 0xb0, 0x00, 0x00, /* 0x75 */
+  /* 0x16 */  0x21, 0xb0, 0x00, 0x00, /* 0x76 TMAP (0x16d-0x16f) */
+  /* 0x17 */  0x83, 0x00, 0x02, 0x04, /* 0x77 */
+  /* 0x18 */  0x02, 0xe4, 0x68, 0x00, /* 0x78 */
+  /* 0x19 */  0x02, 0xe6, 0x68, 0x00, /* 0x79 */
+  /* 0x1a */  0x01, 0xe4, 0x00, 0x00, /* 0x7a */
+  /* 0x1b */  0x02, 0xe4, 0x6a, 0x00, /* 0x7b */
+  /* 0x1c */  0x03, 0xe6, 0x6a, 0x71, /* 0x7c */
+  /* 0x1d */  0x03, 0xe2, 0x62, 0xc4, /* 0x7d */
+  /* 0x1e */  0x03, 0x00, 0x08, 0x00, /* 0x7e */
+  /* 0x1f */  0x08, 0x00, 0x07, 0x00, /* 0x7f */
+};
+#define DAT_00086c08 DAT_00086c08_backing[0]
+#define DAT_00086c09 DAT_00086c08_backing[1]
+#define DAT_00086c0a DAT_00086c08_backing[2]
+#define DAT_00086c0b DAT_00086c08_backing[3]
 undefined4 DAT_00086ce0;
 undefined4 DAT_00086ce4;
 undefined4 DAT_00086ce8;
@@ -13192,6 +13261,7 @@ int * param_2;
 // was FUN_0001f370 -- near-plane (w=DAT_00084608=5.0) Sutherland-Hodgman clip of
 // each visible tile quad; writes clipped positions + interpolated texcoords into
 // the 0x88-byte render records at DAT_000bc038 and the DAT_000c4838[] pointer table
+static int g_nc_total, g_nc_accept, g_nc_flag1_zero, g_nc_flag2_nonzero;
 void near_clip_visible_tiles(param_1,param_2)
 intptr_t param_1;
 int param_2;
@@ -13227,6 +13297,7 @@ int param_2;
 
   if (param_2 == 0) {
     DAT_000c8c98 = 0;
+    g_nc_total = 0; g_nc_accept = 0; g_nc_flag1_zero = 0; g_nc_flag2_nonzero = 0;
   }
   else {
     local_48 = 0;
@@ -13236,6 +13307,10 @@ int param_2;
       local_4c = 0;
       iVar14 = param_1;
       do {
+        g_nc_total++;
+        if ((*(int *)(iVar14 + 0x486c) != 0) && (*(int *)(iVar14 + 0x4870) == 0)) g_nc_accept++;
+        else if (*(int *)(iVar14 + 0x486c) == 0) g_nc_flag1_zero++;
+        else g_nc_flag2_nonzero++;
         if ((*(int *)(iVar14 + 0x486c) != 0) && (*(int *)(iVar14 + 0x4870) == 0)) {
           iVar19 = local_7c * 0x88;
           puVar20 = &DAT_000bc038 + iVar19;
@@ -13492,6 +13567,9 @@ LAB_0002029c:
         local_74 = local_74 + 0xc;
       } while (local_48 < *(int *)(param_1 + 4));
     }
+    if (getenv("UW_DEBUG_NEARCLIP"))
+      fprintf(stderr, "[nearclip] this frame: total=%d accept=%d flag1_zero=%d flag2_nonzero=%d\n",
+              g_nc_total, g_nc_accept, g_nc_flag1_zero, g_nc_flag2_nonzero);
   }
   return;
 }
@@ -50715,6 +50793,546 @@ LAB_0005e7e0:
 // rendering) with a flat shade byte -- deliberately not textured, per the
 // project's "flat-shaded is a fine first cut" bar; a real UV/material
 // path (EXTENDED_COLORS in the .E format) is future work.
+/* ===================================================================
+   Generic display-list bank interpreter -- ported from uw1-decomp (the
+   separate DOS Ultima Underworld decompile at ~/Github/uw1-decomp,
+   port/uw1_dlist.c + uw1_dlist.h + uw1_dlist_lengths.c), at the user's
+   request. See mysteries.md's Mystery 1 UPDATE 5 and
+   object-rendering-findings.txt's 2026-09-16 (2) entry for the full
+   trace: this port's own emit_object_billboard only performs a real
+   screen transform for catalog ids 0xe/0xf/0xc (ordinary animated
+   sprite billboards) -- everything else, including the door frame/jamb
+   (catalog 1, bank 0x61), needs the same kind of true 3D "display list"
+   geometry Mystery 1 already found entirely absent from this WinCE
+   binary's own compiled code. DOS's original engine (and uw1-decomp's
+   own port) solves this generically: a bank is a small bytecode
+   program (opcode + operand words) that builds vertices and faces,
+   walked by ONE interpreter shared by every bank rather than per-object
+   C code -- this is that interpreter, ported rather than reinvented,
+   plus (below it) the real bank-0x61 doorway-frame bytecode uw1-decomp
+   recovered from the actual 1992 DOS UW.EXE.
+
+   Simplified from uw1-decomp's own version for this port's needs:
+     - Output is vertex positions only, no UV/image tracking -- this
+       port's model renderer is flat-shaded only regardless of source,
+       same as g_model_map's .E models (Mystery 3).
+     - Sprite/creature "blit" records (0x003a/0x005a) are consumed at
+       their length and dropped, not reported -- this interpreter is
+       only used for real architecture banks, not sprite objects.
+     - 0x0050/0x00ba (rotated sub-list calls) run their sub-list WITHOUT
+       applying the extra rotation; this port already applies its own
+       single heading rotation to the whole model afterward, the same
+       way emit_model_object does for the .E models, and the geometry
+       recovered so far doesn't visibly need more than that (verified
+       empirically -- see the fix note near g_model_map below, not
+       assumed).
+     - Branch exploration (the cull-plane, skip-if, and branch-if-on-
+       screen opcodes) IS kept faithful to uw1-decomp's own algorithm -- bank
+       0x61 genuinely uses several of these for real per-face detail,
+       so a naive "always fall through" single pass would silently drop
+       geometry. Ported as: one run declining every branch, then one
+       more run per distinct branch site discovered, unioning all
+       distinct faces (de-duplicated) across every run -- exactly
+       uw1_dlist_run's own algorithm, which uw1-decomp's own door
+       renderer (uw1_view_door_faces) calls the same way. */
+
+#define UWDL_SLOTS 257
+#define UWDL_SLOT_STRIDE 8
+#define UWDL_MAX_FACE_VERTS 16
+#define UWDL_MAX_FACES 96
+#define UWDL_MAX_SITES 64
+#define UWDL_MAX_DEPTH 32
+#define UWDL_PATH_WORDS 512
+
+typedef struct { int32_t p[3]; int placed; } uwdl_slot;
+typedef struct { int count; float p[UWDL_MAX_FACE_VERTS][3];
+                 int has_uv; int32_t u[UWDL_MAX_FACE_VERTS], v[UWDL_MAX_FACE_VERTS]; } uwdl_face;
+
+enum { UWDL_FIXED = 1, UWDL_COUNTED = 2 };
+typedef struct { unsigned short op; int kind; int base; int stride; int word; } uwdl_len;
+
+/* Verbatim (kind/base/stride/word) from uw1_dlist_lengths.c, trimmed to
+   the opcodes this interpreter's own walk (below) can execute or safely
+   skip over -- an opcode with no entry here refuses the whole run
+   rather than guessing a length, matching uw1-decomp's own stance that
+   an opcode silently walked past is the failure mode to avoid. */
+static const uwdl_len g_uwdl_lengths[] = {
+  { 0x0000, UWDL_FIXED, 1, 0, 0 }, { 0x0002, UWDL_FIXED, 3, 0, 0 },
+  { 0x0006, UWDL_FIXED, 9, 0, 0 }, { 0x000c, UWDL_FIXED, 7, 0, 0 },
+  { 0x0010, UWDL_FIXED, 7, 0, 0 }, { 0x0012, UWDL_FIXED, 2, 0, 0 },
+  { 0x0014, UWDL_FIXED, 4, 0, 0 }, { 0x0016, UWDL_FIXED, 4, 0, 0 },
+  { 0x0018, UWDL_FIXED, 7, 0, 0 }, { 0x0036, UWDL_FIXED, 10, 0, 0 },
+  { 0x0038, UWDL_FIXED, 13, 0, 0 }, { 0x003a, UWDL_FIXED, 4, 0, 0 },
+  { 0x003e, UWDL_FIXED, 4, 0, 0 }, { 0x0040, UWDL_FIXED, 1, 0, 0 },
+  { 0x0048, UWDL_FIXED, 2, 0, 0 }, { 0x004a, UWDL_FIXED, 4, 0, 0 },
+  { 0x004c, UWDL_FIXED, 5, 0, 0 }, { 0x0050, UWDL_FIXED, 3, 0, 0 },
+  { 0x0058, UWDL_FIXED, 8, 0, 0 }, { 0x005a, UWDL_FIXED, 6, 0, 0 },
+  { 0x005e, UWDL_FIXED, 6, 0, 0 }, { 0x0060, UWDL_FIXED, 6, 0, 0 },
+  { 0x0062, UWDL_FIXED, 6, 0, 0 }, { 0x0064, UWDL_FIXED, 4, 0, 0 },
+  { 0x0066, UWDL_FIXED, 4, 0, 0 }, { 0x0068, UWDL_FIXED, 4, 0, 0 },
+  { 0x0078, UWDL_FIXED, 6, 0, 0 }, { 0x007a, UWDL_FIXED, 5, 0, 0 },
+  { 0x007e, UWDL_COUNTED, 2, 1, 1 }, { 0x0082, UWDL_COUNTED, 3, 3, 1 },
+  { 0x0086, UWDL_FIXED, 4, 0, 0 }, { 0x0088, UWDL_FIXED, 4, 0, 0 },
+  { 0x008a, UWDL_FIXED, 4, 0, 0 }, { 0x008c, UWDL_FIXED, 4, 0, 0 },
+  { 0x0090, UWDL_FIXED, 5, 0, 0 }, { 0x0092, UWDL_FIXED, 5, 0, 0 },
+  { 0x0094, UWDL_FIXED, 5, 0, 0 }, { 0x00a0, UWDL_FIXED, 4, 0, 0 },
+  { 0x00a8, UWDL_COUNTED, 3, 3, 2 }, { 0x00b2, UWDL_FIXED, 2, 0, 0 },
+  { 0x00b4, UWDL_COUNTED, 2, 3, 1 }, { 0x00ba, UWDL_FIXED, 3, 0, 0 },
+  { 0x00bc, UWDL_FIXED, 3, 0, 0 }, { 0x00be, UWDL_FIXED, 3, 0, 0 },
+  { 0x00c0, UWDL_FIXED, 3, 0, 0 }, { 0x00ce, UWDL_COUNTED, 2, 3, 1 },
+  { 0x00d0, UWDL_FIXED, 2, 0, 0 }, { 0x00d6, UWDL_FIXED, 1, 0, 0 },
+};
+#define UWDL_LEN_COUNT (int)(sizeof(g_uwdl_lengths)/sizeof(g_uwdl_lengths[0]))
+
+static int uwdl_record_length(const unsigned short *w, int count, int at)
+{
+  int i, n, len; const uwdl_len *e = 0;
+  if (w == 0 || at < 0 || at >= count) return 0;
+  if (w[at] == 0) return 1;
+  for (i = 0; i < UWDL_LEN_COUNT; i++) if (g_uwdl_lengths[i].op == w[at]) { e = &g_uwdl_lengths[i]; break; }
+  if (e == 0) return 0;
+  if (e->kind == UWDL_FIXED) { len = e->base; }
+  else {
+    if (at + e->word >= count) return 0;
+    n = w[at + e->word];
+    if (n < 1 || n > 0x800) return 0;
+    len = e->base + e->stride * n;
+  }
+  if (len < 1 || at + len > count) return 0;
+  return len;
+}
+
+typedef struct {
+  const unsigned short *words; int count;
+  int32_t t[3];
+  uwdl_slot slot[UWDL_SLOTS];
+  uwdl_face faces[UWDL_MAX_FACES];
+  int face_count;
+  unsigned char path[UWDL_PATH_WORDS];
+  int undo[UWDL_PATH_WORDS];
+  int undo_count;
+  int sites[UWDL_MAX_SITES];
+  unsigned char queued[UWDL_MAX_SITES];
+  int site_count;
+  int queue[UWDL_MAX_SITES];
+  int queue_len, queue_head;
+  int policy, has_policy;
+  int depth, stop;
+} uwdl_vm;
+
+static int32_t uwdl_sign16(unsigned short w) { return (int32_t)(short)w; }
+
+static uwdl_slot *uwdl_slot_at(uwdl_vm *m, unsigned short off)
+{
+  int idx;
+  if ((off % UWDL_SLOT_STRIDE) != 0) return 0;
+  idx = off / UWDL_SLOT_STRIDE;
+  if (idx < 0 || idx >= UWDL_SLOTS) return 0;
+  return &m->slot[idx];
+}
+
+static void uwdl_place(const uwdl_vm *m, unsigned short x, unsigned short z, unsigned short y,
+                        int32_t *p, int with_t)
+{
+  p[0] = uwdl_sign16(x) - (with_t ? m->t[0] : 0);
+  p[1] = uwdl_sign16(y) - (with_t ? m->t[1] : 0);
+  p[2] = uwdl_sign16(z) - (with_t ? m->t[2] : 0);
+}
+
+static void uwdl_store(uwdl_vm *m, unsigned short off, const int32_t *p)
+{
+  uwdl_slot *s = uwdl_slot_at(m, off);
+  if (!s) return;
+  s->p[0] = p[0]; s->p[1] = p[1]; s->p[2] = p[2]; s->placed = 1;
+}
+
+static int uwdl_same_face(const uwdl_face *a, const uwdl_face *b)
+{
+  int i;
+  if (a->count != b->count || a->has_uv != b->has_uv) return 0;
+  for (i = 0; i < a->count; i++) {
+    if (a->p[i][0] != b->p[i][0] || a->p[i][1] != b->p[i][1] || a->p[i][2] != b->p[i][2]) return 0;
+    if (a->has_uv && (a->u[i] != b->u[i] || a->v[i] != b->v[i])) return 0;
+  }
+  return 1;
+}
+
+static void uwdl_emit_face(uwdl_vm *m, uwdl_face *f)
+{
+  int i;
+  if (f->count < 3) return;
+  for (i = 0; i < m->face_count; i++) if (uwdl_same_face(&m->faces[i], f)) return;
+  if (m->face_count >= UWDL_MAX_FACES) return;
+  m->faces[m->face_count++] = *f;
+}
+
+static void uwdl_face_vertex(uwdl_vm *m, uwdl_face *f, unsigned short off)
+{
+  uwdl_slot *s;
+  if (f->count >= UWDL_MAX_FACE_VERTS) return;
+  s = uwdl_slot_at(m, off);
+  if (s && s->placed) {
+    f->p[f->count][0] = (float)s->p[0];
+    f->p[f->count][1] = (float)s->p[1];
+    f->p[f->count][2] = (float)s->p[2];
+    f->count++;
+  }
+}
+
+/* disp word index / consumed count for each branch or call opcode this
+   interpreter supports, matching uw1_dlist.c's OPS[] transfer table
+   exactly (kind 1=call, 2=jump, 3=cond; target = at+1+consumed+d/2). */
+static int uwdl_transfer(unsigned short op, int *kind, int *disp, int *consumed, int *end_on_zero)
+{
+  switch (op) {
+  case 0x0012: *kind=1; *disp=1; *consumed=1; *end_on_zero=0; return 1;
+  case 0x0048: *kind=2; *disp=1; *consumed=1; *end_on_zero=0; return 1;
+  case 0x0050: case 0x00ba: *kind=1; *disp=2; *consumed=2; *end_on_zero=0; return 1;
+  case 0x0014: case 0x0016: *kind=3; *disp=1; *consumed=3; *end_on_zero=0; return 1;
+  case 0x0058: *kind=3; *disp=1; *consumed=7; *end_on_zero=0; return 1;
+  case 0x005e: case 0x0060: case 0x0062: *kind=3; *disp=1; *consumed=5; *end_on_zero=0; return 1;
+  case 0x0064: case 0x0066: case 0x0068: *kind=3; *disp=1; *consumed=3; *end_on_zero=0; return 1;
+  case 0x0078: *kind=3; *disp=5; *consumed=5; *end_on_zero=1; return 1;
+  default: return 0;
+  }
+}
+
+static void uwdl_note_site(uwdl_vm *m, int at)
+{
+  int i;
+  for (i = 0; i < m->site_count; i++) if (m->sites[i] == at) return;
+  if (m->site_count >= UWDL_MAX_SITES) return;
+  m->sites[m->site_count] = at;
+  m->queued[m->site_count] = 0;
+  m->site_count++;
+}
+
+static void uwdl_queue_sites(uwdl_vm *m)
+{
+  int i;
+  for (i = 0; i < m->site_count; i++)
+    if (!m->queued[i] && m->queue_len < UWDL_MAX_SITES) {
+      m->queued[i] = 1;
+      m->queue[m->queue_len++] = m->sites[i];
+    }
+}
+
+static void uwdl_walk(uwdl_vm *m, int at)
+{
+  int mark = m->undo_count;
+  for (;;) {
+    unsigned short op;
+    int n, k;
+    const unsigned short *r;
+    if (m->stop) break;
+    if (at < 0 || at >= m->count || (at < UWDL_PATH_WORDS && m->path[at])) break;
+    if (at < UWDL_PATH_WORDS) { m->path[at] = 1; m->undo[m->undo_count++] = at; }
+    op = m->words[at];
+    if (op == 0) break;
+    n = uwdl_record_length(m->words, m->count, at);
+    if (n == 0) { m->stop = 1; break; }
+    r = m->words + at;
+    switch (op) {
+    case 0x004a:
+      m->t[0] -= uwdl_sign16(r[1]); m->t[1] -= uwdl_sign16(r[2]); m->t[2] -= uwdl_sign16(r[3]);
+      break;
+    case 0x007a: { int32_t p[3]; uwdl_place(m, r[1], r[2], r[3], p, 1); uwdl_store(m, r[4], p); break; }
+    case 0x004c: { int32_t p[3]; uwdl_place(m, r[1], r[2], r[3], p, 0); uwdl_store(m, r[4], p); break; }
+    case 0x0082: {
+      int count = r[1];
+      for (k = 0; k < count && 3+k*3+2 < n; k++) {
+        int32_t p[3];
+        uwdl_place(m, r[3+k*3], r[4+k*3], r[5+k*3], p, 1);
+        uwdl_store(m, (unsigned short)(r[2] + k*UWDL_SLOT_STRIDE), p);
+      }
+      break;
+    }
+    case 0x0086: case 0x0088: case 0x008a: {
+      uwdl_slot *src = uwdl_slot_at(m, r[1]);
+      int axis = (op == 0x0086) ? 0 : (op == 0x0088) ? 1 : 2;
+      if (src && src->placed) {
+        int32_t p[3]; p[0]=src->p[0]; p[1]=src->p[1]; p[2]=src->p[2];
+        p[axis] += uwdl_sign16(r[2]);
+        uwdl_store(m, r[3], p);
+      }
+      break;
+    }
+    case 0x008c: {
+      uwdl_slot *a = uwdl_slot_at(m, r[1]);
+      uwdl_slot *b = uwdl_slot_at(m, r[2]);
+      if (a && b && a->placed && b->placed) {
+        int32_t p[3]; p[0]=a->p[0]+b->p[0]; p[1]=a->p[1]+b->p[1]; p[2]=a->p[2]+b->p[2];
+        uwdl_store(m, r[3], p);
+      }
+      break;
+    }
+    case 0x0090: case 0x0092: case 0x0094: {
+      uwdl_slot *src = uwdl_slot_at(m, r[3]);
+      if (src && src->placed) {
+        int32_t p[3]; p[0]=src->p[0]; p[1]=src->p[1]; p[2]=src->p[2];
+        if (op == 0x0094) { p[2] += uwdl_sign16(r[1]); p[1] += uwdl_sign16(r[2]); }
+        else { p[0] += uwdl_sign16(r[1]); p[op==0x0090?1:2] += uwdl_sign16(r[2]); }
+        uwdl_store(m, r[4], p);
+      }
+      break;
+    }
+    case 0x007e: {
+      uwdl_face f; f.count = 0; f.has_uv = 0;
+      { int count = r[1]; for (k = 0; k < count && 2+k < n; k++) uwdl_face_vertex(m, &f, r[2+k]); }
+      uwdl_emit_face(m, &f);
+      break;
+    }
+    case 0x00a8: {
+      uwdl_face f; f.count = 0; f.has_uv = 1;
+      { int count = r[2]; for (k = 0; k < count && 3+k*3+2 < n; k++) {
+          uwdl_face_vertex(m, &f, r[3+k*3]);
+          if (f.count > 0) { f.u[f.count-1] = uwdl_sign16(r[4+k*3]); f.v[f.count-1] = uwdl_sign16(r[5+k*3]); }
+        } }
+      uwdl_emit_face(m, &f);
+      break;
+    }
+    case 0x00b4: case 0x00ce: {
+      uwdl_face f; f.count = 0; f.has_uv = 1;
+      { int count = r[1]; for (k = 0; k < count && 2+k*3+2 < n; k++) {
+          uwdl_face_vertex(m, &f, r[2+k*3]);
+          if (f.count > 0) { f.u[f.count-1] = uwdl_sign16(r[3+k*3]); f.v[f.count-1] = uwdl_sign16(r[4+k*3]); }
+        } }
+      uwdl_emit_face(m, &f);
+      break;
+    }
+    default: break;
+    }
+    {
+      int kind, disp, consumed, end_on_zero, nxt = at + n;
+      if (uwdl_transfer(op, &kind, &disp, &consumed, &end_on_zero)) {
+        int32_t d = uwdl_sign16(m->words[at + disp]);
+        int tgt = at + 1 + consumed + d/2;
+        if (kind == 3) {
+          uwdl_note_site(m, at);
+          if (!m->has_policy || m->policy != at) { at = nxt; continue; }
+          if (end_on_zero && d == 0) goto done;
+          at = tgt; continue;
+        }
+        if (end_on_zero && d == 0) goto done;
+        if (kind == 2) { nxt = tgt; }
+        else {
+          if (m->depth >= UWDL_MAX_DEPTH) { m->stop = 1; goto done; }
+          m->depth++; uwdl_walk(m, tgt); m->depth--;
+          if (m->stop) goto done;
+        }
+      }
+      at = nxt;
+    }
+  }
+done:
+  while (m->undo_count > mark) { int a = m->undo[--m->undo_count]; if (a < UWDL_PATH_WORDS) m->path[a] = 0; }
+}
+
+/* Run the bank at word 0, unioning faces across every distinct branch
+   policy (see the block comment above) -- uw1_dlist_run's own
+   algorithm. Returns the number of faces written to out. */
+static int uwdl_run_bank(const unsigned short *words, int count, uwdl_face *out, int max_faces)
+{
+  uwdl_vm *m = (uwdl_vm *)calloc(1, sizeof(uwdl_vm));
+  int i, n;
+  if (!m) return 0;
+  m->words = words; m->count = count;
+  for (i = 0; i < 64; i++) {
+    memset(m->slot, 0, sizeof(m->slot));
+    memset(m->t, 0, sizeof(m->t));
+    memset(m->path, 0, sizeof(m->path));
+    m->undo_count = 0; m->depth = 0; m->stop = 0;
+    uwdl_walk(m, 0);
+    uwdl_queue_sites(m);
+    if (m->queue_head >= m->queue_len) break;
+    m->has_policy = 1;
+    m->policy = m->queue[m->queue_head++];
+  }
+  n = m->face_count; if (n > max_faces) n = max_faces;
+  for (i = 0; i < n; i++) out[i] = m->faces[i];
+  free(m);
+  return n;
+}
+
+/* Pushes a bank's real display-list geometry into the same shared
+   arena/pipeline emit_model_object already feeds -- same anchor
+   (DAT_0023b904/91c/920), same heading rotation, same texture-size/
+   shade conventions. Faces with more than 4 vertices are fan-
+   triangulated from vertex 0, the same 4-index-per-record limit
+   emit_model_object's own arena format already works within. */
+static void emit_dlist_bank_object(const unsigned short *words, int count, int heading, double scale, double yoff, void *texptr)
+{
+  static uwdl_face faces[UWDL_MAX_FACES];
+  int nfaces = uwdl_run_bank(words, count, faces, UWDL_MAX_FACES);
+  double ang, ca, sa; short ax, ah, az; int fi;
+  ax = (short)DAT_0023b904; ah = (short)DAT_0023b91c; az = (short)DAT_0023b920;
+  if (getenv("UW_DEBUG_DLIST")) {
+    fprintf(stderr, "[dlist] words=%d faces=%d heading=%d anchor=(%d,%d,%d) scale=%g yoff=%g\n",
+            count, nfaces, heading, ax, ah, az, scale, yoff);
+    if (nfaces > 0) {
+      float lo[3] = {faces[0].p[0][0], faces[0].p[0][1], faces[0].p[0][2]};
+      float hi[3] = {faces[0].p[0][0], faces[0].p[0][1], faces[0].p[0][2]};
+      int _fi, _vi;
+      for (_fi = 0; _fi < nfaces; _fi++) {
+        for (_vi = 0; _vi < faces[_fi].count; _vi++) {
+          int a;
+          for (a = 0; a < 3; a++) {
+            float v = faces[_fi].p[_vi][a];
+            if (v < lo[a]) lo[a] = v;
+            if (v > hi[a]) hi[a] = v;
+          }
+        }
+      }
+      fprintf(stderr, "[dlist] bbox x=[%g,%g] y=[%g,%g] z=[%g,%g]\n",
+              lo[0], hi[0], lo[1], hi[1], lo[2], hi[2]);
+    }
+  }
+  if (nfaces == 0) return;
+
+  ang = heading * 45.0 * (3.14159265358979 / 180.0);
+  ca = cos(ang); sa = sin(ang);
+
+  for (fi = 0; fi < nfaces; fi++) {
+    uwdl_face *f = &faces[fi];
+    int nv = f->count, base_vtx, vi, start;
+    if (nv < 3) continue;
+    base_vtx = DAT_0023b838;
+    if (base_vtx + nv >= 512 - 4 || DAT_0023b83c >= 490 - 1) break;
+    { int src_idx[UWDL_MAX_FACE_VERTS];
+    for (vi = 0; vi < nv; vi++) {
+      /* UW_DLIST_FLIP_WINDING=1: read source vertices back-to-front.
+         DOS's face vertex order may wind opposite to what this
+         renderer treats as front-facing (DFRAME.E's own .E-format
+         vertex order was presumably authored/ordered to already match
+         this renderer, but this bank's real DOS order has no such
+         guarantee) -- testing whether backface culling is why 9 real,
+         correctly-anchored faces still don't reach the screen. */
+      int _src = getenv("UW_DLIST_FLIP_WINDING") ? (nv - 1 - vi) : vi;
+      double mx = f->p[_src][0], my = f->p[_src][1], mz = f->p[_src][2];
+      double rx = mx*ca - mz*sa, rz = mx*sa + mz*ca;
+      float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + vi)*0xc);
+      vf[0] = (float)(ax + rx*scale);
+      vf[1] = (float)(ah + my*scale + yoff);
+      vf[2] = (float)(az + rz*scale);
+      src_idx[vi] = _src;
+    }
+    DAT_0023b838 = base_vtx + nv;
+    DAT_000a85d0 = DAT_0023b838;
+
+    for (start = 1; start + 1 < nv; start += 2) {
+      int i0, i1, i2, i3, rec, rb, _texsize; short shade;
+      int s0, s1, s2, s3;
+      if (DAT_0023b83c >= 490 - 1) break;
+      i0 = base_vtx; i1 = base_vtx+start; i2 = base_vtx+start+1;
+      i3 = (start + 2 < nv) ? base_vtx+start+2 : i2;
+      s0 = src_idx[0]; s1 = src_idx[start]; s2 = src_idx[start+1];
+      s3 = (start + 2 < nv) ? src_idx[start+2] : s2;
+      rec = DAT_0023b83c;
+      rb = rec * 0x60;
+      *(int *)(&DAT_000acde4 + rb) = 4;
+      *(int *)(&DAT_000acde8 + rb) = i0;
+      *(int *)(&DAT_000acdec + rb) = i1;
+      *(int *)(&DAT_000acdf0 + rb) = i2;
+      *(int *)(&DAT_000acdf4 + rb) = i3;
+      _texsize = texptr ? 16 : 0;
+      *(int *)(&DAT_000ace00 + rb) = _texsize;
+      *(int *)(&DAT_000ace04 + rb) = _texsize;
+      /* Real per-vertex UV, at the user's request: DOS's own bytecode
+         carries explicit u,v per vertex for these opcodes (the whole
+         texture spans 0..0xffff per uw1-decomp's own documentation of
+         the format) -- scale into this renderer's own texture_size-unit
+         UV convention (confirmed real, not screen-derived, by reading
+         how tile walls populate these same 4 vertex-UV slots: a real
+         per-vertex float pair, not screen position). texptr==0 (the
+         g_model_map .E-model convention) keeps the old flat zero-UV
+         fallback -- only meaningful once a real texture is bound. */
+      if (f->has_uv && texptr) {
+        /* NOT _texsize (16) -- that's this renderer's own wall-tiling
+           display-scale field (ace00/04), unrelated to a texture's real
+           pixel dimensions, confirmed by tracing DOS's own working
+           formula (uw1-decomp port/uw1_view.c:2910/3107):
+           `in[j].u = f->u[j] * t.w / 65536.0` -- t.w is the REAL bound
+           texture's pixel width. UW1 wall textures are W64.TR-family,
+           64x64 (matching this project's own earlier W64.TR references),
+           not 16 -- reusing _texsize here was the actual bug behind last
+           attempt's regression to fully invisible. */
+        double uscale = 64.0 / 65536.0;
+        *(float *)(&DAT_000ace08 + rb) = (float)(f->u[s0] * uscale);
+        *(float *)(&DAT_000ace0c + rb) = (float)(f->v[s0] * uscale);
+        *(float *)(&DAT_000ace10 + rb) = (float)(f->u[s1] * uscale);
+        *(float *)(&DAT_000ace14 + rb) = (float)(f->v[s1] * uscale);
+        *(float *)(&DAT_000ace18 + rb) = (float)(f->u[s2] * uscale);
+        *(float *)(&DAT_000ace1c + rb) = (float)(f->v[s2] * uscale);
+        *(float *)(&DAT_000ace20 + rb) = (float)(f->u[s3] * uscale);
+        *(float *)(&DAT_000ace24 + rb) = (float)(f->v[s3] * uscale);
+      } else {
+        *(int *)(&DAT_000ace08 + rb) = 0;
+        *(int *)(&DAT_000ace0c + rb) = 0;
+        *(int *)(&DAT_000ace10 + rb) = 0;
+        *(int *)(&DAT_000ace14 + rb) = 0;
+        *(int *)(&DAT_000ace18 + rb) = 0;
+        *(int *)(&DAT_000ace1c + rb) = 0;
+        *(int *)(&DAT_000ace20 + rb) = 0;
+        *(int *)(&DAT_000ace24 + rb) = 0;
+      }
+      *(int *)(&DAT_000acdfc + rb) = 0;
+      if (texptr && (unsigned)rec < UW_MAX_VIS_TILES) g_tile_texptr_emit[rec] = texptr;
+      shade = (short)DAT_000da47c;
+      *(short *)(&DAT_000ace30 + rb) = shade;
+      *(short *)(&DAT_000ace32 + rb) = (short)(shade >> 15);
+      DAT_0023b83c = rec + 1;
+      DAT_000a85d4 = DAT_0023b83c;
+    }
+    }
+  }
+}
+
+/* Bank 0x61 -- the doorway frame -- 259 words, verbatim from
+   uw1-decomp's port/uw1_view_models.c (its own uw1_view_model_words[],
+   the run at region offset 2919/uw1_view_model_head_doorway, source
+   words[249..507]), which that project extracted directly from the
+   real 1992 DOS UW.EXE (segment 5723) and verified bank-for-bank
+   against it. This is the SAME architectural frame our own DFRAME.E
+   represents -- included here to drive the generic interpreter above
+   as a real, working example, not to replace DFRAME.E's own (working)
+   rendering; see the door-frame test call near g_model_map below. */
+static const unsigned short g_dlist_bank_0x61[] = {
+  0x007a, 0x0010, 0x0004, 0x0200, 0x0000, 0x0078, 0x0000, 0x0080,
+  0x0200, 0x0004, 0x0000, 0x007a, 0xffd0, 0x0000, 0x0000, 0x0000,
+  0x0088, 0x0000, 0x00d0, 0x0008, 0x0086, 0x0008, 0x0080, 0x0010,
+  0x0086, 0x0000, 0x0080, 0x0018, 0x008a, 0x0000, 0x0008, 0x0020,
+  0x008a, 0x0008, 0x0008, 0x0028, 0x008a, 0x0010, 0x0008, 0x0030,
+  0x008a, 0x0018, 0x0008, 0x0038, 0x0086, 0x0000, 0xffc0, 0x0040,
+  0x0086, 0x0020, 0xffc0, 0x0048, 0x0086, 0x0000, 0x00c0, 0x0050,
+  0x0086, 0x0020, 0x00c0, 0x0058, 0x0086, 0x0008, 0xffc0, 0x0060,
+  0x0086, 0x0028, 0xffc0, 0x0068, 0x0086, 0x0008, 0x00c0, 0x0070,
+  0x0086, 0x0028, 0x00c0, 0x0078, 0x008c, 0x0060, 0x0800, 0x0080,
+  0x008c, 0x0068, 0x0800, 0x0088, 0x008c, 0x0070, 0x0800, 0x0090,
+  0x008c, 0x0078, 0x0800, 0x0098, 0x0014, 0x0074, 0x2926, 0x0000,
+  0x0064, 0x0012, 0x7fff, 0x0030, 0x00bc, 0x2920, 0x0001, 0x007e,
+  0x0004, 0x0000, 0x0008, 0x0028, 0x0020, 0x0066, 0x0012, 0x8001,
+  0xff30, 0x00bc, 0x2920, 0x0002, 0x007e, 0x0004, 0x0008, 0x0010,
+  0x0030, 0x0028, 0x0064, 0x0012, 0x8001, 0xffb0, 0x00bc, 0x2920,
+  0x0001, 0x007e, 0x0004, 0x0010, 0x0018, 0x0038, 0x0030, 0x0066,
+  0x001e, 0x8001, 0x0000, 0x00bc, 0x2920, 0x0002, 0x007e, 0x0004,
+  0x0000, 0x0020, 0x0048, 0x0040, 0x007e, 0x0004, 0x0038, 0x0018,
+  0x0050, 0x0058, 0x0068, 0x0060, 0x8001, 0xfff0, 0x00bc, 0x2920,
+  0x0000, 0x00b4, 0x0004, 0x0080, 0x0000, 0x0000, 0x0090, 0xffff,
+  0x0000, 0x0070, 0xffff, 0xffff, 0x0060, 0x0000, 0xffff, 0x00be,
+  0x292e, 0x292c, 0x00b4, 0x0004, 0x0060, 0x0000, 0x3000, 0x0008,
+  0x3fff, 0x3000, 0x0000, 0x3fff, 0xffff, 0x0040, 0x0000, 0xffff,
+  0x00b4, 0x0004, 0x0010, 0xc000, 0x3000, 0x0070, 0xffff, 0x3000,
+  0x0050, 0xffff, 0xffff, 0x0018, 0xc000, 0xffff, 0x0068, 0x0060,
+  0x7fff, 0xffe8, 0x00bc, 0x2920, 0x0000, 0x00b4, 0x0004, 0x0098,
+  0xffff, 0x0000, 0x0088, 0x0000, 0x0000, 0x0068, 0x0000, 0xffff,
+  0x0078, 0xffff, 0xffff, 0x00be, 0x292e, 0x292c, 0x00b4, 0x0004,
+  0x0028, 0x3fff, 0x3000, 0x0068, 0x0000, 0x3000, 0x0048, 0x0000,
+  0xffff, 0x0020, 0x3fff, 0xffff, 0x00b4, 0x0004, 0x0078, 0xffff,
+  0x3000, 0x0030, 0xc000, 0x3000, 0x0038, 0xc000, 0xffff, 0x0058,
+  0xffff, 0xffff, 0x0000,
+};
+#define UW_DLIST_BANK_0x61_COUNT (int)(sizeof(g_dlist_bank_0x61)/sizeof(g_dlist_bank_0x61[0]))
+
 static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, void *texptr)
 {
   int npts = *(int *)model;
@@ -50899,6 +51517,22 @@ static const ModelMapEntry g_model_map[] = {
   // architectural models above) since the failure looks positional/
   // occlusion-related, not a scale or Y problem -- open item.
   { 0x157, &DAT_0013a5d4, "SHRINE",   1.0, -100.0, 0, 0, 0, 0 },
+  // "a_pillar" = 0x160. Unlike the boulder/bridge/shrine ids above (found
+  // by hand via UW_DUMP_NAMES trial and error), this one comes from a real
+  // recovered table: the DOS decompile project (uw1-decomp, a separate,
+  // independent decompile of the DOS original) recovered the original
+  // engine's real object-id -> render-geometry dispatch (DGROUP:0x682/
+  // 0x60a, see mysteries.md's Mystery 1 update) and it maps id 0x160 to
+  // bank 0x6a, its own recovered name for which is "pillar". Cross-checked
+  // byte-for-byte against our own comobj.dat (see mysteries.md) -- this
+  // Pocket PC port shipped the exact same comobj.dat as the DOS original,
+  // confirming the id and its render-class=2 ("dispatch") value line up
+  // for real, not by coincidence. NEWPILL.E's own POINTS span X/Z -16..16
+  // (a slender column, not the small-local-unit boulder family) and
+  // Y 0..1024 -- the same "real frame + an oversized riser part clipped to
+  // one room height" shape as DFRAME.E above, so scale/yoff/y_clip mirror
+  // DFRAME's exactly rather than the boulders' scale=8.
+  { 0x160, &DAT_001369a8, "NEWPILL",  1.0, -100.0, 256.0, 0, 0, 0 },
   // Door family: DFRAME.E (the frame) plus DOOR.E (the leaf, model2) --
   // DOOR.E's own local X (0..128) is shifted by x_off2=-64 to sit
   // centered in DFRAME's inner opening (which spans local X -64..64,
@@ -51273,7 +51907,21 @@ ushort * param_1;
   uVar27 = (uint)*param_1;
   {
     const ModelMapEntry *_me = lookup_object_model(uVar27 & 0x1ff);
-    if (_me && !getenv("UW_DISABLE_MODEL_RENDER")) {
+    /* DISABLED BY DEFAULT (2026-09-16, at the user's request): g_model_map
+       is this project's own hand-authored id->model table, not a
+       recovered mechanism (see its own comment above and mysteries.md's
+       Mystery 1) -- and it unconditionally intercepts every id it lists
+       (all of boulders/bridge/shrine/pillar/doors 0x140-0x14f) before
+       render-class dispatch ever runs, which is what made
+       emit_anim_object_frames's real, traced-from-DOS door-drawing call
+       (uw.c ~52001, UW_DOOR_ANIM_FRAMES) permanently unreachable -- see
+       that finding in object-rendering-findings.txt. Flipped to opt-in
+       (UW_ENABLE_MODEL_RENDER=1) so the actual decompiled dispatch path
+       -- now with real data behind DAT_00086c08/DAT_00086c80, unlike when
+       this branch was first added -- can run and be observed/tested on
+       its own, unmasked by this override. Re-enable to get the real 3D
+       geometry back for everyday use/screenshots. */
+    if (_me && getenv("UW_ENABLE_MODEL_RENDER")) {
       /* Raw stored heading is in a fixed world-compass frame, but this
          whole rendering pipeline (tile walk, wall/floor geometry, and the
          object world anchor DAT_0023b904/91c/920 this function's own
@@ -51950,6 +52598,117 @@ LAB_00061d34:
           fprintf(stderr, "[door] emit_tile_objects: frame=%d raw_heading=%d quadrant=%d angle_deg=%d\n",
                   uVar27, _raw_heading, (int)DAT_0023b4a0, g_billboard_angle_override_deg);
       }
+      /* DEAD CODE, same as emit_anim_object_frames itself -- kept as a
+         documented, correct wiring rather than deleted. Traced (at the
+         user's request) how DOS's dialog_script_event really calls
+         dialog_action_here for door ids
+         (uw1-decomp/docs/decompilation/functions/dialog_action_here.c):
+         its body calls dialog_action_object with catalog ids 1/0xc/0xe/
+         0xf, the exact constants this file's own emit_anim_object_frames
+         already uses -- confirming it as the real counterpart. This
+         project's own leaf-sprite formula two lines up
+         (`DAT_00202734 + (uVar27&7) + 0x30`) already independently
+         reimplements dialog_action_here's own catalog-0xe formula
+         (`WORD_6aac_15e2 + (param_1&7) + 0x30`), which is why the call
+         below passes the same `uVar27 & 7` -- the door's low 3 id bits
+         (0x140-0x147 -> this project's 7 door skins/types + secret),
+         very likely what `param_1` really is.
+         BUT: wiring it up and testing (UW_DEBUG_DOOR at every real door
+         position on level 1) found this whole branch -- everything from
+         `(uVar27&0x30)==0` down, not just this call -- is unreachable
+         for every door placed in the game. `lookup_object_model()`
+         (uw.c ~51360, called at the very top of this function, long
+         before render-class dispatch even runs) already matches every
+         door id (0x140-0x14f are all in g_model_map) and returns via
+         `emit_model_object`+`return` first. That's a NEWER, better fix
+         (real DFRAME.E/DOOR.E 3D geometry) that was added after this
+         class-2 door branch and fully supersedes it -- not something
+         this call could ever have been double-drawing against. Left in
+         place, still gated behind UW_DOOR_ANIM_FRAMES, purely as an
+         accurate record of the real dispatch for whenever/if doors are
+         ever removed from g_model_map -- it cannot currently affect
+         anything, verified rather than assumed. See
+         object-rendering-findings.txt. */
+      if (getenv("UW_DOOR_ANIM_FRAMES")) {
+        emit_anim_object_frames(uVar27 & 7, param_1);
+      }
+      /* TEST CALL for the ported generic display-list interpreter above
+         (UW_DLIST_DOOR=1, off by default): draws the real bank-0x61
+         doorway-frame geometry at this door's own anchor, the same real
+         3D-model capability catalog 1 above needed and never had.
+         scale/yoff start at DFRAME.E's own calibrated values (same
+         physical object, architectural/world-unit family per
+         g_model_map's own comment) -- not yet independently verified
+         for this bank's own coordinate convention; UW_DLIST_SCALE/
+         UW_DLIST_YOFF override for tuning. This is a side-by-side check
+         against DFRAME.E, not a replacement for it. */
+      if (getenv("UW_DLIST_DOOR")) {
+        double _scale = 1.0, _yoff = -100.0;
+        int _raw_heading2 = (int)(*(short *)((char *)param_1 + 2) >> 6 & 7);
+        int _quadrant_heading2 = (_raw_heading2 - 2 * (int)DAT_0023b4a0) & 7;
+        /* Same shape of correction emit_model_object already established
+           for the .E models (a quadrant term plus a small per-source
+           compass-step constant, see its own UW_MODEL_HEADING_OFFSET
+           comment) -- but NOT the same constant. Traced DOS's own real
+           door-heading formula (uw1-decomp port/uw1_view.c:2628/2758,
+           both uw1_view_door_faces and uw1_view_model_faces):
+           `angle = -(heading&7) * 45deg`, no quadrant term at all,
+           measured (not derived) against 33 real doors on level 1 --
+           their own comment: "one sense puts all 33 of them there and
+           the other misses by 32 units". That confirms the rotation
+           MATH (same x'=x*cos-z*sin formula, only X/Z touched, verified
+           identical to ours) but doesn't hand us a literal constant:
+           DOS's frame is true world-space with the camera transform
+           applied later by a separate stage, while ours (matching
+           emit_model_object's own working convention) pre-rotates into
+           a camera-quadrant frame right here -- the quadrant term exists
+           for exactly that reason and DOS's formula has no equivalent to
+           translate. -3 is the empirically-found value (user-guided
+           screenshot comparison: two real door-post shapes appeared at
+           this offset, not at -1/0/+1/+2) for THIS bank's own vertex
+           source, the same kind of per-source constant DFRAME.E already
+           needed its own -1 for. */
+        { int _step = -3;
+          const char *_s = getenv("UW_DLIST_HEADING_OFFSET"); if (_s) _step = atoi(_s);
+          _quadrant_heading2 = (_quadrant_heading2 + _step) & 7;
+        }
+        { const char *_s = getenv("UW_DLIST_SCALE"); if (_s) _scale = atof(_s); }
+        { const char *_s = getenv("UW_DLIST_YOFF"); if (_s) _yoff = atof(_s); }
+        /* Real texture, not the flat 0 every other g_model_map entry uses.
+           DOS's own row 1 (this bank) has flags bit 0x20 set -- "image
+           from field" -- meaning the image isn't baked into the bytecode
+           at all, it's resolved through the same level-wall-texture
+           lookup dialog_action_here already uses for it. Reuse the exact
+           expression the jamb catalog=1 call in emit_object_billboard
+           already resolves successfully here (confirmed live,
+           get_texture_page returned a real pointer for this same door):
+           the tile's own wall-texture index. Bank 0x61's own face_flat/
+           face_textured_same opcodes (0x007e/0x00b4) already carry real
+           per-vertex UV in the bytecode -- unlike the door LEAF sprite
+           texture experiment that made the leaf disappear (a small
+           finite sprite sampling outside its own bounds against this
+           renderer's screen-position-derived UV), this is architecturally
+           the same "large, wall-sized surface" case that already works
+           for ordinary tile walls, not the case that broke. */
+        if (getenv("UW_DLIST_DOOR_TEXTURE")) {
+          int _wtex = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
+          void *_texptr = get_texture_page(_wtex);
+          if (getenv("UW_DEBUG_DLIST"))
+            fprintf(stderr, "[dlist] wall texture index=%d texptr=%p\n", _wtex, _texptr);
+          emit_dlist_bank_object(g_dlist_bank_0x61, UW_DLIST_BANK_0x61_COUNT,
+                                  _quadrant_heading2, _scale, _yoff, _texptr);
+        } else {
+          emit_dlist_bank_object(g_dlist_bank_0x61, UW_DLIST_BANK_0x61_COUNT,
+                                  _quadrant_heading2, _scale, _yoff, 0);
+        }
+        /* UW_DLIST_DOOR_ONLY=1: skip the pre-existing leaf-sprite draw
+           below entirely, so a screenshot/diff shows nothing but this
+           bank's own geometry -- isolates the frame from the leaf for
+           calibration, since the leaf sprite's own pixels otherwise swamp
+           a same-position diff (see the "these look like pixel
+           differences on the door leaf" finding). */
+        if (getenv("UW_DLIST_DOOR_ONLY")) return;
+      }
       goto LAB_emit_mesh_sprite_quad;
     }
     /* DAT_00086c80_backing has no writer anywhere in this decompile (same
@@ -51995,6 +52754,58 @@ LAB_00061d34:
       }
     }
     iVar17 = (int)(((uVar27 & 0x3f) - 0x10) * 0x10000) >> 0x10;
+    /* Real recovered per-row image formula (DOS decompile cross-check --
+       a separate, independent decompile of the DOS original at
+       ~/Github/uw1-decomp -- see mysteries.md's Mystery 1 update and
+       object-rendering-findings.txt's 2026-09-13 entry). `iVar17` above
+       is already computing exactly DGROUP:0x682's own index (`(id&0x3f)
+       -0x10`, i.e. `item_id - 0x150` for these ids) -- this codebase had
+       independently reconstructed the right indexing without realizing
+       it lines up with a real recovered dispatch table. DOS's row for
+       that index gives `image = TMOBJ_base + (b3&0x1f) + object_flags %
+       ((b3>>5)+1)`, `object_flags` being word0 bits 9-12 (confirmed live
+       against real placed objects below, not just DOS's own table: our
+       own UW_DUMP_OBJECTS_FILE census shows four real "a_lever"
+       instances in the same puzzle room carrying (word0>>9)&0xf = 1,2,3,4
+       and "some_writing" instances spanning 0,1,7,8,9 -- exactly the
+       kind of per-instance variation a modulo-based multi-image formula
+       predicts, not a per-id constant). TMOBJ_base is DAT_00202734 (the
+       real, live TMFLAT/TMOBJ load-cursor snapshot `load_door_frames`
+       and the loader above already use -- see `DAT_00202734 =
+       DAT_00202744;` right before TMFLAT's own FUN_00041990 call) + 0x10
+       for TMFLAT's own 16 slots, the same "[0x15e2]+0x10" DOS's own
+       comments describe.
+       Only wired for ids independently name-confirmed via our own
+       UW_DUMP_NAMES (not trusted from DOS alone): 0x161 "a_lever", 0x162
+       "a_switch&switches", 0x165 "a_gravestone", 0x166 "some_writing" --
+       the last one matching DOS's own doc prose verbatim ("some_writing's
+       row picks TMOBJ entries 20..27"), independently pulled from two
+       unrelated binaries' string tables. Every other iVar17 slot (DOS
+       banks this port hasn't cross-checked, or hasn't decoded on its own
+       side yet) keeps the old "no real data" 668 fallback below. */
+    { static const struct { int iv17; int base; int mod; } _decal_row[] = {
+        { 0x161 - 0x150, 4,  8 },  /* a_lever         -> TMOBJ  4..11 */
+        { 0x162 - 0x150, 12, 8 },  /* a_switch        -> TMOBJ 12..19 */
+        { 0x166 - 0x150, 20, 8 },  /* some_writing    -> TMOBJ 20..27 */
+        { 0x165 - 0x150, 28, 2 },  /* a_gravestone    -> TMOBJ 28..29 */
+      };
+      unsigned _di;
+      for (_di = 0; _di < sizeof(_decal_row)/sizeof(_decal_row[0]); _di++) {
+        if (_decal_row[_di].iv17 == iVar17) {
+          int _flags = (*param_1 >> 9) & 0xf;
+          int _off = _decal_row[_di].base + (_flags % _decal_row[_di].mod);
+          int _abs = (int)(short)DAT_00202734 + 0x10 + _off;
+          if (getenv("UW_DEBUG_DECAL"))
+            fprintf(stderr, "[decal] id=0x%03x iVar17=%d flags=%d off=%d abs_frame=%d\n",
+                    (int)(*param_1 & 0x1ff), iVar17, _flags, _off, _abs);
+          /* Negated, same as the DAT_00086c80 path below: FUN_00040770's
+             `param_1 < 0` arm treats -param_1 as the absolute frame
+             directly (see its own comment). */
+          uVar27 = (uint)(ushort)(-_abs);
+          goto LAB_decal_frame_resolved;
+        }
+      }
+    }
     if ((short)*(ushort *)(&DAT_00086c80 + iVar17 * 2) < 0) {
       return;
     }
@@ -52019,6 +52830,7 @@ LAB_00061d34:
        the sack etc. this session) instead of emit_object_billboard, by
        overriding uVar27 and jumping into that code directly. */
     uVar27 = (uint)(ushort)(-(short)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
+LAB_decal_frame_resolved:
     /* Make it a wall-flush decal instead of a camera-facing billboard:
        the quad-build code below extends this sprite along a "right
        vector" looked up from a sin/cos table by angle DAT_000db44c
@@ -52258,6 +53070,9 @@ short param_4;
   }
   else {
     local_58 = (byte *)get_texture_page((int)param_4);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] emit_object_billboard: get_texture_page(%d) = %p\n",
+              (int)param_4, (void *)local_58);
     if (local_58 == (byte *)0x0) {
       /* param_4 out of get_texture_page's 0..0x73 range -- reached with
          (uVar27 & 0xf) + DAT_00202734 (~0x2b8) from emit_tile_objects's

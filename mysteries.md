@@ -11,8 +11,197 @@ session's blow-by-blow log.
 
 ---
 
-## Mystery 1: How did the game originally dispatch object draws to different renderers?
+## Mystery 1: How did the game originally dispatch object draws to different renderers? (UPDATE: dispatch mechanism confirmed real, see below)
 
+**UPDATE (DOS decompile cross-check, 2026-09-13):** a separate, independent
+decompile of the DOS original (`uw1-decomp`, checked out at
+`~/Github/uw1-decomp`) has fully recovered this dispatch, and it's the same
+on-disk field our own `comobj.dat` loader already reads.
+
+- DOS's `COMOBJ.DAT` is 512 rows x 11 bytes on disk. Byte offset **+9**, bits
+  0-1, is a "draw arm" selector: 0=sprite, 1=critter, **2=dispatch to real
+  3D geometry (or a door)**, 3=table (`UW1_VIEW_DRAW_TABLE` -- correction,
+  see UPDATE 2 below: this does NOT mean unused/dead code, only that this
+  arm doesn't index OBJECTS.GR the way arm 0 does; it draws real decal
+  objects through a different image source).
+  (`uw1-decomp/port/uw1_view.h:548-579`, `uw1_view.c:2202-2207`, ported from
+  the original's `dialog_script_event` at `3bdd:0005`.)
+- For arm 2, `DGROUP:0x682` (`uw1_view_model_row_of_item[]`,
+  `uw1-decomp/port/uw1_view_models.c:183-187`) maps `item_id - 0x150` (23
+  entries, ids `0x150`-`0x166`) to a row index; `DGROUP:0x60a`
+  (`uw1_view_model_row[][4]`, `uw1_view_models.c:144-180`, 32 rows) maps that
+  row to a geometry "bank" -- real embedded display-list data baked into
+  `UW.EXE` at segment `0x5723`.
+- **This is the same field we already read.** Our `comobj.dat` loader stores
+  an 11-byte on-disk record into a 13-byte (`0xd`) in-memory stride, with
+  confirmed padding at mem offsets 4 and 0xc (see the comment at
+  `uw.c:1417-1430`). Walking through that padding: our "render class" byte
+  `DAT_00202c9a` sits at mem offset `0xa`, which lands on **disk offset 9**
+  once the one padding byte before it (offset 4) is subtracted out --
+  byte-for-byte the same field DOS uses. Our own independent dump of a
+  placed boulder (id `0x154`) found it carrying render-class **2**, DOS's
+  exact "dispatch" value, which corroborates this is literally the same
+  original game data, not a coincidence of format.
+- What this means in practice: `object-rendering-findings.txt`'s "no id/model
+  field exists anywhere in comobj.dat" finding was checking for a *direct*
+  id-to-model field -- correct, there isn't one -- but missed that the
+  *render-class* field it had already found and named doubles as the
+  dispatch gate for an *indirect* id-through-row-through-bank table, exactly
+  like DOS's. Our whole `g_model_map`/`lookup_object_model` mechanism (see
+  below) was us rediscovering, one object family at a time via
+  `UW_DUMP_NAMES` trial-and-error, pieces of this same original dispatch --
+  because we didn't have this cross-reference before now.
+- **We don't need DOS's raw geometry.** Our own `DATA3D/*.E` files are more
+  complete (all 29 loaded) than what `uw1-decomp` has decoded so far (only
+  ~10 of 32 banks have real geometry bytes transcribed; most of
+  `uw1_view_model_head[]` is still `-1`, "not carried"). What we gain from
+  their table is the **id-to-identity mapping**: which of our own
+  already-loaded `.E` files a given id should use.
+- Cross-referencing `uw1_view_model_row_of_item[]` against
+  `uw1-decomp/docs/graphs/uw-playable/nodes/n-07-06-pillars-bridges-decals.md`:
+  id `0x164` "a_bridge" -> row 2 -> bank `0x62`, matching our existing
+  `FBRIDGE` entry exactly (independent confirmation it's correct); id `0x160`
+  "a_pillar" -> row `0xa` -> bank `0x6a` (DOS has real geometry for this
+  bank) -- we already load `NEWPILL.E` into `DAT_001369a8` but never wired it
+  up. The rest of the 23-item table points at banks DOS hasn't decoded yet,
+  or -- per their own `n-07-06` doc -- belong to a *different* "decal"
+  wall-texture-quad class (rows `0x10`-`0x1f`, banks `0x70`-`0x7f`) rather
+  than a freestanding 3D model.
+
+**UPDATE 2 (decal dispatch, 2026-09-13):** the decal half of that same
+table is now wired too, and it turned out this file had *already*
+independently rebuilt the right indexing scheme for it without knowing --
+it just had no real per-id image data to put behind it. `uw1_view.h:1519-
+1543` gives the real per-row image formula for the `flags & 0x10` arm:
+`image = TMOBJ_base + (b3&0x1f) + object_flags % ((b3>>5)+1)`, where
+`object_flags` is the object's own word0 bits 9-12 (so the SAME id can draw
+one of several real images depending on the placed instance, not a fixed
+per-id picture). Our own `emit_tile_objects` class-2 `id&0x30 != 0` branch
+already computes `iVar17 = (id&0x3f)-0x10` -- byte-for-byte DOS's own
+`DGROUP:0x682` index (`item_id-0x150`) -- but had no real table behind it
+(`DAT_00086c80` has no writer anywhere in this decompile, so every sign
+guessed the same hardcoded frame; see `object-rendering-findings.txt`).
+Name-confirmed via our own `UW_DUMP_NAMES` (not trusted from DOS alone) and
+wired with the real formula for four ids: `0x161` "a_lever" (row `0x10` ->
+TMOBJ frames 4-11), `0x162` "a_switch&switches" (row `0x11` -> 12-19),
+`0x166` "some_writing" (row `0x12` -> 20-27 -- matching DOS's own doc prose
+verbatim, pulled independently from two unrelated binaries' string
+tables), `0x165` "a_gravestone" (row `0x13` -> 28-29). Verified against
+real placed objects, not just DOS's table: our own `UW_DUMP_OBJECTS_FILE`
+census shows four real `a_lever`s in one puzzle room carrying word0 bits
+9-12 = 1,2,3,4 (resolving to four genuinely different TMOBJ frames, 664-
+667, confirmed live via `UW_DEBUG_DECAL=1`) and `some_writing` instances
+spanning flags 0,1,7,8,9 -- real per-instance variation, not a constant.
+Visually confirmed: a lever now draws a small, distinct wall-mounted plate
+graphic where before every sign in the game (including this one) drew the
+same placeholder "message/plaque" frame. The remaining ~26 `iVar17` slots
+(ids DOS hasn't cross-checked, or hasn't decoded the bank body for on its
+own side yet) keep the old no-data fallback.
+
+Also found while reading this: this port's `emit_tile_objects` render-class
+**3** branch (`DAT_00202c9a & 3 == 3`) already calls `emit_object_billboard`
+with the exact catalog ids (`0x14`, `0x16`) DOS's own arm-3 body uses for
+the two remaining decal families -- `0x170`-`0x17f` (buttons/switches/
+lever/pull-chains straight out of TMFLAT, `image=[TMFLAT_base]+(id&0xf)`)
+and `0x16d`-`0x16f` (force field/special tmap obj, image from the level's
+own texture list) -- using `DAT_00202734`, the same live TMFLAT-load-cursor
+snapshot the formula above needs. This matches DOS's structure well enough
+that it was very likely written by someone translating the same real ARM
+dispatch, not invented -- and `emit_object_billboard`'s own effect catalog
+(`DAT_00086c08`) turned out to have the identical "no writer anywhere"
+problem that broke the door catalog elsewhere in this file.
+
+**UPDATE 3 (`DAT_00086c08` traced and fixed, 2026-09-15):** at the user's
+request, traced how the DOS decompile populates the equivalent of this
+table rather than guessing again. `dialog_action_object`'s real body
+(`uw1-decomp/docs/decompilation/functions/dialog_action_object.c:20`)
+reads `*(byte*)(param_1*4 + 0x60a)` -- the EXACT same access shape as this
+file's `(&DAT_00086c08)[param_1*4]`, into the SAME `DGROUP:0x60a` /
+`uw1_view_model_row[][4]` table already recovered and used above.
+`emit_object_billboard` and the class-2 sign branch are two different
+WinCE-decompiled call shapes of the one original `dialog_action_object`,
+not two separate mechanisms. Confirmed the bit layout matches exactly
+(byte0: bit `0x20`=texture-page mode, bit `0x80`=direction-dependent
+animation, bits 0-2=frame count; byte3: the same image formula) and that
+no real row's frame count exceeds 3, so nothing spills past its own
+4-byte slot. Every current caller (door jamb-overlay/open-swing frames,
+plus these two decal families) was reading all-zero -> 0 frames -> drew
+nothing, so there was no working behavior to regress. Fixed by aliasing
+`DAT_00086c08` onto a real 128-byte array holding all 32 rows verbatim
+(uw.c ~4067, same technique as the earlier `DAT_00086c80`/comobj.dat
+fixes). Verified: a real "special tmap obj" (force field, id `0x16e`) at
+tiles (31,1)/(32,1) right next to spawn now draws a small blue/cyan patch
+on the wall that wasn't there before -- thematically correct for a force
+field.
+
+**Correction (2026-09-16):** checked whether this fix could affect the
+door jamb-overlay/open-swing paths (catalog ids `1`/`0xc`/`0xe`/`0xf`,
+inside `emit_anim_object_frames`) -- it can't. `emit_anim_object_frames`
+(uw.c ~53015, `was FUN_00064384`) has **zero callers anywhere in this
+file** (confirmed via grep -- only its own definition and its own debug
+comments reference it), and Ghidra's own decompile flags the block right
+before it as an unreachable block. So this fix has no live effect on
+doors at all today, for better or worse -- the only two catalog ids this
+fix actually exercises at runtime are the reachable ones,
+`emit_tile_objects`'s class-3 branch's direct `0x14`/`0x16` calls (the
+TMFLAT/TMAP decal families verified above). Nothing else in the object-
+rendering flow reads `DAT_00086c08`, so there's no risk of this fix
+regressing the model-map path (boulders/bridge/shrine/pillar/doors'
+frame+leaf, which never touches this table) or the earlier lever/switch/
+writing/gravestone fix (a different table, `DAT_00086c80`, in a different
+function).
+
+**UPDATE 4 (`emit_anim_object_frames` wired, found still dead, 2026-09-16):**
+traced DOS's real caller of the door-drawing logic
+(`dialog_action_here`, `uw1-decomp/docs/decompilation/functions/
+dialog_action_here.c` -- confirmed as the counterpart since its body calls
+`dialog_action_object` with the same 1/0xc/0xe/0xf constants
+`emit_anim_object_frames` already has) and wired the missing call into
+`emit_tile_objects`'s door branch (`uw.c` ~52001), gated behind
+`UW_DOOR_ANIM_FRAMES=1`. A/B-tested it at every real door on level 1 --
+zero visual difference anywhere. Root cause: `lookup_object_model()`
+(`uw.c` ~51360), called long before this branch is ever reached, already
+matches every door id and returns via the real `DFRAME.E`/`DOOR.E` 3D
+model first -- so this whole branch (not just the new call) is
+unreachable for every door in the game, superseded by the newer
+model-map fix. Left in place as an accurate, verified-correct-but-dormant
+record; see `object-rendering-findings.txt`'s matching entry for the full
+trace.
+
+**UPDATE 5 (`g_model_map` disabled by default; the real reason the jamb
+pass draws nothing, 2026-09-16):** `g_model_map` is now disabled by
+default (`UW_ENABLE_MODEL_RENDER=1` to turn it back on) so the traced
+dispatch above can actually be observed rather than masked. With it off,
+the door leaf renders again via this project's own pre-existing sprite
+fix, confirming the branch is live -- but `UW_DOOR_ANIM_FRAMES` still
+changed nothing, even at that confirmed-visible door. Traced why:
+`emit_object_billboard`'s screen-projection call (`transform_points_by_
+matrix`, `uw.c` ~53031) is hard-gated to catalog ids `0xe`/`0xf`/`0xc`
+only (`uw.c` ~52968) -- catalog `1` (jamb) never reaches it, confirmed
+live that this isn't a data failure (`get_texture_page(24)` returns a
+real pointer for the jamb call). DOS's own `dialog_action_object` has no
+such gate -- for any catalog it just writes an opcode stream into a
+named bank and leaves rendering to a separate, generic display-list
+interpreter, the same bank system Mystery 1 already covers. This port's
+`emit_object_billboard` looks like a compiler-specialized version of
+just that interpreter's hot path (ordinary animated sprite billboards);
+whatever handled catalog 1's real frame geometry generically either
+never existed in this build or wasn't recovered. Not a bug to fix here --
+it's the same "no true 3D-model dispatch" gap Mystery 1 already
+identified, and `g_model_map`'s `DFRAME.E` is the working answer to it.
+Full trace in `object-rendering-findings.txt`.
+
+**UPDATE 6 (generic display-list interpreter ported, 2026-09-16):** at
+the user's request, ported uw1-decomp's own generic bank interpreter
+(`port/uw1_dlist.c`/`.h`) into `uw.c`, plus bank 0x61's real 259-word
+bytecode (extracted programmatically from `uw1_view_model_words[]`, not
+hand-copied). Wired as an opt-in test call (`UW_DLIST_DOOR=1`). It runs
+correctly -- 9 real faces decoded from the real bytecode, a real
+scale-responsive change confirmed on screen via pixel diff -- proving
+the mechanism works, but the bank's own coordinate convention isn't
+calibrated yet, so it doesn't yet look like a clean door frame. Full
+detail and next steps in `object-rendering-findings.txt`'s matching
+entry.
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
@@ -199,15 +388,40 @@ automap-reveal sections and the git log around commit `97fe3e6`):
   reveals the whole room cluster as a side effect, never fixed back down
   since).
 
-**Still open:**
-- Was there ever a real, original connection from carried light source
-  → view/reveal radius, or did the genuine 1992 engine also just reveal
-  whole rooms at once and rely on darkness/fog for *rendering* only
-  (never automap reveal)? We have infrastructure (`SHADES.DAT`, the
-  radial grid) that strongly suggests SOME light-radius concept existed
-  in the data, but zero evidence it was ever wired to the player's
-  equipped light source specifically, as opposed to per-level ambient
-  presets.
+**UPDATE 2 (DOS decompile cross-check, 2026-09-13):** the first "still open"
+question below is now answered -- **no, the genuine 1992 DOS engine never
+wired a carried light source to view or reveal radius either.** Checked
+against `uw1-decomp` (`~/Github/uw1-decomp`):
+- View/render distance there is a flat constant read from `SHADES.DAT`
+  (`UW1_VIEW_DRAW_DISTANCE`), used as-is at its one call site
+  (`uw1-decomp/port/uw_main.c:778`), independent of any light source. Their
+  own header states this outright: "there is no per-tile light level in
+  Underworld's world renderer at all. A torch lights the world by being an
+  object the object pass draws... it does not brighten the wall behind it."
+  (`uw1-decomp/port/uw1_view.h:81-89`.)
+- Their automap reveal is driven by the exact same fixed-radius cell loop
+  as the 3D view (`render_tile_faces.c:34-38`, `render_world_view.c:91`,
+  `render_tile_rows.c:84-92` in `uw1-decomp/docs/decompilation/functions/`)
+  -- no wall-flood, no light-source check anywhere in that path.
+- The torch object's own brightness is entirely self-contained: a separate
+  16-row "light sources" `OBJECTS.DAT` table, read only by the torch-class
+  object's own draw code
+  (`uw1-decomp/docs/uw-playable/object-properties.md:89-92`), matching
+  exactly what we'd already found in our own `use_light_source` trace above.
+- No hits for "torch" anywhere across DOS's 1817 decompiled functions
+  outside that one object-draw path, confirming there's no missed
+  connection to chase.
+
+Conclusion: the whole-room automap reveal (and the flat, light-independent
+view distance) is a genuine original design property of Ultima Underworld's
+1992 engine, not something either this port or the DOS decompile lost or
+broke. The infrastructure (`SHADES.DAT`, the radial shade grid) exists for
+per-level ambient presets, not a carried-light mechanic -- there never was
+one to recover.
+
+**Still open (DOS confirms no, see UPDATE 2 above for the resolved half):**
+- ~~Was there ever a real, original connection from carried light source
+  → view/reveal radius~~ -- answered above: no.
 - What do `FUN_000667cc`'s `DAT_002020d8` gate and `FUN_00067e40`
   actually do? Neither has been named or traced to a real trigger.
 - Whether fixing this (giving automap reveal its own real, bounded
@@ -276,12 +490,44 @@ designed to be.** Full trace in `object-rendering-findings.txt`
     renderer implements per-vertex UV as a distinct concept from
     "projected screen position."
 
+**UPDATE (DOS decompile cross-check, 2026-09-13):** the first "still open"
+question below is answered -- **yes, the genuine 1992 DOS engine's model
+format really did have real per-vertex UV mapping**, checked directly
+against `uw1-decomp` (`~/Github/uw1-decomp`):
+- Its display-list bytecode has distinct textured-face opcodes (`0x00a8`
+  `face_textured`, `0x00b4`/`0x00ce` `face_textured_same`/`_shaded`) where
+  each vertex entry carries an explicit vertex-slot plus **u** and **v**
+  words, alongside a separate untextured `0x007e face_flat` opcode colored
+  via a flat `0x00bc colour` cell+shade pair
+  (`uw1-decomp/port/uw1_dlist.h:117-160`, `uw1_dlist.c:145-181,646-660`).
+  Textured and flat faces coexist on the same object.
+- These aren't a theoretical opcode -- they're used on real architectural
+  3D objects: the door leaf/doorway banks decode as "2 textured, 4 flat"
+  and "6 textured, 5 flat" faces respectively
+  (`uw1-decomp/docs/graphs/uw-playable/nodes/n-07-05-door-from-models.md:46-49`),
+  and the UV data survives all the way into the renderer's own draw struct
+  (`uw1_view_door_faces()`, `uw1-decomp/port/uw1_view.c` ~line 2736-2815,
+  copies `has_uv`/`u[]`/`v[]` straight through).
+
+So this was a real, designed original-engine feature -- our own conclusion
+above (no UV field anywhere in the `.E` format, models "never designed to be
+texture mapped") is only true of *this Pocket PC port's own* `.E` text
+format specifically, not of the underlying Ultima Underworld model concept
+in general. Whoever built this WinCE port's asset pipeline evidently
+stripped UV data out (along with the per-face normal and resolved color,
+already noted above as computed-then-discarded) when exporting these models
+to the simplified `.E` text format -- a deliberate simplification for this
+platform, not evidence the original never had it.
+
+Porting real texturing into our renderer from here would mean re-deriving
+per-face UVs for our own independently-encoded `.E` models from scratch --
+DOS's display-list bytecode and our `.E` POINTS/PARTS text format are two
+unrelated encodings with no shared vertex/face numbering to translate
+through, so this isn't a quick lookup the way the render-dispatch table
+(Mystery 1) was. Left as a real, confirmed-but-unsolved follow-up, not
+attempted this round.
+
 **Still open:**
-- Whether the genuine 1992 PC engine's model renderer worked
-  differently (real UV mapping with a format this WinCE port's `.E`
-  parser simply doesn't expose/use) — we only have evidence about *this
-  parser and this data*, not about whatever the original DOS renderer
-  might have assumed.
 - `DAT_000db480`/`DAT_000db470`/`DAT_000db494` (the flags gating the
   double-sided-face and `EXTENDED_COLORS` resolution logic) have no
   writer anywhere in this decompile — always BSS-zero. Flagged but not

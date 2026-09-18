@@ -894,3 +894,399 @@ Same "hidden writer, not yet Ghidra-checked" shape as DAT_00085668 and
 friends from earlier in this project, but not run down this session --
 worth a real Ghidra reference/byte-pattern search before trusting either
 "always off" or "a real writer exists" as the answer.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-13: DOS DECOMPILE CROSS-CHECK -- REAL DISPATCH TABLE FOUND,
+PILLAR (id 0x160) WIRED UP FROM IT
+═══════════════════════════════════════════════════════════════════════════
+A separate, independent decompile of the DOS original (`uw1-decomp`,
+checked out at ~/Github/uw1-decomp) has fully recovered the original
+engine's object-id -> render-geometry dispatch that this project's earlier
+"no id/model field exists anywhere in comobj.dat" finding (above) had ruled
+out as a *direct* field. It's real, just indirect:
+
+- DOS's COMOBJ.DAT: 512 rows x 11 bytes on disk. Byte offset +9, bits 0-1,
+  is a "draw arm": 0=sprite, 1=critter, 2=dispatch to real 3D geometry (or
+  a door), 3=table (confirmed unread). For arm 2, DGROUP:0x682
+  (uw1_view_model_row_of_item[]) maps item_id-0x150 (23 entries) to a row;
+  DGROUP:0x60a (uw1_view_model_row[][4], 32 rows) maps the row to a
+  geometry "bank" baked into UW.EXE.
+- This is the SAME field our own render-class byte (DAT_00202c9a, the one
+  this file already found and named) reads. Our comobj.dat loader stores
+  an 11-byte on-disk record into a 13-byte in-memory stride with confirmed
+  padding at offsets 4 and 0xc (uw.c:1417-1430) -- working through that
+  padding, our DAT_00202c9a (mem offset 0xa) lands on disk offset 9,
+  byte-for-byte DOS's dispatch field.
+- Verified this isn't just a format coincidence: read both comobj.dat files
+  directly (our extracted UWDATA/DATA/COMOBJ.DAT and uw1-decomp's
+  vendor/DATA/COMOBJ.DAT) at the byte level for every id this file already
+  had wired (0x140-0x14f doors, 0x153-0x157 boulders/shrine, 0x160 pillar,
+  0x164 bridge) plus 0x161/0x162/0x165/0x166 -- **every single row is
+  byte-for-byte identical between the two.** This Pocket PC port shipped
+  the exact same comobj.dat as the DOS original.
+- Cross-referencing uw1_view_model_row_of_item[] against
+  uw1-decomp/docs/graphs/uw-playable/nodes/n-07-06-pillars-bridges-decals.md:
+  id 0x164 "a_bridge" -> row 2 -> bank 0x62, matching our existing FBRIDGE
+  entry exactly (independent confirmation it was already right). id 0x160
+  "a_pillar" -> row 0xa -> bank 0x6a (DOS has real geometry decoded for
+  this one) -- we already load NEWPILL.E into DAT_001369a8 but had never
+  wired it up.
+- The rest of the 23-item table (0x161, 0x162, 0x165, 0x166, etc.) resolve
+  to rows 0x10-0x1f (banks 0x70-0x7f), which uw1-decomp's own n-07-06 doc
+  treats as a *different* "decal" wall-texture-quad class, not freestanding
+  3D models -- and DOS hasn't decoded most of those banks' actual geometry
+  yet either. Deliberately NOT ported; would need independent verification
+  per id, same as everything else in this file.
+
+FIX: added `{ 0x160, &DAT_001369a8, "NEWPILL", 1.0, -100.0, 256.0, 0, 0, 0 }`
+to g_model_map (uw.c). Confirmed via our own tooling first, not just DOS's
+table: UW_DUMP_NAMES=1 shows our own page-4 name table resolves id 0x160 to
+"a_pillar" too, and UW_DUMP_OBJECTS_FILE found several real placed
+instances on level 1 (tiles (57,6), (29,17), (34,17), (9,19), (29,20),
+(34,20), (26,21), (52,31), (56,31), (52,32), render class 2, no model
+wired). scale/yoff/y_clip mirror DFRAME's (not the boulders' scale=8):
+NEWPILL.E's own POINTS span X/Z -16..16 (a slender column) and Y 0..1024,
+the same "real frame + oversized riser clipped to one room height" shape
+DFRAME uses.
+
+VERIFIED visually: `SETPLAYERPOS 29.5 18.5 768 160 0` (facing the pillar at
+tile (29,17) from (30,17)) showed nothing before the fix (matching this
+file's earlier "invisible, not absent" boulder finding -- render class 2
+routed pillars through the door/sign quad path instead, projecting
+off-screen) and a real standing rectangular column after it, at the
+correct position and a plausible height/width. UW_DEBUG_MODEL=1 confirmed
+a single model emission per frame with npts=8/nparts=5/emitted=4 (matching
+NEWPILL.E's own 8 points / 4 real parts exactly, the 5th filtered as the
+spurious trailing entry the parser comment already documents). No crashes.
+
+Mystery 1's DOS-cross-check also resolved Mystery 2 (no torch-to-reveal-
+radius wiring in the DOS original either -- genuine 1992 design property,
+not a lost port feature) and confirmed Mystery 3 (DOS's model format DID
+have real per-vertex UV data; this port's own `.E` text format dropped it
+-- a deliberate simplification by this port's own asset pipeline, not
+evidence the concept never existed). See mysteries.md for the full,
+separately-cited write-up of all three.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-13 (2): WALL-DECAL DISPATCH -- REAL PER-ROW IMAGE FORMULA,
+FOUR SIGN IDS WIRED (LEVER/SWITCH/WRITING/GRAVESTONE)
+═══════════════════════════════════════════════════════════════════════════
+Follow-up to the update above: DOS's recovered dispatch (uw1-decomp,
+port/uw1_view.h:1500-1651) doesn't stop at freestanding 3D models -- the
+SAME item-id -> row table also covers "decal" objects (writings, levers,
+switches, buttons, pull chains, a gravestone) that draw as small flat
+images on a wall, through the exact `iVar17 = (id&0x3f)-0x10` indexing
+this file's own emit_tile_objects class-2 sign branch already computed
+(uw.c ~52013) -- this codebase had independently reconstructed DOS's real
+DGROUP:0x682 index without anyone realizing it, it just had no real data
+to look up with it. That "no real data" was DAT_00086c80: no writer
+anywhere in this decompile, so it got hand-initialized to a single
+constant (668, TMOBJ.GR's "message/plaque" frame 25) for all 32 possible
+slots -- meaning every sign in the game, of every real type, drew the
+identical placeholder graphic.
+
+DOS's real formula (uw1_view.h:1519-1543), for the arm-2 rows whose flag
+byte has bit 0x10 set: `image = TMOBJ_base + (b3&0x1f) + object_flags %
+((b3>>5)+1)`, where `b3` is the row's own 4th byte (`uw1_view_model_row`,
+port/uw1_view_models.c) and `object_flags` is the PLACED OBJECT's own
+word0 bits 9-12 -- i.e. the same id can draw one of several real images
+depending on the instance, not one fixed picture per id. `TMOBJ_base` is
+`[DGROUP:0x15e2]+0x10`; our own equivalent is `DAT_00202734+0x10` --
+DAT_00202734 already gets snapshotted right before TMFLAT's own
+FUN_00041990 load call (uw.c ~31874), i.e. it's TMFLAT's own live base,
+already used by this exact same file's render-class-3 branch for a
+different purpose (see below) -- no new global needed, just reused.
+
+Name-confirmed via our own UW_DUMP_NAMES (not trusted from DOS alone) and
+wired for four ids in uw.c's class-2 sign branch:
+  0x161 "a_lever"            row 0x10  ->  TMOBJ frames  4..11 (mod 8)
+  0x162 "a_switch&switches"  row 0x11  ->  TMOBJ frames 12..19 (mod 8)
+  0x166 "some_writing"       row 0x12  ->  TMOBJ frames 20..27 (mod 8)
+  0x165 "a_gravestone"       row 0x13  ->  TMOBJ frames 28..29 (mod 2)
+"some_writing" is a direct, independent match to uw1-decomp's own doc
+prose ("some_writing's row picks TMOBJ entries 20..27") -- two unrelated
+decompiles of two different binaries pulling the identical object name
+out of their respective string tables.
+
+VERIFIED against real placed objects, not just DOS's table: UW_DUMP_
+OBJECTS_FILE's census shows four real "a_lever" objects in one puzzle
+room (tiles (56-59,45)) carrying word0 bits 9-12 = 1,2,3,4 respectively,
+and "some_writing" instances spanning flags 0,1,7,8,9 across a level --
+real per-instance variation, exactly what a modulo-based multi-image
+formula predicts and a per-id constant could never produce. UW_DEBUG_
+DECAL=1 confirms all four levers now resolve to four DIFFERENT absolute
+TMOBJ frames (664/665/666/667) instead of the same constant. Visually
+confirmed at one lever (SETPLAYERPOS 57.5 46.5 768 180 0): a small,
+distinct wall-mounted plate graphic now draws where every sign previously
+drew the same placeholder. The other ~26 `iVar17` slots (ids DOS hasn't
+cross-checked against, or hasn't decoded the bank body for on its own
+side yet) keep the old 668 fallback -- untouched, not guessed further.
+
+ALSO FOUND, NOT YET CHASED: this file's render-class-3 branch
+(`DAT_00202c9a & 3 == 3`) already calls `emit_object_billboard(0x14, ...)`
+and `emit_object_billboard(0x16, ...)` -- the exact two catalog ids DOS's
+own arm-3 body (`dialog_action_object(0x14,...)` for ids 0x170-0x17f,
+`dialog_action_object(0x16,...)` for 0x16d-0x16f) uses, and the 0x14 call
+already uses `(id&0xf)+DAT_00202734`, matching DOS's `[TMFLAT_base]+
+(id&0xf)` formula for 0x170-0x17f exactly. This looks like a real,
+correct translation of the original dispatch, not an invented one. BUT:
+emit_object_billboard's own effect catalog (DAT_00086c08) has the
+identical "no writer anywhere in this decompile" problem that broke the
+door catalog fixed earlier this project (see uw.c's own comment at the
+door-billboard call site) -- so these two families may still be drawing
+on garbage catalog-derived flags (scale, anchor, animation) even though
+the frame-number arithmetic is right. Left alone this session; a real
+emit_object_billboard/DAT_00086c08 investigation, not a lookup-table fix
+like the ones above.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-15: DAT_00086c08 IS uw1_view_model_row -- TRACED AND FIXED
+═══════════════════════════════════════════════════════════════════════════
+Follow-up, at the user's explicit request to trace how the DOS decompile
+sets the equivalent of DAT_00086c08 (emit_object_billboard's "effect
+catalog", flagged above as broken -- no writer, so every catalog id always
+saw 0 frames and drew nothing).
+
+Read the real decompiled `dialog_action_object`
+(uw1-decomp/docs/decompilation/functions/dialog_action_object.c:20):
+`bVar1 = *(byte *)((uint)param_1 * 4 + 0x60a);` -- byte-for-byte the same
+access shape as this file's `(&DAT_00086c08)[param_1*4]`. This is
+DGROUP:0x60a, i.e. the exact same 32-row x 4-byte table
+(`uw1_view_model_row[][4]`, port/uw1_view_models.c) already fully
+recovered and used for the pillar/lever/switch/writing/gravestone fixes
+above. `emit_object_billboard` and the class-2 sign branch aren't two
+separate mechanisms -- they're two different WinCE-decompiled call shapes
+of the SAME original `dialog_action_object`, reading the SAME original
+table. Confirmed the bit layout matches exactly: byte0 bit 0x20 =
+texture-page/field mode, bit 0x80 = direction-dependent animation, bits
+0-2 = frame count (`bVar1 & 7` in both the DOS source and this file's own
+`bVar4 & 7`); byte3 feeds the identical `(b3&0x1f) + flags%((b3>>5)+1)`
+image formula already used above. Also confirmed no row's real frame
+count (`byte0 & 7`) exceeds 3, so no row's frame list actually spills into
+the next row's bytes despite the 4-byte stride only reserving 3 follower
+bytes per row -- a real property of the data, not something this fix
+needed to handle specially.
+
+Every current caller was reading all-zero: doors' jamb-overlay/open-swing
+frames (catalog ids 1, 0xc, 0xe, 0xf) and the two remaining decal families
+(0x14 for TMFLAT buttons/switches/lever/pull-chains 0x170-0x17f, 0x16 for
+TMAP force-field/special-tmap-obj 0x16d-0x16f) all computed 0 frames and
+skipped their build loop entirely -- so all of them likely drew nothing.
+Since nothing currently draws through this table, there was no working
+behavior to regress.
+
+FIX: replaced the four lone `undefined` scalars (DAT_00086c08/09/0a/0b)
+with a real `static const undefined1[128]` backing array holding all 32
+rows verbatim from `uw1_view_model_row[][4]`, aliased the same way
+DAT_00086c80/comobj.dat were fixed earlier (uw.c ~4067).
+
+VERIFIED: rebuilt clean. At the real "special tmap obj" (id 0x16e)
+instances right next to the spawn point (tiles (31,1)/(32,1),
+SETPLAYERPOS 32.5 1.5 768 315 0), a small blue/cyan patch now draws on the
+wall that wasn't there before this fix -- thematically correct for a
+"force field" object (these are meant to look like a shimmering blue
+field in the original game). Not yet cross-checked pixel-for-pixel
+against a reference.
+
+CORRECTION (2026-09-16), checked at the user's prompt ("are the earlier
+fixes for this flow stomping on what they're supposed to do?"): the door
+jamb-overlay/open-swing-animation items are NOT affected by this fix and
+never will be as this file stands -- `emit_anim_object_frames` (uw.c
+~53015, was FUN_00064384), the only function whose body reads catalog ids
+1/0xc/0xe/0xf, has ZERO call sites anywhere in this file (confirmed via
+grep; only its own definition and its own debug-print/comments mention
+its name), and Ghidra's own decompile marks the block immediately before
+it "Removing unreachable block". This function is dead code in the
+current binary/decompile, not merely untested -- so the DAT_00086c08 fix
+has no live effect on doors today. The only catalog ids this fix actually
+exercises at runtime are the two reachable direct calls in
+emit_tile_objects's class-3 branch (0x14/0x16, the TMFLAT/TMAP decal
+families verified above). No interaction with the model-map path
+(boulders/bridge/shrine/pillar/doors' own frame+leaf -- never touches
+this table) or the earlier lever/switch/writing/gravestone fix (a
+different table, DAT_00086c80, in a different function) either --
+confirmed by tracing every reader of both tables, not just checking the
+four ids each fix targets.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-16: WIRED emit_anim_object_frames BACK IN -- AND FOUND ITS
+WHOLE CALL SITE IS ALREADY DEAD, SUPERSEDED BY g_model_map
+═══════════════════════════════════════════════════════════════════════════
+Follow-up, at the user's request to trace what DOS function this port is
+missing a call to, and then actually wire it up.
+
+TRACED: DOS's `dialog_action_here` (uw1-decomp/docs/decompilation/
+functions/dialog_action_here.c) is the real counterpart of this file's
+dead `emit_anim_object_frames` -- confirmed conclusively, not by
+similarity: its own body calls `dialog_action_object` with catalog ids
+1/0xc/0xe/0xf, the exact constants `emit_anim_object_frames` already has.
+Its caller in DOS is `dialog_script_event` (the object draw pass, this
+project's `emit_tile_objects`), which sends door ids straight to it.
+
+Also traced `param_1`'s real meaning by reading the full function body
+(worth recording, since it's easy to get wrong): NOT an open/closed/
+animation-state enum as first guessed. `(param_1&7)==6` and `==7` are two
+of what are very likely 8 distinct door TYPES/skins (this project's own
+comobj ids 0x140-0x145+0x147 give exactly 8 low-bit values, 0-7) --
+`emit_tile_objects`'s own pre-existing leaf-sprite fix already computes
+`DAT_00202734 + (uVar27&7) + 0x30`, which is dialog_action_here's own
+catalog-0xe formula (`WORD_6aac_15e2 + (param_1&7) + 0x30`) verbatim, so
+`param_1 = uVar27&7` (the door's own low id bits) is very likely right.
+
+WIRED UP: added `emit_anim_object_frames(uVar27 & 7, param_1)` to
+emit_tile_objects's door branch (`(uVar27&0x30)==0`, uw.c ~52001), gated
+behind `UW_DOOR_ANIM_FRAMES=1` (off by default) since it hadn't been
+visually verified yet.
+
+TESTED, and this is the real finding: built and ran an A/B screenshot
+comparison (UW_DOOR_ANIM_FRAMES on vs off) at multiple real door
+positions (tiles (24,7), (22,5), (32,1) vicinity, all confirmed doors via
+a fresh UW_DUMP_OBJECTS_FILE census) -- zero pixel difference at the
+door itself every time (176 px differed in one run, but in the UI border
+corner, unrelated noise). Checked why with UW_DEBUG_DOOR: its
+`[door] emit_tile_objects: frame=...` print, right where this whole
+branch lives, fired ZERO times across every position and angle tried.
+Root cause: `lookup_object_model()` (uw.c ~51360), called at the very
+top of emit_tile_objects -- long before render-class dispatch runs at
+all -- already matches every door id (all of 0x140-0x14f are in
+g_model_map) and returns via `emit_model_object` first. The ENTIRE class-2
+door branch this call lives in, not just the call itself, is unreachable
+for every door placed in the game today. It was written before g_model_map
+existed; g_model_map is the newer, better fix (real DFRAME.E/DOOR.E 3D
+geometry) and fully supersedes it. There was never a risk of double-drawn
+geometry (my working theory before testing) -- there's no drawing at all
+on that path to conflict with anything.
+
+Left the wiring in place, still opt-in, as an accurate record of the real
+dispatch (correct function, correct catalog ids, correct param_1
+derivation, all traced and cited) for if doors are ever pulled out of
+g_model_map -- but it currently cannot affect anything, which is now
+verified rather than assumed. No further action taken this session; the
+jamb-overlay/per-type door-frame detail DOS's dialog_action_here draws
+(row 1/bank 0x61, textured through the level's own wall texture -- the
+same real-UV capability Mystery 3 already found this port's `.E` format
+can't reproduce) would need to be added to g_model_map's own door
+handling directly if it's wanted, not recovered by unblocking this dead
+branch.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-16 (2): g_model_map DISABLED BY DEFAULT, AND THE REAL REASON
+THE JAMB PASS DRAWS NOTHING FOUND
+═══════════════════════════════════════════════════════════════════════════
+At the user's request, g_model_map is now DISABLED BY DEFAULT (uw.c
+~51361: flipped from opt-out `UW_DISABLE_MODEL_RENDER` to opt-in
+`UW_ENABLE_MODEL_RENDER=1`) -- it's this project's own hand-authored
+table, not a recovered mechanism, and leaving it on by default was
+masking the real (previously dead) dispatch path from being observed at
+all, including the emit_anim_object_frames wiring from the update above.
+
+With it off, the class-2 door branch is confirmed live (UW_DEBUG_DOOR
+fired 348 times across a level-1 scan) and a real door leaf DOES draw --
+this project's pre-existing `DAT_00202734+(id&7)+0x30` sprite fix, unrelated
+to today's work (confirmed screenshot at tile (24,6)-(24,7), SETPLAYERPOS
+24.5 6.5 768 270 0: a real wood-paneled door leaf sprite). But turning on
+UW_DOOR_ANIM_FRAMES at that exact same, now-confirmed-visible door still
+produced a byte-identical screenshot -- so traced further, at the user's
+request, to find out why.
+
+ROOT CAUSE, confirmed live (not just read): emit_object_billboard's own
+screen-projection step -- `transform_points_by_matrix(&DAT_000a85d0,
+_anim)` (uw.c ~53031), the call that actually registers a record's
+vertices for the rasterizer -- is gated: `if (((uVar14 != 0xe) &&
+(uVar14 != 0xf)) && (uVar14 != 0xc)) goto LAB_000640ec;` (uw.c ~52968).
+It runs ONLY for catalog ids 0xe/0xf/0xc (the leaf/swing family).
+Catalog 1 (the jamb pass, bank-0x61-equivalent) never reaches it.
+
+Added a debug print at the `get_texture_page` call (uw.c ~52446,
+UW_DEBUG_DOOR) to rule out a data/lookup failure first, rather than
+assume the structural gate was the whole story. Confirmed live at the
+same door: `catalog_idx=1 ... DAT_00086c08[idx]=0x21`,
+`get_texture_page(24) = 0x103939cf4` -- a real, valid, non-null texture
+page. The jamb call's own texture-select records are built correctly.
+It's specifically the transform/projection step that's skipped for this
+catalog value, not a texture failure -- confirmed, not assumed.
+
+Why this isn't a bug to fix: read DOS's own `dialog_action_object`
+again with this specific question in mind -- does IT gate its own
+transform the same way? No: it has no transform step of its own for
+ANY catalog value. It only ever writes an opcode stream and finishes
+with `render_img_bank_store(param_1+0x60, 1)` (dialog_action_object.c
+line 260), storing the stream under a named bank; a separate, generic
+display-list interpreter walks and renders that bank later, uniformly,
+regardless of which catalog wrote it (the same uw1_dlist/bank system
+n-07-05/n-07-06 already documented for models and decals). This port's
+`emit_object_billboard` looks like a compiler-specialized version of
+just the hot path (0xe/0xf/0xc, ordinary animated sprite billboards) --
+the generic bank interpreter DOS relies on for everything else, catalog
+1 included, either never existed in this WinCE build or was never
+recovered from it. Same "orphaned dispatch" shape as DAT_00085668 and
+friends elsewhere in this project, but for something that may genuinely
+not be present in this specific compiled binary at all, not merely
+undiscovered -- not chased further, since g_model_map's DFRAME.E already
+supplies exactly this capability (real 3D frame/jamb geometry) through a
+different, working mechanism, matching Mystery 1's core finding that
+this WinCE binary never had a true 3D-model dispatch of its own.
+
+Conclusion: emit_anim_object_frames's jamb pass isn't "unwired" --
+it's asking `emit_object_billboard` for a rendering mode (independent
+transform of non-billboard, static-architecture geometry) that this
+specific compiled function does not implement for any catalog value
+outside the leaf family. No further action planned; g_model_map (now
+disabled by default per the user's request, but the right fix when
+re-enabled) remains the correct way to get real door-frame geometry on
+screen.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-16 (3): PORTED THE GENERIC DISPLAY-LIST INTERPRETER FROM
+uw1-decomp, FIRST REAL RESULT (UNCALIBRATED)
+═══════════════════════════════════════════════════════════════════════════
+At the user's request, ported uw1-decomp's own answer to the gap above:
+a generic bytecode interpreter for the "display list" bank format the
+real 1992 engine used for every piece of true 3D geometry (doors,
+boulders, bridge, pillar, the decal panels -- the same uw1_dlist/bank
+system n-07-01 through n-07-06 already documented on the DOS side).
+Ported from port/uw1_dlist.c + uw1_dlist.h + uw1_dlist_lengths.c into
+uw.c (new code, just above emit_model_object): the opcode length table,
+the vertex/face-building opcodes (translate, vertex/vertex_view/
+vertex_run/vertex_offset*/vertex_sum, face_flat/face_textured/
+face_textured_same), and the branch-exploration walk (call/jump/cond
+transfers, unioning de-duplicated faces across every distinct branch
+policy) -- bank 0x61 (the doorway frame) genuinely uses several
+conditional opcodes for real per-face detail, so a naive single
+"decline everything" pass would have silently dropped geometry.
+Simplified from uw1-decomp's own version: positions only (no UV/image
+tracking, matching this port's existing flat-shaded-only model
+renderer), no sprite/blit reporting (not needed for architecture
+banks), and 0x0050/0x00ba sub-list rotations run without applying the
+extra angle (not yet needed for what's been tested).
+
+DATA: embedded bank 0x61's real 259-word bytecode, extracted
+programmatically (not hand-transcribed, to avoid a transcription error)
+from uw1-decomp's own uw1_view_model_words[]/uw1_view_model_runs[]
+(port/uw1_view_models.c) -- the same real recovery from the actual DOS
+UW.EXE this project already used for the pillar/lever/switch/writing/
+gravestone/force-field fixes, just the geometry words instead of the
+row/flag bytes.
+
+WIRED (UW_DLIST_DOOR=1, off by default): a test call in emit_tile_objects's
+door branch, feeding the interpreter's output through the same arena/
+anchor/heading pipeline emit_model_object already uses (fan-triangulated
+for faces over 4 vertices, since that arena's own record format is
+quad/triangle only).
+
+RESULT: the interpreter runs and produces real geometry -- 9 distinct
+faces out of bank 0x61's 259 words (UW_DEBUG_DLIST), not zero and not a
+cap/overflow, confirming the ported walk (including branch exploration)
+executes correctly end to end. It's visible on screen: a real, small,
+scale-responsive change appears at a real door's position (confirmed via
+pixel diff against the same shot with the feature off -- 140 pixels
+changed in a compact, plausible viewport region; tried scale 1 and 8,
+both produce different, real geometry, not a no-op). NOT YET a clean,
+recognizable door-frame shape -- unlike DFRAME.E, this bank's own local
+coordinate convention hasn't been independently calibrated yet (its
+scale/anchor-offset needs the same visual-iteration process DFRAME.E and
+the boulders went through, not yet done here for lack of time this
+session). Left as an explicitly opt-in, clearly incomplete feature
+(UW_DLIST_DOOR=1, UW_DLIST_SCALE/UW_DLIST_YOFF for tuning) rather than
+claimed as working -- the mechanism is proven; the calibration is the
+open item for next time.
