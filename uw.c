@@ -34715,14 +34715,21 @@ LAB_000455f8:
 
 
 
-undefined4 FUN_00045678(param_1)
+ushort *FUN_00045678(param_1)
 short param_1;
 
 {
   int iVar1;
   short sVar2;
-  undefined4 uVar3;
-  
+  /* Was `undefined4 uVar3;` -- truncated find_object_in_link_chain's/
+     FUN_00045708's real 64-bit object pointer to 32 bits. The
+     param_1!=2 branch (FUN_000459d8) still returns a narrower
+     `undefined4` itself (a separate, not-yet-fixed truncation one level
+     further down its own call chain via FUN_00045b20) -- cast here just
+     carries that existing truncation forward unchanged rather than
+     introducing a new one. */
+  ushort *uVar3;
+
   sVar2 = hit_test_inventory_widget(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
   iVar1 = (int)sVar2;
   if ((iVar1 < 0) || (0x13 < iVar1)) {
@@ -34732,19 +34739,28 @@ short param_1;
     uVar3 = FUN_00045708((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
   }
   else {
-    uVar3 = FUN_000459d8(0xffffffff,0xffffffff,0xffffffff,(int)(char)(&g_backpack_widget_to_slot)[iVar1]);
+    uVar3 = (ushort *)FUN_000459d8(0xffffffff,0xffffffff,0xffffffff,(int)(char)(&g_backpack_widget_to_slot)[iVar1]);
   }
   return uVar3;
 }
 
 
 
-undefined4 FUN_00045708(param_1)
+ushort *FUN_00045708(param_1)
 short param_1;
 
 {
-  resolve_object_link(&DAT_00202950 + param_1 * 2);
-  return 0;
+  /* Was `resolve_object_link(&DAT_00202950 + param_1 * 2); return 0;` --
+     confirmed via real ARM disassembly (0x45708-0x45718: `mov r3,r0,lsl
+     #0x10; ldr r0,[...]; mov r3,r3,asr #0x10; add r0,r0,r3,lsl #0x1; b
+     0x53514` -- a genuine TAIL CALL straight into resolve_object_link,
+     0x53514) that this always returned resolve_object_link's own result,
+     not a hardcoded 0. Ghidra didn't model the tail call and decompiled
+     it as "call for side effect, then return 0" instead -- the caller
+     (FUN_00045678, in turn feeding g_interact_target in FUN_0003f648's
+     own right-click-in-inventory "ready item" handler) always saw a
+     NULL target as a result, silently no-op'ing every right-click. */
+  return (ushort *)resolve_object_link(&DAT_00202950 + param_1 * 2);
 }
 
 
@@ -34810,7 +34826,7 @@ uint param_2;
   iVar8 = (int)(short)iVar7;
   sVar1 = (short)param_2;
   if (iVar8 < 0x1c) {
-    FUN_00045b20(0xffffffff,0xffffffff,0xffffffff,iVar7,sVar1);
+    extract_and_refresh_slot_item(0xffffffff,0xffffffff,0xffffffff,iVar7,sVar1);
     if (iVar8 < 0x13) {
       redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar8]);
     }
@@ -34861,6 +34877,21 @@ uint param_2;
     }
     object_list_unlink(DAT_002046b4,puVar5);
     g_player_carry_weight = g_player_carry_weight - (short)iVar3;
+    /* This else-branch (reached when the object isn't found among the
+       28 direct/open-container-borrowed slots at all, e.g. nested two
+       containers deep) unlinked the object but, unlike this function's
+       OWN sibling branch just above (the `iVar8<0x1c && iVar8>=0x13`
+       case), never refreshed the open-container widget grid
+       afterward. Added the same FUN_00042e30/FUN_00042d70 pair that
+       sibling already calls (FUN_00042d70's own first line is
+       `redraw_inventory_widget_range(0xc,0x13)` -- exactly that grid)
+       for consistency -- not independently confirmed live (this
+       specific branch wasn't the one the torch-duplication repro
+       exercised; see extract_and_refresh_slot_item's own comment for
+       the actual confirmed root cause), but the same staleness risk
+       applies on general principle. */
+    FUN_00042e30();
+    FUN_00042d70();
     redraw_inventory_widget(0x13);
     FUN_000667cc();
   }
@@ -34869,54 +34900,94 @@ uint param_2;
 
 
 
-undefined4 FUN_000459d8()
+ushort *FUN_000459d8(param_1,param_2,param_3,param_4)
+/* Was a bare K&R `()` reading an implicit `short in_r3;` for its 4th
+   arg, and forwarding to FUN_00045b20 via a bare `FUN_00045b20()` call
+   with no explicit arguments at all. On real ARM32 hardware, a
+   register-passing K&R call like this genuinely forwards whatever's
+   still sitting in r0-r3 (this function's own incoming args) straight
+   through -- but a C compiler targeting this 64-bit host has no such
+   guarantee for a literal `foo()` call: it passes exactly zero
+   arguments, full stop. Confirmed as the actual root cause of the
+   torch-duplication bug (not a mere stale-redraw issue as first
+   suspected): reduce_object_count's OWN call to FUN_00045b20 passed
+   real, explicit arguments correctly, but FUN_00045b20's undeclared
+   body had no way to name/forward them, so its own nested
+   extract_matching_object_from_slot() call ran with garbage/zeroed
+   arguments and silently did nothing -- the torch was never actually
+   unlinked from the sack's contents chain before use_light_source
+   moved a (correctly readied) copy of it into the shoulder slot. */
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
 
 {
-  undefined4 uVar1;
+  ushort *uVar1;
   ushort *puVar2;
-  short in_r3;
-  
-  uVar1 = FUN_00045b20();
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + in_r3 * 2);
+
+  uVar1 = extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,0);
+  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
     FUN_00042e30();
     FUN_00042d70();
     return uVar1;
   }
-  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[in_r3]);
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_4]);
   return uVar1;
 }
 
 
 
-undefined4 FUN_00045a7c()
+ushort *FUN_00045a7c(param_1,param_2,param_3,param_4)
+/* Same bare-K&R-forwarding bug as FUN_000459d8 just above (identical
+   body); see its own comment. */
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
 
 {
-  undefined4 uVar1;
+  ushort *uVar1;
   ushort *puVar2;
-  short in_r3;
-  
-  uVar1 = FUN_00045b20();
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + in_r3 * 2);
+
+  uVar1 = extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,0);
+  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
     FUN_00042e30();
     FUN_00042d70();
     return uVar1;
   }
-  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[in_r3]);
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_4]);
   return uVar1;
 }
 
 
 
-undefined4 FUN_00045b20()
+// was FUN_00045b20 -- thin wrapper: extracts the object matching
+// param_1/param_2/param_3 (category/subcategory/quality, <0 = any)
+// from slot param_4 via extract_matching_object_from_slot, then
+// refreshes carry-weight/UI state via FUN_000667cc(). Was a bare K&R
+// `()` blindly relying on ARM32 register pass-through to forward its
+// own caller's args into extract_matching_object_from_slot() -- see
+// FUN_000459d8's own comment on why that's unsound on this 64-bit
+// host. This was THE actual root cause of the torch-duplication bug:
+// reduce_object_count's real, explicit call here (with a genuine
+// object-bearing slot index) silently forwarded nothing, so the torch
+// was never unlinked from its container before being placed anew.
+ushort *extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
+ushort param_5;
 
 {
-  undefined4 uVar1;
-  
-  uVar1 = extract_matching_object_from_slot();
+  ushort *uVar1;
+
+  uVar1 = extract_matching_object_from_slot(param_1,param_2,param_3,param_4,param_5);
   FUN_000667cc();
   return uVar1;
 }
@@ -36150,7 +36221,7 @@ uint param_2;
     uVar6 = FUN_0002805c(param_1,puVar4);
     if ((short)uVar6 < 0) {
       if (iVar1 < 0x13) {
-        puVar4 = (ushort *)FUN_00045b20(0xffffffff,0xffffffff,0xffffffff,param_2,0);
+        puVar4 = (ushort *)extract_and_refresh_slot_item(0xffffffff,0xffffffff,0xffffffff,param_2,0);
         iVar5 = place_held_item_in_empty_slot(param_1,param_2);
         if (iVar5 == 0) {
           place_held_item_in_empty_slot(puVar4,param_2);
