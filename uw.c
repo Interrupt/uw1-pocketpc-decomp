@@ -4473,20 +4473,20 @@ char *DAT_0023cca4;
    is a separate, still-open bug -- unrelated to position.) */
 
 /* .data 0x87170 -- X of the dragon HEAD sub-sprite, [0]=left
-   [1]=right. Sprite made by FUN_00076194(2,0xd,10) into
+   [1]=right. Sprite made by sprite_list_alloc_raw_entry(2,0xd,10) into
    DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
    0xd x 10 (redraw_hud_panels:54161); animation frame set from DAT_000871d4
    (54190). */
 static short DAT_00087170_arr[2] = { 36, 228};
 #define DAT_00087170 DAT_00087170_arr[0]
 /* .data 0x87174 -- X of the dragon BODY sub-sprite, [0]=left
-   [1]=right. Sprite made by FUN_00076194(2,0x25,0x17) into
+   [1]=right. Sprite made by sprite_list_alloc_raw_entry(2,0x25,0x17) into
    DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
    0x25 x 0x17 (redraw_hud_panels:54166); frame from DAT_000871d8 (54191). */
 static short DAT_00087174_arr[2] = { 36, 204};
 #define DAT_00087174 DAT_00087174_arr[0]
 /* .data 0x871b4 -- X of the dragon WING/TAIL sub-sprite, [0]=left
-   [1]=right. Sprite made by FUN_00076078(0) into DAT_0023c238[side],
+   [1]=right. Sprite made by sprite_list_alloc_entry(0) into DAT_0023c238[side],
    placed at ((&DAT_000871b4)[side], 0x42), size 0xc x 0x1c
    (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
    0x208d (right) at 54196, NOT from a table. */
@@ -4499,13 +4499,13 @@ static short DAT_000871b4_arr[4] = { 40, 224};
    +0x12 left/right delta matches the wing/tail sub-sprite's own
    literal 0x207b/0x208d pair exactly, confirming this is the real
    dragons.GR left/right frame convention, not a guess. Read as
-   `(&DAT_000871d4)[side]` and passed to FUN_00076390 as the frame arg
+   `(&DAT_000871d4)[side]` and passed to sprite_list_set_frame_id as the frame arg
    for DAT_0023c230[side] (redraw_hud_panels:54190). */
 static unsigned short DAT_000871d4_arr[2] = { 0x206d, 0x207f };
 #define DAT_000871d4 DAT_000871d4_arr[0]
 /* Was `FIXME[hud-dragon-frames]: .data 0x871d8 -- ... reads 0 now`.
    Real values 0x206e (left) / 0x2080 (right), same +0x12 delta.
-   Frame arg to FUN_00076390 for DAT_0023c234[side] (redraw_hud_panels
+   Frame arg to sprite_list_set_frame_id for DAT_0023c234[side] (redraw_hud_panels
    :54191, also FUN_0006dbe4:54753). */
 static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
 #define DAT_000871d8 DAT_000871d8_arr[0]
@@ -4524,7 +4524,7 @@ static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
    (now-real, 8-byte-on-this-host) pointer size. */
 static void (*const PTR_FUN_00087220_table[13])(void) = {
   (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))FUN_0007830c, 0,
-  (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))FUN_0006df70, (void(*)(void))FUN_0006e038,
+  (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))FUN_0006e038,
   (void(*)(void))hud_damage_flash_tick, (void(*)(void))hud_damage_flash_tick, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
   (void(*)(void))advance_action_animation_frame,
 };
@@ -4648,7 +4648,7 @@ static char DAT_0023c240_vitals[16];
 short DAT_0023c250;
 /* .data 0x87178..0x871b7: four rows (x / y / w / h) of the HUD damage-
    flash sprite placement table, read as `*(short *)(&row + iVar6*6)` at
-   three call sites in hud_damage_flash_tick and handed to FUN_000762c4. Ghidra
+   three call sites in hud_damage_flash_tick and handed to sprite_list_set_rect. Ghidra
    split it into two lone `undefined` scalars plus two `undefined *`
    pointer slots -- and `&PTR_DAT_00087198` was then cast through `(int)`,
    truncating the 64-bit address (wild `*(short *)` read -> crash on the
@@ -4875,7 +4875,7 @@ char *DAT_0023c3e8;
    (`DAT_0023c3e8 + 0x500`, a genuine 64-bit heap pointer on this host) --
    every comparison against it (`DAT_0023c3ec <= someRealPointer`) then
    always came out true regardless of the real slot table's size, so
-   FUN_00076078 (the HUD button-slot allocator) always believed the table
+   sprite_list_alloc_entry (the HUD button-slot allocator) always believed the table
    was full and returned -1 on its very first call, crashing the first
    caller that tried to use that "slot". */
 char *DAT_0023c3ec;
@@ -4898,8 +4898,8 @@ undefined2 DAT_0023c41c;
 /* Sprite-list record status-word bit flags (.data ~0x87638). Ghidra
    split these off as lone `ushort` scalars and never recovered their
    values, so they were all 0 -- which made the whole sprite-list
-   compositor (FUN_00076508 & helpers: FUN_00076078/76194 slot alloc,
-   FUN_00076390 frame set, FUN_00075cb8 bucketing) inert: the free-slot
+   compositor (FUN_00076508 & helpers: sprite_list_alloc_entry/76194 slot alloc,
+   sprite_list_set_frame_id frame set, sprite_list_queue_slot_redraw bucketing) inert: the free-slot
    scan `(DAT_00087638 & status) == 0` always matched slot 0, and the
    compositor's draw gate `(status & DAT_0008763c) != 0` was never true,
    so the HUD compass + dragon.GR decorations were never drawn at all.
@@ -11390,9 +11390,9 @@ void FUN_0001b474()
   iVar6 = (*DAT_00100674 & 0x3f) * 0x30;
   g_blit_transparent_mode = 1;
   do {
-    uVar5 = FUN_00076a2c(0x10,0x20);
+    uVar5 = grtile_alloc_registered(0x10,0x20);
     (&DAT_000bc028)[iVar7] = uVar5;
-    uVar5 = FUN_00076a2c(0x10,0x20);
+    uVar5 = grtile_alloc_registered(0x10,0x20);
     (&DAT_000bc010)[iVar7] = uVar5;
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 4);
@@ -31863,7 +31863,7 @@ short param_3;
   /* param_1 (a real buffer pointer, from load_gr_resource_entries's allocator
      callback) was declared int here and silently truncated to 32 bits on
      dereference -- see uw_alloc_grtile()'s comment for why this uses that
-     helper instead of FUN_00076a2c directly. DAT_0024e090 is an 8-byte-
+     helper instead of grtile_alloc_registered directly. DAT_0024e090 is an 8-byte-
      stride pointer table -- see its declaration comment. */
   pvVar1 = uw_alloc_grtile(*(undefined1 *)((char *)param_1 + 1),*(byte *)((char *)param_1 + 2) + 1);
   if (pvVar1 != 0) {
@@ -33141,7 +33141,7 @@ short param_1;
           iVar10 = 0xc;
           do {
             iVar11 = iVar10 * 0xe;
-            uVar8 = FUN_00076a2c((&g_inv_hotspot_dirty_w)[iVar11],(uint)(byte)(&g_inv_hotspot_dirty_h)[iVar11] << 1);
+            uVar8 = grtile_alloc_registered((&g_inv_hotspot_dirty_w)[iVar11],(uint)(byte)(&g_inv_hotspot_dirty_h)[iVar11] << 1);
             sVar4 = (&g_inv_hotspot_draw_y)[iVar10 * 7];
             (&DAT_002028a0)[iVar10 + -0xc] = uVar8;
             /* Was a hardcoded original-binary literal address
@@ -35120,13 +35120,13 @@ void FUN_00046414()
     FUN_0004638c();
     iVar5 = 6;
     do {
-      uVar1 = FUN_00076a2c((&g_inv_hotspot_dirty_w)[iVar5 * 0xe],
+      uVar1 = grtile_alloc_registered((&g_inv_hotspot_dirty_w)[iVar5 * 0xe],
                            (uint)(byte)(&g_inv_hotspot_dirty_h)[iVar5 * 0xe] << 1);
       (&DAT_002028e8)[iVar5] = uVar1;
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 0x17);
-    DAT_002028e8 = FUN_00076a2c(0x10,0x14);
-    DAT_002028ec = FUN_00076a2c(0x54,0x52);
+    DAT_002028e8 = grtile_alloc_registered(0x10,0x14);
+    DAT_002028ec = grtile_alloc_registered(0x54,0x52);
     iVar5 = 6;
     do {
       /* iVar5==10/11 were hardcoded original-binary literal addresses
@@ -45307,7 +45307,7 @@ undefined4 FUN_00056f28()
   DAT_002047dc = DAT_0020471c + 0xdf;
   DAT_002047d8 = DAT_0020471c + 0x83;
   FUN_00057dc0(0x106c);
-  DAT_000889b8 = FUN_00076a2c(0x28,0x28);
+  DAT_000889b8 = grtile_alloc_registered(0x28,0x28);
   if (DAT_000889b8 == 0) {
     uVar1 = 0xffffffff;
   }
@@ -58072,9 +58072,9 @@ short param_1;
   pbVar5 = &DAT_0023c118 + iVar1;
   if (*pbVar5 != 0) {
     do {
-      FUN_00076338((int)(short)(&DAT_0023c224)[iVar1],(int)*(short *)(&DAT_000870ec + iVar1 * 2),
+      sprite_list_set_position((int)(short)(&DAT_0023c224)[iVar1],(int)*(short *)(&DAT_000870ec + iVar1 * 2),
                    (int)(short)(&DAT_000870f2)[iVar3]);
-      FUN_00076390((int)(short)(&DAT_0023c224)[iVar1],iVar3 + iVar4);
+      sprite_list_set_frame_id((int)(short)(&DAT_0023c224)[iVar1],iVar3 + iVar4);
       FUN_00076508();
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     } while (iVar3 < (int)(uint)*pbVar5);
@@ -58093,10 +58093,10 @@ void FUN_0006cb74()
   
   bVar1 = DAT_0023c11a;
   uVar2 = (uint)DAT_0023c11a;
-  FUN_00076390((int)DAT_0023c228,(uVar2 & 3) + 0x2059);
-  FUN_00076338((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)(ushort)bVar1],
+  sprite_list_set_frame_id((int)DAT_0023c228,(uVar2 & 3) + 0x2059);
+  sprite_list_set_position((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)(ushort)bVar1],
                (int)(short)(&DAT_00087150)[(short)(ushort)bVar1]);
-  FUN_00076390((int)DAT_0023c22c,uVar2 + 0x205d);
+  sprite_list_set_frame_id((int)DAT_0023c22c,uVar2 + 0x205d);
   FUN_00076508();
   return;
 }
@@ -58144,37 +58144,37 @@ void redraw_hud_panels()
   if (DAT_0023c23c == 0) {
     iVar3 = 0;
     do {
-      uVar1 = FUN_00076078(0);
+      uVar1 = sprite_list_alloc_entry(0);
       (&DAT_0023c224)[iVar3] = (short)uVar1;
-      FUN_000762c4(uVar1,0,0,0x18,4);
-      uVar1 = FUN_00076194(2,0xd,10);
+      sprite_list_set_rect(uVar1,0,0,0x18,4);
+      uVar1 = sprite_list_alloc_raw_entry(2,0xd,10);
       (&DAT_0023c230)[iVar3] = (short)uVar1;
-      FUN_000762c4(uVar1,(int)(short)(&DAT_00087170)[iVar3],0x87,0xd,10);
+      sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087170)[iVar3],0x87,0xd,10);
       g_blit_transparent_mode = 1;
-      uVar1 = FUN_00076194(2,0x25,0x17);
+      uVar1 = sprite_list_alloc_raw_entry(2,0x25,0x17);
       (&DAT_0023c234)[iVar3] = (short)uVar1;
       g_blit_transparent_mode = 0;
-      FUN_000762c4(uVar1,(int)(short)(&DAT_00087174)[iVar3],0x92,0x25,0x17);
-      uVar1 = FUN_00076078(0);
+      sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087174)[iVar3],0x92,0x25,0x17);
+      uVar1 = sprite_list_alloc_entry(0);
       (&DAT_0023c238)[iVar3] = (short)uVar1;
-      FUN_000762c4(uVar1,(int)(short)(&DAT_000871b4)[iVar3],0x42,0xc,0x1c);
+      sprite_list_set_rect(uVar1,(int)(short)(&DAT_000871b4)[iVar3],0x42,0xc,0x1c);
       (&DAT_0023c12c)[iVar3] = 0;
       (&DAT_0023c11c)[iVar3] = 0;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     } while (iVar3 < 2);
-    uVar1 = FUN_00076078(0);
+    uVar1 = sprite_list_alloc_entry(0);
     DAT_0023c228 = (undefined2)uVar1;
-    FUN_000762c4(uVar1,0x70,0x84,0x38,0x20);
-    uVar1 = FUN_00076078(0);
+    sprite_list_set_rect(uVar1,0x70,0x84,0x38,0x20);
+    uVar1 = sprite_list_alloc_entry(0);
     DAT_0023c22c = (undefined2)uVar1;
     if (getenv("UW_DEBUG_COMPASS")) {
       fprintf(stderr, "[compass] redraw_hud_panels init: sprite_handle=%d x=%d y=%d\n",
               (int)uVar1, (int)DAT_00087130, (int)DAT_00087150);
     }
-    FUN_000762c4(uVar1,(int)DAT_00087130,(int)DAT_00087150,3,4);
-    uVar1 = FUN_00076078(0);
+    sprite_list_set_rect(uVar1,(int)DAT_00087130,(int)DAT_00087150,3,4);
+    uVar1 = sprite_list_alloc_entry(0);
     DAT_0023c21c = (short)uVar1;
-    FUN_000762c4(uVar1,0x80,5,1,1);
+    sprite_list_set_rect(uVar1,0x80,5,1,1);
     DAT_0023c130 = 6;
     DAT_0023c120 = 6;
     DAT_0023c23c = 1;
@@ -58182,17 +58182,17 @@ void redraw_hud_panels()
   iVar3 = 0;
   do {
     hud_vitals_threshold_shake(iVar3);
-    FUN_00076390((int)(short)(&DAT_0023c230)[iVar3],(&DAT_000871d4)[iVar3]);
-    FUN_00076390((int)(short)(&DAT_0023c234)[iVar3],(&DAT_000871d8)[iVar3]);
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c230)[iVar3],(&DAT_000871d4)[iVar3]);
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c234)[iVar3],(&DAT_000871d8)[iVar3]);
     iVar2 = 0x12;
     if (iVar3 == 0) {
       iVar2 = 0;
     }
-    FUN_00076390((int)(short)(&DAT_0023c238)[iVar3],iVar2 + 0x207b);
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c238)[iVar3],iVar2 + 0x207b);
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
   } while (iVar3 < 2);
   FUN_0006cb74();
-  FUN_00076390((int)DAT_0023c21c,0x20a6);
+  sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
   FUN_0006e96c(DAT_00086df8 + 0x47);
   FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
   /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
@@ -58494,15 +58494,15 @@ short param_1;
   iVar1 = uVar2 * 2;
   psVar11 = (short *)(&DAT_0023c244 + iVar1);
   if (*psVar11 == 0) {
-    uVar6 = FUN_00076078(0);
+    uVar6 = sprite_list_alloc_entry(0);
     *psVar11 = (short)uVar6;
-    FUN_000762c4(uVar6,(int)*(short *)(&DAT_000870ec + iVar1),0x7e,0x18,0x21);
-    uVar6 = FUN_00076078(0);
+    sprite_list_set_rect(uVar6,(int)*(short *)(&DAT_000870ec + iVar1),0x7e,0x18,0x21);
+    uVar6 = sprite_list_alloc_entry(0);
     *(short *)(&DAT_0023c240 + iVar1) = (short)uVar6;
-    FUN_000762c4(uVar6,0,0,0x18,4);
-    uVar6 = FUN_00076078(0);
+    sprite_list_set_rect(uVar6,0,0,0x18,4);
+    uVar6 = sprite_list_alloc_entry(0);
     *(short *)(&DAT_0023c248 + iVar1) = (short)uVar6;
-    FUN_000762c4(uVar6,(int)*(short *)(&DAT_000870ec + iVar1),0x7e,0x18,4);
+    sprite_list_set_rect(uVar6,(int)*(short *)(&DAT_000870ec + iVar1),0x7e,0x18,4);
   }
   pbVar7 = &DAT_0023c128 + uVar2;
   uVar8 = (uint)*pbVar7;
@@ -58515,14 +58515,14 @@ short param_1;
       *pbVar7 = (byte)uVar9;
       iVar3 = (int)(short)uVar8;
       sVar5 = (&DAT_000870f2)[iVar3];
-      FUN_000762c4((int)*psVar11,(int)sVar4,(int)sVar5,0x18,
+      sprite_list_set_rect((int)*psVar11,(int)sVar4,(int)sVar5,0x18,
                    (&DAT_00087114)[iVar3]);
       sprite_list_set_lifetime((int)*psVar11,sVar5 + -0x7e);
-      FUN_00076390((int)*psVar11,0x2057);
+      sprite_list_set_frame_id((int)*psVar11,0x2057);
       if (iVar3 != 0) {
-        FUN_00076338((int)(short)(&DAT_0023c224)[uVar2],(int)*(short *)(&DAT_000870ec + iVar1),
+        sprite_list_set_position((int)(short)(&DAT_0023c224)[uVar2],(int)*(short *)(&DAT_000870ec + iVar1),
                      (int)*(short *)(&DAT_000870f0 + iVar3 * 2));
-        FUN_00076390((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
+        sprite_list_set_frame_id((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
       }
     }
     else if (*(int *)(&DAT_0023c1f0 + uVar2 * 4) == 0) {
@@ -58534,29 +58534,29 @@ short param_1;
     sVar4 = *(short *)(&DAT_000870ec + iVar1);
     uVar8 = uVar9 & 0xff;
     *pbVar7 = (byte)uVar9;
-    FUN_00076338((int)(short)(&DAT_0023c224)[uVar2],(int)sVar4,
+    sprite_list_set_position((int)(short)(&DAT_0023c224)[uVar2],(int)sVar4,
                  (int)*(short *)(&DAT_000870f0 + (short)uVar8 * 2));
-    FUN_00076390((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
   }
   if (((*(int *)(&DAT_0023c1f0 + uVar2 * 4) == 1) && (uVar9 = (uint)(short)uVar8, uVar9 < 8)) &&
      (uVar9 != 0)) {
     psVar11 = &DAT_00087254 + uVar2;
     if (*psVar11 == local_2e) {
       *psVar11 = local_2c;
-      FUN_00076390((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
+      sprite_list_set_frame_id((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
       *(int *)(&DAT_0023c1f0 + uVar2 * 4) = 0;
     }
     else {
       psVar10 = (short *)(&DAT_000870f0 + uVar9 * 2);
-      FUN_00076338((int)*(short *)(&DAT_0023c240 + iVar1),(int)*(short *)(&DAT_000870ec + iVar1),
+      sprite_list_set_position((int)*(short *)(&DAT_0023c240 + iVar1),(int)*(short *)(&DAT_000870ec + iVar1),
                    (int)*psVar10);
       sVar4 = *(short *)(&DAT_0023c240 + iVar1);
       *psVar11 = *psVar11 + 1;
-      FUN_00076390((int)sVar4,(int)*psVar11);
+      sprite_list_set_frame_id((int)sVar4,(int)*psVar11);
       psVar11 = (short *)(&DAT_0023c248 + iVar1);
       sprite_list_set_lifetime((int)*psVar11,*psVar10 + -0x7e);
-      FUN_00076338((int)*psVar11,(int)*(short *)(&DAT_000870ec + iVar1),(int)*psVar10);
-      FUN_00076404((int)*psVar11,0x2058);
+      sprite_list_set_position((int)*psVar11,(int)*(short *)(&DAT_000870ec + iVar1),(int)*psVar10);
+      sprite_list_set_frame_id_transparent((int)*psVar11,0x2058);
     }
   }
   return;
@@ -58604,7 +58604,7 @@ int param_1;
   psVar11 = &DAT_0023c1e8 + iVar6;
   if (*psVar11 == 0) {
     g_blit_transparent_mode = 1;
-    sVar4 = FUN_00076194(3,0x28,0x18);
+    sVar4 = sprite_list_alloc_raw_entry(3,0x28,0x18);
     g_blit_transparent_mode = 0;
     *psVar11 = sVar4;
   }
@@ -58612,7 +58612,7 @@ int param_1;
   if (*piVar10 == 1) {
     iVar5 = (int)DAT_0023c250;
     DAT_0023c250 = DAT_0023c250 + 1;
-    FUN_00076390((int)(short)(&DAT_0023c238)[iVar6],
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c238)[iVar6],
                  *(undefined2 *)(&DAT_000871b8 + (iVar6 * 7 + iVar5) * 2));
     if (6 < DAT_0023c250) {
       DAT_0023c250 = 0;
@@ -58637,7 +58637,7 @@ int param_1;
     if (sVar4 == 1) {
       (&DAT_0023c11c)[iVar6] = 0;
       iVar5 = iVar6 * 6;
-      FUN_000762c4((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
+      sprite_list_set_rect((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
                    (int)*(short *)(&DAT_00087188 + iVar5),
                    (int)*(short *)((char *)&PTR_DAT_00087198 + iVar5),
                    *(undefined2 *)((char *)&PTR_DAT_000871a8 + iVar5));
@@ -58648,7 +58648,7 @@ LAB_0006dec8:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      FUN_00076390((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4);
       if (local_30[iVar6 * 3] < *psVar9) {
         *psVar9 = local_40[iVar6 * 3];
         *(short *)(&DAT_0023c124 + iVar1) = *(short *)(&DAT_0023c124 + iVar1) + -1;
@@ -58679,7 +58679,7 @@ LAB_0006de00:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      FUN_00076390((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4);
       if (*psVar9 <= local_30[iVar6 * 3]) {
         return;
       }
@@ -58698,7 +58698,7 @@ LAB_0006de54:
           psVar9 = (short *)(&DAT_0023c24c + iVar1);
           sVar4 = *psVar11;
           *psVar9 = *psVar9 + -1;
-          FUN_00076390((int)sVar4);
+          sprite_list_set_frame_id((int)sVar4);
           if (local_40[iVar6 * 3 + 1] <= *psVar9) {
             return;
           }
@@ -58707,7 +58707,7 @@ LAB_0006de54:
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + 1;
-        FUN_00076390((int)sVar4);
+        sprite_list_set_frame_id((int)sVar4);
         iVar5 = iVar6 * 3 + 1;
         if (local_30[iVar5] < *psVar9) {
           *psVar9 = local_40[iVar5] + 2;
@@ -58722,7 +58722,7 @@ LAB_0006de54:
       (&DAT_0023c11c)[iVar6] = 0;
       iVar8 = iVar6 * 3 + 1;
       iVar5 = iVar8 * 2;
-      FUN_000762c4((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
+      sprite_list_set_rect((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
                    (int)*(short *)(&DAT_00087188 + iVar5),
                    (int)*(short *)((char *)&PTR_DAT_00087198 + iVar5),
                    *(undefined2 *)((char *)&PTR_DAT_000871a8 + iVar5));
@@ -58734,7 +58734,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      FUN_00076390((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4);
       if ((int)*psVar9 <= local_40[iVar6 * 3 + 1] + 1) {
         return;
       }
@@ -58749,7 +58749,7 @@ LAB_0006dd88:
         FUN_00076488((int)(short)(&DAT_0023c234)[iVar6]);
         iVar8 = iVar6 * 3 + 2;
         iVar5 = iVar8 * 2;
-        FUN_000762c4((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
+        sprite_list_set_rect((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
                      (int)*(short *)(&DAT_00087188 + iVar5),
                      (int)*(short *)((char *)&PTR_DAT_00087198 + iVar5),
                      *(undefined2 *)((char *)&PTR_DAT_000871a8 + iVar5));
@@ -58772,13 +58772,13 @@ LAB_0006dd88:
             return;
           }
           FUN_00076488((int)*psVar11);
-          FUN_00076390((int)(short)(&DAT_0023c234)[iVar6],(&DAT_000871d8)[iVar6]);
+          sprite_list_set_frame_id((int)(short)(&DAT_0023c234)[iVar6],(&DAT_000871d8)[iVar6]);
           goto LAB_0006de00;
         }
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + -1;
-        FUN_00076390((int)sVar4);
+        sprite_list_set_frame_id((int)sVar4);
         if (*psVar9 != local_40[iVar6 * 3 + 2]) {
           return;
         }
@@ -58787,7 +58787,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      FUN_00076390((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4);
       if ((int)*psVar9 <= (int)local_30[iVar6 * 3 + 2]) {
         return;
       }
@@ -58800,14 +58800,25 @@ LAB_0006dd88:
 
 
 
-void FUN_0006df70()
+// was FUN_0006df70 -- one of the 13 entries in PTR_FUN_00087220_table
+// (the per-tick HUD panel redraw dispatch, alongside hud_vitals_bar_tick
+// and hud_damage_flash_tick, its naming siblings). Steps the compass
+// needle's displayed heading (DAT_0023c12a) one increment toward the
+// player's real heading (DAT_0023c11a) each call, clearing the "needle
+// dirty" bit in DAT_0023c1d8 once it catches up. Updates the needle
+// sprite via sprite_list_set_frame_id (compass rose frame) and
+// sprite_list_set_position (DAT_00087130/DAT_00087150, the needle's
+// recovered per-heading ellipse position table -- see their own
+// comments) using the two sprite-list slot handles allocated once at
+// startup by redraw_hud_panels (DAT_0023c228/DAT_0023c22c).
+void hud_compass_needle_tick()
 
 {
   int iVar1;
   short sVar2;
   uint uVar3;
   uint uVar4;
-  
+
   uVar4 = (uint)DAT_0023c12a;
   sVar2 = (short)(DAT_0023c11a - uVar4);
   iVar1 = (int)((DAT_0023c11a - uVar4) * 0x10000) >> 0x10;
@@ -58823,15 +58834,15 @@ void FUN_0006df70()
       uVar3 = uVar4 - 1;
     }
     uVar4 = uVar3 & 0xf;
-    FUN_00076390((int)DAT_0023c228,(uVar3 & 3) + 0x2059);
+    sprite_list_set_frame_id((int)DAT_0023c228,(uVar3 & 3) + 0x2059);
     if (getenv("UW_DEBUG_COMPASS")) {
       fprintf(stderr, "[compass] heading=%u x=%d y=%d frame_id=0x%x\n", uVar4,
               (int)(short)(&DAT_00087130)[(short)uVar4], (int)(short)(&DAT_00087150)[(short)uVar4],
               (unsigned)uVar4 + 0x205d);
     }
-    FUN_00076338((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)uVar4],
+    sprite_list_set_position((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)uVar4],
                  (int)(short)(&DAT_00087150)[(short)uVar4]);
-    FUN_00076390((int)DAT_0023c22c,uVar4 + 0x205d);
+    sprite_list_set_frame_id((int)DAT_0023c22c,uVar4 + 0x205d);
     DAT_0023c12a = (byte)uVar4;
   }
   return;
@@ -58851,14 +58862,14 @@ void FUN_0006e038()
   uVar1 = (uint)DAT_0023c11b;
   if ((-1 < (int)uVar1) && ((int)uVar1 < 0xe)) {
     if (DAT_0023c254 == 0) {
-      uVar3 = FUN_00076078(0);
+      uVar3 = sprite_list_alloc_entry(0);
       DAT_0023c254 = (short)uVar3;
-      FUN_000762c4(uVar3,4,0x8c,1,1);
+      sprite_list_set_rect(uVar3,4,0x8c,1,1);
     }
     if (uVar1 == 9) {
       iVar4 = (int)DAT_00087258;
       DAT_00087258 = DAT_00087258 + 1;
-      FUN_00076390((int)DAT_0023c254,iVar4 + 0x2098);
+      sprite_list_set_frame_id((int)DAT_0023c254,iVar4 + 0x2098);
       if (0xd < DAT_00087258) {
         DAT_00087258 = 9;
       }
@@ -58868,7 +58879,7 @@ void FUN_0006e038()
       if (DAT_0023c258 == 9) {
         DAT_00087258 = 9;
       }
-      FUN_00076390((int)DAT_0023c254,(uVar1 & 0xffff) + 0x2098);
+      sprite_list_set_frame_id((int)DAT_0023c254,(uVar1 & 0xffff) + 0x2098);
       DAT_0023c1d8 = DAT_0023c1d8 & 0xfff7;
     }
     DAT_0023c258 = (short)cVar2;
@@ -58927,14 +58938,14 @@ LAB_0006e244:
   }
   else {
     DAT_0023c220 = DAT_0023c220 + 1;
-    FUN_00076390((int)DAT_0023c21c,
+    sprite_list_set_frame_id((int)DAT_0023c21c,
                  (uint)DAT_0023c12f * 3 + -3 + (uint)*(ushort *)(iVar1 * 2 + 0x87200));
   }
   if (5 < DAT_0023c220) {
     DAT_0023c25c = 0;
     DAT_0023c220 = 0;
     DAT_0023c12f = 0;
-    FUN_00076390((int)DAT_0023c21c,0x20a6);
+    sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
     DAT_0023c1d8 = DAT_0023c1d8 & 0xff7f;
   }
   return;
@@ -59264,9 +59275,9 @@ char *param_1;
     iVar2 = 0;
     g_blit_transparent_mode = 1;
     do {
-      uVar1 = FUN_00076194(1,0x10,0x10);
+      uVar1 = sprite_list_alloc_raw_entry(1,0x10,0x10);
       (&DAT_0023c268)[iVar2] = (short)uVar1;
-      FUN_000762c4(uVar1,(int)(short)(&DAT_00087210)[iVar2],0x8b,0x10,0x10);
+      sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087210)[iVar2],0x8b,0x10,0x10);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
     g_blit_transparent_mode = 0;
@@ -59274,7 +59285,7 @@ char *param_1;
   iVar2 = 0;
   do {
     if (*(byte *)(iVar2 + param_1) < 0x18) {
-      FUN_00076390((int)(&DAT_0023c268)[iVar2],*(byte *)(iVar2 + param_1) + 0xe8);
+      sprite_list_set_frame_id((int)(&DAT_0023c268)[iVar2],*(byte *)(iVar2 + param_1) + 0xe8);
     }
     else {
       FUN_00076488((int)(&DAT_0023c268)[iVar2]);
@@ -59300,9 +59311,9 @@ char *param_1;
       iVar2 = 0;
       g_blit_transparent_mode = 1;
       do {
-        uVar1 = FUN_00076194(1,0x10,0x12);
+        uVar1 = sprite_list_alloc_raw_entry(1,0x10,0x12);
         (&DAT_0023c270)[iVar2] = (short)uVar1;
-        FUN_000762c4(uVar1,(int)(short)(&DAT_00087218)[iVar2],0x89,0x10,0x12);
+        sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087218)[iVar2],0x89,0x10,0x12);
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
       } while (iVar2 < 3);
       g_blit_transparent_mode = 0;
@@ -59310,7 +59321,7 @@ char *param_1;
     iVar2 = 0;
     do {
       if (*(byte *)(iVar2 + param_1) < 0x15) {
-        FUN_00076390((int)(&DAT_0023c270)[iVar2],*(byte *)(iVar2 + param_1) + 0x20c0);
+        sprite_list_set_frame_id((int)(&DAT_0023c270)[iVar2],*(byte *)(iVar2 + param_1) + 0x20c0);
       }
       else {
         FUN_00076488((int)(&DAT_0023c270)[iVar2]);
@@ -63620,7 +63631,18 @@ undefined4 FUN_00075be0()
 
 
 
-void FUN_00075cb8(param_1)
+// was FUN_00075cb8 -- part of the sprite-list compositor family
+// (alongside sprite_list_set_rect/set_position/set_frame_id* and
+// sprite_list_set_lifetime, all indexing the same DAT_0023c3e8 slot-
+// record array). Every one of those setters calls this once they're
+// done, passing the slot index -- it walks the compositor's spatial
+// dirty-region buckets, registers the slot (and any other slot whose
+// bounding box overlaps it) into whichever buckets its own bounding
+// box falls in, and sets DAT_0023c41c (a "compositor has dirty work"
+// flag some outer flush loop checks). Already extensively documented
+// at its own call sites as "queues the sprite in the compositor" --
+// this definition just gives that a real name to match.
+void sprite_list_queue_slot_redraw(param_1)
 ushort param_1;
 
 {
@@ -63634,7 +63656,7 @@ ushort param_1;
      and no dragon/compass sprite ever got queued for drawing (or, on a
      different heap layout, got queued opaque garbage -- the "black
      rectangle" over the HUD). Same pointer-truncation class as the rest
-     of this compositor (FUN_000762c4 / sprite_list_set_lifetime). */
+     of this compositor (sprite_list_set_rect / sprite_list_set_lifetime). */
   char *iVar3;
   uint uVar4;
   ushort *puVar5;
@@ -63723,7 +63745,17 @@ LAB_00076038:
 
 
 
-int FUN_00076078(param_1)
+// was FUN_00076078 -- allocates a new sprite-list compositor slot
+// (linear scan of DAT_0023c3e8's fixed 0x40-entry array for a free
+// record, matching sprite_list_set_rect/set_position's own `param_1 <
+// 0x40` bound), stores param_1 as the slot's resource/frame id, zeroes
+// its remaining fields, and returns the new slot's index via
+// Ordinal_2005(0x14,...) (byte offset / 0x14-byte record stride ==
+// slot index). Returns -1 if the pool is full. Compare
+// sprite_list_alloc_raw_entry (was sprite_list_alloc_raw_entry) which does the same
+// but also attaches a freshly allocated raw pixel buffer instead of
+// just a resource id.
+int sprite_list_alloc_entry(param_1)
 undefined4 param_1;
 
 {
@@ -63770,7 +63802,14 @@ undefined4 param_1;
 
 
 
-int FUN_00076194(param_1,param_2,param_3)
+// was FUN_00076194 -- sibling of sprite_list_alloc_entry: allocates a
+// new compositor slot the same way, but also allocates a fresh raw
+// pixel buffer for it (via grtile_alloc_registered, param_2 x param_3*2 bytes,
+// same grtile-style scratch-buffer allocator uw_alloc_grtile shares)
+// instead of just storing a resource id. Used for the dragon head/body
+// decorations (redraw_hud_panels), which need their own writable
+// backing buffer rather than pointing at a static .GR resource frame.
+int sprite_list_alloc_raw_entry(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
 int param_3;
@@ -63803,7 +63842,7 @@ int param_3;
   if (bVar6) {
     *(undefined1 *)((char *)puVar5 + 1) = uVar4;
   }
-  iVar3 = FUN_00076a2c(param_2,param_3 << 1);
+  iVar3 = grtile_alloc_registered(param_2,param_3 << 1);
   if (iVar3 == 0) {
     return -1;
   }
@@ -63821,7 +63860,12 @@ int param_3;
 
 
 
-undefined4 FUN_000762c4(param_1,param_2,param_3,param_4,param_5)
+// was FUN_000762c4 -- sets a compositor slot's full geometry (x, y, w,
+// h) in one call, used at creation time (redraw_hud_panels calls this
+// right after allocating each dragon/compass/status-icon slot to
+// establish its rect). Compare sprite_list_set_position, which only
+// updates x/y for an already-sized slot during animation.
+undefined4 sprite_list_set_rect(param_1,param_2,param_3,param_4,param_5)
 short param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -63831,14 +63875,14 @@ undefined2 param_5;
 {
   undefined4 uVar1;
   /* Was `int`, truncating the real DAT_0023c3e8 slot-record pointer
-     computed here (same bug as its sibling functions FUN_00076338 and
+     computed here (same bug as its sibling functions sprite_list_set_position and
      sprite_list_set_lifetime below, which compute the identical expression). */
   char * iVar2;
 
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
     if (getenv("UW_DEBUG_SPRPOS")) {
-      fprintf(stderr, "[sprpos] FUN_000762c4 create: slot=%d x=%d y=%d w=%d h=%d\n",
+      fprintf(stderr, "[sprpos] sprite_list_set_rect create: slot=%d x=%d y=%d w=%d h=%d\n",
               (int)param_1, (int)param_2, (int)param_3, (int)param_4, (int)param_5);
     }
     *(char *)(iVar2 + 6) = (char)param_4;
@@ -63849,7 +63893,7 @@ undefined2 param_5;
     *(char *)(iVar2 + 3) = (char)((uint)param_2 >> 8);
     *(char *)(iVar2 + 5) = (char)((uint)param_3 >> 8);
     *(char *)(iVar2 + 9) = (char)((ushort)param_5 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -63860,7 +63904,14 @@ undefined2 param_5;
 
 
 
-undefined4 FUN_00076338(param_1,param_2,param_3)
+// was FUN_00076338 -- updates an already-allocated compositor slot's
+// x/y position only (its width/height, set once by sprite_list_set_rect,
+// are left alone). Called every tick by hud_compass_needle_tick to
+// move the needle sprite through its 16-heading ellipse. Like its
+// sibling setters below, only bounds-checks `param_1 < 0x40` -- a
+// negative/corrupted slot handle would bypass that and compute a wild
+// pointer into DAT_0023c3e8.
+undefined4 sprite_list_set_position(param_1,param_2,param_3)
 short param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -63868,17 +63919,17 @@ undefined4 param_3;
 {
   undefined4 uVar1;
   char * iVar2;
-  
+
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
     if (getenv("UW_DEBUG_SPRPOS")) {
-      fprintf(stderr, "[sprpos] FUN_00076338 slot=%d x=%d y=%d\n", (int)param_1, (int)param_2, (int)param_3);
+      fprintf(stderr, "[sprpos] sprite_list_set_position slot=%d x=%d y=%d\n", (int)param_1, (int)param_2, (int)param_3);
     }
     *(char *)(iVar2 + 2) = (char)param_2;
     *(char *)(iVar2 + 4) = (char)param_3;
     *(char *)(iVar2 + 3) = (char)((uint)param_2 >> 8);
     *(char *)(iVar2 + 5) = (char)((uint)param_3 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -63889,7 +63940,16 @@ undefined4 param_3;
 
 
 
-undefined4 FUN_00076390(param_1,param_2)
+// was FUN_00076390 -- updates an already-allocated compositor slot's
+// displayed sprite/frame id (offset+7/+0xf, separate from whatever
+// resource id sprite_list_alloc_entry stored at creation) and ORs
+// DAT_0008763c into the slot's flags word to mark it dirty. Called
+// every tick by hud_compass_needle_tick to advance the needle/compass-
+// rose frame ids. Compare sprite_list_set_frame_id_transparent, the
+// same operation but also forcing DAT_00087648 (a transparent-blit
+// flag, matching sprite_list_alloc_entry/alloc_raw_entry's own
+// g_blit_transparent_mode branch) into the flags word.
+undefined4 sprite_list_set_frame_id(param_1,param_2)
 short param_1;
 undefined4 param_2;
 
@@ -63897,7 +63957,7 @@ undefined4 param_2;
   ushort uVar1;
   undefined4 uVar2;
   ushort *puVar3;
-  
+
   if (param_1 < 0x40) {
     puVar3 = (ushort *)(param_1 * 0x14 + DAT_0023c3e8);
     *(char *)(puVar3 + 7) = (char)param_2;
@@ -63905,7 +63965,7 @@ undefined4 param_2;
     uVar1 = *puVar3 | DAT_0008763c;
     *(char *)puVar3 = (char)uVar1;
     *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar2 = 0;
   }
   else {
@@ -63916,7 +63976,9 @@ undefined4 param_2;
 
 
 
-undefined4 FUN_00076404(param_1,param_2)
+// was FUN_00076404 -- sprite_list_set_frame_id's transparent-blit
+// sibling; see that function's own comment.
+undefined4 sprite_list_set_frame_id_transparent(param_1,param_2)
 short param_1;
 undefined4 param_2;
 
@@ -63924,7 +63986,7 @@ undefined4 param_2;
   ushort uVar1;
   undefined4 uVar2;
   ushort *puVar3;
-  
+
   if (param_1 < 0x40) {
     puVar3 = (ushort *)(param_1 * 0x14 + DAT_0023c3e8);
     *(char *)(puVar3 + 7) = (char)param_2;
@@ -63932,7 +63994,7 @@ undefined4 param_2;
     uVar1 = *puVar3 | DAT_00087648 | DAT_0008763c;
     *(char *)puVar3 = (char)uVar1;
     *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar2 = 0;
   }
   else {
@@ -63958,7 +64020,7 @@ undefined4 param_1;
     uVar1 = DAT_0023c418 & *puVar2;
     *(char *)puVar2 = (char)uVar1;
     *(char *)((char *)puVar2 + 1) = (char)(uVar1 >> 8);
-    FUN_00075cb8(param_1);
+    sprite_list_queue_slot_redraw(param_1);
   }
   return 0xffffffff;
 }
@@ -64114,7 +64176,7 @@ undefined4 param_2;
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
     *(char *)(iVar2 + 10) = (char)param_2;
     *(char *)(iVar2 + 0xb) = (char)((uint)param_2 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -64138,12 +64200,21 @@ void FUN_000769e8()
 
 
 
-/* Real pointers for FUN_00076a2c's DAT_0023c3fc record table, indexed
-   by record slot (see FUN_00076a2c's comment). DAT_0023c3fc holds
+/* Real pointers for grtile_alloc_registered's DAT_0023c3fc record table, indexed
+   by record slot (see grtile_alloc_registered's comment). DAT_0023c3fc holds
    0x1540/0x11 = 320 records exactly. */
 static void *g_grtile_real_ptrs[320];
 
-undefined4 FUN_00076a2c(param_1,param_2)
+// was FUN_00076a2c -- allocates a param_1 x param_2 raw pixel buffer
+// (real heap pointer, tracked in g_grtile_real_ptrs) and registers it
+// into DAT_0023c3fc's 320-record identity-key table, returning a
+// truncated 32-bit key most callers use for opaque compare/store
+// (sprite_list_alloc_raw_entry, container/inventory hotspot scratch
+// tiles, status-icon buffers) rather than the real pointer -- see
+// capture_framebuffer_rect_to_grtile, the one caller that needs actual
+// dereferenceable pixels. Sibling of uw_alloc_grtile, which does the
+// same allocation without registering a lookup key.
+undefined4 grtile_alloc_registered(param_1,param_2)
 uint param_1;
 uint param_2;
 
@@ -64203,9 +64274,9 @@ uint param_1;
 uint param_2;
 {
   /* FUN_00041708 needs a real, dereferenceable pointer (it memmoves into
-     the result) rather than FUN_00076a2c's opaque truncated handle -- see
+     the result) rather than grtile_alloc_registered's opaque truncated handle -- see
      the comment there. Same size computation, no registration into
-     FUN_00076a2c's own DAT_0023c3fc identity-key table since nothing
+     grtile_alloc_registered's own DAT_0023c3fc identity-key table since nothing
      ever looks buffers from this call path up that way (see
      FUN_00041708). */
   unsigned int size;
@@ -64263,7 +64334,7 @@ short param_5;
   short sVar10;
   int iVar11;
   int iVar12;
-  /* param_1 is FUN_00076a2c's opaque truncated identity key (used for
+  /* param_1 is grtile_alloc_registered's opaque truncated identity key (used for
      the record-table search below), not a real pointer -- but this
      function ALSO renders glyph pixels directly into the matched
      record's buffer (the `*param_1 = ...` loop further down used to
@@ -64392,7 +64463,7 @@ short * param_1;
   int iVar5;
   int iVar6;
   int iVar7;
-  /* param_1 is FUN_00076a2c's opaque truncated identity key, not a
+  /* param_1 is grtile_alloc_registered's opaque truncated identity key, not a
      real pointer -- same issue as capture_framebuffer_rect_to_grtile above. Read glyph
      pixels back through the real pointer tracked in
      g_grtile_real_ptrs instead of dereferencing the key directly. */
@@ -65137,11 +65208,11 @@ void FUN_0007830c()
   byte bVar1;
   
   if (DAT_0024af88 == 0) {
-    DAT_0024af88 = FUN_00076a2c(0x96,0x2b);
+    DAT_0024af88 = grtile_alloc_registered(0x96,0x2b);
     if (DAT_0024af88 != 0) {
       capture_framebuffer_rect_to_grtile(DAT_0024af88,0xf0,0x47,0x4b,0x2b);
     }
-    DAT_0024af8c = FUN_00076a2c(0x46,0x15);
+    DAT_0024af8c = grtile_alloc_registered(0x46,0x15);
     if (DAT_0024af8c != 0) {
       capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }

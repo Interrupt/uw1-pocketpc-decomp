@@ -75,7 +75,7 @@ char *param_3;
 
   local_64[0] = 0;
   sVar8 = 0;
-  uVar15 = FUN_00076a2c(0x5f,0x6e);
+  uVar15 = grtile_alloc_registered(0x5f,0x6e);
   local_60 = (undefined4)uVar15;
   pcVar_p2off = param_2 + 0x20;
   memset(local_5c_buf + 4, 0x14, 6);

@@ -92,7 +92,7 @@ typedef void *codeptr();
 
 /* Forward declaration needed because FUN_00041708 (much earlier in uw.c)
    calls this before its own definition later in the file -- see its
-   definition, right after FUN_00076a2c, for why it exists. */
+   definition, right after grtile_alloc_registered, for why it exists. */
 void *uw_alloc_grtile();
 
 /* Forward declaration needed because main_menu_loop (now in game.c) takes
@@ -1414,7 +1414,7 @@ void set_hud_status_value();
 void hud_panel_redraw_dispatch();
 void hud_vitals_bar_tick();
 void hud_damage_flash_tick();
-void FUN_0006df70();
+void hud_compass_needle_tick();
 void FUN_0006e038();
 void FUN_0006e130();
 void FUN_0006e1d4();
@@ -1522,18 +1522,18 @@ void FUN_000756c8();
 void FUN_00075808();
 void FUN_00075a88();
 undefined4 FUN_00075be0();
-void FUN_00075cb8();
-int FUN_00076078();
-int FUN_00076194();
-undefined4 FUN_000762c4();
-undefined4 FUN_00076338();
-undefined4 FUN_00076390();
-undefined4 FUN_00076404();
+void sprite_list_queue_slot_redraw();
+int sprite_list_alloc_entry();
+int sprite_list_alloc_raw_entry();
+undefined4 sprite_list_set_rect();
+undefined4 sprite_list_set_position();
+undefined4 sprite_list_set_frame_id();
+undefined4 sprite_list_set_frame_id_transparent();
 undefined4 FUN_00076488();
 void FUN_00076508();
 undefined4 sprite_list_set_lifetime();
 void FUN_000769e8();
-undefined4 FUN_00076a2c();
+undefined4 grtile_alloc_registered();
 undefined4 FUN_00076b24();
 undefined4 capture_framebuffer_rect_to_grtile();
 undefined4 FUN_00076e98();
