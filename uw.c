@@ -29991,13 +29991,7 @@ void interact_use()
 {
   int iVar1;
 
-  /* "Interact converse" is the original binary's own embedded debug
-     string for this dispatch slot (matching the sibling DEBUG(INFO,
-     "Interact Look"/"Interact attack") calls) -- left as-is since it's
-     genuine original content, not something this port typed. Doesn't
-     reflect this function's real role in the shipped game (see its
-     own header comment: it's Use, not converse/talk). */
-  DEBUG(INFO, "Interact converse");
+  DEBUG(INFO, "Interact use");
 
   FUN_00057604(1);
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
