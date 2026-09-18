@@ -58769,11 +58769,30 @@ LAB_0006dec8:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4,*psVar9);
+      // HACK: was draw-then-check (`sprite_list_set_frame_id(...); if
+      // (local_30[iVar6*3] < *psVar9) { reset-for-next-time; }`).
+      // Confirmed via real ARM disassembly that this exact `<` and
+      // draw-before-check order is what the original binary computes,
+      // not a decompiler artifact -- but it means the call where the
+      // counter first exceeds local_30[iVar6*3] (this reaction's own
+      // last legitimate frame) still draws THAT out-of-range value
+      // before resetting the counter for the next cycle. The frame
+      // actually shown is local_40[iVar6*3+1], the START frame of a
+      // completely different reaction type, briefly flashing here.
+      // Confirmed live via a frame-id trace: 0x2070,0x2071,0x2072,
+      // then 0x2073 (belongs to the trap/switch reaction, not this
+      // scroll one) before resetting back to 0x206f. Harmless-looking
+      // on the original hardware's real frame timing, clearly visible
+      // on this port's -- deliberately deviating from authentic
+      // behavior here (user's call) by resetting BEFORE drawing when
+      // the counter overshoots, so the foreign frame is never actually
+      // handed to sprite_list_set_frame_id (this cycle just redraws
+      // its own start frame, local_40[iVar6*3], one call early instead).
       if (local_30[iVar6 * 3] < *psVar9) {
         *psVar9 = local_40[iVar6 * 3];
         *(short *)(&DAT_0023c124 + iVar1) = *(short *)(&DAT_0023c124 + iVar1) + -1;
       }
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       if ((&DAT_0023c11c)[iVar6] == '\0') {
         sVar4 = *(short *)(&DAT_0023c124 + iVar1);
 LAB_0006df34:
@@ -58800,10 +58819,30 @@ LAB_0006de00:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4,*psVar9);
-      if (*psVar9 <= local_30[iVar6 * 3]) {
-        return;
+      // HACK: was `sprite_list_set_frame_id(...); if (*psVar9 <=
+      // local_30[iVar6*3]) return;` -- i.e. draw first, THEN decide
+      // whether the counter overshot. Confirmed via real ARM
+      // disassembly (0x6de4c `cmp r2,r3` / 0x6de50 `ble`) that this
+      // exact `<=` and draw-before-check order is what the original
+      // binary computes, not a decompiler artifact. But it means the
+      // draw already happened with an out-of-range value on the call
+      // where the counter first exceeds local_30[iVar6*3] (the scroll
+      // reaction's own last legitimate frame) -- the actual frame
+      // shown is local_40[iVar6*3+1], the START frame of the NEXT
+      // reaction type, briefly flashing in this reaction's overlay
+      // right before it transitions away. Confirmed live via a
+      // frame-id trace showing e.g. 0x2073 (belongs to a different
+      // reaction entirely) drawn here. Harmless-looking on the
+      // original hardware's real frame timing, clearly visible on
+      // this port's -- deliberately deviating from authentic behavior
+      // here (user's call) by checking BEFORE drawing instead, so the
+      // out-of-range value is never actually handed to
+      // sprite_list_set_frame_id.
+      if (local_30[iVar6 * 3] < *psVar9) {
+        goto LAB_0006de54;
       }
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
+      return;
 LAB_0006de54:
       sVar4 = 5;
     }
@@ -58819,7 +58858,7 @@ LAB_0006de54:
           psVar9 = (short *)(&DAT_0023c24c + iVar1);
           sVar4 = *psVar11;
           *psVar9 = *psVar9 + -1;
-          sprite_list_set_frame_id((int)sVar4,*psVar9);
+          sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
           if (local_40[iVar6 * 3 + 1] <= *psVar9) {
             return;
           }
@@ -58828,7 +58867,7 @@ LAB_0006de54:
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + 1;
-        sprite_list_set_frame_id((int)sVar4,*psVar9);
+        sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
         iVar5 = iVar6 * 3 + 1;
         if (local_30[iVar5] < *psVar9) {
           *psVar9 = local_40[iVar5] + 2;
@@ -58855,7 +58894,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4,*psVar9);
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       if ((int)*psVar9 <= local_40[iVar6 * 3 + 1] + 1) {
         return;
       }
@@ -58899,7 +58938,7 @@ LAB_0006dd88:
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + -1;
-        sprite_list_set_frame_id((int)sVar4,*psVar9);
+        sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
         if (*psVar9 != local_40[iVar6 * 3 + 2]) {
           return;
         }
@@ -58908,7 +58947,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4,*psVar9);
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       if ((int)*psVar9 <= (int)local_30[iVar6 * 3 + 2]) {
         return;
       }
