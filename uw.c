@@ -2376,29 +2376,44 @@ short DAT_0023bd80;
    dispatch table for the 3D-view right-click "interact" modes, indexed by
    FUN_0003f420 as `table[uVar2]` where uVar2 = cursor mode
    (g_cursor_mode) - 1. Link-time-init data the decompile never populated,
-   so every right-click on an object jumped through garbage. Roles read
-   from the five handler bodies:
-     0  interact_look      look / examine  ("You see ..." via
+   so every right-click on an object jumped through garbage.
+
+   The ORDER below was wrong for a while (an earlier session's read of
+   "roles from the five handler bodies" put them in {look, converse,
+   default, talk_npc, attack} order) -- that produced a real,
+   user-visible bug: mode 2's icon (dagger graphic, the weapon-ready HUD
+   status bit it sets matches ready_weapon's own) dispatched to
+   interact_converse instead of interact_attack, crashing there when the
+   player actually tried to swing. Re-dumped the raw 5 pointers directly
+   from UU.exe at 0x858c8 (Ghidra headless, mem.getInt) instead of
+   trusting the prior role-guessing pass; the real order is:
+     0  interact_converse  (0x3f2c4) converse (use_object_on_target start-conversation)
+     1  interact_attack    (0x3f368) attack (swing toward the cursor)
+     2  interact_look      (0x3f14c) look / examine ("You see ..." via
                           dispatch_object_action; also a use/get fallback
                           when FUN_000576d0() says so)
-     1  interact_converse      converse (use_object_on_target start-conversation)
-     2  interact_default  get / use context handler
-     3  interact_talk_npc      talk to NPC (FUN_00028488)
-     4  interact_attack      attack (swing toward the cursor)
-   With no cursor mode selected FUN_0003f420 now dispatches index 0
-   (look), so a bare right-click on an object reads "You see a <name>"
-   instead of the get handler's "You cannot pick that up." */
+     3  interact_default   (0x3ee90) get / use context handler
+     4  interact_talk_npc  (0x3f128) talk to NPC (FUN_00028488)
+   i.e. mode 2 (g_cursor_mode==2) is the real numeric Attack mode, and
+   mode 5 is Talk-to-NPC -- confirmed independently by ready_weapon's own
+   pre-session value (`g_cursor_mode = 2`, see its own comment) and by
+   cursor_mode_button_click's mode-2 special case, which sets the exact
+   same weapon-ready HUD state (flags5f |= 2, set_hud_status_value(8,4))
+   as ready_weapon. FUN_0003f420's real ARM (0x3f590-0x3f5a8) computes
+   the dispatch index as 2 when no cursor mode is selected (not 0), so a
+   bare right-click still lands on interact_look either way -- see that
+   function's own comment for the matching `_dispatch` fix. */
 extern void interact_default(void);
 extern void interact_talk_npc(void);
 extern void interact_look(void);
 extern void interact_converse(void);
 extern void interact_attack(void);
 static void (*const PTR_FUN_000858c8_table[5])(void) = {
-  interact_look,       /* 0: look / examine */
-  interact_converse,       /* 1: converse       */
-  interact_default,   /* 2: get / use      */
-  interact_talk_npc,       /* 3: talk to NPC    */
-  interact_attack,       /* 4: attack         */
+  interact_converse,       /* 0: converse (mode 1) */
+  interact_attack,     /* 1: attack (mode 2)   */
+  interact_look,       /* 2: look / examine (mode 3) */
+  interact_default,    /* 3: get / use (mode 4) */
+  interact_talk_npc,       /* 4: talk to NPC (mode 5) */
 };
 #define PTR_FUN_000858c8 (PTR_FUN_000858c8_table[0])
 code *DAT_002020b8;
@@ -29950,32 +29965,41 @@ void FUN_0003f420()
     if (getenv("UW_DEBUG_COMBAT")) {
       fprintf(stderr, "[combat] uVar2=%u bit1=0x%x\n", uVar2, (unsigned)(*(ushort *)(DAT_00085a6c + 6) & 1));
     }
-    /* With no cursor mode selected, a right-click on an object defaults
-       to "look" (table[3], interact_talk_npc -> "You see a <name>"), not the
-       get/use handler at table[2]. uVar2 itself stays 2 so the
-       describe_picked_terrain() call below still takes its hardcoded
-       mode-2 "You see <terrain>" path when the click misses every
-       object. */
-    _dispatch = (g_cursor_mode == 0) ? 0 : uVar2;
+    /* Was `(g_cursor_mode == 0) ? 0 : uVar2` -- a forced index-0 override
+       for the no-mode-selected case. That matched the table's OLD, wrong
+       order (where index 0 happened to be interact_look), but real ARM
+       disassembly (0x3f590-0x3f5a8: `moveq r4,#0x2` when g_cursor_mode
+       is 0, `subne r4,r3,#0x1` otherwise) never special-cases 0 at all --
+       it's the exact same value uVar2 already computes above. With the
+       dispatch table now in its real order (see its own comment),
+       index 2 is interact_look, so using uVar2 directly still lands a
+       bare right-click on "You see a <name>", now via the real index
+       instead of a special-cased one. */
+    _dispatch = uVar2;
     if ((uVar2 & 0xff) != 1) {
       if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
         g_interact_target = 0;
         return;
       }
       g_interact_target = pick_object_under_cursor(2);
-      /* Was an unconditional bail (describe the terrain and skip the
-         dispatch table entirely) whenever nothing was directly under
-         the cursor. Fine for Look/Get/Talk (table[0]/[2]/[3]), which
-         all genuinely need g_interact_target -- but interact_attack
-         (table[4], uVar2==4) never reads g_interact_target at all; it
-         only uses the raw mouse position (DAT_00085a6c) to pick a
-         swing zone. Requiring a precise pixel-perfect pick before a
-         melee swing can even start doesn't match that -- confirmed
-         live this was the reason interact_attack was never reached at
-         all when swinging at anything not dead-center under the
-         cursor (a wall, empty air, an off-center creature). Let attack
-         fall through to the dispatch table regardless. */
-      if ((g_interact_target == 0) && (uVar2 != 4)) {
+      /* Was `(g_interact_target == 0) && (uVar2 != 4)` -- an extra skip
+         added under the OLD, wrong table order, meant to let attack
+         (then assumed to be table[4]) fall through to the dispatch
+         table even with no object under the cursor, matching live
+         testing that showed swings need that (not every swing lands
+         dead-center under the cursor). Real attack (table[1], uVar2==1)
+         is already excluded from this whole block by the outer
+         `uVar2 != 1` check above -- confirmed via ARM disassembly
+         (0x3f5b4 `beq 0x3f5f0` branches straight to the table call for
+         uVar2==1, before ever reaching this object-pick/describe code),
+         so this fallthrough only runs for modes 0, 2, or 3 now (real
+         table[0]/[2]/[3] = converse/look/default), none of which need a
+         "no object" carve-out -- real disassembly (0x3f5d4-0x3f5e4)
+         unconditionally describes the terrain and returns here. Dropping
+         the `uVar2 != 4` half avoids silently calling table[4]
+         (interact_talk_npc) with a NULL g_interact_target when nothing
+         is under the cursor. */
+      if (g_interact_target == 0) {
         describe_picked_terrain(uVar2,(int)DAT_002020ac);
         goto LAB_0003f584;
       }
@@ -30399,21 +30423,17 @@ void ready_weapon()
       /* Same dropped-argument bug as cursor_mode_button_click's sites. */
       mode_icon_highlight_off(g_cursor_mode);
     }
-    /* Was `g_cursor_mode = 2` -- readying the weapon-hand item is
-       exactly "enter combat stance", so the cursor mode it selects
-       should be 5 (Attack), the one FUN_0003f420 dispatches a 3D-view
-       right-click to interact_attack for -- not 2 (Converse, table[1],
-       which never touches combat at all; confirmed by reading its own
-       body). Whichever mode this used to be, mode_icon_highlight_on(g_cursor_mode)
-       a few lines down highlights whatever icon g_cursor_mode names --
-       so this alone was drawing the WRONG icon (mode 2's) every time a
-       weapon was readied, and left right-clicking dispatch to
-       interact_converse instead of interact_attack. Set to 5 so
-       readying a weapon (from the paperdoll, or bare-handed via
-       handle_inventory_panel_click's own empty-slot branch) puts the
-       player directly into a working attack stance, no separate icon
-       click needed. */
-    g_cursor_mode = 5;
+    /* Originally decompiled as `g_cursor_mode = 2`. An earlier session
+       changed this to 5, reasoning that PTR_FUN_000858c8_table's
+       (then-wrong) declared order put interact_attack at index 4 (mode
+       5). That table order turned out to be wrong -- a fresh raw dump of
+       the 5 pointers directly from UU.exe at 0x858c8 (see the table's
+       own comment) shows interact_attack genuinely at index 1 (mode 2),
+       matching this line's own original value. Restored to 2: mode 2 is
+       the real numeric Attack mode (also matches
+       cursor_mode_button_click's mode-2 special case, which sets this
+       exact same weapon-ready HUD state independently). */
+    g_cursor_mode = 2;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar1 | 2;
     *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar1 >> 8);
@@ -30466,11 +30486,10 @@ void unready_weapon()
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar1 >> 8);
     if (DAT_000868d8 == 0) {
-      /* Was a hardcoded `mode_icon_highlight_off(2)` -- un-highlight needs to name
-         whichever mode ready_weapon actually highlighted (5, Attack,
-         see its own comment), not the old mode-2 value this was
-         presumably copied from. */
-      mode_icon_highlight_off(5);
+      /* Un-highlight needs to name whichever mode ready_weapon actually
+         highlighted -- 2 (Attack, see ready_weapon's own comment on why
+         it's 2 and not 5). */
+      mode_icon_highlight_off(2);
     }
     g_cursor_mode = 0;
     FUN_00027694();
