@@ -34589,7 +34589,7 @@ undefined2 * param_5;
   undefined2 uVar6;
   int iVar7;
   /* Was `undefined4 local_74 [2];` -- element [0] holds a real 64-bit
-     object pointer passed by address into FUN_00045538 (see that
+     object pointer passed by address into find_object_in_link_chain (see that
      function's own fix comment); [1] is unused padding from the
      original 32-bit stack layout. */
   char *local_74 [2];
@@ -34629,7 +34629,7 @@ undefined2 * param_5;
         iVar5 = local_6c[iVar7];
         if ((iVar5 != 0) && ((*(byte *)(iVar5 + 1) & 0x80) == 0)) {
           local_74[0] = resolve_object_link(iVar5 + 6);
-          puVar4 = (ushort *)FUN_00045538(param_1,param_2,param_3,local_74);
+          puVar4 = (ushort *)find_object_in_link_chain(param_1,param_2,param_3,local_74);
           local_6c[iVar7] = (int)puVar4;
           if (puVar4 != (ushort *)0x0) {
 LAB_0004552c:
@@ -34646,13 +34646,19 @@ LAB_0004552c:
 
 
 
-char *FUN_00045538(param_1,param_2,param_3,param_4)
+// was FUN_00045538 -- recursively walks an object's contents link chain
+// (descending into nested containers) looking for the first object
+// matching the category/subcategory/quality filters in param_1/param_2/
+// param_3 (each <0 means "any"); param_4 is an in/out cursor: on entry
+// it points at the current link to examine, on a match it's zeroed (or
+// updated to the next link) and the matched object pointer is returned.
+char *find_object_in_link_chain(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
 /* Was `int * param_4;` -- the caller-supplied slot always holds a real
    64-bit object-record pointer (see FUN_000452dc's own local_74 and
-   FUN_00045b48's own local_28, both fixed alongside this one), but this
+   extract_matching_object_from_slot's own local_28, both fixed alongside this one), but this
    function only ever read/wrote its low 4 bytes through an `int *` view,
    truncating the pointer on every pass. Confirmed live (regression suite,
    demo_inventory_container_torch_use_test.txt): using a torch crashed
@@ -34693,7 +34699,7 @@ LAB_00045668:
       }
 LAB_000455f8:
       if ((((uVar3 & 0x8000) == 0) && (local_1c = resolve_object_link(puVar1 + 3), local_1c != 0)) &&
-         (iVar2 = FUN_00045538(param_1,param_2,param_3,&local_1c), iVar2 != 0)) {
+         (iVar2 = find_object_in_link_chain(param_1,param_2,param_3,&local_1c), iVar2 != 0)) {
         if (local_1c == 0) {
           return iVar2;
         }
@@ -34910,14 +34916,21 @@ undefined4 FUN_00045b20()
 {
   undefined4 uVar1;
   
-  uVar1 = FUN_00045b48();
+  uVar1 = extract_matching_object_from_slot();
   FUN_000667cc();
   return uVar1;
 }
 
 
 
-ushort *FUN_00045b48(param_1,param_2,param_3,param_4,param_5)
+// was FUN_00045b48 -- finds the first object matching the category/
+// subcategory/quality filters (param_1/param_2/param_3, <0 = any) in
+// inventory slot param_4 (searched directly, or via
+// find_object_in_link_chain for nested containers); if it's a stackable
+// object and param_5 asks for fewer than the full stack, splits off a
+// new object for the remaining count via alloc_object_slot before
+// unlinking and returning the matched (now correctly-sized) object.
+ushort *extract_matching_object_from_slot(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -34956,7 +34969,7 @@ ushort param_5;
         (((((int)uVar6 < 0 || ((*puVar3 >> 6 & 7) == uVar6)) &&
           (((short)uVar7 < 0 || (((byte)((byte)*puVar3 >> 4) & 3) == uVar7)))) &&
          (((short)uVar1 < 0 || (((byte)*puVar3 & 0xf) == uVar1)))))) ||
-       (puVar3 = (ushort *)FUN_00045538(param_1,param_2,param_3,&local_28), puVar3 != (ushort *)0x0)
+       (puVar3 = (ushort *)find_object_in_link_chain(param_1,param_2,param_3,&local_28), puVar3 != (ushort *)0x0)
        ) {
       if (((param_5 != 0) && ((*puVar3 & 0x8000) != 0)) && ((puVar3[3] & 0x8000) == 0)) {
         uVar7 = puVar3[3] >> 6;
@@ -35663,7 +35676,7 @@ int param_2;
     resolve_object_link(iVar1 + 4);
     uVar2 = encode_object_slot_index();
   }
-  g_selected_object = (ushort *)FUN_00045b48(0xffffffff,0xffffffff,0xffffffff,param_1,0);
+  g_selected_object = (ushort *)extract_matching_object_from_slot(0xffffffff,0xffffffff,0xffffffff,param_1,0);
   if (g_selected_object != (ushort *)0x0) {
     if (param_2 != 0) {
       iVar1 = (int)(short)param_1;
