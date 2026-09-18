@@ -1452,3 +1452,110 @@ then got drawn anyway." Not yet fully calibrated (heading offset -3 and
 yoff 0 are still the best-found values, not independently re-derived
 for this exact fix), but the structural bug that was actively fighting
 any calibration attempt is gone.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-18: TWO TEXTURE-SAMPLING BUGS FOUND AND FIXED -- "EVERY
+OTHER COLUMN TRANSPARENT"
+═══════════════════════════════════════════════════════════════════════════
+User report, testing the previous update's clean door-frame render: the
+new textured path draws every other column (of the real 320x240
+framebuffer) as transparent. Investigated by reading the actual
+rasterizer (raster_triangle/raster_textured_span, uw.c ~6963-7531) this
+project already has, rather than guessing -- both bugs found and fixed
+are real, cited defects in this session's own emit_dlist_bank_object
+code, not pre-existing engine bugs.
+
+BUG 1 -- wrong texture-stride field (ace00/ace04).
+raster_textured_span's per-pixel texel address computation
+(uw.c ~7490-7502) is:
+
+    do {
+        iVar6 = Ordinal_2005(local_38, 0x1000000);         /* perspective divide */
+        iVar12 = (local_34 >> 6) * iVar6 >> 0x12;           /* "row" (V) index */
+        bVar1 = param_10;
+        if ((param_8 != 0) && (-1 < iVar12)) {
+            for (iVar12 = iVar12*param_6 + ((iVar14>>6)*iVar6>>0x12);
+                 param_7 < iVar12; iVar12 = iVar12 - param_7) { }
+            bVar1 = *(byte *)(iVar12 + param_8);            /* the real texel fetch */
+        }
+        ...
+    } while (...)
+
+param_6/param_7 (the row stride and the wraparound-total) come straight
+from the arena's per-face `ace00`/`ace04` fields (render_visible_tile_list,
+uw.c ~13701-13706: `raster_triangle(0x140, fb, tri, tex, piVar14[0x1b],
+piVar14[0x1c]*piVar14[0x1b], texptr, rect)` -- piVar14[0x1b]/[0x1c] trace
+straight back to those two fields). The REAL tile-wall render path (uw.c
+~50276-50277 and ~50523-50524, gated by the exact same LOD/distance
+check, `DAT_00086b24`) writes the texture's actual pixel width there --
+0x40 (64) for the near/real-detail branch, 0x20 or 0x10 for the
+LOD-reduced branches -- for the exact same wall-texture-index expression
+(`(byte)DAT_0023b4ec[2] & 0x3f`) the door path already reuses to resolve
+its own texture. This session's dlist code instead hardcoded this field
+to a placeholder `16` regardless of what was actually bound (a leftover
+from the UPDATE 2026-09-16 (3) "use texsize" experiment, before UV
+scaling was later split out into its own independent constant -- this
+field was never revisited afterward). Binding a real 64-pixel-wide
+texture (index 24, confirmed via `get_texture_page`) while telling the
+rasterizer its pitch is 16 makes the wraparound math run on completely
+the wrong stride against the real 4096-byte buffer.
+
+FIX: added `uwdl_texture_width(int idx)`, a direct port of
+`get_texture_page`'s own size classification (idx<0x30 -> 64, <0x3a ->
+32, <=0x73 -> 16, else 0 -- uw.c ~31174-31196), and threaded a real
+`texwidth` parameter through `emit_dlist_bank_object` (previously
+implicit/hardcoded) so the ace00/ace04 write and the UV scale (next bug)
+both use the one real value for whichever texture is actually bound.
+
+BUG 2 -- UV words are signed, and DOS's own bytecode legitimately
+produces small negative/near-zero UV.
+Checked `uw1-decomp/port/uw1_dlist.c` directly (not assumed): its own
+`sign16()` is applied to face UV words too (lines 651-652, 664-665),
+exactly matching this project's `uwdl_sign16`. So this part was already
+a faithful port -- a raw word `0xffff` really does mean `-1`, not
+`65535`, on both sides. Dumping bank 0x61's real per-face UV (new
+`UW_DEBUG_DLIST_UV=1` flag) confirmed real corners like:
+
+    face 6: u=(0,16383,16383,0) v=(12288,12288,-1,-1)
+    face 7: u=(-16384,-1,-1,-16384) v=(12288,12288,-1,-1)
+
+-1 and -16384 are small, sane values once scaled (uscale = 64/65536 ~=
+0.000977 -- -16384*uscale = -16.0, a texel or two off one edge, not a
+huge swing). The actual failure mechanism is the rasterizer's own
+boundary check above: `if ((param_8 != 0) && (-1 < iVar12))` gates the
+texel fetch on the interpolated V accumulator being >= 0. A per-vertex V
+sitting at or barely below zero (our v=-1 corners, or any face whose
+whole V range straddles zero after scaling) puts every scanline's
+interpolated V right on that knife-edge; fixed-point rounding and the
+perspective divide (`Ordinal_2005`) flip it across zero from one pixel
+to the next, so the fetch alternately passes and fails -- exactly the
+reported checkerboard. Real tile walls never hit this edge case because
+their own UV is always constructed >= 0 (tile-local offsets, never
+negative) -- this port's raster function may simply never have been
+exercised with negative UV before now.
+
+FIX: in `emit_dlist_bank_object`, before scaling a face's UV to pixel
+units, compute the face's own minimum u and v (across whichever 4
+source vertices that face's fan-triangulated quad actually uses) and
+subtract it from all 4 corners first. This is a pure additive rephase
+of a tiling texture -- the face's own relative UV shape (what actually
+determines the visible texture placement/gradient across that quad) is
+completely unchanged, it just guarantees every sample for that face
+lands comfortably on the valid (>=0) side of the rasterizer's boundary
+check instead of straddling it.
+
+VERIFICATION: re-ran the same repro used throughout this investigation
+(door at tile 24.5,6.5, heading 270, UW_DLIST_DOOR=1
+UW_DLIST_DOOR_TEXTURE=1 UW_DLIST_DOOR_ONLY=1). Before the fix, a
+nearest-neighbor pixel dump of the affected screen region showed
+isolated small rectangular patches of correctly-sampled stone texture
+separated by solid black (transparent) gaps -- a clear checkerboard/
+tiling-wrap artifact, worst on faces facing more edge-on to the camera
+(more scanlines with V close to zero). After both fixes: the same
+region renders as one continuous, correctly textured stone surface, no
+gaps. Pixel-diff against the same no-dlist baseline stayed essentially
+the same size (6980 vs. the prior update's 7028 differing pixels, same
+bounding box) -- expected, since neither fix changes *where* geometry
+draws, only whether previously-corrupted pixels within that same region
+now sample correctly. Confirmed via the standard demo.txt regression
+script afterward: no crashes.

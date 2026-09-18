@@ -51180,7 +51180,26 @@ static int uwdl_run_bank(const unsigned short *words, int count, uwdl_face *out,
    shade conventions. Faces with more than 4 vertices are fan-
    triangulated from vertex 0, the same 4-index-per-record limit
    emit_model_object's own arena format already works within. */
-static void emit_dlist_bank_object(const unsigned short *words, int count, int heading, double scale, double yoff, void *texptr)
+/* Real pixel width for a wall/floor texture index, matching
+   get_texture_page's own size classification exactly (uw.c ~31174:
+   <0x30 -> 64x64, <0x3a -> 32x32, <0x6a or <=0x73 -> 16x16, else no
+   texture). The tile-wall render path (uw.c ~50276-50277/50296,
+   ~50523-50524/50296, same "(byte)DAT_0023b4ec[2] & 0x3f" wall-index
+   expression the door path reuses below) writes this exact value --
+   0x40, 0x20, or 0x10 -- into the arena's ace00/ace04 stride fields for
+   every real tile wall face; emit_dlist_bank_object needs to match it
+   for the same reason, or raster_textured_span's per-pixel texel-index
+   wraparound (`param_7 = width*stride`, uw.c ~7499) runs against the
+   wrong pitch for whatever texture is actually bound. */
+static int uwdl_texture_width(int idx)
+{
+  if (idx < 0x30) return 64;
+  if (idx < 0x3a) return 32;
+  if (idx <= 0x73) return 16;
+  return 0;
+}
+
+static void emit_dlist_bank_object(const unsigned short *words, int count, int heading, double scale, double yoff, void *texptr, int texwidth)
 {
   static uwdl_face faces[UWDL_MAX_FACES];
   int nfaces;
@@ -51209,6 +51228,18 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
       }
       fprintf(stderr, "[dlist] bbox x=[%g,%g] y=[%g,%g] z=[%g,%g]\n",
               lo[0], hi[0], lo[1], hi[1], lo[2], hi[2]);
+    }
+    if (getenv("UW_DEBUG_DLIST_UV")) {
+      int _fi, _vi;
+      for (_fi = 0; _fi < nfaces; _fi++) {
+        uwdl_face *f = &faces[_fi];
+        fprintf(stderr, "[dlist] face %d: nv=%d has_uv=%d", _fi, f->count, f->has_uv);
+        if (f->has_uv) {
+          for (_vi = 0; _vi < f->count; _vi++)
+            fprintf(stderr, " uv[%d]=(%d,%d)", _vi, f->u[_vi], f->v[_vi]);
+        }
+        fprintf(stderr, "\n");
+      }
     }
   }
   if (nfaces == 0) return;
@@ -51273,7 +51304,18 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
       *(int *)(&DAT_000acdec + rb) = i1;
       *(int *)(&DAT_000acdf0 + rb) = i2;
       *(int *)(&DAT_000acdf4 + rb) = i3;
-      _texsize = texptr ? 16 : 0;
+      /* Must be the texture's REAL pixel width (64/32/16, from
+         uwdl_texture_width), not a placeholder constant. This is the
+         same field the real tile-wall render path (uw.c ~50276-50277)
+         writes for the identical wall-index expression the door path
+         resolves below -- raster_textured_span (uw.c ~7441-7499) uses
+         it as the per-pixel texel-address wraparound pitch against the
+         ACTUAL bound texture buffer (get_texture_page's real stride).
+         A too-small placeholder here (16, against a real 64-wide
+         buffer) made the wraparound run on the wrong pitch and alias --
+         every other screen column landing on a wrapped-around texel
+         that happened to read as the transparent colour-key byte. */
+      _texsize = texptr ? texwidth : 0;
       *(int *)(&DAT_000ace00 + rb) = _texsize;
       *(int *)(&DAT_000ace04 + rb) = _texsize;
       /* Real per-vertex UV, at the user's request: DOS's own bytecode
@@ -51286,24 +51328,47 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
          g_model_map .E-model convention) keeps the old flat zero-UV
          fallback -- only meaningful once a real texture is bound. */
       if (f->has_uv && texptr) {
-        /* NOT _texsize (16) -- that's this renderer's own wall-tiling
-           display-scale field (ace00/04), unrelated to a texture's real
-           pixel dimensions, confirmed by tracing DOS's own working
-           formula (uw1-decomp port/uw1_view.c:2910/3107):
-           `in[j].u = f->u[j] * t.w / 65536.0` -- t.w is the REAL bound
-           texture's pixel width. UW1 wall textures are W64.TR-family,
-           64x64 (matching this project's own earlier W64.TR references),
-           not 16 -- reusing _texsize here was the actual bug behind last
-           attempt's regression to fully invisible. */
-        double uscale = 64.0 / 65536.0;
-        *(float *)(&DAT_000ace08 + rb) = (float)(f->u[s0] * uscale);
-        *(float *)(&DAT_000ace0c + rb) = (float)(f->v[s0] * uscale);
-        *(float *)(&DAT_000ace10 + rb) = (float)(f->u[s1] * uscale);
-        *(float *)(&DAT_000ace14 + rb) = (float)(f->v[s1] * uscale);
-        *(float *)(&DAT_000ace18 + rb) = (float)(f->u[s2] * uscale);
-        *(float *)(&DAT_000ace1c + rb) = (float)(f->v[s2] * uscale);
-        *(float *)(&DAT_000ace20 + rb) = (float)(f->u[s3] * uscale);
-        *(float *)(&DAT_000ace24 + rb) = (float)(f->v[s3] * uscale);
+        /* DOS's own working formula (uw1-decomp port/uw1_view.c:2910/
+           3107): `in[j].u = f->u[j] * t.w / 65536.0` -- t.w is the REAL
+           bound texture's pixel width, which varies by texture index
+           (64/32/16, not always 64) -- use the same texwidth the
+           stride field above now uses, so both stay consistent for
+           whichever texture is actually bound. */
+        double uscale = (double)texwidth / 65536.0;
+        /* uwdl_sign16 (matching uw1_dlist.c's own sign16 exactly -- DOS
+           really does treat these words as signed) turns a raw 0xffff
+           UV word into -1, not 65535; DOS's own bytecode legitimately
+           produces small negative u/v this way (measured live: bank
+           0x61 faces with corners like u=(-16384,-1,-1,-16384)). This
+           port's raster_textured_span (uw.c ~7498) gates its texel
+           fetch on `-1 < iVar12`, where iVar12 comes straight from the
+           interpolated V accumulator -- a per-vertex V that's zero or
+           barely negative rides right on that boundary, and fixed-
+           point/perspective-divide rounding flips it across pixel to
+           pixel, which is exactly the "every other column transparent"
+           checkerboard reported live. Ordinary tile walls never hit
+           this because their own UV is always >= 0 by construction, so
+           this edge case was never exercised before. Fix: shift each
+           face's own u/v so its own minimum corner is exactly 0 before
+           scaling -- a pure additive rephase of a tiling texture, so it
+           changes nothing about the face's own relative UV shape/
+           gradient, just keeps every sample comfortably on the valid
+           side of that boundary. */
+        int32_t _umin = f->u[s0], _vmin = f->v[s0];
+        if (f->u[s1] < _umin) _umin = f->u[s1];
+        if (f->u[s2] < _umin) _umin = f->u[s2];
+        if (f->u[s3] < _umin) _umin = f->u[s3];
+        if (f->v[s1] < _vmin) _vmin = f->v[s1];
+        if (f->v[s2] < _vmin) _vmin = f->v[s2];
+        if (f->v[s3] < _vmin) _vmin = f->v[s3];
+        *(float *)(&DAT_000ace08 + rb) = (float)((f->u[s0] - _umin) * uscale);
+        *(float *)(&DAT_000ace0c + rb) = (float)((f->v[s0] - _vmin) * uscale);
+        *(float *)(&DAT_000ace10 + rb) = (float)((f->u[s1] - _umin) * uscale);
+        *(float *)(&DAT_000ace14 + rb) = (float)((f->v[s1] - _vmin) * uscale);
+        *(float *)(&DAT_000ace18 + rb) = (float)((f->u[s2] - _umin) * uscale);
+        *(float *)(&DAT_000ace1c + rb) = (float)((f->v[s2] - _vmin) * uscale);
+        *(float *)(&DAT_000ace20 + rb) = (float)((f->u[s3] - _umin) * uscale);
+        *(float *)(&DAT_000ace24 + rb) = (float)((f->v[s3] - _vmin) * uscale);
       } else {
         *(int *)(&DAT_000ace08 + rb) = 0;
         *(int *)(&DAT_000ace0c + rb) = 0;
@@ -52742,14 +52807,15 @@ LAB_00061d34:
            for ordinary tile walls, not the case that broke. */
         if (getenv("UW_DLIST_DOOR_TEXTURE")) {
           int _wtex = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
+          int _twidth = uwdl_texture_width(_wtex);
           void *_texptr = get_texture_page(_wtex);
           if (getenv("UW_DEBUG_DLIST"))
-            fprintf(stderr, "[dlist] wall texture index=%d texptr=%p\n", _wtex, _texptr);
+            fprintf(stderr, "[dlist] wall texture index=%d width=%d texptr=%p\n", _wtex, _twidth, _texptr);
           emit_dlist_bank_object(g_dlist_bank_0x61, UW_DLIST_BANK_0x61_COUNT,
-                                  _quadrant_heading2, _scale, _yoff, _texptr);
+                                  _quadrant_heading2, _scale, _yoff, _texptr, _twidth);
         } else {
           emit_dlist_bank_object(g_dlist_bank_0x61, UW_DLIST_BANK_0x61_COUNT,
-                                  _quadrant_heading2, _scale, _yoff, 0);
+                                  _quadrant_heading2, _scale, _yoff, 0, 0);
         }
         /* UW_DLIST_DOOR_ONLY=1: skip the pre-existing leaf-sprite draw
            below entirely, so a screenshot/diff shows nothing but this

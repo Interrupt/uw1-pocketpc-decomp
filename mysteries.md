@@ -245,6 +245,46 @@ texture on the frame -- not the banded/discontinuous fragment from
 before (7028 differing pixels vs. baseline, in a coherent doorway-shaped
 region, vs. UPDATE 6's 140 scattered pixels). Screenshots and full
 methodology in `object-rendering-findings.txt`.
+
+**UPDATE 8 (texture-mapping bug: alternating transparent columns, fixed,
+2026-09-18):** the user reported the new textured path drawing every
+other screen column (of the real 320x240 framebuffer) as transparent.
+Two real bugs, both fixed:
+1. `emit_dlist_bank_object`'s texture-size field (written into the
+   arena's `ace00`/`ace04` slots) was hardcoded to `16` regardless of
+   the real bound texture. The real tile-wall render path (`uw.c`
+   ~50276-50277) writes the texture's *actual* pixel width there
+   (64/32/16, matching `get_texture_page`'s own size classes) for the
+   exact same wall-index expression the door path reuses --
+   `raster_textured_span`'s per-pixel texel-address wraparound (`uw.c`
+   ~7499) uses this field as the real buffer's pitch, so writing 16
+   against an actually-64-wide bound buffer ran the wraparound on the
+   wrong pitch. Fixed with a new `uwdl_texture_width()` helper
+   mirroring `get_texture_page`'s exact thresholds, threaded through as
+   a real parameter instead of a constant.
+2. The bigger one: DOS's own UV words are genuinely sign-extended
+   (`uwdl_sign16`, matching `uw1_dlist.c`'s own `sign16` exactly --
+   checked directly against the DOS source, not assumed), so a raw
+   `0xffff` word (which some of bank 0x61's real corners carry) decodes
+   to `-1`, not `65535`. Live per-face dumps (new `UW_DEBUG_DLIST_UV=1`
+   flag) showed exactly this: faces with corners like
+   `u=(-16384,-1,-1,-16384)`. This port's `raster_textured_span` gates
+   its texel fetch on `-1 < iVar12`, where `iVar12` comes straight from
+   the interpolated V accumulator -- a per-vertex V sitting at or
+   barely below zero rides right on that boundary, and fixed-point/
+   perspective-divide rounding flips it across the boundary pixel to
+   pixel, which is exactly the reported checkerboard. Ordinary tile
+   walls never exercise this because their own UV is always >= 0 by
+   construction. Fixed by shifting each face's own u/v so its own
+   minimum corner is exactly 0 before scaling -- a pure additive
+   rephase of a tiling texture (changes nothing about the face's own
+   relative UV shape), done in `emit_dlist_bank_object` right before
+   the scale-to-pixel-units step. Re-verified with an isolated,
+   nearest-neighbor pixel dump of the affected region before/after: the
+   block-shaped texture patches separated by black gaps are gone,
+   replaced by a continuous, correctly textured stone surface. Full
+   detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
