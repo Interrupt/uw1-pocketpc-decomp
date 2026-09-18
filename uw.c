@@ -2382,17 +2382,26 @@ short DAT_0023bd80;
    "roles from the five handler bodies" put them in {look, converse,
    default, talk_npc, attack} order) -- that produced a real,
    user-visible bug: mode 2's icon (dagger graphic, the weapon-ready HUD
-   status bit it sets matches ready_weapon's own) dispatched to
-   interact_converse instead of interact_attack, crashing there when the
-   player actually tried to swing. Re-dumped the raw 5 pointers directly
-   from UU.exe at 0x858c8 (Ghidra headless, mem.getInt) instead of
-   trusting the prior role-guessing pass; the real order is:
-     0  interact_converse  (0x3f2c4) converse (use_object_on_target start-conversation)
+   status bit it sets matches ready_weapon's own) dispatched to what was
+   then called interact_converse instead of interact_attack, crashing
+   there when the player actually tried to swing. Re-dumped the raw 5
+   pointers directly from UU.exe at 0x858c8 (Ghidra headless, mem.getInt)
+   instead of trusting the prior role-guessing pass; the real order is:
+     0  interact_use       (0x3f2c4) open doors/pull chains/etc: calls
+                          use_object_on_target when the target is in
+                          range but line-of-sight is blocked (i.e. it's
+                          something you interact with in place, not
+                          something you're looking straight at)
      1  interact_attack    (0x3f368) attack (swing toward the cursor)
      2  interact_look      (0x3f14c) look / examine ("You see ..." via
                           dispatch_object_action; also a use/get fallback
                           when FUN_000576d0() says so)
-     3  interact_default   (0x3ee90) get / use context handler
+     3  interact_default   (0x3ee90) get / pick up an object (its own
+                          body does check_object_carry_weight +
+                          attach_picked_up_object_to_cursor); falls back
+                          to interact_talk_npc/interact_use itself when
+                          the target under the cursor is an NPC instead
+                          of an object
      4  interact_talk_npc  (0x3f128) talk to NPC (FUN_00028488)
    i.e. mode 2 (g_cursor_mode==2) is the real numeric Attack mode, and
    mode 5 is Talk-to-NPC -- confirmed independently by ready_weapon's own
@@ -2402,18 +2411,33 @@ short DAT_0023bd80;
    as ready_weapon. FUN_0003f420's real ARM (0x3f590-0x3f5a8) computes
    the dispatch index as 2 when no cursor mode is selected (not 0), so a
    bare right-click still lands on interact_look either way -- see that
-   function's own comment for the matching `_dispatch` fix. */
+   function's own comment for the matching `_dispatch` fix.
+
+   The real in-game mode ORDER, top to bottom of the 5 mode-select icons
+   (per direct user knowledge of the shipped game): Talk, Get, Look,
+   Attack, Use -- i.e. Talk is drawn topmost (closest to the special
+   6th "options" icon above it) down to Use at the bottom, the reverse
+   of the numeric mode order above (mode 5 = Talk = topmost icon, mode
+   1 = Use = bottommost of the 5), matching
+   DAT_000858a8/DAT_000858b8's own position table (mode 5 has the
+   smallest native Y, mode 1 the largest -- smaller Y is higher on
+   screen). `interact_converse` (this table's index 0) was renamed to
+   `interact_use` once its actual body -- calling
+   use_object_on_target on a blocked-line-of-sight target, e.g. a door
+   -- turned out to match "Use" (open doors, pull chains, etc.), not
+   conversation at all; there is no separate "converse" interact
+   handler in this game at all, only Talk (interact_talk_npc, mode 5). */
 extern void interact_default(void);
 extern void interact_talk_npc(void);
 extern void interact_look(void);
-extern void interact_converse(void);
+extern void interact_use(void);
 extern void interact_attack(void);
 static void (*const PTR_FUN_000858c8_table[5])(void) = {
-  interact_converse,       /* 0: converse (mode 1) */
-  interact_attack,     /* 1: attack (mode 2)   */
-  interact_look,       /* 2: look / examine (mode 3) */
-  interact_default,    /* 3: get / use (mode 4) */
-  interact_talk_npc,       /* 4: talk to NPC (mode 5) */
+  interact_use,        /* 0: use (mode 1, bottommost icon) */
+  interact_attack,      /* 1: attack (mode 2) */
+  interact_look,        /* 2: look / examine (mode 3) */
+  interact_default,     /* 3: get (mode 4) */
+  interact_talk_npc,    /* 4: talk (mode 5, topmost icon) */
 };
 #define PTR_FUN_000858c8 (PTR_FUN_000858c8_table[0])
 code *DAT_002020b8;
@@ -29687,7 +29711,7 @@ void interact_default()
         interact_talk_npc();
         return;
       }
-      interact_converse();
+      interact_use();
       return;
     }
     if ((*g_interact_target & 0x1ff) == 0x1ca) {
@@ -29952,14 +29976,29 @@ void interact_look()
 
 
 
-// was FUN_0003f2c4
-void interact_converse()
+// was FUN_0003f2c4, briefly named interact_converse by an earlier
+// pass. Renamed: its body never actually starts a conversation --
+// when the target is in range but line-of-sight is blocked (a door,
+// a lever behind an obstruction, etc.) it calls use_object_on_target;
+// otherwise it just prints message 0xb9 (unless the target is type
+// 0x16e) and does nothing else. Real UW1's own mode ordering (user-
+// confirmed: Talk/Get/Look/Attack/Use, top to bottom of the icon
+// bar) has NO separate "converse" mode at all -- Talk is its own
+// mode (interact_talk_npc, mode 5); this function is Use (mode 1,
+// table index 0), matching "open doors, use pull chains, etc."
+void interact_use()
 
 {
   int iVar1;
-  
+
+  /* "Interact converse" is the original binary's own embedded debug
+     string for this dispatch slot (matching the sibling DEBUG(INFO,
+     "Interact Look"/"Interact attack") calls) -- left as-is since it's
+     genuine original content, not something this port typed. Doesn't
+     reflect this function's real role in the shipped game (see its
+     own header comment: it's Use, not converse/talk). */
   DEBUG(INFO, "Interact converse");
-  
+
   FUN_00057604(1);
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
   if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,g_interact_target), iVar1 != 0)) {
@@ -30022,7 +30061,7 @@ void FUN_0003f420()
     if (g_interact_target == 0) {
       return;
     }
-    interact_converse();
+    interact_use();
     return;
   }
   g_interact_target = 0;
@@ -30073,7 +30112,7 @@ void FUN_0003f420()
          (0x3f5b4 `beq 0x3f5f0` branches straight to the table call for
          uVar2==1, before ever reaching this object-pick/describe code),
          so this fallthrough only runs for modes 0, 2, or 3 now (real
-         table[0]/[2]/[3] = converse/look/default), none of which need a
+         table[0]/[2]/[3] = use/look/get), none of which need a
          "no object" carve-out -- real disassembly (0x3f5d4-0x3f5e4)
          unconditionally describes the terrain and returns here. Dropping
          the `uVar2 != 4` half avoids silently calling table[4]

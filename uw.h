@@ -905,7 +905,7 @@ void interact_default();
 void interact_talk_npc();
 void dispatch_object_action();
 void interact_look();
-void interact_converse();
+void interact_use();
 void interact_attack();
 void FUN_0003f420();
 void FUN_0003f648();
