@@ -4563,8 +4563,18 @@ undefined2 DAT_0023c200;
 char DAT_000870dc;
 char DAT_000870d8;
 ushort DAT_0023c1dc;
-byte DAT_0023c11d;
-byte DAT_0023c12d;
+/* Was lone `byte DAT_0023c11d;`/`byte DAT_0023c12d;` scalars -- but
+   these are exactly the RIGHT-dragon (index 1) slot of the
+   DAT_0023c11c_arr/DAT_0023c12c_arr 2-element arrays declared just
+   above (0x23c11d = 0x23c11c + 1, 0x23c12d = 0x23c12c + 1 in the
+   original binary), read by set_hud_status_value's iVar1==4 branch as
+   "is the OTHER (right) dragon already mid-animation" checks. As
+   separate standalone globals they never alias the real array, so
+   they read back 0 forever (nothing else in this file ever writes
+   them) -- set_hud_status_value's cross-side conflict logic always
+   saw the right dragon as idle. Made real aliases instead. */
+#define DAT_0023c11d DAT_0023c11c_arr[1]
+#define DAT_0023c12d DAT_0023c12c_arr[1]
 ushort DAT_0023c1e0;
 undefined1 DAT_0023c11b;
 byte DAT_0023c12a;
@@ -4653,12 +4663,29 @@ short DAT_0023c250;
    pointer slots -- and `&PTR_DAT_00087198` was then cast through `(int)`,
    truncating the 64-bit address (wild `*(short *)` read -> crash on the
    first HUD flash). Back each row with real storage and keep the byte-
-   offset indexing. Values weren't recovered from the binary (zero here);
-   worst case the flash sprite draws at 0,0 with 0 size. */
-static char DAT_00087178_arr[16];
-static char DAT_00087188_arr[16];
-static char PTR_DAT_00087198_arr[16];
-static char PTR_DAT_000871a8_arr[16];
+   offset indexing.
+
+   Was left as all-zero ("worst case the flash sprite draws at 0,0 with
+   0 size") because at the time nothing could reach this code at all --
+   set_hud_status_value's dragon-reaction branch wrote its request to
+   the wrong global (see DAT_0023c11c's own comment), so
+   hud_damage_flash_tick's "has a reaction been requested" gate never
+   fired. Now that that's fixed, this table is genuinely read every
+   time the animation plays -- confirmed live: with it still zeroed,
+   the flash sprite drew a large blank/garbage rect at native (0,0),
+   the exact top-left corner the compass pedestal occupies, visually
+   stomping the compass needle every time (reported as "scrolling the
+   messages resets the compass animation"). Recovered the real values
+   the same way as everything else in this cluster (Ghidra headless,
+   `mem.getShort`): indices 0-2 are the left dragon's 3 flash-sequence
+   sub-rects, indices 3-5 the right dragon's; indices 6-7 of each row
+   are genuinely unused by this table (H's happen to read back
+   40/224 -- that's DAT_000871b4's OWN data, the very next real table,
+   not padding belonging here) so are left 0. */
+static char DAT_00087178_arr[16] = {40,0, 48,0, 36,0, 204,0, 204,0, 200,0, 0,0, 0,0};  /* X: L 40/48/36, R 204/204/200 */
+static char DAT_00087188_arr[16] = {156,0, 146,0, 146,0, 156,0, 146,0, 146,0, 0,0, 0,0};  /* Y: L 156/146/146, R 156/146/146 */
+static char PTR_DAT_00087198_arr[16] = {33,0, 24,0, 37,0, 34,0, 24,0, 38,0, 0,0, 0,0};  /* W: L 33/24/37, R 34/24/38 */
+static char PTR_DAT_000871a8_arr[16] = {14,0, 16,0, 23,0, 14,0, 16,0, 23,0, 0,0, 0,0};  /* H: L 14/16/23, R 14/16/23 */
 #define DAT_00087178 DAT_00087178_arr[0]
 #define DAT_00087188 DAT_00087188_arr[0]
 #define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
@@ -58351,7 +58378,25 @@ LAB_0006d164:
     if (DAT_0023c11c == 0) goto joined_r0x0006d150;
     if (uVar6 == 0) goto LAB_0006d164;
   }
-  (&DAT_0023c118)[(char)param_1] = uVar4;
+  /* Was `(&DAT_0023c118)[(char)param_1] = uVar4;` -- correct for the
+     iVar1<2 (health/mana) branch above, which jumps straight to
+     LAB_0006d17c without reaching this line, but this specific write
+     only executes for the iVar1==4 dragon-reaction branch, where
+     param_1 is 4 or 5 (the resolved left/right dragon side). In the
+     original 32-bit binary DAT_0023c118+4/+5 IS the same memory as
+     DAT_0023c11c/DAT_0023c11d (see their own comments) -- an address
+     coincidence this decompile's split, unrelated C globals don't
+     preserve. hud_damage_flash_tick (the function this value is FOR)
+     reads it back as `(&DAT_0023c11c)[iVar6]` where iVar6=param_1-4,
+     never DAT_0023c118 at all -- so on this host the old line silently
+     wrote a value nothing ever read, and hud_damage_flash_tick's own
+     "has a reaction been requested" gate (`(&DAT_0023c11c)[iVar6] !=
+     0`) was never satisfied, meaning the whole dragon reaction/wing-
+     flap animation this function drives never started, no matter how
+     many times set_hud_status_value(4,...) was called (e.g. every
+     message-scroll line, msg_scroll_scroll_up_line). Write to the real
+     target instead. */
+  (&DAT_0023c11c)[param_1 + -4] = uVar4;
 LAB_0006d17c:
   DAT_0023c1d8 = DAT_0023c1d8 | (ushort)(1 << (uint)param_1);
   return;
@@ -58620,9 +58665,13 @@ int param_1;
     }
   }
   psVar7 = &DAT_0023c1e4 + iVar6;
+  if (getenv("UW_DEBUG_DRAGON"))
+    fprintf(stderr, "[dragon] tick param_1=%d iVar6=%d target=%d playing=%d\n", param_1, iVar6, (int)(&DAT_0023c11c)[iVar6], (int)(&DAT_0023c12c)[iVar6]);
   if ((*psVar7 == 0) && ((&DAT_0023c11c)[iVar6] != '\0')) {
     (&DAT_0023c12c)[iVar6] = (&DAT_0023c11c)[iVar6];
     *psVar7 = 1;
+    if (getenv("UW_DEBUG_DRAGON"))
+      fprintf(stderr, "[dragon] STARTED animation iVar6=%d playing=%d\n", iVar6, (int)(&DAT_0023c12c)[iVar6]);
   }
   cVar3 = (&DAT_0023c12c)[iVar6];
   if (cVar3 == '\0') {
