@@ -4442,10 +4442,36 @@ static short DAT_00087150_arr[16] = {
   132, 134, 135, 138, 142, 146, 148, 151, 153, 151, 148, 146, 142, 138, 135, 134,
 };
 #define DAT_00087150 DAT_00087150_arr[0]
-short DAT_0023c1e8;
-short DAT_0023c1ea;
-undefined2 DAT_0023c1e6;
-undefined2 DAT_0023c1e4;
+/* Was two lone `short` scalars -- same split-symbol bug as
+   DAT_0023c11c/DAT_0023c230 etc. elsewhere in this file.
+   `hud_dragon_reaction_tick` indexes `&DAT_0023c1e8 + iVar6`
+   (iVar6=0/1, left/right dragon's HEAD-animation sprite-list slot
+   handle -- a separate, dynamically-allocated overlay sprite driving
+   the head's reaction animation, distinct from DAT_0023c230's own
+   static head sub-sprite) and `FUN_0006cbf0` resets both elements
+   individually (`FUN_00076488((int)DAT_0023c1e8);
+   FUN_00076488((int)DAT_0023c1ea);`) -- confirming these are really
+   one 2-element array (0x23c1e8/0x23c1ea are exactly 2 bytes apart in
+   the original binary), not two independent globals. As separate C
+   symbols on this host, `(&DAT_0023c1e8)[1]` read/wrote whatever the
+   compiler placed next instead of the real right-dragon head-
+   animation slot -- confirmed live: this produced a garbage slot
+   handle for the right dragon's head-animation sprite, which happened
+   to land on/repurpose an unrelated already-allocated slot (an
+   inventory item's, e.g. a red key), drawing that item's sprite
+   instead of the dragon's own head animation. */
+static short DAT_0023c1e8_arr[2];
+#define DAT_0023c1e8 DAT_0023c1e8_arr[0]
+#define DAT_0023c1ea DAT_0023c1e8_arr[1]
+/* Same split-symbol bug, same fix: `hud_dragon_reaction_tick` indexes
+   `&DAT_0023c1e4 + iVar6` (the animation-phase state byte per dragon
+   side) and `FUN_0006cbf0` resets both elements individually
+   (`DAT_0023c1e6 = 0; ... DAT_0023c1e4 = 0;`) -- 0x23c1e4/0x23c1e6 are
+   exactly 2 bytes apart in the original binary, confirming this is
+   really one 2-element array too. */
+static undefined2 DAT_0023c1e4_arr[2];
+#define DAT_0023c1e4 DAT_0023c1e4_arr[0]
+#define DAT_0023c1e6 DAT_0023c1e4_arr[1]
 undefined2 DAT_0023c220;
 ushort DAT_0023c1d8;
 undefined1 DAT_0023c11f;
@@ -4656,32 +4682,35 @@ static char DAT_0023c240_vitals[16];
 #define DAT_0023c248 DAT_0023c240_vitals[8]
 #define DAT_0023c24c DAT_0023c240_vitals[12]
 short DAT_0023c250;
-/* .data 0x87178..0x871b7: four rows (x / y / w / h) of the HUD damage-
-   flash sprite placement table, read as `*(short *)(&row + iVar6*6)` at
-   three call sites in hud_dragon_reaction_tick and handed to sprite_list_set_rect. Ghidra
-   split it into two lone `undefined` scalars plus two `undefined *`
-   pointer slots -- and `&PTR_DAT_00087198` was then cast through `(int)`,
-   truncating the 64-bit address (wild `*(short *)` read -> crash on the
-   first HUD flash). Back each row with real storage and keep the byte-
-   offset indexing.
+/* .data 0x87178..0x871b7: four rows (x / y / w / h) of the dragon
+   HEAD-animation overlay sprite's placement table (a separate,
+   dynamically-allocated sprite driving the head's reaction animation
+   -- see DAT_0023c1e8's own comment), read as `*(short *)(&row +
+   iVar6*6)` at three call sites in hud_dragon_reaction_tick and
+   handed to sprite_list_set_rect. Ghidra split it into two lone
+   `undefined` scalars plus two `undefined *` pointer slots -- and
+   `&PTR_DAT_00087198` was then cast through `(int)`, truncating the
+   64-bit address (wild `*(short *)` read -> crash the first time the
+   head animation played). Back each row with real storage and keep
+   the byte-offset indexing.
 
-   Was left as all-zero ("worst case the flash sprite draws at 0,0 with
-   0 size") because at the time nothing could reach this code at all --
-   set_hud_status_value's dragon-reaction branch wrote its request to
-   the wrong global (see DAT_0023c11c's own comment), so
-   hud_dragon_reaction_tick's "has a reaction been requested" gate never
-   fired. Now that that's fixed, this table is genuinely read every
-   time the animation plays -- confirmed live: with it still zeroed,
-   the flash sprite drew a large blank/garbage rect at native (0,0),
-   the exact top-left corner the compass pedestal occupies, visually
-   stomping the compass needle every time (reported as "scrolling the
-   messages resets the compass animation"). Recovered the real values
-   the same way as everything else in this cluster (Ghidra headless,
-   `mem.getShort`): indices 0-2 are the left dragon's 3 flash-sequence
-   sub-rects, indices 3-5 the right dragon's; indices 6-7 of each row
-   are genuinely unused by this table (H's happen to read back
-   40/224 -- that's DAT_000871b4's OWN data, the very next real table,
-   not padding belonging here) so are left 0. */
+   Was left as all-zero ("worst case the [overlay] sprite draws at
+   0,0 with 0 size") because at the time nothing could reach this code
+   at all -- set_hud_status_value's dragon-reaction branch wrote its
+   request to the wrong global (see DAT_0023c11c's own comment), so
+   hud_dragon_reaction_tick's "has a reaction been requested" gate
+   never fired. Now that that's fixed, this table is genuinely read
+   every time the animation plays -- confirmed live: with it still
+   zeroed, the head-animation overlay drew a large blank/garbage rect
+   at native (0,0), the exact top-left corner the compass pedestal
+   occupies, visually stomping the compass needle every time (reported
+   as "scrolling the messages resets the compass animation"). Recovered
+   the real values the same way as everything else in this cluster
+   (Ghidra headless, `mem.getShort`): indices 0-2 are the left
+   dragon's 3 head-animation sub-rects, indices 3-5 the right dragon's;
+   indices 6-7 of each row are genuinely unused by this table (H's
+   happen to read back 40/224 -- that's DAT_000871b4's OWN data, the
+   very next real table, not padding belonging here) so are left 0. */
 static char DAT_00087178_arr[16] = {40,0, 48,0, 36,0, 204,0, 204,0, 200,0, 0,0, 0,0};  /* X: L 40/48/36, R 204/204/200 */
 static char DAT_00087188_arr[16] = {156,0, 146,0, 146,0, 156,0, 146,0, 146,0, 0,0, 0,0};  /* Y: L 156/146/146, R 156/146/146 */
 static char PTR_DAT_00087198_arr[16] = {33,0, 24,0, 37,0, 34,0, 24,0, 38,0, 0,0, 0,0};  /* W: L 33/24/37, R 34/24/38 */
@@ -4699,18 +4728,18 @@ static char PTR_DAT_000871a8_arr[16] = {14,0, 16,0, 23,0, 14,0, 16,0, 23,0, 0,0,
    written, so it stayed zero-filled while the others got fixed).
    `hud_dragon_reaction_tick` reads this as `*(short *)(&DAT_000871b8 +
    (iVar6*7+iVar5)*2)` -- iVar6=0/1 left/right dragon, iVar5=DAT_0023c250
-   cycling 0-6 -- to pick the dragon WING sub-sprite's frame id for each
-   step of its flap animation. With this at 0 the id resolved through
-   resolve_sprite_id_to_frame's `id<0x1000` branch as an absolute
-   OBJECTS.GR frame instead of the intended LFTI.GR-relative id,
-   drawing whatever object happens to sit at that low absolute frame
-   index (confirmed live: a red-key-shaped inventory item sprite,
-   reported by the user, instead of the dragon wing). Recovered the
-   real values the same way as the rect table (Ghidra headless,
-   mem.getShort at 0x871b8): 7 frames per side, left dragon ramping
-   0x207b->0x207e and back, right dragon 0x208d->0x2090 and back --
-   matches the ramp-up/ramp-down flap shape DAT_0023c250's own 0-6
-   cycling implies. */
+   cycling 0-6 -- to pick the dragon TAIL sub-sprite's (DAT_0023c238)
+   frame id for each step of its whip/lash animation. With this at 0
+   the id resolved through resolve_sprite_id_to_frame's `id<0x1000`
+   branch as an absolute OBJECTS.GR frame instead of the intended
+   LFTI.GR-relative id, drawing whatever object happens to sit at that
+   low absolute frame index (confirmed live: a red-key-shaped
+   inventory item sprite, reported by the user, instead of the dragon
+   tail). Recovered the real values the same way as the rect table
+   (Ghidra headless, mem.getShort at 0x871b8): 7 frames per side, left
+   dragon ramping 0x207b->0x207e and back, right dragon 0x208d->0x2090
+   and back -- matches the ramp-up/ramp-down shape DAT_0023c250's own
+   0-6 cycling implies. */
 static const unsigned short DAT_000871b8_arr[14] = {
   0x207b, 0x207c, 0x207d, 0x207e, 0x207d, 0x207c, 0x207b,
   0x208d, 0x208e, 0x208f, 0x2090, 0x208f, 0x208e, 0x208d,
@@ -58644,14 +58673,15 @@ short param_1;
 // PTR_FUN_00087220_table/DAT_00087230 alongside its hud_X_tick
 // siblings: a small state machine (param_1-4 -> iVar6, indexing every
 // DAT_0023c11c/DAT_0023c12c-family global 0=left/1=right) that plays
-// the dragon decoration's reactive wing-flap (DAT_0023c238's frame,
+// the dragon decoration's reactive TAIL whip (DAT_0023c238's frame,
 // stepped through DAT_000871b8's per-side sequence) together with a
-// short-lived flash overlay sprite positioned via the recovered
-// DAT_00087178/DAT_00087188/PTR_DAT_00087198/PTR_DAT_000871a8 rect
-// table (see that table's own comment for the "drew at 0,0" bug this
-// state machine's dormancy used to hide). "Dragon reacting to a
-// HUD-worthy event" is the real generalization; the event doesn't
-// have to be damage.
+// short-lived HEAD-animation overlay sprite (DAT_0023c1e8's slot,
+// distinct from DAT_0023c230's own static head sub-sprite) positioned
+// via the recovered DAT_00087178/DAT_00087188/PTR_DAT_00087198/
+// PTR_DAT_000871a8 rect table (see that table's own comment for the
+// "drew at 0,0" bug this state machine's dormancy used to hide).
+// "Dragon reacting to a HUD-worthy event" is the real generalization;
+// the event doesn't have to be damage.
 void hud_dragon_reaction_tick(param_1)
 int param_1;
 
@@ -58739,7 +58769,7 @@ LAB_0006dec8:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4,*psVar9);
       if (local_30[iVar6 * 3] < *psVar9) {
         *psVar9 = local_40[iVar6 * 3];
         *(short *)(&DAT_0023c124 + iVar1) = *(short *)(&DAT_0023c124 + iVar1) + -1;
@@ -58770,7 +58800,7 @@ LAB_0006de00:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4,*psVar9);
       if (*psVar9 <= local_30[iVar6 * 3]) {
         return;
       }
@@ -58789,7 +58819,7 @@ LAB_0006de54:
           psVar9 = (short *)(&DAT_0023c24c + iVar1);
           sVar4 = *psVar11;
           *psVar9 = *psVar9 + -1;
-          sprite_list_set_frame_id((int)sVar4);
+          sprite_list_set_frame_id((int)sVar4,*psVar9);
           if (local_40[iVar6 * 3 + 1] <= *psVar9) {
             return;
           }
@@ -58798,7 +58828,7 @@ LAB_0006de54:
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + 1;
-        sprite_list_set_frame_id((int)sVar4);
+        sprite_list_set_frame_id((int)sVar4,*psVar9);
         iVar5 = iVar6 * 3 + 1;
         if (local_30[iVar5] < *psVar9) {
           *psVar9 = local_40[iVar5] + 2;
@@ -58825,7 +58855,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4,*psVar9);
       if ((int)*psVar9 <= local_40[iVar6 * 3 + 1] + 1) {
         return;
       }
@@ -58869,7 +58899,7 @@ LAB_0006dd88:
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + -1;
-        sprite_list_set_frame_id((int)sVar4);
+        sprite_list_set_frame_id((int)sVar4,*psVar9);
         if (*psVar9 != local_40[iVar6 * 3 + 2]) {
           return;
         }
@@ -58878,7 +58908,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      sprite_list_set_frame_id((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4,*psVar9);
       if ((int)*psVar9 <= (int)local_30[iVar6 * 3 + 2]) {
         return;
       }
