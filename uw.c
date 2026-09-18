@@ -25623,7 +25623,7 @@ LAB_00038100:
     else if ((uVar1 & 0x1f0) == 0x80) {
       iVar3 = FUN_00052c5c(10,param_1);
       if (iVar3 == 0) goto LAB_00038100;
-      FUN_0007c84c(param_1,0);
+      try_empty_container(param_1,0);
     }
     else {
       if ((param_3 & 8) != 0) {
@@ -66070,7 +66070,19 @@ undefined4 param_1;
 
 
 
-undefined4 FUN_00079144(param_1,param_2)
+// was FUN_00079144 -- walks a container's (param_1) contents link
+// chain and places each item into the world near the container's own
+// position (via place_object_in_world), clearing param_1's own
+// contents-head link as it goes. param_2, when non-zero, ORs its low
+// 6 bits into each placed item's own field (offset+3, matching
+// DAT_00202c98's own "container" flag-table lookup) -- something
+// caller-specific, not fully traced. Returns 0 if the container had
+// no contents at all (nothing to empty), 1 if it emptied at least one
+// item. This is the real mechanism behind "using Use mode on a
+// container empties its contents onto the nearby ground" -- called
+// (via try_empty_container) from try_combine_or_stow_object, itself
+// reached from interact_use.
+undefined4 empty_container_into_world(param_1,param_2)
 ushort * param_1;
 short param_2;
 
@@ -66136,7 +66148,7 @@ void FUN_0007931c(param_1)
 byte * param_1;
 
 {
-  FUN_00079144(param_1,(&DAT_001007d9)[(*param_1 & 0x3f) * 0x30]);
+  empty_container_into_world(param_1,(&DAT_001007d9)[(*param_1 & 0x3f) * 0x30]);
   return;
 }
 
@@ -68065,7 +68077,15 @@ byte * param_2;
 
 
 
-void FUN_0007c84c(param_1,param_2)
+// was FUN_0007c84c -- thin wrapper around empty_container_into_world:
+// empties param_1's contents, and if it turns out param_1 had nothing
+// to empty (return 0) and param_2 is non-zero (callers pass whether
+// the container belongs to the player), prints the object's own name
+// followed by "is empty " (s_is_empty__0008790c) via
+// message_scroll_print_wrapped -- the "The sack is empty." message a
+// player sees using Use mode on an already-empty container. Called
+// from try_combine_or_stow_object, itself reached from interact_use.
+void try_empty_container(param_1,param_2)
 ushort * param_1;
 int param_2;
 
@@ -68082,7 +68102,7 @@ int param_2;
   if (((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0) {
     bVar4 = (byte)param_1[3] & 0x3f;
   }
-  iVar2 = FUN_00079144(param_1,bVar4);
+  iVar2 = empty_container_into_world(param_1,bVar4);
   if ((iVar2 == 0) && (param_2 != 0)) {
     pcVar3 = &DAT_00085c88;
     wptr_60040 = acStack_85ce4;
@@ -68141,7 +68161,7 @@ int param_3;
     message_scroll_print_wrapped(s_is_locked__000878fc);
   }
   else if (param_3 == 0) {
-    FUN_0007c84c(param_2,param_1 == g_player_object);
+    try_empty_container(param_2,param_1 == g_player_object);
   }
   else {
     FUN_000451b0(param_2);
