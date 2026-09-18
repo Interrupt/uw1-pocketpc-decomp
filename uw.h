@@ -1413,7 +1413,7 @@ void thunk_FUN_0006edb8();
 void set_hud_status_value();
 void hud_panel_redraw_dispatch();
 void hud_vitals_bar_tick();
-void hud_damage_flash_tick();
+void hud_dragon_reaction_tick();
 void hud_compass_needle_tick();
 void FUN_0006e038();
 void FUN_0006e130();

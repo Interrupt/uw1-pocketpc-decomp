@@ -4525,7 +4525,7 @@ static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
 static void (*const PTR_FUN_00087220_table[13])(void) = {
   (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))FUN_0007830c, 0,
   (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))FUN_0006e038,
-  (void(*)(void))hud_damage_flash_tick, (void(*)(void))hud_damage_flash_tick, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
+  (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
   (void(*)(void))advance_action_animation_frame,
 };
 #define PTR_FUN_00087220 (PTR_FUN_00087220_table[0])
@@ -4643,7 +4643,7 @@ static undefined1 DAT_00087112_backing[32] = {
    verified against disassembly. */
 #define DAT_00087114 (*(short *)(DAT_00087112_backing + 2))
 /* .bss 0x23c240..0x23c24f: four short[2] rows of sprite handles for the
-   HUD flask/vitals animation (hud_vitals_bar_tick / hud_damage_flash_tick), indexed
+   HUD flask/vitals animation (hud_vitals_bar_tick / hud_dragon_reaction_tick), indexed
    `&row + param*2` with param in {0,1}. Ghidra split the region into four
    lone 1-byte `undefined` scalars, so the param==1 (`+2`) access ran off
    the end of a 1-byte global and read/wrote a neighbouring variable --
@@ -4658,7 +4658,7 @@ static char DAT_0023c240_vitals[16];
 short DAT_0023c250;
 /* .data 0x87178..0x871b7: four rows (x / y / w / h) of the HUD damage-
    flash sprite placement table, read as `*(short *)(&row + iVar6*6)` at
-   three call sites in hud_damage_flash_tick and handed to sprite_list_set_rect. Ghidra
+   three call sites in hud_dragon_reaction_tick and handed to sprite_list_set_rect. Ghidra
    split it into two lone `undefined` scalars plus two `undefined *`
    pointer slots -- and `&PTR_DAT_00087198` was then cast through `(int)`,
    truncating the 64-bit address (wild `*(short *)` read -> crash on the
@@ -4669,7 +4669,7 @@ short DAT_0023c250;
    0 size") because at the time nothing could reach this code at all --
    set_hud_status_value's dragon-reaction branch wrote its request to
    the wrong global (see DAT_0023c11c's own comment), so
-   hud_damage_flash_tick's "has a reaction been requested" gate never
+   hud_dragon_reaction_tick's "has a reaction been requested" gate never
    fired. Now that that's fixed, this table is genuinely read every
    time the animation plays -- confirmed live: with it still zeroed,
    the flash sprite drew a large blank/garbage rect at native (0,0),
@@ -58386,10 +58386,10 @@ LAB_0006d164:
      original 32-bit binary DAT_0023c118+4/+5 IS the same memory as
      DAT_0023c11c/DAT_0023c11d (see their own comments) -- an address
      coincidence this decompile's split, unrelated C globals don't
-     preserve. hud_damage_flash_tick (the function this value is FOR)
+     preserve. hud_dragon_reaction_tick (the function this value is FOR)
      reads it back as `(&DAT_0023c11c)[iVar6]` where iVar6=param_1-4,
      never DAT_0023c118 at all -- so on this host the old line silently
-     wrote a value nothing ever read, and hud_damage_flash_tick's own
+     wrote a value nothing ever read, and hud_dragon_reaction_tick's own
      "has a reaction been requested" gate (`(&DAT_0023c11c)[iVar6] !=
      0`) was never satisfied, meaning the whole dragon reaction/wing-
      flap animation this function drives never started, no matter how
@@ -58609,8 +58609,26 @@ short param_1;
 
 
 
-// was FUN_0006d894
-void hud_damage_flash_tick(param_1)
+// was FUN_0006d894, briefly named hud_damage_flash_tick by an earlier
+// pass. Renamed again: despite the "damage" name, its 3 real callers
+// (msg_scroll_scroll_up_line on every message-scroll line,
+// sync_player_stats_to_hud on an HP/poison threshold, FUN_00027f14 on
+// a trap/switch-type object trigger) are mostly unrelated to damage --
+// "damage" only describes one of the three. What this function
+// actually drives, dispatched via set_hud_status_value's status
+// category 4/5 (param_1, left/right dragon) through
+// PTR_FUN_00087220_table/DAT_00087230 alongside its hud_X_tick
+// siblings: a small state machine (param_1-4 -> iVar6, indexing every
+// DAT_0023c11c/DAT_0023c12c-family global 0=left/1=right) that plays
+// the dragon decoration's reactive wing-flap (DAT_0023c238's frame,
+// stepped through DAT_000871b8's per-side sequence) together with a
+// short-lived flash overlay sprite positioned via the recovered
+// DAT_00087178/DAT_00087188/PTR_DAT_00087198/PTR_DAT_000871a8 rect
+// table (see that table's own comment for the "drew at 0,0" bug this
+// state machine's dormancy used to hide). "Dragon reacting to a
+// HUD-worthy event" is the real generalization; the event doesn't
+// have to be damage.
+void hud_dragon_reaction_tick(param_1)
 int param_1;
 
 {
@@ -58851,7 +58869,7 @@ LAB_0006dd88:
 
 // was FUN_0006df70 -- one of the 13 entries in PTR_FUN_00087220_table
 // (the per-tick HUD panel redraw dispatch, alongside hud_vitals_bar_tick
-// and hud_damage_flash_tick, its naming siblings). Steps the compass
+// and hud_dragon_reaction_tick, its naming siblings). Steps the compass
 // needle's displayed heading (DAT_0023c12a) one increment toward the
 // player's real heading (DAT_0023c11a) each call, clearing the "needle
 // dirty" bit in DAT_0023c1d8 once it catches up. Updates the needle
