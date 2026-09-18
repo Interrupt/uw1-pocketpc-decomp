@@ -202,6 +202,49 @@ the mechanism works, but the bank's own coordinate convention isn't
 calibrated yet, so it doesn't yet look like a clean door frame. Full
 detail and next steps in `object-rendering-findings.txt`'s matching
 entry.
+
+**UPDATE 7 (does `UU.exe` itself carry baked bank data? no -- plus the
+real vertex-drop bug fixed, 2026-09-17):** two follow-ups.
+
+First, the user asked whether our own WinCE `UU.exe` might carry baked
+display-list geometry as *data*, even with no code reading it (proven in
+UPDATE 6's four-way check above), which would let calibration use
+native WinCE-scaled geometry instead of reconciling DOS's independently-
+extracted bank data. A naive opcode-value-density scan found a
+misleading hit; a proper structural scan (reusing this project's own
+`uwdl_record_length`/opcode-length table to look for long chains of
+valid opcode->length->next-opcode records, the only way real bytecode
+could show up) found a maximum chain of 5 records anywhere in the whole
+882KB binary -- indistinguishable from chance matches against a sparse
+~44-value opcode space. Conclusively no baked bank data exists in
+`UU.exe`, as code or as data; `uw1-decomp`'s DOS-side bank recovery and
+this project's own `.E` files remain the only two geometry sources.
+Full methodology in `object-rendering-findings.txt`.
+
+Second, and more importantly: found and fixed the actual bug behind
+UPDATE 6's "not yet a clean door frame" result. `uwdl_face_vertex` was
+silently dropping any vertex referencing a slot the interpreter's walk
+never marked `placed`, reindexing the face's vertex list around the
+gap -- corrupting connectivity (confirmed 28 of 288, 9.7%, vertex-slot
+references affected for bank 0x61). Reading `uw1-decomp`'s real
+`face_vertex` (`port/uw1_dlist.c:484-501`) showed the actual design:
+never drop -- always append the vertex with a `placed` flag, and let the
+*caller* reject the whole face if it isn't a fully-placed quad (`if
+(f->count != 4) continue;` / `if (!f->placed[j]) break;`, in both
+`uw1_view_door_faces` and `uw1_view_model_faces`,
+`port/uw1_view.c:2647-2691,2766-2781`) -- a partially-placed face is a
+declined branch's leftover, not a smaller polygon to salvage. Ported
+that exact behavior (added a `placed[]` array to `uwdl_face`, stopped
+dropping/reindexing in `uwdl_face_vertex`, made `uwdl_same_face` compare
+`placed[]` per DOS's own `same_face`, and rejected any non-quad or
+partially-placed face in `emit_dlist_bank_object`). Result: bank 0x61
+now decodes 11 real faces (up from 9) and, verified visually with
+`UW_DLIST_DOOR_ONLY=1` (real door leaf hidden) at a real door, produces
+a clean, recognizable rectangular doorway opening with real stone-wall
+texture on the frame -- not the banded/discontinuous fragment from
+before (7028 differing pixels vs. baseline, in a coherent doorway-shaped
+region, vs. UPDATE 6's 140 scattered pixels). Screenshots and full
+methodology in `object-rendering-findings.txt`.
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

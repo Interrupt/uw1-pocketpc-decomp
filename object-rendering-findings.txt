@@ -1290,3 +1290,165 @@ session). Left as an explicitly opt-in, clearly incomplete feature
 (UW_DLIST_DOOR=1, UW_DLIST_SCALE/UW_DLIST_YOFF for tuning) rather than
 claimed as working -- the mechanism is proven; the calibration is the
 open item for next time.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-17: DOES UU.EXE CONTAIN ITS OWN BAKED DISPLAY-LIST GEOMETRY?
+NO -- CONFIRMED BY STRUCTURAL BINARY SCAN. .E FILES ARE THE ONLY SOURCE.
+═══════════════════════════════════════════════════════════════════════════
+Question raised by the user: since we're now leaning on uw1-decomp's
+recovered bank 0x61 bytecode (extracted from the *DOS* UW.EXE) to drive
+the new interpreter above, does our own WinCE UU.exe perhaps also carry
+baked display-list geometry directly -- as data, even if nothing in the
+compiled code reads it -- which would let us calibrate natively instead
+of reconciling two independently-extracted, possibly differently-scaled
+sources?
+
+This is distinct from the original Mystery 1 finding (no *code* consumes
+baked model data -- confirmed earlier via a whole-binary Ghidra xref
+search across all 29 .E-loaded buffer addresses, zero consumers, plus a
+full .text undefined-byte-gap scan finding no room for a hidden reader
+function). That proved the *code* doesn't use it. It left open whether
+the *data* might still be sitting in the binary unused.
+
+FIRST PASS (naive, real UU.exe file: "Ultima Underworld PPC cabs
+2/UWDATA/UU.exe", 882176 bytes): scanned every 16-bit LE word position
+with a 512-word sliding window, counting matches against the ~44-value
+uw1_dlist opcode set, looking for high-density clusters. Top hit:
+384/512 words matched at byte offset 0x8ddc0. On inspection this was a
+FALSE POSITIVE: a repetitive fixed-stride unrelated table (pattern
+`0000 0000 0000 0001 0412 0000 XXXX 0000`, XXXX incrementing by 0x10 per
+row), immediately followed by a literal embedded RIFF/WAVE/fmt audio
+resource at 0x8e480. The heuristic's flaw: several real opcode values
+(0x0000, 0x0002, etc.) are small integers that also occur constantly in
+ordinary data by pure chance, so raw density is not distinctive.
+
+SECOND PASS (structural, the real test): reused the *exact* opcode/
+length table this project's own uwdl interpreter uses
+(g_uwdl_lengths[]/uwdl_record_length in uw.c) and, for every word
+position in the file, walked a chain: is this word a known opcode? does
+its declared length (fixed, or base+stride*count for counted opcodes,
+with the count word range-checked to 1..0x800 exactly as the real
+interpreter does) land on another valid opcode? repeat. A real bytecode
+stream produces long chains (bank 0x61 alone is 259 words / dozens of
+consecutive records); random data hitting one of ~44 sparse opcode
+values by chance should almost never chain more than 2-3 steps.
+
+Sanity check: re-ran the scanner against the first pass's false-positive
+region (0x8ddc0) -- correctly rejected, chain length 1.
+
+RESULT across the entire 882176-byte file (441088 word positions):
+maximum chain length found anywhere = 5. Full distribution: 43849
+positions chain exactly 1 step, 3671 chain 2, 290 chain 3, 27 chain 4,
+only 5 positions reach chain 5, and 393245 positions (89%) don't even
+form one valid record. This is precisely the shape random noise produces
+against a sparse opcode table -- nothing remotely resembling a real
+multi-hundred-word bank exists anywhere in the file.
+
+CONCLUSION: UU.exe contains no baked display-list/bank geometry data
+anywhere, matching (and now strengthening) the original Mystery 1
+finding. Combined with the earlier proof that no code path reads such
+data either, this closes the question completely: this WinCE port's
+compiled binary never had display-list geometry, as code or as data.
+The uw1-decomp DOS-side bank data (already embedded for bank 0x61 above)
+and this project's own .E files remain the only two available sources
+of real 3D geometry -- there is no third, WinCE-native source to fall
+back on for calibration. The vertex-drop bug in uwdl_face_vertex
+(confirmed 28/288, 9.7%, dropped for bank 0x61 -- see next update) stays
+the active blocker for a clean door-frame render.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-17 (2): ROOT-CAUSED AND FIXED THE VERTEX-DROP BUG --
+REAL, CLEAN DOOR-FRAME GEOMETRY NOW RENDERS
+═══════════════════════════════════════════════════════════════════════════
+Root cause: uwdl_face_vertex, when a face opcode (0x007e/0x00a8/0x00b4/
+0x00ce) referenced a slot the interpreter's walk never marked `placed`
+(a corner only some *other* branch policy fills in), silently dropped
+that vertex from the face's vertex array and shifted the rest down to
+fill the gap. A would-be quad missing corner 2, say, became a 3-vertex
+face made of corners {0,1,3} -- structurally a different, wrongly-wound
+polygon, not a smaller honest one. This is what produced the banded,
+discontinuous fragment in the prior update.
+
+Checked uw1-decomp's own face_vertex (port/uw1_dlist.c:484-501) for how
+the real implementation handles this -- it does NOT drop anything:
+
+    static void face_vertex(vm *m, uw1_dlist_face *f, uint16_t off)
+    {
+        slotv *s;
+        if (f->count >= UW1_DLIST_FACE_VERTS) { m->out->overflow = 1; return; }
+        s = slot_at(m, off);
+        f->slot[f->count] = off;
+        f->placed[f->count] = (s != NULL && s->placed);
+        if (s != NULL && s->placed) {
+            f->p[f->count][0] = s->p[0]; f->p[f->count][1] = s->p[1];
+            f->p[f->count][2] = s->p[2];
+        }
+        f->count++;
+    }
+
+Every vertex reference is always appended, always incrementing count; an
+unplaced one just carries placed=0 (and p left at zero). The DOS
+*interpreter* never discards anything. The discarding happens one layer
+up, in the actual consumers -- uw1_view_door_faces and
+uw1_view_model_faces (port/uw1_view.c:2643-2691, 2762-2781) -- and it's
+a whole-face decision, not a per-vertex one:
+
+    if (f->count != 4) { continue; }        /* nothing either bank builds */
+    ...
+    for (j = 0; j < 4; j++) {
+        if (!f->placed[j]) { break; }        /* a corner the run never placed */
+        ... build o->p[j] ...
+    }
+    if (j == 4) { n++; }                     /* only a fully-placed quad counts */
+
+So a face is either a complete, fully-placed quad (drawn) or it's
+thrown away whole (not drawn, not patched, not reconnected). Given the
+branch-union algorithm already ported in UPDATE 2026-09-16 (3) explores
+every distinct declined/taken policy and unions the resulting faces by
+identity, a corner that's unplaced under one policy is expected to come
+back fully placed under a different policy's run -- the "whole face or
+nothing" rule is what makes that algorithm correct; salvaging partial
+faces (what this port's code was doing) fights against it instead.
+
+FIX applied in uw.c:
+  1. Added `int placed[UWDL_MAX_FACE_VERTS];` to the `uwdl_face` struct.
+  2. `uwdl_face_vertex`: always appends now (removed the drop/reindex
+     branch); stores `placed[i]` and zeroes p[i] when unplaced, exactly
+     matching face_vertex above. g_uwdl_vertex_attempted/dropped kept as
+     diagnostic counters (renamed the debug message from "DROPPED" to
+     "unplaced" since it's no longer discarded from the face).
+  3. `uwdl_same_face`: now compares `placed[i]` per-vertex and only
+     compares p[i] when placed, matching DOS's own same_face
+     (port/uw1_dlist.c:415-448) -- needed so face-identity dedup across
+     branch-policy runs works the same way DOS's does.
+  4. `emit_dlist_bank_object`: added the exact whole-face filter from
+     uw1_view_door_faces/uw1_view_model_faces -- skip any face where
+     count != 4, or any of the 4 vertices has placed == 0. (Scoped to
+     this exact call site/bank family, which is the only thing this
+     function currently serves and the only thing the DOS source cited
+     above actually proves this rule for.)
+
+RESULT: bank 0x61 now decodes to 11 real faces (was 9 before the fix --
+the dedup identity changed because corrupted partial faces are no
+longer counted as distinct "faces" to compare against). Re-tested at a
+real door (tile 24.5,6.5, heading 270, the same repro used throughout
+this investigation) with UW_DLIST_DOOR=1 UW_DLIST_DOOR_TEXTURE=1
+UW_DLIST_DOOR_ONLY=1 UW_DLIST_HEADING_OFFSET=-3 UW_DLIST_YOFF=0 (the
+door leaf hidden so only the interpreter's own output is visible):
+pixel diff against the same shot with UW_DLIST_DOOR unset went from
+UPDATE 2026-09-16 (3)'s 140 scattered pixels to 7028 pixels in one
+coherent 90x106 bounding box -- and visually (see
+scratchpad screenshots from this session; crop of the doorway region)
+it is now a clean, recognizable, correctly-shaped rectangular doorway
+opening with real stone-wall texture across the frame, not a banded
+fragment. This is the first result in this investigation that actually
+looks like a door frame rather than "proof the mechanism runs."
+
+Vertex-drop counters still report attempted=288/dropped=28 per run
+(same numbers as before -- the interpreter still visits the same
+slots), but "dropped" now means "counted as unplaced, correctly
+excluded its whole face" rather than "silently corrupted a face that
+then got drawn anyway." Not yet fully calibrated (heading offset -3 and
+yoff 0 are still the best-found values, not independently re-derived
+for this exact fix), but the structural bug that was actively fighting
+any calibration attempt is gone.

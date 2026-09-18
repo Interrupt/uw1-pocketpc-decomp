@@ -50846,6 +50846,7 @@ LAB_0005e7e0:
 
 typedef struct { int32_t p[3]; int placed; } uwdl_slot;
 typedef struct { int count; float p[UWDL_MAX_FACE_VERTS][3];
+                 int placed[UWDL_MAX_FACE_VERTS];
                  int has_uv; int32_t u[UWDL_MAX_FACE_VERTS], v[UWDL_MAX_FACE_VERTS]; } uwdl_face;
 
 enum { UWDL_FIXED = 1, UWDL_COUNTED = 2 };
@@ -50951,7 +50952,9 @@ static int uwdl_same_face(const uwdl_face *a, const uwdl_face *b)
   int i;
   if (a->count != b->count || a->has_uv != b->has_uv) return 0;
   for (i = 0; i < a->count; i++) {
-    if (a->p[i][0] != b->p[i][0] || a->p[i][1] != b->p[i][1] || a->p[i][2] != b->p[i][2]) return 0;
+    if (a->placed[i] != b->placed[i]) return 0;
+    if (a->placed[i] &&
+        (a->p[i][0] != b->p[i][0] || a->p[i][1] != b->p[i][1] || a->p[i][2] != b->p[i][2])) return 0;
     if (a->has_uv && (a->u[i] != b->u[i] || a->v[i] != b->v[i])) return 0;
   }
   return 1;
@@ -50966,17 +50969,34 @@ static void uwdl_emit_face(uwdl_vm *m, uwdl_face *f)
   m->faces[m->face_count++] = *f;
 }
 
+/* Matches uw1_dlist.c's own face_vertex exactly: an unplaced slot is NOT
+   dropped/reindexed out of the face (that corrupts connectivity -- a
+   would-be quad silently becomes a differently-wound triangle). It is
+   always appended with placed=0 and p=(0,0,0); the caller
+   (emit_dlist_bank_object, mirroring uw1_view_door_faces/
+   uw1_view_model_faces) rejects the whole face if it isn't a fully-placed
+   quad, the same "nothing either bank builds" / "a corner the run never
+   placed" rule the real DOS consumer uses. */
+static int g_uwdl_vertex_attempted, g_uwdl_vertex_dropped;
 static void uwdl_face_vertex(uwdl_vm *m, uwdl_face *f, unsigned short off)
 {
   uwdl_slot *s;
   if (f->count >= UWDL_MAX_FACE_VERTS) return;
+  g_uwdl_vertex_attempted++;
   s = uwdl_slot_at(m, off);
+  f->placed[f->count] = (s != 0 && s->placed);
   if (s && s->placed) {
     f->p[f->count][0] = (float)s->p[0];
     f->p[f->count][1] = (float)s->p[1];
     f->p[f->count][2] = (float)s->p[2];
-    f->count++;
+  } else {
+    f->p[f->count][0] = f->p[f->count][1] = f->p[f->count][2] = 0.0f;
+    g_uwdl_vertex_dropped++;
+    if (getenv("UW_DEBUG_DLIST_VERTS"))
+      fprintf(stderr, "[dlist] unplaced vertex slot=0x%04x (%s)\n", off,
+              s == 0 ? "out of range" : "never placed");
   }
+  f->count++;
 }
 
 /* disp word index / consumed count for each branch or call opcode this
@@ -51163,12 +51183,16 @@ static int uwdl_run_bank(const unsigned short *words, int count, uwdl_face *out,
 static void emit_dlist_bank_object(const unsigned short *words, int count, int heading, double scale, double yoff, void *texptr)
 {
   static uwdl_face faces[UWDL_MAX_FACES];
-  int nfaces = uwdl_run_bank(words, count, faces, UWDL_MAX_FACES);
+  int nfaces;
   double ang, ca, sa; short ax, ah, az; int fi;
+  g_uwdl_vertex_attempted = 0; g_uwdl_vertex_dropped = 0;
+  nfaces = uwdl_run_bank(words, count, faces, UWDL_MAX_FACES);
   ax = (short)DAT_0023b904; ah = (short)DAT_0023b91c; az = (short)DAT_0023b920;
   if (getenv("UW_DEBUG_DLIST")) {
     fprintf(stderr, "[dlist] words=%d faces=%d heading=%d anchor=(%d,%d,%d) scale=%g yoff=%g\n",
             count, nfaces, heading, ax, ah, az, scale, yoff);
+    fprintf(stderr, "[dlist] vertex slots: attempted=%d dropped=%d\n",
+            g_uwdl_vertex_attempted, g_uwdl_vertex_dropped);
     if (nfaces > 0) {
       float lo[3] = {faces[0].p[0][0], faces[0].p[0][1], faces[0].p[0][2]};
       float hi[3] = {faces[0].p[0][0], faces[0].p[0][1], faces[0].p[0][2]};
@@ -51195,7 +51219,22 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
   for (fi = 0; fi < nfaces; fi++) {
     uwdl_face *f = &faces[fi];
     int nv = f->count, base_vtx, vi, start;
-    if (nv < 3) continue;
+    /* Matches uw1_view_door_faces/uw1_view_model_faces exactly: "if
+       (f->count != 4) continue; /-* nothing either bank builds *-/" plus
+       "if (!f->placed[j]) break;" (a corner the run never placed rejects
+       the whole face). These are proven, not assumed -- every door/model
+       bank (0x60-0x74) this interpreter currently serves only ever
+       renders a face this way; a partially-placed face is a declined
+       branch's leftover, not a smaller polygon to salvage. Previously
+       this code kept partial faces by dropping/reindexing their unplaced
+       vertices, which corrupted connectivity (confirmed 28/288, 9.7%,
+       vertex slots affected for bank 0x61) -- the actual cause of the
+       banded/discontinuous render. */
+    if (nv != 4) continue;
+    { int _pj; int _all_placed = 1;
+      for (_pj = 0; _pj < 4; _pj++) if (!f->placed[_pj]) { _all_placed = 0; break; }
+      if (!_all_placed) continue;
+    }
     base_vtx = DAT_0023b838;
     if (base_vtx + nv >= 512 - 4 || DAT_0023b83c >= 490 - 1) break;
     { int src_idx[UWDL_MAX_FACE_VERTS];
@@ -52643,7 +52682,18 @@ LAB_00061d34:
          UW_DLIST_YOFF override for tuning. This is a side-by-side check
          against DFRAME.E, not a replacement for it. */
       if (getenv("UW_DLIST_DOOR")) {
-        double _scale = 1.0, _yoff = -100.0;
+        /* yoff=0, not DFRAME.E's own -100: traced DOS's real formula
+           (uw1_view.c:2684/2805, both uw1_view_door_faces and
+           uw1_view_model_faces) -- `o->p[j][2] = org[2] + y` with y the
+           model's own raw local coordinate, NO extra vertical offset at
+           all. DFRAME.E's -100 corrects for something specific to OUR
+           own anchor (DAT_0023b91c) that DFRAME.E's own local-Y
+           convention needed, tuned by hand for that specific .E file --
+           not a universal constant, and reusing it here was silently
+           burying this bank's geometry (confirmed live: yoff=0 revealed
+           substantially more real texture detail than -100, exactly
+           matching a "half stuck in the ground" symptom). */
+        double _scale = 1.0, _yoff = 0.0;
         int _raw_heading2 = (int)(*(short *)((char *)param_1 + 2) >> 6 & 7);
         int _quadrant_heading2 = (_raw_heading2 - 2 * (int)DAT_0023b4a0) & 7;
         /* Same shape of correction emit_model_object already established
