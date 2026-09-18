@@ -1559,3 +1559,70 @@ bounding box) -- expected, since neither fix changes *where* geometry
 draws, only whether previously-corrupted pixels within that same region
 now sample correctly. Confirmed via the standard demo.txt regression
 script afterward: no crashes.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-18 (2): SWITCHED TO THIS RENDERER'S OWN WORKING TEXTURE
+CONVENTION -- STOPPED REUSING DOS'S RAW UV WORDS ENTIRELY
+═══════════════════════════════════════════════════════════════════════════
+User report after the previous update: columns were fixed, but now rows
+show gaps instead. Rephasing each face's raw UV to its own non-negative
+minimum (the previous fix) only guarantees the four *corner* values stay
+>= 0 -- raster_textured_span's `-1 < iVar12` gate (uw.c ~7498) tests the
+interpolated value at every scanline across the whole span, and nothing
+guarantees an interior-interpolated value can't still dip negative
+between two nominally-safe corners once perspective-correct division and
+fixed-point rounding are involved. Corner-only rephasing was treating a
+symptom, not the actual mechanism.
+
+The user asked directly: can this just reuse the same texturing tile
+walls already use, since that demonstrably works? Checked by grep across
+every UV-writing site in this entire file (ordinary orthogonal walls,
+the diagonal-wall branch, the sprite/decal LOD branch -- uw.c ~49930,
+~50115, ~50352/50361/50474, ~50592/50610): the four U fields
+(ace08/ace10/ace18/ace20) are UNCONDITIONALLY written as literal `0` at
+every single site, no exception, anywhere in the file. This renderer
+never varies U per vertex. Horizontal texture tiling must come entirely
+from the rasterizer's own scanline/perspective setup (raster_triangle_
+perspective_setup, driven by vertex screen positions), not from a stored
+per-vertex U difference -- which also explains why DOS's own raw UV
+words (which do vary U) were never going to map cleanly onto this
+renderer's convention no matter how they were rephased.
+
+Only V varies at every one of those real sites, and it's derived from
+the vertex's own world height/Z position (through a texsize-scaled
+fixed-point formula), then pushed non-negative by a `while` loop that
+adds the texture size until it clears zero (uw.c ~50469-50479) -- an
+iterative correction on a value drawn from real position data, not a
+rephase of separately-encoded external data.
+
+FIX: stopped using the interpreter's `f->u[]/f->v[]` (DOS's raw
+bytecode UV) for texture coordinates entirely. Instead, in
+emit_dlist_bank_object:
+  - U is now unconditionally 0 for all 4 corners of every textured face,
+    matching every real site in this file exactly.
+  - V is now each vertex's own real height (`f->p[.][1]`, the Y/up axis
+    -- untouched by the heading rotation applied just above it, so this
+    is the same value regardless of which way the door faces),
+    normalized per-face by subtracting that face's own minimum corner
+    height so the whole face is always >= 0 -- the same non-negative
+    guarantee the wall path's loop provides, computed directly instead
+    of iteratively (since we have all 4 corners up front, unlike the
+    wall path's incremental per-corner emission). No extra scale factor:
+    world-unit height is already confirmed texel-scale for this exact
+    geometry (DFRAME.E and this bank both calibrated at scale=1.0
+    earlier in this investigation), and the rasterizer's own wraparound
+    loop (uw.c ~7499-7501) tiles the bound texture across any span
+    taller than one texture repeat, the same as it already does for
+    ordinary tall walls.
+
+VERIFICATION: re-ran the same repro (door at tile 24.5,6.5, heading 270,
+UW_DLIST_DOOR=1 UW_DLIST_DOOR_TEXTURE=1 UW_DLIST_DOOR_ONLY=1). An ASCII
+dark-pixel map of the affected region (thresholding near-black pixels,
+printed as a text grid) shows irregular, natural-looking noise -- silh
+ouette edges and mortar-line shading -- with no regular row or column
+period, unlike the clean rectangular gap pattern from either of the two
+previous bugs. Pixel-diff against the no-dlist baseline stayed the same
+size (7012 vs. 6980/7028 in prior updates, same 90x106 bounding box) --
+again expected, since this only changes how already-drawn pixels sample
+the texture. Confirmed via the standard demo.txt regression script
+afterward: no crashes.

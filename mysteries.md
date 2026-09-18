@@ -285,6 +285,27 @@ Two real bugs, both fixed:
    replaced by a continuous, correctly textured stone surface. Full
    detail in `object-rendering-findings.txt`.
 
+**UPDATE 9 (row gaps after UPDATE 8's fix -- stopped reusing DOS's raw UV
+words entirely, matched this renderer's own working convention instead,
+2026-09-18):** the user reported rows now showing gaps instead of
+columns, and asked directly: can this just reuse the same texturing
+tile walls already use? Good call -- corner-only UV rephasing
+(UPDATE 8) didn't guarantee interior-interpolated values along a whole
+scanline stayed non-negative, just the 4 corners. Checked every real
+UV-writing site in this file by grep (ordinary walls, the diagonal-wall
+branch, the sprite/decal LOD branch): U is unconditionally `0` at every
+single one, no exception -- this renderer never varies U per vertex;
+horizontal tiling comes entirely from the rasterizer's own scanline
+setup. Only V varies, always derived from the vertex's own real height/
+position, never from externally-sourced data. Stopped using DOS's raw
+bytecode UV words for texture coordinates at all: U is now always 0,
+and V is each vertex's own real height, normalized per-face to its own
+minimum so it's always >= 0 -- the same shape as the wall path's own
+non-negative guarantee, computed directly. Re-verified with a dark-
+pixel ASCII map of the affected region: irregular, natural-looking
+noise (silhouette edges, mortar shading), no more regular gap pattern.
+Full detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

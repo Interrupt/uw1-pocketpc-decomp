@@ -51328,47 +51328,57 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
          g_model_map .E-model convention) keeps the old flat zero-UV
          fallback -- only meaningful once a real texture is bound. */
       if (f->has_uv && texptr) {
-        /* DOS's own working formula (uw1-decomp port/uw1_view.c:2910/
-           3107): `in[j].u = f->u[j] * t.w / 65536.0` -- t.w is the REAL
-           bound texture's pixel width, which varies by texture index
-           (64/32/16, not always 64) -- use the same texwidth the
-           stride field above now uses, so both stay consistent for
-           whichever texture is actually bound. */
-        double uscale = (double)texwidth / 65536.0;
-        /* uwdl_sign16 (matching uw1_dlist.c's own sign16 exactly -- DOS
-           really does treat these words as signed) turns a raw 0xffff
-           UV word into -1, not 65535; DOS's own bytecode legitimately
-           produces small negative u/v this way (measured live: bank
-           0x61 faces with corners like u=(-16384,-1,-1,-16384)). This
-           port's raster_textured_span (uw.c ~7498) gates its texel
-           fetch on `-1 < iVar12`, where iVar12 comes straight from the
-           interpolated V accumulator -- a per-vertex V that's zero or
-           barely negative rides right on that boundary, and fixed-
-           point/perspective-divide rounding flips it across pixel to
-           pixel, which is exactly the "every other column transparent"
-           checkerboard reported live. Ordinary tile walls never hit
-           this because their own UV is always >= 0 by construction, so
-           this edge case was never exercised before. Fix: shift each
-           face's own u/v so its own minimum corner is exactly 0 before
-           scaling -- a pure additive rephase of a tiling texture, so it
-           changes nothing about the face's own relative UV shape/
-           gradient, just keeps every sample comfortably on the valid
-           side of that boundary. */
-        int32_t _umin = f->u[s0], _vmin = f->v[s0];
-        if (f->u[s1] < _umin) _umin = f->u[s1];
-        if (f->u[s2] < _umin) _umin = f->u[s2];
-        if (f->u[s3] < _umin) _umin = f->u[s3];
-        if (f->v[s1] < _vmin) _vmin = f->v[s1];
-        if (f->v[s2] < _vmin) _vmin = f->v[s2];
-        if (f->v[s3] < _vmin) _vmin = f->v[s3];
-        *(float *)(&DAT_000ace08 + rb) = (float)((f->u[s0] - _umin) * uscale);
-        *(float *)(&DAT_000ace0c + rb) = (float)((f->v[s0] - _vmin) * uscale);
-        *(float *)(&DAT_000ace10 + rb) = (float)((f->u[s1] - _umin) * uscale);
-        *(float *)(&DAT_000ace14 + rb) = (float)((f->v[s1] - _vmin) * uscale);
-        *(float *)(&DAT_000ace18 + rb) = (float)((f->u[s2] - _umin) * uscale);
-        *(float *)(&DAT_000ace1c + rb) = (float)((f->v[s2] - _vmin) * uscale);
-        *(float *)(&DAT_000ace20 + rb) = (float)((f->u[s3] - _umin) * uscale);
-        *(float *)(&DAT_000ace24 + rb) = (float)((f->v[s3] - _vmin) * uscale);
+        /* Two attempts at reusing DOS's own raw signed UV words
+           (uwdl_sign16, matching uw1_dlist.c's own sign16 exactly --
+           confirmed a faithful port, not a bug) both still produced
+           artifacts live (first a column checkerboard, then -- after
+           rephasing each face to its own non-negative minimum -- a row
+           checkerboard instead): raster_textured_span's texel-fetch
+           gate (`-1 < iVar12`, uw.c ~7498) is sensitive to the exact
+           interpolated fixed-point value throughout the span, not just
+           the corner values, so no per-corner rephase of DOS's literal
+           UV data reliably keeps every interior sample on the valid
+           side of it.
+           At the user's suggestion: stop reusing DOS's raw UV words at
+           all and match this renderer's own real, working convention
+           instead -- confirmed by grep across every other UV-writing
+           site in this file (tile walls, the diagonal-wall branch, the
+           sprite/decal LOD branch): U (ace08/ace10/ace18/ace20) is
+           UNCONDITIONALLY 0 at every single one of them, no exception.
+           This renderer never varies U per vertex; horizontal tiling
+           comes from the rasterizer's own scanline setup, not a stored
+           per-vertex value. Only V varies, and every one of those real
+           sites derives it from the vertex's own world height/Z
+           position (scaled through a texsize-dependent fixed-point
+           formula), then pushes it non-negative by adding the texture
+           size until it clears zero (the `while` correction loop at
+           uw.c ~50469-50479) -- never by an arbitrary rephase of
+           externally-sourced data.
+           Ported that same shape here: V comes from each vertex's own
+           real height (f->p[.][1], the Y/up axis -- untouched by the
+           heading rotation above, so this is exactly the same value
+           regardless of which heading this door is facing), normalized
+           per-face to its own minimum corner so it's always >= 0 -- the
+           same non-negative guarantee the wall path's loop provides,
+           just computed directly instead of iteratively. World-unit
+           height is already confirmed texel-scale for this exact
+           geometry (DFRAME.E and this bank both calibrated at
+           scale=1.0), so no extra scale factor is applied; the
+           rasterizer's own wraparound loop (uw.c ~7499-7501) tiles the
+           bound texture across any span taller than one texture
+           repeat, same as it already does for ordinary walls. */
+        double vmin = f->p[s0][1];
+        if (f->p[s1][1] < vmin) vmin = f->p[s1][1];
+        if (f->p[s2][1] < vmin) vmin = f->p[s2][1];
+        if (f->p[s3][1] < vmin) vmin = f->p[s3][1];
+        *(int *)(&DAT_000ace08 + rb) = 0;
+        *(float *)(&DAT_000ace0c + rb) = (float)(f->p[s0][1] - vmin);
+        *(int *)(&DAT_000ace10 + rb) = 0;
+        *(float *)(&DAT_000ace14 + rb) = (float)(f->p[s1][1] - vmin);
+        *(int *)(&DAT_000ace18 + rb) = 0;
+        *(float *)(&DAT_000ace1c + rb) = (float)(f->p[s2][1] - vmin);
+        *(int *)(&DAT_000ace20 + rb) = 0;
+        *(float *)(&DAT_000ace24 + rb) = (float)(f->p[s3][1] - vmin);
       } else {
         *(int *)(&DAT_000ace08 + rb) = 0;
         *(int *)(&DAT_000ace0c + rb) = 0;
