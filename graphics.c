@@ -54,7 +54,14 @@ short param_4;
   int iVar15;
   
   DEBUG(TRACE, "[graphics] rect_fill_or_save_restore(%u,%u,%u,%u)", param_1, param_2, param_3, param_4);
-  
+
+  if (DAT_00204848 != 0 && getenv("UW_DEBUG_CURSORCLIP")) {
+    fprintf(stderr, "[cursorclip] request color=%d rect=(%d,%d,%d,%d) clip=(%d,%d,%d,%d)\n",
+            (int)DAT_000a85c0, (int)(short)param_1, (int)(short)param_2, (int)param_3, (int)param_4,
+            (int)(short)DAT_000a85c4, (int)(short)DAT_000a85c8,
+            (int)(short)DAT_000842a4, (int)(short)DAT_000842a8);
+  }
+
   iVar14 = (int)(short)param_1;
   iVar13 = (param_3 - iVar14) * 0x10000;
   iVar11 = iVar13 >> 0x10;
@@ -90,6 +97,10 @@ short param_4;
           uVar9 = iVar12 + (param_2 & 0xffff);
           iVar13 = 0;
           // DAT_00204848 is only ever set by the mouse-cursor code (FUN_000584c0 sets it to 1 right before deliberately drawing with color 0x14, to save what's under the cursor), so colors 0x14/0x15 only mean save/restore during that specific sequence -- with DAT_00204848 at its default 0 (every other caller), they're ordinary palette colors and this whole block is skipped in favor of the flat fill below. There are 256 real palette entries (0x100, see the palette-conversion loop), so 20/21 aren't reserved from the palette's own perspective either.
+          if (DAT_00204848 != 0 && getenv("UW_DEBUG_CURSORCLIP")) {
+            fprintf(stderr, "[cursorclip] PROCEEDING color=%d clipped_rect=(%u,%u)-(%u,%u)\n",
+                    (int)DAT_000a85c0, uVar2, uVar5, (uint)param_1, uVar9);
+          }
           if (DAT_00204848 != 0) {
             if (DAT_000a85c0 == 0x14) {
               // SAVE mode: copy the rect from g_uw_framebuffer into the DAT_000879b8 scratch buffer.

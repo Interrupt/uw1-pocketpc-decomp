@@ -45997,8 +45997,8 @@ int FUN_00056fe8()
   
   iVar1 = 0;
   if (getenv("UW_DEBUG_CURSORERASE")) {
-    fprintf(stderr, "[cursorerase] entry DAT_00204844=%d will_erase=%d mouse=(%d,%d)\n",
-            (int)DAT_00204844, DAT_00204844 != 0, (int)g_mouse_x, (int)g_mouse_y);
+    fprintf(stderr, "[cursorerase] entry DAT_00204844=%d will_erase=%d depth=%d mouse=(%d,%d)\n",
+            (int)DAT_00204844, DAT_00204844 != 0, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
   if (DAT_00204844 != 0) {
     set_draw_color(0x15);
@@ -46955,6 +46955,11 @@ short param_1;
 void FUN_000584c0()
 
 {
+  if (getenv("UW_DEBUG_CURSORSHOW")) {
+    fprintf(stderr, "[cursorsave] entry DAT_00204844=%d sprite=%d mouse=(%d,%d) size=(%d,%d)\n",
+            (int)DAT_00204844, (int)DAT_00204788, (int)g_mouse_x, (int)g_mouse_y,
+            (int)DAT_00204784, (int)DAT_002047a4);
+  }
   DAT_00204848 = 1;
   set_draw_color(0x14);
   rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
@@ -46969,35 +46974,53 @@ void FUN_000584c0()
 void FUN_0005857c()
 
 {
+  int _dbg_show = getenv("UW_DEBUG_CURSORSHOW") != NULL;
+  if (_dbg_show) {
+    fprintf(stderr, "[cursorshow] entry selected=%p mode=%d holdstate=%d DAT_00204844=%d depth=%d mouse=(%d,%d)\n",
+            (void *)g_selected_object, (int)g_cursor_mode, (int)g_cursor_holding_state,
+            (int)DAT_00204844, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
+  }
   if (g_selected_object == 0) {
     if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0)) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (no button/mode)\n");
       return;
     }
     if (DAT_000868dc != 7) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (DAT_000868dc=%d != 7)\n", (int)DAT_000868dc);
       return;
     }
     if ((((ushort)DAT_00201b60 & 4) != 0) && (g_cursor_mode == 3)) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit4+mode3)\n");
       return;
     }
     if ((((ushort)DAT_00201b60 & 2) != 0) && (DAT_0023c63c != 0)) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit2+button)\n");
       return;
     }
     if (((ushort)DAT_00201b60 & 0xc9) != 0) {
       if (g_mouse_x < DAT_00204838) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");
         return;
       }
       if (g_mouse_y < DAT_0020483c) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds y<)\n");
         return;
       }
       if (DAT_002047dc < g_mouse_x) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x>)\n");
         return;
       }
       if (DAT_002047d8 < g_mouse_y) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds y>)\n");
         return;
       }
     }
-    if (g_cursor_mode != 0) goto LAB_00058674;
+    if (g_cursor_mode != 0) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] SKIP-SAVE path (mode!=0), drawing sprite=%d without a save\n", (int)DAT_00204788);
+      goto LAB_00058674;
+    }
   }
+  if (_dbg_show) fprintf(stderr, "[cursorshow] normal path: saving then drawing sprite=%d\n", (int)DAT_00204788);
   FUN_000584c0();
 LAB_00058674:
   g_blit_transparent_mode = 1;
@@ -65926,6 +65949,10 @@ int param_4;
       }
     }
     else {
+      if (getenv("UW_DEBUG_CURSORCLICK")) {
+        fprintf(stderr, "[cursorclick] WM_LBUTTONDOWN before DAT_00204844=%d selected=%p holdstate=%d\n",
+                (int)DAT_00204844, (void *)g_selected_object, (int)g_cursor_holding_state);
+      }
       DAT_00204844 = 1;
       if ((g_cursor_mode != 0) || (g_cursor_holding_state != 0)) {
         DAT_00204844 = 2;
@@ -65943,18 +65970,31 @@ int param_4;
     }
   }
   if (param_2 == 0x202) {
-    /* Investigated whether this unconditional zeroing of DAT_00204844
-       (without an erase first, unlike update_mouse_state's own
-       erase-then-clear protocol) explained a held-item cursor icon
-       being left on screen after an invalid drop -- ruled out via
-       direct UW_DEBUG_CURSORERASE tracing: adding the missing erase
-       call here made no observable difference (identical
-       DAT_00204844==0 sequencing with or without it). This branch is
-       only WM_LBUTTONUP (left button); this project's own inventory
-       drag/drop convention uses the RIGHT button throughout (see
-       gx_stub.c's uw_inject_mouse_rdown/rup), so it may simply not be
-       on the relevant path for that bug. Left as original -- see
-       FUN_00056fe8's own comment for what's still open. */
+    /* An EARLIER attempt at this exact fix (erase before clearing
+       DAT_00204844) was reverted as "no measurable effect" -- that test
+       apparently didn't hit the actual failure window. Confirmed live via
+       UW_DEBUG_CURSORCLICK + UW_DEBUG_CURSORERASE on a real right-drag
+       pickup followed by a LEFT click while still holding (this
+       project's drag convention is normally right-button, but nothing
+       stops a real player from also left-clicking mid-hold, and
+       bug-inventory-stamp-demo.txt is a recorded repro of exactly that):
+       DAT_00204844 was 1 (an icon genuinely shown, not yet erased) at
+       the moment WM_LBUTTONUP fired; the unconditional `DAT_00204844 = 0`
+       below then made the NEXT erase attempt see DAT_00204844 == 0 and
+       skip entirely (`will_erase=0`) -- so the icon painted at that
+       position is never restored, a permanent stamp. update_mouse_state's
+       own protocol is always erase-THEN-clear; this handler cleared
+       without erasing. Calling the real erase function first (a no-op
+       if there was nothing to erase) matches that protocol and fixes the
+       stamp without touching the continuous per-frame hide/show path
+       that the earlier g_force_flush attempt regressed (see
+       FUN_00056fe8's own comment) -- this only runs once per actual
+       left-button release, not every frame. */
+    FUN_00056fe8();
+    if (getenv("UW_DEBUG_CURSORCLICK")) {
+      fprintf(stderr, "[cursorclick] WM_LBUTTONUP before DAT_00204844=%d selected=%p mouse=(%d,%d)\n",
+              (int)DAT_00204844, (void *)g_selected_object, (int)g_mouse_x, (int)g_mouse_y);
+    }
     DAT_00204844 = 0;
     if ((g_selected_object == 0) && ((DAT_00201b60 & 2) == 0)) {
       DAT_00204844 = 0;
