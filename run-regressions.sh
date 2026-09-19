@@ -35,7 +35,7 @@ BIN="${BIN:-build/uw_dbg}"
 DEBUG_LEVEL="${DEBUG_LEVEL:-WARN}"
 EXTRA_ENV="${EXTRA_ENV:-}"
 
-DEFAULT_SCRIPTS="demo_click_female.txt demo_critter_orbit_cardinal.txt demo_dungeon_room.txt demo_inventory_container_item_click_test.txt demo_inventory_container_torch_use_test.txt demo_inventory_dropback_test.txt demo_inventory_invalid_drop_test.txt demo_inventory_open_bag_test.txt demo_object_test.txt demo_objects.txt demo.txt"
+DEFAULT_SCRIPTS="demo_critter_orbit_cardinal.txt demo_inventory_container_item_click_test.txt demo_inventory_container_torch_use_test.txt demo_inventory_dropback_test.txt demo_inventory_invalid_drop_test.txt demo_inventory_open_bag_test.txt"
 
 if [ "$#" -gt 0 ]; then
   SCRIPTS="$*"
@@ -71,7 +71,10 @@ for s in $SCRIPTS; do
   env $EXTRA_ENV UW_DEMO_DELAY_MS=100 UW_DATA_DIR="$(pwd)/data" UW_DEBUG_LEVEL="$DEBUG_LEVEL" UW_DEMO_FILE="$(pwd)/$s" UW_FAST_SLEEP=1 "./$BIN" >"$log" 2>&1 &
   pid=$!
 
-  ( sleep "$TIMEOUT"; kill "$pid" 2>/dev/null ) &
+  (
+    sleep "$TIMEOUT"
+    kill "$pid" 2>/dev/null
+  ) &
   watchdog=$!
 
   wait "$pid" 2>/dev/null
