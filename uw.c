@@ -6471,7 +6471,9 @@ void FUN_00012948()
    flush) leaves the flag clear and keeps flushing every substep as before. */
 int g_suppress_frame_timed_flush = 0;
 
-void FUN_0001294c()
+// was FUN_0001294c -- render_dungeon_frame_timed's own per-frame screen
+// flush step (see g_suppress_frame_timed_flush above)
+void flush_dungeon_frame()
 
 {
   if (!g_suppress_frame_timed_flush) {
@@ -37696,7 +37698,7 @@ void main_loop_hud_flush()
          so the guard still applies. render_dungeon_frame_timed does its
          own dirty_rect_union internally (same rect this hack used to set
          by hand), so flush_dirty_rect_to_display(1) below still blits it --
-         g_suppress_frame_timed_flush (see FUN_0001294c's own comment)
+         g_suppress_frame_timed_flush (see flush_dungeon_frame's own comment)
          stops render_dungeon_frame_timed from ALSO doing its own real
          screen flush here, since that was a second real GXEndDraw() every
          tick, each independently vsync-throttled, roughly doubling
@@ -49105,7 +49107,7 @@ void render_dungeon_frame_timed()
     weapon_swing_draw_tick();
   }
   FUN_0005721c();
-  FUN_0001294c();
+  flush_dungeon_frame();
   FUN_00057460();
   set_viewport_clip_rect(0,0,0x13f,199);
   iVar6 = read_realtime_clock_units();

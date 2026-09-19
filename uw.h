@@ -480,7 +480,7 @@ void fade_out();
 void blit_raw_sprite_clipped();
 void FUN_00012850();
 void FUN_00012948();
-void FUN_0001294c();
+void flush_dungeon_frame();
 void thunk_FUN_0003c310();
 void FUN_00012958();
 undefined4 render_dungeon_view();
