@@ -1053,7 +1053,7 @@ void build_creature_look_text();
 void FUN_000495d0();
 undefined4 FUN_000496b0();
 void main_loop_hud_flush();
-void FUN_00049818();
+void dispatch_sticky_mode_handlers();
 void FUN_00049924();
 undefined4 FUN_00049940();
 void FUN_00049948();

@@ -2161,7 +2161,7 @@ undefined2 DAT_00201b64;
 undefined2 DAT_00202080;
 short DAT_00201c94;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
-   FUN_00049818/enter_dungeon_view/FUN_0003c038/change_game_mode (DAT_00201b64 = the
+   dispatch_sticky_mode_handlers/enter_dungeon_view/FUN_0003c038/change_game_mode (DAT_00201b64 = the
    mode: 0 is the normal in-game/dungeon view, seen so far; 1 and 2 are
    some other screen). It's link-time-initialized data in the original
    binary -- nothing in this decompile ever writes to it at runtime -- so
@@ -2172,7 +2172,7 @@ short DAT_00201c94;
    e.g. s_chrbtns_00084ef8's comment), then matching each recovered
    32-bit ARM address against this file's own FUN_ names by address.
    Left as a bare zero-filled placeholder, every handler read came back
-   NULL, so the per-frame redraw dispatch (FUN_00049818) never called
+   NULL, so the per-frame redraw dispatch (dispatch_sticky_mode_handlers) never called
    anything -- the game reached the dungeon and ran forever, but no HUD
    panel, 3D view, or tmap tile ever drew.
 
@@ -2213,7 +2213,7 @@ static void (*const DAT_00085668_real_table[48])(void) = {
 /* Alias into the same table at entry 15 (byte offset 15*8) -- Ghidra's
    own decompile of the real UU.exe shows this used as `&DAT_000856a4 +
    mode*0x80`, i.e. "entry 15 of whichever mode", the same table
-   FUN_00049818 reads -- not a separate byte the way it was declared
+   dispatch_sticky_mode_handlers reads -- not a separate byte the way it was declared
    before (that left it permanently 0/NULL too). */
 #define DAT_000856a4 (DAT_00085668_backing[15 * 8])
 char s__DATA_main_byt_000857a8[] = "\\DATA\\main.byt";
@@ -3181,7 +3181,7 @@ char s_an_adventurer__00085d08[] = "an_adventurer.";
    the words together: "You see an mellow outcastnamedBragit" instead of
    "You see a mellow outcast named Bragit". */
 char s_named_00085d18[] = " named ";
-/* Per-mode "sticky redraw bits" mask read by FUN_00049818 right after it
+/* Per-mode "sticky redraw bits" mask read by dispatch_sticky_mode_handlers right after it
    finishes dispatching DAT_00201c84's currently-set bits through
    DAT_00085668: `DAT_00201c84 = DAT_00085728[mode] | DAT_00201c84;` re-arms
    whichever bits this mode always wants re-triggered next idle tick, which
@@ -18330,7 +18330,7 @@ void FUN_00028ffc()
     flush_dirty_rect_to_display(1);
     FUN_000735fc();
     if (DAT_00201c84 != 0) {
-      FUN_00049818();
+      dispatch_sticky_mode_handlers();
     }
     if (DAT_00250718 == 0) {
       FUN_0007f170(500,0);
@@ -37685,7 +37685,7 @@ void main_loop_hud_flush()
     }
   }
   if (DAT_00201c84 != 0) {
-    FUN_00049818();
+    dispatch_sticky_mode_handlers();
   }
   /* HACK: drive the attack-swing state machine (FUN_00027708) every
      main-loop tick. Its own body is a real, correct state machine
@@ -37729,7 +37729,18 @@ void main_loop_hud_flush()
 
 
 
-void FUN_00049818()
+// was FUN_00049818 -- dispatches DAT_00201c84's currently-set "sticky
+// redraw/per-frame" bits through the DAT_00085668 per-mode handler table
+// (movement_pacing_handler is mode 0's bit 12, see DAT_00085728's own
+// comment), then re-arms whichever bits DAT_00085728[current mode] always
+// wants re-triggered -- this re-arm is what makes a mode's per-frame
+// handlers keep firing every call instead of running once and going
+// quiet. Called once per real game tick from app_main_loop's own while
+// loop (game.c), gated on DAT_00201c84 != 0 (see main_loop_hud_flush's
+// own call site) -- this is the actual per-tick movement dispatch, the
+// anchor point uw_advance_game_tick's deterministic clock now advances
+// in lockstep with (see its own comment in gx_stub.c).
+void dispatch_sticky_mode_handlers()
 
 {
   short sVar1;
@@ -37737,7 +37748,7 @@ void FUN_00049818()
   uint uVar3;
   ushort uVar4;
   bool bVar5;
-  
+
   if (DAT_00201c84 != 0) {
     uVar4 = 1;
     uVar3 = 0;
@@ -46247,7 +46258,7 @@ int param_1;
     sVar1 = peek_input_event();
     if (((((int)sVar2 | 0xfffcU) & (int)sVar1) != (int)sVar2) || (DAT_0008696e != -1)) break;
     if (param_1 != 0) {
-      FUN_00049818();
+      dispatch_sticky_mode_handlers();
     }
     FUN_00057904(1);
     FUN_00058734();
@@ -46284,7 +46295,7 @@ int param_1;
     if ((sVar3 == 0) || (iVar4 != 0)) break;
     flush_dirty_rect_to_display(1);
     if (param_1 != 0) {
-      FUN_00049818();
+      dispatch_sticky_mode_handlers();
     }
     poll_input_event(0);
     FUN_00057904(1);
