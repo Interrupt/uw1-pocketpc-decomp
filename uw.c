@@ -3038,16 +3038,37 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
    resolving to widget id 0 (a "not a spell" message code, observed
    live: without this, placing an item successfully updated the data
    but the grid stayed visually empty and printed an unrelated
-   spell-error message on refresh). Other indices stay 0, matching
-   prior (dead) behavior. Note open_backpack_container treats any mapped widget
-   id >= 0xb (11) as "handled by a wider grid redraw elsewhere,
-   nothing to do here" -- with these now-correct values (12-19) that
-   guard always takes the "elsewhere" branch for backpack-grid slots,
-   which is why entering/leaving a container needs its own explicit
-   whole-grid redraw call (see open_backpack_container/close_backpack_container's own
-   comments) rather than relying on this single-widget path. */
+   spell-error message on refresh).
+
+   Slots 5..10 (the worn-hand/shoulder/finger paperdoll slots, widgets
+   6..11) map back to widgets 6..11 the same N -> N-1 way -- user QA
+   report: "dragging and dropping into a paper doll slot does not show
+   the item." Confirmed live (UW_DEBUG_INV + a direct SDLRDOWN/SDLRUP
+   drag onto widget 9's own click rect): place_held_item_in_empty_slot
+   correctly writes the object into slot 8 and its own
+   `redraw_inventory_widget(g_backpack_slot_to_widget[8])` call DOES
+   fire, but with this array's slot 5..10 entries still at their prior
+   (dead) 0 value, that resolved to widget id 0 -- the deliberate
+   torso no-op sentinel (see g_inventory_hotspot_table's own comment)
+   -- so nothing ever got redrawn even though the placement itself
+   succeeded (confirmed via the demo harness's own post-drop state
+   dump: holding=0, occupied_slots=1, yet the paperdoll circles stayed
+   empty in a SCREENSHOT). g_backpack_widget_to_slot's own comment
+   already documents this exact N -> N-1 rule being extended to
+   widgets 6..11/slots 5..10 when that feature was added -- this
+   reverse array was simply never updated to match at the time. Other
+   indices stay 0, matching prior (dead) behavior. Note
+   open_backpack_container treats any mapped widget id >= 0xb (11) as
+   "handled by a wider grid redraw elsewhere, nothing to do here" --
+   with these now-correct values (12-19) that guard always takes the
+   "elsewhere" branch for backpack-grid slots, which is why
+   entering/leaving a container needs its own explicit whole-grid
+   redraw call (see open_backpack_container/close_backpack_container's own
+   comments) rather than relying on this single-widget path. The new
+   6..11 entries are below that >= 0xb threshold, so they take the
+   single-widget redraw path as intended, not the "elsewhere" one. */
 static unsigned char g_backpack_slot_to_widget_backing[0x17] = {
-  0,0,0,0,0,0,0,0,0,0,0, 12,13,14,15,16,17,18,19, 0,0,0,0,
+  0,0,0,0,0, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0,
 };
 #define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
 undefined2 DAT_00202980;
@@ -35855,6 +35876,23 @@ short param_1;
   }
   else {
     g_cursor_holding_state = 1;
+    /* Same stale-cursor-icon-erase race as attach_picked_up_object_to_cursor's
+       own copy of this fix (see its own comment) -- this function's
+       "release while holding" branch has the identical shape (widget
+       dispatch redraws the dropped item, then later cleanup erases a
+       still-pending save from the drag icon's last position, which can
+       clobber that fresh redraw if the two overlap -- routine for a
+       drop, since releasing ON the target slot is the point). Flush it
+       here too, before any dispatch below can redraw anything --
+       FUN_00056fe8() only does the actual pixel restore, it does NOT
+       clear DAT_00204844 itself (every caller is responsible for that
+       off its own return value, see its own comment); missing that
+       clear left the flag set, so a LATER update_mouse_state cycle
+       still saw "erase pending" and redundantly restored the same
+       stale save a second time, clobbering the fresh redraw anyway. */
+    if (FUN_00056fe8() != 0) {
+      DAT_00204844 = 0;
+    }
     if ((DAT_0023c1d4 != '\0') && (sVar1 != 0x17)) {
       g_cursor_holding_state = 1;
       return;
@@ -35928,6 +35966,36 @@ ushort * param_1;
     iVar1 = (int)sVar2;
     if (0 < iVar1) {
       g_cursor_holding_state = 1;
+      /* User QA report: "dragging and dropping into a paper doll slot
+         does not show the item" -- confirmed live (also reproduces for
+         an ordinary backpack-grid drop under the same drag pattern, so
+         this isn't slot-specific) via UW_DEBUG_CURSORERASE/CURSORSHOW:
+         update_mouse_state's own continuous per-tick cursor-icon cycle
+         (still running here, since g_selected_object doesn't clear
+         until the widget dispatch below actually succeeds) leaves a
+         pending "erase this saved background" state (DAT_00204844) from
+         the drag icon's last shown position. The widget dispatch below
+         (handle_backpack_slot_click -> place_held_item_in_empty_slot,
+         or handle_object_drop_target) draws the placed item fresh into
+         its slot -- but then ITS OWN cleanup (FUN_00057cac(3) below)
+         erases that still-pending stale save, which restores the
+         PRE-drop background over top of the item that was just
+         correctly drawn, since a drop's target slot position commonly
+         overlaps where the drag icon was last shown (releasing ON the
+         slot is the whole point of a drop). Flushing that pending erase
+         HERE -- before any redraw happens -- makes it a genuine no-op
+         (nothing to restore yet) instead of a same-tick race against
+         the fresh redraw, matching update_mouse_state's own
+         erase-before-anything-else protocol. FUN_00056fe8() only does
+         the actual pixel restore, it does NOT clear DAT_00204844
+         itself (every caller is responsible for that off its own
+         return value, see its own comment); missing that clear left
+         the flag set, so a LATER update_mouse_state cycle still saw
+         "erase pending" and redundantly restored the same stale save a
+         second time, clobbering the fresh redraw anyway. */
+      if (FUN_00056fe8() != 0) {
+        DAT_00204844 = 0;
+      }
       if ((DAT_0023c1d4 == '\0') || (iVar1 == 0x17)) {
         /* Same "leave-container icon eats the drop instead of routing
            it to the parent" bug and fix as handle_inventory_panel_click's
