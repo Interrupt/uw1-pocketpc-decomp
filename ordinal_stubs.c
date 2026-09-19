@@ -599,8 +599,21 @@ long Ordinal_1039()
 void *Ordinal_1041(size)
 unsigned int size;
 {
+    /* Was plain malloc -- real WinCE code allocating a small tracking
+       record and never explicitly zeroing it (e.g. open_backpack_container's
+       12-byte container-tracking record, which reads its own byte offset
+       8 in a masked read-modify-write without ever writing it first --
+       confirmed present in the real ARM binary too, at 0x4346c/0x4348c)
+       only makes sense if this ordinal itself zero-initializes, matching
+       LocalAlloc(LPTR, ...) semantics (LMEM_FIXED | LMEM_ZEROINIT) --
+       the idiomatic WinCE call for exactly this "alloc and rely on
+       zeroed fields" pattern. Confirmed live: the un-zeroed offset 8
+       byte fed a bogus object-slot index into release_container_reference
+       on container close, corrupting an unrelated, effectively random
+       object's data each time (matching a user report of "closing and
+       reopening a container loses other contents seemingly randomly"). */
     if (size == 0 || size > (64u * 1024u * 1024u)) size = 4096;
-    return malloc(size);
+    return calloc(1, size);
 }
 
 void *Ordinal_1044(dest, src, n)

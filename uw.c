@@ -33340,7 +33340,32 @@ short param_1;
         *(undefined1 *)((char *)g_current_container_record + 0xb) = 0;
         uVar3 = *puVar13;
         bVar5 = (byte)uVar3;
-        *(byte *)(g_current_container_record + 2) = (*(byte *)(g_current_container_record + 2) ^ bVar5) & 0x3f ^ bVar5;
+        /* Was `*(byte *)(g_current_container_record + 2) = ...` -- byte
+           offset 2, not 8. g_current_container_record is declared
+           `char *` (retyped for 64-bit pointer safety, same class as
+           this whole session's other fixes), so "+2" here means literal
+           byte offset 2 -- but this expression's own "2" only makes
+           sense as an `undefined4 *`-scaled offset (2*4=8 bytes),
+           matching what release_container_reference's own read
+           (`*(ushort*)(param_1+8)`, real byte offset 8, param_1 also
+           `char *`) expects, and confirmed via real ARM disassembly
+           (0x4346c ldrb/0x4348c strb, both `[r0,#0x8]`) to be the
+           correct target. The retype from `undefined4 *` to `char *`
+           silently changed this literal "+2"'s meaning without anyone
+           rescaling it to "+8" to match -- so this write landed on byte
+           offset 2 (colliding with the unrelated "next/link" field just
+           zeroed above) while the real target, offset 8, was left
+           permanently zero (its own explicit-zero pass, lines above,
+           never covers 8 either). release_container_reference then read
+           a 16-bit value assembled from an always-zero byte 8 and this
+           uVar3-derived byte 9, silently losing byte 8's own bits and
+           landing on the wrong object's slot when decrementing it on
+           container close. Confirmed live: this corrupted an unrelated
+           nearby object (matching a user report that closing and
+           reopening a container "loses other contents seemingly
+           randomly" after equipping an item from it). */
+        *(byte *)((char *)g_current_container_record + 8) =
+             (*(byte *)((char *)g_current_container_record + 8) ^ bVar5) & 0x3f ^ bVar5;
         *(char *)((char *)g_current_container_record + 9) = (char)(uVar3 >> 8);
         /* Was `g_current_container_link = (g_current_container_link ^ *(ushort*)(g_current_container_record+2))
            & 0x3f ^ *(ushort*)(g_current_container_record+2)` -- a "keep bits inside
@@ -35031,7 +35056,32 @@ ushort param_5;
       local_28 = g_player_object;
     }
     else {
-      local_28 = resolve_object_link(g_current_container_record + 8);
+      /* Was `resolve_object_link(g_current_container_record + 8)` --
+         g_current_container_record is a small (12-byte) Ordinal_1041
+         heap allocation, nowhere near the object arena buffer
+         resolve_object_link's own bounds guard checks against (see its
+         own comment), so this call was ALWAYS silently rejected on this
+         64-bit host, returning NULL regardless of what offset+8/9 held
+         (confirmed live: local_28 read back NULL even after fixing
+         offset+8/9's own encoding to correctly carry the container's
+         identity -- see that write's own comment a few thousand lines
+         up). g_current_container_link is a normal global, already
+         proven arena-resolvable throughout this whole file, and
+         open_backpack_container keeps it in lockstep with the exact
+         same identity value this record's own offset+8/9 encodes for
+         the currently-displayed (innermost, if nested) open container
+         -- which is exactly what this branch (iVar4>=0x13, a widget
+         showing that container's own contents) needs. Confirmed live:
+         this was the reason object_list_unlink got called with a
+         bogus near-null "list" address, corrupting/dropping other
+         objects still in the sack's real contents chain whenever an
+         item was used out of an open container (matching a user report
+         of "closing and reopening a container loses other contents
+         seemingly randomly"). Other call sites of this same
+         `resolve_object_link(g_current_container_record+8)` pattern
+         likely share this bug too, but aren't exercised by this
+         specific repro -- not fixed here. */
+      local_28 = resolve_object_link(&g_current_container_link);
     }
     uVar6 = (uint)(short)param_1;
     uVar7 = (ushort)param_2;
