@@ -35553,6 +35553,29 @@ short param_1;
      container is actually open, so a plain click here does nothing
      once armour rendering claims this record back in a future pass. */
   if ((iVar9 == 1) && (g_current_container_record != 0)) {
+    /* Was unconditional: dropping a held item onto this icon (drag it
+       out of the open container back to the parent) closed the
+       container without ever placing the item anywhere, leaving it
+       stuck on the cursor -- the user then had to click again, now on
+       the parent's own backpack grid, to actually place it. This
+       whole affordance is this project's own addition (see the
+       comment above), so its exact "drop here" behavior isn't
+       constrained by the original binary; auto-place the held item
+       into any free parent-backpack slot first, using the same
+       auto_place_in_container(...,0x13) "find an empty slot" sentinel
+       auto_place_in_container's own other callers (and
+       check_object_fits_in_slot's matching special-case) already
+       establish, then close as before either way. Matches a user
+       report: "dragging from a container to the parent requires an
+       extra click". */
+    if (g_selected_object != (ushort *)0x0) {
+      if (auto_place_in_container(g_selected_object, 0x13) != 0) {
+        g_selected_object = (ushort *)0x0;
+        g_cursor_holding_state = 0;
+        FUN_00057cac(3);
+      }
+      FUN_000667cc();
+    }
     close_backpack_container();
     return;
   }
@@ -35651,6 +35674,26 @@ short param_1;
     }
     iVar9 = (int)sVar1;
     if (0 < iVar9) {
+      /* Was missing here too: this is the REAL drop-target dispatch for
+         a release that lands while already holding an item (this
+         function's own preceding widget-range block only handles the
+         very first click of a drag, when nothing was held yet -- see
+         its own sibling fix's comment for why the top-of-function
+         check alone isn't enough. `sVar1`/`iVar9` here is the actual
+         RELEASE position, freshly hit-tested a few lines up). Same
+         "leave-container icon eats the drop instead of routing it to
+         the parent" bug and same fix as the top-of-function copy. */
+      if ((iVar9 == 1) && (g_current_container_record != 0)) {
+        if (auto_place_in_container(g_selected_object, 0x13) != 0) {
+          g_selected_object = (ushort *)0x0;
+          g_cursor_holding_state = 0;
+          FUN_00057cac(3);
+          bVar11 = false;
+        }
+        FUN_000667cc();
+        close_backpack_container();
+        return;
+      }
       if (iVar9 < 0x15) {
         handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar9]);
       }
@@ -35692,7 +35735,22 @@ ushort * param_1;
     if (0 < iVar1) {
       g_cursor_holding_state = 1;
       if ((DAT_0023c1d4 == '\0') || (iVar1 == 0x17)) {
-        if (iVar1 < 0x15) {
+        /* Same "leave-container icon eats the drop instead of routing
+           it to the parent" bug and fix as handle_inventory_panel_click's
+           own two copies (see their comments) -- this is the analogous
+           drop-dispatch for a drag that started in the 3D world (e.g.
+           picking an item straight off the ground and releasing it on
+           this icon while a container happens to be open). */
+        if ((iVar1 == 1) && (g_current_container_record != 0)) {
+          if (auto_place_in_container(g_selected_object, 0x13) != 0) {
+            g_selected_object = (ushort *)0x0;
+            g_cursor_holding_state = 0;
+            FUN_00057cac(3);
+          }
+          FUN_000667cc();
+          close_backpack_container();
+        }
+        else if (iVar1 < 0x15) {
           handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
           if (g_selected_object == (ushort *)0x0) {
             g_cursor_holding_state = 0;
