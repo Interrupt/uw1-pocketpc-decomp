@@ -1,6 +1,20 @@
 #ifndef GX_STUB_H
 #define GX_STUB_H
 
+/* SDL_Event.*.which value tagging a click injected by uw_inject_mouse_* so
+   uw_pump_events takes the event's own coords (the GetGlobalMouseState
+   warp is a no-op under the dummy video driver). Also used by
+   democapture.c to recognize and skip a demo script's own injected
+   clicks, so replaying a demo file doesn't get recorded back into a new
+   one. */
+#define UW_SYNTH_MOUSE 0x55570001u
+/* Stamped into keysym.unused (a spare Uint32 that survives SDL's event
+   queue memcpy) on keydown/keyup events pushed by uw_inject_key_* so the
+   physical-ESC "abort the running demo" check can tell a real keypress
+   from a demo's own SDLHOLD injection. Also used by democapture.c, same
+   reason as UW_SYNTH_MOUSE above. */
+#define UW_SYNTH_KEY 0x55570002u
+
 int GXOpenDisplay(void *hwnd, unsigned int flags);
 int GXCloseDisplay(void);
 void *GXBeginDraw(void);

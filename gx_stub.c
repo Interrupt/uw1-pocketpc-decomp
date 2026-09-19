@@ -4,6 +4,7 @@
 #include "ordinal_stubs.h"
 #include "uw.h"
 #include "demomode.h"
+#include "democapture.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -75,15 +76,9 @@ typedef struct {
  * space in the name-entry field. */
 #define VK_APP1 0xC1
 
-/* SDL_Event.*.which value tagging a click injected by uw_inject_mouse_* so
-   uw_pump_events takes the event's own coords (the GetGlobalMouseState
-   warp is a no-op under the dummy video driver). */
-#define UW_SYNTH_MOUSE 0x55570001u
-/* Stamped into keysym.unused (a spare Uint32 that survives SDL's event
-   queue memcpy) on keydown/keyup events pushed by uw_inject_key_* so the
-   physical-ESC "abort the running demo" check can tell a real keypress
-   from a demo's own SDLHOLD injection. */
-#define UW_SYNTH_KEY 0x55570002u
+/* UW_SYNTH_MOUSE/UW_SYNTH_KEY are declared in gx_stub.h (shared with
+   democapture.c, which needs to tell a real event from a demo's own
+   injected one to avoid recording playback back into a new file). */
 
 /* Dungeon-view (3D) player movement is polled from the physical keyboard
    state every pump (poll_dungeon_movement_keys), DOS-style, rather than
@@ -295,9 +290,15 @@ void uw_pump_events(void) {
     }
 
     while (SDL_PollEvent(&ev)) {
+        /* Record before any of the game's own filtering/early-returns
+           below, so what gets written matches exactly what a human at
+           the keyboard/mouse actually did -- democapture does its own
+           synthetic-event check and is a no-op if recording is off. */
+        democapture_record_event(&ev);
         switch (ev.type) {
             case SDL_QUIT:
                 g_running = 0;
+                democapture_shutdown();
                 SDL_DestroyTexture(g_tex);
                 SDL_DestroyRenderer(g_ren);
                 SDL_DestroyWindow(g_win);
@@ -590,6 +591,7 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
                                SDL_TEXTUREACCESS_STREAMING, GX_W, GX_H);
     memset(g_framebuffer, 0, sizeof(g_framebuffer));
     demomode_init();
+    democapture_init();
     return 1;
 }
 
@@ -1129,7 +1131,7 @@ void *GXBeginDraw(void) {
                         "(further calls not logged, this runs every frame)\n");
         logged = 1;
     }
-    if (!g_running) exit(0);
+    if (!g_running) { democapture_shutdown(); exit(0); }
     return g_framebuffer;
 }
 
