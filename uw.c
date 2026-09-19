@@ -34507,7 +34507,21 @@ short param_2;
   short sVar2;
   int iVar3;
   char *iVar4;
-  int iVar5;
+  /* Was `int iVar5;` -- truncated g_current_container_record's real
+     64-bit pointer on assignment (`iVar5 = g_current_container_record;`
+     just below), then dereferenced the truncated wild value at
+     `*(short *)(iVar5 + 10)`. Same class as this whole session's other
+     narrow-local-for-a-pointer fixes. Confirmed live: crashed
+     immediately on the loop's first iteration, right after fixing this
+     same function's sibling resolve_object_link(record+8) bug just
+     above (both reached by the same "drag an item to a different slot
+     inside an open container" user repro). The CONCAT13-based "next"
+     pointer reconstruction two lines below has its own separate,
+     not-fixed-here 64-bit truncation (same as free_open_container_chain's
+     identical idiom) -- harmless for a single, non-nested open
+     container (next is always a real zero there), still broken for
+     genuine container nesting. */
+  char *iVar5;
   uint uVar6;
   int iVar7;
   undefined4 uVar8;
@@ -34540,7 +34554,22 @@ short param_2;
     iVar3 = FUN_00046260(param_1);
     if (-1 < iVar1) {
       if (0x12 < iVar1) {
-        iVar4 = resolve_object_link(g_current_container_record + 8);
+        /* Was `resolve_object_link(g_current_container_record + 8)` --
+           same bug, same fix, as extract_matching_object_from_slot's
+           and check_object_fits_in_slot's own identical calls (see
+           their comments): g_current_container_record is a small heap
+           allocation outside the object arena resolve_object_link
+           bounds-checks against, so this was always NULL on this
+           64-bit host. iVar4 (initialized to g_player_object at this
+           function's top) is used below unconditionally
+           (`object_list_append_tail(iVar4 + 6, param_1)`), so the NULL
+           result crashed immediately. g_current_container_link holds
+           the same identity and is normal-global arena-resolvable.
+           Confirmed live: this was the very next crash after fixing
+           check_object_fits_in_slot's own copy of the same bug,
+           reached by the identical "drag an item to a different slot
+           inside an open container" user repro. */
+        iVar4 = resolve_object_link(&g_current_container_link);
         for (iVar5 = g_current_container_record; iVar5 != 0;
             iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
                              CONCAT12(*(undefined1 *)(iVar5 + 6),
@@ -36053,8 +36082,37 @@ LAB_00047a0c:
   bVar7 = 1;
   if (0x13 < iVar15) {
     for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(int *)(iVar12 + 4)) {
-      pbVar13 = (byte *)resolve_object_link(iVar12 + 8);
-      if (((short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3] == 0) ||
+      /* Was unconditional `pbVar13 = resolve_object_link(iVar12 + 8);` --
+         iVar12 is a container-tracking record (a small Ordinal_1041 heap
+         allocation), nowhere near the object arena buffer
+         resolve_object_link's own bounds guard checks against -- this
+         call was always silently rejected on this 64-bit host, and the
+         very next line dereferenced the resulting NULL unconditionally.
+         Same root cause and same class of fix as
+         extract_matching_object_from_slot's own identical bug (see its
+         comment): for the innermost/currently-open container (the
+         common case, and the only one this loop's first iteration ever
+         sees without real container nesting), g_current_container_link
+         already holds this exact identity and is normal-global
+         arena-resolvable. Deeper ancestor records (genuine nesting, an
+         untested and likely still-broken path -- the "next" pointer
+         chase two lines below has its own separate 64-bit truncation
+         issue) have no equivalent stand-in available here; guard those
+         against NULL and treat "can't verify this ancestor's own
+         capacity" as not-blocking rather than crash, matching this
+         session's established NULL-guard precedent (FUN_00080ed4,
+         FUN_00051fa0). Confirmed live: dragging an item from one slot
+         to another within an open container crashed here on every
+         attempt (matches a user report with an identical backtrace:
+         check_object_fits_in_slot -> place_object_in_backpack_slot ->
+         place_held_item_in_empty_slot -> handle_backpack_slot_click). */
+      pbVar13 = (byte *)(iVar12 == g_current_container_record ?
+                         resolve_object_link(&g_current_container_link) :
+                         resolve_object_link(iVar12 + 8));
+      if (pbVar13 == (byte *)0x0) {
+        bVar7 = 1;
+      }
+      else if (((short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3] == 0) ||
          (bVar7 = 0,
          (int)*(short *)(iVar12 + 10) + (int)local_54[0] <=
          (int)(short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3])) {
@@ -36087,7 +36145,30 @@ LAB_00047a0c:
     return 0;
   }
   uVar2 = (uint)*(short *)(&DAT_002029f9 + iVar15);
-  if ((int)uVar2 < 0) goto LAB_00047a0c;
+  /* DAT_002029f9 (this container-type's "specific item id required" table,
+     alongside its sibling DAT_002029f8 used for the weight-capacity check
+     just above) is loaded by FUN_0004a02c -- but that loader itself has
+     no caller anywhere in the decompiled binary (confirmed via a real
+     Ghidra xref search: the only reference to FUN_0004a02c's address is
+     a DATA reference, meaning it's stored into some struct as a function
+     pointer for an indirect call this project hasn't traced/wired up
+     yet), so this table is permanently all-zero. The sibling capacity
+     table (DAT_002029f8) already treats a zero entry as "no limit" (see
+     the `(&DAT_002029f8)[iVar15] == 0` check just above); this table's
+     own zero-entry case was instead falling into the "must be this
+     exact item id" branch below with a real zero, incorrectly requiring
+     the placed item's id to literally be 0 -- rejecting every real
+     item with the "does not fit" message (FUN_00078c80(0xf8)).
+     Confirmed live: dragging an item to an empty slot inside an open
+     container printed "That item does not fit." on every attempt.
+     Treat an unpopulated (zero) entry the same permissive way its
+     sibling table already does, via the same LAB_00047a0c fallback
+     already used for the table's other explicit "no restriction"
+     sentinel (a negative entry) -- a narrow, local fix for the
+     immediate symptom; the deeper root cause (wiring up FUN_0004a02c's
+     real call so this table, DAT_002029f8, and g_food_effect_table all
+     get their real game data) is a separate, larger task. */
+  if ((int)uVar2 <= 0) goto LAB_00047a0c;
   if ((int)uVar2 < 0x200) {
     if ((local_4c != uVar2) && (FUN_00078c80(0xf8), uVar8 != uVar2)) {
       return 0;
