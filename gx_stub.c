@@ -98,6 +98,7 @@ extern unsigned short DAT_0023c448;   /* latched pending input code */
 extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears DAT_0023c448 */
 extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move rate scale) */
 extern short DAT_0023beb4;            /* view pitch (1/256 deg); sync_camera_from_player -> DAT_000db448 */
+extern unsigned int g_uw_frame_clock_units; /* fixed-step wall-clock substitute for movement_pacing_handler -- see its own comment in uw.c */
 
 /* OR'd into the real SDL_GetKeyboardState() so scripted tests (SDLHOLD /
    uw_inject_key_down/up) can drive the same movement path -- SDL_PushEvent
@@ -281,6 +282,17 @@ void uw_pump_events(void) {
        below so a played-back tick and a recorded tick both correspond to
        the exact same uw_pump_events() call. */
     democapture_tick();
+    /* Advance g_uw_frame_clock_units (see its own comment in uw.c) by
+       exactly one fixed tick's worth, in the SAME 4ms-per-unit scale
+       FUN_0002294c()/Ordinal_535()>>2 uses -- computed fresh from the
+       running tick count each call (not accumulated with a per-call
+       remainder) so integer truncation never drifts the total over a
+       long session: 60 ticks always total exactly 250 units (1000ms),
+       whichever ticks happen to round up. */
+    { static unsigned int tick_count = 0;
+      tick_count++;
+      g_uw_frame_clock_units = (unsigned int)((unsigned long long)tick_count * 250 / 60);
+    }
     demomode_pump();
     poll_dungeon_movement_keys();
 

@@ -4272,6 +4272,29 @@ undefined4 DAT_0023bf50;
 char DAT_00087944_backing[128];
 char *DAT_00087944 = DAT_00087944_backing;
 short DAT_0024af6c;
+/* Deterministic, fixed-step substitute for the real wall-clock
+   (FUN_0002294c(), itself Ordinal_535()>>2 -- SDL_GetTicks() scaled to
+   4ms-per-unit) that movement_pacing_handler() (this file, ~line 56163)
+   used to read directly for ALL of its internal timing, including the
+   uVar6 delta that directly scales how far the player moves/turns each
+   tick. Real elapsed time made movement distance sensitive to actual
+   frame-delivery jitter -- fine for one live session, but meant a
+   recorded input sequence (democapture.c) with tick-for-tick-identical
+   keys held for tick-for-tick-identical durations still couldn't
+   reproduce the exact same on-screen distance on replay, since the two
+   sessions' real per-tick timing was never bit-for-bit identical (user-
+   reported: "movement via input still seems to slightly overshoot...
+   if input was 1:1"). Advanced once per real game tick by gx_stub.c's
+   uw_pump_events() (see its own comment) by a fixed amount matching
+   1000/60 ms in this same 4ms-per-unit scale, computed drift-free from
+   the running tick count (not accumulated per-call, which would drift)
+   -- movement becomes a pure function of TICK COUNT, exactly what the
+   recorder already captures losslessly, eliminating this class of
+   replay drift entirely instead of trying to reproduce real timing
+   jitter. Deliberately unconditional (not just during record/playback)
+   since the game is already vsync-locked to ~60Hz (gx_stub.c's own
+   frame-budget cap), so this doesn't change how normal play feels. */
+unsigned int g_uw_frame_clock_units;
 char DAT_00087950_backing[128];
 char *DAT_00087950 = DAT_00087950_backing;
 char DAT_00087948_backing[128];
@@ -56170,13 +56193,27 @@ void movement_pacing_handler()
   uint uVar5;
   uint uVar6;
   undefined8 uVar7;
-  
-  iVar3 = FUN_0002294c();
+  uint uVar_now;
+
+  /* Was 4 separate FUN_0002294c() (real wall-clock) reads in this
+     function -- replaced with g_uw_frame_clock_units, a fixed-step
+     substitute in the same 4ms-per-unit scale (see its own comment in
+     this file). All 4 original reads are really asking "what time is it
+     right now", each then diffed against the SAME DAT_0023bf54
+     reference -- captured once into uVar_now here so they keep agreeing
+     with each other exactly as they did when each was a fresh (but,
+     within the same real millisecond, effectively identical) clock
+     read. uVar6 is the actual movement/turn-distance driver
+     (movement_tick below); the other reads feed DAT_0023bf58's
+     animation-bob phase, which shares the same DAT_0023bf54 reference
+     point and so needs to move in step with it too. */
+  uVar_now = g_uw_frame_clock_units;
+  iVar3 = uVar_now;
   uVar6 = iVar3 - DAT_0023bf54;
   if (uVar6 < 0x41) {
-    uVar5 = FUN_0002294c();
+    uVar5 = uVar_now;
     DAT_0023bf58 = ((char)(uVar5 >> 4) - (char)(DAT_0023bf54 >> 4)) + DAT_0023bf58;
-    uVar7 = FUN_0002294c();
+    uVar7 = uVar_now;
     uVar5 = (uint)((ulonglong)uVar7 >> 0x20);
     uVar4 = ((uint)uVar7 >> 6) - (DAT_0023bf54 >> 6) & 0xff;
     if (uVar6 == 0) {
@@ -56200,7 +56237,7 @@ void movement_pacing_handler()
   *(char *)(DAT_00086df8 + 0xcf) = (char)((uint)iVar3 >> 8);
   *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar3 >> 0x10);
   *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar3 >> 0x18);
-  DAT_0023bf54 = FUN_0002294c();
+  DAT_0023bf54 = uVar_now;
   if (DAT_002020d4 == 0) {
     bVar2 = 0;
   }
