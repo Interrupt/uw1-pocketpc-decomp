@@ -37633,6 +37633,9 @@ static void uw_debug_blit_pick_buffer(void)
 void main_loop_hud_flush()
 
 {
+  unsigned int _dbg_hf_t0 = 0;
+  int _dbg_hf = getenv("UW_DEBUG_HUDSPLIT") != NULL;
+  if (_dbg_hf) _dbg_hf_t0 = read_realtime_clock_units() * 4;
   dirty_rect_set(100,100,100,100);
   /* HACK: redraw the 3D dungeon view on every main-loop iteration.
      Normally the redraw is driven off dirty bit 3, which apply_movement_tick
@@ -37711,7 +37714,14 @@ void main_loop_hud_flush()
     if (_swing_tick < 0) _swing_tick = (getenv("UW_NO_FORCE_SWING_TICK") == NULL);
     if (_swing_tick) FUN_00027708(0);
   }
-  poll_input_bindings(DAT_00085a6c);
+  { unsigned int _t1 = 0, _t2 = 0;
+    if (_dbg_hf) _t1 = read_realtime_clock_units() * 4;
+    poll_input_bindings(DAT_00085a6c);
+    if (_dbg_hf) {
+      _t2 = read_realtime_clock_units() * 4;
+      fprintf(stderr, "[hudsplit] pre_pib_ms=%u pib_ms=%u\n", _t1 - _dbg_hf_t0, _t2 - _t1);
+    }
+  }
   /* When the forced 3D redraw ran this frame, push it through even if a
      mouse button is being held in the viewport: DAT_0023c63c (the
      click-hold flag) otherwise blocks flush_dirty_rect_to_display's real
@@ -56252,10 +56262,14 @@ void movement_pacing_handler()
   uVar_now = uw_frame_clock_ms();
   if (getenv("UW_DEBUG_MOVEPACE")) {
     static unsigned int call_count = 0;
+    static unsigned int last_real_ms = 0;
+    unsigned int real_ms = read_realtime_clock_units() * 4; /* back to real ms -- see its own comment */
     call_count++;
-    fprintf(stderr, "[movepace] call=%u now=%u last=%u delta=%u mode=%d code=0x%x turnrate=%d\n",
+    fprintf(stderr, "[movepace] call=%u now=%u last=%u delta=%u mode=%d code=0x%x turnrate=%d real_ms=%u real_delta=%u\n",
             call_count, uVar_now, (unsigned)DAT_0023bf54, uVar_now - (unsigned)DAT_0023bf54,
-            (int)g_movement_mode, (unsigned)DAT_0023c448, (int)DAT_0023bf4c);
+            (int)g_movement_mode, (unsigned)DAT_0023c448, (int)DAT_0023bf4c,
+            real_ms, real_ms - last_real_ms);
+    last_real_ms = real_ms;
   }
   iVar3 = uVar_now;
   uVar6 = iVar3 - DAT_0023bf54;

@@ -321,11 +321,19 @@ void uw_advance_game_tick(void) {
     static unsigned int tick_count = 0;
     tick_count++;
     g_uw_frame_clock_units = (unsigned int)((unsigned long long)tick_count * 250 / 60);
+    if (getenv("UW_DEBUG_TICKRATIO")) {
+        extern unsigned int g_uw_pump_events_calls; /* defined below */
+        fprintf(stderr, "[tickratio] game_tick=%u pump_calls_this_tick=%u\n", tick_count, g_uw_pump_events_calls);
+        g_uw_pump_events_calls = 0;
+    }
 }
+
+unsigned int g_uw_pump_events_calls = 0;
 
 void uw_pump_events(void) {
     SDL_Event ev;
     if (!g_win) return;
+    g_uw_pump_events_calls++;
     /* democapture_tick()/demomode_pump() MUST stay universally reachable
        from here (unlike g_uw_frame_clock_units's own advance -- see
        uw_advance_game_tick's comment): uw_pump_events() is the one call

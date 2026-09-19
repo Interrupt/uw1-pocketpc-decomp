@@ -100,13 +100,24 @@ undefined4 param_4;
            reached from other polling loops within a single iteration of
            this one. */
         uw_advance_game_tick();
-        iVar2 = Ordinal_864(auStack_40,0,0,0,1);
-        if (iVar2 != 0) {
-          if (local_3c == 0x12) break;
-          Ordinal_870(auStack_40);
-          Ordinal_859(auStack_40);
+        {
+          static unsigned int _dbg_t0 = 0, _dbg_t1 = 0;
+          int _dbg = getenv("UW_DEBUG_ITERSPLIT") != NULL;
+          if (_dbg) _dbg_t0 = read_realtime_clock_units() * 4;
+          iVar2 = Ordinal_864(auStack_40,0,0,0,1);
+          if (iVar2 != 0) {
+            if (local_3c == 0x12) break;
+            Ordinal_870(auStack_40);
+            Ordinal_859(auStack_40);
+          }
+          if (_dbg) _dbg_t1 = read_realtime_clock_units() * 4;
+          main_loop_hud_flush();
+          if (_dbg) {
+            unsigned int _dbg_t2 = read_realtime_clock_units() * 4;
+            fprintf(stderr, "[itersplit] ordinal864_ms=%u hudflush_ms=%u\n",
+                    _dbg_t1 - _dbg_t0, _dbg_t2 - _dbg_t1);
+          }
         }
-        main_loop_hud_flush();
       }
       uVar3 = FUN_00077860(param_1,local_38);
       return uVar3;
