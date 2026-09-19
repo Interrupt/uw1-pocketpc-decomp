@@ -2821,8 +2821,8 @@ void uw_debug_dump_inventory_state(void) {
     for (int i = 0; i < 28; i++)
       if (*(unsigned short *)&g_backpack_slot_table[i*2] & 0xffc0) occupied++;
   }
-  fprintf(stderr, "[demo] post-screenshot state: g_cursor_holding_state(holding)=%d occupied_slots=%d\n",
-          (int)g_cursor_holding_state, occupied);
+  fprintf(stderr, "[demo] post-screenshot state: g_cursor_holding_state(holding)=%d occupied_slots=%d g_current_container_record=%p\n",
+          (int)g_cursor_holding_state, occupied, (void *)g_current_container_record);
 }
 undefined4 g_open_container_list;
 /* g_backpack_widget_to_slot_plus1's address (0x85c39) is exactly one byte past
@@ -35565,9 +35565,17 @@ short param_1;
        auto_place_in_container(...,0x13) "find an empty slot" sentinel
        auto_place_in_container's own other callers (and
        check_object_fits_in_slot's matching special-case) already
-       establish, then close as before either way. Matches a user
-       report: "dragging from a container to the parent requires an
-       extra click". */
+       establish. Matches a user report: "dragging from a container to
+       the parent requires an extra click".
+
+       Whether to ALSO auto-close the container after that drop (the
+       original behavior, matching a plain click on this same icon
+       with nothing held) is now a deliberate opt-in via
+       UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF, per user
+       request -- placing the item and leaving the container open lets
+       the user drag several items out in a row without it snapping
+       shut after the first one. A plain click here (nothing held)
+       always closes as before, unaffected by this toggle. */
     if (g_selected_object != (ushort *)0x0) {
       if (auto_place_in_container(g_selected_object, 0x13) != 0) {
         g_selected_object = (ushort *)0x0;
@@ -35575,8 +35583,20 @@ short param_1;
         FUN_00057cac(3);
       }
       FUN_000667cc();
+      if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+        close_backpack_container();
+      }
+      else {
+        /* Staying open: the item just left this container's own grid
+           (widgets 0xc-0x13), so redraw it to reflect that -- without
+           this the grid kept showing its pre-drop contents (stale)
+           until some unrelated redraw happened to refresh it. */
+        redraw_inventory_widget_range(0xc,0x13);
+      }
     }
-    close_backpack_container();
+    else {
+      close_backpack_container();
+    }
     return;
   }
   if ((0 < iVar9) && (iVar9 < 0x15)) {
@@ -35691,7 +35711,14 @@ short param_1;
           bVar11 = false;
         }
         FUN_000667cc();
-        close_backpack_container();
+        /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
+           -- see the top-of-function copy of this same fix for why. */
+        if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+          close_backpack_container();
+        }
+        else {
+          redraw_inventory_widget_range(0xc,0x13);
+        }
         return;
       }
       if (iVar9 < 0x15) {
@@ -35748,7 +35775,12 @@ ushort * param_1;
             FUN_00057cac(3);
           }
           FUN_000667cc();
-          close_backpack_container();
+          /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
+             -- see handle_inventory_panel_click's own copy of this fix
+             for why. */
+          if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+            close_backpack_container();
+          }
         }
         else if (iVar1 < 0x15) {
           handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
