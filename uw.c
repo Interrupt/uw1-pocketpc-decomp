@@ -4273,7 +4273,7 @@ char DAT_00087944_backing[128];
 char *DAT_00087944 = DAT_00087944_backing;
 short DAT_0024af6c;
 /* Deterministic, fixed-step substitute for the real wall-clock
-   (FUN_0002294c(), itself Ordinal_535()>>2 -- SDL_GetTicks() scaled to
+   (read_realtime_clock_units(), itself Ordinal_535()>>2 -- SDL_GetTicks() scaled to
    4ms-per-unit) that movement_pacing_handler() (this file, ~line 56186)
    used to read directly for ALL of its internal timing, including the
    uVar6 delta that directly scales how far the player moves/turns each
@@ -4295,12 +4295,12 @@ short DAT_0024af6c;
    since the game is already vsync-locked to ~60Hz (gx_stub.c's own
    frame-budget cap), so this doesn't change how normal play feels.
 
-   Deliberately NOT folded into FUN_0002294c() itself, even though that
+   Deliberately NOT folded into read_realtime_clock_units() itself, even though that
    is literally the "what time is it" function movement_pacing_handler
    used to call and would have been the more obvious single place to
-   fix -- FUN_0002294c() has ~65 other call sites across this file, and
+   fix -- read_realtime_clock_units() has ~65 other call sites across this file, and
    at least one (move_key_directional_step's own tail, ~line 56177:
-   `do { iVar2 = FUN_0002294c(); } while ((uint)(iVar2-iVar1) < 0x18);`)
+   `do { iVar2 = read_realtime_clock_units(); } while ((uint)(iVar2-iVar1) < 0x18);`)
    busy-spins on it in a tight loop with NO event pump in between
    iterations, deliberately throttling a discrete step's real-world
    pacing. This clock only advances once per real uw_pump_events() call
@@ -4312,7 +4312,7 @@ unsigned int g_uw_frame_clock_units;
 /* Accessor for g_uw_frame_clock_units -- see its own comment. Use this,
    not the raw global, from any new gameplay-tick-paced timing code (the
    same shape as movement_pacing_handler's own use) that wants
-   deterministic, tick-count-driven pacing instead of FUN_0002294c()'s
+   deterministic, tick-count-driven pacing instead of read_realtime_clock_units()'s
    real wall-clock time. */
 unsigned int uw_frame_clock_ms() {
   return g_uw_frame_clock_units;
@@ -6133,7 +6133,7 @@ ushort *param_3;
   Ordinal_1044(puVar3,param_3,0x1f400);
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
-  uint diag_t0 = FUN_0002294c();
+  uint diag_t0 = read_realtime_clock_units();
   do {
     uVar4 = Ordinal_2032(iVar9);
     uVar4 = Ordinal_2026(uVar4,0x3e000000);
@@ -6164,7 +6164,7 @@ ushort *param_3;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", FUN_0002294c() - diag_t0);
+  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", read_realtime_clock_units() - diag_t0);
   debug_framebuffer_dump("fade_in");
   Ordinal_1018(puVar3);
   return;
@@ -6199,7 +6199,7 @@ undefined2 * param_3;
   iVar11 = 7;
   iVar10 = 64000;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
-  uint diag_t0 = FUN_0002294c();
+  uint diag_t0 = read_realtime_clock_units();
   do {
     uVar5 = Ordinal_2032(iVar11);
     uVar5 = Ordinal_2026(uVar5,0x3e000000);
@@ -6229,7 +6229,7 @@ undefined2 * param_3;
     param_3 = param_3 + 1;
   }
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", FUN_0002294c() - diag_t0);
+  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", read_realtime_clock_units() - diag_t0);
   debug_framebuffer_dump("fade_out");
   Ordinal_1018(puVar4);
   return;
@@ -15113,11 +15113,20 @@ int param_1;
 
 
 
-uint FUN_0002294c()
+// was FUN_0002294c -- GetTickCount-shaped: Ordinal_535() (SDL_GetTicks(),
+// real elapsed ms since startup) scaled down to 4ms-per-unit. Used
+// throughout this file (fades, double-click/hold timing, the attack-swing
+// state machine, movement_pacing_handler's pre-uw_frame_clock_ms reads,
+// ...) as the generic "what time is it" source; some callers (e.g.
+// move_key_directional_step's own tail) busy-spin on it in a tight loop
+// with no event pump in between, so it must keep returning genuine
+// real-time -- see uw_frame_clock_ms's own comment for why movement's
+// deterministic clock is a separate function, not a change here.
+uint read_realtime_clock_units()
 
 {
   uint uVar1;
-  
+
   uVar1 = Ordinal_535();
   return uVar1 >> 2;
 }
@@ -17687,13 +17696,13 @@ LAB_00027754:
           }
           *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) & 0xfa | 10;
           if (DAT_001005e8 < 0) {
-            DAT_001005f0 = FUN_0002294c();
+            DAT_001005f0 = read_realtime_clock_units();
             DAT_001005e8 = 0;
             return;
           }
-          sVar4 = FUN_0002294c();
+          sVar4 = read_realtime_clock_units();
           DAT_001005e8 = (sVar4 - (short)DAT_001005f0) + DAT_001005e8;
-          DAT_001005f0 = FUN_0002294c();
+          DAT_001005f0 = read_realtime_clock_units();
           if (DAT_001005e8 < 0x11) {
             return;
           }
@@ -23214,7 +23223,7 @@ LAB_000337fc:
       if ((bVar3 < 5) || (bVar3 = FUN_00072b2c(), 7 < bVar3)) {
         FUN_000735b0(6);
       }
-      DAT_00101944 = FUN_0002294c();
+      DAT_00101944 = read_realtime_clock_units();
     }
     uVar9 = (uint)*(ushort *)((char *)DAT_0010190c + 0xb);
     if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
@@ -23797,7 +23806,7 @@ ushort * param_3;
     uVar4 = 6;
   }
   FUN_000735b0(uVar4);
-  DAT_00101944 = FUN_0002294c();
+  DAT_00101944 = read_realtime_clock_units();
   return 0;
 }
 
@@ -24604,13 +24613,13 @@ ushort * param_1;
   iVar4 = 0x10;
   do {
     if (param_1[1] != 0) {
-      uVar2 = FUN_0002294c();
+      uVar2 = read_realtime_clock_units();
       iVar3 = Ordinal_2005(param_1[1],0x38e);
       if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*param_1)) {
         uVar2 = (1 - (uint)(byte)param_1[3]) + (uint)*(byte *)((char *)param_1 + 7);
         palette_cycle_range((uint)(byte)param_1[3],uVar2,0);
         reinstall_active_palette(uVar2 & 0xff,(char)param_1[3],1);
-        uVar1 = FUN_0002294c();
+        uVar1 = read_realtime_clock_units();
         *(char *)param_1 = (char)uVar1;
         *(char *)((char *)param_1 + 1) = (char)((ushort)uVar1 >> 8);
       }
@@ -25053,7 +25062,7 @@ LAB_00036858:
         local_64 = uVar14;
         FUN_00035fdc(uVar14 + 0x100,local_b8);
         build_rgb565_palette(local_b8,0xffffffff);
-        local_54 = FUN_0002294c();
+        local_54 = read_realtime_clock_units();
         local_4c = local_54;
         FUN_00035e00(uVar14 + 0x500,*(undefined2 *)(uVar14 + 6),local_70);
         local_93 = 0;
@@ -25193,9 +25202,9 @@ LAB_00036ca4:
                     sVar20 = sVar6;
                   }
                   if (((sVar20 != -1) && (local_91 == -1)) &&
-                     ((3 < sVar20 || (iVar9 = FUN_0002294c(), 0x40 < (uint)(iVar9 - local_54))))) {
+                     ((3 < sVar20 || (iVar9 = read_realtime_clock_units(), 0x40 < (uint)(iVar9 - local_54))))) {
                     local_8b = local_8b | 2;
-                    local_54 = FUN_0002294c();
+                    local_54 = read_realtime_clock_units();
                   }
                   uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10);
                   if (sVar20 == 1) {
@@ -25205,7 +25214,7 @@ LAB_00036ca4:
                     DAT_0023c63c = 0;
                   }
                   if ((sVar20 == 0x1b) && ((local_8b & 0x10) != 0)) goto LAB_00037a8c;
-                  iVar9 = FUN_0002294c();
+                  iVar9 = read_realtime_clock_units();
                   local_4c = iVar9;
                   uVar18 = Ordinal_2005(*(undefined2 *)(local_88 + 0x44),300);
                   uVar14 = iVar9 - iVar10;
@@ -25322,7 +25331,7 @@ LAB_00036ca4:
               if ((uint)DAT_00101a6c == (uint)local_97) {
                 do {
                   if (((local_95 != 999) &&
-                      (iVar9 = FUN_0002294c(), (uint)local_95 <= (uint)(iVar9 - iVar10) >> 8)) &&
+                      (iVar9 = read_realtime_clock_units(), (uint)local_95 <= (uint)(iVar9 - iVar10) >> 8)) &&
                      ((local_8b & 0x80) == 0)) break;
                   sVar6 = -1;
                   if (param_1 != 10) {
@@ -25331,7 +25340,7 @@ LAB_00036ca4:
                   FUN_000366bc(acStack_d0);
                   if (((local_8b & 0x80) != 0) && (iVar9 = FUN_00073ac4(), iVar9 != 0)) {
                     local_8b = local_8b & 0x7f;
-                    iVar9 = FUN_0002294c();
+                    iVar9 = read_realtime_clock_units();
                     local_95 = local_95 + (short)((uint)(iVar9 - iVar10) >> 8);
                   }
                   do {
@@ -25350,7 +25359,7 @@ LAB_00036ca4:
                   }
                   if ((sVar20 == 0x1b) && ((local_8b & 0x10) != 0)) goto LAB_00037a8c;
                   if (((sVar20 == -1) || (local_91 != -1)) ||
-                     ((sVar20 < 4 && (iVar9 = FUN_0002294c(), (uint)(iVar9 - local_54) < 0x41)))) {
+                     ((sVar20 < 4 && (iVar9 = read_realtime_clock_units(), (uint)(iVar9 - local_54) < 0x41)))) {
                     cVar5 = '\0';
                   }
                   else {
@@ -28512,7 +28521,7 @@ LAB_0003c940:
         g_fall_accel = -4;
       }
       set_locomotion_state((int)DAT_00202c68,0);
-      uVar10 = FUN_0002294c();
+      uVar10 = read_realtime_clock_units();
       uVar5 = *(ushort *)(g_player_object + 0xb) & 0xfff;
       *(char *)(g_player_object + 0xb) = (char)uVar5;
       *(byte *)(g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
@@ -28818,7 +28827,7 @@ void commit_player_move()
   *(byte *)(g_player_object + 2) =
        (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
   *(char *)(g_player_object + 3) = (char)(uVar3 >> 8);
-  uVar3 = FUN_0002294c();
+  uVar3 = read_realtime_clock_units();
   uVar4 = *(ushort *)(g_player_object + 0xb) & 0xfff;
   *(char *)(g_player_object + 0xb) = (char)uVar4;
   *(byte *)(g_player_object + 0xc) = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
@@ -29417,10 +29426,10 @@ void sync_player_stats_to_hud()
   if (*(char *)(g_player_object + 8) == '\0') {
     FUN_00072288();
   }
-  uVar3 = FUN_0002294c();
+  uVar3 = read_realtime_clock_units();
   iVar1 = ((uVar3 >> 8) - DAT_002020e4) * 0x10000;
   if (iVar1 >> 0x10 != 0) {
-    uVar3 = FUN_0002294c();
+    uVar3 = read_realtime_clock_units();
     DAT_002020e4 = uVar3 >> 8;
     DAT_002020e8 = (char)((uint)iVar1 >> 0x10) + DAT_002020e8;
     FUN_00073634();
@@ -31750,7 +31759,7 @@ short param_2;
   
   iVar2 = DAT_0024af78;
   iVar9 = DAT_0024af78 + 0x300;
-  iVar4 = FUN_0002294c();
+  iVar4 = read_realtime_clock_units();
   if (param_2 == 0) {
     iVar4 = 0;
     do {
@@ -31781,10 +31790,10 @@ short param_2;
           iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
         } while (iVar8 < 0x300);
         do {
-          iVar8 = FUN_0002294c();
+          iVar8 = read_realtime_clock_units();
         } while ((uint)(iVar8 - iVar4) < 8);
         FUN_00040f34(iVar2,0);
-        iVar4 = FUN_0002294c();
+        iVar4 = read_realtime_clock_units();
         iVar5 = iVar5 + 1;
       } while (iVar5 * 0x10000 >> 0x10 < iVar1);
     }
@@ -37682,7 +37691,7 @@ void main_loop_hud_flush()
      main-loop tick. Its own body is a real, correct state machine
      (wind-up -> resolve-impact -> follow-through -> return-to-idle,
      gated on DAT_0010062c/DAT_000870e4 and a real-elapsed-time
-     accumulator read via FUN_0002294c()), but interact_attack only
+     accumulator read via read_realtime_clock_units()), but interact_attack only
      ever calls it ONCE, with a nonzero param_1, to arm the swing
      (DAT_0010062c set to a negative wind-up countdown). Nothing else
      in the normal per-tick path calls FUN_00027708(0) to let that
@@ -46390,7 +46399,7 @@ int param_1;
     uVar4 = 0xffffffff;
   }
   else {
-    DAT_00204868 = FUN_0002294c(uVar2);
+    DAT_00204868 = read_realtime_clock_units(uVar2);
     if ((uVar2 & 0x80) == 0) {
       if ((*DAT_0008794c != '\0') && (iVar3 = Ordinal_1417(sVar1,0x103), iVar3 != 0)) {
         if (DAT_0023c448 == 0x400) {
@@ -46762,7 +46771,7 @@ void update_mouse_state()
         return;
       }
       if (DAT_00204708 == 0) {
-        iVar8 = FUN_0002294c();
+        iVar8 = read_realtime_clock_units();
         if ((uint)(iVar8 - DAT_00204864) < 10) {
           return;
         }
@@ -46781,12 +46790,12 @@ void update_mouse_state()
         }
       }
       else {
-        iVar8 = FUN_0002294c();
+        iVar8 = read_realtime_clock_units();
         if ((uint)(iVar8 - DAT_00204864) < 10) {
           return;
         }
       }
-      DAT_00204864 = FUN_0002294c();
+      DAT_00204864 = read_realtime_clock_units();
       uVar10 = 3;
       iVar8 = (int)DAT_00204700;
       local_28 = (short)((uint)((iVar8 + -1) * 0x10000) >> 0x10);
@@ -49008,7 +49017,7 @@ void full_dungeon_redraw()
 
 
 
-// was FUN_0005bbe0 -- timed dungeon-view redraw: rebuild the draw list if needed, run render_dungeon_view, measure it (FUN_0002294c) and feed an adaptive-quality value
+// was FUN_0005bbe0 -- timed dungeon-view redraw: rebuild the draw list if needed, run render_dungeon_view, measure it (read_realtime_clock_units) and feed an adaptive-quality value
 void render_dungeon_frame_timed()
 
 {
@@ -49024,7 +49033,7 @@ void render_dungeon_frame_timed()
   short sVar9;
   undefined1 auStack_60 [60];
   
-  DAT_0023aec8 = FUN_0002294c();
+  DAT_0023aec8 = read_realtime_clock_units();
   iVar8 = build_frame_draw_list();
   if (iVar8 != 0) {
     draw_command_list_rewind();
@@ -49035,10 +49044,10 @@ void render_dungeon_frame_timed()
   }
   set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
   dirty_rect_union(0x13,0x84,0x34,0xe0);
-  iVar8 = FUN_0002294c();
+  iVar8 = read_realtime_clock_units();
   iVar8 = iVar8 - DAT_0023aec8;
   iVar4 = render_dungeon_view();
-  iVar5 = FUN_0002294c();
+  iVar5 = read_realtime_clock_units();
   if (g_dungeon_view_active != 0) {
     weapon_swing_draw_tick();
   }
@@ -49046,7 +49055,7 @@ void render_dungeon_frame_timed()
   FUN_0001294c();
   FUN_00057460();
   set_viewport_clip_rect(0,0,0x13f,199);
-  iVar6 = FUN_0002294c();
+  iVar6 = read_realtime_clock_units();
   iVar7 = (iVar6 - iVar5) + iVar4 + iVar8;
   if (iVar7 == 0) {
     sVar2 = 0;
@@ -53216,7 +53225,7 @@ short param_4;
     }
     else {
       DAT_0023b804 = 1;
-      uVar21 = FUN_0002294c();
+      uVar21 = read_realtime_clock_units();
       uVar11 = (ushort)(uVar21 >> 6);
       local_7c = uVar11 & 7;
       if ((uVar21 >> 6 & 4) != 0) {
@@ -56147,10 +56156,10 @@ undefined4 param_1;
   int iVar2;
   ushort uVar3;
   
-  iVar1 = FUN_0002294c();
+  iVar1 = read_realtime_clock_units();
   iVar2 = begin_directional_move(param_1);
   if (iVar2 != 0) {
-    DAT_0023bf54 = FUN_0002294c();
+    DAT_0023bf54 = read_realtime_clock_units();
     DAT_0023bf58 = DAT_0023bf58 + 4;
     g_jump_ascent_timer = 0;
     if (DAT_000879ac != 0) {
@@ -56161,7 +56170,7 @@ undefined4 param_1;
     *(char *)(DAT_00086df8 + 0xcf) = (char)((uint)iVar2 >> 8);
     *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar2 >> 0x10);
     *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar2 >> 0x18);
-    DAT_0023bf54 = FUN_0002294c();
+    DAT_0023bf54 = read_realtime_clock_units();
     uVar3 = (ushort)DAT_0023bf58;
     if (DAT_002020d4 == 0) {
       DAT_0023bf58 = 0;
@@ -56196,7 +56205,7 @@ undefined4 param_1;
     FUN_00049924(10);
   }
   do {
-    iVar2 = FUN_0002294c();
+    iVar2 = read_realtime_clock_units();
   } while ((uint)(iVar2 - iVar1) < 0x18);
   FUN_00057570();
   return;
@@ -56217,7 +56226,7 @@ void movement_pacing_handler()
   undefined8 uVar7;
   uint uVar_now;
 
-  /* Was 4 separate FUN_0002294c() (real wall-clock) reads in this
+  /* Was 4 separate read_realtime_clock_units() (real wall-clock) reads in this
      function -- replaced with uw_frame_clock_ms(), a fixed-step
      substitute in the same 4ms-per-unit scale (see its own and
      g_uw_frame_clock_units's comments). All 4 original reads are really
@@ -56320,7 +56329,7 @@ int param_3;
     if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) == 0) && ((DAT_002048a8 & 0x10) == 0)) {
       if (param_3 == 0) {
         if (g_jump_ascent_timer != 0) {
-          uVar7 = FUN_0002294c();
+          uVar7 = read_realtime_clock_units();
           uVar4 = (undefined4)((ulonglong)uVar7 >> 0x20);
           if (DAT_0023bf5c < (uint)uVar7) {
             uVar6 = DAT_0023bf60 != '\0';
@@ -56338,7 +56347,7 @@ int param_3;
             if (200 < uVar5) {
               uVar5 = 200;
             }
-            iVar3 = FUN_0002294c();
+            iVar3 = read_realtime_clock_units();
             DAT_0023bf5c = iVar3 + (uint)uVar5;
           }
         }
@@ -56356,18 +56365,18 @@ int param_3;
         }
         FUN_00072f30(uVar6,iVar3,uVar2 - 0x10,uVar2,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_lr);
         DAT_0023bf60 = DAT_0023bf60 == '\0';
-        iVar3 = FUN_0002294c();
+        iVar3 = read_realtime_clock_units();
         DAT_0023bf5c = iVar3 + 100;
       }
     }
   }
   else {
-    if ((DAT_00086e84 != -1) && (uVar2 = FUN_0002294c(), DAT_0023bf64 + 0x1800U <= uVar2)) {
+    if ((DAT_00086e84 != -1) && (uVar2 = read_realtime_clock_units(), DAT_0023bf64 + 0x1800U <= uVar2)) {
       FUN_0007305c();
       DAT_00086e84 = -1;
     }
     if (DAT_00086e84 == -1) {
-      DAT_0023bf64 = FUN_0002294c();
+      DAT_0023bf64 = read_realtime_clock_units();
       DAT_00086e84 = FUN_00072f30(0,0x40,0);
     }
   }
@@ -57050,9 +57059,9 @@ uint param_1;
   int iVar1;
   uint uVar2;
   
-  iVar1 = FUN_0002294c();
+  iVar1 = read_realtime_clock_units();
   do {
-    uVar2 = FUN_0002294c();
+    uVar2 = read_realtime_clock_units();
   } while (uVar2 < iVar1 + (param_1 & 0xffff));
   return;
 }
@@ -57113,7 +57122,7 @@ void FUN_0006a168()
 {
   uint uVar1;
   
-  uVar1 = FUN_0002294c();
+  uVar1 = read_realtime_clock_units();
   if (0xd < (int)((uVar1 & 0xffff) - (uint)DAT_0023bf74)) {
     palette_cycle_range(0x40,0x40,1);
     reinstall_active_palette(0x40,0x40,0);
@@ -57137,7 +57146,7 @@ void FUN_0006a168()
       }
       dirty_rect_union(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
     }
-    DAT_0023bf74 = FUN_0002294c();
+    DAT_0023bf74 = read_realtime_clock_units();
   }
   flush_dirty_rect_to_display(1);
   return;
@@ -59078,7 +59087,7 @@ void hud_panel_redraw_dispatch()
   bool bVar8;
   int iVar9;
 
-  bVar2 = FUN_0002294c();
+  bVar2 = read_realtime_clock_units();
   bVar8 = false;
   if (DAT_0023c1e0 != 0) {
     iVar7 = 1;
@@ -61581,9 +61590,9 @@ short param_1;
     }
   }
   if (((short)iVar3 < 0) || ((*(byte *)(DAT_00086df8 + 0x62) & 8) != 0)) {
-    iVar3 = FUN_0002294c();
+    iVar3 = read_realtime_clock_units();
     do {
-      uVar2 = FUN_0002294c();
+      uVar2 = read_realtime_clock_units();
     } while (uVar2 < iVar3 + 0x180U);
     uVar1 = 0;
   }
@@ -62313,7 +62322,7 @@ int param_2;
     DAT_0023c3a8 = param_1;
     if (param_2 != 0) {
       FUN_0004ca50(DAT_0023c3b8);
-      DAT_0023c280 = FUN_0002294c();
+      DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
     }
@@ -62330,7 +62339,7 @@ void FUN_00072aac()
   if ((DAT_00087454 != 0) && (DAT_00087448 != 0)) {
     if (DAT_0023c32c != -1) {
       FUN_0004ca50(DAT_0023c3b8);
-      DAT_0023c280 = FUN_0002294c();
+      DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
     }
@@ -62695,7 +62704,7 @@ int param_1;
         DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar2,local_18);
       }
       FUN_0004ca50();
-      DAT_0023c280 = FUN_0002294c();
+      DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
     }
     if (DAT_0023c3bc == 0) {
@@ -62763,9 +62772,9 @@ short param_1;
       }
       local_2c[uVar7] = cVar5;
       uVar7 = uVar7 + 1 & 0xf;
-      iVar6 = FUN_0002294c();
+      iVar6 = read_realtime_clock_units();
     }
-    if ((0 < iVar6) && (iVar3 = FUN_0002294c(), 0x40 < (uint)(iVar3 - iVar6))) {
+    if ((0 < iVar6) && (iVar3 = read_realtime_clock_units(), 0x40 < (uint)(iVar3 - iVar6))) {
       iVar6 = -1;
     }
   }
@@ -62895,7 +62904,7 @@ void FUN_00073634()
   if (((DAT_00087454 != 0) && (DAT_00087448 != 0)) &&
      (((DAT_0023c3a8 != 9 && (DAT_0023c3a8 != 0xb)) || (iVar1 = FUN_00073870(), iVar1 != 0)))) {
     if (((DAT_0023c3a8 < 5) || (7 < DAT_0023c3a8)) ||
-       (uVar2 = FUN_0002294c(), uVar2 <= DAT_00101944 + 0xa00U)) {
+       (uVar2 = read_realtime_clock_units(), uVar2 <= DAT_00101944 + 0xa00U)) {
       uVar2 = (uint)DAT_0023c384;
     }
     else {
@@ -62934,17 +62943,17 @@ void FUN_00073634()
         FUN_00072910(uVar2,1);
       }
       else {
-        uVar2 = FUN_0002294c();
+        uVar2 = read_realtime_clock_units();
         if (DAT_0023c378 + 0x800U < uVar2) {
           FUN_00072910(DAT_0023c384,1);
-          DAT_0023c378 = FUN_0002294c();
+          DAT_0023c378 = read_realtime_clock_units();
         }
         else {
           DAT_0023c384 = DAT_0023c3a8;
         }
       }
       if ((4 < DAT_0023c384) && (DAT_0023c384 < 8)) {
-        DAT_0023c378 = FUN_0002294c();
+        DAT_0023c378 = read_realtime_clock_units();
       }
     }
   }
@@ -62958,7 +62967,7 @@ bool FUN_00073870()
 {
   int iVar1;
   
-  iVar1 = FUN_0002294c();
+  iVar1 = read_realtime_clock_units();
   return DAT_0023c330 * 0x100 + 3U < (uint)(iVar1 - DAT_0023c280);
 }
 
@@ -65664,7 +65673,7 @@ uint param_3;
     DAT_0023c448 = DAT_0023c448 | uVar1;
     return 0;
   }
-  DAT_0023c648 = FUN_0002294c();
+  DAT_0023c648 = read_realtime_clock_units();
   if (uVar1 == _DAT_0023ce10) {
     if (DAT_000876c8 != 0) {
       DAT_0024af6c = 0x14;
@@ -70249,7 +70258,7 @@ uint param_2;
   
   FUN_00057604(1);
   sVar1 = next_input_event();
-  iVar3 = FUN_0002294c();
+  iVar3 = read_realtime_clock_units();
   if (DAT_00250708 != 0 && param_2 != 0) {
     FUN_000570b4();
   }
@@ -70257,7 +70266,7 @@ uint param_2;
     sVar2 = next_input_event();
     if (sVar1 != sVar2) break;
     flush_dirty_rect_to_display(1);
-  } while ((param_1 == 0) || (uVar4 = FUN_0002294c(), uVar4 <= (uint)(param_1 + iVar3)));
+  } while ((param_1 == 0) || (uVar4 = read_realtime_clock_units(), uVar4 <= (uint)(param_1 + iVar3)));
   FUN_00057604(1);
   FUN_0007f094();
   if ((param_2 & DAT_00250708) != 0) {
@@ -70445,7 +70454,7 @@ char *param_1;
     }
     Ordinal_1044(auStack_54,param_1,(short)uVar3 + 1);
     FUN_0007f6fc(auStack_54,0);
-    DAT_00250720 = FUN_0002294c();
+    DAT_00250720 = read_realtime_clock_units();
     if (DAT_00250708 != 0) {
       FUN_000570b4();
     }

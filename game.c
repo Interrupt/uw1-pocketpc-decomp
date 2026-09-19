@@ -90,7 +90,7 @@ undefined4 param_4;
           }
         }
         else {
-          DAT_0023c648 = FUN_0002294c();
+          DAT_0023c648 = read_realtime_clock_units();
           DAT_0023c448 = 0;
         }
         iVar2 = Ordinal_864(auStack_40,0,0,0,1);
@@ -396,7 +396,7 @@ undefined4 param_1;
       g_text_use_palette_color = 0;
     }
     else if (local_838 == 2) {
-      iVar4 = FUN_0002294c();
+      iVar4 = read_realtime_clock_units();
       do {
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
@@ -408,10 +408,10 @@ undefined4 param_1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT1_BYT_00086ed0);
         FUN_0006c98c(2,acStack_7ec,1);
-        iVar10 = FUN_0002294c();
+        iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
-      iVar4 = FUN_0002294c();
+      iVar4 = read_realtime_clock_units();
       do {
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
@@ -423,10 +423,10 @@ undefined4 param_1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT2_BYT_00086ebc);
         FUN_0006c98c(2,acStack_7ec,1);
-        iVar10 = FUN_0002294c();
+        iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
-      iVar4 = FUN_0002294c();
+      iVar4 = read_realtime_clock_units();
       do {
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
@@ -438,7 +438,7 @@ undefined4 param_1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT3_BYT_00086ea8);
         FUN_0006c98c(2,acStack_7ec,1);
-        iVar10 = FUN_0002294c();
+        iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       FUN_00049924(0x7ffe);

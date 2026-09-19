@@ -284,7 +284,7 @@ void uw_pump_events(void) {
     democapture_tick();
     /* Advance g_uw_frame_clock_units (see its own comment in uw.c) by
        exactly one fixed tick's worth, in the SAME 4ms-per-unit scale
-       FUN_0002294c()/Ordinal_535()>>2 uses -- computed fresh from the
+       read_realtime_clock_units()/Ordinal_535()>>2 uses -- computed fresh from the
        running tick count each call (not accumulated with a per-call
        remainder) so integer truncation never drifts the total over a
        long session: 60 ticks always total exactly 250 units (1000ms),

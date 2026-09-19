@@ -645,7 +645,7 @@ undefined4 FUN_00022884();
 uint FUN_000228ac();
 void FUN_000228d4();
 undefined4 rand_below();
-uint FUN_0002294c();
+uint read_realtime_clock_units();
 undefined *FUN_0002295c();
 undefined *FUN_00022998();
 void FUN_000229e0();
