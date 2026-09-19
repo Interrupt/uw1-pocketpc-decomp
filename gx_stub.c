@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <dlfcn.h> /* UW_DEBUG_ENDDRAW's dladdr() caller lookup, see GXEndDraw */
 
 #define GX_W 320
 #define GX_H 240
@@ -1219,6 +1220,22 @@ void *GXBeginDraw(void) {
 
 int GXEndDraw(void) {
     if (!g_tex) return 0;
+    /* UW_DEBUG_ENDDRAW: log every real call to this function (i.e. every
+       actual SDL_RenderPresent, the true screen-present) with its
+       immediate caller's symbol, so a genuinely redundant second
+       GXEndDraw() per real game tick -- each one throttled independently
+       by the vsync-pacing SDL_Delay below -- can be spotted directly
+       instead of bisected by hand. See demo-recording-infrastructure
+       memory's "keyboard input runs at ~half framerate" entry for why
+       this was added. */
+    if (getenv("UW_DEBUG_ENDDRAW")) {
+        void *caller = __builtin_return_address(0);
+        Dl_info info;
+        const char *name = (dladdr(caller, &info) && info.dli_sname) ? info.dli_sname : "?";
+        static unsigned int call_count = 0;
+        call_count++;
+        fprintf(stderr, "[enddraw] call=%u tick=%u caller=%s(%p)\n", call_count, g_uw_frame_clock_units, name, caller);
+    }
     /* Un-rotate the portrait "hardware" framebuffer back to a natural
      * landscape image for display -- see the HW_W/HW_H comment above.
      * landscape(x,y) = portrait((HW_W-1-x), y), i.e. the inverse of the

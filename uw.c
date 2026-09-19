@@ -6458,10 +6458,25 @@ void FUN_00012948()
 
 
 
+/* g_suppress_frame_timed_flush: lets main_loop_hud_flush's per-tick forced
+   render_dungeon_frame_timed() call (see its own comment) skip THIS
+   function's real screen flush, since main_loop_hud_flush already does its
+   own explicit flush_dirty_rect_to_display(1) right after (once
+   poll_input_bindings and the HUD dispatch have also run). Without this,
+   every tick called GXEndDraw() twice -- once here, once from that trailing
+   flush -- and each is independently vsync-throttled (see GXEndDraw's own
+   comment: real GAPI hardware blocked every call until the next refresh),
+   roughly doubling real per-tick time. FUN_00067f1c's own call site (a
+   rare one-shot 64-substep view-spin animation with no other per-substep
+   flush) leaves the flag clear and keeps flushing every substep as before. */
+int g_suppress_frame_timed_flush = 0;
+
 void FUN_0001294c()
 
 {
-  flush_dirty_rect_to_display(1);
+  if (!g_suppress_frame_timed_flush) {
+    flush_dirty_rect_to_display(1);
+  }
   return;
 }
 
@@ -15535,6 +15550,14 @@ void flush_dirty_rect_to_display()
         puVar5 = puVar5 + (iVar7 >> 1);
         puVar4 = puVar4 + -1;
       } while (iVar11 != 0);
+    }
+    if (getenv("UW_DEBUG_FLUSHCALLER")) {
+      void *caller = __builtin_return_address(0);
+      Dl_info info;
+      const char *name = (dladdr(caller, &info) && info.dli_sname) ? info.dli_sname : "?";
+      static unsigned int call_count = 0;
+      call_count++;
+      fprintf(stderr, "[flushcaller] call=%u tick=%u caller=%s(%p)\n", call_count, g_uw_frame_clock_units, name, caller);
     }
     GXEndDraw();
   }
@@ -37672,11 +37695,20 @@ void main_loop_hud_flush()
          render_dungeon_frame_timed reaches the same rebuild_dungeon_view,
          so the guard still applies. render_dungeon_frame_timed does its
          own dirty_rect_union internally (same rect this hack used to set
-         by hand), so flush_dirty_rect_to_display(1) below still blits it.
-         Skipped while an animation owns the view (DAT_00201c90 != 0). Set
-         UW_NO_FORCE_3D_REDRAW to restore the motion-gated behaviour. */
+         by hand), so flush_dirty_rect_to_display(1) below still blits it --
+         g_suppress_frame_timed_flush (see FUN_0001294c's own comment)
+         stops render_dungeon_frame_timed from ALSO doing its own real
+         screen flush here, since that was a second real GXEndDraw() every
+         tick, each independently vsync-throttled, roughly doubling
+         real per-tick time (only visible with keyboard-held input, since
+         a mouse-button hold's DAT_0023c63c gate happened to already skip
+         one of the two). Skipped while an animation owns the view
+         (DAT_00201c90 != 0). Set UW_NO_FORCE_3D_REDRAW to restore the
+         motion-gated behaviour. */
       g_force_redraw_no_xp = 1;
+      g_suppress_frame_timed_flush = 1;
       render_dungeon_frame_timed();
+      g_suppress_frame_timed_flush = 0;
       /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
          buffer, then paint it over the viewport (see
          uw_debug_blit_pick_buffer). */
