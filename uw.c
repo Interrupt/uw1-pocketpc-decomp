@@ -45887,34 +45887,57 @@ int FUN_00056fe8()
   int iVar1;
   
   iVar1 = 0;
+  if (getenv("UW_DEBUG_CURSORERASE")) {
+    fprintf(stderr, "[cursorerase] entry DAT_00204844=%d will_erase=%d mouse=(%d,%d)\n",
+            (int)DAT_00204844, DAT_00204844 != 0, (int)g_mouse_x, (int)g_mouse_y);
+  }
   if (DAT_00204844 != 0) {
     set_draw_color(0x15);
     rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
-    /* Missing force-flush, unlike this function's own sibling/pair
-       FUN_0005857c (the cursor-icon "show"/redraw half of the same
-       hide-move-show cycle -- see FUN_00057590), which wraps its own
-       flush_dirty_rect_to_display call in `g_force_flush = 1; ...;
-       g_force_flush = 0;`. flush_dirty_rect_to_display's own gate
-       blocks a real flush whenever an item is held (g_selected_object
-       != 0) unless g_force_flush is set -- so while dragging an item,
-       THIS function's restore-the-background-under-the-old-cursor-
-       position call never actually reached the screen, while the
-       paired show-call's forced flush of the NEW position did. Net
-       effect: the previous cursor-icon draw was never erased on
-       screen during a drag, only ever the newest one. Root cause of a
-       user report: dropping a held item somewhere with no valid slot
-       (so it stays on the cursor) "stamps" the held item's icon at
-       that spot permanently, and clicking there again "stamps more" --
-       each subsequent hide/show cycle drew a new copy without ever
-       erasing the old one on screen (the underlying framebuffer itself
-       was fine, confirmed via screenshot -- which forces its own full
-       flush regardless of this gate and so never showed the bug).
-       Matches FUN_0005857c's own established wrapping. */
-    g_force_flush = 1;
+    /* REVERTED (was: force g_force_flush around this call, matching
+       FUN_0005857c's own sibling wrapping) -- caused a visible flicker
+       regression: rect_fill_or_save_restore's own dirty_rect_union call
+       already records this erase's rect unconditionally, BEFORE any
+       gating, and the dirty rect only resets once per FRAME (not once
+       per hide/show pair, see flush_dirty_rect_to_display's own
+       comment) -- so the immediately-following paired show call
+       (FUN_0005857c, called right after this from the same
+       hide-move-show cycle) already sweeps up this erase's rect into
+       its own forced flush. Forcing a flush HERE TOO just adds a
+       second, premature flush per cycle, visibly showing the
+       transient "erased, nothing redrawn yet" frame for one beat
+       before the very next flush corrects it -- a flicker on every
+       single cursor hide/show (i.e. constantly, since effectively
+       every draw op in this file wraps itself in this hide/show pair).
+       User confirmed this regression live.
+
+       STILL OPEN -- user report not yet actually fixed: dragging an
+       item onto a paperdoll spot with no slot leaves its icon
+       stamped there permanently, and clicking again stamps more.
+       Traced (via a temporary UW_DEBUG_CURSORERASE trace on this
+       function's own entry) to a real, reproducible sequence: during
+       an idle gap, an erase call here successfully clears
+       DAT_00204844 to 0 (correct so far), but the PAIRED redraw
+       (update_mouse_state's own `if (0 < DAT_00204840) FUN_0005857c();`
+       right after its own call to this function) does not fire,
+       because DAT_00204840 (the show/hide nesting depth counter) is
+       <=0 at that exact moment -- so nothing gets marked to redraw,
+       and DAT_00204844 stays at 0 even though the game may still
+       consider the item "held" and expect the cursor icon to keep
+       following the mouse. Did NOT chase this further: WHY the depth
+       counter is <=0 at that specific point (some other hide() with
+       no matching show() yet pending?) is unknown, and a wrong guess
+       here risks a second regression the same way the force-flush
+       attempt above did. Ruled OUT as an explanation: FUN_00077dd0's
+       WM_LBUTTONUP handler unconditionally zeroing DAT_00204844 (see
+       its own comment) -- adding an erase-before-clear there made no
+       observable difference in the same trace, and this project's own
+       inventory drag/drop convention uses the RIGHT mouse button
+       throughout anyway (gx_stub.c's uw_inject_mouse_rdown/rup), not
+       left, so that handler may not even be on the relevant path. */
     flush_dirty_rect_to_display(1);
-    g_force_flush = 0;
     DAT_00204848 = 0;
     iVar1 = DAT_00204844;
   }
@@ -65727,6 +65750,18 @@ int param_4;
     }
   }
   if (param_2 == 0x202) {
+    /* Investigated whether this unconditional zeroing of DAT_00204844
+       (without an erase first, unlike update_mouse_state's own
+       erase-then-clear protocol) explained a held-item cursor icon
+       being left on screen after an invalid drop -- ruled out via
+       direct UW_DEBUG_CURSORERASE tracing: adding the missing erase
+       call here made no observable difference (identical
+       DAT_00204844==0 sequencing with or without it). This branch is
+       only WM_LBUTTONUP (left button); this project's own inventory
+       drag/drop convention uses the RIGHT button throughout (see
+       gx_stub.c's uw_inject_mouse_rdown/rup), so it may simply not be
+       on the relevant path for that bug. Left as original -- see
+       FUN_00056fe8's own comment for what's still open. */
     DAT_00204844 = 0;
     if ((g_selected_object == 0) && ((DAT_00201b60 & 2) == 0)) {
       DAT_00204844 = 0;

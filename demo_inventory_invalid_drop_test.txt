@@ -28,24 +28,14 @@ SDLCLICK 20 110
 WAIT 2
 SDLRDOWN 200 200
 WAIT 2
-SDLMOVE 400 200
-WAIT 2
-SDLRUP 520 195
-WAIT 2
-SCREENSHOT /tmp/invaliddrop_00_in_grid.bmp
-SDLRDOWN 520 195
-WAIT 2
 SDLMOVE 600 10
 WAIT 2
 SDLRUP 600 10
 WAIT 2
-SCREENSHOT /tmp/invaliddrop_01_after_invalid_drop.bmp
+SCREENSHOT /tmp/invaliddrop_02_after_drop.bmp
 SDLCLICK 600 10
 WAIT 2
-SCREENSHOT /tmp/invaliddrop_02_after_click1.bmp
+SCREENSHOT /tmp/invaliddrop_03_after_click1.bmp
 SDLCLICK 600 10
 WAIT 2
-SCREENSHOT /tmp/invaliddrop_03_after_click2.bmp
-SDLMOVE 400 300
-WAIT 2
-SCREENSHOT /tmp/invaliddrop_04_mouse_moved.bmp
+SCREENSHOT /tmp/invaliddrop_04_after_click2.bmp
