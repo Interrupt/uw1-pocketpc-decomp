@@ -56067,11 +56067,40 @@ short param_1;
 
 
 
+/* Fixed turn-rate accelerator value for decode_movement_command's turn
+   branches -- see that function's own comment for why turning was
+   decoupled from DAT_0024af6c (the held-key ramp, still used as-is for
+   forward/back). UW_TURN_ACCEL overrides it (same units as DAT_0024af6c,
+   i.e. plug in any value that function would otherwise have ramped to)
+   for retuning without a rebuild. */
+static int uw_turn_rate_accel(void) {
+  static int v = -1;
+  if (v < 0) {
+    const char *e = getenv("UW_TURN_ACCEL");
+    v = e ? atoi(e) : 0x60;
+  }
+  return v;
+}
+
 // was FUN_000685e8 -- turn the latched input code (DAT_0023c448) into the
-// analog forward rate DAT_0023bf48 / turn rate DAT_0023bf4c, scaled by the
-// held-key accelerator DAT_0024af6c. NOTE: DAT_0024af6c ramps to ~0x140 in
-// this recompile, so the rate multiplies (esp. run's 0x700000) overflowed
-// int32 and produced a negative rate -- widened to 64-bit below.
+// analog forward rate DAT_0023bf48 / turn rate DAT_0023bf4c. DAT_0023bf48
+// (forward/back) is scaled by the held-key accelerator DAT_0024af6c, which
+// is meant to -- and, per playtesting against DOS UW1, correctly does --
+// ramp walk into run the longer W/S stays held. NOTE: DAT_0024af6c ramps
+// to ~0x140 in this recompile, so the rate multiplies (esp. run's
+// 0x700000) overflowed int32 and produced a negative rate -- widened to
+// 64-bit below.
+//
+// DAT_0023bf4c (turn) uses uw_turn_rate_accel() instead of DAT_0024af6c
+// directly: side-by-side playtesting against DOS UW1 (same A/D-analog +
+// Shift+A/D-stepped scheme) found our turning ramped up to ~3x DOS's
+// speed and, since DAT_0024af6c is shared with forward/back (confirmed:
+// forward/run speed alone matched DOS fine), carried over an already-
+// ramped rate from a preceding held run/walk into an immediately-
+// following turn -- DOS's turn read as a constant, non-accelerating
+// rate throughout. uw_turn_rate_accel() reproduces that: a fixed value,
+// independent of how long any key (including a differently-coded one)
+// has been held.
 void decode_movement_command()
 
 {
@@ -56122,7 +56151,7 @@ LAB_000687cc:
             return;
           }
 LAB_000686a8:
-          DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * -0x5a0000 >> 0x10));
+          DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10));
           g_movement_mode = 1;
           return;
         }
@@ -56193,7 +56222,7 @@ LAB_000687fc:
       return;
     }
   }
-  DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x5a0000 >> 0x10));
+  DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10));
   g_movement_mode = 1;
   return;
 }
