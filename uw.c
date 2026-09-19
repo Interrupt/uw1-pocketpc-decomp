@@ -33038,24 +33038,37 @@ void close_backpack_container()
     g_blit_transparent_mode = 0;
     bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
     redraw_hud_panels();
-    /* NOT YET FIXED: closing a container leaves a black cutout around
-       the paperdoll's worn-item ring area (shoulders/hands/finger
-       rings, widgets 6-0xb), which this redraw pass doesn't cover
-       (only 0xc-0x13 and two singles). Tried extending it to also
-       call redraw_inventory_widget_range(6,0xb) here, matching the
-       grid widgets' own restore-then-redraw pattern (their backing
-       DAT_002028e8[6..0x16] framebuffer-tile captures, done once by
-       FUN_00046414 at dungeon-view entry, are confirmed populated with
-       real grtile handles and untouched by open/close's own
-       DAT_002028e8<->DAT_002028a0 swap, which only covers indices
-       0xc-0x13) -- but live-tested and the black area was IDENTICAL
-       with or without that call, so whatever's actually being
-       restored from those handles isn't the correct background either
-       (most likely captured too early relative to when the real
-       background texture first gets painted, at dungeon-view init).
-       Reverted rather than ship an unconfirmed no-op change; matches a
-       user report of "closing a container draws black areas under
-       some of the paper doll section" -- still open. */
+    /* STILL OPEN, deep-dived but not resolved: closing a container
+       leaves a body-shaped black cutout around the paperdoll (user
+       report: "closing a container draws black areas under some of
+       the paper doll section"). Traced the missing piece to widget 0
+       -- the paperdoll's own BODY sprite (id 0x2091, drawn by
+       FUN_00046bfc, which widget 0 routes to via
+       redraw_inventory_widget's own `iVar1 < 6` branch) -- since
+       nothing in this redraw pass ever repaints it (or widgets 1-5,
+       the same function's own small do-loop) after
+       redraw_hud_panels's flat background blit paints over that whole
+       area. Confirmed live that FUN_00046bfc's own internal gate
+       (DAT_0023c1d4=='\0') passes here and it does reach its
+       draw_sprite_by_id(0x2091, ...) call with correct-looking
+       coordinates -- but adding a `redraw_inventory_widget(0)` call
+       right here produced NO visible change at all, meaning sprite
+       0x2091 itself likely isn't resolving/rendering correctly in
+       this specific, never-before-exercised call path (FUN_00046bfc
+       has no other caller anywhere in the file), a deeper issue this
+       session didn't have time to chase down. Also tried
+       redraw_inventory_widget_range(6,0xb) for the smaller worn-item
+       ring widgets just below the body -- confirmed via its own debug
+       trace to correctly iterate widgets 6-11, and paired with a real,
+       independently-kept fix to a related bug in
+       redraw_inventory_widget_range's own tile-restore call (see that
+       function's fix comment) -- but this also produced no visible
+       change, meaning the ring slots aren't the visible black area
+       either (matched the body sprite's own dirty rect, not the
+       smaller ring icons', much more closely). Both attempts reverted
+       here rather than ship unconfirmed no-ops; the real fix is most
+       likely inside FUN_00046bfc/draw_sprite_by_id's own sprite-0x2091
+       resolution when called from this new context. */
     redraw_inventory_widget_range(0xc,0x13);
     redraw_inventory_widget(0x15);
     redraw_inventory_widget(0x16);
@@ -35733,7 +35746,7 @@ void FUN_00046bfc()
   uint uVar2;
   uint uVar3;
   int iVar4;
-  
+
   if (DAT_0023c1d4 == '\0') {
     FUN_00057118();
     if (DAT_00085c54 != 0) {
@@ -36539,7 +36552,35 @@ short param_2;
 joined_r0x00048308:
       while (iVar6 <= iVar2) {
         if (iVar6 != 0x14) {
+          /* Was called here with g_blit_transparent_mode==1 (set just
+             above this loop, for the item-sprite draw further down
+             which genuinely needs it). FUN_00076e98 restores a saved
+             framebuffer tile pixel-for-pixel -- raw RGB565 screen
+             data, not palette-indexed sprite art -- and it also
+             respects g_blit_transparent_mode (skipping any source
+             pixel whose raw 16-bit value is exactly 0 when it's set).
+             0x0000 is a perfectly ordinary color (black) in a captured
+             framebuffer tile, not a "this pixel is transparent" marker,
+             so restoring one under transparent mode silently drops
+             every genuinely-black pixel in it, leaving whatever stale
+             content (often actual black) was already in the
+             framebuffer showing through instead. Real bug regardless
+             of the case below: found while chasing a user report of
+             "closing a container draws black areas under some of the
+             paper doll section", but live-testing with
+             close_backpack_container also calling this function for
+             the worn-item ring widgets (6-0xb) showed no visible
+             change either way, so it wasn't -- by itself -- the
+             visible cause there (see close_backpack_container's own
+             comment for what that black area traced back to instead).
+             Kept anyway since it's a genuine correctness fix for any
+             captured tile that does contain real black pixels,
+             independent of that specific symptom. Force opaque for
+             the restore itself; the sprite draw right after still
+             runs under the loop's own transparent mode, unaffected. */
+          g_blit_transparent_mode = 0;
           FUN_00076e98((&DAT_002028e8)[iVar6]);
+          g_blit_transparent_mode = 1;
           auStack_54[iVar6] = 1;
           if (getenv("UW_DEBUG_INV"))
             fprintf(stderr, "[inv] redraw_inventory_widget_range loop iVar6=%d slot_arr_idx=%d arr_val=0x%04x\n",
