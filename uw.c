@@ -15430,6 +15430,13 @@ void flush_dirty_rect_to_display()
   }
   iVar10 = 0x140 - DAT_00088958;
   iVar11 = 0x140 - DAT_00088950;
+  if (getenv("UW_DEBUG_FLUSHGATE")) {
+    int willflush = ((0 < DAT_00084f10) ||
+      (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0))))));
+    fprintf(stderr, "[flushgate] willflush=%d selected=%p force=%d rect=(%d,%d,%d,%d)\n",
+            willflush, (void *)g_selected_object, (int)g_force_flush,
+            (int)DAT_00088954, (int)DAT_0008895c, (int)DAT_00088950, (int)DAT_00088958);
+  }
   if (((0 < DAT_00084f10) ||
       (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0)))))
       ) && ((DAT_0023cdc0 == 0x10 && (DAT_0023c430 = GXBeginDraw(), DAT_0023c430 != (void *)0x0))))
@@ -45885,7 +45892,29 @@ int FUN_00056fe8()
     rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
+    /* Missing force-flush, unlike this function's own sibling/pair
+       FUN_0005857c (the cursor-icon "show"/redraw half of the same
+       hide-move-show cycle -- see FUN_00057590), which wraps its own
+       flush_dirty_rect_to_display call in `g_force_flush = 1; ...;
+       g_force_flush = 0;`. flush_dirty_rect_to_display's own gate
+       blocks a real flush whenever an item is held (g_selected_object
+       != 0) unless g_force_flush is set -- so while dragging an item,
+       THIS function's restore-the-background-under-the-old-cursor-
+       position call never actually reached the screen, while the
+       paired show-call's forced flush of the NEW position did. Net
+       effect: the previous cursor-icon draw was never erased on
+       screen during a drag, only ever the newest one. Root cause of a
+       user report: dropping a held item somewhere with no valid slot
+       (so it stays on the cursor) "stamps" the held item's icon at
+       that spot permanently, and clicking there again "stamps more" --
+       each subsequent hide/show cycle drew a new copy without ever
+       erasing the old one on screen (the underlying framebuffer itself
+       was fine, confirmed via screenshot -- which forces its own full
+       flush regardless of this gate and so never showed the bug).
+       Matches FUN_0005857c's own established wrapping. */
+    g_force_flush = 1;
     flush_dirty_rect_to_display(1);
+    g_force_flush = 0;
     DAT_00204848 = 0;
     iVar1 = DAT_00204844;
   }

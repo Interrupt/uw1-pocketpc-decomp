@@ -35,7 +35,7 @@ BIN="${BIN:-build/uw_dbg}"
 DEBUG_LEVEL="${DEBUG_LEVEL:-WARN}"
 EXTRA_ENV="${EXTRA_ENV:-}"
 
-DEFAULT_SCRIPTS="demo_click_female.txt demo_critter_orbit_cardinal.txt demo_dungeon_room.txt demo_inventory_container_item_click_test.txt demo_inventory_container_torch_use_test.txt demo_inventory_dropback_test.txt demo_inventory_open_bag_test.txt demo_object_test.txt demo_objects.txt demo.txt"
+DEFAULT_SCRIPTS="demo_click_female.txt demo_critter_orbit_cardinal.txt demo_dungeon_room.txt demo_inventory_container_item_click_test.txt demo_inventory_container_torch_use_test.txt demo_inventory_dropback_test.txt demo_inventory_invalid_drop_test.txt demo_inventory_open_bag_test.txt demo_object_test.txt demo_objects.txt demo.txt"
 
 if [ "$#" -gt 0 ]; then
   SCRIPTS="$*"
