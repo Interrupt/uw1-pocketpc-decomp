@@ -127,11 +127,29 @@ void democapture_tick(void) {
 /* Flushes however many idle ticks preceded the line about to be written
    (the current tick, already counted by this call's own democapture_tick(),
    belongs to that line itself, not to the idle count -- un-count it
-   first). Called before every recorded line. */
+   first). Called before every recorded line.
+
+   The WAIT N line this writes is NOT N ticks of gap on replay -- it's
+   N+1: demomode_pump()'s own WAIT handling spends one whole tick just
+   reading/parsing the line (setting g_demo_wait_ticks = N and
+   returning) before the N-tick countdown even starts decrementing on
+   SUBSEQUENT calls (see its own code). Writing the true idle-tick count
+   G directly overshoots the real gap by one tick on every single WAIT
+   line replayed -- negligible under the old ms-bucketed pacing (a few
+   tens of ms lost in a 100ms+ bucket), but significant now that a tick
+   IS the unit: poll_dungeon_movement_keys()'s held-key turn/walk
+   acceleration is duration-based, so consistently replaying every held
+   key one tick longer than it was actually held measurably overshoots
+   turns and walks -- user-reported live ("walking around and turning
+   seems to overshoot on playback"). Write G-1 instead so the WAIT
+   line's own 1-tick parse overhead plus its N-tick countdown together
+   reproduce exactly G ticks of real gap; omit the line entirely for
+   G==0 (already correct: back-to-back lines with no WAIT between them
+   already replay on consecutive ticks with zero gap). */
 static void flush_idle(void) {
     if (g_rec_idle_ticks > 0) g_rec_idle_ticks--;
     if (g_rec_idle_ticks > 0) {
-        fprintf(g_rec_file, "WAIT %d\n", g_rec_idle_ticks);
+        fprintf(g_rec_file, "WAIT %d\n", g_rec_idle_ticks - 1);
     }
     g_rec_idle_ticks = 0;
 }
