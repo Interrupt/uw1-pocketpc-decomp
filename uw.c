@@ -33085,6 +33085,11 @@ void free_open_container_chain()
 
 
 
+/* Registered grtile handle for record 1's own pixel backup -- see its
+   capture site in open_backpack_container and the restore in
+   close_backpack_container just below. 0 until the first-ever open. */
+undefined4 g_container_icon_backup_grtile = 0;
+
 void close_backpack_container()
 
 {
@@ -33170,15 +33175,31 @@ void close_backpack_container()
        mode -- and per that same fix's own finding, the panel art has a
        genuinely transparent pixel right there, so redraw_hud_panels's
        transparent blit (just above) correctly leaves it untouched by
-       design, same as before. Nothing else in this function redraws
+       design, same as before. Nothing else in this function redrew
        record 1's spot: it belongs to widgets 0-5 (the paperdoll body),
        which only redraw_inventory_widget(<6) -> FUN_00046bfc reaches --
        redraw_inventory_widget_range below only covers 0xc-0x13 (the
-       backpack grid). Confirmed live via before/after SCREENSHOT diffing
-       on a real open-then-close repro (bug-redraw-demo.txt): the stale
-       icon sits exactly at record 1's draw position (241,61 panel-local)
-       and disappears once the paperdoll body is redrawn here too. */
-    redraw_inventory_widget(1);
+       backpack grid).
+
+       FIRST attempt was redraw_inventory_widget(1) here (redrawing the
+       paperdoll body) -- confirmed via before/after SCREENSHOT diffing
+       on a real repro (bug-redraw-demo.txt) that this only covers a
+       SMALL corner of the icon, not the whole spot ("a small rectangle
+       of the lower right corner does get cleared, but not the whole
+       button" -- user QA report): the body sprite's own opaque
+       silhouette doesn't fill this position's whole 16x16 footprint,
+       and neither it nor the panel background (their normal combined
+       compositing) is meant to paint every pixel here -- some of it is
+       load-once content from the panel's initial setup that nothing
+       normally ever redraws, which is exactly why the spot looks
+       correct in ordinary play (nothing dirties it) but not after this
+       icon draws over it. Replaced with a verbatim pixel restore
+       (g_container_icon_backup_grtile, captured once on the very first
+       open in open_backpack_container, blitted back here) so the fix
+       doesn't depend on knowing exactly which combination of layers is
+       "supposed" to show through -- same pattern this function already
+       used for the adjacent DAT_002028ec region above. */
+    FUN_00076e98(g_container_icon_backup_grtile);
     redraw_inventory_widget_range(0xc,0x13);
     redraw_inventory_widget(0x15);
     redraw_inventory_widget(0x16);
@@ -33390,6 +33411,42 @@ short param_1;
            sprite draw above now supplies the container-view
            background on its own, matching direct playtest
            confirmation that it renders correctly in real gameplay. */
+        /* Pixel-perfect backup of record 1's own spot (the "leave
+           container" button, drawn over below), captured once ever on
+           the very first open while it's still guaranteed pristine --
+           same established pattern this function already uses for the
+           adjacent DAT_002028ec region a few lines below (capture once
+           at setup, FUN_00076e98 blits it back verbatim on close). This
+           one didn't exist: record 1 belongs to widgets 0-5 (the
+           paperdoll body), which FUN_00046414's own one-time hotspot
+           snapshot loop (records 6-0x16 only) never covered. Without
+           it, closing could only redraw the paperdoll body sprite over
+           this spot, which -- confirmed live via before/after
+           SCREENSHOT diffing on bug-redraw-demo.txt -- only covers a
+           small corner of it (the body's own opaque silhouette doesn't
+           fill the whole 16x16 icon footprint there), leaving most of
+           the stale container icon still visible ("a small rectangle
+           of the lower right corner does get cleared, but not the
+           whole button"). A verbatim pixel restore sidesteps needing to
+           know exactly which combination of layers is "supposed" to
+           show through there. */
+        if (g_container_icon_backup_grtile == 0) {
+          /* grtile_alloc_registered's 2nd arg is a BYTE count, not a
+             pixel count (it mallocs param_1*param_2 raw bytes) -- every
+             other caller in this file doubles the pixel height to
+             account for RGB565's 2 bytes/pixel (e.g. the hotspot-table
+             loop just above uses `dirty_h << 1`). Passing plain 16 here
+             first time allocated only a 256-byte buffer for a region
+             that needs 16*16*2=512, so capture_framebuffer_rect_to_grtile's
+             own copy loop (16x16 shorts) ran past the end of it and
+             FUN_00076e98 blitted back garbage/black instead of the
+             real captured pixels -- confirmed live via SCREENSHOT (a
+             solid dark rectangle instead of the stale icon). */
+          g_container_icon_backup_grtile = grtile_alloc_registered(16,32);
+          capture_framebuffer_rect_to_grtile(g_container_icon_backup_grtile,
+                       (int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
+                       (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
+        }
         g_blit_transparent_mode = 1;
         draw_sprite_by_id(uVar3 & 0x1ff,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
                      (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
