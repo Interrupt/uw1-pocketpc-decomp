@@ -6259,7 +6259,24 @@ short param_7;
     local_34 = param_2 + sVar1 + -200;
   }
   param_3 = param_7 * iVar2 + iVar13 + param_3;
-  dirty_rect_union(iVar6,iVar6 + iVar3,iVar14);
+  /* Same missing-4th-argument K&R-call bug as bitmap_blit_to_framebuffer's
+     own dirty_rect_union call (see graphics.c's fix comment) -- this is
+     the more directly relevant instance for inventory icons specifically:
+     this function draws every "already-resident raw sprite" (grid item
+     icons and the container-indicator icon both resolve through here via
+     blit_object_sprite_by_frame's own DAT_00202738 threshold branch, per
+     that function's own comment). Missing the "right" bound left the
+     accumulated dirty rect not reliably covering a freshly-drawn icon's
+     actual width, so only a smaller stale sub-rect got flushed -- this is
+     the direct cause of "redraw areas don't match the actual inventory
+     button sizes" (confirmed live: first-time sack pickup and container-
+     close icon redraws both go through this exact call). */
+  if (getenv("UW_DEBUG_BLITRAW")) {
+    fprintf(stderr, "[blitraw] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
+            (int)param_1, (int)param_2, (int)iVar2, (int)iVar3,
+            iVar6, iVar6 + iVar3, iVar14, iVar14 + iVar2);
+  }
+  dirty_rect_union(iVar6,iVar6 + iVar3,iVar14,iVar14 + iVar2);
   if (g_blit_transparent_mode == 0) {
     iVar11 = (int)local_3c;
     iVar4 = iVar3 - local_34;

@@ -4,6 +4,8 @@
  * decompile) once these functions' real roles were confirmed. */
 #include "headers/graphics.h"
 #include "debug.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 /* Scratch buffer for rect_fill_or_save_restore's save/restore modes --
  * only ever used within this function, so it stays local to this file
@@ -244,7 +246,25 @@ short param_7;
   if (200 < iVar7 + iVar2) {
     sVar12 = param_2 + sVar1 + -200;
   }
-  dirty_rect_union(iVar7,iVar7 + iVar2,iVar8);
+  /* Was a 3-argument call to a K&R-style `dirty_rect_union()` (no
+     prototype, so this compiles without error) -- missing its 4th
+     ("right" bound) argument entirely. On real ARM32 hardware this
+     genuinely forwarded whatever the caller's own incoming register
+     held (same bug class already fixed in extract_and_refresh_slot_item,
+     see uw.c's own writeup); on this 64-bit host the callee instead
+     reads garbage, so the accumulated dirty rect's right edge doesn't
+     reliably extend to cover this blit's actual width. Confirmed live:
+     this is the cause of "redraw areas don't match the actual inventory
+     button sizes" (both a freshly-placed item's icon and
+     close_backpack_container's own panel-background repaint go through
+     this call) -- sibling call draw_sprite_by_id already passes all 4
+     bounds correctly and was the reference for this fix. */
+  if (getenv("UW_DEBUG_BLITRAW")) {
+    fprintf(stderr, "[blitfb] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
+            (int)param_1, (int)param_2, (int)iVar9, (int)iVar2,
+            iVar7, iVar7 + iVar2, iVar8, iVar8 + iVar9);
+  }
+  dirty_rect_union(iVar7,iVar7 + iVar2,iVar8,iVar8 + iVar9);
   iVar5 = (int)sVar14;
   if (g_blit_transparent_mode == 0) {
     if (iVar5 < iVar2 - sVar12) {
