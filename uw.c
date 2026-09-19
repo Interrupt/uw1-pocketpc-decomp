@@ -56239,6 +56239,13 @@ void movement_pacing_handler()
      animation-bob phase, which shares the same DAT_0023bf54 reference
      point and so needs to move in step with it too. */
   uVar_now = uw_frame_clock_ms();
+  if (getenv("UW_DEBUG_MOVEPACE")) {
+    static unsigned int call_count = 0;
+    call_count++;
+    fprintf(stderr, "[movepace] call=%u now=%u last=%u delta=%u mode=%d code=0x%x turnrate=%d\n",
+            call_count, uVar_now, (unsigned)DAT_0023bf54, uVar_now - (unsigned)DAT_0023bf54,
+            (int)g_movement_mode, (unsigned)DAT_0023c448, (int)DAT_0023bf4c);
+  }
   iVar3 = uVar_now;
   uVar6 = iVar3 - DAT_0023bf54;
   if (uVar6 < 0x41) {

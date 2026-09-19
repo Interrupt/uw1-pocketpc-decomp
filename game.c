@@ -93,6 +93,13 @@ undefined4 param_4;
           DAT_0023c648 = read_realtime_clock_units();
           DAT_0023c448 = 0;
         }
+        /* One real game tick -- see uw_advance_game_tick's own comment
+           for why this must be called from exactly here (this loop, once
+           per iteration) rather than from inside uw_pump_events() itself,
+           which Ordinal_864 below triggers but which can also be
+           reached from other polling loops within a single iteration of
+           this one. */
+        uw_advance_game_tick();
         iVar2 = Ordinal_864(auStack_40,0,0,0,1);
         if (iVar2 != 0) {
           if (local_3c == 0x12) break;

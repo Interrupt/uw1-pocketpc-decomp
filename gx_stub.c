@@ -257,35 +257,21 @@ static void poll_dungeon_movement_keys(void) {
     else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
 
     if (code) {
-        if (!active) {
-            DAT_0024af6c = 0x14;  /* re-arm accel on press edge */
-            active = 1;
-        } else if (DAT_0024af6c < 0x140) {
-            /* Ramp while continuously held -- decode_movement_command's own
-               comment ("NOTE: DAT_0024af6c ramps to ~0x140 in this
-               recompile") already documents 0x140 as this accelerator's
-               real upper bound (and that function was widened to 64-bit
-               specifically to handle multiplying by a value that large
-               without overflow) -- but nothing anywhere actually
-               incremented it: every writer, in both this poll-driven path
-               and the original discrete-key-repeat path in
-               handle_keyboard_message, only ever reset it flat to 0x14 on
-               press or 0 on release. Turning/running at a flat, un-ramped
-               rate from the very first tick felt jerkier than the real
-               game (or this port's own mouse-driven turning) and made it
-               easy to overshoot a precise target, since even a single
-               short tap already turned at full rate -- user-reported
-               live. Step size is a judgment call (no original value
-               survives to recover): UW_HOLD_ACCEL_STEP, default 8/tick,
-               ramps 0x14->0x140 in about 38 ticks (~0.6s at the game's own
-               ~60Hz tick rate) -- tune to taste. Skipped for S's walk_slow
-               below, which pins a fixed slow rate every tick regardless
-               (a genuine constant-speed walk, not meant to accelerate). */
-            static int _ha = -1;
-            if (_ha < 0) { const char *e = getenv("UW_HOLD_ACCEL_STEP"); _ha = e ? atoi(e) : 8; }
-            int v = (int)DAT_0024af6c + _ha;
-            DAT_0024af6c = (short)(v > 0x140 ? 0x140 : v);
-        }
+        /* Re-arm accel on press edge only -- the actual ramp-while-held
+           lives in game.c's app_main_loop (the real WinMain message-pump
+           loop), which already doubles/quadruples DAT_0024af6c every
+           iteration while DAT_000876c8==0 (key still down) -- confirmed:
+           decode_movement_command's own "NOTE: DAT_0024af6c ramps to
+           ~0x140" comment was accurate all along, just describing THAT
+           loop, which this file's earlier investigation missed by only
+           grepping uw.c/gx_stub.c for writers, not game.c. This function
+           already sets DAT_000876c8 correctly (0 below while held, 1 on
+           release), so that loop's existing ramp applies to WASD-driven
+           turning/running automatically with no separate logic needed
+           here -- an earlier attempt added a second, differently-shaped
+           (linear, not exponential) ramp in THIS function on top of it;
+           reverted as redundant/wrong once the real mechanism was found. */
+        if (!active) { DAT_0024af6c = 0x14; active = 1; }
         if (walk_slow) {
             /* keep S's forward rate below decode_movement_command's per-tick
                step clamp so it is a genuine slow walk, not a clamped run. */
@@ -301,15 +287,30 @@ static void poll_dungeon_movement_keys(void) {
     }
 }
 
-void uw_pump_events(void) {
-    SDL_Event ev;
-    if (!g_win) return;
-    /* One real game tick, unconditionally -- see democapture.c's own
-       top comment for why the recorder counts ticks here rather than
-       timing itself off the wall clock. Must run before demomode_pump()
-       below so a played-back tick and a recorded tick both correspond to
-       the exact same uw_pump_events() call. */
-    democapture_tick();
+/* Called ONCE per real game tick from app_main_loop's own while loop
+   (game.c) -- the SAME loop that calls main_loop_hud_flush(), which is
+   what actually dispatches movement_pacing_handler() (uw.c) via the
+   sticky-bits table. Deliberately just the clock, NOT democapture_tick()/
+   demomode_pump() (those stay in uw_pump_events() below -- see its own
+   comment for why they can't move here). uw_pump_events() is also
+   reachable from Ordinal_864/poll_input_event, "the real keyboard-
+   polling function used by every menu/input-wait loop in the game" (see
+   its own comment in ordinal_stubs.c) -- confirmed live
+   (UW_DEBUG_MOVEPACE) that during plain WASD holding it was firing
+   roughly TWICE per real movement_pacing_handler() call, so advancing
+   g_uw_frame_clock_units there made every turn/walk update jump by two
+   ticks' worth at once instead of one -- user-reported: "does not seem
+   to update the actual player yaw every tick like mouse movement does."
+   Moving just the clock here, to the exact call site that also drives
+   movement, fixes that at the root instead of trying to guess/compensate
+   for however many times uw_pump_events() happens to fire per
+   iteration. This does mean a recorded/replayed WAIT tick (counted at
+   uw_pump_events()'s own, finer rate) no longer corresponds 1:1 to one
+   unit of this clock -- harmless for determinism (both recording and
+   replay see the identical relationship, since it's the same code
+   either way) and doesn't need to be exact for movement fidelity, only
+   consistent, which it is. */
+void uw_advance_game_tick(void) {
     /* Advance g_uw_frame_clock_units (see its own comment in uw.c) by
        exactly one fixed tick's worth, in the SAME 4ms-per-unit scale
        read_realtime_clock_units()/Ordinal_535()>>2 uses -- computed fresh from the
@@ -317,10 +318,25 @@ void uw_pump_events(void) {
        remainder) so integer truncation never drifts the total over a
        long session: 60 ticks always total exactly 250 units (1000ms),
        whichever ticks happen to round up. */
-    { static unsigned int tick_count = 0;
-      tick_count++;
-      g_uw_frame_clock_units = (unsigned int)((unsigned long long)tick_count * 250 / 60);
-    }
+    static unsigned int tick_count = 0;
+    tick_count++;
+    g_uw_frame_clock_units = (unsigned int)((unsigned long long)tick_count * 250 / 60);
+}
+
+void uw_pump_events(void) {
+    SDL_Event ev;
+    if (!g_win) return;
+    /* democapture_tick()/demomode_pump() MUST stay universally reachable
+       from here (unlike g_uw_frame_clock_units's own advance -- see
+       uw_advance_game_tick's comment): uw_pump_events() is the one call
+       site reachable from EVERY context in the game (chargen, menus,
+       dungeon movement, ...), not just app_main_loop's own while loop
+       (which doesn't even start running until after chargen/menus are
+       done) -- confirmed live: moving these here too broke demo
+       playback completely (chargen never advanced past the first
+       screen, since demomode_pump() was no longer being called at all
+       during it). */
+    democapture_tick();
     demomode_pump();
     poll_dungeon_movement_keys();
 
