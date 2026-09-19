@@ -12,6 +12,14 @@
  * if recording is disabled (see UW_RECORD_DEMOFILE's own comment). */
 void democapture_init(void);
 
+/* Call once per real uw_pump_events() invocation (i.e. once per actual
+ * game tick), BEFORE the SDL event loop -- advances the recorder's own
+ * idle-tick counter, the sole source of a recording's WAIT lines (see
+ * democapture.c's top comment for why this is tick-counted, not
+ * wall-clock timed). No-op if recording is off or a demo is currently
+ * being played back. */
+void democapture_tick(void);
+
 /* Call from uw_pump_events for every event actually pulled off SDL's
  * queue, BEFORE any demo-injected/synthetic filtering -- democapture
  * does its own synthetic check (SDL_KEYDOWN/UP's keysym.unused ==

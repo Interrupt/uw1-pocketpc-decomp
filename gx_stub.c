@@ -275,6 +275,12 @@ static void poll_dungeon_movement_keys(void) {
 void uw_pump_events(void) {
     SDL_Event ev;
     if (!g_win) return;
+    /* One real game tick, unconditionally -- see democapture.c's own
+       top comment for why the recorder counts ticks here rather than
+       timing itself off the wall clock. Must run before demomode_pump()
+       below so a played-back tick and a recorded tick both correspond to
+       the exact same uw_pump_events() call. */
+    democapture_tick();
     demomode_pump();
     poll_dungeon_movement_keys();
 

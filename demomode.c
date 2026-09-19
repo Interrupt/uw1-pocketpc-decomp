@@ -104,7 +104,15 @@
  *                    own playback rate rather than relying solely on the
  *                    env var -- democapture.c's recorder writes one of
  *                    these as its first line, capturing the real pacing
- *                    of the recorded session.
+ *                    of the recorded session. DELAY 0 (or
+ *                    UW_DEMO_DELAY_MS=0) means tick-native playback: no
+ *                    wall-clock gate at all, process exactly one line per
+ *                    real uw_pump_events() call instead of waiting <ms>
+ *                    between lines -- this is the recorder's own default,
+ *                    since it counts real ticks the same way (see
+ *                    democapture.c's top comment), so a recording plays
+ *                    back at the real pace it was played with no ms
+ *                    approximation on either side.
  * Pacing is controlled by the UW_DEMO_DELAY_MS env var (default 250ms
  * between inputs) and/or a DELAY line (see above). Once the file runs out, the process exits (making
  * scripted test runs self-terminating for fast feedback loops); set
@@ -255,7 +263,10 @@ void demomode_init(void) {
     const char *delay_env = getenv("UW_DEMO_DELAY_MS");
     if (delay_env) {
         int v = atoi(delay_env);
-        if (v > 0) g_demo_delay_ms = v;
+        /* v==0 is a real, meaningful value (see demomode_pump's own
+           comment: no wall-clock gate at all, one line per real pump
+           call) -- only reject a negative/malformed value, not zero. */
+        if (v >= 0) g_demo_delay_ms = v;
     }
 
     g_demo_active = 1;
@@ -301,7 +312,14 @@ void demomode_abort(const char *reason) {
 void demomode_pump(void) {
     if (!g_demo_active || g_demo_done) return;
     Uint32 now = SDL_GetTicks();
-    if (now < g_demo_next_tick) return;
+    /* g_demo_delay_ms == 0 (via a DELAY 0 line or UW_DEMO_DELAY_MS=0) means
+       tick-native playback: no wall-clock gate at all, process exactly one
+       line every real uw_pump_events() call -- the same tick source
+       democapture.c's recorder counts against (see its own top comment),
+       so a recording made with the matching DELAY 0 (the recorder's own
+       default) replays at the real pace it was played, with no ms
+       approximation on either side. */
+    if (g_demo_delay_ms > 0 && now < g_demo_next_tick) return;
 
     /* Mid-WAIT: burn one idle tick with no input at all, letting
      * whatever the game's own idle-tick dispatch does run on its own --
@@ -401,9 +419,12 @@ void demomode_pump(void) {
            it last executed, since this simply overwrites the same
            variable the env var seeds at init. democapture.c's recorder
            writes one of these as its first line, capturing the real
-           pacing of what was recorded. */
-        int ms = 0;
-        if (sscanf(p + 6, "%d", &ms) != 1 || ms <= 0) {
+           pacing of what was recorded. DELAY 0 is a real, meaningful
+           value -- see demomode_pump's own comment -- so ms starts at a
+           sentinel -1 (not 0) to tell a genuinely malformed/unparsed
+           line apart from an explicit "0". */
+        int ms = -1;
+        if (sscanf(p + 6, "%d", &ms) != 1 || ms < 0) {
             fprintf(stderr, "[demo] malformed DELAY line '%s', skipping\n", p);
             g_demo_next_tick = now;
             return;

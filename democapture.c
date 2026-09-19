@@ -19,25 +19,31 @@
  * to record a playback run anyway (e.g. to re-derive/tweak a script from
  * what it actually does).
  *
- * Pacing: UW_RECORD_DELAY_MS (default 16, i.e. one real tick -- see
- * DEMO_RECORD_DEFAULT_DELAY_MS below) sets the recorder's own tick
- * granularity -- both how idle gaps get quantized into WAIT lines, and
- * the DELAY line written at the top of the file, so a later replay paces
- * itself the same way by default (see demomode.c's DELAY command). This
- * MUST stay fine-grained (matching the game's own real per-frame tick
- * rate), not just "small": demomode_pump() processes exactly one line
- * per tick regardless of what that line is, so any real events that
- * happened closer together than the recorder's own bucket size collapse
- * onto the same WAIT-free line and then each cost a full tick on replay
- * -- confirmed live: a 100ms default (was the original choice here,
- * wrong) meant up to ~6 real per-frame mouse-motion events could land in
- * one bucket with no WAIT between them, each still costing 100ms during
- * replay, making a recorded drag replay several times slower than it was
- * actually played. 16ms matches gx_stub.c's own real ~60Hz frame-budget
- * cap (`1000/60`, see GXEndDraw's comment) -- the finest granularity
- * real events can actually arrive at here, so consecutive events
- * normally do get a real WAIT between them and replay pacing tracks the
- * recording much more closely. */
+ * Pacing is tick-native, not wall-clock-ms-based, on BOTH sides -- an ms
+ * bucket (even a fine one) is only ever an approximation of the real
+ * per-frame tick rate, and any mismatch between the recorder's bucket
+ * size and the game's actual frame delivery jitter still drifts replay
+ * out of sync with how long the session actually took (confirmed live,
+ * twice: a 100ms bucket compounded badly; a 16ms bucket -- matching
+ * gx_stub.c's own ~60Hz frame-budget cap -- was closer but still
+ * noticeably off). Instead: democapture_tick() is called once per real
+ * uw_pump_events() invocation (i.e. once per actual game tick, which is
+ * itself already paced to ~60Hz by GXEndDraw's own frame-budget delay,
+ * see its comment) and just increments an integer idle-tick counter --
+ * no timestamps, no division, no ms anywhere. A recorded event consumes
+ * the current tick for itself and flushes however many idle ticks
+ * preceded it as a plain "WAIT <count>" line. Since demomode_pump() on
+ * the replay side also processes exactly one line per its own real pump
+ * call when its delay is 0 (the new default DELAY value this recorder
+ * writes -- see demomode.c's own comment), both sides are driven by the
+ * SAME real tick source with no ms conversion anywhere in the pipeline,
+ * so replay pacing tracks the recording as closely as the two processes'
+ * own frame timing naturally allows.
+ *
+ * UW_RECORD_DELAY_MS, if explicitly set to a positive value, overrides
+ * only the DELAY line WRITTEN to the file (for a deliberately slowed-
+ * down replay, e.g. to watch it happen) -- it does not change how the
+ * recorder itself counts ticks. */
 #include "democapture.h"
 #include "gx_stub.h"
 #include "demomode.h"
@@ -46,11 +52,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEMO_RECORD_DEFAULT_DELAY_MS (1000 / 60)
-
 static FILE *g_rec_file;
-static int g_rec_delay_ms = DEMO_RECORD_DEFAULT_DELAY_MS;
-static Uint32 g_rec_last_write_tick;
+static int g_rec_delay_ms = 0;
+static int g_rec_idle_ticks;
 
 /* Same truthy/falsy-by-value convention as UW_DEMO_KEEP_RUNNING (see
    demomode.c) -- getenv() alone can't tell "explicitly disabled" from
@@ -87,7 +91,7 @@ void democapture_init(void) {
     const char *delay_env = getenv("UW_RECORD_DELAY_MS");
     if (delay_env) {
         int v = atoi(delay_env);
-        if (v > 0) g_rec_delay_ms = v;
+        if (v > 0) g_rec_delay_ms = v; /* overrides only the written DELAY line -- see top comment */
     }
 
     g_rec_file = fopen(path, "w");
@@ -98,8 +102,8 @@ void democapture_init(void) {
     setvbuf(g_rec_file, NULL, _IOLBF, 0); /* line-buffered: a crash mid-session shouldn't lose the tail */
     fprintf(g_rec_file, "# recorded session, replay with UW_DEMO_FILE=%s\n", path);
     fprintf(g_rec_file, "DELAY %d\n", g_rec_delay_ms);
-    g_rec_last_write_tick = SDL_GetTicks();
-    fprintf(stderr, "[record] recording input to %s (delay=%dms)\n", path, g_rec_delay_ms);
+    g_rec_idle_ticks = 0;
+    fprintf(stderr, "[record] recording input to %s (delay=%dms, tick-native pacing)\n", path, g_rec_delay_ms);
 }
 
 void democapture_shutdown(void) {
@@ -108,19 +112,28 @@ void democapture_shutdown(void) {
     g_rec_file = NULL;
 }
 
-/* Quantizes the real elapsed time since the last written line into whole
-   g_rec_delay_ms ticks and, if any passed, writes a WAIT line for them --
-   called before every other line so a gap between inputs replays at
-   roughly the pace it was recorded at. Snaps g_rec_last_write_tick to
-   `now` exactly (not to the ticks-quantized value) so rounding remainders
-   don't accumulate across many idle periods. */
-static void flush_idle(Uint32 now) {
-    Uint32 elapsed = now - g_rec_last_write_tick;
-    int ticks = (int)(elapsed / (Uint32)g_rec_delay_ms);
-    if (ticks > 0) {
-        fprintf(g_rec_file, "WAIT %d\n", ticks);
+static Uint32 g_rec_debug_start;
+void democapture_tick(void) {
+    if (!g_rec_file) return;
+    if (demomode_active()) return; /* see democapture_record_event's own comment */
+    if (getenv("UW_DEBUG_RECORDTICK")) {
+        if (g_rec_debug_start == 0) g_rec_debug_start = SDL_GetTicks();
+        Uint32 elapsed = SDL_GetTicks() - g_rec_debug_start;
+        fprintf(stderr, "[recordtick] idle_ticks=%d elapsed_ms=%u\n", g_rec_idle_ticks + 1, elapsed);
     }
-    g_rec_last_write_tick = now;
+    g_rec_idle_ticks++;
+}
+
+/* Flushes however many idle ticks preceded the line about to be written
+   (the current tick, already counted by this call's own democapture_tick(),
+   belongs to that line itself, not to the idle count -- un-count it
+   first). Called before every recorded line. */
+static void flush_idle(void) {
+    if (g_rec_idle_ticks > 0) g_rec_idle_ticks--;
+    if (g_rec_idle_ticks > 0) {
+        fprintf(g_rec_file, "WAIT %d\n", g_rec_idle_ticks);
+    }
+    g_rec_idle_ticks = 0;
 }
 
 /* Inverse of demomode.c's demo_translate_sdlkey: pick the same spelling a
@@ -172,7 +185,6 @@ void democapture_record_event(const SDL_Event *ev) {
        guarantee demo playback never records itself, matching a direct
        user request. */
     if (demomode_active()) return;
-    Uint32 now = SDL_GetTicks();
 
     switch (ev->type) {
         case SDL_KEYDOWN:
@@ -181,13 +193,13 @@ void democapture_record_event(const SDL_Event *ev) {
             if (ev->type == SDL_KEYDOWN && ev->key.repeat) return; /* held-key auto-repeat, not a fresh press */
             char namebuf[16];
             const char *name = sdlkey_to_name(ev->key.keysym.sym, namebuf, sizeof(namebuf));
-            flush_idle(now);
+            flush_idle();
             fprintf(g_rec_file, "%s %s\n", ev->type == SDL_KEYDOWN ? "SDLKEYDOWN" : "SDLKEYUP", name);
             break;
         }
         case SDL_MOUSEMOTION: {
             if (ev->motion.which == UW_SYNTH_MOUSE) return;
-            flush_idle(now);
+            flush_idle();
             fprintf(g_rec_file, "SDLMOVE %d %d\n", ev->motion.x, ev->motion.y);
             break;
         }
@@ -199,7 +211,7 @@ void democapture_record_event(const SDL_Event *ev) {
             int is_down = ev->type == SDL_MOUSEBUTTONDOWN;
             const char *cmd = is_right ? (is_down ? "SDLRDOWN" : "SDLRUP")
                                         : (is_down ? "SDLDOWN" : "SDLUP");
-            flush_idle(now);
+            flush_idle();
             fprintf(g_rec_file, "%s %d %d\n", cmd, ev->button.x, ev->button.y);
             break;
         }
