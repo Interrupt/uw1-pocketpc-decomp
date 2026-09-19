@@ -33038,6 +33038,24 @@ void close_backpack_container()
     g_blit_transparent_mode = 0;
     bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
     redraw_hud_panels();
+    /* NOT YET FIXED: closing a container leaves a black cutout around
+       the paperdoll's worn-item ring area (shoulders/hands/finger
+       rings, widgets 6-0xb), which this redraw pass doesn't cover
+       (only 0xc-0x13 and two singles). Tried extending it to also
+       call redraw_inventory_widget_range(6,0xb) here, matching the
+       grid widgets' own restore-then-redraw pattern (their backing
+       DAT_002028e8[6..0x16] framebuffer-tile captures, done once by
+       FUN_00046414 at dungeon-view entry, are confirmed populated with
+       real grtile handles and untouched by open/close's own
+       DAT_002028e8<->DAT_002028a0 swap, which only covers indices
+       0xc-0x13) -- but live-tested and the black area was IDENTICAL
+       with or without that call, so whatever's actually being
+       restored from those handles isn't the correct background either
+       (most likely captured too early relative to when the real
+       background texture first gets painted, at dungeon-view init).
+       Reverted rather than ship an unconfirmed no-op change; matches a
+       user report of "closing a container draws black areas under
+       some of the paper doll section" -- still open. */
     redraw_inventory_widget_range(0xc,0x13);
     redraw_inventory_widget(0x15);
     redraw_inventory_widget(0x16);
