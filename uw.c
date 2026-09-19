@@ -11956,7 +11956,10 @@ int param_3;
     if (bVar3) {
       FUN_00057cac(0);
     }
-    FUN_00057c5c(*g_selected_object & 0x1ff);
+    /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+       own identical fix comment (g_selected_object is `char *`, a
+       single signed byte; the real 9-bit objid needs a `ushort` read). */
+    FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
     FUN_000570b4();
     FUN_0007ec50();
   }
@@ -33688,7 +33691,9 @@ undefined4 param_2;
       if (sVar1 == 0) {
         g_selected_object = param_1;
         FUN_00057cac(3);
-        FUN_00057c5c(*g_selected_object & 0x1ff);
+        /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+           own identical fix comment. */
+        FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
         param_1 = puVar5;
       }
       object_list_insert_head(puVar10,param_1);
@@ -35840,7 +35845,23 @@ int param_2;
     if (bVar3) {
       FUN_00057cac(0);
     }
-    FUN_00057c5c(*g_selected_object & 0x1ff);
+    /* Was `*g_selected_object & 0x1ff` -- g_selected_object is declared
+       `char *` (a single signed byte, used elsewhere in this file for
+       genuine byte-level access), but an object's own id is a 9-bit
+       field spanning 2 bytes, needing a real `ushort` read. Reading
+       just the low byte and sign-extending it (as `char` does) set bit
+       8 spuriously whenever that byte's own top bit was set --
+       e.g. objid 0xb6 read as signed char -74, sign-extended to
+       0xffffffb6, then `&0x1ff` incorrectly produced 0x1b6 instead of
+       0xb6. Confirmed live (UW_DEBUG_CURSOR): every held-item cursor
+       icon with an id >= 0x80 in its low byte resolved to a
+       completely different (or, for ids that pushed the corrupted
+       value past this file's populated sprite range, entirely blank)
+       icon -- matching a user report of several items showing the
+       wrong cursor icon or none at all when picked up. Same root
+       cause at every other `*g_selected_object & 0x1ff` site in this
+       file (see their own copies of this comment). */
+    FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
     FUN_000570b4();
     FUN_000667cc();
   }
@@ -36361,7 +36382,9 @@ uint param_2;
         g_selected_object = puVar4;
         if (g_selected_object != (ushort *)0x0) {
           FUN_00057cac(0);
-          FUN_00057c5c(*g_selected_object & 0x1ff);
+          /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+             own identical fix comment. */
+          FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
         }
       }
       else {
@@ -36379,7 +36402,9 @@ uint param_2;
         g_cursor_holding_state = 1;
         g_selected_object = puVar7;
         FUN_00057cac(3);
-        FUN_00057c5c(*g_selected_object & 0x1ff);
+        /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+           own identical fix comment. */
+        FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
       }
       iVar8 = FUN_00028254(puVar4,uVar6);
       if (iVar8 != 0) {
@@ -46374,7 +46399,34 @@ undefined4 param_1;
 
   FUN_00056fe8();
   resolve_sprite_id_to_frame(param_1);
-  iVar1 = FUN_000408fc(param_1);
+  /* Was unconditional `iVar1 = FUN_000408fc(param_1);` -- FUN_000408fc
+     only covers ids below DAT_00202738 (the "still-compressed .GR
+     resource entry, needs decoding" range); ids at or above it are
+     already-resident raw sprites living directly in DAT_0024e090's own
+     table (see blit_object_sprite_by_frame's own identical branch,
+     which this function was missing). For those higher ids
+     FUN_000408fc's own table lookup misses (a *different* resource's
+     entries live there) and falls back to its zeroed dummy glyph,
+     silently handing back width=height=0 here. First found while
+     chasing a user report of several items (a map, a bag, apple,
+     bread) showing the wrong cursor icon or none at all when picked
+     up -- the real cause of THAT turned out to be a separate bug
+     (g_selected_object's own sign-extension, see
+     swap_cursor_and_slot_item's fix comment) that was corrupting
+     these objects' ids into the >= DAT_00202738 range in the first
+     place; with that fixed these particular items no longer reach
+     this branch at all. Kept anyway since it's a real, independently
+     confirmed divergence from blit_object_sprite_by_frame's own
+     already-correct behavior, for whatever legitimately-high-id items
+     do reach here. */
+  iVar1 = (int)(short)param_1 < (int)(uint)DAT_00202738 ?
+          FUN_000408fc(param_1) : *(char **)(&DAT_0024e090 + (int)(short)param_1 * 8);
+  if (iVar1 == (char *)0x0) {
+    /* Same "table slot never populated" fallback as
+       blit_object_sprite_by_frame's own identical guard. */
+    static char dummy_sprite[8];
+    iVar1 = dummy_sprite;
+  }
   DAT_00204784 = (ushort)*(byte *)(iVar1 + 1);
   DAT_002047a4 = (ushort)*(byte *)(iVar1 + 2);
   DAT_00204704 = (undefined2)param_1;
@@ -67774,7 +67826,14 @@ int param_3;
       if (param_1 != g_player_object) {
         return;
       }
-      if ((g_selected_object == (ushort *)0x0) || ((*g_selected_object & 0x1ff) != 0x129)) {
+      /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+         own identical fix comment. 0x129 has its own bit 8 set, so this
+         comparison could never even succeed while reading a
+         sign-extended single byte (0x29's own top bit is clear, so
+         char-sign-extension never contributes that bit) -- this
+         "already holding the matching quest item" check was silently
+         always false. */
+      if ((g_selected_object == (ushort *)0x0) || ((*(ushort *)g_selected_object & 0x1ff) != 0x129)) {
         puVar4 = (ushort *)FUN_000452dc(4,2,9,2,&local_22);
         if (puVar4 == (ushort *)0x0) {
           puVar4 = (ushort *)FUN_000452dc(4,2,9,4,&local_22);
