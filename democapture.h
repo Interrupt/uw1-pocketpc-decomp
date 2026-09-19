@@ -20,14 +20,27 @@ void democapture_init(void);
  * being played back. */
 void democapture_tick(void);
 
-/* Call from uw_pump_events for every event actually pulled off SDL's
- * queue, BEFORE any demo-injected/synthetic filtering -- democapture
- * does its own synthetic check (SDL_KEYDOWN/UP's keysym.unused ==
- * UW_SYNTH_KEY, SDL_MOUSEBUTTONDOWN/UP/MOTION's button.which/motion.which
- * == UW_SYNTH_MOUSE) so it only records genuine input, not a demo
- * script's own injected events or its own text-input echo. No-op if
- * recording is off or the event type isn't one it captures. */
+/* Call from uw_pump_events for every KEYBOARD event actually pulled off
+ * SDL's queue, BEFORE any demo-injected/synthetic filtering -- democapture
+ * does its own synthetic check (keysym.unused == UW_SYNTH_KEY) so it only
+ * records genuine input, not a demo script's own injected events or its
+ * own text-input echo. Mouse events are NOT handled here -- see
+ * democapture_record_mouse below, which needs coordinates gx_stub.c
+ * hasn't computed yet at the point this would otherwise be called. No-op
+ * if recording is off, the event isn't a keyboard one, or it's not one
+ * this recorder captures (e.g. auto-repeat). */
 void democapture_record_event(const SDL_Event *ev);
+
+/* Call from uw_pump_events's mouse-event case, AFTER it has computed the
+ * real window-relative (win_x, win_y) for the event -- NOT ev.motion.x/y
+ * or ev.button.x/y directly, which can read back at half scale on a
+ * HiDPI display (see that call site's own comment) and would record a
+ * click/drag that replays short of where it actually happened. which
+ * (the SDL_Event's own button.which/motion.which) is passed through so
+ * this can still recognize and skip a demo's own synthetic injection.
+ * event_type is the raw SDL_MOUSEMOTION/SDL_MOUSEBUTTONDOWN/
+ * SDL_MOUSEBUTTONUP; button is ev.button.button (ignored for motion). */
+void democapture_record_mouse(Uint32 event_type, Uint8 button, Uint32 which, int win_x, int win_y);
 
 /* Flush and close the recording file. Call once before the process exits
  * (every exit path -- SDL_QUIT and the g_running check both call this). */

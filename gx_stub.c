@@ -296,10 +296,13 @@ void uw_pump_events(void) {
     }
 
     while (SDL_PollEvent(&ev)) {
-        /* Record before any of the game's own filtering/early-returns
-           below, so what gets written matches exactly what a human at
-           the keyboard/mouse actually did -- democapture does its own
-           synthetic-event check and is a no-op if recording is off. */
+        /* Records KEYBOARD events only, before any of the game's own
+           filtering/early-returns below, so what gets written matches
+           exactly what a human at the keyboard actually did (democapture
+           does its own synthetic-event check and is a no-op if recording
+           is off). Mouse events are recorded separately, further down,
+           once win_x/win_y have been computed correctly -- see
+           democapture_record_mouse's own call site comment. */
         democapture_record_event(&ev);
         switch (ev.type) {
             case SDL_QUIT:
@@ -454,6 +457,15 @@ void uw_pump_events(void) {
                     win_x = gx - wx;
                     win_y = gy - wy;
                 }
+                /* Record with the corrected win_x/win_y above, not the
+                   raw event fields -- see this block's own comment on why
+                   ev.motion.x/y and ev.button.x/y can't be trusted
+                   directly (HiDPI half-scale). Recording the raw fields
+                   instead produced a demo file whose SDLMOVE/SDLDOWN/etc
+                   lines warped the cursor to half the real recorded
+                   distance, replaying every drag/move short of where it
+                   actually went -- user-reported live. */
+                democapture_record_mouse(ev.type, ev.button.button, ev.button.which, win_x, win_y);
                 float lx, ly;
                 SDL_RenderWindowToLogical(g_ren, win_x, win_y, &lx, &ly);
                 int landscape_x = (int)lx, landscape_y = (int)ly;

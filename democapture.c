@@ -170,21 +170,23 @@ static const char *sdlkey_to_name(SDL_Keycode kc, char *buf, size_t bufsz) {
     return buf;
 }
 
+/* Belt-and-suspenders on top of the per-event UW_SYNTH_* tag checks below:
+   demomode's own SDL_WarpMouseInWindow calls (in uw_inject_mouse_down/up/
+   rdown/rup -- see their own comments) can make SDL generate an
+   additional, genuinely REAL (untagged) SDL_MOUSEMOTION as a side effect
+   of the warp itself, not just the explicitly-tagged event the injector
+   pushes -- confirmed live, this leaked a couple of untagged SDLMOVE
+   lines into a recording taken during a demo playback run before this
+   check was added. Suppressing everything for as long as a demo is
+   actively feeding input (regardless of any tag) is the only fully
+   robust way to guarantee demo playback never records itself, matching a
+   direct user request. */
+static int recording_suppressed(void) {
+    return !g_rec_file || demomode_active();
+}
+
 void democapture_record_event(const SDL_Event *ev) {
-    if (!g_rec_file) return;
-    /* Belt-and-suspenders on top of the per-event UW_SYNTH_* tag checks
-       below: demomode's own SDL_WarpMouseInWindow calls (in
-       uw_inject_mouse_down/up/rdown/rup -- see their own comments) can
-       make SDL generate an additional, genuinely REAL (untagged)
-       SDL_MOUSEMOTION as a side effect of the warp itself, not just the
-       explicitly-tagged event the injector pushes -- confirmed live,
-       this leaked a couple of untagged SDLMOVE lines into a recording
-       taken during a demo playback run before this check was added.
-       Suppressing everything for as long as a demo is actively feeding
-       input (regardless of any tag) is the only fully robust way to
-       guarantee demo playback never records itself, matching a direct
-       user request. */
-    if (demomode_active()) return;
+    if (recording_suppressed()) return;
 
     switch (ev->type) {
         case SDL_KEYDOWN:
@@ -197,24 +199,6 @@ void democapture_record_event(const SDL_Event *ev) {
             fprintf(g_rec_file, "%s %s\n", ev->type == SDL_KEYDOWN ? "SDLKEYDOWN" : "SDLKEYUP", name);
             break;
         }
-        case SDL_MOUSEMOTION: {
-            if (ev->motion.which == UW_SYNTH_MOUSE) return;
-            flush_idle();
-            fprintf(g_rec_file, "SDLMOVE %d %d\n", ev->motion.x, ev->motion.y);
-            break;
-        }
-        case SDL_MOUSEBUTTONDOWN:
-        case SDL_MOUSEBUTTONUP: {
-            if (ev->button.which == UW_SYNTH_MOUSE) return;
-            if (ev->button.button != SDL_BUTTON_LEFT && ev->button.button != SDL_BUTTON_RIGHT) return;
-            int is_right = ev->button.button == SDL_BUTTON_RIGHT;
-            int is_down = ev->type == SDL_MOUSEBUTTONDOWN;
-            const char *cmd = is_right ? (is_down ? "SDLRDOWN" : "SDLRUP")
-                                        : (is_down ? "SDLDOWN" : "SDLUP");
-            flush_idle();
-            fprintf(g_rec_file, "%s %d %d\n", cmd, ev->button.x, ev->button.y);
-            break;
-        }
         /* SDL_TEXTINPUT deliberately not recorded: uw_inject_key_down
            already pushes the matching SDL_TEXTINPUT itself for any
            printable key (see its own comment), so replaying the
@@ -224,4 +208,22 @@ void democapture_record_event(const SDL_Event *ev) {
         default:
             break;
     }
+}
+
+void democapture_record_mouse(Uint32 event_type, Uint8 button, Uint32 which, int win_x, int win_y) {
+    if (recording_suppressed()) return;
+    if (which == UW_SYNTH_MOUSE) return;
+
+    if (event_type == SDL_MOUSEMOTION) {
+        flush_idle();
+        fprintf(g_rec_file, "SDLMOVE %d %d\n", win_x, win_y);
+        return;
+    }
+    if (button != SDL_BUTTON_LEFT && button != SDL_BUTTON_RIGHT) return;
+    int is_right = button == SDL_BUTTON_RIGHT;
+    int is_down = event_type == SDL_MOUSEBUTTONDOWN;
+    const char *cmd = is_right ? (is_down ? "SDLRDOWN" : "SDLRUP")
+                                : (is_down ? "SDLDOWN" : "SDLUP");
+    flush_idle();
+    fprintf(g_rec_file, "%s %d %d\n", cmd, win_x, win_y);
 }
