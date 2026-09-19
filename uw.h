@@ -1360,6 +1360,7 @@ void *spawn_new_object();
 void FUN_00068260();
 void move_command_dispatch();
 void decode_movement_command();
+void uw_set_analog_move_turn(int fwd_held, int turn_dir);
 void move_key_directional_step();
 void movement_pacing_handler();
 void movement_tick();

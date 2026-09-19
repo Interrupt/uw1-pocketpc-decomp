@@ -56229,6 +56229,36 @@ LAB_000687fc:
 
 
 
+/* Sets DAT_0023bf48 (forward rate, same 0x500000 scale
+   decode_movement_command's own forward code 0x8d uses) and DAT_0023bf4c
+   (turn rate, via uw_turn_rate_accel()) together in one call, then
+   g_movement_mode = 1 -- resolve_move_vector's mode-1 case already
+   applies both every tick (it always has; decode_movement_command's own
+   single DAT_0023c448 code just never let both be nonzero at once).
+   Called from gx_stub.c's poll_dungeon_movement_keys when a forward key
+   (W/S) and a turn key (A/D) are held simultaneously, so keyboard
+   free-look can move and turn at the same time -- neither DOS UW1 nor
+   this port's own DAT_0023c448 latch could ever represent that
+   (confirmed via the real decompiled handle_keyboard_message: it's a
+   single code too), so this is a deliberate enhancement over strict
+   original-input-model parity, not a decompiled fix. turn_dir: -1 left,
+   +1 right, 0 none. Backward (X) diagonal isn't included -- it's
+   g_movement_mode 8 ("move + face 180"), a different system entirely,
+   not mode 1's forward/turn blend. */
+void uw_set_analog_move_turn(int fwd_held, int turn_dir) {
+  DAT_0023bf48 = fwd_held ? Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10)) : 0;
+  if (turn_dir < 0) {
+    DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10));
+  } else if (turn_dir > 0) {
+    DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10));
+  } else {
+    DAT_0023bf4c = 0;
+  }
+  g_movement_mode = 1;
+}
+
+
+
 // was FUN_00068884 -- keyboard directional-move handler bound to W/S/X/A/D
 // (run-forward / walk-forward / walk-back / turn-left / turn-right); calls
 // begin_directional_move then movement_tick, then paces one held-key frame.

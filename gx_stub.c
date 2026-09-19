@@ -245,19 +245,29 @@ static void poll_dungeon_movement_keys(void) {
         DAT_0023beb4 = (short)(p > 0x1800 ? 0x1800 : p);
     }
 
-    /* One latched code; turning takes priority so free-look always works.
-       (The keyboard decoder is single-axis -- diagonal move+turn would
-       need the analog rates set directly.) */
+    /* One latched code for turn-alone/forward-alone/back/strafe -- matches
+       decode_movement_command's own single-code dispatch. A forward key
+       (W/S) held together with a turn key (A/D) is handled separately
+       below via uw_set_analog_move_turn(), which sets DAT_0023bf48/4c
+       directly: decode_movement_command can only ever set one of them
+       per call (see its own comment), even though resolve_move_vector's
+       mode-1 case has always applied both together. */
     int code = 0, walk_slow = 0;
-    if (left && !right)         code = 0x8f;   /* turn left   */
-    else if (right && !left)    code = 0x91;   /* turn right  */
-    else if (run)              code = 0x8d;                     /* W: run  -- let the accelerator ramp */
-    else if (walk)             { code = 0x8d; walk_slow = 1; }  /* S: walk -- pin accelerator below the step clamp */
-    else if (back)              code = 0x93;   /* backward / turn-around */
-    else if (strafeL && !strafeR) code = 0x2c; /* sidestep left  (DOS ",") */
-    else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
+    int turning = 0;   /* -1 left, +1 right, 0 none */
+    if (left && !right)         { code = 0x8f; turning = -1; }  /* turn left  */
+    else if (right && !left)    { code = 0x91; turning = 1; }   /* turn right */
+    int forward = run || walk;
+    if (!turning) {
+        if (run)               code = 0x8d;                     /* W: run  -- let the accelerator ramp */
+        else if (walk)         { code = 0x8d; walk_slow = 1; }   /* S: walk -- pin accelerator below the step clamp */
+        else if (back)          code = 0x93;   /* backward / turn-around */
+        else if (strafeL && !strafeR) code = 0x2c; /* sidestep left  (DOS ",") */
+        else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
+    } else if (walk) {
+        walk_slow = 1;   /* turning + S: still pin the accelerator for a slow diagonal */
+    }
 
-    if (code) {
+    if (code || (turning && forward)) {
         /* Re-arm accel on press edge only -- the actual ramp-while-held
            lives in game.c's app_main_loop (the real WinMain message-pump
            loop), which already doubles/quadruples DAT_0024af6c every
@@ -280,8 +290,18 @@ static void poll_dungeon_movement_keys(void) {
             if (_wa < 0) { const char *e = getenv("UW_WALK_ACCEL"); _wa = e ? atoi(e) : 0x30; }
             DAT_0024af6c = (short)_wa;
         }
-        DAT_0023c448 = (unsigned short)code;
         DAT_000876c8 = 0;
+        if (turning && forward) {
+            /* Diagonal: set both rates directly and skip the single-code
+               dispatch entirely -- movement_tick only calls
+               decode_movement_command() while g_movement_mode == 0, so
+               setting it to 1 here (inside uw_set_analog_move_turn)
+               pre-empts that for this tick. */
+            DAT_0023c448 = 0;
+            uw_set_analog_move_turn(1, turning);
+        } else {
+            DAT_0023c448 = (unsigned short)code;
+        }
     } else if (active) {
         DAT_000876c8 = 1;   /* release: main loop clears DAT_0023c448 -> stop */
         active = 0;
