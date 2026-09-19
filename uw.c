@@ -33160,8 +33160,25 @@ void close_backpack_container()
        with no visible regression at the one spot this was meant to
        patch (redraw_hud_panels's own transparent blit, immediately
        after, is enough on its own -- whatever it leaves untouched there
-       was already correct). */
+       was already correct) -- EXCEPT for the container icon itself,
+       see below. */
     redraw_hud_panels();
+    /* User report: "opening and closing a bag leaves the container icon
+       behind." open_backpack_container draws the container's own icon at
+       record 1's spot (the "leave container" button position, same
+       0x72x0x53-tile area as the black-cutout fix above) in transparent
+       mode -- and per that same fix's own finding, the panel art has a
+       genuinely transparent pixel right there, so redraw_hud_panels's
+       transparent blit (just above) correctly leaves it untouched by
+       design, same as before. Nothing else in this function redraws
+       record 1's spot: it belongs to widgets 0-5 (the paperdoll body),
+       which only redraw_inventory_widget(<6) -> FUN_00046bfc reaches --
+       redraw_inventory_widget_range below only covers 0xc-0x13 (the
+       backpack grid). Confirmed live via before/after SCREENSHOT diffing
+       on a real open-then-close repro (bug-redraw-demo.txt): the stale
+       icon sits exactly at record 1's draw position (241,61 panel-local)
+       and disappears once the paperdoll body is redrawn here too. */
+    redraw_inventory_widget(1);
     redraw_inventory_widget_range(0xc,0x13);
     redraw_inventory_widget(0x15);
     redraw_inventory_widget(0x16);
