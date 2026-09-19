@@ -257,7 +257,35 @@ static void poll_dungeon_movement_keys(void) {
     else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
 
     if (code) {
-        if (!active) { DAT_0024af6c = 0x14; active = 1; }  /* re-arm accel on press edge */
+        if (!active) {
+            DAT_0024af6c = 0x14;  /* re-arm accel on press edge */
+            active = 1;
+        } else if (DAT_0024af6c < 0x140) {
+            /* Ramp while continuously held -- decode_movement_command's own
+               comment ("NOTE: DAT_0024af6c ramps to ~0x140 in this
+               recompile") already documents 0x140 as this accelerator's
+               real upper bound (and that function was widened to 64-bit
+               specifically to handle multiplying by a value that large
+               without overflow) -- but nothing anywhere actually
+               incremented it: every writer, in both this poll-driven path
+               and the original discrete-key-repeat path in
+               handle_keyboard_message, only ever reset it flat to 0x14 on
+               press or 0 on release. Turning/running at a flat, un-ramped
+               rate from the very first tick felt jerkier than the real
+               game (or this port's own mouse-driven turning) and made it
+               easy to overshoot a precise target, since even a single
+               short tap already turned at full rate -- user-reported
+               live. Step size is a judgment call (no original value
+               survives to recover): UW_HOLD_ACCEL_STEP, default 8/tick,
+               ramps 0x14->0x140 in about 38 ticks (~0.6s at the game's own
+               ~60Hz tick rate) -- tune to taste. Skipped for S's walk_slow
+               below, which pins a fixed slow rate every tick regardless
+               (a genuine constant-speed walk, not meant to accelerate). */
+            static int _ha = -1;
+            if (_ha < 0) { const char *e = getenv("UW_HOLD_ACCEL_STEP"); _ha = e ? atoi(e) : 8; }
+            int v = (int)DAT_0024af6c + _ha;
+            DAT_0024af6c = (short)(v > 0x140 ? 0x140 : v);
+        }
         if (walk_slow) {
             /* keep S's forward rate below decode_movement_command's per-tick
                step clamp so it is a genuine slow walk, not a clamped run. */
