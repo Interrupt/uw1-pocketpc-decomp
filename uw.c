@@ -33036,39 +33036,29 @@ void close_backpack_container()
        one extra fully OPAQUE pass of the same blit first so every
        pixel there gets overwritten regardless. */
     g_blit_transparent_mode = 0;
-    bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+    /* RESOLVED (was: body-shaped black cutout around the paperdoll after
+       closing a container -- user report: "closing a container draws
+       black areas under some of the paper doll section"). The real cause
+       was THIS opaque pre-pass, not a missing redraw: it was added to
+       paint over one small stale leftover (the "leave container" icon,
+       hotspot record 1, in the SAME 0x72x0x53 native-pixel tile) before
+       redraw_hud_panels's own call to the identical blit repaints it
+       transparently -- but bitmap_blit_to_framebuffer's opaque mode
+       writes EVERY source byte literally, including this panel-art
+       tile's many genuinely-transparent-keyed pixels (byte value 0) that
+       back the worn-item ring slots (shoulders/hands/fingers) and the
+       rest of the panel's leather texture. Painting all of them solid
+       black here, then having redraw_hud_panels's transparent pass
+       correctly SKIP those same zero-valued source pixels (by design),
+       permanently left them black -- the opaque pre-pass was blacking
+       out the whole panel background, not just the one icon spot it was
+       meant to fix. Confirmed live (screenshot diff): dropping this call
+       entirely restores the ring backgrounds and shoulder/hand slots
+       with no visible regression at the one spot this was meant to
+       patch (redraw_hud_panels's own transparent blit, immediately
+       after, is enough on its own -- whatever it leaves untouched there
+       was already correct). */
     redraw_hud_panels();
-    /* STILL OPEN, deep-dived but not resolved: closing a container
-       leaves a body-shaped black cutout around the paperdoll (user
-       report: "closing a container draws black areas under some of
-       the paper doll section"). Traced the missing piece to widget 0
-       -- the paperdoll's own BODY sprite (id 0x2091, drawn by
-       FUN_00046bfc, which widget 0 routes to via
-       redraw_inventory_widget's own `iVar1 < 6` branch) -- since
-       nothing in this redraw pass ever repaints it (or widgets 1-5,
-       the same function's own small do-loop) after
-       redraw_hud_panels's flat background blit paints over that whole
-       area. Confirmed live that FUN_00046bfc's own internal gate
-       (DAT_0023c1d4=='\0') passes here and it does reach its
-       draw_sprite_by_id(0x2091, ...) call with correct-looking
-       coordinates -- but adding a `redraw_inventory_widget(0)` call
-       right here produced NO visible change at all, meaning sprite
-       0x2091 itself likely isn't resolving/rendering correctly in
-       this specific, never-before-exercised call path (FUN_00046bfc
-       has no other caller anywhere in the file), a deeper issue this
-       session didn't have time to chase down. Also tried
-       redraw_inventory_widget_range(6,0xb) for the smaller worn-item
-       ring widgets just below the body -- confirmed via its own debug
-       trace to correctly iterate widgets 6-11, and paired with a real,
-       independently-kept fix to a related bug in
-       redraw_inventory_widget_range's own tile-restore call (see that
-       function's fix comment) -- but this also produced no visible
-       change, meaning the ring slots aren't the visible black area
-       either (matched the body sprite's own dirty rect, not the
-       smaller ring icons', much more closely). Both attempts reverted
-       here rather than ship unconfirmed no-ops; the real fix is most
-       likely inside FUN_00046bfc/draw_sprite_by_id's own sprite-0x2091
-       resolution when called from this new context. */
     redraw_inventory_widget_range(0xc,0x13);
     redraw_inventory_widget(0x15);
     redraw_inventory_widget(0x16);
