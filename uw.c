@@ -4274,7 +4274,7 @@ char *DAT_00087944 = DAT_00087944_backing;
 short DAT_0024af6c;
 /* Deterministic, fixed-step substitute for the real wall-clock
    (FUN_0002294c(), itself Ordinal_535()>>2 -- SDL_GetTicks() scaled to
-   4ms-per-unit) that movement_pacing_handler() (this file, ~line 56163)
+   4ms-per-unit) that movement_pacing_handler() (this file, ~line 56186)
    used to read directly for ALL of its internal timing, including the
    uVar6 delta that directly scales how far the player moves/turns each
    tick. Real elapsed time made movement distance sensitive to actual
@@ -4293,8 +4293,30 @@ short DAT_0024af6c;
    replay drift entirely instead of trying to reproduce real timing
    jitter. Deliberately unconditional (not just during record/playback)
    since the game is already vsync-locked to ~60Hz (gx_stub.c's own
-   frame-budget cap), so this doesn't change how normal play feels. */
+   frame-budget cap), so this doesn't change how normal play feels.
+
+   Deliberately NOT folded into FUN_0002294c() itself, even though that
+   is literally the "what time is it" function movement_pacing_handler
+   used to call and would have been the more obvious single place to
+   fix -- FUN_0002294c() has ~65 other call sites across this file, and
+   at least one (move_key_directional_step's own tail, ~line 56177:
+   `do { iVar2 = FUN_0002294c(); } while ((uint)(iVar2-iVar1) < 0x18);`)
+   busy-spins on it in a tight loop with NO event pump in between
+   iterations, deliberately throttling a discrete step's real-world
+   pacing. This clock only advances once per real uw_pump_events() call
+   -- a caller spinning on it outside that cadence, like that loop, would
+   see a frozen value and hang forever. Exposed instead via its own
+   accessor, uw_frame_clock_ms() below, so a caller has to deliberately
+   opt in rather than being silently affected by a global redefinition. */
 unsigned int g_uw_frame_clock_units;
+/* Accessor for g_uw_frame_clock_units -- see its own comment. Use this,
+   not the raw global, from any new gameplay-tick-paced timing code (the
+   same shape as movement_pacing_handler's own use) that wants
+   deterministic, tick-count-driven pacing instead of FUN_0002294c()'s
+   real wall-clock time. */
+unsigned int uw_frame_clock_ms() {
+  return g_uw_frame_clock_units;
+}
 char DAT_00087950_backing[128];
 char *DAT_00087950 = DAT_00087950_backing;
 char DAT_00087948_backing[128];
@@ -56196,18 +56218,18 @@ void movement_pacing_handler()
   uint uVar_now;
 
   /* Was 4 separate FUN_0002294c() (real wall-clock) reads in this
-     function -- replaced with g_uw_frame_clock_units, a fixed-step
-     substitute in the same 4ms-per-unit scale (see its own comment in
-     this file). All 4 original reads are really asking "what time is it
-     right now", each then diffed against the SAME DAT_0023bf54
-     reference -- captured once into uVar_now here so they keep agreeing
-     with each other exactly as they did when each was a fresh (but,
-     within the same real millisecond, effectively identical) clock
-     read. uVar6 is the actual movement/turn-distance driver
-     (movement_tick below); the other reads feed DAT_0023bf58's
+     function -- replaced with uw_frame_clock_ms(), a fixed-step
+     substitute in the same 4ms-per-unit scale (see its own and
+     g_uw_frame_clock_units's comments). All 4 original reads are really
+     asking "what time is it right now", each then diffed against the
+     SAME DAT_0023bf54 reference -- captured once into uVar_now here so
+     they keep agreeing with each other exactly as they did when each
+     was a fresh (but, within the same real millisecond, effectively
+     identical) clock read. uVar6 is the actual movement/turn-distance
+     driver (movement_tick below); the other reads feed DAT_0023bf58's
      animation-bob phase, which shares the same DAT_0023bf54 reference
      point and so needs to move in step with it too. */
-  uVar_now = g_uw_frame_clock_units;
+  uVar_now = uw_frame_clock_ms();
   iVar3 = uVar_now;
   uVar6 = iVar3 - DAT_0023bf54;
   if (uVar6 < 0x41) {
