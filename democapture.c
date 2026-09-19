@@ -19,14 +19,25 @@
  * to record a playback run anyway (e.g. to re-derive/tweak a script from
  * what it actually does).
  *
- * Pacing: UW_RECORD_DELAY_MS (default 100) sets the recorder's own tick
+ * Pacing: UW_RECORD_DELAY_MS (default 16, i.e. one real tick -- see
+ * DEMO_RECORD_DEFAULT_DELAY_MS below) sets the recorder's own tick
  * granularity -- both how idle gaps get quantized into WAIT lines, and
  * the DELAY line written at the top of the file, so a later replay paces
- * itself the same way by default (see demomode.c's DELAY command). Real
- * play has far finer-grained timing than that; this is a compromise
- * between faithful timing and file size, matching demomode.c's own
- * default playback delay's order of magnitude rather than one line per
- * video frame. */
+ * itself the same way by default (see demomode.c's DELAY command). This
+ * MUST stay fine-grained (matching the game's own real per-frame tick
+ * rate), not just "small": demomode_pump() processes exactly one line
+ * per tick regardless of what that line is, so any real events that
+ * happened closer together than the recorder's own bucket size collapse
+ * onto the same WAIT-free line and then each cost a full tick on replay
+ * -- confirmed live: a 100ms default (was the original choice here,
+ * wrong) meant up to ~6 real per-frame mouse-motion events could land in
+ * one bucket with no WAIT between them, each still costing 100ms during
+ * replay, making a recorded drag replay several times slower than it was
+ * actually played. 16ms matches gx_stub.c's own real ~60Hz frame-budget
+ * cap (`1000/60`, see GXEndDraw's comment) -- the finest granularity
+ * real events can actually arrive at here, so consecutive events
+ * normally do get a real WAIT between them and replay pacing tracks the
+ * recording much more closely. */
 #include "democapture.h"
 #include "gx_stub.h"
 #include "demomode.h"
@@ -35,8 +46,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DEMO_RECORD_DEFAULT_DELAY_MS (1000 / 60)
+
 static FILE *g_rec_file;
-static int g_rec_delay_ms = 100;
+static int g_rec_delay_ms = DEMO_RECORD_DEFAULT_DELAY_MS;
 static Uint32 g_rec_last_write_tick;
 
 /* Same truthy/falsy-by-value convention as UW_DEMO_KEEP_RUNNING (see
