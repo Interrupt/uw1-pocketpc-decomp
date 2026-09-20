@@ -55911,7 +55911,19 @@ LAB_000669a8:
       FUN_0001433c(0);
     }
     else {
-      FUN_00014324();
+      /* Was a bare call -- FUN_00014324 declares `char param_1` and
+         computes `DAT_000842b0 = -0x20 - param_1`, but nothing here
+         ever loaded an argument for it, so it ran on leftover register
+         garbage instead of a real value. Its sibling branch just above
+         (the "light source active" case) explicitly passes 0 to the
+         same-shaped FUN_0001433c; this "no light source" case should
+         mirror that with an explicit 0 too, giving the intended -0x20
+         ambient bias (vs FUN_0001433c(0)'s +8) rather than whatever
+         register leftover happened to be here. This is the function
+         that recomputes the 3D-view ambient-darkness bias
+         (DAT_000842b0, read by raster_textured_span) whenever the
+         player's equipped light sources change. */
+      FUN_00014324(0);
     }
   }
   else {
