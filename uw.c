@@ -7499,6 +7499,23 @@ void build_shade_lut()
 
 
 
+// Tunable: extra units to reduce the darkness bias by (equivalently,
+// units to brighten DAT_000842b0 by -- more negative there is
+// brighter) in BOTH set_ambient_bias_with_light and
+// set_ambient_bias_without_light below. Override via
+// UW_AMBIENT_BIAS_REDUCTION while calibrating; default 32.
+int g_ambient_bias_reduction = 32;
+
+static int get_ambient_bias_reduction()
+{
+  int reduction = g_ambient_bias_reduction;
+  const char *_p = getenv("UW_AMBIENT_BIAS_REDUCTION");
+  if (_p) reduction = atoi(_p);
+  return reduction;
+}
+
+
+
 // was FUN_00014324 -- sets DAT_000842b0, the 3D-view ambient bias
 // raster_textured_span adds to every texel's distance-shade LUT index
 // (uw.c's own "checked wall/floor texture rasterizer" comment on that
@@ -7514,7 +7531,7 @@ void set_ambient_bias_with_light(param_1)
 char param_1;
 
 {
-  DAT_000842b0 = -0x20 - param_1;
+  DAT_000842b0 = -0x20 - param_1 - get_ambient_bias_reduction();
   if (getenv("UW_DEBUG_AMBIENT"))
     fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
   return;
@@ -7526,7 +7543,7 @@ void set_ambient_bias_without_light(param_1)
 char param_1;
 
 {
-  DAT_000842b0 = '\b' - param_1;
+  DAT_000842b0 = '\b' - param_1 - get_ambient_bias_reduction();
   if (getenv("UW_DEBUG_AMBIENT"))
     fprintf(stderr, "[ambient] set_ambient_bias_without_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
   return;
