@@ -33458,43 +33458,58 @@ void repopulate_container_grid_slots()
       }
       pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
     } while (pContents != 0);
+    /* User QA: "closing a nested container [is] stuck on [the child's]
+       contents" -- confirmed the real bug here. This loop is searching
+       for whatever's CURRENTLY sitting in slots 20-27 (stale leftover
+       from whichever container was open last) inside the NEW container's
+       own top-level chain, so it can resume the scroll position where
+       the player left off. That's the right idea when re-opening the
+       SAME container, but when popping from a child back to its parent
+       (leave_nested_container_level), the stale slots hold the CHILD's
+       items -- which are never direct members of the PARENT's own
+       chain -- so this search always exhausts with no match, and the
+       original code just returned here having populated nothing at
+       all, leaving the grid stuck showing the child's last contents.
+       Fall back to populating fresh from the chain's own start, exactly
+       like the "nothing currently occupying these slots" case below
+       already does. */
+    pContents = (char *)resolve_object_link(&g_current_container_link);
+    pContents = (char *)resolve_object_link((ushort *)(pContents + 6));
   }
-  else {
+  iVar6 = 0x14;
+  do {
+    uVar4 = encode_object_slot_index(pContents);
+    iVar5 = (short)iVar6 * 2;
+    (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+    (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
+    if (pContents != 0) {
+      if ((*(byte *)(pContents + 1) & 0x40) != 0) {
+        iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
+      }
+      pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
+    }
+    iVar6 = iVar6 + 1;
+  } while (iVar6 * 0x10000 >> 0x10 < 0x1c);
+  while (pContents != 0) {
     iVar6 = 0x14;
     do {
+      iVar5 = iVar6 * 2;
+      uVar1 = *(undefined2 *)(iVar5 + 0x202958);
+      bVar2 = (byte)uVar1;
+      (&DAT_00202950)[iVar5] = ((&DAT_00202950)[iVar5] ^ bVar2) & 0x3f ^ bVar2;
+      (&DAT_00202951)[iVar5] = (char)((ushort)uVar1 >> 8);
+      iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+    } while (iVar6 < 0x18);
+    for (; iVar5 = (int)(short)iVar6, iVar5 < 0x1c; iVar6 = iVar6 + 1) {
       uVar4 = encode_object_slot_index(pContents);
-      iVar5 = (short)iVar6 * 2;
-      (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
-      (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
+      (&DAT_00202950)[iVar5 * 2] =
+           (&DAT_00202950)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+      (&DAT_00202951)[iVar5 * 2] = (char)((uVar4 << 0x16) >> 0x18);
       if (pContents != 0) {
         if ((*(byte *)(pContents + 1) & 0x40) != 0) {
-          iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
+          iVar6 = (iVar5 + -1) * 0x10000 >> 0x10;
         }
         pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
-      }
-      iVar6 = iVar6 + 1;
-    } while (iVar6 * 0x10000 >> 0x10 < 0x1c);
-    while (pContents != 0) {
-      iVar6 = 0x14;
-      do {
-        iVar5 = iVar6 * 2;
-        uVar1 = *(undefined2 *)(iVar5 + 0x202958);
-        bVar2 = (byte)uVar1;
-        (&DAT_00202950)[iVar5] = ((&DAT_00202950)[iVar5] ^ bVar2) & 0x3f ^ bVar2;
-        (&DAT_00202951)[iVar5] = (char)((ushort)uVar1 >> 8);
-        iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
-      } while (iVar6 < 0x18);
-      for (; iVar5 = (int)(short)iVar6, iVar5 < 0x1c; iVar6 = iVar6 + 1) {
-        uVar4 = encode_object_slot_index(pContents);
-        (&DAT_00202950)[iVar5 * 2] =
-             (&DAT_00202950)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
-        (&DAT_00202951)[iVar5 * 2] = (char)((uVar4 << 0x16) >> 0x18);
-        if (pContents != 0) {
-          if ((*(byte *)(pContents + 1) & 0x40) != 0) {
-            iVar6 = (iVar5 + -1) * 0x10000 >> 0x10;
-          }
-          pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
-        }
       }
     }
   }
