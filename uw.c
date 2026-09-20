@@ -16781,7 +16781,14 @@ LAB_00024dd4:
 
 
 // was palette_cycle_range -- rotate a contiguous run of DAT_00088d98 palette entries by
-// one (torch-flicker / water-shimmer colour cycling)
+// one. Confirmed real callers so far: the title screen's own gold-gradient
+// animation (0x40-0x7f), FUN_0003601c's special-illustrated-book/scroll
+// view feature (see its own comment -- NOT ordinary lava/water/torch tile
+// shimmer, ruled out live), and the equipped-lit-torch HUD icon flicker
+// this project added (range 16-23, the confirmed fire gradient in PALS.DAT
+// bank 0 -- see mode-icon-and-hud-icon-flicker-fixes memory). Whatever
+// drives ordinary per-tile water/lava/wall-torch animation during normal
+// walking, if the original game has one at all, is still unfound.
 void palette_cycle_range(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
@@ -24647,6 +24654,28 @@ undefined1 * param_2;
 
 
 
+/* NOT a per-tile lava/water/torch tile-shimmer driver, despite looking
+   like one -- traced both of its two real call sites (uw.c ~37381 and
+   ~68657) and they're gated on a special object flag right where the
+   game prints "You read the..." and dispatches to
+   FUN_00037c14((param_1[3]>>6&0x1ff)+0x100): this is the SPECIAL
+   ILLUSTRATED BOOK/SCROLL full-screen view feature (a rare object
+   class that shows a picture, with a few small animated palette-cycled
+   details, when read -- distinct from an ordinary scroll's text
+   popup). Confirmed unreachable from normal per-tick gameplay
+   rendering: a live UW_DEBUG_PALCYCLE_RECORDS trace never fired once
+   across several walking demos nor 60 real ticks standing directly on
+   the known water tile from [[water-wading-and-wall-slide-findings]]
+   (SETPLAYERPOS 6.58 4.92 0 191 0) -- ruling this specific function
+   out as the mechanism for ordinary water/lava/wall-torch shimmer
+   during play, if the original game has one at all. Iterates a
+   16-slot table of 8-byte records (last-update clock, a rate value
+   Ordinal_2005'd against 0x38e, then a start/end palette-index byte
+   pair) -- genuinely reusable for animating multiple independent
+   palette ranges, but nothing in its enclosing function
+   (FUN_0003671c) was found writing real per-object data into that
+   table; it may be uninitialized/link-time data this decompile never
+   recovered, same class of gap as other tables in this file. */
 void FUN_0003601c(param_1)
 ushort * param_1;
 
@@ -24658,6 +24687,11 @@ ushort * param_1;
   
   iVar4 = 0x10;
   do {
+    if (getenv("UW_DEBUG_PALCYCLE_RECORDS") && param_1[1] != 0) {
+      fprintf(stderr, "[palcycle] slot=%d last=%u rate=%u start=%d end=%d\n",
+              0x10 - iVar4, (unsigned)*param_1, (unsigned)param_1[1],
+              (int)(byte)param_1[3], (int)*(byte *)((char *)param_1 + 7));
+    }
     if (param_1[1] != 0) {
       uVar2 = read_realtime_clock_units();
       iVar3 = Ordinal_2005(param_1[1],0x38e);
