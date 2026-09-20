@@ -53063,7 +53063,7 @@ static int uwdl_texture_width(int idx)
   return 0;
 }
 
-static void emit_dlist_bank_object(const unsigned short *words, int count, int head, int heading, double scale, double yoff, void *texptr, int texwidth)
+static void emit_dlist_bank_object(const unsigned short *words, int count, int head, int heading, double scale, double yoff, void *texptr, int texwidth, int texheight)
 {
   static uwdl_face faces[UWDL_MAX_FACES];
   int nfaces;
@@ -53281,40 +53281,74 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
            for V), normalized per-face to its own non-negative minimum,
            same as V. */
         int32_t umin = (int32_t)f->p[s0][0], vmin = (int32_t)f->p[s0][1];
+        int32_t umax = umin, vmax = vmin;
         int32_t u0, u1, u2, u3, v0, v1, v2, v3;
-        /* Scale factor, at the user's report that the texture repeats
-           3-4x too densely: raw world-unit deltas (the previous version)
-           were used 1:1 as texel coordinates, with no scale-down at all.
-           The real wall-populate formula (uw.c, traced when root-causing
-           the earlier static bug) is
-           `V = ((1024.0 - height) / 256.0) * (texwidth - 1)` -- the
-           additive `1024.0 -` term is specific to how DOS's own Z
-           variable is anchored (irrelevant here since each face is
-           already normalized to its own minimum separately), but the
-           scale COEFFICIENT on the position term, `(texwidth-1)/256.0`,
-           is the real, load-bearing part: for a 64-wide texture that's
-           63/256 ~= 0.246 -- i.e. roughly one texel per 4 world units,
-           not one texel per world unit. Applying it here (both axes,
-           for consistency -- DOS's own formula is V-only because walls
-           never vary U, but the coefficient itself is just a texel-per-
-           world-unit conversion that applies equally to whichever axis
-           actually varies) turns a raw ~250-world-unit face span into
-           roughly one 64-texel repeat instead of ~4. */
-        double uvscale = (texwidth > 1) ? (double)(texwidth - 1) / 256.0 : 1.0;
+        double uscale, vscale;
         if ((int32_t)f->p[s1][0] < umin) umin = (int32_t)f->p[s1][0];
         if ((int32_t)f->p[s2][0] < umin) umin = (int32_t)f->p[s2][0];
         if ((int32_t)f->p[s3][0] < umin) umin = (int32_t)f->p[s3][0];
         if ((int32_t)f->p[s1][1] < vmin) vmin = (int32_t)f->p[s1][1];
         if ((int32_t)f->p[s2][1] < vmin) vmin = (int32_t)f->p[s2][1];
         if ((int32_t)f->p[s3][1] < vmin) vmin = (int32_t)f->p[s3][1];
-        u0 = (int32_t)((f->p[s0][0] - umin) * uvscale);
-        u1 = (int32_t)((f->p[s1][0] - umin) * uvscale);
-        u2 = (int32_t)((f->p[s2][0] - umin) * uvscale);
-        u3 = (int32_t)((f->p[s3][0] - umin) * uvscale);
-        v0 = (int32_t)((f->p[s0][1] - vmin) * uvscale);
-        v1 = (int32_t)((f->p[s1][1] - vmin) * uvscale);
-        v2 = (int32_t)((f->p[s2][1] - vmin) * uvscale);
-        v3 = (int32_t)((f->p[s3][1] - vmin) * uvscale);
+        if ((int32_t)f->p[s1][0] > umax) umax = (int32_t)f->p[s1][0];
+        if ((int32_t)f->p[s2][0] > umax) umax = (int32_t)f->p[s2][0];
+        if ((int32_t)f->p[s3][0] > umax) umax = (int32_t)f->p[s3][0];
+        if ((int32_t)f->p[s1][1] > vmax) vmax = (int32_t)f->p[s1][1];
+        if ((int32_t)f->p[s2][1] > vmax) vmax = (int32_t)f->p[s2][1];
+        if ((int32_t)f->p[s3][1] > vmax) vmax = (int32_t)f->p[s3][1];
+        if (head == 4187 /* UW_DLIST_HEAD_LEAF -- defined later in this file,
+                             after g_dlist_region, which must come after this
+                             function; literal kept in sync with that #define */) {
+          /* The leaf's own bound texture is a single, complete sprite
+             (a real decoded OBJECTS/doors.GR image, not a small
+             repeating wall texture) -- at the user's report that the
+             door renders roughly 2x too large: the wall-tiling density
+             coefficient below (texels per world unit, correct for an
+             actually-repeating surface) was being applied here too,
+             which for a sprite means "tile this image across the face
+             at wall density" rather than "stretch this one image to
+             cover the face exactly once" -- the visible symptom of
+             tiling a single image at roughly half the face's real
+             width is indistinguishable from "the image looks 2x too
+             big" (each tile reads as if it were the whole door,
+             showing only about half the real door's width per visible
+             copy). Fixed by mapping this face's own local coordinate
+             span directly onto the sprite's real pixel dimensions --
+             umax-umin/vmax-vmin (this face's real world-unit width/
+             height) scaled to exactly texwidth/texheight, a genuine
+             stretch-to-fit, not a tiling density. */
+          int32_t urange = umax - umin, vrange = vmax - vmin;
+          uscale = (urange > 0) ? (double)texwidth / (double)urange : 1.0;
+          vscale = (vrange > 0) ? (double)texheight / (double)vrange : 1.0;
+        } else {
+          /* Scale factor, at the user's report that the texture repeats
+             3-4x too densely: raw world-unit deltas (the previous version)
+             were used 1:1 as texel coordinates, with no scale-down at all.
+             The real wall-populate formula (uw.c, traced when root-causing
+             the earlier static bug) is
+             `V = ((1024.0 - height) / 256.0) * (texwidth - 1)` -- the
+             additive `1024.0 -` term is specific to how DOS's own Z
+             variable is anchored (irrelevant here since each face is
+             already normalized to its own minimum separately), but the
+             scale COEFFICIENT on the position term, `(texwidth-1)/256.0`,
+             is the real, load-bearing part: for a 64-wide texture that's
+             63/256 ~= 0.246 -- i.e. roughly one texel per 4 world units,
+             not one texel per world unit. Applying it here (both axes,
+             for consistency -- DOS's own formula is V-only because walls
+             never vary U, but the coefficient itself is just a texel-per-
+             world-unit conversion that applies equally to whichever axis
+             actually varies) turns a raw ~250-world-unit face span into
+             roughly one 64-texel repeat instead of ~4. */
+          uscale = vscale = (texwidth > 1) ? (double)(texwidth - 1) / 256.0 : 1.0;
+        }
+        u0 = (int32_t)((f->p[s0][0] - umin) * uscale);
+        u1 = (int32_t)((f->p[s1][0] - umin) * uscale);
+        u2 = (int32_t)((f->p[s2][0] - umin) * uscale);
+        u3 = (int32_t)((f->p[s3][0] - umin) * uscale);
+        v0 = (int32_t)((f->p[s0][1] - vmin) * vscale);
+        v1 = (int32_t)((f->p[s1][1] - vmin) * vscale);
+        v2 = (int32_t)((f->p[s2][1] - vmin) * vscale);
+        v3 = (int32_t)((f->p[s3][1] - vmin) * vscale);
         *(int *)(&DAT_000ace08 + rb) = u0;
         *(int *)(&DAT_000ace0c + rb) = v0;
         *(int *)(&DAT_000ace10 + rb) = u1;
@@ -55299,10 +55333,10 @@ LAB_00061d34:
           if (getenv("UW_DEBUG_DLIST"))
             fprintf(stderr, "[dlist] wall texture index=%d width=%d texptr=%p\n", _wtex, _twidth, _texptr);
           emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_DOORWAY,
-                                  _quadrant_heading2, _scale, _yoff, _texptr, _twidth);
+                                  _quadrant_heading2, _scale, _yoff, _texptr, _twidth, _twidth);
         } else {
           emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_DOORWAY,
-                                  _quadrant_heading2, _scale, _yoff, 0, 0);
+                                  _quadrant_heading2, _scale, _yoff, 0, 0, 0);
         }
         /* Door LEAF (bank 0x6e) -- the swinging panel itself, not just
            the frame. Same region/interpreter/anchor pipeline as the
@@ -55358,20 +55392,21 @@ LAB_00061d34:
                nothing real (confirmed live: width=0/height=0 even at a
                real closed door, tile 24.5,6.5). Same fix, same reason,
                as the shared LAB_emit_mesh_sprite_quad call site above. */
-            void *_leaf_texptr = 0; int _leaf_twidth = 0;
+            void *_leaf_texptr = 0; int _leaf_twidth = 0; int _leaf_theight = 0;
             FUN_00040770((short)-(int)uVar27, (uint)DAT_0023bc88 * (int)DAT_00086b30);
             if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) {
               _leaf_texptr = DAT_0023c7a0_arr[DAT_0023b83c];
               _leaf_twidth = (int)(unsigned short)DAT_00202508;
+              _leaf_theight = (int)(unsigned short)DAT_002022f8;
             }
             if (getenv("UW_DEBUG_DLIST"))
               fprintf(stderr, "[dlist] leaf sprite frame=%d texptr=%p width=%d height=%d\n",
-                      uVar27, _leaf_texptr, _leaf_twidth, (int)(unsigned short)DAT_002022f8);
+                      uVar27, _leaf_texptr, _leaf_twidth, _leaf_theight);
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _scale, _yoff, _leaf_texptr, _leaf_twidth);
+                                    _leaf_heading, _scale, _yoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
           } else {
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _scale, _yoff, 0, 0);
+                                    _leaf_heading, _scale, _yoff, 0, 0, 0);
           }
         }
         /* UW_DLIST_DOOR_ONLY=1: skip the pre-existing leaf-sprite draw

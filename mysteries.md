@@ -449,6 +449,21 @@ used for its ordinary sprite, so this fixes real door rendering
 game-wide, not just this session's new geometry. Full detail in
 `object-rendering-findings.txt`.
 
+**UPDATE 16 (leaf rendered ~2x too large -- tiling-density UV scale
+applied to a sprite that should stretch to fit, 2026-09-20):** user,
+right after confirming the real texture: "seemingly 2x as large as they
+should be." The leaf's UV was reusing the frame/wall's tiling-density
+scale (`(texwidth-1)/256`, texels per world unit -- correct for a small
+repeating wall texture), but the leaf's bound texture is a single,
+complete decoded sprite, not a repeating pattern -- tiling one image at
+roughly half the face's real width reads exactly like "the image looks
+2x too big." Fixed by stretch-fitting each face's own real coordinate
+span directly onto the sprite's real pixel dimensions instead, which
+needed a new `texheight` parameter threaded through (previously only
+width existed, since wall textures are always square). Verified: the
+leaf now renders as a single, properly-proportioned panel contained
+within the frame. Full detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

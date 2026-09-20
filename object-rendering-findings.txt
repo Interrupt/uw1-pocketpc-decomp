@@ -2032,3 +2032,44 @@ the SAME call every closed door in the game already used for its
 ordinary 2D sprite, so this also fixes (or was always going to need
 fixing for) the game's own real door rendering, independent of
 anything this session's dlist work added.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (6): LEAF DOOR RENDERED ~2X TOO LARGE -- WAS APPLYING
+THE WALL'S TILING-DENSITY UV SCALE TO A SPRITE THAT SHOULD STRETCH TO
+FIT, NOT REPEAT
+═══════════════════════════════════════════════════════════════════════════
+User report immediately after confirming the real sprite texture now
+resolves correctly: "the door is rendering now with the right sprite,
+but seemingly 2x as large as they should be."
+
+Root cause: the leaf's UV was reusing the exact same scale formula the
+FRAME (and real tile walls) use --
+`uscale = vscale = (texwidth-1)/256.0`, a texels-PER-WORLD-UNIT tiling
+density, correct for a small repeating wall texture. But the leaf's
+bound texture (per the previous update) is a single, complete decoded
+sprite (32x64 pixels, a real door image), not a repeating pattern --
+applying a tiling-density scale to it means "tile this one image across
+the face at wall density" instead of "stretch this one image to cover
+the face exactly once." Visually, tiling a single image at roughly half
+the face's real width reads exactly like "the image looks 2x too big"
+(each visible copy only shows about half the real door, so the image
+appears zoomed/oversized relative to the frame).
+
+FIX: for the leaf specifically (head == UW1's leaf entry, 4187),
+compute each face's own real local coordinate span (umax-umin,
+vmax-vmin -- this face's actual world-unit width/height) and scale it
+to map EXACTLY onto the sprite's real pixel dimensions
+(texwidth/texheight) -- a genuine stretch-to-fit instead of a tiling
+density. Required threading a new `texheight` parameter through
+emit_dlist_bank_object (previously only texwidth existed, since walls
+are always square 16/32/64 so one value sufficed) and reading the
+sprite's real decoded height (DAT_002022f8) at the leaf's own
+FUN_00040770 call site, alongside the width it already read. The
+doorway/frame's own wall-texture call sites pass texwidth for both
+width and height (unchanged behavior -- wall textures really are
+square, so this is a no-op for that path).
+
+VERIFICATION: at the same confirmed closed door (tile 24.5,6.5), the
+leaf now renders as a single, properly-proportioned door panel
+contained within the frame, not overflowing/oversized. Standard
+run-regressions.sh: 6/6 clean.
