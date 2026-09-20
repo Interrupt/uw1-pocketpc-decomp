@@ -2824,7 +2824,19 @@ void uw_debug_dump_inventory_state(void) {
   fprintf(stderr, "[demo] post-screenshot state: g_cursor_holding_state(holding)=%d occupied_slots=%d g_current_container_record=%p\n",
           (int)g_cursor_holding_state, occupied, (void *)g_current_container_record);
 }
-undefined4 g_open_container_list;
+/* Was a lone `undefined4` (4-byte) scalar holding a real heap pointer
+   (an Ordinal_1041-allocated open-container tracking record, same class
+   as g_current_container_record right above) -- every assignment to/from
+   it (open_backpack_container, close_backpack_container) truncated the
+   real 64-bit pointer to 32 bits. That alone was silent as long as only
+   ONE container was ever open simultaneously (the only case exercised
+   before this session's container fixes), since nothing ever needed to
+   walk to a SECOND record through it. Widened to a real pointer; see
+   also the g_current_container_record-chain "next"/"prev" link widening
+   in open_backpack_container/leave_nested_container_level/
+   free_open_container_chain below for the deeper version of this same
+   bug, found and fixed alongside it. */
+char *g_open_container_list;
 /* g_backpack_widget_to_slot_plus1's address (0x85c39) is exactly one byte past
    g_backpack_widget_to_slot's (0x85c38) -- not a separate byte, an alias into the
    same backing array (same relationship as DAT_002028ec/DAT_002028e8,
@@ -3067,8 +3079,25 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
    comments) rather than relying on this single-widget path. The new
    6..11 entries are below that >= 0xb threshold, so they take the
    single-widget redraw path as intended, not the "elsewhere" one. */
-static unsigned char g_backpack_slot_to_widget_backing[0x17] = {
+/* Slots 20..27 (an OPEN container's own 8 content slots, populated by
+   open_backpack_container's own N -> N+8 widget remap at uw.c ~33712,
+   "Remap widgets 12-19 -> slots 20-27") were entirely missing from this
+   array -- it stopped at 0x17 (23) entries, 5 short of the 0x1c (28)
+   every other piece of this container-view code already uses as its
+   slot-range bound. Reported crash: "placing a container in another
+   container and trying to open the nested one" -- opening a container
+   nested inside an already-open one resolves to a content slot in
+   exactly this 20-27 range (confirmed live: slot=26 for a nested sack),
+   and indexing 3-5 elements past this array's end fed a garbage widget
+   id into redraw_inventory_widget, crashing deep in its own hotspot-
+   table lookup. Extended to 0x1c entries with the same N -> N-8 inverse
+   of the widget remap above (slots 20-27 -> widgets 12-19, mirroring
+   slots 11-18 -> widgets 12-19 just above it). Never triggered before
+   because nothing before this session's chain of container fixes ever
+   got far enough to open a SECOND, nested container view. */
+static unsigned char g_backpack_slot_to_widget_backing[0x1c] = {
   0,0,0,0,0, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0,
+  12,13,14,15,16,17,18,19,
 };
 #define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
 undefined2 DAT_00202980;
@@ -33124,19 +33153,23 @@ char *param_1;
 void free_open_container_chain()
 
 {
-  undefined1 uVar1;
-  undefined3 uVar2;
-  int iVar3;
+  char *_prev;
 
   if (g_current_container_record != 0) {
-    uVar2 = *(undefined3 *)(g_current_container_record + 4);
-    uVar1 = *(undefined1 *)(g_current_container_record + 7);
-    while( true ) {
-      iVar3 = CONCAT13(uVar1,uVar2);
-      if (iVar3 == 0) break;
+    /* Was reconstructing the "prev" chain link from the record's own
+       byte-4..7 field (CONCAT13 of a 3-byte + 1-byte read) -- that field
+       is only ever a truncated 32-bit half of a real 64-bit pointer (see
+       open_backpack_container's own record-widening fix). Walk the real,
+       untruncated prev pointer at +0x14 instead. Never triggered before
+       because closing a container was unreachable until this session's
+       earlier fixes got that far at all, and freeing a chain of TWO OR
+       MORE records (this loop's actual reason to exist) needed the
+       nested-container-open fix on top of that. */
+    _prev = *(char **)(g_current_container_record + 0x14);
+    while (_prev != 0) {
       /* Dropped argument: release_container_reference's declared signature takes the
          open-container tracking record being freed -- g_current_container_record,
-         the current one, before it's overwritten by iVar3 below --
+         the current one, before it's overwritten by _prev below --
          same "wrapper forgot to forward its own argument" idiom as
          this whole session's other fixes. Never triggered before
          because closing a container (this whole function) was
@@ -33146,9 +33179,8 @@ void free_open_container_chain()
          param_1's place. */
       release_container_reference((char *)g_current_container_record);
       Ordinal_1018(g_current_container_record);
-      uVar2 = *(undefined3 *)(iVar3 + 4);
-      uVar1 = *(undefined1 *)(iVar3 + 7);
-      g_current_container_record = iVar3;
+      g_current_container_record = _prev;
+      _prev = *(char **)(g_current_container_record + 0x14);
     }
     g_open_container_list = 0;
     release_container_reference((char *)g_current_container_record);
@@ -33290,21 +33322,38 @@ void leave_nested_container_level()
 
 {
   int iVar1;
-  
+  char *_old;
+
   if (g_open_container_list != 0) {
-    if (*(int *)(g_current_container_record + 4) == 0) {
+    /* Was `*(int *)(g_current_container_record + 4) == 0` -- the legacy
+       byte-4..7 "prev" field is only ever a truncated 32-bit half of a
+       real 64-bit pointer (see open_backpack_container's own record-
+       widening fix); check the real, untruncated prev pointer at +0x14
+       instead -- a truncated-but-nonzero value here would wrongly take
+       the "pop a level" branch below instead of closing outright. */
+    if (*(char **)(g_current_container_record + 0x14) == 0) {
       close_backpack_container();
     }
     else {
       /* Same dropped argument as free_open_container_chain's own fix -- forward the
          current g_current_container_record before it's overwritten below. */
       release_container_reference((char *)g_current_container_record);
-      g_current_container_record = *(undefined1 **)(g_current_container_record + 4);
-      Ordinal_1018();
+      /* Was `g_current_container_record = *(undefined1 **)(g_current_container_record + 4);
+         Ordinal_1018();` -- walked the same truncated legacy "prev" field
+         (wild pointer the moment a real second record existed to walk
+         to), then freed with NO argument at all (dropped, same idiom as
+         the sibling fix above) instead of the OLD record this is meant
+         to pop. Save the old pointer, walk the real +0x14 prev pointer,
+         then free the right one. */
+      _old = g_current_container_record;
+      g_current_container_record = *(char **)(g_current_container_record + 0x14);
+      Ordinal_1018(_old);
       *g_current_container_record = 0;
       g_current_container_record[1] = 0;
       g_current_container_record[2] = 0;
       g_current_container_record[3] = 0;
+      /* This record is the tail again now that its child was just freed. */
+      *(char **)(g_current_container_record + 0xc) = 0;
       g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
       iVar1 = resolve_object_link((ushort *)(g_current_container_record + 8));
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
@@ -33456,7 +33505,11 @@ short param_1;
   
   iVar1 = (int)param_1;
   puVar13 = (ushort *)(&DAT_00202950 + iVar1 * 2);
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] open_backpack_container entry: param_1=%d puVar13=%p\n", (int)param_1, (void *)puVar13);
   puVar7 = (ushort *)resolve_object_link(puVar13);
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] open_backpack_container: resolve_object_link -> puVar7=%p\n", (void *)puVar7);
   uVar3 = *puVar7;
   if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
     if ((uVar3 & 0xf) == 0xf) {
@@ -33574,39 +33627,84 @@ short param_1;
         } while (iVar10 < 0x14);
       }
       else {
-        puVar9 = g_open_container_list;
+        puVar9 = (undefined4 *)g_open_container_list;
         do {
           if (((*(ushort *)(puVar9 + 2) ^ *puVar13) & 0xffc0) == 0) {
             close_backpack_container();
             return;
           }
-          puVar9 = (undefined4 *)*puVar9;
+          /* Was `puVar9 = (undefined4 *)*puVar9;` -- walking this chain
+             "forward" via the record's own byte-0..3 "next" field, which
+             open_backpack_container's own record-creation code below
+             only ever wrote as a truncated 32-bit half of a real 64-bit
+             pointer (same bug class as g_open_container_list itself,
+             just embedded field-by-field instead of in a single global).
+             Harmless as long as at most one record ever existed to walk
+             through; reading it back as a full 8-byte pointer here wildly
+             mis-derefs the moment a second (nested) container is open.
+             Real, untruncated forward pointer now lives at the new +0xc
+             field this record-creation code below also writes. */
+          puVar9 = *(undefined4 **)((char *)puVar9 + 0xc);
         } while (puVar9 != (undefined4 *)0x0);
         if (iVar1 < 0xb) {
           free_open_container_chain();
         }
       }
-      puVar9 = (undefined4 *)Ordinal_1041(0xc);
+      /* Record grew from 0xc (12) to 0x1c (28) bytes: the original
+         12-byte layout (0-3 next / 4-7 prev / 8-9 container-link / 10-11
+         weight) only ever stored its next/prev CHAIN LINKS as 4-byte
+         fields -- correct on the original 32-bit target where a pointer
+         IS 4 bytes, but every one of them is a real 64-bit heap pointer
+         on this host (same class as g_open_container_list just above).
+         Rather than reshuffle every existing +8/+9/+10/+11 accessor
+         throughout this file (release_container_reference,
+         leave_nested_container_level, free_open_container_chain, the
+         combine/stow paths, etc. -- dozens of sites), the legacy 0-3/4-7
+         fields are left as harmless (if lossy) leftovers and two new
+         real 8-byte pointer fields are appended: +0xc = next, +0x14 =
+         prev. Only the chain-WALKING sites (here, and
+         leave_nested_container_level / free_open_container_chain) needed
+         updating to read these instead; every plain "is there a
+         next/prev at all" NULL check and every +8..+11 field access
+         keeps working unchanged. */
+      puVar9 = (undefined4 *)Ordinal_1041(0x1c);
       if (puVar9 != (undefined4 *)0x0) {
         if (g_open_container_list == (undefined4 *)0x0) {
-          g_open_container_list = puVar9;
-          g_current_container_record = puVar9;
+          g_open_container_list = (char *)puVar9;
+          g_current_container_record = (char *)puVar9;
           *(undefined1 *)(puVar9 + 1) = 0;
           *(undefined1 *)((char *)puVar9 + 5) = 0;
           *(undefined1 *)((char *)puVar9 + 6) = 0;
           *(undefined1 *)((char *)puVar9 + 7) = 0;
+          *(char **)((char *)puVar9 + 0xc) = 0;
+          *(char **)((char *)puVar9 + 0x14) = 0;
         }
         else {
           *(char *)g_current_container_record = (char)puVar9;
           *(char *)((char *)g_current_container_record + 1) = (char)((uint)puVar9 >> 8);
           *(char *)((char *)g_current_container_record + 2) = (char)((uint)puVar9 >> 0x10);
           *(char *)((char *)g_current_container_record + 3) = (char)((uint)puVar9 >> 0x18);
-          puVar6 = g_current_container_record;
+          puVar6 = (undefined4 *)g_current_container_record;
           *(char *)(puVar9 + 1) = (char)g_current_container_record;
           *(char *)((char *)puVar9 + 5) = (char)((uint)puVar6 >> 8);
           *(char *)((char *)puVar9 + 6) = (char)((uint)puVar6 >> 0x10);
           *(char *)((char *)puVar9 + 7) = (char)((uint)puVar6 >> 0x18);
-          g_current_container_record = (undefined4 *)*g_current_container_record;
+          /* Real (untruncated) chain links: the OLD current record's
+             "next" now really points at the new one, and the new one's
+             "prev" really points back at the old one. */
+          *(char **)((char *)g_current_container_record + 0xc) = (char *)puVar9;
+          *(char **)((char *)puVar9 + 0x14) = g_current_container_record;
+          *(char **)((char *)puVar9 + 0xc) = 0;
+          /* Was `g_current_container_record = (undefined4 *)*g_current_container_record;`
+             -- reading back the truncated 4-byte "next" field this same
+             block just wrote 4 lines above, purely to reconstruct the
+             pointer it already had in `puVar9` the whole time (a lossless
+             round-trip on the original 32-bit target, a wild-pointer read
+             on this 64-bit host). Just use puVar9 directly -- this is the
+             actual crash this whole record-widening fix was chasing
+             (reported: "placing a container in another container and
+             trying to open the nested one"). */
+          g_current_container_record = (char *)puVar9;
         }
         *(undefined1 *)g_current_container_record = 0;
         *(undefined1 *)((char *)g_current_container_record + 1) = 0;
@@ -34872,7 +34970,25 @@ short param_2;
 
 
 
-int FUN_000451b0()
+/* Given an object, find which currently-displayed backpack-grid widget
+   shows it (or allocate it one if it isn't shown yet). Was declared with
+   no parameters at all, and its body called encode_object_slot_index()
+   bare -- but every one of its 4 real call sites passes a real object
+   pointer, so this silently relied on ARM register leftover (the
+   caller's arg still sitting in r0, unclobbered) to accidentally forward
+   the right value. That's the same dropped-argument idiom already fixed
+   dozens of times in this file, except here BOTH this function's own
+   argument and its inner encode_object_slot_index() call were dropped
+   in tandem -- confirmed to crash for real: try_combine_or_stow_object's
+   "open a nested container" branch calls FUN_000451b0(container) then
+   open_backpack_container() (also bare -- see that call site's own fix),
+   and whatever register leftover reached open_backpack_container's
+   param_1 there was garbage in a fresh call context, producing a wild
+   resolve_object_link() dereference the instant a SECOND level of
+   container nesting was opened (a top-level open happened to work by
+   the same lucky-leftover coincidence one level up). */
+int FUN_000451b0(param_1)
+ushort *param_1;
 
 {
   char cVar1;
@@ -34881,8 +34997,8 @@ int FUN_000451b0()
   int iVar4;
   ushort *puVar5;
   int iVar6;
-  
-  uVar2 = encode_object_slot_index();
+
+  uVar2 = encode_object_slot_index((char *)param_1);
   iVar6 = 0;
   do {
     cVar1 = (&g_backpack_widget_to_slot)[iVar6];
@@ -69137,8 +69253,22 @@ int param_3;
     try_empty_container(param_2,param_1 == g_player_object);
   }
   else {
-    FUN_000451b0(param_2);
-    open_backpack_container();
+    /* Both calls here were bare (no arguments) -- see FUN_000451b0's own
+       fix comment and open_backpack_container's declared `short param_1`.
+       FUN_000451b0(param_2) finds (or allocates) the grid widget
+       currently displaying this container; that widget index is exactly
+       what open_backpack_container needs to know WHICH container to
+       open. Confirmed crashing for real: opening a container nested
+       inside an already-open container dereferenced whatever garbage
+       register value reached open_backpack_container's param_1, since
+       nothing here ever captured FUN_000451b0's return value at all. */
+    int _widget = FUN_000451b0(param_2);
+    if (getenv("UW_DEBUG_INV"))
+      fprintf(stderr, "[inv] try_combine_or_stow_object open: param_2=%p FUN_000451b0 returned widget=%d\n",
+              (void *)param_2, _widget);
+    if (-1 < _widget) {
+      open_backpack_container(_widget);
+    }
   }
   return;
 }
