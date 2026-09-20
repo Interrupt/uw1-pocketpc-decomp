@@ -355,6 +355,40 @@ directions on both jambs -- the first result in this investigation that
 looks like an actual door frame, not a proof-of-mechanism fragment.
 Full detail in `object-rendering-findings.txt`.
 
+**UPDATE 12 (missing lintel geometry: never seeded the "rise" origin
+slot DOS's own prologue always sets up, 2026-09-20):** the user reported
+scaling/positioning looking off against the DOS reference. Re-read
+`door_model` (uw1-decomp port/uw1_view.c ~2528-2586) line by line and
+found DOS never runs a bank's bytecode raw -- it always wraps it in a
+synthesized prologue that stores `(0, 0, rise)` into slot `0x800`
+(`rise = UW1_VIEW_DOOR_LINTEL_TOP(0x330) - org[2]`) and then calls into
+the real bank. Confirmed this isn't academic: bank 0x61's own bytecode
+references slot 0x800 directly, four times, via `vertex_sum`
+instructions -- and `vertex_sum` refuses to store its result if either
+source slot is unplaced. Since this interpreter never seeded slot 0x800,
+those four destinations were permanently unplaced, and combined with
+the earlier "whole face must be fully placed" fix, every face that
+depended on them was silently dropped -- real missing geometry (the
+lintel top), not a coordinate offset. Fixed by seeding slot 0x800 with
+`(0, 0, 0x330 - ah)` at the start of every branch-exploration pass.
+Verified: vertex-drop count went from 28/288 to 0/288, and the frame's
+bounding box grew from y=[0,208] to y=[0,384] -- visibly taller,
+filling in what was previously an empty gap at the top of the archway.
+
+**UPDATE 13 (UV scale was 1:1 raw world units; should be
+`(texwidth-1)/256`, 2026-09-20):** immediately after, the user reported
+the texture repeating 3-4x too densely. Every previous UV fix had
+gotten storage type and non-negativity right but never revisited
+magnitude -- U/V were raw world-unit deltas with no scale-down. The
+real wall-populate V formula (traced earlier, root-causing the
+float-vs-int static bug) is `((1024.0 - height) / 256.0) * (texwidth -
+1)` -- irrelevant additive term aside (each face is already normalized
+to its own minimum), the real coefficient is `(texwidth-1)/256.0`, ~4x
+smaller than the 1:1 scale this code was using, matching the user's own
+"3-4x too dense" report closely. Fixed by applying that coefficient to
+both U and V after normalization. Full detail on both fixes in
+`object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

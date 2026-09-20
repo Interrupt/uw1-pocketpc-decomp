@@ -52978,17 +52978,38 @@ done:
 /* Run the bank at word 0, unioning faces across every distinct branch
    policy (see the block comment above) -- uw1_dlist_run's own
    algorithm. Returns the number of faces written to out. */
-static int uwdl_run_bank(const unsigned short *words, int count, uwdl_face *out, int max_faces)
+/* DOS never runs a bank raw -- door_model (uw1-decomp port/uw1_view.c
+   ~2528-2559) always wraps it in a synthesized 8-word prologue:
+   `0x004c 0 0 rise 0x0800  0x0012 <call bank>  0x0000` -- store (0,0,rise)
+   into slot 0x800 (index 256 of 257, UW1_DLIST_SLOTS/UW1_DLIST_SLOT_STRIDE
+   both confirmed identical to this port's own UWDL_SLOTS/UWDL_SLOT_STRIDE),
+   THEN call into the bank. Confirmed this isn't academic for bank 0x61
+   specifically: its own real bytecode (g_dlist_bank_0x61) contains FOUR
+   `0x008c <slot> 0x0800 <dest>` (vertex_sum) instructions reading slot
+   0x800 directly. vertex_sum refuses to store anything if EITHER source
+   is unplaced (uw1_dlist.c K_VERTEX_SUM: `if (... || !a->placed ||
+   !b->placed) return;`) -- so without this seed, slot 0x800 is never
+   placed, all 4 of those vertex_sum destinations stay permanently
+   unplaced too, and this interpreter's own whole-face-must-be-placed
+   rule (matching uw1_view_door_faces's own `if (!f->placed[j]) break;`)
+   then silently drops every face that (transitively) depends on any of
+   those 4 destinations -- real missing geometry, not just a coordinate
+   offset, which is likely a real contributor to the reported scaling/
+   positioning mismatch against the DOS reference. */
+static int uwdl_run_bank(const unsigned short *words, int count, int32_t rise, uwdl_face *out, int max_faces)
 {
   uwdl_vm *m = (uwdl_vm *)calloc(1, sizeof(uwdl_vm));
   int i, n;
   if (!m) return 0;
   m->words = words; m->count = count;
   for (i = 0; i < 64; i++) {
+    uwdl_slot *origin;
     memset(m->slot, 0, sizeof(m->slot));
     memset(m->t, 0, sizeof(m->t));
     memset(m->path, 0, sizeof(m->path));
     m->undo_count = 0; m->depth = 0; m->stop = 0;
+    origin = uwdl_slot_at(m, 0x0800);
+    if (origin) { origin->p[0] = 0; origin->p[1] = rise; origin->p[2] = 0; origin->placed = 1; }
     uwdl_walk(m, 0);
     uwdl_queue_sites(m);
     if (m->queue_head >= m->queue_len) break;
@@ -53031,9 +53052,22 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
   static uwdl_face faces[UWDL_MAX_FACES];
   int nfaces;
   double ang, ca, sa; short ax, ah, az; int fi;
+  int32_t rise;
   g_uwdl_vertex_attempted = 0; g_uwdl_vertex_dropped = 0;
-  nfaces = uwdl_run_bank(words, count, faces, UWDL_MAX_FACES);
   ax = (short)DAT_0023b904; ah = (short)DAT_0023b91c; az = (short)DAT_0023b920;
+  /* door_model's own rise argument: `UW1_VIEW_DOOR_LINTEL_TOP - org[2]`
+     (uw1-decomp port/uw1_view.c:2639), where org[2] is the door object's
+     own world height -- this renderer's `ah` (DAT_0023b91c), the same
+     anchor component o->p[j][2]=org[2]+y ultimately feeds on the DOS
+     side. UW1_VIEW_DOOR_LINTEL_TOP=0x330 (816) confirmed directly from
+     uw1_view.h:1467, a fixed absolute height in the same 0-1024-per-
+     tile unit convention this geometry already uses (matches
+     UW1_VIEW_MODEL_CEILING=0x400=1024). Only meaningful for banks that
+     actually reference slot 0x800 (bank 0x61 does, confirmed above);
+     harmless (the seeded slot simply goes unread) for any bank that
+     doesn't. */
+  rise = (int32_t)(0x330 - ah);
+  nfaces = uwdl_run_bank(words, count, rise, faces, UWDL_MAX_FACES);
   if (getenv("UW_DEBUG_DLIST")) {
     fprintf(stderr, "[dlist] words=%d faces=%d heading=%d anchor=(%d,%d,%d) scale=%g yoff=%g\n",
             count, nfaces, heading, ax, ah, az, scale, yoff);
@@ -53232,20 +53266,39 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
            same as V. */
         int32_t umin = (int32_t)f->p[s0][0], vmin = (int32_t)f->p[s0][1];
         int32_t u0, u1, u2, u3, v0, v1, v2, v3;
+        /* Scale factor, at the user's report that the texture repeats
+           3-4x too densely: raw world-unit deltas (the previous version)
+           were used 1:1 as texel coordinates, with no scale-down at all.
+           The real wall-populate formula (uw.c, traced when root-causing
+           the earlier static bug) is
+           `V = ((1024.0 - height) / 256.0) * (texwidth - 1)` -- the
+           additive `1024.0 -` term is specific to how DOS's own Z
+           variable is anchored (irrelevant here since each face is
+           already normalized to its own minimum separately), but the
+           scale COEFFICIENT on the position term, `(texwidth-1)/256.0`,
+           is the real, load-bearing part: for a 64-wide texture that's
+           63/256 ~= 0.246 -- i.e. roughly one texel per 4 world units,
+           not one texel per world unit. Applying it here (both axes,
+           for consistency -- DOS's own formula is V-only because walls
+           never vary U, but the coefficient itself is just a texel-per-
+           world-unit conversion that applies equally to whichever axis
+           actually varies) turns a raw ~250-world-unit face span into
+           roughly one 64-texel repeat instead of ~4. */
+        double uvscale = (texwidth > 1) ? (double)(texwidth - 1) / 256.0 : 1.0;
         if ((int32_t)f->p[s1][0] < umin) umin = (int32_t)f->p[s1][0];
         if ((int32_t)f->p[s2][0] < umin) umin = (int32_t)f->p[s2][0];
         if ((int32_t)f->p[s3][0] < umin) umin = (int32_t)f->p[s3][0];
         if ((int32_t)f->p[s1][1] < vmin) vmin = (int32_t)f->p[s1][1];
         if ((int32_t)f->p[s2][1] < vmin) vmin = (int32_t)f->p[s2][1];
         if ((int32_t)f->p[s3][1] < vmin) vmin = (int32_t)f->p[s3][1];
-        u0 = (int32_t)f->p[s0][0] - umin;
-        u1 = (int32_t)f->p[s1][0] - umin;
-        u2 = (int32_t)f->p[s2][0] - umin;
-        u3 = (int32_t)f->p[s3][0] - umin;
-        v0 = (int32_t)f->p[s0][1] - vmin;
-        v1 = (int32_t)f->p[s1][1] - vmin;
-        v2 = (int32_t)f->p[s2][1] - vmin;
-        v3 = (int32_t)f->p[s3][1] - vmin;
+        u0 = (int32_t)((f->p[s0][0] - umin) * uvscale);
+        u1 = (int32_t)((f->p[s1][0] - umin) * uvscale);
+        u2 = (int32_t)((f->p[s2][0] - umin) * uvscale);
+        u3 = (int32_t)((f->p[s3][0] - umin) * uvscale);
+        v0 = (int32_t)((f->p[s0][1] - vmin) * uvscale);
+        v1 = (int32_t)((f->p[s1][1] - vmin) * uvscale);
+        v2 = (int32_t)((f->p[s2][1] - vmin) * uvscale);
+        v3 = (int32_t)((f->p[s3][1] - vmin) * uvscale);
         *(int *)(&DAT_000ace08 + rb) = u0;
         *(int *)(&DAT_000ace0c + rb) = v0;
         *(int *)(&DAT_000ace10 + rb) = u1;

@@ -1791,3 +1791,106 @@ a "[critter] decode_critter_sprite_page: implausible header w=0 h=236"
 warning) -- confirmed via backtrace to share no code with any of this
 investigation's changes. Flagged to the user as a separate bug, not
 chased further in this session.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (2): MISSING GEOMETRY -- WE NEVER SEEDED THE "RISE"
+ORIGIN SLOT DOS's PROLOGUE ALWAYS SETS UP FOR BANK 0x61
+═══════════════════════════════════════════════════════════════════════════
+User report: door frame scaling/positioning looks off against the DOS
+reference. Re-read uw1-decomp's door_model (port/uw1_view.c ~2528-2586)
+line by line instead of re-deriving from memory, and found something
+this investigation's earlier UV-focused sessions had missed entirely:
+DOS never runs a bank's bytecode raw. `door_model` always synthesizes
+an 8-word prologue in front of the real bank and CALLS into the bank
+through it:
+
+    region[p+0] = 0x004c;             /* store, no translate */
+    region[p+1..3] = 0, 0, rise;      /* (x, z, y) = (0, 0, rise) */
+    region[p+4] = 0x0800;             /* destination: slot 0x800 */
+    region[p+5] = 0x0012;             /* call */
+    region[p+6] = <displacement to the real bank's own head>;
+    region[p+7] = 0x0000;             /* end, after the call returns */
+
+`rise = UW1_VIEW_DOOR_LINTEL_TOP - org[2]` (LINTEL_TOP = 0x330 = 816,
+confirmed straight from uw1_view.h:1467; org[2] is the door object's own
+world height, the same value that later becomes `o->p[j][2] = org[2] +
+y` -- this renderer's `ah`/DAT_0023b91c anchor component).
+
+Checked whether this is just academic bookkeeping or whether bank
+0x61's own bytecode actually reads slot 0x800 -- it does, four times:
+
+    0x008c 0x0060 0x0800 0x0080   (vertex_sum: dest 0x80 = slot 0x60 + slot 0x800)
+    0x008c 0x0068 0x0800 0x0088
+    0x008c 0x0070 0x0800 0x0090
+    0x008c 0x0078 0x0800 0x0098
+
+`K_VERTEX_SUM`'s own real behavior (uw1_dlist.c ~577-585): `if (a ==
+NULL || b == NULL || !a->placed || !b->placed) return;` -- it refuses
+to store anything if EITHER source is unplaced. This interpreter's own
+`uwdl_run_bank` never seeded slot 0x800 (index 256 of 257 -- confirmed
+UW1_DLIST_SLOTS/UW1_DLIST_SLOT_STRIDE are 257/8, identical to this
+port's own UWDL_SLOTS/UWDL_SLOT_STRIDE), so it was permanently
+unplaced, all 4 of those vertex_sum destinations were permanently
+unplaced too, and -- combined with the earlier fix requiring a face's
+4 corners to ALL be placed to draw at all -- every face that
+transitively depended on any of those 4 slots was silently dropped.
+This wasn't a coordinate-offset bug, it was missing geometry: real
+faces (the lintel top, going by the slot naming and LINTEL_TOP's own
+name) were never being built at all.
+
+FIX: added a `rise` parameter to `uwdl_run_bank`, computed in
+`emit_dlist_bank_object` as `0x330 - ah` (the exact DOS formula, using
+this renderer's own height anchor in place of DOS's org[2]), and seed
+slot 0x800 with (0, 0, rise) at the start of every branch-exploration
+pass (matching DOS's prologue being applied once per real `door_model`
+call, replicated once per pass here since each pass resets the whole
+slot table). Axis-checked against this interpreter's own `uwdl_place`
+(`p[0]=x, p[1]=y, p[2]=z`) to put `rise` in the right slot (p[1]).
+
+VERIFICATION: same repro (door at tile 33.23,8.68). Before: vertex
+slots attempted=288 dropped=28, bbox y=[0,208]. After: attempted=288
+dropped=0 -- every vertex slot bank 0x61 references now resolves --
+and bbox y=[0,384], visibly taller (the previously-missing lintel-top
+geometry now included). Screenshot: the frame now extends up into what
+was previously an empty gap at the top of the archway, filling out a
+noticeably more complete, architecturally correct shape. Standard
+run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (3): UV SCALE WAS 1:1 RAW WORLD UNITS -- SHOULD BE
+(texwidth-1)/256 PER THE REAL WALL FORMULA'S OWN COEFFICIENT
+═════════════════════════════════════════════════════════════════════════════
+User report: texture repeats 3-4x too densely. Every UV fix so far had
+gotten U/V's *storage type* and *non-negativity* right but never
+revisited their actual magnitude -- U and V were raw world-unit position
+deltas, scaled by exactly 1.0 (1 world unit = 1 texel).
+
+Went back to the real wall-populate V formula traced when root-causing
+the earlier float-vs-int static bug (uw.c, the wall-tile-face code):
+
+    V = ((1024.0 - height) / 256.0) * (texwidth - 1)
+
+The `1024.0 -` term is specific to DOS's own Z-anchoring convention and
+irrelevant here (each face already gets normalized to its own minimum
+separately, so an additive constant washes out) -- what matters is the
+scale COEFFICIENT on the position term: `(texwidth-1)/256.0`. For this
+bank's 64-wide texture that's 63/256 ~= 0.246, i.e. roughly one texel
+per 4 world units, not one texel per world unit. This is a real,
+sourced conversion factor, not an arbitrary guess, and its rough
+magnitude (~4x smaller) matches the user's own "3-4x too dense" report
+almost exactly.
+
+FIX: multiply both U and V (after the existing per-face non-negative
+normalization) by `(texwidth-1)/256.0` in emit_dlist_bank_object.
+Applied to both axes for consistency -- DOS's own formula is V-only
+because ordinary walls never vary U, but the coefficient itself is just
+a texels-per-world-unit conversion, not something axis-specific.
+
+VERIFICATION: same repro. Visually, the frame now shows a small number
+of large, clearly-defined stone blocks per jamb instead of many small
+ones -- roughly the inverse density of the previous result, consistent
+with a ~4x scale-down. Standard run-regressions.sh: 6/6 clean. Not
+independently confirmed pixel-perfect against a real DOS screenshot
+(none available to this project), but grounded in the one real,
+recovered formula this renderer actually uses for the same purpose,
+not a fitted constant.
