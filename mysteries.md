@@ -514,6 +514,24 @@ correct width, a continuous panel from near the top down to the floor.
 A small residual gap remains at the very top for next time. Full detail
 in `object-rendering-findings.txt`.
 
+**UPDATE 19 (correction: the Y-scale was wrong -- frame's own face data
+proves 208 is the real door-opening height, 2026-09-20):** user, after
+UPDATE 18: "it should fit the gap of just the door area, not go into
+the lintel" -- overturning the previous update's reading of "whole
+opening" as the frame's full 384. Checked properly this time: dumped
+bank 0x61's own 11 faces by real position. Face 1 (the lintel's
+underside) sits at exactly y=208; the outer jamb faces (the door
+opening's real sides) all span y=[0,208]; the lintel's own front/back
+faces (already correctly textured, real UV) are the separate
+y=[208,384] band above. The frame's real door opening is y=[0,208] --
+exactly the leaf's own original, unscaled native height. Reverted
+`_leaf_yscale`'s default from `384/208` back to `1.0` (the mechanism
+itself stays, since a uniform scale really was proven wrong in
+principle -- just this specific default was). Verified: the leaf now
+fills exactly the door opening, with the frame's own already-textured
+lintel correctly visible above it -- not a gap, not missing texture,
+DOS's own real geometry. Full detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

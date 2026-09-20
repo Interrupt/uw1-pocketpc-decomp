@@ -2192,3 +2192,60 @@ few more world units of legitimate lintel underside even for a
 correctly-sized door), but this is a dramatic, confirmed-direction
 improvement over the previous "small vertical section" result.
 Standard run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (9): CORRECTION -- THE Y-SCALE WAS WRONG. THE
+FRAME'S OWN FACE DATA PROVES 208 IS THE REAL DOOR-OPENING HEIGHT; THE
+384 BAND ABOVE IT IS THE LINTEL, NOT PART OF THE DOOR
+═══════════════════════════════════════════════════════════════════════════
+User, after the Y-scale fix: "This is wrong, it should fit the gap of
+just the door area, not go into the lintel." This directly overturns
+UPDATE (8)'s working assumption (that "the whole opening" the user
+confirmed meant the frame's full 384) -- it meant the door's own
+opening specifically, excluding the lintel band above it.
+
+Checked this properly instead of guessing at another ratio: dumped
+bank 0x61's own 11 faces by real position (extended UW_DEBUG_DLIST_UV
+to also print each face's p[] positions, not just the unused raw DOS
+uv[] words it already printed). The data settles this cleanly, no
+ambiguity:
+
+    face 1 (flat): p0=(-48,208,0) p1=(80,208,0) p2=(80,208,8) p3=(-48,208,8)
+      -- a horizontal face at y=208 exactly: the lintel's own underside.
+    face 5 (textured): p0=(-112,384,0) p1=(144,384,0) p2=(144,208,0) p3=(-112,208,0)
+      -- spans y=[208,384]: the lintel's own front face (real UV, real
+      texture -- this band already renders correctly as part of the
+      frame, it was never missing or wrong, just misidentified as "gap").
+    faces 6/7/9 (textured, the outer jambs -- the door opening's real
+    sides): all span y=[0,208] exactly, matching the leaf's own native
+    height precisely.
+
+The frame's real door OPENING is y=[0,208]. y=[208,384] is the lintel,
+a separate architectural element the frame already renders (with its
+own real wall-textured face) that a door leaf was never meant to
+reach. The leaf's original, unscaled native height (208) was correct
+the whole time -- UPDATE (8)'s 384/208 Y-scale was a real regression,
+pushing the door up into the lintel band exactly as the user reported.
+
+FIX: reverted `_leaf_yscale`'s default from `384.0/208.0` back to
+`1.0`. The `yscale` mechanism itself (independent Y-only scaling,
+separate from X/Z) is kept -- it's real, general-purpose infrastructure
+proven necessary in principle (a uniform scale really was wrong, tested
+directly) even though this specific default was wrong; UW_DLIST_LEAF_
+YSCALE remains available for whatever the NEXT real calibration need
+turns out to be, now correctly starting from a verified-correct 1.0
+baseline instead of an assumed one.
+
+VERIFICATION: same repro -- door leaf now fills exactly the y=[0,208]
+opening, with the frame's own already-textured lintel visible above it
+(not a gap, not missing texture -- confirmed by face 5's own real UV
+data, real stone texture, matching the jambs because it's genuinely
+the same wall material in this design, not a bug). This matches DOS's
+own real face geometry exactly, not just a visual guess. Standard
+run-regressions.sh: 6/6 clean.
+
+Lesson for next time: when the user's confirmation of a general
+statement ("doors fill the whole opening") conflicts with what the
+actual geometry data shows, get the PRECISE geometric breakdown (which
+face is which) before applying a fix, rather than picking the most
+literal reading of the confirmation and scaling to match it.

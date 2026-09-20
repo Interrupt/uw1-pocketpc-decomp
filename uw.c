@@ -55411,23 +55411,30 @@ LAB_00061d34:
              base, not stacked on top of the frame's. */
           int _leaf_heading = (_raw_heading2 - 2 * (int)DAT_0023b4a0) & 7;
           double _leaf_scale = _scale;
-          double _leaf_yscale = 384.0 / 208.0;
+          double _leaf_yscale = 1.0;
           { int _lstep = -3;
             const char *_s = getenv("UW_DLIST_LEAF_HEADING_OFFSET"); if (_s) _lstep = atoi(_s);
             _leaf_heading = (_leaf_heading + _lstep) & 7;
           }
-          /* User confirmed real UW1 doors fill the whole opening (no
-             lintel gap), so the leaf's own native height (208, confirmed
-             complete -- see the g_dlist_region 0x0800-slot investigation
-             above: the leaf never references it, so it isn't lintel-
-             relative the way bank 0x61 is, and this isn't missing/dropped
-             geometry) genuinely needs to reach the frame's own real
-             opening height (384) to match. A UNIFORM scale already
-             tested wrong (~1.846 applied to X too made the door visibly
-             too wide, poking past its own jambs, while still leaving a
-             gap) -- doors are much taller than wide, so only Y needs
-             stretching. Default 384/208 is the direct ratio; both axes
-             stay independently tunable live. */
+          /* CORRECTED: the previous version of this comment scaled Y to
+             384/208 on the (wrong) assumption that the frame's whole
+             y=[0,384] bbox was "the opening." Dumped bank 0x61's own 11
+             faces by real position (UW_DEBUG_DLIST_UV) to check directly
+             instead of assuming further, and it settles this cleanly:
+             face 1 (the lintel's own underside, a horizontal face) sits
+             at exactly y=208; faces 6/7/9 (the outer jambs -- the actual
+             sides of the door opening a leaf swings within) all span
+             y=[0,208]; faces 5/8 (the lintel's own front/back) are the
+             separate y=[208,384] band above that. The frame's real door
+             OPENING is y=[0,208] -- exactly the leaf's own native
+             height, unscaled. User confirmed directly: doors fill the
+             door area, not the lintel -- scaling the leaf to 384 pushed
+             it up into the lintel band, which was the bug, not a fix.
+             yscale is kept as a real, independently-tunable parameter
+             (X/Z still uses this bank's own confirmed-correct 1.0 via
+             _leaf_scale) in case future calibration needs it for a
+             different reason, but 1.0 is the evidenced-correct default
+             now, not 384/208. */
           { const char *_s = getenv("UW_DLIST_LEAF_SCALE"); if (_s) _leaf_scale = atof(_s); }
           { const char *_s = getenv("UW_DLIST_LEAF_YSCALE"); if (_s) _leaf_yscale = atof(_s); }
           if (getenv("UW_DLIST_DOOR_TEXTURE")) {
