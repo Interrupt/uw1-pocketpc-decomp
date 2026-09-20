@@ -33316,6 +33316,27 @@ void close_backpack_container()
 
 
 
+/* Draws the container icon / leave-button (widget 1, above the 8-item
+   grid) for whichever container's header word is passed in -- factored
+   out of open_backpack_container so leave_nested_container_level can
+   redraw it too when popping back to a parent (see that call site's own
+   comment). Always draws the OPEN sprite variant (id | 1); see
+   open_backpack_container's original comment on this icon for the
+   COMOBJ.DAT even/odd closed/open id pairs this relies on. */
+static void draw_container_indicator_icon(header)
+ushort header;
+{
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] widget-1 icon id=0x%03x (open variant of 0x%03x)\n",
+            (unsigned)((header & 0x1ff) | 1), (unsigned)(header & 0x1ff));
+  g_blit_transparent_mode = 1;
+  draw_sprite_by_id((header & 0x1ff) | 1,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
+               (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
+  g_blit_transparent_mode = 0;
+}
+
+
+
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 void leave_nested_container_level()
@@ -33372,6 +33393,13 @@ void leave_nested_container_level()
         fprintf(stderr, "[inv] leave_nested_container_level: popped to record=%p g_current_container_link=0x%04x resolved=%p\n",
                 (void *)g_current_container_record, (unsigned)g_current_container_link, (void *)iVar1);
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
+      /* User QA: "the container indicator does not update to show the
+         current container icon" after popping back to a parent -- this
+         icon (widget 1) is only ever drawn inside open_backpack_container,
+         which this pop path never calls, so it was left showing whatever
+         the child container's icon looked like. Redraw it here from the
+         parent's own just-resolved header word. */
+      draw_container_indicator_icon(*(ushort *)iVar1);
       repopulate_container_grid_slots();
       refresh_container_view();
       redraw_inventory_widget_range(0x14,0x14);
@@ -33702,14 +33730,10 @@ short param_1;
          "a_pack"/0x083 "an_open pack", 0x086 "a_pouch"/0x087 "an_open
          pouch", 0x08a "a_gold coffer"/0x08b "an_open gold coffer", 0x088
          "a_map case"/0x089 "an_open map case") -- OR in the low bit to
-         show the open variant instead. */
-      if (getenv("UW_DEBUG_INV"))
-        fprintf(stderr, "[inv] open_backpack_container: widget-1 icon id=0x%03x (open variant of 0x%03x)\n",
-                (unsigned)((uVar3 & 0x1ff) | 1), (unsigned)(uVar3 & 0x1ff));
-      g_blit_transparent_mode = 1;
-      draw_sprite_by_id((uVar3 & 0x1ff) | 1,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
-                   (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
-      g_blit_transparent_mode = 0;
+         show the open variant instead. Factored the actual draw out into
+         draw_container_indicator_icon so leave_nested_container_level's
+         own pop-to-parent path can redraw this same icon too. */
+      draw_container_indicator_icon(uVar3);
       /* Record grew from 0xc (12) to 0x1c (28) bytes: the original
          12-byte layout (0-3 next / 4-7 prev / 8-9 container-link / 10-11
          weight) only ever stored its next/prev CHAIN LINKS as 4-byte
@@ -33906,15 +33930,25 @@ void FUN_0004365c()
 
 {
   short sVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
+  char *iVar2;
+  char *iVar3;
+  char *iVar4;
   int iVar5;
-  
+
   if ((g_open_container_list != 0) && (DAT_002029a0 != 0)) {
-    iVar2 = resolve_object_link(g_current_container_record + 8);
-    iVar3 = resolve_object_link(iVar2 + 6);
-    iVar4 = resolve_object_link(&DAT_00202978);
+    /* Was `resolve_object_link(g_current_container_record + 8)` -- a
+       tracking record lives outside the level's object arena
+       resolve_object_link bounds-checks against, always NULL on this
+       host (same already-established `g_current_container_link`
+       workaround as elsewhere in this file). iVar2/3/4 were also plain
+       `int`, truncating every resolve_object_link() pointer they held
+       -- this whole function only ever uses them as pointers (a
+       content-chain scroll search), so retyped outright rather than
+       introducing yet more dedicated locals. */
+    g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
+    iVar2 = (char *)resolve_object_link(&g_current_container_link);
+    iVar3 = (char *)resolve_object_link((ushort *)(iVar2 + 6));
+    iVar4 = (char *)resolve_object_link(&DAT_00202978);
     iVar2 = iVar3;
     if (iVar3 != iVar4) {
       do {
@@ -33922,7 +33956,7 @@ void FUN_0004365c()
         iVar5 = 0;
         iVar2 = iVar3;
         do {
-          iVar2 = resolve_object_link(iVar2 + 4);
+          iVar2 = (char *)resolve_object_link((ushort *)(iVar2 + 4));
           if (iVar2 == 0) {
             return;
           }
@@ -33961,7 +33995,8 @@ short param_2;
   int iVar10;
   bool bVar11;
   short local_28;
-  
+  ushort _parentLink;
+
   bVar11 = false;
   /* Dropped arguments -- same bare call as place_object_in_backpack_slot's identical
      fix just above (search "check_object_fits_in_slot's declared signature"). */
@@ -33972,7 +34007,21 @@ LAB_000438ac:
   }
   else {
     iVar10 = (int)param_2;
-    if ((iVar10 == 0x13) && (*(int *)(g_current_container_record + 4) == 0)) {
+    /* Both `g_current_container_record + 4` reads below were the legacy
+       4-byte "prev" field -- only ever a truncated half of a real
+       64-bit pointer (see open_backpack_container's record-widening
+       comment); walk the real +0x14 pointer instead. The second one
+       also fed the truncated value straight into resolve_object_link as
+       if it were an object pointer's own base -- a tracking record
+       lives outside the level's object arena (same "was always NULL on
+       this host" class as the several already-fixed
+       `resolve_object_link(g_current_container_record + 8)` call sites
+       elsewhere in this file), so even with the pointer fixed this still
+       needs to go through a local copy of the record's own saved link
+       (`_parentLink`), the same workaround `g_current_container_link`
+       already established, not a direct resolve through the record's
+       own memory. */
+    if ((iVar10 == 0x13) && (*(char **)(g_current_container_record + 0x14) == 0)) {
       iVar10 = 0xb;
       do {
         if ((*(ushort *)(&DAT_00202950 + iVar10 * 2) & 0xffc0) == 0) {
@@ -33988,8 +34037,23 @@ LAB_0004386c:
       iVar9 = 0;
     }
     else {
-      if ((iVar10 == 0x13) && (iVar9 = *(int *)(g_current_container_record + 4), iVar9 != 0)) {
-        puVar4 = (ushort *)resolve_object_link(iVar9 + 8);
+      if ((iVar10 == 0x13) &&
+         (iVar9 = *(char **)(g_current_container_record + 0x14), iVar9 != 0)) {
+        /* resolve_object_link rejects a pointer to an ordinary stack
+           local (confirmed live: `_parentLink` as a plain local always
+           resolved to NULL, crashing the very next dereference) -- it
+           only accepts globals (the object arena, or this file's own
+           handful of established global "scratch link" spots like
+           g_current_container_link itself). Save/restore that global
+           around the resolve instead of introducing a new local: this
+           function is asked to place into the PARENT while
+           g_current_container_link still needs to keep meaning "the
+           currently open (child) container" for anything else that
+           reads it before this function returns. */
+        _parentLink = g_current_container_link;
+        g_current_container_link = *(ushort *)(iVar9 + 8);
+        puVar4 = (ushort *)resolve_object_link(&g_current_container_link);
+        g_current_container_link = _parentLink;
       }
       else {
         puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar10 * 2);
@@ -34011,11 +34075,12 @@ LAB_0004386c:
     else {
       iVar10 = FUN_00046260(param_1);
       g_player_carry_weight = g_player_carry_weight + (short)iVar10;
-      for (; iVar9 != 0;
-          iVar9 = CONCAT13(*(undefined1 *)(iVar9 + 7),
-                           CONCAT12(*(undefined1 *)(iVar9 + 6),
-                                    CONCAT11(*(undefined1 *)(iVar9 + 5),*(undefined1 *)(iVar9 + 4)))
-                          )) {
+      /* Legacy truncated "prev" walk -- same fix as
+         place_object_in_backpack_slot's sibling copy (search "still
+         broken for genuine container nesting"). Note `iVar9` here was
+         already set to either 0 or a real (untruncated, per the fix
+         above) tracking-record pointer, so this walk is now consistent. */
+      for (; iVar9 != 0; iVar9 = *(char **)(iVar9 + 0x14)) {
         iVar8 = *(short *)(iVar9 + 10) + iVar10;
         *(char *)(iVar9 + 10) = (char)iVar8;
         *(char *)(iVar9 + 0xb) = (char)((uint)iVar8 >> 8);
@@ -34108,9 +34173,23 @@ undefined4 param_2;
   int iVar8;
   byte *pbVar9;
   ushort *puVar10;
-  
-  iVar4 = resolve_object_link(g_current_container_record + 8);
-  puVar10 = (ushort *)(iVar4 + 6);
+  char *pAncestor;
+
+  /* Was `resolve_object_link(g_current_container_record + 8)` -- a
+     tracking record lives outside the level's object arena
+     resolve_object_link bounds-checks against, so this always returned
+     NULL on this host (same class as the several already-fixed
+     `resolve_object_link(g_current_container_record + 8)` call sites
+     elsewhere in this file -- search "g_current_container_link holds
+     the same identity"). Route through that same established
+     global-copy workaround instead of resolving through the record's
+     own memory directly. Also was truncating the resolved 64-bit
+     contents-head pointer through `int iVar4` before adding +6 --
+     fixed by giving it its own pointer-typed local rather than reusing
+     `iVar4`, which has two unrelated plain-int roles later in this
+     function. */
+  g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
+  puVar10 = (ushort *)((char *)resolve_object_link(&g_current_container_link) + 6);
   iVar4 = (short)param_2 * 2;
   pbVar9 = &DAT_00202950 + iVar4;
   puVar5 = (ushort *)resolve_object_link(pbVar9);
@@ -34133,14 +34212,16 @@ undefined4 param_2;
       (&DAT_00202951)[iVar4] = (char)((uVar7 << 0x16) >> 0x18);
       sVar2 = FUN_00046260(param_1);
       sVar3 = FUN_00046260(puVar5);
-      for (iVar4 = g_current_container_record; iVar4 != 0;
-          iVar4 = CONCAT13(*(undefined1 *)(iVar4 + 7),
-                           CONCAT12(*(undefined1 *)(iVar4 + 6),
-                                    CONCAT11(*(undefined1 *)(iVar4 + 5),*(undefined1 *)(iVar4 + 4)))
-                          )) {
-        iVar8 = (int)*(short *)(iVar4 + 10) + (((int)sVar2 - (int)sVar3) * 0x10000 >> 0x10);
-        *(char *)(iVar4 + 10) = (char)iVar8;
-        *(char *)(iVar4 + 0xb) = (char)((uint)iVar8 >> 8);
+      /* Legacy truncated "prev" walk -- same fix as
+         place_object_in_backpack_slot's sibling copy (search "still
+         broken for genuine container nesting"); given its own dedicated
+         local (pAncestor) since `iVar4` has unrelated plain-int roles
+         elsewhere in this function. */
+      for (pAncestor = g_current_container_record; pAncestor != 0;
+          pAncestor = *(char **)(pAncestor + 0x14)) {
+        iVar8 = (int)*(short *)(pAncestor + 10) + (((int)sVar2 - (int)sVar3) * 0x10000 >> 0x10);
+        *(char *)(pAncestor + 10) = (char)iVar8;
+        *(char *)(pAncestor + 0xb) = (char)((uint)iVar8 >> 8);
       }
       sVar2 = FUN_00046260(param_1);
       g_player_carry_weight = g_player_carry_weight + sVar2;
@@ -35006,11 +35087,18 @@ short param_2;
            reached by the identical "drag an item to a different slot
            inside an open container" user repro. */
         iVar4 = resolve_object_link(&g_current_container_link);
+        /* Was walking the ancestor chain via the legacy 4-byte "prev"
+           field (CONCAT13/12/11 of bytes 4-7) -- only ever a truncated
+           half of a real 64-bit pointer (see open_backpack_container's
+           record-widening comment); this exact spot was already flagged
+           as a known, deliberately-deferred gap by an earlier session
+           ("harmless for a single, non-nested open container... still
+           broken for genuine container nesting" -- see this function's
+           own comment a few lines up). Real nesting exists now,
+           courtesy of this session's container fixes -- walk the real,
+           untruncated prev pointer at +0x14 instead. */
         for (iVar5 = g_current_container_record; iVar5 != 0;
-            iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
-                             CONCAT12(*(undefined1 *)(iVar5 + 6),
-                                      CONCAT11(*(undefined1 *)(iVar5 + 5),*(undefined1 *)(iVar5 + 4)
-                                              )))) {
+            iVar5 = *(char **)(iVar5 + 0x14)) {
           iVar7 = *(short *)(iVar5 + 10) + iVar3;
           *(char *)(iVar5 + 10) = (char)iVar7;
           *(char *)(iVar5 + 0xb) = (char)((uint)iVar7 >> 8);
@@ -35635,11 +35723,10 @@ ushort param_5;
                (&DAT_00202950)[iVar9 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
           iVar5 = g_current_container_record;
           (&DAT_00202951)[iVar9 * 2] = (char)((uVar6 << 0x16) >> 0x18);
-          for (; iVar5 != 0;
-              iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
-                               CONCAT12(*(undefined1 *)(iVar5 + 6),
-                                        CONCAT11(*(undefined1 *)(iVar5 + 5),
-                                                 *(undefined1 *)(iVar5 + 4))))) {
+          /* Legacy truncated "prev" walk -- same fix as
+             place_object_in_backpack_slot's sibling copy above (search
+             "still broken for genuine container nesting"). */
+          for (; iVar5 != 0; iVar5 = *(char **)(iVar5 + 0x14)) {
             iVar9 = *(short *)(iVar5 + 10) - iVar4;
             *(char *)(iVar5 + 10) = (char)iVar9;
             *(char *)(iVar5 + 0xb) = (char)((uint)iVar9 >> 8);
@@ -36099,11 +36186,20 @@ short param_1;
           redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar9]);
         }
         else {
-          for (; iVar6 != 0;
-              iVar6 = CONCAT13(*(undefined1 *)(iVar6 + 7),
-                               CONCAT12(*(undefined1 *)(iVar6 + 6),
-                                        CONCAT11(*(undefined1 *)(iVar6 + 5),
-                                                 *(undefined1 *)(iVar6 + 4))))) {
+          /* Was walking the "prev" chain (up through every ancestor
+             container, to propagate the removed item's weight all the
+             way to the root) via CONCAT13/12/11 of the record's own
+             byte-4..7 field -- the same legacy 4-byte "prev" that's only
+             ever a truncated half of a real 64-bit pointer (see
+             open_backpack_container's own record-widening comment).
+             Harmless with a single open container (loop runs once,
+             lands on 0); wild-pointer crash the instant a real ancestor
+             existed to walk to -- confirmed live: moving an item inside
+             a NESTED container's own grid ("Trying to move an item in a
+             nested container causes a crash"). Walk the real,
+             untruncated prev pointer at +0x14 instead, same fix as
+             leave_nested_container_level/free_open_container_chain. */
+          for (; iVar6 != 0; iVar6 = *(char **)(iVar6 + 0x14)) {
             iVar9 = FUN_00046260(puVar7);
             iVar9 = *(short *)(iVar6 + 10) - iVar9;
             *(char *)(iVar6 + 10) = (char)iVar9;
@@ -37061,12 +37157,11 @@ uint param_2;
     }
     iVar8 = (*(ushort *)(&DAT_00202c91 + (*param_1 & 0x1ff) * 0xd) >> 4) * param_2;
     iVar5 = g_current_container_record;
+    /* Legacy truncated "prev" walk -- same fix as
+       place_object_in_backpack_slot's sibling copy (search "still
+       broken for genuine container nesting"). */
     if (0x13 < iVar1) {
-      for (; iVar5 != 0;
-          iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
-                           CONCAT12(*(undefined1 *)(iVar5 + 6),
-                                    CONCAT11(*(undefined1 *)(iVar5 + 5),*(undefined1 *)(iVar5 + 4)))
-                          )) {
+      for (; iVar5 != 0; iVar5 = *(char **)(iVar5 + 0x14)) {
         iVar10 = *(short *)(iVar5 + 10) + iVar8;
         *(char *)(iVar5 + 10) = (char)iVar10;
         *(char *)(iVar5 + 0xb) = (char)((uint)iVar10 >> 8);
