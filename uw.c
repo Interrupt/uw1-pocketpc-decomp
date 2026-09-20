@@ -7706,6 +7706,26 @@ undefined4 * param_6;
 // was FUN_0001548c -- the textured span rasterizer: for one scanline
 // span between two edges, perspective-divides per pixel, samples the
 // tile texture, shade-corrects and writes RGB565 into g_uw_framebuffer
+//
+// Checked for a "special/self-illuminated colour" exclusion from the
+// distance-shade multiply (user's global fire/water palette-animation
+// search) -- there isn't one, and none is needed: every texel's colour
+// is scaled by the same distance/light factor (DAT_000b5638) regardless
+// of palette index, BUT the colour itself is sampled from g_palette_rgb565
+// fresh on every single frame (unlike the 2D HUD/paperdoll icon path,
+// which composites once into the framebuffer and never re-reads the
+// palette -- see mode-icon-and-hud-icon-flicker-fixes memory). So any
+// wall/floor/ceiling texel whose palette index falls inside a range
+// palette_cycle_range rotates would already animate through this exact
+// code, for free, with no extra plumbing. Confirmed real lava-shaped
+// textures exist using exactly the fire-gradient range (16-23) already
+// wired up for the torch-icon fix: F32.TR/F16.TR entries 24/25 are
+// 94-100% pixels in that range (entry 23 ~28%), W64.TR/W16.TR entry 206
+// is ~93% -- unmistakably lava floor and a lava/torch wall texture. The
+// level loaded from a fresh game (UW_DEBUG_TEXIDS) doesn't reference any
+// of those specific texture ids in its own 48-wall/10-floor id lists, so
+// this couldn't be verified live from the default spawn point -- would
+// need a level that actually places one of them on screen.
 void raster_textured_span(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
 int param_1;
 intptr_t param_2; /* framebuffer base */
@@ -48908,6 +48928,14 @@ int param_2;
     iVar4 = iVar1;
   } while (iVar1 < 10);
   load_terrain_texture_props((char *)&DAT_0023ae58,(char *)&DAT_0023adb8);
+  if (getenv("UW_DEBUG_TEXIDS")) {
+    int _i;
+    fprintf(stderr, "[texids] wall:");
+    for (_i = 0; _i < 0x30; _i++) fprintf(stderr, " %d", (int)(&DAT_0023ae58)[_i]);
+    fprintf(stderr, "\n[texids] floor:");
+    for (_i = 0; _i < 10; _i++) fprintf(stderr, " %d", (int)(&DAT_0023adb8)[_i]);
+    fprintf(stderr, "\n");
+  }
   iVar4 = 0;
   do {
     uVar2 = local_tmap_buf[58 + iVar4];
