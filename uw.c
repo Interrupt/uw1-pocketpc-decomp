@@ -37964,60 +37964,20 @@ void main_loop_hud_flush()
   } else {
     flush_dirty_rect_to_display(1);
   }
-  /* Lit-torch (and any other equipped light source) HUD icon flicker.
-     User report: "the torch when used does not animate in the HUD like
-     it should" -- confirmed the intended animation is a PALETTE cycle,
-     not a sprite flipbook (an in-game frame dump of ids 140-203 found
-     exactly one lit-torch frame, 149 -- no adjacent flame-variant
-     frames around it), then pinned the exact range by decoding
-     PALS.DAT bank 0 directly: indices 16-23 are an unmistakable
-     red/orange/yellow fire gradient (240,136,4 / 216,92,0 / 200,56,0 /
-     184,24,0 / 168,0,0 / 252,212,0 / 244,148,0 / 236,116,4), distinct
-     from the grey/fog gradient immediately after it at 24-31. Verified
-     empirically via a temporary debug probe: cycling exactly this
-     8-entry range visibly flickered the torch's own on-screen colors
-     while leaving the wall and everything else untouched (a wider or
-     differently-placed range either did nothing or wrongly disturbed
-     unrelated colors, e.g. the stone wall). This project's own
-     GXEndDraw comment already establishes why nothing does this "for
-     free": real GAPI/VGA hardware's palette swap recolored the whole
-     screen instantly, but this port converts palette-indexed source
-     art to RGB565 at draw time (draw_sprite_by_id/bitmap_blit_to_framebuffer),
-     so a palette rotation alone doesn't touch already-composited
-     pixels -- something has to actually redraw. The existing
-     `palette_cycle_range`/FUN_0003601c torch-flicker system only ever
-     runs for wall-mounted torches walked into view during 3D-model
-     rendering, never for the paperdoll/HUD icon path
-     (redraw_inventory_widget_range), which has no periodic redraw hook
-     of its own at all -- so an equipped lit torch's icon was rendered
-     once (correctly, as the lit sprite) and then never touched again.
-     Throttled to roughly 8 shifts/second (matching a believable flicker
-     rate, not once every 60Hz tick) and scoped to the six worn-item
-     paperdoll widgets (6-11: shoulders/hands/finger-rings -- see
-     g_inventory_hotspot_table's own comment) rather than just the two
-     hand slots: confirmed live via UW_DEBUG_INV that a lit torch from
-     a real recorded repro (bug-torch-anim.txt) actually ends up
-     equipped in widget 6 (a shoulder slot), not hand widget 8/9 as
-     first assumed -- narrowing to (8,9) silently redrew nothing every
-     tick (redraw_inventory_widget_range's own [inv] trace showed zero
-     widget_id=8/9 lines) while (6,11) covers wherever a light source
-     actually lands. redraw_inventory_widget_range's own slot-occupied
-     check already no-ops harmlessly for any of these six that's empty
-     or holds an unlit item (whose own sprite doesn't reference this
-     palette range anyway), so this doesn't need to separately detect
-     "is it lit." Set UW_NO_TORCH_ICON_FLICKER to restore the (broken)
-     no-animation behaviour. */
-  { static int _torch_flicker = -1, _torch_tick = 0;
-    if (_torch_flicker < 0) _torch_flicker = (getenv("UW_NO_TORCH_ICON_FLICKER") == NULL);
-    if (_torch_flicker) {
-      _torch_tick++;
-      if ((_torch_tick & 7) == 0) {
-        palette_cycle_range(16, 8, 1);
-        reinstall_active_palette();
-        redraw_inventory_widget_range(6, 11);
-      }
-    }
-  }
+  /* REVERTED (was a hand-hacked lit-torch HUD icon flicker -- see
+     mode-icon-and-hud-icon-flicker-fixes memory for the full arc).
+     Unconditionally rotating palette_cycle_range(16,8,1) every 8 ticks
+     from here ran regardless of dungeon-view state and touched the
+     shared global palette (DAT_00088d98/g_palette_rgb565), the same
+     table raster_textured_span samples fresh every frame for ALL 3D
+     wall/floor/ceiling rendering -- including real lava textures this
+     project confirmed use this exact fire-gradient range (F32.TR/
+     F16.TR entries 24/25, W64.TR/W16.TR entry 206). If the original
+     game's own (still-unfound) global fire/water palette-animation
+     mechanism turns up later, this hack would already be stomping on
+     the same palette range and timing, corrupting or double-animating
+     it. Pulled until that original mechanism is found or ruled out for
+     good; the equipped lit-torch HUD icon is back to not animating. */
   return;
 }
 
