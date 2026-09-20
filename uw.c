@@ -7274,7 +7274,18 @@ void build_shade_lut()
 
 
 
-void FUN_00014324(param_1)
+// was FUN_00014324 -- sets DAT_000842b0, the 3D-view ambient bias
+// raster_textured_span adds to every texel's distance-shade LUT index
+// (uw.c's own "checked wall/floor texture rasterizer" comment on that
+// function has the full formula). MORE NEGATIVE here means BRIGHTER
+// (it pulls the effective distance-shade index down toward the "close/
+// bright" end of the LUT regardless of a texel's real depth). Called
+// with param_1=0 (giving -0x20) from the "a light source IS currently
+// equipped and lit" branch of the function that recomputes derived
+// player state whenever equipped items change (uw.c ~55910-55926,
+// where the sibling `8 - param_1` call handles the "no light source"
+// case) -- this is the brightening half of that pair, not the dim one.
+void set_ambient_bias_with_light(param_1)
 char param_1;
 
 {
@@ -55867,7 +55878,14 @@ LAB_000669a8:
       iVar7 = FUN_000528a8();
       bVar1 = *(byte *)(iVar7 + 1);
       if (bVar10 < bVar1) {
-        FUN_00014324();
+        /* Also a bare call (no argument) -- but whatever DAT_000842b0
+           value this leaves is unconditionally overwritten a few lines
+           below by this same function's own definitive
+           set_ambient_bias_with_light(0)/FUN_0001433c(0) decision (made
+           from the aggregated bVar9/bVar10 this loop is computing), so
+           it's provably inert either way, not fixed alongside the real
+           bug in that later call. */
+        set_ambient_bias_with_light();
         iVar5 = iVar4;
         bVar9 = bVar1;
         bVar10 = bVar1;
@@ -55907,23 +55925,22 @@ LAB_000669a8:
   } while (iVar4 < 0xb);
   FUN_00066634(local_30);
   if (DAT_002020d8 == 0) {
+    /* *(char*)(DAT_00086df8+99) is the player's current light radius
+       (upper nibble; 0 = no equipped light source at all, maintained by
+       this same function's own scan of equip slots above + a separate
+       updater at uw.c ~55510). ==0 (no light) -> FUN_0001433c(0), the
+       mild "8 - param_1" dimming bias; else (a light source IS lit) ->
+       set_ambient_bias_with_light below, the much stronger "-0x20 -
+       param_1" brightening bias (more negative = brighter -- see that
+       function's own comment for the full sign-convention explanation). */
     if (*(char *)(DAT_00086df8 + 99) == '\0') {
       FUN_0001433c(0);
     }
     else {
-      /* Was a bare call -- FUN_00014324 declares `char param_1` and
-         computes `DAT_000842b0 = -0x20 - param_1`, but nothing here
-         ever loaded an argument for it, so it ran on leftover register
-         garbage instead of a real value. Its sibling branch just above
-         (the "light source active" case) explicitly passes 0 to the
-         same-shaped FUN_0001433c; this "no light source" case should
-         mirror that with an explicit 0 too, giving the intended -0x20
-         ambient bias (vs FUN_0001433c(0)'s +8) rather than whatever
-         register leftover happened to be here. This is the function
-         that recomputes the 3D-view ambient-darkness bias
-         (DAT_000842b0, read by raster_textured_span) whenever the
-         player's equipped light sources change. */
-      FUN_00014324(0);
+      /* Was a bare call -- ran on leftover register garbage instead of
+         a real argument. The sibling call just above explicitly passes
+         0 to FUN_0001433c; mirror that here too. */
+      set_ambient_bias_with_light(0);
     }
   }
   else {
@@ -68363,7 +68380,7 @@ int param_2;
       if ((uVar10 & 0xf) < 4) {
         *(byte *)param_1 = (bVar2 + 4 ^ bVar2) & 0xf ^ bVar2;
         *(byte *)((char *)param_1 + 1) = bVar1;
-        FUN_00014324(0);
+        set_ambient_bias_with_light(0);
       }
       else {
         *(byte *)param_1 = (bVar2 - 4 ^ bVar2) & 0xf ^ bVar2;
