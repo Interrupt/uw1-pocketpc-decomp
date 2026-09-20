@@ -29882,7 +29882,7 @@ void FUN_0003e644()
     return;
   }
   FUN_0004638c();
-  FUN_00046bfc();
+  redraw_armor_overlay_widgets();
   FUN_00048110();
   return;
 }
@@ -36669,7 +36669,7 @@ ushort * param_1;
    relying on two separate locals happening to land adjacently on the
    stack (true in the original 32-bit ARM build, not guaranteed by a
    modern compiler). */
-undefined4 FUN_00046b88(param_1,param_2)
+undefined4 load_armor_overlay_frame(param_1,param_2)
 int param_1;
 undefined4 param_2;
 
@@ -36691,7 +36691,7 @@ undefined4 param_2;
 
 
 
-void FUN_00046bfc()
+void redraw_armor_overlay_widgets()
 
 {
   byte *pbVar1;
@@ -36725,7 +36725,7 @@ void FUN_00046bfc()
            ((short)uVar2 + 1 != (int)*(char *)((char *)&DAT_002028e0 + iVar4))) {
           *(char *)((char *)&DAT_00202988 + iVar4) = (char)uVar3 + '\x01';
           *(char *)((char *)&DAT_002028e0 + iVar4) = (char)uVar2 + '\x01';
-          FUN_00046b88(iVar4,uVar2 * 0xf + uVar3);
+          load_armor_overlay_frame(iVar4,uVar2 * 0xf + uVar3);
         }
         draw_sprite_by_id(iVar4 + 0x2091,(int)(&g_inv_hotspot_draw_x)[iVar4 * 7],(int)(&g_inv_hotspot_draw_y)[iVar4 * 7],
                      (&g_inv_hotspot_dirty_h)[iVar4 * 0xe],(&g_inv_hotspot_dirty_w)[iVar4 * 0xe]);
@@ -36766,7 +36766,7 @@ undefined4 param_1;
   if (DAT_0023c1d4 == '\0') {
     iVar1 = (int)(short)param_1;
     if (iVar1 < 6) {
-      FUN_00046bfc();
+      redraw_armor_overlay_widgets();
     }
     else if (iVar1 < 0x15) {
       redraw_inventory_widget_range(param_1,param_1);
