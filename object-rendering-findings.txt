@@ -2152,3 +2152,43 @@ height." Two separate findings from this report:
 
 Standard run-regressions.sh: 6/6 clean after both changes in this
 update.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (8): USER CONFIRMED REAL DOORS FILL THE WHOLE OPENING
+-- Y-ONLY SCALE (NOT UNIFORM) FIXES THE LEAF'S HEIGHT
+═══════════════════════════════════════════════════════════════════════════
+Asked the user directly rather than guessing further (real-game visual
+knowledge this investigation couldn't resolve from the DOS source
+alone): confirmed real UW1 doors fill the whole opening, no lintel gap.
+So the leaf's 208-vs-384 mismatch against the frame IS a real problem
+to fix, not the frame's own solid lintel showing through correctly.
+
+The earlier uniform-scale test (~1.846, matching 384/208) had already
+ruled out one approach: applied evenly to X and Z as well as Y, it made
+the door visibly too WIDE (poking past its own jambs) while the height
+symptom was still there in a different form. Doors are much taller
+than wide, so the fix is to scale Y independently of X/Z, not
+uniformly -- exactly the kind of asymmetric scale this project's own
+`emit_model_object` doesn't need (its .E models are pre-authored at
+the right proportions) but this bank's own local-unit convention does.
+
+FIX: added an independent `yscale` parameter to
+emit_dlist_bank_object, applied only to the vertical vertex term
+(`vf[1] = ah + my*yscale + yoff`, vs. `vf[0]/vf[2]` which still use the
+existing X/Z `scale`). The frame's own two call sites pass
+`yscale=scale` (unchanged behavior, still uniform, since that's already
+confirmed correct). The leaf gets its own `_leaf_yscale`, defaulting to
+`384.0/208.0` (the direct ratio between the frame's real opening height
+and the leaf's own real native height), independently overridable via
+UW_DLIST_LEAF_YSCALE alongside the existing UW_DLIST_LEAF_SCALE for X/Z.
+
+VERIFICATION: at the same repro, the door now reaches nearly the full
+height of the opening with the correct width (no longer poking past
+the jambs) -- a continuous wood-textured panel from near the top of
+the opening down to the floor, not the previous small lower section.
+A small residual gap remains right at the very top (worth another look
+next session, possibly the exact ratio needs fine-tuning or there's a
+few more world units of legitimate lintel underside even for a
+correctly-sized door), but this is a dramatic, confirmed-direction
+improvement over the previous "small vertical section" result.
+Standard run-regressions.sh: 6/6 clean.

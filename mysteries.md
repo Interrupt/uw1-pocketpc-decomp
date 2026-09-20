@@ -499,6 +499,21 @@ investigation can't resolve from the DOS source alone -- flagged to the
 user rather than guessed at further. Full detail in
 `object-rendering-findings.txt`.
 
+**UPDATE 18 (user confirmed real doors fill the whole opening -- Y-only
+scale fixes the leaf's height, 2026-09-20):** asked directly rather than
+guessing further; confirmed real UW1 doors have no lintel gap, so the
+208-vs-384 mismatch is a real problem. The earlier uniform-scale test
+had already shown WHY a plain scale is wrong -- applied to X too, it
+made the door visibly too wide. Fixed with an independent Y-only scale
+(new `yscale` param to `emit_dlist_bank_object`, applied only to the
+vertical vertex term) -- the frame's own calls keep `yscale=scale`
+(unchanged, already correct), the leaf gets its own
+`UW_DLIST_LEAF_YSCALE`, defaulting to `384/208` (the direct ratio).
+Verified: the door now reaches nearly the full opening height at the
+correct width, a continuous panel from near the top down to the floor.
+A small residual gap remains at the very top for next time. Full detail
+in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
