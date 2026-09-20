@@ -3040,19 +3040,30 @@ ushort DAT_00202986;
 static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
   /* rec 0 (real, degenerate sentinel): click 0,c8,0,c8 ; draw 104,c ; dirty 24,45 */
   0x00,0x00, 0xc8,0x00, 0x00,0x00, 0xc8,0x00,  0x04,0x01, 0x0c,0x00,  0x24,0x45,
-  /* rec 1 (real armor-slot rect, likely feet/boots -- see table comment
-     above; the "open container" icon that used to be hacked in here
-     has been removed entirely now that widget 20 is the real
-     mechanism): click 10d,38,11d,48 ; draw 10c,19 ; dirty 13,32 */
+  /* rec 1 (real armor-slot rect, LEGS -- confirmed live via
+     check_object_fits_in_slot/class2_variant_effect_table_lookup
+     dropping id 0x23 "leather leggings" here successfully; the earlier
+     "likely feet/boots" guess in this comment was wrong -- corrected
+     after verifying with a real item. The "open container" icon that
+     used to be hacked in here has been removed entirely now that
+     widget 20 is the real mechanism): click 10d,38,11d,48 ; draw
+     10c,19 ; dirty 13,32 */
   0x0d,0x01, 0x38,0x00, 0x1d,0x01, 0x48,0x00,  0x0c,0x01, 0x19,0x00,  0x13,0x32,
-  /* rec 2 (head): click 10d,9,11e,19 ; draw b,b ; dirty 14,14 */
+  /* rec 2 (head -- confirmed live, id 0x2c "a leather cap"): click
+     10d,9,11e,19 ; draw b,b ; dirty 14,14 */
   0x0d,0x01, 0x09,0x00, 0x1e,0x01, 0x19,0x00,  0x0b,0x01, 0x0b,0x00,  0x14,0x14,
-  /* rec 3 (torso/chest): click 107,1a,123,2b ; draw 106,18 ; dirty 21,2c */
+  /* rec 3 (torso/chest -- confirmed live, id 0x20 "a leather vest"):
+     click 107,1a,123,2b ; draw 106,18 ; dirty 21,2c */
   0x07,0x01, 0x1a,0x00, 0x23,0x01, 0x2b,0x00,  0x06,0x01, 0x18,0x00,  0x21,0x2c,
-  /* rec 4 (legs): click 107,2c,123,38 ; draw 105,2b ; dirty 21,c */
+  /* rec 4 (HANDS, not legs -- confirmed live, id 0x26 "leather
+     gloves"; the "legs" label was an earlier unconfirmed guess,
+     corrected after verifying with a real item): click 107,2c,123,38 ;
+     draw 105,2b ; dirty 21,c */
   0x07,0x01, 0x2c,0x00, 0x23,0x01, 0x38,0x00,  0x05,0x01, 0x2b,0x00,  0x21,0x0c,
-  /* rec 5 (real armor-slot rect, likely a belt -- see table comment
-     above): click 107,48,123,51 ; draw 10a,43 ; dirty 15,d */
+  /* rec 5 (real armor-slot rect, FEET, not a belt -- confirmed live,
+     id 0x29 "leather boots"; the "likely a belt" guess in this
+     comment was wrong -- corrected after verifying with a real item):
+     click 107,48,123,51 ; draw 10a,43 ; dirty 15,d */
   0x07,0x01, 0x48,0x00, 0x23,0x01, 0x51,0x00,  0x0a,0x01, 0x43,0x00,  0x15,0x0d,
 
   /* rec 6 (left shoulder): click f4,d,105,1e ; draw f5,e ; dirty 10,10 */
@@ -3611,14 +3622,46 @@ undefined4 LAB_0002a2d8()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-undefined4 LAB_00041e84()
+/* LAB_00041e84: dispatch target index 0 of get_scanned_object_class_
+   effect_ptr's 8-entry table -- reached for any object whose class is
+   0 (id&0x1c0)>>6==0, which check_object_fits_in_slot treats as the
+   ARMOR class (its own uVar1==0 checks gate the body-slot validation
+   at uw.c ~36952). Was a no-op `return 0;` stub like
+   class2_variant_effect_table_lookup used to be, and for the exact
+   same reason: check_object_fits_in_slot dereferences this function's
+   return value at `+3` to read the equipped piece's slot-type byte,
+   so a hardcoded 0 crashed on address 3 the instant a real armor
+   piece was checked. Real disassembly (0x41e84-0x41f2c) shows the
+   same id-split-then-table-lookup shape as
+   class2_variant_effect_table_lookup, just with 3 possible tables
+   instead of one: family=(id&0x30)>>4 selects DAT_00202800 (stride 8,
+   family 0), DAT_002027d0 (stride 3, family 1), or DAT_00202750
+   (stride 4, families 2 and 3 -- family 3 adds 16 to the nibble index
+   into the same table). All three are already real, non-orphaned
+   globals loaded from objects.dat by the already-correct FUN_00041e40
+   (called via FUN_00052674's boot-time dispatch table, same loader
+   that reaches load_light_food_effect_tables) and already read
+   elsewhere in this file (FUN_000272c0, uw.c ~17840). */
+void *LAB_00041e84()
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  ushort uVar1;
+  int family;
+  int nibble;
+
+  uVar1 = *(ushort *)g_scratch_object_ptr;
+  family = (uVar1 & 0x30) >> 4;
+  nibble = uVar1 & 0xf;
+  if (family == 0) {
+    return &DAT_00202800 + nibble * 8;
+  }
+  if (family == 1) {
+    return &DAT_002027d0 + nibble * 3;
+  }
+  if (family == 3) {
+    nibble = nibble + 16;
+  }
+  return &DAT_00202750 + nibble * 4;
 }
 /* class2_variant_effect_table_lookup: was `undefined DAT_0004a070;` -- a plain data byte, not a
    function. get_scanned_object_class_effect_ptr takes its address and CALLS it (`local_24[2] =
@@ -32861,6 +32904,14 @@ undefined4 param_1;
   FUN_0002285c(param_1,&DAT_00202800,0x80);
   FUN_0002285c(param_1,&DAT_002027d0,0x30);
   FUN_0002285c(param_1,&DAT_00202750,0x80);
+  if (getenv("UW_DEBUG_ARMOR_TABLES")) {
+    int _i;
+    for (_i = 0; _i < 32; _i++)
+      fprintf(stderr, "[armor] DAT_00202750[%d] (family%d nibble%d): %02x %02x %02x %02x\n",
+              _i, _i < 16 ? 2 : 3, _i < 16 ? _i : _i - 16,
+              (unsigned char)(&DAT_00202750)[_i*4], (unsigned char)(&DAT_00202750)[_i*4+1],
+              (unsigned char)(&DAT_00202750)[_i*4+2], (unsigned char)(&DAT_00202750)[_i*4+3]);
+  }
   return;
 }
 
@@ -36446,6 +36497,9 @@ short param_1;
   }
   wait_for_click_release(1);
   sVar1 = (short)uVar5;
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] handle_inventory_panel_click decision: g_selected_object=%p g_cursor_holding_state=%d sVar1=%d param_1=%d\n",
+            (void *)g_selected_object, (int)g_cursor_holding_state, (int)sVar1, (int)param_1);
   if ((g_selected_object == 0) || (g_cursor_holding_state == 2)) {
     if (0 < sVar1) {
       if (-1 < param_1) {
@@ -38494,6 +38548,29 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
   }
 }
 
+/* Temporary test hook for verifying the armor paper-doll equip flow
+   without a real "give item" mechanism: once per run, the first time
+   backpack grid slot 12 holds a real object, overwrite its low 9 id
+   bits with UW_DEBUG_FORCE_ITEM_ID (hex) in place -- reusing a real,
+   already-linked object (e.g. a picked-up torch) the same way
+   use_light_source toggles bits on an existing object, rather than
+   fabricating a new arena entry. Not meant to stay long-term. */
+static void uw_debug_force_item_id_once(void) {
+  static int done = 0;
+  if (done) return;
+  const char *idstr = getenv("UW_DEBUG_FORCE_ITEM_ID");
+  if (!idstr) return;
+  ushort *obj = (ushort *)get_equipped_item_at_slot(12);
+  if (!obj) return;
+  done = 1;
+  int newid = (int)strtol(idstr, NULL, 16);
+  ushort old = *obj;
+  *obj = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
+  fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff, *obj & 0x1ff);
+}
+
+
+
 static void uw_debug_dump_sprite_frames_once(void) {
   static int done = 0;
   if (done) return;
@@ -38616,6 +38693,7 @@ void main_loop_hud_flush()
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
   uw_debug_dump_sprite_frames_once();
+  uw_debug_force_item_id_once();
   /* When the forced 3D redraw ran this frame, push it through even if a
      mouse button is being held in the viewport: DAT_0023c63c (the
      click-hold flag) otherwise blocks flush_dirty_rect_to_display's real
