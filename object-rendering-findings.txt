@@ -1626,3 +1626,101 @@ size (7012 vs. 6980/7028 in prior updates, same 90x106 bounding box) --
 again expected, since this only changes how already-drawn pixels sample
 the texture. Confirmed via the standard demo.txt regression script
 afterward: no crashes.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20: THE REAL ROOT CAUSE -- ARENA UV FIELDS HOLD A PLAIN
+TRUNCATED INT, NOT A FLOAT BIT PATTERN. STANDING RIGHT IN FRONT OF A
+DOOR SHOWED THIS WAS STILL BROKEN (RANDOM STATIC), NOT JUST MISCALIBRATED
+═══════════════════════════════════════════════════════════════════════════
+User report, testing UPDATE 8/9's fixes live: standing right in front of
+a door frame (not a few tiles back, where every previous screenshot in
+this investigation was taken) showed high-frequency salt-and-pepper
+static across the whole textured surface -- visually nothing like a
+column or row gap pattern, more like reading garbage/noise. This was a
+real, different, worse bug that every prior screenshot (taken from
+further away, where the artifact is much less visible) had missed --
+a real gap in this investigation's own verification standard, now
+corrected by testing close-up specifically.
+
+METHOD: rather than guess again, instrumented the actual consumer --
+raster_textured_span (uw.c ~7490-7539) -- with a new UW_DEBUG_RASTER_UV
+flag that logs, per rasterized span touching our door's texture pointer,
+the per-pixel V step (`*(int*)(param_3+0x44)`) and the resulting min/max
+interpolated value and computed texel address. Live result before this
+fix: `vstep(0x44)=-1904738304` -- close to two BILLION per pixel -- and
+`local_34` swinging from roughly -1.8 billion to +2.1 billion within a
+single few-pixel scanline span, with the resulting texel address landing
+uncorrelated all over the 0..4095 valid range pixel to pixel. That's
+exactly what "random static" looks like: the interpolator is walking a
+value so enormous relative to its useful range that only noise-like low
+bits survive into the final address.
+
+ROOT CAUSE: traced where that per-pixel step comes from --
+raster_triangle_perspective_setup (uw.c ~7162+) builds it from a 3-vertex
+`x,y,w,u,v` array (`render_visible_tile_list`'s own comment at uw.c
+~13630-13636 confirms this layout explicitly), and that array's u/v
+entries are populated by `Ordinal_2032(piVar14[0x10])` /
+`Ordinal_2032(piVar14[0x11])` -- Ordinal_2032 is int->float (uw.c
+ordinal_stubs.c:980-984, confirmed by reading the real implementation
+directly, not guessed): it takes a plain C int and produces the IEEE
+bit pattern for that integer's *value*. piVar14[0x10/0x11] are read as
+plain ints here.
+
+Cross-checked against the real, working wall-populate code's own last
+step for this same field (uw.c ~50356-50360):
+
+    uVar20 = Ordinal_2015(0x44800000, Z);      /* 1024.0 - Z (softfloat SUBTRACT) */
+    uVar20 = Ordinal_2026(uVar20, 0x3b800000); /* * (1/256) */
+    Ordinal_2026(uVar20, uVar17);              /* * (texsize-1) */
+    uVar20 = Ordinal_2020();                   /* !! */
+    (&DAT_000ace0c)[iVar18] = (char)uVar20;
+
+`Ordinal_2020(x)` (ordinal_stubs.c:897-901) is
+`(long)ordfloat_bits_to_float(x)` -- NOT a bit-reinterpret. It converts
+the float BITS in `x` into a real C `float` VALUE, then casts that
+*value* to a `long` (a genuine truncating numeric conversion, e.g.
+50.7f -> 50). So the wall path's own last step deliberately converts its
+computed float back down to a plain truncated integer before storing it
+-- the arena's ace0c/ace14/ace1c/ace24 fields hold a plain int the whole
+time, and `Ordinal_2032` on the read side (render_visible_tile_list)
+converts that plain int into a float for the one-time perspective-setup
+math. A clean, consistent int<->float round trip on the real path.
+
+This session's dlist code instead wrote `*(float *)(&DAT_000ace0c + rb)
+= (float)v;` -- a raw C float bit pattern, not a truncated int. When
+`Ordinal_2032` on the read side treated that bit pattern as a plain
+integer and converted THAT integer's value to float, a modest V value
+like 50.0f (bit pattern 0x42480000 = 1,111,490,560 as a plain integer)
+became int->float(1111490560) ~= 1.1114906e9 -- almost exactly the ~1.9
+billion magnitude the live instrumentation caught. Every previous
+UV-related fix in this investigation (the stride fix, both UV-rephasing
+attempts, and the switch to the wall's U=0/V=height convention) was
+built on top of this same float-instead-of-int storage mistake, which
+is why every attempt still produced *some* kind of visible corruption --
+the actual values being interpolated were never sane to begin with.
+
+FIX: changed the UV write in emit_dlist_bank_object to store a plain
+`int32_t` (matching Ordinal_2020's real truncating contract) instead of
+a `float` cast, for all 4 corners' U and V.
+
+VERIFICATION: re-ran the same UW_DEBUG_RASTER_UV instrumentation at the
+exact door the user was standing in front of
+(SETPLAYERPOS 33.23 8.68 640 101 7, from the user's own manual-test
+session log). Per-pixel V step dropped from -1904738304 to -15380 --
+five orders of magnitude smaller, a small sane increment -- and the
+computed texel addresses now vary smoothly and coherently within the
+valid 0..4095 range across each span (e.g. 3840->3968, 3712->3840),
+instead of jumping randomly. Visually: the random static is completely
+gone, replaced by a coherent, correctly-sampled textured surface on both
+door-frame jambs. Not yet perfectly calibrated -- the visible texture
+repeats noticeably more densely (more/thinner horizontal bands) than a
+real wall's own texture density, suggesting the V magnitude, while no
+longer catastrophically wrong, likely still needs the same kind of
+scale-down the wall formula applies (the `(1024-Z)/256` term) rather
+than raw world-height units -- but this is an ordinary calibration
+question now, not corruption. Confirmed via the standard demo.txt
+regression script: no crashes.
+
+The new UW_DEBUG_RASTER_UV instrumentation is left in place (gated,
+off by default) since it was the difference between guessing and
+actually finding this bug -- worth keeping for the next texture issue.

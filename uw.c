@@ -7488,6 +7488,9 @@ byte param_10;
     local_4 = param_2 + iVar9 * 2;
   }
   if (0 < iVar11) {
+    int _dbg = getenv("UW_DEBUG_RASTER_UV") != 0;
+    int _dbg_n = 0, _dbg_minaddr = 0x7fffffff, _dbg_maxaddr = -0x7fffffff;
+    long _dbg_minv = 0x7fffffffL, _dbg_maxv = -0x7fffffffL;
     iVar6 = *(int *)(param_4 + 8) * param_1 + iVar6;
     puVar13 = (undefined1 *)(iVar6 + iVar12);
     puVar10 = (ushort *)(local_4 + iVar6 * 2);
@@ -7500,6 +7503,13 @@ byte param_10;
             iVar12 = iVar12 - param_7) {
         }
         bVar1 = *(byte *)(iVar12 + param_8);
+        if (_dbg) {
+          _dbg_n++;
+          if (iVar12 < _dbg_minaddr) _dbg_minaddr = iVar12;
+          if (iVar12 > _dbg_maxaddr) _dbg_maxaddr = iVar12;
+          if (local_34 < _dbg_minv) _dbg_minv = local_34;
+          if (local_34 > _dbg_maxv) _dbg_maxv = local_34;
+        }
       }
       if (bVar1 != 0) {
         iVar12 = ((iVar6 >> 4) + (int)DAT_000842b0) * 0x10000 >> 0x10;
@@ -7526,6 +7536,12 @@ byte param_10;
       iVar14 = *(int *)(param_3 + 0x40) + iVar14;
       local_34 = *(int *)(param_3 + 0x44) + local_34;
     } while (iVar11 != 0);
+    if (_dbg && _dbg_n > 0) {
+      fprintf(stderr, "[raster-uv] tex=%p n=%d stride=%d total=%d vstep(0x44)=%d "
+              "local_34=[%ld,%ld] addr=[%d,%d]\n",
+              (void *)param_8, _dbg_n, param_6, param_7,
+              *(int *)(param_3 + 0x44), _dbg_minv, _dbg_maxv, _dbg_minaddr, _dbg_maxaddr);
+    }
   }
   return;
 }
@@ -51367,18 +51383,40 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
            rasterizer's own wraparound loop (uw.c ~7499-7501) tiles the
            bound texture across any span taller than one texture
            repeat, same as it already does for ordinary walls. */
-        double vmin = f->p[s0][1];
-        if (f->p[s1][1] < vmin) vmin = f->p[s1][1];
-        if (f->p[s2][1] < vmin) vmin = f->p[s2][1];
-        if (f->p[s3][1] < vmin) vmin = f->p[s3][1];
+        /* CRITICAL: these fields hold a plain truncated INTEGER, not a
+           float bit pattern, despite being fed by float math. The real
+           wall-populate code's own last step is
+           `uVar20 = Ordinal_2020(uVar20); (&DAT_000ace0c)[iVar18] = (char)uVar20;`
+           -- and Ordinal_2020(x) is `(long)ordfloat_bits_to_float(x)`,
+           a genuine C float->long VALUE conversion (truncation), not a
+           bit-reinterpret. render_visible_tile_list later reads this
+           same field back with `Ordinal_2032(piVar14[0x10/0x11])` --
+           Ordinal_2032 is int->float, converting that plain integer
+           back into a float for the raster math. Storing a raw `float`
+           bit pattern here instead (this code's previous version)
+           fed that int->float conversion a nonsense huge integer (a
+           float's bit pattern reinterpreted as an int is enormous),
+           which is exactly what UW_DEBUG_RASTER_UV caught live: local_34
+           swinging by ~1.9 billion per pixel and sampling effectively
+           random texels -- the reported static/noise. Fix: write the
+           plain truncated int, matching Ordinal_2020's own contract. */
+        int32_t vmin = (int32_t)f->p[s0][1];
+        int32_t v0, v1, v2, v3;
+        if ((int32_t)f->p[s1][1] < vmin) vmin = (int32_t)f->p[s1][1];
+        if ((int32_t)f->p[s2][1] < vmin) vmin = (int32_t)f->p[s2][1];
+        if ((int32_t)f->p[s3][1] < vmin) vmin = (int32_t)f->p[s3][1];
+        v0 = (int32_t)f->p[s0][1] - vmin;
+        v1 = (int32_t)f->p[s1][1] - vmin;
+        v2 = (int32_t)f->p[s2][1] - vmin;
+        v3 = (int32_t)f->p[s3][1] - vmin;
         *(int *)(&DAT_000ace08 + rb) = 0;
-        *(float *)(&DAT_000ace0c + rb) = (float)(f->p[s0][1] - vmin);
+        *(int *)(&DAT_000ace0c + rb) = v0;
         *(int *)(&DAT_000ace10 + rb) = 0;
-        *(float *)(&DAT_000ace14 + rb) = (float)(f->p[s1][1] - vmin);
+        *(int *)(&DAT_000ace14 + rb) = v1;
         *(int *)(&DAT_000ace18 + rb) = 0;
-        *(float *)(&DAT_000ace1c + rb) = (float)(f->p[s2][1] - vmin);
+        *(int *)(&DAT_000ace1c + rb) = v2;
         *(int *)(&DAT_000ace20 + rb) = 0;
-        *(float *)(&DAT_000ace24 + rb) = (float)(f->p[s3][1] - vmin);
+        *(int *)(&DAT_000ace24 + rb) = v3;
       } else {
         *(int *)(&DAT_000ace08 + rb) = 0;
         *(int *)(&DAT_000ace0c + rb) = 0;

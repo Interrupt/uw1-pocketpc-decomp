@@ -306,6 +306,36 @@ pixel ASCII map of the affected region: irregular, natural-looking
 noise (silhouette edges, mortar shading), no more regular gap pattern.
 Full detail in `object-rendering-findings.txt`.
 
+**UPDATE 10 (the real root cause: arena UV fields hold a plain
+truncated int, not a float bit pattern -- found by testing right in
+front of a door instead of from a few tiles back, 2026-09-20):** the
+user tested standing directly in front of a door frame (every previous
+screenshot in this investigation was taken from further away) and
+reported random static/garbling -- a real, worse bug UPDATE 8/9 had
+missed because the verification distance hid it. Instrumented the real
+consumer directly (new `UW_DEBUG_RASTER_UV` flag on
+`raster_textured_span`) instead of guessing again: the per-pixel V step
+was `-1904738304` (~1.9 billion) and the interpolated value swung
+billions within a single scanline, landing on effectively random texel
+addresses -- textbook static. Traced why: `Ordinal_2032` (int->float,
+confirmed by reading `ordinal_stubs.c` directly) converts these arena
+UV fields from a *plain int* on the read side; the real wall-populate
+code's own last write step is `Ordinal_2020(x)` = `(long)
+ordfloat_bits_to_float(x)` -- a genuine float-to-int truncation, not a
+bit-reinterpret -- so the field holds a plain truncated integer the
+whole time. This session's code had been writing a raw C `float` bit
+pattern instead ever since UPDATE 6 first added texturing; every later
+fix (UPDATE 7/8/9) was built on top of that mistake, which is why each
+one still produced *some* visible corruption no matter what the UV
+*values* were. Fixed by storing a plain `int32_t` instead of a `float`
+cast. Re-verified live at the user's own reported position
+(tile 33.23,8.68): per-pixel V step dropped to `-15380`, texel addresses
+now vary smoothly within the valid range, and the random static is
+completely gone -- a coherent, correctly textured surface on both
+jambs. Not yet perfectly scaled (visibly more texture repeats than a
+real wall shows), but that's an ordinary calibration question now, not
+corruption. Full detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
