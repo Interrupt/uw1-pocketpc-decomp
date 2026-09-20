@@ -411,6 +411,44 @@ either flat-shaded grey (structurally right, uncoloured) or reusing the
 wall texture (wrong) depending on flags. Full detail in
 `object-rendering-findings.txt`.
 
+**UPDATE 15 (found the real door-sprite texture, and a real game-wide
+bug silently breaking it, 2026-09-20):** user: "The Door sprite was
+drawing with the correct texture before the door model was wired up,
+it's probably that resource." Traced the ordinary sprite path's own
+texture call (`FUN_00040770(uVar27, shade)`) and confirmed against DOS
+source that the leaf specifically should bind its own decoded sprite
+(`s->pixels`), not the wall texture. Wiring it up still failed
+(width=0/height=0) until tracing two compounding, pre-existing bugs
+(not introduced this session, not specific to the leaf feature):
+1. This project's own earlier `uVar27 = 60000 + (uVar27 & 7)` fix feeds
+   a value >= 32768 into FUN_00040770's `short param_1`, which silently
+   truncates/reinterprets 60000 as -5536 -- accidentally still negative
+   (so it takes the "literal absolute frame" escape hatch) but the
+   WRONG absolute frame, nowhere near where load_door_frames actually
+   registered the sprite. Fixed by moving the scratch base to 30000
+   (comfortably inside `short`'s positive range).
+2. Even fixed in magnitude, a POSITIVE value goes through ordinary
+   id-range bucketing instead of the escape hatch -- it needs to be
+   NEGATIVE on purpose, matching this file's own established TMOBJ sign
+   fix. Fixed by negating at all three call sites that can receive this
+   id range, including a previously-dormant one in `emit_model_object`
+   whose own comment says it "made the leaf disappear" when first
+   tried -- very likely this exact bug.
+
+VERIFICATION: FUN_00040770 now resolves real sprite data (32x64,
+matching load_door_frames's own documented door-sized dimensions
+exactly). At a confirmed real closed door, the door now renders with
+its real wooden texture -- visible plank grain, metal bands, a lock
+plate -- where it previously showed nothing (an empty passage). With
+the ordinary sprite hidden (UW_DLIST_DOOR_ONLY=1), this session's own
+new leaf geometry independently shows the same real wood texture,
+confirming the fix applies to the new 3D leaf specifically, not just
+the pre-existing billboard. This fix's scope is broader than the leaf
+feature: the same call is what every closed door in the game already
+used for its ordinary sprite, so this fixes real door rendering
+game-wide, not just this session's new geometry. Full detail in
+`object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

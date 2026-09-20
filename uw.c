@@ -32831,8 +32831,24 @@ void load_door_frames()
      Deliberately deviating from the original's exact (buggy) value
      here per user direction: picked a fixed scratch base far past
      every real resource range this project has identified, so this
-     temporary borrow can never collide with anything real again. */
-  DAT_00202744 = 60000;
+     temporary borrow can never collide with anything real again.
+     CORRECTED from the original 60000: every consumer of this frame
+     id (FUN_00040770 below, and emit_object_billboard's own frame
+     parameter) takes it as a `short` -- a signed 16-bit value. 60000
+     (0xea60) has its top bit set, so truncating/reinterpreting it as
+     `short` silently produces -5536, not 60000; FUN_00040770 then
+     takes its own "negative param_1 = literal absolute frame" escape
+     hatch and resolves absolute frame 5536 instead -- nowhere near
+     where this loop actually registered the real door sprite data.
+     Confirmed live: load_door_frames itself reported `ok=1` for all 6
+     slots (the registration succeeds), but FUN_00040770(60000, ...)
+     still came back with width=0/height=0 -- the mismatch traced
+     directly to this truncation, not a registration failure. 30000
+     stays comfortably inside `short`'s positive range (max 32767)
+     even after the +0..7 offset every caller adds, while remaining
+     just as far past every real resource range as 60000 was for the
+     purpose this comment already describes. */
+  DAT_00202744 = 30000;
   do {
     /* Was passed `0` for the post-process/registration callback (param_5)
        -- with no registrar, even a successful allocate+read never stores
@@ -54548,8 +54564,16 @@ ushort * param_1;
            load_door_frames's own (fixed) scratch base; see that
            function's comment for why the original binary's formula
            collided with the HUD icon preload range. */
-        int _sprite_frame = 60000 + (uVar27 & 7);
-        FUN_00040770((short)_sprite_frame, 0);
+        int _sprite_frame = 30000 + (uVar27 & 7);
+        /* Negate -- see the identical fix (and its full explanation) at
+           the other two FUN_00040770 call sites for this exact same
+           30000+k door-scratch frame id. Without it this call resolves
+           to nothing real via resolve_sprite_id_to_frame's ordinary
+           bucketing instead of the intended literal-absolute-frame
+           escape hatch -- likely the actual reason this whole leaf-
+           texture attempt was previously observed to make the leaf
+           disappear rather than texture it. */
+        FUN_00040770((short)-_sprite_frame, 0);
         if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) _leaf_tex = g_tile_texptr_emit[DAT_0023b83c];
         if (getenv("UW_DEBUG_MODEL")) {
           int _w = (int)(short)DAT_00202508, _h = (int)(short)DAT_002022f8;
@@ -54684,7 +54708,32 @@ LAB_emit_mesh_sprite_quad:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0x7f8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    FUN_00040770(uVar27,(uint)DAT_0023bc88 * (int)DAT_00086b30);
+    /* FUN_00040770's param_1 is a `short`: a genuinely small, ordinary
+       resolve_sprite_id_to_frame-range id (every other caller reaching
+       this shared label -- items, critters, etc.) must pass through
+       unchanged, but the door-leaf scratch frame this branch's own
+       `uVar27 = 30000 + (uVar27 & 7)` computes (see that assignment's
+       own comment) needs FUN_00040770's OTHER contract: `if (param_1 <
+       0) resolved = -(int)param_1;`, its literal-absolute-frame escape
+       hatch, bypassing resolve_sprite_id_to_frame's id-range bucketing
+       entirely (which has no bucket for a fixed scratch base like this
+       and would resolve it to something unrelated). 30000 is astronomically
+       outside any real ordinary id range this project has identified, so
+       it's safe to detect here and negate only for this specific case --
+       confirmed necessary live: without the negation, FUN_00040770 came
+       back with width=0/height=0 even for a real closed door (repro:
+       tile 24.5,6.5) -- resolve_sprite_id_to_frame has no idea what to
+       do with a raw 30000ish id, it needs the escape hatch, matching the
+       exact same negation pattern this file's own TMOBJ sign fix already
+       established (`uVar27 = (uint)(ushort)(-_abs);`) for the identical
+       reason. */
+    { short _sprite_arg = (short)uVar27;
+      if (uVar27 >= 30000 && uVar27 < 30008) _sprite_arg = (short)-(int)uVar27;
+      if (getenv("UW_DEBUG_DLIST"))
+        fprintf(stderr, "[dlist] LAB_emit_mesh_sprite_quad real call: uVar27=%u sprite_arg=%d\n",
+                uVar27, _sprite_arg);
+      FUN_00040770(_sprite_arg,(uint)DAT_0023bc88 * (int)DAT_00086b30);
+    }
     /* DAT_000d9ed8/DAT_000d9930[angle] = sin/cos(angle degrees) (see
        FUN_0001dd2c). Normally angle = DAT_000db44c, the CAMERA's yaw,
        which is what makes this quad extend along the camera's own
@@ -55124,7 +55173,7 @@ LAB_00061d34:
          load_door_frames's own (fixed) scratch base; see that
          function's comment for why the original binary's formula
          collided with the HUD icon preload range. */
-      uVar27 = 60000 + (uVar27 & 7);
+      uVar27 = 30000 + (uVar27 & 7);
       /* >>6, not >>7 -- >>7 is what emit_anim_object_frames itself reads
          here, but that's fed to emit_object_billboard's own catalog-
          driven rotation math, not a plain compass heading. >>6&7 matches
@@ -55281,11 +55330,45 @@ LAB_00061d34:
             _leaf_heading = (_leaf_heading + _lstep) & 7;
           }
           if (getenv("UW_DLIST_DOOR_TEXTURE")) {
-            int _wtex = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
-            int _twidth = uwdl_texture_width(_wtex);
-            void *_texptr = get_texture_page(_wtex);
+            /* NOT the wall texture -- confirmed live by the user that the
+               closed door already drew with its own correct texture
+               before this 3D leaf was wired up, via the ordinary
+               sprite-quad path this same door branch falls through to
+               at LAB_emit_mesh_sprite_quad. That path's real texture
+               call is `FUN_00040770(uVar27, shade)` -- uVar27 here is
+               already the same resolved door-leaf sprite/frame id (see
+               the debug print two blocks up: "[door] ... frame=%d",
+               uVar27 -- unchanged since). Matches DOS's own leaf-face
+               texture source too (uw1-decomp port/uw1_view.c ~2865:
+               `t.texels = s->pixels` for UW1_VIEW_DOOR_MODEL_LEAF,
+               explicitly NOT the wall's `t.texels = wall` the doorway/
+               frame faces use a few lines below it) -- two independent
+               confirmations (live user observation, real DOS source)
+               pointing at the same fix.
+               FUN_00040770 decodes the sprite and publishes the real
+               pointer into DAT_0023c7a0_arr[DAT_0023b83c] (a real void*
+               array, see its own declaration) and the pixel width/
+               height into DAT_00202508/DAT_002022f8 -- read both right
+               after the call, before DAT_0023b83c can move. */
+            /* Must negate -- FUN_00040770's `short` param_1 only takes
+               `uVar27` (30000+k) as this literal absolute frame via its
+               `param_1 < 0` escape hatch; passed positive it instead
+               goes through resolve_sprite_id_to_frame's ordinary id-range
+               bucketing, which has no bucket for 30000+ and resolves to
+               nothing real (confirmed live: width=0/height=0 even at a
+               real closed door, tile 24.5,6.5). Same fix, same reason,
+               as the shared LAB_emit_mesh_sprite_quad call site above. */
+            void *_leaf_texptr = 0; int _leaf_twidth = 0;
+            FUN_00040770((short)-(int)uVar27, (uint)DAT_0023bc88 * (int)DAT_00086b30);
+            if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) {
+              _leaf_texptr = DAT_0023c7a0_arr[DAT_0023b83c];
+              _leaf_twidth = (int)(unsigned short)DAT_00202508;
+            }
+            if (getenv("UW_DEBUG_DLIST"))
+              fprintf(stderr, "[dlist] leaf sprite frame=%d texptr=%p width=%d height=%d\n",
+                      uVar27, _leaf_texptr, _leaf_twidth, (int)(unsigned short)DAT_002022f8);
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _scale, _yoff, _texptr, _twidth);
+                                    _leaf_heading, _scale, _yoff, _leaf_texptr, _leaf_twidth);
           } else {
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
                                     _leaf_heading, _scale, _yoff, 0, 0);
@@ -56488,7 +56571,7 @@ LAB_00064cdc:
                load_door_frames's own (fixed) scratch base; see that
                function's comment for why the original binary's
                formula collided with the HUD icon preload range. */
-            uVar11 = 60000 + param_1;
+            uVar11 = 30000 + param_1;
             uVar9 = 0xe;
           }
           if (getenv("UW_DEBUG_DOOR"))

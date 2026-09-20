@@ -1945,3 +1945,90 @@ fully flat-shaded (a plain grey panel, structurally correct but
 uncoloured) depending on UW_DLIST_DOOR_TEXTURE. Finding and wiring the
 real door-sprite texture source is the open follow-up. Standard
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (5): FOUND THE REAL DOOR-SPRITE TEXTURE, AND A REAL
+GAME-WIDE BUG THAT WAS SILENTLY BREAKING IT (SHORT-TRUNCATION +
+MISSING NEGATION)
+═══════════════════════════════════════════════════════════════════════════
+User: "The Door sprite was drawing with the correct texture before the
+door model was wired up, it's probably that resource." Traced the
+ordinary sprite-quad path (LAB_emit_mesh_sprite_quad, this door
+branch's own real fallthrough) -- its texture call is
+`FUN_00040770(uVar27, shade)`, and `uVar27` at that point is already
+the resolved door-leaf sprite frame id (confirmed via the existing
+"[door] emit_tile_objects: frame=%d" debug print). Confirmed against
+DOS source too: uw1_view.c ~2865 sets `t.texels = s->pixels` for
+`UW1_VIEW_DOOR_MODEL_LEAF` specifically, NOT `t.texels = wall` (the
+doorway/frame's own source a few lines below) -- two independent
+confirmations (the user's own recollection, real DOS code) pointing at
+the same fix: bind the leaf's own decoded sprite, not the wall texture.
+
+Wiring that up (FUN_00040770(uVar27,...), then reading the real pointer
+back from DAT_0023c7a0_arr[DAT_0023b83c] and the real width from
+DAT_00202508) initially still failed -- width=0/height=0 even at a
+confirmed real closed door (tile 24.5,6.5). Chased it to two compounding
+real bugs, both pre-existing in this codebase (not introduced this
+session, and not specific to the new leaf feature):
+
+1. `uVar27 = 60000 + (uVar27 & 7)` (this project's own earlier fix, at
+   uw.c's class-2 door branch, plus two sibling sites with the identical
+   formula) fed a value >= 32768 into FUN_00040770, whose `param_1` is
+   declared `short` (16-bit signed). 60000 (0xea60) has its sign bit
+   set, so it silently truncates/reinterprets as -5536 when passed --
+   which, by accident, DOES trigger FUN_00040770's own "negative
+   param_1 = literal absolute frame" escape hatch, but resolves the
+   WRONG absolute frame (5536, not anything related to 60000) --
+   nowhere near where load_door_frames actually registered the real
+   sprite data (confirmed separately: load_door_frames's own
+   UW_DEBUG_DOOR output showed `ok=1` for all 6 slots -- registration
+   genuinely succeeds, the corruption is purely in how this id later
+   gets passed to FUN_00040770). Fixed by moving the scratch base from
+   60000 to 30000 (all 4 sites) -- comfortably inside `short`'s positive
+   range even with the +0..7 per-door-type offset, while remaining just
+   as far past every real resource range as 60000 was for the original
+   purpose (avoiding the HUD-icon-preload collision documented on
+   load_door_frames itself).
+
+2. Even after fixing the magnitude, a POSITIVE 30000 goes through
+   FUN_00040770's OTHER branch -- `resolved = resolve_sprite_id_to_frame
+   (param_1);` -- ordinary id-range bucketing, which has no bucket for
+   an arbitrary fixed scratch base like this and resolves it to nothing
+   real. The value needs to be NEGATIVE to take the literal-absolute-
+   frame escape hatch on purpose, matching this file's own already-
+   established TMOBJ sign fix (`uVar27 = (uint)(ushort)(-_abs);`) for
+   the exact same underlying reason. Fixed by negating specifically for
+   this id range (>=30000 && <30008, safely outside any real ordinary
+   sprite id) at all three FUN_00040770 call sites that can receive it:
+   the shared LAB_emit_mesh_sprite_quad call (conditional, since that
+   label is reached by many OTHER callers with ordinary ids that must
+   NOT be negated), this session's own new leaf-texture call, and a
+   third, previously-dormant call in emit_model_object's own earlier
+   "door LEAF sprite texture experiment" (the one this project's own
+   comments describe as having "made the leaf disappear" when first
+   tried -- very likely this exact bug was the real reason).
+
+VERIFICATION: after both fixes, FUN_00040770 resolves real sprite data
+-- width=32 height=64, matching load_door_frames's own documented
+"door-sized (32x64)" description exactly. Screenshots at a confirmed
+real closed door (tile 24.5,6.5): with the ordinary sprite path
+re-enabled (not UW_DLIST_DOOR_ONLY), the door now renders as a real,
+detailed wooden door -- visible plank grain, metal reinforcement bands,
+and a lock/handle plate -- where it previously showed nothing at all
+(the baseline screenshot, unmodified aside from this fix, shows an
+empty dark passage instead of a door). With UW_DLIST_DOOR_ONLY=1
+(isolating ONLY this session's new leaf geometry, no ordinary sprite),
+the leaf independently shows the same real wood-textured panel,
+correctly positioned within the frame -- confirming the new 3D leaf
+specifically (not just the pre-existing 2D billboard) now textures
+correctly. The leaf's own scale doesn't yet fill the doorway the way a
+real closed door should (smaller than the opening) -- a calibration
+item, not a correctness bug, left for next time. Standard
+run-regressions.sh: 6/6 clean.
+
+This fix's scope is broader than the leaf-texture feature that
+surfaced it: FUN_00040770(uVar27,...) at LAB_emit_mesh_sprite_quad is
+the SAME call every closed door in the game already used for its
+ordinary 2D sprite, so this also fixes (or was always going to need
+fixing for) the game's own real door rendering, independent of
+anything this session's dlist work added.
