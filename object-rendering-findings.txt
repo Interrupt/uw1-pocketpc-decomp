@@ -1772,3 +1772,22 @@ result in this entire investigation that looks like an actual,
 recognizable, correctly-textured door frame rather than a proof-of-
 mechanism fragment. Confirmed via the standard demo.txt regression
 script: no crashes.
+
+USER-CONFIRMED (2026-09-20, live interactive test, not just the
+scripted screenshot repro above): "This looks texturing looks great
+now." Closes out the UV/texturing thread that started with UPDATE 6's
+first uncalibrated attempt -- the four real bugs found and fixed along
+the way (wrong texture-stride placeholder, reusing DOS's raw signed UV
+words against this renderer's own boundary-sensitive rasterizer, the
+float-bit-pattern-vs-plain-int storage mismatch, and U=0 wrongly
+generalized from texel-narrow wall quads to this bank's wide ones) are
+the actual, verified cause set -- not guesses. UW_DLIST_DOOR/_TEXTURE
+remain opt-in (off by default) pending scale/position calibration
+(heading offset, yoff) and wiring this up for more than just bank 0x61.
+
+Separately, this same interactive session surfaced a real, unrelated
+crash (SIGBUS in hud_vitals_bar_tick -> FUN_00076390, immediately after
+a "[critter] decode_critter_sprite_page: implausible header w=0 h=236"
+warning) -- confirmed via backtrace to share no code with any of this
+investigation's changes. Flagged to the user as a separate bug, not
+chased further in this session.
