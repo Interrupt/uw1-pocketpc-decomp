@@ -336,6 +336,25 @@ jambs. Not yet perfectly scaled (visibly more texture repeats than a
 real wall shows), but that's an ordinary calibration question now, not
 corruption. Full detail in `object-rendering-findings.txt`.
 
+**UPDATE 11 (U=0 was the wrong generalization -- real door frame
+texture now works in both axes, 2026-09-20):** the user's next report:
+vertical looked right, but the frame looked like a single texture
+column stretched across X. UPDATE 9's "U is unconditionally 0" was
+correctly read off every real wall-populate site, but the
+generalization was wrong for this case: U=0 works for walls because
+each wall quad only covers about one texel-column of real width (many
+narrow quads make up a wide wall); this bank's own faces are wide
+single quads (bbox x=[-112,144], several texture repeats, vs. z=[0,8],
+just the frame's thickness), so U=0 sampled the same column across the
+whole 256-unit width. Fixed by varying U the same way V already does --
+each vertex's own local X (the real "width" axis for this thin-in-Z
+geometry), normalized per-face to a non-negative minimum, stored as a
+plain int. Re-verified at the user's reported position: a real,
+correctly-proportioned stone-brick pattern varying naturally in both
+directions on both jambs -- the first result in this investigation that
+looks like an actual door frame, not a proof-of-mechanism fragment.
+Full detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

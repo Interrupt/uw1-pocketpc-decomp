@@ -1724,3 +1724,51 @@ regression script: no crashes.
 The new UW_DEBUG_RASTER_UV instrumentation is left in place (gated,
 off by default) since it was the difference between guessing and
 actually finding this bug -- worth keeping for the next texture issue.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (2): U=0 WAS THE WRONG GENERALIZATION -- REAL DOOR
+FRAME TEXTURE NOW WORKS IN BOTH AXES
+═══════════════════════════════════════════════════════════════════════════
+User report after the int/float fix: vertical (V) looked right, but the
+frame looked like a single texture column stretched across the whole
+X width. Root cause was UPDATE 9's own change: it set U unconditionally
+to 0, generalized from grepping every real wall-populate site in this
+file (all of which really do write literal 0 there). That grep was
+correct about what those sites write, but the generalization drawn from
+it -- "this renderer never varies U, ever" -- was wrong for this case.
+
+Why U=0 works for walls: raster_triangle_perspective_setup builds a
+perspective-corrected U gradient from the *3 triangle vertices'* own U
+values; if a wall's own quad only ever covers about one texel-column's
+worth of real-world horizontal extent (many narrow quads side by side
+making up a full wall, not one wide quad), sampling texel-column 0 for
+that whole narrow sliver is locally correct, and the next quad over
+covers the next texel column the same way, etc -- horizontal texture
+variation across a wide wall comes from many quads, not one.
+
+This bank's own faces are not built that way: bank 0x61's own bbox is
+x=[-112,144] (256 world units, several texture repeats) in a single
+quad per face, not many narrow ones. U=0 the whole time meant every
+pixel across that whole 256-unit-wide quad sampled the exact same
+texel column -- precisely "one texel stretched across X."
+
+FIX: varies U the same way V already does (UPDATE 8/9's approach,
+now correctly stored as a plain int per UPDATE 10) -- from each
+vertex's own real position, normalized per-face to a non-negative
+minimum. Specifically each vertex's local X (f->p[.][0], the
+PRE-rotation local coordinate, same role local Y already plays for V):
+this bank's own geometry is thin in Z (bbox z=[0,8], the frame's own
+wall thickness) and wide in X, so X is the real "width" axis for this
+specific geometry, exactly mirroring why Y is the right "height" axis
+for V.
+
+VERIFICATION: re-tested at the user's own reported position
+(tile 33.23,8.68, heading 101). The result is a real, correctly-
+proportioned stone-brick pattern varying naturally in both directions
+on both jambs -- individual brick blocks of a sane, roughly-square
+aspect ratio, matching the surrounding tile wall's own texture style --
+not a stretched column, not noise, not banding. This is the first
+result in this entire investigation that looks like an actual,
+recognizable, correctly-textured door frame rather than a proof-of-
+mechanism fragment. Confirmed via the standard demo.txt regression
+script: no crashes.

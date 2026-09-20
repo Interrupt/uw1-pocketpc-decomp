@@ -51400,22 +51400,48 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
            swinging by ~1.9 billion per pixel and sampling effectively
            random texels -- the reported static/noise. Fix: write the
            plain truncated int, matching Ordinal_2020's own contract. */
-        int32_t vmin = (int32_t)f->p[s0][1];
-        int32_t v0, v1, v2, v3;
+        /* U=0 (matching every real wall site verbatim) turned out to be
+           the wrong generalization: it works for walls only because
+           each wall's own quad is already texel-narrow in its own
+           world-X extent -- a whole real wall surface is built from
+           many such narrow quads side by side, each one genuinely only
+           covering about one texel-column's worth of world space, so
+           "always sample column 0" is locally correct for every one of
+           them. This bank's door-frame faces are NOT texel-narrow --
+           bank 0x61's own bbox spans x=[-112,144] (256 world units,
+           several texture repeats wide) in one single quad -- so U=0
+           stretched that one column across the whole width, exactly
+           the "single texel stretched in X" the user reported. Fixed
+           by varying U the same way V already does: from each vertex's
+           own local X (f->p[.][0], the PRE-rotation local coordinate --
+           this bank's own geometry is thin in Z (bbox z=[0,8], just the
+           frame's wall-thickness) and wide in X, so X is this
+           geometry's real horizontal axis, the same role local Y played
+           for V), normalized per-face to its own non-negative minimum,
+           same as V. */
+        int32_t umin = (int32_t)f->p[s0][0], vmin = (int32_t)f->p[s0][1];
+        int32_t u0, u1, u2, u3, v0, v1, v2, v3;
+        if ((int32_t)f->p[s1][0] < umin) umin = (int32_t)f->p[s1][0];
+        if ((int32_t)f->p[s2][0] < umin) umin = (int32_t)f->p[s2][0];
+        if ((int32_t)f->p[s3][0] < umin) umin = (int32_t)f->p[s3][0];
         if ((int32_t)f->p[s1][1] < vmin) vmin = (int32_t)f->p[s1][1];
         if ((int32_t)f->p[s2][1] < vmin) vmin = (int32_t)f->p[s2][1];
         if ((int32_t)f->p[s3][1] < vmin) vmin = (int32_t)f->p[s3][1];
+        u0 = (int32_t)f->p[s0][0] - umin;
+        u1 = (int32_t)f->p[s1][0] - umin;
+        u2 = (int32_t)f->p[s2][0] - umin;
+        u3 = (int32_t)f->p[s3][0] - umin;
         v0 = (int32_t)f->p[s0][1] - vmin;
         v1 = (int32_t)f->p[s1][1] - vmin;
         v2 = (int32_t)f->p[s2][1] - vmin;
         v3 = (int32_t)f->p[s3][1] - vmin;
-        *(int *)(&DAT_000ace08 + rb) = 0;
+        *(int *)(&DAT_000ace08 + rb) = u0;
         *(int *)(&DAT_000ace0c + rb) = v0;
-        *(int *)(&DAT_000ace10 + rb) = 0;
+        *(int *)(&DAT_000ace10 + rb) = u1;
         *(int *)(&DAT_000ace14 + rb) = v1;
-        *(int *)(&DAT_000ace18 + rb) = 0;
+        *(int *)(&DAT_000ace18 + rb) = u2;
         *(int *)(&DAT_000ace1c + rb) = v2;
-        *(int *)(&DAT_000ace20 + rb) = 0;
+        *(int *)(&DAT_000ace20 + rb) = u3;
         *(int *)(&DAT_000ace24 + rb) = v3;
       } else {
         *(int *)(&DAT_000ace08 + rb) = 0;
