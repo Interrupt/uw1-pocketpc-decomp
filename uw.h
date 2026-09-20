@@ -1165,7 +1165,7 @@ undefined4 place_object_in_world();
 void drop_object_near_target();
 undefined4 find_object_placement();
 undefined4 FUN_00052674();
-undefined4 FUN_000528a8();
+void *FUN_000528a8();
 void reset_level_object_arena();
 undefined4 FUN_00052af4();
 undefined4 FUN_00052bac();

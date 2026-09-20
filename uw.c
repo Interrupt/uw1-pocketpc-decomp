@@ -3289,7 +3289,16 @@ undefined4 DAT_00202910;
 ushort DAT_00202962;
 ushort DAT_00202964;
 char s_Move_how_many__00085c68[] = "Move_how_many?";
-undefined1 DAT_00085ac8;
+/* DAT_00085ac8: light-source-eligible equip slots {5,6,7,8} (see
+   FUN_000667cc and FUN_0005404c's light-scan loops, and use_light_source's
+   own comparison against find_or_assign_object_widget's result). Was a
+   bare 1-byte scalar -- every existing `(&DAT_00085ac8)[1..3]` read past
+   the single declared byte into whatever the linker placed next, instead
+   of the real dumped table. Dumped directly from the real binary at
+   0x85ac8: `5 6 7 8 0 0 0 0 0 0 0xc8 0 0 0 0xc8 0`. */
+static unsigned char DAT_00085ac8_backing[16] =
+    {5,6,7,8,0,0,0,0,0,0,0xc8,0,0,0,0xc8,0};
+#define DAT_00085ac8 DAT_00085ac8_backing[0]
 char s_is_too_full__00085c78[] = "is_too_full.";
 static undefined1 DAT_00085c88_backing[32768];
 #define DAT_00085c88 DAT_00085c88_backing[0]
@@ -3611,7 +3620,51 @@ undefined4 LAB_00041e84()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-undefined DAT_0004a070;
+/* LAB_0004a070: was `undefined DAT_0004a070;` -- a plain data byte, not a
+   function. FUN_000528a8 takes its address and CALLS it (`local_24[2] =
+   &DAT_0004a070; (*(code*)local_24[idx])();`) for any object whose class
+   is 2 (id&0x1c0)>>6==2 -- exactly the 0x90-class light sources
+   FUN_000667cc's and FUN_0005404c's light-scan loops filter for. Taking
+   the address of a data byte and jumping into it crashed the instant a
+   real torch was found by the (now-fixed) scan loop. Real disassembly
+   (0x4a070-0x4a108) shows this reads the scanned object's id (via
+   DAT_00204690, the same object pointer FUN_000528a8's other handlers
+   already read), splits it into family=(id&0x30)>>4 and nibble=(id&0xf),
+   then returns a pointer into one of three already-recovered runtime
+   tables (DAT_002029f8/DAT_002029d8/g_food_effect_table, populated from
+   objects.dat by FUN_0004a02c via FUN_00052674's boot-time loader --
+   confirmed reachable, not orphaned) indexed by nibble at that family's
+   stride (3/2/1 bytes). Family 2 (torches' actual family, id=0x9X ->
+   (0x9X&0x30)>>4==1 -- so torches hit the *1*-stride table, not this
+   branch, but it's included for the other 0x90-class objects that do
+   route here) returns 0, matching the sibling LAB_ stub functions'
+   "Ghidra couldn't resolve, no-op returns 0" convention for entries
+   this table genuinely leaves unused. */
+/* Return type was `undefined4` -- same 64-bit-pointer-truncation bug
+   already flagged on FUN_000528a8 itself: this handler hands back a
+   pointer into a runtime table, and undefined4 drops its upper 32 bits
+   on a 64-bit build, producing a wild address in the caller. */
+void *LAB_0004a070()
+
+{
+  ushort uVar1;
+  int family;
+  int nibble;
+
+  uVar1 = *(ushort *)DAT_00204690;
+  family = (uVar1 & 0x30) >> 4;
+  nibble = uVar1 & 0xf;
+  if (family == 0) {
+    return &DAT_002029f8 + nibble * 3;
+  }
+  if (family == 1) {
+    return &DAT_002029d8 + nibble * 2;
+  }
+  if (family == 2) {
+    return 0;
+  }
+  return &g_food_effect_table + nibble;
+}
 undefined4 LAB_0006b3d4()
 
 {
@@ -44042,7 +44095,12 @@ undefined4 FUN_00052674()
 
 
 
-undefined4 FUN_000528a8()
+/* Was `undefined4` -- same 64-bit-pointer-truncated-through-a-32-bit-
+   return-type bug as FUN_00045054's (see its own comment): this
+   function returns a POINTER into one of the runtime tables LAB_0004a070
+   and friends compute, and on a 64-bit build `undefined4` silently drops
+   the pointer's upper 32 bits, handing the caller a wild address. */
+void *FUN_000528a8()
 
 {
   undefined1 *local_24 [4];
@@ -44053,14 +44111,22 @@ undefined4 FUN_000528a8()
   
   local_24[0] = &LAB_00041e84;
   local_24[1] = &LAB_0002a2d8;
-  local_24[2] = &DAT_0004a070;
+  local_24[2] = &LAB_0004a070;
   local_24[3] = &LAB_0007913c;
   local_14 = &LAB_00073b10;
   local_10 = &LAB_0006b3d4;
   local_c = &LAB_0007cd7c;
   local_8 = &LAB_0001583c;
-  (*(code *)local_24[(short)((*DAT_00204690 & 0x1c0) >> 6)])();
-  return 0;
+  /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace
+     a return value through the indirect call and fabricated a "return 0"
+     placeholder. Real disassembly (0x52928-0x52938) shows no instruction
+     sets r0 before the epilogue -- whatever the dispatched per-class
+     handler leaves in r0 IS this function's real return value. Every
+     caller relies on that (e.g. FUN_000667cc's light-scan loop:
+     `iVar7 = FUN_000528a8(); bVar1 = *(byte*)(iVar7+1);` -- with the
+     hardcoded 0 this dereferenced address 1 and crashed the moment a
+     real light source was actually found by the scan). */
+  return (*(void *(*)())local_24[(short)((*DAT_00204690 & 0x1c0) >> 6)])();
 }
 
 
@@ -55994,7 +56060,9 @@ void FUN_000667cc()
   int iVar4;
   int iVar5;
   ushort *puVar6;
-  int iVar7;
+  byte *iVar7; /* Was `int` -- truncated the 64-bit pointer FUN_000528a8
+                  returns (see its own comment); made a real crash once
+                  that return value stopped being a hardcoded 0. */
   uint uVar8;
   byte bVar9;
   ushort uVar11;
@@ -56073,12 +56141,20 @@ LAB_000669a8:
   do {
     puVar6 = g_selected_object;
     if (!bVar12) {
-      /* Dropped argument (Ghidra relied on a register leftover that
-         doesn't hold the right value on this recompile) -- every other
-         call to this function in this loop nest passes the current slot
-         index (see the identically-shaped loop at line ~48762 below);
-         iVar4 is that same index here. */
-      puVar6 = (ushort *)FUN_00045054(iVar4);
+      /* Was FUN_00045054(iVar4) -- scanning raw equip slots 0-3, which
+         never hold a light source. Disassembly of the real binary
+         (0x669e8-0x669f4) shows an indirect table lookup was dropped:
+         r8 is loaded from the literal pool with DAT_00085ac8, then
+         `ldrsbne r0,[r5,r8]` reads DAT_00085ac8[iVar4] (the real
+         light-source-eligible slots {5,6,7,8}) before calling
+         FUN_00045054. The sibling light-fuel-burn loop in FUN_0005404c
+         (uw.c ~45174) already uses this exact
+         `FUN_00045054((char)(&DAT_00085ac8)[iVar9])` pattern for the
+         identical 0x90-class/radius-nibble check, confirming this is
+         the real call shape here too -- this was the actual cause of
+         [[torch-ambient-light-scan-range-mismatch]]: a lit torch
+         auto-equips to slot 5 (widget 6), which this loop never read. */
+      puVar6 = (ushort *)FUN_00045054((int)(char)(&DAT_00085ac8)[iVar4]);
     }
     DAT_00204690 = puVar6;
     if (getenv("UW_DEBUG_AMBIENT"))
@@ -56088,7 +56164,7 @@ LAB_000669a8:
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
         (uVar11 = *puVar6 & 0xf, 3 < uVar11)) && (uVar11 < 8)) {
       iVar7 = FUN_000528a8();
-      bVar1 = *(byte *)(iVar7 + 1);
+      bVar1 = iVar7[1];
       if (bVar10 < bVar1) {
         /* Also a bare call (no argument) -- but whatever DAT_000842b0
            value this leaves is unconditionally overwritten a few lines
