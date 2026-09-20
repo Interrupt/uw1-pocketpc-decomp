@@ -104,7 +104,7 @@ int DAT_00204848;
 // 0, paints as palette index 0 -- typically black), nonzero skips
 // byte==0 pixels for real transparency. Callers that want a transparent
 // blit set this to 1 immediately before the call and reset it to 0
-// right after (draw_sprite_by_id, FUN_0003f99c/FUN_0003fa1c, etc). Named
+// right after (draw_sprite_by_id, mode_icon_highlight_on/mode_icon_highlight_off, etc). Named
 // after root-causing the inventory-panel "black box" bug: redraw_hud_panels's
 // panels.GR background blit had a trailing literal `1` argument that
 // clearly intended transparency but never actually set this global,
@@ -2161,7 +2161,7 @@ undefined2 DAT_00201b64;
 undefined2 DAT_00202080;
 short DAT_00201c94;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
-   FUN_00049818/enter_dungeon_view/FUN_0003c038/change_game_mode (DAT_00201b64 = the
+   dispatch_sticky_mode_handlers/enter_dungeon_view/FUN_0003c038/change_game_mode (DAT_00201b64 = the
    mode: 0 is the normal in-game/dungeon view, seen so far; 1 and 2 are
    some other screen). It's link-time-initialized data in the original
    binary -- nothing in this decompile ever writes to it at runtime -- so
@@ -2172,7 +2172,7 @@ short DAT_00201c94;
    e.g. s_chrbtns_00084ef8's comment), then matching each recovered
    32-bit ARM address against this file's own FUN_ names by address.
    Left as a bare zero-filled placeholder, every handler read came back
-   NULL, so the per-frame redraw dispatch (FUN_00049818) never called
+   NULL, so the per-frame redraw dispatch (dispatch_sticky_mode_handlers) never called
    anything -- the game reached the dungeon and ran forever, but no HUD
    panel, 3D view, or tmap tile ever drew.
 
@@ -2196,7 +2196,7 @@ static void (*const DAT_00085668_real_table[48])(void) = {
   (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))dungeon_view_anim_tick,
   0, 0, 0, 0,
   0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))movement_pacing_handler,
-  (void(*)(void))FUN_0003e4cc, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
+  (void(*)(void))sync_player_stats_to_hud, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
   /* mode 1 */
   0, (void(*)(void))enter_automap_screen, 0, 0,
   0, 0, 0, 0,
@@ -2213,7 +2213,7 @@ static void (*const DAT_00085668_real_table[48])(void) = {
 /* Alias into the same table at entry 15 (byte offset 15*8) -- Ghidra's
    own decompile of the real UU.exe shows this used as `&DAT_000856a4 +
    mode*0x80`, i.e. "entry 15 of whichever mode", the same table
-   FUN_00049818 reads -- not a separate byte the way it was declared
+   dispatch_sticky_mode_handlers reads -- not a separate byte the way it was declared
    before (that left it permanently 0/NULL too). */
 #define DAT_000856a4 (DAT_00085668_backing[15 * 8])
 char s__DATA_main_byt_000857a8[] = "\\DATA\\main.byt";
@@ -2376,29 +2376,68 @@ short DAT_0023bd80;
    dispatch table for the 3D-view right-click "interact" modes, indexed by
    FUN_0003f420 as `table[uVar2]` where uVar2 = cursor mode
    (g_cursor_mode) - 1. Link-time-init data the decompile never populated,
-   so every right-click on an object jumped through garbage. Roles read
-   from the five handler bodies:
-     0  interact_look      look / examine  ("You see ..." via
+   so every right-click on an object jumped through garbage.
+
+   The ORDER below was wrong for a while (an earlier session's read of
+   "roles from the five handler bodies" put them in {look, converse,
+   default, talk_npc, attack} order) -- that produced a real,
+   user-visible bug: mode 2's icon (dagger graphic, the weapon-ready HUD
+   status bit it sets matches ready_weapon's own) dispatched to what was
+   then called interact_converse instead of interact_attack, crashing
+   there when the player actually tried to swing. Re-dumped the raw 5
+   pointers directly from UU.exe at 0x858c8 (Ghidra headless, mem.getInt)
+   instead of trusting the prior role-guessing pass; the real order is:
+     0  interact_use       (0x3f2c4) open doors/pull chains/etc: calls
+                          use_object_on_target when the target is in
+                          range but line-of-sight is blocked (i.e. it's
+                          something you interact with in place, not
+                          something you're looking straight at)
+     1  interact_attack    (0x3f368) attack (swing toward the cursor)
+     2  interact_look      (0x3f14c) look / examine ("You see ..." via
                           dispatch_object_action; also a use/get fallback
                           when FUN_000576d0() says so)
-     1  interact_converse      converse (use_object_on_target start-conversation)
-     2  interact_default  get / use context handler
-     3  interact_talk_npc      talk to NPC (FUN_00028488)
-     4  interact_attack      attack (swing toward the cursor)
-   With no cursor mode selected FUN_0003f420 now dispatches index 0
-   (look), so a bare right-click on an object reads "You see a <name>"
-   instead of the get handler's "You cannot pick that up." */
+     3  interact_default   (0x3ee90) get / pick up an object (its own
+                          body does check_object_carry_weight +
+                          attach_picked_up_object_to_cursor); falls back
+                          to interact_talk_npc/interact_use itself when
+                          the target under the cursor is an NPC instead
+                          of an object
+     4  interact_talk_npc  (0x3f128) talk to NPC (FUN_00028488)
+   i.e. mode 2 (g_cursor_mode==2) is the real numeric Attack mode, and
+   mode 5 is Talk-to-NPC -- confirmed independently by ready_weapon's own
+   pre-session value (`g_cursor_mode = 2`, see its own comment) and by
+   cursor_mode_button_click's mode-2 special case, which sets the exact
+   same weapon-ready HUD state (flags5f |= 2, set_hud_status_value(8,4))
+   as ready_weapon. FUN_0003f420's real ARM (0x3f590-0x3f5a8) computes
+   the dispatch index as 2 when no cursor mode is selected (not 0), so a
+   bare right-click still lands on interact_look either way -- see that
+   function's own comment for the matching `_dispatch` fix.
+
+   The real in-game mode ORDER, top to bottom of the 5 mode-select icons
+   (per direct user knowledge of the shipped game): Talk, Get, Look,
+   Attack, Use -- i.e. Talk is drawn topmost (closest to the special
+   6th "options" icon above it) down to Use at the bottom, the reverse
+   of the numeric mode order above (mode 5 = Talk = topmost icon, mode
+   1 = Use = bottommost of the 5), matching
+   DAT_000858a8/DAT_000858b8's own position table (mode 5 has the
+   smallest native Y, mode 1 the largest -- smaller Y is higher on
+   screen). `interact_converse` (this table's index 0) was renamed to
+   `interact_use` once its actual body -- calling
+   use_object_on_target on a blocked-line-of-sight target, e.g. a door
+   -- turned out to match "Use" (open doors, pull chains, etc.), not
+   conversation at all; there is no separate "converse" interact
+   handler in this game at all, only Talk (interact_talk_npc, mode 5). */
 extern void interact_default(void);
 extern void interact_talk_npc(void);
 extern void interact_look(void);
-extern void interact_converse(void);
+extern void interact_use(void);
 extern void interact_attack(void);
 static void (*const PTR_FUN_000858c8_table[5])(void) = {
-  interact_look,       /* 0: look / examine */
-  interact_converse,       /* 1: converse       */
-  interact_default,   /* 2: get / use      */
-  interact_talk_npc,       /* 3: talk to NPC    */
-  interact_attack,       /* 4: attack         */
+  interact_use,        /* 0: use (mode 1, bottommost icon) */
+  interact_attack,      /* 1: attack (mode 2) */
+  interact_look,        /* 2: look / examine (mode 3) */
+  interact_default,     /* 3: get (mode 4) */
+  interact_talk_npc,    /* 4: talk (mode 5, topmost icon) */
 };
 #define PTR_FUN_000858c8 (PTR_FUN_000858c8_table[0])
 code *DAT_002020b8;
@@ -2411,14 +2450,14 @@ code *DAT_002020b8;
    by PTR_FUN_000858c8 (the very next declared symbol in this file) --
    a clean, unambiguous 8-short/8-short layout with no gap. These are the
    6 in-game HUD cursor-mode icon buttons' (Look/Use/Talk/etc, drawn by
-   FUN_0003f99c/FUN_0003fa1c via draw_sprite_by_id) screen positions;
+   mode_icon_highlight_on/mode_icon_highlight_off via draw_sprite_by_id) screen positions;
    only indices 0-5 are ever read (cursor_mode_button_click bounds-checks
    at 5), the remaining 2 slots are unused padding in the original data.
    Declaring these as plain zero-filled arrays (as a prior session had
    them) meant every highlight/unhighlight icon drew at (0,0) instead of
    its real button position -- part of the "door image on mode-icon
    click" bug (see cursor_mode_button_click's own comment for the other
-   half, a dropped FUN_0003fa1c argument). */
+   half, a dropped mode_icon_highlight_off argument). */
 static const unsigned short DAT_000858a8_real[8] = {8,8,6,6,7,8,0,0};
 #define DAT_000858a8 (*(undefined1 *)DAT_000858a8_real)
 static const unsigned short DAT_000858b8_real[8] = {100,81,66,48,28,11,144,0};
@@ -2502,7 +2541,7 @@ undefined1 DAT_0023ce71;
 
    It's a table of *pointer*-sized slots (each holds a resource buffer
    address, written by FUN_00041708/FUN_00041770 and read back by
-   FUN_000408fc/blit_object_sprite_by_frame/FUN_00040be0), but every access site strided
+   FUN_000408fc/blit_object_sprite_by_frame/sprite_list_flush_blit_raw), but every access site strided
    it by 4 bytes and read/wrote it as 'int'/'undefined4' -- correct on the
    original 32-bit binary where a pointer IS 4 bytes, truncating on this
    64-bit host. Widened to an 8-byte stride (buffer doubled to match) and
@@ -2626,21 +2665,38 @@ undefined2 DAT_00202734;
 char DAT_00085988;
 char DAT_0024d000;
 char DAT_0024fa28;
-static undefined DAT_000859ac_backing[8192];
-#define DAT_000859ac DAT_000859ac_backing[0]
+/* Was `static undefined DAT_000859ac_backing[8192]` -- Ghidra never
+   recognized this as a string reference (no cross-reference to label
+   it), but the raw bytes at this address in the real binary spell out
+   "optb\0" plainly -- confirmed via direct memory dump (Ghidra
+   headless, `mem.getBytes`), matching OPTB.GR in data/DATA/. This and
+   its 3 siblings below were the "Unrecoverable string tables" this
+   file's own comments referenced; all 4 turned out to be perfectly
+   readable, just never labeled. Recovering them fixes the frame-
+   counter corruption bug documented at load_gr_resource_entries's own
+   "nothing to load" branch (each of these 4 was previously read as an
+   empty string, silently re-adding the previous resource's frame
+   count instead of contributing OPTB.GR's/etc.'s own real frames). */
+char s_optb_000859ac[] = "optb";
 char s_scrledge_000859b4[] = "scrledge";
 char s_spells_000859c0[] = "spells";
 char s_chains_000859c8[] = "chains";
-static undefined DAT_000859d0_backing[8192];
-#define DAT_000859d0 DAT_000859d0_backing[0]
+/* Was `static undefined DAT_000859d0_backing[8192]` -- real bytes
+   spell "eyes\0", matching EYES.GR. See s_optb_000859ac's comment. */
+char s_eyes_000859d0[] = "eyes";
 char s_power_000859d8[] = "power";
-static undefined DAT_000859e0_backing[8192];
-#define DAT_000859e0 DAT_000859e0_backing[0]
+/* Was `static undefined DAT_000859e0_backing[8192]` -- real bytes
+   spell "inv\0", matching INV.GR. See s_optb_000859ac's comment. */
+char s_inv_000859e0[] = "inv";
 char s_dragons_000859e4[] = "dragons";
 char s_compass_000859ec[] = "compass";
 char s_flasks_000859f4[] = "flasks";
-static undefined DAT_000859fc_backing[8192];
-#define DAT_000859fc DAT_000859fc_backing[0]
+/* Was `static undefined DAT_000859fc_backing[8192]` -- real bytes
+   spell "lfti\0", matching LFTI.GR. See s_optb_000859ac's comment.
+   This is the one loaded right after TMOBJ.GR -- the resource the
+   mode-icon highlight (mode_icon_highlight_on/mode_icon_highlight_off) actually indexes
+   into. */
+char s_lfti_000859fc[] = "lfti";
 char s_tmobj_00085a04[] = "tmobj";
 char s_tmflat_00085a0c[] = "tmflat";
 char s_3dwin_00085a14[] = "3dwin";
@@ -2765,10 +2821,22 @@ void uw_debug_dump_inventory_state(void) {
     for (int i = 0; i < 28; i++)
       if (*(unsigned short *)&g_backpack_slot_table[i*2] & 0xffc0) occupied++;
   }
-  fprintf(stderr, "[demo] post-screenshot state: g_cursor_holding_state(holding)=%d occupied_slots=%d\n",
-          (int)g_cursor_holding_state, occupied);
+  fprintf(stderr, "[demo] post-screenshot state: g_cursor_holding_state(holding)=%d occupied_slots=%d g_current_container_record=%p\n",
+          (int)g_cursor_holding_state, occupied, (void *)g_current_container_record);
 }
-undefined4 g_open_container_list;
+/* Was a lone `undefined4` (4-byte) scalar holding a real heap pointer
+   (an Ordinal_1041-allocated open-container tracking record, same class
+   as g_current_container_record right above) -- every assignment to/from
+   it (open_backpack_container, close_backpack_container) truncated the
+   real 64-bit pointer to 32 bits. That alone was silent as long as only
+   ONE container was ever open simultaneously (the only case exercised
+   before this session's container fixes), since nothing ever needed to
+   walk to a SECOND record through it. Widened to a real pointer; see
+   also the g_current_container_record-chain "next"/"prev" link widening
+   in open_backpack_container/leave_nested_container_level/
+   free_open_container_chain below for the deeper version of this same
+   bug, found and fixed alongside it. */
+char *g_open_container_list;
 /* g_backpack_widget_to_slot_plus1's address (0x85c39) is exactly one byte past
    g_backpack_widget_to_slot's (0x85c38) -- not a separate byte, an alias into the
    same backing array (same relationship as DAT_002028ec/DAT_002028e8,
@@ -2982,16 +3050,54 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
    resolving to widget id 0 (a "not a spell" message code, observed
    live: without this, placing an item successfully updated the data
    but the grid stayed visually empty and printed an unrelated
-   spell-error message on refresh). Other indices stay 0, matching
-   prior (dead) behavior. Note open_backpack_container treats any mapped widget
-   id >= 0xb (11) as "handled by a wider grid redraw elsewhere,
-   nothing to do here" -- with these now-correct values (12-19) that
-   guard always takes the "elsewhere" branch for backpack-grid slots,
-   which is why entering/leaving a container needs its own explicit
-   whole-grid redraw call (see open_backpack_container/close_backpack_container's own
-   comments) rather than relying on this single-widget path. */
-static unsigned char g_backpack_slot_to_widget_backing[0x17] = {
-  0,0,0,0,0,0,0,0,0,0,0, 12,13,14,15,16,17,18,19, 0,0,0,0,
+   spell-error message on refresh).
+
+   Slots 5..10 (the worn-hand/shoulder/finger paperdoll slots, widgets
+   6..11) map back to widgets 6..11 the same N -> N-1 way -- user QA
+   report: "dragging and dropping into a paper doll slot does not show
+   the item." Confirmed live (UW_DEBUG_INV + a direct SDLRDOWN/SDLRUP
+   drag onto widget 9's own click rect): place_held_item_in_empty_slot
+   correctly writes the object into slot 8 and its own
+   `redraw_inventory_widget(g_backpack_slot_to_widget[8])` call DOES
+   fire, but with this array's slot 5..10 entries still at their prior
+   (dead) 0 value, that resolved to widget id 0 -- the deliberate
+   torso no-op sentinel (see g_inventory_hotspot_table's own comment)
+   -- so nothing ever got redrawn even though the placement itself
+   succeeded (confirmed via the demo harness's own post-drop state
+   dump: holding=0, occupied_slots=1, yet the paperdoll circles stayed
+   empty in a SCREENSHOT). g_backpack_widget_to_slot's own comment
+   already documents this exact N -> N-1 rule being extended to
+   widgets 6..11/slots 5..10 when that feature was added -- this
+   reverse array was simply never updated to match at the time. Other
+   indices stay 0, matching prior (dead) behavior. Note
+   open_backpack_container treats any mapped widget id >= 0xb (11) as
+   "handled by a wider grid redraw elsewhere, nothing to do here" --
+   with these now-correct values (12-19) that guard always takes the
+   "elsewhere" branch for backpack-grid slots, which is why
+   entering/leaving a container needs its own explicit whole-grid
+   redraw call (see open_backpack_container/close_backpack_container's own
+   comments) rather than relying on this single-widget path. The new
+   6..11 entries are below that >= 0xb threshold, so they take the
+   single-widget redraw path as intended, not the "elsewhere" one. */
+/* Slots 20..27 (an OPEN container's own 8 content slots, populated by
+   open_backpack_container's own N -> N+8 widget remap at uw.c ~33712,
+   "Remap widgets 12-19 -> slots 20-27") were entirely missing from this
+   array -- it stopped at 0x17 (23) entries, 5 short of the 0x1c (28)
+   every other piece of this container-view code already uses as its
+   slot-range bound. Reported crash: "placing a container in another
+   container and trying to open the nested one" -- opening a container
+   nested inside an already-open one resolves to a content slot in
+   exactly this 20-27 range (confirmed live: slot=26 for a nested sack),
+   and indexing 3-5 elements past this array's end fed a garbage widget
+   id into redraw_inventory_widget, crashing deep in its own hotspot-
+   table lookup. Extended to 0x1c entries with the same N -> N-8 inverse
+   of the widget remap above (slots 20-27 -> widgets 12-19, mirroring
+   slots 11-18 -> widgets 12-19 just above it). Never triggered before
+   because nothing before this session's chain of container fixes ever
+   got far enough to open a SECOND, nested container view. */
+static unsigned char g_backpack_slot_to_widget_backing[0x1c] = {
+  0,0,0,0,0, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0,
+  12,13,14,15,16,17,18,19,
 };
 #define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
 undefined2 DAT_00202980;
@@ -3125,7 +3231,7 @@ char s_an_adventurer__00085d08[] = "an_adventurer.";
    the words together: "You see an mellow outcastnamedBragit" instead of
    "You see a mellow outcast named Bragit". */
 char s_named_00085d18[] = " named ";
-/* Per-mode "sticky redraw bits" mask read by FUN_00049818 right after it
+/* Per-mode "sticky redraw bits" mask read by dispatch_sticky_mode_handlers right after it
    finishes dispatching DAT_00201c84's currently-set bits through
    DAT_00085668: `DAT_00201c84 = DAT_00085728[mode] | DAT_00201c84;` re-arms
    whichever bits this mode always wants re-triggered next idle tick, which
@@ -3139,7 +3245,7 @@ char s_named_00085d18[] = " named ";
    then silently stopped, no matter how many frames/inputs followed.
    Recovered the same way: read UU.exe's real .data bytes at 0x85728
    directly via Ghidra (mode 0 = 0x3800 = bits 11/12/13 =
-   movement_pacing_handler/FUN_0003e4cc/hud_panel_redraw_dispatch; mode 1 = 0x1000 = bit 12 =
+   movement_pacing_handler/sync_player_stats_to_hud/hud_panel_redraw_dispatch; mode 1 = 0x1000 = bit 12 =
    exit_automap_screen; mode 2 = 0x0000, nothing sticky). Only 3 ushorts (one per
    mode, matching DAT_00085668_real_table's 3 modes) are real data -- the
    bytes immediately after are the next struct over (a `\DATA\lev.ark`
@@ -3496,7 +3602,7 @@ int DAT_002046fc;
      4  quit-game confirm    (FUN_00056838 draw / FUN_00056c88 click)
      5  torch brightness     (FUN_0005693c draw / FUN_00056a70 click)
      6  top-level menu list  (FUN_000567c0 draw / FUN_00056b48 click)
-   Index 7 is never dispatched (DAT_000868dc==7 is FUN_00056724's
+   Index 7 is never dispatched (DAT_000868dc==7 is close_ui_panel_return_to_game's
    "menu closing" sentinel, checked directly rather than redrawn) but
    both tables are sized 8 with a null-safe entry there for defense. */
 extern void FUN_000567c0(void);
@@ -4216,6 +4322,51 @@ undefined4 DAT_0023bf50;
 char DAT_00087944_backing[128];
 char *DAT_00087944 = DAT_00087944_backing;
 short DAT_0024af6c;
+/* Deterministic, fixed-step substitute for the real wall-clock
+   (read_realtime_clock_units(), itself Ordinal_535()>>2 -- SDL_GetTicks() scaled to
+   4ms-per-unit) that movement_pacing_handler() (this file, ~line 56186)
+   used to read directly for ALL of its internal timing, including the
+   uVar6 delta that directly scales how far the player moves/turns each
+   tick. Real elapsed time made movement distance sensitive to actual
+   frame-delivery jitter -- fine for one live session, but meant a
+   recorded input sequence (democapture.c) with tick-for-tick-identical
+   keys held for tick-for-tick-identical durations still couldn't
+   reproduce the exact same on-screen distance on replay, since the two
+   sessions' real per-tick timing was never bit-for-bit identical (user-
+   reported: "movement via input still seems to slightly overshoot...
+   if input was 1:1"). Advanced once per real game tick by gx_stub.c's
+   uw_pump_events() (see its own comment) by a fixed amount matching
+   1000/60 ms in this same 4ms-per-unit scale, computed drift-free from
+   the running tick count (not accumulated per-call, which would drift)
+   -- movement becomes a pure function of TICK COUNT, exactly what the
+   recorder already captures losslessly, eliminating this class of
+   replay drift entirely instead of trying to reproduce real timing
+   jitter. Deliberately unconditional (not just during record/playback)
+   since the game is already vsync-locked to ~60Hz (gx_stub.c's own
+   frame-budget cap), so this doesn't change how normal play feels.
+
+   Deliberately NOT folded into read_realtime_clock_units() itself, even though that
+   is literally the "what time is it" function movement_pacing_handler
+   used to call and would have been the more obvious single place to
+   fix -- read_realtime_clock_units() has ~65 other call sites across this file, and
+   at least one (move_key_directional_step's own tail, ~line 56177:
+   `do { iVar2 = read_realtime_clock_units(); } while ((uint)(iVar2-iVar1) < 0x18);`)
+   busy-spins on it in a tight loop with NO event pump in between
+   iterations, deliberately throttling a discrete step's real-world
+   pacing. This clock only advances once per real uw_pump_events() call
+   -- a caller spinning on it outside that cadence, like that loop, would
+   see a frozen value and hang forever. Exposed instead via its own
+   accessor, uw_frame_clock_ms() below, so a caller has to deliberately
+   opt in rather than being silently affected by a global redefinition. */
+unsigned int g_uw_frame_clock_units;
+/* Accessor for g_uw_frame_clock_units -- see its own comment. Use this,
+   not the raw global, from any new gameplay-tick-paced timing code (the
+   same shape as movement_pacing_handler's own use) that wants
+   deterministic, tick-count-driven pacing instead of read_realtime_clock_units()'s
+   real wall-clock time. */
+unsigned int uw_frame_clock_ms() {
+  return g_uw_frame_clock_units;
+}
 char DAT_00087950_backing[128];
 char *DAT_00087950 = DAT_00087950_backing;
 char DAT_00087948_backing[128];
@@ -4317,42 +4468,129 @@ static undefined DAT_000870c8_backing[8192] = "\\*.*";
 #define DAT_000870c8 DAT_000870c8_backing[0]
 static undefined DAT_000870cc_backing[8192];
 #define DAT_000870cc DAT_000870cc_backing[0]
-static undefined1 DAT_000870ec_backing[65536];
+/* Was `static undefined1 DAT_000870ec_backing[65536]` (an oversized,
+   never-populated byte buffer) -- real per-flask X position for
+   `hud_vitals_bar_tick` (the health/mana FLASK bar update function),
+   [0]=health [1]=mana. Read via byte-scaled pointer arithmetic at
+   every call site (`&DAT_000870ec + iVar1` where iVar1 is already a
+   pre-scaled byte offset of 0 or 2, or `&DAT_000870ec + iVar1*2` in
+   hud_vitals_threshold_shake where iVar1 is a plain 0/1 element index) -- kept
+   byte-typed here rather than a natural short array, matching every
+   existing call site instead of needing them all rewritten.
+   Recovered via direct memory dump (Ghidra headless, `mem.getShort`):
+   real values 248 (health) / 284 (mana), byte-encoded little-endian
+   below. */
+static undefined1 DAT_000870ec_backing[4] = { 248,0, 28,1 };  /* 248, 284 */
 #define DAT_000870ec DAT_000870ec_backing[0]
-undefined2 DAT_000870f2;
-undefined1 DAT_0023c118;
-undefined1 DAT_0023c128;
-undefined2 DAT_0023c224;
+/* Was a lone `undefined2 DAT_000870f2;` -- real data confirms this is
+   simply index [1] of DAT_000870f0's own real array (0x870f2 ==
+   0x870f0+2) -- see DAT_000870f0's comment below for the full table
+   and writeup. Alias into it (as a real short lvalue at that byte
+   offset) instead of a separate declaration, so `(&DAT_000870f2)
+   [iVar3]`'s existing natural-short-array indexing at its own call
+   sites keeps working unchanged. */
+#define DAT_000870f2 (*(short *)(DAT_000870f0_backing + 2))
+/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
+   DAT_0023c224/DAT_0023c230 etc. (see DAT_0023c224's comment for the
+   full writeup). DAT_0023c118/DAT_0023c128 are `hud_vitals_bar_tick`'s
+   (the real health/mana FLASK bar update function) own current/target
+   fill-level counters per flask (index 0=health, 1=mana), used
+   throughout as `(&DAT_0023c118)[uVar2]`/`(&DAT_0023c128)[uVar2]`.
+   With these as lone scalars, index [1] on each aliased the next
+   global in this build's layout -- DAT_0023c118[1] read/wrote
+   DAT_0023c128[0]'s own byte, and DAT_0023c128[1] read/wrote
+   DAT_0023c224's first byte -- so the mana flask's fill-level
+   tracking was corrupting the health flask's, and the compass-icon
+   cluster besides. Fixed the same way, real 2-element arrays. */
+static undefined1 DAT_0023c118_arr[2];
+#define DAT_0023c118 DAT_0023c118_arr[0]
+static undefined1 DAT_0023c128_arr[2];
+#define DAT_0023c128 DAT_0023c128_arr[0]
+/* Was a lone `undefined2 DAT_0023c224;` -- but used as a real 2-element
+   array throughout (`(&DAT_0023c224)[iVar1]`/`[uVar2]` for index 0 AND
+   1, including the creation loop in redraw_hud_panels that assigns
+   BOTH elements). Same "split symbol" bug class as this project's
+   other reconstructed tables (see e.g. DAT_00087130's own history) --
+   index [1] read/wrote whatever global happened to sit 2 bytes past
+   this one in OUR build's memory layout, which is not guaranteed (or
+   even likely) to match the original binary's fixed layout. Confirmed
+   live via a sprite-position trace: with the lone-scalar declaration,
+   `(&DAT_0023c224)[1]` resolved to slot 8 -- the COMPASS BACKGROUND
+   sprite's own real slot handle (DAT_0023c228, created a few
+   statements later) -- so any code exercising the second status-icon
+   slot (uVar2==1 in the two functions above) stomped the compass
+   background's position to whatever it happened to pass for its own
+   icon (typically (0,0), before DAT_000870ec/DAT_000870f2 -- the real
+   FLASK X/Y tables -- were themselves recovered, see their own
+   comments above). This was the real cause of the compass background
+   staying stuck at
+   (0,0) despite being created with the correct position. Real fix:
+   make this a genuine 2-element array. */
+static short DAT_0023c224_arr[2];
+#define DAT_0023c224 DAT_0023c224_arr[0]
 byte DAT_0023c11a;
 short DAT_0023c228;
 short DAT_0023c22c;
-/* FIXME[hud-compass-layout]: .data 0x87130 -- compass-needle X position,
-   one short per compass heading. Indexed by the current heading
-   (DAT_0023c11a / DAT_0023c12a, masked `& 0xf` at FUN_0006df70:54803, so
-   16 entries). Read as `(&DAT_00087130)[heading]` and passed as the X arg
-   of FUN_00076338 (FUN_0006cb74:54108, FUN_0006df70:54805) and, for
-   element [0] only, FUN_000762c4 (redraw_hud_panels:54179) for the compass
-   needle sprite DAT_0023c22c (sprite size 3x4). Ghidra never recovered
-   the .data contents so every entry reads 0 and the needle is stuck at
-   x=0 (part of the black block in the HUD top-left). Fill in[0..15] with
-   the real per-heading X from the UW1 compass layout. */
+/* Was `FIXME[hud-compass-layout]: .data 0x87130 -- ... Ghidra never
+   recovered the .data contents so every entry reads 0 and the needle
+   is stuck at x=0 (part of the black block in the HUD top-left)`.
+   Same class of gap as the 4 "unrecoverable" resource-name strings
+   (see s_lfti_000859fc's comment) -- Ghidra just never created a
+   labeled cross-reference to this .data, but the real bytes are
+   perfectly intact in the binary. Recovered via direct memory dump
+   (Ghidra headless, `mem.getShort`): 16 real values tracing a clean
+   small ellipse (112-160), confirming this is genuine per-heading
+   compass-needle X data, not padding. Combined with DAT_00087150
+   below, the ellipse is centered around (136,142) in native
+   (320x200-ish) coordinates -- right at the bottom edge of the 3D
+   viewport (registered at native (52,20)-(223,132), see
+   FUN_0005b758's caller), exactly where the "pedestal" decoration
+   sits in a real reference screenshot of the shipping game. Verified
+   live: with these real values, the needle no longer appears at the
+   top-left corner (the previous x=0/y=0 bug); it now subtly cycles
+   position on the pedestal as the player turns, matching the
+   reference. */
 static short DAT_00087130_arr[16] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  136, 128, 120, 116, 112, 112, 116, 124, 136, 144, 156, 160, 160, 156, 152, 144,
 };
 #define DAT_00087130 DAT_00087130_arr[0]
-/* FIXME[hud-compass-layout]: .data 0x87150 -- compass-needle Y position,
-   one short per compass heading, paired 1:1 with DAT_00087130. Same 16
-   entries, same call sites (Y arg of FUN_00076338 / FUN_000762c4 for
-   DAT_0023c22c). Reads 0 -> needle stuck at y=0. Fill in[0..15] with the
-   real per-heading Y. */
+/* Was `FIXME[hud-compass-layout]: .data 0x87150 -- ...`. See
+   DAT_00087130's comment -- real Y data recovered the same way,
+   16 values tracing the same ellipse (132-153). */
 static short DAT_00087150_arr[16] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  132, 134, 135, 138, 142, 146, 148, 151, 153, 151, 148, 146, 142, 138, 135, 134,
 };
 #define DAT_00087150 DAT_00087150_arr[0]
-short DAT_0023c1e8;
-short DAT_0023c1ea;
-undefined2 DAT_0023c1e6;
-undefined2 DAT_0023c1e4;
+/* Was two lone `short` scalars -- same split-symbol bug as
+   DAT_0023c11c/DAT_0023c230 etc. elsewhere in this file.
+   `hud_dragon_reaction_tick` indexes `&DAT_0023c1e8 + iVar6`
+   (iVar6=0/1, left/right dragon's HEAD-animation sprite-list slot
+   handle -- a separate, dynamically-allocated overlay sprite driving
+   the head's reaction animation, distinct from DAT_0023c230's own
+   static head sub-sprite) and `FUN_0006cbf0` resets both elements
+   individually (`FUN_00076488((int)DAT_0023c1e8);
+   FUN_00076488((int)DAT_0023c1ea);`) -- confirming these are really
+   one 2-element array (0x23c1e8/0x23c1ea are exactly 2 bytes apart in
+   the original binary), not two independent globals. As separate C
+   symbols on this host, `(&DAT_0023c1e8)[1]` read/wrote whatever the
+   compiler placed next instead of the real right-dragon head-
+   animation slot -- confirmed live: this produced a garbage slot
+   handle for the right dragon's head-animation sprite, which happened
+   to land on/repurpose an unrelated already-allocated slot (an
+   inventory item's, e.g. a red key), drawing that item's sprite
+   instead of the dragon's own head animation. */
+static short DAT_0023c1e8_arr[2];
+#define DAT_0023c1e8 DAT_0023c1e8_arr[0]
+#define DAT_0023c1ea DAT_0023c1e8_arr[1]
+/* Same split-symbol bug, same fix: `hud_dragon_reaction_tick` indexes
+   `&DAT_0023c1e4 + iVar6` (the animation-phase state byte per dragon
+   side) and `FUN_0006cbf0` resets both elements individually
+   (`DAT_0023c1e6 = 0; ... DAT_0023c1e4 = 0;`) -- 0x23c1e4/0x23c1e6 are
+   exactly 2 bytes apart in the original binary, confirming this is
+   really one 2-element array too. */
+static undefined2 DAT_0023c1e4_arr[2];
+#define DAT_0023c1e4 DAT_0023c1e4_arr[0]
+#define DAT_0023c1e6 DAT_0023c1e4_arr[1]
 undefined2 DAT_0023c220;
 ushort DAT_0023c1d8;
 undefined1 DAT_0023c11f;
@@ -4363,52 +4601,58 @@ int DAT_0023c23c;
 short DAT_0023c21c;
 /* Same fix as DAT_00248410 above -- see its comment. */
 char *DAT_0023cca4;
-/* The three FIXME[hud-dragon-layout] tables below all position the
-   two dragons.gr decorations that frame the compass -- index 0 = left
-   dragon, index 1 = right dragon -- built once in redraw_hud_panels
-   (54155-54198). Each dragon is drawn as three sprite-list sub-sprites
-   (head, body, wing/tail), created at fixed Y with X taken from these
-   tables; Ghidra never recovered the .data so every X reads 0 and both
-   dragons pile up at the screen's left edge as a black rectangle over
-   the 3D view + HUD. (The black is dragons.gr's colour-0 key showing
-   through -- the sprite-list compositor FUN_00076508 not honouring it is
-   a separate bug.) Fill each pair [left, right] with the real X. */
+/* The three tables below all position the two dragons.gr decorations
+   that frame the compass -- index 0 = left dragon, index 1 = right
+   dragon -- built once in redraw_hud_panels (54155-54198). Each
+   dragon is drawn as three sprite-list sub-sprites (head, body,
+   wing/tail), created at fixed Y with X taken from these tables. Was
+   `FIXME[hud-dragon-layout]: Ghidra never recovered the .data so
+   every X reads 0 and both dragons pile up at the screen's left edge
+   as a black rectangle` -- same class of gap as the compass-needle
+   tables right above (see DAT_00087130's comment) and the 4
+   "unrecoverable" resource-name strings (s_lfti_000859fc's comment):
+   Ghidra just never labeled a cross-reference to this .data. Real
+   values recovered via direct memory dump (Ghidra headless,
+   `mem.getShort`). (The color-0-key transparency issue this comment
+   used to also mention, in the sprite-list compositor FUN_00076508,
+   is a separate, still-open bug -- unrelated to position.) */
 
-/* FIXME[hud-dragon-layout]: .data 0x87170 -- X of the dragon HEAD
-   sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076194(2,0xd,10)
-   into DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
+/* .data 0x87170 -- X of the dragon HEAD sub-sprite, [0]=left
+   [1]=right. Sprite made by sprite_list_alloc_raw_entry(2,0xd,10) into
+   DAT_0023c230[side], placed at ((&DAT_00087170)[side], 0x87), size
    0xd x 10 (redraw_hud_panels:54161); animation frame set from DAT_000871d4
    (54190). */
-static short DAT_00087170_arr[2] = { 0, 0};
+static short DAT_00087170_arr[2] = { 36, 228};
 #define DAT_00087170 DAT_00087170_arr[0]
-/* FIXME[hud-dragon-layout]: .data 0x87174 -- X of the dragon BODY
-   sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076194(2,0x25,0x17)
-   into DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
+/* .data 0x87174 -- X of the dragon BODY sub-sprite, [0]=left
+   [1]=right. Sprite made by sprite_list_alloc_raw_entry(2,0x25,0x17) into
+   DAT_0023c234[side], placed at ((&DAT_00087174)[side], 0x92), size
    0x25 x 0x17 (redraw_hud_panels:54166); frame from DAT_000871d8 (54191). */
-static short DAT_00087174_arr[2] = { 0, 0};
+static short DAT_00087174_arr[2] = { 36, 204};
 #define DAT_00087174 DAT_00087174_arr[0]
-/* FIXME[hud-dragon-layout]: .data 0x871b4 -- X of the dragon WING/TAIL
-   sub-sprite, [0]=left [1]=right. Sprite made by FUN_00076078(0) into
-   DAT_0023c238[side], placed at ((&DAT_000871b4)[side], 0x42), size
-   0xc x 0x1c (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
+/* .data 0x871b4 -- X of the dragon WING/TAIL sub-sprite, [0]=left
+   [1]=right. Sprite made by sprite_list_alloc_entry(0) into DAT_0023c238[side],
+   placed at ((&DAT_000871b4)[side], 0x42), size 0xc x 0x1c
+   (redraw_hud_panels:54169); frame is a literal 0x207b (left) /
    0x208d (right) at 54196, NOT from a table. */
-static short DAT_000871b4_arr[4] = { 0, 0};
+static short DAT_000871b4_arr[4] = { 40, 224};
 #define DAT_000871b4 DAT_000871b4_arr[0]
 
-/* FIXME[hud-dragon-frames]: .data 0x871d4 -- initial dragons.GR frame id
-   for the dragon HEAD sub-sprite, [0]=left [1]=right. Read as
-   `(&DAT_000871d4)[side]` and passed to FUN_00076390 as the frame arg for
-   DAT_0023c230[side] (redraw_hud_panels:54190). dragons.GR ids are in the
-   0x20xx range (cf. the wing's literal 0x207b/0x208d); reads 0 now. Fill
-   with the real left/right head-frame ids. */
-static unsigned short DAT_000871d4_arr[2] = { 0, 0 };
+/* Was `FIXME[hud-dragon-frames]: .data 0x871d4 -- ... reads 0 now`.
+   Same class of gap as the position tables above -- recovered via
+   direct memory dump. Real values 0x206d (left) / 0x207f (right); the
+   +0x12 left/right delta matches the wing/tail sub-sprite's own
+   literal 0x207b/0x208d pair exactly, confirming this is the real
+   dragons.GR left/right frame convention, not a guess. Read as
+   `(&DAT_000871d4)[side]` and passed to sprite_list_set_frame_id as the frame arg
+   for DAT_0023c230[side] (redraw_hud_panels:54190). */
+static unsigned short DAT_000871d4_arr[2] = { 0x206d, 0x207f };
 #define DAT_000871d4 DAT_000871d4_arr[0]
-/* FIXME[hud-dragon-frames]: .data 0x871d8 -- initial dragons.GR frame id
-   for the dragon BODY sub-sprite, [0]=left [1]=right. Read as
-   `(&DAT_000871d8)[side]`, frame arg to FUN_00076390 for DAT_0023c234[side]
-   (redraw_hud_panels:54191, also FUN_0006dbe4:54753). Fill with the real
-   left/right body-frame ids. */
-static unsigned short DAT_000871d8_arr[2] = { 0, 0 };
+/* Was `FIXME[hud-dragon-frames]: .data 0x871d8 -- ... reads 0 now`.
+   Real values 0x206e (left) / 0x2080 (right), same +0x12 delta.
+   Frame arg to sprite_list_set_frame_id for DAT_0023c234[side] (redraw_hud_panels
+   :54191, also FUN_0006dbe4:54753). */
+static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
 #define DAT_000871d8 DAT_000871d8_arr[0]
 /* HUD-panel/tab dispatch table (13 entries), read as
    `(&PTR_FUN_00087220)[index]` at 4 call sites (DAT_0023c1d4/DAT_0023c134
@@ -4425,23 +4669,57 @@ static unsigned short DAT_000871d8_arr[2] = { 0, 0 };
    (now-real, 8-byte-on-this-host) pointer size. */
 static void (*const PTR_FUN_00087220_table[13])(void) = {
   (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))FUN_0007830c, 0,
-  (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))FUN_0006df70, (void(*)(void))FUN_0006e038,
-  (void(*)(void))hud_damage_flash_tick, (void(*)(void))hud_damage_flash_tick, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
+  (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))FUN_0006e038,
+  (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
   (void(*)(void))advance_action_animation_frame,
 };
 #define PTR_FUN_00087220 (PTR_FUN_00087220_table[0])
 char s_panels_00087260[] = "panels";
-undefined1 DAT_0023c11c;
-undefined1 DAT_0023c12c;
-undefined2 DAT_0023c230;
-undefined2 DAT_0023c234;
-undefined2 DAT_0023c238;
+/* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
+   DAT_0023c224/DAT_0023c230 etc. above: both are used throughout as
+   real 2-element byte arrays (`(&DAT_0023c11c)[iVar6]`/
+   `(&DAT_0023c12c)[iVar6]` for index 0 AND 1, including redraw_hud_
+   panels's own creation loop). Fixed the same way. */
+static undefined1 DAT_0023c11c_arr[2];
+#define DAT_0023c11c DAT_0023c11c_arr[0]
+static undefined1 DAT_0023c12c_arr[2];
+#define DAT_0023c12c DAT_0023c12c_arr[0]
+/* Was 3 lone `undefined2` scalars (DAT_0023c230/234/238) -- same
+   "split symbol" bug as DAT_0023c224 (see its own comment for the
+   full writeup): each is used throughout as a real 2-element array
+   (`(&DAT_0023c23X)[iVar3]`/`[iVar6]` for index 0 AND 1, including
+   redraw_hud_panels's own creation loop, which assigns both elements
+   for all three in sequence). The real per-side addresses in the
+   original binary are exactly 4 bytes apart (0x230/0x234/0x238),
+   confirming each one really is a 2-element short array back to back,
+   not 3 independent scalars -- so as lone scalars in this build, index
+   [1] on each reads/writes whatever the compiler happened to place
+   next, with no guarantee of matching the original layout (exactly
+   the aliasing that stomped the compass background sprite via
+   DAT_0023c224). Same "left dragon head/body/wing pile-up" report
+   this affects -- fixed the same way, real 2-element arrays. */
+static short DAT_0023c230_arr[2];
+#define DAT_0023c230 DAT_0023c230_arr[0]
+static short DAT_0023c234_arr[2];
+#define DAT_0023c234 DAT_0023c234_arr[0]
+static short DAT_0023c238_arr[2];
+#define DAT_0023c238 DAT_0023c238_arr[0]
 undefined2 DAT_0023c200;
 char DAT_000870dc;
 char DAT_000870d8;
 ushort DAT_0023c1dc;
-byte DAT_0023c11d;
-byte DAT_0023c12d;
+/* Was lone `byte DAT_0023c11d;`/`byte DAT_0023c12d;` scalars -- but
+   these are exactly the RIGHT-dragon (index 1) slot of the
+   DAT_0023c11c_arr/DAT_0023c12c_arr 2-element arrays declared just
+   above (0x23c11d = 0x23c11c + 1, 0x23c12d = 0x23c12c + 1 in the
+   original binary), read by set_hud_status_value's iVar1==4 branch as
+   "is the OTHER (right) dragon already mid-animation" checks. As
+   separate standalone globals they never alias the real array, so
+   they read back 0 forever (nothing else in this file ever writes
+   them) -- set_hud_status_value's cross-side conflict logic always
+   saw the right dragon as idle. Made real aliases instead. */
+#define DAT_0023c11d DAT_0023c11c_arr[1]
+#define DAT_0023c12d DAT_0023c12c_arr[1]
 ushort DAT_0023c1e0;
 undefined1 DAT_0023c11b;
 byte DAT_0023c12a;
@@ -4460,13 +4738,57 @@ static undefined1 DAT_0023c1f0_backing[65536];
 #define DAT_0023c1f0 DAT_0023c1f0_backing[0]
 static undefined1 DAT_0023c1f8_backing[65536];
 #define DAT_0023c1f8 DAT_0023c1f8_backing[0]
-undefined2 DAT_00087254;
-static undefined1 DAT_000870f0_backing[65536];
+/* Was `undefined2 DAT_00087254;` -- split-symbol bug: real ARM code
+   (confirmed via disassembly of FUN_0006d4a4/hud_vitals_bar_tick)
+   computes `&DAT_00087254 + uVar2*2` for the mana slot, so this is a
+   genuine 2-element short array (0=health, 1=mana shimmer/wraparound
+   state), not a lone scalar. Also not zero-init bss like it looked --
+   raw memory dump (Ghidra headless) showed real .data here: 0x2019
+   (health) / 0x2032 (mana), i.e. each side starts equal to its OWN
+   `local_2c` shimmer-reset constant (a "settled" starting state). */
+static short DAT_00087254_arr[2] = { 0x2019, 0x2032 };
+#define DAT_00087254 DAT_00087254_arr[0]
+/* Was `static undefined1 DAT_000870f0_backing[65536]` (oversized,
+   never populated) -- real per-step Y offset for the FLASK fill-level
+   animation sprite in `hud_vitals_bar_tick`/`hud_vitals_threshold_shake` (the
+   health/mana flask bar update), read via explicit byte-scaled
+   pointer arithmetic (`&DAT_000870f0 + N*2`) at every call site, so
+   kept byte-typed here rather than converting to a natural short
+   array (would need editing 5 call sites for no behavioural gain).
+   Recovered via direct memory dump (Ghidra headless, `mem.getShort`):
+   14 real entries forming a smooth descending curve (liquid Y rises
+   as fill increases), byte-encoded little-endian below (all values
+   fit in one byte, high byte always 0):
+     [0]=156 [1]=152 [2]=150 [3]=148 [4]=146 [5]=144 [6]=142 [7]=141
+     [8]=140 [9]=139 [10]=137 [11]=135 [12]=133 [13]=131 [14..]=0
+   `DAT_000870f2` (see its own comment) is simply this same array's
+   real index [1]. */
+static undefined1 DAT_000870f0_backing[32] = {
+  156,0, 152,0, 150,0, 148,0, 146,0, 144,0, 142,0, 141,0,
+  140,0, 139,0, 137,0, 135,0, 133,0, 131,0, 0,0, 0,0,
+};
 #define DAT_000870f0 DAT_000870f0_backing[0]
-static undefined1 DAT_00087112_backing[65536];
+/* Was `static undefined1 DAT_00087112_backing[65536]` (oversized,
+   never populated) -- real per-step HEIGHT for the same flask
+   fill-level animation sprite (paired with DAT_000870f0's Y), read
+   the same byte-scaled way (`&DAT_00087112 + N*2`). Recovered the
+   same way: 13 real entries, a small rise-then-fall curve (the fill
+   bubble growing then settling), byte-encoded little-endian:
+     [0]=4 [1]=5 [2]=6 [3]=7 [4]=7 [5]=7 [6]=7 [7]=6
+     [8]=5 [9]=4 [10]=4 [11]=4 [12]=4 [13..]=0 */
+static undefined1 DAT_00087112_backing[32] = {
+  4,0, 5,0, 6,0, 7,0, 7,0, 7,0, 7,0, 6,0,
+  5,0, 4,0, 4,0, 4,0, 4,0, 0,0, 0,0, 0,0,
+};
 #define DAT_00087112 DAT_00087112_backing[0]
+/* Real ARM code (hud_vitals_bar_tick's decreasing branch) reads this
+   table at `&DAT_00087112 + iVar3*2 + 2`, i.e. one short PAST what the
+   decompiler wrote as `(&DAT_00087112)[iVar3]` -- same "+2" sibling
+   pattern as DAT_000870f2 vs DAT_000870f0, just not caught until
+   verified against disassembly. */
+#define DAT_00087114 (*(short *)(DAT_00087112_backing + 2))
 /* .bss 0x23c240..0x23c24f: four short[2] rows of sprite handles for the
-   HUD flask/vitals animation (hud_vitals_bar_tick / hud_damage_flash_tick), indexed
+   HUD flask/vitals animation (hud_vitals_bar_tick / hud_dragon_reaction_tick), indexed
    `&row + param*2` with param in {0,1}. Ghidra split the region into four
    lone 1-byte `undefined` scalars, so the param==1 (`+2`) access ran off
    the end of a 1-byte global and read/wrote a neighbouring variable --
@@ -4479,25 +4801,69 @@ static char DAT_0023c240_vitals[16];
 #define DAT_0023c248 DAT_0023c240_vitals[8]
 #define DAT_0023c24c DAT_0023c240_vitals[12]
 short DAT_0023c250;
-/* .data 0x87178..0x871b7: four rows (x / y / w / h) of the HUD damage-
-   flash sprite placement table, read as `*(short *)(&row + iVar6*6)` at
-   three call sites in hud_damage_flash_tick and handed to FUN_000762c4. Ghidra
-   split it into two lone `undefined` scalars plus two `undefined *`
-   pointer slots -- and `&PTR_DAT_00087198` was then cast through `(int)`,
-   truncating the 64-bit address (wild `*(short *)` read -> crash on the
-   first HUD flash). Back each row with real storage and keep the byte-
-   offset indexing. Values weren't recovered from the binary (zero here);
-   worst case the flash sprite draws at 0,0 with 0 size. */
-static char DAT_00087178_arr[16];
-static char DAT_00087188_arr[16];
-static char PTR_DAT_00087198_arr[16];
-static char PTR_DAT_000871a8_arr[16];
+/* .data 0x87178..0x871b7: four rows (x / y / w / h) of the dragon
+   HEAD-animation overlay sprite's placement table (a separate,
+   dynamically-allocated sprite driving the head's reaction animation
+   -- see DAT_0023c1e8's own comment), read as `*(short *)(&row +
+   iVar6*6)` at three call sites in hud_dragon_reaction_tick and
+   handed to sprite_list_set_rect. Ghidra split it into two lone
+   `undefined` scalars plus two `undefined *` pointer slots -- and
+   `&PTR_DAT_00087198` was then cast through `(int)`, truncating the
+   64-bit address (wild `*(short *)` read -> crash the first time the
+   head animation played). Back each row with real storage and keep
+   the byte-offset indexing.
+
+   Was left as all-zero ("worst case the [overlay] sprite draws at
+   0,0 with 0 size") because at the time nothing could reach this code
+   at all -- set_hud_status_value's dragon-reaction branch wrote its
+   request to the wrong global (see DAT_0023c11c's own comment), so
+   hud_dragon_reaction_tick's "has a reaction been requested" gate
+   never fired. Now that that's fixed, this table is genuinely read
+   every time the animation plays -- confirmed live: with it still
+   zeroed, the head-animation overlay drew a large blank/garbage rect
+   at native (0,0), the exact top-left corner the compass pedestal
+   occupies, visually stomping the compass needle every time (reported
+   as "scrolling the messages resets the compass animation"). Recovered
+   the real values the same way as everything else in this cluster
+   (Ghidra headless, `mem.getShort`): indices 0-2 are the left
+   dragon's 3 head-animation sub-rects, indices 3-5 the right dragon's;
+   indices 6-7 of each row are genuinely unused by this table (H's
+   happen to read back 40/224 -- that's DAT_000871b4's OWN data, the
+   very next real table, not padding belonging here) so are left 0. */
+static char DAT_00087178_arr[16] = {40,0, 48,0, 36,0, 204,0, 204,0, 200,0, 0,0, 0,0};  /* X: L 40/48/36, R 204/204/200 */
+static char DAT_00087188_arr[16] = {156,0, 146,0, 146,0, 156,0, 146,0, 146,0, 0,0, 0,0};  /* Y: L 156/146/146, R 156/146/146 */
+static char PTR_DAT_00087198_arr[16] = {33,0, 24,0, 37,0, 34,0, 24,0, 38,0, 0,0, 0,0};  /* W: L 33/24/37, R 34/24/38 */
+static char PTR_DAT_000871a8_arr[16] = {14,0, 16,0, 23,0, 14,0, 16,0, 23,0, 0,0, 0,0};  /* H: L 14/16/23, R 14/16/23 */
 #define DAT_00087178 DAT_00087178_arr[0]
 #define DAT_00087188 DAT_00087188_arr[0]
 #define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
 #define PTR_DAT_000871a8 PTR_DAT_000871a8_arr[0]
-static undefined1 DAT_000871b8_backing[65536];
-#define DAT_000871b8 DAT_000871b8_backing[0]
+/* Was a 64KB never-populated scratch buffer -- same "oversized
+   placeholder" pattern as most of this file's other unrecovered .data
+   gaps, just missed in the earlier pass that fixed the sibling
+   DAT_00087178/DAT_00087188/PTR_DAT_00087198/PTR_DAT_000871a8 rect
+   table right above (they're read/write neighbors in
+   hud_dragon_reaction_tick, but this one's own comment never got
+   written, so it stayed zero-filled while the others got fixed).
+   `hud_dragon_reaction_tick` reads this as `*(short *)(&DAT_000871b8 +
+   (iVar6*7+iVar5)*2)` -- iVar6=0/1 left/right dragon, iVar5=DAT_0023c250
+   cycling 0-6 -- to pick the dragon TAIL sub-sprite's (DAT_0023c238)
+   frame id for each step of its whip/lash animation. With this at 0
+   the id resolved through resolve_sprite_id_to_frame's `id<0x1000`
+   branch as an absolute OBJECTS.GR frame instead of the intended
+   LFTI.GR-relative id, drawing whatever object happens to sit at that
+   low absolute frame index (confirmed live: a red-key-shaped
+   inventory item sprite, reported by the user, instead of the dragon
+   tail). Recovered the real values the same way as the rect table
+   (Ghidra headless, mem.getShort at 0x871b8): 7 frames per side, left
+   dragon ramping 0x207b->0x207e and back, right dragon 0x208d->0x2090
+   and back -- matches the ramp-up/ramp-down shape DAT_0023c250's own
+   0-6 cycling implies. */
+static const unsigned short DAT_000871b8_arr[14] = {
+  0x207b, 0x207c, 0x207d, 0x207e, 0x207d, 0x207c, 0x207b,
+  0x208d, 0x208e, 0x208f, 0x2090, 0x208f, 0x208e, 0x208d,
+};
+#define DAT_000871b8 (*(undefined1 *)DAT_000871b8_arr)
 undefined DAT_0023c124;
 short DAT_0023c254;
 short DAT_00087258;
@@ -4708,7 +5074,7 @@ char *DAT_0023c3e8;
    (`DAT_0023c3e8 + 0x500`, a genuine 64-bit heap pointer on this host) --
    every comparison against it (`DAT_0023c3ec <= someRealPointer`) then
    always came out true regardless of the real slot table's size, so
-   FUN_00076078 (the HUD button-slot allocator) always believed the table
+   sprite_list_alloc_entry (the HUD button-slot allocator) always believed the table
    was full and returned -1 on its very first call, crashing the first
    caller that tried to use that "slot". */
 char *DAT_0023c3ec;
@@ -4731,8 +5097,8 @@ undefined2 DAT_0023c41c;
 /* Sprite-list record status-word bit flags (.data ~0x87638). Ghidra
    split these off as lone `ushort` scalars and never recovered their
    values, so they were all 0 -- which made the whole sprite-list
-   compositor (FUN_00076508 & helpers: FUN_00076078/76194 slot alloc,
-   FUN_00076390 frame set, FUN_00075cb8 bucketing) inert: the free-slot
+   compositor (FUN_00076508 & helpers: sprite_list_alloc_entry/76194 slot alloc,
+   sprite_list_set_frame_id frame set, sprite_list_queue_slot_redraw bucketing) inert: the free-slot
    scan `(DAT_00087638 & status) == 0` always matched slot 0, and the
    compositor's draw gate `(status & DAT_0008763c) != 0` was never true,
    so the HUD compass + dragon.GR decorations were never drawn at all.
@@ -5817,7 +6183,7 @@ ushort *param_3;
   Ordinal_1044(puVar3,param_3,0x1f400);
   iVar9 = 1;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
-  uint diag_t0 = FUN_0002294c();
+  uint diag_t0 = read_realtime_clock_units();
   do {
     uVar4 = Ordinal_2032(iVar9);
     uVar4 = Ordinal_2026(uVar4,0x3e000000);
@@ -5848,7 +6214,7 @@ ushort *param_3;
     puVar6 = puVar6 + 1;
   } while (iVar9 != 0);
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", FUN_0002294c() - diag_t0);
+  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", read_realtime_clock_units() - diag_t0);
   debug_framebuffer_dump("fade_in");
   Ordinal_1018(puVar3);
   return;
@@ -5883,7 +6249,7 @@ undefined2 * param_3;
   iVar11 = 7;
   iVar10 = 64000;
   // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
-  uint diag_t0 = FUN_0002294c();
+  uint diag_t0 = read_realtime_clock_units();
   do {
     uVar5 = Ordinal_2032(iVar11);
     uVar5 = Ordinal_2026(uVar5,0x3e000000);
@@ -5913,7 +6279,7 @@ undefined2 * param_3;
     param_3 = param_3 + 1;
   }
   flush_dirty_rect_to_display(1);
-  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", FUN_0002294c() - diag_t0);
+  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", read_realtime_clock_units() - diag_t0);
   debug_framebuffer_dump("fade_out");
   Ordinal_1018(puVar4);
   return;
@@ -5923,7 +6289,14 @@ undefined2 * param_3;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_000125a8(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+// was FUN_000125a8 -- lowest-level raw (already-decoded, uncompressed)
+// sprite blit primitive: draws a pre-decoded pixel buffer (param_3,
+// the "absolute frame table" entry's payload, header already
+// skipped by the caller) at (param_1,param_2) sized (param_4,param_5)
+// with edge clipping against the framebuffer bounds. Used by
+// blit_object_sprite_by_frame's absolute-frame-table branch and by
+// sprite_list_flush_blit_raw.
+void blit_raw_sprite_clipped(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 short param_1;
 short param_2;
 /* Source-bitmap pointer -- was `int`, truncating the real `char *` the
@@ -5981,7 +6354,24 @@ short param_7;
     local_34 = param_2 + sVar1 + -200;
   }
   param_3 = param_7 * iVar2 + iVar13 + param_3;
-  dirty_rect_union(iVar6,iVar6 + iVar3,iVar14);
+  /* Same missing-4th-argument K&R-call bug as bitmap_blit_to_framebuffer's
+     own dirty_rect_union call (see graphics.c's fix comment) -- this is
+     the more directly relevant instance for inventory icons specifically:
+     this function draws every "already-resident raw sprite" (grid item
+     icons and the container-indicator icon both resolve through here via
+     blit_object_sprite_by_frame's own DAT_00202738 threshold branch, per
+     that function's own comment). Missing the "right" bound left the
+     accumulated dirty rect not reliably covering a freshly-drawn icon's
+     actual width, so only a smaller stale sub-rect got flushed -- this is
+     the direct cause of "redraw areas don't match the actual inventory
+     button sizes" (confirmed live: first-time sack pickup and container-
+     close icon redraws both go through this exact call). */
+  if (getenv("UW_DEBUG_BLITRAW")) {
+    fprintf(stderr, "[blitraw] dstX=%d dstY=%d w=%d h=%d -> dirty top=%d bottom=%d left=%d right=%d\n",
+            (int)param_1, (int)param_2, (int)iVar2, (int)iVar3,
+            iVar6, iVar6 + iVar3, iVar14, iVar14 + iVar2);
+  }
+  dirty_rect_union(iVar6,iVar6 + iVar3,iVar14,iVar14 + iVar2);
   if (g_blit_transparent_mode == 0) {
     iVar11 = (int)local_3c;
     iVar4 = iVar3 - local_34;
@@ -6043,7 +6433,7 @@ short param_7;
       } while (iVar4 < iVar11);
     }
   }
-  debug_framebuffer_dump("FUN_000125a8");
+  debug_framebuffer_dump("blit_raw_sprite_clipped");
   return;
 }
 
@@ -6118,10 +6508,27 @@ void FUN_00012948()
 
 
 
-void FUN_0001294c()
+/* g_suppress_frame_timed_flush: lets main_loop_hud_flush's per-tick forced
+   render_dungeon_frame_timed() call (see its own comment) skip THIS
+   function's real screen flush, since main_loop_hud_flush already does its
+   own explicit flush_dirty_rect_to_display(1) right after (once
+   poll_input_bindings and the HUD dispatch have also run). Without this,
+   every tick called GXEndDraw() twice -- once here, once from that trailing
+   flush -- and each is independently vsync-throttled (see GXEndDraw's own
+   comment: real GAPI hardware blocked every call until the next refresh),
+   roughly doubling real per-tick time. FUN_00067f1c's own call site (a
+   rare one-shot 64-substep view-spin animation with no other per-substep
+   flush) leaves the flag clear and keeps flushing every substep as before. */
+int g_suppress_frame_timed_flush = 0;
+
+// was FUN_0001294c -- render_dungeon_frame_timed's own per-frame screen
+// flush step (see g_suppress_frame_timed_flush above)
+void flush_dungeon_frame()
 
 {
-  flush_dirty_rect_to_display(1);
+  if (!g_suppress_frame_timed_flush) {
+    flush_dirty_rect_to_display(1);
+  }
   return;
 }
 
@@ -7328,6 +7735,26 @@ undefined4 * param_6;
 // was FUN_0001548c -- the textured span rasterizer: for one scanline
 // span between two edges, perspective-divides per pixel, samples the
 // tile texture, shade-corrects and writes RGB565 into g_uw_framebuffer
+//
+// Checked for a "special/self-illuminated colour" exclusion from the
+// distance-shade multiply (user's global fire/water palette-animation
+// search) -- there isn't one, and none is needed: every texel's colour
+// is scaled by the same distance/light factor (DAT_000b5638) regardless
+// of palette index, BUT the colour itself is sampled from g_palette_rgb565
+// fresh on every single frame (unlike the 2D HUD/paperdoll icon path,
+// which composites once into the framebuffer and never re-reads the
+// palette -- see mode-icon-and-hud-icon-flicker-fixes memory). So any
+// wall/floor/ceiling texel whose palette index falls inside a range
+// palette_cycle_range rotates would already animate through this exact
+// code, for free, with no extra plumbing. Confirmed real lava-shaped
+// textures exist using exactly the fire-gradient range (16-23) already
+// wired up for the torch-icon fix: F32.TR/F16.TR entries 24/25 are
+// 94-100% pixels in that range (entry 23 ~28%), W64.TR/W16.TR entry 206
+// is ~93% -- unmistakably lava floor and a lava/torch wall texture. The
+// level loaded from a fresh game (UW_DEBUG_TEXIDS) doesn't reference any
+// of those specific texture ids in its own 48-wall/10-floor id lists, so
+// this couldn't be verified live from the default spawn point -- would
+// need a level that actually places one of them on screen.
 void raster_textured_span(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
 int param_1;
 intptr_t param_2; /* framebuffer base */
@@ -8413,7 +8840,7 @@ void FUN_00016ef8()
   if (3 < DAT_00085a6c[3]) {
     return;
   }
-  FUN_00057604(1);
+  wait_for_click_release(1);
   if ((((local_5e < 0x105) || (0x13f < local_5e)) || (0xb4 < local_60)) || (local_60 < 0x96)) {
     if (((local_5e < 0x105) || (0x13f < local_5e)) || ((0x94 < local_60 || (local_60 < 0x77)))) {
       if (local_5e < 0x114) {
@@ -8532,7 +8959,7 @@ LAB_000171bc:
   }
   FUN_00017b38(iVar10);
 LAB_0001764c:
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 LAB_000171a4:
   sVar2 = FUN_000575c4(&local_5a);
@@ -11216,9 +11643,9 @@ void FUN_0001b474()
   iVar6 = (*DAT_00100674 & 0x3f) * 0x30;
   g_blit_transparent_mode = 1;
   do {
-    uVar5 = FUN_00076a2c(0x10,0x20);
+    uVar5 = grtile_alloc_registered(0x10,0x20);
     (&DAT_000bc028)[iVar7] = uVar5;
-    uVar5 = FUN_00076a2c(0x10,0x20);
+    uVar5 = grtile_alloc_registered(0x10,0x20);
     (&DAT_000bc010)[iVar7] = uVar5;
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 4);
@@ -11483,7 +11910,7 @@ int param_4;
         g_cursor_holding_state = 1;
         return;
       }
-      FUN_00057604(1);
+      wait_for_click_release(1);
       FUN_00057504(&local_36,&local_38);
       sVar1 = FUN_0001bef4((int)local_36,(int)local_38,&local_10,&local_c,&local_8,&local_4);
       if (sVar1 == 0) {
@@ -11516,7 +11943,7 @@ int param_4;
       goto LAB_0001bec8;
     }
   }
-  FUN_00057604(1);
+  wait_for_click_release(1);
   g_cursor_holding_state = 1;
   if ((short)local_10 == 0) {
     g_cursor_holding_state = 1;
@@ -11678,7 +12105,10 @@ int param_3;
     if (bVar3) {
       FUN_00057cac(0);
     }
-    FUN_00057c5c(*g_selected_object & 0x1ff);
+    /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+       own identical fix comment (g_selected_object is `char *`, a
+       single signed byte; the real 9-bit objid needs a `ushort` read). */
+    FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
     FUN_000570b4();
     FUN_0007ec50();
   }
@@ -14770,11 +15200,20 @@ int param_1;
 
 
 
-uint FUN_0002294c()
+// was FUN_0002294c -- GetTickCount-shaped: Ordinal_535() (SDL_GetTicks(),
+// real elapsed ms since startup) scaled down to 4ms-per-unit. Used
+// throughout this file (fades, double-click/hold timing, the attack-swing
+// state machine, movement_pacing_handler's pre-uw_frame_clock_ms reads,
+// ...) as the generic "what time is it" source; some callers (e.g.
+// move_key_directional_step's own tail) busy-spin on it in a tight loop
+// with no event pump in between, so it must keep returning genuine
+// real-time -- see uw_frame_clock_ms's own comment for why movement's
+// deterministic clock is a separate function, not a change here.
+uint read_realtime_clock_units()
 
 {
   uint uVar1;
-  
+
   uVar1 = Ordinal_535();
   return uVar1 >> 2;
 }
@@ -15132,6 +15571,13 @@ void flush_dirty_rect_to_display()
   }
   iVar10 = 0x140 - DAT_00088958;
   iVar11 = 0x140 - DAT_00088950;
+  if (getenv("UW_DEBUG_FLUSHGATE")) {
+    int willflush = ((0 < DAT_00084f10) ||
+      (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0))))));
+    fprintf(stderr, "[flushgate] willflush=%d selected=%p force=%d rect=(%d,%d,%d,%d)\n",
+            willflush, (void *)g_selected_object, (int)g_force_flush,
+            (int)DAT_00088954, (int)DAT_0008895c, (int)DAT_00088950, (int)DAT_00088958);
+  }
   if (((0 < DAT_00084f10) ||
       (((g_selected_object == 0 || (g_force_flush != 0)) && ((DAT_0023c63c == 0 || (g_force_flush != 0)))))
       ) && ((DAT_0023cdc0 == 0x10 && (DAT_0023c430 = GXBeginDraw(), DAT_0023c430 != (void *)0x0))))
@@ -15176,6 +15622,14 @@ void flush_dirty_rect_to_display()
         puVar5 = puVar5 + (iVar7 >> 1);
         puVar4 = puVar4 + -1;
       } while (iVar11 != 0);
+    }
+    if (getenv("UW_DEBUG_FLUSHCALLER")) {
+      void *caller = __builtin_return_address(0);
+      Dl_info info;
+      const char *name = (dladdr(caller, &info) && info.dli_sname) ? info.dli_sname : "?";
+      static unsigned int call_count = 0;
+      call_count++;
+      fprintf(stderr, "[flushcaller] call=%u tick=%u caller=%s(%p)\n", call_count, g_uw_frame_clock_units, name, caller);
     }
     GXEndDraw();
   }
@@ -16376,7 +16830,14 @@ LAB_00024dd4:
 
 
 // was palette_cycle_range -- rotate a contiguous run of DAT_00088d98 palette entries by
-// one (torch-flicker / water-shimmer colour cycling)
+// one. Confirmed real callers so far: the title screen's own gold-gradient
+// animation (0x40-0x7f), FUN_0003601c's special-illustrated-book/scroll
+// view feature (see its own comment -- NOT ordinary lava/water/torch tile
+// shimmer, ruled out live), and the equipped-lit-torch HUD icon flicker
+// this project added (range 16-23, the confirmed fire gradient in PALS.DAT
+// bank 0 -- see mode-icon-and-hud-icon-flicker-fixes memory). Whatever
+// drives ordinary per-tile water/lava/wall-torch animation during normal
+// walking, if the original game has one at all, is still unfound.
 void palette_cycle_range(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
@@ -16897,7 +17358,7 @@ undefined1 param_1;
           if (2 < (short)iVar11) {
             iVar11 = 2;
           }
-          FUN_0006cff4(7,3 - iVar11);
+          set_hud_status_value(7,3 - iVar11);
           uVar8 = DAT_00100624;
           cVar10 = DAT_001005dc;
         }
@@ -17123,7 +17584,7 @@ char * * param_2;
       if ((-1 < (char)(&DAT_002027d2)[iVar5]) && ((char)(&DAT_002027d2)[iVar5] < '\x10')) {
         sVar3 = FUN_000271dc(uVar2 & 0xf);
         if (sVar3 < 0) {
-          FUN_00057604(1);
+          wait_for_click_release(1);
           return 0xffffffff;
         }
         *param_1 = &DAT_002027d0 + iVar5;
@@ -17208,10 +17669,10 @@ void FUN_000275e0()
 {
   DAT_0010062c = 0xfff6;
   DAT_00084f10 = 0xffff;
-  FUN_0006cff4(3,0);
+  set_hud_status_value(3,0);
   g_cursor_holding_state = g_cursor_holding_state + -4;
   FUN_00057cac(3);
-  FUN_0006cff4(8,4);
+  set_hud_status_value(8,4);
   DAT_001005ec = 0;
   return;
 }
@@ -17227,8 +17688,8 @@ void FUN_0002764c()
   if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
     uVar1 = 6;
   }
-  FUN_0006cff4(8,uVar1);
-  FUN_0006cff4(3,0);
+  set_hud_status_value(8,uVar1);
+  set_hud_status_value(3,0);
   return;
 }
 
@@ -17297,7 +17758,7 @@ LAB_00027754:
             if (DAT_0010062c < -9) {
               return;
             }
-            FUN_0006cff4(3,0);
+            set_hud_status_value(3,0);
             local_20[0] = Ordinal_2005(100,((int)(((uint)*(byte *)(pRecord + 5) -
                                                   (uint)*(byte *)(pRecord + 3)) * 0x10000) >> 0x10) *
                                            (uint)DAT_00100614);
@@ -17321,7 +17782,7 @@ LAB_00027754:
             if (-1 < DAT_00100618) {
               return;
             }
-            FUN_0006cff4(3,9);
+            set_hud_status_value(3,9);
             DAT_00100618 = 0;
             g_cursor_holding_state = g_cursor_holding_state + 4;
             FUN_00057c5c(0x1075);
@@ -17331,19 +17792,19 @@ LAB_00027754:
             if (DAT_0010062c < -4) {
               return;
             }
-            FUN_0006cff4(8,-1 - DAT_0010062c);
+            set_hud_status_value(8,-1 - DAT_0010062c);
             DAT_0010062c = 0xfffb;
             return;
           }
           *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) & 0xfa | 10;
           if (DAT_001005e8 < 0) {
-            DAT_001005f0 = FUN_0002294c();
+            DAT_001005f0 = read_realtime_clock_units();
             DAT_001005e8 = 0;
             return;
           }
-          sVar4 = FUN_0002294c();
+          sVar4 = read_realtime_clock_units();
           DAT_001005e8 = (sVar4 - (short)DAT_001005f0) + DAT_001005e8;
-          DAT_001005f0 = FUN_0002294c();
+          DAT_001005f0 = read_realtime_clock_units();
           if (DAT_001005e8 < 0x11) {
             return;
           }
@@ -17353,7 +17814,7 @@ LAB_00027754:
               DAT_00100614 = 100;
             }
             sVar4 = Ordinal_2005(0xc,DAT_00100614);
-            FUN_0006cff4(3,sVar4 + 1);
+            set_hud_status_value(3,sVar4 + 1);
             iVar6 = (int)DAT_001005e8;
             DAT_001005e8 = (short)(iVar6 + -0x10);
           } while (0x10 < (iVar6 + -0x10) * 0x10000 >> 0x10);
@@ -17379,8 +17840,8 @@ LAB_00027754:
       DAT_0010062c = (short)(-1 - (uint)bVar1);
       iVar5 = Ordinal_2005(3,iVar5);
       DAT_00084f10 = (ushort)(byte)(&DAT_00084f0b)[iVar5];
-      FUN_0006cff4(8,-1 - (-1 - (uint)bVar1));
-      FUN_0006cff4(3,1);
+      set_hud_status_value(8,-1 - (-1 - (uint)bVar1));
+      set_hud_status_value(3,1);
       DAT_001005e8 = -1;
       DAT_00100614 = 0;
     }
@@ -17496,7 +17957,7 @@ ushort * param_1;
   int extraout_r1;
   
   if ((*param_1 & 0x1c0) == 0x40) {
-    FUN_0006cff4(4,2);
+    set_hud_status_value(4,2);
     FUN_000735b0(9);
     sVar1 = *(short *)(&DAT_001007f8 + ((byte)*param_1 & 0x3f) * 0x30);
     iVar2 = FUN_0006a058(2,(int)sVar1);
@@ -17851,7 +18312,7 @@ void FUN_000286cc()
       FUN_000570b4();
       DAT_0023bf0c = 0;
       FUN_000577f0();
-      FUN_0003fa1c(5);
+      mode_icon_highlight_off(5);
       g_cursor_mode = 0;
       FUN_00028c00(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
       change_game_mode(1);
@@ -17971,7 +18432,7 @@ void FUN_00028ffc()
     flush_dirty_rect_to_display(1);
     FUN_000735fc();
     if (DAT_00201c84 != 0) {
-      FUN_00049818();
+      dispatch_sticky_mode_handlers();
     }
     if (DAT_00250718 == 0) {
       FUN_0007f170(500,0);
@@ -18124,7 +18585,7 @@ short param_1;
     if ((0 < iVar1) && (iVar1 < DAT_00100794)) {
       DAT_00100790 = 0;
       DAT_0010078c = 0;
-      FUN_00057604(0);
+      wait_for_click_release(0);
       FUN_0007f140();
       FUN_0007fce8(1);
       FUN_0007f0e0();
@@ -18273,7 +18734,7 @@ int param_1;
 {
   int iVar1;
   
-  FUN_00057604(0);
+  wait_for_click_release(0);
   iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   FUN_0007f170(iVar1 * 500,0);
   return 1;
@@ -22864,7 +23325,7 @@ LAB_000337fc:
       if ((bVar3 < 5) || (bVar3 = FUN_00072b2c(), 7 < bVar3)) {
         FUN_000735b0(6);
       }
-      DAT_00101944 = FUN_0002294c();
+      DAT_00101944 = read_realtime_clock_units();
     }
     uVar9 = (uint)*(ushort *)((char *)DAT_0010190c + 0xb);
     if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
@@ -23447,7 +23908,7 @@ ushort * param_3;
     uVar4 = 6;
   }
   FUN_000735b0(uVar4);
-  DAT_00101944 = FUN_0002294c();
+  DAT_00101944 = read_realtime_clock_units();
   return 0;
 }
 
@@ -24242,6 +24703,28 @@ undefined1 * param_2;
 
 
 
+/* NOT a per-tile lava/water/torch tile-shimmer driver, despite looking
+   like one -- traced both of its two real call sites (uw.c ~37381 and
+   ~68657) and they're gated on a special object flag right where the
+   game prints "You read the..." and dispatches to
+   FUN_00037c14((param_1[3]>>6&0x1ff)+0x100): this is the SPECIAL
+   ILLUSTRATED BOOK/SCROLL full-screen view feature (a rare object
+   class that shows a picture, with a few small animated palette-cycled
+   details, when read -- distinct from an ordinary scroll's text
+   popup). Confirmed unreachable from normal per-tick gameplay
+   rendering: a live UW_DEBUG_PALCYCLE_RECORDS trace never fired once
+   across several walking demos nor 60 real ticks standing directly on
+   the known water tile from [[water-wading-and-wall-slide-findings]]
+   (SETPLAYERPOS 6.58 4.92 0 191 0) -- ruling this specific function
+   out as the mechanism for ordinary water/lava/wall-torch shimmer
+   during play, if the original game has one at all. Iterates a
+   16-slot table of 8-byte records (last-update clock, a rate value
+   Ordinal_2005'd against 0x38e, then a start/end palette-index byte
+   pair) -- genuinely reusable for animating multiple independent
+   palette ranges, but nothing in its enclosing function
+   (FUN_0003671c) was found writing real per-object data into that
+   table; it may be uninitialized/link-time data this decompile never
+   recovered, same class of gap as other tables in this file. */
 void FUN_0003601c(param_1)
 ushort * param_1;
 
@@ -24253,14 +24736,19 @@ ushort * param_1;
   
   iVar4 = 0x10;
   do {
+    if (getenv("UW_DEBUG_PALCYCLE_RECORDS") && param_1[1] != 0) {
+      fprintf(stderr, "[palcycle] slot=%d last=%u rate=%u start=%d end=%d\n",
+              0x10 - iVar4, (unsigned)*param_1, (unsigned)param_1[1],
+              (int)(byte)param_1[3], (int)*(byte *)((char *)param_1 + 7));
+    }
     if (param_1[1] != 0) {
-      uVar2 = FUN_0002294c();
+      uVar2 = read_realtime_clock_units();
       iVar3 = Ordinal_2005(param_1[1],0x38e);
       if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*param_1)) {
         uVar2 = (1 - (uint)(byte)param_1[3]) + (uint)*(byte *)((char *)param_1 + 7);
         palette_cycle_range((uint)(byte)param_1[3],uVar2,0);
         reinstall_active_palette(uVar2 & 0xff,(char)param_1[3],1);
-        uVar1 = FUN_0002294c();
+        uVar1 = read_realtime_clock_units();
         *(char *)param_1 = (char)uVar1;
         *(char *)((char *)param_1 + 1) = (char)((ushort)uVar1 >> 8);
       }
@@ -24703,7 +25191,7 @@ LAB_00036858:
         local_64 = uVar14;
         FUN_00035fdc(uVar14 + 0x100,local_b8);
         build_rgb565_palette(local_b8,0xffffffff);
-        local_54 = FUN_0002294c();
+        local_54 = read_realtime_clock_units();
         local_4c = local_54;
         FUN_00035e00(uVar14 + 0x500,*(undefined2 *)(uVar14 + 6),local_70);
         local_93 = 0;
@@ -24843,9 +25331,9 @@ LAB_00036ca4:
                     sVar20 = sVar6;
                   }
                   if (((sVar20 != -1) && (local_91 == -1)) &&
-                     ((3 < sVar20 || (iVar9 = FUN_0002294c(), 0x40 < (uint)(iVar9 - local_54))))) {
+                     ((3 < sVar20 || (iVar9 = read_realtime_clock_units(), 0x40 < (uint)(iVar9 - local_54))))) {
                     local_8b = local_8b | 2;
-                    local_54 = FUN_0002294c();
+                    local_54 = read_realtime_clock_units();
                   }
                   uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10);
                   if (sVar20 == 1) {
@@ -24855,7 +25343,7 @@ LAB_00036ca4:
                     DAT_0023c63c = 0;
                   }
                   if ((sVar20 == 0x1b) && ((local_8b & 0x10) != 0)) goto LAB_00037a8c;
-                  iVar9 = FUN_0002294c();
+                  iVar9 = read_realtime_clock_units();
                   local_4c = iVar9;
                   uVar18 = Ordinal_2005(*(undefined2 *)(local_88 + 0x44),300);
                   uVar14 = iVar9 - iVar10;
@@ -24972,7 +25460,7 @@ LAB_00036ca4:
               if ((uint)DAT_00101a6c == (uint)local_97) {
                 do {
                   if (((local_95 != 999) &&
-                      (iVar9 = FUN_0002294c(), (uint)local_95 <= (uint)(iVar9 - iVar10) >> 8)) &&
+                      (iVar9 = read_realtime_clock_units(), (uint)local_95 <= (uint)(iVar9 - iVar10) >> 8)) &&
                      ((local_8b & 0x80) == 0)) break;
                   sVar6 = -1;
                   if (param_1 != 10) {
@@ -24981,7 +25469,7 @@ LAB_00036ca4:
                   FUN_000366bc(acStack_d0);
                   if (((local_8b & 0x80) != 0) && (iVar9 = FUN_00073ac4(), iVar9 != 0)) {
                     local_8b = local_8b & 0x7f;
-                    iVar9 = FUN_0002294c();
+                    iVar9 = read_realtime_clock_units();
                     local_95 = local_95 + (short)((uint)(iVar9 - iVar10) >> 8);
                   }
                   do {
@@ -25000,7 +25488,7 @@ LAB_00036ca4:
                   }
                   if ((sVar20 == 0x1b) && ((local_8b & 0x10) != 0)) goto LAB_00037a8c;
                   if (((sVar20 == -1) || (local_91 != -1)) ||
-                     ((sVar20 < 4 && (iVar9 = FUN_0002294c(), (uint)(iVar9 - local_54) < 0x41)))) {
+                     ((sVar20 < 4 && (iVar9 = read_realtime_clock_units(), (uint)(iVar9 - local_54) < 0x41)))) {
                     cVar5 = '\0';
                   }
                   else {
@@ -25345,7 +25833,7 @@ LAB_00038100:
     else if ((uVar1 & 0x1f0) == 0x80) {
       iVar3 = FUN_00052c5c(10,param_1);
       if (iVar3 == 0) goto LAB_00038100;
-      FUN_0007c84c(param_1,0);
+      try_empty_container(param_1,0);
     }
     else {
       if ((param_3 & 8) != 0) {
@@ -27596,7 +28084,7 @@ void enter_dungeon_view()
   if (iVar3 == 0) {
     FUN_0003c3c8(0x300b);
   }
-  FUN_0003e44c();
+  enter_dungeon_view_hud_init();
   FUN_00049924(0x7dfe);
   FUN_000667cc();
   full_dungeon_redraw();
@@ -27658,9 +28146,9 @@ short param_1;
   DAT_0023bf0c = 0;
   FUN_000577f0();
   if (param_1 == 1) {
-    FUN_0006cff4(2,0);
+    set_hud_status_value(2,0);
     FUN_0006cb74();
-    FUN_0006ca4c(0);
+    hud_vitals_threshold_shake(0);
     message_scroll_print_wrapped(s_You_died_000857b8);
     FUN_00037c14(0x103);
     Ordinal_496(2000);
@@ -28050,7 +28538,7 @@ LAB_0003c780:
     FUN_00069424(0x40,(extraout_r1_03 & 0xff) + 0xf);
   }
   uVar2 = Ordinal_1053();
-  FUN_0006cff4(2,uVar2 & 0xf);
+  set_hud_status_value(2,uVar2 & 0xf);
   return;
 }
 
@@ -28162,7 +28650,7 @@ LAB_0003c940:
         g_fall_accel = -4;
       }
       set_locomotion_state((int)DAT_00202c68,0);
-      uVar10 = FUN_0002294c();
+      uVar10 = read_realtime_clock_units();
       uVar5 = *(ushort *)(g_player_object + 0xb) & 0xfff;
       *(char *)(g_player_object + 0xb) = (char)uVar5;
       *(byte *)(g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
@@ -28468,7 +28956,7 @@ void commit_player_move()
   *(byte *)(g_player_object + 2) =
        (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
   *(char *)(g_player_object + 3) = (char)(uVar3 >> 8);
-  uVar3 = FUN_0002294c();
+  uVar3 = read_realtime_clock_units();
   uVar4 = *(ushort *)(g_player_object + 0xb) & 0xfff;
   *(char *)(g_player_object + 0xb) = (char)uVar4;
   *(byte *)(g_player_object + 0xc) = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
@@ -28885,7 +29373,7 @@ void FUN_0003def4()
     }
     uVar1 = 0;
   }
-  FUN_0006cff4(6,uVar1);
+  set_hud_status_value(6,uVar1);
   return;
 }
 
@@ -28920,7 +29408,7 @@ void FUN_0003df28()
     FUN_00078c80(0x45);
   }
   FUN_00078c94(0x46,extraout_r1 + 0x47,0x53);
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -28965,7 +29453,7 @@ void FUN_0003e0b4()
       Ordinal_1063(local_84,auStack_a4);
       Ordinal_1063(local_84,&DAT_0008522c);
       message_scroll_print_wrapped(local_84);
-      FUN_00057604(1);
+      wait_for_click_release(1);
     }
   }
   else if (0xd < DAT_00085a6c[1]) {
@@ -28981,7 +29469,7 @@ void FUN_0003e2a4()
 {
   DAT_000868d8 = 0;
   DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,1,cursor_mode_button_click);
-  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
+  DAT_00202090 = register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
   DAT_002020c8 = register_click_region(0xb0,0x9b,0xde,0x8b,0,1,FUN_00044d14);
   DAT_002020bc = register_click_region(0x34,0x99,0x66,0x89,0,1,FUN_00044bd8);
   DAT_0020209c = register_click_region(0x7a,0x97,0x98,0x88,0,1,FUN_0003df28);
@@ -29003,7 +29491,14 @@ void FUN_0003e404()
 
 
 
-void FUN_0003e44c()
+// was FUN_0003e44c -- per-frame(ish) HUD/gameplay-mode refresh, called
+// from enter_dungeon_view (chargen completion, returning from a menu,
+// etc.); re-establishes the mode-icon highlight if a mode is already
+// selected, then calls sync_player_stats_to_hud. Its first call
+// passes s_init_gamedisp_goes_000858e8 ("init_gamedisp goes..."), a
+// leftover original-build debug string strongly suggesting this
+// function's real name was closer to init_gamedisp.
+void enter_dungeon_view_hud_init()
 
 {
   FUN_0007ea34(s_init_gamedisp_goes_000858e8);
@@ -29013,20 +29508,30 @@ void FUN_0003e44c()
   FUN_0003e2a4();
   if (DAT_000868d8 == 0) {
     if (g_cursor_mode != 0) {
-      FUN_0003f99c();
+      /* Dropped argument (confirmed via disassembly of 0x3e44c: r0
+         holds g_cursor_mode, untouched since the guard's own load,
+         right up to `bl 0x3f99c`) -- the real ARM code passes
+         g_cursor_mode through via register reuse. Without it, the
+         mode icon's initial highlight on entering the dungeon view
+         drew with whatever id happened to be left over in r0. */
+      mode_icon_highlight_on((int)g_cursor_mode);
     }
   }
   else {
     FUN_000564f8(1);
   }
-  FUN_0003e4cc();
+  sync_player_stats_to_hud();
   redraw_hud_panels();
   return;
 }
 
 
 
-void FUN_0003e4cc()
+// was FUN_0003e4cc -- reads the player object's current HP/MP/etc.
+// and pushes them into the HUD via set_hud_status_value, one call per
+// status slot (0=health, 1=mana, 2=hunger-ish, 4=poison flash, ...).
+// Called once per HUD refresh from enter_dungeon_view_hud_init.
+void sync_player_stats_to_hud()
 
 {
   int iVar1;
@@ -29035,25 +29540,25 @@ void FUN_0003e4cc()
   
   FUN_00027708(0);
   bVar2 = *(byte *)(g_player_object + 8);
-  FUN_0006cff4(0,bVar2);
+  set_hud_status_value(0,bVar2);
   if (((uint)DAT_001013a4 < (uint)*(byte *)(g_player_object + 0x11) * 4) ||
      ((bVar2 < 0x10 && (*(byte *)(g_player_object + 0x11) != 0)))) {
-    FUN_0006cff4(4,3);
+    set_hud_status_value(4,3);
   }
   *(undefined1 *)(g_player_object + 0x11) = 0;
-  FUN_0006cff4(1,*(undefined1 *)(DAT_00086df8 + 0x37));
+  set_hud_status_value(1,*(undefined1 *)(DAT_00086df8 + 0x37));
   if (DAT_00201b68 != 9) {
-    FUN_0006cff4(2,(ushort)(((int)(((*(byte *)(g_player_object + 0x18) & 0x1f) +
+    set_hud_status_value(2,(ushort)(((int)(((*(byte *)(g_player_object + 0x18) & 0x1f) +
                                    ((*(ushort *)(g_player_object + 2) & 0x380) >> 2)) * 0x10000) >>
                             0x10) + 8 >> 4) & 0xf);
   }
   if (*(char *)(g_player_object + 8) == '\0') {
     FUN_00072288();
   }
-  uVar3 = FUN_0002294c();
+  uVar3 = read_realtime_clock_units();
   iVar1 = ((uVar3 >> 8) - DAT_002020e4) * 0x10000;
   if (iVar1 >> 0x10 != 0) {
-    uVar3 = FUN_0002294c();
+    uVar3 = read_realtime_clock_units();
     DAT_002020e4 = uVar3 >> 8;
     DAT_002020e8 = (char)((uint)iVar1 >> 0x10) + DAT_002020e8;
     FUN_00073634();
@@ -29416,7 +29921,7 @@ void interact_default()
         interact_talk_npc();
         return;
       }
-      interact_converse();
+      interact_use();
       return;
     }
     if ((*g_interact_target & 0x1ff) == 0x1ca) {
@@ -29464,7 +29969,7 @@ void interact_default()
   }
   FUN_00078c80(iVar1);
 LAB_0003f11c:
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -29474,7 +29979,7 @@ LAB_0003f11c:
 void interact_talk_npc()
 
 {
-  FUN_00057604(1);
+  wait_for_click_release(1);
   FUN_00028488(g_interact_target);
   return;
 }
@@ -29667,7 +30172,7 @@ void interact_look()
   }
   FUN_0007c2ec(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
   if (g_cursor_mode == 3) {
-    FUN_00057604(1);
+    wait_for_click_release(1);
   }
   else {
     iVar2 = FUN_000576d0();
@@ -29681,15 +30186,24 @@ void interact_look()
 
 
 
-// was FUN_0003f2c4
-void interact_converse()
+// was FUN_0003f2c4, briefly named interact_converse by an earlier
+// pass. Renamed: its body never actually starts a conversation --
+// when the target is in range but line-of-sight is blocked (a door,
+// a lever behind an obstruction, etc.) it calls use_object_on_target;
+// otherwise it just prints message 0xb9 (unless the target is type
+// 0x16e) and does nothing else. Real UW1's own mode ordering (user-
+// confirmed: Talk/Get/Look/Attack/Use, top to bottom of the icon
+// bar) has NO separate "converse" mode at all -- Talk is its own
+// mode (interact_talk_npc, mode 5); this function is Use (mode 1,
+// table index 0), matching "open doors, use pull chains, etc."
+void interact_use()
 
 {
   int iVar1;
-  
-  DEBUG(INFO, "Interact converse");
-  
-  FUN_00057604(1);
+
+  DEBUG(INFO, "Interact use");
+
+  wait_for_click_release(1);
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
   if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,g_interact_target), iVar1 != 0)) {
     if ((*g_interact_target & 0x1fe) != 0x16e) {
@@ -29751,7 +30265,7 @@ void FUN_0003f420()
     if (g_interact_target == 0) {
       return;
     }
-    interact_converse();
+    interact_use();
     return;
   }
   g_interact_target = 0;
@@ -29774,32 +30288,41 @@ void FUN_0003f420()
     if (getenv("UW_DEBUG_COMBAT")) {
       fprintf(stderr, "[combat] uVar2=%u bit1=0x%x\n", uVar2, (unsigned)(*(ushort *)(DAT_00085a6c + 6) & 1));
     }
-    /* With no cursor mode selected, a right-click on an object defaults
-       to "look" (table[3], interact_talk_npc -> "You see a <name>"), not the
-       get/use handler at table[2]. uVar2 itself stays 2 so the
-       describe_picked_terrain() call below still takes its hardcoded
-       mode-2 "You see <terrain>" path when the click misses every
-       object. */
-    _dispatch = (g_cursor_mode == 0) ? 0 : uVar2;
+    /* Was `(g_cursor_mode == 0) ? 0 : uVar2` -- a forced index-0 override
+       for the no-mode-selected case. That matched the table's OLD, wrong
+       order (where index 0 happened to be interact_look), but real ARM
+       disassembly (0x3f590-0x3f5a8: `moveq r4,#0x2` when g_cursor_mode
+       is 0, `subne r4,r3,#0x1` otherwise) never special-cases 0 at all --
+       it's the exact same value uVar2 already computes above. With the
+       dispatch table now in its real order (see its own comment),
+       index 2 is interact_look, so using uVar2 directly still lands a
+       bare right-click on "You see a <name>", now via the real index
+       instead of a special-cased one. */
+    _dispatch = uVar2;
     if ((uVar2 & 0xff) != 1) {
       if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
         g_interact_target = 0;
         return;
       }
       g_interact_target = pick_object_under_cursor(2);
-      /* Was an unconditional bail (describe the terrain and skip the
-         dispatch table entirely) whenever nothing was directly under
-         the cursor. Fine for Look/Get/Talk (table[0]/[2]/[3]), which
-         all genuinely need g_interact_target -- but interact_attack
-         (table[4], uVar2==4) never reads g_interact_target at all; it
-         only uses the raw mouse position (DAT_00085a6c) to pick a
-         swing zone. Requiring a precise pixel-perfect pick before a
-         melee swing can even start doesn't match that -- confirmed
-         live this was the reason interact_attack was never reached at
-         all when swinging at anything not dead-center under the
-         cursor (a wall, empty air, an off-center creature). Let attack
-         fall through to the dispatch table regardless. */
-      if ((g_interact_target == 0) && (uVar2 != 4)) {
+      /* Was `(g_interact_target == 0) && (uVar2 != 4)` -- an extra skip
+         added under the OLD, wrong table order, meant to let attack
+         (then assumed to be table[4]) fall through to the dispatch
+         table even with no object under the cursor, matching live
+         testing that showed swings need that (not every swing lands
+         dead-center under the cursor). Real attack (table[1], uVar2==1)
+         is already excluded from this whole block by the outer
+         `uVar2 != 1` check above -- confirmed via ARM disassembly
+         (0x3f5b4 `beq 0x3f5f0` branches straight to the table call for
+         uVar2==1, before ever reaching this object-pick/describe code),
+         so this fallthrough only runs for modes 0, 2, or 3 now (real
+         table[0]/[2]/[3] = use/look/get), none of which need a
+         "no object" carve-out -- real disassembly (0x3f5d4-0x3f5e4)
+         unconditionally describes the terrain and returns here. Dropping
+         the `uVar2 != 4` half avoids silently calling table[4]
+         (interact_talk_npc) with a NULL g_interact_target when nothing
+         is under the cursor. */
+      if (g_interact_target == 0) {
         describe_picked_terrain(uVar2,(int)DAT_002020ac);
         goto LAB_0003f584;
       }
@@ -29838,7 +30361,7 @@ void FUN_0003f420()
       }
     }
 LAB_0003f584:
-    FUN_00057604(1);
+    wait_for_click_release(1);
   }
   return;
 }
@@ -29931,7 +30454,7 @@ void handle_inventory_panel_normal_click()
       g_interact_target = FUN_00045678(2);
       if (g_interact_target != 0) {
         (*DAT_002020b8)(g_interact_target,1,1);
-        FUN_00057604(1);
+        wait_for_click_release(1);
         return;
       }
       FUN_00057cac(3);
@@ -29965,7 +30488,14 @@ void inventory_panel_click_region()
 
 
 
-void FUN_0003f99c(param_1)
+// was FUN_0003f99c -- draws the "selected" state for mode icon
+// param_1 (1-based) by blitting LFTI.GR's per-icon highlight frame
+// (id (param_1-1)*-2+0x200b) at that icon's registered position
+// (DAT_000858a8/DAT_000858b8). Called both from
+// cursor_mode_button_click's own click handling and from
+// enter_dungeon_view_hud_init/close_ui_panel_return_to_game to
+// re-establish the highlight when a mode is already selected.
+void mode_icon_highlight_on(param_1)
 int param_1;
 
 {
@@ -29978,8 +30508,13 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   g_blit_transparent_mode = 1;
+  /* Confirmed via real ARM disassembly (0x3f99c: `mov r0,#0x2000;
+     orr r0,r0,#0xb; sub r0,r0,r4,lsl #0x1`) that `(param_1-1)*-2 +
+     0x200b` is exactly what the original compiled code computes --
+     NOT a decompile artifact. The "door sprite" bug is NOT here; see
+     resolve_sprite_id_to_frame/the resource loader instead. */
   if (getenv("UW_DEBUG_MODEICON"))
-    fprintf(stderr, "[modeicon] FUN_0003f99c (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
+    fprintf(stderr, "[modeicon] mode_icon_highlight_on (highlight ON) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
             param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
@@ -29989,7 +30524,10 @@ int param_1;
 
 
 
-void FUN_0003fa1c(param_1)
+// was FUN_0003fa1c -- un-highlights mode icon param_1 (1-based),
+// mode_icon_highlight_on's counterpart: draws LFTI.GR's adjacent
+// "unselected" frame (id (0x1005-(param_1-1))*2) at the same position.
+void mode_icon_highlight_off(param_1)
 int param_1;
 
 {
@@ -30002,8 +30540,14 @@ int param_1;
   sVar3 = *(short *)(&DAT_000858b8 + iVar1 * 2);
   FUN_00057118();
   g_blit_transparent_mode = 1;
+  /* Confirmed via real ARM disassembly (0x3fa1c: `mov r0,#0x1000;
+     orr r0,r0,#0x5; sub r0,r0,r4; mov r0,r0,lsl #0x1`) that
+     `(0x1005-(param_1-1))*2` is exactly what the original compiled
+     code computes -- NOT a decompile artifact. Reverted an earlier
+     incorrect "fix" that dropped this doubling; see resolve_sprite_id_to_frame/the
+     resource loader for the real "door sprite" bug instead. */
   if (getenv("UW_DEBUG_MODEICON"))
-    fprintf(stderr, "[modeicon] FUN_0003fa1c (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
+    fprintf(stderr, "[modeicon] mode_icon_highlight_off (highlight OFF) param_1=%d iVar1=%d id=0x%x x=%d y=%d\n",
             param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
@@ -30047,7 +30591,7 @@ short param_1;
       FUN_000564f8(1);
     }
     else {
-      FUN_0006cff4(8,6);
+      set_hud_status_value(8,6);
       uVar6 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfffd;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar6;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar6 >> 8);
@@ -30058,22 +30602,22 @@ short param_1;
       iVar1 = iVar7 >> 0x10;
       if (iVar1 == g_cursor_mode) {
         /* Dropped argument (Ghidra emitted a bare call despite
-           FUN_0003fa1c's own body using param_1 throughout) -- confirmed
+           mode_icon_highlight_off's own body using param_1 throughout) -- confirmed
            by this same function's sibling call sites elsewhere in the
-           file (FUN_0003fa1c(2), FUN_0003fa1c(5)) using the correct
-           explicit-argument convention. FUN_0003fa1c un-highlights
+           file (mode_icon_highlight_off(2), mode_icon_highlight_off(5)) using the correct
+           explicit-argument convention. mode_icon_highlight_off un-highlights
            whichever mode icon is currently selected, so it needs the
            OLD g_cursor_mode value (read here, before it's overwritten
            below) -- this is the exact "door image" bug: without it, the
            call ran on register-leftover garbage, resolving to a wild,
            essentially random absolute sprite frame instead of the
            intended icon. */
-        FUN_0003fa1c(g_cursor_mode);
+        mode_icon_highlight_off(g_cursor_mode);
         g_cursor_mode = 0;
       }
       else {
         if (g_cursor_mode != 0) {
-          FUN_0003fa1c(g_cursor_mode);
+          mode_icon_highlight_off(g_cursor_mode);
         }
         g_cursor_mode = (short)((uint)iVar7 >> 0x10);
         if (getenv("UW_DEBUG_MODEBTN"))
@@ -30083,8 +30627,8 @@ short param_1;
             uVar2 = *(undefined2 *)(DAT_00086df8 + 0x5f);
             *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar2 | 2;
             *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar2 >> 8);
-            FUN_0006cff4(8,4);
-            FUN_0003f99c((int)g_cursor_mode);
+            set_hud_status_value(8,4);
+            mode_icon_highlight_on((int)g_cursor_mode);
             bVar3 = FUN_00072b2c();
             if ((bVar3 < 5) || (bVar3 = FUN_00072b2c(), 7 < bVar3)) {
               FUN_000735b0(8);
@@ -30095,13 +30639,13 @@ short param_1;
           }
         }
         else {
-          FUN_0003f99c(iVar1);
+          mode_icon_highlight_on(iVar1);
         }
       }
       if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar4 = FUN_00072b2c(), cVar4 == '\b')) {
         FUN_000735c0();
       }
-      FUN_00057604(1);
+      wait_for_click_release(1);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
         FUN_00057c5c(0x1077);
       }
@@ -30112,7 +30656,13 @@ short param_1;
 
 
 
-void FUN_0003fd14(param_1)
+// was FUN_0003fd14 -- registered over the same mode-icon-bar click
+// rect as cursor_mode_button_click but under a different active-mask
+// bit (4, not 1), so it's live in a different input context. Near-
+// identical body, but only lets the click force-select mode 3 (any
+// other resolved index besides toggling the current mode back off is
+// ignored) -- a restricted variant of the normal click handler.
+void cursor_mode_button_click_restricted(param_1)
 short param_1;
 
 {
@@ -30140,7 +30690,7 @@ short param_1;
       FUN_000564f8(1);
     }
     else {
-      FUN_0006cff4(8,6);
+      set_hud_status_value(8,6);
       uVar4 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfffd;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar4;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar4 >> 8);
@@ -30152,20 +30702,20 @@ short param_1;
       if (iVar1 == g_cursor_mode) {
         /* Same dropped-argument bug as cursor_mode_button_click's own
            two identical sites above -- see that comment. */
-        FUN_0003fa1c(g_cursor_mode);
+        mode_icon_highlight_off(g_cursor_mode);
         g_cursor_mode = 0;
       }
       else if (iVar1 == 3) {
         if (g_cursor_mode != 0) {
-          FUN_0003fa1c(g_cursor_mode);
+          mode_icon_highlight_off(g_cursor_mode);
         }
         g_cursor_mode = (short)((uint)iVar5 >> 0x10);
-        FUN_0003f99c(3);
+        mode_icon_highlight_on(3);
       }
       if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar2 = FUN_00072b2c(), cVar2 == '\b')) {
         FUN_000735c0();
       }
-      FUN_00057604(1);
+      wait_for_click_release(1);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
         FUN_00057c5c(0x1077);
       }
@@ -30194,23 +30744,19 @@ void ready_weapon()
     }
     if (g_cursor_mode != 0) {
       /* Same dropped-argument bug as cursor_mode_button_click's sites. */
-      FUN_0003fa1c(g_cursor_mode);
+      mode_icon_highlight_off(g_cursor_mode);
     }
-    /* Was `g_cursor_mode = 2` -- readying the weapon-hand item is
-       exactly "enter combat stance", so the cursor mode it selects
-       should be 5 (Attack), the one FUN_0003f420 dispatches a 3D-view
-       right-click to interact_attack for -- not 2 (Converse, table[1],
-       which never touches combat at all; confirmed by reading its own
-       body). Whichever mode this used to be, FUN_0003f99c(g_cursor_mode)
-       a few lines down highlights whatever icon g_cursor_mode names --
-       so this alone was drawing the WRONG icon (mode 2's) every time a
-       weapon was readied, and left right-clicking dispatch to
-       interact_converse instead of interact_attack. Set to 5 so
-       readying a weapon (from the paperdoll, or bare-handed via
-       handle_inventory_panel_click's own empty-slot branch) puts the
-       player directly into a working attack stance, no separate icon
-       click needed. */
-    g_cursor_mode = 5;
+    /* Originally decompiled as `g_cursor_mode = 2`. An earlier session
+       changed this to 5, reasoning that PTR_FUN_000858c8_table's
+       (then-wrong) declared order put interact_attack at index 4 (mode
+       5). That table order turned out to be wrong -- a fresh raw dump of
+       the 5 pointers directly from UU.exe at 0x858c8 (see the table's
+       own comment) shows interact_attack genuinely at index 1 (mode 2),
+       matching this line's own original value. Restored to 2: mode 2 is
+       the real numeric Attack mode (also matches
+       cursor_mode_button_click's mode-2 special case, which sets this
+       exact same weapon-ready HUD state independently). */
+    g_cursor_mode = 2;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar1 | 2;
     *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar1 >> 8);
@@ -30230,8 +30776,8 @@ void ready_weapon()
        overlay once the lower animation finishes, matching "disabled
        when you leave combat mode, but with an animation delay". */
     g_weapon_overlay_enabled = 1;
-    FUN_0006cff4(8,4);
-    FUN_0003f99c((int)g_cursor_mode);
+    set_hud_status_value(8,4);
+    mode_icon_highlight_on((int)g_cursor_mode);
     bVar2 = FUN_00072b2c();
     if ((4 < bVar2) && (bVar2 = FUN_00072b2c(), bVar2 < 8)) {
       return;
@@ -30258,16 +30804,15 @@ void unready_weapon()
   uint uVar1;
 
   if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) {
-    FUN_0006cff4(8,6);
+    set_hud_status_value(8,6);
     uVar1 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfffd;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar1 >> 8);
     if (DAT_000868d8 == 0) {
-      /* Was a hardcoded `FUN_0003fa1c(2)` -- un-highlight needs to name
-         whichever mode ready_weapon actually highlighted (5, Attack,
-         see its own comment), not the old mode-2 value this was
-         presumably copied from. */
-      FUN_0003fa1c(5);
+      /* Un-highlight needs to name whichever mode ready_weapon actually
+         highlighted -- 2 (Attack, see ready_weapon's own comment on why
+         it's 2 and not 5). */
+      mode_icon_highlight_off(2);
     }
     g_cursor_mode = 0;
     FUN_00027694();
@@ -30695,11 +31240,11 @@ short param_5;
 
 
 /* param_1 = object sprite id, param_2 = shade -- both were dropped by
-   Ghidra at the emit_tile_objects call site AND on the FUN_00040aa8 /
+   Ghidra at the emit_tile_objects call site AND on the resolve_sprite_id_to_frame /
    FUN_000408fc calls below, so the sprite loader ran with a garbage id
    and FUN_000408fc handed back its zeroed dummy glyph -> every object
    billboard decoded to a 0x0 texture (invisible). Forward the id, and
-   resolve it through FUN_00040aa8 the way draw_sprite_by_id does. */
+   resolve it through resolve_sprite_id_to_frame the way draw_sprite_by_id does. */
 undefined4 FUN_00040770(param_1,param_2)
 short param_1;
 uint param_2;
@@ -30715,22 +31260,22 @@ uint param_2;
   (void)param_2;
   if (param_1 < 0) {
     /* Escape hatch: a negative param_1 names an ABSOLUTE frame directly
-       (-param_1), bypassing FUN_00040aa8's id-range resolution entirely.
+       (-param_1), bypassing resolve_sprite_id_to_frame's id-range resolution entirely.
        Needed for TMOBJ signs (emit_tile_objects's class-2 branch):
-       FUN_00040aa8's ">= 0x2000 -> DAT_00202738 + id - 0x2000" TMOBJ
+       resolve_sprite_id_to_frame's ">= 0x2000 -> DAT_00202738 + id - 0x2000" TMOBJ
        convention assumes DAT_00202738 is TMOBJ's own starting base, but
        it's actually snapshotted right AFTER TMOBJ's own
        FUN_00041910(s_tmobj) call finishes -- confirmed by instrumenting
        the loader directly (DAT_00202744 went 643 -> 681 across that one
        call, so TMOBJ's real 38 frames are absolute 643-680, and
        DAT_00202738=681 is the NEXT resource's base). No non-negative
-       encoding through FUN_00040aa8's existing branches can reach frames
+       encoding through resolve_sprite_id_to_frame's existing branches can reach frames
        *before* DAT_00202738, so bypass it here instead of reworking the
        shared id convention every other caller (OBJECTS/ANIMO ids) relies
        on. */
     resolved = -(int)param_1;
   } else {
-    resolved = FUN_00040aa8(param_1);
+    resolved = resolve_sprite_id_to_frame(param_1);
   }
   pcVar3 = (char *)FUN_000408fc(resolved);
   bVar1 = pcVar3[1];
@@ -30898,15 +31443,16 @@ undefined4 param_3;
             (int)param_1, (int)(uint)DAT_00202738, (void *)iVar4,
             (int)param_1 < (int)(uint)DAT_00202738 ? "registered-resource(FUN_000408fc)" : "absolute-frame-table(DAT_0024e090)");
   if (iVar4 == (char *)0x0) {
-    /* Table slot never populated. Four .GR resource names in the preload
-       sequence around SCRLEDGE.GR (FUN_00041ca8: the &DAT_000859fc /
-       &DAT_000859e0 / &DAT_000859d0 / &DAT_000859ac calls) were never
-       recovered by Ghidra -- empty strings -> those files don't load ->
-       the running slot cursor is short, so the scroll-edge decoration
-       sprites (ids 0x20d5..0x20e5, drawn by msg_scroll_draw_edges/FUN_0007f290
-       every time the message scroll advances a line) land on empty
-       slots. Draw nothing rather than dereferencing NULL and taking the
-       game down mid-message. Same safe-fallback shape as FUN_000408fc. */
+    /* Table slot never populated. This used to be caused by 4 .GR
+       resource names in the preload sequence around SCRLEDGE.GR
+       (LFTI/INV/EYES/OPTB, see s_lfti_000859fc's own comment) reading
+       as empty strings and silently corrupting the running frame
+       counter for everything loaded after each one -- now fixed (both
+       the string recovery and the underlying counter-corruption bug
+       in load_gr_resource_entries). Kept as a defensive fallback for
+       any other still-unpopulated slot: draw nothing rather than
+       dereferencing NULL and taking the game down mid-message. Same
+       safe-fallback shape as FUN_000408fc. */
     static char dummy_sprite[8];
     iVar4 = dummy_sprite;
   }
@@ -30941,7 +31487,7 @@ undefined4 param_3;
     }
   }
   else {
-    FUN_000125a8(param_2,param_3,iVar4 + 5,*(undefined1 *)(iVar4 + 2),*(undefined1 *)(iVar4 + 1),0,0
+    blit_raw_sprite_clipped(param_2,param_3,iVar4 + 5,*(undefined1 *)(iVar4 + 2),*(undefined1 *)(iVar4 + 1),0,0
                  ,0);
   }
   return;
@@ -30978,7 +31524,15 @@ char * param_1;
 
 
 
-uint FUN_00040aa8(param_1)
+// was FUN_00040aa8 -- the central symbolic-id -> absolute-frame
+// resolver used throughout the HUD/object draw paths: id<0x1000 is
+// already an absolute OBJECTS.GR frame, 0x1000<=id<0x2000 resolves
+// via DAT_00202730 (BUTTONS.GR's base), id>=0x2000 resolves via
+// DAT_00202738 (LFTI's base, i.e. "whatever preloaded resource comes
+// right after TMOBJ.GR" -- see that global's own comment). Same
+// formula this whole session's HUD work reconstructed independently
+// as "resolved = base + (id - range_start)".
+uint resolve_sprite_id_to_frame(param_1)
 int param_1;
 
 {
@@ -31026,7 +31580,7 @@ short param_5;
     bVar1 = true;
     g_blit_transparent_mode = 1;
   }
-  uVar2 = FUN_00040aa8(param_1);
+  uVar2 = resolve_sprite_id_to_frame(param_1);
   blit_object_sprite_by_frame(uVar2,param_2,param_3,param_4,param_5);
   if (bVar1) {
     g_blit_transparent_mode = 0;
@@ -31047,9 +31601,23 @@ undefined4 param_3;
   char *pcVar3;
   undefined4 unaff_r4;
   undefined4 unaff_r5;
-  
-  FUN_00040aa8();
-  pcVar3 = (char *)FUN_000408fc();
+  uint resolved;
+
+  /* Dropped arguments (2 calls) -- same idiom as the identical
+     `resolved = resolve_sprite_id_to_frame(param_1); FUN_000408fc(resolved);` pair
+     used correctly elsewhere in this file (see e.g. the call site
+     right above this function). Both calls here ran bare, so the
+     resolved icon graphic came from whatever register happened to be
+     left over from the PREVIOUS call instead of this call's own
+     param_1 -- three icon draws happen back-to-back every single
+     frame from weapon_swing_draw_tick (ids 0x107f/0x1080/0x1081), so
+     with this bug each one actually drew whatever the icon 2 calls
+     earlier resolved to, and the leftover register value alternated
+     between two stale states frame to frame. Confirmed live: this
+     produced a real 2-frame-period flicker in exactly that HUD icon
+     area during a held wind-up. */
+  resolved = resolve_sprite_id_to_frame(param_1);
+  pcVar3 = (char *)FUN_000408fc(resolved);
   cVar1 = pcVar3[1];
   cVar2 = pcVar3[2];
   if (*pcVar3 == '\x04') {
@@ -31064,7 +31632,13 @@ undefined4 param_3;
 
 
 
-void FUN_00040be0(param_1,param_2,param_3,param_4,param_5,param_6)
+// was FUN_00040be0 -- the sprite-list compositor flush loop's second
+// draw path ("path=FUN_00040be0" in UW_DIAG_SPRLIST output, taken for
+// entries with puVar4[5]!=0), a sibling of draw_sprite_by_id: resolves
+// param_1 via resolve_sprite_id_to_frame then blits straight through
+// blit_raw_sprite_clipped, skipping draw_sprite_by_id's own id-range
+// transparent-mode toggle.
+void sprite_list_flush_blit_raw(param_1,param_2,param_3,param_4,param_5,param_6)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -31074,15 +31648,27 @@ short param_6;
 
 {
   short sVar1;
-  
-  sVar1 = FUN_00040aa8();
+
+  /* Dropped argument (confirmed via disassembly of 0x40be0: `bl
+     0x40aa8` executes before this function's prologue ever touches
+     r0, so the real ARM code passes this function's own param_1
+     through to resolve_sprite_id_to_frame via register reuse -- same idiom already
+     fixed for the identical pair of calls in the sibling function
+     FUN_00040bc0, just missed here). Without it, sVar1 came from
+     whatever register was left over from an unrelated recent call,
+     resolving to a stale/wrong slot in the absolute-frame table
+     (DAT_0024e090) -- e.g. showing whatever sprite (a door, etc.) had
+     most recently been decoded into that slot, matching this
+     project's established "mode icon draws a door sprite" bug
+     pattern, just via a different dropped call site. */
+  sVar1 = resolve_sprite_id_to_frame(param_1);
   /* DAT_0024e090 is an 8-byte-stride pointer table -- see its declaration
      comment; mirrors the iVar4+5 idiom in blit_object_sprite_by_frame. */
   {
     static char dummy_sprite[8];
     char *spr = *(char **)(&DAT_0024e090 + sVar1 * 8);
     if (spr == (char *)0x0) spr = dummy_sprite;  /* unregistered slot -- see blit_object_sprite_by_frame */
-    FUN_000125a8(param_2,param_3,spr + 5,
+    blit_raw_sprite_clipped(param_2,param_3,spr + 5,
                  ((int)param_4 + (int)param_6) * 0x10000 >> 0x10,param_5,0,param_6,1);
   }
   return;
@@ -31302,7 +31888,7 @@ short param_2;
   
   iVar2 = DAT_0024af78;
   iVar9 = DAT_0024af78 + 0x300;
-  iVar4 = FUN_0002294c();
+  iVar4 = read_realtime_clock_units();
   if (param_2 == 0) {
     iVar4 = 0;
     do {
@@ -31333,10 +31919,10 @@ short param_2;
           iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
         } while (iVar8 < 0x300);
         do {
-          iVar8 = FUN_0002294c();
+          iVar8 = read_realtime_clock_units();
         } while ((uint)(iVar8 - iVar4) < 8);
         FUN_00040f34(iVar2,0);
-        iVar4 = FUN_0002294c();
+        iVar4 = read_realtime_clock_units();
         iVar5 = iVar5 + 1;
       } while (iVar5 * 0x10000 >> 0x10 < iVar1);
     }
@@ -31413,7 +31999,7 @@ void FUN_00041210()
   FUN_000411b8(5);
   full_dungeon_redraw();
   FUN_000411cc(5);
-  FUN_00057604(1);
+  wait_for_click_release(1);
   full_dungeon_redraw();
   FUN_000411b8(5);
   FUN_00067d10(1);
@@ -31600,7 +32186,7 @@ short param_3;
   /* param_1 (a real buffer pointer, from load_gr_resource_entries's allocator
      callback) was declared int here and silently truncated to 32 bits on
      dereference -- see uw_alloc_grtile()'s comment for why this uses that
-     helper instead of FUN_00076a2c directly. DAT_0024e090 is an 8-byte-
+     helper instead of grtile_alloc_registered directly. DAT_0024e090 is an 8-byte-
      stride pointer table -- see its declaration comment. */
   pvVar1 = uw_alloc_grtile(*(undefined1 *)((char *)param_1 + 1),*(byte *)((char *)param_1 + 2) + 1);
   if (pvVar1 != 0) {
@@ -31678,7 +32264,34 @@ codeval * param_5;
        original address were never recovered by Ghidra (no content, just
        a dangling address -- see README "Unrecoverable string tables").
        Treat "nothing to load" as success rather than failing the whole
-       resource-preload batch this participates in. */
+       resource-preload batch this participates in.
+
+       BUG (found tracing the mode-icon "door sprite" report): this
+       early return never touches DAT_00202728 (the just-loaded
+       resource's frame count), so it's left holding whatever the
+       PREVIOUS real load set it to. FUN_00041910/FUN_000419c8's
+       callers unconditionally do `DAT_00202744 += DAT_00202728`
+       right after calling this regardless of success/failure -- so
+       every one of these "nothing to load" resources silently
+       RE-ADDS the previous resource's frame count to the running
+       absolute-frame counter instead of contributing zero. Confirmed
+       live via UW_DEBUG_DUMP_GR: all 4 unrecovered resource names in
+       the post-TMOBJ preload chain (this project's own prior
+       "Unrecoverable string tables" investigation already knew these
+       fail to load, but not that the failure corrupts every
+       subsequent resource's frame numbering) each duplicate the
+       immediately-preceding real resource's exact frame count
+       (e.g. the one right after TMOBJ.GR claims TMOBJ's own 38
+       frames a second time). This is why the mode-icon highlight
+       (which indexes into this same running counter, expecting the
+       resource that comes right after TMOBJ) actually landed on
+       TMOBJ's OWN leftover frame data (a wall-mounted decorative tile
+       object) instead of whatever the missing resource's real icon
+       content should have been -- a door/gate-like TMOBJ decoration,
+       matching the user's report exactly. Zero the count so a missing
+       resource correctly contributes no frames instead of duplicating
+       the previous one. */
+    DAT_00202728 = 0;
     return uVar6;
   }
   iVar1 = open_gr_resource_file(param_1,1);
@@ -31737,8 +32350,14 @@ char *param_1;
 
 {
   undefined4 uVar1;
+  short _dbg_before;
+  _dbg_before = DAT_00202744;
   uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000415b0,&LAB_000415d0);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
+  if (getenv("UW_DEBUG_DUMP_GR")) {
+    fprintf(stderr, "[dumpgr] FUN_00041910(\"%s\") frames [%d, %d) count=%d ok=%d\n",
+            param_1, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
+  }
   return uVar1;
 }
 
@@ -31772,8 +32391,14 @@ char *param_1;
   /* Ghidra dropped load_gr_resource_entries's result and always returned failure
      (see FUN_00040cd4 for the same pattern); propagate the real result. */
   undefined4 uVar1;
+  short _dbg_before;
+  _dbg_before = DAT_00202744;
   uVar1 = load_gr_resource_entries(param_1,0,0xffffffff,&LAB_000416e8,FUN_00041708);
   DAT_00202744 = (short)DAT_00202728 + DAT_00202744;
+  if (getenv("UW_DEBUG_DUMP_GR")) {
+    fprintf(stderr, "[dumpgr] FUN_000419c8(\"%s\") frames [%d, %d) count=%d ok=%d\n",
+            param_1, (int)_dbg_before, (int)DAT_00202744, (int)DAT_00202728, (int)uVar1);
+  }
   return uVar1;
 }
 
@@ -31874,25 +32499,25 @@ undefined4 FUN_00041aac()
     DAT_00202734 = DAT_00202744;
     uVar12 = FUN_00041990(s_tmflat_00085a0c,0x170,0x10);
     /* DAT_00202738 is snapshotted AFTER this call, i.e. it's the base for
-       whatever loads NEXT, not TMOBJ's own base -- confirmed by
-       instrumenting this exact spot (DAT_00202744 went 643 -> 681 across
-       the FUN_00041910 call below), so TMOBJ's real 38 frames are
-       absolute indices 643-680. See emit_tile_objects's class-2 sign
-       branch and FUN_00040770's negative-param_1 comment for where this
-       matters. */
+       whatever loads NEXT (LFTI.GR, see s_lfti_000859fc), not TMOBJ's own
+       base -- confirmed by instrumenting this exact spot (DAT_00202744
+       went 643 -> 681 across the FUN_00041910 call below), so TMOBJ's
+       real 38 frames are absolute indices 643-680. See
+       emit_tile_objects's class-2 sign branch and FUN_00040770's
+       negative-param_1 comment for where this matters. */
     uVar13 = FUN_00041910(s_tmobj_00085a04);
     DAT_00202738 = DAT_00202744;
-    uVar14 = FUN_000419c8(&DAT_000859fc);
+    uVar14 = FUN_000419c8(s_lfti_000859fc);
     uVar15 = FUN_000419c8(s_flasks_000859f4);
     uVar16 = FUN_000419c8(s_compass_000859ec);
     uVar17 = FUN_000419c8(s_dragons_000859e4);
-    uVar18 = FUN_000419c8(&DAT_000859e0);
+    uVar18 = FUN_000419c8(s_inv_000859e0);
     uVar19 = FUN_000419c8(s_power_000859d8);
-    uVar20 = FUN_000419c8(&DAT_000859d0);
+    uVar20 = FUN_000419c8(s_eyes_000859d0);
     uVar21 = FUN_000419c8(s_chains_000859c8);
     uVar22 = FUN_000419c8(s_spells_000859c0);
     uVar23 = FUN_000419c8(s_scrledge_000859b4);
-    uVar24 = FUN_000419c8(&DAT_000859ac);
+    uVar24 = FUN_000419c8(s_optb_000859ac);
     if ((uVar23 & uVar24 & uVar22 & uVar21 & uVar20 & uVar19 & uVar18 & uVar17 & uVar16 & uVar15 &
          uVar14 & uVar13 & uVar12 & uVar11 & uVar10 & uVar9 & uVar8 & uVar7 & uVar6 & uVar5 & 1) ==
         0) {
@@ -31926,7 +32551,27 @@ void load_door_frames()
   uVar2 = DAT_00202748;
   uVar1 = DAT_00202744;
   iVar3 = 0;
-  DAT_00202744 = DAT_00202734 + 0x30;
+  /* Was `DAT_00202734 + 0x30` -- confirmed via real ARM disassembly
+     (0x41dcc: `add r0,r0,#0x30`) that this is genuinely what the
+     original binary computes, not a decompiler artifact. With
+     DAT_00202734==643 (TMOBJ's own start, see its declaration
+     comment), that lands this loop's 6 scratch slots at absolute
+     691-696 -- overlapping LFTI's own last 2 entries (691-692) AND
+     FLASKS' first 4 (693-696), which have already been correctly
+     registered by the time a door is first loaded. Since
+     DAT_00202744 gets restored right after this loop, these 6 slots
+     are only ever meant to be scratch space, but the original game's
+     chosen offset was too small to clear the whole HUD-icon preload
+     range (LFTI/FLASKS/COMPASS/DRAGONS/INV/POWER/EYES/CHAINS/SPELLS/
+     SCRLEDGE/OPTB, ending at 919) -- a genuine bug in the shipped
+     1994 binary, confirmed live: it silently overwrites the flask's
+     own first 4 animation frames with door-sized (32x64) data,
+     visible as a spurious door image under the health/mana flasks.
+     Deliberately deviating from the original's exact (buggy) value
+     here per user direction: picked a fixed scratch base far past
+     every real resource range this project has identified, so this
+     temporary borrow can never collide with anything real again. */
+  DAT_00202744 = 60000;
   do {
     /* Was passed `0` for the post-process/registration callback (param_5)
        -- with no registrar, even a successful allocate+read never stores
@@ -32508,19 +33153,23 @@ char *param_1;
 void free_open_container_chain()
 
 {
-  undefined1 uVar1;
-  undefined3 uVar2;
-  int iVar3;
+  char *_prev;
 
   if (g_current_container_record != 0) {
-    uVar2 = *(undefined3 *)(g_current_container_record + 4);
-    uVar1 = *(undefined1 *)(g_current_container_record + 7);
-    while( true ) {
-      iVar3 = CONCAT13(uVar1,uVar2);
-      if (iVar3 == 0) break;
+    /* Was reconstructing the "prev" chain link from the record's own
+       byte-4..7 field (CONCAT13 of a 3-byte + 1-byte read) -- that field
+       is only ever a truncated 32-bit half of a real 64-bit pointer (see
+       open_backpack_container's own record-widening fix). Walk the real,
+       untruncated prev pointer at +0x14 instead. Never triggered before
+       because closing a container was unreachable until this session's
+       earlier fixes got that far at all, and freeing a chain of TWO OR
+       MORE records (this loop's actual reason to exist) needed the
+       nested-container-open fix on top of that. */
+    _prev = *(char **)(g_current_container_record + 0x14);
+    while (_prev != 0) {
       /* Dropped argument: release_container_reference's declared signature takes the
          open-container tracking record being freed -- g_current_container_record,
-         the current one, before it's overwritten by iVar3 below --
+         the current one, before it's overwritten by _prev below --
          same "wrapper forgot to forward its own argument" idiom as
          this whole session's other fixes. Never triggered before
          because closing a container (this whole function) was
@@ -32530,9 +33179,8 @@ void free_open_container_chain()
          param_1's place. */
       release_container_reference((char *)g_current_container_record);
       Ordinal_1018(g_current_container_record);
-      uVar2 = *(undefined3 *)(iVar3 + 4);
-      uVar1 = *(undefined1 *)(iVar3 + 7);
-      g_current_container_record = iVar3;
+      g_current_container_record = _prev;
+      _prev = *(char **)(g_current_container_record + 0x14);
     }
     g_open_container_list = 0;
     release_container_reference((char *)g_current_container_record);
@@ -32543,6 +33191,11 @@ void free_open_container_chain()
 }
 
 
+
+/* Registered grtile handle for record 1's own pixel backup -- see its
+   capture site in open_backpack_container and the restore in
+   close_backpack_container just below. 0 until the first-ever open. */
+undefined4 g_container_icon_backup_grtile = 0;
 
 void close_backpack_container()
 
@@ -32598,8 +33251,62 @@ void close_backpack_container()
        one extra fully OPAQUE pass of the same blit first so every
        pixel there gets overwritten regardless. */
     g_blit_transparent_mode = 0;
-    bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
+    /* RESOLVED (was: body-shaped black cutout around the paperdoll after
+       closing a container -- user report: "closing a container draws
+       black areas under some of the paper doll section"). The real cause
+       was THIS opaque pre-pass, not a missing redraw: it was added to
+       paint over one small stale leftover (the "leave container" icon,
+       hotspot record 1, in the SAME 0x72x0x53 native-pixel tile) before
+       redraw_hud_panels's own call to the identical blit repaints it
+       transparently -- but bitmap_blit_to_framebuffer's opaque mode
+       writes EVERY source byte literally, including this panel-art
+       tile's many genuinely-transparent-keyed pixels (byte value 0) that
+       back the worn-item ring slots (shoulders/hands/fingers) and the
+       rest of the panel's leather texture. Painting all of them solid
+       black here, then having redraw_hud_panels's transparent pass
+       correctly SKIP those same zero-valued source pixels (by design),
+       permanently left them black -- the opaque pre-pass was blacking
+       out the whole panel background, not just the one icon spot it was
+       meant to fix. Confirmed live (screenshot diff): dropping this call
+       entirely restores the ring backgrounds and shoulder/hand slots
+       with no visible regression at the one spot this was meant to
+       patch (redraw_hud_panels's own transparent blit, immediately
+       after, is enough on its own -- whatever it leaves untouched there
+       was already correct) -- EXCEPT for the container icon itself,
+       see below. */
     redraw_hud_panels();
+    /* User report: "opening and closing a bag leaves the container icon
+       behind." open_backpack_container draws the container's own icon at
+       record 1's spot (the "leave container" button position, same
+       0x72x0x53-tile area as the black-cutout fix above) in transparent
+       mode -- and per that same fix's own finding, the panel art has a
+       genuinely transparent pixel right there, so redraw_hud_panels's
+       transparent blit (just above) correctly leaves it untouched by
+       design, same as before. Nothing else in this function redrew
+       record 1's spot: it belongs to widgets 0-5 (the paperdoll body),
+       which only redraw_inventory_widget(<6) -> FUN_00046bfc reaches --
+       redraw_inventory_widget_range below only covers 0xc-0x13 (the
+       backpack grid).
+
+       FIRST attempt was redraw_inventory_widget(1) here (redrawing the
+       paperdoll body) -- confirmed via before/after SCREENSHOT diffing
+       on a real repro (bug-redraw-demo.txt) that this only covers a
+       SMALL corner of the icon, not the whole spot ("a small rectangle
+       of the lower right corner does get cleared, but not the whole
+       button" -- user QA report): the body sprite's own opaque
+       silhouette doesn't fill this position's whole 16x16 footprint,
+       and neither it nor the panel background (their normal combined
+       compositing) is meant to paint every pixel here -- some of it is
+       load-once content from the panel's initial setup that nothing
+       normally ever redraws, which is exactly why the spot looks
+       correct in ordinary play (nothing dirties it) but not after this
+       icon draws over it. Replaced with a verbatim pixel restore
+       (g_container_icon_backup_grtile, captured once on the very first
+       open in open_backpack_container, blitted back here) so the fix
+       doesn't depend on knowing exactly which combination of layers is
+       "supposed" to show through -- same pattern this function already
+       used for the adjacent DAT_002028ec region above. */
+    FUN_00076e98(g_container_icon_backup_grtile);
     redraw_inventory_widget_range(0xc,0x13);
     redraw_inventory_widget(0x15);
     redraw_inventory_widget(0x16);
@@ -32609,32 +33316,92 @@ void close_backpack_container()
 
 
 
+/* Draws the container icon / leave-button (widget 1, above the 8-item
+   grid) for whichever container's header word is passed in -- factored
+   out of open_backpack_container so leave_nested_container_level can
+   redraw it too when popping back to a parent (see that call site's own
+   comment). Always draws the OPEN sprite variant (id | 1); see
+   open_backpack_container's original comment on this icon for the
+   COMOBJ.DAT even/odd closed/open id pairs this relies on. */
+static void draw_container_indicator_icon(header)
+ushort header;
+{
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] widget-1 icon id=0x%03x (open variant of 0x%03x)\n",
+            (unsigned)((header & 0x1ff) | 1), (unsigned)(header & 0x1ff));
+  g_blit_transparent_mode = 1;
+  draw_sprite_by_id((header & 0x1ff) | 1,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
+               (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
+  g_blit_transparent_mode = 0;
+}
+
+
+
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 void leave_nested_container_level()
 
 {
-  int iVar1;
-  
+  /* Was `int iVar1;` -- resolve_object_link returns a real 64-bit
+     pointer, truncated to 32 bits by this narrower type (same class as
+     dozens of other fixes this session), then immediately dereferenced
+     via `*(ushort*)(iVar1+6)` below -- a wild-pointer crash. Never
+     triggered before because this whole function (popping OUT of a
+     container back to its parent) was unreachable until this session's
+     nested-container-open fix made a parent/child chain possible to
+     create in the first place. */
+  char *iVar1;
+  char *_old;
+
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] leave_nested_container_level entry: g_open_container_list=%p g_current_container_record=%p prev=%p\n",
+            (void *)g_open_container_list, (void *)g_current_container_record,
+            g_current_container_record ? *(void **)(g_current_container_record + 0x14) : 0);
   if (g_open_container_list != 0) {
-    if (*(int *)(g_current_container_record + 4) == 0) {
+    /* Was `*(int *)(g_current_container_record + 4) == 0` -- the legacy
+       byte-4..7 "prev" field is only ever a truncated 32-bit half of a
+       real 64-bit pointer (see open_backpack_container's own record-
+       widening fix); check the real, untruncated prev pointer at +0x14
+       instead -- a truncated-but-nonzero value here would wrongly take
+       the "pop a level" branch below instead of closing outright. */
+    if (*(char **)(g_current_container_record + 0x14) == 0) {
       close_backpack_container();
     }
     else {
       /* Same dropped argument as free_open_container_chain's own fix -- forward the
          current g_current_container_record before it's overwritten below. */
       release_container_reference((char *)g_current_container_record);
-      g_current_container_record = *(undefined1 **)(g_current_container_record + 4);
-      Ordinal_1018();
+      /* Was `g_current_container_record = *(undefined1 **)(g_current_container_record + 4);
+         Ordinal_1018();` -- walked the same truncated legacy "prev" field
+         (wild pointer the moment a real second record existed to walk
+         to), then freed with NO argument at all (dropped, same idiom as
+         the sibling fix above) instead of the OLD record this is meant
+         to pop. Save the old pointer, walk the real +0x14 prev pointer,
+         then free the right one. */
+      _old = g_current_container_record;
+      g_current_container_record = *(char **)(g_current_container_record + 0x14);
+      Ordinal_1018(_old);
       *g_current_container_record = 0;
       g_current_container_record[1] = 0;
       g_current_container_record[2] = 0;
       g_current_container_record[3] = 0;
+      /* This record is the tail again now that its child was just freed. */
+      *(char **)(g_current_container_record + 0xc) = 0;
       g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
-      iVar1 = resolve_object_link((ushort *)(g_current_container_record + 8));
+      iVar1 = (char *)resolve_object_link(&g_current_container_link);
+      if (getenv("UW_DEBUG_INV"))
+        fprintf(stderr, "[inv] leave_nested_container_level: popped to record=%p g_current_container_link=0x%04x resolved=%p\n",
+                (void *)g_current_container_record, (unsigned)g_current_container_link, (void *)iVar1);
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
-      FUN_00042e30();
-      FUN_00042d70();
+      /* User QA: "the container indicator does not update to show the
+         current container icon" after popping back to a parent -- this
+         icon (widget 1) is only ever drawn inside open_backpack_container,
+         which this pop path never calls, so it was left showing whatever
+         the child container's icon looked like. Redraw it here from the
+         parent's own just-resolved header word. */
+      draw_container_indicator_icon(*(ushort *)iVar1);
+      repopulate_container_grid_slots();
+      refresh_container_view();
       redraw_inventory_widget_range(0x14,0x14);
     }
   }
@@ -32645,7 +33412,7 @@ void leave_nested_container_level()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00042d70()
+void refresh_container_view()
 
 {
   short sVar1;
@@ -32669,82 +33436,108 @@ void FUN_00042d70()
 
 
 
-void FUN_00042e30()
+void repopulate_container_grid_slots()
 
 {
   undefined2 uVar1;
   byte bVar2;
-  int iVar3;
+  /* Was `int iVar3;`/`int iVar5;` for the parts of this function where
+     they hold real resolve_object_link() pointers (truncated to 32 bits
+     on this 64-bit host, same class as leave_nested_container_level's
+     own sibling fix right above -- never triggered before because this
+     function, called from leave_nested_container_level, was itself
+     unreachable until a real parent/child container chain could exist).
+     iVar5 ALSO has a second, genuine plain-int role later in this same
+     function (a slot-index loop counter) -- left as `int` there and
+     given its own pointer-typed local (_pMatch) for just the one
+     resolve_object_link comparison that needed it. */
+  char *pContents;
+  char *_pMatch;
   uint uVar4;
   int iVar5;
   int iVar6;
-  
+
   iVar6 = 0x14;
   do {
     if ((*(ushort *)(&DAT_00202950 + iVar6 * 2) & 0xffc0) != 0) break;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x1c);
-  iVar3 = resolve_object_link(&g_current_container_link);
-  iVar3 = resolve_object_link(iVar3 + 6);
+  pContents = (char *)resolve_object_link(&g_current_container_link);
+  pContents = (char *)resolve_object_link((ushort *)(pContents + 6));
   if ((short)iVar6 < 0x1c) {
     do {
-      iVar5 = resolve_object_link(&DAT_00202950 + (short)iVar6 * 2);
-      if (iVar3 == iVar5) {
+      _pMatch = (char *)resolve_object_link(&DAT_00202950 + (short)iVar6 * 2);
+      if (pContents == _pMatch) {
         iVar6 = 0x14;
         do {
-          uVar4 = encode_object_slot_index(iVar3);
+          uVar4 = encode_object_slot_index(pContents);
           iVar5 = (short)iVar6 * 2;
           (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
           (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
-          if (iVar3 != 0) {
-            if ((*(byte *)(iVar3 + 1) & 0x40) != 0) {
+          if (pContents != 0) {
+            if ((*(byte *)(pContents + 1) & 0x40) != 0) {
               iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
             }
-            iVar3 = resolve_object_link(iVar3 + 4);
+            pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
           }
           iVar6 = iVar6 + 1;
         } while (iVar6 * 0x10000 >> 0x10 < 0x1c);
         return;
       }
-      iVar3 = resolve_object_link(iVar3 + 4);
-    } while (iVar3 != 0);
+      pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
+    } while (pContents != 0);
+    /* User QA: "closing a nested container [is] stuck on [the child's]
+       contents" -- confirmed the real bug here. This loop is searching
+       for whatever's CURRENTLY sitting in slots 20-27 (stale leftover
+       from whichever container was open last) inside the NEW container's
+       own top-level chain, so it can resume the scroll position where
+       the player left off. That's the right idea when re-opening the
+       SAME container, but when popping from a child back to its parent
+       (leave_nested_container_level), the stale slots hold the CHILD's
+       items -- which are never direct members of the PARENT's own
+       chain -- so this search always exhausts with no match, and the
+       original code just returned here having populated nothing at
+       all, leaving the grid stuck showing the child's last contents.
+       Fall back to populating fresh from the chain's own start, exactly
+       like the "nothing currently occupying these slots" case below
+       already does. */
+    pContents = (char *)resolve_object_link(&g_current_container_link);
+    pContents = (char *)resolve_object_link((ushort *)(pContents + 6));
   }
-  else {
+  iVar6 = 0x14;
+  do {
+    uVar4 = encode_object_slot_index(pContents);
+    iVar5 = (short)iVar6 * 2;
+    (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+    (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
+    if (pContents != 0) {
+      if ((*(byte *)(pContents + 1) & 0x40) != 0) {
+        iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
+      }
+      pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
+    }
+    iVar6 = iVar6 + 1;
+  } while (iVar6 * 0x10000 >> 0x10 < 0x1c);
+  while (pContents != 0) {
     iVar6 = 0x14;
     do {
-      uVar4 = encode_object_slot_index(iVar3);
-      iVar5 = (short)iVar6 * 2;
-      (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
-      (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
-      if (iVar3 != 0) {
-        if ((*(byte *)(iVar3 + 1) & 0x40) != 0) {
-          iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
+      iVar5 = iVar6 * 2;
+      uVar1 = *(undefined2 *)(iVar5 + 0x202958);
+      bVar2 = (byte)uVar1;
+      (&DAT_00202950)[iVar5] = ((&DAT_00202950)[iVar5] ^ bVar2) & 0x3f ^ bVar2;
+      (&DAT_00202951)[iVar5] = (char)((ushort)uVar1 >> 8);
+      iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+    } while (iVar6 < 0x18);
+    for (; iVar5 = (int)(short)iVar6, iVar5 < 0x1c; iVar6 = iVar6 + 1) {
+      uVar4 = encode_object_slot_index(pContents);
+      (&DAT_00202950)[iVar5 * 2] =
+           (&DAT_00202950)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+      (&DAT_00202951)[iVar5 * 2] = (char)((uVar4 << 0x16) >> 0x18);
+      if (pContents != 0) {
+        if ((*(byte *)(pContents + 1) & 0x40) != 0) {
+          iVar6 = (iVar5 + -1) * 0x10000 >> 0x10;
         }
-        iVar3 = resolve_object_link(iVar3 + 4);
-      }
-      iVar6 = iVar6 + 1;
-    } while (iVar6 * 0x10000 >> 0x10 < 0x1c);
-    while (iVar3 != 0) {
-      iVar6 = 0x14;
-      do {
-        iVar5 = iVar6 * 2;
-        uVar1 = *(undefined2 *)(iVar5 + 0x202958);
-        bVar2 = (byte)uVar1;
-        (&DAT_00202950)[iVar5] = ((&DAT_00202950)[iVar5] ^ bVar2) & 0x3f ^ bVar2;
-        (&DAT_00202951)[iVar5] = (char)((ushort)uVar1 >> 8);
-        iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
-      } while (iVar6 < 0x18);
-      for (; iVar5 = (int)(short)iVar6, iVar5 < 0x1c; iVar6 = iVar6 + 1) {
-        uVar4 = encode_object_slot_index(iVar3);
-        (&DAT_00202950)[iVar5 * 2] =
-             (&DAT_00202950)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
-        (&DAT_00202951)[iVar5 * 2] = (char)((uVar4 << 0x16) >> 0x18);
-        if (iVar3 != 0) {
-          if ((*(byte *)(iVar3 + 1) & 0x40) != 0) {
-            iVar6 = (iVar5 + -1) * 0x10000 >> 0x10;
-          }
-          iVar3 = resolve_object_link(iVar3 + 4);
-        }
+        pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
       }
     }
   }
@@ -32781,11 +33574,15 @@ short param_1;
   
   iVar1 = (int)param_1;
   puVar13 = (ushort *)(&DAT_00202950 + iVar1 * 2);
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] open_backpack_container entry: param_1=%d puVar13=%p\n", (int)param_1, (void *)puVar13);
   puVar7 = (ushort *)resolve_object_link(puVar13);
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] open_backpack_container: resolve_object_link -> puVar7=%p\n", (void *)puVar7);
   uVar3 = *puVar7;
   if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
     if ((uVar3 & 0xf) == 0xf) {
-      FUN_0006cff4(6,1);
+      set_hud_status_value(6,1);
     }
     else {
       if (g_open_container_list == (undefined4 *)0x0) {
@@ -32793,32 +33590,65 @@ short param_1;
         if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
           draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
         }
-        /* Missing container-view chrome, per direct playtest feedback
-           describing the real game's layout (none of this exists
-           anywhere in the decompiled body -- the 0x2097 sprite draw
-           just above is the closest existing candidate, but it drew
-           nothing visible in testing, likely a never-recovered/empty
-           .GR resource slot, same story as the scroll-edge decoration
-           sprites documented in blit_object_sprite_by_frame's own comment):
-           1. A darker rectangle over the whole 8-cell grid area,
-              replacing the plain panel-background circles while a
-              container's contents are shown there instead of the
-              player's own backpack.
-           2. The open container's own icon, drawn ~40 screen px (20
-              panel-local units) above grid slot 1 at g_inv_hotspot_click_x1
-              record 1's new draw position (see its own comment) --
-              clicking it (wired in handle_inventory_panel_click) leaves the container. */
-        set_draw_color(0);
-        rect_fill_or_save_restore(0xf0,0x50,0x13c,0x76);
-        g_blit_transparent_mode = 1;
-        draw_sprite_by_id(uVar3 & 0x1ff,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
-                     (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
-        g_blit_transparent_mode = 0;
+        /* Was also followed by a hand-added `set_draw_color(0);
+           rect_fill_or_save_restore(0xf0,0x50,0x13c,0x76);` -- a flat
+           dark rectangle painted over the whole 8-cell grid area,
+           standing in for the container-view background because the
+           real 0x2097 sprite draw just above "drew nothing visible in
+           testing, likely a never-recovered/empty .GR resource slot"
+           (same class as the scroll-edge decoration gap this whole
+           session's resource-corruption fixes, see
+           mode-icon-and-hud-icon-flicker-fixes.md, were chasing).
+           That gap is closed now: confirmed live (UW_DEBUG_INV
+           instrumentation on blit_object_sprite_by_frame's
+           absolute-frame-table branch) that id 0x2097 resolves to
+           frame 832, a real non-null slot with genuine 41x85
+           dimensions -- not the dummy/empty fallback this hack was
+           written to paper over. Dropped the rectangle; the real
+           sprite draw above now supplies the container-view
+           background on its own, matching direct playtest
+           confirmation that it renders correctly in real gameplay. */
+        /* Pixel-perfect backup of record 1's own spot (the "leave
+           container" button, drawn over below), captured once ever on
+           the very first open while it's still guaranteed pristine --
+           same established pattern this function already uses for the
+           adjacent DAT_002028ec region a few lines below (capture once
+           at setup, FUN_00076e98 blits it back verbatim on close). This
+           one didn't exist: record 1 belongs to widgets 0-5 (the
+           paperdoll body), which FUN_00046414's own one-time hotspot
+           snapshot loop (records 6-0x16 only) never covered. Without
+           it, closing could only redraw the paperdoll body sprite over
+           this spot, which -- confirmed live via before/after
+           SCREENSHOT diffing on bug-redraw-demo.txt -- only covers a
+           small corner of it (the body's own opaque silhouette doesn't
+           fill the whole 16x16 icon footprint there), leaving most of
+           the stale container icon still visible ("a small rectangle
+           of the lower right corner does get cleared, but not the
+           whole button"). A verbatim pixel restore sidesteps needing to
+           know exactly which combination of layers is "supposed" to
+           show through there. */
+        if (g_container_icon_backup_grtile == 0) {
+          /* grtile_alloc_registered's 2nd arg is a BYTE count, not a
+             pixel count (it mallocs param_1*param_2 raw bytes) -- every
+             other caller in this file doubles the pixel height to
+             account for RGB565's 2 bytes/pixel (e.g. the hotspot-table
+             loop just above uses `dirty_h << 1`). Passing plain 16 here
+             first time allocated only a 256-byte buffer for a region
+             that needs 16*16*2=512, so capture_framebuffer_rect_to_grtile's
+             own copy loop (16x16 shorts) ran past the end of it and
+             FUN_00076e98 blitted back garbage/black instead of the
+             real captured pixels -- confirmed live via SCREENSHOT (a
+             solid dark rectangle instead of the stale icon). */
+          g_container_icon_backup_grtile = grtile_alloc_registered(16,32);
+          capture_framebuffer_rect_to_grtile(g_container_icon_backup_grtile,
+                       (int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
+                       (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
+        }
         if (DAT_002028a0 == 0) {
           iVar10 = 0xc;
           do {
             iVar11 = iVar10 * 0xe;
-            uVar8 = FUN_00076a2c((&g_inv_hotspot_dirty_w)[iVar11],(uint)(byte)(&g_inv_hotspot_dirty_h)[iVar11] << 1);
+            uVar8 = grtile_alloc_registered((&g_inv_hotspot_dirty_w)[iVar11],(uint)(byte)(&g_inv_hotspot_dirty_h)[iVar11] << 1);
             sVar4 = (&g_inv_hotspot_draw_y)[iVar10 * 7];
             (&DAT_002028a0)[iVar10 + -0xc] = uVar8;
             /* Was a hardcoded original-binary literal address
@@ -32862,39 +33692,103 @@ short param_1;
         } while (iVar10 < 0x14);
       }
       else {
-        puVar9 = g_open_container_list;
+        puVar9 = (undefined4 *)g_open_container_list;
         do {
           if (((*(ushort *)(puVar9 + 2) ^ *puVar13) & 0xffc0) == 0) {
             close_backpack_container();
             return;
           }
-          puVar9 = (undefined4 *)*puVar9;
+          /* Was `puVar9 = (undefined4 *)*puVar9;` -- walking this chain
+             "forward" via the record's own byte-0..3 "next" field, which
+             open_backpack_container's own record-creation code below
+             only ever wrote as a truncated 32-bit half of a real 64-bit
+             pointer (same bug class as g_open_container_list itself,
+             just embedded field-by-field instead of in a single global).
+             Harmless as long as at most one record ever existed to walk
+             through; reading it back as a full 8-byte pointer here wildly
+             mis-derefs the moment a second (nested) container is open.
+             Real, untruncated forward pointer now lives at the new +0xc
+             field this record-creation code below also writes. */
+          puVar9 = *(undefined4 **)((char *)puVar9 + 0xc);
         } while (puVar9 != (undefined4 *)0x0);
         if (iVar1 < 0xb) {
           free_open_container_chain();
         }
       }
-      puVar9 = (undefined4 *)Ordinal_1041(0xc);
+      /* User QA: "open container indicator slot does not show the
+         'open' version of a container like it should" + "opening a
+         nested container does not update to show the new container."
+         Two bugs in one: (a) this draw only ever ran inside the
+         `g_open_container_list == 0` branch above, i.e. only on the
+         very FIRST container opened -- opening a container nested
+         inside it never touched this icon again, so it kept showing
+         the OUTER container's art. Moved out here so it (re)draws for
+         every open, first or nested. (b) it drew the plain closed-
+         container sprite id (`uVar3 & 0x1ff`) -- real UW1 containers in
+         this id range come in even/odd closed/open pairs (confirmed via
+         COMOBJ.DAT names: 0x080 "a_sack"/0x081 "an_open sack", 0x082
+         "a_pack"/0x083 "an_open pack", 0x086 "a_pouch"/0x087 "an_open
+         pouch", 0x08a "a_gold coffer"/0x08b "an_open gold coffer", 0x088
+         "a_map case"/0x089 "an_open map case") -- OR in the low bit to
+         show the open variant instead. Factored the actual draw out into
+         draw_container_indicator_icon so leave_nested_container_level's
+         own pop-to-parent path can redraw this same icon too. */
+      draw_container_indicator_icon(uVar3);
+      /* Record grew from 0xc (12) to 0x1c (28) bytes: the original
+         12-byte layout (0-3 next / 4-7 prev / 8-9 container-link / 10-11
+         weight) only ever stored its next/prev CHAIN LINKS as 4-byte
+         fields -- correct on the original 32-bit target where a pointer
+         IS 4 bytes, but every one of them is a real 64-bit heap pointer
+         on this host (same class as g_open_container_list just above).
+         Rather than reshuffle every existing +8/+9/+10/+11 accessor
+         throughout this file (release_container_reference,
+         leave_nested_container_level, free_open_container_chain, the
+         combine/stow paths, etc. -- dozens of sites), the legacy 0-3/4-7
+         fields are left as harmless (if lossy) leftovers and two new
+         real 8-byte pointer fields are appended: +0xc = next, +0x14 =
+         prev. Only the chain-WALKING sites (here, and
+         leave_nested_container_level / free_open_container_chain) needed
+         updating to read these instead; every plain "is there a
+         next/prev at all" NULL check and every +8..+11 field access
+         keeps working unchanged. */
+      puVar9 = (undefined4 *)Ordinal_1041(0x1c);
       if (puVar9 != (undefined4 *)0x0) {
         if (g_open_container_list == (undefined4 *)0x0) {
-          g_open_container_list = puVar9;
-          g_current_container_record = puVar9;
+          g_open_container_list = (char *)puVar9;
+          g_current_container_record = (char *)puVar9;
           *(undefined1 *)(puVar9 + 1) = 0;
           *(undefined1 *)((char *)puVar9 + 5) = 0;
           *(undefined1 *)((char *)puVar9 + 6) = 0;
           *(undefined1 *)((char *)puVar9 + 7) = 0;
+          *(char **)((char *)puVar9 + 0xc) = 0;
+          *(char **)((char *)puVar9 + 0x14) = 0;
         }
         else {
           *(char *)g_current_container_record = (char)puVar9;
           *(char *)((char *)g_current_container_record + 1) = (char)((uint)puVar9 >> 8);
           *(char *)((char *)g_current_container_record + 2) = (char)((uint)puVar9 >> 0x10);
           *(char *)((char *)g_current_container_record + 3) = (char)((uint)puVar9 >> 0x18);
-          puVar6 = g_current_container_record;
+          puVar6 = (undefined4 *)g_current_container_record;
           *(char *)(puVar9 + 1) = (char)g_current_container_record;
           *(char *)((char *)puVar9 + 5) = (char)((uint)puVar6 >> 8);
           *(char *)((char *)puVar9 + 6) = (char)((uint)puVar6 >> 0x10);
           *(char *)((char *)puVar9 + 7) = (char)((uint)puVar6 >> 0x18);
-          g_current_container_record = (undefined4 *)*g_current_container_record;
+          /* Real (untruncated) chain links: the OLD current record's
+             "next" now really points at the new one, and the new one's
+             "prev" really points back at the old one. */
+          *(char **)((char *)g_current_container_record + 0xc) = (char *)puVar9;
+          *(char **)((char *)puVar9 + 0x14) = g_current_container_record;
+          *(char **)((char *)puVar9 + 0xc) = 0;
+          /* Was `g_current_container_record = (undefined4 *)*g_current_container_record;`
+             -- reading back the truncated 4-byte "next" field this same
+             block just wrote 4 lines above, purely to reconstruct the
+             pointer it already had in `puVar9` the whole time (a lossless
+             round-trip on the original 32-bit target, a wild-pointer read
+             on this 64-bit host). Just use puVar9 directly -- this is the
+             actual crash this whole record-widening fix was chasing
+             (reported: "placing a container in another container and
+             trying to open the nested one"). */
+          g_current_container_record = (char *)puVar9;
         }
         *(undefined1 *)g_current_container_record = 0;
         *(undefined1 *)((char *)g_current_container_record + 1) = 0;
@@ -32904,7 +33798,32 @@ short param_1;
         *(undefined1 *)((char *)g_current_container_record + 0xb) = 0;
         uVar3 = *puVar13;
         bVar5 = (byte)uVar3;
-        *(byte *)(g_current_container_record + 2) = (*(byte *)(g_current_container_record + 2) ^ bVar5) & 0x3f ^ bVar5;
+        /* Was `*(byte *)(g_current_container_record + 2) = ...` -- byte
+           offset 2, not 8. g_current_container_record is declared
+           `char *` (retyped for 64-bit pointer safety, same class as
+           this whole session's other fixes), so "+2" here means literal
+           byte offset 2 -- but this expression's own "2" only makes
+           sense as an `undefined4 *`-scaled offset (2*4=8 bytes),
+           matching what release_container_reference's own read
+           (`*(ushort*)(param_1+8)`, real byte offset 8, param_1 also
+           `char *`) expects, and confirmed via real ARM disassembly
+           (0x4346c ldrb/0x4348c strb, both `[r0,#0x8]`) to be the
+           correct target. The retype from `undefined4 *` to `char *`
+           silently changed this literal "+2"'s meaning without anyone
+           rescaling it to "+8" to match -- so this write landed on byte
+           offset 2 (colliding with the unrelated "next/link" field just
+           zeroed above) while the real target, offset 8, was left
+           permanently zero (its own explicit-zero pass, lines above,
+           never covers 8 either). release_container_reference then read
+           a 16-bit value assembled from an always-zero byte 8 and this
+           uVar3-derived byte 9, silently losing byte 8's own bits and
+           landing on the wrong object's slot when decrementing it on
+           container close. Confirmed live: this corrupted an unrelated
+           nearby object (matching a user report that closing and
+           reopening a container "loses other contents seemingly
+           randomly" after equipping an item from it). */
+        *(byte *)((char *)g_current_container_record + 8) =
+             (*(byte *)((char *)g_current_container_record + 8) ^ bVar5) & 0x3f ^ bVar5;
         *(char *)((char *)g_current_container_record + 9) = (char)(uVar3 >> 8);
         /* Was `g_current_container_link = (g_current_container_link ^ *(ushort*)(g_current_container_record+2))
            & 0x3f ^ *(ushort*)(g_current_container_record+2)` -- a "keep bits inside
@@ -32977,7 +33896,7 @@ short param_1;
           *(byte *)puVar7 = ((char)(uVar3 & 0xf) + 1U ^ (byte)uVar3) & 0xf ^ (byte)uVar3;
           *(byte *)((char *)puVar7 + 1) = (byte)(uVar3 >> 8);
         }
-        FUN_00042d70();
+        refresh_container_view();
         redraw_inventory_widget_range(0x14,0x14);
         if ((char)(&g_backpack_slot_to_widget)[iVar1] < '\v') {
           redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
@@ -32997,8 +33916,8 @@ void FUN_00043614()
 {
   if ((g_open_container_list != 0) && (DAT_0020299c != 0)) {
     _DAT_00202978 = DAT_00202980;
-    FUN_00042e30();
-    FUN_00042d70();
+    repopulate_container_grid_slots();
+    refresh_container_view();
   }
   return;
 }
@@ -33011,15 +33930,25 @@ void FUN_0004365c()
 
 {
   short sVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
+  char *iVar2;
+  char *iVar3;
+  char *iVar4;
   int iVar5;
-  
+
   if ((g_open_container_list != 0) && (DAT_002029a0 != 0)) {
-    iVar2 = resolve_object_link(g_current_container_record + 8);
-    iVar3 = resolve_object_link(iVar2 + 6);
-    iVar4 = resolve_object_link(&DAT_00202978);
+    /* Was `resolve_object_link(g_current_container_record + 8)` -- a
+       tracking record lives outside the level's object arena
+       resolve_object_link bounds-checks against, always NULL on this
+       host (same already-established `g_current_container_link`
+       workaround as elsewhere in this file). iVar2/3/4 were also plain
+       `int`, truncating every resolve_object_link() pointer they held
+       -- this whole function only ever uses them as pointers (a
+       content-chain scroll search), so retyped outright rather than
+       introducing yet more dedicated locals. */
+    g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
+    iVar2 = (char *)resolve_object_link(&g_current_container_link);
+    iVar3 = (char *)resolve_object_link((ushort *)(iVar2 + 6));
+    iVar4 = (char *)resolve_object_link(&DAT_00202978);
     iVar2 = iVar3;
     if (iVar3 != iVar4) {
       do {
@@ -33027,7 +33956,7 @@ void FUN_0004365c()
         iVar5 = 0;
         iVar2 = iVar3;
         do {
-          iVar2 = resolve_object_link(iVar2 + 4);
+          iVar2 = (char *)resolve_object_link((ushort *)(iVar2 + 4));
           if (iVar2 == 0) {
             return;
           }
@@ -33039,8 +33968,8 @@ void FUN_0004365c()
 LAB_00043700:
     sVar1 = encode_object_slot_index(iVar3);
     _DAT_00202978 = _DAT_00202978 & 0x3f | sVar1 << 6;
-    FUN_00042e30();
-    FUN_00042d70();
+    repopulate_container_grid_slots();
+    refresh_container_view();
   }
   return;
 }
@@ -33066,7 +33995,8 @@ short param_2;
   int iVar10;
   bool bVar11;
   short local_28;
-  
+  ushort _parentLink;
+
   bVar11 = false;
   /* Dropped arguments -- same bare call as place_object_in_backpack_slot's identical
      fix just above (search "check_object_fits_in_slot's declared signature"). */
@@ -33077,7 +34007,21 @@ LAB_000438ac:
   }
   else {
     iVar10 = (int)param_2;
-    if ((iVar10 == 0x13) && (*(int *)(g_current_container_record + 4) == 0)) {
+    /* Both `g_current_container_record + 4` reads below were the legacy
+       4-byte "prev" field -- only ever a truncated half of a real
+       64-bit pointer (see open_backpack_container's record-widening
+       comment); walk the real +0x14 pointer instead. The second one
+       also fed the truncated value straight into resolve_object_link as
+       if it were an object pointer's own base -- a tracking record
+       lives outside the level's object arena (same "was always NULL on
+       this host" class as the several already-fixed
+       `resolve_object_link(g_current_container_record + 8)` call sites
+       elsewhere in this file), so even with the pointer fixed this still
+       needs to go through a local copy of the record's own saved link
+       (`_parentLink`), the same workaround `g_current_container_link`
+       already established, not a direct resolve through the record's
+       own memory. */
+    if ((iVar10 == 0x13) && (*(char **)(g_current_container_record + 0x14) == 0)) {
       iVar10 = 0xb;
       do {
         if ((*(ushort *)(&DAT_00202950 + iVar10 * 2) & 0xffc0) == 0) {
@@ -33093,8 +34037,23 @@ LAB_0004386c:
       iVar9 = 0;
     }
     else {
-      if ((iVar10 == 0x13) && (iVar9 = *(int *)(g_current_container_record + 4), iVar9 != 0)) {
-        puVar4 = (ushort *)resolve_object_link(iVar9 + 8);
+      if ((iVar10 == 0x13) &&
+         (iVar9 = *(char **)(g_current_container_record + 0x14), iVar9 != 0)) {
+        /* resolve_object_link rejects a pointer to an ordinary stack
+           local (confirmed live: `_parentLink` as a plain local always
+           resolved to NULL, crashing the very next dereference) -- it
+           only accepts globals (the object arena, or this file's own
+           handful of established global "scratch link" spots like
+           g_current_container_link itself). Save/restore that global
+           around the resolve instead of introducing a new local: this
+           function is asked to place into the PARENT while
+           g_current_container_link still needs to keep meaning "the
+           currently open (child) container" for anything else that
+           reads it before this function returns. */
+        _parentLink = g_current_container_link;
+        g_current_container_link = *(ushort *)(iVar9 + 8);
+        puVar4 = (ushort *)resolve_object_link(&g_current_container_link);
+        g_current_container_link = _parentLink;
       }
       else {
         puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar10 * 2);
@@ -33116,11 +34075,12 @@ LAB_0004386c:
     else {
       iVar10 = FUN_00046260(param_1);
       g_player_carry_weight = g_player_carry_weight + (short)iVar10;
-      for (; iVar9 != 0;
-          iVar9 = CONCAT13(*(undefined1 *)(iVar9 + 7),
-                           CONCAT12(*(undefined1 *)(iVar9 + 6),
-                                    CONCAT11(*(undefined1 *)(iVar9 + 5),*(undefined1 *)(iVar9 + 4)))
-                          )) {
+      /* Legacy truncated "prev" walk -- same fix as
+         place_object_in_backpack_slot's sibling copy (search "still
+         broken for genuine container nesting"). Note `iVar9` here was
+         already set to either 0 or a real (untruncated, per the fix
+         above) tracking-record pointer, so this walk is now consistent. */
+      for (; iVar9 != 0; iVar9 = *(char **)(iVar9 + 0x14)) {
         iVar8 = *(short *)(iVar9 + 10) + iVar10;
         *(char *)(iVar9 + 10) = (char)iVar8;
         *(char *)(iVar9 + 0xb) = (char)((uint)iVar8 >> 8);
@@ -33180,7 +34140,7 @@ LAB_000439a0:
         }
       }
       else {
-        FUN_00042e30();
+        repopulate_container_grid_slots();
         redraw_inventory_widget_range(0xc,0x13);
       }
       uVar2 = *param_1;
@@ -33213,9 +34173,23 @@ undefined4 param_2;
   int iVar8;
   byte *pbVar9;
   ushort *puVar10;
-  
-  iVar4 = resolve_object_link(g_current_container_record + 8);
-  puVar10 = (ushort *)(iVar4 + 6);
+  char *pAncestor;
+
+  /* Was `resolve_object_link(g_current_container_record + 8)` -- a
+     tracking record lives outside the level's object arena
+     resolve_object_link bounds-checks against, so this always returned
+     NULL on this host (same class as the several already-fixed
+     `resolve_object_link(g_current_container_record + 8)` call sites
+     elsewhere in this file -- search "g_current_container_link holds
+     the same identity"). Route through that same established
+     global-copy workaround instead of resolving through the record's
+     own memory directly. Also was truncating the resolved 64-bit
+     contents-head pointer through `int iVar4` before adding +6 --
+     fixed by giving it its own pointer-typed local rather than reusing
+     `iVar4`, which has two unrelated plain-int roles later in this
+     function. */
+  g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
+  puVar10 = (ushort *)((char *)resolve_object_link(&g_current_container_link) + 6);
   iVar4 = (short)param_2 * 2;
   pbVar9 = &DAT_00202950 + iVar4;
   puVar5 = (ushort *)resolve_object_link(pbVar9);
@@ -33227,7 +34201,9 @@ undefined4 param_2;
       if (sVar1 == 0) {
         g_selected_object = param_1;
         FUN_00057cac(3);
-        FUN_00057c5c(*g_selected_object & 0x1ff);
+        /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+           own identical fix comment. */
+        FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
         param_1 = puVar5;
       }
       object_list_insert_head(puVar10,param_1);
@@ -33236,19 +34212,21 @@ undefined4 param_2;
       (&DAT_00202951)[iVar4] = (char)((uVar7 << 0x16) >> 0x18);
       sVar2 = FUN_00046260(param_1);
       sVar3 = FUN_00046260(puVar5);
-      for (iVar4 = g_current_container_record; iVar4 != 0;
-          iVar4 = CONCAT13(*(undefined1 *)(iVar4 + 7),
-                           CONCAT12(*(undefined1 *)(iVar4 + 6),
-                                    CONCAT11(*(undefined1 *)(iVar4 + 5),*(undefined1 *)(iVar4 + 4)))
-                          )) {
-        iVar8 = (int)*(short *)(iVar4 + 10) + (((int)sVar2 - (int)sVar3) * 0x10000 >> 0x10);
-        *(char *)(iVar4 + 10) = (char)iVar8;
-        *(char *)(iVar4 + 0xb) = (char)((uint)iVar8 >> 8);
+      /* Legacy truncated "prev" walk -- same fix as
+         place_object_in_backpack_slot's sibling copy (search "still
+         broken for genuine container nesting"); given its own dedicated
+         local (pAncestor) since `iVar4` has unrelated plain-int roles
+         elsewhere in this function. */
+      for (pAncestor = g_current_container_record; pAncestor != 0;
+          pAncestor = *(char **)(pAncestor + 0x14)) {
+        iVar8 = (int)*(short *)(pAncestor + 10) + (((int)sVar2 - (int)sVar3) * 0x10000 >> 0x10);
+        *(char *)(pAncestor + 10) = (char)iVar8;
+        *(char *)(pAncestor + 0xb) = (char)((uint)iVar8 >> 8);
       }
       sVar2 = FUN_00046260(param_1);
       g_player_carry_weight = g_player_carry_weight + sVar2;
       FUN_000667cc();
-      FUN_00042e30();
+      repopulate_container_grid_slots();
       redraw_inventory_widget_range((int)(char)(&g_backpack_slot_to_widget)[(short)param_2],
                    (int)(char)(&g_backpack_slot_to_widget)[(short)param_2]);
       return sVar1 != 0;
@@ -33835,7 +34813,7 @@ void FUN_0004497c()
         }
       }
     }
-    FUN_00057604(1);
+    wait_for_click_release(1);
   }
   return;
 }
@@ -33885,7 +34863,7 @@ void FUN_00044bd8()
         }
         FUN_00078c80(iVar2 + 0x89);
       }
-      FUN_00057604(1);
+      wait_for_click_release(1);
     }
   }
   return;
@@ -33906,7 +34884,7 @@ short param_1;
         FUN_00072f30(0x15,0x40,0);
       }
       else {
-        FUN_00057604(1);
+        wait_for_click_release(1);
         iVar1 = 0;
         do {
           if ((ushort)((ushort)*(byte *)(DAT_00086df8 + 0x49) +
@@ -33924,7 +34902,7 @@ short param_1;
       }
     }
     else {
-      FUN_00057604(1);
+      wait_for_click_release(1);
     }
   }
   return;
@@ -34046,7 +35024,21 @@ short param_2;
   short sVar2;
   int iVar3;
   char *iVar4;
-  int iVar5;
+  /* Was `int iVar5;` -- truncated g_current_container_record's real
+     64-bit pointer on assignment (`iVar5 = g_current_container_record;`
+     just below), then dereferenced the truncated wild value at
+     `*(short *)(iVar5 + 10)`. Same class as this whole session's other
+     narrow-local-for-a-pointer fixes. Confirmed live: crashed
+     immediately on the loop's first iteration, right after fixing this
+     same function's sibling resolve_object_link(record+8) bug just
+     above (both reached by the same "drag an item to a different slot
+     inside an open container" user repro). The CONCAT13-based "next"
+     pointer reconstruction two lines below has its own separate,
+     not-fixed-here 64-bit truncation (same as free_open_container_chain's
+     identical idiom) -- harmless for a single, non-nested open
+     container (next is always a real zero there), still broken for
+     genuine container nesting. */
+  char *iVar5;
   uint uVar6;
   int iVar7;
   undefined4 uVar8;
@@ -34079,12 +35071,34 @@ short param_2;
     iVar3 = FUN_00046260(param_1);
     if (-1 < iVar1) {
       if (0x12 < iVar1) {
-        iVar4 = resolve_object_link(g_current_container_record + 8);
+        /* Was `resolve_object_link(g_current_container_record + 8)` --
+           same bug, same fix, as extract_matching_object_from_slot's
+           and check_object_fits_in_slot's own identical calls (see
+           their comments): g_current_container_record is a small heap
+           allocation outside the object arena resolve_object_link
+           bounds-checks against, so this was always NULL on this
+           64-bit host. iVar4 (initialized to g_player_object at this
+           function's top) is used below unconditionally
+           (`object_list_append_tail(iVar4 + 6, param_1)`), so the NULL
+           result crashed immediately. g_current_container_link holds
+           the same identity and is normal-global arena-resolvable.
+           Confirmed live: this was the very next crash after fixing
+           check_object_fits_in_slot's own copy of the same bug,
+           reached by the identical "drag an item to a different slot
+           inside an open container" user repro. */
+        iVar4 = resolve_object_link(&g_current_container_link);
+        /* Was walking the ancestor chain via the legacy 4-byte "prev"
+           field (CONCAT13/12/11 of bytes 4-7) -- only ever a truncated
+           half of a real 64-bit pointer (see open_backpack_container's
+           record-widening comment); this exact spot was already flagged
+           as a known, deliberately-deferred gap by an earlier session
+           ("harmless for a single, non-nested open container... still
+           broken for genuine container nesting" -- see this function's
+           own comment a few lines up). Real nesting exists now,
+           courtesy of this session's container fixes -- walk the real,
+           untruncated prev pointer at +0x14 instead. */
         for (iVar5 = g_current_container_record; iVar5 != 0;
-            iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
-                             CONCAT12(*(undefined1 *)(iVar5 + 6),
-                                      CONCAT11(*(undefined1 *)(iVar5 + 5),*(undefined1 *)(iVar5 + 4)
-                                              )))) {
+            iVar5 = *(char **)(iVar5 + 0x14)) {
           iVar7 = *(short *)(iVar5 + 10) + iVar3;
           *(char *)(iVar5 + 10) = (char)iVar7;
           *(char *)(iVar5 + 0xb) = (char)((uint)iVar7 >> 8);
@@ -34104,7 +35118,27 @@ short param_2;
 
 
 
-int FUN_000451b0()
+// was FUN_000451b0 -- given an object, find which currently-displayed
+// backpack-grid widget shows it (or allocate it one if it isn't shown
+// yet).
+/* Was declared with no parameters at all, and its body called
+   encode_object_slot_index() bare -- but every one of its 4 real call
+   sites passes a real object pointer, so this silently relied on ARM
+   register leftover (the caller's arg still sitting in r0, unclobbered)
+   to accidentally forward the right value. That's the same
+   dropped-argument idiom already fixed dozens of times in this file,
+   except here BOTH this function's own argument and its inner
+   encode_object_slot_index() call were dropped in tandem -- confirmed
+   to crash for real: try_combine_or_stow_object's "open a nested
+   container" branch calls find_or_assign_object_widget(container) then
+   open_backpack_container() (also bare -- see that call site's own fix),
+   and whatever register leftover reached open_backpack_container's
+   param_1 there was garbage in a fresh call context, producing a wild
+   resolve_object_link() dereference the instant a SECOND level of
+   container nesting was opened (a top-level open happened to work by
+   the same lucky-leftover coincidence one level up). */
+int find_or_assign_object_widget(param_1)
+ushort *param_1;
 
 {
   char cVar1;
@@ -34113,8 +35147,8 @@ int FUN_000451b0()
   int iVar4;
   ushort *puVar5;
   int iVar6;
-  
-  uVar2 = encode_object_slot_index();
+
+  uVar2 = encode_object_slot_index((char *)param_1);
   iVar6 = 0;
   do {
     cVar1 = (&g_backpack_widget_to_slot)[iVar6];
@@ -34152,7 +35186,11 @@ undefined2 * param_5;
   int iVar5;
   undefined2 uVar6;
   int iVar7;
-  undefined4 local_74 [2];
+  /* Was `undefined4 local_74 [2];` -- element [0] holds a real 64-bit
+     object pointer passed by address into find_object_in_link_chain (see that
+     function's own fix comment); [1] is unused padding from the
+     original 32-bit stack layout. */
+  char *local_74 [2];
   int local_6c [19];
   ushort uVar2;
   ushort uVar3;
@@ -34189,7 +35227,7 @@ undefined2 * param_5;
         iVar5 = local_6c[iVar7];
         if ((iVar5 != 0) && ((*(byte *)(iVar5 + 1) & 0x80) == 0)) {
           local_74[0] = resolve_object_link(iVar5 + 6);
-          puVar4 = (ushort *)FUN_00045538(param_1,param_2,param_3,local_74);
+          puVar4 = (ushort *)find_object_in_link_chain(param_1,param_2,param_3,local_74);
           local_6c[iVar7] = (int)puVar4;
           if (puVar4 != (ushort *)0x0) {
 LAB_0004552c:
@@ -34206,18 +35244,33 @@ LAB_0004552c:
 
 
 
-int FUN_00045538(param_1,param_2,param_3,param_4)
+// was FUN_00045538 -- recursively walks an object's contents link chain
+// (descending into nested containers) looking for the first object
+// matching the category/subcategory/quality filters in param_1/param_2/
+// param_3 (each <0 means "any"); param_4 is an in/out cursor: on entry
+// it points at the current link to examine, on a match it's zeroed (or
+// updated to the next link) and the matched object pointer is returned.
+char *find_object_in_link_chain(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
-int * param_4;
+/* Was `int * param_4;` -- the caller-supplied slot always holds a real
+   64-bit object-record pointer (see FUN_000452dc's own local_74 and
+   extract_matching_object_from_slot's own local_28, both fixed alongside this one), but this
+   function only ever read/wrote its low 4 bytes through an `int *` view,
+   truncating the pointer on every pass. Confirmed live (regression suite,
+   demo_inventory_container_torch_use_test.txt): using a torch crashed
+   dereferencing a truncated object pointer at `uVar3 = (uint)*puVar1;`
+   (this function's own line, EXC_BAD_ACCESS at the low 32 bits of a real
+   object address). */
+char **param_4;
 
 {
   ushort *puVar1;
-  int iVar2;
+  char *iVar2;
   uint uVar3;
-  int local_1c;
-  
+  char *local_1c;
+
   if (*param_4 != 0) {
     do {
       if ((short)param_1 < 0) {
@@ -34244,7 +35297,7 @@ LAB_00045668:
       }
 LAB_000455f8:
       if ((((uVar3 & 0x8000) == 0) && (local_1c = resolve_object_link(puVar1 + 3), local_1c != 0)) &&
-         (iVar2 = FUN_00045538(param_1,param_2,param_3,&local_1c), iVar2 != 0)) {
+         (iVar2 = find_object_in_link_chain(param_1,param_2,param_3,&local_1c), iVar2 != 0)) {
         if (local_1c == 0) {
           return iVar2;
         }
@@ -34260,14 +35313,21 @@ LAB_000455f8:
 
 
 
-undefined4 FUN_00045678(param_1)
+ushort *FUN_00045678(param_1)
 short param_1;
 
 {
   int iVar1;
   short sVar2;
-  undefined4 uVar3;
-  
+  /* Was `undefined4 uVar3;` -- truncated find_object_in_link_chain's/
+     FUN_00045708's real 64-bit object pointer to 32 bits. The
+     param_1!=2 branch (FUN_000459d8) still returns a narrower
+     `undefined4` itself (a separate, not-yet-fixed truncation one level
+     further down its own call chain via FUN_00045b20) -- cast here just
+     carries that existing truncation forward unchanged rather than
+     introducing a new one. */
+  ushort *uVar3;
+
   sVar2 = hit_test_inventory_widget(*DAT_00085a6c + 0xf0,0x76 - DAT_00085a6c[1]);
   iVar1 = (int)sVar2;
   if ((iVar1 < 0) || (0x13 < iVar1)) {
@@ -34277,19 +35337,28 @@ short param_1;
     uVar3 = FUN_00045708((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
   }
   else {
-    uVar3 = FUN_000459d8(0xffffffff,0xffffffff,0xffffffff,(int)(char)(&g_backpack_widget_to_slot)[iVar1]);
+    uVar3 = (ushort *)FUN_000459d8(0xffffffff,0xffffffff,0xffffffff,(int)(char)(&g_backpack_widget_to_slot)[iVar1]);
   }
   return uVar3;
 }
 
 
 
-undefined4 FUN_00045708(param_1)
+ushort *FUN_00045708(param_1)
 short param_1;
 
 {
-  resolve_object_link(&DAT_00202950 + param_1 * 2);
-  return 0;
+  /* Was `resolve_object_link(&DAT_00202950 + param_1 * 2); return 0;` --
+     confirmed via real ARM disassembly (0x45708-0x45718: `mov r3,r0,lsl
+     #0x10; ldr r0,[...]; mov r3,r3,asr #0x10; add r0,r0,r3,lsl #0x1; b
+     0x53514` -- a genuine TAIL CALL straight into resolve_object_link,
+     0x53514) that this always returned resolve_object_link's own result,
+     not a hardcoded 0. Ghidra didn't model the tail call and decompiled
+     it as "call for side effect, then return 0" instead -- the caller
+     (FUN_00045678, in turn feeding g_interact_target in FUN_0003f648's
+     own right-click-in-inventory "ready item" handler) always saw a
+     NULL target as a result, silently no-op'ing every right-click. */
+  return (ushort *)resolve_object_link(&DAT_00202950 + param_1 * 2);
 }
 
 
@@ -34355,13 +35424,13 @@ uint param_2;
   iVar8 = (int)(short)iVar7;
   sVar1 = (short)param_2;
   if (iVar8 < 0x1c) {
-    FUN_00045b20(0xffffffff,0xffffffff,0xffffffff,iVar7,sVar1);
+    extract_and_refresh_slot_item(0xffffffff,0xffffffff,0xffffffff,iVar7,sVar1);
     if (iVar8 < 0x13) {
       redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar8]);
     }
     else {
-      FUN_00042e30();
-      FUN_00042d70();
+      repopulate_container_grid_slots();
+      refresh_container_view();
       /* Was `for (iVar7 = g_current_container_record; ...)` -- truncated
          g_current_container_record (a real char* global) into a 32-bit
          int, then rebuilt a bogus "next" address out of raw bytes at
@@ -34406,6 +35475,21 @@ uint param_2;
     }
     object_list_unlink(DAT_002046b4,puVar5);
     g_player_carry_weight = g_player_carry_weight - (short)iVar3;
+    /* This else-branch (reached when the object isn't found among the
+       28 direct/open-container-borrowed slots at all, e.g. nested two
+       containers deep) unlinked the object but, unlike this function's
+       OWN sibling branch just above (the `iVar8<0x1c && iVar8>=0x13`
+       case), never refreshed the open-container widget grid
+       afterward. Added the same repopulate_container_grid_slots/refresh_container_view pair that
+       sibling already calls (refresh_container_view's own first line is
+       `redraw_inventory_widget_range(0xc,0x13)` -- exactly that grid)
+       for consistency -- not independently confirmed live (this
+       specific branch wasn't the one the torch-duplication repro
+       exercised; see extract_and_refresh_slot_item's own comment for
+       the actual confirmed root cause), but the same staleness risk
+       applies on general principle. */
+    repopulate_container_grid_slots();
+    refresh_container_view();
     redraw_inventory_widget(0x13);
     FUN_000667cc();
   }
@@ -34414,61 +35498,108 @@ uint param_2;
 
 
 
-undefined4 FUN_000459d8()
+ushort *FUN_000459d8(param_1,param_2,param_3,param_4)
+/* Was a bare K&R `()` reading an implicit `short in_r3;` for its 4th
+   arg, and forwarding to FUN_00045b20 via a bare `FUN_00045b20()` call
+   with no explicit arguments at all. On real ARM32 hardware, a
+   register-passing K&R call like this genuinely forwards whatever's
+   still sitting in r0-r3 (this function's own incoming args) straight
+   through -- but a C compiler targeting this 64-bit host has no such
+   guarantee for a literal `foo()` call: it passes exactly zero
+   arguments, full stop. Confirmed as the actual root cause of the
+   torch-duplication bug (not a mere stale-redraw issue as first
+   suspected): reduce_object_count's OWN call to FUN_00045b20 passed
+   real, explicit arguments correctly, but FUN_00045b20's undeclared
+   body had no way to name/forward them, so its own nested
+   extract_matching_object_from_slot() call ran with garbage/zeroed
+   arguments and silently did nothing -- the torch was never actually
+   unlinked from the sack's contents chain before use_light_source
+   moved a (correctly readied) copy of it into the shoulder slot. */
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
 
 {
-  undefined4 uVar1;
+  ushort *uVar1;
   ushort *puVar2;
-  short in_r3;
-  
-  uVar1 = FUN_00045b20();
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + in_r3 * 2);
+
+  uVar1 = extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,0);
+  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
-    FUN_00042e30();
-    FUN_00042d70();
+    repopulate_container_grid_slots();
+    refresh_container_view();
     return uVar1;
   }
-  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[in_r3]);
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_4]);
   return uVar1;
 }
 
 
 
-undefined4 FUN_00045a7c()
+ushort *FUN_00045a7c(param_1,param_2,param_3,param_4)
+/* Same bare-K&R-forwarding bug as FUN_000459d8 just above (identical
+   body); see its own comment. */
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
 
 {
-  undefined4 uVar1;
+  ushort *uVar1;
   ushort *puVar2;
-  short in_r3;
-  
-  uVar1 = FUN_00045b20();
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + in_r3 * 2);
+
+  uVar1 = extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,0);
+  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
-    FUN_00042e30();
-    FUN_00042d70();
+    repopulate_container_grid_slots();
+    refresh_container_view();
     return uVar1;
   }
-  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[in_r3]);
+  redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_4]);
   return uVar1;
 }
 
 
 
-undefined4 FUN_00045b20()
+// was FUN_00045b20 -- thin wrapper: extracts the object matching
+// param_1/param_2/param_3 (category/subcategory/quality, <0 = any)
+// from slot param_4 via extract_matching_object_from_slot, then
+// refreshes carry-weight/UI state via FUN_000667cc(). Was a bare K&R
+// `()` blindly relying on ARM32 register pass-through to forward its
+// own caller's args into extract_matching_object_from_slot() -- see
+// FUN_000459d8's own comment on why that's unsound on this 64-bit
+// host. This was THE actual root cause of the torch-duplication bug:
+// reduce_object_count's real, explicit call here (with a genuine
+// object-bearing slot index) silently forwarded nothing, so the torch
+// was never unlinked from its container before being placed anew.
+ushort *extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+short param_4;
+ushort param_5;
 
 {
-  undefined4 uVar1;
-  
-  uVar1 = FUN_00045b48();
+  ushort *uVar1;
+
+  uVar1 = extract_matching_object_from_slot(param_1,param_2,param_3,param_4,param_5);
   FUN_000667cc();
   return uVar1;
 }
 
 
 
-ushort *FUN_00045b48(param_1,param_2,param_3,param_4,param_5)
+// was FUN_00045b48 -- finds the first object matching the category/
+// subcategory/quality filters (param_1/param_2/param_3, <0 = any) in
+// inventory slot param_4 (searched directly, or via
+// find_object_in_link_chain for nested containers); if it's a stackable
+// object and param_5 asks for fewer than the full stack, splits off a
+// new object for the remaining count via alloc_object_slot before
+// unlinking and returning the matched (now correctly-sized) object.
+ushort *extract_matching_object_from_slot(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -34498,7 +35629,32 @@ ushort param_5;
       local_28 = g_player_object;
     }
     else {
-      local_28 = resolve_object_link(g_current_container_record + 8);
+      /* Was `resolve_object_link(g_current_container_record + 8)` --
+         g_current_container_record is a small (12-byte) Ordinal_1041
+         heap allocation, nowhere near the object arena buffer
+         resolve_object_link's own bounds guard checks against (see its
+         own comment), so this call was ALWAYS silently rejected on this
+         64-bit host, returning NULL regardless of what offset+8/9 held
+         (confirmed live: local_28 read back NULL even after fixing
+         offset+8/9's own encoding to correctly carry the container's
+         identity -- see that write's own comment a few thousand lines
+         up). g_current_container_link is a normal global, already
+         proven arena-resolvable throughout this whole file, and
+         open_backpack_container keeps it in lockstep with the exact
+         same identity value this record's own offset+8/9 encodes for
+         the currently-displayed (innermost, if nested) open container
+         -- which is exactly what this branch (iVar4>=0x13, a widget
+         showing that container's own contents) needs. Confirmed live:
+         this was the reason object_list_unlink got called with a
+         bogus near-null "list" address, corrupting/dropping other
+         objects still in the sack's real contents chain whenever an
+         item was used out of an open container (matching a user report
+         of "closing and reopening a container loses other contents
+         seemingly randomly"). Other call sites of this same
+         `resolve_object_link(g_current_container_record+8)` pattern
+         likely share this bug too, but aren't exercised by this
+         specific repro -- not fixed here. */
+      local_28 = resolve_object_link(&g_current_container_link);
     }
     uVar6 = (uint)(short)param_1;
     uVar7 = (ushort)param_2;
@@ -34507,7 +35663,7 @@ ushort param_5;
         (((((int)uVar6 < 0 || ((*puVar3 >> 6 & 7) == uVar6)) &&
           (((short)uVar7 < 0 || (((byte)((byte)*puVar3 >> 4) & 3) == uVar7)))) &&
          (((short)uVar1 < 0 || (((byte)*puVar3 & 0xf) == uVar1)))))) ||
-       (puVar3 = (ushort *)FUN_00045538(param_1,param_2,param_3,&local_28), puVar3 != (ushort *)0x0)
+       (puVar3 = (ushort *)find_object_in_link_chain(param_1,param_2,param_3,&local_28), puVar3 != (ushort *)0x0)
        ) {
       if (((param_5 != 0) && ((*puVar3 & 0x8000) != 0)) && ((puVar3[3] & 0x8000) == 0)) {
         uVar7 = puVar3[3] >> 6;
@@ -34567,11 +35723,10 @@ ushort param_5;
                (&DAT_00202950)[iVar9 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
           iVar5 = g_current_container_record;
           (&DAT_00202951)[iVar9 * 2] = (char)((uVar6 << 0x16) >> 0x18);
-          for (; iVar5 != 0;
-              iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
-                               CONCAT12(*(undefined1 *)(iVar5 + 6),
-                                        CONCAT11(*(undefined1 *)(iVar5 + 5),
-                                                 *(undefined1 *)(iVar5 + 4))))) {
+          /* Legacy truncated "prev" walk -- same fix as
+             place_object_in_backpack_slot's sibling copy above (search
+             "still broken for genuine container nesting"). */
+          for (; iVar5 != 0; iVar5 = *(char **)(iVar5 + 0x14)) {
             iVar9 = *(short *)(iVar5 + 10) - iVar4;
             *(char *)(iVar5 + 10) = (char)iVar9;
             *(char *)(iVar5 + 0xb) = (char)((uint)iVar9 >> 8);
@@ -34797,13 +35952,13 @@ void FUN_00046414()
     FUN_0004638c();
     iVar5 = 6;
     do {
-      uVar1 = FUN_00076a2c((&g_inv_hotspot_dirty_w)[iVar5 * 0xe],
+      uVar1 = grtile_alloc_registered((&g_inv_hotspot_dirty_w)[iVar5 * 0xe],
                            (uint)(byte)(&g_inv_hotspot_dirty_h)[iVar5 * 0xe] << 1);
       (&DAT_002028e8)[iVar5] = uVar1;
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 0x17);
-    DAT_002028e8 = FUN_00076a2c(0x10,0x14);
-    DAT_002028ec = FUN_00076a2c(0x54,0x52);
+    DAT_002028e8 = grtile_alloc_registered(0x10,0x14);
+    DAT_002028ec = grtile_alloc_registered(0x54,0x52);
     iVar5 = 6;
     do {
       /* iVar5==10/11 were hardcoded original-binary literal addresses
@@ -34905,7 +36060,82 @@ short param_1;
      container is actually open, so a plain click here does nothing
      once armour rendering claims this record back in a future pass. */
   if ((iVar9 == 1) && (g_current_container_record != 0)) {
-    close_backpack_container();
+    /* Was unconditional: dropping a held item onto this icon (drag it
+       out of the open container back to the parent) closed the
+       container without ever placing the item anywhere, leaving it
+       stuck on the cursor -- the user then had to click again, now on
+       the parent's own backpack grid, to actually place it. This
+       whole affordance is this project's own addition (see the
+       comment above), so its exact "drop here" behavior isn't
+       constrained by the original binary; auto-place the held item
+       into any free parent-backpack slot first, using the same
+       auto_place_in_container(...,0x13) "find an empty slot" sentinel
+       auto_place_in_container's own other callers (and
+       check_object_fits_in_slot's matching special-case) already
+       establish. Matches a user report: "dragging from a container to
+       the parent requires an extra click".
+
+       Whether to ALSO auto-close the container after that drop (the
+       original behavior, matching a plain click on this same icon
+       with nothing held) is now a deliberate opt-in via
+       UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF, per user
+       request -- placing the item and leaving the container open lets
+       the user drag several items out in a row without it snapping
+       shut after the first one. A plain click here (nothing held)
+       always closes as before, unaffected by this toggle. */
+    if (g_selected_object != (ushort *)0x0) {
+      if (auto_place_in_container(g_selected_object, 0x13) != 0) {
+        g_selected_object = (ushort *)0x0;
+        g_cursor_holding_state = 0;
+        FUN_00057cac(3);
+      }
+      FUN_000667cc();
+      if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+        leave_nested_container_level();
+      }
+      else {
+        /* Staying open: the item just left this container's own grid
+           (widgets 0xc-0x13), so redraw it to reflect that -- without
+           this the grid kept showing its pre-drop contents (stale)
+           until some unrelated redraw happened to refresh it. */
+        redraw_inventory_widget_range(0xc,0x13);
+      }
+    }
+    else {
+      /* Was unconditionally `close_backpack_container()` -- fully
+         closing the ENTIRE open-container chain regardless of how many
+         levels deep the player had navigated. User QA: "opening a
+         nested container does not update to show the new container --
+         should let you go back to the parent container on click." A
+         plain click on this icon should pop back ONE level (to
+         whichever container this one is nested inside, if any), not
+         necessarily close everything -- leave_nested_container_level
+         already implements exactly that (and itself calls
+         close_backpack_container when there's no parent to pop back
+         to, so top-level containers still close in one click same as
+         before). */
+      leave_nested_container_level();
+    }
+    /* poll_input_bindings dispatches off a non-consuming peek_input_event()
+       -- the mouse-down event stays "pending" and gets seen again on
+       later ticks (this project's own consuming-vs-peeking distinction,
+       see poll_input_event's comment) until something drains it, which
+       is why interact_default's own equivalent "committed click" tail
+       calls wait_for_click_release(1) (loop until the button is actually
+       released). Every other branch here happens to be safe without it
+       -- either its resolved widget/slot changes once the click takes
+       effect (so a stray re-fire lands somewhere harmless) or its own
+       action is naturally idempotent (close_backpack_container's own
+       top-level `g_current_container_record != 0` guard no-ops on a
+       repeat call). leave_nested_container_level pops exactly one MORE
+       level on every call, so without this it was silently popping
+       2-3 levels per real single click -- confirmed live: a single
+       SDLCLICK (and even a separately-timed SDLDOWN/SDLUP pair) on this
+       icon fired handle_inventory_panel_click's widget-1 branch 2-3
+       times in a row, so a nested container's "go back one level" click
+       fell all the way through to a full close instead of stopping at
+       the parent. */
+    wait_for_click_release(1);
     return;
   }
   if ((0 < iVar9) && (iVar9 < 0x15)) {
@@ -34916,7 +36146,7 @@ short param_1;
         if (iVar9 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
           toggle_weapon_ready();
         }
-        FUN_00057604(1);
+        wait_for_click_release(1);
         return;
       }
       if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = FUN_000576d0(1), iVar6 != 0)) {
@@ -34956,18 +36186,27 @@ short param_1;
           redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar9]);
         }
         else {
-          for (; iVar6 != 0;
-              iVar6 = CONCAT13(*(undefined1 *)(iVar6 + 7),
-                               CONCAT12(*(undefined1 *)(iVar6 + 6),
-                                        CONCAT11(*(undefined1 *)(iVar6 + 5),
-                                                 *(undefined1 *)(iVar6 + 4))))) {
+          /* Was walking the "prev" chain (up through every ancestor
+             container, to propagate the removed item's weight all the
+             way to the root) via CONCAT13/12/11 of the record's own
+             byte-4..7 field -- the same legacy 4-byte "prev" that's only
+             ever a truncated half of a real 64-bit pointer (see
+             open_backpack_container's own record-widening comment).
+             Harmless with a single open container (loop runs once,
+             lands on 0); wild-pointer crash the instant a real ancestor
+             existed to walk to -- confirmed live: moving an item inside
+             a NESTED container's own grid ("Trying to move an item in a
+             nested container causes a crash"). Walk the real,
+             untruncated prev pointer at +0x14 instead, same fix as
+             leave_nested_container_level/free_open_container_chain. */
+          for (; iVar6 != 0; iVar6 = *(char **)(iVar6 + 0x14)) {
             iVar9 = FUN_00046260(puVar7);
             iVar9 = *(short *)(iVar6 + 10) - iVar9;
             *(char *)(iVar6 + 10) = (char)iVar9;
             *(char *)(iVar6 + 0xb) = (char)((uint)iVar9 >> 8);
           }
-          FUN_00042e30();
-          FUN_00042d70();
+          repopulate_container_grid_slots();
+          refresh_container_view();
         }
         if (g_selected_object == 0) {
           return;
@@ -34978,11 +36217,11 @@ short param_1;
         }
       }
     }
-    FUN_00057604(1);
+    wait_for_click_release(1);
     FUN_00057504(&local_2e,&local_30);
     uVar5 = hit_test_inventory_widget((int)local_2e,(int)local_30);
   }
-  FUN_00057604(1);
+  wait_for_click_release(1);
   sVar1 = (short)uVar5;
   if ((g_selected_object == 0) || (g_cursor_holding_state == 2)) {
     if (0 < sVar1) {
@@ -34997,12 +36236,60 @@ short param_1;
   }
   else {
     g_cursor_holding_state = 1;
+    /* Same stale-cursor-icon-erase race as attach_picked_up_object_to_cursor's
+       own copy of this fix (see its own comment) -- this function's
+       "release while holding" branch has the identical shape (widget
+       dispatch redraws the dropped item, then later cleanup erases a
+       still-pending save from the drag icon's last position, which can
+       clobber that fresh redraw if the two overlap -- routine for a
+       drop, since releasing ON the target slot is the point). Flush it
+       here too, before any dispatch below can redraw anything --
+       FUN_00056fe8() only does the actual pixel restore, it does NOT
+       clear DAT_00204844 itself (every caller is responsible for that
+       off its own return value, see its own comment); missing that
+       clear left the flag set, so a LATER update_mouse_state cycle
+       still saw "erase pending" and redundantly restored the same
+       stale save a second time, clobbering the fresh redraw anyway. */
+    if (FUN_00056fe8() != 0) {
+      DAT_00204844 = 0;
+    }
     if ((DAT_0023c1d4 != '\0') && (sVar1 != 0x17)) {
       g_cursor_holding_state = 1;
       return;
     }
     iVar9 = (int)sVar1;
     if (0 < iVar9) {
+      /* Was missing here too: this is the REAL drop-target dispatch for
+         a release that lands while already holding an item (this
+         function's own preceding widget-range block only handles the
+         very first click of a drag, when nothing was held yet -- see
+         its own sibling fix's comment for why the top-of-function
+         check alone isn't enough. `sVar1`/`iVar9` here is the actual
+         RELEASE position, freshly hit-tested a few lines up). Same
+         "leave-container icon eats the drop instead of routing it to
+         the parent" bug and same fix as the top-of-function copy. */
+      if ((iVar9 == 1) && (g_current_container_record != 0)) {
+        if (auto_place_in_container(g_selected_object, 0x13) != 0) {
+          g_selected_object = (ushort *)0x0;
+          g_cursor_holding_state = 0;
+          FUN_00057cac(3);
+          bVar11 = false;
+        }
+        FUN_000667cc();
+        /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
+           -- see the top-of-function copy of this same fix for why.
+           Was close_backpack_container() here too -- this is the
+           "release while already holding" twin of that top-of-function
+           branch and was missed when it was fixed (Update 27); same
+           "pop one level, not everything" fix. */
+        if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+          leave_nested_container_level();
+        }
+        else {
+          redraw_inventory_widget_range(0xc,0x13);
+        }
+        return;
+      }
       if (iVar9 < 0x15) {
         handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar9]);
       }
@@ -35034,7 +36321,7 @@ ushort * param_1;
   g_selected_object = param_1;
   FUN_00057c5c(*param_1 & 0x1ff);
   FUN_000575c4(&local_14);
-  if ((local_14 != 0) && (FUN_00057604(1), g_selected_object != (ushort *)0x0)) {
+  if ((local_14 != 0) && (wait_for_click_release(1), g_selected_object != (ushort *)0x0)) {
     FUN_00057504(local_10,&local_12);
     sVar2 = hit_test_inventory_widget((int)local_10[0],(int)local_12);
     if (getenv("UW_DEBUG_INV"))
@@ -35043,8 +36330,60 @@ ushort * param_1;
     iVar1 = (int)sVar2;
     if (0 < iVar1) {
       g_cursor_holding_state = 1;
+      /* User QA report: "dragging and dropping into a paper doll slot
+         does not show the item" -- confirmed live (also reproduces for
+         an ordinary backpack-grid drop under the same drag pattern, so
+         this isn't slot-specific) via UW_DEBUG_CURSORERASE/CURSORSHOW:
+         update_mouse_state's own continuous per-tick cursor-icon cycle
+         (still running here, since g_selected_object doesn't clear
+         until the widget dispatch below actually succeeds) leaves a
+         pending "erase this saved background" state (DAT_00204844) from
+         the drag icon's last shown position. The widget dispatch below
+         (handle_backpack_slot_click -> place_held_item_in_empty_slot,
+         or handle_object_drop_target) draws the placed item fresh into
+         its slot -- but then ITS OWN cleanup (FUN_00057cac(3) below)
+         erases that still-pending stale save, which restores the
+         PRE-drop background over top of the item that was just
+         correctly drawn, since a drop's target slot position commonly
+         overlaps where the drag icon was last shown (releasing ON the
+         slot is the whole point of a drop). Flushing that pending erase
+         HERE -- before any redraw happens -- makes it a genuine no-op
+         (nothing to restore yet) instead of a same-tick race against
+         the fresh redraw, matching update_mouse_state's own
+         erase-before-anything-else protocol. FUN_00056fe8() only does
+         the actual pixel restore, it does NOT clear DAT_00204844
+         itself (every caller is responsible for that off its own
+         return value, see its own comment); missing that clear left
+         the flag set, so a LATER update_mouse_state cycle still saw
+         "erase pending" and redundantly restored the same stale save a
+         second time, clobbering the fresh redraw anyway. */
+      if (FUN_00056fe8() != 0) {
+        DAT_00204844 = 0;
+      }
       if ((DAT_0023c1d4 == '\0') || (iVar1 == 0x17)) {
-        if (iVar1 < 0x15) {
+        /* Same "leave-container icon eats the drop instead of routing
+           it to the parent" bug and fix as handle_inventory_panel_click's
+           own two copies (see their comments) -- this is the analogous
+           drop-dispatch for a drag that started in the 3D world (e.g.
+           picking an item straight off the ground and releasing it on
+           this icon while a container happens to be open). */
+        if ((iVar1 == 1) && (g_current_container_record != 0)) {
+          if (auto_place_in_container(g_selected_object, 0x13) != 0) {
+            g_selected_object = (ushort *)0x0;
+            g_cursor_holding_state = 0;
+            FUN_00057cac(3);
+          }
+          FUN_000667cc();
+          /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
+             -- see handle_inventory_panel_click's own copy of this fix
+             for why. Was close_backpack_container() here too -- missed
+             when handle_inventory_panel_click's two copies were fixed
+             (Update 27); same "pop one level, not everything" fix. */
+          if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+            leave_nested_container_level();
+          }
+        }
+        else if (iVar1 < 0x15) {
           handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
           if (g_selected_object == (ushort *)0x0) {
             g_cursor_holding_state = 0;
@@ -35098,7 +36437,7 @@ void FUN_00046bfc()
   uint uVar2;
   uint uVar3;
   int iVar4;
-  
+
   if (DAT_0023c1d4 == '\0') {
     FUN_00057118();
     if (DAT_00085c54 != 0) {
@@ -35214,7 +36553,7 @@ int param_2;
     resolve_object_link(iVar1 + 4);
     uVar2 = encode_object_slot_index();
   }
-  g_selected_object = (ushort *)FUN_00045b48(0xffffffff,0xffffffff,0xffffffff,param_1,0);
+  g_selected_object = (ushort *)extract_matching_object_from_slot(0xffffffff,0xffffffff,0xffffffff,param_1,0);
   if (g_selected_object != (ushort *)0x0) {
     if (param_2 != 0) {
       iVar1 = (int)(short)param_1;
@@ -35228,7 +36567,23 @@ int param_2;
     if (bVar3) {
       FUN_00057cac(0);
     }
-    FUN_00057c5c(*g_selected_object & 0x1ff);
+    /* Was `*g_selected_object & 0x1ff` -- g_selected_object is declared
+       `char *` (a single signed byte, used elsewhere in this file for
+       genuine byte-level access), but an object's own id is a 9-bit
+       field spanning 2 bytes, needing a real `ushort` read. Reading
+       just the low byte and sign-extending it (as `char` does) set bit
+       8 spuriously whenever that byte's own top bit was set --
+       e.g. objid 0xb6 read as signed char -74, sign-extended to
+       0xffffffb6, then `&0x1ff` incorrectly produced 0x1b6 instead of
+       0xb6. Confirmed live (UW_DEBUG_CURSOR): every held-item cursor
+       icon with an id >= 0x80 in its low byte resolved to a
+       completely different (or, for ids that pushed the corrupted
+       value past this file's populated sprite range, entirely blank)
+       icon -- matching a user report of several items showing the
+       wrong cursor icon or none at all when picked up. Same root
+       cause at every other `*g_selected_object & 0x1ff` site in this
+       file (see their own copies of this comment). */
+    FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
     FUN_000570b4();
     FUN_000667cc();
   }
@@ -35333,7 +36688,9 @@ undefined4 param_2;
   uint local_4c;
   undefined *local_48;
   char acStack_40 [28];
-  
+  char *_parentRec;
+  undefined2 _savedLink;
+
   local_4c = (uint)(short)(*param_1 & 0x1ff);
   local_48 = &DAT_00202c90 + local_4c * 0xd;
   uVar1 = *param_1 >> 6 & 7;
@@ -35345,7 +36702,24 @@ undefined4 param_2;
     if (g_current_container_record == 0) {
       return 0;
     }
-    if (*(int *)(g_current_container_record + 4) == 0) {
+    /* Both `g_current_container_record + 4` reads below were the legacy
+       4-byte "prev" field -- only ever a truncated half of a real
+       64-bit pointer (same class as the whole Update-29 sweep --
+       search "still broken for genuine container nesting"). The second
+       one compounded it: it fed the truncated value + 8 straight into
+       resolve_object_link as an object-pointer base, the same
+       "tracking record lives outside the object arena" bug already
+       fixed at several other call sites -- confirmed live: this is the
+       exact crash from "dropping [a held item] in another inventory
+       slot" while viewing a nested container (check_object_fits_in_slot,
+       via place_object_in_backpack_slot/place_held_item_in_empty_slot/
+       handle_backpack_slot_click). Walk the real +0x14 prev pointer to
+       find the parent record, then resolve its own saved link through
+       the established g_current_container_link global-copy workaround
+       (save/restore, since this function runs while a CHILD container
+       is still the "current" one). */
+    _parentRec = *(char **)(g_current_container_record + 0x14);
+    if (_parentRec == 0) {
       iVar15 = 0xb;
       do {
         if ((*(ushort *)(&DAT_00202950 + iVar15 * 2) & 0xffc0) == 0) break;
@@ -35360,18 +36734,21 @@ undefined4 param_2;
       }
       return 0;
     }
-    puVar10 = (undefined1 *)(*(int *)(g_current_container_record + 4) + 8);
-LAB_00047474:
-    puVar11 = (ushort *)resolve_object_link(puVar10);
+    _savedLink = g_current_container_link;
+    g_current_container_link = *(undefined2 *)(_parentRec + 8);
+    puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
+    g_current_container_link = _savedLink;
   }
   else {
     if (iVar15 < 0x14) {
       puVar10 = &DAT_00202950 + iVar15 * 2;
-      goto LAB_00047474;
+      puVar11 = (ushort *)resolve_object_link(puVar10);
     }
-    puVar11 = (ushort *)resolve_object_link(&DAT_00202950 + iVar15 * 2);
-    if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
-      puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
+    else {
+      puVar11 = (ushort *)resolve_object_link(&DAT_00202950 + iVar15 * 2);
+      if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
+        puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
+      }
     }
   }
   if (iVar15 < 5) {
@@ -35469,9 +36846,33 @@ LAB_00047a0c:
   iVar12 = g_current_container_record;
   bVar7 = 1;
   if (0x13 < iVar15) {
-    for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(int *)(iVar12 + 4)) {
-      pbVar13 = (byte *)resolve_object_link(iVar12 + 8);
-      if (((short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3] == 0) ||
+    /* Was `iVar12 = *(int *)(iVar12 + 4)` walking the legacy 4-byte
+       "prev" field (truncated half of a real 64-bit pointer, same class
+       as this whole file's Update-29 sweep) -- an EARLIER pass through
+       this exact loop already found and partly fixed the DIFFERENT bug
+       right below (resolve_object_link(iVar12+8) always NULL for a
+       tracking record, outside the object arena), but that fix only
+       covered the FIRST iteration (the innermost/currently-open
+       container, via the ternary onto g_current_container_link) and
+       explicitly flagged deeper ancestors as "untested and likely
+       still-broken" for lack of an "equivalent stand-in" at the time --
+       that stand-in is the same g_current_container_link save/restore
+       workaround, just needed on every iteration, not only the first,
+       now that the walk pointer itself is also fixed. Confirmed live:
+       still the exact same crash (check_object_fits_in_slot via
+       place_object_in_backpack_slot/place_held_item_in_empty_slot/
+       handle_backpack_slot_click) the moment a real 2-level-deep
+       ancestor chain existed to walk into on this loop's SECOND
+       iteration. */
+    for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(char **)(iVar12 + 0x14)) {
+      _savedLink = g_current_container_link;
+      g_current_container_link = *(undefined2 *)(iVar12 + 8);
+      pbVar13 = (byte *)resolve_object_link(&g_current_container_link);
+      g_current_container_link = _savedLink;
+      if (pbVar13 == (byte *)0x0) {
+        bVar7 = 1;
+      }
+      else if (((short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3] == 0) ||
          (bVar7 = 0,
          (int)*(short *)(iVar12 + 10) + (int)local_54[0] <=
          (int)(short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3])) {
@@ -35504,7 +36905,30 @@ LAB_00047a0c:
     return 0;
   }
   uVar2 = (uint)*(short *)(&DAT_002029f9 + iVar15);
-  if ((int)uVar2 < 0) goto LAB_00047a0c;
+  /* DAT_002029f9 (this container-type's "specific item id required" table,
+     alongside its sibling DAT_002029f8 used for the weight-capacity check
+     just above) is loaded by FUN_0004a02c -- but that loader itself has
+     no caller anywhere in the decompiled binary (confirmed via a real
+     Ghidra xref search: the only reference to FUN_0004a02c's address is
+     a DATA reference, meaning it's stored into some struct as a function
+     pointer for an indirect call this project hasn't traced/wired up
+     yet), so this table is permanently all-zero. The sibling capacity
+     table (DAT_002029f8) already treats a zero entry as "no limit" (see
+     the `(&DAT_002029f8)[iVar15] == 0` check just above); this table's
+     own zero-entry case was instead falling into the "must be this
+     exact item id" branch below with a real zero, incorrectly requiring
+     the placed item's id to literally be 0 -- rejecting every real
+     item with the "does not fit" message (FUN_00078c80(0xf8)).
+     Confirmed live: dragging an item to an empty slot inside an open
+     container printed "That item does not fit." on every attempt.
+     Treat an unpopulated (zero) entry the same permissive way its
+     sibling table already does, via the same LAB_00047a0c fallback
+     already used for the table's other explicit "no restriction"
+     sentinel (a negative entry) -- a narrow, local fix for the
+     immediate symptom; the deeper root cause (wiring up FUN_0004a02c's
+     real call so this table, DAT_002029f8, and g_food_effect_table all
+     get their real game data) is a separate, larger task. */
+  if ((int)uVar2 <= 0) goto LAB_00047a0c;
   if ((int)uVar2 < 0x200) {
     if ((local_4c != uVar2) && (FUN_00078c80(0xf8), uVar8 != uVar2)) {
       return 0;
@@ -35603,8 +37027,8 @@ short param_2;
         redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
       }
       else {
-        FUN_00042e30();
-        FUN_00042d70();
+        repopulate_container_grid_slots();
+        refresh_container_view();
       }
       uVar3 = 1;
     }
@@ -35688,7 +37112,7 @@ uint param_2;
     uVar6 = FUN_0002805c(param_1,puVar4);
     if ((short)uVar6 < 0) {
       if (iVar1 < 0x13) {
-        puVar4 = (ushort *)FUN_00045b20(0xffffffff,0xffffffff,0xffffffff,param_2,0);
+        puVar4 = (ushort *)extract_and_refresh_slot_item(0xffffffff,0xffffffff,0xffffffff,param_2,0);
         iVar5 = place_held_item_in_empty_slot(param_1,param_2);
         if (iVar5 == 0) {
           place_held_item_in_empty_slot(puVar4,param_2);
@@ -35697,7 +37121,9 @@ uint param_2;
         g_selected_object = puVar4;
         if (g_selected_object != (ushort *)0x0) {
           FUN_00057cac(0);
-          FUN_00057c5c(*g_selected_object & 0x1ff);
+          /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+             own identical fix comment. */
+          FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
         }
       }
       else {
@@ -35715,7 +37141,9 @@ uint param_2;
         g_cursor_holding_state = 1;
         g_selected_object = puVar7;
         FUN_00057cac(3);
-        FUN_00057c5c(*g_selected_object & 0x1ff);
+        /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+           own identical fix comment. */
+        FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
       }
       iVar8 = FUN_00028254(puVar4,uVar6);
       if (iVar8 != 0) {
@@ -35752,12 +37180,11 @@ uint param_2;
     }
     iVar8 = (*(ushort *)(&DAT_00202c91 + (*param_1 & 0x1ff) * 0xd) >> 4) * param_2;
     iVar5 = g_current_container_record;
+    /* Legacy truncated "prev" walk -- same fix as
+       place_object_in_backpack_slot's sibling copy (search "still
+       broken for genuine container nesting"). */
     if (0x13 < iVar1) {
-      for (; iVar5 != 0;
-          iVar5 = CONCAT13(*(undefined1 *)(iVar5 + 7),
-                           CONCAT12(*(undefined1 *)(iVar5 + 6),
-                                    CONCAT11(*(undefined1 *)(iVar5 + 5),*(undefined1 *)(iVar5 + 4)))
-                          )) {
+      for (; iVar5 != 0; iVar5 = *(char **)(iVar5 + 0x14)) {
         iVar10 = *(short *)(iVar5 + 10) + iVar8;
         *(char *)(iVar5 + 10) = (char)iVar10;
         *(char *)(iVar5 + 0xb) = (char)((uint)iVar10 >> 8);
@@ -35832,7 +37259,35 @@ short param_2;
 joined_r0x00048308:
       while (iVar6 <= iVar2) {
         if (iVar6 != 0x14) {
+          /* Was called here with g_blit_transparent_mode==1 (set just
+             above this loop, for the item-sprite draw further down
+             which genuinely needs it). FUN_00076e98 restores a saved
+             framebuffer tile pixel-for-pixel -- raw RGB565 screen
+             data, not palette-indexed sprite art -- and it also
+             respects g_blit_transparent_mode (skipping any source
+             pixel whose raw 16-bit value is exactly 0 when it's set).
+             0x0000 is a perfectly ordinary color (black) in a captured
+             framebuffer tile, not a "this pixel is transparent" marker,
+             so restoring one under transparent mode silently drops
+             every genuinely-black pixel in it, leaving whatever stale
+             content (often actual black) was already in the
+             framebuffer showing through instead. Real bug regardless
+             of the case below: found while chasing a user report of
+             "closing a container draws black areas under some of the
+             paper doll section", but live-testing with
+             close_backpack_container also calling this function for
+             the worn-item ring widgets (6-0xb) showed no visible
+             change either way, so it wasn't -- by itself -- the
+             visible cause there (see close_backpack_container's own
+             comment for what that black area traced back to instead).
+             Kept anyway since it's a genuine correctness fix for any
+             captured tile that does contain real black pixels,
+             independent of that specific symptom. Force opaque for
+             the restore itself; the sprite draw right after still
+             runs under the loop's own transparent mode, unaffected. */
+          g_blit_transparent_mode = 0;
           FUN_00076e98((&DAT_002028e8)[iVar6]);
+          g_blit_transparent_mode = 1;
           auStack_54[iVar6] = 1;
           if (getenv("UW_DEBUG_INV"))
             fprintf(stderr, "[inv] redraw_inventory_widget_range loop iVar6=%d slot_arr_idx=%d arr_val=0x%04x\n",
@@ -36727,6 +38182,9 @@ static void uw_debug_blit_pick_buffer(void)
 void main_loop_hud_flush()
 
 {
+  unsigned int _dbg_hf_t0 = 0;
+  int _dbg_hf = getenv("UW_DEBUG_HUDSPLIT") != NULL;
+  if (_dbg_hf) _dbg_hf_t0 = read_realtime_clock_units() * 4;
   dirty_rect_set(100,100,100,100);
   /* HACK: redraw the 3D dungeon view on every main-loop iteration.
      Normally the redraw is driven off dirty bit 3, which apply_movement_tick
@@ -36763,11 +38221,20 @@ void main_loop_hud_flush()
          render_dungeon_frame_timed reaches the same rebuild_dungeon_view,
          so the guard still applies. render_dungeon_frame_timed does its
          own dirty_rect_union internally (same rect this hack used to set
-         by hand), so flush_dirty_rect_to_display(1) below still blits it.
-         Skipped while an animation owns the view (DAT_00201c90 != 0). Set
-         UW_NO_FORCE_3D_REDRAW to restore the motion-gated behaviour. */
+         by hand), so flush_dirty_rect_to_display(1) below still blits it --
+         g_suppress_frame_timed_flush (see flush_dungeon_frame's own comment)
+         stops render_dungeon_frame_timed from ALSO doing its own real
+         screen flush here, since that was a second real GXEndDraw() every
+         tick, each independently vsync-throttled, roughly doubling
+         real per-tick time (only visible with keyboard-held input, since
+         a mouse-button hold's DAT_0023c63c gate happened to already skip
+         one of the two). Skipped while an animation owns the view
+         (DAT_00201c90 != 0). Set UW_NO_FORCE_3D_REDRAW to restore the
+         motion-gated behaviour. */
       g_force_redraw_no_xp = 1;
+      g_suppress_frame_timed_flush = 1;
       render_dungeon_frame_timed();
+      g_suppress_frame_timed_flush = 0;
       /* UW_DEBUG_PICK_VIEW: run a pick-mode render pass to fill the pick
          buffer, then paint it over the viewport (see
          uw_debug_blit_pick_buffer). */
@@ -36779,13 +38246,13 @@ void main_loop_hud_flush()
     }
   }
   if (DAT_00201c84 != 0) {
-    FUN_00049818();
+    dispatch_sticky_mode_handlers();
   }
   /* HACK: drive the attack-swing state machine (FUN_00027708) every
      main-loop tick. Its own body is a real, correct state machine
      (wind-up -> resolve-impact -> follow-through -> return-to-idle,
      gated on DAT_0010062c/DAT_000870e4 and a real-elapsed-time
-     accumulator read via FUN_0002294c()), but interact_attack only
+     accumulator read via read_realtime_clock_units()), but interact_attack only
      ever calls it ONCE, with a nonzero param_1, to arm the swing
      (DAT_0010062c set to a negative wind-up countdown). Nothing else
      in the normal per-tick path calls FUN_00027708(0) to let that
@@ -36805,7 +38272,14 @@ void main_loop_hud_flush()
     if (_swing_tick < 0) _swing_tick = (getenv("UW_NO_FORCE_SWING_TICK") == NULL);
     if (_swing_tick) FUN_00027708(0);
   }
-  poll_input_bindings(DAT_00085a6c);
+  { unsigned int _t1 = 0, _t2 = 0;
+    if (_dbg_hf) _t1 = read_realtime_clock_units() * 4;
+    poll_input_bindings(DAT_00085a6c);
+    if (_dbg_hf) {
+      _t2 = read_realtime_clock_units() * 4;
+      fprintf(stderr, "[hudsplit] pre_pib_ms=%u pib_ms=%u\n", _t1 - _dbg_hf_t0, _t2 - _t1);
+    }
+  }
   /* When the forced 3D redraw ran this frame, push it through even if a
      mouse button is being held in the viewport: DAT_0023c63c (the
      click-hold flag) otherwise blocks flush_dirty_rect_to_display's real
@@ -36818,12 +38292,37 @@ void main_loop_hud_flush()
   } else {
     flush_dirty_rect_to_display(1);
   }
+  /* REVERTED (was a hand-hacked lit-torch HUD icon flicker -- see
+     mode-icon-and-hud-icon-flicker-fixes memory for the full arc).
+     Unconditionally rotating palette_cycle_range(16,8,1) every 8 ticks
+     from here ran regardless of dungeon-view state and touched the
+     shared global palette (DAT_00088d98/g_palette_rgb565), the same
+     table raster_textured_span samples fresh every frame for ALL 3D
+     wall/floor/ceiling rendering -- including real lava textures this
+     project confirmed use this exact fire-gradient range (F32.TR/
+     F16.TR entries 24/25, W64.TR/W16.TR entry 206). If the original
+     game's own (still-unfound) global fire/water palette-animation
+     mechanism turns up later, this hack would already be stomping on
+     the same palette range and timing, corrupting or double-animating
+     it. Pulled until that original mechanism is found or ruled out for
+     good; the equipped lit-torch HUD icon is back to not animating. */
   return;
 }
 
 
 
-void FUN_00049818()
+// was FUN_00049818 -- dispatches DAT_00201c84's currently-set "sticky
+// redraw/per-frame" bits through the DAT_00085668 per-mode handler table
+// (movement_pacing_handler is mode 0's bit 12, see DAT_00085728's own
+// comment), then re-arms whichever bits DAT_00085728[current mode] always
+// wants re-triggered -- this re-arm is what makes a mode's per-frame
+// handlers keep firing every call instead of running once and going
+// quiet. Called once per real game tick from app_main_loop's own while
+// loop (game.c), gated on DAT_00201c84 != 0 (see main_loop_hud_flush's
+// own call site) -- this is the actual per-tick movement dispatch, the
+// anchor point uw_advance_game_tick's deterministic clock now advances
+// in lockstep with (see its own comment in gx_stub.c).
+void dispatch_sticky_mode_handlers()
 
 {
   short sVar1;
@@ -36831,7 +38330,7 @@ void FUN_00049818()
   uint uVar3;
   ushort uVar4;
   bool bVar5;
-  
+
   if (DAT_00201c84 != 0) {
     uVar4 = 1;
     uVar3 = 0;
@@ -42012,7 +43511,22 @@ byte param_7;
         }
         if (-1 < sVar7) {
           puVar4 = (ushort *)resolve_object_link(&DAT_00202c3a + sVar7 * 6);
-          if (((&DAT_00202c93)[(*puVar4 & 0x1ff) * 0xd] & 2) == 0) {
+          /* Was an unguarded `*puVar4` -- resolve_object_link legitimately
+             returns NULL when the candidate slot (&DAT_00202c3a +
+             sVar7*6) has no object linked there at all, same class as
+             FUN_00080ed4's own already-fixed missing NULL guard
+             (swinging at empty air/a wall). Confirmed live: this
+             crashed 100% of the time emptying the starting-room sack's
+             contents via Use mode -- empty_container_into_world's
+             randomized scatter (find_object_placement) lands an item
+             on a tile whose best-height candidate slot (sVar7, chosen
+             just above) has no object registered, and this was the
+             first path to ever dereference that NULL. No object linked
+             here means there's nothing to check the "blocks passage"
+             flag on, so treat it as NOT blocking (skip the `return 0`)
+             rather than crash. */
+          if ((puVar4 != (ushort *)0x0) &&
+             (((&DAT_00202c93)[(*puVar4 & 0x1ff) * 0xd] & 2) == 0)) {
             DAT_00202c6c = (undefined2 *)uVar2;
             return 0;
           }
@@ -42112,8 +43626,6 @@ short param_5;
 {
   ushort uVar1;
   undefined4 uVar2;
-  short extraout_r1;
-  short extraout_r1_00;
   byte bVar3;
   uint uVar4;
   int iVar5;
@@ -42126,12 +43638,26 @@ short param_5;
   while( true ) {
     if ((bVar3 != 0) || (uVar4 = param_2, uVar6 = param_3, DAT_00202c84 == 0)) {
       iVar5 = (int)(short)(param_5 * 2 + 1);
+      /* Was `Ordinal_2005(iVar5,uVar2); ... (int)extraout_r1 ...` (twice)
+         -- bare calls whose result was read back via Ghidra's
+         extraout_r1 idiom, always uninitialized garbage on this host
+         (there's no way to read a second register out of a normal C
+         call). Ordinal_2005 is COREDLL's div/mod ordinal
+         (divisor,dividend): the quotient is its real C return value,
+         but this caller wants the REMAINDER -- confirmed by
+         ordinal_stubs.c's own comment on Ordinal_2005 documenting
+         exactly this "extraout_r1 reads want the remainder" idiom.
+         Compute it directly instead of reading a nonexistent second
+         return value: this crashed 100% of the time using Use mode on
+         a container (find_object_placement is how try_combine_or_
+         stow_object scatters emptied contents onto the ground),
+         confirmed live, because uVar4/uVar6 below were built from
+         garbage stack memory, sending object placement to a wild
+         tile. */
       uVar2 = Ordinal_1053();
-      Ordinal_2005(iVar5,uVar2);
+      uVar4 = (((int)uVar2 % iVar5) - (int)param_5) + param_2;
       uVar2 = Ordinal_1053();
-      Ordinal_2005(iVar5,uVar2);
-      uVar4 = ((int)extraout_r1 - (int)param_5) + param_2;
-      uVar6 = ((int)extraout_r1_00 - (int)param_5) + param_3;
+      uVar6 = (((int)uVar2 % iVar5) - (int)param_5) + param_3;
     }
     uVar2 = encode_object_slot_index(param_1);
     iVar5 = FUN_00051fa0(*param_1 & 0x1ff,uVar2,uVar4,uVar6,param_4,1,0);
@@ -44390,7 +45916,7 @@ short param_1;
     FUN_00057118();
     FUN_00056cc8(6);
     FUN_000570b4();
-    FUN_00057604(0);
+    wait_for_click_release(0);
   }
   DAT_002046f8 = 0;
   do {
@@ -44441,7 +45967,7 @@ LAB_00056638:
             bVar5 = sVar1 == 0x20;
             goto LAB_0005659c;
           }
-          FUN_00056724();
+          close_ui_panel_return_to_game();
         }
       }
     }
@@ -44504,7 +46030,12 @@ int param_2;
 
 
 
-void FUN_00056724()
+// was FUN_00056724 -- closes whatever UI panel/popup is currently
+// open (DAT_000868d8 = 0) and redraws the icon-bar's "options button"
+// background (OPTBTNS.GR), re-establishing the mode-icon highlight if
+// a mode is already selected. Called on Escape and other panel-close
+// paths.
+void close_ui_panel_return_to_game()
 
 {
   FUN_00057118();
@@ -44513,7 +46044,12 @@ void FUN_00056724()
   FUN_00041a18(0x20eb,s_optbtns_00086954,0);
   draw_sprite_by_id(0x20eb,4,0xb,0x6c,0x23);
   if (0 < g_cursor_mode) {
-    FUN_0003f99c();
+    /* Dropped argument -- same idiom as the identical bug in
+       enter_dungeon_view_hud_init right above this function's sibling call (see its
+       comment); confirmed via disassembly of 0x56724 the same way:
+       r0 holds g_cursor_mode, untouched from the guard's own load
+       through to `blgt 0x3f99c`. */
+    mode_icon_highlight_on((int)g_cursor_mode);
   }
   DAT_002046f8 = 1;
   FUN_000570b4();
@@ -44653,7 +46189,7 @@ LAB_000569ec:
     }
   }
   else {
-    FUN_00056724();
+    close_ui_panel_return_to_game();
   }
   return;
 }
@@ -44682,7 +46218,7 @@ LAB_00056a44:
     }
   }
   else {
-    FUN_00056724();
+    close_ui_panel_return_to_game();
   }
   return;
 }
@@ -44713,7 +46249,7 @@ int param_1;
       FUN_00056cc8(6);
     }
     else {
-      FUN_00056724();
+      close_ui_panel_return_to_game();
     }
   }
   return;
@@ -44733,7 +46269,7 @@ short param_1;
   }
   else {
     if (param_1 == 1) {
-      FUN_00056724();
+      close_ui_panel_return_to_game();
       return;
     }
     if (param_1 == 2) {
@@ -44800,7 +46336,7 @@ int param_1;
         unready_weapon();
       }
     }
-    FUN_00056724();
+    close_ui_panel_return_to_game();
   }
   return;
 }
@@ -44820,7 +46356,7 @@ short param_1;
     FUN_0003bc08(0);
     FUN_00057118();
   }
-  FUN_00056724();
+  close_ui_panel_return_to_game();
   return;
 }
 
@@ -44853,7 +46389,7 @@ undefined4 param_1;
     PTR_FUN_00086900_table[DAT_000868dc](param_1);
   }
   FUN_000570b4();
-  FUN_00057604(0);
+  wait_for_click_release(0);
   return;
 }
 
@@ -44974,7 +46510,7 @@ undefined4 FUN_00056f28()
   DAT_002047dc = DAT_0020471c + 0xdf;
   DAT_002047d8 = DAT_0020471c + 0x83;
   FUN_00057dc0(0x106c);
-  DAT_000889b8 = FUN_00076a2c(0x28,0x28);
+  DAT_000889b8 = grtile_alloc_registered(0x28,0x28);
   if (DAT_000889b8 == 0) {
     uVar1 = 0xffffffff;
   }
@@ -44998,11 +46534,56 @@ int FUN_00056fe8()
   int iVar1;
   
   iVar1 = 0;
+  if (getenv("UW_DEBUG_CURSORERASE")) {
+    fprintf(stderr, "[cursorerase] entry DAT_00204844=%d will_erase=%d depth=%d mouse=(%d,%d)\n",
+            (int)DAT_00204844, DAT_00204844 != 0, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
+  }
   if (DAT_00204844 != 0) {
     set_draw_color(0x15);
     rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
+    /* REVERTED (was: force g_force_flush around this call, matching
+       FUN_0005857c's own sibling wrapping) -- caused a visible flicker
+       regression: rect_fill_or_save_restore's own dirty_rect_union call
+       already records this erase's rect unconditionally, BEFORE any
+       gating, and the dirty rect only resets once per FRAME (not once
+       per hide/show pair, see flush_dirty_rect_to_display's own
+       comment) -- so the immediately-following paired show call
+       (FUN_0005857c, called right after this from the same
+       hide-move-show cycle) already sweeps up this erase's rect into
+       its own forced flush. Forcing a flush HERE TOO just adds a
+       second, premature flush per cycle, visibly showing the
+       transient "erased, nothing redrawn yet" frame for one beat
+       before the very next flush corrects it -- a flicker on every
+       single cursor hide/show (i.e. constantly, since effectively
+       every draw op in this file wraps itself in this hide/show pair).
+       User confirmed this regression live.
+
+       STILL OPEN -- user report not yet actually fixed: dragging an
+       item onto a paperdoll spot with no slot leaves its icon
+       stamped there permanently, and clicking again stamps more.
+       Traced (via a temporary UW_DEBUG_CURSORERASE trace on this
+       function's own entry) to a real, reproducible sequence: during
+       an idle gap, an erase call here successfully clears
+       DAT_00204844 to 0 (correct so far), but the PAIRED redraw
+       (update_mouse_state's own `if (0 < DAT_00204840) FUN_0005857c();`
+       right after its own call to this function) does not fire,
+       because DAT_00204840 (the show/hide nesting depth counter) is
+       <=0 at that exact moment -- so nothing gets marked to redraw,
+       and DAT_00204844 stays at 0 even though the game may still
+       consider the item "held" and expect the cursor icon to keep
+       following the mouse. Did NOT chase this further: WHY the depth
+       counter is <=0 at that specific point (some other hide() with
+       no matching show() yet pending?) is unknown, and a wrong guess
+       here risks a second regression the same way the force-flush
+       attempt above did. Ruled OUT as an explanation: FUN_00077dd0's
+       WM_LBUTTONUP handler unconditionally zeroing DAT_00204844 (see
+       its own comment) -- adding an erase-before-clear there made no
+       observable difference in the same trace, and this project's own
+       inventory drag/drop convention uses the RIGHT mouse button
+       throughout anyway (gx_stub.c's uw_inject_mouse_rdown/rup), not
+       left, so that handler may not even be on the relevant path. */
     flush_dirty_rect_to_display(1);
     DAT_00204848 = 0;
     iVar1 = DAT_00204844;
@@ -45243,7 +46824,7 @@ short * param_1;
 
 
 
-void FUN_00057604(param_1)
+void wait_for_click_release(param_1)
 int param_1;
 
 {
@@ -45259,7 +46840,7 @@ int param_1;
     sVar1 = peek_input_event();
     if (((((int)sVar2 | 0xfffcU) & (int)sVar1) != (int)sVar2) || (DAT_0008696e != -1)) break;
     if (param_1 != 0) {
-      FUN_00049818();
+      dispatch_sticky_mode_handlers();
     }
     FUN_00057904(1);
     FUN_00058734();
@@ -45296,7 +46877,7 @@ int param_1;
     if ((sVar3 == 0) || (iVar4 != 0)) break;
     flush_dirty_rect_to_display(1);
     if (param_1 != 0) {
-      FUN_00049818();
+      dispatch_sticky_mode_handlers();
     }
     poll_input_event(0);
     FUN_00057904(1);
@@ -45411,7 +46992,7 @@ int param_1;
     uVar4 = 0xffffffff;
   }
   else {
-    DAT_00204868 = FUN_0002294c(uVar2);
+    DAT_00204868 = read_realtime_clock_units(uVar2);
     if ((uVar2 & 0x80) == 0) {
       if ((*DAT_0008794c != '\0') && (iVar3 = Ordinal_1417(sVar1,0x103), iVar3 != 0)) {
         if (DAT_0023c448 == 0x400) {
@@ -45667,13 +47248,40 @@ undefined4 param_1;
 
 {
   /* FUN_000408fc's argument is dropped by Ghidra at this call site;
-     forwarding param_1 matches the FUN_00040aa8(param_1) call right
+     forwarding param_1 matches the resolve_sprite_id_to_frame(param_1) call right
      above it and FUN_000408fc's own DAT_0024e090-indexed-by-id shape. */
   char *iVar1;
 
   FUN_00056fe8();
-  FUN_00040aa8(param_1);
-  iVar1 = FUN_000408fc(param_1);
+  resolve_sprite_id_to_frame(param_1);
+  /* Was unconditional `iVar1 = FUN_000408fc(param_1);` -- FUN_000408fc
+     only covers ids below DAT_00202738 (the "still-compressed .GR
+     resource entry, needs decoding" range); ids at or above it are
+     already-resident raw sprites living directly in DAT_0024e090's own
+     table (see blit_object_sprite_by_frame's own identical branch,
+     which this function was missing). For those higher ids
+     FUN_000408fc's own table lookup misses (a *different* resource's
+     entries live there) and falls back to its zeroed dummy glyph,
+     silently handing back width=height=0 here. First found while
+     chasing a user report of several items (a map, a bag, apple,
+     bread) showing the wrong cursor icon or none at all when picked
+     up -- the real cause of THAT turned out to be a separate bug
+     (g_selected_object's own sign-extension, see
+     swap_cursor_and_slot_item's fix comment) that was corrupting
+     these objects' ids into the >= DAT_00202738 range in the first
+     place; with that fixed these particular items no longer reach
+     this branch at all. Kept anyway since it's a real, independently
+     confirmed divergence from blit_object_sprite_by_frame's own
+     already-correct behavior, for whatever legitimately-high-id items
+     do reach here. */
+  iVar1 = (int)(short)param_1 < (int)(uint)DAT_00202738 ?
+          FUN_000408fc(param_1) : *(char **)(&DAT_0024e090 + (int)(short)param_1 * 8);
+  if (iVar1 == (char *)0x0) {
+    /* Same "table slot never populated" fallback as
+       blit_object_sprite_by_frame's own identical guard. */
+    static char dummy_sprite[8];
+    iVar1 = dummy_sprite;
+  }
   DAT_00204784 = (ushort)*(byte *)(iVar1 + 1);
   DAT_002047a4 = (ushort)*(byte *)(iVar1 + 2);
   DAT_00204704 = (undefined2)param_1;
@@ -45756,7 +47364,7 @@ void update_mouse_state()
         return;
       }
       if (DAT_00204708 == 0) {
-        iVar8 = FUN_0002294c();
+        iVar8 = read_realtime_clock_units();
         if ((uint)(iVar8 - DAT_00204864) < 10) {
           return;
         }
@@ -45775,12 +47383,12 @@ void update_mouse_state()
         }
       }
       else {
-        iVar8 = FUN_0002294c();
+        iVar8 = read_realtime_clock_units();
         if ((uint)(iVar8 - DAT_00204864) < 10) {
           return;
         }
       }
-      DAT_00204864 = FUN_0002294c();
+      DAT_00204864 = read_realtime_clock_units();
       uVar10 = 3;
       iVar8 = (int)DAT_00204700;
       local_28 = (short)((uint)((iVar8 + -1) * 0x10000) >> 0x10);
@@ -45885,6 +47493,11 @@ short param_1;
 void FUN_000584c0()
 
 {
+  if (getenv("UW_DEBUG_CURSORSHOW")) {
+    fprintf(stderr, "[cursorsave] entry DAT_00204844=%d sprite=%d mouse=(%d,%d) size=(%d,%d)\n",
+            (int)DAT_00204844, (int)DAT_00204788, (int)g_mouse_x, (int)g_mouse_y,
+            (int)DAT_00204784, (int)DAT_002047a4);
+  }
   DAT_00204848 = 1;
   set_draw_color(0x14);
   rect_fill_or_save_restore(g_mouse_x - DAT_0020471c,g_mouse_y - DAT_00204748,
@@ -45899,35 +47512,53 @@ void FUN_000584c0()
 void FUN_0005857c()
 
 {
+  int _dbg_show = getenv("UW_DEBUG_CURSORSHOW") != NULL;
+  if (_dbg_show) {
+    fprintf(stderr, "[cursorshow] entry selected=%p mode=%d holdstate=%d DAT_00204844=%d depth=%d mouse=(%d,%d)\n",
+            (void *)g_selected_object, (int)g_cursor_mode, (int)g_cursor_holding_state,
+            (int)DAT_00204844, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
+  }
   if (g_selected_object == 0) {
     if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0)) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (no button/mode)\n");
       return;
     }
     if (DAT_000868dc != 7) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (DAT_000868dc=%d != 7)\n", (int)DAT_000868dc);
       return;
     }
     if ((((ushort)DAT_00201b60 & 4) != 0) && (g_cursor_mode == 3)) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit4+mode3)\n");
       return;
     }
     if ((((ushort)DAT_00201b60 & 2) != 0) && (DAT_0023c63c != 0)) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit2+button)\n");
       return;
     }
     if (((ushort)DAT_00201b60 & 0xc9) != 0) {
       if (g_mouse_x < DAT_00204838) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");
         return;
       }
       if (g_mouse_y < DAT_0020483c) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds y<)\n");
         return;
       }
       if (DAT_002047dc < g_mouse_x) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x>)\n");
         return;
       }
       if (DAT_002047d8 < g_mouse_y) {
+        if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds y>)\n");
         return;
       }
     }
-    if (g_cursor_mode != 0) goto LAB_00058674;
+    if (g_cursor_mode != 0) {
+      if (_dbg_show) fprintf(stderr, "[cursorshow] SKIP-SAVE path (mode!=0), drawing sprite=%d without a save\n", (int)DAT_00204788);
+      goto LAB_00058674;
+    }
   }
+  if (_dbg_show) fprintf(stderr, "[cursorshow] normal path: saving then drawing sprite=%d\n", (int)DAT_00204788);
   FUN_000584c0();
 LAB_00058674:
   g_blit_transparent_mode = 1;
@@ -47585,6 +49216,14 @@ int param_2;
     iVar4 = iVar1;
   } while (iVar1 < 10);
   load_terrain_texture_props((char *)&DAT_0023ae58,(char *)&DAT_0023adb8);
+  if (getenv("UW_DEBUG_TEXIDS")) {
+    int _i;
+    fprintf(stderr, "[texids] wall:");
+    for (_i = 0; _i < 0x30; _i++) fprintf(stderr, " %d", (int)(&DAT_0023ae58)[_i]);
+    fprintf(stderr, "\n[texids] floor:");
+    for (_i = 0; _i < 10; _i++) fprintf(stderr, " %d", (int)(&DAT_0023adb8)[_i]);
+    fprintf(stderr, "\n");
+  }
   iVar4 = 0;
   do {
     uVar2 = local_tmap_buf[58 + iVar4];
@@ -48002,7 +49641,7 @@ void full_dungeon_redraw()
 
 
 
-// was FUN_0005bbe0 -- timed dungeon-view redraw: rebuild the draw list if needed, run render_dungeon_view, measure it (FUN_0002294c) and feed an adaptive-quality value
+// was FUN_0005bbe0 -- timed dungeon-view redraw: rebuild the draw list if needed, run render_dungeon_view, measure it (read_realtime_clock_units) and feed an adaptive-quality value
 void render_dungeon_frame_timed()
 
 {
@@ -48018,7 +49657,7 @@ void render_dungeon_frame_timed()
   short sVar9;
   undefined1 auStack_60 [60];
   
-  DAT_0023aec8 = FUN_0002294c();
+  DAT_0023aec8 = read_realtime_clock_units();
   iVar8 = build_frame_draw_list();
   if (iVar8 != 0) {
     draw_command_list_rewind();
@@ -48029,18 +49668,18 @@ void render_dungeon_frame_timed()
   }
   set_viewport_clip_rect(0x34,0x13,DAT_0023b020 + 0x33,DAT_0023aed4 + 0x12);
   dirty_rect_union(0x13,0x84,0x34,0xe0);
-  iVar8 = FUN_0002294c();
+  iVar8 = read_realtime_clock_units();
   iVar8 = iVar8 - DAT_0023aec8;
   iVar4 = render_dungeon_view();
-  iVar5 = FUN_0002294c();
+  iVar5 = read_realtime_clock_units();
   if (g_dungeon_view_active != 0) {
     weapon_swing_draw_tick();
   }
   FUN_0005721c();
-  FUN_0001294c();
+  flush_dungeon_frame();
   FUN_00057460();
   set_viewport_clip_rect(0,0,0x13f,199);
-  iVar6 = FUN_0002294c();
+  iVar6 = read_realtime_clock_units();
   iVar7 = (iVar6 - iVar5) + iVar4 + iVar8;
   if (iVar7 == 0) {
     sVar2 = 0;
@@ -51291,29 +52930,6 @@ ushort * param_1;
          quadrant they happened to be calibrated in. */
       int _raw_heading = (int)(param_1[1] >> 6 & 7);
       int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
-      /* The sign/door billboard-angle-override code (uw.c ~50670-50680)
-         needed a further "+1 compass step" (45 degrees) on top of the
-         quadrant compensation above, confirmed live in that code's own
-         comment. Assumed at first that the same +1 would carry over here
-         -- it does NOT. A/B-tested all 8 possible offsets against the
-         door repro screenshot (tile 24,7): offset 0 and +1 both rendered
-         as a thin, mostly edge-on sliver (the frame's broad face turned
-         almost perpendicular to the camera); +2 was a visibly skewed
-         parallelogram; -1 was the only one that came out as a clean,
-         axis-aligned rectangle flush with the doorway, matching the
-         surrounding wall geometry; -2/-3 were skewed/thin again. So the
-         correction is real (the user was right to ask), but its SIGN is
-         opposite the billboard code's -- expected, since that code
-         rotates a 2D quad-extension direction via a sin/cos lookup table,
-         while this code applies a real rotation matrix directly to 3D
-         model-space vertices; the two conventions don't share a rotation
-         sense, so the billboard fix's constant doesn't transfer as-is.
-         UW_MODEL_HEADING_OFFSET (compass steps, default -1) overrides
-         this for further tuning if a different model family disagrees. */
-      { int _step = -1;
-        const char *_s = getenv("UW_MODEL_HEADING_OFFSET"); if (_s) _step = atoi(_s);
-        _heading = (_heading + _step) & 7;
-      }
       if (getenv("UW_DEBUG_MODEL"))
         fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d compensated=%d\n",
                 (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _heading);
@@ -51360,7 +52976,11 @@ ushort * param_1;
          behavior) if there's no leaf for this id (open doors). */
       void *_leaf_tex = 0;
       if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
-        int _sprite_frame = DAT_00202734 + (uVar27 & 7) + 0x30;
+        /* Was `DAT_00202734 + (uVar27 & 7) + 0x30` -- matches
+           load_door_frames's own (fixed) scratch base; see that
+           function's comment for why the original binary's formula
+           collided with the HUD icon preload range. */
+        int _sprite_frame = 60000 + (uVar27 & 7);
         FUN_00040770((short)_sprite_frame, 0);
         if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) _leaf_tex = g_tile_texptr_emit[DAT_0023b83c];
         if (getenv("UW_DEBUG_MODEL")) {
@@ -51926,15 +53546,17 @@ LAB_00061d34:
          nothing ever reached a real screen pixel (confirmed: a door
          6 tiles from spawn rendered as a plain, empty corridor).
          Route the door's own already-resolved absolute OBJECTS.GR
-         frame (DAT_00202734 + (type&7) + 0x30, confirmed live via
-         UW_DEBUG_DOOR to match emit_anim_object_frames's own
-         computation) through the same real, working sprite-decode +
-         mesh-quad path class 0 uses, exactly like the TMOBJ sign fix
+         frame through the same real, working sprite-decode + mesh-
+         quad path class 0 uses, exactly like the TMOBJ sign fix
          a few lines below -- this only handles the door "leaf"
          sprite itself, not emit_anim_object_frames's separate static
          frame/jamb overlay (uVar10==0 iteration) or its open-door
-         swing animation (param_1==6 case); those are still open. */
-      uVar27 = DAT_00202734 + (uVar27 & 7) + 0x30;
+         swing animation (param_1==6 case); those are still open.
+         Formula was `DAT_00202734 + (type&7) + 0x30` -- matches
+         load_door_frames's own (fixed) scratch base; see that
+         function's comment for why the original binary's formula
+         collided with the HUD icon preload range. */
+      uVar27 = 60000 + (uVar27 & 7);
       /* >>6, not >>7 -- >>7 is what emit_anim_object_frames itself reads
          here, but that's fed to emit_object_billboard's own catalog-
          driven rotation math, not a plain compass heading. >>6&7 matches
@@ -52013,7 +53635,7 @@ LAB_00061d34:
        object type 0x166) in this exact (class 2, id&0x30 != 0) branch.
        Route the real absolute TMOBJ frame through FUN_00040770's
        negative-param_1 "direct absolute frame" escape hatch (see its own
-       comment -- FUN_00040aa8's normal id-range convention can't reach
+       comment -- resolve_sprite_id_to_frame's normal id-range convention can't reach
        frames before DAT_00202738 at all) into the same real, working
        sprite-decode + mesh-quad path class 0 uses (proven correct for
        the sack etc. this session) instead of emit_object_billboard, by
@@ -52227,7 +53849,7 @@ short param_4;
     }
     else {
       DAT_0023b804 = 1;
-      uVar21 = FUN_0002294c();
+      uVar21 = read_realtime_clock_units();
       uVar11 = (ushort)(uVar21 >> 6);
       local_7c = uVar11 & 7;
       if ((uVar21 >> 6 & 4) != 0) {
@@ -53084,7 +54706,11 @@ LAB_00064cdc:
             uVar11 = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
           }
           else {
-            uVar11 = DAT_00202734 + param_1 + 0x30;
+            /* Was `DAT_00202734 + param_1 + 0x30` -- matches
+               load_door_frames's own (fixed) scratch base; see that
+               function's comment for why the original binary's
+               formula collided with the HUD icon preload range. */
+            uVar11 = 60000 + param_1;
             uVar9 = 0xe;
           }
           if (getenv("UW_DEBUG_DOOR"))
@@ -54490,7 +56116,7 @@ void FUN_00066e90()
   register_click_region(0x52,0x30,0x88,10,4,4,FUN_0001baa0);
   register_click_region(0x8b,0x30,0xc1,10,4,4,FUN_0001b89c);
   register_click_region(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
-  register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,FUN_0003fd14);
+  register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
   register_key_binding(0x286,0,0x1b,FUN_000679f4);
   register_key_binding(0x30,0,0x1b,FUN_00067950);
   return;
@@ -55010,11 +56636,40 @@ short param_1;
 
 
 
+/* Fixed turn-rate accelerator value for decode_movement_command's turn
+   branches -- see that function's own comment for why turning was
+   decoupled from DAT_0024af6c (the held-key ramp, still used as-is for
+   forward/back). UW_TURN_ACCEL overrides it (same units as DAT_0024af6c,
+   i.e. plug in any value that function would otherwise have ramped to)
+   for retuning without a rebuild. */
+static int uw_turn_rate_accel(void) {
+  static int v = -1;
+  if (v < 0) {
+    const char *e = getenv("UW_TURN_ACCEL");
+    v = e ? atoi(e) : 0x60;
+  }
+  return v;
+}
+
 // was FUN_000685e8 -- turn the latched input code (DAT_0023c448) into the
-// analog forward rate DAT_0023bf48 / turn rate DAT_0023bf4c, scaled by the
-// held-key accelerator DAT_0024af6c. NOTE: DAT_0024af6c ramps to ~0x140 in
-// this recompile, so the rate multiplies (esp. run's 0x700000) overflowed
-// int32 and produced a negative rate -- widened to 64-bit below.
+// analog forward rate DAT_0023bf48 / turn rate DAT_0023bf4c. DAT_0023bf48
+// (forward/back) is scaled by the held-key accelerator DAT_0024af6c, which
+// is meant to -- and, per playtesting against DOS UW1, correctly does --
+// ramp walk into run the longer W/S stays held. NOTE: DAT_0024af6c ramps
+// to ~0x140 in this recompile, so the rate multiplies (esp. run's
+// 0x700000) overflowed int32 and produced a negative rate -- widened to
+// 64-bit below.
+//
+// DAT_0023bf4c (turn) uses uw_turn_rate_accel() instead of DAT_0024af6c
+// directly: side-by-side playtesting against DOS UW1 (same A/D-analog +
+// Shift+A/D-stepped scheme) found our turning ramped up to ~3x DOS's
+// speed and, since DAT_0024af6c is shared with forward/back (confirmed:
+// forward/run speed alone matched DOS fine), carried over an already-
+// ramped rate from a preceding held run/walk into an immediately-
+// following turn -- DOS's turn read as a constant, non-accelerating
+// rate throughout. uw_turn_rate_accel() reproduces that: a fixed value,
+// independent of how long any key (including a differently-coded one)
+// has been held.
 void decode_movement_command()
 
 {
@@ -55065,7 +56720,7 @@ LAB_000687cc:
             return;
           }
 LAB_000686a8:
-          DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * -0x5a0000 >> 0x10));
+          DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10));
           g_movement_mode = 1;
           return;
         }
@@ -55136,9 +56791,39 @@ LAB_000687fc:
       return;
     }
   }
-  DAT_0023bf4c = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x5a0000 >> 0x10));
+  DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10));
   g_movement_mode = 1;
   return;
+}
+
+
+
+/* Sets DAT_0023bf48 (forward rate, same 0x500000 scale
+   decode_movement_command's own forward code 0x8d uses) and DAT_0023bf4c
+   (turn rate, via uw_turn_rate_accel()) together in one call, then
+   g_movement_mode = 1 -- resolve_move_vector's mode-1 case already
+   applies both every tick (it always has; decode_movement_command's own
+   single DAT_0023c448 code just never let both be nonzero at once).
+   Called from gx_stub.c's poll_dungeon_movement_keys when a forward key
+   (W/S) and a turn key (A/D) are held simultaneously, so keyboard
+   free-look can move and turn at the same time -- neither DOS UW1 nor
+   this port's own DAT_0023c448 latch could ever represent that
+   (confirmed via the real decompiled handle_keyboard_message: it's a
+   single code too), so this is a deliberate enhancement over strict
+   original-input-model parity, not a decompiled fix. turn_dir: -1 left,
+   +1 right, 0 none. Backward (X) diagonal isn't included -- it's
+   g_movement_mode 8 ("move + face 180"), a different system entirely,
+   not mode 1's forward/turn blend. */
+void uw_set_analog_move_turn(int fwd_held, int turn_dir) {
+  DAT_0023bf48 = fwd_held ? Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10)) : 0;
+  if (turn_dir < 0) {
+    DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10));
+  } else if (turn_dir > 0) {
+    DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10));
+  } else {
+    DAT_0023bf4c = 0;
+  }
+  g_movement_mode = 1;
 }
 
 
@@ -55154,10 +56839,10 @@ undefined4 param_1;
   int iVar2;
   ushort uVar3;
   
-  iVar1 = FUN_0002294c();
+  iVar1 = read_realtime_clock_units();
   iVar2 = begin_directional_move(param_1);
   if (iVar2 != 0) {
-    DAT_0023bf54 = FUN_0002294c();
+    DAT_0023bf54 = read_realtime_clock_units();
     DAT_0023bf58 = DAT_0023bf58 + 4;
     g_jump_ascent_timer = 0;
     if (DAT_000879ac != 0) {
@@ -55168,7 +56853,7 @@ undefined4 param_1;
     *(char *)(DAT_00086df8 + 0xcf) = (char)((uint)iVar2 >> 8);
     *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar2 >> 0x10);
     *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar2 >> 0x18);
-    DAT_0023bf54 = FUN_0002294c();
+    DAT_0023bf54 = read_realtime_clock_units();
     uVar3 = (ushort)DAT_0023bf58;
     if (DAT_002020d4 == 0) {
       DAT_0023bf58 = 0;
@@ -55203,7 +56888,7 @@ undefined4 param_1;
     FUN_00049924(10);
   }
   do {
-    iVar2 = FUN_0002294c();
+    iVar2 = read_realtime_clock_units();
   } while ((uint)(iVar2 - iVar1) < 0x18);
   FUN_00057570();
   return;
@@ -55222,13 +56907,38 @@ void movement_pacing_handler()
   uint uVar5;
   uint uVar6;
   undefined8 uVar7;
-  
-  iVar3 = FUN_0002294c();
+  uint uVar_now;
+
+  /* Was 4 separate read_realtime_clock_units() (real wall-clock) reads in this
+     function -- replaced with uw_frame_clock_ms(), a fixed-step
+     substitute in the same 4ms-per-unit scale (see its own and
+     g_uw_frame_clock_units's comments). All 4 original reads are really
+     asking "what time is it right now", each then diffed against the
+     SAME DAT_0023bf54 reference -- captured once into uVar_now here so
+     they keep agreeing with each other exactly as they did when each
+     was a fresh (but, within the same real millisecond, effectively
+     identical) clock read. uVar6 is the actual movement/turn-distance
+     driver (movement_tick below); the other reads feed DAT_0023bf58's
+     animation-bob phase, which shares the same DAT_0023bf54 reference
+     point and so needs to move in step with it too. */
+  uVar_now = uw_frame_clock_ms();
+  if (getenv("UW_DEBUG_MOVEPACE")) {
+    static unsigned int call_count = 0;
+    static unsigned int last_real_ms = 0;
+    unsigned int real_ms = read_realtime_clock_units() * 4; /* back to real ms -- see its own comment */
+    call_count++;
+    fprintf(stderr, "[movepace] call=%u now=%u last=%u delta=%u mode=%d code=0x%x turnrate=%d real_ms=%u real_delta=%u\n",
+            call_count, uVar_now, (unsigned)DAT_0023bf54, uVar_now - (unsigned)DAT_0023bf54,
+            (int)g_movement_mode, (unsigned)DAT_0023c448, (int)DAT_0023bf4c,
+            real_ms, real_ms - last_real_ms);
+    last_real_ms = real_ms;
+  }
+  iVar3 = uVar_now;
   uVar6 = iVar3 - DAT_0023bf54;
   if (uVar6 < 0x41) {
-    uVar5 = FUN_0002294c();
+    uVar5 = uVar_now;
     DAT_0023bf58 = ((char)(uVar5 >> 4) - (char)(DAT_0023bf54 >> 4)) + DAT_0023bf58;
-    uVar7 = FUN_0002294c();
+    uVar7 = uVar_now;
     uVar5 = (uint)((ulonglong)uVar7 >> 0x20);
     uVar4 = ((uint)uVar7 >> 6) - (DAT_0023bf54 >> 6) & 0xff;
     if (uVar6 == 0) {
@@ -55252,7 +56962,7 @@ void movement_pacing_handler()
   *(char *)(DAT_00086df8 + 0xcf) = (char)((uint)iVar3 >> 8);
   *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar3 >> 0x10);
   *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar3 >> 0x18);
-  DAT_0023bf54 = FUN_0002294c();
+  DAT_0023bf54 = uVar_now;
   if (DAT_002020d4 == 0) {
     bVar2 = 0;
   }
@@ -55313,7 +57023,7 @@ int param_3;
     if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) == 0) && ((DAT_002048a8 & 0x10) == 0)) {
       if (param_3 == 0) {
         if (g_jump_ascent_timer != 0) {
-          uVar7 = FUN_0002294c();
+          uVar7 = read_realtime_clock_units();
           uVar4 = (undefined4)((ulonglong)uVar7 >> 0x20);
           if (DAT_0023bf5c < (uint)uVar7) {
             uVar6 = DAT_0023bf60 != '\0';
@@ -55331,7 +57041,7 @@ int param_3;
             if (200 < uVar5) {
               uVar5 = 200;
             }
-            iVar3 = FUN_0002294c();
+            iVar3 = read_realtime_clock_units();
             DAT_0023bf5c = iVar3 + (uint)uVar5;
           }
         }
@@ -55349,18 +57059,18 @@ int param_3;
         }
         FUN_00072f30(uVar6,iVar3,uVar2 - 0x10,uVar2,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_lr);
         DAT_0023bf60 = DAT_0023bf60 == '\0';
-        iVar3 = FUN_0002294c();
+        iVar3 = read_realtime_clock_units();
         DAT_0023bf5c = iVar3 + 100;
       }
     }
   }
   else {
-    if ((DAT_00086e84 != -1) && (uVar2 = FUN_0002294c(), DAT_0023bf64 + 0x1800U <= uVar2)) {
+    if ((DAT_00086e84 != -1) && (uVar2 = read_realtime_clock_units(), DAT_0023bf64 + 0x1800U <= uVar2)) {
       FUN_0007305c();
       DAT_00086e84 = -1;
     }
     if (DAT_00086e84 == -1) {
-      DAT_0023bf64 = FUN_0002294c();
+      DAT_0023bf64 = read_realtime_clock_units();
       DAT_00086e84 = FUN_00072f30(0,0x40,0);
     }
   }
@@ -56043,9 +57753,9 @@ uint param_1;
   int iVar1;
   uint uVar2;
   
-  iVar1 = FUN_0002294c();
+  iVar1 = read_realtime_clock_units();
   do {
-    uVar2 = FUN_0002294c();
+    uVar2 = read_realtime_clock_units();
   } while (uVar2 < iVar1 + (param_1 & 0xffff));
   return;
 }
@@ -56106,7 +57816,7 @@ void FUN_0006a168()
 {
   uint uVar1;
   
-  uVar1 = FUN_0002294c();
+  uVar1 = read_realtime_clock_units();
   if (0xd < (int)((uVar1 & 0xffff) - (uint)DAT_0023bf74)) {
     palette_cycle_range(0x40,0x40,1);
     reinstall_active_palette(0x40,0x40,0);
@@ -56130,7 +57840,7 @@ void FUN_0006a168()
       }
       dirty_rect_union(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
     }
-    DAT_0023bf74 = FUN_0002294c();
+    DAT_0023bf74 = read_realtime_clock_units();
   }
   flush_dirty_rect_to_display(1);
   return;
@@ -57223,7 +58933,7 @@ undefined4 param_2;
     else {
       FUN_0006e89c();
       iVar2 = 2;
-      FUN_0003e4cc();
+      sync_player_stats_to_hud();
       redraw_hud_panels();
       FUN_0003dca4(0xffffffff);
       DAT_000858a0 = 1;
@@ -57716,7 +59426,12 @@ int param_3;
 
 
 
-void FUN_0006ca4c(param_1)
+// was FUN_0006ca4c -- brief "shake" animation played on a flask's
+// shared decoration slot ((&DAT_0023c224)[iVar1]) when
+// hud_vitals_bar_tick's health-poisoned or mana threshold check
+// crosses over; param_1 selects health(0)/mana(1) and picks which of
+// the 3 literal id ranges (0x200c/0x203e/0x2025) to animate through.
+void hud_vitals_threshold_shake(param_1)
 short param_1;
 
 {
@@ -57747,9 +59462,9 @@ short param_1;
   pbVar5 = &DAT_0023c118 + iVar1;
   if (*pbVar5 != 0) {
     do {
-      FUN_00076338((int)(short)(&DAT_0023c224)[iVar1],(int)*(short *)(&DAT_000870ec + iVar1 * 2),
+      sprite_list_set_position((int)(short)(&DAT_0023c224)[iVar1],(int)*(short *)(&DAT_000870ec + iVar1 * 2),
                    (int)(short)(&DAT_000870f2)[iVar3]);
-      FUN_00076390((int)(short)(&DAT_0023c224)[iVar1],iVar3 + iVar4);
+      sprite_list_set_frame_id((int)(short)(&DAT_0023c224)[iVar1],iVar3 + iVar4);
       FUN_00076508();
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     } while (iVar3 < (int)(uint)*pbVar5);
@@ -57768,10 +59483,10 @@ void FUN_0006cb74()
   
   bVar1 = DAT_0023c11a;
   uVar2 = (uint)DAT_0023c11a;
-  FUN_00076390((int)DAT_0023c228,(uVar2 & 3) + 0x2059);
-  FUN_00076338((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)(ushort)bVar1],
+  sprite_list_set_frame_id((int)DAT_0023c228,(uVar2 & 3) + 0x2059);
+  sprite_list_set_position((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)(ushort)bVar1],
                (int)(short)(&DAT_00087150)[(short)(ushort)bVar1]);
-  FUN_00076390((int)DAT_0023c22c,uVar2 + 0x205d);
+  sprite_list_set_frame_id((int)DAT_0023c22c,uVar2 + 0x205d);
   FUN_00076508();
   return;
 }
@@ -57819,51 +59534,55 @@ void redraw_hud_panels()
   if (DAT_0023c23c == 0) {
     iVar3 = 0;
     do {
-      uVar1 = FUN_00076078(0);
+      uVar1 = sprite_list_alloc_entry(0);
       (&DAT_0023c224)[iVar3] = (short)uVar1;
-      FUN_000762c4(uVar1,0,0,0x18,4);
-      uVar1 = FUN_00076194(2,0xd,10);
+      sprite_list_set_rect(uVar1,0,0,0x18,4);
+      uVar1 = sprite_list_alloc_raw_entry(2,0xd,10);
       (&DAT_0023c230)[iVar3] = (short)uVar1;
-      FUN_000762c4(uVar1,(int)(short)(&DAT_00087170)[iVar3],0x87,0xd,10);
+      sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087170)[iVar3],0x87,0xd,10);
       g_blit_transparent_mode = 1;
-      uVar1 = FUN_00076194(2,0x25,0x17);
+      uVar1 = sprite_list_alloc_raw_entry(2,0x25,0x17);
       (&DAT_0023c234)[iVar3] = (short)uVar1;
       g_blit_transparent_mode = 0;
-      FUN_000762c4(uVar1,(int)(short)(&DAT_00087174)[iVar3],0x92,0x25,0x17);
-      uVar1 = FUN_00076078(0);
+      sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087174)[iVar3],0x92,0x25,0x17);
+      uVar1 = sprite_list_alloc_entry(0);
       (&DAT_0023c238)[iVar3] = (short)uVar1;
-      FUN_000762c4(uVar1,(int)(short)(&DAT_000871b4)[iVar3],0x42,0xc,0x1c);
+      sprite_list_set_rect(uVar1,(int)(short)(&DAT_000871b4)[iVar3],0x42,0xc,0x1c);
       (&DAT_0023c12c)[iVar3] = 0;
       (&DAT_0023c11c)[iVar3] = 0;
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     } while (iVar3 < 2);
-    uVar1 = FUN_00076078(0);
+    uVar1 = sprite_list_alloc_entry(0);
     DAT_0023c228 = (undefined2)uVar1;
-    FUN_000762c4(uVar1,0x70,0x84,0x38,0x20);
-    uVar1 = FUN_00076078(0);
+    sprite_list_set_rect(uVar1,0x70,0x84,0x38,0x20);
+    uVar1 = sprite_list_alloc_entry(0);
     DAT_0023c22c = (undefined2)uVar1;
-    FUN_000762c4(uVar1,(int)DAT_00087130,(int)DAT_00087150,3,4);
-    uVar1 = FUN_00076078(0);
+    if (getenv("UW_DEBUG_COMPASS")) {
+      fprintf(stderr, "[compass] redraw_hud_panels init: sprite_handle=%d x=%d y=%d\n",
+              (int)uVar1, (int)DAT_00087130, (int)DAT_00087150);
+    }
+    sprite_list_set_rect(uVar1,(int)DAT_00087130,(int)DAT_00087150,3,4);
+    uVar1 = sprite_list_alloc_entry(0);
     DAT_0023c21c = (short)uVar1;
-    FUN_000762c4(uVar1,0x80,5,1,1);
+    sprite_list_set_rect(uVar1,0x80,5,1,1);
     DAT_0023c130 = 6;
     DAT_0023c120 = 6;
     DAT_0023c23c = 1;
   }
   iVar3 = 0;
   do {
-    FUN_0006ca4c(iVar3);
-    FUN_00076390((int)(short)(&DAT_0023c230)[iVar3],(&DAT_000871d4)[iVar3]);
-    FUN_00076390((int)(short)(&DAT_0023c234)[iVar3],(&DAT_000871d8)[iVar3]);
+    hud_vitals_threshold_shake(iVar3);
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c230)[iVar3],(&DAT_000871d4)[iVar3]);
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c234)[iVar3],(&DAT_000871d8)[iVar3]);
     iVar2 = 0x12;
     if (iVar3 == 0) {
       iVar2 = 0;
     }
-    FUN_00076390((int)(short)(&DAT_0023c238)[iVar3],iVar2 + 0x207b);
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c238)[iVar3],iVar2 + 0x207b);
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
   } while (iVar3 < 2);
   FUN_0006cb74();
-  FUN_00076390((int)DAT_0023c21c,0x20a6);
+  sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
   FUN_0006e96c(DAT_00086df8 + 0x47);
   FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
   /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
@@ -57871,8 +59590,8 @@ void redraw_hud_panels()
      definition in graphics.c: g_blit_transparent_mode==0 draws every source byte
      opaquely via the palette, nonzero skips byte==0 as the transparent
      key). Every OTHER caller in this file that wants transparency sets
-     this global around the call (draw_sprite_by_id, FUN_0003f99c,
-     FUN_0003fa1c all do `g_blit_transparent_mode = 1; ...; g_blit_transparent_mode = 0;`) --
+     this global around the call (draw_sprite_by_id, mode_icon_highlight_on,
+     mode_icon_highlight_off all do `g_blit_transparent_mode = 1; ...; g_blit_transparent_mode = 0;`) --
      this call's own trailing literal `1` argument clearly intended the
      same thing (it's not a real parameter bitmap_blit_to_framebuffer
      reads at all, just a leftover Ghidra also emitted at the other
@@ -57912,7 +59631,14 @@ void thunk_FUN_0006edb8()
 
 
 
-void FUN_0006cff4(param_1,param_2)
+// was FUN_0006cff4 -- generic "set HUD status slot param_1 to
+// param_2" dispatcher: negative param_1 writes a raw byte value
+// directly, 0/1 compute a health/mana fill tier (0-12) from the
+// player object via Ordinal_2005 (see hud_vitals_bar_tick), and other
+// small param_1 values (2,3,4,6,7,8 -- seen at this session's various
+// call sites) drive other HUD indicators (compass heading, action-
+// animation frame, poison flash, etc.) each with their own encoding.
+void set_hud_status_value(param_1,param_2)
 byte param_1;
 ushort param_2;
 
@@ -58015,7 +59741,25 @@ LAB_0006d164:
     if (DAT_0023c11c == 0) goto joined_r0x0006d150;
     if (uVar6 == 0) goto LAB_0006d164;
   }
-  (&DAT_0023c118)[(char)param_1] = uVar4;
+  /* Was `(&DAT_0023c118)[(char)param_1] = uVar4;` -- correct for the
+     iVar1<2 (health/mana) branch above, which jumps straight to
+     LAB_0006d17c without reaching this line, but this specific write
+     only executes for the iVar1==4 dragon-reaction branch, where
+     param_1 is 4 or 5 (the resolved left/right dragon side). In the
+     original 32-bit binary DAT_0023c118+4/+5 IS the same memory as
+     DAT_0023c11c/DAT_0023c11d (see their own comments) -- an address
+     coincidence this decompile's split, unrelated C globals don't
+     preserve. hud_dragon_reaction_tick (the function this value is FOR)
+     reads it back as `(&DAT_0023c11c)[iVar6]` where iVar6=param_1-4,
+     never DAT_0023c118 at all -- so on this host the old line silently
+     wrote a value nothing ever read, and hud_dragon_reaction_tick's own
+     "has a reaction been requested" gate (`(&DAT_0023c11c)[iVar6] !=
+     0`) was never satisfied, meaning the whole dragon reaction/wing-
+     flap animation this function drives never started, no matter how
+     many times set_hud_status_value(4,...) was called (e.g. every
+     message-scroll line, msg_scroll_scroll_up_line). Write to the real
+     target instead. */
+  (&DAT_0023c11c)[param_1 + -4] = uVar4;
 LAB_0006d17c:
   DAT_0023c1d8 = DAT_0023c1d8 | (ushort)(1 << (uint)param_1);
   return;
@@ -58037,7 +59781,7 @@ void hud_panel_redraw_dispatch()
   bool bVar8;
   int iVar9;
 
-  bVar2 = FUN_0002294c();
+  bVar2 = read_realtime_clock_units();
   bVar8 = false;
   if (DAT_0023c1e0 != 0) {
     iVar7 = 1;
@@ -58133,7 +59877,7 @@ short param_1;
       local_2c = 0x2019;
       local_2e = 0x2024;
       if ((0x204a < DAT_00087254) && (DAT_00087254 < 0x2057)) {
-        FUN_0006ca4c(0);
+        hud_vitals_threshold_shake(0);
         DAT_00087254 = DAT_00087254 + -0x32;
       }
     }
@@ -58142,7 +59886,7 @@ short param_1;
       local_2c = 0x204b;
       local_2e = 0x2056;
       if ((0x2018 < DAT_00087254) && (DAT_00087254 < 0x2025)) {
-        FUN_0006ca4c(0);
+        hud_vitals_threshold_shake(0);
         DAT_00087254 = DAT_00087254 + 0x32;
       }
     }
@@ -58158,15 +59902,15 @@ short param_1;
   iVar1 = uVar2 * 2;
   psVar11 = (short *)(&DAT_0023c244 + iVar1);
   if (*psVar11 == 0) {
-    uVar6 = FUN_00076078(0);
+    uVar6 = sprite_list_alloc_entry(0);
     *psVar11 = (short)uVar6;
-    FUN_000762c4(uVar6,(int)*(short *)(&DAT_000870ec + iVar1),0x7e,0x18,0x21);
-    uVar6 = FUN_00076078(0);
+    sprite_list_set_rect(uVar6,(int)*(short *)(&DAT_000870ec + iVar1),0x7e,0x18,0x21);
+    uVar6 = sprite_list_alloc_entry(0);
     *(short *)(&DAT_0023c240 + iVar1) = (short)uVar6;
-    FUN_000762c4(uVar6,0,0,0x18,4);
-    uVar6 = FUN_00076078(0);
+    sprite_list_set_rect(uVar6,0,0,0x18,4);
+    uVar6 = sprite_list_alloc_entry(0);
     *(short *)(&DAT_0023c248 + iVar1) = (short)uVar6;
-    FUN_000762c4(uVar6,(int)*(short *)(&DAT_000870ec + iVar1),0x7e,0x18,4);
+    sprite_list_set_rect(uVar6,(int)*(short *)(&DAT_000870ec + iVar1),0x7e,0x18,4);
   }
   pbVar7 = &DAT_0023c128 + uVar2;
   uVar8 = (uint)*pbVar7;
@@ -58179,14 +59923,14 @@ short param_1;
       *pbVar7 = (byte)uVar9;
       iVar3 = (int)(short)uVar8;
       sVar5 = (&DAT_000870f2)[iVar3];
-      FUN_000762c4((int)*psVar11,(int)sVar4,(int)sVar5,0x18,
-                   *(undefined2 *)(&DAT_00087112 + iVar3 * 2));
+      sprite_list_set_rect((int)*psVar11,(int)sVar4,(int)sVar5,0x18,
+                   (&DAT_00087114)[iVar3]);
       sprite_list_set_lifetime((int)*psVar11,sVar5 + -0x7e);
-      FUN_00076390((int)*psVar11,0x2057);
+      sprite_list_set_frame_id((int)*psVar11,0x2057);
       if (iVar3 != 0) {
-        FUN_00076338((int)(short)(&DAT_0023c224)[uVar2],(int)*(short *)(&DAT_000870ec + iVar1),
+        sprite_list_set_position((int)(short)(&DAT_0023c224)[uVar2],(int)*(short *)(&DAT_000870ec + iVar1),
                      (int)*(short *)(&DAT_000870f0 + iVar3 * 2));
-        FUN_00076390((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
+        sprite_list_set_frame_id((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
       }
     }
     else if (*(int *)(&DAT_0023c1f0 + uVar2 * 4) == 0) {
@@ -58198,29 +59942,29 @@ short param_1;
     sVar4 = *(short *)(&DAT_000870ec + iVar1);
     uVar8 = uVar9 & 0xff;
     *pbVar7 = (byte)uVar9;
-    FUN_00076338((int)(short)(&DAT_0023c224)[uVar2],(int)sVar4,
+    sprite_list_set_position((int)(short)(&DAT_0023c224)[uVar2],(int)sVar4,
                  (int)*(short *)(&DAT_000870f0 + (short)uVar8 * 2));
-    FUN_00076390((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
   }
   if (((*(int *)(&DAT_0023c1f0 + uVar2 * 4) == 1) && (uVar9 = (uint)(short)uVar8, uVar9 < 8)) &&
      (uVar9 != 0)) {
     psVar11 = &DAT_00087254 + uVar2;
     if (*psVar11 == local_2e) {
       *psVar11 = local_2c;
-      FUN_00076390((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
+      sprite_list_set_frame_id((int)(short)(&DAT_0023c224)[uVar2],uVar8 + local_30 + -1);
       *(int *)(&DAT_0023c1f0 + uVar2 * 4) = 0;
     }
     else {
       psVar10 = (short *)(&DAT_000870f0 + uVar9 * 2);
-      FUN_00076338((int)*(short *)(&DAT_0023c240 + iVar1),(int)*(short *)(&DAT_000870ec + iVar1),
+      sprite_list_set_position((int)*(short *)(&DAT_0023c240 + iVar1),(int)*(short *)(&DAT_000870ec + iVar1),
                    (int)*psVar10);
       sVar4 = *(short *)(&DAT_0023c240 + iVar1);
       *psVar11 = *psVar11 + 1;
-      FUN_00076390((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4,(int)*psVar11);
       psVar11 = (short *)(&DAT_0023c248 + iVar1);
       sprite_list_set_lifetime((int)*psVar11,*psVar10 + -0x7e);
-      FUN_00076338((int)*psVar11,(int)*(short *)(&DAT_000870ec + iVar1),(int)*psVar10);
-      FUN_00076404((int)*psVar11,0x2058);
+      sprite_list_set_position((int)*psVar11,(int)*(short *)(&DAT_000870ec + iVar1),(int)*psVar10);
+      sprite_list_set_frame_id_transparent((int)*psVar11,0x2058);
     }
   }
   return;
@@ -58228,8 +59972,27 @@ short param_1;
 
 
 
-// was FUN_0006d894
-void hud_damage_flash_tick(param_1)
+// was FUN_0006d894, briefly named hud_damage_flash_tick by an earlier
+// pass. Renamed again: despite the "damage" name, its 3 real callers
+// (msg_scroll_scroll_up_line on every message-scroll line,
+// sync_player_stats_to_hud on an HP/poison threshold, FUN_00027f14 on
+// a trap/switch-type object trigger) are mostly unrelated to damage --
+// "damage" only describes one of the three. What this function
+// actually drives, dispatched via set_hud_status_value's status
+// category 4/5 (param_1, left/right dragon) through
+// PTR_FUN_00087220_table/DAT_00087230 alongside its hud_X_tick
+// siblings: a small state machine (param_1-4 -> iVar6, indexing every
+// DAT_0023c11c/DAT_0023c12c-family global 0=left/1=right) that plays
+// the dragon decoration's reactive TAIL whip (DAT_0023c238's frame,
+// stepped through DAT_000871b8's per-side sequence) together with a
+// short-lived HEAD-animation overlay sprite (DAT_0023c1e8's slot,
+// distinct from DAT_0023c230's own static head sub-sprite) positioned
+// via the recovered DAT_00087178/DAT_00087188/PTR_DAT_00087198/
+// PTR_DAT_000871a8 rect table (see that table's own comment for the
+// "drew at 0,0" bug this state machine's dormancy used to hide).
+// "Dragon reacting to a HUD-worthy event" is the real generalization;
+// the event doesn't have to be damage.
+void hud_dragon_reaction_tick(param_1)
 int param_1;
 
 {
@@ -58268,7 +60031,7 @@ int param_1;
   psVar11 = &DAT_0023c1e8 + iVar6;
   if (*psVar11 == 0) {
     g_blit_transparent_mode = 1;
-    sVar4 = FUN_00076194(3,0x28,0x18);
+    sVar4 = sprite_list_alloc_raw_entry(3,0x28,0x18);
     g_blit_transparent_mode = 0;
     *psVar11 = sVar4;
   }
@@ -58276,7 +60039,7 @@ int param_1;
   if (*piVar10 == 1) {
     iVar5 = (int)DAT_0023c250;
     DAT_0023c250 = DAT_0023c250 + 1;
-    FUN_00076390((int)(short)(&DAT_0023c238)[iVar6],
+    sprite_list_set_frame_id((int)(short)(&DAT_0023c238)[iVar6],
                  *(undefined2 *)(&DAT_000871b8 + (iVar6 * 7 + iVar5) * 2));
     if (6 < DAT_0023c250) {
       DAT_0023c250 = 0;
@@ -58284,9 +60047,13 @@ int param_1;
     }
   }
   psVar7 = &DAT_0023c1e4 + iVar6;
+  if (getenv("UW_DEBUG_DRAGON"))
+    fprintf(stderr, "[dragon] tick param_1=%d iVar6=%d target=%d playing=%d\n", param_1, iVar6, (int)(&DAT_0023c11c)[iVar6], (int)(&DAT_0023c12c)[iVar6]);
   if ((*psVar7 == 0) && ((&DAT_0023c11c)[iVar6] != '\0')) {
     (&DAT_0023c12c)[iVar6] = (&DAT_0023c11c)[iVar6];
     *psVar7 = 1;
+    if (getenv("UW_DEBUG_DRAGON"))
+      fprintf(stderr, "[dragon] STARTED animation iVar6=%d playing=%d\n", iVar6, (int)(&DAT_0023c12c)[iVar6]);
   }
   cVar3 = (&DAT_0023c12c)[iVar6];
   if (cVar3 == '\0') {
@@ -58301,7 +60068,7 @@ int param_1;
     if (sVar4 == 1) {
       (&DAT_0023c11c)[iVar6] = 0;
       iVar5 = iVar6 * 6;
-      FUN_000762c4((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
+      sprite_list_set_rect((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
                    (int)*(short *)(&DAT_00087188 + iVar5),
                    (int)*(short *)((char *)&PTR_DAT_00087198 + iVar5),
                    *(undefined2 *)((char *)&PTR_DAT_000871a8 + iVar5));
@@ -58312,11 +60079,30 @@ LAB_0006dec8:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      FUN_00076390((int)sVar4);
+      // HACK: was draw-then-check (`sprite_list_set_frame_id(...); if
+      // (local_30[iVar6*3] < *psVar9) { reset-for-next-time; }`).
+      // Confirmed via real ARM disassembly that this exact `<` and
+      // draw-before-check order is what the original binary computes,
+      // not a decompiler artifact -- but it means the call where the
+      // counter first exceeds local_30[iVar6*3] (this reaction's own
+      // last legitimate frame) still draws THAT out-of-range value
+      // before resetting the counter for the next cycle. The frame
+      // actually shown is local_40[iVar6*3+1], the START frame of a
+      // completely different reaction type, briefly flashing here.
+      // Confirmed live via a frame-id trace: 0x2070,0x2071,0x2072,
+      // then 0x2073 (belongs to the trap/switch reaction, not this
+      // scroll one) before resetting back to 0x206f. Harmless-looking
+      // on the original hardware's real frame timing, clearly visible
+      // on this port's -- deliberately deviating from authentic
+      // behavior here (user's call) by resetting BEFORE drawing when
+      // the counter overshoots, so the foreign frame is never actually
+      // handed to sprite_list_set_frame_id (this cycle just redraws
+      // its own start frame, local_40[iVar6*3], one call early instead).
       if (local_30[iVar6 * 3] < *psVar9) {
         *psVar9 = local_40[iVar6 * 3];
         *(short *)(&DAT_0023c124 + iVar1) = *(short *)(&DAT_0023c124 + iVar1) + -1;
       }
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       if ((&DAT_0023c11c)[iVar6] == '\0') {
         sVar4 = *(short *)(&DAT_0023c124 + iVar1);
 LAB_0006df34:
@@ -58343,10 +60129,30 @@ LAB_0006de00:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      FUN_00076390((int)sVar4);
-      if (*psVar9 <= local_30[iVar6 * 3]) {
-        return;
+      // HACK: was `sprite_list_set_frame_id(...); if (*psVar9 <=
+      // local_30[iVar6*3]) return;` -- i.e. draw first, THEN decide
+      // whether the counter overshot. Confirmed via real ARM
+      // disassembly (0x6de4c `cmp r2,r3` / 0x6de50 `ble`) that this
+      // exact `<=` and draw-before-check order is what the original
+      // binary computes, not a decompiler artifact. But it means the
+      // draw already happened with an out-of-range value on the call
+      // where the counter first exceeds local_30[iVar6*3] (the scroll
+      // reaction's own last legitimate frame) -- the actual frame
+      // shown is local_40[iVar6*3+1], the START frame of the NEXT
+      // reaction type, briefly flashing in this reaction's overlay
+      // right before it transitions away. Confirmed live via a
+      // frame-id trace showing e.g. 0x2073 (belongs to a different
+      // reaction entirely) drawn here. Harmless-looking on the
+      // original hardware's real frame timing, clearly visible on
+      // this port's -- deliberately deviating from authentic behavior
+      // here (user's call) by checking BEFORE drawing instead, so the
+      // out-of-range value is never actually handed to
+      // sprite_list_set_frame_id.
+      if (local_30[iVar6 * 3] < *psVar9) {
+        goto LAB_0006de54;
       }
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
+      return;
 LAB_0006de54:
       sVar4 = 5;
     }
@@ -58362,7 +60168,7 @@ LAB_0006de54:
           psVar9 = (short *)(&DAT_0023c24c + iVar1);
           sVar4 = *psVar11;
           *psVar9 = *psVar9 + -1;
-          FUN_00076390((int)sVar4);
+          sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
           if (local_40[iVar6 * 3 + 1] <= *psVar9) {
             return;
           }
@@ -58371,7 +60177,7 @@ LAB_0006de54:
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + 1;
-        FUN_00076390((int)sVar4);
+        sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
         iVar5 = iVar6 * 3 + 1;
         if (local_30[iVar5] < *psVar9) {
           *psVar9 = local_40[iVar5] + 2;
@@ -58386,7 +60192,7 @@ LAB_0006de54:
       (&DAT_0023c11c)[iVar6] = 0;
       iVar8 = iVar6 * 3 + 1;
       iVar5 = iVar8 * 2;
-      FUN_000762c4((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
+      sprite_list_set_rect((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
                    (int)*(short *)(&DAT_00087188 + iVar5),
                    (int)*(short *)((char *)&PTR_DAT_00087198 + iVar5),
                    *(undefined2 *)((char *)&PTR_DAT_000871a8 + iVar5));
@@ -58398,7 +60204,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      FUN_00076390((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       if ((int)*psVar9 <= local_40[iVar6 * 3 + 1] + 1) {
         return;
       }
@@ -58413,7 +60219,7 @@ LAB_0006dd88:
         FUN_00076488((int)(short)(&DAT_0023c234)[iVar6]);
         iVar8 = iVar6 * 3 + 2;
         iVar5 = iVar8 * 2;
-        FUN_000762c4((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
+        sprite_list_set_rect((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
                      (int)*(short *)(&DAT_00087188 + iVar5),
                      (int)*(short *)((char *)&PTR_DAT_00087198 + iVar5),
                      *(undefined2 *)((char *)&PTR_DAT_000871a8 + iVar5));
@@ -58436,13 +60242,13 @@ LAB_0006dd88:
             return;
           }
           FUN_00076488((int)*psVar11);
-          FUN_00076390((int)(short)(&DAT_0023c234)[iVar6],(&DAT_000871d8)[iVar6]);
+          sprite_list_set_frame_id((int)(short)(&DAT_0023c234)[iVar6],(&DAT_000871d8)[iVar6]);
           goto LAB_0006de00;
         }
         psVar9 = (short *)(&DAT_0023c24c + iVar1);
         sVar4 = *psVar11;
         *psVar9 = *psVar9 + -1;
-        FUN_00076390((int)sVar4);
+        sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
         if (*psVar9 != local_40[iVar6 * 3 + 2]) {
           return;
         }
@@ -58451,7 +60257,7 @@ LAB_0006dd88:
       psVar9 = (short *)(&DAT_0023c24c + iVar1);
       sVar4 = *psVar11;
       *psVar9 = *psVar9 + 1;
-      FUN_00076390((int)sVar4);
+      sprite_list_set_frame_id((int)sVar4,*psVar9); if (getenv("UW_DEBUG_DRAGON")) fprintf(stderr, "[dragon] set_frame iVar6=%d cVar3=%d frame=0x%x\n", iVar6, (int)cVar3, (unsigned)(unsigned short)*psVar9);
       if ((int)*psVar9 <= (int)local_30[iVar6 * 3 + 2]) {
         return;
       }
@@ -58464,14 +60270,25 @@ LAB_0006dd88:
 
 
 
-void FUN_0006df70()
+// was FUN_0006df70 -- one of the 13 entries in PTR_FUN_00087220_table
+// (the per-tick HUD panel redraw dispatch, alongside hud_vitals_bar_tick
+// and hud_dragon_reaction_tick, its naming siblings). Steps the compass
+// needle's displayed heading (DAT_0023c12a) one increment toward the
+// player's real heading (DAT_0023c11a) each call, clearing the "needle
+// dirty" bit in DAT_0023c1d8 once it catches up. Updates the needle
+// sprite via sprite_list_set_frame_id (compass rose frame) and
+// sprite_list_set_position (DAT_00087130/DAT_00087150, the needle's
+// recovered per-heading ellipse position table -- see their own
+// comments) using the two sprite-list slot handles allocated once at
+// startup by redraw_hud_panels (DAT_0023c228/DAT_0023c22c).
+void hud_compass_needle_tick()
 
 {
   int iVar1;
   short sVar2;
   uint uVar3;
   uint uVar4;
-  
+
   uVar4 = (uint)DAT_0023c12a;
   sVar2 = (short)(DAT_0023c11a - uVar4);
   iVar1 = (int)((DAT_0023c11a - uVar4) * 0x10000) >> 0x10;
@@ -58487,10 +60304,15 @@ void FUN_0006df70()
       uVar3 = uVar4 - 1;
     }
     uVar4 = uVar3 & 0xf;
-    FUN_00076390((int)DAT_0023c228,(uVar3 & 3) + 0x2059);
-    FUN_00076338((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)uVar4],
+    sprite_list_set_frame_id((int)DAT_0023c228,(uVar3 & 3) + 0x2059);
+    if (getenv("UW_DEBUG_COMPASS")) {
+      fprintf(stderr, "[compass] heading=%u x=%d y=%d frame_id=0x%x\n", uVar4,
+              (int)(short)(&DAT_00087130)[(short)uVar4], (int)(short)(&DAT_00087150)[(short)uVar4],
+              (unsigned)uVar4 + 0x205d);
+    }
+    sprite_list_set_position((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)uVar4],
                  (int)(short)(&DAT_00087150)[(short)uVar4]);
-    FUN_00076390((int)DAT_0023c22c,uVar4 + 0x205d);
+    sprite_list_set_frame_id((int)DAT_0023c22c,uVar4 + 0x205d);
     DAT_0023c12a = (byte)uVar4;
   }
   return;
@@ -58510,14 +60332,14 @@ void FUN_0006e038()
   uVar1 = (uint)DAT_0023c11b;
   if ((-1 < (int)uVar1) && ((int)uVar1 < 0xe)) {
     if (DAT_0023c254 == 0) {
-      uVar3 = FUN_00076078(0);
+      uVar3 = sprite_list_alloc_entry(0);
       DAT_0023c254 = (short)uVar3;
-      FUN_000762c4(uVar3,4,0x8c,1,1);
+      sprite_list_set_rect(uVar3,4,0x8c,1,1);
     }
     if (uVar1 == 9) {
       iVar4 = (int)DAT_00087258;
       DAT_00087258 = DAT_00087258 + 1;
-      FUN_00076390((int)DAT_0023c254,iVar4 + 0x2098);
+      sprite_list_set_frame_id((int)DAT_0023c254,iVar4 + 0x2098);
       if (0xd < DAT_00087258) {
         DAT_00087258 = 9;
       }
@@ -58527,7 +60349,7 @@ void FUN_0006e038()
       if (DAT_0023c258 == 9) {
         DAT_00087258 = 9;
       }
-      FUN_00076390((int)DAT_0023c254,(uVar1 & 0xffff) + 0x2098);
+      sprite_list_set_frame_id((int)DAT_0023c254,(uVar1 & 0xffff) + 0x2098);
       DAT_0023c1d8 = DAT_0023c1d8 & 0xfff7;
     }
     DAT_0023c258 = (short)cVar2;
@@ -58586,14 +60408,14 @@ LAB_0006e244:
   }
   else {
     DAT_0023c220 = DAT_0023c220 + 1;
-    FUN_00076390((int)DAT_0023c21c,
+    sprite_list_set_frame_id((int)DAT_0023c21c,
                  (uint)DAT_0023c12f * 3 + -3 + (uint)*(ushort *)(iVar1 * 2 + 0x87200));
   }
   if (5 < DAT_0023c220) {
     DAT_0023c25c = 0;
     DAT_0023c220 = 0;
     DAT_0023c12f = 0;
-    FUN_00076390((int)DAT_0023c21c,0x20a6);
+    sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
     DAT_0023c1d8 = DAT_0023c1d8 & 0xff7f;
   }
   return;
@@ -58752,7 +60574,7 @@ short param_1;
 
 // was FUN_0006e648 -- shared player-action animation state machine
 // (weapon raise/ready, among others): reads the requested action type
-// (DAT_0023c120, set via FUN_0006cff4(8,N)), drives the current-action
+// (DAT_0023c120, set via set_hud_status_value(8,N)), drives the current-action
 // state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4),
 // and calls load_weapon_swing_sprites once a weapon-category change
 // needs new sprites. Only reachable via hud_panel_redraw_dispatch's
@@ -58923,9 +60745,9 @@ char *param_1;
     iVar2 = 0;
     g_blit_transparent_mode = 1;
     do {
-      uVar1 = FUN_00076194(1,0x10,0x10);
+      uVar1 = sprite_list_alloc_raw_entry(1,0x10,0x10);
       (&DAT_0023c268)[iVar2] = (short)uVar1;
-      FUN_000762c4(uVar1,(int)(short)(&DAT_00087210)[iVar2],0x8b,0x10,0x10);
+      sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087210)[iVar2],0x8b,0x10,0x10);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
     g_blit_transparent_mode = 0;
@@ -58933,7 +60755,7 @@ char *param_1;
   iVar2 = 0;
   do {
     if (*(byte *)(iVar2 + param_1) < 0x18) {
-      FUN_00076390((int)(&DAT_0023c268)[iVar2],*(byte *)(iVar2 + param_1) + 0xe8);
+      sprite_list_set_frame_id((int)(&DAT_0023c268)[iVar2],*(byte *)(iVar2 + param_1) + 0xe8);
     }
     else {
       FUN_00076488((int)(&DAT_0023c268)[iVar2]);
@@ -58959,9 +60781,9 @@ char *param_1;
       iVar2 = 0;
       g_blit_transparent_mode = 1;
       do {
-        uVar1 = FUN_00076194(1,0x10,0x12);
+        uVar1 = sprite_list_alloc_raw_entry(1,0x10,0x12);
         (&DAT_0023c270)[iVar2] = (short)uVar1;
-        FUN_000762c4(uVar1,(int)(short)(&DAT_00087218)[iVar2],0x89,0x10,0x12);
+        sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087218)[iVar2],0x89,0x10,0x12);
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
       } while (iVar2 < 3);
       g_blit_transparent_mode = 0;
@@ -58969,7 +60791,7 @@ char *param_1;
     iVar2 = 0;
     do {
       if (*(byte *)(iVar2 + param_1) < 0x15) {
-        FUN_00076390((int)(&DAT_0023c270)[iVar2],*(byte *)(iVar2 + param_1) + 0x20c0);
+        sprite_list_set_frame_id((int)(&DAT_0023c270)[iVar2],*(byte *)(iVar2 + param_1) + 0x20c0);
       }
       else {
         FUN_00076488((int)(&DAT_0023c270)[iVar2]);
@@ -59598,11 +61420,19 @@ void weapon_swing_draw_tick()
        needs the raw entry buffer just resolved above; without it, it
        dereferenced whatever register happened to be lying around. */
     uVar2 = (g_weapon_swing_current_frame == 0) ? 0 : decode_gr_entry_bitmap(g_weapon_swing_current_frame);
+    if (getenv("UW_DEBUG_COMBAT")) {
+      fprintf(stderr, "[wswing] DAT_0023c130=%d DAT_000870e4=%d sVar1=%d frame=%p drawn=%d\n",
+              (int)DAT_0023c130, (int)DAT_000870e4, (int)sVar1, (void *)g_weapon_swing_current_frame,
+              uVar2 != 0);
+    }
     if (uVar2 != 0) {
       bitmap_blit_to_framebuffer((uint)(byte)(&g_weapon_swing_frame_x_offset)[sVar1] + (int)DAT_0023c1ec + 0x34,
                    0x83 - (uint)(byte)(&g_weapon_swing_frame_y_offset)[sVar1],uVar2,*(undefined1 *)(g_weapon_swing_current_frame + 2),
                    *(undefined1 *)(g_weapon_swing_current_frame + 1),0,0,1);
     }
+  } else if (getenv("UW_DEBUG_COMBAT")) {
+    fprintf(stderr, "[wswing] SKIPPED: DAT_0023c130=%d DAT_000870e4=%d DAT_000870dc=%d g_weapon_overlay_enabled=%d\n",
+            (int)DAT_0023c130, (int)DAT_000870e4, (int)DAT_000870dc, (int)g_weapon_overlay_enabled);
   }
   FUN_00040bc0(0x107f,0x3e,3);
   FUN_00040bc0(0x1080,0,0xd);
@@ -60454,9 +62284,9 @@ short param_1;
     }
   }
   if (((short)iVar3 < 0) || ((*(byte *)(DAT_00086df8 + 0x62) & 8) != 0)) {
-    iVar3 = FUN_0002294c();
+    iVar3 = read_realtime_clock_units();
     do {
-      uVar2 = FUN_0002294c();
+      uVar2 = read_realtime_clock_units();
     } while (uVar2 < iVar3 + 0x180U);
     uVar1 = 0;
   }
@@ -61186,7 +63016,7 @@ int param_2;
     DAT_0023c3a8 = param_1;
     if (param_2 != 0) {
       FUN_0004ca50(DAT_0023c3b8);
-      DAT_0023c280 = FUN_0002294c();
+      DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
     }
@@ -61203,7 +63033,7 @@ void FUN_00072aac()
   if ((DAT_00087454 != 0) && (DAT_00087448 != 0)) {
     if (DAT_0023c32c != -1) {
       FUN_0004ca50(DAT_0023c3b8);
-      DAT_0023c280 = FUN_0002294c();
+      DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
       DAT_00087448 = 1;
     }
@@ -61568,7 +63398,7 @@ int param_1;
         DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar2,local_18);
       }
       FUN_0004ca50();
-      DAT_0023c280 = FUN_0002294c();
+      DAT_0023c280 = read_realtime_clock_units();
       DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
     }
     if (DAT_0023c3bc == 0) {
@@ -61636,9 +63466,9 @@ short param_1;
       }
       local_2c[uVar7] = cVar5;
       uVar7 = uVar7 + 1 & 0xf;
-      iVar6 = FUN_0002294c();
+      iVar6 = read_realtime_clock_units();
     }
-    if ((0 < iVar6) && (iVar3 = FUN_0002294c(), 0x40 < (uint)(iVar3 - iVar6))) {
+    if ((0 < iVar6) && (iVar3 = read_realtime_clock_units(), 0x40 < (uint)(iVar3 - iVar6))) {
       iVar6 = -1;
     }
   }
@@ -61768,7 +63598,7 @@ void FUN_00073634()
   if (((DAT_00087454 != 0) && (DAT_00087448 != 0)) &&
      (((DAT_0023c3a8 != 9 && (DAT_0023c3a8 != 0xb)) || (iVar1 = FUN_00073870(), iVar1 != 0)))) {
     if (((DAT_0023c3a8 < 5) || (7 < DAT_0023c3a8)) ||
-       (uVar2 = FUN_0002294c(), uVar2 <= DAT_00101944 + 0xa00U)) {
+       (uVar2 = read_realtime_clock_units(), uVar2 <= DAT_00101944 + 0xa00U)) {
       uVar2 = (uint)DAT_0023c384;
     }
     else {
@@ -61807,17 +63637,17 @@ void FUN_00073634()
         FUN_00072910(uVar2,1);
       }
       else {
-        uVar2 = FUN_0002294c();
+        uVar2 = read_realtime_clock_units();
         if (DAT_0023c378 + 0x800U < uVar2) {
           FUN_00072910(DAT_0023c384,1);
-          DAT_0023c378 = FUN_0002294c();
+          DAT_0023c378 = read_realtime_clock_units();
         }
         else {
           DAT_0023c384 = DAT_0023c3a8;
         }
       }
       if ((4 < DAT_0023c384) && (DAT_0023c384 < 8)) {
-        DAT_0023c378 = FUN_0002294c();
+        DAT_0023c378 = read_realtime_clock_units();
       }
     }
   }
@@ -61831,7 +63661,7 @@ bool FUN_00073870()
 {
   int iVar1;
   
-  iVar1 = FUN_0002294c();
+  iVar1 = read_realtime_clock_units();
   return DAT_0023c330 * 0x100 + 3U < (uint)(iVar1 - DAT_0023c280);
 }
 
@@ -63122,7 +64952,7 @@ ushort * param_1;
   }
   FUN_00057cac(3);
   g_cursor_holding_state = 0;
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -63271,7 +65101,18 @@ undefined4 FUN_00075be0()
 
 
 
-void FUN_00075cb8(param_1)
+// was FUN_00075cb8 -- part of the sprite-list compositor family
+// (alongside sprite_list_set_rect/set_position/set_frame_id* and
+// sprite_list_set_lifetime, all indexing the same DAT_0023c3e8 slot-
+// record array). Every one of those setters calls this once they're
+// done, passing the slot index -- it walks the compositor's spatial
+// dirty-region buckets, registers the slot (and any other slot whose
+// bounding box overlaps it) into whichever buckets its own bounding
+// box falls in, and sets DAT_0023c41c (a "compositor has dirty work"
+// flag some outer flush loop checks). Already extensively documented
+// at its own call sites as "queues the sprite in the compositor" --
+// this definition just gives that a real name to match.
+void sprite_list_queue_slot_redraw(param_1)
 ushort param_1;
 
 {
@@ -63285,7 +65126,7 @@ ushort param_1;
      and no dragon/compass sprite ever got queued for drawing (or, on a
      different heap layout, got queued opaque garbage -- the "black
      rectangle" over the HUD). Same pointer-truncation class as the rest
-     of this compositor (FUN_000762c4 / sprite_list_set_lifetime). */
+     of this compositor (sprite_list_set_rect / sprite_list_set_lifetime). */
   char *iVar3;
   uint uVar4;
   ushort *puVar5;
@@ -63374,7 +65215,17 @@ LAB_00076038:
 
 
 
-int FUN_00076078(param_1)
+// was FUN_00076078 -- allocates a new sprite-list compositor slot
+// (linear scan of DAT_0023c3e8's fixed 0x40-entry array for a free
+// record, matching sprite_list_set_rect/set_position's own `param_1 <
+// 0x40` bound), stores param_1 as the slot's resource/frame id, zeroes
+// its remaining fields, and returns the new slot's index via
+// Ordinal_2005(0x14,...) (byte offset / 0x14-byte record stride ==
+// slot index). Returns -1 if the pool is full. Compare
+// sprite_list_alloc_raw_entry (was sprite_list_alloc_raw_entry) which does the same
+// but also attaches a freshly allocated raw pixel buffer instead of
+// just a resource id.
+int sprite_list_alloc_entry(param_1)
 undefined4 param_1;
 
 {
@@ -63421,7 +65272,14 @@ undefined4 param_1;
 
 
 
-int FUN_00076194(param_1,param_2,param_3)
+// was FUN_00076194 -- sibling of sprite_list_alloc_entry: allocates a
+// new compositor slot the same way, but also allocates a fresh raw
+// pixel buffer for it (via grtile_alloc_registered, param_2 x param_3*2 bytes,
+// same grtile-style scratch-buffer allocator uw_alloc_grtile shares)
+// instead of just storing a resource id. Used for the dragon head/body
+// decorations (redraw_hud_panels), which need their own writable
+// backing buffer rather than pointing at a static .GR resource frame.
+int sprite_list_alloc_raw_entry(param_1,param_2,param_3)
 undefined4 param_1;
 undefined4 param_2;
 int param_3;
@@ -63454,7 +65312,7 @@ int param_3;
   if (bVar6) {
     *(undefined1 *)((char *)puVar5 + 1) = uVar4;
   }
-  iVar3 = FUN_00076a2c(param_2,param_3 << 1);
+  iVar3 = grtile_alloc_registered(param_2,param_3 << 1);
   if (iVar3 == 0) {
     return -1;
   }
@@ -63472,7 +65330,12 @@ int param_3;
 
 
 
-undefined4 FUN_000762c4(param_1,param_2,param_3,param_4,param_5)
+// was FUN_000762c4 -- sets a compositor slot's full geometry (x, y, w,
+// h) in one call, used at creation time (redraw_hud_panels calls this
+// right after allocating each dragon/compass/status-icon slot to
+// establish its rect). Compare sprite_list_set_position, which only
+// updates x/y for an already-sized slot during animation.
+undefined4 sprite_list_set_rect(param_1,param_2,param_3,param_4,param_5)
 short param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -63482,12 +65345,16 @@ undefined2 param_5;
 {
   undefined4 uVar1;
   /* Was `int`, truncating the real DAT_0023c3e8 slot-record pointer
-     computed here (same bug as its sibling functions FUN_00076338 and
+     computed here (same bug as its sibling functions sprite_list_set_position and
      sprite_list_set_lifetime below, which compute the identical expression). */
   char * iVar2;
 
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
+    if (getenv("UW_DEBUG_SPRPOS")) {
+      fprintf(stderr, "[sprpos] sprite_list_set_rect create: slot=%d x=%d y=%d w=%d h=%d\n",
+              (int)param_1, (int)param_2, (int)param_3, (int)param_4, (int)param_5);
+    }
     *(char *)(iVar2 + 6) = (char)param_4;
     *(char *)(iVar2 + 7) = (char)((uint)param_4 >> 8);
     *(char *)(iVar2 + 2) = (char)param_2;
@@ -63496,7 +65363,7 @@ undefined2 param_5;
     *(char *)(iVar2 + 3) = (char)((uint)param_2 >> 8);
     *(char *)(iVar2 + 5) = (char)((uint)param_3 >> 8);
     *(char *)(iVar2 + 9) = (char)((ushort)param_5 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -63507,7 +65374,14 @@ undefined2 param_5;
 
 
 
-undefined4 FUN_00076338(param_1,param_2,param_3)
+// was FUN_00076338 -- updates an already-allocated compositor slot's
+// x/y position only (its width/height, set once by sprite_list_set_rect,
+// are left alone). Called every tick by hud_compass_needle_tick to
+// move the needle sprite through its 16-heading ellipse. Like its
+// sibling setters below, only bounds-checks `param_1 < 0x40` -- a
+// negative/corrupted slot handle would bypass that and compute a wild
+// pointer into DAT_0023c3e8.
+undefined4 sprite_list_set_position(param_1,param_2,param_3)
 short param_1;
 undefined4 param_2;
 undefined4 param_3;
@@ -63515,14 +65389,17 @@ undefined4 param_3;
 {
   undefined4 uVar1;
   char * iVar2;
-  
+
   if (param_1 < 0x40) {
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
+    if (getenv("UW_DEBUG_SPRPOS")) {
+      fprintf(stderr, "[sprpos] sprite_list_set_position slot=%d x=%d y=%d\n", (int)param_1, (int)param_2, (int)param_3);
+    }
     *(char *)(iVar2 + 2) = (char)param_2;
     *(char *)(iVar2 + 4) = (char)param_3;
     *(char *)(iVar2 + 3) = (char)((uint)param_2 >> 8);
     *(char *)(iVar2 + 5) = (char)((uint)param_3 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -63533,7 +65410,16 @@ undefined4 param_3;
 
 
 
-undefined4 FUN_00076390(param_1,param_2)
+// was FUN_00076390 -- updates an already-allocated compositor slot's
+// displayed sprite/frame id (offset+7/+0xf, separate from whatever
+// resource id sprite_list_alloc_entry stored at creation) and ORs
+// DAT_0008763c into the slot's flags word to mark it dirty. Called
+// every tick by hud_compass_needle_tick to advance the needle/compass-
+// rose frame ids. Compare sprite_list_set_frame_id_transparent, the
+// same operation but also forcing DAT_00087648 (a transparent-blit
+// flag, matching sprite_list_alloc_entry/alloc_raw_entry's own
+// g_blit_transparent_mode branch) into the flags word.
+undefined4 sprite_list_set_frame_id(param_1,param_2)
 short param_1;
 undefined4 param_2;
 
@@ -63541,7 +65427,7 @@ undefined4 param_2;
   ushort uVar1;
   undefined4 uVar2;
   ushort *puVar3;
-  
+
   if (param_1 < 0x40) {
     puVar3 = (ushort *)(param_1 * 0x14 + DAT_0023c3e8);
     *(char *)(puVar3 + 7) = (char)param_2;
@@ -63549,7 +65435,7 @@ undefined4 param_2;
     uVar1 = *puVar3 | DAT_0008763c;
     *(char *)puVar3 = (char)uVar1;
     *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar2 = 0;
   }
   else {
@@ -63560,7 +65446,9 @@ undefined4 param_2;
 
 
 
-undefined4 FUN_00076404(param_1,param_2)
+// was FUN_00076404 -- sprite_list_set_frame_id's transparent-blit
+// sibling; see that function's own comment.
+undefined4 sprite_list_set_frame_id_transparent(param_1,param_2)
 short param_1;
 undefined4 param_2;
 
@@ -63568,7 +65456,7 @@ undefined4 param_2;
   ushort uVar1;
   undefined4 uVar2;
   ushort *puVar3;
-  
+
   if (param_1 < 0x40) {
     puVar3 = (ushort *)(param_1 * 0x14 + DAT_0023c3e8);
     *(char *)(puVar3 + 7) = (char)param_2;
@@ -63576,7 +65464,7 @@ undefined4 param_2;
     uVar1 = *puVar3 | DAT_00087648 | DAT_0008763c;
     *(char *)puVar3 = (char)uVar1;
     *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar2 = 0;
   }
   else {
@@ -63602,7 +65490,7 @@ undefined4 param_1;
     uVar1 = DAT_0023c418 & *puVar2;
     *(char *)puVar2 = (char)uVar1;
     *(char *)((char *)puVar2 + 1) = (char)(uVar1 >> 8);
-    FUN_00075cb8(param_1);
+    sprite_list_queue_slot_redraw(param_1);
   }
   return 0xffffffff;
 }
@@ -63690,7 +65578,7 @@ void FUN_00076508()
                         (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                         (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                         (int)(ushort)puVar4[3], (int)(ushort)puVar4[4],
-                        puVar4[5] == 0 ? "draw_sprite_by_id" : "FUN_00040be0");
+                        puVar4[5] == 0 ? "draw_sprite_by_id" : "sprite_list_flush_blit_raw");
               if (puVar4[5] == 0) {
                 g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
@@ -63711,7 +65599,7 @@ void FUN_00076508()
               else {
                 g_blit_transparent_mode = 1;
                 if ((uVar1 & DAT_00087648) == 0) {
-                  FUN_00040be0((int)(short)puVar4[7],
+                  sprite_list_flush_blit_raw((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                                (int)(short)puVar4[4],
@@ -63719,7 +65607,7 @@ void FUN_00076508()
                   ;
                 }
                 else {
-                  FUN_00040be0((int)(short)puVar4[7],
+                  sprite_list_flush_blit_raw((int)(short)puVar4[7],
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
                                (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
                                (int)(short)puVar4[4],
@@ -63758,7 +65646,7 @@ undefined4 param_2;
     iVar2 = param_1 * 0x14 + DAT_0023c3e8;
     *(char *)(iVar2 + 10) = (char)param_2;
     *(char *)(iVar2 + 0xb) = (char)((uint)param_2 >> 8);
-    FUN_00075cb8((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
+    sprite_list_queue_slot_redraw((ushort)param_1);  /* arg dropped by Ghidra -- the slot index; without it the sprite never queued in the compositor (dragon/compass HUD not drawn) */
     uVar1 = 0;
   }
   else {
@@ -63782,12 +65670,21 @@ void FUN_000769e8()
 
 
 
-/* Real pointers for FUN_00076a2c's DAT_0023c3fc record table, indexed
-   by record slot (see FUN_00076a2c's comment). DAT_0023c3fc holds
+/* Real pointers for grtile_alloc_registered's DAT_0023c3fc record table, indexed
+   by record slot (see grtile_alloc_registered's comment). DAT_0023c3fc holds
    0x1540/0x11 = 320 records exactly. */
 static void *g_grtile_real_ptrs[320];
 
-undefined4 FUN_00076a2c(param_1,param_2)
+// was FUN_00076a2c -- allocates a param_1 x param_2 raw pixel buffer
+// (real heap pointer, tracked in g_grtile_real_ptrs) and registers it
+// into DAT_0023c3fc's 320-record identity-key table, returning a
+// truncated 32-bit key most callers use for opaque compare/store
+// (sprite_list_alloc_raw_entry, container/inventory hotspot scratch
+// tiles, status-icon buffers) rather than the real pointer -- see
+// capture_framebuffer_rect_to_grtile, the one caller that needs actual
+// dereferenceable pixels. Sibling of uw_alloc_grtile, which does the
+// same allocation without registering a lookup key.
+undefined4 grtile_alloc_registered(param_1,param_2)
 uint param_1;
 uint param_2;
 
@@ -63847,9 +65744,9 @@ uint param_1;
 uint param_2;
 {
   /* FUN_00041708 needs a real, dereferenceable pointer (it memmoves into
-     the result) rather than FUN_00076a2c's opaque truncated handle -- see
+     the result) rather than grtile_alloc_registered's opaque truncated handle -- see
      the comment there. Same size computation, no registration into
-     FUN_00076a2c's own DAT_0023c3fc identity-key table since nothing
+     grtile_alloc_registered's own DAT_0023c3fc identity-key table since nothing
      ever looks buffers from this call path up that way (see
      FUN_00041708). */
   unsigned int size;
@@ -63907,7 +65804,7 @@ short param_5;
   short sVar10;
   int iVar11;
   int iVar12;
-  /* param_1 is FUN_00076a2c's opaque truncated identity key (used for
+  /* param_1 is grtile_alloc_registered's opaque truncated identity key (used for
      the record-table search below), not a real pointer -- but this
      function ALSO renders glyph pixels directly into the matched
      record's buffer (the `*param_1 = ...` loop further down used to
@@ -64036,7 +65933,7 @@ short * param_1;
   int iVar5;
   int iVar6;
   int iVar7;
-  /* param_1 is FUN_00076a2c's opaque truncated identity key, not a
+  /* param_1 is grtile_alloc_registered's opaque truncated identity key, not a
      real pointer -- same issue as capture_framebuffer_rect_to_grtile above. Read glyph
      pixels back through the real pointer tracked in
      g_grtile_real_ptrs instead of dereferencing the key directly. */
@@ -64470,7 +66367,7 @@ uint param_3;
     DAT_0023c448 = DAT_0023c448 | uVar1;
     return 0;
   }
-  DAT_0023c648 = FUN_0002294c();
+  DAT_0023c648 = read_realtime_clock_units();
   if (uVar1 == _DAT_0023ce10) {
     if (DAT_000876c8 != 0) {
       DAT_0024af6c = 0x14;
@@ -64598,6 +66495,10 @@ int param_4;
       }
     }
     else {
+      if (getenv("UW_DEBUG_CURSORCLICK")) {
+        fprintf(stderr, "[cursorclick] WM_LBUTTONDOWN before DAT_00204844=%d selected=%p holdstate=%d\n",
+                (int)DAT_00204844, (void *)g_selected_object, (int)g_cursor_holding_state);
+      }
       DAT_00204844 = 1;
       if ((g_cursor_mode != 0) || (g_cursor_holding_state != 0)) {
         DAT_00204844 = 2;
@@ -64615,6 +66516,31 @@ int param_4;
     }
   }
   if (param_2 == 0x202) {
+    /* An EARLIER attempt at this exact fix (erase before clearing
+       DAT_00204844) was reverted as "no measurable effect" -- that test
+       apparently didn't hit the actual failure window. Confirmed live via
+       UW_DEBUG_CURSORCLICK + UW_DEBUG_CURSORERASE on a real right-drag
+       pickup followed by a LEFT click while still holding (this
+       project's drag convention is normally right-button, but nothing
+       stops a real player from also left-clicking mid-hold, and
+       bug-inventory-stamp-demo.txt is a recorded repro of exactly that):
+       DAT_00204844 was 1 (an icon genuinely shown, not yet erased) at
+       the moment WM_LBUTTONUP fired; the unconditional `DAT_00204844 = 0`
+       below then made the NEXT erase attempt see DAT_00204844 == 0 and
+       skip entirely (`will_erase=0`) -- so the icon painted at that
+       position is never restored, a permanent stamp. update_mouse_state's
+       own protocol is always erase-THEN-clear; this handler cleared
+       without erasing. Calling the real erase function first (a no-op
+       if there was nothing to erase) matches that protocol and fixes the
+       stamp without touching the continuous per-frame hide/show path
+       that the earlier g_force_flush attempt regressed (see
+       FUN_00056fe8's own comment) -- this only runs once per actual
+       left-button release, not every frame. */
+    FUN_00056fe8();
+    if (getenv("UW_DEBUG_CURSORCLICK")) {
+      fprintf(stderr, "[cursorclick] WM_LBUTTONUP before DAT_00204844=%d selected=%p mouse=(%d,%d)\n",
+              (int)DAT_00204844, (void *)g_selected_object, (int)g_mouse_x, (int)g_mouse_y);
+    }
     DAT_00204844 = 0;
     if ((g_selected_object == 0) && ((DAT_00201b60 & 2) == 0)) {
       DAT_00204844 = 0;
@@ -64781,11 +66707,11 @@ void FUN_0007830c()
   byte bVar1;
   
   if (DAT_0024af88 == 0) {
-    DAT_0024af88 = FUN_00076a2c(0x96,0x2b);
+    DAT_0024af88 = grtile_alloc_registered(0x96,0x2b);
     if (DAT_0024af88 != 0) {
       capture_framebuffer_rect_to_grtile(DAT_0024af88,0xf0,0x47,0x4b,0x2b);
     }
-    DAT_0024af8c = FUN_00076a2c(0x46,0x15);
+    DAT_0024af8c = grtile_alloc_registered(0x46,0x15);
     if (DAT_0024af8c != 0) {
       capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
@@ -64853,7 +66779,7 @@ void FUN_00078434()
     }
   }
   select_active_font(s_font5x6p_sys_0008430c);
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -65438,7 +67364,19 @@ undefined4 param_1;
 
 
 
-undefined4 FUN_00079144(param_1,param_2)
+// was FUN_00079144 -- walks a container's (param_1) contents link
+// chain and places each item into the world near the container's own
+// position (via place_object_in_world), clearing param_1's own
+// contents-head link as it goes. param_2, when non-zero, ORs its low
+// 6 bits into each placed item's own field (offset+3, matching
+// DAT_00202c98's own "container" flag-table lookup) -- something
+// caller-specific, not fully traced. Returns 0 if the container had
+// no contents at all (nothing to empty), 1 if it emptied at least one
+// item. This is the real mechanism behind "using Use mode on a
+// container empties its contents onto the nearby ground" -- called
+// (via try_empty_container) from try_combine_or_stow_object, itself
+// reached from interact_use.
+undefined4 empty_container_into_world(param_1,param_2)
 ushort * param_1;
 short param_2;
 
@@ -65446,12 +67384,24 @@ short param_2;
   ushort uVar1;
   ushort uVar2;
   byte bVar3;
-  int iVar4;
+  /* Was `int iVar4;` -- truncated resolve_object_link's real 64-bit
+     pointer return, then handed straight to place_object_in_world's
+     own param_4 (already `char *`, fixed in an earlier pass -- see
+     its own comment) as a garbage-high-bits address. This loop walks
+     a container's contents chain emptying it into the world (the
+     real behavior behind "Use mode on a container empties its
+     contents onto the nearby ground"); this is that chain's own
+     never-before-exercised path, so the truncation was never hit
+     until now. Confirmed live: 100% reproducible SIGSEGV in
+     find_object_placement's first dereference of the wild pointer
+     the moment this loop ran with a real, non-empty container. */
+  char *iVar4;
   int iVar5;
   undefined4 uVar6;
   uint uVar7;
   uint uVar8;
-  
+  char *pNextLink;
+
   if ((param_1[3] & 0xffc0) == 0) {
     uVar6 = 0;
   }
@@ -65470,7 +67420,7 @@ short param_2;
     }
     uVar1 = param_1[1];
     while (iVar4 != 0) {
-      iVar5 = resolve_object_link(iVar4 + 4);
+      pNextLink = resolve_object_link(iVar4 + 4);
       if ((param_2 != 0) && (((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0)) {
         uVar2 = param_1[3];
         bVar3 = (byte)uVar2;
@@ -65479,7 +67429,7 @@ short param_2;
       }
       place_object_in_world((uint)(uVar1 >> 0xd) + uVar7 * 8,((uVar1 & 0x1c00) >> 10) + uVar8 * 8,
                    uVar1 & 0x7f,iVar4,6,0);
-      iVar4 = iVar5;
+      iVar4 = pNextLink;
     }
     uVar6 = 1;
   }
@@ -65492,7 +67442,7 @@ void FUN_0007931c(param_1)
 byte * param_1;
 
 {
-  FUN_00079144(param_1,(&DAT_001007d9)[(*param_1 & 0x3f) * 0x30]);
+  empty_container_into_world(param_1,(&DAT_001007d9)[(*param_1 & 0x3f) * 0x30]);
   return;
 }
 
@@ -66365,7 +68315,7 @@ int param_2;
   }
   else {
     if ((param_1[2] & 0x3f) != 0) {
-      iVar6 = FUN_000451b0(param_1);
+      iVar6 = find_or_assign_object_widget(param_1);
       iVar8 = 0;
       do {
         if (((int)(short)iVar6 == (int)(char)(&DAT_00085ac8)[iVar8]) && (uVar10 == 1)) break;
@@ -66443,7 +68393,7 @@ uint param_2;
         *param_1 = (bVar2 + 4 ^ bVar2) & 0xf ^ bVar2;
         param_1[1] = (byte)((ushort)uVar1 >> 8);
         FUN_00078c80(0x7d);
-        FUN_000451b0(param_1);
+        find_or_assign_object_widget(param_1);
         FUN_0004503c();
       }
     }
@@ -66840,7 +68790,7 @@ int param_3;
       uVar2 = *param_1;
       *(undefined1 *)param_1 = 0x91;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8) & 0xfe;
-      FUN_000451b0(param_1);
+      find_or_assign_object_widget(param_1);
       FUN_0004503c();
     }
   }
@@ -66875,7 +68825,14 @@ int param_3;
       if (param_1 != g_player_object) {
         return;
       }
-      if ((g_selected_object == (ushort *)0x0) || ((*g_selected_object & 0x1ff) != 0x129)) {
+      /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+         own identical fix comment. 0x129 has its own bit 8 set, so this
+         comparison could never even succeed while reading a
+         sign-extended single byte (0x29's own top bit is clear, so
+         char-sign-extension never contributes that bit) -- this
+         "already holding the matching quest item" check was silently
+         always false. */
+      if ((g_selected_object == (ushort *)0x0) || ((*(ushort *)g_selected_object & 0x1ff) != 0x129)) {
         puVar4 = (ushort *)FUN_000452dc(4,2,9,2,&local_22);
         if (puVar4 == (ushort *)0x0) {
           puVar4 = (ushort *)FUN_000452dc(4,2,9,4,&local_22);
@@ -66904,7 +68861,7 @@ int param_3;
         FUN_0004503c((int)local_22);
       }
       else if (local_20[0] == 2) {
-        FUN_00042d70();
+        refresh_container_view();
       }
       finish_object_use(param_2,0,1);
       return;
@@ -66984,7 +68941,7 @@ LAB_0007b7e4:
       *(byte *)(iVar3 + 4) = (byte)uVar7 | 0x3f;
       *(char *)(iVar3 + 5) = (char)((ushort)uVar7 >> 8);
     }
-    FUN_00057604(1);
+    wait_for_click_release(1);
     break;
   case 300:
     break;
@@ -67421,7 +69378,15 @@ byte * param_2;
 
 
 
-void FUN_0007c84c(param_1,param_2)
+// was FUN_0007c84c -- thin wrapper around empty_container_into_world:
+// empties param_1's contents, and if it turns out param_1 had nothing
+// to empty (return 0) and param_2 is non-zero (callers pass whether
+// the container belongs to the player), prints the object's own name
+// followed by "is empty " (s_is_empty__0008790c) via
+// message_scroll_print_wrapped -- the "The sack is empty." message a
+// player sees using Use mode on an already-empty container. Called
+// from try_combine_or_stow_object, itself reached from interact_use.
+void try_empty_container(param_1,param_2)
 ushort * param_1;
 int param_2;
 
@@ -67438,7 +69403,7 @@ int param_2;
   if (((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0) {
     bVar4 = (byte)param_1[3] & 0x3f;
   }
-  iVar2 = FUN_00079144(param_1,bVar4);
+  iVar2 = empty_container_into_world(param_1,bVar4);
   if ((iVar2 == 0) && (param_2 != 0)) {
     pcVar3 = &DAT_00085c88;
     wptr_60040 = acStack_85ce4;
@@ -67497,11 +69462,27 @@ int param_3;
     message_scroll_print_wrapped(s_is_locked__000878fc);
   }
   else if (param_3 == 0) {
-    FUN_0007c84c(param_2,param_1 == g_player_object);
+    try_empty_container(param_2,param_1 == g_player_object);
   }
   else {
-    FUN_000451b0(param_2);
-    open_backpack_container();
+    /* Both calls here were bare (no arguments) -- see
+       find_or_assign_object_widget's own fix comment and
+       open_backpack_container's declared `short param_1`.
+       find_or_assign_object_widget(param_2) finds (or allocates) the
+       grid widget currently displaying this container; that widget
+       index is exactly what open_backpack_container needs to know
+       WHICH container to open. Confirmed crashing for real: opening a
+       container nested inside an already-open container dereferenced
+       whatever garbage register value reached open_backpack_container's
+       param_1, since nothing here ever captured
+       find_or_assign_object_widget's return value at all. */
+    int _widget = find_or_assign_object_widget(param_2);
+    if (getenv("UW_DEBUG_INV"))
+      fprintf(stderr, "[inv] try_combine_or_stow_object open: param_2=%p find_or_assign_object_widget returned widget=%d\n",
+              (void *)param_2, _widget);
+    if (-1 < _widget) {
+      open_backpack_container(_widget);
+    }
   }
   return;
 }
@@ -67514,7 +69495,7 @@ void FUN_0007ca0c()
   FUN_000740b0(DAT_00202098,(int)(char)DAT_00202094);
   g_cursor_holding_state = 0;
   FUN_00057cac(3);
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -69002,9 +70983,9 @@ uint param_2;
   int iVar3;
   uint uVar4;
   
-  FUN_00057604(1);
+  wait_for_click_release(1);
   sVar1 = next_input_event();
-  iVar3 = FUN_0002294c();
+  iVar3 = read_realtime_clock_units();
   if (DAT_00250708 != 0 && param_2 != 0) {
     FUN_000570b4();
   }
@@ -69012,8 +70993,8 @@ uint param_2;
     sVar2 = next_input_event();
     if (sVar1 != sVar2) break;
     flush_dirty_rect_to_display(1);
-  } while ((param_1 == 0) || (uVar4 = FUN_0002294c(), uVar4 <= (uint)(param_1 + iVar3)));
-  FUN_00057604(1);
+  } while ((param_1 == 0) || (uVar4 = read_realtime_clock_units(), uVar4 <= (uint)(param_1 + iVar3)));
+  wait_for_click_release(1);
   FUN_0007f094();
   if ((param_2 & DAT_00250708) != 0) {
     FUN_00057118();
@@ -69082,7 +71063,7 @@ int param_1;
   rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 4),*(undefined2 *)(DAT_00250704 + 10),
                *(undefined2 *)(DAT_00250704 + 6),param_1 + 1);
   if (DAT_00250704 == &DAT_00087960) {
-    FUN_0006cff4(4,1);
+    set_hud_status_value(4,1);
     msg_scroll_draw_edges();
   }
   else {
@@ -69200,7 +71181,7 @@ char *param_1;
     }
     Ordinal_1044(auStack_54,param_1,(short)uVar3 + 1);
     FUN_0007f6fc(auStack_54,0);
-    DAT_00250720 = FUN_0002294c();
+    DAT_00250720 = read_realtime_clock_units();
     if (DAT_00250708 != 0) {
       FUN_000570b4();
     }
@@ -69544,7 +71525,7 @@ int param_1;
   *(undefined1 *)(DAT_00250704 + 10) = 0;
   *(undefined1 *)((char *)DAT_00250704 + 0x15) = 0;
   if (DAT_00250704 == (undefined2 *)&DAT_00087960) {
-    FUN_0006cff4(4,1);
+    set_hud_status_value(4,1);
     iVar2 = msg_scroll_draw_edges();
   }
   else {
@@ -69683,7 +71664,7 @@ short param_5;
   iVar7 = ((int)sVar4 + (int)DAT_0025070c) * 0x10000 >> 0x10;
   iVar14 = (int)*(short *)(DAT_00250704 + 10);
   FUN_00057118();
-  FUN_00057604(0);
+  wait_for_click_release(0);
   uVar8 = next_input_event();
   sVar4 = (short)uVar8;
   do {
@@ -69916,7 +71897,7 @@ int * param_3;
   }
   message_scroll_print_wrapped(puVar2);
   FUN_00057118();
-  FUN_00057604(0);
+  wait_for_click_release(0);
   while( true ) {
     uVar3 = next_input_event();
     sVar1 = (short)uVar3;

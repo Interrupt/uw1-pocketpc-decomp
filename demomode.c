@@ -91,8 +91,30 @@
  *                    SHIFT+turn-key for a sharp, discrete 45-degree snap
  *                    turn (a bare turn-key free-turns instead); see
  *                    in_dungeon_freelook()'s comment in gx_stub.c.
+ *   SDLKEYDOWN/SDLKEYUP <KEY>  -- independent real (tagged) SDL_KEYDOWN/
+ *                    KEYUP with no pre-declared hold duration between them
+ *                    (unlike SDLHOLD) -- what democapture.c's recorder
+ *                    emits for a real key press/release pair, since it
+ *                    only learns the release's timing when it happens.
+ *                    Key name as for SDLHOLD, plus a raw 0xNN/decimal
+ *                    SDL_Keycode fallback for anything without a name.
+ *   DELAY <ms>    -- sets the per-line pacing (same effect as
+ *                    UW_DEMO_DELAY_MS) from within the file itself,
+ *                    effective immediately. Lets each demo file pick its
+ *                    own playback rate rather than relying solely on the
+ *                    env var -- democapture.c's recorder writes one of
+ *                    these as its first line, capturing the real pacing
+ *                    of the recorded session. DELAY 0 (or
+ *                    UW_DEMO_DELAY_MS=0) means tick-native playback: no
+ *                    wall-clock gate at all, process exactly one line per
+ *                    real uw_pump_events() call instead of waiting <ms>
+ *                    between lines -- this is the recorder's own default,
+ *                    since it counts real ticks the same way (see
+ *                    democapture.c's top comment), so a recording plays
+ *                    back at the real pace it was played with no ms
+ *                    approximation on either side.
  * Pacing is controlled by the UW_DEMO_DELAY_MS env var (default 250ms
- * between inputs). Once the file runs out, the process exits (making
+ * between inputs) and/or a DELAY line (see above). Once the file runs out, the process exits (making
  * scripted test runs self-terminating for fast feedback loops); set
  * UW_DEMO_KEEP_RUNNING=1 to keep the window open and just stop feeding
  * synthetic events instead.
@@ -192,6 +214,42 @@ static int demo_translate_vk(const char *name) {
     return 0;
 }
 
+/* Shared SDL_Keycode name parser for SDLHOLD/RAWKEY/SDLKEYDOWN/SDLKEYUP
+   (previously duplicated inline in SDLHOLD and RAWKEY separately). Accepts
+   a single printable character (its lowercase ASCII value is also its
+   SDL_Keycode), the small set of named specials real UW play/chargen
+   needs, or a raw "0xNN"/decimal SDL_Keycode as a fallback for anything
+   else -- the same fallback shape demo_translate_vk already has, needed
+   here so a recorded demo file (democapture.c) can round-trip ANY key,
+   not just the ones with a nice name. Returns 0 (SDLK_UNKNOWN) if
+   unrecognized. */
+static int demo_translate_sdlkey(const char *name) {
+    if (name[0] && name[1] == '\0') {
+        unsigned char c = (unsigned char)name[0];
+        if (c >= 'A' && c <= 'Z') c = (unsigned char)(c - 'A' + 'a');
+        return c;
+    }
+    if (strcasecmp(name, "LEFT") == 0)      return SDLK_LEFT;
+    if (strcasecmp(name, "RIGHT") == 0)     return SDLK_RIGHT;
+    if (strcasecmp(name, "UP") == 0)        return SDLK_UP;
+    if (strcasecmp(name, "DOWN") == 0)      return SDLK_DOWN;
+    if (strcasecmp(name, "RETURN") == 0 || strcasecmp(name, "ENTER") == 0) return SDLK_RETURN;
+    if (strcasecmp(name, "ESCAPE") == 0 || strcasecmp(name, "ESC") == 0)   return SDLK_ESCAPE;
+    if (strcasecmp(name, "SPACE") == 0)     return SDLK_SPACE;
+    if (strcasecmp(name, "BACKSPACE") == 0 || strcasecmp(name, "BACK") == 0) return SDLK_BACKSPACE;
+    if (strcasecmp(name, "TAB") == 0)       return SDLK_TAB;
+    if (strcasecmp(name, "SHIFT") == 0 || strcasecmp(name, "LSHIFT") == 0)  return SDLK_LSHIFT;
+    if (strcasecmp(name, "RSHIFT") == 0)    return SDLK_RSHIFT;
+    if (strcasecmp(name, "CTRL") == 0 || strcasecmp(name, "LCTRL") == 0 || strcasecmp(name, "CONTROL") == 0) return SDLK_LCTRL;
+    if (strcasecmp(name, "RCTRL") == 0)     return SDLK_RCTRL;
+    if ((name[0] == '0' && (name[1] == 'x' || name[1] == 'X')) ||
+        (name[0] >= '0' && name[0] <= '9')) {
+        long v = strtol(name, NULL, 0);
+        if (v > 0) return (int)v;
+    }
+    return 0;
+}
+
 void demomode_init(void) {
     const char *path = getenv("UW_DEMO_FILE");
     if (!path) return;
@@ -205,7 +263,10 @@ void demomode_init(void) {
     const char *delay_env = getenv("UW_DEMO_DELAY_MS");
     if (delay_env) {
         int v = atoi(delay_env);
-        if (v > 0) g_demo_delay_ms = v;
+        /* v==0 is a real, meaningful value (see demomode_pump's own
+           comment: no wall-clock gate at all, one line per real pump
+           call) -- only reject a negative/malformed value, not zero. */
+        if (v >= 0) g_demo_delay_ms = v;
     }
 
     g_demo_active = 1;
@@ -251,7 +312,14 @@ void demomode_abort(const char *reason) {
 void demomode_pump(void) {
     if (!g_demo_active || g_demo_done) return;
     Uint32 now = SDL_GetTicks();
-    if (now < g_demo_next_tick) return;
+    /* g_demo_delay_ms == 0 (via a DELAY 0 line or UW_DEMO_DELAY_MS=0) means
+       tick-native playback: no wall-clock gate at all, process exactly one
+       line every real uw_pump_events() call -- the same tick source
+       democapture.c's recorder counts against (see its own top comment),
+       so a recording made with the matching DELAY 0 (the recorder's own
+       default) replays at the real pace it was played, with no ms
+       approximation on either side. */
+    if (g_demo_delay_ms > 0 && now < g_demo_next_tick) return;
 
     /* Mid-WAIT: burn one idle tick with no input at all, letting
      * whatever the game's own idle-tick dispatch does run on its own --
@@ -339,6 +407,34 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strncasecmp(p, "DELAY ", 6) == 0) {
+        /* Sets the per-line pacing (same units/effect as UW_DEMO_DELAY_MS)
+           from WITHIN the file itself, taking effect immediately (this
+           line's own retry, and every line after it, use the new value) --
+           lets each demo file pick its own playback rate instead of
+           relying solely on the env var, since different scripts need
+           different fidelity (a fast-forward regression check vs. a
+           precisely-timed repro of a hold-duration-sensitive bug). A file
+           that also sets UW_DEMO_DELAY_MS wins with whichever DELAY line
+           it last executed, since this simply overwrites the same
+           variable the env var seeds at init. democapture.c's recorder
+           writes one of these as its first line, capturing the real
+           pacing of what was recorded. DELAY 0 is a real, meaningful
+           value -- see demomode_pump's own comment -- so ms starts at a
+           sentinel -1 (not 0) to tell a genuinely malformed/unparsed
+           line apart from an explicit "0". */
+        int ms = -1;
+        if (sscanf(p + 6, "%d", &ms) != 1 || ms < 0) {
+            fprintf(stderr, "[demo] malformed DELAY line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] setting delay=%dms\n", ms);
+        g_demo_delay_ms = ms;
+        g_demo_next_tick = now;
+        return;
+    }
+
     if (strncasecmp(p, "WAIT ", 5) == 0) {
         int ticks = 0;
         if (sscanf(p + 5, "%d", &ticks) != 1 || ticks < 0) {
@@ -406,18 +502,7 @@ void demomode_pump(void) {
             want_shift = 1;
             memmove(keyname, plus + 1, strlen(plus + 1) + 1);
         }
-        int kc = 0;
-        if (keyname[0] && keyname[1] == '\0') {
-            unsigned char c = (unsigned char)keyname[0];
-            if (c >= 'A' && c <= 'Z') c = (unsigned char)(c - 'A' + 'a');
-            kc = c;
-        } else if (strcasecmp(keyname, "LEFT") == 0)   kc = SDLK_LEFT;
-        else if (strcasecmp(keyname, "RIGHT") == 0)    kc = SDLK_RIGHT;
-        else if (strcasecmp(keyname, "UP") == 0)       kc = SDLK_UP;
-        else if (strcasecmp(keyname, "DOWN") == 0)     kc = SDLK_DOWN;
-        else if (strcasecmp(keyname, "RETURN") == 0 || strcasecmp(keyname, "ENTER") == 0) kc = SDLK_RETURN;
-        else if (strcasecmp(keyname, "ESCAPE") == 0 || strcasecmp(keyname, "ESC") == 0)   kc = SDLK_ESCAPE;
-        else if (strcasecmp(keyname, "SPACE") == 0)    kc = SDLK_SPACE;
+        int kc = demo_translate_sdlkey(keyname);
         if (kc == 0) {
             fprintf(stderr, "[demo] SDLHOLD: unrecognized key '%s', skipping\n", keyname);
             g_demo_next_tick = now;
@@ -452,18 +537,7 @@ void demomode_pump(void) {
             g_demo_next_tick = now;
             return;
         }
-        int kc = 0;
-        if (keyname[0] && keyname[1] == '\0') {
-            unsigned char c = (unsigned char)keyname[0];
-            if (c >= 'A' && c <= 'Z') c = (unsigned char)(c - 'A' + 'a');
-            kc = c;
-        } else if (strcasecmp(keyname, "LEFT") == 0)   kc = SDLK_LEFT;
-        else if (strcasecmp(keyname, "RIGHT") == 0)    kc = SDLK_RIGHT;
-        else if (strcasecmp(keyname, "UP") == 0)       kc = SDLK_UP;
-        else if (strcasecmp(keyname, "DOWN") == 0)     kc = SDLK_DOWN;
-        else if (strcasecmp(keyname, "RETURN") == 0 || strcasecmp(keyname, "ENTER") == 0) kc = SDLK_RETURN;
-        else if (strcasecmp(keyname, "ESCAPE") == 0 || strcasecmp(keyname, "ESC") == 0)   kc = SDLK_ESCAPE;
-        else if (strcasecmp(keyname, "SPACE") == 0)    kc = SDLK_SPACE;
+        int kc = demo_translate_sdlkey(keyname);
         if (kc == 0) {
             fprintf(stderr, "[demo] RAWKEY: unrecognized key '%s', skipping\n", keyname);
             g_demo_next_tick = now;
@@ -480,6 +554,55 @@ void demomode_pump(void) {
         e.type = SDL_KEYUP;
         e.key.state = SDL_RELEASED;
         SDL_PushEvent(&e);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLKEYDOWN ", 11) == 0) {
+        /* Independent, real (tagged) SDL_KEYDOWN with no matching-line-
+         * declared release -- unlike SDLHOLD (which takes its own hold
+         * duration up front), the release is a SEPARATE later SDLKEYUP
+         * line. Exists for democapture.c's recorder, which learns a real
+         * key-up's timing only when it actually happens and can't
+         * pre-declare a tick count the way a hand-written SDLHOLD can.
+         * Key name as for SDLHOLD (single char, named special, or a raw
+         * 0xNN/decimal SDL_Keycode). Does not track hold state the way
+         * HOLD/SDLHOLD do -- multiple keys can be down at once (e.g. a
+         * recorded SHIFT+W turn), matching what actually happened. */
+        char keyname[32];
+        if (sscanf(p + 11, "%31s", keyname) != 1) {
+            fprintf(stderr, "[demo] malformed SDLKEYDOWN line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        int kc = demo_translate_sdlkey(keyname);
+        if (kc == 0) {
+            fprintf(stderr, "[demo] SDLKEYDOWN: unrecognized key '%s', skipping\n", keyname);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] SDLKEYDOWN %s (sdlkey=0x%x)\n", keyname, kc);
+        uw_inject_key_down(kc);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SDLKEYUP ", 9) == 0) {
+        /* See SDLKEYDOWN. */
+        char keyname[32];
+        if (sscanf(p + 9, "%31s", keyname) != 1) {
+            fprintf(stderr, "[demo] malformed SDLKEYUP line '%s', skipping\n", p);
+            g_demo_next_tick = now;
+            return;
+        }
+        int kc = demo_translate_sdlkey(keyname);
+        if (kc == 0) {
+            fprintf(stderr, "[demo] SDLKEYUP: unrecognized key '%s', skipping\n", keyname);
+            g_demo_next_tick = now;
+            return;
+        }
+        fprintf(stderr, "[demo] SDLKEYUP %s (sdlkey=0x%x)\n", keyname, kc);
+        uw_inject_key_up(kc);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

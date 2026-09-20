@@ -4,6 +4,7 @@
 #include "ordinal_stubs.h"
 #include "uw.h"
 #include "demomode.h"
+#include "democapture.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -11,6 +12,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <dlfcn.h> /* UW_DEBUG_ENDDRAW's dladdr() caller lookup, see GXEndDraw */
 
 #define GX_W 320
 #define GX_H 240
@@ -75,15 +77,9 @@ typedef struct {
  * space in the name-entry field. */
 #define VK_APP1 0xC1
 
-/* SDL_Event.*.which value tagging a click injected by uw_inject_mouse_* so
-   uw_pump_events takes the event's own coords (the GetGlobalMouseState
-   warp is a no-op under the dummy video driver). */
-#define UW_SYNTH_MOUSE 0x55570001u
-/* Stamped into keysym.unused (a spare Uint32 that survives SDL's event
-   queue memcpy) on keydown/keyup events pushed by uw_inject_key_* so the
-   physical-ESC "abort the running demo" check can tell a real keypress
-   from a demo's own SDLHOLD injection. */
-#define UW_SYNTH_KEY 0x55570002u
+/* UW_SYNTH_MOUSE/UW_SYNTH_KEY are declared in gx_stub.h (shared with
+   democapture.c, which needs to tell a real event from a demo's own
+   injected one to avoid recording playback back into a new file). */
 
 /* Dungeon-view (3D) player movement is polled from the physical keyboard
    state every pump (poll_dungeon_movement_keys), DOS-style, rather than
@@ -103,6 +99,7 @@ extern unsigned short DAT_0023c448;   /* latched pending input code */
 extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears DAT_0023c448 */
 extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move rate scale) */
 extern short DAT_0023beb4;            /* view pitch (1/256 deg); sync_camera_from_player -> DAT_000db448 */
+extern unsigned int g_uw_frame_clock_units; /* fixed-step wall-clock substitute for movement_pacing_handler -- see its own comment in uw.c */
 
 /* OR'd into the real SDL_GetKeyboardState() so scripted tests (SDLHOLD /
    uw_inject_key_down/up) can drive the same movement path -- SDL_PushEvent
@@ -248,20 +245,44 @@ static void poll_dungeon_movement_keys(void) {
         DAT_0023beb4 = (short)(p > 0x1800 ? 0x1800 : p);
     }
 
-    /* One latched code; turning takes priority so free-look always works.
-       (The keyboard decoder is single-axis -- diagonal move+turn would
-       need the analog rates set directly.) */
+    /* One latched code for turn-alone/forward-alone/back/strafe -- matches
+       decode_movement_command's own single-code dispatch. A forward key
+       (W/S) held together with a turn key (A/D) is handled separately
+       below via uw_set_analog_move_turn(), which sets DAT_0023bf48/4c
+       directly: decode_movement_command can only ever set one of them
+       per call (see its own comment), even though resolve_move_vector's
+       mode-1 case has always applied both together. */
     int code = 0, walk_slow = 0;
-    if (left && !right)         code = 0x8f;   /* turn left   */
-    else if (right && !left)    code = 0x91;   /* turn right  */
-    else if (run)              code = 0x8d;                     /* W: run  -- let the accelerator ramp */
-    else if (walk)             { code = 0x8d; walk_slow = 1; }  /* S: walk -- pin accelerator below the step clamp */
-    else if (back)              code = 0x93;   /* backward / turn-around */
-    else if (strafeL && !strafeR) code = 0x2c; /* sidestep left  (DOS ",") */
-    else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
+    int turning = 0;   /* -1 left, +1 right, 0 none */
+    if (left && !right)         { code = 0x8f; turning = -1; }  /* turn left  */
+    else if (right && !left)    { code = 0x91; turning = 1; }   /* turn right */
+    int forward = run || walk;
+    if (!turning) {
+        if (run)               code = 0x8d;                     /* W: run  -- let the accelerator ramp */
+        else if (walk)         { code = 0x8d; walk_slow = 1; }   /* S: walk -- pin accelerator below the step clamp */
+        else if (back)          code = 0x93;   /* backward / turn-around */
+        else if (strafeL && !strafeR) code = 0x2c; /* sidestep left  (DOS ",") */
+        else if (strafeR && !strafeL) code = 0x2e; /* sidestep right (DOS ".") */
+    } else if (walk) {
+        walk_slow = 1;   /* turning + S: still pin the accelerator for a slow diagonal */
+    }
 
-    if (code) {
-        if (!active) { DAT_0024af6c = 0x14; active = 1; }  /* re-arm accel on press edge */
+    if (code || (turning && forward)) {
+        /* Re-arm accel on press edge only -- the actual ramp-while-held
+           lives in game.c's app_main_loop (the real WinMain message-pump
+           loop), which already doubles/quadruples DAT_0024af6c every
+           iteration while DAT_000876c8==0 (key still down) -- confirmed:
+           decode_movement_command's own "NOTE: DAT_0024af6c ramps to
+           ~0x140" comment was accurate all along, just describing THAT
+           loop, which this file's earlier investigation missed by only
+           grepping uw.c/gx_stub.c for writers, not game.c. This function
+           already sets DAT_000876c8 correctly (0 below while held, 1 on
+           release), so that loop's existing ramp applies to WASD-driven
+           turning/running automatically with no separate logic needed
+           here -- an earlier attempt added a second, differently-shaped
+           (linear, not exponential) ramp in THIS function on top of it;
+           reverted as redundant/wrong once the real mechanism was found. */
+        if (!active) { DAT_0024af6c = 0x14; active = 1; }
         if (walk_slow) {
             /* keep S's forward rate below decode_movement_command's per-tick
                step clamp so it is a genuine slow walk, not a clamped run. */
@@ -269,17 +290,82 @@ static void poll_dungeon_movement_keys(void) {
             if (_wa < 0) { const char *e = getenv("UW_WALK_ACCEL"); _wa = e ? atoi(e) : 0x30; }
             DAT_0024af6c = (short)_wa;
         }
-        DAT_0023c448 = (unsigned short)code;
         DAT_000876c8 = 0;
+        if (turning && forward) {
+            /* Diagonal: set both rates directly and skip the single-code
+               dispatch entirely -- movement_tick only calls
+               decode_movement_command() while g_movement_mode == 0, so
+               setting it to 1 here (inside uw_set_analog_move_turn)
+               pre-empts that for this tick. */
+            DAT_0023c448 = 0;
+            uw_set_analog_move_turn(1, turning);
+        } else {
+            DAT_0023c448 = (unsigned short)code;
+        }
     } else if (active) {
         DAT_000876c8 = 1;   /* release: main loop clears DAT_0023c448 -> stop */
         active = 0;
     }
 }
 
+/* Called ONCE per real game tick from app_main_loop's own while loop
+   (game.c) -- the SAME loop that calls main_loop_hud_flush(), which is
+   what actually dispatches movement_pacing_handler() (uw.c) via the
+   sticky-bits table. Deliberately just the clock, NOT democapture_tick()/
+   demomode_pump() (those stay in uw_pump_events() below -- see its own
+   comment for why they can't move here). uw_pump_events() is also
+   reachable from Ordinal_864/poll_input_event, "the real keyboard-
+   polling function used by every menu/input-wait loop in the game" (see
+   its own comment in ordinal_stubs.c) -- confirmed live
+   (UW_DEBUG_MOVEPACE) that during plain WASD holding it was firing
+   roughly TWICE per real movement_pacing_handler() call, so advancing
+   g_uw_frame_clock_units there made every turn/walk update jump by two
+   ticks' worth at once instead of one -- user-reported: "does not seem
+   to update the actual player yaw every tick like mouse movement does."
+   Moving just the clock here, to the exact call site that also drives
+   movement, fixes that at the root instead of trying to guess/compensate
+   for however many times uw_pump_events() happens to fire per
+   iteration. This does mean a recorded/replayed WAIT tick (counted at
+   uw_pump_events()'s own, finer rate) no longer corresponds 1:1 to one
+   unit of this clock -- harmless for determinism (both recording and
+   replay see the identical relationship, since it's the same code
+   either way) and doesn't need to be exact for movement fidelity, only
+   consistent, which it is. */
+void uw_advance_game_tick(void) {
+    /* Advance g_uw_frame_clock_units (see its own comment in uw.c) by
+       exactly one fixed tick's worth, in the SAME 4ms-per-unit scale
+       read_realtime_clock_units()/Ordinal_535()>>2 uses -- computed fresh from the
+       running tick count each call (not accumulated with a per-call
+       remainder) so integer truncation never drifts the total over a
+       long session: 60 ticks always total exactly 250 units (1000ms),
+       whichever ticks happen to round up. */
+    static unsigned int tick_count = 0;
+    tick_count++;
+    g_uw_frame_clock_units = (unsigned int)((unsigned long long)tick_count * 250 / 60);
+    if (getenv("UW_DEBUG_TICKRATIO")) {
+        extern unsigned int g_uw_pump_events_calls; /* defined below */
+        fprintf(stderr, "[tickratio] game_tick=%u pump_calls_this_tick=%u\n", tick_count, g_uw_pump_events_calls);
+        g_uw_pump_events_calls = 0;
+    }
+}
+
+unsigned int g_uw_pump_events_calls = 0;
+
 void uw_pump_events(void) {
     SDL_Event ev;
     if (!g_win) return;
+    g_uw_pump_events_calls++;
+    /* democapture_tick()/demomode_pump() MUST stay universally reachable
+       from here (unlike g_uw_frame_clock_units's own advance -- see
+       uw_advance_game_tick's comment): uw_pump_events() is the one call
+       site reachable from EVERY context in the game (chargen, menus,
+       dungeon movement, ...), not just app_main_loop's own while loop
+       (which doesn't even start running until after chargen/menus are
+       done) -- confirmed live: moving these here too broke demo
+       playback completely (chargen never advanced past the first
+       screen, since demomode_pump() was no longer being called at all
+       during it). */
+    democapture_tick();
     demomode_pump();
     poll_dungeon_movement_keys();
 
@@ -295,9 +381,18 @@ void uw_pump_events(void) {
     }
 
     while (SDL_PollEvent(&ev)) {
+        /* Records KEYBOARD events only, before any of the game's own
+           filtering/early-returns below, so what gets written matches
+           exactly what a human at the keyboard actually did (democapture
+           does its own synthetic-event check and is a no-op if recording
+           is off). Mouse events are recorded separately, further down,
+           once win_x/win_y have been computed correctly -- see
+           democapture_record_mouse's own call site comment. */
+        democapture_record_event(&ev);
         switch (ev.type) {
             case SDL_QUIT:
                 g_running = 0;
+                democapture_shutdown();
                 SDL_DestroyTexture(g_tex);
                 SDL_DestroyRenderer(g_ren);
                 SDL_DestroyWindow(g_win);
@@ -447,6 +542,15 @@ void uw_pump_events(void) {
                     win_x = gx - wx;
                     win_y = gy - wy;
                 }
+                /* Record with the corrected win_x/win_y above, not the
+                   raw event fields -- see this block's own comment on why
+                   ev.motion.x/y and ev.button.x/y can't be trusted
+                   directly (HiDPI half-scale). Recording the raw fields
+                   instead produced a demo file whose SDLMOVE/SDLDOWN/etc
+                   lines warped the cursor to half the real recorded
+                   distance, replaying every drag/move short of where it
+                   actually went -- user-reported live. */
+                democapture_record_mouse(ev.type, ev.button.button, ev.button.which, win_x, win_y);
                 float lx, ly;
                 SDL_RenderWindowToLogical(g_ren, win_x, win_y, &lx, &ly);
                 int landscape_x = (int)lx, landscape_y = (int)ly;
@@ -590,6 +694,7 @@ int GXOpenDisplay(void *hwnd, unsigned int flags) {
                                SDL_TEXTUREACCESS_STREAMING, GX_W, GX_H);
     memset(g_framebuffer, 0, sizeof(g_framebuffer));
     demomode_init();
+    democapture_init();
     return 1;
 }
 
@@ -1129,12 +1234,28 @@ void *GXBeginDraw(void) {
                         "(further calls not logged, this runs every frame)\n");
         logged = 1;
     }
-    if (!g_running) exit(0);
+    if (!g_running) { democapture_shutdown(); exit(0); }
     return g_framebuffer;
 }
 
 int GXEndDraw(void) {
     if (!g_tex) return 0;
+    /* UW_DEBUG_ENDDRAW: log every real call to this function (i.e. every
+       actual SDL_RenderPresent, the true screen-present) with its
+       immediate caller's symbol, so a genuinely redundant second
+       GXEndDraw() per real game tick -- each one throttled independently
+       by the vsync-pacing SDL_Delay below -- can be spotted directly
+       instead of bisected by hand. See demo-recording-infrastructure
+       memory's "keyboard input runs at ~half framerate" entry for why
+       this was added. */
+    if (getenv("UW_DEBUG_ENDDRAW")) {
+        void *caller = __builtin_return_address(0);
+        Dl_info info;
+        const char *name = (dladdr(caller, &info) && info.dli_sname) ? info.dli_sname : "?";
+        static unsigned int call_count = 0;
+        call_count++;
+        fprintf(stderr, "[enddraw] call=%u tick=%u caller=%s(%p)\n", call_count, g_uw_frame_clock_units, name, caller);
+    }
     /* Un-rotate the portrait "hardware" framebuffer back to a natural
      * landscape image for display -- see the HW_W/HW_H comment above.
      * landscape(x,y) = portrait((HW_W-1-x), y), i.e. the inverse of the
