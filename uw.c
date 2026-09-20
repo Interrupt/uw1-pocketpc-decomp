@@ -36653,30 +36653,39 @@ ushort * param_1;
 
 
 
+/* Was copying "armor_f" into acStack_85c88, a 547936-byte buffer
+   Ghidra misattributed here (the same stack-frame-size-miscalculation
+   artifact already fixed in dispatch_object_action's acStack_85978
+   and check_object_fits_in_slot's acStack_84f64 -- see their own
+   comments) that's never read back afterward. The REAL destination,
+   acStack_28 (6 bytes) + local_22 (the dynamically-picked gender
+   letter, right after it), never actually got "armor_" copied into
+   it -- so FUN_00041a18 loaded a resource file named by 6 bytes of
+   uninitialized stack instead of "armor_f"/"armor_m", explaining why
+   an equipped item's paper-doll overlay renders as a solid block
+   (whatever placeholder/error frame a failed .GR load falls back to)
+   instead of the real worn-armor graphic. Fixed by building the real
+   name into one properly-sized, NUL-terminated local instead of
+   relying on two separate locals happening to land adjacently on the
+   stack (true in the original 32-bit ARM build, not guaranteed by a
+   modern compiler). */
 undefined4 FUN_00046b88(param_1,param_2)
 int param_1;
 undefined4 param_2;
 
 {
-  char *wptr_30748;
-  char cVar1;
-  char *pcVar2;
-  char acStack_85c88 [547936];
-  char acStack_28 [6];
-  undefined1 local_22;
-  
-  pcVar2 = s_armor_f_00085c60;
-    wptr_30748 = acStack_85c88;
-  do {
-    cVar1 = *pcVar2;
-    *wptr_30748 = cVar1; wptr_30748 = wptr_30748 + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  local_22 = 0x6d;
-  if ((*(byte *)(DAT_00086df8 + 100) & 2) == 2) {
-    local_22 = 0x66;
+  char armor_name[8];
+  int i;
+
+  for (i = 0; i < 6; i++) {
+    armor_name[i] = s_armor_f_00085c60[i];
   }
-  FUN_00041a18(param_1 + 0x2091,acStack_28,param_2);
+  armor_name[6] = 0x6d;
+  if ((*(byte *)(DAT_00086df8 + 100) & 2) == 2) {
+    armor_name[6] = 0x66;
+  }
+  armor_name[7] = '\0';
+  FUN_00041a18(param_1 + 0x2091,armor_name,param_2);
   return 1;
 }
 
