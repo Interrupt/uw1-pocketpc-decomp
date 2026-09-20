@@ -961,7 +961,7 @@ void FUN_00041a18();
 undefined4 FUN_00041a78();
 undefined4 FUN_00041aac();
 void load_door_frames();
-void FUN_00041e40();
+void load_armor_variant_tables();
 void input_bindings_init();
 void input_bindings_free();
 int register_click_region();

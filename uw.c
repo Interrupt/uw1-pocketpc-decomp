@@ -3622,7 +3622,7 @@ undefined4 LAB_0002a2d8()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-/* LAB_00041e84: dispatch target index 0 of get_scanned_object_class_
+/* class0_variant_effect_table_lookup: dispatch target index 0 of get_scanned_object_class_
    effect_ptr's 8-entry table -- reached for any object whose class is
    0 (id&0x1c0)>>6==0, which check_object_fits_in_slot treats as the
    ARMOR class (its own uVar1==0 checks gate the body-slot validation
@@ -3638,11 +3638,11 @@ undefined4 LAB_0002a2d8()
    family 0), DAT_002027d0 (stride 3, family 1), or DAT_00202750
    (stride 4, families 2 and 3 -- family 3 adds 16 to the nibble index
    into the same table). All three are already real, non-orphaned
-   globals loaded from objects.dat by the already-correct FUN_00041e40
+   globals loaded from objects.dat by the already-correct load_armor_variant_tables
    (called via FUN_00052674's boot-time dispatch table, same loader
    that reaches load_light_food_effect_tables) and already read
    elsewhere in this file (FUN_000272c0, uw.c ~17840). */
-void *LAB_00041e84()
+void *class0_variant_effect_table_lookup()
 
 {
   ushort uVar1;
@@ -32897,7 +32897,7 @@ void load_door_frames()
 
 
 
-void FUN_00041e40(param_1)
+void load_armor_variant_tables(param_1)
 undefined4 param_1;
 
 {
@@ -44122,7 +44122,7 @@ undefined4 FUN_00052674()
   
   iVar5 = 0;
   local_13c[3] = (code *)0x0;
-  local_13c[0] = FUN_00041e40;
+  local_13c[0] = load_armor_variant_tables;
   local_13c[4] = (code *)0x0;
   local_13c[1] = FUN_0002a2c8;
   local_13c[5] = (code *)0x0;
@@ -44204,7 +44204,7 @@ void *get_scanned_object_class_effect_ptr()
   undefined1 *local_c;
   undefined1 *local_8;
   
-  local_24[0] = &LAB_00041e84;
+  local_24[0] = &class0_variant_effect_table_lookup;
   local_24[1] = &LAB_0002a2d8;
   local_24[2] = &class2_variant_effect_table_lookup;
   local_24[3] = &LAB_0007913c;
