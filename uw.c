@@ -53063,7 +53063,7 @@ static int uwdl_texture_width(int idx)
   return 0;
 }
 
-static void emit_dlist_bank_object(const unsigned short *words, int count, int head, int heading, double scale, double yscale, double yoff, void *texptr, int texwidth, int texheight)
+static void emit_dlist_bank_object(const unsigned short *words, int count, int head, int heading, double scale, double yoff, void *texptr, int texwidth, int texheight)
 {
   static uwdl_face faces[UWDL_MAX_FACES];
   int nfaces;
@@ -53180,19 +53180,8 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
       double mx = f->p[_src][0], my = f->p[_src][1], mz = f->p[_src][2];
       double rx = mx*ca - mz*sa, rz = mx*sa + mz*ca;
       float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + vi)*0xc);
-      /* yscale is INDEPENDENT of scale (X/Z) -- confirmed necessary
-         live: the leaf's own real height (208) needs to reach the
-         frame's real opening height (384, confirmed by the user to be
-         the correct target -- real UW1 doors fill the whole opening,
-         no lintel gap) without also widening the door, which a uniform
-         scale already proved wrong (tested ~1.846 uniformly: the door
-         became visibly too wide, poking past its own jambs, while
-         still showing a gap). Doors are much taller than wide, so
-         stretching only Y is the structurally sensible fix, not a
-         hack -- same idea as any non-uniform object scale, just never
-         needed before this bank. */
       vf[0] = (float)(ax + rx*scale);
-      vf[1] = (float)(ah + my*yscale + yoff);
+      vf[1] = (float)(ah + my*scale + yoff);
       vf[2] = (float)(az + rz*scale);
       src_idx[vi] = _src;
     }
@@ -55384,10 +55373,10 @@ LAB_00061d34:
           if (getenv("UW_DEBUG_DLIST"))
             fprintf(stderr, "[dlist] wall texture index=%d width=%d texptr=%p\n", _wtex, _twidth, _texptr);
           emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_DOORWAY,
-                                  _quadrant_heading2, _scale, _scale, _yoff, _texptr, _twidth, _twidth);
+                                  _quadrant_heading2, _scale, _yoff, _texptr, _twidth, _twidth);
         } else {
           emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_DOORWAY,
-                                  _quadrant_heading2, _scale, _scale, _yoff, 0, 0, 0);
+                                  _quadrant_heading2, _scale, _yoff, 0, 0, 0);
         }
         /* Door LEAF (bank 0x6e) -- the swinging panel itself, not just
            the frame. Same region/interpreter/anchor pipeline as the
@@ -55411,32 +55400,23 @@ LAB_00061d34:
              base, not stacked on top of the frame's. */
           int _leaf_heading = (_raw_heading2 - 2 * (int)DAT_0023b4a0) & 7;
           double _leaf_scale = _scale;
-          double _leaf_yscale = 1.0;
           { int _lstep = -3;
             const char *_s = getenv("UW_DLIST_LEAF_HEADING_OFFSET"); if (_s) _lstep = atoi(_s);
             _leaf_heading = (_leaf_heading + _lstep) & 7;
           }
-          /* CORRECTED: the previous version of this comment scaled Y to
-             384/208 on the (wrong) assumption that the frame's whole
-             y=[0,384] bbox was "the opening." Dumped bank 0x61's own 11
-             faces by real position (UW_DEBUG_DLIST_UV) to check directly
-             instead of assuming further, and it settles this cleanly:
-             face 1 (the lintel's own underside, a horizontal face) sits
-             at exactly y=208; faces 6/7/9 (the outer jambs -- the actual
-             sides of the door opening a leaf swings within) all span
-             y=[0,208]; faces 5/8 (the lintel's own front/back) are the
-             separate y=[208,384] band above that. The frame's real door
-             OPENING is y=[0,208] -- exactly the leaf's own native
-             height, unscaled. User confirmed directly: doors fill the
-             door area, not the lintel -- scaling the leaf to 384 pushed
-             it up into the lintel band, which was the bug, not a fix.
-             yscale is kept as a real, independently-tunable parameter
-             (X/Z still uses this bank's own confirmed-correct 1.0 via
-             _leaf_scale) in case future calibration needs it for a
-             different reason, but 1.0 is the evidenced-correct default
-             now, not 384/208. */
+          /* Reverted the Y-scale detour (both the 384/208 stretch and
+             its later "correct" 1.0 default) at the user's request, to
+             start fresh on door-model scaling with a clean baseline --
+             back to this bank's own confirmed-correct uniform scale,
+             same as the frame. The underlying data point that prompted
+             all of it is still true and worth keeping in mind next
+             time: the frame's real door opening is y=[0,208] (bank
+             0x61's outer jamb faces all span exactly that; the lintel's
+             own front/back faces are the separate y=[208,384] band
+             above), matching the leaf's own native height already --
+             see object-rendering-findings.txt's dated entries for the
+             full trace if picking this back up. */
           { const char *_s = getenv("UW_DLIST_LEAF_SCALE"); if (_s) _leaf_scale = atof(_s); }
-          { const char *_s = getenv("UW_DLIST_LEAF_YSCALE"); if (_s) _leaf_yscale = atof(_s); }
           if (getenv("UW_DLIST_DOOR_TEXTURE")) {
             /* NOT the wall texture -- confirmed live by the user that the
                closed door already drew with its own correct texture
@@ -55477,10 +55457,10 @@ LAB_00061d34:
               fprintf(stderr, "[dlist] leaf sprite frame=%d texptr=%p width=%d height=%d\n",
                       uVar27, _leaf_texptr, _leaf_twidth, _leaf_theight);
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _leaf_scale, _leaf_yscale, _yoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
+                                    _leaf_heading, _leaf_scale, _yoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
           } else {
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _leaf_scale, _leaf_yscale, _yoff, 0, 0, 0);
+                                    _leaf_heading, _leaf_scale, _yoff, 0, 0, 0);
           }
           /* Once the real 3D leaf is drawing, the old 2D camera-facing
              sprite billboard below (LAB_emit_mesh_sprite_quad's own

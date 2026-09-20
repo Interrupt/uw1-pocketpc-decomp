@@ -2280,3 +2280,37 @@ nothing replaced it -- only the leaf's own presence supersedes the old
 billboard, not the frame's.
 
 Standard run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (11): REVERTED THE Y-SCALE DETOUR ENTIRELY, AT THE
+USER'S REQUEST -- START FRESH ON DOOR-MODEL SCALING
+═══════════════════════════════════════════════════════════════════════════
+User: "Revert our door scale changes here, to start fresh on the door
+model scaling." Reverted the independent `yscale` mechanism added in
+UPDATE (8) and its later correction in UPDATE (9) -- both the
+`emit_dlist_bank_object` `yscale` parameter and the leaf's own
+`_leaf_yscale`/`UW_DLIST_LEAF_YSCALE` are gone. The leaf is back to
+this bank's plain, uniform `_leaf_scale` (still independently
+overridable via `UW_DLIST_LEAF_SCALE`, unchanged from before any of
+this detour), same as it was right after the leaf was first wired up
+(commit 6534c77) and before scaling was touched at all.
+
+Scoped precisely: this reverts the SCALE mechanism only, not the other,
+independently-evidenced fixes made alongside/after it in the same
+stretch of work -- the UV stretch-to-fit-vs-tiling fix (UPDATE 6, a
+texture-mapping scale, not a geometric one), the V-direction flip
+(UPDATE 7), the flat-leaf-face skip, and the sprite-duplicate fix
+(UPDATE 10) all stay as they were, each independently verified and
+unrelated to the specific X/Y/Z geometric scale question.
+
+The underlying data point that prompted the whole detour is still
+real and worth keeping for whenever door-model scaling is revisited:
+bank 0x61's own 11 faces, dumped by real position, show the frame's
+actual door OPENING is y=[0,208] (the outer jamb faces all span
+exactly that), with the lintel itself being the separate y=[208,384]
+band above -- and the leaf's own native, unscaled height already
+happens to be 208, matching it exactly. Whatever the next scaling
+question turns out to be, it isn't "make the leaf taller to fill
+384" -- that specific direction is confirmed wrong.
+
+Standard run-regressions.sh: 6/6 clean after the revert.

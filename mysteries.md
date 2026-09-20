@@ -545,6 +545,22 @@ through -- scoped so UW_DLIST_DOOR alone (frame only, no leaf) still
 falls through as before, since nothing replaced the sprite in that
 case. Full detail in `object-rendering-findings.txt`.
 
+**UPDATE 21 (reverted the Y-scale detour entirely, at the user's
+request, 2026-09-20):** "Revert our door scale changes here, to start
+fresh on the door model scaling." Reverted UPDATE 18's independent
+`yscale` mechanism and UPDATE 19's correction of it -- both the
+`emit_dlist_bank_object` `yscale` parameter and `UW_DLIST_LEAF_YSCALE`
+are gone. The leaf is back to this bank's plain, uniform `_leaf_scale`,
+same as right after the leaf was first wired. The other fixes made in
+the same stretch of work (UV stretch-to-fit, V-flip, flat-face skip,
+sprite-duplicate fix) are untouched -- each independently evidenced and
+unrelated to this specific geometric scale question. The underlying
+data point stays true for whenever this is revisited: the frame's real
+door opening is y=[0,208] (confirmed by its own outer jamb faces),
+already matching the leaf's native height exactly -- "scale the leaf up
+to 384" is a confirmed-wrong direction, not just an abandoned one. Full
+detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
