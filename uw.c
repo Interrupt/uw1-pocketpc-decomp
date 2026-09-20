@@ -34970,24 +34970,26 @@ short param_2;
 
 
 
-/* Given an object, find which currently-displayed backpack-grid widget
-   shows it (or allocate it one if it isn't shown yet). Was declared with
-   no parameters at all, and its body called encode_object_slot_index()
-   bare -- but every one of its 4 real call sites passes a real object
-   pointer, so this silently relied on ARM register leftover (the
-   caller's arg still sitting in r0, unclobbered) to accidentally forward
-   the right value. That's the same dropped-argument idiom already fixed
-   dozens of times in this file, except here BOTH this function's own
-   argument and its inner encode_object_slot_index() call were dropped
-   in tandem -- confirmed to crash for real: try_combine_or_stow_object's
-   "open a nested container" branch calls FUN_000451b0(container) then
+// was FUN_000451b0 -- given an object, find which currently-displayed
+// backpack-grid widget shows it (or allocate it one if it isn't shown
+// yet).
+/* Was declared with no parameters at all, and its body called
+   encode_object_slot_index() bare -- but every one of its 4 real call
+   sites passes a real object pointer, so this silently relied on ARM
+   register leftover (the caller's arg still sitting in r0, unclobbered)
+   to accidentally forward the right value. That's the same
+   dropped-argument idiom already fixed dozens of times in this file,
+   except here BOTH this function's own argument and its inner
+   encode_object_slot_index() call were dropped in tandem -- confirmed
+   to crash for real: try_combine_or_stow_object's "open a nested
+   container" branch calls find_or_assign_object_widget(container) then
    open_backpack_container() (also bare -- see that call site's own fix),
    and whatever register leftover reached open_backpack_container's
    param_1 there was garbage in a fresh call context, producing a wild
    resolve_object_link() dereference the instant a SECOND level of
    container nesting was opened (a top-level open happened to work by
    the same lucky-leftover coincidence one level up). */
-int FUN_000451b0(param_1)
+int find_or_assign_object_widget(param_1)
 ushort *param_1;
 
 {
@@ -68103,7 +68105,7 @@ int param_2;
   }
   else {
     if ((param_1[2] & 0x3f) != 0) {
-      iVar6 = FUN_000451b0(param_1);
+      iVar6 = find_or_assign_object_widget(param_1);
       iVar8 = 0;
       do {
         if (((int)(short)iVar6 == (int)(char)(&DAT_00085ac8)[iVar8]) && (uVar10 == 1)) break;
@@ -68181,7 +68183,7 @@ uint param_2;
         *param_1 = (bVar2 + 4 ^ bVar2) & 0xf ^ bVar2;
         param_1[1] = (byte)((ushort)uVar1 >> 8);
         FUN_00078c80(0x7d);
-        FUN_000451b0(param_1);
+        find_or_assign_object_widget(param_1);
         FUN_0004503c();
       }
     }
@@ -68578,7 +68580,7 @@ int param_3;
       uVar2 = *param_1;
       *(undefined1 *)param_1 = 0x91;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8) & 0xfe;
-      FUN_000451b0(param_1);
+      find_or_assign_object_widget(param_1);
       FUN_0004503c();
     }
   }
@@ -69253,18 +69255,20 @@ int param_3;
     try_empty_container(param_2,param_1 == g_player_object);
   }
   else {
-    /* Both calls here were bare (no arguments) -- see FUN_000451b0's own
-       fix comment and open_backpack_container's declared `short param_1`.
-       FUN_000451b0(param_2) finds (or allocates) the grid widget
-       currently displaying this container; that widget index is exactly
-       what open_backpack_container needs to know WHICH container to
-       open. Confirmed crashing for real: opening a container nested
-       inside an already-open container dereferenced whatever garbage
-       register value reached open_backpack_container's param_1, since
-       nothing here ever captured FUN_000451b0's return value at all. */
-    int _widget = FUN_000451b0(param_2);
+    /* Both calls here were bare (no arguments) -- see
+       find_or_assign_object_widget's own fix comment and
+       open_backpack_container's declared `short param_1`.
+       find_or_assign_object_widget(param_2) finds (or allocates) the
+       grid widget currently displaying this container; that widget
+       index is exactly what open_backpack_container needs to know
+       WHICH container to open. Confirmed crashing for real: opening a
+       container nested inside an already-open container dereferenced
+       whatever garbage register value reached open_backpack_container's
+       param_1, since nothing here ever captured
+       find_or_assign_object_widget's return value at all. */
+    int _widget = find_or_assign_object_widget(param_2);
     if (getenv("UW_DEBUG_INV"))
-      fprintf(stderr, "[inv] try_combine_or_stow_object open: param_2=%p FUN_000451b0 returned widget=%d\n",
+      fprintf(stderr, "[inv] try_combine_or_stow_object open: param_2=%p find_or_assign_object_widget returned widget=%d\n",
               (void *)param_2, _widget);
     if (-1 < _widget) {
       open_backpack_container(_widget);
