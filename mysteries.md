@@ -464,6 +464,41 @@ width existed, since wall textures are always square). Verified: the
 leaf now renders as a single, properly-proportioned panel contained
 within the frame. Full detail in `object-rendering-findings.txt`.
 
+**UPDATE 17 (V-direction flip, confirmed; leaf-height question left
+open for the user, 2026-09-20):** user: "the scale is correct but the
+vertical panning seems off now." Confirmed and fixed: world Y increases
+upward but a sprite's V increases downward from its top row -- the
+un-flipped mapping showed the sprite's top-edge band near the opening's
+top, a real gap in the middle, and the bottom-edge band again near the
+bottom (verified the leaf's 2 textured faces are the door's whole front
+and back, not two half-panels needing a seam alignment, ruling that
+theory out first). A/B tested before committing -- flipped is a single,
+continuous, correctly-oriented door. Same "invisible on symmetric
+stone, real on an asymmetric sprite" story as the earlier scale bug, so
+almost certainly present in the frame's own V too, just never visible.
+
+Next report: "seems to be drawing a small vertical section... not the
+full height." Added DOS's own flat-leaf-face skip for a shut door
+(confirmed correct against uw1_view_door_faces's own logic) -- verified
+it changed nothing visually, so not the cause. Checked whether the
+leaf needs the same lintel-relative "rise" positioning bank 0x61 does
+(UPDATE 12): confirmed directly against the real assembled region that
+slot `0x800` is referenced only by bank 0x61 and bank 0x6a (pillar),
+never by the leaf -- its 208-unit height is genuinely complete, not a
+truncated result of a missing seed, and DOS's own door_model call
+passes the same rise to both banks uniformly regardless. A direct
+scale-up test (~1.85, matching the frame's own height ratio) made the
+result visibly worse, ruling out "just needs a bigger scale."
+
+Left open: the frame's own 384-unit height almost certainly includes
+its solid lintel structure, not just the clear opening a leaf needs to
+fill -- if so, 208 could be geometrically correct and the visible "gap
+of stone above the door" may be the real lintel textured like the
+jambs, not missing geometry. This needs real-game visual knowledge this
+investigation can't resolve from the DOS source alone -- flagged to the
+user rather than guessed at further. Full detail in
+`object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

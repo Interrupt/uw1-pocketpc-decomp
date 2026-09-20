@@ -53115,6 +53115,8 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
           for (_vi = 0; _vi < f->count; _vi++)
             fprintf(stderr, " uv[%d]=(%d,%d)", _vi, f->u[_vi], f->v[_vi]);
         }
+        for (_vi = 0; _vi < f->count; _vi++)
+          fprintf(stderr, " p[%d]=(%g,%g,%g)", _vi, f->p[_vi][0], f->p[_vi][1], f->p[_vi][2]);
         fprintf(stderr, "\n");
       }
     }
@@ -53143,6 +53145,26 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
       for (_pj = 0; _pj < 4; _pj++) if (!f->placed[_pj]) { _all_placed = 0; break; }
       if (!_all_placed) continue;
     }
+    /* uw1_view_door_faces (port/uw1_view.c ~2650-2654): "0x0014
+       skip_if_le on parameter slot 3 ... slot 3 is the open amount. A
+       shut door draws no flat face at all" -- `if (f->kind ==
+       UW1_DLIST_FACE_FLAT && open == 0) continue;`. The leaf's 6 faces
+       are only 2 textured (the real front/back door image) and 4 flat
+       (has_uv=0) -- rendering those 4 unconditionally, alongside the 2
+       real textured faces, is what the user saw as "only a small
+       vertical section" of the door: the flat faces are a real but
+       separate part of this bank's geometry (edges/reveals, only
+       meaningful for an OPEN door per DOS's own gate) visually breaking
+       up the one continuous textured panel that should be all a SHUT
+       door shows. This project doesn't yet track live open/shut state
+       for the leaf's own emission (UW_DLIST_DOOR_LEAF is a first pass at
+       geometry+texture, not door animation), so this assumes shut --
+       matching every real test case in this investigation so far -- and
+       skips flat leaf faces unconditionally rather than rendering them
+       incorrectly. */
+    if (head == 4187 /* UW_DLIST_HEAD_LEAF, see its own #define's comment
+                         on why this can't be the macro name here */
+        && !f->has_uv) continue;
     base_vtx = DAT_0023b838;
     if (base_vtx + nv >= 512 - 4 || DAT_0023b83c >= 490 - 1) break;
     { int src_idx[UWDL_MAX_FACE_VERTS];
@@ -53341,14 +53363,32 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
              roughly one 64-texel repeat instead of ~4. */
           uscale = vscale = (texwidth > 1) ? (double)(texwidth - 1) / 256.0 : 1.0;
         }
+        /* V direction: world Y increases upward, but a decoded sprite's
+           V increases downward from row 0 (top) -- mapping the smallest
+           world Y (physically the bottom of a face) to v=0 (the
+           sprite's top row) draws it upside down. Confirmed live at a
+           real closed door (user report: "vertical panning is off"
+           after the scale fix): the un-flipped version showed the
+           sprite's top-edge band near the top of the opening, a gap in
+           the middle (stone showing through), and the bottom-edge band
+           again near the bottom -- not a seam between the leaf's 2
+           textured faces (confirmed both span the WHOLE door, front
+           Z=0 and back Z=8, not two half panels) but the image simply
+           being sampled in the wrong direction. Flipping (largest world
+           Y, physically nearest the lintel, maps to v=0 the sprite's
+           top row) produced a single, correctly continuous door panel.
+           Applies to both axes for the same "world up = image up"
+           reason walls/frame don't show this: their own repeating stone
+           texture looks identical flipped or not, so the same bug was
+           silently present there too without ever being visible. */
         u0 = (int32_t)((f->p[s0][0] - umin) * uscale);
         u1 = (int32_t)((f->p[s1][0] - umin) * uscale);
         u2 = (int32_t)((f->p[s2][0] - umin) * uscale);
         u3 = (int32_t)((f->p[s3][0] - umin) * uscale);
-        v0 = (int32_t)((f->p[s0][1] - vmin) * vscale);
-        v1 = (int32_t)((f->p[s1][1] - vmin) * vscale);
-        v2 = (int32_t)((f->p[s2][1] - vmin) * vscale);
-        v3 = (int32_t)((f->p[s3][1] - vmin) * vscale);
+        v0 = (int32_t)((vmax - f->p[s0][1]) * vscale);
+        v1 = (int32_t)((vmax - f->p[s1][1]) * vscale);
+        v2 = (int32_t)((vmax - f->p[s2][1]) * vscale);
+        v3 = (int32_t)((vmax - f->p[s3][1]) * vscale);
         *(int *)(&DAT_000ace08 + rb) = u0;
         *(int *)(&DAT_000ace0c + rb) = v0;
         *(int *)(&DAT_000ace10 + rb) = u1;
@@ -55359,10 +55399,22 @@ LAB_00061d34:
              independent offset applied to the same quadrant-corrected
              base, not stacked on top of the frame's. */
           int _leaf_heading = (_raw_heading2 - 2 * (int)DAT_0023b4a0) & 7;
+          double _leaf_scale = _scale;
           { int _lstep = -3;
             const char *_s = getenv("UW_DLIST_LEAF_HEADING_OFFSET"); if (_s) _lstep = atoi(_s);
             _leaf_heading = (_leaf_heading + _lstep) & 7;
           }
+          /* User report: the leaf only fills a small vertical section of
+             the doorway, not the full height. Its own bytecode legitimately
+             builds to y=[0,208] with ZERO vertex drops (unlike the frame's
+             earlier "rise" bug, where the shortfall was real MISSING
+             geometry from an unseeded slot) -- this is genuinely all the
+             geometry this bank produces, so the mismatch against the
+             frame's own y=[0,384] opening looks like a real per-bank scale
+             difference between bank 0x6e's own local units and bank
+             0x61's, not missing data. UW_DLIST_LEAF_SCALE to calibrate
+             independently of the frame's own confirmed-correct 1.0. */
+          { const char *_s = getenv("UW_DLIST_LEAF_SCALE"); if (_s) _leaf_scale = atof(_s); }
           if (getenv("UW_DLIST_DOOR_TEXTURE")) {
             /* NOT the wall texture -- confirmed live by the user that the
                closed door already drew with its own correct texture
@@ -55403,10 +55455,10 @@ LAB_00061d34:
               fprintf(stderr, "[dlist] leaf sprite frame=%d texptr=%p width=%d height=%d\n",
                       uVar27, _leaf_texptr, _leaf_twidth, _leaf_theight);
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _scale, _yoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
+                                    _leaf_heading, _leaf_scale, _yoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
           } else {
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _scale, _yoff, 0, 0, 0);
+                                    _leaf_heading, _leaf_scale, _yoff, 0, 0, 0);
           }
         }
         /* UW_DLIST_DOOR_ONLY=1: skip the pre-existing leaf-sprite draw
