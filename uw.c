@@ -4769,11 +4769,33 @@ static undefined1 DAT_000870ec_backing[4] = { 248,0, 28,1 };  /* 248, 284 */
    DAT_0023c128[0]'s own byte, and DAT_0023c128[1] read/wrote
    DAT_0023c224's first byte -- so the mana flask's fill-level
    tracking was corrupting the health flask's, and the compass-icon
-   cluster besides. Fixed the same way, real 2-element arrays. */
-static undefined1 DAT_0023c118_arr[2];
+   cluster besides. Fixed the same way, real 2-element arrays.
+
+   FOLLOW-UP (this session, chasing the chain-hotspot/stats-panel
+   revival): that first fix under-sized both arrays. set_hud_status_value
+   and FUN_0006cbf0's own reset loop (`while (iVar1 < 9)`) both index
+   `(&DAT_0023c118)[i]`/`(&DAT_0023c128)[i]` up to i=8, and disassembly
+   of the real chain-hotspot handler chain (0x6cfb0-0x6cfdc) confirms
+   DAT_0023c11e's real address is exactly DAT_0023c118+6 -- so widened
+   to real 9-element arrays and folded DAT_0023c11e/DAT_0023c11f/
+   DAT_0023c120 (indices 6/7/8 of the first array) and DAT_0023c12e/
+   DAT_0023c12f (indices 6/7 of the second) in as aliases instead of
+   the separate globals they were each declared as, which -- exactly
+   like the original bug here -- put them at unrelated addresses the
+   `(&DAT_0023c118)[6]`-style writes elsewhere in this file could never
+   actually reach. That was why toggling the stats panel (index 6)
+   silently did nothing: set_hud_status_value(6, target) wrote 6 bytes
+   past a 2-byte array into unrelated memory instead of the real
+   DAT_0023c11e the panel-transition ticker (FUN_0006e130) reads. */
+static undefined1 DAT_0023c118_arr[9];
 #define DAT_0023c118 DAT_0023c118_arr[0]
-static undefined1 DAT_0023c128_arr[2];
+#define DAT_0023c11e DAT_0023c118_arr[6]
+#define DAT_0023c11f DAT_0023c118_arr[7]
+#define DAT_0023c120 DAT_0023c118_arr[8]
+static undefined1 DAT_0023c128_arr[9];
 #define DAT_0023c128 DAT_0023c128_arr[0]
+#define DAT_0023c12e DAT_0023c128_arr[6]
+#define DAT_0023c12f DAT_0023c128_arr[7]
 /* Was a lone `undefined2 DAT_0023c224;` -- but used as a real 2-element
    array throughout (`(&DAT_0023c224)[iVar1]`/`[uVar2]` for index 0 AND
    1, including the creation loop in redraw_hud_panels that assigns
@@ -4861,8 +4883,6 @@ static undefined2 DAT_0023c1e4_arr[2];
 #define DAT_0023c1e6 DAT_0023c1e4_arr[1]
 undefined2 DAT_0023c220;
 ushort DAT_0023c1d8;
-undefined1 DAT_0023c11f;
-undefined1 DAT_0023c120;
 undefined1 DAT_0023c130;
 undefined1 DAT_000870e0;
 int DAT_0023c23c;
@@ -4972,7 +4992,22 @@ static short DAT_0023c234_arr[2];
 #define DAT_0023c234 DAT_0023c234_arr[0]
 static short DAT_0023c238_arr[2];
 #define DAT_0023c238 DAT_0023c238_arr[0]
-undefined2 DAT_0023c200;
+/* Was 3 separate `undefined2` scalars (DAT_0023c200/202/204) -- same
+   split-symbol bug as DAT_0023c118/DAT_0023c128 just above (see that
+   comment's full writeup, found chasing the same chain-hotspot/
+   stats-panel revival): FUN_0006eb64/FUN_0006edfc both index
+   `(&DAT_0023c200)[i]` for i=0,1,2 (3 grtile handles backing the
+   panel-switch wipe transition), but as 3 independent globals they
+   don't land in contiguous memory on this recompile, so the loop that
+   allocates/checks all 3 only ever really touched DAT_0023c200 --
+   DAT_0023c202/DAT_0023c204 (read directly by name elsewhere in this
+   same function) stayed 0/uninitialized, so FUN_00049954(DAT_0023c202)
+   returned a garbage grtile handle and crashed
+   bitmap_blit_to_framebuffer the first time this code path ever ran. */
+static undefined2 DAT_0023c200_arr[3];
+#define DAT_0023c200 DAT_0023c200_arr[0]
+#define DAT_0023c202 DAT_0023c200_arr[1]
+#define DAT_0023c204 DAT_0023c200_arr[2]
 char DAT_000870dc;
 char DAT_000870d8;
 ushort DAT_0023c1dc;
@@ -5136,10 +5171,7 @@ undefined DAT_0023c124;
 short DAT_0023c254;
 short DAT_00087258;
 short DAT_0023c258;
-char DAT_0023c11e;
-char DAT_0023c12e;
 int DAT_0023c20c;
-byte DAT_0023c12f;
 byte DAT_0023c25c;
 /* Real per-frame storage for the currently-loaded weapon-swing sprite
    set -- found by tracing weapon_swing_draw_tick's dropped argument
@@ -5247,12 +5279,10 @@ undefined2 DAT_0023c148;
 undefined2 DAT_0023c14c;
 undefined2 DAT_0023c144;
 byte DAT_0023c218;
-undefined2 DAT_0023c202;
 short DAT_0023c134;
 static undefined DAT_00087298_backing[8192];
 #define DAT_00087298 DAT_00087298_backing[0]
 byte DAT_0023c208;
-undefined2 DAT_0023c204;
 short DAT_0023c138;
 short DAT_0023c13c;
 short DAT_0023c110;
@@ -6209,6 +6239,12 @@ void FUN_00011b34()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+/* Forward declaration: g_grtile_real_ptrs is defined much further down
+   (see its own comment there), but FUN_00011c10 here -- much earlier in
+   the file -- needs it to resolve a grtile registry key to the real
+   pointer the key was only ever a truncated stand-in for. */
+static void *g_grtile_real_ptrs[320];
+
 void FUN_00011c10(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 ushort param_1;
 int param_2;
@@ -6233,11 +6269,33 @@ short param_7;
   short sVar12;
   int iVar13;
   short local_30;
-  int local_2c;
-  
+  /* Was `int local_2c = param_3 + ...` -- param_3 is
+     grtile_alloc_registered's opaque truncated identity key, not a real
+     pointer (same issue already fixed in capture_framebuffer_rect_to_grtile
+     and FUN_00076e98, see their own comments -- FUN_00011c10 was the one
+     remaining consumer still dereferencing the key directly instead of
+     resolving it through g_grtile_real_ptrs first). Crashed the instant
+     the stats panel -- the only caller that reaches this with a real
+     grtile key -- first tried to draw. */
+  intptr_t local_2c;
+  char *_resolvedGrtilePtr;
+  {
+    int _gi = 0;
+    undefined4 *_gp = DAT_0023c3fc;
+    _resolvedGrtilePtr = 0;
+    while (_gi <= 0x13f) {
+      if (param_3 == (int)*_gp) {
+        _resolvedGrtilePtr = (char *)g_grtile_real_ptrs[_gi];
+        break;
+      }
+      _gi = _gi + 1;
+      _gp = (undefined4 *)((char *)_gp + 0x11);
+    }
+  }
+
   sVar10 = 0;
   iVar8 = (int)param_6;
-  local_2c = param_3 + ((int)param_7 * (int)param_5 + iVar8) * 2;
+  local_2c = (intptr_t)_resolvedGrtilePtr + ((int)param_7 * (int)param_5 + iVar8) * 2;
   iVar3 = ((int)param_4 - (int)param_7) * 0x10000 >> 0x10;
   local_30 = 0;
   iVar13 = (uint)param_1 << 0x10;
@@ -29663,7 +29721,9 @@ void FUN_0003def4()
 
 {
   undefined4 uVar1;
-  
+
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] FUN_0003def4 (toggle stats panel) entry: DAT_0023c1d4=%d\n", (int)DAT_0023c1d4);
   if (DAT_0023c1d4 == '\0') {
     uVar1 = 2;
   }
@@ -29673,6 +29733,8 @@ void FUN_0003def4()
     }
     uVar1 = 0;
   }
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] FUN_0003def4 -> set_hud_status_value(6,%d)\n", (int)uVar1);
   set_hud_status_value(6,uVar1);
   return;
 }
@@ -29726,6 +29788,8 @@ void FUN_0003e0b4()
   char local_84 [120];
   
   sVar2 = *DAT_00085a6c;
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[flask] FUN_0003e0b4 entry: xoff=%d yoff=%d\n", (int)sVar2, (int)DAT_00085a6c[1]);
   if ((sVar2 < 0x1a) || (0x27 < sVar2)) {
     if (DAT_00085a6c[1] < 0x1f) {
       pcVar3 = (char *)FUN_0007863c((int)(short)(ushort)(0x1e < sVar2) + 0x59U | 0x200);
@@ -33255,9 +33319,17 @@ undefined1 * param_1;
       param_1[5] = 0;
       iVar4 = DAT_00202898 + -1;
       iVar3 = iVar4 * 0x10000 >> 0x10;
+      if (getenv("UW_DEBUG_CLICKREGION"))
+        fprintf(stderr, "[clickregion] click at (%d,%d), scanning %d regions\n", (int)local_28, (int)local_26, (int)DAT_00202898);
       if (-1 < iVar3) {
         do {
           pcVar2 = DAT_00202890 + iVar3 * 0x12;
+          if (getenv("UW_DEBUG_CLICKREGION"))
+            fprintf(stderr, "[clickregion]   region %d: x1=%d y2=%d x2=%d y1=%d mask=0x%x active_mask=0x%x handler_flag=%d\n",
+                    (int)iVar3, (int)*(short *)(pcVar2 + 6), (int)*(short *)(pcVar2 + 4),
+                    (int)*(short *)(pcVar2 + 2), (int)*(short *)(pcVar2 + 8),
+                    (unsigned)*(ushort *)(pcVar2 + 0xc), (unsigned)*(ushort *)(param_1 + 8),
+                    (int)*(int *)(pcVar2 + 0xe));
           if ((((*(short *)(pcVar2 + 6) <= local_28) && (local_26 <= *(short *)(pcVar2 + 8))) &&
               (local_28 <= *(short *)(pcVar2 + 2))) &&
              (((*(short *)(pcVar2 + 4) <= local_26 &&
@@ -33272,6 +33344,10 @@ undefined1 * param_1;
               iVar4 = (int)*(short *)(iVar3 + DAT_00202890 + 8) - (int)local_26;
               param_1[2] = (char)iVar4;
               param_1[3] = (char)((uint)iVar4 >> 8);
+              if (getenv("UW_DEBUG_CLICKREGION"))
+                fprintf(stderr, "[clickregion]   MATCHED region %d -> handler=%p local_offset=(%d,%d)\n",
+                        _cri, (void *)(_cri < 128 ? g_click_region_handler[_cri] : 0),
+                        (int)(char)*param_1, (int)(char)param_1[2]);
               /* call the real 64-bit handler, not the truncated in-record
                  pointer (see g_click_region_handler). */
               if ((uint)_cri < 128 && g_click_region_handler[_cri] != 0) {
@@ -60263,8 +60339,12 @@ void hud_panel_redraw_dispatch()
     }
     iVar7 = 1;
     iVar9 = 0;
+    if (getenv("UW_DEBUG_CLICKREGION") && DAT_0023c1d8 != 0)
+      fprintf(stderr, "[stats] hud_panel_redraw_dispatch: DAT_0023c1d8=0x%x clock-gate open, scanning\n", (unsigned)DAT_0023c1d8);
     do {
       if (((ushort)iVar7 & DAT_0023c1d8) != 0) {
+        if (getenv("UW_DEBUG_CLICKREGION"))
+          fprintf(stderr, "[stats] hud_panel_redraw_dispatch: dispatching DAT_00087230[%d] (table index %d)\n", iVar9, iVar9 + 4);
         (*(code *)(&DAT_00087230)[iVar9])(iVar9);
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
@@ -60794,7 +60874,10 @@ void FUN_0006e130()
 
 {
   int iVar1;
-  
+
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] FUN_0006e130 tick: current=%d target=%d in_progress=%d\n",
+            (int)DAT_0023c12e, (int)DAT_0023c11e, (int)DAT_0023c20c);
   if (DAT_0023c12e != DAT_0023c11e) {
     if (DAT_0023c20c == 0) {
       DAT_0023c20c = 1;
@@ -60802,11 +60885,15 @@ void FUN_0006e130()
       DAT_0023c1d4 = '\x04';
     }
     iVar1 = FUN_0006edfc();
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] FUN_0006e130: FUN_0006edfc() -> %d\n", iVar1);
     if (iVar1 == 1) {
       DAT_0023c12e = DAT_0023c11e;
       DAT_0023c1d4 = DAT_0023c11e;
       DAT_0023c20c = 0;
       DAT_0023c1d8 = DAT_0023c1d8 & 0xffbf;
+      if (getenv("UW_DEBUG_CLICKREGION"))
+        fprintf(stderr, "[stats] FUN_0006e130: transition COMPLETE, now showing panel %d\n", (int)DAT_0023c1d4);
     }
   }
   return;
@@ -61345,8 +61432,16 @@ bool FUN_0006edfc()
 {
   undefined1 uVar1;
   byte bVar2;
-  undefined4 uVar3;
-  undefined4 uVar4;
+  /* Were `undefined4` -- truncated the real 64-bit pointers this
+     function passes around (DAT_0023cca4 itself, and FUN_00049954's
+     return value) to 32 bits on this host before handing them to
+     bitmap_blit_to_framebuffer/FUN_0006f6e0/FUN_0007e998, which then
+     reconstructed a wild pointer from just the low half. Same
+     truncated-pointer-local class as everywhere else this session --
+     this is what crashed the panel-switch wipe transition the first
+     time it ever actually ran. */
+  char *uVar3;
+  char *uVar4;
   int iVar5;
   int iVar6;
   int iVar7;
@@ -67136,7 +67231,9 @@ void FUN_0007830c()
 
 {
   byte bVar1;
-  
+
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] FUN_0007830c (draw stats panel) entry, DAT_0024af88=%d\n", (int)DAT_0024af88);
   if (DAT_0024af88 == 0) {
     DAT_0024af88 = grtile_alloc_registered(0x96,0x2b);
     if (DAT_0024af88 != 0) {
@@ -67146,6 +67243,8 @@ void FUN_0007830c()
     if (DAT_0024af8c != 0) {
       capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] FUN_0007830c: allocated DAT_0024af88=%d DAT_0024af8c=%d\n", (int)DAT_0024af88, (int)DAT_0024af8c);
   }
   *g_draw_color_index = 0xf1;
   *DAT_00084298 = 0xf1;

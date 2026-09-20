@@ -224,7 +224,7 @@ short param_7;
      iteration, so it needs to stay a full-width pointer-sized value. */
   intptr_t local_34;
   
-  DEBUG(TRACE, "[graphics] bitmap_blit_to_framebuffer(%u,%u,%u,%u,%u,%u,%u)", param_1, param_2, param_3, param_4, param_5, param_6, param_7);
+  DEBUG(TRACE, "[graphics] bitmap_blit_to_framebuffer(%u,%u,%p,%u,%u,%u,%u)", param_1, param_2, (void *)param_3, param_4, param_5, param_6, param_7);
 
   sVar13 = 0;
   iVar11 = (int)param_6;
