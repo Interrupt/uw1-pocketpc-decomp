@@ -61360,16 +61360,26 @@ undefined2 param_5;
     }
     DAT_0023c278 = 1;
   }
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] FUN_0006eb64 entry: param_1(target)=%d DAT_0023c218=0x%x DAT_0023c278=%d uVar6=%d\n",
+            (int)param_1, (unsigned)DAT_0023c218, (int)DAT_0023c278, (int)uVar6);
   if ((DAT_0023c218 & 1) != 0) {
     uVar4 = FUN_00049954(DAT_0023c202);
     uVar2 = FUN_00041a78(s_panels_00087260,param_1,uVar4);
     iVar5 = FUN_00049954(DAT_0023c200);
     uVar3 = FUN_00041a78(s_panels_00087260,3,iVar5 + 0x2800);
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] FUN_0006eb64: uVar4(dst202)=%u uVar2(decode1 ok)=%u iVar5(dst200)=%d uVar3(decode2 ok)=%u\n",
+              (unsigned)uVar4, (unsigned)uVar2, iVar5, (unsigned)uVar3);
     if ((uVar2 & uVar3 & uVar6) == 0) {
+      if (getenv("UW_DEBUG_CLICKREGION"))
+        fprintf(stderr, "[stats] FUN_0006eb64: DECODE FAILED, calling FUN_0003c3c8(0x300e)\n");
       FUN_0003c3c8(0x300e);
     }
     FUN_00057118();
     uVar4 = FUN_00049954(DAT_0023c202);
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] FUN_0006eb64: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)uVar4);
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
     uVar1 = DAT_0023c1d4;
     DAT_0023c1d4 = (undefined1)param_1;
