@@ -532,6 +532,19 @@ fills exactly the door opening, with the frame's own already-textured
 lintel correctly visible above it -- not a gap, not missing texture,
 DOS's own real geometry. Full detail in `object-rendering-findings.txt`.
 
+**UPDATE 20 (old 2D sprite billboard still drawing alongside the new
+3D leaf, 2026-09-20):** user: "This path seems to be emitting an extra
+door sprite still that shouldn't be there after the door model
+addition." The door branch always fell through to the ordinary 2D
+camera-facing billboard path after drawing the leaf, regardless of
+whether the leaf actually drew -- a real duplicate (a billboard always
+faces the camera; the leaf is a fixed-orientation 3D panel, so they
+don't overdraw identically, they visibly double up). Fixed by
+returning once the leaf's own block actually runs, instead of falling
+through -- scoped so UW_DLIST_DOOR alone (frame only, no leaf) still
+falls through as before, since nothing replaced the sprite in that
+case. Full detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

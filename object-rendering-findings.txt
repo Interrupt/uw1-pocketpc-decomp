@@ -2249,3 +2249,34 @@ statement ("doors fill the whole opening") conflicts with what the
 actual geometry data shows, get the PRECISE geometric breakdown (which
 face is which) before applying a fix, rather than picking the most
 literal reading of the confirmation and scaling to match it.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (10): OLD 2D SPRITE BILLBOARD WAS STILL DRAWING
+ALONGSIDE THE NEW 3D LEAF -- A REAL DUPLICATE, NOT JUST A FALLBACK
+═══════════════════════════════════════════════════════════════════════════
+User: "This path seems to be emitting an extra door sprite still that
+shouldn't be there after the door model addition."
+
+Root cause: the door branch's control flow always fell through to
+`goto LAB_emit_mesh_sprite_quad` (the ordinary 2D camera-facing sprite
+billboard path) after the UW_DLIST_DOOR/_LEAF block, regardless of
+whether the new 3D leaf actually drew anything. UW_DLIST_DOOR_ONLY was
+already an escape hatch for this (added early on for isolating the
+frame from the leaf sprite during calibration screenshots), but it was
+opt-in and testing-only -- by default, with UW_DLIST_DOOR_LEAF=1 (the
+feature actually being used, not just calibrated), both the real 3D
+leaf AND the old flat billboard drew for the same door. They aren't
+the same shape (a billboard always faces the camera; the leaf is a
+real, fixed-orientation 3D panel), so this isn't an identical overdraw
+-- it's two different-looking door representations layered on the same
+spot.
+
+FIX: once the leaf's own UW_DLIST_DOOR_LEAF block actually runs and
+draws (real geometry, not just a texture no-op), return immediately
+afterward instead of falling through to LAB_emit_mesh_sprite_quad.
+Scoped precisely: UW_DLIST_DOOR alone (frame only, no _LEAF) still
+falls through to the ordinary sprite as before, since in that case
+nothing replaced it -- only the leaf's own presence supersedes the old
+billboard, not the frame's.
+
+Standard run-regressions.sh: 6/6 clean.

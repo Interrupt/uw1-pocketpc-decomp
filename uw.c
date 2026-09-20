@@ -55482,6 +55482,19 @@ LAB_00061d34:
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
                                     _leaf_heading, _leaf_scale, _leaf_yscale, _yoff, 0, 0, 0);
           }
+          /* Once the real 3D leaf is drawing, the old 2D camera-facing
+             sprite billboard below (LAB_emit_mesh_sprite_quad's own
+             fallthrough, unconditional until now) is a duplicate, not a
+             fallback -- confirmed live (user report: "an extra door
+             sprite still... that shouldn't be there"). The two aren't
+             the same shape (a flat billboard always faces the camera;
+             the leaf is a real, correctly-oriented 3D panel), so they
+             don't just overdraw identically, they visibly double up.
+             Return here instead of falling through, but only when the
+             leaf actually drew -- UW_DLIST_DOOR alone (no _LEAF) should
+             still fall through to the ordinary sprite as before, since
+             nothing replaced it in that case. */
+          return;
         }
         /* UW_DLIST_DOOR_ONLY=1: skip the pre-existing leaf-sprite draw
            below entirely, so a screenshot/diff shows nothing but this
