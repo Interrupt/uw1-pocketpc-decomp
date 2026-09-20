@@ -36277,9 +36277,13 @@ short param_1;
         }
         FUN_000667cc();
         /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
-           -- see the top-of-function copy of this same fix for why. */
+           -- see the top-of-function copy of this same fix for why.
+           Was close_backpack_container() here too -- this is the
+           "release while already holding" twin of that top-of-function
+           branch and was missed when it was fixed (Update 27); same
+           "pop one level, not everything" fix. */
         if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
-          close_backpack_container();
+          leave_nested_container_level();
         }
         else {
           redraw_inventory_widget_range(0xc,0x13);
@@ -36372,9 +36376,11 @@ ushort * param_1;
           FUN_000667cc();
           /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
              -- see handle_inventory_panel_click's own copy of this fix
-             for why. */
+             for why. Was close_backpack_container() here too -- missed
+             when handle_inventory_panel_click's two copies were fixed
+             (Update 27); same "pop one level, not everything" fix. */
           if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
-            close_backpack_container();
+            leave_nested_container_level();
           }
         }
         else if (iVar1 < 0x15) {
@@ -36682,7 +36688,9 @@ undefined4 param_2;
   uint local_4c;
   undefined *local_48;
   char acStack_40 [28];
-  
+  char *_parentRec;
+  undefined2 _savedLink;
+
   local_4c = (uint)(short)(*param_1 & 0x1ff);
   local_48 = &DAT_00202c90 + local_4c * 0xd;
   uVar1 = *param_1 >> 6 & 7;
@@ -36694,7 +36702,24 @@ undefined4 param_2;
     if (g_current_container_record == 0) {
       return 0;
     }
-    if (*(int *)(g_current_container_record + 4) == 0) {
+    /* Both `g_current_container_record + 4` reads below were the legacy
+       4-byte "prev" field -- only ever a truncated half of a real
+       64-bit pointer (same class as the whole Update-29 sweep --
+       search "still broken for genuine container nesting"). The second
+       one compounded it: it fed the truncated value + 8 straight into
+       resolve_object_link as an object-pointer base, the same
+       "tracking record lives outside the object arena" bug already
+       fixed at several other call sites -- confirmed live: this is the
+       exact crash from "dropping [a held item] in another inventory
+       slot" while viewing a nested container (check_object_fits_in_slot,
+       via place_object_in_backpack_slot/place_held_item_in_empty_slot/
+       handle_backpack_slot_click). Walk the real +0x14 prev pointer to
+       find the parent record, then resolve its own saved link through
+       the established g_current_container_link global-copy workaround
+       (save/restore, since this function runs while a CHILD container
+       is still the "current" one). */
+    _parentRec = *(char **)(g_current_container_record + 0x14);
+    if (_parentRec == 0) {
       iVar15 = 0xb;
       do {
         if ((*(ushort *)(&DAT_00202950 + iVar15 * 2) & 0xffc0) == 0) break;
@@ -36709,18 +36734,21 @@ undefined4 param_2;
       }
       return 0;
     }
-    puVar10 = (undefined1 *)(*(int *)(g_current_container_record + 4) + 8);
-LAB_00047474:
-    puVar11 = (ushort *)resolve_object_link(puVar10);
+    _savedLink = g_current_container_link;
+    g_current_container_link = *(undefined2 *)(_parentRec + 8);
+    puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
+    g_current_container_link = _savedLink;
   }
   else {
     if (iVar15 < 0x14) {
       puVar10 = &DAT_00202950 + iVar15 * 2;
-      goto LAB_00047474;
+      puVar11 = (ushort *)resolve_object_link(puVar10);
     }
-    puVar11 = (ushort *)resolve_object_link(&DAT_00202950 + iVar15 * 2);
-    if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
-      puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
+    else {
+      puVar11 = (ushort *)resolve_object_link(&DAT_00202950 + iVar15 * 2);
+      if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
+        puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
+      }
     }
   }
   if (iVar15 < 5) {
@@ -36818,34 +36846,29 @@ LAB_00047a0c:
   iVar12 = g_current_container_record;
   bVar7 = 1;
   if (0x13 < iVar15) {
-    for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(int *)(iVar12 + 4)) {
-      /* Was unconditional `pbVar13 = resolve_object_link(iVar12 + 8);` --
-         iVar12 is a container-tracking record (a small Ordinal_1041 heap
-         allocation), nowhere near the object arena buffer
-         resolve_object_link's own bounds guard checks against -- this
-         call was always silently rejected on this 64-bit host, and the
-         very next line dereferenced the resulting NULL unconditionally.
-         Same root cause and same class of fix as
-         extract_matching_object_from_slot's own identical bug (see its
-         comment): for the innermost/currently-open container (the
-         common case, and the only one this loop's first iteration ever
-         sees without real container nesting), g_current_container_link
-         already holds this exact identity and is normal-global
-         arena-resolvable. Deeper ancestor records (genuine nesting, an
-         untested and likely still-broken path -- the "next" pointer
-         chase two lines below has its own separate 64-bit truncation
-         issue) have no equivalent stand-in available here; guard those
-         against NULL and treat "can't verify this ancestor's own
-         capacity" as not-blocking rather than crash, matching this
-         session's established NULL-guard precedent (FUN_00080ed4,
-         FUN_00051fa0). Confirmed live: dragging an item from one slot
-         to another within an open container crashed here on every
-         attempt (matches a user report with an identical backtrace:
-         check_object_fits_in_slot -> place_object_in_backpack_slot ->
-         place_held_item_in_empty_slot -> handle_backpack_slot_click). */
-      pbVar13 = (byte *)(iVar12 == g_current_container_record ?
-                         resolve_object_link(&g_current_container_link) :
-                         resolve_object_link(iVar12 + 8));
+    /* Was `iVar12 = *(int *)(iVar12 + 4)` walking the legacy 4-byte
+       "prev" field (truncated half of a real 64-bit pointer, same class
+       as this whole file's Update-29 sweep) -- an EARLIER pass through
+       this exact loop already found and partly fixed the DIFFERENT bug
+       right below (resolve_object_link(iVar12+8) always NULL for a
+       tracking record, outside the object arena), but that fix only
+       covered the FIRST iteration (the innermost/currently-open
+       container, via the ternary onto g_current_container_link) and
+       explicitly flagged deeper ancestors as "untested and likely
+       still-broken" for lack of an "equivalent stand-in" at the time --
+       that stand-in is the same g_current_container_link save/restore
+       workaround, just needed on every iteration, not only the first,
+       now that the walk pointer itself is also fixed. Confirmed live:
+       still the exact same crash (check_object_fits_in_slot via
+       place_object_in_backpack_slot/place_held_item_in_empty_slot/
+       handle_backpack_slot_click) the moment a real 2-level-deep
+       ancestor chain existed to walk into on this loop's SECOND
+       iteration. */
+    for (; bVar6 = bVar7, iVar12 != 0; iVar12 = *(char **)(iVar12 + 0x14)) {
+      _savedLink = g_current_container_link;
+      g_current_container_link = *(undefined2 *)(iVar12 + 8);
+      pbVar13 = (byte *)resolve_object_link(&g_current_container_link);
+      g_current_container_link = _savedLink;
       if (pbVar13 == (byte *)0x0) {
         bVar7 = 1;
       }
