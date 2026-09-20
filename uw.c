@@ -2987,63 +2987,113 @@ ushort DAT_00202986;
    back to 11-18 (widget N -> slot N-1) after a container closes. That
    in turn implies the *normal* (no container open) mapping is also
    N -> N-1, not identity -- see g_backpack_widget_to_slot's own updated comment. */
+/* .data 0x85ad0: recovered directly from the shipped binary
+   (mem.getBytes, same technique as g_backpack_widget_to_slot/
+   g_backpack_slot_to_widget) -- the earlier claim on this table (kept
+   in git history) that "UU.exe's .data doesn't map cleanly... file
+   offset lands on 3D-model-parser strings" was simply WRONG: this
+   exact address dumps 322 bytes of clean, sane, non-degenerate click/
+   draw rects for every one of the 23 records, immediately followed by
+   g_backpack_slot_to_widget's own real data at 0x85c18 (confirmed
+   byte-identical) -- the whole block from 0x85ad0 through 0x85c4f is
+   one contiguous run of real inventory-UI tables. All 23 records below
+   are now the genuine recovered values, replacing this project's
+   earlier from-scratch reconstruction (screenshot-measured grid,
+   playtest-guessed paperdoll positions) entirely.
+
+   Record 0 really is a degenerate x1=x2/y1=y2-style sentinel in the
+   original binary too (0,200,0,200 -- zero click area) -- the old
+   reconstruction's guess to give it a real body-panel rect was wrong;
+   hit_test_inventory_widget's own "record 0 = no-op sentinel" behavior
+   was right even before this fix, just for the wrong reason.
+
+   Records 1-5 (previously left zero as "still-unimplemented armor
+   slots, out of scope") all have real, valid click rects -- reading
+   top to bottom by y-range: rec2 (y9-25, topmost) = head; rec6/7
+   (y13-30, flanking) = shoulders; rec3 (y26-43) = torso/chest; rec8/9
+   (y35-54, flanking) = hands; rec4 (y44-56) = legs; rec10/11 (y53-70,
+   flanking) = finger/ring slots; rec20 (y65-82, NEW, see below) = an
+   unidentified left-column slot; rec1 (y56-72) and rec5 (y72-81) sit
+   between legs and the backpack grid (y82+) -- likely feet/boots and a
+   belt or similar, not fully identified yet.
+
+   IMPORTANT: record 1's real rect is NOT the "open container" icon --
+   that UI affordance is this project's own addition (see
+   hit_test_inventory_widget's own comment), previously smuggled in by
+   repurposing this record's storage. It's been moved to its own
+   special-cased check in hit_test_inventory_widget
+   (CONTAINER_ICON_WIDGET_ID) using the exact same literal screen
+   position as before, so existing behavior/tests are unaffected and
+   record 1 is free to hold its real recovered armor-slot data.
+
+   Records 20-22 are ALSO real, non-degenerate rects -- previously
+   assumed to be unused padding past a "real 0x17-entry table," they
+   aren't padding at all. Their much smaller dirty w/h (8x10, vs every
+   other record's 16x16 or 20x20) suggests small UI buttons rather than
+   item-holding slots -- consistent with g_backpack_widget_to_slot's own
+   real data mapping widgets 20-22 to slot 0 (the same value used for
+   "no mapping" elsewhere in that table), i.e. these probably aren't
+   equip slots at all. Not otherwise identified yet; kept as real data
+   for now since no fix depends on their exact meaning. */
 static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
-  /* rec 0: click x1,y1,x2,y2 = 108,0b,122,50 (narrowed to a central
-     torso strip, see comment above -- draw x,y unchanged/untouched) ;
-     draw x,y = f0,0b ; dirty w,h = 50,6c */
-  0x08,0x01, 0x0b,0x00, 0x22,0x01, 0x50,0x00,  0x04,0x01, 0x0b,0x00,  0x50,0x6c,
+  /* rec 0 (real, degenerate sentinel): click 0,c8,0,c8 ; draw 104,c ; dirty 24,45 */
+  0x00,0x00, 0xc8,0x00, 0x00,0x00, 0xc8,0x00,  0x04,0x01, 0x0c,0x00,  0x24,0x45,
+  /* rec 1 (real armor-slot rect, likely feet/boots -- see table comment
+     above; the "open container" icon that used to live here has moved
+     to hit_test_inventory_widget's own CONTAINER_ICON_WIDGET_ID special
+     case): click 10d,38,11d,48 ; draw 10c,19 ; dirty 13,32 */
+  0x0d,0x01, 0x38,0x00, 0x1d,0x01, 0x48,0x00,  0x0c,0x01, 0x19,0x00,  0x13,0x32,
+  /* rec 2 (head): click 10d,9,11e,19 ; draw b,b ; dirty 14,14 */
+  0x0d,0x01, 0x09,0x00, 0x1e,0x01, 0x19,0x00,  0x0b,0x01, 0x0b,0x00,  0x14,0x14,
+  /* rec 3 (torso/chest): click 107,1a,123,2b ; draw 106,18 ; dirty 21,2c */
+  0x07,0x01, 0x1a,0x00, 0x23,0x01, 0x2b,0x00,  0x06,0x01, 0x18,0x00,  0x21,0x2c,
+  /* rec 4 (legs): click 107,2c,123,38 ; draw 105,2b ; dirty 21,c */
+  0x07,0x01, 0x2c,0x00, 0x23,0x01, 0x38,0x00,  0x05,0x01, 0x2b,0x00,  0x21,0x0c,
+  /* rec 5 (real armor-slot rect, likely a belt -- see table comment
+     above): click 107,48,123,51 ; draw 10a,43 ; dirty 15,d */
+  0x07,0x01, 0x48,0x00, 0x23,0x01, 0x51,0x00,  0x0a,0x01, 0x43,0x00,  0x15,0x0d,
 
-  [1*14+0] =
-  /* rec 1: the "open container" icon + leave-container button, ~40
-     screen px (20 panel-local units) above grid slot 1 (record 12's
-     own draw x,y, f1,51/241,81, minus 20 on y = f1,3d/241,61) -- per
-     direct playtest feedback describing the real game's container-view
-     layout. Same x as slot 1 (an earlier attempt shifted x left too,
-     clipping off the panel's own left edge at x=0xf0/240 -- confirmed
-     live). Repurposes a currently-unused "worn armour overlay" record
-     (1-5, still zero/unimplemented otherwise) since this table has no
-     spare slots; revisit if armour rendering is ever implemented and
-     needs record 1 back. click f0,34,103,46 ; draw f1,3d */
-  0xf0,0x00, 0x34,0x00, 0x03,0x01, 0x46,0x00,  0xf1,0x00, 0x3d,0x00,  0x14,0x14,
+  /* rec 6 (left shoulder): click f4,d,105,1e ; draw f5,e ; dirty 10,10 */
+  0xf4,0x00, 0x0d,0x00, 0x05,0x01, 0x1e,0x00,  0xf5,0x00, 0x0e,0x00,  0x10,0x10,
+  /* rec 7 (right shoulder): click 125,d,136,1e ; draw 126,e ; dirty 10,10 */
+  0x25,0x01, 0x0d,0x00, 0x36,0x01, 0x1e,0x00,  0x26,0x01, 0x0e,0x00,  0x10,0x10,
+  /* rec 8 (left hand): click f1,23,102,36 ; draw f2,24 ; dirty 10,10 */
+  0xf1,0x00, 0x23,0x00, 0x02,0x01, 0x36,0x00,  0xf2,0x00, 0x24,0x00,  0x10,0x10,
+  /* rec 9 (right hand -- the default/active weapon hand per
+     handle_object_drop_target's `9 - lefthand_bit` check): click
+     127,23,138,36 ; draw 128,24 ; dirty 10,10 */
+  0x27,0x01, 0x23,0x00, 0x38,0x01, 0x36,0x00,  0x28,0x01, 0x24,0x00,  0x10,0x10,
+  /* rec 10 (left finger/ring slot): click f1,35,10c,40 ; draw ff,34 ; dirty 10,10 */
+  0xf1,0x00, 0x35,0x00, 0x0c,0x01, 0x40,0x00,  0xff,0x00, 0x34,0x00,  0x10,0x10,
+  /* rec 11 (right finger/ring slot): click 11e,35,138,46 ; draw 11d,34 ; dirty 10,10 */
+  0x1e,0x01, 0x35,0x00, 0x38,0x01, 0x46,0x00,  0x1d,0x01, 0x34,0x00,  0x10,0x10,
 
-  [6*14+0] =
-  /* rec 6 (left shoulder, screen-right column): click 125,14,135,20 ; draw 126,15 */
-  0x25,0x01, 0x14,0x00, 0x35,0x01, 0x20,0x00,  0x26,0x01, 0x15,0x00,  0x10,0x10,
-  /* rec 7 (right shoulder, screen-left column): click f2,14,102,20 ; draw f3,15 */
-  0xf2,0x00, 0x14,0x00, 0x02,0x01, 0x20,0x00,  0xf3,0x00, 0x15,0x00,  0x10,0x10,
-  /* rec 8 (left hand, screen-right column): click 125,22,139,32 ; draw 126,23.
-     Y-range raised from an earlier 2e-44 attempt -- that overlapped
-     record 1's f0,34-103,46 (container icon) click rect, which is
-     checked first and so always won the overlap; confirmed live
-     (clicking here resolved to widget 1, not 8/9, before this fix). */
-  0x25,0x01, 0x22,0x00, 0x39,0x01, 0x32,0x00,  0x26,0x01, 0x23,0x00,  0x14,0x10,
-  /* rec 9 (right hand, screen-left column -- the default/active weapon
-     hand per handle_object_drop_target's `9 - lefthand_bit` check):
-     click f2,22,106,32 ; draw f3,23 */
-  0xf2,0x00, 0x22,0x00, 0x06,0x01, 0x32,0x00,  0xf3,0x00, 0x23,0x00,  0x14,0x10,
-  /* rec 10 (left hand's finger/ring slot): click 129,47,135,50 ; draw 12a,48
-     (Y-range also moved, same record-1-overlap reason as the hands.) */
-  0x29,0x01, 0x47,0x00, 0x35,0x01, 0x50,0x00,  0x2a,0x01, 0x48,0x00,  0x0c,0x09,
-  /* rec 11 (right hand's finger/ring slot): click f6,47,102,50 ; draw f7,48 */
-  0xf6,0x00, 0x47,0x00, 0x02,0x01, 0x50,0x00,  0xf7,0x00, 0x48,0x00,  0x0c,0x09,
+  /* rec 12 (row1,col1): click f0,52,101,63 ; draw f1,53 ; dirty 10,10 */
+  0xf0,0x00, 0x52,0x00, 0x01,0x01, 0x63,0x00,  0xf1,0x00, 0x53,0x00,  0x10,0x10,
+  /* rec 13 (row1,col2): click 103,52,114,63 ; draw 104,53 ; dirty 10,10 */
+  0x03,0x01, 0x52,0x00, 0x14,0x01, 0x63,0x00,  0x04,0x01, 0x53,0x00,  0x10,0x10,
+  /* rec 14 (row1,col3): click 116,52,127,63 ; draw 117,53 ; dirty 10,10 */
+  0x16,0x01, 0x52,0x00, 0x27,0x01, 0x63,0x00,  0x17,0x01, 0x53,0x00,  0x10,0x10,
+  /* rec 15 (row1,col4): click 129,52,13a,63 ; draw 12a,53 ; dirty 10,10 */
+  0x29,0x01, 0x52,0x00, 0x3a,0x01, 0x63,0x00,  0x2a,0x01, 0x53,0x00,  0x10,0x10,
+  /* rec 16 (row2,col1): click f0,64,101,75 ; draw f1,65 ; dirty 10,10 */
+  0xf0,0x00, 0x64,0x00, 0x01,0x01, 0x75,0x00,  0xf1,0x00, 0x65,0x00,  0x10,0x10,
+  /* rec 17 (row2,col2): click 103,64,114,75 ; draw 104,65 ; dirty 10,10 */
+  0x03,0x01, 0x64,0x00, 0x14,0x01, 0x75,0x00,  0x04,0x01, 0x65,0x00,  0x10,0x10,
+  /* rec 18 (row2,col3): click 116,64,127,75 ; draw 116,65 ; dirty 10,10 */
+  0x16,0x01, 0x64,0x00, 0x27,0x01, 0x75,0x00,  0x16,0x01, 0x65,0x00,  0x10,0x10,
+  /* rec 19 (row2,col4): click 129,64,13a,75 ; draw 12a,65 ; dirty 10,10 */
+  0x29,0x01, 0x64,0x00, 0x3a,0x01, 0x75,0x00,  0x2a,0x01, 0x65,0x00,  0x10,0x10,
 
-  [12*14+0] =
-  /* rec 12 (row1,col1): click f0,50,103,63 ; draw f1,51 */
-  0xf0,0x00, 0x50,0x00, 0x03,0x01, 0x63,0x00,  0xf1,0x00, 0x51,0x00,  0x14,0x14,
-  /* rec 13 (row1,col2): click 103,50,116,63 ; draw 104,51 */
-  0x03,0x01, 0x50,0x00, 0x16,0x01, 0x63,0x00,  0x04,0x01, 0x51,0x00,  0x14,0x14,
-  /* rec 14 (row1,col3): click 116,50,129,63 ; draw 117,51 */
-  0x16,0x01, 0x50,0x00, 0x29,0x01, 0x63,0x00,  0x17,0x01, 0x51,0x00,  0x14,0x14,
-  /* rec 15 (row1,col4): click 129,50,13c,63 ; draw 12a,51 */
-  0x29,0x01, 0x50,0x00, 0x3c,0x01, 0x63,0x00,  0x2a,0x01, 0x51,0x00,  0x14,0x14,
-  /* rec 16 (row2,col1): click f0,63,103,76 ; draw f1,64 */
-  0xf0,0x00, 0x63,0x00, 0x03,0x01, 0x76,0x00,  0xf1,0x00, 0x64,0x00,  0x14,0x14,
-  /* rec 17 (row2,col2): click 103,63,116,76 ; draw 104,64 */
-  0x03,0x01, 0x63,0x00, 0x16,0x01, 0x76,0x00,  0x04,0x01, 0x64,0x00,  0x14,0x14,
-  /* rec 18 (row2,col3): click 116,63,129,76 ; draw 117,64 */
-  0x16,0x01, 0x63,0x00, 0x29,0x01, 0x76,0x00,  0x17,0x01, 0x64,0x00,  0x14,0x14,
-  /* rec 19 (row2,col4): click 129,63,13c,76 ; draw 12a,64 */
-  0x29,0x01, 0x63,0x00, 0x3c,0x01, 0x76,0x00,  0x2a,0x01, 0x64,0x00,  0x14,0x14,
+  /* rec 20 (real, previously-unknown left-column slot -- see table
+     comment above): click f0,41,101,52 ; draw f1,41 ; dirty 10,10 */
+  0xf0,0x00, 0x41,0x00, 0x01,0x01, 0x52,0x00,  0xf1,0x00, 0x41,0x00,  0x10,0x10,
+  /* rec 21 (real, small right-side button -- see table comment above):
+     click 127,47,130,50 ; draw 128,47 ; dirty 8,a */
+  0x27,0x01, 0x47,0x00, 0x30,0x01, 0x50,0x00,  0x28,0x01, 0x47,0x00,  0x08,0x0a,
+  /* rec 22 (real, small right-side button -- see table comment above):
+     click 131,47,13a,50 ; draw 132,47 ; dirty 8,a */
+  0x31,0x01, 0x47,0x00, 0x3a,0x01, 0x50,0x00,  0x32,0x01, 0x47,0x00,  0x08,0x0a,
 };
 #define g_inv_hotspot_click_x1 g_inventory_hotspot_table[0x0]
 #define g_inv_hotspot_click_y1 g_inventory_hotspot_table[0x2]
@@ -3053,6 +3103,26 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
 #define g_inv_hotspot_draw_y (*(unsigned short *)&g_inventory_hotspot_table[0xa])
 #define g_inv_hotspot_dirty_w g_inventory_hotspot_table[0xc]
 #define g_inv_hotspot_dirty_h g_inventory_hotspot_table[0xd]
+
+/* The "open container" / leave-container icon -- this project's own
+   addition (no record in the real hotspot table backs it; see that
+   table's own comment). Used to be smuggled in by repurposing record
+   1's storage; now that record 1 holds real recovered armor-slot data,
+   this icon gets its own dedicated constants instead, using the exact
+   same literal screen position it always has (so existing behavior and
+   tests are unaffected) -- click rect f0,34-103,46, draw position
+   f1,3d, matching the old record-1 values verbatim.
+   CONTAINER_ICON_WIDGET_ID is returned by hit_test_inventory_widget's
+   own special case for this rect, the same pattern already used there
+   for the 0x17/0x18 magic ids -- picked as 0x19 so it can't collide
+   with any real widget id (0-0x16) or those two. */
+#define CONTAINER_ICON_WIDGET_ID 0x19
+#define CONTAINER_ICON_CLICK_X1 0xf0
+#define CONTAINER_ICON_CLICK_Y1 0x34
+#define CONTAINER_ICON_CLICK_X2 0x103
+#define CONTAINER_ICON_CLICK_Y2 0x46
+#define CONTAINER_ICON_DRAW_X 0xf1
+#define CONTAINER_ICON_DRAW_Y 0x3d
 /* .data 0x85c18: array-slot-index -> widget-id lookup, the inverse of
    g_backpack_widget_to_slot (see its own comment) -- read as `(&g_backpack_slot_to_widget)[slot]`
    to find which widget/grid-cell to redraw after a slot's contents
@@ -3094,37 +3164,54 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
    comments) rather than relying on this single-widget path. The new
    6..11 entries are below that >= 0xb threshold, so they take the
    single-widget redraw path as intended, not the "elsewhere" one. */
-/* Slots 20..27 (an OPEN container's own 8 content slots, populated by
-   open_backpack_container's own N -> N+8 widget remap at uw.c ~33712,
-   "Remap widgets 12-19 -> slots 20-27") were entirely missing from this
-   array -- it stopped at 0x17 (23) entries, 5 short of the 0x1c (28)
-   every other piece of this container-view code already uses as its
-   slot-range bound. Reported crash: "placing a container in another
-   container and trying to open the nested one" -- opening a container
-   nested inside an already-open one resolves to a content slot in
-   exactly this 20-27 range (confirmed live: slot=26 for a nested sack),
-   and indexing 3-5 elements past this array's end fed a garbage widget
-   id into redraw_inventory_widget, crashing deep in its own hotspot-
-   table lookup. Extended to 0x1c entries with the same N -> N-8 inverse
-   of the widget remap above (slots 20-27 -> widgets 12-19, mirroring
-   slots 11-18 -> widgets 12-19 just above it). Never triggered before
-   because nothing before this session's chain of container fixes ever
-   got far enough to open a SECOND, nested container view.
+/* CORRECTED with a full re-dump of this table's real .data (0x85c18,
+   28 bytes, one mem.getBytes call covering the whole 0x1c-entry range
+   at once): the previous version of this array below -- {2,3,4,1,5,
+   6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0, 12,13,14,15,16,17,
+   18,19} -- had TWO real bugs, both caught re-verifying this table at
+   the user's request ("also see if we can recover the table used for
+   the widget to slot mapping the same way" after the hotspot-table
+   recovery above):
 
-   Slots 0..4 (the other half of g_backpack_widget_to_slot's own
-   0.85c38 real-data recovery, see its comment) were also left at 0 --
-   dumped directly from the real binary at 0x85c18 (this table's own
-   real .data address) and confirmed non-zero: slot 0->widget 2,
-   1->widget 3, 2->widget 4, 3->widget 1, 4->widget 5. Real data, worth
-   keeping, but NOT a fix for the "lighting a torch doesn't change
-   pixels" bug -- see the forward table's own comment (and
-   [[torch-ambient-light-scan-range-mismatch]]) for why: widgets 0-4
-   have no clickable hotspot yet (g_inventory_hotspot_table's own
-   armor-slot records are still all zero), so nothing currently routes
-   a torch into slot 4 through play regardless of this table being
-   correct. */
+   1) It was simply WRONG at indices 19-22: guessed as 0,0,0,0 ("no
+      mapping"), but the real data is 20,12,13,14 -- slot 19 maps to
+      widget 20 (not "nothing"), and slots 20-22 continue the same
+      "N -> widgets 12-19" nested-container-grid pattern as slots
+      23-27, not a gap. (Widget 20 is real -- see
+      g_inventory_hotspot_table's own comment on its 3 newly-recovered
+      records; this is its first identified purpose: it displays
+      backpack slot 19's own content, a 9th "extra" slot alongside the
+      main 8-cell grid, not one of the paperdoll/armor positions.)
+
+   2) The array literal itself had 31 values for a 28-element (0x1c)
+      array -- `clang -fsyntax-only` reports `warning: excess elements
+      in array initializer` on it, but build.sh's own build step pipes
+      through `grep -iE "error:"` (to keep routine output quiet), which
+      silently swallows every non-"error:" warning including this one,
+      so it printed "built" and looked clean. Clang drops the excess
+      elements off the END of the list, not the intended slots 28-30
+      (which don't exist in a 28-entry array anyway) -- it silently
+      corrupted indices 25-27 instead, which is what a straight
+      concatenation without recomputing the real bound produces. Real,
+      compiled-in values before this fix: index 25=17->actually 14,
+      26=18->actually 15, 27=19->actually 16 (each 3 widgets low).
+      Lesson: build.sh's error-only filter hides genuine compiler
+      warnings like this one -- worth an occasional unfiltered
+      `-fsyntax-only` pass when touching array literals.
+
+   History this replaces: slots 20-27 (an OPEN container's own 8
+   content slots, populated by open_backpack_container's own N -> N+8
+   widget remap at uw.c ~33712, "Remap widgets 12-19 -> slots 20-27")
+   were entirely missing before an earlier session extended this array
+   from 0x17 (23) to 0x1c (28) entries to fix a real crash ("placing a
+   container in another container and trying to open the nested one" --
+   indexing past this array's old end fed a garbage widget id into
+   redraw_inventory_widget). That extension is correct in shape (28
+   entries, N -> N-8 slots 20-27 -> widgets 12-19); the bug was in its
+   exact values, fixed here with the genuine recovered data instead of
+   a guess. */
 static unsigned char g_backpack_slot_to_widget_backing[0x1c] = {
-  2,3,4,1,5, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0,
+  2,3,4,1,5, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19,20,
   12,13,14,15,16,17,18,19,
 };
 #define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
@@ -33373,8 +33460,8 @@ ushort header;
     fprintf(stderr, "[inv] widget-1 icon id=0x%03x (open variant of 0x%03x)\n",
             (unsigned)((header & 0x1ff) | 1), (unsigned)(header & 0x1ff));
   g_blit_transparent_mode = 1;
-  draw_sprite_by_id((header & 0x1ff) | 1,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
-               (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
+  draw_sprite_by_id((header & 0x1ff) | 1,CONTAINER_ICON_DRAW_X,
+               CONTAINER_ICON_DRAW_Y,16,16);
   g_blit_transparent_mode = 0;
 }
 
@@ -33684,8 +33771,8 @@ short param_1;
              solid dark rectangle instead of the stale icon). */
           g_container_icon_backup_grtile = grtile_alloc_registered(16,32);
           capture_framebuffer_rect_to_grtile(g_container_icon_backup_grtile,
-                       (int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
-                       (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
+                       CONTAINER_ICON_DRAW_X,
+                       CONTAINER_ICON_DRAW_Y,16,16);
         }
         if (DAT_002028a0 == 0) {
           iVar10 = 0xc;
@@ -36095,14 +36182,15 @@ short param_1;
     fprintf(stderr, "[inv] handle_inventory_panel_click click test: panel_x=%d panel_y=%d -> widget_id=%d\n",
             (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]), (int)(short)uVar5);
   iVar9 = (int)(short)uVar5;
-  /* Leave-container click: widget 1 (repurposed from an unimplemented
-     worn-armour overlay slot -- see g_inv_hotspot_click_x1's own comment) is the
-     open-container icon drawn above the grid. No such affordance
-     exists anywhere in the decompiled body; added per direct playtest
-     feedback describing the real game's layout. Only active while a
-     container is actually open, so a plain click here does nothing
-     once armour rendering claims this record back in a future pass. */
-  if ((iVar9 == 1) && (g_current_container_record != 0)) {
+  /* Leave-container click: CONTAINER_ICON_WIDGET_ID is the open-container
+     icon drawn above the grid, hit_test_inventory_widget's own special
+     case for it (see that constant's own comment) -- no longer stealing
+     a real widget id now that widget 1's real armor-slot data has been
+     recovered. No such affordance exists anywhere in the decompiled
+     body; added per direct playtest feedback describing the real
+     game's layout. Only active while a container is actually open
+     (the same guard hit_test_inventory_widget itself now applies). */
+  if ((iVar9 == CONTAINER_ICON_WIDGET_ID) && (g_current_container_record != 0)) {
     /* Was unconditional: dropping a held item onto this icon (drag it
        out of the open container back to the parent) closed the
        container without ever placing the item anywhere, leaving it
@@ -36311,7 +36399,7 @@ short param_1;
          RELEASE position, freshly hit-tested a few lines up). Same
          "leave-container icon eats the drop instead of routing it to
          the parent" bug and same fix as the top-of-function copy. */
-      if ((iVar9 == 1) && (g_current_container_record != 0)) {
+      if ((iVar9 == CONTAINER_ICON_WIDGET_ID) && (g_current_container_record != 0)) {
         if (auto_place_in_container(g_selected_object, 0x13) != 0) {
           g_selected_object = (ushort *)0x0;
           g_cursor_holding_state = 0;
@@ -36410,7 +36498,7 @@ ushort * param_1;
            drop-dispatch for a drag that started in the 3D world (e.g.
            picking an item straight off the ground and releasing it on
            this icon while a container happens to be open). */
-        if ((iVar1 == 1) && (g_current_container_record != 0)) {
+        if ((iVar1 == CONTAINER_ICON_WIDGET_ID) && (g_current_container_record != 0)) {
           if (auto_place_in_container(g_selected_object, 0x13) != 0) {
             g_selected_object = (ushort *)0x0;
             g_cursor_holding_state = 0;
@@ -37459,6 +37547,17 @@ short param_2;
        ) {
       return 0x17;
     }
+  }
+  /* The "open container" / leave-container icon -- this project's own
+     addition, not a real widget-table record (see CONTAINER_ICON_WIDGET_ID's
+     own comment). Only active while a container is actually open,
+     matching this affordance's original callers' own guard. Special-
+     cased here the same way the two magic ids above are, using the
+     exact literal screen position this icon has always drawn at. */
+  if ((g_current_container_record != 0) &&
+      (CONTAINER_ICON_CLICK_X1 <= iVar1 && iVar1 <= CONTAINER_ICON_CLICK_X2) &&
+      (CONTAINER_ICON_CLICK_Y1 <= (int)param_2 && (int)param_2 <= CONTAINER_ICON_CLICK_Y2)) {
+    return CONTAINER_ICON_WIDGET_ID;
   }
   iVar3 = 0;
   while (((iVar2 = iVar3 * 0xe, iVar1 < *(short *)(&g_inv_hotspot_click_x1 + iVar2) ||
