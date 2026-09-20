@@ -2314,3 +2314,60 @@ question turns out to be, it isn't "make the leaf taller to fill
 384" -- that specific direction is confirmed wrong.
 
 Standard run-regressions.sh: 6/6 clean after the revert.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (12): THE REAL BUG -- ace04 USED texwidth INSTEAD OF
+texheight, SILENTLY HALVING THE SAMPLED SPRITE HEIGHT (THE ACTUAL CAUSE
+OF "SMALL PIECE OF THE DOOR")
+═══════════════════════════════════════════════════════════════════════════
+User: "It looks like the vertical door UVs might be the problem: it is
+only showing a small piece of the door instead of the actual door
+height." Then: "Either that, or it is getting the door sprite height
+incorrect."
+
+Checked both hypotheses against real data instead of guessing:
+- Added a new UW_DEBUG_DLIST_FINALUV flag dumping the actual computed
+  u0..v3 int values written per face. For the leaf's real textured
+  face: u=(0,32,32,0) v=(0,0,64,64) -- the full 0..32/0..64 corner
+  range IS being written correctly. Not a UV-assignment bug.
+- Independently verified the sprite's real dimensions straight from the
+  DOORS.GR resource file on disk (not just trusting FUN_00040770's own
+  self-report): its own header format (byte0=compression mode, byte1=
+  width, byte2=height) shows the first entry's real header bytes as
+  `04 20 40 00` -- mode 4 (raw), width 0x20=32, height 0x40=64. Matches
+  FUN_00040770's own decode exactly. Not a wrong-height-source bug
+  either.
+
+Found the real cause with the existing UW_DEBUG_RASTER_UV instrumentation
+instead: `total=1024` for the leaf's texture calls -- but a 32x64 sprite
+is 2048 bytes, and `total` (param_7 in raster_textured_span) is the
+modulus the row/column address wraps at. 1024 = 32*32, not 32*64 --
+exactly half. Traced to `emit_dlist_bank_object`'s own ace00/ace04
+write: `ace00 = texwidth; ace04 = texwidth;` -- BOTH fields getting the
+same value. This is correct for every real WALL texture this file uses
+(they're always square, 16x16/32x32/64x64, so width==height and the
+coincidence was invisible), but ace04 is NOT "width again" -- it's the
+field render_visible_tile_list multiplies by ace00 to get the real
+wraparound total (`param_7 = piVar14[0x1c] * piVar14[0x1b]`), i.e. the
+image's real HEIGHT term, not its width. For the leaf's genuinely
+rectangular 32x64 sprite this silently computed 32*32=1024 instead of
+32*64=2048, and raster_textured_span's own wraparound
+(`for (...; param_7 < iVar12; iVar12 -= param_7)`) folded every row
+address past 32 back into the TOP half of the buffer -- the bottom half
+of the sprite was mathematically unreachable, not merely under-scaled.
+This is exactly "a small piece of the door, not the full height," and
+it's also exactly a sprite-dimension bug in effect (half the real
+height silently discarded) even though the SOURCE dimensions were read
+correctly -- both of the user's hypotheses were pointing at the same
+real defect from two different angles.
+
+FIX: `ace04 = texptr ? texheight : 0;` instead of reusing texwidth. No
+effect on the frame/wall path (texheight==texwidth there, passed
+identically at both frame call sites already).
+
+VERIFICATION: UW_DEBUG_RASTER_UV now reports `total=2048` for the leaf
+(matching the real 32x64=2048-byte buffer exactly). Screenshot at the
+same repro: visibly more of the door's real detail is now reachable --
+the lock/handle plate (previously right at the edge of the visible
+range) is now fully shown, and the panel extends further down. Standard
+run-regressions.sh: 6/6 clean.

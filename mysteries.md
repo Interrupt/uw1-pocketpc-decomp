@@ -561,6 +561,30 @@ already matching the leaf's native height exactly -- "scale the leaf up
 to 384" is a confirmed-wrong direction, not just an abandoned one. Full
 detail in `object-rendering-findings.txt`.
 
+**UPDATE 22 (the real bug: ace04 used texwidth instead of texheight,
+silently halving the sampled sprite height, 2026-09-20):** user: "the
+vertical door UVs might be the problem: it is only showing a small
+piece of the door... Either that, or it is getting the door sprite
+height incorrect." Checked both against real data: a new
+UW_DEBUG_DLIST_FINALUV dump showed the written UV corners already span
+the full 0..32/0..64 range (not a UV-assignment bug), and the real
+DOORS.GR file's own header bytes independently confirm the sprite
+really is 32x64 (not a wrong-dimension-source bug). Found the actual
+cause with the existing UW_DEBUG_RASTER_UV instrumentation: the
+wraparound total was 1024, not 2048 (32x64=2048 bytes). Traced to
+`emit_dlist_bank_object` writing `ace04 = texwidth` (same as ace00) --
+correct for every real WALL texture (always square, so the coincidence
+was invisible) but wrong for the leaf's genuinely rectangular sprite,
+where ace04 needs the real HEIGHT for the wraparound math
+(`param_7 = ace04*ace00`). The bug folded every row past 32 back into
+the top half of the buffer -- the bottom half of the door was
+mathematically unreachable, not just under-scaled. Both of the user's
+hypotheses were pointing at the same real defect. Fixed by writing the
+real texheight into ace04. Verified: wraparound total now reports 2048,
+and the door's previously-cut-off lower detail (the lock plate, more of
+the panel) is now visible. Full detail in
+`object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

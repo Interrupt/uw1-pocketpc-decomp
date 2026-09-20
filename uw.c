@@ -53203,20 +53203,31 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
       *(int *)(&DAT_000acdec + rb) = i1;
       *(int *)(&DAT_000acdf0 + rb) = i2;
       *(int *)(&DAT_000acdf4 + rb) = i3;
-      /* Must be the texture's REAL pixel width (64/32/16, from
-         uwdl_texture_width), not a placeholder constant. This is the
-         same field the real tile-wall render path (uw.c ~50276-50277)
-         writes for the identical wall-index expression the door path
-         resolves below -- raster_textured_span (uw.c ~7441-7499) uses
-         it as the per-pixel texel-address wraparound pitch against the
-         ACTUAL bound texture buffer (get_texture_page's real stride).
-         A too-small placeholder here (16, against a real 64-wide
-         buffer) made the wraparound run on the wrong pitch and alias --
-         every other screen column landing on a wrapped-around texel
-         that happened to read as the transparent colour-key byte. */
+      /* ace00 must be the texture's REAL pixel width/stride (64/32/16
+         for wall textures, from uwdl_texture_width) -- confirmed via
+         render_visible_tile_list/raster_triangle: this field becomes
+         param_6, the row pitch raster_textured_span's per-pixel
+         address uses (`iVar12*param_6 + col`). A too-small placeholder
+         here made the horizontal wraparound alias -- see the "every
+         other column" fix earlier in this investigation.
+         ace04 is a DIFFERENT field -- it becomes param_7 = ace04*ace00,
+         the TOTAL wraparound the row/column address is reduced modulo.
+         For a SQUARE wall texture (width==height, every real wall
+         texture this file uses) writing texwidth into both looked
+         correct by coincidence, but for the leaf's real 32x64
+         RECTANGULAR sprite it silently used texWIDTH (32) as the
+         height term too, so the real formula (width*width=1024) fell
+         to HALF the sprite's true byte size (width*height=2048) --
+         confirmed live (UW_DEBUG_RASTER_UV): total=1024, and the
+         observed max sampled address topped out at exactly 1024 (row
+         32 of 64), matching the user's own report of "only a small
+         piece of the door, not the full height" precisely: the bottom
+         half of the sprite was never reachable, the wraparound modulus
+         cut it off at the midpoint. Fixed by using the real height for
+         ace04, not texwidth. */
       _texsize = texptr ? texwidth : 0;
       *(int *)(&DAT_000ace00 + rb) = _texsize;
-      *(int *)(&DAT_000ace04 + rb) = _texsize;
+      *(int *)(&DAT_000ace04 + rb) = texptr ? texheight : 0;
       /* Real per-vertex UV, at the user's request: DOS's own bytecode
          carries explicit u,v per vertex for these opcodes (the whole
          texture spans 0..0xffff per uw1-decomp's own documentation of
@@ -53320,7 +53331,8 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
         if ((int32_t)f->p[s3][1] > vmax) vmax = (int32_t)f->p[s3][1];
         if (head == 4187 /* UW_DLIST_HEAD_LEAF -- defined later in this file,
                              after g_dlist_region, which must come after this
-                             function; literal kept in sync with that #define */) {
+                             function; literal kept in sync with that #define */
+            && !getenv("UW_DLIST_NO_STRETCH")) {
           /* The leaf's own bound texture is a single, complete sprite
              (a real decoded OBJECTS/doors.GR image, not a small
              repeating wall texture) -- at the user's report that the
@@ -53389,6 +53401,9 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
         v1 = (int32_t)((vmax - f->p[s1][1]) * vscale);
         v2 = (int32_t)((vmax - f->p[s2][1]) * vscale);
         v3 = (int32_t)((vmax - f->p[s3][1]) * vscale);
+        if (getenv("UW_DEBUG_DLIST_FINALUV"))
+          fprintf(stderr, "[dlist] final uv head=%d fi=%d umin=%d umax=%d vmin=%d vmax=%d uscale=%g vscale=%g -> u=(%d,%d,%d,%d) v=(%d,%d,%d,%d)\n",
+                  head, fi, umin, umax, vmin, vmax, uscale, vscale, u0, u1, u2, u3, v0, v1, v2, v3);
         *(int *)(&DAT_000ace08 + rb) = u0;
         *(int *)(&DAT_000ace0c + rb) = v0;
         *(int *)(&DAT_000ace10 + rb) = u1;
