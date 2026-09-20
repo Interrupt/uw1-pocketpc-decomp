@@ -1721,7 +1721,7 @@ static char DAT_00085244_backing[32768] = "an ";
 #define DAT_00085244 DAT_00085244_backing[0]
 static char DAT_00085248_backing[32768] = "a ";
 #define DAT_00085248 DAT_00085248_backing[0]
-byte *DAT_00204690;
+byte *g_scratch_object_ptr;
 undefined *DAT_001007c8;
 char s_npc_talkedto_00085340[] = "npc_talkedto";
 char s_npc_gtarg_00085350[] = "npc_gtarg";
@@ -2758,7 +2758,7 @@ undefined2 DAT_00202898;
 undefined2 DAT_0020288c;
 undefined2 DAT_00202894;
 undefined2 DAT_00085a70;
-/* .data 0x85c38: widget-id -> DAT_00202950 slot-array-index lookup (read
+/* .data 0x85c38: widget-id -> g_equipped_items slot-array-index lookup (read
    as `(&g_backpack_widget_to_slot)[widget_id]` for widget ids 0-0x16, i.e. one byte
    per record of the g_inv_hotspot_click_x1 hotspot table). Widget ids
    0-5 were previously left at 0 ("still-unimplemented torso/legs/feet/
@@ -2781,8 +2781,8 @@ undefined2 DAT_00085a70;
    are still all zero/unimplemented ("worn armour overlay", see that
    table's own comment) -- nothing can actually reach these slots
    through play yet regardless of this table's data being right. The
-   real bug is one level up: FUN_000667cc's ambient-light rescan only
-   ever checks DAT_00202950 slots 0-3 (plus the mouse cursor as a stand-
+   real bug is one level up: refresh_player_equipment_effects's ambient-light rescan only
+   ever checks g_equipped_items slots 0-3 (plus the mouse cursor as a stand-
    in for a notional 5th slot) -- confirmed via a fresh Ghidra decompile
    of the pristine binary that this 0-4 range is exactly what the real
    compiled code does, not a decompilation artifact. A torch equipped
@@ -2790,7 +2790,7 @@ undefined2 DAT_00085a70;
    generic backpack list, landing in widget 6 / slot 5) is structurally
    outside that range and can never be found by the rescan, which is
    why the correct -32 ambient bias set by use_light_source always gets
-   immediately stomped back to +8. DAT_00085ac8 ({5,6,7,8}, "already-
+   immediately stomped back to +8. g_light_source_slots ({5,6,7,8}, "already-
    equipped valid WIDGET ids for a light source" -- confirmed by
    use_light_source's own comparison against find_or_assign_object_widget's
    return value, a widget id, not a slot index) suggests widget 5 (slot
@@ -2811,10 +2811,10 @@ static unsigned char g_backpack_widget_to_slot_backing[0x17] = {
   1,3,0,1,2,4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19, 0,0,
 };
 #define g_backpack_widget_to_slot g_backpack_widget_to_slot_backing[0]
-/* DAT_00202950 (28 2-byte "backpack/equipment slot" object-link
+/* g_equipped_items (28 2-byte "backpack/equipment slot" object-link
    records -- see g_backpack_widget_to_slot's own comment) was a bare scalar Ghidra
    never gave real backing to. A plain standalone static array is NOT
-   enough, though: every reader/writer passes `&DAT_00202950 + idx*2`
+   enough, though: every reader/writer passes `&g_equipped_items + idx*2`
    straight to resolve_object_link (or gets it back from
    encode_object_slot_index's matching encode step), and resolve_object_link
    refuses to decode through any address outside the level's own
@@ -2835,7 +2835,7 @@ static unsigned char g_backpack_widget_to_slot_backing[0x17] = {
    same 0x38 bytes so this new tail is actually accepted (see both of
    their own comments). */
 char *g_backpack_slot_table;
-#define DAT_00202950 g_backpack_slot_table[0]
+#define g_equipped_items g_backpack_slot_table[0]
 #define DAT_00202951 g_backpack_slot_table[1]
 void uw_debug_dump_inventory_state(void) {
   int occupied = 0;
@@ -2862,7 +2862,7 @@ char *g_open_container_list;
 /* g_backpack_widget_to_slot_plus1's address (0x85c39) is exactly one byte past
    g_backpack_widget_to_slot's (0x85c38) -- not a separate byte, an alias into the
    same backing array (same relationship as DAT_002028ec/DAT_002028e8,
-   DAT_00202951/DAT_00202950 elsewhere in this file). close_backpack_container (the
+   DAT_00202951/g_equipped_items elsewhere in this file). close_backpack_container (the
    close-container function) indexes it as `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]`
    (11..18), which through this alias lands at
    g_backpack_widget_to_slot_backing[12..19] -- exactly the 8 backpack-grid widgets,
@@ -2879,7 +2879,7 @@ char *g_open_container_list;
    (`(&DAT_002028e8)[iVar5] = uVar1` in FUN_00046414, a sibling of this
    same bug one array over) was clobbering g_selected_object (a real, load-
    bearing `char *`), corrupting an equipped-item lookup and crashing
-   FUN_000667cc on the very first in-game frame. Widened with a safety
+   refresh_player_equipment_effects on the very first in-game frame. Widened with a safety
    margin. */
 static undefined4 DAT_002028a0_backing[64];
 #define DAT_002028a0 DAT_002028a0_backing[0]
@@ -2890,7 +2890,7 @@ static undefined4 DAT_002028a0_backing[64];
 static undefined4 DAT_002028e8_backing[64];
 #define DAT_002028e8 DAT_002028e8_backing[0]
 /* Same "resolve_object_link needs an in-arena address" issue as
-   DAT_00202950 (see its own, much longer comment) -- a standalone
+   g_equipped_items (see its own, much longer comment) -- a standalone
    backing array's address will never fall inside the level's object
    arena, so every resolve_object_link(&g_current_container_link) call (the "item
    currently in the process of being combined/used" single-object
@@ -2989,7 +2989,7 @@ ushort DAT_00202986;
    close-container function): it resets `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]`
    (11..18) to identity, and g_backpack_widget_to_slot_plus1's address is exactly one byte
    past g_backpack_widget_to_slot's -- the same split-symbol relationship as
-   DAT_00202951/DAT_00202950 -- so that write really lands at
+   DAT_00202951/g_equipped_items -- so that write really lands at
    g_backpack_widget_to_slot_backing[12..19], resetting widgets 12-19's slot mapping
    back to 11-18 (widget N -> slot N-1) after a container closes. That
    in turn implies the *normal* (no container open) mapping is also
@@ -3289,21 +3289,21 @@ undefined4 DAT_00202910;
 ushort DAT_00202962;
 ushort DAT_00202964;
 char s_Move_how_many__00085c68[] = "Move_how_many?";
-/* DAT_00085ac8: light-source-eligible equip slots {5,6,7,8} (see
-   FUN_000667cc and FUN_0005404c's light-scan loops, and use_light_source's
+/* g_light_source_slots: light-source-eligible equip slots {5,6,7,8} (see
+   refresh_player_equipment_effects and FUN_0005404c's light-scan loops, and use_light_source's
    own comparison against find_or_assign_object_widget's result). Was a
-   bare 1-byte scalar -- every existing `(&DAT_00085ac8)[1..3]` read past
+   bare 1-byte scalar -- every existing `(&g_light_source_slots)[1..3]` read past
    the single declared byte into whatever the linker placed next, instead
    of the real dumped table. Dumped directly from the real binary at
    0x85ac8: `5 6 7 8 0 0 0 0 0 0 0xc8 0 0 0 0xc8 0`. */
 static unsigned char DAT_00085ac8_backing[16] =
     {5,6,7,8,0,0,0,0,0,0,0xc8,0,0,0,0xc8,0};
-#define DAT_00085ac8 DAT_00085ac8_backing[0]
+#define g_light_source_slots DAT_00085ac8_backing[0]
 char s_is_too_full__00085c78[] = "is_too_full.";
 static undefined1 DAT_00085c88_backing[32768];
 #define DAT_00085c88 DAT_00085c88_backing[0]
 static undefined1 DAT_002029f8_backing[256];
-#define DAT_002029f8 DAT_002029f8_backing[0]
+#define g_carry_weight_limit_table DAT_002029f8_backing[0]
 undefined DAT_002029f9;
 /* DAT_00202938: widget 20's own saved-background grtile handle (the
    "open container indicator" -- see g_inventory_hotspot_table's own
@@ -3316,7 +3316,7 @@ undefined4 DAT_00202938;
    see their own comments): this is g_backpack_widget_to_slot's own
    real byte 20, not a separate global -- Ghidra just never connected
    the two. redraw_inventory_widget_range's widget-20 special case
-   (see its own comment) reads this as the DAT_00202950 slot to draw
+   (see its own comment) reads this as the g_equipped_items slot to draw
    for the "open container indicator" -- with real data now restored
    to g_backpack_widget_to_slot_backing[20] (19, the same slot
    g_backpack_slot_to_widget's own recovery independently confirmed),
@@ -3468,7 +3468,7 @@ static const short DAT_00085f50_cosine[260] = {
 undefined DAT_00086260;
 undefined DAT_00086264;
 static undefined1 DAT_002029d8_backing[256];
-#define DAT_002029d8 DAT_002029d8_backing[0]
+#define g_light_radius_table DAT_002029d8_backing[0]
 // g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
 // object id's low nibble) effect/quality byte table, loaded at runtime
 // (FUN_0002285c) and read by use_food_item to decide a food item's
@@ -3624,14 +3624,14 @@ undefined4 LAB_00041e84()
    function. get_scanned_object_class_effect_ptr takes its address and CALLS it (`local_24[2] =
    &DAT_0004a070; (*(code*)local_24[idx])();`) for any object whose class
    is 2 (id&0x1c0)>>6==2 -- exactly the 0x90-class light sources
-   FUN_000667cc's and FUN_0005404c's light-scan loops filter for. Taking
+   refresh_player_equipment_effects's and FUN_0005404c's light-scan loops filter for. Taking
    the address of a data byte and jumping into it crashed the instant a
    real torch was found by the (now-fixed) scan loop. Real disassembly
    (0x4a070-0x4a108) shows this reads the scanned object's id (via
-   DAT_00204690, the same object pointer get_scanned_object_class_effect_ptr's other handlers
+   g_scratch_object_ptr, the same object pointer get_scanned_object_class_effect_ptr's other handlers
    already read), splits it into family=(id&0x30)>>4 and nibble=(id&0xf),
    then returns a pointer into one of three already-recovered runtime
-   tables (DAT_002029f8/DAT_002029d8/g_food_effect_table, populated from
+   tables (g_carry_weight_limit_table/g_light_radius_table/g_food_effect_table, populated from
    objects.dat by load_light_food_effect_tables via FUN_00052674's boot-time loader --
    confirmed reachable, not orphaned) indexed by nibble at that family's
    stride (3/2/1 bytes). Family 2 (torches' actual family, id=0x9X ->
@@ -3651,14 +3651,14 @@ void *class2_variant_effect_table_lookup()
   int family;
   int nibble;
 
-  uVar1 = *(ushort *)DAT_00204690;
+  uVar1 = *(ushort *)g_scratch_object_ptr;
   family = (uVar1 & 0x30) >> 4;
   nibble = uVar1 & 0xf;
   if (family == 0) {
-    return &DAT_002029f8 + nibble * 3;
+    return &g_carry_weight_limit_table + nibble * 3;
   }
   if (family == 1) {
-    return &DAT_002029d8 + nibble * 2;
+    return &g_light_radius_table + nibble * 2;
   }
   if (family == 2) {
     return 0;
@@ -4472,7 +4472,7 @@ char DAT_00086db4;
 int DAT_00086db8;
 undefined1 DAT_00086da8;
 undefined DAT_00086dc8;
-undefined DAT_002026d0;
+undefined g_object_weight_table;
 undefined DAT_00202806;
 undefined2 DAT_0023beb8;
 undefined2 DAT_0023be8c;
@@ -7522,13 +7522,13 @@ char param_1;
 
 
 
-void FUN_0001433c(param_1)
+void set_ambient_bias_without_light(param_1)
 char param_1;
 
 {
   DAT_000842b0 = '\b' - param_1;
   if (getenv("UW_DEBUG_AMBIENT"))
-    fprintf(stderr, "[ambient] FUN_0001433c(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
+    fprintf(stderr, "[ambient] set_ambient_bias_without_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
   return;
 }
 
@@ -16120,7 +16120,7 @@ int param_1;
   Ordinal_2005(6,uVar4);
   *(char *)(g_player_object + 8) = (-6 - extraout_r1) + *(char *)(DAT_0023be74 + 4);
   DAT_00201b68 = 1;
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   return;
 }
 
@@ -17666,7 +17666,7 @@ short param_1;
     bVar7 = (byte)(&DAT_001007e0)[(uVar1 & 0x3f) * 0x30] >> 6;
   }
   if (DAT_00100620 == 1) {
-    puVar6 = (ushort *)FUN_00045054((char)DAT_00100624 + 1U & 3);
+    puVar6 = (ushort *)get_equipped_item_at_slot((char)DAT_00100624 + 1U & 3);
     if (((((puVar6 == (ushort *)0x0) || (uVar3 = *puVar6 & 0x1ff, uVar3 == 0x20)) || (uVar3 == 0x23)
          ) || ((uVar3 == 0x26 || (uVar3 == 0x29)))) || (uVar3 == 0x2c)) {
 LAB_00026fe8:
@@ -17800,7 +17800,7 @@ short param_1;
    reads it back and dereferences it as a pointer. param_2 had the
    same problem one level removed: it points at DAT_001005e0 (a real
    `char *`), but was declared `undefined4 *` (4 bytes), so `*param_2 =
-   puVar4` only ever wrote the low 32 bits of FUN_00045054's real
+   puVar4` only ever wrote the low 32 bits of get_equipped_item_at_slot's real
    pointer into the first half of that 8-byte slot. */
 undefined4 FUN_000272c0(param_1,param_2)
 char * * param_1;
@@ -17814,7 +17814,7 @@ char * * param_2;
   int iVar5;
 
   *param_1 = 0;
-  puVar4 = (ushort *)FUN_00045054(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
+  puVar4 = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
   *param_2 = (char *)puVar4;
   if (puVar4 != (ushort *)0x0) {
     uVar2 = *puVar4;
@@ -19463,97 +19463,97 @@ undefined4 FUN_0002a35c()
   int extraout_r1;
   int iVar3;
   
-  uVar1 = *(ushort *)(DAT_00204690 + 0x16);
-  DAT_00204690[0x16] = (byte)(uVar1 & 0x3ff);
-  DAT_00204690[0x17] = (byte)((uVar1 & 0x3ff) >> 8) | 0x80;
-  uVar1 = *(ushort *)(DAT_00204690 + 0x16);
-  DAT_00204690[0x16] = (byte)(uVar1 & 0xfe0f);
-  DAT_00204690[0x17] = (byte)((uVar1 & 0xfe0f) >> 8) | 2;
-  uVar1 = *(ushort *)(DAT_00204690 + 4);
-  DAT_00204690[4] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  DAT_00204690[5] = (byte)((uVar1 & 0xffc0) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 6);
-  DAT_00204690[6] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  DAT_00204690[7] = (byte)((uVar1 & 0xffc0) >> 8);
-  DAT_001007c8 = &DAT_001007d0 + (*DAT_00204690 & 0x3f) * 0x30;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
+  g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0x3ff);
+  g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0x3ff) >> 8) | 0x80;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
+  g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0xfe0f);
+  g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0xfe0f) >> 8) | 2;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 4);
+  g_scratch_object_ptr[4] = (byte)(uVar1 & 0xffc0) ^ 0x20;
+  g_scratch_object_ptr[5] = (byte)((uVar1 & 0xffc0) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 6);
+  g_scratch_object_ptr[6] = (byte)(uVar1 & 0xffc0) ^ 0x20;
+  g_scratch_object_ptr[7] = (byte)((uVar1 & 0xffc0) >> 8);
+  DAT_001007c8 = &DAT_001007d0 + (*g_scratch_object_ptr & 0x3f) * 0x30;
   uVar2 = Ordinal_1053();
   Ordinal_2005(0x18,uVar2);
   iVar3 = (extraout_r1 + 0x10) * (uint)(byte)DAT_001007c8[4];
   if (iVar3 < 0) {
     iVar3 = iVar3 + 0x1f;
   }
-  DAT_00204690[8] = (byte)(iVar3 >> 5);
-  DAT_00204690[9] = (byte)(*(ushort *)(DAT_00204690 + 2) >> 2) & 0xe0;
-  uVar1 = *(ushort *)(DAT_00204690 + 0xb);
-  DAT_00204690[0xb] = (byte)(uVar1 & 0xfff8) | 8;
-  DAT_00204690[0xc] = (byte)((uVar1 & 0xfff8) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xb);
-  DAT_00204690[0xb] = (byte)(uVar1 & 0xf00f);
-  DAT_00204690[0xc] = (byte)((uVar1 & 0xf00f) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xfff0);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xfff0) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xf);
-  DAT_00204690[0xf] = (byte)(uVar1 & 0xffc0);
-  DAT_00204690[0x10] = (byte)((uVar1 & 0xffc0) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xf);
-  DAT_00204690[0xf] = (byte)(uVar1 & 0xf03f);
-  DAT_00204690[0x10] = (byte)((uVar1 & 0xf03f) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xff0f);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xff0f) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xfdff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xfdff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xfbff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xfbff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xf7ff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xf7ff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xfeff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xfeff) >> 8);
-  DAT_00204690[0x18] = DAT_00204690[0x18] & 0xdf;
-  uVar1 = *(ushort *)(DAT_00204690 + 0xf);
-  DAT_00204690[0xf] = (byte)(uVar1 & 0xfff);
-  DAT_00204690[0x10] = (byte)((uVar1 & 0xfff) >> 8);
-  DAT_00204690[10] = DAT_00204690[10] & 0xf0;
-  DAT_00204690[0x14] = DAT_00204690[0x14] & 0xfc | 4;
-  DAT_00204690[0x15] = DAT_00204690[0x15] & 0xe0 | 0x20;
-  uVar1 = *(ushort *)(DAT_00204690 + 0xb);
-  DAT_00204690[0xb] = (byte)(uVar1 & 0xfff);
-  DAT_00204690[0xc] = (byte)((uVar1 & 0xfff) >> 8);
-  DAT_00204690[0x14] = DAT_00204690[0x14] & 7 | 0x80;
-  DAT_00204690[0x13] = DAT_00204690[0x13] & 0x7f;
-  DAT_00204690[0x13] = DAT_00204690[0x13] & 0x80;
-  DAT_00204690[0x11] = 0;
-  DAT_00204690[0x12] = 0;
-  DAT_00204690[0x15] = DAT_00204690[0x15] & 0x7f;
-  DAT_00204690[0x18] = DAT_00204690[0x18] & 0x7f;
-  DAT_00204690[0x18] = DAT_00204690[0x18] & 0xbf;
-  uVar1 = *(ushort *)(DAT_00204690 + 0x16);
-  DAT_00204690[0x16] = (byte)(uVar1 & 0xfff0);
-  DAT_00204690[0x17] = (byte)((uVar1 & 0xfff0) >> 8);
-  DAT_00204690[0x15] = DAT_00204690[0x15] & 0xbf;
-  DAT_00204690[0x1a] = 0;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xfe;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xfd;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xef;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xdf;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xbf;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0x7f;
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xefff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xefff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xdfff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xdfff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0x3fff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0x3fff) >> 8) | 0x80;
-  DAT_00204690[10] = DAT_00204690[10] & 0x7f;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xf3;
+  g_scratch_object_ptr[8] = (byte)(iVar3 >> 5);
+  g_scratch_object_ptr[9] = (byte)(*(ushort *)(g_scratch_object_ptr + 2) >> 2) & 0xe0;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xb);
+  g_scratch_object_ptr[0xb] = (byte)(uVar1 & 0xfff8) | 8;
+  g_scratch_object_ptr[0xc] = (byte)((uVar1 & 0xfff8) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xb);
+  g_scratch_object_ptr[0xb] = (byte)(uVar1 & 0xf00f);
+  g_scratch_object_ptr[0xc] = (byte)((uVar1 & 0xf00f) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfff0);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfff0) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xf);
+  g_scratch_object_ptr[0xf] = (byte)(uVar1 & 0xffc0);
+  g_scratch_object_ptr[0x10] = (byte)((uVar1 & 0xffc0) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xf);
+  g_scratch_object_ptr[0xf] = (byte)(uVar1 & 0xf03f);
+  g_scratch_object_ptr[0x10] = (byte)((uVar1 & 0xf03f) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xff0f);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xff0f) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfdff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfdff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfbff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfbff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xf7ff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xf7ff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfeff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfeff) >> 8);
+  g_scratch_object_ptr[0x18] = g_scratch_object_ptr[0x18] & 0xdf;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xf);
+  g_scratch_object_ptr[0xf] = (byte)(uVar1 & 0xfff);
+  g_scratch_object_ptr[0x10] = (byte)((uVar1 & 0xfff) >> 8);
+  g_scratch_object_ptr[10] = g_scratch_object_ptr[10] & 0xf0;
+  g_scratch_object_ptr[0x14] = g_scratch_object_ptr[0x14] & 0xfc | 4;
+  g_scratch_object_ptr[0x15] = g_scratch_object_ptr[0x15] & 0xe0 | 0x20;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xb);
+  g_scratch_object_ptr[0xb] = (byte)(uVar1 & 0xfff);
+  g_scratch_object_ptr[0xc] = (byte)((uVar1 & 0xfff) >> 8);
+  g_scratch_object_ptr[0x14] = g_scratch_object_ptr[0x14] & 7 | 0x80;
+  g_scratch_object_ptr[0x13] = g_scratch_object_ptr[0x13] & 0x7f;
+  g_scratch_object_ptr[0x13] = g_scratch_object_ptr[0x13] & 0x80;
+  g_scratch_object_ptr[0x11] = 0;
+  g_scratch_object_ptr[0x12] = 0;
+  g_scratch_object_ptr[0x15] = g_scratch_object_ptr[0x15] & 0x7f;
+  g_scratch_object_ptr[0x18] = g_scratch_object_ptr[0x18] & 0x7f;
+  g_scratch_object_ptr[0x18] = g_scratch_object_ptr[0x18] & 0xbf;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
+  g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0xfff0);
+  g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0xfff0) >> 8);
+  g_scratch_object_ptr[0x15] = g_scratch_object_ptr[0x15] & 0xbf;
+  g_scratch_object_ptr[0x1a] = 0;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xfe;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xfd;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xef;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xdf;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xbf;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0x7f;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xefff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xefff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xdfff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xdfff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0x3fff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0x3fff) >> 8) | 0x80;
+  g_scratch_object_ptr[10] = g_scratch_object_ptr[10] & 0x7f;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xf3;
   return 1;
 }
 
@@ -27193,7 +27193,7 @@ void FUN_0003a398()
     decrement_object_count(iVar2);
     FUN_00053334(0,iVar2,1);
     FUN_00048110();
-    FUN_000667cc();
+    refresh_player_equipment_effects();
   }
   return;
 }
@@ -27223,7 +27223,7 @@ undefined4 param_3;
     decrement_object_count(iVar2);
     FUN_00053334(0,iVar2,1);
     FUN_00048110();
-    FUN_000667cc();
+    refresh_player_equipment_effects();
   }
   return;
 }
@@ -27567,7 +27567,7 @@ int param_3;
       message_scroll_print_wrapped(auStack_64);
       FUN_00078c80(0x53);
     }
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     FUN_00049924(0x200);
   }
   return;
@@ -28326,7 +28326,7 @@ void enter_dungeon_view()
   }
   enter_dungeon_view_hud_init();
   FUN_00049924(0x7dfe);
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   full_dungeon_redraw();
   weapon_overlay_and_full_redraw();
   FUN_000570b4();
@@ -28342,7 +28342,7 @@ void FUN_0003bee4()
   uint uVar1;
   
   FUN_00066c90();
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   uVar1 = *(ushort *)(g_player_object + 2) & 0xfc7f;
   *(char *)(g_player_object + 2) = (char)uVar1;
   *(char *)(g_player_object + 3) = (char)(uVar1 >> 8);
@@ -33289,7 +33289,7 @@ short param_1;
   if (7 < iVar2) {
     if (iVar2 < 10) {
       if (iVar2 == 9 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
-        puVar1 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
+        puVar1 = (ushort *)resolve_object_link(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
         /* Was missing a NULL check -- resolve_object_link legitimately
            returns 0 for an empty slot (its own link word has no
            object-table bits set, see its own comment), and every fresh
@@ -33349,7 +33349,7 @@ short param_1;
             g_cursor_holding_state = 0;
             FUN_00057cac(3);
           }
-          FUN_000667cc();
+          refresh_player_equipment_effects();
           if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
             leave_nested_container_level();
           }
@@ -33384,7 +33384,7 @@ short param_1;
                  *(byte *)(DAT_00086df8 + 0x5e);
           }
           g_selected_object = 0;
-          FUN_000667cc();
+          refresh_player_equipment_effects();
         }
         goto LAB_00042a10;
       }
@@ -33402,7 +33402,7 @@ short param_1;
      storage fix a few functions up), immediately segfaulting one frame
      further in on use_object_on_target's own dereference of the same
      truncated value. */
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
+  puVar2 = (ushort *)resolve_object_link(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
   if (puVar2 != 0) {
     /* Page 4 of comobj's string data is the base object-name table,
        indexed directly by id (0x800 | id) -- same lookup the
@@ -33511,7 +33511,7 @@ void close_backpack_container()
        so this isn't load-bearing for the full-panel repaint below, but
        leaving a stale occupied reference there would be a latent trap
        for any future reader of this slot. */
-    *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = 0;
+    *(unsigned short *)(&g_equipped_items + DAT_00085c4c * 2) = 0;
     iVar1 = 0xb;
     do {
       (&g_backpack_widget_to_slot_plus1)[iVar1] = (char)iVar1;
@@ -33673,7 +33673,7 @@ void leave_nested_container_level()
          of the same link value, resolve_object_link doesn't care which
          address you point it at" pattern open_backpack_container's own
          g_current_container_link assignment already established. */
-      *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = g_current_container_link;
+      *(unsigned short *)(&g_equipped_items + DAT_00085c4c * 2) = g_current_container_link;
       redraw_inventory_widget_range(0x14,0x14);
     }
   }
@@ -33731,20 +33731,20 @@ void repopulate_container_grid_slots()
 
   iVar6 = 0x14;
   do {
-    if ((*(ushort *)(&DAT_00202950 + iVar6 * 2) & 0xffc0) != 0) break;
+    if ((*(ushort *)(&g_equipped_items + iVar6 * 2) & 0xffc0) != 0) break;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x1c);
   pContents = (char *)resolve_object_link(&g_current_container_link);
   pContents = (char *)resolve_object_link((ushort *)(pContents + 6));
   if ((short)iVar6 < 0x1c) {
     do {
-      _pMatch = (char *)resolve_object_link(&DAT_00202950 + (short)iVar6 * 2);
+      _pMatch = (char *)resolve_object_link(&g_equipped_items + (short)iVar6 * 2);
       if (pContents == _pMatch) {
         iVar6 = 0x14;
         do {
           uVar4 = encode_object_slot_index(pContents);
           iVar5 = (short)iVar6 * 2;
-          (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+          (&g_equipped_items)[iVar5] = (&g_equipped_items)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
           (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
           if (pContents != 0) {
             if ((*(byte *)(pContents + 1) & 0x40) != 0) {
@@ -33780,7 +33780,7 @@ void repopulate_container_grid_slots()
   do {
     uVar4 = encode_object_slot_index(pContents);
     iVar5 = (short)iVar6 * 2;
-    (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+    (&g_equipped_items)[iVar5] = (&g_equipped_items)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
     (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
     if (pContents != 0) {
       if ((*(byte *)(pContents + 1) & 0x40) != 0) {
@@ -33796,14 +33796,14 @@ void repopulate_container_grid_slots()
       iVar5 = iVar6 * 2;
       uVar1 = *(undefined2 *)(iVar5 + 0x202958);
       bVar2 = (byte)uVar1;
-      (&DAT_00202950)[iVar5] = ((&DAT_00202950)[iVar5] ^ bVar2) & 0x3f ^ bVar2;
+      (&g_equipped_items)[iVar5] = ((&g_equipped_items)[iVar5] ^ bVar2) & 0x3f ^ bVar2;
       (&DAT_00202951)[iVar5] = (char)((ushort)uVar1 >> 8);
       iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
     } while (iVar6 < 0x18);
     for (; iVar5 = (int)(short)iVar6, iVar5 < 0x1c; iVar6 = iVar6 + 1) {
       uVar4 = encode_object_slot_index(pContents);
-      (&DAT_00202950)[iVar5 * 2] =
-           (&DAT_00202950)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+      (&g_equipped_items)[iVar5 * 2] =
+           (&g_equipped_items)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
       (&DAT_00202951)[iVar5 * 2] = (char)((uVar4 << 0x16) >> 0x18);
       if (pContents != 0) {
         if ((*(byte *)(pContents + 1) & 0x40) != 0) {
@@ -33845,7 +33845,7 @@ short param_1;
   ushort *puVar15;
   
   iVar1 = (int)param_1;
-  puVar13 = (ushort *)(&DAT_00202950 + iVar1 * 2);
+  puVar13 = (ushort *)(&g_equipped_items + iVar1 * 2);
   if (getenv("UW_DEBUG_INV"))
     fprintf(stderr, "[inv] open_backpack_container entry: param_1=%d puVar13=%p\n", (int)param_1, (void *)puVar13);
   puVar7 = (ushort *)resolve_object_link(puVar13);
@@ -34116,8 +34116,8 @@ short param_1;
         do {
           uVar12 = encode_object_slot_index(puVar15);
           iVar2 = (int)(short)iVar10;
-          (&DAT_00202950)[iVar2 * 2] =
-               (&DAT_00202950)[iVar2 * 2] & 0x3f | (byte)((uVar12 & 0x3ff) << 6);
+          (&g_equipped_items)[iVar2 * 2] =
+               (&g_equipped_items)[iVar2 * 2] & 0x3f | (byte)((uVar12 & 0x3ff) << 6);
           (&DAT_00202951)[iVar2 * 2] = (char)((uVar12 << 0x16) >> 0x18);
           if (puVar15 != NULL) {
             if ((*(byte *)((char *)puVar15 + 1) & 0x40) != 0) {
@@ -34154,7 +34154,7 @@ short param_1;
            DAT_00085c4c's own comment): point slot 19 at the same
            object g_current_container_link was just set to a few lines
            above (this container's own link). */
-        *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = g_current_container_link;
+        *(unsigned short *)(&g_equipped_items + DAT_00085c4c * 2) = g_current_container_link;
         redraw_inventory_widget_range(0x14,0x14);
         if ((char)(&g_backpack_slot_to_widget)[iVar1] < '\v') {
           redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
@@ -34290,7 +34290,7 @@ LAB_000438ac:
     if ((iVar10 == 0x13) && (*(char **)(g_current_container_record + 0x14) == 0)) {
       iVar10 = 0xb;
       do {
-        if ((*(ushort *)(&DAT_00202950 + iVar10 * 2) & 0xffc0) == 0) {
+        if ((*(ushort *)(&g_equipped_items + iVar10 * 2) & 0xffc0) == 0) {
           bVar11 = true;
           break;
         }
@@ -34322,7 +34322,7 @@ LAB_0004386c:
         g_current_container_link = _parentLink;
       }
       else {
-        puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar10 * 2);
+        puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar10 * 2);
         iVar9 = g_current_container_record;
         if (iVar10 < 0x14) {
           local_28 = 0;
@@ -34393,8 +34393,8 @@ LAB_0004386c:
       if (bVar11) {
         uVar7 = encode_object_slot_index(param_1);
         iVar10 = (int)local_28;
-        (&DAT_00202950)[iVar10 * 2] =
-             (&DAT_00202950)[iVar10 * 2] & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
+        (&g_equipped_items)[iVar10 * 2] =
+             (&g_equipped_items)[iVar10 * 2] & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
         (&DAT_00202951)[iVar10 * 2] = (char)((uVar7 << 0x16) >> 0x18);
       }
 LAB_000439a0:
@@ -34414,7 +34414,7 @@ LAB_000439a0:
         bVar1 = (byte)uVar2;
         *(byte *)param_1 = (bVar1 - 4 ^ bVar1) & 0xf ^ bVar1;
         *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
-        FUN_0001433c(0);
+        set_ambient_bias_without_light(0);
       }
     }
     uVar5 = 1;
@@ -34457,7 +34457,7 @@ undefined4 param_2;
   g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
   puVar10 = (ushort *)((char *)resolve_object_link(&g_current_container_link) + 6);
   iVar4 = (short)param_2 * 2;
-  pbVar9 = &DAT_00202950 + iVar4;
+  pbVar9 = &g_equipped_items + iVar4;
   puVar5 = (ushort *)resolve_object_link(pbVar9);
   while( true ) {
     puVar6 = (ushort *)resolve_object_link(puVar10);
@@ -34491,7 +34491,7 @@ undefined4 param_2;
       }
       sVar2 = FUN_00046260(param_1);
       g_player_carry_weight = g_player_carry_weight + sVar2;
-      FUN_000667cc();
+      refresh_player_equipment_effects();
       repopulate_container_grid_slots();
       redraw_inventory_widget_range((int)(char)(&g_backpack_slot_to_widget)[(short)param_2],
                    (int)(char)(&g_backpack_slot_to_widget)[(short)param_2]);
@@ -34698,7 +34698,7 @@ undefined2 * param_2;
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
-    if (((*(ushort *)(&DAT_00202950 + iVar1) ^ *param_1) & 0xffc0) == 0) {
+    if (((*(ushort *)(&g_equipped_items + iVar1) ^ *param_1) & 0xffc0) == 0) {
       uVar2 = *param_2;
       iVar4 = iVar1 + DAT_002028c0;
       bVar3 = (byte)uVar2;
@@ -34756,7 +34756,7 @@ ushort * param_2;
     if (((*(ushort *)(iVar1 + iVar4) ^ *param_2) & 0xffc0) == 0) {
       uVar2 = *param_1;
       bVar3 = (byte)uVar2;
-      (&DAT_00202950)[iVar1] = ((&DAT_00202950)[iVar1] ^ bVar3) & 0x3f ^ bVar3;
+      (&g_equipped_items)[iVar1] = ((&g_equipped_items)[iVar1] ^ bVar3) & 0x3f ^ bVar3;
       (&DAT_00202951)[iVar1] = (char)((ushort)uVar2 >> 8);
     }
     iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
@@ -34919,7 +34919,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     FUN_0004638c();
   }
   FUN_00044538(DAT_002028c8);
-  FUN_000667cc();
+  refresh_player_equipment_effects();
 LAB_00044730:
   if (DAT_002028c8 != 0) {
     Ordinal_1018();
@@ -35110,7 +35110,7 @@ void FUN_00044bd8()
       if ((DAT_00085a6c[3] & 2U) == 0) {
         iVar2 = FUN_00053ab0(&local_10);
         if (iVar2 != 0) {
-          FUN_000667cc();
+          refresh_player_equipment_effects();
         }
       }
       else {
@@ -35261,17 +35261,17 @@ short param_1;
    pointer and then discarding it in favor of a hardcoded 0, same
    "dropped return value" idiom already fixed for next_input_event elsewhere
    in this file. Every caller treats the return as the real result (e.g.
-   `puVar6 = (ushort *)FUN_00045054(iVar4); if (puVar6 != 0) ...`), so the
+   `puVar6 = (ushort *)get_equipped_item_at_slot(iVar4); if (puVar6 != 0) ...`), so the
    hardcoded 0 silently turned every one of those checks into "nothing
    here" -- except the *upper* bits of the 8-byte-wide return register
    this recompile reads were left uninitialized (the old `undefined4`
    return type only ever set the low 32 bits), so callers actually read
    garbage instead of a clean NULL and crashed dereferencing it. */
-void *FUN_00045054(param_1)
+void *get_equipped_item_at_slot(param_1)
 short param_1;
 
 {
-  return resolve_object_link(&DAT_00202950 + param_1 * 2);
+  return resolve_object_link(&g_equipped_items + param_1 * 2);
 }
 
 
@@ -35371,14 +35371,14 @@ short param_2;
         }
       }
       uVar6 = encode_object_slot_index(param_1);
-      (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
+      (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar6 << 0x16) >> 0x18);
     }
     object_list_append_tail(iVar4 + 6,param_1);
     g_player_carry_weight = g_player_carry_weight + (short)iVar3;
     uVar8 = 1;
   }
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   return uVar8;
 }
 
@@ -35418,7 +35418,7 @@ ushort *param_1;
   iVar6 = 0;
   do {
     cVar1 = (&g_backpack_widget_to_slot)[iVar6];
-    puVar5 = (ushort *)(&DAT_00202950 + (short)cVar1 * 2);
+    puVar5 = (ushort *)(&g_equipped_items + (short)cVar1 * 2);
     if ((*puVar5 & 0xffc0) != 0) {
       if ((uint)(*puVar5 >> 6) == (int)(short)uVar2) {
         return (int)cVar1;
@@ -35464,7 +35464,7 @@ undefined2 * param_5;
   iVar7 = 0;
   do {
     uVar6 = (undefined2)iVar7;
-    puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar7 * 2);
+    puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar7 * 2);
     local_6c[iVar7] = (int)puVar4;
     sVar1 = (short)param_1;
     uVar2 = (ushort)param_2;
@@ -35478,7 +35478,7 @@ undefined2 * param_5;
   if (param_4 != 1) {
     iVar5 = (int)(short)((uint)iVar5 >> 0x10);
     while (uVar6 = (undefined2)iVar7, iVar5 < 0x13) {
-      puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar5 * 2);
+      puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar5 * 2);
       local_6c[iVar5] = (int)puVar4;
       if (((puVar4 != (ushort *)0x0) && ((sVar1 < 0 || ((*puVar4 >> 6 & 7) == (int)sVar1)))) &&
          ((((short)uVar2 < 0 || (((byte)((byte)*puVar4 >> 4) & 3) == uVar2)) &&
@@ -35614,7 +35614,7 @@ ushort *FUN_00045708(param_1)
 short param_1;
 
 {
-  /* Was `resolve_object_link(&DAT_00202950 + param_1 * 2); return 0;` --
+  /* Was `resolve_object_link(&g_equipped_items + param_1 * 2); return 0;` --
      confirmed via real ARM disassembly (0x45708-0x45718: `mov r3,r0,lsl
      #0x10; ldr r0,[...]; mov r3,r3,asr #0x10; add r0,r0,r3,lsl #0x1; b
      0x53514` -- a genuine TAIL CALL straight into resolve_object_link,
@@ -35624,7 +35624,7 @@ short param_1;
      (FUN_00045678, in turn feeding g_interact_target in FUN_0003f648's
      own right-click-in-inventory "ready item" handler) always saw a
      NULL target as a result, silently no-op'ing every right-click. */
-  return (ushort *)resolve_object_link(&DAT_00202950 + param_1 * 2);
+  return (ushort *)resolve_object_link(&g_equipped_items + param_1 * 2);
 }
 
 
@@ -35684,7 +35684,7 @@ uint param_2;
   uVar4 = encode_object_slot_index(param_1);
   iVar7 = 0;
   do {
-    if ((uint)(*(ushort *)(&DAT_00202950 + iVar7 * 2) >> 6) == (int)(short)uVar4) break;
+    if ((uint)(*(ushort *)(&g_equipped_items + iVar7 * 2) >> 6) == (int)(short)uVar4) break;
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 0x1c);
   iVar8 = (int)(short)iVar7;
@@ -35757,7 +35757,7 @@ uint param_2;
     repopulate_container_grid_slots();
     refresh_container_view();
     redraw_inventory_widget(0x13);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
   }
   return 1;
 }
@@ -35791,7 +35791,7 @@ short param_4;
   ushort *puVar2;
 
   uVar1 = extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,0);
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
+  puVar2 = (ushort *)resolve_object_link(&g_equipped_items + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
     repopulate_container_grid_slots();
@@ -35817,7 +35817,7 @@ short param_4;
   ushort *puVar2;
 
   uVar1 = extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,0);
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
+  puVar2 = (ushort *)resolve_object_link(&g_equipped_items + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
     repopulate_container_grid_slots();
@@ -35833,7 +35833,7 @@ short param_4;
 // was FUN_00045b20 -- thin wrapper: extracts the object matching
 // param_1/param_2/param_3 (category/subcategory/quality, <0 = any)
 // from slot param_4 via extract_matching_object_from_slot, then
-// refreshes carry-weight/UI state via FUN_000667cc(). Was a bare K&R
+// refreshes carry-weight/UI state via refresh_player_equipment_effects(). Was a bare K&R
 // `()` blindly relying on ARM32 register pass-through to forward its
 // own caller's args into extract_matching_object_from_slot() -- see
 // FUN_000459d8's own comment on why that's unsound on this 64-bit
@@ -35852,7 +35852,7 @@ ushort param_5;
   ushort *uVar1;
 
   uVar1 = extract_matching_object_from_slot(param_1,param_2,param_3,param_4,param_5);
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   return uVar1;
 }
 
@@ -35887,7 +35887,7 @@ ushort param_5;
   char *local_28;
   
   iVar4 = (int)param_4;
-  pbVar11 = &DAT_00202950 + iVar4 * 2;
+  pbVar11 = &g_equipped_items + iVar4 * 2;
   pbVar10 = (byte *)0x0;
   puVar3 = (ushort *)resolve_object_link(pbVar11);
   if (puVar3 != (ushort *)0x0) {
@@ -35976,7 +35976,7 @@ ushort param_5;
       sVar2 = encode_object_slot_index(puVar3);
       iVar9 = 0x14;
       do {
-        if ((uint)(*(ushort *)(&DAT_00202950 + iVar9 * 2) >> 6) == (int)sVar2) {
+        if ((uint)(*(ushort *)(&g_equipped_items + iVar9 * 2) >> 6) == (int)sVar2) {
           if (pbVar10 == (byte *)0x0) {
             uVar6 = 0;
           }
@@ -35985,8 +35985,8 @@ ushort param_5;
             uVar6 = (uint)sVar2;
           }
           iVar9 = (int)(short)iVar9;
-          (&DAT_00202950)[iVar9 * 2] =
-               (&DAT_00202950)[iVar9 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
+          (&g_equipped_items)[iVar9 * 2] =
+               (&g_equipped_items)[iVar9 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
           iVar5 = g_current_container_record;
           (&DAT_00202951)[iVar9 * 2] = (char)((uVar6 << 0x16) >> 0x18);
           /* Legacy truncated "prev" walk -- same fix as
@@ -36056,7 +36056,7 @@ int param_5;
   char acStackY_85aec [547480];
   char acStack_4d [53];
   
-  puVar5 = (undefined2 *)FUN_00045054();
+  puVar5 = (undefined2 *)get_equipped_item_at_slot();
   if (puVar5 == (undefined2 *)0x0) {
     return 0xfffffffe;
   }
@@ -36091,7 +36091,7 @@ int param_5;
     }
     decrement_object_count(puVar5);
     FUN_00053334(0,puVar5,1);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     pcVar9 = s_destroyed__00085ab4;
     uVar7 = 1;
   }
@@ -36165,7 +36165,7 @@ ushort * param_1;
 // the sack" call reached exactly this line and segfaulted (bt: interact_
 // default -> check_object_carry_weight -> SIGSEGV). This is a "can the object being
 // picked up fit in the backpack" weight/capacity check -- same "wrapper
-// forgot to forward its own argument" idiom as FUN_00045054 elsewhere in
+// forgot to forward its own argument" idiom as get_equipped_item_at_slot elsewhere in
 // this file, just a missing forward instead of a hardcoded return.
 bool check_object_carry_weight(param_1)
 ushort *param_1;
@@ -36273,7 +36273,7 @@ void FUN_000465c8()
   
   iVar1 = 0;
   do {
-    (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f;
+    (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f;
     (&DAT_00202951)[iVar1 * 2] = 0;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 0x1c);
@@ -36319,7 +36319,7 @@ short param_1;
             (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]), (int)(short)uVar5);
   iVar9 = (int)(short)uVar5;
   /* Permanent (not env-gated) debug line: which real widget got clicked
-     and which g_backpack_widget_to_slot/DAT_00202950 slot it resolves
+     and which g_backpack_widget_to_slot/g_equipped_items slot it resolves
      to -- DEBUG(INFO,...) prints by default under normal play (run.sh's
      own UW_DEBUG_LEVEL=INFO), same as this file's other permanent [inv]
      lines (e.g. "use item" above), and is quieted automatically by the
@@ -36348,7 +36348,7 @@ short param_1;
     cVar2 = (&g_backpack_widget_to_slot)[iVar9];
     if (g_selected_object == 0) {
       iVar9 = (int)(short)cVar2;
-      if ((*(ushort *)(&DAT_00202950 + iVar9 * 2) & 0xffc0) == 0) {
+      if ((*(ushort *)(&g_equipped_items + iVar9 * 2) & 0xffc0) == 0) {
         if (iVar9 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
           toggle_weapon_ready();
         }
@@ -36356,7 +36356,7 @@ short param_1;
         return;
       }
       if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = FUN_000576d0(1), iVar6 != 0)) {
-        puVar7 = (ushort *)resolve_object_link(&DAT_00202950 + iVar9 * 2);
+        puVar7 = (ushort *)resolve_object_link(&g_equipped_items + iVar9 * 2);
         uVar3 = *puVar7;
         if (((uVar3 & 0x8000) == 0) || ((puVar7[3] & 0x8000) != 0)) {
           if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
@@ -36632,8 +36632,8 @@ void FUN_00046bfc()
     iVar4 = 1;
     g_blit_transparent_mode = 1;
     do {
-      if ((*(ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar4] * 2) & 0xffc0) != 0) {
-        pbVar1 = (byte *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar4] * 2));
+      if ((*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar4] * 2) & 0xffc0) != 0) {
+        pbVar1 = (byte *)resolve_object_link((ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar4] * 2));
         uVar3 = *pbVar1 & 0x1f;
         if ((uint)(int)(short)uVar3 < 0xf) {
           uVar2 = (pbVar1[4] & 0x30) >> 4;
@@ -36730,7 +36730,7 @@ int param_2;
     uVar2 = (uint)local_20;
   }
   else {
-    iVar1 = FUN_00045054(param_1);
+    iVar1 = get_equipped_item_at_slot(param_1);
     resolve_object_link(iVar1 + 4);
     uVar2 = encode_object_slot_index();
   }
@@ -36740,9 +36740,9 @@ int param_2;
       iVar1 = (int)(short)param_1;
       if (getenv("UW_DEBUG_INV"))
         fprintf(stderr, "[inv] swap_cursor_and_slot_item writing arr_idx=%d objid=0x%03x\n", iVar1, uVar2 & 0x1ff);
-      (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
+      (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar2 << 0x16) >> 0x18);
-      FUN_000667cc();
+      refresh_player_equipment_effects();
     }
     FUN_00057118();
     if (bVar3) {
@@ -36766,7 +36766,7 @@ int param_2;
        file (see their own copies of this comment). */
     FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
     FUN_000570b4();
-    FUN_000667cc();
+    refresh_player_equipment_effects();
   }
   return;
 }
@@ -36878,7 +36878,7 @@ undefined4 param_2;
   uVar5 = ((byte)*param_1 & 0x30) >> 4;
   bVar4 = (byte)*param_1 & 0xf;
   iVar15 = (int)(short)param_2;
-  DAT_00204690 = param_1;
+  g_scratch_object_ptr = param_1;
   if (iVar15 == 0x13) {
     if (g_current_container_record == 0) {
       return 0;
@@ -36903,7 +36903,7 @@ undefined4 param_2;
     if (_parentRec == 0) {
       iVar15 = 0xb;
       do {
-        if ((*(ushort *)(&DAT_00202950 + iVar15 * 2) & 0xffc0) == 0) break;
+        if ((*(ushort *)(&g_equipped_items + iVar15 * 2) & 0xffc0) == 0) break;
         iVar15 = (iVar15 + 1) * 0x10000 >> 0x10;
       } while (iVar15 < 0x13);
       if ((short)iVar15 < 0x13) {
@@ -36922,11 +36922,11 @@ undefined4 param_2;
   }
   else {
     if (iVar15 < 0x14) {
-      puVar10 = &DAT_00202950 + iVar15 * 2;
+      puVar10 = &g_equipped_items + iVar15 * 2;
       puVar11 = (ushort *)resolve_object_link(puVar10);
     }
     else {
-      puVar11 = (ushort *)resolve_object_link(&DAT_00202950 + iVar15 * 2);
+      puVar11 = (ushort *)resolve_object_link(&g_equipped_items + iVar15 * 2);
       if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
         puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
       }
@@ -36996,7 +36996,7 @@ LAB_00047a68:
     if ((local_50 == 2) && (((uVar5 == 1 && (3 < bVar4)) && (bVar4 < 8)))) {
       iVar12 = 0;
       do {
-        if (iVar15 == (char)(&DAT_00085ac8)[(int)iVar12]) {
+        if (iVar15 == (char)(&g_light_source_slots)[(int)iVar12]) {
           return 1;
         }
         iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
@@ -37005,7 +37005,7 @@ LAB_00047a68:
       bVar6 = (byte)uVar1;
       *(byte *)param_1 = (bVar4 - 4 ^ bVar6) & 0xf ^ bVar6;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar1 >> 8);
-      FUN_0001433c(0);
+      set_ambient_bias_without_light(0);
       sVar9 = check_object_fits_in_slot(param_1,param_2);
       if (sVar9 != 0) {
         return 1;
@@ -37053,10 +37053,10 @@ LAB_00047a0c:
       if (pbVar13 == (byte *)0x0) {
         bVar7 = 1;
       }
-      else if (((short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3] == 0) ||
+      else if (((short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3] == 0) ||
          (bVar7 = 0,
          (int)*(short *)(iVar12 + 10) + (int)local_54[0] <=
-         (int)(short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3])) {
+         (int)(short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3])) {
         bVar7 = 1;
       }
       bVar7 = bVar6 & bVar7;
@@ -37065,8 +37065,8 @@ LAB_00047a0c:
   sum_container_weight(puVar11 + 3,local_54);
   uVar8 = local_4c;
   iVar15 = ((byte)*puVar11 & 0xf) * 3;
-  if (((byte)(&DAT_002029f8)[iVar15] == 0) ||
-     (bVar7 = 0, local_54[0] <= (short)(ushort)(byte)(&DAT_002029f8)[iVar15])) {
+  if (((byte)(&g_carry_weight_limit_table)[iVar15] == 0) ||
+     (bVar7 = 0, local_54[0] <= (short)(ushort)(byte)(&g_carry_weight_limit_table)[iVar15])) {
     bVar7 = 1;
   }
   if (!(bool)(bVar7 & bVar6)) {
@@ -37087,15 +37087,15 @@ LAB_00047a0c:
   }
   uVar2 = (uint)*(short *)(&DAT_002029f9 + iVar15);
   /* DAT_002029f9 (this container-type's "specific item id required" table,
-     alongside its sibling DAT_002029f8 used for the weight-capacity check
+     alongside its sibling g_carry_weight_limit_table used for the weight-capacity check
      just above) is loaded by load_light_food_effect_tables -- but that loader itself has
      no caller anywhere in the decompiled binary (confirmed via a real
      Ghidra xref search: the only reference to load_light_food_effect_tables's address is
      a DATA reference, meaning it's stored into some struct as a function
      pointer for an indirect call this project hasn't traced/wired up
      yet), so this table is permanently all-zero. The sibling capacity
-     table (DAT_002029f8) already treats a zero entry as "no limit" (see
-     the `(&DAT_002029f8)[iVar15] == 0` check just above); this table's
+     table (g_carry_weight_limit_table) already treats a zero entry as "no limit" (see
+     the `(&g_carry_weight_limit_table)[iVar15] == 0` check just above); this table's
      own zero-entry case was instead falling into the "must be this
      exact item id" branch below with a real zero, incorrectly requiring
      the placed item's id to literally be 0 -- rejecting every real
@@ -37107,7 +37107,7 @@ LAB_00047a0c:
      already used for the table's other explicit "no restriction"
      sentinel (a negative entry) -- a narrow, local fix for the
      immediate symptom; the deeper root cause (wiring up load_light_food_effect_tables's
-     real call so this table, DAT_002029f8, and g_food_effect_table all
+     real call so this table, g_carry_weight_limit_table, and g_food_effect_table all
      get their real game data) is a separate, larger task. */
   if ((int)uVar2 <= 0) goto LAB_00047a0c;
   if ((int)uVar2 < 0x200) {
@@ -37161,7 +37161,7 @@ short param_1;
      while wiring up backpack-slot placement (the click hit-boxes and
      widget-to-slot mapping in g_inv_hotspot_click_x1/g_backpack_widget_to_slot were the other
      missing pieces, see their own comments). */
-  if ((*(ushort *)(&DAT_00202950 + param_1 * 2) & 0xffc0) == 0) {
+  if ((*(ushort *)(&g_equipped_items + param_1 * 2) & 0xffc0) == 0) {
     iVar1 = place_held_item_in_empty_slot(g_selected_object, param_1);
   }
   else {
@@ -37199,7 +37199,7 @@ short param_2;
   else {
     /* Dropped argument: place_object_in_backpack_slot's own declared signature takes
        (object, slot_index) and writes the object's link into
-       &DAT_00202950 + slot_index*2 -- the real "place held item into
+       &g_equipped_items + slot_index*2 -- the real "place held item into
        this backpack slot" primitive -- but slot_index was never
        forwarded here, so it placed nothing at a real slot. */
     iVar2 = place_object_in_backpack_slot(param_1, param_2);
@@ -37282,10 +37282,10 @@ uint param_2;
   
   iVar1 = (int)(short)param_2;
   uVar11 = 0;
-  puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar1 * 2);
+  puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar1 * 2);
   if (((*puVar4 & 0x1c0) == 0x80) && ((*puVar4 & 0x30) == 0)) {
     uVar11 = auto_place_in_container(param_1,param_2);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     return uVar11;
   }
   iVar5 = FUN_00047b38(param_1,puVar4);
@@ -37372,7 +37372,7 @@ uint param_2;
       }
     }
     g_player_carry_weight = g_player_carry_weight + (short)iVar8;
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     iVar5 = (puVar4[3] & 0xffc0) + param_2 * 0x40;
     bVar2 = (byte)puVar4[2];
     *(byte *)(puVar4 + 3) = (byte)iVar5 ^ (byte)puVar4[3] & 0x3f;
@@ -37473,15 +37473,15 @@ joined_r0x00048308:
           if (getenv("UW_DEBUG_INV"))
             fprintf(stderr, "[inv] redraw_inventory_widget_range loop iVar6=%d slot_arr_idx=%d arr_val=0x%04x\n",
                     iVar6, (char)(&g_backpack_widget_to_slot)[iVar6],
-                    (unsigned)*(ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
+                    (unsigned)*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
           if (iVar6 < 0x15) {
-            if ((*(ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2) & 0xffc0) != 0) {
+            if ((*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2) & 0xffc0) != 0) {
               if (getenv("UW_DEBUG_INV"))
                 fprintf(stderr, "[inv] resolve addr=%p table=%p lo=%p hi=%p\n",
-                        (void *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2),
+                        (void *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2),
                         (void *)g_backpack_slot_table, (void *)(DAT_002046b8 - 0x4000),
                         (void *)(DAT_002046c4 + 0x1800 + 0x38));
-              puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
+              puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
               if (puVar7 == 0) goto skip_slot_draw_iVar6;
               if (getenv("UW_DEBUG_INV"))
                 fprintf(stderr, "[inv] slot widget_id=%d slot_arr_idx=%d objid=0x%03x draw_x=%d draw_y=%d w=%d h=%d\n",
@@ -37529,12 +37529,12 @@ joined_r0x00048308:
       if (getenv("UW_DEBUG_W20"))
         fprintf(stderr, "[w20] slot=%d raw=0x%04x occupied=%d DAT_00202938=%p x=%d y=%d w=%d h=%d\n",
                 (int)(unsigned char)DAT_00085c4c,
-                (unsigned)*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2),
-                (int)((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0),
+                (unsigned)*(ushort *)(&g_equipped_items + DAT_00085c4c * 2),
+                (int)((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0),
                 (void *)DAT_00202938, (int)_DAT_00085bf0, (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                 (int)DAT_00085bf5, (int)DAT_00085bf4);
-      if ((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0) {
-        puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + DAT_00085c4c * 2));
+      if ((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0) {
+        puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + DAT_00085c4c * 2));
         if (getenv("UW_DEBUG_W20"))
           fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7, puVar7 ? (unsigned)(*puVar7 & 0x1ff) : 0u);
         draw_sprite_by_id(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
@@ -38738,7 +38738,7 @@ undefined4 init_level_object_arena()
   if (DAT_002029cc == 0) {
     /* Widened by 0x3a bytes: 28 backpack/equipment slots * 2 bytes
        (0x38) plus g_current_container_link's own 2 bytes, both now reserved at
-       this buffer's tail -- see reset_level_object_arena and DAT_00202950's/
+       this buffer's tail -- see reset_level_object_arena and g_equipped_items's/
        g_current_container_link's own comments. */
     DAT_002029cc = Ordinal_1041(0x7c08 + 0x3a);
     if (DAT_002029cc == 0) {
@@ -39013,8 +39013,8 @@ void load_light_food_effect_tables(param_1)
 undefined4 param_1;
 
 {
-  FUN_0002285c(param_1,&DAT_002029f8,0x30);
-  FUN_0002285c(param_1,&DAT_002029d8,0x20);
+  FUN_0002285c(param_1,&g_carry_weight_limit_table,0x30);
+  FUN_0002285c(param_1,&g_light_radius_table,0x20);
   FUN_0002285c(param_1,&g_food_effect_table,0x10);
   return;
 }
@@ -39298,7 +39298,7 @@ int param_2;
       bVar1 = (byte)uVar2;
       *(byte *)param_1 = (bVar1 - 4 ^ bVar1) & 0xf ^ bVar1;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
-      FUN_0001433c(0);
+      set_ambient_bias_without_light(0);
     }
     FUN_00055f98(param_1,iVar7 >> 3,iVar8 >> 3,1);
   }
@@ -44096,7 +44096,7 @@ undefined4 FUN_00052674()
 
 
 /* Was `undefined4` -- same 64-bit-pointer-truncated-through-a-32-bit-
-   return-type bug as FUN_00045054's (see its own comment): this
+   return-type bug as get_equipped_item_at_slot's (see its own comment): this
    function returns a POINTER into one of the runtime tables class2_variant_effect_table_lookup
    and friends compute, and on a 64-bit build `undefined4` silently drops
    the pointer's upper 32 bits, handing the caller a wild address. */
@@ -44122,11 +44122,11 @@ void *get_scanned_object_class_effect_ptr()
      placeholder. Real disassembly (0x52928-0x52938) shows no instruction
      sets r0 before the epilogue -- whatever the dispatched per-class
      handler leaves in r0 IS this function's real return value. Every
-     caller relies on that (e.g. FUN_000667cc's light-scan loop:
+     caller relies on that (e.g. refresh_player_equipment_effects's light-scan loop:
      `iVar7 = get_scanned_object_class_effect_ptr(); bVar1 = *(byte*)(iVar7+1);` -- with the
      hardcoded 0 this dereferenced address 1 and crashed the moment a
      real light source was actually found by the scan). */
-  return (*(void *(*)())local_24[(short)((*DAT_00204690 & 0x1c0) >> 6)])();
+  return (*(void *(*)())local_24[(short)((*g_scratch_object_ptr & 0x1c0) >> 6)])();
 }
 
 
@@ -45149,7 +45149,7 @@ void FUN_00053c74()
     }
   }
   if (iVar10 != 0) {
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     FUN_00049924(2);
   }
   if (DAT_002046cc != 0) {
@@ -45237,11 +45237,11 @@ undefined1 param_2;
   uVar10 = 0;
   iVar9 = 0;
   do {
-    puVar6 = (ushort *)FUN_00045054((int)(char)(&DAT_00085ac8)[iVar9]);
+    puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar9]);
     if (puVar6 != (ushort *)0x0) {
       uVar2 = *puVar6;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
-          (uVar7 < 8)) && (cVar1 = (&DAT_002029d8)[uVar7 * 2], cVar1 != '\0')) {
+          (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
         Ordinal_2005(cVar1,param_2);
         uVar8 = (ushort)(extraout_r1 == 0);
         if (1 < param_1) {
@@ -45262,9 +45262,9 @@ undefined1 param_2;
             bVar4 = (byte)uVar2;
             *(byte *)puVar6 = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
             *(byte *)((char *)puVar6 + 1) = (byte)(uVar2 >> 8);
-            FUN_0004503c((int)(char)(&DAT_00085ac8)[iVar9]);
+            FUN_0004503c((int)(char)(&g_light_source_slots)[iVar9]);
             uVar10 = 1;
-            FUN_0001433c(0);
+            set_ambient_bias_without_light(0);
           }
         }
       }
@@ -45358,7 +45358,7 @@ char param_3;
     uVar5 = ((uVar5 & 0xffc0) + 0x40 ^ uVar5) & 0x3c0 ^ uVar5;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     uVar1 = 1;
   }
   return uVar1;
@@ -46017,7 +46017,7 @@ ushort * param_1;
       bVar5 = (byte)uVar1;
       *(byte *)puVar9 = (bVar5 - 4 ^ bVar5) & 0xf ^ bVar5;
       *(byte *)((char *)puVar9 + 1) = (byte)(uVar1 >> 8);
-      FUN_0001433c(0);
+      set_ambient_bias_without_light(0);
     }
     uVar1 = puVar9[2];
     *(byte *)(puVar9 + 2) = (byte)param_1[4] & 0x3f | (byte)(uVar1 & 0xffc0);
@@ -56031,7 +56031,7 @@ uint param_1;
 
 // WARNING: Removing unreachable block (ram,0x000667b0)
 
-int FUN_0006674c(param_1)
+int compute_object_weight(param_1)
 ushort * param_1;
 
 {
@@ -56043,7 +56043,7 @@ ushort * param_1;
     iVar2 = 0;
   }
   else {
-    iVar2 = (((int)((uint)(byte)(&DAT_002026d0)[(uVar1 & 0x1ff) * 4] * ((byte)param_1[2] & 0x3f)) >>
+    iVar2 = (((int)((uint)(byte)(&g_object_weight_table)[(uVar1 & 0x1ff) * 4] * ((byte)param_1[2] & 0x3f)) >>
              6) + 1) * 0x10000 >> 0x10;
   }
   return iVar2;
@@ -56051,7 +56051,7 @@ ushort * param_1;
 
 
 
-void FUN_000667cc()
+void refresh_player_equipment_effects()
 
 {
   byte bVar1;
@@ -56082,26 +56082,26 @@ void FUN_000667cc()
   } while (iVar4 < 4);
   iVar4 = 0;
   do {
-    iVar5 = FUN_00045054(iVar4);
+    iVar5 = get_equipped_item_at_slot(iVar4);
     if (iVar5 != 0) {
-      cVar3 = FUN_0006674c();
+      cVar3 = compute_object_weight();
       DAT_0023be74[(char)(&DAT_00086da8)[iVar4]] =
            cVar3 + DAT_0023be74[(char)(&DAT_00086da8)[iVar4]];
     }
     iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
   } while (iVar4 < 5);
-  puVar6 = (ushort *)FUN_00045054((*(byte *)(DAT_00086df8 + 100) & 1) + 7);
+  puVar6 = (ushort *)get_equipped_item_at_slot((*(byte *)(DAT_00086df8 + 100) & 1) + 7);
   if ((((puVar6 != (ushort *)0x0) && (uVar11 = *puVar6, (uVar11 & 0x1c0) == 0)) &&
       ((uVar11 & 0x30) == 0x30)) && ((10 < (uVar11 & 0xf) && ((uVar11 & 0xf) < 0x10)))) {
-    cVar3 = FUN_0006674c();
+    cVar3 = compute_object_weight();
     *DAT_0023be74 = cVar3 + *DAT_0023be74;
     DAT_0023be74[1] = DAT_0023be74[1] + cVar3;
   }
   DAT_0023be74[0x12] = *(char *)(DAT_00086df8 + 0x22);
-  DAT_00204690 = (ushort *)FUN_00045054(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
+  g_scratch_object_ptr = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
   uVar11 = 2;
-  if (DAT_00204690 != (ushort *)0x0) {
-    uVar2 = *DAT_00204690;
+  if (g_scratch_object_ptr != (ushort *)0x0) {
+    uVar2 = *g_scratch_object_ptr;
     if (((uVar2 & 0x1c0) == 0) && ((uVar2 & 0x30) < 0x20)) {
       uVar8 = uVar2 & 0xf;
       if ((uVar2 & 0x30) == 0) {
@@ -56141,22 +56141,22 @@ LAB_000669a8:
   do {
     puVar6 = g_selected_object;
     if (!bVar12) {
-      /* Was FUN_00045054(iVar4) -- scanning raw equip slots 0-3, which
+      /* Was get_equipped_item_at_slot(iVar4) -- scanning raw equip slots 0-3, which
          never hold a light source. Disassembly of the real binary
          (0x669e8-0x669f4) shows an indirect table lookup was dropped:
-         r8 is loaded from the literal pool with DAT_00085ac8, then
-         `ldrsbne r0,[r5,r8]` reads DAT_00085ac8[iVar4] (the real
+         r8 is loaded from the literal pool with g_light_source_slots, then
+         `ldrsbne r0,[r5,r8]` reads g_light_source_slots[iVar4] (the real
          light-source-eligible slots {5,6,7,8}) before calling
-         FUN_00045054. The sibling light-fuel-burn loop in FUN_0005404c
+         get_equipped_item_at_slot. The sibling light-fuel-burn loop in FUN_0005404c
          (uw.c ~45174) already uses this exact
-         `FUN_00045054((char)(&DAT_00085ac8)[iVar9])` pattern for the
+         `get_equipped_item_at_slot((char)(&g_light_source_slots)[iVar9])` pattern for the
          identical 0x90-class/radius-nibble check, confirming this is
          the real call shape here too -- this was the actual cause of
          [[torch-ambient-light-scan-range-mismatch]]: a lit torch
          auto-equips to slot 5 (widget 6), which this loop never read. */
-      puVar6 = (ushort *)FUN_00045054((int)(char)(&DAT_00085ac8)[iVar4]);
+      puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar4]);
     }
-    DAT_00204690 = puVar6;
+    g_scratch_object_ptr = puVar6;
     if (getenv("UW_DEBUG_AMBIENT"))
       fprintf(stderr, "[ambient] light-scan slot=%d puVar6=%p id=0x%03x nibble=0x%x\n",
               (int)iVar4, (void *)puVar6, puVar6 ? (unsigned)(*puVar6 & 0x1ff) : 0u,
@@ -56169,7 +56169,7 @@ LAB_000669a8:
         /* Also a bare call (no argument) -- but whatever DAT_000842b0
            value this leaves is unconditionally overwritten a few lines
            below by this same function's own definitive
-           set_ambient_bias_with_light(0)/FUN_0001433c(0) decision (made
+           set_ambient_bias_with_light(0)/set_ambient_bias_without_light(0) decision (made
            from the aggregated bVar9/bVar10 this loop is computing), so
            it's provably inert either way, not fixed alongside the real
            bug in that later call. */
@@ -56188,7 +56188,7 @@ LAB_000669a8:
     fprintf(stderr, "[ambient] light-scan result: bVar9=%d iVar5=%d -> DAT_00086df8+99=0x%02x; full slot dump:\n",
             (int)bVar9, (int)iVar5, (unsigned)*(byte *)(DAT_00086df8 + 99));
     for (_s = 0; _s < 11; _s++) {
-      ushort *_o = (ushort *)FUN_00045054(_s);
+      ushort *_o = (ushort *)get_equipped_item_at_slot(_s);
       fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
               _o ? (unsigned)(*_o & 0x1ff) : 0u, _o ? (unsigned)(*_o & 0xf) : 0u);
     }
@@ -56203,19 +56203,19 @@ LAB_000669a8:
   }
   iVar4 = 0;
   do {
-    DAT_00204690 = (ushort *)FUN_00045054(iVar4);
-    if ((DAT_00204690 != (ushort *)0x0) &&
-       (iVar5 = FUN_00045f9c(*DAT_00204690 & 0x1ff,iVar4), iVar5 != 0)) {
-      iVar5 = FUN_0007ca50(DAT_00204690,local_2c,local_2e,&local_28);
+    g_scratch_object_ptr = (ushort *)get_equipped_item_at_slot(iVar4);
+    if ((g_scratch_object_ptr != (ushort *)0x0) &&
+       (iVar5 = FUN_00045f9c(*g_scratch_object_ptr & 0x1ff,iVar4), iVar5 != 0)) {
+      iVar5 = FUN_0007ca50(g_scratch_object_ptr,local_2c,local_2e,&local_28);
       if ((iVar5 == 0) || (local_28 != 0)) {
-        if ((*DAT_00204690 & 0x1ff) == 0x2f) {
+        if ((*g_scratch_object_ptr & 0x1ff) == 0x2f) {
           DAT_0023bc98 = 1;
         }
       }
       else {
         iVar5 = FUN_000661b0(local_2c[0],local_2e[0],&local_30,iVar4);
         if (iVar5 != 0) {
-          FUN_0007cc30(DAT_00204690);
+          FUN_0007cc30(g_scratch_object_ptr);
         }
       }
     }
@@ -56226,18 +56226,18 @@ LAB_000669a8:
     /* *(char*)(DAT_00086df8+99) is the player's current light radius
        (upper nibble; 0 = no equipped light source at all, maintained by
        this same function's own scan of equip slots above + a separate
-       updater at uw.c ~55510). ==0 (no light) -> FUN_0001433c(0), the
+       updater at uw.c ~55510). ==0 (no light) -> set_ambient_bias_without_light(0), the
        mild "8 - param_1" dimming bias; else (a light source IS lit) ->
        set_ambient_bias_with_light below, the much stronger "-0x20 -
        param_1" brightening bias (more negative = brighter -- see that
        function's own comment for the full sign-convention explanation). */
     if (*(char *)(DAT_00086df8 + 99) == '\0') {
-      FUN_0001433c(0);
+      set_ambient_bias_without_light(0);
     }
     else {
       /* Was a bare call -- ran on leftover register garbage instead of
          a real argument. The sibling call just above explicitly passes
-         0 to FUN_0001433c; mirror that here too. */
+         0 to set_ambient_bias_without_light; mirror that here too. */
       set_ambient_bias_with_light(0);
     }
   }
@@ -56724,7 +56724,7 @@ short param_3;
   if (iVar1 != 0) {
     DAT_00086b20 = 1;
   }
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   return;
 }
 
@@ -60753,7 +60753,7 @@ LAB_0006e244:
 // was FUN_0006e360 -- sets the weapon-swing animation "category" to
 // load (0-3, from the weapon-hand item's melee-weapon-stats byte 6, or
 // 3 for empty-handed/fist -- see request_weapon_swing_graphic's own
-// caller in FUN_000667cc) and marks the redraw-dirty bit that
+// caller in refresh_player_equipment_effects) and marks the redraw-dirty bit that
 // hud_panel_redraw_dispatch/advance_action_animation_frame eventually
 // act on to actually load the sprite set (load_weapon_swing_sprites).
 void request_weapon_swing_graphic(param_1)
@@ -62379,7 +62379,7 @@ LAB_00070c78:
   FUN_000703a0(0);
   FUN_00078550();
 LAB_00070b58:
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   FUN_0006a034(0x20);
   FUN_00057570();
   FUN_0005758c();
@@ -62639,7 +62639,7 @@ void FUN_0007141c()
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
     FUN_00038374(g_player_object,0,0,0,0xff,0);
   }
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   FUN_00068c1c();
   if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) != 0) && ((DAT_0020208c & 0x16) == 0)) {
     uVar1 = Ordinal_1053();
@@ -62789,7 +62789,7 @@ LAB_0007158c:
         *(char *)(DAT_00086df8 + 0x61) = (char)uVar6;
         *(char *)(DAT_00086df8 + 0x62) = (char)(uVar6 >> 8);
       }
-      FUN_000667cc();
+      refresh_player_equipment_effects();
       FUN_00040440();
       g_jump_ascent_timer = 0;
       g_fall_accel = 0;
@@ -63069,7 +63069,7 @@ void FUN_0007213c()
     uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfc3f;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     FUN_000735b0(4);
   }
   return;
@@ -64246,7 +64246,7 @@ LAB_00073c90:
       uVar1 = *(undefined2 *)(DAT_00086df8 + 0x61);
       *(byte *)(DAT_00086df8 + 0x61) = (byte)uVar1 | 0xc;
       *(char *)(DAT_00086df8 + 0x62) = (char)((ushort)uVar1 >> 8);
-      FUN_000667cc();
+      refresh_player_equipment_effects();
     }
     break;
   case 0xe:
@@ -65040,12 +65040,12 @@ char param_2;
       uVar6 = uVar2 & 0x3ff;
       *(char *)(pObj + 2) = (char)uVar6;
       *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
-      uVar4 = DAT_00204690;
+      uVar4 = g_scratch_object_ptr;
       if (param_2 == '\x04') {
-        DAT_00204690 = (byte *)pObj;
+        g_scratch_object_ptr = (byte *)pObj;
         FUN_0002a35c();
         uVar6 = local_2e & 0x3f | (local_2c & 0x3ff) << 6;
-        DAT_00204690 = (byte *)uVar4;
+        g_scratch_object_ptr = (byte *)uVar4;
         *(byte *)(pObj + 0x16) = *(byte *)(pObj + 0x16) & 0xf | (byte)(uVar6 << 4);
         *(char *)(pObj + 0x17) = (char)(uVar6 >> 4);
         if (((&DAT_001007da)[(uVar10 & 0xfe3f) * 0x30] & 0x80) != 0) {
@@ -65365,7 +65365,7 @@ LAB_00075a0c:
     *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x10;
     *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
     g_player_carry_weight = 0;
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     FUN_0006ed0c();
   }
   return;
@@ -68413,7 +68413,7 @@ ushort * param_1;
 
 {
   DAT_0023bc94 = 0;
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   if ((*param_1 & 0x1f0) == 0x170) {
     FUN_00078c80(0x9d);
     use_object_on_target(g_player_object,param_1,0);
@@ -68468,7 +68468,7 @@ int param_2;
         return;
       }
       DAT_0023bc94 = 1;
-      FUN_000667cc();
+      refresh_player_equipment_effects();
       pcVar2 = FUN_0007a3a8;
     }
   }
@@ -68645,7 +68645,7 @@ int param_2;
       iVar6 = find_or_assign_object_widget(param_1);
       iVar8 = 0;
       do {
-        if (((int)(short)iVar6 == (int)(char)(&DAT_00085ac8)[iVar8]) && (uVar10 == 1)) break;
+        if (((int)(short)iVar6 == (int)(char)(&g_light_source_slots)[iVar8]) && (uVar10 == 1)) break;
         iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
       } while (iVar8 < 4);
       if ((short)iVar8 == 4) {
@@ -68654,7 +68654,7 @@ int param_2;
           iVar8 = 5;
           iVar6 = 0;
           do {
-            puVar7 = (ushort *)FUN_00045054(iVar8);
+            puVar7 = (ushort *)get_equipped_item_at_slot(iVar8);
             iVar9 = extraout_r3;
             if (puVar7 == (ushort *)0x0) {
               iVar9 = iVar6 << 0x10;
@@ -68683,9 +68683,9 @@ int param_2;
       else {
         *(byte *)param_1 = (bVar2 - 4 ^ bVar2) & 0xf ^ bVar2;
         *(byte *)((char *)param_1 + 1) = bVar1;
-        FUN_0001433c(0);
+        set_ambient_bias_without_light(0);
       }
-      FUN_000667cc();
+      refresh_player_equipment_effects();
       FUN_0004503c(iVar6);
       return;
     }
@@ -68835,7 +68835,7 @@ LAB_0007ae1c:
             *(byte *)(DAT_00086df8 + 0x61) = ((bVar3 & 0xfc) + 4 ^ bVar3) & 0xc ^ bVar3;
             *(char *)(DAT_00086df8 + 0x62) = (char)(uVar9 >> 8);
           }
-          FUN_000667cc();
+          refresh_player_equipment_effects();
           iVar11 = 1;
         }
         else if (uVar8 != 0xb9) {
