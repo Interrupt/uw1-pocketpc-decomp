@@ -1894,3 +1894,54 @@ independently confirmed pixel-perfect against a real DOS screenshot
 (none available to this project), but grounded in the one real,
 recovered formula this renderer actually uses for the same purpose,
 not a fitted constant.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (4): WIRED THE DOOR LEAF (BANK 0x6e), NOT JUST THE
+FRAME -- REQUIRED SWITCHING FROM A SINGLE-BANK SLICE TO THE FULL
+ASSEMBLED REGION
+═══════════════════════════════════════════════════════════════════════════
+User request: get the door leaf model rendering too, not just the
+frame. This needed more than a second bank constant -- bank 0x6e's own
+head (uw1_view_models.c's uw1_view_model_head_leaf = word 4187) is an
+8-word stub that CALLs a body SHARED with other banks at region offset
+112 (the file's own top comment: "bank 0x6e's head at 5723:7326 calls
+5723:5350"). Extracting it as an isolated slice starting at word 0 --
+what this project's g_dlist_bank_0x61 did for bank 0x61 -- would break
+every self-relative call/jump displacement inside it, since those are
+computed relative to the bank's REAL position in the full region, not
+its offset within an isolated extraction.
+
+FIX: replaced g_dlist_bank_0x61 (259 words, bank 0x61 only) with
+g_dlist_region (4286 words) -- the SAME full assembly door_model itself
+performs (uw1-decomp port/uw1_view.c ~2528-2559: memcpy every run to
+its own `at` offset in one array, gaps left zero/LIST_END), built
+programmatically from uw1-decomp's own uw1_view_model_words[]/
+uw1_view_model_runs[] (not hand-transcribed). Verified before swapping
+it in: region[2919:2919+259] matches the old bank-0x61-only array byte
+for byte, and the assembled size (4286 words, 678 of them real data)
+matches uw1_view_models.c's own documented region size exactly.
+Threaded a `head` parameter through uwdl_run_bank/emit_dlist_bank_object
+(previously hardcoded to always uwdl_walk from word 0) so a caller can
+start execution anywhere in the region -- UW_DLIST_HEAD_DOORWAY (2919)
+for the frame, UW_DLIST_HEAD_LEAF (4187) for the leaf. New
+UW_DLIST_DOOR_LEAF=1 flag wires a second emit_dlist_bank_object call
+for the leaf alongside the existing frame call, with its own
+UW_DLIST_LEAF_HEADING_OFFSET (defaults to -3, not yet independently
+calibrated against the frame's own -3).
+
+VERIFICATION: bank 0x6e decodes to exactly 6 faces with 0 of 152
+vertex slots dropped -- matching uw1_view_models.c's own documented
+"bank 0x6e six [faces]" exactly, and the shared-body cross-bank CALL
+resolved correctly (no drops), confirming the full-region approach
+works, not just the single-bank slice it replaced. Visually: the leaf
+now renders as a real, recognizably door-leaf-shaped panel roughly
+filling the doorway opening -- geometry is real and correct. NOT yet
+correct texture: DOS's own leaf-face texture source is a completely
+different sprite (`t.texels = s->pixels`, port/uw1_view.c ~2865-2856,
+NOT the wall texture the doorway/frame legitimately shares) that this
+session didn't trace or wire -- currently the leaf either reuses the
+frame's own wall texture (visually blends into stone, wrong) or renders
+fully flat-shaded (a plain grey panel, structurally correct but
+uncoloured) depending on UW_DLIST_DOOR_TEXTURE. Finding and wiring the
+real door-sprite texture source is the open follow-up. Standard
+run-regressions.sh: 6/6 clean.

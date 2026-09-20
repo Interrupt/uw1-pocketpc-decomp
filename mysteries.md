@@ -389,6 +389,28 @@ smaller than the 1:1 scale this code was using, matching the user's own
 both U and V after normalization. Full detail on both fixes in
 `object-rendering-findings.txt`.
 
+**UPDATE 14 (wired the door leaf, bank 0x6e, not just the frame,
+2026-09-20):** user request: render the leaf model too. Required more
+than a second bank constant -- bank 0x6e's own head is an 8-word stub
+that CALLs a body shared with other banks elsewhere in the region, so
+extracting it as an isolated slice (what this project did for bank
+0x61) breaks its self-relative call displacements. Fixed by replacing
+the single-bank `g_dlist_bank_0x61` array with the FULL assembled
+4286-word region (the same assembly `door_model` itself performs),
+verified against the old array byte-for-byte for the overlapping range,
+and threading a `head` parameter through the interpreter so a caller
+can start anywhere in the region. New `UW_DLIST_DOOR_LEAF=1` flag emits
+the leaf alongside the frame. Verified: bank 0x6e decodes to exactly 6
+faces (matching uw1-decomp's own documented count) with 0 vertex drops,
+confirming the cross-bank call resolves correctly. The leaf now renders
+as a real, recognizably door-shaped panel -- geometry is correct.
+Texture is NOT yet correct: DOS binds a completely different sprite
+source for leaf faces (not the wall texture the frame legitimately
+shares), which this session didn't trace -- left as an open follow-up,
+either flat-shaded grey (structurally right, uncoloured) or reusing the
+wall texture (wrong) depending on flags. Full detail in
+`object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
