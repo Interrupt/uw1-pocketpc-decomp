@@ -3033,7 +3033,7 @@ ushort DAT_00202986;
 
    Records 21-22 are ALSO real, non-degenerate rects -- confirmed via
    handle_object_drop_target's own `iVar2==0x15`/`0x16` dispatch
-   (FUN_00043614/FUN_0004365c) to be the container-grid scroll up/down
+   (scroll_container_grid_up/scroll_container_grid_down) to be the container-grid scroll up/down
    buttons, gated on DAT_0020299c/DAT_002029a0 ("can scroll up/down").
    Their much smaller dirty w/h (8x10, vs every other record's 16x16 or
    20x20) matches real small button art rather than an item slot. */
@@ -33166,6 +33166,14 @@ short param_2;
 
 
 
+/* Forward declarations: both are defined later in this file (after
+   this function's own call sites), and their old K&R-style bare
+   `void foo()` definitions don't match the implicit `int foo()` a
+   pre-definition call would otherwise get -- real prototypes here
+   avoid that "conflicting types" mismatch. */
+void scroll_container_grid_up(void);
+void scroll_container_grid_down(void);
+
 void handle_object_drop_target(param_1)
 short param_1;
 
@@ -33262,11 +33270,11 @@ short param_1;
         goto LAB_00042a10;
       }
       if (iVar2 == 0x15) {
-        FUN_00043614();
+        scroll_container_grid_up();
         goto LAB_00042a10;
       }
       if (iVar2 == 0x16) {
-        FUN_0004365c();
+        scroll_container_grid_down();
         goto LAB_00042a10;
       }
       if (iVar2 == 0x17) {
@@ -34063,7 +34071,12 @@ short param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00043614()
+// was FUN_00043614 -- container-grid scroll up, dispatched from
+// handle_object_drop_target's `iVar2==0x15` case (widget 21's own
+// real click rect, see g_inventory_hotspot_table's comment); its own
+// redraw (widget 21's up-arrow icon) is gated on this same
+// DAT_0020299c "can scroll up" flag in redraw_inventory_widget.
+void scroll_container_grid_up()
 
 {
   if ((g_open_container_list != 0) && (DAT_0020299c != 0)) {
@@ -34078,7 +34091,10 @@ void FUN_00043614()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0004365c()
+// was FUN_0004365c -- container-grid scroll down, the DAT_002029a0
+// ("can scroll down") counterpart to scroll_container_grid_up, same
+// dispatch/redraw pattern via widget 22.
+void scroll_container_grid_down()
 
 {
   short sVar1;
