@@ -3620,19 +3620,19 @@ undefined4 LAB_00041e84()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-/* LAB_0004a070: was `undefined DAT_0004a070;` -- a plain data byte, not a
-   function. FUN_000528a8 takes its address and CALLS it (`local_24[2] =
+/* class2_variant_effect_table_lookup: was `undefined DAT_0004a070;` -- a plain data byte, not a
+   function. get_scanned_object_class_effect_ptr takes its address and CALLS it (`local_24[2] =
    &DAT_0004a070; (*(code*)local_24[idx])();`) for any object whose class
    is 2 (id&0x1c0)>>6==2 -- exactly the 0x90-class light sources
    FUN_000667cc's and FUN_0005404c's light-scan loops filter for. Taking
    the address of a data byte and jumping into it crashed the instant a
    real torch was found by the (now-fixed) scan loop. Real disassembly
    (0x4a070-0x4a108) shows this reads the scanned object's id (via
-   DAT_00204690, the same object pointer FUN_000528a8's other handlers
+   DAT_00204690, the same object pointer get_scanned_object_class_effect_ptr's other handlers
    already read), splits it into family=(id&0x30)>>4 and nibble=(id&0xf),
    then returns a pointer into one of three already-recovered runtime
    tables (DAT_002029f8/DAT_002029d8/g_food_effect_table, populated from
-   objects.dat by FUN_0004a02c via FUN_00052674's boot-time loader --
+   objects.dat by load_light_food_effect_tables via FUN_00052674's boot-time loader --
    confirmed reachable, not orphaned) indexed by nibble at that family's
    stride (3/2/1 bytes). Family 2 (torches' actual family, id=0x9X ->
    (0x9X&0x30)>>4==1 -- so torches hit the *1*-stride table, not this
@@ -3641,10 +3641,10 @@ undefined4 LAB_00041e84()
    "Ghidra couldn't resolve, no-op returns 0" convention for entries
    this table genuinely leaves unused. */
 /* Return type was `undefined4` -- same 64-bit-pointer-truncation bug
-   already flagged on FUN_000528a8 itself: this handler hands back a
+   already flagged on get_scanned_object_class_effect_ptr itself: this handler hands back a
    pointer into a runtime table, and undefined4 drops its upper 32 bits
    on a 64-bit build, producing a wild address in the caller. */
-void *LAB_0004a070()
+void *class2_variant_effect_table_lookup()
 
 {
   ushort uVar1;
@@ -36946,7 +36946,7 @@ undefined4 param_2;
     if (((byte)*param_1 & 0x30) < 0x20) {
       return 0;
     }
-    iVar12 = FUN_000528a8();
+    iVar12 = get_scanned_object_class_effect_ptr();
     if (iVar15 == 0) {
       bVar16 = *(char *)(iVar12 + 3) == '\b';
     }
@@ -36978,7 +36978,7 @@ LAB_00047a68:
     if (((byte)*param_1 & 0x30) < 0x20) {
       return 0;
     }
-    iVar15 = FUN_000528a8();
+    iVar15 = get_scanned_object_class_effect_ptr();
     bVar16 = *(char *)(iVar15 + 3) == '\t';
     goto LAB_00047a68;
   }
@@ -37088,9 +37088,9 @@ LAB_00047a0c:
   uVar2 = (uint)*(short *)(&DAT_002029f9 + iVar15);
   /* DAT_002029f9 (this container-type's "specific item id required" table,
      alongside its sibling DAT_002029f8 used for the weight-capacity check
-     just above) is loaded by FUN_0004a02c -- but that loader itself has
+     just above) is loaded by load_light_food_effect_tables -- but that loader itself has
      no caller anywhere in the decompiled binary (confirmed via a real
-     Ghidra xref search: the only reference to FUN_0004a02c's address is
+     Ghidra xref search: the only reference to load_light_food_effect_tables's address is
      a DATA reference, meaning it's stored into some struct as a function
      pointer for an indirect call this project hasn't traced/wired up
      yet), so this table is permanently all-zero. The sibling capacity
@@ -37106,7 +37106,7 @@ LAB_00047a0c:
      sibling table already does, via the same LAB_00047a0c fallback
      already used for the table's other explicit "no restriction"
      sentinel (a negative entry) -- a narrow, local fix for the
-     immediate symptom; the deeper root cause (wiring up FUN_0004a02c's
+     immediate symptom; the deeper root cause (wiring up load_light_food_effect_tables's
      real call so this table, DAT_002029f8, and g_food_effect_table all
      get their real game data) is a separate, larger task. */
   if ((int)uVar2 <= 0) goto LAB_00047a0c;
@@ -39009,7 +39009,7 @@ undefined4 param_2;
 
 
 
-void FUN_0004a02c(param_1)
+void load_light_food_effect_tables(param_1)
 undefined4 param_1;
 
 {
@@ -44031,7 +44031,7 @@ undefined4 FUN_00052674()
   local_13c[4] = (code *)0x0;
   local_13c[1] = FUN_0002a2c8;
   local_13c[5] = (code *)0x0;
-  local_13c[2] = FUN_0004a02c;
+  local_13c[2] = load_light_food_effect_tables;
   local_13c[6] = (code *)&LAB_0007cd6c;
   local_13c[7] = (code *)&LAB_0001582c;
   Ordinal_1047(acStack_11c,0,0x104);
@@ -44097,10 +44097,10 @@ undefined4 FUN_00052674()
 
 /* Was `undefined4` -- same 64-bit-pointer-truncated-through-a-32-bit-
    return-type bug as FUN_00045054's (see its own comment): this
-   function returns a POINTER into one of the runtime tables LAB_0004a070
+   function returns a POINTER into one of the runtime tables class2_variant_effect_table_lookup
    and friends compute, and on a 64-bit build `undefined4` silently drops
    the pointer's upper 32 bits, handing the caller a wild address. */
-void *FUN_000528a8()
+void *get_scanned_object_class_effect_ptr()
 
 {
   undefined1 *local_24 [4];
@@ -44111,7 +44111,7 @@ void *FUN_000528a8()
   
   local_24[0] = &LAB_00041e84;
   local_24[1] = &LAB_0002a2d8;
-  local_24[2] = &LAB_0004a070;
+  local_24[2] = &class2_variant_effect_table_lookup;
   local_24[3] = &LAB_0007913c;
   local_14 = &LAB_00073b10;
   local_10 = &LAB_0006b3d4;
@@ -44123,7 +44123,7 @@ void *FUN_000528a8()
      sets r0 before the epilogue -- whatever the dispatched per-class
      handler leaves in r0 IS this function's real return value. Every
      caller relies on that (e.g. FUN_000667cc's light-scan loop:
-     `iVar7 = FUN_000528a8(); bVar1 = *(byte*)(iVar7+1);` -- with the
+     `iVar7 = get_scanned_object_class_effect_ptr(); bVar1 = *(byte*)(iVar7+1);` -- with the
      hardcoded 0 this dereferenced address 1 and crashed the moment a
      real light source was actually found by the scan). */
   return (*(void *(*)())local_24[(short)((*DAT_00204690 & 0x1c0) >> 6)])();
@@ -56060,7 +56060,7 @@ void FUN_000667cc()
   int iVar4;
   int iVar5;
   ushort *puVar6;
-  byte *iVar7; /* Was `int` -- truncated the 64-bit pointer FUN_000528a8
+  byte *iVar7; /* Was `int` -- truncated the 64-bit pointer get_scanned_object_class_effect_ptr
                   returns (see its own comment); made a real crash once
                   that return value stopped being a hardcoded 0. */
   uint uVar8;
@@ -56163,7 +56163,7 @@ LAB_000669a8:
               puVar6 ? (unsigned)(*puVar6 & 0xf) : 0u);
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
         (uVar11 = *puVar6 & 0xf, 3 < uVar11)) && (uVar11 < 8)) {
-      iVar7 = FUN_000528a8();
+      iVar7 = get_scanned_object_class_effect_ptr();
       bVar1 = iVar7[1];
       if (bVar10 < bVar1) {
         /* Also a bare call (no argument) -- but whatever DAT_000842b0
