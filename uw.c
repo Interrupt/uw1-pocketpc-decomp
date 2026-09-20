@@ -2760,33 +2760,48 @@ undefined2 DAT_00202894;
 undefined2 DAT_00085a70;
 /* .data 0x85c38: widget-id -> DAT_00202950 slot-array-index lookup (read
    as `(&g_backpack_widget_to_slot)[widget_id]` for widget ids 0-0x16, i.e. one byte
-   per record of the g_inv_hotspot_click_x1 hotspot table). Ghidra left this as a
-   lone scalar -- same split-array pattern as g_inv_hotspot_click_x1 itself (see
-   its own comment) -- and the real .data contents aren't recoverable
-   here either, so every widget aliased slot 0. Backed with a real array;
-   mapped for widget ids 12..19 (the 8 backpack-grid cells this session
-   gave real click rects, see g_inventory_hotspot_table) as widget N -> slot
-   N-1, i.e. slots 11..18 -- NOT identity. That mapping (and the widget
-   range itself, corrected from an earlier session's arbitrary 6..13)
-   comes from close_backpack_container (the close-container function), which resets
-   `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]` to identity on close; g_backpack_widget_to_slot_plus1 is an
-   alias one byte into this same backing (see its own comment), so that
-   reset really targets backing[12..19] = 11..18. open_backpack_container (opening
-   a container) remaps this same backing[12..19] to 20..27 instead --
-   the container's own contents, written to those slots -- while a
-   container is open (see its own comment), and close_backpack_container restores it
-   back to 11..18 on close, confirming the *normal* (no container open)
-   mapping is also N -> N-1, not identity. Extended the same N -> N-1
-   rule to widget ids 6..11 (the worn-hand/shoulder/finger paperdoll
-   slots -- see g_inventory_hotspot_table's matching comment): slots
-   5..10, matching this table's only other confirmed data point
-   exactly and leaving slots 0..4 free of any currently-wired widget
-   (plausibly the still-unimplemented torso/legs/feet/head armor slots,
-   ids 1-5, out of scope for this pass -- see that comment). Ids
-   1-5/20-22 stay 0 -- their real mapping is still unrecovered and out
-   of scope. */
+   per record of the g_inv_hotspot_click_x1 hotspot table). Widget ids
+   0-5 were previously left at 0 ("still-unimplemented torso/legs/feet/
+   head armor slots, out of scope") since this table's real .data bytes
+   looked unrecoverable at the time -- they're not: dumped directly from
+   the shipped binary at 0x85c38 (same `mem.getBytes` technique as this
+   project's other recovered constant tables) and they ARE real,
+   non-zero data: widget 0->slot 1, 1->slot 3, 2->slot 0, 3->slot 1
+   (shares slot 1 with widget 0), 4->slot 2, 5->slot 4. Widget ids
+   6..19 already matched this real data exactly (N -> N-1: slots
+   5..18) -- only the low end was wrong.
+
+   User report: "lighting a torch does not seem to impact the visible
+   pixels at all." This fix restores real, binary-verified data (widget
+   0->slot1, 1->slot3, 2->slot0, 3->slot1, 4->slot2, 5->slot4), which is
+   correct and worth keeping on its own, but it does NOT fix that bug --
+   confirmed by rebuilding with this fix applied and re-testing live: a
+   lit torch still auto-equips into widget 6 (slot 5), same as before,
+   because widgets 0-5's own click hotspots in g_inventory_hotspot_table
+   are still all zero/unimplemented ("worn armour overlay", see that
+   table's own comment) -- nothing can actually reach these slots
+   through play yet regardless of this table's data being right. The
+   real bug is one level up: FUN_000667cc's ambient-light rescan only
+   ever checks DAT_00202950 slots 0-3 (plus the mouse cursor as a stand-
+   in for a notional 5th slot) -- confirmed via a fresh Ghidra decompile
+   of the pristine binary that this 0-4 range is exactly what the real
+   compiled code does, not a decompilation artifact. A torch equipped
+   the only way currently reachable in-game (auto-equip into the
+   generic backpack list, landing in widget 6 / slot 5) is structurally
+   outside that range and can never be found by the rescan, which is
+   why the correct -32 ambient bias set by use_light_source always gets
+   immediately stomped back to +8. DAT_00085ac8 ({5,6,7,8}, "already-
+   equipped valid WIDGET ids for a light source" -- confirmed by
+   use_light_source's own comparison against find_or_assign_object_widget's
+   return value, a widget id, not a slot index) suggests widget 5 (slot
+   4, inside the scanned range) is the real intended primary torch
+   position -- but reaching it requires the still-missing armor-slot
+   hotspots to be built out first; that's a real feature gap, not a
+   one-line fix. See [[torch-ambient-light-scan-range-mismatch]] for the
+   full investigation. Ids 20-22 stay 0 -- past the real 0x17-entry
+   table's own end, never real widget ids. */
 static unsigned char g_backpack_widget_to_slot_backing[0x17] = {
-  0,0,0,0,0,0, 5,6,7,8,9,10,11,12,13,14,15,16,17,18, 0,0,0,
+  1,3,0,1,2,4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18, 0,0,0,
 };
 #define g_backpack_widget_to_slot g_backpack_widget_to_slot_backing[0]
 /* DAT_00202950 (28 2-byte "backpack/equipment slot" object-link
@@ -3094,9 +3109,22 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
    of the widget remap above (slots 20-27 -> widgets 12-19, mirroring
    slots 11-18 -> widgets 12-19 just above it). Never triggered before
    because nothing before this session's chain of container fixes ever
-   got far enough to open a SECOND, nested container view. */
+   got far enough to open a SECOND, nested container view.
+
+   Slots 0..4 (the other half of g_backpack_widget_to_slot's own
+   0.85c38 real-data recovery, see its comment) were also left at 0 --
+   dumped directly from the real binary at 0x85c18 (this table's own
+   real .data address) and confirmed non-zero: slot 0->widget 2,
+   1->widget 3, 2->widget 4, 3->widget 1, 4->widget 5. Real data, worth
+   keeping, but NOT a fix for the "lighting a torch doesn't change
+   pixels" bug -- see the forward table's own comment (and
+   [[torch-ambient-light-scan-range-mismatch]]) for why: widgets 0-4
+   have no clickable hotspot yet (g_inventory_hotspot_table's own
+   armor-slot records are still all zero), so nothing currently routes
+   a torch into slot 4 through play regardless of this table being
+   correct. */
 static unsigned char g_backpack_slot_to_widget_backing[0x1c] = {
-  0,0,0,0,0, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0,
+  2,3,4,1,5, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0,
   12,13,14,15,16,17,18,19,
 };
 #define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
@@ -7290,6 +7318,8 @@ char param_1;
 
 {
   DAT_000842b0 = -0x20 - param_1;
+  if (getenv("UW_DEBUG_AMBIENT"))
+    fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
   return;
 }
 
@@ -7300,6 +7330,8 @@ char param_1;
 
 {
   DAT_000842b0 = '\b' - param_1;
+  if (getenv("UW_DEBUG_AMBIENT"))
+    fprintf(stderr, "[ambient] FUN_0001433c(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
   return;
 }
 
@@ -55873,6 +55905,10 @@ LAB_000669a8:
       puVar6 = (ushort *)FUN_00045054(iVar4);
     }
     DAT_00204690 = puVar6;
+    if (getenv("UW_DEBUG_AMBIENT"))
+      fprintf(stderr, "[ambient] light-scan slot=%d puVar6=%p id=0x%03x nibble=0x%x\n",
+              (int)iVar4, (void *)puVar6, puVar6 ? (unsigned)(*puVar6 & 0x1ff) : 0u,
+              puVar6 ? (unsigned)(*puVar6 & 0xf) : 0u);
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
         (uVar11 = *puVar6 & 0xf, 3 < uVar11)) && (uVar11 < 8)) {
       iVar7 = FUN_000528a8();
@@ -55895,6 +55931,16 @@ LAB_000669a8:
     bVar12 = iVar4 == 4;
   } while (iVar4 < 5);
   *(byte *)(DAT_00086df8 + 99) = bVar9 * '\x10' + (char)iVar5;
+  if (getenv("UW_DEBUG_AMBIENT")) {
+    int _s;
+    fprintf(stderr, "[ambient] light-scan result: bVar9=%d iVar5=%d -> DAT_00086df8+99=0x%02x; full slot dump:\n",
+            (int)bVar9, (int)iVar5, (unsigned)*(byte *)(DAT_00086df8 + 99));
+    for (_s = 0; _s < 11; _s++) {
+      ushort *_o = (ushort *)FUN_00045054(_s);
+      fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
+              _o ? (unsigned)(*_o & 0x1ff) : 0u, _o ? (unsigned)(*_o & 0xf) : 0u);
+    }
+  }
   if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
     iVar4 = 0;
     do {
