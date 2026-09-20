@@ -2798,10 +2798,17 @@ undefined2 DAT_00085a70;
    position -- but reaching it requires the still-missing armor-slot
    hotspots to be built out first; that's a real feature gap, not a
    one-line fix. See [[torch-ambient-light-scan-range-mismatch]] for the
-   full investigation. Ids 20-22 stay 0 -- past the real 0x17-entry
-   table's own end, never real widget ids. */
+   full investigation.
+
+   CORRECTED (found re-verifying with a wide re-dump at the user's
+   request, chasing the widget-20/21/22 investigation below): index 20
+   was transcribed wrong here -- it's real data too (0x13 = 19), not
+   part of the "no mapping" tail. Only indices 21-22 are genuinely 0
+   (past any real widget). Widget 20 -> slot 19 is exactly the "open
+   container indicator" slot -- see g_inventory_hotspot_table's own
+   comment and DAT_00085c4c below for the full mechanism this feeds. */
 static unsigned char g_backpack_widget_to_slot_backing[0x17] = {
-  1,3,0,1,2,4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18, 0,0,0,
+  1,3,0,1,2,4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19, 0,0,
 };
 #define g_backpack_widget_to_slot g_backpack_widget_to_slot_backing[0]
 /* DAT_00202950 (28 2-byte "backpack/equipment slot" object-link
@@ -3018,30 +3025,25 @@ ushort DAT_00202986;
    belt or similar, not fully identified yet.
 
    IMPORTANT: record 1's real rect is NOT the "open container" icon --
-   that UI affordance is this project's own addition (see
-   hit_test_inventory_widget's own comment), previously smuggled in by
-   repurposing this record's storage. It's been moved to its own
-   special-cased check in hit_test_inventory_widget
-   (CONTAINER_ICON_WIDGET_ID) using the exact same literal screen
-   position as before, so existing behavior/tests are unaffected and
-   record 1 is free to hold its real recovered armor-slot data.
+   that UI affordance was this project's own addition, invented before
+   widget 20's real click rect and g_backpack_widget_to_slot[20]'s real
+   data (0x13/19, not 0) were recovered. Widget 20 IS the real
+   mechanism (see DAT_00085c4c's own comment) -- the hack has been
+   removed entirely now that it's wired up.
 
-   Records 20-22 are ALSO real, non-degenerate rects -- previously
-   assumed to be unused padding past a "real 0x17-entry table," they
-   aren't padding at all. Their much smaller dirty w/h (8x10, vs every
-   other record's 16x16 or 20x20) suggests small UI buttons rather than
-   item-holding slots -- consistent with g_backpack_widget_to_slot's own
-   real data mapping widgets 20-22 to slot 0 (the same value used for
-   "no mapping" elsewhere in that table), i.e. these probably aren't
-   equip slots at all. Not otherwise identified yet; kept as real data
-   for now since no fix depends on their exact meaning. */
+   Records 21-22 are ALSO real, non-degenerate rects -- confirmed via
+   handle_object_drop_target's own `iVar2==0x15`/`0x16` dispatch
+   (FUN_00043614/FUN_0004365c) to be the container-grid scroll up/down
+   buttons, gated on DAT_0020299c/DAT_002029a0 ("can scroll up/down").
+   Their much smaller dirty w/h (8x10, vs every other record's 16x16 or
+   20x20) matches real small button art rather than an item slot. */
 static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
   /* rec 0 (real, degenerate sentinel): click 0,c8,0,c8 ; draw 104,c ; dirty 24,45 */
   0x00,0x00, 0xc8,0x00, 0x00,0x00, 0xc8,0x00,  0x04,0x01, 0x0c,0x00,  0x24,0x45,
   /* rec 1 (real armor-slot rect, likely feet/boots -- see table comment
-     above; the "open container" icon that used to live here has moved
-     to hit_test_inventory_widget's own CONTAINER_ICON_WIDGET_ID special
-     case): click 10d,38,11d,48 ; draw 10c,19 ; dirty 13,32 */
+     above; the "open container" icon that used to be hacked in here
+     has been removed entirely now that widget 20 is the real
+     mechanism): click 10d,38,11d,48 ; draw 10c,19 ; dirty 13,32 */
   0x0d,0x01, 0x38,0x00, 0x1d,0x01, 0x48,0x00,  0x0c,0x01, 0x19,0x00,  0x13,0x32,
   /* rec 2 (head): click 10d,9,11e,19 ; draw b,b ; dirty 14,14 */
   0x0d,0x01, 0x09,0x00, 0x1e,0x01, 0x19,0x00,  0x0b,0x01, 0x0b,0x00,  0x14,0x14,
@@ -3104,25 +3106,6 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
 #define g_inv_hotspot_dirty_w g_inventory_hotspot_table[0xc]
 #define g_inv_hotspot_dirty_h g_inventory_hotspot_table[0xd]
 
-/* The "open container" / leave-container icon -- this project's own
-   addition (no record in the real hotspot table backs it; see that
-   table's own comment). Used to be smuggled in by repurposing record
-   1's storage; now that record 1 holds real recovered armor-slot data,
-   this icon gets its own dedicated constants instead, using the exact
-   same literal screen position it always has (so existing behavior and
-   tests are unaffected) -- click rect f0,34-103,46, draw position
-   f1,3d, matching the old record-1 values verbatim.
-   CONTAINER_ICON_WIDGET_ID is returned by hit_test_inventory_widget's
-   own special case for this rect, the same pattern already used there
-   for the 0x17/0x18 magic ids -- picked as 0x19 so it can't collide
-   with any real widget id (0-0x16) or those two. */
-#define CONTAINER_ICON_WIDGET_ID 0x19
-#define CONTAINER_ICON_CLICK_X1 0xf0
-#define CONTAINER_ICON_CLICK_Y1 0x34
-#define CONTAINER_ICON_CLICK_X2 0x103
-#define CONTAINER_ICON_CLICK_Y2 0x46
-#define CONTAINER_ICON_DRAW_X 0xf1
-#define CONTAINER_ICON_DRAW_Y 0x3d
 /* .data 0x85c18: array-slot-index -> widget-id lookup, the inverse of
    g_backpack_widget_to_slot (see its own comment) -- read as `(&g_backpack_slot_to_widget)[slot]`
    to find which widget/grid-cell to redraw after a slot's contents
@@ -3313,13 +3296,42 @@ static undefined1 DAT_00085c88_backing[32768];
 static undefined1 DAT_002029f8_backing[256];
 #define DAT_002029f8 DAT_002029f8_backing[0]
 undefined DAT_002029f9;
+/* DAT_00202938: widget 20's own saved-background grtile handle (the
+   "open container indicator" -- see g_inventory_hotspot_table's own
+   comment and DAT_00085c4c below), same role as (&DAT_002028a0)[i] for
+   widgets 12-19 -- allocated once in open_backpack_container, see its
+   own comment there. Runtime scratch state, not a .data resource, so
+   it stays its own plain global rather than an alias. */
 undefined4 DAT_00202938;
-char DAT_00085c4c;
-undefined1 DAT_00085bf4;
-undefined1 DAT_00085bf3;
-undefined1 DAT_00085bf5;
-undefined1 DAT_00085bf2;
-undefined DAT_00085bf0;
+/* Another split-symbol case (same class as DAT_00085668 and friends,
+   see their own comments): this is g_backpack_widget_to_slot's own
+   real byte 20, not a separate global -- Ghidra just never connected
+   the two. redraw_inventory_widget_range's widget-20 special case
+   (see its own comment) reads this as the DAT_00202950 slot to draw
+   for the "open container indicator" -- with real data now restored
+   to g_backpack_widget_to_slot_backing[20] (19, the same slot
+   g_backpack_slot_to_widget's own recovery independently confirmed),
+   this alias makes that special case see the real value instead of an
+   always-zero dead scalar. */
+#define DAT_00085c4c g_backpack_widget_to_slot_backing[20]
+/* DAT_00085bf0/2/3/4/5: also split-symbol aliases, this time into
+   g_inventory_hotspot_table's own real record 20 (byte offset 280,
+   14 bytes/record -- see that table's own comment). redraw_inventory_
+   widget_range's widget-20 branch reads these directly instead of
+   going through the usual g_inv_hotspot_draw_x/y/dirty_w/dirty_h
+   macros (Ghidra recovered this one spot as individual byte accesses,
+   not the macro'd struct-field pattern used everywhere else) -- same
+   real draw position/size (241,65, 16x16) as those macros would give
+   for record 20, now that the table itself holds real recovered data
+   instead of an all-zero placeholder. `_DAT_00085bf0` (leading
+   underscore -- see this file's own "overlapping symbol" convention)
+   is the 2-byte draw_x; the bare 1-byte DAT_00085bf0 Ghidra also
+   created at the same address is never actually read anywhere. */
+#define _DAT_00085bf0 (*(unsigned short *)&g_inventory_hotspot_table[288])
+#define DAT_00085bf2 g_inventory_hotspot_table[290]
+#define DAT_00085bf3 g_inventory_hotspot_table[291]
+#define DAT_00085bf4 g_inventory_hotspot_table[292]
+#define DAT_00085bf5 g_inventory_hotspot_table[293]
 short DAT_0023be5c;
 short DAT_0023be80;
 char s_cursed_00085ca0[] = "cursed";
@@ -33191,7 +33203,62 @@ short param_1;
     }
     else {
       if (iVar2 == 0x14) {
-        leave_nested_container_level();
+        /* Widget 20, the real "leave container" indicator -- see
+           DAT_00085c4c's own comment for the display side. This used
+           to be a synthetic CONTAINER_ICON_WIDGET_ID special-cased
+           directly in hit_test_inventory_widget plus 3 separate
+           near-identical copies of the logic below scattered across
+           handle_inventory_panel_click (x2) and
+           attach_picked_up_object_to_cursor -- now that widget 20 is a
+           real, correctly-positioned table entry, all 3 of those
+           dispatch here naturally instead, so this is the one place
+           that needs it.
+
+           Was unconditional (just leave_nested_container_level()):
+           dropping a held item onto this icon (drag it out of the open
+           container back to the parent) closed the container without
+           ever placing the item anywhere, leaving it stuck on the
+           cursor -- the user then had to click again, now on the
+           parent's own backpack grid, to actually place it. This
+           specific "drop here auto-places into the parent" behavior is
+           this project's own addition (not constrained by the original
+           binary), using the same auto_place_in_container(...,0x13)
+           "find an empty slot" sentinel its other callers (and
+           check_object_fits_in_slot's matching special-case) already
+           establish. Matches a user report: "dragging from a container
+           to the parent requires an extra click".
+
+           Whether to ALSO auto-close the container after that drop
+           (the original behavior, matching a plain click on this same
+           icon with nothing held) is a deliberate opt-in via
+           UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF, per user
+           request -- placing the item and leaving the container open
+           lets the user drag several items out in a row without it
+           snapping shut after the first one. A plain click here
+           (nothing held) always closes/pops one level as before,
+           unaffected by this toggle. */
+        if (g_selected_object != (ushort *)0x0) {
+          if (auto_place_in_container(g_selected_object, 0x13) != 0) {
+            g_selected_object = (ushort *)0x0;
+            g_cursor_holding_state = 0;
+            FUN_00057cac(3);
+          }
+          FUN_000667cc();
+          if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+            leave_nested_container_level();
+          }
+          else {
+            redraw_inventory_widget_range(0xc,0x13);
+          }
+        }
+        else {
+          leave_nested_container_level();
+        }
+        /* Same "drain the still-pending click" protection the original
+           3 copies of this logic each had -- see their own history:
+           without it, leave_nested_container_level could fire 2-3
+           times per real single click and pop more than one level. */
+        wait_for_click_release(1);
         goto LAB_00042a10;
       }
       if (iVar2 == 0x15) {
@@ -33322,10 +33389,6 @@ void free_open_container_chain()
 
 
 
-/* Registered grtile handle for record 1's own pixel backup -- see its
-   capture site in open_backpack_container and the restore in
-   close_backpack_container just below. 0 until the first-ever open. */
-undefined4 g_container_icon_backup_grtile = 0;
 
 void close_backpack_container()
 
@@ -33336,6 +33399,13 @@ void close_backpack_container()
   if (g_current_container_record != 0) {
     free_open_container_chain();
     g_current_container_link = g_current_container_link & 0x3f;
+    /* Clear the real "open container indicator" slot (widget 20, see
+       DAT_00085c4c's own comment) now that nothing is open -- nothing
+       else currently reads slot 19 outside that widget's own redraw,
+       so this isn't load-bearing for the full-panel repaint below, but
+       leaving a stale occupied reference there would be a latent trap
+       for any future reader of this slot. */
+    *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = 0;
     iVar1 = 0xb;
     do {
       (&g_backpack_widget_to_slot_plus1)[iVar1] = (char)iVar1;
@@ -33406,63 +33476,23 @@ void close_backpack_container()
        see below. */
     redraw_hud_panels();
     /* User report: "opening and closing a bag leaves the container icon
-       behind." open_backpack_container draws the container's own icon at
-       record 1's spot (the "leave container" button position, same
-       0x72x0x53-tile area as the black-cutout fix above) in transparent
-       mode -- and per that same fix's own finding, the panel art has a
-       genuinely transparent pixel right there, so redraw_hud_panels's
-       transparent blit (just above) correctly leaves it untouched by
-       design, same as before. Nothing else in this function redrew
-       record 1's spot: it belongs to widgets 0-5 (the paperdoll body),
-       which only redraw_inventory_widget(<6) -> FUN_00046bfc reaches --
-       redraw_inventory_widget_range below only covers 0xc-0x13 (the
-       backpack grid).
-
-       FIRST attempt was redraw_inventory_widget(1) here (redrawing the
-       paperdoll body) -- confirmed via before/after SCREENSHOT diffing
-       on a real repro (bug-redraw-demo.txt) that this only covers a
-       SMALL corner of the icon, not the whole spot ("a small rectangle
-       of the lower right corner does get cleared, but not the whole
-       button" -- user QA report): the body sprite's own opaque
-       silhouette doesn't fill this position's whole 16x16 footprint,
-       and neither it nor the panel background (their normal combined
-       compositing) is meant to paint every pixel here -- some of it is
-       load-once content from the panel's initial setup that nothing
-       normally ever redraws, which is exactly why the spot looks
-       correct in ordinary play (nothing dirties it) but not after this
-       icon draws over it. Replaced with a verbatim pixel restore
-       (g_container_icon_backup_grtile, captured once on the very first
-       open in open_backpack_container, blitted back here) so the fix
-       doesn't depend on knowing exactly which combination of layers is
-       "supposed" to show through -- same pattern this function already
-       used for the adjacent DAT_002028ec region above. */
-    FUN_00076e98(g_container_icon_backup_grtile);
+       behind." This used to need a hand-added verbatim pixel restore
+       here (g_container_icon_backup_grtile) because the container icon
+       was this project's own hack, drawn at a guessed screen position
+       nothing else ever redrew on close. Now that it's the real widget
+       20 (see DAT_00085c4c's own comment), redraw_inventory_widget_range's
+       own widget-20 special case handles this correctly on its own:
+       it always restores DAT_00202938's saved background first, then
+       only draws a sprite if slot 19 (zeroed a few lines above) is
+       occupied -- so this call alone both clears the stale icon and
+       leaves the spot correctly blank, no separate backup buffer
+       needed. */
     redraw_inventory_widget_range(0xc,0x13);
+    redraw_inventory_widget_range(0x14,0x14);
     redraw_inventory_widget(0x15);
     redraw_inventory_widget(0x16);
   }
   return;
-}
-
-
-
-/* Draws the container icon / leave-button (widget 1, above the 8-item
-   grid) for whichever container's header word is passed in -- factored
-   out of open_backpack_container so leave_nested_container_level can
-   redraw it too when popping back to a parent (see that call site's own
-   comment). Always draws the OPEN sprite variant (id | 1); see
-   open_backpack_container's original comment on this icon for the
-   COMOBJ.DAT even/odd closed/open id pairs this relies on. */
-static void draw_container_indicator_icon(header)
-ushort header;
-{
-  if (getenv("UW_DEBUG_INV"))
-    fprintf(stderr, "[inv] widget-1 icon id=0x%03x (open variant of 0x%03x)\n",
-            (unsigned)((header & 0x1ff) | 1), (unsigned)(header & 0x1ff));
-  g_blit_transparent_mode = 1;
-  draw_sprite_by_id((header & 0x1ff) | 1,CONTAINER_ICON_DRAW_X,
-               CONTAINER_ICON_DRAW_Y,16,16);
-  g_blit_transparent_mode = 0;
 }
 
 
@@ -33525,13 +33555,19 @@ void leave_nested_container_level()
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
       /* User QA: "the container indicator does not update to show the
          current container icon" after popping back to a parent -- this
-         icon (widget 1) is only ever drawn inside open_backpack_container,
-         which this pop path never calls, so it was left showing whatever
-         the child container's icon looked like. Redraw it here from the
-         parent's own just-resolved header word. */
-      draw_container_indicator_icon(*(ushort *)iVar1);
+         is now the real widget 20 (see DAT_00085c4c's own comment),
+         updated a few lines below by pointing slot 19 at the parent's
+         link before redraw_inventory_widget_range(0x14,0x14) runs. */
       repopulate_container_grid_slots();
       refresh_container_view();
+      /* The real "open container indicator" (widget 20, see
+         DAT_00085c4c's own comment): point slot 19 at the SAME object
+         g_current_container_link already refers to (just re-resolved
+         above, now the parent we popped back to) -- same "second copy
+         of the same link value, resolve_object_link doesn't care which
+         address you point it at" pattern open_backpack_container's own
+         g_current_container_link assignment already established. */
+      *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = g_current_container_link;
       redraw_inventory_widget_range(0x14,0x14);
     }
   }
@@ -33738,42 +33774,6 @@ short param_1;
            sprite draw above now supplies the container-view
            background on its own, matching direct playtest
            confirmation that it renders correctly in real gameplay. */
-        /* Pixel-perfect backup of record 1's own spot (the "leave
-           container" button, drawn over below), captured once ever on
-           the very first open while it's still guaranteed pristine --
-           same established pattern this function already uses for the
-           adjacent DAT_002028ec region a few lines below (capture once
-           at setup, FUN_00076e98 blits it back verbatim on close). This
-           one didn't exist: record 1 belongs to widgets 0-5 (the
-           paperdoll body), which FUN_00046414's own one-time hotspot
-           snapshot loop (records 6-0x16 only) never covered. Without
-           it, closing could only redraw the paperdoll body sprite over
-           this spot, which -- confirmed live via before/after
-           SCREENSHOT diffing on bug-redraw-demo.txt -- only covers a
-           small corner of it (the body's own opaque silhouette doesn't
-           fill the whole 16x16 icon footprint there), leaving most of
-           the stale container icon still visible ("a small rectangle
-           of the lower right corner does get cleared, but not the
-           whole button"). A verbatim pixel restore sidesteps needing to
-           know exactly which combination of layers is "supposed" to
-           show through there. */
-        if (g_container_icon_backup_grtile == 0) {
-          /* grtile_alloc_registered's 2nd arg is a BYTE count, not a
-             pixel count (it mallocs param_1*param_2 raw bytes) -- every
-             other caller in this file doubles the pixel height to
-             account for RGB565's 2 bytes/pixel (e.g. the hotspot-table
-             loop just above uses `dirty_h << 1`). Passing plain 16 here
-             first time allocated only a 256-byte buffer for a region
-             that needs 16*16*2=512, so capture_framebuffer_rect_to_grtile's
-             own copy loop (16x16 shorts) ran past the end of it and
-             FUN_00076e98 blitted back garbage/black instead of the
-             real captured pixels -- confirmed live via SCREENSHOT (a
-             solid dark rectangle instead of the stale icon). */
-          g_container_icon_backup_grtile = grtile_alloc_registered(16,32);
-          capture_framebuffer_rect_to_grtile(g_container_icon_backup_grtile,
-                       CONTAINER_ICON_DRAW_X,
-                       CONTAINER_ICON_DRAW_Y,16,16);
-        }
         if (DAT_002028a0 == 0) {
           iVar10 = 0xc;
           do {
@@ -33796,6 +33796,23 @@ short param_1;
                          (&g_inv_hotspot_dirty_h)[iVar11]);
             iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
           } while (iVar10 < 0x14);
+        }
+        /* Widget 20's own background-save, same role/pattern as the
+           g_container_icon_backup_grtile allocation above and the
+           DAT_002028a0 loop just above that (for widgets 12-19) --
+           this one's real "open container indicator" mechanism (see
+           DAT_00085c4c's own comment) needs FUN_00076e98(DAT_00202938)
+           to have real saved pixels to restore before its own sprite
+           draw, same as every other widget's redraw. Never allocated
+           before because nothing reached this branch: widget 20's own
+           click rect didn't exist in the hotspot table until it was
+           recovered from the real binary. */
+        if (DAT_00202938 == 0) {
+          DAT_00202938 = grtile_alloc_registered((&g_inv_hotspot_dirty_w)[20 * 0xe],
+                       (uint)(byte)(&g_inv_hotspot_dirty_h)[20 * 0xe] << 1);
+          capture_framebuffer_rect_to_grtile(DAT_00202938,
+                       (int)(short)(&g_inv_hotspot_draw_x)[20 * 7],(int)(short)(&g_inv_hotspot_draw_y)[20 * 7],
+                       (&g_inv_hotspot_dirty_w)[20 * 0xe],(&g_inv_hotspot_dirty_h)[20 * 0xe]);
         }
         FUN_000570b4();
         /* Was a hardcoded original-binary literal address (0x85c30) --
@@ -33845,25 +33862,25 @@ short param_1;
           free_open_container_chain();
         }
       }
-      /* User QA: "open container indicator slot does not show the
-         'open' version of a container like it should" + "opening a
-         nested container does not update to show the new container."
-         Two bugs in one: (a) this draw only ever ran inside the
-         `g_open_container_list == 0` branch above, i.e. only on the
-         very FIRST container opened -- opening a container nested
-         inside it never touched this icon again, so it kept showing
-         the OUTER container's art. Moved out here so it (re)draws for
-         every open, first or nested. (b) it drew the plain closed-
-         container sprite id (`uVar3 & 0x1ff`) -- real UW1 containers in
-         this id range come in even/odd closed/open pairs (confirmed via
-         COMOBJ.DAT names: 0x080 "a_sack"/0x081 "an_open sack", 0x082
-         "a_pack"/0x083 "an_open pack", 0x086 "a_pouch"/0x087 "an_open
-         pouch", 0x08a "a_gold coffer"/0x08b "an_open gold coffer", 0x088
-         "a_map case"/0x089 "an_open map case") -- OR in the low bit to
-         show the open variant instead. Factored the actual draw out into
-         draw_container_indicator_icon so leave_nested_container_level's
-         own pop-to-parent path can redraw this same icon too. */
-      draw_container_indicator_icon(uVar3);
+      /* User QA (historical, now resolved by the real widget-20
+         mechanism below rather than a dedicated draw call here):
+         "open container indicator slot does not show the 'open'
+         version of a container like it should" + "opening a nested
+         container does not update to show the new container." Real
+         UW1 containers in this id range come in even/odd closed/open
+         pairs (confirmed via COMOBJ.DAT names: 0x080 "a_sack"/0x081
+         "an_open sack", 0x082 "a_pack"/0x083 "an_open pack", 0x086
+         "a_pouch"/0x087 "an_open pouch", 0x08a "a_gold coffer"/0x08b
+         "an_open gold coffer", 0x088 "a_map case"/0x089 "an_open map
+         case") -- the toggle to the open id a few lines below (via
+         resolve_object_link(&g_current_container_link)) already keeps
+         the container object's OWN id correctly showing "open" while
+         it's open; since slot 19 is just a second reference to that
+         same object (see DAT_00085c4c's own comment), the widget-20
+         redraw naturally shows the right variant with no separate
+         "OR in the open bit" step needed, and (being driven by
+         g_current_container_link, re-pointed at whichever container is
+         current on every open/pop) it updates for nested opens too. */
       /* Record grew from 0xc (12) to 0x1c (28) bytes: the original
          12-byte layout (0-3 next / 4-7 prev / 8-9 container-link / 10-11
          weight) only ever stored its next/prev CHAIN LINKS as 4-byte
@@ -34027,6 +34044,11 @@ short param_1;
           *(byte *)((char *)puVar7 + 1) = (byte)(uVar3 >> 8);
         }
         refresh_container_view();
+        /* The real "open container indicator" (widget 20, see
+           DAT_00085c4c's own comment): point slot 19 at the same
+           object g_current_container_link was just set to a few lines
+           above (this container's own link). */
+        *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = g_current_container_link;
         redraw_inventory_widget_range(0x14,0x14);
         if ((char)(&g_backpack_slot_to_widget)[iVar1] < '\v') {
           redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
@@ -36191,97 +36213,24 @@ short param_1;
   if ((0 < iVar9) && (iVar9 < 0x17)) {
     DEBUG(INFO, "[inv] widget %d clicked -> slot %d\n", iVar9,
           (int)(char)(&g_backpack_widget_to_slot)[iVar9]);
-  } else if (iVar9 == CONTAINER_ICON_WIDGET_ID) {
-    DEBUG(INFO, "[inv] widget %d clicked (container icon, no backing slot)\n", iVar9);
   }
-  /* Leave-container click: CONTAINER_ICON_WIDGET_ID is the open-container
-     icon drawn above the grid, hit_test_inventory_widget's own special
-     case for it (see that constant's own comment) -- no longer stealing
-     a real widget id now that widget 1's real armor-slot data has been
-     recovered. No such affordance exists anywhere in the decompiled
-     body; added per direct playtest feedback describing the real
-     game's layout. Only active while a container is actually open
-     (the same guard hit_test_inventory_widget itself now applies). */
-  if ((iVar9 == CONTAINER_ICON_WIDGET_ID) && (g_current_container_record != 0)) {
-    /* Was unconditional: dropping a held item onto this icon (drag it
-       out of the open container back to the parent) closed the
-       container without ever placing the item anywhere, leaving it
-       stuck on the cursor -- the user then had to click again, now on
-       the parent's own backpack grid, to actually place it. This
-       whole affordance is this project's own addition (see the
-       comment above), so its exact "drop here" behavior isn't
-       constrained by the original binary; auto-place the held item
-       into any free parent-backpack slot first, using the same
-       auto_place_in_container(...,0x13) "find an empty slot" sentinel
-       auto_place_in_container's own other callers (and
-       check_object_fits_in_slot's matching special-case) already
-       establish. Matches a user report: "dragging from a container to
-       the parent requires an extra click".
-
-       Whether to ALSO auto-close the container after that drop (the
-       original behavior, matching a plain click on this same icon
-       with nothing held) is now a deliberate opt-in via
-       UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF, per user
-       request -- placing the item and leaving the container open lets
-       the user drag several items out in a row without it snapping
-       shut after the first one. A plain click here (nothing held)
-       always closes as before, unaffected by this toggle. */
-    if (g_selected_object != (ushort *)0x0) {
-      if (auto_place_in_container(g_selected_object, 0x13) != 0) {
-        g_selected_object = (ushort *)0x0;
-        g_cursor_holding_state = 0;
-        FUN_00057cac(3);
-      }
-      FUN_000667cc();
-      if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
-        leave_nested_container_level();
-      }
-      else {
-        /* Staying open: the item just left this container's own grid
-           (widgets 0xc-0x13), so redraw it to reflect that -- without
-           this the grid kept showing its pre-drop contents (stale)
-           until some unrelated redraw happened to refresh it. */
-        redraw_inventory_widget_range(0xc,0x13);
-      }
-    }
-    else {
-      /* Was unconditionally `close_backpack_container()` -- fully
-         closing the ENTIRE open-container chain regardless of how many
-         levels deep the player had navigated. User QA: "opening a
-         nested container does not update to show the new container --
-         should let you go back to the parent container on click." A
-         plain click on this icon should pop back ONE level (to
-         whichever container this one is nested inside, if any), not
-         necessarily close everything -- leave_nested_container_level
-         already implements exactly that (and itself calls
-         close_backpack_container when there's no parent to pop back
-         to, so top-level containers still close in one click same as
-         before). */
-      leave_nested_container_level();
-    }
-    /* poll_input_bindings dispatches off a non-consuming peek_input_event()
-       -- the mouse-down event stays "pending" and gets seen again on
-       later ticks (this project's own consuming-vs-peeking distinction,
-       see poll_input_event's comment) until something drains it, which
-       is why interact_default's own equivalent "committed click" tail
-       calls wait_for_click_release(1) (loop until the button is actually
-       released). Every other branch here happens to be safe without it
-       -- either its resolved widget/slot changes once the click takes
-       effect (so a stray re-fire lands somewhere harmless) or its own
-       action is naturally idempotent (close_backpack_container's own
-       top-level `g_current_container_record != 0` guard no-ops on a
-       repeat call). leave_nested_container_level pops exactly one MORE
-       level on every call, so without this it was silently popping
-       2-3 levels per real single click -- confirmed live: a single
-       SDLCLICK (and even a separately-timed SDLDOWN/SDLUP pair) on this
-       icon fired handle_inventory_panel_click's widget-1 branch 2-3
-       times in a row, so a nested container's "go back one level" click
-       fell all the way through to a full close instead of stopping at
-       the parent. */
-    wait_for_click_release(1);
-    return;
-  }
-  if ((0 < iVar9) && (iVar9 < 0x15)) {
+  /* The old CONTAINER_ICON_WIDGET_ID synthetic dispatch that used to
+     live here (a project-added hack, drawn/hit-tested at a guessed
+     screen position) is gone -- widget 20's own real table entry
+     covers the "leave container" click now, and its full drop/click
+     logic (auto-place a held item into the parent vs. pop one level)
+     lives in handle_object_drop_target's `iVar2==0x14` case, which
+     this function's own fallthrough below already reaches. See that
+     branch's own comment for the history. */
+  /* Was `iVar9 < 0x15` -- treated widget 20 (the real "leave container"
+     button, see DAT_00085c4c's own comment) as an ordinary placeable
+     backpack slot, so a plain click on it tried to pick up/drop an
+     item there instead of ever reaching handle_object_drop_target's
+     own `iVar2==0x14 -> leave_nested_container_level()` dispatch a
+     little further down this file. Widgets 21/22 (scroll arrows) were
+     already correctly excluded (21 is not < 21); only 20 needed
+     excluding too. */
+  if ((0 < iVar9) && (iVar9 < 0x14)) {
     cVar2 = (&g_backpack_widget_to_slot)[iVar9];
     if (g_selected_object == 0) {
       iVar9 = (int)(short)cVar2;
@@ -36402,38 +36351,19 @@ short param_1;
     }
     iVar9 = (int)sVar1;
     if (0 < iVar9) {
-      /* Was missing here too: this is the REAL drop-target dispatch for
-         a release that lands while already holding an item (this
-         function's own preceding widget-range block only handles the
-         very first click of a drag, when nothing was held yet -- see
-         its own sibling fix's comment for why the top-of-function
-         check alone isn't enough. `sVar1`/`iVar9` here is the actual
-         RELEASE position, freshly hit-tested a few lines up). Same
-         "leave-container icon eats the drop instead of routing it to
-         the parent" bug and same fix as the top-of-function copy. */
-      if ((iVar9 == CONTAINER_ICON_WIDGET_ID) && (g_current_container_record != 0)) {
-        if (auto_place_in_container(g_selected_object, 0x13) != 0) {
-          g_selected_object = (ushort *)0x0;
-          g_cursor_holding_state = 0;
-          FUN_00057cac(3);
-          bVar11 = false;
-        }
-        FUN_000667cc();
-        /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
-           -- see the top-of-function copy of this same fix for why.
-           Was close_backpack_container() here too -- this is the
-           "release while already holding" twin of that top-of-function
-           branch and was missed when it was fixed (Update 27); same
-           "pop one level, not everything" fix. */
-        if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
-          leave_nested_container_level();
-        }
-        else {
-          redraw_inventory_widget_range(0xc,0x13);
-        }
-        return;
-      }
-      if (iVar9 < 0x15) {
+      /* `sVar1`/`iVar9` here is the actual RELEASE position, freshly
+         hit-tested a few lines up (this function's own preceding
+         widget-range block only handles the very first click of a
+         drag, when nothing was held yet). Widget 20 (the real "leave
+         container" indicator) falls through the `< 0x14` check below
+         into handle_object_drop_target same as everywhere else now --
+         see that function's own `iVar2==0x14` case for the full
+         drop/click logic this used to duplicate here as a
+         CONTAINER_ICON_WIDGET_ID special case. */
+      /* Same `< 0x15` -> `< 0x14` fix as the top-of-function copy above
+         (widget 20 needs handle_object_drop_target's real dispatch,
+         not ordinary slot placement). */
+      if (iVar9 < 0x14) {
         handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar9]);
       }
       else {
@@ -36504,29 +36434,17 @@ ushort * param_1;
         DAT_00204844 = 0;
       }
       if ((DAT_0023c1d4 == '\0') || (iVar1 == 0x17)) {
-        /* Same "leave-container icon eats the drop instead of routing
-           it to the parent" bug and fix as handle_inventory_panel_click's
-           own two copies (see their comments) -- this is the analogous
-           drop-dispatch for a drag that started in the 3D world (e.g.
-           picking an item straight off the ground and releasing it on
-           this icon while a container happens to be open). */
-        if ((iVar1 == CONTAINER_ICON_WIDGET_ID) && (g_current_container_record != 0)) {
-          if (auto_place_in_container(g_selected_object, 0x13) != 0) {
-            g_selected_object = (ushort *)0x0;
-            g_cursor_holding_state = 0;
-            FUN_00057cac(3);
-          }
-          FUN_000667cc();
-          /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
-             -- see handle_inventory_panel_click's own copy of this fix
-             for why. Was close_backpack_container() here too -- missed
-             when handle_inventory_panel_click's two copies were fixed
-             (Update 27); same "pop one level, not everything" fix. */
-          if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
-            leave_nested_container_level();
-          }
-        }
-        else if (iVar1 < 0x15) {
+        /* Widget 20 (the real "leave container" indicator) falls
+           through to handle_object_drop_target below same as
+           everywhere else -- see that function's own `iVar2==0x14`
+           case for the drop/click logic this used to duplicate here as
+           a CONTAINER_ICON_WIDGET_ID special case (a drag that started
+           in the 3D world, e.g. picking an item straight off the
+           ground and releasing it on this icon while a container
+           happens to be open, is exactly the kind of drop that case
+           already handles). Same `< 0x15` -> `< 0x14` fix as
+           handle_inventory_panel_click's own two copies. */
+        if (iVar1 < 0x14) {
           handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
           if (g_selected_object == (ushort *)0x0) {
             g_cursor_holding_state = 0;
@@ -36534,7 +36452,13 @@ ushort * param_1;
           }
         }
         else {
-          handle_object_drop_target();
+          /* Dropped argument -- every sibling call to
+             handle_object_drop_target elsewhere in this file forwards
+             the resolved widget id (see handle_inventory_panel_click's
+             own two copies); this bare call left it uninitialized,
+             so widget 20/21/22 reached here with garbage instead of
+             their real id. */
+          handle_object_drop_target(iVar1);
         }
       }
     }
@@ -37488,8 +37412,17 @@ joined_r0x00048308:
     if (iVar3 == 0x14) {
       FUN_00076e98(DAT_00202938);
       local_2c = 1;
+      if (getenv("UW_DEBUG_W20"))
+        fprintf(stderr, "[w20] slot=%d raw=0x%04x occupied=%d DAT_00202938=%p x=%d y=%d w=%d h=%d\n",
+                (int)(unsigned char)DAT_00085c4c,
+                (unsigned)*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2),
+                (int)((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0),
+                (void *)DAT_00202938, (int)_DAT_00085bf0, (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
+                (int)DAT_00085bf5, (int)DAT_00085bf4);
       if ((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0) {
         puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + DAT_00085c4c * 2));
+        if (getenv("UW_DEBUG_W20"))
+          fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7, puVar7 ? (unsigned)(*puVar7 & 0x1ff) : 0u);
         draw_sprite_by_id(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                      DAT_00085bf5,DAT_00085bf4);
         if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
@@ -37560,17 +37493,15 @@ short param_2;
       return 0x17;
     }
   }
-  /* The "open container" / leave-container icon -- this project's own
-     addition, not a real widget-table record (see CONTAINER_ICON_WIDGET_ID's
-     own comment). Only active while a container is actually open,
-     matching this affordance's original callers' own guard. Special-
-     cased here the same way the two magic ids above are, using the
-     exact literal screen position this icon has always drawn at. */
-  if ((g_current_container_record != 0) &&
-      (CONTAINER_ICON_CLICK_X1 <= iVar1 && iVar1 <= CONTAINER_ICON_CLICK_X2) &&
-      (CONTAINER_ICON_CLICK_Y1 <= (int)param_2 && (int)param_2 <= CONTAINER_ICON_CLICK_Y2)) {
-    return CONTAINER_ICON_WIDGET_ID;
-  }
+  /* The "open container"/leave-container click used to be special-
+     cased here at a guessed screen position (this project's own
+     CONTAINER_ICON_WIDGET_ID hack, before widget 20's real hotspot
+     data was recovered) -- removed now that the real table entry for
+     widget 20 (scanned below, same as every other widget) covers it
+     correctly, and drawing a real icon there too instead of the
+     hack's slightly-offset guess. See DAT_00085c4c's own comment and
+     handle_object_drop_target's `iVar2==0x14` case for the current
+     mechanism. */
   iVar3 = 0;
   while (((iVar2 = iVar3 * 0xe, iVar1 < *(short *)(&g_inv_hotspot_click_x1 + iVar2) ||
           (*(short *)(&g_inv_hotspot_click_x2 + iVar2) < iVar1)) ||
@@ -38333,33 +38264,27 @@ static void uw_debug_blit_pick_buffer(void)
 
 
 /* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory
-   hotspot's click rect (g_inventory_hotspot_table's 23 records, plus the
-   CONTAINER_ICON_WIDGET_ID rect, which isn't in that table) in bright
-   red, directly into the framebuffer -- for visually verifying the
-   recovered hotspot table lines up with the actual paperdoll/backpack
-   panel art (open the inventory panel, screenshot, and check every box
-   sits exactly on its icon). Record 0 is the real degenerate sentinel
-   (x1=x2, y1=y2) and is skipped, same as hit_test_inventory_widget's
-   own no-op treatment of it. Outline only (not filled) so the icon
-   underneath stays visible. */
+   hotspot's click rect (g_inventory_hotspot_table's 23 records) in
+   bright red, directly into the framebuffer -- for visually verifying
+   the recovered hotspot table lines up with the actual paperdoll/
+   backpack panel art (open the inventory panel, screenshot, and check
+   every box sits exactly on its icon). Record 0 is the real degenerate
+   sentinel (x1=x2, y1=y2) and is skipped, same as
+   hit_test_inventory_widget's own no-op treatment of it. Outline only
+   (not filled) so the icon underneath stays visible. */
 static void uw_debug_draw_inv_hotspot_positions(void)
 {
   unsigned short *fb = (unsigned short *)g_uw_framebuffer;
   int i, min_x = 0x7fffffff, max_x = -1, min_y = 0x7fffffff, max_y = -1;
   if (fb == 0) return;
-  for (i = 0; i <= 0x17; i++) {
+  for (i = 0; i < 0x17; i++) {
     int x1, y1, x2, y2, x, y;
-    if (i < 0x17) {
-      int off = i * 0xe;
-      x1 = *(short *)(&g_inv_hotspot_click_x1 + off);
-      y1 = *(short *)(&g_inv_hotspot_click_y1 + off);
-      x2 = *(short *)(&g_inv_hotspot_click_x2 + off);
-      y2 = *(short *)(&g_inv_hotspot_click_y2 + off);
-      if (x1 == x2 && y1 == y2) continue;
-    } else {
-      x1 = CONTAINER_ICON_CLICK_X1; y1 = CONTAINER_ICON_CLICK_Y1;
-      x2 = CONTAINER_ICON_CLICK_X2; y2 = CONTAINER_ICON_CLICK_Y2;
-    }
+    int off = i * 0xe;
+    x1 = *(short *)(&g_inv_hotspot_click_x1 + off);
+    y1 = *(short *)(&g_inv_hotspot_click_y1 + off);
+    x2 = *(short *)(&g_inv_hotspot_click_x2 + off);
+    y2 = *(short *)(&g_inv_hotspot_click_y2 + off);
+    if (x1 == x2 && y1 == y2) continue;
     for (x = x1; x <= x2; x++) {
       if (x < 0 || x >= 320) continue;
       if (y1 >= 0 && y1 < 200) fb[y1 * 0x140 + x] = 0xF800;
