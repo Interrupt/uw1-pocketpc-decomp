@@ -4276,31 +4276,76 @@ ushort DAT_0023b904;
 ushort DAT_0023b920;
 ushort DAT_0023b91c;
 byte DAT_0023bc88;
-static undefined1 DAT_00086c80_backing[65536];
-#define DAT_00086c80 DAT_00086c80_backing[0]
-/* Was a lone `undefined` scalar -- another silently-zero "orphaned data
-   table" (same class as DAT_00086c80's TMOBJ frame table, see
-   [[object-render-class-and-tmobj-signs]]). resolve_critter_sprite_tier's
-   caller indexes it `(&DAT_00086cc0)[(_dm % 0x20 + 0x20) % 0x20]` to
-   quantize a 32-step relative camera/object angle down to an 8-way
-   octant -- with it silently zero, every critter/door billboard always
-   resolved to octant 0 regardless of true viewing angle, so orbiting one
-   never changed its displayed sprite frame. The real recovered-from-UU.exe
-   content for this table is lost (same situation as DAT_00086c80), so
-   reconstruct it with the natural identity quantization -- 4 consecutive
-   steps per octant -- rather than leave it degenerate. */
-static const undefined1 DAT_00086cc0_arr[32] = {
-  0,0,0,0, 1,1,1,1, 2,2,2,2, 3,3,3,3,
-  4,4,4,4, 5,5,5,5, 6,6,6,6, 7,7,7,7,
+/* .data 0x86c80: real TMOBJ sign-variant -> frame-index table, 32
+   ushort entries, recovered directly from UU.exe (same contiguous
+   dump as DAT_00086c08 above -- see its own comment). CORRECTED: an
+   earlier investigation this project concluded this table's content
+   was "genuinely lost -- not present anywhere in this binary or its
+   data files" and hand-picked a single fallback frame (668, TMOBJ.GR's
+   own "message/plaque" entry 25) for every sign variant instead. That
+   conclusion was wrong the same way g_inventory_hotspot_table's own
+   "doesn't map cleanly" conclusion was wrong -- nobody had actually
+   dumped these bytes. Real values (index -> raw table value; -1/0xffff
+   marks "no sign here", matching the existing `< 0 -> return` bail-out
+   this table's own reader already had): 0->3, 1->8, 2->8, 3->7, 4->7,
+   5->6, 6->5, 7->11, 8->24, 9->9, 10->23, 11->27, 12->28, 13->25,
+   14->26, 15->4, 16->10, 17->16, 18->17, 19->-1, 20->2, 21->19,
+   22->18, 23-31->-1. All non-sentinel values fall inside 0-28 -- see
+   the fix at this table's own reader (search "DAT_00202734") for why
+   these are relative offsets into TMOBJ's own frame range, not
+   standalone absolute frame numbers, and the addition that was
+   missing to use them correctly. */
+static unsigned short DAT_00086c80_backing[32] = {
+  3,8,8,7,7,6,5,11,24,9,23,27,28,25,26,4,
+  10,16,17,0xffff,2,19,18,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
+};
+#define DAT_00086c80 (*(unsigned char *)&DAT_00086c80_backing[0])
+/* .data 0x86cc0: real 32-step -> 8-octant angle-quantization table,
+   recovered in the same dump as DAT_00086c08/DAT_00086c80 above.
+   CORRECTED: was hand-reconstructed as a uniform "4 consecutive steps
+   per octant" identity quantization after an earlier investigation
+   concluded (same wrong "lost" framing as the other two tables here)
+   that the real content was unrecoverable. The real table is NOT a
+   uniform quantization -- bucket sizes are 3,3,5,3,5,3,5,3 (octants
+   0-7), not 4 each. */
+static const unsigned char DAT_00086cc0_arr[32] = {
+  0,0,0,1,1,1,2,2, 2,2,2,3,3,3,4,4,
+  4,4,4,5,5,5,6,6, 6,6,6,7,7,7,0,0,
 };
 #define DAT_00086cc0 (DAT_00086cc0_arr[0])
 short DAT_00189584;
 undefined2 DAT_00189586;
 ushort DAT_0018957a;
-undefined DAT_00086c08;
-undefined DAT_00086c09;
-undefined DAT_00086c0a;
-undefined DAT_00086c0b;
+/* .data 0x86c08: real billboard-catalog table, 30 records of 4 bytes
+   each (byte0=flags/sub-frame-count, bytes1-3=up to 3 more per-entry
+   values -- see emit_object_billboard's own use of it), recovered
+   directly from UU.exe. Was 4 lone `undefined` scalars Ghidra never
+   gave real backing to -- same "split/orphaned data table" class as
+   g_inventory_hotspot_table before its own recovery (see
+   [[inventory-hotspot-table-recovery]]) -- every reader indexes past
+   byte 3 via pointer arithmetic (`(&DAT_00086c08)[catalog_idx*4]`
+   etc.), so a plain 4-byte declaration silently truncated every
+   catalog entry past the first to out-of-bounds reads. Cross-validated:
+   this table's real end (0x86c08+0x78=0x86c80) lines up exactly with
+   DAT_00086c80's own real start below, and this whole region was dumped
+   in one contiguous pull starting from the already-known-good
+   DAT_00086b50_region/DAT_00086c00_arr immediately before it (both
+   matched their existing recovered values exactly, confirming the
+   address mapping). */
+static unsigned char DAT_00086c08_backing[0x78] = {
+  0x01,0xec,0x00,0x00, 0x21,0xeb,0x00,0x00, 0x11,0xec,0x00,0x3e, 0x01,0xe4,0x00,0x00,
+  0x02,0xb6,0xb0,0x00, 0x02,0x64,0x6c,0x00, 0x02,0x64,0x6c,0x00, 0x02,0x64,0x6c,0x00,
+  0x42,0xe8,0xb8,0x00, 0x01,0xe4,0x00,0x00, 0x19,0xe4,0x00,0x60, 0x03,0xa3,0xa4,0xa6,
+  0x01,0x68,0x00,0x00, 0x01,0x68,0x00,0x00, 0x11,0xec,0x00,0x00, 0x21,0xec,0x00,0x00,
+  0x51,0xb0,0x00,0xe4, 0x51,0xb0,0x00,0xec, 0x11,0xb0,0x00,0xf4, 0x11,0x6a,0x00,0x3c,
+  0x51,0xb0,0x00,0x00, 0x11,0xb0,0x00,0x00, 0x21,0xb0,0x00,0x00, 0x83,0x00,0x02,0x04,
+  0x02,0xe4,0x68,0x00, 0x02,0xe6,0x68,0x00, 0x01,0xe4,0x00,0x00, 0x02,0xe4,0x6a,0x00,
+  0x03,0xe6,0x6a,0x71, 0x03,0xe2,0x62,0xc4,
+};
+#define DAT_00086c08 DAT_00086c08_backing[0]
+#define DAT_00086c09 DAT_00086c08_backing[1]
+#define DAT_00086c0a DAT_00086c08_backing[2]
+#define DAT_00086c0b DAT_00086c08_backing[3]
 undefined4 DAT_00086ce0;
 undefined4 DAT_00086ce4;
 undefined4 DAT_00086ce8;
@@ -53721,48 +53766,23 @@ LAB_00061d34:
       }
       goto LAB_emit_mesh_sprite_quad;
     }
-    /* DAT_00086c80_backing has no writer anywhere in this decompile (same
-       "orphaned data table" class as DAT_00086c08/09/0b, the PTR_FUN_
-       dispatch tables, etc. fixed elsewhere this session) -- it's always
-       all-zero, so every sign/TMOBJ variant below was resolving to frame 0
-       regardless of `iVar17`. Real per-variant frame numbers for every
-       possible sign sub-type aren't recoverable from the binary (missing
-       DATA, not a dropped argument/call), BUT the user identified via
-       direct inspection that TMOBJ.GR itself only has 38 real entries
-       total, with entries 25-28 (zero-based) being actual "message/
-       plaque" graphics -- confirmed by instrumenting the resource loader
-       directly (DAT_00202744 went 643 -> 681 across TMOBJ's own
-       FUN_00041910 call, so TMOBJ's 38 real frames are absolute indices
-       643-680; entries 25-28 = absolute 668-671, dimensions 16x16/16x16/
-       16x16/16x32 -- plausible plaque/rune-tablet graphics, distinct from
-       the small flame-flicker-shaped frames earlier in the file and the
-       larger multi-purpose icons after it). Cycle every sign sub-type
-       through these 4 real message frames instead of one arbitrary
-       constant -- still not a true per-instance mapping (that data is
-       genuinely gone), but now always a real message graphic rather
-       than a guess landing outside TMOBJ.GR's actual 38-entry range
-       entirely (which is what the previous "38+i" default did --
-       DAT_00202738 is the NEXT resource's base, not TMOBJ's own, so
-       that default always missed TMOBJ.GR into whatever loads after
-       it). */
-    { static int _tmobj_ids_inited = 0;
-      if (!_tmobj_ids_inited) {
-        _tmobj_ids_inited = 1;
-        int _i;
-        // HACK: hand-picked constant, not recovered/derived data. The real
-        // per-sign-variant -> TMOBJ.GR frame mapping (what DAT_00086c80 was
-        // for) is genuinely lost -- not present anywhere in this binary or
-        // its data files, so it can't be recovered by further disassembly
-        // or file analysis. 668 (TMOBJ.GR entry 25) is just the
-        // least-wrong of the 4 real "message/plaque"-shaped frames (25-28)
-        // found by manual inspection, used for every sign regardless of
-        // its real intended variant. Revisit if the real mapping ever
-        // turns up (e.g. a different original data file/version).
-        for (_i = 0; _i < 0x20; _i++) {
-          *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)668;
-        }
-      }
-    }
+    /* CORRECTED: DAT_00086c80 (the real per-sign-variant -> TMOBJ frame
+       table) has now been recovered from the real binary -- see its
+       own declaration comment -- replacing the "fill every entry with
+       668" placeholder that used to live here (this whole block). Its
+       real values are small (0-28) OFFSETS into TMOBJ's own 38-frame
+       range, not standalone absolute frame numbers -- confirmed
+       self-consistent (0-28 + DAT_00202734's real 643 lands at
+       643-671, inside TMOBJ's real 643-680 span) and matching the
+       `DAT_00202734 + X` idiom this same file already uses for every
+       other TMOBJ-relative reference (doors, HUD icons, etc. -- search
+       "DAT_00202734 +"). The negation below was missing that addition
+       (adding it directly here rather than disassembly-confirming the
+       exact original instruction sequence, which a fresh decompile of
+       this specific spot couldn't reliably resolve -- see
+       [[tmobj-sign-table-recovery]] for why); if a real per-sign
+       screenshot ever shows an obviously wrong plaque graphic, that's
+       the first place to re-check. */
     iVar17 = (int)(((uVar27 & 0x3f) - 0x10) * 0x10000) >> 0x10;
     if ((short)*(ushort *)(&DAT_00086c80 + iVar17 * 2) < 0) {
       return;
@@ -53770,24 +53790,18 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    /* This used to call emit_object_billboard(*(ushort*)(&DAT_00086c80+
-       iVar17*2) & 0xff, ...), feeding a TMOBJ.GR frame index into
-       emit_object_billboard as if it were a slot in DAT_00086c08 -- a
-       small (~64-entry) curated billboard catalogue meant for a fixed
-       set of hand-picked effects (thrown weapons, muzzle flashes, etc;
-       see its other callers' literal 0x14/0x16/0xc slot ids), not an
-       arbitrary data-driven frame number. That's a completely unrelated
-       graphic, not merely "billboard instead of decal".
-       DAT_00202c9a's own game data puts wall signs/plaques (e.g. real
-       object type 0x166) in this exact (class 2, id&0x30 != 0) branch.
-       Route the real absolute TMOBJ frame through FUN_00040770's
+    /* Route the real absolute TMOBJ frame through FUN_00040770's
        negative-param_1 "direct absolute frame" escape hatch (see its own
        comment -- resolve_sprite_id_to_frame's normal id-range convention can't reach
        frames before DAT_00202738 at all) into the same real, working
        sprite-decode + mesh-quad path class 0 uses (proven correct for
        the sack etc. this session) instead of emit_object_billboard, by
        overriding uVar27 and jumping into that code directly. */
-    uVar27 = (uint)(ushort)(-(short)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
+    uVar27 = (uint)(ushort)(-(short)(*(ushort *)(&DAT_00086c80 + iVar17 * 2) + DAT_00202734));
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[sign] variant=%d table_val=%d DAT_00202734=%d -> absolute_frame=%d\n",
+              iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2), (int)DAT_00202734,
+              (int)(short)-(short)uVar27);
     /* Make it a wall-flush decal instead of a camera-facing billboard:
        the quad-build code below extends this sprite along a "right
        vector" looked up from a sin/cos table by angle DAT_000db44c
