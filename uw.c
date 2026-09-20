@@ -2760,33 +2760,55 @@ undefined2 DAT_00202894;
 undefined2 DAT_00085a70;
 /* .data 0x85c38: widget-id -> DAT_00202950 slot-array-index lookup (read
    as `(&g_backpack_widget_to_slot)[widget_id]` for widget ids 0-0x16, i.e. one byte
-   per record of the g_inv_hotspot_click_x1 hotspot table). Ghidra left this as a
-   lone scalar -- same split-array pattern as g_inv_hotspot_click_x1 itself (see
-   its own comment) -- and the real .data contents aren't recoverable
-   here either, so every widget aliased slot 0. Backed with a real array;
-   mapped for widget ids 12..19 (the 8 backpack-grid cells this session
-   gave real click rects, see g_inventory_hotspot_table) as widget N -> slot
-   N-1, i.e. slots 11..18 -- NOT identity. That mapping (and the widget
-   range itself, corrected from an earlier session's arbitrary 6..13)
-   comes from close_backpack_container (the close-container function), which resets
-   `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]` to identity on close; g_backpack_widget_to_slot_plus1 is an
-   alias one byte into this same backing (see its own comment), so that
-   reset really targets backing[12..19] = 11..18. open_backpack_container (opening
-   a container) remaps this same backing[12..19] to 20..27 instead --
-   the container's own contents, written to those slots -- while a
-   container is open (see its own comment), and close_backpack_container restores it
-   back to 11..18 on close, confirming the *normal* (no container open)
-   mapping is also N -> N-1, not identity. Extended the same N -> N-1
-   rule to widget ids 6..11 (the worn-hand/shoulder/finger paperdoll
-   slots -- see g_inventory_hotspot_table's matching comment): slots
-   5..10, matching this table's only other confirmed data point
-   exactly and leaving slots 0..4 free of any currently-wired widget
-   (plausibly the still-unimplemented torso/legs/feet/head armor slots,
-   ids 1-5, out of scope for this pass -- see that comment). Ids
-   1-5/20-22 stay 0 -- their real mapping is still unrecovered and out
-   of scope. */
+   per record of the g_inv_hotspot_click_x1 hotspot table). Widget ids
+   0-5 were previously left at 0 ("still-unimplemented torso/legs/feet/
+   head armor slots, out of scope") since this table's real .data bytes
+   looked unrecoverable at the time -- they're not: dumped directly from
+   the shipped binary at 0x85c38 (same `mem.getBytes` technique as this
+   project's other recovered constant tables) and they ARE real,
+   non-zero data: widget 0->slot 1, 1->slot 3, 2->slot 0, 3->slot 1
+   (shares slot 1 with widget 0), 4->slot 2, 5->slot 4. Widget ids
+   6..19 already matched this real data exactly (N -> N-1: slots
+   5..18) -- only the low end was wrong.
+
+   User report: "lighting a torch does not seem to impact the visible
+   pixels at all." This fix restores real, binary-verified data (widget
+   0->slot1, 1->slot3, 2->slot0, 3->slot1, 4->slot2, 5->slot4), which is
+   correct and worth keeping on its own, but it does NOT fix that bug --
+   confirmed by rebuilding with this fix applied and re-testing live: a
+   lit torch still auto-equips into widget 6 (slot 5), same as before,
+   because widgets 0-5's own click hotspots in g_inventory_hotspot_table
+   are still all zero/unimplemented ("worn armour overlay", see that
+   table's own comment) -- nothing can actually reach these slots
+   through play yet regardless of this table's data being right. The
+   real bug is one level up: FUN_000667cc's ambient-light rescan only
+   ever checks DAT_00202950 slots 0-3 (plus the mouse cursor as a stand-
+   in for a notional 5th slot) -- confirmed via a fresh Ghidra decompile
+   of the pristine binary that this 0-4 range is exactly what the real
+   compiled code does, not a decompilation artifact. A torch equipped
+   the only way currently reachable in-game (auto-equip into the
+   generic backpack list, landing in widget 6 / slot 5) is structurally
+   outside that range and can never be found by the rescan, which is
+   why the correct -32 ambient bias set by use_light_source always gets
+   immediately stomped back to +8. DAT_00085ac8 ({5,6,7,8}, "already-
+   equipped valid WIDGET ids for a light source" -- confirmed by
+   use_light_source's own comparison against find_or_assign_object_widget's
+   return value, a widget id, not a slot index) suggests widget 5 (slot
+   4, inside the scanned range) is the real intended primary torch
+   position -- but reaching it requires the still-missing armor-slot
+   hotspots to be built out first; that's a real feature gap, not a
+   one-line fix. See [[torch-ambient-light-scan-range-mismatch]] for the
+   full investigation.
+
+   CORRECTED (found re-verifying with a wide re-dump at the user's
+   request, chasing the widget-20/21/22 investigation below): index 20
+   was transcribed wrong here -- it's real data too (0x13 = 19), not
+   part of the "no mapping" tail. Only indices 21-22 are genuinely 0
+   (past any real widget). Widget 20 -> slot 19 is exactly the "open
+   container indicator" slot -- see g_inventory_hotspot_table's own
+   comment and DAT_00085c4c below for the full mechanism this feeds. */
 static unsigned char g_backpack_widget_to_slot_backing[0x17] = {
-  0,0,0,0,0,0, 5,6,7,8,9,10,11,12,13,14,15,16,17,18, 0,0,0,
+  1,3,0,1,2,4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19, 0,0,
 };
 #define g_backpack_widget_to_slot g_backpack_widget_to_slot_backing[0]
 /* DAT_00202950 (28 2-byte "backpack/equipment slot" object-link
@@ -2972,63 +2994,108 @@ ushort DAT_00202986;
    back to 11-18 (widget N -> slot N-1) after a container closes. That
    in turn implies the *normal* (no container open) mapping is also
    N -> N-1, not identity -- see g_backpack_widget_to_slot's own updated comment. */
+/* .data 0x85ad0: recovered directly from the shipped binary
+   (mem.getBytes, same technique as g_backpack_widget_to_slot/
+   g_backpack_slot_to_widget) -- the earlier claim on this table (kept
+   in git history) that "UU.exe's .data doesn't map cleanly... file
+   offset lands on 3D-model-parser strings" was simply WRONG: this
+   exact address dumps 322 bytes of clean, sane, non-degenerate click/
+   draw rects for every one of the 23 records, immediately followed by
+   g_backpack_slot_to_widget's own real data at 0x85c18 (confirmed
+   byte-identical) -- the whole block from 0x85ad0 through 0x85c4f is
+   one contiguous run of real inventory-UI tables. All 23 records below
+   are now the genuine recovered values, replacing this project's
+   earlier from-scratch reconstruction (screenshot-measured grid,
+   playtest-guessed paperdoll positions) entirely.
+
+   Record 0 really is a degenerate x1=x2/y1=y2-style sentinel in the
+   original binary too (0,200,0,200 -- zero click area) -- the old
+   reconstruction's guess to give it a real body-panel rect was wrong;
+   hit_test_inventory_widget's own "record 0 = no-op sentinel" behavior
+   was right even before this fix, just for the wrong reason.
+
+   Records 1-5 (previously left zero as "still-unimplemented armor
+   slots, out of scope") all have real, valid click rects -- reading
+   top to bottom by y-range: rec2 (y9-25, topmost) = head; rec6/7
+   (y13-30, flanking) = shoulders; rec3 (y26-43) = torso/chest; rec8/9
+   (y35-54, flanking) = hands; rec4 (y44-56) = legs; rec10/11 (y53-70,
+   flanking) = finger/ring slots; rec20 (y65-82, NEW, see below) = an
+   unidentified left-column slot; rec1 (y56-72) and rec5 (y72-81) sit
+   between legs and the backpack grid (y82+) -- likely feet/boots and a
+   belt or similar, not fully identified yet.
+
+   IMPORTANT: record 1's real rect is NOT the "open container" icon --
+   that UI affordance was this project's own addition, invented before
+   widget 20's real click rect and g_backpack_widget_to_slot[20]'s real
+   data (0x13/19, not 0) were recovered. Widget 20 IS the real
+   mechanism (see DAT_00085c4c's own comment) -- the hack has been
+   removed entirely now that it's wired up.
+
+   Records 21-22 are ALSO real, non-degenerate rects -- confirmed via
+   handle_object_drop_target's own `iVar2==0x15`/`0x16` dispatch
+   (scroll_container_grid_up/scroll_container_grid_down) to be the container-grid scroll up/down
+   buttons, gated on DAT_0020299c/DAT_002029a0 ("can scroll up/down").
+   Their much smaller dirty w/h (8x10, vs every other record's 16x16 or
+   20x20) matches real small button art rather than an item slot. */
 static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
-  /* rec 0: click x1,y1,x2,y2 = 108,0b,122,50 (narrowed to a central
-     torso strip, see comment above -- draw x,y unchanged/untouched) ;
-     draw x,y = f0,0b ; dirty w,h = 50,6c */
-  0x08,0x01, 0x0b,0x00, 0x22,0x01, 0x50,0x00,  0x04,0x01, 0x0b,0x00,  0x50,0x6c,
+  /* rec 0 (real, degenerate sentinel): click 0,c8,0,c8 ; draw 104,c ; dirty 24,45 */
+  0x00,0x00, 0xc8,0x00, 0x00,0x00, 0xc8,0x00,  0x04,0x01, 0x0c,0x00,  0x24,0x45,
+  /* rec 1 (real armor-slot rect, likely feet/boots -- see table comment
+     above; the "open container" icon that used to be hacked in here
+     has been removed entirely now that widget 20 is the real
+     mechanism): click 10d,38,11d,48 ; draw 10c,19 ; dirty 13,32 */
+  0x0d,0x01, 0x38,0x00, 0x1d,0x01, 0x48,0x00,  0x0c,0x01, 0x19,0x00,  0x13,0x32,
+  /* rec 2 (head): click 10d,9,11e,19 ; draw b,b ; dirty 14,14 */
+  0x0d,0x01, 0x09,0x00, 0x1e,0x01, 0x19,0x00,  0x0b,0x01, 0x0b,0x00,  0x14,0x14,
+  /* rec 3 (torso/chest): click 107,1a,123,2b ; draw 106,18 ; dirty 21,2c */
+  0x07,0x01, 0x1a,0x00, 0x23,0x01, 0x2b,0x00,  0x06,0x01, 0x18,0x00,  0x21,0x2c,
+  /* rec 4 (legs): click 107,2c,123,38 ; draw 105,2b ; dirty 21,c */
+  0x07,0x01, 0x2c,0x00, 0x23,0x01, 0x38,0x00,  0x05,0x01, 0x2b,0x00,  0x21,0x0c,
+  /* rec 5 (real armor-slot rect, likely a belt -- see table comment
+     above): click 107,48,123,51 ; draw 10a,43 ; dirty 15,d */
+  0x07,0x01, 0x48,0x00, 0x23,0x01, 0x51,0x00,  0x0a,0x01, 0x43,0x00,  0x15,0x0d,
 
-  [1*14+0] =
-  /* rec 1: the "open container" icon + leave-container button, ~40
-     screen px (20 panel-local units) above grid slot 1 (record 12's
-     own draw x,y, f1,51/241,81, minus 20 on y = f1,3d/241,61) -- per
-     direct playtest feedback describing the real game's container-view
-     layout. Same x as slot 1 (an earlier attempt shifted x left too,
-     clipping off the panel's own left edge at x=0xf0/240 -- confirmed
-     live). Repurposes a currently-unused "worn armour overlay" record
-     (1-5, still zero/unimplemented otherwise) since this table has no
-     spare slots; revisit if armour rendering is ever implemented and
-     needs record 1 back. click f0,34,103,46 ; draw f1,3d */
-  0xf0,0x00, 0x34,0x00, 0x03,0x01, 0x46,0x00,  0xf1,0x00, 0x3d,0x00,  0x14,0x14,
+  /* rec 6 (left shoulder): click f4,d,105,1e ; draw f5,e ; dirty 10,10 */
+  0xf4,0x00, 0x0d,0x00, 0x05,0x01, 0x1e,0x00,  0xf5,0x00, 0x0e,0x00,  0x10,0x10,
+  /* rec 7 (right shoulder): click 125,d,136,1e ; draw 126,e ; dirty 10,10 */
+  0x25,0x01, 0x0d,0x00, 0x36,0x01, 0x1e,0x00,  0x26,0x01, 0x0e,0x00,  0x10,0x10,
+  /* rec 8 (left hand): click f1,23,102,36 ; draw f2,24 ; dirty 10,10 */
+  0xf1,0x00, 0x23,0x00, 0x02,0x01, 0x36,0x00,  0xf2,0x00, 0x24,0x00,  0x10,0x10,
+  /* rec 9 (right hand -- the default/active weapon hand per
+     handle_object_drop_target's `9 - lefthand_bit` check): click
+     127,23,138,36 ; draw 128,24 ; dirty 10,10 */
+  0x27,0x01, 0x23,0x00, 0x38,0x01, 0x36,0x00,  0x28,0x01, 0x24,0x00,  0x10,0x10,
+  /* rec 10 (left finger/ring slot): click f1,35,10c,40 ; draw ff,34 ; dirty 10,10 */
+  0xf1,0x00, 0x35,0x00, 0x0c,0x01, 0x40,0x00,  0xff,0x00, 0x34,0x00,  0x10,0x10,
+  /* rec 11 (right finger/ring slot): click 11e,35,138,46 ; draw 11d,34 ; dirty 10,10 */
+  0x1e,0x01, 0x35,0x00, 0x38,0x01, 0x46,0x00,  0x1d,0x01, 0x34,0x00,  0x10,0x10,
 
-  [6*14+0] =
-  /* rec 6 (left shoulder, screen-right column): click 125,14,135,20 ; draw 126,15 */
-  0x25,0x01, 0x14,0x00, 0x35,0x01, 0x20,0x00,  0x26,0x01, 0x15,0x00,  0x10,0x10,
-  /* rec 7 (right shoulder, screen-left column): click f2,14,102,20 ; draw f3,15 */
-  0xf2,0x00, 0x14,0x00, 0x02,0x01, 0x20,0x00,  0xf3,0x00, 0x15,0x00,  0x10,0x10,
-  /* rec 8 (left hand, screen-right column): click 125,22,139,32 ; draw 126,23.
-     Y-range raised from an earlier 2e-44 attempt -- that overlapped
-     record 1's f0,34-103,46 (container icon) click rect, which is
-     checked first and so always won the overlap; confirmed live
-     (clicking here resolved to widget 1, not 8/9, before this fix). */
-  0x25,0x01, 0x22,0x00, 0x39,0x01, 0x32,0x00,  0x26,0x01, 0x23,0x00,  0x14,0x10,
-  /* rec 9 (right hand, screen-left column -- the default/active weapon
-     hand per handle_object_drop_target's `9 - lefthand_bit` check):
-     click f2,22,106,32 ; draw f3,23 */
-  0xf2,0x00, 0x22,0x00, 0x06,0x01, 0x32,0x00,  0xf3,0x00, 0x23,0x00,  0x14,0x10,
-  /* rec 10 (left hand's finger/ring slot): click 129,47,135,50 ; draw 12a,48
-     (Y-range also moved, same record-1-overlap reason as the hands.) */
-  0x29,0x01, 0x47,0x00, 0x35,0x01, 0x50,0x00,  0x2a,0x01, 0x48,0x00,  0x0c,0x09,
-  /* rec 11 (right hand's finger/ring slot): click f6,47,102,50 ; draw f7,48 */
-  0xf6,0x00, 0x47,0x00, 0x02,0x01, 0x50,0x00,  0xf7,0x00, 0x48,0x00,  0x0c,0x09,
+  /* rec 12 (row1,col1): click f0,52,101,63 ; draw f1,53 ; dirty 10,10 */
+  0xf0,0x00, 0x52,0x00, 0x01,0x01, 0x63,0x00,  0xf1,0x00, 0x53,0x00,  0x10,0x10,
+  /* rec 13 (row1,col2): click 103,52,114,63 ; draw 104,53 ; dirty 10,10 */
+  0x03,0x01, 0x52,0x00, 0x14,0x01, 0x63,0x00,  0x04,0x01, 0x53,0x00,  0x10,0x10,
+  /* rec 14 (row1,col3): click 116,52,127,63 ; draw 117,53 ; dirty 10,10 */
+  0x16,0x01, 0x52,0x00, 0x27,0x01, 0x63,0x00,  0x17,0x01, 0x53,0x00,  0x10,0x10,
+  /* rec 15 (row1,col4): click 129,52,13a,63 ; draw 12a,53 ; dirty 10,10 */
+  0x29,0x01, 0x52,0x00, 0x3a,0x01, 0x63,0x00,  0x2a,0x01, 0x53,0x00,  0x10,0x10,
+  /* rec 16 (row2,col1): click f0,64,101,75 ; draw f1,65 ; dirty 10,10 */
+  0xf0,0x00, 0x64,0x00, 0x01,0x01, 0x75,0x00,  0xf1,0x00, 0x65,0x00,  0x10,0x10,
+  /* rec 17 (row2,col2): click 103,64,114,75 ; draw 104,65 ; dirty 10,10 */
+  0x03,0x01, 0x64,0x00, 0x14,0x01, 0x75,0x00,  0x04,0x01, 0x65,0x00,  0x10,0x10,
+  /* rec 18 (row2,col3): click 116,64,127,75 ; draw 116,65 ; dirty 10,10 */
+  0x16,0x01, 0x64,0x00, 0x27,0x01, 0x75,0x00,  0x16,0x01, 0x65,0x00,  0x10,0x10,
+  /* rec 19 (row2,col4): click 129,64,13a,75 ; draw 12a,65 ; dirty 10,10 */
+  0x29,0x01, 0x64,0x00, 0x3a,0x01, 0x75,0x00,  0x2a,0x01, 0x65,0x00,  0x10,0x10,
 
-  [12*14+0] =
-  /* rec 12 (row1,col1): click f0,50,103,63 ; draw f1,51 */
-  0xf0,0x00, 0x50,0x00, 0x03,0x01, 0x63,0x00,  0xf1,0x00, 0x51,0x00,  0x14,0x14,
-  /* rec 13 (row1,col2): click 103,50,116,63 ; draw 104,51 */
-  0x03,0x01, 0x50,0x00, 0x16,0x01, 0x63,0x00,  0x04,0x01, 0x51,0x00,  0x14,0x14,
-  /* rec 14 (row1,col3): click 116,50,129,63 ; draw 117,51 */
-  0x16,0x01, 0x50,0x00, 0x29,0x01, 0x63,0x00,  0x17,0x01, 0x51,0x00,  0x14,0x14,
-  /* rec 15 (row1,col4): click 129,50,13c,63 ; draw 12a,51 */
-  0x29,0x01, 0x50,0x00, 0x3c,0x01, 0x63,0x00,  0x2a,0x01, 0x51,0x00,  0x14,0x14,
-  /* rec 16 (row2,col1): click f0,63,103,76 ; draw f1,64 */
-  0xf0,0x00, 0x63,0x00, 0x03,0x01, 0x76,0x00,  0xf1,0x00, 0x64,0x00,  0x14,0x14,
-  /* rec 17 (row2,col2): click 103,63,116,76 ; draw 104,64 */
-  0x03,0x01, 0x63,0x00, 0x16,0x01, 0x76,0x00,  0x04,0x01, 0x64,0x00,  0x14,0x14,
-  /* rec 18 (row2,col3): click 116,63,129,76 ; draw 117,64 */
-  0x16,0x01, 0x63,0x00, 0x29,0x01, 0x76,0x00,  0x17,0x01, 0x64,0x00,  0x14,0x14,
-  /* rec 19 (row2,col4): click 129,63,13c,76 ; draw 12a,64 */
-  0x29,0x01, 0x63,0x00, 0x3c,0x01, 0x76,0x00,  0x2a,0x01, 0x64,0x00,  0x14,0x14,
+  /* rec 20 (real, previously-unknown left-column slot -- see table
+     comment above): click f0,41,101,52 ; draw f1,41 ; dirty 10,10 */
+  0xf0,0x00, 0x41,0x00, 0x01,0x01, 0x52,0x00,  0xf1,0x00, 0x41,0x00,  0x10,0x10,
+  /* rec 21 (real, small right-side button -- see table comment above):
+     click 127,47,130,50 ; draw 128,47 ; dirty 8,a */
+  0x27,0x01, 0x47,0x00, 0x30,0x01, 0x50,0x00,  0x28,0x01, 0x47,0x00,  0x08,0x0a,
+  /* rec 22 (real, small right-side button -- see table comment above):
+     click 131,47,13a,50 ; draw 132,47 ; dirty 8,a */
+  0x31,0x01, 0x47,0x00, 0x3a,0x01, 0x50,0x00,  0x32,0x01, 0x47,0x00,  0x08,0x0a,
 };
 #define g_inv_hotspot_click_x1 g_inventory_hotspot_table[0x0]
 #define g_inv_hotspot_click_y1 g_inventory_hotspot_table[0x2]
@@ -3038,6 +3105,7 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
 #define g_inv_hotspot_draw_y (*(unsigned short *)&g_inventory_hotspot_table[0xa])
 #define g_inv_hotspot_dirty_w g_inventory_hotspot_table[0xc]
 #define g_inv_hotspot_dirty_h g_inventory_hotspot_table[0xd]
+
 /* .data 0x85c18: array-slot-index -> widget-id lookup, the inverse of
    g_backpack_widget_to_slot (see its own comment) -- read as `(&g_backpack_slot_to_widget)[slot]`
    to find which widget/grid-cell to redraw after a slot's contents
@@ -3079,24 +3147,54 @@ static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
    comments) rather than relying on this single-widget path. The new
    6..11 entries are below that >= 0xb threshold, so they take the
    single-widget redraw path as intended, not the "elsewhere" one. */
-/* Slots 20..27 (an OPEN container's own 8 content slots, populated by
-   open_backpack_container's own N -> N+8 widget remap at uw.c ~33712,
-   "Remap widgets 12-19 -> slots 20-27") were entirely missing from this
-   array -- it stopped at 0x17 (23) entries, 5 short of the 0x1c (28)
-   every other piece of this container-view code already uses as its
-   slot-range bound. Reported crash: "placing a container in another
-   container and trying to open the nested one" -- opening a container
-   nested inside an already-open one resolves to a content slot in
-   exactly this 20-27 range (confirmed live: slot=26 for a nested sack),
-   and indexing 3-5 elements past this array's end fed a garbage widget
-   id into redraw_inventory_widget, crashing deep in its own hotspot-
-   table lookup. Extended to 0x1c entries with the same N -> N-8 inverse
-   of the widget remap above (slots 20-27 -> widgets 12-19, mirroring
-   slots 11-18 -> widgets 12-19 just above it). Never triggered before
-   because nothing before this session's chain of container fixes ever
-   got far enough to open a SECOND, nested container view. */
+/* CORRECTED with a full re-dump of this table's real .data (0x85c18,
+   28 bytes, one mem.getBytes call covering the whole 0x1c-entry range
+   at once): the previous version of this array below -- {2,3,4,1,5,
+   6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0, 12,13,14,15,16,17,
+   18,19} -- had TWO real bugs, both caught re-verifying this table at
+   the user's request ("also see if we can recover the table used for
+   the widget to slot mapping the same way" after the hotspot-table
+   recovery above):
+
+   1) It was simply WRONG at indices 19-22: guessed as 0,0,0,0 ("no
+      mapping"), but the real data is 20,12,13,14 -- slot 19 maps to
+      widget 20 (not "nothing"), and slots 20-22 continue the same
+      "N -> widgets 12-19" nested-container-grid pattern as slots
+      23-27, not a gap. (Widget 20 is real -- see
+      g_inventory_hotspot_table's own comment on its 3 newly-recovered
+      records; this is its first identified purpose: it displays
+      backpack slot 19's own content, a 9th "extra" slot alongside the
+      main 8-cell grid, not one of the paperdoll/armor positions.)
+
+   2) The array literal itself had 31 values for a 28-element (0x1c)
+      array -- `clang -fsyntax-only` reports `warning: excess elements
+      in array initializer` on it, but build.sh's own build step pipes
+      through `grep -iE "error:"` (to keep routine output quiet), which
+      silently swallows every non-"error:" warning including this one,
+      so it printed "built" and looked clean. Clang drops the excess
+      elements off the END of the list, not the intended slots 28-30
+      (which don't exist in a 28-entry array anyway) -- it silently
+      corrupted indices 25-27 instead, which is what a straight
+      concatenation without recomputing the real bound produces. Real,
+      compiled-in values before this fix: index 25=17->actually 14,
+      26=18->actually 15, 27=19->actually 16 (each 3 widgets low).
+      Lesson: build.sh's error-only filter hides genuine compiler
+      warnings like this one -- worth an occasional unfiltered
+      `-fsyntax-only` pass when touching array literals.
+
+   History this replaces: slots 20-27 (an OPEN container's own 8
+   content slots, populated by open_backpack_container's own N -> N+8
+   widget remap at uw.c ~33712, "Remap widgets 12-19 -> slots 20-27")
+   were entirely missing before an earlier session extended this array
+   from 0x17 (23) to 0x1c (28) entries to fix a real crash ("placing a
+   container in another container and trying to open the nested one" --
+   indexing past this array's old end fed a garbage widget id into
+   redraw_inventory_widget). That extension is correct in shape (28
+   entries, N -> N-8 slots 20-27 -> widgets 12-19); the bug was in its
+   exact values, fixed here with the genuine recovered data instead of
+   a guess. */
 static unsigned char g_backpack_slot_to_widget_backing[0x1c] = {
-  0,0,0,0,0, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19, 0,0,0,0,
+  2,3,4,1,5, 6,7,8,9,10,11, 12,13,14,15,16,17,18,19,20,
   12,13,14,15,16,17,18,19,
 };
 #define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
@@ -3198,13 +3296,42 @@ static undefined1 DAT_00085c88_backing[32768];
 static undefined1 DAT_002029f8_backing[256];
 #define DAT_002029f8 DAT_002029f8_backing[0]
 undefined DAT_002029f9;
+/* DAT_00202938: widget 20's own saved-background grtile handle (the
+   "open container indicator" -- see g_inventory_hotspot_table's own
+   comment and DAT_00085c4c below), same role as (&DAT_002028a0)[i] for
+   widgets 12-19 -- allocated once in open_backpack_container, see its
+   own comment there. Runtime scratch state, not a .data resource, so
+   it stays its own plain global rather than an alias. */
 undefined4 DAT_00202938;
-char DAT_00085c4c;
-undefined1 DAT_00085bf4;
-undefined1 DAT_00085bf3;
-undefined1 DAT_00085bf5;
-undefined1 DAT_00085bf2;
-undefined DAT_00085bf0;
+/* Another split-symbol case (same class as DAT_00085668 and friends,
+   see their own comments): this is g_backpack_widget_to_slot's own
+   real byte 20, not a separate global -- Ghidra just never connected
+   the two. redraw_inventory_widget_range's widget-20 special case
+   (see its own comment) reads this as the DAT_00202950 slot to draw
+   for the "open container indicator" -- with real data now restored
+   to g_backpack_widget_to_slot_backing[20] (19, the same slot
+   g_backpack_slot_to_widget's own recovery independently confirmed),
+   this alias makes that special case see the real value instead of an
+   always-zero dead scalar. */
+#define DAT_00085c4c g_backpack_widget_to_slot_backing[20]
+/* DAT_00085bf0/2/3/4/5: also split-symbol aliases, this time into
+   g_inventory_hotspot_table's own real record 20 (byte offset 280,
+   14 bytes/record -- see that table's own comment). redraw_inventory_
+   widget_range's widget-20 branch reads these directly instead of
+   going through the usual g_inv_hotspot_draw_x/y/dirty_w/dirty_h
+   macros (Ghidra recovered this one spot as individual byte accesses,
+   not the macro'd struct-field pattern used everywhere else) -- same
+   real draw position/size (241,65, 16x16) as those macros would give
+   for record 20, now that the table itself holds real recovered data
+   instead of an all-zero placeholder. `_DAT_00085bf0` (leading
+   underscore -- see this file's own "overlapping symbol" convention)
+   is the 2-byte draw_x; the bare 1-byte DAT_00085bf0 Ghidra also
+   created at the same address is never actually read anywhere. */
+#define _DAT_00085bf0 (*(unsigned short *)&g_inventory_hotspot_table[288])
+#define DAT_00085bf2 g_inventory_hotspot_table[290]
+#define DAT_00085bf3 g_inventory_hotspot_table[291]
+#define DAT_00085bf4 g_inventory_hotspot_table[292]
+#define DAT_00085bf5 g_inventory_hotspot_table[293]
 short DAT_0023be5c;
 short DAT_0023be80;
 char s_cursed_00085ca0[] = "cursed";
@@ -4149,31 +4276,76 @@ ushort DAT_0023b904;
 ushort DAT_0023b920;
 ushort DAT_0023b91c;
 byte DAT_0023bc88;
-static undefined1 DAT_00086c80_backing[65536];
-#define DAT_00086c80 DAT_00086c80_backing[0]
-/* Was a lone `undefined` scalar -- another silently-zero "orphaned data
-   table" (same class as DAT_00086c80's TMOBJ frame table, see
-   [[object-render-class-and-tmobj-signs]]). resolve_critter_sprite_tier's
-   caller indexes it `(&DAT_00086cc0)[(_dm % 0x20 + 0x20) % 0x20]` to
-   quantize a 32-step relative camera/object angle down to an 8-way
-   octant -- with it silently zero, every critter/door billboard always
-   resolved to octant 0 regardless of true viewing angle, so orbiting one
-   never changed its displayed sprite frame. The real recovered-from-UU.exe
-   content for this table is lost (same situation as DAT_00086c80), so
-   reconstruct it with the natural identity quantization -- 4 consecutive
-   steps per octant -- rather than leave it degenerate. */
-static const undefined1 DAT_00086cc0_arr[32] = {
-  0,0,0,0, 1,1,1,1, 2,2,2,2, 3,3,3,3,
-  4,4,4,4, 5,5,5,5, 6,6,6,6, 7,7,7,7,
+/* .data 0x86c80: real TMOBJ sign-variant -> frame-index table, 32
+   ushort entries, recovered directly from UU.exe (same contiguous
+   dump as DAT_00086c08 above -- see its own comment). CORRECTED: an
+   earlier investigation this project concluded this table's content
+   was "genuinely lost -- not present anywhere in this binary or its
+   data files" and hand-picked a single fallback frame (668, TMOBJ.GR's
+   own "message/plaque" entry 25) for every sign variant instead. That
+   conclusion was wrong the same way g_inventory_hotspot_table's own
+   "doesn't map cleanly" conclusion was wrong -- nobody had actually
+   dumped these bytes. Real values (index -> raw table value; -1/0xffff
+   marks "no sign here", matching the existing `< 0 -> return` bail-out
+   this table's own reader already had): 0->3, 1->8, 2->8, 3->7, 4->7,
+   5->6, 6->5, 7->11, 8->24, 9->9, 10->23, 11->27, 12->28, 13->25,
+   14->26, 15->4, 16->10, 17->16, 18->17, 19->-1, 20->2, 21->19,
+   22->18, 23-31->-1. All non-sentinel values fall inside 0-28 -- see
+   the fix at this table's own reader (search "DAT_00202734") for why
+   these are relative offsets into TMOBJ's own frame range, not
+   standalone absolute frame numbers, and the addition that was
+   missing to use them correctly. */
+static unsigned short DAT_00086c80_backing[32] = {
+  3,8,8,7,7,6,5,11,24,9,23,27,28,25,26,4,
+  10,16,17,0xffff,2,19,18,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
+};
+#define DAT_00086c80 (*(unsigned char *)&DAT_00086c80_backing[0])
+/* .data 0x86cc0: real 32-step -> 8-octant angle-quantization table,
+   recovered in the same dump as DAT_00086c08/DAT_00086c80 above.
+   CORRECTED: was hand-reconstructed as a uniform "4 consecutive steps
+   per octant" identity quantization after an earlier investigation
+   concluded (same wrong "lost" framing as the other two tables here)
+   that the real content was unrecoverable. The real table is NOT a
+   uniform quantization -- bucket sizes are 3,3,5,3,5,3,5,3 (octants
+   0-7), not 4 each. */
+static const unsigned char DAT_00086cc0_arr[32] = {
+  0,0,0,1,1,1,2,2, 2,2,2,3,3,3,4,4,
+  4,4,4,5,5,5,6,6, 6,6,6,7,7,7,0,0,
 };
 #define DAT_00086cc0 (DAT_00086cc0_arr[0])
 short DAT_00189584;
 undefined2 DAT_00189586;
 ushort DAT_0018957a;
-undefined DAT_00086c08;
-undefined DAT_00086c09;
-undefined DAT_00086c0a;
-undefined DAT_00086c0b;
+/* .data 0x86c08: real billboard-catalog table, 30 records of 4 bytes
+   each (byte0=flags/sub-frame-count, bytes1-3=up to 3 more per-entry
+   values -- see emit_object_billboard's own use of it), recovered
+   directly from UU.exe. Was 4 lone `undefined` scalars Ghidra never
+   gave real backing to -- same "split/orphaned data table" class as
+   g_inventory_hotspot_table before its own recovery (see
+   [[inventory-hotspot-table-recovery]]) -- every reader indexes past
+   byte 3 via pointer arithmetic (`(&DAT_00086c08)[catalog_idx*4]`
+   etc.), so a plain 4-byte declaration silently truncated every
+   catalog entry past the first to out-of-bounds reads. Cross-validated:
+   this table's real end (0x86c08+0x78=0x86c80) lines up exactly with
+   DAT_00086c80's own real start below, and this whole region was dumped
+   in one contiguous pull starting from the already-known-good
+   DAT_00086b50_region/DAT_00086c00_arr immediately before it (both
+   matched their existing recovered values exactly, confirming the
+   address mapping). */
+static unsigned char DAT_00086c08_backing[0x78] = {
+  0x01,0xec,0x00,0x00, 0x21,0xeb,0x00,0x00, 0x11,0xec,0x00,0x3e, 0x01,0xe4,0x00,0x00,
+  0x02,0xb6,0xb0,0x00, 0x02,0x64,0x6c,0x00, 0x02,0x64,0x6c,0x00, 0x02,0x64,0x6c,0x00,
+  0x42,0xe8,0xb8,0x00, 0x01,0xe4,0x00,0x00, 0x19,0xe4,0x00,0x60, 0x03,0xa3,0xa4,0xa6,
+  0x01,0x68,0x00,0x00, 0x01,0x68,0x00,0x00, 0x11,0xec,0x00,0x00, 0x21,0xec,0x00,0x00,
+  0x51,0xb0,0x00,0xe4, 0x51,0xb0,0x00,0xec, 0x11,0xb0,0x00,0xf4, 0x11,0x6a,0x00,0x3c,
+  0x51,0xb0,0x00,0x00, 0x11,0xb0,0x00,0x00, 0x21,0xb0,0x00,0x00, 0x83,0x00,0x02,0x04,
+  0x02,0xe4,0x68,0x00, 0x02,0xe6,0x68,0x00, 0x01,0xe4,0x00,0x00, 0x02,0xe4,0x6a,0x00,
+  0x03,0xe6,0x6a,0x71, 0x03,0xe2,0x62,0xc4,
+};
+#define DAT_00086c08 DAT_00086c08_backing[0]
+#define DAT_00086c09 DAT_00086c08_backing[1]
+#define DAT_00086c0a DAT_00086c08_backing[2]
+#define DAT_00086c0b DAT_00086c08_backing[3]
 undefined4 DAT_00086ce0;
 undefined4 DAT_00086ce4;
 undefined4 DAT_00086ce8;
@@ -7274,11 +7446,24 @@ void build_shade_lut()
 
 
 
-void FUN_00014324(param_1)
+// was FUN_00014324 -- sets DAT_000842b0, the 3D-view ambient bias
+// raster_textured_span adds to every texel's distance-shade LUT index
+// (uw.c's own "checked wall/floor texture rasterizer" comment on that
+// function has the full formula). MORE NEGATIVE here means BRIGHTER
+// (it pulls the effective distance-shade index down toward the "close/
+// bright" end of the LUT regardless of a texel's real depth). Called
+// with param_1=0 (giving -0x20) from the "a light source IS currently
+// equipped and lit" branch of the function that recomputes derived
+// player state whenever equipped items change (uw.c ~55910-55926,
+// where the sibling `8 - param_1` call handles the "no light source"
+// case) -- this is the brightening half of that pair, not the dim one.
+void set_ambient_bias_with_light(param_1)
 char param_1;
 
 {
   DAT_000842b0 = -0x20 - param_1;
+  if (getenv("UW_DEBUG_AMBIENT"))
+    fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
   return;
 }
 
@@ -7289,6 +7474,8 @@ char param_1;
 
 {
   DAT_000842b0 = '\b' - param_1;
+  if (getenv("UW_DEBUG_AMBIENT"))
+    fprintf(stderr, "[ambient] FUN_0001433c(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
   return;
 }
 
@@ -33024,6 +33211,14 @@ short param_2;
 
 
 
+/* Forward declarations: both are defined later in this file (after
+   this function's own call sites), and their old K&R-style bare
+   `void foo()` definitions don't match the implicit `int foo()` a
+   pre-definition call would otherwise get -- real prototypes here
+   avoid that "conflicting types" mismatch. */
+void scroll_container_grid_up(void);
+void scroll_container_grid_down(void);
+
 void handle_object_drop_target(param_1)
 short param_1;
 
@@ -33061,15 +33256,70 @@ short param_1;
     }
     else {
       if (iVar2 == 0x14) {
-        leave_nested_container_level();
+        /* Widget 20, the real "leave container" indicator -- see
+           DAT_00085c4c's own comment for the display side. This used
+           to be a synthetic CONTAINER_ICON_WIDGET_ID special-cased
+           directly in hit_test_inventory_widget plus 3 separate
+           near-identical copies of the logic below scattered across
+           handle_inventory_panel_click (x2) and
+           attach_picked_up_object_to_cursor -- now that widget 20 is a
+           real, correctly-positioned table entry, all 3 of those
+           dispatch here naturally instead, so this is the one place
+           that needs it.
+
+           Was unconditional (just leave_nested_container_level()):
+           dropping a held item onto this icon (drag it out of the open
+           container back to the parent) closed the container without
+           ever placing the item anywhere, leaving it stuck on the
+           cursor -- the user then had to click again, now on the
+           parent's own backpack grid, to actually place it. This
+           specific "drop here auto-places into the parent" behavior is
+           this project's own addition (not constrained by the original
+           binary), using the same auto_place_in_container(...,0x13)
+           "find an empty slot" sentinel its other callers (and
+           check_object_fits_in_slot's matching special-case) already
+           establish. Matches a user report: "dragging from a container
+           to the parent requires an extra click".
+
+           Whether to ALSO auto-close the container after that drop
+           (the original behavior, matching a plain click on this same
+           icon with nothing held) is a deliberate opt-in via
+           UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF, per user
+           request -- placing the item and leaving the container open
+           lets the user drag several items out in a row without it
+           snapping shut after the first one. A plain click here
+           (nothing held) always closes/pops one level as before,
+           unaffected by this toggle. */
+        if (g_selected_object != (ushort *)0x0) {
+          if (auto_place_in_container(g_selected_object, 0x13) != 0) {
+            g_selected_object = (ushort *)0x0;
+            g_cursor_holding_state = 0;
+            FUN_00057cac(3);
+          }
+          FUN_000667cc();
+          if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
+            leave_nested_container_level();
+          }
+          else {
+            redraw_inventory_widget_range(0xc,0x13);
+          }
+        }
+        else {
+          leave_nested_container_level();
+        }
+        /* Same "drain the still-pending click" protection the original
+           3 copies of this logic each had -- see their own history:
+           without it, leave_nested_container_level could fire 2-3
+           times per real single click and pop more than one level. */
+        wait_for_click_release(1);
         goto LAB_00042a10;
       }
       if (iVar2 == 0x15) {
-        FUN_00043614();
+        scroll_container_grid_up();
         goto LAB_00042a10;
       }
       if (iVar2 == 0x16) {
-        FUN_0004365c();
+        scroll_container_grid_down();
         goto LAB_00042a10;
       }
       if (iVar2 == 0x17) {
@@ -33192,10 +33442,6 @@ void free_open_container_chain()
 
 
 
-/* Registered grtile handle for record 1's own pixel backup -- see its
-   capture site in open_backpack_container and the restore in
-   close_backpack_container just below. 0 until the first-ever open. */
-undefined4 g_container_icon_backup_grtile = 0;
 
 void close_backpack_container()
 
@@ -33206,6 +33452,13 @@ void close_backpack_container()
   if (g_current_container_record != 0) {
     free_open_container_chain();
     g_current_container_link = g_current_container_link & 0x3f;
+    /* Clear the real "open container indicator" slot (widget 20, see
+       DAT_00085c4c's own comment) now that nothing is open -- nothing
+       else currently reads slot 19 outside that widget's own redraw,
+       so this isn't load-bearing for the full-panel repaint below, but
+       leaving a stale occupied reference there would be a latent trap
+       for any future reader of this slot. */
+    *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = 0;
     iVar1 = 0xb;
     do {
       (&g_backpack_widget_to_slot_plus1)[iVar1] = (char)iVar1;
@@ -33276,63 +33529,23 @@ void close_backpack_container()
        see below. */
     redraw_hud_panels();
     /* User report: "opening and closing a bag leaves the container icon
-       behind." open_backpack_container draws the container's own icon at
-       record 1's spot (the "leave container" button position, same
-       0x72x0x53-tile area as the black-cutout fix above) in transparent
-       mode -- and per that same fix's own finding, the panel art has a
-       genuinely transparent pixel right there, so redraw_hud_panels's
-       transparent blit (just above) correctly leaves it untouched by
-       design, same as before. Nothing else in this function redrew
-       record 1's spot: it belongs to widgets 0-5 (the paperdoll body),
-       which only redraw_inventory_widget(<6) -> FUN_00046bfc reaches --
-       redraw_inventory_widget_range below only covers 0xc-0x13 (the
-       backpack grid).
-
-       FIRST attempt was redraw_inventory_widget(1) here (redrawing the
-       paperdoll body) -- confirmed via before/after SCREENSHOT diffing
-       on a real repro (bug-redraw-demo.txt) that this only covers a
-       SMALL corner of the icon, not the whole spot ("a small rectangle
-       of the lower right corner does get cleared, but not the whole
-       button" -- user QA report): the body sprite's own opaque
-       silhouette doesn't fill this position's whole 16x16 footprint,
-       and neither it nor the panel background (their normal combined
-       compositing) is meant to paint every pixel here -- some of it is
-       load-once content from the panel's initial setup that nothing
-       normally ever redraws, which is exactly why the spot looks
-       correct in ordinary play (nothing dirties it) but not after this
-       icon draws over it. Replaced with a verbatim pixel restore
-       (g_container_icon_backup_grtile, captured once on the very first
-       open in open_backpack_container, blitted back here) so the fix
-       doesn't depend on knowing exactly which combination of layers is
-       "supposed" to show through -- same pattern this function already
-       used for the adjacent DAT_002028ec region above. */
-    FUN_00076e98(g_container_icon_backup_grtile);
+       behind." This used to need a hand-added verbatim pixel restore
+       here (g_container_icon_backup_grtile) because the container icon
+       was this project's own hack, drawn at a guessed screen position
+       nothing else ever redrew on close. Now that it's the real widget
+       20 (see DAT_00085c4c's own comment), redraw_inventory_widget_range's
+       own widget-20 special case handles this correctly on its own:
+       it always restores DAT_00202938's saved background first, then
+       only draws a sprite if slot 19 (zeroed a few lines above) is
+       occupied -- so this call alone both clears the stale icon and
+       leaves the spot correctly blank, no separate backup buffer
+       needed. */
     redraw_inventory_widget_range(0xc,0x13);
+    redraw_inventory_widget_range(0x14,0x14);
     redraw_inventory_widget(0x15);
     redraw_inventory_widget(0x16);
   }
   return;
-}
-
-
-
-/* Draws the container icon / leave-button (widget 1, above the 8-item
-   grid) for whichever container's header word is passed in -- factored
-   out of open_backpack_container so leave_nested_container_level can
-   redraw it too when popping back to a parent (see that call site's own
-   comment). Always draws the OPEN sprite variant (id | 1); see
-   open_backpack_container's original comment on this icon for the
-   COMOBJ.DAT even/odd closed/open id pairs this relies on. */
-static void draw_container_indicator_icon(header)
-ushort header;
-{
-  if (getenv("UW_DEBUG_INV"))
-    fprintf(stderr, "[inv] widget-1 icon id=0x%03x (open variant of 0x%03x)\n",
-            (unsigned)((header & 0x1ff) | 1), (unsigned)(header & 0x1ff));
-  g_blit_transparent_mode = 1;
-  draw_sprite_by_id((header & 0x1ff) | 1,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
-               (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
-  g_blit_transparent_mode = 0;
 }
 
 
@@ -33395,13 +33608,19 @@ void leave_nested_container_level()
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
       /* User QA: "the container indicator does not update to show the
          current container icon" after popping back to a parent -- this
-         icon (widget 1) is only ever drawn inside open_backpack_container,
-         which this pop path never calls, so it was left showing whatever
-         the child container's icon looked like. Redraw it here from the
-         parent's own just-resolved header word. */
-      draw_container_indicator_icon(*(ushort *)iVar1);
+         is now the real widget 20 (see DAT_00085c4c's own comment),
+         updated a few lines below by pointing slot 19 at the parent's
+         link before redraw_inventory_widget_range(0x14,0x14) runs. */
       repopulate_container_grid_slots();
       refresh_container_view();
+      /* The real "open container indicator" (widget 20, see
+         DAT_00085c4c's own comment): point slot 19 at the SAME object
+         g_current_container_link already refers to (just re-resolved
+         above, now the parent we popped back to) -- same "second copy
+         of the same link value, resolve_object_link doesn't care which
+         address you point it at" pattern open_backpack_container's own
+         g_current_container_link assignment already established. */
+      *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = g_current_container_link;
       redraw_inventory_widget_range(0x14,0x14);
     }
   }
@@ -33608,42 +33827,6 @@ short param_1;
            sprite draw above now supplies the container-view
            background on its own, matching direct playtest
            confirmation that it renders correctly in real gameplay. */
-        /* Pixel-perfect backup of record 1's own spot (the "leave
-           container" button, drawn over below), captured once ever on
-           the very first open while it's still guaranteed pristine --
-           same established pattern this function already uses for the
-           adjacent DAT_002028ec region a few lines below (capture once
-           at setup, FUN_00076e98 blits it back verbatim on close). This
-           one didn't exist: record 1 belongs to widgets 0-5 (the
-           paperdoll body), which FUN_00046414's own one-time hotspot
-           snapshot loop (records 6-0x16 only) never covered. Without
-           it, closing could only redraw the paperdoll body sprite over
-           this spot, which -- confirmed live via before/after
-           SCREENSHOT diffing on bug-redraw-demo.txt -- only covers a
-           small corner of it (the body's own opaque silhouette doesn't
-           fill the whole 16x16 icon footprint there), leaving most of
-           the stale container icon still visible ("a small rectangle
-           of the lower right corner does get cleared, but not the
-           whole button"). A verbatim pixel restore sidesteps needing to
-           know exactly which combination of layers is "supposed" to
-           show through there. */
-        if (g_container_icon_backup_grtile == 0) {
-          /* grtile_alloc_registered's 2nd arg is a BYTE count, not a
-             pixel count (it mallocs param_1*param_2 raw bytes) -- every
-             other caller in this file doubles the pixel height to
-             account for RGB565's 2 bytes/pixel (e.g. the hotspot-table
-             loop just above uses `dirty_h << 1`). Passing plain 16 here
-             first time allocated only a 256-byte buffer for a region
-             that needs 16*16*2=512, so capture_framebuffer_rect_to_grtile's
-             own copy loop (16x16 shorts) ran past the end of it and
-             FUN_00076e98 blitted back garbage/black instead of the
-             real captured pixels -- confirmed live via SCREENSHOT (a
-             solid dark rectangle instead of the stale icon). */
-          g_container_icon_backup_grtile = grtile_alloc_registered(16,32);
-          capture_framebuffer_rect_to_grtile(g_container_icon_backup_grtile,
-                       (int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
-                       (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
-        }
         if (DAT_002028a0 == 0) {
           iVar10 = 0xc;
           do {
@@ -33666,6 +33849,23 @@ short param_1;
                          (&g_inv_hotspot_dirty_h)[iVar11]);
             iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
           } while (iVar10 < 0x14);
+        }
+        /* Widget 20's own background-save, same role/pattern as the
+           g_container_icon_backup_grtile allocation above and the
+           DAT_002028a0 loop just above that (for widgets 12-19) --
+           this one's real "open container indicator" mechanism (see
+           DAT_00085c4c's own comment) needs FUN_00076e98(DAT_00202938)
+           to have real saved pixels to restore before its own sprite
+           draw, same as every other widget's redraw. Never allocated
+           before because nothing reached this branch: widget 20's own
+           click rect didn't exist in the hotspot table until it was
+           recovered from the real binary. */
+        if (DAT_00202938 == 0) {
+          DAT_00202938 = grtile_alloc_registered((&g_inv_hotspot_dirty_w)[20 * 0xe],
+                       (uint)(byte)(&g_inv_hotspot_dirty_h)[20 * 0xe] << 1);
+          capture_framebuffer_rect_to_grtile(DAT_00202938,
+                       (int)(short)(&g_inv_hotspot_draw_x)[20 * 7],(int)(short)(&g_inv_hotspot_draw_y)[20 * 7],
+                       (&g_inv_hotspot_dirty_w)[20 * 0xe],(&g_inv_hotspot_dirty_h)[20 * 0xe]);
         }
         FUN_000570b4();
         /* Was a hardcoded original-binary literal address (0x85c30) --
@@ -33715,25 +33915,25 @@ short param_1;
           free_open_container_chain();
         }
       }
-      /* User QA: "open container indicator slot does not show the
-         'open' version of a container like it should" + "opening a
-         nested container does not update to show the new container."
-         Two bugs in one: (a) this draw only ever ran inside the
-         `g_open_container_list == 0` branch above, i.e. only on the
-         very FIRST container opened -- opening a container nested
-         inside it never touched this icon again, so it kept showing
-         the OUTER container's art. Moved out here so it (re)draws for
-         every open, first or nested. (b) it drew the plain closed-
-         container sprite id (`uVar3 & 0x1ff`) -- real UW1 containers in
-         this id range come in even/odd closed/open pairs (confirmed via
-         COMOBJ.DAT names: 0x080 "a_sack"/0x081 "an_open sack", 0x082
-         "a_pack"/0x083 "an_open pack", 0x086 "a_pouch"/0x087 "an_open
-         pouch", 0x08a "a_gold coffer"/0x08b "an_open gold coffer", 0x088
-         "a_map case"/0x089 "an_open map case") -- OR in the low bit to
-         show the open variant instead. Factored the actual draw out into
-         draw_container_indicator_icon so leave_nested_container_level's
-         own pop-to-parent path can redraw this same icon too. */
-      draw_container_indicator_icon(uVar3);
+      /* User QA (historical, now resolved by the real widget-20
+         mechanism below rather than a dedicated draw call here):
+         "open container indicator slot does not show the 'open'
+         version of a container like it should" + "opening a nested
+         container does not update to show the new container." Real
+         UW1 containers in this id range come in even/odd closed/open
+         pairs (confirmed via COMOBJ.DAT names: 0x080 "a_sack"/0x081
+         "an_open sack", 0x082 "a_pack"/0x083 "an_open pack", 0x086
+         "a_pouch"/0x087 "an_open pouch", 0x08a "a_gold coffer"/0x08b
+         "an_open gold coffer", 0x088 "a_map case"/0x089 "an_open map
+         case") -- the toggle to the open id a few lines below (via
+         resolve_object_link(&g_current_container_link)) already keeps
+         the container object's OWN id correctly showing "open" while
+         it's open; since slot 19 is just a second reference to that
+         same object (see DAT_00085c4c's own comment), the widget-20
+         redraw naturally shows the right variant with no separate
+         "OR in the open bit" step needed, and (being driven by
+         g_current_container_link, re-pointed at whichever container is
+         current on every open/pop) it updates for nested opens too. */
       /* Record grew from 0xc (12) to 0x1c (28) bytes: the original
          12-byte layout (0-3 next / 4-7 prev / 8-9 container-link / 10-11
          weight) only ever stored its next/prev CHAIN LINKS as 4-byte
@@ -33897,6 +34097,11 @@ short param_1;
           *(byte *)((char *)puVar7 + 1) = (byte)(uVar3 >> 8);
         }
         refresh_container_view();
+        /* The real "open container indicator" (widget 20, see
+           DAT_00085c4c's own comment): point slot 19 at the same
+           object g_current_container_link was just set to a few lines
+           above (this container's own link). */
+        *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = g_current_container_link;
         redraw_inventory_widget_range(0x14,0x14);
         if ((char)(&g_backpack_slot_to_widget)[iVar1] < '\v') {
           redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
@@ -33911,7 +34116,12 @@ short param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00043614()
+// was FUN_00043614 -- container-grid scroll up, dispatched from
+// handle_object_drop_target's `iVar2==0x15` case (widget 21's own
+// real click rect, see g_inventory_hotspot_table's comment); its own
+// redraw (widget 21's up-arrow icon) is gated on this same
+// DAT_0020299c "can scroll up" flag in redraw_inventory_widget.
+void scroll_container_grid_up()
 
 {
   if ((g_open_container_list != 0) && (DAT_0020299c != 0)) {
@@ -33926,7 +34136,10 @@ void FUN_00043614()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0004365c()
+// was FUN_0004365c -- container-grid scroll down, the DAT_002029a0
+// ("can scroll down") counterpart to scroll_container_grid_up, same
+// dispatch/redraw pattern via widget 22.
+void scroll_container_grid_down()
 
 {
   short sVar1;
@@ -36052,93 +36265,33 @@ short param_1;
     fprintf(stderr, "[inv] handle_inventory_panel_click click test: panel_x=%d panel_y=%d -> widget_id=%d\n",
             (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]), (int)(short)uVar5);
   iVar9 = (int)(short)uVar5;
-  /* Leave-container click: widget 1 (repurposed from an unimplemented
-     worn-armour overlay slot -- see g_inv_hotspot_click_x1's own comment) is the
-     open-container icon drawn above the grid. No such affordance
-     exists anywhere in the decompiled body; added per direct playtest
-     feedback describing the real game's layout. Only active while a
-     container is actually open, so a plain click here does nothing
-     once armour rendering claims this record back in a future pass. */
-  if ((iVar9 == 1) && (g_current_container_record != 0)) {
-    /* Was unconditional: dropping a held item onto this icon (drag it
-       out of the open container back to the parent) closed the
-       container without ever placing the item anywhere, leaving it
-       stuck on the cursor -- the user then had to click again, now on
-       the parent's own backpack grid, to actually place it. This
-       whole affordance is this project's own addition (see the
-       comment above), so its exact "drop here" behavior isn't
-       constrained by the original binary; auto-place the held item
-       into any free parent-backpack slot first, using the same
-       auto_place_in_container(...,0x13) "find an empty slot" sentinel
-       auto_place_in_container's own other callers (and
-       check_object_fits_in_slot's matching special-case) already
-       establish. Matches a user report: "dragging from a container to
-       the parent requires an extra click".
-
-       Whether to ALSO auto-close the container after that drop (the
-       original behavior, matching a plain click on this same icon
-       with nothing held) is now a deliberate opt-in via
-       UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF, per user
-       request -- placing the item and leaving the container open lets
-       the user drag several items out in a row without it snapping
-       shut after the first one. A plain click here (nothing held)
-       always closes as before, unaffected by this toggle. */
-    if (g_selected_object != (ushort *)0x0) {
-      if (auto_place_in_container(g_selected_object, 0x13) != 0) {
-        g_selected_object = (ushort *)0x0;
-        g_cursor_holding_state = 0;
-        FUN_00057cac(3);
-      }
-      FUN_000667cc();
-      if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
-        leave_nested_container_level();
-      }
-      else {
-        /* Staying open: the item just left this container's own grid
-           (widgets 0xc-0x13), so redraw it to reflect that -- without
-           this the grid kept showing its pre-drop contents (stale)
-           until some unrelated redraw happened to refresh it. */
-        redraw_inventory_widget_range(0xc,0x13);
-      }
-    }
-    else {
-      /* Was unconditionally `close_backpack_container()` -- fully
-         closing the ENTIRE open-container chain regardless of how many
-         levels deep the player had navigated. User QA: "opening a
-         nested container does not update to show the new container --
-         should let you go back to the parent container on click." A
-         plain click on this icon should pop back ONE level (to
-         whichever container this one is nested inside, if any), not
-         necessarily close everything -- leave_nested_container_level
-         already implements exactly that (and itself calls
-         close_backpack_container when there's no parent to pop back
-         to, so top-level containers still close in one click same as
-         before). */
-      leave_nested_container_level();
-    }
-    /* poll_input_bindings dispatches off a non-consuming peek_input_event()
-       -- the mouse-down event stays "pending" and gets seen again on
-       later ticks (this project's own consuming-vs-peeking distinction,
-       see poll_input_event's comment) until something drains it, which
-       is why interact_default's own equivalent "committed click" tail
-       calls wait_for_click_release(1) (loop until the button is actually
-       released). Every other branch here happens to be safe without it
-       -- either its resolved widget/slot changes once the click takes
-       effect (so a stray re-fire lands somewhere harmless) or its own
-       action is naturally idempotent (close_backpack_container's own
-       top-level `g_current_container_record != 0` guard no-ops on a
-       repeat call). leave_nested_container_level pops exactly one MORE
-       level on every call, so without this it was silently popping
-       2-3 levels per real single click -- confirmed live: a single
-       SDLCLICK (and even a separately-timed SDLDOWN/SDLUP pair) on this
-       icon fired handle_inventory_panel_click's widget-1 branch 2-3
-       times in a row, so a nested container's "go back one level" click
-       fell all the way through to a full close instead of stopping at
-       the parent. */
-    wait_for_click_release(1);
-    return;
+  /* Permanent (not env-gated) debug line: which real widget got clicked
+     and which g_backpack_widget_to_slot/DAT_00202950 slot it resolves
+     to -- DEBUG(INFO,...) prints by default under normal play (run.sh's
+     own UW_DEBUG_LEVEL=INFO), same as this file's other permanent [inv]
+     lines (e.g. "use item" above), and is quieted automatically by the
+     regression suite's own UW_DEBUG_LEVEL=WARN default. */
+  if ((0 < iVar9) && (iVar9 < 0x17)) {
+    DEBUG(INFO, "[inv] widget %d clicked -> slot %d\n", iVar9,
+          (int)(char)(&g_backpack_widget_to_slot)[iVar9]);
   }
-  if ((0 < iVar9) && (iVar9 < 0x15)) {
+  /* The old CONTAINER_ICON_WIDGET_ID synthetic dispatch that used to
+     live here (a project-added hack, drawn/hit-tested at a guessed
+     screen position) is gone -- widget 20's own real table entry
+     covers the "leave container" click now, and its full drop/click
+     logic (auto-place a held item into the parent vs. pop one level)
+     lives in handle_object_drop_target's `iVar2==0x14` case, which
+     this function's own fallthrough below already reaches. See that
+     branch's own comment for the history. */
+  /* Was `iVar9 < 0x15` -- treated widget 20 (the real "leave container"
+     button, see DAT_00085c4c's own comment) as an ordinary placeable
+     backpack slot, so a plain click on it tried to pick up/drop an
+     item there instead of ever reaching handle_object_drop_target's
+     own `iVar2==0x14 -> leave_nested_container_level()` dispatch a
+     little further down this file. Widgets 21/22 (scroll arrows) were
+     already correctly excluded (21 is not < 21); only 20 needed
+     excluding too. */
+  if ((0 < iVar9) && (iVar9 < 0x14)) {
     cVar2 = (&g_backpack_widget_to_slot)[iVar9];
     if (g_selected_object == 0) {
       iVar9 = (int)(short)cVar2;
@@ -36259,38 +36412,19 @@ short param_1;
     }
     iVar9 = (int)sVar1;
     if (0 < iVar9) {
-      /* Was missing here too: this is the REAL drop-target dispatch for
-         a release that lands while already holding an item (this
-         function's own preceding widget-range block only handles the
-         very first click of a drag, when nothing was held yet -- see
-         its own sibling fix's comment for why the top-of-function
-         check alone isn't enough. `sVar1`/`iVar9` here is the actual
-         RELEASE position, freshly hit-tested a few lines up). Same
-         "leave-container icon eats the drop instead of routing it to
-         the parent" bug and same fix as the top-of-function copy. */
-      if ((iVar9 == 1) && (g_current_container_record != 0)) {
-        if (auto_place_in_container(g_selected_object, 0x13) != 0) {
-          g_selected_object = (ushort *)0x0;
-          g_cursor_holding_state = 0;
-          FUN_00057cac(3);
-          bVar11 = false;
-        }
-        FUN_000667cc();
-        /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
-           -- see the top-of-function copy of this same fix for why.
-           Was close_backpack_container() here too -- this is the
-           "release while already holding" twin of that top-of-function
-           branch and was missed when it was fixed (Update 27); same
-           "pop one level, not everything" fix. */
-        if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
-          leave_nested_container_level();
-        }
-        else {
-          redraw_inventory_widget_range(0xc,0x13);
-        }
-        return;
-      }
-      if (iVar9 < 0x15) {
+      /* `sVar1`/`iVar9` here is the actual RELEASE position, freshly
+         hit-tested a few lines up (this function's own preceding
+         widget-range block only handles the very first click of a
+         drag, when nothing was held yet). Widget 20 (the real "leave
+         container" indicator) falls through the `< 0x14` check below
+         into handle_object_drop_target same as everywhere else now --
+         see that function's own `iVar2==0x14` case for the full
+         drop/click logic this used to duplicate here as a
+         CONTAINER_ICON_WIDGET_ID special case. */
+      /* Same `< 0x15` -> `< 0x14` fix as the top-of-function copy above
+         (widget 20 needs handle_object_drop_target's real dispatch,
+         not ordinary slot placement). */
+      if (iVar9 < 0x14) {
         handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar9]);
       }
       else {
@@ -36361,29 +36495,17 @@ ushort * param_1;
         DAT_00204844 = 0;
       }
       if ((DAT_0023c1d4 == '\0') || (iVar1 == 0x17)) {
-        /* Same "leave-container icon eats the drop instead of routing
-           it to the parent" bug and fix as handle_inventory_panel_click's
-           own two copies (see their comments) -- this is the analogous
-           drop-dispatch for a drag that started in the 3D world (e.g.
-           picking an item straight off the ground and releasing it on
-           this icon while a container happens to be open). */
-        if ((iVar1 == 1) && (g_current_container_record != 0)) {
-          if (auto_place_in_container(g_selected_object, 0x13) != 0) {
-            g_selected_object = (ushort *)0x0;
-            g_cursor_holding_state = 0;
-            FUN_00057cac(3);
-          }
-          FUN_000667cc();
-          /* Opt-in via UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT, default OFF
-             -- see handle_inventory_panel_click's own copy of this fix
-             for why. Was close_backpack_container() here too -- missed
-             when handle_inventory_panel_click's two copies were fixed
-             (Update 27); same "pop one level, not everything" fix. */
-          if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
-            leave_nested_container_level();
-          }
-        }
-        else if (iVar1 < 0x15) {
+        /* Widget 20 (the real "leave container" indicator) falls
+           through to handle_object_drop_target below same as
+           everywhere else -- see that function's own `iVar2==0x14`
+           case for the drop/click logic this used to duplicate here as
+           a CONTAINER_ICON_WIDGET_ID special case (a drag that started
+           in the 3D world, e.g. picking an item straight off the
+           ground and releasing it on this icon while a container
+           happens to be open, is exactly the kind of drop that case
+           already handles). Same `< 0x15` -> `< 0x14` fix as
+           handle_inventory_panel_click's own two copies. */
+        if (iVar1 < 0x14) {
           handle_backpack_slot_click((int)(char)(&g_backpack_widget_to_slot)[iVar1]);
           if (g_selected_object == (ushort *)0x0) {
             g_cursor_holding_state = 0;
@@ -36391,7 +36513,13 @@ ushort * param_1;
           }
         }
         else {
-          handle_object_drop_target();
+          /* Dropped argument -- every sibling call to
+             handle_object_drop_target elsewhere in this file forwards
+             the resolved widget id (see handle_inventory_panel_click's
+             own two copies); this bare call left it uninitialized,
+             so widget 20/21/22 reached here with garbage instead of
+             their real id. */
+          handle_object_drop_target(iVar1);
         }
       }
     }
@@ -37345,8 +37473,17 @@ joined_r0x00048308:
     if (iVar3 == 0x14) {
       FUN_00076e98(DAT_00202938);
       local_2c = 1;
+      if (getenv("UW_DEBUG_W20"))
+        fprintf(stderr, "[w20] slot=%d raw=0x%04x occupied=%d DAT_00202938=%p x=%d y=%d w=%d h=%d\n",
+                (int)(unsigned char)DAT_00085c4c,
+                (unsigned)*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2),
+                (int)((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0),
+                (void *)DAT_00202938, (int)_DAT_00085bf0, (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
+                (int)DAT_00085bf5, (int)DAT_00085bf4);
       if ((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0) {
         puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + DAT_00085c4c * 2));
+        if (getenv("UW_DEBUG_W20"))
+          fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7, puVar7 ? (unsigned)(*puVar7 & 0x1ff) : 0u);
         draw_sprite_by_id(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                      DAT_00085bf5,DAT_00085bf4);
         if ((((*puVar7 & 0x8000) != 0) && ((puVar7[3] & 0x8000) == 0)) &&
@@ -37417,6 +37554,15 @@ short param_2;
       return 0x17;
     }
   }
+  /* The "open container"/leave-container click used to be special-
+     cased here at a guessed screen position (this project's own
+     CONTAINER_ICON_WIDGET_ID hack, before widget 20's real hotspot
+     data was recovered) -- removed now that the real table entry for
+     widget 20 (scanned below, same as every other widget) covers it
+     correctly, and drawing a real icon there too instead of the
+     hack's slightly-offset guess. See DAT_00085c4c's own comment and
+     handle_object_drop_target's `iVar2==0x14` case for the current
+     mechanism. */
   iVar3 = 0;
   while (((iVar2 = iVar3 * 0xe, iVar1 < *(short *)(&g_inv_hotspot_click_x1 + iVar2) ||
           (*(short *)(&g_inv_hotspot_click_x2 + iVar2) < iVar1)) ||
@@ -38176,6 +38322,48 @@ static void uw_debug_blit_pick_buffer(void)
   }
 }
 
+
+
+/* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory
+   hotspot's click rect (g_inventory_hotspot_table's 23 records) in
+   bright red, directly into the framebuffer -- for visually verifying
+   the recovered hotspot table lines up with the actual paperdoll/
+   backpack panel art (open the inventory panel, screenshot, and check
+   every box sits exactly on its icon). Record 0 is the real degenerate
+   sentinel (x1=x2, y1=y2) and is skipped, same as
+   hit_test_inventory_widget's own no-op treatment of it. Outline only
+   (not filled) so the icon underneath stays visible. */
+static void uw_debug_draw_inv_hotspot_positions(void)
+{
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int i, min_x = 0x7fffffff, max_x = -1, min_y = 0x7fffffff, max_y = -1;
+  if (fb == 0) return;
+  for (i = 0; i < 0x17; i++) {
+    int x1, y1, x2, y2, x, y;
+    int off = i * 0xe;
+    x1 = *(short *)(&g_inv_hotspot_click_x1 + off);
+    y1 = *(short *)(&g_inv_hotspot_click_y1 + off);
+    x2 = *(short *)(&g_inv_hotspot_click_x2 + off);
+    y2 = *(short *)(&g_inv_hotspot_click_y2 + off);
+    if (x1 == x2 && y1 == y2) continue;
+    for (x = x1; x <= x2; x++) {
+      if (x < 0 || x >= 320) continue;
+      if (y1 >= 0 && y1 < 200) fb[y1 * 0x140 + x] = 0xF800;
+      if (y2 >= 0 && y2 < 200) fb[y2 * 0x140 + x] = 0xF800;
+    }
+    for (y = y1; y <= y2; y++) {
+      if (y < 0 || y >= 200) continue;
+      if (x1 >= 0 && x1 < 320) fb[y * 0x140 + x1] = 0xF800;
+      if (x2 >= 0 && x2 < 320) fb[y * 0x140 + x2] = 0xF800;
+    }
+    if (x1 < min_x) min_x = x1;
+    if (x2 > max_x) max_x = x2;
+    if (y1 < min_y) min_y = y1;
+    if (y2 > max_y) max_y = y2;
+  }
+  if (max_x >= 0) dirty_rect_union(min_y, max_y, min_x, max_x);
+}
+
 // was FUN_000497cc -- runs once per in-game main-loop iteration: resets
 // the dirty rect to a degenerate {100,100,100,100}, redraws the small
 // HUD/cursor element, and flushes that to the display
@@ -38279,6 +38467,10 @@ void main_loop_hud_flush()
       _t2 = read_realtime_clock_units() * 4;
       fprintf(stderr, "[hudsplit] pre_pib_ms=%u pib_ms=%u\n", _t1 - _dbg_hf_t0, _t2 - _t1);
     }
+  }
+  { static int _div = -1;
+    if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
+    if (_div) uw_debug_draw_inv_hotspot_positions();
   }
   /* When the forced 3D redraw ran this frame, push it through even if a
      mouse button is being held in the viewport: DAT_0023c63c (the
@@ -53574,48 +53766,10 @@ LAB_00061d34:
       }
       goto LAB_emit_mesh_sprite_quad;
     }
-    /* DAT_00086c80_backing has no writer anywhere in this decompile (same
-       "orphaned data table" class as DAT_00086c08/09/0b, the PTR_FUN_
-       dispatch tables, etc. fixed elsewhere this session) -- it's always
-       all-zero, so every sign/TMOBJ variant below was resolving to frame 0
-       regardless of `iVar17`. Real per-variant frame numbers for every
-       possible sign sub-type aren't recoverable from the binary (missing
-       DATA, not a dropped argument/call), BUT the user identified via
-       direct inspection that TMOBJ.GR itself only has 38 real entries
-       total, with entries 25-28 (zero-based) being actual "message/
-       plaque" graphics -- confirmed by instrumenting the resource loader
-       directly (DAT_00202744 went 643 -> 681 across TMOBJ's own
-       FUN_00041910 call, so TMOBJ's 38 real frames are absolute indices
-       643-680; entries 25-28 = absolute 668-671, dimensions 16x16/16x16/
-       16x16/16x32 -- plausible plaque/rune-tablet graphics, distinct from
-       the small flame-flicker-shaped frames earlier in the file and the
-       larger multi-purpose icons after it). Cycle every sign sub-type
-       through these 4 real message frames instead of one arbitrary
-       constant -- still not a true per-instance mapping (that data is
-       genuinely gone), but now always a real message graphic rather
-       than a guess landing outside TMOBJ.GR's actual 38-entry range
-       entirely (which is what the previous "38+i" default did --
-       DAT_00202738 is the NEXT resource's base, not TMOBJ's own, so
-       that default always missed TMOBJ.GR into whatever loads after
-       it). */
-    { static int _tmobj_ids_inited = 0;
-      if (!_tmobj_ids_inited) {
-        _tmobj_ids_inited = 1;
-        int _i;
-        // HACK: hand-picked constant, not recovered/derived data. The real
-        // per-sign-variant -> TMOBJ.GR frame mapping (what DAT_00086c80 was
-        // for) is genuinely lost -- not present anywhere in this binary or
-        // its data files, so it can't be recovered by further disassembly
-        // or file analysis. 668 (TMOBJ.GR entry 25) is just the
-        // least-wrong of the 4 real "message/plaque"-shaped frames (25-28)
-        // found by manual inspection, used for every sign regardless of
-        // its real intended variant. Revisit if the real mapping ever
-        // turns up (e.g. a different original data file/version).
-        for (_i = 0; _i < 0x20; _i++) {
-          *(ushort *)(&DAT_00086c80 + _i * 2) = (ushort)668;
-        }
-      }
-    }
+    /* DAT_00086c80 (the real per-sign-variant -> billboard-catalog
+       index table) has now been recovered from the real binary -- see
+       its own declaration comment -- replacing the "fill every entry
+       with 668" placeholder that used to live here. */
     iVar17 = (int)(((uVar27 & 0x3f) - 0x10) * 0x10000) >> 0x10;
     if ((short)*(ushort *)(&DAT_00086c80 + iVar17 * 2) < 0) {
       return;
@@ -53623,59 +53777,36 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    /* This used to call emit_object_billboard(*(ushort*)(&DAT_00086c80+
-       iVar17*2) & 0xff, ...), feeding a TMOBJ.GR frame index into
-       emit_object_billboard as if it were a slot in DAT_00086c08 -- a
-       small (~64-entry) curated billboard catalogue meant for a fixed
-       set of hand-picked effects (thrown weapons, muzzle flashes, etc;
-       see its other callers' literal 0x14/0x16/0xc slot ids), not an
-       arbitrary data-driven frame number. That's a completely unrelated
-       graphic, not merely "billboard instead of decal".
-       DAT_00202c9a's own game data puts wall signs/plaques (e.g. real
-       object type 0x166) in this exact (class 2, id&0x30 != 0) branch.
-       Route the real absolute TMOBJ frame through FUN_00040770's
-       negative-param_1 "direct absolute frame" escape hatch (see its own
-       comment -- resolve_sprite_id_to_frame's normal id-range convention can't reach
-       frames before DAT_00202738 at all) into the same real, working
-       sprite-decode + mesh-quad path class 0 uses (proven correct for
-       the sack etc. this session) instead of emit_object_billboard, by
-       overriding uVar27 and jumping into that code directly. */
-    uVar27 = (uint)(ushort)(-(short)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
-    /* Make it a wall-flush decal instead of a camera-facing billboard:
-       the quad-build code below extends this sprite along a "right
-       vector" looked up from a sin/cos table by angle DAT_000db44c
-       (the CAMERA's own yaw -- see its comment), which is exactly what
-       makes an ordinary item billboard always face the camera. Override
-       that lookup with the object's own stored heading (param_1[1]>>6&7,
-       one of 8 compass directions * 45 degrees) instead, so the quad
-       extends along the WALL's own fixed facing direction and stays
-       flush against it regardless of camera angle. Self-clearing (see
-       g_billboard_angle_override_deg's own comment). */
-    /* +1 (45 degrees): confirmed live in-game the decal drew with a real
-       fixed orientation (not camera-facing) as soon as this override
-       existed, but 45 degrees off from flush -- one compass step
-       correction, wrapped back into the table's 0-360 range.
-       Also compensate for DAT_0023b4a0, the screen-rotation quadrant
-       computed from the CAMERA's current view angle (see
-       sync_camera_from_player's own comment on it): this same file
-       rotates every OTHER object's stored orientation-ish fields by it
-       (see emit_tile_objects' own sub-position remap a few hundred lines
-       above -- (x,y) rotated 90*quadrant degrees per quadrant 0-3) before
-       treating them as real-world directions, but this heading read
-       never did -- confirmed live (and reproducibly) that the same sign
-       renders correctly (quadrant 0) from one standing spot and broken
-       (90 degrees / invisible, both quadrant 3) from two others, with the
-       raw heading and computed angle identical every time. Apply the
-       same 90-degrees-per-quadrant rotation to the heading (2 compass
-       steps = 90 degrees) before the existing +1 correction. */
-    { int _raw_heading = (int)(param_1[1] >> 6 & 7);
-      int _quadrant_heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
-      g_billboard_angle_override_deg = ((_quadrant_heading + 1) & 7) * 45;
-      if (getenv("UW_DEBUG_OBJPOS"))
-        fprintf(stderr, "[signheading] param_1[1]=0x%04x raw_heading=%d quadrant=%d angle_deg=%d\n",
-                (unsigned)param_1[1], _raw_heading, (int)DAT_0023b4a0, g_billboard_angle_override_deg);
-    }
-    goto LAB_emit_mesh_sprite_quad;
+    /* EXPERIMENTAL, under live test (user report: with the real table
+       values in place, the previous "+DAT_00202734, absolute TMOBJ
+       frame via FUN_00040770's escape hatch" wiring rendered a lever/
+       dial graphic instead of a sign for the real starting-room sign --
+       screenshot-confirmed, so that formula is wrong). Trying this
+       project's OWN earlier-rejected alternative instead: call
+       emit_object_billboard directly with the real table value (now
+       meaningful data, not the all-zero placeholder that made this
+       look like "a completely unrelated graphic" when it was first
+       tried) as a billboard-catalog index, matching this exact
+       4-argument call shape used identically by the two other real
+       billboard call sites in this same function (search
+       "emit_object_billboard(0x14," and "0x16,"). Only weakly
+       evidenced (the fresh-decompile check that first suggested this
+       resolved its data reference to garbage -- see
+       [[tmobj-sign-table-recovery]] -- so this is going on the CALL
+       SHAPE matching those other two confirmed-real call sites, not a
+       clean disassembly of this specific branch). NOTE: switching to
+       emit_object_billboard means this decal loses the wall-flush
+       positioning fix below (g_billboard_angle_override_deg) --
+       billboards are camera-facing by construction and don't read that
+       override at all, so if this turns out to be the right graphic,
+       the positioning may need its own separate fix. */
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[sign] variant=%d table_val=%d -> emit_object_billboard(catalog_idx=%d)\n",
+              iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+              (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
+    emit_object_billboard((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+                           param_1, 0xffffffff, 0xffffffff);
+    return;
   }
   if (bVar13 != 3) {
     return;
@@ -53838,6 +53969,10 @@ short param_4;
           *DAT_00110fc0 =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                (ushort)DAT_0023bc88 * DAT_00086b30 * 0x100;
+          if (getenv("UW_DEBUG_DOOR"))
+            fprintf(stderr, "[billboard] static sub-frame %d: mesh_slot=0x%04x pushed_val=0x%04x (catalog_byte=0x%02x)\n",
+                    iVar29, (unsigned)uVar11, (unsigned)*DAT_00110fc0,
+                    (unsigned)(byte)(&DAT_00086c09)[iVar29 + iVar1]);
           puVar25 = DAT_00110fc0 + 1;
           DAT_00110fc0 = puVar25;
           (&DAT_00189570)[iVar29] =
@@ -53950,9 +54085,16 @@ short param_4;
         if (cVar9 != '\0') {
           Ordinal_2005(cVar9,*(byte *)(param_2 + 1) >> 1 & 0xf);
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1_00 + (uint)DAT_00202734 + 0x10;
+          if (getenv("UW_DEBUG_DOOR"))
+            fprintf(stderr, "[billboard] extra-frame: bVar5=0x%02x cVar9=%d extraout_r1_00=%d DAT_00202734=%d -> iVar29=%d\n",
+                    (unsigned)bVar5, (int)cVar9, (int)extraout_r1_00, (int)DAT_00202734, iVar29);
         }
       }
     }
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[billboard] extra-frame check: iVar29=%d (short)(ushort)iVar29=%d -> %s\n",
+              iVar29, (int)(short)(ushort)iVar29,
+              (-1 < (short)(ushort)iVar29) ? "PUSHED" : "SKIPPED");
     if (-1 < (short)(ushort)iVar29) {
       *puVar25 = 0xc0;
       DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -53984,6 +54126,9 @@ short param_4;
     puVar25 = DAT_00110fc0 + 1;
     DAT_00110fc0 = puVar25;
   }
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[billboard] position anchor: DAT_0023b904=%d DAT_0023b91c=%d DAT_0023b920=%d\n",
+            (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920);
   *puVar25 = 0x18;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = DAT_0023b904;
@@ -55862,12 +56007,23 @@ LAB_000669a8:
       puVar6 = (ushort *)FUN_00045054(iVar4);
     }
     DAT_00204690 = puVar6;
+    if (getenv("UW_DEBUG_AMBIENT"))
+      fprintf(stderr, "[ambient] light-scan slot=%d puVar6=%p id=0x%03x nibble=0x%x\n",
+              (int)iVar4, (void *)puVar6, puVar6 ? (unsigned)(*puVar6 & 0x1ff) : 0u,
+              puVar6 ? (unsigned)(*puVar6 & 0xf) : 0u);
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
         (uVar11 = *puVar6 & 0xf, 3 < uVar11)) && (uVar11 < 8)) {
       iVar7 = FUN_000528a8();
       bVar1 = *(byte *)(iVar7 + 1);
       if (bVar10 < bVar1) {
-        FUN_00014324();
+        /* Also a bare call (no argument) -- but whatever DAT_000842b0
+           value this leaves is unconditionally overwritten a few lines
+           below by this same function's own definitive
+           set_ambient_bias_with_light(0)/FUN_0001433c(0) decision (made
+           from the aggregated bVar9/bVar10 this loop is computing), so
+           it's provably inert either way, not fixed alongside the real
+           bug in that later call. */
+        set_ambient_bias_with_light();
         iVar5 = iVar4;
         bVar9 = bVar1;
         bVar10 = bVar1;
@@ -55877,6 +56033,16 @@ LAB_000669a8:
     bVar12 = iVar4 == 4;
   } while (iVar4 < 5);
   *(byte *)(DAT_00086df8 + 99) = bVar9 * '\x10' + (char)iVar5;
+  if (getenv("UW_DEBUG_AMBIENT")) {
+    int _s;
+    fprintf(stderr, "[ambient] light-scan result: bVar9=%d iVar5=%d -> DAT_00086df8+99=0x%02x; full slot dump:\n",
+            (int)bVar9, (int)iVar5, (unsigned)*(byte *)(DAT_00086df8 + 99));
+    for (_s = 0; _s < 11; _s++) {
+      ushort *_o = (ushort *)FUN_00045054(_s);
+      fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
+              _o ? (unsigned)(*_o & 0x1ff) : 0u, _o ? (unsigned)(*_o & 0xf) : 0u);
+    }
+  }
   if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
     iVar4 = 0;
     do {
@@ -55907,11 +56073,22 @@ LAB_000669a8:
   } while (iVar4 < 0xb);
   FUN_00066634(local_30);
   if (DAT_002020d8 == 0) {
+    /* *(char*)(DAT_00086df8+99) is the player's current light radius
+       (upper nibble; 0 = no equipped light source at all, maintained by
+       this same function's own scan of equip slots above + a separate
+       updater at uw.c ~55510). ==0 (no light) -> FUN_0001433c(0), the
+       mild "8 - param_1" dimming bias; else (a light source IS lit) ->
+       set_ambient_bias_with_light below, the much stronger "-0x20 -
+       param_1" brightening bias (more negative = brighter -- see that
+       function's own comment for the full sign-convention explanation). */
     if (*(char *)(DAT_00086df8 + 99) == '\0') {
       FUN_0001433c(0);
     }
     else {
-      FUN_00014324();
+      /* Was a bare call -- ran on leftover register garbage instead of
+         a real argument. The sibling call just above explicitly passes
+         0 to FUN_0001433c; mirror that here too. */
+      set_ambient_bias_with_light(0);
     }
   }
   else {
@@ -68351,7 +68528,7 @@ int param_2;
       if ((uVar10 & 0xf) < 4) {
         *(byte *)param_1 = (bVar2 + 4 ^ bVar2) & 0xf ^ bVar2;
         *(byte *)((char *)param_1 + 1) = bVar1;
-        FUN_00014324(0);
+        set_ambient_bias_with_light(0);
       }
       else {
         *(byte *)param_1 = (bVar2 - 4 ^ bVar2) & 0xf ^ bVar2;
