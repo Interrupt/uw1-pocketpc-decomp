@@ -53766,23 +53766,10 @@ LAB_00061d34:
       }
       goto LAB_emit_mesh_sprite_quad;
     }
-    /* CORRECTED: DAT_00086c80 (the real per-sign-variant -> TMOBJ frame
-       table) has now been recovered from the real binary -- see its
-       own declaration comment -- replacing the "fill every entry with
-       668" placeholder that used to live here (this whole block). Its
-       real values are small (0-28) OFFSETS into TMOBJ's own 38-frame
-       range, not standalone absolute frame numbers -- confirmed
-       self-consistent (0-28 + DAT_00202734's real 643 lands at
-       643-671, inside TMOBJ's real 643-680 span) and matching the
-       `DAT_00202734 + X` idiom this same file already uses for every
-       other TMOBJ-relative reference (doors, HUD icons, etc. -- search
-       "DAT_00202734 +"). The negation below was missing that addition
-       (adding it directly here rather than disassembly-confirming the
-       exact original instruction sequence, which a fresh decompile of
-       this specific spot couldn't reliably resolve -- see
-       [[tmobj-sign-table-recovery]] for why); if a real per-sign
-       screenshot ever shows an obviously wrong plaque graphic, that's
-       the first place to re-check. */
+    /* DAT_00086c80 (the real per-sign-variant -> billboard-catalog
+       index table) has now been recovered from the real binary -- see
+       its own declaration comment -- replacing the "fill every entry
+       with 668" placeholder that used to live here. */
     iVar17 = (int)(((uVar27 & 0x3f) - 0x10) * 0x10000) >> 0x10;
     if ((short)*(ushort *)(&DAT_00086c80 + iVar17 * 2) < 0) {
       return;
@@ -53790,53 +53777,36 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    /* Route the real absolute TMOBJ frame through FUN_00040770's
-       negative-param_1 "direct absolute frame" escape hatch (see its own
-       comment -- resolve_sprite_id_to_frame's normal id-range convention can't reach
-       frames before DAT_00202738 at all) into the same real, working
-       sprite-decode + mesh-quad path class 0 uses (proven correct for
-       the sack etc. this session) instead of emit_object_billboard, by
-       overriding uVar27 and jumping into that code directly. */
-    uVar27 = (uint)(ushort)(-(short)(*(ushort *)(&DAT_00086c80 + iVar17 * 2) + DAT_00202734));
+    /* EXPERIMENTAL, under live test (user report: with the real table
+       values in place, the previous "+DAT_00202734, absolute TMOBJ
+       frame via FUN_00040770's escape hatch" wiring rendered a lever/
+       dial graphic instead of a sign for the real starting-room sign --
+       screenshot-confirmed, so that formula is wrong). Trying this
+       project's OWN earlier-rejected alternative instead: call
+       emit_object_billboard directly with the real table value (now
+       meaningful data, not the all-zero placeholder that made this
+       look like "a completely unrelated graphic" when it was first
+       tried) as a billboard-catalog index, matching this exact
+       4-argument call shape used identically by the two other real
+       billboard call sites in this same function (search
+       "emit_object_billboard(0x14," and "0x16,"). Only weakly
+       evidenced (the fresh-decompile check that first suggested this
+       resolved its data reference to garbage -- see
+       [[tmobj-sign-table-recovery]] -- so this is going on the CALL
+       SHAPE matching those other two confirmed-real call sites, not a
+       clean disassembly of this specific branch). NOTE: switching to
+       emit_object_billboard means this decal loses the wall-flush
+       positioning fix below (g_billboard_angle_override_deg) --
+       billboards are camera-facing by construction and don't read that
+       override at all, so if this turns out to be the right graphic,
+       the positioning may need its own separate fix. */
     if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[sign] variant=%d table_val=%d DAT_00202734=%d -> absolute_frame=%d\n",
-              iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2), (int)DAT_00202734,
-              (int)(short)-(short)uVar27);
-    /* Make it a wall-flush decal instead of a camera-facing billboard:
-       the quad-build code below extends this sprite along a "right
-       vector" looked up from a sin/cos table by angle DAT_000db44c
-       (the CAMERA's own yaw -- see its comment), which is exactly what
-       makes an ordinary item billboard always face the camera. Override
-       that lookup with the object's own stored heading (param_1[1]>>6&7,
-       one of 8 compass directions * 45 degrees) instead, so the quad
-       extends along the WALL's own fixed facing direction and stays
-       flush against it regardless of camera angle. Self-clearing (see
-       g_billboard_angle_override_deg's own comment). */
-    /* +1 (45 degrees): confirmed live in-game the decal drew with a real
-       fixed orientation (not camera-facing) as soon as this override
-       existed, but 45 degrees off from flush -- one compass step
-       correction, wrapped back into the table's 0-360 range.
-       Also compensate for DAT_0023b4a0, the screen-rotation quadrant
-       computed from the CAMERA's current view angle (see
-       sync_camera_from_player's own comment on it): this same file
-       rotates every OTHER object's stored orientation-ish fields by it
-       (see emit_tile_objects' own sub-position remap a few hundred lines
-       above -- (x,y) rotated 90*quadrant degrees per quadrant 0-3) before
-       treating them as real-world directions, but this heading read
-       never did -- confirmed live (and reproducibly) that the same sign
-       renders correctly (quadrant 0) from one standing spot and broken
-       (90 degrees / invisible, both quadrant 3) from two others, with the
-       raw heading and computed angle identical every time. Apply the
-       same 90-degrees-per-quadrant rotation to the heading (2 compass
-       steps = 90 degrees) before the existing +1 correction. */
-    { int _raw_heading = (int)(param_1[1] >> 6 & 7);
-      int _quadrant_heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
-      g_billboard_angle_override_deg = ((_quadrant_heading + 1) & 7) * 45;
-      if (getenv("UW_DEBUG_OBJPOS"))
-        fprintf(stderr, "[signheading] param_1[1]=0x%04x raw_heading=%d quadrant=%d angle_deg=%d\n",
-                (unsigned)param_1[1], _raw_heading, (int)DAT_0023b4a0, g_billboard_angle_override_deg);
-    }
-    goto LAB_emit_mesh_sprite_quad;
+      fprintf(stderr, "[sign] variant=%d table_val=%d -> emit_object_billboard(catalog_idx=%d)\n",
+              iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+              (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
+    emit_object_billboard((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+                           param_1, 0xffffffff, 0xffffffff);
+    return;
   }
   if (bVar13 != 3) {
     return;
@@ -53999,6 +53969,10 @@ short param_4;
           *DAT_00110fc0 =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                (ushort)DAT_0023bc88 * DAT_00086b30 * 0x100;
+          if (getenv("UW_DEBUG_DOOR"))
+            fprintf(stderr, "[billboard] static sub-frame %d: mesh_slot=0x%04x pushed_val=0x%04x (catalog_byte=0x%02x)\n",
+                    iVar29, (unsigned)uVar11, (unsigned)*DAT_00110fc0,
+                    (unsigned)(byte)(&DAT_00086c09)[iVar29 + iVar1]);
           puVar25 = DAT_00110fc0 + 1;
           DAT_00110fc0 = puVar25;
           (&DAT_00189570)[iVar29] =
@@ -54111,9 +54085,16 @@ short param_4;
         if (cVar9 != '\0') {
           Ordinal_2005(cVar9,*(byte *)(param_2 + 1) >> 1 & 0xf);
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1_00 + (uint)DAT_00202734 + 0x10;
+          if (getenv("UW_DEBUG_DOOR"))
+            fprintf(stderr, "[billboard] extra-frame: bVar5=0x%02x cVar9=%d extraout_r1_00=%d DAT_00202734=%d -> iVar29=%d\n",
+                    (unsigned)bVar5, (int)cVar9, (int)extraout_r1_00, (int)DAT_00202734, iVar29);
         }
       }
     }
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[billboard] extra-frame check: iVar29=%d (short)(ushort)iVar29=%d -> %s\n",
+              iVar29, (int)(short)(ushort)iVar29,
+              (-1 < (short)(ushort)iVar29) ? "PUSHED" : "SKIPPED");
     if (-1 < (short)(ushort)iVar29) {
       *puVar25 = 0xc0;
       DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -54145,6 +54126,9 @@ short param_4;
     puVar25 = DAT_00110fc0 + 1;
     DAT_00110fc0 = puVar25;
   }
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[billboard] position anchor: DAT_0023b904=%d DAT_0023b91c=%d DAT_0023b920=%d\n",
+            (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920);
   *puVar25 = 0x18;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = DAT_0023b904;
