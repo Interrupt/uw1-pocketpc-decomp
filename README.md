@@ -1,5 +1,7 @@
 # Ultima Underworld 1 — WinCE decompile, stubbed for native compile
 
+<img width="752" height="620" alt="Screenshot 2026-09-20 at 1 18 42 AM" src="https://github.com/user-attachments/assets/50cac1ef-6723-49c9-bf5a-30fef6fc100a" />
+
 `uw.c`/`uw.h` are a Ghidra decompile of `UU.exe`, the Windows CE (Pocket
 PC) port of Ultima Underworld 1 (originally shipped by ZIO Interactive for
 devices like the HP Jornada 540 — the folder name says "PPC" but that
