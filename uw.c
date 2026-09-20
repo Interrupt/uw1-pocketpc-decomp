@@ -38364,6 +38364,79 @@ static void uw_debug_draw_inv_hotspot_positions(void)
   if (max_x >= 0) dirty_rect_union(min_y, max_y, min_x, max_x);
 }
 
+/* Debug tool (UW_DUMP_SPRITE_FRAMES / UW_DUMP_SPRITE_IDS): dump
+   individual sprites to standalone BMP files by real resource id, one
+   file per id, using the game's own real render path (blit_object_
+   sprite_by_frame for a raw absolute frame index, draw_sprite_by_id
+   for a normal game object/sprite id that goes through
+   resolve_sprite_id_to_frame first) -- not a separate from-scratch
+   .GR parser, so it exercises exactly the same code this project has
+   been chasing rendering bugs through (e.g. the TMOBJ sign investigation,
+   see [[tmobj-sign-table-recovery]] and follow-ups).
+
+   UW_DUMP_SPRITE_FRAMES/UW_DUMP_SPRITE_IDS are a comma-separated list
+   of ids and/or inclusive ranges, e.g. "643-680,18,149". Output goes to
+   UW_DUMP_SPRITE_DIR (default "debug/sprites"), as frame_<id>.bmp or
+   id_<id>.bmp. Runs once, early in the first real gameplay tick. */
+static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int cw = 96, ch = 128, ox = 4, oy = 4;
+  if (fb == 0) return;
+  for (int y = 0; y < ch; y++) {
+    for (int x = 0; x < cw; x++) {
+      fb[(oy + y) * 0x140 + (ox + x)] = 0;
+    }
+  }
+  if (is_frame) {
+    blit_object_sprite_by_frame(id, ox, oy);
+  } else {
+    draw_sprite_by_id(id, ox, oy, cw, ch);
+  }
+  char path[320];
+  snprintf(path, sizeof(path), "%s/%s_%d.bmp", dir, is_frame ? "frame" : "id", id);
+  uw_save_rgb565_region_bmp(path, fb + oy * 0x140 + ox, cw, ch, 0x140);
+}
+
+static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, const char *dir) {
+  const char *spec = getenv(envname);
+  if (!spec || !spec[0]) return;
+  uw_debug_mkdir_p(dir);
+  const char *p = spec;
+  while (*p) {
+    int lo, hi;
+    char *end;
+    lo = (int)strtol(p, &end, 10);
+    if (end == p) break;
+    p = end;
+    if (*p == '-') {
+      p++;
+      hi = (int)strtol(p, &end, 10);
+      if (end == p) hi = lo;
+      p = end;
+    } else {
+      hi = lo;
+    }
+    for (int id = lo; id <= hi; id++) {
+      _uw_dump_sprite_to_file(is_frame, id, dir);
+    }
+    if (*p == ',') p++;
+    else break;
+  }
+}
+
+static void uw_debug_dump_sprite_frames_once(void) {
+  static int done = 0;
+  if (done) return;
+  done = 1;
+  if (!getenv("UW_DUMP_SPRITE_FRAMES") && !getenv("UW_DUMP_SPRITE_IDS")) return;
+  const char *dir = getenv("UW_DUMP_SPRITE_DIR");
+  if (!dir || !dir[0]) dir = "debug/sprites";
+  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_FRAMES", 1, dir);
+  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_IDS", 0, dir);
+}
+
+
+
 // was FUN_000497cc -- runs once per in-game main-loop iteration: resets
 // the dirty rect to a degenerate {100,100,100,100}, redraws the small
 // HUD/cursor element, and flushes that to the display
@@ -38472,6 +38545,7 @@ void main_loop_hud_flush()
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
+  uw_debug_dump_sprite_frames_once();
   /* When the forced 3D redraw ran this frame, push it through even if a
      mouse button is being held in the viewport: DAT_0023c63c (the
      click-hold flag) otherwise blocks flush_dirty_rect_to_display's real
