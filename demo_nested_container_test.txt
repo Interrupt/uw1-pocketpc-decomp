@@ -55,4 +55,7 @@ WAIT 2
 SCREENSHOT /tmp/nestB_05_left_level.bmp
 SDLCLICK 482 122
 WAIT 2
-SCREENSHOT /tmp/nestB_06_closed.bmp
+SCREENSHOT /tmp/nestB_06_left_level.bmp
+SDLCLICK 482 122
+WAIT 2
+SCREENSHOT /tmp/nestB_07_closed.bmp

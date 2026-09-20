@@ -33321,9 +33321,21 @@ void close_backpack_container()
 void leave_nested_container_level()
 
 {
-  int iVar1;
+  /* Was `int iVar1;` -- resolve_object_link returns a real 64-bit
+     pointer, truncated to 32 bits by this narrower type (same class as
+     dozens of other fixes this session), then immediately dereferenced
+     via `*(ushort*)(iVar1+6)` below -- a wild-pointer crash. Never
+     triggered before because this whole function (popping OUT of a
+     container back to its parent) was unreachable until this session's
+     nested-container-open fix made a parent/child chain possible to
+     create in the first place. */
+  char *iVar1;
   char *_old;
 
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] leave_nested_container_level entry: g_open_container_list=%p g_current_container_record=%p prev=%p\n",
+            (void *)g_open_container_list, (void *)g_current_container_record,
+            g_current_container_record ? *(void **)(g_current_container_record + 0x14) : 0);
   if (g_open_container_list != 0) {
     /* Was `*(int *)(g_current_container_record + 4) == 0` -- the legacy
        byte-4..7 "prev" field is only ever a truncated 32-bit half of a
@@ -33355,7 +33367,10 @@ void leave_nested_container_level()
       /* This record is the tail again now that its child was just freed. */
       *(char **)(g_current_container_record + 0xc) = 0;
       g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
-      iVar1 = resolve_object_link((ushort *)(g_current_container_record + 8));
+      iVar1 = (char *)resolve_object_link(&g_current_container_link);
+      if (getenv("UW_DEBUG_INV"))
+        fprintf(stderr, "[inv] leave_nested_container_level: popped to record=%p g_current_container_link=0x%04x resolved=%p\n",
+                (void *)g_current_container_record, (unsigned)g_current_container_link, (void *)iVar1);
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
       FUN_00042e30();
       FUN_00042d70();
@@ -33398,57 +33413,68 @@ void FUN_00042e30()
 {
   undefined2 uVar1;
   byte bVar2;
-  int iVar3;
+  /* Was `int iVar3;`/`int iVar5;` for the parts of this function where
+     they hold real resolve_object_link() pointers (truncated to 32 bits
+     on this 64-bit host, same class as leave_nested_container_level's
+     own sibling fix right above -- never triggered before because this
+     function, called from leave_nested_container_level, was itself
+     unreachable until a real parent/child container chain could exist).
+     iVar5 ALSO has a second, genuine plain-int role later in this same
+     function (a slot-index loop counter) -- left as `int` there and
+     given its own pointer-typed local (_pMatch) for just the one
+     resolve_object_link comparison that needed it. */
+  char *pContents;
+  char *_pMatch;
   uint uVar4;
   int iVar5;
   int iVar6;
-  
+
   iVar6 = 0x14;
   do {
     if ((*(ushort *)(&DAT_00202950 + iVar6 * 2) & 0xffc0) != 0) break;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x1c);
-  iVar3 = resolve_object_link(&g_current_container_link);
-  iVar3 = resolve_object_link(iVar3 + 6);
+  pContents = (char *)resolve_object_link(&g_current_container_link);
+  pContents = (char *)resolve_object_link((ushort *)(pContents + 6));
   if ((short)iVar6 < 0x1c) {
     do {
-      iVar5 = resolve_object_link(&DAT_00202950 + (short)iVar6 * 2);
-      if (iVar3 == iVar5) {
+      _pMatch = (char *)resolve_object_link(&DAT_00202950 + (short)iVar6 * 2);
+      if (pContents == _pMatch) {
         iVar6 = 0x14;
         do {
-          uVar4 = encode_object_slot_index(iVar3);
+          uVar4 = encode_object_slot_index(pContents);
           iVar5 = (short)iVar6 * 2;
           (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
           (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
-          if (iVar3 != 0) {
-            if ((*(byte *)(iVar3 + 1) & 0x40) != 0) {
+          if (pContents != 0) {
+            if ((*(byte *)(pContents + 1) & 0x40) != 0) {
               iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
             }
-            iVar3 = resolve_object_link(iVar3 + 4);
+            pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
           }
           iVar6 = iVar6 + 1;
         } while (iVar6 * 0x10000 >> 0x10 < 0x1c);
         return;
       }
-      iVar3 = resolve_object_link(iVar3 + 4);
-    } while (iVar3 != 0);
+      pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
+    } while (pContents != 0);
   }
   else {
     iVar6 = 0x14;
     do {
-      uVar4 = encode_object_slot_index(iVar3);
+      uVar4 = encode_object_slot_index(pContents);
       iVar5 = (short)iVar6 * 2;
       (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
       (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
-      if (iVar3 != 0) {
-        if ((*(byte *)(iVar3 + 1) & 0x40) != 0) {
+      if (pContents != 0) {
+        if ((*(byte *)(pContents + 1) & 0x40) != 0) {
           iVar6 = ((short)iVar6 + -1) * 0x10000 >> 0x10;
         }
-        iVar3 = resolve_object_link(iVar3 + 4);
+        pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
       }
       iVar6 = iVar6 + 1;
     } while (iVar6 * 0x10000 >> 0x10 < 0x1c);
-    while (iVar3 != 0) {
+    while (pContents != 0) {
       iVar6 = 0x14;
       do {
         iVar5 = iVar6 * 2;
@@ -33459,15 +33485,15 @@ void FUN_00042e30()
         iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
       } while (iVar6 < 0x18);
       for (; iVar5 = (int)(short)iVar6, iVar5 < 0x1c; iVar6 = iVar6 + 1) {
-        uVar4 = encode_object_slot_index(iVar3);
+        uVar4 = encode_object_slot_index(pContents);
         (&DAT_00202950)[iVar5 * 2] =
              (&DAT_00202950)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
         (&DAT_00202951)[iVar5 * 2] = (char)((uVar4 << 0x16) >> 0x18);
-        if (iVar3 != 0) {
-          if ((*(byte *)(iVar3 + 1) & 0x40) != 0) {
+        if (pContents != 0) {
+          if ((*(byte *)(pContents + 1) & 0x40) != 0) {
             iVar6 = (iVar5 + -1) * 0x10000 >> 0x10;
           }
-          iVar3 = resolve_object_link(iVar3 + 4);
+          pContents = (char *)resolve_object_link((ushort *)(pContents + 4));
         }
       }
     }
@@ -33575,10 +33601,6 @@ short param_1;
                        (int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
                        (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
         }
-        g_blit_transparent_mode = 1;
-        draw_sprite_by_id(uVar3 & 0x1ff,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
-                     (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
-        g_blit_transparent_mode = 0;
         if (DAT_002028a0 == 0) {
           iVar10 = 0xc;
           do {
@@ -33650,6 +33672,29 @@ short param_1;
           free_open_container_chain();
         }
       }
+      /* User QA: "open container indicator slot does not show the
+         'open' version of a container like it should" + "opening a
+         nested container does not update to show the new container."
+         Two bugs in one: (a) this draw only ever ran inside the
+         `g_open_container_list == 0` branch above, i.e. only on the
+         very FIRST container opened -- opening a container nested
+         inside it never touched this icon again, so it kept showing
+         the OUTER container's art. Moved out here so it (re)draws for
+         every open, first or nested. (b) it drew the plain closed-
+         container sprite id (`uVar3 & 0x1ff`) -- real UW1 containers in
+         this id range come in even/odd closed/open pairs (confirmed via
+         COMOBJ.DAT names: 0x080 "a_sack"/0x081 "an_open sack", 0x082
+         "a_pack"/0x083 "an_open pack", 0x086 "a_pouch"/0x087 "an_open
+         pouch", 0x08a "a_gold coffer"/0x08b "an_open gold coffer", 0x088
+         "a_map case"/0x089 "an_open map case") -- OR in the low bit to
+         show the open variant instead. */
+      if (getenv("UW_DEBUG_INV"))
+        fprintf(stderr, "[inv] open_backpack_container: widget-1 icon id=0x%03x (open variant of 0x%03x)\n",
+                (unsigned)((uVar3 & 0x1ff) | 1), (unsigned)(uVar3 & 0x1ff));
+      g_blit_transparent_mode = 1;
+      draw_sprite_by_id((uVar3 & 0x1ff) | 1,(int)(short)(&g_inv_hotspot_draw_x)[1 * 7],
+                   (int)(short)(&g_inv_hotspot_draw_y)[1 * 7],16,16);
+      g_blit_transparent_mode = 0;
       /* Record grew from 0xc (12) to 0x1c (28) bytes: the original
          12-byte layout (0-3 next / 4-7 prev / 8-9 container-link / 10-11
          weight) only ever stored its next/prev CHAIN LINKS as 4-byte
@@ -35944,7 +35989,7 @@ short param_1;
       }
       FUN_000667cc();
       if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
-        close_backpack_container();
+        leave_nested_container_level();
       }
       else {
         /* Staying open: the item just left this container's own grid
@@ -35955,8 +36000,40 @@ short param_1;
       }
     }
     else {
-      close_backpack_container();
+      /* Was unconditionally `close_backpack_container()` -- fully
+         closing the ENTIRE open-container chain regardless of how many
+         levels deep the player had navigated. User QA: "opening a
+         nested container does not update to show the new container --
+         should let you go back to the parent container on click." A
+         plain click on this icon should pop back ONE level (to
+         whichever container this one is nested inside, if any), not
+         necessarily close everything -- leave_nested_container_level
+         already implements exactly that (and itself calls
+         close_backpack_container when there's no parent to pop back
+         to, so top-level containers still close in one click same as
+         before). */
+      leave_nested_container_level();
     }
+    /* poll_input_bindings dispatches off a non-consuming peek_input_event()
+       -- the mouse-down event stays "pending" and gets seen again on
+       later ticks (this project's own consuming-vs-peeking distinction,
+       see poll_input_event's comment) until something drains it, which
+       is why interact_default's own equivalent "committed click" tail
+       calls FUN_00057604(1) (loop until the button is actually
+       released). Every other branch here happens to be safe without it
+       -- either its resolved widget/slot changes once the click takes
+       effect (so a stray re-fire lands somewhere harmless) or its own
+       action is naturally idempotent (close_backpack_container's own
+       top-level `g_current_container_record != 0` guard no-ops on a
+       repeat call). leave_nested_container_level pops exactly one MORE
+       level on every call, so without this it was silently popping
+       2-3 levels per real single click -- confirmed live: a single
+       SDLCLICK (and even a separately-timed SDLDOWN/SDLUP pair) on this
+       icon fired handle_inventory_panel_click's widget-1 branch 2-3
+       times in a row, so a nested container's "go back one level" click
+       fell all the way through to a full close instead of stopping at
+       the parent. */
+    FUN_00057604(1);
     return;
   }
   if ((0 < iVar9) && (iVar9 < 0x15)) {
