@@ -1,0 +1,91 @@
+# Orbits the test critter (assoc-table type 26, CR32PAGE.N00, tile
+# (17,7) on the chargen-spawn level) through the 4 cardinal camera
+# positions, screenshotting from each so the critter's displayed
+# sprite/direction can be checked by eye across viewing angles. See
+# ad18e2a (DAT_00086cc0 octant table fix) and the model-heading revert
+# this file was built to re-verify.
+#
+# Run with:
+#   UW_ENABLE_3D_GEOMETRY=1 UW_FAST_SLEEP=1 UW_DEBUG_CRITTER=1 \
+#     UW_DATA_DIR="$(pwd)/data" UW_DEMO_FILE=demo_critter_orbit_cardinal.txt \
+#     ./build/uw_dbg
+# then look at /tmp/critorbit_{N,E,S,W}.bmp. z=768 (confirmed the
+# natural floor height for all 4 tiles, via UW_DEBUG_FLOORZ) and the
+# 4 SETPLAYERPOS points were calibrated live against this specific
+# level/critter: the room here isn't open in every direction close to
+# the critter's own tile, so each shot stands in the CENTER of the
+# adjacent tile (N/S/E/W of the critter's tile (17,7)) rather than at
+# a fixed small radius from the critter itself -- smaller offsets
+# clipped into nearby walls from several directions.
+#
+# What to expect (last verified against this room's real geometry):
+# E gives the cleanest full view of the critter (stands square in the
+# corridor facing the camera). W shows a partial/edge glimpse. N shows
+# open corridor with the critter out of frame/occluded. S is genuinely
+# wall-blocked at the tile-center standpoint (real geometry between
+# (17,8) and the critter's tile, not a bad camera spot -- TELEPORT 17 8
+# with its own default facing does glimpse the critter, looking due
+# north from tile-center does not). Don't take S's blocked view as a
+# regression if it doesn't change.
+#
+# Also noted while building this: the UW_DEBUG_CRITTER
+# "[critter] emit_tile_objects: ... cam_yaw=" trace value looked stuck
+# across multiple SETPLAYERPOS calls in a row even though the
+# resulting screenshots and the trace's own quadrant/dir(uVar29)
+# fields DID visibly change -- likely an artifact of teleporting the
+# camera programmatically rather than a real gameplay bug (real
+# turning is gradual, this is instant), but flagged here in case a
+# future session wants to dig into DAT_00086e6c+0x2c's update timing.
+
+ENTER
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+UP
+TYPE Avatar
+UP
+UP
+UP
+UP
+UP
+SETPLAYERPOS 17.500 6.500 768 180 0
+WAIT 5
+REVEAL
+WAIT 3
+REVEAL
+WAIT 3
+SCREENSHOT /tmp/critorbit_N.bmp
+SETPLAYERPOS 18.500 7.500 768 270 0
+WAIT 5
+REVEAL
+WAIT 3
+REVEAL
+WAIT 3
+SCREENSHOT /tmp/critorbit_E.bmp
+SETPLAYERPOS 17.500 8.500 768 0 0
+WAIT 5
+REVEAL
+WAIT 3
+REVEAL
+WAIT 3
+SCREENSHOT /tmp/critorbit_S.bmp
+SETPLAYERPOS 16.500 7.500 768 90 0
+WAIT 5
+REVEAL
+WAIT 3
+REVEAL
+WAIT 3
+SCREENSHOT /tmp/critorbit_W.bmp

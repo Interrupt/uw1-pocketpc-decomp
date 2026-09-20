@@ -90,16 +90,34 @@ undefined4 param_4;
           }
         }
         else {
-          DAT_0023c648 = FUN_0002294c();
+          DAT_0023c648 = read_realtime_clock_units();
           DAT_0023c448 = 0;
         }
-        iVar2 = Ordinal_864(auStack_40,0,0,0,1);
-        if (iVar2 != 0) {
-          if (local_3c == 0x12) break;
-          Ordinal_870(auStack_40);
-          Ordinal_859(auStack_40);
+        /* One real game tick -- see uw_advance_game_tick's own comment
+           for why this must be called from exactly here (this loop, once
+           per iteration) rather than from inside uw_pump_events() itself,
+           which Ordinal_864 below triggers but which can also be
+           reached from other polling loops within a single iteration of
+           this one. */
+        uw_advance_game_tick();
+        {
+          static unsigned int _dbg_t0 = 0, _dbg_t1 = 0;
+          int _dbg = getenv("UW_DEBUG_ITERSPLIT") != NULL;
+          if (_dbg) _dbg_t0 = read_realtime_clock_units() * 4;
+          iVar2 = Ordinal_864(auStack_40,0,0,0,1);
+          if (iVar2 != 0) {
+            if (local_3c == 0x12) break;
+            Ordinal_870(auStack_40);
+            Ordinal_859(auStack_40);
+          }
+          if (_dbg) _dbg_t1 = read_realtime_clock_units() * 4;
+          main_loop_hud_flush();
+          if (_dbg) {
+            unsigned int _dbg_t2 = read_realtime_clock_units() * 4;
+            fprintf(stderr, "[itersplit] ordinal864_ms=%u hudflush_ms=%u\n",
+                    _dbg_t1 - _dbg_t0, _dbg_t2 - _dbg_t1);
+          }
         }
-        main_loop_hud_flush();
       }
       uVar3 = FUN_00077860(param_1,local_38);
       return uVar3;
@@ -396,7 +414,7 @@ undefined4 param_1;
       g_text_use_palette_color = 0;
     }
     else if (local_838 == 2) {
-      iVar4 = FUN_0002294c();
+      iVar4 = read_realtime_clock_units();
       do {
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
@@ -408,10 +426,10 @@ undefined4 param_1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT1_BYT_00086ed0);
         FUN_0006c98c(2,acStack_7ec,1);
-        iVar10 = FUN_0002294c();
+        iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
-      iVar4 = FUN_0002294c();
+      iVar4 = read_realtime_clock_units();
       do {
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
@@ -423,10 +441,10 @@ undefined4 param_1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT2_BYT_00086ebc);
         FUN_0006c98c(2,acStack_7ec,1);
-        iVar10 = FUN_0002294c();
+        iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
-      iVar4 = FUN_0002294c();
+      iVar4 = read_realtime_clock_units();
       do {
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
@@ -438,7 +456,7 @@ undefined4 param_1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_7ec,s__DATA_CREDIT3_BYT_00086ea8);
         FUN_0006c98c(2,acStack_7ec,1);
-        iVar10 = FUN_0002294c();
+        iVar10 = read_realtime_clock_units();
         sVar3 = next_input_event();
       } while ((sVar3 < 0) && (iVar10 - iVar4 < 0x2ee));
       FUN_00049924(0x7ffe);
