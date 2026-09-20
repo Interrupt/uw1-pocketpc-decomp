@@ -8840,7 +8840,7 @@ void FUN_00016ef8()
   if (3 < DAT_00085a6c[3]) {
     return;
   }
-  FUN_00057604(1);
+  wait_for_click_release(1);
   if ((((local_5e < 0x105) || (0x13f < local_5e)) || (0xb4 < local_60)) || (local_60 < 0x96)) {
     if (((local_5e < 0x105) || (0x13f < local_5e)) || ((0x94 < local_60 || (local_60 < 0x77)))) {
       if (local_5e < 0x114) {
@@ -8959,7 +8959,7 @@ LAB_000171bc:
   }
   FUN_00017b38(iVar10);
 LAB_0001764c:
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 LAB_000171a4:
   sVar2 = FUN_000575c4(&local_5a);
@@ -11910,7 +11910,7 @@ int param_4;
         g_cursor_holding_state = 1;
         return;
       }
-      FUN_00057604(1);
+      wait_for_click_release(1);
       FUN_00057504(&local_36,&local_38);
       sVar1 = FUN_0001bef4((int)local_36,(int)local_38,&local_10,&local_c,&local_8,&local_4);
       if (sVar1 == 0) {
@@ -11943,7 +11943,7 @@ int param_4;
       goto LAB_0001bec8;
     }
   }
-  FUN_00057604(1);
+  wait_for_click_release(1);
   g_cursor_holding_state = 1;
   if ((short)local_10 == 0) {
     g_cursor_holding_state = 1;
@@ -17584,7 +17584,7 @@ char * * param_2;
       if ((-1 < (char)(&DAT_002027d2)[iVar5]) && ((char)(&DAT_002027d2)[iVar5] < '\x10')) {
         sVar3 = FUN_000271dc(uVar2 & 0xf);
         if (sVar3 < 0) {
-          FUN_00057604(1);
+          wait_for_click_release(1);
           return 0xffffffff;
         }
         *param_1 = &DAT_002027d0 + iVar5;
@@ -18585,7 +18585,7 @@ short param_1;
     if ((0 < iVar1) && (iVar1 < DAT_00100794)) {
       DAT_00100790 = 0;
       DAT_0010078c = 0;
-      FUN_00057604(0);
+      wait_for_click_release(0);
       FUN_0007f140();
       FUN_0007fce8(1);
       FUN_0007f0e0();
@@ -18734,7 +18734,7 @@ int param_1;
 {
   int iVar1;
   
-  FUN_00057604(0);
+  wait_for_click_release(0);
   iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   FUN_0007f170(iVar1 * 500,0);
   return 1;
@@ -29408,7 +29408,7 @@ void FUN_0003df28()
     FUN_00078c80(0x45);
   }
   FUN_00078c94(0x46,extraout_r1 + 0x47,0x53);
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -29453,7 +29453,7 @@ void FUN_0003e0b4()
       Ordinal_1063(local_84,auStack_a4);
       Ordinal_1063(local_84,&DAT_0008522c);
       message_scroll_print_wrapped(local_84);
-      FUN_00057604(1);
+      wait_for_click_release(1);
     }
   }
   else if (0xd < DAT_00085a6c[1]) {
@@ -29969,7 +29969,7 @@ void interact_default()
   }
   FUN_00078c80(iVar1);
 LAB_0003f11c:
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -29979,7 +29979,7 @@ LAB_0003f11c:
 void interact_talk_npc()
 
 {
-  FUN_00057604(1);
+  wait_for_click_release(1);
   FUN_00028488(g_interact_target);
   return;
 }
@@ -30172,7 +30172,7 @@ void interact_look()
   }
   FUN_0007c2ec(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
   if (g_cursor_mode == 3) {
-    FUN_00057604(1);
+    wait_for_click_release(1);
   }
   else {
     iVar2 = FUN_000576d0();
@@ -30203,7 +30203,7 @@ void interact_use()
 
   DEBUG(INFO, "Interact use");
 
-  FUN_00057604(1);
+  wait_for_click_release(1);
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
   if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,g_interact_target), iVar1 != 0)) {
     if ((*g_interact_target & 0x1fe) != 0x16e) {
@@ -30361,7 +30361,7 @@ void FUN_0003f420()
       }
     }
 LAB_0003f584:
-    FUN_00057604(1);
+    wait_for_click_release(1);
   }
   return;
 }
@@ -30454,7 +30454,7 @@ void handle_inventory_panel_normal_click()
       g_interact_target = FUN_00045678(2);
       if (g_interact_target != 0) {
         (*DAT_002020b8)(g_interact_target,1,1);
-        FUN_00057604(1);
+        wait_for_click_release(1);
         return;
       }
       FUN_00057cac(3);
@@ -30645,7 +30645,7 @@ short param_1;
       if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar4 = FUN_00072b2c(), cVar4 == '\b')) {
         FUN_000735c0();
       }
-      FUN_00057604(1);
+      wait_for_click_release(1);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
         FUN_00057c5c(0x1077);
       }
@@ -30715,7 +30715,7 @@ short param_1;
       if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar2 = FUN_00072b2c(), cVar2 == '\b')) {
         FUN_000735c0();
       }
-      FUN_00057604(1);
+      wait_for_click_release(1);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
         FUN_00057c5c(0x1077);
       }
@@ -31999,7 +31999,7 @@ void FUN_00041210()
   FUN_000411b8(5);
   full_dungeon_redraw();
   FUN_000411cc(5);
-  FUN_00057604(1);
+  wait_for_click_release(1);
   full_dungeon_redraw();
   FUN_000411b8(5);
   FUN_00067d10(1);
@@ -33372,8 +33372,8 @@ void leave_nested_container_level()
         fprintf(stderr, "[inv] leave_nested_container_level: popped to record=%p g_current_container_link=0x%04x resolved=%p\n",
                 (void *)g_current_container_record, (unsigned)g_current_container_link, (void *)iVar1);
       _DAT_00202978 = (_DAT_00202978 ^ *(ushort *)(iVar1 + 6)) & 0x3f ^ *(ushort *)(iVar1 + 6);
-      FUN_00042e30();
-      FUN_00042d70();
+      repopulate_container_grid_slots();
+      refresh_container_view();
       redraw_inventory_widget_range(0x14,0x14);
     }
   }
@@ -33384,7 +33384,7 @@ void leave_nested_container_level()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_00042d70()
+void refresh_container_view()
 
 {
   short sVar1;
@@ -33408,7 +33408,7 @@ void FUN_00042d70()
 
 
 
-void FUN_00042e30()
+void repopulate_container_grid_slots()
 
 {
   undefined2 uVar1;
@@ -33857,7 +33857,7 @@ short param_1;
           *(byte *)puVar7 = ((char)(uVar3 & 0xf) + 1U ^ (byte)uVar3) & 0xf ^ (byte)uVar3;
           *(byte *)((char *)puVar7 + 1) = (byte)(uVar3 >> 8);
         }
-        FUN_00042d70();
+        refresh_container_view();
         redraw_inventory_widget_range(0x14,0x14);
         if ((char)(&g_backpack_slot_to_widget)[iVar1] < '\v') {
           redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
@@ -33877,8 +33877,8 @@ void FUN_00043614()
 {
   if ((g_open_container_list != 0) && (DAT_0020299c != 0)) {
     _DAT_00202978 = DAT_00202980;
-    FUN_00042e30();
-    FUN_00042d70();
+    repopulate_container_grid_slots();
+    refresh_container_view();
   }
   return;
 }
@@ -33919,8 +33919,8 @@ void FUN_0004365c()
 LAB_00043700:
     sVar1 = encode_object_slot_index(iVar3);
     _DAT_00202978 = _DAT_00202978 & 0x3f | sVar1 << 6;
-    FUN_00042e30();
-    FUN_00042d70();
+    repopulate_container_grid_slots();
+    refresh_container_view();
   }
   return;
 }
@@ -34060,7 +34060,7 @@ LAB_000439a0:
         }
       }
       else {
-        FUN_00042e30();
+        repopulate_container_grid_slots();
         redraw_inventory_widget_range(0xc,0x13);
       }
       uVar2 = *param_1;
@@ -34130,7 +34130,7 @@ undefined4 param_2;
       sVar2 = FUN_00046260(param_1);
       g_player_carry_weight = g_player_carry_weight + sVar2;
       FUN_000667cc();
-      FUN_00042e30();
+      repopulate_container_grid_slots();
       redraw_inventory_widget_range((int)(char)(&g_backpack_slot_to_widget)[(short)param_2],
                    (int)(char)(&g_backpack_slot_to_widget)[(short)param_2]);
       return sVar1 != 0;
@@ -34717,7 +34717,7 @@ void FUN_0004497c()
         }
       }
     }
-    FUN_00057604(1);
+    wait_for_click_release(1);
   }
   return;
 }
@@ -34767,7 +34767,7 @@ void FUN_00044bd8()
         }
         FUN_00078c80(iVar2 + 0x89);
       }
-      FUN_00057604(1);
+      wait_for_click_release(1);
     }
   }
   return;
@@ -34788,7 +34788,7 @@ short param_1;
         FUN_00072f30(0x15,0x40,0);
       }
       else {
-        FUN_00057604(1);
+        wait_for_click_release(1);
         iVar1 = 0;
         do {
           if ((ushort)((ushort)*(byte *)(DAT_00086df8 + 0x49) +
@@ -34806,7 +34806,7 @@ short param_1;
       }
     }
     else {
-      FUN_00057604(1);
+      wait_for_click_release(1);
     }
   }
   return;
@@ -35326,8 +35326,8 @@ uint param_2;
       redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar8]);
     }
     else {
-      FUN_00042e30();
-      FUN_00042d70();
+      repopulate_container_grid_slots();
+      refresh_container_view();
       /* Was `for (iVar7 = g_current_container_record; ...)` -- truncated
          g_current_container_record (a real char* global) into a 32-bit
          int, then rebuilt a bogus "next" address out of raw bytes at
@@ -35377,16 +35377,16 @@ uint param_2;
        containers deep) unlinked the object but, unlike this function's
        OWN sibling branch just above (the `iVar8<0x1c && iVar8>=0x13`
        case), never refreshed the open-container widget grid
-       afterward. Added the same FUN_00042e30/FUN_00042d70 pair that
-       sibling already calls (FUN_00042d70's own first line is
+       afterward. Added the same repopulate_container_grid_slots/refresh_container_view pair that
+       sibling already calls (refresh_container_view's own first line is
        `redraw_inventory_widget_range(0xc,0x13)` -- exactly that grid)
        for consistency -- not independently confirmed live (this
        specific branch wasn't the one the torch-duplication repro
        exercised; see extract_and_refresh_slot_item's own comment for
        the actual confirmed root cause), but the same staleness risk
        applies on general principle. */
-    FUN_00042e30();
-    FUN_00042d70();
+    repopulate_container_grid_slots();
+    refresh_container_view();
     redraw_inventory_widget(0x13);
     FUN_000667cc();
   }
@@ -35425,8 +35425,8 @@ short param_4;
   puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
-    FUN_00042e30();
-    FUN_00042d70();
+    repopulate_container_grid_slots();
+    refresh_container_view();
     return uVar1;
   }
   redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_4]);
@@ -35451,8 +35451,8 @@ short param_4;
   puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
-    FUN_00042e30();
-    FUN_00042d70();
+    repopulate_container_grid_slots();
+    refresh_container_view();
     return uVar1;
   }
   redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[param_4]);
@@ -36019,7 +36019,7 @@ short param_1;
        later ticks (this project's own consuming-vs-peeking distinction,
        see poll_input_event's comment) until something drains it, which
        is why interact_default's own equivalent "committed click" tail
-       calls FUN_00057604(1) (loop until the button is actually
+       calls wait_for_click_release(1) (loop until the button is actually
        released). Every other branch here happens to be safe without it
        -- either its resolved widget/slot changes once the click takes
        effect (so a stray re-fire lands somewhere harmless) or its own
@@ -36033,7 +36033,7 @@ short param_1;
        times in a row, so a nested container's "go back one level" click
        fell all the way through to a full close instead of stopping at
        the parent. */
-    FUN_00057604(1);
+    wait_for_click_release(1);
     return;
   }
   if ((0 < iVar9) && (iVar9 < 0x15)) {
@@ -36044,7 +36044,7 @@ short param_1;
         if (iVar9 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
           toggle_weapon_ready();
         }
-        FUN_00057604(1);
+        wait_for_click_release(1);
         return;
       }
       if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = FUN_000576d0(1), iVar6 != 0)) {
@@ -36094,8 +36094,8 @@ short param_1;
             *(char *)(iVar6 + 10) = (char)iVar9;
             *(char *)(iVar6 + 0xb) = (char)((uint)iVar9 >> 8);
           }
-          FUN_00042e30();
-          FUN_00042d70();
+          repopulate_container_grid_slots();
+          refresh_container_view();
         }
         if (g_selected_object == 0) {
           return;
@@ -36106,11 +36106,11 @@ short param_1;
         }
       }
     }
-    FUN_00057604(1);
+    wait_for_click_release(1);
     FUN_00057504(&local_2e,&local_30);
     uVar5 = hit_test_inventory_widget((int)local_2e,(int)local_30);
   }
-  FUN_00057604(1);
+  wait_for_click_release(1);
   sVar1 = (short)uVar5;
   if ((g_selected_object == 0) || (g_cursor_holding_state == 2)) {
     if (0 < sVar1) {
@@ -36206,7 +36206,7 @@ ushort * param_1;
   g_selected_object = param_1;
   FUN_00057c5c(*param_1 & 0x1ff);
   FUN_000575c4(&local_14);
-  if ((local_14 != 0) && (FUN_00057604(1), g_selected_object != (ushort *)0x0)) {
+  if ((local_14 != 0) && (wait_for_click_release(1), g_selected_object != (ushort *)0x0)) {
     FUN_00057504(local_10,&local_12);
     sVar2 = hit_test_inventory_widget((int)local_10[0],(int)local_12);
     if (getenv("UW_DEBUG_INV"))
@@ -36893,8 +36893,8 @@ short param_2;
         redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
       }
       else {
-        FUN_00042e30();
-        FUN_00042d70();
+        repopulate_container_grid_slots();
+        refresh_container_view();
       }
       uVar3 = 1;
     }
@@ -45783,7 +45783,7 @@ short param_1;
     FUN_00057118();
     FUN_00056cc8(6);
     FUN_000570b4();
-    FUN_00057604(0);
+    wait_for_click_release(0);
   }
   DAT_002046f8 = 0;
   do {
@@ -46256,7 +46256,7 @@ undefined4 param_1;
     PTR_FUN_00086900_table[DAT_000868dc](param_1);
   }
   FUN_000570b4();
-  FUN_00057604(0);
+  wait_for_click_release(0);
   return;
 }
 
@@ -46691,7 +46691,7 @@ short * param_1;
 
 
 
-void FUN_00057604(param_1)
+void wait_for_click_release(param_1)
 int param_1;
 
 {
@@ -64819,7 +64819,7 @@ ushort * param_1;
   }
   FUN_00057cac(3);
   g_cursor_holding_state = 0;
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -66646,7 +66646,7 @@ void FUN_00078434()
     }
   }
   select_active_font(s_font5x6p_sys_0008430c);
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -68728,7 +68728,7 @@ int param_3;
         FUN_0004503c((int)local_22);
       }
       else if (local_20[0] == 2) {
-        FUN_00042d70();
+        refresh_container_view();
       }
       finish_object_use(param_2,0,1);
       return;
@@ -68808,7 +68808,7 @@ LAB_0007b7e4:
       *(byte *)(iVar3 + 4) = (byte)uVar7 | 0x3f;
       *(char *)(iVar3 + 5) = (char)((ushort)uVar7 >> 8);
     }
-    FUN_00057604(1);
+    wait_for_click_release(1);
     break;
   case 300:
     break;
@@ -69362,7 +69362,7 @@ void FUN_0007ca0c()
   FUN_000740b0(DAT_00202098,(int)(char)DAT_00202094);
   g_cursor_holding_state = 0;
   FUN_00057cac(3);
-  FUN_00057604(1);
+  wait_for_click_release(1);
   return;
 }
 
@@ -70850,7 +70850,7 @@ uint param_2;
   int iVar3;
   uint uVar4;
   
-  FUN_00057604(1);
+  wait_for_click_release(1);
   sVar1 = next_input_event();
   iVar3 = read_realtime_clock_units();
   if (DAT_00250708 != 0 && param_2 != 0) {
@@ -70861,7 +70861,7 @@ uint param_2;
     if (sVar1 != sVar2) break;
     flush_dirty_rect_to_display(1);
   } while ((param_1 == 0) || (uVar4 = read_realtime_clock_units(), uVar4 <= (uint)(param_1 + iVar3)));
-  FUN_00057604(1);
+  wait_for_click_release(1);
   FUN_0007f094();
   if ((param_2 & DAT_00250708) != 0) {
     FUN_00057118();
@@ -71531,7 +71531,7 @@ short param_5;
   iVar7 = ((int)sVar4 + (int)DAT_0025070c) * 0x10000 >> 0x10;
   iVar14 = (int)*(short *)(DAT_00250704 + 10);
   FUN_00057118();
-  FUN_00057604(0);
+  wait_for_click_release(0);
   uVar8 = next_input_event();
   sVar4 = (short)uVar8;
   do {
@@ -71764,7 +71764,7 @@ int * param_3;
   }
   message_scroll_print_wrapped(puVar2);
   FUN_00057118();
-  FUN_00057604(0);
+  wait_for_click_release(0);
   while( true ) {
     uVar3 = next_input_event();
     sVar1 = (short)uVar3;
