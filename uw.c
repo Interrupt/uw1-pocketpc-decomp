@@ -38318,6 +38318,54 @@ static void uw_debug_blit_pick_buffer(void)
   }
 }
 
+
+
+/* Debug view (UW_DEBUG_DRAW_INV_POSITIONS): outline every real inventory
+   hotspot's click rect (g_inventory_hotspot_table's 23 records, plus the
+   CONTAINER_ICON_WIDGET_ID rect, which isn't in that table) in bright
+   red, directly into the framebuffer -- for visually verifying the
+   recovered hotspot table lines up with the actual paperdoll/backpack
+   panel art (open the inventory panel, screenshot, and check every box
+   sits exactly on its icon). Record 0 is the real degenerate sentinel
+   (x1=x2, y1=y2) and is skipped, same as hit_test_inventory_widget's
+   own no-op treatment of it. Outline only (not filled) so the icon
+   underneath stays visible. */
+static void uw_debug_draw_inv_hotspot_positions(void)
+{
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int i, min_x = 0x7fffffff, max_x = -1, min_y = 0x7fffffff, max_y = -1;
+  if (fb == 0) return;
+  for (i = 0; i <= 0x17; i++) {
+    int x1, y1, x2, y2, x, y;
+    if (i < 0x17) {
+      int off = i * 0xe;
+      x1 = *(short *)(&g_inv_hotspot_click_x1 + off);
+      y1 = *(short *)(&g_inv_hotspot_click_y1 + off);
+      x2 = *(short *)(&g_inv_hotspot_click_x2 + off);
+      y2 = *(short *)(&g_inv_hotspot_click_y2 + off);
+      if (x1 == x2 && y1 == y2) continue;
+    } else {
+      x1 = CONTAINER_ICON_CLICK_X1; y1 = CONTAINER_ICON_CLICK_Y1;
+      x2 = CONTAINER_ICON_CLICK_X2; y2 = CONTAINER_ICON_CLICK_Y2;
+    }
+    for (x = x1; x <= x2; x++) {
+      if (x < 0 || x >= 320) continue;
+      if (y1 >= 0 && y1 < 200) fb[y1 * 0x140 + x] = 0xF800;
+      if (y2 >= 0 && y2 < 200) fb[y2 * 0x140 + x] = 0xF800;
+    }
+    for (y = y1; y <= y2; y++) {
+      if (y < 0 || y >= 200) continue;
+      if (x1 >= 0 && x1 < 320) fb[y * 0x140 + x1] = 0xF800;
+      if (x2 >= 0 && x2 < 320) fb[y * 0x140 + x2] = 0xF800;
+    }
+    if (x1 < min_x) min_x = x1;
+    if (x2 > max_x) max_x = x2;
+    if (y1 < min_y) min_y = y1;
+    if (y2 > max_y) max_y = y2;
+  }
+  if (max_x >= 0) dirty_rect_union(min_y, max_y, min_x, max_x);
+}
+
 // was FUN_000497cc -- runs once per in-game main-loop iteration: resets
 // the dirty rect to a degenerate {100,100,100,100}, redraws the small
 // HUD/cursor element, and flushes that to the display
@@ -38421,6 +38469,10 @@ void main_loop_hud_flush()
       _t2 = read_realtime_clock_units() * 4;
       fprintf(stderr, "[hudsplit] pre_pib_ms=%u pib_ms=%u\n", _t1 - _dbg_hf_t0, _t2 - _t1);
     }
+  }
+  { static int _div = -1;
+    if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
+    if (_div) uw_debug_draw_inv_hotspot_positions();
   }
   /* When the forced 3D redraw ran this frame, push it through even if a
      mouse button is being held in the viewport: DAT_0023c63c (the
