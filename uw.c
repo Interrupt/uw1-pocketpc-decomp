@@ -36182,6 +36182,18 @@ short param_1;
     fprintf(stderr, "[inv] handle_inventory_panel_click click test: panel_x=%d panel_y=%d -> widget_id=%d\n",
             (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]), (int)(short)uVar5);
   iVar9 = (int)(short)uVar5;
+  /* Permanent (not env-gated) debug line: which real widget got clicked
+     and which g_backpack_widget_to_slot/DAT_00202950 slot it resolves
+     to -- DEBUG(INFO,...) prints by default under normal play (run.sh's
+     own UW_DEBUG_LEVEL=INFO), same as this file's other permanent [inv]
+     lines (e.g. "use item" above), and is quieted automatically by the
+     regression suite's own UW_DEBUG_LEVEL=WARN default. */
+  if ((0 < iVar9) && (iVar9 < 0x17)) {
+    DEBUG(INFO, "[inv] widget %d clicked -> slot %d\n", iVar9,
+          (int)(char)(&g_backpack_widget_to_slot)[iVar9]);
+  } else if (iVar9 == CONTAINER_ICON_WIDGET_ID) {
+    DEBUG(INFO, "[inv] widget %d clicked (container icon, no backing slot)\n", iVar9);
+  }
   /* Leave-container click: CONTAINER_ICON_WIDGET_ID is the open-container
      icon drawn above the grid, hit_test_inventory_widget's own special
      case for it (see that constant's own comment) -- no longer stealing
