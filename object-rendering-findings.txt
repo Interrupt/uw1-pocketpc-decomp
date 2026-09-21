@@ -2918,3 +2918,120 @@ investigation's established pattern (xoff, zoff, leaf, texture were
 all added opt-in first and defaulted on only after the user's own
 broader live testing confirmed them). Standard run-regressions.sh:
 6/6 clean throughout.
+
+UPDATE 2026-09-21 (21): REVIVED THE REAL cull_side_x/y/z OPCODES --
+ENTRY (20)'S CROSS-PRODUCT SUBSTITUTE DID NOT WORK; THIS DOES,
+CONFIRMED LIVE, NOW DEFAULT-ON
+═══════════════════════════════════════════════════════════════════════════
+User, after testing entry (20)'s cross-product substitute cull live:
+"This fixed backface culling does not seem to work for the doors and
+door frames, all faces seem to seem to be wound the same way. Revive
+the culling opcodes."
+
+WHY THE CROSS-PRODUCT SUBSTITUTE COULDN'T HAVE WORKED, confirmed rather
+than just accepted: a face-normal/winding test can only distinguish
+faces that have OPPOSING winding for their front/back sides. This
+model doesn't have that -- there's only ONE set of faces per real
+surface, and which ones belong in the final geometry is decided at
+CONSTRUCTION TIME by the bytecode's own cull_side_x/y/z opcodes, not by
+which way a face happens to wind once transformed. The user's own
+phrase ("all faces seem to be wound the same way") is exactly the
+symptom a winding-based test gives when there's no real winding
+distinction to find -- confirms the diagnosis, not just describes the
+bug.
+
+CONFIRMED THESE OPCODES ARE THE REAL, LOAD-BEARING MECHANISM, not a
+theoretical corner of the format: added UW_DEBUG_DLIST_OPCODES (dumps
+every opcode uwdl_walk visits) and ran it rendering this exact door.
+cull_side_x (0x0064): 1288 hits. cull_side_y (0x0066): 1288 hits.
+cull_side_z (0x0068): 1472 hits. For comparison, the face-emitting
+opcodes themselves: face_flat (0x007e) 2484, face_textured_same
+(0x00b4) 1932, face_textured (0x00a8) 644. The cull opcodes fire more
+often, combined, than the faces they gate -- this is the PRIMARY
+mechanism selecting this bank's geometry, not a rare edge case.
+
+REVERSE-ENGINEERED THE REAL OPERAND LAYOUT EMPIRICALLY, since the real
+x86 handler (16e7:3f7b for cull_side_x, 16e7:3f92 for cull_side_y,
+16e7:3fa9 for cull_side_z) isn't available in either this project's or
+uw1-decomp's own disassembly listings (checked directly: grepped
+uw1-decomp's docs/decompilation/listing/*.asm for these addresses,
+zero hits; their own docs/uw-playable/display-list.md table entry for
+these opcodes is itself only a name/length/one-line gloss, not a
+transcribed handler -- uw1-decomp has not reverse-engineered this
+either, matches their own admission already quoted in entry (20)).
+
+Added UW_DEBUG_DLIST_CULLOP to dump every live cull_side_* instruction's
+raw operand words (r[1]=displacement, r[2], r[3]) plus whatever
+uwdl_slot_at(r[2]) resolves to. Real output, verbatim:
+  at=159  op=0x0068 r1=30 r2=0x8001 r3=0    slot_placed=-1
+  at=178  op=0x0068 r1=30 r2=0x7fff r3=-8   slot_placed=-1
+  at=201  op=0x0064 r1=18 r2=0x8001 r3=0    slot_placed=-1
+  at=214  op=0x0066 r1=18 r2=0x7fff r3=-208 slot_placed=-1
+  at=227  op=0x0064 r1=18 r2=0x7fff r3=-128 slot_placed=-1
+  at=240  op=0x0066 r1=18 r2=0x8001 r3=0    slot_placed=-1
+  (and more at further offsets, same pattern throughout)
+r[2] is EVERY TIME exactly 0x7fff (32767, the max positive signed 16-
+bit value) or 0x8001 (-32767, one more than the true minimum) -- never
+anything else, and never a valid slot (slot_placed=-1 means off%stride
+!= 0 every single time, ruling out "named cell reference" for r[2]
+directly, not by assumption). This is a bare SIGN MARKER, matching the
+doc's own gloss verbatim ("half-space test on x; the sign word says
+which half") -- r[2] IS the sign word. r[3] is a small, plausible
+coordinate-unit literal each time (0, -8, -208, -128, 48, -80, -16,
+-24) -- a literal threshold value, not a reference either.
+
+THE REAL TEST, derived from this: compare the bytecode's own current
+accumulated-translation origin on the relevant axis (m->t[axis], the
+exact same state 0x004a/translate already maintains -- no new state
+needed) against the literal threshold r[3], with r[2]'s sign picking
+which side of that comparison survives. This is a pure, static,
+construction-time half-space test using VM state the interpreter
+already has -- not a runtime camera-relative check at all, despite
+uw1-decomp's own gloss calling it "drop the faces pointing away from
+the eye" (their own inferred PURPOSE, evidently correct in effect for
+a model authored with a canonical front/back orientation, but not a
+literal live camera query in the mechanism itself).
+
+IMPLEMENTATION: added int cull_valid/cull_take to uwdl_vm. In the main
+opcode-dispatch switch in uwdl_walk, before the existing semantic
+switch(op), added a block that recognizes 0x0064/0x0066/0x0068,
+computes axis = 0/1/2 respectively, origin = -m->t[axis] (t[] is
+already the NEGATED accumulator per uwdl_place's own existing
+convention), thresh = sign16(r[3]), keep = (r[2] as signed short > 0)
+? origin>=thresh : origin<=thresh, and stores cull_valid=1/cull_take=
+!keep for the branch-decision code below to consume. UW_DLIST_
+REAL_CULL_FLIP inverts keep for calibration. Then in the existing
+kind==3 branch-decision code (previously only the generic "policy"
+fallback used by skip_if_le/ge, which never resolves for these opcodes
+and always falls through unconditionally): if m->cull_valid is set,
+take the real branch (skip forward, i.e. cull) when m->cull_take,
+otherwise fall through and keep the face -- entirely bypassing the old
+always-fall-through default for cull_side_* specifically, while
+leaving skip_if_le/skip_if_ge's own existing door-open/shut handling
+completely untouched (still always falls through, matching this file's
+documented "assumes shut" behavior elsewhere).
+
+VERIFICATION, decisive not ambiguous: screenshot at the QA3 repro
+position (tile=31.95,8.98 z=640 yaw=85) with the real cull opcodes
+active and UW_DLIST_REAL_CULL_FLIP unset renders a complete, correct
+door -- same frame, same leaf, nothing missing, pixel-identical in
+gross appearance to the pre-culling baseline despite culling away
+roughly 31% of guarded faces (215 CULL / 473 keep decisions logged
+across one render's worth of frames). Flipping the polarity
+(UW_DLIST_REAL_CULL_FLIP=1) at the exact same position renders a
+visibly BROKEN door instead -- missing frame panels, a gaping
+unintended black void where geometry should be -- a stark, unambiguous
+contrast that leaves no real doubt about which polarity is correct.
+Checked the second, differently-oriented door (tile=24.5,6.5 yaw=270)
+too: unaffected either way (same pre-existing rendering situation noted
+in entry (20)), not a regression.
+
+DEFAULTED UW_DLIST_REAL_CULL_OPCODES ON (opt-out via =0, matching this
+file's UW_DISABLE_*-style convention) given the decisive confirmation
+above -- unlike entry (20)'s substitute, which stayed opt-in for lack
+of a real confirming test, this one has one. REMOVED entry (20)'s
+cross-product substitute entirely (the UW_DLIST_CULL/_CULL_FLIP/
+UW_DEBUG_DLIST_CULL env vars and their code) rather than leaving it in
+as dead, superseded, confusing code now that the real mechanism works
+and the user confirmed the substitute doesn't. Standard
+run-regressions.sh: 6/6 clean throughout.

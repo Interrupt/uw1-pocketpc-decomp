@@ -52762,6 +52762,7 @@ typedef struct {
   int queue_len, queue_head;
   int policy, has_policy;
   int depth, stop;
+  int cull_valid, cull_take;
 } uwdl_vm;
 
 static int32_t uwdl_sign16(unsigned short w) { return (int32_t)(short)w; }
@@ -52895,6 +52896,58 @@ static void uwdl_walk(uwdl_vm *m, int at)
     n = uwdl_record_length(m->words, m->count, at);
     if (n == 0) { m->stop = 1; break; }
     r = m->words + at;
+    if (getenv("UW_DEBUG_DLIST_OPCODES"))
+      fprintf(stderr, "[dlist-op] at=%d op=0x%04x\n", at, op);
+    /* cull_side_x/y/z (0x0064/66/68): DOS's own real opcodes ("half-space
+       test on x/y/z; the sign word says which half", uw1-decomp docs/
+       uw-playable/display-list.md:401-403), confirmed live to be heavily
+       used by this exact bank (UW_DEBUG_DLIST_OPCODES: 1288-1472 hits
+       each rendering this door) -- not a theoretical opcode, the thing
+       actually gating most of this bank's faces. Neither this
+       interpreter's own uwdl_transfer (kind=3 "policy" branches, never
+       resolved -- always falls through) nor uw1-decomp's own port
+       implements the real test; both draw every face unconditionally
+       (see UPDATE (19)/(20) in the findings doc for the full trace of
+       why that reads as a "backface culling is flipped" symptom).
+       Reverse-engineered the real operand layout empirically instead of
+       guessing: UW_DEBUG_DLIST_CULLOP dumped r[2] as ALWAYS exactly
+       0x7fff or 0x8001 (the extreme +/- values a signed 16-bit word can
+       hold) and uwdl_slot_at(r[2]) as never a valid slot (off%stride!=0,
+       "slot_placed=-1" every time) -- ruling out "named cell reference"
+       for r[2] and confirming it really is just a sign marker, exactly
+       matching the doc's own words. r[3] came back as small, plausible
+       coordinate-unit values (-208, -128, 48, -80, -16, -24, 0) -- a
+       literal threshold, not a slot reference either. So the real test
+       compares this bytecode's OWN current accumulated-translation
+       origin (m->t[axis], the same state 0x004a/translate already
+       maintains) against that literal threshold, with r[2]'s sign
+       picking which side survives -- a pure construction-time
+       half-space test using state this interpreter already has, not a
+       runtime camera check (this project's earlier UW_DLIST_CULL
+       cross-product substitute assumed the latter and the user
+       confirmed live it doesn't distinguish these faces at all --
+       consistent with there being no real front/back winding pair to
+       tell apart, only this construction-time selection). Polarity
+       (which sign keeps which side) confirmed live, not just assumed:
+       UW_DLIST_REAL_CULL_FLIP (inverting it) renders a visibly broken
+       door -- missing frame panels, a gaping unintended void -- while
+       this default renders a complete, correct one, at two independent
+       test positions. See uwdl_walk's own kind==3 branch handling below
+       for where this decision actually takes effect. */
+    if (op == 0x0064 || op == 0x0066 || op == 0x0068) {
+      int _axis = (op == 0x0064) ? 0 : (op == 0x0066) ? 1 : 2;
+      int32_t _origin = -m->t[_axis];
+      int32_t _thresh = uwdl_sign16(r[3]);
+      int _keep = ((short)r[2] > 0) ? (_origin >= _thresh) : (_origin <= _thresh);
+      if (getenv("UW_DLIST_REAL_CULL_FLIP")) _keep = !_keep;
+      m->cull_valid = 1;
+      m->cull_take = !_keep;
+      if (getenv("UW_DEBUG_DLIST_CULLOP"))
+        fprintf(stderr, "[dlist-cullop] at=%d op=0x%04x axis=%d origin=%d sign=0x%04x thresh=%d -> %s\n",
+                at, op, _axis, _origin, r[2], _thresh, _keep ? "keep" : "CULL");
+    } else {
+      m->cull_valid = 0;
+    }
     switch (op) {
     case 0x004a:
       m->t[0] -= uwdl_sign16(r[1]); m->t[1] -= uwdl_sign16(r[2]); m->t[2] -= uwdl_sign16(r[3]);
@@ -52971,6 +53024,25 @@ static void uwdl_walk(uwdl_vm *m, int at)
         int32_t d = uwdl_sign16(m->words[at + disp]);
         int tgt = at + 1 + consumed + d/2;
         if (kind == 3) {
+          /* Use the real, just-evaluated cull_side_x/y/z decision
+             (m->cull_valid/cull_take, see the opcode-dispatch block
+             above) instead of the generic kind=3 "policy" fallback
+             below -- which was never meant for these opcodes
+             specifically (it exists for skip_if_le/ge's own door-open/
+             shut branch selection, left untouched here: those still
+             always fall through, matching the documented "assumes
+             shut" behavior elsewhere in this file). Default-on: the
+             polarity was confirmed live (UW_DLIST_REAL_CULL_FLIP
+             produces a visibly broken door -- missing frame panels, a
+             gaping unintended void -- while this default renders a
+             complete, correct one, at two independent test positions).
+             UW_DLIST_REAL_CULL_OPCODES=0 opts back out, matching this
+             file's UW_DISABLE_*-style convention. */
+          if (m->cull_valid && (getenv("UW_DLIST_REAL_CULL_OPCODES") == NULL ||
+                                 atoi(getenv("UW_DLIST_REAL_CULL_OPCODES")) != 0)) {
+            if (m->cull_take) { at = tgt; continue; }
+            at = nxt; continue;
+          }
           uwdl_note_site(m, at);
           if (!m->has_policy || m->policy != at) { at = nxt; continue; }
           if (end_on_zero && d == 0) goto done;
@@ -53225,66 +53297,17 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
       i3 = (start + 2 < nv) ? base_vtx+start+2 : i2;
       s0 = src_idx[0]; s1 = src_idx[start]; s2 = src_idx[start+1];
       s3 = (start + 2 < nv) ? src_idx[start+2] : s2;
-      /* UW_DLIST_CULL: real backface culling. Confirmed by tracing DOS's
-         own bytecode (uw1-decomp port/uw1_dlist.c, opcodes 0x0064/66/68
-         "cull_side_x/y/z" -- "half-space test on x/y/z; the sign word
-         says which half") that a real per-axis cull test exists in the
-         ORIGINAL engine and drops faces pointing away from the eye. But
-         neither uw1-decomp's own port nor this file's ported interpreter
-         (uwdl_transfer's kind=3 "policy" branches, never evaluated)
-         actually implements that test's real math -- uw1-decomp's own
-         comment on this (port/uw1_view.c ~2493) says so directly: "every
-         face the bank can build is drawn and the depth buffer settles
-         the overlap." We have no depth buffer either (grep confirms:
-         no z-buffer anywhere in this renderer), so faces are painted in
-         fixed bytecode order regardless of view -- whichever of a real
-         front/back face pair happens to come LAST in that order simply
-         overdraws the other, which is exactly consistent with a
-         visually "flipped"/wrong-face-showing symptom that changes with
-         camera quadrant (the geometry's orientation relative to the
-         fixed draw order changes with heading, even though draw order
-         itself doesn't). Rather than reverse-engineer the real x86
-         handler (16e7:3f7b etc, not available), use the standard,
-         general 3D technique instead: a face normal from the two edges
-         of its own already-transformed (post-rotation/anchor) WORLD
-         vertices, culled by the sign of its Z component in this
-         renderer's own camera-canonical frame (the same frame the
-         DAT_0023b4a0 quadrant pre-rotation exists to establish, where
-         the camera always looks down a fixed axis). UW_DLIST_CULL_FLIP
-         inverts the sign, since the correct polarity isn't yet
-         independently confirmed -- calibrate live against a known-good
-         face before trusting either default. */
-      if (getenv("UW_DLIST_CULL") || getenv("UW_DEBUG_DLIST_CULL")) {
-        float *_pv0 = (float *)((char *)DAT_000a85d0_backing + 8 + i0*0xc);
-        float *_pv1 = (float *)((char *)DAT_000a85d0_backing + 8 + i1*0xc);
-        float *_pv2 = (float *)((char *)DAT_000a85d0_backing + 8 + i2*0xc);
-        double _e1x = _pv1[0]-_pv0[0], _e1y = _pv1[1]-_pv0[1], _e1z = _pv1[2]-_pv0[2];
-        double _e2x = _pv2[0]-_pv0[0], _e2y = _pv2[1]-_pv0[1], _e2z = _pv2[2]-_pv0[2];
-        double _nx = _e1y*_e2z - _e1z*_e2y;
-        double _ny = _e1z*_e2x - _e1x*_e2z;
-        double _nz = _e1x*_e2y - _e1y*_e2x;
-        double _cx = (_pv0[0]+_pv1[0]+_pv2[0])/3.0;
-        double _cy = (_pv0[1]+_pv1[1]+_pv2[1])/3.0;
-        double _cz = (_pv0[2]+_pv1[2]+_pv2[2])/3.0;
-        /* No confirmed camera/eye-position global found yet in this
-           canonical frame (DAT_0023b8c0/DAT_0023bc8c were tried first
-           but are quadrant-indexed tile-grid STEP constants, not a
-           position -- see their own use at uw.c ~57378 multiplying
-           tile-row/column indices; ruled out, not a guess). Falling
-           back to the frame's own construction: the entire point of the
-           DAT_0023b4a0 quadrant pre-rotation is to put the camera at a
-           fixed, simple place in this canonical space -- (0,0) in X/Z
-           is the natural candidate, not yet independently confirmed. */
-        double _ex = 0.0, _ez = 0.0;
-        double _vx = _cx - _ex, _vz = _cz - _ez;
-        double _dot = _nx*_vx + _nz*_vz;
-        if (getenv("UW_DLIST_CULL_FLIP")) _dot = -_dot;
-        if (getenv("UW_DEBUG_DLIST_CULL"))
-          fprintf(stderr, "[dlist-cull] fi=%d start=%d quadrant=%d heading=%d normal=(%g,%g,%g) centroid=(%g,%g,%g) eye=(%g,_,%g) dot=%g %s\n",
-                  fi, start, (int)DAT_0023b4a0, heading, _nx, _ny, _nz, _cx, _cy, _cz, _ex, _ez, _dot,
-                  (_dot < 0) ? "would-cull" : "would-keep");
-        if (getenv("UW_DLIST_CULL") && _dot < 0) continue;
-      }
+      /* Backface culling for this bank is now the REAL cull_side_x/y/z
+         bytecode opcodes (uwdl_walk's own kind=3 branch handling, see
+         UW_DLIST_REAL_CULL_OPCODES), not a post-hoc geometric guess --
+         a first attempt here using a generic cross-product face-normal
+         test was tried and confirmed live (by the user) not to
+         distinguish these faces at all, consistent with there being no
+         real front/back winding pair for a normal test to tell apart --
+         the model only has ONE set of faces per surface, selected at
+         CONSTRUCTION time by the bytecode's own cull opcodes, not by
+         view-dependent winding. See object-rendering-findings.txt's
+         dated UPDATE for the full trace/removal note. */
       rec = DAT_0023b83c;
       rb = rec * 0x60;
       *(int *)(&DAT_000acde4 + rb) = 4;

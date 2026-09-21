@@ -817,6 +817,63 @@ pattern: add opt-in, let the user's own broader live testing calibrate
 polarity/defaults, as already worked for xoff/zoff/leaf/texture above.
 Standard run-regressions.sh: 6/6 clean.
 
+**UPDATE 30 (revived the REAL cull_side_x/y/z opcodes -- the generic
+cross-product substitute from UPDATE 29 didn't work; this does,
+confirmed live, and is now default-on, 2026-09-21):** user: "This fixed
+backface culling does not seem to work for the doors and door frames,
+all faces seem to be wound the same way. Revive the culling opcodes."
+
+Confirmed why the cross-product test couldn't have worked: this
+model's faces don't have real opposing-winding front/back pairs for a
+normal test to tell apart -- the correct set is selected at
+CONSTRUCTION time by the bytecode's own `cull_side_x/y/z` opcodes
+(0x0064/0x0066/0x0068), confirmed live to be heavily used by this exact
+bank (`UW_DEBUG_DLIST_OPCODES`: 1288-1472 hits each, more than the
+face-emitting opcodes themselves) -- not a theoretical feature, the
+actual gate on most of this bank's geometry.
+
+Reverse-engineered the real operand layout empirically rather than
+guessing blind (the real x86 handler at `16e7:3f7b` etc. isn't
+available in either project's disassembly listings -- checked, not
+assumed): dumped every live `cull_side_*` instruction's raw operand
+words with a new `UW_DEBUG_DLIST_CULLOP`. `r[2]` came back as *always*
+exactly `0x7fff` or `0x8001` -- the two extremes a signed 16-bit word
+can hold -- and `uwdl_slot_at(r[2])` never resolved to a valid slot
+(`off % stride != 0` every time), ruling out "named cell reference" for
+`r[2]` and confirming it really is a bare sign marker, matching the
+doc's own words ("the sign word says which half") exactly. `r[3]` came
+back as small, plausible coordinate-unit values (-208, -128, 48, -80,
+-16, -24, 0) -- a literal threshold, not a slot reference either. So
+the real test compares this bytecode's own current accumulated-
+translation origin (`m->t[axis]`, state `0x004a`/`translate` already
+maintains) against that literal threshold, with `r[2]`'s sign picking
+which side survives -- a pure construction-time half-space test, not a
+runtime camera check.
+
+Implemented the real evaluation in `uwdl_walk` itself (not a
+downstream heuristic this time): computes and stores `m->cull_take`
+right in the opcode-dispatch switch, then the existing `kind==3`
+branch-decision code (previously *only* the generic "policy" fallback,
+which never resolves for these opcodes and always falls through) now
+takes the real branch for `cull_side_x/y/z` specifically, leaving
+`skip_if_le`/`skip_if_ge`'s own existing door-open/shut handling
+untouched. `UW_DLIST_REAL_CULL_FLIP` inverts the polarity for
+calibration.
+
+VERIFIED, not just assumed: `UW_DLIST_REAL_CULL_FLIP=1` renders a
+visibly broken door (missing frame panels, a gaping unintended void)
+while the un-flipped polarity renders a complete, correct door at the
+QA3 repro position -- decisive, not ambiguous. Confirmed no regression
+at a second, differently-oriented door too. Culling removes roughly
+30% of this bank's guarded faces (215 of 688 decisions across one
+render, at the repro position) with zero visible change to the correct
+case -- exactly what a correct construction-time selector redundant-
+face removal should look like. Defaulted `UW_DLIST_REAL_CULL_OPCODES`
+on (opt-out via `=0`, matching this file's convention) given the
+decisive confirmation. Removed UPDATE 29's cross-product substitute
+entirely rather than leaving it as dead/confusing code, now that the
+real mechanism is working. Standard run-regressions.sh: 6/6 clean.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
