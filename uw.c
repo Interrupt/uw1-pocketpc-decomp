@@ -53197,6 +53197,22 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
       vf[1] = (float)(ah + my*scale + yoff);
       vf[2] = (float)(az + rz*scale);
       src_idx[vi] = _src;
+      /* UW_DEBUG_DLIST_XFORM: the opcode-decoded face list (UW_DEBUG_
+         DLIST/_UV above) prints raw bytecode-local coordinates, still in
+         the model's own body space -- reasoning about the quadrant-
+         dependent xoff-sign/UV-flip QA reports off of that requires
+         mentally replaying the heading rotation (ca/sa, itself already
+         carrying the -2*DAT_0023b4a0 quadrant correction) and the
+         anchor's own separate quadrant rotation by hand. This prints
+         each vertex's already-final, post-rotation/anchor world position
+         (the exact same vf[] value written into the shared arena) next
+         to its source local coordinate, so the two can be compared
+         directly without re-deriving the transform. */
+      if (getenv("UW_DEBUG_DLIST_XFORM"))
+        fprintf(stderr, "[dlist-xform] fi=%d vi=%d src=%d quadrant=%d heading=%d local=(%g,%g,%g) world=(%g,%g,%g)\n",
+                fi, vi, _src, (int)DAT_0023b4a0, heading,
+                f->p[_src][0], f->p[_src][1], f->p[_src][2],
+                vf[0], vf[1], vf[2]);
     }
     DAT_0023b838 = base_vtx + nv;
     DAT_000a85d0 = DAT_0023b838;
