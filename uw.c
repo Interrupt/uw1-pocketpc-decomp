@@ -53058,8 +53058,26 @@ static void uwdl_walk(uwdl_vm *m, int at)
              per-viewpoint behavior, not another static coincidence.
              UW_DLIST_REAL_CULL_OPCODES=0 still opts out, matching this
              file's UW_DISABLE_*-style convention. */
-          if (m->cull_valid && (getenv("UW_DLIST_REAL_CULL_OPCODES") == NULL ||
-                                 atoi(getenv("UW_DLIST_REAL_CULL_OPCODES")) != 0)) {
+          /* REVERTED TO OPT-IN AGAIN: confirmed live (user report) that
+             the door disappears ENTIRELY (faces=0, not just partial
+             loss) in roughly half of all camera-yaw quadrants --
+             reproduced directly at the QA3 repro tile, quadrant=1
+             (faces=8, correct) vs quadrant=2 (faces=0, every single
+             cull_side test evaluates CULL). The eye/comparison model
+             from the previous entry was verified multi-angle before
+             shipping, but not across a FULL quadrant sweep -- this is
+             exactly that gap. Round-trip-verified the eye transform
+             itself is algebraically self-consistent (applying the
+             forward vertex transform to the computed eye_local exactly
+             recovers the real camera world position, at the broken
+             quadrant too) -- so the bug is not a simple math slip in
+             uwdl_eye's own rotation, it's a deeper mismatch between how
+             the anchor's and the real camera's own independent
+             quadrant transforms relate to each other (or a similar
+             root cause), not yet fully isolated. See the dated
+             findings-doc entry for the live evidence. */
+          if (m->cull_valid && getenv("UW_DLIST_REAL_CULL_OPCODES") &&
+              atoi(getenv("UW_DLIST_REAL_CULL_OPCODES")) != 0) {
             if (m->cull_take) { at = tgt; continue; }
             at = nxt; continue;
           }

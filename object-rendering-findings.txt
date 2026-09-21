@@ -3488,3 +3488,113 @@ at all, if the working comparison doesn't use it, remains open but no
 longer blocks default-on status -- flagged for whoever investigates
 other display-list banks next, in case it matters there. Standard
 run-regressions.sh: 6/6 clean.
+
+UPDATE 2026-09-21 (26): CORRECTION -- ENTRY (25)'S DEFAULT-ON BREAKS
+DOORS COMPLETELY IN ~HALF OF ALL CAMERA-YAW QUADRANTS. REVERTED. ROOT
+CAUSE NARROWED TO THE REAL-CAMERA GLOBAL LIKELY LACKING THE SAME
+"WHICH TILE" COMPONENT OBJECT ANCHORS HAVE
+═══════════════════════════════════════════════════════════════════════════
+User, live-testing entry (25)'s default: "Doors render fine from some
+yaw quadrants, including backface culling, but are missing in the
+other 50%. Is the backface culling flipping based on the view
+quadrant?" Asked to confirm what "quadrant" meant: "quadrant = yaw
+quadrant, like in other rendering cases" -- confirming DAT_0023b4a0,
+the exact same camera-yaw quadrant this whole investigation has used
+from the start.
+
+REPRODUCED DIRECTLY AND EXACTLY: a full yaw sweep (0-340 in 20-degree
+steps) at the QA3 repro tile with UW_DEBUG_DLIST/UW_DEBUG_DOOR on.
+quadrant=1: faces=8 (correct, matching entry (25)'s own verification
+at this exact position). quadrant=2: faces=0 -- not partial loss like
+entry (21)'s 54%-over-cull bug, a COMPLETE blackout, every single face
+in the bank gone. UW_DEBUG_DLIST_CULLOP confirmed all 12 of this
+bank's cull_side instructions evaluate CULL simultaneously at
+quadrant=2 (all 12 evaluated keep-or-mixed at quadrant=1).
+
+RULED OUT THE OBVIOUS SUSPECTS BEFORE REVERTING BLIND, rather than
+just reaching for the revert immediately:
+
+1. The eye's own inverse-rotation formula. Verified by round-trip:
+   applying the SAME forward per-vertex transform (`rx=mx*ca-mz*sa;
+   world=anchor+rx*scale`, the exact formula real vertices go through)
+   to the computed eye_local, using the SAME ca/sa/anchor/scale as the
+   broken quadrant=2 case, EXACTLY recovers the original real camera
+   world position (verified to the unit: eye_local=(156,164,448) forward-
+   transforms back to world=(4108,4) matching real_camera_pos=(4108,
+   804,4) precisely). The rotation math itself is provably self-
+   consistent at the broken quadrant, not the bug.
+
+2. A mismatch between the anchor's own quadrant-rotation formula and
+   the camera's own (sync_camera_from_player). Read both side by side:
+   the anchor's code (uw.c ~54516-54534) and the camera's code (uw.c
+   ~59702-59719) implement the EXACT SAME four-case structure with the
+   exact same roles for each variable (own-X, own-Z, 0xff-X, 0xff-Z
+   selected identically per DAT_0023b4a0 value 0-3) -- byte-for-byte
+   equivalent formulas, just applied to different source bytes (the
+   object's own sub-tile fraction vs the player's own sub-tile
+   fraction). Not a mismatch either.
+
+NARROWED TO SOMETHING MORE SPECIFIC: the anchor's own X/Z globals
+(DAT_0023b904/920) preserve a HIGH BYTE across this quadrant-rotation
+code -- `DAT_0023b904 = (DAT_0023b904 & 0xff00) + local_54` only
+replaces the LOW byte (the sub-tile fraction this code computes); the
+high byte is left untouched, meaning it comes from some OTHER, earlier
+computation not yet traced (most likely something in the tile-walk,
+computed once per rendered tile, representing "which tile this object
+is in, relative to the player" as an already-rotated delta). Checked
+the actual anchor values from the reproduced working/broken cases: the
+high byte genuinely DIFFERS between quadrants for the SAME real door
+(X: 4240 & 0xff00 = 4096 at quadrant=1, vs 3664 & 0xff00 = 3584 at
+quadrant=2; Z: 688 & 0xff00 = 512 vs 144 & 0xff00 = 0) -- exactly what
+you'd expect if it's a genuine "which tile" delta that itself needs to
+rotate as the viewing quadrant changes, the same way the low byte
+does.
+
+But the real camera position's own equivalent base constants
+(DAT_0023bf30/34/38, added into DAT_000db438/43c/440 in sync_camera_
+from_player) have NO writer anywhere in this file at all -- already
+confirmed directly in entry (25) via grep, re-confirmed here. They are
+always 0. This means the camera position has NO "which tile" component
+whatsoever -- it is permanently bounded to a small range (the sub-tile
+fraction, 0-255-ish, plus one fixed constant on X only), regardless of
+which real-world tile the player is actually standing in. This is a
+real, structural asymmetry, not a coincidence: the anchor's own high
+byte genuinely moves with the real world layout as quadrant changes;
+the camera value's equivalent never moves at all, for any quadrant, at
+any real player position.
+
+LIKELY CONCLUSION, not yet proven or fixed: DAT_000db438/43c/440 are
+probably a narrower, VIEW-MATRIX-SPECIFIC quantity -- perfectly
+adequate for building the camera's own projection matrix (which only
+needs relative/local precision near the viewer, not absolute world
+position) -- rather than a general "player world position, in the same
+per-tile convention object anchors use" the way entry (25) assumed.
+The magnitude similarity that made this look promising at quadrant=1
+(real_camera_pos=(4100,804,243) vs anchor=(4240,640,688), both
+thousands-range) may have been a coincidence specific to that one
+quadrant/position pairing, not evidence the two live in a truly shared
+coordinate space in general.
+
+REVERTED UW_DLIST_REAL_CULL_OPCODES back to opt-in immediately (not
+after further guessing) given the severity -- a complete door
+blackout in half of all viewing directions is a much worse regression
+than entry (21)'s partial over-cull. Confirmed live: with it off, the
+same quadrant=2 case that showed faces=0 now correctly shows the full
+faces=11/faces=6 baseline geometry, door visible again from every
+angle tested. Standard run-regressions.sh: 6/6 clean.
+
+WHAT'S STILL SOLID, not undone by this revert: the face-plane opcode
+semantics and operand layout from entry (24) (independently confirmed
+by UWXtract, unaffected by this bug) remain correct findings. The
+unconditional `origin <= thresh` comparison (entry 25) is also likely
+still correct GIVEN a correct eye position -- entry (25)'s own
+multi-angle verification showed it working cleanly whenever the eye
+value was in the sub-tile-fraction-dominated range typical of a player
+standing very close to the door being tested; the bug is isolated to
+where the eye position comes from, not the comparison built on top of
+it. The well-scoped remaining task: compute a genuine "which tile is
+the player in, relative to this specific object" delta the same way
+the anchor's own high byte apparently does (likely requiring tracing
+where that high byte actually gets set, not yet done), rather than
+continuing to trust the view-matrix camera globals to already carry
+it.

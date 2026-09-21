@@ -1078,6 +1078,69 @@ word (r[2]) is encoded at all if the comparison doesn't use it remains
 an open, but no longer blocking, question. Standard run-regressions.sh:
 6/6 clean; confirmed door renders correctly with zero env vars set.
 
+**UPDATE 35 (CORRECTION -- UPDATE 34's default-on breaks doors
+completely in ~half of all camera-yaw quadrants; reverted; root cause
+narrowed to the real-camera global likely lacking the same "which
+tile" component object anchors have, 2026-09-21):** user, live-testing
+UPDATE 34's default: "Doors render fine from some yaw quadrants,
+including backface culling, but are missing in the other 50%. Is the
+backface culling flipping based on the view quadrant?" -- then, when
+asked to clarify "quadrant": "quadrant = yaw quadrant, like in other
+rendering cases" (confirming `DAT_0023b4a0`, the same camera-yaw
+quadrant this whole investigation has used throughout).
+
+REPRODUCED EXACTLY: full yaw sweep at the QA3 repro tile with
+`UW_DEBUG_DLIST` on. `quadrant=1`: `faces=8` (correct, matches UPDATE
+34's own verification). `quadrant=2`: `faces=0` -- the ENTIRE bank,
+every single face, gone. Not partial loss like UPDATE 30's bug -- a
+complete blackout in this quadrant. `UW_DEBUG_DLIST_CULLOP` confirmed
+all 12 of this bank's cull tests evaluate CULL simultaneously at
+quadrant=2, none at quadrant=1.
+
+RULED OUT the obvious suspects before reverting blind: (1) the eye's
+own inverse-rotation formula -- round-trip verified (apply the SAME
+forward vertex transform to the computed `eye_local`, using the SAME
+`ca`/`sa`/anchor/scale) EXACTLY recovers the original real camera world
+position, at the broken quadrant too, not approximately -- the
+rotation math itself is provably self-consistent, not the bug. (2) A
+mismatch between the anchor's and the camera's own quadrant-rotation
+formulas -- compared them side by side and they are byte-for-byte
+identical (same four-case structure, same roles for each variable),
+confirmed not the bug either.
+
+NARROWED to something more specific: the anchor's own X/Z (`DAT_
+0023b904`/`920`) preserve a HIGH BYTE across the quadrant-rotation code
+(`DAT_0023b904 = (DAT_0023b904 & 0xff00) + local_54` -- only the LOW
+byte, the sub-tile fraction, gets rotated by that code; the high byte,
+presumably "which tile" this object is in relative to the player, come
+from somewhere else entirely, not yet traced). Checked the real
+anchor values used in both the working and broken case: the high byte
+genuinely differs between quadrants for the SAME real door (X: 4096 at
+quadrant=1 vs 3584 at quadrant=2; Z: 512 vs 0) -- expected, if it's a
+real "which tile" delta that itself rotates with viewing quadrant. But
+the real camera position's own equivalent constants
+(`DAT_0023bf30`/`34`/`38`) have no writer anywhere in this file
+(confirmed earlier, UPDATE 34) -- they're always 0, meaning the camera
+position has NO "which tile" component at all, just a bounded sub-tile
+fraction plus a fixed constant. This is a real, structural asymmetry:
+the anchor's own high byte moves with the real world layout as
+quadrant changes; the camera value's equivalent doesn't move at all.
+Likely conclusion, not yet proven: `DAT_000db438` etc. are a narrower,
+view-matrix-specific quantity (fine for building the camera's own
+projection matrix) rather than a general "player world position in the
+same convention as object anchors" -- the assumption UPDATE 34 was
+built on.
+
+REVERTED `UW_DLIST_REAL_CULL_OPCODES` back to opt-in immediately
+(confirmed: with it off, the same quadrant=2 case correctly falls back
+to the safe faces=11/faces=6 geometry, door visible from every angle
+again). The face-plane opcode semantics and operand layout (UPDATE 33)
+remain solid, confirmed findings; the eye-position source is the piece
+that needs a real fix -- most likely computing a genuine "which tile
+is the player in, relative to this object" delta the same way the
+anchor's own high byte does, rather than trusting the camera-matrix
+globals to already have it. Standard run-regressions.sh: 6/6 clean.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
