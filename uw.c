@@ -53063,7 +53063,7 @@ static int uwdl_texture_width(int idx)
   return 0;
 }
 
-static void emit_dlist_bank_object(const unsigned short *words, int count, int head, int heading, double scale, double yoff, double xoff, void *texptr, int texwidth, int texheight)
+static void emit_dlist_bank_object(const unsigned short *words, int count, int head, int heading, double scale, double yoff, double xoff, double zoff, void *texptr, int texwidth, int texheight)
 {
   static uwdl_face faces[UWDL_MAX_FACES];
   int nfaces;
@@ -53085,8 +53085,8 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
   rise = (int32_t)(0x330 - ah);
   nfaces = uwdl_run_bank(words, count, head, rise, faces, UWDL_MAX_FACES);
   if (getenv("UW_DEBUG_DLIST")) {
-    fprintf(stderr, "[dlist] words=%d faces=%d heading=%d anchor=(%d,%d,%d) scale=%g yoff=%g\n",
-            count, nfaces, heading, ax, ah, az, scale, yoff);
+    fprintf(stderr, "[dlist] words=%d faces=%d heading=%d anchor=(%d,%d,%d) scale=%g yoff=%g xoff=%g zoff=%g\n",
+            count, nfaces, heading, ax, ah, az, scale, yoff, xoff, zoff);
     fprintf(stderr, "[dlist] vertex slots: attempted=%d dropped=%d\n",
             g_uwdl_vertex_attempted, g_uwdl_vertex_dropped);
     if (nfaces > 0) {
@@ -53190,7 +53190,7 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
          banks agree exactly. Applied before rotation (matching xoff_
          local's own point in the pipeline), so it's a true local-space
          center correction, not a post-rotation screen-space nudge. */
-      double mx = f->p[_src][0] + xoff, my = f->p[_src][1], mz = f->p[_src][2];
+      double mx = f->p[_src][0] + xoff, my = f->p[_src][1], mz = f->p[_src][2] + zoff;
       double rx = mx*ca - mz*sa, rz = mx*sa + mz*ca;
       float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + vi)*0xc);
       vf[0] = (float)(ax + rx*scale);
@@ -55367,6 +55367,20 @@ LAB_00061d34:
            report of "too far" at the full value. */
         double _xoff = -8.0;
         { const char *_s = getenv("UW_DLIST_XOFF"); if (_s) _xoff = atof(_s); }
+        /* Z (into/out of the wall plane, along the tile's own depth axis)
+           has no measured bias yet the way X does -- 0.0 default, pure
+           manual tuning knob. Added because the "shifted right, black
+           gap on the left" QA report (steep near-side-on yaw=85 view)
+           didn't respond to any UW_DLIST_XOFF value tried, which is
+           exactly what a depth-axis error would look like at a shallow
+           viewing angle: a Z offset reads on screen as a lateral shift
+           via parallax at those angles, not at a head-on view, so it can
+           masquerade as an X problem. Applied the same way as xoff (added
+           to local Z before rotation, see emit_dlist_bank_object's own
+           vertex loop) so it moves the object along its own local depth
+           axis, not a fixed screen direction. */
+        double _zoff = 0.0;
+        { const char *_s = getenv("UW_DLIST_ZOFF"); if (_s) _zoff = atof(_s); }
         /* >>7, not >>6: DOS's own real struct layout (uw1-decomp
            port/uw1_level.h:572, cited to real ARM disassembly at
            3121:0d5a) puts `heading` at word1 BITS 7-9, not 6-8 --
@@ -55453,10 +55467,10 @@ LAB_00061d34:
           if (getenv("UW_DEBUG_DLIST"))
             fprintf(stderr, "[dlist] wall texture index=%d width=%d texptr=%p\n", _wtex, _twidth, _texptr);
           emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_DOORWAY,
-                                  _quadrant_heading2, _scale, _yoff, _xoff, _texptr, _twidth, _twidth);
+                                  _quadrant_heading2, _scale, _yoff, _xoff, _zoff, _texptr, _twidth, _twidth);
         } else {
           emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_DOORWAY,
-                                  _quadrant_heading2, _scale, _yoff, _xoff, 0, 0, 0);
+                                  _quadrant_heading2, _scale, _yoff, _xoff, _zoff, 0, 0, 0);
         }
         /* Door LEAF (bank 0x6e) -- the swinging panel itself, not just
            the frame. Same region/interpreter/anchor pipeline as the
@@ -55575,10 +55589,10 @@ LAB_00061d34:
               fprintf(stderr, "[dlist] leaf sprite frame=%d texptr=%p width=%d height=%d (trimmed)\n",
                       uVar27, _leaf_texptr, _leaf_twidth, _leaf_theight);
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _leaf_scale, _yoff, _xoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
+                                    _leaf_heading, _leaf_scale, _yoff, _xoff, _zoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
           } else {
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _leaf_scale, _yoff, _xoff, 0, 0, 0);
+                                    _leaf_heading, _leaf_scale, _yoff, _xoff, _zoff, 0, 0, 0);
           }
           /* Once the real 3D leaf is drawing, the old 2D camera-facing
              sprite billboard below (LAB_emit_mesh_sprite_quad's own

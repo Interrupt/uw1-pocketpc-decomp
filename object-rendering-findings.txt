@@ -2545,3 +2545,115 @@ VERIFICATION: with the bit-fix + -4 step, both the qa45 repro door
 origpos repro door now report even headings (0 and 0 respectively) and
 visually show a flush, correctly-oriented door at both. Standard
 run-regressions.sh: 6/6 clean.
+
+UPDATE 2026-09-20 (16): QA PASS 3 INVESTIGATION -- ENV VAR MISTAKE, A
+MISSING data/ DIRECTORY, AND AN xoff SWEEP (INCONCLUSIVE ON THE
+REPORTED GAP)
+═══════════════════════════════════════════════════════════════════════════
+User QA, round 3, at their own final live-play position (tile=31.95,
+8.98 z=640 yaw=85 pitch=0): "the door and frame are shifted a bit too
+far to the right, leaving a black gap instead of fitting snuggly in
+the tile."
+
+Two environment problems found and fixed before any real investigation
+could proceed, both self-inflicted after a context-compaction restart:
+
+1. Every repro run after the restart set only UW_DLIST_DOOR=1, omitting
+   UW_DLIST_DOOR_LEAF=1/UW_DLIST_DOOR_TEXTURE=1 (both still opt-in at
+   the time -- see UPDATE 17 below). This silently switched every test
+   from "frame + textured leaf" (what the earlier, pre-restart
+   screenshots showed) to "frame only, untextured" -- produced
+   screenshots that looked catastrophically different (an apparently
+   open doorway, no leaf visible at all) purely from the missing env
+   vars, not from any real regression. Wasted a full round of xoff=
+   -16/-24/-32 testing before this was caught via UW_DEBUG_DOOR output
+   showing no leaf-related debug lines at all.
+2. The local data/ directory (gitignored, a convenience copy of the
+   real extracted game data) had gone missing from the working tree
+   entirely (cause unknown -- not a git-tracked change, git status
+   showed nothing). Runs were silently failing at "Could_not_read_data"
+   after the character-creation demo script had already played out,
+   producing empty/stale output. Restored by re-copying from the
+   original CE cab extraction (~/Downloads/Ultima Underworld PPC cabs
+   2/UWDATA).
+
+With both fixed, a clean xoff sweep at the repro position (frame+leaf+
+texture all on, full uncropped screenshots, then a consistent 172x214+
+282+38 crop at 300% for comparison):
+- xoff=-8 (committed default): frame snug against the wall corner on
+  the left, leaf centered inside the frame with a small margin, normal
+  mortar-line gap on the right. No distinct black gap beyond the
+  ordinary dark seam.
+- xoff=0: visually near-identical to -8.
+- xoff=+8/+16: shifts the WHOLE frame+leaf right -- widens the gap on
+  the left and starts clipping the frame's right edge into the next
+  wall stone. Wrong direction relative to the user's report.
+- xoff=-16: still reasonable, marginally tighter on the left than -8.
+- xoff=-24: over-corrects a DIFFERENT way -- the leaf's own left edge
+  starts poking past the frame's left jamb (frame and leaf share the
+  same xoff parameter, so pushing it further doesn't just move the
+  whole assembly, it also desyncs the leaf's position relative to the
+  frame around it). A new, worse artifact, not a fix.
+
+Also re-confirmed (this time with the corrected env vars) a finding
+from before the restart: the dark area at the left of this doorway is
+present even with the door object disabled (UW_DLIST_DOOR unset)
+entirely -- a pre-existing tile-corner/wall-seam shading artifact
+independent of this geometry.
+
+CONCLUSION: at this specific repro position/angle, no xoff value in
+either direction produces a clean fix for a gap distinct from the
+known pre-existing seam -- the current -8 default already looks
+reasonably centered, and moving further in either direction trades one
+artifact for another (right-side clipping going positive, leaf/frame
+desync going very negative). Not resolved; xoff alone does not appear
+to be the mechanism behind the user's reported gap. See UPDATE 18
+below for the depth-axis (zoff) hypothesis this prompted.
+
+UPDATE 2026-09-20 (17): LEAF + REAL TEXTURE NOW DEFAULT-ON
+═══════════════════════════════════════════════════════════════════════════
+Both UW_DLIST_DOOR_LEAF and UW_DLIST_DOOR_TEXTURE had been opt-in flags
+since they were first added, purely as calibration scaffolding (so the
+frame's shape could be checked in isolation before trusting the leaf,
+and the leaf's shape before trusting its own texture mapping). By this
+point both are independently confirmed correct: real per-vertex UV
+bank (UPDATE 2026-09-20 (12)), blank-row-trimmed sprite (UPDATE
+2026-09-20 (14)), duplicate 2D billboard suppressed (UPDATE 20 in
+mysteries.md). Requiring three separate env vars (UW_DLIST_DOOR=1
+UW_DLIST_DOOR_LEAF=1 UW_DLIST_DOOR_TEXTURE=1) to see the real door no
+longer served a calibration purpose, so flipped both defaults to on --
+same var names now work as an explicit opt-out (=0), following this
+file's existing UW_DISABLE_*-style default-on pattern
+(UW_DISABLE_PICK_RERENDER/UW_DISABLE_TILE_FEATURES). Verified live:
+UW_DLIST_DOOR=1 alone now renders the full textured leaf, no other env
+vars needed. Commit f36e8b6. Standard run-regressions.sh: 6/6 clean.
+
+UPDATE 2026-09-20 (18): ADDED UW_DLIST_ZOFF -- A DEPTH-AXIS TUNING
+KNOB, FOR THE STILL-UNRESOLVED QA3 GAP
+═══════════════════════════════════════════════════════════════════════════
+xoff/yoff (local X/Y, applied before rotation) already existed as
+tuning knobs, but the door's local Z (into/out of the wall plane, its
+own depth axis) had no equivalent -- a real gap, and a plausible
+explanation for why the UPDATE (16) xoff sweep didn't close the QA3
+report: at a steep, near-side-on viewing angle (yaw=85 at the repro
+position), a depth-axis position error reads on screen as an apparent
+lateral shift via parallax, not as a shift along the true screen-X
+direction the way xoff moves things -- so a real Z-axis bug could
+masquerade as an X problem and simply not respond to any xoff value.
+
+Added `zoff` as a new parameter to emit_dlist_bank_object (threaded
+through both the frame's two calls and the leaf's two calls), applied
+the same way as xoff -- added to local Z before rotation, in the same
+vertex-transform loop (`mz = f->p[_src][2] + zoff`) -- so it moves the
+object along its own local depth axis, not a fixed screen direction.
+0.0 default (no measured bias the way xoff has its own confirmed +16
+bbox-center bias); pure manual env-var override via UW_DLIST_ZOFF.
+
+VERIFIED live at the QA3 repro position: UW_DLIST_ZOFF=-16 and +16
+both produce a real, visually distinct shift, different in character
+from xoff's effect (the frame's apparent size/position on screen
+changes, consistent with a true depth move at this angle, not a
+lateral one) -- confirms the mechanism itself works correctly. The QA3
+gap is still NOT resolved as of this entry; zoff is a new tool for
+continuing that investigation, not yet a fix. Standard
+run-regressions.sh: 6/6 clean.

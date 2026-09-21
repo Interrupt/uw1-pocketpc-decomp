@@ -651,6 +651,35 @@ Also reduced `xoff` (the horizontal centering fix from the previous QA
 round) from -16.0 to -8.0 per the user's own live report that the full
 value overshoots. Full detail in `object-rendering-findings.txt`.
 
+**UPDATE 26 (leaf + real texture now default-on, 2026-09-20):** both
+were still opt-in (`UW_DLIST_DOOR_LEAF=1`/`UW_DLIST_DOOR_TEXTURE=1`)
+purely because they'd started life as calibration flags -- by this
+point both are independently confirmed correct (real per-vertex UV
+bank, blank-row-trimmed sprite, duplicate-billboard suppression all
+verified above), so requiring two more env vars on top of
+`UW_DLIST_DOOR=1` no longer served a purpose. Flipped the default to
+on, same var names now work as an explicit opt-out (`=0`), matching
+this file's existing `UW_DISABLE_*`-style default-on convention
+(`UW_DISABLE_PICK_RERENDER`/`UW_DISABLE_TILE_FEATURES`). Verified live:
+`UW_DLIST_DOOR=1` alone now draws the textured leaf with no other env
+vars. Commit `f36e8b6`.
+
+**UPDATE 27 (added `UW_DLIST_ZOFF`, a depth-axis tuning knob, 2026-09-20):**
+`xoff`/`yoff` already existed for the horizontal and vertical local
+axes, but nothing let the door move along its own local Z (into/out of
+the wall plane) -- a real gap, since a depth-axis position error reads
+on screen as a lateral shift at a steep, near-side-on viewing angle
+(parallax), which could fully explain why no `UW_DLIST_XOFF` value
+tried during the still-open "shifted right, black gap" QA report (see
+`object-rendering-findings.txt`) closed it: it may never have been an
+X problem. Added the same way as `xoff` (added to local Z before
+rotation, in `emit_dlist_bank_object`'s own vertex loop), 0.0 default
+(no measured bias the way X has one). Verified live at the repro
+position: `UW_DLIST_ZOFF=-16`/`+16` both produce a real, distinct shift
+along the door's own depth axis, different in character from `xoff`'s
+effect -- confirms the mechanism works; the QA gap itself is still
+unresolved and this is now the next axis to try against it.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
