@@ -1538,7 +1538,7 @@ undefined4 DAT_00100730;
 undefined4 DAT_00100734;
 undefined4 DAT_00100738;
 undefined4 DAT_0010073c;
-undefined1 DAT_0023c1d4;
+undefined1 g_active_hud_panel;
 undefined1 DAT_00100678;
 undefined4 DAT_00085c54;
 short DAT_00201c74;
@@ -4776,9 +4776,9 @@ static undefined1 DAT_000870ec_backing[4] = { 248,0, 28,1 };  /* 248, 284 */
    and FUN_0006cbf0's own reset loop (`while (iVar1 < 9)`) both index
    `(&DAT_0023c118)[i]`/`(&DAT_0023c128)[i]` up to i=8, and disassembly
    of the real chain-hotspot handler chain (0x6cfb0-0x6cfdc) confirms
-   DAT_0023c11e's real address is exactly DAT_0023c118+6 -- so widened
-   to real 9-element arrays and folded DAT_0023c11e/DAT_0023c11f/
-   DAT_0023c120 (indices 6/7/8 of the first array) and DAT_0023c12e/
+   g_target_hud_panel's real address is exactly DAT_0023c118+6 -- so widened
+   to real 9-element arrays and folded g_target_hud_panel/DAT_0023c11f/
+   DAT_0023c120 (indices 6/7/8 of the first array) and g_committed_hud_panel/
    DAT_0023c12f (indices 6/7 of the second) in as aliases instead of
    the separate globals they were each declared as, which -- exactly
    like the original bug here -- put them at unrelated addresses the
@@ -4786,15 +4786,15 @@ static undefined1 DAT_000870ec_backing[4] = { 248,0, 28,1 };  /* 248, 284 */
    actually reach. That was why toggling the stats panel (index 6)
    silently did nothing: set_hud_status_value(6, target) wrote 6 bytes
    past a 2-byte array into unrelated memory instead of the real
-   DAT_0023c11e the panel-transition ticker (FUN_0006e130) reads. */
+   g_target_hud_panel the panel-transition ticker (tick_hud_panel_transition) reads. */
 static undefined1 DAT_0023c118_arr[9];
 #define DAT_0023c118 DAT_0023c118_arr[0]
-#define DAT_0023c11e DAT_0023c118_arr[6]
+#define g_target_hud_panel DAT_0023c118_arr[6]
 #define DAT_0023c11f DAT_0023c118_arr[7]
 #define DAT_0023c120 DAT_0023c118_arr[8]
 static undefined1 DAT_0023c128_arr[9];
 #define DAT_0023c128 DAT_0023c128_arr[0]
-#define DAT_0023c12e DAT_0023c128_arr[6]
+#define g_committed_hud_panel DAT_0023c128_arr[6]
 #define DAT_0023c12f DAT_0023c128_arr[7]
 /* Was a lone `undefined2 DAT_0023c224;` -- but used as a real 2-element
    array throughout (`(&DAT_0023c224)[iVar1]`/`[uVar2]` for index 0 AND
@@ -4943,7 +4943,7 @@ static unsigned short DAT_000871d4_arr[2] = { 0x206d, 0x207f };
 static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
 #define DAT_000871d8 DAT_000871d8_arr[0]
 /* HUD-panel/tab dispatch table (13 entries), read as
-   `(&PTR_FUN_00087220)[index]` at 4 call sites (DAT_0023c1d4/DAT_0023c134
+   `(&g_hud_panel_handlers)[index]` at 4 call sites (g_active_hud_panel/DAT_0023c134
    select the index -- which panel/tab is active). Same class of bug as
    DAT_00085668 above: link-time-initialized data in the original binary
    that nothing in this decompile ever writes, declared here as a single
@@ -4953,15 +4953,15 @@ static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
    against this file's own FUN_ names); index 3 is genuinely NULL in the
    original data, not a recovery gap. Since this was already declared as
    a bare pointer rather than a byte array, no caller-side index-math
-   needs to change -- `(&PTR_FUN_00087220)[i]` already scales by the
+   needs to change -- `(&g_hud_panel_handlers)[i]` already scales by the
    (now-real, 8-byte-on-this-host) pointer size. */
-static void (*const PTR_FUN_00087220_table[13])(void) = {
-  (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))FUN_0007830c, 0,
+static void (*const g_hud_panel_handlers_table[13])(void) = {
+  (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))draw_stats_panel_content, 0,
   (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))FUN_0006e038,
-  (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
+  (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))tick_hud_panel_transition, (void(*)(void))FUN_0006e1d4,
   (void(*)(void))advance_action_animation_frame,
 };
-#define PTR_FUN_00087220 (PTR_FUN_00087220_table[0])
+#define g_hud_panel_handlers (g_hud_panel_handlers_table[0])
 char s_panels_00087260[] = "panels";
 /* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
    DAT_0023c224/DAT_0023c230 etc. above: both are used throughout as
@@ -5028,15 +5028,15 @@ undefined1 DAT_0023c11b;
 byte DAT_0023c12a;
 byte DAT_0023c150;
 /* Was a lone `undefined4` scalar, but hud_panel_redraw_dispatch indexes 9 entries
-   from it (`(&DAT_00087230)[0..8]`) as a function-pointer dispatch
+   from it (`(&g_hud_panel_ticker_handlers)[0..8]`) as a function-pointer dispatch
    table and calls through them -- same lone-scalar-instead-of-a-real-
    array bug as everywhere else this project, except this one turned out
    to need no new Ghidra archaeology: 0x87230 is exactly
-   PTR_FUN_00087220_table[4] (0x87220 + 4*4), and hud_panel_redraw_dispatch's 9-entry
+   g_hud_panel_handlers_table[4] (0x87220 + 4*4), and hud_panel_redraw_dispatch's 9-entry
    range (0x87230..0x87250) is exactly that table's remaining entries
    4-12 -- a stray duplicate alias into an already-recovered table, same
    shape as DAT_000856a4 aliasing into DAT_00085668_backing. */
-#define DAT_00087230 (PTR_FUN_00087220_table[4])
+#define g_hud_panel_ticker_handlers (g_hud_panel_handlers_table[4])
 static undefined1 DAT_0023c1f0_backing[65536];
 #define DAT_0023c1f0 DAT_0023c1f0_backing[0]
 static undefined1 DAT_0023c1f8_backing[65536];
@@ -18612,8 +18612,8 @@ void FUN_000286cc()
     bitmap_blit_to_framebuffer(0xec,8,DAT_0010073c,0x72,0x54,0,0,1);
     set_draw_color(0xf1);
     FUN_000116dc(0x34,0x30,0xdc);
-    DAT_00100678 = DAT_0023c1d4;
-    DAT_0023c1d4 = 0;
+    DAT_00100678 = g_active_hud_panel;
+    g_active_hud_panel = 0;
     DAT_00085c54 = 0;
     FUN_00046414();
     FUN_0003e644();
@@ -18694,7 +18694,7 @@ void FUN_00028bac()
     FUN_0001b7c0();
   }
   FUN_000735c0();
-  DAT_0023c1d4 = DAT_00100678;
+  g_active_hud_panel = DAT_00100678;
   FUN_0007f0e0();
   return;
 }
@@ -29717,24 +29717,24 @@ byte param_1;
 
 
 
-void FUN_0003def4()
+void toggle_stats_panel()
 
 {
   undefined4 uVar1;
 
   if (getenv("UW_DEBUG_CLICKREGION"))
-    fprintf(stderr, "[stats] FUN_0003def4 (toggle stats panel) entry: DAT_0023c1d4=%d\n", (int)DAT_0023c1d4);
-  if (DAT_0023c1d4 == '\0') {
+    fprintf(stderr, "[stats] toggle_stats_panel (toggle stats panel) entry: g_active_hud_panel=%d\n", (int)g_active_hud_panel);
+  if (g_active_hud_panel == '\0') {
     uVar1 = 2;
   }
   else {
-    if (DAT_0023c1d4 == '\x04') {
+    if (g_active_hud_panel == '\x04') {
       return;
     }
     uVar1 = 0;
   }
   if (getenv("UW_DEBUG_CLICKREGION"))
-    fprintf(stderr, "[stats] FUN_0003def4 -> set_hud_status_value(6,%d)\n", (int)uVar1);
+    fprintf(stderr, "[stats] toggle_stats_panel -> set_hud_status_value(6,%d)\n", (int)uVar1);
   set_hud_status_value(6,uVar1);
   return;
 }
@@ -29821,7 +29821,7 @@ void FUN_0003e0b4()
     }
   }
   else if (0xd < DAT_00085a6c[1]) {
-    FUN_0003def4(0);
+    toggle_stats_panel(0);
   }
   return;
 }
@@ -29942,7 +29942,7 @@ void sync_player_stats_to_hud()
 void FUN_0003e644()
 
 {
-  if ((DAT_0023c1d4 != '\0') && (*(short *)(DAT_00085a6c + 8) != 4)) {
+  if ((g_active_hud_panel != '\0') && (*(short *)(DAT_00085a6c + 8) != 4)) {
     return;
   }
   FUN_0004638c();
@@ -30838,13 +30838,13 @@ LAB_0003f91c:
 void inventory_panel_click_region()
 
 {
-  if (DAT_0023c1d4 == '\0') {
+  if (g_active_hud_panel == '\0') {
     handle_inventory_panel_normal_click();
   }
-  else if (DAT_0023c1d4 == '\x01') {
+  else if (g_active_hud_panel == '\x01') {
     FUN_0004497c();
   }
-  else if (DAT_0023c1d4 == '\x02') {
+  else if (g_active_hud_panel == '\x02') {
     FUN_00078434();
   }
   return;
@@ -33672,7 +33672,7 @@ void close_backpack_container()
       iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
     } while (iVar1 < 0x14);
     FUN_00057118();
-    if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
+    if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (g_active_hud_panel == '\0')) {
       FUN_00076e98(DAT_002028ec);
       FUN_00048110();
     }
@@ -34003,7 +34003,7 @@ short param_1;
     else {
       if (g_open_container_list == (undefined4 *)0x0) {
         FUN_00057118();
-        if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
+        if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (g_active_hud_panel == '\0')) {
           draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
         }
         /* Was also followed by a hand-added `set_draw_color(0);
@@ -36606,7 +36606,7 @@ short param_1;
     if (FUN_00056fe8() != 0) {
       DAT_00204844 = 0;
     }
-    if ((DAT_0023c1d4 != '\0') && (sVar1 != 0x17)) {
+    if ((g_active_hud_panel != '\0') && (sVar1 != 0x17)) {
       g_cursor_holding_state = 1;
       return;
     }
@@ -36694,7 +36694,7 @@ ushort * param_1;
       if (FUN_00056fe8() != 0) {
         DAT_00204844 = 0;
       }
-      if ((DAT_0023c1d4 == '\0') || (iVar1 == 0x17)) {
+      if ((g_active_hud_panel == '\0') || (iVar1 == 0x17)) {
         /* Widget 20 (the real "leave container" indicator) falls
            through to handle_object_drop_target below same as
            everywhere else -- see that function's own `iVar2==0x14`
@@ -36775,7 +36775,7 @@ void redraw_armor_overlay_widgets()
   uint uVar3;
   int iVar4;
 
-  if (DAT_0023c1d4 == '\0') {
+  if (g_active_hud_panel == '\0') {
     FUN_00057118();
     if (DAT_00085c54 != 0) {
       screen_backup_save();
@@ -36839,7 +36839,7 @@ undefined4 param_1;
   undefined4 uVar2;
   
   uVar2 = 0xffffffff;
-  if (DAT_0023c1d4 == '\0') {
+  if (g_active_hud_panel == '\0') {
     iVar1 = (int)(short)param_1;
     if (iVar1 < 6) {
       redraw_armor_overlay_widgets();
@@ -37550,7 +37550,7 @@ uint param_2;
 void FUN_00048110()
 
 {
-  if (DAT_0023c1d4 == '\0') {
+  if (g_active_hud_panel == '\0') {
     DAT_00085c50 = 0xffff;
     if (g_current_container_record == 0) {
       FUN_00076e98(DAT_002028ec);
@@ -56583,7 +56583,7 @@ void FUN_00066e90()
   register_key_binding(0x32,0,0x11,&LAB_000680d0);
   register_key_binding(0x6a,7,0x1b,move_command_dispatch);
   register_key_binding(0x4a,6,0x1b,move_command_dispatch);
-  register_key_binding(0x86,0,0x1b,FUN_0003def4);
+  register_key_binding(0x86,0,0x1b,toggle_stats_panel);
   register_key_binding(0x89,0,0x1b,&LAB_00071ac4);
   register_key_binding(0x88,2,0x1b,&LAB_0007036c);
   register_key_binding(0x87,1,0x1b,FUN_00044d14);
@@ -58148,7 +58148,7 @@ short param_1;
 void FUN_00069e30()
 
 {
-  if (DAT_0023c1d4 == '\x02') {
+  if (g_active_hud_panel == '\x02') {
     *g_draw_color_index = 0xf1;
     *DAT_00084298 = 0xf1;
     FUN_00057118();
@@ -60014,7 +60014,7 @@ void FUN_0006cbf0()
   FUN_00076488((int)DAT_0023c1e8);
   FUN_00076488((int)DAT_0023c1ea);
   DAT_0023c1e6 = 0;
-  DAT_0023c1d4 = 0;
+  g_active_hud_panel = 0;
   DAT_0023c1e4 = 0;
   DAT_0023c220 = 0;
   DAT_0023c1d8 = DAT_0023c1d8 & 0xff7f;
@@ -60091,7 +60091,7 @@ void redraw_hud_panels()
   FUN_0006cb74();
   sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
   FUN_0006e96c(DAT_00086df8 + 0x47);
-  FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
+  FUN_00041a78(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
   /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
      parameter -- it reads the global g_blit_transparent_mode instead (see its own
      definition in graphics.c: g_blit_transparent_mode==0 draws every source byte
@@ -60113,7 +60113,7 @@ void redraw_hud_panels()
   g_blit_transparent_mode = 1;
   bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
   g_blit_transparent_mode = 0;
-  (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
+  (*(code *)(&g_hud_panel_handlers)[g_active_hud_panel])();
   FUN_00076508();
   return;
 }
@@ -60204,7 +60204,7 @@ LAB_0006d09c:
   }
   if (iVar1 != 4) {
     if (iVar1 == 6) {
-      if (DAT_0023c1d4 == '\x04') {
+      if (g_active_hud_panel == '\x04') {
         return;
       }
     }
@@ -60297,7 +60297,7 @@ void hud_panel_redraw_dispatch()
     do {
       uVar1 = (ushort)iVar7;
       if ((uVar1 & uVar4) != 0) {
-        (*(code *)(&DAT_00087230)[iVar9])(iVar9);
+        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
         uVar4 = DAT_0023c1e0 & ~uVar1;
         bVar8 = true;
         DAT_0023c1e0 = uVar4;
@@ -60312,7 +60312,7 @@ void hud_panel_redraw_dispatch()
     iVar9 = 0;
     do {
       if (((ushort)iVar7 & DAT_0023c1dc) != 0) {
-        (*(code *)(&DAT_00087230)[iVar9])(iVar9);
+        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
         bVar6 = DAT_0023c150;
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
@@ -60344,8 +60344,8 @@ void hud_panel_redraw_dispatch()
     do {
       if (((ushort)iVar7 & DAT_0023c1d8) != 0) {
         if (getenv("UW_DEBUG_CLICKREGION"))
-          fprintf(stderr, "[stats] hud_panel_redraw_dispatch: dispatching DAT_00087230[%d] (table index %d)\n", iVar9, iVar9 + 4);
-        (*(code *)(&DAT_00087230)[iVar9])(iVar9);
+          fprintf(stderr, "[stats] hud_panel_redraw_dispatch: dispatching g_hud_panel_ticker_handlers[%d] (table index %d)\n", iVar9, iVar9 + 4);
+        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
       iVar7 = ((int)(short)(ushort)iVar7 << 0x11) >> 0x10;
@@ -60491,7 +60491,7 @@ short param_1;
 // "damage" only describes one of the three. What this function
 // actually drives, dispatched via set_hud_status_value's status
 // category 4/5 (param_1, left/right dragon) through
-// PTR_FUN_00087220_table/DAT_00087230 alongside its hud_X_tick
+// g_hud_panel_handlers_table/g_hud_panel_ticker_handlers alongside its hud_X_tick
 // siblings: a small state machine (param_1-4 -> iVar6, indexing every
 // DAT_0023c11c/DAT_0023c12c-family global 0=left/1=right) that plays
 // the dragon decoration's reactive TAIL whip (DAT_0023c238's frame,
@@ -60781,7 +60781,7 @@ LAB_0006dd88:
 
 
 
-// was FUN_0006df70 -- one of the 13 entries in PTR_FUN_00087220_table
+// was FUN_0006df70 -- one of the 13 entries in g_hud_panel_handlers_table
 // (the per-tick HUD panel redraw dispatch, alongside hud_vitals_bar_tick
 // and hud_dragon_reaction_tick, its naming siblings). Steps the compass
 // needle's displayed heading (DAT_0023c12a) one increment toward the
@@ -60870,30 +60870,30 @@ void FUN_0006e038()
 
 
 
-void FUN_0006e130()
+void tick_hud_panel_transition()
 
 {
   int iVar1;
 
   if (getenv("UW_DEBUG_CLICKREGION"))
-    fprintf(stderr, "[stats] FUN_0006e130 tick: current=%d target=%d in_progress=%d\n",
-            (int)DAT_0023c12e, (int)DAT_0023c11e, (int)DAT_0023c20c);
-  if (DAT_0023c12e != DAT_0023c11e) {
+    fprintf(stderr, "[stats] tick_hud_panel_transition tick: current=%d target=%d in_progress=%d\n",
+            (int)g_committed_hud_panel, (int)g_target_hud_panel, (int)DAT_0023c20c);
+  if (g_committed_hud_panel != g_target_hud_panel) {
     if (DAT_0023c20c == 0) {
       DAT_0023c20c = 1;
-      FUN_0006eb64(DAT_0023c11e,0xec,8,0x53,0x72);
-      DAT_0023c1d4 = '\x04';
+      FUN_0006eb64(g_target_hud_panel,0xec,8,0x53,0x72);
+      g_active_hud_panel = '\x04';
     }
     iVar1 = FUN_0006edfc();
     if (getenv("UW_DEBUG_CLICKREGION"))
-      fprintf(stderr, "[stats] FUN_0006e130: FUN_0006edfc() -> %d\n", iVar1);
+      fprintf(stderr, "[stats] tick_hud_panel_transition: FUN_0006edfc() -> %d\n", iVar1);
     if (iVar1 == 1) {
-      DAT_0023c12e = DAT_0023c11e;
-      DAT_0023c1d4 = DAT_0023c11e;
+      g_committed_hud_panel = g_target_hud_panel;
+      g_active_hud_panel = g_target_hud_panel;
       DAT_0023c20c = 0;
       DAT_0023c1d8 = DAT_0023c1d8 & 0xffbf;
       if (getenv("UW_DEBUG_CLICKREGION"))
-        fprintf(stderr, "[stats] FUN_0006e130: transition COMPLETE, now showing panel %d\n", (int)DAT_0023c1d4);
+        fprintf(stderr, "[stats] tick_hud_panel_transition: transition COMPLETE, now showing panel %d\n", (int)g_active_hud_panel);
     }
   }
   return;
@@ -61096,7 +61096,7 @@ short param_1;
 // state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4),
 // and calls load_weapon_swing_sprites once a weapon-category change
 // needs new sprites. Only reachable via hud_panel_redraw_dispatch's
-// dirty-bit-gated dispatch table (PTR_FUN_00087220_table[12]), which
+// dirty-bit-gated dispatch table (g_hud_panel_handlers_table[12]), which
 // IS wired into the real per-frame dispatch (DAT_00085668, mode 0) --
 // confirmed live via UW_DEBUG_COMBAT that this runs continuously during
 // normal play, not dead code. DAT_000870e4 is also read (separately,
@@ -61381,12 +61381,12 @@ undefined2 param_5;
     if (getenv("UW_DEBUG_CLICKREGION"))
       fprintf(stderr, "[stats] FUN_0006eb64: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)uVar4);
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
-    uVar1 = DAT_0023c1d4;
-    DAT_0023c1d4 = (undefined1)param_1;
+    uVar1 = g_active_hud_panel;
+    g_active_hud_panel = (undefined1)param_1;
     DAT_00085c54 = 0;
-    (*(code *)(&PTR_FUN_00087220)[(short)param_1])();
+    (*(code *)(&g_hud_panel_handlers)[(short)param_1])();
     DAT_00085c54 = 1;
-    DAT_0023c1d4 = uVar1;
+    g_active_hud_panel = uVar1;
     uVar4 = FUN_00049954(DAT_0023c202);
     FUN_0007e998(uVar4,0xec,8,0x53,0x72);
     FUN_000570b4();
@@ -61397,19 +61397,19 @@ undefined2 param_5;
 
 
 
-void FUN_0006ed0c()
+void redraw_active_hud_panel()
 
 {
   int iVar1;
   
-  iVar1 = FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
+  iVar1 = FUN_00041a78(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
   if (iVar1 == 0) {
     FUN_0007ea34(&DAT_00087298);
   }
   else {
     FUN_00057118();
     bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
-    (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
+    (*(code *)(&g_hud_panel_handlers)[g_active_hud_panel])();
     set_draw_color(0x1a);
     flush_dirty_rect_to_display(1);
     FUN_000570b4();
@@ -61671,13 +61671,13 @@ LAB_0006f008:
       FUN_00057118();
       set_draw_color(0xf1);
       rect_fill_or_save_restore(0x114,5,0x117,0x7d);
-      uVar1 = DAT_0023c1d4;
-      DAT_0023c1d4 = (undefined1)DAT_0023c134;
+      uVar1 = g_active_hud_panel;
+      g_active_hud_panel = (undefined1)DAT_0023c134;
       screen_backup_restore_rect(0xec,8,0x13f,0x7a);
       bitmap_blit_to_framebuffer(0xec,8,uVar3,0x72,0x53,0,0,1);
-      (*(code *)(&PTR_FUN_00087220)[DAT_0023c134])();
+      (*(code *)(&g_hud_panel_handlers)[DAT_0023c134])();
       screen_backup_save();
-      DAT_0023c1d4 = uVar1;
+      g_active_hud_panel = uVar1;
       draw_sprite_by_id(0x20b8,0x110,4,1,1);
       draw_sprite_by_id(0x20b0,0x110,0x7a,1,1);
       set_draw_color(0x1a);
@@ -62265,7 +62265,7 @@ char param_1;
   message_scroll_print_wrapped(&DAT_0008730c);
   *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + param_1;
   FUN_000703a0(0);
-  FUN_00078550();
+  refresh_stats_panel_if_active();
   return;
 }
 
@@ -62586,7 +62586,7 @@ LAB_00070c78:
     *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + -1;
   }
   FUN_000703a0(0);
-  FUN_00078550();
+  refresh_stats_panel_if_active();
 LAB_00070b58:
   refresh_player_equipment_effects();
   FUN_0006a034(0x20);
@@ -63007,7 +63007,7 @@ LAB_0007158c:
       g_vertical_velocity = 0;
       DAT_00204888 = 0;
       DAT_00204886 = 0;
-      FUN_00078550();
+      refresh_stats_panel_if_active();
       full_dungeon_redraw();
       FUN_000735c0();
       if (bVar2) {
@@ -65575,7 +65575,7 @@ LAB_00075a0c:
     *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
     g_player_carry_weight = 0;
     refresh_player_equipment_effects();
-    FUN_0006ed0c();
+    redraw_active_hud_panel();
   }
   return;
 }
@@ -67237,13 +67237,13 @@ uint param_1;
 
 
 
-void FUN_0007830c()
+void draw_stats_panel_content()
 
 {
   byte bVar1;
 
   if (getenv("UW_DEBUG_CLICKREGION"))
-    fprintf(stderr, "[stats] FUN_0007830c (draw stats panel) entry, DAT_0024af88=%d\n", (int)DAT_0024af88);
+    fprintf(stderr, "[stats] draw_stats_panel_content (draw stats panel) entry, DAT_0024af88=%d\n", (int)DAT_0024af88);
   if (DAT_0024af88 == 0) {
     DAT_0024af88 = grtile_alloc_registered(0x96,0x2b);
     if (DAT_0024af88 != 0) {
@@ -67254,7 +67254,7 @@ void FUN_0007830c()
       capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
     if (getenv("UW_DEBUG_CLICKREGION"))
-      fprintf(stderr, "[stats] FUN_0007830c: allocated DAT_0024af88=%d DAT_0024af8c=%d\n", (int)DAT_0024af88, (int)DAT_0024af8c);
+      fprintf(stderr, "[stats] draw_stats_panel_content: allocated DAT_0024af88=%d DAT_0024af8c=%d\n", (int)DAT_0024af88, (int)DAT_0024af8c);
   }
   *g_draw_color_index = 0xf1;
   *DAT_00084298 = 0xf1;
@@ -67325,11 +67325,11 @@ void FUN_00078434()
 
 
 
-void FUN_00078550()
+void refresh_stats_panel_if_active()
 
 {
-  if (DAT_0023c1d4 == '\x02') {
-    FUN_0006ed0c();
+  if (g_active_hud_panel == '\x02') {
+    redraw_active_hud_panel();
   }
   return;
 }
