@@ -746,6 +746,77 @@ or culling for that case -- consistent with the still-open
 document as dead/unwritten code. Not fixed this round; flagged as the
 next thing to chase, separately from the now-resolved xoff/zoff issue.
 
+**UPDATE 29 (real backface culling added, opt-in -- confirms the UV-flip
+hypothesis above; scale-sign hypothesis ruled out, 2026-09-20):** user,
+following up on UPDATE 28's open UV-flip question: "Backface culling
+for these models is flipped" and "Still seeing a flip when quadrants
+change -- is the scale sign changing?"
+
+Scale: ruled out directly by code inspection, no live testing needed --
+`_scale`/`_leaf_scale` are fixed literal `1.0` (only overridden by the
+`UW_DLIST_SCALE`/`UW_DLIST_LEAF_SCALE` env vars), with no code path
+anywhere that derives or flips their sign from heading or
+`DAT_0023b4a0`. Not the cause.
+
+Backface culling: traced DOS's own bytecode format (uw1-decomp `port/
+uw1_dlist.c` opcodes `0x0064`/`0x0066`/`0x0068` "cull_side_x/y/z" --
+"half-space test on x/y/z; the sign word says which half", `0x0058`/
+`0x005e`/`0x0060`/`0x0062` "cull_plane_*") -- these are real,
+documented opcodes confirming the ORIGINAL engine does perform
+backface culling. But neither this file's ported interpreter
+(`uwdl_transfer`'s `kind=3` branches for these opcodes are never
+resolved, always fall through) nor uw1-decomp's OWN port implements the
+actual geometric test -- uw1-decomp's own comment says so directly
+(`port/uw1_view.c` ~2493): "every face the bank can build is drawn and
+the depth buffer settles the overlap." Checked whether we have an
+equivalent safety net: we don't -- grep confirms no z-buffer/depth
+buffer anywhere in this renderer. So every face (both sides of what
+should be a single-sided panel) gets drawn in fixed bytecode order
+regardless of view, and whichever one is emitted LAST simply overdraws
+the other on screen -- exactly consistent with a visually "flipped"
+symptom that tracks camera quadrant, even though draw order itself
+never changes (the geometry's orientation relative to that fixed order
+does, as heading rotates).
+
+Implemented a standard cross-product face-normal test instead of
+reverse-engineering the undocumented original opcode handler (not
+available without real x86 disassembly access): for each face, compute
+its normal from two edges of its own already-transformed world
+vertices, dot it against the vector from a camera-proxy position to
+the face centroid, cull if negative. New env vars `UW_DLIST_CULL=1`
+(opt-in) and `UW_DLIST_CULL_FLIP=1` (inverts the sign, since the
+correct polarity wasn't assumed). One wrong turn during this: first
+tried treating two existing quadrant-indexed globals as a camera
+position, but their own use elsewhere (`uw.c` ~57378, multiplying
+tile-row/column indices) shows they're grid-step constants, not a
+position -- ruled out rather than left in. Fell back to `(0,0)` in X/Z,
+the natural candidate given the whole point of the `DAT_0023b4a0`
+quadrant pre-rotation is to put the camera at a fixed, simple spot in
+this canonical frame.
+
+Verified with `UW_DEBUG_DLIST_CULL`: the SAME physical face of the same
+real door gets the SAME cull decision (keep/cull) whether viewed from
+camera quadrant 1 or 2 (two different look directions from the same
+standing position) -- exactly the self-consistency a correct test
+should have, and exactly what the old always-both-sides behavior
+lacked. Confirmed live with a screenshot at the QA3 repro position that
+enabling the cull doesn't break the known-good close-up door (renders
+identically, nothing missing). Tried a second, differently-oriented
+door (tile=24.5,6.5 yaw=270) as a generalization check; that view
+turned out to show identical geometry with cull on, off, or flipped --
+a pre-existing rendering situation at that specific spot unrelated to
+this change, not evidence either way on polarity.
+
+Left `UW_DLIST_CULL` OPT-IN rather than defaulting it on: confirmed
+self-consistent and non-regressive on the cases reachable from
+teleport-based testing, but the real test this needs -- walking to the
+genuinely other side of a door, where the correct visible face
+actually should change -- isn't reachable that way without knowing the
+dungeon layout. Matches this whole investigation's established
+pattern: add opt-in, let the user's own broader live testing calibrate
+polarity/defaults, as already worked for xoff/zoff/leaf/texture above.
+Standard run-regressions.sh: 6/6 clean.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

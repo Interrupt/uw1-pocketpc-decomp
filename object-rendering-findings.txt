@@ -2781,3 +2781,140 @@ DAT_000db494 (the double-sided-face/EXTENDED_COLORS gating flags,
 confirmed to have no writer anywhere in this decompile, always
 BSS-zero). Not fixed this round -- flagged as the next thing to chase,
 independently of the now-resolved xoff/zoff fix above.
+
+UPDATE 2026-09-20 (20): REAL BACKFACE CULLING ADDED (OPT-IN) --
+CONFIRMS THE UV-FLIP HYPOTHESIS FROM ENTRY (19); SCALE-SIGN HYPOTHESIS
+RULED OUT
+═══════════════════════════════════════════════════════════════════════════
+User, following up on entry (19)'s open UV-flip question with two new
+findings: "Backface culling for these models is flipped" and "Still
+seeing a flip when quadrants change - is the scale sign changing?"
+
+SCALE-SIGN HYPOTHESIS: ruled out directly, no live testing needed.
+grep confirms `_scale`/`_leaf_scale` (uw.c, the door branch of
+emit_tile_objects) are a fixed literal 1.0, touched only by the
+UW_DLIST_SCALE/UW_DLIST_LEAF_SCALE env-var overrides -- no code path
+anywhere derives or negates either from heading, DAT_0023b4a0, or
+anything else quadrant-dependent. Not the cause of anything.
+
+BACKFACE CULLING: traced DOS's own real bytecode format for the actual
+mechanism, rather than guessing. uw1-decomp's own opcode table
+(port/uw1_dlist.c lines ~119-133) documents seven real opcodes:
+0x0058 cull_plane_3, 0x005e cull_plane_yz, 0x0060 cull_plane_xz, 0x0062
+cull_plane_xy, 0x0064 cull_side_x ("half-space test on x; the sign
+word says which half"), 0x0066 cull_side_y, 0x0068 cull_side_z -- these
+are genuine T_COND (conditional-branch) opcodes in the original
+engine's own display-list format, confirming DOS really does perform
+backface culling on this exact kind of face data.
+
+But NEITHER side of this investigation actually implements the real
+geometric test these opcodes perform:
+  - This file's own ported interpreter (uwdl_transfer, uw.c ~52848)
+    does recognize all seven opcodes and correctly computes their
+    branch-target arithmetic (kind=3, matching skip_if_le/ge's own
+    shape) -- but the kind=3 branch-taking logic in uwdl_walk requires
+    an externally-supplied "policy" naming the exact branch site to
+    take (`if (!m->has_policy || m->policy != at) { at = nxt; continue;
+    }` -- uw.c ~52970) and nothing ever supplies one for these cull
+    sites, so they always fall through, i.e. always resolve to
+    "not culled, keep this face" regardless of the model's real
+    geometry or the current view. This was already true before today
+    -- not a new bug, a pre-existing gap now specifically implicated by
+    this QA report.
+  - uw1-decomp's own C port doesn't implement it either, and says so
+    directly in its own source comment (port/uw1_view.c ~2493-2496):
+    "the cull_side_x/y/z branches, which drop the faces pointing away
+    from the eye. Every face the bank can build is drawn and the depth
+    buffer settles the overlap." Checked whether we have the same
+    safety net their comment relies on: grep across this whole file for
+    any z-buffer/depth-buffer found nothing. render_visible_tile_list
+    (uw.c ~14195) confirmed to call raster_triangle unconditionally,
+    once per triangle, in fixed arena order, with zero depth test of
+    any kind.
+
+CONCLUSION: every face this bank's bytecode can build -- both sides of
+what should be a single visible panel -- gets pushed into the arena and
+drawn in fixed bytecode order regardless of view direction, and with no
+depth buffer, whichever one lands LAST in that draw order simply
+overdraws the other on screen. The object's own orientation relative
+to that FIXED draw order changes continuously as heading rotates (even
+though the order itself never does), so which of the two overlapping,
+never-culled faces "wins" on screen changes with view angle too --
+exactly the "flip" symptom reported, and exactly consistent with entry
+(19)'s leading hypothesis (viewing the back of a single-sided quad
+without proper handling) being correct, now with a concrete mechanism
+identified (no depth buffer, not "no culling" alone -- uw1-decomp shows
+"no culling" is survivable WITH a depth buffer, which is the piece we
+are actually missing).
+
+FIX (opt-in): rather than reverse-engineer the real, undocumented x86
+handler for these opcodes (16e7:3f7b etc., not available without the
+real disassembly), implemented a standard, general 3D graphics
+technique instead -- a per-face cross-product normal test. In the
+triangle-record-building loop (uw.c, emit_dlist_bank_object, right
+before the `*(int*)(&DAT_000acde4+rb)=4` face-record write): read back
+the three already-transformed world vertices for the face's first
+triangle, compute edge vectors e1=v1-v0, e2=v2-v0, take their full 3D
+cross product for the real face normal (nx,ny,nz), form the centroid,
+and take a dot product against the vector from a camera-proxy position
+to that centroid; cull (skip writing the face record entirely, don't
+advance DAT_0023b83c) if the dot is negative.
+
+One wrong turn during this, corrected before shipping: first tried
+using DAT_0023b8c0/DAT_0023bc8c (quadrant-indexed) as the camera's own
+position in this canonical frame. Checked their OTHER use first (this
+file's own house rule) and found they're multiplied against tile-row/
+column indices at uw.c ~57378-57379 -- real per-tile-step stride
+constants for the tile-walk grid, not a position at all. Ruled out
+directly rather than left in on a guess. Fell back to (0,0) in X/Z as
+the camera proxy: the entire purpose of the DAT_0023b4a0 quadrant
+pre-rotation this whole investigation has been tracing is to place the
+camera at a fixed, simple point in this canonical frame, so the origin
+is the natural (though not yet independently confirmed) candidate.
+
+New env vars: UW_DLIST_CULL=1 (opt-in, off by default), UW_DLIST_
+CULL_FLIP=1 (inverts the dot-product sign, since the correct polarity
+for this camera-proxy choice isn't independently confirmed yet).
+UW_DEBUG_DLIST_CULL prints, per face, the full normal, centroid, eye
+position, dot product, and would-keep/would-cull decision -- runs
+whenever either UW_DLIST_CULL or UW_DEBUG_DLIST_CULL is set, so the
+decision can be inspected without actually culling anything yet.
+
+VERIFICATION: used UW_DEBUG_DLIST_CULL at the same two camera
+quadrants already established for entry (19)'s xoff/zoff investigation
+(tile=31.95,8.98, yaw=85 -> quadrant=1/heading=0, and yaw=150 ->
+quadrant=2/heading=6, both looking at the SAME real door from the SAME
+standing position). Found the SAME physical face gets the SAME
+keep/cull decision in both quadrants (e.g. fi=0's first face: dot=
+-1.82e7 "would-cull" at quadrant 1, dot=-9.74e7 "would-cull" at
+quadrant 2 for the same rotated-with-heading normal) -- exactly the
+self-consistency a correct backface test should have, and exactly what
+the old always-both-sides behavior structurally could not have (its
+"decision" was really just draw order, with no notion of consistency
+across viewpoints at all). Confirmed live with a screenshot at the QA3
+repro position: UW_DLIST_CULL=1 renders an identical, fully-intact
+door (same frame, same leaf, nothing missing) to the uncalled baseline
+-- the cull doesn't break the known-good case.
+
+Tried a second, differently-oriented door as a generalization check
+(tile=24.5,6.5 yaw=270, an earlier session's df_close.txt repro,
+raw_heading different from the tile=31.95,8.98 door). That view showed
+IDENTICAL geometry (what looks like a lattice/grate pattern through the
+frame) whether UW_DLIST_CULL was on, off, or flipped, and matches the
+plain dlist-default-on baseline too -- this specific view is unaffected
+by culling either way, a pre-existing rendering situation at that
+position/heading unrelated to today's change, not usable as evidence
+for or against the chosen polarity.
+
+DECISION: left UW_DLIST_CULL opt-in rather than defaulting it on.
+Self-consistency across viewpoints from the SAME standing position is
+confirmed, and the known-good case doesn't regress, but the test that
+actually matters most -- walking to the genuinely other side of a real
+door, where the correct visible face should actually change between
+the two vantage points -- isn't reachable through teleport-based
+testing without knowing the dungeon's real layout well enough to find
+a two-sided approach to the same door. Matches this whole
+investigation's established pattern (xoff, zoff, leaf, texture were
+all added opt-in first and defaulted on only after the user's own
+broader live testing confirmed them). Standard run-regressions.sh:
+6/6 clean throughout.

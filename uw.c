@@ -53225,6 +53225,66 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
       i3 = (start + 2 < nv) ? base_vtx+start+2 : i2;
       s0 = src_idx[0]; s1 = src_idx[start]; s2 = src_idx[start+1];
       s3 = (start + 2 < nv) ? src_idx[start+2] : s2;
+      /* UW_DLIST_CULL: real backface culling. Confirmed by tracing DOS's
+         own bytecode (uw1-decomp port/uw1_dlist.c, opcodes 0x0064/66/68
+         "cull_side_x/y/z" -- "half-space test on x/y/z; the sign word
+         says which half") that a real per-axis cull test exists in the
+         ORIGINAL engine and drops faces pointing away from the eye. But
+         neither uw1-decomp's own port nor this file's ported interpreter
+         (uwdl_transfer's kind=3 "policy" branches, never evaluated)
+         actually implements that test's real math -- uw1-decomp's own
+         comment on this (port/uw1_view.c ~2493) says so directly: "every
+         face the bank can build is drawn and the depth buffer settles
+         the overlap." We have no depth buffer either (grep confirms:
+         no z-buffer anywhere in this renderer), so faces are painted in
+         fixed bytecode order regardless of view -- whichever of a real
+         front/back face pair happens to come LAST in that order simply
+         overdraws the other, which is exactly consistent with a
+         visually "flipped"/wrong-face-showing symptom that changes with
+         camera quadrant (the geometry's orientation relative to the
+         fixed draw order changes with heading, even though draw order
+         itself doesn't). Rather than reverse-engineer the real x86
+         handler (16e7:3f7b etc, not available), use the standard,
+         general 3D technique instead: a face normal from the two edges
+         of its own already-transformed (post-rotation/anchor) WORLD
+         vertices, culled by the sign of its Z component in this
+         renderer's own camera-canonical frame (the same frame the
+         DAT_0023b4a0 quadrant pre-rotation exists to establish, where
+         the camera always looks down a fixed axis). UW_DLIST_CULL_FLIP
+         inverts the sign, since the correct polarity isn't yet
+         independently confirmed -- calibrate live against a known-good
+         face before trusting either default. */
+      if (getenv("UW_DLIST_CULL") || getenv("UW_DEBUG_DLIST_CULL")) {
+        float *_pv0 = (float *)((char *)DAT_000a85d0_backing + 8 + i0*0xc);
+        float *_pv1 = (float *)((char *)DAT_000a85d0_backing + 8 + i1*0xc);
+        float *_pv2 = (float *)((char *)DAT_000a85d0_backing + 8 + i2*0xc);
+        double _e1x = _pv1[0]-_pv0[0], _e1y = _pv1[1]-_pv0[1], _e1z = _pv1[2]-_pv0[2];
+        double _e2x = _pv2[0]-_pv0[0], _e2y = _pv2[1]-_pv0[1], _e2z = _pv2[2]-_pv0[2];
+        double _nx = _e1y*_e2z - _e1z*_e2y;
+        double _ny = _e1z*_e2x - _e1x*_e2z;
+        double _nz = _e1x*_e2y - _e1y*_e2x;
+        double _cx = (_pv0[0]+_pv1[0]+_pv2[0])/3.0;
+        double _cy = (_pv0[1]+_pv1[1]+_pv2[1])/3.0;
+        double _cz = (_pv0[2]+_pv1[2]+_pv2[2])/3.0;
+        /* No confirmed camera/eye-position global found yet in this
+           canonical frame (DAT_0023b8c0/DAT_0023bc8c were tried first
+           but are quadrant-indexed tile-grid STEP constants, not a
+           position -- see their own use at uw.c ~57378 multiplying
+           tile-row/column indices; ruled out, not a guess). Falling
+           back to the frame's own construction: the entire point of the
+           DAT_0023b4a0 quadrant pre-rotation is to put the camera at a
+           fixed, simple place in this canonical space -- (0,0) in X/Z
+           is the natural candidate, not yet independently confirmed. */
+        double _ex = 0.0, _ez = 0.0;
+        double _vx = _cx - _ex, _vz = _cz - _ez;
+        double _dot = _nx*_vx + _nz*_vz;
+        if (getenv("UW_DLIST_CULL_FLIP")) _dot = -_dot;
+        if (getenv("UW_DEBUG_DLIST_CULL"))
+          fprintf(stderr, "[dlist-cull] fi=%d start=%d quadrant=%d heading=%d normal=(%g,%g,%g) centroid=(%g,%g,%g) eye=(%g,_,%g) dot=%g %s\n",
+                  fi, start, (int)DAT_0023b4a0, heading, _nx, _ny, _nz, _cx, _cy, _cz, _ex, _ez, _dot,
+                  (_dot < 0) ? "would-cull" : "would-keep");
+        if (getenv("UW_DLIST_CULL") && _dot < 0) continue;
+      }
       rec = DAT_0023b83c;
       rb = rec * 0x60;
       *(int *)(&DAT_000acde4 + rb) = 4;
