@@ -606,6 +606,28 @@ real per-door raw_heading values live (0,1,5,1,5,5,1,1 across 8 doors)
 (0,2,4,6); seeing odd values here is the concrete lead for next time.
 Full detail in `object-rendering-findings.txt`.
 
+**UPDATE 24 (the real sink/height bug: ~20% blank padding at the top of
+the door sprite's own buffer, 2026-09-20):** briefly tried `yoff=100`
+live as a fix for the sink -- looked right, but the user correctly
+caught it as a workaround: "yoff=0 seems correct. What seems incorrect
+is the vertical texture UV mapping for the door leaf, it still does
+not seem to be scaling 100% to the full height of the door." Reverted
+yoff to 0 immediately. Checked the sprite's own real pixel content
+instead of the UV math again: a row-by-row scan of the decoded buffer
+found rows 0-12 of 64 are completely blank -- real content only starts
+at row 13 (13/64 ~= 20%, matching BOTH the "sunk ~20%" and "not full
+height" reports -- the same bug seen twice). This is leftover from the
+sprite's original 2D-billboard design (anchored at the bottom, blank
+headroom above so the art could scale up without redrawing) -- our
+stretch-to-fit mapping has no concept of an anchor point, so it
+stretched the blank rows right along with the real content. Fixed by
+trimming the blank top rows before binding the leaf's texture
+(advancing texptr past them, reducing the height used for both the
+stretch scale and the wraparound field). Verified: the door's texture
+now reaches the top of the opening with no gap, continuous to the
+floor -- the first fully correct result in this whole effort. Full
+detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

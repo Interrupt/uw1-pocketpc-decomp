@@ -2427,3 +2427,60 @@ resolved; the odd-heading observation is the concrete lead for next
 time, not a guess.
 
 Standard run-regressions.sh: 6/6 clean after the xoff fix.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (14): THE REAL SINK/HEIGHT BUG -- THE DOOR SPRITE HAS
+~20% BLANK PADDING AT THE TOP OF ITS OWN BUFFER, LEFT OVER FROM ITS
+ORIGINAL 2D-BILLBOARD DESIGN
+═══════════════════════════════════════════════════════════════════════════
+User: after the sink finding, tried `yoff=100` as a live test -- it
+visually looked like a fix (door raised cleanly off the floor). But the
+user correctly caught this as a workaround, not the real fix: "yoff=0
+seems correct. What seems incorrect is the vertical texture UV mapping
+for the door leaf, it still does not seem to be scaling 100% to the
+full height of the door." Reverted yoff back to 0 immediately rather
+than keep a masking fix.
+
+Checked the actual sprite content directly instead of continuing to
+guess at UV formulas: added a row-by-row nonzero scan of the leaf's own
+decoded pixel buffer (new debug instrumentation, then folded into a
+permanent fix). Result: rows 0-12 of the real 64-row buffer are
+COMPLETELY blank (every byte 0, the transparent colour-key value) --
+real door content only starts at row 13. 13/64 ~= 20.3%, matching the
+"sunk ~20-25%" report and the later "not scaling to full height" report
+exactly -- both were the same underlying cause seen at two different
+points in this investigation, not two separate bugs.
+
+Why the blank rows exist: this sprite was authored for the ordinary 2D
+billboard path, where an object is anchored at a fixed screen point
+(the bottom/floor) and the image can be scaled up from there -- blank
+headroom above the real content is a normal convention for that kind
+of sprite (lets the same art scale larger without redrawing). Our
+stretch-to-fit mapping has no concept of "anchor point," it spreads the
+WHOLE buffer across the door's real geometric height -- so the blank
+rows got stretched right along with the real content, eating ~20% of
+the door's rendered height as an invisible gap at the top.
+
+FIX: before binding the leaf's texture, scan for the first row with any
+non-colour-key byte and trim the blank rows off -- advance texptr past
+them and reduce the height used for both the stretch-to-fit scale and
+the ace04 wraparound field to match. The full REAL image (not the full
+buffer, blank padding included) now stretches across the full door
+height. Confirmed live: height went from 64 to 51 (64-13) after
+trimming.
+
+VERIFICATION: same repro. The door's wood texture now reaches the very
+top of the opening with no gap before the lintel starts, and continues
+unbroken to the floor -- the first result in this whole leaf-texturing
+effort that shows the complete, correctly-proportioned image filling
+its own geometry exactly, no workaround offset needed. Standard
+run-regressions.sh: 6/6 clean.
+
+Note for next time: this trim only looks for blank rows from the TOP.
+Row 63 (the very bottom) showed nonzero=25/32 in the same scan, i.e.
+real content all the way to the last row -- no bottom padding was found
+in this specific sprite, so a bottom-trim wasn't implemented, but a
+different door-type sprite could plausibly have padding on either edge
+if this convention isn't perfectly uniform across all 6 registered door
+skins; worth a quick re-check across a couple of the other 5 if a
+similar height-mismatch symptom ever reappears on a different door.

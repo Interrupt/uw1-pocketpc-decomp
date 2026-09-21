@@ -55336,17 +55336,19 @@ LAB_00061d34:
          UW_DLIST_YOFF override for tuning. This is a side-by-side check
          against DFRAME.E, not a replacement for it. */
       if (getenv("UW_DLIST_DOOR")) {
-        /* yoff=0, not DFRAME.E's own -100: traced DOS's real formula
-           (uw1_view.c:2684/2805, both uw1_view_door_faces and
-           uw1_view_model_faces) -- `o->p[j][2] = org[2] + y` with y the
-           model's own raw local coordinate, NO extra vertical offset at
-           all. DFRAME.E's -100 corrects for something specific to OUR
-           own anchor (DAT_0023b91c) that DFRAME.E's own local-Y
-           convention needed, tuned by hand for that specific .E file --
-           not a universal constant, and reusing it here was silently
-           burying this bank's geometry (confirmed live: yoff=0 revealed
-           substantially more real texture detail than -100, exactly
-           matching a "half stuck in the ground" symptom). */
+        /* yoff=0: DOS's own real formula (uw1_view.c:2684/2805) has NO
+           extra vertical offset at all (`o->p[j][2] = org[2] + y`), and
+           DFRAME.E's own -100 was confirmed wrong for this bank
+           (tried first, produced "half stuck in the ground"). +100 was
+           also tried, briefly, after the "sunk" QA report -- it LOOKED
+           like a fix (visually raised the door off the floor), but the
+           user correctly identified that as a workaround, not the real
+           fix: the geometry's own position is right at yoff=0, and the
+           actual bug is the leaf's UV not covering the full door
+           height (a texture-mapping gap that reads as "sunk" because
+           the untextured/floor-showing lower portion looks like the
+           door stopping short of the floor) -- see the leaf UV-scale
+           investigation for the real fix. Reverted +100. */
         double _scale = 1.0, _yoff = 0.0;
         /* xoff, same mechanism as emit_model_object's own xoff_local
            (added to local X before rotation) -- confirmed necessary by
@@ -55492,8 +55494,43 @@ LAB_00061d34:
               _leaf_twidth = (int)(unsigned short)DAT_00202508;
               _leaf_theight = (int)(unsigned short)DAT_002022f8;
             }
+            /* This sprite was designed for the ordinary 2D billboard
+               path, which anchors an object at a fixed screen point
+               (typically the bottom/floor) and scales the image
+               upward from there -- a common convention for that kind
+               of sprite is real content anchored at the bottom with
+               blank headroom above it, so the same art still lines up
+               if the engine ever draws it larger. Confirmed live
+               (UW_DEBUG_DLIST_SPRITEROWS, scanning every row for any
+               nonzero/non-colour-key byte): this door sprite's own
+               rows 0-12 (of 64) are completely blank, real content only
+               starts at row 13 -- 13/64 ~= 20%, matching the "sunk ~20%"
+               / "UV not reaching full height" reports exactly, both
+               really the same cause. Our stretch-to-fit mapping spreads
+               the WHOLE buffer (blank rows included) across the door's
+               full height, so the top ~20% of the rendered quad shows
+               nothing (floor/background) instead of continuing the
+               door texture. Fixed by trimming the blank top rows before
+               computing texheight/binding texptr for the leaf: advance
+               texptr past them and use only the real content rows as
+               the stretch-to-fit source, so the FULL door height gets
+               the FULL real image, no blank margin included. */
+            if (_leaf_texptr && _leaf_twidth > 0 && _leaf_theight > 0) {
+              unsigned char *_sb = (unsigned char *)_leaf_texptr;
+              int _row, _col, _nz, _top = 0;
+              for (_row = 0; _row < _leaf_theight; _row++) {
+                _nz = 0;
+                for (_col = 0; _col < _leaf_twidth; _col++)
+                  if (_sb[_row * _leaf_twidth + _col] != 0) { _nz = 1; break; }
+                if (_nz) { _top = _row; break; }
+              }
+              if (_top > 0 && _top < _leaf_theight) {
+                _leaf_texptr = _sb + _top * _leaf_twidth;
+                _leaf_theight -= _top;
+              }
+            }
             if (getenv("UW_DEBUG_DLIST"))
-              fprintf(stderr, "[dlist] leaf sprite frame=%d texptr=%p width=%d height=%d\n",
+              fprintf(stderr, "[dlist] leaf sprite frame=%d texptr=%p width=%d height=%d (trimmed)\n",
                       uVar27, _leaf_texptr, _leaf_twidth, _leaf_theight);
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
                                     _leaf_heading, _leaf_scale, _yoff, _xoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
