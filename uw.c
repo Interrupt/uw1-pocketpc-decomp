@@ -55366,36 +55366,39 @@ LAB_00061d34:
            door stopping short of the floor) -- see the leaf UV-scale
            investigation for the real fix. Reverted +100. */
         double _scale = 1.0, _yoff = 0.0;
-        /* xoff, same mechanism as emit_model_object's own xoff_local
-           (added to local X before rotation) -- confirmed necessary by
-           that exact precedent (uw.c ~54222): DOOR.E needed a real
-           xoff_local=-64.0 to center within DFRAME.E's own opening,
-           because DOOR.E's own local X wasn't naturally centered at 0.
-           This bank has the identical situation, confirmed via its own
-           UW_DEBUG_DLIST bbox print: bank 0x61 (frame, x=[-112,144])
-           and bank 0x6e (leaf, x=[-48,80]) both center at exactly +16,
-           not 0 -- a real, measured, shared bias, not a guess. The full
-           -16.0 (the raw bbox-center value) was tried first but the
-           user's own live QA (multiple doors/angles, not just this
-           file's scripted single-screenshot repro) found it overshoots
-           and clips into the wall -- halved to -8.0, which still reads
-           as well-centered in the scripted repro and matches the QA
-           report of "too far" at the full value. */
-        double _xoff = -8.0;
+        /* xoff/zoff TOGETHER, not xoff alone: QA (round 3) found the
+           correction's needed SIGN flips depending on which 45-degree
+           camera-yaw quadrant (DAT_0023b4a0) the player is in. Root
+           cause, confirmed with the new UW_DEBUG_DLIST_XFORM tool: xoff/
+           zoff are added to local X/Z BEFORE the heading rotation
+           (ca,sa = cos/sin(heading*45)), so their effect on SCREEN X is
+           ca*xoff - sa*zoff -- at heading=0 (this door's own raw heading
+           in one camera quadrant) ca=1,sa=0, so only xoff moves screen
+           X and zoff does nothing; at heading=6 (the SAME door, one
+           camera quadrant over) ca=0,sa=-1, so it INVERTS -- xoff now
+           does nothing and zoff controls screen X entirely. An X-only
+           correction is chasing a moving target: at some headings its
+           whole effect lands on the axis that isn't even being
+           corrected. The fix isn't a per-quadrant sign flip, it's using
+           the model's own real 2D local bias as a proper (x,z) vector
+           that rotates WITH the geometry, so it stays correct at every
+           heading by construction. Confirmed via UW_DEBUG_DLIST's own
+           bbox print: bank 0x61 (frame, x=[-112,144] z=[0,8]) and bank
+           0x6e (leaf, x=[-48,80] z=[0,8]) both center at exactly
+           (+16,+4), not (0,0) -- the same measured bias on both axes,
+           shared by both banks. Setting xoff=-16, zoff=-4 makes the
+           bbox-center vertex map to (mx,mz)=(0,0) for ANY heading --
+           the correction and the bias rotate together and cancel
+           exactly, no quadrant-dependent sign needed. (The earlier
+           xoff-only -16 "overshoots" report that led to halving it to
+           -8 was real, but was symptomatic of testing an X-only
+           correction across multiple headings/doors without zoff
+           existing yet to catch the other axis -- not evidence -16 was
+           the wrong X magnitude.) Same mechanism as emit_model_object's
+           own xoff_local precedent (uw.c ~54222, DOOR.E's own -64.0). */
+        double _xoff = -16.0;
         { const char *_s = getenv("UW_DLIST_XOFF"); if (_s) _xoff = atof(_s); }
-        /* Z (into/out of the wall plane, along the tile's own depth axis)
-           has no measured bias yet the way X does -- 0.0 default, pure
-           manual tuning knob. Added because the "shifted right, black
-           gap on the left" QA report (steep near-side-on yaw=85 view)
-           didn't respond to any UW_DLIST_XOFF value tried, which is
-           exactly what a depth-axis error would look like at a shallow
-           viewing angle: a Z offset reads on screen as a lateral shift
-           via parallax at those angles, not at a head-on view, so it can
-           masquerade as an X problem. Applied the same way as xoff (added
-           to local Z before rotation, see emit_dlist_bank_object's own
-           vertex loop) so it moves the object along its own local depth
-           axis, not a fixed screen direction. */
-        double _zoff = 0.0;
+        double _zoff = -4.0;
         { const char *_s = getenv("UW_DLIST_ZOFF"); if (_s) _zoff = atof(_s); }
         /* >>7, not >>6: DOS's own real struct layout (uw1-decomp
            port/uw1_level.h:572, cited to real ARM disassembly at

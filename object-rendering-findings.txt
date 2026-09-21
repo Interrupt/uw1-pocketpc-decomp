@@ -2657,3 +2657,127 @@ lateral one) -- confirms the mechanism itself works correctly. The QA3
 gap is still NOT resolved as of this entry; zoff is a new tool for
 continuing that investigation, not yet a fix. Standard
 run-regressions.sh: 6/6 clean.
+
+UPDATE 2026-09-20 (19): THE REAL FIX FOR "xoff's SIGN FLIPS PER CAMERA
+QUADRANT" -- A MISSING zoff COMPONENT, NOT A SIGN BUG; UV-FLIP ISOLATED
+AS A SEPARATE, STILL-OPEN QUESTION
+═══════════════════════════════════════════════════════════════════════════
+User QA, new round, at whatever live position they were testing: (1)
+UW_DLIST_XOFF=-32 "perfectly centers" the door and frame in the tile;
+(2) the correct SIGN for UW_DLIST_XOFF flips depending on which
+45-degree camera-yaw quadrant (DAT_0023b4a0) the player is in; (3) UV
+mapping on the door and frame also flips horizontally depending on the
+45-degree view angle.
+
+Separately, mid-investigation, user asked: "For opcode draws, can we
+output these draw lists after the camera quadrant clipping has
+occurred to simplify things?" -- the existing dlist debug prints
+(UW_DEBUG_DLIST/_UV) only show raw bytecode-local coordinates in the
+model's own body space, requiring the heading rotation and the
+anchor's own separate quadrant rotation to be replayed by hand to
+reason about a quadrant-dependent symptom. Added UW_DEBUG_DLIST_XFORM,
+printing each vertex's already-final vf[] world position -- the exact
+value written into the shared arena -- right next to its source local
+coordinate and the active quadrant/heading, inside the same
+transform loop that computes it. Commit 2f6e601.
+
+INVESTIGATION (using the new tool): picked the same door used for the
+prior QA3 repro (tile=31.95,8.98 z=640), and swept yaw at that fixed
+position to find genuinely different DAT_0023b4a0 values while still
+viewing the same object -- yaw=85 gave DAT_0023b4a0=1 (a close-up,
+head-on framing), yaw=150 gave DAT_0023b4a0=2 (a more distant framing,
+same door, confirmed via UW_DEBUG_DOOR's raw_heading=5 staying
+constant across both). With UW_DEBUG_DLIST_XFORM (and UW_DLIST_XOFF=0/
+UW_DLIST_ZOFF=0 to see raw, uncorrected numbers), the SAME vertex
+(local=(-48,0,0)) gave:
+  - yaw=85 (quadrant=1): heading=0, world=(4192,640,688)
+  - yaw=150 (quadrant=2): heading=6, world=(3664,640,192)
+And a second vertex at local=(80,208,0) (local X shifted by +128 from
+the first):
+  - yaw=85 (quadrant=1): heading=0, world=(4320,848,688) -- world X
+    also shifted by +128, a clean 1:1 mapping.
+  - yaw=150 (quadrant=2): heading=6, world=(3664,848,64) -- world X
+    UNCHANGED despite the same +128 local X shift.
+
+ROOT CAUSE: xoff/zoff are added to local X/Z *before* the per-object
+heading rotation (ca,sa = cos/sin(heading*45deg), already carrying the
+existing -2*DAT_0023b4a0 quadrant correction). Their combined effect
+on SCREEN X is exactly `ca*xoff - sa*zoff` (from rx = mx*ca - mz*sa,
+mx = local_x+xoff, mz = local_z+zoff). At heading=0 (this door, one
+camera quadrant): ca=1, sa=0 -- ONLY xoff affects screen X, zoff does
+literally nothing. At heading=6 (the SAME real door, one camera
+quadrant over -- not a different door, not a calibration difference):
+ca=cos(270deg)=0, sa=sin(270deg)=-1 -- that INVERTS entirely: xoff now
+does literally nothing (its whole coefficient is ca=0) and zoff
+controls screen X completely instead. An xoff-only correction (zoff
+defaulted to 0.0 until the previous entry) is chasing a moving target:
+at some headings its entire effect lands on an axis that isn't even
+being corrected. This is exactly and completely explains "the sign
+needs to flip" -- it's not really a sign flip, it's the SAME fixed
+local-space correction periodically landing its effect on the wrong
+screen axis as heading rotates through 90-degree steps.
+
+THE FIX: use the model's own real 2D local bias as a proper (x,z)
+vector, both components together, so the correction rotates WITH the
+object's own geometry and keeps canceling correctly at every heading
+by construction -- rather than trying to track a screen-space
+direction that doesn't stay fixed. UW_DEBUG_DLIST's own bbox print
+already had this measured on BOTH axes, not just X (previous entries
+only used the X half of it): bank 0x61 (frame) bbox x=[-112,144]
+z=[0,8], bank 0x6e (leaf) bbox x=[-48,80] z=[0,8] -- both banks center
+at exactly (+16,+4), not (+16,0). Changed BOTH defaults: xoff=-16.0
+(back up from -8.0), zoff=-4.0 (new, was 0.0).
+
+VERIFICATION (mathematical, then live): with xoff=-16,zoff=-4, a
+vertex at the bbox center (local x=16,z=4) has mx=mz=0 for ANY heading
+-- rx=rz=0 regardless of ca/sa, so it maps EXACTLY onto the anchor
+point at every possible camera quadrant, by construction, not by
+per-angle tuning. Confirmed directly against real UW_DEBUG_DLIST_XFORM
+output for the same two quadrants used above: at heading=0, the
+frame's full local X span [-112,144] now maps to world X range
+[4112,4368] -- center exactly 4240, matching the printed anchor
+(4240,640,688) exactly. At heading=6, the SAME span maps to world X
+range [3660,3668] -- center exactly 3664, matching the printed anchor
+(3664,640,144) exactly. Both camera quadrants land exactly centered on
+the anchor with the identical (xoff,zoff) pair, no sign flip anywhere,
+no per-quadrant branching needed. Live screenshot at the QA3 repro
+position (tile=31.95,8.98 z=640 yaw=85) confirms the door and frame
+sit centered with no visible gap or wall clip. Standard
+run-regressions.sh: 6/6 clean.
+
+Note on the earlier "-16 overshoots, halved to -8" finding (UPDATE
+2026-09-20 (15)): that observation was real, but it was a symptom of
+testing an X-ONLY correction across multiple doors/headings before
+zoff existed at all to catch the axis the correction's effect was
+actually landing on at those headings -- not evidence that -16 was the
+wrong X magnitude. With zoff now present and set correctly alongside
+it, -16 is exactly right.
+
+UV FLIP (point 3): confirmed to be a genuinely SEPARATE issue, not
+explained or fixed by the above. Checked directly with
+UW_DEBUG_DLIST_FINALUV across the same two camera quadrants (yaw=85
+vs yaw=150) for the same door: the printed u0..v3 output is
+byte-identical between them for every face. This has to be true given
+the code as written -- the UV computation (`u0 = (f->p[s0][0]-umin)*
+uscale`, etc., ~uw.c 53409-53416) reads ONLY the raw, untransformed
+local bytecode coordinates (f->p[], not vf[]) and never references
+heading, ca/sa, xoff, or zoff anywhere. It is mathematically
+impossible for this specific computation to vary with camera angle as
+currently written, camera-quadrant-dependent or not.
+
+If the actual rendered texture still visibly flips with view angle (as
+reported), the cause must be downstream of this UV computation --
+almost certainly in how the shared rasterizer (raster_triangle/
+raster_textured_span) associates u0..u3 with actual on-screen quad
+corners, which DOES depend on the quad's final screen-space vertex
+order/winding, and that winding can legitimately change as heading
+rotates a quad through view-dependent front/back orientations.
+Leading hypothesis, NOT YET CONFIRMED: this renderer is effectively
+viewing the BACK of a single-sided textured quad at some headings (a
+real, expected 3D-geometry situation, not a calibration issue) without
+the rasterizer mirroring or culling for that case -- consistent with
+this same document's still-open note on DAT_000db480/DAT_000db470/
+DAT_000db494 (the double-sided-face/EXTENDED_COLORS gating flags,
+confirmed to have no writer anywhere in this decompile, always
+BSS-zero). Not fixed this round -- flagged as the next thing to chase,
+independently of the now-resolved xoff/zoff fix above.

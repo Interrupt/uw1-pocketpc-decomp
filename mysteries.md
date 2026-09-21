@@ -680,6 +680,72 @@ along the door's own depth axis, different in character from `xoff`'s
 effect -- confirms the mechanism works; the QA gap itself is still
 unresolved and this is now the next axis to try against it.
 
+**UPDATE 28 (the real fix for "xoff's sign flips per camera-yaw quadrant"
+-- it needed zoff too, not a sign flip; UV-flip isolated as a separate,
+still-open issue, 2026-09-20):** user QA: (1) `UW_DLIST_XOFF=-32`
+"perfectly centers" the door at one viewing angle; (2) the correction's
+needed SIGN flips depending on which 45-degree camera-yaw quadrant
+(`DAT_0023b4a0`) the player is in; (3) the UV mapping also flips
+horizontally with view angle. User separately asked for the opcode
+draw-list debug output to print post-transform (after the camera-
+quadrant handling), to simplify reasoning about this -- added
+`UW_DEBUG_DLIST_XFORM`, printing each vertex's real, final `vf[]` world
+position (the same one written into the shared arena) next to its
+source local coordinate and the active quadrant/heading. Commit
+`2f6e601`.
+
+Used it to find the real cause of (1)/(2): `xoff`/`zoff` are added to
+local X/Z *before* the heading rotation (`ca,sa = cos/sin(heading*45)`),
+so their combined effect on SCREEN X is `ca*xoff - sa*zoff`. Confirmed
+live for this exact door across two real camera quadrants: at
+heading=0, `ca=1,sa=0` -- only `xoff` moves screen X, `zoff` does
+nothing. At heading=6 (same door, one camera quadrant over, `DAT_
+0023b4a0` incremented by 1), `ca=0,sa=-1` -- that INVERTS: `xoff` now
+does nothing and `zoff` controls screen X entirely. An X-only
+correction was chasing a moving target, landing its whole effect on
+whichever axis isn't even being corrected once heading passes 45°/
+135°/etc -- exactly the "sign needs to flip" symptom, and exactly why
+this had no single, quadrant-stable value.
+
+The real fix: use the model's own actual 2D local bias, both axes
+together, so the correction rotates *with* the geometry and cancels
+correctly at any heading by construction. `UW_DEBUG_DLIST`'s own bbox
+print already had this measured on both axes, not just X: bank 0x61
+(frame) bbox `x=[-112,144] z=[0,8]` and bank 0x6e (leaf) bbox
+`x=[-48,80] z=[0,8]` -- both center at exactly `(+16,+4)`, not just
+`(+16,0)`. Set `xoff=-16, zoff=-4` (both defaults). Verified
+mathematically AND live with `UW_DEBUG_DLIST_XFORM`: with this pair,
+the frame's full local X span maps to world X range `[4112,4368]`
+(center exactly `4240` = the real anchor) at heading=0, and to world X
+range `[3660,3668]` (center exactly `3664` = the real anchor) at
+heading=6 -- both quadrants land exactly centered on the anchor, same
+`(xoff,zoff)`, no sign flip anywhere. (The earlier "-16 overshoots,
+halved to -8" QA finding was real, but was a symptom of testing an
+X-only correction across multiple headings/doors before `zoff` existed
+to catch the axis the correction was actually landing on -- not
+evidence -16 was the wrong X magnitude.) Confirmed visually at the QA3
+repro position: door and frame sit centered with no gap or wall clip.
+
+(3), the UV flip, is confirmed to be a genuinely separate issue, not
+explained by this fix: `UW_DEBUG_DLIST_FINALUV`'s own u/v output is
+byte-identical between the two camera quadrants for the same door/face
+(checked directly) -- the UV math (`u0 = (f->p[s0][0]-umin)*uscale`
+etc.) reads only the raw, untransformed local bytecode coordinates and
+never touches heading, `ca`/`sa`, `xoff`, or `zoff` at all, so it is
+mathematically incapable of varying with camera angle as currently
+written. If the rendered texture still visibly flips with view angle,
+the cause has to be downstream of this UV computation -- most likely in
+how the shared triangle rasterizer associates `u0..u3` with actual
+on-screen quad corners, which does depend on the quad's final,
+heading-dependent screen-space vertex order/winding. Leading
+hypothesis, not yet confirmed: viewing what is effectively the BACK of
+a single-sided textured quad (a legitimate 3D-geometry situation once
+heading crosses certain thresholds) without the rasterizer mirroring
+or culling for that case -- consistent with the still-open
+`DAT_000db480`-family "double-sided face" flags noted elsewhere in this
+document as dead/unwritten code. Not fixed this round; flagged as the
+next thing to chase, separately from the now-resolved xoff/zoff issue.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
