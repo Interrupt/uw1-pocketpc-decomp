@@ -903,6 +903,45 @@ int uw_save_screenshot(const char *path) {
     return ok;
 }
 
+/* Saves a rectangular region of a raw RGB565 buffer (e.g. a slice of
+ * g_uw_framebuffer) to a standalone 24bpp BMP file -- same technique
+ * as uw_save_screenshot above (build an SDL surface, SDL_SaveBMP it),
+ * just reading from an arbitrary RGB565 source buffer instead of the
+ * SDL renderer's own presented output. `stride_pixels` is the source
+ * buffer's own row width in pixels (not necessarily equal to `w`, if
+ * dumping a sub-rectangle out of a larger buffer like the game's own
+ * 320-wide framebuffer). */
+int uw_save_rgb565_region_bmp(const char *path, const unsigned short *pixels,
+                               int w, int h, int stride_pixels) {
+    if (!pixels || w <= 0 || h <= 0) return 0;
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, w, h, 24, SDL_PIXELFORMAT_RGB24);
+    if (!surf) {
+        fprintf(stderr, "[gx] sprite-dump: SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
+        return 0;
+    }
+    for (int y = 0; y < h; y++) {
+        unsigned char *row = (unsigned char *)surf->pixels + y * surf->pitch;
+        const unsigned short *src = pixels + (size_t)y * stride_pixels;
+        for (int x = 0; x < w; x++) {
+            unsigned short px = src[x];
+            unsigned r = (px >> 11) & 0x1f;
+            unsigned g = (px >> 5) & 0x3f;
+            unsigned b = px & 0x1f;
+            row[x * 3 + 0] = (unsigned char)(r * 255 / 31);
+            row[x * 3 + 1] = (unsigned char)(g * 255 / 63);
+            row[x * 3 + 2] = (unsigned char)(b * 255 / 31);
+        }
+    }
+    int ok = SDL_SaveBMP(surf, path) == 0;
+    if (!ok) {
+        fprintf(stderr, "[gx] sprite-dump: SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+    } else {
+        fprintf(stderr, "[gx] sprite-dump saved to %s (%dx%d)\n", path, w, h);
+    }
+    SDL_FreeSurface(surf);
+    return ok;
+}
+
 static void debug_mkdir_p(const char *path) {
     char buf[300];
     size_t len = strlen(path);
@@ -916,6 +955,13 @@ static void debug_mkdir_p(const char *path) {
         }
     }
     mkdir(buf, 0755);
+}
+
+/* Public wrapper so uw.c's own debug tools (e.g. the sprite-by-frame
+ * dumper) can ensure their output directory exists without duplicating
+ * this logic. */
+void uw_debug_mkdir_p(const char *path) {
+    debug_mkdir_p(path);
 }
 
 void uw_debug_dump_gr_entry(const char *gr_name, int entry_index,

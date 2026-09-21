@@ -1538,7 +1538,7 @@ undefined4 DAT_00100730;
 undefined4 DAT_00100734;
 undefined4 DAT_00100738;
 undefined4 DAT_0010073c;
-undefined1 DAT_0023c1d4;
+undefined1 g_active_hud_panel;
 undefined1 DAT_00100678;
 undefined4 DAT_00085c54;
 short DAT_00201c74;
@@ -1721,7 +1721,7 @@ static char DAT_00085244_backing[32768] = "an ";
 #define DAT_00085244 DAT_00085244_backing[0]
 static char DAT_00085248_backing[32768] = "a ";
 #define DAT_00085248 DAT_00085248_backing[0]
-byte *DAT_00204690;
+byte *g_scratch_object_ptr;
 undefined *DAT_001007c8;
 char s_npc_talkedto_00085340[] = "npc_talkedto";
 char s_npc_gtarg_00085350[] = "npc_gtarg";
@@ -2650,7 +2650,13 @@ unsigned int param_1;
      spells/scrledge and friends). */
   return Ordinal_1041(param_1);
 }
-undefined4 DAT_00202510;
+/* Was `undefined4` -- truncated the real 64-bit destination pointer
+   FUN_00041a78 assigns here (see that function's own comment on why
+   this global exists at all: load_gr_resource_entries always decodes
+   into its OWN malloc'd buffer via the allocator callback and only
+   ever hands that buffer back through the post-process callback, so
+   passing a pre-allocated destination needs this indirection). */
+void *DAT_00202510;
 void *LAB_000416f8(param_1)
 unsigned int param_1;
 
@@ -2658,6 +2664,32 @@ unsigned int param_1;
   /* Allocator callback, same role as LAB_000415b0 -- see there. Used by
      FUN_00041a78, which passes no post-process callback (param_5 == 0). */
   return Ordinal_1041(param_1);
+}
+/* Not decompiled -- FUN_00041a78's post-process callback. Ghidra never
+   recovered a real one here (it hardcoded param_5=0, "no callback"),
+   but that leaves load_gr_resource_entries's freshly-decoded buffer
+   completely unreachable: it's malloc'd fresh by LAB_000416f8, never
+   registered anywhere (unlike every sibling load_gr_resource_entries
+   call site, which DOES pass a real post-process callback to register
+   its buffer into DAT_0024e090[] -- see LAB_000415d0/LAB_00041610/
+   LAB_00041670), and then simply discarded once load_gr_resource_entries's
+   loop moves on. Confirmed live: FUN_0006eb64's decode calls reported
+   success while leaving their destination grtile buffer entirely
+   zeroed (0/9462 nonzero bytes), which is exactly what "decode
+   succeeds but the caller's buffer is never touched" looks like. Since
+   FUN_00041a78 stashes its REAL destination in DAT_00202510 (see that
+   global's own comment) specifically to route around the missing
+   callback, the callback this decode always needed is simply "copy the
+   decoded bytes there" -- same leak-the-temporary-allocation posture
+   as Ordinal_1018's own documented precedent (freeing a possibly-
+   garbage pointer is worse than a short-lived leak). */
+static unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx)
+{
+  (void)idx;
+  if (DAT_00202510 != 0) {
+    memcpy(DAT_00202510, buf, size);
+  }
+  return 1;
 }
 undefined2 DAT_0020272c;
 undefined2 DAT_0024fa1c;
@@ -2758,7 +2790,7 @@ undefined2 DAT_00202898;
 undefined2 DAT_0020288c;
 undefined2 DAT_00202894;
 undefined2 DAT_00085a70;
-/* .data 0x85c38: widget-id -> DAT_00202950 slot-array-index lookup (read
+/* .data 0x85c38: widget-id -> g_equipped_items slot-array-index lookup (read
    as `(&g_backpack_widget_to_slot)[widget_id]` for widget ids 0-0x16, i.e. one byte
    per record of the g_inv_hotspot_click_x1 hotspot table). Widget ids
    0-5 were previously left at 0 ("still-unimplemented torso/legs/feet/
@@ -2781,8 +2813,8 @@ undefined2 DAT_00085a70;
    are still all zero/unimplemented ("worn armour overlay", see that
    table's own comment) -- nothing can actually reach these slots
    through play yet regardless of this table's data being right. The
-   real bug is one level up: FUN_000667cc's ambient-light rescan only
-   ever checks DAT_00202950 slots 0-3 (plus the mouse cursor as a stand-
+   real bug is one level up: refresh_player_equipment_effects's ambient-light rescan only
+   ever checks g_equipped_items slots 0-3 (plus the mouse cursor as a stand-
    in for a notional 5th slot) -- confirmed via a fresh Ghidra decompile
    of the pristine binary that this 0-4 range is exactly what the real
    compiled code does, not a decompilation artifact. A torch equipped
@@ -2790,7 +2822,7 @@ undefined2 DAT_00085a70;
    generic backpack list, landing in widget 6 / slot 5) is structurally
    outside that range and can never be found by the rescan, which is
    why the correct -32 ambient bias set by use_light_source always gets
-   immediately stomped back to +8. DAT_00085ac8 ({5,6,7,8}, "already-
+   immediately stomped back to +8. g_light_source_slots ({5,6,7,8}, "already-
    equipped valid WIDGET ids for a light source" -- confirmed by
    use_light_source's own comparison against find_or_assign_object_widget's
    return value, a widget id, not a slot index) suggests widget 5 (slot
@@ -2811,10 +2843,10 @@ static unsigned char g_backpack_widget_to_slot_backing[0x17] = {
   1,3,0,1,2,4, 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19, 0,0,
 };
 #define g_backpack_widget_to_slot g_backpack_widget_to_slot_backing[0]
-/* DAT_00202950 (28 2-byte "backpack/equipment slot" object-link
+/* g_equipped_items (28 2-byte "backpack/equipment slot" object-link
    records -- see g_backpack_widget_to_slot's own comment) was a bare scalar Ghidra
    never gave real backing to. A plain standalone static array is NOT
-   enough, though: every reader/writer passes `&DAT_00202950 + idx*2`
+   enough, though: every reader/writer passes `&g_equipped_items + idx*2`
    straight to resolve_object_link (or gets it back from
    encode_object_slot_index's matching encode step), and resolve_object_link
    refuses to decode through any address outside the level's own
@@ -2835,7 +2867,7 @@ static unsigned char g_backpack_widget_to_slot_backing[0x17] = {
    same 0x38 bytes so this new tail is actually accepted (see both of
    their own comments). */
 char *g_backpack_slot_table;
-#define DAT_00202950 g_backpack_slot_table[0]
+#define g_equipped_items g_backpack_slot_table[0]
 #define DAT_00202951 g_backpack_slot_table[1]
 void uw_debug_dump_inventory_state(void) {
   int occupied = 0;
@@ -2862,7 +2894,7 @@ char *g_open_container_list;
 /* g_backpack_widget_to_slot_plus1's address (0x85c39) is exactly one byte past
    g_backpack_widget_to_slot's (0x85c38) -- not a separate byte, an alias into the
    same backing array (same relationship as DAT_002028ec/DAT_002028e8,
-   DAT_00202951/DAT_00202950 elsewhere in this file). close_backpack_container (the
+   DAT_00202951/g_equipped_items elsewhere in this file). close_backpack_container (the
    close-container function) indexes it as `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]`
    (11..18), which through this alias lands at
    g_backpack_widget_to_slot_backing[12..19] -- exactly the 8 backpack-grid widgets,
@@ -2879,7 +2911,7 @@ char *g_open_container_list;
    (`(&DAT_002028e8)[iVar5] = uVar1` in FUN_00046414, a sibling of this
    same bug one array over) was clobbering g_selected_object (a real, load-
    bearing `char *`), corrupting an equipped-item lookup and crashing
-   FUN_000667cc on the very first in-game frame. Widened with a safety
+   refresh_player_equipment_effects on the very first in-game frame. Widened with a safety
    margin. */
 static undefined4 DAT_002028a0_backing[64];
 #define DAT_002028a0 DAT_002028a0_backing[0]
@@ -2890,7 +2922,7 @@ static undefined4 DAT_002028a0_backing[64];
 static undefined4 DAT_002028e8_backing[64];
 #define DAT_002028e8 DAT_002028e8_backing[0]
 /* Same "resolve_object_link needs an in-arena address" issue as
-   DAT_00202950 (see its own, much longer comment) -- a standalone
+   g_equipped_items (see its own, much longer comment) -- a standalone
    backing array's address will never fall inside the level's object
    arena, so every resolve_object_link(&g_current_container_link) call (the "item
    currently in the process of being combined/used" single-object
@@ -2989,7 +3021,7 @@ ushort DAT_00202986;
    close-container function): it resets `(&g_backpack_widget_to_slot_plus1)[0xb..0x12]`
    (11..18) to identity, and g_backpack_widget_to_slot_plus1's address is exactly one byte
    past g_backpack_widget_to_slot's -- the same split-symbol relationship as
-   DAT_00202951/DAT_00202950 -- so that write really lands at
+   DAT_00202951/g_equipped_items -- so that write really lands at
    g_backpack_widget_to_slot_backing[12..19], resetting widgets 12-19's slot mapping
    back to 11-18 (widget N -> slot N-1) after a container closes. That
    in turn implies the *normal* (no container open) mapping is also
@@ -3040,19 +3072,30 @@ ushort DAT_00202986;
 static unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2] = {
   /* rec 0 (real, degenerate sentinel): click 0,c8,0,c8 ; draw 104,c ; dirty 24,45 */
   0x00,0x00, 0xc8,0x00, 0x00,0x00, 0xc8,0x00,  0x04,0x01, 0x0c,0x00,  0x24,0x45,
-  /* rec 1 (real armor-slot rect, likely feet/boots -- see table comment
-     above; the "open container" icon that used to be hacked in here
-     has been removed entirely now that widget 20 is the real
-     mechanism): click 10d,38,11d,48 ; draw 10c,19 ; dirty 13,32 */
+  /* rec 1 (real armor-slot rect, LEGS -- confirmed live via
+     check_object_fits_in_slot/class2_variant_effect_table_lookup
+     dropping id 0x23 "leather leggings" here successfully; the earlier
+     "likely feet/boots" guess in this comment was wrong -- corrected
+     after verifying with a real item. The "open container" icon that
+     used to be hacked in here has been removed entirely now that
+     widget 20 is the real mechanism): click 10d,38,11d,48 ; draw
+     10c,19 ; dirty 13,32 */
   0x0d,0x01, 0x38,0x00, 0x1d,0x01, 0x48,0x00,  0x0c,0x01, 0x19,0x00,  0x13,0x32,
-  /* rec 2 (head): click 10d,9,11e,19 ; draw b,b ; dirty 14,14 */
+  /* rec 2 (head -- confirmed live, id 0x2c "a leather cap"): click
+     10d,9,11e,19 ; draw b,b ; dirty 14,14 */
   0x0d,0x01, 0x09,0x00, 0x1e,0x01, 0x19,0x00,  0x0b,0x01, 0x0b,0x00,  0x14,0x14,
-  /* rec 3 (torso/chest): click 107,1a,123,2b ; draw 106,18 ; dirty 21,2c */
+  /* rec 3 (torso/chest -- confirmed live, id 0x20 "a leather vest"):
+     click 107,1a,123,2b ; draw 106,18 ; dirty 21,2c */
   0x07,0x01, 0x1a,0x00, 0x23,0x01, 0x2b,0x00,  0x06,0x01, 0x18,0x00,  0x21,0x2c,
-  /* rec 4 (legs): click 107,2c,123,38 ; draw 105,2b ; dirty 21,c */
+  /* rec 4 (HANDS, not legs -- confirmed live, id 0x26 "leather
+     gloves"; the "legs" label was an earlier unconfirmed guess,
+     corrected after verifying with a real item): click 107,2c,123,38 ;
+     draw 105,2b ; dirty 21,c */
   0x07,0x01, 0x2c,0x00, 0x23,0x01, 0x38,0x00,  0x05,0x01, 0x2b,0x00,  0x21,0x0c,
-  /* rec 5 (real armor-slot rect, likely a belt -- see table comment
-     above): click 107,48,123,51 ; draw 10a,43 ; dirty 15,d */
+  /* rec 5 (real armor-slot rect, FEET, not a belt -- confirmed live,
+     id 0x29 "leather boots"; the "likely a belt" guess in this
+     comment was wrong -- corrected after verifying with a real item):
+     click 107,48,123,51 ; draw 10a,43 ; dirty 15,d */
   0x07,0x01, 0x48,0x00, 0x23,0x01, 0x51,0x00,  0x0a,0x01, 0x43,0x00,  0x15,0x0d,
 
   /* rec 6 (left shoulder): click f4,d,105,1e ; draw f5,e ; dirty 10,10 */
@@ -3289,12 +3332,21 @@ undefined4 DAT_00202910;
 ushort DAT_00202962;
 ushort DAT_00202964;
 char s_Move_how_many__00085c68[] = "Move_how_many?";
-undefined1 DAT_00085ac8;
+/* g_light_source_slots: light-source-eligible equip slots {5,6,7,8} (see
+   refresh_player_equipment_effects and FUN_0005404c's light-scan loops, and use_light_source's
+   own comparison against find_or_assign_object_widget's result). Was a
+   bare 1-byte scalar -- every existing `(&g_light_source_slots)[1..3]` read past
+   the single declared byte into whatever the linker placed next, instead
+   of the real dumped table. Dumped directly from the real binary at
+   0x85ac8: `5 6 7 8 0 0 0 0 0 0 0xc8 0 0 0 0xc8 0`. */
+static unsigned char DAT_00085ac8_backing[16] =
+    {5,6,7,8,0,0,0,0,0,0,0xc8,0,0,0,0xc8,0};
+#define g_light_source_slots DAT_00085ac8_backing[0]
 char s_is_too_full__00085c78[] = "is_too_full.";
 static undefined1 DAT_00085c88_backing[32768];
 #define DAT_00085c88 DAT_00085c88_backing[0]
 static undefined1 DAT_002029f8_backing[256];
-#define DAT_002029f8 DAT_002029f8_backing[0]
+#define g_carry_weight_limit_table DAT_002029f8_backing[0]
 undefined DAT_002029f9;
 /* DAT_00202938: widget 20's own saved-background grtile handle (the
    "open container indicator" -- see g_inventory_hotspot_table's own
@@ -3307,7 +3359,7 @@ undefined4 DAT_00202938;
    see their own comments): this is g_backpack_widget_to_slot's own
    real byte 20, not a separate global -- Ghidra just never connected
    the two. redraw_inventory_widget_range's widget-20 special case
-   (see its own comment) reads this as the DAT_00202950 slot to draw
+   (see its own comment) reads this as the g_equipped_items slot to draw
    for the "open container indicator" -- with real data now restored
    to g_backpack_widget_to_slot_backing[20] (19, the same slot
    g_backpack_slot_to_widget's own recovery independently confirmed),
@@ -3459,7 +3511,7 @@ static const short DAT_00085f50_cosine[260] = {
 undefined DAT_00086260;
 undefined DAT_00086264;
 static undefined1 DAT_002029d8_backing[256];
-#define DAT_002029d8 DAT_002029d8_backing[0]
+#define g_light_radius_table DAT_002029d8_backing[0]
 // g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
 // object id's low nibble) effect/quality byte table, loaded at runtime
 // (FUN_0002285c) and read by use_food_item to decide a food item's
@@ -3602,16 +3654,92 @@ undefined4 LAB_0002a2d8()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-undefined4 LAB_00041e84()
+/* class0_variant_effect_table_lookup: dispatch target index 0 of get_scanned_object_class_
+   effect_ptr's 8-entry table -- reached for any object whose class is
+   0 (id&0x1c0)>>6==0, which check_object_fits_in_slot treats as the
+   ARMOR class (its own uVar1==0 checks gate the body-slot validation
+   at uw.c ~36952). Was a no-op `return 0;` stub like
+   class2_variant_effect_table_lookup used to be, and for the exact
+   same reason: check_object_fits_in_slot dereferences this function's
+   return value at `+3` to read the equipped piece's slot-type byte,
+   so a hardcoded 0 crashed on address 3 the instant a real armor
+   piece was checked. Real disassembly (0x41e84-0x41f2c) shows the
+   same id-split-then-table-lookup shape as
+   class2_variant_effect_table_lookup, just with 3 possible tables
+   instead of one: family=(id&0x30)>>4 selects DAT_00202800 (stride 8,
+   family 0), DAT_002027d0 (stride 3, family 1), or DAT_00202750
+   (stride 4, families 2 and 3 -- family 3 adds 16 to the nibble index
+   into the same table). All three are already real, non-orphaned
+   globals loaded from objects.dat by the already-correct load_armor_variant_tables
+   (called via FUN_00052674's boot-time dispatch table, same loader
+   that reaches load_light_food_effect_tables) and already read
+   elsewhere in this file (FUN_000272c0, uw.c ~17840). */
+void *class0_variant_effect_table_lookup()
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  ushort uVar1;
+  int family;
+  int nibble;
+
+  uVar1 = *(ushort *)g_scratch_object_ptr;
+  family = (uVar1 & 0x30) >> 4;
+  nibble = uVar1 & 0xf;
+  if (family == 0) {
+    return &DAT_00202800 + nibble * 8;
+  }
+  if (family == 1) {
+    return &DAT_002027d0 + nibble * 3;
+  }
+  if (family == 3) {
+    nibble = nibble + 16;
+  }
+  return &DAT_00202750 + nibble * 4;
 }
-undefined DAT_0004a070;
+/* class2_variant_effect_table_lookup: was `undefined DAT_0004a070;` -- a plain data byte, not a
+   function. get_scanned_object_class_effect_ptr takes its address and CALLS it (`local_24[2] =
+   &DAT_0004a070; (*(code*)local_24[idx])();`) for any object whose class
+   is 2 (id&0x1c0)>>6==2 -- exactly the 0x90-class light sources
+   refresh_player_equipment_effects's and FUN_0005404c's light-scan loops filter for. Taking
+   the address of a data byte and jumping into it crashed the instant a
+   real torch was found by the (now-fixed) scan loop. Real disassembly
+   (0x4a070-0x4a108) shows this reads the scanned object's id (via
+   g_scratch_object_ptr, the same object pointer get_scanned_object_class_effect_ptr's other handlers
+   already read), splits it into family=(id&0x30)>>4 and nibble=(id&0xf),
+   then returns a pointer into one of three already-recovered runtime
+   tables (g_carry_weight_limit_table/g_light_radius_table/g_food_effect_table, populated from
+   objects.dat by load_light_food_effect_tables via FUN_00052674's boot-time loader --
+   confirmed reachable, not orphaned) indexed by nibble at that family's
+   stride (3/2/1 bytes). Family 2 (torches' actual family, id=0x9X ->
+   (0x9X&0x30)>>4==1 -- so torches hit the *1*-stride table, not this
+   branch, but it's included for the other 0x90-class objects that do
+   route here) returns 0, matching the sibling LAB_ stub functions'
+   "Ghidra couldn't resolve, no-op returns 0" convention for entries
+   this table genuinely leaves unused. */
+/* Return type was `undefined4` -- same 64-bit-pointer-truncation bug
+   already flagged on get_scanned_object_class_effect_ptr itself: this handler hands back a
+   pointer into a runtime table, and undefined4 drops its upper 32 bits
+   on a 64-bit build, producing a wild address in the caller. */
+void *class2_variant_effect_table_lookup()
+
+{
+  ushort uVar1;
+  int family;
+  int nibble;
+
+  uVar1 = *(ushort *)g_scratch_object_ptr;
+  family = (uVar1 & 0x30) >> 4;
+  nibble = uVar1 & 0xf;
+  if (family == 0) {
+    return &g_carry_weight_limit_table + nibble * 3;
+  }
+  if (family == 1) {
+    return &g_light_radius_table + nibble * 2;
+  }
+  if (family == 2) {
+    return 0;
+  }
+  return &g_food_effect_table + nibble;
+}
 undefined4 LAB_0006b3d4()
 
 {
@@ -4419,7 +4547,7 @@ char DAT_00086db4;
 int DAT_00086db8;
 undefined1 DAT_00086da8;
 undefined DAT_00086dc8;
-undefined DAT_002026d0;
+undefined g_object_weight_table;
 undefined DAT_00202806;
 undefined2 DAT_0023beb8;
 undefined2 DAT_0023be8c;
@@ -4673,11 +4801,33 @@ static undefined1 DAT_000870ec_backing[4] = { 248,0, 28,1 };  /* 248, 284 */
    DAT_0023c128[0]'s own byte, and DAT_0023c128[1] read/wrote
    DAT_0023c224's first byte -- so the mana flask's fill-level
    tracking was corrupting the health flask's, and the compass-icon
-   cluster besides. Fixed the same way, real 2-element arrays. */
-static undefined1 DAT_0023c118_arr[2];
+   cluster besides. Fixed the same way, real 2-element arrays.
+
+   FOLLOW-UP (this session, chasing the chain-hotspot/stats-panel
+   revival): that first fix under-sized both arrays. set_hud_status_value
+   and FUN_0006cbf0's own reset loop (`while (iVar1 < 9)`) both index
+   `(&DAT_0023c118)[i]`/`(&DAT_0023c128)[i]` up to i=8, and disassembly
+   of the real chain-hotspot handler chain (0x6cfb0-0x6cfdc) confirms
+   g_target_hud_panel's real address is exactly DAT_0023c118+6 -- so widened
+   to real 9-element arrays and folded g_target_hud_panel/DAT_0023c11f/
+   DAT_0023c120 (indices 6/7/8 of the first array) and g_committed_hud_panel/
+   DAT_0023c12f (indices 6/7 of the second) in as aliases instead of
+   the separate globals they were each declared as, which -- exactly
+   like the original bug here -- put them at unrelated addresses the
+   `(&DAT_0023c118)[6]`-style writes elsewhere in this file could never
+   actually reach. That was why toggling the stats panel (index 6)
+   silently did nothing: set_hud_status_value(6, target) wrote 6 bytes
+   past a 2-byte array into unrelated memory instead of the real
+   g_target_hud_panel the panel-transition ticker (tick_hud_panel_transition) reads. */
+static undefined1 DAT_0023c118_arr[9];
 #define DAT_0023c118 DAT_0023c118_arr[0]
-static undefined1 DAT_0023c128_arr[2];
+#define g_target_hud_panel DAT_0023c118_arr[6]
+#define DAT_0023c11f DAT_0023c118_arr[7]
+#define DAT_0023c120 DAT_0023c118_arr[8]
+static undefined1 DAT_0023c128_arr[9];
 #define DAT_0023c128 DAT_0023c128_arr[0]
+#define g_committed_hud_panel DAT_0023c128_arr[6]
+#define DAT_0023c12f DAT_0023c128_arr[7]
 /* Was a lone `undefined2 DAT_0023c224;` -- but used as a real 2-element
    array throughout (`(&DAT_0023c224)[iVar1]`/`[uVar2]` for index 0 AND
    1, including the creation loop in redraw_hud_panels that assigns
@@ -4765,8 +4915,6 @@ static undefined2 DAT_0023c1e4_arr[2];
 #define DAT_0023c1e6 DAT_0023c1e4_arr[1]
 undefined2 DAT_0023c220;
 ushort DAT_0023c1d8;
-undefined1 DAT_0023c11f;
-undefined1 DAT_0023c120;
 undefined1 DAT_0023c130;
 undefined1 DAT_000870e0;
 int DAT_0023c23c;
@@ -4827,7 +4975,7 @@ static unsigned short DAT_000871d4_arr[2] = { 0x206d, 0x207f };
 static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
 #define DAT_000871d8 DAT_000871d8_arr[0]
 /* HUD-panel/tab dispatch table (13 entries), read as
-   `(&PTR_FUN_00087220)[index]` at 4 call sites (DAT_0023c1d4/DAT_0023c134
+   `(&g_hud_panel_handlers)[index]` at 4 call sites (g_active_hud_panel/DAT_0023c134
    select the index -- which panel/tab is active). Same class of bug as
    DAT_00085668 above: link-time-initialized data in the original binary
    that nothing in this decompile ever writes, declared here as a single
@@ -4837,15 +4985,15 @@ static unsigned short DAT_000871d8_arr[2] = { 0x206e, 0x2080 };
    against this file's own FUN_ names); index 3 is genuinely NULL in the
    original data, not a recovery gap. Since this was already declared as
    a bare pointer rather than a byte array, no caller-side index-math
-   needs to change -- `(&PTR_FUN_00087220)[i]` already scales by the
+   needs to change -- `(&g_hud_panel_handlers)[i]` already scales by the
    (now-real, 8-byte-on-this-host) pointer size. */
-static void (*const PTR_FUN_00087220_table[13])(void) = {
-  (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))FUN_0007830c, 0,
+static void (*const g_hud_panel_handlers_table[13])(void) = {
+  (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))draw_stats_panel_content, 0,
   (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))FUN_0006e038,
-  (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))FUN_0006e130, (void(*)(void))FUN_0006e1d4,
+  (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))tick_hud_panel_transition, (void(*)(void))FUN_0006e1d4,
   (void(*)(void))advance_action_animation_frame,
 };
-#define PTR_FUN_00087220 (PTR_FUN_00087220_table[0])
+#define g_hud_panel_handlers (g_hud_panel_handlers_table[0])
 char s_panels_00087260[] = "panels";
 /* Was 2 lone `undefined1` scalars -- same "split symbol" bug as
    DAT_0023c224/DAT_0023c230 etc. above: both are used throughout as
@@ -4876,7 +5024,29 @@ static short DAT_0023c234_arr[2];
 #define DAT_0023c234 DAT_0023c234_arr[0]
 static short DAT_0023c238_arr[2];
 #define DAT_0023c238 DAT_0023c238_arr[0]
-undefined2 DAT_0023c200;
+/* Was 3 separate `undefined2` scalars (DAT_0023c200/202/204) -- same
+   split-symbol bug as DAT_0023c118/DAT_0023c128 just above (see that
+   comment's full writeup, found chasing the same chain-hotspot/
+   stats-panel revival): FUN_0006eb64/FUN_0006edfc both index
+   `(&DAT_0023c200)[i]` for i=0,1,2 (3 grtile handles backing the
+   panel-switch wipe transition), but as 3 independent globals they
+   don't land in contiguous memory on this recompile, so the loop that
+   allocates/checks all 3 only ever really touched DAT_0023c200 --
+   DAT_0023c202/DAT_0023c204 (read directly by name elsewhere in this
+   same function) stayed 0/uninitialized, so resolve_flip_grtile_slot(DAT_0023c202)
+   returned a garbage grtile handle and crashed
+   bitmap_blit_to_framebuffer the first time this code path ever ran.
+   Also widened the element type from `undefined2` to `undefined4`:
+   grtile_alloc_registered's return value (now that alloc_flip_grtile_slot
+   actually calls it instead of stubbing out) is a real 4-byte opaque
+   registry key -- 2 bytes isn't enough to round-trip it back through
+   resolve_flip_grtile_slot's registry-key comparison. Not a concern
+   while both allocator/resolver were stubs (every stored value was 0
+   either way), but a real requirement now that they aren't. */
+static undefined4 DAT_0023c200_arr[3];
+#define DAT_0023c200 DAT_0023c200_arr[0]
+#define DAT_0023c202 DAT_0023c200_arr[1]
+#define DAT_0023c204 DAT_0023c200_arr[2]
 char DAT_000870dc;
 char DAT_000870d8;
 ushort DAT_0023c1dc;
@@ -4897,15 +5067,15 @@ undefined1 DAT_0023c11b;
 byte DAT_0023c12a;
 byte DAT_0023c150;
 /* Was a lone `undefined4` scalar, but hud_panel_redraw_dispatch indexes 9 entries
-   from it (`(&DAT_00087230)[0..8]`) as a function-pointer dispatch
+   from it (`(&g_hud_panel_ticker_handlers)[0..8]`) as a function-pointer dispatch
    table and calls through them -- same lone-scalar-instead-of-a-real-
    array bug as everywhere else this project, except this one turned out
    to need no new Ghidra archaeology: 0x87230 is exactly
-   PTR_FUN_00087220_table[4] (0x87220 + 4*4), and hud_panel_redraw_dispatch's 9-entry
+   g_hud_panel_handlers_table[4] (0x87220 + 4*4), and hud_panel_redraw_dispatch's 9-entry
    range (0x87230..0x87250) is exactly that table's remaining entries
    4-12 -- a stray duplicate alias into an already-recovered table, same
    shape as DAT_000856a4 aliasing into DAT_00085668_backing. */
-#define DAT_00087230 (PTR_FUN_00087220_table[4])
+#define g_hud_panel_ticker_handlers (g_hud_panel_handlers_table[4])
 static undefined1 DAT_0023c1f0_backing[65536];
 #define DAT_0023c1f0 DAT_0023c1f0_backing[0]
 static undefined1 DAT_0023c1f8_backing[65536];
@@ -5040,10 +5210,7 @@ undefined DAT_0023c124;
 short DAT_0023c254;
 short DAT_00087258;
 short DAT_0023c258;
-char DAT_0023c11e;
-char DAT_0023c12e;
 int DAT_0023c20c;
-byte DAT_0023c12f;
 byte DAT_0023c25c;
 /* Real per-frame storage for the currently-loaded weapon-swing sprite
    set -- found by tracing weapon_swing_draw_tick's dropped argument
@@ -5141,26 +5308,68 @@ int DAT_0023c260;
 char s__DATA_weapons_cm_00087284[] = "\\DATA\\weapons.cm";
 static undefined1 DAT_00202700_backing[256];
 #define DAT_00202700 DAT_00202700_backing[0]
-undefined2 DAT_0023c268;
-undefined2 DAT_00087210;
-undefined2 DAT_0023c270;
-undefined2 DAT_00087218;
+/* Was 2 lone `undefined2` scalars (DAT_0023c268/DAT_0023c270) -- same
+   split-symbol bug as DAT_0023c118/DAT_0023c200 elsewhere in this
+   file (see DAT_0023c118's own comment for the full writeup): both
+   are indexed as real 3-element short arrays by their respective
+   owners (FUN_0006e96c/FUN_0006ea54, the mode-icon-highlight sprite
+   setup for the left/right dragon decorations), each written via a
+   `(&DAT_0023c26X)[i] = ...` one-time-init loop. As bare scalars, the
+   out-of-bounds writes for i=1,2 landed on whatever the compiler
+   placed next on THIS host -- empirically, DAT_0023c278 (see its own
+   comment), corrupting it from 0 to 13 (a leftover sprite-handle
+   value) the very first time redraw_hud_panels ever ran, which in
+   turn permanently defeated FUN_0006eb64's own `DAT_0023c278==0`
+   one-time-setup guard for the entire rest of the program -- found
+   while chasing why the chain-hotspot/stats-panel flip's grtile setup
+   never ran even after alloc_flip_grtile_slot/resolve_flip_grtile_slot
+   were implemented for real. */
+static short DAT_0023c268_arr[3];
+#define DAT_0023c268 DAT_0023c268_arr[0]
+static short DAT_0023c270_arr[3];
+#define DAT_0023c270 DAT_0023c270_arr[0]
+/* DAT_00087210/DAT_00087218: read-only per-side (left/right dragon)
+   position lookup tables, same `(&DAT_000872XX)[i]` 3-wide indexing
+   pattern as their writable DAT_0023c26X siblings just above -- but
+   only ever READ, so under-sizing them doesn't corrupt anything else,
+   just returns wrong/adjacent-memory positions for indices 1/2.
+   Widened for the same safety reason; real per-index position data
+   not yet recovered (index 0 -- the only one exercised so far, both
+   dragons currently land on the same spot -- reads correctly since it
+   IS the real scalar). */
+static undefined2 DAT_00087210_arr[3];
+#define DAT_00087210 DAT_00087210_arr[0]
+static undefined2 DAT_00087218_arr[3];
+#define DAT_00087218 DAT_00087218_arr[0]
 undefined2 DAT_0023c140;
 int DAT_0023c278;
 undefined2 DAT_0023c148;
 undefined2 DAT_0023c14c;
 undefined2 DAT_0023c144;
-byte DAT_0023c218;
-undefined2 DAT_0023c202;
+byte g_flip_grtile_cache_ready;
 short DAT_0023c134;
 static undefined DAT_00087298_backing[8192];
 #define DAT_00087298 DAT_00087298_backing[0]
 byte DAT_0023c208;
-undefined2 DAT_0023c204;
 short DAT_0023c138;
 short DAT_0023c13c;
 short DAT_0023c110;
-unsigned short u_dgijjjigd_G__000871e0[] = u"dgijjjigd\\G&";
+/* Was `u"dgijjjigd\\G&"` -- Ghidra misidentified this as a UTF-16
+   string because its low bytes happen to be printable ASCII. It's
+   really a 16-entry numeric squash-percentage curve for the chain
+   flip animation's stage-by-stage width (symmetric: 100 down to 0 at
+   the midpoint, back up to 92), used by FUN_0006f6e0 as
+   `table[stage]` and `table[stage+8]`. The string literal stopped at
+   the first embedded NUL (index 12), silently truncating the real
+   16-element array to 13 -- so `table[stage+8]` read out of bounds
+   for stage 5/6/7 (indices 13/14/15), feeding garbage into
+   DAT_0023c13c's stride computation and wild-writing past the grtile
+   buffer in FUN_0006fa28's pixel-copy loop (this is what was
+   corrupting the heap). Recovered via a direct memory dump of the
+   real binary at 0x000871e0. */
+static unsigned short u_dgijjjigd_G__000871e0[16] = {
+  100,103,105,106,106,106,105,103,100,92,71,38,0,38,71,92
+};
 char s__DATA_shades_dat_000872a4[] = "\\DATA\\shades.dat";
 char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
 char s__DATA_light_dat_000872c8[] = "\\DATA\\light.dat";
@@ -6113,6 +6322,12 @@ void FUN_00011b34()
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+/* Forward declaration: g_grtile_real_ptrs is defined much further down
+   (see its own comment there), but FUN_00011c10 here -- much earlier in
+   the file -- needs it to resolve a grtile registry key to the real
+   pointer the key was only ever a truncated stand-in for. */
+static void *g_grtile_real_ptrs[320];
+
 void FUN_00011c10(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 ushort param_1;
 int param_2;
@@ -6137,11 +6352,33 @@ short param_7;
   short sVar12;
   int iVar13;
   short local_30;
-  int local_2c;
-  
+  /* Was `int local_2c = param_3 + ...` -- param_3 is
+     grtile_alloc_registered's opaque truncated identity key, not a real
+     pointer (same issue already fixed in capture_framebuffer_rect_to_grtile
+     and FUN_00076e98, see their own comments -- FUN_00011c10 was the one
+     remaining consumer still dereferencing the key directly instead of
+     resolving it through g_grtile_real_ptrs first). Crashed the instant
+     the stats panel -- the only caller that reaches this with a real
+     grtile key -- first tried to draw. */
+  intptr_t local_2c;
+  char *_resolvedGrtilePtr;
+  {
+    int _gi = 0;
+    undefined4 *_gp = DAT_0023c3fc;
+    _resolvedGrtilePtr = 0;
+    while (_gi <= 0x13f) {
+      if (param_3 == (int)*_gp) {
+        _resolvedGrtilePtr = (char *)g_grtile_real_ptrs[_gi];
+        break;
+      }
+      _gi = _gi + 1;
+      _gp = (undefined4 *)((char *)_gp + 0x11);
+    }
+  }
+
   sVar10 = 0;
   iVar8 = (int)param_6;
-  local_2c = param_3 + ((int)param_7 * (int)param_5 + iVar8) * 2;
+  local_2c = (intptr_t)_resolvedGrtilePtr + ((int)param_7 * (int)param_5 + iVar8) * 2;
   iVar3 = ((int)param_4 - (int)param_7) * 0x10000 >> 0x10;
   local_30 = 0;
   iVar13 = (uint)param_1 << 0x10;
@@ -7446,6 +7683,23 @@ void build_shade_lut()
 
 
 
+// Tunable: extra units ADDED to DAT_000842b0's computed value (more
+// negative there is brighter, so this darkens the view) in BOTH
+// set_ambient_bias_with_light and set_ambient_bias_without_light
+// below. Override via UW_AMBIENT_BIAS_REDUCTION while calibrating;
+// default 32.
+int g_ambient_bias_reduction = 32;
+
+static int get_ambient_bias_reduction()
+{
+  int reduction = g_ambient_bias_reduction;
+  const char *_p = getenv("UW_AMBIENT_BIAS_REDUCTION");
+  if (_p) reduction = atoi(_p);
+  return reduction;
+}
+
+
+
 // was FUN_00014324 -- sets DAT_000842b0, the 3D-view ambient bias
 // raster_textured_span adds to every texel's distance-shade LUT index
 // (uw.c's own "checked wall/floor texture rasterizer" comment on that
@@ -7461,7 +7715,7 @@ void set_ambient_bias_with_light(param_1)
 char param_1;
 
 {
-  DAT_000842b0 = -0x20 - param_1;
+  DAT_000842b0 = -0x20 - param_1 + get_ambient_bias_reduction();
   if (getenv("UW_DEBUG_AMBIENT"))
     fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
   return;
@@ -7469,13 +7723,13 @@ char param_1;
 
 
 
-void FUN_0001433c(param_1)
+void set_ambient_bias_without_light(param_1)
 char param_1;
 
 {
-  DAT_000842b0 = '\b' - param_1;
+  DAT_000842b0 = '\b' - param_1 + get_ambient_bias_reduction();
   if (getenv("UW_DEBUG_AMBIENT"))
-    fprintf(stderr, "[ambient] FUN_0001433c(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
+    fprintf(stderr, "[ambient] set_ambient_bias_without_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
   return;
 }
 
@@ -16067,7 +16321,7 @@ int param_1;
   Ordinal_2005(6,uVar4);
   *(char *)(g_player_object + 8) = (-6 - extraout_r1) + *(char *)(DAT_0023be74 + 4);
   DAT_00201b68 = 1;
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   return;
 }
 
@@ -17613,7 +17867,7 @@ short param_1;
     bVar7 = (byte)(&DAT_001007e0)[(uVar1 & 0x3f) * 0x30] >> 6;
   }
   if (DAT_00100620 == 1) {
-    puVar6 = (ushort *)FUN_00045054((char)DAT_00100624 + 1U & 3);
+    puVar6 = (ushort *)get_equipped_item_at_slot((char)DAT_00100624 + 1U & 3);
     if (((((puVar6 == (ushort *)0x0) || (uVar3 = *puVar6 & 0x1ff, uVar3 == 0x20)) || (uVar3 == 0x23)
          ) || ((uVar3 == 0x26 || (uVar3 == 0x29)))) || (uVar3 == 0x2c)) {
 LAB_00026fe8:
@@ -17747,7 +18001,7 @@ short param_1;
    reads it back and dereferences it as a pointer. param_2 had the
    same problem one level removed: it points at DAT_001005e0 (a real
    `char *`), but was declared `undefined4 *` (4 bytes), so `*param_2 =
-   puVar4` only ever wrote the low 32 bits of FUN_00045054's real
+   puVar4` only ever wrote the low 32 bits of get_equipped_item_at_slot's real
    pointer into the first half of that 8-byte slot. */
 undefined4 FUN_000272c0(param_1,param_2)
 char * * param_1;
@@ -17761,7 +18015,7 @@ char * * param_2;
   int iVar5;
 
   *param_1 = 0;
-  puVar4 = (ushort *)FUN_00045054(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
+  puVar4 = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
   *param_2 = (char *)puVar4;
   if (puVar4 != (ushort *)0x0) {
     uVar2 = *puVar4;
@@ -18441,8 +18695,8 @@ void FUN_000286cc()
     bitmap_blit_to_framebuffer(0xec,8,DAT_0010073c,0x72,0x54,0,0,1);
     set_draw_color(0xf1);
     FUN_000116dc(0x34,0x30,0xdc);
-    DAT_00100678 = DAT_0023c1d4;
-    DAT_0023c1d4 = 0;
+    DAT_00100678 = g_active_hud_panel;
+    g_active_hud_panel = 0;
     DAT_00085c54 = 0;
     FUN_00046414();
     FUN_0003e644();
@@ -18523,7 +18777,7 @@ void FUN_00028bac()
     FUN_0001b7c0();
   }
   FUN_000735c0();
-  DAT_0023c1d4 = DAT_00100678;
+  g_active_hud_panel = DAT_00100678;
   FUN_0007f0e0();
   return;
 }
@@ -19410,97 +19664,97 @@ undefined4 FUN_0002a35c()
   int extraout_r1;
   int iVar3;
   
-  uVar1 = *(ushort *)(DAT_00204690 + 0x16);
-  DAT_00204690[0x16] = (byte)(uVar1 & 0x3ff);
-  DAT_00204690[0x17] = (byte)((uVar1 & 0x3ff) >> 8) | 0x80;
-  uVar1 = *(ushort *)(DAT_00204690 + 0x16);
-  DAT_00204690[0x16] = (byte)(uVar1 & 0xfe0f);
-  DAT_00204690[0x17] = (byte)((uVar1 & 0xfe0f) >> 8) | 2;
-  uVar1 = *(ushort *)(DAT_00204690 + 4);
-  DAT_00204690[4] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  DAT_00204690[5] = (byte)((uVar1 & 0xffc0) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 6);
-  DAT_00204690[6] = (byte)(uVar1 & 0xffc0) ^ 0x20;
-  DAT_00204690[7] = (byte)((uVar1 & 0xffc0) >> 8);
-  DAT_001007c8 = &DAT_001007d0 + (*DAT_00204690 & 0x3f) * 0x30;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
+  g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0x3ff);
+  g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0x3ff) >> 8) | 0x80;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
+  g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0xfe0f);
+  g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0xfe0f) >> 8) | 2;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 4);
+  g_scratch_object_ptr[4] = (byte)(uVar1 & 0xffc0) ^ 0x20;
+  g_scratch_object_ptr[5] = (byte)((uVar1 & 0xffc0) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 6);
+  g_scratch_object_ptr[6] = (byte)(uVar1 & 0xffc0) ^ 0x20;
+  g_scratch_object_ptr[7] = (byte)((uVar1 & 0xffc0) >> 8);
+  DAT_001007c8 = &DAT_001007d0 + (*g_scratch_object_ptr & 0x3f) * 0x30;
   uVar2 = Ordinal_1053();
   Ordinal_2005(0x18,uVar2);
   iVar3 = (extraout_r1 + 0x10) * (uint)(byte)DAT_001007c8[4];
   if (iVar3 < 0) {
     iVar3 = iVar3 + 0x1f;
   }
-  DAT_00204690[8] = (byte)(iVar3 >> 5);
-  DAT_00204690[9] = (byte)(*(ushort *)(DAT_00204690 + 2) >> 2) & 0xe0;
-  uVar1 = *(ushort *)(DAT_00204690 + 0xb);
-  DAT_00204690[0xb] = (byte)(uVar1 & 0xfff8) | 8;
-  DAT_00204690[0xc] = (byte)((uVar1 & 0xfff8) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xb);
-  DAT_00204690[0xb] = (byte)(uVar1 & 0xf00f);
-  DAT_00204690[0xc] = (byte)((uVar1 & 0xf00f) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xfff0);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xfff0) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xf);
-  DAT_00204690[0xf] = (byte)(uVar1 & 0xffc0);
-  DAT_00204690[0x10] = (byte)((uVar1 & 0xffc0) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xf);
-  DAT_00204690[0xf] = (byte)(uVar1 & 0xf03f);
-  DAT_00204690[0x10] = (byte)((uVar1 & 0xf03f) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xff0f);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xff0f) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xfdff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xfdff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xfbff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xfbff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xf7ff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xf7ff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xfeff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xfeff) >> 8);
-  DAT_00204690[0x18] = DAT_00204690[0x18] & 0xdf;
-  uVar1 = *(ushort *)(DAT_00204690 + 0xf);
-  DAT_00204690[0xf] = (byte)(uVar1 & 0xfff);
-  DAT_00204690[0x10] = (byte)((uVar1 & 0xfff) >> 8);
-  DAT_00204690[10] = DAT_00204690[10] & 0xf0;
-  DAT_00204690[0x14] = DAT_00204690[0x14] & 0xfc | 4;
-  DAT_00204690[0x15] = DAT_00204690[0x15] & 0xe0 | 0x20;
-  uVar1 = *(ushort *)(DAT_00204690 + 0xb);
-  DAT_00204690[0xb] = (byte)(uVar1 & 0xfff);
-  DAT_00204690[0xc] = (byte)((uVar1 & 0xfff) >> 8);
-  DAT_00204690[0x14] = DAT_00204690[0x14] & 7 | 0x80;
-  DAT_00204690[0x13] = DAT_00204690[0x13] & 0x7f;
-  DAT_00204690[0x13] = DAT_00204690[0x13] & 0x80;
-  DAT_00204690[0x11] = 0;
-  DAT_00204690[0x12] = 0;
-  DAT_00204690[0x15] = DAT_00204690[0x15] & 0x7f;
-  DAT_00204690[0x18] = DAT_00204690[0x18] & 0x7f;
-  DAT_00204690[0x18] = DAT_00204690[0x18] & 0xbf;
-  uVar1 = *(ushort *)(DAT_00204690 + 0x16);
-  DAT_00204690[0x16] = (byte)(uVar1 & 0xfff0);
-  DAT_00204690[0x17] = (byte)((uVar1 & 0xfff0) >> 8);
-  DAT_00204690[0x15] = DAT_00204690[0x15] & 0xbf;
-  DAT_00204690[0x1a] = 0;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xfe;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xfd;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xef;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xdf;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xbf;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0x7f;
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xefff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xefff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0xdfff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0xdfff) >> 8);
-  uVar1 = *(ushort *)(DAT_00204690 + 0xd);
-  DAT_00204690[0xd] = (byte)(uVar1 & 0x3fff);
-  DAT_00204690[0xe] = (byte)((uVar1 & 0x3fff) >> 8) | 0x80;
-  DAT_00204690[10] = DAT_00204690[10] & 0x7f;
-  DAT_00204690[0x19] = DAT_00204690[0x19] & 0xf3;
+  g_scratch_object_ptr[8] = (byte)(iVar3 >> 5);
+  g_scratch_object_ptr[9] = (byte)(*(ushort *)(g_scratch_object_ptr + 2) >> 2) & 0xe0;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xb);
+  g_scratch_object_ptr[0xb] = (byte)(uVar1 & 0xfff8) | 8;
+  g_scratch_object_ptr[0xc] = (byte)((uVar1 & 0xfff8) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xb);
+  g_scratch_object_ptr[0xb] = (byte)(uVar1 & 0xf00f);
+  g_scratch_object_ptr[0xc] = (byte)((uVar1 & 0xf00f) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfff0);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfff0) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xf);
+  g_scratch_object_ptr[0xf] = (byte)(uVar1 & 0xffc0);
+  g_scratch_object_ptr[0x10] = (byte)((uVar1 & 0xffc0) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xf);
+  g_scratch_object_ptr[0xf] = (byte)(uVar1 & 0xf03f);
+  g_scratch_object_ptr[0x10] = (byte)((uVar1 & 0xf03f) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xff0f);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xff0f) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfdff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfdff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfbff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfbff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xf7ff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xf7ff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xfeff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xfeff) >> 8);
+  g_scratch_object_ptr[0x18] = g_scratch_object_ptr[0x18] & 0xdf;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xf);
+  g_scratch_object_ptr[0xf] = (byte)(uVar1 & 0xfff);
+  g_scratch_object_ptr[0x10] = (byte)((uVar1 & 0xfff) >> 8);
+  g_scratch_object_ptr[10] = g_scratch_object_ptr[10] & 0xf0;
+  g_scratch_object_ptr[0x14] = g_scratch_object_ptr[0x14] & 0xfc | 4;
+  g_scratch_object_ptr[0x15] = g_scratch_object_ptr[0x15] & 0xe0 | 0x20;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xb);
+  g_scratch_object_ptr[0xb] = (byte)(uVar1 & 0xfff);
+  g_scratch_object_ptr[0xc] = (byte)((uVar1 & 0xfff) >> 8);
+  g_scratch_object_ptr[0x14] = g_scratch_object_ptr[0x14] & 7 | 0x80;
+  g_scratch_object_ptr[0x13] = g_scratch_object_ptr[0x13] & 0x7f;
+  g_scratch_object_ptr[0x13] = g_scratch_object_ptr[0x13] & 0x80;
+  g_scratch_object_ptr[0x11] = 0;
+  g_scratch_object_ptr[0x12] = 0;
+  g_scratch_object_ptr[0x15] = g_scratch_object_ptr[0x15] & 0x7f;
+  g_scratch_object_ptr[0x18] = g_scratch_object_ptr[0x18] & 0x7f;
+  g_scratch_object_ptr[0x18] = g_scratch_object_ptr[0x18] & 0xbf;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0x16);
+  g_scratch_object_ptr[0x16] = (byte)(uVar1 & 0xfff0);
+  g_scratch_object_ptr[0x17] = (byte)((uVar1 & 0xfff0) >> 8);
+  g_scratch_object_ptr[0x15] = g_scratch_object_ptr[0x15] & 0xbf;
+  g_scratch_object_ptr[0x1a] = 0;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xfe;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xfd;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xef;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xdf;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xbf;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0x7f;
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xefff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xefff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0xdfff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0xdfff) >> 8);
+  uVar1 = *(ushort *)(g_scratch_object_ptr + 0xd);
+  g_scratch_object_ptr[0xd] = (byte)(uVar1 & 0x3fff);
+  g_scratch_object_ptr[0xe] = (byte)((uVar1 & 0x3fff) >> 8) | 0x80;
+  g_scratch_object_ptr[10] = g_scratch_object_ptr[10] & 0x7f;
+  g_scratch_object_ptr[0x19] = g_scratch_object_ptr[0x19] & 0xf3;
   return 1;
 }
 
@@ -27140,7 +27394,7 @@ void FUN_0003a398()
     decrement_object_count(iVar2);
     FUN_00053334(0,iVar2,1);
     FUN_00048110();
-    FUN_000667cc();
+    refresh_player_equipment_effects();
   }
   return;
 }
@@ -27170,7 +27424,7 @@ undefined4 param_3;
     decrement_object_count(iVar2);
     FUN_00053334(0,iVar2,1);
     FUN_00048110();
-    FUN_000667cc();
+    refresh_player_equipment_effects();
   }
   return;
 }
@@ -27514,7 +27768,7 @@ int param_3;
       message_scroll_print_wrapped(auStack_64);
       FUN_00078c80(0x53);
     }
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     FUN_00049924(0x200);
   }
   return;
@@ -28273,7 +28527,7 @@ void enter_dungeon_view()
   }
   enter_dungeon_view_hud_init();
   FUN_00049924(0x7dfe);
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   full_dungeon_redraw();
   weapon_overlay_and_full_redraw();
   FUN_000570b4();
@@ -28289,7 +28543,7 @@ void FUN_0003bee4()
   uint uVar1;
   
   FUN_00066c90();
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   uVar1 = *(ushort *)(g_player_object + 2) & 0xfc7f;
   *(char *)(g_player_object + 2) = (char)uVar1;
   *(char *)(g_player_object + 3) = (char)(uVar1 >> 8);
@@ -29546,20 +29800,24 @@ byte param_1;
 
 
 
-void FUN_0003def4()
+void toggle_stats_panel()
 
 {
   undefined4 uVar1;
-  
-  if (DAT_0023c1d4 == '\0') {
+
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] toggle_stats_panel (toggle stats panel) entry: g_active_hud_panel=%d\n", (int)g_active_hud_panel);
+  if (g_active_hud_panel == '\0') {
     uVar1 = 2;
   }
   else {
-    if (DAT_0023c1d4 == '\x04') {
+    if (g_active_hud_panel == '\x04') {
       return;
     }
     uVar1 = 0;
   }
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] toggle_stats_panel -> set_hud_status_value(6,%d)\n", (int)uVar1);
   set_hud_status_value(6,uVar1);
   return;
 }
@@ -29613,6 +29871,8 @@ void FUN_0003e0b4()
   char local_84 [120];
   
   sVar2 = *DAT_00085a6c;
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[flask] FUN_0003e0b4 entry: xoff=%d yoff=%d\n", (int)sVar2, (int)DAT_00085a6c[1]);
   if ((sVar2 < 0x1a) || (0x27 < sVar2)) {
     if (DAT_00085a6c[1] < 0x1f) {
       pcVar3 = (char *)FUN_0007863c((int)(short)(ushort)(0x1e < sVar2) + 0x59U | 0x200);
@@ -29644,7 +29904,7 @@ void FUN_0003e0b4()
     }
   }
   else if (0xd < DAT_00085a6c[1]) {
-    FUN_0003def4(0);
+    toggle_stats_panel(0);
   }
   return;
 }
@@ -29765,11 +30025,11 @@ void sync_player_stats_to_hud()
 void FUN_0003e644()
 
 {
-  if ((DAT_0023c1d4 != '\0') && (*(short *)(DAT_00085a6c + 8) != 4)) {
+  if ((g_active_hud_panel != '\0') && (*(short *)(DAT_00085a6c + 8) != 4)) {
     return;
   }
   FUN_0004638c();
-  FUN_00046bfc();
+  redraw_armor_overlay_widgets();
   FUN_00048110();
   return;
 }
@@ -30661,13 +30921,13 @@ LAB_0003f91c:
 void inventory_panel_click_region()
 
 {
-  if (DAT_0023c1d4 == '\0') {
+  if (g_active_hud_panel == '\0') {
     handle_inventory_panel_normal_click();
   }
-  else if (DAT_0023c1d4 == '\x01') {
+  else if (g_active_hud_panel == '\x01') {
     FUN_0004497c();
   }
-  else if (DAT_0023c1d4 == '\x02') {
+  else if (g_active_hud_panel == '\x02') {
     FUN_00078434();
   }
   return;
@@ -32612,15 +32872,32 @@ undefined4 param_3;
 
 
 
+/* Was `load_gr_resource_entries(...); return 0;` -- a dropped return
+   value (same class as FUN_00045054/get_scanned_object_class_effect_ptr
+   elsewhere this session): load_gr_resource_entries has a real `uint`
+   return (used directly by its other callers, e.g. FUN_00041a4c/
+   FUN_00041a90's own `return load_gr_resource_entries(...)`), but this
+   wrapper discarded it and always reported success. Harmless at
+   redraw_hud_panels's own call site (doesn't check the return value),
+   but FUN_0006eb64/redraw_active_hud_panel both DO check it, and with
+   the hardcoded 0 they always took their "decode failed" error branch
+   -- confirmed live once alloc_flip_grtile_slot/resolve_flip_grtile_slot
+   stopped being stubs and this path actually ran for the first time. */
 undefined4 FUN_00041a78(param_1,param_2,param_3)
 char *param_1;
 undefined4 param_2;
-undefined4 param_3;
+void *param_3;
 
 {
   DAT_00202510 = param_3;
-  load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,0);
-  return 0;
+  /* Was a hardcoded `0` (no post-process callback) -- see
+     uw_copy_gr_entry_to_dest's own comment: without a real callback
+     here, load_gr_resource_entries decodes into its own throwaway
+     buffer and DAT_00202510 (this function's whole reason for
+     existing) is never actually consulted, so this decode always
+     reported success while leaving the caller's destination buffer
+     untouched. */
+  return load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,&uw_copy_gr_entry_to_dest);
 }
 
 
@@ -32784,13 +33061,21 @@ void load_door_frames()
 
 
 
-void FUN_00041e40(param_1)
+void load_armor_variant_tables(param_1)
 undefined4 param_1;
 
 {
   FUN_0002285c(param_1,&DAT_00202800,0x80);
   FUN_0002285c(param_1,&DAT_002027d0,0x30);
   FUN_0002285c(param_1,&DAT_00202750,0x80);
+  if (getenv("UW_DEBUG_ARMOR_TABLES")) {
+    int _i;
+    for (_i = 0; _i < 32; _i++)
+      fprintf(stderr, "[armor] DAT_00202750[%d] (family%d nibble%d): %02x %02x %02x %02x\n",
+              _i, _i < 16 ? 2 : 3, _i < 16 ? _i : _i - 16,
+              (unsigned char)(&DAT_00202750)[_i*4], (unsigned char)(&DAT_00202750)[_i*4+1],
+              (unsigned char)(&DAT_00202750)[_i*4+2], (unsigned char)(&DAT_00202750)[_i*4+3]);
+  }
   return;
 }
 
@@ -33134,9 +33419,17 @@ undefined1 * param_1;
       param_1[5] = 0;
       iVar4 = DAT_00202898 + -1;
       iVar3 = iVar4 * 0x10000 >> 0x10;
+      if (getenv("UW_DEBUG_CLICKREGION"))
+        fprintf(stderr, "[clickregion] click at (%d,%d), scanning %d regions\n", (int)local_28, (int)local_26, (int)DAT_00202898);
       if (-1 < iVar3) {
         do {
           pcVar2 = DAT_00202890 + iVar3 * 0x12;
+          if (getenv("UW_DEBUG_CLICKREGION"))
+            fprintf(stderr, "[clickregion]   region %d: x1=%d y2=%d x2=%d y1=%d mask=0x%x active_mask=0x%x handler_flag=%d\n",
+                    (int)iVar3, (int)*(short *)(pcVar2 + 6), (int)*(short *)(pcVar2 + 4),
+                    (int)*(short *)(pcVar2 + 2), (int)*(short *)(pcVar2 + 8),
+                    (unsigned)*(ushort *)(pcVar2 + 0xc), (unsigned)*(ushort *)(param_1 + 8),
+                    (int)*(int *)(pcVar2 + 0xe));
           if ((((*(short *)(pcVar2 + 6) <= local_28) && (local_26 <= *(short *)(pcVar2 + 8))) &&
               (local_28 <= *(short *)(pcVar2 + 2))) &&
              (((*(short *)(pcVar2 + 4) <= local_26 &&
@@ -33151,6 +33444,10 @@ undefined1 * param_1;
               iVar4 = (int)*(short *)(iVar3 + DAT_00202890 + 8) - (int)local_26;
               param_1[2] = (char)iVar4;
               param_1[3] = (char)((uint)iVar4 >> 8);
+              if (getenv("UW_DEBUG_CLICKREGION"))
+                fprintf(stderr, "[clickregion]   MATCHED region %d -> handler=%p local_offset=(%d,%d)\n",
+                        _cri, (void *)(_cri < 128 ? g_click_region_handler[_cri] : 0),
+                        (int)(char)*param_1, (int)(char)param_1[2]);
               /* call the real 64-bit handler, not the truncated in-record
                  pointer (see g_click_region_handler). */
               if ((uint)_cri < 128 && g_click_region_handler[_cri] != 0) {
@@ -33236,7 +33533,7 @@ short param_1;
   if (7 < iVar2) {
     if (iVar2 < 10) {
       if (iVar2 == 9 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
-        puVar1 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
+        puVar1 = (ushort *)resolve_object_link(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
         /* Was missing a NULL check -- resolve_object_link legitimately
            returns 0 for an empty slot (its own link word has no
            object-table bits set, see its own comment), and every fresh
@@ -33296,7 +33593,7 @@ short param_1;
             g_cursor_holding_state = 0;
             FUN_00057cac(3);
           }
-          FUN_000667cc();
+          refresh_player_equipment_effects();
           if (getenv("UW_CONTAINER_AUTOCLOSE_ON_DRAG_OUT")) {
             leave_nested_container_level();
           }
@@ -33331,7 +33628,7 @@ short param_1;
                  *(byte *)(DAT_00086df8 + 0x5e);
           }
           g_selected_object = 0;
-          FUN_000667cc();
+          refresh_player_equipment_effects();
         }
         goto LAB_00042a10;
       }
@@ -33349,7 +33646,7 @@ short param_1;
      storage fix a few functions up), immediately segfaulting one frame
      further in on use_object_on_target's own dereference of the same
      truncated value. */
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
+  puVar2 = (ushort *)resolve_object_link(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar2] * 2);
   if (puVar2 != 0) {
     /* Page 4 of comobj's string data is the base object-name table,
        indexed directly by id (0x800 | id) -- same lookup the
@@ -33458,7 +33755,7 @@ void close_backpack_container()
        so this isn't load-bearing for the full-panel repaint below, but
        leaving a stale occupied reference there would be a latent trap
        for any future reader of this slot. */
-    *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = 0;
+    *(unsigned short *)(&g_equipped_items + DAT_00085c4c * 2) = 0;
     iVar1 = 0xb;
     do {
       (&g_backpack_widget_to_slot_plus1)[iVar1] = (char)iVar1;
@@ -33475,7 +33772,7 @@ void close_backpack_container()
       iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
     } while (iVar1 < 0x14);
     FUN_00057118();
-    if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
+    if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (g_active_hud_panel == '\0')) {
       FUN_00076e98(DAT_002028ec);
       FUN_00048110();
     }
@@ -33620,7 +33917,7 @@ void leave_nested_container_level()
          of the same link value, resolve_object_link doesn't care which
          address you point it at" pattern open_backpack_container's own
          g_current_container_link assignment already established. */
-      *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = g_current_container_link;
+      *(unsigned short *)(&g_equipped_items + DAT_00085c4c * 2) = g_current_container_link;
       redraw_inventory_widget_range(0x14,0x14);
     }
   }
@@ -33678,20 +33975,20 @@ void repopulate_container_grid_slots()
 
   iVar6 = 0x14;
   do {
-    if ((*(ushort *)(&DAT_00202950 + iVar6 * 2) & 0xffc0) != 0) break;
+    if ((*(ushort *)(&g_equipped_items + iVar6 * 2) & 0xffc0) != 0) break;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x1c);
   pContents = (char *)resolve_object_link(&g_current_container_link);
   pContents = (char *)resolve_object_link((ushort *)(pContents + 6));
   if ((short)iVar6 < 0x1c) {
     do {
-      _pMatch = (char *)resolve_object_link(&DAT_00202950 + (short)iVar6 * 2);
+      _pMatch = (char *)resolve_object_link(&g_equipped_items + (short)iVar6 * 2);
       if (pContents == _pMatch) {
         iVar6 = 0x14;
         do {
           uVar4 = encode_object_slot_index(pContents);
           iVar5 = (short)iVar6 * 2;
-          (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+          (&g_equipped_items)[iVar5] = (&g_equipped_items)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
           (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
           if (pContents != 0) {
             if ((*(byte *)(pContents + 1) & 0x40) != 0) {
@@ -33727,7 +34024,7 @@ void repopulate_container_grid_slots()
   do {
     uVar4 = encode_object_slot_index(pContents);
     iVar5 = (short)iVar6 * 2;
-    (&DAT_00202950)[iVar5] = (&DAT_00202950)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+    (&g_equipped_items)[iVar5] = (&g_equipped_items)[iVar5] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
     (&DAT_00202951)[iVar5] = (char)((uVar4 << 0x16) >> 0x18);
     if (pContents != 0) {
       if ((*(byte *)(pContents + 1) & 0x40) != 0) {
@@ -33743,14 +34040,14 @@ void repopulate_container_grid_slots()
       iVar5 = iVar6 * 2;
       uVar1 = *(undefined2 *)(iVar5 + 0x202958);
       bVar2 = (byte)uVar1;
-      (&DAT_00202950)[iVar5] = ((&DAT_00202950)[iVar5] ^ bVar2) & 0x3f ^ bVar2;
+      (&g_equipped_items)[iVar5] = ((&g_equipped_items)[iVar5] ^ bVar2) & 0x3f ^ bVar2;
       (&DAT_00202951)[iVar5] = (char)((ushort)uVar1 >> 8);
       iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
     } while (iVar6 < 0x18);
     for (; iVar5 = (int)(short)iVar6, iVar5 < 0x1c; iVar6 = iVar6 + 1) {
       uVar4 = encode_object_slot_index(pContents);
-      (&DAT_00202950)[iVar5 * 2] =
-           (&DAT_00202950)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
+      (&g_equipped_items)[iVar5 * 2] =
+           (&g_equipped_items)[iVar5 * 2] & 0x3f | (byte)((uVar4 & 0x3ff) << 6);
       (&DAT_00202951)[iVar5 * 2] = (char)((uVar4 << 0x16) >> 0x18);
       if (pContents != 0) {
         if ((*(byte *)(pContents + 1) & 0x40) != 0) {
@@ -33792,7 +34089,7 @@ short param_1;
   ushort *puVar15;
   
   iVar1 = (int)param_1;
-  puVar13 = (ushort *)(&DAT_00202950 + iVar1 * 2);
+  puVar13 = (ushort *)(&g_equipped_items + iVar1 * 2);
   if (getenv("UW_DEBUG_INV"))
     fprintf(stderr, "[inv] open_backpack_container entry: param_1=%d puVar13=%p\n", (int)param_1, (void *)puVar13);
   puVar7 = (ushort *)resolve_object_link(puVar13);
@@ -33806,7 +34103,7 @@ short param_1;
     else {
       if (g_open_container_list == (undefined4 *)0x0) {
         FUN_00057118();
-        if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (DAT_0023c1d4 == '\0')) {
+        if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (g_active_hud_panel == '\0')) {
           draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
         }
         /* Was also followed by a hand-added `set_draw_color(0);
@@ -34063,8 +34360,8 @@ short param_1;
         do {
           uVar12 = encode_object_slot_index(puVar15);
           iVar2 = (int)(short)iVar10;
-          (&DAT_00202950)[iVar2 * 2] =
-               (&DAT_00202950)[iVar2 * 2] & 0x3f | (byte)((uVar12 & 0x3ff) << 6);
+          (&g_equipped_items)[iVar2 * 2] =
+               (&g_equipped_items)[iVar2 * 2] & 0x3f | (byte)((uVar12 & 0x3ff) << 6);
           (&DAT_00202951)[iVar2 * 2] = (char)((uVar12 << 0x16) >> 0x18);
           if (puVar15 != NULL) {
             if ((*(byte *)((char *)puVar15 + 1) & 0x40) != 0) {
@@ -34101,7 +34398,7 @@ short param_1;
            DAT_00085c4c's own comment): point slot 19 at the same
            object g_current_container_link was just set to a few lines
            above (this container's own link). */
-        *(unsigned short *)(&DAT_00202950 + DAT_00085c4c * 2) = g_current_container_link;
+        *(unsigned short *)(&g_equipped_items + DAT_00085c4c * 2) = g_current_container_link;
         redraw_inventory_widget_range(0x14,0x14);
         if ((char)(&g_backpack_slot_to_widget)[iVar1] < '\v') {
           redraw_inventory_widget((int)(char)(&g_backpack_slot_to_widget)[iVar1]);
@@ -34237,7 +34534,7 @@ LAB_000438ac:
     if ((iVar10 == 0x13) && (*(char **)(g_current_container_record + 0x14) == 0)) {
       iVar10 = 0xb;
       do {
-        if ((*(ushort *)(&DAT_00202950 + iVar10 * 2) & 0xffc0) == 0) {
+        if ((*(ushort *)(&g_equipped_items + iVar10 * 2) & 0xffc0) == 0) {
           bVar11 = true;
           break;
         }
@@ -34269,7 +34566,7 @@ LAB_0004386c:
         g_current_container_link = _parentLink;
       }
       else {
-        puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar10 * 2);
+        puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar10 * 2);
         iVar9 = g_current_container_record;
         if (iVar10 < 0x14) {
           local_28 = 0;
@@ -34340,8 +34637,8 @@ LAB_0004386c:
       if (bVar11) {
         uVar7 = encode_object_slot_index(param_1);
         iVar10 = (int)local_28;
-        (&DAT_00202950)[iVar10 * 2] =
-             (&DAT_00202950)[iVar10 * 2] & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
+        (&g_equipped_items)[iVar10 * 2] =
+             (&g_equipped_items)[iVar10 * 2] & 0x3f | (byte)((uVar7 & 0x3ff) << 6);
         (&DAT_00202951)[iVar10 * 2] = (char)((uVar7 << 0x16) >> 0x18);
       }
 LAB_000439a0:
@@ -34361,7 +34658,7 @@ LAB_000439a0:
         bVar1 = (byte)uVar2;
         *(byte *)param_1 = (bVar1 - 4 ^ bVar1) & 0xf ^ bVar1;
         *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
-        FUN_0001433c(0);
+        set_ambient_bias_without_light(0);
       }
     }
     uVar5 = 1;
@@ -34404,7 +34701,7 @@ undefined4 param_2;
   g_current_container_link = *(undefined2 *)(g_current_container_record + 8);
   puVar10 = (ushort *)((char *)resolve_object_link(&g_current_container_link) + 6);
   iVar4 = (short)param_2 * 2;
-  pbVar9 = &DAT_00202950 + iVar4;
+  pbVar9 = &g_equipped_items + iVar4;
   puVar5 = (ushort *)resolve_object_link(pbVar9);
   while( true ) {
     puVar6 = (ushort *)resolve_object_link(puVar10);
@@ -34438,7 +34735,7 @@ undefined4 param_2;
       }
       sVar2 = FUN_00046260(param_1);
       g_player_carry_weight = g_player_carry_weight + sVar2;
-      FUN_000667cc();
+      refresh_player_equipment_effects();
       repopulate_container_grid_slots();
       redraw_inventory_widget_range((int)(char)(&g_backpack_slot_to_widget)[(short)param_2],
                    (int)(char)(&g_backpack_slot_to_widget)[(short)param_2]);
@@ -34645,7 +34942,7 @@ undefined2 * param_2;
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
-    if (((*(ushort *)(&DAT_00202950 + iVar1) ^ *param_1) & 0xffc0) == 0) {
+    if (((*(ushort *)(&g_equipped_items + iVar1) ^ *param_1) & 0xffc0) == 0) {
       uVar2 = *param_2;
       iVar4 = iVar1 + DAT_002028c0;
       bVar3 = (byte)uVar2;
@@ -34703,7 +35000,7 @@ ushort * param_2;
     if (((*(ushort *)(iVar1 + iVar4) ^ *param_2) & 0xffc0) == 0) {
       uVar2 = *param_1;
       bVar3 = (byte)uVar2;
-      (&DAT_00202950)[iVar1] = ((&DAT_00202950)[iVar1] ^ bVar3) & 0x3f ^ bVar3;
+      (&g_equipped_items)[iVar1] = ((&g_equipped_items)[iVar1] ^ bVar3) & 0x3f ^ bVar3;
       (&DAT_00202951)[iVar1] = (char)((ushort)uVar2 >> 8);
     }
     iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
@@ -34866,7 +35163,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     FUN_0004638c();
   }
   FUN_00044538(DAT_002028c8);
-  FUN_000667cc();
+  refresh_player_equipment_effects();
 LAB_00044730:
   if (DAT_002028c8 != 0) {
     Ordinal_1018();
@@ -35057,7 +35354,7 @@ void FUN_00044bd8()
       if ((DAT_00085a6c[3] & 2U) == 0) {
         iVar2 = FUN_00053ab0(&local_10);
         if (iVar2 != 0) {
-          FUN_000667cc();
+          refresh_player_equipment_effects();
         }
       }
       else {
@@ -35208,17 +35505,17 @@ short param_1;
    pointer and then discarding it in favor of a hardcoded 0, same
    "dropped return value" idiom already fixed for next_input_event elsewhere
    in this file. Every caller treats the return as the real result (e.g.
-   `puVar6 = (ushort *)FUN_00045054(iVar4); if (puVar6 != 0) ...`), so the
+   `puVar6 = (ushort *)get_equipped_item_at_slot(iVar4); if (puVar6 != 0) ...`), so the
    hardcoded 0 silently turned every one of those checks into "nothing
    here" -- except the *upper* bits of the 8-byte-wide return register
    this recompile reads were left uninitialized (the old `undefined4`
    return type only ever set the low 32 bits), so callers actually read
    garbage instead of a clean NULL and crashed dereferencing it. */
-void *FUN_00045054(param_1)
+void *get_equipped_item_at_slot(param_1)
 short param_1;
 
 {
-  return resolve_object_link(&DAT_00202950 + param_1 * 2);
+  return resolve_object_link(&g_equipped_items + param_1 * 2);
 }
 
 
@@ -35318,14 +35615,14 @@ short param_2;
         }
       }
       uVar6 = encode_object_slot_index(param_1);
-      (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
+      (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar6 << 0x16) >> 0x18);
     }
     object_list_append_tail(iVar4 + 6,param_1);
     g_player_carry_weight = g_player_carry_weight + (short)iVar3;
     uVar8 = 1;
   }
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   return uVar8;
 }
 
@@ -35365,7 +35662,7 @@ ushort *param_1;
   iVar6 = 0;
   do {
     cVar1 = (&g_backpack_widget_to_slot)[iVar6];
-    puVar5 = (ushort *)(&DAT_00202950 + (short)cVar1 * 2);
+    puVar5 = (ushort *)(&g_equipped_items + (short)cVar1 * 2);
     if ((*puVar5 & 0xffc0) != 0) {
       if ((uint)(*puVar5 >> 6) == (int)(short)uVar2) {
         return (int)cVar1;
@@ -35411,7 +35708,7 @@ undefined2 * param_5;
   iVar7 = 0;
   do {
     uVar6 = (undefined2)iVar7;
-    puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar7 * 2);
+    puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar7 * 2);
     local_6c[iVar7] = (int)puVar4;
     sVar1 = (short)param_1;
     uVar2 = (ushort)param_2;
@@ -35425,7 +35722,7 @@ undefined2 * param_5;
   if (param_4 != 1) {
     iVar5 = (int)(short)((uint)iVar5 >> 0x10);
     while (uVar6 = (undefined2)iVar7, iVar5 < 0x13) {
-      puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar5 * 2);
+      puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar5 * 2);
       local_6c[iVar5] = (int)puVar4;
       if (((puVar4 != (ushort *)0x0) && ((sVar1 < 0 || ((*puVar4 >> 6 & 7) == (int)sVar1)))) &&
          ((((short)uVar2 < 0 || (((byte)((byte)*puVar4 >> 4) & 3) == uVar2)) &&
@@ -35561,7 +35858,7 @@ ushort *FUN_00045708(param_1)
 short param_1;
 
 {
-  /* Was `resolve_object_link(&DAT_00202950 + param_1 * 2); return 0;` --
+  /* Was `resolve_object_link(&g_equipped_items + param_1 * 2); return 0;` --
      confirmed via real ARM disassembly (0x45708-0x45718: `mov r3,r0,lsl
      #0x10; ldr r0,[...]; mov r3,r3,asr #0x10; add r0,r0,r3,lsl #0x1; b
      0x53514` -- a genuine TAIL CALL straight into resolve_object_link,
@@ -35571,7 +35868,7 @@ short param_1;
      (FUN_00045678, in turn feeding g_interact_target in FUN_0003f648's
      own right-click-in-inventory "ready item" handler) always saw a
      NULL target as a result, silently no-op'ing every right-click. */
-  return (ushort *)resolve_object_link(&DAT_00202950 + param_1 * 2);
+  return (ushort *)resolve_object_link(&g_equipped_items + param_1 * 2);
 }
 
 
@@ -35631,7 +35928,7 @@ uint param_2;
   uVar4 = encode_object_slot_index(param_1);
   iVar7 = 0;
   do {
-    if ((uint)(*(ushort *)(&DAT_00202950 + iVar7 * 2) >> 6) == (int)(short)uVar4) break;
+    if ((uint)(*(ushort *)(&g_equipped_items + iVar7 * 2) >> 6) == (int)(short)uVar4) break;
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 0x1c);
   iVar8 = (int)(short)iVar7;
@@ -35704,7 +36001,7 @@ uint param_2;
     repopulate_container_grid_slots();
     refresh_container_view();
     redraw_inventory_widget(0x13);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
   }
   return 1;
 }
@@ -35738,7 +36035,7 @@ short param_4;
   ushort *puVar2;
 
   uVar1 = extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,0);
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
+  puVar2 = (ushort *)resolve_object_link(&g_equipped_items + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
     repopulate_container_grid_slots();
@@ -35764,7 +36061,7 @@ short param_4;
   ushort *puVar2;
 
   uVar1 = extract_and_refresh_slot_item(param_1,param_2,param_3,param_4,0);
-  puVar2 = (ushort *)resolve_object_link(&DAT_00202950 + param_4 * 2);
+  puVar2 = (ushort *)resolve_object_link(&g_equipped_items + param_4 * 2);
   if ((((puVar2 != (ushort *)0x0) && ((*puVar2 & 0x1c0) == 0x80)) && ((*puVar2 & 0x30) == 0)) &&
      (g_current_container_record != 0)) {
     repopulate_container_grid_slots();
@@ -35780,7 +36077,7 @@ short param_4;
 // was FUN_00045b20 -- thin wrapper: extracts the object matching
 // param_1/param_2/param_3 (category/subcategory/quality, <0 = any)
 // from slot param_4 via extract_matching_object_from_slot, then
-// refreshes carry-weight/UI state via FUN_000667cc(). Was a bare K&R
+// refreshes carry-weight/UI state via refresh_player_equipment_effects(). Was a bare K&R
 // `()` blindly relying on ARM32 register pass-through to forward its
 // own caller's args into extract_matching_object_from_slot() -- see
 // FUN_000459d8's own comment on why that's unsound on this 64-bit
@@ -35799,7 +36096,7 @@ ushort param_5;
   ushort *uVar1;
 
   uVar1 = extract_matching_object_from_slot(param_1,param_2,param_3,param_4,param_5);
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   return uVar1;
 }
 
@@ -35834,7 +36131,7 @@ ushort param_5;
   char *local_28;
   
   iVar4 = (int)param_4;
-  pbVar11 = &DAT_00202950 + iVar4 * 2;
+  pbVar11 = &g_equipped_items + iVar4 * 2;
   pbVar10 = (byte *)0x0;
   puVar3 = (ushort *)resolve_object_link(pbVar11);
   if (puVar3 != (ushort *)0x0) {
@@ -35923,7 +36220,7 @@ ushort param_5;
       sVar2 = encode_object_slot_index(puVar3);
       iVar9 = 0x14;
       do {
-        if ((uint)(*(ushort *)(&DAT_00202950 + iVar9 * 2) >> 6) == (int)sVar2) {
+        if ((uint)(*(ushort *)(&g_equipped_items + iVar9 * 2) >> 6) == (int)sVar2) {
           if (pbVar10 == (byte *)0x0) {
             uVar6 = 0;
           }
@@ -35932,8 +36229,8 @@ ushort param_5;
             uVar6 = (uint)sVar2;
           }
           iVar9 = (int)(short)iVar9;
-          (&DAT_00202950)[iVar9 * 2] =
-               (&DAT_00202950)[iVar9 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
+          (&g_equipped_items)[iVar9 * 2] =
+               (&g_equipped_items)[iVar9 * 2] & 0x3f | (byte)((uVar6 & 0x3ff) << 6);
           iVar5 = g_current_container_record;
           (&DAT_00202951)[iVar9 * 2] = (char)((uVar6 << 0x16) >> 0x18);
           /* Legacy truncated "prev" walk -- same fix as
@@ -36003,7 +36300,7 @@ int param_5;
   char acStackY_85aec [547480];
   char acStack_4d [53];
   
-  puVar5 = (undefined2 *)FUN_00045054();
+  puVar5 = (undefined2 *)get_equipped_item_at_slot();
   if (puVar5 == (undefined2 *)0x0) {
     return 0xfffffffe;
   }
@@ -36038,7 +36335,7 @@ int param_5;
     }
     decrement_object_count(puVar5);
     FUN_00053334(0,puVar5,1);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     pcVar9 = s_destroyed__00085ab4;
     uVar7 = 1;
   }
@@ -36112,7 +36409,7 @@ ushort * param_1;
 // the sack" call reached exactly this line and segfaulted (bt: interact_
 // default -> check_object_carry_weight -> SIGSEGV). This is a "can the object being
 // picked up fit in the backpack" weight/capacity check -- same "wrapper
-// forgot to forward its own argument" idiom as FUN_00045054 elsewhere in
+// forgot to forward its own argument" idiom as get_equipped_item_at_slot elsewhere in
 // this file, just a missing forward instead of a hardcoded return.
 bool check_object_carry_weight(param_1)
 ushort *param_1;
@@ -36220,7 +36517,7 @@ void FUN_000465c8()
   
   iVar1 = 0;
   do {
-    (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f;
+    (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f;
     (&DAT_00202951)[iVar1 * 2] = 0;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 0x1c);
@@ -36266,7 +36563,7 @@ short param_1;
             (int)(*DAT_00085a6c + 0xf0), (int)(0x76 - DAT_00085a6c[1]), (int)(short)uVar5);
   iVar9 = (int)(short)uVar5;
   /* Permanent (not env-gated) debug line: which real widget got clicked
-     and which g_backpack_widget_to_slot/DAT_00202950 slot it resolves
+     and which g_backpack_widget_to_slot/g_equipped_items slot it resolves
      to -- DEBUG(INFO,...) prints by default under normal play (run.sh's
      own UW_DEBUG_LEVEL=INFO), same as this file's other permanent [inv]
      lines (e.g. "use item" above), and is quieted automatically by the
@@ -36295,7 +36592,7 @@ short param_1;
     cVar2 = (&g_backpack_widget_to_slot)[iVar9];
     if (g_selected_object == 0) {
       iVar9 = (int)(short)cVar2;
-      if ((*(ushort *)(&DAT_00202950 + iVar9 * 2) & 0xffc0) == 0) {
+      if ((*(ushort *)(&g_equipped_items + iVar9 * 2) & 0xffc0) == 0) {
         if (iVar9 == 8 - (*(byte *)(DAT_00086df8 + 100) & 1)) {
           toggle_weapon_ready();
         }
@@ -36303,7 +36600,7 @@ short param_1;
         return;
       }
       if (((iVar9 != -1) && (iVar9 != 0x13)) && (iVar6 = FUN_000576d0(1), iVar6 != 0)) {
-        puVar7 = (ushort *)resolve_object_link(&DAT_00202950 + iVar9 * 2);
+        puVar7 = (ushort *)resolve_object_link(&g_equipped_items + iVar9 * 2);
         uVar3 = *puVar7;
         if (((uVar3 & 0x8000) == 0) || ((puVar7[3] & 0x8000) != 0)) {
           if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
@@ -36376,6 +36673,9 @@ short param_1;
   }
   wait_for_click_release(1);
   sVar1 = (short)uVar5;
+  if (getenv("UW_DEBUG_INV"))
+    fprintf(stderr, "[inv] handle_inventory_panel_click decision: g_selected_object=%p g_cursor_holding_state=%d sVar1=%d param_1=%d\n",
+            (void *)g_selected_object, (int)g_cursor_holding_state, (int)sVar1, (int)param_1);
   if ((g_selected_object == 0) || (g_cursor_holding_state == 2)) {
     if (0 < sVar1) {
       if (-1 < param_1) {
@@ -36406,7 +36706,7 @@ short param_1;
     if (FUN_00056fe8() != 0) {
       DAT_00204844 = 0;
     }
-    if ((DAT_0023c1d4 != '\0') && (sVar1 != 0x17)) {
+    if ((g_active_hud_panel != '\0') && (sVar1 != 0x17)) {
       g_cursor_holding_state = 1;
       return;
     }
@@ -36494,7 +36794,7 @@ ushort * param_1;
       if (FUN_00056fe8() != 0) {
         DAT_00204844 = 0;
       }
-      if ((DAT_0023c1d4 == '\0') || (iVar1 == 0x17)) {
+      if ((g_active_hud_panel == '\0') || (iVar1 == 0x17)) {
         /* Widget 20 (the real "leave container" indicator) falls
            through to handle_object_drop_target below same as
            everywhere else -- see that function's own `iVar2==0x14`
@@ -36529,36 +36829,45 @@ ushort * param_1;
 
 
 
-undefined4 FUN_00046b88(param_1,param_2)
+/* Was copying "armor_f" into acStack_85c88, a 547936-byte buffer
+   Ghidra misattributed here (the same stack-frame-size-miscalculation
+   artifact already fixed in dispatch_object_action's acStack_85978
+   and check_object_fits_in_slot's acStack_84f64 -- see their own
+   comments) that's never read back afterward. The REAL destination,
+   acStack_28 (6 bytes) + local_22 (the dynamically-picked gender
+   letter, right after it), never actually got "armor_" copied into
+   it -- so FUN_00041a18 loaded a resource file named by 6 bytes of
+   uninitialized stack instead of "armor_f"/"armor_m", explaining why
+   an equipped item's paper-doll overlay renders as a solid block
+   (whatever placeholder/error frame a failed .GR load falls back to)
+   instead of the real worn-armor graphic. Fixed by building the real
+   name into one properly-sized, NUL-terminated local instead of
+   relying on two separate locals happening to land adjacently on the
+   stack (true in the original 32-bit ARM build, not guaranteed by a
+   modern compiler). */
+undefined4 load_armor_overlay_frame(param_1,param_2)
 int param_1;
 undefined4 param_2;
 
 {
-  char *wptr_30748;
-  char cVar1;
-  char *pcVar2;
-  char acStack_85c88 [547936];
-  char acStack_28 [6];
-  undefined1 local_22;
-  
-  pcVar2 = s_armor_f_00085c60;
-    wptr_30748 = acStack_85c88;
-  do {
-    cVar1 = *pcVar2;
-    *wptr_30748 = cVar1; wptr_30748 = wptr_30748 + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  local_22 = 0x6d;
-  if ((*(byte *)(DAT_00086df8 + 100) & 2) == 2) {
-    local_22 = 0x66;
+  char armor_name[8];
+  int i;
+
+  for (i = 0; i < 6; i++) {
+    armor_name[i] = s_armor_f_00085c60[i];
   }
-  FUN_00041a18(param_1 + 0x2091,acStack_28,param_2);
+  armor_name[6] = 0x6d;
+  if ((*(byte *)(DAT_00086df8 + 100) & 2) == 2) {
+    armor_name[6] = 0x66;
+  }
+  armor_name[7] = '\0';
+  FUN_00041a18(param_1 + 0x2091,armor_name,param_2);
   return 1;
 }
 
 
 
-void FUN_00046bfc()
+void redraw_armor_overlay_widgets()
 
 {
   byte *pbVar1;
@@ -36566,7 +36875,7 @@ void FUN_00046bfc()
   uint uVar3;
   int iVar4;
 
-  if (DAT_0023c1d4 == '\0') {
+  if (g_active_hud_panel == '\0') {
     FUN_00057118();
     if (DAT_00085c54 != 0) {
       screen_backup_save();
@@ -36579,8 +36888,8 @@ void FUN_00046bfc()
     iVar4 = 1;
     g_blit_transparent_mode = 1;
     do {
-      if ((*(ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar4] * 2) & 0xffc0) != 0) {
-        pbVar1 = (byte *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar4] * 2));
+      if ((*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar4] * 2) & 0xffc0) != 0) {
+        pbVar1 = (byte *)resolve_object_link((ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar4] * 2));
         uVar3 = *pbVar1 & 0x1f;
         if ((uint)(int)(short)uVar3 < 0xf) {
           uVar2 = (pbVar1[4] & 0x30) >> 4;
@@ -36592,7 +36901,7 @@ void FUN_00046bfc()
            ((short)uVar2 + 1 != (int)*(char *)((char *)&DAT_002028e0 + iVar4))) {
           *(char *)((char *)&DAT_00202988 + iVar4) = (char)uVar3 + '\x01';
           *(char *)((char *)&DAT_002028e0 + iVar4) = (char)uVar2 + '\x01';
-          FUN_00046b88(iVar4,uVar2 * 0xf + uVar3);
+          load_armor_overlay_frame(iVar4,uVar2 * 0xf + uVar3);
         }
         draw_sprite_by_id(iVar4 + 0x2091,(int)(&g_inv_hotspot_draw_x)[iVar4 * 7],(int)(&g_inv_hotspot_draw_y)[iVar4 * 7],
                      (&g_inv_hotspot_dirty_h)[iVar4 * 0xe],(&g_inv_hotspot_dirty_w)[iVar4 * 0xe]);
@@ -36630,10 +36939,10 @@ undefined4 param_1;
   undefined4 uVar2;
   
   uVar2 = 0xffffffff;
-  if (DAT_0023c1d4 == '\0') {
+  if (g_active_hud_panel == '\0') {
     iVar1 = (int)(short)param_1;
     if (iVar1 < 6) {
-      FUN_00046bfc();
+      redraw_armor_overlay_widgets();
     }
     else if (iVar1 < 0x15) {
       redraw_inventory_widget_range(param_1,param_1);
@@ -36677,7 +36986,7 @@ int param_2;
     uVar2 = (uint)local_20;
   }
   else {
-    iVar1 = FUN_00045054(param_1);
+    iVar1 = get_equipped_item_at_slot(param_1);
     resolve_object_link(iVar1 + 4);
     uVar2 = encode_object_slot_index();
   }
@@ -36687,9 +36996,9 @@ int param_2;
       iVar1 = (int)(short)param_1;
       if (getenv("UW_DEBUG_INV"))
         fprintf(stderr, "[inv] swap_cursor_and_slot_item writing arr_idx=%d objid=0x%03x\n", iVar1, uVar2 & 0x1ff);
-      (&DAT_00202950)[iVar1 * 2] = (&DAT_00202950)[iVar1 * 2] & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
+      (&g_equipped_items)[iVar1 * 2] = (&g_equipped_items)[iVar1 * 2] & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
       (&DAT_00202951)[iVar1 * 2] = (char)((uVar2 << 0x16) >> 0x18);
-      FUN_000667cc();
+      refresh_player_equipment_effects();
     }
     FUN_00057118();
     if (bVar3) {
@@ -36713,7 +37022,7 @@ int param_2;
        file (see their own copies of this comment). */
     FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
     FUN_000570b4();
-    FUN_000667cc();
+    refresh_player_equipment_effects();
   }
   return;
 }
@@ -36825,7 +37134,7 @@ undefined4 param_2;
   uVar5 = ((byte)*param_1 & 0x30) >> 4;
   bVar4 = (byte)*param_1 & 0xf;
   iVar15 = (int)(short)param_2;
-  DAT_00204690 = param_1;
+  g_scratch_object_ptr = param_1;
   if (iVar15 == 0x13) {
     if (g_current_container_record == 0) {
       return 0;
@@ -36850,7 +37159,7 @@ undefined4 param_2;
     if (_parentRec == 0) {
       iVar15 = 0xb;
       do {
-        if ((*(ushort *)(&DAT_00202950 + iVar15 * 2) & 0xffc0) == 0) break;
+        if ((*(ushort *)(&g_equipped_items + iVar15 * 2) & 0xffc0) == 0) break;
         iVar15 = (iVar15 + 1) * 0x10000 >> 0x10;
       } while (iVar15 < 0x13);
       if ((short)iVar15 < 0x13) {
@@ -36869,11 +37178,11 @@ undefined4 param_2;
   }
   else {
     if (iVar15 < 0x14) {
-      puVar10 = &DAT_00202950 + iVar15 * 2;
+      puVar10 = &g_equipped_items + iVar15 * 2;
       puVar11 = (ushort *)resolve_object_link(puVar10);
     }
     else {
-      puVar11 = (ushort *)resolve_object_link(&DAT_00202950 + iVar15 * 2);
+      puVar11 = (ushort *)resolve_object_link(&g_equipped_items + iVar15 * 2);
       if ((puVar11 == (ushort *)0x0) || ((*puVar11 & 0x1f0) != 0x80)) {
         puVar11 = (ushort *)resolve_object_link(&g_current_container_link);
       }
@@ -36893,7 +37202,7 @@ undefined4 param_2;
     if (((byte)*param_1 & 0x30) < 0x20) {
       return 0;
     }
-    iVar12 = FUN_000528a8();
+    iVar12 = get_scanned_object_class_effect_ptr();
     if (iVar15 == 0) {
       bVar16 = *(char *)(iVar12 + 3) == '\b';
     }
@@ -36925,7 +37234,7 @@ LAB_00047a68:
     if (((byte)*param_1 & 0x30) < 0x20) {
       return 0;
     }
-    iVar15 = FUN_000528a8();
+    iVar15 = get_scanned_object_class_effect_ptr();
     bVar16 = *(char *)(iVar15 + 3) == '\t';
     goto LAB_00047a68;
   }
@@ -36943,7 +37252,7 @@ LAB_00047a68:
     if ((local_50 == 2) && (((uVar5 == 1 && (3 < bVar4)) && (bVar4 < 8)))) {
       iVar12 = 0;
       do {
-        if (iVar15 == (char)(&DAT_00085ac8)[(int)iVar12]) {
+        if (iVar15 == (char)(&g_light_source_slots)[(int)iVar12]) {
           return 1;
         }
         iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
@@ -36952,7 +37261,7 @@ LAB_00047a68:
       bVar6 = (byte)uVar1;
       *(byte *)param_1 = (bVar4 - 4 ^ bVar6) & 0xf ^ bVar6;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar1 >> 8);
-      FUN_0001433c(0);
+      set_ambient_bias_without_light(0);
       sVar9 = check_object_fits_in_slot(param_1,param_2);
       if (sVar9 != 0) {
         return 1;
@@ -37000,10 +37309,10 @@ LAB_00047a0c:
       if (pbVar13 == (byte *)0x0) {
         bVar7 = 1;
       }
-      else if (((short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3] == 0) ||
+      else if (((short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3] == 0) ||
          (bVar7 = 0,
          (int)*(short *)(iVar12 + 10) + (int)local_54[0] <=
-         (int)(short)(ushort)(byte)(&DAT_002029f8)[(*pbVar13 & 0xf) * 3])) {
+         (int)(short)(ushort)(byte)(&g_carry_weight_limit_table)[(*pbVar13 & 0xf) * 3])) {
         bVar7 = 1;
       }
       bVar7 = bVar6 & bVar7;
@@ -37012,8 +37321,8 @@ LAB_00047a0c:
   sum_container_weight(puVar11 + 3,local_54);
   uVar8 = local_4c;
   iVar15 = ((byte)*puVar11 & 0xf) * 3;
-  if (((byte)(&DAT_002029f8)[iVar15] == 0) ||
-     (bVar7 = 0, local_54[0] <= (short)(ushort)(byte)(&DAT_002029f8)[iVar15])) {
+  if (((byte)(&g_carry_weight_limit_table)[iVar15] == 0) ||
+     (bVar7 = 0, local_54[0] <= (short)(ushort)(byte)(&g_carry_weight_limit_table)[iVar15])) {
     bVar7 = 1;
   }
   if (!(bool)(bVar7 & bVar6)) {
@@ -37034,15 +37343,15 @@ LAB_00047a0c:
   }
   uVar2 = (uint)*(short *)(&DAT_002029f9 + iVar15);
   /* DAT_002029f9 (this container-type's "specific item id required" table,
-     alongside its sibling DAT_002029f8 used for the weight-capacity check
-     just above) is loaded by FUN_0004a02c -- but that loader itself has
+     alongside its sibling g_carry_weight_limit_table used for the weight-capacity check
+     just above) is loaded by load_light_food_effect_tables -- but that loader itself has
      no caller anywhere in the decompiled binary (confirmed via a real
-     Ghidra xref search: the only reference to FUN_0004a02c's address is
+     Ghidra xref search: the only reference to load_light_food_effect_tables's address is
      a DATA reference, meaning it's stored into some struct as a function
      pointer for an indirect call this project hasn't traced/wired up
      yet), so this table is permanently all-zero. The sibling capacity
-     table (DAT_002029f8) already treats a zero entry as "no limit" (see
-     the `(&DAT_002029f8)[iVar15] == 0` check just above); this table's
+     table (g_carry_weight_limit_table) already treats a zero entry as "no limit" (see
+     the `(&g_carry_weight_limit_table)[iVar15] == 0` check just above); this table's
      own zero-entry case was instead falling into the "must be this
      exact item id" branch below with a real zero, incorrectly requiring
      the placed item's id to literally be 0 -- rejecting every real
@@ -37053,8 +37362,8 @@ LAB_00047a0c:
      sibling table already does, via the same LAB_00047a0c fallback
      already used for the table's other explicit "no restriction"
      sentinel (a negative entry) -- a narrow, local fix for the
-     immediate symptom; the deeper root cause (wiring up FUN_0004a02c's
-     real call so this table, DAT_002029f8, and g_food_effect_table all
+     immediate symptom; the deeper root cause (wiring up load_light_food_effect_tables's
+     real call so this table, g_carry_weight_limit_table, and g_food_effect_table all
      get their real game data) is a separate, larger task. */
   if ((int)uVar2 <= 0) goto LAB_00047a0c;
   if ((int)uVar2 < 0x200) {
@@ -37108,7 +37417,7 @@ short param_1;
      while wiring up backpack-slot placement (the click hit-boxes and
      widget-to-slot mapping in g_inv_hotspot_click_x1/g_backpack_widget_to_slot were the other
      missing pieces, see their own comments). */
-  if ((*(ushort *)(&DAT_00202950 + param_1 * 2) & 0xffc0) == 0) {
+  if ((*(ushort *)(&g_equipped_items + param_1 * 2) & 0xffc0) == 0) {
     iVar1 = place_held_item_in_empty_slot(g_selected_object, param_1);
   }
   else {
@@ -37146,7 +37455,7 @@ short param_2;
   else {
     /* Dropped argument: place_object_in_backpack_slot's own declared signature takes
        (object, slot_index) and writes the object's link into
-       &DAT_00202950 + slot_index*2 -- the real "place held item into
+       &g_equipped_items + slot_index*2 -- the real "place held item into
        this backpack slot" primitive -- but slot_index was never
        forwarded here, so it placed nothing at a real slot. */
     iVar2 = place_object_in_backpack_slot(param_1, param_2);
@@ -37229,10 +37538,10 @@ uint param_2;
   
   iVar1 = (int)(short)param_2;
   uVar11 = 0;
-  puVar4 = (ushort *)resolve_object_link(&DAT_00202950 + iVar1 * 2);
+  puVar4 = (ushort *)resolve_object_link(&g_equipped_items + iVar1 * 2);
   if (((*puVar4 & 0x1c0) == 0x80) && ((*puVar4 & 0x30) == 0)) {
     uVar11 = auto_place_in_container(param_1,param_2);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     return uVar11;
   }
   iVar5 = FUN_00047b38(param_1,puVar4);
@@ -37319,7 +37628,7 @@ uint param_2;
       }
     }
     g_player_carry_weight = g_player_carry_weight + (short)iVar8;
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     iVar5 = (puVar4[3] & 0xffc0) + param_2 * 0x40;
     bVar2 = (byte)puVar4[2];
     *(byte *)(puVar4 + 3) = (byte)iVar5 ^ (byte)puVar4[3] & 0x3f;
@@ -37341,7 +37650,7 @@ uint param_2;
 void FUN_00048110()
 
 {
-  if (DAT_0023c1d4 == '\0') {
+  if (g_active_hud_panel == '\0') {
     DAT_00085c50 = 0xffff;
     if (g_current_container_record == 0) {
       FUN_00076e98(DAT_002028ec);
@@ -37420,15 +37729,15 @@ joined_r0x00048308:
           if (getenv("UW_DEBUG_INV"))
             fprintf(stderr, "[inv] redraw_inventory_widget_range loop iVar6=%d slot_arr_idx=%d arr_val=0x%04x\n",
                     iVar6, (char)(&g_backpack_widget_to_slot)[iVar6],
-                    (unsigned)*(ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
+                    (unsigned)*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
           if (iVar6 < 0x15) {
-            if ((*(ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2) & 0xffc0) != 0) {
+            if ((*(ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2) & 0xffc0) != 0) {
               if (getenv("UW_DEBUG_INV"))
                 fprintf(stderr, "[inv] resolve addr=%p table=%p lo=%p hi=%p\n",
-                        (void *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2),
+                        (void *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2),
                         (void *)g_backpack_slot_table, (void *)(DAT_002046b8 - 0x4000),
                         (void *)(DAT_002046c4 + 0x1800 + 0x38));
-              puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
+              puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + (char)(&g_backpack_widget_to_slot)[iVar6] * 2));
               if (puVar7 == 0) goto skip_slot_draw_iVar6;
               if (getenv("UW_DEBUG_INV"))
                 fprintf(stderr, "[inv] slot widget_id=%d slot_arr_idx=%d objid=0x%03x draw_x=%d draw_y=%d w=%d h=%d\n",
@@ -37476,12 +37785,12 @@ joined_r0x00048308:
       if (getenv("UW_DEBUG_W20"))
         fprintf(stderr, "[w20] slot=%d raw=0x%04x occupied=%d DAT_00202938=%p x=%d y=%d w=%d h=%d\n",
                 (int)(unsigned char)DAT_00085c4c,
-                (unsigned)*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2),
-                (int)((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0),
+                (unsigned)*(ushort *)(&g_equipped_items + DAT_00085c4c * 2),
+                (int)((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0),
                 (void *)DAT_00202938, (int)_DAT_00085bf0, (int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
                 (int)DAT_00085bf5, (int)DAT_00085bf4);
-      if ((*(ushort *)(&DAT_00202950 + DAT_00085c4c * 2) & 0xffc0) != 0) {
-        puVar7 = (ushort *)resolve_object_link((ushort *)(&DAT_00202950 + DAT_00085c4c * 2));
+      if ((*(ushort *)(&g_equipped_items + DAT_00085c4c * 2) & 0xffc0) != 0) {
+        puVar7 = (ushort *)resolve_object_link((ushort *)(&g_equipped_items + DAT_00085c4c * 2));
         if (getenv("UW_DEBUG_W20"))
           fprintf(stderr, "[w20] resolved=%p id=0x%03x\n", (void *)puVar7, puVar7 ? (unsigned)(*puVar7 & 0x1ff) : 0u);
         draw_sprite_by_id(*puVar7 & 0x1ff,(int)_DAT_00085bf0,(int)CONCAT11(DAT_00085bf3,DAT_00085bf2),
@@ -38364,6 +38673,102 @@ static void uw_debug_draw_inv_hotspot_positions(void)
   if (max_x >= 0) dirty_rect_union(min_y, max_y, min_x, max_x);
 }
 
+/* Debug tool (UW_DUMP_SPRITE_FRAMES / UW_DUMP_SPRITE_IDS): dump
+   individual sprites to standalone BMP files by real resource id, one
+   file per id, using the game's own real render path (blit_object_
+   sprite_by_frame for a raw absolute frame index, draw_sprite_by_id
+   for a normal game object/sprite id that goes through
+   resolve_sprite_id_to_frame first) -- not a separate from-scratch
+   .GR parser, so it exercises exactly the same code this project has
+   been chasing rendering bugs through (e.g. the TMOBJ sign investigation,
+   see [[tmobj-sign-table-recovery]] and follow-ups).
+
+   UW_DUMP_SPRITE_FRAMES/UW_DUMP_SPRITE_IDS are a comma-separated list
+   of ids and/or inclusive ranges, e.g. "643-680,18,149". Output goes to
+   UW_DUMP_SPRITE_DIR (default "debug/sprites"), as frame_<id>.bmp or
+   id_<id>.bmp. Runs once, early in the first real gameplay tick. */
+static void _uw_dump_sprite_to_file(int is_frame, int id, const char *dir) {
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int cw = 96, ch = 128, ox = 4, oy = 4;
+  if (fb == 0) return;
+  for (int y = 0; y < ch; y++) {
+    for (int x = 0; x < cw; x++) {
+      fb[(oy + y) * 0x140 + (ox + x)] = 0;
+    }
+  }
+  if (is_frame) {
+    blit_object_sprite_by_frame(id, ox, oy);
+  } else {
+    draw_sprite_by_id(id, ox, oy, cw, ch);
+  }
+  char path[320];
+  snprintf(path, sizeof(path), "%s/%s_%d.bmp", dir, is_frame ? "frame" : "id", id);
+  uw_save_rgb565_region_bmp(path, fb + oy * 0x140 + ox, cw, ch, 0x140);
+}
+
+static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, const char *dir) {
+  const char *spec = getenv(envname);
+  if (!spec || !spec[0]) return;
+  uw_debug_mkdir_p(dir);
+  const char *p = spec;
+  while (*p) {
+    int lo, hi;
+    char *end;
+    lo = (int)strtol(p, &end, 10);
+    if (end == p) break;
+    p = end;
+    if (*p == '-') {
+      p++;
+      hi = (int)strtol(p, &end, 10);
+      if (end == p) hi = lo;
+      p = end;
+    } else {
+      hi = lo;
+    }
+    for (int id = lo; id <= hi; id++) {
+      _uw_dump_sprite_to_file(is_frame, id, dir);
+    }
+    if (*p == ',') p++;
+    else break;
+  }
+}
+
+/* Temporary test hook for verifying the armor paper-doll equip flow
+   without a real "give item" mechanism: once per run, the first time
+   backpack grid slot 12 holds a real object, overwrite its low 9 id
+   bits with UW_DEBUG_FORCE_ITEM_ID (hex) in place -- reusing a real,
+   already-linked object (e.g. a picked-up torch) the same way
+   use_light_source toggles bits on an existing object, rather than
+   fabricating a new arena entry. Not meant to stay long-term. */
+static void uw_debug_force_item_id_once(void) {
+  static int done = 0;
+  if (done) return;
+  const char *idstr = getenv("UW_DEBUG_FORCE_ITEM_ID");
+  if (!idstr) return;
+  ushort *obj = (ushort *)get_equipped_item_at_slot(12);
+  if (!obj) return;
+  done = 1;
+  int newid = (int)strtol(idstr, NULL, 16);
+  ushort old = *obj;
+  *obj = (old & ~(ushort)0x1ff) | (newid & 0x1ff);
+  fprintf(stderr, "[armor] forced slot12 object id 0x%03x -> 0x%03x\n", old & 0x1ff, *obj & 0x1ff);
+}
+
+
+
+static void uw_debug_dump_sprite_frames_once(void) {
+  static int done = 0;
+  if (done) return;
+  done = 1;
+  if (!getenv("UW_DUMP_SPRITE_FRAMES") && !getenv("UW_DUMP_SPRITE_IDS")) return;
+  const char *dir = getenv("UW_DUMP_SPRITE_DIR");
+  if (!dir || !dir[0]) dir = "debug/sprites";
+  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_FRAMES", 1, dir);
+  _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_IDS", 0, dir);
+}
+
+
+
 // was FUN_000497cc -- runs once per in-game main-loop iteration: resets
 // the dirty rect to a degenerate {100,100,100,100}, redraws the small
 // HUD/cursor element, and flushes that to the display
@@ -38472,6 +38877,8 @@ void main_loop_hud_flush()
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
+  uw_debug_dump_sprite_frames_once();
+  uw_debug_force_item_id_once();
   /* When the forced 3D redraw ran this frame, push it through even if a
      mouse button is being held in the viewport: DAT_0023c63c (the
      click-hold flag) otherwise blocks flush_dirty_rect_to_display's real
@@ -38581,18 +38988,71 @@ void FUN_00049948()
 
 
 
-undefined4 FUN_0004994c()
+/* alloc_flip_grtile_slot/resolve_flip_grtile_slot: were real, confirmed
+   `mov r0,#0; cpy pc,lr` no-ops in the pristine binary (disassembly-
+   verified at both real addresses, 0x4994c and 0x49954 -- not a
+   decompilation artifact). Their only caller, FUN_0006eb64's
+   double-buffered-grtile setup for the chain-hotspot panel-switch flip
+   animation, unconditionally failed as a result (uVar6 = uVar6 &
+   alloc_flip_grtile_slot() forced uVar6 to 0), so g_flip_grtile_cache_ready's
+   ready bit could never be set and the entire staged blit path in
+   FUN_0006edfc was dead code -- in the shipped .exe, not just this
+   decompile. See [[chain-hotspot-stats-panel]]: exhaustive real-binary
+   cross-referencing found no other path to draw_stats_panel_content
+   either, so this genuinely was inert in the original game.
+
+   THE BODIES BELOW ARE NOT DECOMPILED CODE. Per explicit user request
+   ("implement these stubs to revive this path"), this is a from-
+   scratch reimplementation of what these two functions would need to
+   do for the surrounding (real, decompiled) double-buffered-grtile
+   machinery to actually work, since the original binary's own version
+   is confirmed permanently inert and there is nothing to recover.
+   Written to match this file's own already-established grtile
+   conventions (grtile_alloc_registered's opaque-key allocation,
+   and the g_grtile_real_ptrs registry-walk resolution already used by
+   capture_framebuffer_rect_to_grtile/FUN_00076e98/FUN_00011c10) rather
+   than invented from nothing. */
+undefined4 alloc_flip_grtile_slot()
 
 {
-  return 0;
+  /* Not decompiled (see above). Sized generously (0x100*0x80 = 32768
+     bytes) rather than exactly: the real per-slot sizes the original
+     binary would have used were never recovered (this whole path was
+     dead, so nothing to disassemble), and FUN_0006eb64 itself indexes
+     one slot at a +0x2800 (10240) byte offset, so this needs enough
+     headroom for whatever panels.GR frame-3 decode lands there on top
+     of the base 0x72x0x53 panel rect every slot also needs to hold. */
+  return grtile_alloc_registered(0x100,0x80);
 }
 
 
 
-undefined4 FUN_00049954()
+void *resolve_flip_grtile_slot(param_1)
+undefined4 param_1;
 
 {
-  return 0;
+  /* Not decompiled (see above). Same registry-walk resolution as
+     capture_framebuffer_rect_to_grtile/FUN_00076e98/FUN_00011c10:
+     grtile_alloc_registered's return value is an opaque truncated
+     identity key (see its own comment), not a real pointer -- find
+     the matching record in the DAT_0023c3fc registry and return the
+     real pointer g_grtile_real_ptrs tracks for it. */
+  int iVar1;
+  undefined4 *puVar2;
+
+  if (param_1 == 0) {
+    return 0;
+  }
+  iVar1 = 0;
+  puVar2 = DAT_0023c3fc;
+  while (param_1 != *puVar2) {
+    iVar1 = iVar1 + 1;
+    puVar2 = (undefined4 *)((char *)puVar2 + 0x11);
+    if (0x13f < iVar1) {
+      return 0;
+    }
+  }
+  return g_grtile_real_ptrs[iVar1];
 }
 
 
@@ -38611,7 +39071,7 @@ undefined4 init_level_object_arena()
   if (DAT_002029cc == 0) {
     /* Widened by 0x3a bytes: 28 backpack/equipment slots * 2 bytes
        (0x38) plus g_current_container_link's own 2 bytes, both now reserved at
-       this buffer's tail -- see reset_level_object_arena and DAT_00202950's/
+       this buffer's tail -- see reset_level_object_arena and g_equipped_items's/
        g_current_container_link's own comments. */
     DAT_002029cc = Ordinal_1041(0x7c08 + 0x3a);
     if (DAT_002029cc == 0) {
@@ -38882,12 +39342,12 @@ undefined4 param_2;
 
 
 
-void FUN_0004a02c(param_1)
+void load_light_food_effect_tables(param_1)
 undefined4 param_1;
 
 {
-  FUN_0002285c(param_1,&DAT_002029f8,0x30);
-  FUN_0002285c(param_1,&DAT_002029d8,0x20);
+  FUN_0002285c(param_1,&g_carry_weight_limit_table,0x30);
+  FUN_0002285c(param_1,&g_light_radius_table,0x20);
   FUN_0002285c(param_1,&g_food_effect_table,0x10);
   return;
 }
@@ -39171,7 +39631,7 @@ int param_2;
       bVar1 = (byte)uVar2;
       *(byte *)param_1 = (bVar1 - 4 ^ bVar1) & 0xf ^ bVar1;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
-      FUN_0001433c(0);
+      set_ambient_bias_without_light(0);
     }
     FUN_00055f98(param_1,iVar7 >> 3,iVar8 >> 3,1);
   }
@@ -43900,11 +44360,11 @@ undefined4 FUN_00052674()
   
   iVar5 = 0;
   local_13c[3] = (code *)0x0;
-  local_13c[0] = FUN_00041e40;
+  local_13c[0] = load_armor_variant_tables;
   local_13c[4] = (code *)0x0;
   local_13c[1] = FUN_0002a2c8;
   local_13c[5] = (code *)0x0;
-  local_13c[2] = FUN_0004a02c;
+  local_13c[2] = load_light_food_effect_tables;
   local_13c[6] = (code *)&LAB_0007cd6c;
   local_13c[7] = (code *)&LAB_0001582c;
   Ordinal_1047(acStack_11c,0,0x104);
@@ -43968,7 +44428,12 @@ undefined4 FUN_00052674()
 
 
 
-undefined4 FUN_000528a8()
+/* Was `undefined4` -- same 64-bit-pointer-truncated-through-a-32-bit-
+   return-type bug as get_equipped_item_at_slot's (see its own comment): this
+   function returns a POINTER into one of the runtime tables class2_variant_effect_table_lookup
+   and friends compute, and on a 64-bit build `undefined4` silently drops
+   the pointer's upper 32 bits, handing the caller a wild address. */
+void *get_scanned_object_class_effect_ptr()
 
 {
   undefined1 *local_24 [4];
@@ -43977,16 +44442,24 @@ undefined4 FUN_000528a8()
   undefined1 *local_c;
   undefined1 *local_8;
   
-  local_24[0] = &LAB_00041e84;
+  local_24[0] = &class0_variant_effect_table_lookup;
   local_24[1] = &LAB_0002a2d8;
-  local_24[2] = &DAT_0004a070;
+  local_24[2] = &class2_variant_effect_table_lookup;
   local_24[3] = &LAB_0007913c;
   local_14 = &LAB_00073b10;
   local_10 = &LAB_0006b3d4;
   local_c = &LAB_0007cd7c;
   local_8 = &LAB_0001583c;
-  (*(code *)local_24[(short)((*DAT_00204690 & 0x1c0) >> 6)])();
-  return 0;
+  /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace
+     a return value through the indirect call and fabricated a "return 0"
+     placeholder. Real disassembly (0x52928-0x52938) shows no instruction
+     sets r0 before the epilogue -- whatever the dispatched per-class
+     handler leaves in r0 IS this function's real return value. Every
+     caller relies on that (e.g. refresh_player_equipment_effects's light-scan loop:
+     `iVar7 = get_scanned_object_class_effect_ptr(); bVar1 = *(byte*)(iVar7+1);` -- with the
+     hardcoded 0 this dereferenced address 1 and crashed the moment a
+     real light source was actually found by the scan). */
+  return (*(void *(*)())local_24[(short)((*g_scratch_object_ptr & 0x1c0) >> 6)])();
 }
 
 
@@ -45009,7 +45482,7 @@ void FUN_00053c74()
     }
   }
   if (iVar10 != 0) {
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     FUN_00049924(2);
   }
   if (DAT_002046cc != 0) {
@@ -45097,11 +45570,11 @@ undefined1 param_2;
   uVar10 = 0;
   iVar9 = 0;
   do {
-    puVar6 = (ushort *)FUN_00045054((int)(char)(&DAT_00085ac8)[iVar9]);
+    puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar9]);
     if (puVar6 != (ushort *)0x0) {
       uVar2 = *puVar6;
       if (((((uVar2 & 0x1f0) == 0x90) && (uVar7 = (uint)(short)(uVar2 & 0xf), 3 < uVar7)) &&
-          (uVar7 < 8)) && (cVar1 = (&DAT_002029d8)[uVar7 * 2], cVar1 != '\0')) {
+          (uVar7 < 8)) && (cVar1 = (&g_light_radius_table)[uVar7 * 2], cVar1 != '\0')) {
         Ordinal_2005(cVar1,param_2);
         uVar8 = (ushort)(extraout_r1 == 0);
         if (1 < param_1) {
@@ -45122,9 +45595,9 @@ undefined1 param_2;
             bVar4 = (byte)uVar2;
             *(byte *)puVar6 = (bVar4 - 4 ^ bVar4) & 0xf ^ bVar4;
             *(byte *)((char *)puVar6 + 1) = (byte)(uVar2 >> 8);
-            FUN_0004503c((int)(char)(&DAT_00085ac8)[iVar9]);
+            FUN_0004503c((int)(char)(&g_light_source_slots)[iVar9]);
             uVar10 = 1;
-            FUN_0001433c(0);
+            set_ambient_bias_without_light(0);
           }
         }
       }
@@ -45218,7 +45691,7 @@ char param_3;
     uVar5 = ((uVar5 & 0xffc0) + 0x40 ^ uVar5) & 0x3c0 ^ uVar5;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar5;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     uVar1 = 1;
   }
   return uVar1;
@@ -45877,7 +46350,7 @@ ushort * param_1;
       bVar5 = (byte)uVar1;
       *(byte *)puVar9 = (bVar5 - 4 ^ bVar5) & 0xf ^ bVar5;
       *(byte *)((char *)puVar9 + 1) = (byte)(uVar1 >> 8);
-      FUN_0001433c(0);
+      set_ambient_bias_without_light(0);
     }
     uVar1 = puVar9[2];
     *(byte *)(puVar9 + 2) = (byte)param_1[4] & 0x3f | (byte)(uVar1 & 0xffc0);
@@ -55891,7 +56364,7 @@ uint param_1;
 
 // WARNING: Removing unreachable block (ram,0x000667b0)
 
-int FUN_0006674c(param_1)
+int compute_object_weight(param_1)
 ushort * param_1;
 
 {
@@ -55903,7 +56376,7 @@ ushort * param_1;
     iVar2 = 0;
   }
   else {
-    iVar2 = (((int)((uint)(byte)(&DAT_002026d0)[(uVar1 & 0x1ff) * 4] * ((byte)param_1[2] & 0x3f)) >>
+    iVar2 = (((int)((uint)(byte)(&g_object_weight_table)[(uVar1 & 0x1ff) * 4] * ((byte)param_1[2] & 0x3f)) >>
              6) + 1) * 0x10000 >> 0x10;
   }
   return iVar2;
@@ -55911,7 +56384,7 @@ ushort * param_1;
 
 
 
-void FUN_000667cc()
+void refresh_player_equipment_effects()
 
 {
   byte bVar1;
@@ -55920,7 +56393,9 @@ void FUN_000667cc()
   int iVar4;
   int iVar5;
   ushort *puVar6;
-  int iVar7;
+  byte *iVar7; /* Was `int` -- truncated the 64-bit pointer get_scanned_object_class_effect_ptr
+                  returns (see its own comment); made a real crash once
+                  that return value stopped being a hardcoded 0. */
   uint uVar8;
   byte bVar9;
   ushort uVar11;
@@ -55940,26 +56415,26 @@ void FUN_000667cc()
   } while (iVar4 < 4);
   iVar4 = 0;
   do {
-    iVar5 = FUN_00045054(iVar4);
+    iVar5 = get_equipped_item_at_slot(iVar4);
     if (iVar5 != 0) {
-      cVar3 = FUN_0006674c();
+      cVar3 = compute_object_weight();
       DAT_0023be74[(char)(&DAT_00086da8)[iVar4]] =
            cVar3 + DAT_0023be74[(char)(&DAT_00086da8)[iVar4]];
     }
     iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
   } while (iVar4 < 5);
-  puVar6 = (ushort *)FUN_00045054((*(byte *)(DAT_00086df8 + 100) & 1) + 7);
+  puVar6 = (ushort *)get_equipped_item_at_slot((*(byte *)(DAT_00086df8 + 100) & 1) + 7);
   if ((((puVar6 != (ushort *)0x0) && (uVar11 = *puVar6, (uVar11 & 0x1c0) == 0)) &&
       ((uVar11 & 0x30) == 0x30)) && ((10 < (uVar11 & 0xf) && ((uVar11 & 0xf) < 0x10)))) {
-    cVar3 = FUN_0006674c();
+    cVar3 = compute_object_weight();
     *DAT_0023be74 = cVar3 + *DAT_0023be74;
     DAT_0023be74[1] = DAT_0023be74[1] + cVar3;
   }
   DAT_0023be74[0x12] = *(char *)(DAT_00086df8 + 0x22);
-  DAT_00204690 = (ushort *)FUN_00045054(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
+  g_scratch_object_ptr = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
   uVar11 = 2;
-  if (DAT_00204690 != (ushort *)0x0) {
-    uVar2 = *DAT_00204690;
+  if (g_scratch_object_ptr != (ushort *)0x0) {
+    uVar2 = *g_scratch_object_ptr;
     if (((uVar2 & 0x1c0) == 0) && ((uVar2 & 0x30) < 0x20)) {
       uVar8 = uVar2 & 0xf;
       if ((uVar2 & 0x30) == 0) {
@@ -55999,27 +56474,35 @@ LAB_000669a8:
   do {
     puVar6 = g_selected_object;
     if (!bVar12) {
-      /* Dropped argument (Ghidra relied on a register leftover that
-         doesn't hold the right value on this recompile) -- every other
-         call to this function in this loop nest passes the current slot
-         index (see the identically-shaped loop at line ~48762 below);
-         iVar4 is that same index here. */
-      puVar6 = (ushort *)FUN_00045054(iVar4);
+      /* Was get_equipped_item_at_slot(iVar4) -- scanning raw equip slots 0-3, which
+         never hold a light source. Disassembly of the real binary
+         (0x669e8-0x669f4) shows an indirect table lookup was dropped:
+         r8 is loaded from the literal pool with g_light_source_slots, then
+         `ldrsbne r0,[r5,r8]` reads g_light_source_slots[iVar4] (the real
+         light-source-eligible slots {5,6,7,8}) before calling
+         get_equipped_item_at_slot. The sibling light-fuel-burn loop in FUN_0005404c
+         (uw.c ~45174) already uses this exact
+         `get_equipped_item_at_slot((char)(&g_light_source_slots)[iVar9])` pattern for the
+         identical 0x90-class/radius-nibble check, confirming this is
+         the real call shape here too -- this was the actual cause of
+         [[torch-ambient-light-scan-range-mismatch]]: a lit torch
+         auto-equips to slot 5 (widget 6), which this loop never read. */
+      puVar6 = (ushort *)get_equipped_item_at_slot((int)(char)(&g_light_source_slots)[iVar4]);
     }
-    DAT_00204690 = puVar6;
+    g_scratch_object_ptr = puVar6;
     if (getenv("UW_DEBUG_AMBIENT"))
       fprintf(stderr, "[ambient] light-scan slot=%d puVar6=%p id=0x%03x nibble=0x%x\n",
               (int)iVar4, (void *)puVar6, puVar6 ? (unsigned)(*puVar6 & 0x1ff) : 0u,
               puVar6 ? (unsigned)(*puVar6 & 0xf) : 0u);
     if ((((puVar6 != (ushort *)0x0) && ((*puVar6 & 0x1f0) == 0x90)) &&
         (uVar11 = *puVar6 & 0xf, 3 < uVar11)) && (uVar11 < 8)) {
-      iVar7 = FUN_000528a8();
-      bVar1 = *(byte *)(iVar7 + 1);
+      iVar7 = get_scanned_object_class_effect_ptr();
+      bVar1 = iVar7[1];
       if (bVar10 < bVar1) {
         /* Also a bare call (no argument) -- but whatever DAT_000842b0
            value this leaves is unconditionally overwritten a few lines
            below by this same function's own definitive
-           set_ambient_bias_with_light(0)/FUN_0001433c(0) decision (made
+           set_ambient_bias_with_light(0)/set_ambient_bias_without_light(0) decision (made
            from the aggregated bVar9/bVar10 this loop is computing), so
            it's provably inert either way, not fixed alongside the real
            bug in that later call. */
@@ -56038,7 +56521,7 @@ LAB_000669a8:
     fprintf(stderr, "[ambient] light-scan result: bVar9=%d iVar5=%d -> DAT_00086df8+99=0x%02x; full slot dump:\n",
             (int)bVar9, (int)iVar5, (unsigned)*(byte *)(DAT_00086df8 + 99));
     for (_s = 0; _s < 11; _s++) {
-      ushort *_o = (ushort *)FUN_00045054(_s);
+      ushort *_o = (ushort *)get_equipped_item_at_slot(_s);
       fprintf(stderr, "  slot=%d ptr=%p id=0x%03x nibble=0x%x\n", _s, (void *)_o,
               _o ? (unsigned)(*_o & 0x1ff) : 0u, _o ? (unsigned)(*_o & 0xf) : 0u);
     }
@@ -56053,19 +56536,19 @@ LAB_000669a8:
   }
   iVar4 = 0;
   do {
-    DAT_00204690 = (ushort *)FUN_00045054(iVar4);
-    if ((DAT_00204690 != (ushort *)0x0) &&
-       (iVar5 = FUN_00045f9c(*DAT_00204690 & 0x1ff,iVar4), iVar5 != 0)) {
-      iVar5 = FUN_0007ca50(DAT_00204690,local_2c,local_2e,&local_28);
+    g_scratch_object_ptr = (ushort *)get_equipped_item_at_slot(iVar4);
+    if ((g_scratch_object_ptr != (ushort *)0x0) &&
+       (iVar5 = FUN_00045f9c(*g_scratch_object_ptr & 0x1ff,iVar4), iVar5 != 0)) {
+      iVar5 = FUN_0007ca50(g_scratch_object_ptr,local_2c,local_2e,&local_28);
       if ((iVar5 == 0) || (local_28 != 0)) {
-        if ((*DAT_00204690 & 0x1ff) == 0x2f) {
+        if ((*g_scratch_object_ptr & 0x1ff) == 0x2f) {
           DAT_0023bc98 = 1;
         }
       }
       else {
         iVar5 = FUN_000661b0(local_2c[0],local_2e[0],&local_30,iVar4);
         if (iVar5 != 0) {
-          FUN_0007cc30(DAT_00204690);
+          FUN_0007cc30(g_scratch_object_ptr);
         }
       }
     }
@@ -56076,18 +56559,18 @@ LAB_000669a8:
     /* *(char*)(DAT_00086df8+99) is the player's current light radius
        (upper nibble; 0 = no equipped light source at all, maintained by
        this same function's own scan of equip slots above + a separate
-       updater at uw.c ~55510). ==0 (no light) -> FUN_0001433c(0), the
+       updater at uw.c ~55510). ==0 (no light) -> set_ambient_bias_without_light(0), the
        mild "8 - param_1" dimming bias; else (a light source IS lit) ->
        set_ambient_bias_with_light below, the much stronger "-0x20 -
        param_1" brightening bias (more negative = brighter -- see that
        function's own comment for the full sign-convention explanation). */
     if (*(char *)(DAT_00086df8 + 99) == '\0') {
-      FUN_0001433c(0);
+      set_ambient_bias_without_light(0);
     }
     else {
       /* Was a bare call -- ran on leftover register garbage instead of
          a real argument. The sibling call just above explicitly passes
-         0 to FUN_0001433c; mirror that here too. */
+         0 to set_ambient_bias_without_light; mirror that here too. */
       set_ambient_bias_with_light(0);
     }
   }
@@ -56253,7 +56736,7 @@ void FUN_00066e90()
   register_key_binding(0x32,0,0x11,&LAB_000680d0);
   register_key_binding(0x6a,7,0x1b,move_command_dispatch);
   register_key_binding(0x4a,6,0x1b,move_command_dispatch);
-  register_key_binding(0x86,0,0x1b,FUN_0003def4);
+  register_key_binding(0x86,0,0x1b,toggle_stats_panel);
   register_key_binding(0x89,0,0x1b,&LAB_00071ac4);
   register_key_binding(0x88,2,0x1b,&LAB_0007036c);
   register_key_binding(0x87,1,0x1b,FUN_00044d14);
@@ -56574,7 +57057,7 @@ short param_3;
   if (iVar1 != 0) {
     DAT_00086b20 = 1;
   }
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   return;
 }
 
@@ -57818,7 +58301,7 @@ short param_1;
 void FUN_00069e30()
 
 {
-  if (DAT_0023c1d4 == '\x02') {
+  if (g_active_hud_panel == '\x02') {
     *g_draw_color_index = 0xf1;
     *DAT_00084298 = 0xf1;
     FUN_00057118();
@@ -59684,7 +60167,7 @@ void FUN_0006cbf0()
   FUN_00076488((int)DAT_0023c1e8);
   FUN_00076488((int)DAT_0023c1ea);
   DAT_0023c1e6 = 0;
-  DAT_0023c1d4 = 0;
+  g_active_hud_panel = 0;
   DAT_0023c1e4 = 0;
   DAT_0023c220 = 0;
   DAT_0023c1d8 = DAT_0023c1d8 & 0xff7f;
@@ -59761,7 +60244,7 @@ void redraw_hud_panels()
   FUN_0006cb74();
   sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
   FUN_0006e96c(DAT_00086df8 + 0x47);
-  FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
+  FUN_00041a78(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
   /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
      parameter -- it reads the global g_blit_transparent_mode instead (see its own
      definition in graphics.c: g_blit_transparent_mode==0 draws every source byte
@@ -59783,7 +60266,7 @@ void redraw_hud_panels()
   g_blit_transparent_mode = 1;
   bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
   g_blit_transparent_mode = 0;
-  (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
+  (*(code *)(&g_hud_panel_handlers)[g_active_hud_panel])();
   FUN_00076508();
   return;
 }
@@ -59874,7 +60357,7 @@ LAB_0006d09c:
   }
   if (iVar1 != 4) {
     if (iVar1 == 6) {
-      if (DAT_0023c1d4 == '\x04') {
+      if (g_active_hud_panel == '\x04') {
         return;
       }
     }
@@ -59967,7 +60450,7 @@ void hud_panel_redraw_dispatch()
     do {
       uVar1 = (ushort)iVar7;
       if ((uVar1 & uVar4) != 0) {
-        (*(code *)(&DAT_00087230)[iVar9])(iVar9);
+        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
         uVar4 = DAT_0023c1e0 & ~uVar1;
         bVar8 = true;
         DAT_0023c1e0 = uVar4;
@@ -59982,7 +60465,7 @@ void hud_panel_redraw_dispatch()
     iVar9 = 0;
     do {
       if (((ushort)iVar7 & DAT_0023c1dc) != 0) {
-        (*(code *)(&DAT_00087230)[iVar9])(iVar9);
+        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
         bVar6 = DAT_0023c150;
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
@@ -60009,9 +60492,13 @@ void hud_panel_redraw_dispatch()
     }
     iVar7 = 1;
     iVar9 = 0;
+    if (getenv("UW_DEBUG_CLICKREGION") && DAT_0023c1d8 != 0)
+      fprintf(stderr, "[stats] hud_panel_redraw_dispatch: DAT_0023c1d8=0x%x clock-gate open, scanning\n", (unsigned)DAT_0023c1d8);
     do {
       if (((ushort)iVar7 & DAT_0023c1d8) != 0) {
-        (*(code *)(&DAT_00087230)[iVar9])(iVar9);
+        if (getenv("UW_DEBUG_CLICKREGION"))
+          fprintf(stderr, "[stats] hud_panel_redraw_dispatch: dispatching g_hud_panel_ticker_handlers[%d] (table index %d)\n", iVar9, iVar9 + 4);
+        (*(code *)(&g_hud_panel_ticker_handlers)[iVar9])(iVar9);
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
       iVar7 = ((int)(short)(ushort)iVar7 << 0x11) >> 0x10;
@@ -60157,7 +60644,7 @@ short param_1;
 // "damage" only describes one of the three. What this function
 // actually drives, dispatched via set_hud_status_value's status
 // category 4/5 (param_1, left/right dragon) through
-// PTR_FUN_00087220_table/DAT_00087230 alongside its hud_X_tick
+// g_hud_panel_handlers_table/g_hud_panel_ticker_handlers alongside its hud_X_tick
 // siblings: a small state machine (param_1-4 -> iVar6, indexing every
 // DAT_0023c11c/DAT_0023c12c-family global 0=left/1=right) that plays
 // the dragon decoration's reactive TAIL whip (DAT_0023c238's frame,
@@ -60447,7 +60934,7 @@ LAB_0006dd88:
 
 
 
-// was FUN_0006df70 -- one of the 13 entries in PTR_FUN_00087220_table
+// was FUN_0006df70 -- one of the 13 entries in g_hud_panel_handlers_table
 // (the per-tick HUD panel redraw dispatch, alongside hud_vitals_bar_tick
 // and hud_dragon_reaction_tick, its naming siblings). Steps the compass
 // needle's displayed heading (DAT_0023c12a) one increment toward the
@@ -60536,23 +61023,30 @@ void FUN_0006e038()
 
 
 
-void FUN_0006e130()
+void tick_hud_panel_transition()
 
 {
   int iVar1;
-  
-  if (DAT_0023c12e != DAT_0023c11e) {
+
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] tick_hud_panel_transition tick: current=%d target=%d in_progress=%d\n",
+            (int)g_committed_hud_panel, (int)g_target_hud_panel, (int)DAT_0023c20c);
+  if (g_committed_hud_panel != g_target_hud_panel) {
     if (DAT_0023c20c == 0) {
       DAT_0023c20c = 1;
-      FUN_0006eb64(DAT_0023c11e,0xec,8,0x53,0x72);
-      DAT_0023c1d4 = '\x04';
+      FUN_0006eb64(g_target_hud_panel,0xec,8,0x53,0x72);
+      g_active_hud_panel = '\x04';
     }
     iVar1 = FUN_0006edfc();
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] tick_hud_panel_transition: FUN_0006edfc() -> %d\n", iVar1);
     if (iVar1 == 1) {
-      DAT_0023c12e = DAT_0023c11e;
-      DAT_0023c1d4 = DAT_0023c11e;
+      g_committed_hud_panel = g_target_hud_panel;
+      g_active_hud_panel = g_target_hud_panel;
       DAT_0023c20c = 0;
       DAT_0023c1d8 = DAT_0023c1d8 & 0xffbf;
+      if (getenv("UW_DEBUG_CLICKREGION"))
+        fprintf(stderr, "[stats] tick_hud_panel_transition: transition COMPLETE, now showing panel %d\n", (int)g_active_hud_panel);
     }
   }
   return;
@@ -60603,7 +61097,7 @@ LAB_0006e244:
 // was FUN_0006e360 -- sets the weapon-swing animation "category" to
 // load (0-3, from the weapon-hand item's melee-weapon-stats byte 6, or
 // 3 for empty-handed/fist -- see request_weapon_swing_graphic's own
-// caller in FUN_000667cc) and marks the redraw-dirty bit that
+// caller in refresh_player_equipment_effects) and marks the redraw-dirty bit that
 // hud_panel_redraw_dispatch/advance_action_animation_frame eventually
 // act on to actually load the sprite set (load_weapon_swing_sprites).
 void request_weapon_swing_graphic(param_1)
@@ -60755,7 +61249,7 @@ short param_1;
 // state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4),
 // and calls load_weapon_swing_sprites once a weapon-category change
 // needs new sprites. Only reachable via hud_panel_redraw_dispatch's
-// dirty-bit-gated dispatch table (PTR_FUN_00087220_table[12]), which
+// dirty-bit-gated dispatch table (g_hud_panel_handlers_table[12]), which
 // IS wired into the real per-frame dispatch (DAT_00085668, mode 0) --
 // confirmed live via UW_DEBUG_COMBAT that this runs continuously during
 // normal play, not dead code. DAT_000870e4 is also read (separately,
@@ -60991,12 +61485,26 @@ undefined2 param_5;
 
 {
   undefined1 uVar1;
-  ushort uVar2;
+  /* Was `ushort` -- too narrow for alloc_flip_grtile_slot's real 4-byte
+     grtile key now that it's no longer a stub (harmless before, when
+     it always returned 0). Still reused a few lines down as a plain
+     0/1 success flag (FUN_00041a78's return), which fits fine in the
+     wider type too. */
+  undefined4 uVar2;
   ushort uVar3;
-  undefined4 uVar4;
-  int iVar5;
+  /* Was `undefined4` -- truncated resolve_flip_grtile_slot's real
+     pointer return (see its own comment) to 32 bits on this host
+     before handing it to FUN_00041a78/bitmap_blit_to_framebuffer.
+     Harmless while resolve_flip_grtile_slot was a stub always
+     returning 0; a real truncated-pointer bug now that it isn't. */
+  char *uVar4;
+  /* Was `int` -- doubles as this loop's plain counter (0..2, fine
+     either way) AND, further down, resolve_flip_grtile_slot's real
+     pointer return used in pointer arithmetic (`iVar5 + 0x2800`),
+     which does need the wider type now that that call isn't a stub. */
+  intptr_t iVar5;
   ushort uVar6;
-  
+
   uVar6 = 1;
   DAT_0023c140 = param_5;
   DAT_0023c144 = param_4;
@@ -61006,8 +61514,24 @@ undefined2 param_5;
     iVar5 = 0;
     do {
       if ((&DAT_0023c200)[iVar5] == 0) {
-        uVar2 = FUN_0004994c();
-        uVar6 = uVar6 & uVar2;
+        uVar2 = alloc_flip_grtile_slot();
+        /* Not decompiled -- see alloc_flip_grtile_slot's own comment.
+           This slot's newly-allocated key was never actually stored
+           back into the array, so this "already allocated?" check
+           above would see 0 again on every subsequent call even after
+           a real (non-stub) allocation succeeded -- invisible while
+           the allocator was a stub (there was never a real key to
+           lose), but a real bug once it does something. */
+        (&DAT_0023c200)[iVar5] = uVar2;
+        /* Was `uVar6 = uVar6 & uVar2;` -- a bitwise AND of the
+           success accumulator against uVar2 directly made sense when
+           uVar2 could only ever be the stub's constant 0, but uVar2 is
+           now a real (large, effectively-arbitrary-bit-pattern) grtile
+           key, so ANDing it directly could clear uVar6's low bit --
+           and so the whole accumulator -- on a perfectly successful
+           allocation just because that key's low bit happened to be
+           0. Normalize to a real boolean success check instead. */
+        uVar6 = uVar6 & (uVar2 != 0);
       }
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 3);
@@ -61015,29 +61539,64 @@ undefined2 param_5;
       FUN_0006edb8();
     }
     else {
-      DAT_0023c218 = DAT_0023c218 | 1;
+      g_flip_grtile_cache_ready = g_flip_grtile_cache_ready | 1;
     }
     DAT_0023c278 = 1;
   }
-  if ((DAT_0023c218 & 1) != 0) {
-    uVar4 = FUN_00049954(DAT_0023c202);
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] FUN_0006eb64 entry: param_1(target)=%d g_flip_grtile_cache_ready=0x%x DAT_0023c278=%d uVar6=%d\n",
+            (int)param_1, (unsigned)g_flip_grtile_cache_ready, (int)DAT_0023c278, (int)uVar6);
+  if ((g_flip_grtile_cache_ready & 1) != 0) {
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     uVar2 = FUN_00041a78(s_panels_00087260,param_1,uVar4);
-    iVar5 = FUN_00049954(DAT_0023c200);
+    iVar5 = resolve_flip_grtile_slot(DAT_0023c200);
     uVar3 = FUN_00041a78(s_panels_00087260,3,iVar5 + 0x2800);
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] FUN_0006eb64: uVar4(dst202)=%u uVar2(decode1 ok)=%u iVar5(dst200)=%d uVar3(decode2 ok)=%u\n",
+              (unsigned)uVar4, (unsigned)uVar2, iVar5, (unsigned)uVar3);
     if ((uVar2 & uVar3 & uVar6) == 0) {
+      if (getenv("UW_DEBUG_CLICKREGION"))
+        fprintf(stderr, "[stats] FUN_0006eb64: DECODE FAILED, calling FUN_0003c3c8(0x300e)\n");
       FUN_0003c3c8(0x300e);
     }
     FUN_00057118();
-    uVar4 = FUN_00049954(DAT_0023c202);
-    bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
-    uVar1 = DAT_0023c1d4;
-    DAT_0023c1d4 = (undefined1)param_1;
-    DAT_00085c54 = 0;
-    (*(code *)(&PTR_FUN_00087220)[(short)param_1])();
-    DAT_00085c54 = 1;
-    DAT_0023c1d4 = uVar1;
-    uVar4 = FUN_00049954(DAT_0023c202);
+    /* Not decompiled -- capture the CURRENT (source/old panel's) live
+       screen content into DAT_0023c200's offset-0 region (its
+       0x2800 offset already holds the decoded chain graphic from
+       just above, so this doesn't collide) before the target panel's
+       content gets drawn over it below. Without this, FUN_0006edfc's
+       first tick captured "whatever's currently on screen" into
+       DAT_0023c200 believing it was grabbing the front (source) face
+       of the flip -- but by that point this function had already
+       drawn and captured the TARGET panel here, leaving it visible on
+       screen, so DAT_0023c200 ended up with the same target content
+       as DAT_0023c202. Both flip halves showed the target panel
+       instead of source-then-target. QA: "clicking the chain does
+       flip... but shows stats for both halves, should only switch at
+       the edge-on midpoint." */
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
     FUN_0007e998(uVar4,0xec,8,0x53,0x72);
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] FUN_0006eb64: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)uVar4);
+    bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
+    uVar1 = g_active_hud_panel;
+    g_active_hud_panel = (undefined1)param_1;
+    DAT_00085c54 = 0;
+    (*(code *)(&g_hud_panel_handlers)[(short)param_1])();
+    DAT_00085c54 = 1;
+    g_active_hud_panel = uVar1;
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
+    FUN_0007e998(uVar4,0xec,8,0x53,0x72);
+    /* Not decompiled -- put the source content (just captured above)
+       back on screen now that we're done using the screen as a
+       scratch surface to capture the target. Otherwise the target
+       panel stays visible here, and FUN_0006edfc's first tick's own
+       (unchanged) "capture whatever's on screen into DAT_0023c200"
+       step would just re-capture the target again, undoing the fix
+       above. */
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
+    bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
     FUN_000570b4();
   }
   DAT_0023c134 = (short)param_1;
@@ -61046,19 +61605,19 @@ undefined2 param_5;
 
 
 
-void FUN_0006ed0c()
+void redraw_active_hud_panel()
 
 {
   int iVar1;
   
-  iVar1 = FUN_00041a78(s_panels_00087260,DAT_0023c1d4,DAT_0023cca4);
+  iVar1 = FUN_00041a78(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
   if (iVar1 == 0) {
     FUN_0007ea34(&DAT_00087298);
   }
   else {
     FUN_00057118();
     bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
-    (*(code *)(&PTR_FUN_00087220)[DAT_0023c1d4])();
+    (*(code *)(&g_hud_panel_handlers)[g_active_hud_panel])();
     set_draw_color(0x1a);
     flush_dirty_rect_to_display(1);
     FUN_000570b4();
@@ -61091,23 +61650,39 @@ bool FUN_0006edfc()
 {
   undefined1 uVar1;
   byte bVar2;
-  undefined4 uVar3;
-  undefined4 uVar4;
+  /* Were `undefined4` -- truncated the real 64-bit pointers this
+     function passes around (DAT_0023cca4 itself, and resolve_flip_grtile_slot's
+     return value) to 32 bits on this host before handing them to
+     bitmap_blit_to_framebuffer/FUN_0006f6e0/FUN_0007e998, which then
+     reconstructed a wild pointer from just the low half. Same
+     truncated-pointer-local class as everywhere else this session --
+     this is what crashed the panel-switch wipe transition the first
+     time it ever actually ran. */
+  char *uVar3;
+  char *uVar4;
   int iVar5;
   int iVar6;
   int iVar7;
   int iVar8;
   int iVar9;
   bool bVar10;
+  /* Was `iVar7 + 0x2800` (iVar7 declared `int`) -- iVar7 is reused as
+     a plain int scratch everywhere else in this function, but in the
+     DAT_0023c208==4 stage it briefly holds resolve_flip_grtile_slot's
+     real 64-bit pointer, truncated to 32 bits before the +0x2800
+     offset, producing a wild address. Same pointer-truncation class
+     as uVar3/uVar4 above; needs its own real-pointer local since
+     iVar7's other uses in this function are genuine int arithmetic. */
+  char *pFlipSrc4;
   
   uVar3 = DAT_0023cca4;
   bVar2 = DAT_0023c208 + 1;
-  if ((DAT_0023c218 & 1) != 0) {
+  if ((g_flip_grtile_cache_ready & 1) != 0) {
     DAT_0023c208 = bVar2;
     FUN_00057118();
-    uVar3 = FUN_00049954(DAT_0023c204);
+    uVar3 = resolve_flip_grtile_slot(DAT_0023c204);
     if (DAT_0023c208 == 1) {
-      uVar4 = FUN_00049954(DAT_0023c200);
+      uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
       FUN_0007e998(uVar4,(int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,(int)DAT_0023c144,
                    DAT_0023c140);
       FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
@@ -61124,7 +61699,35 @@ bool FUN_0006edfc()
       if (iVar9 < 0) {
         iVar9 = iVar9 + 1;
       }
-      rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar9 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+      /* Not decompiled -- was `(iVar9 >> 1) - DAT_0023c14c`. Confirmed
+         via real ARM disassembly (0006f21c-0006f24c) that the shipped
+         binary genuinely computes it this way, so this is a real,
+         never-fixed bug in the original game's own compiled code for
+         this feature (which this whole investigation independently
+         confirmed is never reachable in any shipped build -- never
+         QA'd). QA (live): iVar9 (= DAT_0023c138-DAT_0023c140) stays
+         small (0-7) across the whole animation -- DAT_0023c138 is a
+         "should stay ~constant" height reference that actually
+         wobbles up to 106% of DAT_0023c140 due to the same curve
+         table's overshoot -- so the ORIGINAL buggy subtraction put
+         the panel's edge-erase strips and its squashed-content blit
+         ~15-16px ABOVE the panel's real top (DAT_0023c14c=8) instead
+         of a few px below it ("draws 16 pixels too high"). First fix
+         attempt just flipped the operand order (`DAT_0023c14c +
+         delta`), which was closer but still wrong: it anchors the
+         TOP edge at DAT_0023c14c and lets the panel grow downward as
+         DAT_0023c138 overshoots, drifting a few extra px low each
+         time the height wobbles ("shifts down a bit too much"). The
+         correct fix keeps the panel's VERTICAL CENTER fixed (not its
+         top) as its height wobbles -- `DAT_0023c14c -
+         (iVar9 >> 1)` -- since top = center - height/2 =
+         (DAT_0023c14c + DAT_0023c140/2) - DAT_0023c138/2 =
+         DAT_0023c14c - (DAT_0023c138-DAT_0023c140)/2. Verified live:
+         this keeps the computed center within 0.5px of the true
+         center (DAT_0023c14c+DAT_0023c140/2) at every stage, vs. the
+         addition version drifting up to 6px low at the most extreme
+         wobble (stage 3/5, DAT_0023c138=120). */
+      rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar9 >> 1 & 0xffffU),
                    (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
                    (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
       iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
@@ -61139,8 +61742,9 @@ bool FUN_0006edfc()
       if (iVar9 < 0) {
         iVar9 = iVar9 + 1;
       }
+      /* Not decompiled -- same "16 pixels too high" fix as above. */
       rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
-                   (iVar7 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+                   (int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
                    (int)DAT_0023c144 + (uint)DAT_0023c148,(uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff
                   );
       iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
@@ -61151,13 +61755,15 @@ bool FUN_0006edfc()
       if (iVar5 < 0) {
         iVar5 = iVar5 + 1;
       }
+      /* Not decompiled -- same "16 pixels too high" fix as above,
+         this time for the actual squashed-content blit position. */
       bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
-                   (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
+                   (int)(short)DAT_0023c14c - (int)(short)(iVar7 >> 1),uVar3,(int)DAT_0023c138,
                    DAT_0023c13c,0,0,1);
     }
     else if (1 < DAT_0023c208) {
       if (DAT_0023c208 < 4) {
-        uVar4 = FUN_00049954(DAT_0023c200);
+        uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
         FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
         set_draw_color(0xf1);
         iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
@@ -61172,7 +61778,11 @@ bool FUN_0006edfc()
         if (iVar9 < 0) {
           iVar9 = iVar9 + 1;
         }
-        rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar9 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+        /* Not decompiled -- "16 pixels too high" fix, see the
+           identical block in the DAT_0023c208==1 branch above for the
+           full explanation (disassembly-confirmed real bug, not a
+           decompiler artifact). */
+        rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar9 >> 1 & 0xffffU),
                      (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
                      (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
         iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
@@ -61188,7 +61798,7 @@ bool FUN_0006edfc()
           iVar9 = iVar9 + 1;
         }
         rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
-                     (iVar7 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+                     (int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
                      (int)DAT_0023c144 + (uint)DAT_0023c148,
                      (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
         iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
@@ -61200,11 +61810,11 @@ bool FUN_0006edfc()
           iVar5 = iVar5 + 1;
         }
         bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
-                     (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
+                     (int)(short)DAT_0023c14c - (int)(short)(iVar7 >> 1),uVar3,(int)DAT_0023c138,
                      DAT_0023c13c,0,0,1);
       }
       else if (DAT_0023c208 == 4) {
-        iVar7 = FUN_00049954(DAT_0023c200);
+        pFlipSrc4 = resolve_flip_grtile_slot(DAT_0023c200);
         set_draw_color(0xf1);
         iVar9 = (int)DAT_0023c140 + (int)DAT_0023c138;
         iVar5 = (int)DAT_0023c144 + (int)DAT_0023c13c;
@@ -61222,8 +61832,10 @@ bool FUN_0006edfc()
         if (iVar6 < 0) {
           iVar6 = iVar6 + 1;
         }
+        /* Not decompiled -- "16 pixels too high" fix, see the
+           DAT_0023c208==1 branch above for the full explanation. */
         rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar6 >> 1) & 0xffff,
-                     (iVar8 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+                     (int)DAT_0023c14c - (iVar8 >> 1 & 0xffffU),
                      (uint)DAT_0023c148 + (iVar5 >> 1) & 0xffff,
                      (uint)DAT_0023c14c + (iVar9 >> 1) & 0xffff);
         iVar5 = -(int)DAT_0023c140 + 0x78;
@@ -61235,19 +61847,37 @@ bool FUN_0006edfc()
           iVar9 = DAT_0023c144 + -2;
         }
         bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar9 >> 1),
-                     (int)(short)(iVar5 >> 1) - (int)(short)DAT_0023c14c,iVar7 + 0x2800,0x78,3,0,0,1
+                     (int)(short)(iVar5 >> 1) - (int)(short)DAT_0023c14c,pFlipSrc4 + 0x2800,0x78,3,0,0,1
                     );
       }
       else if (4 < DAT_0023c208) {
         if (DAT_0023c208 < 8) {
-          uVar4 = FUN_00049954(DAT_0023c202);
+          uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
           set_draw_color(0xf1);
           iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar7 >> 1 & 0xffffU) - (int)(short)DAT_0023c14c,
-                       DAT_0023c148 + DAT_0023c144);
+          /* Was missing its 4th argument (y2) -- real disassembly
+             (0006f3d8-0006f400) shows r3 genuinely computed as
+             `(short)DAT_0023c14c + (short)(iVar7 >> 1)` right before
+             the call, matching the same y1/y2-around-center pattern
+             every other rect_fill_or_save_restore call in this
+             function uses; the decompiler just dropped it from the
+             call's C syntax. Previously left as the original 3-arg
+             dropped-argument call because applying this fix crashed a
+             few ticks later -- that turned out to be a side effect of
+             FUN_0007e998/FUN_00041a78 being broken (this rect_fill
+             finally actually running exposed their bugs, rather than
+             being wrong itself); now that both are fixed, re-applying
+             this fix is what it takes for the panel-flip's "erase old
+             content" pass to bound itself correctly instead of wiping
+             out the static flask/chain area below the panel with a
+             leftover-register y2. */
+          /* Not decompiled -- "16 pixels too high" fix, see the
+             DAT_0023c208==1 branch above for the full explanation. */
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
+                       DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
           iVar7 = (int)DAT_0023c138 + (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
@@ -61263,19 +61893,27 @@ bool FUN_0006edfc()
           if (iVar5 < 0) {
             iVar5 = iVar5 + 1;
           }
+          /* Not decompiled -- "16 pixels too high" fix (the
+             squashed-content blit position itself this time). */
           bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
-                       (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
+                       (int)(short)DAT_0023c14c - (int)(short)(iVar7 >> 1),uVar3,(int)DAT_0023c138,
                        DAT_0023c13c,0,0,1);
         }
         else if (DAT_0023c208 == 8) {
-          uVar3 = FUN_00049954(DAT_0023c202);
+          uVar3 = resolve_flip_grtile_slot(DAT_0023c202);
           set_draw_color(0xf1);
           iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar7 >> 1 & 0xffffU) - (int)(short)DAT_0023c14c,
-                       DAT_0023c148 + DAT_0023c144);
+          /* Was missing its 4th argument (y2) -- same dropped-argument
+             bug as the sibling call above (real disassembly
+             0006f56c-0006f594, identical instruction pattern);
+             re-applied for the same reason (see that comment). Y1 also
+             fixed for the same "16 pixels too high" bug as every other
+             occurrence in this function (see DAT_0023c208==1 branch). */
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
+                       DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
           iVar7 = (int)DAT_0023c138 + (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
@@ -61312,13 +61950,13 @@ LAB_0006f008:
       FUN_00057118();
       set_draw_color(0xf1);
       rect_fill_or_save_restore(0x114,5,0x117,0x7d);
-      uVar1 = DAT_0023c1d4;
-      DAT_0023c1d4 = (undefined1)DAT_0023c134;
+      uVar1 = g_active_hud_panel;
+      g_active_hud_panel = (undefined1)DAT_0023c134;
       screen_backup_restore_rect(0xec,8,0x13f,0x7a);
       bitmap_blit_to_framebuffer(0xec,8,uVar3,0x72,0x53,0,0,1);
-      (*(code *)(&PTR_FUN_00087220)[DAT_0023c134])();
+      (*(code *)(&g_hud_panel_handlers)[DAT_0023c134])();
       screen_backup_save();
-      DAT_0023c1d4 = uVar1;
+      g_active_hud_panel = uVar1;
       draw_sprite_by_id(0x20b8,0x110,4,1,1);
       draw_sprite_by_id(0x20b0,0x110,0x7a,1,1);
       set_draw_color(0x1a);
@@ -61339,11 +61977,15 @@ LAB_0006f6c8:
 
 
 void FUN_0006f6e0(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
+char *param_1;
+char *param_2;
 short param_3;
 
 {
+  /* Were `undefined4` -- truncated the real 64-bit source/dest pointers
+     (already fixed to real pointers at FUN_0006edfc's call sites)
+     back down to 32 bits on entry. Same pointer-truncation class as
+     everywhere else this session. */
   short sVar1;
   wchar_t wVar2;
   short sVar3;
@@ -61355,7 +61997,30 @@ short param_3;
   int iVar9;
   int iVar10;
   int iVar11;
-  
+  /* Not decompiled -- QA: "the panel should fully squish horizontally
+     during the flip, ours just crops part of it". Root cause: every
+     FUN_0006fa28() call site in this function (all disassembly-
+     confirmed dropped-argument fixes from earlier this session)
+     advances param_1 (source column) and param_2 (dest column) by
+     exactly 1 EACH, every single call, with no exception anywhere in
+     this function -- confirmed at the instruction level, not a
+     decompiler artifact. Since the total number of calls always
+     equals DAT_0023c13c (the squashed width, strictly less than
+     DAT_0023c144's full 83 except at stage 0/8), that lockstep means
+     param_1 only ever reaches the first DAT_0023c13c source columns
+     and never reads the rest -- a left-aligned crop, not a resample.
+     A real squash needs param_1 to sweep the FULL source width
+     (DAT_0023c144) over the same DAT_0023c13c destination writes.
+     Added a simple fixed-point accumulator (new, not decompiled) to
+     do that: advance a running source-position accumulator by
+     DAT_0023c144 on every destination column written, and step
+     param_1 by however many whole source columns that accumulator
+     just crossed -- so by the last destination column, param_1 has
+     swept the entire source width, however narrow the destination
+     got. param_2 keeps its original (correct) +1-per-call advance. */
+  int squashAccum;
+  int squashSrcCol;
+
   sVar6 = DAT_0023c144;
   iVar8 = (int)param_3;
   iVar11 = (int)DAT_0023c144;
@@ -61375,6 +62040,8 @@ short param_3;
   else {
     sVar6 = 1;
   }
+  squashAccum = 0;
+  squashSrcCol = 0;
   iVar11 = 0;
   if (iVar8 < 4) {
     iVar8 = (iVar10 - sVar4) * 0x10000 >> 0x10;
@@ -61396,7 +62063,18 @@ short param_3;
             else {
               iVar10 = (int)(short)(iVar8 << 1) + (int)sVar1;
             }
-            FUN_0006fa28();
+            /* Was `FUN_0006fa28();` -- dropped arguments. Real
+               disassembly (0006f884-0006f8a4) shows param_1/param_2
+               passed in as-is, then both incremented by 1 byte
+               afterward -- confirmed identical at all 3 call sites
+               in this function. */
+            FUN_0006fa28(param_1,param_2);
+            /* Not decompiled -- squash accumulator, see this
+               function's own comment near its locals. */
+            squashAccum = squashAccum + (int)DAT_0023c144;
+            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+            squashSrcCol = squashAccum / (int)DAT_0023c13c;
+            param_2 = param_2 + 1;
             iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
           } while (iVar9 < sVar6);
           iVar9 = (int)DAT_0023c13c;
@@ -61426,7 +62104,16 @@ short param_3;
               DAT_0023c138 = DAT_0023c138 + 2;
               iVar10 = iVar8 * 2 + (int)sVar1;
             }
-            FUN_0006fa28();
+            /* Was `FUN_0006fa28();` -- same dropped-argument bug as
+               the sibling branch above (real disassembly
+               0006f96c-0006f988). */
+            FUN_0006fa28(param_1,param_2);
+            /* Not decompiled -- squash accumulator, see this
+               function's own comment near its locals. */
+            squashAccum = squashAccum + (int)DAT_0023c144;
+            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+            squashSrcCol = squashAccum / (int)DAT_0023c13c;
+            param_2 = param_2 + 1;
             iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
           } while (iVar9 < sVar6);
           iVar9 = (int)DAT_0023c13c;
@@ -61437,7 +62124,15 @@ short param_3;
   }
   for (iVar9 = iVar9 - (int)sVar3 * (int)sVar6; iVar9 = iVar9 * 0x10000 >> 0x10, 0 < iVar9;
       iVar9 = iVar9 + -1) {
-    FUN_0006fa28();
+    /* Was `FUN_0006fa28();` -- same dropped-argument bug (real
+       disassembly 0006f9ec-0006fa0c: leftover-rows loop). */
+    FUN_0006fa28(param_1,param_2);
+    /* Not decompiled -- squash accumulator, see this function's own
+       comment near its locals. */
+    squashAccum = squashAccum + (int)DAT_0023c144;
+    param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+    squashSrcCol = squashAccum / (int)DAT_0023c13c;
+    param_2 = param_2 + 1;
   }
   DAT_0023c138 = sVar4;
   return;
@@ -61457,7 +62152,7 @@ undefined1 * param_2;
   int iVar5;
   int iVar6;
   short sVar7;
-  
+
   sVar7 = DAT_0023c138 - DAT_0023c140;
   if (0 < DAT_0023c110) {
     iVar3 = 0;
@@ -61505,7 +62200,21 @@ undefined1 * param_2;
     sVar2 = (DAT_0023c138 - sVar7 * (short)(sVar2 + 1)) + -1;
   }
   else {
-    sVar1 = Ordinal_2005(iVar3 + 1);
+    /* Was `Ordinal_2005(iVar3 + 1)` -- missing its dividend argument.
+       The sibling branch above (iVar3 < 1) makes the exact same call
+       shape fully: `Ordinal_2005(iVar3 + -1,(int)DAT_0023c140)`
+       (divisor=iVar3+/-1, dividend=DAT_0023c140), so by direct
+       symmetry this one is missing `(int)DAT_0023c140` too. Unlike
+       Ordinal_2005's own K&R "leftover register" idiom (safe on the
+       original ARM ABI, where an unfilled argument register
+       predictably still held the caller's last computed value), a
+       dropped argument here is NOT safe on this x86-64 recompile --
+       the reused register/stack slot holds architecture-mismatched
+       garbage, not the original value. sVar1 becomes this loop's
+       inner trip count, so garbage here produced an unbounded copy
+       loop and a wild param_1/param_2 write -- the intermittent,
+       ASLR-flaky crash/heap-corruption in this function. */
+    sVar1 = Ordinal_2005(iVar3 + 1,(int)DAT_0023c140);
     iVar6 = 0;
     if (0 < iVar3) {
       do {
@@ -61906,7 +62615,7 @@ char param_1;
   message_scroll_print_wrapped(&DAT_0008730c);
   *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + param_1;
   FUN_000703a0(0);
-  FUN_00078550();
+  refresh_stats_panel_if_active();
   return;
 }
 
@@ -62227,9 +62936,9 @@ LAB_00070c78:
     *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + -1;
   }
   FUN_000703a0(0);
-  FUN_00078550();
+  refresh_stats_panel_if_active();
 LAB_00070b58:
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   FUN_0006a034(0x20);
   FUN_00057570();
   FUN_0005758c();
@@ -62489,7 +63198,7 @@ void FUN_0007141c()
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
     FUN_00038374(g_player_object,0,0,0,0xff,0);
   }
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   FUN_00068c1c();
   if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) != 0) && ((DAT_0020208c & 0x16) == 0)) {
     uVar1 = Ordinal_1053();
@@ -62639,7 +63348,7 @@ LAB_0007158c:
         *(char *)(DAT_00086df8 + 0x61) = (char)uVar6;
         *(char *)(DAT_00086df8 + 0x62) = (char)(uVar6 >> 8);
       }
-      FUN_000667cc();
+      refresh_player_equipment_effects();
       FUN_00040440();
       g_jump_ascent_timer = 0;
       g_fall_accel = 0;
@@ -62648,7 +63357,7 @@ LAB_0007158c:
       g_vertical_velocity = 0;
       DAT_00204888 = 0;
       DAT_00204886 = 0;
-      FUN_00078550();
+      refresh_stats_panel_if_active();
       full_dungeon_redraw();
       FUN_000735c0();
       if (bVar2) {
@@ -62919,7 +63628,7 @@ void FUN_0007213c()
     uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfc3f;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
-    FUN_000667cc();
+    refresh_player_equipment_effects();
     FUN_000735b0(4);
   }
   return;
@@ -64096,7 +64805,7 @@ LAB_00073c90:
       uVar1 = *(undefined2 *)(DAT_00086df8 + 0x61);
       *(byte *)(DAT_00086df8 + 0x61) = (byte)uVar1 | 0xc;
       *(char *)(DAT_00086df8 + 0x62) = (char)((ushort)uVar1 >> 8);
-      FUN_000667cc();
+      refresh_player_equipment_effects();
     }
     break;
   case 0xe:
@@ -64890,12 +65599,12 @@ char param_2;
       uVar6 = uVar2 & 0x3ff;
       *(char *)(pObj + 2) = (char)uVar6;
       *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
-      uVar4 = DAT_00204690;
+      uVar4 = g_scratch_object_ptr;
       if (param_2 == '\x04') {
-        DAT_00204690 = (byte *)pObj;
+        g_scratch_object_ptr = (byte *)pObj;
         FUN_0002a35c();
         uVar6 = local_2e & 0x3f | (local_2c & 0x3ff) << 6;
-        DAT_00204690 = (byte *)uVar4;
+        g_scratch_object_ptr = (byte *)uVar4;
         *(byte *)(pObj + 0x16) = *(byte *)(pObj + 0x16) & 0xf | (byte)(uVar6 << 4);
         *(char *)(pObj + 0x17) = (char)(uVar6 >> 4);
         if (((&DAT_001007da)[(uVar10 & 0xfe3f) * 0x30] & 0x80) != 0) {
@@ -65215,8 +65924,8 @@ LAB_00075a0c:
     *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x10;
     *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
     g_player_carry_weight = 0;
-    FUN_000667cc();
-    FUN_0006ed0c();
+    refresh_player_equipment_effects();
+    redraw_active_hud_panel();
   }
   return;
 }
@@ -66878,11 +67587,13 @@ uint param_1;
 
 
 
-void FUN_0007830c()
+void draw_stats_panel_content()
 
 {
   byte bVar1;
-  
+
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] draw_stats_panel_content (draw stats panel) entry, DAT_0024af88=%d\n", (int)DAT_0024af88);
   if (DAT_0024af88 == 0) {
     DAT_0024af88 = grtile_alloc_registered(0x96,0x2b);
     if (DAT_0024af88 != 0) {
@@ -66892,6 +67603,8 @@ void FUN_0007830c()
     if (DAT_0024af8c != 0) {
       capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
     }
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] draw_stats_panel_content: allocated DAT_0024af88=%d DAT_0024af8c=%d\n", (int)DAT_0024af88, (int)DAT_0024af8c);
   }
   *g_draw_color_index = 0xf1;
   *DAT_00084298 = 0xf1;
@@ -66962,11 +67675,11 @@ void FUN_00078434()
 
 
 
-void FUN_00078550()
+void refresh_stats_panel_if_active()
 
 {
-  if (DAT_0023c1d4 == '\x02') {
-    FUN_0006ed0c();
+  if (g_active_hud_panel == '\x02') {
+    redraw_active_hud_panel();
   }
   return;
 }
@@ -68263,7 +68976,7 @@ ushort * param_1;
 
 {
   DAT_0023bc94 = 0;
-  FUN_000667cc();
+  refresh_player_equipment_effects();
   if ((*param_1 & 0x1f0) == 0x170) {
     FUN_00078c80(0x9d);
     use_object_on_target(g_player_object,param_1,0);
@@ -68318,7 +69031,7 @@ int param_2;
         return;
       }
       DAT_0023bc94 = 1;
-      FUN_000667cc();
+      refresh_player_equipment_effects();
       pcVar2 = FUN_0007a3a8;
     }
   }
@@ -68495,7 +69208,7 @@ int param_2;
       iVar6 = find_or_assign_object_widget(param_1);
       iVar8 = 0;
       do {
-        if (((int)(short)iVar6 == (int)(char)(&DAT_00085ac8)[iVar8]) && (uVar10 == 1)) break;
+        if (((int)(short)iVar6 == (int)(char)(&g_light_source_slots)[iVar8]) && (uVar10 == 1)) break;
         iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
       } while (iVar8 < 4);
       if ((short)iVar8 == 4) {
@@ -68504,7 +69217,7 @@ int param_2;
           iVar8 = 5;
           iVar6 = 0;
           do {
-            puVar7 = (ushort *)FUN_00045054(iVar8);
+            puVar7 = (ushort *)get_equipped_item_at_slot(iVar8);
             iVar9 = extraout_r3;
             if (puVar7 == (ushort *)0x0) {
               iVar9 = iVar6 << 0x10;
@@ -68533,9 +69246,9 @@ int param_2;
       else {
         *(byte *)param_1 = (bVar2 - 4 ^ bVar2) & 0xf ^ bVar2;
         *(byte *)((char *)param_1 + 1) = bVar1;
-        FUN_0001433c(0);
+        set_ambient_bias_without_light(0);
       }
-      FUN_000667cc();
+      refresh_player_equipment_effects();
       FUN_0004503c(iVar6);
       return;
     }
@@ -68685,7 +69398,7 @@ LAB_0007ae1c:
             *(byte *)(DAT_00086df8 + 0x61) = ((bVar3 & 0xfc) + 4 ^ bVar3) & 0xc ^ bVar3;
             *(char *)(DAT_00086df8 + 0x62) = (char)(uVar9 >> 8);
           }
-          FUN_000667cc();
+          refresh_player_equipment_effects();
           iVar11 = 1;
         }
         else if (uVar8 != 0xb9) {
@@ -70645,10 +71358,92 @@ int param_1;
 
 
 
-void FUN_0007e998()
+/* Not decompiled -- confirmed a genuine dead stub in the real binary
+   too (disassembly at 0x0007e998 is just `cpy pc,lr`, 4 bytes, no
+   body). This is the "capture the framebuffer rect we just drew panel
+   content into, back into the grtile buffer" step (both real call
+   sites draw content live via draw_stats_panel_content/the target hud
+   panel handler and then immediately call this to snapshot it for the
+   flip animation to work from).
+
+   capture_framebuffer_rect_to_grtile, the obvious existing primitive
+   to delegate to, copies the live framebuffer's 16bpp RGB565 pixels
+   verbatim -- but the grtile buffers here and FUN_0006fa28's whole
+   squash-blit loop are 8bpp paletted (1 byte/pixel, confirmed via
+   disassembly-recovered pointer stepping), same format
+   decode_gr_entry_bitmap/FUN_00041a78 already decoded into this exact
+   buffer just before draw_stats_panel_content ran. A real fix needs
+   an actual 16bpp->8bpp palette-matching capture, which doesn't exist
+   anywhere else in this codebase -- implemented here as a per-pixel
+   nearest-color search against g_palette_rgb565 (the same 256-entry
+   RGB565 table every other paletted draw in this file already
+   indexes into, e.g. rect_fill_or_save_restore's fill mode and
+   uw_get_default_palette's own reverse-conversion precedent).
+
+   Writes tightly-packed rows (stride = width, no padding) starting at
+   the destination buffer's own base -- matching the layout
+   FUN_00041a78's decode already established for this same buffer
+   (bitmap_blit_to_framebuffer reads it back with that same width as
+   its own row stride, no separate pitch).
+
+   param_1 is the destination grtile buffer's real pointer (both call
+   sites already resolve it via resolve_flip_grtile_slot before
+   calling, unlike capture_framebuffer_rect_to_grtile which wants the
+   raw registry key instead -- see that function's own comment on this
+   same distinction). param_2/param_3 are the framebuffer capture
+   rect's x/y; param_4/param_5 are width/height, in that order --
+   confirmed by cross-checking both real call sites' literal argument
+   values against the adjacent, already-working
+   bitmap_blit_to_framebuffer call's own disassembly-verified
+   (x,y,src,HEIGHT,WIDTH,...) parameter order (that function's param_4
+   drives the row/Y loop, param_5 the column/X loop and source
+   stride) -- FUN_0007e998's own two call sites consistently pass
+   their last two arguments in the opposite (width,height) order from
+   that sibling blit call sitting right next to each of them. */
+void FUN_0007e998(param_1,param_2,param_3,param_4,param_5)
+unsigned char *param_1;
+int param_2;
+int param_3;
+int param_4;
+int param_5;
 
 {
-  return;
+  int row;
+  int col;
+  int i;
+  unsigned short *pal565;
+  unsigned short src_pixel;
+  unsigned short pal_pixel;
+  int dr;
+  int dg;
+  int db;
+  int dist;
+  int best_index;
+  int best_dist;
+  short *fb_row;
+
+  pal565 = (unsigned short *)g_palette_rgb565_backing;
+  for (row = 0; row < param_5; row++) {
+    fb_row = (short *)((char *)g_uw_framebuffer + ((param_3 + row) * 0x140 + param_2) * 2);
+    for (col = 0; col < param_4; col++) {
+      src_pixel = (unsigned short)fb_row[col];
+      best_index = 0;
+      best_dist = 0x7fffffff;
+      for (i = 0; i < 256; i++) {
+        pal_pixel = pal565[i];
+        dr = (int)((src_pixel >> 11) & 0x1f) - (int)((pal_pixel >> 11) & 0x1f);
+        dg = (int)((src_pixel >> 5) & 0x3f) - (int)((pal_pixel >> 5) & 0x3f);
+        db = (int)(src_pixel & 0x1f) - (int)(pal_pixel & 0x1f);
+        dist = dr * dr + dg * dg + db * db;
+        if (dist < best_dist) {
+          best_dist = dist;
+          best_index = i;
+          if (dist == 0) break;
+        }
+      }
+      param_1[row * param_4 + col] = (unsigned char)best_index;
+    }
+  }
 }
 
 
