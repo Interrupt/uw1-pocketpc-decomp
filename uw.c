@@ -55417,6 +55417,19 @@ LAB_00061d34:
         }
         { const char *_s = getenv("UW_DLIST_SCALE"); if (_s) _scale = atof(_s); }
         { const char *_s = getenv("UW_DLIST_YOFF"); if (_s) _yoff = atof(_s); }
+        /* Both the leaf and its texture were opt-in (UW_DLIST_DOOR_LEAF=1 /
+           UW_DLIST_DOOR_TEXTURE=1) during calibration; now confirmed
+           correct (real per-vertex UV bank, blank-row-trimmed sprite,
+           duplicate-billboard suppressed -- see the dated findings below),
+           default them on. Same env vars still work as an explicit
+           opt-OUT (=0) for isolating the frame alone during future
+           calibration work, matching this file's existing
+           UW_DISABLE_*-style default-on convention (see
+           UW_DISABLE_PICK_RERENDER/UW_DISABLE_TILE_FEATURES). */
+        int _door_leaf_on = 1;
+        { const char *_s = getenv("UW_DLIST_DOOR_LEAF"); if (_s && atoi(_s) == 0) _door_leaf_on = 0; }
+        int _door_texture_on = 1;
+        { const char *_s = getenv("UW_DLIST_DOOR_TEXTURE"); if (_s && atoi(_s) == 0) _door_texture_on = 0; }
         /* Real texture, not the flat 0 every other g_model_map entry uses.
            DOS's own row 1 (this bank) has flags bit 0x20 set -- "image
            from field" -- meaning the image isn't baked into the bytecode
@@ -55433,7 +55446,7 @@ LAB_00061d34:
            renderer's screen-position-derived UV), this is architecturally
            the same "large, wall-sized surface" case that already works
            for ordinary tile walls, not the case that broke. */
-        if (getenv("UW_DLIST_DOOR_TEXTURE")) {
+        if (_door_texture_on) {
           int _wtex = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
           int _twidth = uwdl_texture_width(_wtex);
           void *_texptr = get_texture_page(_wtex);
@@ -55458,7 +55471,7 @@ LAB_00061d34:
            opt-in like the rest of this feature; independent of
            UW_DLIST_DOOR_TEXTURE so the leaf's shape can be checked flat
            before trusting its own texture mapping too. */
-        if (getenv("UW_DLIST_DOOR_LEAF")) {
+        if (_door_leaf_on) {
           /* Same quadrant correction as the frame above, computed fresh
              from _raw_heading2 rather than reusing _quadrant_heading2 --
              that variable already has the FRAME's own -4 step folded
@@ -55487,7 +55500,7 @@ LAB_00061d34:
              see object-rendering-findings.txt's dated entries for the
              full trace if picking this back up. */
           { const char *_s = getenv("UW_DLIST_LEAF_SCALE"); if (_s) _leaf_scale = atof(_s); }
-          if (getenv("UW_DLIST_DOOR_TEXTURE")) {
+          if (_door_texture_on) {
             /* NOT the wall texture -- confirmed live by the user that the
                closed door already drew with its own correct texture
                before this 3D leaf was wired up, via the ordinary
