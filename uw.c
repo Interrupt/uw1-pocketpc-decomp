@@ -2650,7 +2650,13 @@ unsigned int param_1;
      spells/scrledge and friends). */
   return Ordinal_1041(param_1);
 }
-undefined4 DAT_00202510;
+/* Was `undefined4` -- truncated the real 64-bit destination pointer
+   FUN_00041a78 assigns here (see that function's own comment on why
+   this global exists at all: load_gr_resource_entries always decodes
+   into its OWN malloc'd buffer via the allocator callback and only
+   ever hands that buffer back through the post-process callback, so
+   passing a pre-allocated destination needs this indirection). */
+void *DAT_00202510;
 void *LAB_000416f8(param_1)
 unsigned int param_1;
 
@@ -2658,6 +2664,32 @@ unsigned int param_1;
   /* Allocator callback, same role as LAB_000415b0 -- see there. Used by
      FUN_00041a78, which passes no post-process callback (param_5 == 0). */
   return Ordinal_1041(param_1);
+}
+/* Not decompiled -- FUN_00041a78's post-process callback. Ghidra never
+   recovered a real one here (it hardcoded param_5=0, "no callback"),
+   but that leaves load_gr_resource_entries's freshly-decoded buffer
+   completely unreachable: it's malloc'd fresh by LAB_000416f8, never
+   registered anywhere (unlike every sibling load_gr_resource_entries
+   call site, which DOES pass a real post-process callback to register
+   its buffer into DAT_0024e090[] -- see LAB_000415d0/LAB_00041610/
+   LAB_00041670), and then simply discarded once load_gr_resource_entries's
+   loop moves on. Confirmed live: FUN_0006eb64's decode calls reported
+   success while leaving their destination grtile buffer entirely
+   zeroed (0/9462 nonzero bytes), which is exactly what "decode
+   succeeds but the caller's buffer is never touched" looks like. Since
+   FUN_00041a78 stashes its REAL destination in DAT_00202510 (see that
+   global's own comment) specifically to route around the missing
+   callback, the callback this decode always needed is simply "copy the
+   decoded bytes there" -- same leak-the-temporary-allocation posture
+   as Ordinal_1018's own documented precedent (freeing a possibly-
+   garbage pointer is worse than a short-lived leak). */
+static unsigned int uw_copy_gr_entry_to_dest(void *buf, unsigned int size, int idx)
+{
+  (void)idx;
+  if (DAT_00202510 != 0) {
+    memcpy(DAT_00202510, buf, size);
+  }
+  return 1;
 }
 undefined2 DAT_0020272c;
 undefined2 DAT_0024fa1c;
@@ -5003,8 +5035,15 @@ static short DAT_0023c238_arr[2];
    DAT_0023c202/DAT_0023c204 (read directly by name elsewhere in this
    same function) stayed 0/uninitialized, so resolve_flip_grtile_slot(DAT_0023c202)
    returned a garbage grtile handle and crashed
-   bitmap_blit_to_framebuffer the first time this code path ever ran. */
-static undefined2 DAT_0023c200_arr[3];
+   bitmap_blit_to_framebuffer the first time this code path ever ran.
+   Also widened the element type from `undefined2` to `undefined4`:
+   grtile_alloc_registered's return value (now that alloc_flip_grtile_slot
+   actually calls it instead of stubbing out) is a real 4-byte opaque
+   registry key -- 2 bytes isn't enough to round-trip it back through
+   resolve_flip_grtile_slot's registry-key comparison. Not a concern
+   while both allocator/resolver were stubs (every stored value was 0
+   either way), but a real requirement now that they aren't. */
+static undefined4 DAT_0023c200_arr[3];
 #define DAT_0023c200 DAT_0023c200_arr[0]
 #define DAT_0023c202 DAT_0023c200_arr[1]
 #define DAT_0023c204 DAT_0023c200_arr[2]
@@ -5269,10 +5308,39 @@ int DAT_0023c260;
 char s__DATA_weapons_cm_00087284[] = "\\DATA\\weapons.cm";
 static undefined1 DAT_00202700_backing[256];
 #define DAT_00202700 DAT_00202700_backing[0]
-undefined2 DAT_0023c268;
-undefined2 DAT_00087210;
-undefined2 DAT_0023c270;
-undefined2 DAT_00087218;
+/* Was 2 lone `undefined2` scalars (DAT_0023c268/DAT_0023c270) -- same
+   split-symbol bug as DAT_0023c118/DAT_0023c200 elsewhere in this
+   file (see DAT_0023c118's own comment for the full writeup): both
+   are indexed as real 3-element short arrays by their respective
+   owners (FUN_0006e96c/FUN_0006ea54, the mode-icon-highlight sprite
+   setup for the left/right dragon decorations), each written via a
+   `(&DAT_0023c26X)[i] = ...` one-time-init loop. As bare scalars, the
+   out-of-bounds writes for i=1,2 landed on whatever the compiler
+   placed next on THIS host -- empirically, DAT_0023c278 (see its own
+   comment), corrupting it from 0 to 13 (a leftover sprite-handle
+   value) the very first time redraw_hud_panels ever ran, which in
+   turn permanently defeated FUN_0006eb64's own `DAT_0023c278==0`
+   one-time-setup guard for the entire rest of the program -- found
+   while chasing why the chain-hotspot/stats-panel flip's grtile setup
+   never ran even after alloc_flip_grtile_slot/resolve_flip_grtile_slot
+   were implemented for real. */
+static short DAT_0023c268_arr[3];
+#define DAT_0023c268 DAT_0023c268_arr[0]
+static short DAT_0023c270_arr[3];
+#define DAT_0023c270 DAT_0023c270_arr[0]
+/* DAT_00087210/DAT_00087218: read-only per-side (left/right dragon)
+   position lookup tables, same `(&DAT_000872XX)[i]` 3-wide indexing
+   pattern as their writable DAT_0023c26X siblings just above -- but
+   only ever READ, so under-sizing them doesn't corrupt anything else,
+   just returns wrong/adjacent-memory positions for indices 1/2.
+   Widened for the same safety reason; real per-index position data
+   not yet recovered (index 0 -- the only one exercised so far, both
+   dragons currently land on the same spot -- reads correctly since it
+   IS the real scalar). */
+static undefined2 DAT_00087210_arr[3];
+#define DAT_00087210 DAT_00087210_arr[0]
+static undefined2 DAT_00087218_arr[3];
+#define DAT_00087218 DAT_00087218_arr[0]
 undefined2 DAT_0023c140;
 int DAT_0023c278;
 undefined2 DAT_0023c148;
@@ -5286,7 +5354,22 @@ byte DAT_0023c208;
 short DAT_0023c138;
 short DAT_0023c13c;
 short DAT_0023c110;
-unsigned short u_dgijjjigd_G__000871e0[] = u"dgijjjigd\\G&";
+/* Was `u"dgijjjigd\\G&"` -- Ghidra misidentified this as a UTF-16
+   string because its low bytes happen to be printable ASCII. It's
+   really a 16-entry numeric squash-percentage curve for the chain
+   flip animation's stage-by-stage width (symmetric: 100 down to 0 at
+   the midpoint, back up to 92), used by FUN_0006f6e0 as
+   `table[stage]` and `table[stage+8]`. The string literal stopped at
+   the first embedded NUL (index 12), silently truncating the real
+   16-element array to 13 -- so `table[stage+8]` read out of bounds
+   for stage 5/6/7 (indices 13/14/15), feeding garbage into
+   DAT_0023c13c's stride computation and wild-writing past the grtile
+   buffer in FUN_0006fa28's pixel-copy loop (this is what was
+   corrupting the heap). Recovered via a direct memory dump of the
+   real binary at 0x000871e0. */
+static unsigned short u_dgijjjigd_G__000871e0[16] = {
+  100,103,105,106,106,106,105,103,100,92,71,38,0,38,71,92
+};
 char s__DATA_shades_dat_000872a4[] = "\\DATA\\shades.dat";
 char s__DATA_mono_dat_000872b8[] = "\\DATA\\mono.dat";
 char s__DATA_light_dat_000872c8[] = "\\DATA\\light.dat";
@@ -32789,15 +32872,32 @@ undefined4 param_3;
 
 
 
+/* Was `load_gr_resource_entries(...); return 0;` -- a dropped return
+   value (same class as FUN_00045054/get_scanned_object_class_effect_ptr
+   elsewhere this session): load_gr_resource_entries has a real `uint`
+   return (used directly by its other callers, e.g. FUN_00041a4c/
+   FUN_00041a90's own `return load_gr_resource_entries(...)`), but this
+   wrapper discarded it and always reported success. Harmless at
+   redraw_hud_panels's own call site (doesn't check the return value),
+   but FUN_0006eb64/redraw_active_hud_panel both DO check it, and with
+   the hardcoded 0 they always took their "decode failed" error branch
+   -- confirmed live once alloc_flip_grtile_slot/resolve_flip_grtile_slot
+   stopped being stubs and this path actually ran for the first time. */
 undefined4 FUN_00041a78(param_1,param_2,param_3)
 char *param_1;
 undefined4 param_2;
-undefined4 param_3;
+void *param_3;
 
 {
   DAT_00202510 = param_3;
-  load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,0);
-  return 0;
+  /* Was a hardcoded `0` (no post-process callback) -- see
+     uw_copy_gr_entry_to_dest's own comment: without a real callback
+     here, load_gr_resource_entries decodes into its own throwaway
+     buffer and DAT_00202510 (this function's whole reason for
+     existing) is never actually consulted, so this decode always
+     reported success while leaving the caller's destination buffer
+     untouched. */
+  return load_gr_resource_entries(param_1,param_2,1,&LAB_000416f8,&uw_copy_gr_entry_to_dest);
 }
 
 
@@ -38888,31 +38988,71 @@ void FUN_00049948()
 
 
 
-/* alloc_flip_grtile_slot/resolve_flip_grtile_slot: real, confirmed
+/* alloc_flip_grtile_slot/resolve_flip_grtile_slot: were real, confirmed
    `mov r0,#0; cpy pc,lr` no-ops in the pristine binary (disassembly-
    verified at both real addresses, 0x4994c and 0x49954 -- not a
    decompilation artifact). Their only caller, FUN_0006eb64's
    double-buffered-grtile setup for the chain-hotspot panel-switch flip
-   animation, unconditionally fails as a result (uVar6 = uVar6 &
-   alloc_flip_grtile_slot() forces uVar6 to 0), so g_flip_grtile_cache_ready's ready
-   bit can never be set and the entire staged blit path in FUN_0006edfc
-   is dead code -- in the shipped .exe, not just this decompile. See
-   [[chain-hotspot-stats-panel]]: exhaustive real-binary cross-
-   referencing found no other path to draw_stats_panel_content either,
-   so this genuinely appears inert in the original game. Named for
-   their intended role, not their actual (inert) behavior. */
+   animation, unconditionally failed as a result (uVar6 = uVar6 &
+   alloc_flip_grtile_slot() forced uVar6 to 0), so g_flip_grtile_cache_ready's
+   ready bit could never be set and the entire staged blit path in
+   FUN_0006edfc was dead code -- in the shipped .exe, not just this
+   decompile. See [[chain-hotspot-stats-panel]]: exhaustive real-binary
+   cross-referencing found no other path to draw_stats_panel_content
+   either, so this genuinely was inert in the original game.
+
+   THE BODIES BELOW ARE NOT DECOMPILED CODE. Per explicit user request
+   ("implement these stubs to revive this path"), this is a from-
+   scratch reimplementation of what these two functions would need to
+   do for the surrounding (real, decompiled) double-buffered-grtile
+   machinery to actually work, since the original binary's own version
+   is confirmed permanently inert and there is nothing to recover.
+   Written to match this file's own already-established grtile
+   conventions (grtile_alloc_registered's opaque-key allocation,
+   and the g_grtile_real_ptrs registry-walk resolution already used by
+   capture_framebuffer_rect_to_grtile/FUN_00076e98/FUN_00011c10) rather
+   than invented from nothing. */
 undefined4 alloc_flip_grtile_slot()
 
 {
-  return 0;
+  /* Not decompiled (see above). Sized generously (0x100*0x80 = 32768
+     bytes) rather than exactly: the real per-slot sizes the original
+     binary would have used were never recovered (this whole path was
+     dead, so nothing to disassemble), and FUN_0006eb64 itself indexes
+     one slot at a +0x2800 (10240) byte offset, so this needs enough
+     headroom for whatever panels.GR frame-3 decode lands there on top
+     of the base 0x72x0x53 panel rect every slot also needs to hold. */
+  return grtile_alloc_registered(0x100,0x80);
 }
 
 
 
-undefined4 resolve_flip_grtile_slot()
+void *resolve_flip_grtile_slot(param_1)
+undefined4 param_1;
 
 {
-  return 0;
+  /* Not decompiled (see above). Same registry-walk resolution as
+     capture_framebuffer_rect_to_grtile/FUN_00076e98/FUN_00011c10:
+     grtile_alloc_registered's return value is an opaque truncated
+     identity key (see its own comment), not a real pointer -- find
+     the matching record in the DAT_0023c3fc registry and return the
+     real pointer g_grtile_real_ptrs tracks for it. */
+  int iVar1;
+  undefined4 *puVar2;
+
+  if (param_1 == 0) {
+    return 0;
+  }
+  iVar1 = 0;
+  puVar2 = DAT_0023c3fc;
+  while (param_1 != *puVar2) {
+    iVar1 = iVar1 + 1;
+    puVar2 = (undefined4 *)((char *)puVar2 + 0x11);
+    if (0x13f < iVar1) {
+      return 0;
+    }
+  }
+  return g_grtile_real_ptrs[iVar1];
 }
 
 
@@ -61345,12 +61485,26 @@ undefined2 param_5;
 
 {
   undefined1 uVar1;
-  ushort uVar2;
+  /* Was `ushort` -- too narrow for alloc_flip_grtile_slot's real 4-byte
+     grtile key now that it's no longer a stub (harmless before, when
+     it always returned 0). Still reused a few lines down as a plain
+     0/1 success flag (FUN_00041a78's return), which fits fine in the
+     wider type too. */
+  undefined4 uVar2;
   ushort uVar3;
-  undefined4 uVar4;
-  int iVar5;
+  /* Was `undefined4` -- truncated resolve_flip_grtile_slot's real
+     pointer return (see its own comment) to 32 bits on this host
+     before handing it to FUN_00041a78/bitmap_blit_to_framebuffer.
+     Harmless while resolve_flip_grtile_slot was a stub always
+     returning 0; a real truncated-pointer bug now that it isn't. */
+  char *uVar4;
+  /* Was `int` -- doubles as this loop's plain counter (0..2, fine
+     either way) AND, further down, resolve_flip_grtile_slot's real
+     pointer return used in pointer arithmetic (`iVar5 + 0x2800`),
+     which does need the wider type now that that call isn't a stub. */
+  intptr_t iVar5;
   ushort uVar6;
-  
+
   uVar6 = 1;
   DAT_0023c140 = param_5;
   DAT_0023c144 = param_4;
@@ -61361,7 +61515,23 @@ undefined2 param_5;
     do {
       if ((&DAT_0023c200)[iVar5] == 0) {
         uVar2 = alloc_flip_grtile_slot();
-        uVar6 = uVar6 & uVar2;
+        /* Not decompiled -- see alloc_flip_grtile_slot's own comment.
+           This slot's newly-allocated key was never actually stored
+           back into the array, so this "already allocated?" check
+           above would see 0 again on every subsequent call even after
+           a real (non-stub) allocation succeeded -- invisible while
+           the allocator was a stub (there was never a real key to
+           lose), but a real bug once it does something. */
+        (&DAT_0023c200)[iVar5] = uVar2;
+        /* Was `uVar6 = uVar6 & uVar2;` -- a bitwise AND of the
+           success accumulator against uVar2 directly made sense when
+           uVar2 could only ever be the stub's constant 0, but uVar2 is
+           now a real (large, effectively-arbitrary-bit-pattern) grtile
+           key, so ANDing it directly could clear uVar6's low bit --
+           and so the whole accumulator -- on a perfectly successful
+           allocation just because that key's low bit happened to be
+           0. Normalize to a real boolean success check instead. */
+        uVar6 = uVar6 & (uVar2 != 0);
       }
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < 3);
@@ -61390,6 +61560,22 @@ undefined2 param_5;
       FUN_0003c3c8(0x300e);
     }
     FUN_00057118();
+    /* Not decompiled -- capture the CURRENT (source/old panel's) live
+       screen content into DAT_0023c200's offset-0 region (its
+       0x2800 offset already holds the decoded chain graphic from
+       just above, so this doesn't collide) before the target panel's
+       content gets drawn over it below. Without this, FUN_0006edfc's
+       first tick captured "whatever's currently on screen" into
+       DAT_0023c200 believing it was grabbing the front (source) face
+       of the flip -- but by that point this function had already
+       drawn and captured the TARGET panel here, leaving it visible on
+       screen, so DAT_0023c200 ended up with the same target content
+       as DAT_0023c202. Both flip halves showed the target panel
+       instead of source-then-target. QA: "clicking the chain does
+       flip... but shows stats for both halves, should only switch at
+       the edge-on midpoint." */
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
+    FUN_0007e998(uVar4,0xec,8,0x53,0x72);
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     if (getenv("UW_DEBUG_CLICKREGION"))
       fprintf(stderr, "[stats] FUN_0006eb64: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)uVar4);
@@ -61402,6 +61588,15 @@ undefined2 param_5;
     g_active_hud_panel = uVar1;
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     FUN_0007e998(uVar4,0xec,8,0x53,0x72);
+    /* Not decompiled -- put the source content (just captured above)
+       back on screen now that we're done using the screen as a
+       scratch surface to capture the target. Otherwise the target
+       panel stays visible here, and FUN_0006edfc's first tick's own
+       (unchanged) "capture whatever's on screen into DAT_0023c200"
+       step would just re-capture the target again, undoing the fix
+       above. */
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
+    bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
     FUN_000570b4();
   }
   DAT_0023c134 = (short)param_1;
@@ -61471,6 +61666,14 @@ bool FUN_0006edfc()
   int iVar8;
   int iVar9;
   bool bVar10;
+  /* Was `iVar7 + 0x2800` (iVar7 declared `int`) -- iVar7 is reused as
+     a plain int scratch everywhere else in this function, but in the
+     DAT_0023c208==4 stage it briefly holds resolve_flip_grtile_slot's
+     real 64-bit pointer, truncated to 32 bits before the +0x2800
+     offset, producing a wild address. Same pointer-truncation class
+     as uVar3/uVar4 above; needs its own real-pointer local since
+     iVar7's other uses in this function are genuine int arithmetic. */
+  char *pFlipSrc4;
   
   uVar3 = DAT_0023cca4;
   bVar2 = DAT_0023c208 + 1;
@@ -61496,7 +61699,35 @@ bool FUN_0006edfc()
       if (iVar9 < 0) {
         iVar9 = iVar9 + 1;
       }
-      rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar9 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+      /* Not decompiled -- was `(iVar9 >> 1) - DAT_0023c14c`. Confirmed
+         via real ARM disassembly (0006f21c-0006f24c) that the shipped
+         binary genuinely computes it this way, so this is a real,
+         never-fixed bug in the original game's own compiled code for
+         this feature (which this whole investigation independently
+         confirmed is never reachable in any shipped build -- never
+         QA'd). QA (live): iVar9 (= DAT_0023c138-DAT_0023c140) stays
+         small (0-7) across the whole animation -- DAT_0023c138 is a
+         "should stay ~constant" height reference that actually
+         wobbles up to 106% of DAT_0023c140 due to the same curve
+         table's overshoot -- so the ORIGINAL buggy subtraction put
+         the panel's edge-erase strips and its squashed-content blit
+         ~15-16px ABOVE the panel's real top (DAT_0023c14c=8) instead
+         of a few px below it ("draws 16 pixels too high"). First fix
+         attempt just flipped the operand order (`DAT_0023c14c +
+         delta`), which was closer but still wrong: it anchors the
+         TOP edge at DAT_0023c14c and lets the panel grow downward as
+         DAT_0023c138 overshoots, drifting a few extra px low each
+         time the height wobbles ("shifts down a bit too much"). The
+         correct fix keeps the panel's VERTICAL CENTER fixed (not its
+         top) as its height wobbles -- `DAT_0023c14c -
+         (iVar9 >> 1)` -- since top = center - height/2 =
+         (DAT_0023c14c + DAT_0023c140/2) - DAT_0023c138/2 =
+         DAT_0023c14c - (DAT_0023c138-DAT_0023c140)/2. Verified live:
+         this keeps the computed center within 0.5px of the true
+         center (DAT_0023c14c+DAT_0023c140/2) at every stage, vs. the
+         addition version drifting up to 6px low at the most extreme
+         wobble (stage 3/5, DAT_0023c138=120). */
+      rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar9 >> 1 & 0xffffU),
                    (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
                    (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
       iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
@@ -61511,8 +61742,9 @@ bool FUN_0006edfc()
       if (iVar9 < 0) {
         iVar9 = iVar9 + 1;
       }
+      /* Not decompiled -- same "16 pixels too high" fix as above. */
       rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
-                   (iVar7 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+                   (int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
                    (int)DAT_0023c144 + (uint)DAT_0023c148,(uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff
                   );
       iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
@@ -61523,8 +61755,10 @@ bool FUN_0006edfc()
       if (iVar5 < 0) {
         iVar5 = iVar5 + 1;
       }
+      /* Not decompiled -- same "16 pixels too high" fix as above,
+         this time for the actual squashed-content blit position. */
       bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
-                   (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
+                   (int)(short)DAT_0023c14c - (int)(short)(iVar7 >> 1),uVar3,(int)DAT_0023c138,
                    DAT_0023c13c,0,0,1);
     }
     else if (1 < DAT_0023c208) {
@@ -61544,7 +61778,11 @@ bool FUN_0006edfc()
         if (iVar9 < 0) {
           iVar9 = iVar9 + 1;
         }
-        rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar9 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+        /* Not decompiled -- "16 pixels too high" fix, see the
+           identical block in the DAT_0023c208==1 branch above for the
+           full explanation (disassembly-confirmed real bug, not a
+           decompiler artifact). */
+        rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar9 >> 1 & 0xffffU),
                      (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
                      (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
         iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
@@ -61560,7 +61798,7 @@ bool FUN_0006edfc()
           iVar9 = iVar9 + 1;
         }
         rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
-                     (iVar7 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+                     (int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
                      (int)DAT_0023c144 + (uint)DAT_0023c148,
                      (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
         iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
@@ -61572,11 +61810,11 @@ bool FUN_0006edfc()
           iVar5 = iVar5 + 1;
         }
         bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
-                     (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
+                     (int)(short)DAT_0023c14c - (int)(short)(iVar7 >> 1),uVar3,(int)DAT_0023c138,
                      DAT_0023c13c,0,0,1);
       }
       else if (DAT_0023c208 == 4) {
-        iVar7 = resolve_flip_grtile_slot(DAT_0023c200);
+        pFlipSrc4 = resolve_flip_grtile_slot(DAT_0023c200);
         set_draw_color(0xf1);
         iVar9 = (int)DAT_0023c140 + (int)DAT_0023c138;
         iVar5 = (int)DAT_0023c144 + (int)DAT_0023c13c;
@@ -61594,8 +61832,10 @@ bool FUN_0006edfc()
         if (iVar6 < 0) {
           iVar6 = iVar6 + 1;
         }
+        /* Not decompiled -- "16 pixels too high" fix, see the
+           DAT_0023c208==1 branch above for the full explanation. */
         rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar6 >> 1) & 0xffff,
-                     (iVar8 >> 1 & 0xffffU) - (uint)DAT_0023c14c,
+                     (int)DAT_0023c14c - (iVar8 >> 1 & 0xffffU),
                      (uint)DAT_0023c148 + (iVar5 >> 1) & 0xffff,
                      (uint)DAT_0023c14c + (iVar9 >> 1) & 0xffff);
         iVar5 = -(int)DAT_0023c140 + 0x78;
@@ -61607,7 +61847,7 @@ bool FUN_0006edfc()
           iVar9 = DAT_0023c144 + -2;
         }
         bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar9 >> 1),
-                     (int)(short)(iVar5 >> 1) - (int)(short)DAT_0023c14c,iVar7 + 0x2800,0x78,3,0,0,1
+                     (int)(short)(iVar5 >> 1) - (int)(short)DAT_0023c14c,pFlipSrc4 + 0x2800,0x78,3,0,0,1
                     );
       }
       else if (4 < DAT_0023c208) {
@@ -61618,8 +61858,26 @@ bool FUN_0006edfc()
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar7 >> 1 & 0xffffU) - (int)(short)DAT_0023c14c,
-                       DAT_0023c148 + DAT_0023c144);
+          /* Was missing its 4th argument (y2) -- real disassembly
+             (0006f3d8-0006f400) shows r3 genuinely computed as
+             `(short)DAT_0023c14c + (short)(iVar7 >> 1)` right before
+             the call, matching the same y1/y2-around-center pattern
+             every other rect_fill_or_save_restore call in this
+             function uses; the decompiler just dropped it from the
+             call's C syntax. Previously left as the original 3-arg
+             dropped-argument call because applying this fix crashed a
+             few ticks later -- that turned out to be a side effect of
+             FUN_0007e998/FUN_00041a78 being broken (this rect_fill
+             finally actually running exposed their bugs, rather than
+             being wrong itself); now that both are fixed, re-applying
+             this fix is what it takes for the panel-flip's "erase old
+             content" pass to bound itself correctly instead of wiping
+             out the static flask/chain area below the panel with a
+             leftover-register y2. */
+          /* Not decompiled -- "16 pixels too high" fix, see the
+             DAT_0023c208==1 branch above for the full explanation. */
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
+                       DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
           iVar7 = (int)DAT_0023c138 + (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
@@ -61635,8 +61893,10 @@ bool FUN_0006edfc()
           if (iVar5 < 0) {
             iVar5 = iVar5 + 1;
           }
+          /* Not decompiled -- "16 pixels too high" fix (the
+             squashed-content blit position itself this time). */
           bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
-                       (int)(short)(iVar7 >> 1) - (int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c138,
+                       (int)(short)DAT_0023c14c - (int)(short)(iVar7 >> 1),uVar3,(int)DAT_0023c138,
                        DAT_0023c13c,0,0,1);
         }
         else if (DAT_0023c208 == 8) {
@@ -61646,8 +61906,14 @@ bool FUN_0006edfc()
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
           }
-          rect_fill_or_save_restore((int)(short)DAT_0023c148,(iVar7 >> 1 & 0xffffU) - (int)(short)DAT_0023c14c,
-                       DAT_0023c148 + DAT_0023c144);
+          /* Was missing its 4th argument (y2) -- same dropped-argument
+             bug as the sibling call above (real disassembly
+             0006f56c-0006f594, identical instruction pattern);
+             re-applied for the same reason (see that comment). Y1 also
+             fixed for the same "16 pixels too high" bug as every other
+             occurrence in this function (see DAT_0023c208==1 branch). */
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
+                       DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
           iVar7 = (int)DAT_0023c138 + (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
@@ -61711,11 +61977,15 @@ LAB_0006f6c8:
 
 
 void FUN_0006f6e0(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
+char *param_1;
+char *param_2;
 short param_3;
 
 {
+  /* Were `undefined4` -- truncated the real 64-bit source/dest pointers
+     (already fixed to real pointers at FUN_0006edfc's call sites)
+     back down to 32 bits on entry. Same pointer-truncation class as
+     everywhere else this session. */
   short sVar1;
   wchar_t wVar2;
   short sVar3;
@@ -61727,7 +61997,30 @@ short param_3;
   int iVar9;
   int iVar10;
   int iVar11;
-  
+  /* Not decompiled -- QA: "the panel should fully squish horizontally
+     during the flip, ours just crops part of it". Root cause: every
+     FUN_0006fa28() call site in this function (all disassembly-
+     confirmed dropped-argument fixes from earlier this session)
+     advances param_1 (source column) and param_2 (dest column) by
+     exactly 1 EACH, every single call, with no exception anywhere in
+     this function -- confirmed at the instruction level, not a
+     decompiler artifact. Since the total number of calls always
+     equals DAT_0023c13c (the squashed width, strictly less than
+     DAT_0023c144's full 83 except at stage 0/8), that lockstep means
+     param_1 only ever reaches the first DAT_0023c13c source columns
+     and never reads the rest -- a left-aligned crop, not a resample.
+     A real squash needs param_1 to sweep the FULL source width
+     (DAT_0023c144) over the same DAT_0023c13c destination writes.
+     Added a simple fixed-point accumulator (new, not decompiled) to
+     do that: advance a running source-position accumulator by
+     DAT_0023c144 on every destination column written, and step
+     param_1 by however many whole source columns that accumulator
+     just crossed -- so by the last destination column, param_1 has
+     swept the entire source width, however narrow the destination
+     got. param_2 keeps its original (correct) +1-per-call advance. */
+  int squashAccum;
+  int squashSrcCol;
+
   sVar6 = DAT_0023c144;
   iVar8 = (int)param_3;
   iVar11 = (int)DAT_0023c144;
@@ -61747,6 +62040,8 @@ short param_3;
   else {
     sVar6 = 1;
   }
+  squashAccum = 0;
+  squashSrcCol = 0;
   iVar11 = 0;
   if (iVar8 < 4) {
     iVar8 = (iVar10 - sVar4) * 0x10000 >> 0x10;
@@ -61768,7 +62063,18 @@ short param_3;
             else {
               iVar10 = (int)(short)(iVar8 << 1) + (int)sVar1;
             }
-            FUN_0006fa28();
+            /* Was `FUN_0006fa28();` -- dropped arguments. Real
+               disassembly (0006f884-0006f8a4) shows param_1/param_2
+               passed in as-is, then both incremented by 1 byte
+               afterward -- confirmed identical at all 3 call sites
+               in this function. */
+            FUN_0006fa28(param_1,param_2);
+            /* Not decompiled -- squash accumulator, see this
+               function's own comment near its locals. */
+            squashAccum = squashAccum + (int)DAT_0023c144;
+            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+            squashSrcCol = squashAccum / (int)DAT_0023c13c;
+            param_2 = param_2 + 1;
             iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
           } while (iVar9 < sVar6);
           iVar9 = (int)DAT_0023c13c;
@@ -61798,7 +62104,16 @@ short param_3;
               DAT_0023c138 = DAT_0023c138 + 2;
               iVar10 = iVar8 * 2 + (int)sVar1;
             }
-            FUN_0006fa28();
+            /* Was `FUN_0006fa28();` -- same dropped-argument bug as
+               the sibling branch above (real disassembly
+               0006f96c-0006f988). */
+            FUN_0006fa28(param_1,param_2);
+            /* Not decompiled -- squash accumulator, see this
+               function's own comment near its locals. */
+            squashAccum = squashAccum + (int)DAT_0023c144;
+            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+            squashSrcCol = squashAccum / (int)DAT_0023c13c;
+            param_2 = param_2 + 1;
             iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
           } while (iVar9 < sVar6);
           iVar9 = (int)DAT_0023c13c;
@@ -61809,7 +62124,15 @@ short param_3;
   }
   for (iVar9 = iVar9 - (int)sVar3 * (int)sVar6; iVar9 = iVar9 * 0x10000 >> 0x10, 0 < iVar9;
       iVar9 = iVar9 + -1) {
-    FUN_0006fa28();
+    /* Was `FUN_0006fa28();` -- same dropped-argument bug (real
+       disassembly 0006f9ec-0006fa0c: leftover-rows loop). */
+    FUN_0006fa28(param_1,param_2);
+    /* Not decompiled -- squash accumulator, see this function's own
+       comment near its locals. */
+    squashAccum = squashAccum + (int)DAT_0023c144;
+    param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+    squashSrcCol = squashAccum / (int)DAT_0023c13c;
+    param_2 = param_2 + 1;
   }
   DAT_0023c138 = sVar4;
   return;
@@ -61829,7 +62152,7 @@ undefined1 * param_2;
   int iVar5;
   int iVar6;
   short sVar7;
-  
+
   sVar7 = DAT_0023c138 - DAT_0023c140;
   if (0 < DAT_0023c110) {
     iVar3 = 0;
@@ -61877,7 +62200,21 @@ undefined1 * param_2;
     sVar2 = (DAT_0023c138 - sVar7 * (short)(sVar2 + 1)) + -1;
   }
   else {
-    sVar1 = Ordinal_2005(iVar3 + 1);
+    /* Was `Ordinal_2005(iVar3 + 1)` -- missing its dividend argument.
+       The sibling branch above (iVar3 < 1) makes the exact same call
+       shape fully: `Ordinal_2005(iVar3 + -1,(int)DAT_0023c140)`
+       (divisor=iVar3+/-1, dividend=DAT_0023c140), so by direct
+       symmetry this one is missing `(int)DAT_0023c140` too. Unlike
+       Ordinal_2005's own K&R "leftover register" idiom (safe on the
+       original ARM ABI, where an unfilled argument register
+       predictably still held the caller's last computed value), a
+       dropped argument here is NOT safe on this x86-64 recompile --
+       the reused register/stack slot holds architecture-mismatched
+       garbage, not the original value. sVar1 becomes this loop's
+       inner trip count, so garbage here produced an unbounded copy
+       loop and a wild param_1/param_2 write -- the intermittent,
+       ASLR-flaky crash/heap-corruption in this function. */
+    sVar1 = Ordinal_2005(iVar3 + 1,(int)DAT_0023c140);
     iVar6 = 0;
     if (0 < iVar3) {
       do {
@@ -71021,10 +71358,92 @@ int param_1;
 
 
 
-void FUN_0007e998()
+/* Not decompiled -- confirmed a genuine dead stub in the real binary
+   too (disassembly at 0x0007e998 is just `cpy pc,lr`, 4 bytes, no
+   body). This is the "capture the framebuffer rect we just drew panel
+   content into, back into the grtile buffer" step (both real call
+   sites draw content live via draw_stats_panel_content/the target hud
+   panel handler and then immediately call this to snapshot it for the
+   flip animation to work from).
+
+   capture_framebuffer_rect_to_grtile, the obvious existing primitive
+   to delegate to, copies the live framebuffer's 16bpp RGB565 pixels
+   verbatim -- but the grtile buffers here and FUN_0006fa28's whole
+   squash-blit loop are 8bpp paletted (1 byte/pixel, confirmed via
+   disassembly-recovered pointer stepping), same format
+   decode_gr_entry_bitmap/FUN_00041a78 already decoded into this exact
+   buffer just before draw_stats_panel_content ran. A real fix needs
+   an actual 16bpp->8bpp palette-matching capture, which doesn't exist
+   anywhere else in this codebase -- implemented here as a per-pixel
+   nearest-color search against g_palette_rgb565 (the same 256-entry
+   RGB565 table every other paletted draw in this file already
+   indexes into, e.g. rect_fill_or_save_restore's fill mode and
+   uw_get_default_palette's own reverse-conversion precedent).
+
+   Writes tightly-packed rows (stride = width, no padding) starting at
+   the destination buffer's own base -- matching the layout
+   FUN_00041a78's decode already established for this same buffer
+   (bitmap_blit_to_framebuffer reads it back with that same width as
+   its own row stride, no separate pitch).
+
+   param_1 is the destination grtile buffer's real pointer (both call
+   sites already resolve it via resolve_flip_grtile_slot before
+   calling, unlike capture_framebuffer_rect_to_grtile which wants the
+   raw registry key instead -- see that function's own comment on this
+   same distinction). param_2/param_3 are the framebuffer capture
+   rect's x/y; param_4/param_5 are width/height, in that order --
+   confirmed by cross-checking both real call sites' literal argument
+   values against the adjacent, already-working
+   bitmap_blit_to_framebuffer call's own disassembly-verified
+   (x,y,src,HEIGHT,WIDTH,...) parameter order (that function's param_4
+   drives the row/Y loop, param_5 the column/X loop and source
+   stride) -- FUN_0007e998's own two call sites consistently pass
+   their last two arguments in the opposite (width,height) order from
+   that sibling blit call sitting right next to each of them. */
+void FUN_0007e998(param_1,param_2,param_3,param_4,param_5)
+unsigned char *param_1;
+int param_2;
+int param_3;
+int param_4;
+int param_5;
 
 {
-  return;
+  int row;
+  int col;
+  int i;
+  unsigned short *pal565;
+  unsigned short src_pixel;
+  unsigned short pal_pixel;
+  int dr;
+  int dg;
+  int db;
+  int dist;
+  int best_index;
+  int best_dist;
+  short *fb_row;
+
+  pal565 = (unsigned short *)g_palette_rgb565_backing;
+  for (row = 0; row < param_5; row++) {
+    fb_row = (short *)((char *)g_uw_framebuffer + ((param_3 + row) * 0x140 + param_2) * 2);
+    for (col = 0; col < param_4; col++) {
+      src_pixel = (unsigned short)fb_row[col];
+      best_index = 0;
+      best_dist = 0x7fffffff;
+      for (i = 0; i < 256; i++) {
+        pal_pixel = pal565[i];
+        dr = (int)((src_pixel >> 11) & 0x1f) - (int)((pal_pixel >> 11) & 0x1f);
+        dg = (int)((src_pixel >> 5) & 0x3f) - (int)((pal_pixel >> 5) & 0x3f);
+        db = (int)(src_pixel & 0x1f) - (int)(pal_pixel & 0x1f);
+        dist = dr * dr + dg * dg + db * db;
+        if (dist < best_dist) {
+          best_dist = dist;
+          best_index = i;
+          if (dist == 0) break;
+        }
+      }
+      param_1[row * param_4 + col] = (unsigned char)best_index;
+    }
+  }
 }
 
 

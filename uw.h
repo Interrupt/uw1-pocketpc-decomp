@@ -1058,7 +1058,7 @@ void FUN_00049924();
 undefined4 FUN_00049940();
 void FUN_00049948();
 undefined4 alloc_flip_grtile_slot();
-undefined4 resolve_flip_grtile_slot();
+void *resolve_flip_grtile_slot();
 void FUN_0004995c();
 undefined4 init_level_object_arena();
 void FUN_000499a4();
