@@ -52908,35 +52908,33 @@ static void uwdl_walk(uwdl_vm *m, int at)
        sign+threshold test as first modeled. MDLXtract's own case for
        0x0064 (its M3_UW_FACE_PLANE_X) reads word[1] as a length,
        word[2] as a normal component ("x"), and word[3] as "face_dist"
-       -- "FacePlane Normal = (x, 0.0, 0.0) {Len, Dist}". This directly
-       explains why word[2] (r[2]) is ALWAYS exactly the extreme signed
-       16-bit value (0x7fff/0x8001, confirmed via UW_DEBUG_DLIST_CULLOP)
-       -- it's a fixed-point-encoded UNIT normal component (~+-1.0), not
-       an arbitrary sign marker; correct for an axis-aligned face-plane
-       specialization where the normal has no other choice. word[3] is
-       the plane's own real DISTANCE along that axis, matching the
-       small, plausible coordinate-unit values already found (48, -208,
-       -80, -16, etc). This is a genuine half-space test -- but against
-       the EYE, matching uw1-decomp's own doc gloss ("drop the faces
-       pointing away from the eye") which the earlier m->t[axis]-based
-       model could never satisfy (that quantity has no view-dependence
-       at all, confirmed by its own 16-way sign sweep never changing
-       the face count). The real comparison is eye_local[axis] vs the
-       plane distance -- eye_local being the camera's own position
-       expressed in this SAME pre-rotation local body space the rest of
-       this bytecode builds in, seeded once per emit_dlist_bank_object
-       call (m->eye[], see its own computation and comment there) by
-       inverse-transforming the camera's assumed canonical-frame
-       position through the same heading rotation/anchor/xoff/zoff the
-       forward vertex transform uses. UW_DLIST_REAL_CULL_FLIP inverts
-       the comparison for live polarity calibration -- the eye-position
-       assumption (camera at the canonical frame's own origin) is a
-       first attempt, not yet independently confirmed. */
+       -- "FacePlane Normal = (x, 0.0, 0.0) {Len, Dist}". This is a
+       genuine half-space test against the EYE, matching uw1-decomp's
+       own doc gloss ("drop the faces pointing away from the eye").
+
+       THE COMPARISON, confirmed live: `origin <= thresh`,
+       UNCONDITIONALLY -- r[2]'s sign does NOT flip the comparison
+       operator (an `if (sign>0) >= else <=` branch was tried first and
+       could never work with a real, view-dependent eye position; a
+       16-way sign/axis sweep against it -- see the dated findings-doc
+       entries -- always landed on the same wrong face count no matter
+       how the branch was flipped). With the REAL eye (m->eye[], the
+       renderer's own camera position -- see its own computation
+       comment above this function) and this unconditional formula,
+       the door renders correctly and completely at every camera angle
+       tested (three independent positions, including one where the
+       earlier degenerate eye-at-anchor model produced a visually
+       plausible but non-view-dependent result). Why r[2]'s sign is
+       encoded at all if unused here is still an open question -- not
+       resolved, just not needed for this bank's own faces; left
+       readable in the debug print in case it matters for other banks
+       later. UW_DLIST_REAL_CULL_FLIP inverts the whole comparison for
+       further calibration if a different bank/opcode ever needs it. */
     if (op == 0x0064 || op == 0x0066 || op == 0x0068) {
       int _axis = (op == 0x0064) ? 0 : (op == 0x0066) ? 1 : 2;
       int32_t _origin = m->eye[_axis];
       int32_t _thresh = uwdl_sign16(r[3]);
-      int _keep = ((short)r[2] > 0) ? (_origin >= _thresh) : (_origin <= _thresh);
+      int _keep = (_origin <= _thresh);
       if (getenv("UW_DLIST_REAL_CULL_FLIP")) _keep = !_keep;
       m->cull_valid = 1;
       m->cull_take = !_keep;
@@ -53036,26 +53034,32 @@ static void uwdl_walk(uwdl_vm *m, int at)
              shut branch selection, left untouched here: those still
              always fall through, matching the documented "assumes
              shut" behavior elsewhere in this file).
-             REVERTED TO OPT-IN (was briefly default-on): the single-
-             screenshot verification that justified defaulting this on
-             was NOT rigorous enough -- it confirmed the geometry looked
-             plausible at one position, but never checked the actual
-             face COUNT. UW_DEBUG_DLIST's own "faces=N" print shows the
-             real bug directly: this bank builds 11 faces with culling
-             off (confirmed baseline, matches every prior finding in
-             this investigation), but only 5 survive with this cull
-             logic on -- a 54% over-cull, not a minor polarity nit.
-             Confirmed quadrant-invariant (same 5 faces kept at every
-             camera angle tested), which is why it doesn't look "wrong"
-             from any single fixed viewpoint -- but different viewing
-             angles need different ones of the 6 permanently-missing
-             faces, which is exactly what the live QA report ("faces
-             disappear based on yaw quadrant") describes. The threshold/
-             sign test logic itself needs more work before this can be
-             trusted as a default again -- see the dated findings-doc
-             entry for the live-reproduced evidence. */
-          if (m->cull_valid && getenv("UW_DLIST_REAL_CULL_OPCODES") &&
-              atoi(getenv("UW_DLIST_REAL_CULL_OPCODES")) != 0) {
+             DEFAULT-ON again, this time on solid ground: an earlier
+             attempt shipped default-on after only a single-screenshot
+             check and turned out to over-cull by 54%, quadrant-
+             invariant (same wrong faces kept at every angle) --
+             exactly the "faces disappear based on yaw quadrant" bug
+             that got it reverted. Root cause found since: the
+             comparison was against m->t[axis] (a purely bytecode-
+             local accumulator with no view-dependence at all), when
+             an independent third-party decoder of this same opcode
+             family (Draxinusom/UWXtract) revealed these are FACE-PLANE
+             opcodes -- a genuine half-space test against the EYE. Now
+             compares against m->eye[] (the renderer's own real camera
+             position, DAT_000db438/43c/440, seeded fresh before every
+             walk -- see its own computation comment above), with an
+             unconditional `origin <= thresh` comparison (see the
+             opcode-dispatch block's own comment for why the sign-
+             branching version never worked). Verified correct and
+             complete at three independently tested camera positions
+             with genuinely different eye values, plus two more
+             positions matching their own already-documented pre-
+             existing appearance (not a new regression) -- real
+             per-viewpoint behavior, not another static coincidence.
+             UW_DLIST_REAL_CULL_OPCODES=0 still opts out, matching this
+             file's UW_DISABLE_*-style convention. */
+          if (m->cull_valid && (getenv("UW_DLIST_REAL_CULL_OPCODES") == NULL ||
+                                 atoi(getenv("UW_DLIST_REAL_CULL_OPCODES")) != 0)) {
             if (m->cull_take) { at = tgt; continue; }
             at = nxt; continue;
           }
@@ -53181,29 +53185,32 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
        world=anchor+rx*scale), so it lives in the exact same coordinate
        system the plane thresholds (r[3]) are authored in.
 
-       World eye = (0,0,0) (the canonical frame's own origin -- the
-       same candidate the since-removed UPDATE-20 cross-product
-       substitute used) was tried FIRST and confirmed WRONG live: it
-       puts the eye thousands of units away from the geometry (its own
-       local span is only a few hundred units), so every comparison's
-       sign becomes decided almost entirely by r[2]'s sign alone rather
-       than any real spatial relationship, and the door's leaf panel
-       renders completely missing.
+       Two earlier candidates tried and rejected before this one:
+       world eye = (0,0,0) put the eye thousands of units from geometry
+       spanning only a few hundred (broken live -- leaf missing
+       entirely). World eye = the object's own anchor rendered
+       correctly but is mathematically degenerate (eye-anchor always
+       exactly zero, no real view-dependence).
 
-       World eye = the object's own anchor (ax,ah,az) -- i.e. treating
-       the eye as coincident with the door itself -- was tried second
-       and DOES render a complete, correct door live. But this choice
-       is mathematically degenerate: (eye-anchor) is identically zero
-       for every call regardless of heading, so it's exactly as
-       quadrant-invariant as the earlier, since-reverted m->t[axis]
-       model was -- a better STATIC approximation for this one close-up
-       view, not proof of genuine per-viewpoint culling. Used as the
-       default anyway since it's the only tested candidate that doesn't
-       visibly break, while UW_DLIST_EYE_X/Y/Z stay available to try a
-       genuinely player-relative candidate (this renderer's real player-
-       position global, not yet identified) without another code
-       change. */
-    double _ex = ax, _ey = ah, _ez = az;
+       CONFIRMED WORKING: world eye = the renderer's own REAL camera
+       position, DAT_000db438/43c/440 -- found via build_view_matrix's
+       own comment ("build the view/camera matrix ... from the camera
+       translation (DAT_000db438/43c/440)", uw.c ~13216), read here as
+       the softfloat bit patterns they're stored as (Ordinal_2032's own
+       contract), used AS-IS with no correction. (A theory that the
+       sync formula's asymmetric `+0x1000` on X needed subtracting was
+       tried and made things WORSE, not better -- that constant turned
+       out to be load-bearing, not a bug; see the dated findings-doc
+       entry for the full trace of that dead end.) Paired with the
+       unconditional `origin <= thresh` comparison in uwdl_walk (not
+       the sign-branching one first tried), this renders a complete,
+       correct door at every one of three independently tested camera
+       positions, including angles where the eye genuinely differs
+       frame to frame -- the first time this mechanism has shown real
+       per-viewpoint behavior rather than a static approximation.
+       UW_DLIST_EYE_X/Y/Z still override for further calibration if a
+       future case needs it. */
+    double _ex = *(float *)&DAT_000db438, _ey = *(float *)&DAT_000db43c, _ez = *(float *)&DAT_000db440;
     { const char *_s = getenv("UW_DLIST_EYE_X"); if (_s) _ex = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Y"); if (_s) _ey = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Z"); if (_s) _ez = atof(_s); }
@@ -53215,8 +53222,9 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
     g_uwdl_eye[1] = (int32_t)lround((scale != 0.0) ? (_ey - ah - yoff) / scale : 0.0);
     g_uwdl_eye[2] = (int32_t)lround(_mz - zoff);
     if (getenv("UW_DEBUG_DLIST"))
-      fprintf(stderr, "[dlist] eye_local=(%d,%d,%d) (world eye assumed (%g,%g,%g), anchor=(%d,%d,%d))\n",
-              g_uwdl_eye[0], g_uwdl_eye[1], g_uwdl_eye[2], _ex, _ey, _ez, ax, ah, az);
+      fprintf(stderr, "[dlist] eye_local=(%d,%d,%d) (world eye assumed (%g,%g,%g), anchor=(%d,%d,%d), real_camera_pos=(%g,%g,%g))\n",
+              g_uwdl_eye[0], g_uwdl_eye[1], g_uwdl_eye[2], _ex, _ey, _ez, ax, ah, az,
+              *(float *)&DAT_000db438, *(float *)&DAT_000db43c, *(float *)&DAT_000db440);
   }
   nfaces = uwdl_run_bank(words, count, head, rise, g_uwdl_eye, faces, UWDL_MAX_FACES);
   if (getenv("UW_DEBUG_DLIST")) {

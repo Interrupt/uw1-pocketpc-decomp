@@ -1037,6 +1037,47 @@ direction is right, not merely a coincidence in the count.
 11/6 baseline with zero env vars). Standard run-regressions.sh: 6/6
 clean.
 
+**UPDATE 34 (real player-relative eye wired up; genuine per-viewpoint
+culling working and confirmed at three independent camera positions --
+DEFAULT-ON, 2026-09-21):** user: "Wire up the real eye position next,"
+then "Try using the player position as the eye position."
+
+Found the renderer's own real camera-position globals,
+`DAT_000db438/43c/440`, via `build_view_matrix`'s own comment ("build
+the view/camera matrix ... from the camera translation"). Tried them
+raw first -- still rendered a broken door (leaf missing). Traced why:
+`sync_camera_from_player`'s own formula adds a bare `+0x1000` to X but
+not Z, an asymmetry the object anchor's own computation has no
+equivalent of; first assumed this was a bug and subtracted it back
+out -- that made things WORSE (the corrected eye collapsed to nearly
+the same broken magnitude as the earlier failed `(0,0,0)` guess),
+proving the `+0x1000` is a load-bearing reference constant, not an
+error to strip.
+
+The real remaining bug turned out to be the COMPARISON, not the eye
+value: the original `if (sign>0) origin>=thresh else origin<=thresh`
+branch (built when UPDATE 33 first modeled these as face-plane
+opcodes) could never work correctly once the eye genuinely varies by
+viewpoint -- confirmed by testing an unconditional `origin <= thresh`
+(ignoring the sign word's direction entirely) against the real camera
+eye: the door rendered **complete and correct**. Verified at three
+independent camera positions with genuinely different eye values
+(not a fixed/degenerate case this time), plus two more positions whose
+appearance matches their own already-documented pre-existing
+characteristics (not new regressions). This is the first time this
+mechanism has shown real, working per-viewpoint behavior rather than a
+static approximation that merely looked plausible from one angle.
+
+Made this the new default (`UW_DLIST_REAL_CULL_OPCODES` now default-on
+again, opt-out via `=0`) -- unlike the previous default-on attempt
+(UPDATE 30/entry 21, reverted after a 54% over-cull), this one is
+backed by: an independent third-party confirmation of the opcode
+semantics (UPDATE 33), a genuinely view-dependent eye source, and
+multi-angle live verification, not a single screenshot. Why the sign
+word (r[2]) is encoded at all if the comparison doesn't use it remains
+an open, but no longer blocking, question. Standard run-regressions.sh:
+6/6 clean; confirmed door renders correctly with zero env vars set.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

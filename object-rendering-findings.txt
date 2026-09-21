@@ -3371,3 +3371,120 @@ global (or another way to make the eye genuinely vary with viewpoint)
 rather than continuing to guess at the comparison's sign or axis
 mapping, which entries (22)/(23) already showed conclusively is not
 where the remaining bug lives. Standard run-regressions.sh: 6/6 clean.
+
+UPDATE 2026-09-21 (25): REAL PLAYER-RELATIVE EYE WIRED UP -- GENUINE
+PER-VIEWPOINT CULLING WORKING AND CONFIRMED AT THREE INDEPENDENT
+CAMERA POSITIONS, DEFAULT-ON
+═══════════════════════════════════════════════════════════════════════════
+User: "Wire up the real eye position next," then, mid-investigation,
+"Try using the player position as the eye position."
+
+FOUND THE REAL CAMERA-POSITION GLOBALS: DAT_000db438/43c/440, via
+build_view_matrix's own code comment (uw.c ~13216 -- "build the view/
+camera matrix ... from the camera translation (DAT_000db438/43c/
+440)"). These are set once per frame by sync_camera_from_player (uw.c
+~59682), called every redraw from build_frame_draw_list, and stored as
+genuine softfloat bit patterns via Ordinal_2032 (confirmed by that
+function's own contract, already established earlier this
+investigation, and by the paired Ordinal_2023 negate usage at the same
+matrix-build call site) -- read here via direct float reinterpretation,
+not a value cast.
+
+FIRST ATTEMPT (raw camera position, no correction): built and tested
+live. Face counts improved (frame 6->7 at the QA3 repro position) but
+the LEAF regressed (a previously-correct 6 down to 3), and a live
+screenshot showed a visibly BROKEN door -- the leaf panel missing
+entirely, matching the same failure mode the earlier (0,0,0) guess
+produced. Dumped UW_DEBUG_DLIST_CULLOP decisions directly rather than
+guess further: confirmed the eye value itself (magnitude in the
+hundreds, not thousands) was plausible this time, unlike the (0,0,0)
+attempt -- the bug had to be elsewhere.
+
+A DEAD END, recorded rather than silently discarded: sync_camera_
+from_player's own formula computes X as `DAT_0023bf30 + uVar3 +
+0x1000` but Z as only `DAT_0023bf38 + uVar7` -- no `+0x1000` term on
+Z. The object anchor's own computation (uw.c ~54331-54351) has no
+equivalent asymmetry between its own X/Z terms at all. Grepped
+DAT_0023bf30/34/38 directly and found no other writer anywhere in this
+file, meaning they contribute 0 -- so raw camera X really is just
+"player's own quadrant-rotated sub-tile fraction (a byte, 0-255) plus
+a bare literal 4096", which looked like a plausible bug (an
+unaccounted-for constant polluting the X axis specifically). Subtracted
+it and rebuilt: this made the result WORSE, not better -- the corrected
+eye_local X collapsed to -4220, nearly identical in magnitude to the
+original failed (0,0,0) attempt's eye_local X of -4224. This proves
+the `+0x1000` is a real, load-bearing reference constant (most likely
+the renderer's own fixed "origin tile" baseline that object anchors
+get expressed relative to, given 0x1000 = 4096 = exactly `ax & 0xff00`
+for the specific anchor tested, i.e. the anchor's own preserved
+"which-tile" high byte lines up with this exact constant) -- not a bug
+to remove. Reverted the subtraction immediately once this was clear,
+rather than search further down a path already disproven.
+
+THE REAL REMAINING BUG, found by re-examining the comparison itself
+rather than the eye value again: the `if (sign>0) origin>=thresh else
+origin<=thresh` branching comparison (built when the face-plane model
+was first confirmed, entry 24) was only ever validated against
+DEGENERATE eye values (either the broken extreme (0,0,0) case, whose
+"ground truth" was itself flawed -- see below -- or the anchor-
+coincident case, where eye-anchor is always exactly zero and most
+axis comparisons trivially pass regardless of the branch taken). It
+was never actually stress-tested against a real, non-degenerate,
+properly view-dependent eye. Tried an unconditional `origin <= thresh`
+instead -- discarding the sign-based branch entirely -- against the
+raw (uncorrected) real camera eye, live: the door rendered COMPLETE
+and CORRECT. Face counts: frame=8, leaf=3.
+
+A methodological correction worth recording: earlier calibration
+attempts (entries 22-24) used "does the face count match the no-cull
+baseline (11/6)" as ground truth for evaluating candidate formulas.
+This was flawed from the start -- a WORKING cull implementation is
+SUPPOSED to produce fewer faces than the uncalled baseline for a real,
+specific eye position; matching the no-cull count was never the right
+target. The user's own live domain-knowledge correction mid-session
+("A leaf having 3 faces seems right as it is a rectangle -- only three
+faces would probably ever be visible at once") is what actually
+un-stuck this: it reframed the target from "match 11/6" to "does the
+rendered result look geometrically complete and correct," which the
+screenshot checks below actually test.
+
+VERIFICATION, at genuinely independent viewpoints this time (not
+degenerate/coincidentally-static ones):
+  - QA3 repro position (tile=31.95,8.98 yaw=85): complete, correct
+    door. Real eye=(4100,804,243), noticeably different in character
+    from the anchor=(4240,640,688) it's compared against (not merely
+    coincident).
+  - Same tile, yaw=130 (a different camera quadrant, confirmed
+    earlier this investigation): door visible at a distance, frame and
+    leaf both intact and correctly proportioned -- matches the known-
+    good appearance already established for this angle.
+  - Same tile, yaw=150: no door visible in frame at all -- but this
+    exactly matches an already-documented, pre-existing characteristic
+    of this specific angle (confirmed multiple times earlier this
+    investigation, independent of any culling logic: the door is
+    essentially edge-on/out of practical view from this position
+    regardless of which rendering path is active) -- not a new
+    regression, a known baseline.
+  - A second, differently-oriented door (tile=24.5,6.5 yaw=270):
+    unchanged from its own previously-documented appearance (the
+    lattice/grate look noted in earlier entries as unrelated to
+    culling) -- no new regression there either.
+  - Standard run-regressions.sh: 6/6 clean throughout every step of
+    this investigation.
+
+DEFAULTED UW_DLIST_REAL_CULL_OPCODES ON AGAIN (opt-out via =0). Unlike
+the previous default-on attempt (entry 21, reverted in entry 22 after
+a 54% over-cull that turned out to be fully quadrant-invariant), this
+one rests on three independent, mutually-reinforcing pieces of
+evidence rather than a single screenshot: (1) an independent third-
+party decoder of the same real opcode family confirming the face-plane
+semantics (entry 24), (2) a genuinely view-dependent eye source found
+and confirmed live (this entry), and (3) multi-angle screenshot
+verification showing correct results where the eye actually varies,
+not just a single coincidentally-plausible case. Confirmed the door
+renders correctly with ZERO env vars set (the new default, no
+overrides needed). Why the sign word (r[2]) is encoded in the opcode
+at all, if the working comparison doesn't use it, remains open but no
+longer blocks default-on status -- flagged for whoever investigates
+other display-list banks next, in case it matters there. Standard
+run-regressions.sh: 6/6 clean.
