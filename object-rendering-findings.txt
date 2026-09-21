@@ -2484,3 +2484,64 @@ different door-type sprite could plausibly have padding on either edge
 if this convention isn't perfectly uniform across all 6 registered door
 skins; worth a quick re-check across a couple of the other 5 if a
 similar height-mismatch symptom ever reappears on a different door.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (15): QA PASS 2 -- FIXED THE REAL ROTATION BUG (A
+ONE-BIT HEADING-FIELD MISREAD, NOT A CALIBRATION ISSUE) AND TUNED xoff
+DOWN
+═══════════════════════════════════════════════════════════════════════════
+User QA, round 2: (1) UV rendering confirmed fixed; (2) doors/frames
+shifted "just a tiny bit too far" now, clipping into the wall; (3)
+rotation still off -- specifically, "there is a door rotated 45 degrees
+which never happens in the original binary," from the user's own final
+live-play player position.
+
+ROTATION (real fix, not calibration): got the exact repro position from
+the running game's own stdout log (no scripted repro needed -- the
+[playerpos] debug line, already always-on, gave tile=9.28,9.95 z=64
+yaw=13 pitch=12 directly). At that door: UW_DEBUG_DOOR's own
+raw_heading print showed 0 (even, correctly matching DOS's "no door is
+ever at an odd heading" rule) -- but UW_DEBUG_DLIST showed our actual
+applied heading was 5 (odd, a 225-degree/45-degree-family angle). Root
+cause: the frame's own `-3` heading-offset step is itself ODD, so
+adding it to an even raw heading always flips it odd -- exactly a
+45-degree misrotation, on every door, not an occasional glitch.
+
+Chased WHY -3 (odd) was ever picked as "the calibrated value" in the
+first place, since that only makes sense if the RAW heading being fed
+into it was already wrong: checked DOS's own real object struct
+directly (uw1-decomp port/uw1_level.h:572, `uint8_t heading; /**< word1
+bits 7-9, 0..7; 3121:0d5a */`) against this file's own extraction,
+`(*(short*)(param_1+2) >> 6) & 7` -- bits 6-8, ONE BIT TOO LOW. That
+low bit spills in from `zpos` (word1 bits 0-6, ending exactly at bit
+6), so the extracted "heading" was silently corrupted by an unrelated
+field's own low bit for every door -- explaining both why raw_heading
+sometimes came out even (correct, when zpos's own bit happened to be 0)
+and sometimes odd (wrong, when it happened to be 1), and why a single
+odd offset constant was ever "confirmed" against a screenshot test that
+likely only checked one or two doors that happened to have that bit
+clear.
+
+FIX: corrected the shift from `>>6` to `>>7` (matching DOS's own struct
+exactly). With the raw heading now genuinely always even (confirmed
+across multiple test doors), the OLD -3 step (odd) had to be
+re-derived, since it now flips every correctly-even raw heading back
+to odd -- re-ran the same kind of screenshot comparison the original
+-3 used, fresh, at TWO different real doors, and found -4 (even, so it
+preserves parity) correct at both. Updated both the frame's and leaf's
+own heading-offset defaults from -3 to -4.
+
+xoff (tuning, not a new bug): reduced the horizontal-centering
+correction added in the previous QA round from -16.0 (the raw measured
+bbox-center value) to -8.0, per the user's own live report that the
+full value overshoots and clips into the wall. The scripted single-
+screenshot repro this file uses doesn't show an obvious difference
+between -8 and -16 at this one viewing angle, so this is trusting the
+user's own broader live testing (multiple doors/angles) over the
+narrower repro.
+
+VERIFICATION: with the bit-fix + -4 step, both the qa45 repro door
+(previously showing an incorrect 45-degree angle) and the long-standing
+origpos repro door now report even headings (0 and 0 respectively) and
+visually show a flush, correctly-oriented door at both. Standard
+run-regressions.sh: 6/6 clean.

@@ -55358,10 +55358,29 @@ LAB_00061d34:
            This bank has the identical situation, confirmed via its own
            UW_DEBUG_DLIST bbox print: bank 0x61 (frame, x=[-112,144])
            and bank 0x6e (leaf, x=[-48,80]) both center at exactly +16,
-           not 0 -- a real, measured, shared bias, not a guess. */
-        double _xoff = -16.0;
+           not 0 -- a real, measured, shared bias, not a guess. The full
+           -16.0 (the raw bbox-center value) was tried first but the
+           user's own live QA (multiple doors/angles, not just this
+           file's scripted single-screenshot repro) found it overshoots
+           and clips into the wall -- halved to -8.0, which still reads
+           as well-centered in the scripted repro and matches the QA
+           report of "too far" at the full value. */
+        double _xoff = -8.0;
         { const char *_s = getenv("UW_DLIST_XOFF"); if (_s) _xoff = atof(_s); }
-        int _raw_heading2 = (int)(*(short *)((char *)param_1 + 2) >> 6 & 7);
+        /* >>7, not >>6: DOS's own real struct layout (uw1-decomp
+           port/uw1_level.h:572, cited to real ARM disassembly at
+           3121:0d5a) puts `heading` at word1 BITS 7-9, not 6-8 --
+           confirmed live to be the actual cause of the reported
+           "door rotated 45 degrees, never happens in the original
+           binary" bug: reading one bit too low pulls in zpos's own top
+           bit (word1 bits 0-6, ending exactly at bit 6) instead of
+           heading's real low bit, silently corrupting parity for
+           whichever doors happen to have zpos's own low bit set --
+           explaining why some doors came out with an even raw heading
+           (correct, 0/2/4/6, matching DOS's own "no door is ever at an
+           odd heading" observation) and others odd (wrong), rather
+           than a uniform, single-value offset bug. */
+        int _raw_heading2 = (int)(*(short *)((char *)param_1 + 2) >> 7 & 7);
         int _quadrant_heading2 = (_raw_heading2 - 2 * (int)DAT_0023b4a0) & 7;
         /* Same shape of correction emit_model_object already established
            for the .E models (a quadrant term plus a small per-source
@@ -55380,12 +55399,19 @@ LAB_00061d34:
            emit_model_object's own working convention) pre-rotates into
            a camera-quadrant frame right here -- the quadrant term exists
            for exactly that reason and DOS's formula has no equivalent to
-           translate. -3 is the empirically-found value (user-guided
-           screenshot comparison: two real door-post shapes appeared at
-           this offset, not at -1/0/+1/+2) for THIS bank's own vertex
-           source, the same kind of per-source constant DFRAME.E already
-           needed its own -1 for. */
-        { int _step = -3;
+           translate. -3 was the original empirically-found value
+           (user-guided screenshot comparison), but it predates the
+           `>>6` vs `>>7` heading-bit fix a few lines above -- with that
+           corrected, -3 (an ODD step) flips every real door's now-
+           correctly-EVEN raw heading back to odd, exactly reproducing
+           the "door rotated 45 degrees" bug the bit-fix was meant to
+           close. -4 (an EVEN step, so it preserves parity) was
+           re-derived the same way, screenshot-compared fresh against
+           two different real doors post-bit-fix, and confirmed correct
+           at both -- for THIS bank's own vertex source, the same kind
+           of per-source constant DFRAME.E already needed its own -1
+           for. */
+        { int _step = -4;
           const char *_s = getenv("UW_DLIST_HEADING_OFFSET"); if (_s) _step = atoi(_s);
           _quadrant_heading2 = (_quadrant_heading2 + _step) & 7;
         }
@@ -55435,13 +55461,16 @@ LAB_00061d34:
         if (getenv("UW_DLIST_DOOR_LEAF")) {
           /* Same quadrant correction as the frame above, computed fresh
              from _raw_heading2 rather than reusing _quadrant_heading2 --
-             that variable already has the FRAME's own -3 step folded
+             that variable already has the FRAME's own -4 step folded
              into it by this point, and the leaf needs its own
              independent offset applied to the same quadrant-corrected
-             base, not stacked on top of the frame's. */
+             base, not stacked on top of the frame's. -4 not -3, same
+             even-parity reasoning as the frame's own step (see its
+             comment) -- both banks share the same corrected raw_heading
+             source. */
           int _leaf_heading = (_raw_heading2 - 2 * (int)DAT_0023b4a0) & 7;
           double _leaf_scale = _scale;
-          { int _lstep = -3;
+          { int _lstep = -4;
             const char *_s = getenv("UW_DLIST_LEAF_HEADING_OFFSET"); if (_s) _lstep = atoi(_s);
             _leaf_heading = (_leaf_heading + _lstep) & 7;
           }

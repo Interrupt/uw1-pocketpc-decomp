@@ -628,6 +628,29 @@ now reaches the top of the opening with no gap, continuous to the
 floor -- the first fully correct result in this whole effort. Full
 detail in `object-rendering-findings.txt`.
 
+**UPDATE 25 (QA pass 2 -- fixed the real rotation bug, a one-bit
+heading-field misread, and tuned xoff down, 2026-09-20):** user: UV
+fixed; doors shifted "just a tiny bit too far" now (clips into wall);
+"there is a door rotated 45 degrees which never happens in the original
+binary." Got the exact repro position straight from the running game's
+own always-on [playerpos] log line, no scripted repro needed. Traced
+the 45-degree bug to a real, root-level bug, not a calibration miss:
+this file's own heading extraction reads `(*(short*)(param_1+2) >> 6) &
+7` (word1 bits 6-8), but DOS's own real object struct (uw1-decomp
+port/uw1_level.h:572, cited to real ARM disassembly) puts `heading` at
+word1 bits 7-9 -- one bit too low, silently pulling in the adjacent
+zpos field's own low bit and corrupting parity per-door (sometimes
+even/correct, sometimes odd/wrong, depending on that unrelated bit).
+This also explains why the earlier `-3` heading-offset step was ever
+"confirmed" -- odd step on a sometimes-corrupted raw value coincidentally
+looked right for whichever doors got screenshot-tested at the time.
+Fixed the shift (`>>6` to `>>7`), which makes raw_heading always even,
+and re-derived the offset step fresh (now needs to be even too, to
+preserve parity) -- `-4` confirmed correct at two different real doors.
+Also reduced `xoff` (the horizontal centering fix from the previous QA
+round) from -16.0 to -8.0 per the user's own live report that the full
+value overshoots. Full detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
