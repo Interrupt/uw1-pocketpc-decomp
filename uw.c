@@ -52927,18 +52927,51 @@ static void uwdl_walk(uwdl_vm *m, int at)
        cross-product substitute assumed the latter and the user
        confirmed live it doesn't distinguish these faces at all --
        consistent with there being no real front/back winding pair to
-       tell apart, only this construction-time selection). Polarity
-       (which sign keeps which side) confirmed live, not just assumed:
-       UW_DLIST_REAL_CULL_FLIP (inverting it) renders a visibly broken
-       door -- missing frame panels, a gaping unintended void -- while
-       this default renders a complete, correct one, at two independent
-       test positions. See uwdl_walk's own kind==3 branch handling below
-       for where this decision actually takes effect. */
+       tell apart, only this construction-time selection).
+
+       STILL WRONG, NOT DEFAULT-ON (reverted -- see uwdl_walk's own
+       kind==3 branch handling below): an initial single-screenshot
+       check made this look confirmed and it briefly shipped default-on,
+       but UW_DEBUG_DLIST's own "faces=N" count catches the real bug
+       directly -- this bank builds 11 faces with culling off (the
+       established, repeatedly-confirmed baseline), but only 5 survive
+       with this logic on, REGARDLESS of camera angle (same 5 kept at
+       every quadrant tested) -- different views need different ones of
+       the 6 permanently-missing faces, which is what a later live QA
+       report ("faces disappear based on yaw quadrant") actually was.
+       Systematically swept all 16 combinations of UW_DLIST_CULL_
+       ORIGIN_SIGN and per-axis UW_DLIST_CULL_FLIP_X/Y/Z (below) --
+       EVERY combination gives exactly faces=5, even though the
+       individual per-instruction keep/cull decisions verifiably DO
+       change between combinations (9 of 12 decisions differ between
+       the baseline and the fully-flipped case, confirmed via
+       UW_DEBUG_DLIST_CULLOP) -- ruling out a simple sign/polarity bug
+       entirely. One structural clue worth keeping: consecutive
+       cull_side_z instructions were found back-to-back with the first
+       one's own skip target landing EXACTLY on the second one's own
+       address (at=159, d=30 -> tgt=178, itself another cull_side_z at
+       178) -- suggestive of an if/else-if CHAIN of mutually exclusive
+       alternatives rather than independent per-face AND-gates, which
+       would mean this file's "skip = exclude entirely" semantics for
+       kind=3 might be structurally wrong for this opcode family even
+       with a correct comparison. Not chased further: the real x86
+       handler isn't in either project's disassembly listings (checked
+       directly, see the findings doc's dated entry), and guessing
+       control-flow SHAPE (not just comparison polarity) without it
+       risks more wasted effort for no confirmed gain. Left available as
+       an opt-in experiment (UW_DLIST_REAL_CULL_OPCODES=1) for whoever
+       picks this up next with real disassembly access. */
     if (op == 0x0064 || op == 0x0066 || op == 0x0068) {
       int _axis = (op == 0x0064) ? 0 : (op == 0x0066) ? 1 : 2;
       int32_t _origin = -m->t[_axis];
+      if (getenv("UW_DLIST_CULL_ORIGIN_SIGN")) _origin = -_origin;
       int32_t _thresh = uwdl_sign16(r[3]);
       int _keep = ((short)r[2] > 0) ? (_origin >= _thresh) : (_origin <= _thresh);
+      { const char *_fx = getenv("UW_DLIST_CULL_FLIP_X");
+        const char *_fy = getenv("UW_DLIST_CULL_FLIP_Y");
+        const char *_fz = getenv("UW_DLIST_CULL_FLIP_Z");
+        if ((_axis == 0 && _fx) || (_axis == 1 && _fy) || (_axis == 2 && _fz)) _keep = !_keep;
+      }
       if (getenv("UW_DLIST_REAL_CULL_FLIP")) _keep = !_keep;
       m->cull_valid = 1;
       m->cull_take = !_keep;
@@ -53031,15 +53064,27 @@ static void uwdl_walk(uwdl_vm *m, int at)
              specifically (it exists for skip_if_le/ge's own door-open/
              shut branch selection, left untouched here: those still
              always fall through, matching the documented "assumes
-             shut" behavior elsewhere in this file). Default-on: the
-             polarity was confirmed live (UW_DLIST_REAL_CULL_FLIP
-             produces a visibly broken door -- missing frame panels, a
-             gaping unintended void -- while this default renders a
-             complete, correct one, at two independent test positions).
-             UW_DLIST_REAL_CULL_OPCODES=0 opts back out, matching this
-             file's UW_DISABLE_*-style convention. */
-          if (m->cull_valid && (getenv("UW_DLIST_REAL_CULL_OPCODES") == NULL ||
-                                 atoi(getenv("UW_DLIST_REAL_CULL_OPCODES")) != 0)) {
+             shut" behavior elsewhere in this file).
+             REVERTED TO OPT-IN (was briefly default-on): the single-
+             screenshot verification that justified defaulting this on
+             was NOT rigorous enough -- it confirmed the geometry looked
+             plausible at one position, but never checked the actual
+             face COUNT. UW_DEBUG_DLIST's own "faces=N" print shows the
+             real bug directly: this bank builds 11 faces with culling
+             off (confirmed baseline, matches every prior finding in
+             this investigation), but only 5 survive with this cull
+             logic on -- a 54% over-cull, not a minor polarity nit.
+             Confirmed quadrant-invariant (same 5 faces kept at every
+             camera angle tested), which is why it doesn't look "wrong"
+             from any single fixed viewpoint -- but different viewing
+             angles need different ones of the 6 permanently-missing
+             faces, which is exactly what the live QA report ("faces
+             disappear based on yaw quadrant") describes. The threshold/
+             sign test logic itself needs more work before this can be
+             trusted as a default again -- see the dated findings-doc
+             entry for the live-reproduced evidence. */
+          if (m->cull_valid && getenv("UW_DLIST_REAL_CULL_OPCODES") &&
+              atoi(getenv("UW_DLIST_REAL_CULL_OPCODES")) != 0) {
             if (m->cull_take) { at = tgt; continue; }
             at = nxt; continue;
           }

@@ -874,6 +874,61 @@ decisive confirmation. Removed UPDATE 29's cross-product substitute
 entirely rather than leaving it as dead/confusing code, now that the
 real mechanism is working. Standard run-regressions.sh: 6/6 clean.
 
+**UPDATE 31 (CORRECTION -- UPDATE 30's default-on was wrong; reverted
+to opt-in, the real bug is structural, not a polarity nit,
+2026-09-21):** user, live-testing UPDATE 30's default: "Backface
+culling seems to be flipped when faces are visible" and "Faces
+disappear based on yaw quadrant."
+
+UPDATE 30's own verification (one screenshot at one position looking
+visually complete, plus a flip-test showing the opposite polarity
+looks obviously broken) was NOT rigorous enough -- it never checked the
+actual face COUNT, only visual plausibility. `UW_DEBUG_DLIST`'s own
+`faces=N` print exposes the real bug directly: this bank builds 11
+faces with culling off (the repeatedly-confirmed baseline throughout
+this whole investigation), but only **5** survive with UPDATE 30's
+cull logic on -- a 54% over-cull, not a minor sign issue. Confirmed
+this is fully quadrant-INVARIANT (the identical 5 faces are kept at
+every camera angle tested, byte-for-byte identical decisions) -- which
+is exactly consistent with the live report: different viewing angles
+need different ones of the 6 permanently-missing faces, so it reads as
+"faces disappear based on yaw" even though the underlying decision set
+never actually changes with view.
+
+Tried to find a working polarity systematically before giving up:
+swept all 16 combinations of an origin-sign flip and independent
+per-axis (X/Y/Z) flips. Confirmed the individual per-instruction
+decisions genuinely do change between combinations (9 of 12 decisions
+differ between the unflipped baseline and the fully-flipped case) --
+but every single one of the 16 combinations still produces exactly
+**5** frame faces. This rules out a simple comparison-polarity bug
+entirely; flipping signs cannot fix this. One structural clue found
+along the way: two `cull_side_z` instructions turned out to sit
+back-to-back with the first one's own skip target landing EXACTLY on
+the second one's address -- suggestive of an if/else-if CHAIN of
+mutually exclusive alternatives (only one of several should ever
+"win") rather than independent per-face AND-gates, which would mean
+this interpreter's "skip = exclude entirely" semantics may be
+structurally wrong for this opcode family even with a theoretically
+correct comparison.
+
+Not chased further this round: the real x86 handler (`16e7:3f7b` for
+`cull_side_x`, etc.) isn't in either this project's or uw1-decomp's own
+disassembly listings (checked directly, zero hits) -- getting the
+control-flow SHAPE right (not just the comparison's sign) without that
+access risks more wasted effort for no confirmed gain, the same lesson
+UPDATE 29's cross-product dead-end already taught once this session.
+
+REVERTED `UW_DLIST_REAL_CULL_OPCODES` to opt-in (confirmed back to the
+correct 11/6 baseline face counts with no env vars set). The real
+opcode evaluation code stays in place, gated off by default, as a
+documented, ready-to-resume experiment for whoever next has real
+disassembly access -- not deleted, since the operand-layout reverse-
+engineering (sign word / threshold / axis mapping) in UPDATE 30 is
+still solid, verified evidence even though the branch-taking semantics
+built on top of it aren't yet right. Standard run-regressions.sh:
+6/6 clean.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

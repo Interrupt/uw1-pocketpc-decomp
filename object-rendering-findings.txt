@@ -3035,3 +3035,104 @@ UW_DEBUG_DLIST_CULL env vars and their code) rather than leaving it in
 as dead, superseded, confusing code now that the real mechanism works
 and the user confirmed the substitute doesn't. Standard
 run-regressions.sh: 6/6 clean throughout.
+
+UPDATE 2026-09-21 (22): CORRECTION -- ENTRY (21)'S DEFAULT-ON WAS
+WRONG. THE REAL BUG IS STRUCTURAL (54% OVER-CULL), NOT A POLARITY NIT.
+REVERTED TO OPT-IN
+═══════════════════════════════════════════════════════════════════════════
+User, live-testing entry (21)'s default-on real cull opcodes: "Backface
+culling seems to be flipped when faces are visible" and "Faces
+disappear based on yaw quadrant."
+
+WHY ENTRY (21)'S VERIFICATION MISSED THIS: it checked one screenshot at
+one position (looked visually complete) plus a flip-test (the opposite
+polarity looked obviously broken, missing panels and a gaping void) --
+concluded from that contrast that the un-flipped default was correct.
+Never checked the actual face COUNT, only visual plausibility at a
+single angle. That was the mistake.
+
+THE REAL BUG, found via UW_DEBUG_DLIST's own "faces=N" print (already
+in this file, just not consulted at the time): this bank builds 11
+faces with culling off -- confirmed directly again as a fresh baseline
+check (`words=4286 faces=11` for the frame, `faces=6` for the leaf,
+matching every prior finding in this entire investigation exactly).
+With entry (21)'s cull logic on: frame drops to exactly 5 faces. Leaf
+stays at 6 (unaffected -- it apparently doesn't hit these opcodes the
+same way, or its own checks always evaluate to keep). A 54% loss on
+the frame bank specifically, not a minor miscalibration.
+
+CONFIRMED QUADRANT-INVARIANT, which is the key that explains the live
+report: dumped cull decisions at two different camera quadrants
+(tile=31.95,8.98, yaw=85 -> quadrant=1/heading=0, yaw=150 ->
+quadrant=2/heading=6, the same two established in entries (19)/(20))
+and found the exact same 5 faces kept, byte-for-byte identical
+decisions, at both. Since the missing 6 faces never change, but WHICH
+of the 11 real faces a given viewing angle actually needs to look
+complete DOES change with angle, different views end up missing
+different critical faces -- reading as "faces disappear based on yaw
+quadrant" even though the underlying decision set is completely fixed,
+never actually recomputed per view. Screenshots at yaw=130 (small but
+plausible door), yaw=150 (door reduced to a bare sliver), and yaw=170
+(door effectively gone, though partly a legitimate FOV/perspective
+effect) made the visible degradation concrete, though the definitive
+evidence is the raw face-count numbers above, not the screenshots.
+
+SYSTEMATIC POLARITY SWEEP, to rule out (or find) a simple sign fix
+before escalating: added UW_DLIST_CULL_ORIGIN_SIGN (flips the sign of
+`origin = -m->t[axis]`) and independent per-axis UW_DLIST_CULL_FLIP_X/
+Y/Z (each inverts just that axis's keep/cull result), then scripted
+all 16 combinations (2 origin signs x 2^3 per-axis flips), rebuilding
+env vars each run, checking UW_DEBUG_DLIST's own face count each time.
+RESULT: every single one of the 16 combinations produces exactly
+faces=5. No variation whatsoever across the full combinatorial sweep.
+
+Verified this wasn't because the flips were silently no-ops: dumped
+UW_DEBUG_DLIST_CULLOP decisions for the plain baseline vs the fully-
+flipped case (origin sign + all three axes inverted) side by side for
+the same 12 real instruction sites -- 9 of 12 decisions genuinely
+differ between the two runs (confirmed the flip code is real and
+active), yet the total face count is identical (5) in both. This is
+decisive: a pure comparison-polarity bug CANNOT produce this pattern --
+flipping which side of a threshold test passes should change which
+faces survive AND, generically, how many, especially across 16
+independent combinations. Getting an invariant count despite genuinely
+different per-instruction outcomes points to something in the
+CONTROL-FLOW STRUCTURE built on top of the (probably correct) operand
+reverse-engineering from entry (21), not the comparison itself.
+
+ONE STRUCTURAL CLUE, not yet resolved: examining the raw `at` addresses
+of consecutive cull_side_z instructions found the first one's own skip
+target (`at=159`, displacement word value 30, target = at+4+30/2 = 178)
+lands EXACTLY on the address of the very next cull_side_z instruction
+(`at=178`). This is exactly the shape of an if/else-if CHAIN -- "if
+this half-space test fails, skip to the NEXT alternative test" -- not
+a set of independent per-face AND-gates each unconditionally dropping
+some fraction of the geometry. If that reading is right, this
+interpreter's blanket "cull_take -> skip past everything up to tgt"
+semantics (borrowed directly from skip_if_le/ge's own shape, which
+really is a simple binary skip) may be the wrong MODEL for this
+specific opcode family, independent of whatever the comparison itself
+should be -- a different, deeper fix than anything tried so far.
+
+DECISION: did not chase the control-flow question further this round.
+The real x86 handlers (16e7:3f7b cull_side_x, 16e7:3f92 cull_side_y,
+16e7:3fa9 cull_side_z) are not present in either this project's or
+uw1-decomp's own disassembly listings -- checked directly again (grep
+across docs/decompilation/listing/*.asm for all three addresses, zero
+hits, same result as entry (21)'s first check). Guessing at control-
+flow SHAPE without that access carries real risk of more wasted effort
+for no confirmed gain, the exact lesson entry (20)'s cross-product
+dead-end already taught once this session -- better to stop and report
+clearly than keep guessing blind a second time.
+
+REVERTED UW_DLIST_REAL_CULL_OPCODES to opt-in (confirmed back to the
+correct faces=11/faces=6 baseline with zero env vars set, standard
+run-regressions.sh: 6/6 clean). Left the real-opcode evaluation code
+and all its diagnostic env vars (UW_DEBUG_DLIST_CULLOP, UW_DLIST_
+CULL_ORIGIN_SIGN, UW_DLIST_CULL_FLIP_X/Y/Z, UW_DLIST_REAL_CULL_FLIP) in
+place rather than deleting them -- the operand-layout reverse-
+engineering (sign word at r[2], threshold at r[3], axis-to-m->t[]
+mapping) is still solid, verified evidence, only the branch-taking
+control-flow built on top of it needs more work. Ready to resume for
+whoever next has real disassembly access to confirm the actual
+handler's control-flow shape.
