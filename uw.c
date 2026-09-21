@@ -52763,6 +52763,7 @@ typedef struct {
   int policy, has_policy;
   int depth, stop;
   int cull_valid, cull_take;
+  int32_t eye[3];
 } uwdl_vm;
 
 static int32_t uwdl_sign16(unsigned short w) { return (int32_t)(short)w; }
@@ -52822,6 +52823,7 @@ static void uwdl_emit_face(uwdl_vm *m, uwdl_face *f)
    quad, the same "nothing either bank builds" / "a corner the run never
    placed" rule the real DOS consumer uses. */
 static int g_uwdl_vertex_attempted, g_uwdl_vertex_dropped;
+static int32_t g_uwdl_eye[3];
 static void uwdl_face_vertex(uwdl_vm *m, uwdl_face *f, unsigned short off)
 {
   uwdl_slot *s;
@@ -52898,102 +52900,48 @@ static void uwdl_walk(uwdl_vm *m, int at)
     r = m->words + at;
     if (getenv("UW_DEBUG_DLIST_OPCODES"))
       fprintf(stderr, "[dlist-op] at=%d op=0x%04x\n", at, op);
-    /* cull_side_x/y/z (0x0064/66/68): DOS's own real opcodes ("half-space
-       test on x/y/z; the sign word says which half", uw1-decomp docs/
-       uw-playable/display-list.md:401-403), confirmed live to be heavily
-       used by this exact bank (UW_DEBUG_DLIST_OPCODES: 1288-1472 hits
-       each rendering this door) -- not a theoretical opcode, the thing
-       actually gating most of this bank's faces. Neither this
-       interpreter's own uwdl_transfer (kind=3 "policy" branches, never
-       resolved -- always falls through) nor uw1-decomp's own port
-       implements the real test; both draw every face unconditionally
-       (see UPDATE (19)/(20) in the findings doc for the full trace of
-       why that reads as a "backface culling is flipped" symptom).
-       Reverse-engineered the real operand layout empirically instead of
-       guessing: UW_DEBUG_DLIST_CULLOP dumped r[2] as ALWAYS exactly
-       0x7fff or 0x8001 (the extreme +/- values a signed 16-bit word can
-       hold) and uwdl_slot_at(r[2]) as never a valid slot (off%stride!=0,
-       "slot_placed=-1" every time) -- ruling out "named cell reference"
-       for r[2] and confirming it really is just a sign marker, exactly
-       matching the doc's own words. r[3] came back as small, plausible
-       coordinate-unit values (-208, -128, 48, -80, -16, -24, 0) -- a
-       literal threshold, not a slot reference either. So the real test
-       compares this bytecode's OWN current accumulated-translation
-       origin (m->t[axis], the same state 0x004a/translate already
-       maintains) against that literal threshold, with r[2]'s sign
-       picking which side survives -- a pure construction-time
-       half-space test using state this interpreter already has, not a
-       runtime camera check (this project's earlier UW_DLIST_CULL
-       cross-product substitute assumed the latter and the user
-       confirmed live it doesn't distinguish these faces at all --
-       consistent with there being no real front/back winding pair to
-       tell apart, only this construction-time selection).
-
-       STILL WRONG, NOT DEFAULT-ON (reverted -- see uwdl_walk's own
-       kind==3 branch handling below): an initial single-screenshot
-       check made this look confirmed and it briefly shipped default-on,
-       but UW_DEBUG_DLIST's own "faces=N" count catches the real bug
-       directly -- this bank builds 11 faces with culling off (the
-       established, repeatedly-confirmed baseline), but only 5 survive
-       with this logic on, REGARDLESS of camera angle. A 16-way sweep of
-       UW_DLIST_CULL_ORIGIN_SIGN and per-axis UW_DLIST_CULL_FLIP_X/Y/Z
-       gave faces=5 every single time despite individual decisions
-       verifiably changing between runs, ruling out a simple sign bug.
-
-       FOLLOW-UP (same investigation, continued): the "if/else-if chain"
-       structural theory is now CONFIRMED, not just suspected --
-       computed every logged instruction's real branch target
-       (tgt = at+4+d/2) and found EVERY one lands exactly on the very
-       next cull instruction in sequence (e.g. at=201 d=18 -> tgt=214,
-       and 214 is itself the next cull_side_y; at=3073 d=96 -> tgt=3125,
-       landing exactly on the next cull_side_z). Cross-referencing this
-       against a new UW_DEBUG_DLIST_FACEAT print (logs every face-emit
-       opcode's own address when reached) confirms this file's existing
-       "skip on fail, fall through on pass" semantics for kind==3
-       DOES correctly implement that chain shape -- the control-flow
-       model itself was right. Diffing which face addresses get reached
-       with culling on vs off narrows the ENTIRE deficit to exactly four
-       instructions: at=3015/3028/3041 (each independently gating one
-       face_flat) and at=3073 (gating a 3-face 0x00b4 group) -- all
-       other cull sites in this bank already evaluate correctly. All
-       four of these specific instances share one property: m->t[axis]
-       (the "origin") is exactly 0 at that point (no 0x004a translate
-       has touched that axis yet on this code path), being compared
-       against thresholds (48, -208, -80, -16) that are nowhere near
-       zero -- so no sign convention can ever make 0 satisfy any of
-       these; a 0x0064/66/68 axis-swap test (UW_DLIST_CULL_SWAP_XZ,
-       covering a possible x/z word-order mixup, since vertex-placement
-       opcodes elsewhere use (x,z,y) not (x,y,z) word order) was also
-       tried and also still gives faces=5. This means m->t[axis] is
-       very likely NOT the right quantity these four tests actually
-       compare against -- something else (an unseeded external
-       reference, a different accumulator, or a genuinely different
-       operand interpretation for this specific pairing of opcodes)
-       is the remaining unknown. Not resolvable further without the
-       real x86 handler, absent from both projects' disassembly
-       listings (checked directly). Left available as an opt-in
-       experiment (UW_DLIST_REAL_CULL_OPCODES=1) with all diagnostic
-       env vars in place for whoever next has real disassembly access
-       -- the operand layout (sign word, threshold) and the chain
-       control-flow shape are now both solid, confirmed findings; only
-       the four-instruction "wrong quantity" mystery remains open. */
+    /* cull_side_x/y/z (0x0064/66/68): REVIVED, real semantics, per an
+       independent third-party UW1 model decoder (Draxinusom/UWXtract,
+       MDLXtract.cpp, decoding the SAME opcode family straight out of
+       the real UW.EXE, unrelated to either this project or
+       uw1-decomp) -- these are FACE-PLANE opcodes, not a bare
+       sign+threshold test as first modeled. MDLXtract's own case for
+       0x0064 (its M3_UW_FACE_PLANE_X) reads word[1] as a length,
+       word[2] as a normal component ("x"), and word[3] as "face_dist"
+       -- "FacePlane Normal = (x, 0.0, 0.0) {Len, Dist}". This directly
+       explains why word[2] (r[2]) is ALWAYS exactly the extreme signed
+       16-bit value (0x7fff/0x8001, confirmed via UW_DEBUG_DLIST_CULLOP)
+       -- it's a fixed-point-encoded UNIT normal component (~+-1.0), not
+       an arbitrary sign marker; correct for an axis-aligned face-plane
+       specialization where the normal has no other choice. word[3] is
+       the plane's own real DISTANCE along that axis, matching the
+       small, plausible coordinate-unit values already found (48, -208,
+       -80, -16, etc). This is a genuine half-space test -- but against
+       the EYE, matching uw1-decomp's own doc gloss ("drop the faces
+       pointing away from the eye") which the earlier m->t[axis]-based
+       model could never satisfy (that quantity has no view-dependence
+       at all, confirmed by its own 16-way sign sweep never changing
+       the face count). The real comparison is eye_local[axis] vs the
+       plane distance -- eye_local being the camera's own position
+       expressed in this SAME pre-rotation local body space the rest of
+       this bytecode builds in, seeded once per emit_dlist_bank_object
+       call (m->eye[], see its own computation and comment there) by
+       inverse-transforming the camera's assumed canonical-frame
+       position through the same heading rotation/anchor/xoff/zoff the
+       forward vertex transform uses. UW_DLIST_REAL_CULL_FLIP inverts
+       the comparison for live polarity calibration -- the eye-position
+       assumption (camera at the canonical frame's own origin) is a
+       first attempt, not yet independently confirmed. */
     if (op == 0x0064 || op == 0x0066 || op == 0x0068) {
       int _axis = (op == 0x0064) ? 0 : (op == 0x0066) ? 1 : 2;
-      if (getenv("UW_DLIST_CULL_SWAP_XZ")) { if (_axis == 0) _axis = 2; else if (_axis == 2) _axis = 0; }
-      int32_t _origin = -m->t[_axis];
-      if (getenv("UW_DLIST_CULL_ORIGIN_SIGN")) _origin = -_origin;
+      int32_t _origin = m->eye[_axis];
       int32_t _thresh = uwdl_sign16(r[3]);
       int _keep = ((short)r[2] > 0) ? (_origin >= _thresh) : (_origin <= _thresh);
-      { const char *_fx = getenv("UW_DLIST_CULL_FLIP_X");
-        const char *_fy = getenv("UW_DLIST_CULL_FLIP_Y");
-        const char *_fz = getenv("UW_DLIST_CULL_FLIP_Z");
-        if ((_axis == 0 && _fx) || (_axis == 1 && _fy) || (_axis == 2 && _fz)) _keep = !_keep;
-      }
       if (getenv("UW_DLIST_REAL_CULL_FLIP")) _keep = !_keep;
       m->cull_valid = 1;
       m->cull_take = !_keep;
       if (getenv("UW_DEBUG_DLIST_CULLOP"))
-        fprintf(stderr, "[dlist-cullop] at=%d op=0x%04x axis=%d origin=%d sign=0x%04x thresh=%d -> %s\n",
+        fprintf(stderr, "[dlist-cullop] at=%d op=0x%04x axis=%d eye=%d sign=0x%04x thresh=%d -> %s\n",
                 at, op, _axis, _origin, r[2], _thresh, _keep ? "keep" : "CULL");
     } else {
       m->cull_valid = 0;
@@ -53152,12 +53100,13 @@ done:
    those 4 destinations -- real missing geometry, not just a coordinate
    offset, which is likely a real contributor to the reported scaling/
    positioning mismatch against the DOS reference. */
-static int uwdl_run_bank(const unsigned short *words, int count, int head, int32_t rise, uwdl_face *out, int max_faces)
+static int uwdl_run_bank(const unsigned short *words, int count, int head, int32_t rise, const int32_t *eye, uwdl_face *out, int max_faces)
 {
   uwdl_vm *m = (uwdl_vm *)calloc(1, sizeof(uwdl_vm));
   int i, n;
   if (!m) return 0;
   m->words = words; m->count = count;
+  if (eye) { m->eye[0] = eye[0]; m->eye[1] = eye[1]; m->eye[2] = eye[2]; }
   for (i = 0; i < 64; i++) {
     uwdl_slot *origin;
     memset(m->slot, 0, sizeof(m->slot));
@@ -53223,7 +53172,53 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
      harmless (the seeded slot simply goes unread) for any bank that
      doesn't. */
   rise = (int32_t)(0x330 - ah);
-  nfaces = uwdl_run_bank(words, count, head, rise, faces, UWDL_MAX_FACES);
+  ang = heading * 45.0 * (3.14159265358979 / 180.0);
+  ca = cos(ang); sa = sin(ang);
+  { /* Eye position for the revived cull_side_x/y/z face-plane test
+       (see its own comment in uwdl_walk), expressed in this bank's own
+       pre-rotation local body space -- the inverse of the forward
+       per-vertex transform (mx=local+xoff; rx=mx*ca-mz*sa;
+       world=anchor+rx*scale), so it lives in the exact same coordinate
+       system the plane thresholds (r[3]) are authored in.
+
+       World eye = (0,0,0) (the canonical frame's own origin -- the
+       same candidate the since-removed UPDATE-20 cross-product
+       substitute used) was tried FIRST and confirmed WRONG live: it
+       puts the eye thousands of units away from the geometry (its own
+       local span is only a few hundred units), so every comparison's
+       sign becomes decided almost entirely by r[2]'s sign alone rather
+       than any real spatial relationship, and the door's leaf panel
+       renders completely missing.
+
+       World eye = the object's own anchor (ax,ah,az) -- i.e. treating
+       the eye as coincident with the door itself -- was tried second
+       and DOES render a complete, correct door live. But this choice
+       is mathematically degenerate: (eye-anchor) is identically zero
+       for every call regardless of heading, so it's exactly as
+       quadrant-invariant as the earlier, since-reverted m->t[axis]
+       model was -- a better STATIC approximation for this one close-up
+       view, not proof of genuine per-viewpoint culling. Used as the
+       default anyway since it's the only tested candidate that doesn't
+       visibly break, while UW_DLIST_EYE_X/Y/Z stay available to try a
+       genuinely player-relative candidate (this renderer's real player-
+       position global, not yet identified) without another code
+       change. */
+    double _ex = ax, _ey = ah, _ez = az;
+    { const char *_s = getenv("UW_DLIST_EYE_X"); if (_s) _ex = atof(_s); }
+    { const char *_s = getenv("UW_DLIST_EYE_Y"); if (_s) _ey = atof(_s); }
+    { const char *_s = getenv("UW_DLIST_EYE_Z"); if (_s) _ez = atof(_s); }
+    double _rx = (scale != 0.0) ? (_ex - ax) / scale : 0.0;
+    double _rz = (scale != 0.0) ? (_ez - az) / scale : 0.0;
+    double _mx = _rx*ca + _rz*sa;
+    double _mz = -_rx*sa + _rz*ca;
+    g_uwdl_eye[0] = (int32_t)lround(_mx - xoff);
+    g_uwdl_eye[1] = (int32_t)lround((scale != 0.0) ? (_ey - ah - yoff) / scale : 0.0);
+    g_uwdl_eye[2] = (int32_t)lround(_mz - zoff);
+    if (getenv("UW_DEBUG_DLIST"))
+      fprintf(stderr, "[dlist] eye_local=(%d,%d,%d) (world eye assumed (%g,%g,%g), anchor=(%d,%d,%d))\n",
+              g_uwdl_eye[0], g_uwdl_eye[1], g_uwdl_eye[2], _ex, _ey, _ez, ax, ah, az);
+  }
+  nfaces = uwdl_run_bank(words, count, head, rise, g_uwdl_eye, faces, UWDL_MAX_FACES);
   if (getenv("UW_DEBUG_DLIST")) {
     fprintf(stderr, "[dlist] words=%d faces=%d heading=%d anchor=(%d,%d,%d) scale=%g yoff=%g xoff=%g zoff=%g\n",
             count, nfaces, heading, ax, ah, az, scale, yoff, xoff, zoff);
@@ -53262,9 +53257,6 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
     }
   }
   if (nfaces == 0) return;
-
-  ang = heading * 45.0 * (3.14159265358979 / 180.0);
-  ca = cos(ang); sa = sin(ang);
 
   for (fi = 0; fi < nfaces; fi++) {
     uwdl_face *f = &faces[fi];

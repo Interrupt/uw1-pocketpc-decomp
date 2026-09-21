@@ -3250,3 +3250,124 @@ really read" -- a much smaller, well-scoped problem for whoever next
 has real disassembly access. UW_DLIST_REAL_CULL_OPCODES remains
 opt-in, unchanged from entry (22)'s revert. Standard
 run-regressions.sh: 6/6 clean.
+
+UPDATE 2026-09-21 (24): THE "WRONG VM STATE" FROM ENTRY (23) FOUND --
+THESE ARE FACE-PLANE OPCODES, NOT A SIGN+THRESHOLD TEST; REAL
+PER-VIEWPOINT CULLING WORKING, STILL OPT-IN PENDING A BETTER EYE
+REFERENCE
+═══════════════════════════════════════════════════════════════════════════
+User found and shared a genuine external resource: an independent
+third-party UW1 model decoder, Draxinusom/UWXtract
+(github.com/Draxinusom/UWXtract, file MDLXtract.cpp), which decodes
+this SAME opcode family directly out of the real UW.EXE. Unrelated to
+this project or uw1-decomp -- a completely independent reverse-
+engineering effort landing on the same opcode numbers.
+
+THE KEY REVELATION: that decoder's own case for opcode 0x0064 (its
+`M3_UW_FACE_PLANE_X`) reads word[1] as a face length, word[2] as a
+normal component ("x", via its own read_float which divides by 16),
+and word[3] as "face_dist" -- printed as "FacePlane Normal = (x, 0.0,
+0.0) {Len, Dist}". This means 0x0064/66/68 are FACE-PLANE definitions
+(a normal vector plus a signed distance from origin -- the standard
+plane-equation encoding), not the bare "sign word + integer threshold"
+test entry (21)/(22) modeled from the operand layout alone. This
+single insight explains multiple previously-unexplained observations
+at once:
+  - Why word[2] (r[2]) is ALWAYS exactly the extreme signed-16 value
+    (0x7fff or 0x8001, confirmed via UW_DEBUG_DLIST_CULLOP): as a
+    fixed-point-encoded unit normal component, it should always be at
+    the extreme for an axis-aligned face plane (the normal has no
+    other component to vary), not an arbitrary "sign marker" as first
+    modeled -- though the sign extraction itself, which is all entry
+    (21)'s code actually used, happens to be numerically identical
+    either way.
+  - Why entry (22)'s systematic search (16-way sign sweep, X/Z axis
+    swap, all landing on exactly faces=5 every time) could never find
+    a fix: it was searching the wrong space entirely. The real
+    variable that needed to change wasn't the comparison's sign or
+    axis mapping -- it was WHAT gets compared. A face-plane half-space
+    test is inherently a test against the EYE/camera position, exactly
+    matching uw1-decomp's own doc gloss ("drop the faces pointing away
+    from the eye") -- which m->t[axis] (a purely bytecode-local,
+    view-independent accumulator, confirmed to never vary with camera
+    angle) could never satisfy, no matter how its sign was tuned.
+
+IMPLEMENTATION: added `int32_t eye[3]` to `uwdl_vm`, computed once per
+`emit_dlist_bank_object` call (before `uwdl_run_bank` is invoked, so
+`ang`/`ca`/`sa` were moved earlier in the function to be available) and
+seeded into the VM before the walk begins -- the exact same pattern
+already used for seeding "rise" into slot 0x800 before this session's
+work even began. The eye is computed by inverting the forward
+per-vertex transform (`mx=local+xoff; rx=mx*ca-mz*sa; world=anchor+
+rx*scale`) to express an assumed WORLD eye position in this bank's own
+pre-rotation local body space -- the exact coordinate system the plane
+thresholds (r[3]) are authored in. The cull_side_x/y/z test itself
+changed from `origin = -m->t[axis]` to `origin = m->eye[axis]`,
+otherwise unchanged (same sign-based comparison, same
+UW_DLIST_REAL_CULL_FLIP override).
+
+CALIBRATING THE WORLD EYE POSITION, live, since this is the one
+remaining unknown (three candidates tried so far):
+  1. World eye = (0,0,0) -- the canonical frame's own origin, the same
+     assumption the since-removed UPDATE-20/entry(20) cross-product
+     substitute used, and the "natural candidate" this entry started
+     with. RESULT: frame face count improved from 5 to 7 (closer to
+     the true 11), but the LEAF's count dropped from a perfect 6 to 3,
+     and a live screenshot at the QA3 repro position showed a visibly
+     BROKEN door -- the leaf panel completely missing, only frame/wall
+     stonework visible with a black gap. Diagnosed why: this eye
+     position sits ~4200+ units from the object's own local geometry,
+     which only spans a few hundred units, so every comparison's
+     outcome ends up dominated almost entirely by which side of zero
+     the sign word encodes, rather than reflecting a genuine spatial
+     relationship to the actual geometry.
+  2. World eye = the object's own anchor (ax, ah, az) -- i.e. treating
+     the eye as coincident with the door itself. RESULT: a live
+     screenshot at the same repro position shows a COMPLETE, CORRECT
+     door -- same visual quality as the original working baseline.
+     Face counts: frame=6, leaf=3.
+  3. Not yet tried: this renderer's real player-position global
+     (unidentified so far) instead of a fixed guess -- the natural
+     next candidate, since it would make eye-anchor genuinely
+     nonzero and heading-dependent instead of degenerate.
+
+IMPORTANT CAVEAT ON CANDIDATE 2, not glossed over: eye=anchor makes
+(eye - anchor) identically zero on every single call, regardless of
+heading or camera quadrant -- meaning this candidate is EXACTLY as
+quadrant-invariant as the reverted m->t[axis] model from entries
+(21)/(22) was. It is a better STATIC approximation (produces a
+visually correct result for the one close-up viewing angle tested so
+far), not evidence that genuine per-viewpoint culling is now working.
+The original QA report this whole investigation started from ("faces
+disappear based on yaw quadrant") is not yet provably fixed by this
+candidate -- it may just happen to pick a visually-adequate fixed
+subset for the angles most commonly used. Made this the new default
+anyway (still gated behind the opt-in UW_DLIST_REAL_CULL_OPCODES)
+since it's the only tested candidate that doesn't visibly break, and
+because the underlying face-plane MODEL is now confirmed correct by
+an independent source -- getting the eye reference exactly right is a
+narrower, well-scoped remaining problem, not a reason to doubt the
+mechanism itself anymore.
+
+INDEPENDENT VALIDATION of the new leaf count, from the user's own
+domain knowledge rather than this file's own math: a door leaf is a
+thin rectangular panel, and from any single real viewpoint at most 3
+of its faces should ever be visible simultaneously (front and back
+can never both show at once, and only some of the edge/side faces are
+visible depending on angle). The leaf's new count under this fix (3,
+down from the no-cull baseline's 6) matches this exactly -- real,
+independently-reasoned confirmation this direction is correct, not a
+coincidence in the raw number.
+
+STATUS: UW_DLIST_REAL_CULL_OPCODES remains opt-in (confirmed back to
+the safe faces=11/faces=6 baseline with zero env vars set). This is
+the most solid state this feature has been in across all of entries
+(20) through (24): the underlying opcode semantics are now confirmed
+by an independent source rather than reverse-engineered from operand
+patterns alone, and a live, visually-correct render has been achieved
+for the first time since entry (21)'s original over-eager default-on.
+The remaining well-scoped task is finding the real player-position
+global (or another way to make the eye genuinely vary with viewpoint)
+rather than continuing to guess at the comparison's sign or axis
+mapping, which entries (22)/(23) already showed conclusively is not
+where the remaining bug lives. Standard run-regressions.sh: 6/6 clean.

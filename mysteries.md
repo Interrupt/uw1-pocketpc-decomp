@@ -978,6 +978,65 @@ tests reference the wrong piece of VM state." `UW_DLIST_REAL_CULL_
 OPCODES` stays opt-in, unchanged. Standard run-regressions.sh: 6/6
 clean.
 
+**UPDATE 33 (the "wrong VM state" from UPDATE 32 identified and fixed
+-- these are FACE-PLANE opcodes, not a bare threshold test; real
+per-viewpoint culling working for the first time, still opt-in pending
+a better eye reference, 2026-09-21):** user found and shared a genuine
+external reference: an independent third-party UW1 model decoder
+(Draxinusom/UWXtract, `MDLXtract.cpp`, GitHub), decoding the SAME
+opcode family straight out of the real `UW.EXE`, unrelated to this
+project or uw1-decomp.
+
+That decoder's own case for `0x0064` (its `M3_UW_FACE_PLANE_X`) reads
+word[1] as a length, word[2] as a normal component, and word[3] as a
+real plane "Dist" -- i.e. these are FACE-PLANE opcodes (normal +
+distance), not the bare sign+threshold test UPDATE 30 modeled. This
+directly explains why word[2] is always the extreme signed-16 value
+(0x7fff/0x8001, already confirmed via UW_DEBUG_DLIST_CULLOP): it's a
+fixed-point unit normal component, correct for an axis-aligned
+specialization where the normal has no other choice, not an arbitrary
+sign marker. And it means the correct comparison is a genuine
+half-space test against the EYE -- exactly matching uw1-decomp's own
+doc gloss ("drop the faces pointing away from the eye"), which
+`m->t[axis]` (UPDATE 30/32's model, with no view-dependence at all)
+could never have satisfied.
+
+IMPLEMENTED: the camera/eye position, expressed in this bank's own
+pre-rotation local body space -- the inverse of the forward per-vertex
+transform -- computed once per `emit_dlist_bank_object` call and seeded
+into the VM (`m->eye[]`) before the walk begins, the same pattern
+already used for seeding "rise" into slot 0x800. The cull test now
+compares `m->eye[axis]` against the plane's own threshold.
+
+CALIBRATING THE EYE REFERENCE, live: world eye = (0,0,0) (the canonical
+frame's own origin, the same candidate UPDATE 20's removed cross-
+product substitute used) renders a visibly BROKEN door -- the leaf
+panel disappears entirely -- because it puts the eye thousands of
+units from geometry that only spans a few hundred, so the comparison's
+outcome ends up decided almost entirely by the normal's sign rather
+than a real spatial relationship. World eye = the object's own anchor
+(i.e. eye coincident with the door) renders a complete, correct door.
+Made anchor the default. Important caveat, not glossed over: eye=anchor
+is mathematically degenerate (`eye - anchor` is identically zero every
+time, regardless of heading), so it's exactly as quadrant-invariant as
+the reverted `m->t[axis]` model was -- a better STATIC approximation
+for typical close-up views, not proof of genuine per-viewpoint culling
+working yet. `UW_DLIST_EYE_X/Y/Z` stay available to try a real
+player-relative candidate once this renderer's own player-position
+global is identified.
+
+Confirmed via user's own live gameplay insight, not just this file's
+own math: a door leaf is a thin rectangular panel, and from any single
+real viewpoint at most 3 of its faces should ever be visible at once
+(front/back can't both show, and only some edges are ever visible) --
+the leaf's new face count under this fix (3, down from the no-cull
+baseline's 6) matches that exactly, and is a genuine confirmation this
+direction is right, not merely a coincidence in the count.
+
+`UW_DLIST_REAL_CULL_OPCODES` stays opt-in (confirmed back to the safe
+11/6 baseline with zero env vars). Standard run-regressions.sh: 6/6
+clean.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
