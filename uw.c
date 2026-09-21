@@ -55341,17 +55341,18 @@ LAB_00061d34:
       if (getenv("UW_DOOR_ANIM_FRAMES")) {
         emit_anim_object_frames(uVar27 & 7, param_1);
       }
-      /* TEST CALL for the ported generic display-list interpreter above
-         (UW_DLIST_DOOR=1, off by default): draws the real bank-0x61
-         doorway-frame geometry at this door's own anchor, the same real
-         3D-model capability catalog 1 above needed and never had.
-         scale/yoff start at DFRAME.E's own calibrated values (same
-         physical object, architectural/world-unit family per
-         g_model_map's own comment) -- not yet independently verified
-         for this bank's own coordinate convention; UW_DLIST_SCALE/
-         UW_DLIST_YOFF override for tuning. This is a side-by-side check
-         against DFRAME.E, not a replacement for it. */
-      if (getenv("UW_DLIST_DOOR")) {
+      /* The ported generic display-list interpreter above draws the
+         real bank-0x61 doorway-frame (+ bank 0x6e leaf) geometry at
+         this door's own anchor, the same real 3D-model capability
+         catalog 1 above needed and never had. Was opt-in (UW_DLIST_
+         DOOR=1) during calibration; now default-on like UW_DLIST_
+         DOOR_LEAF/_TEXTURE above, for the same reason -- the mechanism
+         is confirmed working (see mysteries.md's dated UPDATEs), not
+         still being calibrated. Same var still works as an explicit
+         opt-out (=0), matching this file's UW_DISABLE_*-style
+         convention. UW_DLIST_SCALE/_YOFF/_XOFF/_ZOFF still override
+         for tuning. */
+      { const char *_s = getenv("UW_DLIST_DOOR"); if (!_s || atoi(_s) != 0) {
         /* yoff=0: DOS's own real formula (uw1_view.c:2684/2805) has NO
            extra vertical offset at all (`o->p[j][2] = org[2] + y`), and
            DFRAME.E's own -100 was confirmed wrong for this bank
@@ -55634,7 +55635,7 @@ LAB_00061d34:
            a same-position diff (see the "these look like pixel
            differences on the door leaf" finding). */
         if (getenv("UW_DLIST_DOOR_ONLY")) return;
-      }
+      } }
       goto LAB_emit_mesh_sprite_quad;
     }
     /* DAT_00086c80 (the real per-sign-variant -> billboard-catalog
