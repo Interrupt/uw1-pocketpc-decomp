@@ -929,6 +929,55 @@ still solid, verified evidence even though the branch-taking semantics
 built on top of it aren't yet right. Standard run-regressions.sh:
 6/6 clean.
 
+**UPDATE 32 (follow-up: confirmed the if/else-if chain theory is right;
+narrowed the whole deficit to 4 specific instructions where m->t[axis]
+is provably the wrong quantity, 2026-09-21):** user: "Resume, keep
+looking into how to revive the control flow."
+
+CONFIRMED THE CHAIN THEORY, not just suspected: computed every logged
+instruction's real branch target directly (`tgt = at+4+d/2`, using the
+already-known `consumed=3` for these opcodes) and found every single
+one lands EXACTLY on the address of the next cull instruction in
+sequence (e.g. `at=201 d=18 -> tgt=214`, and 214 IS the next
+`cull_side_y`; `at=3073 d=96 -> tgt=3125`, landing exactly on the next
+`cull_side_z`). This is decisive evidence of an if/else-if chain, not a
+guess.
+
+Added `UW_DEBUG_DLIST_FACEAT` (logs the address of every face-emit
+opcode actually reached) and used it to check whether this file's
+EXISTING "skip on fail, fall through on pass" semantics for `kind==3`
+already implements that chain shape correctly. It does -- diffing
+which face addresses get reached with culling on vs off narrows the
+ENTIRE 6-face deficit to exactly four specific instructions:
+`at=3015`/`3028`/`3041` (each independently gating one `face_flat`)
+and `at=3073` (gating a 3-face `0x00b4` group). Every other cull site
+in this bank already evaluates correctly -- this was a much smaller,
+more precise problem than "over-culls everything."
+
+All four bad instances share one property: `m->t[axis]` ("origin") is
+exactly 0 at that point in the walk (no `0x004a translate` has touched
+that axis yet on this code path), compared against thresholds (48,
+-208, -80, -16) nowhere near zero -- no sign convention can ever make
+0 satisfy any of these, which is exactly why the 16-way sign sweep from
+UPDATE 31 could never have found a fix here. Tried one more targeted
+hypothesis a sign-only sweep couldn't have caught: an X/Z axis-swap
+(`UW_DLIST_CULL_SWAP_XZ`, since vertex-placement opcodes elsewhere use
+word order x,z,y rather than x,y,z) -- also still gives `faces=5`.
+
+CONCLUSION: `m->t[axis]` is very likely not the right quantity these
+four specific tests compare against -- some other accumulator, an
+unseeded external reference, or a genuinely different operand reading
+for this exact opcode pairing is the remaining unknown. Not resolvable
+further without the real x86 handler, which is absent from both this
+project's and uw1-decomp's own disassembly listings (checked directly
+again). Real, meaningful progress though: the chain control-flow shape
+and the operand layout (sign word, threshold) are now both solid,
+confirmed findings, not guesses -- the remaining mystery is narrowed
+from "the whole mechanism might be wrong" down to "these four specific
+tests reference the wrong piece of VM state." `UW_DLIST_REAL_CULL_
+OPCODES` stays opt-in, unchanged. Standard run-regressions.sh: 6/6
+clean.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

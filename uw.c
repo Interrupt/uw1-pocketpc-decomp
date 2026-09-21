@@ -52935,34 +52935,51 @@ static void uwdl_walk(uwdl_vm *m, int at)
        but UW_DEBUG_DLIST's own "faces=N" count catches the real bug
        directly -- this bank builds 11 faces with culling off (the
        established, repeatedly-confirmed baseline), but only 5 survive
-       with this logic on, REGARDLESS of camera angle (same 5 kept at
-       every quadrant tested) -- different views need different ones of
-       the 6 permanently-missing faces, which is what a later live QA
-       report ("faces disappear based on yaw quadrant") actually was.
-       Systematically swept all 16 combinations of UW_DLIST_CULL_
-       ORIGIN_SIGN and per-axis UW_DLIST_CULL_FLIP_X/Y/Z (below) --
-       EVERY combination gives exactly faces=5, even though the
-       individual per-instruction keep/cull decisions verifiably DO
-       change between combinations (9 of 12 decisions differ between
-       the baseline and the fully-flipped case, confirmed via
-       UW_DEBUG_DLIST_CULLOP) -- ruling out a simple sign/polarity bug
-       entirely. One structural clue worth keeping: consecutive
-       cull_side_z instructions were found back-to-back with the first
-       one's own skip target landing EXACTLY on the second one's own
-       address (at=159, d=30 -> tgt=178, itself another cull_side_z at
-       178) -- suggestive of an if/else-if CHAIN of mutually exclusive
-       alternatives rather than independent per-face AND-gates, which
-       would mean this file's "skip = exclude entirely" semantics for
-       kind=3 might be structurally wrong for this opcode family even
-       with a correct comparison. Not chased further: the real x86
-       handler isn't in either project's disassembly listings (checked
-       directly, see the findings doc's dated entry), and guessing
-       control-flow SHAPE (not just comparison polarity) without it
-       risks more wasted effort for no confirmed gain. Left available as
-       an opt-in experiment (UW_DLIST_REAL_CULL_OPCODES=1) for whoever
-       picks this up next with real disassembly access. */
+       with this logic on, REGARDLESS of camera angle. A 16-way sweep of
+       UW_DLIST_CULL_ORIGIN_SIGN and per-axis UW_DLIST_CULL_FLIP_X/Y/Z
+       gave faces=5 every single time despite individual decisions
+       verifiably changing between runs, ruling out a simple sign bug.
+
+       FOLLOW-UP (same investigation, continued): the "if/else-if chain"
+       structural theory is now CONFIRMED, not just suspected --
+       computed every logged instruction's real branch target
+       (tgt = at+4+d/2) and found EVERY one lands exactly on the very
+       next cull instruction in sequence (e.g. at=201 d=18 -> tgt=214,
+       and 214 is itself the next cull_side_y; at=3073 d=96 -> tgt=3125,
+       landing exactly on the next cull_side_z). Cross-referencing this
+       against a new UW_DEBUG_DLIST_FACEAT print (logs every face-emit
+       opcode's own address when reached) confirms this file's existing
+       "skip on fail, fall through on pass" semantics for kind==3
+       DOES correctly implement that chain shape -- the control-flow
+       model itself was right. Diffing which face addresses get reached
+       with culling on vs off narrows the ENTIRE deficit to exactly four
+       instructions: at=3015/3028/3041 (each independently gating one
+       face_flat) and at=3073 (gating a 3-face 0x00b4 group) -- all
+       other cull sites in this bank already evaluate correctly. All
+       four of these specific instances share one property: m->t[axis]
+       (the "origin") is exactly 0 at that point (no 0x004a translate
+       has touched that axis yet on this code path), being compared
+       against thresholds (48, -208, -80, -16) that are nowhere near
+       zero -- so no sign convention can ever make 0 satisfy any of
+       these; a 0x0064/66/68 axis-swap test (UW_DLIST_CULL_SWAP_XZ,
+       covering a possible x/z word-order mixup, since vertex-placement
+       opcodes elsewhere use (x,z,y) not (x,y,z) word order) was also
+       tried and also still gives faces=5. This means m->t[axis] is
+       very likely NOT the right quantity these four tests actually
+       compare against -- something else (an unseeded external
+       reference, a different accumulator, or a genuinely different
+       operand interpretation for this specific pairing of opcodes)
+       is the remaining unknown. Not resolvable further without the
+       real x86 handler, absent from both projects' disassembly
+       listings (checked directly). Left available as an opt-in
+       experiment (UW_DLIST_REAL_CULL_OPCODES=1) with all diagnostic
+       env vars in place for whoever next has real disassembly access
+       -- the operand layout (sign word, threshold) and the chain
+       control-flow shape are now both solid, confirmed findings; only
+       the four-instruction "wrong quantity" mystery remains open. */
     if (op == 0x0064 || op == 0x0066 || op == 0x0068) {
       int _axis = (op == 0x0064) ? 0 : (op == 0x0066) ? 1 : 2;
+      if (getenv("UW_DLIST_CULL_SWAP_XZ")) { if (_axis == 0) _axis = 2; else if (_axis == 2) _axis = 0; }
       int32_t _origin = -m->t[_axis];
       if (getenv("UW_DLIST_CULL_ORIGIN_SIGN")) _origin = -_origin;
       int32_t _thresh = uwdl_sign16(r[3]);
@@ -53028,6 +53045,8 @@ static void uwdl_walk(uwdl_vm *m, int at)
     case 0x007e: {
       uwdl_face f; f.count = 0; f.has_uv = 0;
       { int count = r[1]; for (k = 0; k < count && 2+k < n; k++) uwdl_face_vertex(m, &f, r[2+k]); }
+      if (getenv("UW_DEBUG_DLIST_FACEAT"))
+        fprintf(stderr, "[dlist-faceat] at=%d op=0x007e count=%d\n", at, f.count);
       uwdl_emit_face(m, &f);
       break;
     }
@@ -53037,6 +53056,8 @@ static void uwdl_walk(uwdl_vm *m, int at)
           uwdl_face_vertex(m, &f, r[3+k*3]);
           if (f.count > 0) { f.u[f.count-1] = uwdl_sign16(r[4+k*3]); f.v[f.count-1] = uwdl_sign16(r[5+k*3]); }
         } }
+      if (getenv("UW_DEBUG_DLIST_FACEAT"))
+        fprintf(stderr, "[dlist-faceat] at=%d op=0x00a8 count=%d\n", at, f.count);
       uwdl_emit_face(m, &f);
       break;
     }
@@ -53046,6 +53067,8 @@ static void uwdl_walk(uwdl_vm *m, int at)
           uwdl_face_vertex(m, &f, r[2+k*3]);
           if (f.count > 0) { f.u[f.count-1] = uwdl_sign16(r[3+k*3]); f.v[f.count-1] = uwdl_sign16(r[4+k*3]); }
         } }
+      if (getenv("UW_DEBUG_DLIST_FACEAT"))
+        fprintf(stderr, "[dlist-faceat] at=%d op=0x%04x count=%d\n", at, op, f.count);
       uwdl_emit_face(m, &f);
       break;
     }

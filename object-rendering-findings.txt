@@ -3136,3 +3136,117 @@ mapping) is still solid, verified evidence, only the branch-taking
 control-flow built on top of it needs more work. Ready to resume for
 whoever next has real disassembly access to confirm the actual
 handler's control-flow shape.
+
+UPDATE 2026-09-21 (23): FOLLOW-UP -- CONFIRMED THE IF/ELSE-IF CHAIN
+THEORY DIRECTLY; NARROWED THE ENTIRE 6-FACE DEFICIT TO 4 SPECIFIC
+INSTRUCTIONS WHERE m->t[axis] IS PROVABLY THE WRONG QUANTITY
+═══════════════════════════════════════════════════════════════════════════
+User: "Resume, keep looking into how to revive the control flow."
+
+STEP 1 -- CONFIRM THE CHAIN THEORY WITH REAL NUMBERS, not just a single
+suggestive coincidence. Entry (22) noted one pair (at=159 -> tgt=178,
+itself another cull_side_z) as a hint. Computed the real branch target
+for every logged instruction directly from its own displacement word
+(consumed=3 already established in entry (21), so tgt = at+4+d/2,
+where d is the signed word at r[1]):
+  at=159  d=30 -> tgt=178   (178 IS the next cull_side_z)
+  at=178  d=30 -> tgt=197   (197 is a skip_if_le -- door open/shut test, end of this local chain)
+  at=201  d=18 -> tgt=214   (214 IS the next cull_side_y)
+  at=214  d=18 -> tgt=227   (227 IS the next cull_side_x)
+  at=227  d=18 -> tgt=240   (240 IS the next cull_side_y)
+  at=240  d=18 -> tgt=253   (chain end -- 253 not a cull instruction)
+  at=3015 d=18 -> tgt=3028  (3028 IS the next cull_side_y)
+  at=3028 d=18 -> tgt=3041  (3041 IS the next cull_side_x)
+  at=3041 d=18 -> tgt=3054  (3054 IS the next cull_side_y)
+  at=3054 d=30 -> tgt=3073  (3073 IS the next cull_side_z)
+  at=3073 d=96 -> tgt=3125  (3125 IS the next cull_side_z)
+  at=3125 d=96 -> tgt=3177  (chain end)
+EVERY logged instruction's own skip target lands EXACTLY on the next
+cull instruction in the sequence (with the two natural exceptions being
+each group's own final instruction, whose target is genuinely something
+else -- a skip_if_le or plain non-cull geometry). This is decisive,
+not circumstantial: an if/else-if chain of half-space tests, each one
+independently gating its own immediately-following geometry, falling
+through to the next test whether it passed or failed (since passing
+geometry has no explicit "jump past the rest of the chain" -- it just
+runs into the next test naturally, which will typically fail on a
+complementary/non-overlapping range).
+
+STEP 2 -- CHECK WHETHER THIS FILE'S EXISTING CONTROL-FLOW ALREADY
+IMPLEMENTS THAT SHAPE CORRECTLY, using a NEW diagnostic
+(UW_DEBUG_DLIST_FACEAT, added this entry): logs the `at` address of
+every face-emit opcode (0x007e/0x00a8/0x00b4/0x00ce) actually reached,
+right where each one calls uwdl_emit_face. Ran with culling off (all
+17 face-emit sites reached, deduping to the known-correct 11 unique
+faces) and with culling on (11 sites reached, deduping to 5). Diffing
+the reached-site sets directly:
+  off: {163,182,208,221,234,247,3022,3035,3048,3061,3067,3080,3097,3111,3132,3149,3163}
+  on:  {163,182,208,221,234,247,          3061,3067,          3132,3149,3163}
+  MISSING when culling on: {3022, 3035, 3048, 3080, 3097, 3111}
+This confirms this interpreter's existing kind==3 "skip on fail, fall
+through on pass" semantics DOES correctly implement the chain shape
+from step 1 -- the control-flow MODEL itself is right, contrary to
+entry (22)'s working theory that it might be structurally wrong. The
+real deficit is much narrower than previously thought: cross-
+referencing the missing addresses against their own gating cull
+instruction identifies exactly FOUR bad test instances, not a
+systemic problem across the whole bank:
+  - at=3015 (gates 3022's face_flat directly)
+  - at=3028 (gates 3035's face_flat directly)
+  - at=3041 (gates 3048's face_flat directly)
+  - at=3073 (gates the entire 3080/3097/3111 group of three 0x00b4 faces at once, via its own skip target landing past all three straight to 3125)
+Every OTHER cull site in this bank (159, 178, 201, 214, 227, 240,
+3054, 3125) already evaluates correctly and was already confirmed
+correct before this entry.
+
+STEP 3 -- WHY THESE FOUR SPECIFICALLY: all four share one property,
+confirmed directly from the existing UW_DEBUG_DLIST_CULLOP dump:
+`origin` (= -m->t[axis]) is exactly 0 at each of these four points in
+the walk. This makes sense mechanically -- m->t[] resets to (0,0,0) at
+the start of each policy pass and is only ever changed by an executed
+`0x004a translate`; no translate touching the relevant axis happens on
+the code path reaching these four instructions. Their thresholds are
+48, -208, -80, and -16 respectively -- none anywhere near zero. No
+sign convention can make `0 >= 48`, `0 <= -208`, `0 <= -80`, or
+`0 <= -16` true; this is exactly why entry (22)'s systematic 16-way
+sign/axis-flip sweep could never have found a fix here, no matter how
+long it ran -- the magnitude relationship itself is wrong, not just
+the comparison's direction. This also explains why 159/178 (also
+origin=0) were unaffected: their own thresholds (0, -8) sit close
+enough to 0 that ordinary sign choices can satisfy them; 3015/3028/
+3041/3073's thresholds are simply too far from 0 for that to ever work
+by coincidence.
+
+Tried one further hypothesis a pure sign sweep could never have caught:
+a swapped X/Z axis mapping. Vertex-placement opcodes elsewhere in this
+same interpreter (e.g. 0x007a's own `uwdl_place(m, r[1], r[2], r[3],
+p, 1)` call) read raw bytecode words in (x, z, y) order, not (x, y,
+z) -- so it's plausible cull_side_x/z's own axis-to-m->t[]-index
+mapping could be similarly transposed from the naive name-order
+reading. Added UW_DLIST_CULL_SWAP_XZ (swaps axis 0 and axis 2 only for
+these three opcodes) and reran -- still exactly faces=5. Axis mapping
+ruled out too, at least for the simple x<->z swap.
+
+CONCLUSION: m->t[axis] is very likely not the correct quantity these
+four specific instructions are meant to compare against at all -- some
+other VM state (a different accumulator this interpreter doesn't
+track, an externally-seeded reference value analogous to how slot
+0x800 gets seeded with "rise" before the walk begins, or a genuinely
+different operand interpretation specific to this exact
+opcode/threshold pairing) is the real remaining unknown. This is not
+resolvable further without the real x86 handler (16e7:3f7b/3f92/3fa9),
+confirmed absent from both this project's and uw1-decomp's own
+disassembly listings (grepped again directly, zero hits, same result
+as every previous check).
+
+STATUS: real, concrete progress even without a final fix. Two
+previously-open structural questions are now closed with direct
+evidence rather than suspicion: (1) the if/else-if chain shape is
+confirmed, not guessed, and (2) this interpreter's existing branch
+semantics already implement that shape correctly. The remaining open
+question has shrunk from "is the whole mechanism even the right model"
+down to "exactly which piece of VM state do these four specific tests
+really read" -- a much smaller, well-scoped problem for whoever next
+has real disassembly access. UW_DLIST_REAL_CULL_OPCODES remains
+opt-in, unchanged from entry (22)'s revert. Standard
+run-regressions.sh: 6/6 clean.
