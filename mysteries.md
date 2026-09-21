@@ -585,6 +585,27 @@ and the door's previously-cut-off lower detail (the lock plate, more of
 the panel) is now visible. Full detail in
 `object-rendering-findings.txt`.
 
+**UPDATE 23 (QA pass, three findings -- fixed the horizontal shift,
+sink and rotation still open, 2026-09-20):** user QA: (1) door sunk into
+the ground ~20-25%, (2) door frame+leaf shifted left instead of
+centered, (3) door directions don't match expected rotations, most face
+the same way. Fixed (2): `emit_model_object`'s own working DFRAME.E+
+DOOR.E calibration already solved this exact problem for the same
+object family (`xoff_local=-64.0`, applied to local X before rotation,
+its own comment explaining DOOR.E's local X wasn't naturally centered).
+Confirmed this bank family has the identical situation via
+UW_DEBUG_DLIST's own bbox output: bank 0x61 (frame) and bank 0x6e
+(leaf) both center at exactly +16, not 0 -- measured, not assumed.
+Added the same `xoff` mechanism, defaulting to -16.0. Not fixed (1):
+checked history first -- yoff=-100 (DFRAME's own value) was already
+tried earlier this session and made things WORSE ("half stuck in the
+ground"), so reverting to it now would be a regression, not a fix; the
+current smaller sink needs its own investigation. Not fixed (3): pulled
+real per-door raw_heading values live (0,1,5,1,5,5,1,1 across 8 doors)
+-- DOS's own source states real doors only ever use EVEN headings
+(0,2,4,6); seeing odd values here is the concrete lead for next time.
+Full detail in `object-rendering-findings.txt`.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

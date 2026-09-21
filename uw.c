@@ -53063,7 +53063,7 @@ static int uwdl_texture_width(int idx)
   return 0;
 }
 
-static void emit_dlist_bank_object(const unsigned short *words, int count, int head, int heading, double scale, double yoff, void *texptr, int texwidth, int texheight)
+static void emit_dlist_bank_object(const unsigned short *words, int count, int head, int heading, double scale, double yoff, double xoff, void *texptr, int texwidth, int texheight)
 {
   static uwdl_face faces[UWDL_MAX_FACES];
   int nfaces;
@@ -53177,7 +53177,20 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
          guarantee) -- testing whether backface culling is why 9 real,
          correctly-anchored faces still don't reach the screen. */
       int _src = getenv("UW_DLIST_FLIP_WINDING") ? (nv - 1 - vi) : vi;
-      double mx = f->p[_src][0], my = f->p[_src][1], mz = f->p[_src][2];
+      /* xoff, same role as emit_model_object's own xoff_local (added to
+         local X before rotation, uw.c ~54034) -- confirmed necessary by
+         that exact mechanism's own precedent: DOOR.E needed a real
+         xoff_local=-64.0 to center within DFRAME.E's own opening (uw.c
+         ~54222 comment: "DOOR.E's own local X (0..128) is shifted by
+         x_off2=-64 to sit centered in DFRAME's inner opening"). This
+         bank's own geometry has an analogous, directly-measurable bias:
+         both bank 0x61 (frame, bbox x=[-112,144]) and bank 0x6e (leaf,
+         bbox x=[-48,80]) have their real local X centered at +16, not 0
+         -- confirmed live via UW_DEBUG_DLIST's own bbox print, both
+         banks agree exactly. Applied before rotation (matching xoff_
+         local's own point in the pipeline), so it's a true local-space
+         center correction, not a post-rotation screen-space nudge. */
+      double mx = f->p[_src][0] + xoff, my = f->p[_src][1], mz = f->p[_src][2];
       double rx = mx*ca - mz*sa, rz = mx*sa + mz*ca;
       float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + vi)*0xc);
       vf[0] = (float)(ax + rx*scale);
@@ -55335,6 +55348,17 @@ LAB_00061d34:
            substantially more real texture detail than -100, exactly
            matching a "half stuck in the ground" symptom). */
         double _scale = 1.0, _yoff = 0.0;
+        /* xoff, same mechanism as emit_model_object's own xoff_local
+           (added to local X before rotation) -- confirmed necessary by
+           that exact precedent (uw.c ~54222): DOOR.E needed a real
+           xoff_local=-64.0 to center within DFRAME.E's own opening,
+           because DOOR.E's own local X wasn't naturally centered at 0.
+           This bank has the identical situation, confirmed via its own
+           UW_DEBUG_DLIST bbox print: bank 0x61 (frame, x=[-112,144])
+           and bank 0x6e (leaf, x=[-48,80]) both center at exactly +16,
+           not 0 -- a real, measured, shared bias, not a guess. */
+        double _xoff = -16.0;
+        { const char *_s = getenv("UW_DLIST_XOFF"); if (_s) _xoff = atof(_s); }
         int _raw_heading2 = (int)(*(short *)((char *)param_1 + 2) >> 6 & 7);
         int _quadrant_heading2 = (_raw_heading2 - 2 * (int)DAT_0023b4a0) & 7;
         /* Same shape of correction emit_model_object already established
@@ -55388,10 +55412,10 @@ LAB_00061d34:
           if (getenv("UW_DEBUG_DLIST"))
             fprintf(stderr, "[dlist] wall texture index=%d width=%d texptr=%p\n", _wtex, _twidth, _texptr);
           emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_DOORWAY,
-                                  _quadrant_heading2, _scale, _yoff, _texptr, _twidth, _twidth);
+                                  _quadrant_heading2, _scale, _yoff, _xoff, _texptr, _twidth, _twidth);
         } else {
           emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_DOORWAY,
-                                  _quadrant_heading2, _scale, _yoff, 0, 0, 0);
+                                  _quadrant_heading2, _scale, _yoff, _xoff, 0, 0, 0);
         }
         /* Door LEAF (bank 0x6e) -- the swinging panel itself, not just
            the frame. Same region/interpreter/anchor pipeline as the
@@ -55472,10 +55496,10 @@ LAB_00061d34:
               fprintf(stderr, "[dlist] leaf sprite frame=%d texptr=%p width=%d height=%d\n",
                       uVar27, _leaf_texptr, _leaf_twidth, _leaf_theight);
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _leaf_scale, _yoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
+                                    _leaf_heading, _leaf_scale, _yoff, _xoff, _leaf_texptr, _leaf_twidth, _leaf_theight);
           } else {
             emit_dlist_bank_object(g_dlist_region, UW_DLIST_REGION_COUNT, UW_DLIST_HEAD_LEAF,
-                                    _leaf_heading, _leaf_scale, _yoff, 0, 0, 0);
+                                    _leaf_heading, _leaf_scale, _yoff, _xoff, 0, 0, 0);
           }
           /* Once the real 3D leaf is drawing, the old 2D camera-facing
              sprite billboard below (LAB_emit_mesh_sprite_quad's own

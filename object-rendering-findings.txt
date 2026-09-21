@@ -2371,3 +2371,59 @@ same repro: visibly more of the door's real detail is now reachable --
 the lock/handle plate (previously right at the edge of the visible
 range) is now fully shown, and the panel extends further down. Standard
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+UPDATE 2026-09-20 (13): QA PASS -- THREE FINDINGS. FIXED THE HORIZONTAL
+SHIFT (xoff, matching DFRAME.E's own proven mechanism); SINK AND
+ROTATION STILL OPEN
+═══════════════════════════════════════════════════════════════════════════
+User QA findings, live interactive testing:
+1. The door is sunk into the ground a bit, ~20-25%.
+2. The door frame + door are shifted left instead of centered in the
+   tile.
+3. Door + door frame directions don't match their expected rotations --
+   most face the same direction.
+
+FIXED (#2, horizontal shift): checked emit_model_object's own working
+DFRAME.E+DOOR.E calibration for precedent instead of guessing at a
+value. It already has exactly this problem solved for the same object
+family: `{ 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0,
+&DAT_00145a58, "DOOR", -64.0 }` -- DOOR.E's own xoff_local=-64.0,
+applied to local X before rotation, with its own comment explaining
+why: "DOOR.E's own local X (0..128) is shifted by x_off2=-64 to sit
+centered in DFRAME's inner opening." Our own dlist path had no
+equivalent term at all. Checked whether this bank family has the same
+kind of bias by re-reading UW_DEBUG_DLIST's own bbox output: bank 0x61
+(frame) bbox x=[-112,144], bank 0x6e (leaf) bbox x=[-48,80] -- both
+center at exactly +16, not 0, a real measured bias shared identically
+by both banks (not assumed). Added a new `xoff` parameter to
+emit_dlist_bank_object (same role/pipeline position as xoff_local:
+added to local X before rotation), defaulting to -16.0 for both frame
+and leaf calls, tunable via UW_DLIST_XOFF.
+
+NOT YET FIXED (#1, sink): checked history before changing yoff --
+UPDATE 2026-09-16-ish's own comment on this exact code explicitly
+records that yoff=-100 (DFRAME.E's own value) was ALREADY tried and
+produced a WORSE result ("half stuck in the ground"), and yoff=0 was
+the confirmed fix at the time. Reverting to -100 now would be a real
+regression to an already-diagnosed bug, not a fix -- did not do this.
+The current ~20-25% sink is either a smaller, different-magnitude issue
+than that earlier one, or unrelated to yoff entirely (possibly anchor-
+related, or specific to how far the leaf/frame's own Y=0 sits relative
+to the true rendered floor line). Needs its own fresh investigation,
+not a reused constant.
+
+NOT YET FIXED (#3, rotation): pulled real per-door raw_heading values
+from a live walkthrough (UW_DEBUG_DOOR=1): observed 0, 1, 5, 1, 5, 5,
+1, 1 across 8 real doors. Notably, DOS's own source comment (already
+cited earlier in this investigation, uw1_view.c ~2622) states "Level 1
+holds 33 doors, at headings 0, 2, 4 and 6" -- i.e. real doors should
+only ever take EVEN heading values (cardinal-wall-aligned). Seeing odd
+values (1, 5) in our own live read is suspicious and worth chasing
+first -- either our own raw_heading extraction is picking up the wrong
+bits for some door instances, or "most face the same direction" is a
+downstream symptom of whatever's producing these odd values. Not yet
+resolved; the odd-heading observation is the concrete lead for next
+time, not a guess.
+
+Standard run-regressions.sh: 6/6 clean after the xoff fix.
