@@ -5001,7 +5001,7 @@ static short DAT_0023c238_arr[2];
    don't land in contiguous memory on this recompile, so the loop that
    allocates/checks all 3 only ever really touched DAT_0023c200 --
    DAT_0023c202/DAT_0023c204 (read directly by name elsewhere in this
-   same function) stayed 0/uninitialized, so FUN_00049954(DAT_0023c202)
+   same function) stayed 0/uninitialized, so resolve_flip_grtile_slot(DAT_0023c202)
    returned a garbage grtile handle and crashed
    bitmap_blit_to_framebuffer the first time this code path ever ran. */
 static undefined2 DAT_0023c200_arr[3];
@@ -5278,7 +5278,7 @@ int DAT_0023c278;
 undefined2 DAT_0023c148;
 undefined2 DAT_0023c14c;
 undefined2 DAT_0023c144;
-byte DAT_0023c218;
+byte g_flip_grtile_cache_ready;
 short DAT_0023c134;
 static undefined DAT_00087298_backing[8192];
 #define DAT_00087298 DAT_00087298_backing[0]
@@ -38888,7 +38888,20 @@ void FUN_00049948()
 
 
 
-undefined4 FUN_0004994c()
+/* alloc_flip_grtile_slot/resolve_flip_grtile_slot: real, confirmed
+   `mov r0,#0; cpy pc,lr` no-ops in the pristine binary (disassembly-
+   verified at both real addresses, 0x4994c and 0x49954 -- not a
+   decompilation artifact). Their only caller, FUN_0006eb64's
+   double-buffered-grtile setup for the chain-hotspot panel-switch flip
+   animation, unconditionally fails as a result (uVar6 = uVar6 &
+   alloc_flip_grtile_slot() forces uVar6 to 0), so g_flip_grtile_cache_ready's ready
+   bit can never be set and the entire staged blit path in FUN_0006edfc
+   is dead code -- in the shipped .exe, not just this decompile. See
+   [[chain-hotspot-stats-panel]]: exhaustive real-binary cross-
+   referencing found no other path to draw_stats_panel_content either,
+   so this genuinely appears inert in the original game. Named for
+   their intended role, not their actual (inert) behavior. */
+undefined4 alloc_flip_grtile_slot()
 
 {
   return 0;
@@ -38896,7 +38909,7 @@ undefined4 FUN_0004994c()
 
 
 
-undefined4 FUN_00049954()
+undefined4 resolve_flip_grtile_slot()
 
 {
   return 0;
@@ -61347,7 +61360,7 @@ undefined2 param_5;
     iVar5 = 0;
     do {
       if ((&DAT_0023c200)[iVar5] == 0) {
-        uVar2 = FUN_0004994c();
+        uVar2 = alloc_flip_grtile_slot();
         uVar6 = uVar6 & uVar2;
       }
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
@@ -61356,17 +61369,17 @@ undefined2 param_5;
       FUN_0006edb8();
     }
     else {
-      DAT_0023c218 = DAT_0023c218 | 1;
+      g_flip_grtile_cache_ready = g_flip_grtile_cache_ready | 1;
     }
     DAT_0023c278 = 1;
   }
   if (getenv("UW_DEBUG_CLICKREGION"))
-    fprintf(stderr, "[stats] FUN_0006eb64 entry: param_1(target)=%d DAT_0023c218=0x%x DAT_0023c278=%d uVar6=%d\n",
-            (int)param_1, (unsigned)DAT_0023c218, (int)DAT_0023c278, (int)uVar6);
-  if ((DAT_0023c218 & 1) != 0) {
-    uVar4 = FUN_00049954(DAT_0023c202);
+    fprintf(stderr, "[stats] FUN_0006eb64 entry: param_1(target)=%d g_flip_grtile_cache_ready=0x%x DAT_0023c278=%d uVar6=%d\n",
+            (int)param_1, (unsigned)g_flip_grtile_cache_ready, (int)DAT_0023c278, (int)uVar6);
+  if ((g_flip_grtile_cache_ready & 1) != 0) {
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     uVar2 = FUN_00041a78(s_panels_00087260,param_1,uVar4);
-    iVar5 = FUN_00049954(DAT_0023c200);
+    iVar5 = resolve_flip_grtile_slot(DAT_0023c200);
     uVar3 = FUN_00041a78(s_panels_00087260,3,iVar5 + 0x2800);
     if (getenv("UW_DEBUG_CLICKREGION"))
       fprintf(stderr, "[stats] FUN_0006eb64: uVar4(dst202)=%u uVar2(decode1 ok)=%u iVar5(dst200)=%d uVar3(decode2 ok)=%u\n",
@@ -61377,7 +61390,7 @@ undefined2 param_5;
       FUN_0003c3c8(0x300e);
     }
     FUN_00057118();
-    uVar4 = FUN_00049954(DAT_0023c202);
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     if (getenv("UW_DEBUG_CLICKREGION"))
       fprintf(stderr, "[stats] FUN_0006eb64: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)uVar4);
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
@@ -61387,7 +61400,7 @@ undefined2 param_5;
     (*(code *)(&g_hud_panel_handlers)[(short)param_1])();
     DAT_00085c54 = 1;
     g_active_hud_panel = uVar1;
-    uVar4 = FUN_00049954(DAT_0023c202);
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     FUN_0007e998(uVar4,0xec,8,0x53,0x72);
     FUN_000570b4();
   }
@@ -61443,7 +61456,7 @@ bool FUN_0006edfc()
   undefined1 uVar1;
   byte bVar2;
   /* Were `undefined4` -- truncated the real 64-bit pointers this
-     function passes around (DAT_0023cca4 itself, and FUN_00049954's
+     function passes around (DAT_0023cca4 itself, and resolve_flip_grtile_slot's
      return value) to 32 bits on this host before handing them to
      bitmap_blit_to_framebuffer/FUN_0006f6e0/FUN_0007e998, which then
      reconstructed a wild pointer from just the low half. Same
@@ -61461,12 +61474,12 @@ bool FUN_0006edfc()
   
   uVar3 = DAT_0023cca4;
   bVar2 = DAT_0023c208 + 1;
-  if ((DAT_0023c218 & 1) != 0) {
+  if ((g_flip_grtile_cache_ready & 1) != 0) {
     DAT_0023c208 = bVar2;
     FUN_00057118();
-    uVar3 = FUN_00049954(DAT_0023c204);
+    uVar3 = resolve_flip_grtile_slot(DAT_0023c204);
     if (DAT_0023c208 == 1) {
-      uVar4 = FUN_00049954(DAT_0023c200);
+      uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
       FUN_0007e998(uVar4,(int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,(int)DAT_0023c144,
                    DAT_0023c140);
       FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
@@ -61516,7 +61529,7 @@ bool FUN_0006edfc()
     }
     else if (1 < DAT_0023c208) {
       if (DAT_0023c208 < 4) {
-        uVar4 = FUN_00049954(DAT_0023c200);
+        uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
         FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
         set_draw_color(0xf1);
         iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
@@ -61563,7 +61576,7 @@ bool FUN_0006edfc()
                      DAT_0023c13c,0,0,1);
       }
       else if (DAT_0023c208 == 4) {
-        iVar7 = FUN_00049954(DAT_0023c200);
+        iVar7 = resolve_flip_grtile_slot(DAT_0023c200);
         set_draw_color(0xf1);
         iVar9 = (int)DAT_0023c140 + (int)DAT_0023c138;
         iVar5 = (int)DAT_0023c144 + (int)DAT_0023c13c;
@@ -61599,7 +61612,7 @@ bool FUN_0006edfc()
       }
       else if (4 < DAT_0023c208) {
         if (DAT_0023c208 < 8) {
-          uVar4 = FUN_00049954(DAT_0023c202);
+          uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
           set_draw_color(0xf1);
           iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
           if (iVar7 < 0) {
@@ -61627,7 +61640,7 @@ bool FUN_0006edfc()
                        DAT_0023c13c,0,0,1);
         }
         else if (DAT_0023c208 == 8) {
-          uVar3 = FUN_00049954(DAT_0023c202);
+          uVar3 = resolve_flip_grtile_slot(DAT_0023c202);
           set_draw_color(0xf1);
           iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
           if (iVar7 < 0) {
