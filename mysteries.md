@@ -1251,6 +1251,61 @@ letters follow that same, already-correct convention, not UWXtract's.
 diagnostic. `UW_DLIST_REAL_CULL_OPCODES` unchanged, still opt-in.
 Standard run-regressions.sh: 6/6 clean.
 
+**UPDATE 38 (implemented the world-space reformulation the diagram's
+own closing callout pointed at -- rebuilt the cull comparison to
+happen in post-rotation world space instead of pulling the eye back
+into local body space; verified equivalent, not a fix by itself, 2026-
+09-21):** user: "Make that fix: the eye position passed to model
+rendering should be in the same post-rotation world space."
+
+REBUILT THE COMPARISON'S OWN ARCHITECTURE, not just its inputs. The
+previous approach pulled the camera's world position BACKWARD through
+the inverse of the per-vertex rotation, into this bank's own pre-
+rotation local body space, then compared it against the plane's fixed
+local threshold directly. The new approach does the opposite: it
+leaves the eye in world space completely untouched, and instead pushes
+each face-plane's own local axis-aligned normal and threshold FORWARD
+into the exact same post-rotation world space real vertices land in
+(`world = anchor + R(heading)*local*scale`) -- the same `ca`/`sa`/
+anchor/scale the per-vertex loop itself uses, now threaded into the
+VM (`m->ca`, `m->sa`, `m->anchor[]`, `m->scale`) and used to compute a
+world-space normal and plane constant per cull test.
+
+Caught and fixed one real subtlety doing this that a naive port would
+have missed: the plane's own threshold is authored in RAW bytecode-
+local coordinates, but the real forward vertex transform adds `xoff`/
+`zoff` (horizontal) and `yoff` (vertical) to local coordinates BEFORE
+rotating/translating. Folded these into an ADJUSTED anchor
+(`adj_anchor = anchor + scale*R(heading)*(xoff,zoff)` for the
+horizontal pair, `ah+yoff` for height) computed once per call, so
+`world = adj_anchor + R(heading)*local*scale` exactly reproduces the
+real vertex transform for any local point, `xoff`/`zoff`/`yoff`
+included -- omitting this would have silently mismatched the new
+world-space formula against the geometry it's supposed to be testing.
+
+VERIFIED LIVE, decisively: quadrant=1 (previously `faces=8`, correct)
+stays exactly `faces=8` -- the reformulation doesn't disturb the
+already-working case, confirming it's a faithful re-derivation, not a
+different (and coincidentally compatible) test. quadrant=2 (the broken
+case) is STILL `faces=0` -- completely unchanged. This is the useful
+result, not a null one: it's a live, empirical confirmation (not just
+algebra) that the two formulations really are mathematically
+equivalent, which means the earlier finding stands confirmed rather
+than superseded -- the bug was never about which coordinate space the
+comparison happens in. It is specifically that the eye VALUE itself
+(`DAT_000db438`/`43c`/`440`, the renderer's own camera-matrix globals)
+does not carry a correct "which tile" world-position component at
+every quadrant, exactly as UPDATE 36 found by tracing the anchor's own
+formula. `UW_DLIST_REAL_CULL_OPCODES` remains reverted to opt-in
+(confirmed: door still renders correctly, faces=11/6, with zero env
+vars). Standard run-regressions.sh: 6/6 clean. This world-space
+formulation is kept as the new implementation going forward -- it's
+the architecturally cleaner one (matches the pattern real vertices
+already use, one fewer inverse-transform for an error to hide in) --
+but the actual remaining fix is unchanged: find or construct a real
+"which tile is the camera in, relative to this object" value, the same
+way the object anchor's own preserved high byte already does.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

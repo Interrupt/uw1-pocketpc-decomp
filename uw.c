@@ -52763,7 +52763,21 @@ typedef struct {
   int policy, has_policy;
   int depth, stop;
   int cull_valid, cull_take;
-  int32_t eye[3];
+  /* World-space cull parameters: rather than pulling the camera's world
+     position BACKWARD into this bank's own pre-rotation local body
+     space (the earlier approach -- mathematically equivalent to this
+     one if implemented correctly, but empirically still broken at
+     some camera quadrants), push each face-plane's own local axis-
+     aligned normal + threshold FORWARD into the SAME post-rotation
+     world space real vertices land in (world = anchor + R(heading)*
+     local*scale), and compare directly against the raw world eye --
+     no inverse rotation on the eye at all. eye_world is the raw
+     camera position, unmodified; ca/sa/anchor/scale are the exact
+     same forward-transform parameters emit_dlist_bank_object's own
+     per-vertex loop uses. */
+  double eye_world[3];
+  double ca, sa, scale;
+  double anchor[3];
 } uwdl_vm;
 
 static int32_t uwdl_sign16(unsigned short w) { return (int32_t)(short)w; }
@@ -52823,7 +52837,8 @@ static void uwdl_emit_face(uwdl_vm *m, uwdl_face *f)
    quad, the same "nothing either bank builds" / "a corner the run never
    placed" rule the real DOS consumer uses. */
 static int g_uwdl_vertex_attempted, g_uwdl_vertex_dropped;
-static int32_t g_uwdl_eye[3];
+static double g_uwdl_eye_world[3];
+static double g_uwdl_anchor[3];
 static void uwdl_face_vertex(uwdl_vm *m, uwdl_face *f, unsigned short off)
 {
   uwdl_slot *s;
@@ -52933,15 +52948,29 @@ static void uwdl_walk(uwdl_vm *m, int at)
     if (op == 0x0064 || op == 0x0066 || op == 0x0068) {
       int _axis = (op == 0x0064) ? 0 : (op == 0x0066) ? 1 : 2;
       if (getenv("UW_DLIST_CULL_SWAP_YZ")) { if (_axis == 1) _axis = 2; else if (_axis == 2) _axis = 1; }
-      int32_t _origin = m->eye[_axis];
-      int32_t _thresh = uwdl_sign16(r[3]);
-      int _keep = (_origin <= _thresh);
+      /* World-space normal for this face's local axis-aligned plane,
+         obtained by applying the SAME rotation real vertices go
+         through (rx=mx*ca-mz*sa; rz=mx*sa+mz*ca) to the local unit
+         axis vector -- axis0(local X)->(ca,0,sa); axis1(local
+         height, never rotated)->(0,1,0); axis2(local Z)->(-sa,0,ca). */
+      double _nx = (_axis == 0) ? m->ca : (_axis == 2) ? -m->sa : 0.0;
+      double _ny = (_axis == 1) ? 1.0 : 0.0;
+      double _nz = (_axis == 0) ? m->sa : (_axis == 2) ? m->ca : 0.0;
+      double _thresh = (double)uwdl_sign16(r[3]);
+      /* D_world: the same local plane (local[axis]=thresh), expressed
+         as a world-space plane constant -- world_normal . anchor +
+         thresh*scale (derived from world = anchor + R*local*scale and
+         R being orthogonal, so R*n . R*local = n . local = thresh on
+         the plane). */
+      double _dworld = _nx*m->anchor[0] + _ny*m->anchor[1] + _nz*m->anchor[2] + _thresh*m->scale;
+      double _eyedot = _nx*m->eye_world[0] + _ny*m->eye_world[1] + _nz*m->eye_world[2];
+      int _keep = (_eyedot <= _dworld);
       if (getenv("UW_DLIST_REAL_CULL_FLIP")) _keep = !_keep;
       m->cull_valid = 1;
       m->cull_take = !_keep;
       if (getenv("UW_DEBUG_DLIST_CULLOP"))
-        fprintf(stderr, "[dlist-cullop] at=%d op=0x%04x axis=%d eye=%d sign=0x%04x thresh=%d -> %s\n",
-                at, op, _axis, _origin, r[2], _thresh, _keep ? "keep" : "CULL");
+        fprintf(stderr, "[dlist-cullop] at=%d op=0x%04x axis=%d normal=(%g,%g,%g) eyedot=%g dworld=%g sign=0x%04x thresh=%g -> %s\n",
+                at, op, _axis, _nx, _ny, _nz, _eyedot, _dworld, r[2], _thresh, _keep ? "keep" : "CULL");
     } else {
       m->cull_valid = 0;
     }
@@ -53123,13 +53152,17 @@ done:
    those 4 destinations -- real missing geometry, not just a coordinate
    offset, which is likely a real contributor to the reported scaling/
    positioning mismatch against the DOS reference. */
-static int uwdl_run_bank(const unsigned short *words, int count, int head, int32_t rise, const int32_t *eye, uwdl_face *out, int max_faces)
+static int uwdl_run_bank(const unsigned short *words, int count, int head, int32_t rise,
+                          const double *eye_world, double ca, double sa, double scale, const double *anchor,
+                          uwdl_face *out, int max_faces)
 {
   uwdl_vm *m = (uwdl_vm *)calloc(1, sizeof(uwdl_vm));
   int i, n;
   if (!m) return 0;
   m->words = words; m->count = count;
-  if (eye) { m->eye[0] = eye[0]; m->eye[1] = eye[1]; m->eye[2] = eye[2]; }
+  if (eye_world) { m->eye_world[0] = eye_world[0]; m->eye_world[1] = eye_world[1]; m->eye_world[2] = eye_world[2]; }
+  m->ca = ca; m->sa = sa; m->scale = scale;
+  if (anchor) { m->anchor[0] = anchor[0]; m->anchor[1] = anchor[1]; m->anchor[2] = anchor[2]; }
   for (i = 0; i < 64; i++) {
     uwdl_slot *origin;
     memset(m->slot, 0, sizeof(m->slot));
@@ -53198,89 +53231,55 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
   ang = heading * 45.0 * (3.14159265358979 / 180.0);
   ca = cos(ang); sa = sin(ang);
   { /* Eye position for the revived cull_side_x/y/z face-plane test
-       (see its own comment in uwdl_walk), expressed in this bank's own
-       pre-rotation local body space -- the inverse of the forward
-       per-vertex transform (mx=local+xoff; rx=mx*ca-mz*sa;
-       world=anchor+rx*scale), so it lives in the exact same coordinate
-       system the plane thresholds (r[3]) are authored in.
+       (see its own comment in uwdl_walk). Earlier approach: pull the
+       camera's world position BACKWARD into this bank's own
+       pre-rotation local body space (the inverse of the forward
+       per-vertex transform), then compare against the plane's own
+       local threshold directly. That's mathematically equivalent to
+       comparing in world space IF the world eye value is correct --
+       but every candidate world eye tried this session (world origin,
+       the object's own anchor, the real camera-matrix globals) either
+       broke visibly or was degenerate, and the back-transform added a
+       second place for an error to hide (the object's own heading
+       rotation applied to a POINT that isn't the object).
 
-       Candidates tried and rejected before this one: world eye =
-       (0,0,0) put the eye thousands of units from geometry spanning
-       only a few hundred (broken live -- leaf missing entirely).
-       World eye = the object's own anchor rendered correctly but is
-       mathematically degenerate (eye-anchor always exactly zero, no
-       real view-dependence). World eye = the renderer's own real
-       camera position, DAT_000db438/43c/440 (build_view_matrix's own
-       camera translation) looked promising (three angles verified
-       correct) but broke a door completely (faces=0) at a DIFFERENT
-       camera quadrant -- confirmed via round-trip that the rotation
-       math itself was self-consistent, so the bug had to be the eye
-       source: DAT_0023bf30/34/38 (the sync formula's own base
-       constants) have no writer anywhere in this file, meaning that
-       camera position carries no "which tile" component at all --
-       just a bounded sub-tile fraction -- while the object anchor's
-       own X/Z (DAT_0023b904/920) DO carry one (a preserved high byte,
-       confirmed to genuinely shift between quadrants for the same
-       real door). The two values don't live in the same coordinate
-       convention; their similarity at one tested quadrant was
-       coincidental.
-
-       CURRENT CANDIDATE, derived not guessed: traced the anchor's own
-       FULL initial computation (not just the later low-byte quadrant
-       rotation), at uw.c ~57449 in emit_tile_features -- `((tile-
-       relative offset byte) + sign-extended-fraction(DAT_0023b4e4)) *
-       0x20 + 0x10`, where DAT_0023b4e4/e8 are the tile-walk's own
-       ring-position indices for whichever tile is currently being
-       processed (see the walk at uw.c ~51209-51268: DAT_0023b4e4
-       ranges 0->0x10 then resets to 0x20->0x10, DAT_0023b4e8 descends
-       from g_visibility_ring_depth). The formula ITSELF is now
-       independently verified byte-exact against two real, known
-       anchor values (both banks, both quadrants -- plugging the real
-       observed DAT_0023b4e4/e8/bb99/bb9a for this door's own tile into
-       `(bb99 + sign_extend((e4<<0x13)>>0x10)) * 0x20 + 0x10` recovers
-       4240 and 3664 exactly, matching the debug print's own anchor
-       values to the unit). But TWO candidate "player canonical" values
-       built on top of that confirmed formula were tried and BOTH
-       failed live: (a) naively assuming DAT_0023b4e4/e8 pivot at 0x10
-       for the player's own tile gives (4112,4112) -- tested, still
-       faces=0/1 at the broken quadrant. (b) solving for the FIXED
-       ROTATION CENTER algebraically from the two known real anchor
-       values at quadrant=1/2 (treating "player's own position" as the
-       point the whole quadrant-canonical frame rotates around, which
-       architecturally it should be) gives a cleaner (4224,128) --
-       ALSO tested, ALSO still broken (eye_local_z lands at 564,
-       nowhere near the working range). Both ruled out by direct live
-       testing, not just reasoning. UW_DLIST_EYE_PLAYER_CANONICAL=1
-       kept as an opt-in diagnostic (uses the (4112,4112) guess) for
-       whoever continues this -- see the dated findings-doc entry for
-       the full trace, including the still-unexplored lead
-       (sprite_partition_by_depth / DAT_0023b8c8, which actually select
-       bb99/bb9a's own table index and haven't been traced yet -- the
-       "which tile" delta may not be a simple per-tile lookup at all).
-       UW_DLIST_EYE_X/Y/Z still override individually for further
-       calibration. */
-    double _ex, _ey, _ez;
-    if (getenv("UW_DLIST_EYE_PLAYER_CANONICAL")) {
-      _ex = 4112.0; _ez = 4112.0; _ey = *(float *)&DAT_000db43c;
-    } else {
-      _ex = *(float *)&DAT_000db438; _ey = *(float *)&DAT_000db43c; _ez = *(float *)&DAT_000db440;
-    }
+       THIS is the fix: keep the eye in world space, untouched, and
+       instead push each face-plane's own local axis-aligned normal +
+       threshold FORWARD into the SAME post-rotation world space real
+       vertices land in (world = anchor + R(heading)*local*scale) --
+       the actual math now lives in uwdl_walk's own cull dispatch
+       (m->ca/sa/anchor/scale, seeded here, are exactly the SAME
+       parameters the per-vertex loop below uses). eye_world is the
+       renderer's own real camera position, DAT_000db438/43c/440
+       (build_view_matrix's own camera translation), read as the
+       softfloat bit patterns they're stored as, used completely as-is
+       -- no rotation, no anchor subtraction, no per-object correction
+       of any kind applied to it. UW_DLIST_EYE_X/Y/Z still override
+       individually for calibration if a future case needs it. */
+    double _ex = *(float *)&DAT_000db438, _ey = *(float *)&DAT_000db43c, _ez = *(float *)&DAT_000db440;
     { const char *_s = getenv("UW_DLIST_EYE_X"); if (_s) _ex = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Y"); if (_s) _ey = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Z"); if (_s) _ez = atof(_s); }
-    double _rx = (scale != 0.0) ? (_ex - ax) / scale : 0.0;
-    double _rz = (scale != 0.0) ? (_ez - az) / scale : 0.0;
-    double _mx = _rx*ca + _rz*sa;
-    double _mz = -_rx*sa + _rz*ca;
-    g_uwdl_eye[0] = (int32_t)lround(_mx - xoff);
-    g_uwdl_eye[1] = (int32_t)lround((scale != 0.0) ? (_ey - ah - yoff) / scale : 0.0);
-    g_uwdl_eye[2] = (int32_t)lround(_mz - zoff);
+    g_uwdl_eye_world[0] = _ex; g_uwdl_eye_world[1] = _ey; g_uwdl_eye_world[2] = _ez;
+    /* The plane test's own axis-aligned thresholds live in RAW
+       bytecode-local space, i.e. BEFORE xoff/zoff/yoff are added --
+       the forward per-vertex transform below adds them to local
+       coordinates first, THEN rotates/scales/translates (mx=local+
+       xoff; ...; world=anchor+rx*scale; world_y=ah+my*scale+yoff).
+       Folding xoff/zoff/yoff into an ADJUSTED anchor here (rather than
+       leaving the cull test's own D_world formula to add them itself)
+       keeps uwdl_walk's own math identical to a plain "local[axis]=
+       thresh" plane test: world = adjusted_anchor + R*local*scale
+       exactly reproduces the real vertex transform for any local
+       point, xoff/zoff/yoff included. */
+    g_uwdl_anchor[0] = ax + scale*(xoff*ca - zoff*sa);
+    g_uwdl_anchor[1] = ah + yoff;
+    g_uwdl_anchor[2] = az + scale*(xoff*sa + zoff*ca);
     if (getenv("UW_DEBUG_DLIST"))
-      fprintf(stderr, "[dlist] eye_local=(%d,%d,%d) (world eye assumed (%g,%g,%g), anchor=(%d,%d,%d), real_camera_pos=(%g,%g,%g))\n",
-              g_uwdl_eye[0], g_uwdl_eye[1], g_uwdl_eye[2], _ex, _ey, _ez, ax, ah, az,
-              *(float *)&DAT_000db438, *(float *)&DAT_000db43c, *(float *)&DAT_000db440);
+      fprintf(stderr, "[dlist] eye_world=(%g,%g,%g) anchor=(%d,%d,%d) adj_anchor=(%g,%g,%g) ca=%g sa=%g scale=%g\n",
+              _ex, _ey, _ez, ax, ah, az, g_uwdl_anchor[0], g_uwdl_anchor[1], g_uwdl_anchor[2], ca, sa, scale);
   }
-  nfaces = uwdl_run_bank(words, count, head, rise, g_uwdl_eye, faces, UWDL_MAX_FACES);
+  nfaces = uwdl_run_bank(words, count, head, rise, g_uwdl_eye_world, ca, sa, scale, g_uwdl_anchor, faces, UWDL_MAX_FACES);
   if (getenv("UW_DEBUG_DLIST")) {
     fprintf(stderr, "[dlist] words=%d faces=%d heading=%d anchor=(%d,%d,%d) scale=%g yoff=%g xoff=%g zoff=%g\n",
             count, nfaces, heading, ax, ah, az, scale, yoff, xoff, zoff);

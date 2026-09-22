@@ -3783,3 +3783,88 @@ UW_DLIST_CULL_SWAP_XZ, ORIGIN_SIGN, etc. from earlier entries).
 UW_DLIST_REAL_CULL_OPCODES unchanged, still safely reverted to opt-in.
 Standard run-regressions.sh: 6/6 clean; confirmed the door still
 renders correctly with zero env vars set.
+
+(29) 2026-09-21: rebuilt the cull comparison to happen in post-
+rotation WORLD space instead of pulling the eye backward into the
+bank's local body space, per explicit direction: "the eye position
+passed to model rendering should be in the same post-rotation world
+space." Used this as a decisive experiment on the still-open quadrant=2
+door-blackout bug (entries 26-28), not just an architectural cleanup.
+
+WHAT CHANGED, concretely. Before: `emit_dlist_bank_object` computed
+`g_uwdl_eye[3]` once per call by taking the real world camera position
+(`DAT_000db438/43c/440`) and inverse-rotating it by `-heading` back
+into this bank's own pre-rotation local coordinate frame, then each
+cull opcode (0x0064/66/68) compared that fixed local eye value
+directly against the plane's raw local-space threshold word. After:
+`uwdl_vm` instead carries `eye_world[3]` (untouched world-space camera
+position), plus `ca`/`sa`/`scale`/`anchor[3]` -- the exact same
+rotation/scale/translate parameters the per-vertex transform already
+uses to place real geometry in world space. Each cull opcode now
+computes its OWN local axis-aligned unit normal (axis0/X -> local
+(1,0,0), axis1/height (never rotated by heading) -> local (0,1,0),
+axis2/Z -> local (0,0,1)), rotates just that normal by the SAME
+`ca`/`sa` into world space, forms the plane constant
+`D_world = dot(world_normal, adj_anchor) + thresh*scale`, and tests
+`dot(world_normal, eye_world) <= D_world` -- i.e. the plane itself is
+pushed forward into world space to meet the untouched eye, the
+opposite direction from before.
+
+ONE REAL SUBTLETY CAUGHT BEFORE TESTING, not after: the real per-
+vertex transform doesn't rotate a bare local point -- it first adds
+`xoff`/`zoff` (horizontal, e.g. this door's own `xoff=-16, zoff=-4`)
+and `yoff` (vertical) to the raw bytecode-local coordinates, THEN
+rotates/scales/translates. A naive port of the plane test using the
+raw `anchor` alone would silently test against the wrong plane by
+exactly that offset. Fixed by computing an ADJUSTED anchor once per
+call -- `adj_anchor[0,2] = anchor[0,2] + scale*R(heading)*(xoff,zoff)`,
+`adj_anchor[1] = anchor[1] + yoff` -- chosen so that
+`world = adj_anchor + R(heading)*local*scale` reproduces the real
+per-vertex transform exactly for local=(0,0,0) and every other local
+point, xoff/zoff/yoff included.
+
+VERIFIED LIVE at both repro tiles used throughout entries 26-28
+(tile=31.95,8.98; UW_DLIST_REAL_CULL_OPCODES=1
+UW_DEBUG_DLIST_CULLOP=1):
+  quadrant=1 (yaw=85, heading=0, ca=1 sa=0): faces=8 (frame) /
+    faces=3 (leaf) -- IDENTICAL to the pre-refactor result. The
+    reformulation doesn't disturb the already-correct case, which is
+    the expected signature of a faithful re-derivation rather than a
+    coincidentally-compatible different test.
+  quadrant=2 (yaw=140, heading=6, ca~=0 sa=-1): faces=0 -- STILL
+    completely broken, byte-for-byte the same failure as before this
+    entire refactor.
+This is the valuable result, not a null one. Before this entry, the
+equivalence between "pull eye back into local space" and "push plane
+forward into world space" had only been established by hand algebra
+(both reduce to the same dot product under an orthogonal rotation).
+Getting the SAME broken output after a genuine architectural rewrite
+is a live, empirical confirmation of that equivalence, which rules
+out -- decisively, not just by argument -- the hypothesis that the bug
+was ever about which coordinate space the comparison happens in. Per
+entry 27's finding, the remaining bug is squarely that the eye VALUE
+itself (`DAT_000db438` etc., the renderer's own camera-matrix globals)
+lacks a correct "which tile" world-position component the way the
+object anchor's own preserved high byte does -- this entry confirms
+that finding rather than superseding it.
+
+Kept the world-space formulation as the implementation going forward
+even though it didn't fix the bug: it's the architecturally cleaner
+of the two equivalent forms (matches the same rotate-and-place pattern
+real vertices already use; one fewer inverse-transform for a future
+bug to hide behind), and per-instruction debug output
+(UW_DEBUG_DLIST_CULLOP) now prints the more directly checkable
+`normal=(nx,ny,nz) eyedot=... dworld=...` instead of the old opaque
+local-space `eye=... thresh=...` pair. UW_DLIST_REAL_CULL_OPCODES
+remains reverted to opt-in; confirmed with zero env vars set the door
+still renders the full baseline geometry correctly (faces=11/6).
+Standard run-regressions.sh: 6/6 clean.
+
+Still open: the real fix requires either (a) fully tracing the ring-
+walk's real depth-to-distance semantics (sprite_partition_by_depth /
+DAT_0023b8c8, not yet traced, plus what g_visibility_ring_depth means
+in real tile-distance terms) to construct a correct "which tile is the
+camera in" delta the way the object anchor formula already does, or
+(b) finding a different, more directly reliable real player/camera
+world-position source elsewhere in the codebase that already carries
+that component.
