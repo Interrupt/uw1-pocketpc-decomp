@@ -95,6 +95,7 @@ typedef struct {
    Keys 1 / 2 / 3 pitch the view up / centre / down (DAT_0023beb4; the
    game's own handler for these, LAB_000680d0, is a lost jump-table stub). */
 extern unsigned short DAT_00201b64;   /* game mode; 0 == in-game 3D dungeon view */
+extern int g_text_input_active;       /* FUN_0007ffa8's text-entry loop is running (save-name field, "Move how many", "Chant the mantra", etc); see its own comment in uw.c */
 extern unsigned short DAT_0023c448;   /* latched pending input code */
 extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears DAT_0023c448 */
 extern short DAT_0024af6c;            /* held-key repeat accelerator (turn/move rate scale) */
@@ -213,6 +214,12 @@ static int translate_vk(SDL_Keycode sym) {
    as in the DOS controls. */
 static int in_dungeon_freelook(void) {
     if (DAT_00201b64 != 0) return 0;
+    /* A text-entry field (save-name, "Move how many", "Chant the mantra",
+     * ...) is a scroll-area overlay drawn on top of the dungeon view
+     * without ever changing the top-level game mode, so DAT_00201b64
+     * alone can't tell them apart -- without this check A/D/C/W/S/X/Z/
+     * 1/2/3 kept reaching the movement poller instead of typing. */
+    if (g_text_input_active) return 0;
     /* SDL_GetModState() only reflects modifier keys that came through the
      * real OS input backend -- a demo-injected SDLK_LSHIFT (uw_inject_key_down,
      * which SDL_PushEvent()s the event rather than feeding it through SDL's

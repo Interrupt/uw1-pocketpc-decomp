@@ -1539,6 +1539,18 @@ undefined4 DAT_00100734;
 undefined4 DAT_00100738;
 undefined4 DAT_0010073c;
 undefined1 g_active_hud_panel;
+/* Not part of the original binary -- a port-side addition. FUN_0007ffa8
+   (the generic scroll-area text-entry field used by save-name entry,
+   "Move how many", "Chant the mantra", etc.) is opened as an overlay on
+   top of the dungeon view without ever calling set_game_mode, so
+   DAT_00201b60/DAT_00201b64 (the top-level game-mode pair) never change
+   while it's up -- gx_stub.c's in_dungeon_freelook() has no way to tell
+   the difference between "really in the 3D view" and "a text field is
+   capturing keystrokes over it", so it kept routing A/D/C/W/S/X/Z/1/2/3
+   to the movement poller instead of letting them type. Set true for the
+   duration of FUN_0007ffa8's input loop; gx_stub.c checks it (as an
+   extern) alongside DAT_00201b64. */
+int g_text_input_active;
 undefined1 DAT_00100678;
 undefined4 DAT_00085c54;
 short DAT_00201c74;
@@ -1682,7 +1694,20 @@ short DAT_0010078c;
 short DAT_00201c84;
 int DAT_00250718;
 short DAT_00100794;
-static undefined DAT_0008522c_backing[8192];
+/* Reused scratch global (see the DAT_000a85d0 comment above for the
+   general pattern) -- most call sites treat it as a writable sprintf-
+   style destination buffer via Ordinal_1063, but several others
+   (FUN_000567ec's save-slot list among them) pass `&DAT_0008522c`
+   straight to message_scroll_print_wrapped with no write beforehand,
+   relying on it holding its real static initial content. A Ghidra
+   memory dump of the original binary at 0x8522c confirmed that content
+   is the two bytes `0a 00` -- the string "\n" -- not zero. Printing an
+   empty string (this array's old all-zero C default) instead of a real
+   "\n" silently skipped the pending-newline flag FUN_0007f7cc sets from
+   a string's trailing '\n' (see its own comment), which is why the
+   save-slot list rendered every entry run together on one line with no
+   breaks. Seeded to match. */
+static undefined DAT_0008522c_backing[8192] = "\n";
 #define DAT_0008522c DAT_0008522c_backing[0]
 static undefined1 DAT_00100680_backing[65536];
 #define DAT_00100680 DAT_00100680_backing[0]
@@ -3826,14 +3851,53 @@ char s_optbtns_00086954[] = "optbtns";
 short DAT_002046f0;
 short DAT_002046f4;
 undefined2 DAT_000868dc;
-undefined DAT_0008705c;
-char s_III__00087064[] = "III-";
-undefined DAT_0008706c;
-undefined DAT_00087074;
-undefined4 DAT_00087990;
-static undefined DAT_00087038_backing[8192];
+/* Was a bare 1-byte `undefined` scalar -- FUN_000567ec takes its address
+   and passes it straight to message_scroll_print_wrapped as the save-
+   slot IV label, so it needs to be a real string, not a scalar. Real
+   bytes confirmed via a Ghidra memory dump of the original binary at
+   0x8705c: "IV- " (with a trailing space, matching the sibling I-/II-/
+   III- labels below). Same class of bug as the other unrecovered-string
+   fixes this session, just previously missed because Ghidra had typed
+   this one as a scalar instead of generating a garbled placeholder
+   string for it. */
+char DAT_0008705c[] = "IV- ";
+/* Was `"III-"` -- missing its trailing space, confirmed via the same
+   memory dump (0x87064: "III- ", not "III-"). */
+char s_III__00087064[] = "III- ";
+/* Same fix as DAT_0008705c above: real bytes at 0x8706c are "II- ". */
+char DAT_0008706c[] = "II- ";
+/* Same fix as DAT_0008705c above: real bytes at 0x87074 are "I- ". */
+char DAT_00087074[] = "I- ";
+/* Real .data value confirmed via a Ghidra memory dump of the original
+   binary at 0x87990: 0x00000001, not the C zero-default this plain
+   declaration gave it. This flag gates FUN_0007f7cc's leading-backslash
+   control-code parser (`if (DAT_00087990 != 0 && *param_1=='\\')`);
+   FUN_000567ec's save-slot-list header print happens before that
+   function's own explicit reset (confirmed both in the C source and via
+   disassembly -- not a decompile-dropped-statement bug, the real binary
+   really does read whatever this flag was last left at), so on this
+   port's very first save/load screen it inherited the wrong (zero)
+   default and printed its leading "\6" color code literally instead of
+   interpreting it. */
+undefined4 DAT_00087990 = 1;
+/* Same reused-global-holding-a-real-string pattern as DAT_0008522c
+   above: a Ghidra memory dump of the original binary at 0x87038 shows
+   the real bytes are `5c 30 00` -- the string "\0" (a literal
+   backslash+'0' control code, not an escape byte), not the all-zero
+   default this backing array's C declaration gave it. */
+static undefined DAT_00087038_backing[8192] = "\\0";
 #define DAT_00087038 DAT_00087038_backing[0]
-char s__6_Save_Game_Descriptions_0008703c[] = "\\6_Save_Game_Descriptions";
+/* Was `"\\6_Save_Game_Descriptions"` -- underscores standing in for
+   whitespace, matching Ghidra's own auto-generated symbol name for this
+   string rather than its real recovered bytes (same garbled-placeholder
+   class as s__not_used_yet__00087020 and the save-name prompt string
+   fixed earlier this session). Real bytes confirmed via a Ghidra memory
+   dump of the original binary at 0x8703c
+   (`5c 36 20 20 20 20 53 61 76 65 20 47 61 6d 65 20 44 65 73 63 72 69
+   70 74 69 6f 6e 73 00`): a literal backslash and '6' (not an escape
+   sequence -- there's no raw 0x06 byte here, just the two printable
+   characters), then four real spaces, then "Save Game Descriptions". */
+char s__6_Save_Game_Descriptions_0008703c[] = "\\6    Save Game Descriptions";
 int DAT_002046fc;
 /* Were lone `undefined *` -- the real thing is a pair of function-pointer
    dispatch tables for the in-game pause menu, indexed by menu "state"
@@ -4761,7 +4825,15 @@ unsigned short u_Error_00087008[] = u"Error";
 unsigned short u_UUWI_00087014[] = u"UUWI";
 static undefined DAT_0023bf78_backing[8192];
 #define DAT_0023bf78 DAT_0023bf78_backing[0]
-char s__not_used_yet__00087020[] = "<not_used_yet>";
+/* Was `"<not_used_yet>"` -- underscores standing in for the real spaces
+   (same garbled-placeholder class as the save-descriptions header
+   string above and the save-name prompt fixed earlier this session).
+   Real bytes confirmed via a Ghidra memory dump of the original binary
+   at 0x87020 (`3c 6e 6f 74 20 75 73 65 64 20 79 65 74 3e 00`): the
+   angle brackets were genuinely part of the string, just with real
+   spaces instead of underscores between the words, and no trailing
+   newline. */
+char s__not_used_yet__00087020[] = "<not used yet>";
 /* Was zero-initialized -- see DAT_000857a0's comment above. probe_save_slots
    appends this to DAT_000857a0 ("\SAVE0") to build each save-slot probe
    path, then substitutes the '0' with '1'..'4'; the already-recovered
@@ -5712,11 +5784,27 @@ short DAT_00250710;
 char s__MORE__00087994[] = "[MORE]";
 undefined4 DAT_00250720;
 short DAT_0025070c;
-undefined DAT_0008799c;
-undefined DAT_000879a0;
-static undefined DAT_000879a4_backing[8192];
+/* Was a bare 1-byte `undefined` scalar -- FUN_0008090c's yes/no dialog
+   takes its address and passes it to message_scroll_print_wrapped, so it
+   needs to be a real string. Real bytes confirmed via a Ghidra memory
+   dump of the original binary at 0x8799c: "No". Same bug class as the
+   save-slot label fix earlier this session (Ghidra typed it as a scalar
+   instead of generating a garbled placeholder string). */
+char DAT_0008799c[] = "No";
+/* Same fix as DAT_0008799c above: real bytes at 0x879a0 are "Yes". */
+char DAT_000879a0[] = "Yes";
+/* Reused-global-holding-a-real-string pattern (see the DAT_0008522c
+   comment far above): FUN_0007ffa8's ESC-cancel path prints
+   `&DAT_000879a4` with no write beforehand. Real bytes at 0x879a4: "-". */
+static undefined DAT_000879a4_backing[8192] = "-";
 #define DAT_000879a4 DAT_000879a4_backing[0]
-static undefined DAT_000879a8_backing[8192];
+/* Same pattern: FUN_0007ffa8 defaults its prompt-before-the-input-field
+   text to `&DAT_000879a8` whenever the caller passes a NULL label (the
+   save-name-entry call site does exactly this) -- real bytes at 0x879a8
+   are ">" , the leading caret shown before the text cursor. Left zero
+   (empty string) by this backing array's C default, so that prompt
+   character was silently missing. */
+static undefined DAT_000879a8_backing[8192] = ">";
 #define DAT_000879a8 DAT_000879a8_backing[0]
 static undefined1 DAT_00250778_backing[8192];
 #define DAT_00250778 DAT_00250778_backing[0]
@@ -31096,6 +31184,8 @@ short param_1;
       if (DAT_000868d8 == 0) {
         sVar5 = Ordinal_2005(0x12,DAT_00085a6c[1] + 2);
         iVar7 = (int)sVar5;
+        if (getenv("UW_DEBUG_MODEBTN"))
+          fprintf(stderr, "[modebtn] resolved iVar7=%d\n", iVar7);
         if (5 < iVar7) {
           return;
         }
@@ -34970,7 +35060,7 @@ byte * param_2;
   undefined1 *puVar1;
   undefined1 *puVar2;
   uint uVar3;
-  
+
   puVar1 = (undefined1 *)resolve_object_link(param_1);
   while (puVar1 != (undefined1 *)0x0) {
     puVar2 = (undefined1 *)FUN_00044294();
@@ -34998,6 +35088,22 @@ byte * param_2;
 
 
 
+/* Same pointer-truncation bug class as FUN_00044294/FUN_000442bc just
+   below (their own comment has the full writeup) -- iVar4 was `int`,
+   truncating DAT_002028c0 (a real `undefined1 *` heap pointer) to 32
+   bits before the following `*(char *)(iVar4 + 1)` write dereferenced
+   it back out as a wild 64-bit address. The sibling expression right
+   above it, `*(byte *)(iVar1 + DAT_002028c0)`, computes the identical
+   address inline without going through a truncating temporary, so it
+   stayed correct -- the same "half right, half wrong" pattern already
+   seen elsewhere this session (mixed styling from the same real,
+   unambiguously 32-bit-clean ARM source). This was the second,
+   previously-masked half of the QA-reported inventory-save crash: fixing
+   FUN_00044294 let execution get past its own wild pointer and into
+   this one. Confirmed via lldb: the crash backtrace attributed the
+   fault to FUN_000440d0's call-site return address (this function's own
+   prologue hadn't finished setting up x29/x30 yet when it faulted), not
+   a bug in FUN_000440d0 itself. */
 void FUN_000441d8(param_1,param_2)
 ushort * param_1;
 undefined2 * param_2;
@@ -35006,9 +35112,9 @@ undefined2 * param_2;
   int iVar1;
   undefined2 uVar2;
   byte bVar3;
-  int iVar4;
+  char *iVar4;
   int iVar5;
-  
+
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
@@ -35026,7 +35132,22 @@ undefined2 * param_2;
 
 
 
-int FUN_00044294()
+/* Was `int` -- DAT_002028c4 is a real `undefined1 *` heap pointer (the
+   inventory-serialization scratch buffer allocated in FUN_00043fd8/
+   FUN_00043e20), so `DAT_002028c4 + DAT_002028cc * 8` is real pointer
+   arithmetic, but returning it as a 32-bit `int` truncated the pointer
+   before the caller's `(undefined1 *)` cast sign-extended the truncated
+   low 32 bits back out to 64 -- producing a wild address. Confirmed via
+   lldb disassembly of this port's own compiled binary (not the original
+   ARM code): FUN_000440d0's call site does exactly `mov x8, x0; sxtw
+   x8, w8` on this function's return value, then dereferences it a few
+   instructions later -- the crash a QA report reproduced by saving with
+   an item in inventory (any inventory contents send FUN_000440d0
+   through the resolve_object_link/FUN_00044294 loop that hits this).
+   Same pointer-truncation bug class fixed many times elsewhere this
+   session, just via a return type this time instead of a parameter or
+   local. */
+void *FUN_00044294()
 
 {
   DAT_002028cc = DAT_002028cc + 1;
@@ -35035,12 +35156,14 @@ int FUN_00044294()
 
 
 
-int FUN_000442bc(param_1)
+/* Same truncated-pointer-return bug as FUN_00044294 just above, same
+   fix. */
+void *FUN_000442bc(param_1)
 short param_1;
 
 {
-  int iVar1;
-  
+  void *iVar1;
+
   if (param_1 == 0) {
     iVar1 = 0;
   }
@@ -35080,7 +35203,7 @@ ushort * param_2;
 
 
 
-void FUN_00044398(param_1,param_2)
+void deFUN_000440d0(param_1,param_2)
 byte * param_1;
 ushort * param_2;
 
@@ -35106,7 +35229,18 @@ ushort * param_2;
     param_1 = puVar1 + 4;
     param_2 = (ushort *)(puVar3 + 4);
     if (((puVar3[1] & 0x80) == 0) && ((*(ushort *)(puVar3 + 6) & 0xffc0) != 0)) {
-      FUN_00044398(puVar1 + 6);
+      /* Dropped 2nd argument -- deFUN_000440d0 takes (param_1, param_2) and
+         every other call site (both non-recursive ones, a few lines up
+         this file) passes both; this self-recursive call for a nested
+         container's own contents only passed the first. Same idiom as
+         FUN_000440d0's matching recursive call just above in this file
+         (`FUN_000440d0(puVar1 + 6,puVar2 + 6);`), which this function
+         otherwise exactly mirrors for the Load direction. Not yet known
+         to have crashed in practice (would only trigger loading a save
+         with a nested container in inventory), found while auditing this
+         function for the same pointer-truncation bug class as its Save-
+         side counterpart. */
+      deFUN_000440d0(puVar1 + 6,(ushort *)(puVar3 + 6));
     }
   }
   return;
@@ -35175,7 +35309,7 @@ undefined1 * param_1;
     puVar3 = puVar3 + 1;
     iVar4 = iVar5;
   } while (iVar5 != 0 && bVar1);
-  FUN_00044398(g_player_object + 6,param_1 + 6);
+  deFUN_000440d0(g_player_object + 6,param_1 + 6);
   if (g_cursor_holding_state == 1) {
     puVar2 = (undefined1 *)alloc_object_slot(0);
     g_selected_object = puVar2;
@@ -35188,7 +35322,7 @@ undefined1 * param_1;
     puVar2[6] = param_1[0x21];
     puVar2[7] = param_1[0x22];
     if ((param_1[0x1c] & 0x80) == 0) {
-      FUN_00044398(g_selected_object + 6,param_1 + 0x21);
+      deFUN_000440d0(g_selected_object + 6,param_1 + 0x21);
     }
   }
   return;
@@ -59870,24 +60004,22 @@ char param_1;
       fprintf(stderr, "[savedesc] FUN_0006c670 returned %d, acStack_528=%s\n", iVar4, acStack_528);
     if (iVar4 != 0) {
       FUN_00078c80(0xaa);
-      /* The decompile never reconstructed a "type a save description"
-         prompt (real UW1 likely had one; FUN_0006c264's own param_2
-         confirms the Load side at least round-trips whatever text is
-         already stored), and building that whole text-entry flow from
-         scratch is out of scope here. Write a real, useful description
-         anyway -- the current dungeon level -- so a save actually shows
-         up as "used" (probe_save_slots probes for this file's existence) and
-         the Load list has something meaningful to show instead of
-         staying blank forever. */
-      {
-        char descbuf[64];
-        char descpath[300];
-        int desclen;
-        snprintf(descbuf, sizeof(descbuf), "Level %d", (int)DAT_00201b68);
-        snprintf(descpath, sizeof(descpath), "%s\\desc", acStack_528);
-        desclen = (int)strlen(descbuf);
-        FUN_0007edf4(descbuf, descpath, (ushort)desclen);
-      }
+      /* An earlier session added a snprintf("Level %d", ...) write-back
+         to this slot's desc file here, reasoning the decompile never
+         reconstructed a "type a save description" prompt for Save, so
+         Load should at least leave something non-blank behind. That
+         reasoning no longer applies -- FUN_0006c264 (the Save path) now
+         has a fully working name-entry flow and writes the player's
+         actual chosen name into the desc file at save time (see its own
+         FUN_0007edf4 call). This block ran on every LOAD too, though,
+         unconditionally overwriting the first strlen("Level N") bytes of
+         the slot's real desc file with "Level N" and leaving whatever
+         longer content used to be there past that point untouched --
+         confirmed as the cause of a QA report where loading a save named
+         "HELLO WORLD" corrupted its own stored name to "LEVEL 1ORLD" (7
+         bytes of "Level 1" overwriting the first 7 bytes of "HELLO
+         WORLD", "ORLD" being the un-overwritten remainder). Load has no
+         business rewriting the slot's description at all -- removed. */
       FUN_0003bee4();
       iVar4 = FUN_00044624(&DAT_000857a0);
       if (iVar4 != 0) {
@@ -72676,16 +72808,31 @@ int param_5;
   rect_fill_or_save_restore(param_1,param_2,param_3,param_4);
 
   /* Populate the message-scroll context struct (DAT_00250704 ->
-     DAT_00087960) from the region rectangle. The decompile lost this:
-     FUN_0007fc8c only drew the panel background, so every scroll field
-     (word-wrap left/right edges at +4/+6, the draw cursor at +8/+0xa,
-     the new-line margin at +0xc, the scroll-blit top at +0xe) stayed 0
-     -- FUN_0007f7cc's width test then never fit, it recursed into
-     word-wrap, and draw_text_string (if reached) drew at (0,0). Called
-     once from FUN_0007f044 during in-game HUD init with
-     (0xf,0xa9,0x131,200,0). */
+     DAT_00087960) from the region rectangle. An earlier session's own
+     comment here claimed "the decompile lost this" from FUN_0007fc8c's
+     real body -- re-checked via a fresh Ghidra disassembly of 0x7fc8c
+     this session and that's NOT accurate: the real function only draws
+     the (up to) two background rects and tail-calls
+     rect_fill_or_save_restore once more, nothing else -- this whole
+     struct-populate block has no match in the real binary at this
+     address. Left in place anyway (not reverted) because it's the only
+     place currently seeding these fields at all, and empirically
+     produces a correct, working panel (confirmed visually: the save/
+     load name prompt and the save-slot description list both render
+     correctly with it). Real ARM disassembly of FUN_0007fce8 (see its
+     own comment) independently confirmed the byte layout this block
+     writes to (+2 bottom_y, +4 left_x, +6 right_x, +8/+0xa draw cursor
+     x/y, +0xc/+0xe new-line-reset x/y) is at least self-consistent with
+     how the rest of the widget reads it. What's still missing: +0x00
+     ("top y", read by FUN_0007fce8's own erase-rect on every reset) was
+     never written here either -- confirmed as the cause of that erase
+     covering the whole screen instead of just this panel's own strip,
+     fixed below by seeding it the same as +0x0e. Wherever the REAL
+     populate code for this struct actually lives is still unknown; flagged
+     for future investigation rather than solved here. */
   ctx = (char *)DAT_00250704;
   if (ctx != (char *)0x0) {
+    *(short *)(ctx + 0x00) = (short)param_2;   /* top y (erase rect)   */
     *(short *)(ctx + 0x02) = (short)param_4;   /* bottom y             */
     *(short *)(ctx + 0x04) = (short)param_1;   /* left x               */
     *(short *)(ctx + 0x06) = (short)param_3;   /* right x              */
@@ -72703,32 +72850,60 @@ int param_5;
 
 
 
+/* Every field-offset constant below that was written as a bare
+   `DAT_00250704 + N` (no cast before the addition) was wrong -- half
+   what it should be. DAT_00250704 is declared `undefined *`
+   (uw.h: `typedef unsigned char undefined`), a real byte pointer, but
+   these specific expressions were decompiled as if it scaled by
+   sizeof(undefined2)==2, so every one of them landed N/2 bytes early.
+   The OTHER offsets in this same function, written with an explicit
+   `(char *)DAT_00250704 + N` cast placed *before* the addition, were
+   already byte-correct -- this mixed styling (both forms decompiled
+   from the same real ARM code, which is unambiguously byte-addressed
+   throughout) is what hid the bug: half the fields in this "reset the
+   scroll panel" struct landed at the right place, half didn't.
+   Confirmed via real ARM disassembly (0x7fd14-0x7fdd8): the struct's
+   real byte layout is top_y@0, bottom_y@2, left_x@4, right_x@6 (used
+   by the rect_fill_or_save_restore call below), base_x@0xc, base_y@0xe
+   (the panel's static origin, populated once by FUN_0007fc8c),
+   cur_x@8, cur_y@0xa (the live draw-cursor these get copied into on
+   every reset -- this is the actual bug: cur_y was landing at byte 5,
+   splitting a partial write across the middle of top_y/bottom_y's own
+   bytes instead of the real cursor field, so it read back as garbage
+   or zero and every scroll message before the first real scroll-up
+   drew off in the weeds instead of at the panel's visible top row),
+   and three more zeroed fields at 0x10/0x12/0x14 (a 0x11/0x13/0x15
+   counterpart to each was already correct). Root cause of both the
+   invisible "Enter a save name" prompt and the invisible save-slot
+   list text -- same struct, same reset function, same bug. */
 void FUN_0007fce8(param_1)
 int param_1;
 
 {
-  undefined2 *puVar1;
+  char *pStruct;
+  undefined2 uVar1;
   int iVar2;
-  
+
   if ((param_1 != 0) && (FUN_0007f094(), DAT_00250708 != 0)) {
     FUN_00057118();
   }
   set_draw_color(0x2a);
-  rect_fill_or_save_restore(DAT_00250704[2],*DAT_00250704,(ushort)DAT_00250704[3] + 1,(ushort)DAT_00250704[1] + 1
-              );
-  puVar1 = DAT_00250704 + 7;
-  *(char *)(DAT_00250704 + 5) = (char)*puVar1;
-  *(char *)((char *)DAT_00250704 + 0xb) = (char)((ushort)*puVar1 >> 8);
-  puVar1 = DAT_00250704 + 6;
-  *(char *)(DAT_00250704 + 4) = (char)*puVar1;
-  *(char *)((char *)DAT_00250704 + 9) = (char)((ushort)*puVar1 >> 8);
-  *(undefined1 *)(DAT_00250704 + 8) = 0;
-  *(undefined1 *)((char *)DAT_00250704 + 0x11) = 0;
-  *(undefined1 *)(DAT_00250704 + 9) = 0;
-  *(undefined1 *)((char *)DAT_00250704 + 0x13) = 0;
-  *(undefined1 *)(DAT_00250704 + 10) = 0;
-  *(undefined1 *)((char *)DAT_00250704 + 0x15) = 0;
-  if (DAT_00250704 == (undefined2 *)&DAT_00087960) {
+  pStruct = (char *)DAT_00250704;
+  rect_fill_or_save_restore(*(short *)(pStruct + 4),*(short *)(pStruct + 0),
+               (ushort)*(short *)(pStruct + 6) + 1,(ushort)*(short *)(pStruct + 2) + 1);
+  uVar1 = *(undefined2 *)(pStruct + 0xe);
+  *(char *)(pStruct + 0xa) = (char)uVar1;
+  *(char *)(pStruct + 0xb) = (char)((ushort)uVar1 >> 8);
+  uVar1 = *(undefined2 *)(pStruct + 0xc);
+  *(char *)(pStruct + 8) = (char)uVar1;
+  *(char *)(pStruct + 9) = (char)((ushort)uVar1 >> 8);
+  *(undefined1 *)(pStruct + 0x10) = 0;
+  *(undefined1 *)(pStruct + 0x11) = 0;
+  *(undefined1 *)(pStruct + 0x12) = 0;
+  *(undefined1 *)(pStruct + 0x13) = 0;
+  *(undefined1 *)(pStruct + 0x14) = 0;
+  *(undefined1 *)(pStruct + 0x15) = 0;
+  if (DAT_00250704 == (undefined *)&DAT_00087960) {
     set_hud_status_value(4,1);
     iVar2 = msg_scroll_draw_edges();
   }
@@ -72869,6 +73044,7 @@ short param_5;
   iVar14 = (int)*(short *)(DAT_00250704 + 10);
   FUN_00057118();
   wait_for_click_release(0);
+  g_text_input_active = 1;
   uVar8 = next_input_event();
   sVar4 = (short)uVar8;
   do {
@@ -72910,6 +73086,7 @@ short param_5;
         *(char *)(DAT_00250704 + 8) = (char)iVar7;
         *(char *)(DAT_00250704 + 9) = (char)((uint)iVar7 >> 8);
       }
+      g_text_input_active = 0;
       return uVar8;
     }
     flush_dirty_rect_to_display(1);
