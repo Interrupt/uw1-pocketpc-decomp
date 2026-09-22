@@ -52839,6 +52839,17 @@ static void uwdl_emit_face(uwdl_vm *m, uwdl_face *f)
 static int g_uwdl_vertex_attempted, g_uwdl_vertex_dropped;
 static double g_uwdl_eye_world[3];
 static double g_uwdl_anchor[3];
+/* The player's REAL world position (X,height,Z), read from
+   DAT_00086e6c+0xa/0xe/0x12 fresh each frame, before sync_camera_from_
+   player masks X/Z to their low byte and before build_frame_draw_list's
+   own in-place truncation of that same struct (uw.c ~50006-50007) --
+   i.e. the one point in a frame where the player's full, untruncated,
+   unrotated world position is still available. UW_DLIST_EYE_TRUE_PLAYER_
+   POS=1 swaps this straight in as the cull test's eye, completely
+   replacing DAT_000db438/43c/440, to test doing the comparison in real
+   world space instead of this renderer's own per-frame re-centered
+   "window" coordinate convention. */
+static double g_true_player_pos[3];
 static void uwdl_face_vertex(uwdl_vm *m, uwdl_face *f, unsigned short off)
 {
   uwdl_slot *s;
@@ -53266,6 +53277,21 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
        the right shape of correction; the eye's real deficiency isn't a
        missing constant on one axis. See object-rendering-findings.txt
        for the full numeric reasoning and the falsification. */
+    /* Quick test, entirely in real world space: swap in the player's
+       actual full-precision, unmasked, unrotated world position
+       (g_true_player_pos, captured in sync_camera_from_player before
+       either it or build_frame_draw_list truncate the player struct's
+       own X/Z to a per-tile fraction) as the eye, completely bypassing
+       DAT_000db438/43c/440's own windowed/re-centered convention. Not
+       expected to line up with the anchor's own coordinate frame (the
+       anchor is built relative to a fixed, arbitrary "player's own tile
+       sits at 4096" reference via the ring-walk, not real map-wide
+       coordinates) -- but that assumption is itself unproven, so this
+       tests it directly with real numbers instead of trusting the
+       derivation. */
+    if (getenv("UW_DLIST_EYE_TRUE_PLAYER_POS")) {
+      _ex = g_true_player_pos[0]; _ey = g_true_player_pos[1]; _ez = g_true_player_pos[2];
+    }
     { const char *_s = getenv("UW_DLIST_EYE_X"); if (_s) _ex = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Y"); if (_s) _ey = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Z"); if (_s) _ez = atof(_s); }
@@ -59765,6 +59791,14 @@ void sync_camera_from_player()
   cVar1 = DAT_0023b4a0;
   iVar4 = DAT_00086e6c;
   sVar8 = 0;
+  /* Grab the player's real, full-precision, unmasked world position here
+     -- the one moment before this function's own `&0xff` below (and
+     build_frame_draw_list's later in-place truncation of the same
+     struct fields) throws the coarse tile part away. See
+     g_true_player_pos's own comment. */
+  g_true_player_pos[0] = (double)*(short *)(DAT_00086e6c + 10);
+  g_true_player_pos[1] = (double)*(short *)(DAT_00086e6c + 0xe);
+  g_true_player_pos[2] = (double)*(short *)(DAT_00086e6c + 0x12);
   uVar2 = *(ushort *)(DAT_00086e6c + 10) & 0xff;
   uVar5 = *(ushort *)(DAT_00086e6c + 0x12) & 0xff;
   uVar3 = uVar2;

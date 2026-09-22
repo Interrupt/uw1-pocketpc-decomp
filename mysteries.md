@@ -1345,6 +1345,42 @@ confirmed restored to faces=8/3 after the revert. run-regressions.sh:
 6/6 clean. Next step, unchanged: trace `sprite_partition_by_depth`/
 `DAT_0023b8c8`'s real semantics.
 
+**UPDATE 40 (the most direct possible test: real world space, real
+player position, 2026-09-21):** user: "Is there a way to do this
+calculation entirely in world space? We could use the player's
+position as the eye position for a quick test." Implemented exactly
+that: captured the player's true, full-precision, unmasked, unrotated
+world position at the top of `sync_camera_from_player` (before its own
+masking and before `build_frame_draw_list`'s later truncation of the
+same struct fields), wired it in as a new opt-in diagnostic
+(`UW_DLIST_EYE_TRUE_PLAYER_POS=1`) that bypasses `DAT_000db438/43c/440`
+entirely.
+
+Result: `eye_world=(8179,804,2299)` against `anchor=(4240,640,688)`
+(quadrant=1) and the same eye against `anchor=(3664,640,144)`
+(quadrant=2) -- nearly double the anchor's X, more than 3x its Z.
+Completely different scale. quadrant=1 (previously the known-good
+faces=8/3) dropped to faces=0; quadrant=2 went from faces=0 to faces=2
+(neither a known-correct value). This directly confirms, with real
+numbers rather than inference, that the object anchor is NOT expressed
+in real map-wide coordinates -- it's built entirely relative to a
+fixed, arbitrary "the player's own tile always sits at ~4096" reference
+point that the ring-walk silently re-establishes every frame. There is
+no true absolute coordinate space in this render path for a raw player
+position to land in correctly; a genuine world-space comparison would
+need the object's own real absolute tile position reconstructed too,
+not just its already-windowed anchor.
+
+Kept as a documented, tested-and-ruled-out diagnostic, off by default.
+`UW_DLIST_REAL_CULL_OPCODES` still opt-in; default rendering confirmed
+unaffected (faces=11/6). run-regressions.sh: 6/6 clean. Three
+independent eye substitutions have now failed in three different,
+informative ways ((4112,4112), flat Z bias, true absolute position) --
+converging evidence the fix needs the object's real position
+reconstructed, not the eye guessed at. Next step unchanged: trace
+`sprite_partition_by_depth`/`DAT_0023b8c8` and the ring-walk's real
+tile-indexing scheme.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

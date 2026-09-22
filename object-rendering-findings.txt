@@ -3948,3 +3948,62 @@ pipeline that varies per-object rather than being a fixed constant.
 UW_DLIST_REAL_CULL_OPCODES remains reverted to opt-in; confirmed
 restored to the known-good baseline (faces=8/3 at quadrant=1) after
 the revert. Standard run-regressions.sh: 6/6 clean.
+
+(31) 2026-09-21: user asked for the most direct possible test -- do the
+cull comparison entirely in real world space, using the player's real
+position as the eye -- to check the "the anchor lives in a fixed,
+per-frame re-centered window, not real map coordinates" conclusion
+directly with numbers rather than continuing to reason about it.
+
+IMPLEMENTED CLEANLY, no guesswork this time: added g_true_player_pos[3],
+captured at the very top of sync_camera_from_player (uw.c ~59776-59784)
+by reading DAT_00086e6c+0xa/0xe/0x12 (the player struct's real X/height/
+Z fields) BEFORE that function's own `&0xff` masking and before
+build_frame_draw_list's later in-place truncation of those same fields
+(uw.c ~50006-50007) -- the one point in a frame where the player's
+full-precision, unmasked, UNROTATED world position is still intact.
+Wired it into emit_dlist_bank_object's eye-setup as a new opt-in
+diagnostic, UW_DLIST_EYE_TRUE_PLAYER_POS=1, which swaps this straight
+in as the cull test's eye, completely bypassing DAT_000db438/43c/440
+and its windowed convention -- no rotation, no window-centering, no
+per-object correction, exactly the player's raw world coordinates.
+
+RESULT, live at both repro quadrants:
+  quadrant=1 (previously faces=8/3, the known-good baseline):
+    eye_world=(8179,804,2299) vs anchor=(4240,640,688) -- faces=0.
+  quadrant=2 (previously faces=0, the broken case):
+    eye_world=(8179,804,2299) [same value -- same real player position
+    in both tests, tile=31.95,8.98 in both] vs anchor=(3664,640,144)
+    -- faces=2 (nonzero, but not a known-correct reference value).
+The eye and anchor numbers make the mismatch obvious on sight: eye X
+(8179) is nearly double anchor X (4240), eye Z (2299) is more than 3x
+anchor Z (688) -- nothing close to the same scale. This DIRECTLY,
+empirically confirms (not just algebraically infers) what was inferred
+after UPDATE 30/entry 30: DAT_0023b904/91c/920 (the anchor) is NOT
+expressed in real, map-wide absolute coordinates. It's built entirely
+relative to a fixed, arbitrary "the player's own tile always sits at
+this constant" reference (~4096-4112, from the ring-walk's own center
+index) that gets silently re-established fresh every frame -- there is
+no real absolute coordinate space anywhere in this rendering path for
+a raw player position to land in correctly. A genuine "entirely in
+world space" comparison would require reconstructing the object's own
+real absolute position too (the true absolute tile of whichever map
+cell the ring-walk is currently visiting, not just its walk-relative
+index) -- not attempted here; this was deliberately the cheap, direct
+version of the test, and it answered the specific question asked.
+
+Kept UW_DLIST_EYE_TRUE_PLAYER_POS as a documented, tested-and-ruled-out
+diagnostic (matching this session's established pattern). Off by
+default; UW_DLIST_REAL_CULL_OPCODES remains opt-in; confirmed zero-env-
+var default rendering unaffected (faces=11/6). Standard
+run-regressions.sh: 6/6 clean.
+
+Net effect on the open question: every fixed-value eye substitution
+tried so far -- the flat (4112,4112) candidate, the flat +0x1000-on-Z
+bias, and now the true unrotated absolute player position -- has
+failed, each in a different, informative way. The real fix increasingly
+looks like it needs the object's own true position reconstructed (not
+just its already-windowed anchor), which routes back to the same
+still-open next step: trace sprite_partition_by_depth/DAT_0023b8c8 and
+the ring-walk's real tile-indexing scheme to recover an actual absolute
+tile coordinate for whichever object/tile is currently being rendered.
