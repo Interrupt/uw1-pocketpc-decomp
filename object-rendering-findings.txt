@@ -3868,3 +3868,83 @@ camera in" delta the way the object anchor formula already does, or
 (b) finding a different, more directly reliable real player/camera
 world-position source elsewhere in the codebase that already carries
 that component.
+
+(30) 2026-09-21: attempted a specific, concrete "which tile" fix,
+tested it live, and it made the known-good quadrant WORSE -- recording
+the falsification and the one new fact this pass did confirm, so the
+next attempt doesn't retread this ground.
+
+THE ATTEMPT. Traced sync_camera_from_player (uw.c:59743-59783) in full
+for the first time this investigation. Confirmed directly: it builds
+DAT_000db438/440 (eye X/Z) from ONLY the player's low byte of real
+position (`*(ushort*)(DAT_00086e6c+10/0x12) & 0xff` -- the 0-255
+fine sub-tile fraction), quadrant-swapped by the identical 4-case
+formula used everywhere else in this investigation, then adds a fixed
+baseline -- a literal `+0x1000` (4096) for X, `+DAT_0023bf30/38` for
+X/Z respectively (bf30/34/38, and their angle-offset siblings bf3c/
+bf40, confirmed by grep to have NO writer anywhere in this file -- a
+dead camera-shake/bob-offset feature, always 0, not a repurposable
+"tile index" slot as briefly hoped). Cross-checked against the object
+anchor formula (DAT_0023b904, emit_tile_features ~line 57484):
+`(billboard_nudge + ring_walk_index*8) * 0x20 + 0x10`. At the ring-
+walk's own center index (16, the player's own tile, deliberately
+skipped by the walk itself so it's never directly observed) that
+formula reduces to exactly 16*8*32+16 = 4112 -- i.e. eye X's existing
+literal `+0x1000` already lands within 16 units of the SAME reference
+point nearby object anchors are built around, while eye Z gets no
+equivalent baseline at all (stuck in the raw 0-255 band). Hypothesis:
+Z is missing the same kind of fixed baseline X already has; add it.
+
+Implemented as a locally-scoped correction inside
+emit_dlist_bank_object's own eye-setup block (NOT in the shared
+sync_camera_from_player global, which also feeds the real view matrix
+used by the rest of the renderer -- deliberately kept scoped to avoid
+risking a much wider regression): `_ez += 0x1000`, tunable via
+UW_DLIST_EYE_Z_TILE_BIAS for calibration.
+
+TESTED LIVE, FALSIFIED: quadrant=1 (previously faces=8/3, the known-
+good baseline) dropped to faces=2/1 -- substantially WORSE. Reverted
+immediately. A flat, always-on additive constant on Z is not the right
+shape of correction -- the pre-existing (uncorrected) eye Z=243 was
+already close enough to this door's own anchor Z=688 (delta ~445, well
+under 2 tiles) to pass every face test; forcibly shifting it by a flat
+4096 overshoots by roughly an order of magnitude and flips the sign of
+most of this door's own face-plane tests. Whatever the eye's real
+deficiency is, it is not "always add a fixed tile-sized constant to
+one axis" -- ruled out with real numbers, not just reverted on
+suspicion.
+
+SEPARATELY CONFIRMED, a genuinely new fact (not previously checked):
+compared sync_camera_from_player's own internal quadrant-swap (lines
+59763-59779, applied to a LOCAL copy of the masked position before
+computing eye X/Z) against build_frame_draw_list's OWN quadrant-swap
+of the REAL player struct fields (lines 50006-50024, which truncates
+DAT_00086e6c+10/0x12 to their low byte and quadrant-rotates them IN
+PLACE, immediately after calling sync_camera_from_player, for the rest
+of that frame's tile-walk/anchor pipeline to read) case-by-case for
+all four quadrants (0/1/2/3). Byte-for-byte identical in every case --
+there is no phase/ordering mismatch between the camera's own quadrant
+transform and the one the rest of the frame's rendering (anchors
+included) subsequently uses. This closes off a plausible-sounding
+alternate theory (a quadrant-numbering disagreement between the two
+independent rotation call sites) without needing a live test to rule
+it out.
+
+Two concrete "add a missing tile term" attempts have now failed this
+investigation: the naive flat (4112,4112) replacement candidate (an
+earlier session, see UPDATE 36/entry 27) and this pass's flat +0x1000-
+on-Z-only additive correction. Both replace/shift the eye by a fixed
+amount that doesn't track the object's own actual distance from the
+player. This is reasonably strong evidence the real fix isn't a
+constant at all -- it likely needs the eye's OWN coarse term to be
+computed the same PER-OBJECT, walk-relative way the anchor's e4/e8
+term is (i.e. derived fresh per rendered object/bank from the real
+tile-to-tile distance between camera and that specific object), not a
+single fixed number applied uniformly regardless of which door or
+which quadrant is being tested. Still points at the same unresolved
+next step named above: trace sprite_partition_by_depth/DAT_0023b8c8's
+real semantics, since that's the one already-connected piece of this
+pipeline that varies per-object rather than being a fixed constant.
+UW_DLIST_REAL_CULL_OPCODES remains reverted to opt-in; confirmed
+restored to the known-good baseline (faces=8/3 at quadrant=1) after
+the revert. Standard run-regressions.sh: 6/6 clean.

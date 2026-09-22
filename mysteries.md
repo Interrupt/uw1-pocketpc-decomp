@@ -1306,6 +1306,45 @@ but the actual remaining fix is unchanged: find or construct a real
 "which tile is the camera in, relative to this object" value, the same
 way the object anchor's own preserved high byte already does.
 
+**UPDATE 39 (traced sync_camera_from_player, tried and falsified a
+concrete fix, ruled out a quadrant-phase-mismatch alternative,
+2026-09-21):** user: "Yes, make this fix now" (after being walked
+through the "which tile" theory above). Traced `sync_camera_from_player`
+directly for the first time -- confirmed it masks the player's real
+position to its low byte (`&0xff`, the 0-255 fine sub-tile fraction)
+before quadrant-rotating it, and adds a fixed baseline: a literal
+`+0x1000` (4096) for X, and `+DAT_0023bf30/38` (a dead camera-shake/
+bob-offset family, confirmed no writer anywhere in the file, always 0)
+for X/Z -- i.e. Z effectively gets no baseline at all, while X's
+existing `+0x1000` lands within 16 units of what the object-anchor
+formula's own implicit center works out to (16<<3<<5 + 0x10 = 4112, at
+the ring-walk's center index). Hypothesized Z was missing the same
+kind of baseline X already has, and added a scoped `+0x1000` to the
+cull test's own eye Z (not the shared camera global) to test it.
+
+TESTED LIVE, FALSIFIED: the known-good quadrant (faces=8/3) dropped to
+faces=2/1 -- worse, not fixed. Reverted immediately. The already-
+correct eye Z (243) was close enough to this door's own anchor Z (688)
+to pass every test; a flat +4096 badly overshoots. A fixed per-axis
+constant is not the right shape of correction.
+
+Also checked, and ruled out, a second plausible theory while here:
+compared `sync_camera_from_player`'s own quadrant-swap against
+`build_frame_draw_list`'s separate quadrant-swap of the real player
+struct (applied immediately after, for the rest of the frame) case by
+case for all four quadrants -- byte-for-byte identical in every case.
+No phase/ordering mismatch between the two.
+
+Two independent "replace/shift the eye by a fixed amount" attempts
+have now failed (the earlier (4112,4112) candidate and this pass's
+flat Z bias). This is real evidence the fix isn't a constant -- the
+eye's own coarse term likely needs to be computed per-object, the same
+walk-relative way the anchor's own e4/e8 term is, not applied
+uniformly. `UW_DLIST_REAL_CULL_OPCODES` remains reverted to opt-in;
+confirmed restored to faces=8/3 after the revert. run-regressions.sh:
+6/6 clean. Next step, unchanged: trace `sprite_partition_by_depth`/
+`DAT_0023b8c8`'s real semantics.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

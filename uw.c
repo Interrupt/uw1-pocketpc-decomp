@@ -53257,6 +53257,15 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
        of any kind applied to it. UW_DLIST_EYE_X/Y/Z still override
        individually for calibration if a future case needs it. */
     double _ex = *(float *)&DAT_000db438, _ey = *(float *)&DAT_000db43c, _ez = *(float *)&DAT_000db440;
+    /* TESTED AND RULED OUT (2026-09-21): tried adding a flat +0x1000 to
+       _ez here, on the theory that eye Z was missing the same fixed
+       tile-center baseline eye X's own sync_camera_from_player formula
+       already has (`+0x1000` literal, confirmed load-bearing earlier).
+       Live result at the known-good quadrant=1 repro: faces dropped from
+       8/3 to 2/1 -- WORSE, not fixed. A flat per-axis constant is not
+       the right shape of correction; the eye's real deficiency isn't a
+       missing constant on one axis. See object-rendering-findings.txt
+       for the full numeric reasoning and the falsification. */
     { const char *_s = getenv("UW_DLIST_EYE_X"); if (_s) _ex = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Y"); if (_s) _ey = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Z"); if (_s) _ez = atof(_s); }
