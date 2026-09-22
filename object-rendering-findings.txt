@@ -4112,3 +4112,92 @@ formula bug. Next step: trace which specific bytecode offsets the
 height/Z cull tests come from at quadrant=1 vs quadrant=2 for the SAME
 logical face, to see whether the if/else-if chain is genuinely taking
 a different path.
+
+(33) 2026-09-21: continuing entry (32)'s open thread -- caught a real
+bug in that entry's own code, then found and ruled out a genuine,
+previously-undocumented per-quadrant mechanism while chasing it.
+
+BUG FOUND AND FIXED: entry (32)'s anchor-shift code originally read
+`g_uwdl_anchor[0] += g_true_player_pos[0] - _ring_center_x;` directly.
+When UW_DLIST_ANCHOR_DELTA_CASE was added afterward to sweep possible
+per-quadrant rotations of this delta, the refactor introduced an
+intermediate variable computed WRONG: `double _dx = ax - _ring_center_x`
+-- using the raw anchor `ax` instead of `g_true_player_pos[0]`. This
+silently discarded the true-player-position term entirely and broke
+the quadrant=1 exact match that had just been confirmed, without any
+test catching it (the post-refactor verification only checked default-
+state/regression safety, not the specific exact-match claim itself --
+a real process gap: always re-verify the SPECIFIC claim just made after
+any refactor that touches its own code path, not just general safety).
+Caught only because the user asked to continue investigating and a
+fresh cullop trace showed nonsensical numbers (adj_anchor Z landing
+negative) that didn't match the previously-reported values. Fixed
+(`_dx = g_true_player_pos[0] - ...`, `_dz = g_true_player_pos[2] - ...`),
+rebuilt, RE-CONFIRMED quadrant=1 still reproduces faces=8/3 exactly
+with the fix in place -- entry (32)'s core finding stands, verified
+twice now under two different code states.
+
+IMPORTANT CORRECTION: entry (32)'s own "quadrant=2 gives faces=2,
+axis=0 tests now pass" analysis was captured on the BUGGY code and is
+INVALID -- redone with the fix in place, quadrant=2 goes back to full
+faces=0 (all axis=0/1/2 tests cull, not just axis=1/2 as previously,
+now-incorrectly, reported). The "control-flow divergence" hypothesis
+entry (32) closed on was built on this same invalid data;
+re-traced side-by-side with corrected numbers instead (below).
+
+RE-SWEPT UW_DLIST_ANCHOR_DELTA_CASE (0-3) with the bug fixed: quadrant=1
+stays exact only at -1 (no transform) or 0 (identity, same thing);
+case=1 partially degrades it (faces=6/2); case=2/3 fully break it
+(faces=0/0). quadrant=2: -1/0/1 stay at faces=0; case=2/3 reach
+faces=2 (better than 0, still not the correct 8/3). No case reproduces
+an exact match at quadrant=2.
+
+FOUND A REAL, PREVIOUSLY-UNUSED MECHANISM while looking for a better
+transform: walk_visible_tiles (uw.c ~51176-51183) sets its own e4-step
+and e8-step tile-array strides (`iVar7`, `sVar3`) by reading a
+DIFFERENT, already-documented, previously-recovered table --
+`&DAT_00086a00`/`&DAT_00086a02` indexed by `DAT_0023b4a0*6` (full
+provenance and byte values at uw.c ~4068-4096, recovered from the real
+UU.exe .data section): `{+1,-64,-1,+64}` / `{+64,+1,-64,-1}` for
+dir=0..3 -- a genuine 90-degree rotation basis over `tile_index=x+y*64`.
+This CONFIRMS DAT_0023b4e4 (feeds the anchor's X) does not always step
+along real map X: only at dir=0/2; at dir=1/3 (dir=1 is quadrant=1's
+own real value) it steps along real map Y/world Z instead -- the ring-
+walk's own per-quadrant axis reassignment is real and documented, not
+speculation.
+
+TESTED whether decoding this table into a proper per-axis transform
+(rather than guessing a swap/negate case) fixes the anchor
+reconstruction: added UW_DLIST_ANCHOR_DELTA_CASE=4, which reads the
+real a00/a02 table entries for the current DAT_0023b4a0 and builds a
+proper 2x2 transform from them (+-1 = a real X contribution, +-64 = a
+real Z contribution). RESULT: WORSE at both quadrants -- quadrant=1
+regressed from the exact match (faces=8/3) all the way to faces=0;
+quadrant=2 only reached faces=2 (no better than cases 2/3). A real,
+useful negative result, not a wasted one: the a00/a02 table genuinely
+governs which REAL TILE a given (e4,e8) pair samples object data from
+during the walk (confirmed, real game data) -- but that is evidently a
+DIFFERENT question from how ax/az's own COORDINATE VALUE (built by a
+FIXED e4->X, e8->Z formula that never varies by quadrant) should be
+reinterpreted as a real-world delta. Conflating "which tile did this
+data come from" with "what does this coordinate number mean" was the
+wrong move. -1 (no transform) remains the only setting that reproduces
+quadrant=1's exact match.
+
+Kept UW_DLIST_ANCHOR_DELTA_CASE=4 as a documented, tested-and-ruled-out
+option alongside 0-3. UW_DLIST_REAL_CULL_OPCODES still opt-in; default
+rendering reconfirmed unaffected (faces=11/6) after all of the above.
+Standard run-regressions.sh: 6/6 clean.
+
+Where this actually leaves the investigation: quadrant=1's exact match
+is real, reproducible, and still unexplained in terms of WHY the naive
+(no-transform) formula happens to work for that specific quadrant/
+door/heading combination -- possibly because this door's own model
+heading is 0 there (ca=1,sa=0, an identity per-vertex rotation), which
+means each cull test only ever reads a single axis of eye/anchor in
+isolation, potentially hiding a frame mismatch that a non-zero heading
+would expose. That's a concrete, testable idea for whoever picks this
+up next: find or construct a repro where the WORKING quadrant's own
+door model heading is nonzero, and check whether the naive reconstruction
+still matches exactly, to determine whether the "no transform needed"
+result is a general truth or an artifact of this specific test case.

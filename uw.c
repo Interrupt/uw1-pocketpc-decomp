@@ -53339,37 +53339,36 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
          windowed to begin with -- it's already real/absolute, same
          convention g_true_player_pos[1] uses. */
       const double _ring_center_x = 4112.0, _ring_center_z = 16.0;
-      double _dx = ax - _ring_center_x, _dz = az - _ring_center_z;
-      /* DEBUG SWEEP (temporary): quadrant=1 matched the known-good
-         baseline exactly with NO transform on this delta at all --
-         surprising, since DAT_0023b4a0 was 1 there, not 0. quadrant=2
-         (DAT_0023b4a0=2) does not. UW_DLIST_ANCHOR_DELTA_CASE=0..3
-         applies the same swap/negate pattern confirmed byte-identical
-         between sync_camera_from_player and build_frame_draw_list's
-         own quadrant cases, but as a pure vector transform (no 0xff
-         pivot -- that pivot only makes sense for an absolute position
-         inside a fixed 0-255 window, not a displacement), to sweep
-         which case (if any) fixes quadrant=2 without regressing
-         quadrant=1. -1 (default) = no transform, current behavior. */
-      /* SWEPT AND RULED OUT (2026-09-21): all 4 values regress the
-         known-good quadrant=1 case (faces=8/3 -> 0) and make NO
-         difference at all to quadrant=2 (faces=2 in every case,
-         0/1/2/3 alike) -- the remaining quadrant=2 failure isn't about
-         which way this X/Z delta rotates. Per-instruction tracing
-         (UW_DEBUG_DLIST_CULLOP) at quadrant=2 with no delta transform
-         shows axis=0 (X) tests now correctly PASS every time (a real
-         improvement -- they failed unconditionally before this whole
-         experiment); it's axis=1 (height, never rotated/windowed at
-         all) and axis=2 (Z/depth) that CULL every remaining face.
-         Height shouldn't even be quadrant-sensitive -- the real player
-         height and the door's own real height are identical between
-         quadrant=1 and quadrant=2 (same physical position, only yaw
-         differs) -- so if axis=1 culls at quadrant=2 but not at
-         quadrant=1 for what should be the same face, the two runs are
-         reaching that plane test via DIFFERENT points in the bytecode's
-         own if/else-if chain (own heading-dependent control flow), not
-         a shared arithmetic bug. Left at -1 (no transform) by default,
-         matching the value that makes quadrant=1 match exactly. */
+      double _dx = g_true_player_pos[0] - _ring_center_x, _dz = g_true_player_pos[2] - _ring_center_z;
+      /* CASES 0-3 SWEPT AND RULED OUT: none reproduce quadrant=2's
+         missing faces exactly (case 2/3 land on faces=2, not 8/3; 0/1
+         do nothing/regress). CASE 4 (the real per-quadrant tile-step
+         table, see below) ALSO TESTED AND RULED OUT, and more
+         decisively: walk_visible_tiles (uw.c ~51176-51183) reads
+         `iVar7`/`sVar3` -- DAT_0023b4e4's (X's) and DAT_0023b4e8's
+         (Z's) real per-step tile-array stride -- from a documented,
+         previously-recovered table at &DAT_00086a00/a02 +
+         DAT_0023b4a0*6 (its own comment, uw.c ~4068-4096):
+         {+1,-64,-1,+64} / {+64,+1,-64,-1} for dir=0..3, a 90-degree
+         rotation basis over tile_index=x+y*64 -- confirming
+         DAT_0023b4e4 does NOT always step along real map X (only at
+         dir=0/2; at dir=1/3 it steps along real map Y/our world Z
+         instead). Decoding that table into a proper per-axis transform
+         and applying it to this delta seemed like the natural next
+         step, given `ax`/`az` come from a FIXED e4->X, e8->Z formula
+         regardless of dir. Live result: WORSE than no transform at
+         both quadrants -- quadrant=1 regressed from the exact faces=8/3
+         match to faces=0, and quadrant=2 only reached faces=2 (same as
+         the best of cases 0-3, not the correct 8/3). This is a real,
+         useful negative result: the table genuinely governs which REAL
+         TILE a given (e4,e8) pair samples data from (confirmed, it's
+         real recovered game data), but that is NOT the same thing as
+         how ax/az's own COORDINATE VALUE should be reinterpreted as a
+         real-world delta -- applying it here conflates "which tile" the
+         object came from with "what does this coordinate number mean",
+         which are evidently different questions. -1 (default, no
+         transform) remains the only setting that reproduces quadrant=1
+         exactly. */
       { const char *_s = getenv("UW_DLIST_ANCHOR_DELTA_CASE");
         int _dc = _s ? atoi(_s) : -1;
         double _ndx = _dx, _ndz = _dz;
@@ -53377,6 +53376,17 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
         else if (_dc == 1) { _ndx = -_dz; _ndz = _dx; }
         else if (_dc == 2) { _ndx = -_dx; _ndz = -_dz; }
         else if (_dc == 3) { _ndx = _dz; _ndz = -_dx; }
+        else if (_dc == 4) {
+          int _dir = (int)DAT_0023b4a0;
+          short _a00v = *(short *)(&DAT_00086a00 + _dir * 6);
+          short _a02v = *(short *)(&DAT_00086a02 + _dir * 6);
+          double _a00x = (_a00v == 1) ? 1.0 : (_a00v == -1) ? -1.0 : 0.0;
+          double _a00z = (_a00v == 64) ? 1.0 : (_a00v == -64) ? -1.0 : 0.0;
+          double _a02x = (_a02v == 1) ? 1.0 : (_a02v == -1) ? -1.0 : 0.0;
+          double _a02z = (_a02v == 64) ? 1.0 : (_a02v == -64) ? -1.0 : 0.0;
+          _ndx = _dx * _a00x + _dz * _a02x;
+          _ndz = _dx * _a00z + _dz * _a02z;
+        }
         _dx = _ndx; _dz = _ndz;
       }
       g_uwdl_anchor[0] += _dx;

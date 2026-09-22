@@ -1430,6 +1430,57 @@ clean. Next step: trace which bytecode offsets the height/Z cull tests
 actually come from at quadrant=1 vs quadrant=2 for the same logical
 face, to check whether the if/else-if chain takes a different path.
 
+**UPDATE 42 (caught my own bug from UPDATE 41, found a real
+per-quadrant mechanism, ruled it out too, 2026-09-21):** user: "continue
+looking into the quadrant branch divergence." Re-tracing this hit a
+real problem: UPDATE 41's own delta-shift code had been silently broken
+by the follow-up refactor that added `UW_DLIST_ANCHOR_DELTA_CASE` --
+the intermediate variable ended up computed as `ax - ring_center`
+instead of `g_true_player_pos[0] - ring_center`, discarding the true-
+player-position term entirely. My post-refactor testing only re-checked
+default-state safety, not the specific exact-match claim UPDATE 41 had
+just made -- a real gap: always re-verify the SPECIFIC claim, not just
+general safety, after touching its own code path. Fixed, rebuilt,
+**re-confirmed the quadrant=1 exact match still holds** (faces=8/3,
+verified fresh) -- UPDATE 41's core finding stands. But its "axis=0
+now passes at quadrant=2" sub-finding was captured on the buggy build
+and is invalid -- corrected, quadrant=2 is back to full faces=0 (all
+axes fail, not a partial pass), so the "if/else-if branch divergence"
+theory that finding led to is also retracted.
+
+Re-swept the delta-case options with the fix in place: still only -1/0
+(no transform) reproduce quadrant=1 exactly; nothing reaches an exact
+match at quadrant=2 (case 2/3 top out at faces=2).
+
+Went looking for a better transform and found something real: `walk_
+visible_tiles` sets its e4/e8 step strides from a genuine, already-
+documented, previously-recovered table (`&DAT_00086a00`/`&DAT_00086a02`
+indexed by `DAT_0023b4a0*6`, full byte values recovered from real
+UU.exe data, uw.c ~4068-4096) -- confirming `DAT_0023b4e4` does NOT
+always step along real map X: at dir=1 (quadrant=1's own real value)
+and dir=3 it steps along real map Z instead. This is a genuine, newly-
+surfaced per-quadrant axis reassignment, not speculation.
+
+Built a proper transform from that table (`UW_DLIST_ANCHOR_DELTA_CASE=4`)
+and tested it live. Result: WORSE at both quadrants -- quadrant=1
+regressed from the exact match to faces=0; quadrant=2 only reached
+faces=2. Useful negative result: the table governs which real TILE a
+given (e4,e8) samples object data from -- a different question from how
+the anchor's own coordinate VALUE should convert to a real-world delta.
+Conflating the two was the wrong move.
+
+Kept as a documented, ruled-out option. `UW_DLIST_REAL_CULL_OPCODES`
+still opt-in; default rendering reconfirmed unaffected (faces=11/6).
+run-regressions.sh: 6/6 clean. Where this leaves it: quadrant=1's exact
+match is real and reproducible, but still unexplained mechanistically --
+one live hypothesis worth testing next is that this door's own model
+heading happens to be 0 (identity rotation) at quadrant=1, meaning each
+cull test only ever reads one axis of eye/anchor in isolation, which
+could hide a frame mismatch a nonzero heading would expose. Testing a
+repro where the working quadrant's own door heading is nonzero would
+tell us whether "no transform needed" is a general truth or an artifact
+of this specific case.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
