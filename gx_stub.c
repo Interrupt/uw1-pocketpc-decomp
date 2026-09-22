@@ -46,7 +46,18 @@ typedef struct {
 #define KF_DIRECT565 0x10u
 
 /* Real Microsoft GXKeyList layout: 8x (short vk + POINT pt), 12 bytes each
- * after alignment padding = 0x60. Only the vk fields are meaningful here. */
+ * after alignment padding = 0x60. Only the vk fields are meaningful here.
+ * Field ORDER matters -- uw.c's handle_keyboard_message compares incoming
+ * VK codes against this struct's fields by raw byte offset (DAT_0023ce10
+ * + 0xc/0x18/0x24/0x30/0x3c/0x48/0x54), not by name, so it has to match
+ * the real GAPI struct's actual member order: up, down, left, right, a,
+ * b, c, start -- NOT a/b/c/start/up/down/left/right as this struct had
+ * it before. That wrong order put VK_UP/VK_DOWN at the byte offsets
+ * handle_keyboard_message reads as the "a"/"b" button codes (which it maps to
+ * ENTER/ESC respectively -- a real A/B-button-confirms/cancels menu
+ * convention that makes sense; "pressing Up fires Enter" does not) --
+ * confirmed live and reported by QA: Up landed as Enter, Down landed as
+ * Escape in every keyboard-driven menu. */
 typedef struct {
     short vk;
     short pad;
@@ -54,7 +65,7 @@ typedef struct {
 } GxKeyEntry;
 
 typedef struct {
-    GxKeyEntry a, b, c, start, up, down, left, right;
+    GxKeyEntry up, down, left, right, a, b, c, start;
 } GxKeyList;
 
 #define VK_UP 0x26
@@ -148,17 +159,23 @@ static int g_mouseup_deferred_lparam = 0;
  * single-slot DAT_0023c448 latch ORs every message it receives into
  * whatever is already there, so sending WM_KEYDOWN(VK_RETURN) and
  * WM_CHAR(0x0D) back-to-back in the same call (as this code used to)
- * corrupts both: VK_RETURN now correctly matches the recovered
- * GXGetDefaultKeys() start-button field (DAT_0023ce34, see its own
- * comment) and latches DAT_0023c448=0x93 *before* the WM_CHAR arrives and
- * ORs in 0xd on top, leaving 0x9f -- neither a clean "Start button" event
- * nor a clean Enter/0xd, so pressing Enter in any text-entry field
- * (confirmed: the save/load name prompt) silently did nothing. Real
- * Windows CE delivers these as genuinely separate, sequentially-polled
- * messages; SDL's synthesized WM_CHAR companion for Enter/Backspace (SDL
- * itself never generates a real SDL_TEXTINPUT for either) needs the same
- * deferral real SDL_TEXTINPUT already gets from the "return after one
- * event" discipline a few lines below. */
+ * risks corrupting both if VK_RETURN also matches one of
+ * GXGetDefaultKeys()'s struct fields (see GxKeyList's own comment on the
+ * struct's real field order -- with it wrong, VK_RETURN previously
+ * matched the "start" field at the wrong offset and latched
+ * DAT_0023c448=0x93 before the WM_CHAR arrived and ORed in 0xd on top,
+ * leaving 0x9f -- neither a clean "Start button" event nor a clean
+ * Enter/0xd, so pressing Enter in any text-entry field (confirmed: the
+ * save/load name prompt) silently did nothing). With the struct order
+ * now fixed, "start" is a different field the game's own
+ * handle_keyboard_message treats as a no-op, so this specific collision
+ * can no longer happen -- kept anyway since it still matches how real
+ * Windows CE delivers WM_KEYDOWN and WM_CHAR as genuinely separate,
+ * sequentially-polled messages, which SDL's synthesized WM_CHAR
+ * companion for Enter/Backspace (SDL itself never generates a real
+ * SDL_TEXTINPUT for either) needs the same deferral real SDL_TEXTINPUT
+ * already gets from the "return after one event" discipline a few lines
+ * below. */
 static int g_keychar_deferred = 0;
 
 /* True from a dispatched button-down until the (possibly still-deferred)
@@ -1448,23 +1465,49 @@ void *GXGetDisplayProperties(void) {
 }
 
 void *GXGetDefaultKeys(void *outBuffer) {
-    fprintf(stderr, "[gx] GXGetDefaultKeys: mapping arrows/ctrl/esc/enter to the game's "
-                    "D-pad and B/C/Start buttons (A left unbound -- see below)\n");
+    fprintf(stderr, "[gx] GXGetDefaultKeys: mapping arrows/esc to the game's "
+                    "D-pad and B button (A/C/Start left unbound -- see below)\n");
     GxKeyList *kl = (GxKeyList *)outBuffer;
     if (!kl) return outBuffer;
     memset(kl, 0, sizeof(*kl));
     /* Button A was VK_SPACE, which collided with typing a space in the
-     * name-entry field (handle_keyboard_message turns a button-A keydown into event
-     * 0x91 = delete-previous-char). Use a WinCE app-button VK instead --
-     * the shape real GAPI returns -- so the spacebar is free. Desktop
-     * "activate" is the mouse click, so leaving A without a keyboard
-     * binding costs nothing here. */
+     * name-entry field (with the struct's real field order -- see
+     * GxKeyList's own comment -- handle_keyboard_message turns a button-A
+     * keydown into event 0xd = Enter, not a delete like an earlier,
+     * wrong-struct-order version of this comment claimed). Leave A on a
+     * WinCE app-button VK nothing else uses, since real Enter already
+     * reaches the game through its own separate WM_CHAR-deferral path
+     * (see uw_pump_events's g_keychar_deferred) regardless of this
+     * struct -- binding a second key to the "a" slot would be redundant,
+     * not a fix for anything. Desktop "activate" is the mouse click, so
+     * leaving A without a real keyboard binding costs nothing here.
+     *
+     * Button B is the one real key that has no other path into the game:
+     * handle_keyboard_message only ever produces the Escape event code
+     * (0x1b) when the incoming vk matches this exact struct field, and
+     * Escape doesn't get Enter/Backspace's WM_CHAR-deferral treatment.
+     * With the struct's fields in the WRONG order (as this file had it
+     * before), VK_UP/VK_DOWN landed on the byte offsets the game reads
+     * as the A/B button codes instead -- Up fired Enter, Down fired
+     * Escape, confirmed and reported by QA. Real fix was the struct
+     * reorder (see GxKeyList's own comment); Escape still needs an
+     * explicit binding here now that the offsets are correct. */
     kl->a.vk = VK_APP1;
-    kl->b.vk = VK_CONTROL;
-    kl->c.vk = VK_ESCAPE;
+    kl->b.vk = VK_ESCAPE;
+    kl->c.vk = VK_CONTROL;
     kl->start.vk = VK_RETURN;
-    kl->up.vk = VK_UP;
-    kl->down.vk = VK_DOWN;
+    /* Swapped from the "obvious" kl->up.vk=VK_UP/kl->down.vk=VK_DOWN --
+     * confirmed by QA after the struct-order fix above that Up/Down felt
+     * backwards in the menu (the collision with Enter/Esc was gone, but
+     * the surviving direction was flipped). This mapping is entirely
+     * this port's own invention (GXGetDefaultKeys stands in for what
+     * would have been a real hardware D-pad driver call, so there's no
+     * "real" answer to verify against, unlike the struct layout above)
+     * -- swap which physical arrow key feeds which struct slot rather
+     * than touch menu_button_list_navigate's own index arithmetic, which
+     * is real recovered game logic. */
+    kl->up.vk = VK_DOWN;
+    kl->down.vk = VK_UP;
     kl->left.vk = VK_LEFT;
     kl->right.vk = VK_RIGHT;
     return outBuffer;

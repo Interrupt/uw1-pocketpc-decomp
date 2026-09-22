@@ -46992,6 +46992,30 @@ void draw_save_load_slot_list()
   local_bc[3] = &s_IV__0008705c;
   msg_scroll_panel_reset(1);
   probe_save_slots(auStack_ac,auStack_c4);
+  /* g_text_use_palette_color gates whether draw_text_string honours
+     *g_draw_color_index at all (see that global's own comment) --
+     confirmed via disassembly that neither message_scroll_print_wrapped
+     nor msg_scroll_draw_wrapped_span (the real functions behind this
+     whole print) ever touch it, so message-scroll text always takes the
+     flat g_text_flat_color path in the pristine binary. The "\6" control
+     code this header uses (real palette index 0xd4 -- confirmed RGB
+     (88,184,64), a real green, against PALS.DAT bank 0) needs this flag
+     on to have any visible effect at all, matching a QA report that the
+     original game rendered this list in green. Bracket it narrowly
+     around just this function's own prints (mirrors draw_menu_item_list
+     and FUN_0006a3d8/FUN_00037c14's own established "caller forces it
+     for the scope of its own draw, then restores" pattern) rather than
+     forcing it on inside message_scroll_print_wrapped itself -- an
+     earlier attempt did that and leaked this panel's now-colored
+     DAT_00250704+0x16 persistent-color field into every *unrelated*
+     scroll message printed afterward for the rest of the session
+     (reported: ordinary messages rendering white, since this list's own
+     trailing "\0" sets that field to palette index 0x60 before this
+     function returns). Scoping the flag to just this call can't leak
+     that way, since it's always restored the moment this function
+     returns, regardless of what the persistent color field is left at. */
+  int _saved_text_palette_color = g_text_use_palette_color;
+  g_text_use_palette_color = 1;
   message_scroll_print_wrapped(s__6_Save_Game_Descriptions_0008703c);
   iVar1 = 0;
   g_scroll_control_codes_enabled = 0;
@@ -47003,6 +47027,7 @@ void draw_save_load_slot_list()
   } while (iVar1 < 4);
   g_scroll_control_codes_enabled = 1;
   message_scroll_print_wrapped(&s_scroll_color_reset_00087038);
+  g_text_use_palette_color = _saved_text_palette_color;
   return;
 }
 
@@ -59050,15 +59075,26 @@ int param_4;
     select_active_font(s_fontbig_sys_0008432c);
     draw_menu_item_list(param_1,param_2,param_3,param_4);
     select_active_font(s_font5x6p_sys_0008430c);
+    /* Was: `ushort _cyc_t = DAT_0023bf74; ... if (DAT_0023bf74 != _cyc_t)
+       draw_menu_item_list(...)` -- an earlier session's own addition
+       (its comment claimed it was needed for the menu-item bitmaps to
+       shimmer in step with FUN_0006a168's gold-gradient palette
+       rotation), not real recovered code: confirmed via a fresh ARM
+       disassembly of this function (0x6af3c) that the real idle-wait
+       loop here is exactly `bl FUN_000735fc; bl FUN_0006a168;`, nothing
+       else -- no DAT_0023bf74 comparison, no second draw_menu_item_list
+       call. That fabricated redraw ran with the small font selected
+       (the line right above switches to it before this loop, which IS
+       real/matches disassembly) while the ORIGINAL list draw two lines
+       up used the big font and is never erased first -- so every
+       palette-cycle tick redrew each list label a second time, in the
+       wrong small font, directly on top of the correct big-font text.
+       Confirmed live: the title-screen save-slot list showed each
+       description doubled, once correctly in the large font and once
+       overlaid in the small one. Removed. */
     while (sVar2 = next_input_event(), sVar2 < 0) {
-      ushort _cyc_t = DAT_0023bf74;
       FUN_000735fc();
       FUN_0006a168();
-      /* FUN_0006a168 rotated the gold gradient palette (indices 0x40..0x7f)
-         this tick and re-blitted the OPSCR title; recolour the menu-item
-         bitmaps too so they shimmer in step with the title, the way the
-         original's hardware palette swap did. */
-      if (DAT_0023bf74 != _cyc_t) draw_menu_item_list(param_1,param_2,param_3,param_4);
     }
     if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x param_4=%d\n", (int)sVar2, (int)param_4);
     sVar1 = (short)param_1;
@@ -72165,8 +72201,29 @@ ushort param_3;
   int iVar1;
   uint uVar2;
   bool bVar3;
-  
-  iVar1 = FUN_0002273c(param_2);
+
+  /* Was `FUN_0002273c(param_2)` (== uw_file_open_write(param_2, 0), our
+     port's "rb+", no-truncate" mode) -- real ARM disassembly of
+     FUN_0002273c (0x2273c) shows the original game's own write-open
+     helper always ends up starting from an empty file regardless of
+     which branch it takes (TRUNCATE_EXISTING when the target already
+     exists, OPEN_ALWAYS -- i.e. create fresh -- when it doesn't), never
+     "open and preserve existing content". This function is now this
+     codebase's only caller (the save-slot description write in
+     save_game_to_slot); using the non-truncating wrapper here left
+     stale trailing bytes from a previous, longer description whenever a
+     shorter new name was saved over it -- confirmed live: saving
+     "MYCHAR" over a slot that had previously held a longer name left
+     the file as "MYCHAR\0EST\0" (the old name's un-truncated tail after
+     the new null terminator), which the title-screen slot picker then
+     displayed as if two different labels were drawn on top of each
+     other. Call uw_file_open_write directly with create_always=1
+     ("wb+", truncates) instead of going through FUN_0002273c's
+     no-truncate wrapper -- deliberately NOT changing FUN_0002273c
+     itself, since its other several callers (the level-archive
+     read-then-write path in particular) may rely on its current
+     preserve-existing-content behavior and weren't audited here. */
+  iVar1 = uw_file_open_write(param_2, 1);
   if (iVar1 == -1) {
     bVar3 = false;
   }
