@@ -3598,3 +3598,115 @@ the anchor's own high byte apparently does (likely requiring tracing
 where that high byte actually gets set, not yet done), rather than
 continuing to trust the view-matrix camera globals to already carry
 it.
+
+UPDATE 2026-09-21 (27): CONTINUED TRACING -- ANCHOR FORMULA FULLY
+REVERSE-ENGINEERED AND VERIFIED; TWO DERIVED PLAYER-EYE CANDIDATES
+BOTH TESTED AND STILL BROKEN; A REAL MISCONCEPTION ABOUT ITS INPUTS
+FOUND AND CORRECTED
+═══════════════════════════════════════════════════════════════════════════
+User: "keep tracing this."
+
+TRACED THE ANCHOR'S REAL INITIAL COMPUTATION, not just the later
+low-byte quadrant-rotation tweak already known from earlier entries.
+Found it in emit_tile_features (uw.c ~57476-57479):
+  DAT_0023b904 = ((byte-sized per-object value from &DAT_0023bb99[i])
+                  + sign_extend((DAT_0023b4e4 << 0x13) >> 0x10))
+                 * 0x20 + 0x10
+  DAT_0023b920 = same shape, using &DAT_0023bb9a[i] and DAT_0023b4e8
+where `i = cVar8*4`, `cVar8` from a per-tile object sort-order array
+(DAT_0023b8c8), and DAT_0023b4e4/e8 are indices from the same
+ring/diamond tile-walk already identified in entry (26)'s automap-
+reveal code (uw.c ~51209-51268) -- confirming this walk's own indices
+are what drive object anchoring during rendering too, not a separate
+mechanism.
+
+ADDED UW_DEBUG_OBJPOS INSTRUMENTATION (extended an existing, narrowly-
+scoped debug print already in this exact spot to also cover door ids
+0x140-0x14f, then temporarily broadened it to all objects for a table
+search) printing the real DAT_0023b4e4/e8/bb99/bb9a/quadrant values at
+the moment this formula runs. Captured real data for the SAME door
+(id=0x140) at both the working and broken quadrant:
+  quadrant=1 (working): bb99=4 bb9a=5 e4=16 e8=2
+  quadrant=2 (broken):  bb99=2 bb9a=4 e4=14 e8=0
+VERIFIED THE FORMULA IS EXACT, not approximate: plugging these real
+numbers in by hand recovers 4240/688 (quadrant=1) and 3664/144
+(quadrant=2) to the unit, matching the known anchor values from every
+earlier entry precisely. This is now a confirmed, proven piece of
+this renderer's real mechanics, independent of whether the cull bug
+gets fixed.
+
+BUILT TWO CANDIDATE "PLAYER CANONICAL EYE" VALUES on top of this
+confirmed formula, both tested live against the exact broken quadrant
+case, both still broken:
+  (a) Naive: assume the ring-walk pivots at index 0x10 (16) for "the
+      player's own tile" (matching the visually symmetric 0->16 then
+      32->16 shape of the walk's two inner loops), and that a tile's
+      offset from itself is 0 -- gives a fixed world eye of
+      (4112, 4112). Live result at the broken quadrant: eye_local=
+      (-3952,164,452), faces=2. Still badly broken -- the Z component
+      in particular is nowhere near the plausible range (a few hundred
+      units at most, matching the model's own local extent).
+  (b) Algebraic: since architecturally "the player's own position"
+      should be exactly the fixed point the whole quadrant-canonical
+      frame rotates around (everything else rotates AROUND the player,
+      by the entire design of this rendering architecture), solve for
+      that fixed point directly using the two known real anchor values
+      for the SAME door at quadrant=1 and quadrant=2, treating the
+      quadrant delta as a +90 degree CCW rotation (the handedness
+      already established earlier this investigation for the anchor's
+      own quadrant transform): A2-C = Rot90ccw(A1-C). Two linear
+      equations, solved exactly: C = (4224, 128). Live result at the
+      broken quadrant: eye_local=(32,164,564), faces=0-1. Better X
+      (32, close to 0), but Z is still far outside the working range.
+Neither candidate, despite being derived from confirmed-correct
+formulas rather than guessed, produces a working cull result.
+
+A REAL CORRECTION FOUND ALONG THE WAY, not just a dead end: `bb99`/
+`bb9a` (the first term in the anchor formula above) were assumed, in
+this investigation's own earlier entries, to represent "per-tile
+offset from the player." This file's OWN struct-recovery comment (uw.c
+~4420-4429, present since before this session, just not consulted
+until now) documents the real layout precisely: `DAT_0023bb98[i*4+0/1/
+2]` are per-object BILLBOARD X/Y/Z offset bytes (a small cosmetic
+nudge so multiple sprites on the same tile visually separate rather
+than perfectly overlapping), indexed by `i` from a depth SORT ORDER
+array (DAT_0023b8c8), not by tile position at all. The formula's own
+arithmetic still checks out exactly (these offsets are genuinely small,
+single-digit in the captured data, so they don't change the overall
+verification above) -- but the semantic story needs correcting: the
+entire "which tile" component comes from the ring-walk indices
+(DAT_0023b4e4/e8) alone, not from bb99/bb9a.
+
+ONE MORE STRUCTURAL DETAIL FOUND while re-reading the ring-walk loop
+closely (uw.c ~51209-51268): its two inner loops on DAT_0023b4e4 (0
+ascending to 15, then 32 descending to 17) never actually visit
+e4=16 -- that specific value is handled by one separate call OUTSIDE
+both inner loops, firing once per outer (e8) iteration. This strongly
+suggests e4=16 is each row's own CENTER column, handled as a special
+case rather than by the general sweep. Separately, the outer loop on
+e8 stops once it would reach 0 (`while (-1 < iVar4-1)`, i.e. the loop
+body runs for e8 down to 1, never 0) -- meaning "ring depth 0" (very
+plausibly the player's own row) may never get an object anchor
+computed through this exact code path at all during normal play. If
+true, there simply isn't a "natural," directly-observable player-
+canonical anchor value produced by this mechanism to extract by
+watching real play -- it would need to be computed by understanding
+the FULL ring-to-distance mapping analytically (what g_visibility_
+ring_depth means in real tile-distance terms, and how e4/e8 map to a
+real (dx,dz) tile offset at each ring), not sampled from a live run.
+
+STATUS: this is real, durable progress on the underlying mechanism
+even without a working fix yet -- the anchor formula is now fully
+understood and independently verified (not assumed), and a genuine
+misconception about its inputs (bb99/bb9a) has been found and
+corrected for anyone building on this work later. The actual eye value
+the cull test needs remains unresolved: both candidates derived from
+the now-confirmed formula failed live testing, and completing this
+needs a dedicated trace of the ring-walk's real depth-to-distance
+semantics (particularly what governs g_visibility_ring_depth and
+whether/how ring 0 is handled) that wasn't finished this round.
+UW_DLIST_REAL_CULL_OPCODES remains reverted to opt-in (confirmed safe:
+faces=11/6 baseline restored with zero env vars). UW_DLIST_EYE_
+PLAYER_CANONICAL=1 kept as a documented, tested-and-insufficient
+diagnostic (candidate (a) above) for whoever picks this back up.
+Standard run-regressions.sh: 6/6 clean throughout.

@@ -1141,6 +1141,71 @@ is the player in, relative to this object" delta the same way the
 anchor's own high byte does, rather than trusting the camera-matrix
 globals to already have it. Standard run-regressions.sh: 6/6 clean.
 
+**UPDATE 36 (continued tracing: reverse-engineered and VERIFIED the
+real anchor formula; two candidate player-eye values derived from it
+both tested and still broken; the real fix needs a deeper trace than
+completed this round, 2026-09-21):** user: "keep tracing this."
+
+FULLY TRACED AND VERIFIED the object anchor's real construction, not
+just its later low-byte quadrant tweak. Found the initial computation
+in `emit_tile_features` (uw.c ~57476): `DAT_0023b904 = (per-object
+byte + sign_extended_fraction(DAT_0023b4e4)) * 0x20 + 0x10` (Z
+symmetric via `DAT_0023b4e8`/`bb9a`). Added debug instrumentation
+(`UW_DEBUG_OBJPOS`, extended to cover door ids) and captured the real
+inputs for the SAME door at both the working and broken quadrant.
+Plugging the real observed `DAT_0023b4e4`/`e8`/`bb99`/`bb9a` into this
+formula recovers the exact known anchor values (4240/688 at quadrant=1,
+3664/144 at quadrant=2) to the unit -- the formula itself is now
+proven correct, not assumed.
+
+TWO CANDIDATE "player canonical eye" VALUES BUILT ON TOP OF IT, BOTH
+TESTED LIVE AND BOTH STILL BROKEN: (a) naively assuming the ring-walk
+index pivots at 0x10 for "the player's own tile" gives a fixed
+(4112,4112) -- tested at the broken quadrant, still faces=0-1. (b)
+solving algebraically for the fixed rotation CENTER using the two real
+known anchor values (since architecturally the player's own position
+should be exactly the point the whole canonical frame rotates around)
+gives a cleaner-looking (4224,128) -- also tested, also still broken
+(eye_local lands far outside the working range). Neither guess
+survived contact with real data.
+
+A SIGNIFICANT CORRECTION found while investigating further: `bb99`/
+`bb9a` (added into the anchor formula above) are NOT a per-tile
+position delta at all -- this file's own struct-recovery comment (uw.c
+~4420-4429) documents `DAT_0023bb98[i*4+0/1/2]` as "per-object
+BILLBOARD X/Y/Z offsets," a small per-object cosmetic nudge (so
+multiple sprites on the same tile don't perfectly overlap), indexed by
+sort order (`DAT_0023b8c8`), not tile position. The formula's own
+arithmetic still checks out (these offsets are small, a few units),
+but the "which tile" component comes entirely from the ring-walk
+indices (`DAT_0023b4e4`/`e8`), not from bb99/bb9a as first assumed --
+correcting that mental model.
+
+ALSO FOUND, re-reading the ring-walk's own loop structure closely: its
+two inner loops (`e4` ascending 0->15, then descending 32->17) never
+actually visit `e4=16` -- that specific value is handled by a separate,
+single call outside both inner loops, once per outer (`e8`) iteration,
+strongly suggesting `e4=16` is each row's own CENTER column. And the
+outer loop on `e8` explicitly stops before reaching 0 (`while (-1 <
+iVar4-1)`, i.e. processes down to `e8=1` only) -- meaning "ring depth
+0" (the player's own row) may never get an anchor computed via this
+exact code path at all in normal operation, which would explain why
+no clean, directly-observable "player's own anchor" value exists to
+extract this way.
+
+STATUS: real, verifiable progress on the underlying mechanism (the
+anchor formula is now fully understood and proven correct; a real
+misunderstanding about its inputs was found and corrected), but the
+actual "player canonical eye" value the cull fix needs remains
+unresolved -- both derived candidates failed live testing, and the
+ring-walk's real depth-to-distance mapping (specifically what happens
+at ring depth 0, and how `g_visibility_ring_depth` relates to real
+tile distance) needs its own dedicated trace, not completed this
+round. `UW_DLIST_REAL_CULL_OPCODES` remains reverted to opt-in, safe.
+`UW_DLIST_EYE_PLAYER_CANONICAL=1` kept as a documented, confirmed-not-
+sufficient diagnostic for whoever continues this. Standard
+run-regressions.sh: 6/6 clean.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

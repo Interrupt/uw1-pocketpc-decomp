@@ -53203,32 +53203,67 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
        world=anchor+rx*scale), so it lives in the exact same coordinate
        system the plane thresholds (r[3]) are authored in.
 
-       Two earlier candidates tried and rejected before this one:
-       world eye = (0,0,0) put the eye thousands of units from geometry
-       spanning only a few hundred (broken live -- leaf missing
-       entirely). World eye = the object's own anchor rendered
-       correctly but is mathematically degenerate (eye-anchor always
-       exactly zero, no real view-dependence).
+       Candidates tried and rejected before this one: world eye =
+       (0,0,0) put the eye thousands of units from geometry spanning
+       only a few hundred (broken live -- leaf missing entirely).
+       World eye = the object's own anchor rendered correctly but is
+       mathematically degenerate (eye-anchor always exactly zero, no
+       real view-dependence). World eye = the renderer's own real
+       camera position, DAT_000db438/43c/440 (build_view_matrix's own
+       camera translation) looked promising (three angles verified
+       correct) but broke a door completely (faces=0) at a DIFFERENT
+       camera quadrant -- confirmed via round-trip that the rotation
+       math itself was self-consistent, so the bug had to be the eye
+       source: DAT_0023bf30/34/38 (the sync formula's own base
+       constants) have no writer anywhere in this file, meaning that
+       camera position carries no "which tile" component at all --
+       just a bounded sub-tile fraction -- while the object anchor's
+       own X/Z (DAT_0023b904/920) DO carry one (a preserved high byte,
+       confirmed to genuinely shift between quadrants for the same
+       real door). The two values don't live in the same coordinate
+       convention; their similarity at one tested quadrant was
+       coincidental.
 
-       CONFIRMED WORKING: world eye = the renderer's own REAL camera
-       position, DAT_000db438/43c/440 -- found via build_view_matrix's
-       own comment ("build the view/camera matrix ... from the camera
-       translation (DAT_000db438/43c/440)", uw.c ~13216), read here as
-       the softfloat bit patterns they're stored as (Ordinal_2032's own
-       contract), used AS-IS with no correction. (A theory that the
-       sync formula's asymmetric `+0x1000` on X needed subtracting was
-       tried and made things WORSE, not better -- that constant turned
-       out to be load-bearing, not a bug; see the dated findings-doc
-       entry for the full trace of that dead end.) Paired with the
-       unconditional `origin <= thresh` comparison in uwdl_walk (not
-       the sign-branching one first tried), this renders a complete,
-       correct door at every one of three independently tested camera
-       positions, including angles where the eye genuinely differs
-       frame to frame -- the first time this mechanism has shown real
-       per-viewpoint behavior rather than a static approximation.
-       UW_DLIST_EYE_X/Y/Z still override for further calibration if a
-       future case needs it. */
-    double _ex = *(float *)&DAT_000db438, _ey = *(float *)&DAT_000db43c, _ez = *(float *)&DAT_000db440;
+       CURRENT CANDIDATE, derived not guessed: traced the anchor's own
+       FULL initial computation (not just the later low-byte quadrant
+       rotation), at uw.c ~57449 in emit_tile_features -- `((tile-
+       relative offset byte) + sign-extended-fraction(DAT_0023b4e4)) *
+       0x20 + 0x10`, where DAT_0023b4e4/e8 are the tile-walk's own
+       ring-position indices for whichever tile is currently being
+       processed (see the walk at uw.c ~51209-51268: DAT_0023b4e4
+       ranges 0->0x10 then resets to 0x20->0x10, DAT_0023b4e8 descends
+       from g_visibility_ring_depth). The formula ITSELF is now
+       independently verified byte-exact against two real, known
+       anchor values (both banks, both quadrants -- plugging the real
+       observed DAT_0023b4e4/e8/bb99/bb9a for this door's own tile into
+       `(bb99 + sign_extend((e4<<0x13)>>0x10)) * 0x20 + 0x10` recovers
+       4240 and 3664 exactly, matching the debug print's own anchor
+       values to the unit). But TWO candidate "player canonical" values
+       built on top of that confirmed formula were tried and BOTH
+       failed live: (a) naively assuming DAT_0023b4e4/e8 pivot at 0x10
+       for the player's own tile gives (4112,4112) -- tested, still
+       faces=0/1 at the broken quadrant. (b) solving for the FIXED
+       ROTATION CENTER algebraically from the two known real anchor
+       values at quadrant=1/2 (treating "player's own position" as the
+       point the whole quadrant-canonical frame rotates around, which
+       architecturally it should be) gives a cleaner (4224,128) --
+       ALSO tested, ALSO still broken (eye_local_z lands at 564,
+       nowhere near the working range). Both ruled out by direct live
+       testing, not just reasoning. UW_DLIST_EYE_PLAYER_CANONICAL=1
+       kept as an opt-in diagnostic (uses the (4112,4112) guess) for
+       whoever continues this -- see the dated findings-doc entry for
+       the full trace, including the still-unexplored lead
+       (sprite_partition_by_depth / DAT_0023b8c8, which actually select
+       bb99/bb9a's own table index and haven't been traced yet -- the
+       "which tile" delta may not be a simple per-tile lookup at all).
+       UW_DLIST_EYE_X/Y/Z still override individually for further
+       calibration. */
+    double _ex, _ey, _ez;
+    if (getenv("UW_DLIST_EYE_PLAYER_CANONICAL")) {
+      _ex = 4112.0; _ez = 4112.0; _ey = *(float *)&DAT_000db43c;
+    } else {
+      _ex = *(float *)&DAT_000db438; _ey = *(float *)&DAT_000db43c; _ez = *(float *)&DAT_000db440;
+    }
     { const char *_s = getenv("UW_DLIST_EYE_X"); if (_s) _ex = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Y"); if (_s) _ey = atof(_s); }
     { const char *_s = getenv("UW_DLIST_EYE_Z"); if (_s) _ez = atof(_s); }
@@ -57442,10 +57477,10 @@ ushort * param_1;
             continue;
           }
           iVar7 = cVar8 * 4;
-          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (*puVar5 & 0x1ff) == 0x166)
-            fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
-                    (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
-                    (int)DAT_0023b4e4, (int)DAT_0023b4e8);
+          if (getenv("UW_DEBUG_OBJPOS") && puVar5)
+            fprintf(stderr, "[objpos] id=0x%03x cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d quadrant=%d\n",
+                    (*puVar5 & 0x1ff), (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
+                    (int)DAT_0023b4e4, (int)DAT_0023b4e8, (int)DAT_0023b4a0);
           DAT_0023b904 = ((short)(char)(&DAT_0023bb99)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
