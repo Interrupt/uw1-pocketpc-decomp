@@ -141,6 +141,25 @@ static int g_mouse_event_pending = 0;
 static int g_mouseup_deferred = 0;
 static int g_mouseup_deferred_lparam = 0;
 
+/* Pending WM_CHAR byte for Enter/Backspace (0 = none), dispatched one full
+ * poll cycle after the matching WM_KEYDOWN -- same "one message per real
+ * poll" deferral as g_mouseup_deferred above. handle_keyboard_message's
+ * single-slot DAT_0023c448 latch ORs every message it receives into
+ * whatever is already there, so sending WM_KEYDOWN(VK_RETURN) and
+ * WM_CHAR(0x0D) back-to-back in the same call (as this code used to)
+ * corrupts both: VK_RETURN now correctly matches the recovered
+ * GXGetDefaultKeys() start-button field (DAT_0023ce34, see its own
+ * comment) and latches DAT_0023c448=0x93 *before* the WM_CHAR arrives and
+ * ORs in 0xd on top, leaving 0x9f -- neither a clean "Start button" event
+ * nor a clean Enter/0xd, so pressing Enter in any text-entry field
+ * (confirmed: the save/load name prompt) silently did nothing. Real
+ * Windows CE delivers these as genuinely separate, sequentially-polled
+ * messages; SDL's synthesized WM_CHAR companion for Enter/Backspace (SDL
+ * itself never generates a real SDL_TEXTINPUT for either) needs the same
+ * deferral real SDL_TEXTINPUT already gets from the "return after one
+ * event" discipline a few lines below. */
+static int g_keychar_deferred = 0;
+
 /* True from a dispatched button-down until the (possibly still-deferred)
  * matching button-up actually dispatches. See its use at the bottom of
  * uw_pump_events for why this is needed even with g_mouseup_deferred
@@ -380,6 +399,14 @@ void uw_pump_events(void) {
         return;
     }
 
+    if (g_keychar_deferred) {
+        /* See g_keychar_deferred's comment. */
+        int c = g_keychar_deferred;
+        g_keychar_deferred = 0;
+        handle_keyboard_message(0, 0x102u, (unsigned int)c);
+        return;
+    }
+
     while (SDL_PollEvent(&ev)) {
         /* Records KEYBOARD events only, before any of the game's own
            filtering/early-returns below, so what gets written matches
@@ -451,13 +478,15 @@ void uw_pump_events(void) {
                  * event only fires for printable characters), but the
                  * game's WM_CHAR handler (handle_keyboard_message, message 0x102)
                  * treats any raw byte value the same way regardless of
-                 * how it arrived, so send them here as the real
-                 * control-character bytes a Windows WM_CHAR would carry. */
+                 * how it arrived, so synthesize it -- deferred to the next
+                 * uw_pump_events() call (see g_keychar_deferred's comment)
+                 * so it doesn't land in DAT_0023c448 in the same poll as
+                 * this keydown's own WM_KEYDOWN message. */
                 if (ev.type == SDL_KEYDOWN) {
                     if (ev.key.keysym.sym == SDLK_BACKSPACE) {
-                        handle_keyboard_message(0, 0x102u, 0x08u);
+                        g_keychar_deferred = 0x08;
                     } else if (ev.key.keysym.sym == SDLK_RETURN) {
-                        handle_keyboard_message(0, 0x102u, 0x0Du);
+                        g_keychar_deferred = 0x0D;
                     }
                 }
                 /* Real Windows delivers WM_KEYDOWN and WM_CHAR as

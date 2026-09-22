@@ -701,9 +701,29 @@ int Ordinal_1070(const char *a, const char *b, unsigned int n)
     return strncmp(a, b, n);
 }
 
-long Ordinal_1071()
+/* MSVCRT `strncpy(dest, src, n)` -- sits right after strcmp(1065)/
+ * strlen(1068)/strncmp(1070) in the ordinal table, matching that
+ * sequential string-function grouping. Confirmed by its callers: every
+ * site copies a fixed-width raw field (e.g. the player's name field)
+ * into a stack buffer and then manually null-terminates one byte past
+ * the copy length, exactly the defensive pattern strncpy's own
+ * "doesn't guarantee termination" semantics require. Was a no-op stub
+ * returning 0, which left every such buffer as uninitialized stack
+ * garbage -- confirmed as the cause of the player name never
+ * displaying on the stats panel (FUN_00077f30 draws whatever garbage
+ * was left in its local buffer instead of the real name). */
+long Ordinal_1071(dest, src, n)
+char *dest;
+const char *src;
+unsigned int n;
 {
-    return 0;
+    if (dest == 0) return 0;
+    if (src == 0) {
+        memset(dest, 0, n);
+        return (long)dest;
+    }
+    strncpy(dest, src, n);
+    return (long)dest;
 }
 
 long Ordinal_1072()
@@ -776,9 +796,34 @@ unsigned int count;
     return calloc(count, elem_size);
 }
 
-long Ordinal_1407()
+/* MSVCRT `strrchr(str, c)` -- find the LAST occurrence of character `c`
+   in `str`, or NULL if absent. Was an unconditional `return 0;` stub
+   (same dead-stub class as Ordinal_1071/Ordinal_1416 before they were
+   fixed) -- most callers (message_scroll_print_wrapped's word-wrap)
+   already defensively fall back on a NULL result, masking the stub
+   there. open_level_archive's use has no such fallback: it calls this
+   to find the last '\' in a level-archive path so it can replace the
+   filename with "_arc.tmp" for its read-modify-write temp file, and a
+   permanently-NULL result makes it truncate to an EMPTY prefix instead
+   -- so the archive's own temp file for level-state writes ends up
+   created at the data root ("_arc.tmp") instead of inside the save
+   slot ("\SAVE0\_arc.tmp"), and \SAVE0\lev.ark itself never actually
+   gets the current live level state written into it. Confirmed via a
+   real save attempt: a stale, permanently-empty data/_arc.tmp sat there
+   untouched while \SAVE0\lev.ark's content never changed no matter what
+   the player did. */
+long Ordinal_1407(str, c)
+char *str;
+int c;
 {
-    return 0;
+    char *p;
+    char *last = 0;
+    if (str == 0) return 0;
+    for (p = str; ; p++) {
+        if (*p == (char)c) last = p;
+        if (*p == '\0') break;
+    }
+    return (long)last;
 }
 
 long Ordinal_1415()
@@ -786,9 +831,31 @@ long Ordinal_1415()
     return 0;
 }
 
-long Ordinal_1416()
+/* MSVCRT `_strupr(str)` -- uppercase a string in place, return the same
+ * pointer. Sits right before Ordinal_1417 (`_isctype`), matching
+ * MSVCRT's own clustering of case/character-type functions. Confirmed
+ * by its one already-argument-correct call site (FUN_0007002c's
+ * "chant the mantra" puzzle: uppercases the player's typed word and a
+ * looked-up mantra-list string before comparing them with strcmp, a
+ * classic case-insensitive-match idiom) and by its 2 dropped-argument
+ * call sites in the stats panel (FUN_00077f30's player title,
+ * FUN_0007821c's skill names) -- both were calling this with zero
+ * explicit arguments, relying on the K&R leftover-register idiom used
+ * throughout this codebase, which doesn't reliably carry the
+ * just-returned FUN_0007863c() string pointer through on this
+ * recompile; fixed at those call sites to pass it explicitly. Was a
+ * no-op stub returning 0, so every string passed through it vanished
+ * (drawn as a NULL pointer) -- confirmed as the cause of the player's
+ * title and every skill name never displaying on the stats panel. */
+long Ordinal_1416(str)
+char *str;
 {
-    return 0;
+    char *p;
+    if (str == 0) return 0;
+    for (p = str; *p != '\0'; p++) {
+        *p = (char)toupper((unsigned char)*p);
+    }
+    return (long)str;
 }
 
 /* MSVCRT-style `_isctype(c, mask)` character classification helper --

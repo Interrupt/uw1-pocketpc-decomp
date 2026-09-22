@@ -3843,19 +3843,34 @@ int DAT_002046fc;
    calls table[state](clicked_index)). Link-time-init data the decompile
    never populated -> clicking the top-left panel's "menu" button (which
    calls FUN_000564f8 -> FUN_00056cc8(6), the top-level list) jumped
-   through a null pointer. Roles cross-referenced from the target
-   functions' own bodies and FUN_00056b48's state-transition targets (item
-   0->5, item1->return to game directly, item2->4, item3->3, item4->2,
-   item5->1 iff FUN_00040130 "can save", item6->0 iff FUN_000400dc "can
-   load"):
+   through a null pointer.
+
+   Entries 0-3 and 6 were correctly reconstructed by an earlier session
+   via call-shape analysis (cross-referencing FUN_00056b48's state-
+   transition targets against each candidate function's own logic).
+   Entries 4/5 (quit confirm vs. torch/detail brightness) were ALSO
+   guessed that same way and came out swapped -- confirmed live: clicking
+   the on-screen "DETAIL" button showed the quit-confirmation screen, and
+   clicking inside it actually exited the game; clicking "QUIT GAME"
+   showed the detail-brightness slider. Root-caused for real this time:
+   these two tables are genuine link-time data in the original binary
+   (not synthesized by Ghidra), readable directly at their own addresses
+   -- a Ghidra headless memory dump of 0x868e0 and 0x86900 in the
+   original .exe gives the real function pointers at every one of these
+   8 slots, no inference needed. Index 4's real target is 0x5693c
+   (FUN_0005693c, brightness) and index 5's is 0x56838 (FUN_00056838,
+   quit confirm) in the draw table -- the reverse of what was guessed --
+   and correspondingly 0x56a70 (FUN_00056a70, brightness click) / 0x56c88
+   (FUN_00056c88, quit click) in the click table. Swapped both tables'
+   4/5 entries to match:
      0  load-game slot list  (FUN_000567ec draw, shared w/ save;
                               FUN_00056bdc click, DAT_000868dc==1 gates
                               the save-only "extra slot" bits)
      1  save-game slot list  (same pair as 0)
      2  sound on/off toggle  (FUN_00056864 draw / FUN_000569c0 click)
      3  music on/off toggle  (FUN_00056864 draw / FUN_00056a18 click)
-     4  quit-game confirm    (FUN_00056838 draw / FUN_00056c88 click)
-     5  torch brightness     (FUN_0005693c draw / FUN_00056a70 click)
+     4  torch brightness     (FUN_0005693c draw / FUN_00056a70 click)
+     5  quit-game confirm    (FUN_00056838 draw / FUN_00056c88 click)
      6  top-level menu list  (FUN_000567c0 draw / FUN_00056b48 click)
    Index 7 is never dispatched (DAT_000868dc==7 is close_ui_panel_return_to_game's
    "menu closing" sentinel, checked directly rather than redrawn) but
@@ -3876,8 +3891,8 @@ static void (*const PTR_FUN_000868e0_table[8])(void) = {
   FUN_000567ec,  /* 1: save slot list */
   FUN_00056864,  /* 2: sound toggle   */
   FUN_00056864,  /* 3: music toggle   */
-  FUN_00056838,  /* 4: quit confirm   */
-  FUN_0005693c,  /* 5: brightness     */
+  FUN_0005693c,  /* 4: brightness     */
+  FUN_00056838,  /* 5: quit confirm   */
   FUN_000567c0,  /* 6: top-level list */
   0,
 };
@@ -3887,8 +3902,8 @@ static void (*const PTR_FUN_00086900_table[8])(int) = {
   FUN_00056bdc,  /* 1: save slot list */
   FUN_000569c0,  /* 2: sound toggle   */
   FUN_00056a18,  /* 3: music toggle   */
-  FUN_00056c88,  /* 4: quit confirm   */
-  FUN_00056a70,  /* 5: brightness     */
+  FUN_00056a70,  /* 4: brightness     */
+  FUN_00056c88,  /* 5: quit confirm   */
   FUN_00056b48,  /* 6: top-level list */
   0,
 };
@@ -4755,7 +4770,15 @@ char s__not_used_yet__00087020[] = "<not_used_yet>";
 static undefined DAT_00087030_backing[8192] = "\\desc";
 #define DAT_00087030 DAT_00087030_backing[0]
 char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
-char s_Please_enter_a_Save_Game_file_an_00087094[] = "Please_enter_a_Save_Game_file_an";
+/* Was `"Please_enter_a_Save_Game_file_an"` -- a garbled placeholder that
+   just echoed this string's own auto-generated symbol name (underscores
+   for spaces, truncated at Ghidra's naming-length cap) instead of the
+   real recovered text; this is why the pause-menu's save/load name
+   prompt never showed anything in the message scroll. Real bytes
+   confirmed via Ghidra headless dump of 0x87094 in the original binary
+   (`20 20 50 6c ... 45 6e 74 65 72 0a 00`): two leading spaces, no
+   trailing period, a trailing newline before the NUL. */
+char s_Please_enter_a_Save_Game_file_an_00087094[] = "  Please enter a Save Game file and press Enter\n";
 char s__SAVE0_desc_00087078[] = "\\SAVE0\\desc";
 static undefined DAT_00087084_backing[8192];
 #define DAT_00087084 DAT_00087084_backing[0]
@@ -8365,6 +8388,17 @@ char * param_2;
   int iVar6;
   uint uVar7;
   bool bVar8;
+  /* Was reusing `iVar3` (an int, otherwise a loop counter / file handle
+     elsewhere in this function) to also hold Ordinal_1407's (strrchr)
+     return -- harmless while that ordinal was a dead `return 0;` stub
+     (see its own comment: fixed for real this session), but now that it
+     returns a genuine 64-bit pointer into local_228, storing it in an
+     `int` truncates it, and `*(undefined1*)(iVar3+1)=0` writes through
+     the truncated wild pointer. Confirmed via lldb crash in this exact
+     line reached from the "Journey Onward" title-screen load, the first
+     real exercise of this path since the stub got fixed. Dedicated
+     pointer local instead of reusing iVar3. */
+  char *pLastSlash;
   ushort local_230 [4];
   char local_228 [264];
   char local_120 [260];
@@ -8382,15 +8416,32 @@ char * param_2;
     local_228[iVar3] = *pcVar2;
     iVar3 = iVar3 + 1;
   } while (*pcVar2 != '\0');
-  iVar3 = Ordinal_1407(local_228,0x5c);
-  if (iVar3 == 0) {
+  pLastSlash = (char *)Ordinal_1407(local_228,0x5c);
+  if (pLastSlash == 0) {
     local_228[0] = '\0';
   }
   else {
-    *(undefined1 *)(iVar3 + 1) = 0;
+    pLastSlash[1] = 0;
   }
   Ordinal_1063(local_228,s__arc_tmp_000842b4);
-  iVar3 = FUN_00022810(local_120);
+  /* Was `FUN_00022810(local_120)` -- opens read-only (uw_file_open_read).
+     This handle (*param_1 in every downstream caller) is later WRITTEN
+     to directly by FUN_00015b94 (the archive-entry byte-write a level
+     save/transition uses to flush the live in-memory object arena --
+     including the player's own position, since the player is just a
+     fixed-offset object inside that same arena -- back into this file)
+     -- a write through a read-only handle silently writes 0 bytes,
+     FUN_00015b94 returns false, and the whole save chain unwinds
+     through its failure path ("Save Game Failed"), never actually
+     persisting anything. Confirmed via tracing: SAVE0/lev.ark stayed
+     byte-identical across saves no matter what the player did.
+     FUN_0002273c (uw_file_open_write with create_always=0) opens "rb+"
+     on an existing file -- read AND write, no truncation -- exactly
+     what every other caller of this handle already assumed. Falls back
+     to "wb+" (create) only if the file doesn't already exist, which
+     every real caller here doesn't hit (\SAVE0\lev.ark is always
+     seeded before this runs). */
+  iVar3 = FUN_0002273c(local_120);
   if (iVar3 == -1) {
     bVar8 = false;
   }
@@ -8406,6 +8457,8 @@ char * param_2;
     param_1[2] = (char)((uint)iVar3 >> 0x10);
     param_1[0xe] = 0;
     bVar8 = (iVar4 == 2 && iVar5 == uVar7 * 4) && iVar6 != -1;
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[archive] iVar4=%d iVar5=%d uVar7=%u iVar6=%d bVar8=%d\n", iVar4, iVar5, uVar7, iVar6, (int)bVar8);
     param_1[3] = (char)((uint)iVar3 >> 0x18);
     param_1[5] = (char)((uint)iVar6 >> 8);
     iVar3 = 0;
@@ -8472,7 +8525,17 @@ undefined4 * param_1;
 bool FUN_00015b94(param_1,param_2,param_3,param_4)
 undefined4 * param_1;
 uint param_2;
-undefined4 param_3;
+/* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live
+   object arena) pointer FUN_00049b04 passes in as the source buffer for
+   the archive-entry write. Harmless while every actual write attempt
+   through it failed anyway for other reasons (Ordinal_1407 stub,
+   read-only archive handle -- both fixed, see open_level_archive's and
+   Ordinal_1407's own comments); with those fixed this is the last thing
+   standing between a save and actually writing anything: fwrite() on
+   the truncated (now only-32-bit, so on a 64-bit host a wild/unmapped)
+   pointer fails with EFAULT, confirmed via a UW_DEBUG_INPUTEVENT trace
+   in uw_file_write (errno 14, "Bad address"). */
+void *param_3;
 uint param_4;
 
 {
@@ -8506,10 +8569,15 @@ uint param_4;
      pointer -- see read_archive_entry's matching comment. The table is a fixed
      global; use its real address. */
   uVar15 = *(uint *)((char *)&DAT_000b78b8 + iVar8);
+  if (getenv("UW_DEBUG_INPUTEVENT"))
+    fprintf(stderr, "[15b94] param_2=%u entrycount=%u uVar15=%u param_4=%u handle1=%d handle2=%d\n",
+            param_2, (uint)*(ushort *)(param_1 + 2), uVar15, param_4, (int)*param_1, (int)param_1[1]);
   if ((param_2 & 0xffff) <= (uint)*(ushort *)(param_1 + 2)) {
     if (uVar15 == 0) {
       uVar4 = FUN_00022850(*param_1,0,2);
       uVar15 = FUN_00022884(*param_1,param_3,param_4 & 0xffff);
+      if (getenv("UW_DEBUG_INPUTEVENT"))
+        fprintf(stderr, "[15b94] fast-path seek=%d write_wrote=%u want=%u\n", (int)uVar4, uVar15, param_4 & 0xffff);
       *(undefined1 *)((char *)param_1 + 0xe) = 1;
       *(undefined4 *)((char *)&DAT_000b78b8 + iVar8) = uVar4;
       return uVar15 == (param_4 & 0xffff);
@@ -8619,6 +8687,8 @@ uint param_4;
                                    CONCAT11(*(undefined1 *)((char *)param_1 + 1),*(undefined1 *)param_1
                                            ))),uVar15,0);
     uVar15 = FUN_00022884(*param_1,param_3,param_4);
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[15b94] exact-fit path: handle1=%d wrote=%u want=%u\n", (int)*param_1, uVar15, param_4);
     if (uVar15 == param_4) {
       return true;
     }
@@ -35052,8 +35122,18 @@ char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
                    instead of being called with no argument at all. */
 
 {
-  int iVar1;
-  
+  /* Was `int iVar1;` -- truncated resolve_object_link's real 64-bit
+     `void *` return to 32 bits on this recompile (harmless on the
+     original 32-bit ARM binary). This code path (the recursive
+     inventory-unlink walk) was never actually exercised in any session
+     until Enter started working correctly in the save/load name-entry
+     field (see gx_stub.c's g_keychar_deferred) and a save finally ran
+     all the way through to this function -- confirmed via lldb: the
+     fault address was exactly g_player_object's low 32 bits (+0x1b),
+     the classic signature of a pointer silently narrowed to `int`. Same
+     bug class as this function's own param_1 fix above. */
+  char *iVar1;
+
   iVar1 = resolve_object_link(param_1);
   if (iVar1 != 0) {
     if ((*(byte *)(iVar1 + 1) & 0x80) == 0) {
@@ -47074,6 +47154,37 @@ short param_2;
 
 
 
+/* Was raw pointer arithmetic `*(char *)(DAT_000868dc * 7 + iVar2 + 0x86920)`
+   -- 0x86920 is the ORIGINAL 32-bit binary's fixed load address for this
+   table (immediately following the PTR_FUN_000868e0/00086900 dispatch
+   tables, see their own comment -- same "orphaned link-time data" class),
+   used as a literal absolute pointer instead of a symbol. On this
+   recompile nothing is mapped there, so any state/highlight-index
+   combination whose real value is genuinely non-zero (i.e. that state
+   actually has a navigable widget in that D-pad-navigation slot) reads
+   through a wild pointer and crashes -- confirmed via lldb, EXC_BAD_ACCESS
+   at 0x86924. Never hit until the Enter-key WM_CHAR fix (see
+   [[save-load-name-entry-crash]]'s g_keychar_deferred) let VK_RETURN's
+   GXGetDefaultKeys() "start button" code (0x93) reach FUN_000564f8's own
+   event loop cleanly for the first time -- that's what calls FUN_00056d6c
+   with a real highlighted-item index. Real bytes recovered via a Ghidra
+   headless memory dump of the original binary at 0x86920 (8 rows x 7
+   columns, one row per menu state 0-7, one column per D-pad-navigable
+   list position 0-6): each nonzero byte is the widget-highlight value
+   FUN_000566dc's own 2nd argument expects for that slot (matches the
+   literal values each state's own draw function already passes it,
+   e.g. FUN_000567c0's `FUN_000566dc(6,6)`). */
+static const unsigned char g_menu_nav_highlight_table[8][7] = {
+  {  0,  24,  36,  34,  32,  30,   0 },
+  {  0,  24,  36,  34,  32,  30,   0 },
+  {  0,   0,  26,  22,  20,   0,   0 },
+  {  0,   0,  26,  22,  20,   0,   0 },
+  { 28,  44,  42,  40,  38,   0,   0 },
+  {  0,   0,   0,  59,  57,   0,   0 },
+  { 18,  16,  14,  12,  10,   8,   6 },
+  {  0,   0,   0, 111, 112, 116,  98 },
+};
+
 void FUN_00056d6c(param_1)
 short param_1;
 
@@ -47081,7 +47192,7 @@ short param_1;
   short sVar1;
   int iVar2;
   int iVar3;
-  
+
   if (param_1 < 0x167) {
     if (param_1 == 0x166) {
       iVar2 = 3;
@@ -47098,11 +47209,11 @@ LAB_00056ddc:
         if (6 < iVar2) {
           return;
         }
-        if (*(char *)(DAT_000868dc * 7 + iVar2 + 0x86920) == '\0') {
+        if (g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2] == 0) {
           return;
         }
         FUN_00057118();
-        FUN_000566dc(iVar3 + sVar1,(int)*(char *)(DAT_000868dc * 7 + iVar2 + 0x86920));
+        FUN_000566dc(iVar3 + sVar1,(int)g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2]);
         FUN_000570b4();
         return;
       }
@@ -47714,6 +47825,8 @@ int param_1;
     Ordinal_870(auStack_24);
     Ordinal_859(auStack_24);
     uVar2 = (uint)DAT_0023c448;
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[inputevent] DAT_0023c448=0x%x\n", (unsigned int)DAT_0023c448);
     if (uVar2 == 0) {
       uVar2 = poll_mouse_event();
     }
@@ -49915,10 +50028,24 @@ int param_2;
   int iVar4;
   undefined2 *puVar5;
   undefined2 *puVar6;
-  undefined2 local_8c [48];
-  undefined2 local_2c [10];
-  undefined2 local_18 [6];
-  
+  /* Was three separate locals (local_8c[48], local_2c[10], local_18[6])
+     -- a stack-slot-splitting artifact (same bug class as
+     stack0xffdc2e30_buf/acStack_528 in FUN_0006c0c0, or
+     acStack_86af8/etc in FUN_0005b36c right below this function): real
+     ARM disassembly (0x5b29c: `sub sp,sp,#0x80`) allocates ONE 128-byte
+     (64-undefined2) buffer, and this function's own writes to
+     `local_8c[iVar2+0x30]` (indices 48-57) and `local_8c[iVar2+0x3a]`
+     (indices 58-60) already prove it -- those are past a real 48-element
+     array's bounds. With the split, those writes silently corrupted
+     local_2c/local_18's stack space at every call; on this recompile
+     (stack-protector enabled) that finally tripped `__stack_chk_fail`
+     and aborted -- confirmed via lldb, never hit before because nothing
+     reached this function successfully until the write-path bugs above
+     it (Ordinal_1407, open_level_archive's read-only handle,
+     FUN_00015b94/FUN_00081d74's own pointer-truncation and fabricated-
+     return-0 bugs) were fixed. One properly-sized buffer instead. */
+  undefined2 local_8c [64];
+
   iVar2 = 0;
   do {
     puVar5 = &DAT_0023ae58 + iVar2;
@@ -49941,8 +50068,13 @@ int param_2;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     local_8c[iVar4] = CONCAT11((&DAT_0023b841)[iVar3],(&DAT_0023b840)[iVar1]);
   } while (iVar2 < 3);
-  FUN_00015b94(param_1,param_2 + 0x11,local_8c,0x7a);
-  return 0;
+  /* Was `FUN_00015b94(...); return 0;` -- a fabricated `return 0`
+     masking a real result, same bug class as FUN_00081d74 right above
+     this function. Real disassembly (0x5b354-0x5b35c) shows a plain
+     `bl 0x15b94` with no instruction overwriting r0 before the function
+     returns -- r0 (FUN_00015b94's own return value) falls straight
+     through as this function's return value, it's never hardcoded to 0. */
+  return FUN_00015b94(param_1,param_2 + 0x11,local_8c,0x7a);
 }
 
 
@@ -59046,16 +59178,20 @@ undefined4 journey_onward_load_slot_menu()
       sVar2 = load_level(1);
       if (sVar2 != 0) {
         FUN_0006c834(1,3);
-        /* Real UW1 presumably restores the player's saved tile position
-           from bglobals.dat automatically somewhere in this decompile,
-           but that path hasn't been found/verified -- confirmed via
-           testing that without an explicit call here the player stays
-           at tile (0,0), an unplaced/invalid position (black 3D view).
-           Use the same known-good spawn point character_generator_start
-           uses for a fresh game so a loaded game is at least playable,
-           rather than leaving this "Journey Onward" entry point
-           dropping the player somewhere invalid. */
-        set_player_tile_position(0x20,2,1);
+        /* Was a hardcoded set_player_tile_position(0x20,2,1) here --
+           worked around load_level leaving the player at tile (0,0)
+           (unplaced, black 3D view) because the save/load path never
+           actually wrote the live player position into \SAVE0\lev.ark
+           to begin with (see [[save-load-position-not-persisted]]: 6
+           bugs in the archive-write chain plus FUN_0006c264/
+           FUN_0006c0c0's own FUN_0006c670 calls having src/dest
+           backwards, all fixed). The player's tile position is just
+           another field of its own object record, at a fixed offset
+           inside the same arena load_level's object-table read
+           populates -- with a real save now actually persisting it,
+           this hardcoded override would clobber the correct restored
+           position with the fixed chargen spawn point instead. Removed;
+           load_level's own read is what places the player now. */
       }
       FUN_0006e89c();
       uVar5 = 1;
@@ -59448,15 +59584,23 @@ undefined4 param_1;
   *(char *)g_player_object = (char)(uVar1 & 0xfe3f);
   *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xfe3f) >> 8);
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
+  if (getenv("UW_DEBUG_INPUTEVENT"))
+    fprintf(stderr, "[0006bcd4] open_level_archive=%d\n", iVar2);
   uVar3 = 0;
   if (iVar2 != 0) {
     iVar2 = FUN_00049b04(auStack_20,param_1);
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[0006bcd4] FUN_00049b04=%d\n", iVar2);
     if (((iVar2 != 0) && (iVar2 = FUN_0005b298(auStack_20,param_1), iVar2 != 0)) &&
        (iVar2 = FUN_00016434(auStack_20,param_1), iVar2 != 0)) {
       iVar2 = FUN_00015a58(auStack_20);
       uVar3 = 1;
+      if (getenv("UW_DEBUG_INPUTEVENT"))
+        fprintf(stderr, "[0006bcd4] FUN_00015a58=%d uVar3=%d\n", iVar2, (int)uVar3);
       if (iVar2 != 0) goto LAB_0006bdbc;
     }
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[0006bcd4] falling through to fail, uVar3=0\n");
     uVar3 = 0;
   }
 LAB_0006bdbc:
@@ -59557,13 +59701,23 @@ undefined4 param_2;
 {
   int iVar1;
   int iVar2;
-  undefined1 auStack_d4 [32];
   short local_b4 [4];
   undefined1 auStack_ac [160];
-  
+
   probe_save_slots(auStack_ac,local_b4);
   if (param_1 == 0) {
-    iVar1 = FUN_0006c264(param_2,auStack_d4 + (short)param_2 * 0x28);
+    /* Was `auStack_d4 + (short)param_2 * 0x28` into a phantom, separately
+       -declared 32-byte `auStack_d4` local -- confirmed via real ARM
+       disassembly (0x6c088-0x6c098) that no such buffer exists: the real
+       code computes sp+8 + (slot-1)*0x28, i.e. a pointer straight into
+       auStack_ac (the very buffer probe_save_slots just filled, at
+       sp+8), offset by (slot-1) records, not slot. Ghidra's own
+       `auStack_d4 [32]` was a stack-slot-splitting artifact (same bug
+       class as stack0xffdc2e30_buf/acStack_528 -- see FUN_0006c0c0's own
+       comment) -- the 32-byte size wasn't even big enough for the real
+       4x40-byte-record indexing it was being used with, which would have
+       stack-smashed for any slot past the first. */
+    iVar1 = FUN_0006c264(param_2,auStack_ac + ((short)param_2 - 1) * 0x28);
     iVar2 = 4;
     if (iVar1 != 0) {
       iVar2 = 5;
@@ -59694,12 +59848,24 @@ char param_1;
   iVar4 = FUN_0006c560(acStack_630);
   if (iVar4 != 0) {
     FUN_00078c80(0xaa);
-    /* Was FUN_0006c670(auStack_218,auStack_420) -- the broken wide-string
-       copies of these two ANSI buffers (see FUN_0006c670's own comment).
-       Pass the real paths straight through instead: acStack_528 is the
-       chosen slot ("\SAVEn", destination), acStack_630 the live session
-       ("\SAVE0", source) -- neither is read again after this call. */
-    iVar4 = FUN_0006c670(acStack_528,acStack_630);
+    /* Was FUN_0006c670(acStack_528,acStack_630) -- i.e. (dest="\SAVEn",
+       src="\SAVE0"), copying the ACTIVE SESSION onto the chosen slot --
+       a save-direction copy. That's backwards for this function: live
+       testing confirms FUN_0006c0c0's own status text is "Restoring
+       Game " (this is the Load path, gated by FUN_00040130's
+       unconditional-allow "can load" semantics; FUN_0006c264 -- own
+       status text "Saving Game " -- is the Save path, see its matching
+       fix). An earlier session's comment here ("chosen slot,
+       destination... live session, source... i.e. 'Save Game'
+       snapshot-copies the live SAVE0 session into the chosen numbered
+       slot") was the same directional mistake as FUN_0006c264's
+       original call, just never caught because this Load path was never
+       actually exercised end-to-end with a real position check.
+       acStack_630 ("\SAVE0", the active session) is the destination;
+       acStack_528 ("\SAVEn", the chosen slot) is the source -- loading
+       the slot's saved state into the live session, matching what
+       FUN_0006c264 now does in the opposite direction. */
+    iVar4 = FUN_0006c670(acStack_630,acStack_528);
     if (getenv("UW_DEBUG_SAVEDESC"))
       fprintf(stderr, "[savedesc] FUN_0006c670 returned %d, acStack_528=%s\n", iVar4, acStack_528);
     if (iVar4 != 0) {
@@ -59744,7 +59910,19 @@ char param_1;
 
 undefined4 FUN_0006c264(param_1,param_2)
 char param_1;
-undefined4 param_2;
+/* Was `undefined4` -- truncates the real 64-bit buffer pointer
+   FUN_0006bfec passes in (a pointer into its own auStack_ac local,
+   see that function's comment). On the original 32-bit ARM binary this
+   was harmless, but on this 64-bit recompile the parameter-spill in
+   this function's own prologue drops the pointer's upper 32 bits the
+   moment it's read out of the argument register, leaving every later
+   dereference (message_scroll_print_wrapped, the FUN_0007ffa8 name-entry
+   call, the strlen/Ordinal_1063 calls near the end) a wild pointer --
+   confirmed crash: "Enter a save/load name" renders fine (that prompt
+   is a static string, not this buffer), but touching the corrupted
+   buffer once you start typing segfaults. Same bug class as
+   FUN_00077f30's uVar3 fix earlier this session. */
+char *param_2;
 
 {
   char stack0xffdc2d20_buf [256];
@@ -59783,7 +59961,14 @@ undefined4 param_2;
   }
   FUN_0007fce8(1);
   message_scroll_print_wrapped(s_Please_enter_a_Save_Game_file_an_00087094);
-  sVar2 = FUN_0007ffa8(0,param_2,param_2,1);
+  /* Dropped 5th argument (max name length) -- confirmed via real ARM
+     disassembly (0x6c2f8-0x6c30c: `mov r3,#0x1e; strh r3,[sp,#0]` pushes
+     0x1e as the 5th/stack arg immediately before the call). Same
+     dropped-argument idiom fixed elsewhere this session -- without it
+     param_5 is whatever garbage was left on the stack, which
+     FUN_0007ffa8 clamps to at most 0x32 but never validates as sane
+     otherwise. */
+  sVar2 = FUN_0007ffa8(0,param_2,param_2,1,0x1e);
   if (((sVar2 != 0x1b) && (sVar2 != 1)) && (sVar2 != 2)) {
     message_scroll_print_wrapped(&DAT_0008522c);
     FUN_00078c80(0xa7);
@@ -59836,12 +60021,26 @@ undefined4 param_2;
             Ordinal_61(auStack_428,uVar5);
             uVar5 = FUN_0002295c(local_638);
             Ordinal_61(auStack_220,uVar5);
-            /* Was FUN_0006c670(auStack_220,auStack_428) -- the broken wide
-               copies; pass the real ANSI paths directly instead (see
-               FUN_0006c670's own comment). local_638 is the active
-               session ("\SAVE0", destination -- Load overwrites it),
-               local_530 the chosen slot ("\SAVEn", source). */
-            iVar4 = FUN_0006c670(local_638,local_530);
+            /* Was FUN_0006c670(local_638,local_530) -- i.e.
+               (dest="\SAVE0", src="\SAVEn"), copying the CHOSEN SLOT
+               back onto the active session. That's backwards for this
+               function: FUN_0006c264 is the SAVE path (confirmed live --
+               its own status text is "Saving Game ", gated by
+               FUN_000400dc's real save preconditions, and it just
+               finished writing the current name/player.dat/lev.ark
+               state into local_638="\SAVE0" a few lines up) -- copying
+               SAVEn back onto SAVE0 immediately discards all of that
+               and leaves the actual save slot (local_530) untouched.
+               Confirmed via a live save/move/reload test: SAVE0 and the
+               target slot stayed byte-identical to each other (and to
+               their pre-save content) no matter what the player did,
+               until swapping this call's argument order so the
+               freshly-updated local_638 ("\SAVE0") is the SOURCE and
+               local_530 ("\SAVEn") the DESTINATION -- i.e. actually
+               writing the live session out to the chosen slot, matching
+               what FUN_0006c0c0 (the sibling Load path, own status text
+               "Restoring Game ") does in the opposite direction. */
+            iVar4 = FUN_0006c670(local_530,local_638);
             if (iVar4 != 0) {
               message_scroll_print_wrapped(&DAT_00087038);
               uVar5 = 1;
@@ -67237,6 +67436,8 @@ uint param_3;
     return 0;
   }
   uVar1 = (ushort)param_3;
+  if (getenv("UW_DEBUG_INPUTEVENT"))
+    fprintf(stderr, "[keymsg] msg=0x%x wparam=0x%x DAT_0023c448_before=0x%x\n", (unsigned int)param_2, (unsigned int)param_3, (unsigned int)DAT_0023c448);
   if (param_2 != 0x100) {
     if (param_2 == 0x101) {
       DAT_000876c8 = 1;
@@ -67461,11 +67662,18 @@ void FUN_00077f30()
 {
   char cVar1;
   short sVar2;
-  undefined4 uVar3;
+  /* Was `undefined4` -- truncated Ordinal_1416's real 64-bit string
+     pointer return (see that ordinal's own comment: it's `_strupr`,
+     genuinely implemented now instead of a stub) to 32 bits on this
+     host before handing it to draw_text_string. Harmless while
+     Ordinal_1416 was a stub always returning 0; a real
+     pointer-truncation crash now that it isn't. Same class as
+     everywhere else this session. */
+  char *uVar3;
   int iVar4;
   undefined1 auStack_28 [30];
   undefined1 local_a;
-  
+
   Ordinal_1071(auStack_28,DAT_00086df8,0xf);
   local_a = 0;
   Ordinal_1416(auStack_28);
@@ -67475,8 +67683,15 @@ void FUN_00077f30()
     iVar4 = -(int)sVar2 + 0x49;
   }
   draw_text_string(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
-  FUN_0007863c((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400);
-  uVar3 = Ordinal_1416();
+  /* Was `FUN_0007863c(id); uVar3 = Ordinal_1416();` -- Ordinal_1416
+     (real body: `_strupr`, see its own comment) needs an explicit
+     string argument, but was called with none, relying on the K&R
+     leftover-register idiom (this project's established "dropped
+     argument" pattern) to still hold FUN_0007863c's just-returned
+     string pointer. That register doesn't reliably carry through on
+     this recompile, so uVar3 came back NULL/garbage and the player's
+     title was never drawn. Thread the string through explicitly. */
+  uVar3 = Ordinal_1416(FUN_0007863c((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
   draw_text_string(uVar3,0xf2,0x16);
   FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
   cVar1 = *(byte *)(DAT_00086df8 + 0x3d) - 1;
@@ -67566,7 +67781,9 @@ void FUN_0007821c(param_1)
 uint param_1;
 
 {
-  undefined4 uVar1;
+  /* Was `undefined4` -- same Ordinal_1416 pointer-truncation class as
+     FUN_00077f30's player-title draw. */
+  char *uVar1;
   int iVar2;
   uint uVar3;
   int iVar4;
@@ -67576,8 +67793,12 @@ uint param_1;
   FUN_000229e0(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
   FUN_00011c10(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
                0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
-  FUN_0007863c((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400);
-  uVar1 = Ordinal_1416();
+  /* Was `FUN_0007863c(id); uVar1 = Ordinal_1416();` -- same dropped-
+     argument bug as FUN_00077f30's player-title draw above; thread
+     the looked-up skill-name string through explicitly instead of
+     relying on leftover-register reuse. This is why no skill names
+     (Sword/Swimming/Mace/etc.) ever displayed. */
+  uVar1 = Ordinal_1416(FUN_0007863c((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400));
   iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
   draw_text_string(uVar1,0xf2,iVar4);
   iVar2 = measure_text_width(auStack_18);
@@ -67654,7 +67875,18 @@ void FUN_00078434()
     if (sVar2 != 1) {
       uVar1 = 0;
     }
-    sVar2 = FUN_00069eb0(local_c,uVar1,1);
+    /* Was `FUN_00069eb0(local_c,uVar1,1);` -- dropped its 4th
+       argument (direction, -1/+1), the SAME `sVar2` value just
+       computed above from the click position but about to be
+       clobbered by this very call's own return value (Ghidra reused
+       the variable slot). FUN_00069eb0's own body branches on
+       param_4==-1 vs anything else to pick which bound check and
+       which sign to apply, so a dropped/garbage direction here could
+       clamp against the wrong bound or step the wrong way --
+       confirmed as the cause of "scrolling jumps somewhere else
+       instead of line by line". Re-derive the direction explicitly
+       instead of relying on the leftover register. */
+    sVar2 = FUN_00069eb0(local_c,uVar1,1,(0x24 < *DAT_00085a6c) ? 1 : -1);
     if (sVar2 != 0) {
       DAT_0024af80 = (byte)local_c[0];
       FUN_00057118();
@@ -73640,7 +73872,14 @@ int param_2;
 
 
 undefined4 FUN_00081d74(param_1,param_2)
-undefined4 param_1;
+/* Was `undefined4` -- truncated the real 64-bit archive-handle-struct
+   pointer (FUN_00049b04's own `auStack_20`) FUN_00015b94 needs as its
+   own param_1. Same bug class as FUN_00015b94's own param_3 fix right
+   above this function -- confirmed via the same crash chain, one call
+   further down (FUN_00049b04 -> FUN_00081d74 -> FUN_00015b94, this
+   function's own nested call, dereferencing the truncated handle
+   pointer). */
+undefined4 *param_1;
 int param_2;
 
 {
@@ -73651,8 +73890,18 @@ int param_2;
     (&DAT_00250778)[iVar1] = (&DAT_00250778)[iVar1] & 0x3f;
     (&DAT_00250779)[iVar1] = 0;
   }
-  FUN_00015b94(param_1,param_2 + 8,&DAT_00250778,0x180);
-  return 0;
+  /* Was `FUN_00015b94(...); return 0;` -- a fabricated `return 0`
+     masking a real result (same bug class as the torch/ambient-light
+     fix earlier this session). Real ARM disassembly (0x81dbc-0x81dc0)
+     ends in a tail call (`b 0x15b94`, not `bl`) -- FUN_00015b94's own
+     return value IS this function's return value, not a hardcoded
+     failure. Confirmed: without this, a real save's second archive
+     write (this header-table update, right after the main level-data
+     write) always reported failure even when the write underneath it
+     fully succeeded, so FUN_00049b04 -- and the whole save chain above
+     it -- always unwound through its failure path ("Save Game Failed")
+     no matter what. */
+  return FUN_00015b94(param_1,param_2 + 8,&DAT_00250778,0x180);
 }
 
 

@@ -194,8 +194,11 @@ int uw_file_write(int handle, const void *buf, unsigned int size) {
         DEBUG(ERR, "[fileio] write: handle %d invalid/null-buf/oversized, size=%u\n", handle, size);
         return 0;
     }
+    errno = 0;
     int n = (int)fwrite(buf, 1, size, f);
-    /* fprintf(stderr, "[fileio] write: handle %d requested=%u wrote=%d\n", handle, size, n); */
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+        fprintf(stderr, "[fileio] write: handle %d requested=%u wrote=%d errno=%d(%s) ferror=%d feof=%d\n",
+                handle, size, n, errno, strerror(errno), ferror(f), feof(f));
     return n;
 }
 
