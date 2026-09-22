@@ -53310,9 +53310,81 @@ static void emit_dlist_bank_object(const unsigned short *words, int count, int h
     g_uwdl_anchor[0] = ax + scale*(xoff*ca - zoff*sa);
     g_uwdl_anchor[1] = ah + yoff;
     g_uwdl_anchor[2] = az + scale*(xoff*sa + zoff*ca);
+    if (getenv("UW_DLIST_EYE_TRUE_PLAYER_POS")) {
+      /* Other half of the same experiment: object space -> world space,
+         not just eye -> world space. ax/az (and so g_uwdl_anchor's X/Z)
+         are expressed relative to a fixed, arbitrary reference point
+         that the ring-walk silently re-establishes every frame -- NOT
+         the same reference on both axes, despite the anchor formula
+         itself (emit_tile_features ~line 57484:
+         `(nudge + ring_index*8) * 0x20 + 0x10`) looking structurally
+         identical for X/Z. DAT_0023b4e4 (X's ring index) sweeps a
+         genuine signed range centered on the player -- 0..15 then
+         32..17, i.e. +-16 around a skipped center of 16 -- so X's
+         reference is 16*8*32+16 = 4112. DAT_0023b4e8 (Z's ring index)
+         is a DIFFERENT kind of quantity: confirmed directly in
+         walk_visible_tiles (uw.c ~51209-51255), it's seeded from
+         g_visibility_ring_depth and counted DOWN to 0 -- a one-
+         directional depth-from-player counter (this quadrant-canonical
+         system's own "forward" range), not a symmetric sweep. Its own
+         zero -- the player's own row -- is ring_index=0, not 16, so
+         Z's reference is 0*8*32+16 = 16, not 4112. Using 4112 for both
+         (the first version of this test) produced a reconstructed
+         anchor whose Z landed over 13 tiles from the player for a door
+         the player is standing right in front of -- a sign the wrong
+         constant was in play, not that the whole approach is invalid.
+         Shift each axis by (true_player_pos - its own reference), so
+         both sides of the plane test genuinely share one coordinate
+         system. Y is untouched: the object's own height (ah) was never
+         windowed to begin with -- it's already real/absolute, same
+         convention g_true_player_pos[1] uses. */
+      const double _ring_center_x = 4112.0, _ring_center_z = 16.0;
+      double _dx = ax - _ring_center_x, _dz = az - _ring_center_z;
+      /* DEBUG SWEEP (temporary): quadrant=1 matched the known-good
+         baseline exactly with NO transform on this delta at all --
+         surprising, since DAT_0023b4a0 was 1 there, not 0. quadrant=2
+         (DAT_0023b4a0=2) does not. UW_DLIST_ANCHOR_DELTA_CASE=0..3
+         applies the same swap/negate pattern confirmed byte-identical
+         between sync_camera_from_player and build_frame_draw_list's
+         own quadrant cases, but as a pure vector transform (no 0xff
+         pivot -- that pivot only makes sense for an absolute position
+         inside a fixed 0-255 window, not a displacement), to sweep
+         which case (if any) fixes quadrant=2 without regressing
+         quadrant=1. -1 (default) = no transform, current behavior. */
+      /* SWEPT AND RULED OUT (2026-09-21): all 4 values regress the
+         known-good quadrant=1 case (faces=8/3 -> 0) and make NO
+         difference at all to quadrant=2 (faces=2 in every case,
+         0/1/2/3 alike) -- the remaining quadrant=2 failure isn't about
+         which way this X/Z delta rotates. Per-instruction tracing
+         (UW_DEBUG_DLIST_CULLOP) at quadrant=2 with no delta transform
+         shows axis=0 (X) tests now correctly PASS every time (a real
+         improvement -- they failed unconditionally before this whole
+         experiment); it's axis=1 (height, never rotated/windowed at
+         all) and axis=2 (Z/depth) that CULL every remaining face.
+         Height shouldn't even be quadrant-sensitive -- the real player
+         height and the door's own real height are identical between
+         quadrant=1 and quadrant=2 (same physical position, only yaw
+         differs) -- so if axis=1 culls at quadrant=2 but not at
+         quadrant=1 for what should be the same face, the two runs are
+         reaching that plane test via DIFFERENT points in the bytecode's
+         own if/else-if chain (own heading-dependent control flow), not
+         a shared arithmetic bug. Left at -1 (no transform) by default,
+         matching the value that makes quadrant=1 match exactly. */
+      { const char *_s = getenv("UW_DLIST_ANCHOR_DELTA_CASE");
+        int _dc = _s ? atoi(_s) : -1;
+        double _ndx = _dx, _ndz = _dz;
+        if (_dc == 0) { _ndx = _dx; _ndz = _dz; }
+        else if (_dc == 1) { _ndx = -_dz; _ndz = _dx; }
+        else if (_dc == 2) { _ndx = -_dx; _ndz = -_dz; }
+        else if (_dc == 3) { _ndx = _dz; _ndz = -_dx; }
+        _dx = _ndx; _dz = _ndz;
+      }
+      g_uwdl_anchor[0] += _dx;
+      g_uwdl_anchor[2] += _dz;
+    }
     if (getenv("UW_DEBUG_DLIST"))
-      fprintf(stderr, "[dlist] eye_world=(%g,%g,%g) anchor=(%d,%d,%d) adj_anchor=(%g,%g,%g) ca=%g sa=%g scale=%g\n",
-              _ex, _ey, _ez, ax, ah, az, g_uwdl_anchor[0], g_uwdl_anchor[1], g_uwdl_anchor[2], ca, sa, scale);
+      fprintf(stderr, "[dlist] eye_world=(%g,%g,%g) anchor=(%d,%d,%d) adj_anchor=(%g,%g,%g) ca=%g sa=%g scale=%g quadrant=%d\n",
+              _ex, _ey, _ez, ax, ah, az, g_uwdl_anchor[0], g_uwdl_anchor[1], g_uwdl_anchor[2], ca, sa, scale, (int)DAT_0023b4a0);
   }
   nfaces = uwdl_run_bank(words, count, head, rise, g_uwdl_eye_world, ca, sa, scale, g_uwdl_anchor, faces, UWDL_MAX_FACES);
   if (getenv("UW_DEBUG_DLIST")) {

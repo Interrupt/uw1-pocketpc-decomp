@@ -4007,3 +4007,108 @@ just its already-windowed anchor), which routes back to the same
 still-open next step: trace sprite_partition_by_depth/DAT_0023b8c8 and
 the ring-walk's real tile-indexing scheme to recover an actual absolute
 tile coordinate for whichever object/tile is currently being rendered.
+
+(32) 2026-09-21: user's next ask completed entry (31)'s missing half --
+"can the cull plane also be in world coordinates? If both are in the
+same coordinate system, then we can do a compare." Doing that produced
+this investigation's first EXACT match against the known-good baseline
+at quadrant=1 (not just closer -- byte-identical to faces=8/3), via a
+genuinely new finding about DAT_0023b4e4 vs DAT_0023b4e8's real
+semantics. Quadrant=2 is still broken, but the failure mode changed
+in a specific, informative way -- recorded below for whoever picks
+this up next.
+
+RECONSTRUCTING THE ANCHOR INTO WORLD SPACE. ax/az (DAT_0023b904/920)
+are expressed relative to a fixed reference point the ring-walk
+silently re-establishes every frame, not real map coordinates --
+established in entry (31). The FIRST version of this reconstruction
+assumed that reference was the same constant (4112) on both X and Z,
+since the anchor formula `(nudge + ring_index*8)*0x20+0x10` (emit_tile_
+features ~line 57484) looks structurally identical for both. Testing
+it (eye=true_player_pos, anchor=true_player_pos+(anchor_windowed-4112))
+gave a reconstructed anchor whose Z landed over 13 tiles from a door
+the player is standing directly in front of -- implausible, a sign of
+a wrong constant, not a wrong approach.
+
+THE REAL FINDING: re-read walk_visible_tiles (uw.c ~51209-51255)
+specifically to check DAT_0023b4e4 and DAT_0023b4e8's own real ranges,
+rather than assuming symmetry. DAT_0023b4e4 (feeds the anchor's X) does
+sweep a genuine signed range centered on the player: 0..15 then 32..17,
+i.e. +-16 around a skipped center value of 16 -- so X's reference really
+is 16*8*32+16 = 4112, confirmed. DAT_0023b4e8 (feeds the anchor's Z) is
+a DIFFERENT KIND OF QUANTITY: `DAT_0023b4e8 = g_visibility_ring_depth`,
+then decremented every outer-loop pass down to 0 (confirmed by the
+loop's own condition, `-1 < (iVar4-1)`) -- a one-directional DEPTH
+counter (this quadrant-canonical system's own "how far forward am I
+looking" range), not a symmetric sweep at all. Its own zero -- the
+player's own row -- is ring_index=0, not 16. So Z's real reference is
+0*8*32+16 = 16, not 4112. This asymmetry (X genuinely centered, Z
+genuinely one-directional from a zero start) is a real structural fact
+about this ring-walk, not a guess -- and it's very likely the same
+underlying reason `sync_camera_from_player`'s own eye formula treats X
+and Z asymmetrically too (`+0x1000` literal on X, nothing on Z --
+entries 27/30).
+
+Implemented: `g_uwdl_anchor[0] += g_true_player_pos[0] - 4112.0;
+g_uwdl_anchor[2] += g_true_player_pos[2] - 16.0;`, still gated behind
+UW_DLIST_EYE_TRUE_PLAYER_POS (both halves of this experiment -- eye and
+anchor -- only make sense switched on together).
+
+RESULT, quadrant=1 (tile=31.95,8.98, yaw=85, real camera-quadrant
+DAT_0023b4a0=1 -- confirmed by adding it to the [dlist] debug line,
+NOT 0 as assumed going in): eye_world=(8179,804,2299),
+adj_anchor=(8291,640,2967) -- faces=8 (frame) and faces=3 (leaf).
+EXACT MATCH to the known-good baseline. First exact match this whole
+investigation has produced from a principled reconstruction rather
+than tuning against the answer.
+
+RESULT, quadrant=2 (same tile, yaw=140, DAT_0023b4a0=2):
+eye_world=(8179,804,2299) [same value -- same real player position],
+adj_anchor=(7727,640,2443) -- faces=2. Still broken, but NOT the same
+way as before: adj_anchor is now a small, physically plausible ~1-2
+tile displacement from the eye (unlike entry (31)'s implausible 13-tile
+error), yet culling is still wrong.
+
+SWEPT WHETHER THE DELTA NEEDS ITS OWN PER-QUADRANT ROTATION: added
+UW_DLIST_ANCHOR_DELTA_CASE (0-3), applying the same swap/negate pattern
+confirmed byte-identical between sync_camera_from_player and
+build_frame_draw_list's quadrant cases, but as a pure vector transform
+(no `0xff-x` pivot -- that only makes sense for an absolute position
+inside a fixed 0-255 window, not a displacement). Result: ALL FOUR
+explicit cases regress quadrant=1 (faces=8/3 -> 0 every time -- only
+"no transform" reproduces the exact match), and NONE of them change
+quadrant=2's result at all (faces=2 in every case, 0/1/2/3 alike). The
+X/Z delta's own rotation isn't what's wrong for quadrant=2.
+
+TRACED PER-INSTRUCTION (UW_DEBUG_DLIST_CULLOP) at quadrant=2 to see
+exactly what's failing: axis=0 (X) tests now correctly KEEP every time
+-- a real, working improvement (they failed unconditionally before this
+whole experiment). It's axis=1 (height, `normal=(0,1,0)`, never
+rotated or windowed at all -- confirmed real/absolute on both sides
+already) and axis=2 (Z/depth) that CULL every remaining face. Height
+being wrong is the most suspicious part: the real player height (804)
+and this door's real height (640, `ah`) are IDENTICAL between
+quadrant=1 and quadrant=2 -- same physical spot, only yaw differs --
+so if axis=1's plane test culls at quadrant=2 but a working equivalent
+doesn't at quadrant=1, the two runs must be reaching DIFFERENT
+instructions in the bytecode's own if/else-if chain (this bank's
+control flow is itself heading-dependent, confirmed earlier this
+investigation), not hitting the same arithmetic with different results.
+
+Kept UW_DLIST_ANCHOR_DELTA_CASE as a documented, swept-and-ruled-out
+diagnostic (default -1, no transform, matching the value that produces
+the exact quadrant=1 match). UW_DLIST_EYE_TRUE_PLAYER_POS unchanged,
+opt-in. UW_DLIST_REAL_CULL_OPCODES still opt-in; confirmed zero-env-var
+default rendering unaffected (faces=11/6). Standard run-regressions.sh:
+6/6 clean.
+
+Net effect: real, concrete progress -- one full quadrant now reproduces
+the known-good baseline exactly via a principled world-space
+reconstruction, and quadrant=2's X-axis culling is now also correct.
+What's left is narrower than before: axis=1/height and axis=2/Z-depth
+specifically, at quadrant=2 specifically, most likely a control-flow
+(which bytecode branch gets walked) difference rather than a shared
+formula bug. Next step: trace which specific bytecode offsets the
+height/Z cull tests come from at quadrant=1 vs quadrant=2 for the SAME
+logical face, to see whether the if/else-if chain is genuinely taking
+a different path.

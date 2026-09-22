@@ -1381,6 +1381,55 @@ reconstructed, not the eye guessed at. Next step unchanged: trace
 `sprite_partition_by_depth`/`DAT_0023b8c8` and the ring-walk's real
 tile-indexing scheme.
 
+**UPDATE 41 (BREAKTHROUGH -- the first exact match this investigation
+has produced, 2026-09-21):** user: "This misses the other half of this
+approach - can the cull plane also be in world coordinates? If both
+are in the same coordinate system, then we can do a compare" -- then,
+mid-turn: "That might need a conversion from the object space back to
+world space." Exactly right on both counts.
+
+Reconstructed the anchor's own X/Z into the same real world space
+`g_true_player_pos` already lives in. First attempt assumed the ring-
+walk's two indices (`DAT_0023b4e4` for X, `DAT_0023b4e8` for Z) share
+the same reference point (both structurally feed the anchor formula
+identically). Re-reading `walk_visible_tiles` (uw.c ~51209-51255)
+specifically to check disproved that: `DAT_0023b4e4` genuinely sweeps
+a signed range centered on the player (0..15 then 32..17, +-16 around
+a skipped center of 16 -- reference = 4112). `DAT_0023b4e8` is seeded
+from `g_visibility_ring_depth` and counted DOWN to 0 every outer-loop
+pass -- a one-directional depth-from-player counter, not a symmetric
+sweep at all. Its own zero is ring-index 0, not 16 -- reference = 16,
+not 4112. Using the wrong shared constant (4112 for both) the first
+time produced a reconstructed anchor over 13 tiles from a door the
+player was standing directly in front of; using the correct asymmetric
+references fixed that immediately.
+
+Result: quadrant=1 (real camera-quadrant `DAT_0023b4a0=1`, confirmed
+by instrumenting it into the debug line) now reproduces `faces=8/3`
+**exactly** -- byte-identical to the known-good baseline, not just
+closer. First exact match this whole investigation has produced from
+principled reconstruction. Quadrant=2 (`DAT_0023b4a0=2`) is still
+broken (`faces=2`), but differently than before: swept all 4 possible
+per-quadrant rotations of the reconstructed delta
+(`UW_DLIST_ANCHOR_DELTA_CASE=0..3`) -- every one regresses quadrant=1
+and none change quadrant=2 at all, so the delta's own orientation isn't
+the remaining problem. Per-instruction tracing shows why: axis=0 (X)
+now correctly passes every test at quadrant=2 too (real progress); it's
+axis=1 (height -- never rotated, never windowed, and identical between
+both quadrants since it's the same real player/door) and axis=2
+(Z/depth) that cull everything. Height failing differently between two
+runs with the identical real height strongly implies the bytecode's
+own if/else-if chain is walking a genuinely different branch at
+quadrant=2, not hitting shared arithmetic with a different result.
+
+`UW_DLIST_ANCHOR_DELTA_CASE` kept as a documented, swept-and-ruled-out
+diagnostic (default -1, no transform -- the value that produces the
+exact match). `UW_DLIST_REAL_CULL_OPCODES` still opt-in; default
+rendering confirmed unaffected (faces=11/6). run-regressions.sh: 6/6
+clean. Next step: trace which bytecode offsets the height/Z cull tests
+actually come from at quadrant=1 vs quadrant=2 for the same logical
+face, to check whether the if/else-if chain takes a different path.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
