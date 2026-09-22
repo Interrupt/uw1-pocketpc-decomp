@@ -20,6 +20,13 @@
 #                            extra env vars (space-separated KEY=VAL pairs)
 #                            forwarded to the binary for every script
 #
+# All scripts are launched at once, each against its own SDL window, and
+# run concurrently rather than one at a time -- each uw_dbg instance only
+# ever touches its own window/log/demo file, and demomode's mouse
+# injectors no longer warp the real OS cursor (see uw_inject_mouse_down's
+# comment in gx_stub.c), so nothing about one run's input stomps on
+# another's.
+#
 # Note: demo_automap.txt is deliberately excluded from the default list
 # -- it's a 4000+ line tile-by-tile traversal that takes 5+ minutes,
 # too slow for a routine regression check. Pass it explicitly as an
@@ -50,51 +57,82 @@ fi
 
 mkdir -p "$OUT_DIR"
 
-crash_count=0
-timeout_count=0
-total_count=0
-
+# Kick off every script at once, each in its own background runner
+# subshell that does its own run+watchdog+wait+classify and drops the
+# verdict in a per-script result file (rather than echoing directly,
+# which would interleave garbled output across concurrently-finishing
+# runs) -- then wait for all of them and report in a second, ordered
+# pass below.
+run_scripts=""
 for s in $SCRIPTS; do
   if [ ! -f "$s" ]; then
     echo "SKIP (not found): $s"
     continue
   fi
-  echo "Running test: $s"
-  total_count=$((total_count + 1))
+  run_scripts="$run_scripts $s"
   log="$OUT_DIR/$s.log"
-
-  # Run in the background (env, not eval -- env execs the binary in place
-  # of itself rather than forking, so $! below is the real game process's
-  # PID, not a wrapper shell's), race it against a watchdog timer instead
-  # of a fixed sleep, then wait for whichever finishes first. No `timeout`
-  # command needed, so this works on stock OSX.
-  env $EXTRA_ENV UW_DEMO_DELAY_MS=100 UW_DATA_DIR="$(pwd)/data" UW_DEBUG_LEVEL="$DEBUG_LEVEL" UW_DEMO_FILE="$(pwd)/$s" UW_FAST_SLEEP=1 "./$BIN" >"$log" 2>&1 &
-  pid=$!
+  result="$OUT_DIR/$s.result"
+  rm -f "$result"
 
   (
-    sleep "$TIMEOUT"
-    kill "$pid" 2>/dev/null
+    # Run in the background (env, not eval -- env execs the binary in
+    # place of itself rather than forking, so $! below is the real game
+    # process's PID, not a wrapper shell's), race it against a watchdog
+    # timer instead of a fixed sleep, then wait for whichever finishes
+    # first. No `timeout` command needed, so this works on stock OSX.
+    env $EXTRA_ENV UW_DEMO_DELAY_MS=100 UW_DATA_DIR="$(pwd)/data" UW_DEBUG_LEVEL="$DEBUG_LEVEL" UW_DEMO_FILE="$(pwd)/$s" UW_FAST_SLEEP=1 "./$BIN" >"$log" 2>&1 &
+    pid=$!
+
+    (
+      sleep "$TIMEOUT"
+      kill "$pid" 2>/dev/null
+    ) &
+    watchdog=$!
+
+    wait "$pid" 2>/dev/null
+    rc=$?
+    kill "$watchdog" 2>/dev/null
+    wait "$watchdog" 2>/dev/null
+
+    # A shell reports a signal-terminated command's exit status as 128+signal.
+    # Our watchdog's `kill` sends SIGTERM (143); some environments/OOM killers
+    # use SIGKILL (137) -- either means the script hung and got force-killed
+    # rather than finishing on its own.
+    if [ "$rc" -eq 137 ] || [ "$rc" -eq 143 ]; then
+      echo "TIMEOUT $rc" >"$result"
+    elif grep -qi "fatal signal\|EXC_BAD_ACCESS\|SIGSEGV\|Segmentation fault" "$log"; then
+      echo "CRASH $rc" >"$result"
+    else
+      echo "CLEAN $rc" >"$result"
+    fi
   ) &
-  watchdog=$!
+  echo "Started: $s (pid $!)"
+done
 
-  wait "$pid" 2>/dev/null
-  rc=$?
-  kill "$watchdog" 2>/dev/null
-  wait "$watchdog" 2>/dev/null
+wait
 
-  # A shell reports a signal-terminated command's exit status as 128+signal.
-  # Our watchdog's `kill` sends SIGTERM (143); some environments/OOM killers
-  # use SIGKILL (137) -- either means the script hung and got force-killed
-  # rather than finishing on its own.
-  if [ "$rc" -eq 137 ] || [ "$rc" -eq 143 ]; then
-    echo "TIMEOUT: $s (killed after ${TIMEOUT}s, see $log)"
-    timeout_count=$((timeout_count + 1))
-  elif grep -qi "fatal signal\|EXC_BAD_ACCESS\|SIGSEGV\|Segmentation fault" "$log"; then
-    echo "CRASH: $s (exit=$rc, see $log)"
-    crash_count=$((crash_count + 1))
-  else
-    echo "clean: $s (exit=$rc)"
-  fi
+crash_count=0
+timeout_count=0
+total_count=0
+
+for s in $run_scripts; do
+  total_count=$((total_count + 1))
+  log="$OUT_DIR/$s.log"
+  result="$OUT_DIR/$s.result"
+  read -r status rc <"$result"
+  case "$status" in
+    TIMEOUT)
+      echo "TIMEOUT: $s (killed after ${TIMEOUT}s, see $log)"
+      timeout_count=$((timeout_count + 1))
+      ;;
+    CRASH)
+      echo "CRASH: $s (exit=$rc, see $log)"
+      crash_count=$((crash_count + 1))
+      ;;
+    *)
+      echo "clean: $s (exit=$rc)"
+      ;;
+  esac
 done
 
 echo ""

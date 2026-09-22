@@ -530,9 +530,14 @@ void uw_pump_events(void) {
                  * of the raw event fields. */
                 int win_x, win_y;
                 if (ev.button.which == UW_SYNTH_MOUSE) {
-                    /* injected click (uw_inject_mouse_*): the SDL_GetGlobalMouseState
-                       warp does not work under the dummy video driver, so take the
-                       event's own window-point coords directly. */
+                    /* injected click (uw_inject_mouse_*): these never warp
+                       the real OS cursor (see uw_inject_mouse_down's
+                       comment), and SDL_GetGlobalMouseState() doesn't
+                       reflect a synthetic position anyway (and doesn't
+                       work at all under the dummy video driver), so take
+                       the event's own window-point coords directly --
+                       that's the actual, and only, source of truth for
+                       where an injected click lands. */
                     win_x = (ev.type == SDL_MOUSEMOTION) ? ev.motion.x : ev.button.x;
                     win_y = (ev.type == SDL_MOUSEMOTION) ? ev.motion.y : ev.button.y;
                 } else {
@@ -705,24 +710,26 @@ int uw_take_mouse_event_pending(void) {
 }
 
 int uw_inject_mouse_down(int window_x, int window_y) {
-    /* For scripted/unattended testing: warps the real OS cursor into the
-     * window at the given point (window points, not logical/portrait
-     * coordinates) then pushes a genuine SDL_MOUSEBUTTONDOWN event, so
-     * this exercises the exact same code path a real click does --
-     * unlike demomode's CLICK command, which calls FUN_00077dd0 directly
-     * and bypasses uw_pump_events (and therefore g_mouse_event_pending)
-     * entirely. gx_stub.c's own mouse handling reads the cursor position
-     * via SDL_GetGlobalMouseState() (see its HiDPI-workaround comment),
-     * not the event's own x/y fields, so the warp is what actually
-     * controls where the click lands. Split from the button-up half (see
+    /* For scripted/unattended testing: pushes a genuine SDL_MOUSEBUTTONDOWN
+     * event at the given point (window points, not logical/portrait
+     * coordinates), so this exercises the exact same code path a real
+     * click does -- unlike demomode's CLICK command, which calls
+     * FUN_00077dd0 directly and bypasses uw_pump_events (and therefore
+     * g_mouse_event_pending) entirely. Deliberately does NOT warp the
+     * real OS cursor: gx_stub.c's own mouse handling reads the click
+     * position from the event's own x/y fields for any event tagged
+     * UW_SYNTH_MOUSE (see that check's comment), not from
+     * SDL_GetGlobalMouseState(), so setting that internal/event cursor
+     * position is enough -- a real SDL_WarpMouseInWindow would move the
+     * host's actual mouse pointer, which stomps on whatever the user (or
+     * another test running concurrently in its own window) is doing with
+     * the real cursor at the time. Split from the button-up half (see
      * uw_inject_mouse_up) so tests can insert a real multi-poll gap
      * between them, matching how an actual held click behaves -- a
      * same-instant down+up pair hides bugs that only show up once
      * genuine wall-clock time (and therefore multiple uw_pump_events()
      * calls with nothing new queued in between) separates the two. */
     if (!g_win) return 0;
-    SDL_WarpMouseInWindow(g_win, window_x, window_y);
-    SDL_PumpEvents();
     SDL_Event down = {0};
     down.type = SDL_MOUSEBUTTONDOWN;
     down.button.button = SDL_BUTTON_LEFT;
@@ -736,8 +743,6 @@ int uw_inject_mouse_down(int window_x, int window_y) {
 int uw_inject_mouse_up(int window_x, int window_y) {
     /* See uw_inject_mouse_down's comment. */
     if (!g_win) return 0;
-    SDL_WarpMouseInWindow(g_win, window_x, window_y);
-    SDL_PumpEvents();
     SDL_Event up = {0};
     up.type = SDL_MOUSEBUTTONUP;
     up.button.button = SDL_BUTTON_LEFT;
@@ -759,8 +764,6 @@ int uw_inject_mouse_click(int window_x, int window_y) {
 int uw_inject_mouse_rclick(int window_x, int window_y) {
     /* Right-button down+up (interact). See uw_inject_mouse_down. */
     if (!g_win) return 0;
-    SDL_WarpMouseInWindow(g_win, window_x, window_y);
-    SDL_PumpEvents();
     for (int up = 0; up < 2; up++) {
         SDL_Event e = {0};
         e.type = up ? SDL_MOUSEBUTTONUP : SDL_MOUSEBUTTONDOWN;
@@ -779,8 +782,6 @@ int uw_inject_mouse_rdown(int window_x, int window_y) {
        real held right-button drag (grab an object, hold, move, release
        elsewhere) instead of an instantaneous click. */
     if (!g_win) return 0;
-    SDL_WarpMouseInWindow(g_win, window_x, window_y);
-    SDL_PumpEvents();
     SDL_Event down = {0};
     down.type = SDL_MOUSEBUTTONDOWN;
     down.button.button = SDL_BUTTON_RIGHT;
@@ -793,8 +794,6 @@ int uw_inject_mouse_rdown(int window_x, int window_y) {
 
 int uw_inject_mouse_rup(int window_x, int window_y) {
     if (!g_win) return 0;
-    SDL_WarpMouseInWindow(g_win, window_x, window_y);
-    SDL_PumpEvents();
     SDL_Event up = {0};
     up.type = SDL_MOUSEBUTTONUP;
     up.button.button = SDL_BUTTON_RIGHT;
@@ -807,8 +806,6 @@ int uw_inject_mouse_rup(int window_x, int window_y) {
 
 int uw_inject_mouse_motion(int window_x, int window_y) {
     if (!g_win) return 0;
-    SDL_WarpMouseInWindow(g_win, window_x, window_y);
-    SDL_PumpEvents();
     SDL_Event motion = {0};
     motion.type = SDL_MOUSEMOTION;
     motion.motion.which = UW_SYNTH_MOUSE;

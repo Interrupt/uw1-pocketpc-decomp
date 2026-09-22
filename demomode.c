@@ -717,11 +717,12 @@ void demomode_pump(void) {
     }
 
     if (strncasecmp(p, "SDLCLICK ", 9) == 0) {
-        /* SDLCLICK <window_x> <window_y> -- warps the real cursor and
-         * pushes genuine SDL mouse events (via uw_inject_mouse_click),
-         * so unlike CLICK above this exercises the actual
-         * uw_pump_events() path end to end, including
-         * g_mouse_event_pending/Ordinal_864. */
+        /* SDLCLICK <window_x> <window_y> -- pushes genuine SDL mouse
+         * events at the given point (via uw_inject_mouse_click), so
+         * unlike CLICK above this exercises the actual uw_pump_events()
+         * path end to end, including g_mouse_event_pending/Ordinal_864.
+         * Does not touch the real OS cursor -- see uw_inject_mouse_down's
+         * comment. */
         int wx = 0, wy = 0;
         sscanf(p + 9, "%d %d", &wx, &wy);
         fprintf(stderr, "[demo] SDLCLICK window=(%d,%d)\n", wx, wy);
