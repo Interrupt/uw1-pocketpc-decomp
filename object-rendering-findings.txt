@@ -3710,3 +3710,76 @@ faces=11/6 baseline restored with zero env vars). UW_DLIST_EYE_
 PLAYER_CANONICAL=1 kept as a documented, tested-and-insufficient
 diagnostic (candidate (a) above) for whoever picks this back up.
 Standard run-regressions.sh: 6/6 clean throughout.
+
+UPDATE 2026-09-21 (28): CHECKED A REAL ALTERNATIVE HYPOTHESIS -- CULL
+OPCODE AXIS LETTERS SWAPPED, NOT JUST THE EYE SOURCE WRONG -- TESTED
+DIRECTLY, RULED OUT
+═══════════════════════════════════════════════════════════════════════════
+User: "Is this genuinely the anchor x / z and not anchor x / y? This
+coordinate system seems to be Z up."
+
+WHY THIS WAS WORTH CHECKING RIGOROUSLY, not dismissing: UWXtract's own
+#defines (MDLXtract.cpp) label opcode 0x0066 as "Z" (M3_UW_FACE_
+PLANE_Z) and 0x0068 as "Y" (M3_UW_FACE_PLANE_Y) -- the OPPOSITE of
+"cull_side_y"/"cull_side_z" (uw1-decomp's own naming for the exact
+same two opcode numbers, which this file's code inherited for its own
+axis-index mapping: 0x0066->array slot 1, 0x0068->array slot 2).
+Independently confirmed the "Z-up" premise itself, not just accepted
+it: DOS's own real door-lintel formula, traced much earlier in this
+investigation, reads `UW1_VIEW_DOOR_LINTEL_TOP - org[2]` with org[2]
+explicitly commented as the object's own world HEIGHT -- org[2] being
+the THIRD array component confirms Z (not Y) really is the vertical
+axis in this engine's genuine convention. Two independent, real
+sources disagreeing on which LETTER goes with which opcode number is
+exactly the kind of thing that's silently broken plenty of other work
+in this investigation (the m->t[axis] cull model, the eye computation
+itself) -- worth checking with the same rigor, not assumed fine because
+the door LOOKS right in one tested view.
+
+TESTED DIRECTLY rather than resolve it by further argument: added
+UW_DLIST_CULL_SWAP_YZ (swaps which of the eye array's slot 1 (height,
+never rotated by heading) vs slot 2 (the other horizontal axis, rotated
+together with slot 0/X) opcodes 0x0066/0x0068 read from), then ran it
+at both the known-working quadrant=1 case and the known-broken
+quadrant=2 case, using the real-camera eye source (the closest-to-
+working candidate available). Results:
+  quadrant=1 (previously faces=8, correct): swapped -> faces=5, WORSE.
+  quadrant=2 (previously faces=0, broken): swapped -> faces=0, NO
+    CHANGE, still completely broken.
+This is decisive: the swap makes the known-good case measurably worse
+and does nothing at all for the broken case. This file's EXISTING axis
+mapping (0x0066 -> the unrotated/height slot, 0x0068 -> the rotated/
+other-horizontal slot) is confirmed, empirically, to be the correct one
+for this specific bytecode -- not swapped, despite what UWXtract's own
+opcode letters would suggest if taken at face value.
+
+BEST UNDERSTANDING OF THE DISCREPANCY, for whoever reads UWXtract's
+source next expecting its letters to transfer directly: UWXtract
+decodes model data read straight out of a table embedded in the
+compiled UW.EXE itself (its own header comment: "Underworld models are
+(unfortunately) buried deep inside the executable... UW_model_offset[]
+... table_offset/base_offset" -- a fixed-location binary blob, 32
+models). This is a DIFFERENT data source than the display-list BANK
+bytecode this project actually uses for doors (separately decoded by
+uw1-decomp from the game's real disassembly and assembled into
+g_dlist_region). The two data sources evidently share some opcode
+NUMBERS (likely a related or shared underlying VM/format used for both
+creature/item models and architectural display-lists), which is why
+UWXtract's decode of 0x0064/66/68 as face-plane opcodes was such a
+valuable, transferable insight in the first place (UPDATE 33/entry
+24) -- but there's no guarantee the two data sources also share the
+exact same PER-OPCODE WORD-ORDER convention, and this test suggests
+they don't, at least for the Y/Z pair specifically. This project's own
+already-established vertex placement (uwdl_place, uw.c ~52780-52786,
+reads bytecode words in (x,z,y) order) is proven correct many times
+over by every working door screenhot in this entire investigation --
+the more directly-applicable ground truth for THIS specific data,
+confirmed once more here to also govern the cull opcodes' own axis
+letters correctly.
+
+UW_DLIST_CULL_SWAP_YZ kept in place as a documented, tested-and-ruled-
+out diagnostic (matching this session's established pattern for
+UW_DLIST_CULL_SWAP_XZ, ORIGIN_SIGN, etc. from earlier entries).
+UW_DLIST_REAL_CULL_OPCODES unchanged, still safely reverted to opt-in.
+Standard run-regressions.sh: 6/6 clean; confirmed the door still
+renders correctly with zero env vars set.

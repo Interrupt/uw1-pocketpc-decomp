@@ -52932,6 +52932,7 @@ static void uwdl_walk(uwdl_vm *m, int at)
        further calibration if a different bank/opcode ever needs it. */
     if (op == 0x0064 || op == 0x0066 || op == 0x0068) {
       int _axis = (op == 0x0064) ? 0 : (op == 0x0066) ? 1 : 2;
+      if (getenv("UW_DLIST_CULL_SWAP_YZ")) { if (_axis == 1) _axis = 2; else if (_axis == 2) _axis = 1; }
       int32_t _origin = m->eye[_axis];
       int32_t _thresh = uwdl_sign16(r[3]);
       int _keep = (_origin <= _thresh);

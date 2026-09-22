@@ -1206,6 +1206,51 @@ round. `UW_DLIST_REAL_CULL_OPCODES` remains reverted to opt-in, safe.
 sufficient diagnostic for whoever continues this. Standard
 run-regressions.sh: 6/6 clean.
 
+**UPDATE 37 (checked a real, well-motivated alternative hypothesis --
+cull opcode axis LETTERS swapped, not just the eye source wrong --
+tested directly and ruled out, 2026-09-21):** user: "Is this genuinely
+the anchor x / z and not anchor x / y? This coordinate system seems to
+be Z up."
+
+A sharp, independently-worth-checking question: UWXtract's own
+`#define`s label opcode `0x0066` "Z" and `0x0068` "Y" (`M3_UW_FACE_
+PLANE_Z`/`_Y` respectively) -- the OPPOSITE of the "cull_side_y"/
+"cull_side_z" letters this file's own code took from uw1-decomp's
+naming for the exact same two opcode numbers. Independently confirmed
+this engine really is Z-up, not just plausible: DOS's own door-lintel
+formula (traced much earlier this investigation) explicitly calls
+`org[2]` -- the THIRD component -- "height" in its own source comment,
+directly confirming Z (not Y) is the vertical axis in this engine's
+real convention.
+
+Rather than trust either label, tested the SWAP directly and let real
+data decide (`UW_DLIST_CULL_SWAP_YZ`, swaps which array slot opcodes
+`0x0066`/`0x0068` read from): at quadrant=1 (previously correct,
+faces=8), swapping makes it WORSE (faces=5). At quadrant=2 (the broken
+case), swapping doesn't help at all (still faces=0). This rules the
+hypothesis out empirically, not just by argument -- this file's
+EXISTING axis mapping (0x0066 -> the height/unrotated slot, 0x0068 ->
+the other horizontal/rotated slot) is the one that's actually correct
+for THIS bytecode source.
+
+Best understanding of why UWXtract's letters don't transfer directly:
+UWXtract decodes model data read straight out of a table embedded in
+the compiled UW.EXE (its own header comment: "models are buried deep
+inside the executable") -- a DIFFERENT data source than the display-
+list BANK bytecode this file actually uses (separately decoded by
+uw1-decomp and assembled into `g_dlist_region`). The two apparently
+share some opcode numbers (a related or shared underlying format) but
+not necessarily the same per-opcode word-order convention -- this
+file's own already-established, extensively visually-verified vertex
+placement (`uwdl_place`, reads bytecode words in (x,z,y) order, proven
+correct by every working door screenshot this whole investigation)
+is the more directly-applicable ground truth for THIS specific data,
+and the axis-swap test just confirmed the cull opcodes' own axis
+letters follow that same, already-correct convention, not UWXtract's.
+`UW_DLIST_CULL_SWAP_YZ` kept as a documented, tested-and-ruled-out
+diagnostic. `UW_DLIST_REAL_CULL_OPCODES` unchanged, still opt-in.
+Standard run-regressions.sh: 6/6 clean.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry
