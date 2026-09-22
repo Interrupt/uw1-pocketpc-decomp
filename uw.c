@@ -59879,6 +59879,26 @@ undefined4 param_2;
     iVar2 = 4;
     if (iVar1 != 0) {
       iVar2 = 5;
+      /* load_game_from_slot's own success branch just below (the mirror
+         Load path) calls FUN_0006e89c/sync_player_stats_to_hud/
+         redraw_hud_panels/FUN_0003dca4(0xffffffff)/FUN_00049924(0x7ffe)
+         after a successful load; this Save branch called none of them.
+         Most of those are Load-specific (resyncing HUD/stats after
+         reloading a possibly-different character), but FUN_00049924
+         (ORs param_1 into DAT_00201c84, the dirty-bit register
+         main_loop_hud_flush's per-tick force-3D-redraw hack and
+         dispatch_sticky_mode_handlers both gate on) is a general
+         "something changed, redraw everything" signal with no Load-
+         specific meaning -- Save closing its own UI panel needs it just
+         as much as Load does. Without it, closing the Save dialog left
+         the 3D viewport rendering nothing (solid black) until some
+         *other* code path happened to set a dirty bit on its own --
+         confirmed live via a QA report ("3d view stops updating after
+         saving, but the game is still running") and reproduced with a
+         screenshot immediately after a scripted save: viewport solid
+         black, HUD chrome and "Save Game Succeeded." both drawing fine
+         around it. Fixed by calling FUN_00049924(0x7ffe) here too. */
+      FUN_00049924(0x7ffe);
     }
   }
   else if (false) {
