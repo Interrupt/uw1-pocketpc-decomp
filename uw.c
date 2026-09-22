@@ -124,7 +124,7 @@ undefined *PTR_Ordinal_2020_00084018;
    DAT_000a85d0 is also used as a plain scalar counter/index -- that's not
    a conflict, just the same address doing double duty at different times,
    same as other reused-scratch-memory globals already documented this
-   session (e.g. DAT_0008522c); the `[0]` alias below preserves that use
+   session (e.g. s_scroll_newline_0008522c); the `[0]` alias below preserves that use
    unchanged. Widened to a generous backing size well past every offset
    observed, same pattern as the other undersized-record-table fixes this
    session. */
@@ -1539,7 +1539,7 @@ undefined4 DAT_00100734;
 undefined4 DAT_00100738;
 undefined4 DAT_0010073c;
 undefined1 g_active_hud_panel;
-/* Not part of the original binary -- a port-side addition. FUN_0007ffa8
+/* Not part of the original binary -- a port-side addition. scroll_text_entry_prompt
    (the generic scroll-area text-entry field used by save-name entry,
    "Move how many", "Chant the mantra", etc.) is opened as an overlay on
    top of the dungeon view without ever calling set_game_mode, so
@@ -1548,7 +1548,7 @@ undefined1 g_active_hud_panel;
    the difference between "really in the 3D view" and "a text field is
    capturing keystrokes over it", so it kept routing A/D/C/W/S/X/Z/1/2/3
    to the movement poller instead of letting them type. Set true for the
-   duration of FUN_0007ffa8's input loop; gx_stub.c checks it (as an
+   duration of scroll_text_entry_prompt's input loop; gx_stub.c checks it (as an
    extern) alongside DAT_00201b64. */
 int g_text_input_active;
 undefined1 DAT_00100678;
@@ -1697,18 +1697,19 @@ short DAT_00100794;
 /* Reused scratch global (see the DAT_000a85d0 comment above for the
    general pattern) -- most call sites treat it as a writable sprintf-
    style destination buffer via Ordinal_1063, but several others
-   (FUN_000567ec's save-slot list among them) pass `&DAT_0008522c`
+   (draw_save_load_slot_list's save-slot list among them) pass `&s_scroll_newline_0008522c`
    straight to message_scroll_print_wrapped with no write beforehand,
    relying on it holding its real static initial content. A Ghidra
    memory dump of the original binary at 0x8522c confirmed that content
    is the two bytes `0a 00` -- the string "\n" -- not zero. Printing an
    empty string (this array's old all-zero C default) instead of a real
-   "\n" silently skipped the pending-newline flag FUN_0007f7cc sets from
+   "\n" silently skipped the pending-newline flag msg_scroll_draw_wrapped_span sets from
    a string's trailing '\n' (see its own comment), which is why the
    save-slot list rendered every entry run together on one line with no
    breaks. Seeded to match. */
-static undefined DAT_0008522c_backing[8192] = "\n";
-#define DAT_0008522c DAT_0008522c_backing[0]
+// was DAT_0008522c
+static undefined s_scroll_newline_0008522c_backing[8192] = "\n";
+#define s_scroll_newline_0008522c s_scroll_newline_0008522c_backing[0]
 static undefined1 DAT_00100680_backing[65536];
 #define DAT_00100680 DAT_00100680_backing[0]
 undefined2 DAT_00100790;
@@ -2175,7 +2176,7 @@ char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
    reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
    bglobals.dat, desc) alongside already-recovered sibling constants that
    spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
-   and probe_save_slots/FUN_0006c0c0 both search the built path for a literal
+   and probe_save_slots/load_game_from_slot both search the built path for a literal
    '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
    supplies one. Recovered as "\SAVE0"; kept the oversized backing array
    since nothing else relies on its exact size. */
@@ -3268,11 +3269,15 @@ static unsigned char g_backpack_slot_to_widget_backing[0x1c] = {
 #define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
 undefined2 DAT_00202980;
 short g_player_carry_weight;
-undefined1 *DAT_002028c0;
-undefined1 *DAT_002028c4;
-static undefined2 DAT_002028cc_backing[8192];
-#define DAT_002028cc DAT_002028cc_backing[0]
-char *DAT_002028c8;
+// was DAT_002028c0
+undefined1 *g_save_equip_table_ptr;
+// was DAT_002028c4
+undefined1 *g_save_record_base_ptr;
+// was DAT_002028cc
+static undefined2 g_save_record_count_backing[8192];
+#define g_save_record_count g_save_record_count_backing[0]
+// was DAT_002028c8
+char *g_save_record_buffer;
 /* Was missing its leading backslash -- both call sites append this
    straight onto a directory path built with no trailing separator (e.g.
    FUN_00044624 builds "<root>\SAVE0" then appends this), so the file name
@@ -3851,7 +3856,7 @@ char s_optbtns_00086954[] = "optbtns";
 short DAT_002046f0;
 short DAT_002046f4;
 undefined2 DAT_000868dc;
-/* Was a bare 1-byte `undefined` scalar -- FUN_000567ec takes its address
+/* Was a bare 1-byte `undefined` scalar -- draw_save_load_slot_list takes its address
    and passes it straight to message_scroll_print_wrapped as the save-
    slot IV label, so it needs to be a real string, not a scalar. Real
    bytes confirmed via a Ghidra memory dump of the original binary at
@@ -3860,33 +3865,38 @@ undefined2 DAT_000868dc;
    fixes this session, just previously missed because Ghidra had typed
    this one as a scalar instead of generating a garbled placeholder
    string for it. */
-char DAT_0008705c[] = "IV- ";
+// was DAT_0008705c
+char s_IV__0008705c[] = "IV- ";
 /* Was `"III-"` -- missing its trailing space, confirmed via the same
    memory dump (0x87064: "III- ", not "III-"). */
 char s_III__00087064[] = "III- ";
-/* Same fix as DAT_0008705c above: real bytes at 0x8706c are "II- ". */
-char DAT_0008706c[] = "II- ";
-/* Same fix as DAT_0008705c above: real bytes at 0x87074 are "I- ". */
-char DAT_00087074[] = "I- ";
+/* Same fix as s_IV__0008705c above: real bytes at 0x8706c are "II- ". */
+// was DAT_0008706c
+char s_II__0008706c[] = "II- ";
+/* Same fix as s_IV__0008705c above: real bytes at 0x87074 are "I- ". */
+// was DAT_00087074
+char s_I__00087074[] = "I- ";
 /* Real .data value confirmed via a Ghidra memory dump of the original
    binary at 0x87990: 0x00000001, not the C zero-default this plain
-   declaration gave it. This flag gates FUN_0007f7cc's leading-backslash
-   control-code parser (`if (DAT_00087990 != 0 && *param_1=='\\')`);
-   FUN_000567ec's save-slot-list header print happens before that
+   declaration gave it. This flag gates msg_scroll_draw_wrapped_span's leading-backslash
+   control-code parser (`if (g_scroll_control_codes_enabled != 0 && *param_1=='\\')`);
+   draw_save_load_slot_list's save-slot-list header print happens before that
    function's own explicit reset (confirmed both in the C source and via
    disassembly -- not a decompile-dropped-statement bug, the real binary
    really does read whatever this flag was last left at), so on this
    port's very first save/load screen it inherited the wrong (zero)
    default and printed its leading "\6" color code literally instead of
    interpreting it. */
-undefined4 DAT_00087990 = 1;
-/* Same reused-global-holding-a-real-string pattern as DAT_0008522c
+// was DAT_00087990
+undefined4 g_scroll_control_codes_enabled = 1;
+/* Same reused-global-holding-a-real-string pattern as s_scroll_newline_0008522c
    above: a Ghidra memory dump of the original binary at 0x87038 shows
    the real bytes are `5c 30 00` -- the string "\0" (a literal
    backslash+'0' control code, not an escape byte), not the all-zero
    default this backing array's C declaration gave it. */
-static undefined DAT_00087038_backing[8192] = "\\0";
-#define DAT_00087038 DAT_00087038_backing[0]
+// was DAT_00087038
+static undefined s_scroll_color_reset_00087038_backing[8192] = "\\0";
+#define s_scroll_color_reset_00087038 s_scroll_color_reset_00087038_backing[0]
 /* Was `"\\6_Save_Game_Descriptions"` -- underscores standing in for
    whitespace, matching Ghidra's own auto-generated symbol name for this
    string rather than its real recovered bytes (same garbled-placeholder
@@ -3927,7 +3937,7 @@ int DAT_002046fc;
    and correspondingly 0x56a70 (FUN_00056a70, brightness click) / 0x56c88
    (FUN_00056c88, quit click) in the click table. Swapped both tables'
    4/5 entries to match:
-     0  load-game slot list  (FUN_000567ec draw, shared w/ save;
+     0  load-game slot list  (draw_save_load_slot_list draw, shared w/ save;
                               FUN_00056bdc click, DAT_000868dc==1 gates
                               the save-only "extra slot" bits)
      1  save-game slot list  (same pair as 0)
@@ -3940,7 +3950,7 @@ int DAT_002046fc;
    "menu closing" sentinel, checked directly rather than redrawn) but
    both tables are sized 8 with a null-safe entry there for defense. */
 extern void FUN_000567c0(void);
-extern void FUN_000567ec(void);
+extern void draw_save_load_slot_list(void);
 extern void FUN_00056838(void);
 extern void FUN_00056864(void);
 extern void FUN_0005693c(void);
@@ -3951,8 +3961,8 @@ extern void FUN_00056c88(int);
 extern void FUN_00056a70(int);
 extern void FUN_00056b48(int);
 static void (*const PTR_FUN_000868e0_table[8])(void) = {
-  FUN_000567ec,  /* 0: load slot list */
-  FUN_000567ec,  /* 1: save slot list */
+  draw_save_load_slot_list,  /* 0: load slot list */
+  draw_save_load_slot_list,  /* 1: save slot list */
   FUN_00056864,  /* 2: sound toggle   */
   FUN_00056864,  /* 3: music toggle   */
   FUN_0005693c,  /* 4: brightness     */
@@ -5790,22 +5800,26 @@ short DAT_0025070c;
    dump of the original binary at 0x8799c: "No". Same bug class as the
    save-slot label fix earlier this session (Ghidra typed it as a scalar
    instead of generating a garbled placeholder string). */
-char DAT_0008799c[] = "No";
-/* Same fix as DAT_0008799c above: real bytes at 0x879a0 are "Yes". */
-char DAT_000879a0[] = "Yes";
-/* Reused-global-holding-a-real-string pattern (see the DAT_0008522c
-   comment far above): FUN_0007ffa8's ESC-cancel path prints
-   `&DAT_000879a4` with no write beforehand. Real bytes at 0x879a4: "-". */
-static undefined DAT_000879a4_backing[8192] = "-";
-#define DAT_000879a4 DAT_000879a4_backing[0]
-/* Same pattern: FUN_0007ffa8 defaults its prompt-before-the-input-field
-   text to `&DAT_000879a8` whenever the caller passes a NULL label (the
+// was DAT_0008799c
+char s_No_0008799c[] = "No";
+/* Same fix as s_No_0008799c above: real bytes at 0x879a0 are "Yes". */
+// was DAT_000879a0
+char s_Yes_000879a0[] = "Yes";
+/* Reused-global-holding-a-real-string pattern (see the s_scroll_newline_0008522c
+   comment far above): scroll_text_entry_prompt's ESC-cancel path prints
+   `&s_dash_000879a4` with no write beforehand. Real bytes at 0x879a4: "-". */
+// was DAT_000879a4
+static undefined s_dash_000879a4_backing[8192] = "-";
+#define s_dash_000879a4 s_dash_000879a4_backing[0]
+/* Same pattern: scroll_text_entry_prompt defaults its prompt-before-the-input-field
+   text to `&s_scroll_prompt_arrow_000879a8` whenever the caller passes a NULL label (the
    save-name-entry call site does exactly this) -- real bytes at 0x879a8
    are ">" , the leading caret shown before the text cursor. Left zero
    (empty string) by this backing array's C default, so that prompt
    character was silently missing. */
-static undefined DAT_000879a8_backing[8192] = ">";
-#define DAT_000879a8 DAT_000879a8_backing[0]
+// was DAT_000879a8
+static undefined s_scroll_prompt_arrow_000879a8_backing[8192] = ">";
+#define s_scroll_prompt_arrow_000879a8 s_scroll_prompt_arrow_000879a8_backing[0]
 static undefined1 DAT_00250778_backing[8192];
 #define DAT_00250778 DAT_00250778_backing[0]
 static undefined DAT_0025077c_backing[8192];
@@ -10010,7 +10024,7 @@ int param_1;
          loop's very first iteration, the enclosing function's own object-
          pointer parameter) -- confirmed individually via disassembly for
          a representative sample of these sites (this one, FUN_00052af4,
-         FUN_00052c5c, sum_container_weight, FUN_000440d0, FUN_00072598,
+         FUN_00052c5c, sum_container_weight, serialize_inventory_link_chain, FUN_00072598,
          FUN_0007deec, FUN_00080ed4, FUN_000181a4), and applied by the
          same pattern to the rest. */
       iVar8 = resolve_object_link(puVar7);
@@ -18860,9 +18874,9 @@ void FUN_000286cc()
     FUN_0003e644();
     DAT_00085c54 = 1;
     FUN_0007f140();
-    FUN_0007fce8(0);
+    msg_scroll_panel_reset(0);
     FUN_0007f110();
-    FUN_0007fce8(0);
+    msg_scroll_panel_reset(0);
     select_active_font(s_font5x6p_sys_0008430c);
     uVar6 = 2;
     *g_draw_color_index = 0x65;
@@ -19036,7 +19050,7 @@ void FUN_00028ffc()
     if (DAT_00250718 == 0) {
       FUN_0007f170(500,0);
       FUN_0007f140();
-      FUN_0007fce8(1);
+      msg_scroll_panel_reset(1);
       if (1 < DAT_00100794) {
         iVar4 = 1;
         do {
@@ -19050,7 +19064,7 @@ void FUN_00028ffc()
             pcVar3[(int)(acStack_b9 + iVar2)] = cVar1;
             pcVar3 = pcVar3 + 1;
           } while (cVar1 != '\0');
-          Ordinal_1063(&local_bc,&DAT_0008522c);
+          Ordinal_1063(&local_bc,&s_scroll_newline_0008522c);
           message_scroll_print_wrapped(&local_bc);
           iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
         } while (iVar4 < DAT_00100794);
@@ -19127,7 +19141,7 @@ int param_1;
     sVar5 = (short)uVar6;
   }
   FUN_0007f140();
-  FUN_0007fce8(1);
+  msg_scroll_panel_reset(1);
   FUN_0007ec50();
   iVar12 = 0;
   do {
@@ -19147,7 +19161,7 @@ int param_1;
         pcVar10[(int)(acStack_c1 + iVar9)] = cVar1;
         pcVar10 = pcVar10 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(&local_c4,&DAT_0008522c);
+      Ordinal_1063(&local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(&local_c4);
       FUN_0007ec50();
       for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
@@ -19186,7 +19200,7 @@ short param_1;
       DAT_0010078c = 0;
       wait_for_click_release(0);
       FUN_0007f140();
-      FUN_0007fce8(1);
+      msg_scroll_panel_reset(1);
       FUN_0007f0e0();
       DAT_00250718 = 0;
       FUN_0007f110();
@@ -19228,7 +19242,7 @@ undefined4 param_1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(DAT_001007c0,param_1);
-  Ordinal_1063(DAT_001007c0,&DAT_0008522c);
+  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
   FUN_0007f110();
   message_scroll_print_wrapped(DAT_001007c0);
   FUN_0007ec50();
@@ -19253,7 +19267,7 @@ char * param_1;
     *pcVar2 = cVar1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(DAT_001007c0,&DAT_0008522c);
+  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
   FUN_0007f140();
   message_scroll_print_wrapped(DAT_001007c0);
   FUN_0007ec50();
@@ -19350,8 +19364,8 @@ int FUN_0002990c()
   char *pcVar4;
   char local_a8 [160];
   
-  FUN_0007ffa8(0,0,local_a8,1,0x32);
-  message_scroll_print_wrapped(&DAT_0008522c);
+  scroll_text_entry_prompt(0,0,local_a8,1,0x32);
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   FUN_0007ec50();
   pcVar2 = local_a8;
   pcVar4 = DAT_001007b8;
@@ -27891,7 +27905,7 @@ int param_3;
       local_68 = (uint)(sVar1 == 2);
       FUN_0007fee8();
     }
-    message_scroll_print_wrapped(&DAT_0008522c);
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     if (local_68 == 0) {
       return;
     }
@@ -28755,7 +28769,7 @@ short param_1;
   do {
     sVar1 = next_input_event();
   } while (sVar1 < 0);
-  FUN_0007fce8(1);
+  msg_scroll_panel_reset(1);
   /* 0x80, see DAT_00085668's comment. */
   (**(code **)(&DAT_000856a4 + DAT_00201b64 * 0x80))();
   *(undefined1 *)(DAT_00085a6c + 8) = 0;
@@ -29990,7 +30004,7 @@ void FUN_0003df28()
   int iVar3;
   short extraout_r1;
   
-  message_scroll_print_wrapped(&DAT_0008522c);
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   sVar1 = Ordinal_2005(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
   FUN_00078c94(0x40,sVar1 + 0x68,0x67);
   sVar1 = Ordinal_2005(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
@@ -30056,7 +30070,7 @@ void FUN_0003e0b4()
       Ordinal_1063(local_84,auStack_94);
       Ordinal_1063(local_84,s_out_of_000858dc);
       Ordinal_1063(local_84,auStack_a4);
-      Ordinal_1063(local_84,&DAT_0008522c);
+      Ordinal_1063(local_84,&s_scroll_newline_0008522c);
       message_scroll_print_wrapped(local_84);
       wait_for_click_release(1);
     }
@@ -30766,7 +30780,7 @@ void interact_look()
         local_18 = (uint)(sVar1 == 2);
         FUN_0007fee8();
       }
-      message_scroll_print_wrapped(&DAT_0008522c);
+      message_scroll_print_wrapped(&s_scroll_newline_0008522c);
       if (local_18 != 0) {
         FUN_0007266c(g_interact_target,*(undefined1 *)(DAT_00086df8 + 0x2b));
       }
@@ -34941,7 +34955,8 @@ short * param_2;
 
 
 
-void FUN_00043e20(param_1)
+// was FUN_00043e20
+void build_player_save_record(param_1)
 undefined1 * param_1;
 
 {
@@ -34970,21 +34985,21 @@ undefined1 * param_1;
   } while (iVar5 != 0 && bVar1);
   param_1[4] = param_1[4] & 0x3f;
   param_1[5] = 0;
-  DAT_002028c0 = param_1 + 0x23;
-  DAT_002028c4 = param_1 + 0x5b;
-  DAT_002028cc = 0;
+  g_save_equip_table_ptr = param_1 + 0x23;
+  g_save_record_base_ptr = param_1 + 0x5b;
+  g_save_record_count = 0;
   iVar6 = 0;
   do {
-    puVar8 = (ushort *)(DAT_002028c0 + iVar6 * 2);
+    puVar8 = (ushort *)(g_save_equip_table_ptr + iVar6 * 2);
     uVar2 = *puVar8;
     *(char *)puVar8 = (char)(uVar2 & 0xffc0);
     *(char *)((char *)puVar8 + 1) = (char)((uVar2 & 0xffc0) >> 8);
-    pbVar9 = DAT_002028c0 + iVar6 * 2;
+    pbVar9 = g_save_equip_table_ptr + iVar6 * 2;
     *pbVar9 = *pbVar9 & 0x3f;
     pbVar9[1] = 0;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x13);
-  FUN_000440d0(g_player_object + 6,param_1 + 6);
+  serialize_inventory_link_chain(g_player_object + 6,param_1 + 6);
   puVar4 = g_selected_object;
   if (g_cursor_holding_state == 1) {
     param_1[0x1b] = *g_selected_object;
@@ -34996,7 +35011,7 @@ undefined1 * param_1;
     param_1[0x21] = puVar4[6];
     param_1[0x22] = puVar4[7];
     if ((g_selected_object[1] & 0x80) == 0) {
-      FUN_000440d0(g_selected_object + 6,param_1 + 0x21);
+      serialize_inventory_link_chain(g_selected_object + 6,param_1 + 0x21);
     }
     sVar3 = encode_object_slot_index(g_selected_object);
     local_14[0] = local_14[0] & 0x3f | sVar3 << 6;
@@ -35007,7 +35022,8 @@ undefined1 * param_1;
 
 
 
-bool FUN_00043fd8(param_1)
+// was FUN_00043fd8
+bool write_player_save_record(param_1)
 char * param_1;
 
 {
@@ -35017,13 +35033,13 @@ char * param_1;
   char acStack_114 [260];
   
   bVar3 = true;
-  DAT_002028c8 = Ordinal_1041(0x4000);
-  if (DAT_002028c8 == 0) {
+  g_save_record_buffer = Ordinal_1041(0x4000);
+  if (g_save_record_buffer == 0) {
     bVar3 = false;
   }
   else {
-    FUN_00043e20(DAT_002028c8);
-    DAT_002028cc = DAT_002028cc + 1;
+    build_player_save_record(g_save_record_buffer);
+    g_save_record_count = g_save_record_count + 1;
     if (param_1 != (char *)0x0) {
       iVar2 = -(int)param_1;
       do {
@@ -35036,13 +35052,13 @@ char * param_1;
       bVar3 = iVar2 != -1;
       if (bVar3) {
         FUN_00065b90();
-        FUN_00022884(iVar2,&DAT_002028cc,2);
-        FUN_00022884(iVar2,DAT_002028c8,DAT_002028cc * 8 + 0x5b);
+        FUN_00022884(iVar2,&g_save_record_count,2);
+        FUN_00022884(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b);
         Ordinal_553(iVar2);
       }
-      if (DAT_002028c8 != 0) {
+      if (g_save_record_buffer != 0) {
         Ordinal_1018();
-        DAT_002028c8 = 0;
+        g_save_record_buffer = 0;
       }
       FUN_00049924(0x200);
     }
@@ -35052,7 +35068,8 @@ char * param_1;
 
 
 
-void FUN_000440d0(param_1,param_2)
+// was FUN_000440d0
+void serialize_inventory_link_chain(param_1,param_2)
 undefined1 * param_1;
 byte * param_2;
 
@@ -35063,7 +35080,7 @@ byte * param_2;
 
   puVar1 = (undefined1 *)resolve_object_link(param_1);
   while (puVar1 != (undefined1 *)0x0) {
-    puVar2 = (undefined1 *)FUN_00044294();
+    puVar2 = (undefined1 *)alloc_save_record_slot();
     *puVar2 = *puVar1;
     puVar2[1] = puVar1[1];
     puVar2[2] = puVar1[2];
@@ -35072,14 +35089,14 @@ byte * param_2;
     puVar2[5] = puVar1[5];
     puVar2[6] = puVar1[6];
     puVar2[7] = puVar1[7];
-    uVar3 = (uint)DAT_002028cc;
+    uVar3 = (uint)g_save_record_count;
     *param_2 = *param_2 & 0x3f | (byte)((uVar3 & 0x3ff) << 6);
     param_2[1] = (byte)((uVar3 << 0x16) >> 0x18);
-    FUN_000441d8(param_1,param_2);
+    encode_equipped_item_index(param_1,param_2);
     param_1 = puVar1 + 4;
     param_2 = puVar2 + 4;
     if (((puVar1[1] & 0x80) == 0) && ((*(ushort *)(puVar1 + 6) & 0xffc0) != 0)) {
-      FUN_000440d0(puVar1 + 6,puVar2 + 6);
+      serialize_inventory_link_chain(puVar1 + 6,puVar2 + 6);
     }
     puVar1 = (undefined1 *)resolve_object_link(param_1);
   }
@@ -35088,23 +35105,24 @@ byte * param_2;
 
 
 
-/* Same pointer-truncation bug class as FUN_00044294/FUN_000442bc just
+/* Same pointer-truncation bug class as alloc_save_record_slot/save_record_slot_from_index just
    below (their own comment has the full writeup) -- iVar4 was `int`,
-   truncating DAT_002028c0 (a real `undefined1 *` heap pointer) to 32
+   truncating g_save_equip_table_ptr (a real `undefined1 *` heap pointer) to 32
    bits before the following `*(char *)(iVar4 + 1)` write dereferenced
    it back out as a wild 64-bit address. The sibling expression right
-   above it, `*(byte *)(iVar1 + DAT_002028c0)`, computes the identical
+   above it, `*(byte *)(iVar1 + g_save_equip_table_ptr)`, computes the identical
    address inline without going through a truncating temporary, so it
    stayed correct -- the same "half right, half wrong" pattern already
    seen elsewhere this session (mixed styling from the same real,
    unambiguously 32-bit-clean ARM source). This was the second,
    previously-masked half of the QA-reported inventory-save crash: fixing
-   FUN_00044294 let execution get past its own wild pointer and into
+   alloc_save_record_slot let execution get past its own wild pointer and into
    this one. Confirmed via lldb: the crash backtrace attributed the
-   fault to FUN_000440d0's call-site return address (this function's own
+   fault to serialize_inventory_link_chain's call-site return address (this function's own
    prologue hadn't finished setting up x29/x30 yet when it faulted), not
-   a bug in FUN_000440d0 itself. */
-void FUN_000441d8(param_1,param_2)
+   a bug in serialize_inventory_link_chain itself. */
+// was FUN_000441d8
+void encode_equipped_item_index(param_1,param_2)
 ushort * param_1;
 undefined2 * param_2;
 
@@ -35120,9 +35138,9 @@ undefined2 * param_2;
     iVar1 = iVar5 * 2;
     if (((*(ushort *)(&g_equipped_items + iVar1) ^ *param_1) & 0xffc0) == 0) {
       uVar2 = *param_2;
-      iVar4 = iVar1 + DAT_002028c0;
+      iVar4 = iVar1 + g_save_equip_table_ptr;
       bVar3 = (byte)uVar2;
-      *(byte *)(iVar1 + DAT_002028c0) = (*(byte *)(iVar1 + DAT_002028c0) ^ bVar3) & 0x3f ^ bVar3;
+      *(byte *)(iVar1 + g_save_equip_table_ptr) = (*(byte *)(iVar1 + g_save_equip_table_ptr) ^ bVar3) & 0x3f ^ bVar3;
       *(char *)(iVar4 + 1) = (char)((ushort)uVar2 >> 8);
     }
     iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
@@ -35132,33 +35150,35 @@ undefined2 * param_2;
 
 
 
-/* Was `int` -- DAT_002028c4 is a real `undefined1 *` heap pointer (the
-   inventory-serialization scratch buffer allocated in FUN_00043fd8/
-   FUN_00043e20), so `DAT_002028c4 + DAT_002028cc * 8` is real pointer
+/* Was `int` -- g_save_record_base_ptr is a real `undefined1 *` heap pointer (the
+   inventory-serialization scratch buffer allocated in write_player_save_record/
+   build_player_save_record), so `g_save_record_base_ptr + g_save_record_count * 8` is real pointer
    arithmetic, but returning it as a 32-bit `int` truncated the pointer
    before the caller's `(undefined1 *)` cast sign-extended the truncated
    low 32 bits back out to 64 -- producing a wild address. Confirmed via
    lldb disassembly of this port's own compiled binary (not the original
-   ARM code): FUN_000440d0's call site does exactly `mov x8, x0; sxtw
+   ARM code): serialize_inventory_link_chain's call site does exactly `mov x8, x0; sxtw
    x8, w8` on this function's return value, then dereferences it a few
    instructions later -- the crash a QA report reproduced by saving with
-   an item in inventory (any inventory contents send FUN_000440d0
-   through the resolve_object_link/FUN_00044294 loop that hits this).
+   an item in inventory (any inventory contents send serialize_inventory_link_chain
+   through the resolve_object_link/alloc_save_record_slot loop that hits this).
    Same pointer-truncation bug class fixed many times elsewhere this
    session, just via a return type this time instead of a parameter or
    local. */
-void *FUN_00044294()
+// was FUN_00044294
+void *alloc_save_record_slot()
 
 {
-  DAT_002028cc = DAT_002028cc + 1;
-  return DAT_002028c4 + DAT_002028cc * 8;
+  g_save_record_count = g_save_record_count + 1;
+  return g_save_record_base_ptr + g_save_record_count * 8;
 }
 
 
 
-/* Same truncated-pointer-return bug as FUN_00044294 just above, same
+/* Same truncated-pointer-return bug as alloc_save_record_slot just above, same
    fix. */
-void *FUN_000442bc(param_1)
+// was FUN_000442bc
+void *save_record_slot_from_index(param_1)
 short param_1;
 
 {
@@ -35168,14 +35188,15 @@ short param_1;
     iVar1 = 0;
   }
   else {
-    iVar1 = DAT_002028c4 + param_1 * 8;
+    iVar1 = g_save_record_base_ptr + param_1 * 8;
   }
   return iVar1;
 }
 
 
 
-void FUN_000442dc(param_1,param_2)
+// was FUN_000442dc
+void decode_equipped_item_index(param_1,param_2)
 undefined2 * param_1;
 ushort * param_2;
 
@@ -35186,7 +35207,7 @@ ushort * param_2;
   char *iVar4;
   int iVar5;
   
-  iVar4 = DAT_002028c0;
+  iVar4 = g_save_equip_table_ptr;
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
@@ -35203,7 +35224,8 @@ ushort * param_2;
 
 
 
-void deFUN_000440d0(param_1,param_2)
+// was FUN_00044398
+void deserialize_inventory_link_chain(param_1,param_2)
 byte * param_1;
 ushort * param_2;
 
@@ -35212,7 +35234,7 @@ ushort * param_2;
   uint uVar2;
   undefined1 *puVar3;
   
-  while (puVar3 = (undefined1 *)FUN_000442bc(*param_2 >> 6), puVar3 != (undefined1 *)0x0) {
+  while (puVar3 = (undefined1 *)save_record_slot_from_index(*param_2 >> 6), puVar3 != (undefined1 *)0x0) {
     puVar1 = (undefined1 *)alloc_object_slot(0);
     *puVar1 = *puVar3;
     puVar1[1] = puVar3[1];
@@ -35225,22 +35247,22 @@ ushort * param_2;
     uVar2 = encode_object_slot_index();
     *param_1 = *param_1 & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
     param_1[1] = (byte)((uVar2 << 0x16) >> 0x18);
-    FUN_000442dc(param_1,param_2);
+    decode_equipped_item_index(param_1,param_2);
     param_1 = puVar1 + 4;
     param_2 = (ushort *)(puVar3 + 4);
     if (((puVar3[1] & 0x80) == 0) && ((*(ushort *)(puVar3 + 6) & 0xffc0) != 0)) {
-      /* Dropped 2nd argument -- deFUN_000440d0 takes (param_1, param_2) and
+      /* Dropped 2nd argument -- deserialize_inventory_link_chain takes (param_1, param_2) and
          every other call site (both non-recursive ones, a few lines up
          this file) passes both; this self-recursive call for a nested
          container's own contents only passed the first. Same idiom as
-         FUN_000440d0's matching recursive call just above in this file
-         (`FUN_000440d0(puVar1 + 6,puVar2 + 6);`), which this function
+         serialize_inventory_link_chain's matching recursive call just above in this file
+         (`serialize_inventory_link_chain(puVar1 + 6,puVar2 + 6);`), which this function
          otherwise exactly mirrors for the Load direction. Not yet known
          to have crashed in practice (would only trigger loading a save
          with a nested container in inventory), found while auditing this
          function for the same pointer-truncation bug class as its Save-
          side counterpart. */
-      deFUN_000440d0(puVar1 + 6,(ushort *)(puVar3 + 6));
+      deserialize_inventory_link_chain(puVar1 + 6,(ushort *)(puVar3 + 6));
     }
   }
   return;
@@ -35286,7 +35308,8 @@ char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
 
 
 
-void FUN_00044538(param_1)
+// was FUN_00044538
+void restore_player_save_record(param_1)
 undefined1 * param_1;
 
 {
@@ -35296,8 +35319,8 @@ undefined1 * param_1;
   int iVar4;
   int iVar5;
   
-  DAT_002028c0 = param_1 + 0x23;
-  DAT_002028c4 = param_1 + 0x5b;
+  g_save_equip_table_ptr = param_1 + 0x23;
+  g_save_record_base_ptr = param_1 + 0x5b;
   puVar2 = g_player_object;
   puVar3 = param_1;
   iVar4 = 0x1b;
@@ -35309,7 +35332,7 @@ undefined1 * param_1;
     puVar3 = puVar3 + 1;
     iVar4 = iVar5;
   } while (iVar5 != 0 && bVar1);
-  deFUN_000440d0(g_player_object + 6,param_1 + 6);
+  deserialize_inventory_link_chain(g_player_object + 6,param_1 + 6);
   if (g_cursor_holding_state == 1) {
     puVar2 = (undefined1 *)alloc_object_slot(0);
     g_selected_object = puVar2;
@@ -35322,7 +35345,7 @@ undefined1 * param_1;
     puVar2[6] = param_1[0x21];
     puVar2[7] = param_1[0x22];
     if ((param_1[0x1c] & 0x80) == 0) {
-      deFUN_000440d0(g_selected_object + 6,param_1 + 0x21);
+      deserialize_inventory_link_chain(g_selected_object + 6,param_1 + 0x21);
     }
   }
   return;
@@ -35332,7 +35355,7 @@ undefined1 * param_1;
 
 undefined4 FUN_00044624(param_1)
 char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
-                   FUN_0006c0c0 passes in (the save-slot-copy path), which
+                   load_game_from_slot passes in (the save-slot-copy path), which
                    only started actually running once the save-directory-
                    creation fixes above stopped it from bailing out
                    earlier. Every other call site passes 0/NULL, so this
@@ -35352,7 +35375,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   FUN_00066c90();
-  if ((DAT_002028c8 == 0) && (DAT_002028c8 = Ordinal_1041(0x4000), DAT_002028c8 == 0)) {
+  if ((g_save_record_buffer == 0) && (g_save_record_buffer = Ordinal_1041(0x4000), g_save_record_buffer == 0)) {
     return 0;
   }
   if (param_1 != 0) {
@@ -35371,17 +35394,17 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
       goto LAB_00044730;
     }
     FUN_00065d4c();
-    FUN_0002285c(iVar3,&DAT_002028cc,2);
-    FUN_0002285c(iVar3,DAT_002028c8,DAT_002028cc * 8 + 0x5b);
+    FUN_0002285c(iVar3,&g_save_record_count,2);
+    FUN_0002285c(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b);
     Ordinal_553(iVar3);
     FUN_0004638c();
   }
-  FUN_00044538(DAT_002028c8);
+  restore_player_save_record(g_save_record_buffer);
   refresh_player_equipment_effects();
 LAB_00044730:
-  if (DAT_002028c8 != 0) {
+  if (g_save_record_buffer != 0) {
     Ordinal_1018();
-    DAT_002028c8 = 0;
+    g_save_record_buffer = 0;
   }
   if ((param_1 != 0) && (-1 < DAT_00202080)) {
     object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
@@ -37260,7 +37283,7 @@ undefined1 * param_1;
   uVar1 = *(ushort *)(param_1 + 6) >> 6;
   local_1c = 0x31;
   local_1b = 0;
-  sVar2 = FUN_0007ffa8(s_Move_how_many__00085c68,&local_1c,auStack_18,0,3);
+  sVar2 = scroll_text_entry_prompt(s_Move_how_many__00085c68,&local_1c,auStack_18,0,3);
   if ((sVar2 != 0x1b) && (sVar2 != 3)) {
     if ((sVar2 == 0) || (3 < sVar2)) {
       sVar2 = Ordinal_993(auStack_18);
@@ -37276,7 +37299,7 @@ undefined1 * param_1;
       }
       FUN_0007fe20(uVar5);
     }
-    message_scroll_print_wrapped(&DAT_0008522c);
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     if (((int)(short)uVar5 != 0) &&
        (puVar4 = param_1, (int)(short)uVar5 != (uint)(*(ushort *)(param_1 + 6) >> 6))) {
       puVar4 = (undefined1 *)alloc_object_slot(0);
@@ -38416,7 +38439,7 @@ short param_2;
           message_scroll_print_wrapped(acStack_6c);
           FUN_0007863c(param_1[3] >> 6 | 0x600);
           message_scroll_print_wrapped();
-          puVar5 = &DAT_0008522c;
+          puVar5 = &s_scroll_newline_0008522c;
         }
         else {
           puVar5 = (undefined *)FUN_0007863c(uVar3 >> 6 | 0x600);
@@ -38526,7 +38549,7 @@ short param_2;
     }
     pcVar_str = (char *)FUN_0007863c(uVar9 | 0x1000);
     if (pcVar_str != (char *)0x0 && local_128[0] != '\0') {
-      FUN_0007fce8(1);
+      msg_scroll_panel_reset(1);
     }
     if (((*param_1 & 0xf) == 6) || (local_128[0] == '\0')) {
       /* was two separate calls with message_scroll_print_wrapped()'s arg
@@ -38542,7 +38565,7 @@ short param_2;
          actual real sign/inscription text ("We attacked the entrance
          with all manner of tools..."), confirmed via UW_DEBUG_OBJPOS. */
       message_scroll_print_wrapped((char *)format_object_display_name(pcVar_str,1,0));
-      message_scroll_print_wrapped(&DAT_0008522c);
+      message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     }
     if (local_128[0] != '\0') {
       FUN_0006fee8(local_128[0]);
@@ -46948,7 +46971,8 @@ void FUN_000567c0()
 
 
 
-void FUN_000567ec()
+// was FUN_000567ec
+void draw_save_load_slot_list()
 
 {
   int iVar1;
@@ -46962,23 +46986,23 @@ void FUN_000567ec()
   if (DAT_000868dc == 1) {
     FUN_00056688(6,0x2e);
   }
-  local_bc[0] = &DAT_00087074;
-  local_bc[1] = &DAT_0008706c;
+  local_bc[0] = &s_I__00087074;
+  local_bc[1] = &s_II__0008706c;
   local_bc[2] = s_III__00087064;
-  local_bc[3] = &DAT_0008705c;
-  FUN_0007fce8(1);
+  local_bc[3] = &s_IV__0008705c;
+  msg_scroll_panel_reset(1);
   probe_save_slots(auStack_ac,auStack_c4);
   message_scroll_print_wrapped(s__6_Save_Game_Descriptions_0008703c);
   iVar1 = 0;
-  DAT_00087990 = 0;
+  g_scroll_control_codes_enabled = 0;
   do {
-    message_scroll_print_wrapped(&DAT_0008522c);
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     message_scroll_print_wrapped(local_bc[iVar1]);
     message_scroll_print_wrapped(auStack_ac + iVar1 * 0x28);
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 4);
-  DAT_00087990 = 1;
-  message_scroll_print_wrapped(&DAT_00087038);
+  g_scroll_control_codes_enabled = 1;
+  message_scroll_print_wrapped(&s_scroll_color_reset_00087038);
   return;
 }
 
@@ -47195,7 +47219,7 @@ int param_1;
   iVar2 = 4;
   if ((0 < sVar1) && (sVar1 < 6)) {
     FUN_000566dc(param_1,(0x14 - param_1) * 2);
-    FUN_0007fce8(0);
+    msg_scroll_panel_reset(0);
     if (sVar1 != 1) {
       if (sVar1 != 2) {
         if (sVar1 != 3) {
@@ -50164,7 +50188,7 @@ int param_2;
   undefined2 *puVar6;
   /* Was three separate locals (local_8c[48], local_2c[10], local_18[6])
      -- a stack-slot-splitting artifact (same bug class as
-     stack0xffdc2e30_buf/acStack_528 in FUN_0006c0c0, or
+     stack0xffdc2e30_buf/acStack_528 in load_game_from_slot, or
      acStack_86af8/etc in FUN_0005b36c right below this function): real
      ARM disassembly (0x5b29c: `sub sp,sp,#0x80`) allocates ONE 128-byte
      (64-undefined2) buffer, and this function's own writes to
@@ -59182,7 +59206,7 @@ undefined4 journey_onward_load_slot_menu()
      probe_save_slots unconditionally writes 4 fixed-width 0x28(40)-byte
      records into whatever buffer its param_1 points at (uVar5*0x28 +
      charindex, for uVar5 = 0..3), i.e. it needs 0xA0 (160) bytes -- and
-     both its other call sites (FUN_000567ec's auStack_ac, FUN_0006a1c4's
+     both its other call sites (draw_save_load_slot_list's auStack_ac, FUN_0006a1c4's
      auStack_a4) already correctly declare exactly that. Only this one
      was wrong, at less than a quarter the required size. Confirmed via
      AddressSanitizer: a real stack-buffer-overflow, reproducibly
@@ -59278,7 +59302,7 @@ undefined4 journey_onward_load_slot_menu()
     }
     draw_text_string(pcVar_str,(short)(iVar8 >> 1) + 10,0x5a);
     select_active_font(s_font5x6p_sys_0008430c);
-    /* Was `FUN_0006c0c0(iVar4 + 1)` -- FUN_0006c0c0 is "Save Game"
+    /* Was `load_game_from_slot(iVar4 + 1)` -- load_game_from_slot is "Save Game"
        (copies the live \SAVE0 session INTO the chosen slot), which makes
        no sense from the title screen where no game is running yet: this
        whole screen only ever appears when main_menu_loop found an
@@ -59286,13 +59310,13 @@ undefined4 journey_onward_load_slot_menu()
        enters gameplay (`bVar11 = sVar3==1;` breaks main_menu_loop's own
        loop straight into set_game_mode(1)) -- pure Save-Game semantics
        for a title screen with no active session, but exactly what
-       "Continue/Load Game" should do. Reusing the real FUN_0006c264
+       "Continue/Load Game" should do. Reusing the real save_game_to_slot
        Load path here would also pull in its own text-entry prompt
-       (FUN_0007ffa8), which is designed for the in-game pause-menu Load
+       (scroll_text_entry_prompt), which is designed for the in-game pause-menu Load
        flow, not a fresh process with no dungeon loaded yet -- so do the
-       same slot<->SAVE0 file copy FUN_0006c264 does (just in the load
+       same slot<->SAVE0 file copy save_game_to_slot does (just in the load
        direction, \SAVEn -> \SAVE0) directly, then the same post-copy
-       refresh sequence FUN_0006c0c0 already does on its own success. */
+       refresh sequence load_game_from_slot already does on its own success. */
     {
       char loadsrc[300];
       snprintf(loadsrc, sizeof(loadsrc), "\\SAVE%d", iVar4 + 1);
@@ -59305,7 +59329,7 @@ undefined4 journey_onward_load_slot_menu()
       FUN_00044624(&DAT_000857a0);
       /* DAT_00201b68 (current level) isn't meaningfully set yet at a
          fresh title screen with no dungeon loaded -- unlike
-         FUN_0006c0c0's own use of it, which only ever runs mid-game.
+         load_game_from_slot's own use of it, which only ever runs mid-game.
          Every save this decompile can produce is level 1 (no UI to
          change levels exists yet), so load that directly rather than a
          possibly-stale/zero level number. */
@@ -59317,8 +59341,8 @@ undefined4 journey_onward_load_slot_menu()
            (unplaced, black 3D view) because the save/load path never
            actually wrote the live player position into \SAVE0\lev.ark
            to begin with (see [[save-load-position-not-persisted]]: 6
-           bugs in the archive-write chain plus FUN_0006c264/
-           FUN_0006c0c0's own FUN_0006c670 calls having src/dest
+           bugs in the archive-write chain plus save_game_to_slot/
+           load_game_from_slot's own FUN_0006c670 calls having src/dest
            backwards, all fixed). The player's tile position is just
            another field of its own object record, at a fixed offset
            inside the same arena load_level's object-table read
@@ -59671,7 +59695,7 @@ undefined4 param_1;
   int iVar2;
   undefined1 auStack_1c [16];
   
-  FUN_00043fd8(0);
+  write_player_save_record(0);
   if (-1 < DAT_00202080) {
     DAT_00202080 = -1;
   }
@@ -59708,7 +59732,7 @@ undefined4 param_1;
   undefined4 uVar3;
   undefined1 auStack_20 [16];
   
-  FUN_00043fd8(0);
+  write_player_save_record(0);
   FUN_000444b0(g_player_object + 3);
   if (-1 < DAT_00202080) {
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
@@ -59847,11 +59871,11 @@ undefined4 param_2;
        auStack_ac (the very buffer probe_save_slots just filled, at
        sp+8), offset by (slot-1) records, not slot. Ghidra's own
        `auStack_d4 [32]` was a stack-slot-splitting artifact (same bug
-       class as stack0xffdc2e30_buf/acStack_528 -- see FUN_0006c0c0's own
+       class as stack0xffdc2e30_buf/acStack_528 -- see load_game_from_slot's own
        comment) -- the 32-byte size wasn't even big enough for the real
        4x40-byte-record indexing it was being used with, which would have
        stack-smashed for any slot past the first. */
-    iVar1 = FUN_0006c264(param_2,auStack_ac + ((short)param_2 - 1) * 0x28);
+    iVar1 = save_game_to_slot(param_2,auStack_ac + ((short)param_2 - 1) * 0x28);
     iVar2 = 4;
     if (iVar1 != 0) {
       iVar2 = 5;
@@ -59865,7 +59889,7 @@ undefined4 param_2;
        before allowing a save into it -- meaning a brand new slot (the
        common case: no prior saves exist at all, so this bitmask is all
        zero) could never be saved to. The LOAD branch just above has no
-       equivalent gate (it tries FUN_0006c264 unconditionally and lets it
+       equivalent gate (it tries save_game_to_slot unconditionally and lets it
        fail for an empty slot), so this looks like an inverted/leftover
        guard rather than an intentional "can't create new saves" limit.
        Disabled so save always proceeds; kept as dead code (rather than
@@ -59874,7 +59898,7 @@ undefined4 param_2;
     iVar2 = 1;
   }
   else {
-    iVar1 = FUN_0006c0c0(param_2);
+    iVar1 = load_game_from_slot(param_2);
     if (iVar1 == 0) {
       iVar2 = 3;
     }
@@ -59894,7 +59918,8 @@ undefined4 param_2;
 
 
 
-undefined4 FUN_0006c0c0(param_1)
+// was FUN_0006c0c0
+undefined4 load_game_from_slot(param_1)
 char param_1;
 
 {
@@ -59985,20 +60010,20 @@ char param_1;
     /* Was FUN_0006c670(acStack_528,acStack_630) -- i.e. (dest="\SAVEn",
        src="\SAVE0"), copying the ACTIVE SESSION onto the chosen slot --
        a save-direction copy. That's backwards for this function: live
-       testing confirms FUN_0006c0c0's own status text is "Restoring
+       testing confirms load_game_from_slot's own status text is "Restoring
        Game " (this is the Load path, gated by FUN_00040130's
-       unconditional-allow "can load" semantics; FUN_0006c264 -- own
+       unconditional-allow "can load" semantics; save_game_to_slot -- own
        status text "Saving Game " -- is the Save path, see its matching
        fix). An earlier session's comment here ("chosen slot,
        destination... live session, source... i.e. 'Save Game'
        snapshot-copies the live SAVE0 session into the chosen numbered
-       slot") was the same directional mistake as FUN_0006c264's
+       slot") was the same directional mistake as save_game_to_slot's
        original call, just never caught because this Load path was never
        actually exercised end-to-end with a real position check.
        acStack_630 ("\SAVE0", the active session) is the destination;
        acStack_528 ("\SAVEn", the chosen slot) is the source -- loading
        the slot's saved state into the live session, matching what
-       FUN_0006c264 now does in the opposite direction. */
+       save_game_to_slot now does in the opposite direction. */
     iVar4 = FUN_0006c670(acStack_630,acStack_528);
     if (getenv("UW_DEBUG_SAVEDESC"))
       fprintf(stderr, "[savedesc] FUN_0006c670 returned %d, acStack_528=%s\n", iVar4, acStack_528);
@@ -60008,7 +60033,7 @@ char param_1;
          to this slot's desc file here, reasoning the decompile never
          reconstructed a "type a save description" prompt for Save, so
          Load should at least leave something non-blank behind. That
-         reasoning no longer applies -- FUN_0006c264 (the Save path) now
+         reasoning no longer applies -- save_game_to_slot (the Save path) now
          has a fully working name-entry flow and writes the player's
          actual chosen name into the desc file at save time (see its own
          FUN_0007edf4 call). This block ran on every LOAD too, though,
@@ -60034,13 +60059,14 @@ char param_1;
       }
     }
   }
-  message_scroll_print_wrapped(&DAT_0008522c);
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   return 0;
 }
 
 
 
-undefined4 FUN_0006c264(param_1,param_2)
+// was FUN_0006c264
+undefined4 save_game_to_slot(param_1,param_2)
 char param_1;
 /* Was `undefined4` -- truncates the real 64-bit buffer pointer
    FUN_0006bfec passes in (a pointer into its own auStack_ac local,
@@ -60048,7 +60074,7 @@ char param_1;
    was harmless, but on this 64-bit recompile the parameter-spill in
    this function's own prologue drops the pointer's upper 32 bits the
    moment it's read out of the argument register, leaving every later
-   dereference (message_scroll_print_wrapped, the FUN_0007ffa8 name-entry
+   dereference (message_scroll_print_wrapped, the scroll_text_entry_prompt name-entry
    call, the strlen/Ordinal_1063 calls near the end) a wild pointer --
    confirmed crash: "Enter a save/load name" renders fine (that prompt
    is a static string, not this buffer), but touching the corrupted
@@ -60091,18 +60117,18 @@ char *param_2;
   *pcVar3 = param_1 + '0';
   pcVar3[1] = '\0';
   }
-  FUN_0007fce8(1);
+  msg_scroll_panel_reset(1);
   message_scroll_print_wrapped(s_Please_enter_a_Save_Game_file_an_00087094);
   /* Dropped 5th argument (max name length) -- confirmed via real ARM
      disassembly (0x6c2f8-0x6c30c: `mov r3,#0x1e; strh r3,[sp,#0]` pushes
      0x1e as the 5th/stack arg immediately before the call). Same
      dropped-argument idiom fixed elsewhere this session -- without it
      param_5 is whatever garbage was left on the stack, which
-     FUN_0007ffa8 clamps to at most 0x32 but never validates as sane
+     scroll_text_entry_prompt clamps to at most 0x32 but never validates as sane
      otherwise. */
-  sVar2 = FUN_0007ffa8(0,param_2,param_2,1,0x1e);
+  sVar2 = scroll_text_entry_prompt(0,param_2,param_2,1,0x1e);
   if (((sVar2 != 0x1b) && (sVar2 != 1)) && (sVar2 != 2)) {
-    message_scroll_print_wrapped(&DAT_0008522c);
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     FUN_00078c80(0xa7);
     iVar4 = 0;
     do {
@@ -60143,7 +60169,7 @@ char *param_2;
           pcVar8 = pcVar8 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(local_638,&DAT_000857a0);
-        iVar4 = FUN_00043fd8(local_638);
+        iVar4 = write_player_save_record(local_638);
         if (iVar4 != 0) {
           FUN_00078c80(0xaa);
           iVar4 = FUN_0006bcd4((int)DAT_00201b68);
@@ -60156,7 +60182,7 @@ char *param_2;
             /* Was FUN_0006c670(local_638,local_530) -- i.e.
                (dest="\SAVE0", src="\SAVEn"), copying the CHOSEN SLOT
                back onto the active session. That's backwards for this
-               function: FUN_0006c264 is the SAVE path (confirmed live --
+               function: save_game_to_slot is the SAVE path (confirmed live --
                its own status text is "Saving Game ", gated by
                FUN_000400dc's real save preconditions, and it just
                finished writing the current name/player.dat/lev.ark
@@ -60170,11 +60196,11 @@ char *param_2;
                freshly-updated local_638 ("\SAVE0") is the SOURCE and
                local_530 ("\SAVEn") the DESTINATION -- i.e. actually
                writing the live session out to the chosen slot, matching
-               what FUN_0006c0c0 (the sibling Load path, own status text
+               what load_game_from_slot (the sibling Load path, own status text
                "Restoring Game ") does in the opposite direction. */
             iVar4 = FUN_0006c670(local_530,local_638);
             if (iVar4 != 0) {
-              message_scroll_print_wrapped(&DAT_00087038);
+              message_scroll_print_wrapped(&s_scroll_color_reset_00087038);
               uVar5 = 1;
               goto LAB_0006c544;
             }
@@ -60186,7 +60212,7 @@ char *param_2;
 LAB_0006c540:
   uVar5 = 0;
 LAB_0006c544:
-  FUN_0007fce8(1);
+  msg_scroll_panel_reset(1);
   return uVar5;
 }
 
@@ -63159,8 +63185,8 @@ void FUN_000708bc()
   undefined1 local_58 [52];
   
   local_58[0] = 0;
-  FUN_0007ffa8(s_Chant_the_mantra__0008731c,0,local_58,1,10);
-  message_scroll_print_wrapped(&DAT_0008522c);
+  scroll_text_entry_prompt(s_Chant_the_mantra__0008731c,0,local_58,1,10);
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   iVar10 = 0x33;
   do {
     uVar4 = Ordinal_1416(local_58);
@@ -64038,7 +64064,7 @@ LAB_00072374:
     if (iVar6 != 0) {
       FUN_00037c14(0x102);
       thunk_FUN_0003c310(0xf1);
-      FUN_0007fce8(1);
+      msg_scroll_panel_reset(1);
       return;
     }
   }
@@ -70246,7 +70272,7 @@ int param_2;
           message_scroll_print_wrapped(acStack_7c);
           FUN_0007863c(param_1[3] >> 6 | 0x600);
           message_scroll_print_wrapped();
-          message_scroll_print_wrapped(&DAT_0008522c);
+          message_scroll_print_wrapped(&s_scroll_newline_0008522c);
         }
         else {
           FUN_000282ac();
@@ -72108,7 +72134,7 @@ undefined4 FUN_0007edec()
 
 bool FUN_0007edf4(param_1,param_2,param_3)
 void *param_1;  /* was `undefined4` -- truncated the real data-buffer
-                   pointer (FUN_0006c264 passes its own param_2, a real
+                   pointer (save_game_to_slot passes its own param_2, a real
                    description-text buffer; the new save-description
                    write above passes a real stack buffer too) */
 char *param_2;  /* was `undefined4` -- same truncation, for the real
@@ -72207,7 +72233,7 @@ undefined4 param_1;
 byte param_2;
 char *param_3;  /* was `int` -- truncated the real DAT_00086df8 pointer
                    FUN_00065b90 passes in, latent until something
-                   (FUN_00043fd8, the player.dat writer) actually called
+                   (write_player_save_record, the player.dat writer) actually called
                    FUN_00065b90 -- previously only reachable from the
                    Load Game path */
 short param_4;
@@ -72259,7 +72285,7 @@ void FUN_0007f044()
 {
   DAT_00250704 = &DAT_00087960;
   DAT_00250714 = 0;
-  FUN_0007fc8c(0xf,0xa9,0x131,200,0);
+  msg_scroll_panel_init(0xf,0xa9,0x131,200,0);
   msg_scroll_draw_edges();
   return;
 }
@@ -72493,7 +72519,7 @@ char *param_1;
     }
     if (DAT_00250718 != 0 && iVar2 != 1) {
       DAT_00250718 = 0;
-      FUN_0007fce8(0);
+      msg_scroll_panel_reset(0);
     }
     DAT_00250710 = *(undefined2 *)(DAT_00250704 + 0x14);
     DAT_0025071c = 0;
@@ -72570,17 +72596,18 @@ undefined4 param_2;
   while ((iVar2 = Ordinal_1064(param_1,10), iVar2 != 0 &&
          (cVar1 = iVar2[1], cVar1 != '\0'))) {
     iVar2[1] = 0;
-    FUN_0007f7cc(param_1,1);
+    msg_scroll_draw_wrapped_span(param_1,1);
     param_1 = iVar2 + 1;
     *param_1 = cVar1;
   }
-  FUN_0007f7cc(param_1,param_2);
+  msg_scroll_draw_wrapped_span(param_1,param_2);
   return;
 }
 
 
 
-void FUN_0007f7cc(param_1,param_2)
+// was FUN_0007f7cc
+void msg_scroll_draw_wrapped_span(param_1,param_2)
 char * param_1;
 undefined4 param_2;
 
@@ -72592,8 +72619,8 @@ undefined4 param_2;
   char *iVar5;
   undefined1 uVar6;
   int iVar7;
-  /* Recursion-depth safety valve for the FUN_0007f7cc<->FUN_0007fb2c word-
-     wrap pair: FUN_0007fb2c's search-for-a-space-to-split-on has no
+  /* Recursion-depth safety valve for the msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line word-
+     wrap pair: msg_scroll_wrap_split_line's search-for-a-space-to-split-on has no
      fallback once the remainder is down to a single character/space that
      still doesn't fit the remaining line width (its own retry at
      LAB_0007fc64 hands the SAME unshrinkable string straight back here),
@@ -72609,7 +72636,7 @@ undefined4 param_2;
   s_wrap_recursion_depth++;
 
   iVar5 = 0;
-  if ((DAT_00087990 != 0) && (*param_1 == '\\')) {
+  if ((g_scroll_control_codes_enabled != 0) && (*param_1 == '\\')) {
     cVar2 = param_1[1];
     param_1 = param_1 + 2;
     if (cVar2 < '6') {
@@ -72712,7 +72739,7 @@ LAB_0007fa30:
     *(char *)(DAT_00250704 + 9) = (char)((uint)iVar5 >> 8);
   }
   else {
-    FUN_0007fb2c(param_1,param_2);
+    msg_scroll_wrap_split_line(param_1,param_2);
   }
   s_wrap_recursion_depth--;
   return;
@@ -72720,7 +72747,8 @@ LAB_0007fa30:
 
 
 
-void FUN_0007fb2c(param_1,param_2)
+// was FUN_0007fb2c
+void msg_scroll_wrap_split_line(param_1,param_2)
 char * param_1;
 undefined4 param_2;
 
@@ -72732,11 +72760,11 @@ undefined4 param_2;
   int iVar5;
   char cVar6;
 
-  /* Guard against infinite FUN_0007f7cc<->FUN_0007fb2c recursion on an
-     empty string: FUN_0007f7cc sends param_1 here whenever its pixel width
+  /* Guard against infinite msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line recursion on an
+     empty string: msg_scroll_draw_wrapped_span sends param_1 here whenever its pixel width
      doesn't fit the remaining line width, but an empty string has zero
      width and can never be split any narrower -- every one of this
-     function's exits below hands param_1 straight back to FUN_0007f7cc
+     function's exits below hands param_1 straight back to msg_scroll_draw_wrapped_span
      unchanged, which (if the line is already full) sends it right back
      here forever. There's nothing to wrap for an empty string, so just
      stop. Confirmed via a real crash: reached with param_1="" once (this
@@ -72769,7 +72797,7 @@ undefined4 param_2;
     cVar6 = *pcVar3;
     *pcVar3 = '\0';
     if (pcVar3 <= param_1) {
-      FUN_0007f7cc(&DAT_0008522c,1);
+      msg_scroll_draw_wrapped_span(&s_scroll_newline_0008522c,1);
       goto LAB_0007fc64;
     }
     sVar2 = measure_text_width(param_1);
@@ -72779,18 +72807,19 @@ LAB_0007fc2c:
   cVar1 = pcVar3[1];
   *pcVar3 = '\n';
   pcVar3[1] = '\0';
-  FUN_0007f7cc(param_1,1);
+  msg_scroll_draw_wrapped_span(param_1,1);
   *pcVar3 = cVar6;
   pcVar3[1] = cVar1;
   param_1 = pcVar3 + (cVar6 == ' ');
 LAB_0007fc64:
-  FUN_0007f7cc(param_1,param_2);
+  msg_scroll_draw_wrapped_span(param_1,param_2);
   return;
 }
 
 
 
-void FUN_0007fc8c(param_1,param_2,param_3,param_4,param_5)
+// was FUN_0007fc8c
+void msg_scroll_panel_init(param_1,param_2,param_3,param_4,param_5)
 int param_1;
 int param_2;
 int param_3;
@@ -72809,7 +72838,7 @@ int param_5;
 
   /* Populate the message-scroll context struct (DAT_00250704 ->
      DAT_00087960) from the region rectangle. An earlier session's own
-     comment here claimed "the decompile lost this" from FUN_0007fc8c's
+     comment here claimed "the decompile lost this" from msg_scroll_panel_init's
      real body -- re-checked via a fresh Ghidra disassembly of 0x7fc8c
      this session and that's NOT accurate: the real function only draws
      the (up to) two background rects and tail-calls
@@ -72819,12 +72848,12 @@ int param_5;
      place currently seeding these fields at all, and empirically
      produces a correct, working panel (confirmed visually: the save/
      load name prompt and the save-slot description list both render
-     correctly with it). Real ARM disassembly of FUN_0007fce8 (see its
+     correctly with it). Real ARM disassembly of msg_scroll_panel_reset (see its
      own comment) independently confirmed the byte layout this block
      writes to (+2 bottom_y, +4 left_x, +6 right_x, +8/+0xa draw cursor
      x/y, +0xc/+0xe new-line-reset x/y) is at least self-consistent with
      how the rest of the widget reads it. What's still missing: +0x00
-     ("top y", read by FUN_0007fce8's own erase-rect on every reset) was
+     ("top y", read by msg_scroll_panel_reset's own erase-rect on every reset) was
      never written here either -- confirmed as the cause of that erase
      covering the whole screen instead of just this panel's own strip,
      fixed below by seeding it the same as +0x0e. Wherever the REAL
@@ -72865,7 +72894,7 @@ int param_5;
    Confirmed via real ARM disassembly (0x7fd14-0x7fdd8): the struct's
    real byte layout is top_y@0, bottom_y@2, left_x@4, right_x@6 (used
    by the rect_fill_or_save_restore call below), base_x@0xc, base_y@0xe
-   (the panel's static origin, populated once by FUN_0007fc8c),
+   (the panel's static origin, populated once by msg_scroll_panel_init),
    cur_x@8, cur_y@0xa (the live draw-cursor these get copied into on
    every reset -- this is the actual bug: cur_y was landing at byte 5,
    splitting a partial write across the middle of top_y/bottom_y's own
@@ -72876,7 +72905,8 @@ int param_5;
    counterpart to each was already correct). Root cause of both the
    invisible "Enter a save name" prompt and the invisible save-slot
    list text -- same struct, same reset function, same bug. */
-void FUN_0007fce8(param_1)
+// was FUN_0007fce8
+void msg_scroll_panel_reset(param_1)
 int param_1;
 
 {
@@ -72965,10 +72995,10 @@ int param_1;
   *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
   *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
   if (param_1 == 0) {
-    puVar2 = &DAT_0008799c;
+    puVar2 = &s_No_0008799c;
   }
   else {
-    puVar2 = &DAT_000879a0;
+    puVar2 = &s_Yes_000879a0;
   }
   message_scroll_print_wrapped(puVar2);
   return;
@@ -72976,7 +73006,8 @@ int param_1;
 
 
 
-undefined4 FUN_0007ffa8(param_1,param_2,param_3,param_4,param_5)
+// was FUN_0007ffa8
+undefined4 scroll_text_entry_prompt(param_1,param_2,param_3,param_4,param_5)
 undefined * param_1;
 char * param_2;
 int param_3;
@@ -73008,9 +73039,9 @@ short param_5;
   FUN_0007f0e0();
   *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   if (param_1 == (undefined *)0x0) {
-    sVar3 = measure_text_width(&DAT_000879a8);
+    sVar3 = measure_text_width(&s_scroll_prompt_arrow_000879a8);
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
-    param_1 = &DAT_000879a8;
+    param_1 = &s_scroll_prompt_arrow_000879a8;
   }
   else {
     sVar3 = measure_text_width(param_1);
@@ -73023,9 +73054,9 @@ short param_5;
     uVar13 = 0;
   }
   else {
-    DAT_00087990 = 0;
+    g_scroll_control_codes_enabled = 0;
     message_scroll_print_wrapped(param_2);
-    DAT_00087990 = 1;
+    g_scroll_control_codes_enabled = 1;
     pcVar6 = param_2;
     do {
       cVar1 = *pcVar6;
@@ -73074,7 +73105,7 @@ short param_5;
         sVar3 = DAT_0025070c;
         *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
         *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar3 >> 8);
-        message_scroll_print_wrapped(&DAT_000879a4);
+        message_scroll_print_wrapped(&s_dash_000879a4);
       }
       else {
         pcVar6 = acStack_a1;
@@ -73271,10 +73302,10 @@ int * param_3;
   }
   DAT_0025070c = *(undefined2 *)(DAT_00250704 + 8);
   if (*param_3 == 0) {
-    puVar2 = &DAT_0008799c;
+    puVar2 = &s_No_0008799c;
   }
   else {
-    puVar2 = &DAT_000879a0;
+    puVar2 = &s_Yes_000879a0;
   }
   message_scroll_print_wrapped(puVar2);
   FUN_00057118();

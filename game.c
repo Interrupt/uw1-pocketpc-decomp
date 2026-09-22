@@ -350,11 +350,12 @@ undefined4 param_1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_6e4,&DAT_000857a0);
         FUN_0006c560(acStack_6e4);
-        /* FUN_0006c0c0 (the numbered-save-slot "Save Game" path) reads
-           \SAVE0\player.dat before duplicating SAVE0 into the chosen
-           slot, but nothing ever created that file for a freshly-started
-           character. FUN_00043fd8 is the only other writer (confirmed by
-           its body: malloc+serialize+CreateFile+WriteFile) -- called here
+        /* load_game_from_slot (was FUN_0006c0c0; the numbered-save-slot
+           "Save Game" path) reads \SAVE0\player.dat before duplicating
+           SAVE0 into the chosen slot, but nothing ever created that file
+           for a freshly-started character. write_player_save_record
+           (was FUN_00043fd8) is the only other writer (confirmed by its
+           body: malloc+serialize+CreateFile+WriteFile) -- called here
            too, alongside the \SAVE0\lev.ark seed a few lines down. First
            attempt chased a red herring: this newly reaches
            FUN_00065b90->FUN_0007ef78 with a genuinely truncated pointer
@@ -363,7 +364,7 @@ undefined4 param_1;
            unrelated, pre-existing bug in FUN_00019120 (also fixed, see
            its own comment) that this code path happens to run right
            past. */
-        FUN_00043fd8(acStack_6e4);
+        write_player_save_record(acStack_6e4);
         Ordinal_1047(acStack_6e4,0,0x104);
         pcVar5 = &DAT_0023cca8;
         pcVar_dst = acStack_6e4;
