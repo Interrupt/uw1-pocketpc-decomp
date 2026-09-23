@@ -39933,6 +39933,8 @@ int param_2;
     }
     iVar7 = (int)(short)local_28;
     iVar8 = (int)(short)local_26;
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-fallback] dropping via trajectory path: tile=(%d,%d)\n", iVar7 >> 3, iVar8 >> 3);
     pDropTile = (char *)tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
     /* tilemap_lookup returns NULL for any tile coordinate outside
        0-63 (see its own bounds check) -- confirmed live: dragging an
@@ -40028,7 +40030,13 @@ LAB_0004b06c:
       uVar9 = (byte)DAT_00202a44[0xc] & 0x1f;
     }
     DAT_00202a54 = (DAT_00202a44[1] >> 2 & 0xffe0) + DAT_00202a40 + uVar9 & 0xff;
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-pos] DAT_00202a4c(tilex_in)=%d DAT_00202a50(tiley_in)=%d\n",
+              (int)DAT_00202a4c, (int)DAT_00202a50);
     FUN_0005578c(puVar6,(int)DAT_00202a4c,(int)DAT_00202a50);
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-pos] after FUN_0005578c: puVar6[0xb]=0x%x tilex_out=%d tiley_out=%d\n",
+              (unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));
     uVar7 = puVar6[1] & 0xfc7f | ((int)(short)(DAT_00202a54 & 0xe0) >> 5) << 7;
     *(char *)(puVar6 + 1) = (char)uVar7;
     *(char *)((char *)puVar6 + 3) = (char)(uVar7 >> 8);
@@ -40134,11 +40142,40 @@ ushort * param_2;
   int iVar5;
   uint uVar6;
   uint uVar7;
-  ushort local_38 [6];
-  ushort local_2c;
-  ushort local_2a;
-  
-  DAT_00202c6c = local_38;
+  /* Was three separate C locals (`ushort local_38[6]; ushort local_2c;
+     ushort local_2a;`), but collision_height_envelope/collision_build_
+     height_field write through DAT_00202c6c-relative offset arithmetic
+     expecting ONE contiguous struct (the same "collision working block"
+     layout already fixed globally as DAT_002049c8_backing, see its own
+     comment) -- Ghidra's own local-variable naming here reflects the
+     real ARM stack frame it disassembled (local_38/local_2c/local_2a =
+     stack offsets -0x38/-0x2c/-0x2a), and the gaps between those names
+     exactly match local_38's own 12-byte size then 2 more bytes, i.e.
+     local_2c sits at +0xc and local_2a at +0xe relative to local_38 --
+     exactly where DAT_002049d4/DAT_002049d6 (the tile property-flag
+     pair collision_build_height_field writes) live in the already-fixed
+     global layout. As separate, unbacked C locals here, nothing
+     guaranteed they were laid out contiguously on THIS recompile's
+     stack, so the indexed writes and the by-name reads of local_2c/
+     local_2a could land on unrelated stack memory -- the identical bug
+     class fixed once already for the global struct (commit ed49786),
+     just recurring in this function's own private local instance of
+     the same pattern. Confirmed live: this function computes the
+     collision-refined landing tile for a thrown/dropped item, and with
+     local_2c/local_2a reading garbage, the gate at the bottom of this
+     function (`(local_2a|local_2c)&0x300`) and the final tile-position
+     write it guards behaved unpredictably -- root cause of "the thrown
+     item disappears" (it got linked into a essentially-random, usually
+     off in a map corner, tile's object list instead of one near the
+     player). Backed as one real buffer, sized to match
+     DAT_002049c8_backing's own generous 64 bytes for the same safety
+     margin. */
+  unsigned char local_backing[64];
+#define local_38 ((ushort *)local_backing)
+#define local_2c (*(ushort *)(local_backing + 0xc))
+#define local_2a (*(ushort *)(local_backing + 0xe))
+
+  DAT_00202c6c = local_backing;
   uVar2 = *param_1;
   uVar3 = encode_object_slot_index(param_1);
   *(byte *)(DAT_00202c6c + 5) = (byte)uVar3;
@@ -40158,8 +40195,16 @@ ushort * param_2;
                DAT_00202c6c + 1);
   *(byte *)(DAT_00202c6c + 2) = (byte)param_1[1] & 0x7f;
   *(byte *)((char *)DAT_00202c6c + 5) = 0;
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] pre-collision local_38[0..5]=%d,%d,%d,%d,%d,%d offset4(Z)=%d\n",
+            (int)local_38[0], (int)local_38[1], (int)local_38[2], (int)local_38[3],
+            (int)local_38[4], (int)local_38[5], (int)*(short *)((char *)DAT_00202c6c + 4));
   collision_height_envelope(0,1);
   collision_build_height_field(0);
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] post-collision local_2c=%d local_2a=%d DAT_00202c6c[0]=%d DAT_00202c6c[1]=%d gate=0x%x\n",
+            (int)local_2c, (int)local_2a, (int)DAT_00202c6c[0], (int)DAT_00202c6c[1],
+            (unsigned)((local_2a | local_2c) & 0x300));
   if (((local_2a | local_2c) & 0x300) == 0) {
     if ((byte)DAT_00202c6c[10] != 0) {
       FUN_00051dd0();
@@ -40189,6 +40234,9 @@ ushort * param_2;
 LAB_0004b4d4:
     uVar4 = 0;
   }
+#undef local_38
+#undef local_2c
+#undef local_2a
   return uVar4;
 }
 
