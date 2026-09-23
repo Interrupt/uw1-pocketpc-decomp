@@ -40004,8 +40004,9 @@ ushort *FUN_0004ad10()
   ushort *puVar6;
   uint uVar7;
   int iVar8;
+  char *pbTile;
   ushort uVar9;
-  
+
   puVar6 = (ushort *)alloc_object_slot(1);
   if (puVar6 == (ushort *)0x0) {
 LAB_0004b06c:
@@ -40066,6 +40067,10 @@ LAB_0004b06c:
         goto LAB_0004b06c;
       }
     }
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-spawn] *puVar6=0x%x (&0x1c0=0x%x) puVar6[0xb]_before=0x%x DAT_00202a44_type=0x%x\n",
+              (unsigned)*puVar6, (unsigned)(*puVar6 & 0x1c0), (unsigned)puVar6[0xb],
+              (unsigned)(*DAT_00202a44 & 0x1ff));
     if ((*puVar6 & 0x1c0) != 0x40) {
       sVar5 = 0;
       iVar8 = (*(byte *)((char *)puVar6 + 3) & 0xe0) + ((puVar6[0xb] & 0xfc00) >> 2) + 0xf;
@@ -40083,6 +40088,9 @@ LAB_0004b06c:
       *(char *)(puVar6 + 9) = (char)sVar5;
       *(byte *)((char *)puVar6 + 0x15) = *(byte *)((char *)puVar6 + 0x15) & 0x7f;
     }
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-spawn] puVar6[0xb]_after=0x%x tilex=%d tiley=%d\n",
+              (unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));
     *(byte *)(puVar6 + 10) = (char)DAT_00202a3c * '\b' + 0x87U & 0xf9 | 1;
     *(byte *)((char *)puVar6 + 0x13) =
          ((byte)DAT_00202a48 ^ *(byte *)((char *)puVar6 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar6 + 0x13)
@@ -40092,8 +40100,21 @@ LAB_0004b06c:
       *(char *)(puVar6 + 3) = (char)(uVar9 & 0xffc0);
       *(char *)((char *)puVar6 + 7) = (char)((uVar9 & 0xffc0) >> 8);
     }
-    iVar8 = tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
-    object_list_insert_head(iVar8 + 2,puVar6);
+    /* Was `iVar8 = tilemap_lookup(...); object_list_insert_head(iVar8 + 2,...)`
+       -- tilemap_lookup returns a real 64-bit tile-record pointer, but
+       iVar8 is `int` (used throughout this function for genuine small
+       integer scratch math, so not safe to widen wholesale); truncating
+       the pointer into it and adding +2 produced a wild, non-dereferenced
+       -able address that crashed inside object_list_insert_head the
+       moment this (previously dead/untested) throw-item spawn path first
+       got real exercise. Same class as object_list_insert_head/
+       object_list_append_tail/FUN_00053334's own params, already fixed
+       elsewhere -- this just never got a properly-typed local to feed
+       them. Confirmed live: crashed 100% of the time replaying the
+       user's bug-throw-item.txt once its trailing WAIT gave the object-
+       drop tick enough time to run. */
+    pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
+    object_list_insert_head(pbTile + 2,puVar6);
     FUN_00072fc8(10,puVar6,0);
   }
   return puVar6;
@@ -46605,6 +46626,7 @@ ushort * param_1;
   undefined4 uVar6;
   undefined4 uVar7;
   int iVar8;
+  char *pbTile;
   ushort *puVar9;
   int iVar10;
   short extraout_r1;
@@ -46673,8 +46695,13 @@ ushort * param_1;
   if (DAT_00201b68 == 9) {
     bVar3 = false;
   }
-  iVar8 = tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
-  iVar8 = iVar8 + 2;
+  /* Was `iVar8 = tilemap_lookup(...); iVar8 = iVar8 + 2;` -- same pointer-
+     truncation-into-`int` bug fixed in FUN_0004ad10 just above (that one
+     crashed live; this is the same call shape, iVar8 already reused here
+     for unrelated small-integer math earlier in this function, so given
+     its own dedicated pointer local rather than widening iVar8 itself). */
+  pbTile = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
+  pbTile = pbTile + 2;
   if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
     *(byte *)puVar9 = (byte)*param_1;
     *(byte *)((char *)puVar9 + 1) = *(byte *)((char *)param_1 + 1);
@@ -46719,13 +46746,13 @@ ushort * param_1;
       local_2c = (byte)param_1[9];
     }
   }
-  FUN_00053334(iVar8,param_1,1);
+  FUN_00053334(pbTile,param_1,1);
   if (puVar9 != (ushort *)0x0) {
-    object_list_insert_head(iVar8,puVar9);
+    object_list_insert_head(pbTile,puVar9);
   }
   if ((bVar13 == 9) &&
      (iVar10 = FUN_000816e0(puVar9,(int)DAT_0010144c,(int)DAT_00101454,local_2c), iVar10 == 0)) {
-    puVar9 = (ushort *)FUN_00053334(iVar8,puVar9,0);
+    puVar9 = (ushort *)FUN_00053334(pbTile,puVar9,0);
   }
   return puVar9;
 }
@@ -74131,7 +74158,9 @@ short param_7;
   char *iVar5;  /* was `int` -- truncated spawn_new_object's real pointer */
   uint uVar6;
   undefined4 uVar7;
-  int iVar8;
+  char *iVar8;  /* was `int` -- truncated tilemap_lookup's real pointer, same
+                   class as iVar5 above; crashed live in the sibling call
+                   shape at FUN_0004ad10/FUN_0005596c (see their comments) */
   byte bVar9;
 
   iVar5 = (char *)spawn_new_object(param_2 + 0x1c0,0);
@@ -74170,7 +74199,7 @@ LAB_00081980:
     free_object_slot(iVar5);
     return 0;
   }
-  iVar8 = tilemap_lookup((int)param_6,(int)param_7);
+  iVar8 = (char *)tilemap_lookup((int)param_6,(int)param_7);
   object_list_append_tail(iVar8 + 2,iVar5);
   return 1;
 }
