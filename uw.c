@@ -3610,8 +3610,44 @@ static undefined1 DAT_00202c70_backing[65536];
 #define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
 undefined DAT_00202c34;
 ushort *_DAT_00202c34;
-undefined1 DAT_00086884;
-undefined DAT_0008688c;
+/* Wall-slide corner-classification tables, used by FUN_00051320 (called
+   from sweep_slide_along_wall when a wall hit has a specific blocked-
+   corner shape) to pick which of the 8 candidate headings in
+   DAT_000869a8 to deflect toward. Both were declared as single-byte
+   scalars -- an "orphaned data table" class bug, same as DAT_000869a8
+   just fixed above -- so any index past 0 read undefined, unrelated
+   adjacent globals in this port's own memory layout (not the real
+   binary's), producing effectively-random results for any corner
+   configuration except the very first. This is the deeper reason wall
+   sliding sometimes turned the player back INTO the wall: even once
+   DAT_000869a8 held real headings, FUN_00051320 was often picking the
+   WRONG index into it.
+
+   Real data recovered via Ghidra headless dump (matching these globals'
+   own name-encoded addresses, 0x86884 and 0x8688c): DAT_00086884 is a
+   real 4-entry SIGNED array {1,-1,-1,1} (per-corner +/-1 deltas, read as
+   `(&DAT_00086884)[iVar3]` for iVar3 0-3 in FUN_00051320's loop).
+   DAT_0008688c sits 4 bytes into a real lookup table that starts at
+   0x86888 (confirmed: the function's own literal pool for the "r8" table
+   base is 0x86888, and 0x86888+4 = 0x8688c exactly) -- both of
+   FUN_00051320's own lookups already index relative to DAT_0008688c
+   correctly (`(&DAT_0008688c)[iVar6*3+iVar7]` and
+   `(&DAT_0008688c)[iVar9*-3-iVar7]`, the latter reaching back to offset
+   -4, i.e. the table's real start at 0x86888); only the DECLARATION was
+   wrong, not the indexing arithmetic. Backed with the real bytes from
+   0x86884 through 0x868893 (32 bytes from the table's real start,
+   comfortably covering every offset either lookup can produce); bytes
+   past offset +7 from DAT_0008688c decode as the ASCII string
+   "\DATA\comobj.dat" -- real, unrelated adjacent data in the original
+   binary, kept verbatim rather than guessed at, since matching the
+   original memory layout exactly is safer than inventing a boundary. */
+signed char DAT_00086884_backing[4] = {1, -1, -1, 1};
+#define DAT_00086884 DAT_00086884_backing[0]
+static unsigned char DAT_0008688c_backing[32] = {
+  5, 4, 3, 6, 9, 2, 7, 0, 1, 0, 0, 0, 92, 68, 65, 84,
+  65, 92, 99, 111, 109, 111, 98, 106, 46, 100, 97, 116, 0, 0, 0, 0
+};
+#define DAT_0008688c DAT_0008688c_backing[4]
 char DAT_00202c20;
 char DAT_00202c28;
 char DAT_00202c24;
@@ -4088,7 +4124,24 @@ char *DAT_002048bc;
    [[jump-physics-fix-and-open-integrator-issue]]). */
 short *g_sweep_velocity;
 undefined1 DAT_002049c0;
-undefined1 DAT_002049bc;
+/* "Already slid this tick" cooldown, decremented once per ordinary substep
+   in sweep_step (`DAT_002049bc = DAT_002049bc + -1;`) and read back in
+   sweep_slide_along_wall's own first line to skip re-deflecting mid-slide.
+   Verified via disassembly (0x59b84/0x5a5c0) both sites use `ldrsb` --
+   SIGNED byte reads -- so 0 decrementing to -1 reads back as -1, and the
+   guard (`if (0 < DAT_002049bc)`) correctly stays false. Declared here as
+   `undefined1` (unsigned char), it was reset to 0 every tick
+   (movement_collision_sweep) then immediately decremented on the very
+   first ordinary substep before any wall was ever hit, underflowing to
+   255 (unsigned) instead of -1 (signed) -- permanently latching the
+   "already slid" guard true, so sweep_slide_along_wall took its early
+   revert-and-end path on every single call and sweep_deflect_heading
+   never ran at all. Symptom: running straight into a wall stopped the
+   player dead with zero deflection/turning, forever, instead of sliding
+   along it -- confirmed live via a new UW_DEBUG_WALL trace showing
+   DAT_002049bc=255 on every one of 4523 calls during an 80+-tick
+   straight-on wall hold. */
+char DAT_002049bc;
 short DAT_00086990;
 short DAT_00086996;
 // was DAT_0008697c_backing/DAT_0008697c -- the swept working foot position
@@ -4118,7 +4171,38 @@ static undefined1 DAT_00086986_backing[65536];
    branch, so "walk forward" moved the player BACKWARD (toward the wall
    behind the spawn). Alias it to backing[1]. */
 #define DAT_00086987 DAT_00086986_backing[1]
-static undefined1 DAT_000869a8_backing[65536];
+/* Wall-slide deflection candidate-heading table (was a zero-initialized
+   65536-byte placeholder with no writer anywhere in the decompile -- an
+   "orphaned data table" of the same class as the TMOBJ/inventory-hotspot
+   tables fixed elsewhere in this project). sweep_slide_along_wall reads
+   `*(short*)(&DAT_000869a8 + index*2)` to pick which heading to deflect
+   the move toward; with the real table missing, every read always came
+   back 0, so every wall hit -- head-on or glancing -- tried to deflect
+   toward the SAME fixed heading regardless of which way the wall
+   actually faced. That deflection only succeeds when it happens to be
+   close enough to the real wall's face (confirmed via a live
+   UW_DEBUG_WALL trace: candidate_heading=0 on 100% of calls, and
+   sweep_deflect_heading itself only returned nonzero -- i.e. actually
+   redirected the move -- 3 times out of 2258 during a real diagonal
+   wall hold), matching the reported symptom exactly: sliding sometimes
+   turns the player further INTO the wall instead of along it, "working"
+   only by coincidence when heading 0 happens to roughly line up with
+   the actual wall.
+
+   Recovered the real 8-entry table from the original binary at 0x869a8
+   (Ghidra headless dump, matching this global's own name/address) --
+   confirmed via disassembly of sweep_slide_along_wall (0x59b7c) that the
+   pointer literal at 0x59c20 resolves to exactly this address. The 8
+   real values are `-8192*i` (i.e. -45 degrees * i, wrapped to a signed
+   16-bit heading) for i=0..7 -- the 8 compass octants relative to the
+   hit. Confirmed the table is EXACTLY these 8 entries and no more: bytes
+   immediately following decode as ASCII (an unrelated string literal),
+   not further table data. */
+static unsigned char DAT_000869a8_backing[16] = {
+  0x00, 0x00, /*     0 */  0x00, 0xE0, /* -8192 */  0x00, 0xC0, /* -16384 */
+  0x00, 0xA0, /* -24576 */ 0x00, 0x80, /* -32768 */ 0x00, 0x60, /*  24576 */
+  0x00, 0x40, /* 16384 */  0x00, 0x20  /*  8192 */
+};
 #define DAT_000869a8 DAT_000869a8_backing[0]
 int DAT_00204870;
 undefined1 DAT_0024f0ca;
@@ -49284,21 +49368,35 @@ int param_1;
 {
   int iVar1;
   ushort uVar2;
-  
+
+  if (getenv("UW_DEBUG_WALL"))
+    fprintf(stderr, "[wall-slide] enter param_1=%d DAT_002049bc=%d\n", param_1, (int)DAT_002049bc);
   if ('\0' < DAT_002049bc) {
+    if (getenv("UW_DEBUG_WALL"))
+      fprintf(stderr, "[wall-slide] -> already-slid guard, revert+end sweep\n");
     sweep_step(0xffffffff);
     DAT_00086996 = DAT_00086990 + 1;
     return;
   }
   if (param_1 != 0) {
     FUN_00051320();
+    if (getenv("UW_DEBUG_WALL"))
+      fprintf(stderr, "[wall-slide] after FUN_00051320: DAT_002049da=%d DAT_0008698c=%d\n",
+              (int)DAT_002049da, (int)DAT_0008698c);
     uVar2 = (ushort)DAT_002049da;
     if (DAT_002049da != 9) goto LAB_00059be4;
+  } else if (getenv("UW_DEBUG_WALL")) {
+    fprintf(stderr, "[wall-slide] param_1==0 path, DAT_0008698c=%d\n", (int)DAT_0008698c);
   }
   uVar2 = DAT_0008698c << 1;
 LAB_00059be4:
   sweep_step(0xffffffff);
+  if (getenv("UW_DEBUG_WALL"))
+    fprintf(stderr, "[wall-slide] uVar2=%d candidate_heading=%d DAT_002049ce(cur_heading)=%d\n",
+            (int)uVar2, (int)*(short *)(&DAT_000869a8 + (short)uVar2 * 2), (int)DAT_002049ce);
   iVar1 = sweep_deflect_heading(*(undefined2 *)(&DAT_000869a8 + (short)uVar2 * 2));
+  if (getenv("UW_DEBUG_WALL"))
+    fprintf(stderr, "[wall-slide] sweep_deflect_heading returned %d\n", iVar1);
   if (iVar1 == 0) {
     DAT_00086996 = DAT_00086990 + 1;
   }
