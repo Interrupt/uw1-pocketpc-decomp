@@ -3817,6 +3817,18 @@ undefined1 DAT_002046e4;
 static unsigned char DAT_002049c8_backing[64];
 #define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
 #define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
+/* Offset 4 -- the third field of the X(0)/Y(2)/?(4)/heading(6) layout, and
+   never given a name because nothing in the decompile reads it by a plain
+   global symbol; every access is through the indexed `DAT_00202c6c[4]`
+   pointer form, which Ghidra doesn't auto-name. FUN_00051fa0's own private
+   local copy of this exact struct layout names it explicitly in an
+   existing comment: "the player's current sub-tile height byte" (its
+   local_38 = param_5, set before use). collision_height_envelope's own
+   read (player_height + this field, compared against a candidate floor
+   height) matches that reading too. The X/Y sync fix in sweep_collision_
+   flags (commit ed49786) stopped short of this one -- added here as its
+   natural third line, mirroring the existing pattern exactly. */
+#define DAT_002049cc (*(short *)(DAT_002049c8_backing + 0x04))
 #define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
 #define DAT_002049d0 (DAT_002049c8_backing[0x08])
 #define DAT_002049d1 (DAT_002049c8_backing[0x09])
@@ -43533,6 +43545,10 @@ uint param_1;
   uVar2 = collision_sample_floor_height(4,&local_14);
   *(undefined1 *)(DAT_00202c6c + 0x10) = uVar2;
   uVar3 = (uint)*(byte *)(DAT_00202c6c + 0x10);
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-corner-flags] DAT_00202c78=0x%x shape=%d uVar3(sampled)=%d off4=%d param_1(steplim)=%d\n",
+            (unsigned)DAT_00202c78, (int)(DAT_00202c78 & 0xf), (int)uVar3,
+            (int)*(short *)(DAT_00202c6c + 4), (int)param_1);
   if (uVar3 == 0x80) {
     uVar4 = *(ushort *)(DAT_00202c6c + 0xc) | 0x200;
   }
@@ -43636,6 +43652,9 @@ uint param_1;
   DAT_00202c6c[0xe] = (byte)*(undefined2 *)pbVar1;
   DAT_00202c6c[0xf] = (byte)((ushort)*(undefined2 *)pbVar1 >> 8);
   DAT_00202c6c[0x11] = DAT_00202c6c[0x10];
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-inside-bhf] after-copy d8=%d d9=%d uVar3(DAT_00202c6c[8])=%d\n",
+            (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11], (int)(uint)(ushort)DAT_00202c6c[8]);
   puVar2 = _DAT_00202c34;
   uVar3 = (ushort)DAT_00202c6c[8];
   if (uVar3 != 0) {
@@ -43733,6 +43752,10 @@ uint param_1;
       iVar7 = (iVar7 + 1) * 0x1000000 >> 0x18;
     } while (iVar7 < 4);
   }
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-bhf-end] d8=%d d9=%d macro_d8=%d macro_d9=%d\n",
+            (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11],
+            (int)DAT_002049d8, (int)DAT_002049d9);
   return;
 }
 
@@ -49717,9 +49740,26 @@ uint sweep_collision_flags()
      dropped whatever kept it current -- so DAT_002049c8/ca sat at (0,0) and
      every collision test hit tile (0,0), letting the player walk straight
      through solid walls and off the map.  g_sweep_foot_pos is the live position
-     in the same 1/8-tile units these readers expect (>>3 -> tile). */
+     in the same 1/8-tile units these readers expect (>>3 -> tile).
+
+     That original fix stopped at X/Y -- offset+4 (DAT_002049cc, see its own
+     comment at the struct declaration) is the position triplet's missing
+     third field, "the player's current sub-tile height." Left at 0 (its
+     static-init value, never written on this global instance), it made
+     collision_corner_flags's "(step_limit + current_Z) < sampled_floor_
+     height" walkable/auto-stick test compare every real floor height
+     against a Z of 0 -- always true, so the auto-stick branch (which sets
+     the "walkable" bit 4) could never be reached on any slope, forcing
+     every ramp tile through the block/fall-arm path instead of the
+     snap-resolver. Confirmed live via UW_DEBUG_RAMP's [ramp-corner-flags]
+     trace: off4=0 on every call throughout a ramp descent, while the real
+     sampled floor height tracked the slope correctly (~95, ~94, ~93...).
+     g_sweep_foot_pos[2] is footz itself (*(short*)((char*)g_sweep_foot_pos+4)),
+     already in the same raw units collision_corner_flags compares against --
+     no additional scaling needed, matching X/Y's own direct assignment. */
   DAT_002049c8 = g_sweep_foot_pos[0];
   DAT_002049ca = g_sweep_foot_pos[1];
+  DAT_002049cc = g_sweep_foot_pos[2];
   if (tilemap_lookup((short)((int)g_sweep_foot_pos[0] >> 3),(short)((int)g_sweep_foot_pos[1] >> 3)) ==
       (void *)0x0) {
     /* stepped outside the 64x64 map -- the border is always solid; report a
@@ -49727,9 +49767,18 @@ uint sweep_collision_flags()
        collision_build_height_field dereferencing a NULL tile pointer.) */
     return 0xffff8000;
   }
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-ptr-check] DAT_00202c6c=%p &DAT_002049c8=%p match=%d\n",
+            (void *)DAT_00202c6c, (void *)&DAT_002049c8, (int)(DAT_00202c6c == (byte *)&DAT_002049c8));
   collision_build_height_field(*(undefined1 *)(DAT_00204874 + 0x27));
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-post-buildheight] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   collision_height_envelope(0,0);
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-post-envelope] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   reticle_object_pick(0);
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-post-reticle] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   local_3c = DAT_002049d6 | DAT_002049d4;
   bVar8 = (local_3c & DAT_002048bc[2]) == 0;
   if ((DAT_002049dc != '\0') &&
@@ -49880,6 +49929,12 @@ LAB_0005abe4:
     local_3c = local_3c & 0xf7ff;
   }
   uVar1 = local_3c;
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-pre-fallback] iVar4=%d iVar6=%d local_3c=0x%x DAT_002049d6=0x%x DAT_002049d4=0x%x DAT_002049d8=%d DAT_002049d9=%d bVar7=%d bVar8=%d DAT_00204878=%d vvel=%d fallaccel=%d\n",
+            iVar4, iVar6, (unsigned)local_3c, (unsigned)DAT_002049d6, (unsigned)DAT_002049d4,
+            (int)DAT_002049d8, (int)DAT_002049d9,
+            (int)bVar7, (int)bVar8, (int)DAT_00204878, (int)*(short *)(DAT_00204874 + 10),
+            (int)*(short *)(DAT_00204874 + 0x10));
   // PHYSICS: no-feature fallback snap -- pull the foot down onto the flat floor
   // when there is no slope/step feature. Also suppressed once a gravity fall is
   // armed (+0x10) so the fall integrator owns the descent.
