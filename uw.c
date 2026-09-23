@@ -60357,7 +60357,34 @@ char *param_1;  /* destination directory, e.g. "\SAVE3" */
 char *param_2;  /* source directory, e.g. "\SAVE0" */
 
 {
-  static const char *file_suffixes[] = { "\\lev.ark", "\\bglobals.dat", "\\desc" };
+  /* Was a hardcoded 3-entry list missing "player.dat" entirely -- real
+     ARM disassembly of this function (0x6c670) shows it's genuinely
+     NOT a fixed-file-list copier at all: it calls what are clearly
+     FindFirstFile/FindNextFile/CopyFile-equivalents (0x8203c/0x82150/
+     0x81ff4), looping over and copying EVERY file in the source
+     directory (skipping only subdirectories, via a FILE_ATTRIBUTE_
+     DIRECTORY==0x10 check) -- a generic "copy this whole save folder"
+     operation, not a curated list an earlier session guessed at. A full
+     FindFirstFile-style reimplementation felt like more risk than this
+     specific bug warranted (the one real file it would additionally
+     pick up here, "_arc.tmp", is a zero-byte scratch file from the
+     archive-write path, harmless either way) -- confirmed the complete
+     real file set for a save directory empirically instead (`ls
+     data/SAVE0`) and added the one missing real file directly. Without
+     player.dat here, Save/Load's own player.dat write
+     (write_player_save_record) always goes straight to the fixed
+     \SAVE0\player.dat path and NOTHING ever copies a per-slot player.dat
+     to/from \SAVE<n> -- so every numbered slot shares the exact same,
+     single, always-most-recently-written player.dat regardless of which
+     slot you actually saved/loaded. Confirmed live and reported by QA:
+     the loaded dungeon state was correctly per-slot, but the player
+     character (inventory included) always reflected whichever save had
+     been made most recently, letting an item picked up after one save
+     be duplicated by loading an earlier save that still had it lying on
+     the ground -- the old \SAVE0\player.dat (with the item now in
+     inventory) was never actually replaced by loading, so it persisted
+     alongside the reloaded, not-yet-picked-up copy on the ground. */
+  static const char *file_suffixes[] = { "\\lev.ark", "\\bglobals.dat", "\\player.dat", "\\desc" };
   char src[300];
   char dst[300];
   size_t i;
@@ -60368,8 +60395,9 @@ char *param_2;  /* source directory, e.g. "\SAVE0" */
     snprintf(src, sizeof(src), "%s%s", param_2, file_suffixes[i]);
     snprintf(dst, sizeof(dst), "%s%s", param_1, file_suffixes[i]);
     /* desc is optional (a brand new character who has never saved/loaded
-       before has no \SAVE0\desc yet) -- lev.ark/bglobals.dat are not. */
-    if (!uw_file_copy(src, dst) && i != 2) {
+       before has no \SAVE0\desc yet) -- lev.ark/bglobals.dat/player.dat
+       are not. */
+    if (!uw_file_copy(src, dst) && i != 3) {
       ok = 0;
     }
   }
