@@ -30598,10 +30598,13 @@ ushort *pick_object_under_cursor()
 
     DAT_002020a8 = DAT_002020b0 + 2;
     if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d\n",
+      fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d off10=0x%x off13=0x%x off14=0x%x off15=0x%x off4000=%d\n",
               (void *)puVar3, (unsigned)(*puVar3 & 0x1ff),
               (int)((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20),
-              (int)object_ptr_in_arena((char *)puVar3));
+              (int)object_ptr_in_arena((char *)puVar3),
+              (unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),
+              (unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),
+              (int)((*puVar3 & 0x4000) != 0));
     if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
        (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;
@@ -40082,7 +40085,53 @@ int param_2;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
       set_ambient_bias_without_light(0);
     }
-    settle_dropped_object(param_1,iVar7 >> 3,iVar8 >> 3,1);
+    {
+      ushort *pPostSettle = settle_dropped_object(param_1,iVar7 >> 3,iVar8 >> 3,1);
+      /* HACK, not disassembly-derived at this call site (though the
+         function it calls is real and unmodified): settle_dropped_
+         object's own reallocate_object_to_arena path (disassembly-
+         confirmed faithful) places a dropped/thrown object into the
+         MOBILE object arena via alloc_object_slot(1) -- see
+         https://wiki.ultimacodex.com/wiki/Ultima_Underworld_internal_formats,
+         which documents separate mobile/immobile object lists. A real
+         mobile object is expected to later transition into the
+         IMMOBILE list (alloc_object_slot(0)) once it stops moving --
+         FUN_0005596c does exactly that (decay/destroy roll, then
+         alloc_object_slot(0) + field copy + relink), but its only
+         known callers (FUN_00034fa4, itself only reached via
+         FUN_0003513c) fire solely on a dungeon-level transition, not
+         during ordinary same-level play -- there is no per-tick,
+         delta-time-driven object physics loop anywhere in this
+         codebase that would otherwise call it. Since this port
+         resolves a toss instantly (no real per-tick flight
+         simulation), call FUN_0005596c here -- immediately after the
+         object becomes mobile -- to synchronously complete the
+         mobile->immobile transition a real flight would eventually
+         trigger on its own. Confirmed live: without this, a thrown/
+         dropped object renders fine but is permanently stuck in the
+         mobile arena, which pick_object_under_cursor's Get-mode
+         shortcut (interact_default's only path to attach_picked_up_
+         object_to_cursor) requires NOT being in -- "You cannot pick
+         that up" forever. With this call, the object correctly shows
+         up as immobile and Get-mode pickup succeeds normally
+         (bug-throw-item.txt). On by default; set
+         UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
+         forever, un-pickable) behavior. */
+      if (pPostSettle != NULL && !getenv("UW_DISABLE_SETTLE_IMMOBILE")) {
+        ushort *pImmobile;
+        undefined2 uVarSavedTileX = DAT_0010144c;
+        undefined2 uVarSavedTileY = DAT_00101454;
+        DAT_0010144c = (ushort)(iVar7 >> 3);
+        DAT_00101454 = (ushort)(iVar8 >> 3);
+        pImmobile = FUN_0005596c(pPostSettle);
+        DAT_0010144c = uVarSavedTileX;
+        DAT_00101454 = uVarSavedTileY;
+        if (getenv("UW_DEBUG_THROW"))
+          fprintf(stderr, "[settle-immobile] FUN_0005596c(%p) -> %p in_arena=%d\n",
+                  (void *)pPostSettle, (void *)pImmobile,
+                  pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
+      }
+    }
   }
   return 1;
 }
@@ -40267,6 +40316,35 @@ LAB_0004b06c:
           (unsigned)(*puVar6 & 0x1ff), puVar6[0xb] >> 10, (puVar6[0xb] & 0x3f0) >> 4);
     object_list_insert_head(pbTile + 2,puVar6);
     FUN_00072fc8(10,puVar6,0);
+    /* HACK, not disassembly-derived at this call site -- same fix as
+       drop_held_object_near_player's trajectory branch, see that
+       comment for the full explanation. This function (like that one)
+       places its result via alloc_object_slot(1), the MOBILE object
+       arena; complete the mobile->immobile settle transition
+       synchronously here too, since nothing else will. On by default;
+       set UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
+       forever, un-pickable) behavior. FUN_0005596c unconditionally
+       frees its input object (via its own discard_misplaced_object(
+       ...,1) call) regardless of whether the immobile copy succeeds,
+       so puVar6 must always be reassigned to its return value here --
+       including NULL, on the (class-gated, rare) chance it rolled the
+       object's own decay/destroy check -- never left pointing at the
+       now-freed original. */
+    if (!getenv("UW_DISABLE_SETTLE_IMMOBILE")) {
+      ushort *pImmobile;
+      undefined2 uVarSavedTileX = DAT_0010144c;
+      undefined2 uVarSavedTileY = DAT_00101454;
+      DAT_0010144c = (ushort)(puVar6[0xb] >> 10);
+      DAT_00101454 = (ushort)((puVar6[0xb] & 0x3f0) >> 4);
+      pImmobile = FUN_0005596c(puVar6);
+      DAT_0010144c = uVarSavedTileX;
+      DAT_00101454 = uVarSavedTileY;
+      if (getenv("UW_DEBUG_THROW"))
+        fprintf(stderr, "[settle-immobile] FUN_0005596c(%p) -> %p in_arena=%d\n",
+                (void *)puVar6, (void *)pImmobile,
+                pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
+      puVar6 = pImmobile;
+    }
   }
   return puVar6;
 }
@@ -40380,9 +40458,11 @@ ushort * param_2;
   collision_height_envelope(0,1);
   collision_build_height_field(0);
   if (getenv("UW_DEBUG_THROW"))
-    fprintf(stderr, "[throw-refine] post-collision local_2c=%d local_2a=%d DAT_00202c6c[0]=%d DAT_00202c6c[1]=%d gate=0x%x\n",
+    fprintf(stderr, "[throw-refine] post-collision local_2c=%d local_2a=%d DAT_00202c6c[0]=%d DAT_00202c6c[1]=%d gate=0x%x ref_height(off4)=%d sampled_floor(off0x10)=%d steplim(off8)=%d\n",
             (int)local_2c, (int)local_2a, (int)DAT_00202c6c[0], (int)DAT_00202c6c[1],
-            (unsigned)((local_2a | local_2c) & 0x300));
+            (unsigned)((local_2a | local_2c) & 0x300),
+            (int)*(short *)((char *)DAT_00202c6c + 4), (int)(byte)DAT_00202c6c[0x10],
+            (int)(byte)DAT_00202c6c[8]);
   if (((local_2a | local_2c) & 0x300) == 0) {
     if ((byte)DAT_00202c6c[10] != 0) {
       FUN_00051dd0();
