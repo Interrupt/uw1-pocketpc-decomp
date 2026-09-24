@@ -67032,11 +67032,31 @@ char param_2;
       if (uVar6 < 2) {
         uVar6 = 2;
       }
+      /* Was `Ordinal_2005(uVar6,uVar4); uVar10 = (extraout_r1_01 & 0xffff) + ...`
+         -- the same fabricated-remainder bug fixed throughout this
+         session (this port's Ordinal_2005 never populates extraout_r1),
+         but this one was skipped by the earlier file-wide mechanical
+         sweep because uVar6 (the divisor) is a variable, not a compile-
+         time literal. Unlike every other instance of this bug found so
+         far, THIS one is a genuine, deterministic infinite loop rather
+         than a wrong-value/misbehavior bug: extraout_r1_01 never
+         changes, so uVar10/iVar8 are identical on every iteration of
+         both do-while loops below regardless of the fresh
+         Ordinal_1053() reroll each time round -- if that one fixed
+         (wrong) candidate ever fails either loop's retry condition,
+         nothing about the computation can ever change to let it pass,
+         and the loop spins at 100% CPU forever. This is reached from
+         FUN_00073b74's spell-effect dispatch (case 8, "summon
+         monster"), for BOTH player- and NPC-cast spells (see the
+         sibling `param_1 == g_player_object` check just above) --
+         likely the real cause of the reported "game hangs in a 100%
+         busy loop" QA report, since it only triggers when something
+         actually casts this specific spell, not on every tick.
+         Computed the remainder directly instead. */
       do {
         do {
           uVar4 = Ordinal_1053();
-          Ordinal_2005(uVar6,uVar4);
-          uVar10 = (extraout_r1_01 & 0xffff) + uVar6 + 0x40;
+          uVar10 = ((uint)(uintptr_t)uVar4 % uVar6 & 0xffff) + uVar6 + 0x40;
           iVar8 = (uVar10 & 0xfe3f) * 0x30;
         } while ((&g_monster_max_stats_table)[iVar8] == '\0');
       } while ((((((&DAT_001007da)[iVar8] & 2) != 0) || ((uVar10 & 0xffff) == 0x7b)) ||
