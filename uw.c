@@ -47088,7 +47088,6 @@ int param_4;
      doesn't touch any of them. */
   char *pDropTile;
   undefined1 local_4c [24];
-  bool bVar14; /* HACK-only local, see [f98-hack2]'s own comment below */
 
   DAT_002046d4 = 0;
   DAT_002046ec = 0;
@@ -47118,40 +47117,6 @@ int param_4;
     iVar12 = param_3 * 8 + ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2);
     DAT_00202c6c[2] = (char)iVar12;
     DAT_00202c6c[3] = (char)((uint)iVar12 >> 8);
-    /* HACK, not disassembly-derived: an object that has never been placed
-       in the world (e.g. a chargen-default inventory item being thrown
-       for the very first time) still has its raw height sub-field
-       (param_1[1]&0x7f, just copied into DAT_00202c6c[4] above) at its
-       inventory-default of 0. collision_corner_flags (called inside
-       collision_build_height_field below) compares this "reference
-       height" against the tile's real sampled floor height -- written
-       to DAT_00202c6c[0x10] as a side effect of that same call -- to
-       decide whether the object can reach this floor; with reference=0
-       that's "no" for virtually any real floor, latching the 0x100
-       "can't step up here" bit and routing the object into
-       discard_misplaced_object's "misplaced object" path, which destroys it with
-       ~100% odds (see that function's own comment). Confirmed via
-       disassembly that the real binary's drop_held_object_near_player
-       (0x4a69c) also never sets this field before calling here, so the
-       original game must rely on it already being meaningful -- true
-       for picking up and re-dropping a floor item, never true for a
-       fresh inventory-only item. Do a throwaway probe call to learn the
-       tile's real floor height and reseed both the working block and
-       the object's own field from it before the real call below
-       decides anything, so a first-time-placed object reads as
-       "already at floor level" instead of "at the bottom of the
-       world". Confirmed live: without this, throwing/dropping any
-       never-placed inventory item destroyed it instead of landing it
-       (bug-throw-item.txt). */
-    if (DAT_00202c6c[4] == 0 && DAT_00202c6c[5] == 0 && !bVar1) {
-      collision_build_height_field(DAT_00202c6c[8]);
-      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
-        fprintf(stderr, "[f98-hack] never-placed object (height ref was 0), reseeding from probe floor sample=%d\n",
-                (int)(byte)DAT_00202c6c[0x10]);
-      DAT_00202c6c[4] = DAT_00202c6c[0x10];
-      DAT_00202c6c[5] = 0;
-      *(byte *)(param_1 + 1) = (*(byte *)(param_1 + 1) & 0x80) | ((byte)DAT_00202c6c[0x10] & 0x7f);
-    }
     collision_build_height_field(DAT_00202c6c[8]);
     if (((int)((uint)(byte)DAT_00202c6c[8] + (uint)(byte)DAT_00202c6c[0x10]) <
          (int)*(short *)(DAT_00202c6c + 4)) || (iVar12 = 1, bVar1)) {
@@ -47216,45 +47181,17 @@ LAB_000564d8:
       cVar4 = FUN_000382cc(param_1,1,8);
       goto LAB_000564d0;
     }
-    /* HACK, not disassembly-derived: object_ptr_in_arena(param_1)==0 means
-       param_1 is NOT one of the alloc_object_slot(1)-style low-region
-       object records that emit_tile_objects's very first gate requires
-       to render at all (its own `iVar17 = object_ptr_in_arena(param_1);
-       if ((iVar17 != 0) && ...)` skips ALL rendering setup otherwise,
-       unconditionally, every frame, forever). A chargen-default
-       inventory item that's never been placed in the world lives
-       outside that region (its address is wherever the level's static
-       object table put it), so even once the false "no room" destroy
-       (see the height-reseed hack above) and the ordinary "flat ground,
-       nothing to do" early-returns below are avoided, simply leaving it
-       linked into the tile's object list -- which is all the two
-       bail-outs just below this comment do -- produces an object that's
-       genuinely in the world's linked list but can never actually be
-       drawn. reallocate_object_to_arena (the `iVar12==0` branch right below) is the
-       real code that fixes this class of problem: it allocates a FRESH
-       low-region copy via alloc_object_slot(1) -- the same allocator
-       spawn_object_near_player uses -- and unlinks/frees the original,
-       swapping it in. Force that path whenever the object isn't
-       already arena-eligible, instead of returning early and leaving a
-       permanently-invisible object in the tile list. Confirmed live:
-       without this, the object survived (no longer destroyed) but
-       never rendered in the 3D view or responded to a click anywhere
-       in a systematic floor scan (bug-throw-item.txt). */
-    bVar14 = object_ptr_in_arena((char *)param_1) == 0;
-    if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80 && bVar14)
-      fprintf(stderr, "[f98-hack2] param_1=%p not in renderable arena, forcing reallocate_object_to_arena replace\n",
-              (void *)param_1);
-    if ((uVar2 & 8) != 0 && !bVar14) {
+    if ((uVar2 & 8) != 0) {
       if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
         fprintf(stderr, "[f98] BAIL: (uVar2&8)!=0, returning param_1 unchanged\n");
       return param_1;
     }
-    if (DAT_002046ec != 0 && !bVar14) {
+    if (DAT_002046ec != 0) {
       if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
         fprintf(stderr, "[f98] BAIL: DAT_002046ec!=0, returning param_1 unchanged\n");
       return param_1;
     }
-    if (iVar12 == 0 || bVar14) {
+    if (iVar12 == 0) {
       if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
         fprintf(stderr, "[f98] -> reallocate_object_to_arena replace path, coords=(%d,%d)\n", (int)param_2, (int)param_3);
       DAT_0010144c = param_2;
