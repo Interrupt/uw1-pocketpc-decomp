@@ -23449,7 +23449,12 @@ uint param_1;
 uint param_2;
 
 {
-  int iVar1;
+  /* Was `int`, truncating the real 64-bit pointer FUN_000535fc(1)
+     returns -- same class of bug fixed repeatedly elsewhere this
+     session. Confirmed live crashing on the very first dereference (the
+     first time this newly-reachable NPC AI path called it). Reused for
+     small-int arithmetic afterward; intptr_t is safe for that too. */
+  intptr_t iVar1;
   uint uVar2;
   uint extraout_r1;
   uint extraout_r1_00;
@@ -23471,27 +23476,27 @@ uint param_2;
   if ((int)(uVar4 * uVar4 + uVar2 * uVar2 & 0xffff) < (int)((param_2 & 0xffff) * (param_2 & 0xffff))
      ) {
     uVar2 = FUN_0002e3b4((int)(uVar3 * 0x1000000) >> 0x18,(int)(uVar5 * 0x1000000) >> 0x18);
-    Ordinal_2005(8,(uVar2 & 0xff) + 4);
-    iVar1 = (extraout_r1 & 7) * 0x20;
+    /* All 5 Ordinal_2005 calls below were the same fabricated-remainder
+       bug fixed elsewhere this session (this port's Ordinal_2005 never
+       populates extraout_r1/extraout_r1_NN) -- computed each remainder
+       directly instead. Divisors are constants (8, 0x100), so `% 8`/
+       `% 0x100` is exact (the latter equals `& 0xff`, matching the
+       explicit mask this code already applies to the overall result). */
+    iVar1 = (((uVar2 & 0xff) + 4) % 8) * 0x20;
     uVar4 = param_1 & 0xff;
-    Ordinal_2005(0x100,(iVar1 - uVar4) + 0x100);
-    uVar2 = extraout_r1_00 & 0xff;
+    uVar2 = ((iVar1 - uVar4) + 0x100) & 0xff;
     if ((0x3f < uVar2) && (uVar2 < 0xc1)) {
       if (uVar2 < 0x60) {
-        Ordinal_2005(0x100,iVar1 + 0xe0);
-        param_1 = extraout_r1_01;
+        param_1 = (iVar1 + 0xe0) & 0xff;
       }
       else if (uVar2 < 0x80) {
-        Ordinal_2005(0x100,uVar4 + 0x20);
-        param_1 = extraout_r1_02;
+        param_1 = (uVar4 + 0x20) & 0xff;
       }
       else if (uVar2 < 0xa1) {
-        Ordinal_2005(0x100,uVar4 + 0xe0);
-        param_1 = extraout_r1_04;
+        param_1 = (uVar4 + 0xe0) & 0xff;
       }
       else {
-        Ordinal_2005(0x100,iVar1 + 0x20);
-        param_1 = extraout_r1_03;
+        param_1 = (iVar1 + 0x20) & 0xff;
       }
       param_1 = param_1 & 0xff;
     }
@@ -23976,7 +23981,10 @@ undefined4 npc_ai_tick()
   uint uVar9;
   uint uVar10;
   ushort *puVar11;
-  
+
+  if (getenv("UW_DEBUG_NPC_POS"))
+    fprintf(stderr, "[npc-pos] obj=%p tile=(%u,%u)\n", (void *)DAT_0010190c,
+            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
   DAT_00101738 = encode_object_slot_index(DAT_0010190c);
   DAT_00101404 = &DAT_001007d0 + ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
@@ -47235,9 +47243,19 @@ ushort * param_1;
             *(byte *)((char *)param_1 + 3) = (byte)(uVar1 >> 8);
             uVar6 = Ordinal_1053();
             uVar7 = Ordinal_1053();
-            Ordinal_2005(3,uVar6);
+            /* Was `Ordinal_2005(3,uVar6); ... extraout_r1_00` / same for
+               uVar7/extraout_r1 -- the same fabricated-remainder bug
+               fixed several times elsewhere this session (this port's
+               Ordinal_2005 never populates extraout_r1). Computed each
+               remainder directly instead; this was feeding a random
+               scatter offset into FUN_00081388 (spawn debris around the
+               object), so previously ran with a garbage/undefined delta
+               every time this rare "teleport gate" branch was taken --
+               intermittently crashing (confirmed live, ~1-in-5 runs of
+               demo_critter_orbit_cardinal.txt). */
+            extraout_r1_00 = (short)(uVar6 % 3);
             iVar10 = (int)DAT_00101454;
-            Ordinal_2005(3,uVar7);
+            extraout_r1 = (short)(uVar7 % 3);
             FUN_00081388(param_1,(int)DAT_0010144c + (int)extraout_r1_00 + -1,
                          iVar10 + extraout_r1 + -1);
             iVar8 = (iVar8 + -1) * 0x10000 >> 0x10;
