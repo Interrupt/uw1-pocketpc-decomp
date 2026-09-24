@@ -1858,7 +1858,7 @@ undefined4 DAT_00101924;
 undefined4 DAT_00101734;
 undefined DAT_002048c2;
 /* Was a bare `undefined2` -- same split-symbol class as DAT_002048f0/
-   DAT_00204950 below (see their own comment): FUN_00054a00 writes up to
+   DAT_00204950 below (see their own comment): build_object_placement_snapshot writes up to
    offset 0x28 into whichever of these three globals DAT_0010172c
    currently points at, a massive out-of-bounds write past a 2-byte
    scalar. Oversized generously like its siblings. */
@@ -1919,7 +1919,7 @@ undefined4 DAT_00101728;
    of bug as npc_ai_tick's own iVar5 fix and FUN_000535fc's header
    comment. Confirmed live via lldb: DAT_0010172c read 0xb6c724 instead
    of the real 0x100b6c724 (upper word dropped), so the very next
-   FUN_00054a00(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
+   build_object_placement_snapshot(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
    first time an NPC's per-tick AI (npc_ai_tick) got this far -- which
    never happened before this session's other fixes let that code run
    at all. Note: a separate, unrelated function (the tile_pair_los_blocked
@@ -1963,7 +1963,7 @@ byte DAT_00101458;
 byte DAT_001018fc;
 byte DAT_00101434;
 /* Was a bare 1-byte `undefined` -- same split-symbol class as
-   DAT_00204980/990/9b0's own backing-array fixes just above: FUN_00054a00
+   DAT_00204980/990/9b0's own backing-array fixes just above: build_object_placement_snapshot
    (called with this as its param_2 "object state" out-buffer, via
    DAT_0010172c) writes fields up to offset 0x28 into it, a massive
    out-of-bounds write past a 1-byte scalar. Confirmed live crashing
@@ -20329,7 +20329,7 @@ ushort param_3;
 // was FUN_0002b47c. Per-object per-tick processor for non-NPC mobile
 // objects (thrown/dropped items, debris, ...) -- tick_mobile_objects'
 // sibling dispatch to npc_ai_tick for class-0x40 (NPC) objects. Advances
-// the object's position (FUN_00054f6c) and its own tick-phase field
+// the object's position (sync_object_tile_position) and its own tick-phase field
 // directly (no Ordinal_2005 dependency, unlike npc_ai_tick's own
 // now-fixed phase-advance code).
 int mobile_object_tick()
@@ -20351,11 +20351,11 @@ int mobile_object_tick()
   if (((&DAT_00202c93)[(*DAT_0010190c & 0x1ff) * 0xd] & 8) == 0) {
     DAT_002049a0 = 0;
   }
-  FUN_00054a00(DAT_0010190c,&DAT_00204920);
-  FUN_0002bd70(&DAT_00204920,&DAT_002049a0);
+  build_object_placement_snapshot(DAT_0010190c,&DAT_00204920);
+  apply_placement_collision_sweep(&DAT_00204920,&DAT_002049a0);
   DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
   DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
-  iVar2 = FUN_00054f6c(DAT_0010190c,&DAT_00204920);
+  iVar2 = sync_object_tile_position(DAT_0010190c,&DAT_00204920);
   if (iVar2 != 0) {
     bVar1 = (byte)DAT_0010190c[5];
     *(byte *)(DAT_0010190c + 5) = (((byte)DAT_0010190c[10] & 7) + bVar1 ^ bVar1) & 0xf ^ bVar1;
@@ -20407,7 +20407,13 @@ void FUN_0002b63c()
 
 
 
-int FUN_0002b7a0(param_1)
+// was FUN_0002b7a0. Builds the collision_build_height_field scratch
+// buffer (DAT_00202c6c, a local 24-byte struct) for param_1, then
+// returns a combined height/step-limit field. Called with a dropped
+// argument from npc_ai_tick (relies on register-reuse from the
+// immediately preceding build_object_placement_snapshot call, whose
+// first argument is the same object pointer this function expects).
+int build_collision_height_field_for_object(param_1)
 ushort * param_1;
 
 {
@@ -20578,7 +20584,12 @@ ushort * param_1;
 
 
 
-undefined4 FUN_0002bd70(param_1)
+// was FUN_0002bd70. Writes a small field into the object-placement
+// snapshot buffer (param_1, one of DAT_00204920/DAT_0010172c's chosen
+// targets) then runs movement_collision_sweep. Second argument is
+// declared but genuinely unused by the real function (confirmed no
+// param_2 reference in its body).
+undefined4 apply_placement_collision_sweep(param_1)
 intptr_t param_1;
 
 {
@@ -24062,11 +24073,11 @@ undefined4 npc_ai_tick()
   }
   if ((((*(byte *)((char *)DAT_0010190c + 0x15) & 0x40) == 0) ||
       ((*(byte *)((char *)DAT_0010190c + 0x13) & 0x7f) != 0)) || ((DAT_0010190c[10] & 0xf8) != 0x80)) {
-    FUN_00054a00(DAT_0010190c,DAT_0010172c);
+    build_object_placement_snapshot(DAT_0010190c,DAT_0010172c);
     bVar3 = *(byte *)((char *)DAT_0010190c + 9);
-    /* Was `FUN_0002b7a0()` -- a dropped argument (K&R declared, relying
+    /* Was `build_collision_height_field_for_object()` -- a dropped argument (K&R declared, relying
        on whatever register-content reuse the real ARM code got for
-       free). FUN_0002b7a0's own single param is dereferenced the exact
+       free). build_collision_height_field_for_object's own single param is dereferenced the exact
        same way every other call in this function uses DAT_0010190c (the
        object currently being processed) -- e.g. `*param_1 & 0x1ff`
        mirrors `*DAT_0010190c & 0x1ff` used just a few lines below.
@@ -24074,11 +24085,11 @@ undefined4 npc_ai_tick()
        garbage/NULL and crashed on its first dereference the moment an
        NPC's per-tick AI got this far (only possible after this
        session's other npc_ai_tick fixes). */
-    DAT_00101414 = FUN_0002b7a0(DAT_0010190c);
-    FUN_0002bd70(DAT_0010172c,DAT_00101438);
+    DAT_00101414 = build_collision_height_field_for_object(DAT_0010190c);
+    apply_placement_collision_sweep(DAT_0010172c,DAT_00101438);
     DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
     DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
-    FUN_00054f6c(DAT_0010190c,DAT_0010172c);
+    sync_object_tile_position(DAT_0010190c,DAT_0010172c);
     if (*(byte *)((char *)DAT_0010190c + 9) != bVar3) {
       DAT_00101430 = 1;
     }
@@ -25032,7 +25043,7 @@ int param_1;
   pbVar4 = (byte *)tilemap_lookup();
   pbVar8 = pbVar4 + 2;
   iVar5 = discard_misplaced_object(pbVar8,param_1,0);
-  if ((iVar5 != 0) && (iVar5 = FUN_0005596c(param_1), iVar5 != 0)) {
+  if ((iVar5 != 0) && (iVar5 = settle_mobile_to_immobile(param_1), iVar5 != 0)) {
     object_list_unlink(pbVar8,iVar5);
     DAT_00202c84 = 1;
     iVar6 = find_object_placement(iVar5,(uint)(bVar1 >> 5) + (uint)bVar3 * 8,
@@ -40231,7 +40242,7 @@ int param_2;
          which documents separate mobile/immobile object lists. A real
          mobile object is expected to later transition into the
          IMMOBILE list (alloc_object_slot(0)) once it stops moving --
-         FUN_0005596c does exactly that (decay/destroy roll, then
+         settle_mobile_to_immobile does exactly that (decay/destroy roll, then
          alloc_object_slot(0) + field copy + relink), but its only
          known callers (FUN_00034fa4, itself only reached via
          FUN_0003513c) fire solely on a dungeon-level transition, not
@@ -40239,7 +40250,7 @@ int param_2;
          delta-time-driven object physics loop anywhere in this
          codebase that would otherwise call it. Since this port
          resolves a toss instantly (no real per-tick flight
-         simulation), call FUN_0005596c here -- immediately after the
+         simulation), call settle_mobile_to_immobile here -- immediately after the
          object becomes mobile -- to synchronously complete the
          mobile->immobile transition a real flight would eventually
          trigger on its own. Confirmed live: without this, a thrown/
@@ -40258,11 +40269,11 @@ int param_2;
         undefined2 uVarSavedTileY = DAT_00101454;
         DAT_0010144c = (ushort)(iVar7 >> 3);
         DAT_00101454 = (ushort)(iVar8 >> 3);
-        pImmobile = FUN_0005596c(pPostSettle);
+        pImmobile = settle_mobile_to_immobile(pPostSettle);
         DAT_0010144c = uVarSavedTileX;
         DAT_00101454 = uVarSavedTileY;
         if (getenv("UW_DEBUG_THROW"))
-          fprintf(stderr, "[settle-immobile] FUN_0005596c(%p) -> %p in_arena=%d\n",
+          fprintf(stderr, "[settle-immobile] settle_mobile_to_immobile(%p) -> %p in_arena=%d\n",
                   (void *)pPostSettle, (void *)pImmobile,
                   pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
       }
@@ -40458,7 +40469,7 @@ LAB_0004b06c:
        arena; complete the mobile->immobile settle transition
        synchronously here too, since nothing else will. On by default;
        set UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
-       forever, un-pickable) behavior. FUN_0005596c unconditionally
+       forever, un-pickable) behavior. settle_mobile_to_immobile unconditionally
        frees its input object (via its own discard_misplaced_object(
        ...,1) call) regardless of whether the immobile copy succeeds,
        so puVar6 must always be reassigned to its return value here --
@@ -40471,11 +40482,11 @@ LAB_0004b06c:
       undefined2 uVarSavedTileY = DAT_00101454;
       DAT_0010144c = (ushort)(puVar6[0xb] >> 10);
       DAT_00101454 = (ushort)((puVar6[0xb] & 0x3f0) >> 4);
-      pImmobile = FUN_0005596c(puVar6);
+      pImmobile = settle_mobile_to_immobile(puVar6);
       DAT_0010144c = uVarSavedTileX;
       DAT_00101454 = uVarSavedTileY;
       if (getenv("UW_DEBUG_THROW"))
-        fprintf(stderr, "[settle-immobile] FUN_0005596c(%p) -> %p in_arena=%d\n",
+        fprintf(stderr, "[settle-immobile] settle_mobile_to_immobile(%p) -> %p in_arena=%d\n",
                 (void *)puVar6, (void *)pImmobile,
                 pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
       puVar6 = pImmobile;
@@ -46555,7 +46566,7 @@ int param_2;
   if (param_2 != 0) {
     DAT_0010144c = (ushort)DAT_002046d8;
     DAT_00101454 = (ushort)DAT_002046dc;
-    FUN_00054a00(param_2,auStack_48);
+    build_object_placement_snapshot(param_2,auStack_48);
     iVar3 = DAT_00204874;
     if (local_30 != 0) {
       sVar2 = Ordinal_2005((int)local_30,(int)*(short *)(DAT_00204874 + 0x18) << 6);
@@ -46573,7 +46584,7 @@ int param_2;
         iVar3 = iVar3 + 0x3f;
       }
       local_3e = (undefined2)((int)(iVar3) >> 6);
-      FUN_00054f6c(param_2,auStack_48);
+      sync_object_tile_position(param_2,auStack_48);
     }
   }
   return 4;
@@ -46715,7 +46726,13 @@ LAB_000548b8:
 
 
 
-void FUN_00054a00(param_1,param_2)
+// was FUN_00054a00. Fills param_2 (a per-class scratch buffer chosen by
+// npc_ai_tick/mobile_object_tick from DAT_00204920/002048c0/002048f0/
+// 00204950) with a placement/orientation snapshot derived from param_1's
+// current fields -- offsets, class flags, and (for arena-mobile objects)
+// speed/step data used by the following collision-sweep + tile-sync
+// calls.
+void build_object_placement_snapshot(param_1,param_2)
 ushort * param_1;
 byte * param_2;
 
@@ -46849,7 +46866,14 @@ byte * param_2;
 
 
 
-undefined4 FUN_00054f6c(param_1,param_2)
+// was FUN_00054f6c. Applies the placement snapshot (param_2, built by
+// build_object_placement_snapshot) back onto the real object (param_1):
+// relinks it between tilemap tile lists when its tile changed, then
+// copies position/orientation fields and, for arena-mobile objects,
+// speed/collision-height data. May call settle_mobile_to_immobile on a
+// decayed object and, on that path, free it -- callers must always
+// propagate its return value.
+undefined4 sync_object_tile_position(param_1,param_2)
 ushort * param_1;
 ushort * param_2;
 
@@ -46859,9 +46883,9 @@ ushort * param_2;
   byte bVar3;
   short sVar4;
   /* Was `int`, truncating the real 64-bit pointers this variable holds
-     from tilemap_lookup() and FUN_0005596c() (both real pointer
+     from tilemap_lookup() and settle_mobile_to_immobile() (both real pointer
      returns) -- same class of bug fixed several times elsewhere this
-     session (npc_ai_tick's own iVar5, DAT_0010172c, FUN_0002bd70's
+     session (npc_ai_tick's own iVar5, DAT_0010172c, apply_placement_collision_sweep's
      param_1). Confirmed live via lldb: iVar5 held 0x1c820200 instead of
      the real 0x11c820200 (upper word dropped, DAT_002029cc itself was
      NOT corrupted -- an earlier working theory this session, based on
@@ -46964,7 +46988,7 @@ ushort * param_2;
     else if ((param_2[10] == 0 && param_2[8] == 0) && param_2[5] == 0) {
       *(byte *)(param_1 + 5) =
            (byte)param_1[5] & 0x8f | ((&DAT_000868c0)[(byte)param_2[0x14]] & 7) << 4;
-      iVar5 = FUN_0005596c(param_1);
+      iVar5 = settle_mobile_to_immobile(param_1);
       if (iVar5 == 0) {
         return 0;
       }
@@ -47181,7 +47205,20 @@ uint param_3;
 
 
 
-ushort *FUN_0005596c(param_1)
+// was FUN_0005596c. Completes the mobile->immobile object-arena
+// transition per the Ultima Codex internal-format docs: rolls a class-
+// derived decay/destroy chance, and on survival copies param_1's fields
+// into a freshly alloc_object_slot(0)'d immobile-arena record, relinking
+// it into the tile list in param_1's place. Unconditionally frees
+// param_1 via discard_misplaced_object regardless of outcome -- callers
+// must always propagate the return value (including NULL on decay),
+// never keep using their own stale param_1 pointer. Already used by this
+// branch's own drop_held_object_near_player/spawn_object_near_player fix
+// (an explicit synchronous call, since this port resolves a toss
+// instantly with no per-tick flight simulation); now also reached
+// organically via sync_object_tile_position as part of ordinary mobile-
+// object ticking.
+ushort *settle_mobile_to_immobile(param_1)
 ushort * param_1;
 
 {
@@ -58257,7 +58294,7 @@ short param_2;
      single shared accessor behind 70+ call sites, so guard here too
      rather than just the one caller -- confirmed live crashing via a
      wild dereference several calls downstream (object_list_insert_head)
-     the first time NPC AI (FUN_00054f6c, reached only after this
+     the first time NPC AI (sync_object_tile_position, reached only after this
      session's other npc_ai_tick/tick_mobile_objects fixes) called this with
      DAT_002029cc already corrupted. Treat a corrupted base the same as
      an out-of-range coordinate: every caller already has to tolerate
@@ -74818,7 +74855,7 @@ short param_7;
   undefined4 uVar7;
   char *iVar8;  /* was `int` -- truncated tilemap_lookup's real pointer, same
                    class as iVar5 above; crashed live in the sibling call
-                   shape at FUN_0004ad10/FUN_0005596c (see their comments) */
+                   shape at FUN_0004ad10/settle_mobile_to_immobile (see their comments) */
   byte bVar9;
 
   iVar5 = (char *)spawn_new_object(param_2 + 0x1c0,0);

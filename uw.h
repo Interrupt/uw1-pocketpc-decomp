@@ -718,13 +718,13 @@ undefined4 FUN_0002a35c();
 void FUN_0002a8e0();
 bool FUN_0002af88();
 void FUN_0002b258();
-int FUN_0002b47c();
+int mobile_object_tick(); // was FUN_0002b47c
 void FUN_0002b63c();
-int FUN_0002b7a0();
+int build_collision_height_field_for_object(); // was FUN_0002b7a0
 undefined4 FUN_0002b960();
 undefined4 FUN_0002bbec();
 undefined4 FUN_0002bc9c();
-undefined4 FUN_0002bd70();
+undefined4 apply_placement_collision_sweep(); // was FUN_0002bd70
 undefined4 tile_pair_los_blocked();
 undefined4 FUN_0002c8e0();
 undefined4 creature_find_path_to_tile();
@@ -765,7 +765,7 @@ undefined4 FUN_00032410();
 undefined4 FUN_0003276c();
 int FUN_0003298c();
 void FUN_00032aa4();
-undefined4 FUN_00032d38();
+undefined4 npc_ai_tick(); // was FUN_00032d38
 void FUN_00033880();
 undefined4 FUN_00034044();
 undefined4 FUN_00034270();
@@ -775,8 +775,8 @@ void FUN_000344a4();
 undefined4 FUN_000345b8();
 undefined4 FUN_00034634();
 undefined4 FUN_000346a0();
-undefined4 FUN_0003495c();
-void FUN_000349bc();
+undefined4 object_tick_is_due(); // was FUN_0003495c
+void tick_mobile_objects(); // was FUN_000349bc
 void FUN_00034ac4();
 void FUN_00034af0();
 undefined4 FUN_00034ba8();
@@ -1199,11 +1199,11 @@ undefined4 FUN_000542f8();
 undefined4 FUN_0005448c();
 void FUN_000545ac();
 undefined4 FUN_000546c4();
-void FUN_00054a00();
-undefined4 FUN_00054f6c();
+void build_object_placement_snapshot(); // was FUN_00054a00
+undefined4 sync_object_tile_position(); // was FUN_00054f6c
 ushort *reallocate_object_to_arena();
 void compute_object_placement_fields();
-ushort *FUN_0005596c();
+ushort *settle_mobile_to_immobile(); // was FUN_0005596c
 void FUN_00055ef8();
 ushort *settle_dropped_object();
 void FUN_000564f8();
