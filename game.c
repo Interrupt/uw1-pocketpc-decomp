@@ -409,6 +409,7 @@ undefined4 param_1;
         else {
           bVar11 = true;
           set_player_tile_position(0x20,2,1);
+          debug_print_player_position("chargen-spawn");
           FUN_0006c834(1,0);
         }
       }
