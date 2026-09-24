@@ -1914,13 +1914,13 @@ static undefined DAT_00101732_backing[8192];
 undefined DAT_00101733;
 undefined4 DAT_00101728;
 /* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
-   FUN_00032d38/FUN_00032aa4 store here (&DAT_002048c0/002048f0/00204950,
+   npc_ai_tick/FUN_00032aa4 store here (&DAT_002048c0/002048f0/00204950,
    one of a 3-way "which per-class scratch buffer" choice) -- same class
-   of bug as FUN_00032d38's own iVar5 fix and FUN_000535fc's header
+   of bug as npc_ai_tick's own iVar5 fix and FUN_000535fc's header
    comment. Confirmed live via lldb: DAT_0010172c read 0xb6c724 instead
    of the real 0x100b6c724 (upper word dropped), so the very next
    FUN_00054a00(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
-   first time an NPC's per-tick AI (FUN_00032d38) got this far -- which
+   first time an NPC's per-tick AI (npc_ai_tick) got this far -- which
    never happened before this session's other fixes let that code run
    at all. Note: a separate, unrelated function (the tile_pair_los_blocked
    ring-buffer scan a few thousand lines below) also reads raw bytes at
@@ -1968,8 +1968,8 @@ byte DAT_00101434;
    DAT_0010172c) writes fields up to offset 0x28 into it, a massive
    out-of-bounds write past a 1-byte scalar. Confirmed live crashing
    (EXC_BAD_ACCESS writing param_2[0x23]) the first time an NPC actually
-   got far enough through its per-tick AI (FUN_00032d38) to reach this
-   call -- which never happened before DAT_00086dfc/FUN_00032d38's other
+   got far enough through its per-tick AI (npc_ai_tick) to reach this
+   call -- which never happened before g_npc_tick_enabled/npc_ai_tick's other
    fixes let that code run at all. Oversized generously like its
    siblings rather than tightly to 0x29 bytes, in case another
    not-yet-exercised caller writes further into the same real struct. */
@@ -4921,7 +4921,11 @@ byte DAT_0023bf58;
 int DAT_000879ac;
 undefined4 DAT_0023bea8;
 char DAT_0023bf18;
-int DAT_00086dfc;
+// was DAT_00086dfc. movement_tick's enable gate for tick_mobile_objects
+// (the real per-tick NPC AI + mobile-object dispatcher) -- declared but
+// never assigned anywhere in this decompile, a permanently-false gate;
+// see FUN_00066e90's own comment for the fix.
+int g_npc_tick_enabled;
 char DAT_00086e84;
 int DAT_0023bf64;
 char DAT_0023bf60;
@@ -20322,7 +20326,13 @@ ushort param_3;
 
 
 
-int FUN_0002b47c()
+// was FUN_0002b47c. Per-object per-tick processor for non-NPC mobile
+// objects (thrown/dropped items, debris, ...) -- tick_mobile_objects'
+// sibling dispatch to npc_ai_tick for class-0x40 (NPC) objects. Advances
+// the object's position (FUN_00054f6c) and its own tick-phase field
+// directly (no Ordinal_2005 dependency, unlike npc_ai_tick's own
+// now-fixed phase-advance code).
+int mobile_object_tick()
 
 {
   byte bVar1;
@@ -23930,7 +23940,16 @@ ushort * param_1;
 
 
 
-undefined4 FUN_00032d38()
+// was FUN_00032d38. Per-object per-tick AI/movement processor for
+// class-0x40 (NPC/monster) objects, dispatched from tick_mobile_objects.
+// Handles HP regen, goal-tile pathing/movement (via
+// build_collision_height_field_for_object/movement_collision_sweep-style
+// helpers), and always returns 1 -- so tick_mobile_objects' own
+// object_tick_is_due catch-up-window check is what makes its caller's
+// loop terminate, not this function's return value. Was completely
+// unreachable before this session (g_npc_tick_enabled's own fix), so
+// this whole function and everything it calls had never executed.
+undefined4 npc_ai_tick()
 
 {
   undefined1 uVar1;
@@ -23944,7 +23963,7 @@ undefined4 FUN_00032d38()
      FUN_000535fc's own header comment describes, confirmed live via
      lldb: iVar5 held 0x1181181b instead of the real 0x111812e1b-range
      pointer, an exact 32-bit truncation (upper word dropped), crashing
-     FUN_00032d38's very first wild dereference. iVar5 is also reused
+     npc_ai_tick's very first wild dereference. iVar5 is also reused
      for small-int distance-squared arithmetic later in this function;
      intptr_t is safe for that too. */
   intptr_t iVar5;
@@ -23988,8 +24007,8 @@ undefined4 FUN_00032d38()
        below and pinned it there forever, so the class-0x40 (NPC)
        "too far to path, just advance its clock" branch this is in
        could never advance an off-screen monster's tick phase past
-       where FUN_0003495c's catch-up-window check first admitted it --
-       an unconditional infinite loop (FUN_00032d38 always really does
+       where object_tick_is_due's catch-up-window check first admitted it --
+       an unconditional infinite loop (npc_ai_tick always really does
        return 1, confirmed via real disassembly at 0x33874: `mov r0,#1`)
        hanging the entire game solid the moment any monster ever took
        this path. Compute the remainder directly instead. */
@@ -24046,7 +24065,7 @@ undefined4 FUN_00032d38()
        Confirmed live: called with no argument, param_1 read as
        garbage/NULL and crashed on its first dereference the moment an
        NPC's per-tick AI got this far (only possible after this
-       session's other FUN_00032d38 fixes). */
+       session's other npc_ai_tick fixes). */
     DAT_00101414 = FUN_0002b7a0(DAT_0010190c);
     FUN_0002bd70(DAT_0010172c,DAT_00101438);
     DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
@@ -24733,7 +24752,16 @@ ushort * param_3;
 
 
 
-undefined4 FUN_0003495c(param_1)
+// was FUN_0003495c. Checks whether an object's own 4-bit tick-phase
+// field (param_1, from the low nibble of its class-record's phase byte)
+// has caught up to the current dispatch target (DAT_00101928, set once
+// per tick_mobile_objects call) within a small catch-up window, vs. the
+// previous tick's target (DAT_00101948). Real ARM disassembly confirms
+// this genuinely ignores its second (dropped) argument. Returning
+// nonzero is tick_mobile_objects' entire loop-termination signal, since
+// npc_ai_tick/mobile_object_tick's own return values don't reliably
+// carry that meaning (npc_ai_tick always returns 1).
+undefined4 object_tick_is_due(param_1)
 short param_1;
 
 {
@@ -24755,13 +24783,21 @@ short param_1;
 
 
 
-void FUN_000349bc(param_1)
+// was FUN_000349bc. The real per-tick NPC AI + mobile-object dispatcher:
+// walks the mobile-object-arena "currently active slot indices" list
+// (DAT_002046c0..DAT_002046c8), and for each slot due for a sub-step
+// (object_tick_is_due) dispatches to npc_ai_tick (class 0x40, NPC) or
+// mobile_object_tick (everything else), looping while that call keeps
+// signaling more catch-up work. Only caller is movement_tick, gated on
+// g_npc_tick_enabled -- see that global's own comment for why this
+// never ran before this session.
+void tick_mobile_objects(param_1)
 char param_1;
 
 {
   int iVar1;
   byte *pbVar2;
-  
+
   DAT_0010190c = (ushort *)0x0;
   DAT_00101928 = DAT_00101948 + param_1 & 0xf;
   pbVar2 = DAT_002046c0;
@@ -24769,13 +24805,13 @@ char param_1;
     do {
       DAT_0010190c = (ushort *)((uint)*pbVar2 * 0x1b + DAT_002046b8);
       do {
-        iVar1 = FUN_0003495c((byte)DAT_0010190c[5] & 0xf,(byte)DAT_0010190c[10] & 7);
+        iVar1 = object_tick_is_due((byte)DAT_0010190c[5] & 0xf,(byte)DAT_0010190c[10] & 7);
         if (iVar1 == 0) goto LAB_00034a98;
         if ((*DAT_0010190c & 0x1c0) == 0x40) {
-          iVar1 = FUN_00032d38();
+          iVar1 = npc_ai_tick();
         }
         else {
-          iVar1 = FUN_0002b47c();
+          iVar1 = mobile_object_tick();
         }
       } while (iVar1 != 0);
       pbVar2 = pbVar2 + -1;
@@ -46817,7 +46853,7 @@ ushort * param_2;
   /* Was `int`, truncating the real 64-bit pointers this variable holds
      from tilemap_lookup() and FUN_0005596c() (both real pointer
      returns) -- same class of bug fixed several times elsewhere this
-     session (FUN_00032d38's own iVar5, DAT_0010172c, FUN_0002bd70's
+     session (npc_ai_tick's own iVar5, DAT_0010172c, FUN_0002bd70's
      param_1). Confirmed live via lldb: iVar5 held 0x1c820200 instead of
      the real 0x11c820200 (upper word dropped, DAT_002029cc itself was
      NOT corrupted -- an earlier working theory this session, based on
@@ -57748,17 +57784,17 @@ void FUN_00066e90()
   DAT_0023be8c = 0;
   DAT_00086df8 = &DAT_0023bca8;
   /* HACK, same silently-zero class as DAT_0024af60 above and DAT_00086e68 /
-     DAT_0008589c elsewhere in this file: DAT_00086dfc is read exactly once
+     DAT_0008589c elsewhere in this file: g_npc_tick_enabled is read exactly once
      in this whole file, as the enable gate for movement_tick's per-frame
-     call to FUN_000349bc (the real NPC/mobile-object AI+movement
+     call to tick_mobile_objects (the real NPC/mobile-object AI+movement
      dispatcher -- walks the mobile object arena, drives NPC pathing via
-     FUN_00034c10 and other mobile objects via FUN_0002b47c) -- but it is
+     FUN_00034c10 and other mobile objects via mobile_object_tick) -- but it is
      never written anywhere in this decompile, so the gate is permanently
      false and NPCs/mobile objects never tick. This is a link-time-
      initialised flag whose real setup Ghidra dropped, exactly like
      DAT_0024af60's movement-key command-mode flag above. Initialize it
      here, alongside this function's other one-time gameplay-enable flags. */
-  DAT_00086dfc = 1;
+  g_npc_tick_enabled = 1;
   FUN_00066cb4();
   iVar1 = (*g_player_object & 0x3f) * 0x30;
   DAT_0023be74 = &DAT_001007d0 + iVar1;
@@ -58204,7 +58240,7 @@ short param_2;
      rather than just the one caller -- confirmed live crashing via a
      wild dereference several calls downstream (object_list_insert_head)
      the first time NPC AI (FUN_00054f6c, reached only after this
-     session's other FUN_00032d38/FUN_000349bc fixes) called this with
+     session's other npc_ai_tick/tick_mobile_objects fixes) called this with
      DAT_002029cc already corrupted. Treat a corrupted base the same as
      an out-of-range coordinate: every caller already has to tolerate
      this function's documented NULL return. */
@@ -58759,11 +58795,11 @@ int param_3;
     static unsigned callnum = 0;
     callnum++;
     if (callnum % 60 == 1)
-      fprintf(stderr, "[npc-gate] call=%u DAT_00086dfc=%d DAT_002020d0=%d param_2=0x%x (short)=%d\n",
-              callnum, DAT_00086dfc, DAT_002020d0, (unsigned)param_2, (short)param_2);
+      fprintf(stderr, "[npc-gate] call=%u g_npc_tick_enabled=%d DAT_002020d0=%d param_2=0x%x (short)=%d\n",
+              callnum, g_npc_tick_enabled, DAT_002020d0, (unsigned)param_2, (short)param_2);
   }
-  if (((DAT_00086dfc != 0) && (DAT_002020d0 == 0)) && ((short)param_2 != 0)) {
-    FUN_000349bc(param_2);
+  if (((g_npc_tick_enabled != 0) && (DAT_002020d0 == 0)) && ((short)param_2 != 0)) {
+    tick_mobile_objects(param_2);
   }
   if (*(char *)(DAT_00086df8 + 0xb8) != '\0') {
     FUN_0006907c();
