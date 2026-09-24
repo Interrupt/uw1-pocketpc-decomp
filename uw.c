@@ -20736,12 +20736,31 @@ byte * param_11;
     }
     uVar11 = 0;
     uVar2 = puVar7[1];
+    /* `resolve_object_link(puVar7 + 1)` was called unchanged on every
+       iteration -- real disassembly (0x2bdac @ 0x2c068-0x2c0f8) shows
+       the argument register is only ever set to puVar7+1 ONCE, before
+       the loop; each iteration instead advances it by 4 bytes right
+       after the call (`add r0,r0,#0x4`, i.e. `puVar9 + 2`) and the
+       loop-back branch lands AFTER that advance, so the real code
+       walks the object chain one link at a time. The decompiler lost
+       track of that carried register and re-derived a fixed expression
+       from puVar7 instead, so puVar9 -- and therefore uVar11 and uVar2
+       -- was always recomputed from the SAME first object in the
+       chain. Confirmed live via a recorded repro (bug-npc-freeze.txt):
+       whenever that first object doesn't set uVar11 and its own "next"
+       flag stays set, nothing can ever change, so the loop spins at
+       100% CPU forever -- reproduced exactly (same PC, same
+       resolve_object_link argument, sampled repeatedly under lldb on a
+       genuinely hung process). Track the advancing link pointer in its
+       own variable instead. */
+    puVar10 = puVar7 + 1;
     while (((uVar2 & 0xffc0) != 0 && (uVar11 == 0))) {
-      puVar9 = (ushort *)resolve_object_link(puVar7 + 1);
+      puVar9 = (ushort *)resolve_object_link(puVar10);
       iVar13 = (*puVar9 & 0x1ff) * 0xd;
       if (((&DAT_00202c93)[iVar13] & 2) != 0) {
         uVar11 = (int)(((byte)puVar9[1] & 0x7f) + (uint)(byte)(&DAT_00202c90)[iVar13]) >> 3;
       }
+      puVar10 = puVar9 + 2;
       uVar2 = puVar9[2];
     }
     uVar15 = (uint)(byte)((byte)*puVar7 >> 4);
@@ -20813,8 +20832,16 @@ LAB_0002c220:
   local_50 = 0;
   uVar14 = puVar7[1];
   uVar11 = uVar15;
+  /* Same bug as the earlier resolve_object_link loop above in this
+     function (see that one's comment for the full disassembly-
+     confirmed explanation): `resolve_object_link(puVar7 + 1)` was
+     called unchanged on every iteration instead of advancing through
+     the object chain, making this loop genuinely unable to terminate
+     whenever the first linked object doesn't set local_50 and its own
+     "next" flag stays set. Track the advancing link pointer instead. */
+  ushort *puVar_link2 = puVar7 + 1;
   while (((uVar14 & 0xffc0) != 0 && (local_50 == 0))) {
-    puVar10 = (ushort *)resolve_object_link(puVar7 + 1);
+    puVar10 = (ushort *)resolve_object_link(puVar_link2);
     uVar19 = (uint)*puVar10;
     iVar13 = (uVar19 & 0x1ff) * 0xd;
     if (((uVar19 & 0x1c0) != 0x140) || (((*puVar10 & 0x30) != 0 || (7 < (uVar19 & 0xf))))) {
@@ -20950,6 +20977,7 @@ LAB_0002c4e8:
       }
     }
 switchD_0002c458_default:
+    puVar_link2 = puVar10 + 2;
     uVar14 = puVar10[2];
   }
   uVar11 = (uint)param_7;
