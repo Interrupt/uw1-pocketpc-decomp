@@ -101,6 +101,123 @@ void *uw_alloc_grtile();
    comment for what this callback family does). */
 void *LAB_0006a0ac();
 
+/* ---------------------------------------------------------------------
+ * Object / tile record structs.
+ *
+ * This WinCE port keeps the exact same bit-packed layout LEV.ARK uses on
+ * disk for its object table and tilemap, in memory, at runtime -- not
+ * just at load time. Layout is documented at
+ * https://wiki.ultimacodex.com/wiki/File_uw-formats.txt section 4.2/4.3;
+ * cross-confirmed field-by-field against this file's own independently-
+ * recovered accesses (not just trusted from the wiki):
+ *   - uw_object_hdr_t.item_id: `*g_player_object & 0x1ff`, uw.c ~394
+ *   - uw_object_hdr_t.heading: emit_object_billboard's
+ *     `*(ushort*)(g_player_object+2) >> 7 & 7` dispatch, uw.c ~54972
+ *   - uw_object_hdr_t.quality/.next: object_list_insert_head/_unlink's
+ *     `(param_2+4) & 0x3f` (quality preserved) / `sVar<<6` (next
+ *     shifted into the high 10 bits), uw.c ~45790/45871
+ *   - uw_object_hdr_t.owner/.link: unlink_and_free_object's own "+6,
+ *     this file's standard container-contents offset" comment, uw.c
+ *     ~46015 (word3's high 10 bits reused as a "contains" chain head)
+ *   - uw_mobile_object_t.npc_yhome/npc_xhome (offset 0x16) and
+ *     .npc_heading (offset 0x18): g_player_object[0xb]/[0xc]
+ *     ushort-index reads, uw.c ~390-393
+ * Fields inside the 19-byte mobile-extra block the wiki itself marks
+ * "(unknown)", plus the entirely-undocumented 0x11-0x15 gap, are left
+ * as raw reserved bytes rather than guessed at -- don't trust names
+ * beyond the ones cited above without checking real disassembly first.
+ *
+ * Two record sizes share the same 8-byte common header (resolve_object_link,
+ * uw.c ~46036, is the single accessor behind 70+ call sites):
+ *   - slots 0x000-0x0ff: uw_mobile_object_t (0x1b/27 bytes, adds NPC
+ *     state) -- DAT_002046b8 array
+ *   - slots 0x100-0x3ff: uw_object_hdr_t alone (8 bytes) -- DAT_002046c4
+ *     array
+ * These typedefs exist so call sites can be migrated incrementally from
+ * raw `*(ushort*)(ptr+N)` offset math to named field access; the bulk of
+ * this file's ~900 existing raw accesses are NOT yet converted -- this
+ * is a starting point, not a finished migration.
+ * --------------------------------------------------------------------- */
+typedef struct __attribute__((packed)) {
+    /* word 0x00 */
+    unsigned short item_id    : 9;  /* object id / type, 0-0x1ff */
+    unsigned short flags_res  : 3;  /* bits 9-11: unused/unknown per wiki */
+    unsigned short enchanted  : 1;  /* bit 12 */
+    unsigned short doordir    : 1;  /* bit 13: door swing direction (doors only) */
+    unsigned short invisible  : 1;  /* bit 14 */
+    unsigned short is_quant   : 1;  /* bit 15: word3's low field is a quantity, not owner/special */
+
+    /* word 0x02 */
+    unsigned short zpos       : 7;  /* bits 0-6: object Z position, 0-127 */
+    unsigned short heading    : 3;  /* bits 7-9: heading, *45 degrees */
+    unsigned short ypos       : 3;  /* bits 10-12: sub-tile Y, 0-7 */
+    unsigned short xpos       : 3;  /* bits 13-15: sub-tile X, 0-7 */
+
+    /* word 0x04 */
+    unsigned short quality    : 6;  /* bits 0-5 */
+    unsigned short next       : 10; /* bits 6-15: next object slot index in this tile's/container's chain */
+
+    /* word 0x06 */
+    unsigned short owner      : 6;  /* bits 0-5: owner / special property (context-dependent) */
+    unsigned short link       : 10; /* bits 6-15: quantity / special link / "contains" chain head, see is_quant */
+} uw_object_hdr_t;
+
+typedef struct __attribute__((packed)) {
+    uw_object_hdr_t hdr;            /* 8 bytes, offset 0x00 */
+
+    unsigned char  npc_hp;          /* offset 0x08 */
+    unsigned char  _unk09;          /* offset 0x09: not in the wiki's own table */
+    unsigned char  _unk0a;          /* offset 0x0a: wiki documents only bit 7 here, as "(unknown)" */
+
+    unsigned short npc_goal    : 4; /* offset 0x0b, bits 0-3 */
+    unsigned short npc_gtarg   : 8; /* bits 4-11 */
+    unsigned short _pad0b      : 4; /* bits 12-15: not in the wiki's own table */
+
+    unsigned short npc_level    : 4; /* offset 0x0d, bits 0-3 */
+    unsigned short _pad0d       : 9; /* bits 4-12: not in the wiki's own table */
+    unsigned short npc_talkedto : 1; /* bit 13 */
+    unsigned short npc_attitude : 2; /* bits 14-15 */
+
+    unsigned short _pad0f_lo   : 6; /* offset 0x0f, bits 0-5: not in the wiki's own table */
+    unsigned short npc_height  : 7; /* bits 6-12 */
+    unsigned short _pad0f_hi   : 3; /* bits 13-15: not in the wiki's own table */
+
+    unsigned char  _unk11_15[5];    /* offsets 0x11-0x15: entirely undocumented by the wiki */
+
+    unsigned short _pad16_lo  : 4;  /* offset 0x16, bits 0-3: not in the wiki's own table */
+    unsigned short npc_yhome  : 6;  /* bits 4-9 */
+    unsigned short npc_xhome  : 6;  /* bits 10-15 */
+
+    unsigned char  npc_heading : 5; /* offset 0x18, bits 0-4 (rest of byte unused per wiki) */
+    unsigned char  npc_hunger  : 7; /* offset 0x19, bits 0-6 */
+    unsigned char  npc_whoami;      /* offset 0x1a, full byte */
+} uw_mobile_object_t;  /* 0x1b (27) bytes total */
+
+/* 4-byte level tilemap record (wiki section 4.2). DAT_002029cc is the
+ * level's flat 64x64 array of these (tilemap_lookup, uw.c ~58433, is
+ * the single shared accessor behind 70+ call sites: index = tileX +
+ * tileY*0x40). Field-confirmed against this file's own code:
+ *   - wall_tex: DAT_0023b4ec[2] & 0x3f (the tile-cache byte-pointer
+ *     copy of a live tile record), matching the real wall-rendering
+ *     code's own read a few hundred lines above emit_tile_objects
+ *   - obj_head: the field object_list_insert_head/_unlink operate on
+ *     via `tile_ptr + 2` at 70+ call sites throughout this file
+ */
+typedef struct __attribute__((packed)) {
+    /* word 0x00 */
+    unsigned short tile_type    : 4;  /* bits 0-3: 0-9 */
+    unsigned short floor_height : 4;  /* bits 4-7 */
+    unsigned short unk_light    : 1;  /* bit 8: possible special-light flag per wiki */
+    unsigned short unused9      : 1;  /* bit 9: never used in uw1 per wiki */
+    unsigned short floor_tex    : 4;  /* bits 10-13 */
+    unsigned short no_magic     : 1;  /* bit 14: magic disallowed flag */
+    unsigned short door_bit     : 1;  /* bit 15 */
+
+    /* word 0x02 */
+    unsigned short wall_tex     : 6;  /* bits 0-5 */
+    unsigned short obj_head     : 10; /* bits 6-15: first object slot index on this tile */
+} uw_tile_t;  /* 4 bytes total */
+
 typedef union IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion, *PIMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion;
 
 typedef struct IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryStruct IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryStruct, *PIMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryStruct;

@@ -2213,6 +2213,19 @@ char s_The_book_explodes_in_your_face__00085644[] = "The_book_explodes_in_your_f
 undefined DAT_002026d1;
 undefined DAT_00202807;
 char *DAT_002029cc;
+/* Typed views onto the object/tile arenas above (see uw.h's
+   uw_object_hdr_t/uw_mobile_object_t/uw_tile_t for the recovered field
+   layout, cross-referenced against this file's own already-recovered
+   accesses). Existing raw-offset call sites throughout this file are
+   NOT converted to these -- this is additive, for incrementally
+   migrating call sites one at a time without breaking the ~900
+   untouched ones. `g_mobile_objects[i]`/`g_static_objects[i]` are
+   struct-indexed (unlike DAT_002046b8/DAT_002046c4's own raw byte-
+   offset*0x1b/*8 arithmetic); `g_level_tiles[y*0x40+x]` matches
+   tilemap_lookup's own index math directly. */
+#define g_mobile_objects ((uw_mobile_object_t *)DAT_002046b8)
+#define g_static_objects ((uw_object_hdr_t *)DAT_002046c4)
+#define g_level_tiles ((uw_tile_t *)DAT_002029cc)
 undefined1 *DAT_00201b40;
 int DAT_00201b54;
 int DAT_00201b4c;
@@ -4599,6 +4612,9 @@ static const undefined1 DAT_00086c00_arr[8] = { 0x00,0x01,0x02,0x00,0x00,0x00,0x
 undefined2 DAT_0023bc8c;
 undefined2 DAT_0023b8c0;
 byte *DAT_0023b4ec;
+/* Typed view of the tile record currently being processed (see uw.h's
+   uw_tile_t and uw.c's g_level_tiles for the recovered layout). */
+#define g_current_tile ((uw_tile_t *)DAT_0023b4ec)
 /* Was a lone `undefined` scalar; walk_visible_tiles/process_visible_tile_cell index it as
    `(&DAT_00086bf0)[tile_type_nibble]`. Real bytes recovered from
    UU.exe's .data at 0x86bf0 (confirmed 3 ways: reference search,
@@ -23642,7 +23658,7 @@ void FUN_00031a94()
       *(char *)(DAT_0010190c + 3) = (char)(uVar5 >> 8);
       *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
       if (uVar6 < 0x90) {
-        uw_ord2005_rem_81 = ((int)(((*(ushort *)((char *)g_player_object + 2) >> 7 & 7) - (uVar7 & 0xff)) + 8)) % (8);
+        uw_ord2005_rem_81 = ((int)((((uw_mobile_object_t *)g_player_object)->hdr.heading - (uVar7 & 0xff)) + 8)) % (8);
         if (('\x02' < uw_ord2005_rem_81) && (uw_ord2005_rem_81 < '\x06')) {
           DAT_0023bf0c = 0;
           FUN_000577f0();
@@ -53781,7 +53797,7 @@ LAB_0005e7e0:
          floor index from byte 1 bits 2-5.) */
       (*DAT_0023b4d4)(auStack_50,bVar25,iVar16,(byte)puVar23[2] & 0x3f);
       uVar26 = (ushort)DAT_0023b4e0;
-      bVar25 = (byte)DAT_0023b4ec[2] & 0x3f;
+      bVar25 = (byte)g_current_tile->wall_tex;
       if ((short)uVar26 < DAT_00086b24) {
         DAT_0023b81c = 4;
         if ((uVar26 != 0) || (DAT_00087938 != 'd')) {
@@ -54030,7 +54046,7 @@ LAB_0005e7e0:
          orthogonal branch above (word2 byte 2 bits 0-5, not byte 1). */
       (*DAT_0023b4d4)(auStack_50,bVar25,0x10 - (uint)bVar15,(byte)puVar23[2] & 0x3f);
       uVar27 = (ushort)DAT_0023b4e0;
-      bVar25 = (byte)DAT_0023b4ec[2] & 0x3f;
+      bVar25 = (byte)g_current_tile->wall_tex;
       if ((short)uVar27 < DAT_00086b24) {
         DAT_0023b81c = 4;
         if ((uVar27 != 0) || (DAT_00087938 != 'd')) {
@@ -54911,7 +54927,7 @@ ushort * param_1;
          tile they happen to be standing on has no bearing on how they
          should look; leave them at texptr=0 (flat-shaded, unchanged). */
       void *_frame_tex = 0;
-      if (_me->model2) { byte _wall_tex_id = (DAT_0023b4ec[2] & 0x3f) + 0x3a;
+      if (_me->model2) { byte _wall_tex_id = g_current_tile->wall_tex + 0x3a;
         _frame_tex = get_texture_page(_wall_tex_id);
         if (getenv("UW_DEBUG_MODEL"))
           fprintf(stderr, "[model-frame-tex] id=0x%03x wall_tex_id=%d tex=%p\n",
@@ -55917,7 +55933,7 @@ short param_4;
   puVar25 = DAT_00110fc0 + 1;
   DAT_00110fc0 = puVar25;
   if (param_3 < '\0') {
-    uw_ord2005_rem_123 = ((int)((*(ushort *)(param_2 + 2) >> 7 & 7) + (4 - DAT_0023b4a0) * 2)) % (8);
+    uw_ord2005_rem_123 = ((int)(((uw_object_hdr_t *)param_2)->heading + (4 - DAT_0023b4a0) * 2)) % (8);
     local_7c = (ushort)((uint)(uw_ord2005_rem_123 << 0x1d) >> 0x10);
   }
   else {
@@ -56315,11 +56331,11 @@ short param_4;
   *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
   *(char *)(_anim + 0xc13) = (char)((uint)uVar17 >> 0x18);
   if (((uVar14 != 0xe) && (uVar14 != 0xf)) && (uVar14 != 0xc)) goto LAB_000640ec;
-  uVar21 = (int)((*(ushort *)(param_2 + 2) >> 7 & 7) + 1) >> 1;
+  uVar21 = (int)(((uw_object_hdr_t *)param_2)->heading + 1) >> 1;
   if (3 < uVar21) {
     uVar21 = 0;
   }
-  switch(*(ushort *)((char *)g_player_object + 2) >> 7 & 7) {
+  switch(((uw_mobile_object_t *)g_player_object)->hdr.heading) {
   case 0:
     break;
   case 1:
@@ -56553,7 +56569,7 @@ LAB_000647e4:
       }
       if (uVar10 == 0) {
         if (DAT_0023b818 < '\x01') {
-          FUN_0005e3c0(0,DAT_0023bc88,DAT_0023b91c >> 6 & 0xff,*(byte *)(DAT_0023b4ec + 2) & 0x3f);
+          FUN_0005e3c0(0,DAT_0023bc88,DAT_0023b91c >> 6 & 0xff,g_current_tile->wall_tex);
         }
         *DAT_00110fc0 = 2;
         DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -56580,18 +56596,18 @@ LAB_000647e4:
         if (DAT_0023b830 != 0) {
           *DAT_00110fc0 = 0xae;
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          *DAT_00110fc0 = (*(byte *)(DAT_0023b4ec + 2) & 0x3f) + 0xc0;
+          *DAT_00110fc0 = (g_current_tile->wall_tex) + 0xc0;
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          DAT_000da47c = (*(byte *)(DAT_0023b4ec + 2) & 0x3f) + 0xc0;
+          DAT_000da47c = (g_current_tile->wall_tex) + 0xc0;
         }
         *DAT_00110fc0 = 0xb2;
         DAT_00110fc0 = DAT_00110fc0 + 1;
         *DAT_00110fc0 = DAT_0023b81c;
         DAT_00110fc0 = DAT_00110fc0 + 1;
         uVar9 = 1;
-        uVar11 = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
+        uVar11 = g_current_tile->wall_tex;
 LAB_00064cdc:
-        emit_object_billboard(uVar9,param_2,(param_2[1] >> 7 & 7) << 1,uVar11);
+        emit_object_billboard(uVar9,param_2,(((uw_object_hdr_t *)param_2)->heading) << 1,uVar11);
       }
       else {
         if (DAT_0023b830 != 0) {
@@ -56606,7 +56622,7 @@ LAB_00064cdc:
           if (local_28 == 7) {
             if (DAT_0023b818 < '\x01') {
               FUN_0005e3c0(0,DAT_0023bc88,DAT_0023b91c >> 6 & 0xff,
-                           *(byte *)(DAT_0023b4ec + 2) & 0x3f);
+                           g_current_tile->wall_tex);
             }
             *DAT_00110fc0 = 0xb2;
             DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -56619,7 +56635,7 @@ LAB_00064cdc:
             *DAT_00110fc0 = DAT_0023b824 * DAT_0023b824 - 1;
             DAT_00110fc0 = DAT_00110fc0 + 1;
             uVar9 = 0xf;
-            uVar11 = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
+            uVar11 = g_current_tile->wall_tex;
           }
           else {
             /* Was `DAT_00202734 + param_1 + 0x30` -- matches
@@ -56631,11 +56647,11 @@ LAB_00064cdc:
           }
           if (getenv("UW_DEBUG_DOOR"))
             fprintf(stderr, "[door] emit_anim_object_frames: local_34=%d local_28=%d -> emit_object_billboard(catalog=%d, heading=%d, frame_or_id=%d)\n",
-                    (int)local_34, (int)local_28, (int)uVar9, (int)((param_2[1] >> 7 & 7) << 1), (int)uVar11);
+                    (int)local_34, (int)local_28, (int)uVar9, (int)((((uw_object_hdr_t *)param_2)->heading) << 1), (int)uVar11);
           goto LAB_00064cdc;
         }
         DAT_0023b91c = local_34;
-        emit_object_billboard(0xc,param_2,(param_2[1] >> 7 & 7) << 1,0);
+        emit_object_billboard(0xc,param_2,(((uw_object_hdr_t *)param_2)->heading) << 1,0);
         DAT_0023b91c = local_32;
       }
       local_30 = (char)uVar10;
