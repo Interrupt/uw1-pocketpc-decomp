@@ -52501,6 +52501,10 @@ void run_visibility_flood()
     }
   } while (g_visibility_ring_done != 0xf);
 
+  if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
+    fprintf(stderr, "[visibility-flood] g_visibility_ring_depth=%d g_visibility_max_ring_passes=%d\n",
+            (int)g_visibility_ring_depth, (int)g_visibility_max_ring_passes);
+
   /* Hack - Testing (opt-in via UW_HACK_REVEAL_DEPTH): g_visibility_ring_depth is the
      row depth of walk_visible_tiles's reveal/visibility walk -- it starts at
      row &g_visibility_ring_buffer + g_visibility_ring_depth*0x42 and sweeps back to row 0, and
@@ -52819,6 +52823,13 @@ void emit_hud_draw_commands()
    for the fill instead of darken_pixel's 50%.) */
 static byte automap_reveal_byte(byte *tile_rec)
 {
+  if (getenv("UW_DEBUG_AUTOMAP_REVEAL")) {
+    intptr_t idx = (tile_rec - (byte *)DAT_002029cc) / 4;
+    ushort *pp = (ushort *)g_player_object;
+    fprintf(stderr, "[automap-reveal] tile_rec=%p idx=%ld tile=(%ld,%ld) player_tile=(%u,%u)\n",
+            (void *)tile_rec, (long)idx, (long)(idx & 0x3f), (long)(idx >> 6),
+            (unsigned)(pp[0xb] >> 10), (unsigned)((pp[0xb] & 0x3f0) >> 4));
+  }
   return (byte)DAT_0023ae40_backing[tile_rec[1] >> 2 & 0xf] |
          (*tile_rec & 0xf);
 }
@@ -52850,6 +52861,10 @@ void automap_reveal_all_tiles(void)
     }
   }
 }
+
+// Forward decl: defined below, see its own header comment for the
+// automap-over-reveal fix this and process_visible_tile_cell both use.
+static bool automap_cell_in_reveal_radius(void);
 
 // was FUN_0005d9cc
 void walk_visible_tiles()
@@ -52943,7 +52958,13 @@ void walk_visible_tiles()
   pcVar5 = &DAT_000b99d0 + (short)uVar6;
   DAT_0023b4e4 = 0;
   do {
-    if (((uVar6 & 0xf000) == 0) && (*pcVar5 == '\0')) {
+    /* Fourth and final automap-over-reveal site (see
+       automap_cell_in_reveal_radius's header comment, further down in
+       this file, for the full root-cause explanation) -- this is
+       walk_visible_tiles' own trailing one-row sweep (33 tiles wide),
+       run unconditionally after the main ring-walk with no distance
+       check of its own. */
+    if (((uVar6 & 0xf000) == 0) && (*pcVar5 == '\0') && automap_cell_in_reveal_radius()) {
       *pcVar5 = automap_reveal_byte(DAT_0023b4ec);
     }
     DAT_0023b4e4 = DAT_0023b4e4 + 1;
@@ -53227,6 +53248,42 @@ ushort param_4;
 
 
 
+/* QA report: "on a fresh load [the automap] displays tiles more than
+   eight tiles away, through walls, when the max walk should only ever
+   be three tiles." Confirmed live via a recorded repro
+   (bug-fresh-map.txt) and a debug trace: g_visibility_ring_depth
+   (walk_visible_tiles' own ring-walk depth) correctly comes out 3,
+   matching g_visibility_max_ring_passes (SHADES.DAT's per-level view-
+   distance field, already correctly loaded per
+   extend_visibility_ray_row's own comment) -- but walk_visible_tiles'
+   actual sweep at each ring pass covers a fixed ~48-tile-wide row (its
+   rendering-frustum footprint, needed so 3D geometry emission sees the
+   camera's full field of view at that depth), not a small radius.
+   process_visible_tile_cell's automap-reveal writes -- reached for
+   every cell in that wide sweep, whether or not the flood flagged it
+   for 3D geometry -- had no distance/line-of-sight check of their own,
+   so they revealed the whole swept rectangle (observed live: tiles 16
+   tiles from the player, on the very first ring pass) instead of just
+   the tiles genuinely within g_visibility_max_ring_passes. This helper
+   restores the intended small-radius automap reveal without touching
+   the (working, needed-as-is) wide rendering sweep itself -- callers
+   skip the reveal-only write when it returns false, but still let 3D
+   geometry emission run untouched for farther tiles genuinely in view. */
+static bool automap_cell_in_reveal_radius(void)
+{
+  intptr_t cell_idx = (DAT_0023b4ec - (byte *)DAT_002029cc) / 4;
+  ushort *pp = (ushort *)g_player_object;
+  int cell_x = (int)(cell_idx & 0x3f);
+  int cell_y = (int)(cell_idx >> 6);
+  int player_x = (int)(pp[0xb] >> 10);
+  int player_y = (int)((pp[0xb] & 0x3f0) >> 4);
+  int dx = cell_x - player_x;
+  int dy = cell_y - player_y;
+  if (dx < 0) dx = -dx;
+  if (dy < 0) dy = -dy;
+  return (dx <= (int)g_visibility_max_ring_passes) && (dy <= (int)g_visibility_max_ring_passes);
+}
+
 // was FUN_0005e604
 void process_visible_tile_cell(param_1)
 byte * param_1;
@@ -53289,7 +53346,9 @@ byte * param_1;
   bVar25 = *DAT_0023b820;
   local_48 = (uint)(short)(ushort)bVar25;
   if ((local_48 & 0x80) == 0) {
-    if (*param_1 == 0) {
+    /* See automap_cell_in_reveal_radius's own header comment for the
+       full QA-report/root-cause explanation. */
+    if ((*param_1 == 0) && automap_cell_in_reveal_radius()) {
       /* Same floor-texture-aware reveal encoding as walk_visible_tiles's
          ring-walk. Was DAT_00086bf0[type], which made every floor the
          same (all blue, with the earlier reconstruction). */
@@ -53327,7 +53386,12 @@ byte * param_1;
     if (_disabled
         || (int)(uint)DAT_0023b838 >= 512 - 28
         || (int)DAT_0023b83c >= 490 - 6) {
-      if (*param_1 == 0) {
+      /* Same automap-over-reveal fix as the bit-0x80-clear branch above
+         -- see automap_cell_in_reveal_radius's header comment. This is
+         the 3D-geometry-disabled / arena-overflow fallback, which (like
+         that branch) only ever marks the tile revealed, never emits
+         geometry, so the same reveal-radius check applies. */
+      if ((*param_1 == 0) && automap_cell_in_reveal_radius()) {
         *param_1 = automap_reveal_byte(DAT_0023b4ec);
         DAT_0023b810 = DAT_0023b810 + 1;
       }
@@ -54273,7 +54337,15 @@ LAB_0005e7e0:
      (DAT_0023b834 = '\0', DAT_0023b4e0 < 8)) {
     local_84 = cVar2 << 6 | local_84;
   }
-  if (DAT_00086b20 != 0) {
+  /* Third and last automap-over-reveal site (see
+     automap_cell_in_reveal_radius's header comment) -- this one also
+     REFRESHES an already-revealed tile's stored lighting/color byte as
+     the player looks around, so only gate genuinely NEW reveals
+     (*param_1==0) on the radius check; an already-revealed tile keeps
+     updating normally regardless of distance, matching how a real
+     lit-and-explored room's automap brightness should still track the
+     current light level. */
+  if ((DAT_00086b20 != 0) && ((*param_1 != 0) || automap_cell_in_reveal_radius())) {
     *param_1 = local_84;
   }
   return;
