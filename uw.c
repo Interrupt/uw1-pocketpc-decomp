@@ -3633,7 +3633,7 @@ static undefined1 DAT_00202c70_backing[65536];
 #define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
 undefined DAT_00202c34;
 ushort *_DAT_00202c34;
-/* Wall-slide corner-classification tables, used by FUN_00051320 (called
+/* Wall-slide corner-classification tables, used by resolve_wall_slide_corner (called
    from sweep_slide_along_wall when a wall hit has a specific blocked-
    corner shape) to pick which of the 8 candidate headings in
    DAT_000869a8 to deflect toward. Both were declared as single-byte
@@ -3643,17 +3643,17 @@ ushort *_DAT_00202c34;
    binary's), producing effectively-random results for any corner
    configuration except the very first. This is the deeper reason wall
    sliding sometimes turned the player back INTO the wall: even once
-   DAT_000869a8 held real headings, FUN_00051320 was often picking the
+   DAT_000869a8 held real headings, resolve_wall_slide_corner was often picking the
    WRONG index into it.
 
    Real data recovered via Ghidra headless dump (matching these globals'
    own name-encoded addresses, 0x86884 and 0x8688c): DAT_00086884 is a
    real 4-entry SIGNED array {1,-1,-1,1} (per-corner +/-1 deltas, read as
-   `(&DAT_00086884)[iVar3]` for iVar3 0-3 in FUN_00051320's loop).
+   `(&DAT_00086884)[iVar3]` for iVar3 0-3 in resolve_wall_slide_corner's loop).
    DAT_0008688c sits 4 bytes into a real lookup table that starts at
    0x86888 (confirmed: the function's own literal pool for the "r8" table
    base is 0x86888, and 0x86888+4 = 0x8688c exactly) -- both of
-   FUN_00051320's own lookups already index relative to DAT_0008688c
+   resolve_wall_slide_corner's own lookups already index relative to DAT_0008688c
    correctly (`(&DAT_0008688c)[iVar6*3+iVar7]` and
    `(&DAT_0008688c)[iVar9*-3-iVar7]`, the latter reaching back to offset
    -4, i.e. the table's real start at 0x86888); only the DECLARATION was
@@ -10143,7 +10143,7 @@ int param_1;
          loop's very first iteration, the enclosing function's own object-
          pointer parameter) -- confirmed individually via disassembly for
          a representative sample of these sites (this one, FUN_00052af4,
-         FUN_00052c5c, sum_container_weight, serialize_inventory_link_chain, FUN_00072598,
+         roll_object_destroy_chance, sum_container_weight, serialize_inventory_link_chain, FUN_00072598,
          FUN_0007deec, FUN_00080ed4, FUN_000181a4), and applied by the
          same pattern to the rest. */
       iVar8 = resolve_object_link(puVar7);
@@ -10176,7 +10176,7 @@ LAB_0001818c:
                            ((&DAT_00202c91)[(CONCAT11(puVar4[1],*puVar4) & 0x1ff) * 0xd] & 7) + 4);
       if (iVar8 != 0) {
         object_list_append_tail(pbVar9 + 2,puVar4);
-        FUN_00055f98(puVar4,uVar5,uVar6,1);
+        settle_dropped_object(puVar4,uVar5,uVar6,1);
         goto LAB_0001818c;
       }
     }
@@ -10233,7 +10233,7 @@ void FUN_0001825c()
   
   iVar1 = tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
                        (*(ushort *)(DAT_00100674 + 0x16) & 0x3f0) >> 4);
-  FUN_00053334(iVar1 + 2,DAT_00100674,1);
+  discard_misplaced_object(iVar1 + 2,DAT_00100674,1);
   return;
 }
 
@@ -17790,7 +17790,7 @@ byte * param_3;
   local_16 = (short)((uint)((int)*(short *)(DAT_00202c6c + 2) << 0x14) >> 0x10);
   while (collision_build_height_field(0),
         ((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
-    FUN_00069f2c(param_1,0x10,&local_18,&local_16);
+    project_position_by_heading(param_1,0x10,&local_18,&local_16);
     param_2 = param_2 + -1;
     *DAT_00202c6c = (byte)((int)local_18 >> 4);
     DAT_00202c6c[1] = (byte)((uint)((int)local_18 >> 4) >> 8);
@@ -17875,7 +17875,7 @@ undefined4 FUN_00026194()
   local_3c = (short)((puVar6[0xb] & 0xfc00) >> 7) + (ushort)(*(byte *)((char *)puVar6 + 3) >> 5);
   local_3a = (short)((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
   iVar5 = ((byte)puVar6[0xc] & 0x1f) + ((puVar6[1] & 0x380) >> 2);
-  FUN_00069f2c(iVar5,uVar7 + 3,&local_3c,&local_3a);
+  project_position_by_heading(iVar5,uVar7 + 3,&local_3c,&local_3a);
   collision_height_envelope(0,1);
   if (*(char *)((char *)DAT_00202c6c + 0x14) == '\0') {
     collision_build_height_field(0);
@@ -18865,7 +18865,7 @@ undefined4 FUN_000282ac()
       if ((uint)(*(ushort *)(g_current_container_record + 8) >> 6) == (int)sVar4) {
         leave_nested_container_level();
       }
-      FUN_000533e4(puVar5 + 3);
+      free_linked_object_recursive(puVar5 + 3);
       uVar9 = *puVar5 & 0xff1b | 0x11b;
       *(char *)puVar5 = (char)uVar9;
       *(char *)((char *)puVar5 + 1) = (char)(uVar9 >> 8);
@@ -20266,7 +20266,7 @@ ushort param_3;
     *(byte *)(pDropObj + 4) = (byte)uVar6 | 0x28;
     *(char *)(pDropObj + 5) = (char)(uVar6 >> 8);
     object_list_insert_head(iVar4 + 2,pDropObj);
-    FUN_00055f98(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
+    settle_dropped_object(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
   }
   if ((param_3 & 0xff) != 0) {
     uVar7 = Ordinal_1053();
@@ -20294,7 +20294,7 @@ int FUN_0002b47c()
   if (((char)DAT_0010190c[4] == '\0') &&
      (((&DAT_00202c97)[(*DAT_0010190c & 0x1ff) * 0xd] & 0xc) < 0xc)) {
     iVar2 = tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
-    iVar2 = FUN_00053334(iVar2 + 2,DAT_0010190c,0);
+    iVar2 = discard_misplaced_object(iVar2 + 2,DAT_0010190c,0);
     if (iVar2 == 0) {
       return 0;
     }
@@ -24815,7 +24815,7 @@ int param_2;
   uVar11 = param_1[0xb] >> 4 & 0x3f;
   local_28 = tilemap_lookup(uVar9,uVar11);
   if ((param_1[7] & 1) != 0) {
-    FUN_000534a8(local_28 + 2,param_1);
+    unlink_and_free_object(local_28 + 2,param_1);
     return;
   }
   *(byte *)((char *)param_1 + 0x19) = *(byte *)((char *)param_1 + 0x19) & 0xc;
@@ -24896,7 +24896,7 @@ int param_1;
   bVar2 = *(byte *)(param_1 + 3);
   pbVar4 = (byte *)tilemap_lookup();
   pbVar8 = pbVar4 + 2;
-  iVar5 = FUN_00053334(pbVar8,param_1,0);
+  iVar5 = discard_misplaced_object(pbVar8,param_1,0);
   if ((iVar5 != 0) && (iVar5 = FUN_0005596c(param_1), iVar5 != 0)) {
     object_list_unlink(pbVar8,iVar5);
     DAT_00202c84 = 1;
@@ -26513,7 +26513,7 @@ char *param_2;
     *(undefined1 *)(param_2 + 8) = 0;
   }
   else {
-    iVar1 = FUN_00053334(param_1,param_2,0);
+    iVar1 = discard_misplaced_object(param_1,param_2,0);
     if (iVar1 == 0) {
       return 1;
     }
@@ -26563,7 +26563,7 @@ LAB_00038100:
       try_combine_or_stow_object(0,param_1,0);
     }
     else if ((uVar1 & 0x1f0) == 0x80) {
-      iVar3 = FUN_00052c5c(10,param_1);
+      iVar3 = roll_object_destroy_chance(10,param_1);
       if (iVar3 == 0) goto LAB_00038100;
       try_empty_container(param_1,0);
     }
@@ -26586,7 +26586,7 @@ LAB_00038100:
         }
       }
       if (((*param_1 & 0x8000) == 0) && ((param_1[3] & 0xffc0) != 0)) {
-        FUN_000533e4();
+        free_linked_object_recursive();
       }
     }
     if ((short)uVar6 < -1) {
@@ -26598,7 +26598,7 @@ LAB_00038100:
       *(char *)param_1 = (char)uVar5;
       *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
       if ((DAT_002046c4 <= param_1) &&
-         (iVar3 = FUN_00055f98(param_1,param_4,(int)param_5,1), iVar3 == 0)) goto LAB_000382ac;
+         (iVar3 = settle_dropped_object(param_1,param_4,(int)param_5,1), iVar3 == 0)) goto LAB_000382ac;
     }
     uVar4 = 1;
     if (-2 < (short)uVar6) {
@@ -27039,7 +27039,7 @@ int param_6;
           puVar11 = (ushort *)resolve_object_link(puVar11);
           if (((&DAT_00202c90)[(*puVar11 & 0x1ff) * 0xd] != '\0') ||
              (iVar12 = object_ptr_in_arena(puVar11), iVar12 != 0)) {
-            FUN_00053334(pbVar10 + 2,puVar11,0);
+            discard_misplaced_object(pbVar10 + 2,puVar11,0);
           }
         }
       }
@@ -27446,7 +27446,7 @@ undefined4 FUN_00039d78()
   
   local_6 = DAT_00204880 >> 5;
   local_8 = DAT_00204882 >> 5;
-  FUN_00069f2c((int)DAT_00201c70 >> 8,0xb,&local_6,&local_8);
+  project_position_by_heading((int)DAT_00201c70 >> 8,0xb,&local_6,&local_8);
   puVar2 = (ushort *)tilemap_lookup((int)local_6 >> 3,(int)local_8 >> 3);
   uVar1 = *puVar2;
   if ((((uVar1 & 0xf) == 0) || (((&DAT_0023ae40)[uVar1 >> 10 & 0xf] & 0xfff0) != 0x10)) ||
@@ -27612,10 +27612,10 @@ int param_3;
     *(char *)(pNew + 2) = (char)uVar4;
     *(char *)(pNew + 3) = (char)(uVar4 >> 8);
     object_list_insert_head(pTile + 2,pNew);
-    FUN_00055f98(pNew,param_2,param_3 + 1,1);
+    settle_dropped_object(pNew,param_2,param_3 + 1,1);
     iVar5 = 0;
     do {
-      FUN_00053334((char *)local_34[iVar5] + 2,local_44[iVar5],1);
+      discard_misplaced_object((char *)local_34[iVar5] + 2,local_44[iVar5],1);
       iVar5 = (iVar5 + 1) * 0x1000000 >> 0x18;
     } while (iVar5 < 4);
   }
@@ -27683,7 +27683,7 @@ void FUN_0003a398()
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
     FUN_00074028(g_player_object,3);
     decrement_object_count(iVar2);
-    FUN_00053334(0,iVar2,1);
+    discard_misplaced_object(0,iVar2,1);
     FUN_00048110();
     refresh_player_equipment_effects();
   }
@@ -27713,7 +27713,7 @@ undefined4 param_3;
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
     FUN_00074028(g_player_object,3);
     decrement_object_count(iVar2);
-    FUN_00053334(0,iVar2,1);
+    discard_misplaced_object(0,iVar2,1);
     FUN_00048110();
     refresh_player_equipment_effects();
   }
@@ -27762,7 +27762,7 @@ int param_1;
   
   iVar1 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
   ;
-  FUN_000534a8(iVar1 + 2,param_1);
+  unlink_and_free_object(iVar1 + 2,param_1);
   return 1;
 }
 
@@ -28034,7 +28034,7 @@ int param_3;
   if (param_3 == 0) {
     if ((short)iVar2 == -2) {
       iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
-      FUN_00053334(iVar2 + 2,param_1,0);
+      discard_misplaced_object(iVar2 + 2,param_1,0);
     }
   }
   else {
@@ -28045,13 +28045,13 @@ int param_3;
     *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar3 >> 0x10);
     *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar3 >> 0x18);
     if ((short)iVar2 == -2) {
-      iVar3 = FUN_00052c5c(10,param_1);
+      iVar3 = roll_object_destroy_chance(10,param_1);
       if (iVar3 == 0) {
         iVar2 = 0;
       }
       else {
         decrement_object_count(param_1);
-        FUN_00053334(0,param_1,1);
+        discard_misplaced_object(0,param_1,1);
       }
     }
     FUN_00078c80(iVar2 + 0x8e);
@@ -29321,7 +29321,7 @@ LAB_0003c940:
       local_40 = (uint)((DAT_0020208c & 0x14) != 0);
       uVar5 = local_40;
       local_42 = DAT_00204882;
-      FUN_00069f2c((int)(short)((uint)iVar7 >> 8),uVar4,&local_44,&local_42);
+      project_position_by_heading((int)(short)((uint)iVar7 >> 8),uVar4,&local_44,&local_42);
       iVar7 = (int)(short)local_44;
       iVar8 = (int)(short)local_42;
       if (iVar8 < 0) {
@@ -35160,7 +35160,7 @@ undefined1 * param_1;
     }
     sVar3 = encode_object_slot_index(g_selected_object);
     local_14[0] = local_14[0] & 0x3f | sVar3 << 6;
-    FUN_000533e4(local_14);
+    free_linked_object_recursive(local_14);
   }
   return;
 }
@@ -36716,7 +36716,7 @@ int param_5;
       drop_object_near_target(g_player_object,pDropObj,6,0);
     }
     decrement_object_count(puVar5);
-    FUN_00053334(0,puVar5,1);
+    discard_misplaced_object(0,puVar5,1);
     refresh_player_equipment_effects();
     pcVar9 = s_destroyed__00085ab4;
     uVar7 = 1;
@@ -37956,7 +37956,7 @@ uint param_2;
       }
       iVar5 = FUN_00028254(param_1,uVar6);
       if (iVar5 == 1) {
-        FUN_00053334(0,param_1,1);
+        discard_misplaced_object(0,param_1,1);
         g_cursor_holding_state = 1;
         g_selected_object = puVar7;
         FUN_00057cac(3);
@@ -37970,7 +37970,7 @@ uint param_2;
           place_held_item_in_empty_slot(puVar7,param_2);
         }
         deplete_object_count(puVar4);
-        FUN_00053334(0,puVar4,1);
+        discard_misplaced_object(0,puVar4,1);
       }
       uVar11 = 0;
     }
@@ -39591,15 +39591,18 @@ int param_2;
 
 
 
-void FUN_00049c64(param_1,param_2,param_3)
+// was FUN_00049c64 -- look up DAT_00085d48_sine/DAT_00085f50_cosine by
+// the angle byte packed via pack_angle_byte, writing sin(angle) into
+// *param_2 and cos(angle) into *param_3.
+void heading_to_sine_cosine(param_1,param_2,param_3)
 uint param_1;
 undefined2 * param_2;
 undefined2 * param_3;
 
 {
   ushort uVar1;
-  
-  uVar1 = FUN_00049cc0(param_1,(param_1 & 0xffff) >> 8,0);
+
+  uVar1 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
   *param_2 = *(undefined2 *)(&DAT_00085d48 + (short)(uVar1 & 0xff) * 2);
   *param_3 = *(undefined2 *)(&DAT_00085f50 + (short)(uVar1 & 0xff) * 2);
   return;
@@ -39607,7 +39610,11 @@ undefined2 * param_3;
 
 
 
-uint FUN_00049cc0(param_1,param_2,param_3)
+// was FUN_00049cc0 -- pack param_1's low byte and param_2's low byte
+// into one 16-bit value, param_2's byte going into the high or low half
+// depending on param_3. Small shared helper used by
+// heading_to_sine_cosine and angle_to_screen_delta.
+uint pack_angle_byte(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
 int param_3;
@@ -39638,7 +39645,7 @@ undefined1 * param_3;
   int iVar3;
   ushort uVar4;
   
-  uVar4 = FUN_00049cc0(param_1,(param_1 & 0xffff) >> 8,0);
+  uVar4 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
   iVar1 = (short)(uVar4 & 0xff) * 2;
   iVar3 = (int)(short)((ushort)param_1 & 0xff);
   iVar1 = ((int)*(short *)(&DAT_00085d48 + iVar1) +
@@ -39668,12 +39675,12 @@ uint param_1;
   
   uVar3 = (param_1 & 0xffff) >> 8;
   uVar3 = (param_1 & 0xff ^ uVar3) - uVar3;
-  uVar4 = FUN_00049cc0(0,(uVar3 & 0xffff) >> 8,0);
+  uVar4 = pack_angle_byte(0,(uVar3 & 0xffff) >> 8,0);
   iVar1 = (uVar4 & 0xff) * 4;
   uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
   uVar4 = (uVar3 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
   uVar3 = (int)uVar4 >> 0x10;
-  uVar4 = FUN_00049cc0(uVar4 & 0xffff,(uVar4 & 0xffff) >> 8,0);
+  uVar4 = pack_angle_byte(uVar4 & 0xffff,(uVar4 & 0xffff) >> 8,0);
   return ((uVar4 & 0xff | uVar3 << 8) + (uint)uVar2 ^ uVar3) - uVar3;
 }
 
@@ -39690,12 +39697,12 @@ uint param_1;
   
   uVar4 = (param_1 & 0xffff) >> 8;
   uVar4 = (param_1 & 0xff ^ uVar4) - uVar4;
-  uVar3 = FUN_00049cc0(param_1,(uVar4 & 0xffff) >> 8,0);
+  uVar3 = pack_angle_byte(param_1,(uVar4 & 0xffff) >> 8,0);
   iVar1 = (uVar3 & 0xff) * 4;
   uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
   uVar3 = (uVar4 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
   uVar4 = (int)uVar3 >> 0x10;
-  uVar3 = FUN_00049cc0(uVar3 & 0xffff,(uVar3 & 0xffff) >> 8,0);
+  uVar3 = pack_angle_byte(uVar3 & 0xffff,(uVar3 & 0xffff) >> 8,0);
   return ((uVar3 & 0xff | uVar4 << 8) + (uint)uVar2 ^ uVar4) - uVar4;
 }
 
@@ -39736,7 +39743,12 @@ undefined4 param_1;
 
 
 
-bool FUN_0004a110()
+// was FUN_0004a110 -- read the cursor position, derive an "arc"
+// height/angle pair from it into DAT_00202a40/DAT_00202a3c (consumed by
+// spawn_object_near_player when placing the new copy), and return
+// whether the cursor is far enough from the player's own screen
+// position to count as a deliberate throw rather than a same-spot drop.
+bool compute_drop_aim_from_cursor()
 
 {
   int iVar1;
@@ -39802,7 +39814,7 @@ short param_1;
     DAT_00202a44 = g_player_object;
     DAT_00202a50 = (undefined2)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4);
     DAT_00202a54 = 1;
-    FUN_0004a110();
+    compute_drop_aim_from_cursor();
     puVar6 = (ushort *)spawn_object_near_player();
     if (puVar6 == (ushort *)0x0) {
       FUN_00078c80(0xfe);
@@ -39876,7 +39888,7 @@ short param_2;
   DAT_00202a54 = 1;
   DAT_00202a44 = param_1;
   if (param_1 == g_player_object) {
-    FUN_0004a110();
+    compute_drop_aim_from_cursor();
   }
   else {
     if (DAT_002046c4 <= param_1) {
@@ -39908,7 +39920,7 @@ int param_2;
   int iVar8;
   char cVar9;
   /* iVar4 is reused earlier in this function as a plain int (return
-     codes from FUN_0004a110/FUN_00051fa0) -- real uses, left alone --
+     codes from compute_drop_aim_from_cursor/FUN_00051fa0) -- real uses, left alone --
      but also held tilemap_lookup's real 64-bit pointer return,
      truncating it to 32 bits on this host. The NULL check added
      earlier (see below) only ever caught a truly-NULL result; a
@@ -39930,7 +39942,7 @@ int param_2;
             (int)DAT_00204880, (int)DAT_00204882, (int)DAT_00204884,
             (double)DAT_00204880 / 256.0, (double)DAT_00204882 / 256.0,
             fmod((double)DAT_00204880 / 256.0, 1.0), fmod((double)DAT_00204882 / 256.0, 1.0));
-  if ((*(short *)(DAT_00085a6c + 8) == 1) && (iVar4 = FUN_0004a110(), iVar4 != 0)) {
+  if ((*(short *)(DAT_00085a6c + 8) == 1) && (iVar4 = compute_drop_aim_from_cursor(), iVar4 != 0)) {
     DAT_00202a54 = 1;
     DAT_00202a44 = g_player_object;
     DAT_00202a38 = *param_1 & 0x1ff;
@@ -39974,10 +39986,10 @@ int param_2;
               (int)((byte)g_player_object[0xc] & 0x1f), (int)((g_player_object[1] & 0x380) >> 2),
               (int)(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2)),
               (int)cVar9, (int)local_28, (int)local_26);
-    FUN_00069f2c(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),cVar9,&local_28
+    project_position_by_heading(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),cVar9,&local_28
                  ,&local_26);
     if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[throw-heading] after 1st FUN_00069f2c: local_28(X)=%d local_26(Y)=%d\n",
+      fprintf(stderr, "[throw-heading] after 1st project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
               (int)local_28, (int)local_26);
     iVar4 = FUN_00051fa0(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
                          (byte)g_player_object[1] & 0x7f,1,cVar9);
@@ -39987,10 +39999,10 @@ int param_2;
       bVar3 = true;
     }
     else {
-      FUN_00069f2c(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),3,&local_28,
+      project_position_by_heading(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),3,&local_28,
                    &local_26);
       if (getenv("UW_DEBUG_THROW"))
-        fprintf(stderr, "[throw-heading] after 2nd(retry) FUN_00069f2c: local_28(X)=%d local_26(Y)=%d\n",
+        fprintf(stderr, "[throw-heading] after 2nd(retry) project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
                 (int)local_28, (int)local_26);
       iVar4 = FUN_00051fa0(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
                            (byte)g_player_object[1] & 0x7f,1,cVar9);
@@ -40014,7 +40026,7 @@ int param_2;
        tilemap_lookup-result class as this file's other "wild tilemap
        access" crash (see the map-edge Y-wraparound note in memory.md);
        here it wasn't a real map-edge case, just a computed nearby-drop
-       tile (local_28/local_26, from FUN_00069f2c just above) that
+       tile (local_28/local_26, from project_position_by_heading just above) that
        apparently isn't always guaranteed to land in range. Treat it
        the same as the "no room to drop it" (bVar3) failure just below
        instead of dereferencing a wild pointer. */
@@ -40048,7 +40060,7 @@ int param_2;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
       set_ambient_bias_without_light(0);
     }
-    FUN_00055f98(param_1,iVar7 >> 3,iVar8 >> 3,1);
+    settle_dropped_object(param_1,iVar7 >> 3,iVar8 >> 3,1);
   }
   return 1;
 }
@@ -40110,7 +40122,7 @@ LAB_0004b06c:
        write of this field in this function, confirmed faithful to the
        real disassembly, deliberately preserves bits 0-6 of it rather
        than resetting them). Those exact bits are what the height field
-       (param_1[0xf]/[0x10] inside FUN_0005578c, and again at the
+       (param_1[0xf]/[0x10] inside compute_object_placement_fields, and again at the
        `iVar8=((byte)puVar6[1]&0x7f)<<3` line below) is computed from --
        so a freshly-recycled slot gives the spawned item a height derived
        from uninitialized memory. Seeding from the template object's
@@ -40140,9 +40152,9 @@ LAB_0004b06c:
     if (getenv("UW_DEBUG_THROW"))
       fprintf(stderr, "[throw-pos] DAT_00202a4c(tilex_in)=%d DAT_00202a50(tiley_in)=%d\n",
               (int)DAT_00202a4c, (int)DAT_00202a50);
-    FUN_0005578c(puVar6,(int)DAT_00202a4c,(int)DAT_00202a50);
+    compute_object_placement_fields(puVar6,(int)DAT_00202a4c,(int)DAT_00202a50);
     if (getenv("UW_DEBUG_THROW"))
-      fprintf(stderr, "[throw-pos] after FUN_0005578c: puVar6[0xb]=0x%x tilex_out=%d tiley_out=%d\n",
+      fprintf(stderr, "[throw-pos] after compute_object_placement_fields: puVar6[0xb]=0x%x tilex_out=%d tiley_out=%d\n",
               (unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));
     uVar7 = puVar6[1] & 0xfc7f | ((int)(short)(DAT_00202a54 & 0xe0) >> 5) << 7;
     *(char *)(puVar6 + 1) = (char)uVar7;
@@ -40176,7 +40188,7 @@ LAB_0004b06c:
              bVar3;
         *(byte *)((char *)puVar6 + 3) = bVar2;
       }
-      iVar8 = FUN_0004b288(puVar6,DAT_00202a44);
+      iVar8 = check_object_drop_height(puVar6,DAT_00202a44);
       if (iVar8 == 0) {
         free_object_slot(puVar6);
         goto LAB_0004b06c;
@@ -40223,7 +40235,7 @@ LAB_0004b06c:
        -able address that crashed inside object_list_insert_head the
        moment this (previously dead/untested) throw-item spawn path first
        got real exercise. Same class as object_list_insert_head/
-       object_list_append_tail/FUN_00053334's own params, already fixed
+       object_list_append_tail/discard_misplaced_object's own params, already fixed
        elsewhere -- this just never got a properly-typed local to feed
        them. Confirmed live: crashed 100% of the time replaying the
        user's bug-throw-item.txt once its trailing WAIT gave the object-
@@ -40239,7 +40251,13 @@ LAB_0004b06c:
 
 
 
-undefined4 FUN_0004b288(param_1,param_2)
+// was FUN_0004b288 -- validity gate for spawn_object_near_player's
+// freshly-copied object (param_1) placed near param_2's position: runs
+// the same collision_build_height_field/collision_height_envelope
+// machinery settle_dropped_object uses, returning 0 if the copy can't
+// actually rest here (caller frees it and falls back to the trajectory
+// placement path instead).
+undefined4 check_object_drop_height(param_1,param_2)
 ushort * param_1;
 ushort * param_2;
 
@@ -40298,7 +40316,7 @@ ushort * param_2;
   iVar5 = ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2) + ((param_1[0xb] & 0x3f0) >> 1);
   *(byte *)(DAT_00202c6c + 1) = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 3) = (byte)((uint)iVar5 >> 8);
-  FUN_00069f2c(((byte)param_1[0xc] & 0x1f) + ((param_1[1] & 0x380) >> 2),
+  project_position_by_heading(((byte)param_1[0xc] & 0x1f) + ((param_1[1] & 0x380) >> 2),
                ((&DAT_00202c91)[(*param_1 & 0x1ff) * 0xd] & 7) +
                ((&DAT_00202c91)[(*param_2 & 0x1ff) * 0xd] & 7) + '\x04',DAT_00202c6c,
                DAT_00202c6c + 1);
@@ -44023,7 +44041,12 @@ uint param_1;
 
 
 
-void FUN_00051320()
+// was FUN_00051320 -- classify the blocked-corner shape of the current
+// wall hit (from the DAT_00202bfb corner-flag table) and pick which of
+// the 8 candidate octant headings in DAT_000869a8 to deflect toward,
+// writing the choice into DAT_00202c6c[0x12]. Called from
+// sweep_slide_along_wall.
+void resolve_wall_slide_corner()
 
 {
   char cVar1;
@@ -44749,8 +44772,8 @@ int param_6;
   
   iVar1 = find_object_placement(param_4,param_1,param_2,param_3,param_5);
   if (iVar1 == 0) {
-    if ((param_6 == 0) && (iVar1 = FUN_00052c5c(10,param_4), iVar1 != 0)) {
-      FUN_000534a8(0,param_4);
+    if ((param_6 == 0) && (iVar1 = roll_object_destroy_chance(10,param_4), iVar1 != 0)) {
+      unlink_and_free_object(0,param_4);
       return 0;
     }
     uVar2 = *(ushort *)(param_4 + 2) & 0x3ff;
@@ -44850,7 +44873,7 @@ short param_5;
   object_list_append_tail(pTile + 2,param_1);
   iVar5 = object_ptr_in_arena(param_1);
   if (iVar5 == 0) {
-    FUN_00055f98(param_1,(int)uVar4 >> 3,(int)uVar6 >> 3,1);
+    settle_dropped_object(param_1,(int)uVar4 >> 3,(int)uVar6 >> 3,1);
   }
   else {
     uVar4 = ((int)(short)((ushort)uVar4 & 0x1f8) >> 3) << 6 |
@@ -45121,7 +45144,14 @@ ushort * param_1;
 
 
 
-undefined4 FUN_00052c5c(param_1,param_2)
+// was FUN_00052c5c -- disassembly-confirmed real math, not a bug: with
+// param_1=10 (discard_misplaced_object's only caller value) this
+// computes `rand_below(10) < (10 + rand_below(3))`, and since
+// rand_below(10) maxes at 9 while the threshold is always >=10, the
+// roll ALWAYS succeeds under normal conditions (unless the object is
+// itself gated by roll_object_destroy_chance's own nested container
+// check via free_linked_object_recursive/FUN_00052af4).
+undefined4 roll_object_destroy_chance(param_1,param_2)
 short param_1;
 char *param_2;  /* was `int` -- truncated the real object-record pointer
                    (dereferenced via casts, passed to resolve_object_link
@@ -45173,7 +45203,7 @@ ushort * param_2;
   
   if ((*param_2 & 0xffc0) != 0) {
     uVar1 = resolve_object_link(param_2);
-    FUN_00052c5c(param_1,uVar1);
+    roll_object_destroy_chance(param_1,uVar1);
   }
   return 0;
 }
@@ -45221,7 +45251,7 @@ short param_2;
           iVar4 = FUN_00052d24(param_1,local_3c);
           if (iVar4 != 0) {
             uVar5 = FUN_000535fc(local_3c[0] >> 6);
-            FUN_000534a8((ushort *)(iVar9 + 2),uVar5);
+            unlink_and_free_object((ushort *)(iVar9 + 2),uVar5);
             iVar10 = iVar10 + 1;
             if ((int)param_2 <= iVar10 * 0x10000 >> 0x10) {
               return;
@@ -45453,7 +45483,17 @@ byte * param_2;
 
 
 
-ushort *FUN_00053334(param_1,param_2,param_3)
+// was FUN_00053334 -- despite the name this settled on, it's a DESTROY
+// path, not a placement one: when param_3==0 it rolls
+// roll_object_destroy_chance(10, param_2), which (see that function's
+// own comment) returns true with ~100% probability under normal
+// conditions, then unconditionally unlinks and frees param_2 via
+// unlink_and_free_object. Reached by settle_dropped_object whenever an
+// object lands somewhere it can't actually rest (floor too high/low,
+// blocked corner, etc.) -- confirmed via disassembly this "destroy the
+// misplaced object" behavior is genuine original-game logic, not a
+// translation bug.
+ushort *discard_misplaced_object(param_1,param_2,param_3)
 /* Was `int param_1` -- a real object-record pointer (drop_held_object_
    near_player passes pDropTile+2, a resolve_object_link-style address)
    truncated to 32 bits on this 64-bit host, same class as several
@@ -45467,7 +45507,7 @@ int param_3;
   int iVar2;
   ushort local_10 [2];
 
-  /* Dropped argument: FUN_00052c5c's declared signature takes
+  /* Dropped argument: roll_object_destroy_chance's declared signature takes
      (short, char*) and dereferences its second parameter -- but it was
      called here with only the literal 10, leaving the real argument
      (param_2, the object being placed) as leftover-register garbage.
@@ -45476,17 +45516,17 @@ int param_3;
      frames deeper (FUN_00052af4/FUN_00052bac) dereferencing that
      garbage pointer -- this whole collision/placement path had never
      been exercised by any earlier fix or test this session. */
-  if ((param_3 != 0) || (iVar2 = FUN_00052c5c(10,(char *)param_2), iVar2 != 0)) {
+  if ((param_3 != 0) || (iVar2 = roll_object_destroy_chance(10,(char *)param_2), iVar2 != 0)) {
     uVar1 = encode_object_slot_index(param_2);
     local_10[0] = local_10[0] & 0x3f | uVar1 << 6;
     if ((*param_2 & 0x1c0) == 0x1c0) {
       FUN_000809cc(uVar1 & 0x3ff);
     }
     if (param_1 == 0) {
-      FUN_000533e4(local_10);
+      free_linked_object_recursive(local_10);
     }
     else {
-      FUN_000534a8(param_1,param_2);
+      unlink_and_free_object(param_1,param_2);
     }
     param_2 = (ushort *)0x0;
   }
@@ -45495,7 +45535,12 @@ int param_3;
 
 
 
-void FUN_000533e4(param_1)
+// was FUN_000533e4 -- resolve param_1 (a link-field address) to the
+// object it points at and delete it: recurse into two nested-object
+// link fields first (offsets 4/6, e.g. contained items or a wielded
+// weapon), then unlink+free the object itself. param_1==0x180 class
+// (containers) instead defer to FUN_0007e610.
+void free_linked_object_recursive(param_1)
 char *param_1;  /* was `undefined4` -- truncated the real object-record
                    pointer (passed straight to resolve_object_link),
                    latent until that call started actually using it */
@@ -45510,11 +45555,11 @@ char *param_1;  /* was `undefined4` -- truncated the real object-record
     }
     else {
       if ((puVar1[2] & 0xffc0) != 0) {
-        FUN_000533e4();
+        free_linked_object_recursive();
       }
       if ((*puVar1 & 0x8000) == 0) {
         if ((puVar1[3] & 0xffc0) != 0) {
-          FUN_000533e4();
+          free_linked_object_recursive();
         }
       }
       object_list_unlink(param_1,puVar1);
@@ -45526,7 +45571,12 @@ char *param_1;  /* was `undefined4` -- truncated the real object-record
 
 
 
-void FUN_000534a8(param_1,param_2)
+// was FUN_000534a8 -- delete param_2: free its own "contains" link
+// field first (via free_linked_object_recursive, for a container/
+// wielded item), unlink param_2 from the list headed at param_1 (if
+// given), then free its slot. discard_misplaced_object's actual
+// deletion step.
+void unlink_and_free_object(param_1,param_2)
 /* Was `int param_1; int param_2;` -- both real object-record pointers
    (param_2 is dereferenced directly; both are forwarded to
    object_list_unlink/free_object_slot, which already declare pointer
@@ -45537,15 +45587,15 @@ char *param_1;
 char *param_2;
 
 {
-  /* Dropped argument: FUN_000533e4 takes the address of a link field
+  /* Dropped argument: free_linked_object_recursive takes the address of a link field
      to recursively free (its own declared param_1) -- here that's
      param_2's own "contains" field (+6, this file's standard
      container-contents offset) -- but it was called bare, same idiom
-     as FUN_000533e4's own two internal self-recursive calls just above
+     as free_linked_object_recursive's own two internal self-recursive calls just above
      this function (not touched: not reached by this session's specific
-     repro, and FUN_000533e4 already tolerates a NULL resolve safely). */
+     repro, and free_linked_object_recursive already tolerates a NULL resolve safely). */
   if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
-    FUN_000533e4(param_2 + 6);
+    free_linked_object_recursive(param_2 + 6);
   }
   if (param_1 != 0) {
     object_list_unlink((byte *)param_1,(byte *)param_2);
@@ -46606,7 +46656,7 @@ ushort * param_2;
   if ((*param_1 & 0x1c0) != 0x40) {
     if (DAT_002046c4 < param_1) {
       if ((param_2[10] != 0 || param_2[8] != 0) || param_2[5] != 0) {
-        param_1 = (ushort *)FUN_00055610(param_1);
+        param_1 = (ushort *)reallocate_object_to_arena(param_1);
       }
     }
     else if ((param_2[10] == 0 && param_2[8] == 0) && param_2[5] == 0) {
@@ -46616,7 +46666,7 @@ ushort * param_2;
       if (iVar5 == 0) {
         return 0;
       }
-      param_1 = (ushort *)FUN_00055f98(iVar5,(int)(short)DAT_0010144c,(int)DAT_00101454,0);
+      param_1 = (ushort *)settle_dropped_object(iVar5,(int)(short)DAT_0010144c,(int)DAT_00101454,0);
       if (param_1 == (ushort *)0x0) {
         return 0;
       }
@@ -46684,7 +46734,18 @@ LAB_0005559c:
 
 
 
-ushort *FUN_00055610(param_1)
+// was FUN_00055610 -- the "spawn and replace" mechanism: allocate a
+// fresh low-region object slot (alloc_object_slot(1), same allocator
+// spawn_object_near_player uses -- the only region emit_tile_objects's
+// object_ptr_in_arena gate treats as renderable), copy param_1's key
+// fields into it, recompute its placement via
+// compute_object_placement_fields, then unlink param_1 from its tile's
+// object list, free its slot, and insert_head the new copy in its
+// place. Exists to move an object that was never allocated in the
+// renderable arena (e.g. a chargen-default inventory item dropped for
+// the first time) into it; without this an object can be correctly
+// linked into a tile's list yet still never actually render.
+ushort *reallocate_object_to_arena(param_1)
 ushort * param_1;
 
 {
@@ -46721,7 +46782,7 @@ ushort * param_1;
     *(undefined1 *)((char *)puVar2 + 5) = *(undefined1 *)((char *)param_1 + 5);
     *(char *)(puVar2 + 3) = (char)param_1[3];
     *(undefined1 *)((char *)puVar2 + 7) = *(undefined1 *)((char *)param_1 + 7);
-    FUN_0005578c(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
+    compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
     *(byte *)(puVar2 + 4) = (byte)param_1[2] & 0x3f;
     if (((*param_1 & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(*param_1 & 0x1ff) * 0xd] & 3) != 2)) {
       *(byte *)(puVar2 + 0xd) = (byte)(param_1[1] >> 7) & 7;
@@ -46757,7 +46818,16 @@ ushort * param_1;
 
 
 
-void FUN_0005578c(param_1,param_2,param_3)
+// was FUN_0005578c -- finalize an object record's placement at tile
+// (param_2,param_3): recomputes its render/collision height from the
+// low 7 bits of its own offset 2-3 field (the same "height_field =
+// (raw&0x7f)<<3" formula emit_tile_objects and FUN_00040770 both use),
+// caching it into offsets 0xb-0x12 alongside the tile sub-position, and
+// sets a handful of per-object flag bytes (0x13/0x14/0x16-0x18). Called
+// by both spawn_object_near_player and reallocate_object_to_arena
+// whenever a fresh object copy needs a real position/height, not just a
+// carried-over one.
+void compute_object_placement_fields(param_1,param_2,param_3)
 undefined1 * param_1;
 uint param_2;
 uint param_3;
@@ -46884,7 +46954,7 @@ ushort * param_1;
   }
   if (((bVar13 != 0) && (bVar13 < 9)) &&
      ((bVar5 = Ordinal_1053(), (bVar5 & 7) < bVar13 &&
-      (iVar8 = FUN_00052c5c(10,param_1), iVar8 != 0)))) {
+      (iVar8 = roll_object_destroy_chance(10,param_1), iVar8 != 0)))) {
     bVar3 = false;
   }
   if (DAT_00201b68 == 9) {
@@ -46941,13 +47011,13 @@ ushort * param_1;
       local_2c = (byte)param_1[9];
     }
   }
-  FUN_00053334(pbTile,param_1,1);
+  discard_misplaced_object(pbTile,param_1,1);
   if (puVar9 != (ushort *)0x0) {
     object_list_insert_head(pbTile,puVar9);
   }
   if ((bVar13 == 9) &&
      (iVar10 = FUN_000816e0(puVar9,(int)DAT_0010144c,(int)DAT_00101454,local_2c), iVar10 == 0)) {
-    puVar9 = (ushort *)FUN_00053334(pbTile,puVar9,0);
+    puVar9 = (ushort *)discard_misplaced_object(pbTile,puVar9,0);
   }
   return puVar9;
 }
@@ -46982,7 +47052,13 @@ int param_1;
 
 
 
-ushort *FUN_00055f98(param_1,param_2,param_3,param_4)
+// was FUN_00055f98 -- finalize a just-placed object's rest position at
+// (param_2,param_3): validate it can actually reach this floor height,
+// route genuinely-misplaced objects into discard_misplaced_object
+// (which destroys them, see its own comment), or reallocate a never-
+// before-placed object into the renderable arena via
+// reallocate_object_to_arena before returning it.
+ushort *settle_dropped_object(param_1,param_2,param_3,param_4)
 ushort * param_1;
 short param_2;
 short param_3;
@@ -47053,7 +47129,7 @@ int param_4;
        decide whether the object can reach this floor; with reference=0
        that's "no" for virtually any real floor, latching the 0x100
        "can't step up here" bit and routing the object into
-       FUN_00053334's "misplaced object" path, which destroys it with
+       discard_misplaced_object's "misplaced object" path, which destroys it with
        ~100% odds (see that function's own comment). Confirmed via
        disassembly that the real binary's drop_held_object_near_player
        (0x4a69c) also never sets this field before calling here, so the
@@ -47125,9 +47201,9 @@ LAB_000564d0:
       }
 LAB_000564d8:
       if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
-        fprintf(stderr, "[f98] -> FUN_00053334 fallback path (not FUN_00055610 replace)\n");
+        fprintf(stderr, "[f98] -> discard_misplaced_object fallback path (not reallocate_object_to_arena replace)\n");
       pDropTile = (char *)tilemap_lookup((int)param_2,(int)param_3);
-      puVar9 = (ushort *)FUN_00053334(pDropTile + 2,param_1,0);
+      puVar9 = (ushort *)discard_misplaced_object(pDropTile + 2,param_1,0);
       return puVar9;
     }
     if ((uVar2 & 7) == 5) goto LAB_000564d8;
@@ -47154,7 +47230,7 @@ LAB_000564d8:
        linked into the tile's object list -- which is all the two
        bail-outs just below this comment do -- produces an object that's
        genuinely in the world's linked list but can never actually be
-       drawn. FUN_00055610 (the `iVar12==0` branch right below) is the
+       drawn. reallocate_object_to_arena (the `iVar12==0` branch right below) is the
        real code that fixes this class of problem: it allocates a FRESH
        low-region copy via alloc_object_slot(1) -- the same allocator
        spawn_object_near_player uses -- and unlinks/frees the original,
@@ -47166,7 +47242,7 @@ LAB_000564d8:
        in a systematic floor scan (bug-throw-item.txt). */
     bVar14 = object_ptr_in_arena((char *)param_1) == 0;
     if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80 && bVar14)
-      fprintf(stderr, "[f98-hack2] param_1=%p not in renderable arena, forcing FUN_00055610 replace\n",
+      fprintf(stderr, "[f98-hack2] param_1=%p not in renderable arena, forcing reallocate_object_to_arena replace\n",
               (void *)param_1);
     if ((uVar2 & 8) != 0 && !bVar14) {
       if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
@@ -47180,10 +47256,10 @@ LAB_000564d8:
     }
     if (iVar12 == 0 || bVar14) {
       if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
-        fprintf(stderr, "[f98] -> FUN_00055610 replace path, coords=(%d,%d)\n", (int)param_2, (int)param_3);
+        fprintf(stderr, "[f98] -> reallocate_object_to_arena replace path, coords=(%d,%d)\n", (int)param_2, (int)param_3);
       DAT_0010144c = param_2;
       DAT_00101454 = param_3;
-      puVar9 = (ushort *)FUN_00055610(param_1);
+      puVar9 = (ushort *)reallocate_object_to_arena(param_1);
       DAT_0010144c = uVar6;
       DAT_00101454 = uVar3;
       if (DAT_002046d4 != 0) {
@@ -49685,9 +49761,9 @@ int param_1;
     return;
   }
   if (param_1 != 0) {
-    FUN_00051320();
+    resolve_wall_slide_corner();
     if (getenv("UW_DEBUG_WALL"))
-      fprintf(stderr, "[wall-slide] after FUN_00051320: DAT_002049da=%d DAT_0008698c=%d\n",
+      fprintf(stderr, "[wall-slide] after resolve_wall_slide_corner: DAT_002049da=%d DAT_0008698c=%d\n",
               (int)DAT_002049da, (int)DAT_0008698c);
     uVar2 = (ushort)DAT_002049da;
     if (DAT_002049da != 9) goto LAB_00059be4;
@@ -59138,7 +59214,13 @@ LAB_00069ee8:
 
 
 
-void FUN_00069f2c(param_1,param_2,param_3,param_4)
+// was FUN_00069f2c -- disassembly-confirmed faithful: given a compass
+// heading (param_1) and a distance (param_2), looks up
+// heading_to_sine_cosine and adds `*param_4(Y) += sin(heading)*dist`,
+// `*param_3(X) += cos(heading)*dist` -- the standard heading->direction-
+// vector projection, used to compute where a thrown/dropped object's
+// trajectory lands relative to the thrower's position.
+void project_position_by_heading(param_1,param_2,param_3,param_4)
 int param_1;
 short param_2;
 short * param_3;
@@ -59151,7 +59233,7 @@ short * param_4;
   short local_14;
   short local_12;
   
-  FUN_00049c64((0x40U - param_1 & 0xff) << 8,&local_14,&local_12);
+  heading_to_sine_cosine((0x40U - param_1 & 0xff) << 8,&local_14,&local_12);
   iVar3 = (int)local_14;
   if (iVar3 < 0) {
     iVar3 = iVar3 + 0x7f;
@@ -64446,7 +64528,7 @@ undefined4 FUN_00071e20()
   else {
     local_16 = DAT_00204880 >> 5;
     local_18 = DAT_00204882 >> 5;
-    FUN_00069f2c((int)DAT_00201c70 >> 8,0xb,&local_16,&local_18);
+    project_position_by_heading((int)DAT_00201c70 >> 8,0xb,&local_16,&local_18);
     puVar5 = (ushort *)tilemap_lookup((int)(short)local_16 >> 3,(int)(short)local_18 >> 3);
     uVar1 = *puVar5;
     if (((uVar1 & 0xf) == 1) &&
@@ -64609,7 +64691,7 @@ LAB_00072374:
     bVar1 = *(byte *)((char *)g_player_object + 3);
     *(undefined1 *)(pNewObj + 2) = uVar2;
     *(byte *)(pNewObj + 3) = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
-    FUN_00055f98(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
+    settle_dropped_object(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
     FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
@@ -64743,7 +64825,7 @@ undefined4 param_2;
           }
           message_scroll_print_wrapped(acStack_2c);
           message_scroll_print_wrapped(s_was_successfully_dearmed__000873b0);
-          FUN_000533e4(local_34[0]);
+          free_linked_object_recursive(local_34[0]);
         }
       }
     }
@@ -65000,7 +65082,7 @@ LAB_00072f24:
       else {
         sVar2 = Ordinal_2005(uVar3,uVar9 * 0x80);
       }
-      FUN_00049c64(((0x40 - (*(byte *)((char *)g_player_object + 0x18) & 0x1f)) * 4 -
+      heading_to_sine_cosine(((0x40 - (*(byte *)((char *)g_player_object + 0x18) & 0x1f)) * 4 -
                    ((int)*(short *)((char *)g_player_object + 2) & 0x380U)) * 0x40,&local_28,&local_26);
       iVar5 = (int)local_28;
       iVar6 = (int)local_26;
@@ -66346,7 +66428,7 @@ char param_6;
     local_1a = (ushort)DAT_0023c3dc;
     local_1c = (ushort)DAT_0023c3d8;
   }
-  FUN_00069f2c(uVar3,param_5,&local_1a,&local_1c);
+  project_position_by_heading(uVar3,param_5,&local_1a,&local_1c);
   cVar1 = param_6 * '\x02' + '\x01';
   FUN_0007471c(param_2,uVar2,param_3,param_4,(char)local_1a - param_6,(char)local_1c - param_6,cVar1
                ,cVar1);
@@ -66456,7 +66538,7 @@ char param_2;
   if (param_2 != '\x04') {
     uVar7 = 9;
   }
-  FUN_00069f2c(extraout_r1_00 & 0xffff,uVar7,&local_34,&local_32);
+  project_position_by_heading(extraout_r1_00 & 0xffff,uVar7,&local_34,&local_32);
   local_2c = (ushort)((int)(short)local_34 >> 3);
   local_2e = (ushort)((int)(short)local_32 >> 3);
   if (param_2 == '\x03') {
@@ -66559,7 +66641,7 @@ char param_2;
       if (param_2 == '\x04') {
         return;
       }
-      FUN_00055f98(pObj,(int)(short)local_2c,(int)(short)local_2e,1);
+      settle_dropped_object(pObj,(int)(short)local_2c,(int)(short)local_2e,1);
       return;
     }
     if (param_1 != g_player_object) {
@@ -69645,7 +69727,7 @@ LAB_00079cb8:
 // was FUN_00079d08
 bool finish_object_use(param_1,param_2,param_3)
 /* Was `undefined4 param_1` -- a real object-record pointer (forwarded
-   to decrement_object_count/FUN_00053334, which both dereference it), truncated
+   to decrement_object_count/discard_misplaced_object, which both dereference it), truncated
    to 32 bits on this host -- same class as many other fixes this
    session. */
 ushort *param_1;
@@ -69665,11 +69747,11 @@ undefined4 param_3;
     if (iVar2 == 0) {
       sVar1 = encode_object_slot_index(param_1);
       local_14[0] = local_14[0] & 0x3f | sVar1 << 6;
-      FUN_000533e4(local_14);
+      free_linked_object_recursive(local_14);
       iVar2 = 0;
     }
     else {
-      iVar2 = FUN_00053334(DAT_002046b4,param_1,param_3);
+      iVar2 = discard_misplaced_object(DAT_002046b4,param_1,param_3);
       FUN_00049924(2);
     }
   }
@@ -69678,7 +69760,7 @@ undefined4 param_3;
        and forwards it on -- called bare here, same idiom as its own
        fix. */
     decrement_object_count(param_1);
-    iVar2 = FUN_00053334(0,param_1,param_3);
+    iVar2 = discard_misplaced_object(0,param_1,param_3);
   }
   return iVar2 == 0;
 }
@@ -70024,7 +70106,7 @@ int param_2;
     }
     FUN_00081814(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
     iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
-    FUN_00053334(iVar2 + 2,param_1,1);
+    discard_misplaced_object(iVar2 + 2,param_1,1);
     DAT_002020a0 = -1;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
@@ -70567,7 +70649,7 @@ int param_3;
                        ((uVar3 & 0x1c00) >> 10) + DAT_002020a4 * 8,uVar3 & 0x7f,puVar8,6,0);
           iVar6 = iVar6 + -1;
         }
-        FUN_00053334(iVar7 + 2,param_1,1);
+        discard_misplaced_object(iVar7 + 2,param_1,1);
         FUN_00049924(2);
       }
     }
@@ -71802,7 +71884,7 @@ LAB_0007dce4:
     local_34 = tilemap_lookup(param_1[2] & 0x3f,(byte)param_1[3] & 0x3f);
     local_34 = local_34 + 2;
     uVar6 = resolve_object_link(param_1 + 3);
-    FUN_000534a8(local_34,uVar6);
+    unlink_and_free_object(local_34,uVar6);
     FUN_00049924(2);
     return 2;
   case 0xc:
@@ -71991,7 +72073,7 @@ int param_2;
   uVar1 = encode_object_slot_index(param_2);
   iVar2 = FUN_00053644(param_1,1,uVar1);
   if (iVar2 != 0) {
-    FUN_000534a8(DAT_002046b4);
+    unlink_and_free_object(DAT_002046b4);
   }
   return;
 }
