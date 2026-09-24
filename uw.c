@@ -18699,12 +18699,19 @@ short param_5;
   DAT_00100608 = (short)(char)(&DAT_001007d0)[iVar5 + 0x13] +
                  (short)((int)(char)(&DAT_001007e1)[iVar6] >> 1);
   if ((param_1[0xe] & 4) != 0) {
+    /* Both Ordinal_2005 calls below were the same fabricated-remainder
+       bug fixed elsewhere this session (this port's Ordinal_2005 never
+       populates extraout_r1/extraout_r1_00); computed each remainder
+       directly instead. This randomizes a wander/patrol target offset,
+       so previously always added a fixed +7/+4 instead of a real
+       0-5/0-11 random spread -- contributing to (not the sole cause of)
+       the "NPC teleports far away on its first tick" bug this session's
+       QA pass reported, traced to npc_ai_tick's own dropped 5th argument
+       to this function (see its call site's comment). */
     uVar4 = Ordinal_1053();
-    Ordinal_2005(6,uVar4);
-    DAT_00100608 = DAT_00100608 + extraout_r1 + 7;
+    DAT_00100608 = DAT_00100608 + (short)(uVar4 % 6) + 7;
     uVar4 = Ordinal_1053();
-    Ordinal_2005(0xc,uVar4);
-    DAT_0010061c = DAT_0010061c + extraout_r1_00 + 4;
+    DAT_0010061c = DAT_0010061c + (short)(uVar4 % 0xc) + 4;
   }
   iVar5 = FUN_000270d0();
   if ((iVar5 != 0) && (DAT_00100620 == 1)) {
@@ -23994,8 +24001,10 @@ undefined4 npc_ai_tick()
   ushort *puVar11;
 
   if (getenv("UW_DEBUG_NPC_POS"))
-    fprintf(stderr, "[npc-pos] obj=%p tile=(%u,%u)\n", (void *)DAT_0010190c,
-            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+    fprintf(stderr, "[npc-pos] obj=%p type=0x%x tile=(%u,%u) hp=%d\n", (void *)DAT_0010190c,
+            (unsigned)(*DAT_0010190c & 0x1ff),
+            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4),
+            (int)(byte)DAT_0010190c[4]);
   DAT_00101738 = encode_object_slot_index(DAT_0010190c);
   DAT_00101404 = &DAT_001007d0 + ((byte)*DAT_0010190c & 0x3f) * 0x30;
   DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
@@ -24120,6 +24129,10 @@ undefined4 npc_ai_tick()
   DAT_00101434 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x7f;
   DAT_00101730 = (&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd];
   uVar9 = (uint)*(ushort *)((char *)DAT_0010190c + 0xb);
+  if (getenv("UW_DEBUG_NPC_STATE"))
+    fprintf(stderr, "[npc-state] obj=%p uVar9=0x%x class=0x%x byte15=0x%x\n", (void *)DAT_0010190c,
+            uVar9, (unsigned)(uVar9 & 0xf000),
+            (unsigned)(*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f));
   if (((uVar9 & 0xf) == 0xb) || ((uVar9 & 0xf) == 3)) {
 LAB_00033830:
     FUN_00033880();
@@ -24184,8 +24197,27 @@ LAB_000337fc:
     puVar11 = DAT_0010190c;
     bVar3 = *(byte *)((char *)DAT_0010190c + 0x15);
     uVar1 = (&DAT_000853d8)[(uint)(byte)((byte)DAT_0010190c[8] >> 4) * 2];
-    Ordinal_2005(9,uVar7,*(byte *)((char *)DAT_0010190c + 0xf),Ordinal_2005_exref,DAT_00101404[0xf]);
-    FUN_00027ce0(puVar11,(int)extraout_r1_01,uVar1,(bVar3 & 0x3f) - 1);
+    /* Was `Ordinal_2005(9,uVar7,*(byte*)(DAT_0010190c+0xf),Ordinal_2005_exref,
+       DAT_00101404[0xf]); FUN_00027ce0(puVar11,(int)extraout_r1_01,uVar1,
+       (bVar3&0x3f)-1);` -- badly garbled. Real disassembly (0x335b8-0x33628)
+       shows this is genuinely TWO separate things the decompiler folded
+       together: a plain `Ordinal_2005(9,uVar7)` (same fabricated-remainder
+       bug fixed throughout this session -- computed the remainder
+       directly), and FUN_00027ce0's own 5th argument (it takes 5 params,
+       confirmed at its definition; this call was silently dropping the
+       last one) -- DAT_00101404[0xf], stashed on the stack by the real
+       ARM code before the Ordinal_2005 call and read back after it, which
+       the decompiler instead spliced into Ordinal_2005's own argument
+       list as three bogus extra params (including the nonsensical
+       Ordinal_2005_exref placeholder). Confirmed live: this whole branch
+       (an NPC's "pick a new wander/patrol target" state) is exactly what
+       the QA-reported "NPC teleports away on its first tick" bug was
+       tracing back to -- FUN_00027ce0 computes DAT_00100608/DAT_0010061c
+       (target position deltas) then calls FUN_000270d0 to path there;
+       with param_5 uninitialized/garbage and param_2 (the modulo-9
+       remainder) also fabricated-garbage before this fix, the computed
+       target tile could land anywhere. */
+    FUN_00027ce0(puVar11,(short)(uVar7 % 9),uVar1,(bVar3 & 0x3f) - 1,(short)DAT_00101404[0xf]);
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
     uVar9 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
     *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar9;
@@ -24436,17 +24468,37 @@ LAB_00033e9c:
   uVar11 = uVar2 >> 2 & 0xff;
   uVar11 = (uVar11 ^ *(byte *)(DAT_0010190c + 0x18)) & 0x1f ^ uVar11;
   uVar12 = (uint)DAT_001018fc;
-  Ordinal_2005(0x100,(uVar11 - uVar12) + 0x100,*(undefined1 *)(DAT_0010190c + 2),Ordinal_2005_exref,
-               unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_r8,unaff_r9,unaff_lr);
-  uVar5 = extraout_r1_04 & 0xff;
+  /* Was `Ordinal_2005(0x100,(uVar11-uVar12)+0x100,*(undefined1*)(DAT_0010190c+2),
+     Ordinal_2005_exref,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_r8,unaff_r9,
+     unaff_lr);` -- badly garbled. Real disassembly (0x3256c-0x32768, this
+     function's actual body per Ghidra -- FUN_00033880's own "0x33880"
+     entry point is just one jump-table case landing in a shared tail
+     block starting here) confirms this is genuinely a plain 2-argument
+     `Ordinal_2005(0x100,(uVar11-uVar12)+0x100)` call; the extra
+     "arguments" are a decompiler artifact with no real source (the
+     unaff_rN/unaff_lr names mean "whatever these callee-saved registers
+     happened to hold since function entry", never actually read by the
+     real code here). All 5 Ordinal_2005 calls in this function also
+     have the by-now-familiar fabricated-remainder bug (this port's
+     Ordinal_2005 never populates extraout_r1); computed each directly
+     instead (divisor is always the constant 0x100, so `% 0x100` == the
+     `& 0xff` already applied everywhere the remainder is consumed).
+     Confirmed live: this function is npc_ai_tick's `case 0xb`/default
+     dispatch target (the "orient toward last-seen-player direction"
+     tail shared by every non-special AI state), and was the real source
+     of the QA-reported "NPC disappears/teleports on its first tick" bug
+     -- with the remainder always reading as garbage/0, the facing-delta
+     clamp this computes could send an object's orientation (and, via
+     the offset+2/+3 tile-position bits it also writes here, its
+     position) to an arbitrary value on the very first tick any NPC ran
+     this path. */
+  uVar5 = ((uVar11 - uVar12) + 0x100) & 0xff;
   if ((0x1f < uVar5) && (uVar5 < 0xe1)) {
     if (uVar5 < 0x80) {
-      Ordinal_2005(0x100,uVar12 + 0x20);
-      uVar11 = extraout_r1_05;
+      uVar11 = (uVar12 + 0x20) & 0xff;
     }
     else {
-      Ordinal_2005(0x100,uVar12 + 0xe0);
-      uVar11 = extraout_r1_06;
+      uVar11 = (uVar12 + 0xe0) & 0xff;
     }
     uVar11 = uVar11 & 0xff;
   }
@@ -24456,7 +24508,21 @@ LAB_00033e9c:
   *(byte *)(DAT_0010190c + 0x18) =
        (*(byte *)(DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)(DAT_0010190c + 0x18);
   iVar7 = DAT_0010190c;
-  if (DAT_00101430 == 0) {
+  /* Was `if (DAT_00101430 == 0)` -- an inverted condition, confirmed via
+     real disassembly (`cmp r0,#0x0; beq 0x326a4`, where r0 is
+     DAT_00101430 and 0x326a4 is the simple "just copy DAT_00101458"
+     branch this decompile currently has as the ELSE): the real branch
+     runs this whole Ordinal_2005-laden "randomly step the facing toward
+     the last-known player direction" block when DAT_00101430 is
+     NONZERO, and takes the simple path when it's zero -- exactly
+     backwards from what was here. DAT_00101430 defaults to 0 at the top
+     of npc_ai_tick (its only other writer in this file), so with the
+     inverted condition, ordinary NPCs took this complex branch on
+     essentially every tick instead of the simple one -- combined with
+     this branch's own fabricated-remainder bugs (fixed above), this was
+     the real source of the QA-reported "NPC teleports on its first
+     tick" bug. */
+  if (DAT_00101430 != 0) {
     if (DAT_00101434 < 2) {
       return;
     }
@@ -24465,23 +24531,20 @@ LAB_00033e9c:
       return;
     }
     uVar5 = (uint)DAT_00101458;
-    Ordinal_2005(0x100,(bVar10 - uVar5) + 0x100);
-    uVar11 = extraout_r1_07 & 0xff;
+    uVar11 = ((bVar10 - uVar5) + 0x100) & 0xff;
     if ((uVar11 < 0x20) || (0xe0 < uVar11)) {
       *(byte *)(iVar7 + 9) = bVar10;
       return;
     }
     if (uVar11 < 0x40) {
-      Ordinal_2005(0x100,uVar5 + 0x20);
-      uVar9 = extraout_r1;
+      uVar9 = (uVar5 + 0x20) & 0xff;
     }
     else {
       if (uVar11 < 0xc1) {
         *(byte *)(iVar7 + 0x13) = bVar1 & 0x80;
         goto LAB_00032690;
       }
-      Ordinal_2005(0x100,uVar5 + 0xe0);
-      uVar9 = extraout_r1_00;
+      uVar9 = (uVar5 + 0xe0) & 0xff;
     }
     *(undefined1 *)(iVar7 + 9) = uVar9;
   }
