@@ -1857,7 +1857,13 @@ short DAT_002048d0;
 undefined4 DAT_00101924;
 undefined4 DAT_00101734;
 undefined DAT_002048c2;
-undefined2 DAT_002048c0;
+/* Was a bare `undefined2` -- same split-symbol class as DAT_002048f0/
+   DAT_00204950 below (see their own comment): FUN_00054a00 writes up to
+   offset 0x28 into whichever of these three globals DAT_0010172c
+   currently points at, a massive out-of-bounds write past a 2-byte
+   scalar. Oversized generously like its siblings. */
+static undefined2 DAT_002048c0_backing[32768];
+#define DAT_002048c0 DAT_002048c0_backing[0]
 ushort DAT_00101414;
 undefined2 DAT_002048c8;
 undefined2 DAT_002048c6;
@@ -1907,7 +1913,25 @@ static undefined DAT_00101732_backing[8192];
 #define DAT_00101732 DAT_00101732_backing[0]
 undefined DAT_00101733;
 undefined4 DAT_00101728;
-undefined4 DAT_0010172c;
+/* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
+   FUN_00032d38/FUN_00032aa4 store here (&DAT_002048c0/002048f0/00204950,
+   one of a 3-way "which per-class scratch buffer" choice) -- same class
+   of bug as FUN_00032d38's own iVar5 fix and FUN_000535fc's header
+   comment. Confirmed live via lldb: DAT_0010172c read 0xb6c724 instead
+   of the real 0x100b6c724 (upper word dropped), so the very next
+   FUN_00054a00(DAT_0010190c,DAT_0010172c) call wild-derefs, crashing the
+   first time an NPC's per-tick AI (FUN_00032d38) got this far -- which
+   never happened before this session's other fixes let that code run
+   at all. Note: a separate, unrelated function (the tile_pair_los_blocked
+   ring-buffer scan a few thousand lines below) also reads raw bytes at
+   `&DAT_0010172c + small offset` as part of an already-fragile,
+   not-yet-fixed split-symbol-cluster spanning several adjacent globals
+   (see DAT_00101732's own backing-array fix and
+   [[split-symbol-clusters-to-structs]]) -- that usage's correctness
+   already depended on undefined/compiler-chosen adjacent-global layout
+   before this change and is no more or less well-defined after
+   widening this one field from 4 to 8 bytes. */
+void *DAT_0010172c;
 undefined DAT_00101749;
 ushort DAT_000853b8;
 undefined1 DAT_0010174a;
@@ -1938,8 +1962,21 @@ undefined1 DAT_00101738;
 byte DAT_00101458;
 byte DAT_001018fc;
 byte DAT_00101434;
-undefined DAT_002048f0;
-undefined DAT_00204950;
+/* Was a bare 1-byte `undefined` -- same split-symbol class as
+   DAT_00204980/990/9b0's own backing-array fixes just above: FUN_00054a00
+   (called with this as its param_2 "object state" out-buffer, via
+   DAT_0010172c) writes fields up to offset 0x28 into it, a massive
+   out-of-bounds write past a 1-byte scalar. Confirmed live crashing
+   (EXC_BAD_ACCESS writing param_2[0x23]) the first time an NPC actually
+   got far enough through its per-tick AI (FUN_00032d38) to reach this
+   call -- which never happened before DAT_00086dfc/FUN_00032d38's other
+   fixes let that code run at all. Oversized generously like its
+   siblings rather than tightly to 0x29 bytes, in case another
+   not-yet-exercised caller writes further into the same real struct. */
+static undefined1 DAT_002048f0_backing[65536];
+#define DAT_002048f0 DAT_002048f0_backing[0]
+static undefined1 DAT_00204950_backing[65536];
+#define DAT_00204950 DAT_00204950_backing[0]
 undefined4 DAT_00101944;
 short DAT_00202a3c;
 undefined DAT_000853d8;
@@ -20532,9 +20569,15 @@ ushort * param_1;
 
 
 undefined4 FUN_0002bd70(param_1)
-int param_1;
+intptr_t param_1;
 
 {
+  /* param_1 was `int`, truncating the real 64-bit pointers callers pass
+     (&DAT_00204920, and DAT_0010172c after its own fix above) -- same
+     class of bug as DAT_0010172c's own fix. Confirmed live via lldb:
+     read as 0xb6c724 instead of the real 0x100b6c724, crashing on this
+     very first dereference the moment an NPC's per-tick AI got this
+     far. */
   *(char *)(param_1 + 0x12) = (char)(((*(byte *)(DAT_0010190c + 0x14) & 7) << 0x14) >> 0x10);
   *(undefined1 *)(param_1 + 0x13) = 0;
   movement_collision_sweep();
@@ -23894,7 +23937,17 @@ undefined4 FUN_00032d38()
   undefined2 uVar2;
   byte bVar3;
   char cVar4;
-  int iVar5;
+  /* Was `int`, truncating the real 64-bit pointers this variable holds
+     (FUN_000535fc(1) and tilemap_lookup() both return real pointers, and
+     the two dereferences below and the object_list_unlink(iVar5+2,...)
+     call both need the full address) -- same class of bug as
+     FUN_000535fc's own header comment describes, confirmed live via
+     lldb: iVar5 held 0x1181181b instead of the real 0x111812e1b-range
+     pointer, an exact 32-bit truncation (upper word dropped), crashing
+     FUN_00032d38's very first wild dereference. iVar5 is also reused
+     for small-int distance-squared arithmetic later in this function;
+     intptr_t is safe for that too. */
+  intptr_t iVar5;
   int iVar6;
   undefined4 uVar7;
   byte extraout_r1;
@@ -23921,8 +23974,26 @@ undefined4 FUN_00032d38()
          100 < (iVar5 * iVar5 + iVar6 * iVar6) * 0x10000 >> 0x10)) &&
      ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 3)) {
     bVar3 = (byte)DAT_0010190c[5];
-    Ordinal_2005(0x10,(bVar3 & 0xf) + 8);
-    bVar8 = extraout_r1;
+    /* Was `Ordinal_2005(0x10,(bVar3&0xf)+8); bVar8 = extraout_r1;` -- the
+       classic "call idivmod, then read its remainder back through the
+       extraout_r1 register-leftover fiction" pattern already fixed
+       elsewhere this session (FUN_000229e0, FUN_0002431c's sVar_rem):
+       this port's Ordinal_2005 (ordinal_stubs.c) only returns the
+       quotient through its real C return value and never touches
+       anything a recompiled build's own extraout_r1 local could
+       legitimately read, so every read of it here was uninitialized/
+       stray-value garbage -- confirmed via UW_DEBUG_NPC_PHASE: it read
+       0 every single time regardless of the real (bVar3&0xf)+8 dividend,
+       which fed straight back into DAT_0010190c[5]'s own low nibble
+       below and pinned it there forever, so the class-0x40 (NPC)
+       "too far to path, just advance its clock" branch this is in
+       could never advance an off-screen monster's tick phase past
+       where FUN_0003495c's catch-up-window check first admitted it --
+       an unconditional infinite loop (FUN_00032d38 always really does
+       return 1, confirmed via real disassembly at 0x33874: `mov r0,#1`)
+       hanging the entire game solid the moment any monster ever took
+       this path. Compute the remainder directly instead. */
+    bVar8 = ((bVar3 & 0xf) + 8) % 0x10;
     goto LAB_00033860;
   }
   if ((DAT_00101404[10] & 0x80) == 0) {
@@ -23966,7 +24037,17 @@ undefined4 FUN_00032d38()
       ((*(byte *)((char *)DAT_0010190c + 0x13) & 0x7f) != 0)) || ((DAT_0010190c[10] & 0xf8) != 0x80)) {
     FUN_00054a00(DAT_0010190c,DAT_0010172c);
     bVar3 = *(byte *)((char *)DAT_0010190c + 9);
-    DAT_00101414 = FUN_0002b7a0();
+    /* Was `FUN_0002b7a0()` -- a dropped argument (K&R declared, relying
+       on whatever register-content reuse the real ARM code got for
+       free). FUN_0002b7a0's own single param is dereferenced the exact
+       same way every other call in this function uses DAT_0010190c (the
+       object currently being processed) -- e.g. `*param_1 & 0x1ff`
+       mirrors `*DAT_0010190c & 0x1ff` used just a few lines below.
+       Confirmed live: called with no argument, param_1 read as
+       garbage/NULL and crashed on its first dereference the moment an
+       NPC's per-tick AI got this far (only possible after this
+       session's other FUN_00032d38 fixes). */
+    DAT_00101414 = FUN_0002b7a0(DAT_0010190c);
     FUN_0002bd70(DAT_0010172c,DAT_00101438);
     DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
     DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
@@ -24078,10 +24159,16 @@ LAB_000337fc:
 LAB_00033834:
   puVar11 = DAT_0010190c;
   bVar3 = (byte)DAT_0010190c[5];
-  Ordinal_2005(0x10,((byte)DAT_0010190c[10] & 7) + (bVar3 & 0xf));
-  bVar8 = extraout_r1_00;
+  /* Was `Ordinal_2005(...); bVar8 = extraout_r1_00;` -- same fabricated-
+     remainder bug as the other Ordinal_2005 call above in this function,
+     see that comment. Compute the remainder directly instead. */
+  bVar8 = (((byte)DAT_0010190c[10] & 7) + (bVar3 & 0xf)) % 0x10;
 LAB_00033860:
   *(byte *)(puVar11 + 5) = (bVar3 ^ bVar8) & 0xf ^ bVar3;
+  if (getenv("UW_DEBUG_NPC_PHASE"))
+    fprintf(stderr, "[npc-phase] obj=%p old=0x%x new=0x%x bVar8=0x%x speed=0x%x\n",
+            (void *)puVar11, bVar3, (unsigned)((bVar3 ^ bVar8) & 0xf ^ bVar3), bVar8,
+            (unsigned)((byte)puVar11[10] & 7));
   return 1;
 }
 
@@ -24814,6 +24901,10 @@ int param_2;
   uVar9 = (uint)(param_1[0xb] >> 10);
   uVar11 = param_1[0xb] >> 4 & 0x3f;
   local_28 = tilemap_lookup(uVar9,uVar11);
+  if (getenv("UW_DEBUG_NPC_TICK"))
+    fprintf(stderr, "[npc-tick] obj=%p class=0x%x tile=(%u,%u) target=(%u,%u)\n",
+            (void *)param_1, (unsigned)(*param_1 & 0x1ff), uVar9, uVar11,
+            (unsigned)((byte)param_1[2] & 0x3f), (unsigned)(param_1[3] & 0x3f));
   if ((param_1[7] & 1) != 0) {
     unlink_and_free_object(local_28 + 2,param_1);
     return;
@@ -46723,7 +46814,19 @@ ushort * param_2;
   undefined1 uVar2;
   byte bVar3;
   short sVar4;
-  int iVar5;
+  /* Was `int`, truncating the real 64-bit pointers this variable holds
+     from tilemap_lookup() and FUN_0005596c() (both real pointer
+     returns) -- same class of bug fixed several times elsewhere this
+     session (FUN_00032d38's own iVar5, DAT_0010172c, FUN_0002bd70's
+     param_1). Confirmed live via lldb: iVar5 held 0x1c820200 instead of
+     the real 0x11c820200 (upper word dropped, DAT_002029cc itself was
+     NOT corrupted -- an earlier working theory this session, based on
+     comparing DAT_002029cc across separate process runs with different
+     ASLR-derived heap addresses, was wrong), crashing
+     object_list_insert_head on the truncated iVar5+2. iVar5 is also
+     reused for small-int arithmetic later in this function; intptr_t is
+     safe for that too. */
+  intptr_t iVar5;
   undefined4 uVar6;
   int extraout_r1;
   uint uVar7;
@@ -46733,12 +46836,36 @@ ushort * param_2;
   bool bVar11;
   
   if (((short)*param_2 >> 8 != DAT_0010144c) || ((short)param_2[1] >> 8 != DAT_00101454)) {
-    iVar5 = tilemap_lookup();
-    object_list_unlink(iVar5 + 2,param_1);
+    /* Both tilemap_lookup() calls below were dropped-argument (K&R,
+       relying on register-content reuse) -- unlike the many other such
+       call sites in this file that legitimately reuse whatever's still
+       in r0/r1 from an immediately preceding, equivalent computation,
+       here the surrounding code makes the intended arguments
+       unambiguous and explicit: DAT_0010144c/DAT_00101454 are "the
+       current tile" (old, for the unlink just below; the caller's own
+       just-written new values, for the insert after they're updated).
+       Confirmed live via lldb: the second call returned NULL (garbage
+       register content, not the real new tile coords), crashing
+       object_list_insert_head on iVar5+2 == 0x2.
+
+       Separately: neither object_list_unlink nor object_list_insert_head
+       itself tolerates a NULL tilemap_lookup result (both unconditionally
+       dereference their first arg), so also skip each call outright on
+       NULL -- tilemap_lookup can legitimately return NULL now that it
+       guards against DAT_002029cc's own separately-documented corruption
+       (see that function's comment); confirmed live crashing here via
+       exactly that path (a wild pointer read at object_list_insert_head's
+       first dereference) the first time NPC AI reached this function. */
+    iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
+    if (iVar5 != 0) {
+      object_list_unlink(iVar5 + 2,param_1);
+    }
     DAT_0010144c = (ushort)(char)(*param_2 >> 8);
     DAT_00101454 = (short)(char)(param_2[1] >> 8);
-    iVar5 = tilemap_lookup();
-    object_list_insert_head(iVar5 + 2,param_1);
+    iVar5 = tilemap_lookup(DAT_0010144c,DAT_00101454);
+    if (iVar5 != 0) {
+      object_list_insert_head(iVar5 + 2,param_1);
+    }
   }
   uVar7 = (uint)param_1[1];
   bVar9 = (byte)((int)(((int)(short)param_2[2] & 0x3f8U) << 0x10) >> 0x13);
@@ -57620,6 +57747,18 @@ void FUN_00066e90()
   FUN_0006ff08(0);
   DAT_0023be8c = 0;
   DAT_00086df8 = &DAT_0023bca8;
+  /* HACK, same silently-zero class as DAT_0024af60 above and DAT_00086e68 /
+     DAT_0008589c elsewhere in this file: DAT_00086dfc is read exactly once
+     in this whole file, as the enable gate for movement_tick's per-frame
+     call to FUN_000349bc (the real NPC/mobile-object AI+movement
+     dispatcher -- walks the mobile object arena, drives NPC pathing via
+     FUN_00034c10 and other mobile objects via FUN_0002b47c) -- but it is
+     never written anywhere in this decompile, so the gate is permanently
+     false and NPCs/mobile objects never tick. This is a link-time-
+     initialised flag whose real setup Ghidra dropped, exactly like
+     DAT_0024af60's movement-key command-mode flag above. Initialize it
+     here, alongside this function's other one-time gameplay-enable flags. */
+  DAT_00086dfc = 1;
   FUN_00066cb4();
   iVar1 = (*g_player_object & 0x3f) * 0x30;
   DAT_0023be74 = &DAT_001007d0 + iVar1;
@@ -58054,7 +58193,23 @@ short param_2;
 {
   char *iVar1;
 
-  if (((int)param_2 & 0xffffffc0U) + ((int)param_1 & 0xffffffc0U) == 0) {
+  /* DAT_002029cc is set once, early (init_level_object_arena/
+     reset_level_object_arena, a real malloc'd pointer via Ordinal_1041),
+     but has been separately observed (FUN_00066e90's own comment) to no
+     longer hold that pointer by later points in a session -- some other
+     write elsewhere in this file lands on its storage, a real,
+     documented, not-yet-root-caused bug. FUN_00066e90 already guards
+     its own use with this same bounds check; tilemap_lookup is the
+     single shared accessor behind 70+ call sites, so guard here too
+     rather than just the one caller -- confirmed live crashing via a
+     wild dereference several calls downstream (object_list_insert_head)
+     the first time NPC AI (FUN_00054f6c, reached only after this
+     session's other FUN_00032d38/FUN_000349bc fixes) called this with
+     DAT_002029cc already corrupted. Treat a corrupted base the same as
+     an out-of-range coordinate: every caller already has to tolerate
+     this function's documented NULL return. */
+  if ((((int)param_2 & 0xffffffc0U) + ((int)param_1 & 0xffffffc0U) == 0) &&
+      ((uintptr_t)DAT_002029cc >= 0x10000)) {
     iVar1 = DAT_002029cc + ((int)param_1 + param_2 * 0x40) * 4;
   }
   else {
@@ -58599,6 +58754,13 @@ int param_3;
        ((g_fall_accel != 0 || (DAT_0020488e != 0)))) || ((DAT_0020488c != 0 || (DAT_000858a0 != 0)))
       ) && (param_3 == 0)) {
     apply_movement_tick(param_1);
+  }
+  if (getenv("UW_DEBUG_NPC_GATE")) {
+    static unsigned callnum = 0;
+    callnum++;
+    if (callnum % 60 == 1)
+      fprintf(stderr, "[npc-gate] call=%u DAT_00086dfc=%d DAT_002020d0=%d param_2=0x%x (short)=%d\n",
+              callnum, DAT_00086dfc, DAT_002020d0, (unsigned)param_2, (short)param_2);
   }
   if (((DAT_00086dfc != 0) && (DAT_002020d0 == 0)) && ((short)param_2 != 0)) {
     FUN_000349bc(param_2);
