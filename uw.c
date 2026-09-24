@@ -30597,6 +30597,11 @@ ushort *pick_object_under_cursor()
     }
 
     DAT_002020a8 = DAT_002020b0 + 2;
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d\n",
+              (void *)puVar3, (unsigned)(*puVar3 & 0x1ff),
+              (int)((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20),
+              (int)object_ptr_in_arena((char *)puVar3));
     if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
        (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;
@@ -30695,12 +30700,24 @@ void interact_default()
   }
   else {
     if ((iVar1 != 0) && (iVar2 == 0)) {
+      if (getenv("UW_DEBUG_THROW"))
+        fprintf(stderr, "[grab] target=%p type=0x%x bit8000=%d target3=0x%x target3_bit8000=%d target3_qty=0x%x in_arena=%d\n",
+                (void *)g_interact_target, (unsigned)(*g_interact_target & 0x1ff),
+                (int)((*g_interact_target & 0x8000) != 0), (unsigned)g_interact_target[3],
+                (int)((g_interact_target[3] & 0x8000) != 0), (unsigned)(g_interact_target[3] & 0xffc0),
+                (int)object_ptr_in_arena((char *)g_interact_target));
       if (((*g_interact_target & 0x8000) != 0) &&
          (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
+        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
+          fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling FUN_000470fc\n");
         puVar3 = (ushort *)FUN_000470fc();
         if (puVar3 == (ushort *)0x0) {
+          if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
+            fprintf(stderr, "[grab] FUN_000470fc returned NULL, bailing\n");
           return;
         }
+        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
+          fprintf(stderr, "[grab] FUN_000470fc returned puVar3=%p (target=%p)\n", (void *)puVar3, (void *)g_interact_target);
         if (puVar3 != g_interact_target) {
           object_list_insert_head(g_interact_target + 2,puVar3);
         }
@@ -39786,6 +39803,9 @@ bool compute_drop_aim_from_cursor()
   sVar3 = Ordinal_2005(6,sVar5 + -0x38);
   sVar4 = Ordinal_2005(0x300,(int)DAT_0023beb4);
   DAT_00202a3c = sVar3 + sVar4;
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",
+            (int)local_10, (int)local_e, (int)sVar5, (int)(0x24 < sVar5));
   return 0x24 < sVar5;
 }
 
@@ -39942,6 +39962,8 @@ int param_2;
             (int)DAT_00204880, (int)DAT_00204882, (int)DAT_00204884,
             (double)DAT_00204880 / 256.0, (double)DAT_00204882 / 256.0,
             fmod((double)DAT_00204880 / 256.0, 1.0), fmod((double)DAT_00204882 / 256.0, 1.0));
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[branch-gate] game_mode=%d\n", (int)*(short *)(DAT_00085a6c + 8));
   if ((*(short *)(DAT_00085a6c + 8) == 1) && (iVar4 = compute_drop_aim_from_cursor(), iVar4 != 0)) {
     DAT_00202a54 = 1;
     DAT_00202a44 = g_player_object;
@@ -40310,17 +40332,46 @@ ushort * param_2;
   iVar5 = (short)(uVar2 & 0x1ff) * 0xd;
   *(byte *)(DAT_00202c6c + 4) = (&DAT_00202c91)[iVar5] & 7;
   *(undefined *)((char *)DAT_00202c6c + 9) = (&DAT_00202c90)[iVar5];
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] ENTER param_1=%p param_1[0xb]=0x%x param_1+3byte=0x%x\n",
+            (void *)param_1, (unsigned)param_1[0xb], (unsigned)*(byte *)((char *)param_1 + 3));
   iVar5 = ((param_1[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)param_1 + 3) >> 5);
   *(byte *)DAT_00202c6c = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 1) = (byte)((uint)iVar5 >> 8);
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] X computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
+  /* Was `DAT_00202c6c + 1` for Y's low byte -- disassembly-confirmed
+     (0x4b288 @ 0x4b3b8: `strb r3,[r1,#0x2]`) the real write target is
+     offset+2, not +1. Offset+1 is X's own high byte (just written two
+     lines above); with the wrong offset, Y's low byte clobbered X's
+     high byte immediately after it was set, corrupting the "near drop"
+     landing-tile lookup this function computes (confirmed live: X read
+     back as garbage like 6912/8=864, off the 64-tile map, sending
+     collision_build_height_field's tilemap_lookup out of bounds ->
+     early-return -> the collision-flags gate below reads uninitialized
+     stack instead of real data -> always looks blocked -> this whole
+     "place it near the player" path always silently failed and fell
+     back to the far/trajectory throw path instead). */
   iVar5 = ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2) + ((param_1[0xb] & 0x3f0) >> 1);
-  *(byte *)(DAT_00202c6c + 1) = (byte)iVar5;
+  *(byte *)((char *)DAT_00202c6c + 2) = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 3) = (byte)((uint)iVar5 >> 8);
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] Y computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
+  /* Both pointer args below were `DAT_00202c6c`/`DAT_00202c6c + 1` --
+     the Y output must be `+2` to match the real Y storage (offset+2/+3,
+     see the fix just above); `+1` is X's own high byte. Disassembly-
+     confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
   project_position_by_heading(((byte)param_1[0xc] & 0x1f) + ((param_1[1] & 0x380) >> 2),
                ((&DAT_00202c91)[(*param_1 & 0x1ff) * 0xd] & 7) +
                ((&DAT_00202c91)[(*param_2 & 0x1ff) * 0xd] & 7) + '\x04',DAT_00202c6c,
-               DAT_00202c6c + 1);
-  *(byte *)(DAT_00202c6c + 2) = (byte)param_1[1] & 0x7f;
+               DAT_00202c6c + 2);
+  /* Was `DAT_00202c6c + 2` -- disassembly-confirmed (0x4b288 @ 0x4b474:
+     `strb r3,[r0,#0x4]`) the real target is offset+4/+5 (the same "Z"
+     field this function's own later collision calls read via
+     `*(short *)(DAT_00202c6c + 4)`), not offset+2 (Y's own low byte,
+     just written above -- this write would otherwise immediately
+     re-clobber it). */
+  *(byte *)((char *)DAT_00202c6c + 4) = (byte)param_1[1] & 0x7f;
   *(byte *)((char *)DAT_00202c6c + 5) = 0;
   if (getenv("UW_DEBUG_THROW"))
     fprintf(stderr, "[throw-refine] pre-collision local_38[0..5]=%d,%d,%d,%d,%d,%d offset4(Z)=%d\n",
