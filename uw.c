@@ -20680,6 +20680,20 @@ byte * param_11;
   pbVar8 = (byte *)tilemap_lookup(param_1,param_2);
   uVar18 = (uint)param_5;
   puVar9 = (ushort *)tilemap_lookup(uVar18,param_6);
+  /* Added NULL guards: tilemap_lookup legitimately returns NULL for an
+     out-of-range tile coordinate (its own documented contract), and all
+     three results here were dereferenced unconditionally. Confirmed
+     live crashing (EXC_BAD_ACCESS at puVar9, param_6=0xff -- an
+     off-map Y coordinate) via a recorded repro
+     (bug_critter_crash.txt): creature_find_path_to_tile's BFS
+     wavefront explores neighbor tiles around the search area without
+     clamping to the map's 0-63 bounds first, so it can hand this
+     function a genuinely off-map (param_5,param_6) intermediate tile.
+     Treat an off-map tile the same as every other "no line of sight"
+     case in this function: return 0 (blocked). */
+  if ((puVar7 == (ushort *)0x0) || (pbVar8 == (byte *)0x0) || (puVar9 == (ushort *)0x0)) {
+    return 0;
+  }
   uVar19 = *puVar7 & 0xf;
   uVar11 = *puVar9 & 0xf;
   bVar3 = (byte)uVar11;
