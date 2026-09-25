@@ -22791,20 +22791,20 @@ void FUN_0002f818()
   
   if (DAT_00101900 < 3) {
     if (DAT_00101734 != 0) {
-      *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xc1 | 1;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc1 | 1;
       iVar5 = DAT_0010190c;
-      uVar1 = *(ushort *)(DAT_0010190c + 0xb);
+      uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
       uw_ord2005_rem_40 = ((int)((uVar1 >> 0xc) + 1)) % (4);
       uVar7 = uVar1 & 0xfff;
       *(char *)(iVar5 + 0xb) = (char)uVar7;
-      *(byte *)(DAT_0010190c + 0xc) = (byte)(uVar7 >> 8) | (byte)(((uw_ord2005_rem_40 & 0xf) << 0xc) >> 8)
+      *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar7 >> 8) | (byte)(((uw_ord2005_rem_40 & 0xf) << 0xc) >> 8)
       ;
-      *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
+      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
       uVar7 = FUN_0002e3b4((int)(char)DAT_00101444,(int)(char)DAT_00101448);
-      uVar7 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar7 & 7) << 7;
-      *(char *)(DAT_0010190c + 2) = (char)uVar7;
-      *(char *)(DAT_0010190c + 3) = (char)(uVar7 >> 8);
-      *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
+      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 7) << 7;
+      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
+      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
     }
   }
   else if (DAT_00101900 < 0x41) {
@@ -22832,23 +22832,23 @@ void FUN_0002f818()
       object_list_unlink(_tile9 + 2,DAT_0010190c);
       object_list_insert_head(pbVar6 + 2,DAT_0010190c);
     }
-    uVar7 = *(ushort *)(DAT_0010190c + 0x16) & 0x3ff;
-    *(char *)(DAT_0010190c + 0x16) = (char)uVar7;
-    *(byte *)(DAT_0010190c + 0x17) =
+    uVar7 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0x3ff;
+    *(char *)((char *)DAT_0010190c + 0x16) = (char)uVar7;
+    *(byte *)((char *)DAT_0010190c + 0x17) =
          (byte)(uVar7 >> 8) | (byte)((((int)(char)((uint)iVar5 >> 0x18) & 0x3fU) << 10) >> 8);
-    uVar7 = *(ushort *)(DAT_0010190c + 0x16) & 0xfc0f |
+    uVar7 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0xfc0f |
             ((int)(char)((uint)iVar8 >> 0x18) & 0x3fU) << 4;
-    *(char *)(DAT_0010190c + 0x16) = (char)uVar7;
-    *(char *)(DAT_0010190c + 0x17) = (char)(uVar7 >> 8);
-    uVar7 = *(ushort *)(DAT_0010190c + 2) & 0x1fff;
-    *(char *)(DAT_0010190c + 2) = (char)uVar7;
-    *(byte *)(DAT_0010190c + 3) = (byte)(uVar7 >> 8) | 0x80;
-    uVar7 = *(ushort *)(DAT_0010190c + 2) & 0xf3ff;
-    *(char *)(DAT_0010190c + 2) = (char)uVar7;
-    *(byte *)(DAT_0010190c + 3) = (byte)(uVar7 >> 8) | 0x10;
-    uVar7 = *(ushort *)(DAT_0010190c + 2) & 0xff80;
-    *(byte *)(DAT_0010190c + 2) = *pbVar6 >> 1 & 0x78 | (byte)uVar7;
-    *(char *)(DAT_0010190c + 3) = (char)(uVar7 >> 8);
+    *(char *)((char *)DAT_0010190c + 0x16) = (char)uVar7;
+    *(char *)((char *)DAT_0010190c + 0x17) = (char)(uVar7 >> 8);
+    uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0x1fff;
+    *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
+    *(byte *)((char *)DAT_0010190c + 3) = (byte)(uVar7 >> 8) | 0x80;
+    uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xf3ff;
+    *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
+    *(byte *)((char *)DAT_0010190c + 3) = (byte)(uVar7 >> 8) | 0x10;
+    uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xff80;
+    *(byte *)((char *)DAT_0010190c + 2) = *pbVar6 >> 1 & 0x78 | (byte)uVar7;
+    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
   }
   return;
 }
@@ -24963,6 +24963,29 @@ int FUN_0003431c()
 
 
 
+/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as
+   the rest of this NPC-AI cluster this session (see
+   [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
+   `ushort *`, so every bare `DAT_0010190c + N` here was scaling N by
+   2. Verified against fresh disassembly of this function's entry
+   (0x343e4-0x34478): `ldrb r11,[r2,#0xc]; ldrb r10,[r2,#0xb]; ...;
+   strb r0,[r2,#0xb]; ...; strb r2,[r0,#0xc]` -- all raw, unscaled
+   bytes. THIS IS THE REAL "set a new NPC goal" FUNCTION --
+   `*(byte *)(DAT_0010190c + 0xb) = param_1 & 0xf | ...` writes
+   param_1's low nibble as the new goal -- called throughout this
+   cluster with goal values 4, 5, 6, 8, 9 (FUN_00033880's tail,
+   FUN_0002fba8's guard, etc.). With the write scaled to byte 0x16
+   instead of the real byte 0xb, every call to "pick a new goal" was
+   silently corrupting the object's TILE POSITION field instead of
+   ever actually changing its goal -- meaning goal could structurally
+   never change away from whatever it started at. This is very likely
+   the actual root cause of a wandering NPC's walk animation playing
+   while its tile position never advances: not just that the dispatch
+   (fixed earlier) was misrouting whatever goal existed, but that goal
+   itself could never transition to a real movement goal (1/5/6/9/10)
+   in the first place. FUN_000344a4 right below (its sibling, called
+   from the same call sites' alternate branch) has the identical bug,
+   fixed the same way. */
 void FUN_000343d8(param_1,param_2)
 byte param_1;
 uint param_2;
@@ -24972,18 +24995,18 @@ uint param_2;
   byte bVar2;
   uint uVar3;
   
-  if ((*(byte *)(DAT_0010190c + 0xb) & 0xf) == 4) {
-    uVar1 = *(undefined2 *)(DAT_0010190c + 0xd);
+  if ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) == 4) {
+    uVar1 = *(undefined2 *)((char *)DAT_0010190c + 0xd);
     bVar2 = (byte)uVar1;
-    *(byte *)(DAT_0010190c + 0xd) = (bVar2 ^ *(byte *)(DAT_0010190c + 0xb)) & 0xf ^ bVar2;
-    *(char *)(DAT_0010190c + 0xe) = (char)((ushort)uVar1 >> 8);
+    *(byte *)((char *)DAT_0010190c + 0xd) = (bVar2 ^ *(byte *)((char *)DAT_0010190c + 0xb)) & 0xf ^ bVar2;
+    *(char *)((char *)DAT_0010190c + 0xe) = (char)((ushort)uVar1 >> 8);
   }
-  uVar3 = *(ushort *)(DAT_0010190c + 0xb) & 0xfff0;
-  *(byte *)(DAT_0010190c + 0xb) = param_1 & 0xf | (byte)uVar3;
-  *(char *)(DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)(DAT_0010190c + 0xb) & 0xf00f | (param_2 & 0xff) << 4;
-  *(char *)(DAT_0010190c + 0xb) = (char)uVar3;
-  *(char *)(DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
+  uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff0;
+  *(byte *)((char *)DAT_0010190c + 0xb) = param_1 & 0xf | (byte)uVar3;
+  *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
+  uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f | (param_2 & 0xff) << 4;
+  *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar3;
+  *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
   return;
 }
 
@@ -24996,25 +25019,25 @@ void FUN_000344a4()
   byte bVar2;
   uint uVar3;
   
-  if ((*(byte *)(DAT_0010190c + 0xd) & 0xf) == 0) {
-    uVar3 = *(ushort *)(DAT_0010190c + 0xb) & 0xfff2;
-    *(byte *)(DAT_0010190c + 0xb) = (byte)uVar3 | 2;
-    *(char *)(DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
-    uVar3 = *(ushort *)(DAT_0010190c + 0xb) & 0xf00f;
-    *(char *)(DAT_0010190c + 0xb) = (char)uVar3;
-    *(char *)(DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
+  if ((*(byte *)((char *)DAT_0010190c + 0xd) & 0xf) == 0) {
+    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff2;
+    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar3 | 2;
+    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
+    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f;
+    *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar3;
+    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
   }
   else {
-    uVar1 = *(undefined2 *)(DAT_0010190c + 0xb);
+    uVar1 = *(undefined2 *)((char *)DAT_0010190c + 0xb);
     bVar2 = (byte)uVar1;
-    *(byte *)(DAT_0010190c + 0xb) = (bVar2 ^ *(byte *)(DAT_0010190c + 0xd)) & 0xf ^ bVar2;
-    *(char *)(DAT_0010190c + 0xc) = (char)((ushort)uVar1 >> 8);
-    uVar3 = *(ushort *)(DAT_0010190c + 0xb) & 0xf01f;
-    *(byte *)(DAT_0010190c + 0xb) = (byte)uVar3 | 0x10;
-    *(char *)(DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
-    uVar3 = *(ushort *)(DAT_0010190c + 0xd) & 0xfff0;
-    *(char *)(DAT_0010190c + 0xd) = (char)uVar3;
-    *(char *)(DAT_0010190c + 0xe) = (char)(uVar3 >> 8);
+    *(byte *)((char *)DAT_0010190c + 0xb) = (bVar2 ^ *(byte *)((char *)DAT_0010190c + 0xd)) & 0xf ^ bVar2;
+    *(char *)((char *)DAT_0010190c + 0xc) = (char)((ushort)uVar1 >> 8);
+    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf01f;
+    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar3 | 0x10;
+    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar3 >> 8);
+    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0xfff0;
+    *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar3;
+    *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar3 >> 8);
   }
   return;
 }
