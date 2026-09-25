@@ -18,22 +18,27 @@
 # a fixed small radius from the critter itself -- smaller offsets
 # clipped into nearby walls from several directions.
 #
-# What to expect (updated after reverting a wrong "missing else" fix to
-# emit_tile_objects's direction resolver -- see that revert's own comment,
-# uw.c ~55457 -- which a fresh disassembly check showed didn't match the
-# real binary): E and W both now resolve to a direction whose glyph is the
-# CR32PAGE.N00 page's own 0xff "missing frame" sentinel for this critter
-# (confirmed via UW_DEBUG_CRITTER: glyph_idx=40 -> pbVar11[40]=0xff), so
-# both show an empty corridor -- a pre-existing, already-documented data
-# gap (see ad18e2a's commit message: "3 of 8 octants missing real
-# per-direction glyph data" for this specific asset), not a rendering
-# regression. N shows open corridor with the critter out of frame/
-# occluded (unchanged). S is genuinely wall-blocked at the tile-center
-# standpoint (real geometry between (17,8) and the critter's tile, not a
-# bad camera spot -- TELEPORT 17 8 with its own default facing does
-# glimpse the critter, looking due north from tile-center does not).
-# Don't take any of E/W/S being blank as a regression on its own -- check
-# the UW_DEBUG_CRITTER trace's glyph_idx/0xff status first.
+# What to expect (updated after two more fixes: the "missing else"
+# revert in emit_tile_objects's direction resolver -- uw.c ~55457 -- and
+# a ushort-vs-byte pointer-scaling bug in FUN_00033880's shared
+# "orient toward last-seen-player" tail -- uw.c ~24624/24665 -- that was
+# corrupting both this critter's rendered HEIGHT and its heading byte;
+# see that fix's own commit for the disassembly evidence, 0x32578-0x3265c):
+# E now gives the cleanest full view of the critter (stands square in the
+# corridor facing the camera), matching this file's original expectation
+# from before either bug. W still shows nothing -- confirmed via
+# UW_DEBUG_CRITTER that it resolves to glyph_idx=40, this critter's
+# CR32PAGE.N00 page's own 0xff "missing frame" sentinel, a pre-existing,
+# already-documented data gap (see ad18e2a's commit message: "3 of 8
+# octants missing real per-direction glyph data" for this specific
+# asset), not a rendering regression. N shows open corridor with the
+# critter out of frame/occluded (unchanged). S is genuinely wall-blocked
+# at the tile-center standpoint (real geometry between (17,8) and the
+# critter's tile, not a bad camera spot -- TELEPORT 17 8 with its own
+# default facing does glimpse the critter, looking due north from
+# tile-center does not). If W (or any angle) comes back blank in a
+# future check, look at the UW_DEBUG_CRITTER trace's glyph_idx/0xff
+# status before assuming a regression.
 #
 # Also noted while building this: the UW_DEBUG_CRITTER
 # "[critter] emit_tile_objects: ... cam_yaw=" trace value looked stuck

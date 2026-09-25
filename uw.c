@@ -24621,7 +24621,17 @@ LAB_00033e9c:
     *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) | 7;
   }
   iVar7 = DAT_0010190c;
-  uVar2 = *(ushort *)(DAT_0010190c + 2);
+  /* HACK: same ushort-vs-byte pointer-arithmetic scaling bug as
+     process_visible_tile_cell's sibling FUN_0002fcec (fixed earlier this
+     session) -- DAT_0010190c is `ushort *`, so bare `DAT_0010190c + 2`
+     scales to byte offset 4, but real disassembly of this exact block
+     (0x32578-0x3257c: `ldrb r3,[r4,#0x3]; ldrb r2,[r4,#0x2]`) reads raw
+     BYTE offsets 2/3. Cast to a byte pointer first so the offset isn't
+     doubled; see the matching write fix a few lines down (was
+     `DAT_0010190c + 3`, same bug, confirmed via 0x32654-0x3265c:
+     `ldr r1,[r6,#0x0]; strb r3,[r1,#0x3]` -- also raw byte 3, not the
+     scaled byte 6 the undecorated expression computed). */
+  uVar2 = *(ushort *)((char *)DAT_0010190c + 2);
   bVar10 = *(byte *)(DAT_0010190c + 9);
   uVar11 = uVar2 >> 2 & 0xff;
   uVar11 = (uVar11 ^ *(byte *)(DAT_0010190c + 0x18)) & 0x1f ^ uVar11;
@@ -24662,7 +24672,7 @@ LAB_00033e9c:
   }
   uVar5 = uVar2 & 0xfc7f | (uVar11 & 0xffe0) << 2;
   *(char *)(iVar7 + 2) = (char)uVar5;
-  *(char *)(DAT_0010190c + 3) = (char)(uVar5 >> 8);
+  *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
   *(byte *)(DAT_0010190c + 0x18) =
        (*(byte *)(DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)(DAT_0010190c + 0x18);
   iVar7 = DAT_0010190c;
@@ -55489,6 +55499,10 @@ LAB_00061d34:
       fprintf(stderr, "[critter] emit_tile_objects: id=0x%03x raw_slot=%d own_heading_bits=%d cam_yaw=%d quadrant=%d dir(uVar29)=%d\n",
               uVar27 & 0x1ff, *(byte *)((char *)param_1 + 0x15) & 0x3f,
               (int)(param_1[1] >> 5 & 0x1c), (int)DAT_000db44c, (int)DAT_0023b4a0, (int)uVar29);
+    if (getenv("UW_DEBUG_CRITTER_Z"))
+      fprintf(stderr, "[critter-z] id=0x%03x world_x(b904)=%d world_z(b920)=%d HEIGHT(b91c)=%d raw_b9=%d raw_b13=%d\n",
+              uVar27 & 0x1ff, (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c,
+              (int)*(byte *)((char *)param_1 + 9), (int)*(byte *)((char *)param_1 + 0x13));
     resolve_critter_sprite_tier(uVar27 & 0x3f,uVar29,(byte)param_1[6] >> 4,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     uVar30 = (&DAT_000d9ed8)[DAT_000db44c];
     uVar18 = Ordinal_2023((&DAT_000d9930)[DAT_000db44c]);
