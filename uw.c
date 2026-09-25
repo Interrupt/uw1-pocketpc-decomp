@@ -20504,6 +20504,17 @@ ushort * param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
+/* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this
+   NPC-AI cluster this session (see
+   [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
+   `ushort *`, so every bare `DAT_0010190c + N` here was scaling N by
+   2. Verified against fresh disassembly of this function's entry
+   (0x2b998): `ldrb r3,[r0,#0x14]` -- raw, unscaled byte 0x14. This is
+   the DAT_00204980 collision-config buffer's real callback (see
+   sweep_apply_collision's fix this session), called via the same
+   indirect-callback path as FUN_0002bbec/FUN_0002bc9c. Cast every
+   offset to a byte pointer throughout this function so none of them
+   are scaled. */
 undefined4 FUN_0002b960(param_1)
 ushort * param_1;
 
@@ -20519,7 +20530,7 @@ ushort * param_1;
     if (DAT_002048d0 == 0) {
       DAT_002048d0 = -4;
     }
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xf9 | 1;
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
     DAT_00101924 = 1;
     uVar4 = 0;
     puVar2 = &DAT_00101734;
@@ -20533,14 +20544,14 @@ LAB_0002bb2c:
       DAT_00101734 = 0;
       FUN_00081814(DAT_0010190c,6,3,0,0,(short)(char)((ushort)DAT_002048c0 >> 8),
                    (short)(char)((ushort)_DAT_002048c2 >> 8));
-      *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xcc | 0xc;
-      uVar5 = *(ushort *)(DAT_0010190c + 0xb) & 0xfff;
-      *(char *)(DAT_0010190c + 0xb) = (char)uVar5;
-      *(byte *)(DAT_0010190c + 0xc) = (byte)(uVar5 >> 8) | 0x30;
-      *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xf9 | 1;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xcc | 0xc;
+      uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
+      *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar5;
+      *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar5 >> 8) | 0x30;
+      *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
       return 1;
     }
-    if ((*(byte *)(DAT_0010190c + 0x15) & 0x80) == 0) {
+    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) {
       DAT_00101924 = 1;
       DAT_002048c6 = 0;
       DAT_002048c8 = 0;
@@ -20549,7 +20560,7 @@ LAB_0002bb2c:
   }
   if ((((uVar1 & 0x800) != 0) && ((DAT_00101414 & 0x800) == 0)) ||
      (((uVar1 & 0x20) != 0 && ((DAT_00101414 & 0x20) == 0)))) {
-    if ((*(byte *)(DAT_0010190c + 0x15) & 0x80) == 0) {
+    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) {
       DAT_00101924 = 1;
       DAT_002048c6 = 0;
       DAT_002048c8 = 0;
