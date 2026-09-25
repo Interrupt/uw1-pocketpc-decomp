@@ -10962,15 +10962,15 @@ undefined4 param_2;
     *puVar3 = 0;
     DAT_000bbf88 = FUN_0007873c(puVar3,0x7c);
     FUN_0001b0a4();
-    FUN_0001ae28(s_compare_000845a0,FUN_000196e8);
-    FUN_0001ae28(s_random_00084598,FUN_000196c0);
-    FUN_0001ae28(s_plural_00084590,FUN_000197c0);
-    FUN_0001ae28(s_contains_00084584,FUN_000197fc);
-    FUN_0001ae28(s_append_0008457c,FUN_000198e8);
-    FUN_0001ae28(&DAT_00084574,FUN_0001998c);
-    FUN_0001ae28(&DAT_0008456c,FUN_000199d4);
-    FUN_0001ae28(s_length_00084564,&LAB_00019a60);
-    FUN_0001ae28(&DAT_00084560,FUN_00019a80);
+    babl_register_intrinsic(s_compare_000845a0,FUN_000196e8);
+    babl_register_intrinsic(s_random_00084598,FUN_000196c0);
+    babl_register_intrinsic(s_plural_00084590,FUN_000197c0);
+    babl_register_intrinsic(s_contains_00084584,FUN_000197fc);
+    babl_register_intrinsic(s_append_0008457c,FUN_000198e8);
+    babl_register_intrinsic(&DAT_00084574,FUN_0001998c);
+    babl_register_intrinsic(&DAT_0008456c,FUN_000199d4);
+    babl_register_intrinsic(s_length_00084564,&LAB_00019a60);
+    babl_register_intrinsic(&DAT_00084560,FUN_00019a80);
     return 1;
   }
   return 0xffffffff;
@@ -12188,7 +12188,13 @@ short param_1;
 
 
 
-void FUN_0001ae28(param_1,param_2)
+/* was FUN_0001ae28 -- binds a name (param_1) to a native function pointer
+   (param_2) callable from conversation ("babl") scripts. Called ~52
+   times, all from conversation-setup functions like FUN_000286cc (see
+   sync_conv_vars_from_npc's own comment below), registering intrinsics
+   such as "do_judgement", "set_attitude", "take_from_npc_inv",
+   "place_object" -- the native-code side of babl's script language. */
+void babl_register_intrinsic(param_1,param_2)
 char * param_1;
 undefined4 param_2;
 
@@ -12215,7 +12221,15 @@ undefined4 param_2;
 
 
 
-void FUN_0001aebc(param_1,param_2,param_3)
+/* was FUN_0001aebc -- looks up a named babl script variable (param_1,
+   e.g. "npc_hp") in the variable table at DAT_000bbf70 (0x20-byte
+   stride records) and copies param_3 16-bit values from param_2 INTO
+   its backing storage (DAT_000bbf14) -- i.e. native code publishing a
+   value for the conversation script to read. Called 32 times, always
+   right after computing a real object-record field (see
+   sync_conv_vars_from_npc). Paired with babl_var_get for the reverse
+   direction. */
+void babl_var_set(param_1,param_2,param_3)
 char *param_1;
 int param_2;
 short param_3;
@@ -12268,7 +12282,13 @@ short param_3;
 
 
 
-void FUN_0001afe4(param_1,param_2,param_3)
+/* was FUN_0001afe4 -- the mirror of babl_var_set: looks up a named babl
+   script variable in the same DAT_000bbf70 table and copies its current
+   value OUT of DAT_000bbf14 into param_2 -- native code reading back
+   whatever value the conversation script itself set. Called 14 times,
+   always right before writing the result into a real object-record
+   field (see sync_conv_vars_to_npc). */
+void babl_var_get(param_1,param_2,param_3)
 char *param_1;
 int param_2;
 short param_3;
@@ -13258,7 +13278,7 @@ int param_1;
     sVar7 = Ordinal_2005(uVar8,(DAT_00100674[8] - uVar8) * 2);
     iVar12 = sVar7 + 2;
   }
-  FUN_0001afe4(s_npc_attitude_000845f8,&local_2c,1);
+  babl_var_get(s_npc_attitude_000845f8,&local_2c,1);
   bVar4 = DAT_00100674[0x19];
   if ((bVar4 & 0x40) == 0) {
     iVar10 = 1;
@@ -13280,7 +13300,7 @@ int param_1;
     DAT_000bc008 = 1;
     if (0 < local_2c) {
       local_2c = (short)((uint)((local_2c + -1) * 0x10000) >> 0x10);
-      FUN_0001aebc(s_npc_attitude_000845f8,&local_2c,1);
+      babl_var_set(s_npc_attitude_000845f8,&local_2c,1);
     }
     uVar9 = 1;
   }
@@ -19159,56 +19179,56 @@ void FUN_00028c00()
     message_scroll_print_wrapped();
   }
   else {
-    FUN_0001ae28(s_babl_menu_00085220,&LAB_0002912c);
-    FUN_0001ae28(s_babl_fmenu_00085214,FUN_00029358);
-    FUN_0001ae28(&DAT_000845a8,FUN_00029708);
-    FUN_0001ae28(s_respond_000845ac,FUN_0002977c);
-    FUN_0001ae28(s_get_quest_00085208,FUN_00018370);
-    FUN_0001ae28(s_set_quest_000851fc,FUN_000182b4);
-    FUN_0001ae28(&DAT_000851f8,&LAB_0001840c);
-    FUN_0001ae28(s_babl_ask_000851ec,FUN_0002990c);
-    FUN_0001ae28(s_print_000851e4,FUN_00029850);
-    FUN_0001ae28(s_show_inv_000851d8,FUN_000299b0);
-    FUN_0001ae28(s_give_to_npc_000851cc,FUN_00029cc8);
-    FUN_0001ae28(s_find_inv_000851c0,FUN_00029f4c);
-    FUN_0001ae28(s_take_from_npc_000851b0,&LAB_00029f74);
-    FUN_0001ae28(s_take_id_from_npc_0008519c,&LAB_00029f88);
-    FUN_0001ae28(s_identify_inv_0008518c,FUN_00029fb0);
-    FUN_0001ae28(s_do_offer_00085180,FUN_0001c57c);
-    FUN_0001ae28(s_do_demand_00085174,FUN_0001ca78);
-    FUN_0001ae28(s_do_decline_00085168,&LAB_0001cd34);
-    FUN_0001ae28(s_do_judgement_00085158,FUN_0001cd3c);
-    FUN_0001ae28(s_end_barter_0008514c,FUN_0001b7c0);
-    FUN_0001ae28(s_setup_to_barter_0008513c,FUN_0001b288);
-    FUN_0001ae28(s_pause_00085134,FUN_000298d8);
-    FUN_0001ae28(s_set_likes_dislikes_00085120,FUN_0001da88);
-    FUN_0001ae28(s_do_inv_create_00085110,&LAB_00029f9c);
-    FUN_0001ae28(s_do_inv_delete_00085100,FUN_00029f38);
-    FUN_0001ae28(s_check_inv_quality_000850ec,FUN_0002a258);
-    FUN_0001ae28(s_set_inv_quality_000850dc,FUN_0002a27c);
-    FUN_0001ae28(s_count_inv_000850d0,FUN_0002a1fc);
-    FUN_0001ae28(s_gronk_door_000850c4,FUN_00018430);
-    FUN_0001ae28(s_set_attitude_000850b4,FUN_00017be8);
-    FUN_0001ae28(s_set_race_attitude_000850a0,FUN_00017c1c);
-    FUN_0001ae28(s_take_from_npc_inv_0008508c,FUN_000181a4);
-    FUN_0001ae28(s_add_to_npc_inv_0008507c,FUN_00018230);
-    FUN_0001ae28(s_place_object_0008506c,FUN_00017eec);
-    FUN_0001ae28(s_remove_talker_0008505c,FUN_0001825c);
-    FUN_0001ae28(s_x_skills_00085050,FUN_00017e10);
-    FUN_0001ae28(s_x_traps_00085048,FUN_00017e90);
-    FUN_0001ae28(s_x_obj_stuff_0008503c,FUN_0001853c);
-    FUN_0001ae28(s_x_obj_pos_00085030,FUN_000188fc);
-    FUN_0001ae28(s_find_barter_00085024,FUN_00029a58);
-    FUN_0001ae28(s_find_barter_total_00085010,FUN_00029b60);
-    FUN_0001ae28(s_give_ptr_npc_00085000,FUN_00029e34);
-    FUN_0002a8e0(DAT_00100674);
+    babl_register_intrinsic(s_babl_menu_00085220,&LAB_0002912c);
+    babl_register_intrinsic(s_babl_fmenu_00085214,FUN_00029358);
+    babl_register_intrinsic(&DAT_000845a8,FUN_00029708);
+    babl_register_intrinsic(s_respond_000845ac,FUN_0002977c);
+    babl_register_intrinsic(s_get_quest_00085208,FUN_00018370);
+    babl_register_intrinsic(s_set_quest_000851fc,FUN_000182b4);
+    babl_register_intrinsic(&DAT_000851f8,&LAB_0001840c);
+    babl_register_intrinsic(s_babl_ask_000851ec,FUN_0002990c);
+    babl_register_intrinsic(s_print_000851e4,FUN_00029850);
+    babl_register_intrinsic(s_show_inv_000851d8,FUN_000299b0);
+    babl_register_intrinsic(s_give_to_npc_000851cc,FUN_00029cc8);
+    babl_register_intrinsic(s_find_inv_000851c0,FUN_00029f4c);
+    babl_register_intrinsic(s_take_from_npc_000851b0,&LAB_00029f74);
+    babl_register_intrinsic(s_take_id_from_npc_0008519c,&LAB_00029f88);
+    babl_register_intrinsic(s_identify_inv_0008518c,FUN_00029fb0);
+    babl_register_intrinsic(s_do_offer_00085180,FUN_0001c57c);
+    babl_register_intrinsic(s_do_demand_00085174,FUN_0001ca78);
+    babl_register_intrinsic(s_do_decline_00085168,&LAB_0001cd34);
+    babl_register_intrinsic(s_do_judgement_00085158,FUN_0001cd3c);
+    babl_register_intrinsic(s_end_barter_0008514c,FUN_0001b7c0);
+    babl_register_intrinsic(s_setup_to_barter_0008513c,FUN_0001b288);
+    babl_register_intrinsic(s_pause_00085134,FUN_000298d8);
+    babl_register_intrinsic(s_set_likes_dislikes_00085120,FUN_0001da88);
+    babl_register_intrinsic(s_do_inv_create_00085110,&LAB_00029f9c);
+    babl_register_intrinsic(s_do_inv_delete_00085100,FUN_00029f38);
+    babl_register_intrinsic(s_check_inv_quality_000850ec,FUN_0002a258);
+    babl_register_intrinsic(s_set_inv_quality_000850dc,FUN_0002a27c);
+    babl_register_intrinsic(s_count_inv_000850d0,FUN_0002a1fc);
+    babl_register_intrinsic(s_gronk_door_000850c4,FUN_00018430);
+    babl_register_intrinsic(s_set_attitude_000850b4,FUN_00017be8);
+    babl_register_intrinsic(s_set_race_attitude_000850a0,FUN_00017c1c);
+    babl_register_intrinsic(s_take_from_npc_inv_0008508c,FUN_000181a4);
+    babl_register_intrinsic(s_add_to_npc_inv_0008507c,FUN_00018230);
+    babl_register_intrinsic(s_place_object_0008506c,FUN_00017eec);
+    babl_register_intrinsic(s_remove_talker_0008505c,FUN_0001825c);
+    babl_register_intrinsic(s_x_skills_00085050,FUN_00017e10);
+    babl_register_intrinsic(s_x_traps_00085048,FUN_00017e90);
+    babl_register_intrinsic(s_x_obj_stuff_0008503c,FUN_0001853c);
+    babl_register_intrinsic(s_x_obj_pos_00085030,FUN_000188fc);
+    babl_register_intrinsic(s_find_barter_00085024,FUN_00029a58);
+    babl_register_intrinsic(s_find_barter_total_00085010,FUN_00029b60);
+    babl_register_intrinsic(s_give_ptr_npc_00085000,FUN_00029e34);
+    sync_conv_vars_from_npc(DAT_00100674);
     DAT_001007b8 = FUN_00018ac8(0xa0);
     if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
       FUN_000798c4();
     }
     FUN_0001a1c8();
     uVar3 = 500;
-    iVar2 = FUN_0002af88(DAT_00100674);
+    iVar2 = sync_conv_vars_to_npc(DAT_00100674);
     if ((iVar2 != 0) || (DAT_001007b4 == '\0')) {
       uVar3 = 0;
     }
@@ -20123,7 +20143,27 @@ undefined4 FUN_0002a35c()
 
 
 
-void FUN_0002a8e0(param_1)
+/* was FUN_0002a8e0 -- NOT a debug/cheat tool (an earlier pass through
+   this file mislabeled it that way from its shape alone; tracing its
+   real caller corrects that). Called exactly once, from FUN_000286cc
+   (uw.c ~19025 -- loads the NPC's head portrait via "genhead",
+   draws the conversation UI, then calls change_game_mode(1): this is
+   real conversation-open setup, unconditional on every "talk to NPC",
+   not gated behind any debug/cheat flag), as
+   `sync_conv_vars_from_npc(DAT_00100674)` where DAT_00100674 is the NPC
+   just talked to (assigned in FUN_00028488's own interact-with-object
+   path). Publishes every field babl conversation scripts can read --
+   npc_xhome/npc_yhome/npc_goal/npc_gtarg/npc_talkedto/npc_level/
+   npc_attitude/npc_hp/npc_health/npc_arms/npc_power/npc_hunger/
+   npc_whoami/npc_name, plus the PLAYER's own play_health/play_hp/
+   play_hunger/play_mana/play_power/play_arms/play_level/play_sex/
+   play_poison/play_drawn/play_name, plus dungeon_level/game_time/
+   game_mins/game_days -- via babl_var_set, immediately before the
+   conversation bytecode interpreter (FUN_0001a1c8) actually runs. This
+   is the real object-record/console-variable binding the "npc_xhome"/
+   "npc_yhome" evidence for uw_object_hdr_t's quality/owner fields (see
+   struct-recovery-plan.md) came from. */
+void sync_conv_vars_from_npc(param_1)
 ushort * param_1;
 
 {
@@ -20137,44 +20177,44 @@ ushort * param_1;
   
   iVar3 = ((byte)*param_1 & 0x3f) * 0x30;
   local_20[0] = (ushort)(byte)param_1[0xd];
-  FUN_0001aebc(s_npc_whoami_000853a0,local_20,1);
+  babl_var_set(s_npc_whoami_000853a0,local_20,1);
   local_20[0] = 0x10;
   if ((*(byte *)((char *)param_1 + 0x19) & 0x80) == 0) {
     local_20[0] = 0xc0;
   }
-  FUN_0001aebc(s_npc_hunger_00085394,local_20,1);
+  babl_var_set(s_npc_hunger_00085394,local_20,1);
   if ((&g_monster_max_stats_table)[iVar3] == '\0') {
     local_20[0] = 0x80;
   }
   else {
     local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[iVar3],(uint)(byte)param_1[4] << 8);
   }
-  FUN_0001aebc(s_npc_health_00085388,local_20,1);
+  babl_var_set(s_npc_health_00085388,local_20,1);
   local_20[0] = (ushort)(byte)param_1[4];
-  FUN_0001aebc(s_npc_hp_00085380,local_20,1);
+  babl_var_set(s_npc_hp_00085380,local_20,1);
   local_20[0] = (ushort)(char)(&DAT_001007e3)[iVar3];
-  FUN_0001aebc(s_npc_arms_00085374,local_20,1);
+  babl_var_set(s_npc_arms_00085374,local_20,1);
   local_20[0] = (ushort)(byte)(&DAT_001007d5)[iVar3] + (ushort)((byte)(&DAT_001007fd)[iVar3] >> 1);
-  FUN_0001aebc(s_npc_power_00085368,local_20,1);
+  babl_var_set(s_npc_power_00085368,local_20,1);
   local_20[0] = *(byte *)((char *)param_1 + 0xb) & 0xf;
-  FUN_0001aebc(s_npc_goal_0008535c,local_20,1);
+  babl_var_set(s_npc_goal_0008535c,local_20,1);
   local_20[0] = (ushort)((*(ushort *)((char *)param_1 + 0xb) & 0xff0) >> 4);
-  FUN_0001aebc(s_npc_gtarg_00085350,local_20,1);
+  babl_var_set(s_npc_gtarg_00085350,local_20,1);
   local_20[0] = (ushort)(((byte)param_1[7] & 0x20) >> 5);
-  FUN_0001aebc(s_npc_talkedto_00085340,local_20,1);
+  babl_var_set(s_npc_talkedto_00085340,local_20,1);
   local_20[0] = (byte)(&DAT_001007dd)[iVar3] & 0xf;
-  FUN_0001aebc(s_npc_level_00085334,local_20,1);
+  babl_var_set(s_npc_level_00085334,local_20,1);
   local_20[0] = (byte)param_1[2] & 0x3f;
-  FUN_0001aebc(s_npc_xhome_00085328,local_20,1);
+  babl_var_set(s_npc_xhome_00085328,local_20,1);
   local_20[0] = (byte)param_1[3] & 0x3f;
-  FUN_0001aebc(s_npc_yhome_0008531c,local_20,1);
+  babl_var_set(s_npc_yhome_0008531c,local_20,1);
   if ((byte)param_1[0xd] == 0) {
     local_20[0] = *param_1 & 0x1ff | 0x800;
   }
   else {
     local_20[0] = (byte)param_1[0xd] + 0x10 | 0xe00;
   }
-  FUN_0001aebc(s_npc_name_00085310,local_20,1);
+  babl_var_set(s_npc_name_00085310,local_20,1);
   uVar4 = *(ushort *)((char *)param_1 + 0xb) & 0xf;
   bVar5 = uVar4 == 5;
   if (bVar5) {
@@ -20189,54 +20229,68 @@ ushort * param_1;
   else {
     local_20[0] = 6;
   }
-  FUN_0001aebc(s_npc_attitude_000845f8,local_20,1);
+  babl_var_set(s_npc_attitude_000845f8,local_20,1);
   bVar1 = *g_player_object;
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x39);
-  FUN_0001aebc(s_play_hunger_00085304,local_20,1);
+  babl_var_set(s_play_hunger_00085304,local_20,1);
   if ((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30] == '\0') {
     local_20[0] = 0x80;
   }
   else {
     local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)g_player_object[8] << 8);
   }
-  FUN_0001aebc(s_play_health_000852f8,local_20,1);
+  babl_var_set(s_play_health_000852f8,local_20,1);
   local_20[0] = (ushort)g_player_object[8];
-  FUN_0001aebc(s_play_hp_000852f0,local_20,1);
+  babl_var_set(s_play_hp_000852f0,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x1e) + (ushort)*(byte *)(DAT_00086df8 + 0x21);
-  FUN_0001aebc(s_play_arms_000852e4,local_20,1);
+  babl_var_set(s_play_arms_000852e4,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x27) + (ushort)*(byte *)(DAT_00086df8 + 0x37) +
                 (ushort)*(byte *)(DAT_00086df8 + 0x1f);
-  FUN_0001aebc(s_play_power_000852d8,local_20,1);
+  babl_var_set(s_play_power_000852d8,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x37);
-  FUN_0001aebc(s_play_mana_000852cc,local_20,1);
+  babl_var_set(s_play_mana_000852cc,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x3d);
-  FUN_0001aebc(s_play_level_000852c0,local_20,1);
+  babl_var_set(s_play_level_000852c0,local_20,1);
   local_20[0] = DAT_00201b68;
-  FUN_0001aebc(s_dungeon_level_000852b0,local_20,1);
+  babl_var_set(s_dungeon_level_000852b0,local_20,1);
   local_20[0] = Ordinal_2008(0x3bc4,*(undefined4 *)(DAT_00086df8 + 0xce));
-  FUN_0001aebc(s_game_time_000852a4,local_20,1);
+  babl_var_set(s_game_time_000852a4,local_20,1);
   uVar2 = Ordinal_2008(0x3bc4,*(undefined4 *)(DAT_00086df8 + 0xce));
   Ordinal_2008(0x5a0,uVar2);
   local_20[0] = extraout_r1;
-  FUN_0001aebc(s_game_mins_00085298,local_20,1);
+  babl_var_set(s_game_mins_00085298,local_20,1);
   local_20[0] = Ordinal_2008(0x1502e80,*(undefined4 *)(DAT_00086df8 + 0xce));
-  FUN_0001aebc(s_game_days_0008528c,local_20,1);
+  babl_var_set(s_game_days_0008528c,local_20,1);
   local_20[0] = 0;
-  FUN_0001aebc(s_new_player_exp_0008527c,local_20,1);
+  babl_var_set(s_new_player_exp_0008527c,local_20,1);
   local_20[0] = (ushort)((*(byte *)(DAT_00086df8 + 100) & 2) >> 1);
-  FUN_0001aebc(s_play_sex_00085270,local_20,1);
+  babl_var_set(s_play_sex_00085270,local_20,1);
   local_20[0] = (ushort)((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) >> 2);
-  FUN_0001aebc(s_play_poison_00085264,local_20,1);
+  babl_var_set(s_play_poison_00085264,local_20,1);
   local_20[0] = (ushort)((*(byte *)(DAT_00086df8 + 0x5f) & 2) >> 1);
-  FUN_0001aebc(s_play_drawn_00085258,local_20,1);
+  babl_var_set(s_play_drawn_00085258,local_20,1);
   local_20[0] = DAT_00201c74;
-  FUN_0001aebc(s_play_name_0008524c,local_20,1);
+  babl_var_set(s_play_name_0008524c,local_20,1);
   return;
 }
 
 
 
-bool FUN_0002af88(param_1)
+/* was FUN_0002af88 -- the write-back mirror of sync_conv_vars_from_npc,
+   called once from the same FUN_000286cc, right after the conversation
+   bytecode interpreter (FUN_0001a1c8) runs. Reads back whatever the
+   script itself set via babl_var_get and applies it to the real object
+   record: npc_xhome/npc_yhome/npc_goal/npc_gtarg/npc_talkedto/
+   npc_attitude/npc_hunger(as a derived "is starving" flag, not a raw
+   counter)/npc_hp, plus the player's play_hunger/play_hp/play_mana/
+   play_poison, plus granting new_player_exp if the script set it
+   nonzero. This is how a conversation script changes an NPC's
+   disposition toward the player, or rewards experience for a correct
+   answer -- real gameplay effects of dialogue choices, not a debug
+   tool. Return value reflects whether npc_attitude ended up 0 after the
+   script ran; the caller uses it (OR'd with DAT_001007b4) to decide
+   whether to skip a post-conversation delay. */
+bool sync_conv_vars_to_npc(param_1)
 char *param_1;
 
 {
@@ -20247,27 +20301,27 @@ char *param_1;
   ushort local_10;
   undefined2 local_e;
   
-  FUN_0001afe4(s_npc_hunger_00085394,&local_10,1);
+  babl_var_get(s_npc_hunger_00085394,&local_10,1);
   *(byte *)(param_1 + 0x19) = ((short)local_10 < 0x20) << 7 | *(byte *)(param_1 + 0x19) & 0x7f;
-  FUN_0001afe4(s_npc_hp_00085380,&local_10,1);
+  babl_var_get(s_npc_hp_00085380,&local_10,1);
   *(char *)(param_1 + 8) = (char)local_10;
-  FUN_0001afe4(s_npc_xhome_00085328,&local_10,1);
+  babl_var_get(s_npc_xhome_00085328,&local_10,1);
   uVar1 = *(undefined2 *)(param_1 + 4);
   bVar2 = (byte)uVar1;
   *(byte *)(param_1 + 4) = (bVar2 ^ (byte)local_10) & 0x3f ^ bVar2;
   *(char *)(param_1 + 5) = (char)((ushort)uVar1 >> 8);
-  FUN_0001afe4(s_npc_yhome_0008531c,&local_10,1);
+  babl_var_get(s_npc_yhome_0008531c,&local_10,1);
   uVar1 = *(undefined2 *)(param_1 + 6);
   bVar2 = (byte)uVar1;
   *(byte *)(param_1 + 6) = (bVar2 ^ (byte)local_10) & 0x3f ^ bVar2;
   *(char *)(param_1 + 7) = (char)((ushort)uVar1 >> 8);
-  FUN_0001afe4(s_npc_goal_0008535c,&local_10,1);
-  FUN_0001afe4(s_npc_gtarg_00085350,&local_e,1);
+  babl_var_get(s_npc_goal_0008535c,&local_10,1);
+  babl_var_get(s_npc_gtarg_00085350,&local_e,1);
   FUN_00034ac4(param_1,(undefined1)local_10,local_e);
   uVar1 = *(undefined2 *)(param_1 + 0xd);
   *(char *)(param_1 + 0xd) = (char)uVar1;
   *(byte *)(param_1 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;
-  FUN_0001afe4(s_npc_attitude_000845f8,&local_10,1);
+  babl_var_get(s_npc_attitude_000845f8,&local_10,1);
   if ((short)local_10 < 4) {
     uVar3 = *(ushort *)(param_1 + 0xd) & 0x3fff;
     *(char *)(param_1 + 0xd) = (char)uVar3;
@@ -20283,17 +20337,17 @@ char *param_1;
   uVar1 = *(undefined2 *)(param_1 + 0xd);
   *(char *)(param_1 + 0xd) = (char)uVar1;
   *(byte *)(param_1 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;
-  FUN_0001afe4(s_play_hunger_00085304,&local_10,1);
+  babl_var_get(s_play_hunger_00085304,&local_10,1);
   *(char *)(DAT_00086df8 + 0x39) = (char)local_10;
-  FUN_0001afe4(s_play_hp_000852f0,&local_10,1);
+  babl_var_get(s_play_hp_000852f0,&local_10,1);
   *(char *)((char *)g_player_object + 8) = (char)local_10;
-  FUN_0001afe4(s_play_mana_000852cc,&local_10,1);
+  babl_var_get(s_play_mana_000852cc,&local_10,1);
   *(char *)(DAT_00086df8 + 0x37) = (char)local_10;
-  FUN_0001afe4(s_play_poison_00085264,&local_10,1);
+  babl_var_get(s_play_poison_00085264,&local_10,1);
   uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
   *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar3 | (byte)((local_10 & 0xf) << 2);
   *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
-  FUN_0001afe4(s_new_player_exp_0008527c,&local_10,1);
+  babl_var_get(s_new_player_exp_0008527c,&local_10,1);
   if (local_10 != 0) {
     grant_experience_points((int)(short)local_10);   /* dropped arg: the parsed exp value */
   }
