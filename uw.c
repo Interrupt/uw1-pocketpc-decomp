@@ -5937,7 +5937,8 @@ static undefined2 DAT_0024cfbc_backing[8192];
    dereference a garbage address (crash in demo_critter_orbit_cardinal.txt,
    EXC_BAD_ACCESS at uw.c:70173). Sibling DAT_00101404, assigned via the
    identical pattern, is correctly `char *`. */
-char *DAT_0024cfc4;
+// was DAT_0024cfc4
+char *g_despawn_creature_record;
 undefined1 DAT_002034b5;
 char s_on_what__000878e0[] = "on_what?";
 static undefined1 DAT_000878ec_backing[32768];
@@ -22447,7 +22448,7 @@ LAB_0002ed50:
   }
   *(byte *)(DAT_0010190c + 0x18) = bVar9;
 LAB_0002ee74:
-  FUN_0002f124();
+  npc_idle_behavior_tick();
   return;
 }
 
@@ -22535,7 +22536,8 @@ ushort * param_1;
 
 
 
-void FUN_0002f124()
+// was FUN_0002f124
+void npc_idle_behavior_tick()
 
 {
   int uw_ord2005_rem_23 = 0; int uw_ord2005_rem_24 = 0; int uw_ord2005_rem_25 = 0; int uw_ord2005_rem_26 = 0; int uw_ord2005_rem_27 = 0; int uw_ord2005_rem_28 = 0; int uw_ord2005_rem_29 = 0; int uw_ord2005_rem_30 = 0; int uw_ord2005_rem_31 = 0; int uw_ord2005_rem_32 = 0; int uw_ord2005_rem_33 = 0; int uw_ord2005_rem_34 = 0; int uw_ord2005_rem_35 = 0; int uw_ord2005_rem_36 = 0; int uw_ord2005_rem_37 = 0; int uw_ord2005_rem_38 = 0; int uw_ord2005_rem_39 = 0;
@@ -22854,7 +22856,7 @@ void FUN_0002fba8()
       FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
     }
     else {
-      FUN_0002f124();
+      npc_idle_behavior_tick();
     }
   }
   return;
@@ -22968,7 +22970,7 @@ LAB_0002fe88:
     fprintf(stderr, "[npc-fcec-dispatch] obj=%p uVar5=%d\n", (void *)DAT_0010190c, (int)uVar5);
   if ((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf) != 0) {
     if (uVar5 == 2) {
-      FUN_0002f124();
+      npc_idle_behavior_tick();
       return;
     }
     if (uVar5 != 7) {
@@ -24634,7 +24636,7 @@ LAB_00033d18:
     FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar8 >> 4 & 0xf);
     break;
   case 2:
-    FUN_0002f124();
+    npc_idle_behavior_tick();
     break;
   case 3:
     if ((bVar3) || (iVar7 = FUN_00034044(), iVar7 != 0)) {
@@ -70175,7 +70177,7 @@ int param_1;
   char *pObj;  /* was reuse of `iVar8` (int) -- truncated
                   spawn_new_object's real pointer */
 
-  bVar3 = *(byte *)(DAT_0024cfc4 + 0x26);
+  bVar3 = *(byte *)(g_despawn_creature_record + 0x26);
   uVar7 = Ordinal_1053();
   uw_ord2005_rem_159 = ((int)(uVar7)) % (0x10);
   if (uw_ord2005_rem_159 < (int)(uint)(bVar3 >> 4)) {
@@ -70243,7 +70245,7 @@ int param_1;
   char *pObj;  /* was reuse of `uVar2` (undefined4) -- truncated
                   spawn_new_object's real pointer */
 
-  bVar1 = *(byte *)(DAT_0024cfc4 + 0x27);
+  bVar1 = *(byte *)(g_despawn_creature_record + 0x27);
   uVar2 = Ordinal_1053();
   uw_ord2005_rem_160 = ((int)(uVar2)) % (0x10);
   if (uw_ord2005_rem_160 < (int)(bVar1 & 0xf)) {
@@ -70275,7 +70277,7 @@ int param_1;
   
   uVar8 = 0;
   do {
-    bVar6 = *(byte *)(uVar8 + DAT_0024cfc4 + 0x20);
+    bVar6 = *(byte *)(uVar8 + g_despawn_creature_record + 0x20);
     if ((bVar6 & 1) != 0) {
       pbVar4 = (byte *)spawn_new_object((bVar6 >> 1 & 0xf) + (bVar6 >> 5 & 3) * '\x10',0);
       uVar5 = Ordinal_1053();
@@ -70334,7 +70336,7 @@ int param_1;
   uVar8 = 0;
   do {
     uVar5 = Ordinal_1053();
-    uVar1 = *(ushort *)(DAT_0024cfc4 + uVar8 * 2 + 0x22);
+    uVar1 = *(ushort *)(g_despawn_creature_record + uVar8 * 2 + 0x22);
     uw_ord2005_rem_164 = ((int)(uVar5)) % (0x10);
     if (uw_ord2005_rem_164 < (int)(uVar1 & 0xf)) {
       iVar6 = (char *)spawn_new_object(uVar1 >> 4,0);
@@ -70371,7 +70373,7 @@ ushort * param_1;
   undefined2 uVar1;
   
   if ((param_1[7] & 0x10) == 0) {
-    DAT_0024cfc4 = &DAT_001007d0 +
+    g_despawn_creature_record = &DAT_001007d0 +
                    (((int)(short)*param_1 & 0xfU) + (short)((*param_1 & 0x30) >> 4) * 0x10) * 0x30;
     FUN_00079350(param_1);
     FUN_0007955c(param_1);

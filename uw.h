@@ -744,7 +744,7 @@ void FUN_0002e454();
 void FUN_0002e58c();
 void FUN_0002ee80();
 void FUN_0002efa0();
-void FUN_0002f124();
+void npc_idle_behavior_tick();
 void FUN_0002f818();
 void FUN_0002fba8();
 void FUN_0002fcec();
