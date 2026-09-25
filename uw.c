@@ -5932,7 +5932,12 @@ static undefined1 DAT_0024af98_backing[4096];
 #define DAT_0024af98 DAT_0024af98_backing[0]
 static undefined2 DAT_0024cfbc_backing[8192];
 #define DAT_0024cfbc DAT_0024cfbc_backing[0]
-int DAT_0024cfc4;
+/* was `int` -- truncated pointer to a 64-bit address on assignment in
+   FUN_000798c4 (&DAT_001007d0 + index*0x30), causing FUN_00079350 to
+   dereference a garbage address (crash in demo_critter_orbit_cardinal.txt,
+   EXC_BAD_ACCESS at uw.c:70173). Sibling DAT_00101404, assigned via the
+   identical pattern, is correctly `char *`. */
+char *DAT_0024cfc4;
 undefined1 DAT_002034b5;
 char s_on_what__000878e0[] = "on_what?";
 static undefined1 DAT_000878ec_backing[32768];
@@ -22534,6 +22539,10 @@ void FUN_0002f124()
 
 {
   int uw_ord2005_rem_23 = 0; int uw_ord2005_rem_24 = 0; int uw_ord2005_rem_25 = 0; int uw_ord2005_rem_26 = 0; int uw_ord2005_rem_27 = 0; int uw_ord2005_rem_28 = 0; int uw_ord2005_rem_29 = 0; int uw_ord2005_rem_30 = 0; int uw_ord2005_rem_31 = 0; int uw_ord2005_rem_32 = 0; int uw_ord2005_rem_33 = 0; int uw_ord2005_rem_34 = 0; int uw_ord2005_rem_35 = 0; int uw_ord2005_rem_36 = 0; int uw_ord2005_rem_37 = 0; int uw_ord2005_rem_38 = 0; int uw_ord2005_rem_39 = 0;
+  if (getenv("UW_DEBUG_NPC_STATEMACHINE"))
+    fprintf(stderr, "[npc-f124] ENTER obj=%p state=0x%x frame_nibble(0xc)=0x%x DAT_00101734=%d\n",
+            (void *)DAT_0010190c, (unsigned)(*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f),
+            (unsigned)(*(byte *)((char *)DAT_0010190c + 0xc) & 0xf0) >> 4, (int)DAT_00101734);
   ushort uVar1;
   byte *pbVar2;
   undefined4 uVar3;
@@ -22561,16 +22570,16 @@ void FUN_0002f124()
   uint uVar8;
   char *iVar9;
   
-  if ((*(byte *)(DAT_0010190c + 0x15) & 0x80) != 0) {
-    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)(DAT_0010190c + 0x16) & 0xf));
-    *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0x7f;
+  if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
+    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
+    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
   }
   pbVar2 = (byte *)tilemap_lookup(DAT_00101918,DAT_001013f8);
   if (DAT_00101734 == 0) {
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xf9 | 1;
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
     return;
   }
-  if ((*(byte *)(DAT_0010190c + 0xe) & 0xc0) == 0) {
+  if ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) {
     uVar3 = Ordinal_1053();
     uw_ord2005_rem_23 = ((int)(uVar3)) % (2);
     if (uw_ord2005_rem_23 != 0) {
@@ -22583,7 +22592,7 @@ void FUN_0002f124()
       if (DAT_0010140c < (byte)((*pbVar2 >> 4) + 2)) {
         uVar3 = Ordinal_1053();
         iVar9 = DAT_0010190c;
-        bVar5 = *(byte *)(DAT_0010190c + 0x14);
+        bVar5 = *(byte *)((char *)DAT_0010190c + 0x14);
         uw_ord2005_rem_24 = ((int)(uVar3)) % (3);
         *(byte *)(iVar9 + 0x14) = ~bVar5 & 7 ^ (char)((uw_ord2005_rem_24 & 0xff) << 3) + 0x87U;
         goto LAB_0002f314;
@@ -22597,16 +22606,36 @@ void FUN_0002f124()
       uw_ord2005_rem_26 = ((int)(uVar3)) % (3);
       cVar4 = uw_ord2005_rem_26;
     }
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 7 ^ (cVar4 + '\x0e') * '\b';
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (cVar4 + '\x0e') * '\b';
   }
 LAB_0002f314:
-  if ((*(byte *)(DAT_0010190c + 0x15) & 0x3f) == 0x20) {
+  /* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as
+     the rest of this NPC-AI cluster this session (see
+     [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
+     `ushort *`, so every bare `DAT_0010190c + N` in this function (both
+     the hex- and decimal-offset forms) was scaling N by 2. Verified
+     against fresh disassembly of this exact state-transition gate
+     (0x2f360-0x2f390): `ldrb r2,[r0,#0xb]; ldrb r3,[r0,#0xc]; orr
+     r3,r2,r3,lsl#8; and r3,r3,#0xf000; cmp r3,#0x3000` -- raw bytes
+     0xb/0xc combined, masked to byte 0xc's own upper nibble (our
+     "frame" field), compared against 3 -- all real, unscaled offsets.
+     This is npc_ai_tick's case-0xb/default target reaching this
+     function's state 0x20<->0x2c toggle (idle vs whatever 0x2c really
+     is): with the read scaled to byte 0x18 instead of the real frame
+     byte 0xc, this gate compared against essentially unrelated data
+     and could all but never see frame==3, so an object could get stuck
+     never transitioning off state 0x20 -- exactly the symptom reported
+     live (a peaceful NPC, Bragit, permanently showing what looks like
+     an alert/hostile idle pose instead of cycling into whatever state
+     0x2c's animation actually is). Cast every offset to a byte pointer
+     throughout this function so none of them are scaled. */
+  if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x20) {
     uVar3 = Ordinal_1053();
     uw_ord2005_rem_27 = ((int)(uVar3)) % (0x10);
     if (((uw_ord2005_rem_27 & 0xff) < (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) &&
-       ((*(byte *)(DAT_0010190c + 0xc) & 0xf0) == 0x30)) {
+       ((*(byte *)((char *)DAT_0010190c + 0xc) & 0xf0) == 0x30)) {
 LAB_0002f384:
-      bVar5 = *(byte *)(DAT_0010190c + 0x15) & 0xec | 0x2c;
+      bVar5 = *(byte *)((char *)DAT_0010190c + 0x15) & 0xec | 0x2c;
       goto LAB_0002f390;
     }
   }
@@ -22614,25 +22643,25 @@ LAB_0002f384:
     uVar3 = Ordinal_1053();
     uw_ord2005_rem_28 = ((int)(uVar3)) % (0x10);
     if (((uw_ord2005_rem_28 & 0xff) <= (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) ||
-       ((*(byte *)(DAT_0010190c + 0xc) & 0xf0) != 0x30)) goto LAB_0002f384;
-    bVar5 = *(byte *)(DAT_0010190c + 0x15) & 0xe0 | 0x20;
+       ((*(byte *)((char *)DAT_0010190c + 0xc) & 0xf0) != 0x30)) goto LAB_0002f384;
+    bVar5 = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
 LAB_0002f390:
-    *(byte *)(DAT_0010190c + 0x15) = bVar5;
+    *(byte *)((char *)DAT_0010190c + 0x15) = bVar5;
   }
-  if ((*(byte *)(DAT_0010190c + 0x15) & 0x3f) == 0x2c) {
+  if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x2c) {
     if ((DAT_00101924 != 0) && (DAT_00101430 == 0)) {
       uVar3 = Ordinal_1053();
       uw_ord2005_rem_29 = ((int)(uVar3)) % (2);
       iVar9 = DAT_0010190c;
-      uw_ord2005_rem_30 = ((int)((uint)*(byte *)(DAT_0010190c + 9) + uw_ord2005_rem_29 * 0x80 + 0xc0)) % (0x100);
+      uw_ord2005_rem_30 = ((int)((uint)*(byte *)((char *)DAT_0010190c + 9) + uw_ord2005_rem_29 * 0x80 + 0xc0)) % (0x100);
       *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_30;
-      uVar7 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_30 & 0xe0) << 2;
-      *(char *)(DAT_0010190c + 2) = (char)uVar7;
-      *(char *)(DAT_0010190c + 3) = (char)(uVar7 >> 8);
-      *(byte *)(DAT_0010190c + 0x18) =
-           ((byte)uw_ord2005_rem_30 ^ *(byte *)(DAT_0010190c + 0x18)) & 0x1f ^
-           *(byte *)(DAT_0010190c + 0x18);
-      *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
+      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_30 & 0xe0) << 2;
+      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
+      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      *(byte *)((char *)DAT_0010190c + 0x18) =
+           ((byte)uw_ord2005_rem_30 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^
+           *(byte *)((char *)DAT_0010190c + 0x18);
+      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
       return;
     }
     uVar3 = Ordinal_1053();
@@ -22641,13 +22670,13 @@ LAB_0002f390:
     if ((uw_ord2005_rem_31 & 0xff) < (bVar5 & 0xf) + 8) {
       uVar3 = Ordinal_1053();
       iVar9 = DAT_0010190c;
-      bVar5 = *(byte *)(DAT_0010190c + 9);
+      bVar5 = *(byte *)((char *)DAT_0010190c + 9);
       uw_ord2005_rem_32 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_33 = ((int)(uw_ord2005_rem_32 + (uint)bVar5 + 0xe0)) % (0x100);
       uVar7 = uw_ord2005_rem_33 & 0xff;
     }
     else {
-      uVar7 = (uint)*(byte *)(DAT_0010190c + 9);
+      uVar7 = (uint)*(byte *)((char *)DAT_0010190c + 9);
       iVar9 = DAT_0010190c;
     }
     if (DAT_00101430 == 0) {
@@ -22655,13 +22684,13 @@ LAB_0002f390:
       iVar9 = DAT_0010190c;
     }
     *(byte *)(iVar9 + 9) = (byte)uVar7;
-    uVar8 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar7 & 0xe0) << 2;
-    *(char *)(DAT_0010190c + 2) = (char)uVar8;
-    *(char *)(DAT_0010190c + 3) = (char)(uVar8 >> 8);
-    bVar5 = *(byte *)(DAT_0010190c + 0x18);
+    uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 0xe0) << 2;
+    *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
+    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
+    bVar5 = *(byte *)((char *)DAT_0010190c + 0x18);
     bVar6 = bVar5 ^ (byte)uVar7;
 LAB_0002f6cc:
-    *(byte *)(DAT_0010190c + 0x18) = bVar6 & 0x1f ^ bVar5;
+    *(byte *)((char *)DAT_0010190c + 0x18) = bVar6 & 0x1f ^ bVar5;
   }
   else {
     uVar3 = Ordinal_1053();
@@ -22669,44 +22698,44 @@ LAB_0002f6cc:
     if ((uw_ord2005_rem_34 & 0xff) < (*(byte *)(DAT_00101404 + 0x1f) & 0xf)) {
       uVar3 = Ordinal_1053();
       iVar9 = DAT_0010190c;
-      bVar5 = *(byte *)(DAT_0010190c + 9);
+      bVar5 = *(byte *)((char *)DAT_0010190c + 9);
       uw_ord2005_rem_35 = ((int)(uVar3)) % (0x40);
       uw_ord2005_rem_36 = ((int)(uw_ord2005_rem_35 + (uint)bVar5 + 0xe0)) % (0x100);
       *(byte *)(iVar9 + 9) = (byte)uw_ord2005_rem_36;
-      uVar7 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_36 & 0xe0) << 2;
-      *(char *)(DAT_0010190c + 2) = (char)uVar7;
-      *(char *)(DAT_0010190c + 3) = (char)(uVar7 >> 8);
-      bVar5 = *(byte *)(DAT_0010190c + 0x18);
+      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uw_ord2005_rem_36 & 0xe0) << 2;
+      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
+      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      bVar5 = *(byte *)((char *)DAT_0010190c + 0x18);
       bVar6 = (byte)uw_ord2005_rem_36 ^ bVar5;
       goto LAB_0002f6cc;
     }
   }
-  bVar5 = *(byte *)(DAT_0010190c + 0x15);
+  bVar5 = *(byte *)((char *)DAT_0010190c + 0x15);
   if ((bVar5 & 0x3f) == 0x20) {
-    *(byte *)(DAT_0010190c + 0x15) = bVar5 | 0x40;
-    *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfe | 6;
+    *(byte *)((char *)DAT_0010190c + 0x15) = bVar5 | 0x40;
+    *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
     uVar3 = Ordinal_1053();
     uw_ord2005_rem_37 = ((int)(uVar3)) % (2);
     iVar9 = DAT_0010190c;
     if (uw_ord2005_rem_37 == 0) goto LAB_0002f810;
-    uVar1 = *(ushort *)(DAT_0010190c + 0xb);
+    uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_38 = ((int)((uVar1 >> 0xc) + 1)) % (4);
     uVar7 = uw_ord2005_rem_38;
   }
   else {
-    *(byte *)(DAT_0010190c + 0x15) = bVar5 & 0xbf;
-    *(byte *)(DAT_0010190c + 0x13) =
-         (*(byte *)(DAT_0010190c + 0x13) ^ *(byte *)(DAT_00101404 + 0xb)) & 0x7f ^
-         *(byte *)(DAT_0010190c + 0x13);
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
+    *(byte *)((char *)DAT_0010190c + 0x15) = bVar5 & 0xbf;
+    *(byte *)((char *)DAT_0010190c + 0x13) =
+         (*(byte *)((char *)DAT_0010190c + 0x13) ^ *(byte *)(DAT_00101404 + 0xb)) & 0x7f ^
+         *(byte *)((char *)DAT_0010190c + 0x13);
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
     iVar9 = DAT_0010190c;
-    uVar1 = *(ushort *)(DAT_0010190c + 0xb);
+    uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_39 = ((int)((uVar1 >> 0xc) + 1)) % (4);
     uVar7 = uw_ord2005_rem_39;
   }
   *(char *)(iVar9 + 0xb) = (char)(uVar1 & 0xfff);
-  *(byte *)(DAT_0010190c + 0xc) = (byte)((uVar1 & 0xfff) >> 8) | (byte)(((uVar7 & 0xf) << 0xc) >> 8)
+  *(byte *)((char *)DAT_0010190c + 0xc) = (byte)((uVar1 & 0xfff) >> 8) | (byte)(((uVar7 & 0xf) << 0xc) >> 8)
   ;
 LAB_0002f810:
   FUN_00031dbc();
@@ -22870,6 +22899,19 @@ void FUN_0002fcec()
      no longer reaches an object 6 tiles away). This function's real
      target (byte 0xb/0xc) is unrelated to position; cast to a byte
      pointer before adding so the offset isn't scaled. */
+  if (getenv("UW_DEBUG_NPC_ATTITUDE")) {
+    /* uw-formats.txt (4.3.3, "Mobile object extra info"): offset 0xd is
+       a 16-bit field -- bits 0-3 npc_level, bit 13 npc_talkedto, bits
+       14-15 npc_attitude. Byte 0xe is that field's high byte, so its
+       own bits 6-7 (mask 0xc0) ARE npc_attitude, and bit 5 (mask 0x20)
+       is npc_talkedto. Offset 0xb is likewise a 16-bit field -- bits
+       0-3 npc_goal, bits 4-11 npc_gtarg -- matching this function's own
+       "uVar6 & 0xf"-style dispatch nibble read elsewhere in this file. */
+    ushort _de = *(ushort *)((char *)DAT_0010190c + 0xd);
+    fprintf(stderr, "[npc-attitude] obj=%p npc_attitude=%d npc_talkedto=%d npc_level=%d npc_goal=%d\n",
+            (void *)DAT_0010190c, (_de >> 14) & 3, (_de >> 13) & 1, _de & 0xf,
+            (int)(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf));
+  }
   if ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) {
     uVar6 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf01f;
     *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar6 | 0x10;
@@ -55501,6 +55543,7 @@ LAB_00061d34:
     *DAT_00110fc0 = 0x7f8;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     uVar29 = *(byte *)((char *)param_1 + 0x15) & 0x3f;
+    { const char *_fs = getenv("UW_FORCE_CRITTER_STATE"); if (_fs) uVar29 = (uint)atoi(_fs); }
     /* Ghidra modelled the divmod's remainder (ARM r1) as `extraout_r1`,
        which was never assigned -> wild index into the 0x20-entry
        DAT_00086cc0 direction table (crash when an object first came into
@@ -55557,6 +55600,23 @@ LAB_00061d34:
       fprintf(stderr, "[critter-z] id=0x%03x world_x(b904)=%d world_z(b920)=%d HEIGHT(b91c)=%d raw_b9=%d raw_b13=%d\n",
               uVar27 & 0x1ff, (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c,
               (int)*(byte *)((char *)param_1 + 9), (int)*(byte *)((char *)param_1 + 0x13));
+    if (getenv("UW_DEBUG_CRITTER_NAME")) {
+      static int _named = 0;
+      if (!_named) {
+        _named = 1;
+        int _id = uVar27 & 0x1ff;
+        int _iv = _id * 0xd;
+        int _grp = (byte)(&DAT_00202c9b)[_iv] & 0xf;
+        int _qual = (byte)param_1[2] & 0x3f;
+        int _off = 0;
+        if (_qual != 0) {
+          _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)param_1[2] >> 4 & 3) + 1);
+        }
+        char *_nm = (char *)FUN_0007863c(_grp * 6 + _off | 0xa00);
+        fprintf(stderr, "[critter-name] id=0x%03x namegrp=%d name='%s'\n",
+                _id, _grp, _nm ? _nm : "(null)");
+      }
+    }
     {
       short _frame_arg = (byte)param_1[6] >> 4;
       const char *_ff = getenv("UW_FORCE_CRITTER_FRAME");
