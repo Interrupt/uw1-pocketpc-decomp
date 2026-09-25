@@ -18736,7 +18736,21 @@ short param_5;
     uVar4 = Ordinal_1053();
     DAT_0010061c = DAT_0010061c + (short)(uVar4 % 0xc) + 4;
   }
+  if (getenv("UW_DEBUG_NPC_WANDER")) {
+    ushort _pos = *(ushort *)(param_1 + 0x16);
+    fprintf(stderr, "[npc-wander] obj=%p param_2=%d param_3=%d param_4=%d param_5=%d"
+            " base_iVar5=%d bVar1=%d DAT_00100608=%d DAT_0010061c=%d src_tile=(%u,%u)\n",
+            (void *)param_1, (int)(short)param_2, (int)param_3, (int)param_4, (int)param_5,
+            iVar5, (int)bVar1, (int)DAT_00100608, (int)DAT_0010061c,
+            (unsigned)(_pos >> 10), (unsigned)((_pos & 0x3f0) >> 4));
+  }
   iVar5 = FUN_000270d0();
+  if (getenv("UW_DEBUG_NPC_WANDER")) {
+    ushort _pos = *(ushort *)(param_1 + 0x16);
+    fprintf(stderr, "[npc-wander] FUN_000270d0 returned %d DAT_00100620=%d dst_tile=(%u,%u)\n",
+            iVar5, (int)DAT_00100620,
+            (unsigned)(_pos >> 10), (unsigned)((_pos & 0x3f0) >> 4));
+  }
   if ((iVar5 != 0) && (DAT_00100620 == 1)) {
     if (((short)(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) < param_5) &&
        (cVar2 = FUN_000382cc(g_player_object,1,0x10), cVar2 != '\0')) {
@@ -22829,10 +22843,26 @@ void FUN_0002fcec()
   if (DAT_00101734 == 0) {
     return;
   }
-  if ((*(byte *)(DAT_0010190c + 0xe) & 0xc0) == 0) {
-    uVar6 = *(ushort *)(DAT_0010190c + 0xb) & 0xf01f;
-    *(byte *)(DAT_0010190c + 0xb) = (byte)uVar6 | 0x10;
-    *(char *)(DAT_0010190c + 0xc) = (char)(uVar6 >> 8);
+  /* HACK: DAT_0010190c is `ushort *`, so bare `DAT_0010190c + N` pointer
+     arithmetic scales N by 2 -- correct for the handful of genuine 16-bit-
+     array-style fields elsewhere in this file, but WRONG here: real
+     disassembly (0x2fd0c-0x2fd44) reads/writes this object's raw BYTE
+     offsets 0xe (a guard byte) and 0xb/0xc (a packed 16-bit field) via
+     plain `ldrb/strb r,[r0,#N]` -- i.e. N is meant as a byte offset, not a
+     ushort-array index. The undecorated `DAT_0010190c + 0xb` here instead
+     computed byte offset 0x16 (0xb*2) -- which happens to be this object's
+     REAL current-tile-position field (confirmed via a live lldb watchpoint
+     on that address during a recorded repro, demo_critter.txt: the write
+     below fired and corrupted the tile Y coordinate from 7 to 1 in a
+     single tick, exactly matching the QA-reported "NPC disappears on its
+     first tick" symptom -- process_visible_tile_cell's rendering sweep
+     no longer reaches an object 6 tiles away). This function's real
+     target (byte 0xb/0xc) is unrelated to position; cast to a byte
+     pointer before adding so the offset isn't scaled. */
+  if ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) {
+    uVar6 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf01f;
+    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar6 | 0x10;
+    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar6 >> 8);
     FUN_00034044();
     if ((*(byte *)(DAT_0010190c + 0x19) & 1) != 0) {
 LAB_0002fe88:
@@ -24132,6 +24162,8 @@ undefined4 npc_ai_tick()
        hanging the entire game solid the moment any monster ever took
        this path. Compute the remainder directly instead. */
     bVar8 = ((bVar3 & 0xf) + 8) % 0x10;
+    if (getenv("UW_DEBUG_NPC_WANDER"))
+      fprintf(stderr, "[npc-branch] obj=%p took too-far-early-exit\n", (void *)DAT_0010190c);
     goto LAB_00033860;
   }
   if ((DAT_00101404[10] & 0x80) == 0) {
@@ -24175,6 +24207,11 @@ undefined4 npc_ai_tick()
       ((*(byte *)((char *)DAT_0010190c + 0x13) & 0x7f) != 0)) || ((DAT_0010190c[10] & 0xf8) != 0x80)) {
     build_object_placement_snapshot(DAT_0010190c,DAT_0010172c);
     bVar3 = *(byte *)((char *)DAT_0010190c + 9);
+    if (getenv("UW_DEBUG_NPC_WANDER"))
+      fprintf(stderr, "[npc-sweep] obj=%p pre_tile=(%u,%u) snap0=0x%04x snap1=0x%04x\n",
+              (void *)DAT_0010190c,
+              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4),
+              (unsigned)((ushort *)DAT_0010172c)[0], (unsigned)((ushort *)DAT_0010172c)[1]);
     /* Was `build_collision_height_field_for_object()` -- a dropped argument (K&R declared, relying
        on whatever register-content reuse the real ARM code got for
        free). build_collision_height_field_for_object's own single param is dereferenced the exact
@@ -24187,9 +24224,19 @@ undefined4 npc_ai_tick()
        session's other npc_ai_tick fixes). */
     DAT_00101414 = build_collision_height_field_for_object(DAT_0010190c);
     apply_placement_collision_sweep(DAT_0010172c,DAT_00101438);
+    if (getenv("UW_DEBUG_NPC_WANDER"))
+      fprintf(stderr, "[npc-sweep] obj=%p post_sweep snap0=0x%04x snap1=0x%04x (tile=(%u,%u))\n",
+              (void *)DAT_0010190c,
+              (unsigned)((ushort *)DAT_0010172c)[0], (unsigned)((ushort *)DAT_0010172c)[1],
+              (unsigned)(byte)(((ushort *)DAT_0010172c)[0] >> 8),
+              (unsigned)(byte)(((ushort *)DAT_0010172c)[1] >> 8));
     DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
     DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
     sync_object_tile_position(DAT_0010190c,DAT_0010172c);
+    if (getenv("UW_DEBUG_NPC_WANDER"))
+      fprintf(stderr, "[npc-sweep] obj=%p post_sync tile=(%u,%u)\n",
+              (void *)DAT_0010190c,
+              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
     if (*(byte *)((char *)DAT_0010190c + 9) != bVar3) {
       DAT_00101430 = 1;
     }
@@ -24226,7 +24273,15 @@ undefined4 npc_ai_tick()
             (unsigned)(*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f));
   if (((uVar9 & 0xf) == 0xb) || ((uVar9 & 0xf) == 3)) {
 LAB_00033830:
+    if (getenv("UW_DEBUG_NPC_WANDER"))
+      fprintf(stderr, "[npc-branch] obj=%p entering FUN_00033880 pre_tile=(%u,%u)\n",
+              (void *)DAT_0010190c,
+              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
     FUN_00033880();
+    if (getenv("UW_DEBUG_NPC_WANDER"))
+      fprintf(stderr, "[npc-branch] obj=%p returned from FUN_00033880 post_tile=(%u,%u)\n",
+              (void *)DAT_0010190c,
+              (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
     goto LAB_00033834;
   }
   bVar3 = *(byte *)((char *)DAT_0010190c + 0x15) & 0x3f;
@@ -24330,6 +24385,9 @@ LAB_00033860:
     fprintf(stderr, "[npc-phase] obj=%p old=0x%x new=0x%x bVar8=0x%x speed=0x%x\n",
             (void *)puVar11, bVar3, (unsigned)((bVar3 ^ bVar8) & 0xf ^ bVar3), bVar8,
             (unsigned)((byte)puVar11[10] & 7));
+  if (getenv("UW_DEBUG_NPC_WANDER"))
+    fprintf(stderr, "[npc-exit] obj=%p exit_tile=(%u,%u)\n", (void *)DAT_0010190c,
+            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
   return 1;
 }
 
