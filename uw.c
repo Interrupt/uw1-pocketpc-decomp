@@ -55455,32 +55455,30 @@ LAB_00061d34:
                 (int)((int)((int)_col_angle + (uint)(unsigned short)_quad_term) >> 0xb), _dm, (int)bVar13);
     }
     if ((ushort)uVar29 < 0x20) {
-      /* Was missing its `else` -- when the mirror test (see below) came
-         out false, uVar29 was left at its ORIGINAL value (the object's
-         own raw animation-state byte, e.g. 0 for "idle"), never updated
-         to the just-computed octant bVar13. Since that raw value gets
-         fed straight into resolve_critter_sprite_tier as "direction",
-         an object whose raw state happens to equal some OTHER state's
-         real direction/frame index (confirmed live: idle state 0 vs.
-         attack frames living at nearby indices in the same page) shows
-         a completely wrong, unrelated frame from certain viewing
-         angles -- looking like the animation itself changed based on
-         camera angle. This mirroring scheme is the classic "5 real
-         images cover 8 octants via horizontal flip" trick: the mirror
-         test true (`2 < (bVar13-3&7)`, i.e. bVar13 in {0,1,2,6,7} --
-         back/side views) reuses a flipped image via the +0x20 flag;
-         false (bVar13 in {3,4,5} -- front-ish views) should show the
-         real, un-mirrored image for that octant directly, which means
-         uVar29 must become bVar13 -- not stay unchanged. The uVar29==0xc
-         special case (left alone either way -- likely a "dead/corpse"
-         state that doesn't animate by direction) is preserved exactly
-         as before. */
+      /* REVERTED (checked against a fresh disassembly of this exact block,
+         real addresses 0x611ac-0x611cc): an earlier session added an
+         `else { uVar29 = bVar13; }` here, theorizing the missing else was
+         a decompiler-dropped branch. It isn't. The real code is a plain
+         ARM conditional instruction:
+           0x611c4: cmp r3,#0x3
+           0x611c8: addge r4,r1,#0x20   ; r4 (uVar29) only touched if r3>=3
+         There is no corresponding instruction for the r3<3 case anywhere
+         nearby -- r4 simply keeps whatever it already held (the object's
+         raw animation-state byte from *(param_1+0x15)&0x3f, set at
+         0x61134 and never touched again on this path), exactly like the
+         "buggy" pre-fix behavior. That earlier fix was plausible-looking
+         (an object's raw state coinciding with another state's real
+         direction index can show a wrong frame) but not what the shipped
+         binary does. This mirroring scheme is the classic "5 real images
+         cover 8 octants via horizontal flip" trick: the mirror test true
+         (`2 < (bVar13-3&7)`,
+         i.e. bVar13 in {0,1,2,6,7} -- back/side views) reuses a flipped
+         image via the +0x20 flag; false (bVar13 in {3,4,5} -- front-ish
+         views) leaves uVar29 as-is, matching the real code exactly. The
+         uVar29==0xc special case (skips this whole block) is unchanged. */
       if ((ushort)uVar29 != 0xc) {
         if (2 < (bVar13 - 3 & 7)) {
           uVar29 = bVar13 + 0x20;
-        }
-        else {
-          uVar29 = bVar13;
         }
       }
     }
