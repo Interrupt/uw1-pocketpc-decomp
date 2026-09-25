@@ -54347,11 +54347,54 @@ static const unsigned short g_dlist_region[4286] = {
 #define UW_DLIST_HEAD_LEAF    4187  /* bank 0x6e */
 #define UW_DLIST_REGION_COUNT (int)(sizeof(g_dlist_region)/sizeof(g_dlist_region[0]))
 
-static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, void *texptr)
+// e-model-texturing branch: optional planar-projection texturing for .E
+// models. This codebase's shared quad-record format (the same one
+// ordinary tile walls use, DAT_000acde4.. onward) already carries real
+// per-vertex UV fields (DAT_000ace08/0c/10/14/18/1c/20/24 -- confirmed
+// live, uw.c ~51767-51877: the wall-drawing code writes a real (0,0)-
+// (0,15)-(15,15)-(15,0) texel-corner pattern into exactly these fields
+// for an ordinary wall quad) -- emit_model_object has just never written
+// anything but 0 into them. That, not a missing UV system, looks like
+// the real reason texturing a .E model previously "didn't work": a
+// textured record with all-zero UV samples one single texel everywhere,
+// which reads as flat uniform color -- exactly what was observed. NONE
+// keeps every existing g_model_map row's current (flat-shaded, texptr
+// ignored) behavior unchanged by default.
+typedef enum { UW_UVPROJ_NONE = 0, UW_UVPROJ_XZ, UW_UVPROJ_XY, UW_UVPROJ_ZY } UvProjection;
+
+/* Planar-projection UV for one local vertex, in the same [0,15] texel-
+   corner convention ordinary tile walls already use (DAT_0023b824's own
+   wall-slot value minus one -- see the wall-drawing reference at uw.c
+   ~51767-51877). Wraps each axis against uv_scale (world units per one
+   texture repeat) so a texture tiles across a model's surface instead
+   of stretching once end to end. Projects from LOCAL (pre-rotation,
+   pre-anchor) model space rather than world space, deliberately: it
+   keeps a given model's own texturing identical no matter which
+   compass heading this particular placed instance faces, at the cost
+   of not necessarily lining up seam-for-seam with the real wall texture
+   the object sits against (open calibration question, not yet checked
+   against a screenshot). */
+static void uv_project(int proj, float lx, float ly, float lz, double uv_scale, int *out_u, int *out_v)
+{
+  double a = 0.0, b = 0.0;
+  switch (proj) {
+    case UW_UVPROJ_XY: a = lx; b = ly; break;
+    case UW_UVPROJ_ZY: a = lz; b = ly; break;
+    case UW_UVPROJ_XZ: a = lx; b = lz; break;
+    default: *out_u = 0; *out_v = 0; return;
+  }
+  double u = fmod(a, uv_scale); if (u < 0) u += uv_scale;
+  double v = fmod(b, uv_scale); if (v < 0) v += uv_scale;
+  *out_u = (int)(u / uv_scale * 16.0) & 15;
+  *out_v = (int)(v / uv_scale * 16.0) & 15;
+}
+
+static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, void *texptr, int uv_proj, double uv_scale)
 {
   int npts = *(int *)model;
   int nparts = *(int *)(model + 4);
   if (npts <= 0 || npts > 600 || nparts <= 0) return;
+  if (uv_scale <= 0.0) uv_scale = 256.0;
 
   /* The object's own world anchor height (DAT_0023b91c) appears to be a
      ceiling-relative or otherwise offset reference rather than the tile's
@@ -54365,6 +54408,7 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
   { const char *_s = getenv("UW_MODEL_SCALE"); if (_s) scale = atof(_s); }
   { const char *_s = getenv("UW_MODEL_YOFF"); if (_s) yoff = atof(_s); }
   { const char *_s = getenv("UW_MODEL_YCLIP"); if (_s) y_clip = atof(_s); }
+  { const char *_s = getenv("UW_MODEL_UV_SCALE"); if (_s) uv_scale = atof(_s); }
   double ang = heading * 45.0 * (3.14159265358979 / 180.0);
   double ca = cos(ang), sa = sin(ang);
 
@@ -54380,6 +54424,12 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
 
   int base_vtx = DAT_0023b838;
   int i;
+  /* Local (pre-rotation) vertex positions, kept around for the UV
+     projection below -- computed heading-independently from the SAME
+     local space each model's own points are authored in, so a given
+     door/model looks the same regardless of which compass direction
+     this particular instance faces. */
+  static float _uv_local[600][3];
   for (i = 0; i < npts; i++) {
     float mx = *(float *)(model + 8 + i*0xc) + (float)xoff_local;
     float my = *(float *)(model + 8 + i*0xc + 4);
@@ -54401,6 +54451,7 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
        (DFRAME.E's Y=1024 set) aren't shared with any other, unclipped
        part. */
     if (y_clip > 0 && my > y_clip) my = (float)y_clip;
+    _uv_local[i][0] = mx; _uv_local[i][1] = my; _uv_local[i][2] = mz;
     double rx = mx*ca - mz*sa;
     double rz = mx*sa + mz*ca;
     float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + i)*0xc);
@@ -54443,14 +54494,26 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
     int _texsize = texptr ? 16 : 0;
     *(int *)(&DAT_000ace00 + rb) = _texsize;
     *(int *)(&DAT_000ace04 + rb) = _texsize;
-    *(int *)(&DAT_000ace08 + rb) = 0;
-    *(int *)(&DAT_000ace0c + rb) = 0;
-    *(int *)(&DAT_000ace10 + rb) = 0;
-    *(int *)(&DAT_000ace14 + rb) = 0;
-    *(int *)(&DAT_000ace18 + rb) = 0;
-    *(int *)(&DAT_000ace1c + rb) = 0;
-    *(int *)(&DAT_000ace20 + rb) = 0;
-    *(int *)(&DAT_000ace24 + rb) = 0;
+    {
+      int _tu0 = 0, _tv0 = 0, _tu1 = 0, _tv1 = 0, _tu2 = 0, _tv2 = 0, _tu3 = 0, _tv3 = 0;
+      if (texptr && uv_proj != UW_UVPROJ_NONE) {
+        uv_project(uv_proj, _uv_local[v0][0], _uv_local[v0][1], _uv_local[v0][2], uv_scale, &_tu0, &_tv0);
+        uv_project(uv_proj, _uv_local[v1][0], _uv_local[v1][1], _uv_local[v1][2], uv_scale, &_tu1, &_tv1);
+        uv_project(uv_proj, _uv_local[v2][0], _uv_local[v2][1], _uv_local[v2][2], uv_scale, &_tu2, &_tv2);
+        uv_project(uv_proj, _uv_local[v3][0], _uv_local[v3][1], _uv_local[v3][2], uv_scale, &_tu3, &_tv3);
+      }
+      *(int *)(&DAT_000ace08 + rb) = _tu0;
+      *(int *)(&DAT_000ace0c + rb) = _tv0;
+      *(int *)(&DAT_000ace10 + rb) = _tu1;
+      *(int *)(&DAT_000ace14 + rb) = _tv1;
+      *(int *)(&DAT_000ace18 + rb) = _tu2;
+      *(int *)(&DAT_000ace1c + rb) = _tv2;
+      *(int *)(&DAT_000ace20 + rb) = _tu3;
+      *(int *)(&DAT_000ace24 + rb) = _tv3;
+      if (getenv("UW_DEBUG_MODEL_UV"))
+        fprintf(stderr, "[model-uv] rec=%d uv=(%d,%d)(%d,%d)(%d,%d)(%d,%d)\n",
+                rec, _tu0,_tv0,_tu1,_tv1,_tu2,_tv2,_tu3,_tv3);
+    }
     /* Same truncated-in-record-field problem every other texture
        consumer in this file already worked around (the field is 4
        bytes, a real pointer is 8 on this host): publish through the
@@ -54499,6 +54562,7 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
 // tile's real floor-height field (open item, see object-rendering-
 // findings.txt). UW_MODEL_SCALE/UW_MODEL_YOFF/UW_MODEL_YCLIP override every
 // entry at once, for interactive re-tuning.
+
 typedef struct {
   int id;
   void *model;
@@ -54511,6 +54575,11 @@ typedef struct {
   const char *name2;
   double x_off2; // model2's local-space X shift before rotation, to
                   // center it in model 1's opening
+  UvProjection uv_proj; // which two world axes become U/V; NONE = flat-
+                         // shaded regardless of texptr (current behavior)
+  double uv_scale;      // real world units per one texture repeat (u/v
+                         // wrap period); 0 = fall back to a 256-unit
+                         // (one tile) default when uv_proj is set
 } ModelMapEntry;
 
 static const ModelMapEntry g_model_map[] = {
@@ -54569,20 +54638,27 @@ static const ModelMapEntry g_model_map[] = {
   // wrong place. 0x146/0x14e have no resolved name (likely unused slots)
   // and are deliberately left out. "a_door trap" (0x188) is a trigger
   // object, not physical architecture -- not included.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
+  // uv_proj=XY (local width x local height -- heading-independent, so the
+  // same projection looks right regardless of which compass direction
+  // this specific door instance faces), uv_scale=256.0 (one texture
+  // repeat per world tile, matching the wall-texture tiling convention
+  // established for ordinary tile walls) -- first live test of the new
+  // real-per-vertex-UV path (see ModelMapEntry's own comment); starting
+  // point for calibration, not yet confirmed correct on screen.
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
 };
 #define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
 
@@ -54978,6 +55054,14 @@ ushort * param_1;
          should look; leave them at texptr=0 (flat-shaded, unchanged). */
       void *_frame_tex = 0;
       if (_me->model2) { byte _wall_tex_id = (DAT_0023b4ec[2] & 0x3f) + 0x3a;
+        /* One-off diagnostic for the e-model-texturing UV work: force a
+           different, visually distinct texture id to tell "geometry/UV
+           rendering but blending with the identical wall texture" apart
+           from "not rendering at all" -- the frame normally intentionally
+           matches the wall it's set into, which makes that ambiguous from
+           a screenshot alone. Not a real feature; remove once the UV
+           mechanism is confirmed. */
+        { const char *_s = getenv("UW_MODEL_FRAME_TEX_OVERRIDE"); if (_s) _wall_tex_id = (byte)atoi(_s); }
         _frame_tex = get_texture_page(_wall_tex_id);
         if (getenv("UW_DEBUG_MODEL"))
           fprintf(stderr, "[model-frame-tex] id=0x%03x wall_tex_id=%d tex=%p\n",
@@ -55022,7 +55106,7 @@ ushort * param_1;
                   (int)(uVar27 & 0x1ff), _sprite_frame, _leaf_tex, _w, _h, _nz, _tot);
         }
       }
-      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0, _frame_tex);
+      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0, _frame_tex, _me->uv_proj, _me->uv_scale);
       if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
         /* _leaf_tex decodes fine (confirmed via UW_DEBUG_MODEL's
            nonzero-pixel count -- real sprite content, not garbage) but
@@ -55035,13 +55119,19 @@ ushort * param_1;
            for the identical reason (works for a world-fixed wall texture
            that tiles across the whole screen-space range; a small finite
            sprite bitmap mostly samples out of its own bounds -> reads as
-           transparent). Solving this needs a real per-vertex UV system
-           this codebase doesn't have for ANY object yet, sprite or model
-           -- out of scope for this pass. Defaulting to untextured (0)
-           until that exists; UW_MODEL_LEAF_TEXTURE=1 applies it anyway,
-           for experimenting with the actual failure mode. */
+           transparent). CORRECTED (e-model-texturing branch): the record
+           format DOES already carry real per-vertex UV fields (see
+           emit_model_object's own uv_project -- this was wrong, not a
+           missing system) -- but the planar/tiling projection built for
+           the frame's wall texture is still the wrong TOOL for a sprite:
+           a sprite needs its own bounds mapped once (fit, not tiled), a
+           different UV mode this pass doesn't build. Left at UW_UVPROJ_
+           NONE for the leaf specifically until a "fit to local bounds"
+           projection exists; UW_MODEL_LEAF_TEXTURE=1 still applies the
+           texture pointer with no UV (the old broken behavior) for
+           experimenting with the failure mode if useful. */
         void *_apply_tex = getenv("UW_MODEL_LEAF_TEXTURE") ? _leaf_tex : 0;
-        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2, _apply_tex);
+        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2, _apply_tex, UW_UVPROJ_NONE, 0.0);
       }
       return;
     }

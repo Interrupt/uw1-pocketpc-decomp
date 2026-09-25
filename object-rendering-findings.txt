@@ -4272,3 +4272,110 @@ tree with left/right node offsets, used for draw-order sorting rather
 than simple visibility culling) describes a mechanism this project's
 door bytecode may or may not also use elsewhere in its own control
 flow -- not yet cross-checked against g_dlist_region's actual bytes.
+
+===============================================================================
+NEW BRANCH: e-model-texturing (2026-09-21)
+===============================================================================
+Branched from `mysteries` at commit 5a73d2f. Context: the user called the
+current door/frame rendering (the g_dlist_region display-list bytecode
+path this whole document's earlier entries investigated) "a hack since
+we could not get texturing working in our port," and asked to try giving
+each `.E` model in g_model_map an optional planar-projection UV instead,
+with an eventual goal of switching doors/door-frames back to rendering
+from the `.E` files once real texturing works for them.
+
+(35) 2026-09-21: found the real, previously-missed reason .E-model
+texturing "didn't work," built a planar-projection UV mechanism for it,
+confirmed the mechanism is sound via a known-good sanity check -- but
+hit a SEPARATE, pre-existing problem that still blocks visually
+confirming it on the door frame specifically.
+
+THE REAL BUG (not a missing UV system): emit_model_object's own comment
+claimed "this codebase doesn't have [a real per-vertex UV system] for
+ANY object yet, sprite or model." That's wrong. The shared quad-record
+format every rasterized surface in this renderer uses (DAT_000acde4
+onward, the same one ordinary tile walls use) already has real per-
+vertex UV fields: DAT_000ace08/0c (vertex0 U/V), 0x10/14 (vertex1),
+0x18/1c (vertex2), 0x20/24 (vertex3), each a 4-byte int. Confirmed
+directly by reading the real wall-drawing reference code (uw.c
+~51767-51877): for an ordinary wall quad it writes a real (0,0)-(0,15)-
+(15,15)-(15,0) texel-corner pattern into exactly these fields --
+DAT_0023b824 (16 for "wall-sized" surfaces, 64 for floor/ceiling) sets
+the wrap range, matching the `_texsize` field emit_model_object already
+wrote (16) without ever using it correctly. emit_model_object wrote flat
+ZERO into all 8 UV fields for every model, always -- with real UV
+coordinates all pinned at texel (0,0), a textured record samples one
+single texel everywhere, which reads as flat uniform color. That
+matches, exactly, what was previously observed and blamed on a missing
+UV system (uw.c's own comment history: "a textured record drew as a
+perfectly flat, uniform color... even though the texture pointer itself
+decoded real image data").
+
+BUILT: a `uv_project()` helper (uw.c, just above emit_model_object) that
+computes real per-vertex UV from a model's LOCAL (pre-rotation,
+pre-anchor) vertex position -- deliberately local rather than world
+space, so a given model's texturing looks identical regardless of which
+compass heading a particular placed instance faces, at the cost of not
+necessarily seaming with the real wall texture behind it (open question,
+not yet checked). Three projection planes (XY/XZ/ZY), wrapped against a
+per-model `uv_scale` (world units per texture repeat, default 256 = one
+tile) into the same [0,15] texel range ordinary walls use. Added
+`UvProjection uv_proj` and `double uv_scale` fields to ModelMapEntry
+(defaulting to UW_UVPROJ_NONE/0 for every existing row via C's
+aggregate-init zero-fill rule -- no row needed editing except the ones
+being tested, so nothing about any OTHER model's current behavior
+changed). Enabled UW_UVPROJ_XY, uv_scale=256 on the door-frame
+(DFRAME.E) family specifically, reusing the wall-texture pointer
+(_frame_tex) that already resolves correctly. UW_MODEL_UV_SCALE env var
+added for live calibration, matching this file's established
+UW_MODEL_SCALE/YOFF/YCLIP convention.
+
+VERIFIED THE MECHANISM ITSELF WORKS: UW_DEBUG_MODEL_UV dumps real,
+non-degenerate, spatially-varying UV per record (e.g. "uv=(8,0)(8,13)
+(12,13)(12,0)"), not the old flat (0,0)(0,0)(0,0)(0,0) -- confirmed at
+the door repro used throughout this whole investigation
+(tile=31.95,8.98, id=0x140, anchor=(4240,640,688), the same anchor this
+document's earlier entries spent an entire multi-day trace confirming
+is correct).
+
+HIT A SEPARATE PROBLEM taking the live screenshot to confirm visually:
+the door frame doesn't appear on screen AT ALL at this repro --
+compared four screenshots (normal display-list door rendering as
+baseline; UW_ENABLE_MODEL_RENDER with the real wall texture; with
+UW_MODEL_UV_SCALE=32, an 8x denser tiling that should have been
+obviously different if the frame were rendering; with an entirely
+different, visually distinct texture id forced via a one-off
+UW_MODEL_FRAME_TEX_OVERRIDE diagnostic) and none show any visible
+difference from each other or from "no frame at all." Ruled out a
+general regression from this branch's own edits by testing a KNOWN-
+GOOD case: the boulder repro (`SETPLAYERPOS 9.53 3.66 64 181 16`,
+object-rendering-findings.txt's own documented boulder repro) still
+renders a clearly visible, correctly-shaped 3D shape with
+UW_ENABLE_MODEL_RENDER=1 -- the shared model pipeline is intact, this
+isn't a general breakage. The door frame's invisibility is specific to
+DFRAME.E (or doors generally) and predates this branch's own changes --
+UW_ENABLE_MODEL_RENDER for doors/DFRAME was never actually confirmed
+working on screen before this session either (unlike boulders, which
+have a documented "original boulder calibration" -- doors have no
+equivalent confirmation anywhere in this file's history).
+
+Plausible causes not yet checked: backface-culled winding order
+specific to DFRAME.E (the boulder's own winding might just happen to be
+outward-facing from this angle while DFRAME.E's isn't), the frame
+geometry coinciding with / being occluded by the tile's own wall mesh
+(a "frame" that hugs a doorway opening tightly could be behind the
+wall's own near-clip surface), or a real-vs-flagged render-class
+mismatch specific to door ids that emit_tile_objects's generic object
+dispatch doesn't actually reach for doors the way it does for boulders
+(doors may be drawn through an entirely separate code path upstream,
+with lookup_object_model's own hit for id 0x140 being a real but
+functionally-dead branch). Next step: instrument or step through
+whichever code path actually draws door OBJECTS (not the tile-wall
+geometry) to confirm emit_tile_objects's per-object dispatch is even
+the right place doors reach in the first place -- compare directly
+against how boulders/bridge/shrine get there.
+
+UW_MODEL_FRAME_TEX_OVERRIDE and UW_MODEL_UV_SCALE kept as documented
+diagnostics. Default rendering unaffected (confirmed, faces=11/6, zero
+env vars); UW_ENABLE_MODEL_RENDER and UW_DLIST_REAL_CULL_OPCODES both
+remain opt-in. Standard run-regressions.sh: 6/6 clean.
