@@ -20647,11 +20647,27 @@ ushort * param_1;
 
 // was FUN_0002bd70. Writes a small field into the object-placement
 // snapshot buffer (param_1, one of DAT_00204920/DAT_0010172c's chosen
-// targets) then runs movement_collision_sweep. Second argument is
-// declared but genuinely unused by the real function (confirmed no
-// param_2 reference in its body).
-undefined4 apply_placement_collision_sweep(param_1)
+// targets) then runs movement_collision_sweep.
+/* Second argument was previously left undeclared, relying on it still
+   sitting in the same ABI register (r1) at the tail call to
+   movement_collision_sweep() -- a K&R "dropped-argument" idiom already
+   seen (and fixed) elsewhere this session (FUN_00073b18). It reliably
+   works in the REAL ARM binary only because that compiler's generated
+   code for this function body happens to never touch r1 between entry
+   and the call; nothing about C guarantees that on a different compiler/
+   platform, and on this port's build it isn't reliable -- confirmed
+   live: an intermittent (~3/10 runs) SIGSEGV in sweep_apply_collision,
+   indirect-calling through a garbage function pointer read from
+   movement_collision_sweep's own param_2 (DAT_002048bc), newly exposed
+   now that NPCs actually move far enough to hit real collisions (see
+   this function's own byte-0x14 fix just above). Both real call sites
+   already pass a real second argument explicitly
+   (apply_placement_collision_sweep(&DAT_00204920,&DAT_002049a0) and
+   (DAT_0010172c,DAT_00101438)) -- give it a real declared parameter and
+   forward it explicitly instead of relying on register leftovers. */
+undefined4 apply_placement_collision_sweep(param_1,param_2)
 intptr_t param_1;
+intptr_t param_2;
 
 {
   /* param_1 was `int`, truncating the real 64-bit pointers callers pass
@@ -20660,9 +20676,27 @@ intptr_t param_1;
      read as 0xb6c724 instead of the real 0x100b6c724, crashing on this
      very first dereference the moment an NPC's per-tick AI got this
      far. */
-  *(char *)(param_1 + 0x12) = (char)(((*(byte *)(DAT_0010190c + 0x14) & 7) << 0x14) >> 0x10);
+  /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this
+     NPC-AI cluster this session (see
+     [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
+     `ushort *`, so the bare `DAT_0010190c + 0x14` here scaled to byte
+     offset 0x28 (unrelated data) instead of the real byte 0x14
+     (confirmed via disassembly of this exact function, 0x2bd7c:
+     `ldrb r3,[r2,#0x14]` -- raw, unscaled). This byte's low 3 bits are
+     the same field npc_idle_behavior_tick sets on every idle-toggle
+     transition; the value computed here feeds movement_sweep_setup's
+     sub-step-count formula (DAT_00086990 = offset0x12 * velocity),
+     which multiplies by ZERO whenever this read comes out wrong/empty
+     -- capping every physics sub-step loop to a single negligible
+     iteration regardless of how large the (correctly-computed)
+     per-tick velocity is. This is very likely the actual root cause of
+     the "walk animation plays for a few seconds but the NPC never
+     reaches an adjacent tile" symptom: real velocity was being
+     computed (confirmed live), but the sub-step count that turns
+     velocity into actual swept distance was silently starved at zero. */
+  *(char *)(param_1 + 0x12) = (char)(((*(byte *)((char *)DAT_0010190c + 0x14) & 7) << 0x14) >> 0x10);
   *(undefined1 *)(param_1 + 0x13) = 0;
-  movement_collision_sweep();
+  movement_collision_sweep(param_1,param_2);
   return 1;
 }
 
@@ -47445,11 +47479,16 @@ byte * param_2;
     uVar4 = *(byte *)((char *)param_1 + 0x13) & 0x7f;
     param_2[0x14] = (byte)uVar4;
     param_2[0x15] = 0;
+    if (getenv("UW_DEBUG_NPC_SPEED"))
+      fprintf(stderr, "[npc-speed] obj=%p byte13&0x7f=%d class0x40=%d\n", (void *)param_1,
+              (int)uVar4, (int)((*param_1 & 0x1c0) == 0x40));
     if ((((*param_1 & 0x1c0) == 0x40) ||
         (*(short *)(param_2 + 0x10) != 0 || *(short *)(param_2 + 10) != 0)) ||
        (((&DAT_00202c93)[iVar5] & 8) != 0)) {
       param_2[0x14] = (byte)(uVar4 * 0x2f);
       param_2[0x15] = (byte)(uVar4 * 0x2f >> 8);
+      if (getenv("UW_DEBUG_NPC_SPEED"))
+        fprintf(stderr, "[npc-speed] obj=%p -> final speed=%d\n", (void *)param_1, (int)(short)(uVar4 * 0x2f));
       if ((*param_1 & 0x1c0) == 0x40) {
         param_2[0x27] = 8;
       }
@@ -50262,6 +50301,12 @@ int param_2;
             (int)(*(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10)));
   g_sweep_velocity[2] =
        g_sweep_velocity[2] + *(short *)(DAT_00204874 + 0x12) * *(short *)(DAT_00204874 + 0x10);
+  if (getenv("UW_DEBUG_NPC_SPEED"))
+    fprintf(stderr, "[npc-velocity] obj=%p speed(0x14)=%d local_20=%d local_1e=%d dir(0xc,0xe,0x10)=(%d,%d,%d) speed2(0x12)=%d -> vel=(%d,%d,%d)\n",
+            (void *)DAT_00204874, (int)*(short *)(DAT_00204874 + 0x14), (int)local_20, (int)local_1e,
+            (int)*(short *)(DAT_00204874 + 0xc), (int)*(short *)(DAT_00204874 + 0xe), (int)*(short *)(DAT_00204874 + 0x10),
+            (int)*(short *)(DAT_00204874 + 0x12),
+            (int)*g_sweep_velocity, (int)g_sweep_velocity[1], (int)g_sweep_velocity[2]);
   if ((g_sweep_velocity[1] == 0 && g_sweep_velocity[2] == 0) && *g_sweep_velocity == 0) {
     return 0;
   }
@@ -51410,12 +51455,40 @@ void sweep_apply_collision()
         fprintf(stderr, "[apply-collision] -> clean resolve (no flags after mask)\n");
       return;
     }
-    if (getenv("UW_DEBUG_JUMP"))
-      fprintf(stderr, "[apply-collision] cond1(local_14&bc[1]==0)=%d bc[1]=0x%x fnptr=%p\n",
-              (int)((local_14[0] & DAT_002048bc[1]) == 0), (unsigned)(unsigned char)DAT_002048bc[1],
-              *(void **)(DAT_002048bc + 4));
-    if (((local_14[0] & DAT_002048bc[1]) == 0) ||
-       (iVar2 = (**(codeval **)(DAT_002048bc + 4))(local_14), iVar2 == 0)) {
+    /* This branch used to call through a function pointer read via
+       generic offset arithmetic on DAT_002048bc (`*(void**)(...+4)`,
+       later corrected to `+8` against fresh disassembly of the real
+       function, FUN_0005ad18 0x5add4-0x5adf8: the original ARM code
+       reconstructs a 32-bit address from 4 bytes at offsets 8/9/0xa/0xb
+       and branches to it directly). That approach can never work on
+       this port even at the right offset: the four real snapshot
+       buffers (DAT_00204980/00204990/002049a0/002049b0) were each
+       decompiled with their own callback slot as an INDEPENDENT global
+       (DAT_00204988/00204998/002049a8/002049b8 respectively -- see
+       their real initialization a few hundred lines up, uw.c ~20450-
+       20465: `DAT_00204988=FUN_0002b960; DAT_00204998=FUN_0002bbec;
+       DAT_002049a8=&LAB_0002bbe4; DAT_002049b8=FUN_0002bc9c;`), not
+       packed contiguously the way the original ARM struct was -- so no
+       fixed-offset read from a runtime-varying base can reach the right
+       one. Look up which of the four known buffers DAT_002048bc
+       currently is and call ITS real, already-correctly-initialized
+       callback directly instead. Confirmed live: the old generic read
+       caused an intermittent (~30-50% of runs) SIGSEGV here, newly
+       exposed now that NPCs actually move far enough to hit real
+       collisions (see this file's earlier byte-0x14/dropped-arg fixes
+       in apply_placement_collision_sweep). */
+    {
+      codeval *_cb = (codeval *)0;
+      if (DAT_002048bc == (char *)&DAT_00204980) _cb = (codeval *)DAT_00204988;
+      else if (DAT_002048bc == (char *)&DAT_00204990) _cb = (codeval *)DAT_00204998;
+      else if (DAT_002048bc == (char *)&DAT_002049a0) _cb = (codeval *)DAT_002049a8;
+      else if (DAT_002048bc == (char *)&DAT_002049b0) _cb = (codeval *)DAT_002049b8;
+      if (getenv("UW_DEBUG_JUMP"))
+        fprintf(stderr, "[apply-collision] cond1(local_14&bc[1]==0)=%d bc[1]=0x%x cb=%p\n",
+                (int)((local_14[0] & DAT_002048bc[1]) == 0), (unsigned)(unsigned char)DAT_002048bc[1],
+                (void *)_cb);
+      if (((local_14[0] & DAT_002048bc[1]) == 0) ||
+         (_cb == (codeval *)0) || (iVar2 = (*_cb)(local_14), iVar2 == 0)) {
       // PHYSICS: wall collision -- 0x700 bits mean "hit an angled/solid face":
       // slide the move along it (sweep_slide_along_wall) instead of stopping dead.
       /* Narrowed from the full 0x700 mask to 0x600 (0x200|0x400): 0x100
@@ -51468,6 +51541,7 @@ void sweep_apply_collision()
         fprintf(stderr, "[apply-collision] -> fully blocked, arming g_fall_accel=0xfc and restarting\n");
       sweep_restart_remaining(bVar3);
       return;
+    }
     }
     // PHYSICS: soft block resolved -- back the sub-step out (sweep_step(-1))
     if (getenv("UW_DEBUG_JUMP"))
