@@ -4642,7 +4642,10 @@ static const unsigned char DAT_00086bf0_real_table[16] = {
 #define DAT_00086bf0 (*(undefined1 *)DAT_00086bf0_real_table)
 undefined1 DAT_0023b818;
 char *DAT_0023b4f0;
-undefined4 DAT_0023b808;
+char *DAT_0023b808;  /* was `undefined4` (4 bytes) -- would truncate the
+                        real `void *` tilemap_lookup returns; currently a
+                        write-only global (no reader elsewhere in this
+                        file), so not a live bug, but fixed for safety */
 undefined4 DAT_0023b838;
 short DAT_0023b4e8;
 short DAT_0023b4e4;
@@ -10110,8 +10113,10 @@ int param_1;
     iVar12 = (int)(short)iVar10;
     do {
       while (iVar5 <= sVar8) {
-        iVar5 = tilemap_lookup(iVar9,iVar10);
-        puVar7 = (ushort *)resolve_object_link(iVar5 + 2);
+        /* was folded into `int iVar5` (reused elsewhere as a loop-index
+           int) -- truncated tilemap_lookup's real `void *` return */
+        char *_tile5 = (char *)tilemap_lookup(iVar9,iVar10);
+        puVar7 = (ushort *)resolve_object_link(_tile5 + 2);
         if (puVar7 != (ushort *)0x0) {
           do {
             if ((((*puVar7 & 0x1ff) == (int)(short)(uVar1 & 0x1ff)) && ((puVar7[5] & 0x80) == 0)) &&
@@ -10293,9 +10298,9 @@ int param_1;
 void FUN_0001825c()
 
 {
-  int iVar1;
-  
-  iVar1 = tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
+  char *iVar1;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+
+  iVar1 = (char *)tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
                        (*(ushort *)(DAT_00100674 + 0x16) & 0x3f0) >> 4);
   discard_misplaced_object(iVar1 + 2,DAT_00100674,1);
   return;
@@ -20333,7 +20338,9 @@ ushort param_3;
   byte bVar1;
   byte bVar2;
   undefined2 uVar3;
-  int iVar4;
+  char *iVar4;  /* was `int` -- truncated tilemap_lookup's real `void *`
+                    return (crash: object_list_insert_head(iVar4 + 2, ...)
+                    below dereferences the truncated address) */
   uint uVar6;
   undefined4 uVar7;
   int extraout_r1;
@@ -20341,7 +20348,7 @@ ushort param_3;
                        spawn_new_object's real object pointer in both of
                        this function's drop branches */
 
-  iVar4 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
+  iVar4 = (char *)tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
   ;
   if (((param_2 & 0xff) != 0) &&
      (pDropObj = (char *)spawn_new_object((short)(param_2 & 0xff) + 0xd8,0), pDropObj != NULL)) {
@@ -20389,12 +20396,13 @@ int mobile_object_tick()
 
 {
   byte bVar1;
-  int iVar2;
-  
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's, then
+                   discard_misplaced_object's, real pointer returns */
+
   if (((char)DAT_0010190c[4] == '\0') &&
      (((&DAT_00202c97)[(*DAT_0010190c & 0x1ff) * 0xd] & 0xc) < 0xc)) {
-    iVar2 = tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
-    iVar2 = discard_misplaced_object(iVar2 + 2,DAT_0010190c,0);
+    iVar2 = (char *)tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
+    iVar2 = (char *)discard_misplaced_object(iVar2 + 2,DAT_0010190c,0);
     if (iVar2 == 0) {
       return 0;
     }
@@ -22796,10 +22804,14 @@ void FUN_0002f818()
     iVar8 = Ordinal_2005((int)sVar4,
                          (((int)DAT_001013f8 - (int)(short)DAT_00101410) * 0x10000 >> 0x10) << 2);
     iVar8 = (iVar8 + iVar9) * 0x1000000;
-    iVar9 = tilemap_lookup(cVar3,cVar2);
-    pbVar6 = (byte *)tilemap_lookup((int)(iVar5) >> 0x18,iVar8 >> 0x18);
-    object_list_unlink(iVar9 + 2,DAT_0010190c);
-    object_list_insert_head(pbVar6 + 2,DAT_0010190c);
+    {
+      /* was folded into `int iVar9` (reused above as an unrelated int) --
+         truncated tilemap_lookup's real `void *` return */
+      char *_tile9 = (char *)tilemap_lookup(cVar3,cVar2);
+      pbVar6 = (byte *)tilemap_lookup((int)(iVar5) >> 0x18,iVar8 >> 0x18);
+      object_list_unlink(_tile9 + 2,DAT_0010190c);
+      object_list_insert_head(pbVar6 + 2,DAT_0010190c);
+    }
     uVar7 = *(ushort *)(DAT_0010190c + 0x16) & 0x3ff;
     *(char *)(DAT_0010190c + 0x16) = (char)uVar7;
     *(byte *)(DAT_0010190c + 0x17) =
@@ -25264,12 +25276,12 @@ int param_2;
   uint uVar11;
   byte local_2c;
   byte local_2b [3];
-  int local_28;
-  
+  char *local_28;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+
   iVar6 = ((byte)*param_1 & 0x3f) * 0x30;
   uVar9 = (uint)(param_1[0xb] >> 10);
   uVar11 = param_1[0xb] >> 4 & 0x3f;
-  local_28 = tilemap_lookup(uVar9,uVar11);
+  local_28 = (char *)tilemap_lookup(uVar9,uVar11);
   if (getenv("UW_DEBUG_NPC_TICK"))
     fprintf(stderr, "[npc-tick] obj=%p class=0x%x tile=(%u,%u) target=(%u,%u)\n",
             (void *)param_1, (unsigned)(*param_1 & 0x1ff), uVar9, uVar11,
@@ -25561,8 +25573,11 @@ ushort * param_3;
                                  0x10,(ushort)((uint)bVar3 << 3) & 0xff,
                                 *(byte *)(DAT_00101404 + 10) >> 7,8);
           if (iVar11 != 0) {
-            iVar11 = tilemap_lookup(DAT_00101918,DAT_001013f8);
-            object_list_unlink(iVar11 + 2,param_3);
+            /* was folded into `int iVar11` (reused above for unrelated
+               int arithmetic) -- truncated tilemap_lookup's real
+               `void *` return */
+            char *_tile11 = (char *)tilemap_lookup(DAT_00101918,DAT_001013f8);
+            object_list_unlink(_tile11 + 2,param_3);
             object_list_insert_head(puVar7 + 1,param_3);
             uVar9 = bVar1 & 0x3f | (uint)bVar2 << 6;
             *(byte *)(param_3 + 0xb) = (byte)param_3[0xb] & 0xf | (byte)(uVar9 << 4);
@@ -27031,8 +27046,11 @@ LAB_00038100:
     else {
       if ((param_3 & 8) != 0) {
         if (((uVar1 & 0x1ff) == 0xd5) || ((uVar1 & 0x1ff) == 0xd6)) {
-          iVar3 = tilemap_lookup(param_4,(int)param_5);
-          iVar3 = FUN_00037fe8(iVar3 + 2,param_1);
+          /* was folded into `int iVar3` (reused elsewhere in this function
+             for unrelated int values) -- truncated tilemap_lookup's real
+             `void *` return */
+          char *_tile3 = (char *)tilemap_lookup(param_4,(int)param_5);
+          iVar3 = FUN_00037fe8(_tile3 + 2,param_1);
           if (iVar3 != 0) goto LAB_000382ac;
           uVar6 = 0xffffffff;
         }
@@ -28237,8 +28255,10 @@ void FUN_0003a654()
   undefined2 uVar1;
   ushort *puVar2;
   ushort *puVar3;
-  int iVar4;
-  
+  intptr_t iVar4;  /* was `int` -- reused as a plain int loop counter above,
+                       then as tilemap_lookup's real `void *` return below;
+                       intptr_t is safe for both */
+
   FUN_00037c14(2);
   iVar4 = 9;
   uVar1 = *(undefined2 *)(DAT_00086df8 + 0x6e);
@@ -28496,8 +28516,11 @@ int param_3;
   iVar2 = FUN_0003a99c(param_1,param_2,local_6c);
   if (param_3 == 0) {
     if ((short)iVar2 == -2) {
-      iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
-      discard_misplaced_object(iVar2 + 2,param_1,0);
+      /* was folded into `int iVar2` (reused elsewhere in this function for
+         unrelated int values) -- truncated tilemap_lookup's real
+         `void *` return */
+      char *_tile2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
+      discard_misplaced_object(_tile2 + 2,param_1,0);
     }
   }
   else {
@@ -45382,8 +45405,10 @@ int param_6;
     *(char *)(param_4 + 2) = (char)uVar2;
     *(byte *)(param_4 + 3) =
          (byte)(uVar2 >> 8) | (byte)(((param_2 & 7 | (param_1 & 0x1fff) << 3) << 10) >> 8);
-    iVar1 = tilemap_lookup((int)(short)param_1 >> 3,(int)(short)param_2 >> 3);
-    object_list_insert_head(iVar1 + 2,param_4);
+    /* was folded into `int iVar1` (reused above for unrelated int
+       values) -- truncated tilemap_lookup's real `void *` return */
+    char *_tile1 = (char *)tilemap_lookup((int)(short)param_1 >> 3,(int)(short)param_2 >> 3);
+    object_list_insert_head(_tile1 + 2,param_4);
   }
   return 1;
 }
@@ -65194,9 +65219,9 @@ void FUN_00071b94()
   short sVar3;
   char *pcVar4;
   undefined2 *puVar5;
-  int iVar6;
+  char *iVar6;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
   char *pcVar7;
-  int local_11c;
+  char *local_11c;  /* was `int` -- same truncation, derived from iVar6 */
   char acStack_114 [260];
   
   if (DAT_0023c27c == '\0') {
@@ -66453,12 +66478,25 @@ void FUN_00073b0c()
 
 
 
-byte FUN_00073b18()
+byte FUN_00073b18(param_1,param_2)
+/* was declared with empty parens and called tilemap_lookup() with no
+   explicit args, relying on its 2 real args still sitting in the same
+   ABI registers/stack slots at the nested call (a K&R "dropped-arg"
+   register-forwarding idiom used elsewhere in this file, e.g. the
+   DAT_0023aecc fix). Every one of this function's 6 call sites passes
+   exactly 2 args -- fragile on this host's calling convention:
+   intermittently (~1/18 runs) an intervening op clobbered the forwarded
+   registers before reaching tilemap_lookup, corrupting its args and
+   crashing FUN_00073b18 + 16 (demo_critter_orbit_cardinal.txt). Given
+   real declared parameters and forwarded explicitly instead. */
+int param_1;
+int param_2;
 
 {
-  int iVar1;
-  
-  iVar1 = tilemap_lookup();
+  char *iVar1;  /* was `int` -- same tilemap_lookup pointer-truncation
+                   bug as FUN_0002b258/FUN_00079350 etc this session */
+
+  iVar1 = (char *)tilemap_lookup(param_1,param_2);
   return *(byte *)(iVar1 + 1) >> 6 & 1;
 }
 
@@ -67088,7 +67126,9 @@ char param_8;
       if ((0 < iVar1) && (iVar8 = (int)cVar11, 0 < iVar8)) {
         iVar12 = (int)param_6;
         iVar10 = (int)param_5;
-        iVar16 = tilemap_lookup(iVar10,iVar12);
+        /* was folded into `int iVar16` (reused above for unrelated int
+           values) -- truncated tilemap_lookup's real `void *` return */
+        char *_tile16 = (char *)tilemap_lookup(iVar10,iVar12);
         iVar9 = iVar1 + param_5;
         do {
           local_60 = (short)iVar10;
@@ -67100,7 +67140,7 @@ char param_8;
               if ((short)iVar12 <= iVar4) {
                 do {
                   if (((-1 < iVar7) && (iVar7 < 0x40)) && ((-1 < iVar15 && (iVar15 < 0x40)))) {
-                    pbVar14 = (byte *)(iVar16 + (((iVar15 - param_6) * 0x40 - (int)param_5) + iVar7)
+                    pbVar14 = (byte *)(_tile16 + (((iVar15 - param_6) * 0x40 - (int)param_5) + iVar7)
                                                 * 4);
                     if (param_4 == '@') {
                       if ((*pbVar14 & 0xf) != 0) {
@@ -67727,18 +67767,19 @@ undefined1 param_4;
 
 {
   undefined1 uVar1;
-  int iVar2;
-  int iVar3;
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's/resolve_object_link's
+                   real `void *` returns */
+  char *iVar3;  /* was `int` -- same, holds resolve_object_link's return */
   undefined4 uVar4;
   byte bVar5;
-  
+
   bVar5 = param_3 - 1;
   if (param_3 != '\0') {
-    iVar2 = tilemap_lookup(param_1);
-    iVar2 = resolve_object_link(iVar2 + 2);
+    iVar2 = (char *)tilemap_lookup(param_1);
+    iVar2 = (char *)resolve_object_link(iVar2 + 2);
     if (iVar2 != 0) {
       do {
-        iVar3 = resolve_object_link(iVar2 + 4);
+        iVar3 = (char *)resolve_object_link(iVar2 + 4);
         uVar1 = FUN_0006a058((&DAT_0008762c)[bVar5],(&DAT_00087630)[bVar5]);
         uVar4 = FUN_000535fc(param_4);
         FUN_00038374(iVar2,uVar4,param_1,(int)param_2,uVar1,(&DAT_00087634)[bVar5]);
@@ -70159,7 +70200,9 @@ byte * param_1;
 
 
 void FUN_00079350(param_1)
-int param_1;
+char *param_1;  /* was `int` -- truncated the real object pointer FUN_000798c4
+                   passes in (on this 64-bit build), corrupting the address
+                   handed to object_list_insert_head(param_1 + 6, ...) below */
 
 {
   int uw_ord2005_rem_159 = 0;
@@ -70235,7 +70278,7 @@ int param_1;
 
 
 void FUN_0007955c(param_1)
-int param_1;
+char *param_1;  /* was `int` -- same pointer-truncation bug as FUN_00079350 */
 
 {
   int uw_ord2005_rem_160 = 0;
@@ -70258,7 +70301,7 @@ int param_1;
 
 
 void FUN_000795cc(param_1)
-int param_1;
+char *param_1;  /* was `int` -- same pointer-truncation bug as FUN_00079350 */
 
 {
   int uw_ord2005_rem_161 = 0; int uw_ord2005_rem_162 = 0; int uw_ord2005_rem_163 = 0;
@@ -70316,7 +70359,7 @@ int param_1;
 
 
 void FUN_00079784(param_1)
-int param_1;
+char *param_1;  /* was `int` -- same pointer-truncation bug as FUN_00079350 */
 
 {
   int uw_ord2005_rem_164 = 0; int uw_ord2005_rem_165 = 0; int uw_ord2005_rem_166 = 0;
@@ -70532,14 +70575,17 @@ undefined4 param_3;
 
 {
   short sVar1;
-  int iVar2;
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's/discard_misplaced_object's
+                   real `void *`/`ushort *` returns; only ever compared to
+                   0 (FUN_00053644's plain int return also lands here, but
+                   is likewise only ever compared to 0, so char* is safe) */
   undefined4 uVar3;
   ushort local_14 [2];
-  
+
   if (param_2 == 0) {
-    iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
+    iVar2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
     uVar3 = encode_object_slot_index(param_1);
-    iVar2 = FUN_00053644(iVar2 + 2,1,uVar3);
+    iVar2 = (char *)(intptr_t)FUN_00053644(iVar2 + 2,1,uVar3);
     if (iVar2 == 0) {
       sVar1 = encode_object_slot_index(param_1);
       local_14[0] = local_14[0] & 0x3f | sVar1 << 6;
@@ -70547,7 +70593,7 @@ undefined4 param_3;
       iVar2 = 0;
     }
     else {
-      iVar2 = discard_misplaced_object(DAT_002046b4,param_1,param_3);
+      iVar2 = (char *)discard_misplaced_object(DAT_002046b4,param_1,param_3);
       FUN_00049924(2);
     }
   }
@@ -70556,7 +70602,7 @@ undefined4 param_3;
        and forwards it on -- called bare here, same idiom as its own
        fix. */
     decrement_object_count(param_1);
-    iVar2 = discard_misplaced_object(0,param_1,param_3);
+    iVar2 = (char *)discard_misplaced_object(0,param_1,param_3);
   }
   return iVar2 == 0;
 }
@@ -70744,7 +70790,8 @@ undefined4 param_2;
 
 {
   undefined2 uVar1;
-  int iVar2;
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's/resolve_object_link's
+                   real `void *` returns */
   undefined4 uVar3;
   undefined2 local_2c [5];
   ushort local_21;
@@ -70774,8 +70821,8 @@ undefined4 param_2;
       local_1e = local_1e | 0xc0;
       local_12 = 0x1b;
       FUN_00028488(local_2c);
-      iVar2 = tilemap_lookup(0x36,0x34);
-      iVar2 = resolve_object_link(iVar2 + 2);
+      iVar2 = (char *)tilemap_lookup(0x36,0x34);
+      iVar2 = (char *)resolve_object_link(iVar2 + 2);
       if (iVar2 != 0) {
         FUN_0007cdbc(g_player_object,0,iVar2,0);
       }
@@ -70893,15 +70940,15 @@ int param_2;
 
 {
   undefined2 uVar1;
-  int iVar2;
-  
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+
   if ((*param_1 & 0x1ff) == 0x117) {
     FUN_00078c80(0x85);
     if (param_2 != 0) {
       finish_object_use(DAT_00202098,param_2,1);
     }
     FUN_00081814(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
-    iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
+    iVar2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
     discard_misplaced_object(iVar2 + 2,param_1,1);
     DAT_002020a0 = -1;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
@@ -71389,13 +71436,13 @@ int param_3;
   short sVar4;
   undefined4 uVar5;
   int iVar6;
-  int iVar7;
+  char *iVar7;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
   ushort *puVar8;
   uint uVar9;
   uint uVar10;
   uint extraout_r1;
   uint uVar11;
-  
+
   FUN_00057cac(3);
   g_selected_object = 0;
   g_cursor_holding_state = 0;
@@ -71409,7 +71456,7 @@ int param_3;
       }
       else {
         FUN_00078c80(0x87);
-        iVar7 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
+        iVar7 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
         sVar4 = rand_below(2);
         iVar6 = ((int)sVar4 - uVar11) + 0x156;
         while( true ) {
@@ -72352,9 +72399,9 @@ ushort param_4;
 {
   ushort uVar1;
   short sVar2;
-  int iVar3;
+  char *iVar3;  /* was `int` -- truncated resolve_object_link's real `void *` return */
   uint uVar4;
-  int iVar5;
+  char *iVar5;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
   byte bVar6;
   byte bVar7;
   
@@ -72400,7 +72447,7 @@ ushort param_4;
     param_3 = (ushort *)resolve_object_link(param_3 + 2);
     bVar6 = (byte)*param_3;
   }
-  iVar3 = resolve_object_link(param_3 + 3);
+  iVar3 = (char *)resolve_object_link(param_3 + 3);
   bVar6 = (byte)param_3[2] & 0x3f;
   bVar7 = (byte)param_3[3] & 0x3f;
   if (iVar3 == 0) {
@@ -72409,7 +72456,7 @@ ushort param_4;
   uVar4 = FUN_0007d074(param_1,param_2,iVar3,bVar6,bVar7);
   if ((*param_3 & 0x400) == 0) {
     if ((param_3[3] & 0xffc0) != 0) {
-      iVar5 = tilemap_lookup(bVar6,bVar7);
+      iVar5 = (char *)tilemap_lookup(bVar6,bVar7);
       FUN_0007dfd8(iVar5 + 2,iVar3);
       return uVar4 | 0x20;
     }
@@ -72469,7 +72516,7 @@ uint param_3;
   undefined4 in_stack_ffffffb8;
   undefined2 uVar21;
   undefined1 auStack_38 [4];
-  int local_34;
+  char *local_34;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
   int local_30;
   
   uVar20 = (undefined2)((uint)in_stack_ffffffb4 >> 0x10);
@@ -72597,7 +72644,7 @@ uint param_3;
     }
     return 2;
   case 8:
-    local_34 = tilemap_lookup(param_2,param_3);
+    local_34 = (char *)tilemap_lookup(param_2,param_3);
     local_34 = local_34 + 2;
     iVar16 = FUN_000537d0(&local_34,0,5,0,CONCAT22(uVar20,0xffff));
     DAT_002020a0 = (undefined2)param_2;
@@ -72622,7 +72669,12 @@ uint param_3;
       }
     }
     else {
-      local_34 = iVar16 + 6;
+      /* NOTE: iVar16 itself is a separate, not-yet-fixed truncation bug --
+         it holds FUN_000537d0's real `ushort *` return in a plain `int`
+         (declared above, reused for unrelated int values elsewhere in
+         this function so not blanket-retyped here); out of scope for
+         this tilemap_lookup-focused pass. */
+      local_34 = (char *)(iVar16 + 6);
       iVar11 = FUN_000537d0(&local_34,0,4,0,0xf);
       if (iVar11 != 0) {
         object_list_unlink(local_34,iVar11);
@@ -72679,7 +72731,7 @@ LAB_0007dce4:
     iVar16 = FUN_00039bd8(uVar6,sVar3 + 3,4,0);
     return iVar16;
   case 0xb:
-    local_34 = tilemap_lookup(param_1[2] & 0x3f,(byte)param_1[3] & 0x3f);
+    local_34 = (char *)tilemap_lookup(param_1[2] & 0x3f,(byte)param_1[3] & 0x3f);
     local_34 = local_34 + 2;
     uVar6 = resolve_object_link(param_1 + 3);
     unlink_and_free_object(local_34,uVar6);
@@ -73039,13 +73091,13 @@ int param_2;
   ushort uVar2;
   byte bVar3;
   ushort *puVar4;
-  int iVar5;
-  
+  char *iVar5;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+
   puVar4 = (ushort *)resolve_object_link(param_2 + 6);
   uVar2 = *puVar4;
   uVar1 = (uVar2 & 0x1e00) >> 9;
   if ((short)uVar1 == 1) {
-    iVar5 = tilemap_lookup(*(byte *)(param_2 + 4) & 0x3f,*(ushort *)(param_2 + 6) & 0x3f);
+    iVar5 = (char *)tilemap_lookup(*(byte *)(param_2 + 4) & 0x3f,*(ushort *)(param_2 + 6) & 0x3f);
     FUN_0007dfd8(iVar5 + 2,puVar4);
   }
   else {
@@ -73159,8 +73211,10 @@ int param_1;
   local_1a = 0;
   pbVar1 = (byte *)FUN_000539b0(5,0,0xffffffff,&local_1c,&local_1a);
   while (pbVar1 != (byte *)0x0) {
-    iVar2 = tilemap_lookup((int)local_1c,(int)local_1a);
-    if ((((*(byte *)(iVar2 + 1) & 0x80) == 0) && (7 < (*pbVar1 & 0xf))) &&
+    /* was folded into `int iVar2` (reused below for unrelated int
+       values) -- truncated tilemap_lookup's real `void *` return */
+    char *_tile2 = (char *)tilemap_lookup((int)local_1c,(int)local_1a);
+    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (*pbVar1 & 0xf))) &&
        (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
       DAT_002020a4 = local_1a;
@@ -74812,8 +74866,12 @@ short param_1;
   
   iVar2 = param_1 * 6;
   uVar1 = resolve_object_link(&DAT_00250778 + iVar2);
-  iVar2 = tilemap_lookup((&DAT_0025077c)[iVar2],(&DAT_0025077d)[iVar2]);
-  object_list_unlink(iVar2 + 2,uVar1);
+  /* was folded into `int iVar2` (reused above as an index) -- truncated
+     tilemap_lookup's real `void *` return */
+  {
+    char *_tile2 = (char *)tilemap_lookup((&DAT_0025077c)[iVar2],(&DAT_0025077d)[iVar2]);
+    object_list_unlink(_tile2 + 2,uVar1);
+  }
   free_object_slot(uVar1);
   return;
 }
@@ -75242,8 +75300,13 @@ undefined4 param_3;
     bVar3 = (byte)uVar2;
     *(byte *)(puVar8 + 1) = (((bVar4 & 0xf) + bVar3) - 8 ^ bVar3) & 0x7f ^ bVar3;
     *(char *)((char *)puVar8 + 3) = (char)(uVar2 >> 8);
-    iVar7 = tilemap_lookup(param_2,param_3);
-    object_list_insert_head(iVar7 + 2,puVar8);
+    /* was folded into `int iVar7` (this function's loop counter, reused
+       immediately after this for unrelated int values) -- truncated
+       tilemap_lookup's real `void *` return */
+    {
+      char *_tile7 = (char *)tilemap_lookup(param_2,param_3);
+      object_list_insert_head(_tile7 + 2,puVar8);
+    }
     uVar6 = Ordinal_1053();
     uw_ord2005_rem_173 = ((int)(uVar6)) % (3);
     uVar6 = Ordinal_1053();
@@ -75254,8 +75317,10 @@ undefined4 param_3;
     sVar5 = FUN_00080ed4(uVar11,((int)uw_ord2005_rem_174 - (int)uw_ord2005_rem_173) + 2,(int)uw_ord2005_rem_173,
                          param_2 & 0xff,uVar12,uVar13);
     if (sVar5 == -1) {
-      iVar7 = tilemap_lookup(param_2,param_3);
-      object_list_unlink(iVar7 + 2,puVar8);
+      /* was folded into `int iVar7` (this function's loop counter) --
+         truncated tilemap_lookup's real `void *` return */
+      char *_tile7b = (char *)tilemap_lookup(param_2,param_3);
+      object_list_unlink(_tile7b + 2,puVar8);
       free_object_slot(puVar8);
       iVar7 = -1;
     }
