@@ -22267,7 +22267,7 @@ byte param_3;
    ...; ldrb r3,[r0,#0x15]; ...; ldrb r3,[r0,#0x17]; ldrb r2,[r0,#0x16]`
    -- all raw, unscaled bytes. This is param_1=target tile x,
    param_2=target tile y, param_3=direction -- called from both
-   FUN_0002fba8 (when far enough from a wander/chase target) and this
+   npc_wander_return_home_tick (when far enough from a wander/chase target) and this
    function's own sibling switch's case 1, and itself calls
    creature_find_path_to_tile (line ~180 below, with a wrong direction
    argument before this fix: `*(byte *)(DAT_0010190c + 2) >> 3 & 0xf`
@@ -22278,7 +22278,8 @@ byte param_3;
    NPC's walk animation plays while its tile position never advances.
    Cast every offset to a byte pointer throughout this function so none
    of them are scaled. */
-void FUN_0002e58c(param_1,param_2,param_3)
+// was FUN_0002e58c
+void npc_walk_toward_tile(param_1,param_2,param_3)
 uint param_1;
 char param_2;
 undefined1 param_3;
@@ -22326,7 +22327,7 @@ undefined1 param_3;
       }
       goto LAB_0002e6fc;
     }
-    FUN_000343d8(8,0);
+    npc_set_goal(8,0);
   }
   if (DAT_00101734 == 0) {
 LAB_0002e6fc:
@@ -22613,7 +22614,7 @@ void npc_idle_behavior_tick()
     uVar3 = Ordinal_1053();
     uw_ord2005_rem_23 = ((int)(uVar3)) % (2);
     if (uw_ord2005_rem_23 != 0) {
-      FUN_0002fcec();
+      npc_notice_and_idle_tick();
       return;
     }
   }
@@ -22774,7 +22775,11 @@ LAB_0002f810:
 
 
 
-void FUN_0002f818()
+// was FUN_0002f818 -- goal 3's main handler: distance-tiered response
+// to a detected target (close: randomize stance; medium: walk toward
+// the tracked target's own tile via npc_walk_toward_tile, i.e. chase;
+// far: random-walk reposition + relink tilemap bucket)
+void npc_combat_approach_tick()
 
 {
   int uw_ord2005_rem_40 = 0;
@@ -22809,7 +22814,7 @@ void FUN_0002f818()
   }
   else if (DAT_00101900 < 0x41) {
     if (DAT_00101734 != 0) {
-      FUN_0002e58c(DAT_00101408,DAT_00101410,DAT_00101420);
+      npc_walk_toward_tile(DAT_00101408,DAT_00101410,DAT_00101420);
     }
   }
   else {
@@ -22855,7 +22860,11 @@ void FUN_0002f818()
 
 
 
-void FUN_0002fba8()
+// was FUN_0002fba8 -- goal 8: if attitude neutral and goal isn't
+// already 4, resets to idle via npc_set_goal(4,1); else walks toward
+// the home tile (DAT_0010143c/173c) via npc_walk_toward_tile if
+// farther than a threshold, otherwise idles (npc_idle_behavior_tick)
+void npc_wander_return_home_tick()
 
 {
   uint uVar1;
@@ -22877,7 +22886,7 @@ void FUN_0002fba8()
        step/collision check) may never have run as intended. */
     if (((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) &&
        ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 4)) {
-      FUN_000343d8(4,1);
+      npc_set_goal(4,1);
       return;
     }
     iVar2 = ((int)DAT_0010143c - (int)DAT_00101918) * 0x1000000 >> 0x18;
@@ -22890,7 +22899,7 @@ void FUN_0002fba8()
               iVar2*iVar2+iVar3*iVar3, (int)(uVar1*uVar1) < iVar2*iVar2+iVar3*iVar3 ? "WALK" : "idle");
     if ((int)(uVar1 * uVar1) < iVar2 * iVar2 + iVar3 * iVar3) {
       puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
-      FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
+      npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
     }
     else {
       npc_idle_behavior_tick();
@@ -22901,7 +22910,9 @@ void FUN_0002fba8()
 
 
 
-void FUN_0002fcec()
+// was FUN_0002fcec -- goal dispatch target for goals 0/4/7 (notice the
+// player when attitude is neutral, otherwise idle frame-cycle default)
+void npc_notice_and_idle_tick()
 
 {
   int uw_ord2005_rem_41 = 0; int uw_ord2005_rem_42 = 0; int uw_ord2005_rem_43 = 0; int uw_ord2005_rem_44 = 0; int uw_ord2005_rem_45 = 0;
@@ -22958,7 +22969,7 @@ void FUN_0002fcec()
     FUN_00034044();
     if ((*(byte *)(DAT_0010190c + 0x19) & 1) != 0) {
 LAB_0002fe88:
-      FUN_000343d8(5,1);
+      npc_set_goal(5,1);
       return;
     }
     if ((*(byte *)(DAT_0010190c + 0x19) & 2) != 0) {
@@ -22987,7 +22998,7 @@ LAB_0002fe88:
         uVar4 = Ordinal_1053();
         uw_ord2005_rem_43 = ((int)(uVar4)) % (2);
         if (uw_ord2005_rem_43 == 0) {
-          FUN_0002e58c(local_17[0],local_18,DAT_00101420);
+          npc_walk_toward_tile(local_17[0],local_18,DAT_00101420);
           return;
         }
       }
@@ -23011,7 +23022,7 @@ LAB_0002fe88:
       return;
     }
     if (uVar5 != 7) {
-      FUN_0002fba8();
+      npc_wander_return_home_tick();
       return;
     }
   }
@@ -23048,7 +23059,11 @@ LAB_0002fe88:
 
 
 
-void FUN_0002ff94()
+// was FUN_0002ff94 -- goal 5: attacks (npc_combat_set_stance) if
+// within dist^2<100 (~10 tiles) of the tracked target or already at
+// its tile, else picks a sub-goal (FUN_00030e50/FUN_00030aac/
+// FUN_00030be0, not yet named)
+void npc_combat_engage_close_tick()
 
 {
   int uw_ord2005_rem_46 = 0;
@@ -23089,7 +23104,7 @@ void FUN_0002ff94()
      ((uVar5 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
       (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar5) - uVar5) < 4 ||
       ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0)))) {
-    FUN_00030364();
+    npc_combat_set_stance();
   }
   else if ((*(byte *)(DAT_00101404 + 0x2d) & 0xfe) == 0) {
     if ((*(byte *)(DAT_00101404 + 0x20) >> 1 & 0xf0) != 0x10) goto LAB_000302bc;
@@ -23136,14 +23151,17 @@ LAB_000302bc:
   else {
     *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) & 0xfe;
     *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) & 0xfd;
-    FUN_000343d8(4,0);
+    npc_set_goal(4,0);
   }
   return;
 }
 
 
 
-undefined4 FUN_00030364(param_1)
+// was FUN_00030364 -- the shared attack/stance action called by every
+// combat-engage goal handler once in range: sets combat-ready frame
+// bits (byte 0x13/9/0x15) based on param_1, a distance/angle metric
+undefined4 npc_combat_set_stance(param_1)
 ushort param_1;
 
 {
@@ -23319,7 +23337,7 @@ undefined4 param_4;
           bVar4 = *(byte *)(DAT_0010190c + 0x19) & 0xfd;
 LAB_00030984:
           *(byte *)(DAT_0010190c + 0x19) = bVar4;
-          FUN_000344a4();
+          npc_clear_special_goal();
           return;
         }
         if (cVar2 != '\x02') goto LAB_000309a0;
@@ -23343,9 +23361,9 @@ LAB_000309a0:
         ((param_3 < 2 &&
          (uVar1 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
          3 < (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar1) - uVar1))))))) &&
-      (FUN_0002e58c(local_10 & 0xff,local_c & 0xff), (*(byte *)(DAT_0010190c + 0x18) & 0x40) != 0)))
+      (npc_walk_toward_tile(local_10 & 0xff,local_c & 0xff), (*(byte *)(DAT_0010190c + 0x18) & 0x40) != 0)))
      ) {
-    FUN_000344a4();
+    npc_clear_special_goal();
     *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) & 0xfd;
   }
   return;
@@ -23467,7 +23485,10 @@ undefined4 FUN_00030e50()
 
 
 
-void FUN_00030fe8()
+// was FUN_00030fe8 -- goal 9: same shape as npc_combat_engage_close_tick
+// but a wider dist^2<0x90 (~12 tile) engage radius; otherwise positions
+// via npc_combat_position_tick or picks a sub-goal
+void npc_combat_engage_wide_tick()
 
 {
   int uw_ord2005_rem_63 = 0;
@@ -23479,7 +23500,7 @@ void FUN_00030fe8()
   if (DAT_00101734 != 0) {
     if (((ushort)(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448) < 0x90) ||
        ((DAT_00101408 == DAT_00101918 && (DAT_001013f8 == DAT_00101410)))) {
-      FUN_00030364();
+      npc_combat_set_stance();
     }
     else if (DAT_00101900 < 5) {
       uVar3 = FUN_0002e3b4((int)(char)DAT_00101444,(int)(char)DAT_00101448);
@@ -23507,7 +23528,7 @@ void FUN_00030fe8()
             FUN_00030e50();
           }
           else {
-            FUN_00031214();
+            npc_combat_position_tick();
           }
         }
         else {
@@ -23523,7 +23544,10 @@ void FUN_00030fe8()
 
 // WARNING: Removing unreachable block (ram,0x000314a0)
 
-void FUN_00031214()
+// was FUN_00031214 -- goal 6, also called as a sub-step from the
+// combat-engage handlers: fine facing/frame adjustment relative to
+// the target's heading and distance (flanking/circling in melee range)
+void npc_combat_position_tick()
 
 {
   int uw_ord2005_rem_64 = 0; int uw_ord2005_rem_65 = 0; int uw_ord2005_rem_66 = 0; int uw_ord2005_rem_67 = 0; int uw_ord2005_rem_68 = 0; int uw_ord2005_rem_69 = 0; int uw_ord2005_rem_70 = 0; int uw_ord2005_rem_71 = 0; int uw_ord2005_rem_72 = 0; int uw_ord2005_rem_73 = 0; int uw_ord2005_rem_74 = 0; int uw_ord2005_rem_75 = 0; int uw_ord2005_rem_76 = 0;
@@ -23596,7 +23620,7 @@ void FUN_00031214()
     }
 LAB_000314d0:
     *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) | 0x10;
-    FUN_000343d8(9,*(ushort *)(DAT_0010190c + 0xb) >> 4 & 0xff);
+    npc_set_goal(9,*(ushort *)(DAT_0010190c + 0xb) >> 4 & 0xff);
   }
   else {
     if ((DAT_00101924 == 0) || (DAT_00101430 != 0)) {
@@ -23756,7 +23780,10 @@ uint param_2;
 
 
 
-void FUN_00031a94()
+// was FUN_00031a94 -- goal 10: checks line-of-sight/distance
+// (FUN_00032180, dist^2>399); if lost, reverts straight to idle state
+// 0x20, otherwise continues closing on the target
+void npc_combat_disengage_tick()
 
 {
   int uw_ord2005_rem_77 = 0; int uw_ord2005_rem_78 = 0; int uw_ord2005_rem_79 = 0; int uw_ord2005_rem_80 = 0; int uw_ord2005_rem_81 = 0;
@@ -23879,7 +23906,10 @@ void FUN_00031dbc()
 
 
 
-void FUN_00031fa8()
+// was FUN_00031fa8 -- goal 0xc: same shape as npc_wander_return_home_tick
+// but an exact tile-equality check instead of a distance threshold --
+// walk home (npc_walk_toward_tile) if not exactly there, idle if so
+void npc_wander_return_home_exact_tick()
 
 {
   int uw_ord2005_rem_84 = 0; int uw_ord2005_rem_85 = 0;
@@ -23894,7 +23924,7 @@ void FUN_00031fa8()
   if (DAT_00101734 != 0) {
     if (((*(byte *)(DAT_0010190c + 0xe) & 0xc0) == 0) &&
        ((*(byte *)(DAT_0010190c + 0xb) & 0xf) != 4)) {
-      FUN_000343d8(4,1);
+      npc_set_goal(4,1);
     }
     else if ((DAT_0010143c == DAT_00101918) && (DAT_0010173c == DAT_001013f8)) {
       *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfe | 6;
@@ -23914,7 +23944,7 @@ void FUN_00031fa8()
     }
     else {
       puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
-      FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
+      npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
     }
   }
   return;
@@ -24622,7 +24652,7 @@ LAB_000339fc:
           if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0) {
             cVar4 = '\x01';
           }
-          FUN_000343d8(5,cVar4);
+          npc_set_goal(5,cVar4);
           FUN_0002e454(DAT_0010192c,DAT_00101930,DAT_00101934);
         }
       }
@@ -24682,7 +24712,7 @@ LAB_00033d18:
             uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
             uVar6 = 5;
           }
-          FUN_000343d8(uVar6,uVar9);
+          npc_set_goal(uVar6,uVar9);
           *(undefined1 *)((char *)DAT_0010190c + 0x12) = 0;
           *(undefined1 *)((char *)DAT_0010190c + 0x11) = 0;
         }
@@ -24701,43 +24731,43 @@ LAB_00033d18:
     goto LAB_00033e9c;
   case 1:
     puVar8 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
-    FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar8 >> 4 & 0xf);
+    npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,*puVar8 >> 4 & 0xf);
     break;
   case 2:
     npc_idle_behavior_tick();
     break;
   case 3:
     if ((bVar3) || (iVar7 = FUN_00034044(), iVar7 != 0)) {
-      FUN_0002f818();
+      npc_combat_approach_tick();
     }
     else {
 LAB_00033ef8:
-      FUN_000344a4();
+      npc_clear_special_goal();
     }
     break;
   case 4:
     goto LAB_00033e9c;
   case 5:
     if ((!bVar3) && (iVar7 = FUN_00034044(), iVar7 == 0)) goto LAB_00033ef8;
-    FUN_0002ff94();
+    npc_combat_engage_close_tick();
     break;
   case 6:
     if ((!bVar3) && (iVar7 = FUN_00034044(), iVar7 == 0)) goto LAB_00033ef8;
-    FUN_00031214();
+    npc_combat_position_tick();
     break;
   case 7:
 LAB_00033e9c:
-    FUN_0002fcec();
+    npc_notice_and_idle_tick();
     break;
   case 8:
-    FUN_0002fba8();
+    npc_wander_return_home_tick();
     break;
   case 9:
     if ((!bVar3) && (iVar7 = FUN_00034044(), iVar7 == 0)) goto LAB_00033ef8;
-    FUN_00030fe8();
+    npc_combat_engage_wide_tick();
     break;
   case 10:
-    FUN_00031a94();
+    npc_combat_disengage_tick();
     break;
   case 0xb:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
@@ -24763,14 +24793,14 @@ LAB_00033e9c:
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x40;
     break;
   case 0xc:
-    FUN_00031fa8();
+    npc_wander_return_home_exact_tick();
     break;
   default:
     *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) | 7;
   }
   iVar7 = DAT_0010190c;
   /* HACK: same ushort-vs-byte pointer-arithmetic scaling bug as
-     process_visible_tile_cell's sibling FUN_0002fcec (fixed earlier this
+     process_visible_tile_cell's sibling npc_notice_and_idle_tick (fixed earlier this
      session) -- DAT_0010190c is `ushort *`, so bare `DAT_0010190c + 2`
      scales to byte offset 4, but real disassembly of this exact block
      (0x32578-0x3257c: `ldrb r3,[r4,#0x3]; ldrb r2,[r4,#0x2]`) reads raw
@@ -24974,7 +25004,7 @@ int FUN_0003431c()
    `*(byte *)(DAT_0010190c + 0xb) = param_1 & 0xf | ...` writes
    param_1's low nibble as the new goal -- called throughout this
    cluster with goal values 4, 5, 6, 8, 9 (FUN_00033880's tail,
-   FUN_0002fba8's guard, etc.). With the write scaled to byte 0x16
+   npc_wander_return_home_tick's guard, etc.). With the write scaled to byte 0x16
    instead of the real byte 0xb, every call to "pick a new goal" was
    silently corrupting the object's TILE POSITION field instead of
    ever actually changing its goal -- meaning goal could structurally
@@ -24983,10 +25013,11 @@ int FUN_0003431c()
    while its tile position never advances: not just that the dispatch
    (fixed earlier) was misrouting whatever goal existed, but that goal
    itself could never transition to a real movement goal (1/5/6/9/10)
-   in the first place. FUN_000344a4 right below (its sibling, called
+   in the first place. npc_clear_special_goal right below (its sibling, called
    from the same call sites' alternate branch) has the identical bug,
    fixed the same way. */
-void FUN_000343d8(param_1,param_2)
+// was FUN_000343d8
+void npc_set_goal(param_1,param_2)
 byte param_1;
 uint param_2;
 
@@ -25012,7 +25043,11 @@ uint param_2;
 
 
 
-void FUN_000344a4()
+// was FUN_000344a4 -- npc_set_goal's sibling: fallback when a
+// combat-engage goal's guard fails (player not detected / no path).
+// Sets goal to 2 (idle) when npc_level's low nibble is 0, else XORs
+// goal with a level-derived value and sets flag 0x10
+void npc_clear_special_goal()
 
 {
   undefined2 uVar1;
@@ -25260,7 +25295,7 @@ undefined4 param_3;
   
   uVar1 = DAT_0010190c;
   DAT_0010190c = param_1;
-  FUN_000343d8(param_2,param_3);
+  npc_set_goal(param_2,param_3);
   DAT_0010190c = uVar1;
   return;
 }
