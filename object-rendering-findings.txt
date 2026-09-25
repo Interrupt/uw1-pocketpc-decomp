@@ -4472,3 +4472,63 @@ in-game navigation, not another coordinate guess) to distinguish
 winding from occlusion, or instrument raster_triangle/whatever
 consumes these arena records for an explicit backface-test/depth-order
 check on this specific record range.
+
+(37) 2026-09-21: the "next step" above turned out to be unnecessary --
+the user tested live (interactively, per their own request to "run so I
+can test") and settled entry (36)'s open winding/occlusion question for
+free: the door frame DOES render, from real in-game navigation, at a
+real door instance (id=0x140, tile~32.5,8.9-8.9, anchor=(4240,640,432)
+-- a DIFFERENT real door than entries 35/36's own repro, same id/family,
+confirming this isn't a one-instance fluke). So entry 36's occlusion/
+winding hypothesis was never the real blocker -- the frame was always
+capable of rendering; entries 35/36 just never found a viewing angle
+that showed it (a real gap in this document's own testing, not a code
+bug beyond the two already fixed in entry 36).
+
+With the frame actually visible, the user reported three real, live
+QA findings against it, tested and cross-checked before fixing rather
+than guessed blind:
+
+1. TEXELS 4X TOO LARGE. `uv_scale=256.0` (from entry 35) treats one
+texture repeat as spanning a full 256-unit tile. 256/64=4 -- an exact
+match to "4x too large," and 64 world units is exactly the wall
+texture's own real pixel width (the same "wall-sized" convention
+established throughout this whole document). Changed uv_scale 256.0 ->
+64.0 on all 14 door/frame g_model_map rows.
+
+2. HALFWAY IN THE GROUND. `yoff=-100.0` was inherited, unmodified, from
+the boulder family's own calibration (ROCKBIG/MED/SMALL use -200,
+architectural models -100) -- itself flagged in this same file's own
+comment as "a real calibration gap... not derived from the tile's real
+floor-height field," i.e. never independently confirmed for DFRAME
+specifically. The display-list door path -- independently, extensively
+calibrated for this EXACT physical door across this whole document's
+earlier entries -- uses yoff=0. Changed yoff -100.0 -> 0.0 on all 14
+door/frame rows. Verified live (screenshot): the sink is visibly gone.
+
+3. SHIFTED RIGHT, GAP ON LEFT ("door and frame positioned correctly
+relative to each other" -- a shared error, not a leaf-vs-frame one).
+Not yet fixed -- diagnosed as far as static screenshots allow: captured
+a direct A/B pair at the identical live repro position (tile=32.50,
+8.91, yaw=97) -- the .E-model path (frame+leaf, untextured leaf since
+UW_MODEL_LEAF_TEXTURE wasn't set) versus the display-list path's own
+known-correct rendering (a real textured closed door filling the
+opening). The .E-model shot showed a flat gray surface (the leaf,
+unmistakably -- matches its own known "no UV yet" flat-shaded
+appearance) occupying the RIGHT portion of the opening with dark open
+passage visible on the LEFT -- consistent with the user's own report.
+Isolated the frame alone (UW_MODEL_NO_LEAF=1) at the same angle for a
+cleaner look: no obviously dramatic rightward shift versus the
+reference in this specific isolated view, which doesn't rule out a
+frame-level error but doesn't confirm one either from a static
+screenshot alone. Fix deferred to the next live test round rather than
+guessed -- ModelMapEntry now has xoff (model1) exposed only as a
+hardcoded 0.0 at the call site (not yet a per-row field the way zoff
+is), and x_off2=-64.0 (leaf) is a candidate for adjustment too; both
+need the user's own live judgment on the CURRENT (uv_scale/yoff-fixed)
+build before guessing further, since the vertical fix alone can shift
+how a rightward offset reads at a given viewing angle.
+
+Verified default rendering unaffected (faces=11/6, zero env vars) and
+run-regressions.sh: 6/6 clean, after both fixes. UW_ENABLE_MODEL_RENDER
+remains opt-in.

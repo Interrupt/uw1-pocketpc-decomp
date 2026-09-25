@@ -54680,20 +54680,20 @@ static const ModelMapEntry g_model_map[] = {
   // established for ordinary tile walls) -- first live test of the new
   // real-per-vertex-UV path (see ModelMapEntry's own comment); starting
   // point for calibration, not yet confirmed correct on screen.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
 };
 #define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
 
