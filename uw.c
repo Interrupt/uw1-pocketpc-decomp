@@ -32397,6 +32397,26 @@ short param_5;
         fprintf(stderr, "\n");
       }
     }
+    /* Temporary investigation aid (UW_DEBUG_CRITTER_TABLESPAN): report
+       every (page, tier)'s real direction-selector table span
+       (pbVar11[1], the byte count of the pbVar11[2..] table before
+       pbVar6 begins) once, to compare against other pages -- checking
+       whether Bragit's unusually small span (32, discovered this
+       session -- already too short for the state>=0x20 formula's
+       minimum output of 32) is typical for this asset class or
+       specific to peaceful/simple NPCs. */
+    if (getenv("UW_DEBUG_CRITTER_TABLESPAN")) {
+      static int seen[256 * 4];
+      static int seen_n = 0;
+      int key = param_1 * 4 + param_2;
+      int already = 0;
+      for (int _i = 0; _i < seen_n; _i++) if (seen[_i] == key) { already = 1; break; }
+      if (!already && seen_n < (int)(sizeof(seen)/sizeof(seen[0]))) {
+        seen[seen_n++] = key;
+        fprintf(stderr, "[critter-tablespan] page=%d tier=%d pbVar11[1](span)=%d\n",
+                param_1, param_2, (int)pbVar11[1]);
+      }
+    }
     uVar3 = (ushort)pbVar6[(((int)param_5 +
                             ((int)((uint)pbVar11[iVar9] << 0x13) >> 0x10)) * 0x10000 >> 0x10)
                            + 1];
