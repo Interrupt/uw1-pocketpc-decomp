@@ -816,32 +816,32 @@ void demomode_pump(void) {
         return;
     }
 
-    int vk = demo_translate_vk(p);
-    if (vk == 0) {
+    /* Was a direct handle_keyboard_message(WM_KEYDOWN)+(WM_KEYUP) pair,
+     * on the theory (see the removed comment's own explanation) that
+     * Enter's WM_KEYDOWN alone was enough once GXGetDefaultKeys's
+     * "start" button field really held VK_RETURN -- true at the time,
+     * but that depended on DAT_0023ce34 being the "start" slot's real
+     * offset. Fixing GxKeyList's field order to match the real Windows
+     * CE GAPI layout (up/down/left/right/a/b/c/start, not
+     * a/b/c/start/up/down/left/right -- see that struct's own comment)
+     * moved "start" to a different offset that handle_keyboard_message
+     * treats as a pure no-op, so this bare-command path stopped
+     * producing any event at all for Enter (and everything else routed
+     * through it) the moment that fix landed -- confirmed live: chargen
+     * skip sequences using bare ENTER lines stopped advancing past the
+     * title screen. Route through the same real SDL injection path
+     * SDLKEYDOWN/SDLKEYUP already use instead of hand-rolling the
+     * WM_KEYDOWN/WM_CHAR sequencing a second time here -- it already
+     * gets Enter/Backspace's WM_CHAR deferral right (see
+     * g_keychar_deferred) and stays correct regardless of which struct
+     * offset "start" or any other button ends up at. */
+    int sdlkey = demo_translate_sdlkey(p);
+    if (sdlkey == 0) {
         fprintf(stderr, "[demo] unrecognized input '%s', skipping\n", p);
-    } else if (vk == VK_BACK) {
-        /* Backspace only ever reaches the game as WM_CHAR (0x102), not a
-         * VK keydown/keyup -- see gx_stub.c's uw_pump_events. */
-        fprintf(stderr, "[demo] sending %s\n", p);
-        handle_keyboard_message(0, 0x102u, (unsigned int)VK_BACK);
     } else {
         fprintf(stderr, "[demo] sending %s\n", p);
-        handle_keyboard_message(0, 0x100u, (unsigned int)vk);
-        handle_keyboard_message(0, 0x101u, (unsigned int)vk);
-        /* Used to also send a WM_CHAR(0x0D) here for Enter specifically,
-         * on the theory that text-entry fields submit on the WM_CHAR
-         * rather than the VK keydown. That's now known wrong on two
-         * counts: (1) name entry already submits correctly off the
-         * keydown alone -- confirmed empirically once DAT_0023ce34
-         * (start.vk) was fixed to really hold VK_RETURN (see its uw.c
-         * comment) -- and (2) sending both messages actively breaks
-         * every other consumer of DAT_0023c448: handle_keyboard_message's WM_CHAR
-         * case ORs its byte in rather than replacing
-         * (`DAT_0023c448 = DAT_0023c448 | uVar1`), so this always
-         * corrupted the keydown's real command code (0x93, the "start
-         * button" pressed) into a value nothing recognizes (0x93|0xd =
-         * 0x9f) -- silently discarding every Enter press system-wide,
-         * menus and world movement alike, without ever crashing. */
+        uw_inject_key_down(sdlkey);
+        uw_inject_key_up(sdlkey);
     }
     g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
 }

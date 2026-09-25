@@ -124,7 +124,7 @@ undefined *PTR_Ordinal_2020_00084018;
    DAT_000a85d0 is also used as a plain scalar counter/index -- that's not
    a conflict, just the same address doing double duty at different times,
    same as other reused-scratch-memory globals already documented this
-   session (e.g. DAT_0008522c); the `[0]` alias below preserves that use
+   session (e.g. s_scroll_newline_0008522c); the `[0]` alias below preserves that use
    unchanged. Widened to a generous backing size well past every offset
    observed, same pattern as the other undersized-record-table fixes this
    session. */
@@ -383,7 +383,30 @@ undefined2 DAT_000b99c8;
 undefined *PTR_Ordinal_2008_00084060;
 char s_fontbig_sys_0008432c[] = "fontbig.sys";
 char s__DATA_blnkmap_byt_00084338[] = "\\DATA\\blnkmap.byt";
-char *g_player_object;
+/* Was `char *` -- but every `g_player_object[N]` bracket-index use
+   throughout this file (position/facing/type fields) matches the SAME
+   ushort-array-index convention every other object-record pointer in
+   this codebase uses (e.g. `param_1[N]` for a `ushort *param_1`), not a
+   byte-array one: g_player_object[0xc] as ushort-index 0xc = byte
+   offset 0x18, matching the real ARM disassembly's `ldrb r0,[r0,#0x18]`
+   facing-byte read; g_player_object[0xb] = byte offset 0x16, matching
+   set_player_tile_position's own tile-position writes; bare
+   `*g_player_object & 0x1ff` (the object type/class field) needs 9
+   bits, which no single byte read can supply. With the old `char *`
+   type every one of those bracket-index reads was silently reading the
+   wrong byte (index N instead of byte offset 2*N) -- confirmed live:
+   drop_held_object_near_player's g_player_object[0xb] read (meant to
+   recover the player's own tile Y position for a "throw distance"
+   projection) read whatever unrelated byte sits at offset 0xb instead
+   of the real position at offset 0x16, producing a wildly wrong throw
+   start point. Retyped to `ushort *` to match; every *pointer-
+   arithmetic* use elsewhere in this file (`g_player_object + N`,
+   expecting a literal byte offset N, then cast down to byte/char for a
+   sub-field read) has been updated alongside this to explicitly cast to
+   `(char *)` first, preserving their existing (correct) byte-offset
+   arithmetic now that the base type's own implicit scaling would
+   otherwise double it. */
+ushort *g_player_object;
 undefined4 LAB_00017ba8()
 
 {
@@ -1539,6 +1562,18 @@ undefined4 DAT_00100734;
 undefined4 DAT_00100738;
 undefined4 DAT_0010073c;
 undefined1 g_active_hud_panel;
+/* Not part of the original binary -- a port-side addition. scroll_text_entry_prompt
+   (the generic scroll-area text-entry field used by save-name entry,
+   "Move how many", "Chant the mantra", etc.) is opened as an overlay on
+   top of the dungeon view without ever calling set_game_mode, so
+   DAT_00201b60/DAT_00201b64 (the top-level game-mode pair) never change
+   while it's up -- gx_stub.c's in_dungeon_freelook() has no way to tell
+   the difference between "really in the 3D view" and "a text field is
+   capturing keystrokes over it", so it kept routing A/D/C/W/S/X/Z/1/2/3
+   to the movement poller instead of letting them type. Set true for the
+   duration of scroll_text_entry_prompt's input loop; gx_stub.c checks it (as an
+   extern) alongside DAT_00201b64. */
+int g_text_input_active;
 undefined1 DAT_00100678;
 undefined4 DAT_00085c54;
 short DAT_00201c74;
@@ -1682,8 +1717,22 @@ short DAT_0010078c;
 short DAT_00201c84;
 int DAT_00250718;
 short DAT_00100794;
-static undefined DAT_0008522c_backing[8192];
-#define DAT_0008522c DAT_0008522c_backing[0]
+/* Reused scratch global (see the DAT_000a85d0 comment above for the
+   general pattern) -- most call sites treat it as a writable sprintf-
+   style destination buffer via Ordinal_1063, but several others
+   (draw_save_load_slot_list's save-slot list among them) pass `&s_scroll_newline_0008522c`
+   straight to message_scroll_print_wrapped with no write beforehand,
+   relying on it holding its real static initial content. A Ghidra
+   memory dump of the original binary at 0x8522c confirmed that content
+   is the two bytes `0a 00` -- the string "\n" -- not zero. Printing an
+   empty string (this array's old all-zero C default) instead of a real
+   "\n" silently skipped the pending-newline flag msg_scroll_draw_wrapped_span sets from
+   a string's trailing '\n' (see its own comment), which is why the
+   save-slot list rendered every entry run together on one line with no
+   breaks. Seeded to match. */
+// was DAT_0008522c
+static undefined s_scroll_newline_0008522c_backing[8192] = "\n";
+#define s_scroll_newline_0008522c s_scroll_newline_0008522c_backing[0]
 static undefined1 DAT_00100680_backing[65536];
 #define DAT_00100680 DAT_00100680_backing[0]
 undefined2 DAT_00100790;
@@ -2150,7 +2199,7 @@ char s__DATA_pres2_byt_00085780[] = "\\DATA\\pres2.byt";
    reader concatenates it as the base of a "\SAVE0\..." path (lev.ark,
    bglobals.dat, desc) alongside already-recovered sibling constants that
    spell that prefix out in full (s__SAVE0_lev_ark, s__SAVE0_desc, etc.),
-   and probe_save_slots/FUN_0006c0c0 both search the built path for a literal
+   and probe_save_slots/load_game_from_slot both search the built path for a literal
    '0' character to substitute a real slot digit (1-4) -- only "SAVE0"
    supplies one. Recovered as "\SAVE0"; kept the oversized backing array
    since nothing else relies on its exact size. */
@@ -3243,11 +3292,15 @@ static unsigned char g_backpack_slot_to_widget_backing[0x1c] = {
 #define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
 undefined2 DAT_00202980;
 short g_player_carry_weight;
-undefined1 *DAT_002028c0;
-undefined1 *DAT_002028c4;
-static undefined2 DAT_002028cc_backing[8192];
-#define DAT_002028cc DAT_002028cc_backing[0]
-char *DAT_002028c8;
+// was DAT_002028c0
+undefined1 *g_save_equip_table_ptr;
+// was DAT_002028c4
+undefined1 *g_save_record_base_ptr;
+// was DAT_002028cc
+static undefined2 g_save_record_count_backing[8192];
+#define g_save_record_count g_save_record_count_backing[0]
+// was DAT_002028c8
+char *g_save_record_buffer;
 /* Was missing its leading backslash -- both call sites append this
    straight onto a directory path built with no trailing separator (e.g.
    FUN_00044624 builds "<root>\SAVE0" then appends this), so the file name
@@ -3580,8 +3633,44 @@ static undefined1 DAT_00202c70_backing[65536];
 #define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
 undefined DAT_00202c34;
 ushort *_DAT_00202c34;
-undefined1 DAT_00086884;
-undefined DAT_0008688c;
+/* Wall-slide corner-classification tables, used by resolve_wall_slide_corner (called
+   from sweep_slide_along_wall when a wall hit has a specific blocked-
+   corner shape) to pick which of the 8 candidate headings in
+   DAT_000869a8 to deflect toward. Both were declared as single-byte
+   scalars -- an "orphaned data table" class bug, same as DAT_000869a8
+   just fixed above -- so any index past 0 read undefined, unrelated
+   adjacent globals in this port's own memory layout (not the real
+   binary's), producing effectively-random results for any corner
+   configuration except the very first. This is the deeper reason wall
+   sliding sometimes turned the player back INTO the wall: even once
+   DAT_000869a8 held real headings, resolve_wall_slide_corner was often picking the
+   WRONG index into it.
+
+   Real data recovered via Ghidra headless dump (matching these globals'
+   own name-encoded addresses, 0x86884 and 0x8688c): DAT_00086884 is a
+   real 4-entry SIGNED array {1,-1,-1,1} (per-corner +/-1 deltas, read as
+   `(&DAT_00086884)[iVar3]` for iVar3 0-3 in resolve_wall_slide_corner's loop).
+   DAT_0008688c sits 4 bytes into a real lookup table that starts at
+   0x86888 (confirmed: the function's own literal pool for the "r8" table
+   base is 0x86888, and 0x86888+4 = 0x8688c exactly) -- both of
+   resolve_wall_slide_corner's own lookups already index relative to DAT_0008688c
+   correctly (`(&DAT_0008688c)[iVar6*3+iVar7]` and
+   `(&DAT_0008688c)[iVar9*-3-iVar7]`, the latter reaching back to offset
+   -4, i.e. the table's real start at 0x86888); only the DECLARATION was
+   wrong, not the indexing arithmetic. Backed with the real bytes from
+   0x86884 through 0x868893 (32 bytes from the table's real start,
+   comfortably covering every offset either lookup can produce); bytes
+   past offset +7 from DAT_0008688c decode as the ASCII string
+   "\DATA\comobj.dat" -- real, unrelated adjacent data in the original
+   binary, kept verbatim rather than guessed at, since matching the
+   original memory layout exactly is safer than inventing a boundary. */
+signed char DAT_00086884_backing[4] = {1, -1, -1, 1};
+#define DAT_00086884 DAT_00086884_backing[0]
+static unsigned char DAT_0008688c_backing[32] = {
+  5, 4, 3, 6, 9, 2, 7, 0, 1, 0, 0, 0, 92, 68, 65, 84,
+  65, 92, 99, 111, 109, 111, 98, 106, 46, 100, 97, 116, 0, 0, 0, 0
+};
+#define DAT_0008688c DAT_0008688c_backing[4]
 char DAT_00202c20;
 char DAT_00202c28;
 char DAT_00202c24;
@@ -3787,6 +3876,18 @@ undefined1 DAT_002046e4;
 static unsigned char DAT_002049c8_backing[64];
 #define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
 #define DAT_002049ca (*(short *)(DAT_002049c8_backing + 0x02))
+/* Offset 4 -- the third field of the X(0)/Y(2)/?(4)/heading(6) layout, and
+   never given a name because nothing in the decompile reads it by a plain
+   global symbol; every access is through the indexed `DAT_00202c6c[4]`
+   pointer form, which Ghidra doesn't auto-name. FUN_00051fa0's own private
+   local copy of this exact struct layout names it explicitly in an
+   existing comment: "the player's current sub-tile height byte" (its
+   local_38 = param_5, set before use). collision_height_envelope's own
+   read (player_height + this field, compared against a candidate floor
+   height) matches that reading too. The X/Y sync fix in sweep_collision_
+   flags (commit ed49786) stopped short of this one -- added here as its
+   natural third line, mirroring the existing pattern exactly. */
+#define DAT_002049cc (*(short *)(DAT_002049c8_backing + 0x04))
 #define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
 #define DAT_002049d0 (DAT_002049c8_backing[0x08])
 #define DAT_002049d1 (DAT_002049c8_backing[0x09])
@@ -3826,14 +3927,58 @@ char s_optbtns_00086954[] = "optbtns";
 short DAT_002046f0;
 short DAT_002046f4;
 undefined2 DAT_000868dc;
-undefined DAT_0008705c;
-char s_III__00087064[] = "III-";
-undefined DAT_0008706c;
-undefined DAT_00087074;
-undefined4 DAT_00087990;
-static undefined DAT_00087038_backing[8192];
-#define DAT_00087038 DAT_00087038_backing[0]
-char s__6_Save_Game_Descriptions_0008703c[] = "\\6_Save_Game_Descriptions";
+/* Was a bare 1-byte `undefined` scalar -- draw_save_load_slot_list takes its address
+   and passes it straight to message_scroll_print_wrapped as the save-
+   slot IV label, so it needs to be a real string, not a scalar. Real
+   bytes confirmed via a Ghidra memory dump of the original binary at
+   0x8705c: "IV- " (with a trailing space, matching the sibling I-/II-/
+   III- labels below). Same class of bug as the other unrecovered-string
+   fixes this session, just previously missed because Ghidra had typed
+   this one as a scalar instead of generating a garbled placeholder
+   string for it. */
+// was DAT_0008705c
+char s_IV__0008705c[] = "IV- ";
+/* Was `"III-"` -- missing its trailing space, confirmed via the same
+   memory dump (0x87064: "III- ", not "III-"). */
+char s_III__00087064[] = "III- ";
+/* Same fix as s_IV__0008705c above: real bytes at 0x8706c are "II- ". */
+// was DAT_0008706c
+char s_II__0008706c[] = "II- ";
+/* Same fix as s_IV__0008705c above: real bytes at 0x87074 are "I- ". */
+// was DAT_00087074
+char s_I__00087074[] = "I- ";
+/* Real .data value confirmed via a Ghidra memory dump of the original
+   binary at 0x87990: 0x00000001, not the C zero-default this plain
+   declaration gave it. This flag gates msg_scroll_draw_wrapped_span's leading-backslash
+   control-code parser (`if (g_scroll_control_codes_enabled != 0 && *param_1=='\\')`);
+   draw_save_load_slot_list's save-slot-list header print happens before that
+   function's own explicit reset (confirmed both in the C source and via
+   disassembly -- not a decompile-dropped-statement bug, the real binary
+   really does read whatever this flag was last left at), so on this
+   port's very first save/load screen it inherited the wrong (zero)
+   default and printed its leading "\6" color code literally instead of
+   interpreting it. */
+// was DAT_00087990
+undefined4 g_scroll_control_codes_enabled = 1;
+/* Same reused-global-holding-a-real-string pattern as s_scroll_newline_0008522c
+   above: a Ghidra memory dump of the original binary at 0x87038 shows
+   the real bytes are `5c 30 00` -- the string "\0" (a literal
+   backslash+'0' control code, not an escape byte), not the all-zero
+   default this backing array's C declaration gave it. */
+// was DAT_00087038
+static undefined s_scroll_color_reset_00087038_backing[8192] = "\\0";
+#define s_scroll_color_reset_00087038 s_scroll_color_reset_00087038_backing[0]
+/* Was `"\\6_Save_Game_Descriptions"` -- underscores standing in for
+   whitespace, matching Ghidra's own auto-generated symbol name for this
+   string rather than its real recovered bytes (same garbled-placeholder
+   class as s__not_used_yet__00087020 and the save-name prompt string
+   fixed earlier this session). Real bytes confirmed via a Ghidra memory
+   dump of the original binary at 0x8703c
+   (`5c 36 20 20 20 20 53 61 76 65 20 47 61 6d 65 20 44 65 73 63 72 69
+   70 74 69 6f 6e 73 00`): a literal backslash and '6' (not an escape
+   sequence -- there's no raw 0x06 byte here, just the two printable
+   characters), then four real spaces, then "Save Game Descriptions". */
+char s__6_Save_Game_Descriptions_0008703c[] = "\\6    Save Game Descriptions";
 int DAT_002046fc;
 /* Were lone `undefined *` -- the real thing is a pair of function-pointer
    dispatch tables for the in-game pause menu, indexed by menu "state"
@@ -3843,25 +3988,40 @@ int DAT_002046fc;
    calls table[state](clicked_index)). Link-time-init data the decompile
    never populated -> clicking the top-left panel's "menu" button (which
    calls FUN_000564f8 -> FUN_00056cc8(6), the top-level list) jumped
-   through a null pointer. Roles cross-referenced from the target
-   functions' own bodies and FUN_00056b48's state-transition targets (item
-   0->5, item1->return to game directly, item2->4, item3->3, item4->2,
-   item5->1 iff FUN_00040130 "can save", item6->0 iff FUN_000400dc "can
-   load"):
-     0  load-game slot list  (FUN_000567ec draw, shared w/ save;
+   through a null pointer.
+
+   Entries 0-3 and 6 were correctly reconstructed by an earlier session
+   via call-shape analysis (cross-referencing FUN_00056b48's state-
+   transition targets against each candidate function's own logic).
+   Entries 4/5 (quit confirm vs. torch/detail brightness) were ALSO
+   guessed that same way and came out swapped -- confirmed live: clicking
+   the on-screen "DETAIL" button showed the quit-confirmation screen, and
+   clicking inside it actually exited the game; clicking "QUIT GAME"
+   showed the detail-brightness slider. Root-caused for real this time:
+   these two tables are genuine link-time data in the original binary
+   (not synthesized by Ghidra), readable directly at their own addresses
+   -- a Ghidra headless memory dump of 0x868e0 and 0x86900 in the
+   original .exe gives the real function pointers at every one of these
+   8 slots, no inference needed. Index 4's real target is 0x5693c
+   (FUN_0005693c, brightness) and index 5's is 0x56838 (FUN_00056838,
+   quit confirm) in the draw table -- the reverse of what was guessed --
+   and correspondingly 0x56a70 (FUN_00056a70, brightness click) / 0x56c88
+   (FUN_00056c88, quit click) in the click table. Swapped both tables'
+   4/5 entries to match:
+     0  load-game slot list  (draw_save_load_slot_list draw, shared w/ save;
                               FUN_00056bdc click, DAT_000868dc==1 gates
                               the save-only "extra slot" bits)
      1  save-game slot list  (same pair as 0)
      2  sound on/off toggle  (FUN_00056864 draw / FUN_000569c0 click)
      3  music on/off toggle  (FUN_00056864 draw / FUN_00056a18 click)
-     4  quit-game confirm    (FUN_00056838 draw / FUN_00056c88 click)
-     5  torch brightness     (FUN_0005693c draw / FUN_00056a70 click)
+     4  torch brightness     (FUN_0005693c draw / FUN_00056a70 click)
+     5  quit-game confirm    (FUN_00056838 draw / FUN_00056c88 click)
      6  top-level menu list  (FUN_000567c0 draw / FUN_00056b48 click)
    Index 7 is never dispatched (DAT_000868dc==7 is close_ui_panel_return_to_game's
    "menu closing" sentinel, checked directly rather than redrawn) but
    both tables are sized 8 with a null-safe entry there for defense. */
 extern void FUN_000567c0(void);
-extern void FUN_000567ec(void);
+extern void draw_save_load_slot_list(void);
 extern void FUN_00056838(void);
 extern void FUN_00056864(void);
 extern void FUN_0005693c(void);
@@ -3872,12 +4032,12 @@ extern void FUN_00056c88(int);
 extern void FUN_00056a70(int);
 extern void FUN_00056b48(int);
 static void (*const PTR_FUN_000868e0_table[8])(void) = {
-  FUN_000567ec,  /* 0: load slot list */
-  FUN_000567ec,  /* 1: save slot list */
+  draw_save_load_slot_list,  /* 0: load slot list */
+  draw_save_load_slot_list,  /* 1: save slot list */
   FUN_00056864,  /* 2: sound toggle   */
   FUN_00056864,  /* 3: music toggle   */
-  FUN_00056838,  /* 4: quit confirm   */
-  FUN_0005693c,  /* 5: brightness     */
+  FUN_0005693c,  /* 4: brightness     */
+  FUN_00056838,  /* 5: quit confirm   */
   FUN_000567c0,  /* 6: top-level list */
   0,
 };
@@ -3887,8 +4047,8 @@ static void (*const PTR_FUN_00086900_table[8])(int) = {
   FUN_00056bdc,  /* 1: save slot list */
   FUN_000569c0,  /* 2: sound toggle   */
   FUN_00056a18,  /* 3: music toggle   */
-  FUN_00056c88,  /* 4: quit confirm   */
-  FUN_00056a70,  /* 5: brightness     */
+  FUN_00056a70,  /* 4: brightness     */
+  FUN_00056c88,  /* 5: quit confirm   */
   FUN_00056b48,  /* 6: top-level list */
   0,
 };
@@ -3987,7 +4147,24 @@ char *DAT_002048bc;
    [[jump-physics-fix-and-open-integrator-issue]]). */
 short *g_sweep_velocity;
 undefined1 DAT_002049c0;
-undefined1 DAT_002049bc;
+/* "Already slid this tick" cooldown, decremented once per ordinary substep
+   in sweep_step (`DAT_002049bc = DAT_002049bc + -1;`) and read back in
+   sweep_slide_along_wall's own first line to skip re-deflecting mid-slide.
+   Verified via disassembly (0x59b84/0x5a5c0) both sites use `ldrsb` --
+   SIGNED byte reads -- so 0 decrementing to -1 reads back as -1, and the
+   guard (`if (0 < DAT_002049bc)`) correctly stays false. Declared here as
+   `undefined1` (unsigned char), it was reset to 0 every tick
+   (movement_collision_sweep) then immediately decremented on the very
+   first ordinary substep before any wall was ever hit, underflowing to
+   255 (unsigned) instead of -1 (signed) -- permanently latching the
+   "already slid" guard true, so sweep_slide_along_wall took its early
+   revert-and-end path on every single call and sweep_deflect_heading
+   never ran at all. Symptom: running straight into a wall stopped the
+   player dead with zero deflection/turning, forever, instead of sliding
+   along it -- confirmed live via a new UW_DEBUG_WALL trace showing
+   DAT_002049bc=255 on every one of 4523 calls during an 80+-tick
+   straight-on wall hold. */
+char DAT_002049bc;
 short DAT_00086990;
 short DAT_00086996;
 // was DAT_0008697c_backing/DAT_0008697c -- the swept working foot position
@@ -4017,7 +4194,38 @@ static undefined1 DAT_00086986_backing[65536];
    branch, so "walk forward" moved the player BACKWARD (toward the wall
    behind the spawn). Alias it to backing[1]. */
 #define DAT_00086987 DAT_00086986_backing[1]
-static undefined1 DAT_000869a8_backing[65536];
+/* Wall-slide deflection candidate-heading table (was a zero-initialized
+   65536-byte placeholder with no writer anywhere in the decompile -- an
+   "orphaned data table" of the same class as the TMOBJ/inventory-hotspot
+   tables fixed elsewhere in this project). sweep_slide_along_wall reads
+   `*(short*)(&DAT_000869a8 + index*2)` to pick which heading to deflect
+   the move toward; with the real table missing, every read always came
+   back 0, so every wall hit -- head-on or glancing -- tried to deflect
+   toward the SAME fixed heading regardless of which way the wall
+   actually faced. That deflection only succeeds when it happens to be
+   close enough to the real wall's face (confirmed via a live
+   UW_DEBUG_WALL trace: candidate_heading=0 on 100% of calls, and
+   sweep_deflect_heading itself only returned nonzero -- i.e. actually
+   redirected the move -- 3 times out of 2258 during a real diagonal
+   wall hold), matching the reported symptom exactly: sliding sometimes
+   turns the player further INTO the wall instead of along it, "working"
+   only by coincidence when heading 0 happens to roughly line up with
+   the actual wall.
+
+   Recovered the real 8-entry table from the original binary at 0x869a8
+   (Ghidra headless dump, matching this global's own name/address) --
+   confirmed via disassembly of sweep_slide_along_wall (0x59b7c) that the
+   pointer literal at 0x59c20 resolves to exactly this address. The 8
+   real values are `-8192*i` (i.e. -45 degrees * i, wrapped to a signed
+   16-bit heading) for i=0..7 -- the 8 compass octants relative to the
+   hit. Confirmed the table is EXACTLY these 8 entries and no more: bytes
+   immediately following decode as ASCII (an unrelated string literal),
+   not further table data. */
+static unsigned char DAT_000869a8_backing[16] = {
+  0x00, 0x00, /*     0 */  0x00, 0xE0, /* -8192 */  0x00, 0xC0, /* -16384 */
+  0x00, 0xA0, /* -24576 */ 0x00, 0x80, /* -32768 */ 0x00, 0x60, /*  24576 */
+  0x00, 0x40, /* 16384 */  0x00, 0x20  /*  8192 */
+};
 #define DAT_000869a8 DAT_000869a8_backing[0]
 int DAT_00204870;
 undefined1 DAT_0024f0ca;
@@ -4746,7 +4954,15 @@ unsigned short u_Error_00087008[] = u"Error";
 unsigned short u_UUWI_00087014[] = u"UUWI";
 static undefined DAT_0023bf78_backing[8192];
 #define DAT_0023bf78 DAT_0023bf78_backing[0]
-char s__not_used_yet__00087020[] = "<not_used_yet>";
+/* Was `"<not_used_yet>"` -- underscores standing in for the real spaces
+   (same garbled-placeholder class as the save-descriptions header
+   string above and the save-name prompt fixed earlier this session).
+   Real bytes confirmed via a Ghidra memory dump of the original binary
+   at 0x87020 (`3c 6e 6f 74 20 75 73 65 64 20 79 65 74 3e 00`): the
+   angle brackets were genuinely part of the string, just with real
+   spaces instead of underscores between the words, and no trailing
+   newline. */
+char s__not_used_yet__00087020[] = "<not used yet>";
 /* Was zero-initialized -- see DAT_000857a0's comment above. probe_save_slots
    appends this to DAT_000857a0 ("\SAVE0") to build each save-slot probe
    path, then substitutes the '0' with '1'..'4'; the already-recovered
@@ -4755,7 +4971,15 @@ char s__not_used_yet__00087020[] = "<not_used_yet>";
 static undefined DAT_00087030_backing[8192] = "\\desc";
 #define DAT_00087030 DAT_00087030_backing[0]
 char s__PLAYER_DAT_00087088[] = "\\PLAYER.DAT";
-char s_Please_enter_a_Save_Game_file_an_00087094[] = "Please_enter_a_Save_Game_file_an";
+/* Was `"Please_enter_a_Save_Game_file_an"` -- a garbled placeholder that
+   just echoed this string's own auto-generated symbol name (underscores
+   for spaces, truncated at Ghidra's naming-length cap) instead of the
+   real recovered text; this is why the pause-menu's save/load name
+   prompt never showed anything in the message scroll. Real bytes
+   confirmed via Ghidra headless dump of 0x87094 in the original binary
+   (`20 20 50 6c ... 45 6e 74 65 72 0a 00`): two leading spaces, no
+   trailing period, a trailing newline before the NUL. */
+char s_Please_enter_a_Save_Game_file_an_00087094[] = "  Please enter a Save Game file and press Enter\n";
 char s__SAVE0_desc_00087078[] = "\\SAVE0\\desc";
 static undefined DAT_00087084_backing[8192];
 #define DAT_00087084 DAT_00087084_backing[0]
@@ -5689,12 +5913,32 @@ short DAT_00250710;
 char s__MORE__00087994[] = "[MORE]";
 undefined4 DAT_00250720;
 short DAT_0025070c;
-undefined DAT_0008799c;
-undefined DAT_000879a0;
-static undefined DAT_000879a4_backing[8192];
-#define DAT_000879a4 DAT_000879a4_backing[0]
-static undefined DAT_000879a8_backing[8192];
-#define DAT_000879a8 DAT_000879a8_backing[0]
+/* Was a bare 1-byte `undefined` scalar -- FUN_0008090c's yes/no dialog
+   takes its address and passes it to message_scroll_print_wrapped, so it
+   needs to be a real string. Real bytes confirmed via a Ghidra memory
+   dump of the original binary at 0x8799c: "No". Same bug class as the
+   save-slot label fix earlier this session (Ghidra typed it as a scalar
+   instead of generating a garbled placeholder string). */
+// was DAT_0008799c
+char s_No_0008799c[] = "No";
+/* Same fix as s_No_0008799c above: real bytes at 0x879a0 are "Yes". */
+// was DAT_000879a0
+char s_Yes_000879a0[] = "Yes";
+/* Reused-global-holding-a-real-string pattern (see the s_scroll_newline_0008522c
+   comment far above): scroll_text_entry_prompt's ESC-cancel path prints
+   `&s_dash_000879a4` with no write beforehand. Real bytes at 0x879a4: "-". */
+// was DAT_000879a4
+static undefined s_dash_000879a4_backing[8192] = "-";
+#define s_dash_000879a4 s_dash_000879a4_backing[0]
+/* Same pattern: scroll_text_entry_prompt defaults its prompt-before-the-input-field
+   text to `&s_scroll_prompt_arrow_000879a8` whenever the caller passes a NULL label (the
+   save-name-entry call site does exactly this) -- real bytes at 0x879a8
+   are ">" , the leading caret shown before the text cursor. Left zero
+   (empty string) by this backing array's C default, so that prompt
+   character was silently missing. */
+// was DAT_000879a8
+static undefined s_scroll_prompt_arrow_000879a8_backing[8192] = ">";
+#define s_scroll_prompt_arrow_000879a8 s_scroll_prompt_arrow_000879a8_backing[0]
 static undefined1 DAT_00250778_backing[8192];
 #define DAT_00250778 DAT_00250778_backing[0]
 static undefined DAT_0025077c_backing[8192];
@@ -8365,6 +8609,17 @@ char * param_2;
   int iVar6;
   uint uVar7;
   bool bVar8;
+  /* Was reusing `iVar3` (an int, otherwise a loop counter / file handle
+     elsewhere in this function) to also hold Ordinal_1407's (strrchr)
+     return -- harmless while that ordinal was a dead `return 0;` stub
+     (see its own comment: fixed for real this session), but now that it
+     returns a genuine 64-bit pointer into local_228, storing it in an
+     `int` truncates it, and `*(undefined1*)(iVar3+1)=0` writes through
+     the truncated wild pointer. Confirmed via lldb crash in this exact
+     line reached from the "Journey Onward" title-screen load, the first
+     real exercise of this path since the stub got fixed. Dedicated
+     pointer local instead of reusing iVar3. */
+  char *pLastSlash;
   ushort local_230 [4];
   char local_228 [264];
   char local_120 [260];
@@ -8382,15 +8637,32 @@ char * param_2;
     local_228[iVar3] = *pcVar2;
     iVar3 = iVar3 + 1;
   } while (*pcVar2 != '\0');
-  iVar3 = Ordinal_1407(local_228,0x5c);
-  if (iVar3 == 0) {
+  pLastSlash = (char *)Ordinal_1407(local_228,0x5c);
+  if (pLastSlash == 0) {
     local_228[0] = '\0';
   }
   else {
-    *(undefined1 *)(iVar3 + 1) = 0;
+    pLastSlash[1] = 0;
   }
   Ordinal_1063(local_228,s__arc_tmp_000842b4);
-  iVar3 = FUN_00022810(local_120);
+  /* Was `FUN_00022810(local_120)` -- opens read-only (uw_file_open_read).
+     This handle (*param_1 in every downstream caller) is later WRITTEN
+     to directly by FUN_00015b94 (the archive-entry byte-write a level
+     save/transition uses to flush the live in-memory object arena --
+     including the player's own position, since the player is just a
+     fixed-offset object inside that same arena -- back into this file)
+     -- a write through a read-only handle silently writes 0 bytes,
+     FUN_00015b94 returns false, and the whole save chain unwinds
+     through its failure path ("Save Game Failed"), never actually
+     persisting anything. Confirmed via tracing: SAVE0/lev.ark stayed
+     byte-identical across saves no matter what the player did.
+     FUN_0002273c (uw_file_open_write with create_always=0) opens "rb+"
+     on an existing file -- read AND write, no truncation -- exactly
+     what every other caller of this handle already assumed. Falls back
+     to "wb+" (create) only if the file doesn't already exist, which
+     every real caller here doesn't hit (\SAVE0\lev.ark is always
+     seeded before this runs). */
+  iVar3 = FUN_0002273c(local_120);
   if (iVar3 == -1) {
     bVar8 = false;
   }
@@ -8406,6 +8678,8 @@ char * param_2;
     param_1[2] = (char)((uint)iVar3 >> 0x10);
     param_1[0xe] = 0;
     bVar8 = (iVar4 == 2 && iVar5 == uVar7 * 4) && iVar6 != -1;
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[archive] iVar4=%d iVar5=%d uVar7=%u iVar6=%d bVar8=%d\n", iVar4, iVar5, uVar7, iVar6, (int)bVar8);
     param_1[3] = (char)((uint)iVar3 >> 0x18);
     param_1[5] = (char)((uint)iVar6 >> 8);
     iVar3 = 0;
@@ -8472,7 +8746,17 @@ undefined4 * param_1;
 bool FUN_00015b94(param_1,param_2,param_3,param_4)
 undefined4 * param_1;
 uint param_2;
-undefined4 param_3;
+/* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live
+   object arena) pointer FUN_00049b04 passes in as the source buffer for
+   the archive-entry write. Harmless while every actual write attempt
+   through it failed anyway for other reasons (Ordinal_1407 stub,
+   read-only archive handle -- both fixed, see open_level_archive's and
+   Ordinal_1407's own comments); with those fixed this is the last thing
+   standing between a save and actually writing anything: fwrite() on
+   the truncated (now only-32-bit, so on a 64-bit host a wild/unmapped)
+   pointer fails with EFAULT, confirmed via a UW_DEBUG_INPUTEVENT trace
+   in uw_file_write (errno 14, "Bad address"). */
+void *param_3;
 uint param_4;
 
 {
@@ -8506,10 +8790,15 @@ uint param_4;
      pointer -- see read_archive_entry's matching comment. The table is a fixed
      global; use its real address. */
   uVar15 = *(uint *)((char *)&DAT_000b78b8 + iVar8);
+  if (getenv("UW_DEBUG_INPUTEVENT"))
+    fprintf(stderr, "[15b94] param_2=%u entrycount=%u uVar15=%u param_4=%u handle1=%d handle2=%d\n",
+            param_2, (uint)*(ushort *)(param_1 + 2), uVar15, param_4, (int)*param_1, (int)param_1[1]);
   if ((param_2 & 0xffff) <= (uint)*(ushort *)(param_1 + 2)) {
     if (uVar15 == 0) {
       uVar4 = FUN_00022850(*param_1,0,2);
       uVar15 = FUN_00022884(*param_1,param_3,param_4 & 0xffff);
+      if (getenv("UW_DEBUG_INPUTEVENT"))
+        fprintf(stderr, "[15b94] fast-path seek=%d write_wrote=%u want=%u\n", (int)uVar4, uVar15, param_4 & 0xffff);
       *(undefined1 *)((char *)param_1 + 0xe) = 1;
       *(undefined4 *)((char *)&DAT_000b78b8 + iVar8) = uVar4;
       return uVar15 == (param_4 & 0xffff);
@@ -8619,6 +8908,8 @@ uint param_4;
                                    CONCAT11(*(undefined1 *)((char *)param_1 + 1),*(undefined1 *)param_1
                                            ))),uVar15,0);
     uVar15 = FUN_00022884(*param_1,param_3,param_4);
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[15b94] exact-fit path: handle1=%d wrote=%u want=%u\n", (int)*param_1, uVar15, param_4);
     if (uVar15 == param_4) {
       return true;
     }
@@ -9644,8 +9935,8 @@ undefined4 param_1;
     iVar5 = (int)(short)param_1;
     if ((iVar5 == DAT_00201b68) && (iVar5 != 9)) {
       g_blit_transparent_mode = 1;
-      draw_sprite_by_id(0x103f,((*(ushort *)(g_player_object + 0x16) >> 10) + 2) * 3,
-                   (((*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
+      draw_sprite_by_id(0x103f,((*(ushort *)((char *)g_player_object + 0x16) >> 10) + 2) * 3,
+                   (((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) + 3) * -3 + 200,5,8);
       g_blit_transparent_mode = 0;
     }
     DAT_000ba9d0 = (short)param_1;
@@ -9852,7 +10143,7 @@ int param_1;
          loop's very first iteration, the enclosing function's own object-
          pointer parameter) -- confirmed individually via disassembly for
          a representative sample of these sites (this one, FUN_00052af4,
-         FUN_00052c5c, sum_container_weight, FUN_000440d0, FUN_00072598,
+         roll_object_destroy_chance, sum_container_weight, serialize_inventory_link_chain, FUN_00072598,
          FUN_0007deec, FUN_00080ed4, FUN_000181a4), and applied by the
          same pattern to the rest. */
       iVar8 = resolve_object_link(puVar7);
@@ -9866,8 +10157,8 @@ int param_1;
   iVar8 = (int)(short)uVar5;
   if (iVar8 < 0) {
     DAT_00202c84 = 1;
-    place_object_in_world(*(ushort *)(g_player_object + 0x16) >> 7 & 0x1f8,
-                 *(ushort *)(g_player_object + 0x16) >> 1 & 0x1f8,*(byte *)(g_player_object + 2) & 0x7f,
+    place_object_in_world(*(ushort *)((char *)g_player_object + 0x16) >> 7 & 0x1f8,
+                 *(ushort *)((char *)g_player_object + 0x16) >> 1 & 0x1f8,*(byte *)((char *)g_player_object + 2) & 0x7f,
                  puVar4,6,1);
     DAT_00202c84 = 0;
 LAB_0001818c:
@@ -9885,7 +10176,7 @@ LAB_0001818c:
                            ((&DAT_00202c91)[(CONCAT11(puVar4[1],*puVar4) & 0x1ff) * 0xd] & 7) + 4);
       if (iVar8 != 0) {
         object_list_append_tail(pbVar9 + 2,puVar4);
-        FUN_00055f98(puVar4,uVar5,uVar6,1);
+        settle_dropped_object(puVar4,uVar5,uVar6,1);
         goto LAB_0001818c;
       }
     }
@@ -9942,7 +10233,7 @@ void FUN_0001825c()
   
   iVar1 = tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
                        (*(ushort *)(DAT_00100674 + 0x16) & 0x3f0) >> 4);
-  FUN_00053334(iVar1 + 2,DAT_00100674,1);
+  discard_misplaced_object(iVar1 + 2,DAT_00100674,1);
   return;
 }
 
@@ -12894,7 +13185,7 @@ int param_1;
   }
   else {
     sVar5 = Ordinal_2005(*(char *)(DAT_0023be74 + 4),
-                         ((uint)*(byte *)(g_player_object + 8) - (uint)*(byte *)(DAT_00086df8 + 0x36))
+                         ((uint)*(byte *)((char *)g_player_object + 8) - (uint)*(byte *)(DAT_00086df8 + 0x36))
                          * 2);
     iVar11 = sVar5 + 2;
   }
@@ -16319,7 +16610,7 @@ int param_1;
   *(undefined1 *)(DAT_00086df8 + 0x4b) = 0;
   uVar4 = Ordinal_1053();
   Ordinal_2005(6,uVar4);
-  *(char *)(g_player_object + 8) = (-6 - extraout_r1) + *(char *)(DAT_0023be74 + 4);
+  *(char *)((char *)g_player_object + 8) = (-6 - extraout_r1) + *(char *)(DAT_0023be74 + 4);
   DAT_00201b68 = 1;
   refresh_player_equipment_effects();
   return;
@@ -16533,7 +16824,7 @@ void FUN_00023cdc()
     *(byte *)(DAT_0023be74 + extraout_r1 + 5) = (char)uVar3 + bVar1;
   }
   FUN_000703a0(1);
-  *(undefined1 *)(g_player_object + 8) = *(undefined1 *)(DAT_0023be74 + 4);
+  *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_0023be74 + 4);
   return;
 }
 
@@ -17499,7 +17790,7 @@ byte * param_3;
   local_16 = (short)((uint)((int)*(short *)(DAT_00202c6c + 2) << 0x14) >> 0x10);
   while (collision_build_height_field(0),
         ((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
-    FUN_00069f2c(param_1,0x10,&local_18,&local_16);
+    project_position_by_heading(param_1,0x10,&local_18,&local_16);
     param_2 = param_2 + -1;
     *DAT_00202c6c = (byte)((int)local_18 >> 4);
     DAT_00202c6c[1] = (byte)((uint)((int)local_18 >> 4) >> 8);
@@ -17584,7 +17875,7 @@ undefined4 FUN_00026194()
   local_3c = (short)((puVar6[0xb] & 0xfc00) >> 7) + (ushort)(*(byte *)((char *)puVar6 + 3) >> 5);
   local_3a = (short)((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
   iVar5 = ((byte)puVar6[0xc] & 0x1f) + ((puVar6[1] & 0x380) >> 2);
-  FUN_00069f2c(iVar5,uVar7 + 3,&local_3c,&local_3a);
+  project_position_by_heading(iVar5,uVar7 + 3,&local_3c,&local_3a);
   collision_height_envelope(0,1);
   if (*(char *)((char *)DAT_00202c6c + 0x14) == '\0') {
     collision_build_height_field(0);
@@ -18574,7 +18865,7 @@ undefined4 FUN_000282ac()
       if ((uint)(*(ushort *)(g_current_container_record + 8) >> 6) == (int)sVar4) {
         leave_nested_container_level();
       }
-      FUN_000533e4(puVar5 + 3);
+      free_linked_object_recursive(puVar5 + 3);
       uVar9 = *puVar5 & 0xff1b | 0x11b;
       *(char *)puVar5 = (char)uVar9;
       *(char *)((char *)puVar5 + 1) = (char)(uVar9 >> 8);
@@ -18702,9 +18993,9 @@ void FUN_000286cc()
     FUN_0003e644();
     DAT_00085c54 = 1;
     FUN_0007f140();
-    FUN_0007fce8(0);
+    msg_scroll_panel_reset(0);
     FUN_0007f110();
-    FUN_0007fce8(0);
+    msg_scroll_panel_reset(0);
     select_active_font(s_font5x6p_sys_0008430c);
     uVar6 = 2;
     *g_draw_color_index = 0x65;
@@ -18878,7 +19169,7 @@ void FUN_00028ffc()
     if (DAT_00250718 == 0) {
       FUN_0007f170(500,0);
       FUN_0007f140();
-      FUN_0007fce8(1);
+      msg_scroll_panel_reset(1);
       if (1 < DAT_00100794) {
         iVar4 = 1;
         do {
@@ -18892,7 +19183,7 @@ void FUN_00028ffc()
             pcVar3[(int)(acStack_b9 + iVar2)] = cVar1;
             pcVar3 = pcVar3 + 1;
           } while (cVar1 != '\0');
-          Ordinal_1063(&local_bc,&DAT_0008522c);
+          Ordinal_1063(&local_bc,&s_scroll_newline_0008522c);
           message_scroll_print_wrapped(&local_bc);
           iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
         } while (iVar4 < DAT_00100794);
@@ -18969,7 +19260,7 @@ int param_1;
     sVar5 = (short)uVar6;
   }
   FUN_0007f140();
-  FUN_0007fce8(1);
+  msg_scroll_panel_reset(1);
   FUN_0007ec50();
   iVar12 = 0;
   do {
@@ -18989,7 +19280,7 @@ int param_1;
         pcVar10[(int)(acStack_c1 + iVar9)] = cVar1;
         pcVar10 = pcVar10 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(&local_c4,&DAT_0008522c);
+      Ordinal_1063(&local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(&local_c4);
       FUN_0007ec50();
       for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
@@ -19028,7 +19319,7 @@ short param_1;
       DAT_0010078c = 0;
       wait_for_click_release(0);
       FUN_0007f140();
-      FUN_0007fce8(1);
+      msg_scroll_panel_reset(1);
       FUN_0007f0e0();
       DAT_00250718 = 0;
       FUN_0007f110();
@@ -19070,7 +19361,7 @@ undefined4 param_1;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(DAT_001007c0,param_1);
-  Ordinal_1063(DAT_001007c0,&DAT_0008522c);
+  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
   FUN_0007f110();
   message_scroll_print_wrapped(DAT_001007c0);
   FUN_0007ec50();
@@ -19095,7 +19386,7 @@ char * param_1;
     *pcVar2 = cVar1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  Ordinal_1063(DAT_001007c0,&DAT_0008522c);
+  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
   FUN_0007f140();
   message_scroll_print_wrapped(DAT_001007c0);
   FUN_0007ec50();
@@ -19192,8 +19483,8 @@ int FUN_0002990c()
   char *pcVar4;
   char local_a8 [160];
   
-  FUN_0007ffa8(0,0,local_a8,1,0x32);
-  message_scroll_print_wrapped(&DAT_0008522c);
+  scroll_text_entry_prompt(0,0,local_a8,1,0x32);
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   FUN_0007ec50();
   pcVar2 = local_a8;
   pcVar4 = DAT_001007b8;
@@ -19923,7 +20214,7 @@ char *param_1;
   FUN_0001afe4(s_play_hunger_00085304,&local_10,1);
   *(char *)(DAT_00086df8 + 0x39) = (char)local_10;
   FUN_0001afe4(s_play_hp_000852f0,&local_10,1);
-  *(char *)(g_player_object + 8) = (char)local_10;
+  *(char *)((char *)g_player_object + 8) = (char)local_10;
   FUN_0001afe4(s_play_mana_000852cc,&local_10,1);
   *(char *)(DAT_00086df8 + 0x37) = (char)local_10;
   FUN_0001afe4(s_play_poison_00085264,&local_10,1);
@@ -19975,7 +20266,7 @@ ushort param_3;
     *(byte *)(pDropObj + 4) = (byte)uVar6 | 0x28;
     *(char *)(pDropObj + 5) = (char)(uVar6 >> 8);
     object_list_insert_head(iVar4 + 2,pDropObj);
-    FUN_00055f98(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
+    settle_dropped_object(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
   }
   if ((param_3 & 0xff) != 0) {
     uVar7 = Ordinal_1053();
@@ -20003,7 +20294,7 @@ int FUN_0002b47c()
   if (((char)DAT_0010190c[4] == '\0') &&
      (((&DAT_00202c97)[(*DAT_0010190c & 0x1ff) * 0xd] & 0xc) < 0xc)) {
     iVar2 = tilemap_lookup(DAT_0010190c[0xb] >> 10,(DAT_0010190c[0xb] & 0x3f0) >> 4);
-    iVar2 = FUN_00053334(iVar2 + 2,DAT_0010190c,0);
+    iVar2 = discard_misplaced_object(iVar2 + 2,DAT_0010190c,0);
     if (iVar2 == 0) {
       return 0;
     }
@@ -23220,7 +23511,7 @@ void FUN_00031a94()
       *(char *)(DAT_0010190c + 3) = (char)(uVar5 >> 8);
       *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
       if (uVar6 < 0x90) {
-        Ordinal_2005(8,((*(ushort *)(g_player_object + 2) >> 7 & 7) - (uVar7 & 0xff)) + 8);
+        Ordinal_2005(8,((*(ushort *)((char *)g_player_object + 2) >> 7 & 7) - (uVar7 & 0xff)) + 8);
         if (('\x02' < extraout_r1) && (extraout_r1 < '\x06')) {
           DAT_0023bf0c = 0;
           FUN_000577f0();
@@ -23905,9 +24196,9 @@ LAB_000339fc:
             uVar11 = *(ushort *)(DAT_0010190c + 0xd) & 0x3fff;
             *(char *)(DAT_0010190c + 0xd) = (char)uVar11;
             *(char *)(DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
-            FUN_0002e454(*(ushort *)(g_player_object + 0x16) >> 10,
-                         *(ushort *)(g_player_object + 0x16) >> 4 & 0x3f,
-                         *(byte *)(g_player_object + 2) >> 3 & 0xf);
+            FUN_0002e454(*(ushort *)((char *)g_player_object + 0x16) >> 10,
+                         *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
+                         *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
             *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) | 1;
           }
           if ((DAT_00101900 < 3) ||
@@ -24524,7 +24815,7 @@ int param_2;
   uVar11 = param_1[0xb] >> 4 & 0x3f;
   local_28 = tilemap_lookup(uVar9,uVar11);
   if ((param_1[7] & 1) != 0) {
-    FUN_000534a8(local_28 + 2,param_1);
+    unlink_and_free_object(local_28 + 2,param_1);
     return;
   }
   *(byte *)((char *)param_1 + 0x19) = *(byte *)((char *)param_1 + 0x19) & 0xc;
@@ -24605,7 +24896,7 @@ int param_1;
   bVar2 = *(byte *)(param_1 + 3);
   pbVar4 = (byte *)tilemap_lookup();
   pbVar8 = pbVar4 + 2;
-  iVar5 = FUN_00053334(pbVar8,param_1,0);
+  iVar5 = discard_misplaced_object(pbVar8,param_1,0);
   if ((iVar5 != 0) && (iVar5 = FUN_0005596c(param_1), iVar5 != 0)) {
     object_list_unlink(pbVar8,iVar5);
     DAT_00202c84 = 1;
@@ -24750,7 +25041,7 @@ ushort * param_3;
     Ordinal_2005(2,uVar6);
     if (extraout_r1 != 0) {
       FUN_00032aa4(param_3);
-      uVar4 = *(ushort *)(g_player_object + 0x16);
+      uVar4 = *(ushort *)((char *)g_player_object + 0x16);
       iVar13 = (uint)DAT_001013f8 - ((uVar4 & 0x3f0) >> 4);
       iVar11 = (uint)DAT_00101918 - (uint)(uVar4 >> 10);
       uVar9 = (uint)(*(byte *)(DAT_00101404 + 0x1c) >> 4);
@@ -24761,7 +25052,7 @@ ushort * param_3;
                                  *(byte *)(DAT_0010190c + 2) >> 3 & 0xf,(uint)(uVar4 >> 10),
                                  CONCAT11(uVar16,(char)(uVar4 >> 4)) & 0xff3f,
                                  CONCAT31((int3)((uint)in_stack_ffffffd0 >> 8),
-                                          *(byte *)(g_player_object + 2) >> 3) & 0xffffff0f,0),
+                                          *(byte *)((char *)g_player_object + 2) >> 3) & 0xffffff0f,0),
           iVar11 != 0)) && (1 < DAT_0010142c)) {
         uVar9 = 0;
         if (DAT_0010142c != 0) {
@@ -24820,9 +25111,9 @@ ushort * param_3;
             *(char *)(param_3 + 1) = (char)uVar9;
             *(char *)((char *)param_3 + 3) = (char)(uVar9 >> 8);
             *(byte *)((char *)param_3 + 0x19) = *(byte *)((char *)param_3 + 0x19) | 1;
-            FUN_0002e454(*(ushort *)(g_player_object + 0x16) >> 10,
-                         *(ushort *)(g_player_object + 0x16) >> 4 & 0x3f,
-                         *(byte *)(g_player_object + 2) >> 3 & 0xf);
+            FUN_0002e454(*(ushort *)((char *)g_player_object + 0x16) >> 10,
+                         *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
+                         *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
             DAT_00101950 = 1;
             return 1;
           }
@@ -26222,7 +26513,7 @@ char *param_2;
     *(undefined1 *)(param_2 + 8) = 0;
   }
   else {
-    iVar1 = FUN_00053334(param_1,param_2,0);
+    iVar1 = discard_misplaced_object(param_1,param_2,0);
     if (iVar1 == 0) {
       return 1;
     }
@@ -26272,7 +26563,7 @@ LAB_00038100:
       try_combine_or_stow_object(0,param_1,0);
     }
     else if ((uVar1 & 0x1f0) == 0x80) {
-      iVar3 = FUN_00052c5c(10,param_1);
+      iVar3 = roll_object_destroy_chance(10,param_1);
       if (iVar3 == 0) goto LAB_00038100;
       try_empty_container(param_1,0);
     }
@@ -26295,7 +26586,7 @@ LAB_00038100:
         }
       }
       if (((*param_1 & 0x8000) == 0) && ((param_1[3] & 0xffc0) != 0)) {
-        FUN_000533e4();
+        free_linked_object_recursive();
       }
     }
     if ((short)uVar6 < -1) {
@@ -26307,7 +26598,7 @@ LAB_00038100:
       *(char *)param_1 = (char)uVar5;
       *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
       if ((DAT_002046c4 <= param_1) &&
-         (iVar3 = FUN_00055f98(param_1,param_4,(int)param_5,1), iVar3 == 0)) goto LAB_000382ac;
+         (iVar3 = settle_dropped_object(param_1,param_4,(int)param_5,1), iVar3 == 0)) goto LAB_000382ac;
     }
     uVar4 = 1;
     if (-2 < (short)uVar6) {
@@ -26748,7 +27039,7 @@ int param_6;
           puVar11 = (ushort *)resolve_object_link(puVar11);
           if (((&DAT_00202c90)[(*puVar11 & 0x1ff) * 0xd] != '\0') ||
              (iVar12 = object_ptr_in_arena(puVar11), iVar12 != 0)) {
-            FUN_00053334(pbVar10 + 2,puVar11,0);
+            discard_misplaced_object(pbVar10 + 2,puVar11,0);
           }
         }
       }
@@ -27155,11 +27446,11 @@ undefined4 FUN_00039d78()
   
   local_6 = DAT_00204880 >> 5;
   local_8 = DAT_00204882 >> 5;
-  FUN_00069f2c((int)DAT_00201c70 >> 8,0xb,&local_6,&local_8);
+  project_position_by_heading((int)DAT_00201c70 >> 8,0xb,&local_6,&local_8);
   puVar2 = (ushort *)tilemap_lookup((int)local_6 >> 3,(int)local_8 >> 3);
   uVar1 = *puVar2;
   if ((((uVar1 & 0xf) == 0) || (((&DAT_0023ae40)[uVar1 >> 10 & 0xf] & 0xfff0) != 0x10)) ||
-     ((int)(*(byte *)(g_player_object + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
+     ((int)(*(byte *)((char *)g_player_object + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
     uVar3 = 0x65;
   }
   else {
@@ -27321,10 +27612,10 @@ int param_3;
     *(char *)(pNew + 2) = (char)uVar4;
     *(char *)(pNew + 3) = (char)(uVar4 >> 8);
     object_list_insert_head(pTile + 2,pNew);
-    FUN_00055f98(pNew,param_2,param_3 + 1,1);
+    settle_dropped_object(pNew,param_2,param_3 + 1,1);
     iVar5 = 0;
     do {
-      FUN_00053334((char *)local_34[iVar5] + 2,local_44[iVar5],1);
+      discard_misplaced_object((char *)local_34[iVar5] + 2,local_44[iVar5],1);
       iVar5 = (iVar5 + 1) * 0x1000000 >> 0x18;
     } while (iVar5 < 4);
   }
@@ -27380,8 +27671,8 @@ void FUN_0003a398()
   int iVar2;
   ushort *local_10;   /* was int -- tilemap_lookup()+2 (64-bit ptr) */
 
-  local_10 = (ushort *)((char *)tilemap_lookup(*(ushort *)(g_player_object + 0x16) >> 10,
-                          (*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4) + 2);
+  local_10 = (ushort *)((char *)tilemap_lookup(*(ushort *)((char *)g_player_object + 0x16) >> 10,
+                          (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) + 2);
   iVar2 = FUN_000537d0(&local_10,1,4,1,4);
   if (iVar2 != 0) {
     message_scroll_print_wrapped(s_The_book_explodes_in_your_face__00085644);
@@ -27392,7 +27683,7 @@ void FUN_0003a398()
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
     FUN_00074028(g_player_object,3);
     decrement_object_count(iVar2);
-    FUN_00053334(0,iVar2,1);
+    discard_misplaced_object(0,iVar2,1);
     FUN_00048110();
     refresh_player_equipment_effects();
   }
@@ -27422,7 +27713,7 @@ undefined4 param_3;
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
     FUN_00074028(g_player_object,3);
     decrement_object_count(iVar2);
-    FUN_00053334(0,iVar2,1);
+    discard_misplaced_object(0,iVar2,1);
     FUN_00048110();
     refresh_player_equipment_effects();
   }
@@ -27471,7 +27762,7 @@ int param_1;
   
   iVar1 = tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
   ;
-  FUN_000534a8(iVar1 + 2,param_1);
+  unlink_and_free_object(iVar1 + 2,param_1);
   return 1;
 }
 
@@ -27733,7 +28024,7 @@ int param_3;
       local_68 = (uint)(sVar1 == 2);
       FUN_0007fee8();
     }
-    message_scroll_print_wrapped(&DAT_0008522c);
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     if (local_68 == 0) {
       return;
     }
@@ -27743,7 +28034,7 @@ int param_3;
   if (param_3 == 0) {
     if ((short)iVar2 == -2) {
       iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
-      FUN_00053334(iVar2 + 2,param_1,0);
+      discard_misplaced_object(iVar2 + 2,param_1,0);
     }
   }
   else {
@@ -27754,13 +28045,13 @@ int param_3;
     *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar3 >> 0x10);
     *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar3 >> 0x18);
     if ((short)iVar2 == -2) {
-      iVar3 = FUN_00052c5c(10,param_1);
+      iVar3 = roll_object_destroy_chance(10,param_1);
       if (iVar3 == 0) {
         iVar2 = 0;
       }
       else {
         decrement_object_count(param_1);
-        FUN_00053334(0,param_1,1);
+        discard_misplaced_object(0,param_1,1);
       }
     }
     FUN_00078c80(iVar2 + 0x8e);
@@ -28544,10 +28835,10 @@ void FUN_0003bee4()
   
   FUN_00066c90();
   refresh_player_equipment_effects();
-  uVar1 = *(ushort *)(g_player_object + 2) & 0xfc7f;
-  *(char *)(g_player_object + 2) = (char)uVar1;
-  *(char *)(g_player_object + 3) = (char)(uVar1 >> 8);
-  *(byte *)(g_player_object + 0x18) = *(byte *)(g_player_object + 0x18) & 0xe0;
+  uVar1 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f;
+  *(char *)((char *)g_player_object + 2) = (char)uVar1;
+  *(char *)((char *)g_player_object + 3) = (char)(uVar1 >> 8);
+  *(byte *)((char *)g_player_object + 0x18) = *(byte *)((char *)g_player_object + 0x18) & 0xe0;
   DAT_00201c70 = 0;
   DAT_00201c78 = 0;
   DAT_00086b20 = 1;
@@ -28597,7 +28888,7 @@ short param_1;
   do {
     sVar1 = next_input_event();
   } while (sVar1 < 0);
-  FUN_0007fce8(1);
+  msg_scroll_panel_reset(1);
   /* 0x80, see DAT_00085668's comment. */
   (**(code **)(&DAT_000856a4 + DAT_00201b64 * 0x80))();
   *(undefined1 *)(DAT_00085a6c + 8) = 0;
@@ -28657,7 +28948,7 @@ undefined4 dungeon_view_anim_tick()
        (iVar1 = FUN_00038d4c(g_player_object,(int)DAT_00201c90,(int)DAT_00201c8c,&local_20,&local_1e,1)
        , iVar1 == 0)) {
       DAT_00201c90 = 0;
-      *(undefined1 *)(g_player_object + 8) = 0;
+      *(undefined1 *)((char *)g_player_object + 8) = 0;
       return 0;
     }
     DAT_00201c90 = local_20;
@@ -28943,7 +29234,7 @@ void FUN_0003c6ac()
   byte bVar6;
   
   FUN_000411e0(0xb5);
-  bVar6 = *(byte *)(g_player_object + 8);
+  bVar6 = *(byte *)((char *)g_player_object + 8);
   uVar1 = (uint)(short)(ushort)bVar6;
   if (uVar1 < 0x65) {
     if (uVar1 < 0x33) {
@@ -28970,7 +29261,7 @@ void FUN_0003c6ac()
   }
   bVar6 = bVar6 - cVar5;
 LAB_0003c780:
-  *(byte *)(g_player_object + 8) = bVar6;
+  *(byte *)((char *)g_player_object + 8) = bVar6;
   uVar3 = Ordinal_1053();
   Ordinal_2005(0xc,uVar3);
   if (extraout_r1_02 != 0) {
@@ -29030,7 +29321,7 @@ LAB_0003c940:
       local_40 = (uint)((DAT_0020208c & 0x14) != 0);
       uVar5 = local_40;
       local_42 = DAT_00204882;
-      FUN_00069f2c((int)(short)((uint)iVar7 >> 8),uVar4,&local_44,&local_42);
+      project_position_by_heading((int)(short)((uint)iVar7 >> 8),uVar4,&local_44,&local_42);
       iVar7 = (int)(short)local_44;
       iVar8 = (int)(short)local_42;
       if (iVar8 < 0) {
@@ -29040,7 +29331,7 @@ LAB_0003c940:
         iVar7 = iVar7 + 0x1f;
       }
       iVar7 = FUN_00051fa0(0x7f,1,(int)(short)(iVar7 >> 5),(int)(short)(iVar8 >> 5),
-                           *(byte *)(g_player_object + 2) & 0x7f,uVar5 | uVar10,8);
+                           *(byte *)((char *)g_player_object + 2) & 0x7f,uVar5 | uVar10,8);
       if ((iVar7 == 0) ||
          ((((uVar10 == 0 && (uVar3 = (uint)DAT_00202c68, uVar3 != 1)) && (uVar3 != DAT_00202084)) &&
           ((uVar3 != 0x10 || (uVar5 == 0)))))) goto LAB_0003cdf8;
@@ -29056,35 +29347,35 @@ LAB_0003c940:
         DAT_00202080 = (short)iVar9;
         object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
         uVar6 = DAT_00204880 & 0x3f00;
-        uVar5 = *(ushort *)(g_player_object + 0x16) & 0x3ff;
-        *(char *)(g_player_object + 0x16) = (char)uVar5;
-        *(byte *)(g_player_object + 0x17) =
+        uVar5 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
+        *(char *)((char *)g_player_object + 0x16) = (char)uVar5;
+        *(byte *)((char *)g_player_object + 0x17) =
              (byte)(uVar5 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 8) << 10) >> 8);
-        uVar5 = *(ushort *)(g_player_object + 0x16) & 0xfc0f |
+        uVar5 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f |
                 ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
-        *(char *)(g_player_object + 0x16) = (char)uVar5;
-        *(char *)(g_player_object + 0x17) = (char)(uVar5 >> 8);
+        *(char *)((char *)g_player_object + 0x16) = (char)uVar5;
+        *(char *)((char *)g_player_object + 0x17) = (char)(uVar5 >> 8);
         uVar5 = local_40;
       }
       uVar6 = DAT_00204880 & 0xe0;
-      uVar3 = *(ushort *)(g_player_object + 2) & 0x1fff;
-      *(char *)(g_player_object + 2) = (char)uVar3;
-      *(byte *)(g_player_object + 3) =
+      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
+      *(char *)((char *)g_player_object + 2) = (char)uVar3;
+      *(byte *)((char *)g_player_object + 3) =
            (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 0xd) >> 8);
       uVar6 = DAT_00204882 & 0xe0;
-      uVar3 = *(ushort *)(g_player_object + 2) & 0xe3ff;
-      *(char *)(g_player_object + 2) = (char)uVar3;
-      *(byte *)(g_player_object + 3) =
+      uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xe3ff;
+      *(char *)((char *)g_player_object + 2) = (char)uVar3;
+      *(byte *)((char *)g_player_object + 3) =
            (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar6 >> 5) << 10) >> 8);
       if (getenv("UW_DEBUG_STEPHEIGHT"))
         fprintf(stderr, "[stepsnap] uVar10=%u uVar5=%u cur_z=%d DAT_00202c30=%d snap=%d\n",
                 uVar10, uVar5, (int)DAT_00204884, (int)DAT_00202c30,
                 (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)));
       if (((uVar10 == 0) && (uVar5 == 0)) || (((int)DAT_00204884 >> 3) + -8 <= (int)DAT_00202c30)) {
-        uVar1 = *(undefined2 *)(g_player_object + 2);
+        uVar1 = *(undefined2 *)((char *)g_player_object + 2);
         bVar2 = (byte)uVar1;
-        *(byte *)(g_player_object + 2) = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
-        *(char *)(g_player_object + 3) = (char)((ushort)uVar1 >> 8);
+        *(byte *)((char *)g_player_object + 2) = (bVar2 ^ (byte)DAT_00202c30) & 0x7f ^ bVar2;
+        *(char *)((char *)g_player_object + 3) = (char)((ushort)uVar1 >> 8);
         DAT_00204884 = DAT_00202c30 << 3;
       }
       else if (g_fall_accel == 0 && uVar5 == 0) {
@@ -29092,9 +29383,9 @@ LAB_0003c940:
       }
       set_locomotion_state((int)DAT_00202c68,0);
       uVar10 = read_realtime_clock_units();
-      uVar5 = *(ushort *)(g_player_object + 0xb) & 0xfff;
-      *(char *)(g_player_object + 0xb) = (char)uVar5;
-      *(byte *)(g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
+      uVar5 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
+      *(char *)((char *)g_player_object + 0xb) = (char)uVar5;
+      *(byte *)((char *)g_player_object + 0xc) = (byte)(uVar5 >> 8) | (byte)(((uVar10 & 0xc0) << 6) >> 8);
       uVar4 = DAT_00202c6c;
       DAT_00202c6c = &local_3c;
       local_32 = 1;
@@ -29110,7 +29401,7 @@ LAB_0003c940:
         iVar7 = iVar7 + 0x1f;
       }
       local_3a = (undefined2)(iVar7 >> 5);
-      local_38 = *(byte *)(g_player_object + 2) & 0x7f;
+      local_38 = *(byte *)((char *)g_player_object + 2) & 0x7f;
       collision_height_envelope(0,0);
       FUN_00051dd0();
       iVar8 = (int)*(char *)(DAT_00202c6c + 0xb);
@@ -29164,12 +29455,12 @@ LAB_0003c920:
       else {
         DAT_00201c70 = (DAT_00201c70 & 0xe000) + (ushort)(0 < param_1) * 0x2000;
       }
-      uVar10 = *(ushort *)(g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-      *(char *)(g_player_object + 2) = (char)uVar10;
-      *(char *)(g_player_object + 3) = (char)(uVar10 >> 8);
-      *(byte *)(g_player_object + 0x18) =
-           ((byte)(DAT_00201c70 >> 8) ^ *(byte *)(g_player_object + 0x18)) & 0x1f ^
-           *(byte *)(g_player_object + 0x18);
+      uVar10 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
+      *(char *)((char *)g_player_object + 2) = (char)uVar10;
+      *(char *)((char *)g_player_object + 3) = (char)(uVar10 >> 8);
+      *(byte *)((char *)g_player_object + 0x18) =
+           ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
+           *(byte *)((char *)g_player_object + 0x18);
       uVar4 = DAT_00202c6c;
     }
     DAT_00202c6c = (undefined2 *)uVar4;
@@ -29291,28 +29582,28 @@ uint param_2;
   if (((&DAT_000878d0)[*(byte *)(DAT_002029cc + iVar2 * 4) & 0xf] & 0x20) != 0) {
     DAT_00204884 = DAT_00204884 + 0x20;
   }
-  uVar3 = *(ushort *)(g_player_object + 2) & 0xff80;
-  *(byte *)(g_player_object + 2) =
+  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xff80;
+  *(byte *)((char *)g_player_object + 2) =
        (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  *(char *)(g_player_object + 3) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)(g_player_object + 0x16) & 0x3ff;
-  *(char *)(g_player_object + 0x16) = (char)uVar3;
-  *(byte *)(g_player_object + 0x17) = (byte)(uVar3 >> 8) | (byte)(((param_1 & 0x3f) << 10) >> 8);
-  uVar3 = *(ushort *)(g_player_object + 0x16) & 0xfc0f | (param_2 & 0x3f) << 4;
-  *(char *)(g_player_object + 0x16) = (char)uVar3;
-  *(char *)(g_player_object + 0x17) = (char)(uVar3 >> 8);
-  uVar3 = *(ushort *)(g_player_object + 2) & 0x1fff;
-  *(char *)(g_player_object + 2) = (char)uVar3;
-  *(byte *)(g_player_object + 3) = (byte)(uVar3 >> 8) | 0x60;
-  uVar3 = *(ushort *)(g_player_object + 2) & 0xefff;
-  *(char *)(g_player_object + 2) = (char)uVar3;
-  *(byte *)(g_player_object + 3) = (byte)(uVar3 >> 8) | 0xc;
-  *(byte *)(g_player_object + 0x15) = *(byte *)(g_player_object + 0x15) & 0xec | 0x2c;
-  uVar3 = *(ushort *)(g_player_object + 4) & 0xffc0;
-  *(char *)(g_player_object + 4) = (char)uVar3;
-  *(char *)(g_player_object + 5) = (char)(uVar3 >> 8);
-  *(byte *)(g_player_object + 4) = *(byte *)(g_player_object + 4) & 0x3f;
-  *(undefined1 *)(g_player_object + 5) = 0;
+  *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
+  uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
+  *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
+  *(byte *)((char *)g_player_object + 0x17) = (byte)(uVar3 >> 8) | (byte)(((param_1 & 0x3f) << 10) >> 8);
+  uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f | (param_2 & 0x3f) << 4;
+  *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
+  *(char *)((char *)g_player_object + 0x17) = (char)(uVar3 >> 8);
+  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
+  *(char *)((char *)g_player_object + 2) = (char)uVar3;
+  *(byte *)((char *)g_player_object + 3) = (byte)(uVar3 >> 8) | 0x60;
+  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xefff;
+  *(char *)((char *)g_player_object + 2) = (char)uVar3;
+  *(byte *)((char *)g_player_object + 3) = (byte)(uVar3 >> 8) | 0xc;
+  *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
+  uVar3 = *(ushort *)((char *)g_player_object + 4) & 0xffc0;
+  *(char *)((char *)g_player_object + 4) = (char)uVar3;
+  *(char *)((char *)g_player_object + 5) = (char)(uVar3 >> 8);
+  *(byte *)((char *)g_player_object + 4) = *(byte *)((char *)g_player_object + 4) & 0x3f;
+  *(undefined1 *)((char *)g_player_object + 5) = 0;
   DAT_00202c6c = local_3c;
   uVar1 = encode_object_slot_index(g_player_object);
   DAT_00202c6c[10] = (char)uVar1;
@@ -29339,6 +29630,29 @@ uint param_2;
   return;
 }
 
+
+
+/* Debug-only helper (UW_DEBUG_THROW-gated): print both player-position
+   representations side by side -- the fine, continuous DAT_00204880/2
+   (used by the camera and by demo_set_player_pos) vs. the coarser
+   tile-position bytes packed into g_player_object's own record (offset
+   0x16/0x17, read elsewhere as DAT_00202a4c/DAT_00202a50 by
+   drop_held_object_near_player). Added to bisect a desync between the
+   two: right after chargen's set_player_tile_position(0x20,2,1) call
+   they should agree (that function sets both atomically), so if they
+   already disagree here, the bug is upstream of/inside that call; if
+   they still agree here but disagree later (at throw time), something
+   between chargen-complete and the throw resets g_player_object's own
+   bytes without touching DAT_00204880/2. */
+void debug_print_player_position(const char *label)
+{
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[playerpos:%s] fine=(%d,%d)=world(%g,%g) obj_bytes tile=(%d,%d)\n",
+            label, (int)DAT_00204880, (int)DAT_00204882,
+            (double)DAT_00204880 / 256.0, (double)DAT_00204882 / 256.0,
+            (int)((byte)*(byte *)((char *)g_player_object + 0x17) >> 2),
+            (int)((g_player_object[0xb] & 0x3f0) >> 4));
+}
 
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
@@ -29374,33 +29688,33 @@ void commit_player_move()
     DAT_00202080 = (short)iVar8;
     object_list_insert_head(DAT_002029cc + iVar7 * 4 + 2,g_player_object);
     uVar5 = DAT_00204880 & 0x3f00;
-    uVar3 = *(ushort *)(g_player_object + 0x16) & 0x3ff;
-    *(char *)(g_player_object + 0x16) = (char)uVar3;
-    *(byte *)(g_player_object + 0x17) =
+    uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0x3ff;
+    *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
+    *(byte *)((char *)g_player_object + 0x17) =
          (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 8) << 10) >> 8);
-    uVar3 = *(ushort *)(g_player_object + 0x16) & 0xfc0f |
+    uVar3 = *(ushort *)((char *)g_player_object + 0x16) & 0xfc0f |
             ((int)(short)(DAT_00204882 & 0x3f00) >> 8) << 4;
-    *(char *)(g_player_object + 0x16) = (char)uVar3;
-    *(char *)(g_player_object + 0x17) = (char)(uVar3 >> 8);
+    *(char *)((char *)g_player_object + 0x16) = (char)uVar3;
+    *(char *)((char *)g_player_object + 0x17) = (char)(uVar3 >> 8);
   }
   uVar5 = DAT_00204880 & 0xe0;
-  uVar3 = *(ushort *)(g_player_object + 2) & 0x1fff;
-  *(char *)(g_player_object + 2) = (char)uVar3;
-  *(byte *)(g_player_object + 3) =
+  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0x1fff;
+  *(char *)((char *)g_player_object + 2) = (char)uVar3;
+  *(byte *)((char *)g_player_object + 3) =
        (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 0xd) >> 8);
   uVar5 = DAT_00204882 & 0xe0;
-  uVar3 = *(ushort *)(g_player_object + 2) & 0xe3ff;
-  *(char *)(g_player_object + 2) = (char)uVar3;
-  *(byte *)(g_player_object + 3) =
+  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xe3ff;
+  *(char *)((char *)g_player_object + 2) = (char)uVar3;
+  *(byte *)((char *)g_player_object + 3) =
        (byte)(uVar3 >> 8) | (byte)((uint)(((int)(short)uVar5 >> 5) << 10) >> 8);
-  uVar3 = *(ushort *)(g_player_object + 2) & 0xff80;
-  *(byte *)(g_player_object + 2) =
+  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xff80;
+  *(byte *)((char *)g_player_object + 2) =
        (byte)uVar3 | (byte)((int)(((int)DAT_00204884 & 0x3f8U) << 0x10) >> 0x13);
-  *(char *)(g_player_object + 3) = (char)(uVar3 >> 8);
+  *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
   uVar3 = read_realtime_clock_units();
-  uVar4 = *(ushort *)(g_player_object + 0xb) & 0xfff;
-  *(char *)(g_player_object + 0xb) = (char)uVar4;
-  *(byte *)(g_player_object + 0xc) = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
+  uVar4 = *(ushort *)((char *)g_player_object + 0xb) & 0xfff;
+  *(char *)((char *)g_player_object + 0xb) = (char)uVar4;
+  *(byte *)((char *)g_player_object + 0xc) = (byte)(uVar4 >> 8) | (byte)(((uVar3 & 0xc0) << 6) >> 8);
   if ((_DAT_002048a9 != 0) && (_DAT_002048a1 == DAT_00201c78)) {
     g_jump_ascent_timer = 0;
   }
@@ -29417,12 +29731,12 @@ void commit_player_move()
     }
   }
   DAT_00201c70 = uVar5;
-  uVar3 = *(ushort *)(g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
-  *(char *)(g_player_object + 2) = (char)uVar3;
-  *(char *)(g_player_object + 3) = (char)(uVar3 >> 8);
-  *(byte *)(g_player_object + 0x18) =
-       ((byte)(DAT_00201c70 >> 8) ^ *(byte *)(g_player_object + 0x18)) & 0x1f ^
-       *(byte *)(g_player_object + 0x18);
+  uVar3 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f | ((int)(short)DAT_00201c70 >> 0xd & 7U) << 7;
+  *(char *)((char *)g_player_object + 2) = (char)uVar3;
+  *(char *)((char *)g_player_object + 3) = (char)(uVar3 >> 8);
+  *(byte *)((char *)g_player_object + 0x18) =
+       ((byte)(DAT_00201c70 >> 8) ^ *(byte *)((char *)g_player_object + 0x18)) & 0x1f ^
+       *(byte *)((char *)g_player_object + 0x18);
   if (_DAT_002048a9 != 0) {
     if (DAT_00204896 != '\0') {
       uVar3 = (uint)(_DAT_002048a9 >> 8);
@@ -29832,7 +30146,7 @@ void FUN_0003df28()
   int iVar3;
   short extraout_r1;
   
-  message_scroll_print_wrapped(&DAT_0008522c);
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   sVar1 = Ordinal_2005(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
   FUN_00078c94(0x40,sVar1 + 0x68,0x67);
   sVar1 = Ordinal_2005(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
@@ -29884,7 +30198,7 @@ void FUN_0003e0b4()
         pcVar4 = pcVar4 + 1;
       } while (cVar1 != '\0');
       if (*DAT_00085a6c < 0x1e) {
-        FUN_000229e0(*(undefined1 *)(g_player_object + 8),auStack_94,10);
+        FUN_000229e0(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
         FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
         if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
           sVar2 = Ordinal_2005(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
@@ -29898,7 +30212,7 @@ void FUN_0003e0b4()
       Ordinal_1063(local_84,auStack_94);
       Ordinal_1063(local_84,s_out_of_000858dc);
       Ordinal_1063(local_84,auStack_a4);
-      Ordinal_1063(local_84,&DAT_0008522c);
+      Ordinal_1063(local_84,&s_scroll_newline_0008522c);
       message_scroll_print_wrapped(local_84);
       wait_for_click_release(1);
     }
@@ -29986,20 +30300,20 @@ void sync_player_stats_to_hud()
   uint uVar3;
   
   FUN_00027708(0);
-  bVar2 = *(byte *)(g_player_object + 8);
+  bVar2 = *(byte *)((char *)g_player_object + 8);
   set_hud_status_value(0,bVar2);
-  if (((uint)DAT_001013a4 < (uint)*(byte *)(g_player_object + 0x11) * 4) ||
-     ((bVar2 < 0x10 && (*(byte *)(g_player_object + 0x11) != 0)))) {
+  if (((uint)DAT_001013a4 < (uint)*(byte *)((char *)g_player_object + 0x11) * 4) ||
+     ((bVar2 < 0x10 && (*(byte *)((char *)g_player_object + 0x11) != 0)))) {
     set_hud_status_value(4,3);
   }
-  *(undefined1 *)(g_player_object + 0x11) = 0;
+  *(undefined1 *)((char *)g_player_object + 0x11) = 0;
   set_hud_status_value(1,*(undefined1 *)(DAT_00086df8 + 0x37));
   if (DAT_00201b68 != 9) {
-    set_hud_status_value(2,(ushort)(((int)(((*(byte *)(g_player_object + 0x18) & 0x1f) +
-                                   ((*(ushort *)(g_player_object + 2) & 0x380) >> 2)) * 0x10000) >>
+    set_hud_status_value(2,(ushort)(((int)(((*(byte *)((char *)g_player_object + 0x18) & 0x1f) +
+                                   ((*(ushort *)((char *)g_player_object + 2) & 0x380) >> 2)) * 0x10000) >>
                             0x10) + 8 >> 4) & 0xf);
   }
-  if (*(char *)(g_player_object + 8) == '\0') {
+  if (*(char *)((char *)g_player_object + 8) == '\0') {
     FUN_00072288();
   }
   uVar3 = read_realtime_clock_units();
@@ -30067,12 +30381,12 @@ char *param_3;
     uVar7 = 1;
   }
   else {
-    uVar5 = *(ushort *)(g_player_object + 2);
+    uVar5 = *(ushort *)((char *)g_player_object + 2);
     uVar6 = *(ushort *)(param_2 + 2);
-    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(*(ushort *)(g_player_object + 0x16) >> 10) * -8) -
+    iVar2 = ((((uint)(uVar6 >> 0xd) + (uint)(*(ushort *)((char *)g_player_object + 0x16) >> 10) * -8) -
              (uint)(uVar5 >> 0xd)) + uVar8 * 8) * 0x10000;
     uVar8 = iVar2 >> 0x1f;
-    iVar3 = (((((uVar6 & 0x1c00) >> 10) + ((*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4) * -8) -
+    iVar3 = (((((uVar6 & 0x1c00) >> 10) + ((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) * -8) -
              ((uVar5 & 0x1c00) >> 10)) + iVar3 * 8) * 0x10000;
     uVar4 = iVar3 >> 0x1f;
     iVar2 = (int)(((iVar2 >> 0x10 ^ uVar8) - uVar8) * 0x10000) >> 0x10;
@@ -30134,9 +30448,9 @@ char *param_2;  /* was int -- truncated g_interact_target; deref'd at param_2+2 
   int iVar14;
   
   if (param_1 != 0) {
-    uVar2 = *(ushort *)(g_player_object + 0x16) >> 10;
+    uVar2 = *(ushort *)((char *)g_player_object + 0x16) >> 10;
     uVar9 = (uint)uVar2;
-    uVar10 = (*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4;
+    uVar10 = (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4;
     /* tilemap_lookup returns a 64-bit tile-record pointer; `int iVar5`
        truncated it and the very next line dereferenced the result. Use
        the byte* local this function already has for the same call later. */
@@ -30167,7 +30481,7 @@ char *param_2;  /* was int -- truncated g_interact_target; deref'd at param_2+2 
         }
       }
       iVar5 = ((DAT_0023bc94 + 1) * 0x10000 >> 0x10) << 0x13;
-      uVar2 = *(byte *)(g_player_object + 2) & 0x7f;
+      uVar2 = *(byte *)((char *)g_player_object + 2) & 0x7f;
       if (iVar5 >> 0x10 < (int)(short)uVar2) {
         sVar7 = uVar2 - (short)((uint)iVar5 >> 0x10);
       }
@@ -30283,6 +30597,14 @@ ushort *pick_object_under_cursor()
     }
 
     DAT_002020a8 = DAT_002020b0 + 2;
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[pick-grab] puVar3=%p type=0x%x classbit20=%d in_arena=%d off10=0x%x off13=0x%x off14=0x%x off15=0x%x off4000=%d\n",
+              (void *)puVar3, (unsigned)(*puVar3 & 0x1ff),
+              (int)((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20),
+              (int)object_ptr_in_arena((char *)puVar3),
+              (unsigned)*(byte *)((char *)puVar3 + 10), (unsigned)*(byte *)((char *)puVar3 + 0x13),
+              (unsigned)*(byte *)((char *)puVar3 + 0x14), (unsigned)*(byte *)((char *)puVar3 + 0x15),
+              (int)((*puVar3 & 0x4000) != 0));
     if ((((&DAT_00202c98)[(*puVar3 & 0x1ff) * 0xd] & 0x20) != 0) &&
        (iVar2 = object_ptr_in_arena(puVar3), iVar2 == 0)) {
       DAT_002020ec = 1;
@@ -30381,12 +30703,24 @@ void interact_default()
   }
   else {
     if ((iVar1 != 0) && (iVar2 == 0)) {
+      if (getenv("UW_DEBUG_THROW"))
+        fprintf(stderr, "[grab] target=%p type=0x%x bit8000=%d target3=0x%x target3_bit8000=%d target3_qty=0x%x in_arena=%d\n",
+                (void *)g_interact_target, (unsigned)(*g_interact_target & 0x1ff),
+                (int)((*g_interact_target & 0x8000) != 0), (unsigned)g_interact_target[3],
+                (int)((g_interact_target[3] & 0x8000) != 0), (unsigned)(g_interact_target[3] & 0xffc0),
+                (int)object_ptr_in_arena((char *)g_interact_target));
       if (((*g_interact_target & 0x8000) != 0) &&
          (((g_interact_target[3] & 0x8000) == 0 && ((g_interact_target[3] & 0xffc0) != 0x40)))) {
+        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
+          fprintf(stderr, "[grab] taking STACK-SPLIT branch, calling FUN_000470fc\n");
         puVar3 = (ushort *)FUN_000470fc();
         if (puVar3 == (ushort *)0x0) {
+          if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
+            fprintf(stderr, "[grab] FUN_000470fc returned NULL, bailing\n");
           return;
         }
+        if (getenv("UW_DEBUG_THROW") && (*g_interact_target & 0x1ff) == 0x80)
+          fprintf(stderr, "[grab] FUN_000470fc returned puVar3=%p (target=%p)\n", (void *)puVar3, (void *)g_interact_target);
         if (puVar3 != g_interact_target) {
           object_list_insert_head(g_interact_target + 2,puVar3);
         }
@@ -30608,7 +30942,7 @@ void interact_look()
         local_18 = (uint)(sVar1 == 2);
         FUN_0007fee8();
       }
-      message_scroll_print_wrapped(&DAT_0008522c);
+      message_scroll_print_wrapped(&s_scroll_newline_0008522c);
       if (local_18 != 0) {
         FUN_0007266c(g_interact_target,*(undefined1 *)(DAT_00086df8 + 0x2b));
       }
@@ -31026,6 +31360,8 @@ short param_1;
       if (DAT_000868d8 == 0) {
         sVar5 = Ordinal_2005(0x12,DAT_00085a6c[1] + 2);
         iVar7 = (int)sVar5;
+        if (getenv("UW_DEBUG_MODEBTN"))
+          fprintf(stderr, "[modebtn] resolved iVar7=%d\n", iVar7);
         if (5 < iVar7) {
           return;
         }
@@ -31727,6 +32063,9 @@ uint param_2;
   pcVar3 = (char *)FUN_000408fc(resolved);
   bVar1 = pcVar3[1];
   bVar2 = pcVar3[2];
+  if (getenv("UW_DEBUG_THROW") && param_1 == 0x80)
+    fprintf(stderr, "[throw-sprite] param_1(type)=0x%x resolved_frame=%d w=%d h=%d compressed_flag=%d\n",
+            (unsigned)param_1, resolved, (int)bVar1, (int)bVar2, (int)*pcVar3);
   if (*pcVar3 == '\x04') {
     pcVar3 = pcVar3 + 5;
   }
@@ -34781,7 +35120,8 @@ short * param_2;
 
 
 
-void FUN_00043e20(param_1)
+// was FUN_00043e20
+void build_player_save_record(param_1)
 undefined1 * param_1;
 
 {
@@ -34810,21 +35150,21 @@ undefined1 * param_1;
   } while (iVar5 != 0 && bVar1);
   param_1[4] = param_1[4] & 0x3f;
   param_1[5] = 0;
-  DAT_002028c0 = param_1 + 0x23;
-  DAT_002028c4 = param_1 + 0x5b;
-  DAT_002028cc = 0;
+  g_save_equip_table_ptr = param_1 + 0x23;
+  g_save_record_base_ptr = param_1 + 0x5b;
+  g_save_record_count = 0;
   iVar6 = 0;
   do {
-    puVar8 = (ushort *)(DAT_002028c0 + iVar6 * 2);
+    puVar8 = (ushort *)(g_save_equip_table_ptr + iVar6 * 2);
     uVar2 = *puVar8;
     *(char *)puVar8 = (char)(uVar2 & 0xffc0);
     *(char *)((char *)puVar8 + 1) = (char)((uVar2 & 0xffc0) >> 8);
-    pbVar9 = DAT_002028c0 + iVar6 * 2;
+    pbVar9 = g_save_equip_table_ptr + iVar6 * 2;
     *pbVar9 = *pbVar9 & 0x3f;
     pbVar9[1] = 0;
     iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
   } while (iVar6 < 0x13);
-  FUN_000440d0(g_player_object + 6,param_1 + 6);
+  serialize_inventory_link_chain((char *)g_player_object + 6,param_1 + 6);
   puVar4 = g_selected_object;
   if (g_cursor_holding_state == 1) {
     param_1[0x1b] = *g_selected_object;
@@ -34836,18 +35176,19 @@ undefined1 * param_1;
     param_1[0x21] = puVar4[6];
     param_1[0x22] = puVar4[7];
     if ((g_selected_object[1] & 0x80) == 0) {
-      FUN_000440d0(g_selected_object + 6,param_1 + 0x21);
+      serialize_inventory_link_chain(g_selected_object + 6,param_1 + 0x21);
     }
     sVar3 = encode_object_slot_index(g_selected_object);
     local_14[0] = local_14[0] & 0x3f | sVar3 << 6;
-    FUN_000533e4(local_14);
+    free_linked_object_recursive(local_14);
   }
   return;
 }
 
 
 
-bool FUN_00043fd8(param_1)
+// was FUN_00043fd8
+bool write_player_save_record(param_1)
 char * param_1;
 
 {
@@ -34857,13 +35198,13 @@ char * param_1;
   char acStack_114 [260];
   
   bVar3 = true;
-  DAT_002028c8 = Ordinal_1041(0x4000);
-  if (DAT_002028c8 == 0) {
+  g_save_record_buffer = Ordinal_1041(0x4000);
+  if (g_save_record_buffer == 0) {
     bVar3 = false;
   }
   else {
-    FUN_00043e20(DAT_002028c8);
-    DAT_002028cc = DAT_002028cc + 1;
+    build_player_save_record(g_save_record_buffer);
+    g_save_record_count = g_save_record_count + 1;
     if (param_1 != (char *)0x0) {
       iVar2 = -(int)param_1;
       do {
@@ -34876,13 +35217,13 @@ char * param_1;
       bVar3 = iVar2 != -1;
       if (bVar3) {
         FUN_00065b90();
-        FUN_00022884(iVar2,&DAT_002028cc,2);
-        FUN_00022884(iVar2,DAT_002028c8,DAT_002028cc * 8 + 0x5b);
+        FUN_00022884(iVar2,&g_save_record_count,2);
+        FUN_00022884(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b);
         Ordinal_553(iVar2);
       }
-      if (DAT_002028c8 != 0) {
+      if (g_save_record_buffer != 0) {
         Ordinal_1018();
-        DAT_002028c8 = 0;
+        g_save_record_buffer = 0;
       }
       FUN_00049924(0x200);
     }
@@ -34892,7 +35233,8 @@ char * param_1;
 
 
 
-void FUN_000440d0(param_1,param_2)
+// was FUN_000440d0
+void serialize_inventory_link_chain(param_1,param_2)
 undefined1 * param_1;
 byte * param_2;
 
@@ -34900,10 +35242,10 @@ byte * param_2;
   undefined1 *puVar1;
   undefined1 *puVar2;
   uint uVar3;
-  
+
   puVar1 = (undefined1 *)resolve_object_link(param_1);
   while (puVar1 != (undefined1 *)0x0) {
-    puVar2 = (undefined1 *)FUN_00044294();
+    puVar2 = (undefined1 *)alloc_save_record_slot();
     *puVar2 = *puVar1;
     puVar2[1] = puVar1[1];
     puVar2[2] = puVar1[2];
@@ -34912,14 +35254,14 @@ byte * param_2;
     puVar2[5] = puVar1[5];
     puVar2[6] = puVar1[6];
     puVar2[7] = puVar1[7];
-    uVar3 = (uint)DAT_002028cc;
+    uVar3 = (uint)g_save_record_count;
     *param_2 = *param_2 & 0x3f | (byte)((uVar3 & 0x3ff) << 6);
     param_2[1] = (byte)((uVar3 << 0x16) >> 0x18);
-    FUN_000441d8(param_1,param_2);
+    encode_equipped_item_index(param_1,param_2);
     param_1 = puVar1 + 4;
     param_2 = puVar2 + 4;
     if (((puVar1[1] & 0x80) == 0) && ((*(ushort *)(puVar1 + 6) & 0xffc0) != 0)) {
-      FUN_000440d0(puVar1 + 6,puVar2 + 6);
+      serialize_inventory_link_chain(puVar1 + 6,puVar2 + 6);
     }
     puVar1 = (undefined1 *)resolve_object_link(param_1);
   }
@@ -34928,7 +35270,24 @@ byte * param_2;
 
 
 
-void FUN_000441d8(param_1,param_2)
+/* Same pointer-truncation bug class as alloc_save_record_slot/save_record_slot_from_index just
+   below (their own comment has the full writeup) -- iVar4 was `int`,
+   truncating g_save_equip_table_ptr (a real `undefined1 *` heap pointer) to 32
+   bits before the following `*(char *)(iVar4 + 1)` write dereferenced
+   it back out as a wild 64-bit address. The sibling expression right
+   above it, `*(byte *)(iVar1 + g_save_equip_table_ptr)`, computes the identical
+   address inline without going through a truncating temporary, so it
+   stayed correct -- the same "half right, half wrong" pattern already
+   seen elsewhere this session (mixed styling from the same real,
+   unambiguously 32-bit-clean ARM source). This was the second,
+   previously-masked half of the QA-reported inventory-save crash: fixing
+   alloc_save_record_slot let execution get past its own wild pointer and into
+   this one. Confirmed via lldb: the crash backtrace attributed the
+   fault to serialize_inventory_link_chain's call-site return address (this function's own
+   prologue hadn't finished setting up x29/x30 yet when it faulted), not
+   a bug in serialize_inventory_link_chain itself. */
+// was FUN_000441d8
+void encode_equipped_item_index(param_1,param_2)
 ushort * param_1;
 undefined2 * param_2;
 
@@ -34936,17 +35295,17 @@ undefined2 * param_2;
   int iVar1;
   undefined2 uVar2;
   byte bVar3;
-  int iVar4;
+  char *iVar4;
   int iVar5;
-  
+
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
     if (((*(ushort *)(&g_equipped_items + iVar1) ^ *param_1) & 0xffc0) == 0) {
       uVar2 = *param_2;
-      iVar4 = iVar1 + DAT_002028c0;
+      iVar4 = iVar1 + g_save_equip_table_ptr;
       bVar3 = (byte)uVar2;
-      *(byte *)(iVar1 + DAT_002028c0) = (*(byte *)(iVar1 + DAT_002028c0) ^ bVar3) & 0x3f ^ bVar3;
+      *(byte *)(iVar1 + g_save_equip_table_ptr) = (*(byte *)(iVar1 + g_save_equip_table_ptr) ^ bVar3) & 0x3f ^ bVar3;
       *(char *)(iVar4 + 1) = (char)((ushort)uVar2 >> 8);
     }
     iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
@@ -34956,33 +35315,53 @@ undefined2 * param_2;
 
 
 
-int FUN_00044294()
+/* Was `int` -- g_save_record_base_ptr is a real `undefined1 *` heap pointer (the
+   inventory-serialization scratch buffer allocated in write_player_save_record/
+   build_player_save_record), so `g_save_record_base_ptr + g_save_record_count * 8` is real pointer
+   arithmetic, but returning it as a 32-bit `int` truncated the pointer
+   before the caller's `(undefined1 *)` cast sign-extended the truncated
+   low 32 bits back out to 64 -- producing a wild address. Confirmed via
+   lldb disassembly of this port's own compiled binary (not the original
+   ARM code): serialize_inventory_link_chain's call site does exactly `mov x8, x0; sxtw
+   x8, w8` on this function's return value, then dereferences it a few
+   instructions later -- the crash a QA report reproduced by saving with
+   an item in inventory (any inventory contents send serialize_inventory_link_chain
+   through the resolve_object_link/alloc_save_record_slot loop that hits this).
+   Same pointer-truncation bug class fixed many times elsewhere this
+   session, just via a return type this time instead of a parameter or
+   local. */
+// was FUN_00044294
+void *alloc_save_record_slot()
 
 {
-  DAT_002028cc = DAT_002028cc + 1;
-  return DAT_002028c4 + DAT_002028cc * 8;
+  g_save_record_count = g_save_record_count + 1;
+  return g_save_record_base_ptr + g_save_record_count * 8;
 }
 
 
 
-int FUN_000442bc(param_1)
+/* Same truncated-pointer-return bug as alloc_save_record_slot just above, same
+   fix. */
+// was FUN_000442bc
+void *save_record_slot_from_index(param_1)
 short param_1;
 
 {
-  int iVar1;
-  
+  void *iVar1;
+
   if (param_1 == 0) {
     iVar1 = 0;
   }
   else {
-    iVar1 = DAT_002028c4 + param_1 * 8;
+    iVar1 = g_save_record_base_ptr + param_1 * 8;
   }
   return iVar1;
 }
 
 
 
-void FUN_000442dc(param_1,param_2)
+// was FUN_000442dc
+void decode_equipped_item_index(param_1,param_2)
 undefined2 * param_1;
 ushort * param_2;
 
@@ -34993,7 +35372,7 @@ ushort * param_2;
   char *iVar4;
   int iVar5;
   
-  iVar4 = DAT_002028c0;
+  iVar4 = g_save_equip_table_ptr;
   iVar5 = 0;
   do {
     iVar1 = iVar5 * 2;
@@ -35010,7 +35389,8 @@ ushort * param_2;
 
 
 
-void FUN_00044398(param_1,param_2)
+// was FUN_00044398
+void deserialize_inventory_link_chain(param_1,param_2)
 byte * param_1;
 ushort * param_2;
 
@@ -35019,7 +35399,7 @@ ushort * param_2;
   uint uVar2;
   undefined1 *puVar3;
   
-  while (puVar3 = (undefined1 *)FUN_000442bc(*param_2 >> 6), puVar3 != (undefined1 *)0x0) {
+  while (puVar3 = (undefined1 *)save_record_slot_from_index(*param_2 >> 6), puVar3 != (undefined1 *)0x0) {
     puVar1 = (undefined1 *)alloc_object_slot(0);
     *puVar1 = *puVar3;
     puVar1[1] = puVar3[1];
@@ -35032,11 +35412,22 @@ ushort * param_2;
     uVar2 = encode_object_slot_index();
     *param_1 = *param_1 & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
     param_1[1] = (byte)((uVar2 << 0x16) >> 0x18);
-    FUN_000442dc(param_1,param_2);
+    decode_equipped_item_index(param_1,param_2);
     param_1 = puVar1 + 4;
     param_2 = (ushort *)(puVar3 + 4);
     if (((puVar3[1] & 0x80) == 0) && ((*(ushort *)(puVar3 + 6) & 0xffc0) != 0)) {
-      FUN_00044398(puVar1 + 6);
+      /* Dropped 2nd argument -- deserialize_inventory_link_chain takes (param_1, param_2) and
+         every other call site (both non-recursive ones, a few lines up
+         this file) passes both; this self-recursive call for a nested
+         container's own contents only passed the first. Same idiom as
+         serialize_inventory_link_chain's matching recursive call just above in this file
+         (`serialize_inventory_link_chain(puVar1 + 6,puVar2 + 6);`), which this function
+         otherwise exactly mirrors for the Load direction. Not yet known
+         to have crashed in practice (would only trigger loading a save
+         with a nested container in inventory), found while auditing this
+         function for the same pointer-truncation bug class as its Save-
+         side counterpart. */
+      deserialize_inventory_link_chain(puVar1 + 6,(ushort *)(puVar3 + 6));
     }
   }
   return;
@@ -35052,8 +35443,18 @@ char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
                    instead of being called with no argument at all. */
 
 {
-  int iVar1;
-  
+  /* Was `int iVar1;` -- truncated resolve_object_link's real 64-bit
+     `void *` return to 32 bits on this recompile (harmless on the
+     original 32-bit ARM binary). This code path (the recursive
+     inventory-unlink walk) was never actually exercised in any session
+     until Enter started working correctly in the save/load name-entry
+     field (see gx_stub.c's g_keychar_deferred) and a save finally ran
+     all the way through to this function -- confirmed via lldb: the
+     fault address was exactly g_player_object's low 32 bits (+0x1b),
+     the classic signature of a pointer silently narrowed to `int`. Same
+     bug class as this function's own param_1 fix above. */
+  char *iVar1;
+
   iVar1 = resolve_object_link(param_1);
   if (iVar1 != 0) {
     if ((*(byte *)(iVar1 + 1) & 0x80) == 0) {
@@ -35072,7 +35473,8 @@ char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
 
 
 
-void FUN_00044538(param_1)
+// was FUN_00044538
+void restore_player_save_record(param_1)
 undefined1 * param_1;
 
 {
@@ -35082,8 +35484,8 @@ undefined1 * param_1;
   int iVar4;
   int iVar5;
   
-  DAT_002028c0 = param_1 + 0x23;
-  DAT_002028c4 = param_1 + 0x5b;
+  g_save_equip_table_ptr = param_1 + 0x23;
+  g_save_record_base_ptr = param_1 + 0x5b;
   puVar2 = g_player_object;
   puVar3 = param_1;
   iVar4 = 0x1b;
@@ -35095,7 +35497,7 @@ undefined1 * param_1;
     puVar3 = puVar3 + 1;
     iVar4 = iVar5;
   } while (iVar5 != 0 && bVar1);
-  FUN_00044398(g_player_object + 6,param_1 + 6);
+  deserialize_inventory_link_chain((char *)g_player_object + 6,param_1 + 6);
   if (g_cursor_holding_state == 1) {
     puVar2 = (undefined1 *)alloc_object_slot(0);
     g_selected_object = puVar2;
@@ -35108,7 +35510,7 @@ undefined1 * param_1;
     puVar2[6] = param_1[0x21];
     puVar2[7] = param_1[0x22];
     if ((param_1[0x1c] & 0x80) == 0) {
-      FUN_00044398(g_selected_object + 6,param_1 + 0x21);
+      deserialize_inventory_link_chain(g_selected_object + 6,param_1 + 0x21);
     }
   }
   return;
@@ -35118,7 +35520,7 @@ undefined1 * param_1;
 
 undefined4 FUN_00044624(param_1)
 char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
-                   FUN_0006c0c0 passes in (the save-slot-copy path), which
+                   load_game_from_slot passes in (the save-slot-copy path), which
                    only started actually running once the save-directory-
                    creation fixes above stopped it from bailing out
                    earlier. Every other call site passes 0/NULL, so this
@@ -35138,7 +35540,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
   FUN_00066c90();
-  if ((DAT_002028c8 == 0) && (DAT_002028c8 = Ordinal_1041(0x4000), DAT_002028c8 == 0)) {
+  if ((g_save_record_buffer == 0) && (g_save_record_buffer = Ordinal_1041(0x4000), g_save_record_buffer == 0)) {
     return 0;
   }
   if (param_1 != 0) {
@@ -35157,17 +35559,17 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
       goto LAB_00044730;
     }
     FUN_00065d4c();
-    FUN_0002285c(iVar3,&DAT_002028cc,2);
-    FUN_0002285c(iVar3,DAT_002028c8,DAT_002028cc * 8 + 0x5b);
+    FUN_0002285c(iVar3,&g_save_record_count,2);
+    FUN_0002285c(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b);
     Ordinal_553(iVar3);
     FUN_0004638c();
   }
-  FUN_00044538(DAT_002028c8);
+  restore_player_save_record(g_save_record_buffer);
   refresh_player_equipment_effects();
 LAB_00044730:
-  if (DAT_002028c8 != 0) {
+  if (g_save_record_buffer != 0) {
     Ordinal_1018();
-    DAT_002028c8 = 0;
+    g_save_record_buffer = 0;
   }
   if ((param_1 != 0) && (-1 < DAT_00202080)) {
     object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
@@ -35959,7 +36361,7 @@ uint param_2;
     }
   }
   else {
-    puVar5 = (undefined1 *)FUN_00053644(g_player_object + 6,1,uVar4);
+    puVar5 = (undefined1 *)FUN_00053644((char *)g_player_object + 6,1,uVar4);
     if (puVar5 == (undefined1 *)0x0) {
       return 0;
     }
@@ -36334,7 +36736,7 @@ int param_5;
       drop_object_near_target(g_player_object,pDropObj,6,0);
     }
     decrement_object_count(puVar5);
-    FUN_00053334(0,puVar5,1);
+    discard_misplaced_object(0,puVar5,1);
     refresh_player_equipment_effects();
     pcVar9 = s_destroyed__00085ab4;
     uVar7 = 1;
@@ -37046,7 +37448,7 @@ undefined1 * param_1;
   uVar1 = *(ushort *)(param_1 + 6) >> 6;
   local_1c = 0x31;
   local_1b = 0;
-  sVar2 = FUN_0007ffa8(s_Move_how_many__00085c68,&local_1c,auStack_18,0,3);
+  sVar2 = scroll_text_entry_prompt(s_Move_how_many__00085c68,&local_1c,auStack_18,0,3);
   if ((sVar2 != 0x1b) && (sVar2 != 3)) {
     if ((sVar2 == 0) || (3 < sVar2)) {
       sVar2 = Ordinal_993(auStack_18);
@@ -37062,7 +37464,7 @@ undefined1 * param_1;
       }
       FUN_0007fe20(uVar5);
     }
-    message_scroll_print_wrapped(&DAT_0008522c);
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     if (((int)(short)uVar5 != 0) &&
        (puVar4 = param_1, (int)(short)uVar5 != (uint)(*(ushort *)(param_1 + 6) >> 6))) {
       puVar4 = (undefined1 *)alloc_object_slot(0);
@@ -37574,7 +37976,7 @@ uint param_2;
       }
       iVar5 = FUN_00028254(param_1,uVar6);
       if (iVar5 == 1) {
-        FUN_00053334(0,param_1,1);
+        discard_misplaced_object(0,param_1,1);
         g_cursor_holding_state = 1;
         g_selected_object = puVar7;
         FUN_00057cac(3);
@@ -37588,7 +37990,7 @@ uint param_2;
           place_held_item_in_empty_slot(puVar7,param_2);
         }
         deplete_object_count(puVar4);
-        FUN_00053334(0,puVar4,1);
+        discard_misplaced_object(0,puVar4,1);
       }
       uVar11 = 0;
     }
@@ -38202,7 +38604,7 @@ short param_2;
           message_scroll_print_wrapped(acStack_6c);
           FUN_0007863c(param_1[3] >> 6 | 0x600);
           message_scroll_print_wrapped();
-          puVar5 = &DAT_0008522c;
+          puVar5 = &s_scroll_newline_0008522c;
         }
         else {
           puVar5 = (undefined *)FUN_0007863c(uVar3 >> 6 | 0x600);
@@ -38312,7 +38714,7 @@ short param_2;
     }
     pcVar_str = (char *)FUN_0007863c(uVar9 | 0x1000);
     if (pcVar_str != (char *)0x0 && local_128[0] != '\0') {
-      FUN_0007fce8(1);
+      msg_scroll_panel_reset(1);
     }
     if (((*param_1 & 0xf) == 6) || (local_128[0] == '\0')) {
       /* was two separate calls with message_scroll_print_wrapped()'s arg
@@ -38328,7 +38730,7 @@ short param_2;
          actual real sign/inscription text ("We attacked the entrance
          with all manner of tools..."), confirmed via UW_DEBUG_OBJPOS. */
       message_scroll_print_wrapped((char *)format_object_display_name(pcVar_str,1,0));
-      message_scroll_print_wrapped(&DAT_0008522c);
+      message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     }
     if (local_128[0] != '\0') {
       FUN_0006fee8(local_128[0]);
@@ -39209,15 +39611,18 @@ int param_2;
 
 
 
-void FUN_00049c64(param_1,param_2,param_3)
+// was FUN_00049c64 -- look up DAT_00085d48_sine/DAT_00085f50_cosine by
+// the angle byte packed via pack_angle_byte, writing sin(angle) into
+// *param_2 and cos(angle) into *param_3.
+void heading_to_sine_cosine(param_1,param_2,param_3)
 uint param_1;
 undefined2 * param_2;
 undefined2 * param_3;
 
 {
   ushort uVar1;
-  
-  uVar1 = FUN_00049cc0(param_1,(param_1 & 0xffff) >> 8,0);
+
+  uVar1 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
   *param_2 = *(undefined2 *)(&DAT_00085d48 + (short)(uVar1 & 0xff) * 2);
   *param_3 = *(undefined2 *)(&DAT_00085f50 + (short)(uVar1 & 0xff) * 2);
   return;
@@ -39225,7 +39630,11 @@ undefined2 * param_3;
 
 
 
-uint FUN_00049cc0(param_1,param_2,param_3)
+// was FUN_00049cc0 -- pack param_1's low byte and param_2's low byte
+// into one 16-bit value, param_2's byte going into the high or low half
+// depending on param_3. Small shared helper used by
+// heading_to_sine_cosine and angle_to_screen_delta.
+uint pack_angle_byte(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
 int param_3;
@@ -39256,7 +39665,7 @@ undefined1 * param_3;
   int iVar3;
   ushort uVar4;
   
-  uVar4 = FUN_00049cc0(param_1,(param_1 & 0xffff) >> 8,0);
+  uVar4 = pack_angle_byte(param_1,(param_1 & 0xffff) >> 8,0);
   iVar1 = (short)(uVar4 & 0xff) * 2;
   iVar3 = (int)(short)((ushort)param_1 & 0xff);
   iVar1 = ((int)*(short *)(&DAT_00085d48 + iVar1) +
@@ -39286,12 +39695,12 @@ uint param_1;
   
   uVar3 = (param_1 & 0xffff) >> 8;
   uVar3 = (param_1 & 0xff ^ uVar3) - uVar3;
-  uVar4 = FUN_00049cc0(0,(uVar3 & 0xffff) >> 8,0);
+  uVar4 = pack_angle_byte(0,(uVar3 & 0xffff) >> 8,0);
   iVar1 = (uVar4 & 0xff) * 4;
   uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
   uVar4 = (uVar3 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
   uVar3 = (int)uVar4 >> 0x10;
-  uVar4 = FUN_00049cc0(uVar4 & 0xffff,(uVar4 & 0xffff) >> 8,0);
+  uVar4 = pack_angle_byte(uVar4 & 0xffff,(uVar4 & 0xffff) >> 8,0);
   return ((uVar4 & 0xff | uVar3 << 8) + (uint)uVar2 ^ uVar3) - uVar3;
 }
 
@@ -39308,12 +39717,12 @@ uint param_1;
   
   uVar4 = (param_1 & 0xffff) >> 8;
   uVar4 = (param_1 & 0xff ^ uVar4) - uVar4;
-  uVar3 = FUN_00049cc0(param_1,(uVar4 & 0xffff) >> 8,0);
+  uVar3 = pack_angle_byte(param_1,(uVar4 & 0xffff) >> 8,0);
   iVar1 = (uVar3 & 0xff) * 4;
   uVar2 = *(ushort *)(&DAT_00086260 + iVar1);
   uVar3 = (uVar4 & 0xff) * ((uint)*(ushort *)(&DAT_00086264 + iVar1) - (uint)uVar2 & 0xffff);
   uVar4 = (int)uVar3 >> 0x10;
-  uVar3 = FUN_00049cc0(uVar3 & 0xffff,(uVar3 & 0xffff) >> 8,0);
+  uVar3 = pack_angle_byte(uVar3 & 0xffff,(uVar3 & 0xffff) >> 8,0);
   return ((uVar3 & 0xff | uVar4 << 8) + (uint)uVar2 ^ uVar4) - uVar4;
 }
 
@@ -39354,7 +39763,12 @@ undefined4 param_1;
 
 
 
-bool FUN_0004a110()
+// was FUN_0004a110 -- read the cursor position, derive an "arc"
+// height/angle pair from it into DAT_00202a40/DAT_00202a3c (consumed by
+// spawn_object_near_player when placing the new copy), and return
+// whether the cursor is far enough from the player's own screen
+// position to count as a deliberate throw rather than a same-spot drop.
+bool compute_drop_aim_from_cursor()
 
 {
   int iVar1;
@@ -39392,6 +39806,9 @@ bool FUN_0004a110()
   sVar3 = Ordinal_2005(6,sVar5 + -0x38);
   sVar4 = Ordinal_2005(0x300,(int)DAT_0023beb4);
   DAT_00202a3c = sVar3 + sVar4;
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[dropaim] cursor(local_10,local_e)=(%d,%d) sVar5=%d result(0x24<sVar5)=%d\n",
+            (int)local_10, (int)local_e, (int)sVar5, (int)(0x24 < sVar5));
   return 0x24 < sVar5;
 }
 
@@ -39416,12 +39833,12 @@ short param_1;
     cVar3 = (&DAT_002027d2)[iVar1 * 3];
     DAT_00202a48 = (ushort)(byte)(&DAT_002027d1)[(short)cVar3 * 3];
     DAT_00202a38 = cVar3 + 0x10;
-    DAT_00202a4c = (ushort)(*(byte *)(g_player_object + 0x17) >> 2);
+    DAT_00202a4c = (ushort)(*(byte *)((char *)g_player_object + 0x17) >> 2);
     DAT_00202a44 = g_player_object;
-    DAT_00202a50 = (undefined2)((*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4);
+    DAT_00202a50 = (undefined2)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4);
     DAT_00202a54 = 1;
-    FUN_0004a110();
-    puVar6 = (ushort *)FUN_0004ad10();
+    compute_drop_aim_from_cursor();
+    puVar6 = (ushort *)spawn_object_near_player();
     if (puVar6 == (ushort *)0x0) {
       FUN_00078c80(0xfe);
     }
@@ -39474,7 +39891,7 @@ undefined2 param_3;
   DAT_00202a40 = 0;
   DAT_00202a44 = param_1;
   DAT_00202a48 = param_3;
-  FUN_0004ad10();
+  spawn_object_near_player();
   return;
 }
 
@@ -39494,7 +39911,7 @@ short param_2;
   DAT_00202a54 = 1;
   DAT_00202a44 = param_1;
   if (param_1 == g_player_object) {
-    FUN_0004a110();
+    compute_drop_aim_from_cursor();
   }
   else {
     if (DAT_002046c4 <= param_1) {
@@ -39505,7 +39922,7 @@ short param_2;
     DAT_00202a54 = (ushort)(DAT_002046c4 > param_1);
     DAT_00202a40 = 0;
   }
-  iVar1 = FUN_0004ad10();
+  iVar1 = spawn_object_near_player();
   return iVar1 != 0;
 }
 
@@ -39526,7 +39943,7 @@ int param_2;
   int iVar8;
   char cVar9;
   /* iVar4 is reused earlier in this function as a plain int (return
-     codes from FUN_0004a110/FUN_00051fa0) -- real uses, left alone --
+     codes from compute_drop_aim_from_cursor/FUN_00051fa0) -- real uses, left alone --
      but also held tilemap_lookup's real 64-bit pointer return,
      truncating it to 32 bits on this host. The NULL check added
      earlier (see below) only ever caught a truly-NULL result; a
@@ -39542,12 +39959,20 @@ int param_2;
   
   DAT_00202a4c = (ushort)(*(byte *)((char *)g_player_object + 0x17) >> 2);
   DAT_00202a50 = (short)((g_player_object[0xb] & 0x3f0) >> 4);
-  if ((*(short *)(DAT_00085a6c + 8) == 1) && (iVar4 = FUN_0004a110(), iVar4 != 0)) {
+  if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+    fprintf(stderr, "[throw-playertile] player tile=(%d,%d) fine_pos(DAT_00204880/2/4)=(%d,%d,%d) = world(%g,%g) tile-frac(%g,%g)\n",
+            (int)DAT_00202a4c, (int)DAT_00202a50,
+            (int)DAT_00204880, (int)DAT_00204882, (int)DAT_00204884,
+            (double)DAT_00204880 / 256.0, (double)DAT_00204882 / 256.0,
+            fmod((double)DAT_00204880 / 256.0, 1.0), fmod((double)DAT_00204882 / 256.0, 1.0));
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[branch-gate] game_mode=%d\n", (int)*(short *)(DAT_00085a6c + 8));
+  if ((*(short *)(DAT_00085a6c + 8) == 1) && (iVar4 = compute_drop_aim_from_cursor(), iVar4 != 0)) {
     DAT_00202a54 = 1;
     DAT_00202a44 = g_player_object;
     DAT_00202a38 = *param_1 & 0x1ff;
     DAT_00202a48 = 0xf;
-    puVar5 = (ushort *)FUN_0004ad10();
+    puVar5 = (ushort *)spawn_object_near_player();
     if (puVar5 != (ushort *)0x0) {
       uVar6 = (*puVar5 ^ *param_1) & 0x7fff ^ (uint)*param_1;
       *(char *)puVar5 = (char)uVar6;
@@ -39581,18 +40006,33 @@ int param_2;
     *(byte *)((char *)param_1 + 3) = *(byte *)((char *)param_1 + 3);
     cVar9 = ((&DAT_00202c91)[(CONCAT11(*(byte *)((char *)param_1 + 1),(byte)*param_1) & 0x1ff) * 0xd] &
             7) + ((&DAT_00202c91)[(*g_player_object & 0x1ff) * 0xd] & 7) + '\x01';
-    FUN_00069f2c(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),cVar9,&local_28
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-heading] facing_byte(g_player_object+0x18)&0x1f=%d fine_aim((g_player_object[1]&0x380)>>2)=%d heading=%d dist(cVar9)=%d start=(%d,%d)\n",
+              (int)((byte)g_player_object[0xc] & 0x1f), (int)((g_player_object[1] & 0x380) >> 2),
+              (int)(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2)),
+              (int)cVar9, (int)local_28, (int)local_26);
+    project_position_by_heading(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),cVar9,&local_28
                  ,&local_26);
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-heading] after 1st project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
+              (int)local_28, (int)local_26);
     iVar4 = FUN_00051fa0(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
                          (byte)g_player_object[1] & 0x7f,1,cVar9);
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-heading] 1st FUN_00051fa0 iVar4=%d\n", iVar4);
     if (iVar4 == 0) {
       bVar3 = true;
     }
     else {
-      FUN_00069f2c(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),3,&local_28,
+      project_position_by_heading(((byte)g_player_object[0xc] & 0x1f) + ((g_player_object[1] & 0x380) >> 2),3,&local_28,
                    &local_26);
+      if (getenv("UW_DEBUG_THROW"))
+        fprintf(stderr, "[throw-heading] after 2nd(retry) project_position_by_heading: local_28(X)=%d local_26(Y)=%d\n",
+                (int)local_28, (int)local_26);
       iVar4 = FUN_00051fa0(*param_1 & 0x1ff,0,(int)(short)local_28,(int)(short)local_26,
                            (byte)g_player_object[1] & 0x7f,1,cVar9);
+      if (getenv("UW_DEBUG_THROW"))
+        fprintf(stderr, "[throw-heading] 2nd FUN_00051fa0 iVar4=%d\n", iVar4);
       bVar3 = true;
       if (iVar4 != 0) {
         bVar3 = false;
@@ -39600,6 +40040,8 @@ int param_2;
     }
     iVar7 = (int)(short)local_28;
     iVar8 = (int)(short)local_26;
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-fallback] dropping via trajectory path: tile=(%d,%d)\n", iVar7 >> 3, iVar8 >> 3);
     pDropTile = (char *)tilemap_lookup(iVar7 >> 3,iVar8 >> 3);
     /* tilemap_lookup returns NULL for any tile coordinate outside
        0-63 (see its own bounds check) -- confirmed live: dragging an
@@ -39609,11 +40051,15 @@ int param_2;
        tilemap_lookup-result class as this file's other "wild tilemap
        access" crash (see the map-edge Y-wraparound note in memory.md);
        here it wasn't a real map-edge case, just a computed nearby-drop
-       tile (local_28/local_26, from FUN_00069f2c just above) that
+       tile (local_28/local_26, from project_position_by_heading just above) that
        apparently isn't always guaranteed to land in range. Treat it
        the same as the "no room to drop it" (bVar3) failure just below
        instead of dereferencing a wild pointer. */
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-fallback] bVar3(no-room)=%d pDropTile=%p\n", (int)bVar3, (void *)pDropTile);
     if ((bVar3) || (pDropTile == NULL)) {
+      if (getenv("UW_DEBUG_THROW"))
+        fprintf(stderr, "[throw-fallback] -> BAILED, item never inserted anywhere\n");
       if (param_2 != 0) {
         FUN_00078c80(0xfd);
       }
@@ -39625,6 +40071,12 @@ int param_2;
     *(byte *)((char *)param_1 + 3) =
          (byte)((uVar2 & 0x3ff) >> 8) |
          (byte)(((local_26 & 7 | (local_28 & 0x1fff) << 3) << 10) >> 8);
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-fallback] inserting param_1=%p type=0x%x at pDropTile+2=%p heightfield(param_1[7]/8)=%d\n",
+              (void *)param_1, (unsigned)(*param_1 & 0x1ff), (void *)(pDropTile + 2),
+              (int)*(short *)((char *)param_1 + 0xe));
+    DEBUG(INFO, "[drop] object id=0x%03x landed at tile=(%d,%d)\n",
+          (unsigned)(*param_1 & 0x1ff), iVar7 >> 3, iVar8 >> 3);
     object_list_append_tail((byte *)(pDropTile + 2),(char *)param_1);
     uVar2 = *param_1;
     if ((((uVar2 & 0x1f0) == 0x90) && (3 < (uVar2 & 0xf))) && ((uVar2 & 0xf) < 7)) {
@@ -39633,7 +40085,53 @@ int param_2;
       *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8);
       set_ambient_bias_without_light(0);
     }
-    FUN_00055f98(param_1,iVar7 >> 3,iVar8 >> 3,1);
+    {
+      ushort *pPostSettle = settle_dropped_object(param_1,iVar7 >> 3,iVar8 >> 3,1);
+      /* HACK, not disassembly-derived at this call site (though the
+         function it calls is real and unmodified): settle_dropped_
+         object's own reallocate_object_to_arena path (disassembly-
+         confirmed faithful) places a dropped/thrown object into the
+         MOBILE object arena via alloc_object_slot(1) -- see
+         https://wiki.ultimacodex.com/wiki/Ultima_Underworld_internal_formats,
+         which documents separate mobile/immobile object lists. A real
+         mobile object is expected to later transition into the
+         IMMOBILE list (alloc_object_slot(0)) once it stops moving --
+         FUN_0005596c does exactly that (decay/destroy roll, then
+         alloc_object_slot(0) + field copy + relink), but its only
+         known callers (FUN_00034fa4, itself only reached via
+         FUN_0003513c) fire solely on a dungeon-level transition, not
+         during ordinary same-level play -- there is no per-tick,
+         delta-time-driven object physics loop anywhere in this
+         codebase that would otherwise call it. Since this port
+         resolves a toss instantly (no real per-tick flight
+         simulation), call FUN_0005596c here -- immediately after the
+         object becomes mobile -- to synchronously complete the
+         mobile->immobile transition a real flight would eventually
+         trigger on its own. Confirmed live: without this, a thrown/
+         dropped object renders fine but is permanently stuck in the
+         mobile arena, which pick_object_under_cursor's Get-mode
+         shortcut (interact_default's only path to attach_picked_up_
+         object_to_cursor) requires NOT being in -- "You cannot pick
+         that up" forever. With this call, the object correctly shows
+         up as immobile and Get-mode pickup succeeds normally
+         (bug-throw-item.txt). On by default; set
+         UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
+         forever, un-pickable) behavior. */
+      if (pPostSettle != NULL && !getenv("UW_DISABLE_SETTLE_IMMOBILE")) {
+        ushort *pImmobile;
+        undefined2 uVarSavedTileX = DAT_0010144c;
+        undefined2 uVarSavedTileY = DAT_00101454;
+        DAT_0010144c = (ushort)(iVar7 >> 3);
+        DAT_00101454 = (ushort)(iVar8 >> 3);
+        pImmobile = FUN_0005596c(pPostSettle);
+        DAT_0010144c = uVarSavedTileX;
+        DAT_00101454 = uVarSavedTileY;
+        if (getenv("UW_DEBUG_THROW"))
+          fprintf(stderr, "[settle-immobile] FUN_0005596c(%p) -> %p in_arena=%d\n",
+                  (void *)pPostSettle, (void *)pImmobile,
+                  pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
+      }
+    }
   }
   return 1;
 }
@@ -39654,13 +40152,18 @@ undefined2 param_3;
   DAT_00202a44 = param_1;
   DAT_00202a4c = param_2;
   DAT_00202a50 = param_3;
-  FUN_0004ad10();
+  spawn_object_near_player();
   return;
 }
 
 
 
-ushort *FUN_0004ad10()
+// was FUN_0004ad10 -- spawn a copy of the "template" object (DAT_00202a44)
+// as a new object slot placed near the player's own tile (DAT_00202a4c/
+// DAT_00202a50), used by drop_held_object_near_player's "split a stack,
+// throw one" path. Crash site of the throw-item bug (tilemap_lookup's
+// pointer truncated into iVar8, see that fix's own comment below).
+ushort *spawn_object_near_player()
 
 {
   byte bVar1;
@@ -39671,14 +40174,37 @@ ushort *FUN_0004ad10()
   ushort *puVar6;
   uint uVar7;
   int iVar8;
+  char *pbTile;
   ushort uVar9;
-  
+
   puVar6 = (ushort *)alloc_object_slot(1);
   if (puVar6 == (ushort *)0x0) {
 LAB_0004b06c:
     puVar6 = (ushort *)0x0;
   }
   else {
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-height] seeding puVar6[1] from garbage=0x%x with template DAT_00202a44[1]=0x%x\n",
+              (unsigned)puVar6[1], (unsigned)DAT_00202a44[1]);
+    /* EXPERIMENTAL, not yet disassembly-verified: puVar6[1] (byte offset
+       2-3) starts as whatever alloc_object_slot's free-list handed back
+       (real leftover data from that slot's previous occupant -- alloc_
+       object_slot itself never clears it, and every later read-modify-
+       write of this field in this function, confirmed faithful to the
+       real disassembly, deliberately preserves bits 0-6 of it rather
+       than resetting them). Those exact bits are what the height field
+       (param_1[0xf]/[0x10] inside compute_object_placement_fields, and again at the
+       `iVar8=((byte)puVar6[1]&0x7f)<<3` line below) is computed from --
+       so a freshly-recycled slot gives the spawned item a height derived
+       from uninitialized memory. Seeding from the template object's
+       (DAT_00202a44, the player in this call path) own same field before
+       any of this function's bit-blending runs is the most defensible
+       guess at what the original game relied on already being true of a
+       reused slot, but has NOT been confirmed against real disassembly
+       the way this session's other fixes were -- flagged for a follow-up
+       pass rather than shipped as a confirmed fix. */
+    *(char *)(puVar6 + 1) = (char)DAT_00202a44[1];
+    *(char *)((char *)puVar6 + 3) = (char)(DAT_00202a44[1] >> 8);
     *(byte *)(puVar6 + 2) = (byte)puVar6[2] & 0x3f;
     *(undefined1 *)((char *)puVar6 + 5) = 0;
     uVar7 = CONCAT11(*(undefined1 *)((char *)puVar6 + 1),(char)*puVar6) | 0x8000;
@@ -39694,7 +40220,13 @@ LAB_0004b06c:
       uVar9 = (byte)DAT_00202a44[0xc] & 0x1f;
     }
     DAT_00202a54 = (DAT_00202a44[1] >> 2 & 0xffe0) + DAT_00202a40 + uVar9 & 0xff;
-    FUN_0005578c(puVar6,(int)DAT_00202a4c,(int)DAT_00202a50);
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-pos] DAT_00202a4c(tilex_in)=%d DAT_00202a50(tiley_in)=%d\n",
+              (int)DAT_00202a4c, (int)DAT_00202a50);
+    compute_object_placement_fields(puVar6,(int)DAT_00202a4c,(int)DAT_00202a50);
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-pos] after compute_object_placement_fields: puVar6[0xb]=0x%x tilex_out=%d tiley_out=%d\n",
+              (unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));
     uVar7 = puVar6[1] & 0xfc7f | ((int)(short)(DAT_00202a54 & 0xe0) >> 5) << 7;
     *(char *)(puVar6 + 1) = (char)uVar7;
     *(char *)((char *)puVar6 + 3) = (char)(uVar7 >> 8);
@@ -39727,12 +40259,16 @@ LAB_0004b06c:
              bVar3;
         *(byte *)((char *)puVar6 + 3) = bVar2;
       }
-      iVar8 = FUN_0004b288(puVar6,DAT_00202a44);
+      iVar8 = check_object_drop_height(puVar6,DAT_00202a44);
       if (iVar8 == 0) {
         free_object_slot(puVar6);
         goto LAB_0004b06c;
       }
     }
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-spawn] *puVar6=0x%x (&0x1c0=0x%x) puVar6[0xb]_before=0x%x DAT_00202a44_type=0x%x\n",
+              (unsigned)*puVar6, (unsigned)(*puVar6 & 0x1c0), (unsigned)puVar6[0xb],
+              (unsigned)(*DAT_00202a44 & 0x1ff));
     if ((*puVar6 & 0x1c0) != 0x40) {
       sVar5 = 0;
       iVar8 = (*(byte *)((char *)puVar6 + 3) & 0xe0) + ((puVar6[0xb] & 0xfc00) >> 2) + 0xf;
@@ -39750,6 +40286,9 @@ LAB_0004b06c:
       *(char *)(puVar6 + 9) = (char)sVar5;
       *(byte *)((char *)puVar6 + 0x15) = *(byte *)((char *)puVar6 + 0x15) & 0x7f;
     }
+    if (getenv("UW_DEBUG_THROW"))
+      fprintf(stderr, "[throw-spawn] puVar6[0xb]_after=0x%x tilex=%d tiley=%d\n",
+              (unsigned)puVar6[0xb], (int)(puVar6[0xb] >> 10), (int)((puVar6[0xb] & 0x3f0) >> 4));
     *(byte *)(puVar6 + 10) = (char)DAT_00202a3c * '\b' + 0x87U & 0xf9 | 1;
     *(byte *)((char *)puVar6 + 0x13) =
          ((byte)DAT_00202a48 ^ *(byte *)((char *)puVar6 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar6 + 0x13)
@@ -39759,16 +40298,66 @@ LAB_0004b06c:
       *(char *)(puVar6 + 3) = (char)(uVar9 & 0xffc0);
       *(char *)((char *)puVar6 + 7) = (char)((uVar9 & 0xffc0) >> 8);
     }
-    iVar8 = tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
-    object_list_insert_head(iVar8 + 2,puVar6);
+    /* Was `iVar8 = tilemap_lookup(...); object_list_insert_head(iVar8 + 2,...)`
+       -- tilemap_lookup returns a real 64-bit tile-record pointer, but
+       iVar8 is `int` (used throughout this function for genuine small
+       integer scratch math, so not safe to widen wholesale); truncating
+       the pointer into it and adding +2 produced a wild, non-dereferenced
+       -able address that crashed inside object_list_insert_head the
+       moment this (previously dead/untested) throw-item spawn path first
+       got real exercise. Same class as object_list_insert_head/
+       object_list_append_tail/discard_misplaced_object's own params, already fixed
+       elsewhere -- this just never got a properly-typed local to feed
+       them. Confirmed live: crashed 100% of the time replaying the
+       user's bug-throw-item.txt once its trailing WAIT gave the object-
+       drop tick enough time to run. */
+    pbTile = (char *)tilemap_lookup(puVar6[0xb] >> 10,(puVar6[0xb] & 0x3f0) >> 4);
+    DEBUG(INFO, "[drop] object id=0x%03x landed at tile=(%d,%d)\n",
+          (unsigned)(*puVar6 & 0x1ff), puVar6[0xb] >> 10, (puVar6[0xb] & 0x3f0) >> 4);
+    object_list_insert_head(pbTile + 2,puVar6);
     FUN_00072fc8(10,puVar6,0);
+    /* HACK, not disassembly-derived at this call site -- same fix as
+       drop_held_object_near_player's trajectory branch, see that
+       comment for the full explanation. This function (like that one)
+       places its result via alloc_object_slot(1), the MOBILE object
+       arena; complete the mobile->immobile settle transition
+       synchronously here too, since nothing else will. On by default;
+       set UW_DISABLE_SETTLE_IMMOBILE to fall back to the old (mobile-
+       forever, un-pickable) behavior. FUN_0005596c unconditionally
+       frees its input object (via its own discard_misplaced_object(
+       ...,1) call) regardless of whether the immobile copy succeeds,
+       so puVar6 must always be reassigned to its return value here --
+       including NULL, on the (class-gated, rare) chance it rolled the
+       object's own decay/destroy check -- never left pointing at the
+       now-freed original. */
+    if (!getenv("UW_DISABLE_SETTLE_IMMOBILE")) {
+      ushort *pImmobile;
+      undefined2 uVarSavedTileX = DAT_0010144c;
+      undefined2 uVarSavedTileY = DAT_00101454;
+      DAT_0010144c = (ushort)(puVar6[0xb] >> 10);
+      DAT_00101454 = (ushort)((puVar6[0xb] & 0x3f0) >> 4);
+      pImmobile = FUN_0005596c(puVar6);
+      DAT_0010144c = uVarSavedTileX;
+      DAT_00101454 = uVarSavedTileY;
+      if (getenv("UW_DEBUG_THROW"))
+        fprintf(stderr, "[settle-immobile] FUN_0005596c(%p) -> %p in_arena=%d\n",
+                (void *)puVar6, (void *)pImmobile,
+                pImmobile ? (int)object_ptr_in_arena((char *)pImmobile) : -1);
+      puVar6 = pImmobile;
+    }
   }
   return puVar6;
 }
 
 
 
-undefined4 FUN_0004b288(param_1,param_2)
+// was FUN_0004b288 -- validity gate for spawn_object_near_player's
+// freshly-copied object (param_1) placed near param_2's position: runs
+// the same collision_build_height_field/collision_height_envelope
+// machinery settle_dropped_object uses, returning 0 if the copy can't
+// actually rest here (caller frees it and falls back to the trajectory
+// placement path instead).
+undefined4 check_object_drop_height(param_1,param_2)
 ushort * param_1;
 ushort * param_2;
 
@@ -39780,11 +40369,40 @@ ushort * param_2;
   int iVar5;
   uint uVar6;
   uint uVar7;
-  ushort local_38 [6];
-  ushort local_2c;
-  ushort local_2a;
-  
-  DAT_00202c6c = local_38;
+  /* Was three separate C locals (`ushort local_38[6]; ushort local_2c;
+     ushort local_2a;`), but collision_height_envelope/collision_build_
+     height_field write through DAT_00202c6c-relative offset arithmetic
+     expecting ONE contiguous struct (the same "collision working block"
+     layout already fixed globally as DAT_002049c8_backing, see its own
+     comment) -- Ghidra's own local-variable naming here reflects the
+     real ARM stack frame it disassembled (local_38/local_2c/local_2a =
+     stack offsets -0x38/-0x2c/-0x2a), and the gaps between those names
+     exactly match local_38's own 12-byte size then 2 more bytes, i.e.
+     local_2c sits at +0xc and local_2a at +0xe relative to local_38 --
+     exactly where DAT_002049d4/DAT_002049d6 (the tile property-flag
+     pair collision_build_height_field writes) live in the already-fixed
+     global layout. As separate, unbacked C locals here, nothing
+     guaranteed they were laid out contiguously on THIS recompile's
+     stack, so the indexed writes and the by-name reads of local_2c/
+     local_2a could land on unrelated stack memory -- the identical bug
+     class fixed once already for the global struct (commit ed49786),
+     just recurring in this function's own private local instance of
+     the same pattern. Confirmed live: this function computes the
+     collision-refined landing tile for a thrown/dropped item, and with
+     local_2c/local_2a reading garbage, the gate at the bottom of this
+     function (`(local_2a|local_2c)&0x300`) and the final tile-position
+     write it guards behaved unpredictably -- root cause of "the thrown
+     item disappears" (it got linked into a essentially-random, usually
+     off in a map corner, tile's object list instead of one near the
+     player). Backed as one real buffer, sized to match
+     DAT_002049c8_backing's own generous 64 bytes for the same safety
+     margin. */
+  unsigned char local_backing[64];
+#define local_38 ((ushort *)local_backing)
+#define local_2c (*(ushort *)(local_backing + 0xc))
+#define local_2a (*(ushort *)(local_backing + 0xe))
+
+  DAT_00202c6c = local_backing;
   uVar2 = *param_1;
   uVar3 = encode_object_slot_index(param_1);
   *(byte *)(DAT_00202c6c + 5) = (byte)uVar3;
@@ -39792,20 +40410,59 @@ ushort * param_2;
   iVar5 = (short)(uVar2 & 0x1ff) * 0xd;
   *(byte *)(DAT_00202c6c + 4) = (&DAT_00202c91)[iVar5] & 7;
   *(undefined *)((char *)DAT_00202c6c + 9) = (&DAT_00202c90)[iVar5];
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] ENTER param_1=%p param_1[0xb]=0x%x param_1+3byte=0x%x\n",
+            (void *)param_1, (unsigned)param_1[0xb], (unsigned)*(byte *)((char *)param_1 + 3));
   iVar5 = ((param_1[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)param_1 + 3) >> 5);
   *(byte *)DAT_00202c6c = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 1) = (byte)((uint)iVar5 >> 8);
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] X computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
+  /* Was `DAT_00202c6c + 1` for Y's low byte -- disassembly-confirmed
+     (0x4b288 @ 0x4b3b8: `strb r3,[r1,#0x2]`) the real write target is
+     offset+2, not +1. Offset+1 is X's own high byte (just written two
+     lines above); with the wrong offset, Y's low byte clobbered X's
+     high byte immediately after it was set, corrupting the "near drop"
+     landing-tile lookup this function computes (confirmed live: X read
+     back as garbage like 6912/8=864, off the 64-tile map, sending
+     collision_build_height_field's tilemap_lookup out of bounds ->
+     early-return -> the collision-flags gate below reads uninitialized
+     stack instead of real data -> always looks blocked -> this whole
+     "place it near the player" path always silently failed and fell
+     back to the far/trajectory throw path instead). */
   iVar5 = ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2) + ((param_1[0xb] & 0x3f0) >> 1);
-  *(byte *)(DAT_00202c6c + 1) = (byte)iVar5;
+  *(byte *)((char *)DAT_00202c6c + 2) = (byte)iVar5;
   *(byte *)((char *)DAT_00202c6c + 3) = (byte)((uint)iVar5 >> 8);
-  FUN_00069f2c(((byte)param_1[0xc] & 0x1f) + ((param_1[1] & 0x380) >> 2),
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] Y computed iVar5=%d (tile=%d)\n", iVar5, iVar5 >> 3);
+  /* Both pointer args below were `DAT_00202c6c`/`DAT_00202c6c + 1` --
+     the Y output must be `+2` to match the real Y storage (offset+2/+3,
+     see the fix just above); `+1` is X's own high byte. Disassembly-
+     confirmed (0x4b288 @ 0x4b458's `bl 0x69f2c` args). */
+  project_position_by_heading(((byte)param_1[0xc] & 0x1f) + ((param_1[1] & 0x380) >> 2),
                ((&DAT_00202c91)[(*param_1 & 0x1ff) * 0xd] & 7) +
                ((&DAT_00202c91)[(*param_2 & 0x1ff) * 0xd] & 7) + '\x04',DAT_00202c6c,
-               DAT_00202c6c + 1);
-  *(byte *)(DAT_00202c6c + 2) = (byte)param_1[1] & 0x7f;
+               DAT_00202c6c + 2);
+  /* Was `DAT_00202c6c + 2` -- disassembly-confirmed (0x4b288 @ 0x4b474:
+     `strb r3,[r0,#0x4]`) the real target is offset+4/+5 (the same "Z"
+     field this function's own later collision calls read via
+     `*(short *)(DAT_00202c6c + 4)`), not offset+2 (Y's own low byte,
+     just written above -- this write would otherwise immediately
+     re-clobber it). */
+  *(byte *)((char *)DAT_00202c6c + 4) = (byte)param_1[1] & 0x7f;
   *(byte *)((char *)DAT_00202c6c + 5) = 0;
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] pre-collision local_38[0..5]=%d,%d,%d,%d,%d,%d offset4(Z)=%d\n",
+            (int)local_38[0], (int)local_38[1], (int)local_38[2], (int)local_38[3],
+            (int)local_38[4], (int)local_38[5], (int)*(short *)((char *)DAT_00202c6c + 4));
   collision_height_envelope(0,1);
   collision_build_height_field(0);
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-refine] post-collision local_2c=%d local_2a=%d DAT_00202c6c[0]=%d DAT_00202c6c[1]=%d gate=0x%x ref_height(off4)=%d sampled_floor(off0x10)=%d steplim(off8)=%d\n",
+            (int)local_2c, (int)local_2a, (int)DAT_00202c6c[0], (int)DAT_00202c6c[1],
+            (unsigned)((local_2a | local_2c) & 0x300),
+            (int)*(short *)((char *)DAT_00202c6c + 4), (int)(byte)DAT_00202c6c[0x10],
+            (int)(byte)DAT_00202c6c[8]);
   if (((local_2a | local_2c) & 0x300) == 0) {
     if ((byte)DAT_00202c6c[10] != 0) {
       FUN_00051dd0();
@@ -39835,6 +40492,9 @@ ushort * param_2;
 LAB_0004b4d4:
     uVar4 = 0;
   }
+#undef local_38
+#undef local_2c
+#undef local_2a
   return uVar4;
 }
 
@@ -43296,6 +43956,10 @@ uint param_1;
   uVar2 = collision_sample_floor_height(4,&local_14);
   *(undefined1 *)(DAT_00202c6c + 0x10) = uVar2;
   uVar3 = (uint)*(byte *)(DAT_00202c6c + 0x10);
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-corner-flags] DAT_00202c78=0x%x shape=%d uVar3(sampled)=%d off4=%d param_1(steplim)=%d\n",
+            (unsigned)DAT_00202c78, (int)(DAT_00202c78 & 0xf), (int)uVar3,
+            (int)*(short *)(DAT_00202c6c + 4), (int)param_1);
   if (uVar3 == 0x80) {
     uVar4 = *(ushort *)(DAT_00202c6c + 0xc) | 0x200;
   }
@@ -43399,6 +44063,9 @@ uint param_1;
   DAT_00202c6c[0xe] = (byte)*(undefined2 *)pbVar1;
   DAT_00202c6c[0xf] = (byte)((ushort)*(undefined2 *)pbVar1 >> 8);
   DAT_00202c6c[0x11] = DAT_00202c6c[0x10];
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-inside-bhf] after-copy d8=%d d9=%d uVar3(DAT_00202c6c[8])=%d\n",
+            (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11], (int)(uint)(ushort)DAT_00202c6c[8]);
   puVar2 = _DAT_00202c34;
   uVar3 = (ushort)DAT_00202c6c[8];
   if (uVar3 != 0) {
@@ -43496,12 +44163,21 @@ uint param_1;
       iVar7 = (iVar7 + 1) * 0x1000000 >> 0x18;
     } while (iVar7 < 4);
   }
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-bhf-end] d8=%d d9=%d macro_d8=%d macro_d9=%d\n",
+            (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11],
+            (int)DAT_002049d8, (int)DAT_002049d9);
   return;
 }
 
 
 
-void FUN_00051320()
+// was FUN_00051320 -- classify the blocked-corner shape of the current
+// wall hit (from the DAT_00202bfb corner-flag table) and pick which of
+// the 8 candidate octant headings in DAT_000869a8 to deflect toward,
+// writing the choice into DAT_00202c6c[0x12]. Called from
+// sweep_slide_along_wall.
+void resolve_wall_slide_corner()
 
 {
   char cVar1;
@@ -44227,8 +44903,8 @@ int param_6;
   
   iVar1 = find_object_placement(param_4,param_1,param_2,param_3,param_5);
   if (iVar1 == 0) {
-    if ((param_6 == 0) && (iVar1 = FUN_00052c5c(10,param_4), iVar1 != 0)) {
-      FUN_000534a8(0,param_4);
+    if ((param_6 == 0) && (iVar1 = roll_object_destroy_chance(10,param_4), iVar1 != 0)) {
+      unlink_and_free_object(0,param_4);
       return 0;
     }
     uVar2 = *(ushort *)(param_4 + 2) & 0x3ff;
@@ -44328,7 +45004,7 @@ short param_5;
   object_list_append_tail(pTile + 2,param_1);
   iVar5 = object_ptr_in_arena(param_1);
   if (iVar5 == 0) {
-    FUN_00055f98(param_1,(int)uVar4 >> 3,(int)uVar6 >> 3,1);
+    settle_dropped_object(param_1,(int)uVar4 >> 3,(int)uVar6 >> 3,1);
   }
   else {
     uVar4 = ((int)(short)((ushort)uVar4 & 0x1f8) >> 3) << 6 |
@@ -44506,10 +45182,10 @@ void reset_level_object_arena()
     puVar1 = puVar1 + 1;
   } while (iVar3 < 0x400);
   if (g_player_object != 0) {
-    *(byte *)(g_player_object + 4) = *(byte *)(g_player_object + 4) & 0x3f;
-    *(undefined1 *)(g_player_object + 5) = 0;
-    *(byte *)(g_player_object + 6) = *(byte *)(g_player_object + 6) & 0x3f;
-    *(undefined1 *)(g_player_object + 7) = 0;
+    *(byte *)((char *)g_player_object + 4) = *(byte *)((char *)g_player_object + 4) & 0x3f;
+    *(undefined1 *)((char *)g_player_object + 5) = 0;
+    *(byte *)((char *)g_player_object + 6) = *(byte *)((char *)g_player_object + 6) & 0x3f;
+    *(undefined1 *)((char *)g_player_object + 7) = 0;
     FUN_000465c8();
   }
   DAT_00250770 = 0;
@@ -44599,7 +45275,14 @@ ushort * param_1;
 
 
 
-undefined4 FUN_00052c5c(param_1,param_2)
+// was FUN_00052c5c -- disassembly-confirmed real math, not a bug: with
+// param_1=10 (discard_misplaced_object's only caller value) this
+// computes `rand_below(10) < (10 + rand_below(3))`, and since
+// rand_below(10) maxes at 9 while the threshold is always >=10, the
+// roll ALWAYS succeeds under normal conditions (unless the object is
+// itself gated by roll_object_destroy_chance's own nested container
+// check via free_linked_object_recursive/FUN_00052af4).
+undefined4 roll_object_destroy_chance(param_1,param_2)
 short param_1;
 char *param_2;  /* was `int` -- truncated the real object-record pointer
                    (dereferenced via casts, passed to resolve_object_link
@@ -44651,7 +45334,7 @@ ushort * param_2;
   
   if ((*param_2 & 0xffc0) != 0) {
     uVar1 = resolve_object_link(param_2);
-    FUN_00052c5c(param_1,uVar1);
+    roll_object_destroy_chance(param_1,uVar1);
   }
   return 0;
 }
@@ -44680,7 +45363,7 @@ short param_2;
   
   iVar10 = 0;
   iVar7 = 0;
-  uVar2 = *(ushort *)(g_player_object + 0x16);
+  uVar2 = *(ushort *)((char *)g_player_object + 0x16);
   local_38 = (int)(short)(uVar2 >> 10);
   local_30 = 10 - (short)param_1;
   iVar9 = DAT_002029cc;
@@ -44699,7 +45382,7 @@ short param_2;
           iVar4 = FUN_00052d24(param_1,local_3c);
           if (iVar4 != 0) {
             uVar5 = FUN_000535fc(local_3c[0] >> 6);
-            FUN_000534a8((ushort *)(iVar9 + 2),uVar5);
+            unlink_and_free_object((ushort *)(iVar9 + 2),uVar5);
             iVar10 = iVar10 + 1;
             if ((int)param_2 <= iVar10 * 0x10000 >> 0x10) {
               return;
@@ -44931,7 +45614,17 @@ byte * param_2;
 
 
 
-ushort *FUN_00053334(param_1,param_2,param_3)
+// was FUN_00053334 -- despite the name this settled on, it's a DESTROY
+// path, not a placement one: when param_3==0 it rolls
+// roll_object_destroy_chance(10, param_2), which (see that function's
+// own comment) returns true with ~100% probability under normal
+// conditions, then unconditionally unlinks and frees param_2 via
+// unlink_and_free_object. Reached by settle_dropped_object whenever an
+// object lands somewhere it can't actually rest (floor too high/low,
+// blocked corner, etc.) -- confirmed via disassembly this "destroy the
+// misplaced object" behavior is genuine original-game logic, not a
+// translation bug.
+ushort *discard_misplaced_object(param_1,param_2,param_3)
 /* Was `int param_1` -- a real object-record pointer (drop_held_object_
    near_player passes pDropTile+2, a resolve_object_link-style address)
    truncated to 32 bits on this 64-bit host, same class as several
@@ -44945,7 +45638,7 @@ int param_3;
   int iVar2;
   ushort local_10 [2];
 
-  /* Dropped argument: FUN_00052c5c's declared signature takes
+  /* Dropped argument: roll_object_destroy_chance's declared signature takes
      (short, char*) and dereferences its second parameter -- but it was
      called here with only the literal 10, leaving the real argument
      (param_2, the object being placed) as leftover-register garbage.
@@ -44954,17 +45647,17 @@ int param_3;
      frames deeper (FUN_00052af4/FUN_00052bac) dereferencing that
      garbage pointer -- this whole collision/placement path had never
      been exercised by any earlier fix or test this session. */
-  if ((param_3 != 0) || (iVar2 = FUN_00052c5c(10,(char *)param_2), iVar2 != 0)) {
+  if ((param_3 != 0) || (iVar2 = roll_object_destroy_chance(10,(char *)param_2), iVar2 != 0)) {
     uVar1 = encode_object_slot_index(param_2);
     local_10[0] = local_10[0] & 0x3f | uVar1 << 6;
     if ((*param_2 & 0x1c0) == 0x1c0) {
       FUN_000809cc(uVar1 & 0x3ff);
     }
     if (param_1 == 0) {
-      FUN_000533e4(local_10);
+      free_linked_object_recursive(local_10);
     }
     else {
-      FUN_000534a8(param_1,param_2);
+      unlink_and_free_object(param_1,param_2);
     }
     param_2 = (ushort *)0x0;
   }
@@ -44973,7 +45666,12 @@ int param_3;
 
 
 
-void FUN_000533e4(param_1)
+// was FUN_000533e4 -- resolve param_1 (a link-field address) to the
+// object it points at and delete it: recurse into two nested-object
+// link fields first (offsets 4/6, e.g. contained items or a wielded
+// weapon), then unlink+free the object itself. param_1==0x180 class
+// (containers) instead defer to FUN_0007e610.
+void free_linked_object_recursive(param_1)
 char *param_1;  /* was `undefined4` -- truncated the real object-record
                    pointer (passed straight to resolve_object_link),
                    latent until that call started actually using it */
@@ -44988,11 +45686,11 @@ char *param_1;  /* was `undefined4` -- truncated the real object-record
     }
     else {
       if ((puVar1[2] & 0xffc0) != 0) {
-        FUN_000533e4();
+        free_linked_object_recursive();
       }
       if ((*puVar1 & 0x8000) == 0) {
         if ((puVar1[3] & 0xffc0) != 0) {
-          FUN_000533e4();
+          free_linked_object_recursive();
         }
       }
       object_list_unlink(param_1,puVar1);
@@ -45004,7 +45702,12 @@ char *param_1;  /* was `undefined4` -- truncated the real object-record
 
 
 
-void FUN_000534a8(param_1,param_2)
+// was FUN_000534a8 -- delete param_2: free its own "contains" link
+// field first (via free_linked_object_recursive, for a container/
+// wielded item), unlink param_2 from the list headed at param_1 (if
+// given), then free its slot. discard_misplaced_object's actual
+// deletion step.
+void unlink_and_free_object(param_1,param_2)
 /* Was `int param_1; int param_2;` -- both real object-record pointers
    (param_2 is dereferenced directly; both are forwarded to
    object_list_unlink/free_object_slot, which already declare pointer
@@ -45015,15 +45718,15 @@ char *param_1;
 char *param_2;
 
 {
-  /* Dropped argument: FUN_000533e4 takes the address of a link field
+  /* Dropped argument: free_linked_object_recursive takes the address of a link field
      to recursively free (its own declared param_1) -- here that's
      param_2's own "contains" field (+6, this file's standard
      container-contents offset) -- but it was called bare, same idiom
-     as FUN_000533e4's own two internal self-recursive calls just above
+     as free_linked_object_recursive's own two internal self-recursive calls just above
      this function (not touched: not reached by this session's specific
-     repro, and FUN_000533e4 already tolerates a NULL resolve safely). */
+     repro, and free_linked_object_recursive already tolerates a NULL resolve safely). */
   if (((*(byte *)(param_2 + 1) & 0x80) == 0) && ((*(ushort *)(param_2 + 6) & 0xffc0) != 0)) {
-    FUN_000533e4(param_2 + 6);
+    free_linked_object_recursive(param_2 + 6);
   }
   if (param_1 != 0) {
     object_list_unlink((byte *)param_1,(byte *)param_2);
@@ -46084,7 +46787,7 @@ ushort * param_2;
   if ((*param_1 & 0x1c0) != 0x40) {
     if (DAT_002046c4 < param_1) {
       if ((param_2[10] != 0 || param_2[8] != 0) || param_2[5] != 0) {
-        param_1 = (ushort *)FUN_00055610(param_1);
+        param_1 = (ushort *)reallocate_object_to_arena(param_1);
       }
     }
     else if ((param_2[10] == 0 && param_2[8] == 0) && param_2[5] == 0) {
@@ -46094,7 +46797,7 @@ ushort * param_2;
       if (iVar5 == 0) {
         return 0;
       }
-      param_1 = (ushort *)FUN_00055f98(iVar5,(int)(short)DAT_0010144c,(int)DAT_00101454,0);
+      param_1 = (ushort *)settle_dropped_object(iVar5,(int)(short)DAT_0010144c,(int)DAT_00101454,0);
       if (param_1 == (ushort *)0x0) {
         return 0;
       }
@@ -46162,7 +46865,18 @@ LAB_0005559c:
 
 
 
-ushort *FUN_00055610(param_1)
+// was FUN_00055610 -- the "spawn and replace" mechanism: allocate a
+// fresh low-region object slot (alloc_object_slot(1), same allocator
+// spawn_object_near_player uses -- the only region emit_tile_objects's
+// object_ptr_in_arena gate treats as renderable), copy param_1's key
+// fields into it, recompute its placement via
+// compute_object_placement_fields, then unlink param_1 from its tile's
+// object list, free its slot, and insert_head the new copy in its
+// place. Exists to move an object that was never allocated in the
+// renderable arena (e.g. a chargen-default inventory item dropped for
+// the first time) into it; without this an object can be correctly
+// linked into a tile's list yet still never actually render.
+ushort *reallocate_object_to_arena(param_1)
 ushort * param_1;
 
 {
@@ -46170,6 +46884,22 @@ ushort * param_1;
   ushort *puVar2;
 
   iVar1 = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
+  if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80) {
+    ushort *pWalk;
+    int n = 0;
+    fprintf(stderr, "[replace] ENTER type=0x%x param_1=%p tile=(%d,%d) tilerec=%p\n",
+            (unsigned)(*param_1 & 0x1ff), (void *)param_1,
+            (int)DAT_0010144c, (int)DAT_00101454, (void *)iVar1);
+    fprintf(stderr, "[replace] pre-unlink list @ %p:", (void *)(iVar1 + 2));
+    pWalk = (ushort *)resolve_object_link(iVar1 + 2);
+    while (pWalk != NULL && n < 20) {
+      fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk, (unsigned)(*pWalk & 0x1ff),
+              pWalk == param_1 ? "<-TARGET" : "");
+      pWalk = (ushort *)resolve_object_link((ushort *)((char *)pWalk + 4));
+      n++;
+    }
+    fprintf(stderr, " (n=%d)\n", n);
+  }
   puVar2 = (ushort *)alloc_object_slot(1);
   if (puVar2 == (ushort *)0x0) {
     puVar2 = (ushort *)0x0;
@@ -46183,7 +46913,7 @@ ushort * param_1;
     *(undefined1 *)((char *)puVar2 + 5) = *(undefined1 *)((char *)param_1 + 5);
     *(char *)(puVar2 + 3) = (char)param_1[3];
     *(undefined1 *)((char *)puVar2 + 7) = *(undefined1 *)((char *)param_1 + 7);
-    FUN_0005578c(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
+    compute_object_placement_fields(puVar2,(int)DAT_0010144c,(int)DAT_00101454);
     *(byte *)(puVar2 + 4) = (byte)param_1[2] & 0x3f;
     if (((*param_1 & 0x1c0) != 0x140) && (((&DAT_00202c9a)[(*param_1 & 0x1ff) * 0xd] & 3) != 2)) {
       *(byte *)(puVar2 + 0xd) = (byte)(param_1[1] >> 7) & 7;
@@ -46191,16 +46921,44 @@ ushort * param_1;
     if ((*puVar2 & 0x1c0) == 0x1c0) {
       FUN_00080e00(puVar2,param_1);
     }
+    if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+      fprintf(stderr, "[replace] new copy puVar2=%p type=0x%x height(f/10)=%d in_arena=%d\n",
+              (void *)puVar2, (unsigned)(*puVar2 & 0x1ff),
+              (int)*(short *)((char *)puVar2 + 0xf), (int)object_ptr_in_arena((char *)puVar2));
     object_list_unlink(iVar1 + 2,param_1);
     free_object_slot(param_1);
     object_list_insert_head(iVar1 + 2,puVar2);
+    if (getenv("UW_DEBUG_THROW") && (*puVar2 & 0x1ff) == 0x80) {
+      ushort *pWalk;
+      int n = 0;
+      int found = 0;
+      fprintf(stderr, "[replace] post-insert list @ %p:", (void *)(iVar1 + 2));
+      pWalk = (ushort *)resolve_object_link(iVar1 + 2);
+      while (pWalk != NULL && n < 20) {
+        if (pWalk == puVar2) found = 1;
+        fprintf(stderr, " [%p type=0x%x%s]", (void *)pWalk, (unsigned)(*pWalk & 0x1ff),
+                pWalk == puVar2 ? "<-NEWCOPY" : "");
+        pWalk = (ushort *)resolve_object_link((ushort *)((char *)pWalk + 4));
+        n++;
+      }
+      fprintf(stderr, " (n=%d found_new_copy=%d)\n", n, found);
+    }
   }
   return puVar2;
 }
 
 
 
-void FUN_0005578c(param_1,param_2,param_3)
+// was FUN_0005578c -- finalize an object record's placement at tile
+// (param_2,param_3): recomputes its render/collision height from the
+// low 7 bits of its own offset 2-3 field (the same "height_field =
+// (raw&0x7f)<<3" formula emit_tile_objects and FUN_00040770 both use),
+// caching it into offsets 0xb-0x12 alongside the tile sub-position, and
+// sets a handful of per-object flag bytes (0x13/0x14/0x16-0x18). Called
+// by both spawn_object_near_player and reallocate_object_to_arena
+// whenever a fresh object copy needs a real position/height, not just a
+// carried-over one.
+void compute_object_placement_fields(param_1,param_2,param_3)
 undefined1 * param_1;
 uint param_2;
 uint param_3;
@@ -46215,6 +46973,9 @@ uint param_3;
   uint uVar7;
   
   uVar7 = (uint)*(ushort *)(param_1 + 2);
+  if (getenv("UW_DEBUG_THROW"))
+    fprintf(stderr, "[throw-height] raw param_1[2..3](uVar7 src)=0x%x -> height_field=(uVar7&0x7f)<<3=%d\n",
+            (unsigned)uVar7, (int)((uVar7 & 0x7f) << 3));
   param_1[9] = (byte)(*(ushort *)(param_1 + 2) >> 2) & 0xe0;
   param_1[0x18] = param_1[0x18] & 0xe0;
   param_1[0x14] = param_1[0x14] & 7 | 0x80;
@@ -46261,6 +47022,7 @@ ushort * param_1;
   undefined4 uVar6;
   undefined4 uVar7;
   int iVar8;
+  char *pbTile;
   ushort *puVar9;
   int iVar10;
   short extraout_r1;
@@ -46282,7 +47044,7 @@ ushort * param_1;
            uVar12 = (int)((int)DAT_00101454 - 0x20U) >> 0x1f,
            (int)((((int)DAT_00101454 - 0x20U ^ uVar12) - uVar12) +
                 (((int)DAT_0010144c - 0x20U ^ uVar11) - uVar11)) < 6 &&
-           (*(char *)(g_player_object + 8) != '\0')))) {
+           (*(char *)((char *)g_player_object + 8) != '\0')))) {
     if ((*(byte *)(DAT_00086df8 + 0x62) & 4) == 0) {
       uVar2 = *(undefined2 *)(DAT_00086df8 + 0x6e);
       *(byte *)(DAT_00086df8 + 0x6e) = (byte)uVar2 | 8;
@@ -46323,14 +47085,19 @@ ushort * param_1;
   }
   if (((bVar13 != 0) && (bVar13 < 9)) &&
      ((bVar5 = Ordinal_1053(), (bVar5 & 7) < bVar13 &&
-      (iVar8 = FUN_00052c5c(10,param_1), iVar8 != 0)))) {
+      (iVar8 = roll_object_destroy_chance(10,param_1), iVar8 != 0)))) {
     bVar3 = false;
   }
   if (DAT_00201b68 == 9) {
     bVar3 = false;
   }
-  iVar8 = tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
-  iVar8 = iVar8 + 2;
+  /* Was `iVar8 = tilemap_lookup(...); iVar8 = iVar8 + 2;` -- same pointer-
+     truncation-into-`int` bug fixed in FUN_0004ad10 just above (that one
+     crashed live; this is the same call shape, iVar8 already reused here
+     for unrelated small-integer math earlier in this function, so given
+     its own dedicated pointer local rather than widening iVar8 itself). */
+  pbTile = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
+  pbTile = pbTile + 2;
   if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
     *(byte *)puVar9 = (byte)*param_1;
     *(byte *)((char *)puVar9 + 1) = *(byte *)((char *)param_1 + 1);
@@ -46375,13 +47142,13 @@ ushort * param_1;
       local_2c = (byte)param_1[9];
     }
   }
-  FUN_00053334(iVar8,param_1,1);
+  discard_misplaced_object(pbTile,param_1,1);
   if (puVar9 != (ushort *)0x0) {
-    object_list_insert_head(iVar8,puVar9);
+    object_list_insert_head(pbTile,puVar9);
   }
   if ((bVar13 == 9) &&
      (iVar10 = FUN_000816e0(puVar9,(int)DAT_0010144c,(int)DAT_00101454,local_2c), iVar10 == 0)) {
-    puVar9 = (ushort *)FUN_00053334(iVar8,puVar9,0);
+    puVar9 = (ushort *)discard_misplaced_object(pbTile,puVar9,0);
   }
   return puVar9;
 }
@@ -46416,7 +47183,13 @@ int param_1;
 
 
 
-ushort *FUN_00055f98(param_1,param_2,param_3,param_4)
+// was FUN_00055f98 -- finalize a just-placed object's rest position at
+// (param_2,param_3): validate it can actually reach this floor height,
+// route genuinely-misplaced objects into discard_misplaced_object
+// (which destroys them, see its own comment), or reallocate a never-
+// before-placed object into the renderable arena via
+// reallocate_object_to_arena before returning it.
+ushort *settle_dropped_object(param_1,param_2,param_3,param_4)
 ushort * param_1;
 short param_2;
 short param_3;
@@ -46446,7 +47219,7 @@ int param_4;
      doesn't touch any of them. */
   char *pDropTile;
   undefined1 local_4c [24];
-  
+
   DAT_002046d4 = 0;
   DAT_002046ec = 0;
   DAT_00202c6c = local_4c;
@@ -46456,8 +47229,13 @@ int param_4;
   DAT_00202c6c[0xb] = (char)((ushort)uVar6 >> 8);
   iVar12 = (*param_1 & 0x1ff) * 0xd;
   bVar5 = (&DAT_00202c93)[iVar12];
+  if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+    fprintf(stderr, "[f98] ENTER param_1=%p type=0x%x tile=(%d,%d) flags-byte=0x%x\n",
+            (void *)param_1, (unsigned)(*param_1 & 0x1ff), (int)param_2, (int)param_3, (unsigned)bVar5);
   do {
     if ((bVar5 & 8) != 0) {
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] BAIL: flag8 set on class table, returning param_1 unchanged\n");
       return param_1;
     }
     DAT_00202c6c[8] = (&DAT_00202c91)[iVar12] & 7;
@@ -46504,36 +47282,52 @@ int param_4;
     uVar3 = DAT_00101454;
     uVar6 = DAT_0010144c;
     uVar2 = *(ushort *)(DAT_00202c6c + 0xc);
+    if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+      fprintf(stderr, "[f98] uVar2(local_4c+0xc)=0x%x local_4c+0xe=0x%x local_4c[0x15]=%d iVar12=%d\n",
+              (unsigned)uVar2, (unsigned)*(ushort *)(DAT_00202c6c + 0xe),
+              (int)DAT_00202c6c[0x15], iVar12);
     if ((((*(ushort *)(DAT_00202c6c + 0xe) | uVar2) & 0x300) != 0) || (DAT_00202c6c[0x15] != '\0'))
     {
       cVar4 = '\x01';
 LAB_000564d0:
       if (cVar4 == '\0') {
+        if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+          fprintf(stderr, "[f98] BAIL at LAB_000564d0 (cVar4==0), returning param_1 unchanged\n");
         return param_1;
       }
 LAB_000564d8:
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] -> discard_misplaced_object fallback path (not reallocate_object_to_arena replace)\n");
       pDropTile = (char *)tilemap_lookup((int)param_2,(int)param_3);
-      puVar9 = (ushort *)FUN_00053334(pDropTile + 2,param_1,0);
+      puVar9 = (ushort *)discard_misplaced_object(pDropTile + 2,param_1,0);
       return puVar9;
     }
     if ((uVar2 & 7) == 5) goto LAB_000564d8;
     if ((uVar2 & 7) == 6) {
       if (((&DAT_00202c97)[(*param_1 & 0x1ff) * 0xd] & 0xc) == 0xc) {
+        if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+          fprintf(stderr, "[f98] BAIL: (uVar2&7)==6 class-table gate, returning param_1 unchanged\n");
         return param_1;
       }
       cVar4 = FUN_000382cc(param_1,1,8);
       goto LAB_000564d0;
     }
     if ((uVar2 & 8) != 0) {
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] BAIL: (uVar2&8)!=0, returning param_1 unchanged\n");
       return param_1;
     }
     if (DAT_002046ec != 0) {
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] BAIL: DAT_002046ec!=0, returning param_1 unchanged\n");
       return param_1;
     }
     if (iVar12 == 0) {
+      if (getenv("UW_DEBUG_THROW") && (*param_1 & 0x1ff) == 0x80)
+        fprintf(stderr, "[f98] -> reallocate_object_to_arena replace path, coords=(%d,%d)\n", (int)param_2, (int)param_3);
       DAT_0010144c = param_2;
       DAT_00101454 = param_3;
-      puVar9 = (ushort *)FUN_00055610(param_1);
+      puVar9 = (ushort *)reallocate_object_to_arena(param_1);
       DAT_0010144c = uVar6;
       DAT_00101454 = uVar3;
       if (DAT_002046d4 != 0) {
@@ -46734,7 +47528,8 @@ void FUN_000567c0()
 
 
 
-void FUN_000567ec()
+// was FUN_000567ec
+void draw_save_load_slot_list()
 
 {
   int iVar1;
@@ -46748,23 +47543,48 @@ void FUN_000567ec()
   if (DAT_000868dc == 1) {
     FUN_00056688(6,0x2e);
   }
-  local_bc[0] = &DAT_00087074;
-  local_bc[1] = &DAT_0008706c;
+  local_bc[0] = &s_I__00087074;
+  local_bc[1] = &s_II__0008706c;
   local_bc[2] = s_III__00087064;
-  local_bc[3] = &DAT_0008705c;
-  FUN_0007fce8(1);
+  local_bc[3] = &s_IV__0008705c;
+  msg_scroll_panel_reset(1);
   probe_save_slots(auStack_ac,auStack_c4);
+  /* g_text_use_palette_color gates whether draw_text_string honours
+     *g_draw_color_index at all (see that global's own comment) --
+     confirmed via disassembly that neither message_scroll_print_wrapped
+     nor msg_scroll_draw_wrapped_span (the real functions behind this
+     whole print) ever touch it, so message-scroll text always takes the
+     flat g_text_flat_color path in the pristine binary. The "\6" control
+     code this header uses (real palette index 0xd4 -- confirmed RGB
+     (88,184,64), a real green, against PALS.DAT bank 0) needs this flag
+     on to have any visible effect at all, matching a QA report that the
+     original game rendered this list in green. Bracket it narrowly
+     around just this function's own prints (mirrors draw_menu_item_list
+     and FUN_0006a3d8/FUN_00037c14's own established "caller forces it
+     for the scope of its own draw, then restores" pattern) rather than
+     forcing it on inside message_scroll_print_wrapped itself -- an
+     earlier attempt did that and leaked this panel's now-colored
+     DAT_00250704+0x16 persistent-color field into every *unrelated*
+     scroll message printed afterward for the rest of the session
+     (reported: ordinary messages rendering white, since this list's own
+     trailing "\0" sets that field to palette index 0x60 before this
+     function returns). Scoping the flag to just this call can't leak
+     that way, since it's always restored the moment this function
+     returns, regardless of what the persistent color field is left at. */
+  int _saved_text_palette_color = g_text_use_palette_color;
+  g_text_use_palette_color = 1;
   message_scroll_print_wrapped(s__6_Save_Game_Descriptions_0008703c);
   iVar1 = 0;
-  DAT_00087990 = 0;
+  g_scroll_control_codes_enabled = 0;
   do {
-    message_scroll_print_wrapped(&DAT_0008522c);
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     message_scroll_print_wrapped(local_bc[iVar1]);
     message_scroll_print_wrapped(auStack_ac + iVar1 * 0x28);
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 4);
-  DAT_00087990 = 1;
-  message_scroll_print_wrapped(&DAT_00087038);
+  g_scroll_control_codes_enabled = 1;
+  message_scroll_print_wrapped(&s_scroll_color_reset_00087038);
+  g_text_use_palette_color = _saved_text_palette_color;
   return;
 }
 
@@ -46981,7 +47801,7 @@ int param_1;
   iVar2 = 4;
   if ((0 < sVar1) && (sVar1 < 6)) {
     FUN_000566dc(param_1,(0x14 - param_1) * 2);
-    FUN_0007fce8(0);
+    msg_scroll_panel_reset(0);
     if (sVar1 != 1) {
       if (sVar1 != 2) {
         if (sVar1 != 3) {
@@ -47074,6 +47894,37 @@ short param_2;
 
 
 
+/* Was raw pointer arithmetic `*(char *)(DAT_000868dc * 7 + iVar2 + 0x86920)`
+   -- 0x86920 is the ORIGINAL 32-bit binary's fixed load address for this
+   table (immediately following the PTR_FUN_000868e0/00086900 dispatch
+   tables, see their own comment -- same "orphaned link-time data" class),
+   used as a literal absolute pointer instead of a symbol. On this
+   recompile nothing is mapped there, so any state/highlight-index
+   combination whose real value is genuinely non-zero (i.e. that state
+   actually has a navigable widget in that D-pad-navigation slot) reads
+   through a wild pointer and crashes -- confirmed via lldb, EXC_BAD_ACCESS
+   at 0x86924. Never hit until the Enter-key WM_CHAR fix (see
+   [[save-load-name-entry-crash]]'s g_keychar_deferred) let VK_RETURN's
+   GXGetDefaultKeys() "start button" code (0x93) reach FUN_000564f8's own
+   event loop cleanly for the first time -- that's what calls FUN_00056d6c
+   with a real highlighted-item index. Real bytes recovered via a Ghidra
+   headless memory dump of the original binary at 0x86920 (8 rows x 7
+   columns, one row per menu state 0-7, one column per D-pad-navigable
+   list position 0-6): each nonzero byte is the widget-highlight value
+   FUN_000566dc's own 2nd argument expects for that slot (matches the
+   literal values each state's own draw function already passes it,
+   e.g. FUN_000567c0's `FUN_000566dc(6,6)`). */
+static const unsigned char g_menu_nav_highlight_table[8][7] = {
+  {  0,  24,  36,  34,  32,  30,   0 },
+  {  0,  24,  36,  34,  32,  30,   0 },
+  {  0,   0,  26,  22,  20,   0,   0 },
+  {  0,   0,  26,  22,  20,   0,   0 },
+  { 28,  44,  42,  40,  38,   0,   0 },
+  {  0,   0,   0,  59,  57,   0,   0 },
+  { 18,  16,  14,  12,  10,   8,   6 },
+  {  0,   0,   0, 111, 112, 116,  98 },
+};
+
 void FUN_00056d6c(param_1)
 short param_1;
 
@@ -47081,7 +47932,7 @@ short param_1;
   short sVar1;
   int iVar2;
   int iVar3;
-  
+
   if (param_1 < 0x167) {
     if (param_1 == 0x166) {
       iVar2 = 3;
@@ -47098,11 +47949,11 @@ LAB_00056ddc:
         if (6 < iVar2) {
           return;
         }
-        if (*(char *)(DAT_000868dc * 7 + iVar2 + 0x86920) == '\0') {
+        if (g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2] == 0) {
           return;
         }
         FUN_00057118();
-        FUN_000566dc(iVar3 + sVar1,(int)*(char *)(DAT_000868dc * 7 + iVar2 + 0x86920));
+        FUN_000566dc(iVar3 + sVar1,(int)g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2]);
         FUN_000570b4();
         return;
       }
@@ -47714,6 +48565,8 @@ int param_1;
     Ordinal_870(auStack_24);
     Ordinal_859(auStack_24);
     uVar2 = (uint)DAT_0023c448;
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[inputevent] DAT_0023c448=0x%x\n", (unsigned int)DAT_0023c448);
     if (uVar2 == 0) {
       uVar2 = poll_mouse_event();
     }
@@ -48965,21 +49818,35 @@ int param_1;
 {
   int iVar1;
   ushort uVar2;
-  
+
+  if (getenv("UW_DEBUG_WALL"))
+    fprintf(stderr, "[wall-slide] enter param_1=%d DAT_002049bc=%d\n", param_1, (int)DAT_002049bc);
   if ('\0' < DAT_002049bc) {
+    if (getenv("UW_DEBUG_WALL"))
+      fprintf(stderr, "[wall-slide] -> already-slid guard, revert+end sweep\n");
     sweep_step(0xffffffff);
     DAT_00086996 = DAT_00086990 + 1;
     return;
   }
   if (param_1 != 0) {
-    FUN_00051320();
+    resolve_wall_slide_corner();
+    if (getenv("UW_DEBUG_WALL"))
+      fprintf(stderr, "[wall-slide] after resolve_wall_slide_corner: DAT_002049da=%d DAT_0008698c=%d\n",
+              (int)DAT_002049da, (int)DAT_0008698c);
     uVar2 = (ushort)DAT_002049da;
     if (DAT_002049da != 9) goto LAB_00059be4;
+  } else if (getenv("UW_DEBUG_WALL")) {
+    fprintf(stderr, "[wall-slide] param_1==0 path, DAT_0008698c=%d\n", (int)DAT_0008698c);
   }
   uVar2 = DAT_0008698c << 1;
 LAB_00059be4:
   sweep_step(0xffffffff);
+  if (getenv("UW_DEBUG_WALL"))
+    fprintf(stderr, "[wall-slide] uVar2=%d candidate_heading=%d DAT_002049ce(cur_heading)=%d\n",
+            (int)uVar2, (int)*(short *)(&DAT_000869a8 + (short)uVar2 * 2), (int)DAT_002049ce);
   iVar1 = sweep_deflect_heading(*(undefined2 *)(&DAT_000869a8 + (short)uVar2 * 2));
+  if (getenv("UW_DEBUG_WALL"))
+    fprintf(stderr, "[wall-slide] sweep_deflect_heading returned %d\n", iVar1);
   if (iVar1 == 0) {
     DAT_00086996 = DAT_00086990 + 1;
   }
@@ -49421,9 +50288,26 @@ uint sweep_collision_flags()
      dropped whatever kept it current -- so DAT_002049c8/ca sat at (0,0) and
      every collision test hit tile (0,0), letting the player walk straight
      through solid walls and off the map.  g_sweep_foot_pos is the live position
-     in the same 1/8-tile units these readers expect (>>3 -> tile). */
+     in the same 1/8-tile units these readers expect (>>3 -> tile).
+
+     That original fix stopped at X/Y -- offset+4 (DAT_002049cc, see its own
+     comment at the struct declaration) is the position triplet's missing
+     third field, "the player's current sub-tile height." Left at 0 (its
+     static-init value, never written on this global instance), it made
+     collision_corner_flags's "(step_limit + current_Z) < sampled_floor_
+     height" walkable/auto-stick test compare every real floor height
+     against a Z of 0 -- always true, so the auto-stick branch (which sets
+     the "walkable" bit 4) could never be reached on any slope, forcing
+     every ramp tile through the block/fall-arm path instead of the
+     snap-resolver. Confirmed live via UW_DEBUG_RAMP's [ramp-corner-flags]
+     trace: off4=0 on every call throughout a ramp descent, while the real
+     sampled floor height tracked the slope correctly (~95, ~94, ~93...).
+     g_sweep_foot_pos[2] is footz itself (*(short*)((char*)g_sweep_foot_pos+4)),
+     already in the same raw units collision_corner_flags compares against --
+     no additional scaling needed, matching X/Y's own direct assignment. */
   DAT_002049c8 = g_sweep_foot_pos[0];
   DAT_002049ca = g_sweep_foot_pos[1];
+  DAT_002049cc = g_sweep_foot_pos[2];
   if (tilemap_lookup((short)((int)g_sweep_foot_pos[0] >> 3),(short)((int)g_sweep_foot_pos[1] >> 3)) ==
       (void *)0x0) {
     /* stepped outside the 64x64 map -- the border is always solid; report a
@@ -49431,9 +50315,18 @@ uint sweep_collision_flags()
        collision_build_height_field dereferencing a NULL tile pointer.) */
     return 0xffff8000;
   }
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-ptr-check] DAT_00202c6c=%p &DAT_002049c8=%p match=%d\n",
+            (void *)DAT_00202c6c, (void *)&DAT_002049c8, (int)(DAT_00202c6c == (byte *)&DAT_002049c8));
   collision_build_height_field(*(undefined1 *)(DAT_00204874 + 0x27));
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-post-buildheight] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   collision_height_envelope(0,0);
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-post-envelope] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   reticle_object_pick(0);
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-post-reticle] d8=%d d9=%d\n", (int)DAT_002049d8, (int)DAT_002049d9);
   local_3c = DAT_002049d6 | DAT_002049d4;
   bVar8 = (local_3c & DAT_002048bc[2]) == 0;
   if ((DAT_002049dc != '\0') &&
@@ -49584,6 +50477,12 @@ LAB_0005abe4:
     local_3c = local_3c & 0xf7ff;
   }
   uVar1 = local_3c;
+  if (getenv("UW_DEBUG_RAMP"))
+    fprintf(stderr, "[ramp-pre-fallback] iVar4=%d iVar6=%d local_3c=0x%x DAT_002049d6=0x%x DAT_002049d4=0x%x DAT_002049d8=%d DAT_002049d9=%d bVar7=%d bVar8=%d DAT_00204878=%d vvel=%d fallaccel=%d\n",
+            iVar4, iVar6, (unsigned)local_3c, (unsigned)DAT_002049d6, (unsigned)DAT_002049d4,
+            (int)DAT_002049d8, (int)DAT_002049d9,
+            (int)bVar7, (int)bVar8, (int)DAT_00204878, (int)*(short *)(DAT_00204874 + 10),
+            (int)*(short *)(DAT_00204874 + 0x10));
   // PHYSICS: no-feature fallback snap -- pull the foot down onto the flat floor
   // when there is no slope/step feature. Also suppressed once a gravity fall is
   // armed (+0x10) so the fall integrator owns the descent.
@@ -49915,10 +50814,24 @@ int param_2;
   int iVar4;
   undefined2 *puVar5;
   undefined2 *puVar6;
-  undefined2 local_8c [48];
-  undefined2 local_2c [10];
-  undefined2 local_18 [6];
-  
+  /* Was three separate locals (local_8c[48], local_2c[10], local_18[6])
+     -- a stack-slot-splitting artifact (same bug class as
+     stack0xffdc2e30_buf/acStack_528 in load_game_from_slot, or
+     acStack_86af8/etc in FUN_0005b36c right below this function): real
+     ARM disassembly (0x5b29c: `sub sp,sp,#0x80`) allocates ONE 128-byte
+     (64-undefined2) buffer, and this function's own writes to
+     `local_8c[iVar2+0x30]` (indices 48-57) and `local_8c[iVar2+0x3a]`
+     (indices 58-60) already prove it -- those are past a real 48-element
+     array's bounds. With the split, those writes silently corrupted
+     local_2c/local_18's stack space at every call; on this recompile
+     (stack-protector enabled) that finally tripped `__stack_chk_fail`
+     and aborted -- confirmed via lldb, never hit before because nothing
+     reached this function successfully until the write-path bugs above
+     it (Ordinal_1407, open_level_archive's read-only handle,
+     FUN_00015b94/FUN_00081d74's own pointer-truncation and fabricated-
+     return-0 bugs) were fixed. One properly-sized buffer instead. */
+  undefined2 local_8c [64];
+
   iVar2 = 0;
   do {
     puVar5 = &DAT_0023ae58 + iVar2;
@@ -49941,8 +50854,13 @@ int param_2;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     local_8c[iVar4] = CONCAT11((&DAT_0023b841)[iVar3],(&DAT_0023b840)[iVar1]);
   } while (iVar2 < 3);
-  FUN_00015b94(param_1,param_2 + 0x11,local_8c,0x7a);
-  return 0;
+  /* Was `FUN_00015b94(...); return 0;` -- a fabricated `return 0`
+     masking a real result, same bug class as FUN_00081d74 right above
+     this function. Real disassembly (0x5b354-0x5b35c) shows a plain
+     `bl 0x15b94` with no instruction overwriting r0 before the function
+     returns -- r0 (FUN_00015b94's own return value) falls straight
+     through as this function's return value, it's never hardcoded to 0. */
+  return FUN_00015b94(param_1,param_2 + 0x11,local_8c,0x7a);
 }
 
 
@@ -53294,6 +54212,10 @@ ushort * param_1;
   int iVar35;
   ushort local_54;
   
+  if (getenv("UW_DEBUG_THROW") && ((*param_1 & 0x1ff) == 0x80 || (*param_1 & 0x1ff) == 0x16e))
+    fprintf(stderr, "[throw-emit] ENTER param_1=%p type=0x%x is_player=%d flag4000=%d in_arena=%d DAT_002046c4=%p\n",
+            (void *)param_1, (unsigned)(*param_1 & 0x1ff), param_1 == g_player_object,
+            (*param_1 & 0x4000) == 0x4000, (int)object_ptr_in_arena((char *)param_1), (void *)DAT_002046c4);
   if (param_1 == g_player_object) {
     return;
   }
@@ -53730,7 +54652,12 @@ LAB_emit_mesh_sprite_quad:
        to be an unrelated, pre-existing map-edge bug -- see
        [[map-edge-y-wraparound-crash]] -- not caused by this change; this
        guard is still worth keeping on its own merits.) */
+    if (getenv("UW_DEBUG_THROW") && uVar27 == 0x80)
+      fprintf(stderr, "[throw-render] sack (id=0x80) reached quad emit: DAT_0023b838(vtx)=%u DAT_0023b83c(rec)=%d cap=(508,489)\n",
+              (unsigned)DAT_0023b838, (int)DAT_0023b83c);
     if ((int)(uint)DAT_0023b838 >= 512 - 4 || (int)DAT_0023b83c >= 490 - 1) {
+      if (getenv("UW_DEBUG_THROW") && uVar27 == 0x80)
+        fprintf(stderr, "[throw-render] sack (id=0x80) -> arena FULL, quad SKIPPED (never emitted)\n");
       return;
     }
     if (g_billboard_angle_override_deg >= 0) {
@@ -55021,7 +55948,7 @@ short param_4;
   if (3 < uVar21) {
     uVar21 = 0;
   }
-  switch(*(ushort *)(g_player_object + 2) >> 7 & 7) {
+  switch(*(ushort *)((char *)g_player_object + 2) >> 7 & 7) {
   case 0:
     break;
   case 1:
@@ -55523,7 +56450,7 @@ undefined4 param_3;
 
   _o = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[(short)param_1]);  /* was `int iVar1` */
   bVar2 = *(byte *)(_o + 2) & 0x7f;
-  sprite_partition_step((*(byte *)(g_player_object + 2) & 0x7f) < bVar2,param_2,param_1,param_3,bVar2,0);
+  sprite_partition_step((*(byte *)((char *)g_player_object + 2) & 0x7f) < bVar2,param_2,param_1,param_3,bVar2,0);
   return;
 }
 
@@ -55790,6 +56717,10 @@ ushort * param_1;
           else {
             DAT_0023b91c = *(short *)((char *)puVar5 + 0xf);
           }
+          if (getenv("UW_DEBUG_THROW") && (*puVar5 & 0x1ff) == 0x80)
+            fprintf(stderr, "[throw-scrz] sack DAT_0023b91c=%d cam_ref(DAT_00086e6c+0xe)=%d in_arena=%d\n",
+                    (int)(short)DAT_0023b91c, (int)*(short *)(DAT_00086e6c + 0xe),
+                    (int)object_ptr_in_arena(puVar5));
           if (DAT_0023b830 == '\0') {
             iVar7 = (int)(short)((int)((int)DAT_0023b904 -
                                       ((int)*(short *)(DAT_00086e6c + 10) & 0xffU)) >> 5);
@@ -55933,7 +56864,7 @@ undefined4 param_1;
   DAT_00086df8[0x1e] = *(byte *)(DAT_0023be74 + 5);
   DAT_00086df8[0x1f] = *(byte *)(DAT_0023be74 + 6);
   DAT_00086df8[0x20] = *(byte *)(DAT_0023be74 + 7);
-  DAT_00086df8[0x35] = *(byte *)(g_player_object + 8);
+  DAT_00086df8[0x35] = *(byte *)((char *)g_player_object + 8);
   DAT_00086df8[0x36] = *(byte *)(DAT_0023be74 + 4);
   uVar1 = DAT_00204880;
   DAT_00086df8[0x54] = (byte)DAT_00204880;
@@ -55975,7 +56906,7 @@ undefined4 param_1;
   *(undefined1 *)(DAT_0023be74 + 5) = *(undefined1 *)(DAT_00086df8 + 0x1e);
   *(undefined1 *)(DAT_0023be74 + 6) = *(undefined1 *)(DAT_00086df8 + 0x1f);
   *(undefined1 *)(DAT_0023be74 + 7) = *(undefined1 *)(DAT_00086df8 + 0x20);
-  *(undefined1 *)(g_player_object + 8) = *(undefined1 *)(DAT_00086df8 + 0x35);
+  *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_00086df8 + 0x35);
   *(undefined1 *)(DAT_0023be74 + 4) = *(undefined1 *)(DAT_00086df8 + 0x36);
   DAT_00204880 = *(undefined2 *)(DAT_00086df8 + 0x54);
   DAT_00204882 = *(undefined2 *)(DAT_00086df8 + 0x56);
@@ -56589,7 +57520,7 @@ void FUN_00066c90()
 
 {
   close_backpack_container();
-  FUN_000444b0(g_player_object + 6);
+  FUN_000444b0((char *)g_player_object + 6);
   FUN_000465c8();
   return;
 }
@@ -56602,9 +57533,9 @@ void FUN_00066cb4()
   ushort uVar1;
   
   Ordinal_1047(g_player_object,0,0x1b);
-  *(byte *)(g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
+  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
   *(undefined1 *)((char *)g_player_object + 7) = 0;
-  *(undefined1 *)(g_player_object + 0xd) = 0xfd;
+  *(undefined1 *)((char *)g_player_object + 0xd) = 0xfd;
   uVar1 = *g_player_object;
   *(char *)g_player_object = (char)(uVar1 & 0x7fff);
   *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0x7fff) >> 8);
@@ -56615,18 +57546,18 @@ void FUN_00066cb4()
   *(char *)g_player_object = (char)(uVar1 & 0xbfff);
   *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xbfff) >> 8);
   uVar1 = g_player_object[1];
-  *(char *)(g_player_object + 1) = (char)(uVar1 & 0xfc7f);
+  *(char *)((char *)g_player_object + 1) = (char)(uVar1 & 0xfc7f);
   *(char *)((char *)g_player_object + 3) = (char)((uVar1 & 0xfc7f) >> 8);
-  *(byte *)(g_player_object + 0xc) = (byte)g_player_object[0xc] & 0xe0;
+  *(byte *)((char *)g_player_object + 0xc) = (byte)g_player_object[0xc] & 0xe0;
   uVar1 = g_player_object[2];
-  *(char *)(g_player_object + 2) = (char)(uVar1 & 0xffc0);
+  *(char *)((char *)g_player_object + 2) = (char)(uVar1 & 0xffc0);
   *(char *)((char *)g_player_object + 5) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)(g_player_object + 2) = (byte)g_player_object[2] & 0x3f;
+  *(byte *)((char *)g_player_object + 2) = (byte)g_player_object[2] & 0x3f;
   *(undefined1 *)((char *)g_player_object + 5) = 0;
   uVar1 = g_player_object[3];
-  *(char *)(g_player_object + 3) = (char)(uVar1 & 0xffc0);
+  *(char *)((char *)g_player_object + 3) = (char)(uVar1 & 0xffc0);
   *(char *)((char *)g_player_object + 7) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)(g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
+  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
   *(undefined1 *)((char *)g_player_object + 7) = 0;
   *(undefined1 *)((char *)g_player_object + 0x11) = 0;
   uVar1 = *g_player_object;
@@ -58351,7 +59282,13 @@ LAB_00069ee8:
 
 
 
-void FUN_00069f2c(param_1,param_2,param_3,param_4)
+// was FUN_00069f2c -- disassembly-confirmed faithful: given a compass
+// heading (param_1) and a distance (param_2), looks up
+// heading_to_sine_cosine and adds `*param_4(Y) += sin(heading)*dist`,
+// `*param_3(X) += cos(heading)*dist` -- the standard heading->direction-
+// vector projection, used to compute where a thrown/dropped object's
+// trajectory lands relative to the thrower's position.
+void project_position_by_heading(param_1,param_2,param_3,param_4)
 int param_1;
 short param_2;
 short * param_3;
@@ -58364,7 +59301,7 @@ short * param_4;
   short local_14;
   short local_12;
   
-  FUN_00049c64((0x40U - param_1 & 0xff) << 8,&local_14,&local_12);
+  heading_to_sine_cosine((0x40U - param_1 & 0xff) << 8,&local_14,&local_12);
   iVar3 = (int)local_14;
   if (iVar3 < 0) {
     iVar3 = iVar3 + 0x7f;
@@ -58760,15 +59697,26 @@ int param_4;
     select_active_font(s_fontbig_sys_0008432c);
     draw_menu_item_list(param_1,param_2,param_3,param_4);
     select_active_font(s_font5x6p_sys_0008430c);
+    /* Was: `ushort _cyc_t = DAT_0023bf74; ... if (DAT_0023bf74 != _cyc_t)
+       draw_menu_item_list(...)` -- an earlier session's own addition
+       (its comment claimed it was needed for the menu-item bitmaps to
+       shimmer in step with FUN_0006a168's gold-gradient palette
+       rotation), not real recovered code: confirmed via a fresh ARM
+       disassembly of this function (0x6af3c) that the real idle-wait
+       loop here is exactly `bl FUN_000735fc; bl FUN_0006a168;`, nothing
+       else -- no DAT_0023bf74 comparison, no second draw_menu_item_list
+       call. That fabricated redraw ran with the small font selected
+       (the line right above switches to it before this loop, which IS
+       real/matches disassembly) while the ORIGINAL list draw two lines
+       up used the big font and is never erased first -- so every
+       palette-cycle tick redrew each list label a second time, in the
+       wrong small font, directly on top of the correct big-font text.
+       Confirmed live: the title-screen save-slot list showed each
+       description doubled, once correctly in the large font and once
+       overlaid in the small one. Removed. */
     while (sVar2 = next_input_event(), sVar2 < 0) {
-      ushort _cyc_t = DAT_0023bf74;
       FUN_000735fc();
       FUN_0006a168();
-      /* FUN_0006a168 rotated the gold gradient palette (indices 0x40..0x7f)
-         this tick and re-blitted the OPSCR title; recolour the menu-item
-         bitmaps too so they shimmer in step with the title, the way the
-         original's hardware palette swap did. */
-      if (DAT_0023bf74 != _cyc_t) draw_menu_item_list(param_1,param_2,param_3,param_4);
     }
     if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x param_4=%d\n", (int)sVar2, (int)param_4);
     sVar1 = (short)param_1;
@@ -58916,7 +59864,7 @@ undefined4 journey_onward_load_slot_menu()
      probe_save_slots unconditionally writes 4 fixed-width 0x28(40)-byte
      records into whatever buffer its param_1 points at (uVar5*0x28 +
      charindex, for uVar5 = 0..3), i.e. it needs 0xA0 (160) bytes -- and
-     both its other call sites (FUN_000567ec's auStack_ac, FUN_0006a1c4's
+     both its other call sites (draw_save_load_slot_list's auStack_ac, FUN_0006a1c4's
      auStack_a4) already correctly declare exactly that. Only this one
      was wrong, at less than a quarter the required size. Confirmed via
      AddressSanitizer: a real stack-buffer-overflow, reproducibly
@@ -59012,7 +59960,7 @@ undefined4 journey_onward_load_slot_menu()
     }
     draw_text_string(pcVar_str,(short)(iVar8 >> 1) + 10,0x5a);
     select_active_font(s_font5x6p_sys_0008430c);
-    /* Was `FUN_0006c0c0(iVar4 + 1)` -- FUN_0006c0c0 is "Save Game"
+    /* Was `load_game_from_slot(iVar4 + 1)` -- load_game_from_slot is "Save Game"
        (copies the live \SAVE0 session INTO the chosen slot), which makes
        no sense from the title screen where no game is running yet: this
        whole screen only ever appears when main_menu_loop found an
@@ -59020,13 +59968,13 @@ undefined4 journey_onward_load_slot_menu()
        enters gameplay (`bVar11 = sVar3==1;` breaks main_menu_loop's own
        loop straight into set_game_mode(1)) -- pure Save-Game semantics
        for a title screen with no active session, but exactly what
-       "Continue/Load Game" should do. Reusing the real FUN_0006c264
+       "Continue/Load Game" should do. Reusing the real save_game_to_slot
        Load path here would also pull in its own text-entry prompt
-       (FUN_0007ffa8), which is designed for the in-game pause-menu Load
+       (scroll_text_entry_prompt), which is designed for the in-game pause-menu Load
        flow, not a fresh process with no dungeon loaded yet -- so do the
-       same slot<->SAVE0 file copy FUN_0006c264 does (just in the load
+       same slot<->SAVE0 file copy save_game_to_slot does (just in the load
        direction, \SAVEn -> \SAVE0) directly, then the same post-copy
-       refresh sequence FUN_0006c0c0 already does on its own success. */
+       refresh sequence load_game_from_slot already does on its own success. */
     {
       char loadsrc[300];
       snprintf(loadsrc, sizeof(loadsrc), "\\SAVE%d", iVar4 + 1);
@@ -59039,23 +59987,27 @@ undefined4 journey_onward_load_slot_menu()
       FUN_00044624(&DAT_000857a0);
       /* DAT_00201b68 (current level) isn't meaningfully set yet at a
          fresh title screen with no dungeon loaded -- unlike
-         FUN_0006c0c0's own use of it, which only ever runs mid-game.
+         load_game_from_slot's own use of it, which only ever runs mid-game.
          Every save this decompile can produce is level 1 (no UI to
          change levels exists yet), so load that directly rather than a
          possibly-stale/zero level number. */
       sVar2 = load_level(1);
       if (sVar2 != 0) {
         FUN_0006c834(1,3);
-        /* Real UW1 presumably restores the player's saved tile position
-           from bglobals.dat automatically somewhere in this decompile,
-           but that path hasn't been found/verified -- confirmed via
-           testing that without an explicit call here the player stays
-           at tile (0,0), an unplaced/invalid position (black 3D view).
-           Use the same known-good spawn point character_generator_start
-           uses for a fresh game so a loaded game is at least playable,
-           rather than leaving this "Journey Onward" entry point
-           dropping the player somewhere invalid. */
-        set_player_tile_position(0x20,2,1);
+        /* Was a hardcoded set_player_tile_position(0x20,2,1) here --
+           worked around load_level leaving the player at tile (0,0)
+           (unplaced, black 3D view) because the save/load path never
+           actually wrote the live player position into \SAVE0\lev.ark
+           to begin with (see [[save-load-position-not-persisted]]: 6
+           bugs in the archive-write chain plus save_game_to_slot/
+           load_game_from_slot's own FUN_0006c670 calls having src/dest
+           backwards, all fixed). The player's tile position is just
+           another field of its own object record, at a fixed offset
+           inside the same arena load_level's object-table read
+           populates -- with a real save now actually persisting it,
+           this hardcoded override would clobber the correct restored
+           position with the fixed chargen spawn point instead. Removed;
+           load_level's own read is what places the player now. */
       }
       FUN_0006e89c();
       uVar5 = 1;
@@ -59401,7 +60353,7 @@ undefined4 param_1;
   int iVar2;
   undefined1 auStack_1c [16];
   
-  FUN_00043fd8(0);
+  write_player_save_record(0);
   if (-1 < DAT_00202080) {
     DAT_00202080 = -1;
   }
@@ -59438,8 +60390,8 @@ undefined4 param_1;
   undefined4 uVar3;
   undefined1 auStack_20 [16];
   
-  FUN_00043fd8(0);
-  FUN_000444b0(g_player_object + 3);
+  write_player_save_record(0);
+  FUN_000444b0((char *)g_player_object + 3);
   if (-1 < DAT_00202080) {
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
@@ -59448,15 +60400,23 @@ undefined4 param_1;
   *(char *)g_player_object = (char)(uVar1 & 0xfe3f);
   *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xfe3f) >> 8);
   iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
+  if (getenv("UW_DEBUG_INPUTEVENT"))
+    fprintf(stderr, "[0006bcd4] open_level_archive=%d\n", iVar2);
   uVar3 = 0;
   if (iVar2 != 0) {
     iVar2 = FUN_00049b04(auStack_20,param_1);
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[0006bcd4] FUN_00049b04=%d\n", iVar2);
     if (((iVar2 != 0) && (iVar2 = FUN_0005b298(auStack_20,param_1), iVar2 != 0)) &&
        (iVar2 = FUN_00016434(auStack_20,param_1), iVar2 != 0)) {
       iVar2 = FUN_00015a58(auStack_20);
       uVar3 = 1;
+      if (getenv("UW_DEBUG_INPUTEVENT"))
+        fprintf(stderr, "[0006bcd4] FUN_00015a58=%d uVar3=%d\n", iVar2, (int)uVar3);
       if (iVar2 != 0) goto LAB_0006bdbc;
     }
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[0006bcd4] falling through to fail, uVar3=0\n");
     uVar3 = 0;
   }
 LAB_0006bdbc:
@@ -59557,16 +60517,46 @@ undefined4 param_2;
 {
   int iVar1;
   int iVar2;
-  undefined1 auStack_d4 [32];
   short local_b4 [4];
   undefined1 auStack_ac [160];
-  
+
   probe_save_slots(auStack_ac,local_b4);
   if (param_1 == 0) {
-    iVar1 = FUN_0006c264(param_2,auStack_d4 + (short)param_2 * 0x28);
+    /* Was `auStack_d4 + (short)param_2 * 0x28` into a phantom, separately
+       -declared 32-byte `auStack_d4` local -- confirmed via real ARM
+       disassembly (0x6c088-0x6c098) that no such buffer exists: the real
+       code computes sp+8 + (slot-1)*0x28, i.e. a pointer straight into
+       auStack_ac (the very buffer probe_save_slots just filled, at
+       sp+8), offset by (slot-1) records, not slot. Ghidra's own
+       `auStack_d4 [32]` was a stack-slot-splitting artifact (same bug
+       class as stack0xffdc2e30_buf/acStack_528 -- see load_game_from_slot's own
+       comment) -- the 32-byte size wasn't even big enough for the real
+       4x40-byte-record indexing it was being used with, which would have
+       stack-smashed for any slot past the first. */
+    iVar1 = save_game_to_slot(param_2,auStack_ac + ((short)param_2 - 1) * 0x28);
     iVar2 = 4;
     if (iVar1 != 0) {
       iVar2 = 5;
+      /* load_game_from_slot's own success branch just below (the mirror
+         Load path) calls FUN_0006e89c/sync_player_stats_to_hud/
+         redraw_hud_panels/FUN_0003dca4(0xffffffff)/FUN_00049924(0x7ffe)
+         after a successful load; this Save branch called none of them.
+         Most of those are Load-specific (resyncing HUD/stats after
+         reloading a possibly-different character), but FUN_00049924
+         (ORs param_1 into DAT_00201c84, the dirty-bit register
+         main_loop_hud_flush's per-tick force-3D-redraw hack and
+         dispatch_sticky_mode_handlers both gate on) is a general
+         "something changed, redraw everything" signal with no Load-
+         specific meaning -- Save closing its own UI panel needs it just
+         as much as Load does. Without it, closing the Save dialog left
+         the 3D viewport rendering nothing (solid black) until some
+         *other* code path happened to set a dirty bit on its own --
+         confirmed live via a QA report ("3d view stops updating after
+         saving, but the game is still running") and reproduced with a
+         screenshot immediately after a scripted save: viewport solid
+         black, HUD chrome and "Save Game Succeeded." both drawing fine
+         around it. Fixed by calling FUN_00049924(0x7ffe) here too. */
+      FUN_00049924(0x7ffe);
     }
   }
   else if (false) {
@@ -59577,7 +60567,7 @@ undefined4 param_2;
        before allowing a save into it -- meaning a brand new slot (the
        common case: no prior saves exist at all, so this bitmask is all
        zero) could never be saved to. The LOAD branch just above has no
-       equivalent gate (it tries FUN_0006c264 unconditionally and lets it
+       equivalent gate (it tries save_game_to_slot unconditionally and lets it
        fail for an empty slot), so this looks like an inverted/leftover
        guard rather than an intentional "can't create new saves" limit.
        Disabled so save always proceeds; kept as dead code (rather than
@@ -59586,7 +60576,7 @@ undefined4 param_2;
     iVar2 = 1;
   }
   else {
-    iVar1 = FUN_0006c0c0(param_2);
+    iVar1 = load_game_from_slot(param_2);
     if (iVar1 == 0) {
       iVar2 = 3;
     }
@@ -59606,7 +60596,8 @@ undefined4 param_2;
 
 
 
-undefined4 FUN_0006c0c0(param_1)
+// was FUN_0006c0c0
+undefined4 load_game_from_slot(param_1)
 char param_1;
 
 {
@@ -59694,34 +60685,44 @@ char param_1;
   iVar4 = FUN_0006c560(acStack_630);
   if (iVar4 != 0) {
     FUN_00078c80(0xaa);
-    /* Was FUN_0006c670(auStack_218,auStack_420) -- the broken wide-string
-       copies of these two ANSI buffers (see FUN_0006c670's own comment).
-       Pass the real paths straight through instead: acStack_528 is the
-       chosen slot ("\SAVEn", destination), acStack_630 the live session
-       ("\SAVE0", source) -- neither is read again after this call. */
-    iVar4 = FUN_0006c670(acStack_528,acStack_630);
+    /* Was FUN_0006c670(acStack_528,acStack_630) -- i.e. (dest="\SAVEn",
+       src="\SAVE0"), copying the ACTIVE SESSION onto the chosen slot --
+       a save-direction copy. That's backwards for this function: live
+       testing confirms load_game_from_slot's own status text is "Restoring
+       Game " (this is the Load path, gated by FUN_00040130's
+       unconditional-allow "can load" semantics; save_game_to_slot -- own
+       status text "Saving Game " -- is the Save path, see its matching
+       fix). An earlier session's comment here ("chosen slot,
+       destination... live session, source... i.e. 'Save Game'
+       snapshot-copies the live SAVE0 session into the chosen numbered
+       slot") was the same directional mistake as save_game_to_slot's
+       original call, just never caught because this Load path was never
+       actually exercised end-to-end with a real position check.
+       acStack_630 ("\SAVE0", the active session) is the destination;
+       acStack_528 ("\SAVEn", the chosen slot) is the source -- loading
+       the slot's saved state into the live session, matching what
+       save_game_to_slot now does in the opposite direction. */
+    iVar4 = FUN_0006c670(acStack_630,acStack_528);
     if (getenv("UW_DEBUG_SAVEDESC"))
       fprintf(stderr, "[savedesc] FUN_0006c670 returned %d, acStack_528=%s\n", iVar4, acStack_528);
     if (iVar4 != 0) {
       FUN_00078c80(0xaa);
-      /* The decompile never reconstructed a "type a save description"
-         prompt (real UW1 likely had one; FUN_0006c264's own param_2
-         confirms the Load side at least round-trips whatever text is
-         already stored), and building that whole text-entry flow from
-         scratch is out of scope here. Write a real, useful description
-         anyway -- the current dungeon level -- so a save actually shows
-         up as "used" (probe_save_slots probes for this file's existence) and
-         the Load list has something meaningful to show instead of
-         staying blank forever. */
-      {
-        char descbuf[64];
-        char descpath[300];
-        int desclen;
-        snprintf(descbuf, sizeof(descbuf), "Level %d", (int)DAT_00201b68);
-        snprintf(descpath, sizeof(descpath), "%s\\desc", acStack_528);
-        desclen = (int)strlen(descbuf);
-        FUN_0007edf4(descbuf, descpath, (ushort)desclen);
-      }
+      /* An earlier session added a snprintf("Level %d", ...) write-back
+         to this slot's desc file here, reasoning the decompile never
+         reconstructed a "type a save description" prompt for Save, so
+         Load should at least leave something non-blank behind. That
+         reasoning no longer applies -- save_game_to_slot (the Save path) now
+         has a fully working name-entry flow and writes the player's
+         actual chosen name into the desc file at save time (see its own
+         FUN_0007edf4 call). This block ran on every LOAD too, though,
+         unconditionally overwriting the first strlen("Level N") bytes of
+         the slot's real desc file with "Level N" and leaving whatever
+         longer content used to be there past that point untouched --
+         confirmed as the cause of a QA report where loading a save named
+         "HELLO WORLD" corrupted its own stored name to "LEVEL 1ORLD" (7
+         bytes of "Level 1" overwriting the first 7 bytes of "HELLO
+         WORLD", "ORLD" being the un-overwritten remainder). Load has no
+         business rewriting the slot's description at all -- removed. */
       FUN_0003bee4();
       iVar4 = FUN_00044624(&DAT_000857a0);
       if (iVar4 != 0) {
@@ -59736,15 +60737,28 @@ char param_1;
       }
     }
   }
-  message_scroll_print_wrapped(&DAT_0008522c);
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   return 0;
 }
 
 
 
-undefined4 FUN_0006c264(param_1,param_2)
+// was FUN_0006c264
+undefined4 save_game_to_slot(param_1,param_2)
 char param_1;
-undefined4 param_2;
+/* Was `undefined4` -- truncates the real 64-bit buffer pointer
+   FUN_0006bfec passes in (a pointer into its own auStack_ac local,
+   see that function's comment). On the original 32-bit ARM binary this
+   was harmless, but on this 64-bit recompile the parameter-spill in
+   this function's own prologue drops the pointer's upper 32 bits the
+   moment it's read out of the argument register, leaving every later
+   dereference (message_scroll_print_wrapped, the scroll_text_entry_prompt name-entry
+   call, the strlen/Ordinal_1063 calls near the end) a wild pointer --
+   confirmed crash: "Enter a save/load name" renders fine (that prompt
+   is a static string, not this buffer), but touching the corrupted
+   buffer once you start typing segfaults. Same bug class as
+   FUN_00077f30's uVar3 fix earlier this session. */
+char *param_2;
 
 {
   char stack0xffdc2d20_buf [256];
@@ -59781,11 +60795,18 @@ undefined4 param_2;
   *pcVar3 = param_1 + '0';
   pcVar3[1] = '\0';
   }
-  FUN_0007fce8(1);
+  msg_scroll_panel_reset(1);
   message_scroll_print_wrapped(s_Please_enter_a_Save_Game_file_an_00087094);
-  sVar2 = FUN_0007ffa8(0,param_2,param_2,1);
+  /* Dropped 5th argument (max name length) -- confirmed via real ARM
+     disassembly (0x6c2f8-0x6c30c: `mov r3,#0x1e; strh r3,[sp,#0]` pushes
+     0x1e as the 5th/stack arg immediately before the call). Same
+     dropped-argument idiom fixed elsewhere this session -- without it
+     param_5 is whatever garbage was left on the stack, which
+     scroll_text_entry_prompt clamps to at most 0x32 but never validates as sane
+     otherwise. */
+  sVar2 = scroll_text_entry_prompt(0,param_2,param_2,1,0x1e);
   if (((sVar2 != 0x1b) && (sVar2 != 1)) && (sVar2 != 2)) {
-    message_scroll_print_wrapped(&DAT_0008522c);
+    message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     FUN_00078c80(0xa7);
     iVar4 = 0;
     do {
@@ -59826,7 +60847,7 @@ undefined4 param_2;
           pcVar8 = pcVar8 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(local_638,&DAT_000857a0);
-        iVar4 = FUN_00043fd8(local_638);
+        iVar4 = write_player_save_record(local_638);
         if (iVar4 != 0) {
           FUN_00078c80(0xaa);
           iVar4 = FUN_0006bcd4((int)DAT_00201b68);
@@ -59836,14 +60857,28 @@ undefined4 param_2;
             Ordinal_61(auStack_428,uVar5);
             uVar5 = FUN_0002295c(local_638);
             Ordinal_61(auStack_220,uVar5);
-            /* Was FUN_0006c670(auStack_220,auStack_428) -- the broken wide
-               copies; pass the real ANSI paths directly instead (see
-               FUN_0006c670's own comment). local_638 is the active
-               session ("\SAVE0", destination -- Load overwrites it),
-               local_530 the chosen slot ("\SAVEn", source). */
-            iVar4 = FUN_0006c670(local_638,local_530);
+            /* Was FUN_0006c670(local_638,local_530) -- i.e.
+               (dest="\SAVE0", src="\SAVEn"), copying the CHOSEN SLOT
+               back onto the active session. That's backwards for this
+               function: save_game_to_slot is the SAVE path (confirmed live --
+               its own status text is "Saving Game ", gated by
+               FUN_000400dc's real save preconditions, and it just
+               finished writing the current name/player.dat/lev.ark
+               state into local_638="\SAVE0" a few lines up) -- copying
+               SAVEn back onto SAVE0 immediately discards all of that
+               and leaves the actual save slot (local_530) untouched.
+               Confirmed via a live save/move/reload test: SAVE0 and the
+               target slot stayed byte-identical to each other (and to
+               their pre-save content) no matter what the player did,
+               until swapping this call's argument order so the
+               freshly-updated local_638 ("\SAVE0") is the SOURCE and
+               local_530 ("\SAVEn") the DESTINATION -- i.e. actually
+               writing the live session out to the chosen slot, matching
+               what load_game_from_slot (the sibling Load path, own status text
+               "Restoring Game ") does in the opposite direction. */
+            iVar4 = FUN_0006c670(local_530,local_638);
             if (iVar4 != 0) {
-              message_scroll_print_wrapped(&DAT_00087038);
+              message_scroll_print_wrapped(&s_scroll_color_reset_00087038);
               uVar5 = 1;
               goto LAB_0006c544;
             }
@@ -59855,7 +60890,7 @@ undefined4 param_2;
 LAB_0006c540:
   uVar5 = 0;
 LAB_0006c544:
-  FUN_0007fce8(1);
+  msg_scroll_panel_reset(1);
   return uVar5;
 }
 
@@ -59944,7 +60979,34 @@ char *param_1;  /* destination directory, e.g. "\SAVE3" */
 char *param_2;  /* source directory, e.g. "\SAVE0" */
 
 {
-  static const char *file_suffixes[] = { "\\lev.ark", "\\bglobals.dat", "\\desc" };
+  /* Was a hardcoded 3-entry list missing "player.dat" entirely -- real
+     ARM disassembly of this function (0x6c670) shows it's genuinely
+     NOT a fixed-file-list copier at all: it calls what are clearly
+     FindFirstFile/FindNextFile/CopyFile-equivalents (0x8203c/0x82150/
+     0x81ff4), looping over and copying EVERY file in the source
+     directory (skipping only subdirectories, via a FILE_ATTRIBUTE_
+     DIRECTORY==0x10 check) -- a generic "copy this whole save folder"
+     operation, not a curated list an earlier session guessed at. A full
+     FindFirstFile-style reimplementation felt like more risk than this
+     specific bug warranted (the one real file it would additionally
+     pick up here, "_arc.tmp", is a zero-byte scratch file from the
+     archive-write path, harmless either way) -- confirmed the complete
+     real file set for a save directory empirically instead (`ls
+     data/SAVE0`) and added the one missing real file directly. Without
+     player.dat here, Save/Load's own player.dat write
+     (write_player_save_record) always goes straight to the fixed
+     \SAVE0\player.dat path and NOTHING ever copies a per-slot player.dat
+     to/from \SAVE<n> -- so every numbered slot shares the exact same,
+     single, always-most-recently-written player.dat regardless of which
+     slot you actually saved/loaded. Confirmed live and reported by QA:
+     the loaded dungeon state was correctly per-slot, but the player
+     character (inventory included) always reflected whichever save had
+     been made most recently, letting an item picked up after one save
+     be duplicated by loading an earlier save that still had it lying on
+     the ground -- the old \SAVE0\player.dat (with the item now in
+     inventory) was never actually replaced by loading, so it persisted
+     alongside the reloaded, not-yet-picked-up copy on the ground. */
+  static const char *file_suffixes[] = { "\\lev.ark", "\\bglobals.dat", "\\player.dat", "\\desc" };
   char src[300];
   char dst[300];
   size_t i;
@@ -59955,8 +61017,9 @@ char *param_2;  /* source directory, e.g. "\SAVE0" */
     snprintf(src, sizeof(src), "%s%s", param_2, file_suffixes[i]);
     snprintf(dst, sizeof(dst), "%s%s", param_1, file_suffixes[i]);
     /* desc is optional (a brand new character who has never saved/loaded
-       before has no \SAVE0\desc yet) -- lev.ark/bglobals.dat are not. */
-    if (!uw_file_copy(src, dst) && i != 2) {
+       before has no \SAVE0\desc yet) -- lev.ark/bglobals.dat/player.dat
+       are not. */
+    if (!uw_file_copy(src, dst) && i != 3) {
       ok = 0;
     }
   }
@@ -62828,8 +63891,8 @@ void FUN_000708bc()
   undefined1 local_58 [52];
   
   local_58[0] = 0;
-  FUN_0007ffa8(s_Chant_the_mantra__0008731c,0,local_58,1,10);
-  message_scroll_print_wrapped(&DAT_0008522c);
+  scroll_text_entry_prompt(s_Chant_the_mantra__0008731c,0,local_58,1,10);
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   iVar10 = 0x33;
   do {
     uVar4 = Ordinal_1416(local_58);
@@ -62869,8 +63932,8 @@ LAB_000709e0:
     if (iVar6 == 0x14) {
       if ((*(byte *)(DAT_00086df8 + 0x60) & 0x80) == 0) {
         uVar4 = FUN_0007863c(0x223);
-        FUN_0007ed20(uVar4,*(ushort *)(g_player_object + 0x16) >> 10,
-                     (*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4,(int)DAT_00201b68,0x18,0x2d,3,4
+        FUN_0007ed20(uVar4,*(ushort *)((char *)g_player_object + 0x16) >> 10,
+                     (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4,(int)DAT_00201b68,0x18,0x2d,3,4
                     );
       }
 LAB_00070c78:
@@ -63267,7 +64330,7 @@ LAB_0007158c:
     if (param_1 < 0) {
       FUN_0007141c();
     }
-    if (*(char *)(g_player_object + 8) == '\0') {
+    if (*(char *)((char *)g_player_object + 8) == '\0') {
       FUN_000735c0();
     }
     else {
@@ -63278,7 +64341,7 @@ LAB_0007158c:
         uVar5 = Ordinal_1053();
         Ordinal_2005(4,uVar5);
         iVar4 = (extraout_r1_00 - iVar8) + 7;
-        if (*(byte *)(g_player_object + 8) < 10) {
+        if (*(byte *)((char *)g_player_object + 8) < 10) {
           uVar5 = Ordinal_1053();
           Ordinal_2005(2,uVar5);
           iVar4 = iVar4 + extraout_r1_01 + 1;
@@ -63533,7 +64596,7 @@ undefined4 FUN_00071e20()
   else {
     local_16 = DAT_00204880 >> 5;
     local_18 = DAT_00204882 >> 5;
-    FUN_00069f2c((int)DAT_00201c70 >> 8,0xb,&local_16,&local_18);
+    project_position_by_heading((int)DAT_00201c70 >> 8,0xb,&local_16,&local_18);
     puVar5 = (ushort *)tilemap_lookup((int)(short)local_16 >> 3,(int)(short)local_18 >> 3);
     uVar1 = *puVar5;
     if (((uVar1 & 0xf) == 1) &&
@@ -63610,18 +64673,18 @@ void FUN_0007213c()
   iVar2 = FUN_00072084(*(byte *)(DAT_00086df8 + 0x5e) >> 4,0x1ca);
   if (iVar2 != 0) {
     if (*(byte *)(DAT_0023be74 + 4) < 9) {
-      *(byte *)(g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
+      *(byte *)((char *)g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
     }
     else {
       cVar1 = rand_below(3);
-      *(char *)(g_player_object + 8) = (-2 - cVar1) + *(char *)(DAT_0023be74 + 4);
+      *(char *)((char *)g_player_object + 8) = (-2 - cVar1) + *(char *)(DAT_0023be74 + 4);
     }
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
     if (8 < *(byte *)(DAT_00086df8 + 0x38)) {
       *(byte *)(DAT_00086df8 + 0x37) =
            (-2 - (*(byte *)(DAT_00086df8 + 0x38) >> 3)) + *(char *)(DAT_00086df8 + 0x37);
     }
-    *(byte *)(g_player_object + 0x15) = *(byte *)(g_player_object + 0x15) & 0xec | 0x2c;
+    *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
     uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
@@ -63651,7 +64714,7 @@ void FUN_00072288()
   char *pNewObj;
 
   if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
-    *(undefined1 *)(g_player_object + 8) = 4;
+    *(undefined1 *)((char *)g_player_object + 8) = 4;
     return;
   }
   thunk_FUN_00072c44();
@@ -63683,20 +64746,20 @@ LAB_00072374:
   if (iVar7 != 0) {
     uVar4 = *(undefined2 *)(pNewObj + 2);
     bVar1 = (byte)uVar4;
-    *(byte *)(pNewObj + 2) = (*(byte *)(g_player_object + 2) ^ bVar1) & 0x7f ^ bVar1;
+    *(byte *)(pNewObj + 2) = (*(byte *)((char *)g_player_object + 2) ^ bVar1) & 0x7f ^ bVar1;
     *(char *)(pNewObj + 3) = (char)((ushort)uVar4 >> 8);
     *(byte *)(pNewObj + 6) = *(byte *)(pNewObj + 6) | 0x3f;
     *(undefined1 *)(pNewObj + 7) = *(undefined1 *)(pNewObj + 7);
-    uVar8 = (*(ushort *)(pNewObj + 2) ^ *(ushort *)(g_player_object + 2)) & 0x1fff ^
-            (uint)*(ushort *)(g_player_object + 2);
+    uVar8 = (*(ushort *)(pNewObj + 2) ^ *(ushort *)((char *)g_player_object + 2)) & 0x1fff ^
+            (uint)*(ushort *)((char *)g_player_object + 2);
     uVar2 = (undefined1)uVar8;
     *(undefined1 *)(pNewObj + 2) = uVar2;
     bVar3 = (byte)(uVar8 >> 8);
     *(byte *)(pNewObj + 3) = bVar3;
-    bVar1 = *(byte *)(g_player_object + 3);
+    bVar1 = *(byte *)((char *)g_player_object + 3);
     *(undefined1 *)(pNewObj + 2) = uVar2;
     *(byte *)(pNewObj + 3) = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
-    FUN_00055f98(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
+    settle_dropped_object(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
     FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
@@ -63707,7 +64770,7 @@ LAB_00072374:
     if (iVar6 != 0) {
       FUN_00037c14(0x102);
       thunk_FUN_0003c310(0xf1);
-      FUN_0007fce8(1);
+      msg_scroll_panel_reset(1);
       return;
     }
   }
@@ -63830,7 +64893,7 @@ undefined4 param_2;
           }
           message_scroll_print_wrapped(acStack_2c);
           message_scroll_print_wrapped(s_was_successfully_dearmed__000873b0);
-          FUN_000533e4(local_34[0]);
+          free_linked_object_recursive(local_34[0]);
         }
       }
     }
@@ -64057,11 +65120,11 @@ LAB_00072f24:
   else {
     iVar10 = (param_1 & 0xff) * 5;
     uVar9 = (int)param_2 -
-            ((int)(((*(ushort *)(g_player_object + 0x16) >> 7 & 0x1f8) +
-                   (uint)(*(byte *)(g_player_object + 3) >> 5)) * 0x10000) >> 0x10);
+            ((int)(((*(ushort *)((char *)g_player_object + 0x16) >> 7 & 0x1f8) +
+                   (uint)(*(byte *)((char *)g_player_object + 3) >> 5)) * 0x10000) >> 0x10);
     uVar8 = (int)param_3 -
-            ((int)(((*(ushort *)(g_player_object + 0x16) >> 1 & 0x1f8) +
-                   ((*(byte *)(g_player_object + 3) & 0x1c) >> 2)) * 0x10000) >> 0x10);
+            ((int)(((*(ushort *)((char *)g_player_object + 0x16) >> 1 & 0x1f8) +
+                   ((*(byte *)((char *)g_player_object + 3) & 0x1c) >> 2)) * 0x10000) >> 0x10);
     uVar3 = FUN_00013774(uVar8 * uVar8 + uVar9 * uVar9);
     uVar3 = uVar3 & 0xffff;
     if (uVar3 == 0) {
@@ -64087,8 +65150,8 @@ LAB_00072f24:
       else {
         sVar2 = Ordinal_2005(uVar3,uVar9 * 0x80);
       }
-      FUN_00049c64(((0x40 - (*(byte *)(g_player_object + 0x18) & 0x1f)) * 4 -
-                   ((int)*(short *)(g_player_object + 2) & 0x380U)) * 0x40,&local_28,&local_26);
+      heading_to_sine_cosine(((0x40 - (*(byte *)((char *)g_player_object + 0x18) & 0x1f)) * 4 -
+                   ((int)*(short *)((char *)g_player_object + 2) & 0x380U)) * 0x40,&local_28,&local_26);
       iVar5 = (int)local_28;
       iVar6 = (int)local_26;
       local_28 = (short)(char)((ushort)local_28 >> 8);
@@ -64359,9 +65422,9 @@ short param_1;
     }
   }
   if ((((param_1 == 1) && (DAT_00201b68 == 3)) &&
-      (uVar4 = (*(ushort *)(g_player_object + 0x16) >> 10) - 0x18, uVar7 = (int)uVar4 >> 0x1f,
+      (uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 10) - 0x18, uVar7 = (int)uVar4 >> 0x1f,
       (int)((uVar4 ^ uVar7) - uVar7) < 3)) &&
-     ((uVar4 = (*(ushort *)(g_player_object + 0x16) >> 4 & 0x3f) - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
+     ((uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f) - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
       (int)((uVar4 ^ uVar7) - uVar7) < 3 && (iVar6 = FUN_00073474(local_2c), iVar6 != 0)))) {
     return;
   }
@@ -64856,19 +65919,19 @@ char param_2;
   
   if (param_1 == g_player_object) {
     if (param_2 < '\x01') {
-      sVar2 = (ushort)*(byte *)(g_player_object + 8) - (short)param_2;
+      sVar2 = (ushort)*(byte *)((char *)g_player_object + 8) - (short)param_2;
     }
     else {
       uVar1 = Ordinal_1053();
-      sVar2 = (ushort)*(byte *)(g_player_object + 8) +
+      sVar2 = (ushort)*(byte *)((char *)g_player_object + 8) +
               ((short)(((uVar1 & 3) + (short)param_2) * (ushort)*(byte *)(DAT_0023be74 + 4)) >> 4) +
               1;
     }
     if ((short)(ushort)*(byte *)(DAT_0023be74 + 4) < sVar2) {
-      *(byte *)(g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
+      *(byte *)((char *)g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
     }
     else {
-      *(char *)(g_player_object + 8) = (char)sVar2;
+      *(char *)((char *)g_player_object + 8) = (char)sVar2;
     }
     FUN_00069e30();
   }
@@ -65433,7 +66496,7 @@ char param_6;
     local_1a = (ushort)DAT_0023c3dc;
     local_1c = (ushort)DAT_0023c3d8;
   }
-  FUN_00069f2c(uVar3,param_5,&local_1a,&local_1c);
+  project_position_by_heading(uVar3,param_5,&local_1a,&local_1c);
   cVar1 = param_6 * '\x02' + '\x01';
   FUN_0007471c(param_2,uVar2,param_3,param_4,(char)local_1a - param_6,(char)local_1c - param_6,cVar1
                ,cVar1);
@@ -65543,7 +66606,7 @@ char param_2;
   if (param_2 != '\x04') {
     uVar7 = 9;
   }
-  FUN_00069f2c(extraout_r1_00 & 0xffff,uVar7,&local_34,&local_32);
+  project_position_by_heading(extraout_r1_00 & 0xffff,uVar7,&local_34,&local_32);
   local_2c = (ushort)((int)(short)local_34 >> 3);
   local_2e = (ushort)((int)(short)local_32 >> 3);
   if (param_2 == '\x03') {
@@ -65625,10 +66688,10 @@ char param_2;
           *(byte *)(pObj + 0x19) = *(byte *)(pObj + 0x19) | 1;
           uVar2 = *(ushort *)(pObj + 0xf);
           uVar10 = uVar2 & 0xffc0;
-          bVar1 = *(byte *)(g_player_object + 0x17) >> 2;
+          bVar1 = *(byte *)((char *)g_player_object + 0x17) >> 2;
           *(byte *)(pObj + 0xf) = (byte)uVar10 | bVar1;
           *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
-          uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (*(ushort *)(g_player_object + 0x16) & 0x3f0) << 2;
+          uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) << 2;
           *(char *)(pObj + 0xf) = (char)uVar10;
           *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
         }
@@ -65646,7 +66709,7 @@ char param_2;
       if (param_2 == '\x04') {
         return;
       }
-      FUN_00055f98(pObj,(int)(short)local_2c,(int)(short)local_2e,1);
+      settle_dropped_object(pObj,(int)(short)local_2c,(int)(short)local_2e,1);
       return;
     }
     if (param_1 != g_player_object) {
@@ -65736,7 +66799,7 @@ undefined4 param_2;
   byte local_2c [8];
   
   Ordinal_1047(local_2c,0,8);
-  uVar2 = *(ushort *)(g_player_object + 0x16);
+  uVar2 = *(ushort *)((char *)g_player_object + 0x16);
   for (pbVar10 = DAT_002046c0; pbVar10 < DAT_002046c8; pbVar10 = pbVar10 + 1) {
     puVar5 = (ushort *)((uint)*pbVar10 * 0x1b + DAT_002046b8);
     uVar13 = (uint)*puVar5;
@@ -65915,7 +66978,7 @@ LAB_00075a0c:
     FUN_000542f8(0xb,uVar3,param_2);
     break;
   case 0xc:
-    FUN_000444b0(g_player_object + 6);
+    FUN_000444b0((char *)g_player_object + 6);
     FUN_0003bc1c(0);
     FUN_00044814();
     FUN_00044920();
@@ -67237,6 +68300,8 @@ uint param_3;
     return 0;
   }
   uVar1 = (ushort)param_3;
+  if (getenv("UW_DEBUG_INPUTEVENT"))
+    fprintf(stderr, "[keymsg] msg=0x%x wparam=0x%x DAT_0023c448_before=0x%x\n", (unsigned int)param_2, (unsigned int)param_3, (unsigned int)DAT_0023c448);
   if (param_2 != 0x100) {
     if (param_2 == 0x101) {
       DAT_000876c8 = 1;
@@ -67461,11 +68526,18 @@ void FUN_00077f30()
 {
   char cVar1;
   short sVar2;
-  undefined4 uVar3;
+  /* Was `undefined4` -- truncated Ordinal_1416's real 64-bit string
+     pointer return (see that ordinal's own comment: it's `_strupr`,
+     genuinely implemented now instead of a stub) to 32 bits on this
+     host before handing it to draw_text_string. Harmless while
+     Ordinal_1416 was a stub always returning 0; a real
+     pointer-truncation crash now that it isn't. Same class as
+     everywhere else this session. */
+  char *uVar3;
   int iVar4;
   undefined1 auStack_28 [30];
   undefined1 local_a;
-  
+
   Ordinal_1071(auStack_28,DAT_00086df8,0xf);
   local_a = 0;
   Ordinal_1416(auStack_28);
@@ -67475,8 +68547,15 @@ void FUN_00077f30()
     iVar4 = -(int)sVar2 + 0x49;
   }
   draw_text_string(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
-  FUN_0007863c((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400);
-  uVar3 = Ordinal_1416();
+  /* Was `FUN_0007863c(id); uVar3 = Ordinal_1416();` -- Ordinal_1416
+     (real body: `_strupr`, see its own comment) needs an explicit
+     string argument, but was called with none, relying on the K&R
+     leftover-register idiom (this project's established "dropped
+     argument" pattern) to still hold FUN_0007863c's just-returned
+     string pointer. That register doesn't reliably carry through on
+     this recompile, so uVar3 came back NULL/garbage and the player's
+     title was never drawn. Thread the string through explicitly. */
+  uVar3 = Ordinal_1416(FUN_0007863c((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
   draw_text_string(uVar3,0xf2,0x16);
   FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
   cVar1 = *(byte *)(DAT_00086df8 + 0x3d) - 1;
@@ -67516,7 +68595,7 @@ void FUN_00078088()
   int iVar2;
   undefined1 auStack_c [8];
   
-  FUN_000229e0(*(undefined1 *)(g_player_object + 8),auStack_c,10);
+  FUN_000229e0(*(undefined1 *)((char *)g_player_object + 8),auStack_c,10);
   sVar1 = Ordinal_1068(auStack_c);
   auStack_c[sVar1] = 0x2f;
   FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
@@ -67566,7 +68645,9 @@ void FUN_0007821c(param_1)
 uint param_1;
 
 {
-  undefined4 uVar1;
+  /* Was `undefined4` -- same Ordinal_1416 pointer-truncation class as
+     FUN_00077f30's player-title draw. */
+  char *uVar1;
   int iVar2;
   uint uVar3;
   int iVar4;
@@ -67576,8 +68657,12 @@ uint param_1;
   FUN_000229e0(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
   FUN_00011c10(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
                0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
-  FUN_0007863c((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400);
-  uVar1 = Ordinal_1416();
+  /* Was `FUN_0007863c(id); uVar1 = Ordinal_1416();` -- same dropped-
+     argument bug as FUN_00077f30's player-title draw above; thread
+     the looked-up skill-name string through explicitly instead of
+     relying on leftover-register reuse. This is why no skill names
+     (Sword/Swimming/Mace/etc.) ever displayed. */
+  uVar1 = Ordinal_1416(FUN_0007863c((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400));
   iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
   draw_text_string(uVar1,0xf2,iVar4);
   iVar2 = measure_text_width(auStack_18);
@@ -67654,7 +68739,18 @@ void FUN_00078434()
     if (sVar2 != 1) {
       uVar1 = 0;
     }
-    sVar2 = FUN_00069eb0(local_c,uVar1,1);
+    /* Was `FUN_00069eb0(local_c,uVar1,1);` -- dropped its 4th
+       argument (direction, -1/+1), the SAME `sVar2` value just
+       computed above from the click position but about to be
+       clobbered by this very call's own return value (Ghidra reused
+       the variable slot). FUN_00069eb0's own body branches on
+       param_4==-1 vs anything else to pick which bound check and
+       which sign to apply, so a dropped/garbage direction here could
+       clamp against the wrong bound or step the wrong way --
+       confirmed as the cause of "scrolling jumps somewhere else
+       instead of line by line". Re-derive the direction explicitly
+       instead of relying on the leftover register. */
+    sVar2 = FUN_00069eb0(local_c,uVar1,1,(0x24 < *DAT_00085a6c) ? 1 : -1);
     if (sVar2 != 0) {
       DAT_0024af80 = (byte)local_c[0];
       FUN_00057118();
@@ -68699,7 +69795,7 @@ LAB_00079cb8:
 // was FUN_00079d08
 bool finish_object_use(param_1,param_2,param_3)
 /* Was `undefined4 param_1` -- a real object-record pointer (forwarded
-   to decrement_object_count/FUN_00053334, which both dereference it), truncated
+   to decrement_object_count/discard_misplaced_object, which both dereference it), truncated
    to 32 bits on this host -- same class as many other fixes this
    session. */
 ushort *param_1;
@@ -68719,11 +69815,11 @@ undefined4 param_3;
     if (iVar2 == 0) {
       sVar1 = encode_object_slot_index(param_1);
       local_14[0] = local_14[0] & 0x3f | sVar1 << 6;
-      FUN_000533e4(local_14);
+      free_linked_object_recursive(local_14);
       iVar2 = 0;
     }
     else {
-      iVar2 = FUN_00053334(DAT_002046b4,param_1,param_3);
+      iVar2 = discard_misplaced_object(DAT_002046b4,param_1,param_3);
       FUN_00049924(2);
     }
   }
@@ -68732,7 +69828,7 @@ undefined4 param_3;
        and forwards it on -- called bare here, same idiom as its own
        fix. */
     decrement_object_count(param_1);
-    iVar2 = FUN_00053334(0,param_1,param_3);
+    iVar2 = discard_misplaced_object(0,param_1,param_3);
   }
   return iVar2 == 0;
 }
@@ -69078,7 +70174,7 @@ int param_2;
     }
     FUN_00081814(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
     iVar2 = tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
-    FUN_00053334(iVar2 + 2,param_1,1);
+    discard_misplaced_object(iVar2 + 2,param_1,1);
     DAT_002020a0 = -1;
     uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
@@ -69474,7 +70570,7 @@ LAB_0007af3c:
         if (sVar4 == -1) {
           FUN_00078c80(0xf1);
           FUN_00071510(0xfffffffe);
-          if (*(char *)(g_player_object + 8) == '\0') goto LAB_0007b254;
+          if (*(char *)((char *)g_player_object + 8) == '\0') goto LAB_0007b254;
           FUN_00078c80(0xf3);
           uVar8 = Ordinal_2005(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
           uVar8 = (uVar8 & 0xff) + 10;
@@ -69575,7 +70671,7 @@ int param_3;
   g_cursor_holding_state = 0;
   if ((param_2 != 0) && (param_3 == 0)) {
     uVar5 = encode_object_slot_index(param_1);
-    iVar6 = FUN_00053644(g_player_object + 6,1,uVar5);
+    iVar6 = FUN_00053644((char *)g_player_object + 6,1,uVar5);
     if (iVar6 == 0) {
       uVar11 = (int)*param_1 & 0x1ff;
       if (((ushort)uVar11 < 0x153) || (0x156 < (ushort)uVar11)) {
@@ -69621,7 +70717,7 @@ int param_3;
                        ((uVar3 & 0x1c00) >> 10) + DAT_002020a4 * 8,uVar3 & 0x7f,puVar8,6,0);
           iVar6 = iVar6 + -1;
         }
-        FUN_00053334(iVar7 + 2,param_1,1);
+        discard_misplaced_object(iVar7 + 2,param_1,1);
         FUN_00049924(2);
       }
     }
@@ -69882,7 +70978,7 @@ int param_2;
           message_scroll_print_wrapped(acStack_7c);
           FUN_0007863c(param_1[3] >> 6 | 0x600);
           message_scroll_print_wrapped();
-          message_scroll_print_wrapped(&DAT_0008522c);
+          message_scroll_print_wrapped(&s_scroll_newline_0008522c);
         }
         else {
           FUN_000282ac();
@@ -70845,8 +71941,8 @@ LAB_0007dce4:
     }
     sVar3 = rand_below(*(undefined1 *)(DAT_00086df8 + 0x2a));
     uVar6 = FUN_0007863c(0x2f5);
-    FUN_0007ed20(uVar6,*(ushort *)(g_player_object + 0x16) >> 10,
-                 (*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4,0,
+    FUN_0007ed20(uVar6,*(ushort *)((char *)g_player_object + 0x16) >> 10,
+                 (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4,0,
                  CONCAT22(uVar20,*(ushort *)(DAT_0024cff4 + 0x16) >> 10),
                  CONCAT22(uVar21,(*(ushort *)(DAT_0024cff4 + 0x16) & 0x3f0) >> 4),0,0);
     uVar6 = encode_object_slot_index(DAT_0024cff4);
@@ -70856,7 +71952,7 @@ LAB_0007dce4:
     local_34 = tilemap_lookup(param_1[2] & 0x3f,(byte)param_1[3] & 0x3f);
     local_34 = local_34 + 2;
     uVar6 = resolve_object_link(param_1 + 3);
-    FUN_000534a8(local_34,uVar6);
+    unlink_and_free_object(local_34,uVar6);
     FUN_00049924(2);
     return 2;
   case 0xc:
@@ -71045,7 +72141,7 @@ int param_2;
   uVar1 = encode_object_slot_index(param_2);
   iVar2 = FUN_00053644(param_1,1,uVar1);
   if (iVar2 != 0) {
-    FUN_000534a8(DAT_002046b4);
+    unlink_and_free_object(DAT_002046b4);
   }
   return;
 }
@@ -71273,9 +72369,9 @@ short param_3;
   uint uVar3;
   
   if (((param_1 == 0) ||
-      (uVar3 = (int)(short)(*(ushort *)(g_player_object + 0x16) >> 10) - (int)param_2,
+      (uVar3 = (int)(short)(*(ushort *)((char *)g_player_object + 0x16) >> 10) - (int)param_2,
       uVar1 = (int)uVar3 >> 0x1f, 7 < (int)((uVar3 ^ uVar1) - uVar1))) ||
-     (uVar3 = (int)(short)((*(ushort *)(g_player_object + 0x16) & 0x3f0) >> 4) - (int)param_3,
+     (uVar3 = (int)(short)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) - (int)param_3,
      uVar1 = (int)uVar3 >> 0x1f, uVar2 = 0, 7 < (int)((uVar3 ^ uVar1) - uVar1))) {
     uVar2 = 1;
   }
@@ -71744,7 +72840,7 @@ undefined4 FUN_0007edec()
 
 bool FUN_0007edf4(param_1,param_2,param_3)
 void *param_1;  /* was `undefined4` -- truncated the real data-buffer
-                   pointer (FUN_0006c264 passes its own param_2, a real
+                   pointer (save_game_to_slot passes its own param_2, a real
                    description-text buffer; the new save-description
                    write above passes a real stack buffer too) */
 char *param_2;  /* was `undefined4` -- same truncation, for the real
@@ -71755,8 +72851,29 @@ ushort param_3;
   int iVar1;
   uint uVar2;
   bool bVar3;
-  
-  iVar1 = FUN_0002273c(param_2);
+
+  /* Was `FUN_0002273c(param_2)` (== uw_file_open_write(param_2, 0), our
+     port's "rb+", no-truncate" mode) -- real ARM disassembly of
+     FUN_0002273c (0x2273c) shows the original game's own write-open
+     helper always ends up starting from an empty file regardless of
+     which branch it takes (TRUNCATE_EXISTING when the target already
+     exists, OPEN_ALWAYS -- i.e. create fresh -- when it doesn't), never
+     "open and preserve existing content". This function is now this
+     codebase's only caller (the save-slot description write in
+     save_game_to_slot); using the non-truncating wrapper here left
+     stale trailing bytes from a previous, longer description whenever a
+     shorter new name was saved over it -- confirmed live: saving
+     "MYCHAR" over a slot that had previously held a longer name left
+     the file as "MYCHAR\0EST\0" (the old name's un-truncated tail after
+     the new null terminator), which the title-screen slot picker then
+     displayed as if two different labels were drawn on top of each
+     other. Call uw_file_open_write directly with create_always=1
+     ("wb+", truncates) instead of going through FUN_0002273c's
+     no-truncate wrapper -- deliberately NOT changing FUN_0002273c
+     itself, since its other several callers (the level-archive
+     read-then-write path in particular) may rely on its current
+     preserve-existing-content behavior and weren't audited here. */
+  iVar1 = uw_file_open_write(param_2, 1);
   if (iVar1 == -1) {
     bVar3 = false;
   }
@@ -71843,7 +72960,7 @@ undefined4 param_1;
 byte param_2;
 char *param_3;  /* was `int` -- truncated the real DAT_00086df8 pointer
                    FUN_00065b90 passes in, latent until something
-                   (FUN_00043fd8, the player.dat writer) actually called
+                   (write_player_save_record, the player.dat writer) actually called
                    FUN_00065b90 -- previously only reachable from the
                    Load Game path */
 short param_4;
@@ -71895,7 +73012,7 @@ void FUN_0007f044()
 {
   DAT_00250704 = &DAT_00087960;
   DAT_00250714 = 0;
-  FUN_0007fc8c(0xf,0xa9,0x131,200,0);
+  msg_scroll_panel_init(0xf,0xa9,0x131,200,0);
   msg_scroll_draw_edges();
   return;
 }
@@ -72129,7 +73246,7 @@ char *param_1;
     }
     if (DAT_00250718 != 0 && iVar2 != 1) {
       DAT_00250718 = 0;
-      FUN_0007fce8(0);
+      msg_scroll_panel_reset(0);
     }
     DAT_00250710 = *(undefined2 *)(DAT_00250704 + 0x14);
     DAT_0025071c = 0;
@@ -72206,17 +73323,18 @@ undefined4 param_2;
   while ((iVar2 = Ordinal_1064(param_1,10), iVar2 != 0 &&
          (cVar1 = iVar2[1], cVar1 != '\0'))) {
     iVar2[1] = 0;
-    FUN_0007f7cc(param_1,1);
+    msg_scroll_draw_wrapped_span(param_1,1);
     param_1 = iVar2 + 1;
     *param_1 = cVar1;
   }
-  FUN_0007f7cc(param_1,param_2);
+  msg_scroll_draw_wrapped_span(param_1,param_2);
   return;
 }
 
 
 
-void FUN_0007f7cc(param_1,param_2)
+// was FUN_0007f7cc
+void msg_scroll_draw_wrapped_span(param_1,param_2)
 char * param_1;
 undefined4 param_2;
 
@@ -72228,8 +73346,8 @@ undefined4 param_2;
   char *iVar5;
   undefined1 uVar6;
   int iVar7;
-  /* Recursion-depth safety valve for the FUN_0007f7cc<->FUN_0007fb2c word-
-     wrap pair: FUN_0007fb2c's search-for-a-space-to-split-on has no
+  /* Recursion-depth safety valve for the msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line word-
+     wrap pair: msg_scroll_wrap_split_line's search-for-a-space-to-split-on has no
      fallback once the remainder is down to a single character/space that
      still doesn't fit the remaining line width (its own retry at
      LAB_0007fc64 hands the SAME unshrinkable string straight back here),
@@ -72245,7 +73363,7 @@ undefined4 param_2;
   s_wrap_recursion_depth++;
 
   iVar5 = 0;
-  if ((DAT_00087990 != 0) && (*param_1 == '\\')) {
+  if ((g_scroll_control_codes_enabled != 0) && (*param_1 == '\\')) {
     cVar2 = param_1[1];
     param_1 = param_1 + 2;
     if (cVar2 < '6') {
@@ -72348,7 +73466,7 @@ LAB_0007fa30:
     *(char *)(DAT_00250704 + 9) = (char)((uint)iVar5 >> 8);
   }
   else {
-    FUN_0007fb2c(param_1,param_2);
+    msg_scroll_wrap_split_line(param_1,param_2);
   }
   s_wrap_recursion_depth--;
   return;
@@ -72356,7 +73474,8 @@ LAB_0007fa30:
 
 
 
-void FUN_0007fb2c(param_1,param_2)
+// was FUN_0007fb2c
+void msg_scroll_wrap_split_line(param_1,param_2)
 char * param_1;
 undefined4 param_2;
 
@@ -72368,11 +73487,11 @@ undefined4 param_2;
   int iVar5;
   char cVar6;
 
-  /* Guard against infinite FUN_0007f7cc<->FUN_0007fb2c recursion on an
-     empty string: FUN_0007f7cc sends param_1 here whenever its pixel width
+  /* Guard against infinite msg_scroll_draw_wrapped_span<->msg_scroll_wrap_split_line recursion on an
+     empty string: msg_scroll_draw_wrapped_span sends param_1 here whenever its pixel width
      doesn't fit the remaining line width, but an empty string has zero
      width and can never be split any narrower -- every one of this
-     function's exits below hands param_1 straight back to FUN_0007f7cc
+     function's exits below hands param_1 straight back to msg_scroll_draw_wrapped_span
      unchanged, which (if the line is already full) sends it right back
      here forever. There's nothing to wrap for an empty string, so just
      stop. Confirmed via a real crash: reached with param_1="" once (this
@@ -72405,7 +73524,7 @@ undefined4 param_2;
     cVar6 = *pcVar3;
     *pcVar3 = '\0';
     if (pcVar3 <= param_1) {
-      FUN_0007f7cc(&DAT_0008522c,1);
+      msg_scroll_draw_wrapped_span(&s_scroll_newline_0008522c,1);
       goto LAB_0007fc64;
     }
     sVar2 = measure_text_width(param_1);
@@ -72415,18 +73534,19 @@ LAB_0007fc2c:
   cVar1 = pcVar3[1];
   *pcVar3 = '\n';
   pcVar3[1] = '\0';
-  FUN_0007f7cc(param_1,1);
+  msg_scroll_draw_wrapped_span(param_1,1);
   *pcVar3 = cVar6;
   pcVar3[1] = cVar1;
   param_1 = pcVar3 + (cVar6 == ' ');
 LAB_0007fc64:
-  FUN_0007f7cc(param_1,param_2);
+  msg_scroll_draw_wrapped_span(param_1,param_2);
   return;
 }
 
 
 
-void FUN_0007fc8c(param_1,param_2,param_3,param_4,param_5)
+// was FUN_0007fc8c
+void msg_scroll_panel_init(param_1,param_2,param_3,param_4,param_5)
 int param_1;
 int param_2;
 int param_3;
@@ -72444,16 +73564,31 @@ int param_5;
   rect_fill_or_save_restore(param_1,param_2,param_3,param_4);
 
   /* Populate the message-scroll context struct (DAT_00250704 ->
-     DAT_00087960) from the region rectangle. The decompile lost this:
-     FUN_0007fc8c only drew the panel background, so every scroll field
-     (word-wrap left/right edges at +4/+6, the draw cursor at +8/+0xa,
-     the new-line margin at +0xc, the scroll-blit top at +0xe) stayed 0
-     -- FUN_0007f7cc's width test then never fit, it recursed into
-     word-wrap, and draw_text_string (if reached) drew at (0,0). Called
-     once from FUN_0007f044 during in-game HUD init with
-     (0xf,0xa9,0x131,200,0). */
+     DAT_00087960) from the region rectangle. An earlier session's own
+     comment here claimed "the decompile lost this" from msg_scroll_panel_init's
+     real body -- re-checked via a fresh Ghidra disassembly of 0x7fc8c
+     this session and that's NOT accurate: the real function only draws
+     the (up to) two background rects and tail-calls
+     rect_fill_or_save_restore once more, nothing else -- this whole
+     struct-populate block has no match in the real binary at this
+     address. Left in place anyway (not reverted) because it's the only
+     place currently seeding these fields at all, and empirically
+     produces a correct, working panel (confirmed visually: the save/
+     load name prompt and the save-slot description list both render
+     correctly with it). Real ARM disassembly of msg_scroll_panel_reset (see its
+     own comment) independently confirmed the byte layout this block
+     writes to (+2 bottom_y, +4 left_x, +6 right_x, +8/+0xa draw cursor
+     x/y, +0xc/+0xe new-line-reset x/y) is at least self-consistent with
+     how the rest of the widget reads it. What's still missing: +0x00
+     ("top y", read by msg_scroll_panel_reset's own erase-rect on every reset) was
+     never written here either -- confirmed as the cause of that erase
+     covering the whole screen instead of just this panel's own strip,
+     fixed below by seeding it the same as +0x0e. Wherever the REAL
+     populate code for this struct actually lives is still unknown; flagged
+     for future investigation rather than solved here. */
   ctx = (char *)DAT_00250704;
   if (ctx != (char *)0x0) {
+    *(short *)(ctx + 0x00) = (short)param_2;   /* top y (erase rect)   */
     *(short *)(ctx + 0x02) = (short)param_4;   /* bottom y             */
     *(short *)(ctx + 0x04) = (short)param_1;   /* left x               */
     *(short *)(ctx + 0x06) = (short)param_3;   /* right x              */
@@ -72471,32 +73606,61 @@ int param_5;
 
 
 
-void FUN_0007fce8(param_1)
+/* Every field-offset constant below that was written as a bare
+   `DAT_00250704 + N` (no cast before the addition) was wrong -- half
+   what it should be. DAT_00250704 is declared `undefined *`
+   (uw.h: `typedef unsigned char undefined`), a real byte pointer, but
+   these specific expressions were decompiled as if it scaled by
+   sizeof(undefined2)==2, so every one of them landed N/2 bytes early.
+   The OTHER offsets in this same function, written with an explicit
+   `(char *)DAT_00250704 + N` cast placed *before* the addition, were
+   already byte-correct -- this mixed styling (both forms decompiled
+   from the same real ARM code, which is unambiguously byte-addressed
+   throughout) is what hid the bug: half the fields in this "reset the
+   scroll panel" struct landed at the right place, half didn't.
+   Confirmed via real ARM disassembly (0x7fd14-0x7fdd8): the struct's
+   real byte layout is top_y@0, bottom_y@2, left_x@4, right_x@6 (used
+   by the rect_fill_or_save_restore call below), base_x@0xc, base_y@0xe
+   (the panel's static origin, populated once by msg_scroll_panel_init),
+   cur_x@8, cur_y@0xa (the live draw-cursor these get copied into on
+   every reset -- this is the actual bug: cur_y was landing at byte 5,
+   splitting a partial write across the middle of top_y/bottom_y's own
+   bytes instead of the real cursor field, so it read back as garbage
+   or zero and every scroll message before the first real scroll-up
+   drew off in the weeds instead of at the panel's visible top row),
+   and three more zeroed fields at 0x10/0x12/0x14 (a 0x11/0x13/0x15
+   counterpart to each was already correct). Root cause of both the
+   invisible "Enter a save name" prompt and the invisible save-slot
+   list text -- same struct, same reset function, same bug. */
+// was FUN_0007fce8
+void msg_scroll_panel_reset(param_1)
 int param_1;
 
 {
-  undefined2 *puVar1;
+  char *pStruct;
+  undefined2 uVar1;
   int iVar2;
-  
+
   if ((param_1 != 0) && (FUN_0007f094(), DAT_00250708 != 0)) {
     FUN_00057118();
   }
   set_draw_color(0x2a);
-  rect_fill_or_save_restore(DAT_00250704[2],*DAT_00250704,(ushort)DAT_00250704[3] + 1,(ushort)DAT_00250704[1] + 1
-              );
-  puVar1 = DAT_00250704 + 7;
-  *(char *)(DAT_00250704 + 5) = (char)*puVar1;
-  *(char *)((char *)DAT_00250704 + 0xb) = (char)((ushort)*puVar1 >> 8);
-  puVar1 = DAT_00250704 + 6;
-  *(char *)(DAT_00250704 + 4) = (char)*puVar1;
-  *(char *)((char *)DAT_00250704 + 9) = (char)((ushort)*puVar1 >> 8);
-  *(undefined1 *)(DAT_00250704 + 8) = 0;
-  *(undefined1 *)((char *)DAT_00250704 + 0x11) = 0;
-  *(undefined1 *)(DAT_00250704 + 9) = 0;
-  *(undefined1 *)((char *)DAT_00250704 + 0x13) = 0;
-  *(undefined1 *)(DAT_00250704 + 10) = 0;
-  *(undefined1 *)((char *)DAT_00250704 + 0x15) = 0;
-  if (DAT_00250704 == (undefined2 *)&DAT_00087960) {
+  pStruct = (char *)DAT_00250704;
+  rect_fill_or_save_restore(*(short *)(pStruct + 4),*(short *)(pStruct + 0),
+               (ushort)*(short *)(pStruct + 6) + 1,(ushort)*(short *)(pStruct + 2) + 1);
+  uVar1 = *(undefined2 *)(pStruct + 0xe);
+  *(char *)(pStruct + 0xa) = (char)uVar1;
+  *(char *)(pStruct + 0xb) = (char)((ushort)uVar1 >> 8);
+  uVar1 = *(undefined2 *)(pStruct + 0xc);
+  *(char *)(pStruct + 8) = (char)uVar1;
+  *(char *)(pStruct + 9) = (char)((ushort)uVar1 >> 8);
+  *(undefined1 *)(pStruct + 0x10) = 0;
+  *(undefined1 *)(pStruct + 0x11) = 0;
+  *(undefined1 *)(pStruct + 0x12) = 0;
+  *(undefined1 *)(pStruct + 0x13) = 0;
+  *(undefined1 *)(pStruct + 0x14) = 0;
+  *(undefined1 *)(pStruct + 0x15) = 0;
+  if (DAT_00250704 == (undefined *)&DAT_00087960) {
     set_hud_status_value(4,1);
     iVar2 = msg_scroll_draw_edges();
   }
@@ -72558,10 +73722,10 @@ int param_1;
   *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
   *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
   if (param_1 == 0) {
-    puVar2 = &DAT_0008799c;
+    puVar2 = &s_No_0008799c;
   }
   else {
-    puVar2 = &DAT_000879a0;
+    puVar2 = &s_Yes_000879a0;
   }
   message_scroll_print_wrapped(puVar2);
   return;
@@ -72569,7 +73733,8 @@ int param_1;
 
 
 
-undefined4 FUN_0007ffa8(param_1,param_2,param_3,param_4,param_5)
+// was FUN_0007ffa8
+undefined4 scroll_text_entry_prompt(param_1,param_2,param_3,param_4,param_5)
 undefined * param_1;
 char * param_2;
 int param_3;
@@ -72601,9 +73766,9 @@ short param_5;
   FUN_0007f0e0();
   *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   if (param_1 == (undefined *)0x0) {
-    sVar3 = measure_text_width(&DAT_000879a8);
+    sVar3 = measure_text_width(&s_scroll_prompt_arrow_000879a8);
     sVar3 = -sVar3 - *(short *)(DAT_00250704 + 0xc);
-    param_1 = &DAT_000879a8;
+    param_1 = &s_scroll_prompt_arrow_000879a8;
   }
   else {
     sVar3 = measure_text_width(param_1);
@@ -72616,9 +73781,9 @@ short param_5;
     uVar13 = 0;
   }
   else {
-    DAT_00087990 = 0;
+    g_scroll_control_codes_enabled = 0;
     message_scroll_print_wrapped(param_2);
-    DAT_00087990 = 1;
+    g_scroll_control_codes_enabled = 1;
     pcVar6 = param_2;
     do {
       cVar1 = *pcVar6;
@@ -72637,6 +73802,7 @@ short param_5;
   iVar14 = (int)*(short *)(DAT_00250704 + 10);
   FUN_00057118();
   wait_for_click_release(0);
+  g_text_input_active = 1;
   uVar8 = next_input_event();
   sVar4 = (short)uVar8;
   do {
@@ -72666,7 +73832,7 @@ short param_5;
         sVar3 = DAT_0025070c;
         *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
         *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar3 >> 8);
-        message_scroll_print_wrapped(&DAT_000879a4);
+        message_scroll_print_wrapped(&s_dash_000879a4);
       }
       else {
         pcVar6 = acStack_a1;
@@ -72678,6 +73844,7 @@ short param_5;
         *(char *)(DAT_00250704 + 8) = (char)iVar7;
         *(char *)(DAT_00250704 + 9) = (char)((uint)iVar7 >> 8);
       }
+      g_text_input_active = 0;
       return uVar8;
     }
     flush_dirty_rect_to_display(1);
@@ -72862,10 +74029,10 @@ int * param_3;
   }
   DAT_0025070c = *(undefined2 *)(DAT_00250704 + 8);
   if (*param_3 == 0) {
-    puVar2 = &DAT_0008799c;
+    puVar2 = &s_No_0008799c;
   }
   else {
-    puVar2 = &DAT_000879a0;
+    puVar2 = &s_Yes_000879a0;
   }
   message_scroll_print_wrapped(puVar2);
   FUN_00057118();
@@ -73433,7 +74600,9 @@ short param_7;
   char *iVar5;  /* was `int` -- truncated spawn_new_object's real pointer */
   uint uVar6;
   undefined4 uVar7;
-  int iVar8;
+  char *iVar8;  /* was `int` -- truncated tilemap_lookup's real pointer, same
+                   class as iVar5 above; crashed live in the sibling call
+                   shape at FUN_0004ad10/FUN_0005596c (see their comments) */
   byte bVar9;
 
   iVar5 = (char *)spawn_new_object(param_2 + 0x1c0,0);
@@ -73472,7 +74641,7 @@ LAB_00081980:
     free_object_slot(iVar5);
     return 0;
   }
-  iVar8 = tilemap_lookup((int)param_6,(int)param_7);
+  iVar8 = (char *)tilemap_lookup((int)param_6,(int)param_7);
   object_list_append_tail(iVar8 + 2,iVar5);
   return 1;
 }
@@ -73640,7 +74809,14 @@ int param_2;
 
 
 undefined4 FUN_00081d74(param_1,param_2)
-undefined4 param_1;
+/* Was `undefined4` -- truncated the real 64-bit archive-handle-struct
+   pointer (FUN_00049b04's own `auStack_20`) FUN_00015b94 needs as its
+   own param_1. Same bug class as FUN_00015b94's own param_3 fix right
+   above this function -- confirmed via the same crash chain, one call
+   further down (FUN_00049b04 -> FUN_00081d74 -> FUN_00015b94, this
+   function's own nested call, dereferencing the truncated handle
+   pointer). */
+undefined4 *param_1;
 int param_2;
 
 {
@@ -73651,8 +74827,18 @@ int param_2;
     (&DAT_00250778)[iVar1] = (&DAT_00250778)[iVar1] & 0x3f;
     (&DAT_00250779)[iVar1] = 0;
   }
-  FUN_00015b94(param_1,param_2 + 8,&DAT_00250778,0x180);
-  return 0;
+  /* Was `FUN_00015b94(...); return 0;` -- a fabricated `return 0`
+     masking a real result (same bug class as the torch/ambient-light
+     fix earlier this session). Real ARM disassembly (0x81dbc-0x81dc0)
+     ends in a tail call (`b 0x15b94`, not `bl`) -- FUN_00015b94's own
+     return value IS this function's return value, not a hardcoded
+     failure. Confirmed: without this, a real save's second archive
+     write (this header-table update, right after the main level-data
+     write) always reported failure even when the write underneath it
+     fully succeeded, so FUN_00049b04 -- and the whole save chain above
+     it -- always unwound through its failure path ("Save Game Failed")
+     no matter what. */
+  return FUN_00015b94(param_1,param_2 + 8,&DAT_00250778,0x180);
 }
 
 
