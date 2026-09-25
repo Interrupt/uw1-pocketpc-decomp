@@ -32292,44 +32292,38 @@ void FUN_00040440()
 
 
 
-/* was FUN_000404a0. Loads (and page-caches) a \CRIT\CRnnPAGE.Nnn sprite
-   page and decodes one frame's glyph into a fresh palette-indexed bitmap.
-   Repurposes the same page-cache/glyph-index machinery as the font/glyph
-   renderer (hence the "[glyphpage]" log tag) -- param_1=critter type
-   index, param_2=animation tier, param_3=direction, param_4=frame count
-   for this direction, param_5=frame index. Sets DAT_00202508/DAT_002022f8
-   (w/h) and DAT_002022fc (bitmap pointer) on success. */
-undefined4 decode_critter_sprite_page(param_1,param_2,param_3,param_4,param_5)
-int param_1;
-int param_2;
-short param_3;
-short param_4;
-short param_5;
-
-{
+/* Extracted from decode_critter_sprite_page (was inlined at its top) so
+   resolve_critter_sprite_tier can also load/cache a candidate tier's
+   page and inspect its real (base, span) -- see that function's own
+   comment for why. Behavior unchanged: same page-cache array
+   (DAT_00202308), same filename-building convention, same graceful
+   NULL-return-on-missing-file contract (decode_critter_sprite_page's
+   caller-visible dummy_page sentinel is now applied at its own call
+   site instead of inside this helper). */
+static byte *uw_load_critter_page_cached(int param_1, int param_2) {
   char stack0xffdc3238_buf [256];
   char *stack0xffdc3238_ptr;
   int iVar1;
   char cVar2;
-  ushort uVar3;
   char *pcVar4;
   int iVar5;
-  byte *pbVar6;
-  char *uVar7; /* FUN_000129f8's real return type -- was undefined4, truncating it */
-  byte *pbVar8;
-  int iVar9;
-  int iVar10;
   byte *pbVar11;
-  void **piVar12;
-  char acStack_120 [260];
-  /* iVar5 above is a real int (file handle) for FUN_000227d4's return,
-     reused later in this same function as if it held Ordinal_1041's
-     `void *` return (the decoded glyph buffer) -- same "reused scalar"
-     bug already fixed in FUN_00049008 this session. Separate real
-     pointer local for that use. */
-  void *pvVar_glyphbuf;
-  
+
+  /* Tracks (page,tier) slots already confirmed to have no file, separate
+     from DAT_00202308 (0=never tried, else=a real Ordinal_1041 pointer
+     that FUN_00077a38 unconditionally frees at shutdown -- stuffing a
+     sentinel in there instead would make that loop free garbage).
+     Needed because resolve_critter_sprite_tier now probes every tier
+     0-3 looking for the one whose range covers a given direction, and
+     most creatures only ever have tiers 0-1 (see that function's own
+     comment); without this, tiers 2-3 would re-attempt a failing disk
+     open every single call. */
+  static char known_missing[256];
+
   iVar1 = (param_2 + param_1 * 4) * 0x10000 >> 0x10;
+  if ((unsigned)iVar1 < sizeof(known_missing) && known_missing[iVar1]) {
+    return (byte *)0;
+  }
   pbVar11 = (byte *)(&DAT_00202308)[iVar1];
   if (pbVar11 == (byte *)0x0) {
     DAT_00085928 = (char)((short)param_1 >> 3) + '0';
@@ -32346,29 +32340,83 @@ short param_5;
     Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920);
     iVar5 = FUN_000227d4(stack0xffdc3238_buf);
     if (getenv("UW_DEBUG_CRITTER"))
-      fprintf(stderr, "[critter] decode_critter_sprite_page: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
+      fprintf(stderr, "[critter] load_critter_page_cached: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
               iVar1, param_1, param_2, stack0xffdc3238_buf, iVar5 == -1 ? "FAIL" : "ok");
     if (iVar5 == -1) {
-      /* Missing/unopenable per-page resource file -- was an unconditional
-         FUN_00082388(0xffffffff) hard exit (only reachable for a real
-         object, class 1, that no object in the previously-tested level
-         area happened to use -- confirmed via lldb backtrace: reached
-         from emit_tile_objects's class-1 branch via resolve_critter_sprite_tier, one
-         specific door ~17 tiles from spawn). Same "graceful skip instead
-         of crash" treatment already used for other missing/unregistered
-         resources this session (FUN_000408fc, blit_object_sprite_by_frame) -- return the
-         shared dummy_glyph-shaped sentinel instead of taking the whole
-         game down over one unavailable page file. */
       DEBUG(ERR, "[glyphpage] open FAILED, skipping: %s (param_1=%d param_2=%d)\n",
             stack0xffdc3238_buf, param_1, param_2);
-      static undefined1 dummy_page[8];
-      return dummy_page;
+      if ((unsigned)iVar1 < sizeof(known_missing)) known_missing[iVar1] = 1;
+      return (byte *)0;
     }
     pbVar11 = (byte *)Ordinal_1041(0x7fff);
     (&DAT_00202308)[iVar1] = pbVar11;
     FUN_0002285c(iVar5,pbVar11,0x7fff);
     Ordinal_553(iVar5);
   }
+  if (getenv("UW_DEBUG_CRITTER_TABLESPAN")) {
+    static int seen[256 * 4];
+    static int seen_n = 0;
+    int key = param_1 * 4 + param_2;
+    int already = 0;
+    for (int _i = 0; _i < seen_n; _i++) if (seen[_i] == key) { already = 1; break; }
+    if (!already && seen_n < (int)(sizeof(seen)/sizeof(seen[0]))) {
+      seen[seen_n++] = key;
+      fprintf(stderr, "[critter-tablespan] page=%d tier=%d base=%d span=%d valid_dir=[%d,%d]\n",
+              param_1, param_2, (int)*pbVar11, (int)pbVar11[1],
+              (int)*pbVar11, (int)*pbVar11 + (int)pbVar11[1] - 1);
+    }
+  }
+  return pbVar11;
+}
+
+/* was FUN_000404a0. Loads (and page-caches) a \CRIT\CRnnPAGE.Nnn sprite
+   page and decodes one frame's glyph into a fresh palette-indexed bitmap.
+   Repurposes the same page-cache/glyph-index machinery as the font/glyph
+   renderer (hence the "[glyphpage]" log tag) -- param_1=critter type
+   index, param_2=animation tier, param_3=direction, param_4=frame count
+   for this direction, param_5=frame index. Sets DAT_00202508/DAT_002022f8
+   (w/h) and DAT_002022fc (bitmap pointer) on success. */
+undefined4 decode_critter_sprite_page(param_1,param_2,param_3,param_4,param_5)
+int param_1;
+int param_2;
+short param_3;
+short param_4;
+short param_5;
+
+{
+  ushort uVar3;
+  int iVar1;
+  int iVar5;
+  byte *pbVar6;
+  char *uVar7; /* FUN_000129f8's real return type -- was undefined4, truncating it */
+  byte *pbVar8;
+  int iVar9;
+  int iVar10;
+  byte *pbVar11;
+  void **piVar12;
+  /* iVar5 above is a real int (file handle) for FUN_000227d4's return,
+     reused later in this same function as if it held Ordinal_1041's
+     `void *` return (the decoded glyph buffer) -- same "reused scalar"
+     bug already fixed in FUN_00049008 this session. Separate real
+     pointer local for that use. */
+  void *pvVar_glyphbuf;
+
+  pbVar11 = uw_load_critter_page_cached(param_1, param_2);
+  if (pbVar11 == (byte *)0) {
+    /* Missing/unopenable per-page resource file -- was an unconditional
+       FUN_00082388(0xffffffff) hard exit (only reachable for a real
+       object, class 1, that no object in the previously-tested level
+       area happened to use -- confirmed via lldb backtrace: reached
+       from emit_tile_objects's class-1 branch via resolve_critter_sprite_tier, one
+       specific door ~17 tiles from spawn). Same "graceful skip instead
+       of crash" treatment already used for other missing/unregistered
+       resources this session (FUN_000408fc, blit_object_sprite_by_frame) -- return the
+       shared dummy_glyph-shaped sentinel instead of taking the whole
+       game down over one unavailable page file. */
+    static undefined1 dummy_page[8];
+    return dummy_page;
+  }
+  iVar1 = (param_2 + param_1 * 4) * 0x10000 >> 0x10;
   iVar9 = ((int)(((int)param_3 - (uint)*pbVar11) * 0x10000) >> 0x10) + 2;
   if ((unsigned int)iVar9 >= 0x7ffd) {
     /* Out-of-range glyph/character code for this page (this whole
@@ -32395,26 +32443,6 @@ short param_5;
         fprintf(stderr, "[critter26] pbVar11[1]=%d *pbVar6=%d pbVar6[0..79]:", (int)pbVar11[1], (int)*pbVar6);
         for (int _i = 0; _i < 80; _i++) fprintf(stderr, " %02x", pbVar6[_i]);
         fprintf(stderr, "\n");
-      }
-    }
-    /* Temporary investigation aid (UW_DEBUG_CRITTER_TABLESPAN): report
-       every (page, tier)'s real direction-selector table span
-       (pbVar11[1], the byte count of the pbVar11[2..] table before
-       pbVar6 begins) once, to compare against other pages -- checking
-       whether Bragit's unusually small span (32, discovered this
-       session -- already too short for the state>=0x20 formula's
-       minimum output of 32) is typical for this asset class or
-       specific to peaceful/simple NPCs. */
-    if (getenv("UW_DEBUG_CRITTER_TABLESPAN")) {
-      static int seen[256 * 4];
-      static int seen_n = 0;
-      int key = param_1 * 4 + param_2;
-      int already = 0;
-      for (int _i = 0; _i < seen_n; _i++) if (seen[_i] == key) { already = 1; break; }
-      if (!already && seen_n < (int)(sizeof(seen)/sizeof(seen[0]))) {
-        seen[seen_n++] = key;
-        fprintf(stderr, "[critter-tablespan] page=%d tier=%d pbVar11[1](span)=%d\n",
-                param_1, param_2, (int)pbVar11[1]);
       }
     }
     uVar3 = (ushort)pbVar6[(((int)param_5 +
@@ -32616,26 +32644,41 @@ uint param_2;
 /* was FUN_0004083c. Called from emit_tile_objects's render-class-1
    (camera-facing billboard, used for both critters and doors) branch.
    param_1=critter type index (object id & 0x3f), param_2=direction index,
-   param_3=frame. Looks up the type in the \CRIT\assoc.anm-derived
-   DAT_0023ce70 table, picks an animation tier from DAT_0023c460's
-   per-type threshold table based on param_2, and hands off to
-   decode_critter_sprite_page. Returns 0 (no-op) for a type with no
-   assoc-table entry (0xff sentinel). */
-/* Ghidra dropped this function's real 4th argument -- the caller in
-   emit_tile_objects passes `(uint)DAT_0023bc88 * (int)DAT_00086b30`
-   (the same distance/lighting "shade" term the class-0 item path passes
-   to FUN_00040770) as a 4th arg, but this definition only declared 3
-   params, so that shade value was silently discarded and the tier
-   threshold search below compared against `param_2` (the VIEWING
-   DIRECTION) instead. That made the level-of-detail tier depend on which
-   way you were looking at a critter rather than how close it was --
-   confirmed via UW_DEBUG_CRITTER: tier stayed pinned at 0 for every
-   direction at a fixed test distance, and pbVar11[iVar9] (the real
-   per-direction tier-table byte) turned out to only gate a same-image
-   selector at that tier, giving the appearance of a critter always
-   facing the camera regardless of orbit angle. Restored the 4th param
-   and use it (not direction) for the tier search, matching the
-   class-0 sibling's shade-based convention. */
+   param_3=frame, param_4=shade (see below). Looks up the type in the
+   \CRIT\assoc.anm-derived DAT_0023ce70 table to get its real page
+   index, then hands off to decode_critter_sprite_page. Returns 0
+   (no-op) for a type with no assoc-table entry (0xff sentinel). */
+/* Tier selection REWRITTEN this session -- the shade/DAT_0023c460-
+   threshold mechanism previously here was never the real logic; that
+   original code was not recovered from disassembly, and an earlier
+   session's plausible-looking reconstruction (matching the class-0
+   item path's genuinely distance-based LOD convention) turned out to
+   be the wrong model for critters. Concrete evidence, from directly
+   inspecting the real page files: EVERY creature checked (10 distinct
+   types, including Bragit/page 26) has the identical shape -- tier 0
+   (CRnnPAGE.N00) covers direction 0-31 (states 0x1c-0x1f), tier 1
+   (.N01) covers direction 32-159 (states 0x20-0x2f), and .N02/.N03
+   simply don't exist as files for any of them. These are not graduated
+   LOD/quality levels of the same content -- they're two files that
+   together tile ONE continuous direction-index range. Separately,
+   DAT_0023bc88 (the light-level term feeding the old "shade" value) is
+   hard-clamped to a max of 0xe=14 in the normal 3D-dungeon-view path
+   (uw.c ~57521), so it could never reach anywhere near the per-page
+   threshold data (itself often just the loader's own 0xa0-default
+   fallback, uw.c ~32247, when its own metadata file fails to open) --
+   tier was structurally pinned at 0 for every creature, every dungeon
+   scene, regardless of state, which is exactly what caused states
+   >=0x20 to read past tier 0's real 32-byte table into unrelated bytes
+   (Bragit's reported "mix of attack/idle/death-looking frames").
+   Replaced with the real rule: load each candidate tier's page and use
+   whichever one's actual (base, base+span) range -- read straight from
+   that page's own header bytes via uw_load_critter_page_cached -- truly
+   contains the requested direction, instead of guessing from lighting.
+   param_4 (shade) is no longer used for tier selection; kept in the
+   signature since emit_tile_objects's call site genuinely does pass it
+   (disassembly-confirmed) and may still have a legitimate, not yet
+   identified role elsewhere in critter rendering (e.g. palette/tint) --
+   not removed, just unused here now. */
 undefined4 resolve_critter_sprite_tier(param_1,param_2,param_3,param_4)
 short param_1;
 undefined4 param_2;
@@ -32643,18 +32686,18 @@ short param_3;
 uint param_4;
 
 {
-  byte bVar1;
   undefined4 uVar2;
-  byte *pbVar3;
   uint uVar4;
-  int iVar5;
+  byte *page;
+  int tier;
+  int t;
 
   if (0x60 < param_3) {
     param_3 = 0;
   }
   uVar4 = (uint)(byte)(&DAT_0023ce70)[param_1 * 2];
   if (getenv("UW_DEBUG_CRITTER"))
-    fprintf(stderr, "[critter] resolve_critter_sprite_tier: param_1(type_idx)=%d param_2(dir)=%d param_3(frame)=%d param_4(shade)=%d -> assoc[%d]=%u (0x%x)\n",
+    fprintf(stderr, "[critter] resolve_critter_sprite_tier: param_1(type_idx)=%d param_2(dir)=%d param_3(frame)=%d param_4(shade,unused-for-tier)=%d -> assoc[%d]=%u (0x%x)\n",
             (int)param_1, (int)(short)param_2, (int)param_3, (int)param_4, (int)param_1 * 2, uVar4, uVar4);
   if (0xff < (short)param_2) {
     param_2 = 0;
@@ -32663,20 +32706,22 @@ uint param_4;
     uVar2 = 0;
   }
   else {
-    pbVar3 = &DAT_0023c460 + uVar4 * 3;
-    bVar1 = *pbVar3;
-    iVar5 = 3;
-    do {
-      pbVar3 = pbVar3 + 1;
-      if ((short)param_4 < (short)(ushort)bVar1) break;
-      iVar5 = iVar5 + -1;
-      bVar1 = *pbVar3;
-    } while (0 < iVar5);
-    if (getenv("UW_DEBUG_CRITTER"))
-      fprintf(stderr, "[critter] resolve_critter_sprite_tier: tier-search shade=%d thresholds=[%d,%d,%d] -> tier=%d\n",
-              (int)param_4, (int)(&DAT_0023c460)[uVar4*3], (int)(&DAT_0023c460)[uVar4*3+1],
-              (int)(&DAT_0023c460)[uVar4*3+2], 3 - (int)iVar5);
-    decode_critter_sprite_page(uVar4,3 - (short)iVar5,param_2,(&DAT_0023ce71)[param_1 * 2],param_3);
+    tier = 0;
+    for (t = 0; t < 4; t++) {
+      page = uw_load_critter_page_cached(uVar4, t);
+      if (page == (byte *)0) continue;
+      int base = (int)page[0];
+      int span = (int)page[1];
+      int match = ((int)(short)param_2 >= base) && ((int)(short)param_2 < base + span);
+      if (getenv("UW_DEBUG_CRITTER"))
+        fprintf(stderr, "[critter] resolve_critter_sprite_tier: probe tier=%d base=%d span=%d valid=[%d,%d] dir=%d %s\n",
+                t, base, span, base, base + span - 1, (int)(short)param_2, match ? "MATCH" : "no");
+      if (match) {
+        tier = t;
+        break;
+      }
+    }
+    decode_critter_sprite_page(uVar4,tier,param_2,(&DAT_0023ce71)[param_1 * 2],param_3);
     uVar2 = 1;
   }
   return uVar2;
