@@ -13,19 +13,21 @@ reimplemented against SDL2 and the host filesystem.
 
 ## Building
 
-Requires `clang` and SDL2 (`brew install sdl2`).
+Requires `cmake`, `clang`, and SDL2 (`brew install cmake sdl2`).
 
 ```sh
-clang -std=gnu11 -g -O0 \
-  -Wno-implicit-function-declaration -Wno-int-conversion \
-  -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast \
-  -Wno-incompatible-function-pointer-types -Wno-deprecated-non-prototype \
-  $(sdl2-config --cflags) \
-  -o build/uw uw.c main.c gx_stub.c ordinal_stubs.c file_io.c \
-  $(sdl2-config --libs)
+./build.sh   # configures build/ via CMake and builds build/uw_dbg
+./run.sh     # build.sh, then runs against the local data/ folder
 ```
 
-The `-Wno-*` flags are required, not optional: this is raw decompiled C
+Or drive CMake directly:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j
+```
+
+The `-Wno-*` flags in `CMakeLists.txt` are required, not optional: this is raw decompiled C
 where 32-bit-original-binary idioms (K&R-style unspecified-argument
 functions, implicit int/pointer conversions) are used throughout on
 purpose — see "Architecture notes" below.

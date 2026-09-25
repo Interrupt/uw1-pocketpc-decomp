@@ -189,16 +189,18 @@ static const char *sdlkey_to_name(SDL_Keycode kc, char *buf, size_t bufsz) {
 }
 
 /* Belt-and-suspenders on top of the per-event UW_SYNTH_* tag checks below:
-   demomode's own SDL_WarpMouseInWindow calls (in uw_inject_mouse_down/up/
-   rdown/rup -- see their own comments) can make SDL generate an
-   additional, genuinely REAL (untagged) SDL_MOUSEMOTION as a side effect
-   of the warp itself, not just the explicitly-tagged event the injector
-   pushes -- confirmed live, this leaked a couple of untagged SDLMOVE
+   demomode's injectors (uw_inject_mouse_down/up/rdown/rup/motion) used to
+   also warp the real OS cursor, and that warp itself could make SDL
+   generate an additional, genuinely REAL (untagged) SDL_MOUSEMOTION as a
+   side effect -- confirmed live, this leaked a couple of untagged SDLMOVE
    lines into a recording taken during a demo playback run before this
-   check was added. Suppressing everything for as long as a demo is
-   actively feeding input (regardless of any tag) is the only fully
-   robust way to guarantee demo playback never records itself, matching a
-   direct user request. */
+   check was added. The warp is gone now (see uw_inject_mouse_down's
+   comment -- the injected events carry their own position, so warping the
+   real cursor was never necessary and only fought other windows/users for
+   it), but suppressing everything for as long as a demo is actively
+   feeding input (regardless of any tag) remains the only fully robust way
+   to guarantee demo playback never records itself, matching a direct user
+   request, so this stays as defense in depth. */
 static int recording_suppressed(void) {
     return !g_rec_file || demomode_active();
 }
