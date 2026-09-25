@@ -1481,6 +1481,59 @@ repro where the working quadrant's own door heading is nonzero would
 tell us whether "no transform needed" is a general truth or an artifact
 of this specific case.
 
+**UPDATE 43 (a real primary source closes the Y/Z axis-letter question
+for good, 2026-09-21):** user: "Read the '3D models' section of
+[Underworld Adventures' `uw-formats.txt`] to see if it gives us more
+information on how to use these opcodes." It did -- and it's a much
+better source than anything cited so far: a full node-by-node
+reverse-engineering of the model bytecode with argument-count tables,
+including a direct quote from Doug Church (an actual original UW
+developer) describing the interpreter design: "when it got to the byte
+for 'Norm', it would fetch the normal, dot it [versus] the eye vector,
+and jump or not based on the sign."
+
+Confirmed independently: node `0x0064/66/68` each take exactly 3 args
+(skip-length, normal component, distance) -- matches this project's
+own opcode layout exactly. Node `0x004A` "define translation" reads
+vertex X, then Z, then Y, with the doc's own note "z and y seem to be
+swapped" -- independently corroborating `uwdl_place`'s own (x,z,y)
+word order, established purely by eye against screenshots long before
+this document was found.
+
+The one disagreement: the doc labels `0x0064`=X, `0x0066`=Z,
+`0x0068`=Y(height) -- the opposite of this project's own convention.
+Re-tested `UW_DLIST_CULL_SWAP_YZ` fresh against the CORRECTED world-
+space eye/anchor model from UPDATE 41/42 (a meaningfully different
+test than the original UPDATE 37 attempt, since the whole eye/anchor
+approach has changed since then). Result: still regresses the exact
+quadrant=1 match (`faces=8/3` -> `5/3`) and still doesn't fix
+quadrant=2 (`0/0`).
+
+Not a contradiction: `uw-formats.txt` states outright that these
+models are stored inside the executable itself -- the SAME in-EXE
+model table UWXtract targets (its own header comment says the same
+thing). This project's actual door geometry comes from a completely
+different source -- the display-list bank region, separately reverse-
+engineered by uw1-decomp, with its own already-verified-by-screenshot
+axis convention. TWO independent sources (UWXtract and now
+`uw-formats.txt`) agreeing with EACH OTHER while disagreeing with our
+verified convention is strong evidence of two genuinely different
+bytecode formats sharing opcode numbers (both apparently descended
+from the same "Norm"-opcode design), not evidence our convention is
+wrong. This closes the axis-letter question with real confidence now
+-- not one surprising disagreement, but two independent sources
+describing an unrelated format.
+
+No code changes. `UW_DLIST_CULL_SWAP_YZ` remains a documented,
+twice-ruled-out diagnostic. `UW_DLIST_REAL_CULL_OPCODES` still opt-in;
+run-regressions.sh: 6/6 clean (untouched). Quadrant=2 remains fully
+broken. One more lead from this same document, not yet followed up:
+its "sort nodes" (`0x06/0x0C/0x0E/0x10`) describe a genuine BSP-style
+tree with left/right node offsets for draw-order sorting -- worth
+checking whether `g_dlist_region`'s own bytes use anything structurally
+similar, separate from the simple skip-on-fail cull chain assumed so
+far.
+
 **The question:** Ultima Underworld draws several visually distinct
 kinds of objects in the 3D view — small item billboards, doors, and (at
 least in the original PC release) real 3D models with actual geometry

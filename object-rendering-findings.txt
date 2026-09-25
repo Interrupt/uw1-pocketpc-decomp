@@ -4201,3 +4201,74 @@ up next: find or construct a repro where the WORKING quadrant's own
 door model heading is nonzero, and check whether the naive reconstruction
 still matches exactly, to determine whether the "no transform needed"
 result is a general truth or an artifact of this specific test case.
+
+(34) 2026-09-21: user pointed at a real primary-source document --
+Underworld Adventures' `uw-formats.txt`, section 8 "3D models"
+(https://raw.githubusercontent.com/vividos/UnderworldAdventures/refs/
+heads/main/uwadv/docs/uw-formats.txt) -- a full node-by-node
+reverse-engineering of the in-EXE model interpreter bytecode, complete
+with argument-count tables and a direct quote from Doug Church (an
+original UW developer) describing the interpreter's own design: "when
+it got to the byte for 'Norm', it would fetch the normal, dot it
+[versus] the eye vector, and jump or not based on the sign." This
+closes the open Y/Z axis-letter question definitively, though not in
+the direction that first looked promising.
+
+CONFIRMED, independently, several things this investigation had
+already inferred: node 0x0064/0066/0068 each take exactly 3 args
+(skip-length, Fixed normal component, Fixed distance) -- matches our
+own r[1]/r[2]/r[3] layout exactly. Node 0x004A "define translation"
+takes vertex X, then Z, then Y in that word order, with the doc's own
+note "z and y seem to be swapped" -- independently corroborating this
+project's already-established uwdl_place word order (x,z,y), used
+throughout the door frame/leaf pipeline and calibrated by eye over many
+screenshots long before this doc was found.
+
+THE DISAGREEMENT: the doc labels 0x0064=X-plane, 0x0066=Z-plane,
+0x0068=Y-plane(height) -- our code (and uw1-decomp's own naming) uses
+0x0064=X, 0x0066=Y/height, 0x0068=Z. Re-tested UW_DLIST_CULL_SWAP_YZ
+(swap axis1/axis2) fresh, now against the CORRECTED world-space eye/
+anchor reconstruction from entries (32)/(33) -- a meaningfully
+different test than UPDATE 37's original swap test, since the eye/
+anchor model itself has completely changed since then. Result: swap
+regresses the exact quadrant=1 match (faces=8/3 -> 5/3) and does NOT
+fix quadrant=2 (still faces=0/0). Confirms UPDATE 37's original
+conclusion, now on much firmer ground.
+
+WHY THE DISAGREEMENT ISN'T A CONTRADICTION: `uw-formats.txt`'s own
+section 8 opens by stating these models "are stored within the
+executable... in a segment of the overlaid executable" -- literally
+the SAME in-EXE model-offset table UWXtract targets (confirmed
+UWXtract's own header comment says the same thing, quoted in UPDATE
+33/entry 24). This project's door frame/leaf geometry is NOT drawn
+from that table at all -- it's drawn from a completely separate
+"display list" bank region (`g_dlist_region`), reverse-engineered by
+uw1-decomp from a different part of the game and confirmed to use its
+own axis convention (uwdl_place's (x,z,y) word order, verified correct
+by dozens of working screenshots across this whole investigation).
+TWO independent decoders (UWXtract and now `uw-formats.txt`) agreeing
+with EACH OTHER while disagreeing with our own empirically-verified
+display-list convention is strong evidence these are genuinely two
+different bytecode formats that happen to share opcode numbers for
+face-plane checks (both apparently descend from the same "Norm"-opcode
+design Doug Church described), not evidence our own convention is
+wrong. This closes the axis-letter question with much higher
+confidence than UPDATE 37's original test could -- not one surprising
+disagreement, but two independent, mutually-reinforcing sources
+describing a different, unrelated data format.
+
+No code changes this entry -- purely investigative, confirming/closing
+an already-open question with better sourcing. UW_DLIST_CULL_SWAP_YZ
+remains a documented, twice-ruled-out diagnostic. UW_DLIST_REAL_CULL_
+OPCODES still opt-in; run-regressions.sh: 6/6 clean (unchanged, no
+code touched).
+
+Still open, unchanged from entry (33): quadrant=1's exact match is
+real but mechanistically unexplained; quadrant=2 remains fully broken
+(faces=0). The `uw-formats.txt` document is worth a second pass for
+other leads it might offer beyond the axis-letter question -- e.g. its
+description of "sort nodes" (0x06/0x0C/0x0E/0x10, a genuine BSP-style
+tree with left/right node offsets, used for draw-order sorting rather
+than simple visibility culling) describes a mechanism this project's
+door bytecode may or may not also use elsewhere in its own control
+flow -- not yet cross-checked against g_dlist_region's actual bytes.
