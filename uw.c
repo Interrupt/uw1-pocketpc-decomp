@@ -22258,6 +22258,26 @@ byte param_3;
 
 
 
+/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as
+   the rest of this NPC-AI cluster this session (see
+   [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
+   `ushort *`, so every bare `DAT_0010190c + N` throughout this
+   function was scaling N by 2. Verified against fresh disassembly of
+   this function's own entry (0x2e5d0-0x2e620): `ldrb r3,[r0,#0x18];
+   ...; ldrb r3,[r0,#0x15]; ...; ldrb r3,[r0,#0x17]; ldrb r2,[r0,#0x16]`
+   -- all raw, unscaled bytes. This is param_1=target tile x,
+   param_2=target tile y, param_3=direction -- called from both
+   FUN_0002fba8 (when far enough from a wander/chase target) and this
+   function's own sibling switch's case 1, and itself calls
+   creature_find_path_to_tile (line ~180 below, with a wrong direction
+   argument before this fix: `*(byte *)(DAT_0010190c + 2) >> 3 & 0xf`
+   read byte 4 instead of the real heading at byte 2). This is very
+   likely the actual "step toward a destination tile" implementation --
+   with essentially every read/write in the function operating on the
+   wrong byte, this plausibly explains a QA report that a wandering
+   NPC's walk animation plays while its tile position never advances.
+   Cast every offset to a byte pointer throughout this function so none
+   of them are scaled. */
 void FUN_0002e58c(param_1,param_2,param_3)
 uint param_1;
 char param_2;
@@ -22284,24 +22304,24 @@ undefined1 param_3;
   local_3c = 0;
   local_38 = 0;
   FUN_0002e454(param_1);
-  if (((*(byte *)(DAT_0010190c + 0x18) & 0x20) != 0) &&
-     ((*(byte *)(DAT_0010190c + 0x15) & 0x80) != 0)) {
-    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)(DAT_0010190c + 0x16) & 0xf));
-    *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0x7f;
+  if (((*(byte *)((char *)DAT_0010190c + 0x18) & 0x20) != 0) &&
+     ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0)) {
+    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
+    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
   }
   iVar1 = ((int)(char)param_1 - (int)DAT_00101918) * 0x1000000 >> 0x18;
   iVar6 = ((int)param_2 - (int)DAT_001013f8) * 0x1000000;
   iVar2 = (int)(iVar6) >> 0x18;
   if ((iVar1 == 0) && ((char)((uint)iVar6 >> 0x18) == '\0')) {
-    if ((*(byte *)(DAT_0010190c + 0x15) & 0x80) != 0) {
-      DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)(DAT_0010190c + 0x16) & 0xf));
-      *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0x7f;
+    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
+      DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
     }
-    if ((*(byte *)(DAT_0010190c + 0xb) & 0xf) != 1) {
+    if ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 1) {
       if (DAT_00101734 != 0) {
-        *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
-        *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) | 0x40;
-        *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xe0 | 0x20;
+        *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
+        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x40;
+        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
         return;
       }
       goto LAB_0002e6fc;
@@ -22310,9 +22330,9 @@ undefined1 param_3;
   }
   if (DAT_00101734 == 0) {
 LAB_0002e6fc:
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xf9 | 1;
-    if ((*(byte *)(DAT_0010190c + 0x15) & 0x80) != 0) {
-      uVar3 = *(ushort *)(DAT_0010190c + 0x16);
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
+    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
+      uVar3 = *(ushort *)((char *)DAT_0010190c + 0x16);
       iVar6 = (uVar3 & 0xf) * 0x1c;
       if ((uVar3 >> 10 == (ushort)(byte)(&DAT_00101568)[(int)iVar6]) &&
          ((uVar3 & 0x3f0) >> 4 == (uint)(byte)(&DAT_00101569)[(int)iVar6])) {
@@ -22322,12 +22342,12 @@ LAB_0002e6fc:
     return;
   }
   if (((DAT_00101924 != 0) && (DAT_00101430 == 0)) &&
-     (bVar9 = *(byte *)(DAT_0010190c + 0x18), (bVar9 & 0x40) == 0)) {
+     (bVar9 = *(byte *)((char *)DAT_0010190c + 0x18), (bVar9 & 0x40) == 0)) {
     if (DAT_001013fc != 0) {
       if (DAT_00101560 == 0) {
         uVar3 = *DAT_00101904;
         if (((uVar3 & 0x1c0) == 0x40) && ((uVar3 & 0x1ff) != 0x7f)) {
-          if (((*(byte *)(DAT_0010190c + 0xb) & 0xf) == 5) &&
+          if (((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) == 5) &&
              ((*(byte *)((char *)DAT_00101904 + 0xb) & 0xf) == 5)) {
             param_1 = param_1 & 0xff;
             goto LAB_0002e998;
@@ -22337,78 +22357,78 @@ LAB_0002e6fc:
         if ((((uVar3 & 0x1f0) == 0x140) && (7 < (uVar3 & 0xf))) &&
            ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0)) {
           local_38 = 1;
-          *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 7 | 0x70;
+          *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 7 | 0x70;
           DAT_00101924 = 0;
           DAT_00101914 = 1;
           goto LAB_0002ea00;
         }
       }
       else {
-        *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xe0 | 0x20;
+        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
         uVar7 = Ordinal_1053();
         uw_ord2005_rem_17 = ((int)(uVar7)) % (4);
-        if ((uw_ord2005_rem_17 != 0) && ((*(byte *)(DAT_0010190c + 0xe) & 0xc0) == 0)) {
+        if ((uw_ord2005_rem_17 != 0) && ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0)) {
           FUN_0002efa0(DAT_00101904);
           goto LAB_0002e998;
         }
-        bVar9 = *(byte *)(DAT_0010190c + 0x18);
+        bVar9 = *(byte *)((char *)DAT_0010190c + 0x18);
       }
-      *(byte *)(DAT_0010190c + 0x18) = bVar9 | 0x40;
+      *(byte *)((char *)DAT_0010190c + 0x18) = bVar9 | 0x40;
     }
 LAB_0002e998:
     if (DAT_00101924 != 0) {
-      if ((*(byte *)(DAT_0010190c + 0x15) & 0x80) != 0) {
-        DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)(DAT_0010190c + 0x16) & 0xf));
-        *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0x7f;
+      if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
+        DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
+        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
       }
       local_3c = 1;
-      *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0x7f;
+      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0x7f;
     }
   }
 LAB_0002ea00:
-  if ((*(byte *)(DAT_0010190c + 0x15) & 0x80) != 0) {
-    iVar6 = FUN_0002df2c(&DAT_00101568 + (*(byte *)(DAT_0010190c + 0x16) & 0xf) * 0x1c);
+  if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
+    iVar6 = FUN_0002df2c(&DAT_00101568 + (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf) * 0x1c);
     if (iVar6 != 0) goto LAB_0002ed50;
 LAB_0002ebfc:
-    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)(DAT_0010190c + 0x16) & 0xf));
-    *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0x7f;
+    DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
+    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0x7f;
 LAB_0002ed50:
     if (DAT_00101920 != 0) {
       return;
     }
-    *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xbf;
-    *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xec | 0x2c;
+    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xbf;
+    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xec | 0x2c;
     if (local_38 == 0) {
-      if ((*(byte *)(DAT_0010190c + 0xb) & 0xf) == 5) {
+      if ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) == 5) {
         bVar9 = *(byte *)(DAT_00101404 + 0xc);
       }
       else {
         bVar9 = *(byte *)(DAT_00101404 + 0xb);
       }
-      bVar9 = (*(byte *)(DAT_0010190c + 0x13) ^ bVar9) & 0x7f ^ *(byte *)(DAT_0010190c + 0x13);
+      bVar9 = (*(byte *)((char *)DAT_0010190c + 0x13) ^ bVar9) & 0x7f ^ *(byte *)((char *)DAT_0010190c + 0x13);
     }
     else {
-      bVar9 = *(byte *)(DAT_0010190c + 0x13) & 0x80;
+      bVar9 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
     }
-    *(byte *)(DAT_0010190c + 0x13) = bVar9;
+    *(byte *)((char *)DAT_0010190c + 0x13) = bVar9;
     iVar6 = DAT_0010190c;
-    uVar3 = *(ushort *)(DAT_0010190c + 0xb);
+    uVar3 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_18 = ((int)((uVar3 >> 0xc) + 1)) % (4);
     uVar8 = uVar3 & 0xfff;
     *(char *)(iVar6 + 0xb) = (char)uVar8;
-    *(byte *)(DAT_0010190c + 0xc) =
+    *(byte *)((char *)DAT_0010190c + 0xc) =
          (byte)(uVar8 >> 8) | (byte)(((uw_ord2005_rem_18 & 0xf) << 0xc) >> 8);
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
     return;
   }
-  bVar9 = *(byte *)(DAT_0010190c + 0x18);
+  bVar9 = *(byte *)((char *)DAT_0010190c + 0x18);
   if (((bVar9 & 0x20) == 0) && ((bVar9 & 0x80) != 0)) {
     uVar8 = FUN_0002e3b4(iVar1,iVar2);
-    *(char *)(DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
-    uVar8 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
-    *(char *)(DAT_0010190c + 2) = (char)uVar8;
-    *(char *)(DAT_0010190c + 3) = (char)(uVar8 >> 8);
-    *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
+    *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
+    uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
+    *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
+    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
+    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
     if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
       FUN_0002ee80(param_1,param_2);
     }
@@ -22418,43 +22438,43 @@ LAB_0002ed50:
     uVar7 = Ordinal_1053();
     uw_ord2005_rem_19 = ((int)(uVar7)) % (8);
     if (uw_ord2005_rem_19 != 0) goto LAB_0002ee74;
-    bVar9 = *(byte *)(DAT_0010190c + 0x18) & 0xbf;
+    bVar9 = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
   }
   else {
     if ((local_3c == 0) &&
        (sVar5 = FUN_0002d1e0(DAT_00101918,DAT_001013f8,param_1 & 0xff,param_2), sVar5 == 1)) {
-      *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) | 0x80;
+      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x80;
       uVar8 = FUN_0002e3b4(iVar1,iVar2);
-      *(char *)(DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
-      uVar8 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
-      *(char *)(DAT_0010190c + 2) = (char)uVar8;
-      *(char *)(DAT_0010190c + 3) = (char)(uVar8 >> 8);
-      *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xe0;
-      *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xbf;
-      if ((*(byte *)(DAT_0010190c + 0x15) & 0x80) == 0) goto LAB_0002ed50;
+      *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
+      uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
+      *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
+      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
+      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
+      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
+      if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) goto LAB_0002ed50;
       goto LAB_0002ebfc;
     }
     iVar6 = FUN_0002db4c(local_40);
     if (iVar6 != 0) {
       uVar4 = FUN_0003431c();
-      iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,*(byte *)(DAT_0010190c + 2) >> 3 & 0xf,param_1,
+      iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,*(byte *)((char *)DAT_0010190c + 2) >> 3 & 0xf,param_1,
                            param_2,param_3,uVar4);
       if (iVar6 != 0) {
         DAT_000853b8 = DAT_000853b8 & ~(ushort)(1 << (uint)local_40[0]);
         FUN_0002dbf4(&DAT_00101568 + (uint)local_40[0] * 0x1c);
-        *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xbf;
-        *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) | 0x80;
-        uVar8 = *(ushort *)(DAT_0010190c + 0x16) & 0xfff0;
-        *(byte *)(DAT_0010190c + 0x16) = local_40[0] & 0xf | (byte)uVar8;
-        *(char *)(DAT_0010190c + 0x17) = (char)(uVar8 >> 8);
-        FUN_0002df2c(&DAT_00101568 + (*(byte *)(DAT_0010190c + 0x16) & 0xf) * 0x1c);
+        *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
+        *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x80;
+        uVar8 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0xfff0;
+        *(byte *)((char *)DAT_0010190c + 0x16) = local_40[0] & 0xf | (byte)uVar8;
+        *(char *)((char *)DAT_0010190c + 0x17) = (char)(uVar8 >> 8);
+        FUN_0002df2c(&DAT_00101568 + (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf) * 0x1c);
         goto LAB_0002ed50;
       }
     }
-    *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) | 0x40;
-    bVar9 = *(byte *)(DAT_0010190c + 0x18) & 0x7f;
+    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x40;
+    bVar9 = *(byte *)((char *)DAT_0010190c + 0x18) & 0x7f;
   }
-  *(byte *)(DAT_0010190c + 0x18) = bVar9;
+  *(byte *)((char *)DAT_0010190c + 0x18) = bVar9;
 LAB_0002ee74:
   npc_idle_behavior_tick();
   return;
@@ -22863,6 +22883,11 @@ void FUN_0002fba8()
     iVar2 = ((int)DAT_0010143c - (int)DAT_00101918) * 0x1000000 >> 0x18;
     iVar3 = ((int)DAT_0010173c - (int)DAT_001013f8) * 0x1000000 >> 0x18;
     uVar1 = (uint)(*(byte *)(DAT_00101404 + 0x1c) >> 4);
+    if (getenv("UW_DEBUG_NPC_MOVE"))
+      fprintf(stderr, "[npc-move] obj=%p target=(%d,%d) cur=(%d,%d) dx=%d dy=%d thresh=%u distsq=%d %s\n",
+              (void *)DAT_0010190c, (int)DAT_0010143c, (int)DAT_0010173c,
+              (int)DAT_00101918, (int)DAT_001013f8, iVar2, iVar3, uVar1,
+              iVar2*iVar2+iVar3*iVar3, (int)(uVar1*uVar1) < iVar2*iVar2+iVar3*iVar3 ? "WALK" : "idle");
     if ((int)(uVar1 * uVar1) < iVar2 * iVar2 + iVar3 * iVar3) {
       puVar4 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
       FUN_0002e58c(DAT_0010143c,DAT_0010173c,*puVar4 >> 4 & 0xf);
@@ -24485,6 +24510,30 @@ LAB_00033860:
 
 
 
+/* HACK: whole-function fix, same ushort-vs-byte pointer-scaling bug as
+   the rest of this NPC-AI cluster this session (see
+   [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
+   `ushort *`, so every bare `DAT_0010190c + N` throughout this
+   function (both the "orient toward last-seen-player" tail already
+   fixed earlier, and everything else here, which hadn't been audited)
+   was scaling N by 2. This function's own goal-dispatch switch
+   (`switch(*(ushort *)(DAT_0010190c + 0xb) & 0xf)`) was reading byte
+   offset 0x16 (part of this object's tile-position field) instead of
+   the real goal nibble at raw byte 0xb -- verified against fresh
+   disassembly (0x33d38-0x33d58: `ldrb r3,[r0,#0xc]; ldrb r2,[r0,#0xb];
+   orr r3,r2,r3,lsl#8; ...; and r1,r3,#0xf; addls pc,pc,r1,lsl#2`, a
+   real ARM jump table on raw unscaled bytes -- also confirmed at this
+   function's own entry, 0x338bc-0x338d0, same pattern). A live trace
+   comparing the scaled and correctly-cast reads found 0 matches out of
+   75 samples in a short demo. This is the main per-tick goal dispatch
+   for every NPC (idle, wander-to-target, chase, flee, ...); with it
+   reading the wrong byte, any goal other than the ones that happen to
+   alias to the same idle-dispatch target (0/4/7) got misrouted into
+   idle handling instead of its real handler -- matching a QA report
+   that a wandering NPC's walk ANIMATION played while its tile POSITION
+   never advanced, since the real movement-stepping cases (1, 5, 6, 8,
+   9, 10) were never actually reached. Cast every offset to a byte
+   pointer throughout this function so none of them are scaled. */
 void FUN_00033880()
 
 {
@@ -24521,11 +24570,11 @@ void FUN_00033880()
   
   bVar3 = false;
   DAT_00101920 = 0;
-  *(byte *)(DAT_0010190c + 0x18) = *(byte *)(DAT_0010190c + 0x18) & 0xdf;
-  *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xbf;
-  uVar2 = *(ushort *)(DAT_0010190c + 0xb);
+  *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xdf;
+  *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xbf;
+  uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
   if ((uVar2 & 0xf) != 0xb) {
-    if (((*(byte *)(DAT_0010190c + 0x15) & 0x3f) == 0x2c) && ((uVar2 & 0x1000) == 0x1000)) {
+    if (((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x2c) && ((uVar2 & 0x1000) == 0x1000)) {
       bVar10 = *(byte *)(DAT_00101404 + 0x10) & 0xf;
       if (bVar10 == 1) {
         if ((uVar2 & 0xf000) == 0x1000) {
@@ -24553,31 +24602,31 @@ void FUN_00033880()
     }
 LAB_000339fc:
     if ((*(byte *)(DAT_00101404 + 10) & 2) == 0) {
-      if (((((((*(byte *)(DAT_0010190c + 0x19) & 0x40) == 0) && (DAT_0010194c != DAT_00101738)) &&
+      if (((((((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0) && (DAT_0010194c != DAT_00101738)) &&
             (DAT_000853d0 == *(char *)(DAT_00101404 + 9))) &&
-           ((*(byte *)(DAT_0010190c + 10) & 0x80) == 0)) ||
-          ((*(byte *)(DAT_0010190c + 0x19) & 0x40) != 0)) &&
+           ((*(byte *)((char *)DAT_0010190c + 10) & 0x80) == 0)) ||
+          ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0)) &&
          ((*(uint *)(DAT_00086df8 + 0xce) < DAT_00101940 + 0x200U &&
           (uVar11 = (int)((uint)DAT_00101918 - (uint)DAT_0010192c) >> 0x1f,
           uVar5 = (int)((uint)DAT_001013f8 - (uint)DAT_00101930) >> 0x1f,
           (int)((((uint)DAT_001013f8 - (uint)DAT_00101930 ^ uVar5) - uVar5) +
                (((uint)DAT_00101918 - (uint)DAT_0010192c ^ uVar11) - uVar11)) <
           (int)(*(byte *)(DAT_00101404 + 0x1e) & 0xf))))) {
-        uVar11 = *(ushort *)(DAT_0010190c + 0xd) & 0x3fff;
-        *(char *)(DAT_0010190c + 0xd) = (char)uVar11;
-        *(char *)(DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
-        *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) | 1;
-        bVar10 = *(byte *)(DAT_0010190c + 0xb) & 0xf;
+        uVar11 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0x3fff;
+        *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar11;
+        *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
+        *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
+        bVar10 = *(byte *)((char *)DAT_0010190c + 0xb) & 0xf;
         if ((bVar10 != 9) && (bVar10 != 6)) {
           cVar4 = DAT_0010194c;
-          if ((*(byte *)(DAT_0010190c + 0x19) & 0x40) == 0) {
+          if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0) {
             cVar4 = '\x01';
           }
           FUN_000343d8(5,cVar4);
           FUN_0002e454(DAT_0010192c,DAT_00101930,DAT_00101934);
         }
       }
-      cVar4 = *(char *)(DAT_0010190c + 0x12);
+      cVar4 = *(char *)((char *)DAT_0010190c + 0x12);
       /* Added a NULL guard on FUN_000535fc's result: it legitimately
          returns NULL for an out-of-range slot index (its own established
          behavior/contract), and this code unconditionally dereferenced
@@ -24587,60 +24636,67 @@ LAB_000339fc:
          sweep -- a pre-existing bug in this never-before-exercised
          function, not something the sweep itself introduced. */
       if ((cVar4 != '\0') &&
-         (((cVar4 == '\x01' && ((*(byte *)(DAT_0010190c + 0x19) & 0x40) == 0)) ||
-          (((*(byte *)(DAT_0010190c + 0x19) & 0x40) != 0 ||
+         (((cVar4 == '\x01' && ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0)) ||
+          (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0 ||
            (iVar7 = FUN_000535fc(cVar4), (iVar7 != 0) && (*(byte *)(iVar7 + 0x19) & 0x40) != 0)))))) {
-        if ((uint)*(byte *)(DAT_0010190c + 0x12) != (*(ushort *)(DAT_0010190c + 0xb) >> 4 & 0xff)) {
-          uVar11 = *(ushort *)(DAT_0010190c + 0xb) & 0xf00f |
-                   (uint)*(byte *)(DAT_0010190c + 0x12) << 4;
-          *(char *)(DAT_0010190c + 0xb) = (char)uVar11;
-          *(char *)(DAT_0010190c + 0xc) = (char)(uVar11 >> 8);
+        if ((uint)*(byte *)((char *)DAT_0010190c + 0x12) != (*(ushort *)((char *)DAT_0010190c + 0xb) >> 4 & 0xff)) {
+          uVar11 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f |
+                   (uint)*(byte *)((char *)DAT_0010190c + 0x12) << 4;
+          *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar11;
+          *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar11 >> 8);
         }
         iVar7 = FUN_00034044();
         if (iVar7 != 0) {
           bVar3 = true;
-          if (*(char *)(DAT_0010190c + 0x12) == '\x01') {
-            uVar11 = *(ushort *)(DAT_0010190c + 0xd) & 0x3fff;
-            *(char *)(DAT_0010190c + 0xd) = (char)uVar11;
-            *(char *)(DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
+          if (*(char *)((char *)DAT_0010190c + 0x12) == '\x01') {
+            uVar11 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0x3fff;
+            *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar11;
+            *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
             FUN_0002e454(*(ushort *)((char *)g_player_object + 0x16) >> 10,
                          *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
                          *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
-            *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) | 1;
+            *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
           }
           if ((DAT_00101900 < 3) ||
              (((*(byte *)(DAT_00101404 + 0x2d) & 1) != 0 &&
               (iVar7 = FUN_00073b18(DAT_00101918,DAT_001013f8), iVar7 == 0)))) {
-            if ((*(byte *)(DAT_0010190c + 0x19) & 0x20) != 0) goto LAB_00033d18;
-            if (((*(byte *)(DAT_0010190c + 0x19) & 0x10) == 0) &&
+            if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x20) != 0) goto LAB_00033d18;
+            if (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x10) == 0) &&
                (iVar7 = FUN_00034270(*(undefined1 *)(DAT_00101404 + 4),
-                                     *(undefined1 *)(DAT_0010190c + 8),
+                                     *(undefined1 *)((char *)DAT_0010190c + 8),
                                      *(byte *)(DAT_00101404 + 0x1c) & 0xf,
-                                     *(undefined1 *)(DAT_0010190c + 0x11)), iVar7 != 0)) {
-              uVar9 = *(undefined1 *)(DAT_0010190c + 0x12);
+                                     *(undefined1 *)((char *)DAT_0010190c + 0x11)), iVar7 != 0)) {
+              uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
               uVar6 = 6;
             }
             else {
-              if ((*(byte *)(DAT_0010190c + 0x19) & 0x10) == 0) goto LAB_00033d18;
-              *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) | 0x10;
-              uVar9 = *(undefined1 *)(DAT_0010190c + 0x12);
+              if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x10) == 0) goto LAB_00033d18;
+              *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 0x10;
+              uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
               uVar6 = 9;
             }
           }
           else {
-            *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) | 0x20;
+            *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 0x20;
 LAB_00033d18:
-            uVar9 = *(undefined1 *)(DAT_0010190c + 0x12);
+            uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
             uVar6 = 5;
           }
           FUN_000343d8(uVar6,uVar9);
-          *(undefined1 *)(DAT_0010190c + 0x12) = 0;
-          *(undefined1 *)(DAT_0010190c + 0x11) = 0;
+          *(undefined1 *)((char *)DAT_0010190c + 0x12) = 0;
+          *(undefined1 *)((char *)DAT_0010190c + 0x11) = 0;
         }
       }
     }
   }
-  switch(*(ushort *)(DAT_0010190c + 0xb) & 0xf) {
+  /* Main per-tick goal dispatch -- see this function's header comment
+     for the scaling-bug fix that applies here too (was reading byte
+     0x16 instead of the real goal nibble at byte 0xb). */
+  if (getenv("UW_DEBUG_NPC_GOAL_SWITCH"))
+    fprintf(stderr, "[npc-goal-switch] obj=%p goal=%d tile=(%u,%u)\n", (void *)DAT_0010190c,
+            (int)(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf),
+            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+  switch(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf) {
   case 0:
     goto LAB_00033e9c;
   case 1:
@@ -24684,33 +24740,33 @@ LAB_00033e9c:
     FUN_00031a94();
     break;
   case 0xb:
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfc | 4;
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
     uVar6 = Ordinal_1053();
     iVar7 = DAT_0010190c;
-    bVar10 = *(byte *)(DAT_0010190c + 0x13);
+    bVar10 = *(byte *)((char *)DAT_0010190c + 0x13);
     uw_ord2005_rem_93 = ((int)(uVar6)) % (2);
     *(byte *)(iVar7 + 0x13) = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
     uVar6 = Ordinal_1053();
     uw_ord2005_rem_94 = ((int)(uVar6)) % (0x100);
-    *(undefined1 *)(DAT_0010190c + 9) = uw_ord2005_rem_94;
+    *(undefined1 *)((char *)DAT_0010190c + 9) = uw_ord2005_rem_94;
     uVar6 = Ordinal_1053();
     uw_ord2005_rem_95 = ((int)(uVar6)) % (3);
-    *(byte *)(DAT_0010190c + 0x14) =
-         *(byte *)(DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_95 + '\x0f') * '\b';
+    *(byte *)((char *)DAT_0010190c + 0x14) =
+         *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_95 + '\x0f') * '\b';
     iVar7 = DAT_0010190c;
-    uVar2 = *(ushort *)(DAT_0010190c + 0xb);
+    uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_96 = ((int)((uVar2 >> 0xc) + 1)) % (4);
     uVar11 = uVar2 & 0xfff;
     *(char *)(iVar7 + 0xb) = (char)uVar11;
-    *(byte *)(DAT_0010190c + 0xc) =
+    *(byte *)((char *)DAT_0010190c + 0xc) =
          (byte)(uVar11 >> 8) | (byte)(((uw_ord2005_rem_96 & 0xf) << 0xc) >> 8);
-    *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) | 0x40;
+    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x40;
     break;
   case 0xc:
     FUN_00031fa8();
     break;
   default:
-    *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) | 7;
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) | 7;
   }
   iVar7 = DAT_0010190c;
   /* HACK: same ushort-vs-byte pointer-arithmetic scaling bug as
@@ -24724,9 +24780,9 @@ LAB_00033e9c:
      `ldr r1,[r6,#0x0]; strb r3,[r1,#0x3]` -- also raw byte 3, not the
      scaled byte 6 the undecorated expression computed). */
   uVar2 = *(ushort *)((char *)DAT_0010190c + 2);
-  bVar10 = *(byte *)(DAT_0010190c + 9);
+  bVar10 = *(byte *)((char *)DAT_0010190c + 9);
   uVar11 = uVar2 >> 2 & 0xff;
-  uVar11 = (uVar11 ^ *(byte *)(DAT_0010190c + 0x18)) & 0x1f ^ uVar11;
+  uVar11 = (uVar11 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^ uVar11;
   uVar12 = (uint)DAT_001018fc;
   /* Was `Ordinal_2005(0x100,(uVar11-uVar12)+0x100,*(undefined1*)(DAT_0010190c+2),
      Ordinal_2005_exref,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_r8,unaff_r9,
@@ -24765,8 +24821,8 @@ LAB_00033e9c:
   uVar5 = uVar2 & 0xfc7f | (uVar11 & 0xffe0) << 2;
   *(char *)(iVar7 + 2) = (char)uVar5;
   *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
-  *(byte *)(DAT_0010190c + 0x18) =
-       (*(byte *)(DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)(DAT_0010190c + 0x18);
+  *(byte *)((char *)DAT_0010190c + 0x18) =
+       (*(byte *)((char *)DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)((char *)DAT_0010190c + 0x18);
   iVar7 = DAT_0010190c;
   /* Was `if (DAT_00101430 == 0)` -- an inverted condition, confirmed via
      real disassembly (`cmp r0,#0x0; beq 0x326a4`, where r0 is
@@ -24786,7 +24842,7 @@ LAB_00033e9c:
     if (DAT_00101434 < 2) {
       return;
     }
-    bVar1 = *(byte *)(DAT_0010190c + 0x13);
+    bVar1 = *(byte *)((char *)DAT_0010190c + 0x13);
     if ((bVar1 & 0x7f) < 2) {
       return;
     }
@@ -24810,7 +24866,7 @@ LAB_00033e9c:
   }
   else {
 LAB_00032690:
-    *(byte *)(DAT_0010190c + 9) = DAT_00101458;
+    *(byte *)((char *)DAT_0010190c + 9) = DAT_00101458;
   }
   return;
 }
