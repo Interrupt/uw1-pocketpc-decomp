@@ -39661,6 +39661,95 @@ static void uw_debug_dump_sprite_frames_once(void) {
   _uw_dump_sprite_ids_from_env("UW_DUMP_SPRITE_IDS", 0, dir);
 }
 
+/* Debug tool (UW_DUMP_CRITTER_SHEET): systematically drive
+   decode_critter_sprite_page across every (tier, direction, frame)
+   combination for one or more critter type indices, instead of
+   passively capturing whatever poses a demo happens to render. Lets a
+   bug in a creature's .GR page data (or in the glyph-selection math
+   reading it) be inspected directly as a full sprite sheet, rather
+   than inferred from whichever single frame the AI/camera angle
+   happened to trigger live -- built to investigate a report that
+   Bragit (a peaceful NPC) flashed a "facing player" idle frame, showed
+   garbage data, sometimes showed death-animation frames, and never
+   showed any of the other rotation angles.
+
+   UW_DUMP_CRITTER_SHEET=<type_idx>[,<type_idx>...] -- type_idx is
+   resolve_critter_sprite_tier's own param_1 (the object id's low 6
+   bits, uVar27 & 0x3f in emit_tile_objects -- NOT the full 9-bit
+   object id; run with UW_DEBUG_CRITTER while near the NPC in question
+   to read its real type_idx off the "[critter] emit_tile_objects:
+   ... type_idx=N" trace line). For each type_idx, looks up its real
+   page index and frame-count-check value from the same DAT_0023ce70/
+   DAT_0023ce71 assoc tables resolve_critter_sprite_tier itself reads
+   (skips a type_idx with no assoc entry, the 0xff sentinel), then
+   calls decode_critter_sprite_page directly for tier=0..3 (the real,
+   fixed tier range) x direction=0..UW_DUMP_CRITTER_SHEET_MAXDIR
+   (default 127) x frame=0..UW_DUMP_CRITTER_SHEET_MAXFRAME (default
+   15). decode_critter_sprite_page's own bounds checks (glyph-index
+   range, page-open failure, implausible >64px header) make
+   out-of-range combos a no-op rather than a crash -- most combos in
+   this sweep won't correspond to real data and simply produce no file.
+
+   Reuses the existing uw_debug_dump_critter_sprite hook already wired
+   into decode_critter_sprite_page (gx_stub.c, gated on
+   UW_DEBUG_DUMP_CRIT) to do the actual BMP writing -- implicitly
+   enables that hook so this tool works standalone. Output:
+   debug/crit/type<page_idx>/tier<N>/dir<D>_frame<F>.bmp. Runs once,
+   early in the first real gameplay tick. */
+static void uw_debug_dump_critter_sheet_once(void) {
+  static int done = 0;
+  if (done) return;
+  done = 1;
+  const char *spec = getenv("UW_DUMP_CRITTER_SHEET");
+  if (!spec || !spec[0]) return;
+  setenv("UW_DEBUG_DUMP_CRIT", "1", 0);
+  /* default maxdir kept conservative (63, not the full 0-255 clamp
+     resolve_critter_sprite_tier allows): sweeping direction values past
+     a creature's real per-page table found a separate, unfixed bug --
+     an out-of-range direction can produce a header that still passes
+     the existing "w/h > 64" plausibility check yet isn't real glyph
+     data, and FUN_000129f8's decompressor doesn't bound its output to
+     the allocated buffer, corrupting the heap (confirmed via lldb:
+     malloc's free_list_checksum_botch, non-deterministic crash
+     manifesting later in unrelated code). Raise
+     UW_DUMP_CRITTER_SHEET_MAXDIR deliberately if you need to probe
+     further -- expect it to be crash-prone past a type's real table
+     size, which is itself diagnostic (that boundary IS the type's real
+     direction-table extent). */
+  int maxdir = 63, maxframe = 15;
+  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXDIR"); if (e) maxdir = atoi(e); }
+  { const char *e = getenv("UW_DUMP_CRITTER_SHEET_MAXFRAME"); if (e) maxframe = atoi(e); }
+  const char *p = spec;
+  while (*p) {
+    char *end;
+    long type_idx = strtol(p, &end, 10);
+    if (end == p) break;
+    p = end;
+    if (type_idx >= 0 && type_idx < 64) {
+      int page_idx = (unsigned char)(&DAT_0023ce70)[type_idx * 2];
+      int frame_count_param = (unsigned char)(&DAT_0023ce71)[type_idx * 2];
+      if (page_idx == 0xff) {
+        fprintf(stderr, "[crit-sheet] type_idx=%ld has no assoc-table entry (0xff sentinel), skipping\n",
+                type_idx);
+      } else {
+        fprintf(stderr, "[crit-sheet] type_idx=%ld -> page_idx=%d frame_count_param=%d, sweeping "
+                "tier=0..3 dir=0..%d frame=0..%d\n",
+                type_idx, page_idx, frame_count_param, maxdir, maxframe);
+        for (int tier = 0; tier < 4; tier++) {
+          for (int dir = 0; dir <= maxdir; dir++) {
+            for (int frame = 0; frame <= maxframe; frame++) {
+              decode_critter_sprite_page(page_idx, tier, dir, frame_count_param, frame);
+            }
+          }
+        }
+      }
+    }
+    if (*p == ',') p++;
+    else break;
+  }
+  fprintf(stderr, "[crit-sheet] sweep complete, see debug/crit/\n");
+}
+
 
 
 // was FUN_000497cc -- runs once per in-game main-loop iteration: resets
@@ -39772,6 +39861,7 @@ void main_loop_hud_flush()
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
   uw_debug_dump_sprite_frames_once();
+  uw_debug_dump_critter_sheet_once();
   uw_debug_force_item_id_once();
   /* When the forced 3D redraw ran this frame, push it through even if a
      mouse button is being held in the viewport: DAT_0023c63c (the
@@ -55620,8 +55710,8 @@ LAB_00061d34:
       uVar29 = (uint)bVar13 + (uVar29 - 0x1c) * 8;
     }
     if (getenv("UW_DEBUG_CRITTER"))
-      fprintf(stderr, "[critter] emit_tile_objects: id=0x%03x raw_slot=%d own_heading_bits=%d cam_yaw=%d quadrant=%d dir(uVar29)=%d\n",
-              uVar27 & 0x1ff, *(byte *)((char *)param_1 + 0x15) & 0x3f,
+      fprintf(stderr, "[critter] emit_tile_objects: id=0x%03x type_idx=%d raw_slot=%d own_heading_bits=%d cam_yaw=%d quadrant=%d dir(uVar29)=%d\n",
+              uVar27 & 0x1ff, uVar27 & 0x3f, *(byte *)((char *)param_1 + 0x15) & 0x3f,
               (int)(param_1[1] >> 5 & 0x1c), (int)DAT_000db44c, (int)DAT_0023b4a0, (int)uVar29);
     if (getenv("UW_DEBUG_CRITTER_Z"))
       fprintf(stderr, "[critter-z] id=0x%03x world_x(b904)=%d world_z(b920)=%d HEIGHT(b91c)=%d raw_b9=%d raw_b13=%d\n",
