@@ -22801,8 +22801,19 @@ void FUN_0002fba8()
   ushort *puVar4;
   
   if (DAT_00101734 != 0) {
-    if (((*(byte *)(DAT_0010190c + 0xe) & 0xc0) == 0) &&
-       ((*(byte *)(DAT_0010190c + 0xb) & 0xf) != 4)) {
+    /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this
+       NPC-AI cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]])
+       -- bare `DAT_0010190c + 0xe`/`+ 0xb` scaled to byte 0x1c/0x16
+       (the latter being this object's real tile-position field) instead
+       of the real disassembly's raw bytes 0xe and 0xb (0x2fbc4-0x2fbf8:
+       `ldrb r3,[r0,#0xe]; ldrb r2,[r0,#0xd]; ...; ldrb r3,[r0,#0xc];
+       ldrb r2,[r0,#0xb]; ...; and r3,r3,#0xf; cmp r3,#0x4` -- both raw).
+       With the wrong read, this guard was evaluating against the (now
+       frozen/stable) tile-position byte instead of the real state
+       nibble, so this function's real body below (the actual
+       step/collision check) may never have run as intended. */
+    if (((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) &&
+       ((*(byte *)((char *)DAT_0010190c + 0xb) & 0xf) != 4)) {
       FUN_000343d8(4,1);
       return;
     }
@@ -22901,8 +22912,19 @@ LAB_0002fe88:
       }
     }
   }
-  uVar5 = *(ushort *)(DAT_0010190c + 0xb) & 0xf;
-  if ((*(ushort *)(DAT_0010190c + 0xb) & 0xf) != 0) {
+  /* HACK: same ushort-vs-byte pointer-scaling bug as the two other fixes
+     in this NPC-AI cluster this session (see [[ushort-byte-scaling-bug-npc-cluster]])
+     -- DAT_0010190c is `ushort *`, so bare `DAT_0010190c + 0xb` scales to
+     byte offset 0x16 (this object's real tile-position field, since
+     confirmed stable this session) instead of the raw byte 0xb the real
+     disassembly reads here (0x2fe98-0x2feb0: `ldrb r3,[r0,#0xc]; ldrb
+     r2,[r0,#0xb]; orr r3,r2,r3,lsl#8; ...; ands r1,r3,#0xf` -- byte 0xb's
+     own low nibble, nothing to do with tile position). Cast to a byte
+     pointer first. */
+  uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf;
+  if (getenv("UW_DEBUG_NPC_WANDER"))
+    fprintf(stderr, "[npc-fcec-dispatch] obj=%p uVar5=%d\n", (void *)DAT_0010190c, (int)uVar5);
+  if ((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf) != 0) {
     if (uVar5 == 2) {
       FUN_0002f124();
       return;
@@ -22919,11 +22941,25 @@ LAB_0002fe88:
   uw_ord2005_rem_44 = ((int)(uVar4)) % (2);
   iVar2 = DAT_0010190c;
   if (uw_ord2005_rem_44 != 0) {
-    uVar5 = *(ushort *)(DAT_0010190c + 0xb);
+    /* HACK: this is the real frame-cycle step (advance this idle
+       critter's animation frame, wrapping 0..3 -- see uVar5>>0xc, the
+       upper nibble of raw byte 0xc, matching resolve_critter_sprite_tier's
+       own "frame" param computed the same way in emit_tile_objects). Same
+       scaling bug as the read above: bare `DAT_0010190c + 0xb`/`+ 0xc`
+       hit bytes 0x16/0x18 (corrupting tile position and an unrelated
+       byte) instead of the real bytes 0xb/0xc this data lives at
+       (0x2ff38-0x2ff88: `ldrb r3,[r5,#0xc]; ldrb r2,[r5,#0xb]; ...;
+       strb r3,[r5,#0xb]; ...; strb r3,[r0,#0xc]` -- all raw). With this
+       never actually reaching the real frame byte, it stayed pinned at
+       its spawn value (1, an alert/hostile-looking pose) forever instead
+       of cycling through the idle set -- confirmed live via
+       UW_FORCE_CRITTER_FRAME: frame 0 is a relaxed idle stance, frame 1
+       is alert/weapon-ready, frame 2 is a lunge/attack pose. */
+    uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb);
     uw_ord2005_rem_45 = ((int)((uVar5 >> 0xc) + 1)) % (4);
     uVar6 = uVar5 & 0xfff;
     *(char *)(iVar2 + 0xb) = (char)uVar6;
-    *(byte *)(DAT_0010190c + 0xc) =
+    *(byte *)((char *)DAT_0010190c + 0xc) =
          (byte)(uVar6 >> 8) | (byte)(((uw_ord2005_rem_45 & 0xf) << 0xc) >> 8);
   }
   return;
@@ -46910,6 +46946,18 @@ undefined4 param_2;
   DAT_002046e0 = (byte)(DAT_002049c8 >> 3);
   DAT_002046e4 = (byte)(DAT_002049ca >> 3);
   puVar4 = (ushort *)FUN_000535fc(param_2);
+  /* HACK: FUN_000535fc legitimately returns NULL for an out-of-range/
+     empty slot (its own established contract, guarded at many other
+     call sites this session) and this immediately dereferenced it
+     unconditionally. Newly reachable via npc_ai_tick's placement-sweep
+     -> movement_collision_sweep -> sweep_collision_flags chain now that
+     this session's NPC-AI-cluster byte-scaling fixes let more objects
+     take that path for the first time; confirmed live crashing
+     (EXC_BAD_ACCESS at `uVar2 = *puVar4`) in several regression demos.
+     Match this function's own "nothing to do" early-out (return 2). */
+  if (puVar4 == (ushort *)0x0) {
+    return 2;
+  }
   uVar2 = *puVar4;
   if (iVar1 == -1) {
     puVar11 = (ushort *)0x0;
@@ -46921,6 +46969,12 @@ undefined4 param_2;
   }
   else {
     puVar5 = (ushort *)FUN_000535fc(puVar11[iVar1 * 3 + 1] >> 6);
+    /* HACK: same unguarded FUN_000535fc NULL-return case as the
+       puVar4 fix just above -- puVar5 is dereferenced (`*puVar5`)
+       a few lines down with no check. Same early-out. */
+    if (puVar5 == (ushort *)0x0) {
+      return 2;
+    }
     uVar6 = (uint)DAT_002046e0 + (int)(short)puVar11[iVar1 * 3 + 2] & 0x3f;
     uVar3 = (ushort)uVar6;
     DAT_002046d8 = (byte)uVar6;
@@ -55503,7 +55557,12 @@ LAB_00061d34:
       fprintf(stderr, "[critter-z] id=0x%03x world_x(b904)=%d world_z(b920)=%d HEIGHT(b91c)=%d raw_b9=%d raw_b13=%d\n",
               uVar27 & 0x1ff, (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c,
               (int)*(byte *)((char *)param_1 + 9), (int)*(byte *)((char *)param_1 + 0x13));
-    resolve_critter_sprite_tier(uVar27 & 0x3f,uVar29,(byte)param_1[6] >> 4,(uint)DAT_0023bc88 * (int)DAT_00086b30);
+    {
+      short _frame_arg = (byte)param_1[6] >> 4;
+      const char *_ff = getenv("UW_FORCE_CRITTER_FRAME");
+      if (_ff) _frame_arg = (short)atoi(_ff);
+      resolve_critter_sprite_tier(uVar27 & 0x3f,uVar29,_frame_arg,(uint)DAT_0023bc88 * (int)DAT_00086b30);
+    }
     uVar30 = (&DAT_000d9ed8)[DAT_000db44c];
     uVar18 = Ordinal_2023((&DAT_000d9930)[DAT_000db44c]);
     iVar32 = (int)DAT_00202508;
