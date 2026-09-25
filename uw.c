@@ -54389,7 +54389,7 @@ static void uv_project(int proj, float lx, float ly, float lz, double uv_scale, 
   *out_v = (int)(v / uv_scale * 16.0) & 15;
 }
 
-static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, void *texptr, int uv_proj, double uv_scale)
+static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, double zoff_local, void *texptr, int uv_proj, double uv_scale)
 {
   int npts = *(int *)model;
   int nparts = *(int *)(model + 4);
@@ -54409,6 +54409,8 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
   { const char *_s = getenv("UW_MODEL_YOFF"); if (_s) yoff = atof(_s); }
   { const char *_s = getenv("UW_MODEL_YCLIP"); if (_s) y_clip = atof(_s); }
   { const char *_s = getenv("UW_MODEL_UV_SCALE"); if (_s) uv_scale = atof(_s); }
+  { const char *_s = getenv("UW_MODEL_XOFF"); if (_s) xoff_local = atof(_s); }
+  { const char *_s = getenv("UW_MODEL_ZOFF"); if (_s) zoff_local = atof(_s); }
   double ang = heading * 45.0 * (3.14159265358979 / 180.0);
   double ca = cos(ang), sa = sin(ang);
 
@@ -54433,7 +54435,7 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
   for (i = 0; i < npts; i++) {
     float mx = *(float *)(model + 8 + i*0xc) + (float)xoff_local;
     float my = *(float *)(model + 8 + i*0xc + 4);
-    float mz = *(float *)(model + 8 + i*0xc + 8);
+    float mz = *(float *)(model + 8 + i*0xc + 8) + (float)zoff_local;
     /* Clamp, don't drop. DFRAME.E's two "riser" faces aren't just
        oversized junk above the real frame -- their BOTTOM edge (local Y
        208) is the header panel connecting the two doorposts across the
@@ -54461,6 +54463,26 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
   }
   DAT_0023b838 = base_vtx + npts;
   DAT_000a85d0 = DAT_0023b838;
+
+  if (getenv("UW_DEBUG_MODEL_BBOX")) {
+    /* Same measurement UW_DEBUG_DLIST's own bbox print already did for
+       the display-list door bank (mysteries.md UPDATE 23/28) -- real
+       local X/Y/Z extents, not assumed. That measurement is what found
+       bank 0x61/0x6e's true center (+16,+4), replacing a guessed xoff
+       that was overshooting; this model family (DFRAME.E/DOOR.E) has
+       never had the equivalent check run against IT specifically. */
+    float lo[3] = {_uv_local[0][0], _uv_local[0][1], _uv_local[0][2]};
+    float hi[3] = {_uv_local[0][0], _uv_local[0][1], _uv_local[0][2]};
+    for (i = 1; i < npts; i++) {
+      for (int k = 0; k < 3; k++) {
+        if (_uv_local[i][k] < lo[k]) lo[k] = _uv_local[i][k];
+        if (_uv_local[i][k] > hi[k]) hi[k] = _uv_local[i][k];
+      }
+    }
+    fprintf(stderr, "[model-bbox] npts=%d x=[%g,%g] y=[%g,%g] z=[%g,%g] center=(%g,%g,%g)\n",
+            npts, lo[0], hi[0], lo[1], hi[1], lo[2], hi[2],
+            (lo[0]+hi[0])/2, (lo[1]+hi[1])/2, (lo[2]+hi[2])/2);
+  }
 
   int emitted = 0;
   for (i = 0; i < nparts; i++) {
@@ -54580,6 +54602,19 @@ typedef struct {
   double uv_scale;      // real world units per one texture repeat (u/v
                          // wrap period); 0 = fall back to a 256-unit
                          // (one tile) default when uv_proj is set
+  double zoff;      // model1's own local-space Z shift before rotation --
+                     // the display-list door path needed BOTH X and Z
+                     // local-center correction (mysteries.md UPDATE 28);
+                     // this path only ever had xoff_local (0 for every
+                     // existing row). 0 = no change to current behavior.
+  double zoff2;      // model2's local-space Z shift, paired with x_off2
+  int heading_step;  // extra (raw - 2*quadrant + heading_step) & 7 offset
+                      // applied ON TOP of the generic quadrant
+                      // compensation -- the display-list door bank needed
+                      // exactly this, a fixed -4 (180 degrees) baked into
+                      // its own authored "forward" convention, on top of
+                      // the same generic compensation (mysteries.md
+                      // UPDATE 25). 0 = no change to current behavior.
 } ModelMapEntry;
 
 static const ModelMapEntry g_model_map[] = {
@@ -54645,20 +54680,20 @@ static const ModelMapEntry g_model_map[] = {
   // established for ordinary tile walls) -- first live test of the new
   // real-per-vertex-UV path (see ModelMapEntry's own comment); starting
   // point for calibration, not yet confirmed correct on screen.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0 },
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 256.0, -4.0, -4.0, -4 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 256.0, -4.0, 0, -4 },
 };
 #define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
 
@@ -55026,12 +55061,29 @@ ushort * param_1;
          rendering from certain camera stances) -- apply the identical
          `(raw - 2*quadrant) & 7` compensation here, or these models will
          only ever look correctly oriented from whichever one camera
-         quadrant they happened to be calibrated in. */
-      int _raw_heading = (int)(param_1[1] >> 6 & 7);
-      int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
+         quadrant they happened to be calibrated in.
+
+         SECOND BUG, found while chasing the door frame's invisibility
+         (e-model-texturing branch): this read `param_1[1] >> 6 & 7`.
+         The display-list door path hit the exact same bug and fixed it
+         (UPDATE 25, mysteries.md): DOS's own real object struct
+         (uw1-decomp port/uw1_level.h:572) puts `heading` at word1 bits
+         7-9, not 6-8 -- one bit too low here silently pulls in the
+         adjacent zpos field's own low bit, corrupting heading parity
+         per-object (sometimes correct, sometimes off by one compass
+         step, depending on that unrelated bit). Every other heading
+         read in this file already uses `>>7` (grep confirms -- e.g.
+         uw.c ~55828's own `_raw_heading2` for the display-list path,
+         post-fix); this generic model dispatch and the sign-billboard-
+         angle-override code below (uw.c ~56180, same bug, not yet
+         fixed -- out of scope for this branch) were the two places
+         that never got the fix ported over. */
+      int _raw_heading = (int)(param_1[1] >> 7 & 7);
+      int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0 + _me->heading_step) & 7;
+      { const char *_s = getenv("UW_MODEL_HEADING_STEP"); if (_s) _heading = (_raw_heading - 2 * (int)DAT_0023b4a0 + atoi(_s)) & 7; }
       if (getenv("UW_DEBUG_MODEL"))
-        fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d compensated=%d\n",
-                (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _heading);
+        fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d step=%d compensated=%d\n",
+                (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _me->heading_step, _heading);
       /* Frame texture: the tile's own real wall texture. DAT_0023b4ec is
          the raw tile record currently being walked (confirmed by the
          wall-rendering code just above emit_tile_objects in this same
@@ -55106,7 +55158,7 @@ ushort * param_1;
                   (int)(uVar27 & 0x1ff), _sprite_frame, _leaf_tex, _w, _h, _nz, _tot);
         }
       }
-      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0, _frame_tex, _me->uv_proj, _me->uv_scale);
+      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0, _me->zoff, _frame_tex, _me->uv_proj, _me->uv_scale);
       if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
         /* _leaf_tex decodes fine (confirmed via UW_DEBUG_MODEL's
            nonzero-pixel count -- real sprite content, not garbage) but
@@ -55131,7 +55183,7 @@ ushort * param_1;
            texture pointer with no UV (the old broken behavior) for
            experimenting with the failure mode if useful. */
         void *_apply_tex = getenv("UW_MODEL_LEAF_TEXTURE") ? _leaf_tex : 0;
-        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2, _apply_tex, UW_UVPROJ_NONE, 0.0);
+        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2, _me->zoff2, _apply_tex, UW_UVPROJ_NONE, 0.0);
       }
       return;
     }

@@ -4379,3 +4379,96 @@ UW_MODEL_FRAME_TEX_OVERRIDE and UW_MODEL_UV_SCALE kept as documented
 diagnostics. Default rendering unaffected (confirmed, faces=11/6, zero
 env vars); UW_ENABLE_MODEL_RENDER and UW_DLIST_REAL_CULL_OPCODES both
 remain opt-in. Standard run-regressions.sh: 6/6 clean.
+
+(36) 2026-09-21: user's specific claim -- "the doors and door frames
+going through our path likely has the wrong scale and rotation, we
+fixed bugs to get those positioned properly in the other path that we
+need for this one too" -- was exactly right, and led to two real,
+concrete bug fixes, though the frame is STILL not visible on screen
+after both, narrowing the remaining problem further.
+
+BUG 1, ROTATION, found by direct comparison against the display-list
+path's own fix history (mysteries.md UPDATE 25): emit_tile_objects's
+generic model dispatch read heading as `param_1[1] >> 6 & 7`. DOS's own
+real object struct puts heading at word1 bits 7-9, not 6-8 -- reading
+one bit too low silently pulls in the adjacent zpos field's own low
+bit, corrupting heading parity per-object (DOS's real source states
+doors only ever use EVEN headings; a >>6 read can come out odd,
+silently wrong, depending on that unrelated bit). Every OTHER heading
+read in this file already uses `>>7` (grep-confirmed) -- this generic
+model dispatch (uw.c ~55079) was one of exactly two remaining >>6 call
+sites (the other, the sign-billboard-angle-override code ~56180, has
+the identical bug, not fixed this pass -- out of scope, flagged for
+later). Fixed: `>>6` -> `>>7`. Verified live: raw heading at the id=
+0x140 repro is now 6 (even, as DOS's source requires) where it may
+previously have come out corrupted; compensated heading comes out 4
+with no extra step.
+
+BUG 2, MISSING Z-AXIS LOCAL CENTERING: this path already had
+`xoff_local` (an X-axis pre-rotation shift, needed for DOOR.E's own
+off-center local X -- see g_model_map's own existing comment) but NO
+equivalent for Z. The display-list door investigation (mysteries.md
+UPDATE 28) found BOTH axes needed correction for the exact same model
+family, and that using only one produced exactly this symptom: "an
+X-only correction was chasing a moving target." Added `zoff`/`zoff2`
+fields to ModelMapEntry and a `zoff_local` parameter to
+emit_model_object (mirroring xoff_local exactly), plus UW_MODEL_XOFF/
+UW_MODEL_ZOFF live overrides.
+
+MEASURED, not guessed, using a new UW_DEBUG_MODEL_BBOX print (mirrors
+UW_DEBUG_DLIST's own bbox tool, which is what solved the identical
+problem on the other path): DFRAME.E's real local bbox is `x=[-128,128]
+y=[0,256] z=[0,8]` (X already centered at 0, no xoff needed for the
+frame itself -- matches the earlier "DFRAME's own inner opening spans
+local X -64..64" note, though that's the *opening*, not the overall
+model bbox, which happens to also be centered); DOOR.E's (leaf, post
+xoff_local=-64) is `x=[-64,64] y=[0,208] z=[0,8]`. Both have IDENTICAL
+Z ranges (0..8, center 4) -- the exact same z-center the display-list
+bank's own bbox measurement found for the SAME physical door family
+(mysteries.md UPDATE 28: bank 0x61/0x6e both center at Z=+4). Set
+zoff=-4.0, zoff2=-4.0 on every door/frame row, directly matching that
+established value.
+
+ALSO SET heading_step=-4 (a new ModelMapEntry field + UW_MODEL_
+HEADING_STEP live override) on every door/frame row, by direct
+numeric correspondence: with heading_step=0, this path's compensated
+heading at the repro came out to 4; the display-list path's OWN
+heading at the identical real repro position is independently known
+(this whole document's earlier entries, extensively verified) to be 0
+after ITS OWN extra -4 step is applied. (4 - 4) & 7 = 0 -- applying the
+same -4 step here lands on the exact same real-world-correct heading,
+not a coincidence given both paths draw the same physical door.
+Verified live: compensated heading is now 0 at this repro, matching.
+
+RESULT: with both bugs fixed and heading/Z-center now independently
+verified to match known-good real-world values for this exact door,
+UW_DEBUG_MODEL_UV still shows real per-vertex UV output, and the model
+still doesn't appear visibly on screen (compared against the exact
+same baseline screenshot from entry 35 -- no discernible difference).
+This rules out position/rotation/scale as the remaining cause with
+much higher confidence than before (both were independently measured
+and cross-checked against the other path's own established-correct
+values, not guessed) -- what's left is very likely occlusion (the
+frame's real Z depth is only 8 world units, a thin sliver essentially
+coincident with the tile's own wall surface -- possible z-fighting/
+draw-order issue against that wall, not a bug in the model's own
+placement) or a backface-winding issue specific to DFRAME.E's own
+authored face order (unlike boulders, a thin single-sided architectural
+surface would go fully invisible, not just look inverted, if wound the
+wrong way for this renderer's cull convention). Attempted a same-door-
+from-the-opposite-side check to distinguish the two (winding would flip
+visibility depending on view side; occlusion by the wall would not) but
+picked a guessed camera position that didn't land on the door at all
+(id=0x140 never fired) -- inconclusive, not a real data point, needs a
+properly-navigated second viewpoint rather than another blind guess.
+
+Kept UW_DEBUG_MODEL_BBOX, UW_MODEL_XOFF/ZOFF/HEADING_STEP as documented
+diagnostics/calibration knobs. Default rendering unaffected (faces=
+11/6, zero env vars). UW_ENABLE_MODEL_RENDER remains opt-in. Standard
+run-regressions.sh: 6/6 clean.
+
+Next step: find a reliable second viewpoint (real map knowledge or
+in-game navigation, not another coordinate guess) to distinguish
+winding from occlusion, or instrument raster_triangle/whatever
+consumes these arena records for an explicit backface-test/depth-order
+check on this specific record range.
