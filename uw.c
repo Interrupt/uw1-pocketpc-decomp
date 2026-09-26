@@ -10873,6 +10873,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   
   sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
   sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_set_quest: idx=%d value=%d\n", (int)sVar1, (int)sVar2);
   uVar3 = (uint)sVar1;
   if (-1 < (int)uVar3) {
     if ((int)uVar3 < 0x20) {
@@ -10908,15 +10909,19 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   if (-1 < iVar1) {
     if (0x1f < iVar1) {
       if (0x23 < iVar1) {
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> %d (clamp-high)\n", iVar1, (int)*(undefined1 *)(DAT_00086df8 + 0x6d));
         return *(undefined1 *)(DAT_00086df8 + 0x6d);
       }
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> %d (byte-value slot)\n", iVar1, (int)*(undefined1 *)(iVar1 + DAT_00086df8 + 0x49));
       return *(undefined1 *)(iVar1 + DAT_00086df8 + 0x49);
     }
     sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
     if ((*(uint *)(DAT_00086df8 + 0x65) & 1 << ((int)sVar2 & 0xffU)) != 0) {
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 1 (flag bit set)\n", iVar1);
       return 1;
     }
   }
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 0\n", iVar1);
   return 0;
 }
 
@@ -12009,6 +12014,7 @@ undefined4 build_babl_symbol_table()
       *(char *)(iVar7 + 0x1e) = (char)((uint)iVar2 >> 0x10);
       *(char *)(iVar7 + 0x1f) = (char)((uint)iVar2 >> 0x18);
       bVar12 = (short)((uint)iVar2 >> 0x10) == 0x111;
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] symbol table entry %d: name=\"%s\" type=0x%x isvar=%d\n", (int)iVar5, local_64, (unsigned)((uint)iVar2 >> 0x10), (int)bVar12);
       if (bVar12) {
         iVar6 = (int)DAT_000bbf24;
       }
@@ -12867,6 +12873,9 @@ short param_3;
   short sVar6;
   undefined1 local_34 [28];
 
+  if (getenv("UW_DEBUG_BABL") && param_1 && strcmp(param_1, "npc_talkedto") == 0) {
+    fprintf(stderr, "[babl] babl_set_variable(\"npc_talkedto\", %d)\n", (int)*(short *)param_2);
+  }
   sVar6 = 0;
   iVar2 = Ordinal_1068(param_1); // was a dropped arg -- param_1 itself, matching this same function's own explicit `Ordinal_1068(param_1)` call a few lines below
   if (iVar2 != 0) {
@@ -12943,6 +12952,9 @@ short param_3;
          *(undefined2 *)(DAT_000bbf14 + (iVar1 + *(short *)(iVar2 + 0x1a)) * 2);
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < param_3);
+  if (getenv("UW_DEBUG_BABL") && param_1 && strcmp(param_1, "npc_talkedto") == 0) {
+    fprintf(stderr, "[babl] babl_get_variable(\"npc_talkedto\") -> %d\n", (int)*(short *)param_2);
+  }
   return;
 }
 
@@ -16543,11 +16555,35 @@ char *param_1;
 
 
 
+/* Was `uw_file_open_read(param_1)` (read-only, "rb") -- confirmed WRONG
+   via Ghidra headless: the real ARM body (0x22810) calls
+   `Ordinal_168(fname, 0xc0000000, 1, 0, 3, 0x80, 0)` --
+   GENERIC_READ|GENERIC_WRITE (0xc0000000), OPEN_EXISTING (disposition
+   3) -- a read-write handle, not read-only. Every one of this port's 3
+   real callers already relies on that: FUN_0001a5bc (this file's
+   per-NPC conversation-variable save to \SAVE0\bglobals.dat, called at
+   the end of every babl-VM interpreter yield) opens through this
+   function then immediately writes through the same handle -- silently
+   a no-op with the old read-only mapping, which is why NO conversation
+   state (attitude progress, quest-style script variables, and
+   critically npc_talkedto) ever actually persisted to disk: every
+   subsequent conversation reloaded whatever bglobals.dat already held
+   (its first, likely-all-zero content) instead of what the script had
+   just set, making every NPC's dialogue look like the player's first
+   meeting every single time. The other 2 callers (uw.c ~9516 and
+   ~28019) write through this same handle too, confirming the fix
+   applies uniformly. A sibling call site (uw.c ~9270, the level-save
+   archive path) had already independently hit this identical bug and
+   was fixed there by switching that ONE call site to FUN_0002273c
+   instead of touching this function's body -- fixing the real root
+   cause here supersedes that workaround without conflicting with it
+   (FUN_0002273c is also read-write, just with different
+   create-vs-open-existing disposition logic). */
 undefined4 FUN_00022810(param_1)
 char *param_1;
 
 {
-  return (undefined4)uw_file_open_read(param_1);
+  return (undefined4)uw_file_open_write(param_1, 0);
 }
 
 
@@ -19910,7 +19946,9 @@ void start_npc_conversation()
     if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
       FUN_000798c4();
     }
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: about to call FUN_0001a1c8()\n");
     FUN_0001a1c8();
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: FUN_0001a1c8() returned\n");
     uVar3 = 500;
     iVar2 = FUN_0002af88(DAT_00100674);
     if ((iVar2 != 0) || (DAT_001007b4 == '\0')) {
@@ -21084,6 +21122,7 @@ ushort * param_1;
   local_20[0] = (ushort)((*(ushort *)((char *)param_1 + 0xb) & 0xff0) >> 4);
   babl_set_variable(s_npc_gtarg_00085350,local_20,1);
   local_20[0] = (ushort)(((byte)param_1[7] & 0x20) >> 5);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0002a8e0: seeding npc_talkedto=%d from object byte@0xe=0x%02x (obj=%p)\n", (int)local_20[0], (unsigned)(byte)param_1[7], (void *)param_1);
   babl_set_variable(s_npc_talkedto_00085340,local_20,1);
   local_20[0] = (byte)(&DAT_001007dd)[iVar3] & 0xf;
   babl_set_variable(s_npc_level_00085334,local_20,1);
@@ -21187,7 +21226,8 @@ char *param_1;
   bool bVar4;
   ushort local_10;
   undefined2 local_e;
-  
+
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0002af88: ENTRY param_1=%p\n", (void *)param_1);
   babl_get_variable(s_npc_hunger_00085394,&local_10,1);
   *(byte *)(param_1 + 0x19) = ((short)local_10 < 0x20) << 7 | *(byte *)(param_1 + 0x19) & 0x7f;
   babl_get_variable(s_npc_hp_00085380,&local_10,1);
@@ -21224,6 +21264,7 @@ char *param_1;
   uVar1 = *(undefined2 *)(param_1 + 0xd);
   *(char *)(param_1 + 0xd) = (char)uVar1;
   *(byte *)(param_1 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0002af88: wrote npc_talkedto bit into object byte@0xe=0x%02x (obj=%p), attitude==0?%d\n", (unsigned)*(byte *)(param_1 + 0xe), (void *)param_1, (int)bVar4);
   babl_get_variable(s_play_hunger_00085304,&local_10,1);
   *(char *)(DAT_00086df8 + 0x39) = (char)local_10;
   babl_get_variable(s_play_hp_000852f0,&local_10,1);
