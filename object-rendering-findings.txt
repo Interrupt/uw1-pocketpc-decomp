@@ -4923,3 +4923,75 @@ UW_MODEL_FLIP_WINDING and the per-face UW_DEBUG_MODEL_UV print kept as
 documented diagnostics (the latter genuinely useful again for future
 UV work, not just this one bug). run-regressions.sh: 6/6 clean.
 Default rendering reconfirmed unaffected (faces=11/6, zero env vars).
+
+(44) 2026-09-26: acted on the user's own diagnosis of entry 43's
+"backface" finding rather than continuing to guess at a geometry
+cause: "This game had no back face culling then and no z buffer, can
+we sort the faces based on distance to the camera?" Both winding
+(entry 43) and UV-direction had already been ruled out or were
+unrelated -- with no depth test of any kind in this rasterizer, a
+face physically behind another one simply overdraws it if the .E
+file's own part list happens to emit it later, which reads as "the
+wrong side is showing" without any actual front/back or geometry bug.
+
+FIX: classic painter's algorithm, added directly after emit_model_
+object's own face-emission loop (uw.c ~54735-54818). Scoped to just
+the arena records THIS call emitted this frame ([_rec_start,
+DAT_0023b83c), _rec_start captured right before the emission loop) --
+does not touch the wider engine's own per-tile wall/floor/sprite draw
+order, which is mostly convex geometry per tile and hasn't shown this
+symptom. For each of this model's own records: reads its 4 stored
+vertex indices, looks up their real post-rotation/anchor world
+positions in DAT_000a85d0_backing (the same buffer the triplanar UV
+work in entry 41 already established as "real world space, not local"),
+averages them to a face center, and computes squared distance to the
+real camera eye (DAT_000db438/43c/440 -- the same globals the display-
+list door path already uses for its own eye, noted here as fine for
+RELATIVE ordering among one small object's own nearby faces even
+though mysteries.md UPDATE 41/42 separately flags that value as
+deficient for unrelated absolute-position cull-test work). Sorts
+descending (farthest first) via a plain insertion sort (small N, a
+handful of faces per model -- no need for anything fancier), then
+applies the permutation in place with a cycle-sort over whole 0x60-
+byte arena records (memcpy) plus the parallel g_tile_texptr_emit[]
+side-channel array, which is not part of the record struct itself and
+has to move in lockstep or a record would end up wearing the wrong
+texture after reordering. Fixed 64-entry stack arrays, not alloca
+(unused elsewhere in this file) -- silently skips the sort (goto
+_skip_depth_sort) if some future model's own part count ever exceeds
+that (DFRAME.E's 12 is the largest seen so far, comfortable headroom).
+New UW_MODEL_NO_DEPTH_SORT=1 escape hatch for A/B testing; sorts by
+default otherwise. [model-depthsort] debug line under UW_DEBUG_MODEL.
+
+VERIFIED: compiled clean (no new warnings). Live at the established
+door repro (tile=32.51,8.45 yaw=91, and several other angles/positions
+tried specifically to catch a depth-order-sensitive overlap --
+tile=33.23,8.68 yaw=101; a steep oblique yaw=40 and yaw=65 from
+tile=32.15-32.2,8.5-8.9): [model-depthsort] fires every frame with
+sane eye coordinates, both the frame's 11-face group and the leaf's
+6-face group each get their own independent sort pass (matches the
+existing "faces=11/6" default-state fact -- this doesn't merge the
+two parts together, each emit_model_object call is scoped to its own
+object). Direct A/B screenshot comparison (UW_MODEL_NO_DEPTH_SORT=1
+vs default) at all of the above angles: pixel-identical in every case
+tried. Being honest about what that does and doesn't show, the same
+way entry 43 reported its own winding-flip negative result: it
+confirms the sort runs, doesn't crash, doesn't visibly break anything
+that worked before, and reorders records whenever their computed
+distances genuinely differ -- but none of the specific angles tried
+this session happened to contain two of this door's own faces
+overlapping in screen space where draw order was visibly wrong to
+begin with, so this pass could not independently reproduce entry 43's
+original "backside showing" screenshot to confirm the fix against it
+directly. The mechanism is the right one for a no-z-buffer engine and
+is architecturally sound (real per-face world positions, real camera
+eye, correct farthest-first ordering, verified by inspection of the
+sort itself), but flagged back to the user for live confirmation at
+whatever angle originally showed the symptom, rather than declaring
+it fixed on architecture alone.
+
+run-regressions.sh: 6/6 clean (both of entries 40/42's previously-
+flaky tests clean this run too). Default rendering reconfirmed
+unaffected (faces=11/6, zero env vars, screenshots pixel-identical
+with the sort on vs. UW_MODEL_NO_DEPTH_SORT=1 off at every angle
+tested).

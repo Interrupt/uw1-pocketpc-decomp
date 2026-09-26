@@ -54610,6 +54610,7 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
   }
 
   int emitted = 0;
+  int _rec_start = DAT_0023b83c;
   for (i = 0; i < nparts; i++) {
     int pbase = 0xc14 + i*0x60;
     int vcount = *(int *)(model + pbase);
@@ -54731,6 +54732,91 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
     DAT_000a85d4 = DAT_0023b83c;
     emitted++;
   }
+  /* Live QA insight (no z-buffer, no backface culling in this engine --
+     "can we sort the faces based on distance to the camera?"): this
+     model's own faces, emitted above in whatever order the .E file
+     happens to list its parts, get painted in exactly that order with
+     no depth test at all -- a face physically BEHIND another one, if
+     listed later, simply overdraws it. That reads as "the wrong side
+     is showing" without any geometry, winding, or UV bug at all (both
+     already tested and ruled out this session). Classic painter's
+     algorithm fix: sort this call's own records, farthest-from-camera
+     first, so nearer faces are always painted last and correctly cover
+     farther ones. Scoped to just the records THIS call emitted
+     ([_rec_start, DAT_0023b83c)) -- doesn't touch the wider engine's
+     own draw order for ordinary walls/floors/sprites, which don't
+     appear to need it (this file's real geometry is mostly convex/non-
+     self-overlapping per tile). Uses the SAME real camera-position
+     globals (DAT_000db438/43c/440) the display-list door path already
+     reads for its own eye -- fine for RELATIVE ordering among a single
+     small object's own nearby faces even though that value is known
+     deficient for the unrelated absolute-position cull-test work
+     elsewhere in this file (mysteries.md UPDATE 41/42). */
+  if (getenv("UW_MODEL_NO_DEPTH_SORT") == 0 && DAT_0023b83c > _rec_start) {
+    double _eye_x = *(float *)&DAT_000db438, _eye_y = *(float *)&DAT_000db43c, _eye_z = *(float *)&DAT_000db440;
+    int _n = DAT_0023b83c - _rec_start;
+    /* Fixed-size, not alloca/VLA (not used elsewhere in this file) --
+       64 is generous headroom over any real model's own part count
+       (DFRAME.E's 12 is the largest seen so far); silently skip the
+       sort rather than overflow if some future model ever exceeds it. */
+    if (_n > 64) goto _skip_depth_sort;
+    double _dist[64];
+    int _order[64];
+    for (int _k = 0; _k < _n; _k++) {
+      int rec = _rec_start + _k;
+      int rb = rec * 0x60;
+      int iv0 = *(int *)(&DAT_000acde8 + rb);
+      int iv1 = *(int *)(&DAT_000acdec + rb);
+      int iv2 = *(int *)(&DAT_000acdf0 + rb);
+      int iv3 = *(int *)(&DAT_000acdf4 + rb);
+      float *p0 = (float *)((char *)DAT_000a85d0_backing + 8 + iv0*0xc);
+      float *p1 = (float *)((char *)DAT_000a85d0_backing + 8 + iv1*0xc);
+      float *p2 = (float *)((char *)DAT_000a85d0_backing + 8 + iv2*0xc);
+      float *p3 = (float *)((char *)DAT_000a85d0_backing + 8 + iv3*0xc);
+      double cx = (p0[0]+p1[0]+p2[0]+p3[0]) * 0.25;
+      double cy = (p0[1]+p1[1]+p2[1]+p3[1]) * 0.25;
+      double cz = (p0[2]+p1[2]+p2[2]+p3[2]) * 0.25;
+      double dx = cx - _eye_x, dy = cy - _eye_y, dz = cz - _eye_z;
+      _dist[_k] = dx*dx + dy*dy + dz*dz;
+      _order[_k] = _k;
+    }
+    /* Small N (a handful of faces per model) -- plain insertion sort,
+       descending distance (farthest first). */
+    for (int _a = 1; _a < _n; _a++) {
+      int _oi = _order[_a]; double _od = _dist[_oi];
+      int _b = _a - 1;
+      while (_b >= 0 && _dist[_order[_b]] < _od) { _order[_b+1] = _order[_b]; _b--; }
+      _order[_b+1] = _oi;
+    }
+    /* Apply the new order by swapping whole records (the shared 0x60-
+       byte-stride arena slot every field above indexes into via its
+       own `rb`) plus the parallel g_tile_texptr_emit[] side channel
+       (a separate array, not part of the record itself -- see its own
+       comment above). Cycle-sort in place using _order as a
+       permutation, so every record still ends up written exactly
+       once. */
+    unsigned char _tmp[0x60]; void *_tmp_tex;
+    unsigned char _done[64] = {0};
+    for (int _a = 0; _a < _n && _a < 64; _a++) {
+      if (_done[_a] || _order[_a] == _a) { _done[_a] = 1; continue; }
+      int _cur = _a;
+      memcpy(_tmp, (char *)&DAT_000acde4 + (_rec_start+_a)*0x60, 0x60);
+      _tmp_tex = g_tile_texptr_emit[_rec_start+_a];
+      while (!_done[_cur]) {
+        int _src = _order[_cur];
+        _done[_cur] = 1;
+        if (_src == _a) break;
+        memcpy((char *)&DAT_000acde4 + (_rec_start+_cur)*0x60, (char *)&DAT_000acde4 + (_rec_start+_src)*0x60, 0x60);
+        g_tile_texptr_emit[_rec_start+_cur] = g_tile_texptr_emit[_rec_start+_src];
+        _cur = _src;
+      }
+      memcpy((char *)&DAT_000acde4 + (_rec_start+_cur)*0x60, _tmp, 0x60);
+      g_tile_texptr_emit[_rec_start+_cur] = _tmp_tex;
+    }
+    if (getenv("UW_DEBUG_MODEL"))
+      fprintf(stderr, "[model-depthsort] rec=[%d,%d) eye=(%g,%g,%g)\n", _rec_start, DAT_0023b83c, _eye_x, _eye_y, _eye_z);
+  }
+  _skip_depth_sort:
   if (getenv("UW_DEBUG_MODEL")) {
     fprintf(stderr, "[model] heading=%d anchor=(%d,%d,%d) npts=%d nparts=%d emitted=%d base_vtx=%d\n",
             heading, ax, ah, az, npts, nparts, emitted, base_vtx);
