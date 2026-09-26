@@ -38563,6 +38563,21 @@ void main_loop_hud_flush()
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
+  /* Debug UI: must draw HERE, after the forced 3D redraw above (or it
+     gets painted over) but before flush_dirty_rect_to_display(1) below
+     -- that call is the actual screen present for this tick (blits the
+     software framebuffer through to GXEndDraw/SDL_RenderPresent, see
+     gx_stub.c). Drawing after main_loop_hud_flush() returns (this
+     function's own first version of this hook) was always one full
+     tick too late: the present for THIS tick already happened inside
+     this function, and the very next tick's forced 3D redraw (above)
+     runs and gets flushed before this function is ever reached again
+     -- so the panel's own pixels never survived to reach an actual
+     presented frame, which is exactly the "3D renderer draws on top"
+     symptom. rect_fill_or_save_restore/draw_text_string already call
+     dirty_rect_union themselves, so the panel's region is automatically
+     included in the flush below once drawn here. */
+  dbgui_draw();
   /* When the forced 3D redraw ran this frame, push it through even if a
      mouse button is being held in the viewport: DAT_0023c63c (the
      click-hold flag) otherwise blocks flush_dirty_rect_to_display's real

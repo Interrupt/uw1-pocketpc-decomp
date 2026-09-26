@@ -166,7 +166,11 @@ void dbgui_draw(void)
     int ry = y0 + DBGUI_ROW_H * (i + 1) + 2;
     f->row_y = ry;
     if (i == g_selected) {
-      set_draw_color(g_editing ? 0x60 : 0x1a);
+      /* Palette index 0 -- confirmed real black elsewhere in this file
+         (g_transparent_screen_color's own comment: "framebuffer pixel
+         value 0x0000, pure black"), unlike 0x1a/0x60 which are real but
+         unconfirmed-by-eye colors this session was guessing at. */
+      set_draw_color(0);
       rect_fill_or_save_restore(x0 + 1, ry - 1, x1 - 1, ry + DBGUI_ROW_H - 2);
     }
     char line[64];

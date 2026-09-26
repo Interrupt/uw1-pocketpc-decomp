@@ -3,7 +3,6 @@
  * (the original monolithic decompile) once these functions' real roles
  * were confirmed. */
 #include "headers/game.h"
-#include "headers/debug_ui.h"
 #include "debug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -113,12 +112,6 @@ undefined4 param_4;
           }
           if (_dbg) _dbg_t1 = read_realtime_clock_units() * 4;
           main_loop_hud_flush();
-          /* Genuinely the last thing drawn into the shared software
-             framebuffer each real game tick -- after the 3D view and
-             every other HUD element, so the debug UI (if visible)
-             always ends up on top instead of getting painted over by
-             next frame's own redraw. See dbgui_draw's own comment. */
-          dbgui_draw();
           if (_dbg) {
             unsigned int _dbg_t2 = read_realtime_clock_units() * 4;
             fprintf(stderr, "[itersplit] ordinal864_ms=%u hudflush_ms=%u\n",
