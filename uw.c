@@ -511,8 +511,25 @@ short DAT_000bbf2c;
 short DAT_000bbf74;
 short DAT_000bbf1c;
 short DAT_000bbf08;
-static undefined DAT_000845a8_backing[8192];
-#define DAT_000845a8 DAT_000845a8_backing[0]
+/* Was a zero-initialized 8192-byte backing array -- same "real
+   nonzero .data content missing from this port's build" bug class as
+   several earlier-session fixes (message-scroll control codes,
+   save-slot list text, etc). Confirmed via the real ARM binary
+   (/Users/ccuddigan/Projects/UW1/uw-arm/UU.exe, address 0x845a8): the
+   real bytes are the NUL-terminated string "say", immediately
+   followed in memory by s_respond_000845ac's own "respond" (which
+   this port's decompile already got right as a separate symbol at
+   +4). Every one of DAT_000845a8's 3 use sites treats it purely as a
+   read-only C string (FUN_0001ac48's own symbol-name lookup, and its
+   own babl_register_builtin call) -- there is no numeric/indexed use
+   that would need the backing-array treatment, unlike this file's
+   other DAT_..._backing arrays. Was empty, so FUN_0001ac48 could never
+   match Bragit's real "say" symbol and register_builtin's own
+   registration for it silently no-opped too -- this is why the NPC's
+   own spoken lines never printed even after babl_menu started working
+   (only the player's own numbered response list did, via a totally
+   separate mechanism). */
+char DAT_000845a8[] = "say";
 char s_respond_000845ac[] = "respond";
 undefined2 DAT_000bbfe8;
 undefined2 DAT_000bbfd8;
@@ -1618,7 +1635,7 @@ int g_text_input_active;
 undefined1 DAT_00100678;
 undefined4 DAT_00085c54;
 short DAT_00201c74;
-undefined4 DAT_001007c0;
+char *DAT_001007c0; // was `undefined4` -- assigned a real 64-bit pointer (DAT_00100784, uw.c ~19277) and used as a real string buffer by FUN_0002977c/FUN_000297dc/etc.; truncated on 64-bit, crashing the first time any of those functions actually ran (selecting a babl_menu response)
 undefined1 DAT_0023bf0c;
 undefined2 g_cursor_mode;
 /* Recovered by disassembling the original UU.exe (same method as
@@ -12197,19 +12214,22 @@ void FUN_0001ac48()
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001ac48 entry: looking for symbol \"%s\" text=\"%s\"\n", (char *)DAT_000845a8, (char *)iVar2);
   do {
     /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260) -- every reader of this babl-symbol table
        shares the same crash when no conversation record was loaded. */
     if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001ac48: NO symbol match, text discarded\n");
 LAB_0001ace8:
       if (iVar2 != iVar1) {
         babl_free(iVar2);
       }
       return;
     }
-    iVar3 = Ordinal_1065(&DAT_000845a8,iVar4);
+    iVar3 = Ordinal_1065(DAT_000845a8,iVar4);
     if (iVar3 == 0) {
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001ac48: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
       (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))(iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
       goto LAB_0001ace8;
     }
@@ -12235,10 +12255,12 @@ void FUN_0001acf8()
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001acf8 entry: looking for symbol \"respond\" text=\"%s\"\n", (char *)iVar2);
   do {
     /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260). */
     if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001acf8: NO symbol match, text discarded\n");
 LAB_0001ad98:
       if (iVar2 != iVar1) {
         babl_free(iVar2);
@@ -12247,6 +12269,7 @@ LAB_0001ad98:
     }
     iVar3 = Ordinal_1065(s_respond_000845ac,iVar4);
     if (iVar3 == 0) {
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001acf8: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
       (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))(iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
       goto LAB_0001ad98;
     }
@@ -19360,7 +19383,7 @@ void start_npc_conversation()
   else {
     babl_register_builtin(s_babl_menu_00085220,&babl_menu); // was &LAB_0002912c, the no-op stub
     babl_register_builtin(s_babl_fmenu_00085214,FUN_00029358);
-    babl_register_builtin(&DAT_000845a8,FUN_00029708);
+    babl_register_builtin(DAT_000845a8,FUN_00029708);
     babl_register_builtin(s_respond_000845ac,FUN_0002977c);
     babl_register_builtin(s_get_quest_00085208,FUN_00018370);
     babl_register_builtin(s_set_quest_000851fc,FUN_000182b4);
@@ -19768,7 +19791,7 @@ short param_1;
 
 
 void FUN_00029708(param_1)
-undefined4 param_1;
+char *param_1; // was `undefined4` -- FUN_0001ac48 passes a real (possibly babl_alloc'd) string pointer, truncated on 64-bit; same bug class as FUN_0002977c/FUN_000297dc's own fixes
 
 {
   char cVar1;
@@ -19853,16 +19876,21 @@ int param_1;
 
 {
   char cVar1;
-  int iVar2;
-  int iVar3;
+  /* Was `int` -- reassigned to a real string pointer (FUN_0007863c/
+     babl_expand_string_refs) right after the small FUN_0001adc4 use,
+     same bug class as DAT_001007c0's own fix above; never crashed
+     before because this "print" builtin (idx 2) was never actually
+     reached until babl_menu could run correctly. */
+  intptr_t iVar2;
+  intptr_t iVar3;
   char *pcVar4;
   char *pcVar5;
-  
+
   /* Was 3 dropped register-forwarding args -- same class as
      FUN_000196e8's own comment (uw.c ~10977). */
   iVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
-  iVar2 = FUN_0007863c(iVar2);
-  iVar3 = babl_expand_string_refs(iVar2);
+  iVar2 = (intptr_t)FUN_0007863c((int)iVar2);
+  iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
   pcVar4 = &DAT_0008523c;
   pcVar5 = DAT_001007c0;
   do {
