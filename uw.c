@@ -1779,7 +1779,23 @@ undefined2 DAT_00100790;
 short DAT_00100788;
 static undefined1 DAT_001006d8_backing[65536];
 #define DAT_001006d8 DAT_001006d8_backing[0]
-undefined2 DAT_00100770;
+/* Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/FUN_000295b4
+   all index it as a real array -- `(&DAT_00100770)[idx]` for idx up to
+   9 (a fixed "10 visible scroll lines" loop bound) and up to whatever
+   message_scroll_print_wrapped's own wrapped-line-count returns, which
+   can exceed 10 for long menu text. Confirmed live via lldb: this
+   silently corrupted whatever real global the compiler happened to
+   place next to a single 2-byte scalar (DAT_00100794, the menu's own
+   item count, got stomped from a real small count to -1/0xffff right
+   after the `(&DAT_00100770)[iVar12]=0xffff` init loop), which then
+   made babl_menu's own `if (1 < DAT_00100794)` print-loop check fail
+   even though real menu items had just been resolved -- this is why
+   Bragit's dialogue never appeared despite babl_menu itself running
+   correctly. Same "array Ghidra/this port declared as a bare scalar"
+   bug class as DAT_00100728 and this array's own sibling DAT_001007a0
+   (already fixed with a real backing array). Sized to match. */
+static short DAT_00100770_backing[32768];
+#define DAT_00100770 DAT_00100770_backing[0]
 static undefined1 DAT_001007a0_backing[65536];
 #define DAT_001007a0 DAT_001007a0_backing[0]
 static undefined1 DAT_00085230_backing[32768];
@@ -11233,6 +11249,7 @@ char * param_1;
      every call site. */
   char *pcVar_result;
 
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] expand_string_refs(\"%s\")\n", param_1 ? param_1 : "(null)");
   pcVar_result = param_1;
   iVar6 = Ordinal_1064(param_1,0x40);
   if (iVar6 != 0) {
@@ -12112,6 +12129,7 @@ void FUN_0001ab30()
   undefined2 uVar1;
   
   DAT_000bbf08 = *(short *)(DAT_000bbf80 + DAT_000bbf74 * 2 + 2);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] call builtin idx=%d stack_depth(DAT_000bbf78)=%d arg_slot=%p\n", (int)DAT_000bbf08, (int)DAT_000bbf78, (void *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   uVar1 = (**(codeval **)(DAT_000bbf00 + DAT_000bbf08 * 8))(DAT_000bbf0c + DAT_000bbf78 * 2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
   *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2) = uVar1;
   DAT_000bbf1c = *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2);
@@ -12317,6 +12335,7 @@ intptr_t param_2; // was `undefined4` -- every real caller passes a code address
     pcVar4 = DAT_000bbf70;
     do {
       if ((cVar2 == *pcVar4) && (iVar3 = Ordinal_1065(param_1,pcVar4), iVar3 == 0)) {
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] register_builtin: \"%s\" -> table idx %d\n", param_1, (int)*(short *)(pcVar4 + 0x1a));
         *(intptr_t *)(DAT_000bbf00 + *(short *)(pcVar4 + 0x1a) * 8) = param_2; // was `undefined4 ... * 4` -- DAT_000bbf00's own comment (uw.c ~11468)
         return;
       }
@@ -19403,16 +19422,14 @@ void FUN_00028ffc()
 
 {
   char cVar1;
-  /* Was `int` -- same DAT_00100680 `* 8` stride / pointer-width fix as
-     babl_menu's own comment. Never exercised until babl_menu's real
-     implementation was recovered this session. */
-  intptr_t iVar2;
   char *pcVar3;
+  char *pcVar5;
   int iVar4;
-  undefined1 local_bc;
-  undefined1 local_bb;
-  undefined1 local_ba;
-  char acStack_b9 [157];
+  /* Same "4 separate stack locals relied on being one contiguous
+     buffer" fix as babl_menu's own comment (uw.c ~19505) -- this is
+     the SAME menu redraw, just re-run every idle tick while waiting
+     for the player's click, so it has the identical bug. */
+  char local_bc [160];
 
   while (DAT_0010078c != 0) {
     flush_dirty_rect_to_display(1);
@@ -19428,17 +19445,18 @@ void FUN_00028ffc()
         iVar4 = 1;
         do {
           pcVar3 = *(char **)(&DAT_00100680 + iVar4 * 8);
-          local_bc = (undefined1)((uint)((iVar4 + 0x30) * 0x1000000) >> 0x18);
-          local_bb = 0x2e;
-          local_ba = 0x20;
-          iVar2 = -(intptr_t)pcVar3;
+          local_bc[0] = (undefined1)((uint)((iVar4 + 0x30) * 0x1000000) >> 0x18);
+          local_bc[1] = 0x2e;
+          local_bc[2] = 0x20;
+          pcVar5 = local_bc + 3;
           do {
             cVar1 = *pcVar3;
-            pcVar3[(intptr_t)(acStack_b9 + iVar2)] = cVar1;
             pcVar3 = pcVar3 + 1;
+            *pcVar5 = cVar1;
+            pcVar5 = pcVar5 + 1;
           } while (cVar1 != '\0');
-          Ordinal_1063(&local_bc,&s_scroll_newline_0008522c);
-          message_scroll_print_wrapped(&local_bc);
+          Ordinal_1063(local_bc,&s_scroll_newline_0008522c);
+          message_scroll_print_wrapped(local_bc);
           iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
         } while (iVar4 < DAT_00100794);
       }
@@ -19500,16 +19518,28 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
   char *pcVar11;
   int iVar12;
   short sVar13;
-  char local_c4;
-  undefined1 local_c3;
-  undefined1 local_c2;
-  char acStack_c1 [157];
+  /* Was 4 separate stack locals (`local_c4`, `local_c3`, `local_c2`,
+     `acStack_c1[157]`) that the print loop below relies on being laid
+     out contiguously in memory (writing local_c3/local_c2 then reading
+     the whole thing back starting from `&local_c4`) -- a real
+     assumption about THIS FUNCTION's specific stack frame in the
+     original 32-bit ARM binary that no C compiler guarantees to
+     reproduce (and this one doesn't: confirmed live, the "assembled"
+     string read back as just the 1-byte index digit followed
+     immediately by a stray NUL, silently dropping the ". " and the
+     actual dialogue text -- this is why menu options rendered as bare
+     "1"/"2" with no text). Same bug class as this file's many
+     "Ghidra split one real buffer into separate globals" fixes, just
+     on the stack instead of at file scope. Merged into one real
+     160-byte buffer (1 digit + ". " + up to 157 bytes of text). */
+  char local_c4 [160];
 
   sVar13 = 0;
   DAT_00100790 = 1;
   DAT_00100794 = 1;
   sVar2 = *(short *)(param_1 + -2);
   uVar6 = FUN_0001adc4((int)sVar2);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu entry: param_1=%p sVar2(local-slot-idx)=%d DAT_000bbf78(stack-depth)=%d uVar6(first-msgid)=%u\n", (void *)param_1, (int)sVar2, (int)DAT_000bbf78, (unsigned)uVar6);
   iVar12 = 1;
   sVar5 = (short)uVar6;
   while (sVar5 != 0) {
@@ -19548,20 +19578,22 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
     iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
   } while (iVar12 < 10);
   iVar12 = 1;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu print-loop: DAT_00100794(item_count)=%d\n", (int)DAT_00100794);
   if (1 < DAT_00100794) {
     do {
       pcVar10 = *(char **)(&DAT_00100680 + iVar12 * 8);
-      local_c4 = (char)iVar12 + '0';
-      local_c3 = 0x2e;
-      local_c2 = 0x20;
-      iVar9 = -(intptr_t)pcVar10;
+      local_c4[0] = (char)iVar12 + '0';
+      local_c4[1] = 0x2e;
+      local_c4[2] = 0x20;
+      pcVar11 = local_c4 + 3;
       do {
         cVar1 = *pcVar10;
-        pcVar10[(intptr_t)(acStack_c1 + iVar9)] = cVar1;
         pcVar10 = pcVar10 + 1;
+        *pcVar11 = cVar1;
+        pcVar11 = pcVar11 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(&local_c4,&s_scroll_newline_0008522c);
-      sVar5 = message_scroll_print_wrapped(&local_c4);
+      Ordinal_1063(local_c4,&s_scroll_newline_0008522c);
+      sVar5 = message_scroll_print_wrapped(local_c4);
       FUN_0007ec50();
       for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
         (&DAT_00100770)[iVar9] = (short)iVar12;
@@ -19599,10 +19631,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
   char *pcVar11;
   int iVar12;
   short sVar13;
-  char local_c4;
-  undefined1 local_c3;
-  undefined1 local_c2;
-  char acStack_c1 [157];
+  /* Same "4 separate stack locals relied on being one contiguous
+     buffer" fix as babl_menu's own comment -- confirmed the identical
+     bug here too. Merged into one real buffer. */
+  char local_c4 [160];
 
   sVar13 = 0;
   DAT_00100790 = 1;
@@ -19655,17 +19687,18 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
   if (1 < DAT_00100794) {
     do {
       pcVar10 = *(char **)(&DAT_00100680 + iVar12 * 8);
-      local_c4 = (char)iVar12 + '0';
-      local_c3 = 0x2e;
-      local_c2 = 0x20;
-      iVar9 = -(intptr_t)pcVar10;
+      local_c4[0] = (char)iVar12 + '0';
+      local_c4[1] = 0x2e;
+      local_c4[2] = 0x20;
+      pcVar11 = local_c4 + 3;
       do {
         cVar1 = *pcVar10;
-        pcVar10[(intptr_t)(acStack_c1 + iVar9)] = cVar1;
         pcVar10 = pcVar10 + 1;
+        *pcVar11 = cVar1;
+        pcVar11 = pcVar11 + 1;
       } while (cVar1 != '\0');
-      Ordinal_1063(&local_c4,&s_scroll_newline_0008522c);
-      sVar5 = message_scroll_print_wrapped(&local_c4);
+      Ordinal_1063(local_c4,&s_scroll_newline_0008522c);
+      sVar5 = message_scroll_print_wrapped(local_c4);
       FUN_0007ec50();
       for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
         (&DAT_00100770)[iVar9] = (short)iVar12;
