@@ -4788,3 +4788,73 @@ live UW_MODEL_TUNER session to find the real ceiling_y value for any
 given room, since ceiling_y defaults to 0/disabled and no default value
 was set on the table rows (deliberately -- guessing one would be no
 better than the status quo).
+
+(42) 2026-09-21: entry 41's fix 4 ("guess live via the tuner, no real
+data source exists") is now WRONG in one specific way -- there IS a
+real, confirmed source, and it's not per-room at all. User: "For
+ceiling pinning, for the opcode version we had to pass in the ceiling
+height of the current tile when rendering a model." Checked the DOS
+reference decompile directly (uw1-decomp/port/uw1_view.c ~2483-2489,
+its own documented capture-vs-reimplementation notes for the real door
+model) instead of guessing further:
+
+"slot 0x800 -- the lintel's rise. `dialog_action_here` emits `0x4c 0 0
+(0x330 - z) 0x800` and bank 0x61's four `0x008c` records add that slot
+to the four corners at the top of the opening, so the panel above the
+door reaches `0x330 + 0xd0` -- `0x400`, the ceiling, whatever the
+door's own z."
+
+This is exactly our own already-ported `rise = 0x330 - ah` (uw.c
+~54540-ish, confirmed present since much earlier this investigation) --
+but reading the REAL source's own explanation makes explicit what our
+own port never stated: `rise` is DELIBERATELY constructed to CANCEL OUT
+the door's own world height (z/ah), so the riser always lands at the
+SAME fixed ABSOLUTE WORLD HEIGHT (0x400 = 1024), "whatever the door's
+own z" -- confirming this is a universal constant across the whole
+game, not a per-room or per-tile lookup (consistent with, not
+contradicting, this document's own earlier due-diligence finding that
+no per-tile ceiling HEIGHT field exists in this decompile -- the real
+engine doesn't need one for this purpose; it hardcodes one).
+
+FIX: set ceiling_y=1024.0 directly on all 14 door/frame g_model_map
+rows (was 0/disabled, tuner-only). This is a confirmed real value now,
+not a guess -- the live UW_MODEL_TUNER field stays available for
+further experimentation/other models, but the door family no longer
+needs it to get a real answer.
+
+CAUGHT A REAL BUG while re-verifying this fresh: xoff and heading_step
+had been swapped in all 14 table rows since entry 39/40 (an ordering
+mistake introduced across the several rounds of positional-literal
+table edits that entry) -- `[model-heading] step=-16 compensated=4`
+instead of the confirmed-correct `step=-4 compensated=0`, and xoff was
+-4 instead of the confirmed -16.0. Silently close enough to look
+plausible in casual screenshots (a 180-degree-off heading partially
+masked by DFRAME's own front/back symmetry; -4 vs -16 xoff still
+"mostly" fits) -- entry 41's own "qa4_v1.png ... looks great" review
+did not catch it, a real process gap: a debug print (`[model-heading]`)
+was RIGHT THERE showing step=-16 the whole time and wasn't checked
+against the known-correct value before declaring the screenshot good.
+Fixed: swapped the two values back to their correct positions in all
+14 rows. Verified live: step=-4 compensated=0, matching every earlier
+confirmation of this exact repro's known-correct heading.
+
+Verified live (screenshot, tile=32.51,8.45 yaw=91): correct orientation
+AND ceiling_y=1024 together -- the door frame's top now blends cleanly
+into the room's real ceiling instead of stopping at the old fixed
+y_clip=256 cutoff, with no visible gap or seam. Best combined result
+of this whole entry. run-regressions.sh: 5/6 -- the 6th
+(demo_inventory_invalid_drop_test.txt) TIMED OUT this pass; re-ran it
+standalone 3 more times (not part of a larger parallel batch): 3/3
+clean well within the timeout. Confirmed system-load flakiness (an
+unrelated inventory test, nowhere near this branch's own code), not a
+regression, matching entry 40's own earlier flaky-crash finding for a
+different test in the same suite. Default rendering reconfirmed
+unaffected (faces=11/6, zero env vars).
+
+Lesson for next time, worth keeping in mind: when a debug print is
+already available and directly checkable against a known-correct
+value (as `[model-heading]`'s own compensated= output was, against
+this exact repro's extensively-reconfirmed correct heading=0), check
+it explicitly before calling a visual result "correct" -- a screenshot
+looking plausible is not the same as confirming the specific numeric
+claim being tested.

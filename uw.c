@@ -54778,11 +54778,16 @@ typedef struct {
                       // UPDATE 25). 0 = no change to current behavior.
   double ceiling_y;  // world-space Y a RAW-local-Y-1024 vertex pins to
                       // (live QA: "It's likely that a Y value of 1024
-                      // should mean 'stick to the roof'"). 0 = disabled,
-                      // falls back to the plain y_clip clamp (no real
-                      // per-room ceiling field exists in this data, so
-                      // this has to be calibrated live via UW_MODEL_
-                      // TUNER rather than looked up).
+                      // should mean 'stick to the roof'" -- CONFIRMED:
+                      // uw1-decomp/port/uw1_view.c ~2483-2489 traces the
+                      // real DOS door model's own "rise" slot to exactly
+                      // this -- `0x330 - z` (the door's own height
+                      // cancelled out) reaches a fixed world Y of 0x400
+                      // (1024) "the ceiling, whatever the door's own z".
+                      // A real, confirmed absolute constant for doors,
+                      // not a per-room lookup (none exists in this
+                      // data) and not a guess. 0 = disabled, falls back
+                      // to the plain y_clip clamp.
 } ModelMapEntry;
 
 static const ModelMapEntry g_model_map[] = {
@@ -54853,20 +54858,20 @@ static const ModelMapEntry g_model_map[] = {
   // -4.0 guess, entry 36, was wrong -- corrected here per live QA).
   // x_off2 -80.0 = the leaf's own previous -64.0 centering plus the same
   // -16.0 shift the frame needed, so leaf and frame move together.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
 };
 #define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
 
@@ -55280,12 +55285,20 @@ ushort * param_1;
           g_tune_scale = _me->scale; g_tune_yoff = _me->yoff; g_tune_xoff = 0.0; g_tune_zoff = _me->zoff;
           g_tune_uv_u = _me->uv_scale_u; g_tune_uv_v = _me->uv_scale_v;
           g_tune_heading_step = _me->heading_step;
-          /* Seed from the table's own value if set, otherwise a first
-             guess continuous with the old fixed y_clip=256 behavior
-             (anchor height + one room height) -- no real per-room
-             ceiling field exists in this data (see g_model_map's own
-             due-diligence note), so this has to start somewhere
-             reasonable and get nudged live to the real answer. */
+          /* CONFIRMED, not guessed: seed from the table's own value
+             (1024.0 for the door family -- traced to the real DOS
+             reference source, uw1-decomp/port/uw1_view.c ~2483-2489:
+             the lintel's own "rise" slot is built as `0x330 - z` (the
+             door's own world height cancelled out) added to a vertex
+             whose own local contribution reaches `0x330 + 0xd0`, i.e.
+             the panel above the door always reaches world Y 0x400
+             (1024) "the ceiling, whatever the door's own z" -- a fixed
+             ABSOLUTE constant across the whole game, not a per-room
+             value, matching the same one-slab-per-level assumption
+             already established elsewhere in this investigation.
+             Falls back to anchor+256 only for a model with no real
+             table value set (ceiling_y<=0), as a starting point to
+             nudge live rather than a claim of correctness. */
           g_tune_ceiling_y = (_me->ceiling_y > 0.0) ? _me->ceiling_y : ((double)(short)DAT_0023b91c + 256.0);
         }
         char _title[48];
