@@ -12078,8 +12078,8 @@ void FUN_0001ac48()
   int iVar1;
   int iVar2;
   int iVar3;
-  int iVar4;
-  
+  intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix
+
   iVar1 = FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   iVar2 = FUN_00019aa0();
   DAT_000bbf78 = DAT_000bbf78 + -1;
@@ -12112,8 +12112,8 @@ void FUN_0001acf8()
   int iVar1;
   int iVar2;
   int iVar3;
-  int iVar4;
-  
+  intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix
+
   iVar1 = FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   iVar2 = FUN_00019aa0();
   DAT_000bbf78 = DAT_000bbf78 + -1;
@@ -12232,18 +12232,18 @@ undefined4 param_2;
 
 void FUN_0001aebc(param_1,param_2,param_3)
 char *param_1;
-int param_2;
+intptr_t param_2; // was `int` -- every real caller passes a stack pointer (e.g. FUN_0002a8e0's `local_20`), truncated on 64-bit; same bug class as DAT_000bbf70 (crashes at param_2's own dereference, uw.c ~12283)
 short param_3;
 
 {
   undefined1 uVar1;
-  int iVar2;
+  intptr_t iVar2; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix; this is the crash in bug-critter-talk.txt's own successful-conversation-load path (via FUN_0002a8e0's npc_whoami lookup)
   uint uVar3;
   int iVar4;
   uint uVar5;
   short sVar6;
   undefined1 local_34 [28];
-  
+
   sVar6 = 0;
   iVar2 = Ordinal_1068();
   if (iVar2 != 0) {
@@ -12290,13 +12290,13 @@ short param_3;
 
 void FUN_0001afe4(param_1,param_2,param_3)
 char *param_1;
-int param_2;
+intptr_t param_2; // was `int` -- same pointer-truncation bug as FUN_0001aebc's own param_2 (every real caller passes a stack pointer, e.g. `&local_10`)
 short param_3;
 
 {
   int iVar1;
-  int iVar2;
-  
+  intptr_t iVar2; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix
+
   iVar2 = DAT_000bbf70;
   while( true ) {
     /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
