@@ -4882,7 +4882,32 @@ static const undefined1 DAT_00086d68_region[64] = {
 };
 #define DAT_00086d68 (*(const undefined1 *)DAT_00086d68_region)
 #define DAT_00086d69 (*(const undefined1 *)(DAT_00086d68_region + 1))
-undefined DAT_0023b92e;
+/* Was a lone `undefined` (1-byte) scalar -- but emit_tile_features
+   indexes it as a per-tile array of 18-byte (0x12) "feature count +
+   up to 8 feature ids" records (`&DAT_0023b92e + DAT_0023b4e4*0x12`,
+   DAT_0023b4e4 ranging up to 0x20), same "split symbol" bug class as
+   its two siblings DAT_0023b928/DAT_0023b940 a few lines above, which
+   already got real backing arrays in an earlier round -- this one was
+   simply missed. Confirmed live via an lldb watchpoint: emit_tile_features's
+   own record-count overflow guard (`if (8 < *puVar6) skip`) still lets
+   a write at index 9 through when count reaches 8, one past this
+   record's real 9-ushort span (0x12 bytes = 9 ushorts, valid indices
+   0-8) -- with the real original binary's per-tile stride this only
+   ever spills into the START of the NEXT tile's own record, harmless,
+   but with this variable's own 1-byte declaration EVERY record after
+   the first was already out of bounds, so this single-byte overflow
+   became a wild write landing squarely on grtile_alloc_registered's
+   own DAT_0023c3fc (an unrelated, ordinarily 5440-byte-safe pointer
+   table used by capture_framebuffer_rect_to_grtile/FUN_00076e98),
+   observed corrupting it one ushort at a time across repeated calls
+   until it held the exact non-pointer bit pattern (0x10f010f010f010f0)
+   that then crashed FUN_00076e98's own linear scan of that table --
+   the intermittent (ASLR-dependent, since it depends on this build's
+   own relative global layout) HUD-compositor crash long tracked as a
+   separate, pre-existing, unsolved issue. Widened to match its
+   siblings' oversized-safety convention. */
+static undefined1 g_tile_feature_records_b92e_backing[65536];
+#define DAT_0023b92e g_tile_feature_records_b92e_backing[0]
 undefined1 DAT_0020330c;
 char DAT_00086db0;
 char DAT_00086db1;
