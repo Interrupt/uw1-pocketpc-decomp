@@ -1815,13 +1815,30 @@ static short DAT_00100770_backing[32768];
 #define DAT_00100770 DAT_00100770_backing[0]
 static undefined1 DAT_001007a0_backing[65536];
 #define DAT_001007a0 DAT_001007a0_backing[0]
-static undefined1 DAT_00085230_backing[32768];
+/* DAT_00085230/34/38/3c are 4 tiny (<=3-char) control-code constants,
+   packed 4 bytes apart in the original binary -- confirmed via a real
+   Ghidra memory dump at 0x85230 rather than guessed: "\P\0" (0x5c 0x50
+   0x00), "\0\n" (0x5c 0x30 0x0a 0x00), "\1\0" (0x5c 0x31 0x00) and
+   "\2\0" (0x5c 0x32 0x00) respectively -- "\0"/"\1"/"\2" are all the
+   SAME "reset to default draw color" code (see msg_scroll_draw_wrapped_span's
+   own '0'/'1' handling), "\P" is the pause/wait code, and DAT_00085234
+   uniquely also carries a trailing real newline byte. Same "zero-
+   initialized global missing real .data content" bug class as the
+   scroll's \6-header/color-code fixes elsewhere in this file: all 4
+   were plain zero-filled backing arrays (silently printing nothing),
+   confirmed live as the cause of a real, visible bug -- FUN_000297dc/
+   FUN_00029850 (echoing the player's selected conversation choice
+   before the NPC's reply) append DAT_00085234 as a trailing separator,
+   expecting it to insert a newline after the echoed choice; with it
+   empty, the echoed text ran straight into the NPC's next line with
+   no break at all (e.g. "...the Abyss.Exploring, eh?..."). */
+static undefined1 DAT_00085230_backing[32768] = { 0x5c,0x50,0x00 };
 #define DAT_00085230 DAT_00085230_backing[0]
-static undefined DAT_00085234_backing[8192];
+static undefined DAT_00085234_backing[8192] = { 0x5c,0x30,0x0a,0x00 };
 #define DAT_00085234 DAT_00085234_backing[0]
-static undefined1 DAT_00085238_backing[32768];
+static undefined1 DAT_00085238_backing[32768] = { 0x5c,0x31,0x00 };
 #define DAT_00085238 DAT_00085238_backing[0]
-static undefined1 DAT_0008523c_backing[32768];
+static undefined1 DAT_0008523c_backing[32768] = { 0x5c,0x32,0x00 };
 #define DAT_0008523c DAT_0008523c_backing[0]
 short DAT_001007bc;
 /* DAT_00085240/44/48 are the look-text word-separator/article
@@ -6042,11 +6059,46 @@ undefined1 DAT_0024d010;
 char s_very_near_00087954[] = "very_near";
 undefined *DAT_00250704;
 undefined2 DAT_00250714;
-static undefined1 DAT_00087960_backing[65536];
-#define DAT_00087960 DAT_00087960_backing[0]
+// was DAT_00087960
+static undefined1 g_msg_scroll_panel_state_backing[65536];
+#define g_msg_scroll_panel_state g_msg_scroll_panel_state_backing[0]
 undefined4 DAT_00250708;
 undefined4 DAT_0025071c;
-undefined DAT_00087978;
+/* Was a lone `undefined` (1-byte) scalar, but used throughout this
+   file as the BASE POINTER of a whole message-scroll-panel-state
+   struct (DAT_00250704 = &g_msg_scroll_panel_state_conv, then read/written at offsets
+   up to at least 0x17 -- same "split symbol" bug class as
+   g_msg_scroll_panel_state's own sibling struct a few lines above, which already
+   got the same fix). Confirmed live via lldb: entering NPC conversation
+   mode (FUN_0007f110, DAT_00250714==1) points DAT_00250704 at this
+   1-byte variable, so every field read past its own single byte --
+   including the panel's own width (+6) and cursor-x (+8) -- silently
+   reads whatever unrelated byte happens to sit next to it in this
+   build's layout (observed: width=0, cursor-x=24576, both garbage).
+   With width 0, every string "doesn't fit", so message_scroll_print_
+   wrapped's -> msg_scroll_draw_wrapped_span -> msg_scroll_wrap_split_line
+   word-wrap chain always takes the "no space found" fallback, which
+   destructively NULs out its own working copy of the text while
+   hunting for a split point that can never satisfy a 0-wide line,
+   ultimately drawing nothing real -- this is why Bragit's dialogue
+   never appeared in the scroll panel. Widened to match g_msg_scroll_panel_state's
+   own oversized-safety convention, AND seeded with the real 28-byte
+   (0x1c) struct dumped straight from the original binary at 0x87978
+   (Ghidra headless, mem.getBytes) -- unlike g_msg_scroll_panel_state,
+   which gets its real geometry written at runtime by msg_scroll_panel_init,
+   nothing in this file ever calls that for the conversation-mode
+   struct, so its ONLY source of real values is this original .data
+   (confirmed real: struct ends exactly at 0x87994, the very next
+   symbol, s__MORE__00087994). Kept byte-typed rather than converted to
+   a real C struct, matching the health/mana flask fix's own precedent
+   (see compass-hud-position-fix's memory) -- every call site already
+   does its own byte-offset pointer arithmetic against this base. */
+// was DAT_00087978
+static undefined1 g_msg_scroll_panel_state_conv_backing[65536] = {
+  0x34,0x00,0x84,0x00,0x38,0x00,0xdb,0x00,0x3b,0x00,0x36,0x00,0x3b,0x00,0x36,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x2e,0x00,0x01,0x00,0x00,0x00,
+};
+#define g_msg_scroll_panel_state_conv g_msg_scroll_panel_state_conv_backing[0]
 short DAT_00250724;
 short DAT_00250728;
 short DAT_00250710;
@@ -20579,10 +20631,28 @@ ushort * param_1;
     local_20[0] = 0x80;
   }
   else {
-    local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)g_player_object[8] << 8);
+    /* Was `g_player_object[8]` -- g_player_object is `ushort *`, so the
+       plain-index form reads byte offset 16 (8*2), not byte offset 8
+       where the player's real HP byte lives (matches every other real
+       reader of this field elsewhere in the file, e.g.
+       `*(char*)((char*)g_player_object+8)` in FUN_0002af88's own sync-
+       back a few lines below and in sync_player_stats_to_hud). Same
+       ushort/byte pointer-scaling bug class as the NPC-AI cluster
+       fixed earlier this project. Confirmed against the real ARM
+       disassembly: both this "play_health" calc and the "play_hp" set
+       just below load `ldrb r3,[r4,#0x8]` -- a byte-sized load at
+       offset 8, not 16. Confirmed live: this fed a stale/wrong
+       "play_hp" babl variable (default 0 for a fresh character) at
+       conversation start, and FUN_0002af88's own sync-back at
+       conversation end then faithfully wrote that 0 into the REAL
+       player HP byte, zeroing it and triggering
+       sync_player_stats_to_hud's death-sequence branch, which then hit
+       a separate missing-NULL-guard crash in FUN_0003c038 (fixed
+       there to match change_game_mode's own existing guard). */
+    local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)*(byte *)((char *)g_player_object + 8) << 8);
   }
   babl_set_variable(s_play_health_000852f8,local_20,1);
-  local_20[0] = (ushort)g_player_object[8];
+  local_20[0] = (ushort)*(byte *)((char *)g_player_object + 8);
   babl_set_variable(s_play_hp_000852f0,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x1e) + (ushort)*(byte *)(DAT_00086df8 + 0x21);
   babl_set_variable(s_play_arms_000852e4,local_20,1);
@@ -29876,8 +29946,10 @@ short param_1;
 
 {
   short sVar1;
+  code *pcVar2;
+  bool bVar3;
   undefined1 auStack_31c [768];
-  
+
   DAT_0023bf0c = 0;
   FUN_000577f0();
   if (param_1 == 1) {
@@ -29892,8 +29964,19 @@ short param_1;
     sVar1 = next_input_event();
   } while (sVar1 < 0);
   msg_scroll_panel_reset(1);
-  /* 0x80, see DAT_00085668's comment. */
-  (**(code **)(&DAT_000856a4 + DAT_00201b64 * 0x80))();
+  /* 0x80, see DAT_00085668's comment. Guarded the same way
+     change_game_mode guards its own identical table-callback call --
+     this call site was missing the NULL/0xffffffff check entirely,
+     so any mode with no registered exit callback (e.g. mode 2, the
+     NPC-conversation mode) crashed here with a NULL indirect call. */
+  pcVar2 = (code *)(int)DAT_00201b64;
+  bVar3 = pcVar2 != (code *)0xffffffff;
+  if (bVar3) {
+    pcVar2 = *(code **)(&DAT_000856a4 + (int)pcVar2 * 0x80);
+  }
+  if (bVar3 && pcVar2 != (code *)0x0) {
+    (*pcVar2)();
+  }
   *(undefined1 *)(DAT_00085a6c + 8) = 0;
   *(undefined1 *)(DAT_00085a6c + 9) = 0;
   DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
@@ -74505,7 +74588,7 @@ short param_4;
 void FUN_0007f044()
 
 {
-  DAT_00250704 = &DAT_00087960;
+  DAT_00250704 = &g_msg_scroll_panel_state;
   DAT_00250714 = 0;
   msg_scroll_panel_init(0xf,0xa9,0x131,200,0);
   msg_scroll_draw_edges();
@@ -74529,7 +74612,7 @@ void FUN_0007f0e0()
 {
   DAT_00250714 = 0;
   DAT_0025071c = 1;
-  DAT_00250704 = &DAT_00087960;
+  DAT_00250704 = &g_msg_scroll_panel_state;
   return;
 }
 
@@ -74540,7 +74623,7 @@ void FUN_0007f110()
 {
   DAT_00250714 = 1;
   DAT_0025071c = 1;
-  DAT_00250704 = &DAT_00087978;
+  DAT_00250704 = &g_msg_scroll_panel_state_conv;
   return;
 }
 
@@ -74551,7 +74634,7 @@ void FUN_0007f140()
 {
   DAT_00250714 = 2;
   DAT_0025071c = 1;
-  DAT_00250704 = &DAT_00087960;
+  DAT_00250704 = &g_msg_scroll_panel_state;
   return;
 }
 
@@ -74646,7 +74729,7 @@ int param_1;
   set_draw_color(0x2a);
   rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 4),*(undefined2 *)(DAT_00250704 + 10),
                *(undefined2 *)(DAT_00250704 + 6),param_1 + 1);
-  if (DAT_00250704 == &DAT_00087960) {
+  if (DAT_00250704 == &g_msg_scroll_panel_state) {
     set_hud_status_value(4,1);
     msg_scroll_draw_edges();
   }
@@ -75019,7 +75102,30 @@ undefined4 param_2;
     cVar6 = *pcVar3;
     *pcVar3 = '\0';
     if (pcVar3 <= param_1) {
-      msg_scroll_draw_wrapped_span(&s_scroll_newline_0008522c,1);
+      /* Was `&s_scroll_newline_0008522c` -- confirmed via real ARM
+         disassembly (0x7fc74: `ldr r0,[0x7fc88]`, and DAT_0007fc88's own
+         stored value IS 0x8522c) that the original binary passes this
+         exact same shared "\n" constant's address here too, so this
+         isn't a porting artifact. But msg_scroll_draw_wrapped_span
+         unconditionally self-NULs byte 0 of whatever buffer it's handed
+         once it decides that buffer's last real char was '\n' (see its
+         own comment/disassembly, confirmed no restore anywhere in that
+         function) -- fine for every OTHER caller in this file, which
+         all go through message_scroll_print_wrapped's own local
+         auStack_54 copy first, but this is the ONE call site that
+         invokes msg_scroll_draw_wrapped_span directly on the shared,
+         permanent global, so hitting this fallback even once (confirmed
+         live via an lldb watchpoint during ordinary Bragit dialogue --
+         not some exotic edge case) permanently zeroes the "\n" every
+         other caller in the game relies on, silently collapsing every
+         later multi-line message (babl_menu's numbered responses among
+         them) onto one line for the rest of the process's life. Give
+         this call its own disposable copy instead of the shared
+         original. */
+      char local_newline_copy[2];
+      local_newline_copy[0] = '\n';
+      local_newline_copy[1] = '\0';
+      msg_scroll_draw_wrapped_span(local_newline_copy,1);
       goto LAB_0007fc64;
     }
     sVar2 = measure_text_width(param_1);
@@ -75059,7 +75165,7 @@ int param_5;
   rect_fill_or_save_restore(param_1,param_2,param_3,param_4);
 
   /* Populate the message-scroll context struct (DAT_00250704 ->
-     DAT_00087960) from the region rectangle. An earlier session's own
+     g_msg_scroll_panel_state) from the region rectangle. An earlier session's own
      comment here claimed "the decompile lost this" from msg_scroll_panel_init's
      real body -- re-checked via a fresh Ghidra disassembly of 0x7fc8c
      this session and that's NOT accurate: the real function only draws
@@ -75155,7 +75261,7 @@ int param_1;
   *(undefined1 *)(pStruct + 0x13) = 0;
   *(undefined1 *)(pStruct + 0x14) = 0;
   *(undefined1 *)(pStruct + 0x15) = 0;
-  if (DAT_00250704 == (undefined *)&DAT_00087960) {
+  if (DAT_00250704 == (undefined *)&g_msg_scroll_panel_state) {
     set_hud_status_value(4,1);
     iVar2 = msg_scroll_draw_edges();
   }
