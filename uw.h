@@ -555,7 +555,7 @@ void FUN_000198e8();
 void FUN_0001998c();
 int FUN_000199d4();
 int FUN_00019a80();
-char *FUN_00019aa0();
+char *babl_expand_string_refs();
 int FUN_00019d00();
 undefined4 build_babl_symbol_table();
 void FUN_0001a1a4();

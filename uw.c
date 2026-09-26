@@ -10986,10 +10986,10 @@ int param_1;
      Chained explicitly. */
   iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   pcVar3 = (char *)FUN_0007863c(iVar1);
-  pcVar4 = (char *)FUN_00019aa0(pcVar3);
+  pcVar4 = (char *)babl_expand_string_refs(pcVar3);
   iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
   pcVar5 = (char *)FUN_0007863c(iVar1);
-  pcVar6 = (char *)FUN_00019aa0(pcVar5);
+  pcVar6 = (char *)babl_expand_string_refs(pcVar5);
   pcVar7 = pcVar6;
   do {
     cVar1 = *pcVar7;
@@ -11040,7 +11040,7 @@ int param_1;
 
 {
   /* uVar1/iVar2/uVar3/uVar4/iVar5/iVar7 were `undefined4`/`int` (4 bytes)
-     but hold real string pointers from FUN_0007863c/FUN_00019aa0/
+     but hold real string pointers from FUN_0007863c/babl_expand_string_refs/
      Ordinal_1072 (iVar5 doubly so -- reused below as `iVar5 = iVar2`
      then in pointer arithmetic `iVar5 = iVar5 + iVar7`) -- truncated a
      real 64-bit pointer on assignment even with each call's own
@@ -11058,10 +11058,10 @@ int param_1;
      own comment (uw.c ~10977). Chained explicitly. */
   iVar5 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   uVar1 = (intptr_t)FUN_0007863c((int)iVar5);
-  iVar2 = (intptr_t)FUN_00019aa0((char *)uVar1);
+  iVar2 = (intptr_t)babl_expand_string_refs((char *)uVar1);
   iVar5 = FUN_0001adc4((int)*(short *)(param_1 + -4));
   uVar3 = (intptr_t)FUN_0007863c((int)iVar5);
-  uVar4 = (intptr_t)FUN_00019aa0((char *)uVar3);
+  uVar4 = (intptr_t)babl_expand_string_refs((char *)uVar3);
   Ordinal_1415(uVar3);
   Ordinal_1415(uVar1);
   iVar5 = iVar2;
@@ -11201,7 +11201,7 @@ int param_1;
 
 
 
-char *FUN_00019aa0(param_1)
+char *babl_expand_string_refs(param_1)
 char * param_1;
 
 {
@@ -11219,7 +11219,7 @@ char * param_1;
   char cVar12;
   char *local_38 [2];
   char local_30 [20];
-  /* Was `undefined4 FUN_00019aa0` with a single `return 0;` at the very
+  /* Was `undefined4 babl_expand_string_refs` with a single `return 0;` at the very
      end -- always NULL regardless of what this function actually
      computed. Every one of its ~15 callers throughout this file treats
      the return as the resolved (possibly newly babl_alloc'd) string
@@ -11311,7 +11311,7 @@ LAB_00019bc8:
              get no response" callers) matches passing exactly that. */
           pcVar9 = (char *)FUN_0007863c(sVar3);
           if (pcVar9 != (char *)0x0) {
-            pcVar8 = (char *)FUN_00019aa0(pcVar9);
+            pcVar8 = (char *)babl_expand_string_refs(pcVar9);
             pcVar10 = pcVar8;
             do {
               cVar1 = *pcVar10;
@@ -12127,7 +12127,7 @@ void FUN_0001aba0()
 {
   short sVar1;
   /* iVar2-iVar5 were `int` but hold real string pointers from
-     FUN_0007863c/FUN_00019aa0 -- truncated a real 64-bit pointer on
+     FUN_0007863c/babl_expand_string_refs -- truncated a real 64-bit pointer on
      assignment even with each call's own dropped argument now fixed
      (this function's own next crash site, uw.c ~70085's comment).
      Widened to intptr_t. */
@@ -12141,9 +12141,9 @@ void FUN_0001aba0()
      live (bug-critter-talk.txt) since this whole babl-VM cluster
      started actually running this session. */
   iVar2 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
-  iVar3 = (intptr_t)FUN_00019aa0((char *)iVar2);
+  iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
   iVar4 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2 + -2));
-  iVar5 = (intptr_t)FUN_00019aa0((char *)iVar4);
+  iVar5 = (intptr_t)babl_expand_string_refs((char *)iVar4);
   sVar1 = Ordinal_1065((char*)iVar5,(char*)iVar3);
   if (iVar5 != iVar4) {
     babl_free(iVar5);
@@ -12163,7 +12163,7 @@ void FUN_0001ac48()
 
 {
   /* iVar1/iVar2 were `int` but hold a real string pointer from
-     FUN_0007863c/FUN_00019aa0 -- truncated even with the dropped
+     FUN_0007863c/babl_expand_string_refs -- truncated even with the dropped
      argument below now fixed (uw.c ~70085's comment). Widened to
      intptr_t. */
   intptr_t iVar1;
@@ -12174,10 +12174,10 @@ void FUN_0001ac48()
   /* Was a dropped register-forwarding arg -- same class as
      FUN_000196e8's own comment (uw.c ~10977); this is the crash in
      bug-critter-talk.txt one step past the DAT_000bbf70-width fix
-     below (FUN_00019aa0 read whatever garbage register instead of the
+     below (babl_expand_string_refs read whatever garbage register instead of the
      just-resolved string, then dereferenced it inside Ordinal_1064). */
   iVar1 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
-  iVar2 = (intptr_t)FUN_00019aa0((char *)iVar1);
+  iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
   do {
@@ -12215,7 +12215,7 @@ void FUN_0001acf8()
   /* Was a dropped register-forwarding arg -- same class as
      FUN_0001ac48's own fix just above. */
   iVar1 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
-  iVar2 = (intptr_t)FUN_00019aa0((char *)iVar1);
+  iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
   do {
@@ -19485,7 +19485,7 @@ int param_1;
     if (sVar4 != 0) {
       uVar7 = FUN_0007863c(uVar6);
       *(undefined4 *)(&DAT_001006d8 + DAT_00100794 * 4) = uVar7;
-      iVar8 = FUN_00019aa0(uVar7); // was a dropped register-forwarding arg -- same class as FUN_000196e8's own comment (uw.c ~10977)
+      iVar8 = babl_expand_string_refs(uVar7); // was a dropped register-forwarding arg -- same class as FUN_000196e8's own comment (uw.c ~10977)
       sVar5 = DAT_00100794;
       iVar9 = (int)DAT_00100794;
       *(int *)(&DAT_00100680 + iVar9 * 4) = iVar8;
@@ -19691,7 +19691,7 @@ int param_1;
      FUN_000196e8's own comment (uw.c ~10977). */
   iVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   iVar2 = FUN_0007863c(iVar2);
-  iVar3 = FUN_00019aa0(iVar2);
+  iVar3 = babl_expand_string_refs(iVar2);
   pcVar4 = &DAT_0008523c;
   pcVar5 = DAT_001007c0;
   do {
