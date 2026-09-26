@@ -442,10 +442,10 @@ undefined1 DAT_000bbf30;
 undefined4 DAT_000bbf20;
 char *DAT_000bbf18;
 short DAT_000bbf7c;
-/* Was `int` -- a real 64-bit heap pointer (FUN_00018ac8, i.e. malloc)
+/* Was `int` -- a real 64-bit heap pointer (babl_alloc, i.e. malloc)
    truncated through a 32-bit int, same bug class as DAT_000bbf70/
    DAT_000bbf00 below (see their own comment) -- widened to intptr_t so
-   the existing integer arithmetic throughout FUN_00019e58/FUN_0001b0a4/
+   the existing integer arithmetic throughout build_babl_symbol_table/FUN_0001b0a4/
    etc. keeps compiling unchanged (intptr_t participates in ordinary
    integer arithmetic; a real pointer type would need every site
    recast). */
@@ -479,16 +479,16 @@ char *DAT_000bbf80;
 undefined2 DAT_000bbf8c;
 undefined2 DAT_0024cfac;
 short DAT_000bbf24;
-/* Was `int` -- FUN_00019e58 assigns it a real 64-bit heap pointer
-   (`DAT_000bbf70 = FUN_00018ac8((iVar11+1)*0x20)`) and every reader
-   throughout this whole babl-symbol-table cluster (FUN_0001ae28/
+/* Was `int` -- build_babl_symbol_table assigns it a real 64-bit heap pointer
+   (`DAT_000bbf70 = babl_alloc((iVar11+1)*0x20)`) and every reader
+   throughout this whole babl-symbol-table cluster (babl_register_builtin/
    FUN_0001ac48/FUN_0001acf8/FUN_0001aebc/FUN_0001afe4/FUN_0001b0a4/
-   FUN_00019e58 itself) does plain `int`-width pointer arithmetic on
+   build_babl_symbol_table itself) does plain `int`-width pointer arithmetic on
    it. Truncating this on a 64-bit host is the crash one step past the
    read_archive_entry dropped-argument fix (uw.c ~10984's comment):
    with that fixed, Bragit's conversation record genuinely loads for
    the first time this whole session, and THIS truncation is what
-   FUN_00019e58 immediately crashes on building its symbol table
+   build_babl_symbol_table immediately crashes on building its symbol table
    (`*pcVar9 = cVar4` wild write, confirmed live via lldb -- this
    whole cluster was apparently never exercised by any prior fix or
    test, since no conversation had ever successfully loaded before).
@@ -496,7 +496,7 @@ short DAT_000bbf24;
    reason as DAT_000bbf14 above -- keeps the existing int-arithmetic
    call sites compiling as-is. */
 intptr_t DAT_000bbf70;
-intptr_t DAT_000bbf00; // was `int` -- FUN_00018ac8'd function-pointer-table base, same bug
+intptr_t DAT_000bbf00; // was `int` -- babl_alloc'd function-pointer-table base, same bug
 undefined4 LAB_0001a120()
 
 {
@@ -1667,7 +1667,7 @@ char s_set_quest_000851fc[] = "set_quest";
 char s_get_quest_00085208[] = "get_quest";
 char s_babl_fmenu_00085214[] = "babl_fmenu";
 char s_babl_menu_00085220[] = "babl_menu";
-/* Was `undefined4`, truncating the real char* buffer FUN_00018ac8
+/* Was `undefined4`, truncating the real char* buffer babl_alloc
    returns (assigned at its only writer) -- dereferenced directly a
    few lines after its only other read. */
 char *DAT_001007b8;
@@ -10614,14 +10614,14 @@ int param_1;
 
 
 
-uint *FUN_00018ac8(param_1)
+uint *babl_alloc(param_1)
 int param_1;
 
 /* HACK: this whole function was a hand-rolled, fixed-pool free-list
    allocator whose "next free block" links are packed as 4 INDIVIDUAL
    BYTES within the block header (see the CONCAT13/CONCAT12/CONCAT11
    reconstructions the original body did, and the matching byte-at-a-
-   time writes in FUN_00018ccc/FUN_00018f34) -- a 32-bit-pointer-only
+   time writes in babl_free/babl_resize) -- a 32-bit-pointer-only
    design baked into the original 32-bit ARM binary's own memory
    layout. There is no width to widen here the way DAT_000bbf70 and
    friends were fixed elsewhere in this same babl-VM cluster: a real
@@ -10631,7 +10631,7 @@ int param_1;
    successfully loaded in this port until the read_archive_entry
    dropped-argument fix a few commits up), so nothing depended on its
    exact original behavior surviving intact. Replaced with the host's
-   real allocator -- see FUN_00018ccc/FUN_00018f34's own comments for
+   real allocator -- see babl_free/babl_resize's own comments for
    the matching free()/no-op halves. DAT_000bbf04 (the original
    allocator's free-list head) is now unused by this trio; left
    declared since FUN_00019660 (uw.c ~11090, an unrelated scratch-
@@ -10643,17 +10643,17 @@ int param_1;
 
 
 
-void FUN_00018ccc(param_1)
+void babl_free(param_1)
 intptr_t param_1;
-/* HACK: matching replacement for FUN_00018ac8 -- see its own comment.
+/* HACK: matching replacement for babl_alloc -- see its own comment.
    The original body validated a packed 32-bit-only free-list header
    (`puVar2[(*(ushort*)puVar2>>2)-1]==puVar2 && *(uint**)(param_1-4)
    ==puVar2`) before touching anything, which doubled as a "is this
    really one of my blocks" sanity check; real free() has no equivalent
    for a non-malloc'd pointer, so every caller of this function needs
-   to actually pass a real FUN_00018ac8()/malloc() pointer now (true
+   to actually pass a real babl_alloc()/malloc() pointer now (true
    for every site fixed as part of this same investigation -- see
-   FUN_00019470's `local_28` and this file's other babl-VM pointer-
+   load_npc_conversation_record's `local_28` and this file's other babl-VM pointer-
    width fixes). param_1==0 is the one case the original's own
    validation would always reject (NULL fails the header check), so
    guard it the same way here. */
@@ -10667,18 +10667,18 @@ intptr_t param_1;
 
 
 
-intptr_t FUN_00018f34(param_1,param_2)
+intptr_t babl_resize(param_1,param_2)
 intptr_t param_1;
 int param_2;
 
-/* HACK: matching replacement for FUN_00018ac8/FUN_00018ccc -- see
+/* HACK: matching replacement for babl_alloc/babl_free -- see
    their own comments. The original body was a "shrink this block in
    place, splitting the freed tail back into the free list (or grow it
    via a fresh alloc+free if it doesn't fit)" optimization, reading/
    writing the same packed 32-bit-only free-list header format at a
    fixed offset behind param_1 -- meaningless (reads whatever real
    malloc's own private bookkeeping or adjacent heap bytes happen to
-   be there) once FUN_00018ac8 hands out a real malloc() pointer with
+   be there) once babl_alloc hands out a real malloc() pointer with
    no such header. Its own only call site (uw.c, babl string-buffer
    trimming) ignores the return value entirely and keeps using its own
    already-held pointer afterward, so shrinking was purely a "return
@@ -10826,7 +10826,7 @@ short param_2;
 
 
 
-undefined4 FUN_00019470(param_1,param_2)
+undefined4 load_npc_conversation_record(param_1,param_2)
 char *param_1;
 undefined1 *param_2;
 
@@ -10838,7 +10838,7 @@ undefined1 *param_2;
   undefined1 auStack_20 [16];
 
   /* Was `undefined4 param_2` (32-bit) -- truncated the real 64-bit
-     buffer pointer (DAT_00100784 + 0x400, passed in from FUN_00028c00)
+     buffer pointer (DAT_00100784 + 0x400, passed in from start_npc_conversation)
      before it ever reached FUN_00019660's own `*param_1 = 0xff` write,
      the Talk-mode crash in bug-critter-talk.txt (EXC_BAD_ACCESS at the
      truncated 32-bit address, confirmed live via lldb: param_2 came in
@@ -10853,7 +10853,7 @@ undefined1 *param_2;
     FUN_0003c3c8(0x300a);
   }
   else {
-    DAT_000bbf18 = FUN_00018ac8(0x4000);
+    DAT_000bbf18 = babl_alloc(0x4000);
     if (DAT_000bbf18 == 0) {
       FUN_0003c3c8(4);
     }
@@ -10883,13 +10883,13 @@ undefined1 *param_2;
          function's shared epilogue after the two `bl`s with NO `mov
          r0,#1` of its own, so the real return value here is whatever
          message_scroll_print_wrapped() itself returns, not a hardcoded
-         1. Hardcoding 1 (a non-negative "success") made FUN_00028c00's
+         1. Hardcoding 1 (a non-negative "success") made start_npc_conversation's
          own `if (sVar1 < 0)` caller-side check always take its SUCCESS
          branch even on this "no CNV record for this NPC" path -- which
          then read never-initialized DAT_000bbf70 (still 0 from this
-         run, since the real per-record setup in FUN_00019e58() below
+         run, since the real per-record setup in build_babl_symbol_table() below
          never got a chance to run) as a base pointer inside
-         FUN_0001ae28, crashing at DAT_000bbf70+0x18. This is the exact
+         babl_register_builtin, crashing at DAT_000bbf70+0x18. This is the exact
          crash in bug-critter-talk.txt: Bragit has no real conversation
          record, so this early-return path is supposed to be the one
          taken. Was: message_scroll_print_wrapped(FUN_0007863c(0xe01));
@@ -10901,27 +10901,27 @@ undefined1 *param_2;
       return message_scroll_print_wrapped(FUN_0007863c(0xe01));
     }
   }
-  iVar2 = FUN_00019e58();
+  iVar2 = build_babl_symbol_table();
   if (-1 < iVar2) {
     FUN_0001a1a4(iVar2);
-    FUN_00018ccc(local_28);
-    DAT_000bbf14 = FUN_00018ac8((DAT_000bbf7c + 0x800) * 2);
+    babl_free(local_28);
+    DAT_000bbf14 = babl_alloc((DAT_000bbf7c + 0x800) * 2);
     FUN_0001927c(DAT_000bbf14,(int)DAT_000bbf7c);
     DAT_000bbf84 = DAT_000bbf7c;
     DAT_000bbf0c = DAT_000bbf14 + DAT_000bbf7c * 2;
-    puVar3 = (undefined1 *)FUN_00018ac8(1);
+    puVar3 = (undefined1 *)babl_alloc(1);
     *puVar3 = 0;
     DAT_000bbf88 = FUN_0007873c(puVar3,0x7c);
     FUN_0001b0a4();
-    FUN_0001ae28(s_compare_000845a0,FUN_000196e8);
-    FUN_0001ae28(s_random_00084598,FUN_000196c0);
-    FUN_0001ae28(s_plural_00084590,FUN_000197c0);
-    FUN_0001ae28(s_contains_00084584,FUN_000197fc);
-    FUN_0001ae28(s_append_0008457c,FUN_000198e8);
-    FUN_0001ae28(&DAT_00084574,FUN_0001998c);
-    FUN_0001ae28(&DAT_0008456c,FUN_000199d4);
-    FUN_0001ae28(s_length_00084564,&LAB_00019a60);
-    FUN_0001ae28(&DAT_00084560,FUN_00019a80);
+    babl_register_builtin(s_compare_000845a0,FUN_000196e8);
+    babl_register_builtin(s_random_00084598,FUN_000196c0);
+    babl_register_builtin(s_plural_00084590,FUN_000197c0);
+    babl_register_builtin(s_contains_00084584,FUN_000197fc);
+    babl_register_builtin(s_append_0008457c,FUN_000198e8);
+    babl_register_builtin(&DAT_00084574,FUN_0001998c);
+    babl_register_builtin(&DAT_0008456c,FUN_000199d4);
+    babl_register_builtin(s_length_00084564,&LAB_00019a60);
+    babl_register_builtin(&DAT_00084560,FUN_00019a80);
     return 1;
   }
   return 0xffffffff;
@@ -10996,10 +10996,10 @@ int param_1;
   Ordinal_1415(acStack_218);
   sVar2 = Ordinal_1065(acStack_118,acStack_218);
   if (pcVar5 != pcVar6) {
-    FUN_00018ccc(pcVar6);
+    babl_free(pcVar6);
   }
   if (pcVar3 != pcVar4) {
-    FUN_00018ccc(pcVar4);
+    babl_free(pcVar4);
   }
   return sVar2 == 0;
 }
@@ -11085,7 +11085,7 @@ int param_1;
   pcVar3 = (char *)FUN_0007863c();
   uVar4 = Ordinal_1068();
   uVar5 = Ordinal_1068(pcVar2);
-  iVar6 = FUN_00018ac8((int)(((uVar4 & 0xffff) + (uVar5 & 0xffff) + 1) * 0x10000) >> 0x10);
+  iVar6 = babl_alloc((int)(((uVar4 & 0xffff) + (uVar5 & 0xffff) + 1) * 0x10000) >> 0x10);
   iVar7 = iVar6 - (int)pcVar3;
   do {
     cVar1 = *pcVar3;
@@ -11116,7 +11116,7 @@ int param_1;
   FUN_0001adc4((int)*(short *)(param_1 + -2));
   pcVar2 = (char *)FUN_0007863c();
   iVar3 = Ordinal_1068();
-  iVar3 = FUN_00018ac8(iVar3 + 1);
+  iVar3 = babl_alloc(iVar3 + 1);
   iVar4 = iVar3 - (int)pcVar2;
   do {
     cVar1 = *pcVar2;
@@ -11193,7 +11193,7 @@ char * param_1;
   iVar6 = Ordinal_1064(param_1,0x40);
   if (iVar6 != 0) {
     iVar6 = Ordinal_1068(param_1);
-    pcVar7 = (char *)FUN_00018ac8((iVar6 + 0x40) * 2);
+    pcVar7 = (char *)babl_alloc((iVar6 + 0x40) * 2);
     cVar1 = *param_1;
     pcVar11 = pcVar7;
     local_38[0] = param_1;
@@ -11275,7 +11275,7 @@ LAB_00019bc8:
             } while (cVar1 != '\0');
             if (pcVar9 != pcVar8) {
               /* Was a dropped argument (K&R register-forwarding) --
-                 now that FUN_00018ccc is a real free() (see its own
+                 now that babl_free is a real free() (see its own
                  comment), passing whatever happened to be left in the
                  argument register is far riskier than under the old
                  hand-rolled allocator's own header-validated free.
@@ -11284,7 +11284,7 @@ LAB_00019bc8:
                  content was copied into the caller's real destination
                  (pcVar8), matching every other "if (x != cached) free
                  x" sibling in this same file. */
-              FUN_00018ccc(pcVar9);
+              babl_free(pcVar9);
             }
           }
         }
@@ -11301,7 +11301,7 @@ LAB_00019cc0:
     }
     *pcVar11 = '\0';
     iVar6 = Ordinal_1068(pcVar7);
-    FUN_00018f34(pcVar7,iVar6 + 1);
+    babl_resize(pcVar7,iVar6 + 1);
   }
   return 0;
 }
@@ -11370,7 +11370,7 @@ int * param_1;
 
 
 
-undefined4 FUN_00019e58()
+undefined4 build_babl_symbol_table()
 
 {
   /* iVar1/iVar2/iVar3/iVar5/iVar6/iVar7/iVar10/iVar11 were all plain
@@ -11402,14 +11402,14 @@ undefined4 FUN_00019e58()
 
   DAT_000bbf10 = *(int *)((char *)DAT_000bbf18 + 4);
   DAT_000bbf18 = (char *)((char *)DAT_000bbf18 + 8);
-  DAT_000bbf80 = FUN_00018ac8(DAT_000bbf10 << 1);
+  DAT_000bbf80 = babl_alloc(DAT_000bbf10 << 1);
   DAT_000bbf8c = *(undefined2 *)DAT_000bbf18;
   DAT_0024cfac = *(undefined2 *)((char *)DAT_000bbf18 + 2);
   DAT_000bbf7c = *(undefined2 *)((char *)DAT_000bbf18 + 4);
   iVar11 = (int)*(short *)((char *)DAT_000bbf18 + 6);
   DAT_000bbf18 = (char *)((char *)DAT_000bbf18 + 8);
   DAT_000bbf24 = 0;
-  DAT_000bbf70 = FUN_00018ac8((iVar11 + 1) * 0x20);
+  DAT_000bbf70 = babl_alloc((iVar11 + 1) * 0x20);
   iVar5 = 0;
   if (0 < iVar11) {
     iVar5 = 0;
@@ -11466,7 +11466,7 @@ undefined4 FUN_00019e58()
   *(undefined1 *)(iVar5 + 0x1a) = 0;
   *(undefined1 *)(iVar5 + 0x1b) = 0;
   if (0 < DAT_000bbf24) {
-    DAT_000bbf00 = FUN_00018ac8((int)DAT_000bbf24 << 2);
+    DAT_000bbf00 = babl_alloc((int)DAT_000bbf24 << 2);
   }
   if (0 < DAT_000bbf24) {
     iVar5 = 0;
@@ -12059,10 +12059,10 @@ void FUN_0001aba0()
   iVar5 = FUN_00019aa0();
   sVar1 = Ordinal_1065(iVar5,iVar3);
   if (iVar5 != iVar4) {
-    FUN_00018ccc(iVar5);
+    babl_free(iVar5);
   }
   if (iVar3 != iVar2) {
-    FUN_00018ccc(iVar3);
+    babl_free(iVar3);
   }
   iVar2 = (int)DAT_000bbf78;
   DAT_000bbf78 = (short)(iVar2 + -1);
@@ -12085,13 +12085,13 @@ void FUN_0001ac48()
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
   do {
-    /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+    /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260) -- every reader of this babl-symbol table
        shares the same crash when no conversation record was loaded. */
     if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
 LAB_0001ace8:
       if (iVar2 != iVar1) {
-        FUN_00018ccc(iVar2);
+        babl_free(iVar2);
       }
       return;
     }
@@ -12119,12 +12119,12 @@ void FUN_0001acf8()
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
   do {
-    /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+    /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260). */
     if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
 LAB_0001ad98:
       if (iVar2 != iVar1) {
-        FUN_00018ccc(iVar2);
+        babl_free(iVar2);
       }
       return;
     }
@@ -12177,7 +12177,7 @@ short param_1;
 
 
 
-void FUN_0001ae28(param_1,param_2)
+void babl_register_builtin(param_1,param_2)
 char * param_1;
 undefined4 param_2;
 
@@ -12188,15 +12188,15 @@ undefined4 param_2;
   char *pcVar4;
 
   /* HACK: added `DAT_000bbf70 != 0` -- this whole babl-symbol-table
-     cluster (FUN_0001ae28/FUN_0001ac48/etc.) uniformly assumes
-     DAT_000bbf70 already points at a real, FUN_00019e58()-initialized
+     cluster (babl_register_builtin/FUN_0001ac48/etc.) uniformly assumes
+     DAT_000bbf70 already points at a real, build_babl_symbol_table()-initialized
      record array before touching it. It's declared `int` (not even a
-     pointer) and starts at 0; FUN_00019470's own "no CNV.ARK record
+     pointer) and starts at 0; load_npc_conversation_record's own "no CNV.ARK record
      for this NPC" early-return path (uw.c ~10986, itself already
      fixed twice this session -- a dropped message_scroll_print_
      wrapped() argument, then a hardcoded `return 1` that should have
-     been that call's own return value) skips the FUN_00019e58() call
-     that would set it, yet FUN_00028c00's caller-side `sVar1 < 0`
+     been that call's own return value) skips the build_babl_symbol_table() call
+     that would set it, yet start_npc_conversation's caller-side `sVar1 < 0`
      check (matching real disassembly at 0x28c1c-0x28c20, `bpl` = branch
      on non-negative) still takes its "record found" success branch and
      calls into here regardless -- this is the exact Talk-mode crash in
@@ -12205,7 +12205,7 @@ undefined4 param_2;
      UNRESOLVED: why the real game's equivalent tail read (message_
      scroll_print_wrapped's own return -- see its comment -- ultimately
      `*(short*)(DAT_00250704+0x14)`) would come back genuinely negative
-     in the same scenario on real hardware, letting FUN_00028c00's own
+     in the same scenario on real hardware, letting start_npc_conversation's own
      check correctly reject it without this guard, is still an open
      question (this port's own scroll-state field reads back 0 here,
      confirmed live via lldb) -- flagged as a follow-up, not chased
@@ -12259,10 +12259,10 @@ short param_3;
   local_34[sVar6] = 0;
   iVar2 = DAT_000bbf70;
   while( true ) {
-    /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+    /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260) -- this is the Talk-crash's own next
        crash site once that one's fixed (FUN_0002a8e0's npc_whoami
-       lookup, called unconditionally from FUN_00028c00 same as the
+       lookup, called unconditionally from start_npc_conversation same as the
        babl_menu registrations). */
     if (iVar2 == 0 || *(short *)(iVar2 + 0x18) == 0) {
       return;
@@ -12299,7 +12299,7 @@ short param_3;
   
   iVar2 = DAT_000bbf70;
   while( true ) {
-    /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+    /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
        comment (uw.c ~12260). */
     if (iVar2 == 0 || *(short *)(iVar2 + 0x18) == 0) {
       return;
@@ -12333,7 +12333,7 @@ void FUN_0001b0a4()
   short *psVar3;
   int iVar4;
 
-  /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+  /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
      comment (uw.c ~12260) -- unlike its siblings this one dereferences
      unconditionally before any loop check, so guard the read itself
      rather than the loop condition. */
@@ -19057,10 +19057,10 @@ LAB_000285e4:
 LAB_0002865c:
   /* Was two separate calls with message_scroll_print_wrapped()'s arg
      dropped -- same register-forwarding hazard already fixed at
-     FUN_00019470's own sVar1<0 branch (uw.c ~10987, see its comment)
+     load_npc_conversation_record's own sVar1<0 branch (uw.c ~10987, see its comment)
      and, unfixed, exactly what crashed replaying bug-critter-talk.txt
      one step further than this file's other Talk-crash fixes: Bragit
-     has no CNV.ARK conversation record, so FUN_00028c00 hits this
+     has no CNV.ARK conversation record, so start_npc_conversation hits this
      same pattern too (uw.c ~19211) printing "You get no response"
      before the crash. */
   message_scroll_print_wrapped(FUN_0007863c(uVar3));
@@ -19164,7 +19164,7 @@ void FUN_000286cc()
       FUN_000577f0();
       mode_icon_highlight_off(5);
       g_cursor_mode = 0;
-      FUN_00028c00(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
+      start_npc_conversation(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
       change_game_mode(1);
       return;
     }
@@ -19193,30 +19193,30 @@ void FUN_00028bac()
 
 
 
-void FUN_00028c00()
+void start_npc_conversation()
 
 {
   short sVar1;
   int iVar2;
   undefined4 uVar3;
   
-  sVar1 = FUN_00019470(s__DATA_cnv_ark_00084fc8,DAT_00100784 + 0x400);
+  sVar1 = load_npc_conversation_record(s__DATA_cnv_ark_00084fc8,DAT_00100784 + 0x400);
   /* Was `if (sVar1 < 0)` alone, matching real disassembly at 0x28c1c-
      0x28c20 (`bpl` = branch to the success/registration branch below
      on sVar1 >= 0) -- but that disassembly-confirmed check isn't
      enough on its own for the Talk-mode crash in bug-critter-talk.txt
-     (Bragit has no CNV.ARK conversation record): FUN_00019470's own
+     (Bragit has no CNV.ARK conversation record): load_npc_conversation_record's own
      "no record" branch (uw.c ~10986) returns message_scroll_print_
      wrapped()'s own return value (also disassembly-confirmed, no
      `mov r0,#1` before that branch's return), and in THIS port that
      value came back 0 -- non-negative, so `sVar1 < 0` alone still
      takes the success branch below. Chased this two ways before
-     landing here: (1) hardcoding a hopeful `return -1` in FUN_00019470
+     landing here: (1) hardcoding a hopeful `return -1` in load_npc_conversation_record
      instead would contradict what the disassembly actually shows, and
      (2) individually NULL-guarding every DAT_000bbf70/DAT_000bbf80-
      reading function this success branch calls into turned into an
      unbounded chase (fixed 5 separate crash sites this way -- see
-     FUN_0001ae28/FUN_0001ac48/FUN_0001acf8/FUN_0001aebc/FUN_0001afe4/
+     babl_register_builtin/FUN_0001ac48/FUN_0001acf8/FUN_0001aebc/FUN_0001afe4/
      FUN_0001b0a4's own comments -- before finding a 6th at
      FUN_0001a1c8's DAT_000bbf80 dereference). Whether the real 32-bit
      binary's equivalent register value is reliably negative here (real
@@ -19225,13 +19225,13 @@ void FUN_00028c00()
      not chased further. Gating on DAT_000bbf70 too is the actual fix:
      it's the one flag every function in this success branch already
      agrees means "a real record's symbol table is loaded" (see
-     FUN_00019e58, only ever called -- and only place that sets it --
+     build_babl_symbol_table, only ever called -- and only place that sets it --
      on the genuine record-found path), so checking it here stops the
      whole cluster's crash at its one shared root instead of chasing
      individual dereferences further. */
   if (sVar1 < 0 || DAT_000bbf70 == 0) {
     /* Was two separate calls with message_scroll_print_wrapped()'s arg
-       dropped -- same pattern already fixed at FUN_00019470's own
+       dropped -- same pattern already fixed at load_npc_conversation_record's own
        sVar1<0 branch (uw.c ~10987) and at FUN_00028488's tail (uw.c
        ~19070). This is the specific crash in bug-critter-talk.txt:
        Bragit has no CNV.ARK conversation record (sVar1<0 here is the
@@ -19240,50 +19240,50 @@ void FUN_00028c00()
     message_scroll_print_wrapped(FUN_0007863c(0xe01));
   }
   else {
-    FUN_0001ae28(s_babl_menu_00085220,&LAB_0002912c);
-    FUN_0001ae28(s_babl_fmenu_00085214,FUN_00029358);
-    FUN_0001ae28(&DAT_000845a8,FUN_00029708);
-    FUN_0001ae28(s_respond_000845ac,FUN_0002977c);
-    FUN_0001ae28(s_get_quest_00085208,FUN_00018370);
-    FUN_0001ae28(s_set_quest_000851fc,FUN_000182b4);
-    FUN_0001ae28(&DAT_000851f8,&LAB_0001840c);
-    FUN_0001ae28(s_babl_ask_000851ec,FUN_0002990c);
-    FUN_0001ae28(s_print_000851e4,FUN_00029850);
-    FUN_0001ae28(s_show_inv_000851d8,FUN_000299b0);
-    FUN_0001ae28(s_give_to_npc_000851cc,FUN_00029cc8);
-    FUN_0001ae28(s_find_inv_000851c0,FUN_00029f4c);
-    FUN_0001ae28(s_take_from_npc_000851b0,&LAB_00029f74);
-    FUN_0001ae28(s_take_id_from_npc_0008519c,&LAB_00029f88);
-    FUN_0001ae28(s_identify_inv_0008518c,FUN_00029fb0);
-    FUN_0001ae28(s_do_offer_00085180,FUN_0001c57c);
-    FUN_0001ae28(s_do_demand_00085174,FUN_0001ca78);
-    FUN_0001ae28(s_do_decline_00085168,&LAB_0001cd34);
-    FUN_0001ae28(s_do_judgement_00085158,FUN_0001cd3c);
-    FUN_0001ae28(s_end_barter_0008514c,FUN_0001b7c0);
-    FUN_0001ae28(s_setup_to_barter_0008513c,FUN_0001b288);
-    FUN_0001ae28(s_pause_00085134,FUN_000298d8);
-    FUN_0001ae28(s_set_likes_dislikes_00085120,FUN_0001da88);
-    FUN_0001ae28(s_do_inv_create_00085110,&LAB_00029f9c);
-    FUN_0001ae28(s_do_inv_delete_00085100,FUN_00029f38);
-    FUN_0001ae28(s_check_inv_quality_000850ec,FUN_0002a258);
-    FUN_0001ae28(s_set_inv_quality_000850dc,FUN_0002a27c);
-    FUN_0001ae28(s_count_inv_000850d0,FUN_0002a1fc);
-    FUN_0001ae28(s_gronk_door_000850c4,FUN_00018430);
-    FUN_0001ae28(s_set_attitude_000850b4,FUN_00017be8);
-    FUN_0001ae28(s_set_race_attitude_000850a0,FUN_00017c1c);
-    FUN_0001ae28(s_take_from_npc_inv_0008508c,FUN_000181a4);
-    FUN_0001ae28(s_add_to_npc_inv_0008507c,FUN_00018230);
-    FUN_0001ae28(s_place_object_0008506c,FUN_00017eec);
-    FUN_0001ae28(s_remove_talker_0008505c,FUN_0001825c);
-    FUN_0001ae28(s_x_skills_00085050,FUN_00017e10);
-    FUN_0001ae28(s_x_traps_00085048,FUN_00017e90);
-    FUN_0001ae28(s_x_obj_stuff_0008503c,FUN_0001853c);
-    FUN_0001ae28(s_x_obj_pos_00085030,FUN_000188fc);
-    FUN_0001ae28(s_find_barter_00085024,FUN_00029a58);
-    FUN_0001ae28(s_find_barter_total_00085010,FUN_00029b60);
-    FUN_0001ae28(s_give_ptr_npc_00085000,FUN_00029e34);
+    babl_register_builtin(s_babl_menu_00085220,&LAB_0002912c);
+    babl_register_builtin(s_babl_fmenu_00085214,FUN_00029358);
+    babl_register_builtin(&DAT_000845a8,FUN_00029708);
+    babl_register_builtin(s_respond_000845ac,FUN_0002977c);
+    babl_register_builtin(s_get_quest_00085208,FUN_00018370);
+    babl_register_builtin(s_set_quest_000851fc,FUN_000182b4);
+    babl_register_builtin(&DAT_000851f8,&LAB_0001840c);
+    babl_register_builtin(s_babl_ask_000851ec,FUN_0002990c);
+    babl_register_builtin(s_print_000851e4,FUN_00029850);
+    babl_register_builtin(s_show_inv_000851d8,FUN_000299b0);
+    babl_register_builtin(s_give_to_npc_000851cc,FUN_00029cc8);
+    babl_register_builtin(s_find_inv_000851c0,FUN_00029f4c);
+    babl_register_builtin(s_take_from_npc_000851b0,&LAB_00029f74);
+    babl_register_builtin(s_take_id_from_npc_0008519c,&LAB_00029f88);
+    babl_register_builtin(s_identify_inv_0008518c,FUN_00029fb0);
+    babl_register_builtin(s_do_offer_00085180,FUN_0001c57c);
+    babl_register_builtin(s_do_demand_00085174,FUN_0001ca78);
+    babl_register_builtin(s_do_decline_00085168,&LAB_0001cd34);
+    babl_register_builtin(s_do_judgement_00085158,FUN_0001cd3c);
+    babl_register_builtin(s_end_barter_0008514c,FUN_0001b7c0);
+    babl_register_builtin(s_setup_to_barter_0008513c,FUN_0001b288);
+    babl_register_builtin(s_pause_00085134,FUN_000298d8);
+    babl_register_builtin(s_set_likes_dislikes_00085120,FUN_0001da88);
+    babl_register_builtin(s_do_inv_create_00085110,&LAB_00029f9c);
+    babl_register_builtin(s_do_inv_delete_00085100,FUN_00029f38);
+    babl_register_builtin(s_check_inv_quality_000850ec,FUN_0002a258);
+    babl_register_builtin(s_set_inv_quality_000850dc,FUN_0002a27c);
+    babl_register_builtin(s_count_inv_000850d0,FUN_0002a1fc);
+    babl_register_builtin(s_gronk_door_000850c4,FUN_00018430);
+    babl_register_builtin(s_set_attitude_000850b4,FUN_00017be8);
+    babl_register_builtin(s_set_race_attitude_000850a0,FUN_00017c1c);
+    babl_register_builtin(s_take_from_npc_inv_0008508c,FUN_000181a4);
+    babl_register_builtin(s_add_to_npc_inv_0008507c,FUN_00018230);
+    babl_register_builtin(s_place_object_0008506c,FUN_00017eec);
+    babl_register_builtin(s_remove_talker_0008505c,FUN_0001825c);
+    babl_register_builtin(s_x_skills_00085050,FUN_00017e10);
+    babl_register_builtin(s_x_traps_00085048,FUN_00017e90);
+    babl_register_builtin(s_x_obj_stuff_0008503c,FUN_0001853c);
+    babl_register_builtin(s_x_obj_pos_00085030,FUN_000188fc);
+    babl_register_builtin(s_find_barter_00085024,FUN_00029a58);
+    babl_register_builtin(s_find_barter_total_00085010,FUN_00029b60);
+    babl_register_builtin(s_give_ptr_npc_00085000,FUN_00029e34);
     FUN_0002a8e0(DAT_00100674);
-    DAT_001007b8 = FUN_00018ac8(0xa0);
+    DAT_001007b8 = babl_alloc(0xa0);
     if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
       FUN_000798c4();
     }
@@ -19391,7 +19391,7 @@ int param_1;
       *(int *)(&DAT_00100680 + iVar9 * 4) = iVar8;
       if (iVar8 == *(int *)(&DAT_001006d8 + iVar9 * 4)) {
         iVar9 = Ordinal_1068(*(int *)(&DAT_001006d8 + iVar9 * 4));
-        pcVar10 = (char *)FUN_00018ac8(iVar9 + 1);
+        pcVar10 = (char *)babl_alloc(iVar9 + 1);
         iVar9 = (int)DAT_00100794;
         *(char **)(&DAT_00100680 + iVar9 * 4) = pcVar10;
         pcVar11 = *(char **)(&DAT_001006d8 + iVar9 * 4);
@@ -19482,7 +19482,7 @@ short param_1;
             FUN_000297dc(*(undefined4 *)(&DAT_00100680 + iVar3 * 4));
           }
           if (*(int *)(&DAT_001006d8 + iVar3 * 4) != *(int *)(&DAT_00100680 + iVar3 * 4)) {
-            FUN_00018ccc();
+            babl_free();
           }
           iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
         } while (iVar3 < DAT_00100794);
@@ -19605,7 +19605,7 @@ int param_1;
   FUN_0007f0e0();
   FUN_0007ec50();
   if (iVar3 != iVar2) {
-    FUN_00018ccc(iVar3);
+    babl_free(iVar3);
   }
   return;
 }
@@ -20021,7 +20021,7 @@ LAB_0002a154:
   FUN_00078b18(local_74 + iVar6,iVar5,(int)sVar1,1 < uVar9);
   FUN_00048bf0(iVar5,uVar3,local_74);
   iVar5 = Ordinal_1068(local_74);
-  iVar5 = FUN_00018ac8(iVar5 + 1);
+  iVar5 = babl_alloc(iVar5 + 1);
   pcVar7 = local_74;
   do {
     cVar8 = *pcVar7;
