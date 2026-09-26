@@ -10966,6 +10966,7 @@ int param_1;
 {
   char cVar1;
   short sVar2;
+  int iVar1;
   char *pcVar3;
   char *pcVar4;
   char *pcVar5;
@@ -10973,13 +10974,22 @@ int param_1;
   char *pcVar7;
   char acStack_218 [256];
   char acStack_118 [256];
-  
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
-  pcVar3 = (char *)FUN_0007863c();
-  pcVar4 = (char *)FUN_00019aa0();
-  FUN_0001adc4((int)*(short *)(param_1 + -4));
-  pcVar5 = (char *)FUN_0007863c();
-  pcVar6 = (char *)FUN_00019aa0();
+
+  /* Was 4 dropped register-forwarding args (Ghidra faithfully preserved
+     the original ARM code relying on a value staying in r0 across
+     back-to-back `bl`s with no reload -- confirmed real elsewhere this
+     session, e.g. FUN_00019470's own comment) -- but this whole babl
+     conversation-VM cluster was never exercised until this session's
+     other fixes let it actually run, and a recompiled-for-this-host
+     call written as `()` in C loads no argument at all, so each of
+     these read whatever garbage happened to be in the register instead.
+     Chained explicitly. */
+  iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  pcVar3 = (char *)FUN_0007863c(iVar1);
+  pcVar4 = (char *)FUN_00019aa0(pcVar3);
+  iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  pcVar5 = (char *)FUN_0007863c(iVar1);
+  pcVar6 = (char *)FUN_00019aa0(pcVar5);
   pcVar7 = pcVar6;
   do {
     cVar1 = *pcVar7;
@@ -11029,20 +11039,29 @@ undefined4 FUN_000197fc(param_1)
 int param_1;
 
 {
-  undefined4 uVar1;
-  int iVar2;
-  undefined4 uVar3;
-  undefined4 uVar4;
-  int iVar5;
+  /* uVar1/iVar2/uVar3/uVar4/iVar5/iVar7 were `undefined4`/`int` (4 bytes)
+     but hold real string pointers from FUN_0007863c/FUN_00019aa0/
+     Ordinal_1072 (iVar5 doubly so -- reused below as `iVar5 = iVar2`
+     then in pointer arithmetic `iVar5 = iVar5 + iVar7`) -- truncated a
+     real 64-bit pointer on assignment even with each call's own
+     argument now fixed. Widened to intptr_t; see DAT_000bbf70's own
+     comment for the same fix elsewhere in this cluster. */
+  intptr_t uVar1;
+  intptr_t iVar2;
+  intptr_t uVar3;
+  intptr_t uVar4;
+  intptr_t iVar5;
   int iVar6;
-  int iVar7;
-  
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
-  uVar1 = FUN_0007863c();
-  iVar2 = FUN_00019aa0();
-  FUN_0001adc4((int)*(short *)(param_1 + -4));
-  uVar3 = FUN_0007863c();
-  uVar4 = FUN_00019aa0();
+  intptr_t iVar7;
+
+  /* Was 4 dropped register-forwarding args -- same class as FUN_000196e8's
+     own comment (uw.c ~10977). Chained explicitly. */
+  iVar5 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  uVar1 = (intptr_t)FUN_0007863c((int)iVar5);
+  iVar2 = (intptr_t)FUN_00019aa0((char *)uVar1);
+  iVar5 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  uVar3 = (intptr_t)FUN_0007863c((int)iVar5);
+  uVar4 = (intptr_t)FUN_00019aa0((char *)uVar3);
   Ordinal_1415(uVar3);
   Ordinal_1415(uVar1);
   iVar5 = iVar2;
@@ -11079,11 +11098,16 @@ int param_1;
   int iVar6;
   int iVar7;
   
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
-  pcVar2 = (char *)FUN_0007863c();
-  FUN_0001adc4((int)*(short *)(param_1 + -4));
-  pcVar3 = (char *)FUN_0007863c();
-  uVar4 = Ordinal_1068();
+  /* Was 4 dropped register-forwarding args (2x FUN_0007863c, 2x
+     Ordinal_1068) -- same class as FUN_000196e8's own comment
+     (uw.c ~10977). Chained explicitly: the first Ordinal_1068() forwards
+     pcVar3 (the string just resolved right above it), matching the
+     very next line's own explicit `Ordinal_1068(pcVar2)` call. */
+  iVar6 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  pcVar2 = (char *)FUN_0007863c(iVar6);
+  iVar6 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  pcVar3 = (char *)FUN_0007863c(iVar6);
+  uVar4 = Ordinal_1068(pcVar3);
   uVar5 = Ordinal_1068(pcVar2);
   iVar6 = babl_alloc((int)(((uVar4 & 0xffff) + (uVar5 & 0xffff) + 1) * 0x10000) >> 0x10);
   iVar7 = iVar6 - (int)pcVar3;
@@ -11113,9 +11137,11 @@ int param_1;
   int iVar3;
   int iVar4;
   
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
-  pcVar2 = (char *)FUN_0007863c();
-  iVar3 = Ordinal_1068();
+  /* Was 3 dropped register-forwarding args -- same class as
+     FUN_000196e8's own comment (uw.c ~10977). */
+  iVar4 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  pcVar2 = (char *)FUN_0007863c(iVar4);
+  iVar3 = Ordinal_1068(pcVar2);
   iVar3 = babl_alloc(iVar3 + 1);
   iVar4 = iVar3 - (int)pcVar2;
   do {
@@ -11162,16 +11188,20 @@ int param_1;
 
 {
   short sVar1;
-  
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
-  FUN_0007863c();
-  sVar1 = Ordinal_993();
+  int iVar2;
+  char *pcVar3;
+
+  /* Was 3 dropped register-forwarding args -- same class as
+     FUN_000196e8's own comment (uw.c ~10977). */
+  iVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  pcVar3 = (char *)FUN_0007863c(iVar2);
+  sVar1 = Ordinal_993(pcVar3);
   return (int)sVar1;
 }
 
 
 
-undefined4 FUN_00019aa0(param_1)
+char *FUN_00019aa0(param_1)
 char * param_1;
 
 {
@@ -11189,7 +11219,22 @@ char * param_1;
   char cVar12;
   char *local_38 [2];
   char local_30 [20];
-  
+  /* Was `undefined4 FUN_00019aa0` with a single `return 0;` at the very
+     end -- always NULL regardless of what this function actually
+     computed. Every one of its ~15 callers throughout this file treats
+     the return as the resolved (possibly newly babl_alloc'd) string
+     pointer, e.g. comparing it against their own input pointer to
+     decide whether to babl_free it -- this is the null-deref crash in
+     bug-critter-talk.txt (a real conversation with an "@SS1"-style
+     template substitution, confirmed live via lldb: param_1 was
+     Bragit's actual greeting text). Retyped to `char *` and given a
+     real return: the substituted buffer (pcVar7) when Ordinal_1064
+     found a '@' to expand, else param_1 unchanged -- the same
+     "same pointer back = nothing to free" contract already assumed at
+     every call site. */
+  char *pcVar_result;
+
+  pcVar_result = param_1;
   iVar6 = Ordinal_1064(param_1,0x40);
   if (iVar6 != 0) {
     iVar6 = Ordinal_1068(param_1);
@@ -11302,8 +11347,9 @@ LAB_00019cc0:
     *pcVar11 = '\0';
     iVar6 = Ordinal_1068(pcVar7);
     babl_resize(pcVar7,iVar6 + 1);
+    pcVar_result = pcVar7;
   }
-  return 0;
+  return pcVar_result;
 }
 
 
@@ -11465,13 +11511,25 @@ undefined4 build_babl_symbol_table()
   iVar5 = iVar5 + DAT_000bbf70;
   *(undefined1 *)(iVar5 + 0x1a) = 0;
   *(undefined1 *)(iVar5 + 0x1b) = 0;
+  /* DAT_000bbf00's slot stride was `* 4` (idx << 2 for the allocation,
+     idx * 4 at every reader/writer below) -- a 32-bit-pointer-only design
+     baked into the original binary, same bug class as change_game_mode's
+     own DAT_00085668/DAT_000856a4 table (see its "0x80, was 0x40" fix).
+     Every slot actually holds a real function pointer (8 bytes on this
+     port) -- babl_register_builtin's own `*(undefined4*)` store below
+     only wrote the low 4 bytes of it, and every other slot's write
+     clobbered its next-door neighbor's high 4 bytes. Confirmed live via
+     lldb: FUN_0001ab30's builtin-call opcode (uw.c ~12057) read back a
+     wild, clearly-not-a-code-address function pointer and crashed --
+     this is the reported "any input after Talk opens crashes" bug.
+     Widened to `* 8` throughout (allocation and all 5 index sites). */
   if (0 < DAT_000bbf24) {
-    DAT_000bbf00 = babl_alloc((int)DAT_000bbf24 << 2);
+    DAT_000bbf00 = babl_alloc((int)DAT_000bbf24 << 3);
   }
   if (0 < DAT_000bbf24) {
     iVar5 = 0;
     do {
-      *(undefined1 **)(DAT_000bbf00 + iVar5 * 4) = &LAB_0001a120;
+      *(undefined1 **)(DAT_000bbf00 + iVar5 * 8) = &LAB_0001a120;
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < DAT_000bbf24);
   }
@@ -11508,7 +11566,27 @@ undefined4 FUN_0001a1c8()
     sVar2 = 1;
     do {
       flush_dirty_rect_to_display(1);
-      psVar7 = DAT_000bbf80 + DAT_000bbf74;
+      /* Was `DAT_000bbf80 + DAT_000bbf74` (byte offset) -- DAT_000bbf74 is
+         the babl VM's own instruction pointer, counted in 16-bit WORDS
+         (every other reader of it against this same DAT_000bbf80 buffer --
+         FUN_0001aa0c/FUN_0001ab30, uw.c ~11971/12037 -- does
+         `DAT_000bbf80 + DAT_000bbf74 * 2 [+ 2]`). Confirmed live via lldb:
+         iteration 0 (DAT_000bbf74==0) happens to read the right word either
+         way, but iteration 1 read byte offset 1 instead of word offset 1,
+         landing mid-word (value 6656/0x1a00, matching neither operand nor
+         any real opcode) and falling into the switch's `default:` (case
+         0x26, uw.c ~11650), which sets sVar2=0 and ends the whole VM loop
+         immediately -- this is why every NPC conversation this session
+         (bug-critter-talk.txt's Bragit, with a real CNV.ARK record) never
+         printed a line or showed a menu: the interpreter always aborted
+         after its first real instruction, before FUN_00028ffc's menu loop
+         or any print builtin ever ran, so control fell straight back to
+         change_game_mode(1) (dungeon view) while the conversation frame
+         was still on screen -- the reported "dialog area not rendered,
+         3D view shown instead" and the crash/black-screen on the next
+         click (now routed to ordinary 3D-view input while still in the
+         leftover conversation UI). */
+      psVar7 = (short *)(DAT_000bbf80 + DAT_000bbf74 * 2);
       switch(*psVar7) {
       case 0:
         goto LAB_0001a2d8;
@@ -12035,7 +12113,7 @@ void FUN_0001ab30()
   undefined2 uVar1;
   
   DAT_000bbf08 = *(short *)(DAT_000bbf80 + DAT_000bbf74 * 2 + 2);
-  uVar1 = (**(codeval **)(DAT_000bbf00 + DAT_000bbf08 * 4))(DAT_000bbf0c + DAT_000bbf78 * 2);
+  uVar1 = (**(codeval **)(DAT_000bbf00 + DAT_000bbf08 * 8))(DAT_000bbf0c + DAT_000bbf78 * 2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
   *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2) = uVar1;
   DAT_000bbf1c = *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2);
   DAT_000bbf74 = DAT_000bbf74 + 2;
@@ -12048,16 +12126,25 @@ void FUN_0001aba0()
 
 {
   short sVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  int iVar5;
-  
-  iVar2 = FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
-  iVar3 = FUN_00019aa0();
-  iVar4 = FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2 + -2));
-  iVar5 = FUN_00019aa0();
-  sVar1 = Ordinal_1065(iVar5,iVar3);
+  /* iVar2-iVar5 were `int` but hold real string pointers from
+     FUN_0007863c/FUN_00019aa0 -- truncated a real 64-bit pointer on
+     assignment even with each call's own dropped argument now fixed
+     (this function's own next crash site, uw.c ~70085's comment).
+     Widened to intptr_t. */
+  intptr_t iVar2;
+  intptr_t iVar3;
+  intptr_t iVar4;
+  intptr_t iVar5;
+
+  /* Was 2 dropped register-forwarding args -- same class as
+     FUN_000196e8's own comment (uw.c ~10977), now confirmed reachable
+     live (bug-critter-talk.txt) since this whole babl-VM cluster
+     started actually running this session. */
+  iVar2 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  iVar3 = (intptr_t)FUN_00019aa0((char *)iVar2);
+  iVar4 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2 + -2));
+  iVar5 = (intptr_t)FUN_00019aa0((char *)iVar4);
+  sVar1 = Ordinal_1065((char*)iVar5,(char*)iVar3);
   if (iVar5 != iVar4) {
     babl_free(iVar5);
   }
@@ -12075,13 +12162,22 @@ void FUN_0001aba0()
 void FUN_0001ac48()
 
 {
-  int iVar1;
-  int iVar2;
+  /* iVar1/iVar2 were `int` but hold a real string pointer from
+     FUN_0007863c/FUN_00019aa0 -- truncated even with the dropped
+     argument below now fixed (uw.c ~70085's comment). Widened to
+     intptr_t. */
+  intptr_t iVar1;
+  intptr_t iVar2;
   int iVar3;
   intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix
 
-  iVar1 = FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
-  iVar2 = FUN_00019aa0();
+  /* Was a dropped register-forwarding arg -- same class as
+     FUN_000196e8's own comment (uw.c ~10977); this is the crash in
+     bug-critter-talk.txt one step past the DAT_000bbf70-width fix
+     below (FUN_00019aa0 read whatever garbage register instead of the
+     just-resolved string, then dereferenced it inside Ordinal_1064). */
+  iVar1 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  iVar2 = (intptr_t)FUN_00019aa0((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
   do {
@@ -12097,7 +12193,7 @@ LAB_0001ace8:
     }
     iVar3 = Ordinal_1065(&DAT_000845a8,iVar4);
     if (iVar3 == 0) {
-      (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 4))(iVar2);
+      (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))(iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
       goto LAB_0001ace8;
     }
     iVar4 = iVar4 + 0x20;
@@ -12109,13 +12205,17 @@ LAB_0001ace8:
 void FUN_0001acf8()
 
 {
-  int iVar1;
-  int iVar2;
+  /* iVar1/iVar2 were `int` -- same pointer-truncation fix as
+     FUN_0001ac48's own comment just above. */
+  intptr_t iVar1;
+  intptr_t iVar2;
   int iVar3;
   intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix
 
-  iVar1 = FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
-  iVar2 = FUN_00019aa0();
+  /* Was a dropped register-forwarding arg -- same class as
+     FUN_0001ac48's own fix just above. */
+  iVar1 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  iVar2 = (intptr_t)FUN_00019aa0((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
   do {
@@ -12130,7 +12230,7 @@ LAB_0001ad98:
     }
     iVar3 = Ordinal_1065(s_respond_000845ac,iVar4);
     if (iVar3 == 0) {
-      (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 4))(iVar2);
+      (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))(iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
       goto LAB_0001ad98;
     }
     iVar4 = iVar4 + 0x20;
@@ -12179,7 +12279,7 @@ short param_1;
 
 void babl_register_builtin(param_1,param_2)
 char * param_1;
-undefined4 param_2;
+intptr_t param_2; // was `undefined4` -- every real caller passes a code address (e.g. `&LAB_0002912c`), truncated on 64-bit before it's even stored into DAT_000bbf00 below
 
 {
   short *psVar1;
@@ -12218,7 +12318,7 @@ undefined4 param_2;
     pcVar4 = DAT_000bbf70;
     do {
       if ((cVar2 == *pcVar4) && (iVar3 = Ordinal_1065(param_1,pcVar4), iVar3 == 0)) {
-        *(undefined4 *)(DAT_000bbf00 + *(short *)(pcVar4 + 0x1a) * 4) = param_2;
+        *(intptr_t *)(DAT_000bbf00 + *(short *)(pcVar4 + 0x1a) * 8) = param_2; // was `undefined4 ... * 4` -- DAT_000bbf00's own comment (uw.c ~11468)
         return;
       }
       psVar1 = (short *)(pcVar4 + 0x38);
@@ -12245,7 +12345,7 @@ short param_3;
   undefined1 local_34 [28];
 
   sVar6 = 0;
-  iVar2 = Ordinal_1068();
+  iVar2 = Ordinal_1068(param_1); // was a dropped arg -- param_1 itself, matching this same function's own explicit `Ordinal_1068(param_1)` call a few lines below
   if (iVar2 != 0) {
     uVar5 = 0;
     do {
@@ -19385,7 +19485,7 @@ int param_1;
     if (sVar4 != 0) {
       uVar7 = FUN_0007863c(uVar6);
       *(undefined4 *)(&DAT_001006d8 + DAT_00100794 * 4) = uVar7;
-      iVar8 = FUN_00019aa0();
+      iVar8 = FUN_00019aa0(uVar7); // was a dropped register-forwarding arg -- same class as FUN_000196e8's own comment (uw.c ~10977)
       sVar5 = DAT_00100794;
       iVar9 = (int)DAT_00100794;
       *(int *)(&DAT_00100680 + iVar9 * 4) = iVar8;
@@ -19587,9 +19687,11 @@ int param_1;
   char *pcVar4;
   char *pcVar5;
   
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
-  iVar2 = FUN_0007863c();
-  iVar3 = FUN_00019aa0();
+  /* Was 3 dropped register-forwarding args -- same class as
+     FUN_000196e8's own comment (uw.c ~10977). */
+  iVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  iVar2 = FUN_0007863c(iVar2);
+  iVar3 = FUN_00019aa0(iVar2);
   pcVar4 = &DAT_0008523c;
   pcVar5 = DAT_001007c0;
   do {
@@ -29780,7 +29882,7 @@ char *param_1;
      visibility into which fatal message actually fired. param_1 here is
      the message text directly, not a numeric code. */
   fprintf(stderr, "[fatal] FUN_0003c4a8: %s\n", param_1 ? param_1 : "(null)");
-  uVar1 = Ordinal_1068();
+  uVar1 = Ordinal_1068(param_1); // was a dropped arg -- param_1 itself, same class as FUN_000196e8's own comment (uw.c ~10977)
   Ordinal_1071(&DAT_00201b70,param_1,uVar1);
   FUN_0003baf4(0);
   FUN_00082388(0xffffffe8);
