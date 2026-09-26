@@ -31950,21 +31950,26 @@ short param_1;
 
   iVar1 = (int)param_1;
   if (iVar1 < 0x30) {
+    if (getenv("UW_DEBUG_TEXPAGE")) fprintf(stderr, "[texpage] id=%d -> 64x64 tier\n", (int)param_1);
     return DAT_0023ae38 + iVar1 * 0x1000;
   }
   if (iVar1 < 0x3a) {
+    if (getenv("UW_DEBUG_TEXPAGE")) fprintf(stderr, "[texpage] id=%d -> 32x32 tier\n", (int)param_1);
     return DAT_0023ae34 + (iVar1 + -0x30) * 0x400;
   }
   if (iVar1 < 0x6a) {
     iVar1 = iVar1 + -0x3a;
     ppcVar2 = &DAT_0023ae3c;
+    if (getenv("UW_DEBUG_TEXPAGE")) fprintf(stderr, "[texpage] id=%d -> 16x16 tier (ae3c)\n", (int)param_1);
   }
   else {
     if (0x73 < iVar1) {
+      if (getenv("UW_DEBUG_TEXPAGE")) fprintf(stderr, "[texpage] id=%d -> NULL (out of range)\n", (int)param_1);
       return 0;
     }
     iVar1 = iVar1 + -0x6a;
     ppcVar2 = &DAT_0023ae30;
+    if (getenv("UW_DEBUG_TEXPAGE")) fprintf(stderr, "[texpage] id=%d -> 16x16 tier (ae30)\n", (int)param_1);
   }
   return *ppcVar2 + iVar1 * 0x100;
 }
@@ -54396,7 +54401,15 @@ typedef enum { UW_UVPROJ_NONE = 0, UW_UVPROJ_XZ, UW_UVPROJ_XY, UW_UVPROJ_ZY } Uv
    live QA confirmed U and V needed independent tuning ("uv_scale seems
    not to match both horizontally and vertically -- the vertical scale
    might be pinned"), not just a better shared number. */
-static void uv_project(int proj, float lx, float ly, float lz, double uv_scale_u, double uv_scale_v, int *out_u, int *out_v)
+/* texres: the REAL pixel resolution of whatever texture this face is
+   about to sample (16/32/64 -- see get_texture_page's own 3 real
+   tiers and emit_model_object's own texres_for_wall_tex_id, which
+   mirrors its branching exactly). Was hardcoded to 16 -- fine for the
+   16x16 tier, but silently threw away 3/4 or 15/16 of a 32x32/64x64
+   texture's real detail by only ever emitting 16 discrete steps per
+   axis. Quantizing to the texture's own real resolution instead
+   samples every real texel a higher-res source actually has. */
+static void uv_project(int proj, float lx, float ly, float lz, double uv_scale_u, double uv_scale_v, int texres, int *out_u, int *out_v)
 {
   double a = 0.0, b = 0.0;
   switch (proj) {
@@ -54405,17 +54418,33 @@ static void uv_project(int proj, float lx, float ly, float lz, double uv_scale_u
     case UW_UVPROJ_XZ: a = lx; b = lz; break;
     default: *out_u = 0; *out_v = 0; return;
   }
+  if (texres <= 0) texres = 16;
   double u = fmod(a, uv_scale_u); if (u < 0) u += uv_scale_u;
   double v = fmod(b, uv_scale_v); if (v < 0) v += uv_scale_v;
-  *out_u = (int)(u / uv_scale_u * 16.0) & 15;
-  *out_v = (int)(v / uv_scale_v * 16.0) & 15;
+  *out_u = (int)(u / uv_scale_u * (double)texres) & (texres - 1);
+  *out_v = (int)(v / uv_scale_v * (double)texres) & (texres - 1);
 }
 
-static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, double zoff_local, void *texptr, int uv_proj, double uv_scale_u, double uv_scale_v)
+/* Mirrors get_texture_page's own tier branching (uw.c ~31944) exactly
+   -- given the SAME raw texture id that will be passed to
+   get_texture_page, returns which real pixel resolution that id
+   resolves to, so callers can match their own UV quantization/texsize
+   field to it instead of assuming a fixed 16x16. */
+static int texres_for_wall_tex_id(int id)
+{
+  if (id < 0x30) return 64;
+  if (id < 0x3a) return 32;
+  if (id < 0x6a) return 16;
+  if (id < 0x74) return 16;
+  return 16;
+}
+
+static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, double zoff_local, void *texptr, int uv_proj, double uv_scale_u, double uv_scale_v, int texres)
 {
   int npts = *(int *)model;
   int nparts = *(int *)(model + 4);
   if (npts <= 0 || npts > 600 || nparts <= 0) return;
+  if (texres <= 0) texres = 16;
   if (uv_scale_u <= 0.0) uv_scale_u = 256.0;
   if (uv_scale_v <= 0.0) uv_scale_v = 256.0;
 
@@ -54538,16 +54567,16 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
        variation, even though the texture pointer itself decoded real
        image data (checked via a nonzero-pixel histogram). 16 matches the
        wall-sized convention since these are all wall-scale surfaces. */
-    int _texsize = texptr ? 16 : 0;
+    int _texsize = texptr ? texres : 0;
     *(int *)(&DAT_000ace00 + rb) = _texsize;
     *(int *)(&DAT_000ace04 + rb) = _texsize;
     {
       int _tu0 = 0, _tv0 = 0, _tu1 = 0, _tv1 = 0, _tu2 = 0, _tv2 = 0, _tu3 = 0, _tv3 = 0;
       if (texptr && uv_proj != UW_UVPROJ_NONE) {
-        uv_project(uv_proj, _uv_local[v0][0], _uv_local[v0][1], _uv_local[v0][2], uv_scale_u, uv_scale_v, &_tu0, &_tv0);
-        uv_project(uv_proj, _uv_local[v1][0], _uv_local[v1][1], _uv_local[v1][2], uv_scale_u, uv_scale_v, &_tu1, &_tv1);
-        uv_project(uv_proj, _uv_local[v2][0], _uv_local[v2][1], _uv_local[v2][2], uv_scale_u, uv_scale_v, &_tu2, &_tv2);
-        uv_project(uv_proj, _uv_local[v3][0], _uv_local[v3][1], _uv_local[v3][2], uv_scale_u, uv_scale_v, &_tu3, &_tv3);
+        uv_project(uv_proj, _uv_local[v0][0], _uv_local[v0][1], _uv_local[v0][2], uv_scale_u, uv_scale_v, texres, &_tu0, &_tv0);
+        uv_project(uv_proj, _uv_local[v1][0], _uv_local[v1][1], _uv_local[v1][2], uv_scale_u, uv_scale_v, texres, &_tu1, &_tv1);
+        uv_project(uv_proj, _uv_local[v2][0], _uv_local[v2][1], _uv_local[v2][2], uv_scale_u, uv_scale_v, texres, &_tu2, &_tv2);
+        uv_project(uv_proj, _uv_local[v3][0], _uv_local[v3][1], _uv_local[v3][2], uv_scale_u, uv_scale_v, texres, &_tu3, &_tv3);
       }
       *(int *)(&DAT_000ace08 + rb) = _tu0;
       *(int *)(&DAT_000ace0c + rb) = _tv0;
@@ -55169,24 +55198,43 @@ ushort * param_1;
          the raw tile record currently being walked (confirmed by the
          wall-rendering code just above emit_tile_objects in this same
          function, uw.c ~48986: "UW1 tile word2 (bytes 2-3) bits 0-5 =
-         wall texture index" -- `(byte)DAT_0023b4ec[2] & 0x3f`). That
-         same wall-rendering code adds 0x3a before calling
-         get_texture_page() for the WALL-sized (16x16 arena slot) case
-         specifically (as opposed to the unmodified value used for the
-         64x64 floor/ceiling case a few lines earlier) -- reuse that
-         exact wall-slot formula since a door frame is architecturally a
-         wall surface, not a floor/ceiling one. DAT_0023b4ec stays valid
-         here because object emission for a tile's objects happens while
-         that same tile is still the "current" one being walked (objects
-         are emitted right after that tile's own wall/floor geometry,
-         within the same per-tile pass) -- not verified against a second,
-         differently-textured tile yet, flagged in the findings writeup. */
+         wall texture index" -- `(byte)DAT_0023b4ec[2] & 0x3f`).
+
+         CORRECTED (2026-09-21): this used to add 0x3a before calling
+         get_texture_page(), on the theory that real wall rendering used
+         that same offset to land in get_texture_page's 16x16 tier
+         (`0x3a<=id<0x6a`). Traced this empirically instead of trusting
+         the earlier static read: added UW_DEBUG_TEXPAGE (logs every
+         get_texture_page call's id and which resolution tier it
+         selects) and walked a normal level with ordinary default
+         rendering (no model/frame code involved at all). Result: every
+         single real wall/floor draw during that walk landed in the
+         64x64 or 32x32 tiers (ids like 1/18/24/36/40 -> 64x64, 48/57 ->
+         32x32) -- NONE ever hit the 16x16 tier the old +0x3a offset
+         targeted. The two call sites the old comment was reading
+         (uw.c's own wall-drawing code, which DOES add +0x3a/+0x6a in
+         some branch) are real, but aren't the common case real walls
+         actually go through -- some other, still-unidentified path
+         computes the raw ids these tiers show. The wall texture index
+         itself (0-63, no offset) already lands directly in the correct
+         tier for whatever resolution that specific texture was
+         authored at -- different wall textures are natively different
+         resolutions in this engine's own real texture catalog, not
+         something rendering code should be shifting between. Use the
+         raw index directly, matching real walls, instead of forcing
+         every door frame into the low-detail tier regardless of which
+         texture it actually is. DAT_0023b4ec stays valid here because
+         object emission for a tile's objects happens while that same
+         tile is still the "current" one being walked (objects are
+         emitted right after that tile's own wall/floor geometry,
+         within the same per-tile pass). */
       /* Only door frames (the id family with a model2 leaf) get the wall
          texture -- boulders/bridge/shrine aren't wall-mounted, so the
          tile they happen to be standing on has no bearing on how they
          should look; leave them at texptr=0 (flat-shaded, unchanged). */
       void *_frame_tex = 0;
-      if (_me->model2) { byte _wall_tex_id = (DAT_0023b4ec[2] & 0x3f) + 0x3a;
+      int _frame_texres = 16;
+      if (_me->model2) { byte _wall_tex_id = DAT_0023b4ec[2] & 0x3f;
         /* One-off diagnostic for the e-model-texturing UV work: force a
            different, visually distinct texture id to tell "geometry/UV
            rendering but blending with the identical wall texture" apart
@@ -55196,9 +55244,10 @@ ushort * param_1;
            mechanism is confirmed. */
         { const char *_s = getenv("UW_MODEL_FRAME_TEX_OVERRIDE"); if (_s) _wall_tex_id = (byte)atoi(_s); }
         _frame_tex = get_texture_page(_wall_tex_id);
+        _frame_texres = texres_for_wall_tex_id(_wall_tex_id);
         if (getenv("UW_DEBUG_MODEL"))
-          fprintf(stderr, "[model-frame-tex] id=0x%03x wall_tex_id=%d tex=%p\n",
-                  (int)(uVar27 & 0x1ff), (int)_wall_tex_id, _frame_tex);
+          fprintf(stderr, "[model-frame-tex] id=0x%03x wall_tex_id=%d tex=%p texres=%d\n",
+                  (int)(uVar27 & 0x1ff), (int)_wall_tex_id, _frame_tex, _frame_texres);
       }
       /* Leaf texture: reuse the door's own already-resolved OBJECTS.GR
          sprite frame formula (DAT_00202734 + (type&7) + 0x30 -- the same
@@ -55239,7 +55288,7 @@ ushort * param_1;
                   (int)(uVar27 & 0x1ff), _sprite_frame, _leaf_tex, _w, _h, _nz, _tot);
         }
       }
-      emit_model_object((unsigned char *)_me->model, _heading, _use_scale, _use_yoff, _me->y_clip, _use_xoff, _use_zoff, _frame_tex, _me->uv_proj, _use_uv_u, _use_uv_v);
+      emit_model_object((unsigned char *)_me->model, _heading, _use_scale, _use_yoff, _me->y_clip, _use_xoff, _use_zoff, _frame_tex, _me->uv_proj, _use_uv_u, _use_uv_v, _frame_texres);
       if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
         /* _leaf_tex decodes fine (confirmed via UW_DEBUG_MODEL's
            nonzero-pixel count -- real sprite content, not garbage) but
@@ -55264,7 +55313,7 @@ ushort * param_1;
            texture pointer with no UV (the old broken behavior) for
            experimenting with the failure mode if useful. */
         void *_apply_tex = getenv("UW_MODEL_LEAF_TEXTURE") ? _leaf_tex : 0;
-        emit_model_object((unsigned char *)_me->model2, _heading, _use_scale, _use_yoff, _me->y_clip, _me->x_off2, _me->zoff2, _apply_tex, UW_UVPROJ_NONE, 0.0, 0.0);
+        emit_model_object((unsigned char *)_me->model2, _heading, _use_scale, _use_yoff, _me->y_clip, _me->x_off2, _me->zoff2, _apply_tex, UW_UVPROJ_NONE, 0.0, 0.0, 16);
       }
       return;
     }

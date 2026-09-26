@@ -4648,3 +4648,57 @@ scope for a quick fix, not attempted this entry.
 UW_MODEL_TUNER/UW_ENABLE_MODEL_RENDER still opt-in; default rendering
 reconfirmed unaffected (faces=11/6, zero env vars) after all of the
 above.
+
+(40) 2026-09-21: entry 39's "keep uv_scale >= 128" workaround is now
+moot -- the real problem wasn't the UV scale, it was that the door
+frame's own wall-texture lookup forced every door into a low-detail
+texture tier regardless of which real texture it was. User: "Walls are
+actually using the full detail texture, so let's use that for models
+as well" -- correct, and it overturned a static-analysis conclusion
+this document had been trusting since entry 35.
+
+VERIFIED, not re-guessed: added UW_DEBUG_TEXPAGE (logs every
+get_texture_page call's id and which of its 3 real resolution tiers --
+64x64/32x32/16x16, see the function's own branching, uw.c ~31944 --
+gets selected) and walked a normal level under completely default
+rendering (no model/frame code active at all). Every single real wall/
+floor draw landed in the 64x64 or 32x32 tiers; NONE ever hit 16x16.
+The door frame's own texture lookup (`(DAT_0023b4ec[2]&0x3f) + 0x3a`)
+was deliberately forcing itself into the 16x16 tier, on the strength
+of a comment written earlier in this same investigation (entry 35)
+that had correctly found A real wall-drawing code path using that
+exact +0x3a offset, but that path turns out not to be the one real
+walls actually go through during ordinary play -- a genuine case of
+trusting a real-but-uncommon code path as if it were the common one.
+
+FIX: drop the +0x3a offset entirely -- use the raw wall texture index
+(`DAT_0023b4ec[2]&0x3f`) directly, matching what real walls actually
+do. Different wall textures are natively authored at different
+resolutions in this engine's own real texture catalog; the raw id
+already lands in the correct tier for whichever resolution that
+specific texture is, with no rendering-side adjustment needed.
+
+Also fixed the UV encoding itself to match: it was hardcoded to a
+16-step corner quantization (`& 15`) regardless of the real texture's
+resolution -- fine for the 16x16 tier, but throwing away 3/4 (32x32)
+or 15/16 (64x64) of a higher-res texture's real detail even once the
+right texture was being sampled. Added texres_for_wall_tex_id()
+(mirrors get_texture_page's own branching exactly) and threaded a real
+`texres` parameter through emit_model_object/uv_project, replacing
+every hardcoded 16 with the texture's own real resolution (16/32/64).
+
+Verified live at the door repro: wall_tex_id=24 now resolves texres=64
+(previously always forced to a 16x16-tier id regardless of the real
+texture). Screenshot shows clearly sharper, more detailed stonework on
+the frame, visually matching the surrounding wall's own resolution for
+the first time. run-regressions.sh: 6/6 clean. Default rendering
+reconfirmed unaffected (faces=11/6, zero env vars).
+
+This also mostly obsoletes entry 39's uv_scale-reversal note as a
+practical concern for THIS texture specifically (wall_tex_id=24 is now
+64x64, so uv_project's own quantization step is 4x finer than before
+at the same uv_scale) -- the underlying structural limit (a face's own
+texture can still wrap more than once between its 4 stored corners if
+uv_scale is set too small relative to a face's real width) remains
+real and un-fixed, just less likely to be hit in practice now that the
+quantization itself is finer.
