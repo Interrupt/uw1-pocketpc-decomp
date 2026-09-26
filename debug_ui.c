@@ -16,6 +16,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+/* g_text_use_palette_color/g_draw_color_index are already declared in
+   uw.h; g_text_flat_color (uw.c:32, `undefined2`) isn't -- declare it
+   here directly rather than adding it to uw.h for one caller. */
+extern unsigned short g_text_flat_color;
+
 #define DBGUI_MAX_FIELDS 32
 #define DBGUI_ROW_H 10
 #define DBGUI_PANEL_X 4
@@ -98,19 +103,61 @@ static void dbgui_field_set(DbgField *f, double v)
 
 void dbgui_end(void)
 {
+  /* Deliberately does NOT draw -- see dbgui_draw()'s own comment for
+     why drawing has to happen later in the frame than this is called.
+     Just finalizes the field list/selection state; g_fields/g_title
+     stay valid (this module's own statics) until the next dbgui_begin
+     overwrites them next frame. */
   if (g_field_count == 0) return;
   if (g_selected >= g_field_count) g_selected = g_field_count - 1;
   if (g_selected < 0) g_selected = 0;
-  if (!g_visible) return;
+}
+
+void dbgui_draw(void)
+{
+  /* Called once per frame from app_main_loop, AFTER main_loop_hud_flush()
+     -- i.e. after the 3D view and every other HUD element for this
+     frame have already drawn into the shared software framebuffer.
+     Drawing from inside the model-dispatch code itself (dbgui_end's
+     first version) drew too EARLY: later per-object/HUD draws in the
+     same frame simply painted over the panel, and if the player wasn't
+     looking at a tunable object that frame, nothing drew the panel at
+     all. Reading g_fields/g_title here relies on them surviving from
+     whatever dbgui_begin/dbgui_field_.../dbgui_end calls happened
+     earlier this same frame (this module's own statics, untouched in between) -- if
+     nothing called dbgui_begin this frame, g_field_count is just
+     whatever it was last frame, which still draws correctly (the panel
+     doesn't blank out for one frame just because this particular frame
+     didn't walk the tunable object's own code path). */
+  if (!g_visible || g_field_count == 0) return;
 
   int panel_h = DBGUI_ROW_H * (g_field_count + 1) + 4;
   int x0 = DBGUI_PANEL_X, y0 = DBGUI_PANEL_Y;
   int x1 = x0 + DBGUI_PANEL_W, y1 = y0 + panel_h;
 
-  set_draw_color(0);
+  /* Text color: draw_text_string does NOT use set_draw_color's palette
+     index (confirmed by reading its own body, uw.c ~5826-5834) -- it
+     honours g_text_flat_color (a direct RGB565 value) unless a caller
+     separately sets g_text_use_palette_color=1 AND *g_draw_color_index.
+     Both default to 0/unset, which is exactly why unselected rows drew
+     as invisible black-on-black: set_draw_color(0x0f) before those
+     draw_text_string calls did nothing to the text itself. Force a
+     direct white RGB565 value instead of hunting for the right palette
+     index -- reliable regardless of what this build's real palette
+     layout turns out to be. */
+  g_text_use_palette_color = 0;
+  g_text_flat_color = (unsigned short)0xffff;
+
+  /* Panel/row fill colors ARE real palette indices (rect_fill_or_save_
+     restore's FILL path reads g_palette_rgb565[DAT_000a85c0] directly,
+     graphics.c ~170-176) -- 0x1a is confirmed elsewhere in this file as
+     a real, already-used UI panel background (chargen's own panels);
+     0x60 is confirmed elsewhere as a real, legible highlighted-text
+     color (multiple *g_draw_color_index = 0x60 call sites). Avoid
+     0x14/0x15 -- reserved cursor save/restore codes, not real colors
+     (see rect_fill_or_save_restore's own comment). */
+  set_draw_color(0x1a);
   rect_fill_or_save_restore(x0, y0, x1, y1);
-  set_draw_color(0x0e); /* a bright palette entry for the border/title -- palette index, not RGB */
-  rect_fill_or_save_restore(x0, y0, x1, y0 + 1);
   draw_text_string(g_title, x0 + 3, y0 + 2);
 
   int i;
@@ -119,7 +166,7 @@ void dbgui_end(void)
     int ry = y0 + DBGUI_ROW_H * (i + 1) + 2;
     f->row_y = ry;
     if (i == g_selected) {
-      set_draw_color(g_editing ? 0x20 : 0x08);
+      set_draw_color(g_editing ? 0x60 : 0x1a);
       rect_fill_or_save_restore(x0 + 1, ry - 1, x1 - 1, ry + DBGUI_ROW_H - 2);
     }
     char line[64];
@@ -128,7 +175,6 @@ void dbgui_end(void)
     } else {
       snprintf(line, sizeof(line), "%s: %g", f->name, dbgui_field_get(f));
     }
-    set_draw_color(0x0f);
     draw_text_string(line, x0 + 3, ry);
   }
 }

@@ -368,7 +368,16 @@ void uw_pump_events(void) {
        during it). */
     democapture_tick();
     demomode_pump();
-    poll_dungeon_movement_keys();
+    /* poll_dungeon_movement_keys() reads physical keyboard state
+       directly (not the SDL event queue), so swallowing key EVENTS
+       below (the dbgui_visible() checks in the SDL_KEYDOWN/TEXTINPUT
+       cases) doesn't stop it -- confirmed live: typed digits while
+       editing a debug-UI field still moved the player, because this
+       call is unconditional and runs before the event loop even
+       starts. Skip it entirely while the debug UI owns input. */
+    if (!dbgui_visible()) {
+        poll_dungeon_movement_keys();
+    }
 
     if (g_mouseup_deferred) {
         /* See g_mouseup_deferred's comment. Dispatch the button-up we
