@@ -453,22 +453,35 @@ intptr_t DAT_000bbf14;
 short DAT_000bbf84;
 intptr_t DAT_000bbf0c; // was `int`, same DAT_000bbf14-derived-pointer truncation
 undefined2 DAT_000bbf88;
-undefined4 LAB_00019a60()
-
+/* Was a no-op stub here -- the real function was never decompiled, so
+   the "length" babl builtin (registered a few hundred lines below)
+   silently returned 0 (an empty-string length) whenever a script
+   asked for a string's length, same bug class as babl_menu before its
+   own recovery. Recovered from the real ARM binary (Ghidra headless);
+   it dropped 2 register-forwarding args in the same shape as every
+   other sibling in this cluster (FUN_0007863c/Ordinal_1068 called
+   with no args in the raw decompile, relying on the value already
+   sitting in r0 from the previous call -- chained explicitly here). */
+undefined2 FUN_00019a60(param_1)
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  intptr_t iVar1;
+  char *pcVar2;
+
+  iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  pcVar2 = (char *)FUN_0007863c((int)iVar1);
+  return Ordinal_1068(pcVar2);
 }
-static undefined DAT_00084560_backing[8192];
-#define DAT_00084560 DAT_00084560_backing[0]
+/* Was zero-initialized 8192-byte placeholders -- same "zero-init
+   global missing real .data content" class as this file's many other
+   string recoveries (e.g. s_sex_000851f8's own comment). Confirmed
+   real content via a Ghidra headless memory dump at 0x84560/6c/74:
+   "val" (registered with FUN_00019a80), "find" (FUN_000199d4), "copy"
+   (FUN_0001998c) -- 3 more babl builtin names alongside "length". */
+char s_val_00084560[] = "val";
 char s_length_00084564[] = "length";
-static undefined DAT_0008456c_backing[8192];
-#define DAT_0008456c DAT_0008456c_backing[0]
-static undefined DAT_00084574_backing[8192];
-#define DAT_00084574 DAT_00084574_backing[0]
+char s_find_0008456c[] = "find";
+char s_copy_00084574[] = "copy";
 char s_append_0008457c[] = "append";
 char s_contains_00084584[] = "contains";
 char s_plural_00084590[] = "plural";
@@ -1678,8 +1691,13 @@ char s_give_to_npc_000851cc[] = "give_to_npc";
 char s_show_inv_000851d8[] = "show_inv";
 char s_print_000851e4[] = "print";
 char s_babl_ask_000851ec[] = "babl_ask";
-static undefined DAT_000851f8_backing[8192];
-#define DAT_000851f8 DAT_000851f8_backing[0]
+/* Was a zero-initialized 8192-byte placeholder -- same "zero-init
+   global missing real .data content" class as this file's many other
+   string recoveries. Confirmed real content via a Ghidra headless
+   memory dump at 0x851f8: "sex" (the babl builtin name registered a
+   few lines below at start_npc_conversation, alongside its own
+   still-a-no-op-stub implementation -- see LAB_0001840c's comment). */
+char s_sex_000851f8[] = "sex";
 char s_set_quest_000851fc[] = "set_quest";
 char s_get_quest_00085208[] = "get_quest";
 char s_babl_fmenu_00085214[] = "babl_fmenu";
@@ -1689,23 +1707,47 @@ char s_babl_menu_00085220[] = "babl_menu";
    few lines after its only other read. */
 char *DAT_001007b8;
 char DAT_001007b4;
-undefined4 LAB_0001840c()
-
+/* Was a no-op stub here ("Ghidra couldn't resolve this address...
+   safe no-op stub") -- the real function was never decompiled, so the
+   "sex" babl builtin (registered under that exact script name, see
+   start_npc_conversation) silently did nothing, same bug class as
+   babl_menu before its own recovery. Recovered from the real ARM
+   binary (Ghidra headless). Picks between two babl script-supplied
+   msgids (the two shorts just below the stack-arg pointer, matching
+   every sibling babl builtin's own `param_1 - N` stack-arg convention)
+   based on the player's own gender bit -- byte offset 0x64 (100) of
+   the player-stats struct at DAT_00086df8, bit 1. The original reads
+   this via a literal-pool constant (DAT_0001842c) that just holds
+   &DAT_00086df8's own real address; substituted the real global
+   directly instead of porting a second alias for the same pointer. */
+undefined4 FUN_0001840c(param_1)
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  /* Ghidra's own decompile of this one shows `void`, discarding
+     FUN_0001adc4's return value -- but on real ARM calling convention
+     a tail call like this naturally leaves its callee's return value
+     in r0 for the caller (the babl VM's generic builtin dispatcher,
+     which DOES read every builtin's return value uniformly, same as
+     every other babl_register_builtin entry in this file), so
+     returning it explicitly here matches actual runtime behavior
+     rather than Ghidra's weaker "nothing in THIS function reads r0
+     afterward" signature inference. */
+  return FUN_0001adc4((int)*(short *)(param_1 + (intptr_t)((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 2) + -4));
 }
-undefined4 LAB_0001cd34()
+/* Was a no-op stub here -- the real function was never decompiled, so
+   the "do_decline" babl builtin (registered under that exact script
+   name, see start_npc_conversation) silently did nothing whenever an
+   NPC's barter script declined an offer, same bug class as babl_menu
+   before its own recovery. Recovered from the real ARM binary (Ghidra
+   headless): it's a thin wrapper handing back every item currently
+   staged on the barter table (param_1=0 to FUN_0001c79c, matching
+   that function's own "give everything back" branch) -- genuinely
+   void, FUN_0001c79c itself returns nothing meaningful either. */
+void FUN_0001cd34()
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  FUN_0001c79c(0);
+  return;
 }
 /* Was a no-op stub here ("Ghidra couldn't resolve this address...
    safe no-op stub") -- the real function was never decompiled, so
@@ -10201,8 +10243,7 @@ undefined4 param_1;
 
 
 void FUN_00017be8(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "set_attitude" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   undefined4 uVar1;
   undefined4 uVar2;
@@ -10216,8 +10257,7 @@ int param_1;
 
 
 void FUN_00017c1c(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "set_race_attitude" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   ushort uVar1;
   ushort uVar2;
@@ -10293,12 +10333,11 @@ int param_1;
 
 
 undefined1 FUN_00017e10(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "x_skills" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   short sVar2;
-  
+
   sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
   sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   if (sVar2 == 10000) {
@@ -10313,12 +10352,11 @@ int param_1;
 
 
 undefined1 FUN_00017e90(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "x_traps" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   short sVar2;
-  
+
   sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
   sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   if ((-1 < sVar2) && (sVar2 < 0x40)) {
@@ -10330,8 +10368,7 @@ int param_1;
 
 
 undefined4 FUN_00017eec(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "place_object" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   int iVar1;
   ushort uVar2;
@@ -10407,8 +10444,7 @@ LAB_0001818c:
 
 
 ushort FUN_000181a4(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "take_from_npc_inv" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   ushort *puVar2;
@@ -10432,11 +10468,10 @@ int param_1;
 
 
 void FUN_00018230(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "add_to_npc_inv" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   undefined4 uVar1;
-  
+
   FUN_0001adc4((int)*(short *)(param_1 + -2));
   uVar1 = FUN_000535fc();
   object_list_append_tail(DAT_00100674 + 6,uVar1);
@@ -10459,8 +10494,7 @@ void FUN_0001825c()
 
 
 void FUN_000182b4(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "set_quest" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   short sVar2;
@@ -10492,8 +10526,7 @@ int param_1;
 
 
 undefined1 FUN_00018370(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "get_quest" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   int iVar1;
   short sVar2;
@@ -10518,8 +10551,7 @@ int param_1;
 
 
 undefined4 FUN_00018430(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "gronk_door" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   undefined2 uVar1;
   undefined2 uVar2;
@@ -10561,8 +10593,7 @@ int param_1;
 
 
 void FUN_0001853c(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "x_obj_stuff" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   ushort uVar1;
   byte bVar2;
@@ -10663,8 +10694,7 @@ int param_1;
 
 
 void FUN_000188fc(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "x_obj_pos" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   ushort *puVar2;
@@ -11027,10 +11057,10 @@ undefined1 *param_2;
     babl_register_builtin(s_plural_00084590,FUN_000197c0);
     babl_register_builtin(s_contains_00084584,FUN_000197fc);
     babl_register_builtin(s_append_0008457c,FUN_000198e8);
-    babl_register_builtin(&DAT_00084574,FUN_0001998c);
-    babl_register_builtin(&DAT_0008456c,FUN_000199d4);
-    babl_register_builtin(s_length_00084564,&LAB_00019a60);
-    babl_register_builtin(&DAT_00084560,FUN_00019a80);
+    babl_register_builtin(s_copy_00084574,FUN_0001998c);
+    babl_register_builtin(s_find_0008456c,FUN_000199d4);
+    babl_register_builtin(s_length_00084564,&FUN_00019a60);
+    babl_register_builtin(s_val_00084560,FUN_00019a80);
     return 1;
   }
   return 0xffffffff;
@@ -11057,11 +11087,10 @@ undefined1 * param_1;
 
 
 int FUN_000196c0(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "random" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
-  
+
   sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   sVar1 = rand_below((int)sVar1);
   return sVar1 + 1;
@@ -11070,8 +11099,7 @@ int param_1;
 
 
 bool FUN_000196e8(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "compare" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   char cVar1;
   short sVar2;
@@ -11126,8 +11154,7 @@ int param_1;
 
 
 undefined4 FUN_000197c0(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "plural" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   undefined4 uVar2;
@@ -11145,8 +11172,7 @@ int param_1;
 
 
 undefined4 FUN_000197fc(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "contains" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   /* uVar1/iVar2/uVar3/uVar4/iVar5/iVar7 were `undefined4`/`int` (4 bytes)
      but hold real string pointers from FUN_0007863c/babl_expand_string_refs/
@@ -11196,8 +11222,7 @@ int param_1;
 
 
 void FUN_000198e8(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "append" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   char cVar1;
   char *pcVar2;
@@ -11238,8 +11263,7 @@ int param_1;
 
 
 void FUN_0001998c(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this unnamed builtin, registered under &DAT_00084574, was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   char cVar1;
   char *pcVar2;
@@ -11265,8 +11289,7 @@ int param_1;
 
 
 int FUN_000199d4(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "find" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   short sVar2;
@@ -11293,8 +11316,7 @@ int param_1;
 
 
 int FUN_00019a80(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "val" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   int iVar2;
@@ -13286,8 +13308,7 @@ int param_2;
 
 
 undefined4 FUN_0001c57c(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "do_offer" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   short sVar2;
@@ -13458,8 +13479,7 @@ void FUN_0001c85c()
 
 
 undefined4 FUN_0001ca78(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "do_demand" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   byte bVar1;
   byte bVar2;
@@ -13853,8 +13873,7 @@ short param_1;
 
 
 undefined4 FUN_0001da88(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "set_likes_dislikes" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   DAT_000bc020 = FUN_0001ada8((int)*(short *)(param_1 + -4));
   DAT_000bc000 = FUN_0001ada8((int)*(short *)(param_1 + -2));
@@ -19464,7 +19483,7 @@ void start_npc_conversation()
     babl_register_builtin(s_respond_000845ac,FUN_0002977c);
     babl_register_builtin(s_get_quest_00085208,FUN_00018370);
     babl_register_builtin(s_set_quest_000851fc,FUN_000182b4);
-    babl_register_builtin(&DAT_000851f8,&LAB_0001840c);
+    babl_register_builtin(s_sex_000851f8,FUN_0001840c);
     babl_register_builtin(s_babl_ask_000851ec,FUN_0002990c);
     babl_register_builtin(s_print_000851e4,FUN_00029850);
     babl_register_builtin(s_show_inv_000851d8,FUN_000299b0);
@@ -19475,7 +19494,7 @@ void start_npc_conversation()
     babl_register_builtin(s_identify_inv_0008518c,FUN_00029fb0);
     babl_register_builtin(s_do_offer_00085180,FUN_0001c57c);
     babl_register_builtin(s_do_demand_00085174,FUN_0001ca78);
-    babl_register_builtin(s_do_decline_00085168,&LAB_0001cd34);
+    babl_register_builtin(s_do_decline_00085168,&FUN_0001cd34);
     babl_register_builtin(s_do_judgement_00085158,FUN_0001cd3c);
     babl_register_builtin(s_end_barter_0008514c,FUN_0001b7c0);
     babl_register_builtin(s_setup_to_barter_0008513c,FUN_0001b288);
@@ -20050,11 +20069,10 @@ int param_1;
 
 
 undefined4 FUN_000298d8(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "pause" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   int iVar1;
-  
+
   wait_for_click_release(0);
   iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   FUN_0007f170(iVar1 * 500,0);
@@ -20099,8 +20117,7 @@ int FUN_0002990c()
 
 
 undefined4 FUN_000299b0(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "show_inv" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   short sVar2;
@@ -20133,8 +20150,7 @@ int param_1;
 
 
 int FUN_00029a58(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "find_barter" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   uint uVar1;
   int iVar2;
@@ -20179,8 +20195,7 @@ LAB_00029b4c:
 
 
 bool FUN_00029b60(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "find_barter_total" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   short sVar1;
   short sVar2;
@@ -20229,8 +20244,7 @@ int param_1;
 
 
 undefined4 FUN_00029cc8(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "give_to_npc" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   int iVar1;
   short sVar2;
@@ -20295,8 +20309,7 @@ LAB_00029e2c:
 
 
 undefined4 FUN_00029e34(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "give_ptr_npc" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   undefined4 uVar1;
   int iVar2;
@@ -20341,8 +20354,7 @@ LAB_00029f2c:
 
 
 void FUN_00029f38(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "do_inv_delete" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   FUN_0001adc4((int)*(short *)(param_1 + -2));
   FUN_0001da00();
@@ -20352,8 +20364,7 @@ int param_1;
 
 
 void FUN_00029f4c(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "find_inv" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   int iVar1;
   ushort uVar2;
@@ -20386,8 +20397,7 @@ int param_1;
 
 
 undefined4 FUN_00029fb0(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "identify_inv" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   char *wptr_15610;
   char *wptr_15618;
@@ -20473,12 +20483,11 @@ LAB_0002a154:
 
 
 ushort FUN_0002a1fc(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "count_inv" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   ushort uVar1;
   int iVar2;
-  
+
   FUN_0001adc4((int)*(short *)(param_1 + -2));
   iVar2 = FUN_000535fc();
   if (((*(byte *)(iVar2 + 1) & 0x80) == 0) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {
@@ -20493,11 +20502,10 @@ int param_1;
 
 
 byte FUN_0002a258(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "check_inv_quality" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   int iVar1;
-  
+
   FUN_0001adc4((int)*(short *)(param_1 + -2));
   iVar1 = FUN_000535fc();
   return *(byte *)(iVar1 + 4) & 0x3f;
@@ -20506,8 +20514,7 @@ int param_1;
 
 
 undefined4 FUN_0002a27c(param_1)
-int param_1;
-
+intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "set_inv_quality" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   undefined2 uVar1;
   byte bVar2;
