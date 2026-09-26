@@ -5,6 +5,7 @@
 #include "uw.h"
 #include "demomode.h"
 #include "democapture.h"
+#include "headers/debug_ui.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -401,6 +402,25 @@ void uw_pump_events(void) {
                 break;
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
+                /* Debug UI toggle: backtick always works, shown or
+                 * hidden, so the panel can be brought back even while
+                 * it currently owns no input. Swallowed either way --
+                 * never forwarded to the game (there's no game function
+                 * bound to backtick to preserve). */
+                if (ev.type == SDL_KEYDOWN && !ev.key.repeat && ev.key.keysym.sym == SDLK_BACKQUOTE) {
+                    dbgui_toggle();
+                    return;
+                }
+                /* While the debug UI is visible, it owns ALL keyboard
+                 * input -- a debug/dev tool, not meant to be driven
+                 * simultaneously with normal gameplay input. Route and
+                 * swallow rather than also forwarding to the game. */
+                if (dbgui_visible()) {
+                    if (ev.type == SDL_KEYDOWN && !ev.key.repeat) {
+                        dbgui_feed_key((int)ev.key.keysym.sym);
+                    }
+                    return;
+                }
                 /* Physical ESC aborts a running demo file (and is then
                  * swallowed -- it does NOT also reach the game). Only a
                  * real keypress does this: uw_inject_key_* stamps
@@ -479,6 +499,10 @@ void uw_pump_events(void) {
                 return;
             }
             case SDL_TEXTINPUT: {
+                if (dbgui_visible()) {
+                    dbgui_feed_text(ev.text.text);
+                    return;
+                }
                 /* Real typed characters (respects keyboard layout/shift
                  * state) -- forwarded as WM_CHAR (0x102), matching
                  * handle_keyboard_message's real-text-input path. Only ever one
@@ -554,6 +578,12 @@ void uw_pump_events(void) {
                 float lx, ly;
                 SDL_RenderWindowToLogical(g_ren, win_x, win_y, &lx, &ly);
                 int landscape_x = (int)lx, landscape_y = (int)ly;
+                if (dbgui_visible()) {
+                    if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
+                        dbgui_feed_mouse_down(landscape_x, landscape_y);
+                    }
+                    return;
+                }
                 int portrait_x = landscape_y;
                 int portrait_y = (HW_H - 1) - landscape_x;
                 int lparam = (portrait_y << 16) | (portrait_x & 0xffff);

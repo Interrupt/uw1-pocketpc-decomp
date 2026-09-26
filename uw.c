@@ -1,6 +1,7 @@
 #include "uw.h"
 #include "debug.h"
 #include "gx_stub.h"
+#include "headers/debug_ui.h"
 #include <dlfcn.h>
 #include <math.h>
 #include <stdarg.h>
@@ -54374,7 +54375,13 @@ typedef enum { UW_UVPROJ_NONE = 0, UW_UVPROJ_XZ, UW_UVPROJ_XY, UW_UVPROJ_ZY } Uv
    of not necessarily lining up seam-for-seam with the real wall texture
    the object sits against (open calibration question, not yet checked
    against a screenshot). */
-static void uv_project(int proj, float lx, float ly, float lz, double uv_scale, int *out_u, int *out_v)
+/* uv_scale_u/v are separate on purpose: a single shared scale can't be
+   right for both axes on a face whose real horizontal and vertical
+   extents differ a lot (e.g. a lintel is wide in X but thin in Y) --
+   live QA confirmed U and V needed independent tuning ("uv_scale seems
+   not to match both horizontally and vertically -- the vertical scale
+   might be pinned"), not just a better shared number. */
+static void uv_project(int proj, float lx, float ly, float lz, double uv_scale_u, double uv_scale_v, int *out_u, int *out_v)
 {
   double a = 0.0, b = 0.0;
   switch (proj) {
@@ -54383,18 +54390,19 @@ static void uv_project(int proj, float lx, float ly, float lz, double uv_scale, 
     case UW_UVPROJ_XZ: a = lx; b = lz; break;
     default: *out_u = 0; *out_v = 0; return;
   }
-  double u = fmod(a, uv_scale); if (u < 0) u += uv_scale;
-  double v = fmod(b, uv_scale); if (v < 0) v += uv_scale;
-  *out_u = (int)(u / uv_scale * 16.0) & 15;
-  *out_v = (int)(v / uv_scale * 16.0) & 15;
+  double u = fmod(a, uv_scale_u); if (u < 0) u += uv_scale_u;
+  double v = fmod(b, uv_scale_v); if (v < 0) v += uv_scale_v;
+  *out_u = (int)(u / uv_scale_u * 16.0) & 15;
+  *out_v = (int)(v / uv_scale_v * 16.0) & 15;
 }
 
-static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, double zoff_local, void *texptr, int uv_proj, double uv_scale)
+static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, double zoff_local, void *texptr, int uv_proj, double uv_scale_u, double uv_scale_v)
 {
   int npts = *(int *)model;
   int nparts = *(int *)(model + 4);
   if (npts <= 0 || npts > 600 || nparts <= 0) return;
-  if (uv_scale <= 0.0) uv_scale = 256.0;
+  if (uv_scale_u <= 0.0) uv_scale_u = 256.0;
+  if (uv_scale_v <= 0.0) uv_scale_v = 256.0;
 
   /* The object's own world anchor height (DAT_0023b91c) appears to be a
      ceiling-relative or otherwise offset reference rather than the tile's
@@ -54408,7 +54416,9 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
   { const char *_s = getenv("UW_MODEL_SCALE"); if (_s) scale = atof(_s); }
   { const char *_s = getenv("UW_MODEL_YOFF"); if (_s) yoff = atof(_s); }
   { const char *_s = getenv("UW_MODEL_YCLIP"); if (_s) y_clip = atof(_s); }
-  { const char *_s = getenv("UW_MODEL_UV_SCALE"); if (_s) uv_scale = atof(_s); }
+  { const char *_s = getenv("UW_MODEL_UV_SCALE"); if (_s) { uv_scale_u = atof(_s); uv_scale_v = atof(_s); } }
+  { const char *_s = getenv("UW_MODEL_UV_SCALE_U"); if (_s) uv_scale_u = atof(_s); }
+  { const char *_s = getenv("UW_MODEL_UV_SCALE_V"); if (_s) uv_scale_v = atof(_s); }
   { const char *_s = getenv("UW_MODEL_XOFF"); if (_s) xoff_local = atof(_s); }
   { const char *_s = getenv("UW_MODEL_ZOFF"); if (_s) zoff_local = atof(_s); }
   double ang = heading * 45.0 * (3.14159265358979 / 180.0);
@@ -54519,10 +54529,10 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
     {
       int _tu0 = 0, _tv0 = 0, _tu1 = 0, _tv1 = 0, _tu2 = 0, _tv2 = 0, _tu3 = 0, _tv3 = 0;
       if (texptr && uv_proj != UW_UVPROJ_NONE) {
-        uv_project(uv_proj, _uv_local[v0][0], _uv_local[v0][1], _uv_local[v0][2], uv_scale, &_tu0, &_tv0);
-        uv_project(uv_proj, _uv_local[v1][0], _uv_local[v1][1], _uv_local[v1][2], uv_scale, &_tu1, &_tv1);
-        uv_project(uv_proj, _uv_local[v2][0], _uv_local[v2][1], _uv_local[v2][2], uv_scale, &_tu2, &_tv2);
-        uv_project(uv_proj, _uv_local[v3][0], _uv_local[v3][1], _uv_local[v3][2], uv_scale, &_tu3, &_tv3);
+        uv_project(uv_proj, _uv_local[v0][0], _uv_local[v0][1], _uv_local[v0][2], uv_scale_u, uv_scale_v, &_tu0, &_tv0);
+        uv_project(uv_proj, _uv_local[v1][0], _uv_local[v1][1], _uv_local[v1][2], uv_scale_u, uv_scale_v, &_tu1, &_tv1);
+        uv_project(uv_proj, _uv_local[v2][0], _uv_local[v2][1], _uv_local[v2][2], uv_scale_u, uv_scale_v, &_tu2, &_tv2);
+        uv_project(uv_proj, _uv_local[v3][0], _uv_local[v3][1], _uv_local[v3][2], uv_scale_u, uv_scale_v, &_tu3, &_tv3);
       }
       *(int *)(&DAT_000ace08 + rb) = _tu0;
       *(int *)(&DAT_000ace0c + rb) = _tv0;
@@ -54599,9 +54609,12 @@ typedef struct {
                   // center it in model 1's opening
   UvProjection uv_proj; // which two world axes become U/V; NONE = flat-
                          // shaded regardless of texptr (current behavior)
-  double uv_scale;      // real world units per one texture repeat (u/v
-                         // wrap period); 0 = fall back to a 256-unit
-                         // (one tile) default when uv_proj is set
+  double uv_scale_u, uv_scale_v; // real world units per one texture
+                         // repeat, U and V independent -- live QA found
+                         // a single shared scale can't be right for both
+                         // axes on a face whose real horizontal/vertical
+                         // extents differ a lot (e.g. a lintel is wide
+                         // in X, thin in Y). 0 = 256-unit default.
   double zoff;      // model1's own local-space Z shift before rotation --
                      // the display-list door path needed BOTH X and Z
                      // local-center correction (mysteries.md UPDATE 28);
@@ -54680,20 +54693,20 @@ static const ModelMapEntry g_model_map[] = {
   // established for ordinary tile walls) -- first live test of the new
   // real-per-vertex-UV path (see ModelMapEntry's own comment); starting
   // point for calibration, not yet confirmed correct on screen.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 64.0, -4.0, -4.0, -4 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 64.0, -4.0, 0, -4 },
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
 };
 #define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
 
@@ -54705,6 +54718,17 @@ static const ModelMapEntry *lookup_object_model(int id)
   }
   return 0;
 }
+
+/* Live-tunable model calibration (UW_MODEL_TUNER=1) -- g_model_map's own
+   rows are `static const`, so these mutable globals are what the debug
+   UI actually edits; they get seeded from whichever model's own table
+   row is currently on screen the first time that id is seen (or when
+   the id changes), then override that row's values for every frame
+   after until the process exits. See the panel drawn in
+   emit_tile_objects's own model-dispatch block. */
+static double g_tune_scale, g_tune_yoff, g_tune_xoff, g_tune_zoff, g_tune_uv_u, g_tune_uv_v;
+static int g_tune_heading_step;
+static int g_tune_last_id = -1;
 
 // was FUN_00060aa0
 void emit_tile_objects(param_1)
@@ -55079,11 +55103,43 @@ ushort * param_1;
          fixed -- out of scope for this branch) were the two places
          that never got the fix ported over. */
       int _raw_heading = (int)(param_1[1] >> 7 & 7);
-      int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0 + _me->heading_step) & 7;
+      /* Live tuner: g_tune_* start as a straight copy of this model's
+         own table row the first time this id is seen (or whenever the
+         id changes), then the debug UI edits them directly -- see
+         g_tune_last_id's own comment. Ordinary env-var overrides
+         (UW_MODEL_SCALE etc, applied inside emit_model_object itself)
+         still take final precedence over these if both are set, same
+         as they already did over the table. */
+      double _use_scale = _me->scale, _use_yoff = _me->yoff, _use_xoff = 0.0, _use_zoff = _me->zoff;
+      double _use_uv_u = _me->uv_scale_u, _use_uv_v = _me->uv_scale_v;
+      int _use_heading_step = _me->heading_step;
+      if (getenv("UW_MODEL_TUNER")) {
+        if (_me->id != g_tune_last_id) {
+          g_tune_last_id = _me->id;
+          g_tune_scale = _me->scale; g_tune_yoff = _me->yoff; g_tune_xoff = 0.0; g_tune_zoff = _me->zoff;
+          g_tune_uv_u = _me->uv_scale_u; g_tune_uv_v = _me->uv_scale_v;
+          g_tune_heading_step = _me->heading_step;
+        }
+        char _title[48];
+        snprintf(_title, sizeof(_title), "Model Tuner (id=0x%03x, ` to hide)", _me->id);
+        dbgui_begin(_title);
+        dbgui_field_double("scale", &g_tune_scale, 0.01);
+        dbgui_field_double("yoff", &g_tune_yoff, 1.0);
+        dbgui_field_double("xoff", &g_tune_xoff, 1.0);
+        dbgui_field_double("zoff", &g_tune_zoff, 1.0);
+        dbgui_field_double("uv_scale_u", &g_tune_uv_u, 4.0);
+        dbgui_field_double("uv_scale_v", &g_tune_uv_v, 4.0);
+        dbgui_field_int("heading_step", &g_tune_heading_step, 1);
+        dbgui_end();
+        _use_scale = g_tune_scale; _use_yoff = g_tune_yoff; _use_xoff = g_tune_xoff; _use_zoff = g_tune_zoff;
+        _use_uv_u = g_tune_uv_u; _use_uv_v = g_tune_uv_v;
+        _use_heading_step = g_tune_heading_step;
+      }
+      int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0 + _use_heading_step) & 7;
       { const char *_s = getenv("UW_MODEL_HEADING_STEP"); if (_s) _heading = (_raw_heading - 2 * (int)DAT_0023b4a0 + atoi(_s)) & 7; }
       if (getenv("UW_DEBUG_MODEL"))
         fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d step=%d compensated=%d\n",
-                (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _me->heading_step, _heading);
+                (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _use_heading_step, _heading);
       /* Frame texture: the tile's own real wall texture. DAT_0023b4ec is
          the raw tile record currently being walked (confirmed by the
          wall-rendering code just above emit_tile_objects in this same
@@ -55158,7 +55214,7 @@ ushort * param_1;
                   (int)(uVar27 & 0x1ff), _sprite_frame, _leaf_tex, _w, _h, _nz, _tot);
         }
       }
-      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0, _me->zoff, _frame_tex, _me->uv_proj, _me->uv_scale);
+      emit_model_object((unsigned char *)_me->model, _heading, _use_scale, _use_yoff, _me->y_clip, _use_xoff, _use_zoff, _frame_tex, _me->uv_proj, _use_uv_u, _use_uv_v);
       if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
         /* _leaf_tex decodes fine (confirmed via UW_DEBUG_MODEL's
            nonzero-pixel count -- real sprite content, not garbage) but
@@ -55183,7 +55239,7 @@ ushort * param_1;
            texture pointer with no UV (the old broken behavior) for
            experimenting with the failure mode if useful. */
         void *_apply_tex = getenv("UW_MODEL_LEAF_TEXTURE") ? _leaf_tex : 0;
-        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2, _me->zoff2, _apply_tex, UW_UVPROJ_NONE, 0.0);
+        emit_model_object((unsigned char *)_me->model2, _heading, _use_scale, _use_yoff, _me->y_clip, _me->x_off2, _me->zoff2, _apply_tex, UW_UVPROJ_NONE, 0.0, 0.0);
       }
       return;
     }

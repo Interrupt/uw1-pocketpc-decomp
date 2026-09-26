@@ -4532,3 +4532,59 @@ how a rightward offset reads at a given viewing angle.
 Verified default rendering unaffected (faces=11/6, zero env vars) and
 run-regressions.sh: 6/6 clean, after both fixes. UW_ENABLE_MODEL_RENDER
 remains opt-in.
+
+(38) 2026-09-21: after several rounds of live env-var-and-relaunch
+calibration for uv_scale (256 -> 64 -> 1024 -> 16 -> 256 -> 128, plus a
+discovery that U and V genuinely need independent scale -- split
+uv_scale into uv_scale_u/uv_scale_v, both fields on ModelMapEntry, both
+overridable live via UW_MODEL_UV_SCALE_U/_V, UW_MODEL_UV_SCALE still
+sets both for a quick shared change), the user asked for a real tool
+instead of the edit/rebuild/relaunch loop: "There is no easy way to
+tune these - lets make a simple imgui style immediate mode gui system
+that uses the UW1 rendering functions to draw rectangles, text, and
+enter text into input boxes."
+
+Built one. New files `debug_ui.h`/`debug_ui.c`: a genuinely immediate-
+mode API (`dbgui_begin(title)` / `dbgui_field_double(name,&value,step)`
+/ `dbgui_field_int(...)` / `dbgui_end()`, called fresh every frame --
+only the selection/edit state persists between frames, in this new
+module's own statics) drawn with this project's own recovered UW1
+primitives -- `set_draw_color`/`rect_fill_or_save_restore` (graphics.c)
+for panel/row backgrounds, `draw_text_string` (uw.c) for labels/values
+-- in the same 320x240 landscape logical space those functions already
+draw in, so the panel composites directly into the game's own
+framebuffer with no separate overlay surface.
+
+Input: backtick (SDLK_BACKQUOTE) toggles the panel, wired into gx_stub.c's
+SDL event loop ahead of all existing game input handling, unconditionally
+(works even while hidden). While visible, the debug UI owns ALL keyboard
+and left-click mouse input -- swallowed before reaching the game's own
+WM_*-message translation, rather than trying to run both input systems
+at once. Click a row to select AND begin editing it (prefills the edit
+buffer with the current value); typed digits/minus/period append (via
+dbgui_feed_text, fed from the real SDL_TEXTINPUT event, respecting
+layout same as the game's own text fields); Enter commits (atof);
+Escape cancels. Without editing, Up/Down changes the selected row,
+Left/Right nudges the value by its own per-field step -- fast iteration
+without typing for small adjustments.
+
+Wired into emit_tile_objects's own model-dispatch block (uw.c, right
+where `_heading` is computed) as `UW_MODEL_TUNER=1`: seeds a set of
+new mutable globals (g_tune_scale/yoff/xoff/zoff/uv_u/uv_v/
+heading_step -- g_model_map's own rows are `static const`, can't be
+edited directly) from whichever model's own table row is currently on
+screen, re-seeding whenever the id changes; the panel's title shows
+the live id. These tuned values override scale/yoff/xoff/zoff/
+uv_scale_u/uv_scale_v/heading_step for that model's rendering every
+frame after, both for the frame (model1) and its shared scale/yoff
+with the leaf (model2) -- ordinary UW_MODEL_* env var overrides
+(already existing, applied inside emit_model_object itself) still take
+final precedence over the tuner if both are set, unchanged from
+before.
+
+Compiled clean (no new warnings beyond one pre-existing, unrelated
+uw.h comment-nesting warning). run-regressions.sh: 6/6 clean.
+UW_ENABLE_MODEL_RENDER/UW_MODEL_TUNER both remain opt-in; zero env vars
+still gives the untouched default (faces=11/6). Not yet live-tested by
+the user at time of this entry -- build.sh and run.sh both updated to
+compile the new debug_ui.c.
