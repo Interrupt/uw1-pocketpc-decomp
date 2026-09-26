@@ -482,7 +482,7 @@ short DAT_000bbf24;
 /* Was `int` -- build_babl_symbol_table assigns it a real 64-bit heap pointer
    (`DAT_000bbf70 = babl_alloc((iVar11+1)*0x20)`) and every reader
    throughout this whole babl-symbol-table cluster (babl_register_builtin/
-   FUN_0001ac48/FUN_0001acf8/FUN_0001aebc/FUN_0001afe4/FUN_0001b0a4/
+   FUN_0001ac48/FUN_0001acf8/babl_set_variable/babl_get_variable/FUN_0001b0a4/
    build_babl_symbol_table itself) does plain `int`-width pointer arithmetic on
    it. Truncating this on a 64-bit host is the crash one step past the
    read_archive_entry dropped-argument fix (uw.c ~10984's comment):
@@ -12230,7 +12230,7 @@ undefined4 param_2;
 
 
 
-void FUN_0001aebc(param_1,param_2,param_3)
+void babl_set_variable(param_1,param_2,param_3)
 char *param_1;
 intptr_t param_2; // was `int` -- every real caller passes a stack pointer (e.g. FUN_0002a8e0's `local_20`), truncated on 64-bit; same bug class as DAT_000bbf70 (crashes at param_2's own dereference, uw.c ~12283)
 short param_3;
@@ -12288,9 +12288,9 @@ short param_3;
 
 
 
-void FUN_0001afe4(param_1,param_2,param_3)
+void babl_get_variable(param_1,param_2,param_3)
 char *param_1;
-intptr_t param_2; // was `int` -- same pointer-truncation bug as FUN_0001aebc's own param_2 (every real caller passes a stack pointer, e.g. `&local_10`)
+intptr_t param_2; // was `int` -- same pointer-truncation bug as babl_set_variable's own param_2 (every real caller passes a stack pointer, e.g. `&local_10`)
 short param_3;
 
 {
@@ -13284,7 +13284,7 @@ int param_1;
     sVar7 = Ordinal_2005(uVar8,(DAT_00100674[8] - uVar8) * 2);
     iVar12 = sVar7 + 2;
   }
-  FUN_0001afe4(s_npc_attitude_000845f8,&local_2c,1);
+  babl_get_variable(s_npc_attitude_000845f8,&local_2c,1);
   bVar4 = DAT_00100674[0x19];
   if ((bVar4 & 0x40) == 0) {
     iVar10 = 1;
@@ -13306,7 +13306,7 @@ int param_1;
     DAT_000bc008 = 1;
     if (0 < local_2c) {
       local_2c = (short)((uint)((local_2c + -1) * 0x10000) >> 0x10);
-      FUN_0001aebc(s_npc_attitude_000845f8,&local_2c,1);
+      babl_set_variable(s_npc_attitude_000845f8,&local_2c,1);
     }
     uVar9 = 1;
   }
@@ -19216,7 +19216,7 @@ void start_npc_conversation()
      (2) individually NULL-guarding every DAT_000bbf70/DAT_000bbf80-
      reading function this success branch calls into turned into an
      unbounded chase (fixed 5 separate crash sites this way -- see
-     babl_register_builtin/FUN_0001ac48/FUN_0001acf8/FUN_0001aebc/FUN_0001afe4/
+     babl_register_builtin/FUN_0001ac48/FUN_0001acf8/babl_set_variable/babl_get_variable/
      FUN_0001b0a4's own comments -- before finding a 6th at
      FUN_0001a1c8's DAT_000bbf80 dereference). Whether the real 32-bit
      binary's equivalent register value is reliably negative here (real
@@ -20218,44 +20218,44 @@ ushort * param_1;
   
   iVar3 = ((byte)*param_1 & 0x3f) * 0x30;
   local_20[0] = (ushort)(byte)param_1[0xd];
-  FUN_0001aebc(s_npc_whoami_000853a0,local_20,1);
+  babl_set_variable(s_npc_whoami_000853a0,local_20,1);
   local_20[0] = 0x10;
   if ((*(byte *)((char *)param_1 + 0x19) & 0x80) == 0) {
     local_20[0] = 0xc0;
   }
-  FUN_0001aebc(s_npc_hunger_00085394,local_20,1);
+  babl_set_variable(s_npc_hunger_00085394,local_20,1);
   if ((&g_monster_max_stats_table)[iVar3] == '\0') {
     local_20[0] = 0x80;
   }
   else {
     local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[iVar3],(uint)(byte)param_1[4] << 8);
   }
-  FUN_0001aebc(s_npc_health_00085388,local_20,1);
+  babl_set_variable(s_npc_health_00085388,local_20,1);
   local_20[0] = (ushort)(byte)param_1[4];
-  FUN_0001aebc(s_npc_hp_00085380,local_20,1);
+  babl_set_variable(s_npc_hp_00085380,local_20,1);
   local_20[0] = (ushort)(char)(&DAT_001007e3)[iVar3];
-  FUN_0001aebc(s_npc_arms_00085374,local_20,1);
+  babl_set_variable(s_npc_arms_00085374,local_20,1);
   local_20[0] = (ushort)(byte)(&DAT_001007d5)[iVar3] + (ushort)((byte)(&DAT_001007fd)[iVar3] >> 1);
-  FUN_0001aebc(s_npc_power_00085368,local_20,1);
+  babl_set_variable(s_npc_power_00085368,local_20,1);
   local_20[0] = *(byte *)((char *)param_1 + 0xb) & 0xf;
-  FUN_0001aebc(s_npc_goal_0008535c,local_20,1);
+  babl_set_variable(s_npc_goal_0008535c,local_20,1);
   local_20[0] = (ushort)((*(ushort *)((char *)param_1 + 0xb) & 0xff0) >> 4);
-  FUN_0001aebc(s_npc_gtarg_00085350,local_20,1);
+  babl_set_variable(s_npc_gtarg_00085350,local_20,1);
   local_20[0] = (ushort)(((byte)param_1[7] & 0x20) >> 5);
-  FUN_0001aebc(s_npc_talkedto_00085340,local_20,1);
+  babl_set_variable(s_npc_talkedto_00085340,local_20,1);
   local_20[0] = (byte)(&DAT_001007dd)[iVar3] & 0xf;
-  FUN_0001aebc(s_npc_level_00085334,local_20,1);
+  babl_set_variable(s_npc_level_00085334,local_20,1);
   local_20[0] = (byte)param_1[2] & 0x3f;
-  FUN_0001aebc(s_npc_xhome_00085328,local_20,1);
+  babl_set_variable(s_npc_xhome_00085328,local_20,1);
   local_20[0] = (byte)param_1[3] & 0x3f;
-  FUN_0001aebc(s_npc_yhome_0008531c,local_20,1);
+  babl_set_variable(s_npc_yhome_0008531c,local_20,1);
   if ((byte)param_1[0xd] == 0) {
     local_20[0] = *param_1 & 0x1ff | 0x800;
   }
   else {
     local_20[0] = (byte)param_1[0xd] + 0x10 | 0xe00;
   }
-  FUN_0001aebc(s_npc_name_00085310,local_20,1);
+  babl_set_variable(s_npc_name_00085310,local_20,1);
   uVar4 = *(ushort *)((char *)param_1 + 0xb) & 0xf;
   bVar5 = uVar4 == 5;
   if (bVar5) {
@@ -20270,48 +20270,48 @@ ushort * param_1;
   else {
     local_20[0] = 6;
   }
-  FUN_0001aebc(s_npc_attitude_000845f8,local_20,1);
+  babl_set_variable(s_npc_attitude_000845f8,local_20,1);
   bVar1 = *g_player_object;
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x39);
-  FUN_0001aebc(s_play_hunger_00085304,local_20,1);
+  babl_set_variable(s_play_hunger_00085304,local_20,1);
   if ((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30] == '\0') {
     local_20[0] = 0x80;
   }
   else {
     local_20[0] = Ordinal_2005((&g_monster_max_stats_table)[(bVar1 & 0x3f) * 0x30],(uint)g_player_object[8] << 8);
   }
-  FUN_0001aebc(s_play_health_000852f8,local_20,1);
+  babl_set_variable(s_play_health_000852f8,local_20,1);
   local_20[0] = (ushort)g_player_object[8];
-  FUN_0001aebc(s_play_hp_000852f0,local_20,1);
+  babl_set_variable(s_play_hp_000852f0,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x1e) + (ushort)*(byte *)(DAT_00086df8 + 0x21);
-  FUN_0001aebc(s_play_arms_000852e4,local_20,1);
+  babl_set_variable(s_play_arms_000852e4,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x27) + (ushort)*(byte *)(DAT_00086df8 + 0x37) +
                 (ushort)*(byte *)(DAT_00086df8 + 0x1f);
-  FUN_0001aebc(s_play_power_000852d8,local_20,1);
+  babl_set_variable(s_play_power_000852d8,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x37);
-  FUN_0001aebc(s_play_mana_000852cc,local_20,1);
+  babl_set_variable(s_play_mana_000852cc,local_20,1);
   local_20[0] = (ushort)*(byte *)(DAT_00086df8 + 0x3d);
-  FUN_0001aebc(s_play_level_000852c0,local_20,1);
+  babl_set_variable(s_play_level_000852c0,local_20,1);
   local_20[0] = DAT_00201b68;
-  FUN_0001aebc(s_dungeon_level_000852b0,local_20,1);
+  babl_set_variable(s_dungeon_level_000852b0,local_20,1);
   local_20[0] = Ordinal_2008(0x3bc4,*(undefined4 *)(DAT_00086df8 + 0xce));
-  FUN_0001aebc(s_game_time_000852a4,local_20,1);
+  babl_set_variable(s_game_time_000852a4,local_20,1);
   uVar2 = Ordinal_2008(0x3bc4,*(undefined4 *)(DAT_00086df8 + 0xce));
   Ordinal_2008(0x5a0,uVar2);
   local_20[0] = extraout_r1;
-  FUN_0001aebc(s_game_mins_00085298,local_20,1);
+  babl_set_variable(s_game_mins_00085298,local_20,1);
   local_20[0] = Ordinal_2008(0x1502e80,*(undefined4 *)(DAT_00086df8 + 0xce));
-  FUN_0001aebc(s_game_days_0008528c,local_20,1);
+  babl_set_variable(s_game_days_0008528c,local_20,1);
   local_20[0] = 0;
-  FUN_0001aebc(s_new_player_exp_0008527c,local_20,1);
+  babl_set_variable(s_new_player_exp_0008527c,local_20,1);
   local_20[0] = (ushort)((*(byte *)(DAT_00086df8 + 100) & 2) >> 1);
-  FUN_0001aebc(s_play_sex_00085270,local_20,1);
+  babl_set_variable(s_play_sex_00085270,local_20,1);
   local_20[0] = (ushort)((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) >> 2);
-  FUN_0001aebc(s_play_poison_00085264,local_20,1);
+  babl_set_variable(s_play_poison_00085264,local_20,1);
   local_20[0] = (ushort)((*(byte *)(DAT_00086df8 + 0x5f) & 2) >> 1);
-  FUN_0001aebc(s_play_drawn_00085258,local_20,1);
+  babl_set_variable(s_play_drawn_00085258,local_20,1);
   local_20[0] = DAT_00201c74;
-  FUN_0001aebc(s_play_name_0008524c,local_20,1);
+  babl_set_variable(s_play_name_0008524c,local_20,1);
   return;
 }
 
@@ -20328,27 +20328,27 @@ char *param_1;
   ushort local_10;
   undefined2 local_e;
   
-  FUN_0001afe4(s_npc_hunger_00085394,&local_10,1);
+  babl_get_variable(s_npc_hunger_00085394,&local_10,1);
   *(byte *)(param_1 + 0x19) = ((short)local_10 < 0x20) << 7 | *(byte *)(param_1 + 0x19) & 0x7f;
-  FUN_0001afe4(s_npc_hp_00085380,&local_10,1);
+  babl_get_variable(s_npc_hp_00085380,&local_10,1);
   *(char *)(param_1 + 8) = (char)local_10;
-  FUN_0001afe4(s_npc_xhome_00085328,&local_10,1);
+  babl_get_variable(s_npc_xhome_00085328,&local_10,1);
   uVar1 = *(undefined2 *)(param_1 + 4);
   bVar2 = (byte)uVar1;
   *(byte *)(param_1 + 4) = (bVar2 ^ (byte)local_10) & 0x3f ^ bVar2;
   *(char *)(param_1 + 5) = (char)((ushort)uVar1 >> 8);
-  FUN_0001afe4(s_npc_yhome_0008531c,&local_10,1);
+  babl_get_variable(s_npc_yhome_0008531c,&local_10,1);
   uVar1 = *(undefined2 *)(param_1 + 6);
   bVar2 = (byte)uVar1;
   *(byte *)(param_1 + 6) = (bVar2 ^ (byte)local_10) & 0x3f ^ bVar2;
   *(char *)(param_1 + 7) = (char)((ushort)uVar1 >> 8);
-  FUN_0001afe4(s_npc_goal_0008535c,&local_10,1);
-  FUN_0001afe4(s_npc_gtarg_00085350,&local_e,1);
+  babl_get_variable(s_npc_goal_0008535c,&local_10,1);
+  babl_get_variable(s_npc_gtarg_00085350,&local_e,1);
   FUN_00034ac4(param_1,(undefined1)local_10,local_e);
   uVar1 = *(undefined2 *)(param_1 + 0xd);
   *(char *)(param_1 + 0xd) = (char)uVar1;
   *(byte *)(param_1 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;
-  FUN_0001afe4(s_npc_attitude_000845f8,&local_10,1);
+  babl_get_variable(s_npc_attitude_000845f8,&local_10,1);
   if ((short)local_10 < 4) {
     uVar3 = *(ushort *)(param_1 + 0xd) & 0x3fff;
     *(char *)(param_1 + 0xd) = (char)uVar3;
@@ -20364,17 +20364,17 @@ char *param_1;
   uVar1 = *(undefined2 *)(param_1 + 0xd);
   *(char *)(param_1 + 0xd) = (char)uVar1;
   *(byte *)(param_1 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;
-  FUN_0001afe4(s_play_hunger_00085304,&local_10,1);
+  babl_get_variable(s_play_hunger_00085304,&local_10,1);
   *(char *)(DAT_00086df8 + 0x39) = (char)local_10;
-  FUN_0001afe4(s_play_hp_000852f0,&local_10,1);
+  babl_get_variable(s_play_hp_000852f0,&local_10,1);
   *(char *)((char *)g_player_object + 8) = (char)local_10;
-  FUN_0001afe4(s_play_mana_000852cc,&local_10,1);
+  babl_get_variable(s_play_mana_000852cc,&local_10,1);
   *(char *)(DAT_00086df8 + 0x37) = (char)local_10;
-  FUN_0001afe4(s_play_poison_00085264,&local_10,1);
+  babl_get_variable(s_play_poison_00085264,&local_10,1);
   uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
   *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar3 | (byte)((local_10 & 0xf) << 2);
   *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
-  FUN_0001afe4(s_new_player_exp_0008527c,&local_10,1);
+  babl_get_variable(s_new_player_exp_0008527c,&local_10,1);
   if (local_10 != 0) {
     grant_experience_points((int)(short)local_10);   /* dropped arg: the parsed exp value */
   }
