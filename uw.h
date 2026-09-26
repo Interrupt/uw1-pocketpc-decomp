@@ -1164,7 +1164,7 @@ void FUN_00051cf8();
 void FUN_00051dd0();
 undefined4 FUN_00051fa0();
 undefined4 place_object_in_world();
-void drop_object_near_target();
+undefined4 drop_object_near_target();
 undefined4 find_object_placement();
 undefined4 FUN_00052674();
 void *get_scanned_object_class_effect_ptr();

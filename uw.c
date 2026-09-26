@@ -566,6 +566,17 @@ static undefined2 DAT_000bbfa8_backing[8192];
 static undefined2 DAT_000bbfc0_backing[8192];
 #define DAT_000bbfc0 DAT_000bbfc0_backing[0]
 undefined2 DAT_000bbfd0;
+/* New this round -- referenced only via literal-pool constants inside
+   babl_builtin_take_from_npc/take_id_from_npc (both still-unrecovered
+   stubs at the time this was added). Ghidra never named either: a
+   real-object scratch pointer read/written by both functions (checked
+   for "is a specific target object already selected" before falling
+   back to the current NPC, DAT_00100674) and what looks like a
+   related small mode/count flag read alongside it. Left undescribed
+   beyond that -- neither is exercised by any known conversation
+   script yet, so their exact semantics haven't been confirmed live. */
+intptr_t DAT_00202948; // was `int` in the raw decompile -- holds a real object pointer, same truncation bug class as every other pointer-holding global in this cluster
+short DAT_002020c4;
 undefined4 DAT_000bbff0;
 undefined4 DAT_000bc010;
 undefined4 DAT_000bc028;
@@ -1753,39 +1764,234 @@ void babl_builtin_do_decline()
   return;
 }
 /* Was a no-op stub here ("Ghidra couldn't resolve this address...
-   safe no-op stub") -- the real function was never decompiled, so
-   babl_menu (registered under that exact script name, see
-   start_npc_conversation) silently did nothing. Recovered from the
-   real ARM binary and moved down next to its sibling babl_fmenu
-   (FUN_00029358) -- see babl_menu's own comment there for the full
-   story; it needs babl_fmenu's own globals/helpers already declared
-   by that point in the file. */
-undefined4 LAB_00029f74()
+   safe no-op stub") -- the real function was never decompiled, so the
+   "take_from_npc" babl builtin (registered under that exact script
+   name, see start_npc_conversation) silently did nothing whenever an
+   NPC's script tried to hand the player an item, same bug class as
+   babl_menu before its own recovery. Recovered from the real ARM
+   binary (Ghidra headless); every helper it calls (resolve_object_link,
+   object_list_unlink, check_object_carry_weight, drop_object_near_target,
+   encode_object_slot_index) already has a real implementation and a
+   uw.h forward declaration elsewhere in this file, so it can stay
+   here rather than needing to move (unlike babl_menu's own case).
 
+   Logic: looks up the babl script's requested item (a plain object id
+   under 1000, or a "1000 + category" encoding for an item CLASS) in
+   the current NPC's own inventory chain (or an already-selected
+   override object at DAT_00202948, if one is set), unlinks it from
+   the NPC once found, then either hands it straight to the player
+   (if check_object_carry_weight says it fits -- opens a brief item-
+   view popup via FUN_00057c5c) or, if it doesn't fit, stages it in
+   one of the 4 player-side barter-table slots (DAT_000bbfd0/bbfa8/
+   bbf98/bbfc0, the same table sprite_list/FUN_0001b474 sets up)
+   instead of dropping it. DAT_00202948/DAT_002020c4's own exact
+   semantics aren't independently confirmed (see their own comment) --
+   this is a faithful 1:1 port of the real disassembly, not yet
+   exercised live by any known conversation script. */
+undefined4 babl_builtin_take_from_npc(param_1)
+intptr_t param_1;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
+  uint uVar1;
+  intptr_t iVar2;
+  intptr_t *piVar3;
+  intptr_t *piVar4;
+  intptr_t iVar5;
+  undefined2 uVar6;
+  short sVar7;
+  intptr_t iVar8;
+  ushort *puVar9;
+  intptr_t iVar10;
+  undefined4 uVar11;
+  bool bVar12;
+
+  sVar7 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  piVar4 = &DAT_00202948;
+  piVar3 = (intptr_t *)&DAT_00100674;
+  if (DAT_00202948 == 0) {
+    iVar8 = DAT_00100674;
+    if ((*(byte *)(iVar8 + 0xe) & 0x10) == 0) {
+      FUN_000798c4();
+      iVar8 = *piVar3;
+    }
+    puVar9 = (ushort *)resolve_object_link((ushort *)(iVar8 + 6));
+    if (puVar9 != (ushort *)0x0) {
+      uVar1 = (uint)sVar7;
+      do {
+        if ((int)uVar1 < 1000) {
+          bVar12 = (*puVar9 & 0x1ff) == uVar1;
+        }
+        else {
+          bVar12 = uVar1 - 1000 == (uint)(*puVar9 >> 4 & 0x1f);
+        }
+        if (bVar12) {
+          object_list_unlink((byte *)(iVar8 + 6),(byte *)puVar9);
+          iVar10 = check_object_carry_weight(puVar9);
+          iVar8 = (intptr_t)&DAT_000bbfd0;
+          if (iVar10 == 0) {
+            iVar10 = 0;
+            while (*(short *)(iVar8 + iVar10 * 2) != 0) {
+              iVar10 = (intptr_t)(short)(iVar10 + 1);
+              if (3 < iVar10) {
+                iVar8 = drop_object_near_target((void *)*piVar3,puVar9,5,0);
+                if (iVar8 == 0) {
+                  uVar11 = 3;
+                }
+                else {
+                  uVar11 = 2;
+                }
+                return uVar11;
+              }
+            }
+            iVar2 = (intptr_t)(short)iVar10;
+            uVar6 = encode_object_slot_index((char *)puVar9);
+            iVar5 = (intptr_t)&DAT_000bbfa8;
+            *(undefined2 *)(iVar8 + iVar2 * 2) = uVar6;
+            *(undefined4 *)((intptr_t)&DAT_000bbf98 + iVar2 * 4) = 0;
+            *(undefined2 *)((intptr_t)&DAT_000bbfc0 + (iVar2 + 4) * 2) = 0xffff;
+            *(undefined2 *)(iVar5 + iVar2 * 2) = 0xffff;
+            FUN_0001c420(0,(int)iVar10);
+            FUN_0001bf9c(1,(int)iVar10);
+          }
+          else {
+            *piVar4 = (intptr_t)puVar9;
+            FUN_00057118();
+            FUN_00057c5c(*puVar9 & 0x1ff);
+            DAT_002020c4 = 1;
+            FUN_000570b4();
+            FUN_0007ec50();
+          }
+          return 1;
+        }
+        puVar9 = (ushort *)resolve_object_link(puVar9 + 2);
+      } while (puVar9 != (ushort *)0x0);
+    }
+  }
   return 0;
 }
-undefined4 LAB_00029f88()
-
+/* Was a no-op stub -- same bug and same recovery as
+   babl_builtin_take_from_npc just above (see its own comment for the
+   full story and the helper/global mapping both share). The only real
+   difference: this one matches by exact encoded slot index
+   (encode_object_slot_index(puVar9)==sVar7, "take THIS SPECIFIC
+   item") instead of by object id/category ("take any item of this
+   kind"). Not yet exercised live by any known conversation script. */
+undefined4 babl_builtin_take_id_from_npc(param_1)
+intptr_t param_1;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
+  intptr_t iVar1;
+  intptr_t *piVar2;
+  intptr_t *piVar3;
+  intptr_t iVar4;
+  short sVar5;
+  undefined2 uVar6;
+  short sVar7;
+  intptr_t iVar8;
+  ushort *puVar9;
+  intptr_t iVar10;
+  undefined4 uVar11;
+
+  sVar7 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  piVar3 = &DAT_00202948;
+  piVar2 = (intptr_t *)&DAT_00100674;
+  if (DAT_00202948 == 0) {
+    iVar8 = DAT_00100674;
+    for (puVar9 = (ushort *)resolve_object_link((ushort *)(iVar8 + 6)); puVar9 != (ushort *)0x0;
+        puVar9 = (ushort *)resolve_object_link(puVar9 + 2)) {
+      sVar5 = encode_object_slot_index((char *)puVar9);
+      if (sVar7 == sVar5) {
+        object_list_unlink((byte *)(iVar8 + 6),(byte *)puVar9);
+        iVar10 = check_object_carry_weight(puVar9);
+        iVar8 = (intptr_t)&DAT_000bbfd0;
+        if (iVar10 == 0) {
+          iVar10 = 0;
+          while (*(short *)(iVar8 + iVar10 * 2) != 0) {
+            iVar10 = (intptr_t)(short)(iVar10 + 1);
+            if (3 < iVar10) {
+              iVar8 = drop_object_near_target((void *)*piVar2,puVar9,5,0);
+              if (iVar8 == 0) {
+                uVar11 = 3;
+              }
+              else {
+                uVar11 = 2;
+              }
+              return uVar11;
+            }
+          }
+          iVar1 = (intptr_t)(short)iVar10;
+          uVar6 = encode_object_slot_index((char *)puVar9);
+          iVar4 = (intptr_t)&DAT_000bbfa8;
+          *(undefined2 *)(iVar8 + iVar1 * 2) = uVar6;
+          *(undefined4 *)((intptr_t)&DAT_000bbf98 + iVar1 * 4) = 0;
+          *(undefined2 *)((intptr_t)&DAT_000bbfc0 + (iVar1 + 4) * 2) = 0xffff;
+          *(undefined2 *)(iVar4 + iVar1 * 2) = 0xffff;
+          FUN_0001c420(0,(int)iVar10);
+          FUN_0001bf9c(1,(int)iVar10);
+        }
+        else {
+          *piVar3 = (intptr_t)puVar9;
+          FUN_00057118();
+          FUN_00057c5c(*puVar9 & 0x1ff);
+          DAT_002020c4 = 1;
+          FUN_000570b4();
+          FUN_0007ec50();
+        }
+        return 1;
+      }
+    }
+  }
   return 0;
 }
-undefined4 LAB_00029f9c()
-
+/* Was a no-op stub -- same bug and same recovery as the two
+   babl_builtin_take_from_npc / babl_builtin_take_id_from_npc functions
+   above. Spawns a brand-new object of the babl script's requested id
+   (spawn_new_object), tries to merge it into an existing stack of the
+   same kind in the current NPC's inventory (freeing the freshly-
+   spawned one and growing the existing stack's count instead, if a
+   compatible stack is found -- mirrors the same stacking rule this
+   file's other stack-merge sites use: same object id, both stackable,
+   neither already at the 999 cap), otherwise inserts the new object
+   at the head of the NPC's inventory outright. Not yet exercised live
+   by any known conversation script. */
+undefined4 babl_builtin_do_inv_create(param_1)
+intptr_t param_1;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  ushort uVar1;
+  intptr_t *piVar2;
+  ushort *puVar3;
+  ushort *puVar4;
+  undefined4 uVar5;
+  int iVar6;
+
+  uVar5 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  puVar3 = (ushort *)spawn_new_object(uVar5,0);
+  piVar2 = (intptr_t *)&DAT_00100674;
+  if (puVar3 == (ushort *)0x0) {
+    uVar5 = 0;
+  }
+  else {
+    uVar1 = puVar3[2];
+    *(byte *)(puVar3 + 2) = (byte)uVar1 | 0x3f;
+    *(char *)((char *)puVar3 + 5) = (char)(uVar1 >> 8);
+    puVar4 = (ushort *)(*piVar2 + 6);
+    while (puVar4 = (ushort *)resolve_object_link(puVar4), puVar4 != (ushort *)0x0) {
+      if (((((*puVar3 & 0x8000) != 0) && ((*puVar4 & 0x8000) != 0)) && ((puVar3[3] & 0x8000) == 0))
+         && ((((puVar4[3] & 0x8000) == 0 && (((*puVar4 ^ *puVar3) & 0x1ff) == 0)) &&
+             ((ushort)((puVar4[3] >> 6) + (puVar3[3] >> 6)) < 999)))) {
+        iVar6 = (puVar4[3] & 0xffc0) + (puVar3[3] & 0xffc0);
+        *(byte *)(puVar4 + 3) = (byte)iVar6 ^ (byte)puVar4[3] & 0x3f;
+        *(char *)((char *)puVar4 + 7) = (char)((uint)iVar6 >> 8);
+        free_object_slot(puVar3);
+        puVar3 = (ushort *)0x0;
+        break;
+      }
+      puVar4 = puVar4 + 2;
+    }
+    if (puVar3 != (ushort *)0x0) {
+      object_list_insert_head((byte *)(*piVar2 + 6),(byte *)puVar3);
+    }
+    uVar5 = encode_object_slot_index((char *)puVar3);
+  }
+  return uVar5;
 }
 char s_give_ptr_npc_00085000[] = "give_ptr_npc";
 char s_find_barter_total_00085010[] = "find_barter_total";
@@ -19515,8 +19721,8 @@ void start_npc_conversation()
     babl_register_builtin(s_show_inv_000851d8,babl_builtin_show_inv);
     babl_register_builtin(s_give_to_npc_000851cc,babl_builtin_give_to_npc);
     babl_register_builtin(s_find_inv_000851c0,babl_builtin_find_inv);
-    babl_register_builtin(s_take_from_npc_000851b0,&LAB_00029f74);
-    babl_register_builtin(s_take_id_from_npc_0008519c,&LAB_00029f88);
+    babl_register_builtin(s_take_from_npc_000851b0,&babl_builtin_take_from_npc);
+    babl_register_builtin(s_take_id_from_npc_0008519c,&babl_builtin_take_id_from_npc);
     babl_register_builtin(s_identify_inv_0008518c,babl_builtin_identify_inv);
     babl_register_builtin(s_do_offer_00085180,babl_builtin_do_offer);
     babl_register_builtin(s_do_demand_00085174,babl_builtin_do_demand);
@@ -19526,7 +19732,7 @@ void start_npc_conversation()
     babl_register_builtin(s_setup_to_barter_0008513c,FUN_0001b288);
     babl_register_builtin(s_pause_00085134,babl_builtin_pause);
     babl_register_builtin(s_set_likes_dislikes_00085120,babl_builtin_set_likes_dislikes);
-    babl_register_builtin(s_do_inv_create_00085110,&LAB_00029f9c);
+    babl_register_builtin(s_do_inv_create_00085110,&babl_builtin_do_inv_create);
     babl_register_builtin(s_do_inv_delete_00085100,babl_builtin_do_inv_delete);
     babl_register_builtin(s_check_inv_quality_000850ec,babl_builtin_check_inv_quality);
     babl_register_builtin(s_set_inv_quality_000850dc,babl_builtin_set_inv_quality);
@@ -46298,7 +46504,15 @@ int param_6;
 
 
 // was FUN_000523d0
-void drop_object_near_target(param_1,param_2,param_3,param_4)
+/* Was `void`, discarding place_object_in_world's own tail-call return
+   value (a real 0/1 "did it place" result -- see that function's own
+   comment) -- real ARM calling convention leaves a leaf tail call's
+   return value in r0 for THIS function's own caller, and
+   babl_builtin_take_from_npc (recovered this round) needs that value
+   to decide whether to fall back to the barter table when a dropped
+   item can't be placed. Confirmed by inspecting place_object_in_world's
+   own always-meaningful return (0 or 1), never garbage. */
+undefined4 drop_object_near_target(param_1,param_2,param_3,param_4)
 /* param_2 was `undefined4` -- a real object pointer forwarded straight
    into place_object_in_world's own (now char*) param_4, truncated to 32 bits on
    this host. Same class as place_object_in_world/spawn_new_object's other fixes;
@@ -46311,12 +46525,11 @@ undefined4 param_4;
 
 {
   ushort uVar1;
-  
+
   uVar1 = *(ushort *)(param_1 + 2);
-  place_object_in_world((*(ushort *)(param_1 + 0x16) >> 7 & 0x1f8) + (uVar1 >> 0xd),
+  return place_object_in_world((*(ushort *)(param_1 + 0x16) >> 7 & 0x1f8) + (uVar1 >> 0xd),
                (*(ushort *)(param_1 + 0x16) >> 1 & 0x1f8) + ((uVar1 & 0x1c00) >> 10),uVar1 & 0x7f,
                param_2,param_3,param_4);
-  return;
 }
 
 
@@ -47187,6 +47400,7 @@ ushort * param_1;
 
 
 
+// was FUN_0005358c
 int encode_object_slot_index(param_1)
 char *param_1;
 
