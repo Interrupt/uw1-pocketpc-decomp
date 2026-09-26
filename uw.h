@@ -694,6 +694,7 @@ void FUN_000286cc();
 void FUN_00028bac();
 void start_npc_conversation();
 void FUN_00028ffc();
+int babl_menu(); // was LAB_0002912c, a no-op stub -- see its own comment in uw.c next to FUN_00029358 (babl_fmenu)
 int FUN_00029358();
 void FUN_000295b4();
 void FUN_00029708();

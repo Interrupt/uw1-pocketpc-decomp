@@ -1690,15 +1690,14 @@ undefined4 LAB_0001cd34()
      the same K&R-callable shape as 'codeval' is safe. */
   return 0;
 }
-undefined4 LAB_0002912c()
-
-{
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
-}
+/* Was a no-op stub here ("Ghidra couldn't resolve this address...
+   safe no-op stub") -- the real function was never decompiled, so
+   babl_menu (registered under that exact script name, see
+   start_npc_conversation) silently did nothing. Recovered from the
+   real ARM binary and moved down next to its sibling babl_fmenu
+   (FUN_00029358) -- see babl_menu's own comment there for the full
+   story; it needs babl_fmenu's own globals/helpers already declared
+   by that point in the file. */
 undefined4 LAB_00029f74()
 
 {
@@ -19340,7 +19339,7 @@ void start_npc_conversation()
     message_scroll_print_wrapped(FUN_0007863c(0xe01));
   }
   else {
-    babl_register_builtin(s_babl_menu_00085220,&LAB_0002912c);
+    babl_register_builtin(s_babl_menu_00085220,&babl_menu); // was &LAB_0002912c, the no-op stub
     babl_register_builtin(s_babl_fmenu_00085214,FUN_00029358);
     babl_register_builtin(&DAT_000845a8,FUN_00029708);
     babl_register_builtin(s_respond_000845ac,FUN_0002977c);
@@ -19404,14 +19403,17 @@ void FUN_00028ffc()
 
 {
   char cVar1;
-  int iVar2;
+  /* Was `int` -- same DAT_00100680 `* 8` stride / pointer-width fix as
+     babl_menu's own comment. Never exercised until babl_menu's real
+     implementation was recovered this session. */
+  intptr_t iVar2;
   char *pcVar3;
   int iVar4;
   undefined1 local_bc;
   undefined1 local_bb;
   undefined1 local_ba;
   char acStack_b9 [157];
-  
+
   while (DAT_0010078c != 0) {
     flush_dirty_rect_to_display(1);
     FUN_000735fc();
@@ -19425,14 +19427,14 @@ void FUN_00028ffc()
       if (1 < DAT_00100794) {
         iVar4 = 1;
         do {
-          pcVar3 = *(char **)(&DAT_00100680 + iVar4 * 4);
+          pcVar3 = *(char **)(&DAT_00100680 + iVar4 * 8);
           local_bc = (undefined1)((uint)((iVar4 + 0x30) * 0x1000000) >> 0x18);
           local_bb = 0x2e;
           local_ba = 0x20;
-          iVar2 = -(int)pcVar3;
+          iVar2 = -(intptr_t)pcVar3;
           do {
             cVar1 = *pcVar3;
-            pcVar3[(int)(acStack_b9 + iVar2)] = cVar1;
+            pcVar3[(intptr_t)(acStack_b9 + iVar2)] = cVar1;
             pcVar3 = pcVar3 + 1;
           } while (cVar1 != '\0');
           Ordinal_1063(&local_bc,&s_scroll_newline_0008522c);
@@ -19450,19 +19452,50 @@ void FUN_00028ffc()
 
 
 
-int FUN_00029358(param_1)
-int param_1;
+/* Was a no-op stub (LAB_0002912c, uw.c ~1693's own comment) -- Ghidra
+   never resolved this address into a proper function on this port's
+   own earlier decompile pass, so babl_menu (registered under that
+   exact script name in start_npc_conversation) silently did nothing.
+   Bragit's conversation calls this as its very first action, so no
+   dialogue text or menu ever appeared even after the babl VM crash
+   fixes made the VM itself run correctly end to end (see
+   [[npc-talk-crash-babl-vm-resolved]]).
+
+   Recovered from the real ARM binary
+   (/Users/ccuddigan/Projects/UW1/uw-arm/UU.exe, image base 0x10000,
+   function at 0x2912c) via Ghidra headless disassembly + decompile --
+   it's structurally identical to babl_fmenu just below (FUN_00029358,
+   already correctly ported) with the second (filter-list) parameter
+   and its `if (sVar4 != 0)` gate removed: babl_menu shows every item
+   in its list unconditionally, where babl_fmenu only shows the ones
+   whose parallel filter-list entry is nonzero. Confirmed line-for-line
+   against the real disassembly; every global/helper this calls
+   (DAT_00100790/794/78c/788, DAT_001006d8/100680/1007a0/100770,
+   babl_alloc, babl_expand_string_refs, message_scroll_print_wrapped,
+   FUN_00028ffc, etc.) is the exact same shared struct/state babl_fmenu
+   already uses successfully -- placed here, after babl_fmenu, so those
+   are already declared. */
+int babl_menu(param_1)
+intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call opcode) passes a full 64-bit stack pointer (DAT_000bbf0c + DAT_000bbf78*2), truncated on 64-bit before this function's own `param_1 + -2` dereference; same bug class as babl_set_variable/babl_register_builtin elsewhere in this cluster
 
 {
   char cVar1;
   short sVar2;
-  short sVar3;
-  short sVar4;
   short sVar5;
   undefined4 uVar6;
-  undefined4 uVar7;
-  int iVar8;
-  int iVar9;
+  /* uVar7/iVar8/iVar9 were `undefined4`/`int` (4 bytes) but hold real
+     string pointers from FUN_0007863c/babl_expand_string_refs/
+     Ordinal_1068 -- and DAT_001006d8/DAT_00100680 (the per-item raw-
+     string / expanded-string caches, both raw byte-array backings
+     manually indexed) were stored/read with a `* 4` stride sized for
+     32-bit pointers, same bug class as DAT_000bbf00's own fix earlier
+     in this cluster. Confirmed live via lldb: this is the crash one
+     step past babl_menu's own `param_1` truncation fix. Widened to
+     intptr_t and `* 8` throughout (also fixed in babl_fmenu just below
+     and its two other readers, FUN_00028ffc/FUN_000295b4). */
+  intptr_t uVar7;
+  intptr_t iVar8;
+  intptr_t iVar9;
   char *pcVar10;
   char *pcVar11;
   int iVar12;
@@ -19471,7 +19504,106 @@ int param_1;
   undefined1 local_c3;
   undefined1 local_c2;
   char acStack_c1 [157];
-  
+
+  sVar13 = 0;
+  DAT_00100790 = 1;
+  DAT_00100794 = 1;
+  sVar2 = *(short *)(param_1 + -2);
+  uVar6 = FUN_0001adc4((int)sVar2);
+  iVar12 = 1;
+  sVar5 = (short)uVar6;
+  while (sVar5 != 0) {
+    uVar7 = (intptr_t)FUN_0007863c(uVar6);
+    *(intptr_t *)(&DAT_001006d8 + DAT_00100794 * 8) = uVar7;
+    iVar8 = (intptr_t)babl_expand_string_refs((char *)uVar7);
+    sVar5 = DAT_00100794;
+    iVar9 = (int)DAT_00100794;
+    *(intptr_t *)(&DAT_00100680 + iVar9 * 8) = iVar8;
+    if (iVar8 == *(intptr_t *)(&DAT_001006d8 + iVar9 * 8)) {
+      iVar9 = Ordinal_1068(*(intptr_t *)(&DAT_001006d8 + iVar9 * 8));
+      pcVar10 = (char *)babl_alloc(iVar9 + 1);
+      iVar9 = (int)DAT_00100794;
+      *(char **)(&DAT_00100680 + iVar9 * 8) = pcVar10;
+      pcVar11 = *(char **)(&DAT_001006d8 + iVar9 * 8);
+      do {
+        cVar1 = *pcVar11;
+        pcVar11 = pcVar11 + 1;
+        *pcVar10 = cVar1;
+        pcVar10 = pcVar10 + 1;
+        sVar5 = DAT_00100794;
+      } while (cVar1 != '\0');
+    }
+    DAT_00100794 = sVar5 + 1;
+    *(short *)(&DAT_001007a0 + sVar5 * 2) = (short)uVar6;
+    iVar12 = iVar12 + 1;
+    uVar6 = FUN_0001adc4(iVar12 + sVar2 + -1);
+    sVar5 = (short)uVar6;
+  }
+  FUN_0007f140();
+  msg_scroll_panel_reset(1);
+  FUN_0007ec50();
+  iVar12 = 0;
+  do {
+    (&DAT_00100770)[iVar12] = 0xffff;
+    iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
+  } while (iVar12 < 10);
+  iVar12 = 1;
+  if (1 < DAT_00100794) {
+    do {
+      pcVar10 = *(char **)(&DAT_00100680 + iVar12 * 8);
+      local_c4 = (char)iVar12 + '0';
+      local_c3 = 0x2e;
+      local_c2 = 0x20;
+      iVar9 = -(intptr_t)pcVar10;
+      do {
+        cVar1 = *pcVar10;
+        pcVar10[(intptr_t)(acStack_c1 + iVar9)] = cVar1;
+        pcVar10 = pcVar10 + 1;
+      } while (cVar1 != '\0');
+      Ordinal_1063(&local_c4,&s_scroll_newline_0008522c);
+      sVar5 = message_scroll_print_wrapped(&local_c4);
+      FUN_0007ec50();
+      for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
+        (&DAT_00100770)[iVar9] = (short)iVar12;
+      }
+      iVar12 = (iVar12 + 1) * 0x10000 >> 0x10;
+      sVar13 = sVar5 + 1;
+    } while (iVar12 < DAT_00100794);
+  }
+  FUN_0007f0e0();
+  DAT_0010078c = 1;
+  DAT_00250718 = 1;
+  FUN_00028ffc();
+  return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
+}
+
+
+
+int FUN_00029358(param_1)
+intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own fix just above (this function's identical caller convention was simply never exercised deep enough to crash yet)
+
+{
+  char cVar1;
+  short sVar2;
+  short sVar3;
+  short sVar4;
+  short sVar5;
+  undefined4 uVar6;
+  /* Same width/stride fix as babl_menu's own comment just above --
+     uVar7/iVar8/iVar9 hold real string pointers, and
+     DAT_001006d8/DAT_00100680 need a `* 8` stride to match. */
+  intptr_t uVar7;
+  intptr_t iVar8;
+  intptr_t iVar9;
+  char *pcVar10;
+  char *pcVar11;
+  int iVar12;
+  short sVar13;
+  char local_c4;
+  undefined1 local_c3;
+  undefined1 local_c2;
+  char acStack_c1 [157];
+
   sVar13 = 0;
   DAT_00100790 = 1;
   DAT_00100794 = 1;
@@ -19483,18 +19615,18 @@ int param_1;
   sVar5 = (short)uVar6;
   while (sVar5 != 0) {
     if (sVar4 != 0) {
-      uVar7 = FUN_0007863c(uVar6);
-      *(undefined4 *)(&DAT_001006d8 + DAT_00100794 * 4) = uVar7;
-      iVar8 = babl_expand_string_refs(uVar7); // was a dropped register-forwarding arg -- same class as FUN_000196e8's own comment (uw.c ~10977)
+      uVar7 = (intptr_t)FUN_0007863c(uVar6);
+      *(intptr_t *)(&DAT_001006d8 + DAT_00100794 * 8) = uVar7;
+      iVar8 = (intptr_t)babl_expand_string_refs((char *)uVar7); // was a dropped register-forwarding arg -- same class as FUN_000196e8's own comment (uw.c ~10977)
       sVar5 = DAT_00100794;
       iVar9 = (int)DAT_00100794;
-      *(int *)(&DAT_00100680 + iVar9 * 4) = iVar8;
-      if (iVar8 == *(int *)(&DAT_001006d8 + iVar9 * 4)) {
-        iVar9 = Ordinal_1068(*(int *)(&DAT_001006d8 + iVar9 * 4));
+      *(intptr_t *)(&DAT_00100680 + iVar9 * 8) = iVar8;
+      if (iVar8 == *(intptr_t *)(&DAT_001006d8 + iVar9 * 8)) {
+        iVar9 = Ordinal_1068(*(intptr_t *)(&DAT_001006d8 + iVar9 * 8));
         pcVar10 = (char *)babl_alloc(iVar9 + 1);
         iVar9 = (int)DAT_00100794;
-        *(char **)(&DAT_00100680 + iVar9 * 4) = pcVar10;
-        pcVar11 = *(char **)(&DAT_001006d8 + iVar9 * 4);
+        *(char **)(&DAT_00100680 + iVar9 * 8) = pcVar10;
+        pcVar11 = *(char **)(&DAT_001006d8 + iVar9 * 8);
         do {
           cVar1 = *pcVar11;
           pcVar11 = pcVar11 + 1;
@@ -19522,14 +19654,14 @@ int param_1;
   iVar12 = 1;
   if (1 < DAT_00100794) {
     do {
-      pcVar10 = *(char **)(&DAT_00100680 + iVar12 * 4);
+      pcVar10 = *(char **)(&DAT_00100680 + iVar12 * 8);
       local_c4 = (char)iVar12 + '0';
       local_c3 = 0x2e;
       local_c2 = 0x20;
-      iVar9 = -(int)pcVar10;
+      iVar9 = -(intptr_t)pcVar10;
       do {
         cVar1 = *pcVar10;
-        pcVar10[(int)(acStack_c1 + iVar9)] = cVar1;
+        pcVar10[(intptr_t)(acStack_c1 + iVar9)] = cVar1;
         pcVar10 = pcVar10 + 1;
       } while (cVar1 != '\0');
       Ordinal_1063(&local_c4,&s_scroll_newline_0008522c);
@@ -19557,8 +19689,14 @@ short param_1;
 {
   int iVar1;
   short sVar2;
-  int iVar3;
-  
+  /* Was `int` -- same DAT_00100680/DAT_001006d8 `* 8` stride / pointer-
+     width fix as babl_menu's own comment. Also fixed a dropped
+     babl_free() argument below -- it must free the DAT_00100680-side
+     (expanded) copy when it differs from the DAT_001006d8-side (raw)
+     one, matching every other "if (x != cached) free x" sibling in
+     this file. */
+  intptr_t iVar3;
+
   if (DAT_00100790 != 0) {
     if (param_1 == 0) {
       sVar2 = Ordinal_2005((int)*(short *)(DAT_000879b0 + 6),
@@ -19579,10 +19717,10 @@ short param_1;
         iVar3 = 1;
         do {
           if (iVar3 == iVar1) {
-            FUN_000297dc(*(undefined4 *)(&DAT_00100680 + iVar3 * 4));
+            FUN_000297dc(*(char **)(&DAT_00100680 + iVar3 * 8));
           }
-          if (*(int *)(&DAT_001006d8 + iVar3 * 4) != *(int *)(&DAT_00100680 + iVar3 * 4)) {
-            babl_free();
+          if (*(intptr_t *)(&DAT_001006d8 + iVar3 * 8) != *(intptr_t *)(&DAT_00100680 + iVar3 * 8)) {
+            babl_free(*(intptr_t *)(&DAT_00100680 + iVar3 * 8));
           }
           iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
         } while (iVar3 < DAT_00100794);
@@ -19650,7 +19788,7 @@ char * param_1;
 
 
 void FUN_000297dc(param_1)
-undefined4 param_1;
+char *param_1; // was `undefined4` -- FUN_000295b4 passes a real (possibly babl_alloc'd) string pointer, truncated on 64-bit; same bug class as babl_menu's own fix
 
 {
   char cVar1;
