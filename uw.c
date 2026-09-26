@@ -407,13 +407,25 @@ char s__DATA_blnkmap_byt_00084338[] = "\\DATA\\blnkmap.byt";
    arithmetic now that the base type's own implicit scaling would
    otherwise double it. */
 ushort *g_player_object;
-undefined4 LAB_00017ba8()
-
+/* Was a no-op stub -- the real function was never decompiled, so
+   babl_builtin_set_attitude's own FUN_00074be8 iteration (invoked once
+   per matching-race object it walks) silently never wrote the new
+   attitude value into any of them. Recovered from the real ARM binary
+   (Ghidra headless): writes the babl script's requested attitude
+   value into the object's own attitude bits (byte offset 0xd/0xe,
+   masked to the low 14 bits, same field babl_builtin_set_race_attitude
+   writes more directly a few functions up). Callback signature
+   confirmed from FUN_00074be8's own call site: `(*param_4)(iVar1,param_3)`
+   with iVar1 a real object pointer and param_3 the attitude value. */
+int babl_builtin_set_attitude_apply(param_1,param_2)
+intptr_t param_1;
+uint param_2;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
+  uint uVar1;
+
+  uVar1 = *(ushort *)(param_1 + 0xd) & 0x3fff;
+  *(char *)(param_1 + 0xd) = (char)uVar1;
+  *(byte *)(param_1 + 0xe) = (byte)(uVar1 >> 8) | (byte)(((param_2 & 3) << 0xe) >> 8);
   return 0;
 }
 ushort *DAT_00100674;
@@ -515,9 +527,14 @@ undefined4 LAB_0001a120()
 
 {
   /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
+     (an indirect-jump/jumptable target it gave up on). Recovered via
+     Ghidra headless: the real body is a linked-list scan (walking a
+     chain off *(int*)(DAT_0001a18c+0x34), stepping +0x20 per node,
+     terminated by a zero short at +0x38) that unconditionally
+     `return 0;` on every path -- whether or not it finds a match, it
+     never returns anything else and has no side effects. Confirmed
+     behaviorally equivalent to this stub, so left as-is rather than
+     porting the dead search loop verbatim. */
   return 0;
 }
 short DAT_000bbf78;
@@ -2188,10 +2205,12 @@ undefined *DAT_002049b8;
 undefined4 LAB_0002bbe4()
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
+  /* Ghidra couldn't resolve this address from its own indirect-jump/
+     jumptable call site, but a direct Ghidra headless lookup by
+     address (0x2bbe4) DOES decompile it: `undefined4 FUN_0002bbe4(void)
+     { return 0; }` -- confirmed via disassembly that this genuinely IS
+     a no-op in the real binary too, not a "Ghidra gave up" placeholder.
+     Kept as-is; not a bug. */
   return 0;
 }
 short DAT_002048d0;
@@ -2720,14 +2739,36 @@ undefined1 *DAT_002048b8;
 undefined2 DAT_002048b2;
 undefined2 DAT_0023be98;
 undefined4 DAT_000858a0;
-undefined4 LAB_0003d8e4()
-
+// was FUN_0003d8e4. Stored into DAT_002048b8 (a movement-state callback
+// slot) right alongside the rest of the jump/fall fields' reset in
+// set_player_tile_position and the game-init player setup -- always with
+// param_1 = the player object. Recovered via Ghidra headless: gates on
+// the object's 0x1000 flag bit, g_vertical_velocity being exactly 0 (not
+// still rising/falling) and g_jump_ascent_timer being under a
+// DAT_00202078-derived threshold, then clears the two landing-adjacent
+// fields at struct offsets 6/8 (DAT_00204886/DAT_00204888) and reports
+// success -- i.e. a "has the player settled after a jump/fall" check.
+// DAT_0003d948/DAT_0003d944 were literal-pool constants (addresses of
+// DAT_00204880's struct base and DAT_00202078 respectively), same
+// pattern as DAT_0001842c -- resolved to the existing named fields
+// rather than left as fresh globals. No call site through DAT_002048b8
+// itself was found in this decompile (likely reached only via a
+// jumptable Ghidra never resolved into a caller), so this is ported for
+// fidelity but not independently exercised.
+undefined4 check_and_reset_landing_state(param_1)
+ushort *param_1;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  undefined4 uVar2;
+  if ((((*param_1 & 0x1000) == 0) || (g_vertical_velocity != 0)) ||
+     (DAT_00202078 * 3 <= g_jump_ascent_timer * 10)) {
+    uVar2 = 0;
+  }
+  else {
+    DAT_00204888 = 0;
+    DAT_00204886 = 0;
+    uVar2 = 1;
+  }
+  return uVar2;
 }
 /* Recovered from UU.exe .data at 0x85d20: tile-floor-height -> world Z
    table, `height_nibble * 64` for nibbles 0..13 (then 0,0,1024).
@@ -4082,60 +4123,15 @@ static undefined1 DAT_00202c3e_backing[8192];
 #define DAT_00202c3e DAT_00202c3e_backing[0]
 static undefined1 DAT_00202c3f_backing[8192];
 #define DAT_00202c3f DAT_00202c3f_backing[0]
-undefined4 LAB_0001582c()
-
-{
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
-}
-undefined4 LAB_0007cd6c()
-
-{
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
-}
 char s__DATA_comobj_dat_00086894[] = "\\DATA\\comobj.dat";
 char s__DATA_objects_dat_000868a8[] = "\\DATA\\objects.dat";
 undefined4 LAB_0007913c()
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
-}
-undefined4 LAB_0007cd7c()
-
-{
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
-}
-undefined4 LAB_0001583c()
-
-{
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
-}
-undefined4 LAB_0002a2d8()
-
-{
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
+  /* Confirmed via a direct Ghidra headless lookup by address
+     (0x7913c): `undefined4 FUN_0007913c(void) { return 0; }` -- this
+     genuinely IS a no-op in the real binary too, not a "Ghidra gave
+     up" placeholder. Kept as-is; not a bug. */
   return 0;
 }
 /* class0_variant_effect_table_lookup: dispatch target index 0 of get_scanned_object_class_
@@ -4227,19 +4223,19 @@ void *class2_variant_effect_table_lookup()
 undefined4 LAB_0006b3d4()
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
+  /* Confirmed via a direct Ghidra headless lookup by address
+     (0x6b3d4): `undefined4 FUN_0006b3d4(void) { return 0; }` -- this
+     genuinely IS a no-op in the real binary too, not a "Ghidra gave
+     up" placeholder. Kept as-is; not a bug. */
   return 0;
 }
 undefined4 LAB_00073b10()
 
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
+  /* Confirmed via a direct Ghidra headless lookup by address
+     (0x73b10): `undefined4 FUN_00073b10(void) { return 0; }` -- this
+     genuinely IS a no-op in the real binary too, not a "Ghidra gave
+     up" placeholder. Kept as-is; not a bug. */
   return 0;
 }
 /* Both were `int` -- real 64-bit pointers (DAT_002046a8/DAT_0020469c,
@@ -5184,32 +5180,59 @@ undefined2 DAT_0023beb8;
 undefined2 DAT_0023be8c;
 static undefined DAT_00028bfc_backing[8192];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
-undefined4 LAB_000680d0()
-
+undefined4 DAT_0023be64;
+/* was FUN_0007036c. Bound to key 0x88 in mode 0x1b, arg 2 (uw.c
+   ~59574, register_key_binding). DAT_00070398 and DAT_00070354 were two
+   separate literal-pool constants that Ghidra headless confirms BOTH
+   resolve to the exact same address (DAT_0023be64) -- so this guard is
+   unconditionally true; kept as an explicit always-true branch (rather
+   than silently deleting the check or writing a self-comparison that
+   would trip -Wtautological-compare) since why the original had two
+   loads of the same global here isn't recovered. `*DAT_0007039c` was
+   another literal-pool constant (address of DAT_00086df8, the already-
+   named player-stats struct pointer) -- resolved directly to that named
+   global rather than left as a fresh DAT_. Prints a resolved string
+   (the same "dropped register-forwarding arg" idiom already fixed ~30
+   other places in this file: the bare message_scroll_print_wrapped()
+   call forwards FUN_0007863c's just-returned r0) plus a newline, except
+   uVar2==0xc which instead prints a numeric stat byte from the player
+   struct via FUN_0007541c. */
+undefined4 FUN_0007036c(param_1)
+short param_1;
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  undefined4 uVar1;
+  uint uVar2;
+
+  if (1) {
+    uVar2 = ((uint)param_1 + 10) & 0xff;
+    if ((uVar2 != 10) && (uVar2 != 0xb)) {
+      if (uVar2 == 0xc) {
+        FUN_0007541c(8,*(undefined1 *)(DAT_00086df8 + (int)param_1 + 0x2b));
+      }
+      else {
+        message_scroll_print_wrapped(FUN_0007863c((((int)(short)uVar2 + 0x1f) | 0x400)));
+        message_scroll_print_wrapped(&s_scroll_newline_0008522c);
+      }
+    }
+    uVar1 = 1;
+  }
+  else {
+    uVar1 = 0;
+  }
+  return uVar1;
 }
-undefined4 LAB_0007036c()
-
+/* was FUN_00071ac4. Bound to key 0x89 in mode 0x1b (uw.c ~59573).
+   FUN_000452dc returns `ushort *`; its return was captured into a plain
+   `int` in the original decompile, the same pointer-truncation bug
+   class fixed ~30 other places in this file. */
+void FUN_00071ac4()
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
-}
-undefined4 LAB_00071ac4()
+  ushort *puVar1;
+  undefined1 auStack_10 [4];
 
-{
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  puVar1 = FUN_000452dc(4,2,1,4,(undefined2 *)auStack_10);
+  FUN_00071510(puVar1 != (ushort *)0x0);
+  return;
 }
 /* Base of a large fixed-offset record (FUN_00066cb4: `DAT_00086df8 =
    &DAT_0023bca8;`, then FUN_000232ec and others write through
@@ -5241,6 +5264,47 @@ short DAT_0023be92;
 short DAT_0023be94;
 short DAT_0023bf00;
 undefined2 DAT_0023bf02;
+/* was FUN_000680d0. Bound to keys '1'/'2'/'3' (0x31/0x32/0x33) in mode
+   0x11 with args -1/0/1 respectively (uw.c ~59567-59569,
+   register_key_binding). Nudges a heading field by a fixed step,
+   clamped to +-0x1000 (1/256-degree units), marking the view dirty
+   (FUN_00049924(2)) whenever it actually changed. DAT_000680f4/DAT_000680f8
+   were literal-pool constants resolving to DAT_0023beb4 and
+   DAT_0023bf00 respectively; the original's `DAT_000680f8 + 2` was raw
+   pointer arithmetic across two separately-declared globals that are
+   really adjacent fields of one struct (DAT_0023bf00/DAT_0023bf02,
+   already an established pair via their shared use at uw.c ~60832) --
+   replaced with a direct reference to DAT_0023bf02 instead of address-
+   of-plus-2 arithmetic on an unrelated global. DAT_0023bf2c (from
+   DAT_000680fc) is a freshly-declared flag selecting which of the two
+   fields this nudges; no other reader/writer of it exists yet in this
+   file. */
+short DAT_0023bf2c;
+void FUN_000680d0(param_1)
+undefined4 param_1;
+{
+  short sVar1;
+  short *puVar2;
+
+  puVar2 = &DAT_0023beb4;
+  if (DAT_0023bf2c != 0) {
+    puVar2 = (short *)&DAT_0023bf02;
+  }
+  if ((short)param_1 == 0) {
+    FUN_00049924(2);
+    *puVar2 = 0;
+  }
+  else {
+    sVar1 = 0x1000;
+    if ((short)param_1 == -1) {
+      sVar1 = -0x1000;
+    }
+    if (FUN_00069eb0(puVar2,sVar1,0x400,(short)param_1) != 0) {
+      FUN_00049924(2);
+    }
+  }
+  return;
+}
 int DAT_000db500;
 undefined2 DAT_0023bf04;
 byte DAT_0023beb0;
@@ -6088,14 +6152,16 @@ uint DAT_00202098;
 static undefined1 DAT_00087604_backing[65536];
 #define DAT_00087604 DAT_00087604_backing[0]
 undefined *PTR_FUN_00087614;
-undefined4 LAB_00072268()
-
+/* was FUN_00072268. Stored into the DAT_00201c9c generic no-arg
+   callback slot (uw.c ~30449, `(*DAT_00201c9c)();`) rather than called
+   directly. `*DAT_00072284` was a literal-pool constant resolving to
+   the already-named player-stats struct pointer DAT_00086df8; reads a
+   nibble from it at offset 0x5e and hands it (plus a fixed msgid 0x126)
+   to the already-recovered FUN_00072084. */
+void FUN_00072268()
 {
-  /* Ghidra couldn't resolve this address into a proper function
-     (an indirect-jump/jumptable target it gave up on); it's used
-     purely as a callback pointer elsewhere, so a no-op stub with
-     the same K&R-callable shape as 'codeval' is safe. */
-  return 0;
+  FUN_00072084(*(byte *)(DAT_00086df8 + 0x5e) & 0xf,0x126);
+  return;
 }
 static undefined DAT_0008762c_backing[8192];
 #define DAT_0008762c DAT_0008762c_backing[0]
@@ -6315,7 +6381,14 @@ static undefined1 DAT_000878ec_backing[32768];
 char s_That_000878f4[] = "That";
 char s_is_locked__000878fc[] = "is_locked.";
 char s_is_empty__0008790c[] = "is_empty.";
-undefined DAT_0024cfe0;
+/* Was a lone `undefined` scalar, but the real class6 variant-effect
+   lookup (uw.c ~46760, class6_variant_effect_table_lookup) indexes it
+   as `&DAT_0024cfe0 + nibble` for nibble 0..0xf, and its boot-time
+   loader (load_class6_variant_effect_table) reads exactly 0x10 bytes
+   into it -- same lone-scalar-treated-as-array bug class fixed
+   repeatedly elsewhere in this file. */
+static undefined1 DAT_0024cfe0_backing[8192];
+#define DAT_0024cfe0 DAT_0024cfe0_backing[0]
 char *DAT_0024cff4;
 undefined4 DAT_0024cff0;
 char s_Look__it_s_a_text_trap_00087918[] = "Look,_it's_a_text_trap";
@@ -6417,6 +6490,87 @@ undefined1 DAT_0025077a;
 undefined1 DAT_0025077b;
 static undefined1 DAT_00250730_backing[65536];
 #define DAT_00250730 DAT_00250730_backing[0]
+/* was FUN_0001582c: dispatch slot 7 of FUN_00052674's boot-time
+   objects.dat table-loader list (siblings load_armor_variant_tables/
+   load_light_food_effect_tables sit at slots 0/2, called the same way:
+   `(*local_13c[i])(iVar3)` with iVar3 = the open objects.dat handle).
+   Reads 0x40 bytes -- 16 nibble-indexed entries at a 4-byte stride --
+   into DAT_00250730, the exact buffer class7_variant_effect_table_lookup
+   indexes below. Recovered via Ghidra headless; FUN_0002285c is this
+   file's uw_file_read wrapper. */
+void load_class7_variant_effect_table(param_1)
+int param_1;
+{
+  FUN_0002285c(param_1,&DAT_00250730,0x40);
+  return;
+}
+/* was FUN_0007cd6c: dispatch slot 6, same boot-time loader list. Reads
+   0x10 bytes -- 16 nibble-indexed entries at a 1-byte stride -- into
+   DAT_0024cfe0, the buffer class6_variant_effect_table_lookup indexes
+   below (which is also why that global needed widening from a lone
+   scalar to a real 16-byte array). */
+void load_class6_variant_effect_table(param_1)
+int param_1;
+{
+  FUN_0002285c(param_1,&DAT_0024cfe0,0x10);
+  return;
+}
+/* was FUN_0007cd7c: class6_variant_effect_table_lookup, dispatch slot 6
+   of get_scanned_object_class_effect_ptr's per-class table (uw.c below,
+   local_c -- Ghidra split the trailing 4 array slots of local_24[4] into
+   separate stack variables local_14/local_10/local_c/local_8 for classes
+   4-7, the same split-symbol-cluster pattern as several other stack
+   arrays in this file). Same id-split-then-table-lookup shape as
+   class0_variant_effect_table_lookup/class2_variant_effect_table_lookup,
+   but only defined for family==2 (id&0x30==0x20): indexes DAT_0024cfe0
+   (loaded above by load_class6_variant_effect_table) at 1-byte stride;
+   every other family returns 0, matching this table's real, deliberately
+   partial coverage. */
+void *class6_variant_effect_table_lookup()
+
+{
+  ushort uVar1;
+
+  uVar1 = *(ushort *)g_scratch_object_ptr;
+  if ((uVar1 & 0x30) == 0x20) {
+    return &DAT_0024cfe0 + (uVar1 & 0xf);
+  }
+  return 0;
+}
+/* was FUN_0001583c: class7_variant_effect_table_lookup, dispatch slot 7
+   (local_8). Indexes DAT_00250730 (loaded above by
+   load_class7_variant_effect_table) at 4-byte stride, unconditionally --
+   unlike its class6 sibling, every family/nibble combination is valid
+   here. */
+void *class7_variant_effect_table_lookup()
+
+{
+  return &DAT_00250730 + (*(byte *)g_scratch_object_ptr & 0xf) * 4;
+}
+/* was FUN_0002a2d8: class1_variant_effect_table_lookup, dispatch slot 1
+   of get_scanned_object_class_effect_ptr's local_24 array (the same
+   4-entry array class0/class2/class3's handlers sit in). Same id-split
+   as its siblings, but ALSO caches the split family/nibble into
+   DAT_001013f4/DAT_001013f0 as a side effect (two freshly-declared
+   globals -- not otherwise read/written by any already-named code in
+   this file, so their consumer, if any, is still unrecovered) before
+   indexing DAT_001007d0 at a 0x30-byte stride, family*16+nibble. */
+short DAT_001013f4;
+short DAT_001013f0;
+void *class1_variant_effect_table_lookup()
+
+{
+  short sVar1;
+  ushort uVar2;
+  byte *pbVar3;
+
+  pbVar3 = (byte *)g_scratch_object_ptr;
+  sVar1 = (short)((*pbVar3 & 0x30) >> 4);
+  DAT_001013f4 = sVar1;
+  uVar2 = *pbVar3 & 0xf;
+  DAT_001013f0 = uVar2;
+  return &DAT_001007d0 + (sVar1 * 0x10 + (int)(short)uVar2) * 0x30;
+}
 undefined DAT_00250732;
 static undefined DAT_00250733_backing[8192];
 #define DAT_00250733 DAT_00250733_backing[0]
@@ -10460,7 +10614,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   
   uVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
   uVar2 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  FUN_00074be8(uVar2,0,uVar1,&LAB_00017ba8);
+  FUN_00074be8(uVar2,0,uVar1,&babl_builtin_set_attitude_apply);
   return;
 }
 
@@ -30982,7 +31136,7 @@ uint param_2;
   if (-1 < DAT_00202080) {
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
-  DAT_002048b8 = &LAB_0003d8e4;
+  DAT_002048b8 = &check_and_reset_landing_state;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
   g_jump_ascent_timer = 0;
@@ -46632,8 +46786,8 @@ undefined4 FUN_00052674()
   local_13c[1] = FUN_0002a2c8;
   local_13c[5] = (code *)0x0;
   local_13c[2] = load_light_food_effect_tables;
-  local_13c[6] = (code *)&LAB_0007cd6c;
-  local_13c[7] = (code *)&LAB_0001582c;
+  local_13c[6] = (code *)&load_class6_variant_effect_table;
+  local_13c[7] = (code *)&load_class7_variant_effect_table;
   Ordinal_1047(acStack_11c,0,0x104);
   pcVar7 = &DAT_0023cca8;
     stack0xffdc323c_ptr = stack0xffdc323c_buf;
@@ -46710,13 +46864,13 @@ void *get_scanned_object_class_effect_ptr()
   undefined1 *local_8;
   
   local_24[0] = &class0_variant_effect_table_lookup;
-  local_24[1] = &LAB_0002a2d8;
+  local_24[1] = &class1_variant_effect_table_lookup;
   local_24[2] = &class2_variant_effect_table_lookup;
   local_24[3] = &LAB_0007913c;
   local_14 = &LAB_00073b10;
   local_10 = &LAB_0006b3d4;
-  local_c = &LAB_0007cd7c;
-  local_8 = &LAB_0001583c;
+  local_c = &class6_variant_effect_table_lookup;
+  local_8 = &class7_variant_effect_table_lookup;
   /* Was `(*(code *)local_24[...])(); return 0;` -- Ghidra couldn't trace
      a return value through the indirect call and fabricated a "return 0"
      placeholder. Real disassembly (0x52928-0x52938) shows no instruction
@@ -59419,7 +59573,7 @@ void FUN_00066e90()
   DAT_002048a7 = 8;
   DAT_002048a3 = 1;
   DAT_002048a4 = 0;
-  DAT_002048b8 = &LAB_0003d8e4;
+  DAT_002048b8 = &check_and_reset_landing_state;
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
   g_player_object = DAT_0023b82c;
@@ -59480,14 +59634,14 @@ void FUN_00066e90()
   register_click_region(0x6b,0xa7,0x7b,0x99,0xffff,1,move_key_directional_step);
   register_click_region(0x82,0xa9,0x92,0x9c,0,1,move_key_directional_step);
   register_click_region(0x9b,0xa7,0xaa,0x99,1,1,move_key_directional_step);
-  register_key_binding(0x33,1,0x11,&LAB_000680d0);
-  register_key_binding(0x31,0xffffffff,0x11,&LAB_000680d0);
-  register_key_binding(0x32,0,0x11,&LAB_000680d0);
+  register_key_binding(0x33,1,0x11,&FUN_000680d0);
+  register_key_binding(0x31,0xffffffff,0x11,&FUN_000680d0);
+  register_key_binding(0x32,0,0x11,&FUN_000680d0);
   register_key_binding(0x6a,7,0x1b,move_command_dispatch);
   register_key_binding(0x4a,6,0x1b,move_command_dispatch);
   register_key_binding(0x86,0,0x1b,toggle_stats_panel);
-  register_key_binding(0x89,0,0x1b,&LAB_00071ac4);
-  register_key_binding(0x88,2,0x1b,&LAB_0007036c);
+  register_key_binding(0x89,0,0x1b,&FUN_00071ac4);
+  register_key_binding(0x88,2,0x1b,&FUN_0007036c);
   register_key_binding(0x87,1,0x1b,FUN_00044d14);
   register_key_binding(0x173,0x173,1,FUN_00056ebc);
   register_key_binding(0x172,0x172,1,FUN_00056ebc);
@@ -68390,13 +68544,13 @@ undefined4 param_3;
 codeval * param_4;
 
 {
-  int iVar1;
+  intptr_t iVar1; // was `int` -- FUN_000535fc returns a real 64-bit object pointer, truncated on this host (this loop was never exercised until babl_builtin_set_attitude's own recovery)
   undefined1 *puVar2;
-  
+
   puVar2 = DAT_002046c0;
   if (DAT_002046c0 < DAT_002046c8) {
     do {
-      iVar1 = FUN_000535fc(*puVar2);
+      iVar1 = (intptr_t)FUN_000535fc(*puVar2);
       if (*(byte *)(iVar1 + 0x1a) == param_1) {
         iVar1 = (*param_4)(iVar1,param_3);
         if (iVar1 != 0) {
@@ -68866,7 +69020,7 @@ LAB_0007588c:
       FUN_00078c80(0x111);
     }
     else {
-      DAT_00201c9c = &LAB_00072268;
+      DAT_00201c9c = &FUN_00072268;
       FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
       set_player_tile_position(0,0,0);
       FUN_00049924(0x7ffe);
