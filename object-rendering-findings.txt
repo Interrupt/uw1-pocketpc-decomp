@@ -4588,3 +4588,63 @@ UW_ENABLE_MODEL_RENDER/UW_MODEL_TUNER both remain opt-in; zero env vars
 still gives the untouched default (faces=11/6). Not yet live-tested by
 the user at time of this entry -- build.sh and run.sh both updated to
 compile the new debug_ui.c.
+
+(39) 2026-09-21: three real fixes and two real UI bugs caught during
+the debug UI's actual first live use (draw order fixed properly --
+the true screen present happens inside main_loop_hud_flush() itself,
+not after it returns, see uw.c's own comment now at that call site;
+text color fixed -- draw_text_string honours g_text_flat_color, not
+set_draw_color's palette index at all; selected-row highlight set to
+palette index 0, confirmed real black elsewhere in this file).
+
+With the panel actually working, live calibration on the real door
+repro (id=0x140) found: xoff=-16.0 "makes door frames perfectly fit in
+the wall" (the still-open item from entry 36/37's QA -- CONFIRMED, not
+guessed); zoff=0.0 and yoff=0.0 both correct (entry 36's zoff=-4.0 was
+WRONG -- corrected here). Added a real `xoff` field to ModelMapEntry
+(model1's own X shift was hardcoded 0.0 at the call site until now, no
+per-row field existed) and set it to -16.0 on all 14 door/frame rows;
+zoff/zoff2 corrected from -4.0 to 0.0; x_off2 (the leaf's own centering
+shift) changed from -64.0 to -80.0 -- the same -16.0 correction folded
+in on top of its existing centering, per the user's own note ("doors
+would need it to match") -- so frame and leaf move together.
+
+Verified live (screenshot at the same repro): the door opening now
+looks like a properly-fitted archway with no visible gap, matching the
+QA description. run-regressions.sh: 5/6 clean on this pass -- the 6th
+(demo_inventory_open_bag_test.txt) crashed with a real backtrace
+(FUN_0004ad10, reached via drop_held_object_near_player/
+handle_object_drop_target/attach_picked_up_object_to_cursor --
+inventory drag-and-drop, nowhere near anything this branch touches).
+Re-ran the identical binary against the identical test 3 more times
+standalone: 3/3 clean. Confirmed flaky/pre-existing, not a regression
+from this change -- this branch's own edits are confined to
+ModelMapEntry/g_model_map/the model-dispatch tuner logic, none of
+which this crash's call stack goes anywhere near.
+
+ALSO FOUND, not yet fixed: user reports "uv_scale values of less than
+128 seem to stop making texels smaller and start making them bigger
+again" -- a real reversal, not a perception issue. Root cause is
+structural, not a wrong constant: uv_project's own [0,15] integer
+corner encoding (uw.c, matching the real wall-drawing convention this
+was modeled on) only correctly represents LESS than one full texture
+repeat across a single quad's own real width. Once uv_scale drops
+below a given face's real extent, that face's own texture wraps around
+MORE than once between its corners -- but only 4 discrete corner
+values are ever stored, so whatever consumes DAT_000ace08-27 downstream
+(presumably interpolating linearly between the 4 stored corner values,
+not genuinely wrapping) can't represent that correctly, and the visual
+result is large jumps/stretches that read as "texels got bigger" again
+rather than smaller. This is a real limit of the encoding itself, not
+a tunable number -- the practical takeaway for calibration is to keep
+uv_scale_u/uv_scale_v at or above roughly a face's own real width
+(~128 for this door family, empirically, matching this finding)
+rather than chasing a smaller "sharper" value. A real fix would need
+either genuine UV wrapping in whatever rasterizer consumes these
+fields (not yet identified/traced) or subdividing large faces into
+multiple smaller quads each within one texture repeat -- both out of
+scope for a quick fix, not attempted this entry.
+
+UW_MODEL_TUNER/UW_ENABLE_MODEL_RENDER still opt-in; default rendering
+reconfirmed unaffected (faces=11/6, zero env vars) after all of the
+above.

@@ -54636,6 +54636,11 @@ typedef struct {
                      // this path only ever had xoff_local (0 for every
                      // existing row). 0 = no change to current behavior.
   double zoff2;      // model2's local-space Z shift, paired with x_off2
+  double xoff;       // model1's own local-space X shift before rotation --
+                     // was hardcoded 0.0 at the call site (no per-row
+                     // field existed yet); live-calibrated via the debug
+                     // UI (UW_MODEL_TUNER) to -16.0 for the door frame,
+                     // "makes door frames perfectly fit in the wall".
   int heading_step;  // extra (raw - 2*quadrant + heading_step) & 7 offset
                       // applied ON TOP of the generic quadrant
                       // compensation -- the display-list door bank needed
@@ -54708,20 +54713,25 @@ static const ModelMapEntry g_model_map[] = {
   // established for ordinary tile walls) -- first live test of the new
   // real-per-vertex-UV path (see ModelMapEntry's own comment); starting
   // point for calibration, not yet confirmed correct on screen.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -64.0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, -4.0, -4 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, -4.0, 0, -4 },
+  // xoff=-16.0 confirmed live via the debug UI tuner: "makes door frames
+  // perfectly fit in the wall". zoff/zoff2 confirmed 0.0 (the earlier
+  // -4.0 guess, entry 36, was wrong -- corrected here per live QA).
+  // x_off2 -80.0 = the leaf's own previous -64.0 centering plus the same
+  // -16.0 shift the frame needed, so leaf and frame move together.
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
 };
 #define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
 
@@ -55125,7 +55135,7 @@ ushort * param_1;
          (UW_MODEL_SCALE etc, applied inside emit_model_object itself)
          still take final precedence over these if both are set, same
          as they already did over the table. */
-      double _use_scale = _me->scale, _use_yoff = _me->yoff, _use_xoff = 0.0, _use_zoff = _me->zoff;
+      double _use_scale = _me->scale, _use_yoff = _me->yoff, _use_xoff = _me->xoff, _use_zoff = _me->zoff;
       double _use_uv_u = _me->uv_scale_u, _use_uv_v = _me->uv_scale_v;
       int _use_heading_step = _me->heading_step;
       if (getenv("UW_MODEL_TUNER")) {
