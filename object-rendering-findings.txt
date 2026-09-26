@@ -4702,3 +4702,89 @@ texture can still wrap more than once between its 4 stored corners if
 uv_scale is set too small relative to a face's real width) remains
 real and un-fixed, just less likely to be hit in practice now that the
 quantization itself is finer.
+
+(41) 2026-09-21: a 4-part live QA pass, all four addressed this entry
+(one -- leaf texture -- clearly confirmed visually; the other three
+implemented and verified compiling/running clean, awaiting the user's
+own live confirmation via a fresh screenshot round).
+
+1. LEAF TEXTURE ("Door leaf is not using any texture, should use the
+same door texture that the opcode version was using"). The leaf's
+sprite texture pointer (_leaf_tex, FUN_00040770-decoded, already
+confirmed real/non-garbage via a nonzero-pixel histogram much earlier
+this investigation) was only ever applied behind UW_MODEL_LEAF_
+TEXTURE=1, with UW_UVPROJ_NONE (all-zero UV) -- the exact same "flat
+single texel" bug the frame itself had before entry 35's fix, just
+never revisited for the leaf specifically. Added UW_UVPROJ_FIT_XY: a
+genuinely different UV mode from the frame's tiling projection --
+LINEARLY maps a model's own real local X/Y bbox range onto the sprite's
+own real (not power-of-2 -- 32x64 observed live) pixel dimensions once,
+no repeats, V flipped (sprites are stored top-row-first; local/world Y
+increases upward). Applied unconditionally now (texture on by default,
+matching the display-list path's own already-textured leaf) --
+UW_MODEL_LEAF_TEXTURE=0 still forces it off for comparison. VERIFIED
+LIVE: screenshot at the door repro shows a real, recognizable wooden
+door texture filling the leaf -- the clearest visual win of this whole
+entry.
+
+2. FRAME UV IN WORLD SPACE, PER-FACE ("Door frame UV mapping is not in
+world space, seems to stretch per-face"). Root cause: UW_UVPROJ_XY
+(entry 35) used one FIXED local axis pair for the whole model -- only
+correct for faces whose own normal happens to match that pair; a door
+frame has jamb faces (normal along local X), front/back faces (normal
+along local Z), and cap faces (normal along Y), so any single fixed
+pair stretches whichever faces it's wrong for -- a real triplanar-
+mapping problem, not a coordinate-space one exactly, though moving to
+world space is also independently correct (so adjacent real wall
+texture and this model's own faces share one coordinate grid, instead
+of each model instance texturing independently of the room around it).
+Added UW_UVPROJ_TRIPLANAR_WORLD: per FACE (not per model), computes
+that face's own 4 corners' WORLD-space extent (reads the same vf[]/
+DAT_000a85d0_backing positions already written for rendering, not the
+pre-rotation local array) on each of X/Y/Z, drops the axis with the
+SMALLEST extent (that's the face's own thickness/normal direction),
+and uses the other two as U/V -- standard dominant-axis triplanar
+selection. Set on all 14 door/frame rows, replacing UW_UVPROJ_XY.
+
+3. NON-POWER-OF-2 / INDEPENDENT U,V RESOLUTION. A side effect of
+supporting the leaf's own real 32x64 sprite dimensions (fix 1) and
+matching-tier wall textures that aren't perfectly square: uv_project's
+old `& (texres-1)` wrap only worked for power-of-2 texres. Generalized
+emit_model_object/uv_project to take independent texres_u/texres_v
+(not one shared texres) and switched wrapping/clamping from bitmask to
+a general modulo + explicit clamp, so any real resolution works, not
+just 16/32/64.
+
+4. CEILING PINNING ("Top of the door should be stretching to the roof,
+just like the opcode version was doing with its special pinning. It's
+likely that a Y value of 1024 should mean 'stick to the roof'").
+DFRAME.E's riser vertices top out at exactly local Y 1024 (established
+entry 35/the model-map's own comment) -- this file's own earlier due-
+diligence (memory.md, object-rendering-findings.txt) already
+established NO real per-tile/per-room ceiling height field exists in
+this data, so there is no lookup to wire in; implemented as a live-
+tunable pin instead. Added `ceiling_y` (a new ModelMapEntry field,
+default 0/disabled -> old y_clip=256 clamp behavior unchanged) and a
+`UW_MODEL_CEILING_Y` env override: when set (>0), any vertex whose RAW
+local Y is >=1024 gets its WORLD Y hard-pinned to that value directly
+(bypassing the normal anchor+scale+yoff formula for just that vertex;
+its X/Z still come from the ordinary rotation/anchor math), while every
+OTHER riser vertex (the connecting header etc, y_clip's own established
+finding) still gets the existing y_clip clamp, unchanged. Wired into
+the live debug UI tuner too (UW_MODEL_TUNER) as a new `ceiling_y`
+field, seeded on first use from anchor_height+256 (continuity with the
+old fixed behavior) so the user can nudge it live to find the real
+per-room value empirically, the same way xoff/zoff were found in entry
+39 -- there being no real ceiling-height field to consult, this HAS to
+be found by eye, not derived.
+
+Compiled clean (verified no new warnings in the changed code, checked
+line-by-line against clang -Wall's full output). run-regressions.sh:
+6/6 clean. Default rendering reconfirmed unaffected (faces=11/6, zero
+env vars). Fixes 2-4 implemented and running but not yet independently
+screenshot-verified beyond "leaf+frame both render with real detail
+and no crash/glitch in the same shot" -- fix 4 specifically needs a
+live UW_MODEL_TUNER session to find the real ceiling_y value for any
+given room, since ceiling_y defaults to 0/disabled and no default value
+was set on the table rows (deliberately -- guessing one would be no
+better than the status quo).

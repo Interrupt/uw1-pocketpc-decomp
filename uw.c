@@ -54381,48 +54381,100 @@ static const unsigned short g_dlist_region[4286] = {
 // which reads as flat uniform color -- exactly what was observed. NONE
 // keeps every existing g_model_map row's current (flat-shaded, texptr
 // ignored) behavior unchanged by default.
-typedef enum { UW_UVPROJ_NONE = 0, UW_UVPROJ_XZ, UW_UVPROJ_XY, UW_UVPROJ_ZY } UvProjection;
+typedef enum {
+  UW_UVPROJ_NONE = 0, UW_UVPROJ_XZ, UW_UVPROJ_XY, UW_UVPROJ_ZY,
+  /* Per-face dominant-axis (triplanar) projection in WORLD space --
+     added per live QA ("not in world space, seems to stretch per-
+     face"). A single fixed local axis pair (the original XY/XZ/ZY
+     modes) is only correct for faces whose own normal happens to match
+     what that pair assumes -- the door frame has jamb faces (normal
+     along local X), the front/back face (normal along local Z), AND
+     cap faces (normal along Y), so any one fixed pair stretches
+     whichever faces it's wrong for. Selected fresh per FACE (not per
+     model) by comparing that face's own 4 corners' world-space extent
+     on each axis and dropping the smallest (that's the face's own
+     thickness/normal direction) -- see its own selection code in
+     emit_model_object. Also genuinely WORLD space (reads the same
+     vf[]/DAT_000a85d0_backing positions already computed for
+     rendering, not the pre-rotation local array), so adjacent real
+     wall texture and this model's own faces share one coordinate grid
+     instead of each model instance texturing independently of its
+     surroundings. */
+  UW_UVPROJ_TRIPLANAR_WORLD,
+  /* Fit-to-bounds, not tile-and-wrap: maps a model's own real local
+     X/Y bounding-box range linearly onto [0,texres-1], once, no
+     repeats -- for a flat panel meant to show ONE full image across
+     its own extent (a sprite on a door leaf) rather than a repeating
+     wall-style material. uv_scale_u/v are ignored for this mode (the
+     model's own measured bbox supplies the range instead -- see
+     emit_model_object's own bbox_lo/bbox_hi). */
+  UW_UVPROJ_FIT_XY,
+} UvProjection;
 
-/* Planar-projection UV for one local vertex, in the same [0,15] texel-
-   corner convention ordinary tile walls already use (DAT_0023b824's own
-   wall-slot value minus one -- see the wall-drawing reference at uw.c
-   ~51767-51877). Wraps each axis against uv_scale (world units per one
-   texture repeat) so a texture tiles across a model's surface instead
-   of stretching once end to end. Projects from LOCAL (pre-rotation,
-   pre-anchor) model space rather than world space, deliberately: it
-   keeps a given model's own texturing identical no matter which
-   compass heading this particular placed instance faces, at the cost
-   of not necessarily lining up seam-for-seam with the real wall texture
-   the object sits against (open calibration question, not yet checked
-   against a screenshot). */
 /* uv_scale_u/v are separate on purpose: a single shared scale can't be
    right for both axes on a face whose real horizontal and vertical
    extents differ a lot (e.g. a lintel is wide in X but thin in Y) --
    live QA confirmed U and V needed independent tuning ("uv_scale seems
    not to match both horizontally and vertically -- the vertical scale
-   might be pinned"), not just a better shared number. */
-/* texres: the REAL pixel resolution of whatever texture this face is
-   about to sample (16/32/64 -- see get_texture_page's own 3 real
-   tiers and emit_model_object's own texres_for_wall_tex_id, which
-   mirrors its branching exactly). Was hardcoded to 16 -- fine for the
-   16x16 tier, but silently threw away 3/4 or 15/16 of a 32x32/64x64
-   texture's real detail by only ever emitting 16 discrete steps per
-   axis. Quantizing to the texture's own real resolution instead
-   samples every real texel a higher-res source actually has. */
-static void uv_project(int proj, float lx, float ly, float lz, double uv_scale_u, double uv_scale_v, int texres, int *out_u, int *out_v)
+   might be pinned"), not just a better shared number.
+
+   texres: the REAL pixel resolution/width of whatever this face
+   samples -- 16/32/64 for a wall texture tier (get_texture_page's own
+   3 real tiers, see texres_for_wall_tex_id, which mirrors its
+   branching exactly), or a sprite's own real (not necessarily power-
+   of-2) pixel width/height for UW_UVPROJ_FIT_XY. Was hardcoded to 16
+   and wrapped with `& (texres-1)` (power-of-2 only) -- generalized to
+   modulo/clamp so non-power-of-2 sprite dimensions work too. */
+static void uv_project(int proj, float ax, float ay, float az, double uv_scale_u, double uv_scale_v,
+                        float bbox_lo_x, float bbox_hi_x, float bbox_lo_y, float bbox_hi_y,
+                        int texres_u, int texres_v, int *out_u, int *out_v)
 {
   double a = 0.0, b = 0.0;
+  if (texres_u <= 0) texres_u = 16;
+  if (texres_v <= 0) texres_v = 16;
+  if (proj == UW_UVPROJ_FIT_XY) {
+    double rx = (bbox_hi_x > bbox_lo_x) ? (ax - bbox_lo_x) / (bbox_hi_x - bbox_lo_x) : 0.0;
+    double ry = (bbox_hi_y > bbox_lo_y) ? (ay - bbox_lo_y) / (bbox_hi_y - bbox_lo_y) : 0.0;
+    if (rx < 0) rx = 0; if (rx > 1) rx = 1;
+    if (ry < 0) ry = 0; if (ry > 1) ry = 1;
+    /* Sprites are stored top-row-first (screen convention); world/model
+       Y increases upward, so flip V or the image renders upside down. */
+    *out_u = (int)(rx * (texres_u - 1));
+    *out_v = (int)((1.0 - ry) * (texres_v - 1));
+    return;
+  }
   switch (proj) {
-    case UW_UVPROJ_XY: a = lx; b = ly; break;
-    case UW_UVPROJ_ZY: a = lz; b = ly; break;
-    case UW_UVPROJ_XZ: a = lx; b = lz; break;
+    case UW_UVPROJ_XY: a = ax; b = ay; break;
+    case UW_UVPROJ_ZY: a = az; b = ay; break;
+    case UW_UVPROJ_XZ: a = ax; b = az; break;
     default: *out_u = 0; *out_v = 0; return;
   }
-  if (texres <= 0) texres = 16;
   double u = fmod(a, uv_scale_u); if (u < 0) u += uv_scale_u;
   double v = fmod(b, uv_scale_v); if (v < 0) v += uv_scale_v;
-  *out_u = (int)(u / uv_scale_u * (double)texres) & (texres - 1);
-  *out_v = (int)(v / uv_scale_v * (double)texres) & (texres - 1);
+  int iu = (int)(u / uv_scale_u * (double)texres_u); if (iu >= texres_u) iu = texres_u - 1; if (iu < 0) iu = 0;
+  int iv = (int)(v / uv_scale_v * (double)texres_v); if (iv >= texres_v) iv = texres_v - 1; if (iv < 0) iv = 0;
+  *out_u = iu;
+  *out_v = iv;
+}
+
+/* Which two world axes to use for ONE face's own UV, given that face's
+   4 corner world positions -- the axis with the SMALLEST extent across
+   those 4 corners is treated as the face's own normal/thickness
+   direction and dropped; the other two become U/V. Standard dominant-
+   axis triplanar selection. */
+static int uv_triplanar_face_axes(const float wx[4], const float wy[4], const float wz[4])
+{
+  float lo[3] = {wx[0], wy[0], wz[0]}, hi[3] = {wx[0], wy[0], wz[0]};
+  int k;
+  for (k = 1; k < 4; k++) {
+    if (wx[k] < lo[0]) lo[0] = wx[k]; if (wx[k] > hi[0]) hi[0] = wx[k];
+    if (wy[k] < lo[1]) lo[1] = wy[k]; if (wy[k] > hi[1]) hi[1] = wy[k];
+    if (wz[k] < lo[2]) lo[2] = wz[k]; if (wz[k] > hi[2]) hi[2] = wz[k];
+  }
+  float ex = hi[0] - lo[0], ey = hi[1] - lo[1], ez = hi[2] - lo[2];
+  if (ex <= ey && ex <= ez) return UW_UVPROJ_ZY; /* X is thinnest -> use Z,Y */
+  if (ez <= ex && ez <= ey) return UW_UVPROJ_XY; /* Z is thinnest -> use X,Y */
+  return UW_UVPROJ_XZ;                            /* Y is thinnest -> use X,Z (a cap) */
 }
 
 /* Mirrors get_texture_page's own tier branching (uw.c ~31944) exactly
@@ -54439,12 +54491,13 @@ static int texres_for_wall_tex_id(int id)
   return 16;
 }
 
-static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, double zoff_local, void *texptr, int uv_proj, double uv_scale_u, double uv_scale_v, int texres)
+static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, double zoff_local, void *texptr, int uv_proj, double uv_scale_u, double uv_scale_v, int texres_u, int texres_v, double ceiling_y)
 {
   int npts = *(int *)model;
   int nparts = *(int *)(model + 4);
   if (npts <= 0 || npts > 600 || nparts <= 0) return;
-  if (texres <= 0) texres = 16;
+  if (texres_u <= 0) texres_u = 16;
+  if (texres_v <= 0) texres_v = 16;
   if (uv_scale_u <= 0.0) uv_scale_u = 256.0;
   if (uv_scale_v <= 0.0) uv_scale_v = 256.0;
 
@@ -54465,6 +54518,7 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
   { const char *_s = getenv("UW_MODEL_UV_SCALE_V"); if (_s) uv_scale_v = atof(_s); }
   { const char *_s = getenv("UW_MODEL_XOFF"); if (_s) xoff_local = atof(_s); }
   { const char *_s = getenv("UW_MODEL_ZOFF"); if (_s) zoff_local = atof(_s); }
+  { const char *_s = getenv("UW_MODEL_CEILING_Y"); if (_s) ceiling_y = atof(_s); }
   double ang = heading * 45.0 * (3.14159265358979 / 180.0);
   double ca = cos(ang), sa = sin(ang);
 
@@ -54506,36 +54560,53 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
        clamp per-vertex (not per-face) here because the affected points
        (DFRAME.E's Y=1024 set) aren't shared with any other, unclipped
        part. */
+    /* Live QA (e-model-texturing branch): "Top of the door should be
+       stretching to the roof, just like the opcode version was doing
+       with its special pinning. It's likely that a Y value of 1024
+       should mean 'stick to the roof'." DFRAME.E's own riser vertices
+       top out at exactly local Y 1024 (see this block's own y_clip
+       comment) -- treat that specific value as a real sentinel, not
+       just an oversized part to clip. When ceiling_y is set (>0, a
+       real world-space height -- no per-tile/per-room ceiling field
+       exists in this data, per this file's own due-diligence notes, so
+       this has to be a caller-supplied/tunable value rather than a
+       lookup), a RAW-Y-1024 vertex's WORLD Y is pinned there directly,
+       bypassing the normal anchor+scale+yoff formula for just that
+       vertex -- its X/Z still come from the ordinary rotation/anchor
+       math below. Checked against the RAW my (before the y_clip clamp
+       below), which still applies unchanged to every OTHER riser
+       vertex (the connecting header etc, y_clip's own comment). */
+    int _is_ceiling_sentinel = (ceiling_y > 0.0 && my >= 1024.0f);
     if (y_clip > 0 && my > y_clip) my = (float)y_clip;
     _uv_local[i][0] = mx; _uv_local[i][1] = my; _uv_local[i][2] = mz;
     double rx = mx*ca - mz*sa;
     double rz = mx*sa + mz*ca;
     float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + i)*0xc);
     vf[0] = (float)(ax + rx*scale);
-    vf[1] = (float)(ah + my*scale + yoff);
+    vf[1] = _is_ceiling_sentinel ? (float)ceiling_y : (float)(ah + my*scale + yoff);
     vf[2] = (float)(az + rz*scale);
   }
   DAT_0023b838 = base_vtx + npts;
   DAT_000a85d0 = DAT_0023b838;
 
-  if (getenv("UW_DEBUG_MODEL_BBOX")) {
-    /* Same measurement UW_DEBUG_DLIST's own bbox print already did for
-       the display-list door bank (mysteries.md UPDATE 23/28) -- real
-       local X/Y/Z extents, not assumed. That measurement is what found
-       bank 0x61/0x6e's true center (+16,+4), replacing a guessed xoff
-       that was overshooting; this model family (DFRAME.E/DOOR.E) has
-       never had the equivalent check run against IT specifically. */
-    float lo[3] = {_uv_local[0][0], _uv_local[0][1], _uv_local[0][2]};
-    float hi[3] = {_uv_local[0][0], _uv_local[0][1], _uv_local[0][2]};
-    for (i = 1; i < npts; i++) {
-      for (int k = 0; k < 3; k++) {
-        if (_uv_local[i][k] < lo[k]) lo[k] = _uv_local[i][k];
-        if (_uv_local[i][k] > hi[k]) hi[k] = _uv_local[i][k];
-      }
+  /* Real local X/Y/Z bbox -- always computed (cheap, one pass over
+     already-touched data) rather than only under a debug flag, since
+     UW_UVPROJ_FIT_XY (the leaf's own sprite mapping, below) needs the
+     model's own real local X/Y range to map onto the sprite's bounds.
+     Same measurement UW_DEBUG_DLIST's own bbox print already did for
+     the display-list door bank (mysteries.md UPDATE 23/28). */
+  float _bbox_lo[3] = {_uv_local[0][0], _uv_local[0][1], _uv_local[0][2]};
+  float _bbox_hi[3] = {_uv_local[0][0], _uv_local[0][1], _uv_local[0][2]};
+  for (i = 1; i < npts; i++) {
+    for (int k = 0; k < 3; k++) {
+      if (_uv_local[i][k] < _bbox_lo[k]) _bbox_lo[k] = _uv_local[i][k];
+      if (_uv_local[i][k] > _bbox_hi[k]) _bbox_hi[k] = _uv_local[i][k];
     }
+  }
+  if (getenv("UW_DEBUG_MODEL_BBOX")) {
     fprintf(stderr, "[model-bbox] npts=%d x=[%g,%g] y=[%g,%g] z=[%g,%g] center=(%g,%g,%g)\n",
-            npts, lo[0], hi[0], lo[1], hi[1], lo[2], hi[2],
-            (lo[0]+hi[0])/2, (lo[1]+hi[1])/2, (lo[2]+hi[2])/2);
+            npts, _bbox_lo[0], _bbox_hi[0], _bbox_lo[1], _bbox_hi[1], _bbox_lo[2], _bbox_hi[2],
+            (_bbox_lo[0]+_bbox_hi[0])/2, (_bbox_lo[1]+_bbox_hi[1])/2, (_bbox_lo[2]+_bbox_hi[2])/2);
   }
 
   int emitted = 0;
@@ -54567,16 +54638,44 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
        variation, even though the texture pointer itself decoded real
        image data (checked via a nonzero-pixel histogram). 16 matches the
        wall-sized convention since these are all wall-scale surfaces. */
-    int _texsize = texptr ? texres : 0;
-    *(int *)(&DAT_000ace00 + rb) = _texsize;
-    *(int *)(&DAT_000ace04 + rb) = _texsize;
+    int _texsize_u = texptr ? texres_u : 0;
+    int _texsize_v = texptr ? texres_v : 0;
+    *(int *)(&DAT_000ace00 + rb) = _texsize_u;
+    *(int *)(&DAT_000ace04 + rb) = _texsize_v;
     {
       int _tu0 = 0, _tv0 = 0, _tu1 = 0, _tv1 = 0, _tu2 = 0, _tv2 = 0, _tu3 = 0, _tv3 = 0;
       if (texptr && uv_proj != UW_UVPROJ_NONE) {
-        uv_project(uv_proj, _uv_local[v0][0], _uv_local[v0][1], _uv_local[v0][2], uv_scale_u, uv_scale_v, texres, &_tu0, &_tv0);
-        uv_project(uv_proj, _uv_local[v1][0], _uv_local[v1][1], _uv_local[v1][2], uv_scale_u, uv_scale_v, texres, &_tu1, &_tv1);
-        uv_project(uv_proj, _uv_local[v2][0], _uv_local[v2][1], _uv_local[v2][2], uv_scale_u, uv_scale_v, texres, &_tu2, &_tv2);
-        uv_project(uv_proj, _uv_local[v3][0], _uv_local[v3][1], _uv_local[v3][2], uv_scale_u, uv_scale_v, texres, &_tu3, &_tv3);
+        if (uv_proj == UW_UVPROJ_TRIPLANAR_WORLD) {
+          /* World-space, per-face dominant-axis projection (live QA:
+             "not in world space, seems to stretch per-face") -- read
+             the SAME post-rotation/post-anchor world positions already
+             written into the shared vertex arena for rendering
+             (DAT_000a85d0_backing), not the pre-rotation local array,
+             and pick this specific face's own best axis pair fresh
+             (uv_triplanar_face_axes) rather than one fixed pair for
+             the whole model. */
+          float _wx[4], _wy[4], _wz[4];
+          int _vidx[4] = {v0, v1, v2, v3};
+          for (int _k = 0; _k < 4; _k++) {
+            float *_vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + _vidx[_k])*0xc);
+            _wx[_k] = _vf[0]; _wy[_k] = _vf[1]; _wz[_k] = _vf[2];
+          }
+          int _face_proj = uv_triplanar_face_axes(_wx, _wy, _wz);
+          uv_project(_face_proj, _wx[0], _wy[0], _wz[0], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu0, &_tv0);
+          uv_project(_face_proj, _wx[1], _wy[1], _wz[1], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu1, &_tv1);
+          uv_project(_face_proj, _wx[2], _wy[2], _wz[2], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu2, &_tv2);
+          uv_project(_face_proj, _wx[3], _wy[3], _wz[3], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu3, &_tv3);
+        } else if (uv_proj == UW_UVPROJ_FIT_XY) {
+          uv_project(uv_proj, _uv_local[v0][0], _uv_local[v0][1], 0, uv_scale_u, uv_scale_v, _bbox_lo[0], _bbox_hi[0], _bbox_lo[1], _bbox_hi[1], texres_u, texres_v, &_tu0, &_tv0);
+          uv_project(uv_proj, _uv_local[v1][0], _uv_local[v1][1], 0, uv_scale_u, uv_scale_v, _bbox_lo[0], _bbox_hi[0], _bbox_lo[1], _bbox_hi[1], texres_u, texres_v, &_tu1, &_tv1);
+          uv_project(uv_proj, _uv_local[v2][0], _uv_local[v2][1], 0, uv_scale_u, uv_scale_v, _bbox_lo[0], _bbox_hi[0], _bbox_lo[1], _bbox_hi[1], texres_u, texres_v, &_tu2, &_tv2);
+          uv_project(uv_proj, _uv_local[v3][0], _uv_local[v3][1], 0, uv_scale_u, uv_scale_v, _bbox_lo[0], _bbox_hi[0], _bbox_lo[1], _bbox_hi[1], texres_u, texres_v, &_tu3, &_tv3);
+        } else {
+          uv_project(uv_proj, _uv_local[v0][0], _uv_local[v0][1], _uv_local[v0][2], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu0, &_tv0);
+          uv_project(uv_proj, _uv_local[v1][0], _uv_local[v1][1], _uv_local[v1][2], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu1, &_tv1);
+          uv_project(uv_proj, _uv_local[v2][0], _uv_local[v2][1], _uv_local[v2][2], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu2, &_tv2);
+          uv_project(uv_proj, _uv_local[v3][0], _uv_local[v3][1], _uv_local[v3][2], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu3, &_tv3);
+        }
       }
       *(int *)(&DAT_000ace08 + rb) = _tu0;
       *(int *)(&DAT_000ace0c + rb) = _tv0;
@@ -54677,6 +54776,13 @@ typedef struct {
                       // its own authored "forward" convention, on top of
                       // the same generic compensation (mysteries.md
                       // UPDATE 25). 0 = no change to current behavior.
+  double ceiling_y;  // world-space Y a RAW-local-Y-1024 vertex pins to
+                      // (live QA: "It's likely that a Y value of 1024
+                      // should mean 'stick to the roof'"). 0 = disabled,
+                      // falls back to the plain y_clip clamp (no real
+                      // per-room ceiling field exists in this data, so
+                      // this has to be calibrated live via UW_MODEL_
+                      // TUNER rather than looked up).
 } ModelMapEntry;
 
 static const ModelMapEntry g_model_map[] = {
@@ -54747,20 +54853,20 @@ static const ModelMapEntry g_model_map[] = {
   // -4.0 guess, entry 36, was wrong -- corrected here per live QA).
   // x_off2 -80.0 = the leaf's own previous -64.0 centering plus the same
   // -16.0 shift the frame needed, so leaf and frame move together.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_XY, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -4, -16.0 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -4, -16.0 },
 };
 #define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
 
@@ -54780,7 +54886,7 @@ static const ModelMapEntry *lookup_object_model(int id)
    the id changes), then override that row's values for every frame
    after until the process exits. See the panel drawn in
    emit_tile_objects's own model-dispatch block. */
-static double g_tune_scale, g_tune_yoff, g_tune_xoff, g_tune_zoff, g_tune_uv_u, g_tune_uv_v;
+static double g_tune_scale, g_tune_yoff, g_tune_xoff, g_tune_zoff, g_tune_uv_u, g_tune_uv_v, g_tune_ceiling_y;
 static int g_tune_heading_step;
 static int g_tune_last_id = -1;
 
@@ -55166,6 +55272,7 @@ ushort * param_1;
          as they already did over the table. */
       double _use_scale = _me->scale, _use_yoff = _me->yoff, _use_xoff = _me->xoff, _use_zoff = _me->zoff;
       double _use_uv_u = _me->uv_scale_u, _use_uv_v = _me->uv_scale_v;
+      double _use_ceiling_y = _me->ceiling_y;
       int _use_heading_step = _me->heading_step;
       if (getenv("UW_MODEL_TUNER")) {
         if (_me->id != g_tune_last_id) {
@@ -55173,6 +55280,13 @@ ushort * param_1;
           g_tune_scale = _me->scale; g_tune_yoff = _me->yoff; g_tune_xoff = 0.0; g_tune_zoff = _me->zoff;
           g_tune_uv_u = _me->uv_scale_u; g_tune_uv_v = _me->uv_scale_v;
           g_tune_heading_step = _me->heading_step;
+          /* Seed from the table's own value if set, otherwise a first
+             guess continuous with the old fixed y_clip=256 behavior
+             (anchor height + one room height) -- no real per-room
+             ceiling field exists in this data (see g_model_map's own
+             due-diligence note), so this has to start somewhere
+             reasonable and get nudged live to the real answer. */
+          g_tune_ceiling_y = (_me->ceiling_y > 0.0) ? _me->ceiling_y : ((double)(short)DAT_0023b91c + 256.0);
         }
         char _title[48];
         snprintf(_title, sizeof(_title), "Model Tuner (id=0x%03x, ` to hide)", _me->id);
@@ -55184,10 +55298,12 @@ ushort * param_1;
         dbgui_field_double("uv_scale_u", &g_tune_uv_u, 4.0);
         dbgui_field_double("uv_scale_v", &g_tune_uv_v, 4.0);
         dbgui_field_int("heading_step", &g_tune_heading_step, 1);
+        dbgui_field_double("ceiling_y", &g_tune_ceiling_y, 4.0);
         dbgui_end();
         _use_scale = g_tune_scale; _use_yoff = g_tune_yoff; _use_xoff = g_tune_xoff; _use_zoff = g_tune_zoff;
         _use_uv_u = g_tune_uv_u; _use_uv_v = g_tune_uv_v;
         _use_heading_step = g_tune_heading_step;
+        _use_ceiling_y = g_tune_ceiling_y;
       }
       int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0 + _use_heading_step) & 7;
       { const char *_s = getenv("UW_MODEL_HEADING_STEP"); if (_s) _heading = (_raw_heading - 2 * (int)DAT_0023b4a0 + atoi(_s)) & 7; }
@@ -55264,6 +55380,7 @@ ushort * param_1;
          faces/records, not one). texptr==0 (untextured, current
          behavior) if there's no leaf for this id (open doors). */
       void *_leaf_tex = 0;
+      int _leaf_texres_u = 16, _leaf_texres_v = 16;
       if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
         /* Was `DAT_00202734 + (uVar27 & 7) + 0x30` -- matches
            load_door_frames's own (fixed) scratch base; see that
@@ -55280,40 +55397,40 @@ ushort * param_1;
            disappear rather than texture it. */
         FUN_00040770((short)-_sprite_frame, 0);
         if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) _leaf_tex = g_tile_texptr_emit[DAT_0023b83c];
+        /* Real (not necessarily power-of-2) sprite pixel dimensions --
+           uv_project/the record's own ace00/04 fields now take texres_u/
+           texres_v independently and generalized-modulo instead of a
+           power-of-2 bitmask, specifically so this works. */
+        _leaf_texres_u = (int)(short)DAT_00202508;
+        _leaf_texres_v = (int)(short)DAT_002022f8;
+        if (_leaf_texres_u <= 0) _leaf_texres_u = 16;
+        if (_leaf_texres_v <= 0) _leaf_texres_v = 16;
         if (getenv("UW_DEBUG_MODEL")) {
-          int _w = (int)(short)DAT_00202508, _h = (int)(short)DAT_002022f8;
-          int _nz = 0, _tot = _w*_h;
+          int _nz = 0, _tot = _leaf_texres_u*_leaf_texres_v;
           if (_leaf_tex) { unsigned char *_b = (unsigned char *)_leaf_tex; for (int _k=0;_k<_tot;_k++) if (_b[_k]) _nz++; }
           fprintf(stderr, "[model-leaf-tex] id=0x%03x sprite_frame=%d tex=%p w=%d h=%d nonzero=%d/%d\n",
-                  (int)(uVar27 & 0x1ff), _sprite_frame, _leaf_tex, _w, _h, _nz, _tot);
+                  (int)(uVar27 & 0x1ff), _sprite_frame, _leaf_tex, _leaf_texres_u, _leaf_texres_v, _nz, _tot);
         }
       }
-      emit_model_object((unsigned char *)_me->model, _heading, _use_scale, _use_yoff, _me->y_clip, _use_xoff, _use_zoff, _frame_tex, _me->uv_proj, _use_uv_u, _use_uv_v, _frame_texres);
+      emit_model_object((unsigned char *)_me->model, _heading, _use_scale, _use_yoff, _me->y_clip, _use_xoff, _use_zoff, _frame_tex, _me->uv_proj, _use_uv_u, _use_uv_v, _frame_texres, _frame_texres, _use_ceiling_y);
       if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
-        /* _leaf_tex decodes fine (confirmed via UW_DEBUG_MODEL's
-           nonzero-pixel count -- real sprite content, not garbage) but
-           applying it makes the leaf disappear rather than show the
-           sprite: render_visible_tile_list generates each vertex's
-           texcoord from its PROJECTED SCREEN POSITION (near_clip_visible_
-           tiles, offsets +0x3008/+0x300c), not a real per-vertex UV --
-           the same mechanism object-rendering-findings.txt's "LAST GAP"
-           section already documented as broken for 2D sprite billboards
-           for the identical reason (works for a world-fixed wall texture
-           that tiles across the whole screen-space range; a small finite
-           sprite bitmap mostly samples out of its own bounds -> reads as
-           transparent). CORRECTED (e-model-texturing branch): the record
-           format DOES already carry real per-vertex UV fields (see
-           emit_model_object's own uv_project -- this was wrong, not a
-           missing system) -- but the planar/tiling projection built for
-           the frame's wall texture is still the wrong TOOL for a sprite:
-           a sprite needs its own bounds mapped once (fit, not tiled), a
-           different UV mode this pass doesn't build. Left at UW_UVPROJ_
-           NONE for the leaf specifically until a "fit to local bounds"
-           projection exists; UW_MODEL_LEAF_TEXTURE=1 still applies the
-           texture pointer with no UV (the old broken behavior) for
-           experimenting with the failure mode if useful. */
-        void *_apply_tex = getenv("UW_MODEL_LEAF_TEXTURE") ? _leaf_tex : 0;
-        emit_model_object((unsigned char *)_me->model2, _heading, _use_scale, _use_yoff, _me->y_clip, _me->x_off2, _me->zoff2, _apply_tex, UW_UVPROJ_NONE, 0.0, 0.0, 16);
+        /* CORRECTED (live QA): "Door leaf is not using any texture,
+           should use the same door texture that the opcode version was
+           using." The record format always did carry real per-vertex
+           UV (see uv_project) -- the old "doesn't work" finding was
+           from BEFORE that was wired up at all (all-zero UV, matching
+           the same "flat single texel" bug the frame had). Now uses
+           UW_UVPROJ_FIT_XY: maps the leaf's own real local X/Y bounds
+           onto the sprite's own real pixel dimensions once (no tiling,
+           a sprite is one image, not a repeating material) -- the
+           right tool for this, unlike the frame's periodic wall-style
+           projection. Applied unconditionally now (was UW_MODEL_LEAF_
+           TEXTURE=1 opt-in while broken); that var still forces texptr
+           on with no UV (=0, the pre-fix behavior) for comparison. */
+        void *_apply_tex = _leaf_tex;
+        int _apply_uv = UW_UVPROJ_FIT_XY;
+        { const char *_s = getenv("UW_MODEL_LEAF_TEXTURE"); if (_s && atoi(_s) == 0) { _apply_tex = 0; _apply_uv = UW_UVPROJ_NONE; } }
+        emit_model_object((unsigned char *)_me->model2, _heading, _use_scale, _use_yoff, _me->y_clip, _me->x_off2, _me->zoff2, _apply_tex, _apply_uv, 0.0, 0.0, _leaf_texres_u, _leaf_texres_v, 0.0);
       }
       return;
     }
