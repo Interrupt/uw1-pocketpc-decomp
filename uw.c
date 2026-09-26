@@ -19938,33 +19938,38 @@ char *param_1; // was `undefined4` -- FUN_000295b4 passes a real (possibly babl_
   FUN_0007f110();
   /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
      FUN_00029708's own comment on this same pattern. The PC original
-     highlights the player's own echoed choice in a bright orange,
-     distinct from the NPC's dark-brown speech. Palette index 0x06 is
-     a real, live-confirmed vivid orange (RGB ~(255,161,0)) -- two
-     earlier tries (0x29, then 0x2b) reused entries from the SAME warm-
-     brown ramp as the dark-brown default and both looked washed-out/
-     low-contrast against the similarly-toned parchment background;
-     0x06 is a genuinely different, saturated hue that actually
-     contrasts, while still being a real color already in this game's
-     own palette rather than an invented one.
+     highlights the player's own echoed choice in a color distinct from
+     the NPC's dark-brown speech; per the user's own preference this
+     is plain white here. Palette index 0x60 is a real, live-confirmed
+     pure white (RGB (255,255,255)) -- also, coincidentally, this
+     printed string's own original "\1" prefix byte's real mapping (see
+     below), so this happens to match what a naive reading of that
+     escape code would already produce, just applied reliably instead
+     of being silently overridden. Two earlier tries at a more orange
+     highlight (0x29, then 0x2b, then a genuinely vivid 0x06) were
+     tried and reverted per user feedback.
 
-     Two things had to be fixed before this actually rendered orange:
-     (1) DAT_001007c0 originally started with the "\1" control code
-     (from DAT_00085238) which msg_scroll_draw_wrapped_span re-parses
-     on its own, resetting the color to "\1"'s real mapping (0x60) --
-     stripped that leading escape above so nothing re-parses over this
-     bracket's own color. (2) setting *g_draw_color_index directly here
-     was ALSO a no-op regardless: message_scroll_print_wrapped's own
-     entry unconditionally overwrites it from the panel's persisted
-     *(DAT_00250704+0x16) field (see FUN_00029708's own comment on
-     this, uw.c ~74875) before anything is drawn -- confirmed live via
-     lldb. Set that persisted field instead, on the struct FUN_0007f110
-     just pointed DAT_00250704 at. */
+     Two things had to be fixed before ANY explicit color choice here
+     actually rendered: (1) DAT_001007c0 originally started with the
+     "\1" control code (from DAT_00085238) which msg_scroll_draw_wrapped_span
+     re-parses on its own, resetting the color to "\1"'s real mapping
+     (0x60) -- stripped that leading escape above so nothing re-parses
+     over this bracket's own color (moot now that the target color IS
+     0x60 again, but left stripped since relying on the embedded escape
+     code instead of this explicit bracket would silently break again
+     the next time this color is changed). (2) setting
+     *g_draw_color_index directly here was ALSO a no-op regardless:
+     message_scroll_print_wrapped's own entry unconditionally
+     overwrites it from the panel's persisted *(DAT_00250704+0x16)
+     field (see FUN_00029708's own comment on this, uw.c ~74875) before
+     anything is drawn -- confirmed live via lldb. Set that persisted
+     field instead, on the struct FUN_0007f110 just pointed
+     DAT_00250704 at. */
   {
     int _saved_use_pal = g_text_use_palette_color;
     byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
     g_text_use_palette_color = 1;
-    *(byte *)(DAT_00250704 + 0x16) = 0x06;
+    *(byte *)(DAT_00250704 + 0x16) = 0x60;
     message_scroll_print_wrapped(DAT_001007c0);
     *(byte *)(DAT_00250704 + 0x16) = _saved_color;
     g_text_use_palette_color = _saved_use_pal;
