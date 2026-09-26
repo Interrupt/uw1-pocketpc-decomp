@@ -19861,7 +19861,36 @@ char *param_1; // was `undefined4` -- FUN_0001ac48 passes a real (possibly babl_
   Ordinal_1063(DAT_001007c0,param_1);
   Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
   FUN_0007f110();
-  message_scroll_print_wrapped(DAT_001007c0);
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, confirmed via an
+     exhaustive real-binary reference search that this PocketPC port's
+     conversation text never used the palette-indexed color path at
+     all -- every reference to g_text_use_palette_color across the
+     whole ARM binary was enumerated and none are near this code, so
+     flat black is genuinely what this port always drew here). The PC
+     original renders NPC speech in a dark brown; palette index 0x2e
+     (confirmed a real warm dark-brown entry, RGB ~(88,60,48), via a
+     live palette dump) already happens to be this conversation's own
+     ambient default color for unrelated reasons, so reusing it here
+     gives the same look intentionally instead of by accident.
+
+     Setting *g_draw_color_index directly here does nothing:
+     message_scroll_print_wrapped's own entry unconditionally
+     overwrites it from *(DAT_00250704+0x16) -- the panel's own
+     PERSISTED color, left over from whatever last printed into this
+     same panel struct (see its own read at uw.c ~74875) -- before a
+     single glyph is measured or drawn. Confirmed live via lldb (the
+     explicit 0x2e was already gone, replaced by 0x60, by the time
+     draw_text_string saw it). Set the persisted field itself, on the
+     struct FUN_0007f110 just pointed DAT_00250704 at, instead. */
+  {
+    int _saved_use_pal = g_text_use_palette_color;
+    byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
+    g_text_use_palette_color = 1;
+    *(byte *)(DAT_00250704 + 0x16) = 0x2e;
+    message_scroll_print_wrapped(DAT_001007c0);
+    *(byte *)(DAT_00250704 + 0x16) = _saved_color;
+    g_text_use_palette_color = _saved_use_pal;
+  }
   FUN_0007ec50();
   FUN_0007f0e0();
   DAT_001007b4 = 0;
@@ -19902,19 +19931,44 @@ char *param_1; // was `undefined4` -- FUN_000295b4 passes a real (possibly babl_
   char cVar1;
   char *pcVar2;
   char *pcVar3;
-  
-  pcVar2 = &DAT_00085238;
-  pcVar3 = DAT_001007c0;
-  do {
-    cVar1 = *pcVar2;
-    pcVar2 = pcVar2 + 1;
-    *pcVar3 = cVar1;
-    pcVar3 = pcVar3 + 1;
-  } while (cVar1 != '\0');
+
+  *DAT_001007c0 = '\0';
   Ordinal_1063(DAT_001007c0,param_1);
   Ordinal_1063(DAT_001007c0,&DAT_00085234);
   FUN_0007f110();
-  message_scroll_print_wrapped(DAT_001007c0);
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
+     FUN_00029708's own comment on this same pattern. The PC original
+     highlights the player's own echoed choice in a bright orange,
+     distinct from the NPC's dark-brown speech. Palette index 0x06 is
+     a real, live-confirmed vivid orange (RGB ~(255,161,0)) -- two
+     earlier tries (0x29, then 0x2b) reused entries from the SAME warm-
+     brown ramp as the dark-brown default and both looked washed-out/
+     low-contrast against the similarly-toned parchment background;
+     0x06 is a genuinely different, saturated hue that actually
+     contrasts, while still being a real color already in this game's
+     own palette rather than an invented one.
+
+     Two things had to be fixed before this actually rendered orange:
+     (1) DAT_001007c0 originally started with the "\1" control code
+     (from DAT_00085238) which msg_scroll_draw_wrapped_span re-parses
+     on its own, resetting the color to "\1"'s real mapping (0x60) --
+     stripped that leading escape above so nothing re-parses over this
+     bracket's own color. (2) setting *g_draw_color_index directly here
+     was ALSO a no-op regardless: message_scroll_print_wrapped's own
+     entry unconditionally overwrites it from the panel's persisted
+     *(DAT_00250704+0x16) field (see FUN_00029708's own comment on
+     this, uw.c ~74875) before anything is drawn -- confirmed live via
+     lldb. Set that persisted field instead, on the struct FUN_0007f110
+     just pointed DAT_00250704 at. */
+  {
+    int _saved_use_pal = g_text_use_palette_color;
+    byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
+    g_text_use_palette_color = 1;
+    *(byte *)(DAT_00250704 + 0x16) = 0x06;
+    message_scroll_print_wrapped(DAT_001007c0);
+    *(byte *)(DAT_00250704 + 0x16) = _saved_color;
+    g_text_use_palette_color = _saved_use_pal;
+  }
   FUN_0007ec50();
   FUN_0007f0e0();
   DAT_001007b4 = 1;
