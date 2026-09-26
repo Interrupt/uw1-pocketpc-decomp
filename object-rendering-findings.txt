@@ -4858,3 +4858,68 @@ this exact repro's extensively-reconfirmed correct heading=0), check
 it explicitly before calling a visual result "correct" -- a screenshot
 looking plausible is not the same as confirming the specific numeric
 claim being tested.
+
+(43) 2026-09-21: two more live QA findings; one root-caused and fixed
+with real per-face debug data, one tested and (usefully) ruled out.
+
+LINTEL UV, ROOT-CAUSED: "Lintel UV mapping is not using the world space
+UVs, it is a small area stretched." Added UW_DEBUG_MODEL_UV's own per-
+face triplanar print (proj chosen, world extent, all 4 corners' world
+position AND resulting UV) and captured it live at the door repro.
+Found the exact face: rec=18, the lintel/header cap piece, world
+extent=(256.0,176.0,0.0) (correctly identified as XY-projected, Z
+being the thinnest axis -- axis SELECTION was never the bug) but
+uv=(0,42)(0,0)(0,0)(0,42) -- U identically 0 at all four corners. Root
+cause: the lintel's real world X span is exactly 256 units, exactly
+2x the uv_scale_u then in use (128) -- `fmod(4096,128)` and
+`fmod(4352,128)` both land on 0 (4096=32*128, 4352=34*128), an exact-
+period collision. With only 4 stored corner UV samples and no real
+per-pixel wrap in whatever consumes them, a face whose real width is a
+whole-number multiple of uv_scale always samples the SAME phase at
+both ends -- reading as "one single vertical strip of the texture,
+stretched across the whole face" (matches the report precisely). Not
+a new bug class -- the same structural limit entry 39 already
+documented ("a face's own texture can still wrap more than once
+between its 4 stored corners"), just triggered by a specific face's
+real dimensions landing on an unlucky exact multiple rather than
+uv_scale simply being small. FIX: raised uv_scale_u/v from 128.0 to
+512.0 on all 14 door/frame rows (comfortably larger than the widest
+real face measured, 256) so no face reaches even one full wrap.
+Tradeoff, stated plainly: smaller faces (the 64-wide jambs) now show a
+more zoomed-in slice of the texture than before, a real cost, but
+strictly better than one major face (the lintel) being completely
+flat -- still live-tunable per-model via UW_MODEL_TUNER if the balance
+needs adjusting. VERIFIED LIVE: rec=18 now reads uv=(0,42)(0,0)(32,0)
+(32,42) -- real variation, not a stuck constant -- and the screenshot
+shows genuine stonework detail across the lintel instead of a flat
+stretch.
+
+BACKFACE ("The backside of model faces are displaying, not the
+front"): tested the most direct hypothesis -- reversed each face's own
+4-vertex winding order (new UW_MODEL_FLIP_WINDING=1 diagnostic,
+mirroring the exact same UW_DLIST_FLIP_WINDING precedent already
+built for the OTHER data source) and compared screenshots at the
+identical repro/angle. RESULT: no visible difference at all between
+flipped and unflipped winding. This is a real, useful negative result,
+not an inconclusive one: it matches the EARLIER, independent finding
+for the display-list bytecode's own faces (uw.c ~53565, "a first
+attempt here using a generic cross-product face-normal test...
+confirmed live... not to distinguish these faces at all... no real
+front/back winding pair for a normal test to tell apart") -- this
+renderer's shared rasterizer does not appear to distinguish face
+orientation by winding AT ALL, for either data source, meaning
+reversing vertex order genuinely cannot be "the fix" for a backside-
+showing symptom here. Whatever the user is seeing has to be something
+else -- candidates not yet tested: texture-axis direction (U
+increasing the "wrong" way on a given face reads as a mirrored/
+backward pattern, which could look like "the back of the material"
+without any geometry-level culling being involved at all), or possibly
+something specific to a camera angle/face not covered by this
+session's one fixed repro. Needs a more specific repro (which face,
+from which angle) before guessing further -- flagged back to the user
+rather than continuing to test blind.
+
+UW_MODEL_FLIP_WINDING and the per-face UW_DEBUG_MODEL_UV print kept as
+documented diagnostics (the latter genuinely useful again for future
+UV work, not just this one bug). run-regressions.sh: 6/6 clean.
+Default rendering reconfirmed unaffected (faces=11/6, zero env vars).

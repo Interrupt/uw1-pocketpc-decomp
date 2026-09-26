@@ -54619,6 +54619,19 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
     int v2 = *(int *)(model + pbase + 12);
     int v3 = (vcount == 4) ? *(int *)(model + pbase + 16) : v2;
     if (v0 < 0 || v0 >= npts || v1 < 0 || v1 >= npts || v2 < 0 || v2 >= npts || v3 < 0 || v3 >= npts) continue;
+    /* UW_MODEL_FLIP_WINDING=1: reverse this face's own vertex order.
+       Live QA: "The backside of model faces are displaying, not the
+       front." Direct precedent for this exact class of issue on the
+       OTHER data source (UW_DLIST_FLIP_WINDING, uw.c ~53504-ish) --
+       but that investigation concluded winding doesn't matter for the
+       display-list bytecode specifically, because THAT format's face
+       visibility is selected by its own cull opcodes at construction
+       time, not by geometric winding. The .E model format has no such
+       mechanism at all (a flat, unconditional quad list, no per-face
+       visibility selection baked in) -- so whether winding matters
+       here is a genuinely separate, untested question for this data
+       source, not something the earlier "ruled out" finding covers. */
+    if (getenv("UW_MODEL_FLIP_WINDING")) { int _t = v0; v0 = v3; v3 = _t; _t = v1; v1 = v2; v2 = _t; }
 
     int rec = DAT_0023b83c;
     int rb = rec * 0x60;
@@ -54665,6 +54678,18 @@ static void emit_model_object(unsigned char *model, int heading, double scale, d
           uv_project(_face_proj, _wx[1], _wy[1], _wz[1], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu1, &_tv1);
           uv_project(_face_proj, _wx[2], _wy[2], _wz[2], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu2, &_tv2);
           uv_project(_face_proj, _wx[3], _wy[3], _wz[3], uv_scale_u, uv_scale_v, 0,0,0,0, texres_u, texres_v, &_tu3, &_tv3);
+          if (getenv("UW_DEBUG_MODEL_UV")) {
+            float _ex = 0,_ey=0,_ez=0, _lo[3]={_wx[0],_wy[0],_wz[0]}, _hi[3]={_wx[0],_wy[0],_wz[0]};
+            for (int _k=1;_k<4;_k++){ if(_wx[_k]<_lo[0])_lo[0]=_wx[_k]; if(_wx[_k]>_hi[0])_hi[0]=_wx[_k];
+                                        if(_wy[_k]<_lo[1])_lo[1]=_wy[_k]; if(_wy[_k]>_hi[1])_hi[1]=_wy[_k];
+                                        if(_wz[_k]<_lo[2])_lo[2]=_wz[_k]; if(_wz[_k]>_hi[2])_hi[2]=_wz[_k]; }
+            _ex=_hi[0]-_lo[0]; _ey=_hi[1]-_lo[1]; _ez=_hi[2]-_lo[2];
+            const char *_pname = (_face_proj==UW_UVPROJ_XY)?"XY":(_face_proj==UW_UVPROJ_XZ)?"XZ":(_face_proj==UW_UVPROJ_ZY)?"ZY":"?";
+            fprintf(stderr, "[model-uv-face] rec=%d proj=%s extent=(%.1f,%.1f,%.1f) world=[(%.0f,%.0f,%.0f)(%.0f,%.0f,%.0f)(%.0f,%.0f,%.0f)(%.0f,%.0f,%.0f)] uv=(%d,%d)(%d,%d)(%d,%d)(%d,%d)\n",
+                    DAT_0023b83c, _pname, _ex, _ey, _ez,
+                    _wx[0],_wy[0],_wz[0], _wx[1],_wy[1],_wz[1], _wx[2],_wy[2],_wz[2], _wx[3],_wy[3],_wz[3],
+                    _tu0,_tv0,_tu1,_tv1,_tu2,_tv2,_tu3,_tv3);
+          }
         } else if (uv_proj == UW_UVPROJ_FIT_XY) {
           uv_project(uv_proj, _uv_local[v0][0], _uv_local[v0][1], 0, uv_scale_u, uv_scale_v, _bbox_lo[0], _bbox_hi[0], _bbox_lo[1], _bbox_hi[1], texres_u, texres_v, &_tu0, &_tv0);
           uv_project(uv_proj, _uv_local[v1][0], _uv_local[v1][1], 0, uv_scale_u, uv_scale_v, _bbox_lo[0], _bbox_hi[0], _bbox_lo[1], _bbox_hi[1], texres_u, texres_v, &_tu1, &_tv1);
@@ -54858,20 +54883,20 @@ static const ModelMapEntry g_model_map[] = {
   // -4.0 guess, entry 36, was wrong -- corrected here per live QA).
   // x_off2 -80.0 = the leaf's own previous -64.0 centering plus the same
   // -16.0 shift the frame needed, so leaf and frame move together.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0.0, -16.0, -4, 1024.0 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 128.0, 128.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, &DAT_00145a58, "DOOR", -80.0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0.0, -16.0, -4, 1024.0 },
+  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0, -16.0, -4, 1024.0 },
+  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, 0.0, 256.0, 0, 0, 0, UW_UVPROJ_TRIPLANAR_WORLD, 512.0, 512.0, 0.0, 0, -16.0, -4, 1024.0 },
 };
 #define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
 
