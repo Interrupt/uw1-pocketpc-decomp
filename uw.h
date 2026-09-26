@@ -542,7 +542,7 @@ void FUN_0001853c();
 void FUN_000188fc();
 uint *FUN_00018ac8();
 void FUN_00018ccc();
-int FUN_00018f34();
+intptr_t FUN_00018f34();
 undefined4 FUN_00019120();
 void FUN_0001927c();
 undefined4 FUN_00019470();

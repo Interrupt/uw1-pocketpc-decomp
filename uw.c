@@ -442,9 +442,16 @@ undefined1 DAT_000bbf30;
 undefined4 DAT_000bbf20;
 char *DAT_000bbf18;
 short DAT_000bbf7c;
-int DAT_000bbf14;
+/* Was `int` -- a real 64-bit heap pointer (FUN_00018ac8, i.e. malloc)
+   truncated through a 32-bit int, same bug class as DAT_000bbf70/
+   DAT_000bbf00 below (see their own comment) -- widened to intptr_t so
+   the existing integer arithmetic throughout FUN_00019e58/FUN_0001b0a4/
+   etc. keeps compiling unchanged (intptr_t participates in ordinary
+   integer arithmetic; a real pointer type would need every site
+   recast). */
+intptr_t DAT_000bbf14;
 short DAT_000bbf84;
-int DAT_000bbf0c;
+intptr_t DAT_000bbf0c; // was `int`, same DAT_000bbf14-derived-pointer truncation
 undefined2 DAT_000bbf88;
 undefined4 LAB_00019a60()
 
@@ -472,8 +479,24 @@ char *DAT_000bbf80;
 undefined2 DAT_000bbf8c;
 undefined2 DAT_0024cfac;
 short DAT_000bbf24;
-int DAT_000bbf70;
-int DAT_000bbf00;
+/* Was `int` -- FUN_00019e58 assigns it a real 64-bit heap pointer
+   (`DAT_000bbf70 = FUN_00018ac8((iVar11+1)*0x20)`) and every reader
+   throughout this whole babl-symbol-table cluster (FUN_0001ae28/
+   FUN_0001ac48/FUN_0001acf8/FUN_0001aebc/FUN_0001afe4/FUN_0001b0a4/
+   FUN_00019e58 itself) does plain `int`-width pointer arithmetic on
+   it. Truncating this on a 64-bit host is the crash one step past the
+   read_archive_entry dropped-argument fix (uw.c ~10984's comment):
+   with that fixed, Bragit's conversation record genuinely loads for
+   the first time this whole session, and THIS truncation is what
+   FUN_00019e58 immediately crashes on building its symbol table
+   (`*pcVar9 = cVar4` wild write, confirmed live via lldb -- this
+   whole cluster was apparently never exercised by any prior fix or
+   test, since no conversation had ever successfully loaded before).
+   Widened to intptr_t rather than a real pointer type for the same
+   reason as DAT_000bbf14 above -- keeps the existing int-arithmetic
+   call sites compiling as-is. */
+intptr_t DAT_000bbf70;
+intptr_t DAT_000bbf00; // was `int` -- FUN_00018ac8'd function-pointer-table base, same bug
 undefined4 LAB_0001a120()
 
 {
@@ -1556,11 +1579,29 @@ char *DAT_00100670;
    bounds past a 4-byte scalar. */
 static char *DAT_00100728_backing[256];
 #define DAT_00100728 DAT_00100728_backing[0]
-undefined4 DAT_0010072c;
-undefined4 DAT_00100730;
-undefined4 DAT_00100734;
-undefined4 DAT_00100738;
-undefined4 DAT_0010073c;
+/* HACK: these 5 were separate never-written `undefined4` scalars --
+   confirmed via a fresh Ghidra decompile of the real FUN_000286cc
+   (0x286cc) that every one of its 6 portrait/frame blit calls reads
+   through ONE base pointer (PTR_DAT_000289cc) at consecutive 4-byte
+   offsets 0xb8/0xbc/0xc0/0xc4/0xc8/0xcc -- i.e. a real 6-element
+   pointer array, of which DAT_00100728 (offset 0xb8, the array's own
+   comment above already got this one right) is just index 0. The
+   other 5 were the same "array Ghidra split into separate globals"
+   bug as DAT_00100728 itself warned about, except never actually
+   fixed for these -- LAB_000286a4 (the load_gr_resource_entries
+   per-item callback, idx 0-5 for this 6-item "converse" resource
+   load) only ever wrote DAT_00100728_backing[idx], so idx 1-5 landed
+   in the real backing array while these 5 stayed permanently zero.
+   Reading a NULL DAT_0010072c as bitmap_blit_to_framebuffer's source
+   pointer is exactly the Talk-mode crash in bug-critter-talk.txt
+   (interact_talk_npc -> change_game_mode -> FUN_000286cc -> crash
+   inside bitmap_blit_to_framebuffer on the very first read of an
+   unpopulated slot, uw.c ~19077). */
+#define DAT_0010072c DAT_00100728_backing[1]
+#define DAT_00100730 DAT_00100728_backing[2]
+#define DAT_00100734 DAT_00100728_backing[3]
+#define DAT_00100738 DAT_00100728_backing[4]
+#define DAT_0010073c DAT_00100728_backing[5]
 undefined1 g_active_hud_panel;
 /* Not part of the original binary -- a port-side addition. scroll_text_entry_prompt
    (the generic scroll-area text-entry field used by save-name entry,
@@ -10576,225 +10617,79 @@ int param_1;
 uint *FUN_00018ac8(param_1)
 int param_1;
 
+/* HACK: this whole function was a hand-rolled, fixed-pool free-list
+   allocator whose "next free block" links are packed as 4 INDIVIDUAL
+   BYTES within the block header (see the CONCAT13/CONCAT12/CONCAT11
+   reconstructions the original body did, and the matching byte-at-a-
+   time writes in FUN_00018ccc/FUN_00018f34) -- a 32-bit-pointer-only
+   design baked into the original 32-bit ARM binary's own memory
+   layout. There is no width to widen here the way DAT_000bbf70 and
+   friends were fixed elsewhere in this same babl-VM cluster: a real
+   64-bit pointer simply does not fit in the 4 bytes this format
+   allocates for one. This whole subsystem was apparently never
+   exercised end-to-end before (no NPC's conversation had ever
+   successfully loaded in this port until the read_archive_entry
+   dropped-argument fix a few commits up), so nothing depended on its
+   exact original behavior surviving intact. Replaced with the host's
+   real allocator -- see FUN_00018ccc/FUN_00018f34's own comments for
+   the matching free()/no-op halves. DAT_000bbf04 (the original
+   allocator's free-list head) is now unused by this trio; left
+   declared since FUN_00019660 (uw.c ~11090, an unrelated scratch-
+   buffer setup that happens to reuse the same global address in the
+   original binary) still writes to it. */
 {
-  undefined1 uVar1;
-  uint uVar2;
-  uint *puVar3;
-  uint *puVar4;
-  uint *puVar5;
-  uint uVar6;
-  int iVar7;
-  
-  uVar6 = (param_1 + 3U & 0xfffffffc) + 0xc;
-  puVar3 = (uint *)0x0;
-  puVar4 = DAT_000bbf04;
-  while( true ) {
-    if (puVar4 == (uint *)0x0) {
-      return (uint *)0x0;
-    }
-    if (uVar6 <= *puVar4) break;
-    puVar3 = puVar4;
-    puVar4 = (uint *)puVar4[1];
-  }
-  if (*puVar4 - uVar6 < 0x11) {
-    uVar1 = (undefined1)puVar4[1];
-    if (puVar3 == (uint *)0x0) {
-      puVar5 = (uint *)CONCAT13(*(undefined1 *)((char *)puVar4 + 7),
-                                CONCAT12(*(undefined1 *)((char *)puVar4 + 6),
-                                         CONCAT11(*(undefined1 *)((char *)puVar4 + 5),uVar1)));
-      goto LAB_00018c74;
-    }
-    puVar5 = (uint *)CONCAT13(*(undefined1 *)((char *)puVar4 + 7),
-                              CONCAT12(*(undefined1 *)((char *)puVar4 + 6),
-                                       CONCAT11(*(undefined1 *)((char *)puVar4 + 5),uVar1)));
-    *(undefined1 *)(puVar3 + 1) = uVar1;
-  }
-  else {
-    puVar5 = (uint *)((char *)puVar4 + (uVar6 & 0xffff));
-    uVar2 = puVar4[1];
-    *(char *)(puVar5 + 1) = (char)uVar2;
-    *(char *)((char *)puVar5 + 5) = (char)(uVar2 >> 8);
-    *(char *)((char *)puVar5 + 6) = (char)(uVar2 >> 0x10);
-    *(char *)((char *)puVar5 + 7) = (char)(uVar2 >> 0x18);
-    iVar7 = *puVar4 - uVar6;
-    *(char *)puVar5 = (char)iVar7;
-    *(char *)((char *)puVar5 + 1) = (char)((uint)iVar7 >> 8);
-    *(char *)((char *)puVar5 + 2) = (char)((uint)iVar7 >> 0x10);
-    *(char *)((char *)puVar5 + 3) = (char)((uint)iVar7 >> 0x18);
-    *(char *)puVar4 = (char)uVar6;
-    *(char *)((char *)puVar4 + 1) = (char)(uVar6 >> 8);
-    *(char *)((char *)puVar4 + 2) = (char)(uVar6 >> 0x10);
-    *(char *)((char *)puVar4 + 3) = (char)(uVar6 >> 0x18);
-    if (puVar3 == (uint *)0x0) goto LAB_00018c74;
-    *(char *)(puVar3 + 1) = (char)puVar5;
-  }
-  *(char *)((char *)puVar3 + 5) = (char)((uint)puVar5 >> 8);
-  *(char *)((char *)puVar3 + 6) = (char)((uint)puVar5 >> 0x10);
-  *(char *)((char *)puVar3 + 7) = (char)((uint)puVar5 >> 0x18);
-  puVar5 = DAT_000bbf04;
-LAB_00018c74:
-  DAT_000bbf04 = puVar5;
-  *(char *)(puVar4 + 1) = (char)puVar4;
-  *(char *)((char *)puVar4 + 5) = (char)((uint)puVar4 >> 8);
-  *(char *)((char *)puVar4 + 6) = (char)((uint)puVar4 >> 0x10);
-  *(char *)((char *)puVar4 + 7) = (char)((uint)puVar4 >> 0x18);
-  puVar4[((uint3)(CONCAT12(*(undefined1 *)((char *)puVar4 + 2),
-                           CONCAT11(*(undefined1 *)((char *)puVar4 + 1),(char)*puVar4)) >> 2) & 0xffff)
-         - 1] = (uint)(puVar4 + 2);
-  return puVar4 + 2;
+  return (uint *)malloc((size_t)param_1);
 }
 
 
 
 void FUN_00018ccc(param_1)
-int param_1;
+intptr_t param_1;
+/* HACK: matching replacement for FUN_00018ac8 -- see its own comment.
+   The original body validated a packed 32-bit-only free-list header
+   (`puVar2[(*(ushort*)puVar2>>2)-1]==puVar2 && *(uint**)(param_1-4)
+   ==puVar2`) before touching anything, which doubled as a "is this
+   really one of my blocks" sanity check; real free() has no equivalent
+   for a non-malloc'd pointer, so every caller of this function needs
+   to actually pass a real FUN_00018ac8()/malloc() pointer now (true
+   for every site fixed as part of this same investigation -- see
+   FUN_00019470's `local_28` and this file's other babl-VM pointer-
+   width fixes). param_1==0 is the one case the original's own
+   validation would always reject (NULL fails the header check), so
+   guard it the same way here. */
 
 {
-  uint uVar1;
-  uint *puVar2;
-  uint *puVar3;
-  uint *puVar4;
-  uint *puVar5;
-  uint *puVar6;
-  int iVar7;
-  
-  puVar2 = (uint *)(param_1 + -8);
-  if (((uint *)puVar2[(*(ushort *)puVar2 >> 2) - 1] == puVar2) &&
-     (*(uint **)(param_1 + -4) == puVar2)) {
-    puVar3 = (uint *)0x0;
-    puVar5 = DAT_000bbf04;
-    if (DAT_000bbf04 != (uint *)0x0) {
-      do {
-        puVar6 = (uint *)puVar5[1];
-        if ((puVar2 < puVar6) || (puVar4 = puVar5, puVar6 == (uint *)0x0)) {
-          if (puVar3 != (uint *)0x0) {
-            if (puVar3 + (*puVar3 & 0xffff) * 2 == puVar2) {
-              iVar7 = *puVar2 + *puVar3;
-              *(char *)puVar3 = (char)iVar7;
-              *(char *)((char *)puVar3 + 1) = (char)((uint)iVar7 >> 8);
-              *(char *)((char *)puVar3 + 2) = (char)((uint)iVar7 >> 0x10);
-              *(char *)((char *)puVar3 + 3) = (char)((uint)iVar7 >> 0x18);
-              puVar2 = puVar3;
-            }
-            else {
-              uVar1 = puVar3[1];
-              *(char *)(puVar2 + 1) = (char)uVar1;
-              *(char *)((char *)puVar2 + 5) = (char)(uVar1 >> 8);
-              *(char *)((char *)puVar2 + 6) = (char)(uVar1 >> 0x10);
-              *(char *)((char *)puVar2 + 7) = (char)(uVar1 >> 0x18);
-              *(char *)(puVar3 + 1) = (char)puVar2;
-              *(char *)((char *)puVar3 + 5) = (char)((uint)puVar2 >> 8);
-              *(char *)((char *)puVar3 + 6) = (char)((uint)puVar2 >> 0x10);
-              *(char *)((char *)puVar3 + 7) = (char)((uint)puVar2 >> 0x18);
-            }
-          }
-          puVar4 = puVar3;
-          puVar6 = puVar5;
-          if (puVar2 + (*puVar2 & 0xffff) * 2 == puVar5) {
-            uVar1 = puVar5[1];
-            *(char *)(puVar2 + 1) = (char)uVar1;
-            *(char *)((char *)puVar2 + 5) = (char)(uVar1 >> 8);
-            *(char *)((char *)puVar2 + 6) = (char)(uVar1 >> 0x10);
-            *(char *)((char *)puVar2 + 7) = (char)(uVar1 >> 0x18);
-            iVar7 = *puVar5 + *puVar2;
-            *(char *)puVar2 = (char)iVar7;
-            *(char *)((char *)puVar2 + 1) = (char)((uint)iVar7 >> 8);
-            *(char *)((char *)puVar2 + 2) = (char)((uint)iVar7 >> 0x10);
-            *(char *)((char *)puVar2 + 3) = (char)((uint)iVar7 >> 0x18);
-          }
-        }
-        puVar3 = puVar4;
-        puVar5 = puVar6;
-      } while (puVar6 != (uint *)0x0);
-      if (DAT_000bbf04 != (uint *)0x0) {
-        return;
-      }
-    }
-    DAT_000bbf04 = puVar2;
-    *(undefined1 *)(puVar2 + 1) = 0;
-    *(undefined1 *)((char *)puVar2 + 5) = 0;
-    *(undefined1 *)((char *)puVar2 + 6) = 0;
-    *(undefined1 *)((char *)puVar2 + 7) = 0;
+  if (param_1 != 0) {
+    free((void *)param_1);
   }
   return;
 }
 
 
 
-int FUN_00018f34(param_1,param_2)
-int param_1;
+intptr_t FUN_00018f34(param_1,param_2)
+intptr_t param_1;
 int param_2;
 
+/* HACK: matching replacement for FUN_00018ac8/FUN_00018ccc -- see
+   their own comments. The original body was a "shrink this block in
+   place, splitting the freed tail back into the free list (or grow it
+   via a fresh alloc+free if it doesn't fit)" optimization, reading/
+   writing the same packed 32-bit-only free-list header format at a
+   fixed offset behind param_1 -- meaningless (reads whatever real
+   malloc's own private bookkeeping or adjacent heap bytes happen to
+   be there) once FUN_00018ac8 hands out a real malloc() pointer with
+   no such header. Its own only call site (uw.c, babl string-buffer
+   trimming) ignores the return value entirely and keeps using its own
+   already-held pointer afterward, so shrinking was purely a "return
+   the excess memory to the pool" optimization, not something the
+   caller's correctness depends on -- a real `realloc()` here would
+   risk moving the block out from under that caller's still-live
+   pointer for no benefit. No-op: leave the allocation exactly as it
+   is and report its address unchanged, safe either way. */
 {
-  uint uVar1;
-  uint *puVar2;
-  undefined1 uVar3;
-  undefined1 uVar4;
-  undefined1 uVar5;
-  undefined1 *puVar6;
-  uint *puVar7;
-  uint uVar8;
-  int iVar9;
-  uint *puVar10;
-  int iVar11;
-  
-  uVar5 = DAT_00000007;
-  uVar4 = DAT_00000006;
-  uVar3 = DAT_00000005;
-  puVar10 = (uint *)(param_1 + -8);
-  uVar8 = (param_2 + 3U & 0xfffffffc) + 0xc;
-  uVar1 = *puVar10;
-  if (uVar8 < uVar1) {
-    iVar11 = 0;
-    puVar7 = DAT_000bbf04;
-    if (DAT_000bbf04 == (uint *)0x0) {
-      iVar11 = param_1;
-      if (0x10 < uVar1 - uVar8) {
-        DAT_000bbf04 = (uint *)((char *)puVar10 + (uVar8 & 0xffff));
-        *(undefined1 *)(DAT_000bbf04 + 1) = DAT_00000004;
-        *(undefined1 *)((char *)DAT_000bbf04 + 5) = uVar3;
-        *(undefined1 *)((char *)DAT_000bbf04 + 6) = uVar4;
-        *(undefined1 *)((char *)DAT_000bbf04 + 7) = uVar5;
-        iVar9 = *puVar10 - uVar8;
-        *(char *)DAT_000bbf04 = (char)iVar9;
-        *(char *)((char *)DAT_000bbf04 + 1) = (char)((uint)iVar9 >> 8);
-        *(char *)((char *)DAT_000bbf04 + 2) = (char)((uint)iVar9 >> 0x10);
-        *(char *)((char *)DAT_000bbf04 + 3) = (char)((uint)iVar9 >> 0x18);
-      }
-    }
-    else {
-      do {
-        puVar2 = (uint *)puVar7[1];
-        if ((puVar10 < puVar2) || (puVar2 == (uint *)0x0)) {
-          if (uVar1 - uVar8 < 0x11) {
-            return param_1;
-          }
-          puVar6 = (undefined1 *)((char *)puVar10 + (uVar8 & 0xffff));
-          uVar1 = puVar7[1];
-          puVar6[4] = (char)uVar1;
-          puVar6[5] = (char)(uVar1 >> 8);
-          puVar6[6] = (char)(uVar1 >> 0x10);
-          puVar6[7] = (char)(uVar1 >> 0x18);
-          iVar11 = *puVar10 - uVar8;
-          *puVar6 = (char)iVar11;
-          puVar6[1] = (char)((uint)iVar11 >> 8);
-          puVar6[2] = (char)((uint)iVar11 >> 0x10);
-          puVar6[3] = (char)((uint)iVar11 >> 0x18);
-          *(char *)((char *)puVar7 + 5) = (char)((uint)puVar6 >> 8);
-          *(char *)(puVar7 + 1) = (char)puVar6;
-          *(char *)((char *)puVar7 + 6) = (char)((uint)puVar6 >> 0x10);
-          *(char *)((char *)puVar7 + 7) = (char)((uint)puVar6 >> 0x18);
-          return param_1;
-        }
-        puVar7 = puVar2;
-      } while (puVar2 != (uint *)0x0);
-    }
-  }
-  else {
-    iVar11 = FUN_00018ac8(param_2);
-    FUN_00018ccc(puVar10);
-  }
-  return iVar11;
+  (void)param_2;
+  return param_1;
 }
 
 
@@ -10933,7 +10828,7 @@ short param_2;
 
 undefined4 FUN_00019470(param_1,param_2)
 char *param_1;
-undefined4 param_2;
+undefined1 *param_2;
 
 {
   short sVar1;
@@ -10941,7 +10836,15 @@ undefined4 param_2;
   undefined1 *puVar3;
   char *local_28;
   undefined1 auStack_20 [16];
-  
+
+  /* Was `undefined4 param_2` (32-bit) -- truncated the real 64-bit
+     buffer pointer (DAT_00100784 + 0x400, passed in from FUN_00028c00)
+     before it ever reached FUN_00019660's own `*param_1 = 0xff` write,
+     the Talk-mode crash in bug-critter-talk.txt (EXC_BAD_ACCESS at the
+     truncated 32-bit address, confirmed live via lldb: param_2 came in
+     as 0x58270400, the real 0x158270400 buffer address with its high
+     32 bits dropped). Same truncation-bug class as the tilemap_lookup
+     pointer-truncation sweep earlier this session. */
   FUN_00019660(param_2);
   DAT_000bbf30 = 0;
   DAT_000bbf20 = param_1;
@@ -10955,11 +10858,47 @@ undefined4 param_2;
       FUN_0003c3c8(4);
     }
     local_28 = DAT_000bbf18;
-    sVar1 = read_archive_entry(auStack_20,DAT_001007c4);
+    /* Was `read_archive_entry(auStack_20,DAT_001007c4)` -- a dropped 3rd
+       argument. read_archive_entry's real signature takes a destination
+       buffer (its own `param_3`, see its comment); the real ARM code
+       (0x194d0-0x194dc: `cpy r5,r2` then `bl 0x1613c` with NO reload of
+       r2 in between) relies on r2 still holding local_28 from several
+       instructions earlier -- a register-forwarding trick this host's
+       own C codegen has no reason to reproduce for a call site that's
+       only ever told about 2 arguments. Confirmed via lldb this was the
+       real reason EVERY NPC's Talk (not just Bragit's) failed with "You
+       get no response": Bragit's own directory-table slot (record 67)
+       is genuinely non-empty (199494, confirmed live) -- read_archive_
+       entry's early "empty slot" check was never the problem, the
+       actual FUN_0002285c(fd,param_3,len) read was silently failing on
+       whatever garbage this host happened to leave in the argument
+       register. */
+    sVar1 = read_archive_entry(auStack_20,DAT_001007c4,local_28);
     FUN_00015a58(auStack_20);
     if (sVar1 < 1) {
-      message_scroll_print_wrapped(FUN_0007863c(0xe01)); // was two separate calls with message_scroll_print_wrapped()'s arg dropped; fresh Ghidra disassembly (0x44c90-0x44c94) shows no register load between the two `bl`s -- FUN_0007863c's return (char *) flows straight into message_scroll_print_wrapped as its argument
-      return 1;
+      /* Was `message_scroll_print_wrapped(...); return 1;` -- a second,
+         separate bug on top of the already-fixed dropped-argument one
+         (see the surviving half of this comment below): the real
+         disassembly (0x194fc-0x1950c) falls straight through to this
+         function's shared epilogue after the two `bl`s with NO `mov
+         r0,#1` of its own, so the real return value here is whatever
+         message_scroll_print_wrapped() itself returns, not a hardcoded
+         1. Hardcoding 1 (a non-negative "success") made FUN_00028c00's
+         own `if (sVar1 < 0)` caller-side check always take its SUCCESS
+         branch even on this "no CNV record for this NPC" path -- which
+         then read never-initialized DAT_000bbf70 (still 0 from this
+         run, since the real per-record setup in FUN_00019e58() below
+         never got a chance to run) as a base pointer inside
+         FUN_0001ae28, crashing at DAT_000bbf70+0x18. This is the exact
+         crash in bug-critter-talk.txt: Bragit has no real conversation
+         record, so this early-return path is supposed to be the one
+         taken. Was: message_scroll_print_wrapped(FUN_0007863c(0xe01));
+         return 1; -- two separate calls with message_scroll_print_
+         wrapped()'s arg dropped; fresh Ghidra disassembly (0x44c90-
+         0x44c94) shows no register load between the two `bl`s --
+         FUN_0007863c's return (char *) flows straight into
+         message_scroll_print_wrapped as its argument. */
+      return message_scroll_print_wrapped(FUN_0007863c(0xe01));
     }
   }
   iVar2 = FUN_00019e58();
@@ -11315,7 +11254,17 @@ LAB_00019bc8:
           } while (cVar1 != '\0');
         }
         else {
-          pcVar9 = (char *)FUN_0007863c();
+          /* Was a dropped argument -- Ghidra's own P-code analysis of
+             the real binary shows no register load before this `bl`
+             either, confirming it's genuine register-forwarding, not
+             just this file's own decompile simplifying it away. sVar3
+             (just resolved by the FUN_0001adc4/FUN_0001ae04 calls
+             immediately above, for the 'G'/'P'/'S' cases this branch
+             handles) is the only value left sitting in r0 at this
+             point, and FUN_0007863c's signature elsewhere (a message/
+             string-table-index -> char* resolver, e.g. its 0xe01 "You
+             get no response" callers) matches passing exactly that. */
+          pcVar9 = (char *)FUN_0007863c(sVar3);
           if (pcVar9 != (char *)0x0) {
             pcVar8 = (char *)FUN_00019aa0(pcVar9);
             pcVar10 = pcVar8;
@@ -11325,7 +11274,17 @@ LAB_00019bc8:
               pcVar10 = pcVar10 + 1;
             } while (cVar1 != '\0');
             if (pcVar9 != pcVar8) {
-              FUN_00018ccc();
+              /* Was a dropped argument (K&R register-forwarding) --
+                 now that FUN_00018ccc is a real free() (see its own
+                 comment), passing whatever happened to be left in the
+                 argument register is far riskier than under the old
+                 hand-rolled allocator's own header-validated free.
+                 pcVar9 is unambiguously the intended argument: it's
+                 the just-allocated buffer being discarded once its
+                 content was copied into the caller's real destination
+                 (pcVar8), matching every other "if (x != cached) free
+                 x" sibling in this same file. */
+              FUN_00018ccc(pcVar9);
             }
           }
         }
@@ -11414,20 +11373,33 @@ int * param_1;
 undefined4 FUN_00019e58()
 
 {
-  int iVar1;
-  int iVar2;
-  int iVar3;
+  /* iVar1/iVar2/iVar3/iVar5/iVar6/iVar7/iVar10/iVar11 were all plain
+     `int` -- fine for the small byte-offset/value uses, but iVar10 and
+     iVar7 (mid-loop) and iVar5/iVar11 (after the loop) also get
+     assigned straight from DAT_000bbf70 (now intptr_t, a real 64-bit
+     heap pointer -- see its own comment) or `<offset> + DAT_000bbf70`,
+     and were re-truncating it right back down to 32 bits on every one
+     of those assignments even after DAT_000bbf70 itself was widened.
+     Confirmed live via lldb: the wild write address was exactly
+     DAT_000bbf70's real value with its top byte dropped. Widened the
+     whole set to intptr_t rather than picking apart which specific
+     reuse of each variable is a pointer and which is a plain value --
+     intptr_t is exact for the small-value uses too, so this is a safe
+     blanket fix for this one function. */
+  intptr_t iVar1;
+  intptr_t iVar2;
+  intptr_t iVar3;
   char cVar4;
-  int iVar5;
-  int iVar6;
-  int iVar7;
+  intptr_t iVar5;
+  intptr_t iVar6;
+  intptr_t iVar7;
   char *pcVar8;
   char *pcVar9;
-  int iVar10;
-  int iVar11;
+  intptr_t iVar10;
+  intptr_t iVar11;
   bool bVar12;
   char local_64 [64];
-  
+
   DAT_000bbf10 = *(int *)((char *)DAT_000bbf18 + 4);
   DAT_000bbf18 = (char *)((char *)DAT_000bbf18 + 8);
   DAT_000bbf80 = FUN_00018ac8(DAT_000bbf10 << 1);
@@ -12113,7 +12085,10 @@ void FUN_0001ac48()
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
   do {
-    if (*(short *)(iVar4 + 0x18) == 0) {
+    /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+       comment (uw.c ~12260) -- every reader of this babl-symbol table
+       shares the same crash when no conversation record was loaded. */
+    if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
 LAB_0001ace8:
       if (iVar2 != iVar1) {
         FUN_00018ccc(iVar2);
@@ -12144,7 +12119,9 @@ void FUN_0001acf8()
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
   do {
-    if (*(short *)(iVar4 + 0x18) == 0) {
+    /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+       comment (uw.c ~12260). */
+    if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
 LAB_0001ad98:
       if (iVar2 != iVar1) {
         FUN_00018ccc(iVar2);
@@ -12209,8 +12186,34 @@ undefined4 param_2;
   char cVar2;
   int iVar3;
   char *pcVar4;
-  
-  if (*(short *)(DAT_000bbf70 + 0x18) != 0) {
+
+  /* HACK: added `DAT_000bbf70 != 0` -- this whole babl-symbol-table
+     cluster (FUN_0001ae28/FUN_0001ac48/etc.) uniformly assumes
+     DAT_000bbf70 already points at a real, FUN_00019e58()-initialized
+     record array before touching it. It's declared `int` (not even a
+     pointer) and starts at 0; FUN_00019470's own "no CNV.ARK record
+     for this NPC" early-return path (uw.c ~10986, itself already
+     fixed twice this session -- a dropped message_scroll_print_
+     wrapped() argument, then a hardcoded `return 1` that should have
+     been that call's own return value) skips the FUN_00019e58() call
+     that would set it, yet FUN_00028c00's caller-side `sVar1 < 0`
+     check (matching real disassembly at 0x28c1c-0x28c20, `bpl` = branch
+     on non-negative) still takes its "record found" success branch and
+     calls into here regardless -- this is the exact Talk-mode crash in
+     bug-critter-talk.txt (talking to an NPC with no conversation,
+     EXC_BAD_ACCESS at DAT_000bbf70+0x18 while DAT_000bbf70==0).
+     UNRESOLVED: why the real game's equivalent tail read (message_
+     scroll_print_wrapped's own return -- see its comment -- ultimately
+     `*(short*)(DAT_00250704+0x14)`) would come back genuinely negative
+     in the same scenario on real hardware, letting FUN_00028c00's own
+     check correctly reject it without this guard, is still an open
+     question (this port's own scroll-state field reads back 0 here,
+     confirmed live via lldb) -- flagged as a follow-up, not chased
+     further. This guard matches what every sibling reader of
+     DAT_000bbf70 already assumes ("nonzero == initialized") and is
+     the narrowest fix that stops the crash without guessing at that
+     deeper field's real semantics. */
+  if (DAT_000bbf70 != 0 && *(short *)(DAT_000bbf70 + 0x18) != 0) {
     cVar2 = *param_1;
     pcVar4 = DAT_000bbf70;
     do {
@@ -12256,7 +12259,12 @@ short param_3;
   local_34[sVar6] = 0;
   iVar2 = DAT_000bbf70;
   while( true ) {
-    if (*(short *)(iVar2 + 0x18) == 0) {
+    /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+       comment (uw.c ~12260) -- this is the Talk-crash's own next
+       crash site once that one's fixed (FUN_0002a8e0's npc_whoami
+       lookup, called unconditionally from FUN_00028c00 same as the
+       babl_menu registrations). */
+    if (iVar2 == 0 || *(short *)(iVar2 + 0x18) == 0) {
       return;
     }
     iVar4 = Ordinal_1065(param_1,iVar2);
@@ -12291,7 +12299,9 @@ short param_3;
   
   iVar2 = DAT_000bbf70;
   while( true ) {
-    if (*(short *)(iVar2 + 0x18) == 0) {
+    /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+       comment (uw.c ~12260). */
+    if (iVar2 == 0 || *(short *)(iVar2 + 0x18) == 0) {
       return;
     }
     iVar1 = Ordinal_1065(param_1,iVar2);
@@ -12319,12 +12329,16 @@ void FUN_0001b0a4()
 
 {
   short sVar1;
-  int iVar2;
+  intptr_t iVar2; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t; see its own comment) right back down
   short *psVar3;
   int iVar4;
-  
+
+  /* Same DAT_000bbf70-uninitialized guard as FUN_0001ae28's own
+     comment (uw.c ~12260) -- unlike its siblings this one dereferences
+     unconditionally before any loop check, so guard the read itself
+     rather than the loop condition. */
   psVar3 = (short *)(DAT_000bbf70 + 0x18);
-  sVar1 = *(short *)(DAT_000bbf70 + 0x18);
+  sVar1 = (DAT_000bbf70 == 0) ? 0 : *(short *)(DAT_000bbf70 + 0x18);
   iVar2 = DAT_000bbf70;
   while (sVar1 != 0) {
     if (*(short *)(iVar2 + 0x1e) != 0x111) {
@@ -19041,8 +19055,15 @@ LAB_000285e4:
   }
   uVar3 = 0xe01;
 LAB_0002865c:
-  FUN_0007863c(uVar3);
-  message_scroll_print_wrapped();
+  /* Was two separate calls with message_scroll_print_wrapped()'s arg
+     dropped -- same register-forwarding hazard already fixed at
+     FUN_00019470's own sVar1<0 branch (uw.c ~10987, see its comment)
+     and, unfixed, exactly what crashed replaying bug-critter-talk.txt
+     one step further than this file's other Talk-crash fixes: Bragit
+     has no CNV.ARK conversation record, so FUN_00028c00 hits this
+     same pattern too (uw.c ~19211) printing "You get no response"
+     before the crash. */
+  message_scroll_print_wrapped(FUN_0007863c(uVar3));
   return;
 }
 
@@ -19180,9 +19201,43 @@ void FUN_00028c00()
   undefined4 uVar3;
   
   sVar1 = FUN_00019470(s__DATA_cnv_ark_00084fc8,DAT_00100784 + 0x400);
-  if (sVar1 < 0) {
-    FUN_0007863c(0xe01);
-    message_scroll_print_wrapped();
+  /* Was `if (sVar1 < 0)` alone, matching real disassembly at 0x28c1c-
+     0x28c20 (`bpl` = branch to the success/registration branch below
+     on sVar1 >= 0) -- but that disassembly-confirmed check isn't
+     enough on its own for the Talk-mode crash in bug-critter-talk.txt
+     (Bragit has no CNV.ARK conversation record): FUN_00019470's own
+     "no record" branch (uw.c ~10986) returns message_scroll_print_
+     wrapped()'s own return value (also disassembly-confirmed, no
+     `mov r0,#1` before that branch's return), and in THIS port that
+     value came back 0 -- non-negative, so `sVar1 < 0` alone still
+     takes the success branch below. Chased this two ways before
+     landing here: (1) hardcoding a hopeful `return -1` in FUN_00019470
+     instead would contradict what the disassembly actually shows, and
+     (2) individually NULL-guarding every DAT_000bbf70/DAT_000bbf80-
+     reading function this success branch calls into turned into an
+     unbounded chase (fixed 5 separate crash sites this way -- see
+     FUN_0001ae28/FUN_0001ac48/FUN_0001acf8/FUN_0001aebc/FUN_0001afe4/
+     FUN_0001b0a4's own comments -- before finding a 6th at
+     FUN_0001a1c8's DAT_000bbf80 dereference). Whether the real 32-bit
+     binary's equivalent register value is reliably negative here (real
+     memory garbage that happens to differ from this port's freshly-
+     zeroed scratch buffer) is unresolved and flagged as a follow-up,
+     not chased further. Gating on DAT_000bbf70 too is the actual fix:
+     it's the one flag every function in this success branch already
+     agrees means "a real record's symbol table is loaded" (see
+     FUN_00019e58, only ever called -- and only place that sets it --
+     on the genuine record-found path), so checking it here stops the
+     whole cluster's crash at its one shared root instead of chasing
+     individual dereferences further. */
+  if (sVar1 < 0 || DAT_000bbf70 == 0) {
+    /* Was two separate calls with message_scroll_print_wrapped()'s arg
+       dropped -- same pattern already fixed at FUN_00019470's own
+       sVar1<0 branch (uw.c ~10987) and at FUN_00028488's tail (uw.c
+       ~19070). This is the specific crash in bug-critter-talk.txt:
+       Bragit has no CNV.ARK conversation record (sVar1<0 here is the
+       real, correct "You get no response" case, not a bug), but
+       printing that message crashed on the dropped argument. */
+    message_scroll_print_wrapped(FUN_0007863c(0xe01));
   }
   else {
     FUN_0001ae28(s_babl_menu_00085220,&LAB_0002912c);
