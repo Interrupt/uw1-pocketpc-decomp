@@ -5201,7 +5201,24 @@ int DAT_00086db8;
 undefined1 DAT_00086da8;
 undefined DAT_00086dc8;
 undefined g_object_weight_table;
-undefined DAT_00202806;
+/* Was a lone `undefined` scalar 6 bytes past DAT_00202800 -- but
+   DAT_00202800 is the REAL family-0 armor/weapon variant-effect table
+   (already recovered as a proper 65536-byte backing array, stride 8
+   per nibble -- see class0_variant_effect_table_lookup's own comment,
+   uw.c ~4175, "&DAT_00202800 + nibble*8"), and refresh_player_equipment_effects
+   reads THIS symbol as `(&DAT_00202806)[nibble*8]` -- i.e. byte offset
+   6 of that exact same per-nibble 8-byte record (matching
+   request_weapon_swing_graphic's own comment: the weapon-swing
+   animation category comes from "the weapon-hand item's melee-weapon-
+   stats byte 6"). Being a SEPARATE 1-byte global instead of an alias
+   into the real table meant every nibble except 0 (where nibble*8==0
+   coincidentally lands back on this scalar's own real byte) read
+   whatever unrelated global happened to follow it in this file instead
+   of that weapon's real animation-category byte -- the likely cause of
+   "the weapon drawn in attack mode doesn't match the actual weapon"
+   for any weapon-hand item other than the first one in its family.
+   Aliased into the real table at its correct offset instead. */
+#define DAT_00202806 DAT_00202800_backing[6]
 undefined2 DAT_0023beb8;
 undefined2 DAT_0023be8c;
 static undefined DAT_00028bfc_backing[8192];
@@ -59444,11 +59461,13 @@ void refresh_player_equipment_effects()
   DAT_0023be74[0x12] = *(char *)(DAT_00086df8 + 0x22);
   g_scratch_object_ptr = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
   uVar11 = 2;
+  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[weapon-gfx] refresh_player_equipment_effects: weapon_hand_item=%p id=0x%x\n", (void *)g_scratch_object_ptr, g_scratch_object_ptr ? (unsigned)*g_scratch_object_ptr : 0xffff);
   if (g_scratch_object_ptr != (ushort *)0x0) {
     uVar2 = *g_scratch_object_ptr;
     if (((uVar2 & 0x1c0) == 0) && ((uVar2 & 0x30) < 0x20)) {
       uVar8 = uVar2 & 0xf;
       if ((uVar2 & 0x30) == 0) {
+        if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[weapon-gfx] family0 nibble=%u table_byte(offset+6)=%d\n", uVar8, (int)(&DAT_00202806)[uVar8 * 8]);
         uVar11 = (ushort)(byte)(&DAT_00202806)[uVar8 * 8];
         uVar8 = (uint)(short)(ushort)(byte)(&DAT_00202806)[uVar8 * 8];
         bVar13 = SBORROW4(uVar8,3);
@@ -59474,6 +59493,7 @@ void refresh_player_equipment_effects()
   }
   iVar4 = 3;
 LAB_000669a8:
+  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[weapon-gfx] refresh_player_equipment_effects: resolved category=%d\n", iVar4);
   request_weapon_swing_graphic(iVar4);
   DAT_0023be74[0x12] = DAT_0023be74[0x12] + (*(byte *)(DAT_00086df8 + (short)uVar11 + 0x21) >> 1);
   FUN_00065eb4();
