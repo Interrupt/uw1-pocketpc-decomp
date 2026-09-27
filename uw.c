@@ -12658,8 +12658,15 @@ void FUN_0001aa88()
 
 {
   short *psVar1;
-  
+
   psVar1 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  /* Raw "push variable value" VM opcode: indexes DAT_000bbf14 directly by
+     the symbol's compiled-in slot number, bypassing babl_get_variable's
+     name-based lookup entirely -- this is the actual path a script's own
+     `if npc_talkedto ...` check would read through, and babl_get_variable's
+     own npc_talkedto watch (see its own comment) is blind to it. See
+     bragit-talk-again-investigation. */
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] push-var (raw opcode): slot=%d value=%d\n", (int)*psVar1, (int)*(short *)(DAT_000bbf14 + *psVar1 * 2));
   *psVar1 = *(short *)(DAT_000bbf14 + *psVar1 * 2);
   return;
 }
