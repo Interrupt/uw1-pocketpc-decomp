@@ -5196,3 +5196,82 @@ this whole investigation actually resolved the meaning of):
 Compiled clean after each scoped rename (checked individually, not
 just at the end, given how much of this file reuses these exact
 generic names for unrelated purposes in other functions).
+
+(47) 2026-09-27: three more real bugs found and fixed in the now-default
+native model path, from live QA after entry 46's promotion.
+
+BUG 1 (decal/tmap rotation, two call sites missed): user report "Rotation
+for many tmap and decal objects is wrong... the 'entry door' decals
+change direction based on yaw." Entry 46 only fixed the heading=-1
+issue at the GENERIC class-2 DAT_00086c80 dispatch call -- missed that
+the SAME bug exists at TWO MORE call sites, class-3's own catalog 0x14
+(button/switch/pull-chain, id 0x170-0x17f) and catalog 0x16 (force
+field/special tmap obj, id 0x16d-0x16f) dispatches, both also passing
+heading=0xffffffff unconditionally. The "entry door" decal the user
+specifically named almost certainly goes through one of these, not the
+one already fixed. Same fix, same formula, both call sites: pass the
+object's own real stored heading ((obj[1]>>7&7)<<1) instead of -1.
+
+BUG 2 (bridge texture -- real DOS-decompile research, not a guess):
+user report "Bridge objects are not using their texture." Dispatched a
+research pass into the separate DOS decompile (~/Github/uw1-decomp) at
+the user's implicit direction (matching this whole investigation's own
+house rule: check the real source before guessing). Confirmed with
+citations: a_bridge (0x164) resolves to TMOBJ entries 30/31 ("two
+32x32 planks") via `TMOBJ_base + 0x10 + 30 + (obj_flags%2)` --
+byte-for-byte the SAME formula shape already implemented for lever/
+switch/writing/gravestone in this file's own `_decal_row[]` table
+(port/uw1_view.c:2297, dialog_action_object.c:80-124 for the raw
+decompiled confirmation). Critical difference from those 4: bridge
+resolves to a REAL mesh catalog (2, FBRIDGE.E) through the OUTER
+DAT_00086c80 table, so it can't route through `_decal_row[]`'s own
+LAB_decal_frame_resolved/FUN_00040770 flat-sprite escape hatch without
+throwing away the real 3D geometry entry 45/46 already fixed --
+computed the same formula in a new small `_mesh_tex_row[]` table and
+fed the result directly into emit_catalog_object's own frame_or_texid
+argument instead.
+
+BUG 3 (horizontal-face UV -- real per-model axis pick, not guessed):
+user report "Bridge UV is incorrect, looks fine on one axis but a
+single pixel stretched along the other." Traced thoroughly before
+touching anything, at the user's explicit "check for a mechanism that
+would do this" direction (this port's own UV formula reads point.X for
+U and point.Y for V, unconditionally, for every face -- correct for
+vertical geometry where Y varies with height, degenerate for a
+horizontal face like a bridge's own flat top where Y is constant across
+all 4 corners). Verified via REAL ARM INSTRUCTIONS, not just the
+decompile (the "0x3c1c"-style offsets the decompiler shows are built
+from a split mov+orr pair, invisible to a plain literal-value search --
+had to trace actual registers through the raw disassembly to confirm).
+Found something real and previously miscredited as missing: parse_
+e_model_file (uw.c ~14725) ALREADY computes and stores a genuine
+whole-model bounding box (min_X/extent_X/min_Y/extent_Y) at those exact
+offsets -- confirmed via the real min/max-tracking loop in the raw
+decompile, and confirmed this project's own C port already has it,
+faithfully ported, entry 45's "nothing writes there" finding was wrong
+(hadn't read far enough into parse_e_model_file's own 900-line
+decompile the first time). But this bounding box only sets normalization
+SCALE, not WHICH coordinate gets read -- doesn't by itself fix a
+face where Y doesn't vary. No per-face or per-model axis-selection
+mechanism exists anywhere in the real disassembly (checked exhaustively:
+emit_catalog_object's own three corner-computation branches,
+transform_points_by_matrix, and -- for the first time this session --
+the actual rasterizer caller render_visible_tile_list; none test face
+orientation at all). Reported this honestly rather than guess further;
+user's own call: "For the V, we should pick Y or Z depending on which
+is larger (based on which axis is larger in the bounding box)."
+Implemented exactly that -- ONCE per model-draw-call (not per face,
+matching how a real model is authored: fundamentally vertical or
+horizontal, not a mix), computing this port's own Z extent (never
+tracked by the original bounding-box mechanism, which only ever did
+X/Y) by scanning the model's own point list, and comparing it against
+the real, already-ported Y extent at +0x3c28. All 12 V-axis read sites
+across the three corner-computation branches now use this pick instead
+of a hardcoded point.Y offset.
+
+Verified live: bridge (catalog 2) now genuinely selects Z as its own
+V axis (y_extent=16 vs the real, larger Z extent, logged live), doors/
+frames (catalog 1/14, vertical) still correctly select Y (y_extent=
+1024/208, comfortably larger than their own Z extent) across ~5000
+logged draws each with zero regressions. No crashes across three full
+interactive test sessions. run-regressions.sh: 6/6 clean, fresh build.

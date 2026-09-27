@@ -56651,35 +56651,75 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    /* EXPERIMENTAL, under live test (user report: with the real table
-       values in place, the previous "+DAT_00202734, absolute TMOBJ
-       frame via FUN_00040770's escape hatch" wiring rendered a lever/
-       dial graphic instead of a sign for the real starting-room sign --
-       screenshot-confirmed, so that formula is wrong). Trying this
-       project's OWN earlier-rejected alternative instead: call
-       emit_catalog_object directly with the real table value (now
-       meaningful data, not the all-zero placeholder that made this
-       look like "a completely unrelated graphic" when it was first
-       tried) as a billboard-catalog index, matching this exact
-       4-argument call shape used identically by the two other real
-       billboard call sites in this same function (search
-       "emit_catalog_object(0x14," and "0x16,"). Only weakly
-       evidenced (the fresh-decompile check that first suggested this
-       resolved its data reference to garbage -- see
-       [[tmobj-sign-table-recovery]] -- so this is going on the CALL
-       SHAPE matching those other two confirmed-real call sites, not a
-       clean disassembly of this specific branch). NOTE: switching to
-       emit_catalog_object means this decal loses the wall-flush
-       positioning fix below (g_billboard_angle_override_deg) --
-       billboards are camera-facing by construction and don't read that
-       override at all, so if this turns out to be the right graphic,
-       the positioning may need its own separate fix. */
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[sign] variant=%d table_val=%d -> emit_catalog_object(catalog_idx=%d)\n",
-              iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-              (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
-    emit_catalog_object((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-                           param_1, 0xffffffff, 0xffffffff);
+    /* Confirmed correct (this session): calling emit_catalog_object
+       directly with the real table value is right -- matches the exact
+       4-argument call shape the two other real callers use (search
+       "emit_catalog_object(0x14," and "0x16,"), and now (entry 45/46)
+       we know WHY it's the right shape: this table can resolve to a
+       real loaded .E model catalog (e.g. FBRIDGE.E), not just another
+       flat sprite variant, so it has to go through the one call that
+       actually knows how to draw both.
+
+       The old note here flagged exactly the bug the user then found
+       live: "switching to emit_catalog_object means this decal loses
+       the wall-flush positioning fix below (g_billboard_angle_override_
+       deg) -- billboards are camera-facing by construction... if this
+       turns out to be the right graphic, the positioning may need its
+       own separate fix." Confirmed: passing heading=-1 tells
+       emit_catalog_object to use ITS OWN camera-relative billboard
+       angle (see its own heading<0 branch) instead of the object's real
+       placed orientation -- reported live as "tmap and decal objects...
+       change direction based on yaw" (the starting room's own entry-
+       door decal named specifically). Fixed the same way doors already
+       do it successfully: pass the object's own real stored heading
+       (word1 bits 7-9, doubled -- the exact formula emit_anim_object_
+       frames already uses and this session's own [billboard] angle-calc
+       log already confirmed produces correct, stable 0/90/180/270
+       degree results) instead of -1. emit_catalog_object's own internal
+       math (the heading>=0 branch) already applies the camera-quadrant
+       correction itself, so nothing extra is needed at this call site. */
+    /* Real per-instance texture for the handful of these catalog ids
+       that are ALSO real .E-model geometry (confirmed via the DOS
+       decompile, ~/Github/uw1-decomp, at the user's request --
+       port/uw1_view.c:2297: "0x164 a_bridge row 2, b3 0x3e -> TMOBJ
+       30..31, two 32x32 planks"). Same TMOBJ_base+0x10+base+(flags%mod)
+       formula as _decal_row[] above (real DOS source, same table row
+       shape) -- but unlike those 4 ids, a_bridge resolves to a REAL
+       mesh catalog (2, FBRIDGE.E) through the table two lines up, so it
+       has to reach emit_catalog_object directly (the one path that
+       knows how to draw the mesh) with a real frame_or_texid, not go
+       through _decal_row[]'s own LAB_decal_frame_resolved/FUN_00040770
+       flat-sprite escape hatch -- that would trade the real 3D geometry
+       away for a flat billboard just to get the texture right. User
+       report this fix addresses: "Bridge objects are not using their
+       texture" (the mesh was already correct, entry 45/46 -- only the
+       texture was still the -1 placeholder). Falls back to -1
+       (unchanged placeholder behavior) for every other iVar17 without a
+       confirmed real formula -- not guessed. */
+    { static const struct { int iv17; int base; int mod; } _mesh_tex_row[] = {
+        { 0x164 - 0x150, 30, 2 },  /* a_bridge -> TMOBJ 30..31, two planks */
+      };
+      unsigned _mi;
+      int _tex_frame = 0xffffffff;
+      for (_mi = 0; _mi < sizeof(_mesh_tex_row)/sizeof(_mesh_tex_row[0]); _mi++) {
+        if (_mesh_tex_row[_mi].iv17 == iVar17) {
+          int _flags = (*param_1 >> 9) & 0xf;
+          int _off = _mesh_tex_row[_mi].base + (_flags % _mesh_tex_row[_mi].mod);
+          _tex_frame = (int)(short)DAT_00202734 + 0x10 + _off;
+          if (getenv("UW_DEBUG_DECAL"))
+            fprintf(stderr, "[mesh-tex] id=0x%03x iVar17=%d flags=%d off=%d abs_frame=%d\n",
+                    (int)(*param_1 & 0x1ff), iVar17, _flags, _off, _tex_frame);
+          break;
+        }
+      }
+      if (getenv("UW_DEBUG_DOOR"))
+        fprintf(stderr, "[sign] variant=%d table_val=%d heading=%d tex_frame=%d -> emit_catalog_object(catalog_idx=%d)\n",
+                iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+                (int)((param_1[1] >> 7 & 7) << 1), _tex_frame,
+                (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
+      emit_catalog_object((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+                             param_1, (param_1[1] >> 7 & 7) << 1, _tex_frame);
+    }
     return;
 LAB_decal_frame_resolved:
     /* Reached only via the _decal_row goto above (lever/switch/writing/
@@ -56739,7 +56779,14 @@ LAB_decal_frame_resolved:
       DAT_00110fc0 = DAT_00110fc0 + 1;
       DAT_00189580 = 0;
     }
-    emit_catalog_object(0x14,param_1,0xffffffff,(uVar27 & 0xf) + (uint)DAT_00202734);
+    /* Same heading fix as the generic DAT_00086c80 dispatch above (see
+       its own comment) -- this call was ALSO passing heading=-1
+       (camera-relative billboard angle) unconditionally, missed in the
+       first pass since it's a separate call site. This is the class-3
+       (button/switch/pull-chain, id 0x170-0x17f) TMFLAT dispatch --
+       same fix, same reasoning: these are real placed wall fixtures,
+       not camera-facing billboards. */
+    emit_catalog_object(0x14,param_1,(param_1[1] >> 7 & 7) << 1,(uVar27 & 0xf) + (uint)DAT_00202734);
     if (DAT_0023b830 != 0 || DAT_00086b2c != 0) {
       return;
     }
@@ -56782,7 +56829,10 @@ LAB_00060f54:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     DAT_00189580 = 0;
   }
-  emit_catalog_object(0x16,param_1,0xffffffff,(byte)param_1[3] & 0x3f);
+  /* Same heading fix as the generic DAT_00086c80 dispatch above (see
+     its own comment) -- also missed in the first pass. Class-3's other
+     sub-branch (id 0x16d-0x16f, force field/special tmap obj). */
+  emit_catalog_object(0x16,param_1,(param_1[1] >> 7 & 7) << 1,(byte)param_1[3] & 0x3f);
   if (!bVar14) {
     return;
   }
@@ -56880,7 +56930,28 @@ short frame_or_texid;
   int local_60;
   byte *local_58;
   int faces_remaining;
-  
+  /* Real fix (this session, at the user's direction): the per-corner UV
+     read below is fixed at point.X (U) / point.Y (V) for every face,
+     unconditionally, in the real disassembly (verified via actual ARM
+     instructions, not just the decompile -- see tick_anim_record's own
+     comment and object-rendering-findings.txt). That's correct for
+     vertical geometry (doors, frames -- Y genuinely varies with
+     height) but degenerates for a horizontal face like a bridge's own
+     flat top, where Y is constant across all 4 corners and V collapses
+     to a single texel -- confirmed live (user report: "Bridge UV...
+     looks fine on one axis but a single pixel stretched along the
+     other"). Pick Y or Z for V based on which the model's OWN real
+     bounding box (parse_e_model_file's already-correctly-ported
+     computation at +0x3c24/+0x3c28 -- Y's real min/extent) says is
+     larger, comparing against a Z extent this port computes the same
+     way (this .E parser's own bounding box only ever tracked X/Y, per
+     the real disassembly -- Z was never part of the original
+     mechanism, so there's nothing to port for it). Decided ONCE per
+     model-draw-call (not per face), matching how the model itself is
+     authored -- a model is either fundamentally vertical or
+     horizontal, not a mix. */
+  int _v_offset;
+
   catalog_u = (uint)catalog;
   iVar1 = catalog_u * 4;
   catalog_flags = (&DAT_00086c08)[iVar1];
@@ -57168,6 +57239,25 @@ short frame_or_texid;
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[billboard] tick_anim_record(catalog=%d) -> _anim=%p point_count=%d face_count(faces_remaining)=%d\n",
             (int)catalog, (void *)_anim, *(int *)_anim, faces_remaining);
+  _v_offset = 0xc;  /* default: V <- point.Y, matching the original's own always-Y behavior */
+  { int _pc = *(int *)_anim;
+    if (_pc > 0) {
+      float _minz = 0.0f, _maxz = 0.0f;
+      int _pi;
+      for (_pi = 0; _pi < _pc; _pi++) {
+        float _z = *(float *)(_anim + 8 + _pi*0xc + 8);
+        if (_pi == 0 || _z < _minz) _minz = _z;
+        if (_pi == 0 || _z > _maxz) _maxz = _z;
+      }
+      { float _zext = _maxz - _minz;
+        float _yext = *(float *)(_anim + 0x3c28);   /* real, already-ported model Y extent */
+        if (_zext > _yext) _v_offset = 0x10;  /* V <- point.Z instead */
+      }
+    }
+  }
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[billboard] V-axis pick: catalog=%d y_extent=%g z_extent computed, using %s for V\n",
+            (int)catalog, (double)*(float *)(_anim + 0x3c28), (_v_offset == 0x10) ? "Z" : "Y");
   iVar16 = faces_remaining + -1;
   if (-1 < iVar16) {
     iVar2 = (int)(short)tex_w;
@@ -57254,7 +57344,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar28 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar28);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -57274,7 +57364,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar28);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -57294,7 +57384,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar28);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -57314,7 +57404,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
         *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
         *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar28);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
         uVar17 = Ordinal_2026(uVar17,0x3b800000);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
@@ -57334,7 +57424,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
@@ -57355,7 +57445,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -57375,7 +57465,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -57395,7 +57485,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
         *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
         *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar17 = Ordinal_2047(uVar17,*puVar32);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
@@ -57415,7 +57505,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
@@ -57436,7 +57526,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -57456,7 +57546,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -57476,7 +57566,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
         *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
         *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar17 = Ordinal_2047(uVar17,*puVar32);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
