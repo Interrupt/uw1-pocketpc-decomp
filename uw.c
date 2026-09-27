@@ -667,19 +667,25 @@ int DAT_000db450;
    later billboard this frame the wrong way. */
 int g_billboard_angle_override_deg = -1;
 /* Live-tunable door-frame anchor constants (UW_MODEL_TUNER=1) -- see the
-   wall-plane fix in emit_catalog_object's own catalog_u==1 block. Two
+   wall-plane fix in emit_catalog_object's own catalog_u==1 block. Three
    real regressions already came from guessing these numbers, rebuilding,
    and only then finding out live whether a guess was right; this lets
    the door panel show tunable rows so a value can be nudged and watched
    change on screen the same frame, with no rebuild. g_tune_wide_center
-   is the wide/along-the-wall axis's offset from the tile's own origin
-   (currently 128.0, exact tile center); g_tune_edge_offset is the
-   wall-perpendicular axis's offset from whichever tile edge it's
-   nearest (currently 16.0, half of an assumed 32-unit wall thickness --
-   the specific number this session's QA already found wrong once,
-   edge+0 -> edge+16). */
+   is the wide/along-the-wall axis's offset from the tile's own origin;
+   g_tune_edge_offset is the wall-perpendicular axis's offset from
+   whichever tile edge it's nearest. Live QA confirmed both at 128.0 --
+   i.e. the "wall has real thickness, the perpendicular axis sits at
+   edge+16" theory (tried and initially reported as an improvement) was
+   itself wrong; the real answer is simpler, exact tile center on BOTH
+   axes, no wall-thickness concept needed. At edge_offset==128 the near/
+   far edge-side branch in the fix below collapses to the same value
+   either way (128 or 256-128), so this is equivalent to just always
+   centering -- kept as two separately-tunable fields anyway in case a
+   future model (not a full-tile-wide one like DFRAME.E) genuinely needs
+   something else. */
 double g_tune_wide_center = 128.0;
-double g_tune_edge_offset = 16.0;
+double g_tune_edge_offset = 128.0;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
    view/camera matrix -- build_view_matrix writes the whole matrix in one shot
@@ -14701,6 +14707,8 @@ int * param_1;
   }
   iVar3 = 0;
   piVar2 = param_1;
+  if (getenv("UW_DEBUG_DOOR_POS"))
+    fprintf(stderr, "[doorpos] translate_verts_to_camera_space: second-list record count param_1[1]=%d\n", param_1[1]);
   if (0 < param_1[1]) {
     do {
       *(undefined1 *)(piVar2 + 0x121b) = 1;
@@ -15528,6 +15536,9 @@ LAB_0002029c:
               local_64 = local_78;
               local_78 = local_78 + 1;
             } while (local_78 < iVar4);
+            if (getenv("UW_DEBUG_DOOR_POS") && local_48 >= 26 && local_48 <= 32)
+              fprintf(stderr, "[doorpos] near_clip: emit_idx=%d iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
+                      local_48, iVar18, local_7c);
             if (iVar18 != 0) {
               *puVar20 = (char)iVar18;
               (&DAT_000bc039)[iVar19] = (char)((uint)iVar18 >> 8);
@@ -15536,6 +15547,9 @@ LAB_0002029c:
               /* carry the real texture pointer from emit index to render index */
               if ((unsigned)local_7c < UW_MAX_VIS_TILES && (unsigned)local_48 < UW_MAX_VIS_TILES) {
                 g_tile_texptr_out[local_7c] = g_tile_texptr_emit[local_48];
+                if (getenv("UW_DEBUG_DOOR_POS") && local_48 >= 26 && local_48 <= 32)
+                  fprintf(stderr, "[doorpos] texptr carry: emit_idx=%d out_idx=%d texptr=%p\n",
+                          local_48, local_7c, g_tile_texptr_emit[local_48]);
               }
               local_7c = local_7c + 1;
               (&DAT_000bc03b)[iVar19] = (char)((uint)iVar18 >> 0x18);
@@ -58070,25 +58084,24 @@ LAB_000640ec:
      angle, not assumed) gets the tile's exact center; the wall-
      perpendicular axis the model's thin local Z rotates into.
 
-     That perpendicular axis is NOT the bare tile edge (offset 0/256) --
-     tried that first, and live QA at the user's own reported position
-     (SETPLAYERPOS 34.52 9.00, standing on a tile boundary looking
-     straight at the door) showed a real seam between the frame and the
-     wall, plus a second report that the leaf's other axis sat "exactly
-     on a tile edge instead of being in the door frame". A wall in this
-     engine has real thickness, and a door frame sits recessed inside
-     it, not flush with the tile's own outer boundary the raw rasterizer
-     geometry uses. Slot 0 or 7 of the ORIGINAL per-object formula
-     (offset 16 or 240 -- i.e. edge +/- 16, half of a 32-unit wall
-     thickness) turned out to already be the right target -- the
-     original bug was landing on the wrong SLOT (an interior slot like
-     2 or 3) for this axis, not needing a completely different formula.
-     So: exact center on the wide axis (bypassing the slot table
-     entirely, since it can never land exactly on 128), but edge+/-16
-     -- not edge+0 -- on the perpendicular one, picking the near/far
-     side the un-corrected anchor already sat closer to. Scoped to
-     catalog_u==1 (DFRAME, always drawn first) since DFRAME and the
-     leaf share this same anchor. */
+     The perpendicular axis is ALSO the tile's exact center, not an
+     edge-relative offset -- live QA via the tuner (g_tune_wide_center/
+     g_tune_edge_offset below) confirmed both at 128.0 look correct once
+     a separate real bug (the anchor being baked into this model's own
+     scratch buffer BEFORE this fix used to run, so only the leaf's
+     later, separate call ever picked up an edited value -- see that
+     fix's own commit) stopped masking whether the frame was actually
+     responding. The earlier "wall has real thickness, perpendicular
+     axis sits at edge+16" theory was itself wrong, arrived at while
+     that masking bug made the frame look like it needed a different
+     number than the leaf when actually neither did -- it just wasn't
+     visibly moving. At edge_offset==128 the near/far edge-side branch
+     below collapses to the same value either way (128 or 256-128), so
+     this is really just "exact tile center on both axes," the edge-
+     relative framing kept only because a future non-full-tile-width
+     model might genuinely need it. Scoped to catalog_u==1 (DFRAME,
+     always drawn first) since DFRAME and the leaf share this same
+     anchor. */
   if (catalog_u == 1) {
     /* UW_MODEL_TUNER=1: live-editable version of the two constants just
        below (g_tune_wide_center/g_tune_edge_offset, see their own
@@ -58155,10 +58168,14 @@ LAB_000640ec:
     *(char *)(_anim + 0xc13) = (char)((uint)uVar17 >> 0x18);
   }
   { int _rec_start = DAT_0023b83c;
+  int _vtx_start = DAT_0023b838;
   build_euler_rotation_matrix(_anim,0,(int)sVar13,0);
   transform_points_by_matrix(&DAT_000a85d0,_anim);
   DAT_0023b83c = DAT_000a85d4;
   DAT_0023b838 = DAT_000a85d0;
+  if (getenv("UW_DEBUG_DOOR_POS"))
+    fprintf(stderr, "[doorpos] catalog=%d emitted records [%d,%d) vtx [%d,%d) faces_remaining_was=%d\n",
+            (int)catalog, _rec_start, (int)DAT_0023b83c, _vtx_start, (int)DAT_0023b838, faces_remaining);
   /* transform_points_by_matrix is original, unmodified code -- it has no
      idea g_tile_texptr_emit[] exists. It copies each face's texture
      pointer (texptr) into the arena record's own byte offset +0x18..+0x1b,

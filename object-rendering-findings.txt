@@ -1338,3 +1338,90 @@ moving together. Left the default at 16.0 (this session's own best
 prior estimate) and left the actual recalibration for the user to redo
 live now that both halves genuinely move together -- the tool doing
 its job is the right way to get this number now, not another guess.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (5): confirmed position defaults (128/128); door
+leaf intermittent-disappearance bug reproduced but NOT root-caused
+═══════════════════════════════════════════════════════════════════════════
+Live QA with the fixed (synced) tuner: user confirmed wide_center=128.0
+AND edge_offset=128.0 both look exactly correct -- i.e. the earlier
+"wall has real thickness, perpendicular axis at edge+16" theory
+(MILESTONE (3)) was itself wrong; the real answer is simpler, exact
+tile center on BOTH axes, no separate wall-thickness concept. At
+edge_offset==128 the fix's own near/far-edge branch collapses to the
+same value either way, so this is equivalent to always centering.
+Updated both defaults to 128.0 and rewrote the wall-plane-fix and
+g_tune_* declaration comments to record this (see uw.c). Confirmed via
+UW_DEBUG_DOOR_POS live trace that frame and leaf now genuinely share
+the exact same anchor every frame (this was the whole point of the
+MILESTONE (4) re-bake fix, and it's holding).
+
+Second QA report, at a specific reported position (SETPLAYERPOS 32.52
+8.44 640 90 14): "door leaf disappears... reappears when using Look
+mode at something, disappears again when the mouse moves." Reproduced
+reliably via a scripted repro (SETPLAYERPOS to the exact position,
+screenshot, SDLMOVE, screenshot) -- confirmed real, not a one-off.
+
+The user's own hypothesis while this was being chased: "is this sort
+also how model faces are hidden? could be the actual backface culling
+mechanism we were searching for, inverted for models." Investigated
+directly and it's a good lead worth recording even though it didn't
+pan out for this specific bug: near_clip_visible_tiles (uw.c ~15258)
+DOES have a real per-record gate (`+0x486c != 0 && +0x4870 == 0`,
+checked before a record is even considered), and a real per-vertex
+near-plane accumulator (`iVar18`, a record with iVar18==0 after its
+whole vertex loop is silently dropped, never added to the visible-
+record output list) -- genuinely the kind of mechanism that COULD be a
+mis-firing cull. Traced both: +0x486c/+0x4870 get set unconditionally
+(seeded true/false for every record, every frame, by
+translate_verts_to_camera_space, no orientation/winding test at all --
+so not a backface cull, more a "this record is initialized" flag), and
+confirmed live via a targeted diagnostic that the leaf's own 7 records
+(emit indices 26-32) get iVar18 in {1,4} (nonzero, kept) IDENTICALLY in
+both the visible and invisible screenshots -- so near_clip is not where
+this bug lives, at least not for this repro.
+
+Tried a z-bias fix next (pushing the leaf's local Z toward the camera
+by a few units, on the theory that the frame and leaf -- now sharing
+the exact same anchor per the 128/128 finding above -- might be
+genuinely coplanar and hitting a painter's-algorithm depth-sort tie
+that flips with camera angle). Tested at 4.0 and 40.0 units; neither
+changed the symptom at all. Reverted (no justified constant left
+behind) -- this rules out coplanar depth-sort instability as the cause
+too, at least at the magnitudes tried.
+
+Traced the ENTIRE remaining pipeline with targeted live diagnostics,
+comparing the visible screenshot's frame against the invisible one's,
+value for value:
+  - emission (record range emitted for the leaf): identical, [26,33)
+    both times.
+  - near_clip's per-record keep/drop decision (iVar18): identical,
+    {4,4,4,4,4,4,1} both times, all kept.
+  - the texture pointer carried through to the output record
+    (g_tile_texptr_out, sourced from g_tile_texptr_emit[26..32]):
+    identical pointer VALUE (same address) both times.
+  - the actual raster_triangle call parameters render_dungeon_view
+    issues for these exact records (texture id, screen x/y, width/
+    stride): identical both times.
+  - total draw-call count hitting that same screen region across the
+    multi-frame window between screenshots: identical (36 both times).
+
+Every single stage checked is byte-identical between the "visible" and
+"invisible" screenshots, yet the rendered PIXELS visibly differ. This
+means either (a) the bug is even further downstream than traced here
+(inside raster_triangle's own span-fill/texture-sample logic, not
+caught by tracing its INPUT parameters), or (b) something about
+screenshot/framebuffer-present timing specifically, possibly related
+to how SDLMOVE's mouse-motion event interacts with this port's own
+dirty-rect flush cycle (see the debug-UI fix's own MILESTONE (4) notes
+on how easy it is to get present-timing wrong in this codebase) rather
+than a bug in the door-rendering code itself. NOT ROOT-CAUSED this
+session despite substantial live-tracing effort -- flagging clearly as
+still open rather than guessing further. The diagnostic prints added
+while chasing this (all gated behind UW_DEBUG_DOOR_POS, zero cost when
+unset) are left in place since they're directly useful for whoever
+picks this back up: the emission/near-clip/texptr/record-count
+checkpoints already proved out as a real, working way to bisect this
+class of "something's wrong somewhere in a long pipeline" bug.
+
+run-regressions.sh: 6/6 clean.
