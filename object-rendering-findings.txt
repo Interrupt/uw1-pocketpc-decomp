@@ -894,3 +894,92 @@ Same "hidden writer, not yet Ghidra-checked" shape as DAT_00085668 and
 friends from earlier in this project, but not run down this session --
 worth a real Ghidra reference/byte-pattern search before trusting either
 "always off" or "a real writer exists" as the answer.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27: CLEAN REIMPLEMENTATION ON A NEW BRANCH (3d-objects)
+═══════════════════════════════════════════════════════════════════════════
+A separate investigation this session (on branch e-model-texturing, off
+this same main) found that emit_object_billboard/tick_anim_record --
+the object catalog's ordinary "flat sprite" renderer -- has a second,
+genuine native capability: tick_anim_record's own address-walk formula
+resolves a "catalog" id to the exact same 29 real .E model buffers the
+hand-built g_model_map hack (this file's MILESTONE 2026-09-11 above)
+independently reloads from scratch. That's a real mechanism the original
+binary had; g_model_map was always a workaround for not having found it
+yet. Once found, e-model-texturing fixed 6 real bugs to get it working
+end to end (a buffer-address-walk fix, 2 pointer-truncation crashes, a
+texture side-channel gap, a duplicate-sprite draw, 3 wrong-heading call
+sites, a bridge-texture formula, and a horizontal-face UV axis pick --
+see that branch's own commit history for full details on each).
+
+At the user's request, ported ONLY those real, evidence-based fixes onto
+a fresh branch cut from clean `main` (the actual merge-base of this
+whole investigation), explicitly EXCLUDING both hand-built workarounds
+that predate the discovery: g_model_map/ModelMapEntry/lookup_object_
+model/emit_model_object (the .E-model id-table hack), and the display-
+list bytecode interpreter (a second, independent hack for the same
+underlying gap, never present on main to begin with). Renamed the same
+functions/locals e-model-texturing did (emit_object_billboard ->
+emit_catalog_object, tick_anim_record's param_1 -> catalog, etc.) so the
+two branches read the same way.
+
+Notable branch-specific finding: main's own generic DAT_00086c80 sign/
+decal dispatch already called emit_catalog_object directly with no
+_decal_row[]/LAB_decal_frame_resolved indirection -- that table turned
+out to be a pre-existing wrapper from e-model-texturing's OWN base
+history (predating this session, not part of the fix set), not something
+this session's fixes require. Confirmed live (see below) that main's
+simpler direct dispatch already produces correct lever/switch/writing/
+gravestone/bridge behavior once the heading and bridge-texture fixes are
+applied -- so it was deliberately NOT ported, keeping this branch's
+implementation smaller than e-model-texturing's for the identical
+end result.
+
+Also confirmed live: main's own emit_anim_object_frames and
+emit_object_billboard were functionally identical to e-model-texturing's
+pre-session starting point (diffed against commit 79e78aa, right before
+that branch's own fixes began), and main's load_door_frames already used
+the correct (fixed) 60000-based scratch constant rather than the
+30000 value e-model-texturing had to introduce -- so no additional
+branch-specific adaptation was needed beyond the renames.
+
+VERIFICATION: clean compile after every change (scoped renames verified
+via line-range grep before each sed/perl pass, to avoid touching a
+variable's other, unrelated role in the same function -- e.g. iVar16/
+iVar30/_v_offset each have a small-int role AND a pointer role in
+emit_catalog_object, only the pointer role needed splitting out). Full
+build + `BUILD=1 ./run-regressions.sh`: 6/6 clean. Live UW_DEBUG_DOOR
+trace confirmed the exact same catalog resolutions e-model-texturing
+documented: catalog=1 (DFRAME.E) -> 20 points/12 faces, catalog=14
+(DOOR.E) -> 8 points/7 faces, catalog=2 (FBRIDGE.E) -> 8 points/5 faces,
+and UW_DEBUG_DECAL confirmed the bridge's real TMOBJ texture resolves to
+abs_frame=690 (within the documented TMOBJ 30/31 plank range) rather
+than the old -1 placeholder. Screenshot confirmation: a real door mesh
+(distinct paneled-door texture, not the flat corridor wall pattern
+around it) visible from tile (23,5) looking at the door placed at
+(22,5) -- repro: TELEPORT 23 5, REVEAL, REVEAL (a second REVEAL is
+needed after any TELEPORT/SETPLAYERPOS -- the first redraw after a
+teleport lands on the pre-teleport tile pointer, a known demomode gap
+documented in demo_dungeon_room.txt's own header comment). Bridge
+mesh/texture verified via the debug trace above rather than a clean
+screenshot -- every camera position tried near the bridge's placement
+(36-38,24-25) put the player either inside solid rock (0 visible tiles)
+or standing on/above the bridge itself looking into the chasm below it,
+not at a useful oblique angle; not chased further this session since
+the trace-level confirmation (real geometry + real texture id, matching
+e-model-texturing's own proven-correct values exactly) was judged
+sufficient.
+
+Two lessons worth keeping for the next repro like this: TELEPORT takes
+INTEGER tile coordinates only (a fractional "TELEPORT 22.5 5.5" silently
+no-ops with a "[demo] malformed TELEPORT line" log message, not an
+error the caller notices) -- use SETPLAYERPOS for fractional positioning
+instead, but copy its z value from a real [playerpos] print at a nearby
+tile rather than reusing an unrelated repro's z (different tiles have
+very different floor heights -- e.g. spawn's z=768 vs. an arbitrarily
+guessed z=64 -- and a wrong z can embed the camera in the floor/ceiling,
+producing a fully rendered-but-empty black viewport that looks like a
+rendering bug but is really a camera-placement mistake). And 3D-view
+screenshots need UW_ENABLE_3D_GEOMETRY=1 set, or the dungeon viewport
+never populates at all (visible-tile count stays 0 for every camera
+position) regardless of anything else being correct.
