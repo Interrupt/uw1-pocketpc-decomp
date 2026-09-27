@@ -19776,6 +19776,7 @@ ushort * param_1;
   char acStack_114 [260];
   
   uVar6 = *param_1 & 0x1ff;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488 entry: param_1=%p uVar6(itemid)=0x%x raw=0x%x classcheck=0x%x\n", (void *)param_1, (unsigned)uVar6, (unsigned)*param_1, (unsigned)(*param_1 & 0x1c0));
   if (uVar6 == 0x157) {
     FUN_000708bc(0);
     return;
@@ -19788,11 +19789,13 @@ ushort * param_1;
     return;
   }
   if ((*param_1 & 0x1c0) != 0x40) {
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488: not-a-creature branch (uVar3=0xe00)\n");
     uVar3 = 0xe00;
     goto LAB_0002865c;
   }
   uVar6 = (ushort)(byte)param_1[0xd];
   DAT_00100674 = param_1;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488: conv-id byte(uVar6)=0x%x uVar5=0x%x flagbits(param_1+7)=0x%x flagbyte(param_1+0x19)=0x%x\n", (unsigned)uVar6, (unsigned)(*(ushort *)((char *)param_1 + 0xb) & 0xf), (unsigned)(param_1[7] & 0xc0), (unsigned)(*(byte *)((char *)param_1 + 0x19) & 0x40));
   if (((uVar6 == 0x16) || (uVar6 == 0x8e)) || (uVar6 == 0xe7)) {
 LAB_000285e4:
     if (uVar6 == 0) {
@@ -20063,6 +20066,16 @@ void start_npc_conversation()
     if ((iVar2 != 0) || (DAT_001007b4 == '\0')) {
       uVar3 = 0;
     }
+    /* Debug-only re-seed, no UI involved: directly proves out the
+       npc_talkedto persistence fix (bglobals-dat-readonly-handle-fix)
+       end-to-end without needing to click the NPC a second time through
+       a fragile, animation-position-dependent screen coordinate. Safe
+       to call standalone -- FUN_0002a8e0 just re-reads the object's
+       current fields and re-sets babl variables from them. */
+    if (getenv("UW_DEBUG_TALK_TWICE")) {
+      fprintf(stderr, "[babl] UW_DEBUG_TALK_TWICE: re-seeding from the same object right after natural conversation end\n");
+      FUN_0002a8e0(DAT_00100674);
+    }
     FUN_0007f170(uVar3,0);
   }
   return;
@@ -20244,6 +20257,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
         *pcVar11 = cVar1;
         pcVar11 = pcVar11 + 1;
       } while (cVar1 != '\0');
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu item %d text: \"%s\"\n", iVar12, local_c4);
       Ordinal_1063(local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(local_c4);
       FUN_0007ec50();
@@ -20253,6 +20267,31 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
       iVar12 = (iVar12 + 1) * 0x10000 >> 0x10;
       sVar13 = sVar5 + 1;
     } while (iVar12 < DAT_00100794);
+  }
+  /* Debug-only regression-test aid: end-to-end verifying npc_talkedto
+     persistence (see bglobals-dat-readonly-handle-fix) needs driving a
+     conversation all the way to a real "Farewell"/"Bye" exit, but which
+     numbered topic reaches one varies conversation to conversation and
+     is sometimes randomized turn to turn (confirmed live: the same
+     first answer led down different branches on different runs), so
+     scripting a fixed key sequence in a demo file is not reliable.
+     When set, auto-selects the first item whose text looks like a
+     farewell, exactly as if the player had picked it, instead of
+     blocking on real input -- lets a demo script reach a natural
+     conversation end deterministically for testing. */
+  if (getenv("UW_DEBUG_AUTO_FAREWELL") && (1 < DAT_00100794)) {
+    int _far_i;
+    int _far_pick = 1; /* no farewell offered this turn -- keep the conversation moving */
+    for (_far_i = 1; _far_i < DAT_00100794; _far_i = (_far_i + 1) * 0x10000 >> 0x10) {
+      char *_far_txt = *(char **)(&DAT_00100680 + _far_i * 8);
+      if (_far_txt && (strcasestr(_far_txt, "farewell") || strcasestr(_far_txt, "bye") || strcasestr(_far_txt, "goodbye"))) {
+        _far_pick = _far_i;
+        break;
+      }
+    }
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] UW_DEBUG_AUTO_FAREWELL: auto-selecting item %d (\"%s\")\n", _far_pick, *(char **)(&DAT_00100680 + _far_pick * 8));
+    FUN_000295b4((short)_far_pick);
+    return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
   }
   FUN_0007f0e0();
   DAT_0010078c = 1;
