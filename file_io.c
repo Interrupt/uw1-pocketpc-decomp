@@ -203,7 +203,7 @@ int uw_file_write(int handle, const void *buf, unsigned int size) {
      * fseek/fflush/rewind call (even a zero-distance SEEK_CUR), or the
      * write's effect is undefined. Callers that scan-then-overwrite a
      * record in place (e.g. the babl per-NPC conversation-state save,
-     * FUN_0001a5bc) do exactly that: read the matching record's header,
+     * save_npc_conversation_variables) do exactly that: read the matching record's header,
      * then immediately write over its data with no seek in between --
      * a faithful port of the real game's own read-then-write algorithm
      * (confirmed identical in the real ARM disassembly), but the real

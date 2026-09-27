@@ -11301,7 +11301,7 @@ undefined4 FUN_00019120()
      the "size" that overflowed file_io.c's write-size guard and, before
      that guard existed, silently corrupted the heap (confirmed via ASAN/
      a malloc-guard abort on an unrelated thread). The sibling function
-     right below this one (FUN_0001927c) declares the equivalent pair as
+     right below this one (load_npc_conversation_variables) declares the equivalent pair as
      two contiguous shorts (`short local_124; short local_122;`), which
      is what this record header actually is: two 16-bit fields read by
      one 4-byte call, the second being the following record's real
@@ -11361,7 +11361,7 @@ LAB_00019240:
 
 
 
-void FUN_0001927c(param_1,param_2)
+void load_npc_conversation_variables(param_1,param_2)
 intptr_t param_1; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer its own caller passes (load_npc_conversation_record); dormant (silently never reached the write) until the scan-alignment fix in this same function let execution actually get to FUN_0002285c(iVar4,param_1,...) below, which then crashed writing through the truncated address
 short param_2;
 
@@ -11374,7 +11374,7 @@ short param_2;
   int iVar4;
   uint uVar5;
   /* Same "two separate stack locals read as one 4-byte record" bug as
-     FUN_0001a5bc's own matching comment (its save-side mirror) -- see
+     save_npc_conversation_variables's own matching comment (its save-side mirror) -- see
      there for the full explanation. This is the load side: local_122
      (the record's LENGTH) was silently corrupted by whatever this
      compiler's own stack layout happens to place after local_124 (the
@@ -11394,13 +11394,13 @@ short param_2;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__SAVE0_bglobals_dat_00084538);
   iVar4 = FUN_000227d4(acStack_11c);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001927c: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, want %d shorts\n", acStack_11c, iVar4, (int)DAT_001007c4, (int)param_2);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, want %d shorts\n", acStack_11c, iVar4, (int)DAT_001007c4, (int)param_2);
   if (iVar4 != -1) {
     bVar2 = false;
     do {
       uVar5 = FUN_0002285c(iVar4,local_124_backing,4);
       if ((uVar5 < 4) || ((int)(uint)DAT_001007c4 < (int)local_124)) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001927c: scan stopped, uVar5=%u local_124=%d (no matching record found)\n", uVar5, (int)local_124);
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: scan stopped, uVar5=%u local_124=%d (no matching record found)\n", uVar5, (int)local_124);
         break;
       }
       if ((int)local_124 == (uint)DAT_001007c4) {
@@ -11411,7 +11411,7 @@ short param_2;
         if (uVar5 < (uint)((int)local_122 << 1)) {
           bVar2 = true;
         }
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001927c: MATCH id=%d, restored %u bytes (wanted %d), first 10 shorts: %d %d %d %d %d %d %d %d %d %d\n",
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: MATCH id=%d, restored %u bytes (wanted %d), first 10 shorts: %d %d %d %d %d %d %d %d %d %d\n",
                 (int)local_124, uVar5, (int)local_122 << 1,
                 (int)((short*)param_1)[0], (int)((short*)param_1)[1], (int)((short*)param_1)[2], (int)((short*)param_1)[3], (int)((short*)param_1)[4],
                 (int)((short*)param_1)[5], (int)((short*)param_1)[6], (int)((short*)param_1)[7], (int)((short*)param_1)[8], (int)((short*)param_1)[9]);
@@ -11509,7 +11509,7 @@ undefined1 *param_2;
     FUN_0001a1a4(iVar2);
     babl_free(local_28);
     DAT_000bbf14 = babl_alloc((DAT_000bbf7c + 0x800) * 2);
-    FUN_0001927c(DAT_000bbf14,(int)DAT_000bbf7c);
+    load_npc_conversation_variables(DAT_000bbf14,(int)DAT_000bbf7c);
     DAT_000bbf84 = DAT_000bbf7c;
     DAT_000bbf0c = DAT_000bbf14 + DAT_000bbf7c * 2;
     puVar3 = (undefined1 *)babl_alloc(1);
@@ -12346,7 +12346,7 @@ LAB_0001a470:
       DAT_000bbf74 = DAT_000bbf74 + 1;
 LAB_0001a5a4:
     } while (sVar2 != 0);
-    FUN_0001a5bc();
+    save_npc_conversation_variables();
     uVar4 = 1;
   }
   else {
@@ -12357,14 +12357,14 @@ LAB_0001a5a4:
 
 
 
-void FUN_0001a5bc()
+void save_npc_conversation_variables()
 
 {
   char stack0xffdc3240_buf [256];
   char *stack0xffdc3240_ptr;
   char cVar1;
   short sVar2;
-  intptr_t uVar3; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer on assignment, same bug class as FUN_0001927c's own `param_1` fix (its load-side mirror); dormant until the scan-alignment fix below let execution actually reach this write
+  intptr_t uVar3; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer on assignment, same bug class as load_npc_conversation_variables's own `param_1` fix (its load-side mirror); dormant until the scan-alignment fix below let execution actually reach this write
   char *pcVar4;
   int iVar5;
   uint uVar6;
@@ -12379,7 +12379,7 @@ void FUN_0001a5bc()
      record's ID) -- nothing forces the two to stay adjacent once
      recompiled. Confirmed via the real ARM disassembly that both reads
      genuinely are meant to be one 4-byte record (matching
-     FUN_0001927c's own identical pattern, its own load-side mirror).
+     load_npc_conversation_variables's own identical pattern, its own load-side mirror).
      The corrupted length then feeds FUN_00022850's own seek-forward-
      to-next-record call, misaligning every subsequent scan iteration
      -- this is the actual root cause of "talking to Bragit again
@@ -12405,7 +12405,7 @@ void FUN_0001a5bc()
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_118,s__SAVE0_bglobals_dat_00084538);
   iVar5 = FUN_00022810(acStack_118);
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001a5bc: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
           acStack_118, iVar5, (int)DAT_001007c4, (int)sVar2, (void*)uVar3,
           (int)((short*)uVar3)[0], (int)((short*)uVar3)[1], (int)((short*)uVar3)[2], (int)((short*)uVar3)[3], (int)((short*)uVar3)[4],
           (int)((short*)uVar3)[5], (int)((short*)uVar3)[6], (int)((short*)uVar3)[7], (int)((short*)uVar3)[8], (int)((short*)uVar3)[9]);
@@ -12415,7 +12415,7 @@ void FUN_0001a5bc()
       if ((uVar6 < 4) ||
          (uVar7 = (uint)local_120, uVar6 = (uint)DAT_001007c4,
          uVar7 != uVar6 && (int)uVar6 <= (int)uVar7)) {
-        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001a5bc: scan gave up, uVar6=%u local_120=%d (no matching record -- write SKIPPED entirely)\n", uVar6, (int)local_120);
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: scan gave up, uVar6=%u local_120=%d (no matching record -- write SKIPPED entirely)\n", uVar6, (int)local_120);
         goto LAB_00019460;
       }
       if (uVar7 == uVar6) break;
@@ -12424,7 +12424,7 @@ void FUN_0001a5bc()
     if (sVar2 < local_11e) {
       local_11e = sVar2;
     }
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001a5bc: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
     FUN_00022884(iVar5,uVar3,(int)local_11e << 1);
 LAB_00019460:
     Ordinal_553(iVar5);
@@ -16685,7 +16685,7 @@ char *param_1;
    `Ordinal_168(fname, 0xc0000000, 1, 0, 3, 0x80, 0)` --
    GENERIC_READ|GENERIC_WRITE (0xc0000000), OPEN_EXISTING (disposition
    3) -- a read-write handle, not read-only. Every one of this port's 3
-   real callers already relies on that: FUN_0001a5bc (this file's
+   real callers already relies on that: save_npc_conversation_variables (this file's
    per-NPC conversation-variable save to \SAVE0\bglobals.dat, called at
    the end of every babl-VM interpreter yield) opens through this
    function then immediately writes through the same handle -- silently
