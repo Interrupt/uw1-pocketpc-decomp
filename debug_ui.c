@@ -30,8 +30,10 @@ extern unsigned short g_text_flat_color;
 typedef struct {
   char name[24];
   int is_int;
+  int is_button;
   double *dval;
   int *ival;
+  void (*on_press)(void);
   double step;
   /* Cached screen rect from the last dbgui_end(), for mouse hit-testing
      next frame (this frame's clicks arrive interleaved with drawing,
@@ -128,8 +130,10 @@ static void dbgui_add_field(const char *name, int is_int, double *dval, int *iva
   strncpy(f->name, name, sizeof(f->name) - 1);
   f->name[sizeof(f->name) - 1] = 0;
   f->is_int = is_int;
+  f->is_button = 0;
   f->dval = dval;
   f->ival = ival;
+  f->on_press = 0;
   f->step = step;
 }
 
@@ -141,6 +145,20 @@ void dbgui_field_double(const char *name, double *value, double step)
 void dbgui_field_int(const char *name, int *value, int step)
 {
   dbgui_add_field(name, 1, 0, value, (double)step);
+}
+
+void dbgui_field_button(const char *name, void (*on_press)(void))
+{
+  if (g_field_count >= DBGUI_MAX_FIELDS) return;
+  DbgField *f = &g_fields[g_field_count++];
+  strncpy(f->name, name, sizeof(f->name) - 1);
+  f->name[sizeof(f->name) - 1] = 0;
+  f->is_int = 0;
+  f->is_button = 1;
+  f->dval = 0;
+  f->ival = 0;
+  f->on_press = on_press;
+  f->step = 0;
 }
 
 static double dbgui_field_get(const DbgField *f)
@@ -226,7 +244,9 @@ void dbgui_draw(void)
       rect_fill_or_save_restore(x0 + 1, ry - 1, x1 - 1, ry + DBGUI_ROW_H - 2);
     }
     char line[64];
-    if (g_editing && i == g_selected) {
+    if (f->is_button) {
+      snprintf(line, sizeof(line), "[ %s ]", f->name);
+    } else if (g_editing && i == g_selected) {
       snprintf(line, sizeof(line), "%s: %s_", f->name, g_edit_buf);
     } else {
       snprintf(line, sizeof(line), "%s: %g", f->name, dbgui_field_get(f));
@@ -270,6 +290,10 @@ void dbgui_feed_mouse_down(int lx, int ly)
     if (ly >= f->row_y - 1 && ly < f->row_y + DBGUI_ROW_H - 2 &&
         lx >= DBGUI_PANEL_X + 1 && lx < DBGUI_PANEL_X + DBGUI_PANEL_W - 1) {
       g_selected = i;
+      if (f->is_button) {
+        if (f->on_press) f->on_press();
+        return;
+      }
       g_editing = 1;
       snprintf(g_edit_buf, sizeof(g_edit_buf), "%g", dbgui_field_get(f));
       g_edit_len = (int)strlen(g_edit_buf);
@@ -299,6 +323,8 @@ void dbgui_feed_key(int sdl_keycode)
     g_selected = (g_selected - 1 + g_field_count) % g_field_count;
   } else if (sdl_keycode == DBGUI_KEY_DOWN) {
     g_selected = (g_selected + 1) % g_field_count;
+  } else if (f->is_button) {
+    if (sdl_keycode == DBGUI_KEY_RETURN && f->on_press) f->on_press();
   } else if (sdl_keycode == DBGUI_KEY_LEFT) {
     dbgui_field_set(f, dbgui_field_get(f) - f->step);
   } else if (sdl_keycode == DBGUI_KEY_RIGHT) {

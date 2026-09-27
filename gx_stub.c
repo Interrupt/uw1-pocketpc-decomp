@@ -1293,6 +1293,22 @@ void uw_debug_dump_revealmap(const unsigned char *reveal_data) {
     SDL_FreeSurface(surf);
 }
 
+/* Shared by debug_framebuffer_dump and uw_debug_dump_3d_face below --
+   both just want "snapshot g_uw_framebuffer to this path as a BMP",
+   differing only in when they're gated/named. */
+static void debug_save_framebuffer_bmp(const char *path, const char *log_tag) {
+    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, GX_W, GX_H, 16, SDL_PIXELFORMAT_RGB565);
+    if (!surf) {
+        fprintf(stderr, "[%s] SDL_CreateRGBSurfaceWithFormat failed: %s\n", log_tag, SDL_GetError());
+        return;
+    }
+    memcpy(surf->pixels, g_uw_framebuffer, (size_t)GX_W * GX_H * 2);
+    if (SDL_SaveBMP(surf, path) != 0) {
+        fprintf(stderr, "[%s] SDL_SaveBMP failed for %s: %s\n", log_tag, path, SDL_GetError());
+    }
+    SDL_FreeSurface(surf);
+}
+
 void debug_framebuffer_dump(const char *tag) {
     static int enabled = -1;
     static unsigned int every = 1;
@@ -1340,16 +1356,54 @@ void debug_framebuffer_dump(const char *tag) {
        its declaration comment in uw.c) -- already landscape-oriented, no
        rotation needed (unlike g_framebuffer/g_display_buf below, which are
        the portrait "hardware" buffer this gets flushed to later). */
-    SDL_Surface *surf = SDL_CreateRGBSurfaceWithFormat(0, GX_W, GX_H, 16, SDL_PIXELFORMAT_RGB565);
-    if (!surf) {
-        fprintf(stderr, "[draw-dump] SDL_CreateRGBSurfaceWithFormat failed: %s\n", SDL_GetError());
-        return;
+    debug_save_framebuffer_bmp(path, "draw-dump");
+}
+
+/* Debug tool: armed by the "dump_3d_frame" button in the UW_MODEL_TUNER
+   debug panel (dbgui_field_button, see debug_ui.c) via
+   uw_debug_request_3d_frame_dump() -- captures every individual 3D face
+   raster_triangle call for exactly the next render_visible_tile_list()
+   pass (uw.c, right after each raster_triangle call), then disarms
+   itself (uw_debug_3d_frame_dump_finish(), called once at the end of
+   that same pass). Unlike UW_DEBUG_DRAW (every 2D primitive, for a
+   whole run, env-var gated), this is a one-shot triggered live from the
+   debug UI: point the camera at whatever object/angle is being
+   investigated, press the button, get that one frame's complete 3D
+   paint-order sequence under debug/facedumps/<ts>/, one BMP per face. */
+static int g_dump_3d_frame_active = 0;
+
+void uw_debug_request_3d_frame_dump(void) {
+    g_dump_3d_frame_active = 1;
+    fprintf(stderr, "[face-dump] requested -- capturing every 3D face draw for the next render pass\n");
+}
+
+void uw_debug_dump_3d_face(const char *tag) {
+    if (!g_dump_3d_frame_active) return;
+
+    static char run_dir[300];
+    static int run_dir_ready = 0;
+    if (!run_dir_ready) {
+        time_t now = time(NULL);
+        struct tm tm_now;
+        localtime_r(&now, &tm_now);
+        char ts[32];
+        strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
+        snprintf(run_dir, sizeof(run_dir), "debug/facedumps/%s", ts);
+        debug_mkdir_p(run_dir);
+        run_dir_ready = 1;
     }
-    memcpy(surf->pixels, g_uw_framebuffer, (size_t)GX_W * GX_H * 2);
-    if (SDL_SaveBMP(surf, path) != 0) {
-        fprintf(stderr, "[draw-dump] SDL_SaveBMP failed for %s: %s\n", path, SDL_GetError());
+
+    static unsigned int counter = 0;
+    char path[360];
+    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", run_dir, counter++, tag ? tag : "face");
+    debug_save_framebuffer_bmp(path, "face-dump");
+}
+
+void uw_debug_3d_frame_dump_finish(void) {
+    if (g_dump_3d_frame_active) {
+        fprintf(stderr, "[face-dump] frame capture complete\n");
+        g_dump_3d_frame_active = 0;
     }
-    SDL_FreeSurface(surf);
 }
 
 int GXCloseDisplay(void) {

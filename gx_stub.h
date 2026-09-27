@@ -91,6 +91,21 @@ void uw_debug_dump_critter_sprite(int type, int tier, int direction, int frame,
    long sequences like a full-level automap fill). */
 void debug_framebuffer_dump(const char *tag);
 
+/* Debug tool: one-shot capture of every individual 3D face draw for the
+   next 3D render pass, armed live from the UW_MODEL_TUNER debug panel's
+   "dump_3d_frame" button rather than an env var. uw_debug_request_3d_
+   frame_dump() arms it; uw_debug_dump_3d_face(tag) (called from uw.c's
+   render_visible_tile_list, right after each raster_triangle call) is
+   the no-op-when-disarmed capture; uw_debug_3d_frame_dump_finish()
+   disarms it once that render pass is done. Files land under
+   debug/facedumps/<ts>/, one BMP per face, numbered in actual paint
+   order -- lets a single frame's full 3D draw sequence be inspected
+   (which face painted over which, in what order) the way UW_DEBUG_DRAW
+   already does for 2D primitives. */
+void uw_debug_request_3d_frame_dump(void);
+void uw_debug_dump_3d_face(const char *tag);
+void uw_debug_3d_frame_dump_finish(void);
+
 /* Debug tool: if UW_DEBUG_DUMP_TMAP is set (and not "0"), dumps a level's
    64x64 tile map to a BMP right after it's loaded from the .ark file --
    solid tiles (tile type 0, the classic UW "rock/no floor" type) as black,

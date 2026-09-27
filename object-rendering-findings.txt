@@ -1530,3 +1530,65 @@ closed screenshot now shows the original UI chrome fully restored, no
 stale panel pixels remaining.
 
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (8): per-3D-face frame dump tool, triggered by a new
+debug-panel button; used it to re-confirm the boulder's degenerate face
+═══════════════════════════════════════════════════════════════════════════
+Request: extend the existing UW_DEBUG_DRAW tool (dumps a BMP of
+g_uw_framebuffer after every 2D draw call, debug/drawdumps/<ts>/) to do
+the same for every individual 3D face, triggered live from a button in
+the debug panel rather than an env var, for exactly one frame.
+
+Added a "button" field type to debug_ui.c (dbgui_field_button(name,
+on_press)) -- a row with no value, drawn as "[ name ]"; selecting it and
+pressing RETURN (or clicking it) calls on_press() immediately instead of
+entering the numeric-edit mode double/int fields use.
+
+Added a one-shot capture mechanism in gx_stub.c: uw_debug_request_3d_
+frame_dump() arms it (called by the new "dump_3d_frame" button in the
+Object Tuner panel); uw_debug_dump_3d_face(tag) -- called from
+render_visible_tile_list in uw.c, right after each raster_triangle call
+-- is the no-op-when-disarmed capture; uw_debug_3d_frame_dump_finish()
+(called once at the end of that same render_visible_tile_list pass)
+disarms it. Files land under debug/facedumps/<ts>/, one BMP per face,
+numbered in actual paint order and tagged with the record/sub-triangle
+index and texture id (e.g. "rec046_tri1_tex0x6c"). The shared "build an
+SDL surface from g_uw_framebuffer and save it" logic was factored out of
+debug_framebuffer_dump into debug_save_framebuffer_bmp so both tools
+share one implementation.
+
+Live-verified at the boulder repro position (SETPLAYERPOS 9.86 3.14 64
+213 24): pressing the button captured exactly one frame (95 files),
+correctly disarmed itself afterward (no further capturing on later
+frames), and the sequence's own record numbering independently
+reproduced the milestone-7-era finding without any extra tracing code --
+rec071 is simply ABSENT from the sequence (jumps 000091_rec070_tri1
+straight to 000092_rec072_tri1), matching the earlier UW_DEBUG_MODEL
+trace showing that record's point count collapsing to 1 (i.e. zero
+raster_triangle calls, so nothing for this tool to capture there
+either). At rotation_offset=0 the frames immediately before/after the
+gap both show the boulder as a solid, complete silhouette -- consistent
+with the earlier theory that this face's absence only becomes visible
+as a hole at the specific rotations where it would have been the one
+face responsible for covering an otherwise-uncovered patch.
+
+Separately, while testing this: run-regressions.sh started showing 5/6
+CRASH (settle_mobile_to_immobile recursing on itself -- a real stack
+overflow, not a hang) on demo_inventory_container_item_click_test.txt
+and 4 others, reproducible in total isolation (pkill'd every other
+uw_dbg first) and even with data/SAVE0 deleted outright (rules out
+stale/corrupted save state). Bisected with a throwaway worktree
+(git worktree add /tmp/uw_bisect 723af26, the npcs-merge commit from
+well before this session's object-rendering work began) -- same crash,
+same backtrace, confirming this is a pre-existing bug unrelated to
+today's change (or this branch's work generally), not a regression
+introduced here. Left unfixed / out of scope for this milestone; worth
+a dedicated investigation (object-list corruption in mobile-object
+tick/settle looks like the right area to start, given the self-
+recursive backtrace).
+
+run-regressions.sh: 1/6 clean (the 5 failures are the pre-existing,
+bisected-unrelated crash above, not this change -- confirmed by
+reproducing the identical crash on commit 723af26 with none of today's
+or this branch's code present).

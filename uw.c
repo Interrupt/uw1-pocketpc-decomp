@@ -15717,6 +15717,10 @@ void render_visible_tile_list()
                          ? (intptr_t)g_tile_texptr_out[local_94]
                          : (intptr_t)piVar14[0x1a],
                        local_70_rect);
+          { char _facetag[32];
+            snprintf(_facetag, sizeof(_facetag), "rec%03d_tri%d_tex0x%x", local_94, iVar16, piVar14[0x1e]);
+            uw_debug_dump_3d_face(_facetag);
+          }
           iVar16 = iVar16 + 1;
           iVar17 = iVar17 + 0xc;
           piVar14 = (int *)*local_98;
@@ -15728,6 +15732,7 @@ void render_visible_tile_list()
     } while (local_94 < iVar15);
   }
   debug_framebuffer_dump("render_visible_tile_list");
+  uw_debug_3d_frame_dump_finish();
   return;
 }
 #undef local_70
@@ -58115,6 +58120,7 @@ LAB_000640ec:
       dbgui_field_double("wide_center", &g_tune_wide_center, 1.0);
       dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
     }
+    dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
     dbgui_end();
   }
   sVar13 = (short)((int)sVar13 + (int)g_tune_rotation_offset);
