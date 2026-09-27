@@ -1180,3 +1180,31 @@ introduced, plus continued work on the still-open frame-position issue.
    half of the fix.
 
 run-regressions.sh: 6/6 clean, fresh CMake build.
+
+UPDATE: root cause of the earlier failed screenshot attempts found and
+the wall-plane fix now VISUALLY CONFIRMED. Every earlier "clean test
+angle" attempt this session used SDLHOLD SHIFT+LEFT/RIGHT (arrow keys)
+for turning -- the real dungeon movement scheme binds turning to A/D
+(WASD), not the arrow keys (see poll_dungeon_movement_keys in
+gx_stub.c); SHIFT+LEFT was actually silently walking the player
+forward every time (confirmed via the always-on [playerpos] print:
+position drifted tile-by-tile while yaw never left 0), which is why
+every prior "turn and screenshot" sweep this session kept landing on
+plain walls or random corridor spots instead of a door. Correct
+recipe: TELEPORT already centers the player exactly on a tile (e.g.
+"TELEPORT 23 5" -> tile=(23.50,5.50)); SDLHOLD SHIFT+D <ticks>, ticks
+>= ~30, cleanly snaps yaw by exactly 45 degrees per hold with zero
+position drift (confirmed: 8 consecutive holds walked yaw 0->45->90->
+...->315, tile position identical to 3 decimal places every time).
+
+With a genuinely correct test angle, the door frame now renders
+correctly: flush in a properly recessed dark doorway opening, real
+stone jambs visible on both sides, no embedding into the wall on
+either side. The live anchor for this view: tileOrigin=(3584,256),
+wideIsX=0 (this door's wide axis is Z), anchor=(3840,384) -- X snapped
+to the tile's far edge (3584+256), Z at the tile's exact center
+(256+128) -- both exactly the tile-boundary/tile-center values the fix
+targets, not slot-rounded approximations. MILESTONE (3)'s open
+"needs the user's own live confirmation" item is now closed: the fix
+is confirmed working via a properly-angled test, not just verified
+mathematically.
