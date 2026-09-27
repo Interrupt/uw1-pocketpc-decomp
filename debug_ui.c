@@ -49,6 +49,58 @@ static int g_editing = 0;
 static char g_edit_buf[32];
 static int g_edit_len = 0;
 
+/* Real pixel save/restore for the panel's own screen region, so closing
+   it doesn't leave stale pixels behind -- see dbgui_toggle()'s own
+   comment for why dirty_rect_union alone isn't enough (the panel sits
+   in the static golden-border UI chrome at the screen's top-left
+   corner, outside the 3D viewport, which nothing else ever redraws;
+   marking that region "dirty" just re-presents whatever's still sitting
+   in the framebuffer there -- the stale panel pixels -- unless
+   something first puts the REAL content back). g_uw_framebuffer is a
+   320-wide (DBGUI_FB_STRIDE, confirmed via rect_fill_or_save_restore's
+   own `0x140` stride in graphics.c) array of RGB565 pixels, same
+   320x240 landscape logical space this whole module already draws in.
+   Sized for a generous field count (12 rows), independent of
+   DBGUI_MAX_FIELDS (that one's just an array-safety cap, not a
+   realistic real-world panel height -- this tool has never shown more
+   than 3 fields). */
+#define DBGUI_FB_STRIDE 320
+#define DBGUI_FB_HEIGHT 240
+#define DBGUI_SAVE_ROWS 12
+#define DBGUI_SAVE_H (DBGUI_ROW_H * (DBGUI_SAVE_ROWS + 1) + 4)
+static unsigned short g_saved_px[DBGUI_PANEL_W * DBGUI_SAVE_H];
+static int g_saved_valid = 0;
+
+static void dbgui_save_backing(void)
+{
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int y;
+  if (!fb) return;
+  for (y = 0; y < DBGUI_SAVE_H; y++) {
+    int fy = DBGUI_PANEL_Y + y;
+    if (fy < 0 || fy >= DBGUI_FB_HEIGHT) continue;
+    memcpy(&g_saved_px[y * DBGUI_PANEL_W], &fb[fy * DBGUI_FB_STRIDE + DBGUI_PANEL_X],
+           DBGUI_PANEL_W * sizeof(unsigned short));
+  }
+  g_saved_valid = 1;
+}
+
+static void dbgui_restore_backing(void)
+{
+  unsigned short *fb = (unsigned short *)g_uw_framebuffer;
+  int y;
+  if (!fb || !g_saved_valid) return;
+  for (y = 0; y < DBGUI_SAVE_H; y++) {
+    int fy = DBGUI_PANEL_Y + y;
+    if (fy < 0 || fy >= DBGUI_FB_HEIGHT) continue;
+    memcpy(&fb[fy * DBGUI_FB_STRIDE + DBGUI_PANEL_X], &g_saved_px[y * DBGUI_PANEL_W],
+           DBGUI_PANEL_W * sizeof(unsigned short));
+  }
+  dirty_rect_union(DBGUI_PANEL_X, DBGUI_PANEL_X + DBGUI_PANEL_W,
+                    DBGUI_PANEL_Y, DBGUI_PANEL_Y + DBGUI_SAVE_H);
+  g_saved_valid = 0;
+}
+
 /* SDL_Keycode values duplicated here (not #include <SDL.h>) to keep
    this file decoupled from SDL -- these are SDL2's own stable public
    values, scancode-based for the non-ASCII ones (1<<30 | scancode). */
@@ -187,8 +239,26 @@ int dbgui_visible(void) { return g_visible; }
 
 void dbgui_toggle(void)
 {
+  int was_visible = g_visible;
   g_visible = !g_visible;
   g_editing = 0;
+  /* Closing the panel stops it from drawing (dbgui_draw's own
+     `if (!g_visible ...) return`), but the panel sits in the static
+     golden-border UI chrome at the screen's top-left corner, outside
+     the 3D viewport -- nothing else ever redraws that region, so once
+     the panel itself stops painting it, its last real pixels just sit
+     in the framebuffer as stale leftovers forever (marking the region
+     "dirty" alone isn't enough: that only controls whether the PRESENT
+     step includes it, and re-presenting stale framebuffer content
+     changes nothing on screen). Real save/restore instead: capture
+     what's actually there the moment the panel opens (before it draws
+     over anything), put it back the moment it closes, then mark that
+     region dirty so the restored pixels actually reach the display. */
+  if (g_visible && !was_visible) {
+    dbgui_save_backing();
+  } else if (!g_visible && was_visible) {
+    dbgui_restore_backing();
+  }
 }
 
 void dbgui_feed_mouse_down(int lx, int ly)

@@ -1477,3 +1477,56 @@ correct once on the same class of geometry in the same engine, rather
 than withholding it for lack of a pixel-identical repro.
 
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (7): generalized the door-only debug tuner into a
+per-object tuner; fixed debug-panel close leaving stale pixels behind
+═══════════════════════════════════════════════════════════════════════════
+Request: "convert the door debug tool to a general object debug tool so
+that we can try giving the object a rotation offset and view it from
+all angles." The tuner panel population code (dbgui_begin/field_double/
+dbgui_end) was previously gated inside the catalog_u==1 (door frame)
+branch only. Moved it to run unconditionally in emit_catalog_object,
+titled "Object Tuner (catalog=%d)" so it's clear which object family
+is live; added a new rotation_offset field applied on top of sVar13
+(the model's final rotation angle, degrees) right before the modulo-360
+clamp that already existed, so any catalog's model can be spun through
+all angles live. wide_center/edge_offset fields stay conditional on
+catalog_u==1 since they're door-frame-specific. rotation_offset resets
+to 0 automatically when the viewed catalog changes (g_tune_last_catalog
+tracks the last catalog_u seen), so tuning one object doesn't leave a
+stale offset baked into the next.
+
+Live-verified: panel correctly retitles to "Object Tuner (catalog=7)"
+for the boulder; nudging rotation_offset to 90 via repeated field edits
+visibly rotates the boulder's on-screen silhouette.
+
+Second request, injected mid-turn: "closing the debug tool should
+invalidate its rectangle so that area gets redrawn." First attempt
+tracked the panel's last-drawn rect and called dirty_rect_union() on
+close. Live-tested via open -> close -> screenshot: FAILED -- the
+closed screenshot still showed the full panel text/fields on screen.
+Root cause: dirty_rect_union only controls what flush_dirty_rect_to_
+display later blits to the real display; it doesn't repaint anything
+itself. The panel's screen region is static top-left UI chrome (spell
+icon column, gargoyle trim) outside the 3D viewport, so nothing else
+in the frame loop ever redraws over it -- marking it "dirty" against
+an unchanged, still-stale framebuffer is a no-op.
+
+Fixed properly with a real pixel save/restore in debug_ui.c: before
+first drawing the panel (dbgui_toggle, visible-going-true), memcpy the
+underlying framebuffer region (g_uw_framebuffer, confirmed 320-wide
+RGB565, y*320+x indexed, via reading rect_fill_or_save_restore's own
+body in graphics.c) into a static g_saved_px[] buffer sized for the
+panel's max extent. On close (visible-going-false), memcpy it back and
+THEN call dirty_rect_union so the restored pixels actually get
+presented. (rect_fill_or_save_restore has its own real save/restore
+mode via palette colors 0x14/0x15, but it's gated behind DAT_00204848,
+a mouse-cursor-specific flag set only by FUN_000584c0 -- not safe to
+repurpose here, so a small self-contained buffer was used instead.)
+
+Re-tested the exact same open -> close -> screenshot sequence: the
+closed screenshot now shows the original UI chrome fully restored, no
+stale panel pixels remaining.
+
+run-regressions.sh: 6/6 clean.

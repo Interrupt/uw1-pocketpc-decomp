@@ -686,6 +686,26 @@ int g_billboard_angle_override_deg = -1;
    something else. */
 double g_tune_wide_center = 128.0;
 double g_tune_edge_offset = 128.0;
+/* General object-tuner state (UW_MODEL_TUNER=1) -- was door-only (the
+   panel only populated inside catalog_u==1, and only showed the two
+   door-anchor fields above); generalized so ANY catalog this session's
+   native mesh path draws (boulder, bridge, door, ...) gets a live panel
+   whenever it's on screen, per direct request: "convert the door debug
+   tool to a general object debug tool so we can try giving the object
+   a rotation offset and view it from all angles." g_tune_rotation_offset
+   is added directly to the model's own real final rotation angle
+   (sVar13, degrees) right before build_euler_rotation_matrix runs, so
+   walking around a normally-facing object and nudging this field is
+   equivalent to spinning the OBJECT rather than the camera -- useful
+   for exactly the kind of "does this face-order bug only show from
+   certain angles" question that motivated adding it. g_tune_last_catalog
+   resets the offset to 0 whenever the catalog on screen changes, so a
+   leftover rotation from tuning one object (e.g. a boulder) doesn't
+   silently carry over and confuse the next one (e.g. a door) -- same
+   "reseed on id change" shape the original e-model-texturing tuner used
+   for its own per-model fields. */
+double g_tune_rotation_offset = 0.0;
+int g_tune_last_catalog = -1;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
    view/camera matrix -- build_view_matrix writes the whole matrix in one shot
@@ -58067,6 +58087,41 @@ LAB_000640ec:
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
   }
+  /* General object tuner (UW_MODEL_TUNER=1) -- runs for every catalog
+     this path draws, not just doors, so whatever real .E-model object
+     is currently on screen (boulder, bridge, door frame, ...) gets a
+     live rotation_offset field. Reset to 0 whenever the catalog on
+     screen changes so a leftover rotation from tuning one object
+     doesn't silently carry into the next. Applied directly to the
+     model's own real final rotation angle (degrees) before it's handed
+     to build_euler_rotation_matrix -- nudging this while walking around
+     an object spins the OBJECT, letting every face's true orientation
+     be checked without needing to physically walk a full circle around
+     it in the level (not always possible -- against a wall, etc). Door-
+     specific fields (wide_center/edge_offset) stay conditional on
+     catalog_u==1 in the SAME panel/dbgui_begin call, since dbgui_begin
+     resets the field list each time it's called and only one object's
+     panel can be shown per frame anyway (whichever ran last). */
+  if ((int)catalog_u != g_tune_last_catalog) {
+    g_tune_last_catalog = (int)catalog_u;
+    g_tune_rotation_offset = 0.0;
+  }
+  if (getenv("UW_MODEL_TUNER")) {
+    char _tune_title[48];
+    snprintf(_tune_title, sizeof(_tune_title), "Object Tuner (catalog=%d)", (int)catalog_u);
+    dbgui_begin(_tune_title);
+    dbgui_field_double("rotation_offset", &g_tune_rotation_offset, 5.0);
+    if (catalog_u == 1) {
+      dbgui_field_double("wide_center", &g_tune_wide_center, 1.0);
+      dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
+    }
+    dbgui_end();
+  }
+  sVar13 = (short)((int)sVar13 + (int)g_tune_rotation_offset);
+  for (; 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
+  }
+  for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
+  }
   /* Real fix for the QA report "door frame... offset 16 units into the
      wall... depending on direction" -- the generic per-object anchor
      emit_tile_features computed is a floor-item slot position (one of
@@ -58103,21 +58158,10 @@ LAB_000640ec:
      always drawn first) since DFRAME and the leaf share this same
      anchor. */
   if (catalog_u == 1) {
-    /* UW_MODEL_TUNER=1: live-editable version of the two constants just
-       below (g_tune_wide_center/g_tune_edge_offset, see their own
-       declaration comment) -- backtick toggles the panel, click a row
-       (or Up/Down to select, Left/Right to nudge, Enter to type) to
-       edit, watch the door move on screen the same frame. Panel only
-       gets populated while a door is actually on screen this frame
-       (this code only runs when catalog_u==1 is dispatched at all),
-       matching the same "seeded from whichever object is on screen"
-       shape the removed g_model_map-era tuner used. */
-    if (getenv("UW_MODEL_TUNER")) {
-      dbgui_begin("Door Frame Tuner");
-      dbgui_field_double("wide_center", &g_tune_wide_center, 1.0);
-      dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
-      dbgui_end();
-    }
+    /* wide_center/edge_offset are now populated by the general object-
+       tuner panel above (see its own comment) -- kept live-editable via
+       the SAME globals, just no longer with their own separate
+       dbgui_begin call here. */
     double _rad = (double)sVar13 * (3.14159265358979 / 180.0);
     int _wideIsX = fabs(cos(_rad)) > fabs(sin(_rad));
     int _tileOriginX = (int)DAT_0023b4e4 * 256;
