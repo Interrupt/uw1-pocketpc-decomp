@@ -983,3 +983,116 @@ rendering bug but is really a camera-placement mistake). And 3D-view
 screenshots need UW_ENABLE_3D_GEOMETRY=1 set, or the dungeon viewport
 never populates at all (visible-tile count stays 0 for every camera
 position) regardless of anything else being correct.
+
+CORRECTION (post-rebase onto upstream main): UW_ENABLE_3D_GEOMETRY is
+gone -- a huge upstream merge (90 commits) landed between this entry and
+the next, and somewhere in it the general tile/wall/floor 3D geometry
+renderer (a completely different, older mechanism than this file's own
+object-catalog work) flipped from that opt-in flag to an opt-out one,
+UW_DISABLE_3D_GEOMETRY (default ON, uw.c ~55095). Every demo script
+comment in this repo referencing UW_ENABLE_3D_GEOMETRY=1 is now stale --
+harmless (an unrecognized env var is simply ignored) but no longer does
+anything. Don't be misled the way this session initially was.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (2): QA pass on 3d-objects -- door position/texture,
+default-on toggle
+═══════════════════════════════════════════════════════════════════════════
+Live QA on the rebased 3d-objects branch (interactive play, not just
+demo screenshots) found 3 real issues in the clean reimplementation
+above. Per the user's own direction -- "now that this code path is the
+original, our earlier hand fixes could be fighting this" -- re-traced
+the real ARM disassembly for door positioning/texturing rather than
+guessing, and found two genuinely different root causes hiding behind
+what looked like one "doors are misplaced" symptom:
+
+1. UW_DISABLE_3D_OBJECTS (was: needs UW_ENABLE_3D_GEOMETRY). The native
+   catalog-mesh path (doors/frames as real .E geometry) was already
+   unconditional/default-on -- no flag ever gated it, so there was
+   nothing to flip. The env var this session had been launching with
+   (UW_ENABLE_3D_GEOMETRY=1) was a leftover from testing an unrelated,
+   now-defunct flag (see the CORRECTION just above) that happened to
+   coincide with when this feature was being developed, creating the
+   false impression it was load-bearing. Added a real opt-out,
+   UW_DISABLE_3D_OBJECTS, gated at tick_anim_record's own single choke
+   point (every caller -- doors, bridges, decal-meshes -- resolves
+   catalog data through it), matching the naming convention
+   UW_DISABLE_3D_GEOMETRY already established. When set, falls through
+   to the pre-fix address-walk (empty record, point_count==0) -- there's
+   no old flat-sprite fallback left to restore (g_model_map and the
+   display-list interpreter are both gone from this branch by design),
+   so "disabled" means these objects simply don't draw, for A/B
+   comparison against the feature being on.
+
+2. Door frame embedded ~16 units into the wall, left or right depending
+   on facing direction. Traced to the exact same root cause a much
+   earlier "hand fix" era already diagnosed and fixed for wall decals
+   (see LAB_emit_mesh_sprite_quad's own g_billboard_angle_override_deg
+   comment): emit_tile_features' generic per-object anchor
+   (DAT_0023b904/920) comes from a depth-*sorted* per-tile slot table
+   (DAT_0023bb99/9a), confirmed via fresh Ghidra decompile of the real
+   FUN_00065394 to be a genuine, unconditional, original formula
+   (`slot * 0x20 + 0x10`) with no render-class branch anywhere -- which
+   slot an object lands in depends on other objects sharing the tile and
+   the camera's position, not the object itself. A flat billboard never
+   showed the up-to-one-slot jitter; a real embedded door frame does.
+   The decal path already had the fix (round the anchor back down to
+   the tile's true center: clear the low 5 bits, re-add the +0x10 half-
+   tile constant) -- just hadn't been applied to the new door dispatch,
+   since doors never went through that code path before this session.
+   Applied the same snap (without the decal's subsequent wall-normal
+   push -- a real 3D door already has its own thickness, so the raw
+   tile-centered anchor is the correct final position, not an
+   intermediate one to extrude from).
+
+3. Door leaf (DOOR.E) used the wrong texture AND wasn't centered in the
+   frame's opening. Two independent bugs behind one symptom:
+
+   a) Texture: emit_anim_object_frames passes the leaf's already-decoded
+      sprite frame id (load_door_frames' own scratch base + door_type)
+      as emit_catalog_object's `frame_or_texid` parameter -- a signed
+      16-bit `short`. The scratch base was 60000 (chosen earlier this
+      session specifically to dodge a real HUD-icon-preload collision
+      the *original* 1994 binary has at its own, much smaller offset --
+      see load_door_frames' own comment), which wraps to -5536 as a
+      signed short. emit_catalog_object has a real, deliberate (confirmed
+      via disassembly, not a bug in itself) `frame_or_texid < 0` sentinel
+      meaning "no specific frame -- use the catalog's own internal multi-
+      frame animation lookup instead" -- so the leaf's real, correctly-
+      decoded texture was silently discarded every time in favor of that
+      unrelated internal path. This is exactly "our earlier hand fixes
+      fighting the real path": choosing 60000 solved the collision this
+      session found, but broke a completely different, only-now-relevant
+      signed-range assumption deeper in the real mesh-rendering code that
+      the fix predates. Moved the scratch base to 20000 -- still far past
+      every real resource range this project has identified, but now
+      comfortably under the signed-short sign bit too.
+
+   b) Position: DOOR.E's own local X range is [0,128] (confirmed by
+      reading data/DATA3D/DOOR.E directly and live via a new
+      UW_DEBUG_DOOR_POS hook) -- NOT centered on 0, unlike DFRAME.E's
+      real opening (points 0-7, exactly [-64,64], the same 128-unit
+      width but centered). No per-catalog local offset exists anywhere
+      in the real disassembly of either emit_anim_object_frames or
+      emit_catalog_object for this -- DFRAME and DOOR share the exact
+      same world anchor and heading, confirmed live, with nothing
+      shifting one relative to the other. Concluded this is a data-
+      convention mismatch specific to this PORT'S OWN .E export (the
+      original engine's real door-leaf asset was presumably already
+      centered, matching every other model this path draws), not a
+      missing piece of original logic to port. Fixed with a narrow,
+      catalog==14-scoped compatibility shift computed from the model's
+      own already-ported bounding box (parse_e_model_file's real
+      +0x3c1c min-X/+0x3c20 extent-X fields) rather than a bare
+      hardcoded -64 -- self-corrects to whatever this port's DOOR.E
+      actually contains, and is a no-op for every already-correct model
+      (DFRAME's own full bounding box, risers included, is already
+      centered, so its shift computes to 0.0).
+
+Verified live via the new UW_DEBUG_DOOR_POS hook: leaf's local X range
+now reads [-64,64] (matching the frame's opening exactly) and
+frame_or_texid now reads 20000/20001 (no longer wrapping negative).
+Screenshot at tile (23,5) looking at the door placed at (22,5) confirms
+the leaf now fills the opening flush with the frame, correctly textured,
+not embedded in the wall. run-regressions.sh: 6/6 clean, fresh CMake
+build.

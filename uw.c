@@ -14488,10 +14488,29 @@ short catalog;
   int iVar5;
   void *rec_base;
 
-  if (catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
-    void *dest = g_anim_model_scratch[catalog];
-    memcpy(dest, g_anim_model_slot[catalog], 16384);
-    return dest;
+  /* Native 3D catalog-object rendering (doors/frames drawing as real .E
+     model geometry instead of flat sprites) is enabled by default --
+     no env var needed, unlike this project's earlier, now-removed
+     g_model_map hack (which defaulted off). UW_DISABLE_3D_OBJECTS is
+     the opt-out, for QA comparison against the pre-this-feature
+     behavior, matching the naming convention UW_DISABLE_3D_GEOMETRY
+     (this file's own sibling flag for the tile/wall/floor renderer)
+     already established. Gated here, tick_anim_record's own single
+     choke point for every caller (doors via emit_anim_object_frames,
+     bridges/decals via the generic catalog dispatch) -- when set,
+     every catalog falls through to the address-walk below exactly as
+     it did before this session's fix, which lands in unrelated always-
+     zero memory and returns an empty (point_count==0) record, so
+     callers draw nothing for these objects rather than a stale flat
+     sprite (there's no old sprite path left to fall back to -- see
+     object-rendering-findings.txt). */
+  { static int _disabled = -1;
+    if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_OBJECTS") != NULL);
+    if (!_disabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
+      void *dest = g_anim_model_scratch[catalog];
+      memcpy(dest, g_anim_model_slot[catalog], 16384);
+      return dest;
+    }
   }
 
   iVar4 = catalog * 0x3c2c;
@@ -35245,8 +35264,31 @@ void load_door_frames()
      Deliberately deviating from the original's exact (buggy) value
      here per user direction: picked a fixed scratch base far past
      every real resource range this project has identified, so this
-     temporary borrow can never collide with anything real again. */
-  DAT_00202744 = 60000;
+     temporary borrow can never collide with anything real again.
+
+     REAL BUG FOUND (this session): the first choice, 60000, broke a
+     DIFFERENT thing than the collision this comment was written to
+     avoid -- emit_catalog_object's own `frame_or_texid` parameter
+     (the value emit_anim_object_frames passes straight through as
+     `60000 + door_type`, see its own comment) is a signed 16-bit
+     `short`, and that function uses `frame_or_texid < 0` as a real,
+     deliberate sentinel check (confirmed via disassembly: original
+     code, not something this project added) meaning "no specific
+     frame -- use the catalog's own internal multi-frame animation
+     logic instead." 60000 wraps to -5536 as a signed short, so the
+     door leaf's real, correctly-decoded texture was silently
+     discarded every time in favor of that internal fallback path --
+     confirmed live via UW_DEBUG_DOOR ("door leaf using the wrong
+     texture"). DAT_0024e090's own backing table is genuinely sized
+     for the full unsigned 0..65535 range (524288 bytes / 8-byte
+     stride), so 60000 is a perfectly valid WRITE index here -- the
+     bug is purely on the signed-short READ side deep in
+     emit_catalog_object, not fixable by widening this one constant's
+     own type. Lowered to stay under 32768 (comfortably clear of both
+     the ~919 real-resource ceiling above and the signed-short sign
+     bit here) so the exact same scratch-slot mechanism reads back
+     correctly on both ends. */
+  DAT_00202744 = 20000;
   do {
     /* Was passed `0` for the post-process/registration callback (param_5)
        -- with no registrar, even a successful allocate+read never stores
@@ -56957,6 +56999,27 @@ LAB_00061d34:
          real counterpart, not a guess. `uVar27 & 7` is the door's low 3
          id bits (0x140-0x147 -> 7 door skins/types + secret), matching
          emit_anim_object_frames's own `door_type` parameter. */
+      /* Same root cause the wall-decal path already diagnosed and fixed
+         (see LAB_emit_mesh_sprite_quad's own g_billboard_angle_override_
+         deg comment): the anchor emit_tile_features computed just above
+         (DAT_0023b904/920) came out of its generic per-slot floor-object
+         table, whose sub-tile slot a door lands in depends on how many
+         OTHER objects share the tile and where the camera is standing --
+         not on the door itself. A flat billboard tolerated that jitter;
+         a real embedded 3D door frame doesn't, confirmed live (QA
+         report: "door frame looks to be offset 16 units into the wall
+         to the right or left, depending on direction" -- exactly the
+         up-to-one-slot, sign-varying jitter this same mechanism already
+         caused for decals). Round back down to the tile's own true
+         center the same way (clear the low 5 bits -- one tile is 0x20
+         units -- then re-add the +0x10 half-tile constant emit_tile_
+         features' own formula ends with). Unlike the decal fix, no
+         wall-normal push afterward: a door's own real geometry already
+         spans the wall's full thickness, so the tile-centered anchor
+         alone is the correct final position, not an intermediate one to
+         extrude from. */
+      DAT_0023b904 = (DAT_0023b904 & ~0x1f) | 0x10;
+      DAT_0023b920 = (DAT_0023b920 & ~0x1f) | 0x10;
       emit_anim_object_frames(uVar27 & 7, param_1);
       return;
     }
@@ -57482,6 +57545,60 @@ short frame_or_texid;
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[billboard] tick_anim_record(catalog=%d) -> _anim=%p point_count=%d face_count(faces_remaining)=%d\n",
             (int)catalog, (void *)_anim, *(int *)_anim, faces_remaining);
+  /* DOOR.E's own local X range is [0,128] (confirmed live via the print
+     below, and by reading the raw data/DATA3D/DOOR.E file directly) --
+     NOT centered on 0, unlike every other model this path draws
+     (DFRAME.E's real opening, points 0-7, is exactly [-64,64] -- the
+     same 128-unit width, but centered). No per-catalog local offset
+     exists anywhere in the real disassembly for this call chain (traced
+     emit_anim_object_frames and this function itself, both confirmed
+     matching the real ARM instructions) -- DFRAME and DOOR share the
+     exact same world anchor and heading with nothing shifting one
+     relative to the other. Confirmed live (QA report: "door leaf...
+     offset into the door frame and not perfectly in the opening"):
+     drawing DOOR.E's raw [0,128] range at the same anchor as DFRAME's
+     centered opening leaves half the opening empty and pushes the leaf
+     128 units off-axis, half sticking out past the frame into the wall.
+     This is a data-convention mismatch specific to this PORT'S OWN .E
+     export (the original engine's real door leaf asset was presumably
+     already centered, matching how every other model here behaves) --
+     not a missing piece of original logic to port, so fix it as a
+     narrow compatibility shift using the model's own already-computed
+     bounding box (parse_e_model_file's real +0x3c1c min-X/+0x3c20
+     extent-X fields) rather than a bare hardcoded -64: re-centers
+     whatever this port's own DOOR.E actually contains, and is a no-op
+     for every already-correctly-centered model (DFRAME's own full
+     [-128,128] bounding box, including its riser posts, centers to a
+     0.0 shift). Scoped to catalog==14 only -- every other catalog this
+     path draws was already confirmed correctly positioned this
+     session, so don't risk perturbing them. */
+  if (catalog == 14) {
+    int _pcx = *(int *)_anim;
+    float _minX = *(float *)(_anim + 0x3c1c);
+    float _extX = *(float *)(_anim + 0x3c20);
+    float _shiftX = -(_minX + _extX * 0.5f);
+    int _px;
+    for (_px = 0; _px < _pcx; _px++) {
+      *(float *)(_anim + 8 + _px*0xc) += _shiftX;
+    }
+    if (getenv("UW_DEBUG_DOOR_POS"))
+      fprintf(stderr, "[doorpos] catalog=14 (DOOR.E) re-centered: minX=%g extX=%g shiftX=%g\n",
+              (double)_minX, (double)_extX, (double)_shiftX);
+  }
+  if (getenv("UW_DEBUG_DOOR_POS")) {
+    int _pc2 = *(int *)_anim;
+    float _minx = 0.0f, _maxx = 0.0f;
+    int _pj;
+    for (_pj = 0; _pj < _pc2; _pj++) {
+      float _x = *(float *)(_anim + 8 + _pj*0xc);
+      if (_pj == 0 || _x < _minx) _minx = _x;
+      if (_pj == 0 || _x > _maxx) _maxx = _x;
+    }
+    fprintf(stderr, "[doorpos] catalog=%d anchor=(%d,%d,%d) heading=%d local_X=[%g,%g] bbox_minX=%g bbox_extX=%g\n",
+            (int)catalog, (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,
+            (int)heading, (double)_minx, (double)_maxx,
+            (double)*(float *)(_anim + 0x3c1c), (double)*(float *)(_anim + 0x3c20));
+  }
   _v_offset = 0xc;  /* default: V <- point.Y, matching the original's own always-Y behavior */
   { int _pc = *(int *)_anim;
     if (_pc > 0) {
@@ -58156,8 +58273,14 @@ LAB_00064cdc:
             /* Was `DAT_00202734 + door_type + 0x30` -- matches
                load_door_frames's own (fixed) scratch base; see that
                function's comment for why the original binary's
-               formula collided with the HUD icon preload range. */
-            uVar11 = 60000 + door_type;
+               formula collided with the HUD icon preload range, and
+               why the base moved again from 60000 to 20000 (the first
+               fix broke a DIFFERENT thing: emit_catalog_object's own
+               `frame_or_texid < 0` sentinel check, a signed 16-bit
+               comparison -- 60000 wrapped negative as a short and got
+               silently reinterpreted as "no frame, use the catalog's
+               internal animation" instead of a real frame index). */
+            uVar11 = 20000 + door_type;
             uVar9 = 0xe;
           }
           if (getenv("UW_DEBUG_DOOR"))
