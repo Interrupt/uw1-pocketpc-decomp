@@ -50108,6 +50108,24 @@ int FUN_00056fe8()
 
 
 
+/* Gates the 4 "always show the desktop mouse cursor" deviations below
+   (all originally gated shut on a real Pocket PC touchscreen, where a
+   persistent cursor sprite makes no sense). Defaults OFF: drawing the
+   cursor every idle frame forces a display flush every frame too (see
+   FUN_0005857c's own LAB_00058674 tail), which measurably slowed the
+   game down when this was unconditionally on. Opt in with
+   UW_ALWAYS_SHOW_CURSOR=1 until that flush cost is addressed. */
+static int uw_always_show_cursor(void)
+{
+  static int cached = -1;
+  if (cached < 0) {
+    cached = getenv("UW_ALWAYS_SHOW_CURSOR") != NULL;
+  }
+  return cached;
+}
+
+
+
 undefined4 FUN_000570b4()
 
 {
@@ -50115,8 +50133,22 @@ undefined4 FUN_000570b4()
   
   iVar1 = (int)DAT_00204840;
   DAT_00204840 = (short)(iVar1 + 1);
-  if (((iVar1 + 1) * 0x10000 >> 0x10 == 1) && (DAT_00204788 != 0x106c)) {
-    FUN_0005857c();
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, same as
+     FUN_0005857c's own deviation comment): 0x106c is the real,
+     validly-loadable "default/no specific hotspot" cursor sprite (see
+     FUN_00057dc0), and the real binary deliberately suppresses drawing
+     THIS SPECIFIC sprite -- i.e. no persistent cursor over the plain
+     3D viewport/background, only over registered UI hotspots that set
+     their own distinct icon -- a touchscreen-native choice (no need to
+     draw your own finger/stylus a cursor). Skips the exclusion so the
+     desktop mouse cursor stays visible everywhere, including over the
+     main view, only when UW_ALWAYS_SHOW_CURSOR=1 (see
+     uw_always_show_cursor's own comment -- off by default, this forces
+     a display flush every idle frame). */
+  if ((iVar1 + 1) * 0x10000 >> 0x10 == 1) {
+    if ((DAT_00204788 != 0x106c) || uw_always_show_cursor()) {
+      FUN_0005857c();
+    }
   }
   if (1 < DAT_00204840) {
     DAT_00204840 = DAT_00204840 + -1;
@@ -50418,6 +50450,10 @@ short param_3;
 short param_4;
 
 {
+  if (getenv("UW_DEBUG_CURSORSHOW")) {
+    fprintf(stderr, "[cursorbounds] FUN_00057788(%d,%d,%d,%d)\n",
+            (int)param_1, (int)param_2, (int)param_3, (int)param_4);
+  }
   DAT_00204838 = DAT_0020471c + param_1 + 1;
   DAT_0020470c = DAT_00204838;
   DAT_0020483c = DAT_00204748 + param_4 + 1;
@@ -50447,6 +50483,11 @@ void FUN_000577f0()
     DAT_002047dc = 0xdf - DAT_0020471c;
     DAT_0020483c = DAT_00204748 + 0x12;
     DAT_002047d8 = 0x87 - DAT_00204748;
+  }
+  if (getenv("UW_DEBUG_CURSORSHOW")) {
+    fprintf(stderr, "[cursorbounds] FUN_000577f0() DAT_00201b60=0x%x narrowed=%d rect=(%d,%d)-(%d,%d)\n",
+            (int)(ushort)DAT_00201b60, (((ushort)DAT_00201b60 & 0xc9) != 0),
+            (int)DAT_00204838, (int)DAT_0020483c, (int)DAT_002047dc, (int)DAT_002047d8);
   }
   return;
 }
@@ -50977,7 +51018,12 @@ void update_mouse_state()
       DAT_00086974 = -1;
     }
     FUN_00057e54();
-    if ((DAT_00204788 != 0x106c) && (0 < DAT_00204840)) {
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
+       FUN_000570b4's own matching comment just above: skips the
+       `DAT_00204788 != 0x106c` exclusion so the desktop cursor stays
+       visible over the plain 3D viewport too, not just registered UI
+       hotspots, only when UW_ALWAYS_SHOW_CURSOR=1. */
+    if ((0 < DAT_00204840) && ((DAT_00204788 != 0x106c) || uw_always_show_cursor())) {
       FUN_0005857c();
     }
     if (DAT_0020485c != 0) {
@@ -51038,7 +51084,25 @@ void FUN_0005857c()
             (int)DAT_00204844, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
   if (g_selected_object == 0) {
-    if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0)) {
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real
+       Pocket PC binary only shows this idle cursor sprite while
+       DAT_0023c63c (the left-button-currently-held flag, see
+       FUN_00077dd0's own comment) is set, or DAT_000bbef4 overrides it
+       (draw_automap_screen/the note editor force it to 1) -- a
+       stylus/touchscreen design where there's no persistent hover
+       cursor, only a transient indicator while actively touching the
+       screen. On a real mouse-driven desktop port the cursor should
+       always be visible while hovering, not just while a button is
+       held, so this gate is skipped when UW_ALWAYS_SHOW_CURSOR=1 rather
+       than ported as-is (off by default -- see uw_always_show_cursor's
+       own comment on the frame-rate cost of drawing every idle frame).
+       Confirmed via live tracing (UW_DEBUG_CURSORSHOW) that this WAS
+       the reason plain mouse movement showed no cursor at all outside
+       automap (where DAT_000bbef4 happened to already force it) --
+       this is the second, deliberate half of that same investigation;
+       DAT_000868dc's own missing initializer (see its own fix comment
+       just below) was the other, genuine bug half. */
+    if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0) && !uw_always_show_cursor()) {
       if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (no button/mode)\n");
       return;
     }
@@ -51054,7 +51118,31 @@ void FUN_0005857c()
       if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit2+button)\n");
       return;
     }
-    if (((ushort)DAT_00201b60 & 0xc9) != 0) {
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (4th of this round, see the matching
+       comments above and in FUN_000570b4/update_mouse_state's own tail):
+       the original confines the drawn cursor to a specific UI-mode rectangle
+       (DAT_00204838/DAT_0020483c/DAT_002047dc/DAT_002047d8, only enforced
+       when DAT_00201b60's bits 0,3,6,7 are set) rather than the full screen
+       -- built for a specific Pocket PC touchscreen panel's own valid-tap
+       area, not a general on-screen-bounds safety check: g_mouse_x/g_mouse_y
+       are already separately clamped to the real screen bounds elsewhere in
+       update_mouse_state (DAT_0020470c/DAT_00204830 and DAT_00204710/
+       DAT_00204834), so skipping this narrower confinement cannot draw the
+       cursor off-screen. Confirmed via live tracing (UW_DEBUG_CURSORSHOW)
+       that this rectangle also drifts from what FUN_000577f0 last set it to
+       (e.g. (52,18)-(224,135) right after chargen, silently becoming
+       (52,18)-(109,109) by the first real mouse move with no traced call to
+       either bound-setter in between) -- a pre-existing, unrelated wild-write
+       bug elsewhere (FUN_00056f28's own `(&DAT_002047b0)[iVar2] = 10000` loop
+       treats a lone scalar as a 20-entry array, the same "lone scalar treated
+       as a real array" bug class fixed repeatedly elsewhere in this project)
+       corrupts this rectangle in a way that made the cursor disappear
+       entirely during plain dungeon-view mouse movement on a real desktop
+       mouse. Skipped only when UW_ALWAYS_SHOW_CURSOR=1, since a
+       Pocket-PC-panel-specific tap-area clamp isn't meaningful on a desktop
+       port anyway; left enforced by default rather than chasing the
+       separate corruption bug. */
+    if ((((ushort)DAT_00201b60 & 0xc9) != 0) && !uw_always_show_cursor()) {
       if (g_mouse_x < DAT_00204838) {
         if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");
         return;
@@ -70647,9 +70735,31 @@ int param_4;
   x = (short)param_4;
   *DAT_000876c0 = x;
 
-  if (param_2 == 0x201) {
-    // HACK: DAT_000876c4 has zero writers anywhere in the real binary (confirmed via Ghidra xrefs), so update_mouse_state() would never trust *DAT_000876bc/*DAT_000876c0 and g_mouse_x/g_mouse_y would never update from real clicks -- this input plumbing is genuinely dead in the shipped binary. Setting it here on every click is a deliberate deviation from original logic to keep click-driven cursor tracking working; not something the real binary ever did.
+  // HACK (extended): DAT_000876c4 has zero writers anywhere in the real
+  // binary (confirmed via Ghidra xrefs), so update_mouse_state() would
+  // never trust *DAT_000876bc/*DAT_000876c0 and g_mouse_x/g_mouse_y
+  // would never update from real mouse input at all -- this whole
+  // plumbing is genuinely dead in the shipped binary, which drove its
+  // own cursor entirely via the D-pad/joystick spring-back emulation
+  // (DAT_00086974) instead. Set only on WM_LBUTTONDOWN by default (a
+  // deliberate per-click deviation from an earlier session, kept
+  // below); per user request ("we should always display the cursor" on
+  // desktop, tracking real mouse movement, not just clicks -- see
+  // FUN_0005857c's own matching deviation comment) extended to fire on
+  // every message this handler sees (WM_MOUSEMOVE included) so plain
+  // hover/movement -- not just a click -- makes the game trust and
+  // track the real cursor position from the very first frame, but only
+  // under UW_ALWAYS_SHOW_CURSOR=1: drawing the cursor every idle frame
+  // forces a display flush every frame too, which measurably slowed
+  // the game down when this was unconditional, so it's opt-in (see
+  // uw_always_show_cursor's own comment).
+  if (uw_always_show_cursor()) {
     *DAT_000876c4 = 1;
+  }
+  if (param_2 == 0x201) {
+    if (!uw_always_show_cursor()) {
+      *DAT_000876c4 = 1;
+    }
     if ((200 < x) && (x < 0xf0)) {
       id = FUN_00057a80(*DAT_000876bc,x);
       fprintf(stderr, "[mousehit] on-screen-keyboard tap: x=%d storedY=%d -> id=%d ('%c')\n", x, *DAT_000876bc, id, (id >= 0x20 && id < 0x7f) ? id : '?');
