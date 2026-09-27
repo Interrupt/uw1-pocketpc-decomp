@@ -58,7 +58,7 @@
  *   CLICK <portrait_x> <portrait_y>  -- injects a synthetic mouse click
  *                    directly in portrait "hardware" framebuffer
  *                    coordinates, bypassing gx_stub.c's window->portrait
- *                    transform (see FUN_00077dd0's comment in uw.c)
+ *                    transform (see handle_mouse_message's comment in uw.c)
  *   SDLCLICK <window_x> <window_y>  -- warps the real cursor and pushes
  *                    genuine SDL mouse events, exercising the full
  *                    uw_pump_events() path (unlike CLICK above, which
@@ -701,7 +701,7 @@ void demomode_pump(void) {
 
     if (strncasecmp(p, "CLICK ", 6) == 0) {
         /* CLICK <portrait_x> <portrait_y> -- injects a synthetic
-         * WM_LBUTTONDOWN directly into FUN_00077dd0 (the recovered mouse
+         * WM_LBUTTONDOWN directly into handle_mouse_message (the recovered mouse
          * handler) using portrait "hardware" framebuffer coordinates
          * directly, bypassing gx_stub.c's SDL window->portrait transform
          * entirely. Lets us test the click-to-button-ID recovery in
@@ -710,8 +710,8 @@ void demomode_pump(void) {
         sscanf(p + 6, "%d %d", &px, &py);
         fprintf(stderr, "[demo] CLICK portrait=(%d,%d)\n", px, py);
         int lparam = (py << 16) | (px & 0xffff);
-        FUN_00077dd0(0, 0x201u, 0, lparam);
-        FUN_00077dd0(0, 0x202u, 0, lparam);
+        handle_mouse_message(0, 0x201u, 0, lparam);
+        handle_mouse_message(0, 0x202u, 0, lparam);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }
@@ -801,7 +801,7 @@ void demomode_pump(void) {
          * so anything drawn by a bare demomode call (full_dungeon_redraw
          * for the 3D view, automap fills, ...) lands in g_uw_framebuffer
          * but is never flushed to the GX framebuffer that the screenshot
-         * reads back. Force a full-screen flush the same way FUN_0005857c
+         * reads back. Force a full-screen flush the same way draw_idle_mouse_cursor
          * and the click-hold redraw path force their own. */
         { extern int g_force_flush; extern void flush_dirty_rect_to_display();
           dirty_rect_union(0, 200, 0, 0x140);

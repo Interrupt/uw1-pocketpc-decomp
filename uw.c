@@ -1900,7 +1900,7 @@ intptr_t param_1;
             FUN_00057118();
             FUN_00057c5c(*puVar9 & 0x1ff);
             DAT_002020c4 = 1;
-            FUN_000570b4();
+            cursor_show_idle_tick();
             FUN_0007ec50();
           }
           return 1;
@@ -1975,7 +1975,7 @@ intptr_t param_1;
           FUN_00057118();
           FUN_00057c5c(*puVar9 & 0x1ff);
           DAT_002020c4 = 1;
-          FUN_000570b4();
+          cursor_show_idle_tick();
           FUN_0007ec50();
         }
         return 1;
@@ -4348,7 +4348,7 @@ short DAT_002046f4;
    .data has this at 7, not 0. This is the pause-menu-panel state index
    (0-6 = a panel is open, 7 = closed/back in normal gameplay -- see
    close_ui_panel_return_to_game's own comment above, uw.c ~4400), and
-   FUN_0005857c (the idle mouse-cursor-sprite show function, reached
+   draw_idle_mouse_cursor (the idle mouse-cursor-sprite show function, reached
    whenever nothing is held: g_selected_object==0) refuses to draw the
    cursor at all unless this equals 7. Starting at the C default of 0
    instead of the real 7 meant the idle cursor -- automap browsing
@@ -9708,10 +9708,10 @@ void enter_automap_screen()
   FUN_00016434(0,(int)DAT_00201b68);
   draw_automap_screen((int)DAT_00201b68);
   DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,FUN_00016ef8);
-  FUN_00057788(0,199,0x13f,0);
+  set_cursor_confine_rect(0,199,0x13f,0);
   FUN_00057118();
   FUN_00057c5c(0x1078);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   DAT_000b99c4 = 0;
   return;
 }
@@ -9812,8 +9812,8 @@ void exit_automap_screen()
   FUN_000735c0();
   FUN_00040df0();
   DAT_000bbef4 = 0;
-  FUN_000577f0();
-  FUN_000570b4();
+  reset_cursor_confine_rect();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -10270,15 +10270,15 @@ LAB_000170bc:
     }
     else {
       sVar2 = 0xfd;
-      FUN_00057788(0,199,0x13f,0);
+      set_cursor_confine_rect(0,199,0x13f,0);
       FUN_00057118();
       FUN_00057c5c(0x1079);
-      FUN_000570b4();
+      cursor_show_idle_tick();
       do {
         sVar3 = next_input_event();
       } while (sVar3 != 1);
       FUN_00057504(&local_5e,&local_60);
-      FUN_00057788(0,199,0x13f,0);
+      set_cursor_confine_rect(0,199,0x13f,0);
       FUN_00057cac(1);
     }
   }
@@ -10343,7 +10343,7 @@ LAB_000170bc:
             FUN_0001765c();
           }
         }
-        FUN_000570b4();
+        cursor_show_idle_tick();
         goto LAB_0001764c;
       }
       if (sVar2 != 0xfe) goto LAB_0001764c;
@@ -10611,7 +10611,7 @@ undefined4 param_1;
   Ordinal_1063(acStack_11c,s__DATA_blnkmap_byt_00084338);
   iVar5 = FUN_0007ee4c(acStack_11c,uVar3,64000);
   if (iVar5 == 0) {
-    FUN_000570b4();
+    cursor_show_idle_tick();
     exit_automap_screen();
   }
   else {
@@ -10644,7 +10644,7 @@ undefined4 param_1;
     select_active_font(s_font5x6p_sys_0008430c);
   }
   DAT_000bbef4 = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   Ordinal_1018(uVar3);
   return;
 }
@@ -13242,7 +13242,7 @@ void FUN_0001b7c0()
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   iVar2 = 0;
   do {
     FUN_00076b24((&DAT_000bc028)[iVar2]);
@@ -13590,7 +13590,7 @@ short param_2;
     }
   }
 LAB_0001c1b4:
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_0007ec50();
   return;
 }
@@ -13625,7 +13625,7 @@ int param_3;
        own identical fix comment (g_selected_object is `char *`, a
        single signed byte; the real 9-bit objid needs a `ushort` read). */
     FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     FUN_0007ec50();
   }
   return;
@@ -13742,7 +13742,7 @@ undefined ** param_2;
   plot_pixel(*(short *)param_2 + 1,(int)*(short *)((char *)param_2 + 2),uVar3);
   plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + -1,uVar3);
   plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + 1,uVar3);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_0007ec50();
   return;
 }
@@ -13876,7 +13876,7 @@ short param_1;
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_0007ec50();
   return;
 }
@@ -13931,7 +13931,7 @@ void FUN_0001c85c()
     local_28 = iVar4 >> 0x10;
     local_2c = (short)((uint)iVar4 >> 0x10);
     if (3 < local_28) {
-      FUN_000570b4();
+      cursor_show_idle_tick();
       FUN_0007ec50();
       return;
     }
@@ -14304,7 +14304,7 @@ short param_1;
     }
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 4);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_0007ec50();
   return;
 }
@@ -17543,7 +17543,7 @@ void FUN_00023b38()
   DAT_000fb858 = DAT_001005c8;
   FUN_000120c8(0x1e,0x85,DAT_001005c8,0x37,0x5f,0x1e,0x85,1);
   screen_backup_save();
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_00035df8(0);
   DAT_000fb858 = DAT_001005c4;
   iVar4 = 0;
@@ -17944,7 +17944,7 @@ byte param_3;
         g_blit_transparent_mode = 1;
         bitmap_blit_to_framebuffer((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
                      (int)sVar3 * (bVar1 + 4) + iVar5,pcVar_fb858 + iVar7,(uint)bVar1,bVar2,0,0,1);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         pcVar_fb858 = DAT_000fb858;
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
@@ -18021,23 +18021,23 @@ uint param_2;
     iVar9 = iVar10 >> 0x10;
     local_4 = param_2;
     do {
-      /* HACK: DAT_0023c63c (our click-hold flag -- see FUN_00077dd0's
+      /* HACK: DAT_0023c63c (our click-hold flag -- see handle_mouse_message's
          HACK comment) blocks flush_dirty_rect_to_display's actual screen flush the
          whole time a button is held, unless g_force_flush is set (see
-         its gate at flush_dirty_rect_to_display's top, and FUN_0005857c's matching
+         its gate at flush_dirty_rect_to_display's top, and draw_idle_mouse_cursor's matching
          use of g_force_flush around its own single draw). Without this,
          every per-iteration redraw here updated the software
          framebuffer but the screen never actually presented it until
          release -- confirmed via testing (drag/hover highlight updates
          were invisible until mouse-up). Force the flush the same way
-         FUN_0005857c does. */
+         draw_idle_mouse_cursor does. */
       g_force_flush = 1;
       flush_dirty_rect_to_display(1);
       g_force_flush = 0;
       if (((short)uVar13 != (short)param_2) && ((short)uVar13 != -1)) {
         FUN_00057118();
         FUN_0002431c(param_1,uVar13 & 0xff,param_2 & 0xff);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         local_4 = uVar13 & 0xffff;
       }
       // Click/touch detection: reads the current pointer position, then the math below maps it to a list-item index.
@@ -18344,7 +18344,7 @@ LAB_00024dd4:
             FUN_00057118();
             bitmap_blit_to_framebuffer(iVar7,iVar9,DAT_000fb898 + DAT_000fb858,0x10,0x91,
                          (short)((uint)iVar11 >> 0x10) + -0xa4,0,1);
-            FUN_000570b4();
+            cursor_show_idle_tick();
           }
         }
       }
@@ -18352,7 +18352,7 @@ LAB_00024dd4:
         local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),(char)sVar5);
         FUN_00057118();
         draw_text_string(local_2c,iVar7,iVar9 + 3);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         iVar7 = measure_text_width(local_2c);
         iVar7 = iVar7 + sVar3;
         local_28 = 0;
@@ -19927,9 +19927,9 @@ void FUN_000286cc()
       DAT_001007c0 = DAT_00100784;
       FUN_0001b474();
       FUN_0007f0e0();
-      FUN_000570b4();
+      cursor_show_idle_tick();
       DAT_0023bf0c = 0;
-      FUN_000577f0();
+      reset_cursor_confine_rect();
       mode_icon_highlight_off(5);
       g_cursor_mode = 0;
       start_npc_conversation(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
@@ -24960,7 +24960,7 @@ void npc_combat_disengage_tick()
         uw_ord2005_rem_81 = ((int)(((*(ushort *)((char *)g_player_object + 2) >> 7 & 7) - (uVar7 & 0xff)) + 8)) % (8);
         if (('\x02' < uw_ord2005_rem_81) && (uw_ord2005_rem_81 < '\x06')) {
           DAT_0023bf0c = 0;
-          FUN_000577f0();
+          reset_cursor_confine_rect();
           FUN_00028488(DAT_0010190c);
         }
       }
@@ -28087,7 +28087,7 @@ uint param_1;
   }
   FUN_00049924(uVar2);
 LAB_00037d3c:
-  FUN_000570b4();
+  cursor_show_idle_tick();
   g_text_use_palette_color = 0;
   return;
 }
@@ -30272,7 +30272,7 @@ void FUN_0003b820()
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_62c,s__DATA_COPYRIGHT_BYT_0008576c);
   FUN_0006c98c(2,acStack_62c,1);
-  sVar2 = FUN_00056f28();
+  sVar2 = init_cursor_subsystem();
   if (sVar2 < 0) {
     FUN_0003c3c8(2);
   }
@@ -30439,7 +30439,7 @@ undefined4 param_1;
   }
   DAT_00201b64 = 0;
 LAB_0003bcb0:
-  FUN_000577f0();
+  reset_cursor_confine_rect();
   return;
 }
 
@@ -30533,7 +30533,7 @@ void enter_dungeon_view()
   refresh_player_equipment_effects();
   full_dungeon_redraw();
   weapon_overlay_and_full_redraw();
-  FUN_000570b4();
+  cursor_show_idle_tick();
   fade_in(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   return;
 }
@@ -30590,7 +30590,7 @@ short param_1;
   undefined1 auStack_31c [768];
 
   DAT_0023bf0c = 0;
-  FUN_000577f0();
+  reset_cursor_confine_rect();
   if (param_1 == 1) {
     set_hud_status_value(2,0);
     FUN_0006cb74();
@@ -33028,7 +33028,7 @@ int param_1;
             param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -33061,7 +33061,7 @@ int param_1;
             param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -34379,7 +34379,7 @@ void FUN_00040df0()
   set_viewport_clip_rect(0,0,0x13f,199);
   set_draw_color(0);
   FUN_00011b34();
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -34529,7 +34529,7 @@ void FUN_000411b8()
   thunk_FUN_0003c310(0xf1);
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -34552,7 +34552,7 @@ void FUN_000411cc()
   }
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -34566,7 +34566,7 @@ void FUN_000411e0()
   g_weapon_overlay_enabled = 0;
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -35912,7 +35912,7 @@ void close_backpack_container()
       FUN_00076e98(DAT_002028ec);
       FUN_00048110();
     }
-    FUN_000570b4();
+    cursor_show_idle_tick();
     DAT_002029a0 = 0;
     DAT_0020299c = 0;
     /* Missing piece, matching open_backpack_container's own fix: nothing here
@@ -36082,7 +36082,7 @@ void refresh_container_view()
   DAT_0020299c = (uint)((DAT_00202986 & 0xffc0) != 0);
   redraw_inventory_widget(0x15);
   redraw_inventory_widget(0x16);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -36300,7 +36300,7 @@ short param_1;
                        (int)(short)(&g_inv_hotspot_draw_x)[20 * 7],(int)(short)(&g_inv_hotspot_draw_y)[20 * 7],
                        (&g_inv_hotspot_dirty_w)[20 * 0xe],(&g_inv_hotspot_dirty_h)[20 * 0xe]);
         }
-        FUN_000570b4();
+        cursor_show_idle_tick();
         /* Was a hardcoded original-binary literal address (0x85c30) --
            same bug class as this function's own 0x202870 fix just
            above -- but unlike that one, nothing anywhere else in this
@@ -37426,7 +37426,7 @@ uint param_1;
   iVar1 = ((int)(short)param_1 >> 2) * 0xf;
   iVar2 = (param_1 & 3) * 0x12;
   draw_sprite_by_id(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -37447,7 +37447,7 @@ void FUN_000448a8()
     }
     uVar1 = (int)((uVar1 + 1) * 0x10000) >> 0x10;
   } while ((int)uVar1 < 0x18);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -39124,7 +39124,7 @@ void redraw_armor_overlay_widgets()
     if (iVar4 != 0) {
       select_active_font(s_font5x6p_sys_0008430c);
     }
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -39221,7 +39221,7 @@ int param_2;
        cause at every other `*g_selected_object & 0x1ff` site in this
        file (see their own copies of this comment). */
     FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     refresh_player_equipment_effects();
   }
   return;
@@ -39976,7 +39976,7 @@ joined_r0x00048308:
         select_active_font(s_font5x6p_sys_0008430c);
       }
       FUN_00048514(0);
-      FUN_000570b4();
+      cursor_show_idle_tick();
       return;
     }
     if (iVar3 == 0x14) {
@@ -41244,7 +41244,7 @@ void dispatch_sticky_mode_handlers()
       bVar5 = DAT_0023bf0c == '\x01';
       DAT_0023bf0c = cVar2;
       if (bVar5) {
-        FUN_000577f0();
+        reset_cursor_confine_rect();
       }
     }
   }
@@ -49373,7 +49373,7 @@ short param_1;
   if (param_1 != 0) {
     FUN_00057118();
     FUN_00056cc8(6);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     wait_for_click_release(0);
   }
   DAT_002046f8 = 0;
@@ -49510,7 +49510,7 @@ void close_ui_panel_return_to_game()
     mode_icon_highlight_on((int)g_cursor_mode);
   }
   DAT_002046f8 = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -49836,7 +49836,7 @@ short param_1;
       return;
     }
     FUN_000566dc(4,0x39);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     FUN_0003bc08(0);
     FUN_00057118();
   }
@@ -49872,7 +49872,7 @@ undefined4 param_1;
   if ((uint)DAT_000868dc < 8 && PTR_FUN_00086900_table[DAT_000868dc] != 0) {
     PTR_FUN_00086900_table[DAT_000868dc](param_1);
   }
-  FUN_000570b4();
+  cursor_show_idle_tick();
   wait_for_click_release(0);
   return;
 }
@@ -49953,7 +49953,7 @@ LAB_00056ddc:
         }
         FUN_00057118();
         FUN_000566dc(iVar3 + sVar1,(int)g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2]);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         return;
       }
       if (param_1 == 1) {
@@ -50010,7 +50010,7 @@ void FUN_00056ebc()
 
 
 
-undefined4 FUN_00056f28()
+undefined4 init_cursor_subsystem()
 
 {
   undefined4 uVar1;
@@ -50059,13 +50059,13 @@ int FUN_00056fe8()
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
     /* REVERTED (was: force g_force_flush around this call, matching
-       FUN_0005857c's own sibling wrapping) -- caused a visible flicker
+       draw_idle_mouse_cursor's own sibling wrapping) -- caused a visible flicker
        regression: rect_fill_or_save_restore's own dirty_rect_union call
        already records this erase's rect unconditionally, BEFORE any
        gating, and the dirty rect only resets once per FRAME (not once
        per hide/show pair, see flush_dirty_rect_to_display's own
        comment) -- so the immediately-following paired show call
-       (FUN_0005857c, called right after this from the same
+       (draw_idle_mouse_cursor, called right after this from the same
        hide-move-show cycle) already sweeps up this erase's rect into
        its own forced flush. Forcing a flush HERE TOO just adds a
        second, premature flush per cycle, visibly showing the
@@ -50082,7 +50082,7 @@ int FUN_00056fe8()
        function's own entry) to a real, reproducible sequence: during
        an idle gap, an erase call here successfully clears
        DAT_00204844 to 0 (correct so far), but the PAIRED redraw
-       (update_mouse_state's own `if (0 < DAT_00204840) FUN_0005857c();`
+       (update_mouse_state's own `if (0 < DAT_00204840) draw_idle_mouse_cursor();`
        right after its own call to this function) does not fire,
        because DAT_00204840 (the show/hide nesting depth counter) is
        <=0 at that exact moment -- so nothing gets marked to redraw,
@@ -50092,7 +50092,7 @@ int FUN_00056fe8()
        counter is <=0 at that specific point (some other hide() with
        no matching show() yet pending?) is unknown, and a wrong guess
        here risks a second regression the same way the force-flush
-       attempt above did. Ruled OUT as an explanation: FUN_00077dd0's
+       attempt above did. Ruled OUT as an explanation: handle_mouse_message's
        WM_LBUTTONUP handler unconditionally zeroing DAT_00204844 (see
        its own comment) -- adding an erase-before-clear there made no
        observable difference in the same trace, and this project's own
@@ -50112,7 +50112,7 @@ int FUN_00056fe8()
    (all originally gated shut on a real Pocket PC touchscreen, where a
    persistent cursor sprite makes no sense). Defaults OFF: drawing the
    cursor every idle frame forces a display flush every frame too (see
-   FUN_0005857c's own LAB_00058674 tail), which measurably slowed the
+   draw_idle_mouse_cursor's own LAB_00058674 tail), which measurably slowed the
    game down when this was unconditionally on. Opt in with
    UW_ALWAYS_SHOW_CURSOR=1 until that flush cost is addressed. */
 static int uw_always_show_cursor(void)
@@ -50126,7 +50126,7 @@ static int uw_always_show_cursor(void)
 
 
 
-undefined4 FUN_000570b4()
+undefined4 cursor_show_idle_tick()
 
 {
   int iVar1;
@@ -50134,7 +50134,7 @@ undefined4 FUN_000570b4()
   iVar1 = (int)DAT_00204840;
   DAT_00204840 = (short)(iVar1 + 1);
   /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, same as
-     FUN_0005857c's own deviation comment): 0x106c is the real,
+     draw_idle_mouse_cursor's own deviation comment): 0x106c is the real,
      validly-loadable "default/no specific hotspot" cursor sprite (see
      FUN_00057dc0), and the real binary deliberately suppresses drawing
      THIS SPECIFIC sprite -- i.e. no persistent cursor over the plain
@@ -50147,7 +50147,7 @@ undefined4 FUN_000570b4()
      a display flush every idle frame). */
   if ((iVar1 + 1) * 0x10000 >> 0x10 == 1) {
     if ((DAT_00204788 != 0x106c) || uw_always_show_cursor()) {
-      FUN_0005857c();
+      draw_idle_mouse_cursor();
     }
   }
   if (1 < DAT_00204840) {
@@ -50243,7 +50243,7 @@ void FUN_0005721c()
         }
       }
       if ((DAT_00204840 == 1) && (g_selected_object == 0)) {
-        FUN_0005857c();
+        draw_idle_mouse_cursor();
         return;
       }
       if (DAT_00204840 < 2) {
@@ -50279,7 +50279,7 @@ void FUN_00057460()
     iVar3 = (int)DAT_000842a4;
     iVar4 = (int)DAT_000842a8;
     set_viewport_clip_rect(0,0,0x13f,199);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     set_viewport_clip_rect(iVar1,iVar2,iVar3,iVar4);
   }
   return;
@@ -50348,7 +50348,7 @@ undefined2 param_2;
   FUN_00057e54();
   g_mouse_x = param_1;
   g_mouse_y = param_2;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -50443,7 +50443,7 @@ int param_1;
 
 
 
-void FUN_00057788(param_1,param_2,param_3,param_4)
+void set_cursor_confine_rect(param_1,param_2,param_3,param_4)
 short param_1;
 short param_2;
 short param_3;
@@ -50451,7 +50451,7 @@ short param_4;
 
 {
   if (getenv("UW_DEBUG_CURSORSHOW")) {
-    fprintf(stderr, "[cursorbounds] FUN_00057788(%d,%d,%d,%d)\n",
+    fprintf(stderr, "[cursorbounds] set_cursor_confine_rect(%d,%d,%d,%d)\n",
             (int)param_1, (int)param_2, (int)param_3, (int)param_4);
   }
   DAT_00204838 = DAT_0020471c + param_1 + 1;
@@ -50467,7 +50467,7 @@ short param_4;
 
 
 
-void FUN_000577f0()
+void reset_cursor_confine_rect()
 
 {
   DAT_0020483c = 0;
@@ -50485,7 +50485,7 @@ void FUN_000577f0()
     DAT_002047d8 = 0x87 - DAT_00204748;
   }
   if (getenv("UW_DEBUG_CURSORSHOW")) {
-    fprintf(stderr, "[cursorbounds] FUN_000577f0() DAT_00201b60=0x%x narrowed=%d rect=(%d,%d)-(%d,%d)\n",
+    fprintf(stderr, "[cursorbounds] reset_cursor_confine_rect() DAT_00201b60=0x%x narrowed=%d rect=(%d,%d)-(%d,%d)\n",
             (int)(ushort)DAT_00201b60, (((ushort)DAT_00201b60 & 0xc9) != 0),
             (int)DAT_00204838, (int)DAT_0020483c, (int)DAT_002047dc, (int)DAT_002047d8);
   }
@@ -50747,7 +50747,7 @@ undefined4 param_1;
     DAT_00204858 = DAT_00204858 + '\x01';
     (&DAT_00204714)[iVar1] = DAT_00204704;
     FUN_00057dc0(param_1);
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -50772,7 +50772,7 @@ ushort param_1;
   FUN_00057dc0((int)(short)(&DAT_00204714)[DAT_00204858]);
   FUN_00057e54();
   if ((param_1 & 2) != 0) {
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -51019,12 +51019,12 @@ void update_mouse_state()
     }
     FUN_00057e54();
     /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
-       FUN_000570b4's own matching comment just above: skips the
+       cursor_show_idle_tick's own matching comment just above: skips the
        `DAT_00204788 != 0x106c` exclusion so the desktop cursor stays
        visible over the plain 3D viewport too, not just registered UI
        hotspots, only when UW_ALWAYS_SHOW_CURSOR=1. */
     if ((0 < DAT_00204840) && ((DAT_00204788 != 0x106c) || uw_always_show_cursor())) {
-      FUN_0005857c();
+      draw_idle_mouse_cursor();
     }
     if (DAT_0020485c != 0) {
       set_viewport_clip_rect((int)local_28,(int)sVar1,(int)sVar2,(int)sVar3);
@@ -51074,7 +51074,7 @@ void FUN_000584c0()
 
 
 
-void FUN_0005857c()
+void draw_idle_mouse_cursor()
 
 {
   int _dbg_show = getenv("UW_DEBUG_CURSORSHOW") != NULL;
@@ -51087,7 +51087,7 @@ void FUN_0005857c()
     /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real
        Pocket PC binary only shows this idle cursor sprite while
        DAT_0023c63c (the left-button-currently-held flag, see
-       FUN_00077dd0's own comment) is set, or DAT_000bbef4 overrides it
+       handle_mouse_message's own comment) is set, or DAT_000bbef4 overrides it
        (draw_automap_screen/the note editor force it to 1) -- a
        stylus/touchscreen design where there's no persistent hover
        cursor, only a transient indicator while actively touching the
@@ -51119,7 +51119,7 @@ void FUN_0005857c()
       return;
     }
     /* DEVIATION FROM AUTHENTIC BEHAVIOR (4th of this round, see the matching
-       comments above and in FUN_000570b4/update_mouse_state's own tail):
+       comments above and in cursor_show_idle_tick/update_mouse_state's own tail):
        the original confines the drawn cursor to a specific UI-mode rectangle
        (DAT_00204838/DAT_0020483c/DAT_002047dc/DAT_002047d8, only enforced
        when DAT_00201b60's bits 0,3,6,7 are set) rather than the full screen
@@ -51129,11 +51129,11 @@ void FUN_0005857c()
        update_mouse_state (DAT_0020470c/DAT_00204830 and DAT_00204710/
        DAT_00204834), so skipping this narrower confinement cannot draw the
        cursor off-screen. Confirmed via live tracing (UW_DEBUG_CURSORSHOW)
-       that this rectangle also drifts from what FUN_000577f0 last set it to
+       that this rectangle also drifts from what reset_cursor_confine_rect last set it to
        (e.g. (52,18)-(224,135) right after chargen, silently becoming
        (52,18)-(109,109) by the first real mouse move with no traced call to
        either bound-setter in between) -- a pre-existing, unrelated wild-write
-       bug elsewhere (FUN_00056f28's own `(&DAT_002047b0)[iVar2] = 10000` loop
+       bug elsewhere (init_cursor_subsystem's own `(&DAT_002047b0)[iVar2] = 10000` loop
        treats a lone scalar as a 20-entry array, the same "lone scalar treated
        as a real array" bug class fixed repeatedly elsewhere in this project)
        corrupts this rectangle in a way that made the cursor disappear
@@ -60365,7 +60365,7 @@ void FUN_00068260()
   if (DAT_002020d8 == 0) {
     move_command_dispatch(0xffffffff);
     if (DAT_0023bf0c == '\0') {
-      FUN_00057788((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
+      set_cursor_confine_rect((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
                    ((int)DAT_0023be80 - (int)DAT_0023be88) + 1);
     }
     DAT_0023bf0c = '\x02';
@@ -61489,7 +61489,7 @@ void FUN_00069e30()
     FUN_00078118();
     FUN_000781a0();
     select_active_font(s_font5x6p_sys_0008430c);
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -61800,7 +61800,7 @@ short param_4;
     }
     g_text_use_palette_color = _saved_af74;
   }
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -62132,7 +62132,7 @@ undefined4 journey_onward_load_slot_menu()
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
   FUN_0006c98c(0xffffffff,acStack_1c0,1);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   probe_save_slots(acStack_b8,local_1d8);
   iVar4 = 0;
   uVar10 = (uint)local_1d8[0];
@@ -64907,7 +64907,7 @@ undefined2 param_5;
        above. */
     uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   DAT_0023c134 = (short)param_1;
   return;
@@ -64930,7 +64930,7 @@ void redraw_active_hud_panel()
     (*(code *)(&g_hud_panel_handlers)[g_active_hud_panel])();
     set_draw_color(0x1a);
     flush_dirty_rect_to_display(1);
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -65238,7 +65238,7 @@ bool FUN_0006edfc()
     }
     draw_sprite_by_id(DAT_0023c208 + 0x20b8,0x110,4,1,1);
     draw_sprite_by_id(DAT_0023c208 + 0x20b0,0x110,0x7a,1,1);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     goto LAB_0006f6c8;
   }
   if (DAT_0023c208 == '\x02') {
@@ -65251,7 +65251,7 @@ bool FUN_0006edfc()
     draw_sprite_by_id(0x20b4,0x110,0x7a,1,1);
     bitmap_blit_to_framebuffer(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
 LAB_0006f008:
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   else {
     if (DAT_0023c208 == '\x05') {
@@ -69877,7 +69877,7 @@ void FUN_00076508()
         puVar6 = puVar6 + 0x20;
       } while (puVar6 < DAT_0023c414);
     }
-    FUN_000570b4();
+    cursor_show_idle_tick();
     DAT_0023c41c = 0;
   }
   return;
@@ -70719,7 +70719,7 @@ LAB_00077d70:
    path real keyboard input already uses. Taps outside that strip instead
    set DAT_00204844, a general click-pending flag consumed elsewhere
    (main game world / inventory click handling, not chargen). */
-undefined4 FUN_00077dd0(param_1,param_2,param_3,param_4)
+undefined4 handle_mouse_message(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
 undefined4 param_3;
@@ -70745,7 +70745,7 @@ int param_4;
   // deliberate per-click deviation from an earlier session, kept
   // below); per user request ("we should always display the cursor" on
   // desktop, tracking real mouse movement, not just clicks -- see
-  // FUN_0005857c's own matching deviation comment) extended to fire on
+  // draw_idle_mouse_cursor's own matching deviation comment) extended to fire on
   // every message this handler sees (WM_MOUSEMOVE included) so plain
   // hover/movement -- not just a click -- makes the game trust and
   // track the real cursor position from the very first frame, but only
@@ -71037,7 +71037,7 @@ void draw_stats_panel_content()
     bVar1 = bVar1 + 1;
   } while (bVar1 < 6);
   select_active_font(s_font5x6p_sys_0008430c);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -71086,7 +71086,7 @@ void FUN_00078434()
         uVar3 = (int)(short)local_c[0] + 1;
         local_c[0] = (ushort)uVar3;
       } while ((int)(uVar3 * 0x10000) >> 0x10 < 6);
-      FUN_000570b4();
+      cursor_show_idle_tick();
     }
   }
   select_active_font(s_font5x6p_sys_0008430c);
@@ -74501,7 +74501,7 @@ int param_1;
     *(byte *)(param_1 + 0xb) = (byte)uVar1 | 1;
     *(char *)(param_1 + 0xc) = (char)(uVar1 >> 8);
   }
-  FUN_000577f0();
+  reset_cursor_confine_rect();
   FUN_00028488(param_1);
   return 0;
 }
@@ -75421,7 +75421,7 @@ uint param_2;
   sVar1 = next_input_event();
   iVar3 = read_realtime_clock_units();
   if (DAT_00250708 != 0 && param_2 != 0) {
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   do {
     sVar2 = next_input_event();
@@ -75617,7 +75617,7 @@ char *param_1;
     FUN_0007f6fc(auStack_54,0);
     DAT_00250720 = read_realtime_clock_units();
     if (DAT_00250708 != 0) {
-      FUN_000570b4();
+      cursor_show_idle_tick();
     }
     iVar2 = (int)*(short *)(DAT_00250704 + 0x14);
   }
@@ -76039,7 +76039,7 @@ int param_1;
     iVar2 = DAT_00250708;
   }
   if (param_1 != 0 && iVar2 != 0) {
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -76185,7 +76185,7 @@ short param_5;
           draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
       }
-      FUN_000570b4();
+      cursor_show_idle_tick();
       if ((short)uVar8 == 0x1b) {
         param_3 = param_3 - (int)param_2;
         do {
@@ -76409,7 +76409,7 @@ int * param_3;
     uVar3 = next_input_event();
     sVar1 = (short)uVar3;
     if ((((sVar1 == 0xd) || (sVar1 == 0x1b)) || (sVar1 == 1)) || ((sVar1 == 2 || (sVar1 == 3)))) {
-      FUN_000570b4();
+      cursor_show_idle_tick();
       if (sVar1 == 0x1b) {
         FUN_0007fee8(0);
         *param_3 = 0;

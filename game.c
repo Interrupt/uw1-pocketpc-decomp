@@ -248,7 +248,7 @@ undefined4 param_1;
   }
   FUN_0006a1c4(param_1);
   FUN_00057c5c(0x106c);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   bVar11 = false;
   local_838 = 0;
   do {
@@ -300,7 +300,7 @@ undefined4 param_1;
         iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
       } while (iVar10 < 200);
       debug_framebuffer_dump("main_menu_loop");
-      FUN_000570b4();
+      cursor_show_idle_tick();
       if ((DAT_0023bf70 == 0) ||
          /* Was a literal 0 here (an earlier fix pass believed this
             mirrored sibling call sites like FUN_00041a78's genuine
@@ -487,7 +487,7 @@ undefined4 param_1;
           iVar4 = iVar4 + 1;
         }
         draw_text_string(uVar7,0xa0 - (short)(iVar4 >> 1),0x5a);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         while (sVar3 = next_input_event(), sVar3 < 0) {
           FUN_0006a168();
         }
@@ -500,7 +500,7 @@ undefined4 param_1;
     Ordinal_1018(local_834);
   } while (!bVar11);
   FUN_00057cac(3);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   set_game_mode(1);
   FUN_00049924(0x7ffe);
   DAT_000868d8 = 0;
