@@ -1425,3 +1425,55 @@ checkpoints already proved out as a real, working way to bisect this
 class of "something's wrong somewhere in a long pipeline" bug.
 
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (6): ported the proven face depth-sort from
+e-model-texturing -- no z-buffer means model faces need explicit
+painter's-algorithm ordering
+═══════════════════════════════════════════════════════════════════════════
+QA report: "the last player position of this run shows the backwards
+object model face sorting in a boulder object... a portion of the floor
+shows through the boulder, because far faces are drawn but near faces
+are hidden." Confirmed by inspection: emit_catalog_object's own face
+loop (the current native mesh path) has NO depth-sort at all -- faces
+are pushed into the shared render arena in exactly the order their .E
+file's PARTS section lists them, and this engine has no z-buffer and no
+backface culling anywhere (confirmed repeatedly this session), so a
+face physically behind another, if listed AFTER it, simply overdraws
+it with no depth test -- reads as a hole/gap with no geometry, winding,
+or UV bug involved.
+
+This exact class of fix (depth-sort a model's own just-emitted records,
+farthest-from-camera first, right after they're written) was already
+designed, built, and live-verified this session on the OLD emit_model_
+object/g_model_map path (git log 79e78aa on e-model-texturing) -- ported
+here rather than re-derived, since the underlying shared arena record
+format (&DAT_000acde4 family, 0x60-byte stride) and vertex-position
+storage (DAT_000a85d0_backing, 0xc-byte stride) are the exact same
+structures transform_points_by_matrix already writes into for this
+path too (confirmed by reading its own field offsets, not assumed).
+Inserted right after the existing texptr-backfill block, using the same
+_rec_start/DAT_0023b83c record-range tracking already present there.
+Small-N insertion sort (models here top out around 53 faces for the
+biggest boulder; the reference's own 64-slot fixed-size cap carried
+over unchanged) by squared distance from the real camera-eye globals
+(DAT_000db438/43c/440), descending (farthest first), applied via an
+in-place cycle-sort permutation over whole 0x60-byte records plus the
+parallel g_tile_texptr_emit[] side channel. Opt-out via
+UW_MODEL_NO_DEPTH_SORT=1 for A/B comparison, matching the reference's
+own convention; on by default.
+
+Verified live via UW_DEBUG_MODEL at the user's own reported position
+(SETPLAYERPOS 9.86 3.14 64 213 24): the sort runs every frame against
+the boulder's own 53 records, real per-frame eye coordinates. Could not
+visually reproduce a hole at that exact logged position in either the
+sorted or UW_MODEL_NO_DEPTH_SORT=1 screenshot -- the reported position
+was captured mid-turn (yaw incrementing frame to frame in the source
+log), so the exact frame the hole was visible in was likely a slightly
+different angle than the last logged one. Shipping the fix anyway on
+the strength of the mechanism being both theoretically sound (genuinely
+missing depth-sort, confirmed by code inspection) and already proven
+correct once on the same class of geometry in the same engine, rather
+than withholding it for lack of a pixel-identical repro.
+
+run-regressions.sh: 6/6 clean.

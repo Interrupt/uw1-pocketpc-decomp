@@ -58191,6 +58191,90 @@ LAB_000640ec:
       if ((unsigned)_ti < UW_MAX_VIS_TILES) g_tile_texptr_emit[_ti] = texptr;
     }
   }
+  /* QA report: "backwards object model face sorting in a boulder
+     object... a portion of the floor shows through the boulder,
+     because far faces are drawn but near faces are hidden." This
+     engine has no z-buffer and no backface culling (confirmed
+     repeatedly this session), so a model's own faces are painted in
+     whatever order its .E file happens to list its parts -- a face
+     physically BEHIND another one, if listed later, simply overdraws
+     it, reading as "a hole in the model" with no geometry/winding/UV
+     bug involved. This exact fix (depth-sort a model's own just-
+     emitted records, farthest-from-camera first, right after they're
+     written) was already built, tested, and confirmed live for the
+     OLD emit_model_object/g_model_map path this session (git log
+     79e78aa on this project's own e-model-texturing branch) -- ported
+     here rather than re-invented, adapted only for this function's own
+     record range tracking (_rec_start/DAT_0023b83c, already present
+     above for the texptr backfill) since the underlying arena record
+     format (&DAT_000acde4 family, 0x60-byte stride) and vertex-position
+     storage (DAT_000a85d0_backing, 0xc-byte stride) are the exact same
+     shared structures transform_points_by_matrix just wrote into --
+     confirmed by reading its own field offsets, not assumed. Opt-out
+     via UW_MODEL_NO_DEPTH_SORT=1 for A/B comparison; on by default. */
+  if (getenv("UW_MODEL_NO_DEPTH_SORT") == 0 && DAT_0023b83c > _rec_start) {
+    double _eye_x = *(float *)&DAT_000db438, _eye_y = *(float *)&DAT_000db43c, _eye_z = *(float *)&DAT_000db440;
+    int _n = DAT_0023b83c - _rec_start;
+    if (_n <= 64) {
+      double _dist[64];
+      int _order[64];
+      int _k;
+      for (_k = 0; _k < _n; _k++) {
+        int rec = _rec_start + _k;
+        int rb = rec * 0x60;
+        int iv0 = *(int *)(&DAT_000acde8 + rb);
+        int iv1 = *(int *)(&DAT_000acdec + rb);
+        int iv2 = *(int *)(&DAT_000acdf0 + rb);
+        int iv3 = *(int *)(&DAT_000acdf4 + rb);
+        float *p0 = (float *)((char *)DAT_000a85d0_backing + 8 + iv0*0xc);
+        float *p1 = (float *)((char *)DAT_000a85d0_backing + 8 + iv1*0xc);
+        float *p2 = (float *)((char *)DAT_000a85d0_backing + 8 + iv2*0xc);
+        float *p3 = (float *)((char *)DAT_000a85d0_backing + 8 + iv3*0xc);
+        double cx = (p0[0]+p1[0]+p2[0]+p3[0]) * 0.25;
+        double cy = (p0[1]+p1[1]+p2[1]+p3[1]) * 0.25;
+        double cz = (p0[2]+p1[2]+p2[2]+p3[2]) * 0.25;
+        double dx = cx - _eye_x, dy = cy - _eye_y, dz = cz - _eye_z;
+        _dist[_k] = dx*dx + dy*dy + dz*dz;
+        _order[_k] = _k;
+      }
+      /* Small N -- plain insertion sort, descending distance (farthest
+         first, so nearer faces paint last and correctly cover them). */
+      { int _a;
+        for (_a = 1; _a < _n; _a++) {
+          int _oi = _order[_a]; double _od = _dist[_oi];
+          int _b = _a - 1;
+          while (_b >= 0 && _dist[_order[_b]] < _od) { _order[_b+1] = _order[_b]; _b--; }
+          _order[_b+1] = _oi;
+        }
+      }
+      /* Apply via cycle-sort in place, whole-record memcpy plus the
+         parallel g_tile_texptr_emit[] side channel. */
+      { unsigned char _tmp[0x60]; void *_tmp_tex;
+        unsigned char _done[64] = {0};
+        int _a;
+        for (_a = 0; _a < _n; _a++) {
+          int _cur, _src;
+          if (_done[_a] || _order[_a] == _a) { _done[_a] = 1; continue; }
+          _cur = _a;
+          memcpy(_tmp, (char *)&DAT_000acde4 + (_rec_start+_a)*0x60, 0x60);
+          _tmp_tex = g_tile_texptr_emit[_rec_start+_a];
+          while (!_done[_cur]) {
+            _src = _order[_cur];
+            _done[_cur] = 1;
+            if (_src == _a) break;
+            memcpy((char *)&DAT_000acde4 + (_rec_start+_cur)*0x60, (char *)&DAT_000acde4 + (_rec_start+_src)*0x60, 0x60);
+            g_tile_texptr_emit[_rec_start+_cur] = g_tile_texptr_emit[_rec_start+_src];
+            _cur = _src;
+          }
+          memcpy((char *)&DAT_000acde4 + (_rec_start+_cur)*0x60, _tmp, 0x60);
+          g_tile_texptr_emit[_rec_start+_cur] = _tmp_tex;
+        }
+      }
+      if (getenv("UW_DEBUG_MODEL"))
+        fprintf(stderr, "[model-depthsort] catalog=%d rec=[%d,%d) eye=(%g,%g,%g)\n",
+                (int)catalog, _rec_start, (int)DAT_0023b83c, _eye_x, _eye_y, _eye_z);
+    }
+  }
   }
   if (local_7a != 0xffff) {
     *DAT_00110fc0 = 2;
