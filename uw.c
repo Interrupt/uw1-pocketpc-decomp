@@ -11362,7 +11362,7 @@ LAB_00019240:
 
 
 void FUN_0001927c(param_1,param_2)
-undefined4 param_1;
+intptr_t param_1; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer its own caller passes (load_npc_conversation_record); dormant (silently never reached the write) until the scan-alignment fix in this same function let execution actually get to FUN_0002285c(iVar4,param_1,...) below, which then crashed writing through the truncated address
 short param_2;
 
 {
@@ -11373,10 +11373,18 @@ short param_2;
   char *pcVar3;
   int iVar4;
   uint uVar5;
-  short local_124;
-  short local_122;
+  /* Same "two separate stack locals read as one 4-byte record" bug as
+     FUN_0001a5bc's own matching comment (its save-side mirror) -- see
+     there for the full explanation. This is the load side: local_122
+     (the record's LENGTH) was silently corrupted by whatever this
+     compiler's own stack layout happens to place after local_124 (the
+     ID), feeding a garbage skip-distance into FUN_00022850's seek and
+     misaligning every subsequent scan iteration. */
+  undefined1 local_124_backing[4];
+  #define local_124 (*(short *)(local_124_backing + 0))
+  #define local_122 (*(short *)(local_124_backing + 2))
   char acStack_11c [260];
-  
+
   pcVar3 = &DAT_0023cca8;
     stack0xffdc323c_ptr = acStack_11c;
   do {
@@ -11386,11 +11394,15 @@ short param_2;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__SAVE0_bglobals_dat_00084538);
   iVar4 = FUN_000227d4(acStack_11c);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001927c: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, want %d shorts\n", acStack_11c, iVar4, (int)DAT_001007c4, (int)param_2);
   if (iVar4 != -1) {
     bVar2 = false;
     do {
-      uVar5 = FUN_0002285c(iVar4,&local_124,4);
-      if ((uVar5 < 4) || ((int)(uint)DAT_001007c4 < (int)local_124)) break;
+      uVar5 = FUN_0002285c(iVar4,local_124_backing,4);
+      if ((uVar5 < 4) || ((int)(uint)DAT_001007c4 < (int)local_124)) {
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001927c: scan stopped, uVar5=%u local_124=%d (no matching record found)\n", uVar5, (int)local_124);
+        break;
+      }
       if ((int)local_124 == (uint)DAT_001007c4) {
         if (param_2 < local_122) {
           local_122 = param_2;
@@ -11399,6 +11411,10 @@ short param_2;
         if (uVar5 < (uint)((int)local_122 << 1)) {
           bVar2 = true;
         }
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001927c: MATCH id=%d, restored %u bytes (wanted %d), first 10 shorts: %d %d %d %d %d %d %d %d %d %d\n",
+                (int)local_124, uVar5, (int)local_122 << 1,
+                (int)((short*)param_1)[0], (int)((short*)param_1)[1], (int)((short*)param_1)[2], (int)((short*)param_1)[3], (int)((short*)param_1)[4],
+                (int)((short*)param_1)[5], (int)((short*)param_1)[6], (int)((short*)param_1)[7], (int)((short*)param_1)[8], (int)((short*)param_1)[9]);
       }
       else {
         FUN_00022850(iVar4,(int)local_122 << 1,1);
@@ -11406,6 +11422,8 @@ short param_2;
     } while (!bVar2);
     Ordinal_553(iVar4);
   }
+  #undef local_124
+  #undef local_122
   return;
 }
 
@@ -12174,6 +12192,7 @@ undefined4 FUN_0001a1c8()
          click (now routed to ordinary 3D-view input while still in the
          leftover conversation UI). */
       psVar7 = (short *)(DAT_000bbf80 + DAT_000bbf74 * 2);
+      if (getenv("UW_DEBUG_OPCODE_TRACE")) fprintf(stderr, "[babl-op] ip=%d opcode=%d operand=%d stack_depth=%d top=%d\n", (int)DAT_000bbf74, (int)*psVar7, (int)psVar7[1], (int)DAT_000bbf78, (int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
       switch(*psVar7) {
       case 0:
         goto LAB_0001a2d8;
@@ -12345,15 +12364,35 @@ void FUN_0001a5bc()
   char *stack0xffdc3240_ptr;
   char cVar1;
   short sVar2;
-  undefined4 uVar3;
+  intptr_t uVar3; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer on assignment, same bug class as FUN_0001927c's own `param_1` fix (its load-side mirror); dormant until the scan-alignment fix below let execution actually reach this write
   char *pcVar4;
   int iVar5;
   uint uVar6;
   uint uVar7;
-  short local_120;
-  short local_11e;
+  /* Was two separate stack locals (`short local_120; short local_11e;`)
+     read as ONE 4-byte record via `&local_120,4` -- the same "Ghidra
+     split one real contiguous buffer into separate stack locals" bug
+     class fixed dozens of times elsewhere in this file, just never
+     caught here since it doesn't crash, it just silently corrupts
+     local_11e (the record's LENGTH) with whatever garbage byte this
+     compiler's own stack layout happens to place after local_120 (the
+     record's ID) -- nothing forces the two to stay adjacent once
+     recompiled. Confirmed via the real ARM disassembly that both reads
+     genuinely are meant to be one 4-byte record (matching
+     FUN_0001927c's own identical pattern, its own load-side mirror).
+     The corrupted length then feeds FUN_00022850's own seek-forward-
+     to-next-record call, misaligning every subsequent scan iteration
+     -- this is the actual root cause of "talking to Bragit again
+     starts fresh": his own script-local conversation state (a SEPARATE
+     persistence path from the engine-level npc_talkedto bit, which
+     was already confirmed working) never successfully finds or
+     updates its own saved record, because the scan wanders off into
+     garbage after the very first skipped-record seek. */
+  undefined1 local_120_backing[4];
+  #define local_120 (*(short *)(local_120_backing + 0))
+  #define local_11e (*(short *)(local_120_backing + 2))
   char acStack_118 [260];
-  
+
   FUN_00078a04(0x7c);
   sVar2 = DAT_000bbf7c;
   uVar3 = DAT_000bbf14;
@@ -12366,22 +12405,32 @@ void FUN_0001a5bc()
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_118,s__SAVE0_bglobals_dat_00084538);
   iVar5 = FUN_00022810(acStack_118);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001a5bc: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
+          acStack_118, iVar5, (int)DAT_001007c4, (int)sVar2, (void*)uVar3,
+          (int)((short*)uVar3)[0], (int)((short*)uVar3)[1], (int)((short*)uVar3)[2], (int)((short*)uVar3)[3], (int)((short*)uVar3)[4],
+          (int)((short*)uVar3)[5], (int)((short*)uVar3)[6], (int)((short*)uVar3)[7], (int)((short*)uVar3)[8], (int)((short*)uVar3)[9]);
   if (iVar5 != -1) {
     while( true ) {
-      uVar6 = FUN_0002285c(iVar5,&local_120,4);
+      uVar6 = FUN_0002285c(iVar5,local_120_backing,4);
       if ((uVar6 < 4) ||
          (uVar7 = (uint)local_120, uVar6 = (uint)DAT_001007c4,
-         uVar7 != uVar6 && (int)uVar6 <= (int)uVar7)) goto LAB_00019460;
+         uVar7 != uVar6 && (int)uVar6 <= (int)uVar7)) {
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001a5bc: scan gave up, uVar6=%u local_120=%d (no matching record -- write SKIPPED entirely)\n", uVar6, (int)local_120);
+        goto LAB_00019460;
+      }
       if (uVar7 == uVar6) break;
       FUN_00022850(iVar5,(int)local_11e << 1,1);
     }
     if (sVar2 < local_11e) {
       local_11e = sVar2;
     }
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_0001a5bc: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
     FUN_00022884(iVar5,uVar3,(int)local_11e << 1);
 LAB_00019460:
     Ordinal_553(iVar5);
   }
+  #undef local_120
+  #undef local_11e
   return;
 }
 
@@ -20067,6 +20116,20 @@ void start_npc_conversation()
     DAT_001007b8 = babl_alloc(0xa0);
     if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
       FUN_000798c4();
+    }
+    /* Debug-only static dump of every string in this NPC's own compiled
+       conversation, independent of which branches a live playthrough
+       happens to reach -- see bragit-talk-again-investigation. Message
+       ids are (page<<9)|subindex (FUN_0007863c's own comment); page 0
+       is this just-loaded conversation's own string table. */
+    if (getenv("UW_DEBUG_DUMP_CONV_STRINGS")) {
+      int _dump_i;
+      for (_dump_i = 0; _dump_i < 0x200; _dump_i++) {
+        char *_dump_s = FUN_0007863c((ushort)_dump_i);
+        if (_dump_s && *_dump_s) {
+          fprintf(stderr, "[babl] conv string msgid=%d: \"%s\"\n", _dump_i, _dump_s);
+        }
+      }
     }
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: about to call FUN_0001a1c8()\n");
     FUN_0001a1c8();

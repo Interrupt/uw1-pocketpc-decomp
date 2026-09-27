@@ -183,6 +183,10 @@ int uw_file_read(int handle, void *buf, unsigned int size) {
         DEBUG(ERR, "[fileio] read: handle %d invalid or null buf, size=%u\n", handle, size);
         return 0;
     }
+    /* Symmetric with uw_file_write's own phantom seek -- see its
+     * comment. A write-then-read on the same update-mode stream has
+     * the identical undefined-behavior risk. */
+    fseek(f, 0, SEEK_CUR);
     int n = (int)fread(buf, 1, size, f);
     /* fprintf(stderr, "[fileio] read: handle %d requested=%u got=%d\n", handle, size, n); */
     return n;
@@ -194,6 +198,24 @@ int uw_file_write(int handle, const void *buf, unsigned int size) {
         DEBUG(ERR, "[fileio] write: handle %d invalid/null-buf/oversized, size=%u\n", handle, size);
         return 0;
     }
+    /* C89/C99 7.19.5.3: on a stream opened for update ("rb+"/"wb+"),
+     * output must not directly follow input without an intervening
+     * fseek/fflush/rewind call (even a zero-distance SEEK_CUR), or the
+     * write's effect is undefined. Callers that scan-then-overwrite a
+     * record in place (e.g. the babl per-NPC conversation-state save,
+     * FUN_0001a5bc) do exactly that: read the matching record's header,
+     * then immediately write over its data with no seek in between --
+     * a faithful port of the real game's own read-then-write algorithm
+     * (confirmed identical in the real ARM disassembly), but the real
+     * binary's Win32 ReadFile/WriteFile calls have no such stdio-
+     * specific restriction, so this only misbehaves in this port.
+     * Confirmed live: fwrite reported the correct byte count and
+     * returned success, but the write never actually reached disk --
+     * a freshly re-opened FILE* on the same path still read the old
+     * bytes. This phantom seek is a no-op on position, and fixes it
+     * for every caller uniformly rather than patching each read-then-
+     * write call site individually. */
+    fseek(f, 0, SEEK_CUR);
     errno = 0;
     int n = (int)fwrite(buf, 1, size, f);
     if (getenv("UW_DEBUG_INPUTEVENT"))
