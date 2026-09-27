@@ -12979,6 +12979,9 @@ short param_3;
   if (param_3 < 1) {
     return;
   }
+  if (getenv("UW_DEBUG_BABL") && param_1 && strcmp(param_1, "npc_talkedto") == 0) {
+    fprintf(stderr, "[babl] babl_set_variable(\"npc_talkedto\"): resolved DAT_000bbf14 slot base=%d\n", (int)*(short *)(iVar2 + 0x1a));
+  }
   iVar4 = 0;
   do {
     if (*(short *)(iVar2 + 0x18) <= iVar4) {
@@ -20289,6 +20292,17 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
   if (getenv("UW_DEBUG_AUTO_FAREWELL") && (1 < DAT_00100794)) {
     int _far_i;
     int _far_pick = 1; /* no farewell offered this turn -- keep the conversation moving */
+    /* UW_DEBUG_AUTO_PICK=N overrides the "no farewell offered" default
+       away from item 1, to explore branches a rigid "always pick 1"
+       playthrough never reaches (e.g. hunting for where a script might
+       call get_quest/set_quest) -- clamped into range, never overrides
+       an actual farewell match below. */
+    { const char *_pick_env = getenv("UW_DEBUG_AUTO_PICK");
+      if (_pick_env) {
+        int _pick_n = atoi(_pick_env);
+        if (_pick_n >= 1 && _pick_n < DAT_00100794) _far_pick = _pick_n;
+      }
+    }
     for (_far_i = 1; _far_i < DAT_00100794; _far_i = (_far_i + 1) * 0x10000 >> 0x10) {
       char *_far_txt = *(char **)(&DAT_00100680 + _far_i * 8);
       if (_far_txt && (strcasestr(_far_txt, "farewell") || strcasestr(_far_txt, "bye") || strcasestr(_far_txt, "goodbye"))) {
