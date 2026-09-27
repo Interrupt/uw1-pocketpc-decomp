@@ -4995,3 +4995,155 @@ flaky tests clean this run too). Default rendering reconfirmed
 unaffected (faces=11/6, zero env vars, screenshots pixel-identical
 with the sort on vs. UW_MODEL_NO_DEPTH_SORT=1 off at every angle
 tested).
+
+(45) 2026-09-27: found and fixed a genuinely native, previously-unknown
+3D-model rendering path in this binary -- emit_object_billboard
+(FUN_00061e60), the same "flat sprite" function every ordinary item
+and critter already uses. Traced via fresh Ghidra decompiles of the
+real UU.exe (headless, project at ~/Projects/UW1/decomp) rather than
+re-reading uw.c's own translation, at the user's direction after two
+rounds of this session wrongly concluding the function was billboard-
+only.
+
+DISCOVERY: `tick_anim_record` (FUN_0001dc04), the function
+emit_object_billboard calls to fetch a "catalog" record, computes
+`&DAT_00189590 + catalog*0x3c2c`. Checked that address arithmetic
+against Ghidra's own cross-reference index for every catalog 1-29 and
+found it lands byte-for-byte on the SAME 29 model buffers
+FUN_00038680/parse_e_model_file already load at startup (catalog
+1=DFRAME.E, 2=FBRIDGE.E, 14=DOOR.E, etc, in exact load order) --
+confirmed not coincidental by parse_e_model_file's own documented
+output layout (uw.c ~14356: "part count at offset 4... parts at
+0xc14+p*0x60") matching exactly what emit_object_billboard's own
+per-face loop reads. In the ORIGINAL binary this is one contiguous
+buffer; catalog is a real model-slot index into the SAME .E files
+g_model_map independently reloads. Not critter-skeleton data (a wrong
+turn taken and corrected mid-session, after the user pointed out this
+game's critters are flat sprites with no skeletal system) -- a real,
+second, native path to draw the same models, hiding under a
+misleading "billboard" name.
+
+BUG 1 (why it never worked, ours to fix): this port declares every
+DAT_XXXXXXXX as its own separately-allocated C global (confirmed:
+DAT_00114c1c_backing and DAT_00110ff0_backing are unrelated arrays),
+so the real binary's contiguous-buffer trick can't work here --
+tick_anim_record's walk landed in DAT_00110ff0's own unrelated,
+always-zero memory. local_48 (face count) and point_count were
+therefore always 0 for every catalog, confirmed live via a new
+UW_DEBUG_DOOR print -- emit_object_billboard's whole real-mesh loop
+was silently dead code, in this port only (the buffer itself, and
+FUN_00038680's own real 29-call load list, were both already correct
+and already faithfully ported). FIX: g_anim_model_slot[30], a real
+lookup table (uw.c ~2030) mapping catalog -> the actual model buffer
+address, in FUN_00038680's own load order; tick_anim_record now
+resolves through it and hands back a fresh 16KB memcpy into a
+dedicated g_anim_model_scratch[30][16384] (kept separate from the
+real model buffers so emit_object_billboard's own per-frame scratch
+writes can never corrupt what g_model_map's emit_model_object reads).
+Falls back to the original (harmless, always-empty) behavior for any
+catalog with no real model.
+
+BUG 2 (a real SIGSEGV, ours to fix): the moment local_48 became
+real, emit_object_billboard's own per-face loop crashed instantly.
+First suspected missing per-face adjacency/normal data (a plausible
+read of the CONCAT13-reconstructed "neighbor index" pattern in the
+raw decompile) -- traced further and disproved: those CONCAT13 reads
+are just an unaligned `*(int*)` read of a face's own real vertex-index
+field, byte-by-byte; parse_e_model_file's own computed-but-discarded
+per-face normal (confirmed via disassembly: the vec3_cross result is
+never stored anywhere) isn't involved either. The real cause: two
+local variables (`iVar16`, reused mid-function as the current face
+record's address, and `iVar30`, reused similarly for per-corner vertex
+lookups) were declared `int` but assigned real 64-bit pointer values
+(`_anim + offset`) -- silently truncated on this 64-bit host, the same
+bug class this whole project has hit repeatedly elsewhere
+(DAT_00110fc0/DAT_0023aed0's own history), just never triggered here
+before because the loop never ran with real data. FIX: split each
+into a dedicated pointer variable (`_face_rec`, `_vptr`), scoped
+exactly to each one's own pointer-holding lifetime -- both had a
+legitimate earlier small-integer role that had to stay untouched.
+Confirmed live: the crash is gone, the full per-face loop now
+completes (366 successful completions logged across one test run,
+real sane vertex offsets matching real point indices).
+
+BUG 3 (a real texture bug, ours to fix): with the crash fixed, doors/
+frames rendered but every object through this path showed a texture
+that "cycled between correct-looking and seemingly garbage data"
+(user report) as objects moved in and out of view. Root cause:
+transform_points_by_matrix (FUN_0001ecb0, ALSO original, unmodified
+code) copies each face's resolved texture pointer into the arena
+record's own byte offset +0x18..+0x1b -- but that's only a 32-bit
+field, truncating this platform's real 64-bit pointer (a THIRD
+instance of the same bug class, this time baked into the original
+binary's own code, not introduced by porting it). Worse: this whole
+codebase's shared rasterizer doesn't even read that embedded field for
+this record format -- every OTHER writer of the same 0x60-byte-stride
+record (ordinary walls, emit_model_object's own faces, entry 44's own
+depth-sort code) instead populates the side-channel
+g_tile_texptr_emit[record_index], which transform_points_by_matrix was
+never taught to do since it predates that convention. Objects from
+this path rendered with whatever unrelated texture pointer happened to
+already be sitting in that array slot from a different object drawn
+earlier -- explaining the "cycles between correct and garbage"
+symptom exactly. FIX: backfill g_tile_texptr_emit[] for every record
+this call just added, right after transform_points_by_matrix returns.
+Confirmed live: "doors and door frames are using the right texture
+now" (user report).
+
+BUG 4 (a real double-draw, ours to fix): with real geometry drawing
+correctly, the door's own ordinary flat sprite (LAB_emit_mesh_sprite_
+quad) was STILL drawing on top of/alongside it -- emit_tile_objects's
+door branch always fell through to that unconditionally after calling
+emit_anim_object_frames, since UW_DLIST_DOOR=0 (needed to isolate this
+new path for testing) skips the only existing `return` that would
+otherwise prevent it. Same "a duplicate, not a fallback" reasoning
+already applied to the UW_DLIST_DOOR path itself (see earlier entries)
+-- added the identical `return` here.
+
+NOT YET FIXED, real findings, flagged for follow-up:
+- Bridges (and likely other non-door objects reached via the generic
+  DAT_00086c80 class-2 fallback) render with the WRONG texture, not
+  garbage. Root cause identified but not yet fixed: that generic call
+  site passes param_3=param_4=-1 unconditionally (`emit_object_
+  billboard(bank_id, obj, 0xffffffff, 0xffffffff)`), which
+  emit_object_billboard's own early-exit logic treats as "no real
+  per-instance frame/texture data, use a placeholder" (local_70=NULL,
+  sVar13<0) -- correct behavior for a plain camera-facing sprite (this
+  call's original design target) but never designed to feed a real
+  multi-face mesh, which doesn't have a "placeholder" texture concept.
+  Needs a real per-catalog texture resolution, not yet determined.
+- "Models seem to be rendering backfaces and not the front faces"
+  (user report, confirmed direction-dependent: correct from one
+  viewing side, wrong from the other -- not a constant wrong side).
+  Investigated thoroughly and ruled out two hypotheses: (1) parse_
+  e_model_file's own real 'A'-flag auto-backside mechanism (confirmed
+  present and faithfully ported, uw.c ~15084 -- generates a second,
+  reverse-wound duplicate face for double-sided parts) -- checked the
+  real DFRAME.E/DOOR.E/FBRIDGE.E files directly, every part in all
+  three is flagged 'N', never 'A', so this mechanism produces nothing
+  for these models; (2) a winding/orientation test somewhere in the
+  render chain with a flipped sign -- traced both transform_points_by_
+  matrix AND, for the first time this session, the actual rasterizer
+  caller (render_visible_tile_list, which drives raster_triangle) end
+  to end and found no visibility/orientation test of any kind in
+  either -- confirms (a third independent way, after entry 43's own
+  UW_MODEL_FLIP_WINDING test and the earlier display-list-path test)
+  that nothing in this shared rendering pipeline tests face winding at
+  all. Leading (not yet implemented, reverted once already this
+  session at the user's own direction pending exactly this grounding)
+  explanation: DOOR.E's own real PARTS list order (front, THEN back,
+  then the 4 sides) means the back face always overdraws the front in
+  file order regardless of which is actually nearer the camera --
+  correct by coincidence from the one viewing side where "back drawn
+  last" also happens to mean "back is nearer," wrong from the other.
+  A painter's-algorithm depth sort (the same fix already proven for
+  emit_model_object's own faces, entry 44) would resolve this, scoped
+  to this function's own newly-added records -- proposed, not yet
+  re-applied; needs the user's go-ahead given the earlier revert.
+
+All four fixed bugs are gated behind the existing UW_DOOR_ANIM_FRAMES
+opt-in flag (still off by default) plus UW_DLIST_DOOR=0 for isolated
+testing -- default gameplay (g_model_map on, UW_DOOR_ANIM_FRAMES
+unset) is completely unaffected; this whole path stays out of the way
+until deliberately turned on. run-regressions.sh: 6/6 clean, fresh
+build.

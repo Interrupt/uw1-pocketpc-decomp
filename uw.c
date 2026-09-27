@@ -2027,6 +2027,65 @@ static undefined DAT_0017a4c0_backing[16384];
 #define DAT_0017a4c0 DAT_0017a4c0_backing[0]
 static undefined DAT_0017e0ec_backing[16384];
 #define DAT_0017e0ec DAT_0017e0ec_backing[0]
+/* g_anim_model_slot: real fix for tick_anim_record's own address-walk bug
+   (see that function's own comment). In the ORIGINAL binary, `DAT_00110ff0`
+   and these 29 model buffers are one contiguous array -- FUN_00038680's own
+   29 parse_e_model_file calls fill slots 1..29 in exactly this order, and
+   tick_anim_record/emit_object_billboard read a model's data back by
+   walking `base + slot*0x3c2c`. This port declares every DAT_XXXXXXXX as
+   its OWN separately-allocated C global (confirmed: DAT_00114c1c_backing
+   and DAT_00110ff0_backing are unrelated arrays, not adjacent slices of one
+   buffer) -- so that walk lands in DAT_00110ff0's own unrelated, always-
+   zero memory instead of a real model, and the whole real-mesh path in
+   emit_object_billboard was silently dead (confirmed live: local_48/
+   point_count both always 0 for every catalog, UW_DEBUG_DOOR). Slot 0 is
+   deliberately NULL (no parse_e_model_file call ever targets it -- see
+   FUN_00038680's own call list, which starts at slot 1). Order matches
+   that call list exactly. */
+static void * const g_anim_model_slot[30] = {
+  0,                 /* 0: unused */
+  &DAT_00114c1c,     /* 1: DFRAME.E */
+  &DAT_00118848,     /* 2: FBRIDGE.E */
+  &DAT_0011c474,     /* 3: BENCH.E */
+  &DAT_001200a0,     /* 4: 40LOTUS.E */
+  &DAT_00123ccc,     /* 5: ROCKSMAL.E */
+  &DAT_001278f8,     /* 6: ROCKMED.E */
+  &DAT_0012b524,     /* 7: ROCKBIG.E */
+  &DAT_0012f150,     /* 8: ARROW.E */
+  &DAT_00132d7c,     /* 9: BEAM.E */
+  &DAT_001369a8,     /* 10: NEWPILL.E */
+  &DAT_0013a5d4,     /* 11: SHRINE.E */
+  &DAT_0013e200,     /* 12: NEWPORT.E (1st load) */
+  &DAT_00141e2c,     /* 13: NEWPORT.E (2nd load) */
+  &DAT_00145a58,     /* 14: DOOR.E (1st load) */
+  &DAT_00149684,     /* 15: DOOR.E (2nd load) */
+  &DAT_0014d2b0,     /* 16: TMAP16X16.E (1st load) */
+  &DAT_00150edc,     /* 17: TMAP16X16.E (2nd load) */
+  &DAT_00154b08,     /* 18: TMAP16X16.E (3rd load) */
+  &DAT_00158734,     /* 19: GRAVE.E */
+  &DAT_0015c360,     /* 20: TMAP16X16.E (4th load) */
+  &DAT_0015ff8c,     /* 21: TMAP32X32.E */
+  &DAT_00163bb8,     /* 22: TMAP64X64.E */
+  &DAT_001677e4,     /* 23: GATE.E */
+  &DAT_0016b410,     /* 24: TABLF3.E */
+  &DAT_0016f03c,     /* 25: CHEST.E */
+  &DAT_00172c68,     /* 26: NITESTAN.E */
+  &DAT_00176894,     /* 27: BARRCLOS.E */
+  &DAT_0017a4c0,     /* 28: CHAIRSIM.E */
+  &DAT_0017e0ec,     /* 29: BED2.E */
+};
+/* Per-slot working copy for tick_anim_record's real fix -- a fresh
+   16384-byte memcpy of the real model buffer, refreshed every call rather
+   than reusing the original's incremental per-point "tick" (whose exact
+   purpose -- likely subtle per-frame vertex animation -- isn't needed just
+   to get real geometry flowing, and a full fresh copy is simpler and can't
+   drift stale). Kept SEPARATE from the real g_anim_model_slot buffers
+   (not aliased directly onto them) so emit_object_billboard's own writes
+   into a face record's scratch tail (offsets 0x24-0x43, beyond the real
+   vertex-index data parse_e_model_file's own comment documents ending by
+   offset ~0x14-0x18) can never corrupt the same buffer g_model_map's
+   emit_model_object also reads for real 3D rendering. */
+static unsigned char g_anim_model_scratch[30][16384];
 undefined1 DAT_00189588;
 undefined2 DAT_00110a78;
 undefined2 DAT_00110bc0;
@@ -13141,12 +13200,35 @@ LAB_0001dbcc:
    moment an animated tile object (door, etc.) came into view. The
    function ticks animation record `param_1` in place; it returns that
    record's base, &DAT_00189590 + param_1*0x3c2c (== piVar2 before the
-   loop walks it). */
+   loop walks it).
+
+   REAL FIX (this session): that address-walk formula only worked in the
+   original binary, where DAT_00110ff0 and the 29 model buffers were one
+   contiguous array (see g_anim_model_slot's own comment for the full
+   trace) -- in this port every DAT_XXXXXXXX is its own separate C global,
+   so the walk landed in unrelated always-zero memory and this whole
+   function silently returned an empty record for every catalog (confirmed
+   live: local_48/point_count both always 0, UW_DEBUG_DOOR). Now resolves
+   `param_1` through g_anim_model_slot (the real per-catalog model
+   address, in the same order FUN_00038680 loads them) and hands back a
+   fresh copy in g_anim_model_scratch -- a real npts/nparts/point-list/
+   face-list a caller can actually use, without ever aliasing (and risking
+   emit_object_billboard's own scratch writes corrupting) the same buffer
+   g_model_map's emit_model_object reads for real 3D rendering. Falls back
+   to the original (harmless, always-empty) behavior for any catalog with
+   no real model -- e.g. plain sprite/critter catalogs were never meant to
+   reach this table at all. */
 // was FUN_0001dc04
 void *tick_anim_record(param_1)
 short param_1;
 
 {
+  if (param_1 > 0 && param_1 < 30 && g_anim_model_slot[param_1] != 0) {
+    void *dest = g_anim_model_scratch[param_1];
+    memcpy(dest, g_anim_model_slot[param_1], 16384);
+    return dest;
+  }
+
   undefined4 uVar1;
   int *piVar2;
   undefined *puVar3;
@@ -49830,6 +49912,20 @@ void FUN_0005b828()
 {
   FUN_00012958();
   FUN_00038680();
+  if (getenv("UW_DEBUG_ANIM_TABLE")) {
+    fprintf(stderr, "[animtable] DAT_00110ff0 slot0 npts=%d nparts=%d\n",
+            *(int *)&DAT_00110ff0, *(int *)((char *)&DAT_00110ff0 + 4));
+    fprintf(stderr, "[animtable] DAT_00114c1c (DFRAME.E, slot1) npts=%d nparts=%d\n",
+            *(int *)&DAT_00114c1c, *(int *)((char *)&DAT_00114c1c + 4));
+    fprintf(stderr, "[animtable] DAT_00145a58 (DOOR.E, slot14) npts=%d nparts=%d\n",
+            *(int *)&DAT_00145a58, *(int *)((char *)&DAT_00145a58 + 4));
+    fprintf(stderr, "[animtable] DAT_00189590 slot0 (post-memmove) npts=%d nparts=%d\n",
+            *(int *)&DAT_00189590, *(int *)((char *)&DAT_00189590 + 4));
+    fprintf(stderr, "[animtable] DAT_00189590 slot1 (post-memmove, should mirror DFRAME.E) npts=%d nparts=%d\n",
+            *(int *)((char *)&DAT_00189590 + 0x3c2c), *(int *)((char *)&DAT_00189590 + 0x3c2c + 4));
+    fprintf(stderr, "[animtable] DAT_00189590 slot14 (post-memmove, should mirror DOOR.E) npts=%d nparts=%d\n",
+            *(int *)((char *)&DAT_00189590 + 14*0x3c2c), *(int *)((char *)&DAT_00189590 + 14*0x3c2c + 4));
+  }
   if (getenv("UW_DUMP_MODEL_RAW")) {
     unsigned char *_b = (unsigned char *)&DAT_00123ccc;
     int _k;
@@ -56163,17 +56259,28 @@ LAB_00061d34:
          (uw.c ~51360, called at the very top of this function, long
          before render-class dispatch even runs) already matches every
          door id (0x140-0x14f are all in g_model_map) and returns via
-         `emit_model_object`+`return` first. That's a NEWER, better fix
-         (real DFRAME.E/DOOR.E 3D geometry) that was added after this
-         class-2 door branch and fully supersedes it -- not something
-         this call could ever have been double-drawing against. Left in
-         place, still gated behind UW_DOOR_ANIM_FRAMES, purely as an
-         accurate record of the real dispatch for whenever/if doors are
-         ever removed from g_model_map -- it cannot currently affect
-         anything, verified rather than assumed. See
-         object-rendering-findings.txt. */
+         `emit_model_object`+`return` first, so with the default config
+         (UW_ENABLE_MODEL_RENDER unset) this whole branch stays out of
+         the way -- see object-rendering-findings.txt.
+
+         UPDATE (this session): the "cannot currently affect anything"
+         framing above is now WRONG when UW_DOOR_ANIM_FRAMES=1 is
+         actually turned on for testing -- tick_anim_record's own fix
+         (see its comment) means emit_anim_object_frames really does
+         draw the frame/leaf as real .E-model geometry now, through
+         emit_object_billboard. Confirmed live it draws correctly
+         (right texture, after the g_tile_texptr_emit backfill fix
+         below it) -- but this function used to ALWAYS fall through to
+         LAB_emit_mesh_sprite_quad afterward regardless, same as the
+         UW_DLIST_DOOR path above already had to guard against with its
+         own `return` ("a duplicate, not a fallback" -- see that
+         comment). User confirmed live: "fallback door is still
+         rendering alongside the actual door." Same fix, same
+         reasoning: return here too so the ordinary flat sprite doesn't
+         double up against the real mesh this path just drew. */
       if (getenv("UW_DOOR_ANIM_FRAMES")) {
         emit_anim_object_frames(uVar27 & 7, param_1);
+        return;
       }
       /* The ported generic display-list interpreter above draws the
          real bank-0x61 doorway-frame (+ bank 0x6e leaf) geometry at
@@ -56711,6 +56818,23 @@ short param_4;
   uint uVar14;
   char *pcVar15;
   int iVar16;
+  /* iVar16 itself stays `int` for its FIRST role (a small face-index
+     scalar, `local_48-1`, used only to seed iVar22/local_58 before the
+     loop). Inside the loop it gets reassigned to the CURRENT face
+     record's address (`_anim + iVar22 + 0xc14`) and used purely as a
+     pointer from then on -- the classic "pointer truncated to a 32-bit
+     int on this 64-bit host" bug this whole project has already fixed
+     many times elsewhere (see DAT_00110fc0/DAT_0023aed0's own history),
+     just never noticed here because this per-face loop never actually
+     ran with real face data until now (local_48 was always 0 -- see
+     tick_anim_record's own fix). Confirmed live: this was the real
+     SIGSEGV cause the moment local_48 became real ("uw.c crash backtrace:
+     emit_object_billboard"), not missing adjacency/neighbor data as
+     first suspected -- `_anim=0x10225ac80` truncated through a 32-bit
+     `int` loses its upper bits entirely. Split into its own real pointer,
+     `_face_rec`, scoped to exactly the same loop body iVar16's second
+     role lived in (every use from its first pointer assignment onward). */
+  char *_face_rec;
   undefined4 uVar17;
   int iVar18;
   undefined4 uVar19;
@@ -56730,6 +56854,15 @@ short param_4;
   int iVar29;
   char *_anim;
   int iVar30;
+  /* Same truncated-pointer bug as _face_rec (see its own comment), one
+     variable over: iVar30 has a genuine dual role. In the ceiling-clamp
+     pre-pass (uVar14==1 branch, the do/while over local_60) it's a real
+     small vertex-index integer, used only inline in a pointer expression
+     that's never stored back into iVar30 itself -- left as `int` there,
+     untouched. From its first REAL pointer assignment onward (every
+     branch's own `= ...*0xc + _anim` corner lookups) it's a full address
+     -- split into its own pointer, `_vptr`, scoped to exactly that usage. */
+  char *_vptr;
   undefined4 *puVar31;
   undefined4 *puVar32;
   ushort local_7c;
@@ -57015,8 +57148,17 @@ short param_4;
     uVar11 = DAT_0023b824;
     uVar12 = DAT_0023b824;
   }
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[billboard] texture resolve: catalog=%d bVar4=0x%02x iVar29(frame/id)=%d local_58(get_texture_page result)=%p"
+                     " wall_tex_idx(DAT_0023b4ec[2]&0x3f)=%d quadrant(DAT_0023b4a0)=%d -> local_70=%p uVar11(w)=%d uVar12(h)=%d\n",
+            (int)param_1, (unsigned)bVar4, iVar29, (void *)local_58,
+            (int)(DAT_0023b4ec ? (DAT_0023b4ec[2] & 0x3f) : -1), (int)DAT_0023b4a0,
+            (void *)local_70, (int)uVar11, (int)uVar12);
   _anim = (char *)tick_anim_record(param_1);
   local_48 = *(int *)(_anim + 4);
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[billboard] tick_anim_record(catalog=%d) -> _anim=%p point_count=%d face_count(local_48)=%d\n",
+            (int)param_1, (void *)_anim, *(int *)_anim, local_48);
   iVar16 = local_48 + -1;
   if (-1 < iVar16) {
     iVar2 = (int)(short)uVar11;
@@ -57025,12 +57167,12 @@ short param_4;
     local_58 = (byte *)(iVar16 * 0x18);
     do {
       sVar7 = DAT_000da47c;
-      iVar16 = iVar22 + _anim + 0xc14;
-      *(char *)(iVar16 + 0x4c) = (char)DAT_000da47c;
-      *(char *)(iVar16 + 0x4d) = (char)((ushort)sVar7 >> 8);
+      _face_rec = iVar22 + _anim + 0xc14;
+      *(char *)(_face_rec + 0x4c) = (char)DAT_000da47c;
+      *(char *)(_face_rec + 0x4d) = (char)((ushort)sVar7 >> 8);
       cVar9 = (char)(sVar7 >> 0xf);
-      *(char *)(iVar16 + 0x4e) = cVar9;
-      *(char *)(iVar16 + 0x4f) = cVar9;
+      *(char *)(_face_rec + 0x4e) = cVar9;
+      *(char *)(_face_rec + 0x4f) = cVar9;
       cVar9 = (&DAT_00086c09)[iVar1];
       pbVar23 = &DAT_00086c08 + iVar1;
       pbVar6 = (byte *)0x0;
@@ -57040,36 +57182,39 @@ short param_4;
       }
       if (cVar9 != '\0' && pbVar6 != (byte *)0x0) {
         uVar10 = (undefined2)((uint)pbVar23 >> 8);
-        *(char *)(iVar16 + 0x50) = (char)pbVar23;
+        *(char *)(_face_rec + 0x50) = (char)pbVar23;
       }
       else {
         uVar10 = 0;
-        *(char *)(iVar16 + 0x50) = cVar9;
+        *(char *)(_face_rec + 0x50) = cVar9;
       }
-      *(char *)(iVar16 + 0x51) = (char)uVar10;
-      *(char *)(iVar16 + 0x52) = (char)((ushort)uVar10 >> 8);
-      *(undefined1 *)(iVar16 + 0x53) = 0;
-      *(char *)(iVar16 + 0x18) = (char)local_70;
-      *(char *)(iVar16 + 0x19) = (char)((uint)local_70 >> 8);
-      *(char *)(iVar16 + 0x1a) = (char)((uint)local_70 >> 0x10);
-      *(char *)(iVar16 + 0x1b) = (char)((uint)local_70 >> 0x18);
-      *(char *)(iVar16 + 0x1c) = (char)uVar11;
-      *(char *)(iVar16 + 0x1d) = (char)(uVar11 >> 8);
+      *(char *)(_face_rec + 0x51) = (char)uVar10;
+      *(char *)(_face_rec + 0x52) = (char)((ushort)uVar10 >> 8);
+      *(undefined1 *)(_face_rec + 0x53) = 0;
+      *(char *)(_face_rec + 0x18) = (char)local_70;
+      *(char *)(_face_rec + 0x19) = (char)((uint)local_70 >> 8);
+      *(char *)(_face_rec + 0x1a) = (char)((uint)local_70 >> 0x10);
+      *(char *)(_face_rec + 0x1b) = (char)((uint)local_70 >> 0x18);
+      *(char *)(_face_rec + 0x1c) = (char)uVar11;
+      *(char *)(_face_rec + 0x1d) = (char)(uVar11 >> 8);
                     // WARNING: Store size is inaccurate
-      *(short *)(iVar16 + 0x1e) = (short)uVar11 >> 0xf;
+      *(short *)(_face_rec + 0x1e) = (short)uVar11 >> 0xf;
                     // WARNING: Store size is inaccurate
-      *(short *)(iVar16 + 0x1f) = (short)uVar11 >> 0xf;
-      *(char *)(iVar16 + 0x20) = (char)uVar12;
-      *(char *)(iVar16 + 0x21) = (char)(uVar12 >> 8);
+      *(short *)(_face_rec + 0x1f) = (short)uVar11 >> 0xf;
+      *(char *)(_face_rec + 0x20) = (char)uVar12;
+      *(char *)(_face_rec + 0x21) = (char)(uVar12 >> 8);
                     // WARNING: Store size is inaccurate
-      *(short *)(iVar16 + 0x22) = (short)uVar12 >> 0xf;
+      *(short *)(_face_rec + 0x22) = (short)uVar12 >> 0xf;
                     // WARNING: Store size is inaccurate
-      *(short *)(iVar16 + 0x23) = (short)uVar12 >> 0xf;
+      *(short *)(_face_rec + 0x23) = (short)uVar12 >> 0xf;
       if (uVar14 == 1) {
         local_60 = 0;
         do {
           iVar27 = (int)(short)DAT_0023b91c;
           iVar30 = *(int *)(_anim + 0xc14 + ((int)local_58 + local_60) * 4 + 4);
+          if (getenv("UW_DEBUG_DOOR"))
+            fprintf(stderr, "[billboard] uVar14==1 ceiling-clamp: local_58=%ld local_60=%d vidx=%d point_ofs=%ld (buf size 16384)\n",
+                    (long)local_58, local_60, iVar30, (long)iVar30*0xc + 0xc);
           uVar17 = Ordinal_2032(iVar27);
           uVar17 = Ordinal_2051(*(undefined4 *)(iVar30 * 0xc + _anim + 0xc),uVar17);
           iVar18 = Ordinal_2036(uVar17,0x44800000);
@@ -57083,250 +57228,254 @@ short param_4;
           }
           local_60 = (local_60 + 1) * 0x10000 >> 0x10;
         } while (local_60 < 4);
-        iVar30 = *(int *)(iVar16 + 8) * 0xc + _anim;
+        _vptr = *(int *)(_face_rec + 8) * 0xc + _anim;
+        if (getenv("UW_DEBUG_DOOR"))
+          fprintf(stderr, "[billboard] uVar14==1 face corner: _anim=%p _face_rec-_anim=0x%x face_vidx@+8=%d _vptr-_anim=%ld (buf size 16384)\n",
+                  (void *)_anim, (int)((long)_face_rec - (long)_anim),
+                  *(int *)(_face_rec + 8), (long)_vptr - (long)_anim);
         uVar17 = Ordinal_2032(iVar2 + -1);
         puVar26 = (undefined4 *)(_anim + 0x3c1c);
-        uVar19 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar19 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar19 = Ordinal_2026(uVar19,0x3b800000);
         Ordinal_2026(uVar19,uVar17);
         uVar19 = Ordinal_2020();
-        *(char *)(iVar16 + 0x24) = (char)uVar19;
-        *(char *)(iVar16 + 0x25) = (char)((uint)uVar19 >> 8);
-        *(char *)(iVar16 + 0x26) = (char)((uint)uVar19 >> 0x10);
-        *(char *)(iVar16 + 0x27) = (char)((uint)uVar19 >> 0x18);
+        *(char *)(_face_rec + 0x24) = (char)uVar19;
+        *(char *)(_face_rec + 0x25) = (char)((uint)uVar19 >> 8);
+        *(char *)(_face_rec + 0x26) = (char)((uint)uVar19 >> 0x10);
+        *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar28 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar28);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x28) = (char)uVar20;
-        *(char *)(iVar16 + 0x29) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 7),
-                          CONCAT12(*(undefined1 *)(iVar16 + 6),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 5),*(undefined1 *)(iVar16 + 4))
+        *(char *)(_face_rec + 0x28) = (char)uVar20;
+        *(char *)(_face_rec + 0x29) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 7),
+                          CONCAT12(*(undefined1 *)(_face_rec + 6),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 5),*(undefined1 *)(_face_rec + 4))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x2c) = (char)uVar20;
-        *(char *)(iVar16 + 0x2d) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2e) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar28);
+        *(char *)(_face_rec + 0x2c) = (char)uVar20;
+        *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x30) = (char)uVar20;
-        *(char *)(iVar16 + 0x31) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x32) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x33) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0x13),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0x12),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0x11),
-                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x30) = (char)uVar20;
+        *(char *)(_face_rec + 0x31) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x32) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x33) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0x13),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0x12),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0x11),
+                                            *(undefined1 *)(_face_rec + 0x10)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x34) = (char)uVar20;
-        *(char *)(iVar16 + 0x35) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x36) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar28);
+        *(char *)(_face_rec + 0x34) = (char)uVar20;
+        *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x38) = (char)uVar20;
-        *(char *)(iVar16 + 0x39) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x3a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x3b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0xf),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0xe),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0xd),
-                                            *(undefined1 *)(iVar16 + 0xc)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x38) = (char)uVar20;
+        *(char *)(_face_rec + 0x39) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x3a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x3b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0xf),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0xe),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0xd),
+                                            *(undefined1 *)(_face_rec + 0xc)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar17);
         uVar17 = Ordinal_2020();
-        *(char *)(iVar16 + 0x3c) = (char)uVar17;
-        *(char *)(iVar16 + 0x3d) = (char)((uint)uVar17 >> 8);
-        *(char *)(iVar16 + 0x3e) = (char)((uint)uVar17 >> 0x10);
-        *(char *)(iVar16 + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar28);
+        *(char *)(_face_rec + 0x3c) = (char)uVar17;
+        *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
+        *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
+        *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar28);
         uVar17 = Ordinal_2026(uVar17,0x3b800000);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
       }
       else if (((uVar14 == 0xe) || (uVar14 == 0xf)) || (uVar14 == 0x13)) {
-        iVar30 = *(int *)(iVar16 + 0xc) * 0xc + _anim;
+        _vptr = *(int *)(_face_rec + 0xc) * 0xc + _anim;
         uVar17 = Ordinal_2032(iVar2 + -1);
         puVar26 = (undefined4 *)(_anim + 0x3c1c);
-        uVar19 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar19 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         puVar28 = (undefined4 *)(_anim + 0x3c20);
         uVar19 = Ordinal_2047(uVar19,*puVar28);
         Ordinal_2026(uVar19,uVar17);
         uVar19 = Ordinal_2020();
-        *(char *)(iVar16 + 0x24) = (char)uVar19;
-        *(char *)(iVar16 + 0x25) = (char)((uint)uVar19 >> 8);
-        *(char *)(iVar16 + 0x26) = (char)((uint)uVar19 >> 0x10);
-        *(char *)(iVar16 + 0x27) = (char)((uint)uVar19 >> 0x18);
+        *(char *)(_face_rec + 0x24) = (char)uVar19;
+        *(char *)(_face_rec + 0x25) = (char)((uint)uVar19 >> 8);
+        *(char *)(_face_rec + 0x26) = (char)((uint)uVar19 >> 0x10);
+        *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x28) = (char)uVar20;
-        *(char *)(iVar16 + 0x29) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0x13),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0x12),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0x11),
-                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x28) = (char)uVar20;
+        *(char *)(_face_rec + 0x29) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0x13),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0x12),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0x11),
+                                            *(undefined1 *)(_face_rec + 0x10)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x2c) = (char)uVar20;
-        *(char *)(iVar16 + 0x2d) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2e) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x2c) = (char)uVar20;
+        *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x30) = (char)uVar20;
-        *(char *)(iVar16 + 0x31) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x32) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x33) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 7),
-                          CONCAT12(*(undefined1 *)(iVar16 + 6),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 5),*(undefined1 *)(iVar16 + 4))
+        *(char *)(_face_rec + 0x30) = (char)uVar20;
+        *(char *)(_face_rec + 0x31) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x32) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x33) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 7),
+                          CONCAT12(*(undefined1 *)(_face_rec + 6),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 5),*(undefined1 *)(_face_rec + 4))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x34) = (char)uVar20;
-        *(char *)(iVar16 + 0x35) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x36) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x34) = (char)uVar20;
+        *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x38) = (char)uVar20;
-        *(char *)(iVar16 + 0x39) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x3a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x3b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0xb),
-                          CONCAT12(*(undefined1 *)(iVar16 + 10),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 9),*(undefined1 *)(iVar16 + 8))
+        *(char *)(_face_rec + 0x38) = (char)uVar20;
+        *(char *)(_face_rec + 0x39) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x3a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x3b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0xb),
+                          CONCAT12(*(undefined1 *)(_face_rec + 10),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 9),*(undefined1 *)(_face_rec + 8))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar17 = Ordinal_2020();
-        *(char *)(iVar16 + 0x3c) = (char)uVar17;
-        *(char *)(iVar16 + 0x3d) = (char)((uint)uVar17 >> 8);
-        *(char *)(iVar16 + 0x3e) = (char)((uint)uVar17 >> 0x10);
-        *(char *)(iVar16 + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x3c) = (char)uVar17;
+        *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
+        *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
+        *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
         uVar17 = Ordinal_2047(uVar17,*puVar32);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
       }
       else {
-        iVar30 = *(int *)(iVar16 + 8) * 0xc + _anim;
+        _vptr = *(int *)(_face_rec + 8) * 0xc + _anim;
         uVar17 = Ordinal_2032(iVar2 + -1);
         puVar26 = (undefined4 *)(_anim + 0x3c1c);
-        uVar19 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar19 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         puVar28 = (undefined4 *)(_anim + 0x3c20);
         uVar19 = Ordinal_2047(uVar19,*puVar28);
         Ordinal_2026(uVar19,uVar17);
         uVar19 = Ordinal_2020();
-        *(char *)(iVar16 + 0x24) = (char)uVar19;
-        *(char *)(iVar16 + 0x25) = (char)((uint)uVar19 >> 8);
-        *(char *)(iVar16 + 0x26) = (char)((uint)uVar19 >> 0x10);
-        *(char *)(iVar16 + 0x27) = (char)((uint)uVar19 >> 0x18);
+        *(char *)(_face_rec + 0x24) = (char)uVar19;
+        *(char *)(_face_rec + 0x25) = (char)((uint)uVar19 >> 8);
+        *(char *)(_face_rec + 0x26) = (char)((uint)uVar19 >> 0x10);
+        *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x28) = (char)uVar20;
-        *(char *)(iVar16 + 0x29) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 7),
-                          CONCAT12(*(undefined1 *)(iVar16 + 6),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 5),*(undefined1 *)(iVar16 + 4))
+        *(char *)(_face_rec + 0x28) = (char)uVar20;
+        *(char *)(_face_rec + 0x29) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 7),
+                          CONCAT12(*(undefined1 *)(_face_rec + 6),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 5),*(undefined1 *)(_face_rec + 4))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x2c) = (char)uVar20;
-        *(char *)(iVar16 + 0x2d) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2e) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x2c) = (char)uVar20;
+        *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x30) = (char)uVar20;
-        *(char *)(iVar16 + 0x31) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x32) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x33) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0x13),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0x12),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0x11),
-                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x30) = (char)uVar20;
+        *(char *)(_face_rec + 0x31) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x32) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x33) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0x13),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0x12),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0x11),
+                                            *(undefined1 *)(_face_rec + 0x10)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x34) = (char)uVar20;
-        *(char *)(iVar16 + 0x35) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x36) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x34) = (char)uVar20;
+        *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x38) = (char)uVar20;
-        *(char *)(iVar16 + 0x39) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x3a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x3b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0xf),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0xe),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0xd),
-                                            *(undefined1 *)(iVar16 + 0xc)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x38) = (char)uVar20;
+        *(char *)(_face_rec + 0x39) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x3a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x3b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0xf),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0xe),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0xd),
+                                            *(undefined1 *)(_face_rec + 0xc)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar17 = Ordinal_2020();
-        *(char *)(iVar16 + 0x3c) = (char)uVar17;
-        *(char *)(iVar16 + 0x3d) = (char)((uint)uVar17 >> 8);
-        *(char *)(iVar16 + 0x3e) = (char)((uint)uVar17 >> 0x10);
-        *(char *)(iVar16 + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x3c) = (char)uVar17;
+        *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
+        *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
+        *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + 0xc),*puVar31);
         uVar17 = Ordinal_2047(uVar17,*puVar32);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
       }
-      *(char *)(iVar16 + 0x40) = (char)uVar17;
-      *(char *)(iVar16 + 0x41) = (char)((uint)uVar17 >> 8);
-      *(char *)(iVar16 + 0x42) = (char)((uint)uVar17 >> 0x10);
-      *(char *)(iVar16 + 0x43) = (char)((uint)uVar17 >> 0x18);
+      *(char *)(_face_rec + 0x40) = (char)uVar17;
+      *(char *)(_face_rec + 0x41) = (char)((uint)uVar17 >> 8);
+      *(char *)(_face_rec + 0x42) = (char)((uint)uVar17 >> 0x10);
+      *(char *)(_face_rec + 0x43) = (char)((uint)uVar17 >> 0x18);
       local_58 = (byte *)((char *)local_58 + -0x18);
       iVar22 = iVar22 + -0x60;
       local_48 = local_48 + -1;
@@ -57396,6 +57545,9 @@ LAB_000640ec:
       FUN_0001e6f0(_anim,0x40000000,0x40000000,0x40000000);
     }
   }
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[billboard] angle calc: catalog=%d param_3=%d quadrant=%d local_7c(pre)=%d DAT_0018957a=%d\n",
+            (int)uVar14, (int)param_3, (int)DAT_0023b4a0, (int)(short)local_7c, (int)(short)DAT_0018957a);
   if ((uVar14 == 0xe) || (uVar14 == 0xf)) {
     uVar17 = Ordinal_2032((int)(short)DAT_0018957a);
     uVar19 = Ordinal_2032((int)(short)local_7c);
@@ -57409,10 +57561,40 @@ LAB_000640ec:
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
   }
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[billboard] angle calc: local_7c(post)=%d final_sVar13(deg)=%d\n",
+            (int)(short)local_7c, (int)sVar13);
+  { int _rec_start = DAT_0023b83c;
   build_euler_rotation_matrix(_anim,0,(int)sVar13,0);
   transform_points_by_matrix(&DAT_000a85d0,_anim);
   DAT_0023b83c = DAT_000a85d4;
   DAT_0023b838 = DAT_000a85d0;
+  /* REAL FIX (this session): transform_points_by_matrix is original,
+     unmodified code -- it has no idea g_tile_texptr_emit[] exists. It
+     copies each face's texture pointer (local_70) into the arena
+     record's own byte offset +0x18..+0x1b, but that's only a 32-bit
+     field, truncating this platform's real 64-bit pointer (the SAME
+     bug class as _face_rec/_vptr above, just baked into original code
+     this time, not ours). Worse: this whole codebase's own rasterizer
+     doesn't even read that embedded field for this record format --
+     EVERY other writer of this same 0x60-byte-stride record (walls,
+     emit_model_object's own faces, the depth-sort code above) instead
+     populates the side-channel g_tile_texptr_emit[record_index], which
+     this original function was never taught to do. Confirmed live as
+     the actual cause of "objects cycle between correct textures and
+     garbage" (user report): with this array never written for records
+     from this path, each one rendered with whatever unrelated texture
+     pointer happened to already be sitting in that slot from a
+     completely different object drawn earlier. Backfill it for every
+     record this call just added. */
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[billboard] texptr backfill: records [%d,%d) <- local_70=%p\n",
+            _rec_start, DAT_0023b83c, (void *)local_70);
+  { int _ti; for (_ti = _rec_start; _ti < DAT_0023b83c; _ti++) {
+      if ((unsigned)_ti < UW_MAX_VIS_TILES) g_tile_texptr_emit[_ti] = local_70;
+    }
+  }
+  }
   if (local_7a != 0xffff) {
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
