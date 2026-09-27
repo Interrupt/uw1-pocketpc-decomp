@@ -58247,6 +58247,15 @@ LAB_000640ec:
           _order[_b+1] = _oi;
         }
       }
+      if (getenv("UW_DEBUG_MODEL")) {
+        int _changed = 0, _kk;
+        for (_kk = 0; _kk < _n; _kk++) if (_order[_kk] != _kk) _changed = 1;
+        fprintf(stderr, "[model-depthsort] catalog=%d n=%d order_changed=%d order=[", (int)catalog, _n, _changed);
+        for (_kk = 0; _kk < _n; _kk++) fprintf(stderr, "%d ", _order[_kk]);
+        fprintf(stderr, "] dist=[");
+        for (_kk = 0; _kk < _n; _kk++) fprintf(stderr, "%.0f ", _dist[_kk]);
+        fprintf(stderr, "]\n");
+      }
       /* Apply via cycle-sort in place, whole-record memcpy plus the
          parallel g_tile_texptr_emit[] side channel. */
       { unsigned char _tmp[0x60]; void *_tmp_tex;
