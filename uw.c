@@ -4343,7 +4343,23 @@ int DAT_002046f8;
 char s_optbtns_00086954[] = "optbtns";
 short DAT_002046f0;
 short DAT_002046f4;
-undefined2 DAT_000868dc;
+/* Was zero-initialized (C default, no initializer) -- confirmed via
+   Ghidra headless memory dump (0x868dc) that the real binary's own
+   .data has this at 7, not 0. This is the pause-menu-panel state index
+   (0-6 = a panel is open, 7 = closed/back in normal gameplay -- see
+   close_ui_panel_return_to_game's own comment above, uw.c ~4400), and
+   FUN_0005857c (the idle mouse-cursor-sprite show function, reached
+   whenever nothing is held: g_selected_object==0) refuses to draw the
+   cursor at all unless this equals 7. Starting at the C default of 0
+   instead of the real 7 meant the idle cursor -- automap browsing
+   being the clearest case, since you're never holding an item there,
+   but really anywhere the player hasn't yet opened and closed the
+   Escape menu at least once this session -- never rendered via this
+   path from the moment the game starts, matching the reported "automap
+   cursor doesn't reliably show/flickers" (a session that happens to
+   have already cycled the pause menu once masks this; a fresh session
+   or the very first minutes of play would not). */
+undefined2 DAT_000868dc = 7;
 /* Was a bare 1-byte `undefined` scalar -- draw_save_load_slot_list takes its address
    and passes it straight to message_scroll_print_wrapped as the save-
    slot IV label, so it needs to be a real string, not a scalar. Real
@@ -35516,7 +35532,9 @@ undefined1 * param_1;
   short local_28;
   short local_26;
 
+  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_bindings ENTRY DAT_00201b60=%d\n", (int)DAT_00201b60);
   uVar1 = peek_input_event();
+  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_bindings: peek_input_event=%d\n", (int)(short)uVar1);
   if (-1 < (short)uVar1) {
     if ((short)uVar1 < 4) {
       FUN_00057528(&local_28,&local_26);
@@ -50439,7 +50457,8 @@ int poll_mouse_event()
 
 {
   short sVar1;
-  
+
+  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_mouse_event ENTRY\n");
   update_mouse_state();
   if (DAT_00086968 == -1) {
     DAT_0020484c = 0;
@@ -50539,6 +50558,7 @@ int param_1;
     DAT_0023c448 = 0;
   }
   iVar1 = Ordinal_864(auStack_24,0,0,0,1);
+  if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_event: Ordinal_864=%d DAT_0023c448=0x%x\n", iVar1, (unsigned)DAT_0023c448);
   if (iVar1 == 0) {
     uVar2 = 0xffffffff;
   }
