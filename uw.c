@@ -58124,6 +58124,35 @@ LAB_000640ec:
       fprintf(stderr, "[doorpos] wall-plane fix: angle=%d wideIsX=%d tileOrigin=(%d,%d) wide=%d edge=%d -> anchor=(%d,%d)\n",
               (int)sVar13, _wideIsX, _tileOriginX, _tileOriginZ, _wide, _edge,
               (int)(short)DAT_0023b904, (int)(short)DAT_0023b920);
+    /* REAL BUG (found via QA: "this seems to just tune the door leaf
+       position, not the door frame"): the world anchor was already
+       baked into THIS model's own scratch buffer (_anim + 0xc08..0xc13,
+       the translation build_euler_rotation_matrix/transform_points_by_
+       matrix actually apply) several dozen lines above, from whatever
+       DAT_0023b904/920 held BEFORE this fix ran -- so adjusting the
+       globals here came too late to affect the frame's (catalog_u==1)
+       own transform this same call; only the LEAF's separate call
+       (catalog_u==14, later, re-running this same bake with the
+       by-then-already-modified globals) ever picked up the change.
+       Re-bake right here with the corrected values so this call's own
+       transform (a few lines below) actually uses them -- same
+       Ordinal_2032 float-encode + byte-split writes as the original
+       bake, just re-run after the correction instead of before it. */
+    uVar17 = Ordinal_2032((int)(short)DAT_0023b904);
+    *(char *)(_anim + 0xc08) = (char)uVar17;
+    *(char *)(_anim + 0xc09) = (char)((uint)uVar17 >> 8);
+    *(char *)(_anim + 0xc0a) = (char)((uint)uVar17 >> 0x10);
+    *(char *)(_anim + 0xc0b) = (char)((uint)uVar17 >> 0x18);
+    uVar17 = Ordinal_2032((int)(short)DAT_0023b91c);
+    *(char *)(_anim + 0xc0c) = (char)uVar17;
+    *(char *)(_anim + 0xc0d) = (char)((uint)uVar17 >> 8);
+    *(char *)(_anim + 0xc0e) = (char)((uint)uVar17 >> 0x10);
+    *(char *)(_anim + 0xc0f) = (char)((uint)uVar17 >> 0x18);
+    uVar17 = Ordinal_2032((int)(short)DAT_0023b920);
+    *(char *)(_anim + 0xc10) = (char)uVar17;
+    *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
+    *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
+    *(char *)(_anim + 0xc13) = (char)((uint)uVar17 >> 0x18);
   }
   { int _rec_start = DAT_0023b83c;
   build_euler_rotation_matrix(_anim,0,(int)sVar13,0);

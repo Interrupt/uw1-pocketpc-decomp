@@ -1304,3 +1304,37 @@ CPU at once. A clean pkill -9 -f uw_dbg before the suite re-confirmed
 re-chase it.
 
 run-regressions.sh: 6/6 clean (after confirming the above).
+
+CORRECTION, same pass: QA using the newly-ported tuner found "this seems
+to just tune the door leaf position, not the door frame" -- adjusting
+wide_center/edge_offset visibly moved the leaf but not the frame. Real
+ordering bug, not a UI problem: the world anchor (DAT_0023b904/91c/920)
+gets baked into the model's own scratch buffer (`_anim + 0xc08..0xc13`,
+the translation build_euler_rotation_matrix/transform_points_by_matrix
+actually apply) several dozen lines ABOVE the wall-plane fix block --
+so the fix's edit to those globals came too late to affect that same
+call's (catalog_u==1, the frame) own transform; only the leaf's
+separate, later call (catalog_u==14) re-ran that same bake with the by-
+then-already-modified globals, which is why only it visibly responded.
+This bug predates the tuner -- it affected the earlier hardcoded-
+constant version identically, just silently, since there was nothing to
+compare against a live, independently-moving frame before now. The
+tuner didn't create this bug; it's what made it visible.
+
+Fixed by re-running the same bake (Ordinal_2032 float-encode + byte-
+split writes into _anim+0xc08..0xc13) again immediately after the fix
+block, so this call's own transform uses the corrected values. Verified
+compiling/building/6-6-regressions; a screenshot at the user's own
+reported test position (SETPLAYERPOS 34.52 9.00 640 270 0) shows the
+frame geometry now visibly differs when edge_offset changes, confirming
+it's live again (previously static across every edit).
+
+Deliberately did NOT update g_tune_edge_offset's default to the user's
+earlier finding of "80 looks correct-ish" -- that assessment was made
+while the frame was silently NOT responding to the tuner, so it's really
+"what made the leaf look right against a frame stuck at a fixed old
+position," not a real measurement of the correct edge_offset for the two
+moving together. Left the default at 16.0 (this session's own best
+prior estimate) and left the actual recalibration for the user to redo
+live now that both halves genuinely move together -- the tool doing
+its job is the right way to get this number now, not another guess.
