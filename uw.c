@@ -58040,20 +58040,27 @@ LAB_000640ec:
      Recompute both axes from the tile grid index: the axis DFRAME.E's
      own wide local X rotates into (from the model's real final rotation
      angle, not assumed) gets the tile's exact center; the wall-
-     perpendicular axis the model's thin local Z rotates into gets
-     snapped to whichever tile edge the un-corrected anchor already sat
-     closer to. Scoped to catalog_u==1 (DFRAME, always drawn first)
-     since DFRAME and the leaf share this same anchor.
+     perpendicular axis the model's thin local Z rotates into.
 
-     NOTE: an initial live test of this looked like a regression (one
-     door vanished), but the test vantage itself turned out to be one
-     tile off on its own Y coordinate (confirmed by the user) -- not
-     yet re-verified against a corrected vantage. Left in rather than
-     reverted a second time since the underlying reasoning (exact
-     center, real wall-boundary math, not a guess) is sound; if a
-     corrected re-test still shows a problem, revisit the tile-edge
-     side-selection heuristic specifically (the one genuinely unverified
-     part of this), not the center-axis half. */
+     That perpendicular axis is NOT the bare tile edge (offset 0/256) --
+     tried that first, and live QA at the user's own reported position
+     (SETPLAYERPOS 34.52 9.00, standing on a tile boundary looking
+     straight at the door) showed a real seam between the frame and the
+     wall, plus a second report that the leaf's other axis sat "exactly
+     on a tile edge instead of being in the door frame". A wall in this
+     engine has real thickness, and a door frame sits recessed inside
+     it, not flush with the tile's own outer boundary the raw rasterizer
+     geometry uses. Slot 0 or 7 of the ORIGINAL per-object formula
+     (offset 16 or 240 -- i.e. edge +/- 16, half of a 32-unit wall
+     thickness) turned out to already be the right target -- the
+     original bug was landing on the wrong SLOT (an interior slot like
+     2 or 3) for this axis, not needing a completely different formula.
+     So: exact center on the wide axis (bypassing the slot table
+     entirely, since it can never land exactly on 128), but edge+/-16
+     -- not edge+0 -- on the perpendicular one, picking the near/far
+     side the un-corrected anchor already sat closer to. Scoped to
+     catalog_u==1 (DFRAME, always drawn first) since DFRAME and the
+     leaf share this same anchor. */
   if (catalog_u == 1) {
     double _rad = (double)sVar13 * (3.14159265358979 / 180.0);
     int _wideIsX = fabs(cos(_rad)) > fabs(sin(_rad));
@@ -58062,11 +58069,11 @@ LAB_000640ec:
     if (_wideIsX) {
       DAT_0023b904 = (short)(_tileOriginX + 128);
       DAT_0023b920 = (short)(_tileOriginZ +
-          (((int)(short)DAT_0023b920 - _tileOriginZ < 128) ? 0 : 256));
+          (((int)(short)DAT_0023b920 - _tileOriginZ < 128) ? 16 : 240));
     } else {
       DAT_0023b920 = (short)(_tileOriginZ + 128);
       DAT_0023b904 = (short)(_tileOriginX +
-          (((int)(short)DAT_0023b904 - _tileOriginX < 128) ? 0 : 256));
+          (((int)(short)DAT_0023b904 - _tileOriginX < 128) ? 16 : 240));
     }
     if (getenv("UW_DEBUG_DOOR_POS"))
       fprintf(stderr, "[doorpos] wall-plane fix: angle=%d wideIsX=%d tileOrigin=(%d,%d) -> anchor=(%d,%d)\n",

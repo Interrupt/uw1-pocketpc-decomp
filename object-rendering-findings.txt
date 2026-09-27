@@ -1208,3 +1208,39 @@ targets, not slot-rounded approximations. MILESTONE (3)'s open
 "needs the user's own live confirmation" item is now closed: the fix
 is confirmed working via a properly-angled test, not just verified
 mathematically.
+
+CORRECTION: that "confirmed" was premature. The user's own live play
+(reported position: SETPLAYERPOS 34.52 9.00 640 270 0 -- standing on a
+tile boundary, looking straight at the door) found a real, visible seam
+between the frame and the wall, plus a second, more precise report:
+after the wall-plane fix, the door leaf's wide (left/right) axis was
+correct, but its OTHER axis sat "exactly on a tile edge instead of
+being in the door frame."
+
+That pinned down the actual remaining error: the perpendicular
+(wall-normal) axis was snapped to the bare tile boundary (offset 0 or
+256 from the tile's own origin) -- but a wall in this engine has real
+thickness, and a door frame sits recessed inside it, not flush with
+the tile's own outer edge the rasterizer geometry uses. Re-examined the
+numbers: slot 0 or 7 of the ORIGINAL per-object slot formula (offset 16
+or 240 -- i.e. edge +/- 16, half of a 32-unit wall thickness) was
+already the right target all along -- the original bug (before ANY fix
+this session) was landing on the wrong SLOT for this axis (an interior
+one like 2 or 3), not needing an entirely different formula from the
+wide-axis fix. Changed the perpendicular axis's target from edge+0/256
+to edge+16/240 (same near/far side selection as before, just offset by
+16 instead of 0).
+
+Verified live at a proper, distanced, straight-on angle (TELEPORT 24 5
++ six SDLHOLD SHIFT+D turns to face the door from 2 tiles back, per the
+corrected turn recipe above): the door now sits symmetrically recessed
+in a clean dark opening, with matching stone jambs visible on both
+sides -- no visible embedding or seam. run-regressions.sh: 6/6 clean.
+
+This is the second time this exact axis has needed correcting (edge+0,
+then edge+16) from live QA the math alone didn't predict -- a reminder
+that "matches the real wall rasterizer's boundary formula" was
+necessary but not sufficient; the wall's real thickness (not visible
+in that formula, which only draws the wall's outer face) was the
+missing piece both times, and only became obvious once the user
+pinned an exact reported position and re-confirmed against it.
