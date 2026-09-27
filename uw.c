@@ -56999,27 +56999,34 @@ LAB_00061d34:
          real counterpart, not a guess. `uVar27 & 7` is the door's low 3
          id bits (0x140-0x147 -> 7 door skins/types + secret), matching
          emit_anim_object_frames's own `door_type` parameter. */
-      /* Same root cause the wall-decal path already diagnosed and fixed
-         (see LAB_emit_mesh_sprite_quad's own g_billboard_angle_override_
-         deg comment): the anchor emit_tile_features computed just above
-         (DAT_0023b904/920) came out of its generic per-slot floor-object
-         table, whose sub-tile slot a door lands in depends on how many
-         OTHER objects share the tile and where the camera is standing --
-         not on the door itself. A flat billboard tolerated that jitter;
-         a real embedded 3D door frame doesn't, confirmed live (QA
-         report: "door frame looks to be offset 16 units into the wall
-         to the right or left, depending on direction" -- exactly the
-         up-to-one-slot, sign-varying jitter this same mechanism already
-         caused for decals). Round back down to the tile's own true
-         center the same way (clear the low 5 bits -- one tile is 0x20
-         units -- then re-add the +0x10 half-tile constant emit_tile_
-         features' own formula ends with). Unlike the decal fix, no
-         wall-normal push afterward: a door's own real geometry already
-         spans the wall's full thickness, so the tile-centered anchor
-         alone is the correct final position, not an intermediate one to
-         extrude from. */
+      /* The anchor emit_tile_features computed just above (DAT_0023b904/
+         920) is a generic per-slot floor-object position, whose sub-tile
+         slot depends on how many OTHER objects share the tile and where
+         the camera is standing -- not on the door itself (same root
+         cause the wall-decal path already diagnosed, see LAB_emit_mesh_
+         sprite_quad's own g_billboard_angle_override_deg comment). Round
+         back down to the tile's own slot-quantized center the same way
+         (clear the low 5 bits -- one tile is 0x20 units -- then re-add
+         the +0x10 half-slot constant emit_tile_features' own formula
+         ends with) to remove that camera/other-object jitter.
+
+         QA report: "door frame looks to be offset 16 units into the
+         wall... to the right or left, depending on direction" -- this
+         snap alone does NOT fully fix that (confirmed still present
+         after this fix landed); tried computing an exact tile-center/
+         tile-edge anchor from the tile grid index and the model's real
+         final rotation angle instead (see this branch's git history for
+         the attempt), which made a different door disappear entirely in
+         live testing -- reverted rather than ship that regression. The
+         real fix needs the actual wall-edge side determined from real
+         disassembly/data, not inferred from the already-approximate
+         slot anchor -- still open, see object-rendering-findings.txt. */
       DAT_0023b904 = (DAT_0023b904 & ~0x1f) | 0x10;
       DAT_0023b920 = (DAT_0023b920 & ~0x1f) | 0x10;
+      if (getenv("UW_DEBUG_DOOR_POS"))
+        fprintf(stderr, "[doorpos] anchor=(%d,%d,%d) tile_word0=0x%04x\n",
+                (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,
+                (unsigned)*param_1);
       emit_anim_object_frames(uVar27 & 7, param_1);
       return;
     }
@@ -57581,9 +57588,20 @@ short frame_or_texid;
     for (_px = 0; _px < _pcx; _px++) {
       *(float *)(_anim + 8 + _px*0xc) += _shiftX;
     }
+    /* The per-face U computation just below reads point.X back against
+       this SAME model's own +0x3c1c min-X field (see its own comment --
+       `(point.X - min_X) / extent_X`, mapped across the texture width).
+       Shifting the points without also shifting min-X by the identical
+       amount leaves U computed against the model's OLD, now-stale
+       origin -- confirmed live (QA report: "door UVs are incorrect...
+       U seems offset by half"): half of U's range went negative,
+       visibly wrapping the texture's own left/right edges into the
+       middle of the door instead of its true edges. extent_X is
+       unchanged by a pure translation, so only min-X needs updating. */
+    *(float *)(_anim + 0x3c1c) = _minX + _shiftX;
     if (getenv("UW_DEBUG_DOOR_POS"))
-      fprintf(stderr, "[doorpos] catalog=14 (DOOR.E) re-centered: minX=%g extX=%g shiftX=%g\n",
-              (double)_minX, (double)_extX, (double)_shiftX);
+      fprintf(stderr, "[doorpos] catalog=14 (DOOR.E) re-centered: minX=%g extX=%g shiftX=%g new_minX=%g\n",
+              (double)_minX, (double)_extX, (double)_shiftX, (double)(_minX + _shiftX));
   }
   if (getenv("UW_DEBUG_DOOR_POS")) {
     int _pc2 = *(int *)_anim;
@@ -58006,6 +58024,54 @@ LAB_000640ec:
   for (sVar13 = Ordinal_2020(); 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
+  }
+  /* Real fix for the QA report "door frame... offset 16 units into the
+     wall... depending on direction" -- the generic per-object anchor
+     emit_tile_features computed is a floor-item slot position (one of
+     8 sub-tile slots, 32 units apart); it can land near a tile's true
+     center (128 from the tile's own origin) but, with only 8 discrete
+     slots, can never land exactly ON it (the two closest slots, 3 and
+     4, are 112/144 -- each 16 units off from 128, confirmed live via
+     UW_DEBUG_DOOR_POS's tile-grid dump). A full-tile-wide object like
+     DFRAME.E needs its along-the-wall axis at the tile's EXACT center,
+     not a slot approximation -- confirmed via a fresh Ghidra decompile
+     of process_visible_tile_cell that wall vertices themselves sit at
+     exact tile boundaries (`tileIndex * 256`), never slot-quantized.
+     Recompute both axes from the tile grid index: the axis DFRAME.E's
+     own wide local X rotates into (from the model's real final rotation
+     angle, not assumed) gets the tile's exact center; the wall-
+     perpendicular axis the model's thin local Z rotates into gets
+     snapped to whichever tile edge the un-corrected anchor already sat
+     closer to. Scoped to catalog_u==1 (DFRAME, always drawn first)
+     since DFRAME and the leaf share this same anchor.
+
+     NOTE: an initial live test of this looked like a regression (one
+     door vanished), but the test vantage itself turned out to be one
+     tile off on its own Y coordinate (confirmed by the user) -- not
+     yet re-verified against a corrected vantage. Left in rather than
+     reverted a second time since the underlying reasoning (exact
+     center, real wall-boundary math, not a guess) is sound; if a
+     corrected re-test still shows a problem, revisit the tile-edge
+     side-selection heuristic specifically (the one genuinely unverified
+     part of this), not the center-axis half. */
+  if (catalog_u == 1) {
+    double _rad = (double)sVar13 * (3.14159265358979 / 180.0);
+    int _wideIsX = fabs(cos(_rad)) > fabs(sin(_rad));
+    int _tileOriginX = (int)DAT_0023b4e4 * 256;
+    int _tileOriginZ = (int)DAT_0023b4e8 * 256;
+    if (_wideIsX) {
+      DAT_0023b904 = (short)(_tileOriginX + 128);
+      DAT_0023b920 = (short)(_tileOriginZ +
+          (((int)(short)DAT_0023b920 - _tileOriginZ < 128) ? 0 : 256));
+    } else {
+      DAT_0023b920 = (short)(_tileOriginZ + 128);
+      DAT_0023b904 = (short)(_tileOriginX +
+          (((int)(short)DAT_0023b904 - _tileOriginX < 128) ? 0 : 256));
+    }
+    if (getenv("UW_DEBUG_DOOR_POS"))
+      fprintf(stderr, "[doorpos] wall-plane fix: angle=%d wideIsX=%d tileOrigin=(%d,%d) -> anchor=(%d,%d)\n",
+              (int)sVar13, _wideIsX, _tileOriginX, _tileOriginZ,
+              (int)(short)DAT_0023b904, (int)(short)DAT_0023b920);
   }
   { int _rec_start = DAT_0023b83c;
   build_euler_rotation_matrix(_anim,0,(int)sVar13,0);
@@ -58732,6 +58798,11 @@ ushort * param_1;
             fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
                     (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
                     (int)DAT_0023b4e4, (int)DAT_0023b4e8);
+          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (*puVar5 & 0x1f0) == 0x140)
+            fprintf(stderr, "[doorpos] tile-grid: cVar8=%d slot_x=%d slot_z=%d b4e4(tileX)=%d b4e8(tileZ)=%d tile_origin=(%d,%d)\n",
+                    (int)cVar8, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
+                    (int)DAT_0023b4e4, (int)DAT_0023b4e8,
+                    (int)DAT_0023b4e4 * 256, (int)DAT_0023b4e8 * 256);
           DAT_0023b904 = ((short)(char)(&DAT_0023bb99)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +

@@ -1096,3 +1096,87 @@ Screenshot at tile (23,5) looking at the door placed at (22,5) confirms
 the leaf now fills the opening flush with the frame, correctly textured,
 not embedded in the wall. run-regressions.sh: 6/6 clean, fresh CMake
 build.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (3): door UV regression fix, and the wall-plane
+anchor fix (still needs the user's own live confirmation)
+═══════════════════════════════════════════════════════════════════════════
+Live QA on MILESTONE (2)'s own fixes found a real regression it
+introduced, plus continued work on the still-open frame-position issue.
+
+1. UV regression (fixed, high confidence): the catalog==14 (DOOR.E)
+   re-centering fix from MILESTONE (2) shifted each point's X in place
+   but left the model's own +0x3c1c min-X bounding-box field untouched
+   -- and the per-face U computation a few lines below reads point.X
+   back against that SAME field (`(point.X - min_X) / extent_X`, mapped
+   across the texture width). With the points shifted but min_X stale,
+   half of U's range went negative -- confirmed live (QA report: "door
+   UVs are incorrect, the edges of the door are drawing in the middle,
+   U seems offset by half"), and visually confirmed fixed via a
+   screenshot showing continuous, correctly-wrapped wood-plank texture
+   after also shifting min-X by the identical amount (extent_X is
+   unchanged by a pure translation, so only min-X needed the update).
+
+2. Door frame "offset 16 units into the wall... depending on
+   direction" (fix applied, NOT yet independently confirmed in-game by
+   the user -- flagged explicitly below). Investigated further: the
+   MILESTONE (2) fix (round the anchor to the nearest 32-unit slot) was
+   confirmed live to be a genuine no-op for the reported repro door (no
+   jitter present -- pre-snap and post-snap anchors were identical), so
+   it was never the real fix, just harmless.
+
+   Traced further and found the actual mechanism: emit_tile_features'
+   anchor is a floor-item SLOT position (8 slots per tile, 32 units
+   apart) -- close to a tile's true center (128 from the tile's own
+   origin) but, with only 8 discrete slots, never exactly ON it (the
+   two closest slots, 3 and 4, are 112/144 -- each 16 units off from
+   128, matching the reported magnitude exactly). A fresh Ghidra
+   decompile of the real wall rasterizer (process_visible_tile_cell)
+   confirmed wall vertices themselves sit at exact tile boundaries
+   (`tileIndex * 256`), never slot-quantized -- so a full-tile-wide
+   object like DFRAME.E needs its along-the-wall axis at the tile's
+   EXACT center, and its wall-perpendicular axis at an exact tile edge,
+   neither of which the slot table can produce.
+
+   Fix: in emit_catalog_object, gated to catalog_u==1 (DFRAME, always
+   drawn first -- the leaf shares this same anchor), recompute both
+   world axes directly from the tile grid index and the model's own
+   real final rotation angle (not assumed): the axis DFRAME.E's wide
+   local X rotates into gets the tile's exact center; the other (the
+   axis its thin local Z rotates into) gets snapped to whichever tile
+   edge the uncorrected anchor already sat closer to.
+
+   An initial live test of this (SETPLAYERPOS-based, oblique angle)
+   looked ambiguous -- possible asymmetry, though an oblique viewing
+   angle produces the same visual effect on a genuinely symmetric door
+   via ordinary perspective, so it isn't conclusive either way. A
+   follow-up attempt at a clean, perpendicular test angle failed
+   repeatedly this session (multiple TELEPORT positions near the repro
+   door at (22,5) either landed inside solid rock -- (22,4), (22,6),
+   both 0 visible tiles -- or landed in open space that, at every
+   heading tried including a full 8-direction sweep, never had the
+   door in frame; not yet root-caused). Also tried reverting this fix
+   after one such test appeared to show a different door vanishing
+   entirely -- but the test vantage itself was later found to be wrong
+   (off by one tile), so that "regression" was never confirmed against
+   a valid test either, and the fix was reapplied rather than left
+   reverted on unreliable evidence.
+
+   NET STATUS: the fix's underlying math is sound and directly
+   verified against real wall-rasterizer disassembly (not guessed), and
+   its live anchor output for the repro door is now an exact tile
+   center/edge pair (was (3952,336) inside a 3840-4096/256-512 tile --
+   noticeably off-center on both axes; now (3968,256) -- dead-center
+   parallel to the wall, exactly on the near edge perpendicular to it).
+   But this session was unable to produce a clean, perpendicular
+   screenshot to visually confirm the on-screen result, after several
+   real attempts -- needs the user's own live, interactive
+   confirmation (walking up to a door and looking at it directly,
+   rather than a scripted demo angle) before this can be marked closed.
+   If it's still wrong in play, the most likely remaining error is the
+   tile-edge SIDE selection (near vs far) -- that heuristic (whichever
+   edge the pre-fix anchor already sat closer to) was never
+   independently verified against real data, unlike the exact-center
+   half of the fix.
+
+run-regressions.sh: 6/6 clean, fresh CMake build.
