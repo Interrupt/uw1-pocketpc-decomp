@@ -69,16 +69,35 @@ static int env_is_boolean_truthy(const char *v) {
            strcasecmp(v, "true") == 0 || strcasecmp(v, "yes") == 0;
 }
 
+/* Same truthy-by-value convention as demomode.c's own UW_DEMO_KEEP_RUNNING
+   check (unset/"0"/"false" -- case-insensitive -- all mean off; anything
+   else, including the empty string from a bare `VAR=`, means on). Kept as
+   its own copy rather than a shared helper since the two files don't
+   otherwise share any code. */
+static int keep_running_requested(void) {
+    const char *v = getenv("UW_DEMO_KEEP_RUNNING");
+    return v && *v != '\0' && strcmp(v, "0") != 0 && strcasecmp(v, "false") != 0;
+}
+
 void democapture_init(void) {
     const char *rec = getenv("UW_RECORD_DEMOFILE");
     const char *demo_file = getenv("UW_DEMO_FILE");
 
     if (rec) {
         if (env_is_falsy(rec)) return;
-    } else if (demo_file) {
+    } else if (demo_file && !keep_running_requested()) {
         /* Default OFF while also playing back a demo file -- see this
-           file's own top comment for why. */
-        return;
+           file's own top comment for why. Exception: with
+           UW_DEMO_KEEP_RUNNING=1 the window stays open for genuine live
+           input once the script runs out (demomode.c's own end-of-file
+           handling), and THAT tail is exactly the kind of session worth
+           recording -- e.g. manually clicking around to find the precise
+           spot to extend a scripted repro (a mode-select button, an NPC's
+           on-screen position) without hand-computing window coordinates.
+           Safe to leave this on unconditionally once KEEP_RUNNING is set:
+           recording_suppressed() already gates every write on
+           demomode_active(), so nothing from the scripted portion itself
+           gets double-recorded -- only input from after playback stops. */
     }
 
     const char *path = "current-demo.txt";
@@ -94,14 +113,55 @@ void democapture_init(void) {
         if (v > 0) g_rec_delay_ms = v; /* overrides only the written DELAY line -- see top comment */
     }
 
+    /* When we're recording ON TOP OF a scripted UW_DEMO_FILE playback (the
+       KEEP_RUNNING case above, or an explicit UW_RECORD_DEMOFILE during a
+       playback run per this file's own top comment), read the source
+       script's own lines into memory BEFORE opening the output file --
+       fopen(path,"w") truncates immediately, and path defaults to the
+       same "current-demo.txt" a prior recording (or a user's own
+       UW_RECORD_DEMOFILE=UW_DEMO_FILE) may have set as the source, so
+       opening for write first would wipe the very content we're about to
+       copy from it. Read-before-write here sidesteps that regardless of
+       whether the two paths actually collide. */
+    char *replay_prefix = NULL;
+    if (demo_file) {
+        FILE *src = fopen(demo_file, "rb");
+        if (src) {
+            fseek(src, 0, SEEK_END);
+            long sz = ftell(src);
+            fseek(src, 0, SEEK_SET);
+            if (sz > 0) {
+                replay_prefix = malloc((size_t)sz + 1);
+                if (replay_prefix) {
+                    size_t got = fread(replay_prefix, 1, (size_t)sz, src);
+                    replay_prefix[got] = '\0';
+                }
+            }
+            fclose(src);
+        }
+    }
+
     g_rec_file = fopen(path, "w");
     if (!g_rec_file) {
         fprintf(stderr, "[record] failed to open UW_RECORD_DEMOFILE=%s for writing\n", path);
+        free(replay_prefix);
         return;
     }
     setvbuf(g_rec_file, NULL, _IOLBF, 0); /* line-buffered: a crash mid-session shouldn't lose the tail */
     fprintf(g_rec_file, "# recorded session, replay with UW_DEMO_FILE=%s\n", path);
     fprintf(g_rec_file, "DELAY %d\n", g_rec_delay_ms);
+    if (replay_prefix) {
+        /* Copy the scripted setup in verbatim so the result replays start
+           to finish on its own -- UW_DEMO_FILE alone, no KEEP_RUNNING or
+           original script needed -- instead of being just the live tail
+           recorded after playback stopped. */
+        fprintf(g_rec_file, "# --- scripted setup from %s, copied verbatim ---\n", demo_file);
+        fputs(replay_prefix, g_rec_file);
+        size_t prefix_len = strlen(replay_prefix);
+        if (prefix_len > 0 && replay_prefix[prefix_len - 1] != '\n') fputc('\n', g_rec_file);
+        fprintf(g_rec_file, "# --- live input recorded from here ---\n");
+        free(replay_prefix);
+    }
     g_rec_idle_ticks = 0;
     fprintf(stderr, "[record] recording input to %s (delay=%dms, tick-native pacing)\n", path, g_rec_delay_ms);
 }
