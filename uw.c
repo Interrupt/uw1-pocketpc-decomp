@@ -10217,7 +10217,9 @@ void FUN_00016ef8()
   *DAT_00084298 = 0x2d;
   local_5e = *DAT_00085a6c;
   local_60 = 200 - DAT_00085a6c[1];
+  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] FUN_00016ef8 entry: local_5e=%d local_60=%d DAT_00085a6c[3]=%d\n", (int)local_5e, (int)local_60, (int)DAT_00085a6c[3]);
   if (3 < DAT_00085a6c[3]) {
+    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] FUN_00016ef8: early return (DAT_00085a6c[3] > 3)\n");
     return;
   }
   wait_for_click_release(1);
@@ -10251,6 +10253,7 @@ LAB_000170bc:
     sVar2 = 0xff;
     change_game_mode(1);
   }
+  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] FUN_00016ef8: branch sVar2=0x%x DAT_000bbef0(count)=%d\n", (unsigned)sVar2, (int)DAT_000bbef0);
   if (sVar2 == 0xfb) {
     if (0x62 < DAT_000ba9d0) goto LAB_0001764c;
     iVar10 = DAT_000ba9d0 + 1;
@@ -10343,8 +10346,10 @@ LAB_0001764c:
   return;
 LAB_000171a4:
   sVar2 = FUN_000575c4(&local_5a);
+  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-poll: FUN_000575c4 returned %d local_5a=%d\n", (int)sVar2, (int)local_5a);
   if (0 < sVar2) {
 LAB_000171d0:
+    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-loop: sVar2=%d local_58=\"%s\"\n", (int)sVar2, local_58);
     if (((sVar2 == 0xd) || (sVar2 == 0x1b)) || (sVar2 < 4)) goto LAB_0001739c;
     if ((sVar2 < 0x20) || (0x7a < sVar2)) {
       if (sVar2 == 8) {
@@ -10367,7 +10372,7 @@ LAB_000171d0:
       }
     }
     else {
-      local_5c[0] = Ordinal_1091();
+      local_5c[0] = Ordinal_1091(sVar2);
       sVar2 = measure_text_width(local_58);
       sVar3 = measure_text_width(local_5c);
       if ((((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10) + (int)*(short *)(&DAT_000baa0a + iVar7) <
@@ -10397,6 +10402,7 @@ LAB_000171d0:
   goto LAB_000171bc;
 LAB_0001739c:
   select_active_font(s_font5x6p_sys_0008430c);
+  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: local_58=\"%s\" (empty=%d)\n", local_58, local_58[0]=='\0');
   if (local_58[0] != '\0') {
     DAT_000b99c4 = 1;
     pcVar5 = local_58;
@@ -10406,6 +10412,7 @@ LAB_0001739c:
       pcVar5 = pcVar5 + 1;
     } while (cVar1 != '\0');
     DAT_000bbef0 = DAT_000bbef0 + 1;
+    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: stored, new count=%d\n", (int)DAT_000bbef0);
   }
   flush_dirty_rect_to_display(1);
 LAB_00017404:
@@ -50472,7 +50479,7 @@ int param_1;
           sVar1 = Ordinal_1090(sVar1);
         }
         else {
-          sVar1 = Ordinal_1091();
+          sVar1 = Ordinal_1091(sVar1);
         }
         uVar4 = (uint)sVar1;
       }
