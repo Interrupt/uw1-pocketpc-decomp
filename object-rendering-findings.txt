@@ -1244,3 +1244,63 @@ necessary but not sufficient; the wall's real thickness (not visible
 in that formula, which only draws the wall's outer face) was the
 missing piece both times, and only became obvious once the user
 pinned an exact reported position and re-confirmed against it.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (4): live model-calibration debug UI, ported from
+e-model-texturing
+═══════════════════════════════════════════════════════════════════════════
+Two real regressions on the same two constants (wide_center, edge_offset)
+in a row made clear that guessing a number, rebuilding, and only then
+finding out live whether it was right is too slow a loop for this kind
+of calibration work. Ported the immediate-mode debug UI e-model-texturing
+built for exactly this (git log: ba285fb/6afb0ae/904a8ec) rather than
+re-inventing it -- debug_ui.c/headers/debug_ui.h are fully generic
+(dbgui_begin/field_double/field_int/end/draw, drawn with this project's
+own set_draw_color/rect_fill_or_save_restore/draw_text_string primitives,
+so it composites directly into the game's real framebuffer) and needed
+no changes to port verbatim; only the WIRING differed, since gx_stub.c
+has drifted significantly from e-model-texturing's own fork point (this
+branch's own base is ~90 commits newer) and the original tuner's uw.c
+side was tightly coupled to g_model_map, which this branch deliberately
+doesn't have.
+
+Wiring (adapted to this branch's current code, not copy-pasted):
+- gx_stub.c: backtick toggles the panel; while visible it owns all
+  keyboard/mouse/text input (routed to dbgui_feed_key/mouse_down/text,
+  swallowed rather than forwarded to the game); poll_dungeon_movement_keys()
+  (reads physical keyboard state directly, bypassing the SDL event queue)
+  is skipped entirely while the debug UI is visible, or typed digits would
+  still move the player underneath the panel.
+- uw.c main_loop_hud_flush(): dbgui_draw() call placed after the forced
+  3D redraw but before flush_dirty_rect_to_display(1) (the real per-tick
+  screen present) -- verified against e-model-texturing's own history
+  that this exact placement was hard-won (two earlier placements in that
+  branch's history drew one tick too late, painted over before ever
+  reaching a presented frame).
+- CMakeLists.txt: added debug_ui.c as a build source (this branch builds
+  via CMake now, not the old build.sh SDL2 direct-compile e-model-texturing
+  still used).
+- uw.c emit_catalog_object (catalog_u==1, the door-frame dispatch): new
+  g_tune_wide_center/g_tune_edge_offset globals (seeded from this
+  session's own confirmed-correct defaults, 128.0/16.0) replace the two
+  hardcoded constants in the wall-plane anchor fix; UW_MODEL_TUNER=1
+  populates the panel with them every frame a door is on screen.
+
+Verified live: panel renders correctly on top of the 3D view with both
+fields showing their real current values; editing edge_offset via
+Right-arrow nudges (16 -> 76, 60 nudges) visibly moved the door deeper
+into its recess the same frame, no rebuild -- confirms the live-edit
+loop actually reaches the same code path the QA-reported regressions
+came from, not a disconnected UI.
+
+One real false alarm this pass: the first post-port regression run
+showed 5/6 (demo_inventory_container_torch_use_test.txt timed out at
+60s), which looked like a genuine hang. Re-ran the same script alone --
+clean. Root cause: leftover manual test uw_dbg processes from this same
+session's own interactive debugging hadn't been fully killed before
+kicking off the official suite, so 7+ SDL windows were competing for
+CPU at once. A clean pkill -9 -f uw_dbg before the suite re-confirmed
+6/6. Not a code regression -- flagged here so a future session doesn't
+re-chase it.
+
+run-regressions.sh: 6/6 clean (after confirming the above).

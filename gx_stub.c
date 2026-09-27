@@ -5,6 +5,7 @@
 #include "uw.h"
 #include "demomode.h"
 #include "democapture.h"
+#include "headers/debug_ui.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -410,7 +411,15 @@ void uw_pump_events(void) {
        during it). */
     democapture_tick();
     demomode_pump();
-    poll_dungeon_movement_keys();
+    /* poll_dungeon_movement_keys() reads physical keyboard state
+       directly (not the SDL event queue), so swallowing key EVENTS
+       below (the dbgui_visible() checks in the SDL_KEYDOWN/TEXTINPUT
+       cases) doesn't stop it on its own -- skip the call entirely
+       while the debug UI owns input, matching how the port on
+       e-model-texturing had to fix the same leak. */
+    if (!dbgui_visible()) {
+        poll_dungeon_movement_keys();
+    }
 
     if (g_mouseup_deferred) {
         /* See g_mouseup_deferred's comment. Dispatch the button-up we
@@ -452,6 +461,24 @@ void uw_pump_events(void) {
                 break;
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
+                /* Debug UI toggle: backtick always works, shown or
+                 * hidden, so the panel can be brought back even while
+                 * it currently owns no input. Swallowed either way --
+                 * no game function is bound to backtick to preserve. */
+                if (ev.type == SDL_KEYDOWN && !ev.key.repeat && ev.key.keysym.sym == SDLK_BACKQUOTE) {
+                    dbgui_toggle();
+                    return;
+                }
+                /* While the debug UI is visible, it owns ALL keyboard
+                 * input -- a debug/dev tool, not meant to be driven
+                 * simultaneously with normal gameplay input. Route and
+                 * swallow rather than also forwarding to the game. */
+                if (dbgui_visible()) {
+                    if (ev.type == SDL_KEYDOWN && !ev.key.repeat) {
+                        dbgui_feed_key((int)ev.key.keysym.sym);
+                    }
+                    return;
+                }
                 /* Physical ESC aborts a running demo file (and is then
                  * swallowed -- it does NOT also reach the game). Only a
                  * real keypress does this: uw_inject_key_* stamps
@@ -532,6 +559,10 @@ void uw_pump_events(void) {
                 return;
             }
             case SDL_TEXTINPUT: {
+                if (dbgui_visible()) {
+                    dbgui_feed_text(ev.text.text);
+                    return;
+                }
                 /* Real typed characters (respects keyboard layout/shift
                  * state) -- forwarded as WM_CHAR (0x102), matching
                  * handle_keyboard_message's real-text-input path. Only ever one
@@ -612,6 +643,12 @@ void uw_pump_events(void) {
                 float lx, ly;
                 SDL_RenderWindowToLogical(g_ren, win_x, win_y, &lx, &ly);
                 int landscape_x = (int)lx, landscape_y = (int)ly;
+                if (dbgui_visible()) {
+                    if (ev.type == SDL_MOUSEBUTTONDOWN && ev.button.button == SDL_BUTTON_LEFT) {
+                        dbgui_feed_mouse_down(landscape_x, landscape_y);
+                    }
+                    return;
+                }
                 int portrait_x = landscape_y;
                 int portrait_y = (HW_H - 1) - landscape_x;
                 int lparam = (portrait_y << 16) | (portrait_x & 0xffff);

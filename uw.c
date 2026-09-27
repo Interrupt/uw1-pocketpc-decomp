@@ -1,6 +1,7 @@
 #include "uw.h"
 #include "debug.h"
 #include "gx_stub.h"
+#include "headers/debug_ui.h"
 #include <dlfcn.h>
 #include <math.h>
 #include <stdarg.h>
@@ -665,6 +666,20 @@ int DAT_000db450;
    processed after this one -- an override left set would face every
    later billboard this frame the wrong way. */
 int g_billboard_angle_override_deg = -1;
+/* Live-tunable door-frame anchor constants (UW_MODEL_TUNER=1) -- see the
+   wall-plane fix in emit_catalog_object's own catalog_u==1 block. Two
+   real regressions already came from guessing these numbers, rebuilding,
+   and only then finding out live whether a guess was right; this lets
+   the door panel show tunable rows so a value can be nudged and watched
+   change on screen the same frame, with no rebuild. g_tune_wide_center
+   is the wide/along-the-wall axis's offset from the tile's own origin
+   (currently 128.0, exact tile center); g_tune_edge_offset is the
+   wall-perpendicular axis's offset from whichever tile edge it's
+   nearest (currently 16.0, half of an assumed 32-unit wall thickness --
+   the specific number this session's QA already found wrong once,
+   edge+0 -> edge+16). */
+double g_tune_wide_center = 128.0;
+double g_tune_edge_offset = 16.0;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
    view/camera matrix -- build_view_matrix writes the whole matrix in one shot
@@ -41286,6 +41301,19 @@ void main_loop_hud_flush()
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
+  /* Debug UI: must draw HERE, after the forced 3D redraw above (or it
+     gets painted over) but before flush_dirty_rect_to_display(1) below
+     -- that call is the actual screen present for this tick (blits the
+     software framebuffer through to GXEndDraw/SDL_RenderPresent, see
+     gx_stub.c). Drawing from app_main_loop after this function returns
+     is one full tick too late: the present for THIS tick already
+     happens inside this function, and the very next tick's forced 3D
+     redraw runs and gets flushed before this function is reached
+     again -- so the panel's own pixels never survive to reach an
+     actually-presented frame. rect_fill_or_save_restore/draw_text_string
+     already call dirty_rect_union themselves, so the panel's region is
+     automatically included in the flush below once drawn here. */
+  dbgui_draw();
   uw_debug_dump_sprite_frames_once();
   uw_debug_dump_critter_sheet_once();
   uw_debug_force_item_id_once();
@@ -58062,22 +58090,39 @@ LAB_000640ec:
      catalog_u==1 (DFRAME, always drawn first) since DFRAME and the
      leaf share this same anchor. */
   if (catalog_u == 1) {
+    /* UW_MODEL_TUNER=1: live-editable version of the two constants just
+       below (g_tune_wide_center/g_tune_edge_offset, see their own
+       declaration comment) -- backtick toggles the panel, click a row
+       (or Up/Down to select, Left/Right to nudge, Enter to type) to
+       edit, watch the door move on screen the same frame. Panel only
+       gets populated while a door is actually on screen this frame
+       (this code only runs when catalog_u==1 is dispatched at all),
+       matching the same "seeded from whichever object is on screen"
+       shape the removed g_model_map-era tuner used. */
+    if (getenv("UW_MODEL_TUNER")) {
+      dbgui_begin("Door Frame Tuner");
+      dbgui_field_double("wide_center", &g_tune_wide_center, 1.0);
+      dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
+      dbgui_end();
+    }
     double _rad = (double)sVar13 * (3.14159265358979 / 180.0);
     int _wideIsX = fabs(cos(_rad)) > fabs(sin(_rad));
     int _tileOriginX = (int)DAT_0023b4e4 * 256;
     int _tileOriginZ = (int)DAT_0023b4e8 * 256;
+    int _wide = (int)g_tune_wide_center;
+    int _edge = (int)g_tune_edge_offset;
     if (_wideIsX) {
-      DAT_0023b904 = (short)(_tileOriginX + 128);
+      DAT_0023b904 = (short)(_tileOriginX + _wide);
       DAT_0023b920 = (short)(_tileOriginZ +
-          (((int)(short)DAT_0023b920 - _tileOriginZ < 128) ? 16 : 240));
+          (((int)(short)DAT_0023b920 - _tileOriginZ < 128) ? _edge : 256 - _edge));
     } else {
-      DAT_0023b920 = (short)(_tileOriginZ + 128);
+      DAT_0023b920 = (short)(_tileOriginZ + _wide);
       DAT_0023b904 = (short)(_tileOriginX +
-          (((int)(short)DAT_0023b904 - _tileOriginX < 128) ? 16 : 240));
+          (((int)(short)DAT_0023b904 - _tileOriginX < 128) ? _edge : 256 - _edge));
     }
     if (getenv("UW_DEBUG_DOOR_POS"))
-      fprintf(stderr, "[doorpos] wall-plane fix: angle=%d wideIsX=%d tileOrigin=(%d,%d) -> anchor=(%d,%d)\n",
-              (int)sVar13, _wideIsX, _tileOriginX, _tileOriginZ,
+      fprintf(stderr, "[doorpos] wall-plane fix: angle=%d wideIsX=%d tileOrigin=(%d,%d) wide=%d edge=%d -> anchor=(%d,%d)\n",
+              (int)sVar13, _wideIsX, _tileOriginX, _tileOriginZ, _wide, _edge,
               (int)(short)DAT_0023b904, (int)(short)DAT_0023b920);
   }
   { int _rec_start = DAT_0023b83c;
