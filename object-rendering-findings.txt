@@ -1592,3 +1592,42 @@ run-regressions.sh: 1/6 clean (the 5 failures are the pre-existing,
 bisected-unrelated crash above, not this change -- confirmed by
 reproducing the identical crash on commit 723af26 with none of today's
 or this branch's code present).
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (9): dump_3d_frame button had no visible confirmation --
+route it through the real in-game message scroll instead
+═══════════════════════════════════════════════════════════════════════════
+QA report: "The tool did not dump anything when clicked or with enter."
+Checked the live session's own log first rather than guessing: the button
+HAD fired three separate times (three genuine [face-dump] requested/
+complete pairs, no errors), proving the capture mechanism itself worked
+end-to-end in the real interactive session. The likely real problem: the
+capture is silent (files land on disk, nothing changes on screen), so a
+successful press and a no-op press look identical from the game window.
+(Also: accidentally destroyed the actual evidence for what those 3 live
+presses wrote by rm -rf'ing debug/facedumps/ while reproducing -- worth
+being more careful with a user's own test output next time.)
+
+Follow-up request: put the confirmation in the real in-game message
+scroll rather than inventing a new on-screen indicator. Used the game's
+own message_scroll_print_wrapped(char*) -- the same function every other
+in-game status message (item pickups, "you find nothing", etc.) already
+goes through -- rather than a bespoke debug HUD element.
+
+uw_debug_3d_frame_dump_finish() (gx_stub.c) changed from void to
+returning int: -1 on the common no-op call (nothing was armed), or the
+number of faces just captured. uw.c's render_visible_tile_list calls it
+right after the existing whole-frame debug_framebuffer_dump line and,
+on a non-negative return, prints "[debug] dumped N 3D faces to <dir>" to
+the scroll via message_scroll_print_wrapped. Added uw_debug_3d_frame_
+dump_last_dir() so the message can name the actual output directory.
+Reverted the earlier button-label-count experiment (shows "[ dump_3d_
+frame ]" plain again) now that confirmation lives in the scroll instead.
+
+Live-verified: pressing the button now prints "[debug] dumped 95 3D
+faces to debug/facedumps/<ts>" onto the parchment scroll at the bottom
+of the dungeon view, screenshot-confirmed.
+
+run-regressions.sh: 1/6 clean -- unchanged from the pre-existing,
+already-bisected settle_mobile_to_immobile crash (milestone 8); this
+change doesn't touch that code path.

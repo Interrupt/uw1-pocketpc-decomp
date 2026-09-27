@@ -15732,7 +15732,14 @@ void render_visible_tile_list()
     } while (local_94 < iVar15);
   }
   debug_framebuffer_dump("render_visible_tile_list");
-  uw_debug_3d_frame_dump_finish();
+  { int _dumped = uw_debug_3d_frame_dump_finish();
+    if (_dumped >= 0) {
+      char _msg[80];
+      snprintf(_msg, sizeof(_msg), "[debug] dumped %d 3D faces to %s\n",
+               _dumped, uw_debug_3d_frame_dump_last_dir());
+      message_scroll_print_wrapped(_msg);
+    }
+  }
   return;
 }
 #undef local_70

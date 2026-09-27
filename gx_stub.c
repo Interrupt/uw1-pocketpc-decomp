@@ -1371,16 +1371,25 @@ void debug_framebuffer_dump(const char *tag) {
    investigated, press the button, get that one frame's complete 3D
    paint-order sequence under debug/facedumps/<ts>/, one BMP per face. */
 static int g_dump_3d_frame_active = 0;
+/* -1 = never armed yet this process; otherwise the number of faces the
+   MOST RECENTLY COMPLETED capture actually wrote -- surfaced on the
+   debug panel's button row (see uw.c's tuner block) so pressing it has
+   a visible result even though the capture itself is silent (just BMPs
+   landing on disk, nothing drawn on screen). Without this, a press
+   looks identical whether it wrote 90 files or zero. */
+static int g_dump_3d_frame_last_count = -1;
+static int g_dump_3d_frame_this_count = 0;
+static char g_dump_3d_frame_run_dir[300];
 
 void uw_debug_request_3d_frame_dump(void) {
     g_dump_3d_frame_active = 1;
+    g_dump_3d_frame_this_count = 0;
     fprintf(stderr, "[face-dump] requested -- capturing every 3D face draw for the next render pass\n");
 }
 
 void uw_debug_dump_3d_face(const char *tag) {
     if (!g_dump_3d_frame_active) return;
 
-    static char run_dir[300];
     static int run_dir_ready = 0;
     if (!run_dir_ready) {
         time_t now = time(NULL);
@@ -1388,22 +1397,29 @@ void uw_debug_dump_3d_face(const char *tag) {
         localtime_r(&now, &tm_now);
         char ts[32];
         strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm_now);
-        snprintf(run_dir, sizeof(run_dir), "debug/facedumps/%s", ts);
-        debug_mkdir_p(run_dir);
+        snprintf(g_dump_3d_frame_run_dir, sizeof(g_dump_3d_frame_run_dir), "debug/facedumps/%s", ts);
+        debug_mkdir_p(g_dump_3d_frame_run_dir);
         run_dir_ready = 1;
     }
 
     static unsigned int counter = 0;
     char path[360];
-    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", run_dir, counter++, tag ? tag : "face");
+    snprintf(path, sizeof(path), "%s/%06u_%s.bmp", g_dump_3d_frame_run_dir, counter++, tag ? tag : "face");
     debug_save_framebuffer_bmp(path, "face-dump");
+    g_dump_3d_frame_this_count++;
 }
 
-void uw_debug_3d_frame_dump_finish(void) {
-    if (g_dump_3d_frame_active) {
-        fprintf(stderr, "[face-dump] frame capture complete\n");
-        g_dump_3d_frame_active = 0;
-    }
+int uw_debug_3d_frame_dump_finish(void) {
+    if (!g_dump_3d_frame_active) return -1;
+    g_dump_3d_frame_last_count = g_dump_3d_frame_this_count;
+    fprintf(stderr, "[face-dump] frame capture complete -- %d faces written to %s\n",
+            g_dump_3d_frame_last_count, g_dump_3d_frame_run_dir);
+    g_dump_3d_frame_active = 0;
+    return g_dump_3d_frame_last_count;
+}
+
+const char *uw_debug_3d_frame_dump_last_dir(void) {
+    return g_dump_3d_frame_run_dir;
 }
 
 int GXCloseDisplay(void) {

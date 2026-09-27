@@ -104,7 +104,18 @@ void debug_framebuffer_dump(const char *tag);
    already does for 2D primitives. */
 void uw_debug_request_3d_frame_dump(void);
 void uw_debug_dump_3d_face(const char *tag);
-void uw_debug_3d_frame_dump_finish(void);
+/* Returns -1 if no capture was pending (the common case -- called
+   unconditionally every render_visible_tile_list pass), otherwise the
+   number of faces just captured. The caller (uw.c, right after this
+   call) uses a non-negative return to print a confirmation to the
+   in-game message scroll (message_scroll_print_wrapped) -- the capture
+   itself only writes files, nothing on screen, so without this a
+   button press looks identical whether it wrote 90 files or zero. */
+int uw_debug_3d_frame_dump_finish(void);
+/* Directory the most recent (or in-progress) 3D face capture wrote
+   into, e.g. "debug/facedumps/20260927_161447". Valid once the first
+   capture this process has started. */
+const char *uw_debug_3d_frame_dump_last_dir(void);
 
 /* Debug tool: if UW_DEBUG_DUMP_TMAP is set (and not "0"), dumps a level's
    64x64 tile map to a BMP right after it's loaded from the .ark file --
