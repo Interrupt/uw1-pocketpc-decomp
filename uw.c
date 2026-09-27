@@ -1571,7 +1571,26 @@ static undefined1 DAT_002027d0_backing[256];
 static undefined1 DAT_00202800_backing[65536];
 #define DAT_00202800 DAT_00202800_backing[0]
 undefined DAT_00202878;
-undefined DAT_00084eff;
+/* Was a lone `undefined` scalar (1 byte), but FUN_00027708 indexes it
+   as `(&DAT_00084eff)[iVar5]` with iVar5 = the swing's own attack-type
+   value (3-9, from interact_attack's screen-position-to-3x3-grid
+   mapping -- this is the real "attack from top/left/right/bottom
+   throws a different attack" mechanic the user reported as broken),
+   and FUN_000273f8 separately indexes it by the same attack-type value
+   for a damage bonus lookup. A single byte can't hold 10 real,
+   distinct per-direction values -- recovered the real content via
+   Ghidra headless memory dump (0x84eff, 12 bytes -- Ghidra's own next
+   symbol, DAT_00084f0b, starts exactly 12 bytes later, matching this
+   project's usual "one lone scalar per real small table" pattern):
+   00 02 02 02 00 00 00 01 01 01 00 00. Confirmed genuinely
+   direction-sensitive data (not all-zero/all-same): indices 2-9 read
+   00,02,02,02,00,00,00,01 -- real variation across the attack-type
+   range, not the flat/garbage result a bare 1-byte read would produce
+   once indexed past its own storage. */
+static unsigned char DAT_00084eff_backing[12] = {
+  0x00,0x02,0x02,0x02,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00
+};
+#define DAT_00084eff DAT_00084eff_backing[0]
 static undefined DAT_001007d5_backing[8192];
 #define DAT_001007d5 DAT_001007d5_backing[0]
 /* Was `undefined2` (unsigned short) -- every real use in FUN_00027708/
@@ -1605,7 +1624,14 @@ char *DAT_001005e0 = DAT_001005e0_backing;
 short DAT_001005e8;
 undefined DAT_001005f0;
 byte DAT_00100614;
-undefined DAT_00084f0b;
+/* Was a lone `undefined` scalar, same bug as DAT_00084eff just above --
+   FUN_00027708 indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 =
+   attack-type/3 (0-3), selecting which of a small set of swing
+   animations (`DAT_00084f10`) to play. Recovered via Ghidra headless
+   (0x84f0b, 5 bytes -- DAT_00084f10, the next real symbol, starts
+   exactly 5 bytes later): 00 34 27 19 00. */
+static unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
+#define DAT_00084f0b DAT_00084f0b_backing[0]
 undefined DAT_00250658;
 undefined DAT_001007e1;
 undefined DAT_001007f8;
@@ -32670,11 +32696,13 @@ void interact_attack()
   int iVar4;
 
   DEBUG(INFO, "Interact attack");
-  
+
   psVar1 = DAT_00085a6c;
   sVar2 = Ordinal_2005(DAT_0023be88 + 2,DAT_00085a6c[1] * 3);
   sVar3 = Ordinal_2005(DAT_0023bd80 + 2,*psVar1 * 3);
   iVar4 = sVar2 * 3 + (int)sVar3;
+  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[attack-dir] click=(%d,%d) view=(%d,%d) row=%d col=%d grid=%d -> attack_type=%d\n",
+      (int)*psVar1, (int)DAT_00085a6c[1], (int)DAT_0023bd80, (int)DAT_0023be88, (int)sVar2, (int)sVar3, iVar4, iVar4+1);
   if (iVar4 * 0x10000 >> 0x10 < 2) {
     iVar4 = 2;
   }
