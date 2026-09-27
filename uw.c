@@ -17420,6 +17420,10 @@ int param_1;
   *(undefined1 *)(DAT_00086df8 + 0x66) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x67) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x68) = 0;
+  if (getenv("UW_DEBUG_FORCE_QUEST_TEST")) {
+    *(unsigned int *)(DAT_00086df8 + 0x65) = 0x12345678;
+    fprintf(stderr, "[quest-persist] forced test quest_bits=0x%x at new-game init\n", *(unsigned int *)(DAT_00086df8 + 0x65));
+  }
   *(undefined1 *)(DAT_00086df8 + 0x6e) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x6f) = 0;
   uVar5 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xfff8;
@@ -37125,6 +37129,34 @@ char * param_1;
   else {
     build_player_save_record(g_save_record_buffer);
     g_save_record_count = g_save_record_count + 1;
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real
+       binary's own write_player_save_record never serializes
+       DAT_0023bca8 (the player's stats/skills/quest-flags struct,
+       confirmed via Ghidra decompile of the real ARM functions at
+       0x43e20/0x43fd8/0x44538 -- none reference it) -- so quest flags,
+       skills, difficulty, and the live game clock never actually
+       survived a real save/load, even in the shipped Pocket PC game.
+       Confirmed via the real UW1 savegame format documentation
+       (uw-formats.txt section 9.2.1) that this struct's layout matches
+       player.dat's own documented fields byte-for-byte starting at
+       offset 0x1e (Strength) -- and this project's own live code
+       already reads/writes this exact struct via DAT_00086df8 at those
+       same documented offsets (e.g. 0xce = game_time, 0x65 = quest
+       flags 0-31), confirming it's genuinely the right data, just
+       never persisted. Appended after the existing (dynamically sized)
+       inventory section using THIS function's own post-increment
+       g_save_record_count (matching the exact count the file-length
+       calculation just below uses -- build_player_save_record's own
+       internal offset math runs before this +1, so the copy can't live
+       there without a mismatched offset) rather than interleaved into
+       the middle of the existing fixed-offset layout, so no existing
+       offset changes. 220 bytes matches the documented "first 220
+       bytes" of a real player.dat (the XOR-encrypted header, ending
+       just past the last documented field before the equipment-slot-
+       index table, which this project's own g_save_equip_table_ptr
+       logic already serializes separately -- not duplicated here). */
+    Ordinal_1044(g_save_record_buffer + 0x5b + g_save_record_count * 8,&DAT_0023bca8,220);
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] SAVE appending quest_bits=0x%x at buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
     if (param_1 != (char *)0x0) {
       iVar2 = -(int)param_1;
       do {
@@ -37138,7 +37170,7 @@ char * param_1;
       if (bVar3) {
         FUN_00065b90();
         FUN_00022884(iVar2,&g_save_record_count,2);
-        FUN_00022884(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b);
+        FUN_00022884(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
         Ordinal_553(iVar2);
       }
       if (g_save_record_buffer != 0) {
@@ -37433,6 +37465,20 @@ undefined1 * param_1;
       deserialize_inventory_link_chain(g_selected_object + 6,param_1 + 0x21);
     }
   }
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
+     write_player_save_record's own matching comment: restores
+     DAT_0023bca8 from the same trailing offset that function now
+     appends it at. g_save_record_count is already set here (the
+     caller reads it directly from the file's own 2-byte header
+     before calling this function), matching the exact post-increment
+     count the save side used, so this offset is consistent whether
+     restore_player_save_record's own caller went through a real file
+     read or is just re-applying the currently-held in-memory record
+     (build_player_save_record is only ever called from
+     write_player_save_record, which always fills this same trailing
+     block first -- never garbage). */
+  Ordinal_1044(&DAT_0023bca8,param_1 + 0x5b + g_save_record_count * 8,220);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] LOAD restored quest_bits=0x%x from buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
   return;
 }
 
@@ -37480,7 +37526,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     }
     FUN_00065d4c();
     FUN_0002285c(iVar3,&g_save_record_count,2);
-    FUN_0002285c(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b);
+    FUN_0002285c(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
     Ordinal_553(iVar3);
     FUN_0004638c();
   }
