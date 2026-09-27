@@ -5147,3 +5147,52 @@ testing -- default gameplay (g_model_map on, UW_DOOR_ANIM_FRAMES
 unset) is completely unaffected; this whole path stays out of the way
 until deliberately turned on. run-regressions.sh: 6/6 clean, fresh
 build.
+
+(46) 2026-09-27: promoted entry 45's native model-rendering path to the
+default (user, after live comparison against both g_model_map and the
+UW_DLIST_DOOR display-list interpreter: "this is looking better than
+our other options, commit"), plus a naming pass on the functions this
+whole investigation centered on.
+
+DEFAULT-ON: `UW_DOOR_ANIM_FRAMES`'s own gate flipped from opt-in
+(`if (getenv(...))`) to opt-out (`if (!_s || atoi(_s) != 0)`), matching
+the same convention UW_DLIST_DOOR itself already used. Reachable
+without any other change: g_model_map already defaults OFF
+(UW_ENABLE_MODEL_RENDER unset), so its own door entries don't
+intercept first unless separately re-enabled for comparison. Verified
+live: a fresh screenshot at the established door repro with ZERO env
+vars now shows a real, correctly-textured door and frame (previously
+required UW_DOOR_ANIM_FRAMES=1 explicitly) -- no crash, no double
+sprite, consistent with everything already fixed this session.
+run-regressions.sh: 6/6 clean, fresh build.
+
+NAMING PASS (scoped, not a blanket rename of every Ghidra-default
+identifier in these -- still dense -- functions; targeted the ones
+this whole investigation actually resolved the meaning of):
+- `emit_object_billboard` -> `emit_catalog_object`, everywhere in the
+  file (function + all call sites + comments). The old name actively
+  undersold what this function does now that we know it -- it's not
+  only a billboard renderer, it's the SAME function that draws real
+  multi-face .E model geometry for doors/frames/bridges/decals via
+  tick_anim_record's own catalog resolution (entry 45). Needed a new
+  forward prototype (this file otherwise never pre-declares anything)
+  -- clang's implicit-declaration inference from the call site that
+  precedes the definition was landing on a signature incompatible with
+  the real K&R definition, a hard error under the new name where it
+  had silently been tolerated under the old one.
+- Its own 4 parameters: catalog, obj, heading, frame_or_texid (were
+  param_1-4).
+- emit_anim_object_frames's own 2 parameters: door_type, obj (were
+  param_1-2).
+- tick_anim_record's own 1 parameter: catalog (was param_1).
+- Inside emit_catalog_object, scoped to its own body only (these exact
+  names are reused with different meanings by hundreds of other
+  functions in this file, so every rename below was restricted to this
+  one function's own line range, not a global replace): bVar4 ->
+  catalog_flags (the DAT_00086c08[catalog] flags byte), uVar14 ->
+  catalog_u, local_70 -> texptr, uVar11/uVar12 -> tex_w/tex_h,
+  local_48 -> faces_remaining (a countdown, not a fixed count -- see
+  its own use at the bottom of the per-face loop).
+Compiled clean after each scoped rename (checked individually, not
+just at the end, given how much of this file reuses these exact
+generic names for unrelated purposes in other functions).
