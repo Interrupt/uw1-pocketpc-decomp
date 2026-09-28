@@ -15380,6 +15380,15 @@ int param_2;
               iVar7 = iVar7 * 0xc + param_1;
               puVar8 = (undefined4 *)(iVar7 + 0x3010);
               uVar11 = *puVar8;
+              if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
+                int _lo = 0, _hi = -1;
+                sscanf(getenv("UW_DEBUG_NEARCLIP_RANGE"), "%d:%d", &_lo, &_hi);
+                if (local_48 >= _lo && local_48 <= _hi)
+                  fprintf(stderr, "[nearclip] rec=%d pointcount=%d edge=%d prev_vi=%d cur_vi=%d prev_w=%g cur_w=%g thresh=%g prev_behind=%d\n",
+                          local_48, iVar4, local_78, local_64,
+                          *(int *)(local_50 + 0x4818),
+                          *(float *)&uVar10, *(float *)&uVar11, *(float *)&DAT_00084608, iVar6);
+              }
               if (iVar6 == 0) {
                 iVar6 = Ordinal_2038(uVar11,DAT_00084608);
                 if (iVar6 != 0) {
@@ -15559,6 +15568,13 @@ LAB_0002029c:
             if (getenv("UW_DEBUG_DOOR_POS") && local_48 >= 26 && local_48 <= 32)
               fprintf(stderr, "[doorpos] near_clip: emit_idx=%d iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
                       local_48, iVar18, local_7c);
+            if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
+              int _lo = 0, _hi = -1;
+              sscanf(getenv("UW_DEBUG_NEARCLIP_RANGE"), "%d:%d", &_lo, &_hi);
+              if (local_48 >= _lo && local_48 <= _hi)
+                fprintf(stderr, "[nearclip] rec=%d FINAL iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
+                        local_48, iVar18, local_7c);
+            }
             if (iVar18 != 0) {
               *puVar20 = (char)iVar18;
               (&DAT_000bc039)[iVar19] = (char)((uint)iVar18 >> 8);
@@ -15779,6 +15795,55 @@ void render_visible_tile_list()
 // normal's call site, not just this decompile. Only point positions and
 // vertex-index lists persist. Full writeup: object-rendering-findings.txt
 // UPDATE (7)/(8).
+/* Every .E model file in data/DATA3D/ is CRLF-terminated (confirmed via
+   `xxd` on ROCKBIG.E: the PARTS block's last entry ends "...8);\r\n}\r\n").
+   This parser's own end-of-PARTS-block check (s___c_1____00084954,
+   "%*c%1[}]" -- skip exactly one character, then test for '}') was
+   written assuming the ORIGINAL DOS/CE C runtime's text-mode fopen()
+   would already have collapsed that \r\n to a single \n, leaving %*c's
+   one-character skip landing exactly on '}'. POSIX fopen() never does
+   that translation regardless of mode string, so on this port the raw
+   \r survives, %*c skips it, and %1[}] then fails to match the '\n'
+   that follows -- the parser concludes there's ANOTHER part still to
+   read and parses one phantom extra PARTS entry off of "}\r\n\nNODES
+   {\r\n..." garbage (a degenerate 1-vertex "face" that reliably fails
+   to rasterize at runtime, confirmed live via UW_DEBUG_FACE51: every
+   .E model tested gets its real face count plus exactly one broken
+   trailing entry). Root-caused, not guessed: bisected with UW_DEBUG_
+   NEARCLIP_RANGE that the failing record's own point count is 1 before
+   near-clip ever touches it, then UW_DEBUG_EPARSE showed the parser
+   itself emitting a 53rd part (vertcount=1) for ROCKBIG.E's 52-entry
+   PARTS block. Fixed at the real root: strip \r from the file's own
+   byte stream before scanning, replicating the text-mode translation
+   the recovered scanf patterns were always written to expect, rather
+   than reworking every parser call site individually. */
+static void *uw_e_model_strip_cr(void *raw_fh) {
+  FILE *f = (FILE *)raw_fh;
+  long sz;
+  char *buf;
+  size_t n, r, w;
+  FILE *clean;
+  if (!f) return NULL;
+  if (fseek(f, 0, SEEK_END) != 0) return f;
+  sz = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  if (sz <= 0) return f;
+  buf = (char *)malloc((size_t)sz + 1);
+  if (!buf) return f;
+  n = fread(buf, 1, (size_t)sz, f);
+  fclose(f);
+  for (r = 0, w = 0; r < n; r++) {
+    if (buf[r] != '\r') buf[w++] = buf[r];
+  }
+  buf[w] = 0;
+  /* fmemopen keeps a reference to buf, not a copy -- intentionally never
+     freed (one small per-model leak at load time, ~29 models total,
+     same tolerance this codebase already extends to other load-time
+     scratch allocations). */
+  clean = fmemopen(buf, w, "r");
+  return clean ? clean : f;
+}
+
 void parse_e_model_file(param_1,param_2)
 char *param_1;
 undefined1 * param_2;
@@ -15873,6 +15938,7 @@ undefined1 * param_2;
   } while (cVar18 != '\0');
   Ordinal_1063(acStack_130,param_1);
   pvVar_fh = Ordinal_1113(acStack_130,&DAT_00084a24);
+  pvVar_fh = uw_e_model_strip_cr(pvVar_fh);
   local_25c = pvVar_fh;
   /* This whole function's 11 fatal-error checks (Ordinal_1102 message +
      FUN_00082388, killing the entire process) originally treated any
@@ -16193,6 +16259,8 @@ LAB_000218b8:
                 param_2[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
                 param_2[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
                 param_2[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
+                if (getenv("UW_DEBUG_EPARSE"))
+                  fprintf(stderr, "[eparse] %s part=%d vertcount=%d\n", param_1, g_model_parse_part_count, iVar5);
                 iVar5 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc18);
                 iVar10 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc20);
                 vec3_sub(param_2 + iVar5 * 0xc + 8,
@@ -57623,6 +57691,18 @@ short frame_or_texid;
   }
   _anim = (char *)tick_anim_record(catalog);
   faces_remaining = *(int *)(_anim + 4);
+  if (getenv("UW_DEBUG_FACE51") && catalog == 7) {
+    static int _dumped_once = 0;
+    if (!_dumped_once) {
+      _dumped_once = 1;
+      int _kk;
+      fprintf(stderr, "[face51] model dump: catalog=%d faces_remaining=%d\n", (int)catalog, faces_remaining);
+      for (_kk = 0; _kk < faces_remaining; _kk++) {
+        int _pc = *(int *)(_anim + 0xc14 + _kk * 0x60);
+        fprintf(stderr, "[face51] model k=%d point_count=%d\n", _kk, _pc);
+      }
+    }
+  }
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[billboard] tick_anim_record(catalog=%d) -> _anim=%p point_count=%d face_count(faces_remaining)=%d\n",
             (int)catalog, (void *)_anim, *(int *)_anim, faces_remaining);
@@ -58293,6 +58373,12 @@ LAB_000640ec:
         double dx = cx - _eye_x, dy = cy - _eye_y, dz = cz - _eye_z;
         _dist[_k] = dx*dx + dy*dy + dz*dz;
         _order[_k] = _k;
+        if (getenv("UW_DEBUG_FACE51") && (_k == 50 || _k == 51 || _k == 52)) {
+          fprintf(stderr, "[face51] catalog=%d k=%d iv=(%d,%d,%d,%d) p0=(%g,%g,%g) p1=(%g,%g,%g) p2=(%g,%g,%g) p3=(%g,%g,%g)\n",
+                  (int)catalog, _k, iv0, iv1, iv2, iv3,
+                  p0[0], p0[1], p0[2], p1[0], p1[1], p1[2],
+                  p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]);
+        }
       }
       /* Small N -- plain insertion sort, descending distance (farthest
          first, so nearer faces paint last and correctly cover them). */

@@ -1631,3 +1631,76 @@ of the dungeon view, screenshot-confirmed.
 run-regressions.sh: 1/6 clean -- unchanged from the pre-existing,
 already-bisected settle_mobile_to_immobile crash (milestone 8); this
 change doesn't touch that code path.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (10): ROOT-CAUSED and FIXED the boulder hole -- a CRLF
+parsing bug in parse_e_model_file, not a rendering/depth-sort issue at all
+═══════════════════════════════════════════════════════════════════════════
+QA report (via the new face-dump tool from milestone 8): "it looks like
+model faces are drawn back to front properly, but it stops before drawing
+the nearest ones." This contradicted the milestone-6/9 "single random
+degenerate face, angle-dependent" theory and turned out to be right to
+push on.
+
+Investigation, each step verified against real data rather than guessed:
+1. Re-ran the exact same repro angle with UW_MODEL_NO_DEPTH_SORT=1 -- the
+   SAME record still failed to draw. Rules out the depth-sort entirely
+   (already suspected after milestone 9's matched-angle A/B, now
+   confirmed a second way): whichever face is affected, sort on/off
+   makes no difference.
+2. Added UW_DEBUG_NEARCLIP_RANGE=lo:hi (near_clip_visible_tiles, both the
+   per-edge test and the FINAL iVar18 tally) to inspect the failing
+   record directly. It showed pointcount=1 for that record BEFORE the
+   clip loop even ran a real edge test -- not a clip-plane edge case,
+   the record's own point count was already wrong at entry.
+3. Added UW_DEBUG_EPARSE (parse_e_model_file, right where each part's
+   vertex count gets written) and UW_DEBUG_FACE51 (dumps every face's
+   stored point count straight from the model's own parsed data). Both
+   agreed: ROCKBIG.E's PARTS block has exactly 52 real entries, but the
+   parser was emitting 53 -- a phantom last part with vertcount=1.
+4. Read data/DATA3D/ROCKBIG.E in a hex dump: the PARTS block's last real
+   entry is terminated "...8);\r\n}\r\n" -- CRLF line endings. The
+   parser's own end-of-block check (format string "%*c%1[}]": skip
+   exactly one character, then test for '}') only works if that's a
+   single \n, which is what the ORIGINAL game got for free from DOS/
+   Windows CE's text-mode fopen() automatically collapsing \r\n to \n.
+   POSIX fopen() never does that translation, mode string or not, so
+   this port's %*c skips the \r and lands on \n, %1[}] fails to match,
+   and the parser concludes there's one more part to read -- parsing a
+   phantom, degenerate "face" off of the "}\r\n\nNODES {\r\n..." bytes
+   that follow. That phantom face's point count (1) is why it always
+   failed to rasterize: not a camera/rotation/sort-dependent rendering
+   bug at all, but a static property of the parsed model, present in
+   memory before a single frame ever renders. This also explains why the
+   symptom was only visible at SOME viewing angles despite being always
+   "broken" -- the phantom face only shows up as a hole on the frames
+   where it would have been the one thing covering that screen patch.
+
+Fixed at the actual root rather than patching the one scanf pattern:
+data/DATA3D/*.E is CRLF-authored throughout (this is almost certainly
+not ROCKBIG-specific), so parse_e_model_file now runs every .E file's
+bytes through a small strip-\r pass (uw_e_model_strip_cr: read the
+raw fopen()'d file fully, drop every '\r', fmemopen() a clean stream in
+its place) before any scanf touches it -- replicating the text-mode
+translation the recovered parser code was always written assuming,
+rather than reworking every individual "%*c"/whitespace-sensitive scanf
+pattern in this parser to be CRLF-safe one at a time.
+
+Live-verified: UW_DEBUG_EPARSE now shows ROCKBIG.E stopping cleanly at
+part=51 (52 total, no phantom 53rd). The face-dump tool's sequence at
+the same repro angle that showed a gap before (...rec070, rec071, GAP,
+rec072-HUD) now runs contiguous (...rec070, rec071, rec072-HUD, no
+gap). Screenshot-confirmed: the small hole at the top of the rock
+silhouette at rotation_offset=270 is gone; the boulder now renders as a
+fully closed, solid shape.
+
+The UW_DEBUG_NEARCLIP_RANGE/UW_DEBUG_EPARSE/UW_DEBUG_FACE51 diagnostics
+added while chasing this are left in place (all zero-cost when unset,
+same convention as every other UW_DEBUG_* tool this session) -- likely
+useful again if any OTHER .E model turns out to have its own edge case
+here, or for verifying a given model's real face count without
+cross-referencing the raw text file by hand.
+
+run-regressions.sh: 1/6 clean -- unchanged from the pre-existing,
+already-bisected settle_mobile_to_immobile crash (milestone 8); this
+fix touches only .E model text parsing, nowhere near that code path.
