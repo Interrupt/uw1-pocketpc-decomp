@@ -2297,3 +2297,71 @@ Confirmed live: bug-pull-chain-crash.txt no longer crashes (reaches
 frame deeper, never resolved it.
 
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (20): resolved the "close via chain works, close via
+direct click doesn't" mystery -- confirmed via fresh disassembly that
+direct-click's one-way behavior is GENUINE ORIGINAL GAME DESIGN, not a
+port bug. Also fixed one more independent pointer-truncation bug found
+along the way
+═══════════════════════════════════════════════════════════════════════════
+QA follow-up: "Using the pull chain works to open the door / Using the
+pull chain again closes the door properly / Using the door when open
+does not close the door, but shows the end part of the opening
+animation... Interesting - closing the door works fine via the pull
+chain use chain, but not using the door directly. Look into that."
+
+Traced the two interaction paths (which milestone 18 had already
+partly identified) all the way to source, and this time verified BOTH
+against a fresh, unmodified Ghidra decompile of the real UU.exe binary
+rather than reasoning from this project's own (possibly already
+HACK-adjusted) C source:
+
+- Direct door click routes through FUN_0007bcdc, gated on the door's
+  own word0 low nibble (`(*param_2 & 0xf) < 8 ? [try combination, then
+  FUN_0007c580] : FUN_0007c708`). Confirmed byte-for-byte identical
+  against the real binary's own FUN_0007bcdc -- this project's C source
+  is completely faithful here, not a decompilation error. Since word0's
+  low nibble becomes part of the door's permanent "activated" identity
+  on first use (see milestone 18's own finding) and never resets, this
+  path's FUN_0007c580 (the only branch that can actually close a door)
+  is only ever reachable on a door's FIRST-EVER interaction; every
+  later click permanently routes to FUN_0007c708 (open), which no-ops
+  once already open. Confirmed the SAME in FUN_0007c814 (the "toggle"
+  action available to level scripts, `sVar3==2` in
+  babl_builtin_gronk_door) -- it checks the exact same word0 field, so
+  it would have the identical one-way problem if anything actually used
+  it that way.
+
+- The pull chain does NOT go through either of those word0-gated
+  paths for its own toggling. babl_builtin_gronk_door (the real
+  script-triggered door action, called from level-script effects like
+  a chain's own "use" behavior) dispatches on `sVar3` -- a value read
+  directly from the CHAIN's own script parameter -- calling
+  FUN_0007c580 (close) or FUN_0007c708 (open) EXPLICITLY, not via
+  FUN_0007c814's word0-based toggle. The chain's own alternating
+  behavior comes from whatever independently toggles which explicit
+  action (sVar3==0 vs sVar3==1) the chain's script requests each pull
+  -- outside the scope of this investigation, but structurally
+  separate from and unaffected by the door's own permanently-stuck
+  word0 nibble.
+
+CONCLUSION: this is genuine original 1992 engine design, not a bug
+introduced by this port. A plain click can only ever open a door once
+via this path (any door state after that is fixed); closing a door is
+by design something switches/levers/chains do via their own,
+independently-tracked toggle state, not something re-clicking the door
+itself was ever supposed to do. Not "fixed" -- changing FUN_0007bcdc's
+dispatch condition to use quality instead of word0 (which WOULD make
+direct clicks toggle correctly) would be a deliberate GAMEPLAY CHANGE
+diverging from the authentic original, not a bug fix, and wasn't made.
+
+Found and fixed one more, independent bug while tracing this:
+babl_builtin_gronk_door's own `iVar6` -- declared plain `int`,
+truncating FUN_000537d0's real `ushort *` return on this 64-bit host,
+the exact same bug class as dozens of others already fixed this
+session, just never yet hit hard enough to visibly misbehave (per the
+function's own pre-existing comment: "never exercised deep enough to
+crash/misbehave visibly yet"). Retyped to `ushort *`.
+
+run-regressions.sh: 6/6 clean.

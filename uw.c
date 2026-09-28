@@ -11287,14 +11287,23 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short sVar3;
   undefined4 uVar4;
   undefined4 uVar5;
-  int iVar6;
+  /* HACK: was plain `int iVar6` -- truncated FUN_000537d0's real
+     `ushort *` return (same bug class as its own signature comment)
+     on this 64-bit host. Confirmed live (UW_DEBUG_DOOR) chasing a
+     pull-chain-vs-direct-click door toggle report: this is the real
+     script-triggered door action (open/close/toggle, sVar3==0/1/2),
+     reached from level scripts like a pull chain's own "use" effect --
+     passed straight through to FUN_0007c580/FUN_0007c708/FUN_0007c814
+     below, all of which expect a real pointer. */
+  ushort *iVar6;
   ushort *local_24;   /* was int -- holds tilemap_lookup()+2, a 64-bit ptr */
 
   uVar4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
   uVar5 = FUN_0001adc4((int)*(short *)(param_1 + -6));
   local_24 = (ushort *)((char *)tilemap_lookup(uVar5,uVar4) + 2);
   iVar6 = FUN_000537d0(&local_24,0,5,0,0xffff);
-  if ((iVar6 == 0) && (iVar6 = FUN_000537d0(&local_24,0,7,0,0xf), iVar6 == 0)) {
+  if ((iVar6 == (ushort *)0x0) &&
+     (iVar6 = FUN_000537d0(&local_24,0,7,0,0xf), iVar6 == (ushort *)0x0)) {
     uVar4 = 0;
   }
   else {
@@ -11303,6 +11312,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     DAT_002020a0 = FUN_0001adc4((int)*(short *)(param_1 + -6));
     DAT_002020a4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
     sVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] babl_builtin_gronk_door: sVar3(action)=%d obj0=0x%04x\n",
+              (int)sVar3, (unsigned)*iVar6);
     if (sVar3 == 0) {
       FUN_0007c580(0,iVar6);
     }
@@ -73934,6 +73946,9 @@ ushort * param_2;
   
   uVar5 = *param_2;
   uVar4 = uVar5 >> 4 & 3;
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] FUN_0007bcdc: obj0=0x%04x family=%d low_nibble=%d\n",
+            (unsigned)uVar5, (int)uVar4, (int)(uVar5 & 0xf));
   if ((uVar5 >> 4 & 3) == 0) {
     if ((uVar5 & 0xf) < 8) {
       sVar2 = check_object_combination(param_1,param_2,0);
