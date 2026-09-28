@@ -64,9 +64,32 @@ int DAT_0023c5b0;
 // set) and various fill/blit routines.
 byte g_draw_color_index_backing[128];
 byte *g_draw_color_index = g_draw_color_index_backing;
-char *DAT_000879b0;
+/* DAT_000879b0/DAT_000890a4 (the active font's 12-byte header and its
+   glyph-bitmap data, both filled in by select_active_font's file reads)
+   were plain uninitialized pointers -- no allocation anywhere in this
+   file, and confirmed via Ghidra xref search that the real ARM binary's
+   own source slots (0x40dd8/0x40ddc) are READ-ONLY across the whole
+   binary too, never written by any real code -- so these were never
+   runtime-malloc'd pointers at all; they're link-time-constant
+   addresses of fixed static buffers that Ghidra's static analysis
+   couldn't recover (same class as several other "silently zero"
+   globals already fixed this session). Confirmed live: DAT_000890a4
+   was NULL, and unpack_glyph_bitmap's pointer arithmetic off NULL
+   landed in essentially-random process memory that happened to overlap
+   a heap block libSystem/Foundation legitimately allocated-then-freed
+   during app startup -- an ASan-caught heap-buffer-overflow (uw.c:7007)
+   on the first automap-note text draw of any session, not a "sometimes"
+   bug: font rendering was silently using this same wild pointer on
+   every single draw all along, just usually landing in mapped-but-
+   irrelevant memory instead of a freed block that trips ASan. Given
+   real backing storage instead, sized to what select_active_font's own
+   reads need (12-byte header; 0x1080 bytes of glyph data -- see that
+   function's own comment on why 0x1080). */
+static char DAT_000879b0_backing[12];
+char *DAT_000879b0 = DAT_000879b0_backing;
 undefined2 DAT_000a85b0;
-char *DAT_000890a4;
+static char DAT_000890a4_backing[0x1080];
+char *DAT_000890a4 = DAT_000890a4_backing;
 /* Ghidra split this out as a standalone, never-written `short` -- but its
    address (0x0024ad94) is exactly 0x34 bytes into the RGB565 palette LUT
    at g_palette_rgb565 (0x34/2 = entry 26 = palette color 0x1a), and nothing
@@ -6902,8 +6925,19 @@ short param_3;
           sVar1 = (&DAT_000890b0)[(byte)*pcVar9];
           {
             int _fmt = (int)g_font_row_stride << 3;
+            /* Same signed-char bug as the width lookup just above (see
+               its own comment) -- `*pcVar9` is `char`, signed on this
+               host, so any extended/high glyph index (>=0x80) sign-
+               extended to a negative int here, computing a glyph
+               pointer hundreds of bytes BEFORE g_font_glyph_data_base
+               instead of after it. Confirmed live via UW_DIAG_TEXT: char
+               0x9e computed a pointer 490 bytes before the real base --
+               an ASan-caught heap-buffer-overflow (uw.c:7030) reading
+               whatever heap memory happened to sit there instead of the
+               real glyph 0x9e. Cast to byte to match the fix already
+               applied to the sibling width lookup two lines up. */
             undefined4 _r = unpack_glyph_bitmap(auStack_40,
-                       (DAT_000a85b8 + 1) * (int)*pcVar9 + g_font_row_stride * iVar11 + g_font_glyph_data_base,
+                       (DAT_000a85b8 + 1) * (int)(byte)*pcVar9 + g_font_row_stride * iVar11 + g_font_glyph_data_base,
                        _fmt);
             if (getenv("UW_DIAG_TEXT"))
               fprintf(stderr, "[diag11060] glyph '%c' fmt=%d(0x%x) rowbytes(g_font_row_stride)=%d ret=%d width(sVar1)=%d auStack_40[0..3]=%d,%d,%d,%d\n",
@@ -13524,7 +13558,24 @@ int param_4;
       *(undefined4 *)(local_4 + (short)local_c * 4) = 0;
       (&DAT_000bbfa8)[(short)local_c] = 0xffff;
       (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
-      FUN_0001c420((int)(short)local_10);
+      /* Real ARM binary also calls this with only 1 arg (confirmed via
+         Ghidra decompile of the real FUN_0001bb04) -- same "leftover
+         register" reliance as blit_sprite_row_remapped's dropped 4th
+         arg, not a decompile mistake: the original code never reloads
+         r1 here because it already holds the right value from earlier
+         in this same block. FUN_0001c420's 2nd param is read as
+         `(short)param_2` and used purely as a small array/table index
+         (see its own body) -- local_c is exactly that same value, still
+         live and unchanged since being used on the previous 4 lines, so
+         it's what's actually sitting in that register at this point.
+         Passed explicitly since a C recompile has no equivalent
+         "whatever's left in the register" state (the uninitialized
+         param_2 this crashed on before being declared `undefined **`
+         let it be silently read as a wild pointer instead of the small
+         integer FUN_0001c420 actually expects -- ASan-confirmed
+         heap-buffer-overflow in plot_pixel, reached via this exact call
+         with a garbage index). */
+      FUN_0001c420((int)(short)local_10,(int)(short)local_c);
       if (g_selected_object == 0) {
         return;
       }
@@ -46182,6 +46233,32 @@ static const signed char DAT_00086878_arr[256] = {
 };
 #define DAT_00086878_IDX(b) DAT_00086878_arr[(unsigned char)(b)]
 
+/* collision_build_height_field looks at a NEIGHBOR tile's shade value by
+   offsetting its own current tile pointer (into the tilemap, the first
+   0x4000 bytes of the level arena -- see uw-formats.txt) by a signed
+   per-direction step from DAT_00086878_arr. Near the map edge, that
+   neighbor can legitimately fall outside the tilemap entirely -- this
+   function already guards the analogous case for the CURRENT tile
+   (`if (_DAT_00202c34 == NULL) return;`, a few lines up) via
+   tilemap_lookup's own bounds check, but had no equivalent guard for
+   these neighbor derefs. Confirmed live via ASan: a heap-buffer-overflow
+   read 260 bytes before the arena's own start (ushort index -130, i.e.
+   DAT_00086878_arr[0]'s -0x41 real, recovered offset) on ordinary
+   forward movement near a map edge -- not a data-recovery gap in the
+   table (that index's value IS real, recovered data), just a genuinely
+   off-map neighbor with nothing stopping the read. Same "no object"-
+   style defensive treatment as resolve_object_link's own out-of-range
+   guard: skip the neighbor (leave its shade unresolved) instead of
+   reading unmapped/unrelated memory. */
+static ushort collision_neighbor_shade_or_zero(ushort *base, byte idx) {
+  ptrdiff_t off = (ptrdiff_t)DAT_00086878_IDX(idx) * 2;
+  ushort *p = base + off;
+  if ((char *)p < DAT_002029cc || (char *)(p + 1) > DAT_002029cc + 0x4000) {
+    return 0;
+  }
+  return *p;
+}
+
 // was FUN_00050d78 -- build the per-corner tile height field the sweep collides against
 void collision_build_height_field(param_1)
 uint param_1;
@@ -46277,25 +46354,25 @@ uint param_1;
     DAT_00202c07 = bVar14;
     DAT_00202c09 = DAT_00202c04;
     if (*(short *)(&DAT_00202c70 + (uint)bVar11 * 2) == 0x1111) {
-      uVar3 = _DAT_00202c34[DAT_00086878_IDX(bVar11) * 2];
+      uVar3 = collision_neighbor_shade_or_zero(_DAT_00202c34, bVar11);
       *(ushort *)(&DAT_00202c70 + (uint)bVar11 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar12 * 2) == 0x1111) {
-      uVar3 = puVar2[DAT_00086878_IDX(bVar12) * 2];
+      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar12);
       *(ushort *)(&DAT_00202c70 + (uint)bVar12 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar13 * 2) == 0x1111) {
-      uVar3 = puVar2[DAT_00086878_IDX(bVar13) * 2];
+      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar13);
       *(ushort *)(&DAT_00202c70 + (uint)bVar13 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar14 * 2) == 0x1111) {
-      uVar3 = puVar2[DAT_00086878_IDX(bVar14) * 2];
+      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar14);
       *(ushort *)(&DAT_00202c70 + (uint)bVar14 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
@@ -75217,8 +75294,20 @@ short param_3;
 
 {
   int iVar1;
-  
+
   iVar1 = (int)param_2;
+  /* No bounds check on (param_1, iVar1) against the real 320x240
+     framebuffer (GX_W/GX_H, gx_stub.c) before this raw write -- callers
+     that plot a small crosshair/cursor around a point (e.g. FUN_0001c420,
+     +-1 in x or y around a stored coordinate) can walk one pixel outside
+     the screen near an edge with nothing stopping them. Confirmed live:
+     ASan-caught heap-buffer-overflow WRITE here reached via ordinary
+     Talk-mode interaction. Same defensive "skip instead of touching
+     memory outside the real buffer" posture as resolve_object_link's
+     own out-of-range guard elsewhere in this file. */
+  if ((param_1 < 0) || (0x140 <= param_1) || (iVar1 < 0) || (0xf0 <= iVar1)) {
+    return;
+  }
   *(undefined2 *)
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
        (&g_palette_rgb565)[param_3];
