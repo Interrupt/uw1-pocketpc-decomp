@@ -2642,7 +2642,21 @@ undefined1 DAT_000857a0_backing[32768] = "\\SAVE0";
 undefined2 DAT_00201b6c;
 undefined2 DAT_00201b60;
 undefined2 DAT_00201b64;
-undefined2 DAT_00202080;
+/* Was a plain tentative definition (no initializer), so a truly fresh
+   process starts it at C's default zero instead of the real "no
+   container open" resting state. Every genuine reset in this file
+   (FUN_0003bcd8, probe_save_slots's caller, journey_onward_load_slot_menu's
+   own setup) explicitly sets this to 0xffff/-1, and every reader treats
+   it as signed (`-1 < DAT_00202080` gates FUN_00044624's
+   object_list_unlink call below) -- 0 reads as "container slot 0 is
+   open", spuriously unlinking g_player_object from a wild address
+   computed off a container that was never really open. Confirmed live:
+   SIGBUS in object_list_unlink on the very first "new game" of a
+   process that never had an earlier save to leave this at a sane value
+   (this codebase's regression scripts had been silently relying on
+   stale state left over from a prior interactive session to avoid ever
+   hitting this fresh-process path). */
+short DAT_00202080 = -1;
 short DAT_00201c94;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
    dispatch_sticky_mode_handlers/enter_dungeon_view/FUN_0003c038/change_game_mode (DAT_00201b64 = the
@@ -40103,9 +40117,23 @@ short param_2;
   ushort *puVar7;
   undefined4 uVar8;
   undefined1 auStack_60 [12];
-  ushort auStack_54 [20];
+  /* Was `ushort auStack_54 [20]` (matching the real ARM binary's own
+     stack layout exactly, confirmed via Ghidra decompile of the real
+     FUN_00048198 at 0x48198) -- but FUN_00048110's real call site also
+     matches ours exactly: `redraw_inventory_widget_range(6,0x16)`, a
+     loop upper bound of 22, writing auStack_54[21] and auStack_54[22]
+     (index 20 is separately special-cased via local_2c, never touches
+     the array). The real binary's original stack layout happened to
+     place harmless padding/an unrelated local there, so the same
+     2-element overrun was silently benign in the shipped game; this
+     recompile's different stack layout makes it a real, ASan-confirmed
+     stack-buffer-overflow (WRITE of size 2, uw.c:40164) on literally the
+     first HUD redraw of any fresh game. Widened to fit the real max
+     index (22) actually used, rather than deviating from the real
+     call's range -- a defensive size fix, not a logic change. */
+  ushort auStack_54 [23];
   ushort local_2c;
-  
+
   bVar5 = false;
   FUN_00057118();
   iVar1 = (int)(short)param_1;
