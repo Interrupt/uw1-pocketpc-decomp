@@ -2074,3 +2074,80 @@ wait) to confirm the visual smoothness matches the now-confirmed-
 correct underlying state.
 
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (17): the swing-angle SOURCE FIELD itself was wrong --
+milestone 15's "quality" fix was a genuine bug, not a fix. Root-caused
+against fresh Ghidra decompiles of the real UU.exe binary, per direct
+instruction ("check the disassembly ... see how they actually handled
+this animation")
+═══════════════════════════════════════════════════════════════════════════
+Live user testing of milestone 16's state found three symptoms: the door
+doesn't visibly swing on its hinge, "fully open" only shows it cracked a
+little, and during the animation it swings way too far (almost 90
+degrees). All three trace back to the same root cause.
+
+Used the existing Ghidra headless tooling (analyzeHeadless against
+/Users/ccuddigan/Projects/UW1/decomp, program "UU.exe" -- the real ARM
+WinCE binary this whole port decompiles, found alongside the DOS
+original "UW.EXE" in the same Ghidra project) to get fresh, unmodified
+decompiles of FUN_00064384 (emit_anim_object_frames) and FUN_00081034
+(scheduler_step_entry) straight from the binary, bypassing this
+project's own possibly-already-hacked C source entirely.
+
+Finding: the real door-open trigger's swing-magnitude line was always
+`iVar8 = sign * (bVar4 >> 1 & 7)` -- reading bits 9-11 of the door
+object's own word0 -- NOT quality (obj[3] & 0x3f) at all. Milestone
+15's fix (substituting a fabricated `((quality>>3)!=0) ? 5 : 0`
+boolean-times-fixed-magnitude value) replaced a CORRECT field read
+with an incorrect one, based on a stale live trace taken before the
+scheduler chain (milestone 16) was fixed -- at that point in the
+investigation the real field genuinely did sit at a constant 0, but
+that was a symptom of the scheduler being broken, not evidence the
+field itself was wrong.
+
+The real mechanism, confirmed by reading scheduler_step_entry's own
+fresh decompile: doors' real loaded class-7 behavior flags (from
+objects.dat, read into DAT_00250730) are 0x84 -- bit 2 set, bit 0 (the
+"quality ramp toward a target" path milestone 16 verified and got
+excited about) NOT set. Bit 2's branch (`uVar8 == 4` in
+scheduler_step_entry) directly increments the SAME word0 bits 9-11 by
+the elapsed-ticks parameter every tick, merged back via the same
+`& 0xe00` / `& 0x1e00` masks emit_anim_object_frames reads through --
+this is the real six-to-eight-step gradual sweep, and milestone 16's
+scheduler fixes (all still correct and necessary) already made it run;
+it just never got a chance to matter because emit_anim_object_frames
+was discarding its result and substituting a fixed, oversized value
+instead. (Quality really does just flip +8/-8 open/closed in one
+atomic step, as milestone 16 found -- that part was right. It's simply
+not what drives the visible swing angle.)
+
+Reverted the swing-magnitude line to its real original form. Confirmed
+live (UW_DEBUG_DOOR, bug-open-door.txt): the field now genuinely steps
+0 -> 1 -> 2 -> 3 -> 4 -> 5 across separate ticks (not jumping straight
+to a fixed value), and a full split-screenshot replay shows the door
+leaf swung open on its hinge at a moderate, correct-looking angle by
+the end of the sequence (not the ~90-degree overshoot nor a barely-
+cracked sliver). A mid-sequence screenshot still shows the door closed
+despite the trace confirming the field had already advanced by then --
+consistent with the already-documented, separate, not-yet-fixed
+finding that this viewport only refreshes on discrete input events in
+a scripted demo with zero further input, not a continuous per-frame
+heartbeat; needs live interactive testing (real, continuously-moving
+mouse input) to confirm the visual smoothness matches the now-
+confirmed-correct underlying state.
+
+Tooling note for future passes: the real ARM WinCE binary (UU.exe) is
+already imported into the SAME Ghidra project as the DOS original
+(UW.EXE) that other work this session referenced -- both live under
+/Users/ccuddigan/Projects/UW1/decomp (UW.gpr), addressable via
+analyzeHeadless with -process "UU.exe". Its own address space
+(ARM:LE:32:v8, image base 0x00010000) matches every "// was
+FUN_XXXXXXXX" comment throughout this file directly -- e.g.
+emit_anim_object_frames's own address, 0x64384, is exactly where
+FUN_00064384 lives in that project. This is a much higher-confidence
+ground truth than re-deriving intent from this project's own C source
+alone, and should be reached for earlier next time a HACK's exact
+original behavior is in doubt.
+
+run-regressions.sh: 6/6 clean.

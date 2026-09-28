@@ -58770,48 +58770,31 @@ ushort * obj;
     bVar4 = *(byte *)((char *)obj + 1);
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    /* HACK: the door's actual open/closed state lives in its real
-       "quality" field (obj[3] & 0x3f -- already established and
-       confirmed elsewhere in this file, e.g. UW_DUMP_OBJECTS_FILE's own
-       `_quality = _rec[3] & 0x3f`), NOT in bVar4 (word0's own high
-       byte, whose relevant bits -- `bVar4 >> 1 & 7`, what this line used
-       to read for "how far open" -- were confirmed live to sit at a
-       constant 0 the entire time a door opened in a recorded repro,
-       bug-open-door.txt). That's why DAT_0018957a (the swing-angle
-       contribution added to the door leaf's base heading a few hundred
-       lines down, in emit_catalog_object's own catalog_u==0xe/0xf
-       branch) was always 0: the door's "opening" STATE was real
-       (quality did move, "You see a moving door" was correct) but its
-       RENDERED rotation never advanced.
-
-       Confirmed live (same repro) that door quality is NOT a smooth
-       multi-tick counter: the real "open door" builtin (FUN_0007c708)
-       does a single, guarded `(quality & 0xf) + 8` -- one atomic
-       closed(0-7) -> open(8-15) step, never incremented further (the
-       guard `if (7 < (quality & 0xf)) return;` blocks any repeat) -- so
-       quality only ever measured 0 or 8 across the whole replay, never
-       anything between. A door's swing is therefore a single discrete
-       state flip in this engine, not an animated sweep, matching what
-       was visually confirmed: the leaf rotates once when quality
-       crosses to the 8-15 half and then holds. Since bits 0-2 of
-       quality stayed 0 whenever observed (only bit 3, the open/closed
-       flag itself, ever changed), the magnitude here is just that flag
-       -- `(obj[3] & 0x3f) >> 3` is 0 (closed) or 1 (open) for every
-       value seen -- so it's used as a boolean, then multiplied by a
-       fixed full-swing magnitude (5 raw units = 5*4096 = 20480, i.e.
-       roughly a 90-degree opening on the same 4096-per-eighth-turn
-       scale heading's own math already uses) rather than passed through
-       proportionally: a proportional 0/1 raw unit (the original, first
-       attempt at this fix) turned out to compute and apply correctly
-       end-to-end -- confirmed via a forced-value test that the exact
-       same catalog_u==0xe/0xf consumer swings the mesh dramatically at
-       larger magnitudes -- but was visually almost imperceptible at
-       magnitude 1, since quality never carries a larger value to scale
-       up from. The sign bit stays sourced from bVar4 (unverified
-       whether that's swing direction or something else, but it's
-       unrelated to the confirmed bug and this fix doesn't need to touch
-       it). */
-    iVar8 = ((bVar4 >> 5 & 1) * 2 + -1) * (((obj[3] & 0x3f) >> 3) != 0 ? 5 : 0);
+    /* Reverting the previous "quality" HACK here: fresh Ghidra headless
+       decompiles of this exact function (FUN_00064384) and
+       scheduler_step_entry (FUN_00081034) from the real UU.exe binary
+       (Ghidra project /Users/ccuddigan/Projects/UW1/decomp) prove this
+       line's original form -- `(bVar4 >> 1 & 7)` -- was always correct,
+       and the earlier "fix" (substituting a fabricated quality-derived
+       0/1-times-5 value) was itself the bug, not a fix. `bVar4 >> 1 & 7`
+       reads bits 9-11 of the door's own word0 -- the exact bits
+       scheduler_step_entry's class-flag-bit-2 branch (`uVar8 == 4` a
+       few hundred lines down) directly increments by the elapsed-ticks
+       parameter every tick it runs, merged back via the same `& 0xe00`
+       / `& 0x1e00` masks. Confirmed live (UW_DEBUG_DOOR): doors' real
+       loaded class-7 behavior flags are 0x84 -- bit 2 (0x04) set, bit 0
+       (0x01, the quality-ramp path this session's earlier fix wrongly
+       assumed doors used) NOT set. Quality (obj[3] & 0x3f) really does
+       just flip +8/-8 open/closed in one step (via FUN_0007c708/
+       scheduler_finish_entry) -- that part of the earlier analysis was
+       right -- it's simply not what drives the swing angle at all; the
+       gradual six-to-eight-step sweep the original game shows comes
+       entirely from this word0 field via the bit-2 path instead, which
+       was already correctly implemented elsewhere in this file and
+       simply never got a chance to work because this line was
+       overriding its result with a fixed, oversized substitute instead
+       of reading it. */
+    iVar8 = ((bVar4 >> 5 & 1) * 2 + -1) * (bVar4 >> 1 & 7);
     uVar5 = FUN_00038a8c(5);
     *DAT_00110fc0 = uVar5;
     DAT_00110fc0 = DAT_00110fc0 + 1;
