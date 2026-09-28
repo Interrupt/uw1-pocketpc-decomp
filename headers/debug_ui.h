@@ -31,6 +31,10 @@ void dbgui_field_int(const char *name, int *value, int step);
    RETURN (or clicking it) calls on_press() immediately, instead of
    entering the numeric-edit mode double/int fields use. */
 void dbgui_field_button(const char *name, void (*on_press)(void));
+/* A boolean row, shown as "name: ON"/"name: OFF" (*value treated as
+   nonzero == ON). RETURN, LEFT, or RIGHT all just flip it -- no numeric-
+   edit mode, unlike double/int fields. */
+void dbgui_field_toggle(const char *name, int *value);
 void dbgui_end(void);
 /* Actually paints the panel -- call once per frame from the true end of
  * the frame (after the 3D view and HUD have drawn), NOT from wherever

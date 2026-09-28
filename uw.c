@@ -706,6 +706,24 @@ double g_tune_edge_offset = 128.0;
    for its own per-model fields. */
 double g_tune_rotation_offset = 0.0;
 int g_tune_last_catalog = -1;
+/* UW_MODEL_TUNER=1's "hide_walls" toggle (debug panel, dbgui_field_toggle)
+   -- lets wall/floor tile geometry be filtered out of the render so a
+   single object's own faces (a decal, a boulder) can be inspected via
+   UW_DEBUG_RASTER/the dump_3d_frame face-dump tool without unrelated
+   wall polygons cluttering the trace (several of them coincidentally
+   share texture ids with the object being investigated, confirmed
+   while chasing the TMAP-decal backface report -- filtering by texture
+   id alone doesn't isolate one object's own draws). Checked at the two
+   "commit this wall quad" sites in process_visible_tile_cell (each already
+   writes the quad's geometry/texptr into the current arena slot, THEN
+   advances DAT_0023b83c/DAT_0023b838 to make it visible to the renderer)
+   -- when set, the advance is skipped, so the wall's just-written data is
+   silently overwritten by whatever gets emitted into that same slot next
+   (the next wall, or the tile's own floor/object via emit_tile_features)
+   instead of ever reaching render_visible_tile_list. Floor and objects are
+   untouched -- only process_visible_tile_cell's own wall-quad commits
+   check this flag. */
+int g_uw_hide_walls = 0;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
    view/camera matrix -- build_view_matrix writes the whole matrix in one shot
@@ -55564,8 +55582,10 @@ LAB_0005e7e0:
     (&DAT_000acde6)[iVar30] = 0;
     iVar16 = DAT_00086e6c;
     (&DAT_000acde7)[iVar30] = 0;
-    DAT_000a85d4 = iVar32 + 1;
-    DAT_0023b83c = DAT_000a85d4;
+    if (!g_uw_hide_walls) {
+      DAT_000a85d4 = iVar32 + 1;
+      DAT_0023b83c = DAT_000a85d4;
+    }
   }
   if (*(short *)(iVar16 + 0xe) < 0x3f5) {
     (*DAT_0023b80c)(auStack_50,DAT_0023b4e0,9);
@@ -55743,8 +55763,10 @@ LAB_0005e7e0:
     (&DAT_000acde5)[iVar19] = 0;
     (&DAT_000acde6)[iVar19] = 0;
     (&DAT_000acde7)[iVar19] = 0;
-    DAT_000a85d4 = DAT_0023b83c + 1;
-    DAT_0023b83c = DAT_000a85d4;
+    if (!g_uw_hide_walls) {
+      DAT_000a85d4 = DAT_0023b83c + 1;
+      DAT_0023b83c = DAT_000a85d4;
+    }
   }
   DAT_0023b818 = 0;
   local_54 = 0;
@@ -56022,12 +56044,12 @@ LAB_0005e7e0:
       (&DAT_000acde5)[iVar18] = 0;
       (&DAT_000acde6)[iVar18] = 0;
       (&DAT_000acde7)[iVar18] = 0;
-      DAT_000a85d4 = iVar32 + 1;
+      if (!g_uw_hide_walls) DAT_000a85d4 = iVar32 + 1;
       local_83 = DAT_0023b4e0;
       puVar23 = DAT_0023b4ec;
       iVar16 = DAT_00086e6c;
       bVar25 = DAT_0023b4e0;
-      DAT_0023b83c = DAT_000a85d4;
+      if (!g_uw_hide_walls) DAT_0023b83c = DAT_000a85d4;
     }
     local_54 = local_54 + 1 & 0xff;
     uVar27 = (short)uVar27 >> 1;
@@ -56242,8 +56264,10 @@ LAB_0005e7e0:
       DAT_000a85d0 = iVar16 + 4;
       DAT_0023b838 = DAT_000a85d0;
       (&DAT_000ace26)[iVar34] = (char)((uint)uVar17 >> 0x10);
-      DAT_000a85d4 = DAT_0023b83c + 1;
-      DAT_0023b83c = DAT_000a85d4;
+      if (!g_uw_hide_walls) {
+        DAT_000a85d4 = DAT_0023b83c + 1;
+        DAT_0023b83c = DAT_000a85d4;
+      }
       (&DAT_000ace27)[iVar34] = (char)((uint)uVar17 >> 0x18);
       (&DAT_000acde4)[iVar34] = 4;
       (&DAT_000acde5)[iVar34] = 0;
@@ -58240,6 +58264,7 @@ LAB_000640ec:
       dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
     }
     dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
+    dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
     dbgui_end();
   }
   sVar13 = (short)((int)sVar13 + (int)g_tune_rotation_offset);

@@ -1704,3 +1704,45 @@ cross-referencing the raw text file by hand.
 run-regressions.sh: 1/6 clean -- unchanged from the pre-existing,
 already-bisected settle_mobile_to_immobile crash (milestone 8); this
 fix touches only .E model text parsing, nowhere near that code path.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (11): hide_walls debug toggle, to filter wall/floor/
+ceiling geometry out of the render while investigating a single object
+═══════════════════════════════════════════════════════════════════════════
+Request: filter out wall geometry so the decal-backface investigation
+(and future ones) isn't cluttered by unrelated wall polygons -- several
+of which turned out to coincidentally share texture ids with the object
+being investigated (found while chasing the TMAP decal report: filtering
+UW_DEBUG_RASTER output by texture id alone pulled in off-screen wall
+segments using the same id, not just the object in question).
+
+Added a "toggle" field type to debug_ui.c (dbgui_field_toggle(name,
+int*)) -- a boolean row shown as "name: ON"/"name: OFF"; RETURN, LEFT,
+RIGHT, or a click all just flip it, no numeric-edit mode. Wired a new
+"hide_walls" toggle into the Object Tuner panel, backed by a new global
+(g_uw_hide_walls).
+
+Mechanism: process_visible_tile_cell (uw.c, the function walk_visible_
+tiles calls per visible tile to emit its wall/floor/ceiling geometry
+into the shared per-frame render arena) commits each wall quad in two
+steps -- write the quad's geometry/texptr into the current arena slot,
+then advance DAT_0023b83c (and DAT_0023b838, the vertex cursor) so
+render_visible_tile_list will actually walk it. Found and gated all 4
+of that function's own commit sites (three different code idioms for
+the same "commit" operation, one straightforward grep for the literal
+pattern only caught 2 of them -- had to check every assignment to
+DAT_0023b83c across the function's real extent, 55223-56316, to find
+the other 2). When the toggle is on, the advance is skipped, so the
+wall's just-written data is silently overwritten by whatever the next
+thing emitted into that slot is instead of ever reaching render_
+visible_tile_list -- floor and objects (emit_tile_features/emit_tile_
+objects/emit_catalog_object, separate functions with their own commit
+sites, deliberately left untouched) are unaffected.
+
+Live-verified at the boulder repro position: toggling hide_walls on
+makes the walls/floor/ceiling disappear entirely (plain background,
+boulder still fully rendered); toggling back off restores them, no
+leftover state.
+
+run-regressions.sh: 1/6 clean -- unchanged, pre-existing bisected
+crash (milestone 8), unrelated to this change.

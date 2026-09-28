@@ -31,6 +31,7 @@ typedef struct {
   char name[24];
   int is_int;
   int is_button;
+  int is_toggle;
   double *dval;
   int *ival;
   void (*on_press)(void);
@@ -131,6 +132,7 @@ static void dbgui_add_field(const char *name, int is_int, double *dval, int *iva
   f->name[sizeof(f->name) - 1] = 0;
   f->is_int = is_int;
   f->is_button = 0;
+  f->is_toggle = 0;
   f->dval = dval;
   f->ival = ival;
   f->on_press = 0;
@@ -155,10 +157,26 @@ void dbgui_field_button(const char *name, void (*on_press)(void))
   f->name[sizeof(f->name) - 1] = 0;
   f->is_int = 0;
   f->is_button = 1;
+  f->is_toggle = 0;
   f->dval = 0;
   f->ival = 0;
   f->on_press = on_press;
   f->step = 0;
+}
+
+void dbgui_field_toggle(const char *name, int *value)
+{
+  if (g_field_count >= DBGUI_MAX_FIELDS) return;
+  DbgField *f = &g_fields[g_field_count++];
+  strncpy(f->name, name, sizeof(f->name) - 1);
+  f->name[sizeof(f->name) - 1] = 0;
+  f->is_int = 1;
+  f->is_button = 0;
+  f->is_toggle = 1;
+  f->dval = 0;
+  f->ival = value;
+  f->on_press = 0;
+  f->step = 1;
 }
 
 static double dbgui_field_get(const DbgField *f)
@@ -246,6 +264,8 @@ void dbgui_draw(void)
     char line[64];
     if (f->is_button) {
       snprintf(line, sizeof(line), "[ %s ]", f->name);
+    } else if (f->is_toggle) {
+      snprintf(line, sizeof(line), "%s: %s", f->name, *f->ival ? "ON" : "OFF");
     } else if (g_editing && i == g_selected) {
       snprintf(line, sizeof(line), "%s: %s_", f->name, g_edit_buf);
     } else {
@@ -294,6 +314,10 @@ void dbgui_feed_mouse_down(int lx, int ly)
         if (f->on_press) f->on_press();
         return;
       }
+      if (f->is_toggle) {
+        *f->ival = !*f->ival;
+        return;
+      }
       g_editing = 1;
       snprintf(g_edit_buf, sizeof(g_edit_buf), "%g", dbgui_field_get(f));
       g_edit_len = (int)strlen(g_edit_buf);
@@ -325,6 +349,9 @@ void dbgui_feed_key(int sdl_keycode)
     g_selected = (g_selected + 1) % g_field_count;
   } else if (f->is_button) {
     if (sdl_keycode == DBGUI_KEY_RETURN && f->on_press) f->on_press();
+  } else if (f->is_toggle) {
+    if (sdl_keycode == DBGUI_KEY_RETURN || sdl_keycode == DBGUI_KEY_LEFT || sdl_keycode == DBGUI_KEY_RIGHT)
+      *f->ival = !*f->ival;
   } else if (sdl_keycode == DBGUI_KEY_LEFT) {
     dbgui_field_set(f, dbgui_field_get(f) - f->step);
   } else if (sdl_keycode == DBGUI_KEY_RIGHT) {
