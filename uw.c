@@ -8923,6 +8923,14 @@ LAB_00014684:
   raster_edge_setup(auStack_10c,param_3,uVar11,uVar4,param_8[1],auStack_154);
   raster_edge_setup(auStack_10c,param_3,uVar11,uVar1,param_8[1],auStack_c4);
   raster_edge_setup(auStack_10c,param_3,uVar1,uVar4,param_8[1],auStack_7c);
+  if (getenv("UW_DEBUG_RASTER")) {
+    fprintf(stderr, "[raster] sort top=%u mid=%u bot=%u  uVar7(short-half-idx)=%u uVar9(cmp)=%u  long_x0=%d short1_x0=%d short2_x0=%d\n",
+            (unsigned)uVar11, (unsigned)uVar1, (unsigned)uVar4,
+            (unsigned)uVar7, (unsigned)uVar9,
+            *(int *)(auStack_154 + 0x28) >> 0xe,
+            *(int *)(auStack_c4 + 0x28) >> 0xe,
+            *(int *)(auStack_7c + 0x28) >> 0xe);
+  }
   if (uVar9 < uVar7) {
     puVar3 = auStack_154;
     puVar5 = auStack_c4;
@@ -8930,6 +8938,10 @@ LAB_00014684:
   else {
     puVar3 = auStack_c4;
     puVar5 = auStack_154;
+  }
+  if (getenv("UW_DEBUG_RASTER")) {
+    fprintf(stderr, "[raster] first-half puVar3(assumed-left)_x0=%d puVar5(assumed-right)_x0=%d\n",
+            *(int *)(puVar3 + 0x28) >> 0xe, *(int *)(puVar5 + 0x28) >> 0xe);
   }
   iVar2 = local_b8;
   while( true ) {
@@ -15894,9 +15906,13 @@ static void *uw_e_model_strip_cr(void *raw_fh) {
   return clean ? clean : f;
 }
 
-void parse_e_model_file(param_1,param_2)
+void parse_e_model_file(param_1,param_2,flip_winding)
 char *param_1;
 undefined1 * param_2;
+int flip_winding; /* HACK: not part of the original recovered signature --
+                      see its own use site (the "HACK: flip_winding"
+                      comment, right before the PARTS block's per-face
+                      vertex-reversal) for the full rationale. */
 
 {
   char stack0xffdc3228_buf [256];
@@ -15976,7 +15992,7 @@ undefined1 * param_2;
   undefined1 auStack_150 [16];
   undefined1 auStack_140 [16];
   char acStack_130 [260];
-  
+
   local_258 = &DAT_000da480;
   Ordinal_1047(acStack_130,0,0x104);
   pcVar2 = &DAT_0023cca8;
@@ -16309,6 +16325,37 @@ LAB_000218b8:
                 param_2[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
                 param_2[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
                 param_2[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
+                /* HACK: flip_winding (new parameter, not part of the
+                   original recovered signature) -- caller-supplied,
+                   per-model opt-in to reverse every face's just-read
+                   vertex list. Added because DOOR.E/DFRAME.E/ROCKBIG.E's
+                   faces render backward: raster_triangle has a real,
+                   working backface cull (confirmed this session via its
+                   left/right edge-assignment gate in raster_textured_span
+                   -- not a bug, a legitimate cheap cull the original
+                   engine relies on), so a backward-wound face silently
+                   disappears depending on which side of it the camera
+                   ends up on -- this is what the earlier-in-this-session
+                   unexplained door-leaf flicker actually was. A real
+                   per-face fix would need each face's own normal compared
+                   against the mesh's shape (tried, reverted per explicit
+                   instruction: too complicated for what's just a handful
+                   of known-bad models) -- a flat "flip everything in this
+                   file" flag, opted into only for the specific models
+                   confirmed backward, is simpler and does the same job
+                   for these models specifically (see the call sites in
+                   the .E load list for which ones pass 1). */
+                if (flip_winding && 1 < iVar3) {
+                  int _flip_lo = 0, _flip_hi = iVar3 - 1;
+                  while (_flip_lo < _flip_hi) {
+                    int *_flip_pa = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_lo + 0x306) * 4);
+                    int *_flip_pb = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_hi + 0x306) * 4);
+                    int _flip_tmp = *_flip_pa;
+                    *_flip_pa = *_flip_pb;
+                    *_flip_pb = _flip_tmp;
+                    _flip_lo++; _flip_hi--;
+                  }
+                }
                 if (getenv("UW_DEBUG_EPARSE"))
                   fprintf(stderr, "[eparse] %s part=%d vertcount=%d\n", param_1, g_model_parse_part_count, iVar5);
                 iVar5 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc18);
@@ -28714,35 +28761,35 @@ undefined2 param_5;
 void FUN_00038680()
 
 {
-  parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c);
-  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848);
-  parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474);
-  parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0);
-  parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc);
-  parse_e_model_file(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8);
-  parse_e_model_file(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524);
-  parse_e_model_file(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150);
-  parse_e_model_file(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c);
-  parse_e_model_file(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8);
-  parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4);
-  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200);
-  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08);
-  parse_e_model_file(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360);
-  parse_e_model_file(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c);
-  parse_e_model_file(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8);
-  parse_e_model_file(s__DATA3D_GATE_E_000854e4,&DAT_001677e4);
-  parse_e_model_file(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410);
-  parse_e_model_file(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c);
-  parse_e_model_file(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68);
-  parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894);
-  parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0);
-  parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec);
+  parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c,1);
+  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848,0);
+  parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474,0);
+  parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0,0);
+  parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc,0);
+  parse_e_model_file(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8,0);
+  parse_e_model_file(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524,1);
+  parse_e_model_file(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150,0);
+  parse_e_model_file(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c,0);
+  parse_e_model_file(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8,0);
+  parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4,0);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200,0);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c,0);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58,1);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684,1);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08,0);
+  parse_e_model_file(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360,0);
+  parse_e_model_file(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c,0);
+  parse_e_model_file(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8,0);
+  parse_e_model_file(s__DATA3D_GATE_E_000854e4,&DAT_001677e4,0);
+  parse_e_model_file(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410,0);
+  parse_e_model_file(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c,0);
+  parse_e_model_file(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68,0);
+  parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894,0);
+  parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0,0);
+  parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec,0);
   Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);
   return;
 }
