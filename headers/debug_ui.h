@@ -2,9 +2,12 @@
  * recovered UW1 drawing primitives (rect_fill_or_save_restore,
  * set_draw_color, draw_text_string) rather than a separate rendering
  * path -- so it composites correctly with the game's own screen without
- * needing its own framebuffer or blit step. Opt-in only (UW_MODEL_TUNER=1),
- * built for live-tuning numeric constants (model scale/offset/UV params)
- * without editing code and rebuilding for every value.
+ * needing its own framebuffer or blit step. Always populated when a
+ * catalog object draws (no env var needed), but hidden until backtick
+ * (dbgui_visible()/dbgui_toggle() below) so it has zero effect on normal
+ * play or any demo script that never presses it. Built for live-tuning
+ * numeric constants (model scale/offset/UV params) without editing code
+ * and rebuilding for every value.
  *
  * Usage, once per frame, from anywhere already inside the render pass:
  *   dbgui_begin("Door Frame Tuner");

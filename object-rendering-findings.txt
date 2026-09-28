@@ -1746,3 +1746,24 @@ leftover state.
 
 run-regressions.sh: 1/6 clean -- unchanged, pre-existing bisected
 crash (milestone 8), unrelated to this change.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (12): debug panel on by default -- no more UW_MODEL_TUNER
+env var needed
+═══════════════════════════════════════════════════════════════════════════
+Request: "Turn the debug panel on by default instead of needing an env
+var." Removed the `getenv("UW_MODEL_TUNER")` gate around the panel's
+field-population block in emit_catalog_object -- it now always runs
+whenever a catalog object draws, no relaunch-with-env-var step needed.
+
+The panel itself still only SHOWS on backtick (g_visible in debug_ui.c
+starts 0, unchanged) -- populating the field list is silent/free when
+the panel isn't visible, and dbgui_visible() (which gates whether
+keyboard/mouse input gets swallowed from the game) is unaffected by
+population alone. So this has zero effect on normal play or any of the
+regression demo scripts, none of which press backtick -- confirmed via
+run-regressions.sh (same 1/6 clean, pre-existing unrelated crash,
+unchanged).
+
+Live-verified: panel appears correctly on backtick with no UW_MODEL_
+TUNER set at all.

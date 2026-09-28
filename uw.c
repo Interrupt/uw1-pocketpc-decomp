@@ -58254,8 +58254,14 @@ LAB_000640ec:
     g_tune_last_catalog = (int)catalog_u;
     g_tune_rotation_offset = 0.0;
   }
-  if (getenv("UW_MODEL_TUNER")) {
-    char _tune_title[48];
+  /* Was gated behind UW_MODEL_TUNER=1 -- on unconditionally now, per
+     direct request ("turn the debug panel on by default instead of
+     needing an env var"), so no relaunch-with-env-var step is needed
+     to use it. Still only POPULATES the field list here; the panel
+     itself stays hidden until backtick (dbgui_visible()/g_visible in
+     debug_ui.c, unchanged), so this has zero effect on normal play or
+     any of the regression demo scripts -- none of them press backtick. */
+  { char _tune_title[48];
     snprintf(_tune_title, sizeof(_tune_title), "Object Tuner (catalog=%d)", (int)catalog_u);
     dbgui_begin(_tune_title);
     dbgui_field_double("rotation_offset", &g_tune_rotation_offset, 5.0);
