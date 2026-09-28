@@ -1915,7 +1915,7 @@ intptr_t param_1;
             *(undefined4 *)((intptr_t)&DAT_000bbf98 + iVar2 * 4) = 0;
             *(undefined2 *)((intptr_t)&DAT_000bbfc0 + (iVar2 + 4) * 2) = 0xffff;
             *(undefined2 *)(iVar5 + iVar2 * 2) = 0xffff;
-            FUN_0001c420(0,(int)iVar10);
+            draw_hotspot_crosshair_marker(0,(int)iVar10);
             FUN_0001bf9c(1,(int)iVar10);
           }
           else {
@@ -1990,7 +1990,7 @@ intptr_t param_1;
           *(undefined4 *)((intptr_t)&DAT_000bbf98 + iVar1 * 4) = 0;
           *(undefined2 *)((intptr_t)&DAT_000bbfc0 + (iVar1 + 4) * 2) = 0xffff;
           *(undefined2 *)(iVar4 + iVar1 * 2) = 0xffff;
-          FUN_0001c420(0,(int)iVar10);
+          draw_hotspot_crosshair_marker(0,(int)iVar10);
           FUN_0001bf9c(1,(int)iVar10);
         }
         else {
@@ -13326,8 +13326,8 @@ void FUN_0001b474()
     (&DAT_000bbfc0)[iVar7 + 4] = 0xffff;
     (&DAT_000bbf98)[iVar7] = 0;
     (&DAT_000bbff0)[iVar7] = 0;
-    FUN_0001c420(1,iVar7);
-    FUN_0001c420(0,iVar7);
+    draw_hotspot_crosshair_marker(1,iVar7);
+    draw_hotspot_crosshair_marker(0,iVar7);
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 4);
   DAT_000bc008 = 0;
@@ -13563,7 +13563,7 @@ int param_4;
          register" reliance as blit_sprite_row_remapped's dropped 4th
          arg, not a decompile mistake: the original code never reloads
          r1 here because it already holds the right value from earlier
-         in this same block. FUN_0001c420's 2nd param is read as
+         in this same block. draw_hotspot_crosshair_marker's 2nd param is read as
          `(short)param_2` and used purely as a small array/table index
          (see its own body) -- local_c is exactly that same value, still
          live and unchanged since being used on the previous 4 lines, so
@@ -13572,10 +13572,10 @@ int param_4;
          "whatever's left in the register" state (the uninitialized
          param_2 this crashed on before being declared `undefined **`
          let it be silently read as a wild pointer instead of the small
-         integer FUN_0001c420 actually expects -- ASan-confirmed
+         integer draw_hotspot_crosshair_marker actually expects -- ASan-confirmed
          heap-buffer-overflow in plot_pixel, reached via this exact call
          with a garbage index). */
-      FUN_0001c420((int)(short)local_10,(int)(short)local_c);
+      draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
       if (g_selected_object == 0) {
         return;
       }
@@ -13611,7 +13611,7 @@ int param_4;
       else {
         puVar4 = (uint *)(local_4 + (short)local_c * 4);
         *puVar4 = (uint)(*puVar4 == 0);
-        FUN_0001c420((int)(short)local_10,(int)(short)local_c);
+        draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
       }
       goto LAB_0001bec8;
     }
@@ -13625,7 +13625,7 @@ int param_4;
   FUN_0001c268((int)(short)local_10,(int)(short)local_c,local_8);
   FUN_0001bf9c((int)(short)local_10,(int)(short)local_c);
   *(undefined4 *)(local_4 + (short)local_c * 4) = 1;
-  FUN_0001c420((int)(short)local_10,(int)(short)local_c);
+  draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
   (&DAT_000bbfa8)[(short)local_c] = 0xffff;
   (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
 LAB_0001bec8:
@@ -13866,7 +13866,15 @@ LAB_0001c404:
 
 
 
-void FUN_0001c420(param_1,param_2)
+// was FUN_0001c420 -- draws a 5-pixel plot_pixel crosshair (center + one
+// pixel each direction) at a coordinate pair looked up by index from one
+// of two tables selected by param_1 (worn-item slots vs backpack slots),
+// colored by whether a parallel "valid"/"used" table says that slot is
+// occupied. Found fixing a real ASan-caught crash: one caller
+// (FUN_0001bb04) passed only 1 of the 2 real arguments here, matching
+// the real ARM binary's own reliance on a leftover register value --
+// see that call site's own comment.
+void draw_hotspot_crosshair_marker(param_1,param_2)
 short param_1;
 undefined ** param_2;
 
@@ -14029,7 +14037,7 @@ short param_1;
       FUN_00076e98((&DAT_000bc010)[iVar2]);
       (&DAT_000bbff0)[iVar2] = 0;
       (&DAT_000bbfe8)[iVar2] = 0;
-      FUN_0001c420(0,iVar2);
+      draw_hotspot_crosshair_marker(0,iVar2);
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
@@ -14081,7 +14089,7 @@ void FUN_0001c85c()
         FUN_00076e98((&DAT_000bc028)[local_28]);
         (&DAT_000bbf98)[local_28] = 0;
         *psVar5 = 0;
-        FUN_0001c420(1,(int)local_2c);
+        draw_hotspot_crosshair_marker(1,(int)local_2c);
       }
     }
     iVar4 = (local_28 + 1) * 0x10000;
@@ -14457,7 +14465,7 @@ short param_1;
       FUN_00076e98((&DAT_000bc028)[iVar1]);
       (&DAT_000bbfd0)[iVar1] = 0;
       (&DAT_000bbf98)[iVar1] = 0;
-      FUN_0001c420(1,iVar1);
+      draw_hotspot_crosshair_marker(1,iVar1);
     }
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 4);
@@ -75298,7 +75306,7 @@ short param_3;
   iVar1 = (int)param_2;
   /* No bounds check on (param_1, iVar1) against the real 320x240
      framebuffer (GX_W/GX_H, gx_stub.c) before this raw write -- callers
-     that plot a small crosshair/cursor around a point (e.g. FUN_0001c420,
+     that plot a small crosshair/cursor around a point (e.g. draw_hotspot_crosshair_marker,
      +-1 in x or y around a stored coordinate) can walk one pixel outside
      the screen near an edge with nothing stopping them. Confirmed live:
      ASan-caught heap-buffer-overflow WRITE here reached via ordinary

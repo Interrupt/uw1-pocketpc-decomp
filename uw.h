@@ -606,7 +606,7 @@ void FUN_0001bf9c();
 void FUN_0001c1c8();
 void FUN_0001c268();
 undefined4 FUN_0001c2c4();
-void FUN_0001c420();
+void draw_hotspot_crosshair_marker(); // was FUN_0001c420
 undefined4 FUN_0001c538();
 undefined4 babl_builtin_do_offer();
 void FUN_0001c79c();
