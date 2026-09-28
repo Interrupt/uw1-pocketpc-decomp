@@ -4386,7 +4386,10 @@ undefined4 LAB_00073b10()
    earlier truncations in that same chain were fixed. */
 char *DAT_002046ac;
 char *DAT_002046a0;
-undefined1 DAT_00250770;
+// was DAT_00250770: live entry count in g_scheduler_table (max 0x40) --
+// see g_scheduler_table's own comment for the whole system this
+// belongs to, named to match System Shock's own term for it.
+undefined1 g_scheduler_count;
 short DAT_002046b0;
 byte DAT_002046d0;
 byte DAT_002046cc;
@@ -6653,33 +6656,57 @@ static undefined s_dash_000879a4_backing[8192] = "-";
 // was DAT_000879a8
 static undefined s_scroll_prompt_arrow_000879a8_backing[8192] = ">";
 #define s_scroll_prompt_arrow_000879a8 s_scroll_prompt_arrow_000879a8_backing[0]
-/* HACK: same "separately-allocated global that resolve_object_link's
+/* Forward declarations -- several scheduler_* functions are called
+   (from load_level_object_table/save_level_object_table-ish code far
+   above their own definitions further down this file) before the
+   compiler has seen their real K&R-style parameter types, and this
+   file's implicit-declaration tolerance for that (relied on throughout
+   for hundreds of other never-forward-declared FUN_XXXXXXXX calls)
+   doesn't survive a plain rename here for reasons not fully tracked
+   down -- prototype the affected ones explicitly instead. */
+uint scheduler_add_entry(uint param_1, undefined4 param_2, undefined1 param_3, undefined1 param_4, undefined1 param_5);
+void scheduler_remove_entry(short param_1);
+void scheduler_step_entry(undefined4 param_1, int param_2);
+void scheduler_tick(int param_1);
+void scheduler_set_delay(undefined4 param_1, undefined4 param_2);
+undefined4 scheduler_advance_effect(short param_1, int param_2);
+undefined4 scheduler_load(undefined1 *param_1, int param_2);
+undefined4 scheduler_save(undefined4 *param_1, int param_2);
+
+/* was g_queue_link_table, and every scheduler_* function below was a
+   bare FUN_XXXXXXXX -- renamed to "scheduler", System Shock's own term
+   for this shared timed-effects system (door swing, blood splats,
+   combat highlights, ...), since this decompile never recovered a real
+   name for it. See each scheduler_* function's own "was FUN_..."
+   comment for which raw address it used to be.
+
+   HACK: same "separately-allocated global that resolve_object_link's
    arena-bounds check rejects" class as g_equipped_items/g_backpack_slot_table
    -- see that global's own comment for the fully-worked precedent this
-   fix follows. DAT_00250778 is the scheduled-effects queue's own
-   64-entry (6 bytes/entry = 0x180 total, confirmed by this exact size
-   showing up in its save/load code, FUN_00081ce4/FUN_00081d74) link
-   table -- FUN_00080ed4/FUN_0008097c/FUN_0008128c/FUN_00081034/
-   FUN_00080a98/FUN_00081af4 all pass `&DAT_00250778 + offset` straight
+   fix follows. DAT_00250778 is the scheduler's own 64-entry (6
+   bytes/entry = 0x180 total, confirmed by this exact size showing up
+   in its save/load code, scheduler_load/scheduler_save) link table --
+   scheduler_add_entry/scheduler_despawn_entry/scheduler_tick/scheduler_step_entry/
+   scheduler_expire_entry/scheduler_advance_effect all pass `&DAT_00250778 + offset` straight
    into resolve_object_link, the same call shape as any other object
    "next" link field. A plain standalone static array was never inside
    the level object arena's malloc'd buffer the way it evidently was in
    the original's flat, fixed-address memory map, so every one of those
    resolves came back NULL -- confirmed live (UW_DEBUG_DOOR) chasing a
    door-open bug: a door's own queued open-animation entry could never
-   resolve back to the door object once FUN_0008128c's per-tick walk
+   resolve back to the door object once scheduler_tick's per-tick walk
    actually reached it. Given real backing storage inside the same
    arena buffer instead, right after g_backpack_slot_table's existing
    tail reservation -- see reset_level_object_arena's own comment for
    where it's pointed, init_level_object_arena's for the matching
    allocation-size widening, and resolve_object_link's for the matching
    bounds widening. */
-char *g_queue_link_table;
-#define DAT_00250778 g_queue_link_table[0]
+char *g_scheduler_table;
+#define DAT_00250778 g_scheduler_table[0]
 /* HACK: DAT_00250779 through DAT_0025077d are NOT separate parallel
    arrays -- every access site in the file indexes them with the exact
    same slot*6 index already in scope for a nearby DAT_00250778 access
-   in the same function, and FUN_00080ed4's own push code proves the
+   in the same function, and scheduler_add_entry's own push code proves the
    byte layout directly: DAT_00250778[slot] holds the encoded object
    link's bits 0-1 (in its own top 2 bits) and DAT_00250779[slot] holds
    bits 2-9 -- read back together as one little-endian ushort
@@ -6692,7 +6719,7 @@ char *g_queue_link_table;
    a single `*(short*)(&DAT_0025077a + offset)`). This is the same
    "split symbol cluster" pattern already fixed throughout this file --
    confirmed via a dedicated re-derivation of every access site (~24
-   total), no exceptions. Aliased into g_queue_link_table at their
+   total), no exceptions. Aliased into g_scheduler_table at their
    respective record-byte offsets instead of remaining separate/bare
    globals: bytes 0-1 = link value (DAT_00250778/DAT_00250779), 2-3 =
    delay/anim-type (DAT_0025077a/DAT_0025077b), 4 = tile X
@@ -6701,11 +6728,11 @@ char *g_queue_link_table;
    had its own real (if wrongly separate) backing array and happened
    not to crash by luck of that array's own layout; the other four were
    bare scalars, genuinely undefined behavior when indexed past byte 0. */
-#define DAT_00250779 g_queue_link_table[1]
-#define DAT_0025077a g_queue_link_table[2]
-#define DAT_0025077b g_queue_link_table[3]
-#define DAT_0025077c g_queue_link_table[4]
-#define DAT_0025077d g_queue_link_table[5]
+#define DAT_00250779 g_scheduler_table[1]
+#define DAT_0025077a g_scheduler_table[2]
+#define DAT_0025077b g_scheduler_table[3]
+#define DAT_0025077c g_scheduler_table[4]
+#define DAT_0025077d g_scheduler_table[5]
 static undefined1 DAT_00250730_backing[65536];
 #define DAT_00250730 DAT_00250730_backing[0]
 /* was FUN_0001582c: dispatch slot 7 of FUN_00052674's boot-time
@@ -6793,7 +6820,7 @@ void *class1_variant_effect_table_lookup()
    above (see its comment for the general pattern this file uses
    throughout). DAT_00250732/DAT_00250733 are NOT separate globals --
    every access site indexes them with the exact same `class*4` index
-   (iVar1 in FUN_00081034/FUN_00080ed4) already used to read
+   (iVar1 in scheduler_step_entry/scheduler_add_entry) already used to read
    DAT_00250730's own per-class flags ushort a line or two earlier in
    the same function, and load_class7_variant_effect_table's own
    comment says as much directly: it reads "0x40 bytes -- 16
@@ -6805,7 +6832,7 @@ void *class1_variant_effect_table_lookup()
    and 3 bytes into each of DAT_00250730's own already-loaded entries,
    not independent storage Ghidra failed to widen. Confirmed live
    (UW_DEBUG_DOOR) chasing the same door-open bug the DAT_00250778
-   family's fix above was for: once that fix let FUN_00081034's
+   family's fix above was for: once that fix let scheduler_step_entry's
    per-tick increment actually reach a door's real queue entry, its
    quality stayed stuck at 0 forever (200+ calls, no change) -- traced
    to this exact code reading these as separate, always-zero globals
@@ -11060,7 +11087,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
          pointer parameter) -- confirmed individually via disassembly for
          a representative sample of these sites (this one, FUN_00052af4,
          roll_object_destroy_chance, sum_container_weight, serialize_inventory_link_chain, FUN_00072598,
-         FUN_0007deec, FUN_00080ed4, babl_builtin_take_from_npc_inv), and applied by the
+         FUN_0007deec, scheduler_add_entry, babl_builtin_take_from_npc_inv), and applied by the
          same pattern to the rest. */
       iVar8 = resolve_object_link(puVar7);
       puVar7 = (ushort *)(iVar8 + 4);
@@ -19029,9 +19056,9 @@ byte * param_3;
     FUN_00072c74(7,*(undefined2 *)DAT_00202c6c,*(undefined2 *)(DAT_00202c6c + 2),0);
   }
   uVar8 = encode_object_slot_index(iVar7);
-  sVar6 = FUN_00080ed4(uVar8,2,0,(int)sVar4 >> 3 & 0xff,(char)((int)sVar5 >> 3));
+  sVar6 = scheduler_add_entry(uVar8,2,0,(int)sVar4 >> 3 & 0xff,(char)((int)sVar5 >> 3));
   if (sVar6 == -1) {
-    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] FUN_00025ed8: FUN_00080ed4 queue full, freeing slot\n");
+    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] FUN_00025ed8: scheduler_add_entry queue full, freeing slot\n");
     free_object_slot(iVar7);
     return;
   }
@@ -29844,7 +29871,7 @@ void FUN_0003a57c()
 void FUN_0003a5ec()
 
 {
-  FUN_0008128c(4);
+  scheduler_tick(4);
   FUN_00037c14(3);
   return;
 }
@@ -41804,7 +41831,7 @@ undefined4 init_level_object_arena()
        (0x38) plus g_current_container_link's own 2 bytes, both now reserved at
        this buffer's tail -- see reset_level_object_arena and g_equipped_items's/
        g_current_container_link's own comments. Further widened by 0x180
-       bytes right after that for g_queue_link_table (the scheduled-
+       bytes right after that for g_scheduler_table (the scheduled-
        effects queue's own link table) -- see its own (DAT_00250778's)
        comment. */
     DAT_002029cc = Ordinal_1041(0x7c08 + 0x3a + 0x180);
@@ -41879,7 +41906,7 @@ int param_2;
   else {
     FUN_0003c3c8(3);
   }
-  sVar2 = FUN_00081ce4(auStack_20,param_2);
+  sVar2 = scheduler_load(auStack_20,param_2);
   if (param_1 == (undefined1 *)0x0) {
     FUN_00015a58(auStack_20);
   }
@@ -41933,7 +41960,7 @@ int param_2;
   sVar2 = FUN_00015b94(auStack_20,param_2 + -1,DAT_002029cc,0x7c08);
   sVar3 = 0;
   if (sVar2 != 0) {
-    sVar3 = FUN_00081d74(auStack_20,param_2);
+    sVar3 = scheduler_save(auStack_20,param_2);
   }
   if (param_1 == (undefined1 *)0x0) {
     FUN_00015a58(auStack_20);
@@ -47176,7 +47203,7 @@ byte param_7;
           /* Was an unguarded `*puVar4` -- resolve_object_link legitimately
              returns NULL when the candidate slot (&DAT_00202c3a +
              sVar7*6) has no object linked there at all, same class as
-             FUN_00080ed4's own already-fixed missing NULL guard
+             scheduler_add_entry's own already-fixed missing NULL guard
              (swinging at empty air/a wall). Confirmed live: this
              crashed 100% of the time emptying the starting-room sack's
              contents via Use mode -- empty_container_into_world's
@@ -47515,12 +47542,12 @@ void reset_level_object_arena()
      see its own comment -- so this table is both physically present
      and accepted by resolve_object_link's guard. */
   g_backpack_slot_table = DAT_002029cc + 0x7c08;
-  /* g_queue_link_table lives in this same arena buffer too, right after
+  /* g_scheduler_table lives in this same arena buffer too, right after
      g_backpack_slot_table's own 0x3a-byte reservation -- see
      DAT_00250778's own comment for the full explanation, and
      init_level_object_arena's/resolve_object_link's for the matching
      allocation-size/bounds widening by this same 0x180. */
-  g_queue_link_table = DAT_002029cc + 0x7c08 + 0x3a;
+  g_scheduler_table = DAT_002029cc + 0x7c08 + 0x3a;
   iVar3 = 2;
   DAT_002046a0 = DAT_0020469c;
   DAT_002046a4 = puVar1;
@@ -47537,7 +47564,7 @@ void reset_level_object_arena()
     *(undefined1 *)((char *)g_player_object + 7) = 0;
     FUN_000465c8();
   }
-  DAT_00250770 = 0;
+  g_scheduler_count = 0;
   DAT_002046c0 = DAT_002046a0 + 2;
   DAT_002046c8 = DAT_002046a0 + 2;
   return;
@@ -48000,7 +48027,7 @@ int param_3;
     uVar1 = encode_object_slot_index(param_2);
     local_10[0] = local_10[0] & 0x3f | uVar1 << 6;
     if ((*param_2 & 0x1c0) == 0x1c0) {
-      FUN_000809cc(uVar1 & 0x3ff);
+      scheduler_remove_entry(uVar1 & 0x3ff);
     }
     if (param_1 == 0) {
       free_linked_object_recursive(local_10);
@@ -48124,7 +48151,7 @@ ushort * param_1;
     /* (DAT_002046b8-0x4000) is this arena buffer's own base (aliased as
        _lo just above); +0x7c08+0x3a+0x180 is its new true end, covering
        g_backpack_slot_table's reservation there (28 slots + g_current_container_link,
-       see both their comments) plus g_queue_link_table's own 0x180-byte
+       see both their comments) plus g_scheduler_table's own 0x180-byte
        reservation right after it (see its own, DAT_00250778's, comment)
        -- the buffer itself was widened by the same 0x3a+0x180 bytes in
        init_level_object_arena. This replaces the narrower
@@ -53324,7 +53351,7 @@ int param_2;
      and aborted -- confirmed via lldb, never hit before because nothing
      reached this function successfully until the write-path bugs above
      it (Ordinal_1407, open_level_archive's read-only handle,
-     FUN_00015b94/FUN_00081d74's own pointer-truncation and fabricated-
+     FUN_00015b94/scheduler_save's own pointer-truncation and fabricated-
      return-0 bugs) were fixed. One properly-sized buffer instead. */
   undefined2 local_8c [64];
 
@@ -53351,7 +53378,7 @@ int param_2;
     local_8c[iVar4] = CONCAT11((&DAT_0023b841)[iVar3],(&DAT_0023b840)[iVar1]);
   } while (iVar2 < 3);
   /* Was `FUN_00015b94(...); return 0;` -- a fabricated `return 0`
-     masking a real result, same bug class as FUN_00081d74 right above
+     masking a real result, same bug class as scheduler_save right above
      this function. Real disassembly (0x5b354-0x5b35c) shows a plain
      `bl 0x15b94` with no instruction overwriting r0 before the function
      returns -- r0 (FUN_00015b94's own return value) falls straight
@@ -60333,15 +60360,15 @@ void FUN_00066e90()
      here, alongside this function's other one-time gameplay-enable flags. */
   g_npc_tick_enabled = 1;
   /* HACK, same silently-zero class as g_npc_tick_enabled just above:
-     DAT_000879ac gates all three per-tick call sites of FUN_0008128c
+     DAT_000879ac gates all three per-tick call sites of scheduler_tick
      (the scheduled-effects queue driver -- walks the queue
-     FUN_00080ed4 pushes to, ticking FUN_00081034's gradual per-object
-     step until each entry's delay expires, then FUN_00080a98 finalizes
+     scheduler_add_entry pushes to, ticking scheduler_step_entry's gradual per-object
+     step until each entry's delay expires, then scheduler_expire_entry finalizes
      it) that fire from ordinary gameplay: move_key_directional_step's
      per-held-key-frame call, its sibling per-frame movement-pacing
      call, and the per-tile-scan idle-animation call. Declared but never
      assigned anywhere in this decompile (confirmed via a full-session
-     trace, UW_DEBUG_DOOR2=1: FUN_0008128c never ran once, zero hits
+     trace, UW_DEBUG_DOOR2=1: scheduler_tick never ran once, zero hits
      across 470000+ log lines covering chargen, movement, and object
      interaction), so the entire queue -- doors' real gradual open/close
      swing among its users -- silently never advanced past whatever a
@@ -61188,7 +61215,7 @@ undefined4 param_1;
     DAT_0023bf58 = DAT_0023bf58 + 4;
     g_jump_ascent_timer = 0;
     if (DAT_000879ac != 0) {
-      FUN_0008128c(1);
+      scheduler_tick(1);
     }
     iVar2 = *(int *)(DAT_00086df8 + 0xce) + 0x40;
     *(char *)(DAT_00086df8 + 0xce) = (char)iVar2;
@@ -61297,7 +61324,7 @@ void movement_pacing_handler()
     uVar5 = DAT_000879ac;
   }
   if (uVar4 != 0 && uVar5 != 0) {
-    FUN_0008128c(uVar4);
+    scheduler_tick(uVar4);
   }
   iVar3 = *(int *)(DAT_00086df8 + 0xce) + uVar6;
   *(char *)(DAT_00086df8 + 0xce) = (char)iVar3;
@@ -67396,7 +67423,7 @@ undefined4 FUN_00071e20()
         *puVar7 = *puVar7;
         puVar7[1] = puVar7[1] | 0x20;
         uVar4 = encode_object_slot_index(puVar7);
-        sVar3 = FUN_00080ed4(uVar4,0xffffffff,0,(short)local_16 >> 3 & 0xff,
+        sVar3 = scheduler_add_entry(uVar4,0xffffffff,0,(short)local_16 >> 3 & 0xff,
                              CONCAT11(uVar10,(char)((short)local_18 >> 3)));
         if (sVar3 != 0) {
           *(byte *)(DAT_00086df8 + 0x5e) =
@@ -68665,7 +68692,7 @@ LAB_00073c90:
     break;
   case 0xe:
     FUN_00037c14(param_2 & 0xff);
-    FUN_0008128c(4);
+    scheduler_tick(4);
   }
   return 1;
 }
@@ -68933,7 +68960,7 @@ undefined1 param_5;
   uVar4 = encode_object_slot_index(uVar2);
   uVar5 = (undefined1)param_2;
   uw_ord2005_rem_153 = ((int)(uVar3)) % (4);
-  sVar1 = FUN_00080ed4(uVar4,4,uw_ord2005_rem_153 & 0xff,param_1 & 0xff,uVar5);
+  sVar1 = scheduler_add_entry(uVar4,4,uw_ord2005_rem_153 & 0xff,param_1 & 0xff,uVar5);
   if (sVar1 == -1) {
     free_object_slot(uVar2);
   }
@@ -68964,7 +68991,7 @@ undefined1 param_5;
   FUN_00075a88(param_1,param_2 + 1,1,param_5);
   FUN_00075a88(param_1,param_2 + -1,1,param_5);
   uVar3 = encode_object_slot_index(uVar2);
-  sVar1 = FUN_00080ed4(uVar3,4,0,param_1 & 0xff,(char)param_2);
+  sVar1 = scheduler_add_entry(uVar3,4,0,param_1 & 0xff,(char)param_2);
   if (sVar1 == -1) {
     free_object_slot(uVar2);
   }
@@ -74061,16 +74088,16 @@ ushort * param_1;
   *(char *)param_1 = (char)uVar5;
   *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
   /* HACK: was a bare `encode_object_slot_index();` -- dropped argument,
-     same class as FUN_0008128c's own `FUN_00080a98();` fix just above
+     same class as scheduler_tick's own `scheduler_expire_entry();` fix just above
      (see its comment). encode_object_slot_index's real signature takes
      the object pointer it encodes (`char *param_1`, dereferenced via
      pointer comparisons against DAT_002046b8/DAT_002046c4) -- with none
      passed, this read garbage instead of this door object, so the
-     scheduled-effects queue entry FUN_00080ed4 pushes right below
+     scheduled-effects queue entry scheduler_add_entry pushes right below
      carried an encoded reference to the wrong (or no) object. Confirmed
-     live: FUN_00081034/FUN_00080a98 (the queue's own per-tick step and
+     live: scheduler_step_entry/scheduler_expire_entry (the queue's own per-tick step and
      finalize) resolved this door's queue slot to NULL every time,
-     silently skipping it forever, once the separate FUN_00080a98
+     silently skipping it forever, once the separate scheduler_expire_entry
      missing-argument bug and the DAT_000879ac dead-gate were both
      already fixed -- this was the last of three stacked bugs that had
      to be fixed together before a door's queued open animation could
@@ -74079,7 +74106,7 @@ ushort * param_1;
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] FUN_0007c3f4: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d\n",
             (unsigned)uVar1, (unsigned)uVar5, (int)(((byte)uVar1 ^ bVar3) & 0x3f ^ bVar3), (int)uVar6, (int)uVar4);
-  FUN_00080ed4(uVar4,uVar6,0,(undefined1)DAT_002020a0,(char)DAT_002020a4);
+  scheduler_add_entry(uVar4,uVar6,0,(undefined1)DAT_002020a0,(char)DAT_002020a4);
   return;
 }
 
@@ -74107,9 +74134,9 @@ ushort * param_1;
   }
   *(char *)param_1 = (char)uVar2;
   *(char *)((char *)param_1 + 1) = (char)(uVar2 >> 8);
-  sVar1 = FUN_00081a84(param_1);
+  sVar1 = scheduler_get_delay(param_1);
   if (-1 < sVar1) {
-    FUN_00081abc(param_1,((int)sVar3 - (int)sVar1) * 0x10000 >> 0x10);
+    scheduler_set_delay(param_1,((int)sVar3 - (int)sVar1) * 0x10000 >> 0x10);
   }
   return;
 }
@@ -74187,18 +74214,18 @@ ushort * param_1;
        open animation off at its very first frame -- the actual
        original bug ("door should animate in six to eight small steps
        over a few seconds, it doesn't"). That queue (FUN_0007c3f4 ->
-       FUN_00080ed4's push -> FUN_0008128c's per-tick walk ->
-       FUN_00081034's gradual steps -> FUN_00080a98's eventual finalize,
+       scheduler_add_entry's push -> scheduler_tick's per-tick walk ->
+       scheduler_step_entry's gradual steps -> scheduler_expire_entry's eventual finalize,
        the same +8/-8 math this branch used to do instantly) was itself
        broken by four stacked bugs elsewhere in this file (DAT_000879ac
        never initialized, two dropped function arguments, and the
        queue's own link-table living outside the object arena's
        resolve_object_link-checked address range) -- all now fixed, see
-       their own comments (FUN_00066e90, FUN_0008128c, FUN_0007c3f4,
+       their own comments (FUN_00066e90, scheduler_tick, FUN_0007c3f4,
        DAT_00250778, DAT_00250732). With the queue actually running, a
        redundant re-trigger while already mid-animation should just be
        a no-op -- the real animation is already in flight and will
-       finish itself via FUN_00080a98 on its own schedule. */
+       finish itself via scheduler_expire_entry on its own schedule. */
     return;
   }
   else {
@@ -74731,7 +74758,7 @@ uint param_3;
         }
         if ((*puVar8 & 0x1c0) == 0x1c0) {
           uVar6 = encode_object_slot_index(puVar8);
-          FUN_00080ed4(uVar6,0xffffffff,0,param_2 & 0xff,param_3 & 0xff);
+          scheduler_add_entry(uVar6,0xffffffff,0,param_2 & 0xff,param_3 & 0xff);
         }
       }
     }
@@ -75322,7 +75349,7 @@ int param_1;
   if ((param_1 == 0) && (DAT_000879ac != 0)) {
     iVar2 = 0;
     do {
-      FUN_0008128c(1);
+      scheduler_tick(1);
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 8);
   }
@@ -76973,7 +77000,12 @@ LAB_00080918:
 
 
 
-void FUN_0008097c(param_1)
+// was FUN_0008097c: removes a scheduler entry's own world object (tile
+// unlink + free_object_slot) -- named to match System Shock's own term
+// for this shared timed-effects system (doors' open/close swing,
+// blood splats, combat highlights, ...) that this decompile only ever
+// called by its raw Ghidra address.
+void scheduler_despawn_entry(param_1)
 short param_1;
 
 {
@@ -76994,7 +77026,9 @@ short param_1;
 
 
 
-void FUN_000809cc(param_1)
+// was FUN_000809cc: finds the scheduler entry whose encoded object link
+// matches param_1 and removes it (swap-with-last, decrement count).
+void scheduler_remove_entry(param_1)
 short param_1;
 
 {
@@ -77007,7 +77041,7 @@ short param_1;
   
   uVar2 = 0;
   puVar6 = (ushort *)&DAT_00250778;
-  uVar3 = (uint)DAT_00250770;
+  uVar3 = (uint)g_scheduler_count;
   if (uVar3 != 0) {
     do {
       if ((uint)(*puVar6 >> 6) == (int)param_1) break;
@@ -77017,7 +77051,7 @@ short param_1;
   }
   if ((int)uVar2 < (int)uVar3) {
     uVar1 = uVar3 + 0xff & 0xff;
-    DAT_00250770 = (byte)(uVar3 + 0xff);
+    g_scheduler_count = (byte)(uVar3 + 0xff);
     if ((uVar1 != 0) && (uVar2 != uVar1)) {
       iVar5 = uVar1 * 6;
       iVar4 = uVar2 * 6;
@@ -77034,7 +77068,10 @@ short param_1;
 
 
 
-void FUN_00080a98(param_1)
+// was FUN_00080a98: scheduler_tick's finalize step, run once an entry's
+// delay has expired -- one last scheduler_step_entry catch-up, then
+// (for class 0xf, doors) the actual final open/close quality flip.
+void scheduler_expire_entry(param_1)
 undefined4 param_1;
 
 {
@@ -77052,11 +77089,11 @@ undefined4 param_1;
   
   iVar9 = (short)param_1 * 6;
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] FUN_00080a98 ENTERED: param_1(slot)=%d\n", (int)param_1);
+    fprintf(stderr, "[door] scheduler_expire_entry ENTERED: param_1(slot)=%d\n", (int)param_1);
   puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + iVar9);
   /* HACK: resolve_object_link legitimately returns NULL (every other
      resolve_object_link call site in this file guards for it -- e.g.
-     FUN_00080ed4's own identical fix a little above this function).
+     scheduler_add_entry's own identical fix a little above this function).
      This call site had no guard at all:
      confirmed crashing (EXC_BAD_ACCESS / SIGSEGV dereferencing *puVar4)
      the first time this function ever actually ran in this whole
@@ -77077,17 +77114,31 @@ undefined4 param_1;
     bVar11 = (&DAT_0025077a)[iVar9] == '\0' && (&DAT_0025077b)[iVar9] == '\0';
   }
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] FUN_00080a98: obj0=0x%04x class=%d flags=0x%x bVar11(skip-inc)=%d quality_before=%d\n",
+    fprintf(stderr, "[door] scheduler_expire_entry: obj0=0x%04x class=%d flags=0x%x bVar11(skip-inc)=%d quality_before=%d\n",
             (unsigned)*puVar4, (int)uVar5, (unsigned)uVar1, (int)bVar11, (int)(puVar4[3] & 0x3f));
   if (!bVar11) {
-    FUN_00081034(param_1);
+    /* HACK: was a bare `scheduler_step_entry(param_1);` -- dropped
+       second argument (elapsed ticks), same class as this file's other
+       Ghidra-decompiled dropped-argument calls. scheduler_expire_entry
+       has no elapsed value of its own to forward (it's the queue's
+       delay-just-expired path, not the regular per-tick one), and this
+       one-final-catch-up call's own elapsed-sensitive behavior (the
+       class-flag-bit-2 position/orientation step, scheduler_advance_effect)
+       is not exercised by the door-open bug this session's investigation
+       was chasing (doors use bit 0, a plain unconditional +1 step that
+       ignores elapsed entirely) -- 1 matches the typical per-tick value
+       observed live everywhere else in this file (UW_DEBUG_DOOR2:
+       scheduler_tick's own param_1 is 1 at nearly every call site). Not
+       independently verified for the bit-2 path; flagged for a future
+       pass if that path is ever found to need the real value. */
+    scheduler_step_entry(param_1, 1);
   }
   if (uVar5 == 0xf) {
     uVar10 = (byte)((byte)puVar4[3] >> 4) & 3;
     uVar5 = (byte)puVar4[3] & 0xf;
     uVar8 = (byte)puVar4[1] & 0x7f;
     if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] FUN_00080a98: FINALIZE class0xf obj0=0x%04x quality_low4=%d opening=%d\n",
+      fprintf(stderr, "[door] scheduler_expire_entry: FINALIZE class0xf obj0=0x%04x quality_low4=%d opening=%d\n",
               (unsigned)*puVar4, (int)uVar5, (int)((*puVar4 & 0x1000) == 0));
     if ((*puVar4 & 0x1000) == 0) {
       uVar5 = uVar5 | 8;
@@ -77139,10 +77190,10 @@ undefined4 param_1;
     *(byte *)((char *)puVar4 + 1) = (byte)(uVar8 >> 8);
   }
   if ((uVar1 & 0x20) != 0) {
-    FUN_0008097c(param_1);
+    scheduler_despawn_entry(param_1);
   }
-  DAT_00250770 = DAT_00250770 - 1;
-  uVar5 = (uint)DAT_00250770;
+  g_scheduler_count = g_scheduler_count - 1;
+  uVar5 = (uint)g_scheduler_count;
   if ((uVar5 != 0) && ((int)(short)param_1 != uVar5)) {
     iVar7 = uVar5 * 6;
     (&DAT_00250778)[iVar9] = (&DAT_00250778)[iVar7];
@@ -77169,7 +77220,7 @@ undefined4 param_2;
   uVar2 = encode_object_slot_index();
   sVar1 = encode_object_slot_index(param_2);
   iVar3 = 0;
-  if (DAT_00250770 != 0) {
+  if (g_scheduler_count != 0) {
     do {
       if ((uint)(*(ushort *)(&DAT_00250778 + iVar3 * 6) >> 6) == (int)sVar1) {
         iVar3 = (short)iVar3 * 6;
@@ -77178,14 +77229,18 @@ undefined4 param_2;
         return;
       }
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-    } while (iVar3 < (int)(uint)DAT_00250770);
+    } while (iVar3 < (int)(uint)g_scheduler_count);
   }
   return;
 }
 
 
 
-uint FUN_00080ed4(param_1,param_2,param_3,param_4,param_5)
+// was FUN_00080ed4: pushes a new entry onto the scheduler -- an
+// encoded object link (param_1), a class/anim-type selector (param_2)
+// that decides which scheduler_step_entry behavior applies, an
+// initial delay (param_3), and a tile position (param_4/param_5).
+uint scheduler_add_entry(param_1,param_2,param_3,param_4,param_5)
 uint param_1;
 undefined4 param_2;
 undefined1 param_3;
@@ -77200,8 +77255,8 @@ undefined1 param_5;
   int iVar4;
   ushort uVar5;
   
-  if (DAT_00250770 + 1 < 0x41) {
-    iVar4 = (uint)DAT_00250770 * 6;
+  if (g_scheduler_count + 1 < 0x41) {
+    iVar4 = (uint)g_scheduler_count * 6;
     (&DAT_00250778)[iVar4] = (&DAT_00250778)[iVar4] & 0x3f | (byte)((param_1 & 0x3ff) << 6);
     (&DAT_00250779)[iVar4] = (char)((param_1 << 0x16) >> 0x18);
     (&DAT_0025077a)[iVar4] = (char)param_2;
@@ -77237,8 +77292,8 @@ undefined1 param_5;
       }
     }
     DAT_0023b804 = 1;
-    DAT_00250770 = DAT_00250770 + 1;
-    uVar2 = (uint)DAT_00250770;
+    g_scheduler_count = g_scheduler_count + 1;
+    uVar2 = (uint)g_scheduler_count;
   }
   else {
     uVar2 = 0xffffffff;
@@ -77248,7 +77303,11 @@ undefined1 param_5;
 
 
 
-void FUN_00081034(param_1,param_2)
+// was FUN_00081034: scheduler_tick's per-tick step for one still-pending
+// entry -- per-class behavior-flag bits select a gradual quality step
+// toward a target (bit 0, e.g. a door's swing), a timed decay (bit 1),
+// or a position/orientation step via scheduler_advance_effect (bit 2).
+void scheduler_step_entry(param_1,param_2)
 undefined4 param_1;
 int param_2;
 
@@ -77264,23 +77323,23 @@ int param_2;
   ushort uVar8;
   
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] FUN_00081034 ENTERED: param_1(slot)=%d param_2=%d\n", (int)param_1, param_2);
+    fprintf(stderr, "[door] scheduler_step_entry ENTERED: param_1(slot)=%d param_2=%d\n", (int)param_1, param_2);
   puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + (short)param_1 * 6);
-  /* HACK: same unguarded-NULL class as FUN_00080a98's identical fix --
+  /* HACK: same unguarded-NULL class as scheduler_expire_entry's identical fix --
      see its own comment. A stale queue entry resolves to NULL here too. */
   if (puVar4 == (ushort *)0x0) {
     if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] FUN_00081034: resolve_object_link returned NULL, skipping\n");
+      fprintf(stderr, "[door] scheduler_step_entry: resolve_object_link returned NULL, skipping\n");
     return;
   }
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] FUN_00081034: resolved obj0=0x%04x (checking &0x1f0==0x1c0 -> %d)\n",
+    fprintf(stderr, "[door] scheduler_step_entry: resolved obj0=0x%04x (checking &0x1f0==0x1c0 -> %d)\n",
             (unsigned)*puVar4, (int)((*puVar4 & 0x1f0) == 0x1c0));
   if ((*puVar4 & 0x1f0) == 0x1c0) {
     iVar1 = (*puVar4 & 0xf) * 4;
     uVar3 = 1;
     if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] FUN_00081034: obj0=0x%04x class=%d iVar1=%d flags(uVar7)=0x%x DAT_00250732[iVar1]=%d DAT_00250733[iVar1]=%d quality_before=%d\n",
+      fprintf(stderr, "[door] scheduler_step_entry: obj0=0x%04x class=%d iVar1=%d flags(uVar7)=0x%x DAT_00250732[iVar1]=%d DAT_00250733[iVar1]=%d quality_before=%d\n",
               (unsigned)*puVar4, (*puVar4 & 0xf), iVar1, (unsigned)*(ushort *)(&DAT_00250730 + iVar1),
               (int)(char)(&DAT_00250732)[iVar1], (int)(byte)(&DAT_00250733)[iVar1], (int)(puVar4[3] & 0x3f));
     for (uVar7 = *(ushort *)(&DAT_00250730 + iVar1); uVar7 != 0; uVar7 = uVar7 & uVar8) {
@@ -77298,7 +77357,7 @@ LAB_00081254:
         *(char *)(puVar4 + 3) = (char)uVar8;
         *(char *)((char *)puVar4 + 7) = (char)(uVar8 >> 8);
         if (getenv("UW_DEBUG_DOOR"))
-          fprintf(stderr, "[door] FUN_00081034: quality_after=%d\n", (int)(uVar8 & 0x3f));
+          fprintf(stderr, "[door] scheduler_step_entry: quality_after=%d\n", (int)(uVar8 & 0x3f));
       }
       else {
         if (uVar8 == 2) {
@@ -77323,7 +77382,7 @@ LAB_00081254:
           *(char *)puVar4 = (char)*puVar4;
           *(char *)((char *)puVar4 + 1) = (char)(uVar5 >> 8);
           if ((uVar5 & 0x1000) != 0) {
-            FUN_00081af4(param_1,param_2);
+            scheduler_advance_effect(param_1,param_2);
           }
         }
       }
@@ -77336,7 +77395,13 @@ LAB_00081254:
 
 
 
-void FUN_0008128c(param_1)
+// was FUN_0008128c: walks every live scheduler entry, called from
+// ordinary gameplay's own per-tick pacing (move_key_directional_step
+// and its per-frame sibling, gated by DAT_000879ac -- see
+// FUN_00066e90's own comment) with param_1 = elapsed ticks. Per entry:
+// scheduler_step_entry while its delay hasn't expired yet,
+// scheduler_expire_entry once it has.
+void scheduler_tick(param_1)
 int param_1;
 
 {
@@ -77346,46 +77411,46 @@ int param_1;
   int iVar4;
 
   if (getenv("UW_DEBUG_DOOR2"))
-    fprintf(stderr, "[door] FUN_0008128c called: param_1(elapsed)=%d DAT_00250770(queue_count)=%d\n",
-            param_1, (int)(unsigned char)DAT_00250770);
+    fprintf(stderr, "[door] scheduler_tick called: param_1(elapsed)=%d g_scheduler_count(queue_count)=%d\n",
+            param_1, (int)(unsigned char)g_scheduler_count);
   iVar4 = 0;
-  if (DAT_00250770 != 0) {
+  if (g_scheduler_count != 0) {
     iVar4 = param_1;
   }
   if (DAT_0023b804 != 0) {
     FUN_00049924(2);
   }
-  if (DAT_00250770 != 0) {
+  if (g_scheduler_count != 0) {
     iVar3 = 0;
     do {
       iVar1 = iVar3 * 6;
       if (*(short *)(&DAT_0025077a + iVar1) == -1) {
-        FUN_00081034(iVar3,iVar4);
+        scheduler_step_entry(iVar3,iVar4);
       }
       else {
         iVar2 = *(short *)(&DAT_0025077a + iVar1) - iVar4;
         if (iVar2 * 0x10000 >> 0x10 < 0) {
-          /* HACK: was a bare `FUN_00080a98();` -- dropped argument, same
+          /* HACK: was a bare `scheduler_expire_entry();` -- dropped argument, same
              class as dozens of other Ghidra-decompiled call sites in this
-             file (e.g. FUN_00081034 two lines below, called correctly
-             with iVar3 in the exact same loop). FUN_00080a98's own
+             file (e.g. scheduler_step_entry two lines below, called correctly
+             with iVar3 in the exact same loop). scheduler_expire_entry's own
              param_1 is immediately used as `(short)param_1 * 6` to index
              this same queue's per-slot arrays -- identical to
-             FUN_00081034's indexing one line below -- so it must be the
+             scheduler_step_entry's indexing one line below -- so it must be the
              current slot index (iVar3), not garbage left in a register
              from some unrelated prior call. Confirmed live: this queue's
              finalize step (the only place a door's quality ever gets its
              final +8/-8 open/close flip once its scheduled delay expires)
              never fired for a real door-open repro even after fixing the
              separate DAT_000879ac dead-gate bug that let this whole
-             function start running at all -- FUN_00080a98 ran, but
+             function start running at all -- scheduler_expire_entry ran, but
              resolve_object_link on the garbage param_1 either returned
              NULL (now guarded, see its own comment) or resolved some
              unrelated object, never the actual door. */
-          FUN_00080a98(iVar3);
+          scheduler_expire_entry(iVar3);
         }
         else {
-          FUN_00081034(iVar3,iVar4);
+          scheduler_step_entry(iVar3,iVar4);
           if (DAT_002508fc == 0) {
             (&DAT_0025077a)[iVar1] = (char)iVar2;
             (&DAT_0025077b)[iVar1] = (char)((uint)iVar2 >> 8);
@@ -77396,7 +77461,7 @@ int param_1;
         }
       }
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-    } while (iVar3 < (int)(uint)DAT_00250770);
+    } while (iVar3 < (int)(uint)g_scheduler_count);
   }
   return;
 }
@@ -77492,7 +77557,7 @@ undefined4 param_3;
     uVar12 = (undefined1)param_3;
     uVar13 = (undefined1)uw_ord2005_rem_173;
     uw_ord2005_rem_174 = ((int)(uVar6)) % (3);
-    sVar5 = FUN_00080ed4(uVar11,((int)uw_ord2005_rem_174 - (int)uw_ord2005_rem_173) + 2,(int)uw_ord2005_rem_173,
+    sVar5 = scheduler_add_entry(uVar11,((int)uw_ord2005_rem_174 - (int)uw_ord2005_rem_173) + 2,(int)uw_ord2005_rem_173,
                          param_2 & 0xff,uVar12,uVar13);
     if (sVar5 == -1) {
       /* was folded into `int iVar7` (this function's loop counter) --
@@ -77544,7 +77609,7 @@ undefined4 param_4;
     *(char *)param_1 = (char)uVar5;
     *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
     uVar4 = encode_object_slot_index(param_1);
-    sVar3 = FUN_00080ed4(uVar4,4,0,param_2 & 0xff,(char)param_3);
+    sVar3 = scheduler_add_entry(uVar4,4,0,param_2 & 0xff,(char)param_3);
     if (sVar3 != -1) {
       if (iVar1 == 0) {
         FUN_00081388(param_1,param_2,param_3);
@@ -77611,7 +77676,7 @@ short param_7;
   *(char *)(iVar5 + 3) = (char)((ushort)uVar3 >> 8);
 LAB_00081980:
   uVar7 = encode_object_slot_index(iVar5);
-  sVar4 = FUN_00080ed4(uVar7,param_3,param_4,(int)param_6 & 0xff,(char)param_7);
+  sVar4 = scheduler_add_entry(uVar7,param_3,param_4,(int)param_6 & 0xff,(char)param_7);
   if (sVar4 == -1) {
     free_object_slot(iVar5);
     return 0;
@@ -77623,7 +77688,14 @@ LAB_00081980:
 
 
 
-int FUN_000819f0()
+// was FUN_000819f0: linear-searches the scheduler for the entry whose
+// encoded link matches encode_object_slot_index()'s last result (an
+// implicit-argument call, same idiom as this file's other bare
+// Ghidra-decompiled calls -- see e.g. scheduler_add_entry's own fix
+// comment for a case where that idiom was wrong; unconfirmed either
+// way for this specific call, left as originally decompiled). Returns
+// the slot index, or -1 if not found.
+int scheduler_find_entry()
 
 {
   short sVar1;
@@ -77633,7 +77705,7 @@ int FUN_000819f0()
   
   sVar1 = encode_object_slot_index();
   iVar4 = 0;
-  uVar3 = (uint)DAT_00250770;
+  uVar3 = (uint)g_scheduler_count;
   if (uVar3 != 0) {
     do {
       if ((uint)(*(ushort *)(&DAT_00250778 + iVar4 * 6) >> 6) == (int)sVar1) break;
@@ -77649,13 +77721,14 @@ int FUN_000819f0()
 
 
 
-int FUN_00081a84()
+// was FUN_00081a84: reads scheduler_find_entry's result's delay field.
+int scheduler_get_delay()
 
 {
   short sVar1;
   int iVar2;
-  
-  sVar1 = FUN_000819f0();
+
+  sVar1 = scheduler_find_entry();
   if (sVar1 < 0) {
     iVar2 = -2;
   }
@@ -77667,7 +77740,8 @@ int FUN_00081a84()
 
 
 
-void FUN_00081abc(param_1,param_2)
+// was FUN_00081abc: re-arms scheduler_find_entry's result's delay field.
+void scheduler_set_delay(param_1,param_2)
 undefined4 param_1;
 undefined4 param_2;
 
@@ -77675,7 +77749,7 @@ undefined4 param_2;
   short sVar1;
   int iVar2;
   
-  sVar1 = FUN_000819f0();
+  sVar1 = scheduler_find_entry();
   if (-1 < sVar1) {
     iVar2 = sVar1 * 6;
     (&DAT_0025077a)[iVar2] = (char)param_2;
@@ -77686,7 +77760,13 @@ undefined4 param_2;
 
 
 
-undefined4 FUN_00081af4(param_1,param_2)
+// was FUN_00081af4: scheduler_step_entry's bit-2 sub-handler, called
+// for entries whose per-class behavior flags select a positional/
+// directional step each tick -- respawns the entry's own impact/effect
+// sprite one tile position further along and re-arms its own delay via
+// scheduler_get_delay/scheduler_set_delay, rather than a plain
+// quality ramp. Exact original name/intent not otherwise recovered.
+undefined4 scheduler_advance_effect(param_1,param_2)
 short param_1;
 int param_2;
 
@@ -77735,7 +77815,7 @@ int param_2;
     *(char *)puVar2 = (char)(uVar5 & 0xefff);
     *(byte *)((char *)puVar2 + 1) =
          ((byte)((uVar5 & 0xe00) + (param_2 + 1) * -0x200 >> 8) ^ bVar1) & 0x1e ^ bVar1;
-    iVar6 = FUN_00081a84(puVar2);
+    iVar6 = scheduler_get_delay(puVar2);
     iVar4 = (int)(short)iVar6;
     bVar11 = -1 < iVar4;
     if (bVar11) {
@@ -77756,7 +77836,10 @@ int param_2;
 
 
 
-undefined4 FUN_00081ce4(param_1,param_2)
+// was FUN_00081ce4: loads the whole scheduler table (g_scheduler_table,
+// 0x180 bytes = 64 entries * 6) from a save file, then recomputes
+// g_scheduler_count by re-scanning for the first empty entry.
+undefined4 scheduler_load(param_1,param_2)
 /* .ark handle-struct pointer -- was `undefined4`, truncating the stack
    struct load_level_object_table passes and crashing read_archive_entry below. */
 undefined1 * param_1;
@@ -77771,18 +77854,18 @@ int param_2;
   puVar4 = (ushort *)&DAT_00250778;
   sVar1 = read_archive_entry(param_1,param_2 + 8,&DAT_00250778);
   if (sVar1 == 0x180) {
-    DAT_00250770 = '\0';
+    g_scheduler_count = '\0';
     iVar3 = 0;
     do {
       if ((*puVar4 & 0xffc0) == 0) break;
       iVar3 = iVar3 + 6;
-      DAT_00250770 = DAT_00250770 + '\x01';
+      g_scheduler_count = g_scheduler_count + '\x01';
       puVar4 = puVar4 + 3;
     } while (iVar3 < 0x180);
     uVar2 = 1;
   }
   else {
-    DAT_00250770 = '\0';
+    g_scheduler_count = '\0';
     uVar2 = 0;
   }
   return uVar2;
@@ -77790,12 +77873,16 @@ int param_2;
 
 
 
-undefined4 FUN_00081d74(param_1,param_2)
+// was FUN_00081d74: saves the whole scheduler table (g_scheduler_table,
+// 0x180 bytes) to a save file, and (if g_scheduler_count < 0x40) blanks
+// out one trailing empty entry first so a stale leftover doesn't get
+// misread as real data on the next scheduler_load.
+undefined4 scheduler_save(param_1,param_2)
 /* Was `undefined4` -- truncated the real 64-bit archive-handle-struct
    pointer (FUN_00049b04's own `auStack_20`) FUN_00015b94 needs as its
    own param_1. Same bug class as FUN_00015b94's own param_3 fix right
    above this function -- confirmed via the same crash chain, one call
-   further down (FUN_00049b04 -> FUN_00081d74 -> FUN_00015b94, this
+   further down (FUN_00049b04 -> scheduler_save -> FUN_00015b94, this
    function's own nested call, dereferencing the truncated handle
    pointer). */
 undefined4 *param_1;
@@ -77804,8 +77891,8 @@ int param_2;
 {
   int iVar1;
   
-  if (DAT_00250770 < 0x40) {
-    iVar1 = (uint)DAT_00250770 * 6;
+  if (g_scheduler_count < 0x40) {
+    iVar1 = (uint)g_scheduler_count * 6;
     (&DAT_00250778)[iVar1] = (&DAT_00250778)[iVar1] & 0x3f;
     (&DAT_00250779)[iVar1] = 0;
   }
