@@ -2232,3 +2232,68 @@ place for a future pass on the close-dispatch question, just change
 the address list.
 
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (19): fixed the object tuner's per-catalog field
+visibility bug, and root-caused + fixed a real crash using a pull chain
+(bug-pull-chain-crash.txt) -- three stacked pointer-truncation bugs
+═══════════════════════════════════════════════════════════════════════════
+Two QA reports: "only able to tune leaf_hinge_offset on doors of type
+14, not 1" (a usability bug in milestone 18's own new tunable), and "using
+a pull chain to open a door causes a crash" (a real, reproducible
+EXC_BAD_ACCESS, repro saved as bug-pull-chain-crash.txt).
+
+TUNER VISIBILITY: the object-tuner panel's field list resets on every
+single emit_catalog_object call within a frame (not once per door), so
+with the frame (catalog_u==1) and leaf (catalog_u==0xe/0xf) drawing in
+the same frame plus whatever else is in the scene, whichever catalog
+happened to draw LAST determined which fields were visible -- leaf_
+hinge_offset (gated to catalog_u==0xe/0xf only) was invisible whenever
+catalog 1 drew last. Fixed by showing all three door-family tunables
+(wide_center, edge_offset, leaf_hinge_offset) together whenever ANY
+door catalog (1, 0xe, or 0xf) was the last one drawn, instead of
+splitting them by exact catalog.
+
+PULL-CHAIN CRASH: reproduced immediately via lldb against the saved
+repro. Root-caused through THREE separate, stacked pointer-truncation
+bugs along the same call chain (use_object_on_target ->
+FUN_0007c2ec -> FUN_0007cdbc -> FUN_0007d074 -> FUN_0007d0b0's own
+"case 8" -> object_list_insert_head), each one only surfacing once the
+previous one was fixed and execution got one step further:
+
+1. FUN_0007d074's own param_2/param_3 were both declared `undefined4`
+   (32-bit) despite being real `ushort *` pointers at every call site
+   (confirmed via FUN_0007cdbc's own matching parameter types) -- and
+   DAT_0024cff0, which param_2 gets stored into, had the exact same
+   bug (also dereferenced directly elsewhere in the same function).
+   Classic pointer truncation on this 64-bit host; retyped all three.
+
+2. Fixed with (1), the crash moved one call deeper into
+   FUN_0007d0b0's own "case 8": a bare `object_list_insert_head(local_34);`
+   -- a dropped second argument (every other call site of this
+   function passes exactly two) -- with puVar10 (an object slot this
+   same block had just allocated and populated) the obvious missing
+   argument.
+
+3. Fixed with (2), the crash moved again, this time into
+   object_list_insert_head itself, with an invalid FIRST argument this
+   time. Traced to `iVar16`/`iVar11` -- both plain `int` locals in
+   FUN_0007d0b0, but reused within this same "case 8" to hold
+   FUN_000537d0's real `ushort *` return value (already flagged, but
+   left unfixed, by an EARLIER session's own comment: "a separate,
+   not-yet-fixed truncation bug ... out of scope for this
+   tilemap_lookup-focused pass"). iVar16/iVar11 are genuinely reused
+   for unrelated small integers in every OTHER case of this switch (and
+   iVar11 even earlier within this same case), so a blanket retype
+   wasn't safe -- added two dedicated, correctly-typed locals
+   (_case8_p1/_case8_p2) scoped to just this case's own pointer uses
+   instead, including two further uses of the same truncated value
+   (FUN_0007c580/FUN_0007c814 calls) the original fixer's comment
+   hadn't traced out to.
+
+Confirmed live: bug-pull-chain-crash.txt no longer crashes (reaches
+"end of input, exiting" cleanly) after all three fixes landed together
+-- fixing any one or two in isolation only moved the crash one call
+frame deeper, never resolved it.
+
+run-regressions.sh: 6/6 clean.

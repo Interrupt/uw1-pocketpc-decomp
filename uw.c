@@ -6585,7 +6585,20 @@ char s_is_empty__0008790c[] = "is_empty.";
 static undefined1 DAT_0024cfe0_backing[8192];
 #define DAT_0024cfe0 DAT_0024cfe0_backing[0]
 char *DAT_0024cff4;
-undefined4 DAT_0024cff0;
+/* HACK: was `undefined4` -- truncated a real 64-bit object pointer.
+   Same bug class as DAT_0024cff4 right above (already a real pointer
+   type) and countless other fixes throughout this file: FUN_0007d074
+   stores its own real `ushort *` param_2 here, and it's read back as a
+   pointer both directly (FUN_0007cdbc's own param_2 at both call sites
+   below) and via dereference (`*(byte*)(DAT_0024cff0+1)` further
+   down). Confirmed live (bug-pull-chain-crash.txt, a saved repro):
+   using a pull chain crashed with EXC_BAD_ACCESS at a wild address
+   (0x4c029128, an obviously-truncated 32-bit value) dereferenced in
+   FUN_0007d0b0 -- traced back through FUN_0007d074's own matching
+   param_3 truncation (fixed at its own declaration, see that
+   function's comment) to this global being the same bug one hop
+   earlier in the same call chain. */
+ushort *DAT_0024cff0;
 char s_Look__it_s_a_text_trap_00087918[] = "Look,_it's_a_text_trap";
 short DAT_0024cfd0;
 short DAT_0024cfd8;
@@ -58463,11 +58476,23 @@ LAB_000640ec:
     snprintf(_tune_title, sizeof(_tune_title), "Object Tuner (catalog=%d)", (int)catalog_u);
     dbgui_begin(_tune_title);
     dbgui_field_double("rotation_offset", &g_tune_rotation_offset, 5.0);
-    if (catalog_u == 1) {
+    /* HACK: was `if (catalog_u == 1)` / `if (catalog_u == 0xe || 0xf)`
+       separately -- each door-related tunable only showed up in the
+       panel on whichever exact catalog happened to be the LAST thing
+       drawn in the whole frame (dbgui_begin's own field list resets on
+       every single catalog change, not once per door), so with a
+       frame/leaf pair (or any other scene content) drawing in between,
+       the panel would show catalog=1's row often and catalog=0xe/0xf's
+       hardly ever, or vice versa, depending on draw order -- confirmed
+       live via QA report ("only able to tune leaf_hinge_offset on
+       doors of type 14, not 1"). Show every door-family tunable
+       together whenever ANY door catalog (frame or either leaf id)
+       last drew, instead of splitting them by exact catalog, so
+       whichever one happens to land last this frame still exposes the
+       whole set. */
+    if ((catalog_u == 1) || (catalog_u == 0xe) || (catalog_u == 0xf)) {
       dbgui_field_double("wide_center", &g_tune_wide_center, 1.0);
       dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
-    }
-    if ((catalog_u == 0xe) || (catalog_u == 0xf)) {
       dbgui_field_double("leaf_hinge_offset", &g_tune_leaf_hinge_offset, 8.0);
     }
     dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
@@ -74623,10 +74648,20 @@ ushort param_4;
 
 
 
+/* HACK: param_2 and param_3 were both `undefined4` -- truncated real
+   64-bit pointers (both are `ushort *` at every call site, e.g.
+   FUN_0007cdbc's own `param_2` and `iVar3`/resolve_object_link's
+   result just above this function), the same bug class as
+   DAT_0024cff0's own identical fix just above. Confirmed live
+   (bug-pull-chain-crash.txt): pulling a chain crashed with
+   EXC_BAD_ACCESS on a wild, obviously-truncated address
+   (0x4c029128) dereferenced one call further down, in FUN_0007d0b0 --
+   param_3 is passed straight through as that function's own real
+   `ushort *param_1`. */
 undefined4 FUN_0007d074(param_1,param_2,param_3,param_4,param_5)
 char *param_1;
-undefined4 param_2;
-undefined4 param_3;
+ushort *param_2;
+ushort *param_3;
 undefined4 param_4;
 short param_5;
 
@@ -74659,6 +74694,20 @@ uint param_3;
   undefined1 *puVar9;
   undefined1 *puVar10;
   int iVar11;
+  /* HACK: case 8's own two FUN_000537d0 results (real `ushort *`
+     returns, see that function's own signature) were stored into
+     iVar16/iVar11 -- both plain `int`, truncating a real 64-bit
+     pointer on this host. Confirmed live (bug-pull-chain-crash.txt):
+     pulling a chain crashed with EXC_BAD_ACCESS inside
+     object_list_insert_head, param_1 (== `(char*)(iVar16+6)`) having
+     read as an invalid address reconstructed from a truncated iVar16.
+     iVar16/iVar11 themselves are reused for genuinely unrelated small
+     integers in every OTHER case of this switch (and even earlier in
+     this same case, in iVar11's case) -- not safe to blanket-retype --
+     so case 8's own pointer-holding uses get these two dedicated,
+     correctly-typed locals instead, scoped to exactly that case. */
+  ushort *_case8_p1;
+  ushort *_case8_p2;
   ushort *puVar12;
   undefined2 uVar13;
   uint uVar14;
@@ -74802,16 +74851,16 @@ uint param_3;
   case 8:
     local_34 = (char *)tilemap_lookup(param_2,param_3);
     local_34 = local_34 + 2;
-    iVar16 = FUN_000537d0(&local_34,0,5,0,CONCAT22(uVar20,0xffff));
+    _case8_p1 = FUN_000537d0(&local_34,0,5,0,CONCAT22(uVar20,0xffff));
     DAT_002020a0 = (undefined2)param_2;
     DAT_002020a4 = sVar3;
-    if (iVar16 == 0) {
-      iVar16 = FUN_000537d0(&local_34,0,7,0xffffffff,0xf);
-      if (iVar16 == 0) {
+    if (_case8_p1 == (ushort *)0x0) {
+      _case8_p1 = FUN_000537d0(&local_34,0,7,0xffffffff,0xf);
+      if (_case8_p1 == (ushort *)0x0) {
         return 2;
       }
       uVar4 = param_1[2] & 0x3f;
-      if (7 < (*(byte *)(iVar16 + 6) & 0xf)) {
+      if (7 < (*(byte *)((char *)_case8_p1 + 6) & 0xf)) {
         if ((uVar4 != 1) && (uVar4 != 3)) {
           return 2;
         }
@@ -74825,16 +74874,11 @@ uint param_3;
       }
     }
     else {
-      /* NOTE: iVar16 itself is a separate, not-yet-fixed truncation bug --
-         it holds FUN_000537d0's real `ushort *` return in a plain `int`
-         (declared above, reused for unrelated int values elsewhere in
-         this function so not blanket-retyped here); out of scope for
-         this tilemap_lookup-focused pass. */
-      local_34 = (char *)(iVar16 + 6);
-      iVar11 = FUN_000537d0(&local_34,0,4,0,0xf);
-      if (iVar11 != 0) {
-        object_list_unlink(local_34,iVar11);
-        free_object_slot(iVar11);
+      local_34 = (char *)_case8_p1 + 6;
+      _case8_p2 = FUN_000537d0(&local_34,0,4,0,0xf);
+      if (_case8_p2 != (ushort *)0x0) {
+        object_list_unlink(local_34,_case8_p2);
+        free_object_slot(_case8_p2);
       }
       if (((*param_1 & 0x8000) == 0) && ((param_1[3] & 0xffc0) != 0)) {
         puVar9 = (undefined1 *)resolve_object_link(param_1 + 3);
@@ -74848,18 +74892,39 @@ uint param_3;
           puVar10[5] = puVar9[5];
           puVar10[6] = puVar9[6];
           puVar10[7] = puVar9[7];
-          object_list_insert_head(local_34);
+          /* HACK: was a bare `object_list_insert_head(local_34);` --
+             dropped second argument, same class as this file's other
+             Ghidra-decompiled dropped-argument calls. Every other call
+             site of object_list_insert_head passes exactly two
+             arguments (a list head and the object to insert), and
+             puVar10 -- the object slot this block just allocated and
+             populated a few lines above -- is obviously the intended
+             one here (nothing else newly-relevant is in scope).
+             Confirmed live (bug-pull-chain-crash.txt): pulling a chain
+             crashed with EXC_BAD_ACCESS dereferencing NULL inside
+             object_list_insert_head, param_2 having read as garbage
+             (0) from whatever register happened to be left over. */
+          object_list_insert_head(local_34,puVar10);
         }
       }
       uVar4 = param_1[2] & 0x3f;
       if (uVar4 == 1) {
 LAB_0007dbc0:
-        FUN_0007c580(DAT_0024cff4,iVar16);
+        /* HACK: was `FUN_0007c580(DAT_0024cff4,iVar16);` -- same
+           truncated-pointer class as _case8_p1's own fix a few lines
+           above (see this switch case's top comment). This label is
+           reached either by falling through from here (where
+           _case8_p1 still holds this case's first FUN_000537d0 call)
+           or by `goto` from the if-branch above (where _case8_p1 was
+           reassigned to that branch's own FUN_000537d0 call) -- in
+           both cases _case8_p1 is the object FUN_0007c580 needs,
+           `iVar16` (a plain, truncated int here) was never it. */
+        FUN_0007c580(DAT_0024cff4,_case8_p1);
         return 2;
       }
       if (uVar4 != 2) {
         if (uVar4 == 3) {
-          FUN_0007c814(DAT_0024cff4,iVar16);
+          FUN_0007c814(DAT_0024cff4,_case8_p1);
           return 2;
         }
         return 2;
