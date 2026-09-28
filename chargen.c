@@ -102,7 +102,7 @@ char *param_3;
     DAT_000fb858 = DAT_001005c8;
     // Redraws the raw parchment background (both pages, 0,0 to 320,200) from scratch every loop iteration -- this is the mechanism that clears stale text from the *right* page between prompts (confirmed: disabling it leaves old prompt text visibly bleeding through under new prompt text). As a side effect it also wipes any stats text the previous iteration's switch-case drew on the left page. Confirmed present in the real ARM disassembly at this exact spot, in this exact order relative to the fill below -- not a decompilation bug.
     bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     FUN_00035df8(0);
     DAT_000fb858 = DAT_001005c4;
     FUN_00057118();
@@ -129,7 +129,7 @@ char *param_3;
       bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
 LAB_00025468:
       sVar8 = 0;
-      FUN_000570b4();
+      cursor_show_idle_tick();
       FUN_00035df8(0);
       DAT_000fb858 = DAT_001005c4;
       uVar15 = screen_backup_save();
@@ -156,7 +156,7 @@ LAB_00025468:
              *(byte *)(DAT_00086df8 + 100) & 0xfd | (byte)((uVar9 & 1) << 1);
         FUN_00057118();
         draw_text_string(uVar10,0x11,0x16);
-        uVar15 = FUN_000570b4();
+        uVar15 = cursor_show_idle_tick();
         sVar8 = 1;
         break;
       case 1:
@@ -181,7 +181,7 @@ LAB_00025468:
         FUN_00023a00();
         capture_framebuffer_rect_to_grtile(local_60,0x1e,0x85,0x5f,0x37);
         FUN_00023b38();
-        uVar15 = FUN_000570b4();
+        uVar15 = cursor_show_idle_tick();
         sVar8 = sVar8 + 1;
         break;
       case 3:
@@ -194,7 +194,7 @@ LAB_00025468:
         FUN_00057118();
         FUN_00076e98(local_60);
         FUN_00023b38();
-        FUN_000570b4();
+        cursor_show_idle_tick();
         uVar15 = FUN_000238b4(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
         if ((int)uVar15 == 0) {
           sVar8 = 4;
@@ -231,7 +231,7 @@ LAB_00025468:
         }
         bitmap_blit_to_framebuffer((short)(iVar13 >> 1) + 0x10,(short)(iVar11 >> 1) + 0x2b,iVar14 + param_1,bVar3,
                      bVar2,0,0,1);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         uVar15 = CONCAT44(extraout_r1,DAT_00086df8);
         g_blit_transparent_mode = 0;
         sVar8 = 5;
@@ -252,7 +252,7 @@ LAB_00025468:
           iVar12 = -(int)sVar8 + 0x7f;
         }
         draw_text_string(pcVar5,(short)(iVar12 >> 1) + 0x11,0xb);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         uVar10 = extraout_r1_00;
         if (*pcVar5 != '\0') {
           Ordinal_1071(DAT_00086df8,pcVar5,0x1d);
@@ -267,7 +267,7 @@ LAB_00025468:
           FUN_00057118();
           set_draw_color(0x1a);
           rect_fill_or_save_restore(0x11,0,0x8f,199);
-          FUN_000570b4();
+          cursor_show_idle_tick();
           local_64[0] = 0;
           memset(local_5c_buf + 4, 0x14, 6);
           DAT_001005c0 = 0;
