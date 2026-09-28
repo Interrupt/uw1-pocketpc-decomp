@@ -6687,7 +6687,7 @@ undefined4 scheduler_save(undefined4 *param_1, int param_2);
    bytes/entry = 0x180 total, confirmed by this exact size showing up
    in its save/load code, scheduler_load/scheduler_save) link table --
    scheduler_add_entry/scheduler_despawn_entry/scheduler_tick/scheduler_step_entry/
-   scheduler_expire_entry/scheduler_advance_effect all pass `&DAT_00250778 + offset` straight
+   scheduler_finish_entry/scheduler_advance_effect all pass `&DAT_00250778 + offset` straight
    into resolve_object_link, the same call shape as any other object
    "next" link field. A plain standalone static array was never inside
    the level object arena's malloc'd buffer the way it evidently was in
@@ -60363,7 +60363,7 @@ void FUN_00066e90()
      DAT_000879ac gates all three per-tick call sites of scheduler_tick
      (the scheduled-effects queue driver -- walks the queue
      scheduler_add_entry pushes to, ticking scheduler_step_entry's gradual per-object
-     step until each entry's delay expires, then scheduler_expire_entry finalizes
+     step until each entry's delay expires, then scheduler_finish_entry finalizes
      it) that fire from ordinary gameplay: move_key_directional_step's
      per-held-key-frame call, its sibling per-frame movement-pacing
      call, and the per-tile-scan idle-animation call. Declared but never
@@ -74088,16 +74088,16 @@ ushort * param_1;
   *(char *)param_1 = (char)uVar5;
   *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
   /* HACK: was a bare `encode_object_slot_index();` -- dropped argument,
-     same class as scheduler_tick's own `scheduler_expire_entry();` fix just above
+     same class as scheduler_tick's own `scheduler_finish_entry();` fix just above
      (see its comment). encode_object_slot_index's real signature takes
      the object pointer it encodes (`char *param_1`, dereferenced via
      pointer comparisons against DAT_002046b8/DAT_002046c4) -- with none
      passed, this read garbage instead of this door object, so the
      scheduled-effects queue entry scheduler_add_entry pushes right below
      carried an encoded reference to the wrong (or no) object. Confirmed
-     live: scheduler_step_entry/scheduler_expire_entry (the queue's own per-tick step and
+     live: scheduler_step_entry/scheduler_finish_entry (the queue's own per-tick step and
      finalize) resolved this door's queue slot to NULL every time,
-     silently skipping it forever, once the separate scheduler_expire_entry
+     silently skipping it forever, once the separate scheduler_finish_entry
      missing-argument bug and the DAT_000879ac dead-gate were both
      already fixed -- this was the last of three stacked bugs that had
      to be fixed together before a door's queued open animation could
@@ -74215,7 +74215,7 @@ ushort * param_1;
        original bug ("door should animate in six to eight small steps
        over a few seconds, it doesn't"). That queue (FUN_0007c3f4 ->
        scheduler_add_entry's push -> scheduler_tick's per-tick walk ->
-       scheduler_step_entry's gradual steps -> scheduler_expire_entry's eventual finalize,
+       scheduler_step_entry's gradual steps -> scheduler_finish_entry's eventual finalize,
        the same +8/-8 math this branch used to do instantly) was itself
        broken by four stacked bugs elsewhere in this file (DAT_000879ac
        never initialized, two dropped function arguments, and the
@@ -74225,7 +74225,7 @@ ushort * param_1;
        DAT_00250778, DAT_00250732). With the queue actually running, a
        redundant re-trigger while already mid-animation should just be
        a no-op -- the real animation is already in flight and will
-       finish itself via scheduler_expire_entry on its own schedule. */
+       finish itself via scheduler_finish_entry on its own schedule. */
     return;
   }
   else {
@@ -77071,7 +77071,7 @@ short param_1;
 // was FUN_00080a98: scheduler_tick's finalize step, run once an entry's
 // delay has expired -- one last scheduler_step_entry catch-up, then
 // (for class 0xf, doors) the actual final open/close quality flip.
-void scheduler_expire_entry(param_1)
+void scheduler_finish_entry(param_1)
 undefined4 param_1;
 
 {
@@ -77089,7 +77089,7 @@ undefined4 param_1;
   
   iVar9 = (short)param_1 * 6;
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] scheduler_expire_entry ENTERED: param_1(slot)=%d\n", (int)param_1);
+    fprintf(stderr, "[door] scheduler_finish_entry ENTERED: param_1(slot)=%d\n", (int)param_1);
   puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + iVar9);
   /* HACK: resolve_object_link legitimately returns NULL (every other
      resolve_object_link call site in this file guards for it -- e.g.
@@ -77114,12 +77114,12 @@ undefined4 param_1;
     bVar11 = (&DAT_0025077a)[iVar9] == '\0' && (&DAT_0025077b)[iVar9] == '\0';
   }
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] scheduler_expire_entry: obj0=0x%04x class=%d flags=0x%x bVar11(skip-inc)=%d quality_before=%d\n",
+    fprintf(stderr, "[door] scheduler_finish_entry: obj0=0x%04x class=%d flags=0x%x bVar11(skip-inc)=%d quality_before=%d\n",
             (unsigned)*puVar4, (int)uVar5, (unsigned)uVar1, (int)bVar11, (int)(puVar4[3] & 0x3f));
   if (!bVar11) {
     /* HACK: was a bare `scheduler_step_entry(param_1);` -- dropped
        second argument (elapsed ticks), same class as this file's other
-       Ghidra-decompiled dropped-argument calls. scheduler_expire_entry
+       Ghidra-decompiled dropped-argument calls. scheduler_finish_entry
        has no elapsed value of its own to forward (it's the queue's
        delay-just-expired path, not the regular per-tick one), and this
        one-final-catch-up call's own elapsed-sensitive behavior (the
@@ -77138,7 +77138,7 @@ undefined4 param_1;
     uVar5 = (byte)puVar4[3] & 0xf;
     uVar8 = (byte)puVar4[1] & 0x7f;
     if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] scheduler_expire_entry: FINALIZE class0xf obj0=0x%04x quality_low4=%d opening=%d\n",
+      fprintf(stderr, "[door] scheduler_finish_entry: FINALIZE class0xf obj0=0x%04x quality_low4=%d opening=%d\n",
               (unsigned)*puVar4, (int)uVar5, (int)((*puVar4 & 0x1000) == 0));
     if ((*puVar4 & 0x1000) == 0) {
       uVar5 = uVar5 | 8;
@@ -77325,7 +77325,7 @@ int param_2;
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] scheduler_step_entry ENTERED: param_1(slot)=%d param_2=%d\n", (int)param_1, param_2);
   puVar4 = (ushort *)resolve_object_link(&DAT_00250778 + (short)param_1 * 6);
-  /* HACK: same unguarded-NULL class as scheduler_expire_entry's identical fix --
+  /* HACK: same unguarded-NULL class as scheduler_finish_entry's identical fix --
      see its own comment. A stale queue entry resolves to NULL here too. */
   if (puVar4 == (ushort *)0x0) {
     if (getenv("UW_DEBUG_DOOR"))
@@ -77400,7 +77400,7 @@ LAB_00081254:
 // and its per-frame sibling, gated by DAT_000879ac -- see
 // FUN_00066e90's own comment) with param_1 = elapsed ticks. Per entry:
 // scheduler_step_entry while its delay hasn't expired yet,
-// scheduler_expire_entry once it has.
+// scheduler_finish_entry once it has.
 void scheduler_tick(param_1)
 int param_1;
 
@@ -77430,10 +77430,10 @@ int param_1;
       else {
         iVar2 = *(short *)(&DAT_0025077a + iVar1) - iVar4;
         if (iVar2 * 0x10000 >> 0x10 < 0) {
-          /* HACK: was a bare `scheduler_expire_entry();` -- dropped argument, same
+          /* HACK: was a bare `scheduler_finish_entry();` -- dropped argument, same
              class as dozens of other Ghidra-decompiled call sites in this
              file (e.g. scheduler_step_entry two lines below, called correctly
-             with iVar3 in the exact same loop). scheduler_expire_entry's own
+             with iVar3 in the exact same loop). scheduler_finish_entry's own
              param_1 is immediately used as `(short)param_1 * 6` to index
              this same queue's per-slot arrays -- identical to
              scheduler_step_entry's indexing one line below -- so it must be the
@@ -77443,11 +77443,11 @@ int param_1;
              final +8/-8 open/close flip once its scheduled delay expires)
              never fired for a real door-open repro even after fixing the
              separate DAT_000879ac dead-gate bug that let this whole
-             function start running at all -- scheduler_expire_entry ran, but
+             function start running at all -- scheduler_finish_entry ran, but
              resolve_object_link on the garbage param_1 either returned
              NULL (now guarded, see its own comment) or resolved some
              unrelated object, never the actual door. */
-          scheduler_expire_entry(iVar3);
+          scheduler_finish_entry(iVar3);
         }
         else {
           scheduler_step_entry(iVar3,iVar4);
