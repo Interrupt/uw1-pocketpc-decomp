@@ -8760,6 +8760,20 @@ char param_1;
 // the 3 verts by Y, builds 3 edges via raster_edge_setup, walks
 // scanlines stepping edges (raster_edge_step) and emitting spans
 // (raster_textured_span)
+//
+// UW_DEBUG_RASTER=1: logs every call's screen-space verts/clip rect/
+// texture id, which of the four bounding-box trivial-reject checks (if
+// any) fired, and the final raster_textured_span call count. Added
+// while tracing a QA report that a TMAP decal (catalog 22) draws
+// visible pixels from the front but none from behind, despite an
+// identical raster_triangle call count either way -- confirmed by
+// reading the whole function that there is no winding/normal-based
+// reject anywhere in it (the only early-outs are the four axis-aligned
+// bbox trivial-rejects above, each screen-space-only); a boulder face
+// sweep (catalog 7, which self-occludes so a silently-empty back face
+// would never have been visually noticed) showed span_calls>0 on every
+// one of 52 faces, so whatever's producing the decal's blank back side
+// still needs to be traced with this at the decal's own repro position.
 void raster_triangle(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 undefined4 param_1;
 void *param_2; /* was undefined4 -- the framebuffer base (g_uw_framebuffer) */
@@ -8798,6 +8812,14 @@ int * param_8;
 #define local_b8 (*(int *)(auStack_c4 + 0xc))
 #define local_70 (*(int *)(auStack_7c + 0xc))
 
+  if (getenv("UW_DEBUG_RASTER")) {
+    fprintf(stderr, "[raster] ENTRY texid=0x%x v0=(%g,%g) v1=(%g,%g) v2=(%g,%g) clip=(%d,%d,%d,%d) tex=%p\n",
+            (unsigned)param_4,
+            *(float *)param_3, *(float *)(param_3 + 1),
+            *(float *)(param_3 + 5), *(float *)(param_3 + 6),
+            *(float *)(param_3 + 10), *(float *)(param_3 + 11),
+            param_8[0], param_8[1], param_8[2], param_8[3], (void *)param_7);
+  }
   uVar8 = param_3[6];
   uVar10 = param_3[0xb];
   uVar6 = param_3[1];
@@ -8806,26 +8828,32 @@ int * param_8;
   iVar2 = Ordinal_2028(uVar4,uVar1);
   if (((iVar2 != 0) && (iVar2 = Ordinal_2028(param_3[5],uVar1), iVar2 != 0)) &&
      (iVar2 = Ordinal_2038(param_3[10],uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts left of clip-left\n");
     return;
   }
   uVar1 = Ordinal_2032(param_8[2]);
   iVar2 = Ordinal_2036(uVar4,uVar1);
   if (((iVar2 != 0) && (iVar2 = Ordinal_2036(param_3[5],uVar1), iVar2 != 0)) &&
      (iVar2 = Ordinal_2030(param_3[10],uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts right of clip-right\n");
     return;
   }
   uVar1 = Ordinal_2032(param_8[1]);
   iVar2 = Ordinal_2028(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = Ordinal_2028(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = Ordinal_2038(uVar10,uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts above clip-top\n");
     return;
   }
   uVar1 = Ordinal_2032(param_8[3]);
   iVar2 = Ordinal_2036(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = Ordinal_2036(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = Ordinal_2030(uVar10,uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts below clip-bottom\n");
     return;
   }
+  if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] passed bbox reject, entering scanline setup\n");
+  int _uw_span_calls = 0;
   iVar2 = Ordinal_2028(uVar6,uVar8);
   if (iVar2 == 0) {
     iVar2 = Ordinal_2028(uVar10,uVar8);
@@ -8911,6 +8939,7 @@ LAB_00014684:
       while ((iVar2 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
         if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) &&
            (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)) {
+          _uw_span_calls++;
           raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,
                        param_4);
         }
@@ -8918,18 +8947,21 @@ LAB_00014684:
         raster_edge_step(auStack_154);
         iVar2 = iVar2 + -1;
       }
+      if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE span_calls=%d\n", _uw_span_calls);
       return;
     }
     iVar2 = iVar2 + -1;
     if (param_8[3] <= *(int *)(puVar3 + 8)) break;
     if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) && (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)
        ) {
+      _uw_span_calls++;
       raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,param_4
                   );
     }
     raster_edge_step(auStack_c4);
     raster_edge_step(auStack_154);
   }
+  if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE (broke on clip-bottom) span_calls=%d\n", _uw_span_calls);
   return;
 }
 #undef local_b8
