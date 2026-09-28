@@ -26,6 +26,12 @@
  *                    the ring-walk that marks automap tiles revealed --
  *                    TELEPORT and ordinary movement don't trigger this
  *                    on their own.
+ *   DUMPTILEOBJS  -- walks the current player tile's raw object chain
+ *                    (tilemap_lookup+resolve_object_link, same as
+ *                    object_chain_max_barrier) and prints each object's
+ *                    type/flags words -- ground truth for what the level
+ *                    actually loaded at this tile, independent of any
+ *                    render-time culling.
  *   SETPLAYERPOS <x> <y> <z> <yaw> <pitch>  -- like TELEPORT but fine-grained:
  *                    x/y take a fractional tile position (e.g. "32.5 2.25"),
  *                    z is the raw height unit the [playerpos] print's own
@@ -684,6 +690,189 @@ void demomode_pump(void) {
                         pl[0x16/2] >> 10, (pl[0x16/2] & 0x3f0) >> 4);
         }
         full_dungeon_redraw();
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "DUMPOBJSLOT ", 12) == 0) {
+        /* Diagnostic: print the raw 0x1b-byte record for small-object-table
+         * slot N (DAT_002046b8 + N*0x1b), the same table resolve_object_link
+         * indexes into for link values with (raw>>6) < 0x100. For checking
+         * what's really stored at a specific slot index independent of any
+         * tile's link field, e.g. slot 0 (should be the "no object" sentinel)
+         * and slot 1 (surfacing as the ubiquitous type-0x7f "an_adventurer"
+         * entry seen at seemingly every tile via DUMPTILEOBJS). */
+        extern char *DAT_002046b8;
+        int slot = atoi(p + 12);
+        unsigned char *rec = (unsigned char *)DAT_002046b8 + slot * 0x1b;
+        fprintf(stderr, "[dumpobjslot] slot=%d addr=%p bytes:", slot, (void *)rec);
+        for (int i = 0; i < 0x1b; i++) fprintf(stderr, " %02x", rec[i]);
+        fprintf(stderr, "\n[dumpobjslot] slot=%d word0=0x%04x word1=0x%04x type=0x%03x\n",
+                slot, (unsigned)(rec[0] | (rec[1] << 8)), (unsigned)(rec[2] | (rec[3] << 8)),
+                (unsigned)((rec[0] | (rec[1] << 8)) & 0x1ff));
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "SCANOBJTYPE ", 12) == 0) {
+        /* Diagnostic: scan BOTH object tables (small: DAT_002046b8, 0x1b
+         * bytes/slot, indices 1-0xff; large: DAT_002046c4, 8 bytes/slot,
+         * indices 0x100-0x3fff) for any record whose type field (word0 &
+         * 0x1ff) equals the given hex type -- to check whether an object is
+         * present ANYWHERE in the level (e.g. mispositioned) rather than
+         * merely absent from one tile's chain. */
+        extern char *DAT_002046b8;
+        extern char *DAT_002046c4;
+        int want = (int)strtol(p + 12, NULL, 16);
+        int found = 0;
+        for (int i = 1; i < 0x100; i++) {
+            unsigned char *rec = (unsigned char *)DAT_002046b8 + i * 0x1b;
+            unsigned type = (rec[0] | (rec[1] << 8)) & 0x1ff;
+            if (type == (unsigned)want) {
+                fprintf(stderr, "[scanobjtype] small-table slot=%d addr=%p word0=0x%04x word1=0x%04x\n",
+                        i, (void *)rec, (unsigned)(rec[0] | (rec[1] << 8)), (unsigned)(rec[2] | (rec[3] << 8)));
+                found++;
+            }
+        }
+        /* Large table spans DAT_002046c4 .. DAT_002029cc+0x7c08+0x3a (see
+         * reset_level_object_arena / resolve_object_link's own comment);
+         * DAT_002046c4 itself starts at DAT_002029cc+0x5b00, so that's
+         * (0x7c08+0x3a-0x5b00)/8 =~ 1064 real slots -- stay inside that. */
+        for (int i = 0x100; i < 0x100 + 1064; i++) {
+            unsigned char *rec = (unsigned char *)DAT_002046c4 + (i - 0x100) * 8;
+            unsigned type = (rec[0] | (rec[1] << 8)) & 0x1ff;
+            if (type == (unsigned)want) {
+                fprintf(stderr, "[scanobjtype] large-table slot=%d addr=%p word0=0x%04x word1=0x%04x\n",
+                        i, (void *)rec, (unsigned)(rec[0] | (rec[1] << 8)), (unsigned)(rec[2] | (rec[3] << 8)));
+                found++;
+            }
+        }
+        fprintf(stderr, "[scanobjtype] type=0x%03x total_found=%d\n", want, found);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strncasecmp(p, "FINDOBJ ", 8) == 0) {
+        /* Diagnostic: does ANY tile's object chain (across the whole 64x64
+         * map) ever reach the object at the given large-table slot index?
+         * If not, it's a real, populated record that's simply never linked
+         * into the world -- an orphaned object, not a rendering/pick bug. */
+        extern void *tilemap_lookup(int row, int col);
+        extern void *resolve_object_link(void *link_field);
+        extern char *DAT_002046c4;
+        int slot = atoi(p + 8);
+        void *target = (void *)((char *)DAT_002046c4 + (slot - 0x100) * 8);
+        fprintf(stderr, "[findobj] searching for slot=%d addr=%p across all tiles\n", slot, target);
+        int hits = 0;
+        for (int row = 0; row < 64; row++) {
+            for (int col = 0; col < 64; col++) {
+                void *tile_rec = tilemap_lookup(row, col);
+                if (!tile_rec) continue;
+                unsigned short *link = (unsigned short *)((char *)tile_rec + 2);
+                void *obj;
+                int guard = 0;
+                while ((obj = resolve_object_link(link)) != NULL && guard++ < 64) {
+                    if (obj == target) {
+                        fprintf(stderr, "[findobj]   FOUND on tile (%d,%d)\n", row, col);
+                        hits++;
+                    }
+                    link = (unsigned short *)obj + 2;
+                }
+            }
+        }
+        fprintf(stderr, "[findobj] total tile-chain hits=%d\n", hits);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "PICKBUFDRIFT") == 0) {
+        /* Diagnostic: how far the shared draw/pick-buffer cursor
+         * (DAT_00110fc0) has drifted from its 64KB scratch buffer's base,
+         * and how much headroom remains before it walks off the end into
+         * whatever global follows -- testing the theory that this shared,
+         * seemingly-unbounded cursor is the "stray write corrupts an
+         * unrelated global, never root-caused" bug FUN_00066e90's comment
+         * already documents. */
+        extern long uw_debug_pickbuf_drift(void);
+        extern long uw_debug_pickbuf_capacity(void);
+        long drift = uw_debug_pickbuf_drift();
+        long cap = uw_debug_pickbuf_capacity();
+        fprintf(stderr, "[pickbufdrift] drift=%ld capacity=%ld headroom=%ld%s\n",
+                drift, cap, cap - drift, (drift < 0 || drift >= cap) ? " *** OUT OF BOUNDS ***" : "");
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "DUMPPLAYERINV") == 0) {
+        /* Diagnostic: object slot 1 is reserved for the player (real
+         * UW1 format doc 4.3: "Entry 1 is partly used to store the
+         * player's information"). Its own word 0006 ("link/special")
+         * bits 6-15 are the sp_link field -- when is_quant (bit 15 of
+         * word 0000) is unset, sp_link is a "has-a" (contents) reference
+         * to another object, per the same doc section 4.3. If the rune
+         * bag was meant to be granted as starting inventory rather than
+         * placed on a floor tile, THIS is where that link would live --
+         * check it directly instead of only the tile chains. */
+        extern char *DAT_002046b8;
+        extern void *resolve_object_link(void *link_field);
+        unsigned char *slot1 = (unsigned char *)DAT_002046b8 + 1 * 0x1b;
+        unsigned word0 = slot1[0] | (slot1[1] << 8);
+        int is_quant = (word0 >> 15) & 1;
+        fprintf(stderr, "[dumpplayerinv] slot1 word0=0x%04x (is_quant=%d) link/special word=0x%02x%02x\n",
+                word0, is_quant, slot1[7], slot1[6]);
+        unsigned short *link_field = (unsigned short *)(slot1 + 6);
+        void *contents = resolve_object_link(link_field);
+        if (contents) {
+            unsigned short *c = (unsigned short *)contents;
+            fprintf(stderr, "[dumpplayerinv] sp_link resolves to obj=%p type=0x%03x word0=0x%04x\n",
+                    contents, c[0] & 0x1ff, c[0]);
+            int n = 0;
+            unsigned short *next_link = c + 2;
+            while (1) {
+                void *nx = resolve_object_link(next_link);
+                if (!nx) break;
+                unsigned short *nc = (unsigned short *)nx;
+                fprintf(stderr, "[dumpplayerinv]   +sibling #%d obj=%p type=0x%03x word0=0x%04x\n",
+                        n, nx, nc[0] & 0x1ff, nc[0]);
+                next_link = nc + 2;
+                if (++n > 32) break;
+            }
+        } else {
+            fprintf(stderr, "[dumpplayerinv] sp_link is empty/NULL (no contents linked)\n");
+        }
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
+    if (strcasecmp(p, "DUMPTILEOBJS") == 0) {
+        /* Diagnostic: walk the current player tile's raw object chain
+         * (the same tilemap_lookup(row,col)+2 -> resolve_object_link ->
+         * +2 shorts -> resolve_object_link ... walk object_chain_max_barrier
+         * uses) and print each object's raw type/flags words, independent
+         * of any render-time culling -- ground truth for "is this object
+         * actually in the level's loaded object list at all". */
+        extern void *g_player_object;
+        extern void *tilemap_lookup(int row, int col);
+        extern void *resolve_object_link(void *link_field);
+        unsigned short *pl = (unsigned short *)g_player_object;
+        if (pl) {
+            int row = pl[0x16/2] >> 10;
+            int col = (pl[0x16/2] & 0x3f0) >> 4;
+            void *tile_rec = tilemap_lookup(row, col);
+            unsigned short *link = (unsigned short *)((char *)tile_rec + 2);
+            fprintf(stderr, "[dumptileobjs] tile=(%d,%d) tile_rec=%p raw_link_field=0x%04x\n",
+                    row, col, tile_rec, *link);
+            int n = 0;
+            unsigned short *obj;
+            while ((obj = (unsigned short *)resolve_object_link(link)) != NULL) {
+                fprintf(stderr, "[dumptileobjs]   #%d obj=%p type=0x%03x word0=0x%04x word1=0x%04x\n",
+                        n, (void *)obj, obj[0] & 0x1ff, obj[0], obj[1]);
+                link = obj + 2;
+                n++;
+                if (n > 64) { fprintf(stderr, "[dumptileobjs]   ...giving up after 64\n"); break; }
+            }
+            if (n == 0) fprintf(stderr, "[dumptileobjs]   (empty chain)\n");
+        }
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
     }

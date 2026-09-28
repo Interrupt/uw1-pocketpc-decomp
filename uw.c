@@ -2520,6 +2520,18 @@ char * DAT_00110fc8 = 0;
    content. */
 static char DAT_00110fc0_scratch[65536];
 char *DAT_00110fc0 = DAT_00110fc0_scratch;
+/* Diagnostic accessor (DAT_00110fc0_scratch is static, so demomode.c can't
+   read it directly): how far the shared draw/pick-buffer write cursor has
+   drifted from its scratch buffer's base, and how much headroom is left
+   before it walks off the end into whatever global happens to follow --
+   see draw_command_list_rewind's comment and FUN_00066e90's "stray write
+   corrupts an unrelated global, never root-caused" comment. */
+long uw_debug_pickbuf_drift(void) {
+  return (long)(DAT_00110fc0 - DAT_00110fc0_scratch);
+}
+long uw_debug_pickbuf_capacity(void) {
+  return (long)sizeof(DAT_00110fc0_scratch);
+}
 undefined1 DAT_00110fc4;
 undefined4 DAT_00110bb8;
 /* Was `undefined4` (4 bytes) despite FUN_00038acc using it to reset
@@ -7970,7 +7982,22 @@ LAB_000130d0:
       return DAT_000b462c;
     }
     if (param_3 == '\x06') {
-      blit_sprite_row_remapped(bVar2,6,2);
+      /* blit_sprite_row_remapped's 4th arg (a shade byte; 0xff means "no
+         remap, plain copy") is never set by any of this function's 3 real
+         ARM call sites either (confirmed via Ghidra disassembly at
+         0x12aa0/0x12bf0/0x12d34 -- r3 genuinely isn't loaded before any
+         of the 3 `bl 0x13170` calls). The real binary's r3 register
+         happened to still hold a leftover value from earlier, unrelated
+         code at that point; a C recompile has no equivalent "whatever's
+         left in the register" state, so param_4 here was reading
+         uninitialized garbage -- confirmed live via ASan: a
+         heap-buffer-overflow in blit_sprite_row_remapped reading up to
+         64KB past the 4096-byte LIGHT.DAT remap table (DAT_0024fa2c),
+         since the garbage byte routinely wasn't the 0xff sentinel and so
+         took the remap-table-index path with an unclamped shade value.
+         Passing 0xff explicitly forces the same safe, table-free plain-
+         copy path the callee already has for exactly this situation. */
+      blit_sprite_row_remapped(bVar2,6,2,0xff);
       DAT_000b462c = pbVar4;
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
@@ -8028,7 +8055,10 @@ LAB_000130d0:
     else {
       if (param_3 != '\b') {
         if (param_3 == '\n') {
-          blit_sprite_row_remapped(bVar2,10,1);
+          /* Same dropped-4th-arg / uninitialized-param_4 issue as this
+             function's other blit_sprite_row_remapped call site -- see
+             that comment (a few dozen lines up, the param_3=='\x06' case). */
+          blit_sprite_row_remapped(bVar2,10,1,0xff);
           DAT_000b462c = pbVar4;
           DAT_000b4628 = pbVar4;
           DAT_000b461c = pbVar4;
@@ -8055,7 +8085,10 @@ LAB_000130d0:
         }
         goto LAB_000130d0;
       }
-      blit_sprite_row_remapped(bVar2,8,1);
+      /* Same dropped-4th-arg / uninitialized-param_4 issue as this
+         function's other blit_sprite_row_remapped call site -- see that
+         comment (the param_3=='\x06' case, above). */
+      blit_sprite_row_remapped(bVar2,8,1,0xff);
       DAT_000b462c = pbVar4;
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
@@ -20152,6 +20185,26 @@ void start_npc_conversation()
     if (getenv("UW_DEBUG_TALK_TWICE")) {
       fprintf(stderr, "[babl] UW_DEBUG_TALK_TWICE: re-seeding from the same object right after natural conversation end\n");
       FUN_0002a8e0(DAT_00100674);
+    }
+    /* Debug-only: re-runs the exact same object-pick the mouse position
+       already used to start this conversation would produce, RIGHT as
+       the conversation ends -- same frame, same g_mouse_x/g_mouse_y, no
+       real click or screen coordinate involved at all. Directly tests
+       whether the pick/stencil table's slot-to-object mapping is still
+       consistent immediately after returning from conversation mode,
+       sidestepping both "Bragit wandered" and "click landed mid-
+       conversation" timing problems entirely. See QA report: "leaving a
+       conversation causes 3d-view object-picking to give incorrect
+       results". */
+    if (getenv("UW_DEBUG_PICK_TWICE")) {
+      ushort *_pick2 = pick_object_under_cursor(2);
+      if (_pick2) {
+        fprintf(stderr, "[pick-twice] re-pick at same mouse=(%d,%d) right after conversation end -> objid=0x%03x\n",
+                (int)g_mouse_x, (int)g_mouse_y, (unsigned)(*_pick2 & 0x1ff));
+      } else {
+        fprintf(stderr, "[pick-twice] re-pick at same mouse=(%d,%d) right after conversation end -> NULL\n",
+                (int)g_mouse_x, (int)g_mouse_y);
+      }
     }
     FUN_0007f170(uVar3,0);
   }
@@ -41601,6 +41654,43 @@ int param_2;
        right after a real load, magic marker and all -- see gx_stub.h's
        comment. */
     uw_debug_dump_tmap(param_2, (unsigned char *)iVar3);
+    /* Diagnostic (UW_DEBUG_BAG_TRACE): scan for a type-0x8f (rune bag)
+       object's tile linkage IMMEDIATELY after the raw level block lands
+       in the arena, before any other code (chargen-completion, HUD init,
+       etc.) gets a chance to touch it -- to tell apart "the file's raw
+       bytes never link it" from "something clears/corrupts the link
+       shortly after load". */
+    if (getenv("UW_DEBUG_BAG_TRACE")) {
+      int _found = 0;
+      for (int _i = 0x100; _i < 0x100 + 1064; _i++) {
+        unsigned char *_rec = (unsigned char *)DAT_002046c4 + (_i - 0x100) * 8;
+        unsigned _type = (_rec[0] | (_rec[1] << 8)) & 0x1ff;
+        if (_type == 0x8f) {
+          fprintf(stderr, "[bag-trace] post-load large-table slot=%d addr=%p word0=0x%04x word1=0x%04x\n",
+                  _i, (void *)_rec, (unsigned)(_rec[0] | (_rec[1] << 8)), (unsigned)(_rec[2] | (_rec[3] << 8)));
+          _found++;
+          int _hits = 0;
+          for (int _row = 0; _row < 64; _row++) {
+            for (int _col = 0; _col < 64; _col++) {
+              void *_tile_rec = tilemap_lookup(_row, _col);
+              if (!_tile_rec) continue;
+              unsigned short *_link = (unsigned short *)((char *)_tile_rec + 2);
+              void *_obj;
+              int _guard = 0;
+              while ((_obj = resolve_object_link(_link)) != NULL && _guard++ < 64) {
+                if (_obj == (void *)_rec) {
+                  fprintf(stderr, "[bag-trace]   linked on tile (%d,%d)\n", _row, _col);
+                  _hits++;
+                }
+                _link = (unsigned short *)_obj + 2;
+              }
+            }
+          }
+          fprintf(stderr, "[bag-trace]   tile-chain hits=%d\n", _hits);
+        }
+      }
+      if (!_found) fprintf(stderr, "[bag-trace] post-load: no type-0x8f object found at all\n");
+    }
   }
   else {
     FUN_0003c3c8(3);
@@ -50769,6 +50859,7 @@ int param_1;
   }
   iVar1 = Ordinal_864(auStack_24,0,0,0,1);
   if (getenv("UW_DEBUG_AUTOMAP_CURSOR")) fprintf(stderr, "[automap-cursor] poll_input_event: Ordinal_864=%d DAT_0023c448=0x%x\n", iVar1, (unsigned)DAT_0023c448);
+  if (getenv("UW_DEBUG_INPUTEVENT2")) fprintf(stderr, "[inputevent2] poll_input_event(%d): Ordinal_864=%d DAT_00201b60=%d DAT_002506ab=%d\n", param_1, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
   if (iVar1 == 0) {
     uVar2 = 0xffffffff;
   }
@@ -65965,6 +66056,7 @@ void load_light_tables()
   char acStack_11c [260];
   
   DAT_0024fa2c = Ordinal_1041(0x1000);
+  if (getenv("UW_DEBUG_BAG_TRACE")) fprintf(stderr, "[bag-trace] DAT_0024fa2c allocated at %p\n", (void *)DAT_0024fa2c);
   if (DAT_0024fa2c == 0) {
     FUN_0003c4a8(s_cLightTabs_allocation_error_____000872e8);
   }
