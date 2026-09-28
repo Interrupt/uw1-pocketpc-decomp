@@ -1862,3 +1862,81 @@ signal for this fix, model by model.
 
 run-regressions.sh: 1/6 clean -- unchanged, pre-existing bisected crash
 (milestone 8), unrelated to this change.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (15): root-caused and fixed the door-leaf-never-
+animates bug -- wrong source field AND wrong magnitude, plus a real
+discovery about how door "animation" actually works in this engine
+═══════════════════════════════════════════════════════════════════════════
+Bug report: using a door doesn't animate the door leaf. Door switches to
+the "opening" state (quality does change, "You see a moving door" is a
+correct message) but the rendered door never visibly rotates. Repro:
+bug-open-door.txt (a recorded demo, pre-existing in the repo root).
+
+Investigation used UW_DEBUG_DOOR (reused an existing env var, no new one
+added) to trace emit_anim_object_frames and emit_catalog_object live
+through the repro, plus a spliced-screenshot harness (WAIT commands
+broken into chunks with SCREENSHOT interleaved) to correlate rendered
+frames against traced values frame-by-frame.
+
+Two distinct problems, both now fixed in emit_anim_object_frames
+(uw.c):
+
+1. Wrong source field. The swing-angle magnitude was read from
+   `*(byte*)(obj+1) >> 1 & 7` (bVar4's own bits), confirmed via live
+   trace to sit at a constant 0 the entire time a door opened. The
+   door's real open/closed state lives in the object's "quality" field
+   instead (`obj[3] & 0x3f` -- the same field UW_DUMP_OBJECTS_FILE's own
+   `_quality` reads). Fixed to read quality instead.
+
+2. Wrong magnitude scale, discovered only after fixing (1) still showed
+   no visible rotation. Traced further and found: door quality is NOT a
+   smooth multi-tick counter. The real "open door" builtin
+   (FUN_0007c708) does one guarded atomic step,
+   `(quality & 0xf) + 8` (guarded so it can't re-fire once already
+   >= 8) -- closed is 0-7, open is 8-15, and nothing in this codebase
+   ever increments it further. So quality only ever measured 0 or 8
+   across the whole replay, confirming this door's "animation" really
+   is a single discrete state flip, not a sweep -- matching what the
+   user directly observed mid-investigation ("I did see the door
+   rotating slightly once, but it never moved further" -- that's not a
+   tick-rate bug, that IS the door's real, correct, one-shot state
+   machine). Since bits 0-2 of quality stayed 0 whenever observed, only
+   bit 3 (the open flag) ever carries information, so the fix treats it
+   as boolean and multiplies by a fixed full-swing magnitude (5 raw
+   units, matching heading's own 4096-per-eighth-turn fixed-point scale
+   used throughout this render path) instead of passing the tiny 0/1
+   raw value straight through (which computed and applied correctly
+   end-to-end -- confirmed via a temporary forced-value override proving
+   the same catalog_u==0xe/0xf consumer in emit_catalog_object swings
+   the mesh dramatically at larger magnitudes -- but was visually
+   almost imperceptible at magnitude 1).
+
+Also confirmed along the way (visible in the diff, kept):
+ - The catalog_u==0xe/0xf consumer block in emit_catalog_object (reads
+   DAT_0018957a, adds it to local_7c via Ordinal float calls) DOES fire
+   for this door and DOES feed the real per-vertex rotation angle
+   (local_7c is degrees, passed straight to build_euler_rotation_matrix
+   a few dozen lines later) -- an earlier working theory this session
+   that catalog 0xe/0xf was dead/unreachable for doors was wrong,
+   traced to a stale build; a fresh rebuild+retest showed it fires 1512
+   times across the repro.
+ - emit_anim_object_frames actually has three catalog dispatch paths
+   (catalog 1 = DFRAME, catalog 0xc = unused by this particular repro,
+   catalog 0xe/0xf = the real leaf-swing consumer for a regular hinged
+   door), gated by `local_34` (stays -1, i.e. "use 0xe/0xf", for every
+   door_type except 6).
+ - door_type==6's own separate DAT_0018957a assignment (no <<0xc scale,
+   structurally can't ever reach the 0xe/0xf consumer since it sets
+   local_34 >= 0) looks like a second, likely-dead-or-differently-wired
+   swing path -- NOT fixed here, out of scope for this bug, flagged for
+   a future pass if a type-6 door (portcullis-style) is ever found to
+   have the same symptom.
+
+Live-verified via screenshot: frame immediately before quality flips to
+8 shows a fully closed door; the very next captured frame after the
+flip shows the leaf swung open on its hinge with a dark passage visible
+beyond, holding stable (correctly, since nothing re-closes it) for the
+rest of the replay.
+
+run-regressions.sh: 6/6 clean.

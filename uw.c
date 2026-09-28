@@ -58272,10 +58272,15 @@ LAB_000640ec:
     }
   }
   if ((catalog_u == 0xe) || (catalog_u == 0xf)) {
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] swing: catalog=%d DAT_0018957a=%d local_7c(before)=%d\n",
+              (int)catalog_u, (int)(short)DAT_0018957a, (int)(short)local_7c);
     uVar17 = Ordinal_2032((int)(short)DAT_0018957a);
     uVar19 = Ordinal_2032((int)(short)local_7c);
     Ordinal_2051(uVar17,uVar19);
     local_7c = Ordinal_2020();
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] swing: local_7c(after)=%d\n", (int)(short)local_7c);
   }
   uVar17 = Ordinal_2032((int)(short)local_7c);
   uVar17 = Ordinal_2026(uVar17,0x38000000);
@@ -58618,6 +58623,9 @@ ushort * obj;
     *DAT_00110fc0 = *(byte *)((char *)obj + 1) >> 1 & 7;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     DAT_0018957a = (undefined2)((*(byte *)((char *)obj + 1) & 0xe) >> 1);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] anim_frames(type6): obj0=0x%04x bVar1=0x%02x DAT_0018957a=%d\n",
+              (unsigned)*obj, (unsigned)*(byte *)((char *)obj + 1), (int)(short)DAT_0018957a);
     *DAT_00110fc0 = 0x4c;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0;
@@ -58637,12 +58645,57 @@ ushort * obj;
     bVar4 = *(byte *)((char *)obj + 1);
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    iVar8 = ((bVar4 >> 5 & 1) * 2 + -1) * (bVar4 >> 1 & 7);
+    /* HACK: the door's actual open/closed state lives in its real
+       "quality" field (obj[3] & 0x3f -- already established and
+       confirmed elsewhere in this file, e.g. UW_DUMP_OBJECTS_FILE's own
+       `_quality = _rec[3] & 0x3f`), NOT in bVar4 (word0's own high
+       byte, whose relevant bits -- `bVar4 >> 1 & 7`, what this line used
+       to read for "how far open" -- were confirmed live to sit at a
+       constant 0 the entire time a door opened in a recorded repro,
+       bug-open-door.txt). That's why DAT_0018957a (the swing-angle
+       contribution added to the door leaf's base heading a few hundred
+       lines down, in emit_catalog_object's own catalog_u==0xe/0xf
+       branch) was always 0: the door's "opening" STATE was real
+       (quality did move, "You see a moving door" was correct) but its
+       RENDERED rotation never advanced.
+
+       Confirmed live (same repro) that door quality is NOT a smooth
+       multi-tick counter: the real "open door" builtin (FUN_0007c708)
+       does a single, guarded `(quality & 0xf) + 8` -- one atomic
+       closed(0-7) -> open(8-15) step, never incremented further (the
+       guard `if (7 < (quality & 0xf)) return;` blocks any repeat) -- so
+       quality only ever measured 0 or 8 across the whole replay, never
+       anything between. A door's swing is therefore a single discrete
+       state flip in this engine, not an animated sweep, matching what
+       was visually confirmed: the leaf rotates once when quality
+       crosses to the 8-15 half and then holds. Since bits 0-2 of
+       quality stayed 0 whenever observed (only bit 3, the open/closed
+       flag itself, ever changed), the magnitude here is just that flag
+       -- `(obj[3] & 0x3f) >> 3` is 0 (closed) or 1 (open) for every
+       value seen -- so it's used as a boolean, then multiplied by a
+       fixed full-swing magnitude (5 raw units = 5*4096 = 20480, i.e.
+       roughly a 90-degree opening on the same 4096-per-eighth-turn
+       scale heading's own math already uses) rather than passed through
+       proportionally: a proportional 0/1 raw unit (the original, first
+       attempt at this fix) turned out to compute and apply correctly
+       end-to-end -- confirmed via a forced-value test that the exact
+       same catalog_u==0xe/0xf consumer swings the mesh dramatically at
+       larger magnitudes -- but was visually almost imperceptible at
+       magnitude 1, since quality never carries a larger value to scale
+       up from. The sign bit stays sourced from bVar4 (unverified
+       whether that's swing direction or something else, but it's
+       unrelated to the confirmed bug and this fix doesn't need to touch
+       it). */
+    iVar8 = ((bVar4 >> 5 & 1) * 2 + -1) * (((obj[3] & 0x3f) >> 3) != 0 ? 5 : 0);
     uVar5 = FUN_00038a8c(5);
     *DAT_00110fc0 = uVar5;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)((uint)(iVar8 * 0x10000000) >> 0x10);
     DAT_0018957a = (undefined2)((iVar8 * 0x10000 >> 0x10) << 0xc);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] anim_frames: door_type=%u obj0=0x%04x bVar4(obj+1)=0x%02x openbits=%d sign=%d iVar8=%d DAT_0018957a=%d quality(obj[3]&0x3f)=%d obj[3]=0x%04x\n",
+              door_type, (unsigned)*obj, (unsigned)bVar4, (bVar4 >> 1 & 7), (bVar4 >> 5 & 1), iVar8, (int)(short)DAT_0018957a,
+              (int)(obj[3] & 0x3f), (unsigned)obj[3]);
   }
   local_36 = 0x330 - sVar1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -58801,6 +58854,9 @@ LAB_00064cdc:
           goto LAB_00064cdc;
         }
         DAT_0023b91c = local_34;
+        if (getenv("UW_DEBUG_DOOR"))
+          fprintf(stderr, "[door] emit_anim_object_frames: local_34=%d -> emit_catalog_object(catalog=0xc, heading=%d, frame_or_id=0)\n",
+                  (int)local_34, (int)((obj[1] >> 7 & 7) << 1));
         emit_catalog_object(0xc,obj,(obj[1] >> 7 & 7) << 1,0);
         DAT_0023b91c = local_32;
       }
