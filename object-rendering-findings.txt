@@ -1837,3 +1837,28 @@ flicker repro position, now that the actual mechanism is understood).
 
 run-regressions.sh: 1/6 clean -- unchanged, pre-existing bisected crash
 (milestone 8), unrelated to this change.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (14): flip_winding set corrected by eye -- door leaf
+does NOT need it, the bridge does
+═══════════════════════════════════════════════════════════════════════════
+Direct QA correction after milestone 13 shipped: "The door leaf model
+does not need to be flipped, the bridge model does." Updated the
+parse_e_model_file call sites accordingly -- DOOR.E's flip_winding
+argument reverted to 0 (both loads), FBRIDGE.E's flipped to 1. DFRAME.E
+and ROCKBIG.E unchanged (still 1).
+
+Current flip_winding=1 set: DFRAME.E, FBRIDGE.E, ROCKBIG.E.
+Current flip_winding=0 (unchanged) for DOOR.E and all other models.
+
+This is now confirmed by eye, not the offline centroid-normal
+heuristic from milestone 13 -- that heuristic said DOOR.E's faces were
+100% backward (unambiguous against its own plain box geometry) and
+ROCKBIG.E's were 51/52 already correct, yet live visual testing found
+the OPPOSITE for both (door didn't need it, boulder did). The heuristic
+is not a reliable predictor for which models need this flag; eye-
+confirmed testing at a real repro position is the only trustworthy
+signal for this fix, model by model.
+
+run-regressions.sh: 1/6 clean -- unchanged, pre-existing bisected crash
+(milestone 8), unrelated to this change.

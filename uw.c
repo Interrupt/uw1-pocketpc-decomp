@@ -16328,21 +16328,23 @@ LAB_000218b8:
                 /* HACK: flip_winding (new parameter, not part of the
                    original recovered signature) -- caller-supplied,
                    per-model opt-in to reverse every face's just-read
-                   vertex list. Added because DOOR.E/DFRAME.E/ROCKBIG.E's
-                   faces render backward: raster_triangle has a real,
-                   working backface cull (confirmed this session via its
-                   left/right edge-assignment gate in raster_textured_span
-                   -- not a bug, a legitimate cheap cull the original
-                   engine relies on), so a backward-wound face silently
-                   disappears depending on which side of it the camera
-                   ends up on -- this is what the earlier-in-this-session
-                   unexplained door-leaf flicker actually was. A real
+                   vertex list. Added because several models' faces render
+                   backward: raster_triangle has a real, working backface
+                   cull (confirmed this session via its left/right edge-
+                   assignment gate in raster_textured_span -- not a bug, a
+                   legitimate cheap cull the original engine relies on),
+                   so a backward-wound face silently disappears depending
+                   on which side of it the camera ends up on. A real
                    per-face fix would need each face's own normal compared
                    against the mesh's shape (tried, reverted per explicit
                    instruction: too complicated for what's just a handful
-                   of known-bad models) -- a flat "flip everything in this
+                   of known-bad models, and unreliable besides -- see
+                   object-rendering-findings.txt milestone 13, where that
+                   approach's own centroid heuristic gave the wrong answer
+                   for the boulder) -- a flat "flip everything in this
                    file" flag, opted into only for the specific models
-                   confirmed backward, is simpler and does the same job
+                   confirmed backward BY EYE (not the offline heuristic --
+                   see milestone 13/14), is simpler and does the same job
                    for these models specifically (see the call sites in
                    the .E load list for which ones pass 1). */
                 if (flip_winding && 1 < iVar3) {
@@ -28762,7 +28764,7 @@ void FUN_00038680()
 
 {
   parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c,1);
-  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848,0);
+  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848,1);
   parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474,0);
   parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0,0);
   parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc,0);
@@ -28774,8 +28776,8 @@ void FUN_00038680()
   parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4,0);
   parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200,0);
   parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c,0);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58,1);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684,1);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58,0);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684,0);
   parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0,0);
   parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc,0);
   parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08,0);
