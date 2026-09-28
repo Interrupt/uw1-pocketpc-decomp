@@ -63016,7 +63016,13 @@ undefined4 param_1;
 
 
 
-undefined4 FUN_0006bcd4(param_1)
+// was FUN_0006bcd4 -- flushes the player's carried-inventory chain (freeing
+// the live objects, since write_player_save_record just above already
+// serialized them into the save buffer), then writes the current level's
+// live tilemap+object arena to its on-disk archive. Called both from the
+// explicit "Save Game" menu path (save_game_to_slot) and from level
+// transitions (so the level being left behind remembers its current state).
+undefined4 commit_level_to_save_slot(param_1)
 undefined4 param_1;
 
 {
@@ -63503,7 +63509,7 @@ char *param_2;
         iVar4 = write_player_save_record(local_638);
         if (iVar4 != 0) {
           FUN_00078c80(0xaa);
-          iVar4 = FUN_0006bcd4((int)DAT_00201b68);
+          iVar4 = commit_level_to_save_slot((int)DAT_00201b68);
           if (iVar4 != 0) {
             FUN_00078c80(0xaa);
             uVar5 = FUN_0002295c(local_530);
@@ -63697,7 +63703,7 @@ undefined4 param_2;
     FUN_00057cac(3);
   }
   FUN_0006c834(param_1,1);
-  iVar2 = FUN_0006bcd4(param_1);
+  iVar2 = commit_level_to_save_slot(param_1);
   iVar3 = 0;
   if (iVar2 != 0) {
     sVar1 = load_level(param_2);

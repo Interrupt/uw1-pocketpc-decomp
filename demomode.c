@@ -845,14 +845,14 @@ void demomode_pump(void) {
     }
 
     if (strcasecmp(p, "TRIGGERSAVE") == 0) {
-        /* Diagnostic: calls the real "save to slot 0" flow (FUN_0006bcd4)
+        /* Diagnostic: calls the real "save to slot 0" flow (commit_level_to_save_slot)
          * directly, bypassing pause-menu UI navigation, so a demo script
          * can test the save path without reproducing its exact keypress
          * sequence. */
-        extern unsigned int FUN_0006bcd4(int level);
+        extern unsigned int commit_level_to_save_slot(int level);
         extern short DAT_00201b68;
-        fprintf(stderr, "[triggersave] calling FUN_0006bcd4(%d)\n", (int)DAT_00201b68);
-        unsigned int _r = FUN_0006bcd4((int)DAT_00201b68);
+        fprintf(stderr, "[triggersave] calling commit_level_to_save_slot(%d)\n", (int)DAT_00201b68);
+        unsigned int _r = commit_level_to_save_slot((int)DAT_00201b68);
         fprintf(stderr, "[triggersave] result=%u\n", _r);
         g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
         return;
