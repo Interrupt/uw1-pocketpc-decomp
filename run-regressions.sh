@@ -32,11 +32,15 @@
 #                            extra env vars (space-separated KEY=VAL pairs)
 #                            forwarded to the binary for every script
 #   ASAN_OPTIONS=detect_leaks=0   passed straight through to the ASan
-#                            runtime. Leak detection is off by default --
-#                            this codebase has plenty of known, deliberate
-#                            one-time startup allocations that are never
-#                            freed (e.g. DAT_0024fa2c's light table) which
-#                            would otherwise drown out real bugs in noise.
+#                            runtime. Off by default because
+#                            LeakSanitizer isn't supported on this
+#                            platform at all (confirmed live: with
+#                            detect_leaks=1 the binary aborts on launch
+#                            with "AddressSanitizer: detect_leaks is not
+#                            supported on this platform" before running
+#                            anything) -- this isn't tuning out noise
+#                            from known benign leaks, ASan simply
+#                            refuses to start otherwise here.
 #
 # All scripts are launched at once, each against its own SDL window, and
 # run concurrently rather than one at a time -- each uw_asan instance only
