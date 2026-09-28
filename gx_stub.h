@@ -98,10 +98,11 @@ void debug_framebuffer_dump(const char *tag);
    render_visible_tile_list, right after each raster_triangle call) is
    the no-op-when-disarmed capture; uw_debug_3d_frame_dump_finish()
    disarms it once that render pass is done. Files land under
-   debug/facedumps/<ts>/, one BMP per face, numbered in actual paint
-   order -- lets a single frame's full 3D draw sequence be inspected
-   (which face painted over which, in what order) the way UW_DEBUG_DRAW
-   already does for 2D primitives. */
+   debug/facedumps/<ts>_<n>/ -- a fresh, separately-numbered folder per
+   press, not one growing folder per process -- one BMP per face,
+   numbered in actual paint order -- lets a single frame's full 3D draw
+   sequence be inspected (which face painted over which, in what order)
+   the way UW_DEBUG_DRAW already does for 2D primitives. */
 void uw_debug_request_3d_frame_dump(void);
 void uw_debug_dump_3d_face(const char *tag);
 /* Returns -1 if no capture was pending (the common case -- called
