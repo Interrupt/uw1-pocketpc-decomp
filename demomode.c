@@ -844,6 +844,20 @@ void demomode_pump(void) {
         return;
     }
 
+    if (strcasecmp(p, "TRIGGERSAVE") == 0) {
+        /* Diagnostic: calls the real "save to slot 0" flow (FUN_0006bcd4)
+         * directly, bypassing pause-menu UI navigation, so a demo script
+         * can test the save path without reproducing its exact keypress
+         * sequence. */
+        extern unsigned int FUN_0006bcd4(int level);
+        extern short DAT_00201b68;
+        fprintf(stderr, "[triggersave] calling FUN_0006bcd4(%d)\n", (int)DAT_00201b68);
+        unsigned int _r = FUN_0006bcd4((int)DAT_00201b68);
+        fprintf(stderr, "[triggersave] result=%u\n", _r);
+        g_demo_next_tick = now + (Uint32)g_demo_delay_ms;
+        return;
+    }
+
     if (strcasecmp(p, "DUMPTILEOBJS") == 0) {
         /* Diagnostic: walk the current player tile's raw object chain
          * (the same tilemap_lookup(row,col)+2 -> resolve_object_link ->
