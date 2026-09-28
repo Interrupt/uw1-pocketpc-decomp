@@ -686,6 +686,25 @@ int g_billboard_angle_override_deg = -1;
    something else. */
 double g_tune_wide_center = 128.0;
 double g_tune_edge_offset = 128.0;
+/* QA report: "rotation origin is in the middle of the leaf and not the
+   hinge, so rotation looks off." The leaf (catalog_u==0xe/0xf, DOOR.E)
+   currently shares DFRAME's own anchor exactly (DAT_0023b904/920, set
+   once by the catalog_u==1 block above and simply left in place for
+   the leaf's own later, separate call to reuse) -- correct for a
+   symmetric, full-tile-wide, non-rotating object like the frame, but
+   DOOR.E's own local mesh (POINTS span local X 0-128, not symmetric
+   around 0) rotates around whatever world point its local origin
+   lands on, so sharing the frame's centered anchor puts that pivot
+   roughly mid-leaf instead of at the hinge edge. Not yet live-tuned to
+   a confirmed-correct value (unlike wide_center/edge_offset above,
+   which WERE) -- starts at 0.0 (no change from current behavior) and
+   is meant to be nudged live via the object tuner panel (backtick)
+   while watching a real door swing, the same successful process
+   wide_center/edge_offset themselves were dialed in with, rather than
+   guessed and hardcoded blind. Applied along the model's own "wide"
+   axis (the same one wide_center offsets) in the leaf-specific rebake
+   a few hundred lines below. */
+double g_tune_leaf_hinge_offset = 0.0;
 /* General object-tuner state (UW_MODEL_TUNER=1) -- was door-only (the
    panel only populated inside catalog_u==1, and only showed the two
    door-anchor fields above); generalized so ANY catalog this session's
@@ -58448,6 +58467,9 @@ LAB_000640ec:
       dbgui_field_double("wide_center", &g_tune_wide_center, 1.0);
       dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
     }
+    if ((catalog_u == 0xe) || (catalog_u == 0xf)) {
+      dbgui_field_double("leaf_hinge_offset", &g_tune_leaf_hinge_offset, 8.0);
+    }
     dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
     dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
     dbgui_end();
@@ -58541,6 +58563,38 @@ LAB_000640ec:
     *(char *)(_anim + 0xc0e) = (char)((uint)uVar17 >> 0x10);
     *(char *)(_anim + 0xc0f) = (char)((uint)uVar17 >> 0x18);
     uVar17 = Ordinal_2032((int)(short)DAT_0023b920);
+    *(char *)(_anim + 0xc10) = (char)uVar17;
+    *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
+    *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
+    *(char *)(_anim + 0xc13) = (char)((uint)uVar17 >> 0x18);
+  }
+  /* See g_tune_leaf_hinge_offset's own comment: the leaf currently
+     shares DFRAME's own centered anchor as-is (baked into _anim above,
+     on catalog_u==1's own earlier call, and simply left in place for
+     this call to reuse) -- offset it here, along the same "wide" axis
+     wide_center itself offsets, by a live-tunable amount so the pivot
+     can be walked over to the real hinge edge visually instead of
+     guessed. Zero by default: no behavior change until tuned. */
+  if (((catalog_u == 0xe) || (catalog_u == 0xf)) && (g_tune_leaf_hinge_offset != 0.0)) {
+    double _rad = (double)sVar13 * (3.14159265358979 / 180.0);
+    int _wideIsX = fabs(cos(_rad)) > fabs(sin(_rad));
+    int _off = (int)g_tune_leaf_hinge_offset;
+    short _hx = DAT_0023b904;
+    short _hz = DAT_0023b920;
+    if (_wideIsX) {
+      _hx = (short)(_hx + _off);
+    } else {
+      _hz = (short)(_hz + _off);
+    }
+    if (getenv("UW_DEBUG_DOOR_POS"))
+      fprintf(stderr, "[doorpos] leaf hinge offset: angle=%d wideIsX=%d off=%d anchor=(%d,%d)->(%d,%d)\n",
+              (int)sVar13, _wideIsX, _off, (int)DAT_0023b904, (int)DAT_0023b920, (int)_hx, (int)_hz);
+    uVar17 = Ordinal_2032((int)_hx);
+    *(char *)(_anim + 0xc08) = (char)uVar17;
+    *(char *)(_anim + 0xc09) = (char)((uint)uVar17 >> 8);
+    *(char *)(_anim + 0xc0a) = (char)((uint)uVar17 >> 0x10);
+    *(char *)(_anim + 0xc0b) = (char)((uint)uVar17 >> 0x18);
+    uVar17 = Ordinal_2032((int)_hz);
     *(char *)(_anim + 0xc10) = (char)uVar17;
     *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
     *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
@@ -74135,7 +74189,10 @@ ushort * param_2;
   byte bVar2;
   undefined4 uVar3;
   ushort uVar4;
-  
+
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] FUN_0007c580 (close) called: obj0=0x%04x dirbit=%d openbits=%d quality_low4=%d\n",
+            (unsigned)*param_2, (int)((*param_2 & 0x1000) != 0), (int)((*param_2 >> 9) & 7), (int)(param_2[3] & 0xf));
   if ((*param_2 & 0x1ff) == 0x1cf) {
     uVar4 = param_2[3];
     if ((uVar4 & 0xf) < 8) {
@@ -74183,33 +74240,29 @@ ushort * param_1;
     fprintf(stderr, "[door] FUN_0007c708 called: obj0=0x%04x already_1cf=%d quality_low4=%d\n",
             (unsigned)*param_1, (int)((*param_1 & 0x1ff) == 0x1cf), (int)(param_1[3] & 0xf));
   if ((*param_1 & 0x1ff) == 0x1cf) {
-    /* HACK: this branch used to instantly snap the door's quality
-       nibble from closed(0-7) to open(8-15) in one step whenever "open"
-       got re-triggered while the door was already mid-animation (id
-       already flipped to the 0x1cf "in motion" sentinel by
-       FUN_0007c3f4's first call) -- confirmed live that a single mouse
-       click-and-hold genuinely calls this function twice in quick
-       succession (interact_use's underlying click-region dispatch
-       fires again almost immediately after the first call queued the
-       real animation; root cause of that duplicate trigger is still
-       open, see object-rendering-findings.txt), so this instant-finish
-       used to cut the real, gradual, scheduled-effects-queue-driven
-       open animation off at its very first frame -- the actual
-       original bug ("door should animate in six to eight small steps
-       over a few seconds, it doesn't"). That queue (FUN_0007c3f4 ->
-       scheduler_add_entry's push -> scheduler_tick's per-tick walk ->
-       scheduler_step_entry's gradual steps -> scheduler_finish_entry's eventual finalize,
-       the same +8/-8 math this branch used to do instantly) was itself
-       broken by four stacked bugs elsewhere in this file (DAT_000879ac
-       never initialized, two dropped function arguments, and the
-       queue's own link-table living outside the object arena's
-       resolve_object_link-checked address range) -- all now fixed, see
-       their own comments (FUN_00066e90, scheduler_tick, FUN_0007c3f4,
-       DAT_00250778, DAT_00250732). With the queue actually running, a
-       redundant re-trigger while already mid-animation should just be
-       a no-op -- the real animation is already in flight and will
-       finish itself via scheduler_finish_entry on its own schedule. */
-    return;
+    /* HACK REVERTED: this branch was temporarily made a no-op under the
+       assumption that `id == 0x1cf` only ever meant "still mid the
+       current scheduled animation, a redundant re-trigger should do
+       nothing." That assumption doesn't survive scrutiny: nothing
+       anywhere in this file (checked FUN_0007c4a8, scheduler_finish_entry's
+       own tail, scheduler_despawn_entry) ever resets an object's id
+       back away from 0x1cf once first set -- it's a permanent identity
+       change on first use, not a transient sentinel -- and the real
+       caller dispatch (try_combine_or_stow_object, `(*param_2 & 0xf) < 8
+       ? FUN_0007c580 : FUN_0007c708`) routes every use AFTER the first
+       through this exact branch, via the object's own now-permanently
+       ">= 8" low nibble. Making it a no-op broke every subsequent open
+       after the first, not just the redundant-click case it was aimed
+       at. Restored to match the real disassembly (FUN_00064384's
+       sibling FUN_0007c708 in the real UU.exe) exactly. */
+    ushort uVar1;
+    uVar1 = param_1[3];
+    if (7 < (uVar1 & 0xf)) {
+      return;
+    }
+    *(byte *)(param_1 + 3) = ((char)(uVar1 & 0xf) + 8U ^ (byte)uVar1) & 0x3f ^ (byte)uVar1;
+    *(byte *)((char *)param_1 + 7) = (byte)(uVar1 >> 8);
+    FUN_0007c4a8(param_1);
   }
   else {
     if ((*param_1 & 0xf) < 8) {
@@ -77171,6 +77224,9 @@ undefined4 param_1;
     }
     *(byte *)puVar4 = (byte)uVar8;
     *(byte *)((char *)puVar4 + 1) = (byte)(uVar8 >> 8);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] scheduler_finish_entry: AFTER direction toggle, obj0=0x%04x dirbit=%d openbits=%d\n",
+              (unsigned)*puVar4, (int)((*puVar4 & 0x1000) != 0), (int)((*puVar4 >> 9) & 7));
   }
   if ((uVar1 & 0x20) != 0) {
     scheduler_despawn_entry(param_1);

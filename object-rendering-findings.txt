@@ -2151,3 +2151,84 @@ alone, and should be reached for earlier next time a HACK's exact
 original behavior is in doubt.
 
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (18): QA pass on milestone 17 -- fixed a real
+regression from milestone 16, added a tunable for the hinge-pivot report,
+and investigated (but did not resolve) the close-reopens-instead-of-
+closing report in depth
+═══════════════════════════════════════════════════════════════════════════
+Live QA on milestone 17's swing-angle fix found three things: "door
+swings open now" (confirmed working), "rotation origin is in the middle
+of the leaf and not the hinge, so rotation looks off", and "trying to
+close the door seems to put the door back in the opening state, not
+closing state".
+
+1. CONFIRMED REGRESSION, FIXED: milestone 16 made FUN_0007c708's
+   `id == 0x1cf` branch a no-op, on the theory that 0x1cf was a
+   transient "still mid the current scheduled animation" sentinel and
+   a redundant re-trigger should do nothing. Checked every place that
+   could plausibly reset an object's id away from 0x1cf once set
+   (FUN_0007c4a8, scheduler_finish_entry's own tail, scheduler_despawn_entry)
+   and found none -- it's a PERMANENT identity change on first use, not
+   a transient flag. The real caller (try_combine_or_stow_object,
+   `(*param_2 & 0xf) < 8 ? FUN_0007c580 : FUN_0007c708`) routes every
+   use after the first through this exact branch via the object's own
+   now-permanently-high low nibble. The no-op broke every subsequent
+   open, not just the redundant-click case it targeted. Reverted to
+   match the real disassembly exactly.
+
+2. HINGE PIVOT (rotation origin in the middle, not the hinge): traced
+   to an EARLIER session's own anchor fix (g_tune_wide_center/
+   g_tune_edge_offset, both 128 = exact tile center), added to fix the
+   door FRAME's wall-plane position -- confirmed correct for DFRAME
+   (a symmetric, full-tile-wide, non-rotating object) but never
+   verified for the LEAF, which silently shares the exact same anchor
+   (DAT_0023b904/920 are globals, set once by the frame's own call and
+   simply still in place when the leaf's separate call runs moments
+   later). DOOR.E's own local mesh isn't symmetric around its origin
+   (POINTS span local X 0-128, not centered), so build_euler_rotation_matrix
+   rotating around that origin, placed at the frame's centered anchor,
+   pivots roughly mid-leaf instead of at the hinge edge. Added a
+   SEPARATE, live-tunable `g_tune_leaf_hinge_offset` (starts at 0.0,
+   zero behavior change until adjusted) plus its own object-tuner panel
+   row, gated to catalog_u==0xe/0xf, applied as an offset along the
+   same "wide" axis wide_center itself offsets. Not yet dialed in to a
+   confirmed-correct value -- needs the same live nudge-and-watch
+   process wide_center/edge_offset themselves were tuned with
+   (backtick to open the panel while a real door is swinging).
+
+3. CLOSE REOPENS INSTEAD OF CLOSING: investigated in real depth against
+   fresh disassembly but NOT resolved. Confirmed live that the actual
+   dispatcher for a plain "use" click is NOT the quality-based one at
+   use_object_on_target (`quality < 8 ? FUN_0007c708 : FUN_0007c580`)
+   but a DIFFERENT one in try_combine_or_stow_object, keyed on the
+   object's own word0 low nibble instead (`(*param_2 & 0xf) < 8 ?
+   FUN_0007c580 : FUN_0007c708`) -- FUN_0007c580 fires on a door's
+   first-ever use (word0 low nibble starts at 0), FUN_0007c708 fires on
+   literally every use after that, forever, since word0's low nibble
+   becomes part of the permanent 0x1cf identity (finding 1 above) and
+   never resets. FUN_0007c708's own `id==0x1cf` branch (now correctly
+   restored) only ever ADDS 8 to quality's low nibble, guarded to
+   no-op once quality is already >= 8 -- meaning, via THIS dispatcher,
+   a door that's already open has no path back to a closing action at
+   all; every subsequent click just no-ops. Whether this is a genuine
+   gap in this port (a missing/miswired third code path), a
+   misidentified caller (there may be a different, not-yet-found
+   dispatcher for plain reuse that this session never located), or
+   actually matches original 1992 behavior (doors closing via a
+   different mechanism entirely, e.g. proximity/auto-close, not a
+   second click) is still an open question. Needs either a fresh
+   disassembly pass specifically tracing try_combine_or_stow_object's
+   own caller(s) and every other site that calls FUN_0007c580/
+   FUN_0007c708, or real knowledge of how doors close in the original
+   game, to resolve with confidence rather than more guessing.
+
+Tooling note: this session's disassembly work used
+/private/tmp/ghidra_scripts/DumpDoorSwing.java, DumpSchedulerFns.java,
+and DumpDoorDir.java (decompile+disassemble a list of hardcoded
+addresses against the UU.exe program via analyzeHeadless) -- kept in
+place for a future pass on the close-dispatch question, just change
+the address list.
+
+run-regressions.sh: 6/6 clean.
