@@ -1940,3 +1940,137 @@ beyond, holding stable (correctly, since nothing re-closes it) for the
 rest of the replay.
 
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (16): root-caused why the door's animation was a
+single snap instead of a gradual six-to-eight-step swing -- a real,
+designed scheduled-effects queue existed and was correctly triggered,
+but was completely non-functional, disabled by FIVE independent bugs
+stacked on top of each other
+═══════════════════════════════════════════════════════════════════════════
+Follow-up to milestone 15: that fix made the door visibly open, but via
+an instant one-step snap (the same single `quality += 8` this whole
+investigation eventually found and fixed at its actual source). Direct
+user correction: "when opening a door, the angle should be getting
+updated in small steps - the original game had six or eight position
+changes across a few seconds that ended with the door fully open."
+
+Traced the real "open door" trigger (FUN_0007c708) and found it
+already, correctly, sets up a genuine multi-tick scheduled animation --
+FUN_0007c3f4 flips the object to a temporary "in motion" sentinel id
+and pushes an entry onto a shared scheduled-effects queue (also used
+for blood splats and combat highlights) via FUN_00080ed4;
+FUN_0008128c is meant to walk that queue every tick, calling
+FUN_00081034 to step each pending entry's "quality" by one and
+FUN_00080a98 to finalize it once its delay expires. This exactly
+matches the six-to-eight-step design described. The mechanism was
+simply never running, for five stacked reasons, found and fixed one at
+a time via UW_DEBUG_DOOR/UW_DEBUG_DOOR2 live tracing against
+bug-open-door.txt:
+
+1. DAT_000879ac (gates all three ordinary-gameplay call sites of
+   FUN_0008128c) was declared but never assigned anywhere in this
+   decompile -- a permanently-zero "link-time-initialized flag Ghidra
+   dropped," the exact same bug class already fixed for
+   g_npc_tick_enabled a few lines above in FUN_00066e90. Confirmed via
+   a full-session trace: FUN_0008128c never ran once, zero hits across
+   470000+ log lines. Fixed by initializing it alongside
+   g_npc_tick_enabled, same function, same convention.
+
+2. FUN_0008128c's own call to its finalize step was a bare
+   `FUN_00080a98();` -- a dropped argument (the current slot index),
+   despite FUN_00080a98's own param_1 being immediately used to index
+   the queue's per-slot arrays, identical to a correctly-argumented
+   FUN_00081034 call two lines below in the SAME loop. Fixed by passing
+   the slot index.
+
+3. FUN_00080a98 and FUN_00081034 both call resolve_object_link with no
+   NULL guard at all (crashed live, EXC_BAD_ACCESS, the first time this
+   code path ever actually ran in this whole project's testing, once
+   fix #1 let it start running) -- same class as ~140 other guarded
+   call sites elsewhere in this file. Fixed with the same guard.
+
+4. FUN_0007c3f4's own push called `encode_object_slot_index();` with no
+   argument -- another dropped argument (the door object pointer),
+   despite the function's real signature dereferencing it directly.
+   Confirmed this made the queue entry reference the wrong (or no)
+   object. Fixed by passing the door object pointer.
+
+5. Even with 1-4 fixed, the queue's own link-table (DAT_00250778) still
+   resolved to NULL every time: it's a plain standalone static array in
+   this recompile, never inside the level object arena's malloc'd
+   buffer the way it evidently was in the original's flat, fixed-
+   address memory map -- so resolve_object_link's real, necessary
+   arena-bounds guard (protecting its ~140 other callers against wild
+   pointers) rejected every address into it. This is the exact same bug
+   class already solved once in this file for g_equipped_items/
+   g_backpack_slot_table (see that global's own comment) -- followed
+   that precedent exactly rather than bypassing the check: gave
+   DAT_00250778 real backing storage inside the arena buffer (a new
+   `g_queue_link_table` pointer, set up in reset_level_object_arena
+   right after g_backpack_slot_table's own tail reservation), widened
+   the arena's malloc size and resolve_object_link's bounds to match.
+
+   Discovering this then surfaced a SIXTH bug in the same family: the
+   queue record's five sibling fields (DAT_00250779 through
+   DAT_0025077d) were never separate arrays either -- every access site
+   indexes them with the exact same slot*6 index as DAT_00250778 in the
+   same function, and FUN_00080ed4's own push code proves the intended
+   byte layout directly (DAT_00250778 holds the encoded link's low 2
+   bits, DAT_00250779 the next 8 bits, read back together as one
+   ushort). They were re-aliased into g_queue_link_table at their
+   correct byte offsets (1-5) instead of remaining bare/separate
+   globals -- confirmed via a dedicated re-derivation of all ~24 access
+   sites, no exceptions, matching the 0x180-byte (64 slots * 6 bytes)
+   save/load blob size exactly.
+
+   A near-identical seventh instance of the same pattern surfaced one
+   layer deeper still: DAT_00250732/DAT_00250733 (the per-class step
+   target/increment FUN_00081034 compares quality against) were ALSO
+   separate/bare globals instead of views into DAT_00250730's own
+   already-correctly-loaded 4-byte-stride config table
+   (load_class7_variant_effect_table's own comment describes this exact
+   stride). Without this fix quality entered FUN_00081034's increment
+   block successfully but stayed stuck at 0 forever (confirmed live,
+   200+ calls, no change) -- the "current < target" comparison was
+   always false against a target that read as 0. Re-aliased the same
+   way.
+
+With all seven fixed, quality genuinely steps through multiple distinct
+values across separate ticks (confirmed live: 5,6,7,8 and 13,14,15,16
+in one replay) instead of jumping straight from 0 to a final value, and
+the milestone-15 instant-snap fallback in FUN_0007c708 (which used to
+short-circuit this real animation on a redundant re-trigger, cutting it
+off at its very first frame -- see that function's own updated comment)
+was changed to a no-op: with the queue actually running, a door already
+mid-animation ignoring a repeat "open" poke is correct on its own,
+without needing to rush-finish anything. The door now completes fully
+via the queue alone; confirmed live the instant-snap path never needs
+to fire for a normal open to finish.
+
+Separately confirmed (not yet fixed, not blocking): interact_use's own
+click-region dispatch genuinely fires twice for a single mouse
+click-and-hold (two distinct real OS-level input events, not a stale
+cached one) -- this is what re-triggers FUN_0007c708's now-neutered
+"already mid-animation" branch in the first place. Root cause of the
+duplicate dispatch itself (somewhere in poll_input_bindings/
+FUN_0003f420/wait_for_click_release's interaction) is still open for a
+future pass; harmless now that the branch it used to trigger is a
+no-op instead of a shortcut.
+
+Also still open: the "point-blank, standing directly against the door"
+close-up viewport does not appear to visually refresh continuously
+enough to show every intermediate step in a scripted demo that holds
+the mouse perfectly still (screenshot brightness-sampling across 40+
+frames spanning the whole open sequence found no visible change, even
+though the traced quality/swing values are confirmed correct and
+changing underneath) -- FUN_0008128c itself is only driven by discrete
+input events (mouse clicks/moves), not a continuous per-frame
+heartbeat, so a scripted demo with zero further input after the
+initial click-and-hold never advances the queue at all; real play's
+naturally-continuous small mouse movements should drive this far more
+often. Needs live interactive verification (not a static scripted
+wait) to confirm the visual smoothness matches the now-confirmed-
+correct underlying state.
+
+run-regressions.sh: 6/6 clean.
