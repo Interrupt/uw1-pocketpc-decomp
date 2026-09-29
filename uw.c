@@ -36526,51 +36526,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-undefined4 FUN_000816e0(param_1,param_2,param_3,param_4)
-ushort * param_1;
-uint param_2;
-undefined4 param_3;
-undefined4 param_4;
-
-{
-  int iVar1;
-  ushort uVar2;
-  short sVar3;
-  undefined4 uVar4;
-  uint uVar5;
-  uint uVar6;
-  ushort local_24 [4];
-  
-  local_24[0] = 0x14;
-  local_24[1] = 0x15;
-  local_24[2] = 0x1c2;
-  local_24[3] = 0x1c5;
-  uVar2 = *param_1;
-  uVar6 = 0;
-  do {
-    if ((int)(short)local_24[uVar6] == (uVar2 & 0x1ff)) break;
-    uVar6 = (int)((uVar6 + 1) * 0x10000) >> 0x10;
-  } while ((int)uVar6 < 2);
-  iVar1 = (int)(short)uVar6;
-  if (iVar1 < 2) {
-    uVar5 = (local_24[iVar1 + 2] ^ uVar2) & 0x1ff ^ (uint)uVar2;
-    *(char *)param_1 = (char)uVar5;
-    *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
-    uVar4 = encode_object_slot_index(param_1);
-    sVar3 = scheduler_add_entry(uVar4,4,0,param_2 & 0xff,(char)param_3);
-    if (sVar3 != -1) {
-      if (iVar1 == 0) {
-        spawn_effect_debris_burst(param_1,param_2,param_3);
-      }
-      damage_all_objects_at_tile(param_2,param_3,(uVar6 & 0xff) + 1,param_4);
-      return 1;
-    }
-  }
-  return 0;
-}
-
-
-
 undefined4 FUN_00081814(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 ushort * param_1;
 int param_2;

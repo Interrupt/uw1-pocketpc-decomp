@@ -1370,7 +1370,7 @@ ushort * param_1;
     object_list_insert_head(pbTile,puVar9);
   }
   if ((bVar13 == 9) &&
-     (iVar10 = FUN_000816e0(puVar9,(int)DAT_0010144c,(int)DAT_00101454,local_2c), iVar10 == 0)) {
+     (iVar10 = activate_area_hazard_object(puVar9,(int)DAT_0010144c,(int)DAT_00101454,local_2c), iVar10 == 0)) {
     puVar9 = (ushort *)discard_misplaced_object(pbTile,puVar9,0);
   }
   return puVar9;
@@ -1681,3 +1681,62 @@ ushort * param_1;
   }
   return;
 }
+
+
+// was FUN_000816e0 -- morphs a trap/hazard object (class id 0x14 or
+// 0x15) into its "active" counterpart (0x1c2 or 0x1c5 respectively --
+// 0x1c2 is the same spell-effect id cast_area_spell_effect spawns),
+// schedules it (type 4, delay 0), applies area damage to the tile,
+// and, for the 0x14->0x1c2 case specifically, also spawns a debris
+// burst. Returns 0 (and does nothing) if the object's id doesn't
+// match either trap class, or if scheduling fails. Confirmed live
+// caller: settle_mobile_to_immobile (src/ai.c) triggers this for a
+// specific dying-creature item class, discarding the item outright if
+// activation fails -- reads as "an explosive/hazard creature item
+// detonating on death", though the exact game mechanic beyond the
+// object-id morph isn't independently confirmed.
+undefined4 activate_area_hazard_object(param_1,param_2,param_3,param_4)
+ushort * param_1;
+uint param_2;
+undefined4 param_3;
+undefined4 param_4;
+
+{
+  int iVar1;
+  ushort uVar2;
+  short sVar3;
+  undefined4 uVar4;
+  uint uVar5;
+  uint uVar6;
+  ushort local_24 [4];
+  
+  local_24[0] = 0x14;
+  local_24[1] = 0x15;
+  local_24[2] = 0x1c2;
+  local_24[3] = 0x1c5;
+  uVar2 = *param_1;
+  uVar6 = 0;
+  do {
+    if ((int)(short)local_24[uVar6] == (uVar2 & 0x1ff)) break;
+    uVar6 = (int)((uVar6 + 1) * 0x10000) >> 0x10;
+  } while ((int)uVar6 < 2);
+  iVar1 = (int)(short)uVar6;
+  if (iVar1 < 2) {
+    uVar5 = (local_24[iVar1 + 2] ^ uVar2) & 0x1ff ^ (uint)uVar2;
+    *(char *)param_1 = (char)uVar5;
+    *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
+    uVar4 = encode_object_slot_index(param_1);
+    sVar3 = scheduler_add_entry(uVar4,4,0,param_2 & 0xff,(char)param_3);
+    if (sVar3 != -1) {
+      if (iVar1 == 0) {
+        spawn_effect_debris_burst(param_1,param_2,param_3);
+      }
+      damage_all_objects_at_tile(param_2,param_3,(uVar6 & 0xff) + 1,param_4);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+

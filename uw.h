@@ -3580,7 +3580,7 @@ uint scheduler_add_entry();
 void scheduler_step_entry();
 void scheduler_tick();
 void spawn_effect_debris_burst();
-undefined4 FUN_000816e0();
+undefined4 activate_area_hazard_object();
 undefined4 FUN_00081814();
 int scheduler_find_entry();
 int scheduler_get_delay();
