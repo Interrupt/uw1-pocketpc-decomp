@@ -147,3 +147,82 @@ byte * param_2;
   return;
 }
 
+
+
+
+
+
+
+// was FUN_00071e20 -- disabled outright on level 9. Projects a target
+// tile 11 units ahead of the player's facing (DAT_00201c70) and, if
+// that tile is a door (tile_type==1) whose wall texture id falls into
+// one of four specific ranges (5-11/18-22/27-31/35-40), checks
+// FUN_00051fa0 for whether catalog object 0x1ca can be placed there,
+// then spawns one, encodes the door's texture-derived flags/facing
+// into it, schedules it with an unbounded duration
+// (scheduler_add_entry(...,0xffffffff,...)), and links it into the
+// tile's object list. Exact gameplay meaning (which door-texture
+// feature this represents) not identified -- no supporting strings or
+// comments found nearby.
+undefined4 spawn_scheduled_door_texture_object()
+
+{
+  ushort uVar1;
+  byte bVar2;
+  short sVar3;
+  undefined4 uVar4;
+  ushort *puVar5;
+  int iVar6;
+  undefined1 *puVar7;
+  uint uVar8;
+  undefined2 uVar9;
+  undefined1 uVar10;
+  ushort local_18;
+  ushort local_16;
+  
+  if (DAT_00201b68 == 9) {
+    uVar4 = 0xffffffff;
+  }
+  else {
+    local_16 = DAT_00204880 >> 5;
+    local_18 = DAT_00204882 >> 5;
+    project_position_by_heading((int)DAT_00201c70 >> 8,0xb,&local_16,&local_18);
+    puVar5 = (ushort *)tilemap_lookup((int)(short)local_16 >> 3,(int)(short)local_18 >> 3);
+    uVar1 = *puVar5;
+    if (((uVar1 & 0xf) == 1) &&
+       (((((sVar3 = (&DAT_0023adb8)[uVar1 >> 10 & 0xf], 4 < sVar3 && (sVar3 < 0xc)) ||
+          ((0x11 < sVar3 && (sVar3 < 0x17)))) || ((0x1a < sVar3 && (sVar3 < 0x20)))) ||
+        ((0x22 < sVar3 && (sVar3 < 0x29)))))) {
+      uVar8 = (uVar1 >> 4 & 0xf) << 3;
+      uVar9 = (undefined2)uVar8;
+      iVar6 = FUN_00051fa0(0x1ca,0,(int)(short)local_16,(int)(short)local_18,uVar9,0,0);
+      uVar10 = (undefined1)((ushort)uVar9 >> 8);
+      if (iVar6 != 0) {
+        puVar7 = (undefined1 *)spawn_new_object(0x1ca,0);
+        uVar1 = *(ushort *)(puVar7 + 2);
+        uVar8 = (uVar1 ^ uVar8) & 0x7f ^ (uint)uVar1;
+        puVar7[2] = (char)uVar8;
+        puVar7[3] = (char)(uVar1 >> 8);
+        bVar2 = (byte)(((local_16 & 7) << 0xd) >> 8);
+        puVar7[2] = (char)(uVar8 & 0x1fff);
+        puVar7[3] = (byte)((uVar8 & 0x1fff) >> 8) | bVar2;
+        puVar7[2] = (char)(uVar8 & 0x3ff);
+        puVar7[3] = (byte)((uVar8 & 0x3ff) >> 8) | bVar2 | (byte)(((local_18 & 7) << 10) >> 8);
+        *puVar7 = *puVar7;
+        puVar7[1] = puVar7[1] | 0x20;
+        uVar4 = encode_object_slot_index(puVar7);
+        sVar3 = scheduler_add_entry(uVar4,0xffffffff,0,(short)local_16 >> 3 & 0xff,
+                             CONCAT11(uVar10,(char)((short)local_18 >> 3)));
+        if (sVar3 != 0) {
+          *(byte *)(DAT_00086df8 + 0x5e) =
+               (byte)(((int)DAT_00201b68 & 0xfU) << 4) | *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
+          object_list_insert_head(puVar5 + 1,puVar7);
+          return 1;
+        }
+        free_object_slot(puVar7);
+      }
+    }
+    uVar4 = 0;
+  }
+  return uVar4;
+}

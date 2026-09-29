@@ -3130,7 +3130,7 @@ void apply_rest_status_effects();
 void handle_rest_action();
 undefined4 adjust_player_hunger();
 void handle_game_victory_sequence();
-undefined4 FUN_00071e20();
+undefined4 spawn_scheduled_door_texture_object();
 bool FUN_00072084();
 void FUN_0007213c();
 void FUN_00072288();
