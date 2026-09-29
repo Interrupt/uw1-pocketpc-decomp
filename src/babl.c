@@ -149,7 +149,7 @@ intptr_t param_1;
   if (DAT_00202948 == 0) {
     iVar8 = DAT_00100674;
     if ((*(byte *)(iVar8 + 0xe) & 0x10) == 0) {
-      FUN_000798c4();
+      spawn_creature_death_loot();
       iVar8 = *piVar3;
     }
     puVar9 = (ushort *)resolve_object_link((ushort *)(iVar8 + 6));
@@ -2316,7 +2316,7 @@ void start_npc_conversation()
     sync_conv_vars_from_npc(DAT_00100674);
     DAT_001007b8 = babl_alloc(0xa0);
     if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
-      FUN_000798c4();
+      spawn_creature_death_loot();
     }
     /* Debug-only static dump of every string in this NPC's own compiled
        conversation, independent of which branches a live playthrough
@@ -2847,7 +2847,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   uVar4 = babl_read_var_word((int)*(short *)(param_1 + -4));
   local_10 = g_player_object;
   if ((sVar3 == 0) && (local_10 = DAT_00100674, (*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0)) {
-    FUN_000798c4();
+    spawn_creature_death_loot();
     local_10 = DAT_00100674;
   }
   local_10 = local_10 + 6;
@@ -3794,7 +3794,7 @@ void babl_builtin_setup_to_barter()
   bVar2 = false;
   bVar3 = false;
   if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
-    FUN_000798c4();
+    spawn_creature_death_loot();
   }
   iVar13 = DAT_00100674 + 6;
   puVar6 = (ushort *)resolve_object_link(iVar13);

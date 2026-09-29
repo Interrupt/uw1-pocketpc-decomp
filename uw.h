@@ -3429,7 +3429,7 @@ void spawn_creature_treasure_drop();
 void spawn_creature_special_item_drop();
 void spawn_creature_equipment_drop();
 void spawn_creature_misc_item_drop();
-void FUN_000798c4();
+void spawn_creature_death_loot();
 ushort *use_object_on_target();
 bool finish_object_use();
 short *FUN_00079dec();

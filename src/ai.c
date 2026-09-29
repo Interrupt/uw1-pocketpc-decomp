@@ -724,7 +724,7 @@ LAB_00033830:
       DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
       iVar5 = tilemap_lookup();
       object_list_unlink(iVar5 + 2,DAT_0010190c);
-      FUN_000798c4(DAT_0010190c);
+      spawn_creature_death_loot(DAT_0010190c);
       FUN_0002b258(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
       drop_creature_inventory_on_death(DAT_0010190c);
       free_object_slot(DAT_0010190c);
@@ -1408,7 +1408,7 @@ byte * param_1;
 // linking it into param_1's object chain. No callers found by grep
 // in the remaining decompile.
 void spawn_creature_treasure_drop(param_1)
-char *param_1;  /* was `int` -- truncated the real object pointer FUN_000798c4
+char *param_1;  /* was `int` -- truncated the real object pointer spawn_creature_death_loot
                    passes in (on this 64-bit build), corrupting the address
                    handed to object_list_insert_head(param_1 + 6, ...) below */
 
@@ -1641,5 +1641,43 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
     }
     uVar8 = uVar8 + 1 & 0xff;
   } while (uVar8 < 2);
+  return;
+}
+
+
+
+
+
+// was FUN_000798c4 -- the creature death-loot orchestrator, gated on
+// a "already dropped" flag (param_1[7] bit 0x10, set at the end):
+// points g_despawn_creature_record at this creature's own per-class
+// record in the same table as g_monster_max_stats_table (DAT_001007d0
+// -- note this is 4 bytes BEFORE DAT_001007d4, g_monster_max_stats_
+// table's own documented base; both are used as this table's "start"
+// at different call sites throughout this file, e.g. the 0xc00-byte
+// bulk file-load at uw.c's resource-load code reads into
+// &DAT_001007d0 directly -- worth resolving which base is truly
+// authoritative in a future struct-recovery pass, not done here),
+// then calls all 4 drop-roll functions in sequence
+// (spawn_creature_treasure_drop/special_item/equipment/misc_item)
+// and marks the flag so this never re-fires for the same object.
+// Confirmed real callers in src/ai.c and src/babl.c.
+void spawn_creature_death_loot(param_1)
+ushort * param_1;
+
+{
+  undefined2 uVar1;
+
+  if ((param_1[7] & 0x10) == 0) {
+    g_despawn_creature_record = &DAT_001007d0 +
+                   (((int)(short)*param_1 & 0xfU) + (short)((*param_1 & 0x30) >> 4) * 0x10) * 0x30;
+    spawn_creature_treasure_drop(param_1);
+    spawn_creature_special_item_drop(param_1);
+    spawn_creature_equipment_drop(param_1);
+    spawn_creature_misc_item_drop(param_1);
+    uVar1 = *(undefined2 *)((char *)param_1 + 0xd);
+    *(char *)((char *)param_1 + 0xd) = (char)uVar1;
+    *(byte *)(param_1 + 7) = (byte)((ushort)uVar1 >> 8) | 0x10;
+  }
   return;
 }

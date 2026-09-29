@@ -6402,7 +6402,7 @@ undefined1 DAT_0024af98_backing[4096];
 undefined2 DAT_0024cfbc_backing[8192];
 #define DAT_0024cfbc DAT_0024cfbc_backing[0]
 /* was `int` -- truncated pointer to a 64-bit address on assignment in
-   FUN_000798c4 (&DAT_001007d0 + index*0x30), causing spawn_creature_treasure_drop to
+   spawn_creature_death_loot (&DAT_001007d0 + index*0x30), causing spawn_creature_treasure_drop to
    dereference a garbage address (crash in demo_critter_orbit_cardinal.txt,
    EXC_BAD_ACCESS at uw.c:70173). Sibling DAT_00101404, assigned via the
    identical pattern, is correctly `char *`. */
@@ -36515,28 +36515,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_000798c4(param_1)
-ushort * param_1;
-
-{
-  undefined2 uVar1;
-  
-  if ((param_1[7] & 0x10) == 0) {
-    g_despawn_creature_record = &DAT_001007d0 +
-                   (((int)(short)*param_1 & 0xfU) + (short)((*param_1 & 0x30) >> 4) * 0x10) * 0x30;
-    spawn_creature_treasure_drop(param_1);
-    spawn_creature_special_item_drop(param_1);
-    spawn_creature_equipment_drop(param_1);
-    spawn_creature_misc_item_drop(param_1);
-    uVar1 = *(undefined2 *)((char *)param_1 + 0xd);
-    *(char *)((char *)param_1 + 0xd) = (char)uVar1;
-    *(byte *)(param_1 + 7) = (byte)((ushort)uVar1 >> 8) | 0x10;
-  }
   return;
 }
 
