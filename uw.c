@@ -65,9 +65,32 @@ int DAT_0023c5b0;
 // set) and various fill/blit routines.
 byte g_draw_color_index_backing[128];
 byte *g_draw_color_index = g_draw_color_index_backing;
-char *DAT_000879b0;
+/* DAT_000879b0/DAT_000890a4 (the active font's 12-byte header and its
+   glyph-bitmap data, both filled in by select_active_font's file reads)
+   were plain uninitialized pointers -- no allocation anywhere in this
+   file, and confirmed via Ghidra xref search that the real ARM binary's
+   own source slots (0x40dd8/0x40ddc) are READ-ONLY across the whole
+   binary too, never written by any real code -- so these were never
+   runtime-malloc'd pointers at all; they're link-time-constant
+   addresses of fixed static buffers that Ghidra's static analysis
+   couldn't recover (same class as several other "silently zero"
+   globals already fixed this session). Confirmed live: DAT_000890a4
+   was NULL, and unpack_glyph_bitmap's pointer arithmetic off NULL
+   landed in essentially-random process memory that happened to overlap
+   a heap block libSystem/Foundation legitimately allocated-then-freed
+   during app startup -- an ASan-caught heap-buffer-overflow (uw.c:7007)
+   on the first automap-note text draw of any session, not a "sometimes"
+   bug: font rendering was silently using this same wild pointer on
+   every single draw all along, just usually landing in mapped-but-
+   irrelevant memory instead of a freed block that trips ASan. Given
+   real backing storage instead, sized to what select_active_font's own
+   reads need (12-byte header; 0x1080 bytes of glyph data -- see that
+   function's own comment on why 0x1080). */
+static char DAT_000879b0_backing[12];
+char *DAT_000879b0 = DAT_000879b0_backing;
 undefined2 DAT_000a85b0;
-char *DAT_000890a4;
+static char DAT_000890a4_backing[0x1080];
+char *DAT_000890a4 = DAT_000890a4_backing;
 /* Ghidra split this out as a standalone, never-written `short` -- but its
    address (0x0024ad94) is exactly 0x34 bytes into the RGB565 palette LUT
    at g_palette_rgb565 (0x34/2 = entry 26 = palette color 0x1a), and nothing
@@ -1977,7 +2000,7 @@ intptr_t param_1;
             *(undefined4 *)((intptr_t)&DAT_000bbf98 + iVar2 * 4) = 0;
             *(undefined2 *)((intptr_t)&DAT_000bbfc0 + (iVar2 + 4) * 2) = 0xffff;
             *(undefined2 *)(iVar5 + iVar2 * 2) = 0xffff;
-            FUN_0001c420(0,(int)iVar10);
+            draw_hotspot_crosshair_marker(0,(int)iVar10);
             FUN_0001bf9c(1,(int)iVar10);
           }
           else {
@@ -1985,7 +2008,7 @@ intptr_t param_1;
             FUN_00057118();
             FUN_00057c5c(*puVar9 & 0x1ff);
             DAT_002020c4 = 1;
-            FUN_000570b4();
+            cursor_show_idle_tick();
             FUN_0007ec50();
           }
           return 1;
@@ -2052,7 +2075,7 @@ intptr_t param_1;
           *(undefined4 *)((intptr_t)&DAT_000bbf98 + iVar1 * 4) = 0;
           *(undefined2 *)((intptr_t)&DAT_000bbfc0 + (iVar1 + 4) * 2) = 0xffff;
           *(undefined2 *)(iVar4 + iVar1 * 2) = 0xffff;
-          FUN_0001c420(0,(int)iVar10);
+          draw_hotspot_crosshair_marker(0,(int)iVar10);
           FUN_0001bf9c(1,(int)iVar10);
         }
         else {
@@ -2060,7 +2083,7 @@ intptr_t param_1;
           FUN_00057118();
           FUN_00057c5c(*puVar9 & 0x1ff);
           DAT_002020c4 = 1;
-          FUN_000570b4();
+          cursor_show_idle_tick();
           FUN_0007ec50();
         }
         return 1;
@@ -2660,6 +2683,18 @@ char * DAT_00110fc8 = 0;
    content. */
 static char DAT_00110fc0_scratch[65536];
 char *DAT_00110fc0 = DAT_00110fc0_scratch;
+/* Diagnostic accessor (DAT_00110fc0_scratch is static, so demomode.c can't
+   read it directly): how far the shared draw/pick-buffer write cursor has
+   drifted from its scratch buffer's base, and how much headroom is left
+   before it walks off the end into whatever global happens to follow --
+   see draw_command_list_rewind's comment and FUN_00066e90's "stray write
+   corrupts an unrelated global, never root-caused" comment. */
+long uw_debug_pickbuf_drift(void) {
+  return (long)(DAT_00110fc0 - DAT_00110fc0_scratch);
+}
+long uw_debug_pickbuf_capacity(void) {
+  return (long)sizeof(DAT_00110fc0_scratch);
+}
 undefined1 DAT_00110fc4;
 undefined4 DAT_00110bb8;
 /* Was `undefined4` (4 bytes) despite FUN_00038acc using it to reset
@@ -2770,7 +2805,21 @@ undefined1 DAT_000857a0_backing[32768] = "\\SAVE0";
 undefined2 DAT_00201b6c;
 undefined2 DAT_00201b60;
 undefined2 DAT_00201b64;
-undefined2 DAT_00202080;
+/* Was a plain tentative definition (no initializer), so a truly fresh
+   process starts it at C's default zero instead of the real "no
+   container open" resting state. Every genuine reset in this file
+   (FUN_0003bcd8, probe_save_slots's caller, journey_onward_load_slot_menu's
+   own setup) explicitly sets this to 0xffff/-1, and every reader treats
+   it as signed (`-1 < DAT_00202080` gates FUN_00044624's
+   object_list_unlink call below) -- 0 reads as "container slot 0 is
+   open", spuriously unlinking g_player_object from a wild address
+   computed off a container that was never really open. Confirmed live:
+   SIGBUS in object_list_unlink on the very first "new game" of a
+   process that never had an earlier save to leave this at a sane value
+   (this codebase's regression scripts had been silently relying on
+   stale state left over from a prior interactive session to avoid ever
+   hitting this fresh-process path). */
+short DAT_00202080 = -1;
 short DAT_00201c94;
 /* Per-(redraw-mode, dirty-bit) handler dispatch table read by
    dispatch_sticky_mode_handlers/enter_dungeon_view/FUN_0003c038/change_game_mode (DAT_00201b64 = the
@@ -4491,7 +4540,7 @@ short DAT_002046f4;
    .data has this at 7, not 0. This is the pause-menu-panel state index
    (0-6 = a panel is open, 7 = closed/back in normal gameplay -- see
    close_ui_panel_return_to_game's own comment above, uw.c ~4400), and
-   FUN_0005857c (the idle mouse-cursor-sprite show function, reached
+   draw_idle_mouse_cursor (the idle mouse-cursor-sprite show function, reached
    whenever nothing is held: g_selected_object==0) refuses to draw the
    cursor at all unless this equals 7. Starting at the C default of 0
    instead of the real 7 meant the idle cursor -- automap browsing
@@ -6245,18 +6294,23 @@ static short DAT_0023c268_arr[3];
 #define DAT_0023c268 DAT_0023c268_arr[0]
 static short DAT_0023c270_arr[3];
 #define DAT_0023c270 DAT_0023c270_arr[0]
-/* DAT_00087210/DAT_00087218: read-only per-side (left/right dragon)
-   position lookup tables, same `(&DAT_000872XX)[i]` 3-wide indexing
-   pattern as their writable DAT_0023c26X siblings just above -- but
-   only ever READ, so under-sizing them doesn't corrupt anything else,
-   just returns wrong/adjacent-memory positions for indices 1/2.
-   Widened for the same safety reason; real per-index position data
-   not yet recovered (index 0 -- the only one exercised so far, both
-   dragons currently land on the same spot -- reads correctly since it
-   IS the real scalar). */
-static undefined2 DAT_00087210_arr[3];
+/* DAT_00087210/DAT_00087218: real per-index position lookup tables --
+   recovered directly from the real ARM binary's .data (raw uint16 reads
+   at 0x87210/0x87218, not a function to decompile). DAT_00087210 (used
+   by FUN_0006e96c to X-position the 3 "ready to cast" rune-slot icons)
+   is 176,191,206 -- evenly spaced by 15, confirming it's real per-slot
+   data, not a scalar with garbage padding. Previously only index 0 had
+   a nonzero (but still not verified-real) value; indices 1/2 read as
+   0, landing both later slots' rune icons at the left screen edge --
+   confirmed live: "left-clicking a rune draws it at the wrong X
+   position in the spell-slot area" for any rune beyond the first
+   selected. DAT_00087218 (used by FUN_0006ea54, gated on
+   `*(short*)(DAT_00085a6c+8)==1` -- a different, rarer UI state) is
+   86,69,52, decreasing by 17; recovered the same way even though no
+   live report has hit it yet. */
+static const undefined2 DAT_00087210_arr[3] = {176, 191, 206};
 #define DAT_00087210 DAT_00087210_arr[0]
-static undefined2 DAT_00087218_arr[3];
+static const undefined2 DAT_00087218_arr[3] = {86, 69, 52};
 #define DAT_00087218 DAT_00087218_arr[0]
 undefined2 DAT_0023c140;
 int DAT_0023c278;
@@ -7124,8 +7178,19 @@ short param_3;
           sVar1 = (&DAT_000890b0)[(byte)*pcVar9];
           {
             int _fmt = (int)g_font_row_stride << 3;
+            /* Same signed-char bug as the width lookup just above (see
+               its own comment) -- `*pcVar9` is `char`, signed on this
+               host, so any extended/high glyph index (>=0x80) sign-
+               extended to a negative int here, computing a glyph
+               pointer hundreds of bytes BEFORE g_font_glyph_data_base
+               instead of after it. Confirmed live via UW_DIAG_TEXT: char
+               0x9e computed a pointer 490 bytes before the real base --
+               an ASan-caught heap-buffer-overflow (uw.c:7030) reading
+               whatever heap memory happened to sit there instead of the
+               real glyph 0x9e. Cast to byte to match the fix already
+               applied to the sibling width lookup two lines up. */
             undefined4 _r = unpack_glyph_bitmap(auStack_40,
-                       (DAT_000a85b8 + 1) * (int)*pcVar9 + g_font_row_stride * iVar11 + g_font_glyph_data_base,
+                       (DAT_000a85b8 + 1) * (int)(byte)*pcVar9 + g_font_row_stride * iVar11 + g_font_glyph_data_base,
                        _fmt);
             if (getenv("UW_DIAG_TEXT"))
               fprintf(stderr, "[diag11060] glyph '%c' fmt=%d(0x%x) rowbytes(g_font_row_stride)=%d ret=%d width(sVar1)=%d auStack_40[0..3]=%d,%d,%d,%d\n",
@@ -8218,7 +8283,22 @@ LAB_000130d0:
       return DAT_000b462c;
     }
     if (param_3 == '\x06') {
-      blit_sprite_row_remapped(bVar2,6,2);
+      /* blit_sprite_row_remapped's 4th arg (a shade byte; 0xff means "no
+         remap, plain copy") is never set by any of this function's 3 real
+         ARM call sites either (confirmed via Ghidra disassembly at
+         0x12aa0/0x12bf0/0x12d34 -- r3 genuinely isn't loaded before any
+         of the 3 `bl 0x13170` calls). The real binary's r3 register
+         happened to still hold a leftover value from earlier, unrelated
+         code at that point; a C recompile has no equivalent "whatever's
+         left in the register" state, so param_4 here was reading
+         uninitialized garbage -- confirmed live via ASan: a
+         heap-buffer-overflow in blit_sprite_row_remapped reading up to
+         64KB past the 4096-byte LIGHT.DAT remap table (DAT_0024fa2c),
+         since the garbage byte routinely wasn't the 0xff sentinel and so
+         took the remap-table-index path with an unclamped shade value.
+         Passing 0xff explicitly forces the same safe, table-free plain-
+         copy path the callee already has for exactly this situation. */
+      blit_sprite_row_remapped(bVar2,6,2,0xff);
       DAT_000b462c = pbVar4;
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
@@ -8276,7 +8356,10 @@ LAB_000130d0:
     else {
       if (param_3 != '\b') {
         if (param_3 == '\n') {
-          blit_sprite_row_remapped(bVar2,10,1);
+          /* Same dropped-4th-arg / uninitialized-param_4 issue as this
+             function's other blit_sprite_row_remapped call site -- see
+             that comment (a few dozen lines up, the param_3=='\x06' case). */
+          blit_sprite_row_remapped(bVar2,10,1,0xff);
           DAT_000b462c = pbVar4;
           DAT_000b4628 = pbVar4;
           DAT_000b461c = pbVar4;
@@ -8303,7 +8386,10 @@ LAB_000130d0:
         }
         goto LAB_000130d0;
       }
-      blit_sprite_row_remapped(bVar2,8,1);
+      /* Same dropped-4th-arg / uninitialized-param_4 issue as this
+         function's other blit_sprite_row_remapped call site -- see that
+         comment (the param_3=='\x06' case, above). */
+      blit_sprite_row_remapped(bVar2,8,1,0xff);
       DAT_000b462c = pbVar4;
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
@@ -10000,10 +10086,10 @@ void enter_automap_screen()
   FUN_00016434(0,(int)DAT_00201b68);
   draw_automap_screen((int)DAT_00201b68);
   DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,FUN_00016ef8);
-  FUN_00057788(0,199,0x13f,0);
+  set_cursor_confine_rect(0,199,0x13f,0);
   FUN_00057118();
   FUN_00057c5c(0x1078);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   DAT_000b99c4 = 0;
   return;
 }
@@ -10104,8 +10190,8 @@ void exit_automap_screen()
   FUN_000735c0();
   FUN_00040df0();
   DAT_000bbef4 = 0;
-  FUN_000577f0();
-  FUN_000570b4();
+  reset_cursor_confine_rect();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -10562,15 +10648,15 @@ LAB_000170bc:
     }
     else {
       sVar2 = 0xfd;
-      FUN_00057788(0,199,0x13f,0);
+      set_cursor_confine_rect(0,199,0x13f,0);
       FUN_00057118();
       FUN_00057c5c(0x1079);
-      FUN_000570b4();
+      cursor_show_idle_tick();
       do {
         sVar3 = next_input_event();
       } while (sVar3 != 1);
       FUN_00057504(&local_5e,&local_60);
-      FUN_00057788(0,199,0x13f,0);
+      set_cursor_confine_rect(0,199,0x13f,0);
       FUN_00057cac(1);
     }
   }
@@ -10635,7 +10721,7 @@ LAB_000170bc:
             FUN_0001765c();
           }
         }
-        FUN_000570b4();
+        cursor_show_idle_tick();
         goto LAB_0001764c;
       }
       if (sVar2 != 0xfe) goto LAB_0001764c;
@@ -10903,7 +10989,7 @@ undefined4 param_1;
   Ordinal_1063(acStack_11c,s__DATA_blnkmap_byt_00084338);
   iVar5 = FUN_0007ee4c(acStack_11c,uVar3,64000);
   if (iVar5 == 0) {
-    FUN_000570b4();
+    cursor_show_idle_tick();
     exit_automap_screen();
   }
   else {
@@ -10936,7 +11022,7 @@ undefined4 param_1;
     select_active_font(s_font5x6p_sys_0008430c);
   }
   DAT_000bbef4 = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   Ordinal_1018(uVar3);
   return;
 }
@@ -11605,7 +11691,7 @@ undefined4 FUN_00019120()
      the "size" that overflowed file_io.c's write-size guard and, before
      that guard existed, silently corrupted the heap (confirmed via ASAN/
      a malloc-guard abort on an unrelated thread). The sibling function
-     right below this one (FUN_0001927c) declares the equivalent pair as
+     right below this one (load_npc_conversation_variables) declares the equivalent pair as
      two contiguous shorts (`short local_124; short local_122;`), which
      is what this record header actually is: two 16-bit fields read by
      one 4-byte call, the second being the following record's real
@@ -11665,8 +11751,8 @@ LAB_00019240:
 
 
 
-void FUN_0001927c(param_1,param_2)
-undefined4 param_1;
+void load_npc_conversation_variables(param_1,param_2)
+intptr_t param_1; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer its own caller passes (load_npc_conversation_record); dormant (silently never reached the write) until the scan-alignment fix in this same function let execution actually get to FUN_0002285c(iVar4,param_1,...) below, which then crashed writing through the truncated address
 short param_2;
 
 {
@@ -11677,10 +11763,18 @@ short param_2;
   char *pcVar3;
   int iVar4;
   uint uVar5;
-  short local_124;
-  short local_122;
+  /* Same "two separate stack locals read as one 4-byte record" bug as
+     save_npc_conversation_variables's own matching comment (its save-side mirror) -- see
+     there for the full explanation. This is the load side: local_122
+     (the record's LENGTH) was silently corrupted by whatever this
+     compiler's own stack layout happens to place after local_124 (the
+     ID), feeding a garbage skip-distance into FUN_00022850's seek and
+     misaligning every subsequent scan iteration. */
+  undefined1 local_124_backing[4];
+  #define local_124 (*(short *)(local_124_backing + 0))
+  #define local_122 (*(short *)(local_124_backing + 2))
   char acStack_11c [260];
-  
+
   pcVar3 = &DAT_0023cca8;
     stack0xffdc323c_ptr = acStack_11c;
   do {
@@ -11690,11 +11784,15 @@ short param_2;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__SAVE0_bglobals_dat_00084538);
   iVar4 = FUN_000227d4(acStack_11c);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, want %d shorts\n", acStack_11c, iVar4, (int)DAT_001007c4, (int)param_2);
   if (iVar4 != -1) {
     bVar2 = false;
     do {
-      uVar5 = FUN_0002285c(iVar4,&local_124,4);
-      if ((uVar5 < 4) || ((int)(uint)DAT_001007c4 < (int)local_124)) break;
+      uVar5 = FUN_0002285c(iVar4,local_124_backing,4);
+      if ((uVar5 < 4) || ((int)(uint)DAT_001007c4 < (int)local_124)) {
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: scan stopped, uVar5=%u local_124=%d (no matching record found)\n", uVar5, (int)local_124);
+        break;
+      }
       if ((int)local_124 == (uint)DAT_001007c4) {
         if (param_2 < local_122) {
           local_122 = param_2;
@@ -11703,6 +11801,10 @@ short param_2;
         if (uVar5 < (uint)((int)local_122 << 1)) {
           bVar2 = true;
         }
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: MATCH id=%d, restored %u bytes (wanted %d), first 10 shorts: %d %d %d %d %d %d %d %d %d %d\n",
+                (int)local_124, uVar5, (int)local_122 << 1,
+                (int)((short*)param_1)[0], (int)((short*)param_1)[1], (int)((short*)param_1)[2], (int)((short*)param_1)[3], (int)((short*)param_1)[4],
+                (int)((short*)param_1)[5], (int)((short*)param_1)[6], (int)((short*)param_1)[7], (int)((short*)param_1)[8], (int)((short*)param_1)[9]);
       }
       else {
         FUN_00022850(iVar4,(int)local_122 << 1,1);
@@ -11710,6 +11812,8 @@ short param_2;
     } while (!bVar2);
     Ordinal_553(iVar4);
   }
+  #undef local_124
+  #undef local_122
   return;
 }
 
@@ -11795,7 +11899,7 @@ undefined1 *param_2;
     FUN_0001a1a4(iVar2);
     babl_free(local_28);
     DAT_000bbf14 = babl_alloc((DAT_000bbf7c + 0x800) * 2);
-    FUN_0001927c(DAT_000bbf14,(int)DAT_000bbf7c);
+    load_npc_conversation_variables(DAT_000bbf14,(int)DAT_000bbf7c);
     DAT_000bbf84 = DAT_000bbf7c;
     DAT_000bbf0c = DAT_000bbf14 + DAT_000bbf7c * 2;
     puVar3 = (undefined1 *)babl_alloc(1);
@@ -12478,6 +12582,7 @@ undefined4 FUN_0001a1c8()
          click (now routed to ordinary 3D-view input while still in the
          leftover conversation UI). */
       psVar7 = (short *)(DAT_000bbf80 + DAT_000bbf74 * 2);
+      if (getenv("UW_DEBUG_OPCODE_TRACE")) fprintf(stderr, "[babl-op] ip=%d opcode=%d operand=%d stack_depth=%d top=%d\n", (int)DAT_000bbf74, (int)*psVar7, (int)psVar7[1], (int)DAT_000bbf78, (int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
       switch(*psVar7) {
       case 0:
         goto LAB_0001a2d8;
@@ -12631,7 +12736,7 @@ LAB_0001a470:
       DAT_000bbf74 = DAT_000bbf74 + 1;
 LAB_0001a5a4:
     } while (sVar2 != 0);
-    FUN_0001a5bc();
+    save_npc_conversation_variables();
     uVar4 = 1;
   }
   else {
@@ -12642,22 +12747,42 @@ LAB_0001a5a4:
 
 
 
-void FUN_0001a5bc()
+void save_npc_conversation_variables()
 
 {
   char stack0xffdc3240_buf [256];
   char *stack0xffdc3240_ptr;
   char cVar1;
   short sVar2;
-  undefined4 uVar3;
+  intptr_t uVar3; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer on assignment, same bug class as load_npc_conversation_variables's own `param_1` fix (its load-side mirror); dormant until the scan-alignment fix below let execution actually reach this write
   char *pcVar4;
   int iVar5;
   uint uVar6;
   uint uVar7;
-  short local_120;
-  short local_11e;
+  /* Was two separate stack locals (`short local_120; short local_11e;`)
+     read as ONE 4-byte record via `&local_120,4` -- the same "Ghidra
+     split one real contiguous buffer into separate stack locals" bug
+     class fixed dozens of times elsewhere in this file, just never
+     caught here since it doesn't crash, it just silently corrupts
+     local_11e (the record's LENGTH) with whatever garbage byte this
+     compiler's own stack layout happens to place after local_120 (the
+     record's ID) -- nothing forces the two to stay adjacent once
+     recompiled. Confirmed via the real ARM disassembly that both reads
+     genuinely are meant to be one 4-byte record (matching
+     load_npc_conversation_variables's own identical pattern, its own load-side mirror).
+     The corrupted length then feeds FUN_00022850's own seek-forward-
+     to-next-record call, misaligning every subsequent scan iteration
+     -- this is the actual root cause of "talking to Bragit again
+     starts fresh": his own script-local conversation state (a SEPARATE
+     persistence path from the engine-level npc_talkedto bit, which
+     was already confirmed working) never successfully finds or
+     updates its own saved record, because the scan wanders off into
+     garbage after the very first skipped-record seek. */
+  undefined1 local_120_backing[4];
+  #define local_120 (*(short *)(local_120_backing + 0))
+  #define local_11e (*(short *)(local_120_backing + 2))
   char acStack_118 [260];
-  
+
   FUN_00078a04(0x7c);
   sVar2 = DAT_000bbf7c;
   uVar3 = DAT_000bbf14;
@@ -12670,22 +12795,32 @@ void FUN_0001a5bc()
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_118,s__SAVE0_bglobals_dat_00084538);
   iVar5 = FUN_00022810(acStack_118);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
+          acStack_118, iVar5, (int)DAT_001007c4, (int)sVar2, (void*)uVar3,
+          (int)((short*)uVar3)[0], (int)((short*)uVar3)[1], (int)((short*)uVar3)[2], (int)((short*)uVar3)[3], (int)((short*)uVar3)[4],
+          (int)((short*)uVar3)[5], (int)((short*)uVar3)[6], (int)((short*)uVar3)[7], (int)((short*)uVar3)[8], (int)((short*)uVar3)[9]);
   if (iVar5 != -1) {
     while( true ) {
-      uVar6 = FUN_0002285c(iVar5,&local_120,4);
+      uVar6 = FUN_0002285c(iVar5,local_120_backing,4);
       if ((uVar6 < 4) ||
          (uVar7 = (uint)local_120, uVar6 = (uint)DAT_001007c4,
-         uVar7 != uVar6 && (int)uVar6 <= (int)uVar7)) goto LAB_00019460;
+         uVar7 != uVar6 && (int)uVar6 <= (int)uVar7)) {
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: scan gave up, uVar6=%u local_120=%d (no matching record -- write SKIPPED entirely)\n", uVar6, (int)local_120);
+        goto LAB_00019460;
+      }
       if (uVar7 == uVar6) break;
       FUN_00022850(iVar5,(int)local_11e << 1,1);
     }
     if (sVar2 < local_11e) {
       local_11e = sVar2;
     }
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
     FUN_00022884(iVar5,uVar3,(int)local_11e << 1);
 LAB_00019460:
     Ordinal_553(iVar5);
   }
+  #undef local_120
+  #undef local_11e
   return;
 }
 
@@ -12962,8 +13097,15 @@ void FUN_0001aa88()
 
 {
   short *psVar1;
-  
+
   psVar1 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  /* Raw "push variable value" VM opcode: indexes DAT_000bbf14 directly by
+     the symbol's compiled-in slot number, bypassing babl_get_variable's
+     name-based lookup entirely -- this is the actual path a script's own
+     `if npc_talkedto ...` check would read through, and babl_get_variable's
+     own npc_talkedto watch (see its own comment) is blind to it. See
+     bragit-talk-again-investigation. */
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] push-var (raw opcode): slot=%d value=%d\n", (int)*psVar1, (int)*(short *)(DAT_000bbf14 + *psVar1 * 2));
   *psVar1 = *(short *)(DAT_000bbf14 + *psVar1 * 2);
   return;
 }
@@ -13276,6 +13418,9 @@ short param_3;
   if (param_3 < 1) {
     return;
   }
+  if (getenv("UW_DEBUG_BABL") && param_1 && strcmp(param_1, "npc_talkedto") == 0) {
+    fprintf(stderr, "[babl] babl_set_variable(\"npc_talkedto\"): resolved DAT_000bbf14 slot base=%d\n", (int)*(short *)(iVar2 + 0x1a));
+  }
   iVar4 = 0;
   do {
     if (*(short *)(iVar2 + 0x18) <= iVar4) {
@@ -13490,8 +13635,8 @@ void FUN_0001b474()
     (&DAT_000bbfc0)[iVar7 + 4] = 0xffff;
     (&DAT_000bbf98)[iVar7] = 0;
     (&DAT_000bbff0)[iVar7] = 0;
-    FUN_0001c420(1,iVar7);
-    FUN_0001c420(0,iVar7);
+    draw_hotspot_crosshair_marker(1,iVar7);
+    draw_hotspot_crosshair_marker(0,iVar7);
     iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
   } while (iVar7 < 4);
   DAT_000bc008 = 0;
@@ -13546,7 +13691,7 @@ void FUN_0001b7c0()
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   iVar2 = 0;
   do {
     FUN_00076b24((&DAT_000bc028)[iVar2]);
@@ -13722,7 +13867,24 @@ int param_4;
       *(undefined4 *)(local_4 + (short)local_c * 4) = 0;
       (&DAT_000bbfa8)[(short)local_c] = 0xffff;
       (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
-      FUN_0001c420((int)(short)local_10);
+      /* Real ARM binary also calls this with only 1 arg (confirmed via
+         Ghidra decompile of the real FUN_0001bb04) -- same "leftover
+         register" reliance as blit_sprite_row_remapped's dropped 4th
+         arg, not a decompile mistake: the original code never reloads
+         r1 here because it already holds the right value from earlier
+         in this same block. draw_hotspot_crosshair_marker's 2nd param is read as
+         `(short)param_2` and used purely as a small array/table index
+         (see its own body) -- local_c is exactly that same value, still
+         live and unchanged since being used on the previous 4 lines, so
+         it's what's actually sitting in that register at this point.
+         Passed explicitly since a C recompile has no equivalent
+         "whatever's left in the register" state (the uninitialized
+         param_2 this crashed on before being declared `undefined **`
+         let it be silently read as a wild pointer instead of the small
+         integer draw_hotspot_crosshair_marker actually expects -- ASan-confirmed
+         heap-buffer-overflow in plot_pixel, reached via this exact call
+         with a garbage index). */
+      draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
       if (g_selected_object == 0) {
         return;
       }
@@ -13758,7 +13920,7 @@ int param_4;
       else {
         puVar4 = (uint *)(local_4 + (short)local_c * 4);
         *puVar4 = (uint)(*puVar4 == 0);
-        FUN_0001c420((int)(short)local_10,(int)(short)local_c);
+        draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
       }
       goto LAB_0001bec8;
     }
@@ -13772,7 +13934,7 @@ int param_4;
   FUN_0001c268((int)(short)local_10,(int)(short)local_c,local_8);
   FUN_0001bf9c((int)(short)local_10,(int)(short)local_c);
   *(undefined4 *)(local_4 + (short)local_c * 4) = 1;
-  FUN_0001c420((int)(short)local_10,(int)(short)local_c);
+  draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
   (&DAT_000bbfa8)[(short)local_c] = 0xffff;
   (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
 LAB_0001bec8:
@@ -13894,7 +14056,7 @@ short param_2;
     }
   }
 LAB_0001c1b4:
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_0007ec50();
   return;
 }
@@ -13929,7 +14091,7 @@ int param_3;
        own identical fix comment (g_selected_object is `char *`, a
        single signed byte; the real 9-bit objid needs a `ushort` read). */
     FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     FUN_0007ec50();
   }
   return;
@@ -14013,7 +14175,15 @@ LAB_0001c404:
 
 
 
-void FUN_0001c420(param_1,param_2)
+// was FUN_0001c420 -- draws a 5-pixel plot_pixel crosshair (center + one
+// pixel each direction) at a coordinate pair looked up by index from one
+// of two tables selected by param_1 (worn-item slots vs backpack slots),
+// colored by whether a parallel "valid"/"used" table says that slot is
+// occupied. Found fixing a real ASan-caught crash: one caller
+// (FUN_0001bb04) passed only 1 of the 2 real arguments here, matching
+// the real ARM binary's own reliance on a leftover register value --
+// see that call site's own comment.
+void draw_hotspot_crosshair_marker(param_1,param_2)
 short param_1;
 undefined ** param_2;
 
@@ -14046,7 +14216,7 @@ undefined ** param_2;
   plot_pixel(*(short *)param_2 + 1,(int)*(short *)((char *)param_2 + 2),uVar3);
   plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + -1,uVar3);
   plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + 1,uVar3);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_0007ec50();
   return;
 }
@@ -14176,11 +14346,11 @@ short param_1;
       FUN_00076e98((&DAT_000bc010)[iVar2]);
       (&DAT_000bbff0)[iVar2] = 0;
       (&DAT_000bbfe8)[iVar2] = 0;
-      FUN_0001c420(0,iVar2);
+      draw_hotspot_crosshair_marker(0,iVar2);
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_0007ec50();
   return;
 }
@@ -14228,14 +14398,14 @@ void FUN_0001c85c()
         FUN_00076e98((&DAT_000bc028)[local_28]);
         (&DAT_000bbf98)[local_28] = 0;
         *psVar5 = 0;
-        FUN_0001c420(1,(int)local_2c);
+        draw_hotspot_crosshair_marker(1,(int)local_2c);
       }
     }
     iVar4 = (local_28 + 1) * 0x10000;
     local_28 = iVar4 >> 0x10;
     local_2c = (short)((uint)iVar4 >> 0x10);
     if (3 < local_28) {
-      FUN_000570b4();
+      cursor_show_idle_tick();
       FUN_0007ec50();
       return;
     }
@@ -14604,11 +14774,11 @@ short param_1;
       FUN_00076e98((&DAT_000bc028)[iVar1]);
       (&DAT_000bbfd0)[iVar1] = 0;
       (&DAT_000bbf98)[iVar1] = 0;
-      FUN_0001c420(1,iVar1);
+      draw_hotspot_crosshair_marker(1,iVar1);
     }
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 4);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_0007ec50();
   return;
 }
@@ -17096,7 +17266,7 @@ char *param_1;
    `Ordinal_168(fname, 0xc0000000, 1, 0, 3, 0x80, 0)` --
    GENERIC_READ|GENERIC_WRITE (0xc0000000), OPEN_EXISTING (disposition
    3) -- a read-write handle, not read-only. Every one of this port's 3
-   real callers already relies on that: FUN_0001a5bc (this file's
+   real callers already relies on that: save_npc_conversation_variables (this file's
    per-NPC conversation-variable save to \SAVE0\bglobals.dat, called at
    the end of every babl-VM interpreter yield) opens through this
    function then immediately writes through the same handle -- silently
@@ -17831,6 +18001,10 @@ int param_1;
   *(undefined1 *)(DAT_00086df8 + 0x66) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x67) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x68) = 0;
+  if (getenv("UW_DEBUG_FORCE_QUEST_TEST")) {
+    *(unsigned int *)(DAT_00086df8 + 0x65) = 0x12345678;
+    fprintf(stderr, "[quest-persist] forced test quest_bits=0x%x at new-game init\n", *(unsigned int *)(DAT_00086df8 + 0x65));
+  }
   *(undefined1 *)(DAT_00086df8 + 0x6e) = 0;
   *(undefined1 *)(DAT_00086df8 + 0x6f) = 0;
   uVar5 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xfff8;
@@ -18013,7 +18187,7 @@ void FUN_00023b38()
   DAT_000fb858 = DAT_001005c8;
   FUN_000120c8(0x1e,0x85,DAT_001005c8,0x37,0x5f,0x1e,0x85,1);
   screen_backup_save();
-  FUN_000570b4();
+  cursor_show_idle_tick();
   FUN_00035df8(0);
   DAT_000fb858 = DAT_001005c4;
   iVar4 = 0;
@@ -18414,7 +18588,7 @@ byte param_3;
         g_blit_transparent_mode = 1;
         bitmap_blit_to_framebuffer((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
                      (int)sVar3 * (bVar1 + 4) + iVar5,pcVar_fb858 + iVar7,(uint)bVar1,bVar2,0,0,1);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         pcVar_fb858 = DAT_000fb858;
       }
       iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
@@ -18491,23 +18665,23 @@ uint param_2;
     iVar9 = iVar10 >> 0x10;
     local_4 = param_2;
     do {
-      /* HACK: DAT_0023c63c (our click-hold flag -- see FUN_00077dd0's
+      /* HACK: DAT_0023c63c (our click-hold flag -- see handle_mouse_message's
          HACK comment) blocks flush_dirty_rect_to_display's actual screen flush the
          whole time a button is held, unless g_force_flush is set (see
-         its gate at flush_dirty_rect_to_display's top, and FUN_0005857c's matching
+         its gate at flush_dirty_rect_to_display's top, and draw_idle_mouse_cursor's matching
          use of g_force_flush around its own single draw). Without this,
          every per-iteration redraw here updated the software
          framebuffer but the screen never actually presented it until
          release -- confirmed via testing (drag/hover highlight updates
          were invisible until mouse-up). Force the flush the same way
-         FUN_0005857c does. */
+         draw_idle_mouse_cursor does. */
       g_force_flush = 1;
       flush_dirty_rect_to_display(1);
       g_force_flush = 0;
       if (((short)uVar13 != (short)param_2) && ((short)uVar13 != -1)) {
         FUN_00057118();
         FUN_0002431c(param_1,uVar13 & 0xff,param_2 & 0xff);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         local_4 = uVar13 & 0xffff;
       }
       // Click/touch detection: reads the current pointer position, then the math below maps it to a list-item index.
@@ -18814,7 +18988,7 @@ LAB_00024dd4:
             FUN_00057118();
             bitmap_blit_to_framebuffer(iVar7,iVar9,DAT_000fb898 + DAT_000fb858,0x10,0x91,
                          (short)((uint)iVar11 >> 0x10) + -0xa4,0,1);
-            FUN_000570b4();
+            cursor_show_idle_tick();
           }
         }
       }
@@ -18822,7 +18996,7 @@ LAB_00024dd4:
         local_2c[0] = CONCAT11((undefined1)(local_2c[0] >> 8),(char)sVar5);
         FUN_00057118();
         draw_text_string(local_2c,iVar7,iVar9 + 3);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         iVar7 = measure_text_width(local_2c);
         iVar7 = iVar7 + sVar3;
         local_28 = 0;
@@ -20246,6 +20420,7 @@ ushort * param_1;
   char acStack_114 [260];
   
   uVar6 = *param_1 & 0x1ff;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488 entry: param_1=%p uVar6(itemid)=0x%x raw=0x%x classcheck=0x%x\n", (void *)param_1, (unsigned)uVar6, (unsigned)*param_1, (unsigned)(*param_1 & 0x1c0));
   if (uVar6 == 0x157) {
     FUN_000708bc(0);
     return;
@@ -20258,11 +20433,13 @@ ushort * param_1;
     return;
   }
   if ((*param_1 & 0x1c0) != 0x40) {
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488: not-a-creature branch (uVar3=0xe00)\n");
     uVar3 = 0xe00;
     goto LAB_0002865c;
   }
   uVar6 = (ushort)(byte)param_1[0xd];
   DAT_00100674 = param_1;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488: conv-id byte(uVar6)=0x%x uVar5=0x%x flagbits(param_1+7)=0x%x flagbyte(param_1+0x19)=0x%x\n", (unsigned)uVar6, (unsigned)(*(ushort *)((char *)param_1 + 0xb) & 0xf), (unsigned)(param_1[7] & 0xc0), (unsigned)(*(byte *)((char *)param_1 + 0x19) & 0x40));
   if (((uVar6 == 0x16) || (uVar6 == 0x8e)) || (uVar6 == 0xe7)) {
 LAB_000285e4:
     if (uVar6 == 0) {
@@ -20397,9 +20574,9 @@ void FUN_000286cc()
       DAT_001007c0 = DAT_00100784;
       FUN_0001b474();
       FUN_0007f0e0();
-      FUN_000570b4();
+      cursor_show_idle_tick();
       DAT_0023bf0c = 0;
-      FUN_000577f0();
+      reset_cursor_confine_rect();
       mode_icon_highlight_off(5);
       g_cursor_mode = 0;
       start_npc_conversation(DAT_00100674[0x1a],*DAT_00100674 & 0x3f);
@@ -20525,6 +20702,20 @@ void start_npc_conversation()
     if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
       FUN_000798c4();
     }
+    /* Debug-only static dump of every string in this NPC's own compiled
+       conversation, independent of which branches a live playthrough
+       happens to reach -- see bragit-talk-again-investigation. Message
+       ids are (page<<9)|subindex (FUN_0007863c's own comment); page 0
+       is this just-loaded conversation's own string table. */
+    if (getenv("UW_DEBUG_DUMP_CONV_STRINGS")) {
+      int _dump_i;
+      for (_dump_i = 0; _dump_i < 0x200; _dump_i++) {
+        char *_dump_s = FUN_0007863c((ushort)_dump_i);
+        if (_dump_s && *_dump_s) {
+          fprintf(stderr, "[babl] conv string msgid=%d: \"%s\"\n", _dump_i, _dump_s);
+        }
+      }
+    }
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: about to call FUN_0001a1c8()\n");
     FUN_0001a1c8();
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] start_npc_conversation: FUN_0001a1c8() returned\n");
@@ -20532,6 +20723,36 @@ void start_npc_conversation()
     iVar2 = FUN_0002af88(DAT_00100674);
     if ((iVar2 != 0) || (DAT_001007b4 == '\0')) {
       uVar3 = 0;
+    }
+    /* Debug-only re-seed, no UI involved: directly proves out the
+       npc_talkedto persistence fix (bglobals-dat-readonly-handle-fix)
+       end-to-end without needing to click the NPC a second time through
+       a fragile, animation-position-dependent screen coordinate. Safe
+       to call standalone -- FUN_0002a8e0 just re-reads the object's
+       current fields and re-sets babl variables from them. */
+    if (getenv("UW_DEBUG_TALK_TWICE")) {
+      fprintf(stderr, "[babl] UW_DEBUG_TALK_TWICE: re-seeding from the same object right after natural conversation end\n");
+      FUN_0002a8e0(DAT_00100674);
+    }
+    /* Debug-only: re-runs the exact same object-pick the mouse position
+       already used to start this conversation would produce, RIGHT as
+       the conversation ends -- same frame, same g_mouse_x/g_mouse_y, no
+       real click or screen coordinate involved at all. Directly tests
+       whether the pick/stencil table's slot-to-object mapping is still
+       consistent immediately after returning from conversation mode,
+       sidestepping both "Bragit wandered" and "click landed mid-
+       conversation" timing problems entirely. See QA report: "leaving a
+       conversation causes 3d-view object-picking to give incorrect
+       results". */
+    if (getenv("UW_DEBUG_PICK_TWICE")) {
+      ushort *_pick2 = pick_object_under_cursor(2);
+      if (_pick2) {
+        fprintf(stderr, "[pick-twice] re-pick at same mouse=(%d,%d) right after conversation end -> objid=0x%03x\n",
+                (int)g_mouse_x, (int)g_mouse_y, (unsigned)(*_pick2 & 0x1ff));
+      } else {
+        fprintf(stderr, "[pick-twice] re-pick at same mouse=(%d,%d) right after conversation end -> NULL\n",
+                (int)g_mouse_x, (int)g_mouse_y);
+      }
     }
     FUN_0007f170(uVar3,0);
   }
@@ -20714,6 +20935,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
         *pcVar11 = cVar1;
         pcVar11 = pcVar11 + 1;
       } while (cVar1 != '\0');
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu item %d text: \"%s\"\n", iVar12, local_c4);
       Ordinal_1063(local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(local_c4);
       FUN_0007ec50();
@@ -20723,6 +20945,42 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
       iVar12 = (iVar12 + 1) * 0x10000 >> 0x10;
       sVar13 = sVar5 + 1;
     } while (iVar12 < DAT_00100794);
+  }
+  /* Debug-only regression-test aid: end-to-end verifying npc_talkedto
+     persistence (see bglobals-dat-readonly-handle-fix) needs driving a
+     conversation all the way to a real "Farewell"/"Bye" exit, but which
+     numbered topic reaches one varies conversation to conversation and
+     is sometimes randomized turn to turn (confirmed live: the same
+     first answer led down different branches on different runs), so
+     scripting a fixed key sequence in a demo file is not reliable.
+     When set, auto-selects the first item whose text looks like a
+     farewell, exactly as if the player had picked it, instead of
+     blocking on real input -- lets a demo script reach a natural
+     conversation end deterministically for testing. */
+  if (getenv("UW_DEBUG_AUTO_FAREWELL") && (1 < DAT_00100794)) {
+    int _far_i;
+    int _far_pick = 1; /* no farewell offered this turn -- keep the conversation moving */
+    /* UW_DEBUG_AUTO_PICK=N overrides the "no farewell offered" default
+       away from item 1, to explore branches a rigid "always pick 1"
+       playthrough never reaches (e.g. hunting for where a script might
+       call get_quest/set_quest) -- clamped into range, never overrides
+       an actual farewell match below. */
+    { const char *_pick_env = getenv("UW_DEBUG_AUTO_PICK");
+      if (_pick_env) {
+        int _pick_n = atoi(_pick_env);
+        if (_pick_n >= 1 && _pick_n < DAT_00100794) _far_pick = _pick_n;
+      }
+    }
+    for (_far_i = 1; _far_i < DAT_00100794; _far_i = (_far_i + 1) * 0x10000 >> 0x10) {
+      char *_far_txt = *(char **)(&DAT_00100680 + _far_i * 8);
+      if (_far_txt && (strcasestr(_far_txt, "farewell") || strcasestr(_far_txt, "bye") || strcasestr(_far_txt, "goodbye"))) {
+        _far_pick = _far_i;
+        break;
+      }
+    }
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] UW_DEBUG_AUTO_FAREWELL: auto-selecting item %d (\"%s\")\n", _far_pick, *(char **)(&DAT_00100680 + _far_pick * 8));
+    FUN_000295b4((short)_far_pick);
+    return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
   }
   FUN_0007f0e0();
   DAT_0010078c = 1;
@@ -25430,7 +25688,7 @@ void npc_combat_disengage_tick()
         uw_ord2005_rem_81 = ((int)(((*(ushort *)((char *)g_player_object + 2) >> 7 & 7) - (uVar7 & 0xff)) + 8)) % (8);
         if (('\x02' < uw_ord2005_rem_81) && (uw_ord2005_rem_81 < '\x06')) {
           DAT_0023bf0c = 0;
-          FUN_000577f0();
+          reset_cursor_confine_rect();
           FUN_00028488(DAT_0010190c);
         }
       }
@@ -26952,7 +27210,18 @@ LAB_00034bf0:
 
 void FUN_00034c10(param_1,param_2)
 ushort * param_1;
-int param_2;
+char *param_2; // was `int` -- truncated FUN_0003513c's real stack-buffer
+                // pointer (acStack_58, a char[64] scratch record) on this
+                // 64-bit host. Confirmed live via lldb (bug surfaced after
+                // merging origin/main into this branch): param_2 arrived as
+                // a small, wild 32-bit value (the low half of the real
+                // stack address), and `pcVar3 = (char*)(param_2 + offset);
+                // cVar7 = *pcVar3 - 1;` dereferenced it, segfaulting.
+                // Pre-existing bug (present on both branches individually,
+                // stack-layout dependent -- whether the truncated address
+                // happens to still land in mapped memory), just not
+                // triggered until this merge's combined code size shifted
+                // the real stack layout enough to make it fatal.
 
 {
   int uw_ord2005_rem_100 = 0;
@@ -28557,7 +28826,7 @@ uint param_1;
   }
   FUN_00049924(uVar2);
 LAB_00037d3c:
-  FUN_000570b4();
+  cursor_show_idle_tick();
   g_text_use_palette_color = 0;
   return;
 }
@@ -30742,7 +31011,7 @@ void FUN_0003b820()
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_62c,s__DATA_COPYRIGHT_BYT_0008576c);
   FUN_0006c98c(2,acStack_62c,1);
-  sVar2 = FUN_00056f28();
+  sVar2 = init_cursor_subsystem();
   if (sVar2 < 0) {
     FUN_0003c3c8(2);
   }
@@ -30909,7 +31178,7 @@ undefined4 param_1;
   }
   DAT_00201b64 = 0;
 LAB_0003bcb0:
-  FUN_000577f0();
+  reset_cursor_confine_rect();
   return;
 }
 
@@ -31003,7 +31272,7 @@ void enter_dungeon_view()
   refresh_player_equipment_effects();
   full_dungeon_redraw();
   weapon_overlay_and_full_redraw();
-  FUN_000570b4();
+  cursor_show_idle_tick();
   fade_in(0,0,g_uw_framebuffer,200,0x140,0,0,auStack_314,2,0);
   return;
 }
@@ -31060,7 +31329,7 @@ short param_1;
   undefined1 auStack_31c [768];
 
   DAT_0023bf0c = 0;
-  FUN_000577f0();
+  reset_cursor_confine_rect();
   if (param_1 == 1) {
     set_hud_status_value(2,0);
     FUN_0006cb74();
@@ -33469,6 +33738,8 @@ LAB_0003f91c:
 void inventory_panel_click_region()
 
 {
+  if (getenv("UW_DEBUG_INV")) fprintf(stderr, "[inv] inventory_panel_click_region ENTRY g_active_hud_panel=%d mouse=(%d,%d)\n",
+      (int)g_active_hud_panel, (int)g_mouse_x, (int)g_mouse_y);
   if (g_active_hud_panel == '\0') {
     handle_inventory_panel_normal_click();
   }
@@ -33513,7 +33784,7 @@ int param_1;
             param_1, iVar1, (param_1 + -1) * -2 + 0x200b, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((param_1 + -1) * -2 + 0x200b,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -33546,7 +33817,7 @@ int param_1;
             param_1, iVar1, (0x1005 - (param_1 + -1)) * 2, (int)sVar2, (int)sVar3);
   draw_sprite_by_id((0x1005 - (param_1 + -1)) * 2,(int)sVar2,(int)sVar3,1,1);
   g_blit_transparent_mode = 0;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -34864,7 +35135,7 @@ void FUN_00040df0()
   set_viewport_clip_rect(0,0,0x13f,199);
   set_draw_color(0);
   FUN_00011b34();
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -35014,7 +35285,7 @@ void FUN_000411b8()
   thunk_FUN_0003c310(0xf1);
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -35037,7 +35308,7 @@ void FUN_000411cc()
   }
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -35051,7 +35322,7 @@ void FUN_000411e0()
   g_weapon_overlay_enabled = 0;
   weapon_overlay_and_full_redraw();
   g_weapon_overlay_enabled = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -36420,7 +36691,7 @@ void close_backpack_container()
       FUN_00076e98(DAT_002028ec);
       FUN_00048110();
     }
-    FUN_000570b4();
+    cursor_show_idle_tick();
     DAT_002029a0 = 0;
     DAT_0020299c = 0;
     /* Missing piece, matching open_backpack_container's own fix: nothing here
@@ -36590,7 +36861,7 @@ void refresh_container_view()
   DAT_0020299c = (uint)((DAT_00202986 & 0xffc0) != 0);
   redraw_inventory_widget(0x15);
   redraw_inventory_widget(0x16);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -36808,7 +37079,7 @@ short param_1;
                        (int)(short)(&g_inv_hotspot_draw_x)[20 * 7],(int)(short)(&g_inv_hotspot_draw_y)[20 * 7],
                        (&g_inv_hotspot_dirty_w)[20 * 0xe],(&g_inv_hotspot_dirty_h)[20 * 0xe]);
         }
-        FUN_000570b4();
+        cursor_show_idle_tick();
         /* Was a hardcoded original-binary literal address (0x85c30) --
            same bug class as this function's own 0x202870 fix just
            above -- but unlike that one, nothing anywhere else in this
@@ -37220,7 +37491,23 @@ LAB_0004386c:
       local_28 = 0;
     }
     if ((*puVar4 & 0x1ff) == 0x8f) {
-      iVar10 = FUN_0004479c();
+      /* Real ARM binary calls FUN_0004479c() with 0 args here too
+         (confirmed via Ghidra decompile of the real auto_place_in_container
+         at 0x43734) -- same "leftover register" reliance already found
+         3 times this session (blit_sprite_row_remapped,
+         draw_hotspot_crosshair_marker's caller in FUN_0001bb04,
+         collision_build_height_field's neighbor lookups). FUN_0004479c's
+         param_1 is the object being checked against the rune item-id
+         range (0xe8-0x100) -- exactly this function's own param_1,
+         untouched since entry (last read a few lines up in
+         check_object_fits_in_slot's call), so that's what's actually
+         sitting in the register at this point. Passed explicitly since a
+         C recompile has no equivalent "whatever's left in the register"
+         state: the previously-uninitialized read made FUN_0004479c
+         almost always reject a genuine rune, always printing "You can
+         only put runes in the runes bag" even when dragging a real rune
+         into the rune bag. */
+      iVar10 = FUN_0004479c(param_1);
       if (iVar10 == 0) {
         FUN_00078c80(0xf7);
         goto LAB_000438ac;
@@ -37510,6 +37797,34 @@ char * param_1;
   else {
     build_player_save_record(g_save_record_buffer);
     g_save_record_count = g_save_record_count + 1;
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real
+       binary's own write_player_save_record never serializes
+       DAT_0023bca8 (the player's stats/skills/quest-flags struct,
+       confirmed via Ghidra decompile of the real ARM functions at
+       0x43e20/0x43fd8/0x44538 -- none reference it) -- so quest flags,
+       skills, difficulty, and the live game clock never actually
+       survived a real save/load, even in the shipped Pocket PC game.
+       Confirmed via the real UW1 savegame format documentation
+       (uw-formats.txt section 9.2.1) that this struct's layout matches
+       player.dat's own documented fields byte-for-byte starting at
+       offset 0x1e (Strength) -- and this project's own live code
+       already reads/writes this exact struct via DAT_00086df8 at those
+       same documented offsets (e.g. 0xce = game_time, 0x65 = quest
+       flags 0-31), confirming it's genuinely the right data, just
+       never persisted. Appended after the existing (dynamically sized)
+       inventory section using THIS function's own post-increment
+       g_save_record_count (matching the exact count the file-length
+       calculation just below uses -- build_player_save_record's own
+       internal offset math runs before this +1, so the copy can't live
+       there without a mismatched offset) rather than interleaved into
+       the middle of the existing fixed-offset layout, so no existing
+       offset changes. 220 bytes matches the documented "first 220
+       bytes" of a real player.dat (the XOR-encrypted header, ending
+       just past the last documented field before the equipment-slot-
+       index table, which this project's own g_save_equip_table_ptr
+       logic already serializes separately -- not duplicated here). */
+    Ordinal_1044(g_save_record_buffer + 0x5b + g_save_record_count * 8,&DAT_0023bca8,220);
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] SAVE appending quest_bits=0x%x at buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
     if (param_1 != (char *)0x0) {
       iVar2 = -(int)param_1;
       do {
@@ -37523,7 +37838,7 @@ char * param_1;
       if (bVar3) {
         FUN_00065b90();
         FUN_00022884(iVar2,&g_save_record_count,2);
-        FUN_00022884(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b);
+        FUN_00022884(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
         Ordinal_553(iVar2);
       }
       if (g_save_record_buffer != 0) {
@@ -37818,6 +38133,20 @@ undefined1 * param_1;
       deserialize_inventory_link_chain(g_selected_object + 6,param_1 + 0x21);
     }
   }
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
+     write_player_save_record's own matching comment: restores
+     DAT_0023bca8 from the same trailing offset that function now
+     appends it at. g_save_record_count is already set here (the
+     caller reads it directly from the file's own 2-byte header
+     before calling this function), matching the exact post-increment
+     count the save side used, so this offset is consistent whether
+     restore_player_save_record's own caller went through a real file
+     read or is just re-applying the currently-held in-memory record
+     (build_player_save_record is only ever called from
+     write_player_save_record, which always fills this same trailing
+     block first -- never garbage). */
+  Ordinal_1044(&DAT_0023bca8,param_1 + 0x5b + g_save_record_count * 8,220);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[quest-persist] LOAD restored quest_bits=0x%x from buffer offset %d\n", *(unsigned int *)(DAT_00086df8 + 0x65), (int)(0x5b + g_save_record_count * 8));
   return;
 }
 
@@ -37865,7 +38194,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     }
     FUN_00065d4c();
     FUN_0002285c(iVar3,&g_save_record_count,2);
-    FUN_0002285c(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b);
+    FUN_0002285c(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
     Ordinal_553(iVar3);
     FUN_0004638c();
   }
@@ -37891,16 +38220,44 @@ short * param_1;
   uint uVar1;
   int iVar2;
   undefined4 uVar3;
-  
+  byte *pbVar4;   /* was folded into iVar2 (a 32-bit int) -- see below */
+
   iVar2 = (((int)*param_1 & 0x1ffU) - 0xe8) * 0x10000;
   uVar1 = iVar2 >> 0x10;
   if (((int)uVar1 < 0) || (0x18 < (int)uVar1)) {
     uVar3 = 0;
   }
   else {
-    free_object_slot();
-    iVar2 = DAT_00086df8 + (iVar2 >> 0x13);
-    *(byte *)(iVar2 + 0x44) = (byte)(1 << (7 - (uVar1 & 7) & 0xff)) | *(byte *)(iVar2 + 0x44);
+    /* Was called with 0 args -- real ARM binary does the same bare call
+       (confirmed via Ghidra: FUN_00053004(), free_object_slot's real
+       address, at this exact spot) -- the same "leftover register"
+       reliance already found 4 times this session. param_1 (the rune
+       being placed) is read at this function's very entry (`*param_1`
+       just above) and never touched again before this call, so it's
+       what's actually still sitting in the register. free_object_slot's
+       own param_1 is dereferenced immediately (see its own body), so a
+       genuinely garbage argument crashes hard -- confirmed live: SIGSEGV
+       inside this function the moment a real rune (not the always-
+       rejected garbage from the OUTER dropped-argument bug fixed in the
+       previous commit) actually reached here. Runes get absorbed into
+       the bag's own internal bit-flags rather than remaining separate
+       inventory objects, so their own object slot needs freeing here --
+       matches this function's very next line setting a bit in
+       DAT_00086df8's rune-bag record. */
+    free_object_slot(param_1);
+    /* Was `iVar2 = DAT_00086df8 + (iVar2 >> 0x13); *(byte *)(iVar2 + 0x44) = ...`
+       -- DAT_00086df8 is a real 64-bit char* (the player stats/quest-flags
+       struct, DAT_0023bca8) on this host, but `iVar2` is a 32-bit int;
+       assigning the pointer sum into it silently truncated to the low 32
+       bits, then dereferenced that wrong, truncated address. Same
+       pointer-truncation bug class as dozens of other fixes across this
+       file. Confirmed live via a temporary diagnostic (UW_DEBUG_RUNEBAG):
+       DAT_00086df8 was a real, valid, in-bounds pointer with a value
+       above 0xffffffff, so truncating it landed on unmapped memory --
+       SIGSEGV placing a genuine rune into the rune bag, the exact
+       reported crash. Uses a real pointer-typed local instead. */
+    pbVar4 = (byte *)(DAT_00086df8 + (iVar2 >> 0x13));
+    pbVar4[0x44] = (byte)(1 << (7 - (uVar1 & 7) & 0xff)) | pbVar4[0x44];
     uVar3 = 1;
   }
   return uVar3;
@@ -37934,7 +38291,7 @@ uint param_1;
   iVar1 = ((int)(short)param_1 >> 2) * 0xf;
   iVar2 = (param_1 & 3) * 0x12;
   draw_sprite_by_id(param_1 + 0xe8,iVar2 + 0xf4,iVar1 + 0xd,iVar2 + 0x101,(short)iVar1 + 4);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -37955,7 +38312,7 @@ void FUN_000448a8()
     }
     uVar1 = (int)((uVar1 + 1) * 0x10000) >> 0x10;
   } while ((int)uVar1 < 0x18);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -37987,9 +38344,24 @@ void FUN_0004497c()
   short sVar4;
   short sVar5;
   int iVar6;
-  ushort local_20 [3];
-  undefined2 local_1a;
-  
+  /* Was two separately-declared locals, `ushort local_20[3]` immediately
+     followed by `undefined2 local_1a` -- Ghidra's own offset naming
+     (-0x20, then -0x1a, exactly 6 bytes later) confirms the real ARM
+     stack frame packs them contiguously, and the real code below relies
+     on that: dispatch_object_action_dup reads its param_1[3] (the
+     synthetic "look" object's owner field) as the 4th ushort of what
+     it's handed, but only 3 are ever declared, and local_1a (explicitly
+     zeroed, the very next line) is what's meant to BE that 4th slot.
+     C gives no such adjacency guarantee on this host -- confirmed live:
+     local_20[3] read real stack garbage that happened to decode to a
+     "headless" creature's owner-name index, so right-clicking a rune in
+     this alphabet grid printed "belonging to a headless" instead of
+     just the rune's name. Backing array + #define, same pattern used
+     throughout this file for exactly this class of bug. */
+  undefined1 local_20_backing[8];
+#define local_20 ((ushort *)(local_20_backing + 0))
+#define local_1a (*(undefined2 *)(local_20_backing + 6))
+
   psVar3 = DAT_00085a6c;
   if (g_cursor_holding_state == 0) {
     if (DAT_00085a6c[1] < 0x12) {
@@ -38034,6 +38406,8 @@ void FUN_0004497c()
   }
   return;
 }
+#undef local_20
+#undef local_1a
 
 
 
@@ -39632,7 +40006,7 @@ void redraw_armor_overlay_widgets()
     if (iVar4 != 0) {
       select_active_font(s_font5x6p_sys_0008430c);
     }
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -39729,7 +40103,7 @@ int param_2;
        cause at every other `*g_selected_object & 0x1ff` site in this
        file (see their own copies of this comment). */
     FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     refresh_player_equipment_effects();
   }
   return;
@@ -40389,9 +40763,23 @@ short param_2;
   ushort *puVar7;
   undefined4 uVar8;
   undefined1 auStack_60 [12];
-  ushort auStack_54 [20];
+  /* Was `ushort auStack_54 [20]` (matching the real ARM binary's own
+     stack layout exactly, confirmed via Ghidra decompile of the real
+     FUN_00048198 at 0x48198) -- but FUN_00048110's real call site also
+     matches ours exactly: `redraw_inventory_widget_range(6,0x16)`, a
+     loop upper bound of 22, writing auStack_54[21] and auStack_54[22]
+     (index 20 is separately special-cased via local_2c, never touches
+     the array). The real binary's original stack layout happened to
+     place harmless padding/an unrelated local there, so the same
+     2-element overrun was silently benign in the shipped game; this
+     recompile's different stack layout makes it a real, ASan-confirmed
+     stack-buffer-overflow (WRITE of size 2, uw.c:40164) on literally the
+     first HUD redraw of any fresh game. Widened to fit the real max
+     index (22) actually used, rather than deviating from the real
+     call's range -- a defensive size fix, not a logic change. */
+  ushort auStack_54 [23];
   ushort local_2c;
-  
+
   bVar5 = false;
   FUN_00057118();
   iVar1 = (int)(short)param_1;
@@ -40484,7 +40872,7 @@ joined_r0x00048308:
         select_active_font(s_font5x6p_sys_0008430c);
       }
       FUN_00048514(0);
-      FUN_000570b4();
+      cursor_show_idle_tick();
       return;
     }
     if (iVar3 == 0x14) {
@@ -41774,7 +42162,7 @@ void dispatch_sticky_mode_handlers()
       bVar5 = DAT_0023bf0c == '\x01';
       DAT_0023bf0c = cVar2;
       if (bVar5) {
-        FUN_000577f0();
+        reset_cursor_confine_rect();
       }
     }
   }
@@ -41965,6 +42353,43 @@ int param_2;
        right after a real load, magic marker and all -- see gx_stub.h's
        comment. */
     uw_debug_dump_tmap(param_2, (unsigned char *)iVar3);
+    /* Diagnostic (UW_DEBUG_BAG_TRACE): scan for a type-0x8f (rune bag)
+       object's tile linkage IMMEDIATELY after the raw level block lands
+       in the arena, before any other code (chargen-completion, HUD init,
+       etc.) gets a chance to touch it -- to tell apart "the file's raw
+       bytes never link it" from "something clears/corrupts the link
+       shortly after load". */
+    if (getenv("UW_DEBUG_BAG_TRACE")) {
+      int _found = 0;
+      for (int _i = 0x100; _i < 0x100 + 1064; _i++) {
+        unsigned char *_rec = (unsigned char *)DAT_002046c4 + (_i - 0x100) * 8;
+        unsigned _type = (_rec[0] | (_rec[1] << 8)) & 0x1ff;
+        if (_type == 0x8f) {
+          fprintf(stderr, "[bag-trace] post-load large-table slot=%d addr=%p word0=0x%04x word1=0x%04x\n",
+                  _i, (void *)_rec, (unsigned)(_rec[0] | (_rec[1] << 8)), (unsigned)(_rec[2] | (_rec[3] << 8)));
+          _found++;
+          int _hits = 0;
+          for (int _row = 0; _row < 64; _row++) {
+            for (int _col = 0; _col < 64; _col++) {
+              void *_tile_rec = tilemap_lookup(_row, _col);
+              if (!_tile_rec) continue;
+              unsigned short *_link = (unsigned short *)((char *)_tile_rec + 2);
+              void *_obj;
+              int _guard = 0;
+              while ((_obj = resolve_object_link(_link)) != NULL && _guard++ < 64) {
+                if (_obj == (void *)_rec) {
+                  fprintf(stderr, "[bag-trace]   linked on tile (%d,%d)\n", _row, _col);
+                  _hits++;
+                }
+                _link = (unsigned short *)_obj + 2;
+              }
+            }
+          }
+          fprintf(stderr, "[bag-trace]   tile-chain hits=%d\n", _hits);
+        }
+      }
+      if (!_found) fprintf(stderr, "[bag-trace] post-load: no type-0x8f object found at all\n");
+    }
   }
   else {
     FUN_0003c3c8(3);
@@ -46428,6 +46853,32 @@ static const signed char DAT_00086878_arr[256] = {
 };
 #define DAT_00086878_IDX(b) DAT_00086878_arr[(unsigned char)(b)]
 
+/* collision_build_height_field looks at a NEIGHBOR tile's shade value by
+   offsetting its own current tile pointer (into the tilemap, the first
+   0x4000 bytes of the level arena -- see uw-formats.txt) by a signed
+   per-direction step from DAT_00086878_arr. Near the map edge, that
+   neighbor can legitimately fall outside the tilemap entirely -- this
+   function already guards the analogous case for the CURRENT tile
+   (`if (_DAT_00202c34 == NULL) return;`, a few lines up) via
+   tilemap_lookup's own bounds check, but had no equivalent guard for
+   these neighbor derefs. Confirmed live via ASan: a heap-buffer-overflow
+   read 260 bytes before the arena's own start (ushort index -130, i.e.
+   DAT_00086878_arr[0]'s -0x41 real, recovered offset) on ordinary
+   forward movement near a map edge -- not a data-recovery gap in the
+   table (that index's value IS real, recovered data), just a genuinely
+   off-map neighbor with nothing stopping the read. Same "no object"-
+   style defensive treatment as resolve_object_link's own out-of-range
+   guard: skip the neighbor (leave its shade unresolved) instead of
+   reading unmapped/unrelated memory. */
+static ushort collision_neighbor_shade_or_zero(ushort *base, byte idx) {
+  ptrdiff_t off = (ptrdiff_t)DAT_00086878_IDX(idx) * 2;
+  ushort *p = base + off;
+  if ((char *)p < DAT_002029cc || (char *)(p + 1) > DAT_002029cc + 0x4000) {
+    return 0;
+  }
+  return *p;
+}
+
 // was FUN_00050d78 -- build the per-corner tile height field the sweep collides against
 void collision_build_height_field(param_1)
 uint param_1;
@@ -46523,25 +46974,25 @@ uint param_1;
     DAT_00202c07 = bVar14;
     DAT_00202c09 = DAT_00202c04;
     if (*(short *)(&DAT_00202c70 + (uint)bVar11 * 2) == 0x1111) {
-      uVar3 = _DAT_00202c34[DAT_00086878_IDX(bVar11) * 2];
+      uVar3 = collision_neighbor_shade_or_zero(_DAT_00202c34, bVar11);
       *(ushort *)(&DAT_00202c70 + (uint)bVar11 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar12 * 2) == 0x1111) {
-      uVar3 = puVar2[DAT_00086878_IDX(bVar12) * 2];
+      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar12);
       *(ushort *)(&DAT_00202c70 + (uint)bVar12 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar13 * 2) == 0x1111) {
-      uVar3 = puVar2[DAT_00086878_IDX(bVar13) * 2];
+      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar13);
       *(ushort *)(&DAT_00202c70 + (uint)bVar13 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
     }
     if (*(short *)(&DAT_00202c70 + (uint)bVar14 * 2) == 0x1111) {
-      uVar3 = puVar2[DAT_00086878_IDX(bVar14) * 2];
+      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar14);
       *(ushort *)(&DAT_00202c70 + (uint)bVar14 * 2) =
            (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
       ;
@@ -49929,7 +50380,7 @@ short param_1;
   if (param_1 != 0) {
     FUN_00057118();
     FUN_00056cc8(6);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     wait_for_click_release(0);
   }
   DAT_002046f8 = 0;
@@ -50066,7 +50517,7 @@ void close_ui_panel_return_to_game()
     mode_icon_highlight_on((int)g_cursor_mode);
   }
   DAT_002046f8 = 1;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -50392,7 +50843,7 @@ short param_1;
       return;
     }
     FUN_000566dc(4,0x39);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     FUN_0003bc08(0);
     FUN_00057118();
   }
@@ -50428,7 +50879,7 @@ undefined4 param_1;
   if ((uint)DAT_000868dc < 8 && PTR_FUN_00086900_table[DAT_000868dc] != 0) {
     PTR_FUN_00086900_table[DAT_000868dc](param_1);
   }
-  FUN_000570b4();
+  cursor_show_idle_tick();
   wait_for_click_release(0);
   return;
 }
@@ -50509,7 +50960,7 @@ LAB_00056ddc:
         }
         FUN_00057118();
         FUN_000566dc(iVar3 + sVar1,(int)g_menu_nav_highlight_table[(unsigned)DAT_000868dc & 7][iVar2]);
-        FUN_000570b4();
+        cursor_show_idle_tick();
         return;
       }
       if (param_1 == 1) {
@@ -50566,7 +51017,7 @@ void FUN_00056ebc()
 
 
 
-undefined4 FUN_00056f28()
+undefined4 init_cursor_subsystem()
 
 {
   undefined4 uVar1;
@@ -50615,13 +51066,13 @@ int FUN_00056fe8()
                  ((int)DAT_00204784 - (int)DAT_0020471c) + (int)g_mouse_x + 1,
                  ((int)DAT_002047a4 - (int)DAT_00204748) + (int)g_mouse_y + 1);
     /* REVERTED (was: force g_force_flush around this call, matching
-       FUN_0005857c's own sibling wrapping) -- caused a visible flicker
+       draw_idle_mouse_cursor's own sibling wrapping) -- caused a visible flicker
        regression: rect_fill_or_save_restore's own dirty_rect_union call
        already records this erase's rect unconditionally, BEFORE any
        gating, and the dirty rect only resets once per FRAME (not once
        per hide/show pair, see flush_dirty_rect_to_display's own
        comment) -- so the immediately-following paired show call
-       (FUN_0005857c, called right after this from the same
+       (draw_idle_mouse_cursor, called right after this from the same
        hide-move-show cycle) already sweeps up this erase's rect into
        its own forced flush. Forcing a flush HERE TOO just adds a
        second, premature flush per cycle, visibly showing the
@@ -50638,7 +51089,7 @@ int FUN_00056fe8()
        function's own entry) to a real, reproducible sequence: during
        an idle gap, an erase call here successfully clears
        DAT_00204844 to 0 (correct so far), but the PAIRED redraw
-       (update_mouse_state's own `if (0 < DAT_00204840) FUN_0005857c();`
+       (update_mouse_state's own `if (0 < DAT_00204840) draw_idle_mouse_cursor();`
        right after its own call to this function) does not fire,
        because DAT_00204840 (the show/hide nesting depth counter) is
        <=0 at that exact moment -- so nothing gets marked to redraw,
@@ -50648,7 +51099,7 @@ int FUN_00056fe8()
        counter is <=0 at that specific point (some other hide() with
        no matching show() yet pending?) is unknown, and a wrong guess
        here risks a second regression the same way the force-flush
-       attempt above did. Ruled OUT as an explanation: FUN_00077dd0's
+       attempt above did. Ruled OUT as an explanation: handle_mouse_message's
        WM_LBUTTONUP handler unconditionally zeroing DAT_00204844 (see
        its own comment) -- adding an erase-before-clear there made no
        observable difference in the same trace, and this project's own
@@ -50664,15 +51115,47 @@ int FUN_00056fe8()
 
 
 
-undefined4 FUN_000570b4()
+/* Gates the 4 "always show the desktop mouse cursor" deviations below
+   (all originally gated shut on a real Pocket PC touchscreen, where a
+   persistent cursor sprite makes no sense). Defaults OFF: drawing the
+   cursor every idle frame forces a display flush every frame too (see
+   draw_idle_mouse_cursor's own LAB_00058674 tail), which measurably slowed the
+   game down when this was unconditionally on. Opt in with
+   UW_ALWAYS_SHOW_CURSOR=1 until that flush cost is addressed. */
+static int uw_always_show_cursor(void)
+{
+  static int cached = -1;
+  if (cached < 0) {
+    cached = getenv("UW_ALWAYS_SHOW_CURSOR") != NULL;
+  }
+  return cached;
+}
+
+
+
+undefined4 cursor_show_idle_tick()
 
 {
   int iVar1;
   
   iVar1 = (int)DAT_00204840;
   DAT_00204840 = (short)(iVar1 + 1);
-  if (((iVar1 + 1) * 0x10000 >> 0x10 == 1) && (DAT_00204788 != 0x106c)) {
-    FUN_0005857c();
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, same as
+     draw_idle_mouse_cursor's own deviation comment): 0x106c is the real,
+     validly-loadable "default/no specific hotspot" cursor sprite (see
+     FUN_00057dc0), and the real binary deliberately suppresses drawing
+     THIS SPECIFIC sprite -- i.e. no persistent cursor over the plain
+     3D viewport/background, only over registered UI hotspots that set
+     their own distinct icon -- a touchscreen-native choice (no need to
+     draw your own finger/stylus a cursor). Skips the exclusion so the
+     desktop mouse cursor stays visible everywhere, including over the
+     main view, only when UW_ALWAYS_SHOW_CURSOR=1 (see
+     uw_always_show_cursor's own comment -- off by default, this forces
+     a display flush every idle frame). */
+  if ((iVar1 + 1) * 0x10000 >> 0x10 == 1) {
+    if ((DAT_00204788 != 0x106c) || uw_always_show_cursor()) {
+      draw_idle_mouse_cursor();
+    }
   }
   if (1 < DAT_00204840) {
     DAT_00204840 = DAT_00204840 + -1;
@@ -50767,7 +51250,7 @@ void FUN_0005721c()
         }
       }
       if ((DAT_00204840 == 1) && (g_selected_object == 0)) {
-        FUN_0005857c();
+        draw_idle_mouse_cursor();
         return;
       }
       if (DAT_00204840 < 2) {
@@ -50803,7 +51286,7 @@ void FUN_00057460()
     iVar3 = (int)DAT_000842a4;
     iVar4 = (int)DAT_000842a8;
     set_viewport_clip_rect(0,0,0x13f,199);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     set_viewport_clip_rect(iVar1,iVar2,iVar3,iVar4);
   }
   return;
@@ -50872,7 +51355,7 @@ undefined2 param_2;
   FUN_00057e54();
   g_mouse_x = param_1;
   g_mouse_y = param_2;
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -50967,13 +51450,17 @@ int param_1;
 
 
 
-void FUN_00057788(param_1,param_2,param_3,param_4)
+void set_cursor_confine_rect(param_1,param_2,param_3,param_4)
 short param_1;
 short param_2;
 short param_3;
 short param_4;
 
 {
+  if (getenv("UW_DEBUG_CURSORSHOW")) {
+    fprintf(stderr, "[cursorbounds] set_cursor_confine_rect(%d,%d,%d,%d)\n",
+            (int)param_1, (int)param_2, (int)param_3, (int)param_4);
+  }
   DAT_00204838 = DAT_0020471c + param_1 + 1;
   DAT_0020470c = DAT_00204838;
   DAT_0020483c = DAT_00204748 + param_4 + 1;
@@ -50987,7 +51474,7 @@ short param_4;
 
 
 
-void FUN_000577f0()
+void reset_cursor_confine_rect()
 
 {
   DAT_0020483c = 0;
@@ -51003,6 +51490,11 @@ void FUN_000577f0()
     DAT_002047dc = 0xdf - DAT_0020471c;
     DAT_0020483c = DAT_00204748 + 0x12;
     DAT_002047d8 = 0x87 - DAT_00204748;
+  }
+  if (getenv("UW_DEBUG_CURSORSHOW")) {
+    fprintf(stderr, "[cursorbounds] reset_cursor_confine_rect() DAT_00201b60=0x%x narrowed=%d rect=(%d,%d)-(%d,%d)\n",
+            (int)(ushort)DAT_00201b60, (((ushort)DAT_00201b60 & 0xc9) != 0),
+            (int)DAT_00204838, (int)DAT_0020483c, (int)DAT_002047dc, (int)DAT_002047d8);
   }
   return;
 }
@@ -51118,6 +51610,7 @@ int param_1;
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] poll_input_event(peek=%d): new_os_event(iVar1)=%d DAT_0023c448(before)=0x%x\n",
             param_1, iVar1, (unsigned)DAT_0023c448);
+  if (getenv("UW_DEBUG_INPUTEVENT2")) fprintf(stderr, "[inputevent2] poll_input_event(%d): Ordinal_864=%d DAT_00201b60=%d DAT_002506ab=%d\n", param_1, iVar1, (int)(short)DAT_00201b60, (int)DAT_002506ab);
   if (iVar1 == 0) {
     uVar2 = 0xffffffff;
   }
@@ -51269,7 +51762,7 @@ undefined4 param_1;
     DAT_00204858 = DAT_00204858 + '\x01';
     (&DAT_00204714)[iVar1] = DAT_00204704;
     FUN_00057dc0(param_1);
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -51294,7 +51787,7 @@ ushort param_1;
   FUN_00057dc0((int)(short)(&DAT_00204714)[DAT_00204858]);
   FUN_00057e54();
   if ((param_1 & 2) != 0) {
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -51540,8 +52033,13 @@ void update_mouse_state()
       DAT_00086974 = -1;
     }
     FUN_00057e54();
-    if ((DAT_00204788 != 0x106c) && (0 < DAT_00204840)) {
-      FUN_0005857c();
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
+       cursor_show_idle_tick's own matching comment just above: skips the
+       `DAT_00204788 != 0x106c` exclusion so the desktop cursor stays
+       visible over the plain 3D viewport too, not just registered UI
+       hotspots, only when UW_ALWAYS_SHOW_CURSOR=1. */
+    if ((0 < DAT_00204840) && ((DAT_00204788 != 0x106c) || uw_always_show_cursor())) {
+      draw_idle_mouse_cursor();
     }
     if (DAT_0020485c != 0) {
       set_viewport_clip_rect((int)local_28,(int)sVar1,(int)sVar2,(int)sVar3);
@@ -51591,7 +52089,7 @@ void FUN_000584c0()
 
 
 
-void FUN_0005857c()
+void draw_idle_mouse_cursor()
 
 {
   int _dbg_show = getenv("UW_DEBUG_CURSORSHOW") != NULL;
@@ -51601,7 +52099,25 @@ void FUN_0005857c()
             (int)DAT_00204844, (int)DAT_00204840, (int)g_mouse_x, (int)g_mouse_y);
   }
   if (g_selected_object == 0) {
-    if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0)) {
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested): the real
+       Pocket PC binary only shows this idle cursor sprite while
+       DAT_0023c63c (the left-button-currently-held flag, see
+       handle_mouse_message's own comment) is set, or DAT_000bbef4 overrides it
+       (draw_automap_screen/the note editor force it to 1) -- a
+       stylus/touchscreen design where there's no persistent hover
+       cursor, only a transient indicator while actively touching the
+       screen. On a real mouse-driven desktop port the cursor should
+       always be visible while hovering, not just while a button is
+       held, so this gate is skipped when UW_ALWAYS_SHOW_CURSOR=1 rather
+       than ported as-is (off by default -- see uw_always_show_cursor's
+       own comment on the frame-rate cost of drawing every idle frame).
+       Confirmed via live tracing (UW_DEBUG_CURSORSHOW) that this WAS
+       the reason plain mouse movement showed no cursor at all outside
+       automap (where DAT_000bbef4 happened to already force it) --
+       this is the second, deliberate half of that same investigation;
+       DAT_000868dc's own missing initializer (see its own fix comment
+       just below) was the other, genuine bug half. */
+    if ((DAT_0023c63c == 0) && (DAT_000bbef4 == 0) && !uw_always_show_cursor()) {
       if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (no button/mode)\n");
       return;
     }
@@ -51617,7 +52133,31 @@ void FUN_0005857c()
       if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (bit2+button)\n");
       return;
     }
-    if (((ushort)DAT_00201b60 & 0xc9) != 0) {
+    /* DEVIATION FROM AUTHENTIC BEHAVIOR (4th of this round, see the matching
+       comments above and in cursor_show_idle_tick/update_mouse_state's own tail):
+       the original confines the drawn cursor to a specific UI-mode rectangle
+       (DAT_00204838/DAT_0020483c/DAT_002047dc/DAT_002047d8, only enforced
+       when DAT_00201b60's bits 0,3,6,7 are set) rather than the full screen
+       -- built for a specific Pocket PC touchscreen panel's own valid-tap
+       area, not a general on-screen-bounds safety check: g_mouse_x/g_mouse_y
+       are already separately clamped to the real screen bounds elsewhere in
+       update_mouse_state (DAT_0020470c/DAT_00204830 and DAT_00204710/
+       DAT_00204834), so skipping this narrower confinement cannot draw the
+       cursor off-screen. Confirmed via live tracing (UW_DEBUG_CURSORSHOW)
+       that this rectangle also drifts from what reset_cursor_confine_rect last set it to
+       (e.g. (52,18)-(224,135) right after chargen, silently becoming
+       (52,18)-(109,109) by the first real mouse move with no traced call to
+       either bound-setter in between) -- a pre-existing, unrelated wild-write
+       bug elsewhere (init_cursor_subsystem's own `(&DAT_002047b0)[iVar2] = 10000` loop
+       treats a lone scalar as a 20-entry array, the same "lone scalar treated
+       as a real array" bug class fixed repeatedly elsewhere in this project)
+       corrupts this rectangle in a way that made the cursor disappear
+       entirely during plain dungeon-view mouse movement on a real desktop
+       mouse. Skipped only when UW_ALWAYS_SHOW_CURSOR=1, since a
+       Pocket-PC-panel-specific tap-area clamp isn't meaningful on a desktop
+       port anyway; left enforced by default rather than chasing the
+       separate corruption bug. */
+    if ((((ushort)DAT_00201b60 & 0xc9) != 0) && !uw_always_show_cursor()) {
       if (g_mouse_x < DAT_00204838) {
         if (_dbg_show) fprintf(stderr, "[cursorshow] early-return (out of bounds x<)\n");
         return;
@@ -61016,7 +61556,7 @@ void FUN_00068260()
   if (DAT_002020d8 == 0) {
     move_command_dispatch(0xffffffff);
     if (DAT_0023bf0c == '\0') {
-      FUN_00057788((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
+      set_cursor_confine_rect((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
                    ((int)DAT_0023be80 - (int)DAT_0023be88) + 1);
     }
     DAT_0023bf0c = '\x02';
@@ -62140,7 +62680,7 @@ void FUN_00069e30()
     FUN_00078118();
     FUN_000781a0();
     select_active_font(s_font5x6p_sys_0008430c);
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -62451,7 +62991,7 @@ short param_4;
     }
     g_text_use_palette_color = _saved_af74;
   }
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -62783,7 +63323,7 @@ undefined4 journey_onward_load_slot_menu()
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
   FUN_0006c98c(0xffffffff,acStack_1c0,1);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   probe_save_slots(acStack_b8,local_1d8);
   iVar4 = 0;
   uVar10 = (uint)local_1d8[0];
@@ -63278,7 +63818,13 @@ undefined4 param_1;
 
 
 
-undefined4 FUN_0006bcd4(param_1)
+// was FUN_0006bcd4 -- flushes the player's carried-inventory chain (freeing
+// the live objects, since write_player_save_record just above already
+// serialized them into the save buffer), then writes the current level's
+// live tilemap+object arena to its on-disk archive. Called both from the
+// explicit "Save Game" menu path (save_game_to_slot) and from level
+// transitions (so the level being left behind remembers its current state).
+undefined4 commit_level_to_save_slot(param_1)
 undefined4 param_1;
 
 {
@@ -63288,7 +63834,25 @@ undefined4 param_1;
   undefined1 auStack_20 [16];
   
   write_player_save_record(0);
-  FUN_000444b0((char *)g_player_object + 3);
+  /* Was `+ 3` -- confirmed wrong via Ghidra decompile of the real ARM
+     binary (0x6bcd4): it passes `+ 6`. FUN_000444b0 treats its argument
+     as a pointer to a 2-byte object link field (it immediately calls
+     resolve_object_link on it) -- offset 6 is the player object's real
+     "contents" field (sp_link, matching FUN_000444b0's own recursive
+     calls at +4/+6 a few lines into that function), the head of the
+     player's carried-inventory chain, which this function walks and
+     frees before the save write below (the inventory itself gets
+     separately serialized into the save buffer by
+     write_player_save_record just above). Offset 3 is a byte-misaligned
+     read straddling two unrelated 2-byte fields (the tail of the
+     player's position word and the head of their own "quality/chain"
+     word) -- a garbage value derived from the player's actual position,
+     resolved and then unlinked-and-freed via this same recursive walk.
+     Matches a live report of "saving a game makes items near the
+     player disappear": whatever real object that garbage link
+     happened to resolve to (plausibly something tile-adjacent, given
+     it's derived from position bytes) got deleted on every save. */
+  FUN_000444b0((char *)g_player_object + 6);
   if (-1 < DAT_00202080) {
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
@@ -63747,7 +64311,7 @@ char *param_2;
         iVar4 = write_player_save_record(local_638);
         if (iVar4 != 0) {
           FUN_00078c80(0xaa);
-          iVar4 = FUN_0006bcd4((int)DAT_00201b68);
+          iVar4 = commit_level_to_save_slot((int)DAT_00201b68);
           if (iVar4 != 0) {
             FUN_00078c80(0xaa);
             uVar5 = FUN_0002295c(local_530);
@@ -63941,7 +64505,7 @@ undefined4 param_2;
     FUN_00057cac(3);
   }
   FUN_0006c834(param_1,1);
-  iVar2 = FUN_0006bcd4(param_1);
+  iVar2 = commit_level_to_save_slot(param_1);
   iVar3 = 0;
   if (iVar2 != 0) {
     sVar1 = load_level(param_2);
@@ -65558,7 +66122,7 @@ undefined2 param_5;
        above. */
     uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
     bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   DAT_0023c134 = (short)param_1;
   return;
@@ -65581,7 +66145,7 @@ void redraw_active_hud_panel()
     (*(code *)(&g_hud_panel_handlers)[g_active_hud_panel])();
     set_draw_color(0x1a);
     flush_dirty_rect_to_display(1);
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -65889,7 +66453,7 @@ bool FUN_0006edfc()
     }
     draw_sprite_by_id(DAT_0023c208 + 0x20b8,0x110,4,1,1);
     draw_sprite_by_id(DAT_0023c208 + 0x20b0,0x110,0x7a,1,1);
-    FUN_000570b4();
+    cursor_show_idle_tick();
     goto LAB_0006f6c8;
   }
   if (DAT_0023c208 == '\x02') {
@@ -65902,7 +66466,7 @@ bool FUN_0006edfc()
     draw_sprite_by_id(0x20b4,0x110,0x7a,1,1);
     bitmap_blit_to_framebuffer(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
 LAB_0006f008:
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   else {
     if (DAT_0023c208 == '\x05') {
@@ -66447,6 +67011,7 @@ void load_light_tables()
   char acStack_11c [260];
   
   DAT_0024fa2c = Ordinal_1041(0x1000);
+  if (getenv("UW_DEBUG_BAG_TRACE")) fprintf(stderr, "[bag-trace] DAT_0024fa2c allocated at %p\n", (void *)DAT_0024fa2c);
   if (DAT_0024fa2c == 0) {
     FUN_0003c4a8(s_cLightTabs_allocation_error_____000872e8);
   }
@@ -70528,7 +71093,7 @@ void FUN_00076508()
         puVar6 = puVar6 + 0x20;
       } while (puVar6 < DAT_0023c414);
     }
-    FUN_000570b4();
+    cursor_show_idle_tick();
     DAT_0023c41c = 0;
   }
   return;
@@ -71370,7 +71935,7 @@ LAB_00077d70:
    path real keyboard input already uses. Taps outside that strip instead
    set DAT_00204844, a general click-pending flag consumed elsewhere
    (main game world / inventory click handling, not chargen). */
-undefined4 FUN_00077dd0(param_1,param_2,param_3,param_4)
+undefined4 handle_mouse_message(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
 undefined4 param_3;
@@ -71386,9 +71951,31 @@ int param_4;
   x = (short)param_4;
   *DAT_000876c0 = x;
 
-  if (param_2 == 0x201) {
-    // HACK: DAT_000876c4 has zero writers anywhere in the real binary (confirmed via Ghidra xrefs), so update_mouse_state() would never trust *DAT_000876bc/*DAT_000876c0 and g_mouse_x/g_mouse_y would never update from real clicks -- this input plumbing is genuinely dead in the shipped binary. Setting it here on every click is a deliberate deviation from original logic to keep click-driven cursor tracking working; not something the real binary ever did.
+  // HACK (extended): DAT_000876c4 has zero writers anywhere in the real
+  // binary (confirmed via Ghidra xrefs), so update_mouse_state() would
+  // never trust *DAT_000876bc/*DAT_000876c0 and g_mouse_x/g_mouse_y
+  // would never update from real mouse input at all -- this whole
+  // plumbing is genuinely dead in the shipped binary, which drove its
+  // own cursor entirely via the D-pad/joystick spring-back emulation
+  // (DAT_00086974) instead. Set only on WM_LBUTTONDOWN by default (a
+  // deliberate per-click deviation from an earlier session, kept
+  // below); per user request ("we should always display the cursor" on
+  // desktop, tracking real mouse movement, not just clicks -- see
+  // draw_idle_mouse_cursor's own matching deviation comment) extended to fire on
+  // every message this handler sees (WM_MOUSEMOVE included) so plain
+  // hover/movement -- not just a click -- makes the game trust and
+  // track the real cursor position from the very first frame, but only
+  // under UW_ALWAYS_SHOW_CURSOR=1: drawing the cursor every idle frame
+  // forces a display flush every frame too, which measurably slowed
+  // the game down when this was unconditional, so it's opt-in (see
+  // uw_always_show_cursor's own comment).
+  if (uw_always_show_cursor()) {
     *DAT_000876c4 = 1;
+  }
+  if (param_2 == 0x201) {
+    if (!uw_always_show_cursor()) {
+      *DAT_000876c4 = 1;
+    }
     if ((200 < x) && (x < 0xf0)) {
       id = FUN_00057a80(*DAT_000876bc,x);
       fprintf(stderr, "[mousehit] on-screen-keyboard tap: x=%d storedY=%d -> id=%d ('%c')\n", x, *DAT_000876bc, id, (id >= 0x20 && id < 0x7f) ? id : '?');
@@ -71666,7 +72253,7 @@ void draw_stats_panel_content()
     bVar1 = bVar1 + 1;
   } while (bVar1 < 6);
   select_active_font(s_font5x6p_sys_0008430c);
-  FUN_000570b4();
+  cursor_show_idle_tick();
   return;
 }
 
@@ -71715,7 +72302,7 @@ void FUN_00078434()
         uVar3 = (int)(short)local_c[0] + 1;
         local_c[0] = (ushort)uVar3;
       } while ((int)(uVar3 * 0x10000) >> 0x10 < 6);
-      FUN_000570b4();
+      cursor_show_idle_tick();
     }
   }
   select_active_font(s_font5x6p_sys_0008430c);
@@ -75225,7 +75812,7 @@ int param_1;
     *(byte *)(param_1 + 0xb) = (byte)uVar1 | 1;
     *(char *)(param_1 + 0xc) = (char)(uVar1 >> 8);
   }
-  FUN_000577f0();
+  reset_cursor_confine_rect();
   FUN_00028488(param_1);
   return 0;
 }
@@ -75652,8 +76239,20 @@ short param_3;
 
 {
   int iVar1;
-  
+
   iVar1 = (int)param_2;
+  /* No bounds check on (param_1, iVar1) against the real 320x240
+     framebuffer (GX_W/GX_H, gx_stub.c) before this raw write -- callers
+     that plot a small crosshair/cursor around a point (e.g. draw_hotspot_crosshair_marker,
+     +-1 in x or y around a stored coordinate) can walk one pixel outside
+     the screen near an edge with nothing stopping them. Confirmed live:
+     ASan-caught heap-buffer-overflow WRITE here reached via ordinary
+     Talk-mode interaction. Same defensive "skip instead of touching
+     memory outside the real buffer" posture as resolve_object_link's
+     own out-of-range guard elsewhere in this file. */
+  if ((param_1 < 0) || (0x140 <= param_1) || (iVar1 < 0) || (0xf0 <= iVar1)) {
+    return;
+  }
   *(undefined2 *)
    ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
        (&g_palette_rgb565)[param_3];
@@ -76145,7 +76744,7 @@ uint param_2;
   sVar1 = next_input_event();
   iVar3 = read_realtime_clock_units();
   if (DAT_00250708 != 0 && param_2 != 0) {
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   do {
     sVar2 = next_input_event();
@@ -76341,7 +76940,7 @@ char *param_1;
     FUN_0007f6fc(auStack_54,0);
     DAT_00250720 = read_realtime_clock_units();
     if (DAT_00250708 != 0) {
-      FUN_000570b4();
+      cursor_show_idle_tick();
     }
     iVar2 = (int)*(short *)(DAT_00250704 + 0x14);
   }
@@ -76763,7 +77362,7 @@ int param_1;
     iVar2 = DAT_00250708;
   }
   if (param_1 != 0 && iVar2 != 0) {
-    FUN_000570b4();
+    cursor_show_idle_tick();
   }
   return;
 }
@@ -76909,7 +77508,7 @@ short param_5;
           draw_text_string(acStack_a1 + 1,(int)DAT_0025070c,(int)*(short *)(DAT_00250704 + 10));
         }
       }
-      FUN_000570b4();
+      cursor_show_idle_tick();
       if ((short)uVar8 == 0x1b) {
         param_3 = param_3 - (int)param_2;
         do {
@@ -77133,7 +77732,7 @@ int * param_3;
     uVar3 = next_input_event();
     sVar1 = (short)uVar3;
     if ((((sVar1 == 0xd) || (sVar1 == 0x1b)) || (sVar1 == 1)) || ((sVar1 == 2 || (sVar1 == 3)))) {
-      FUN_000570b4();
+      cursor_show_idle_tick();
       if (sVar1 == 0x1b) {
         FUN_0007fee8(0);
         *param_3 = 0;

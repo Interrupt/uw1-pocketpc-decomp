@@ -126,7 +126,7 @@ static unsigned short g_framebuffer[HW_W * HW_H]; /* RGB565, portrait "hardware"
 static unsigned short g_display_buf[GX_W * GX_H]; /* RGB565, rotated landscape buffer for display */
 static int g_running = 1;
 /* Mouse events (unlike keyboard ones) get handled synchronously and
- * completely inline in uw_pump_events -- FUN_00077dd0 processes and
+ * completely inline in uw_pump_events -- handle_mouse_message processes and
  * finishes with each one before uw_pump_events even returns, so there's
  * no lingering "pending" state the way DAT_0023c448 stays set for
  * keyboard input. Real WinCE PeekMessage would report ANY pending
@@ -428,7 +428,7 @@ void uw_pump_events(void) {
         g_mouseup_deferred = 0;
         g_mouse_button_held = 0;
         g_mouse_event_pending = 1;
-        FUN_00077dd0(0, 0x202u, 0, g_mouseup_deferred_lparam);
+        handle_mouse_message(0, 0x202u, 0, g_mouseup_deferred_lparam);
         return;
     }
 
@@ -591,7 +591,7 @@ void uw_pump_events(void) {
                 /* The real device's stylus reports taps in the portrait
                  * "hardware" framebuffer's own 240x320 coordinate space
                  * (see the HW_W/HW_H comment up top), packed as a real
-                 * Windows lParam (y<<16)|x -- FUN_00077dd0 (recovered from
+                 * Windows lParam (y<<16)|x -- handle_mouse_message (recovered from
                  * the original binary's mouse message-dispatch table,
                  * separate from handle_keyboard_message's keyboard-only table) does
                  * its own portrait Y flip internally, so just convert SDL's
@@ -678,7 +678,7 @@ void uw_pump_events(void) {
 
                        But keep g_mouse_button_held set for the whole hold
                        so the tail of uw_pump_events re-arms
-                       g_mouse_event_pending every pump: FUN_00077dd0's
+                       g_mouse_event_pending every pump: handle_mouse_message's
                        WM_RBUTTONDOWN only latches DAT_002506ab, and the
                        one-shot g_mouse_event_pending it sets here can be
                        consumed+cleared by an unrelated Ordinal_864 caller
@@ -693,7 +693,7 @@ void uw_pump_events(void) {
                     else
                         g_mouse_button_held = 0;
                     g_mouse_event_pending = 1;
-                    FUN_00077dd0(0, msg, 0, lparam);
+                    handle_mouse_message(0, msg, 0, lparam);
                     return;
                 }
                 if (ev.type == SDL_MOUSEBUTTONUP) {
@@ -713,7 +713,7 @@ void uw_pump_events(void) {
                     g_mouse_button_held = 1;
                 }
                 g_mouse_event_pending = 1;
-                FUN_00077dd0(0, msg, 0, lparam);
+                handle_mouse_message(0, msg, 0, lparam);
                 return;
             }
             case SDL_WINDOWEVENT:
@@ -804,7 +804,7 @@ int uw_inject_mouse_down(int window_x, int window_y) {
      * event at the given point (window points, not logical/portrait
      * coordinates), so this exercises the exact same code path a real
      * click does -- unlike demomode's CLICK command, which calls
-     * FUN_00077dd0 directly and bypasses uw_pump_events (and therefore
+     * handle_mouse_message directly and bypasses uw_pump_events (and therefore
      * g_mouse_event_pending) entirely. Deliberately does NOT warp the
      * real OS cursor: gx_stub.c's own mouse handling reads the click
      * position from the event's own x/y fields for any event tagged

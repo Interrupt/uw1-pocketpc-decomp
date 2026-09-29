@@ -500,7 +500,7 @@ int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigne
      *
      * DAT_0023c448 only ever reflects keyboard state, though -- mouse
      * events are handled synchronously and completely inline in
-     * uw_pump_events (FUN_00077dd0 finishes with each one immediately),
+     * uw_pump_events (handle_mouse_message finishes with each one immediately),
      * leaving no "pending" state for DAT_0023c448 to hold the way
      * keyboard input does. Without also checking
      * uw_take_mouse_event_pending(), poll_input_event never falls through to
@@ -520,7 +520,7 @@ long Ordinal_866()
 
 /* Real coredll ordinal: PostMessage(hwnd, msg, wParam, lParam). Confirmed
  * via Ghidra headless disassembly -- this is the exact call the recovered
- * mouse handler (FUN_00077dd0 in uw.c) makes to re-dispatch a stylus tap
+ * mouse handler (handle_mouse_message in uw.c) makes to re-dispatch a stylus tap
  * on the chargen on-screen keyboard as a synthetic WM_CHAR/WM_KEYDOWN.
  * This port never builds a real Win32 MSG queue (see Ordinal_864's
  * comment -- handle_keyboard_message is driven directly from DAT_0023c448), so
