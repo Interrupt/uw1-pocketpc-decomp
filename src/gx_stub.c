@@ -106,7 +106,7 @@ typedef struct {
    move handler at the key-repeat cadence, matching the DOS controls.
    Keys 1 / 2 / 3 pitch the view up / centre / down (DAT_0023beb4; the
    game's own handler for these, LAB_000680d0, is a lost jump-table stub). */
-extern unsigned short DAT_00201b64;   /* game mode; 0 == in-game 3D dungeon view */
+extern short DAT_00201b64;   /* game mode; 0 == in-game 3D dungeon view */
 extern int g_text_input_active;       /* scroll_text_entry_prompt's (was FUN_0007ffa8) text-entry loop is running (save-name field, "Move how many", "Chant the mantra", etc); see its own comment in uw.c */
 extern unsigned short DAT_0023c448;   /* latched pending input code */
 extern int DAT_000876c8;              /* set by WM_KEYUP; main loop then clears DAT_0023c448 */

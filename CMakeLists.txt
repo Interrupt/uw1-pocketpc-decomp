@@ -29,6 +29,7 @@ set(UW_SOURCES
   src/player.c
   src/tmap.c
   src/objects.c
+  src/hud.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

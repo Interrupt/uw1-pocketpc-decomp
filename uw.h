@@ -1173,6 +1173,146 @@ extern char * DAT_0020469c;
 extern char * DAT_002046a4;
 extern char * DAT_002046a8;
 extern char * DAT_002046bc;
+/* Globals defined in uw.c but also used by functions that now live in
+   hud.c (the HUD and message scroll panel) -- extern'd here so both
+   translation units see the same storage. */
+extern const unsigned short DAT_000858a8_real[8];
+extern const unsigned short DAT_000858b8_real[8];
+extern code * DAT_00086b38_fnptrs[6];
+extern undefined1 DAT_000870f0_backing[32];
+extern undefined1 DAT_00087112_backing[32];
+extern const unsigned short DAT_000871b8_arr[14];
+extern undefined1 DAT_0023c11c_arr[2];
+extern undefined1 DAT_0023c118_arr[9];
+extern undefined1 DAT_0023c12c_arr[2];
+extern char DAT_0023c240_vitals[16];
+extern undefined1 DAT_0023cdb0_backing[32768];
+extern undefined1 DAT_0023c128_arr[9];
+extern void (*const g_hud_panel_handlers_table[13])(void);
+extern short DAT_00084f10;
+extern char DAT_000870d8;
+extern char DAT_000870dc;
+extern undefined1 DAT_000870ec_backing[4];
+#define DAT_000870ec DAT_000870ec_backing[0]
+#define DAT_000870f0 DAT_000870f0_backing[0]
+extern short DAT_00087130_arr[16];
+#define DAT_00087130 DAT_00087130_arr[0]
+extern short DAT_00087150_arr[16];
+#define DAT_00087150 DAT_00087150_arr[0]
+extern short DAT_00087170_arr[2];
+#define DAT_00087170 DAT_00087170_arr[0]
+extern short DAT_00087174_arr[2];
+#define DAT_00087174 DAT_00087174_arr[0]
+extern char DAT_00087178_arr[16];
+#define DAT_00087178 DAT_00087178_arr[0]
+extern char DAT_00087188_arr[16];
+#define DAT_00087188 DAT_00087188_arr[0]
+extern short DAT_000871b4_arr[4];
+#define DAT_000871b4 DAT_000871b4_arr[0]
+extern unsigned short DAT_000871d4_arr[2];
+#define DAT_000871d4 DAT_000871d4_arr[0]
+extern unsigned short DAT_000871d8_arr[2];
+#define DAT_000871d8 DAT_000871d8_arr[0]
+extern short DAT_00087254_arr[2];
+#define DAT_00087254 DAT_00087254_arr[0]
+extern undefined DAT_00087298_backing[8192];
+#define DAT_00087298 DAT_00087298_backing[0]
+extern int DAT_00088950;
+extern int DAT_00088954;
+extern int DAT_00088958;
+extern int DAT_0008895c;
+extern undefined2 DAT_00189578;
+extern ushort DAT_00189580;
+extern undefined2 DAT_00189582;
+extern undefined2 DAT_00201b60;
+extern short DAT_00201b64;
+extern short DAT_00201c84;
+extern undefined2 DAT_00201c90;
+extern undefined DAT_0023b4dc;
+extern undefined2 DAT_0023b8c0;
+extern undefined2 DAT_0023bc8c;
+#define DAT_0023c118 DAT_0023c118_arr[0]
+extern byte DAT_0023c11a;
+extern undefined1 DAT_0023c11b;
+#define DAT_0023c11c DAT_0023c11c_arr[0]
+extern undefined DAT_0023c124;
+#define DAT_0023c128 DAT_0023c128_arr[0]
+extern byte DAT_0023c12a;
+#define DAT_0023c12c DAT_0023c12c_arr[0]
+extern undefined1 DAT_0023c130;
+extern byte DAT_0023c150;
+extern ushort DAT_0023c1d8;
+extern ushort DAT_0023c1dc;
+extern ushort DAT_0023c1e0;
+extern undefined2 DAT_0023c1e4_arr[2];
+#define DAT_0023c1e4 DAT_0023c1e4_arr[0]
+extern short DAT_0023c1e8_arr[2];
+#define DAT_0023c1e8 DAT_0023c1e8_arr[0]
+extern undefined1 DAT_0023c1f0_backing[65536];
+#define DAT_0023c1f0 DAT_0023c1f0_backing[0]
+extern undefined1 DAT_0023c1f8_backing[65536];
+#define DAT_0023c1f8 DAT_0023c1f8_backing[0]
+extern int DAT_0023c20c;
+extern short DAT_0023c21c;
+extern short DAT_0023c224_arr[2];
+#define DAT_0023c224 DAT_0023c224_arr[0]
+extern short DAT_0023c228;
+extern short DAT_0023c22c;
+extern short DAT_0023c230_arr[2];
+#define DAT_0023c230 DAT_0023c230_arr[0]
+extern short DAT_0023c234_arr[2];
+#define DAT_0023c234 DAT_0023c234_arr[0]
+extern short DAT_0023c238_arr[2];
+#define DAT_0023c238 DAT_0023c238_arr[0]
+extern int DAT_0023c23c;
+#define DAT_0023c240 DAT_0023c240_vitals[0]
+extern short DAT_0023c250;
+extern void * DAT_0023c430;
+extern short DAT_0023c63c;
+extern undefined * DAT_00250704;
+extern undefined4 DAT_00250708;
+extern short DAT_00250710;
+extern undefined2 DAT_00250714;
+extern undefined4 DAT_0025071c;
+extern undefined4 DAT_00250720;
+extern short DAT_00250724;
+extern int g_force_flush;
+extern int g_force_redraw_no_xp;
+extern undefined1 g_msg_scroll_panel_state_backing[65536];
+#define g_msg_scroll_panel_state g_msg_scroll_panel_state_backing[0]
+extern undefined4 g_scroll_control_codes_enabled;
+extern int g_suppress_frame_timed_flush;
+extern unsigned int g_uw_frame_clock_units;
+extern char PTR_DAT_00087198_arr[16];
+#define PTR_DAT_00087198 PTR_DAT_00087198_arr[0]
+extern char PTR_DAT_000871a8_arr[16];
+#define PTR_DAT_000871a8 PTR_DAT_000871a8_arr[0]
+extern char s__MORE__00087994[];
+extern char s_init_gamedisp_goes_000858e8[];
+extern char s_panels_00087260[];
+#define DAT_000858a8 (*(undefined1 *)DAT_000858a8_real)
+#define DAT_000858b8 (*(undefined1 *)DAT_000858b8_real)
+#define DAT_00086b38 (DAT_00086b38_fnptrs[0])
+#define DAT_00086b40 (DAT_00086b38_fnptrs[2])
+#define DAT_00086b48 (DAT_00086b38_fnptrs[4])
+#define DAT_00086b50  DAT_00086b50_at(0x00)
+#define DAT_00086b52  DAT_00086b50_at(0x02)
+#define DAT_000870f2 (*(short *)(DAT_000870f0_backing + 2))
+#define DAT_00087114 (*(short *)(DAT_00087112_backing + 2))
+#define DAT_000871b8 (*(undefined1 *)DAT_000871b8_arr)
+#define DAT_0023c11d DAT_0023c11c_arr[1]
+#define DAT_0023c120 DAT_0023c118_arr[8]
+#define DAT_0023c12d DAT_0023c12c_arr[1]
+#define DAT_0023c244 DAT_0023c240_vitals[4]
+#define DAT_0023c248 DAT_0023c240_vitals[8]
+#define DAT_0023c24c DAT_0023c240_vitals[12]
+#define DAT_0023cdb8 (*(int *)(DAT_0023cdb0_backing + 8))
+#define DAT_0023cdbc (*(int *)(DAT_0023cdb0_backing + 0xc))
+#define DAT_0023cdc0 (*(int *)(DAT_0023cdb0_backing + 0x10))
+#define g_committed_hud_panel DAT_0023c128_arr[6]
+#define g_hud_panel_handlers (g_hud_panel_handlers_table[0])
+#define g_hud_panel_ticker_handlers (g_hud_panel_handlers_table[4])
+#define g_target_hud_panel DAT_0023c118_arr[6]
 #define DAT_00202806 DAT_00202800_backing[6]
 #define DAT_00204880 (*(short *)&DAT_00204880_backing[0])
 #define DAT_00204882 (*(short *)&DAT_00204880_backing[2])
@@ -1237,6 +1377,11 @@ void raster_triangle();
 void vec3_sub();
 void vec3_cross();
 undefined4 check_and_reset_landing_state();
+void uw_debug_blit_pick_buffer(void);
+void uw_debug_draw_inv_hotspot_positions(void);
+void uw_debug_dump_critter_sheet_once(void);
+void uw_debug_dump_sprite_frames_once(void);
+void uw_debug_force_item_id_once(void);
 int raster_edge_step();
 void raster_triangle_perspective_setup();
 void raster_edge_setup();
@@ -2495,6 +2640,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/player.h"
 #include "src/headers/tmap.h"
 #include "src/headers/objects.h"
+#include "src/headers/hud.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
