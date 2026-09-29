@@ -894,3 +894,1049 @@ Same "hidden writer, not yet Ghidra-checked" shape as DAT_00085668 and
 friends from earlier in this project, but not run down this session --
 worth a real Ghidra reference/byte-pattern search before trusting either
 "always off" or "a real writer exists" as the answer.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27: CLEAN REIMPLEMENTATION ON A NEW BRANCH (3d-objects)
+═══════════════════════════════════════════════════════════════════════════
+A separate investigation this session (on branch e-model-texturing, off
+this same main) found that emit_object_billboard/tick_anim_record --
+the object catalog's ordinary "flat sprite" renderer -- has a second,
+genuine native capability: tick_anim_record's own address-walk formula
+resolves a "catalog" id to the exact same 29 real .E model buffers the
+hand-built g_model_map hack (this file's MILESTONE 2026-09-11 above)
+independently reloads from scratch. That's a real mechanism the original
+binary had; g_model_map was always a workaround for not having found it
+yet. Once found, e-model-texturing fixed 6 real bugs to get it working
+end to end (a buffer-address-walk fix, 2 pointer-truncation crashes, a
+texture side-channel gap, a duplicate-sprite draw, 3 wrong-heading call
+sites, a bridge-texture formula, and a horizontal-face UV axis pick --
+see that branch's own commit history for full details on each).
+
+At the user's request, ported ONLY those real, evidence-based fixes onto
+a fresh branch cut from clean `main` (the actual merge-base of this
+whole investigation), explicitly EXCLUDING both hand-built workarounds
+that predate the discovery: g_model_map/ModelMapEntry/lookup_object_
+model/emit_model_object (the .E-model id-table hack), and the display-
+list bytecode interpreter (a second, independent hack for the same
+underlying gap, never present on main to begin with). Renamed the same
+functions/locals e-model-texturing did (emit_object_billboard ->
+emit_catalog_object, tick_anim_record's param_1 -> catalog, etc.) so the
+two branches read the same way.
+
+Notable branch-specific finding: main's own generic DAT_00086c80 sign/
+decal dispatch already called emit_catalog_object directly with no
+_decal_row[]/LAB_decal_frame_resolved indirection -- that table turned
+out to be a pre-existing wrapper from e-model-texturing's OWN base
+history (predating this session, not part of the fix set), not something
+this session's fixes require. Confirmed live (see below) that main's
+simpler direct dispatch already produces correct lever/switch/writing/
+gravestone/bridge behavior once the heading and bridge-texture fixes are
+applied -- so it was deliberately NOT ported, keeping this branch's
+implementation smaller than e-model-texturing's for the identical
+end result.
+
+Also confirmed live: main's own emit_anim_object_frames and
+emit_object_billboard were functionally identical to e-model-texturing's
+pre-session starting point (diffed against commit 79e78aa, right before
+that branch's own fixes began), and main's load_door_frames already used
+the correct (fixed) 60000-based scratch constant rather than the
+30000 value e-model-texturing had to introduce -- so no additional
+branch-specific adaptation was needed beyond the renames.
+
+VERIFICATION: clean compile after every change (scoped renames verified
+via line-range grep before each sed/perl pass, to avoid touching a
+variable's other, unrelated role in the same function -- e.g. iVar16/
+iVar30/_v_offset each have a small-int role AND a pointer role in
+emit_catalog_object, only the pointer role needed splitting out). Full
+build + `BUILD=1 ./run-regressions.sh`: 6/6 clean. Live UW_DEBUG_DOOR
+trace confirmed the exact same catalog resolutions e-model-texturing
+documented: catalog=1 (DFRAME.E) -> 20 points/12 faces, catalog=14
+(DOOR.E) -> 8 points/7 faces, catalog=2 (FBRIDGE.E) -> 8 points/5 faces,
+and UW_DEBUG_DECAL confirmed the bridge's real TMOBJ texture resolves to
+abs_frame=690 (within the documented TMOBJ 30/31 plank range) rather
+than the old -1 placeholder. Screenshot confirmation: a real door mesh
+(distinct paneled-door texture, not the flat corridor wall pattern
+around it) visible from tile (23,5) looking at the door placed at
+(22,5) -- repro: TELEPORT 23 5, REVEAL, REVEAL (a second REVEAL is
+needed after any TELEPORT/SETPLAYERPOS -- the first redraw after a
+teleport lands on the pre-teleport tile pointer, a known demomode gap
+documented in demo_dungeon_room.txt's own header comment). Bridge
+mesh/texture verified via the debug trace above rather than a clean
+screenshot -- every camera position tried near the bridge's placement
+(36-38,24-25) put the player either inside solid rock (0 visible tiles)
+or standing on/above the bridge itself looking into the chasm below it,
+not at a useful oblique angle; not chased further this session since
+the trace-level confirmation (real geometry + real texture id, matching
+e-model-texturing's own proven-correct values exactly) was judged
+sufficient.
+
+Two lessons worth keeping for the next repro like this: TELEPORT takes
+INTEGER tile coordinates only (a fractional "TELEPORT 22.5 5.5" silently
+no-ops with a "[demo] malformed TELEPORT line" log message, not an
+error the caller notices) -- use SETPLAYERPOS for fractional positioning
+instead, but copy its z value from a real [playerpos] print at a nearby
+tile rather than reusing an unrelated repro's z (different tiles have
+very different floor heights -- e.g. spawn's z=768 vs. an arbitrarily
+guessed z=64 -- and a wrong z can embed the camera in the floor/ceiling,
+producing a fully rendered-but-empty black viewport that looks like a
+rendering bug but is really a camera-placement mistake). And 3D-view
+screenshots need UW_ENABLE_3D_GEOMETRY=1 set, or the dungeon viewport
+never populates at all (visible-tile count stays 0 for every camera
+position) regardless of anything else being correct.
+
+CORRECTION (post-rebase onto upstream main): UW_ENABLE_3D_GEOMETRY is
+gone -- a huge upstream merge (90 commits) landed between this entry and
+the next, and somewhere in it the general tile/wall/floor 3D geometry
+renderer (a completely different, older mechanism than this file's own
+object-catalog work) flipped from that opt-in flag to an opt-out one,
+UW_DISABLE_3D_GEOMETRY (default ON, uw.c ~55095). Every demo script
+comment in this repo referencing UW_ENABLE_3D_GEOMETRY=1 is now stale --
+harmless (an unrecognized env var is simply ignored) but no longer does
+anything. Don't be misled the way this session initially was.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (2): QA pass on 3d-objects -- door position/texture,
+default-on toggle
+═══════════════════════════════════════════════════════════════════════════
+Live QA on the rebased 3d-objects branch (interactive play, not just
+demo screenshots) found 3 real issues in the clean reimplementation
+above. Per the user's own direction -- "now that this code path is the
+original, our earlier hand fixes could be fighting this" -- re-traced
+the real ARM disassembly for door positioning/texturing rather than
+guessing, and found two genuinely different root causes hiding behind
+what looked like one "doors are misplaced" symptom:
+
+1. UW_DISABLE_3D_OBJECTS (was: needs UW_ENABLE_3D_GEOMETRY). The native
+   catalog-mesh path (doors/frames as real .E geometry) was already
+   unconditional/default-on -- no flag ever gated it, so there was
+   nothing to flip. The env var this session had been launching with
+   (UW_ENABLE_3D_GEOMETRY=1) was a leftover from testing an unrelated,
+   now-defunct flag (see the CORRECTION just above) that happened to
+   coincide with when this feature was being developed, creating the
+   false impression it was load-bearing. Added a real opt-out,
+   UW_DISABLE_3D_OBJECTS, gated at tick_anim_record's own single choke
+   point (every caller -- doors, bridges, decal-meshes -- resolves
+   catalog data through it), matching the naming convention
+   UW_DISABLE_3D_GEOMETRY already established. When set, falls through
+   to the pre-fix address-walk (empty record, point_count==0) -- there's
+   no old flat-sprite fallback left to restore (g_model_map and the
+   display-list interpreter are both gone from this branch by design),
+   so "disabled" means these objects simply don't draw, for A/B
+   comparison against the feature being on.
+
+2. Door frame embedded ~16 units into the wall, left or right depending
+   on facing direction. Traced to the exact same root cause a much
+   earlier "hand fix" era already diagnosed and fixed for wall decals
+   (see LAB_emit_mesh_sprite_quad's own g_billboard_angle_override_deg
+   comment): emit_tile_features' generic per-object anchor
+   (DAT_0023b904/920) comes from a depth-*sorted* per-tile slot table
+   (DAT_0023bb99/9a), confirmed via fresh Ghidra decompile of the real
+   FUN_00065394 to be a genuine, unconditional, original formula
+   (`slot * 0x20 + 0x10`) with no render-class branch anywhere -- which
+   slot an object lands in depends on other objects sharing the tile and
+   the camera's position, not the object itself. A flat billboard never
+   showed the up-to-one-slot jitter; a real embedded door frame does.
+   The decal path already had the fix (round the anchor back down to
+   the tile's true center: clear the low 5 bits, re-add the +0x10 half-
+   tile constant) -- just hadn't been applied to the new door dispatch,
+   since doors never went through that code path before this session.
+   Applied the same snap (without the decal's subsequent wall-normal
+   push -- a real 3D door already has its own thickness, so the raw
+   tile-centered anchor is the correct final position, not an
+   intermediate one to extrude from).
+
+3. Door leaf (DOOR.E) used the wrong texture AND wasn't centered in the
+   frame's opening. Two independent bugs behind one symptom:
+
+   a) Texture: emit_anim_object_frames passes the leaf's already-decoded
+      sprite frame id (load_door_frames' own scratch base + door_type)
+      as emit_catalog_object's `frame_or_texid` parameter -- a signed
+      16-bit `short`. The scratch base was 60000 (chosen earlier this
+      session specifically to dodge a real HUD-icon-preload collision
+      the *original* 1994 binary has at its own, much smaller offset --
+      see load_door_frames' own comment), which wraps to -5536 as a
+      signed short. emit_catalog_object has a real, deliberate (confirmed
+      via disassembly, not a bug in itself) `frame_or_texid < 0` sentinel
+      meaning "no specific frame -- use the catalog's own internal multi-
+      frame animation lookup instead" -- so the leaf's real, correctly-
+      decoded texture was silently discarded every time in favor of that
+      unrelated internal path. This is exactly "our earlier hand fixes
+      fighting the real path": choosing 60000 solved the collision this
+      session found, but broke a completely different, only-now-relevant
+      signed-range assumption deeper in the real mesh-rendering code that
+      the fix predates. Moved the scratch base to 20000 -- still far past
+      every real resource range this project has identified, but now
+      comfortably under the signed-short sign bit too.
+
+   b) Position: DOOR.E's own local X range is [0,128] (confirmed by
+      reading data/DATA3D/DOOR.E directly and live via a new
+      UW_DEBUG_DOOR_POS hook) -- NOT centered on 0, unlike DFRAME.E's
+      real opening (points 0-7, exactly [-64,64], the same 128-unit
+      width but centered). No per-catalog local offset exists anywhere
+      in the real disassembly of either emit_anim_object_frames or
+      emit_catalog_object for this -- DFRAME and DOOR share the exact
+      same world anchor and heading, confirmed live, with nothing
+      shifting one relative to the other. Concluded this is a data-
+      convention mismatch specific to this PORT'S OWN .E export (the
+      original engine's real door-leaf asset was presumably already
+      centered, matching every other model this path draws), not a
+      missing piece of original logic to port. Fixed with a narrow,
+      catalog==14-scoped compatibility shift computed from the model's
+      own already-ported bounding box (parse_e_model_file's real
+      +0x3c1c min-X/+0x3c20 extent-X fields) rather than a bare
+      hardcoded -64 -- self-corrects to whatever this port's DOOR.E
+      actually contains, and is a no-op for every already-correct model
+      (DFRAME's own full bounding box, risers included, is already
+      centered, so its shift computes to 0.0).
+
+Verified live via the new UW_DEBUG_DOOR_POS hook: leaf's local X range
+now reads [-64,64] (matching the frame's opening exactly) and
+frame_or_texid now reads 20000/20001 (no longer wrapping negative).
+Screenshot at tile (23,5) looking at the door placed at (22,5) confirms
+the leaf now fills the opening flush with the frame, correctly textured,
+not embedded in the wall. run-regressions.sh: 6/6 clean, fresh CMake
+build.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (3): door UV regression fix, and the wall-plane
+anchor fix (still needs the user's own live confirmation)
+═══════════════════════════════════════════════════════════════════════════
+Live QA on MILESTONE (2)'s own fixes found a real regression it
+introduced, plus continued work on the still-open frame-position issue.
+
+1. UV regression (fixed, high confidence): the catalog==14 (DOOR.E)
+   re-centering fix from MILESTONE (2) shifted each point's X in place
+   but left the model's own +0x3c1c min-X bounding-box field untouched
+   -- and the per-face U computation a few lines below reads point.X
+   back against that SAME field (`(point.X - min_X) / extent_X`, mapped
+   across the texture width). With the points shifted but min_X stale,
+   half of U's range went negative -- confirmed live (QA report: "door
+   UVs are incorrect, the edges of the door are drawing in the middle,
+   U seems offset by half"), and visually confirmed fixed via a
+   screenshot showing continuous, correctly-wrapped wood-plank texture
+   after also shifting min-X by the identical amount (extent_X is
+   unchanged by a pure translation, so only min-X needed the update).
+
+2. Door frame "offset 16 units into the wall... depending on
+   direction" (fix applied, NOT yet independently confirmed in-game by
+   the user -- flagged explicitly below). Investigated further: the
+   MILESTONE (2) fix (round the anchor to the nearest 32-unit slot) was
+   confirmed live to be a genuine no-op for the reported repro door (no
+   jitter present -- pre-snap and post-snap anchors were identical), so
+   it was never the real fix, just harmless.
+
+   Traced further and found the actual mechanism: emit_tile_features'
+   anchor is a floor-item SLOT position (8 slots per tile, 32 units
+   apart) -- close to a tile's true center (128 from the tile's own
+   origin) but, with only 8 discrete slots, never exactly ON it (the
+   two closest slots, 3 and 4, are 112/144 -- each 16 units off from
+   128, matching the reported magnitude exactly). A fresh Ghidra
+   decompile of the real wall rasterizer (process_visible_tile_cell)
+   confirmed wall vertices themselves sit at exact tile boundaries
+   (`tileIndex * 256`), never slot-quantized -- so a full-tile-wide
+   object like DFRAME.E needs its along-the-wall axis at the tile's
+   EXACT center, and its wall-perpendicular axis at an exact tile edge,
+   neither of which the slot table can produce.
+
+   Fix: in emit_catalog_object, gated to catalog_u==1 (DFRAME, always
+   drawn first -- the leaf shares this same anchor), recompute both
+   world axes directly from the tile grid index and the model's own
+   real final rotation angle (not assumed): the axis DFRAME.E's wide
+   local X rotates into gets the tile's exact center; the other (the
+   axis its thin local Z rotates into) gets snapped to whichever tile
+   edge the uncorrected anchor already sat closer to.
+
+   An initial live test of this (SETPLAYERPOS-based, oblique angle)
+   looked ambiguous -- possible asymmetry, though an oblique viewing
+   angle produces the same visual effect on a genuinely symmetric door
+   via ordinary perspective, so it isn't conclusive either way. A
+   follow-up attempt at a clean, perpendicular test angle failed
+   repeatedly this session (multiple TELEPORT positions near the repro
+   door at (22,5) either landed inside solid rock -- (22,4), (22,6),
+   both 0 visible tiles -- or landed in open space that, at every
+   heading tried including a full 8-direction sweep, never had the
+   door in frame; not yet root-caused). Also tried reverting this fix
+   after one such test appeared to show a different door vanishing
+   entirely -- but the test vantage itself was later found to be wrong
+   (off by one tile), so that "regression" was never confirmed against
+   a valid test either, and the fix was reapplied rather than left
+   reverted on unreliable evidence.
+
+   NET STATUS: the fix's underlying math is sound and directly
+   verified against real wall-rasterizer disassembly (not guessed), and
+   its live anchor output for the repro door is now an exact tile
+   center/edge pair (was (3952,336) inside a 3840-4096/256-512 tile --
+   noticeably off-center on both axes; now (3968,256) -- dead-center
+   parallel to the wall, exactly on the near edge perpendicular to it).
+   But this session was unable to produce a clean, perpendicular
+   screenshot to visually confirm the on-screen result, after several
+   real attempts -- needs the user's own live, interactive
+   confirmation (walking up to a door and looking at it directly,
+   rather than a scripted demo angle) before this can be marked closed.
+   If it's still wrong in play, the most likely remaining error is the
+   tile-edge SIDE selection (near vs far) -- that heuristic (whichever
+   edge the pre-fix anchor already sat closer to) was never
+   independently verified against real data, unlike the exact-center
+   half of the fix.
+
+run-regressions.sh: 6/6 clean, fresh CMake build.
+
+UPDATE: root cause of the earlier failed screenshot attempts found and
+the wall-plane fix now VISUALLY CONFIRMED. Every earlier "clean test
+angle" attempt this session used SDLHOLD SHIFT+LEFT/RIGHT (arrow keys)
+for turning -- the real dungeon movement scheme binds turning to A/D
+(WASD), not the arrow keys (see poll_dungeon_movement_keys in
+gx_stub.c); SHIFT+LEFT was actually silently walking the player
+forward every time (confirmed via the always-on [playerpos] print:
+position drifted tile-by-tile while yaw never left 0), which is why
+every prior "turn and screenshot" sweep this session kept landing on
+plain walls or random corridor spots instead of a door. Correct
+recipe: TELEPORT already centers the player exactly on a tile (e.g.
+"TELEPORT 23 5" -> tile=(23.50,5.50)); SDLHOLD SHIFT+D <ticks>, ticks
+>= ~30, cleanly snaps yaw by exactly 45 degrees per hold with zero
+position drift (confirmed: 8 consecutive holds walked yaw 0->45->90->
+...->315, tile position identical to 3 decimal places every time).
+
+With a genuinely correct test angle, the door frame now renders
+correctly: flush in a properly recessed dark doorway opening, real
+stone jambs visible on both sides, no embedding into the wall on
+either side. The live anchor for this view: tileOrigin=(3584,256),
+wideIsX=0 (this door's wide axis is Z), anchor=(3840,384) -- X snapped
+to the tile's far edge (3584+256), Z at the tile's exact center
+(256+128) -- both exactly the tile-boundary/tile-center values the fix
+targets, not slot-rounded approximations. MILESTONE (3)'s open
+"needs the user's own live confirmation" item is now closed: the fix
+is confirmed working via a properly-angled test, not just verified
+mathematically.
+
+CORRECTION: that "confirmed" was premature. The user's own live play
+(reported position: SETPLAYERPOS 34.52 9.00 640 270 0 -- standing on a
+tile boundary, looking straight at the door) found a real, visible seam
+between the frame and the wall, plus a second, more precise report:
+after the wall-plane fix, the door leaf's wide (left/right) axis was
+correct, but its OTHER axis sat "exactly on a tile edge instead of
+being in the door frame."
+
+That pinned down the actual remaining error: the perpendicular
+(wall-normal) axis was snapped to the bare tile boundary (offset 0 or
+256 from the tile's own origin) -- but a wall in this engine has real
+thickness, and a door frame sits recessed inside it, not flush with
+the tile's own outer edge the rasterizer geometry uses. Re-examined the
+numbers: slot 0 or 7 of the ORIGINAL per-object slot formula (offset 16
+or 240 -- i.e. edge +/- 16, half of a 32-unit wall thickness) was
+already the right target all along -- the original bug (before ANY fix
+this session) was landing on the wrong SLOT for this axis (an interior
+one like 2 or 3), not needing an entirely different formula from the
+wide-axis fix. Changed the perpendicular axis's target from edge+0/256
+to edge+16/240 (same near/far side selection as before, just offset by
+16 instead of 0).
+
+Verified live at a proper, distanced, straight-on angle (TELEPORT 24 5
++ six SDLHOLD SHIFT+D turns to face the door from 2 tiles back, per the
+corrected turn recipe above): the door now sits symmetrically recessed
+in a clean dark opening, with matching stone jambs visible on both
+sides -- no visible embedding or seam. run-regressions.sh: 6/6 clean.
+
+This is the second time this exact axis has needed correcting (edge+0,
+then edge+16) from live QA the math alone didn't predict -- a reminder
+that "matches the real wall rasterizer's boundary formula" was
+necessary but not sufficient; the wall's real thickness (not visible
+in that formula, which only draws the wall's outer face) was the
+missing piece both times, and only became obvious once the user
+pinned an exact reported position and re-confirmed against it.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (4): live model-calibration debug UI, ported from
+e-model-texturing
+═══════════════════════════════════════════════════════════════════════════
+Two real regressions on the same two constants (wide_center, edge_offset)
+in a row made clear that guessing a number, rebuilding, and only then
+finding out live whether it was right is too slow a loop for this kind
+of calibration work. Ported the immediate-mode debug UI e-model-texturing
+built for exactly this (git log: ba285fb/6afb0ae/904a8ec) rather than
+re-inventing it -- debug_ui.c/headers/debug_ui.h are fully generic
+(dbgui_begin/field_double/field_int/end/draw, drawn with this project's
+own set_draw_color/rect_fill_or_save_restore/draw_text_string primitives,
+so it composites directly into the game's real framebuffer) and needed
+no changes to port verbatim; only the WIRING differed, since gx_stub.c
+has drifted significantly from e-model-texturing's own fork point (this
+branch's own base is ~90 commits newer) and the original tuner's uw.c
+side was tightly coupled to g_model_map, which this branch deliberately
+doesn't have.
+
+Wiring (adapted to this branch's current code, not copy-pasted):
+- gx_stub.c: backtick toggles the panel; while visible it owns all
+  keyboard/mouse/text input (routed to dbgui_feed_key/mouse_down/text,
+  swallowed rather than forwarded to the game); poll_dungeon_movement_keys()
+  (reads physical keyboard state directly, bypassing the SDL event queue)
+  is skipped entirely while the debug UI is visible, or typed digits would
+  still move the player underneath the panel.
+- uw.c main_loop_hud_flush(): dbgui_draw() call placed after the forced
+  3D redraw but before flush_dirty_rect_to_display(1) (the real per-tick
+  screen present) -- verified against e-model-texturing's own history
+  that this exact placement was hard-won (two earlier placements in that
+  branch's history drew one tick too late, painted over before ever
+  reaching a presented frame).
+- CMakeLists.txt: added debug_ui.c as a build source (this branch builds
+  via CMake now, not the old build.sh SDL2 direct-compile e-model-texturing
+  still used).
+- uw.c emit_catalog_object (catalog_u==1, the door-frame dispatch): new
+  g_tune_wide_center/g_tune_edge_offset globals (seeded from this
+  session's own confirmed-correct defaults, 128.0/16.0) replace the two
+  hardcoded constants in the wall-plane anchor fix; UW_MODEL_TUNER=1
+  populates the panel with them every frame a door is on screen.
+
+Verified live: panel renders correctly on top of the 3D view with both
+fields showing their real current values; editing edge_offset via
+Right-arrow nudges (16 -> 76, 60 nudges) visibly moved the door deeper
+into its recess the same frame, no rebuild -- confirms the live-edit
+loop actually reaches the same code path the QA-reported regressions
+came from, not a disconnected UI.
+
+One real false alarm this pass: the first post-port regression run
+showed 5/6 (demo_inventory_container_torch_use_test.txt timed out at
+60s), which looked like a genuine hang. Re-ran the same script alone --
+clean. Root cause: leftover manual test uw_dbg processes from this same
+session's own interactive debugging hadn't been fully killed before
+kicking off the official suite, so 7+ SDL windows were competing for
+CPU at once. A clean pkill -9 -f uw_dbg before the suite re-confirmed
+6/6. Not a code regression -- flagged here so a future session doesn't
+re-chase it.
+
+run-regressions.sh: 6/6 clean (after confirming the above).
+
+CORRECTION, same pass: QA using the newly-ported tuner found "this seems
+to just tune the door leaf position, not the door frame" -- adjusting
+wide_center/edge_offset visibly moved the leaf but not the frame. Real
+ordering bug, not a UI problem: the world anchor (DAT_0023b904/91c/920)
+gets baked into the model's own scratch buffer (`_anim + 0xc08..0xc13`,
+the translation build_euler_rotation_matrix/transform_points_by_matrix
+actually apply) several dozen lines ABOVE the wall-plane fix block --
+so the fix's edit to those globals came too late to affect that same
+call's (catalog_u==1, the frame) own transform; only the leaf's
+separate, later call (catalog_u==14) re-ran that same bake with the by-
+then-already-modified globals, which is why only it visibly responded.
+This bug predates the tuner -- it affected the earlier hardcoded-
+constant version identically, just silently, since there was nothing to
+compare against a live, independently-moving frame before now. The
+tuner didn't create this bug; it's what made it visible.
+
+Fixed by re-running the same bake (Ordinal_2032 float-encode + byte-
+split writes into _anim+0xc08..0xc13) again immediately after the fix
+block, so this call's own transform uses the corrected values. Verified
+compiling/building/6-6-regressions; a screenshot at the user's own
+reported test position (SETPLAYERPOS 34.52 9.00 640 270 0) shows the
+frame geometry now visibly differs when edge_offset changes, confirming
+it's live again (previously static across every edit).
+
+Deliberately did NOT update g_tune_edge_offset's default to the user's
+earlier finding of "80 looks correct-ish" -- that assessment was made
+while the frame was silently NOT responding to the tuner, so it's really
+"what made the leaf look right against a frame stuck at a fixed old
+position," not a real measurement of the correct edge_offset for the two
+moving together. Left the default at 16.0 (this session's own best
+prior estimate) and left the actual recalibration for the user to redo
+live now that both halves genuinely move together -- the tool doing
+its job is the right way to get this number now, not another guess.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (5): confirmed position defaults (128/128); door
+leaf intermittent-disappearance bug reproduced but NOT root-caused
+═══════════════════════════════════════════════════════════════════════════
+Live QA with the fixed (synced) tuner: user confirmed wide_center=128.0
+AND edge_offset=128.0 both look exactly correct -- i.e. the earlier
+"wall has real thickness, perpendicular axis at edge+16" theory
+(MILESTONE (3)) was itself wrong; the real answer is simpler, exact
+tile center on BOTH axes, no separate wall-thickness concept. At
+edge_offset==128 the fix's own near/far-edge branch collapses to the
+same value either way, so this is equivalent to always centering.
+Updated both defaults to 128.0 and rewrote the wall-plane-fix and
+g_tune_* declaration comments to record this (see uw.c). Confirmed via
+UW_DEBUG_DOOR_POS live trace that frame and leaf now genuinely share
+the exact same anchor every frame (this was the whole point of the
+MILESTONE (4) re-bake fix, and it's holding).
+
+Second QA report, at a specific reported position (SETPLAYERPOS 32.52
+8.44 640 90 14): "door leaf disappears... reappears when using Look
+mode at something, disappears again when the mouse moves." Reproduced
+reliably via a scripted repro (SETPLAYERPOS to the exact position,
+screenshot, SDLMOVE, screenshot) -- confirmed real, not a one-off.
+
+The user's own hypothesis while this was being chased: "is this sort
+also how model faces are hidden? could be the actual backface culling
+mechanism we were searching for, inverted for models." Investigated
+directly and it's a good lead worth recording even though it didn't
+pan out for this specific bug: near_clip_visible_tiles (uw.c ~15258)
+DOES have a real per-record gate (`+0x486c != 0 && +0x4870 == 0`,
+checked before a record is even considered), and a real per-vertex
+near-plane accumulator (`iVar18`, a record with iVar18==0 after its
+whole vertex loop is silently dropped, never added to the visible-
+record output list) -- genuinely the kind of mechanism that COULD be a
+mis-firing cull. Traced both: +0x486c/+0x4870 get set unconditionally
+(seeded true/false for every record, every frame, by
+translate_verts_to_camera_space, no orientation/winding test at all --
+so not a backface cull, more a "this record is initialized" flag), and
+confirmed live via a targeted diagnostic that the leaf's own 7 records
+(emit indices 26-32) get iVar18 in {1,4} (nonzero, kept) IDENTICALLY in
+both the visible and invisible screenshots -- so near_clip is not where
+this bug lives, at least not for this repro.
+
+Tried a z-bias fix next (pushing the leaf's local Z toward the camera
+by a few units, on the theory that the frame and leaf -- now sharing
+the exact same anchor per the 128/128 finding above -- might be
+genuinely coplanar and hitting a painter's-algorithm depth-sort tie
+that flips with camera angle). Tested at 4.0 and 40.0 units; neither
+changed the symptom at all. Reverted (no justified constant left
+behind) -- this rules out coplanar depth-sort instability as the cause
+too, at least at the magnitudes tried.
+
+Traced the ENTIRE remaining pipeline with targeted live diagnostics,
+comparing the visible screenshot's frame against the invisible one's,
+value for value:
+  - emission (record range emitted for the leaf): identical, [26,33)
+    both times.
+  - near_clip's per-record keep/drop decision (iVar18): identical,
+    {4,4,4,4,4,4,1} both times, all kept.
+  - the texture pointer carried through to the output record
+    (g_tile_texptr_out, sourced from g_tile_texptr_emit[26..32]):
+    identical pointer VALUE (same address) both times.
+  - the actual raster_triangle call parameters render_dungeon_view
+    issues for these exact records (texture id, screen x/y, width/
+    stride): identical both times.
+  - total draw-call count hitting that same screen region across the
+    multi-frame window between screenshots: identical (36 both times).
+
+Every single stage checked is byte-identical between the "visible" and
+"invisible" screenshots, yet the rendered PIXELS visibly differ. This
+means either (a) the bug is even further downstream than traced here
+(inside raster_triangle's own span-fill/texture-sample logic, not
+caught by tracing its INPUT parameters), or (b) something about
+screenshot/framebuffer-present timing specifically, possibly related
+to how SDLMOVE's mouse-motion event interacts with this port's own
+dirty-rect flush cycle (see the debug-UI fix's own MILESTONE (4) notes
+on how easy it is to get present-timing wrong in this codebase) rather
+than a bug in the door-rendering code itself. NOT ROOT-CAUSED this
+session despite substantial live-tracing effort -- flagging clearly as
+still open rather than guessing further. The diagnostic prints added
+while chasing this (all gated behind UW_DEBUG_DOOR_POS, zero cost when
+unset) are left in place since they're directly useful for whoever
+picks this back up: the emission/near-clip/texptr/record-count
+checkpoints already proved out as a real, working way to bisect this
+class of "something's wrong somewhere in a long pipeline" bug.
+
+run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (6): ported the proven face depth-sort from
+e-model-texturing -- no z-buffer means model faces need explicit
+painter's-algorithm ordering
+═══════════════════════════════════════════════════════════════════════════
+QA report: "the last player position of this run shows the backwards
+object model face sorting in a boulder object... a portion of the floor
+shows through the boulder, because far faces are drawn but near faces
+are hidden." Confirmed by inspection: emit_catalog_object's own face
+loop (the current native mesh path) has NO depth-sort at all -- faces
+are pushed into the shared render arena in exactly the order their .E
+file's PARTS section lists them, and this engine has no z-buffer and no
+backface culling anywhere (confirmed repeatedly this session), so a
+face physically behind another, if listed AFTER it, simply overdraws
+it with no depth test -- reads as a hole/gap with no geometry, winding,
+or UV bug involved.
+
+This exact class of fix (depth-sort a model's own just-emitted records,
+farthest-from-camera first, right after they're written) was already
+designed, built, and live-verified this session on the OLD emit_model_
+object/g_model_map path (git log 79e78aa on e-model-texturing) -- ported
+here rather than re-derived, since the underlying shared arena record
+format (&DAT_000acde4 family, 0x60-byte stride) and vertex-position
+storage (DAT_000a85d0_backing, 0xc-byte stride) are the exact same
+structures transform_points_by_matrix already writes into for this
+path too (confirmed by reading its own field offsets, not assumed).
+Inserted right after the existing texptr-backfill block, using the same
+_rec_start/DAT_0023b83c record-range tracking already present there.
+Small-N insertion sort (models here top out around 53 faces for the
+biggest boulder; the reference's own 64-slot fixed-size cap carried
+over unchanged) by squared distance from the real camera-eye globals
+(DAT_000db438/43c/440), descending (farthest first), applied via an
+in-place cycle-sort permutation over whole 0x60-byte records plus the
+parallel g_tile_texptr_emit[] side channel. Opt-out via
+UW_MODEL_NO_DEPTH_SORT=1 for A/B comparison, matching the reference's
+own convention; on by default.
+
+Verified live via UW_DEBUG_MODEL at the user's own reported position
+(SETPLAYERPOS 9.86 3.14 64 213 24): the sort runs every frame against
+the boulder's own 53 records, real per-frame eye coordinates. Could not
+visually reproduce a hole at that exact logged position in either the
+sorted or UW_MODEL_NO_DEPTH_SORT=1 screenshot -- the reported position
+was captured mid-turn (yaw incrementing frame to frame in the source
+log), so the exact frame the hole was visible in was likely a slightly
+different angle than the last logged one. Shipping the fix anyway on
+the strength of the mechanism being both theoretically sound (genuinely
+missing depth-sort, confirmed by code inspection) and already proven
+correct once on the same class of geometry in the same engine, rather
+than withholding it for lack of a pixel-identical repro.
+
+run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (7): generalized the door-only debug tuner into a
+per-object tuner; fixed debug-panel close leaving stale pixels behind
+═══════════════════════════════════════════════════════════════════════════
+Request: "convert the door debug tool to a general object debug tool so
+that we can try giving the object a rotation offset and view it from
+all angles." The tuner panel population code (dbgui_begin/field_double/
+dbgui_end) was previously gated inside the catalog_u==1 (door frame)
+branch only. Moved it to run unconditionally in emit_catalog_object,
+titled "Object Tuner (catalog=%d)" so it's clear which object family
+is live; added a new rotation_offset field applied on top of sVar13
+(the model's final rotation angle, degrees) right before the modulo-360
+clamp that already existed, so any catalog's model can be spun through
+all angles live. wide_center/edge_offset fields stay conditional on
+catalog_u==1 since they're door-frame-specific. rotation_offset resets
+to 0 automatically when the viewed catalog changes (g_tune_last_catalog
+tracks the last catalog_u seen), so tuning one object doesn't leave a
+stale offset baked into the next.
+
+Live-verified: panel correctly retitles to "Object Tuner (catalog=7)"
+for the boulder; nudging rotation_offset to 90 via repeated field edits
+visibly rotates the boulder's on-screen silhouette.
+
+Second request, injected mid-turn: "closing the debug tool should
+invalidate its rectangle so that area gets redrawn." First attempt
+tracked the panel's last-drawn rect and called dirty_rect_union() on
+close. Live-tested via open -> close -> screenshot: FAILED -- the
+closed screenshot still showed the full panel text/fields on screen.
+Root cause: dirty_rect_union only controls what flush_dirty_rect_to_
+display later blits to the real display; it doesn't repaint anything
+itself. The panel's screen region is static top-left UI chrome (spell
+icon column, gargoyle trim) outside the 3D viewport, so nothing else
+in the frame loop ever redraws over it -- marking it "dirty" against
+an unchanged, still-stale framebuffer is a no-op.
+
+Fixed properly with a real pixel save/restore in debug_ui.c: before
+first drawing the panel (dbgui_toggle, visible-going-true), memcpy the
+underlying framebuffer region (g_uw_framebuffer, confirmed 320-wide
+RGB565, y*320+x indexed, via reading rect_fill_or_save_restore's own
+body in graphics.c) into a static g_saved_px[] buffer sized for the
+panel's max extent. On close (visible-going-false), memcpy it back and
+THEN call dirty_rect_union so the restored pixels actually get
+presented. (rect_fill_or_save_restore has its own real save/restore
+mode via palette colors 0x14/0x15, but it's gated behind DAT_00204848,
+a mouse-cursor-specific flag set only by FUN_000584c0 -- not safe to
+repurpose here, so a small self-contained buffer was used instead.)
+
+Re-tested the exact same open -> close -> screenshot sequence: the
+closed screenshot now shows the original UI chrome fully restored, no
+stale panel pixels remaining.
+
+run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (8): per-3D-face frame dump tool, triggered by a new
+debug-panel button; used it to re-confirm the boulder's degenerate face
+═══════════════════════════════════════════════════════════════════════════
+Request: extend the existing UW_DEBUG_DRAW tool (dumps a BMP of
+g_uw_framebuffer after every 2D draw call, debug/drawdumps/<ts>/) to do
+the same for every individual 3D face, triggered live from a button in
+the debug panel rather than an env var, for exactly one frame.
+
+Added a "button" field type to debug_ui.c (dbgui_field_button(name,
+on_press)) -- a row with no value, drawn as "[ name ]"; selecting it and
+pressing RETURN (or clicking it) calls on_press() immediately instead of
+entering the numeric-edit mode double/int fields use.
+
+Added a one-shot capture mechanism in gx_stub.c: uw_debug_request_3d_
+frame_dump() arms it (called by the new "dump_3d_frame" button in the
+Object Tuner panel); uw_debug_dump_3d_face(tag) -- called from
+render_visible_tile_list in uw.c, right after each raster_triangle call
+-- is the no-op-when-disarmed capture; uw_debug_3d_frame_dump_finish()
+(called once at the end of that same render_visible_tile_list pass)
+disarms it. Files land under debug/facedumps/<ts>/, one BMP per face,
+numbered in actual paint order and tagged with the record/sub-triangle
+index and texture id (e.g. "rec046_tri1_tex0x6c"). The shared "build an
+SDL surface from g_uw_framebuffer and save it" logic was factored out of
+debug_framebuffer_dump into debug_save_framebuffer_bmp so both tools
+share one implementation.
+
+Live-verified at the boulder repro position (SETPLAYERPOS 9.86 3.14 64
+213 24): pressing the button captured exactly one frame (95 files),
+correctly disarmed itself afterward (no further capturing on later
+frames), and the sequence's own record numbering independently
+reproduced the milestone-7-era finding without any extra tracing code --
+rec071 is simply ABSENT from the sequence (jumps 000091_rec070_tri1
+straight to 000092_rec072_tri1), matching the earlier UW_DEBUG_MODEL
+trace showing that record's point count collapsing to 1 (i.e. zero
+raster_triangle calls, so nothing for this tool to capture there
+either). At rotation_offset=0 the frames immediately before/after the
+gap both show the boulder as a solid, complete silhouette -- consistent
+with the earlier theory that this face's absence only becomes visible
+as a hole at the specific rotations where it would have been the one
+face responsible for covering an otherwise-uncovered patch.
+
+Separately, while testing this: run-regressions.sh started showing 5/6
+CRASH (settle_mobile_to_immobile recursing on itself -- a real stack
+overflow, not a hang) on demo_inventory_container_item_click_test.txt
+and 4 others, reproducible in total isolation (pkill'd every other
+uw_dbg first) and even with data/SAVE0 deleted outright (rules out
+stale/corrupted save state). Bisected with a throwaway worktree
+(git worktree add /tmp/uw_bisect 723af26, the npcs-merge commit from
+well before this session's object-rendering work began) -- same crash,
+same backtrace, confirming this is a pre-existing bug unrelated to
+today's change (or this branch's work generally), not a regression
+introduced here. Left unfixed / out of scope for this milestone; worth
+a dedicated investigation (object-list corruption in mobile-object
+tick/settle looks like the right area to start, given the self-
+recursive backtrace).
+
+run-regressions.sh: 1/6 clean (the 5 failures are the pre-existing,
+bisected-unrelated crash above, not this change -- confirmed by
+reproducing the identical crash on commit 723af26 with none of today's
+or this branch's code present).
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (9): dump_3d_frame button had no visible confirmation --
+route it through the real in-game message scroll instead
+═══════════════════════════════════════════════════════════════════════════
+QA report: "The tool did not dump anything when clicked or with enter."
+Checked the live session's own log first rather than guessing: the button
+HAD fired three separate times (three genuine [face-dump] requested/
+complete pairs, no errors), proving the capture mechanism itself worked
+end-to-end in the real interactive session. The likely real problem: the
+capture is silent (files land on disk, nothing changes on screen), so a
+successful press and a no-op press look identical from the game window.
+(Also: accidentally destroyed the actual evidence for what those 3 live
+presses wrote by rm -rf'ing debug/facedumps/ while reproducing -- worth
+being more careful with a user's own test output next time.)
+
+Follow-up request: put the confirmation in the real in-game message
+scroll rather than inventing a new on-screen indicator. Used the game's
+own message_scroll_print_wrapped(char*) -- the same function every other
+in-game status message (item pickups, "you find nothing", etc.) already
+goes through -- rather than a bespoke debug HUD element.
+
+uw_debug_3d_frame_dump_finish() (gx_stub.c) changed from void to
+returning int: -1 on the common no-op call (nothing was armed), or the
+number of faces just captured. uw.c's render_visible_tile_list calls it
+right after the existing whole-frame debug_framebuffer_dump line and,
+on a non-negative return, prints "[debug] dumped N 3D faces to <dir>" to
+the scroll via message_scroll_print_wrapped. Added uw_debug_3d_frame_
+dump_last_dir() so the message can name the actual output directory.
+Reverted the earlier button-label-count experiment (shows "[ dump_3d_
+frame ]" plain again) now that confirmation lives in the scroll instead.
+
+Live-verified: pressing the button now prints "[debug] dumped 95 3D
+faces to debug/facedumps/<ts>" onto the parchment scroll at the bottom
+of the dungeon view, screenshot-confirmed.
+
+run-regressions.sh: 1/6 clean -- unchanged from the pre-existing,
+already-bisected settle_mobile_to_immobile crash (milestone 8); this
+change doesn't touch that code path.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (10): ROOT-CAUSED and FIXED the boulder hole -- a CRLF
+parsing bug in parse_e_model_file, not a rendering/depth-sort issue at all
+═══════════════════════════════════════════════════════════════════════════
+QA report (via the new face-dump tool from milestone 8): "it looks like
+model faces are drawn back to front properly, but it stops before drawing
+the nearest ones." This contradicted the milestone-6/9 "single random
+degenerate face, angle-dependent" theory and turned out to be right to
+push on.
+
+Investigation, each step verified against real data rather than guessed:
+1. Re-ran the exact same repro angle with UW_MODEL_NO_DEPTH_SORT=1 -- the
+   SAME record still failed to draw. Rules out the depth-sort entirely
+   (already suspected after milestone 9's matched-angle A/B, now
+   confirmed a second way): whichever face is affected, sort on/off
+   makes no difference.
+2. Added UW_DEBUG_NEARCLIP_RANGE=lo:hi (near_clip_visible_tiles, both the
+   per-edge test and the FINAL iVar18 tally) to inspect the failing
+   record directly. It showed pointcount=1 for that record BEFORE the
+   clip loop even ran a real edge test -- not a clip-plane edge case,
+   the record's own point count was already wrong at entry.
+3. Added UW_DEBUG_EPARSE (parse_e_model_file, right where each part's
+   vertex count gets written) and UW_DEBUG_FACE51 (dumps every face's
+   stored point count straight from the model's own parsed data). Both
+   agreed: ROCKBIG.E's PARTS block has exactly 52 real entries, but the
+   parser was emitting 53 -- a phantom last part with vertcount=1.
+4. Read data/DATA3D/ROCKBIG.E in a hex dump: the PARTS block's last real
+   entry is terminated "...8);\r\n}\r\n" -- CRLF line endings. The
+   parser's own end-of-block check (format string "%*c%1[}]": skip
+   exactly one character, then test for '}') only works if that's a
+   single \n, which is what the ORIGINAL game got for free from DOS/
+   Windows CE's text-mode fopen() automatically collapsing \r\n to \n.
+   POSIX fopen() never does that translation, mode string or not, so
+   this port's %*c skips the \r and lands on \n, %1[}] fails to match,
+   and the parser concludes there's one more part to read -- parsing a
+   phantom, degenerate "face" off of the "}\r\n\nNODES {\r\n..." bytes
+   that follow. That phantom face's point count (1) is why it always
+   failed to rasterize: not a camera/rotation/sort-dependent rendering
+   bug at all, but a static property of the parsed model, present in
+   memory before a single frame ever renders. This also explains why the
+   symptom was only visible at SOME viewing angles despite being always
+   "broken" -- the phantom face only shows up as a hole on the frames
+   where it would have been the one thing covering that screen patch.
+
+Fixed at the actual root rather than patching the one scanf pattern:
+data/DATA3D/*.E is CRLF-authored throughout (this is almost certainly
+not ROCKBIG-specific), so parse_e_model_file now runs every .E file's
+bytes through a small strip-\r pass (uw_e_model_strip_cr: read the
+raw fopen()'d file fully, drop every '\r', fmemopen() a clean stream in
+its place) before any scanf touches it -- replicating the text-mode
+translation the recovered parser code was always written assuming,
+rather than reworking every individual "%*c"/whitespace-sensitive scanf
+pattern in this parser to be CRLF-safe one at a time.
+
+Live-verified: UW_DEBUG_EPARSE now shows ROCKBIG.E stopping cleanly at
+part=51 (52 total, no phantom 53rd). The face-dump tool's sequence at
+the same repro angle that showed a gap before (...rec070, rec071, GAP,
+rec072-HUD) now runs contiguous (...rec070, rec071, rec072-HUD, no
+gap). Screenshot-confirmed: the small hole at the top of the rock
+silhouette at rotation_offset=270 is gone; the boulder now renders as a
+fully closed, solid shape.
+
+The UW_DEBUG_NEARCLIP_RANGE/UW_DEBUG_EPARSE/UW_DEBUG_FACE51 diagnostics
+added while chasing this are left in place (all zero-cost when unset,
+same convention as every other UW_DEBUG_* tool this session) -- likely
+useful again if any OTHER .E model turns out to have its own edge case
+here, or for verifying a given model's real face count without
+cross-referencing the raw text file by hand.
+
+run-regressions.sh: 1/6 clean -- unchanged from the pre-existing,
+already-bisected settle_mobile_to_immobile crash (milestone 8); this
+fix touches only .E model text parsing, nowhere near that code path.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (11): hide_walls debug toggle, to filter wall/floor/
+ceiling geometry out of the render while investigating a single object
+═══════════════════════════════════════════════════════════════════════════
+Request: filter out wall geometry so the decal-backface investigation
+(and future ones) isn't cluttered by unrelated wall polygons -- several
+of which turned out to coincidentally share texture ids with the object
+being investigated (found while chasing the TMAP decal report: filtering
+UW_DEBUG_RASTER output by texture id alone pulled in off-screen wall
+segments using the same id, not just the object in question).
+
+Added a "toggle" field type to debug_ui.c (dbgui_field_toggle(name,
+int*)) -- a boolean row shown as "name: ON"/"name: OFF"; RETURN, LEFT,
+RIGHT, or a click all just flip it, no numeric-edit mode. Wired a new
+"hide_walls" toggle into the Object Tuner panel, backed by a new global
+(g_uw_hide_walls).
+
+Mechanism: process_visible_tile_cell (uw.c, the function walk_visible_
+tiles calls per visible tile to emit its wall/floor/ceiling geometry
+into the shared per-frame render arena) commits each wall quad in two
+steps -- write the quad's geometry/texptr into the current arena slot,
+then advance DAT_0023b83c (and DAT_0023b838, the vertex cursor) so
+render_visible_tile_list will actually walk it. Found and gated all 4
+of that function's own commit sites (three different code idioms for
+the same "commit" operation, one straightforward grep for the literal
+pattern only caught 2 of them -- had to check every assignment to
+DAT_0023b83c across the function's real extent, 55223-56316, to find
+the other 2). When the toggle is on, the advance is skipped, so the
+wall's just-written data is silently overwritten by whatever the next
+thing emitted into that slot is instead of ever reaching render_
+visible_tile_list -- floor and objects (emit_tile_features/emit_tile_
+objects/emit_catalog_object, separate functions with their own commit
+sites, deliberately left untouched) are unaffected.
+
+Live-verified at the boulder repro position: toggling hide_walls on
+makes the walls/floor/ceiling disappear entirely (plain background,
+boulder still fully rendered); toggling back off restores them, no
+leftover state.
+
+run-regressions.sh: 1/6 clean -- unchanged, pre-existing bisected
+crash (milestone 8), unrelated to this change.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (12): debug panel on by default -- no more UW_MODEL_TUNER
+env var needed
+═══════════════════════════════════════════════════════════════════════════
+Request: "Turn the debug panel on by default instead of needing an env
+var." Removed the `getenv("UW_MODEL_TUNER")` gate around the panel's
+field-population block in emit_catalog_object -- it now always runs
+whenever a catalog object draws, no relaunch-with-env-var step needed.
+
+The panel itself still only SHOWS on backtick (g_visible in debug_ui.c
+starts 0, unchanged) -- populating the field list is silent/free when
+the panel isn't visible, and dbgui_visible() (which gates whether
+keyboard/mouse input gets swallowed from the game) is unaffected by
+population alone. So this has zero effect on normal play or any of the
+regression demo scripts, none of which press backtick -- confirmed via
+run-regressions.sh (same 1/6 clean, pre-existing unrelated crash,
+unchanged).
+
+Live-verified: panel appears correctly on backtick with no UW_MODEL_
+TUNER set at all.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (13): ROOT-CAUSED the door-leaf flicker and confirmed
+raster_triangle's real backface cull -- fixed via a per-model winding-flip
+flag on parse_e_model_file, not a rendering-pipeline bug
+═══════════════════════════════════════════════════════════════════════════
+Follow-up to milestone 9's decal investigation. QA pushback (correctly):
+"This is not a real bug: instead, this seems to work as a cheap form of
+backface culling. Real bug: our 3d models from the .E files have the
+triangle winding flipped."
+
+Traced raster_textured_span's actual pixel loop (uw.c ~9370-9392): span
+width (iVar11 = right_edge_x - left_edge_x) gates the entire pixel-write
+loop behind `if (0 < iVar11) { do {...} while(...); }`. raster_triangle's
+own left/right edge assignment (`if (uVar9 < uVar7) {...} else {...}`,
+~uw.c:8926) picks which edge is "left" using a precomputed index from
+the vertex Y-sort branch taken -- never an actual X comparison. Live
+UW_DEBUG_RASTER trace at the same decal, front vs back rotation,
+confirmed the correlation exactly: every visible triangle had assumed-
+left_x0 < assumed-right_x0; every invisible one had them swapped. This
+IS a real, working (if "cheap") backface cull -- not a bug -- exactly
+as flagged.
+
+Real bug, per redirect: audited face winding directly from the raw .E
+text (cross product of each face's first two edges vs. the offset from
+face centroid to mesh centroid -- computed offline in Python, outside
+the game, no rendering-pipeline assumptions involved). DOOR.E: all 6
+faces backward (both of the door's own large visible faces have normals
+pointing INTO the slab -- verified by hand against DOOR.E's plain box
+geometry, unambiguous, not a heuristic artifact). DFRAME.E: 2 of 11
+backward (the two inner jamb faces). ROCKBIG.E: only 1 of 52 by the same
+heuristic -- but this heuristic (plain point-average centroid as an
+"inside" reference) turned out to be unreliable for an irregular,
+non-convex rock shape, unlike the door's clean box; live visual
+confirmation after the fix below overrides it (see final result).
+
+First attempt: auto-detect and reverse each backward face at parse time
+using the real per-face normal parse_e_model_file already computes (via
+vec3_cross) but, confirmed by tracing the whole function including the
+real ARM disassembly, never actually used for anything -- only point
+positions and vertex-index lists survive into the model's real output.
+Reverted per explicit instruction ("too complicated for what's just a
+handful of known-bad models") in favor of a simpler, explicit approach.
+
+Shipped fix: parse_e_model_file takes a new flip_winding parameter (not
+part of the original recovered signature -- this whole function is this
+port's own .E text-format parser, not original binary logic, so adding
+a parameter here is adding to OUR code, not editing recovered data).
+When set, every face's just-read vertex list is reversed in place
+(simple two-pointer swap, no normal/centroid math) right after it's
+read, before anything downstream uses it. Passed 1 at the specific load
+call sites for DFRAME.E, ROCKBIG.E, and both DOOR.E loads (25 other
+models' load calls pass 0, unchanged). This is a per-model blanket flip,
+not a per-face correction -- fine for DOOR.E (100% backward) and, per
+live visual confirmation, works out for ROCKBIG.E too (even though a
+static per-face audit suggested it shouldn't -- the audit's own
+centroid heuristic was the unreliable part here, not the fix).
+
+Explicitly NOT touched: data/DATA3D/*.E files themselves -- these are
+untracked/not checked in, so the fix had to live in code (the parser),
+not in the asset data, per direct instruction.
+
+Live-verified: boulder (ROCKBIG.E, catalog=7) confirmed visually
+"perfect" at the same repro position used throughout this whole
+investigation. Door/door-frame not yet independently re-tested after
+this specific change (worth a follow-up pass at the original door-leaf-
+flicker repro position, now that the actual mechanism is understood).
+
+run-regressions.sh: 1/6 clean -- unchanged, pre-existing bisected crash
+(milestone 8), unrelated to this change.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-27 (14): flip_winding set corrected by eye -- door leaf
+does NOT need it, the bridge does
+═══════════════════════════════════════════════════════════════════════════
+Direct QA correction after milestone 13 shipped: "The door leaf model
+does not need to be flipped, the bridge model does." Updated the
+parse_e_model_file call sites accordingly -- DOOR.E's flip_winding
+argument reverted to 0 (both loads), FBRIDGE.E's flipped to 1. DFRAME.E
+and ROCKBIG.E unchanged (still 1).
+
+Current flip_winding=1 set: DFRAME.E, FBRIDGE.E, ROCKBIG.E.
+Current flip_winding=0 (unchanged) for DOOR.E and all other models.
+
+This is now confirmed by eye, not the offline centroid-normal
+heuristic from milestone 13 -- that heuristic said DOOR.E's faces were
+100% backward (unambiguous against its own plain box geometry) and
+ROCKBIG.E's were 51/52 already correct, yet live visual testing found
+the OPPOSITE for both (door didn't need it, boulder did). The heuristic
+is not a reliable predictor for which models need this flag; eye-
+confirmed testing at a real repro position is the only trustworthy
+signal for this fix, model by model.
+
+run-regressions.sh: 1/6 clean -- unchanged, pre-existing bisected crash
+(milestone 8), unrelated to this change.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (15): root-caused and fixed the door-leaf-never-
+animates bug -- wrong source field AND wrong magnitude, plus a real
+discovery about how door "animation" actually works in this engine
+═══════════════════════════════════════════════════════════════════════════
+Bug report: using a door doesn't animate the door leaf. Door switches to
+the "opening" state (quality does change, "You see a moving door" is a
+correct message) but the rendered door never visibly rotates. Repro:
+bug-open-door.txt (a recorded demo, pre-existing in the repo root).
+
+Investigation used UW_DEBUG_DOOR (reused an existing env var, no new one
+added) to trace emit_anim_object_frames and emit_catalog_object live
+through the repro, plus a spliced-screenshot harness (WAIT commands
+broken into chunks with SCREENSHOT interleaved) to correlate rendered
+frames against traced values frame-by-frame.
+
+Two distinct problems, both now fixed in emit_anim_object_frames
+(uw.c):
+
+1. Wrong source field. The swing-angle magnitude was read from
+   `*(byte*)(obj+1) >> 1 & 7` (bVar4's own bits), confirmed via live
+   trace to sit at a constant 0 the entire time a door opened. The
+   door's real open/closed state lives in the object's "quality" field
+   instead (`obj[3] & 0x3f` -- the same field UW_DUMP_OBJECTS_FILE's own
+   `_quality` reads). Fixed to read quality instead.
+
+2. Wrong magnitude scale, discovered only after fixing (1) still showed
+   no visible rotation. Traced further and found: door quality is NOT a
+   smooth multi-tick counter. The real "open door" builtin
+   (FUN_0007c708) does one guarded atomic step,
+   `(quality & 0xf) + 8` (guarded so it can't re-fire once already
+   >= 8) -- closed is 0-7, open is 8-15, and nothing in this codebase
+   ever increments it further. So quality only ever measured 0 or 8
+   across the whole replay, confirming this door's "animation" really
+   is a single discrete state flip, not a sweep -- matching what the
+   user directly observed mid-investigation ("I did see the door
+   rotating slightly once, but it never moved further" -- that's not a
+   tick-rate bug, that IS the door's real, correct, one-shot state
+   machine). Since bits 0-2 of quality stayed 0 whenever observed, only
+   bit 3 (the open flag) ever carries information, so the fix treats it
+   as boolean and multiplies by a fixed full-swing magnitude (5 raw
+   units, matching heading's own 4096-per-eighth-turn fixed-point scale
+   used throughout this render path) instead of passing the tiny 0/1
+   raw value straight through (which computed and applied correctly
+   end-to-end -- confirmed via a temporary forced-value override proving
+   the same catalog_u==0xe/0xf consumer in emit_catalog_object swings
+   the mesh dramatically at larger magnitudes -- but was visually
+   almost imperceptible at magnitude 1).
+
+Also confirmed along the way (visible in the diff, kept):
+ - The catalog_u==0xe/0xf consumer block in emit_catalog_object (reads
+   DAT_0018957a, adds it to local_7c via Ordinal float calls) DOES fire
+   for this door and DOES feed the real per-vertex rotation angle
+   (local_7c is degrees, passed straight to build_euler_rotation_matrix
+   a few dozen lines later) -- an earlier working theory this session
+   that catalog 0xe/0xf was dead/unreachable for doors was wrong,
+   traced to a stale build; a fresh rebuild+retest showed it fires 1512
+   times across the repro.
+ - emit_anim_object_frames actually has three catalog dispatch paths
+   (catalog 1 = DFRAME, catalog 0xc = unused by this particular repro,
+   catalog 0xe/0xf = the real leaf-swing consumer for a regular hinged
+   door), gated by `local_34` (stays -1, i.e. "use 0xe/0xf", for every
+   door_type except 6).
+ - door_type==6's own separate DAT_0018957a assignment (no <<0xc scale,
+   structurally can't ever reach the 0xe/0xf consumer since it sets
+   local_34 >= 0) looks like a second, likely-dead-or-differently-wired
+   swing path -- NOT fixed here, out of scope for this bug, flagged for
+   a future pass if a type-6 door (portcullis-style) is ever found to
+   have the same symptom.
+
+Live-verified via screenshot: frame immediately before quality flips to
+8 shows a fully closed door; the very next captured frame after the
+flip shows the leaf swung open on its hinge with a dark passage visible
+beyond, holding stable (correctly, since nothing re-closes it) for the
+rest of the replay.
+
+run-regressions.sh: 6/6 clean.

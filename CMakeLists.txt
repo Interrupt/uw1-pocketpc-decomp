@@ -32,6 +32,7 @@ set(UW_SOURCES
   src/demomode.c
   src/democapture.c
   src/debug.c
+  src/debug_ui.c
 )
 
 add_executable(uw_dbg ${UW_SOURCES})
