@@ -6402,13 +6402,21 @@ undefined1 DAT_0024af98_backing[4096];
 undefined2 DAT_0024cfbc_backing[8192];
 #define DAT_0024cfbc DAT_0024cfbc_backing[0]
 /* was `int` -- truncated pointer to a 64-bit address on assignment in
-   FUN_000798c4 (&DAT_001007d0 + index*0x30), causing FUN_00079350 to
+   FUN_000798c4 (&DAT_001007d0 + index*0x30), causing spawn_creature_treasure_drop to
    dereference a garbage address (crash in demo_critter_orbit_cardinal.txt,
    EXC_BAD_ACCESS at uw.c:70173). Sibling DAT_00101404, assigned via the
    identical pattern, is correctly `char *`. */
 // was DAT_0024cfc4
 char *g_despawn_creature_record;
-undefined1 DAT_002034b5;
+// Was a lone `undefined1` scalar, but its only use (spawn_creature_
+// treasure_drop, src/ai.c) is `(&DAT_002034b5)[cVar4 * 0xd]` -- a
+// 13-byte-stride record table indexed by a derived level/tier value,
+// same "lone byte indexed as an array" bug class fixed throughout
+// this project. Widened generously, matching this file's other such
+// tables, since indexing past element 0 previously just read
+// whatever adjacent BSS happened to follow it.
+undefined1 DAT_002034b5_backing[8192];
+#define DAT_002034b5 DAT_002034b5_backing[0]
 char s_on_what__000878e0[] = "on_what?";
 static undefined1 DAT_000878ec_backing[32768];
 #define DAT_000878ec DAT_000878ec_backing[0]
@@ -36512,86 +36520,8 @@ LAB_00060f54:
 
 
 
-void FUN_00079350(param_1)
-char *param_1;  /* was `int` -- truncated the real object pointer FUN_000798c4
-                   passes in (on this 64-bit build), corrupting the address
-                   handed to object_list_insert_head(param_1 + 6, ...) below */
-
-{
-  int uw_ord2005_rem_159 = 0;
-  int iVar1;
-  uint uVar2;
-  byte bVar3;
-  char cVar4;
-  char cVar5;
-  short sVar6;
-  undefined4 uVar7;
-  char extraout_r1;
-  int extraout_r1_00;
-  int extraout_r1_01;
-  int iVar8;
-  char *pObj;  /* was reuse of `iVar8` (int) -- truncated
-                  spawn_new_object's real pointer */
-
-  bVar3 = *(byte *)(g_despawn_creature_record + 0x26);
-  uVar7 = Ordinal_1053();
-  uw_ord2005_rem_159 = ((int)(uVar7)) % (0x10);
-  if (uw_ord2005_rem_159 < (int)(uint)(bVar3 >> 4)) {
-    uVar7 = Ordinal_1053();
-    sVar6 = DAT_00201b68;
-    Ordinal_2005(DAT_00201b68 * -3 + 0x28,uVar7);
-    iVar8 = ((char)sVar6 + -0xb) * 3 + (int)extraout_r1;
-    cVar4 = (char)iVar8;
-    if (iVar8 * 0x1000000 >> 0x18 < 0) {
-      cVar4 = '\0';
-    }
-    cVar5 = (&DAT_002034b5)[cVar4 * 0xd];
-    if (cVar5 == '\0') {
-      cVar5 = '\x01';
-    }
-    if (cVar5 < '\f') {
-      if (cVar5 < '\b') {
-        if ('\x03' < cVar5) {
-          cVar5 = (cVar5 + -2) * '\x02';
-        }
-      }
-      else {
-        cVar5 = (cVar5 + -5) * '\x04';
-      }
-    }
-    else {
-      cVar5 = cVar5 * '\b' + -0x44;
-    }
-    iVar8 = (bVar3 & 0xf) * 4;
-    iVar1 = (int)cVar5;
-    if (iVar8 < iVar1) {
-      uVar7 = Ordinal_1053();
-      Ordinal_2005(iVar1,uVar7);
-      if (iVar8 <= extraout_r1_01) {
-        return;
-      }
-      cVar5 = '\x01';
-    }
-    else {
-      cVar5 = Ordinal_2005(iVar1,iVar8);
-      sVar6 = roll_dice_sum(4,((int)cVar5 << 0x19) >> 0x18);
-      cVar5 = (char)(sVar6 >> 2);
-    }
-    uVar2 = (uint)cVar5;
-    if (0 < (int)uVar2) {
-      pObj = (char *)spawn_new_object((short)cVar4 + 0xa0,0);
-      *(byte *)(pObj + 6) = *(byte *)(pObj + 6) & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
-      *(char *)(pObj + 7) = (char)((uVar2 << 0x16) >> 0x18);
-      object_list_insert_head(param_1 + 6,pObj);
-    }
-  }
-  return;
-}
-
-
-
 void FUN_0007955c(param_1)
-char *param_1;  /* was `int` -- same pointer-truncation bug as FUN_00079350 */
+char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
 
 {
   int uw_ord2005_rem_160 = 0;
@@ -36614,7 +36544,7 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as FUN_00079350 */
 
 
 void FUN_000795cc(param_1)
-char *param_1;  /* was `int` -- same pointer-truncation bug as FUN_00079350 */
+char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
 
 {
   int uw_ord2005_rem_161 = 0; int uw_ord2005_rem_162 = 0; int uw_ord2005_rem_163 = 0;
@@ -36672,7 +36602,7 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as FUN_00079350 */
 
 
 void FUN_00079784(param_1)
-char *param_1;  /* was `int` -- same pointer-truncation bug as FUN_00079350 */
+char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
 
 {
   int uw_ord2005_rem_164 = 0; int uw_ord2005_rem_165 = 0; int uw_ord2005_rem_166 = 0;
@@ -36731,7 +36661,7 @@ ushort * param_1;
   if ((param_1[7] & 0x10) == 0) {
     g_despawn_creature_record = &DAT_001007d0 +
                    (((int)(short)*param_1 & 0xfU) + (short)((*param_1 & 0x30) >> 4) * 0x10) * 0x30;
-    FUN_00079350(param_1);
+    spawn_creature_treasure_drop(param_1);
     FUN_0007955c(param_1);
     FUN_000795cc(param_1);
     FUN_00079784(param_1);

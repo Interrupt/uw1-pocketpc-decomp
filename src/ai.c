@@ -1393,3 +1393,92 @@ byte * param_1;
   empty_container_into_world(param_1,(&DAT_001007d9)[(*param_1 & 0x3f) * 0x30]);
   return;
 }
+
+
+
+
+
+// was FUN_00079350 -- rolls a chance (based on g_despawn_creature_
+// record's own drop-rate byte, offset +0x26, high nibble) to spawn a
+// treasure item on a dying/despawning creature: on a hit, derives an
+// item-type tier from the current dungeon level (DAT_00201b68) via a
+// lookup table (DAT_002034b5), rolls a quantity (Ordinal_2005/
+// roll_dice_sum), and if positive spawns a new object (type
+// tier+0xa0) with that quantity encoded into its quality field,
+// linking it into param_1's object chain. No callers found by grep
+// in the remaining decompile.
+void spawn_creature_treasure_drop(param_1)
+char *param_1;  /* was `int` -- truncated the real object pointer FUN_000798c4
+                   passes in (on this 64-bit build), corrupting the address
+                   handed to object_list_insert_head(param_1 + 6, ...) below */
+
+{
+  int uw_ord2005_rem_159 = 0;
+  int iVar1;
+  uint uVar2;
+  byte bVar3;
+  char cVar4;
+  char cVar5;
+  short sVar6;
+  undefined4 uVar7;
+  char extraout_r1;
+  int extraout_r1_00;
+  int extraout_r1_01;
+  int iVar8;
+  char *pObj;  /* was reuse of `iVar8` (int) -- truncated
+                  spawn_new_object's real pointer */
+
+  bVar3 = *(byte *)(g_despawn_creature_record + 0x26);
+  uVar7 = Ordinal_1053();
+  uw_ord2005_rem_159 = ((int)(uVar7)) % (0x10);
+  if (uw_ord2005_rem_159 < (int)(uint)(bVar3 >> 4)) {
+    uVar7 = Ordinal_1053();
+    sVar6 = DAT_00201b68;
+    Ordinal_2005(DAT_00201b68 * -3 + 0x28,uVar7);
+    iVar8 = ((char)sVar6 + -0xb) * 3 + (int)extraout_r1;
+    cVar4 = (char)iVar8;
+    if (iVar8 * 0x1000000 >> 0x18 < 0) {
+      cVar4 = '\0';
+    }
+    cVar5 = (&DAT_002034b5)[cVar4 * 0xd];
+    if (cVar5 == '\0') {
+      cVar5 = '\x01';
+    }
+    if (cVar5 < '\f') {
+      if (cVar5 < '\b') {
+        if ('\x03' < cVar5) {
+          cVar5 = (cVar5 + -2) * '\x02';
+        }
+      }
+      else {
+        cVar5 = (cVar5 + -5) * '\x04';
+      }
+    }
+    else {
+      cVar5 = cVar5 * '\b' + -0x44;
+    }
+    iVar8 = (bVar3 & 0xf) * 4;
+    iVar1 = (int)cVar5;
+    if (iVar8 < iVar1) {
+      uVar7 = Ordinal_1053();
+      Ordinal_2005(iVar1,uVar7);
+      if (iVar8 <= extraout_r1_01) {
+        return;
+      }
+      cVar5 = '\x01';
+    }
+    else {
+      cVar5 = Ordinal_2005(iVar1,iVar8);
+      sVar6 = roll_dice_sum(4,((int)cVar5 << 0x19) >> 0x18);
+      cVar5 = (char)(sVar6 >> 2);
+    }
+    uVar2 = (uint)cVar5;
+    if (0 < (int)uVar2) {
+      pObj = (char *)spawn_new_object((short)cVar4 + 0xa0,0);
+      *(byte *)(pObj + 6) = *(byte *)(pObj + 6) & 0x3f | (byte)((uVar2 & 0x3ff) << 6);
+      *(char *)(pObj + 7) = (char)((uVar2 << 0x16) >> 0x18);
+      object_list_insert_head(param_1 + 6,pObj);
+    }
+  }
+  return;
+}

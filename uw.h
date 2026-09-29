@@ -1004,6 +1004,9 @@ extern undefined1 DAT_0024af98_backing[4096];
 #define DAT_0024af98 DAT_0024af98_backing[0]
 extern undefined2 DAT_0024cfbc_backing[8192];
 #define DAT_0024cfbc DAT_0024cfbc_backing[0]
+extern char *g_despawn_creature_record;
+extern undefined1 DAT_002034b5_backing[8192];
+#define DAT_002034b5 DAT_002034b5_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3420,7 +3423,7 @@ undefined1 walk_strings_pak_huffman_tree();
 int read_strings_pak_bit();
 undefined4 empty_container_into_world();
 void drop_creature_inventory_on_death();
-void FUN_00079350();
+void spawn_creature_treasure_drop();
 void FUN_0007955c();
 void FUN_000795cc();
 void FUN_00079784();
