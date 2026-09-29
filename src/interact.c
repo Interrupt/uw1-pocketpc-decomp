@@ -141,7 +141,7 @@ void interact_look()
       }
       message_scroll_print_wrapped(&s_scroll_newline_0008522c);
       if (local_18 != 0) {
-        FUN_0007266c(g_interact_target,*(undefined1 *)(DAT_00086df8 + 0x2b));
+        roll_container_trap_disarm_check(g_interact_target,*(undefined1 *)(DAT_00086df8 + 0x2b));
       }
     }
   }
@@ -299,4 +299,120 @@ undefined4 param_2;
     }
   }
   return 0;
+}
+
+
+
+
+
+
+// was FUN_0007266c -- roll_container_lockpick_check's sibling for the
+// "disarm trap" mechanic: same container-contents/quality-gated setup,
+// but rolls a disarm skill check (roll_skill_check(param_2,8)) and
+// handles all three outcomes -- critical failure (<0: trap triggers,
+// via FUN_0007d074/FUN_0007dfd8 or FUN_0007cdbc depending on whether
+// the trapped item resolved through a link) with "Your bumbling
+// attempts have set o[ff the trap]", plain failure (==0: "Unable to
+// defuse trap"), and success (>0: "X was successfully dearmed on the
+// Y" followed by free_linked_object_recursive removing the trap).
+// acStackY_84f50's 544536-byte size is this project's established
+// phantom-oversized-local artifact (only ever holds a short string
+// copy here), not a real requirement.
+undefined4 roll_container_trap_disarm_check(param_1,param_2)
+char *param_1;
+undefined4 param_2;
+
+{
+  char *wptr_53920;
+  char *wptr_53945;
+  char *wptr_53956;
+  char cVar1;
+  short sVar2;
+  byte *pbVar3;
+  byte *pbVar4;
+  char *pcVar5;
+  char *pcVar6;
+  byte *pbVar7;
+  undefined4 uVar8;
+  char acStackY_84f50 [544536];
+  ushort *local_34 [2];
+  char acStack_2c [20];
+  
+  uVar8 = 0;
+  if (((*(byte *)(param_1 + 1) & 0x80) == 0) &&
+     (local_34[0] = (ushort *)(param_1 + 6), (*local_34[0] & 0xffc0) != 0)) {
+    pbVar3 = (byte *)FUN_000537d0(local_34,0,6,0xffffffff,0xffff);
+    if (pbVar3 != (byte *)0x0) {
+      if ((*pbVar3 & 0x30) < 0x20) {
+        pbVar7 = (byte *)0x0;
+        pbVar4 = pbVar3;
+      }
+      else {
+        pbVar4 = (byte *)resolve_object_link(pbVar3 + 6);
+        pbVar7 = pbVar3;
+      }
+      if ((*pbVar4 & 0x3f) < 3) {
+        uVar8 = roll_skill_check(param_2,8);
+        if ((short)uVar8 < 1) {
+          if ((short)uVar8 < 0) {
+            message_scroll_print_wrapped(s_Your_bumbling_attempts_have_set_o_00087384);
+            sVar2 = FUN_00078b18(acStack_2c,pbVar4,0,0);
+            if (sVar2 == 0) {
+              pcVar6 = s_UNNAMED_00084f24;
+    wptr_53920 = acStackY_84f50;
+              do {
+                cVar1 = *pcVar6;
+                *wptr_53920 = cVar1; wptr_53920 = wptr_53920 + 1;
+                pcVar6 = pcVar6 + 1;
+              } while (cVar1 != '\0');
+            }
+            message_scroll_print_wrapped(acStack_2c);
+            message_scroll_print_wrapped(&DAT_00084f20);
+            if (pbVar7 == (byte *)0x0) {
+              FUN_0007d074(g_player_object,param_1,pbVar4,(int)DAT_002020a0,DAT_002020a4);
+              FUN_0007dfd8(local_34[0],pbVar4);
+            }
+            else {
+              FUN_0007cdbc(g_player_object,param_1,pbVar7,0xffffffff);
+            }
+          }
+          else {
+            message_scroll_print_wrapped(s_Unable_to_defuse_trap__0008736c);
+          }
+        }
+        else {
+          sVar2 = FUN_00078b18(acStack_2c,pbVar4,0,0);
+          pcVar6 = s_UNNAMED_00084f24;
+    wptr_53956 = acStackY_84f50;
+          if (sVar2 == 0) {
+            pcVar5 = pcVar6;
+    wptr_53945 = acStackY_84f50;
+            do {
+              cVar1 = *pcVar5;
+              *wptr_53945 = cVar1; wptr_53945 = wptr_53945 + 1;
+              pcVar5 = pcVar5 + 1;
+            } while (cVar1 != '\0');
+          }
+          message_scroll_print_wrapped(&DAT_00085c88);
+          message_scroll_print_wrapped(acStack_2c);
+          message_scroll_print_wrapped(s_on_the_000873cc);
+          sVar2 = FUN_00078b18(acStack_2c,param_1,0,0);
+          if (sVar2 == 0) {
+            do {
+              cVar1 = *pcVar6;
+              *wptr_53956 = cVar1; wptr_53956 = wptr_53956 + 1;
+              pcVar6 = pcVar6 + 1;
+            } while (cVar1 != '\0');
+          }
+          message_scroll_print_wrapped(acStack_2c);
+          message_scroll_print_wrapped(s_was_successfully_dearmed__000873b0);
+          free_linked_object_recursive(local_34[0]);
+        }
+      }
+    }
+  }
+  else {
+    uVar8 = 0;
+  }
+  return uVar8;
 }
