@@ -743,6 +743,13 @@ int g_tune_last_catalog = -1;
    untouched -- only process_visible_tile_cell's own wall-quad commits
    check this flag. */
 int g_uw_hide_walls = 0;
+/* Debug-panel toggle (dbgui_field_toggle) for pick_object_under_cursor's
+   own UW_PICK_DIAG trace -- lets the pick stencil/object-resolution trace
+   be flipped on live from the object tuner panel instead of needing a
+   relaunch with the env var set. Read alongside getenv("UW_PICK_DIAG") at
+   each pick call, not cached, so toggling it mid-session takes effect on
+   the very next click. */
+int g_uw_debug_pick_diag = 0;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
    view/camera matrix -- build_view_matrix writes the whole matrix in one shot
@@ -32763,7 +32770,8 @@ ushort *pick_object_under_cursor()
   uVar4 = (uint)bVar1;
   { const char *_f = getenv("UW_PICK_FORCE_SLOT");   /* debug: force the object branch */
     if (_f && (uint)DAT_0023b830 > 1) { uVar4 = (uint)atoi(_f); if (uVar4 == 0 || uVar4 >= (uint)DAT_0023b830) uVar4 = 1; bVar1 = (byte)uVar4; } }
-  if (getenv("UW_PICK_DIAG"))
+  int _pick_diag = g_uw_debug_pick_diag || (getenv("UW_PICK_DIAG") != NULL);
+  if (_pick_diag)
     fprintf(stderr, "[pick] mx=%d my=%d stencil=0x%02x nobj=%d\n",
             (int)g_mouse_x, (int)g_mouse_y, uVar4, (int)DAT_0023b830);
   if ((uVar4 == 0) || (DAT_0023b830 <= uVar4)) {
@@ -32784,6 +32792,8 @@ ushort *pick_object_under_cursor()
 
     if(puVar3) {
       DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(*puVar3 & 0x1ff));
+      if (_pick_diag)
+        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x\n", uVar4, (unsigned)(*puVar3 & 0x1ff));
     }
 
     DAT_002020a8 = DAT_002020b0 + 2;
@@ -58509,6 +58519,7 @@ LAB_000640ec:
     }
     dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
     dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
+    dbgui_field_toggle("pick_diag", &g_uw_debug_pick_diag);
     dbgui_end();
   }
   sVar13 = (short)((int)sVar13 + (int)g_tune_rotation_offset);
@@ -72618,6 +72629,9 @@ int param_3;
   }
   uVar3 = uVar2 >> 6 & 7;
   uVar1 = (ushort)((uVar7 & 0x30) >> 4);
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] use_object_on_target: obj0=0x%04x class(uVar3)=%d family(uVar1)=%d\n",
+            (unsigned)uVar2, (int)uVar3, (int)uVar1);
   if ((uVar2 >> 6 & 7) == 0) {
     if (((uVar1 == 1) && (param_3 == 0)) && (param_1 != 0)) {
       FUN_000545ac(param_2,param_1);
