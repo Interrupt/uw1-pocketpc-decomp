@@ -6453,7 +6453,7 @@ undefined4 DAT_0024cff8;
 undefined4 DAT_0024cfd4;
 undefined DAT_0007e644_backing[8192];
 #define DAT_0007e644 DAT_0007e644_backing[0]
-static undefined DAT_00088640_backing[8192];
+undefined DAT_00088640_backing[8192];
 #define DAT_00088640 DAT_00088640_backing[0]
 short DAT_002506f0;
 undefined2 DAT_002029c8;
@@ -36517,70 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-// was reinstall_active_palette -- re-expand DAT_00088d98 into DAT_00088640 and re-install it as
-// g_palette_rgb565 (real light-level/tint args dropped by Ghidra)
-void reinstall_active_palette()
-
-{
-  /* expand_pals_bytes's 3rd argument was dropped here -- confirmed via real
-     ARM disassembly: this call site (`bl expand_pals_bytes` right after
-     loading only r0/r1) never sets r2 itself, so it silently used
-     whatever was left over in that register from the caller's own
-     context. expand_pals_bytes's param_3 controls whether it scales each
-     raw palette byte up from PALS.DAT's 6-bit-per-channel storage
-     (param_3==0, `<<2`) or copies it unscaled (param_3!=0) -- and
-     DAT_00088d98 (the source here) always holds the RAW, unscaled bytes
-     load_pals_bank loaded (it only produces the *scaled* version in its
-     own local stack buffer, which doesn't survive past that call). With
-     a leftover-nonzero r2, this installed the unscaled (very dark)
-     values into g_palette_rgb565 instead of the real palette -- confirmed:
-     this is what made the whole screen go dark after wiring
-     main_menu_loop through set_palette_bank (which calls this function on
-     every palette load, unlike the rarer hover-timer-only path this
-     bug previously hid behind). Pass 0 explicitly, matching
-     load_pals_bank's own established convention for this exact source
-     format. */
-  expand_pals_bytes(&DAT_00088640,&DAT_00088d98,0);
-  build_rgb565_palette(&DAT_00088640,0xffffffff);
-  return;
-}
-
-
-
-// WARNING: Globals starting with '_' overlap smaller symbols at the same address
-
-// was FUN_0007e9c4
-void plot_pixel(param_1,param_2,param_3)
-short param_1;
-short param_2;
-short param_3;
-
-{
-  int iVar1;
-
-  iVar1 = (int)param_2;
-  /* No bounds check on (param_1, iVar1) against the real 320x240
-     framebuffer (GX_W/GX_H, gx_stub.c) before this raw write -- callers
-     that plot a small crosshair/cursor around a point (e.g. draw_hotspot_crosshair_marker,
-     +-1 in x or y around a stored coordinate) can walk one pixel outside
-     the screen near an edge with nothing stopping them. Confirmed live:
-     ASan-caught heap-buffer-overflow WRITE here reached via ordinary
-     Talk-mode interaction. Same defensive "skip instead of touching
-     memory outside the real buffer" posture as resolve_object_link's
-     own out-of-range guard elsewhere in this file. */
-  if ((param_1 < 0) || (0x140 <= param_1) || (iVar1 < 0) || (0xf0 <= iVar1)) {
-    return;
-  }
-  *(undefined2 *)
-   ((g_uw_framebuffer) + (iVar1 * 0x140 + (int)param_1) * 2) =
-       (&g_palette_rgb565)[param_3];
-  dirty_rect_union(iVar1,iVar1,(int)param_1);
-  debug_framebuffer_dump("plot_pixel");
-  return;
-}
-
-
-
 /* Real body confirmed stripped from the shipped ARM code (disassembly is
    just `cpy pc,lr` -- an immediate return, ignoring whatever argument its
    single call site passes). Likely InitDebug()-equivalent from the same

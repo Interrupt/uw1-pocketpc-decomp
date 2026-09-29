@@ -1029,6 +1029,8 @@ extern undefined4 DAT_0024cff8;
 extern undefined4 DAT_0024cfd4;
 extern undefined DAT_0007e644_backing[8192];
 #define DAT_0007e644 DAT_0007e644_backing[0]
+extern undefined DAT_00088640_backing[8192];
+#define DAT_00088640 DAT_00088640_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
