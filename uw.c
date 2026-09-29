@@ -33017,15 +33017,15 @@ void FUN_00056864()
   DAT_002046f0 = 0xffff;
   if (DAT_000868dc == 2) {
     uVar4 = 0x33;
-    iVar2 = FUN_00072b3c();
+    iVar2 = is_music_playing();
     cVar3 = (iVar2 == 0) + '/';
-    iVar2 = FUN_00072b3c();
+    iVar2 = is_music_playing();
   }
   else {
     uVar4 = 0x34;
-    iVar2 = FUN_00072b58();
+    iVar2 = is_sound_effects_enabled();
     cVar3 = (iVar2 == 0) + '1';
-    iVar2 = FUN_00072b58();
+    iVar2 = is_sound_effects_enabled();
   }
   iVar2 = (short)(ushort)(iVar2 != 0) + 3;
   FUN_00056688(6,cVar3);
@@ -33069,7 +33069,7 @@ short param_1;
     if (param_1 != 3) goto LAB_000569ec;
     uVar1 = 0;
   }
-  FUN_00072b74(uVar1);
+  set_music_enabled(uVar1);
   FUN_00056864();
 LAB_000569ec:
   if (DAT_002046fc == 0) {
@@ -33098,7 +33098,7 @@ short param_1;
     if (param_1 != 3) goto LAB_00056a44;
     uVar1 = 0;
   }
-  FUN_00072c10(uVar1);
+  set_sound_effects_enabled(uVar1);
   FUN_00056864();
 LAB_00056a44:
   if (DAT_002046fc == 0) {
@@ -36422,106 +36422,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_00072aac()
-
-{
-  if ((DAT_00087454 != 0) && (DAT_00087448 != 0)) {
-    if (DAT_0023c32c != -1) {
-      FUN_0004ca50(DAT_0023c3b8);
-      DAT_0023c280 = read_realtime_clock_units();
-      DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
-      DAT_00087448 = 1;
-    }
-  }
-  return;
-}
-
-
-
-undefined1 FUN_00072b2c()
-
-{
-  return DAT_0023c3a8;
-}
-
-
-
-undefined4 FUN_00072b3c()
-
-{
-  undefined4 uVar1;
-  
-  uVar1 = DAT_00087448;
-  if (DAT_00087454 == 0) {
-    uVar1 = 0;
-  }
-  return uVar1;
-}
-
-
-
-undefined4 FUN_00072b58()
-
-{
-  undefined4 uVar1;
-  
-  uVar1 = DAT_0008744c;
-  if (DAT_00087450 == 0) {
-    uVar1 = 0;
-  }
-  return uVar1;
-}
-
-
-
-void FUN_00072b74(param_1)
-int param_1;
-
-{
-  uint uVar1;
-  
-  if (DAT_00087454 != 0) {
-    if (param_1 == 0) {
-      uVar1 = 1;
-    }
-    else {
-      if (DAT_00087448 == 0) {
-        DAT_00087448 = 1;
-        FUN_000735c0();
-        play_music_track(DAT_0023c384,1);
-        return;
-      }
-      uVar1 = 0;
-    }
-    if (((DAT_00087448 & uVar1) != 0) && (DAT_0023c32c != -1)) {
-      DAT_00087448 = 0;
-      FUN_0004cfc8(DAT_0023c3b8);
-      DAT_00087448 = 0;
-    }
-  }
-  return;
-}
-
-
-
-void FUN_00072c10(param_1)
-int param_1;
-
-{
-  if (DAT_00087450 != 0) {
-    if (param_1 == 0) {
-      DAT_0008744c = 0;
-      thunk_FUN_00072c44();
-    }
-    else {
-      DAT_0008744c = 1;
-    }
-  }
   return;
 }
 

@@ -65,8 +65,8 @@ void ready_weapon()
     g_weapon_overlay_enabled = 1;
     set_hud_status_value(8,4);
     mode_icon_highlight_on((int)g_cursor_mode);
-    bVar2 = FUN_00072b2c();
-    if ((4 < bVar2) && (bVar2 = FUN_00072b2c(), bVar2 < 8)) {
+    bVar2 = get_current_music_track();
+    if ((4 < bVar2) && (bVar2 = get_current_music_track(), bVar2 < 8)) {
       return;
     }
     FUN_000735b0(8);

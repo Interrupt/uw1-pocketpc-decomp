@@ -89,3 +89,121 @@ int param_2;
   return uVar4;
 }
 
+
+
+
+
+
+
+// was FUN_00072aac -- restarts/resumes playback of the currently-loaded
+// music module (same start-playback steps as the tail of play_music_track,
+// minus the load), gated on the audio subsystem being initialized and
+// DAT_0023c32c (an open-module handle) being valid.
+void resume_music_playback()
+
+{
+  if ((DAT_00087454 != 0) && (DAT_00087448 != 0)) {
+    if (DAT_0023c32c != -1) {
+      FUN_0004ca50(DAT_0023c3b8);
+      DAT_0023c280 = read_realtime_clock_units();
+      DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
+      DAT_00087448 = 1;
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00072b2c -- returns the currently-playing music track number.
+undefined1 get_current_music_track()
+
+{
+  return DAT_0023c3a8;
+}
+
+
+
+// was FUN_00072b3c -- returns whether music is currently playing
+// (false if the audio subsystem isn't initialized).
+undefined4 is_music_playing()
+
+{
+  undefined4 uVar1;
+
+  uVar1 = DAT_00087448;
+  if (DAT_00087454 == 0) {
+    uVar1 = 0;
+  }
+  return uVar1;
+}
+
+
+
+// was FUN_00072b58 -- is_music_playing's counterpart for the sound-
+// effects subsystem (DAT_0008744c/DAT_00087450).
+undefined4 is_sound_effects_enabled()
+
+{
+  undefined4 uVar1;
+
+  uVar1 = DAT_0008744c;
+  if (DAT_00087450 == 0) {
+    uVar1 = 0;
+  }
+  return uVar1;
+}
+
+
+
+// was FUN_00072b74 -- enables (param_1!=0: resumes playing
+// DAT_0023c384, the current/pending track) or disables (param_1==0:
+// stops playback via FUN_0004cfc8) background music.
+void set_music_enabled(param_1)
+int param_1;
+
+{
+  uint uVar1;
+  
+  if (DAT_00087454 != 0) {
+    if (param_1 == 0) {
+      uVar1 = 1;
+    }
+    else {
+      if (DAT_00087448 == 0) {
+        DAT_00087448 = 1;
+        FUN_000735c0();
+        play_music_track(DAT_0023c384,1);
+        return;
+      }
+      uVar1 = 0;
+    }
+    if (((DAT_00087448 & uVar1) != 0) && (DAT_0023c32c != -1)) {
+      DAT_00087448 = 0;
+      FUN_0004cfc8(DAT_0023c3b8);
+      DAT_00087448 = 0;
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00072c10 -- set_music_enabled's counterpart for the sound-
+// effects subsystem: param_1==0 disables it (also calling
+// thunk_FUN_00072c44 to clean up), param_1!=0 enables it.
+void set_sound_effects_enabled(param_1)
+int param_1;
+
+{
+  if (DAT_00087450 != 0) {
+    if (param_1 == 0) {
+      DAT_0008744c = 0;
+      thunk_FUN_00072c44();
+    }
+    else {
+      DAT_0008744c = 1;
+    }
+  }
+  return;
+}

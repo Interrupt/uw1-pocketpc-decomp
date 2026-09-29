@@ -763,8 +763,8 @@ LAB_000337fc:
   }
   else {
     if (((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf000) == 0) && ((uVar9 & 0xff0) == 0x10)) {
-      bVar3 = FUN_00072b2c();
-      if ((bVar3 < 5) || (bVar3 = FUN_00072b2c(), 7 < bVar3)) {
+      bVar3 = get_current_music_track();
+      if ((bVar3 < 5) || (bVar3 = get_current_music_track(), 7 < bVar3)) {
         FUN_000735b0(6);
       }
       DAT_00101944 = read_realtime_clock_units();

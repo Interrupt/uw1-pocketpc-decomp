@@ -299,7 +299,7 @@ void enter_dungeon_view_hud_init()
   FUN_0007ea34(s_init_gamedisp_goes_000858e8);
   FUN_00046414();
   FUN_0007f044();
-  FUN_00072aac();
+  resume_music_playback();
   FUN_0003e2a4();
   if (DAT_000868d8 == 0) {
     if (g_cursor_mode != 0) {
@@ -466,8 +466,8 @@ short param_1;
             *(char *)(DAT_00086df8 + 0x60) = (char)((ushort)uVar2 >> 8);
             set_hud_status_value(8,4);
             mode_icon_highlight_on((int)g_cursor_mode);
-            bVar3 = FUN_00072b2c();
-            if ((bVar3 < 5) || (bVar3 = FUN_00072b2c(), 7 < bVar3)) {
+            bVar3 = get_current_music_track();
+            if ((bVar3 < 5) || (bVar3 = get_current_music_track(), 7 < bVar3)) {
               FUN_000735b0(8);
             }
           }
@@ -479,7 +479,7 @@ short param_1;
           mode_icon_highlight_on(iVar1);
         }
       }
-      if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar4 = FUN_00072b2c(), cVar4 == '\b')) {
+      if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar4 = get_current_music_track(), cVar4 == '\b')) {
         FUN_000735c0();
       }
       wait_for_click_release(1);
@@ -549,7 +549,7 @@ short param_1;
         g_cursor_mode = (short)((uint)iVar5 >> 0x10);
         mode_icon_highlight_on(3);
       }
-      if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar2 = FUN_00072b2c(), cVar2 == '\b')) {
+      if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar2 = get_current_music_track(), cVar2 == '\b')) {
         FUN_000735c0();
       }
       wait_for_click_release(1);
