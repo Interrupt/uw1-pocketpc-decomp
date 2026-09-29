@@ -2755,8 +2755,16 @@ LAB_00029e2c:
       if (0 < iVar1) {
         iVar5 = 0;
         do {
-          babl_read_var_word((int)*(short *)(param_1 + -2) + (int)(short)iVar5);
-          FUN_0001d3ac();
+          /* BUG FIX: was `babl_read_var_word(...); give_barter_item_by_item_id();`
+             -- the read result was discarded and the call made with zero
+             visible arguments, relying on the leftover register the
+             real ARM binary left it in (same dropped-argument bug class
+             documented throughout this project). Pass the read value
+             through explicitly, matching give_barter_item_by_item_id's
+             other call site (babl_builtin_give_ptr_npc) which already
+             does this correctly. */
+          sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2) + (int)(short)iVar5);
+          give_barter_item_by_item_id(sVar2);
           iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
         } while (iVar5 < iVar1);
       }
@@ -2785,7 +2793,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   do {
     if (local_1c[iVar2] != 0) {
       if ((short)uVar1 == local_14[iVar2]) {
-        FUN_0001d3ac(uVar1);
+        give_barter_item_by_item_id(uVar1);
         goto LAB_00029f2c;
       }
     }
@@ -2819,7 +2827,7 @@ void babl_builtin_do_inv_delete(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "do_inv_delete" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   babl_read_var_word((int)*(short *)(param_1 + -2));
-  FUN_0001da00();
+  remove_item_from_npc_inventory_by_id();
   return;
 }
 
@@ -4945,5 +4953,77 @@ ushort * param_1;
     object_list_insert_head(DAT_00100674 + 6,param_1);
   }
   return;
+}
+
+
+
+
+// was FUN_0001d3ac -- resolves param_1 (an item-value, per this
+// function's own comparison below and its caller
+// babl_builtin_give_ptr_npc) to an object and gives it to the NPC via
+// add_item_to_npc_inventory, then clears every player barter slot
+// whose item-value equals param_1 and redraws it.
+//
+// BUG FIX: the original decompile called both FUN_000535fc() and
+// add_item_to_npc_inventory() with zero visible arguments, relying on
+// leftover register state the way the real ARM binary does (same
+// dropped-argument bug class documented throughout this project) --
+// but FUN_000535fc(short) resolves exactly the kind of item-value/slot
+// index param_1 already is, and its return value (previously
+// discarded entirely, not even captured into a local) is exactly what
+// add_item_to_npc_inventory needs. Pass param_1 explicitly and capture
+// the resolved pointer instead of relying on implicit register
+// leftovers, which a C recompile has no equivalent for.
+void give_barter_item_by_item_id(param_1)
+short param_1;
+
+{
+  int iVar1;
+  void *pvItem;
+
+  pvItem = FUN_000535fc(param_1);
+  add_item_to_npc_inventory(pvItem);
+  FUN_00057118();
+  iVar1 = 0;
+  do {
+    if ((&DAT_000bbfd0)[iVar1] == param_1) {
+      FUN_00076e98((&DAT_000bc028)[iVar1]);
+      (&DAT_000bbfd0)[iVar1] = 0;
+      (&DAT_000bbf98)[iVar1] = 0;
+      draw_hotspot_crosshair_marker(1,iVar1);
+    }
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 4);
+  cursor_show_idle_tick();
+  FUN_0007ec50();
+  return;
+}
+
+
+
+// was FUN_0001da00 -- searches the current conversation partner's
+// (DAT_00100674) inventory list for an item matching item-id param_1;
+// if found, unlinks and frees it and returns 1, else returns 0. Used
+// by babl_builtin_do_inv_delete.
+undefined4 remove_item_from_npc_inventory_by_id(param_1)
+short param_1;
+
+{
+  ushort *puVar1;
+  int iVar2;
+  
+  iVar2 = DAT_00100674 + 6;
+  puVar1 = (ushort *)resolve_object_link(iVar2);
+  if (puVar1 != (ushort *)0x0) {
+    do {
+      if ((*puVar1 & 0x1ff) == (int)param_1) {
+        object_list_unlink(iVar2,puVar1);
+        free_object_slot(puVar1);
+        return 1;
+      }
+      puVar1 = (ushort *)resolve_object_link(puVar1 + 2);
+    } while (puVar1 != (ushort *)0x0);
+  }
+  return 0;
 }
 

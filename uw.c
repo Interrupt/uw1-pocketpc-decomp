@@ -8126,56 +8126,6 @@ LAB_0001ad98:
 
 
 
-void FUN_0001d3ac(param_1)
-short param_1;
-
-{
-  int iVar1;
-  
-  FUN_000535fc();
-  add_item_to_npc_inventory();
-  FUN_00057118();
-  iVar1 = 0;
-  do {
-    if ((&DAT_000bbfd0)[iVar1] == param_1) {
-      FUN_00076e98((&DAT_000bc028)[iVar1]);
-      (&DAT_000bbfd0)[iVar1] = 0;
-      (&DAT_000bbf98)[iVar1] = 0;
-      draw_hotspot_crosshair_marker(1,iVar1);
-    }
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar1 < 4);
-  cursor_show_idle_tick();
-  FUN_0007ec50();
-  return;
-}
-
-
-
-undefined4 FUN_0001da00(param_1)
-short param_1;
-
-{
-  ushort *puVar1;
-  int iVar2;
-  
-  iVar2 = DAT_00100674 + 6;
-  puVar1 = (ushort *)resolve_object_link(iVar2);
-  if (puVar1 != (ushort *)0x0) {
-    do {
-      if ((*puVar1 & 0x1ff) == (int)param_1) {
-        object_list_unlink(iVar2,puVar1);
-        free_object_slot(puVar1);
-        return 1;
-      }
-      puVar1 = (ushort *)resolve_object_link(puVar1 + 2);
-    } while (puVar1 != (ushort *)0x0);
-  }
-  return 0;
-}
-
-
-
 undefined4 FUN_0001dab8()
 
 {
