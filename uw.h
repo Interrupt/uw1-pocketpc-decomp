@@ -1606,6 +1606,20 @@ extern undefined1 DAT_0023ce71;
 extern ushort g_player_max_carry_weight;
 extern char s_belonging_to_00085c90[];
 extern char s_You_see_000858fc[];
+/* Globals defined in uw.c but also used by functions that now live in
+   weapon_swing.c (weapon swing animation) -- extern'd here so both
+   translation units see the same storage. */
+#define UW_WEAPON_SWING_FRAME_COUNT 28
+extern void * g_weapon_swing_raw_frames[UW_WEAPON_SWING_FRAME_COUNT];
+extern short DAT_000870e4;
+extern undefined2 DAT_000870e8;
+extern short DAT_0023c1ec;
+extern undefined1 g_weapon_swing_frame_y_offset_backing[256];
+#define g_weapon_swing_frame_y_offset g_weapon_swing_frame_y_offset_backing[0]
+extern undefined1 g_weapon_swing_frame_x_offset_backing[256];
+#define g_weapon_swing_frame_x_offset g_weapon_swing_frame_x_offset_backing[0]
+extern char s__DATA_weapons_dat_00087268[];
+extern char s_weapons_0008727c[];
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -1807,6 +1821,8 @@ int uw_turn_rate_accel(void);
 undefined4 decode_critter_sprite_page();
 undefined4 resolve_critter_sprite_tier();
 byte *uw_load_critter_page_cached(int param_1, int param_2);
+undefined4 weapon_swing_frame_loaded(void *buf, unsigned size, int idx);
+void *weapon_swing_frame_alloc();
 void scroll_container_grid_up(void);
 void scroll_container_grid_down(void);
 int raster_edge_step();
@@ -3080,6 +3096,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/collision.h"
 #include "src/headers/input.h"
 #include "src/headers/object_actions.h"
+#include "src/headers/weapon_swing.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 

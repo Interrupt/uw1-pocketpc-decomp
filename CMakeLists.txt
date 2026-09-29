@@ -42,6 +42,7 @@ set(UW_SOURCES
   src/collision.c
   src/input.c
   src/object_actions.c
+  src/weapon_swing.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c
