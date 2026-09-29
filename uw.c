@@ -17385,8 +17385,8 @@ int param_1;
   
   advance_menu_music_track();
   if (((*(byte *)(param_1 + 0x45) & 0x40) != 0) && (*(short *)(param_1 + 0x3f) != -1)) {
-    FUN_00073ac0();
-    iVar1 = FUN_00073ac4();
+    voice_sample_cluster_stub_1();
+    iVar1 = is_voice_sample_finished();
     if (iVar1 != 0) {
       *(undefined1 *)(param_1 + 0x3f) = 0xff;
       *(byte *)(param_1 + 0x45) = *(byte *)(param_1 + 0x45) & 0xbf;
@@ -17906,7 +17906,7 @@ LAB_00036ca4:
                     FUN_0003601c(local_88 + 0x80);
                   }
                   FUN_000366bc(acStack_d0);
-                  if (((local_8b & 0x80) != 0) && (iVar9 = FUN_00073ac4(), iVar9 != 0)) {
+                  if (((local_8b & 0x80) != 0) && (iVar9 = is_voice_sample_finished(), iVar9 != 0)) {
                     local_8b = local_8b & 0x7f;
                     iVar9 = read_realtime_clock_units();
                     local_95 = local_95 + (short)((uint)(iVar9 - iVar10) >> 8);
@@ -17983,7 +17983,7 @@ LAB_00036ca4:
       }
 LAB_00037a94:
       if (local_91 != -1) {
-        FUN_00073aec();
+        stop_voice_sample();
       }
       if (local_b9 == '\0') {
         if (local_8d != -2) {
@@ -17998,7 +17998,7 @@ LAB_00037a94:
       iVar10 = local_48;
       iVar9 = local_70;
     }
-    FUN_00073b0c();
+    voice_sample_cluster_stub_2();
     uVar14 = local_64;
     if (local_78 != (int *)0x0) {
       iVar12 = 0;
@@ -36445,44 +36445,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_00073ac0()
-
-{
-  return;
-}
-
-
-
-bool FUN_00073ac4()
-
-{
-  char cVar1;
-  
-  cVar1 = FUN_0004f858(DAT_0023c3b8,0);
-  return cVar1 == '\0';
-}
-
-
-
-void FUN_00073aec()
-
-{
-  if (DAT_0023c3b8 != 0) {
-    FUN_0004f748(DAT_0023c3b8,0);
-  }
-  return;
-}
-
-
-
-void FUN_00073b0c()
-
-{
   return;
 }
 

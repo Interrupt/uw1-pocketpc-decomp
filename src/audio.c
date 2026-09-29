@@ -1003,3 +1003,53 @@ short param_1;
   }
   return uVar2;
 }
+
+
+
+
+
+
+// was FUN_00073ac0 -- currently a no-op stub (Ghidra recovered an
+// empty body), sibling of is_voice_sample_finished/stop_voice_sample
+// in this same cluster.
+void voice_sample_cluster_stub_1()
+
+{
+  return;
+}
+
+
+
+// was FUN_00073ac4 -- true once the voice/speech sample most recently
+// started (via play_numbered_voice_sample) has finished playing.
+bool is_voice_sample_finished()
+
+{
+  char cVar1;
+
+  cVar1 = FUN_0004f858(DAT_0023c3b8,0);
+  return cVar1 == '\0';
+}
+
+
+
+// was FUN_00073aec -- stops the currently-playing voice/speech sample
+// channel.
+void stop_voice_sample()
+
+{
+  if (DAT_0023c3b8 != 0) {
+    FUN_0004f748(DAT_0023c3b8,0);
+  }
+  return;
+}
+
+
+
+// was FUN_00073b0c -- currently a no-op stub (Ghidra recovered an
+// empty body), sibling of voice_sample_cluster_stub_1.
+void voice_sample_cluster_stub_2()
+
+{
+  return;
+}
