@@ -392,3 +392,77 @@ short param_2;
   }
   return;
 }
+
+
+
+
+
+
+// was FUN_0007129c -- rolls for and triggers one of several as-yet-
+// untriggered special per-level dialog/effect ids (tracked as bits in
+// the 16-bit DAT_00086df8+0x6e mask): picks a candidate id (favoring
+// low ids 0-3 gated by which of that mask's own bits 1/2/4/8 are set,
+// falling back to a random id 4-9 if none of those are available or
+// already used), then shows it via FUN_00037c14 (this file's general
+// dialog-box routine, see its own "box drawing routine" comment) and
+// marks its bit used. If no id was available at all (or
+// DAT_00086df8+0x62 bit 3 is set), just busy-waits ~0x180 clock units
+// instead and reports no trigger. Exact meaning of ids 0-9 not
+// identified.
+undefined4 trigger_random_level_special_event(param_1)
+short param_1;
+
+{
+  int uw_ord2005_rem_143 = 0;
+  undefined4 uVar1;
+  short extraout_r1;
+  int extraout_r1_00;
+  uint uVar2;
+  int iVar3;
+  
+  iVar3 = -1;
+  uVar2 = (uint)*(short *)(DAT_00086df8 + 0x6e);
+  if ((uVar2 & 1) == 1) {
+    if ((DAT_00201b68 < 2) || ((uVar2 & 2) == 2)) {
+      if ((uVar2 & 4) == 4) {
+        iVar3 = 2;
+      }
+      else if ((uVar2 & 8) == 8) {
+        iVar3 = 3;
+      }
+    }
+    else {
+      iVar3 = 1;
+    }
+  }
+  else {
+    iVar3 = 0;
+  }
+  if ((short)iVar3 < 0) {
+    uVar1 = Ordinal_1053();
+    Ordinal_2005((param_1 + 1) * 4,uVar1);
+    if (extraout_r1_00 == 0) {
+      uVar1 = Ordinal_1053();
+      uw_ord2005_rem_143 = ((int)(uVar1)) % (6);
+      iVar3 = uw_ord2005_rem_143 + 4;
+      if ((uVar2 & 1 << (iVar3 * 0x10000 >> 0x10 & 0xffU)) != 0) {
+        iVar3 = -1;
+      }
+    }
+  }
+  if (((short)iVar3 < 0) || ((*(byte *)(DAT_00086df8 + 0x62) & 8) != 0)) {
+    iVar3 = read_realtime_clock_units();
+    do {
+      uVar2 = read_realtime_clock_units();
+    } while (uVar2 < iVar3 + 0x180U);
+    uVar1 = 0;
+  }
+  else {
+    FUN_00037c14(iVar3 + 0x18);
+    uVar2 = (uint)*(ushort *)(DAT_00086df8 + 0x6e) ^ 1 << ((int)(short)iVar3 & 0xffU) & 0xffffU;
+    *(char *)(DAT_00086df8 + 0x6e) = (char)uVar2;
+    *(char *)(DAT_00086df8 + 0x6f) = (char)(uVar2 >> 8);
+    uVar1 = 1;
+  }
+  return uVar1;
+}

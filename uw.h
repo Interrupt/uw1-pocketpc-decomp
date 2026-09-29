@@ -3121,7 +3121,7 @@ void print_single_skill_improvement_message();
 void print_skill_improvement_list();
 void handle_mantra_chant();
 void render_endgame_character_stats();
-undefined4 FUN_0007129c();
+undefined4 trigger_random_level_special_event();
 void FUN_0007141c();
 void FUN_00071510();
 undefined4 FUN_00071b08();
