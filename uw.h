@@ -3399,7 +3399,7 @@ void refresh_stats_panel_if_active();
 undefined4 init_string_resource_cache();
 void thunk_FUN_00078e28();
 char *get_message_string();
-int FUN_0007873c();
+int register_interned_string();
 uint FUN_00078918();
 void FUN_00078a04();
 undefined4 FUN_00078b18();

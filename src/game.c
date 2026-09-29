@@ -672,7 +672,7 @@ void init_gameplay_session()
   DAT_0023be74 = &DAT_001007d0 + iVar1;
   g_player_object[8] = (&g_monster_max_stats_table)[iVar1];
   if (DAT_00201c74 == 0) {
-    DAT_00201c74 = FUN_0007873c(DAT_00086df8,0x7d);
+    DAT_00201c74 = register_interned_string(DAT_00086df8,0x7d);
   }
   register_key_binding(0x3f,0xe,1,move_command_dispatch);
   register_key_binding(0x8d,5,1,move_command_dispatch);

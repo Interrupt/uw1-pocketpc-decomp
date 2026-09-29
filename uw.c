@@ -6323,7 +6323,7 @@ undefined *PTR_GXResume_000841f4;
 byte DAT_0024af80;
 undefined4 DAT_0024af88;
 /* DAT_0024bfa0-family (6 arrays) were already widened once (from a
-   pre-this-session pass) to 8200 bytes, but FUN_0007873c indexes with a
+   pre-this-session pass) to 8200 bytes, but register_interned_string indexes with a
    0x804(2052)-byte stride and DAT_0024cfc0 (the record count) grows
    unboundedly as new entries are registered at runtime -- 8200 bytes
    only covers ~4 records, and ASAN caught real startup traffic already
@@ -12894,7 +12894,7 @@ int FUN_0002990c()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   if (DAT_001007bc == 0) {
-    DAT_001007bc = FUN_0007873c(DAT_001007b8,0x7c);
+    DAT_001007bc = register_interned_string(DAT_001007b8,0x7c);
   }
   else {
     iVar3 = get_message_string();
@@ -36511,69 +36511,6 @@ LAB_00060f54:
 }
 
 
-
-int FUN_0007873c(param_1,param_2)
-char *param_1;
-undefined4 param_2;
-
-{
-  int iVar1;
-  int iVar2;
-  ushort uVar3;
-  int iVar4;
-  short sVar5;
-  
-  iVar4 = 0;
-  iVar2 = (int)DAT_0024cfc0;
-  sVar5 = -1;
-  if (0 < iVar2) {
-    do {
-      sVar5 = (short)iVar4;
-      if (*(short *)(&DAT_0024bfa0 + iVar4 * 0x804) == (short)param_2) break;
-      iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
-      sVar5 = -1;
-    } while (iVar4 < iVar2);
-  }
-  if (sVar5 < 0) {
-    if (1 < iVar2) {
-      return 0;
-    }
-    iVar4 = iVar2 * 0x804;
-    (&DAT_0024bfa0)[iVar4] = (char)param_2;
-    (&DAT_0024bfa1)[iVar4] = (char)((uint)param_2 >> 8);
-    (&DAT_0024c7a2)[iVar4] = 0;
-    (&DAT_0024c7a3)[iVar4] = 0;
-    iVar4 = 0;
-    do {
-      iVar1 = (iVar2 * 0x201 + iVar4) * 4;
-      (&DAT_0024bfa2)[iVar1] = 0;
-      (&DAT_0024bfa3)[iVar1] = 0;
-      iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
-      (&DAT_0024bfa4)[iVar1] = 0;
-      (&DAT_0024bfa5)[iVar1] = 0;
-    } while (iVar4 < 0x200);
-    sVar5 = DAT_0024cfc0;
-    DAT_0024cfc0 = (short)((uint)((iVar2 + 1) * 0x10000) >> 0x10);
-  }
-  iVar4 = sVar5 * 0x804;
-  uVar3 = *(ushort *)(&DAT_0024c7a2 + iVar4);
-  iVar2 = (sVar5 * 0x201 + (int)(short)uVar3) * 4;
-  /* Real pointer tracked separately -- see g_bfa2_real_ptrs's comment.
-     iVar2 is already the byte-plane index (pre-multiplied by 4); the
-     side table uses the un-multiplied slot index. */
-  g_bfa2_real_ptrs[iVar2 / 4] = param_1;
-  (&DAT_0024bfa2)[iVar2] = (char)param_1;
-  (&DAT_0024bfa3)[iVar2] = (char)((uint)param_1 >> 8);
-  (&DAT_0024bfa4)[iVar2] = (char)((uint)param_1 >> 0x10);
-  (&DAT_0024bfa5)[iVar2] = (char)((uint)param_1 >> 0x18);
-  sVar5 = *(short *)(&DAT_0024c7a2 + iVar4);
-  (&DAT_0024c7a2)[iVar4] = (char)(sVar5 + 1);
-  (&DAT_0024c7a3)[iVar4] = (char)((uint)(sVar5 + 1) >> 8);
-  return (int)(short)((short)param_2 << 9 | uVar3);
-}
-
-
-
 uint FUN_00078918(param_1,param_2)
 char *param_1;
 uint param_2;
@@ -36598,7 +36535,7 @@ uint param_2;
   else {
     iVar1 = (sVar2 * 0x201 + (int)(short)((ushort)param_2 & 0x1ff)) * 4;
     /* Real pointer tracked separately -- see g_bfa2_real_ptrs's comment
-       and FUN_0007873c's identical write above. */
+       and register_interned_string's identical write above. */
     g_bfa2_real_ptrs[iVar1 / 4] = param_1;
     (&DAT_0024bfa2)[iVar1] = (char)param_1;
     (&DAT_0024bfa3)[iVar1] = (char)((uint)param_1 >> 8);

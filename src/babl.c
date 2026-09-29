@@ -1189,7 +1189,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     pcVar2[iVar7 + iVar6] = cVar1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  FUN_0007873c(iVar6,0x7c);
+  register_interned_string(iVar6,0x7c);
   return;
 }
 
@@ -1216,7 +1216,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     pcVar2[iVar4] = cVar1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
-  FUN_0007873c(iVar3,0x7c);
+  register_interned_string(iVar3,0x7c);
   return;
 }
 
@@ -2947,7 +2947,7 @@ LAB_0002a154:
     pcVar7[iVar5 - (int)local_74] = cVar8;
     pcVar7 = pcVar7 + 1;
   } while (cVar8 != '\0');
-  uVar2 = FUN_0007873c(iVar5,0x7c);
+  uVar2 = register_interned_string(iVar5,0x7c);
   babl_write_var_word((int)*(short *)(param_1 + -4),uVar2);
   return uVar4;
 }
@@ -3331,7 +3331,7 @@ undefined1 *param_2;
     DAT_000bbf0c = DAT_000bbf14 + DAT_000bbf7c * 2;
     puVar3 = (undefined1 *)babl_alloc(1);
     *puVar3 = 0;
-    DAT_000bbf88 = FUN_0007873c(puVar3,0x7c);
+    DAT_000bbf88 = register_interned_string(puVar3,0x7c);
     init_babl_variable_defaults();
     babl_register_builtin(s_compare_000845a0,babl_builtin_compare);
     babl_register_builtin(s_random_00084598,babl_builtin_random);

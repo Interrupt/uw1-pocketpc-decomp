@@ -629,7 +629,7 @@ short * param_1;
 // was FUN_0007856c -- initializes the string-resource page cache
 // (DAT_0024bfa0-family, see that global's own comment): clears the
 // first 2 cache-record slots (0x804/2052-byte stride, matching
-// get_message_string's/what's documented as FUN_0007873c's own indexing) to
+// get_message_string's/what's documented as register_interned_string's own indexing) to
 // an empty/sentinel state (DAT_0024bfa0/1 = 0xffff, the page-id
 // short field; DAT_0024c7a2/3 and the 512-entry DAT_0024bfa2/3/4/5
 // sub-arrays zeroed), then calls FUN_00078d18 (not yet named) and,
@@ -749,3 +749,77 @@ ushort param_1;
   }
   return uVar2;
 }
+
+
+
+
+
+// was FUN_0007873c -- the write-side counterpart to
+// get_message_string: interns a real string pointer (param_1) into
+// the string-resource cache under page param_2, creating that page
+// (capped to at most 2 distinct pages via this path) if it doesn't
+// exist yet. Stores the pointer in g_bfa2_real_ptrs (and its split
+// byte-plane form in the DAT_0024bfa2-family arrays) at the page's
+// next free sub-index, then returns a packed message id
+// `(page << 9) | sub_index` -- the exact same encoding
+// get_message_string's param_1 decodes.
+int register_interned_string(param_1,param_2)
+char *param_1;
+undefined4 param_2;
+
+{
+  int iVar1;
+  int iVar2;
+  ushort uVar3;
+  int iVar4;
+  short sVar5;
+  
+  iVar4 = 0;
+  iVar2 = (int)DAT_0024cfc0;
+  sVar5 = -1;
+  if (0 < iVar2) {
+    do {
+      sVar5 = (short)iVar4;
+      if (*(short *)(&DAT_0024bfa0 + iVar4 * 0x804) == (short)param_2) break;
+      iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+      sVar5 = -1;
+    } while (iVar4 < iVar2);
+  }
+  if (sVar5 < 0) {
+    if (1 < iVar2) {
+      return 0;
+    }
+    iVar4 = iVar2 * 0x804;
+    (&DAT_0024bfa0)[iVar4] = (char)param_2;
+    (&DAT_0024bfa1)[iVar4] = (char)((uint)param_2 >> 8);
+    (&DAT_0024c7a2)[iVar4] = 0;
+    (&DAT_0024c7a3)[iVar4] = 0;
+    iVar4 = 0;
+    do {
+      iVar1 = (iVar2 * 0x201 + iVar4) * 4;
+      (&DAT_0024bfa2)[iVar1] = 0;
+      (&DAT_0024bfa3)[iVar1] = 0;
+      iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+      (&DAT_0024bfa4)[iVar1] = 0;
+      (&DAT_0024bfa5)[iVar1] = 0;
+    } while (iVar4 < 0x200);
+    sVar5 = DAT_0024cfc0;
+    DAT_0024cfc0 = (short)((uint)((iVar2 + 1) * 0x10000) >> 0x10);
+  }
+  iVar4 = sVar5 * 0x804;
+  uVar3 = *(ushort *)(&DAT_0024c7a2 + iVar4);
+  iVar2 = (sVar5 * 0x201 + (int)(short)uVar3) * 4;
+  /* Real pointer tracked separately -- see g_bfa2_real_ptrs's comment.
+     iVar2 is already the byte-plane index (pre-multiplied by 4); the
+     side table uses the un-multiplied slot index. */
+  g_bfa2_real_ptrs[iVar2 / 4] = param_1;
+  (&DAT_0024bfa2)[iVar2] = (char)param_1;
+  (&DAT_0024bfa3)[iVar2] = (char)((uint)param_1 >> 8);
+  (&DAT_0024bfa4)[iVar2] = (char)((uint)param_1 >> 0x10);
+  (&DAT_0024bfa5)[iVar2] = (char)((uint)param_1 >> 0x18);
+  sVar5 = *(short *)(&DAT_0024c7a2 + iVar4);
+  (&DAT_0024c7a2)[iVar4] = (char)(sVar5 + 1);
+  (&DAT_0024c7a3)[iVar4] = (char)((uint)(sVar5 + 1) >> 8);
+  return (int)(short)((short)param_2 << 9 | uVar3);
+}
+
