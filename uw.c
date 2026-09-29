@@ -606,6 +606,17 @@ char s_npc_attitude_000845f8[] = "npc_attitude";
 // own fix for why callers must special-case the player instead.
  undefined DAT_001007d4_backing[8192];
 #define g_monster_max_stats_table DAT_001007d4_backing[0]
+// DAT_001007da and DAT_001007e2 are further fields (offsets +6 and
+// +0xe) within this same 0x30-byte-stride per-monster-class table,
+// not standalone globals -- both were declared as lone bytes and
+// then indexed with the table's own `[class * 0x30]` stride
+// elsewhere in the file (a "flags" byte at +6, checked for bits
+// 0x80/0x40/2/1 by various callers, and a "resist/save" byte at
+// +0xe used by roll_skill_check). Aliased into the same backing
+// array so that indexed access reads the real adjacent bytes instead
+// of walking off the end of a 1-byte global.
+#define DAT_001007da DAT_001007d4_backing[6]
+#define DAT_001007e2 DAT_001007d4_backing[0xe]
 /* Widened from 32768: FUN_00038680 does
    `Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
    memmove, confirmed by ASAN global-buffer-overflow), matching
@@ -1613,8 +1624,6 @@ ushort DAT_00100620;
 #define DAT_00202c9b DAT_00202c90_backing[0xb]
 short DAT_0010061c;
 undefined1 DAT_0010060c;
-undefined DAT_001007da;
-undefined DAT_001007e2;
 short DAT_00100608;
 byte DAT_00100628;
 undefined4 DAT_001005d8;
@@ -6145,7 +6154,7 @@ uint DAT_00202094;
    The "held item currently being used" global driving the item-use
    dispatch chain (finish_object_use and friends). */
 char *DAT_00202098;
-static undefined1 DAT_00087604_backing[65536];
+undefined1 DAT_00087604_backing[65536];
 #define DAT_00087604 DAT_00087604_backing[0]
 undefined *PTR_FUN_00087614;
 /* was check_scheduled_object_location_callback. Stored into the DAT_00201c9c generic no-arg
@@ -36469,214 +36478,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_00074c64(param_1,param_2)
-undefined4 param_1;
-uint param_2;
-
-{
-  char cVar1;
-  
-  cVar1 = roll_dice_sum(3,4);
-  scan_area_ahead_of_object(param_1,(int)cVar1,*(undefined4 *)(&DAT_00087604 + (param_2 & 0x3f) * 4),
-               param_2 & 0xc0,4,2);
-  return;
-}
-
-
-
-void FUN_00074cc8(param_1,param_2)
-int param_1;
-uint param_2;
-
-{
-  if (param_1 == g_player_object) {
-    scan_area_ahead_of_object(param_1,1,(&PTR_FUN_00087614)[param_2 & 0x3f],param_2 & 0xc0,4,2);
-  }
-  return;
-}
-
-
-
-void FUN_00074d20(param_1,param_2)
-int param_1;
-char param_2;
-
-{
-  int uw_ord2005_rem_154 = 0; int uw_ord2005_rem_155 = 0; int uw_ord2005_rem_156 = 0;
-  byte bVar1;
-  ushort uVar2;
-  short sVar3;
-  char *uVar4;
-  byte *pbVar5;
-  uint uVar6;
-  undefined2 uVar7;
-  int extraout_r1;
-  uint extraout_r1_00;
-  uint extraout_r1_01;
-  uint extraout_r1_02;
-  int iVar8;
-  int iVar9;
-  uint uVar10;
-  undefined4 uVar11;
-  char *pObj;  /* was reuse of `iVar8` (int) -- truncated spawn_new_object's
-                  real pointer; iVar8 itself stays int for its earlier,
-                  unrelated uses above */
-  ushort local_34;
-  ushort local_32;
-  short local_30;
-  ushort local_2e;
-  ushort local_2c;
-  byte *local_28;
-  
-  uVar11 = 0x115;
-  uVar4 = Ordinal_1053();
-  uVar2 = *(ushort *)(param_1 + 2);
-  bVar1 = *(byte *)(param_1 + 0x18);
-  uw_ord2005_rem_154 = ((int)(uVar4)) % (0x1b);
-  uw_ord2005_rem_155 = ((int)((bVar1 & 0x1f) + (uVar2 >> 2 & 0xe0) + uw_ord2005_rem_154 + -0xd)) % (0xff);
-  local_34 = (*(ushort *)(param_1 + 0x16) >> 7 & 0x1f8) + (uVar2 >> 0xd);
-  local_32 = (*(ushort *)(param_1 + 0x16) >> 1 & 0x1f8) + (uVar2 >> 10 & 7);
-  uVar7 = 0xc;
-  if (param_2 != '\x04') {
-    uVar7 = 9;
-  }
-  project_position_by_heading(uw_ord2005_rem_155 & 0xffff,uVar7,&local_34,&local_32);
-  local_2c = (ushort)((int)(short)local_34 >> 3);
-  local_2e = (ushort)((int)(short)local_32 >> 3);
-  if (param_2 == '\x03') {
-    sVar3 = FUN_0007e2dc((int)(short)local_34 >> 3,(int)(short)local_32 >> 3,9);
-    if (sVar3 != 0) {
-      uVar11 = 0x114;
-    }
-    if (param_1 != g_player_object) {
-      return;
-    }
-  }
-  else {
-    pbVar5 = (byte *)tilemap_lookup();
-    local_30 = (ushort)(*pbVar5 >> 4) << 3;
-    local_28 = pbVar5;
-    if (param_2 == '\x01') {
-      uVar4 = Ordinal_1053();
-      uw_ord2005_rem_156 = ((int)(uVar4)) % (7);
-      uVar10 = (uw_ord2005_rem_156 & 0xffff) + 0xb0;
-    }
-    else if (param_2 == '\x04') {
-      if (param_1 == g_player_object) {
-        uVar6 = (uint)*(byte *)(DAT_00086df8 + 0x2a);
-      }
-      else {
-        uVar6 = (int)DAT_00201b68 << 2;
-      }
-      uVar6 = uVar6 & 0xff;
-      if (uVar6 < 2) {
-        uVar6 = 2;
-      }
-      /* Was `Ordinal_2005(uVar6,uVar4); uVar10 = (extraout_r1_01 & 0xffff) + ...`
-         -- the same fabricated-remainder bug fixed throughout this
-         session (this port's Ordinal_2005 never populates extraout_r1),
-         but this one was skipped by the earlier file-wide mechanical
-         sweep because uVar6 (the divisor) is a variable, not a compile-
-         time literal. Unlike every other instance of this bug found so
-         far, THIS one is a genuine, deterministic infinite loop rather
-         than a wrong-value/misbehavior bug: extraout_r1_01 never
-         changes, so uVar10/iVar8 are identical on every iteration of
-         both do-while loops below regardless of the fresh
-         Ordinal_1053() reroll each time round -- if that one fixed
-         (wrong) candidate ever fails either loop's retry condition,
-         nothing about the computation can ever change to let it pass,
-         and the loop spins at 100% CPU forever. This is reached from
-         dispatch_special_action's spell-effect dispatch (case 8, "summon
-         monster"), for BOTH player- and NPC-cast spells (see the
-         sibling `param_1 == g_player_object` check just above) --
-         likely the real cause of the reported "game hangs in a 100%
-         busy loop" QA report, since it only triggers when something
-         actually casts this specific spell, not on every tick.
-         Computed the remainder directly instead. */
-      do {
-        do {
-          uVar4 = Ordinal_1053();
-          uVar10 = ((uint)(uintptr_t)uVar4 % uVar6 & 0xffff) + uVar6 + 0x40;
-          iVar8 = (uVar10 & 0xfe3f) * 0x30;
-        } while ((&g_monster_max_stats_table)[iVar8] == '\0');
-      } while ((((((&DAT_001007da)[iVar8] & 2) != 0) || ((uVar10 & 0xffff) == 0x7b)) ||
-               ((uVar10 & 0xffff) == 0x7c)) || (((&DAT_001007da)[iVar8] & 0x40) != 0));
-    }
-    else {
-      uVar10 = (uint)local_2c;
-    }
-    iVar8 = FUN_00051fa0(uVar10,0,(int)(short)local_34,(int)(short)local_32,local_30,1,8);
-    if (iVar8 != 0) {
-      pObj = (char *)spawn_new_object(uVar10,param_2 == '\x04');
-      uVar2 = *(ushort *)(pObj + 2);
-      uVar6 = uVar2 & 0x1fff;
-      bVar1 = (byte)(((local_34 & 7) << 0xd) >> 8);
-      *(char *)(pObj + 2) = (char)uVar6;
-      *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1;
-      uVar6 = uVar2 & 0x3ff;
-      *(char *)(pObj + 2) = (char)uVar6;
-      *(byte *)(pObj + 3) = (byte)(uVar6 >> 8) | bVar1 | (byte)(((local_32 & 7) << 10) >> 8);
-      uVar4 = g_scratch_object_ptr;
-      if (param_2 == '\x04') {
-        g_scratch_object_ptr = (byte *)pObj;
-        FUN_0002a35c();
-        uVar6 = local_2e & 0x3f | (local_2c & 0x3ff) << 6;
-        g_scratch_object_ptr = (byte *)uVar4;
-        *(byte *)(pObj + 0x16) = *(byte *)(pObj + 0x16) & 0xf | (byte)(uVar6 << 4);
-        *(char *)(pObj + 0x17) = (char)(uVar6 >> 4);
-        if (((&DAT_001007da)[(uVar10 & 0xfe3f) * 0x30] & 0x80) != 0) {
-          iVar9 = local_30 + 0x80;
-          if (iVar9 < 0) {
-            iVar9 = local_30 + 0x81;
-          }
-          local_30 = (short)(iVar9 >> 1);
-        }
-        pbVar5 = local_28;
-        if (param_1 == g_player_object) {
-          *(byte *)(pObj + 0x19) = *(byte *)(pObj + 0x19) | 0x40;
-        }
-        else {
-          uVar10 = *(ushort *)(pObj + 0xd) & 0x3fff;
-          *(char *)(pObj + 0xd) = (char)uVar10;
-          *(char *)(pObj + 0xe) = (char)(uVar10 >> 8);
-          *(byte *)(pObj + 0x19) = *(byte *)(pObj + 0x19) | 1;
-          uVar2 = *(ushort *)(pObj + 0xf);
-          uVar10 = uVar2 & 0xffc0;
-          bVar1 = *(byte *)((char *)g_player_object + 0x17) >> 2;
-          *(byte *)(pObj + 0xf) = (byte)uVar10 | bVar1;
-          *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
-          uVar10 = uVar2 & 0xf000 | (uint)bVar1 | (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) << 2;
-          *(char *)(pObj + 0xf) = (char)uVar10;
-          *(char *)(pObj + 0x10) = (char)(uVar10 >> 8);
-        }
-      }
-      else {
-        uVar7 = *(undefined2 *)(pObj + 4);
-        *(byte *)(pObj + 4) = (byte)uVar7 | 0x3f;
-        *(char *)(pObj + 5) = (char)((ushort)uVar7 >> 8);
-      }
-      uVar7 = *(undefined2 *)(pObj + 2);
-      bVar1 = (byte)uVar7;
-      *(byte *)(pObj + 2) = (bVar1 ^ (byte)local_30) & 0x7f ^ bVar1;
-      *(char *)(pObj + 3) = (char)((ushort)uVar7 >> 8);
-      object_list_insert_head(pbVar5 + 2,pObj);
-      if (param_2 == '\x04') {
-        return;
-      }
-      settle_dropped_object(pObj,(int)(short)local_2c,(int)(short)local_2e,1);
-      return;
-    }
-    if (param_1 != g_player_object) {
-      return;
-    }
-    uVar11 = 0x115;
-  }
-  FUN_00078c80(uVar11);
   return;
 }
 

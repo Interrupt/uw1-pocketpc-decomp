@@ -748,6 +748,8 @@ extern undefined1 g_active_hud_panel;
 extern undefined2 g_cursor_mode;
 extern undefined DAT_001007d4_backing[8192];
 #define g_monster_max_stats_table DAT_001007d4_backing[0]
+#define DAT_001007da DAT_001007d4_backing[6]
+#define DAT_001007e2 DAT_001007d4_backing[0xe]
 extern short g_mouse_x;
 extern short g_mouse_y;
 extern ushort * g_player_object;
@@ -1987,6 +1989,9 @@ extern undefined1 DAT_0023c3dc;
 extern undefined1 DAT_0023c3d8;
 extern uint DAT_00202094;
 extern char *DAT_00202098;
+extern undefined1 DAT_00087604_backing[65536];
+#define DAT_00087604 DAT_00087604_backing[0]
+extern undefined *PTR_FUN_00087614;
 extern int DAT_00087450;
 extern undefined4 DAT_0008744c;
 extern undefined DAT_0023c2b0_backing[8192];
@@ -3244,9 +3249,9 @@ void apply_tile_morph_variant_7();
 void scan_area_for_matching_objects();
 void scan_area_ahead_of_object();
 void for_each_object_of_type();
-void FUN_00074c64();
-void FUN_00074cc8();
-void FUN_00074d20();
+void cast_cone_damage_spell();
+void cast_targeted_search_effect();
+void cast_summon_or_spawn_effect();
 undefined4 FUN_00075248();
 void FUN_000753a0();
 void FUN_0007541c();
