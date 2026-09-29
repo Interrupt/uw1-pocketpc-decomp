@@ -3579,7 +3579,7 @@ void scheduler_relink_entry();
 uint scheduler_add_entry();
 void scheduler_step_entry();
 void scheduler_tick();
-void FUN_00081388();
+void spawn_effect_debris_burst();
 undefined4 FUN_000816e0();
 undefined4 FUN_00081814();
 int scheduler_find_entry();

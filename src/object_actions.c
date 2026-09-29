@@ -1163,7 +1163,7 @@ undefined1 param_5;
 // neighbors (a 5-tile cross/"area" pattern), then schedules the
 // effect object to tick (scheduler_add_entry, type 4, delay 0). On
 // schedule failure frees the object slot; otherwise links it into
-// param_4's object list and calls FUN_00081388 (not yet named --
+// param_4's object list and calls spawn_effect_debris_burst (not yet named --
 // likely kicks off the effect's ongoing spread/animation).
 undefined4 cast_area_spell_effect(param_1,param_2,param_3,param_4,param_5)
 uint param_1;
@@ -1190,7 +1190,7 @@ undefined1 param_5;
   }
   else {
     object_list_insert_head(param_4 + 2,uVar2);
-    FUN_00081388(uVar2,param_1,param_2);
+    spawn_effect_debris_burst(uVar2,param_1,param_2);
   }
   return 1;
 }
@@ -2748,6 +2748,128 @@ LAB_0007ed8c:
   message_scroll_print_wrapped(pcVar4);
 LAB_0007edd8:
   message_scroll_print_wrapped(&DAT_00084f20);
+  return;
+}
+
+
+
+
+
+// was FUN_00081388 -- spawns a small burst of 2-4 debris/particle
+// objects at tile (param_2,param_3), each copied from the 8-byte
+// template param_1, given randomized position/orientation offsets
+// within the tile, linked into the tile's object list, and
+// independently scheduled (scheduler_add_entry, randomized class/
+// delay) so each despawns/animates on its own. Confirmed by two
+// distinct callers' own comments: src/ai.c's "teleport gate" effect
+// ("spawn debris around the object") and
+// cast_area_spell_effect's own area-spell visual burst
+// (src/object_actions.c).
+void spawn_effect_debris_burst(param_1,param_2,param_3)
+undefined1 * param_1;
+uint param_2;
+undefined4 param_3;
+
+{
+  int uw_ord2005_rem_170 = 0; int uw_ord2005_rem_171 = 0; int uw_ord2005_rem_172 = 0; int uw_ord2005_rem_173 = 0; int uw_ord2005_rem_174 = 0;
+  short sVar1;
+  ushort uVar2;
+  byte bVar3;
+  byte bVar4;
+  short sVar5;
+  undefined4 uVar6;
+  int iVar7;
+  ushort *puVar8;
+  uint uVar9;
+  uint uVar10;
+  undefined4 uVar11;
+  short extraout_r1;
+  short extraout_r1_00;
+  short extraout_r1_01;
+  short extraout_r1_02;
+  short extraout_r1_03;
+  undefined1 uVar12;
+  undefined1 uVar13;
+  
+  uVar6 = Ordinal_1053();
+  uw_ord2005_rem_170 = ((int)(uVar6)) % (3);
+  iVar7 = uw_ord2005_rem_170 + 2;
+  sVar1 = (short)iVar7;
+  while (-1 < iVar7 * 0x10000 >> 0x10) {
+    puVar8 = (ushort *)alloc_object_slot(0);
+    *(undefined1 *)puVar8 = *param_1;
+    *(undefined1 *)((char *)puVar8 + 1) = param_1[1];
+    *(undefined1 *)(puVar8 + 1) = param_1[2];
+    *(undefined1 *)((char *)puVar8 + 3) = param_1[3];
+    *(undefined1 *)(puVar8 + 2) = param_1[4];
+    *(undefined1 *)((char *)puVar8 + 5) = param_1[5];
+    *(undefined1 *)(puVar8 + 3) = param_1[6];
+    *(undefined1 *)((char *)puVar8 + 7) = param_1[7];
+    uVar9 = Ordinal_1053();
+    uVar10 = (uint)*puVar8;
+    uVar10 = ((uVar9 & 1) + uVar10 + 1 ^ uVar10) & 0x1ff ^ uVar10;
+    *(char *)puVar8 = (char)uVar10;
+    *(char *)((char *)puVar8 + 1) = (char)(uVar10 >> 8);
+    bVar3 = *(byte *)((char *)puVar8 + 3) >> 5;
+    do {
+      do {
+        uVar6 = Ordinal_1053();
+        uw_ord2005_rem_171 = ((int)(uVar6)) % (5);
+        iVar7 = ((int)(((int)uw_ord2005_rem_171 - 2U) * 0x10000) >> 0x10) + (int)(short)(ushort)bVar3;
+      } while (iVar7 < 0);
+    } while (7 < iVar7);
+    uVar9 = puVar8[1] & 0x1fff ^ (((int)uw_ord2005_rem_171 - 2U & 0xffff) + (uint)bVar3 & 0xffff) << 0xd
+    ;
+    *(char *)(puVar8 + 1) = (char)(puVar8[1] & 0x1fff);
+    *(char *)((char *)puVar8 + 3) = (char)(uVar9 >> 8);
+    uVar9 = (uVar9 & 0x1c00) >> 10;
+    do {
+      do {
+        uVar6 = Ordinal_1053();
+        uw_ord2005_rem_172 = ((int)(uVar6)) % (5);
+        iVar7 = ((int)(((int)uw_ord2005_rem_172 - 2U) * 0x10000) >> 0x10) + (int)(short)uVar9;
+      } while (iVar7 < 0);
+    } while (7 < iVar7);
+    bVar3 = (byte)(puVar8[1] >> 8);
+    *(char *)(puVar8 + 1) = (char)puVar8[1];
+    *(byte *)((char *)puVar8 + 3) =
+         (bVar3 ^ (byte)(((((int)uw_ord2005_rem_172 - 2U & 0xffff) + uVar9 & 0xffff) << 10) >> 8)) &
+         0x1c ^ bVar3;
+    bVar4 = Ordinal_1053();
+    uVar2 = puVar8[1];
+    bVar3 = (byte)uVar2;
+    *(byte *)(puVar8 + 1) = (((bVar4 & 0xf) + bVar3) - 8 ^ bVar3) & 0x7f ^ bVar3;
+    *(char *)((char *)puVar8 + 3) = (char)(uVar2 >> 8);
+    /* was folded into `int iVar7` (this function's loop counter, reused
+       immediately after this for unrelated int values) -- truncated
+       tilemap_lookup's real `void *` return */
+    {
+      char *_tile7 = (char *)tilemap_lookup(param_2,param_3);
+      object_list_insert_head(_tile7 + 2,puVar8);
+    }
+    uVar6 = Ordinal_1053();
+    uw_ord2005_rem_173 = ((int)(uVar6)) % (3);
+    uVar6 = Ordinal_1053();
+    uVar11 = encode_object_slot_index(puVar8);
+    uVar12 = (undefined1)param_3;
+    uVar13 = (undefined1)uw_ord2005_rem_173;
+    uw_ord2005_rem_174 = ((int)(uVar6)) % (3);
+    sVar5 = scheduler_add_entry(uVar11,((int)uw_ord2005_rem_174 - (int)uw_ord2005_rem_173) + 2,(int)uw_ord2005_rem_173,
+                         param_2 & 0xff,uVar12,uVar13);
+    if (sVar5 == -1) {
+      /* was folded into `int iVar7` (this function's loop counter) --
+         truncated tilemap_lookup's real `void *` return */
+      char *_tile7b = (char *)tilemap_lookup(param_2,param_3);
+      object_list_unlink(_tile7b + 2,puVar8);
+      free_object_slot(puVar8);
+      iVar7 = -1;
+    }
+    else {
+      iVar7 = (int)sVar1;
+    }
+    iVar7 = iVar7 + -1;
+    sVar1 = (short)iVar7;
+  }
   return;
 }
 

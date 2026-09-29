@@ -1290,7 +1290,7 @@ ushort * param_1;
                fixed several times elsewhere this session (this port's
                Ordinal_2005 never populates extraout_r1). Computed each
                remainder directly instead; this was feeding a random
-               scatter offset into FUN_00081388 (spawn debris around the
+               scatter offset into spawn_effect_debris_burst (spawn debris around the
                object), so previously ran with a garbage/undefined delta
                every time this rare "teleport gate" branch was taken --
                intermittently crashing (confirmed live, ~1-in-5 runs of
@@ -1298,7 +1298,7 @@ ushort * param_1;
             extraout_r1_00 = (short)(uVar6 % 3);
             iVar10 = (int)DAT_00101454;
             extraout_r1 = (short)(uVar7 % 3);
-            FUN_00081388(param_1,(int)DAT_0010144c + (int)extraout_r1_00 + -1,
+            spawn_effect_debris_burst(param_1,(int)DAT_0010144c + (int)extraout_r1_00 + -1,
                          iVar10 + extraout_r1 + -1);
             iVar8 = (iVar8 + -1) * 0x10000 >> 0x10;
           } while ((int)(uint)*(byte *)(DAT_00086df8 + 0x6d) <= iVar8);
