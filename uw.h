@@ -3223,7 +3223,7 @@ void voice_sample_cluster_stub_2();
 byte tile_is_no_magic();
 void dispatch_tile_special_action();
 undefined4 dispatch_special_action();
-void FUN_00073e14();
+void adjust_level7_hazard_value();
 void adjust_player_hp();
 void restore_stat_capped();
 void FUN_00073fc4();

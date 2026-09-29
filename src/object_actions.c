@@ -935,7 +935,7 @@ LAB_00073c90:
     FUN_00074028(param_3,param_2);
     break;
   case 10:
-    FUN_00073e14(param_3,param_2);
+    adjust_level7_hazard_value(param_3,param_2);
     break;
   case 0xb:
     FUN_00075808(param_3,param_2 & 0xffffffc0,param_2 & 0x3f);

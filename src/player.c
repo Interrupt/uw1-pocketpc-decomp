@@ -2713,8 +2713,8 @@ LAB_0007158c:
         }
         else {
           adjust_player_hp(g_player_object,(((short)iVar4 + 1) * (int)sVar3 * 0x1000000 >> 0x18) + -1);
-          FUN_00073e14(g_player_object,0xfffffffa);
-          FUN_00073e14(g_player_object,((char)sVar3 + 1) * (int)(char)iVar4 + (int)(char)sVar3 + -1);
+          adjust_level7_hazard_value(g_player_object,0xfffffffa);
+          adjust_level7_hazard_value(g_player_object,((char)sVar3 + 1) * (int)(char)iVar4 + (int)(char)sVar3 + -1);
         }
         sVar3 = Ordinal_1053();
         adjust_player_hunger(-0x18 - ((int)sVar3 & 0x1fU));
@@ -3031,5 +3031,42 @@ LAB_00072374:
     }
   }
   FUN_0003c038(1);
+  return;
+}
+
+
+
+
+
+
+// was FUN_00073e14 -- adjusts the level-7 hazard byte
+// (DAT_00086df8+0x37, only when param_1 is the player object):
+// param_2<=0 subtracts it as a delta from the current value; param_2>0
+// instead adds a randomized amount (param_2 plus 0-3, scaled by the
+// hazard cap DAT_00086df8+0x38) to the current value plus 1. Clamps
+// to the cap and refreshes the experience/stats display.
+void adjust_level7_hazard_value(param_1,param_2)
+char *param_1;
+char param_2;
+
+{
+  short sVar1;
+  
+  if (param_1 == g_player_object) {
+    if (param_2 < '\x01') {
+      param_2 = *(char *)(DAT_00086df8 + 0x37) - param_2;
+    }
+    else {
+      sVar1 = Ordinal_1053();
+      param_2 = (char)((int)((((int)sVar1 & 3U) + (int)param_2) *
+                             (uint)*(byte *)(DAT_00086df8 + 0x38) * 0x10000) >> 0x14) +
+                *(char *)(DAT_00086df8 + 0x37) + '\x01';
+    }
+    *(char *)(DAT_00086df8 + 0x37) = param_2;
+    if (*(byte *)(DAT_00086df8 + 0x38) < *(byte *)(DAT_00086df8 + 0x37)) {
+      *(byte *)(DAT_00086df8 + 0x37) = *(byte *)(DAT_00086df8 + 0x38);
+    }
+    refresh_experience_display();
+  }
   return;
 }

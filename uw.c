@@ -31972,7 +31972,7 @@ void FUN_00053c74()
       adjust_player_hp(g_player_object,0xffffffff);
     }
     if ((DAT_002046cc & 2) != 0) {
-      FUN_00073e14(g_player_object,0xffffffff);
+      adjust_level7_hazard_value(g_player_object,0xffffffff);
     }
   }
   if (0x50 < *(byte *)(DAT_00086df8 + 0xb9)) {
@@ -31991,7 +31991,7 @@ void FUN_00053c74()
     }
     sVar5 = roll_skill_check(*(undefined1 *)(iVar10 + 0x28),10);
     if (0 < sVar5) {
-      FUN_00073e14(g_player_object,sVar5 * -0x1000000 >> 0x18);
+      adjust_level7_hazard_value(g_player_object,sVar5 * -0x1000000 >> 0x18);
     }
   }
   uw_ord2005_rem_117 = ((int)(DAT_002046d0)) % (0x18);
@@ -36469,34 +36469,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_00073e14(param_1,param_2)
-char *param_1;
-char param_2;
-
-{
-  short sVar1;
-  
-  if (param_1 == g_player_object) {
-    if (param_2 < '\x01') {
-      param_2 = *(char *)(DAT_00086df8 + 0x37) - param_2;
-    }
-    else {
-      sVar1 = Ordinal_1053();
-      param_2 = (char)((int)((((int)sVar1 & 3U) + (int)param_2) *
-                             (uint)*(byte *)(DAT_00086df8 + 0x38) * 0x10000) >> 0x14) +
-                *(char *)(DAT_00086df8 + 0x37) + '\x01';
-    }
-    *(char *)(DAT_00086df8 + 0x37) = param_2;
-    if (*(byte *)(DAT_00086df8 + 0x38) < *(byte *)(DAT_00086df8 + 0x37)) {
-      *(byte *)(DAT_00086df8 + 0x37) = *(byte *)(DAT_00086df8 + 0x38);
-    }
-    refresh_experience_display();
-  }
   return;
 }
 

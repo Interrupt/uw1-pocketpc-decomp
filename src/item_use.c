@@ -625,7 +625,7 @@ LAB_0007ae1c:
           sVar4 = roll_skill_check(*(undefined1 *)(DAT_0023be74 + 7),0x14);
           if (sVar4 != 0) {
             iVar11 = rand_below(3);
-            FUN_00073e14(g_player_object,iVar11 * -0x1000000 >> 0x18);
+            adjust_level7_hazard_value(g_player_object,iVar11 * -0x1000000 >> 0x18);
           }
           uVar9 = *(ushort *)(DAT_00086df8 + 0x61);
           if ((uVar9 & 0xc) < 0xc) {
