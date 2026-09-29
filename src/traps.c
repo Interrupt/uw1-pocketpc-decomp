@@ -448,7 +448,7 @@ LAB_0007d460:
     break;
   case 0x10:
     iVar11 = get_message_string((byte)param_1[3] & 0x3f | ((byte)param_1[2] & 0x2f | 0x90) << 5);
-    FUN_0007ea34(s_Look__it_s_a_text_trap_00087918);
+    debug_print(s_Look__it_s_a_text_trap_00087918);
     if (iVar11 != 0) {
       message_scroll_print_wrapped(iVar11);
     }

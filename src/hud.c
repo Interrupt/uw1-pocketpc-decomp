@@ -296,7 +296,7 @@ void flush_dirty_rect_to_display_240()
 void enter_dungeon_view_hud_init()
 
 {
-  FUN_0007ea34(s_init_gamedisp_goes_000858e8);
+  debug_print(s_init_gamedisp_goes_000858e8);
   FUN_00046414();
   FUN_0007f044();
   resume_music_playback();
@@ -1685,7 +1685,7 @@ void redraw_active_hud_panel()
   
   iVar1 = FUN_00041a78(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
   if (iVar1 == 0) {
-    FUN_0007ea34(&DAT_00087298);
+    debug_print(&DAT_00087298);
   }
   else {
     FUN_00057118();

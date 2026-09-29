@@ -120,7 +120,7 @@ int param_2;
 
   sVar3 = read_archive_entry(param_1,param_2 + 0x11,local_tmap_buf);
   if (sVar3 != 0x7a) {
-    FUN_0007ea34(s_bad_tmap_ids_size_000869b7 + 1);
+    debug_print(s_bad_tmap_ids_size_000869b7 + 1);
   }
   iVar4 = 0;
   do {

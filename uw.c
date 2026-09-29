@@ -12267,13 +12267,13 @@ ushort * param_2;
        (((uVar1 & 0x8000) != 0 || ((param_2[3] & 0xffc0) == 0)))) {
       uVar1 = uVar1 & 0x1ff;
       uVar2 = uVar2 & 0x1ff;
-      FUN_0007ea34(s_checking_if__d_and__d_are_combin_00084f90,uVar2,uVar1);
+      debug_print(s_checking_if__d_and__d_are_combin_00084f90,uVar2,uVar1);
       puVar7 = &DAT_00100630;
       iVar8 = 0;
       do {
         uVar3 = *puVar7 & 0x1ff;
         uVar4 = puVar7[1] & 0x1ff;
-        FUN_0007ea34(s_combination__d_is__d_and__d__00084f70,iVar8,uVar3,uVar4);
+        debug_print(s_combination__d_is__d_and__d__00084f70,iVar8,uVar3,uVar4);
         if (((*puVar7 | puVar7[1]) & 0x8000) != 0) {
           if (((uVar3 == uVar2) && (uVar4 == uVar1)) || ((uVar3 == uVar1 && (uVar4 == uVar2))))
           break;
@@ -12287,7 +12287,7 @@ ushort * param_2;
       if (iVar8 != 10) {
         iVar5 = iVar8;
       }
-      FUN_0007ea34(s_objsbecombinable_returns__d_00084f50,iVar5);
+      debug_print(s_objsbecombinable_returns__d_00084f50,iVar5);
       if (iVar8 == 10) {
         sVar6 = -1;
       }
@@ -20301,7 +20301,7 @@ void FUN_0003b820()
   init_string_resource_cache();
   init_level_object_arena();
   input_bindings_init();
-  FUN_0007ea30();
+  debug_print_init();
   store_window_extra_data_ptr(DAT_0023c540);
   FUN_00037d50();
   iVar3 = FUN_00040cd4();
@@ -36517,50 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-/* Real body confirmed stripped from the shipped ARM code (disassembly is
-   just `cpy pc,lr` -- an immediate return, ignoring whatever argument its
-   single call site passes). Likely InitDebug()-equivalent from the same
-   LG/SS1-heritage debug-print system FUN_0007ea34 belongs to; genuinely
-   does nothing in this binary, so left as a no-op. */
-void FUN_0007ea30()
-
-{
-  return;
-}
-
-
-
-/* Real body confirmed stripped from the shipped ARM code (disassembly:
-   the standard vararg prologue -- stmdb saving r0-r3 and r12/lr to the
-   stack -- immediately followed by ldmia popping straight back out and
-   returning, i.e. the compiler kept the calling convention but the actual
-   printf-style body was compiled out, e.g. via #ifdef DEBUG). This is the
-   same SS1-engine-style debug-print gateway the remaining format strings
-   elsewhere in this file belong to (e.g. "checking_if_%d_and_%d_are_com-
-   bin", "objsbecombinable_returns_%d", "At_%d_%d") -- there's no level
-   parameter to recover since none of its ~8 call sites pass one and the
-   real body never used one, so there's nothing to restore verbatim.
-   Implemented here as a real vararg printer instead. Currently defaults
-   to ON (UW_DEBUG_PRINT=0 to silence) while this is under active
-   development, unlike the original release build which had it fully
-   compiled out. */
-void FUN_0007ea34(char *param_1, ...)
-
-{
-  const char *diag = getenv("UW_DEBUG_PRINT");
-  if ((param_1 != (char *)0x0) && (diag == (char *)0x0 || diag[0] != '0')) {
-    va_list ap;
-    fprintf(stderr, "[dbg] ");
-    va_start(ap, param_1);
-    vfprintf(stderr, param_1, ap);
-    va_end(ap);
-    fprintf(stderr, "\n");
-  }
-  return;
-}
-
-
-
 void FUN_0007ea44()
 
 {

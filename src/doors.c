@@ -255,7 +255,7 @@ ushort param_2;
   bVar1 = param_1 == DAT_00201b68;
   if (bVar1) {
     FUN_000539b0((int)(short)param_2 >> 6,(short)param_2 >> 4 & 3,param_2 & 0xf,&local_8,&local_6);
-    FUN_0007ea34(s_At__d__d_00087360,(int)local_8,(int)local_6);
+    debug_print(s_At__d__d_00087360,(int)local_8,(int)local_6);
     DAT_00201c90 = local_8;
     DAT_00201c8c = local_6;
   }

@@ -4,6 +4,7 @@
  * were confirmed. */
 #include "headers/game.h"
 #include "headers/debug.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -1919,3 +1920,51 @@ undefined4 shutdown_game_resources()
   Ordinal_866(0);
   return 0;
 }
+
+
+/* was FUN_0007ea30 -- real body confirmed stripped from the shipped
+   ARM code (disassembly is just `cpy pc,lr` -- an immediate return,
+   ignoring whatever argument its single call site passes). Likely
+   InitDebug()-equivalent from the same
+   LG/SS1-heritage debug-print system debug_print belongs to; genuinely
+   does nothing in this binary, so left as a no-op. */
+void debug_print_init()
+
+{
+  return;
+}
+
+
+
+/* was FUN_0007ea34 -- real body confirmed stripped from the shipped
+   ARM code (disassembly:
+   the standard vararg prologue -- stmdb saving r0-r3 and r12/lr to the
+   stack -- immediately followed by ldmia popping straight back out and
+   returning, i.e. the compiler kept the calling convention but the actual
+   printf-style body was compiled out, e.g. via #ifdef DEBUG). This is the
+   same SS1-engine-style debug-print gateway the remaining format strings
+   elsewhere in this file belong to (e.g. "checking_if_%d_and_%d_are_com-
+   bin", "objsbecombinable_returns_%d", "At_%d_%d") -- there's no level
+   parameter to recover since none of its ~8 call sites pass one and the
+   real body never used one, so there's nothing to restore verbatim.
+   Implemented here as a real vararg printer instead. Currently defaults
+   to ON (UW_DEBUG_PRINT=0 to silence) while this is under active
+   development, unlike the original release build which had it fully
+   compiled out. */
+void debug_print(char *param_1, ...)
+
+{
+  const char *diag = getenv("UW_DEBUG_PRINT");
+  if ((param_1 != (char *)0x0) && (diag == (char *)0x0 || diag[0] != '0')) {
+    va_list ap;
+    fprintf(stderr, "[dbg] ");
+    va_start(ap, param_1);
+    vfprintf(stderr, param_1, ap);
+    va_end(ap);
+    fprintf(stderr, "\n");
+  }
+  return;
+}
+
+
+
