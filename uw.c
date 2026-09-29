@@ -267,7 +267,7 @@ byte *DAT_000b461c;
    (`*(byte *)(DAT_000b4610 + bVar1)` in blit_sprite_row_remapped) dereferenced a
    wild address. Surfaced by drawing the automap player marker with the
    player at certain positions (draw_sprite_by_id(0x103f,...) ->
-   FUN_000129f8 -> blit_sprite_row_remapped). Retyped to real pointers. */
+   decompress_gr_bitmap -> blit_sprite_row_remapped). Retyped to real pointers. */
 byte *DAT_000b4610;
 byte *DAT_000b4624;
 byte *DAT_0024af78;
@@ -275,7 +275,7 @@ byte *DAT_0024af7c;
 /* Was `undefined4`, silently 0 -- a link-time-initialized pointer
    constant this decompile never writes (holds 0xb45f0 in UU.exe, i.e.
    the address of a 0x20-byte sprite-row scratch buffer). Confirmed via
-   Ghidra: 3 refs, all reads, in blit_sprite_row_remapped/FUN_000129f8, plus the
+   Ghidra: 3 refs, all reads, in blit_sprite_row_remapped/decompress_gr_bitmap, plus the
    `.data` word at 0x842ac literally being 0xb45f0. As NULL it made
    `Ordinal_1047(DAT_000842ac, 10, 0x20)` memset through address 0 and
    the blit write past it. Backed by a real (over-sized) buffer. */
@@ -6785,211 +6785,6 @@ void thunk_FUN_0003c310()
 }
 
 
-
-
-
-byte *FUN_000129f8(param_1,param_2,param_3)
-byte * param_1;
-byte * param_2;
-char param_3;
-
-{
-  bool bVar1;
-  byte bVar2;
-  byte bVar3;
-  byte *pbVar4;
-  byte *pbVar5;
-  uint uVar6;
-  uint uVar7;
-  uint uVar8;
-  undefined4 uVar9;
-  int iVar10;
-  uint uVar11;
-  
-  pbVar5 = DAT_0024af7c;
-  pbVar4 = DAT_0024af78;
-  Ordinal_1047(DAT_000842ac,10,0x20);
-  DAT_000b4614 = DAT_0024fa2c;
-  bVar2 = param_1[1];
-  DAT_000b4618 = param_1;
-  DAT_000b5630 = param_2;
-  if (param_3 == '\0') {
-LAB_000130d0:
-    DAT_000b462c = (byte *)0x0;
-  }
-  else {
-    if (param_3 == '\x02') {
-      DAT_000b462c = param_1;
-      return param_1;
-    }
-    DAT_000b462c = param_1;
-    if (param_3 == '\x04') {
-      FUN_00013108(bVar2,4,param_2[1],*param_1 | 0xff00);
-      DAT_000b462c = pbVar4;
-      DAT_000b4628 = pbVar4;
-      DAT_000b461c = pbVar4;
-      DAT_000b5630 = DAT_000b4618 + 1;
-      uVar6 = FUN_000130e0(bVar2,*DAT_000b4618,0);
-      bVar2 = *DAT_000b5630;
-      DAT_000b5630 = DAT_000b5630 + 1;
-      iVar10 = 0;
-      do {
-        bVar3 = *DAT_000b5630;
-        DAT_000b5630 = DAT_000b5630 + 1;
-        *DAT_000b461c = *(byte *)(DAT_000b4610 + (uint)bVar3);
-        DAT_000b461c = DAT_000b461c + 1;
-        bVar1 = iVar10 < (int)(uVar6 & 0xff | (uint)bVar2 << 8);
-        iVar10 = iVar10 + 1;
-      } while (bVar1);
-      return DAT_000b462c;
-    }
-    if (param_3 == '\x06') {
-      /* blit_sprite_row_remapped's 4th arg (a shade byte; 0xff means "no
-         remap, plain copy") is never set by any of this function's 3 real
-         ARM call sites either (confirmed via Ghidra disassembly at
-         0x12aa0/0x12bf0/0x12d34 -- r3 genuinely isn't loaded before any
-         of the 3 `bl 0x13170` calls). The real binary's r3 register
-         happened to still hold a leftover value from earlier, unrelated
-         code at that point; a C recompile has no equivalent "whatever's
-         left in the register" state, so param_4 here was reading
-         uninitialized garbage -- confirmed live via ASan: a
-         heap-buffer-overflow in blit_sprite_row_remapped reading up to
-         64KB past the 4096-byte LIGHT.DAT remap table (DAT_0024fa2c),
-         since the garbage byte routinely wasn't the 0xff sentinel and so
-         took the remap-table-index path with an unclamped shade value.
-         Passing 0xff explicitly forces the same safe, table-free plain-
-         copy path the callee already has for exactly this situation. */
-      blit_sprite_row_remapped(bVar2,6,2,0xff);
-      DAT_000b462c = pbVar4;
-      DAT_000b4628 = pbVar4;
-      DAT_000b461c = pbVar4;
-      DAT_000b5630 = DAT_000b4618 + 1;
-      uVar6 = FUN_000130e0(bVar2,*DAT_000b4618,0);
-      bVar2 = *DAT_000b5630;
-      DAT_000b5630 = DAT_000b5630 + 1;
-      uVar8 = uVar6 & 0xff | (uint)bVar2 << 8;
-      uVar6 = (uVar8 + 7 & 0xffff) >> 3;
-      uVar7 = 0;
-      for (uVar11 = uVar6; uVar11 != 0; uVar11 = uVar11 - 1) {
-        bVar2 = *DAT_000b5630;
-        DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0(uVar6,bVar2,0);
-        uVar6 = (uVar7 & 0xff) >> 3;
-        *DAT_000b461c = (byte)uVar6;
-        DAT_000b461c = DAT_000b461c + 1;
-        bVar2 = *DAT_000b5630;
-        DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0((uVar7 & 0xff) << 0xd | uVar6,bVar2,0);
-        uVar6 = (uVar7 & 0xff | ((uVar7 & 0xffff) >> 8 & 0xffe0) << 3) >> 6;
-        *DAT_000b461c = (byte)uVar6;
-        uVar6 = ((uVar7 & 0x3f) << 10 | uVar6) >> 3;
-        DAT_000b461c = DAT_000b461c + 1;
-        uVar9 = FUN_000130e0(uVar6 & 0xff | (uVar6 & 0xff) << 8,(uVar7 & 0x3f) >> 1,0);
-        *DAT_000b461c = (byte)uVar9;
-        DAT_000b461c = DAT_000b461c + 1;
-        bVar2 = *DAT_000b5630;
-        DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0(uVar9,bVar2,0);
-        uVar6 = (uVar7 & 0xff | ((uVar7 & 0xffff) >> 8 & 0xff80) << 1) >> 4;
-        *DAT_000b461c = (byte)uVar6;
-        DAT_000b461c = DAT_000b461c + 1;
-        bVar2 = *DAT_000b5630;
-        DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0((uVar7 & 0xff) << 0xc | uVar6,bVar2,0);
-        uVar6 = (uVar7 & 0xff | ((uVar7 & 0xffff) >> 8 & 0xfff0) << 4) >> 7;
-        *DAT_000b461c = (byte)uVar6;
-        DAT_000b461c = DAT_000b461c + 1;
-        uVar6 = FUN_000130e0((uVar7 & 0xff) << 9 | uVar6,0,0);
-        uVar6 = (uVar6 & 0xffff) >> 0xb | (uVar6 & 0x7ff) << 5;
-        *DAT_000b461c = (byte)uVar6;
-        DAT_000b461c = DAT_000b461c + 1;
-        bVar2 = *DAT_000b5630;
-        DAT_000b5630 = DAT_000b5630 + 1;
-        uVar6 = FUN_000130e0(uVar6,bVar2,0);
-        *DAT_000b461c = (byte)((uVar6 & 0xff | ((uVar6 & 0xffff) >> 8 & 0xffc0) << 2) >> 5);
-        uVar6 = uVar6 & 0x1f;
-        DAT_000b461c = DAT_000b461c + 1;
-        *DAT_000b461c = (byte)uVar6;
-        DAT_000b461c = DAT_000b461c + 1;
-        uVar7 = uVar6;
-      }
-    }
-    else {
-      if (param_3 != '\b') {
-        if (param_3 == '\n') {
-          /* Same dropped-4th-arg / uninitialized-param_4 issue as this
-             function's other blit_sprite_row_remapped call site -- see
-             that comment (a few dozen lines up, the param_3=='\x06' case). */
-          blit_sprite_row_remapped(bVar2,10,1,0xff);
-          DAT_000b462c = pbVar4;
-          DAT_000b4628 = pbVar4;
-          DAT_000b461c = pbVar4;
-          DAT_000b5630 = DAT_000b4618 + 1;
-          uVar6 = FUN_000130e0(bVar2,*DAT_000b4618,0);
-          bVar2 = *DAT_000b5630;
-          DAT_000b5630 = DAT_000b5630 + 1;
-          uVar6 = uVar6 & 0xff | (uint)bVar2 << 8;
-          uVar7 = uVar6;
-          for (; uVar6 != 0; uVar6 = uVar6 - 1) {
-            bVar2 = *DAT_000b5630;
-            DAT_000b5630 = DAT_000b5630 + 1;
-            uVar7 = FUN_000130e0(uVar7,bVar2,0);
-            uVar7 = FUN_000130e0(uVar7 & 0xff | (uVar7 & 0xff) << 8,uVar7 & 0xf0,0);
-            uVar7 = FUN_000130e0(uVar7,(uVar7 & 0xff) >> 4,0);
-            *DAT_000b461c = *(byte *)((uVar7 & 0xff) + DAT_000b4610);
-            DAT_000b461c = DAT_000b461c + 1;
-            uVar7 = FUN_000130e0(uVar7,(uVar7 & 0xffff) >> 8,0);
-            uVar7 = FUN_000130e0(uVar7,uVar7 & 0xf,0);
-            *DAT_000b461c = *(byte *)((uVar7 & 0xff) + DAT_000b4610);
-            DAT_000b461c = DAT_000b461c + 1;
-          }
-          return DAT_000b462c;
-        }
-        goto LAB_000130d0;
-      }
-      /* Same dropped-4th-arg / uninitialized-param_4 issue as this
-         function's other blit_sprite_row_remapped call site -- see that
-         comment (the param_3=='\x06' case, above). */
-      blit_sprite_row_remapped(bVar2,8,1,0xff);
-      DAT_000b462c = pbVar4;
-      DAT_000b4628 = pbVar4;
-      DAT_000b461c = pbVar4;
-      DAT_000b5630 = DAT_000b4618 + 1;
-      uVar6 = FUN_000130e0(bVar2,*DAT_000b4618,0);
-      bVar2 = *DAT_000b5630;
-      DAT_000b5630 = DAT_000b5630 + 1;
-      uVar8 = uVar6 & 0xff | (uint)bVar2 << 8;
-      uVar7 = 0;
-      for (uVar6 = (uVar8 + 1 & 0xffff) >> 1; uVar6 != 0; uVar6 = uVar6 - 1) {
-        bVar2 = *DAT_000b5630;
-        DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0(CONCAT11(bVar2,bVar2),bVar2 & 0xf0,0);
-        uVar7 = FUN_000130e0(uVar7,(uVar7 & 0xff) >> 4,0);
-        *DAT_000b461c = (byte)uVar7;
-        DAT_000b461c = DAT_000b461c + 1;
-        uVar7 = FUN_000130e0(uVar7,(uVar7 & 0xffff) >> 8,0);
-        uVar7 = FUN_000130e0(uVar7,uVar7 & 0xf,0);
-        *DAT_000b461c = (byte)uVar7;
-        DAT_000b461c = DAT_000b461c + 1;
-      }
-    }
-    DAT_000b4624 = pbVar4;
-    DAT_000b5630 = pbVar4;
-    DAT_000b4628 = pbVar5;
-    DAT_000b461c = pbVar5;
-    /* blit_sprite_row_remapped above resets DAT_000b4610 to the scratch
-       DAT_000842ac (memset to 0x0a) on the way out, but FUN_000132c4's RLE
-       fill looks its run colours up through DAT_000b4610 -- for the RLE
-       formats (6/8/0xa) that table is the auxiliary palette passed in
-       param_2 (nibble -> 8-bit palette index). Ghidra dropped the setup;
-       point it there so the sprite decodes to real colours instead of a
-       flat 0x0a. */
-    DAT_000b4610 = (byte *)param_2;
-    FUN_000132c4(uVar7,param_3,uVar8);
-    DAT_000b462c = DAT_000b4628;
-  }
-  return DAT_000b462c;
-}
 
 
 
@@ -21870,11 +21665,11 @@ uint param_2;
     pcVar3 = pcVar3 + 5;
   }
   else {
-    /* Ghidra dropped FUN_000129f8's 3rd arg, the .GR entry's compression
+    /* Ghidra dropped decompress_gr_bitmap's 3rd arg, the .GR entry's compression
        mode (*pcVar3 -- 6/8/0xa RLE variants). Without it the decoder took
        its param_3==0 path and produced an all-zero (fully transparent)
        bitmap, so every object billboard sampled nothing. */
-    pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,
+    pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,
                                   *pcVar3);
   }
   iVar5 = (int)(short)(ushort)bVar2 * (int)(short)(ushort)bVar1;
@@ -22006,7 +21801,15 @@ undefined4 param_3;
     pcVar3 = pcVar3 + 5;
   }
   else {
-    pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10);
+    /* HACK: dropped 3rd argument (the .GR entry's own compression-mode
+       byte, *pcVar3) -- the same bug already found and fixed twice
+       elsewhere in this file for this identical decompress_gr_bitmap
+       call shape (decode_gr_entry_bitmap and the call site ~130 lines
+       above this one; see object-rendering-findings.txt's "MILESTONE:
+       objects render" entry). Without it, decompress_gr_bitmap took
+       its param_3==0 path and returned NULL for this icon's real
+       .GR entries. */
+    pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
   }
   bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,1,unaff_r4,unaff_r5);
   return;
@@ -26200,7 +26003,7 @@ static void _uw_dump_sprite_ids_from_env(const char *envname, int is_frame, cons
      a creature's real per-page table found a separate, unfixed bug --
      an out-of-range direction can produce a header that still passes
      the existing "w/h > 64" plausibility check yet isn't real glyph
-     data, and FUN_000129f8's decompressor doesn't bound its output to
+     data, and decompress_gr_bitmap's decompressor doesn't bound its output to
      the allocated buffer, corrupting the heap (confirmed via lldb:
      malloc's free_list_checksum_botch, non-deterministic crash
      manifesting later in unrelated code). Raise

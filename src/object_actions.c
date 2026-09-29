@@ -182,7 +182,7 @@ short param_5;
   int iVar1;
   int iVar5;
   byte *pbVar6;
-  char *uVar7; /* FUN_000129f8's real return type -- was undefined4, truncating it */
+  char *uVar7; /* decompress_gr_bitmap's real return type -- was undefined4, truncating it */
   byte *pbVar8;
   int iVar9;
   int iVar10;
@@ -302,7 +302,7 @@ short param_5;
               (int)(short)DAT_00202508, (int)(short)DAT_002022f8, param_1, param_2, (int)param_3);
         return 0;
       }
-      uVar7 = FUN_000129f8(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
+      uVar7 = decompress_gr_bitmap(pbVar11 + 5,pbVar8 + param_4 * 0x20 + 1,pbVar11[4]);
       if (getenv("UW_DEBUG_CRITTER") && uVar7) {
         fprintf(stderr, "[critter] decode_critter_sprite_page: decoded row bytes[0..15]:");
         for (int _i = 0; _i < 16; _i++) fprintf(stderr, " %02x", (unsigned char)uVar7[_i]);

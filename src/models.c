@@ -487,7 +487,7 @@ short frame_or_texid;
       texptr = (byte *)(pcVar15 + 5);
     }
     else {
-      texptr = (byte *)FUN_000129f8(pcVar15 + 4,&DAT_00202520 + (uint)(byte)pcVar15[3] * 0x10);
+      texptr = (byte *)decompress_gr_bitmap(pcVar15 + 4,&DAT_00202520 + (uint)(byte)pcVar15[3] * 0x10);
     }
   }
   else {

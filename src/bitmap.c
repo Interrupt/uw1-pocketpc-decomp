@@ -269,14 +269,14 @@ undefined4 param_3;
            6/8/0xa) already root-caused and fixed in FUN_00040770's
            identical call (see object-rendering-findings.txt's
            "MILESTONE: objects render" section) -- without it,
-           FUN_000129f8 takes its param_3==0 path, which for this call
+           decompress_gr_bitmap takes its param_3==0 path, which for this call
            site returns NULL instead of an all-transparent buffer
            (unlike FUN_00040770's case), and the caller here has no
            NULL-guard on the result -- confirmed live: picking up the
            starting sack and calling attach_picked_up_object_to_cursor to attach it to the
            cursor crashed here with a NULL source pointer reaching
            bitmap_blit_to_framebuffer. */
-        pcVar3 = (char *)FUN_000129f8(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
+        pcVar3 = (char *)decompress_gr_bitmap(pcVar3 + 4,&DAT_00202520 + (uint)(byte)pcVar3[3] * 0x10,*pcVar3);
       }
       bitmap_blit_to_framebuffer(param_2,param_3,pcVar3,cVar2,cVar1,0,0,0);
     }

@@ -1055,6 +1055,9 @@ extern undefined s_dash_000879a4_backing[8192];
 extern undefined s_scroll_prompt_arrow_000879a8_backing[8192];
 #define s_scroll_prompt_arrow_000879a8 s_scroll_prompt_arrow_000879a8_backing[0]
 extern int g_text_input_active;
+extern byte *DAT_000b4624;
+extern byte *DAT_000b462c;
+extern byte *DAT_000b4618;
 extern undefined1 DAT_00250730_backing[65536];
 #define DAT_00250730 DAT_00250730_backing[0]
 #define DAT_00250732 DAT_00250730_backing[2]
@@ -2353,7 +2356,7 @@ void thunk_FUN_0003c310();
 void reset_viewport_to_fullscreen();
 undefined4 render_dungeon_view();
 undefined8 compute_view_y_bound();
-byte *FUN_000129f8();
+byte *decompress_gr_bitmap();
 uint FUN_000130e0();
 void FUN_00013108();
 void blit_sprite_row_remapped();
