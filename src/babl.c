@@ -3221,3 +3221,189 @@ char *param_1;
   return bVar4;
 }
 
+
+
+
+
+
+undefined4 load_npc_conversation_record(param_1,param_2)
+char *param_1;
+undefined1 *param_2;
+
+{
+  short sVar1;
+  int iVar2;
+  undefined1 *puVar3;
+  char *local_28;
+  undefined1 auStack_20 [16];
+
+  /* Was `undefined4 param_2` (32-bit) -- truncated the real 64-bit
+     buffer pointer (DAT_00100784 + 0x400, passed in from start_npc_conversation)
+     before it ever reached FUN_00019660's own `*param_1 = 0xff` write,
+     the Talk-mode crash in bug-critter-talk.txt (EXC_BAD_ACCESS at the
+     truncated 32-bit address, confirmed live via lldb: param_2 came in
+     as 0x58270400, the real 0x158270400 buffer address with its high
+     32 bits dropped). Same truncation-bug class as the tilemap_lookup
+     pointer-truncation sweep earlier this session. */
+  FUN_00019660(param_2);
+  DAT_000bbf30 = 0;
+  DAT_000bbf20 = param_1;
+  iVar2 = open_level_archive(auStack_20,param_1);
+  if (iVar2 == 0) {
+    FUN_0003c3c8(0x300a);
+  }
+  else {
+    DAT_000bbf18 = babl_alloc(0x4000);
+    if (DAT_000bbf18 == 0) {
+      FUN_0003c3c8(4);
+    }
+    local_28 = DAT_000bbf18;
+    /* Was `read_archive_entry(auStack_20,DAT_001007c4)` -- a dropped 3rd
+       argument. read_archive_entry's real signature takes a destination
+       buffer (its own `param_3`, see its comment); the real ARM code
+       (0x194d0-0x194dc: `cpy r5,r2` then `bl 0x1613c` with NO reload of
+       r2 in between) relies on r2 still holding local_28 from several
+       instructions earlier -- a register-forwarding trick this host's
+       own C codegen has no reason to reproduce for a call site that's
+       only ever told about 2 arguments. Confirmed via lldb this was the
+       real reason EVERY NPC's Talk (not just Bragit's) failed with "You
+       get no response": Bragit's own directory-table slot (record 67)
+       is genuinely non-empty (199494, confirmed live) -- read_archive_
+       entry's early "empty slot" check was never the problem, the
+       actual FUN_0002285c(fd,param_3,len) read was silently failing on
+       whatever garbage this host happened to leave in the argument
+       register. */
+    sVar1 = read_archive_entry(auStack_20,DAT_001007c4,local_28);
+    FUN_00015a58(auStack_20);
+    if (sVar1 < 1) {
+      /* Was `message_scroll_print_wrapped(...); return 1;` -- a second,
+         separate bug on top of the already-fixed dropped-argument one
+         (see the surviving half of this comment below): the real
+         disassembly (0x194fc-0x1950c) falls straight through to this
+         function's shared epilogue after the two `bl`s with NO `mov
+         r0,#1` of its own, so the real return value here is whatever
+         message_scroll_print_wrapped() itself returns, not a hardcoded
+         1. Hardcoding 1 (a non-negative "success") made start_npc_conversation's
+         own `if (sVar1 < 0)` caller-side check always take its SUCCESS
+         branch even on this "no CNV record for this NPC" path -- which
+         then read never-initialized DAT_000bbf70 (still 0 from this
+         run, since the real per-record setup in build_babl_symbol_table() below
+         never got a chance to run) as a base pointer inside
+         babl_register_builtin, crashing at DAT_000bbf70+0x18. This is the exact
+         crash in bug-critter-talk.txt: Bragit has no real conversation
+         record, so this early-return path is supposed to be the one
+         taken. Was: message_scroll_print_wrapped(FUN_0007863c(0xe01));
+         return 1; -- two separate calls with message_scroll_print_
+         wrapped()'s arg dropped; fresh Ghidra disassembly (0x44c90-
+         0x44c94) shows no register load between the two `bl`s --
+         FUN_0007863c's return (char *) flows straight into
+         message_scroll_print_wrapped as its argument. */
+      return message_scroll_print_wrapped(FUN_0007863c(0xe01));
+    }
+  }
+  iVar2 = build_babl_symbol_table();
+  if (-1 < iVar2) {
+    FUN_0001a1a4(iVar2);
+    babl_free(local_28);
+    DAT_000bbf14 = babl_alloc((DAT_000bbf7c + 0x800) * 2);
+    load_npc_conversation_variables(DAT_000bbf14,(int)DAT_000bbf7c);
+    DAT_000bbf84 = DAT_000bbf7c;
+    DAT_000bbf0c = DAT_000bbf14 + DAT_000bbf7c * 2;
+    puVar3 = (undefined1 *)babl_alloc(1);
+    *puVar3 = 0;
+    DAT_000bbf88 = FUN_0007873c(puVar3,0x7c);
+    FUN_0001b0a4();
+    babl_register_builtin(s_compare_000845a0,babl_builtin_compare);
+    babl_register_builtin(s_random_00084598,babl_builtin_random);
+    babl_register_builtin(s_plural_00084590,babl_builtin_plural);
+    babl_register_builtin(s_contains_00084584,babl_builtin_contains);
+    babl_register_builtin(s_append_0008457c,babl_builtin_append);
+    babl_register_builtin(s_copy_00084574,babl_builtin_copy);
+    babl_register_builtin(s_find_0008456c,babl_builtin_find);
+    babl_register_builtin(s_length_00084564,&babl_builtin_length);
+    babl_register_builtin(s_val_00084560,babl_builtin_val);
+    return 1;
+  }
+  return 0xffffffff;
+}
+
+
+
+
+void save_npc_conversation_variables()
+
+{
+  char stack0xffdc3240_buf [256];
+  char *stack0xffdc3240_ptr;
+  char cVar1;
+  short sVar2;
+  intptr_t uVar3; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer on assignment, same bug class as load_npc_conversation_variables's own `param_1` fix (its load-side mirror); dormant until the scan-alignment fix below let execution actually reach this write
+  char *pcVar4;
+  int iVar5;
+  uint uVar6;
+  uint uVar7;
+  /* Was two separate stack locals (`short local_120; short local_11e;`)
+     read as ONE 4-byte record via `&local_120,4` -- the same "Ghidra
+     split one real contiguous buffer into separate stack locals" bug
+     class fixed dozens of times elsewhere in this file, just never
+     caught here since it doesn't crash, it just silently corrupts
+     local_11e (the record's LENGTH) with whatever garbage byte this
+     compiler's own stack layout happens to place after local_120 (the
+     record's ID) -- nothing forces the two to stay adjacent once
+     recompiled. Confirmed via the real ARM disassembly that both reads
+     genuinely are meant to be one 4-byte record (matching
+     load_npc_conversation_variables's own identical pattern, its own load-side mirror).
+     The corrupted length then feeds FUN_00022850's own seek-forward-
+     to-next-record call, misaligning every subsequent scan iteration
+     -- this is the actual root cause of "talking to Bragit again
+     starts fresh": his own script-local conversation state (a SEPARATE
+     persistence path from the engine-level npc_talkedto bit, which
+     was already confirmed working) never successfully finds or
+     updates its own saved record, because the scan wanders off into
+     garbage after the very first skipped-record seek. */
+  undefined1 local_120_backing[4];
+  #define local_120 (*(short *)(local_120_backing + 0))
+  #define local_11e (*(short *)(local_120_backing + 2))
+  char acStack_118 [260];
+
+  FUN_00078a04(0x7c);
+  sVar2 = DAT_000bbf7c;
+  uVar3 = DAT_000bbf14;
+  pcVar4 = &DAT_0023cca8;
+    stack0xffdc3240_ptr = acStack_118;
+  do {
+    cVar1 = *pcVar4;
+    *stack0xffdc3240_ptr = cVar1; stack0xffdc3240_ptr = stack0xffdc3240_ptr + 1;
+    pcVar4 = pcVar4 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_118,s__SAVE0_bglobals_dat_00084538);
+  iVar5 = FUN_00022810(acStack_118);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
+          acStack_118, iVar5, (int)DAT_001007c4, (int)sVar2, (void*)uVar3,
+          (int)((short*)uVar3)[0], (int)((short*)uVar3)[1], (int)((short*)uVar3)[2], (int)((short*)uVar3)[3], (int)((short*)uVar3)[4],
+          (int)((short*)uVar3)[5], (int)((short*)uVar3)[6], (int)((short*)uVar3)[7], (int)((short*)uVar3)[8], (int)((short*)uVar3)[9]);
+  if (iVar5 != -1) {
+    while( true ) {
+      uVar6 = FUN_0002285c(iVar5,local_120_backing,4);
+      if ((uVar6 < 4) ||
+         (uVar7 = (uint)local_120, uVar6 = (uint)DAT_001007c4,
+         uVar7 != uVar6 && (int)uVar6 <= (int)uVar7)) {
+        if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: scan gave up, uVar6=%u local_120=%d (no matching record -- write SKIPPED entirely)\n", uVar6, (int)local_120);
+        goto LAB_00019460;
+      }
+      if (uVar7 == uVar6) break;
+      FUN_00022850(iVar5,(int)local_11e << 1,1);
+    }
+    if (sVar2 < local_11e) {
+      local_11e = sVar2;
+    }
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
+    FUN_00022884(iVar5,uVar3,(int)local_11e << 1);
+LAB_00019460:
+    Ordinal_553(iVar5);
+  }
+  #undef local_120
+  #undef local_11e
+  return;
+}
+

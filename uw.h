@@ -891,6 +891,18 @@ extern char * DAT_0023c40c;
 extern undefined2 DAT_0023c41c;
 extern undefined1 DAT_0024e090_backing[524288];
 #define DAT_0024e090 DAT_0024e090_backing[0]
+extern undefined4 DAT_000bbf20;
+extern undefined1 DAT_000bbf30;
+extern undefined2 DAT_000bbf88;
+extern char s_append_0008457c[];
+extern char s_compare_000845a0[];
+extern char s_contains_00084584[];
+extern char s_copy_00084574[];
+extern char s_find_0008456c[];
+extern char s_length_00084564[];
+extern char s_plural_00084590[];
+extern char s_random_00084598[];
+extern char s_val_00084560[];
 /* Globals defined in uw.c but also used by functions that now live in
    3d.c (the 3D transform/rasterization pipeline) -- extern'd here so
    both translation units see the same storage. */
@@ -1286,6 +1298,13 @@ extern char s_is_empty__0008790c[];
 #define DAT_00202951 g_backpack_slot_table[1]
 #define g_backpack_widget_to_slot_plus1 g_backpack_widget_to_slot_backing[1]
 #define g_current_container_link (*(ushort *)&g_backpack_slot_table[56])
+/* Globals defined in uw.c but also used by functions that now live in
+   interact.c (object interaction dispatch) -- extern'd here so both
+   translation units see the same storage. */
+extern short DAT_000858c4;
+extern char * DAT_002020b0;
+extern int DAT_002020e0;
+extern undefined4 DAT_002020ec;
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -2742,6 +2761,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/hud.h"
 #include "src/headers/ai.h"
 #include "src/headers/containers.h"
+#include "src/headers/interact.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
