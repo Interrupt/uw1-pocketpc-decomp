@@ -997,6 +997,7 @@ extern unsigned short *DAT_0024cfb8;
 extern char *DAT_0024cfa8;
 extern char *g_bfa2_real_ptrs[263168];
 extern short DAT_0024cfc0;
+extern char s_strings_pak_000878c0[];
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3406,8 +3407,8 @@ undefined4 build_object_display_name();
 undefined1 *format_object_display_name();
 void print_scroll_message_by_id();
 void print_scroll_message_concat();
-undefined4 FUN_00078d18();
-void FUN_00078e28();
+undefined4 open_strings_pak_file();
+void close_strings_pak_file();
 undefined1 *FUN_00078e60();
 undefined1 FUN_0007907c();
 int FUN_000790e0();

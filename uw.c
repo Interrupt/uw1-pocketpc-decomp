@@ -6365,7 +6365,7 @@ undefined1 DAT_0024c7a3_backing[1052672];
 #define DAT_0024c7a3 DAT_0024c7a3_backing[0]
 undefined4 DAT_0024bf98;
 /* Declared char* despite always being allocated/read/cast as a single
-   2-byte count (see FUN_00078d18: `(short *)Ordinal_1041(2)`, a 2-byte
+   2-byte count (see open_strings_pak_file: `(short *)Ordinal_1041(2)`, a 2-byte
    read into it, then `*DAT_0024cfb8` used as the item count). That
    mismatch meant every *DAT_0024cfb8 dereference only ever read the
    *first byte* of the real 2-byte count as a signed char -- for
@@ -36507,62 +36507,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-undefined4 FUN_00078d18()
-
-{
-  /* Ghidra couldn't correlate this copy loop's destination with a real
-     stack slot (see fix_stack_copy_loops.py); it's actually copying
-     DAT_0023cca8 (the install dir, set up earlier) directly into
-     acStack_118, which the two Ordinal_1063 (strcat-shaped) calls right
-     below then append "\DATA\" and "strings.pak" onto to build the full
-     path. */
-  char *stack0xffdc3240_ptr;
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  char acStack_118 [260];
-
-  pcVar2 = &DAT_0023cca8;
-    stack0xffdc3240_ptr = acStack_118;
-  do {
-    cVar1 = *pcVar2;
-    *stack0xffdc3240_ptr = cVar1; stack0xffdc3240_ptr = stack0xffdc3240_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_118,s__DATA__00085970);
-  Ordinal_1063(acStack_118,s_strings_pak_000878c0);
-  iVar3 = open_file_for_read(acStack_118);
-  if (iVar3 != -1) {
-    DAT_0024cfb8 = (short *)Ordinal_1041(2);
-    read_file_handle(iVar3,DAT_0024cfb8,2);
-    DAT_0024cfa8 = Ordinal_1041((int)*DAT_0024cfb8 << 2);
-    if (DAT_0024cfa8 == 0) {
-      Ordinal_553(iVar3);
-      return 0x1001;
-    }
-    read_file_handle(iVar3,DAT_0024cfa8,(int)*DAT_0024cfb8 << 2);
-    Ordinal_553(iVar3);
-    DAT_0024bf98 = open_file_for_read(acStack_118);
-    if (DAT_0024bf98 != -1) {
-      return 0;
-    }
-  }
-  return 0x3002;
-}
-
-
-
-void FUN_00078e28()
-
-{
-  Ordinal_553(DAT_0024bf98);
-  Ordinal_1018(DAT_0024cfb8);
-  Ordinal_1018(DAT_0024cfa8);
   return;
 }
 

@@ -629,10 +629,10 @@ short * param_1;
 // was FUN_0007856c -- initializes the string-resource page cache
 // (DAT_0024bfa0-family, see that global's own comment): clears the
 // first 2 cache-record slots (0x804/2052-byte stride, matching
-// get_message_string's/what's documented as register_interned_string's own indexing) to
+// get_message_string's and register_interned_string's own indexing) to
 // an empty/sentinel state (DAT_0024bfa0/1 = 0xffff, the page-id
 // short field; DAT_0024c7a2/3 and the 512-entry DAT_0024bfa2/3/4/5
-// sub-arrays zeroed), then calls FUN_00078d18 (not yet named) and,
+// sub-arrays zeroed), then calls open_strings_pak_file and,
 // conditionally, FUN_0003c3b4 -- likely a "load the default/startup
 // string table" step. This cache grows unboundedly at runtime as
 // more pages are registered; this only seeds its initial 2 slots.
@@ -662,7 +662,7 @@ undefined4 init_string_resource_cache()
     } while (iVar3 < 0x200);
     iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
   } while (iVar4 < 2);
-  sVar2 = FUN_00078d18();
+  sVar2 = open_strings_pak_file();
   if (sVar2 != 0) {
     FUN_0003c3b4();
   }
@@ -916,5 +916,78 @@ undefined4 param_1;
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 0x200);
   }
+  return;
+}
+
+
+
+
+
+// was FUN_00078d18 -- opens STRINGS.PAK (built from the install
+// dir + "\DATA\strings.pak"): reads its 2-byte item count into
+// DAT_0024cfb8, allocates and reads the offset-index table into
+// DAT_0024cfa8, then reopens the file (keeping the handle in
+// DAT_0024bf98 for later per-string seeks/reads, see
+// get_message_string's own decode path). Returns 0 on success,
+// 0x1001 if the index-table allocation failed, or 0x3002 if either
+// open failed. Confirmed real caller: init_string_resource_cache.
+undefined4 open_strings_pak_file()
+
+{
+  /* Ghidra couldn't correlate this copy loop's destination with a real
+     stack slot (see fix_stack_copy_loops.py); it's actually copying
+     DAT_0023cca8 (the install dir, set up earlier) directly into
+     acStack_118, which the two Ordinal_1063 (strcat-shaped) calls right
+     below then append "\DATA\" and "strings.pak" onto to build the full
+     path. */
+  char *stack0xffdc3240_ptr;
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  char acStack_118 [260];
+
+  pcVar2 = &DAT_0023cca8;
+    stack0xffdc3240_ptr = acStack_118;
+  do {
+    cVar1 = *pcVar2;
+    *stack0xffdc3240_ptr = cVar1; stack0xffdc3240_ptr = stack0xffdc3240_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_118,s__DATA__00085970);
+  Ordinal_1063(acStack_118,s_strings_pak_000878c0);
+  iVar3 = open_file_for_read(acStack_118);
+  if (iVar3 != -1) {
+    DAT_0024cfb8 = (short *)Ordinal_1041(2);
+    read_file_handle(iVar3,DAT_0024cfb8,2);
+    DAT_0024cfa8 = Ordinal_1041((int)*DAT_0024cfb8 << 2);
+    if (DAT_0024cfa8 == 0) {
+      Ordinal_553(iVar3);
+      return 0x1001;
+    }
+    read_file_handle(iVar3,DAT_0024cfa8,(int)*DAT_0024cfb8 << 2);
+    Ordinal_553(iVar3);
+    DAT_0024bf98 = open_file_for_read(acStack_118);
+    if (DAT_0024bf98 != -1) {
+      return 0;
+    }
+  }
+  return 0x3002;
+}
+
+
+
+// was FUN_00078e28 -- closes STRINGS.PAK and frees its index/data
+// buffers (DAT_0024cfb8/DAT_0024cfa8). Byte-identical body to the
+// already-extracted thunk_FUN_00078e28 (src/resources.c) -- same
+// split-symbol/naming-collision pattern as this project's other
+// "_dup"-style function pairs (this is the real function at this
+// address; the other is a separate thunk elsewhere that happens to
+// share the exact same compiled body).
+void close_strings_pak_file()
+
+{
+  Ordinal_553(DAT_0024bf98);
+  Ordinal_1018(DAT_0024cfb8);
+  Ordinal_1018(DAT_0024cfa8);
   return;
 }
