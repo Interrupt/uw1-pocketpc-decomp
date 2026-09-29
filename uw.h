@@ -218,6 +218,44 @@ typedef struct __attribute__((packed)) {
     unsigned short obj_head     : 10; /* bits 6-15: first object slot index on this tile */
 } uw_tile_t;  /* 4 bytes total */
 
+/* 0xd (13)-byte comobj.dat per-object-type property record.
+ * DAT_00202c90_backing is the flat array (base DAT_00202c90, stride
+ * 0xd), indexed by an object's type id (obj_hdr.item_id & 0x1ff).
+ * Dozens of call sites throughout uw.c and the split-out src files read individual
+ * byte offsets of this record directly; see struct-recovery-plan.md
+ * for the fuller catalog. Only two single-bit fields have confirmed
+ * evidence so far -- each is named directly in a comment elsewhere
+ * in this codebase (see below) -- so everything else is left as an
+ * honest unnamed gap per the struct-recovery methodology, even where
+ * a mask/shift at some call site proves a byte packs multiple
+ * sub-fields (offsets 1-2, 3, 7, 8, 9, 0xa, 0xb all have at least one
+ * confirmed-used bit or value that just isn't individually pinned
+ * down and named yet). Don't add fields here without the same bar of
+ * evidence (a direct, already-written comment naming the bit/byte's
+ * real meaning) that is_container/has_look_description had. */
+typedef struct __attribute__((packed)) {
+    unsigned char _unk00;        /* offset 0x00: a numeric stat (fed into Ordinal_2005/roll-style calls in several places) -- not yet confirmed */
+    unsigned char _unk01_02[2];  /* offsets 0x01-0x02: packed sub-fields -- a low 3 bits (&7) value read separately from a >>4 value spanning into offset 2, neither named yet */
+    unsigned char _unk03;        /* offset 0x03: flag byte -- bits 2/3/8(0x8) individually checked at different call sites, none named yet */
+    unsigned char _unk04;        /* offset 0x04: unconfirmed */
+    unsigned short _unk05;       /* offsets 0x05-0x06: read as a 2-byte value, ==0/!=0 checked (possibly a "special/quest object" id) -- not yet confirmed */
+    unsigned char _unk07;        /* offset 0x07: flag byte -- bit 0 (0x1) and bits 2-3 (0xc, compared <3/==3) individually checked, none named yet */
+
+    unsigned char _unk08_lo5 : 5; /* offset 0x08, bits 0-4: unconfirmed */
+    unsigned char _unk08_b5  : 1; /* offset 0x08, bit 5 (0x20): confirmed used as a flag (src/interact.c) but not yet named */
+    unsigned char _unk08_b6  : 1; /* offset 0x08, bit 6: unconfirmed */
+    unsigned char is_container : 1; /* offset 0x08, bit 7 (0x80): CONFIRMED -- src/containers.c's own comment names this exact byte/mask as "DAT_00202c98's own 'container' flag-table lookup", gating container-only behavior (e.g. complete_pending_player_command_target) */
+
+    unsigned char _unk09;        /* offset 0x09: flag byte -- bits 0-1 (0x3, resistance-roll chance bits), bit 3 (0x8), and bit 7 (0x80, gates trigger_type_flagged_trap_effect) individually checked, none named yet */
+    unsigned char _unk0a;        /* offset 0x0a: 2-bit value (&3), compared "!= 2" at many call sites (item-combination gating) -- likely an enum, not yet confirmed */
+
+    unsigned char _unk0b_lo4 : 4;   /* offset 0x0b, bits 0-3 (&0xf): confirmed used as a message-id offset in dispatch_object_action, not yet named as a value field */
+    unsigned char has_look_description : 1; /* offset 0x0b, bit 4 (0x10): CONFIRMED -- this file's own comment on DAT_00202c90's re-aliasing names this exact byte/mask as "the right-click 'look' description gate" in dispatch_object_action */
+    unsigned char _unk0b_hi3 : 3;   /* offset 0x0b, bits 5-7: unconfirmed */
+
+    unsigned char _unk0c;        /* offset 0x0c: unconfirmed (last byte of the 0xd-byte stride) */
+} uw_object_type_props_t;  /* 0xd (13) bytes total */
+
 /* ~0x2e-byte "current view" scratch record: the screen-space eye/
  * camera transform (world x/y/elevation, facing, and a camera-shake
  * offset pair), written once per frame by update_current_view_from_subject
@@ -740,6 +778,10 @@ extern undefined1 DAT_00202c90_backing[65536];
 #define DAT_00202c98 DAT_00202c90_backing[8]
 #define DAT_00202c99 DAT_00202c90_backing[9]
 #define DAT_00202c9a DAT_00202c90_backing[0xa]
+// Typed view over the same array for new code -- see uw_object_type_props_t
+// above. Index by an object's type id (obj_hdr.item_id & 0x1ff), matching
+// every existing `(&DAT_00202c9X)[id * 0xd]` call site's own indexing.
+#define g_object_type_props ((uw_object_type_props_t *)DAT_00202c90_backing)
 extern char * DAT_0023be74;
 extern undefined1 DAT_0023bf0c;
 extern undefined2 DAT_0024cfac;

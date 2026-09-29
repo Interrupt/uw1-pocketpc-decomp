@@ -1614,7 +1614,11 @@ ushort DAT_00100620;
    included. Re-aliased into DAT_00202c90's own backing array at their
    real record offsets (0x1,0x3,0x5,0x7,0x8,0x9,0xa,0xb -- confirmed by
    the `*(short*)(&DAT_00202c95+...)` 2-byte read elsewhere, which needs
-   offset 6 to be DAT_00202c95's second byte, not a separate slot). */
+   offset 6 to be DAT_00202c95's second byte, not a separate slot).
+   See uw_object_type_props_t (uw.h) and g_object_type_props for a
+   typed view -- this offset+mask is now
+   g_object_type_props[id].has_look_description, and DAT_00202c98's
+   own 0x80 mask is g_object_type_props[id].is_container. */
 #define DAT_00202c91 DAT_00202c90_backing[1]
 #define DAT_00202c93 DAT_00202c90_backing[3]
 #define DAT_00202c95 DAT_00202c90_backing[5]
@@ -17014,7 +17018,7 @@ byte param_2;
   DAT_0010195c = 0;
   bVar1 = param_2;
   if ((param_2 == 0) &&
-     (bVar1 = DAT_0010195c, ((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0)) {
+     (bVar1 = DAT_0010195c, g_object_type_props[*param_1 & 0x1ff].is_container)) {
     bVar1 = (byte)param_1[3] & 0x3f;
   }
   DAT_0010195c = bVar1;
@@ -35570,7 +35574,7 @@ ushort * param_1;
       }
       char *_nm = (char *)FUN_0007863c(_grp * 6 + _off | 0xa00);
       fprintf(stderr, "[lookslot] slot=%d id=0x%03x flags=0x%04x has_lookbit=%d namegrp=%d name='%s'\n",
-              _slot, _id, (unsigned)_w0, ((&DAT_00202c9b)[_iv] & 0x10) != 0, _grp, _nm ? _nm : "(null)");
+              _slot, _id, (unsigned)_w0, g_object_type_props[_id].has_look_description, _grp, _nm ? _nm : "(null)");
     }
   }
   if (getenv("UW_DUMP_OBJECTS")) {

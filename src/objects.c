@@ -148,7 +148,7 @@ LAB_0004b06c:
     *(byte *)((char *)puVar6 + 0x13) =
          ((byte)DAT_00202a48 ^ *(byte *)((char *)puVar6 + 0x13)) & 0x7f ^ *(byte *)((char *)puVar6 + 0x13)
     ;
-    if (((&DAT_00202c98)[DAT_00202a38 * 0xd] & 0x80) != 0) {
+    if (g_object_type_props[DAT_00202a38].is_container) {
       uVar9 = puVar6[3];
       *(char *)(puVar6 + 3) = (char)(uVar9 & 0xffc0);
       *(char *)((char *)puVar6 + 7) = (char)((uVar9 & 0xffc0) >> 8);

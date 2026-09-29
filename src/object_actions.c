@@ -51,7 +51,7 @@ int param_2;
     return;
   }
   iVar9 = (*param_1 & 0x1ff) * 0xd;
-  if (((&DAT_00202c9b)[iVar9] & 0x10) == 0) {
+  if (!g_object_type_props[*param_1 & 0x1ff].has_look_description) {
     if ((*param_1 & 0x1f0) == 0x160) {
       FUN_00049008(param_1,param_2);
     }
@@ -138,7 +138,7 @@ LAB_000489fc:
   iVar9 = Ordinal_1068(acStack_7c);
   FUN_00078b18(acStack_7c + iVar9,param_1,cVar10 == '\0',uVar11);
   FUN_00048bf0(param_1,param_2,acStack_7c);
-  if (((((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0) &&
+  if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     Ordinal_1063(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning FUN_0007863c's
@@ -505,7 +505,7 @@ int param_2;
     return;
   }
   iVar9 = (*param_1 & 0x1ff) * 0xd;
-  if (((&DAT_00202c9b)[iVar9] & 0x10) == 0) {
+  if (!g_object_type_props[*param_1 & 0x1ff].has_look_description) {
     if ((*param_1 & 0x1f0) == 0x160) {
       FUN_00049008(param_1,param_2);
     }
@@ -584,7 +584,7 @@ LAB_000489fc:
   iVar9 = Ordinal_1068(acStack_7c);
   FUN_00078b18(acStack_7c + iVar9,param_1,cVar10 == '\0',uVar11);
   FUN_00048bf0(param_1,param_2,acStack_7c);
-  if (((((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0) &&
+  if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     Ordinal_1063(acStack_7c,s_belonging_to_00085c90);
     /* uVar11 is `undefined4` (reused as a flag above); assigning FUN_0007863c's

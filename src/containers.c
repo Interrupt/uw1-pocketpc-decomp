@@ -1165,8 +1165,8 @@ short param_1;
 // position (via place_object_in_world), clearing param_1's own
 // contents-head link as it goes. param_2, when non-zero, ORs its low
 // 6 bits into each placed item's own field (offset+3, matching
-// DAT_00202c98's own "container" flag-table lookup) -- something
-// caller-specific, not fully traced. Returns 0 if the container had
+// g_object_type_props[].is_container's own flag-table lookup) --
+// something caller-specific, not fully traced. Returns 0 if the container had
 // no contents at all (nothing to empty), 1 if it emptied at least one
 // item. This is the real mechanism behind "using Use mode on a
 // container empties its contents onto the nearby ground" -- called
@@ -1217,7 +1217,7 @@ short param_2;
     uVar1 = param_1[1];
     while (iVar4 != 0) {
       pNextLink = resolve_object_link(iVar4 + 4);
-      if ((param_2 != 0) && (((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0)) {
+      if ((param_2 != 0) && (g_object_type_props[*param_1 & 0x1ff].is_container)) {
         uVar2 = param_1[3];
         bVar3 = (byte)uVar2;
         *(byte *)(param_1 + 3) = (bVar3 ^ (byte)param_2) & 0x3f ^ bVar3;
@@ -1257,7 +1257,7 @@ int param_2;
   char acStack_5c [80];
   
   bVar4 = 0;
-  if (((&DAT_00202c98)[(*param_1 & 0x1ff) * 0xd] & 0x80) != 0) {
+  if (g_object_type_props[*param_1 & 0x1ff].is_container) {
     bVar4 = (byte)param_1[3] & 0x3f;
   }
   iVar2 = empty_container_into_world(param_1,bVar4);
