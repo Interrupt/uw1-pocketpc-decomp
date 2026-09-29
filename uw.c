@@ -3306,6 +3306,9 @@ undefined4 LAB_00041610(void *buf, unsigned size, int idx)
   uw_register_gr_entry(0, buf, idx);
   return 1;
 }
+/* Forward-declared for the same reason as emit_catalog_object (see its
+   own comment): named functions used before their K&R definition. */
+void emit_floor_texture_select(byte *param_1, uint param_2, short param_3);
 undefined2 DAT_000859a8;
 // was LAB_00041670
 undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx)
