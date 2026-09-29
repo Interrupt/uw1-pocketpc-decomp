@@ -3428,7 +3428,7 @@ void drop_creature_inventory_on_death();
 void spawn_creature_treasure_drop();
 void spawn_creature_special_item_drop();
 void spawn_creature_equipment_drop();
-void FUN_00079784();
+void spawn_creature_misc_item_drop();
 void FUN_000798c4();
 ushort *use_object_on_target();
 bool finish_object_use();

@@ -1582,3 +1582,64 @@ char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_tr
   } while (uVar8 < 2);
   return;
 }
+
+
+
+
+
+// was FUN_00079784 -- fourth creature-death drop roll: iterates 2
+// item slots (g_despawn_creature_record offsets +0x22/+0x24, each a
+// packed ushort: item id in the high 12 bits, drop-chance nibble in
+// the low 4), rolling a d16 chance per slot; on a hit, spawns the
+// item and rolls its quality (level-scaled 50% of the time, fully
+// random 0-63 the rest) -- same quality-roll shape as
+// spawn_creature_equipment_drop but without its enchantment-bonus
+// step. No callers found by grep in the remaining decompile.
+void spawn_creature_misc_item_drop(param_1)
+char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
+
+{
+  int uw_ord2005_rem_164 = 0; int uw_ord2005_rem_165 = 0; int uw_ord2005_rem_166 = 0;
+  ushort uVar1;
+  undefined2 uVar2;
+  byte bVar3;
+  short sVar4;
+  undefined4 uVar5;
+  char *iVar6;  /* was `int` -- truncated spawn_new_object's real pointer */
+  char extraout_r1;
+  byte bVar7;
+  byte extraout_r1_00;
+  int extraout_r1_01;
+  int extraout_r1_02;
+  uint uVar8;
+
+  uVar8 = 0;
+  do {
+    uVar5 = Ordinal_1053();
+    uVar1 = *(ushort *)(g_despawn_creature_record + uVar8 * 2 + 0x22);
+    uw_ord2005_rem_164 = ((int)(uVar5)) % (0x10);
+    if (uw_ord2005_rem_164 < (int)(uVar1 & 0xf)) {
+      iVar6 = (char *)spawn_new_object(uVar1 >> 4,0);
+      uVar5 = Ordinal_1053();
+      uw_ord2005_rem_165 = ((int)(uVar5)) % (2);
+      if (uw_ord2005_rem_165 == 0) {
+        uVar5 = Ordinal_1053();
+        sVar4 = DAT_00201b68;
+        Ordinal_2005((int)DAT_00201b68 << 2,uVar5);
+        bVar7 = extraout_r1 + (char)sVar4 * '\x04';
+      }
+      else {
+        uVar5 = Ordinal_1053();
+        uw_ord2005_rem_166 = ((int)(uVar5)) % (0x40);
+        bVar7 = uw_ord2005_rem_166;
+      }
+      uVar2 = *(undefined2 *)(iVar6 + 4);
+      bVar3 = (byte)uVar2;
+      *(byte *)(iVar6 + 4) = (bVar3 ^ bVar7) & 0x3f ^ bVar3;
+      *(char *)(iVar6 + 5) = (char)((ushort)uVar2 >> 8);
+      object_list_insert_head(param_1 + 6,iVar6);
+    }
+    uVar8 = uVar8 + 1 & 0xff;
+  } while (uVar8 < 2);
+  return;
+}
