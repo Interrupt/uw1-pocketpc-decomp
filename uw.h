@@ -3526,7 +3526,7 @@ void start_ambient_sound_effect();
 void stop_ambient_sound_effect();
 void init_ambient_sound_timing();
 void clear_ambient_sound_target();
-undefined4 FUN_0007ec50();
+undefined4 debug_noop_checkpoint();
 char FUN_0007ec58();
 void FUN_0007ed20();
 undefined4 FUN_0007edec();

@@ -197,7 +197,7 @@ intptr_t param_1;
             FUN_00057c5c(*puVar9 & 0x1ff);
             DAT_002020c4 = 1;
             cursor_show_idle_tick();
-            FUN_0007ec50();
+            debug_noop_checkpoint();
           }
           return 1;
         }
@@ -272,7 +272,7 @@ intptr_t param_1;
           FUN_00057c5c(*puVar9 & 0x1ff);
           DAT_002020c4 = 1;
           cursor_show_idle_tick();
-          FUN_0007ec50();
+          debug_noop_checkpoint();
         }
         return 1;
       }
@@ -1948,7 +1948,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar10;
   bool bVar11;
   
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   uVar4 = babl_read_var_word((int)*(short *)(param_1 + -10));
   sVar1 = babl_read_var_word((int)*(short *)(param_1 + -8));
   uVar5 = babl_read_var_word((int)*(short *)(param_1 + -6));
@@ -2479,7 +2479,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
   }
   FUN_0007f140();
   msg_scroll_panel_reset(1);
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   iVar12 = 0;
   do {
     (&DAT_00100770)[iVar12] = 0xffff;
@@ -2503,7 +2503,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
       if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu item %d text: \"%s\"\n", iVar12, local_c4);
       Ordinal_1063(local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(local_c4);
-      FUN_0007ec50();
+      debug_noop_checkpoint();
       for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
         (&DAT_00100770)[iVar9] = (short)iVar12;
       }
@@ -3834,7 +3834,7 @@ void babl_builtin_setup_to_barter()
       }
     }
   }
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   return;
 }
 
@@ -3981,7 +3981,7 @@ void handle_barter_player_panel_click()
   uVar1 = hit_test_barter_player_slot(*DAT_00085a6c + 0x8b,0x30 - DAT_00085a6c[1]);
   if (-1 < (short)uVar1) {
     handle_barter_slot_click(1,uVar1,&DAT_000bbfd0,&DAT_000bbf98);
-    FUN_0007ec50();
+    debug_noop_checkpoint();
   }
   return;
 }
@@ -4059,7 +4059,7 @@ void handle_barter_player_slot_drop()
   if (-1 < (short)uVar1) {
     handle_barter_slot_click(1,uVar1,&DAT_000bbfd0,&DAT_000bbf98);
   }
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   return;
 }
 
@@ -4075,7 +4075,7 @@ void handle_barter_npc_panel_click()
   uVar1 = hit_test_barter_npc_slot(*DAT_00085a6c + 0x52,0x30 - DAT_00085a6c[1]);
   if (-1 < (short)uVar1) {
     handle_barter_slot_click(0,uVar1,&DAT_000bbfe8,&DAT_000bbff0);
-    FUN_0007ec50();
+    debug_noop_checkpoint();
   }
   return;
 }
@@ -4359,7 +4359,7 @@ short param_2;
   }
 LAB_0001c1b4:
   cursor_show_idle_tick();
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   return;
 }
 
@@ -4399,7 +4399,7 @@ int param_3;
        single signed byte; the real 9-bit objid needs a `ushort` read). */
     FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
     cursor_show_idle_tick();
-    FUN_0007ec50();
+    debug_noop_checkpoint();
   }
   return;
 }
@@ -4487,7 +4487,7 @@ int param_4;
   *psVar7 = sVar4;
 LAB_0001c404:
   redraw_barter_slot_icon(param_2,param_3);
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   return uVar8;
 }
 
@@ -4536,7 +4536,7 @@ undefined ** param_2;
   plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + -1,uVar3);
   plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + 1,uVar3);
   cursor_show_idle_tick();
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   return;
 }
 
@@ -4591,7 +4591,7 @@ short param_1;
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
   cursor_show_idle_tick();
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   return;
 }
 
@@ -4659,7 +4659,7 @@ void finalize_player_barter_items()
     local_2c = (short)((uint)iVar4 >> 0x10);
     if (3 < local_28) {
       cursor_show_idle_tick();
-      FUN_0007ec50();
+      debug_noop_checkpoint();
       return;
     }
   } while( true );
@@ -5001,7 +5001,7 @@ short param_1;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 4);
   cursor_show_idle_tick();
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   return;
 }
 
@@ -5104,4 +5104,23 @@ LAB_0001dbcc:
   }
   return uVar3;
 }
+
+
+
+// was FUN_0007ec50 -- always returns 0 and does nothing else; called
+// from ~24 scattered locations across the babl dialogue-VM code
+// (src/babl.c) and some object-combination logic (uw.c), none of
+// which ever use its return value. Matches the same "dead/stripped
+// debug hook" pattern already confirmed for debug_print_init and
+// debug_print nearby in the original binary, though this one's own
+// disassembly wasn't individually re-checked to confirm it's
+// genuinely a `cpy pc,lr`-style stub rather than something with a
+// real (just currently-unused-by-every-caller) effect.
+undefined4 debug_noop_checkpoint()
+
+{
+  return 0;
+}
+
+
 

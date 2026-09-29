@@ -12609,7 +12609,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
   }
   FUN_0007f140();
   msg_scroll_panel_reset(1);
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   iVar12 = 0;
   do {
     (&DAT_00100770)[iVar12] = 0xffff;
@@ -12631,7 +12631,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
       } while (cVar1 != '\0');
       Ordinal_1063(local_c4,&s_scroll_newline_0008522c);
       sVar5 = message_scroll_print_wrapped(local_c4);
-      FUN_0007ec50();
+      debug_noop_checkpoint();
       for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
         (&DAT_00100770)[iVar9] = (short)iVar12;
       }
@@ -12748,7 +12748,7 @@ char *param_1; // was `undefined4` -- FUN_0001ac48 passes a real (possibly babl_
     *(byte *)(DAT_00250704 + 0x16) = _saved_color;
     g_text_use_palette_color = _saved_use_pal;
   }
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   FUN_0007f0e0();
   DAT_001007b4 = 0;
   return;
@@ -12773,7 +12773,7 @@ char * param_1;
   Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
   FUN_0007f140();
   message_scroll_print_wrapped(DAT_001007c0);
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   FUN_0007f0e0();
   DAT_001007b4 = 1;
   return;
@@ -12831,7 +12831,7 @@ char *param_1; // was `undefined4` -- FUN_000295b4 passes a real (possibly babl_
     *(byte *)(DAT_00250704 + 0x16) = _saved_color;
     g_text_use_palette_color = _saved_use_pal;
   }
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   FUN_0007f0e0();
   DAT_001007b4 = 1;
   return;
@@ -12872,7 +12872,7 @@ int param_1;
   FUN_0007f110();
   message_scroll_print_wrapped(DAT_001007c0);
   FUN_0007f0e0();
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   if (iVar3 != iVar2) {
     babl_free(iVar3);
   }
@@ -12892,7 +12892,7 @@ int FUN_0002990c()
   
   scroll_text_entry_prompt(0,0,local_a8,1,0x32);
   message_scroll_print_wrapped(&s_scroll_newline_0008522c);
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   pcVar2 = local_a8;
   pcVar4 = DAT_001007b8;
   do {
@@ -12910,7 +12910,7 @@ int FUN_0002990c()
       overwrite_interned_string(DAT_001007b8,(int)DAT_001007bc);
     }
   }
-  FUN_0007ec50();
+  debug_noop_checkpoint();
   return (int)DAT_001007bc;
 }
 
@@ -36521,14 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-undefined4 FUN_0007ec50()
-
-{
-  return 0;
-}
-
-
-
 char FUN_0007ec58(param_1,param_2)
 char param_1;
 char param_2;
