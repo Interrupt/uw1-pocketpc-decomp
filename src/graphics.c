@@ -619,3 +619,75 @@ undefined4 render_dungeon_view()
   return 0;
 }
 
+
+
+
+// was build_shade_lut -- build the 160-entry distance-shade LUT DAT_000b5638
+void build_shade_lut()
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  undefined4 *puVar3;
+  int iVar4;
+  
+  puVar3 = &DAT_000b5638;
+  iVar2 = 0;
+  iVar4 = 0xa0;
+  do {
+    uVar1 = Ordinal_2032(iVar2 + 0xa0);
+    uVar1 = Ordinal_2026(uVar1,0x3bcccccd);
+    Ordinal_2026(uVar1,0x45800000);
+    uVar1 = Ordinal_2020();
+    iVar4 = iVar4 + -1;
+    *puVar3 = uVar1;
+    iVar2 = iVar2 + -1;
+    puVar3 = puVar3 + 1;
+  } while (iVar4 != 0);
+  return;
+}
+
+
+static int get_ambient_bias_reduction()
+{
+  int reduction = g_ambient_bias_reduction;
+  const char *_p = getenv("UW_AMBIENT_BIAS_REDUCTION");
+  if (_p) reduction = atoi(_p);
+  return reduction;
+}
+
+
+
+// was FUN_00014324 -- sets DAT_000842b0, the 3D-view ambient bias
+// raster_textured_span adds to every texel's distance-shade LUT index
+// (uw.c's own "checked wall/floor texture rasterizer" comment on that
+// function has the full formula). MORE NEGATIVE here means BRIGHTER
+// (it pulls the effective distance-shade index down toward the "close/
+// bright" end of the LUT regardless of a texel's real depth). Called
+// with param_1=0 (giving -0x20) from the "a light source IS currently
+// equipped and lit" branch of the function that recomputes derived
+// player state whenever equipped items change (uw.c ~55910-55926,
+// where the sibling `8 - param_1` call handles the "no light source"
+// case) -- this is the brightening half of that pair, not the dim one.
+void set_ambient_bias_with_light(param_1)
+char param_1;
+
+{
+  DAT_000842b0 = -0x20 - param_1 + get_ambient_bias_reduction();
+  if (getenv("UW_DEBUG_AMBIENT"))
+    fprintf(stderr, "[ambient] set_ambient_bias_with_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
+  return;
+}
+
+
+
+void set_ambient_bias_without_light(param_1)
+char param_1;
+
+{
+  DAT_000842b0 = '\b' - param_1 + get_ambient_bias_reduction();
+  if (getenv("UW_DEBUG_AMBIENT"))
+    fprintf(stderr, "[ambient] set_ambient_bias_without_light(%d) -> DAT_000842b0=%d\n", (int)param_1, (int)DAT_000842b0);
+  return;
+}
+

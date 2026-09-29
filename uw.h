@@ -497,6 +497,7 @@ extern int g_blit_transparent_mode;
 #define g_transparent_screen_color (*(short *)&g_palette_rgb565_backing[26])
 extern undefined2 DAT_000891b0_backing[76800];
 #define DAT_000891b0 DAT_000891b0_backing[0]
+extern int g_ambient_bias_reduction;
 /* Globals defined in uw.c but also used by functions that now live in
    game.c (app_main_loop, main_menu_loop) -- extern'd here so both
    translation units see the same storage. */
@@ -1818,7 +1819,7 @@ void FUN_00013b8c();
 void FUN_0001422c();
 void FUN_00014258();
 void build_shade_lut();
-void FUN_00014324();
+void set_ambient_bias_with_light();
 void set_ambient_bias_without_light();
 void raster_triangle();
 void vec3_sub();

@@ -454,3 +454,50 @@ void automap_reveal_all_tiles(void)
   }
 }
 
+
+
+
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+// was FUN_00016940
+void darken_pixel(param_1,param_2)
+uint param_1;
+int param_2;
+
+{
+  ushort *puVar1;
+
+  puVar1 = (ushort *)
+           ((g_uw_framebuffer) +
+           ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
+  *puVar1 = *puVar1 >> 1 & 0x7bef;
+  debug_framebuffer_dump("darken_pixel");
+  return;
+}
+
+
+
+/* Like darken_pixel but only a 25% cut (x 3/4 brightness) instead of a
+   halve: RGB565 (px>>1 & 0x7bef) + (px>>2 & 0x39e7).  Not in the
+   original binary -- the Pocket-PC automap 50%-darkens explored floor
+   via darken_pixel, which comes out far darker than the reference map
+   (whose explored floor is a light tint over the parchment).  Used
+   only for the draw_automap_cell floor fill; wall edges / accent
+   pixels keep the faithful darken_pixel. */
+void darken_pixel_light(param_1,param_2)
+uint param_1;
+int param_2;
+
+{
+  ushort *puVar1;
+  ushort uVar2;
+
+  puVar1 = (ushort *)
+           ((g_uw_framebuffer) +
+           ((200U - param_2 & 0xffff) * 0x140 + (param_1 & 0xffff)) * 2);
+  uVar2 = *puVar1;
+  *puVar1 = (uVar2 >> 1 & 0x7bef) + (uVar2 >> 2 & 0x39e7);
+  debug_framebuffer_dump("darken_pixel_light");
+  return;
+}
+
