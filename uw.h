@@ -1620,6 +1620,16 @@ extern undefined1 g_weapon_swing_frame_x_offset_backing[256];
 #define g_weapon_swing_frame_x_offset g_weapon_swing_frame_x_offset_backing[0]
 extern char s__DATA_weapons_dat_00087268[];
 extern char s_weapons_0008727c[];
+/* Globals defined in uw.c but also used by functions that now live in
+   level.c (level loading) -- extern'd here so both translation units
+   see the same storage. */
+extern undefined1 DAT_00088d98_backing[1536];
+#define DAT_00088d98 DAT_00088d98_backing[0]
+extern undefined4 DAT_002029d0;
+extern char * DAT_002046a0;
+extern char * DAT_002046ac;
+extern undefined1 DAT_00250770;
+extern char s__DATA_main_byt_000857a8[];
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -3097,6 +3107,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/input.h"
 #include "src/headers/object_actions.h"
 #include "src/headers/weapon_swing.h"
+#include "src/headers/level.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
