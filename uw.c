@@ -19810,7 +19810,12 @@ int param_3;
     sVar1 = FUN_00080828(0,0xda,&local_68);
     if ((sVar1 != 0) && (sVar1 < 4)) {
       local_68 = (uint)(sVar1 == 2);
-      FUN_0007fee8();
+      /* HACK: was a bare `echo_yes_no_to_scroll();` -- dropped
+         argument, the same class of bug fixed repeatedly elsewhere in
+         this file. local_68, just set on the line above from the
+         prompt's own answer, is obviously the intended argument
+         here. */
+      echo_yes_no_to_scroll(local_68);
     }
     message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     if (local_68 == 0) {
@@ -25318,7 +25323,7 @@ undefined1 * param_1;
       if ((sVar2 != 1) && (sVar2 == 2)) {
         uVar5 = (uint)uVar1;
       }
-      FUN_0007fe20(uVar5);
+      echo_number_to_scroll(uVar5);
     }
     message_scroll_print_wrapped(&s_scroll_newline_0008522c);
     if (((int)(short)uVar5 != 0) &&
@@ -36521,61 +36526,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007fe20(param_1)
-short param_1;
-
-{
-  short sVar1;
-  int iVar2;
-  undefined1 auStack_18 [8];
-  
-  FUN_000229e0((int)param_1,auStack_18,10);
-  iVar2 = (int)DAT_0025070c;
-  sVar1 = *(short *)(DAT_00250704 + 10);
-  select_msg_scroll_mode_normal();
-  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
-  set_draw_color(0x2a);
-  rect_fill_or_save_restore(iVar2,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
-               (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
-  sVar1 = DAT_0025070c;
-  *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
-  *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
-  message_scroll_print_wrapped(auStack_18);
-  return;
-}
-
-
-
-void FUN_0007fee8(param_1)
-int param_1;
-
-{
-  short sVar1;
-  undefined *puVar2;
-  int iVar3;
-  
-  iVar3 = (int)DAT_0025070c;
-  sVar1 = *(short *)(DAT_00250704 + 10);
-  select_msg_scroll_mode_normal();
-  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
-  set_draw_color(0x2a);
-  rect_fill_or_save_restore(iVar3,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
-               (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
-  sVar1 = DAT_0025070c;
-  *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
-  *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
-  if (param_1 == 0) {
-    puVar2 = &s_No_0008799c;
-  }
-  else {
-    puVar2 = &s_Yes_000879a0;
-  }
-  message_scroll_print_wrapped(puVar2);
-  return;
-}
-
-
-
 // was FUN_0007ffa8
 undefined4 scroll_text_entry_prompt(param_1,param_2,param_3,param_4,param_5)
 undefined * param_1;
@@ -36886,7 +36836,7 @@ int * param_3;
     if ((((sVar1 == 0xd) || (sVar1 == 0x1b)) || (sVar1 == 1)) || ((sVar1 == 2 || (sVar1 == 3)))) {
       cursor_show_idle_tick();
       if (sVar1 == 0x1b) {
-        FUN_0007fee8(0);
+        echo_yes_no_to_scroll(0);
         *param_3 = 0;
         uVar3 = 0xffffffff;
       }
@@ -36904,7 +36854,7 @@ LAB_0008090c:
       iVar4 = 1;
 LAB_00080918:
       if (iVar4 != iVar5) {
-        FUN_0007fee8(iVar4);
+        echo_yes_no_to_scroll(iVar4);
         iVar5 = iVar4;
       }
     }

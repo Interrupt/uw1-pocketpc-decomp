@@ -1047,6 +1047,9 @@ extern char s_very_near_00087954[];
 extern undefined1 g_msg_scroll_panel_state_conv_backing[65536];
 #define g_msg_scroll_panel_state_conv g_msg_scroll_panel_state_conv_backing[0]
 extern short DAT_00250728;
+extern short DAT_0025070c;
+extern char s_No_0008799c[];
+extern char s_Yes_000879a0[];
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3555,8 +3558,8 @@ void msg_scroll_draw_wrapped_span();
 void msg_scroll_wrap_split_line();
 void msg_scroll_panel_init();
 void msg_scroll_panel_reset();
-void FUN_0007fe20();
-void FUN_0007fee8();
+void echo_number_to_scroll();
+void echo_yes_no_to_scroll();
 undefined4 scroll_text_entry_prompt();
 undefined4 FUN_00080828();
 void scheduler_despawn_entry();

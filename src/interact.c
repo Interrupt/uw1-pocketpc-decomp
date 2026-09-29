@@ -137,7 +137,12 @@ void interact_look()
       sVar1 = FUN_00080828(0,0xf4,&local_18);
       if ((sVar1 != 0) && (sVar1 < 4)) {
         local_18 = (uint)(sVar1 == 2);
-        FUN_0007fee8();
+        /* HACK: was a bare `echo_yes_no_to_scroll();` -- dropped
+           argument, the same class of bug fixed repeatedly elsewhere
+           in this file. local_18, just set on the line above from the
+           prompt's own answer, is obviously the intended argument
+           here. */
+        echo_yes_no_to_scroll(local_18);
       }
       message_scroll_print_wrapped(&s_scroll_newline_0008522c);
       if (local_18 != 0) {

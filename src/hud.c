@@ -3871,3 +3871,68 @@ undefined4 param_2;
 
 
 
+
+
+// was FUN_0007fe20 -- prints the decimal string form of param_1 (via
+// FUN_000229e0, an unnamed itoa-style helper) to the message scroll,
+// restoring the cursor to the saved column (DAT_0025070c) first. Used
+// to echo a numeric answer back after a scroll-based prompt.
+void echo_number_to_scroll(param_1)
+short param_1;
+
+{
+  short sVar1;
+  int iVar2;
+  undefined1 auStack_18 [8];
+
+  FUN_000229e0((int)param_1,auStack_18,10);
+  iVar2 = (int)DAT_0025070c;
+  sVar1 = *(short *)(DAT_00250704 + 10);
+  select_msg_scroll_mode_normal();
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  set_draw_color(0x2a);
+  rect_fill_or_save_restore(iVar2,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
+               (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
+  sVar1 = DAT_0025070c;
+  *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
+  *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
+  message_scroll_print_wrapped(auStack_18);
+  return;
+}
+
+
+
+// was FUN_0007fee8 -- prints "Yes" or "No" to the message scroll
+// (param_1 nonzero == "Yes"), restoring the cursor to the saved
+// column first, the same setup echo_number_to_scroll does. Used to
+// echo a yes/no answer back after a scroll-based prompt.
+void echo_yes_no_to_scroll(param_1)
+int param_1;
+
+{
+  short sVar1;
+  undefined *puVar2;
+  int iVar3;
+  
+  iVar3 = (int)DAT_0025070c;
+  sVar1 = *(short *)(DAT_00250704 + 10);
+  select_msg_scroll_mode_normal();
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  set_draw_color(0x2a);
+  rect_fill_or_save_restore(iVar3,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
+               (uint)*(ushort *)(DAT_000879b0 + 6) + sVar1 + -1);
+  sVar1 = DAT_0025070c;
+  *(char *)(DAT_00250704 + 8) = (char)DAT_0025070c;
+  *(char *)(DAT_00250704 + 9) = (char)((ushort)sVar1 >> 8);
+  if (param_1 == 0) {
+    puVar2 = &s_No_0008799c;
+  }
+  else {
+    puVar2 = &s_Yes_000879a0;
+  }
+  message_scroll_print_wrapped(puVar2);
+  return;
+}
+
+
+
