@@ -1401,7 +1401,7 @@ LAB_000130d0:
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
       DAT_000b5630 = DAT_000b4618 + 1;
-      uVar6 = FUN_000130e0(bVar2,*DAT_000b4618,0);
+      uVar6 = merge_byte_into_word(bVar2,*DAT_000b4618,0);
       bVar2 = *DAT_000b5630;
       DAT_000b5630 = DAT_000b5630 + 1;
       iVar10 = 0;
@@ -1436,7 +1436,7 @@ LAB_000130d0:
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
       DAT_000b5630 = DAT_000b4618 + 1;
-      uVar6 = FUN_000130e0(bVar2,*DAT_000b4618,0);
+      uVar6 = merge_byte_into_word(bVar2,*DAT_000b4618,0);
       bVar2 = *DAT_000b5630;
       DAT_000b5630 = DAT_000b5630 + 1;
       uVar8 = uVar6 & 0xff | (uint)bVar2 << 8;
@@ -1445,39 +1445,39 @@ LAB_000130d0:
       for (uVar11 = uVar6; uVar11 != 0; uVar11 = uVar11 - 1) {
         bVar2 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0(uVar6,bVar2,0);
+        uVar7 = merge_byte_into_word(uVar6,bVar2,0);
         uVar6 = (uVar7 & 0xff) >> 3;
         *DAT_000b461c = (byte)uVar6;
         DAT_000b461c = DAT_000b461c + 1;
         bVar2 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0((uVar7 & 0xff) << 0xd | uVar6,bVar2,0);
+        uVar7 = merge_byte_into_word((uVar7 & 0xff) << 0xd | uVar6,bVar2,0);
         uVar6 = (uVar7 & 0xff | ((uVar7 & 0xffff) >> 8 & 0xffe0) << 3) >> 6;
         *DAT_000b461c = (byte)uVar6;
         uVar6 = ((uVar7 & 0x3f) << 10 | uVar6) >> 3;
         DAT_000b461c = DAT_000b461c + 1;
-        uVar9 = FUN_000130e0(uVar6 & 0xff | (uVar6 & 0xff) << 8,(uVar7 & 0x3f) >> 1,0);
+        uVar9 = merge_byte_into_word(uVar6 & 0xff | (uVar6 & 0xff) << 8,(uVar7 & 0x3f) >> 1,0);
         *DAT_000b461c = (byte)uVar9;
         DAT_000b461c = DAT_000b461c + 1;
         bVar2 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0(uVar9,bVar2,0);
+        uVar7 = merge_byte_into_word(uVar9,bVar2,0);
         uVar6 = (uVar7 & 0xff | ((uVar7 & 0xffff) >> 8 & 0xff80) << 1) >> 4;
         *DAT_000b461c = (byte)uVar6;
         DAT_000b461c = DAT_000b461c + 1;
         bVar2 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0((uVar7 & 0xff) << 0xc | uVar6,bVar2,0);
+        uVar7 = merge_byte_into_word((uVar7 & 0xff) << 0xc | uVar6,bVar2,0);
         uVar6 = (uVar7 & 0xff | ((uVar7 & 0xffff) >> 8 & 0xfff0) << 4) >> 7;
         *DAT_000b461c = (byte)uVar6;
         DAT_000b461c = DAT_000b461c + 1;
-        uVar6 = FUN_000130e0((uVar7 & 0xff) << 9 | uVar6,0,0);
+        uVar6 = merge_byte_into_word((uVar7 & 0xff) << 9 | uVar6,0,0);
         uVar6 = (uVar6 & 0xffff) >> 0xb | (uVar6 & 0x7ff) << 5;
         *DAT_000b461c = (byte)uVar6;
         DAT_000b461c = DAT_000b461c + 1;
         bVar2 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar6 = FUN_000130e0(uVar6,bVar2,0);
+        uVar6 = merge_byte_into_word(uVar6,bVar2,0);
         *DAT_000b461c = (byte)((uVar6 & 0xff | ((uVar6 & 0xffff) >> 8 & 0xffc0) << 2) >> 5);
         uVar6 = uVar6 & 0x1f;
         DAT_000b461c = DAT_000b461c + 1;
@@ -1497,7 +1497,7 @@ LAB_000130d0:
           DAT_000b4628 = pbVar4;
           DAT_000b461c = pbVar4;
           DAT_000b5630 = DAT_000b4618 + 1;
-          uVar6 = FUN_000130e0(bVar2,*DAT_000b4618,0);
+          uVar6 = merge_byte_into_word(bVar2,*DAT_000b4618,0);
           bVar2 = *DAT_000b5630;
           DAT_000b5630 = DAT_000b5630 + 1;
           uVar6 = uVar6 & 0xff | (uint)bVar2 << 8;
@@ -1505,13 +1505,13 @@ LAB_000130d0:
           for (; uVar6 != 0; uVar6 = uVar6 - 1) {
             bVar2 = *DAT_000b5630;
             DAT_000b5630 = DAT_000b5630 + 1;
-            uVar7 = FUN_000130e0(uVar7,bVar2,0);
-            uVar7 = FUN_000130e0(uVar7 & 0xff | (uVar7 & 0xff) << 8,uVar7 & 0xf0,0);
-            uVar7 = FUN_000130e0(uVar7,(uVar7 & 0xff) >> 4,0);
+            uVar7 = merge_byte_into_word(uVar7,bVar2,0);
+            uVar7 = merge_byte_into_word(uVar7 & 0xff | (uVar7 & 0xff) << 8,uVar7 & 0xf0,0);
+            uVar7 = merge_byte_into_word(uVar7,(uVar7 & 0xff) >> 4,0);
             *DAT_000b461c = *(byte *)((uVar7 & 0xff) + DAT_000b4610);
             DAT_000b461c = DAT_000b461c + 1;
-            uVar7 = FUN_000130e0(uVar7,(uVar7 & 0xffff) >> 8,0);
-            uVar7 = FUN_000130e0(uVar7,uVar7 & 0xf,0);
+            uVar7 = merge_byte_into_word(uVar7,(uVar7 & 0xffff) >> 8,0);
+            uVar7 = merge_byte_into_word(uVar7,uVar7 & 0xf,0);
             *DAT_000b461c = *(byte *)((uVar7 & 0xff) + DAT_000b4610);
             DAT_000b461c = DAT_000b461c + 1;
           }
@@ -1527,7 +1527,7 @@ LAB_000130d0:
       DAT_000b4628 = pbVar4;
       DAT_000b461c = pbVar4;
       DAT_000b5630 = DAT_000b4618 + 1;
-      uVar6 = FUN_000130e0(bVar2,*DAT_000b4618,0);
+      uVar6 = merge_byte_into_word(bVar2,*DAT_000b4618,0);
       bVar2 = *DAT_000b5630;
       DAT_000b5630 = DAT_000b5630 + 1;
       uVar8 = uVar6 & 0xff | (uint)bVar2 << 8;
@@ -1535,12 +1535,12 @@ LAB_000130d0:
       for (uVar6 = (uVar8 + 1 & 0xffff) >> 1; uVar6 != 0; uVar6 = uVar6 - 1) {
         bVar2 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar7 = FUN_000130e0(CONCAT11(bVar2,bVar2),bVar2 & 0xf0,0);
-        uVar7 = FUN_000130e0(uVar7,(uVar7 & 0xff) >> 4,0);
+        uVar7 = merge_byte_into_word(CONCAT11(bVar2,bVar2),bVar2 & 0xf0,0);
+        uVar7 = merge_byte_into_word(uVar7,(uVar7 & 0xff) >> 4,0);
         *DAT_000b461c = (byte)uVar7;
         DAT_000b461c = DAT_000b461c + 1;
-        uVar7 = FUN_000130e0(uVar7,(uVar7 & 0xffff) >> 8,0);
-        uVar7 = FUN_000130e0(uVar7,uVar7 & 0xf,0);
+        uVar7 = merge_byte_into_word(uVar7,(uVar7 & 0xffff) >> 8,0);
+        uVar7 = merge_byte_into_word(uVar7,uVar7 & 0xf,0);
         *DAT_000b461c = (byte)uVar7;
         DAT_000b461c = DAT_000b461c + 1;
       }
@@ -1561,6 +1561,32 @@ LAB_000130d0:
     DAT_000b462c = DAT_000b4628;
   }
   return DAT_000b462c;
+}
+
+
+
+
+
+// was FUN_000130e0 -- merges param_2's own low byte into either the
+// low half (param_3==0, keeping param_1's high byte) or high half
+// (param_3!=0, keeping param_1's low byte) of param_1's 16-bit value.
+// Confirmed heavily used by decompress_gr_bitmap's bit-packed/RLE
+// decode paths as a byte-pair merge primitive.
+uint merge_byte_into_word(param_1,param_2,param_3)
+uint param_1;
+uint param_2;
+int param_3;
+
+{
+  uint uVar1;
+  
+  if (param_3 == 0) {
+    uVar1 = param_1 & 0xff00 | param_2 & 0xff;
+  }
+  else {
+    uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
+  }
+  return uVar1;
 }
 
 

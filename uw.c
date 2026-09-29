@@ -6788,25 +6788,6 @@ void thunk_FUN_0003c310()
 
 
 
-uint FUN_000130e0(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-int param_3;
-
-{
-  uint uVar1;
-  
-  if (param_3 == 0) {
-    uVar1 = param_1 & 0xff00 | param_2 & 0xff;
-  }
-  else {
-    uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
-  }
-  return uVar1;
-}
-
-
-
 void FUN_00013108(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 uint param_2;
@@ -6820,7 +6801,7 @@ uint param_4;
   if (uVar1 != 0xff) {
     param_2 = param_2 & 0xff | uVar1 << 8;
   }
-  uVar1 = FUN_000130e0(param_2,0,0);
+  uVar1 = merge_byte_into_word(param_2,0,0);
   DAT_000b4610 = DAT_000b4614 + (uVar1 & 0xffff);
   DAT_000b4624 = DAT_000b4610;
   return;
@@ -6854,7 +6835,7 @@ LAB_000132fc:
   do {
     if (pbVar10 < DAT_000b4618) {
       DAT_000b5630 = pbVar10 + 1;
-      uVar11 = FUN_000130e0(0,*pbVar10,0);
+      uVar11 = merge_byte_into_word(0,*pbVar10,0);
       uVar8 = uVar11 & 0xff;
       if (2 < uVar8) {
         bVar3 = *DAT_000b5630;
@@ -6874,15 +6855,15 @@ LAB_000132fc:
         if (uVar8 == 1) goto LAB_00013530;
         bVar3 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar11 = FUN_000130e0(uVar11,bVar3,0);
+        uVar11 = merge_byte_into_word(uVar11,bVar3,0);
         if ((uVar11 & 0xff) != 0) {
           uVar11 = (uVar11 & 0x7ff) << 4;
           bVar3 = *DAT_000b5630;
           DAT_000b5630 = DAT_000b5630 + 1;
-          uVar8 = FUN_000130e0(uVar11,bVar3,0);
+          uVar8 = merge_byte_into_word(uVar11,bVar3,0);
           bVar3 = *DAT_000b5630;
           DAT_000b5630 = DAT_000b5630 + 1;
-          uVar6 = FUN_000130e0(uVar8,bVar3,0);
+          uVar6 = merge_byte_into_word(uVar8,bVar3,0);
           uVar2 = *(undefined1 *)(DAT_000b4610 + (uVar6 & 0xffff));
           uVar11 = uVar8 & 0xffff | uVar11;
           pbVar10 = DAT_000b5630;
@@ -6897,12 +6878,12 @@ LAB_000132fc:
         }
         bVar3 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar11 = FUN_000130e0((uint)bVar3 << 4,(uint)bVar3 << 4 & 0xff | (uint)*DAT_000b5630,0);
-        uVar11 = FUN_000130e0((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[1] | (uVar11 & 0xf) << 4,0);
-        uVar11 = FUN_000130e0((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[2] | (uVar11 & 0xf) << 4,0);
+        uVar11 = merge_byte_into_word((uint)bVar3 << 4,(uint)bVar3 << 4 & 0xff | (uint)*DAT_000b5630,0);
+        uVar11 = merge_byte_into_word((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[1] | (uVar11 & 0xf) << 4,0);
+        uVar11 = merge_byte_into_word((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[2] | (uVar11 & 0xf) << 4,0);
         pbVar10 = DAT_000b5630 + 3;
         DAT_000b5630 = DAT_000b5630 + 4;
-        uVar8 = FUN_000130e0(uVar11,*pbVar10,0);
+        uVar8 = merge_byte_into_word(uVar11,*pbVar10,0);
         uVar2 = *(undefined1 *)((uVar8 & 0xff) + DAT_000b4610);
         uVar11 = uVar11 & 0xffff;
         pbVar10 = DAT_000b5630;
@@ -6925,9 +6906,9 @@ LAB_000132fc:
         if (bVar3 == 0) {
           DAT_000b5630 = DAT_000b5630 + 3;
           uVar9 = (uint)*pbVar5 << 4;
-          uVar9 = FUN_000130e0(uVar9,uVar9 & 0xff | (uint)*DAT_000b5630,0);
-          uVar9 = FUN_000130e0((uVar9 & 0x7ff) << 4,(uint)DAT_000b5630[1] | (uVar9 & 0xf) << 4,0);
-          uVar9 = FUN_000130e0((uVar9 & 0x7ff) << 4,(uint)DAT_000b5630[2] | (uVar9 & 0xf) << 4,0);
+          uVar9 = merge_byte_into_word(uVar9,uVar9 & 0xff | (uint)*DAT_000b5630,0);
+          uVar9 = merge_byte_into_word((uVar9 & 0x7ff) << 4,(uint)DAT_000b5630[1] | (uVar9 & 0xf) << 4,0);
+          uVar9 = merge_byte_into_word((uVar9 & 0x7ff) << 4,(uint)DAT_000b5630[2] | (uVar9 & 0xf) << 4,0);
           pbVar10 = DAT_000b5630 + 3;
           uVar9 = uVar9 & 0xffff;
           pbVar5 = pbVar10;
@@ -6959,13 +6940,13 @@ LAB_00013530:
     DAT_000b5630 = pbVar10 + 1;
     if (uVar11 == 0) {
       DAT_000b5630 = pbVar10 + 2;
-      uVar11 = FUN_000130e0(0,pbVar10[1],0);
+      uVar11 = merge_byte_into_word(0,pbVar10[1],0);
       if ((uVar11 & 0xff) == 0) {
         bVar3 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar11 = FUN_000130e0((uint)bVar3 << 4,(uint)bVar3 << 4 & 0xff | (uint)*DAT_000b5630,0);
-        uVar11 = FUN_000130e0((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[1] | (uVar11 & 0xf) << 4,0);
-        uVar11 = FUN_000130e0((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[2] | (uVar11 & 0xf) << 4,0);
+        uVar11 = merge_byte_into_word((uint)bVar3 << 4,(uint)bVar3 << 4 & 0xff | (uint)*DAT_000b5630,0);
+        uVar11 = merge_byte_into_word((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[1] | (uVar11 & 0xf) << 4,0);
+        uVar11 = merge_byte_into_word((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[2] | (uVar11 & 0xf) << 4,0);
         uVar11 = uVar11 & 0xff;
         DAT_000b5630 = DAT_000b5630 + 3;
       }
@@ -6973,7 +6954,7 @@ LAB_00013530:
         uVar11 = (uVar11 & 0x7ff) << 4;
         bVar3 = *DAT_000b5630;
         DAT_000b5630 = DAT_000b5630 + 1;
-        uVar8 = FUN_000130e0(uVar11,bVar3,0);
+        uVar8 = merge_byte_into_word(uVar11,bVar3,0);
         uVar11 = uVar8 & 0xffff | uVar11;
       }
     }

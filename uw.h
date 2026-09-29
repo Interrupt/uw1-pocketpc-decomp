@@ -2357,7 +2357,7 @@ void reset_viewport_to_fullscreen();
 undefined4 render_dungeon_view();
 undefined8 compute_view_y_bound();
 byte *decompress_gr_bitmap();
-uint FUN_000130e0();
+uint merge_byte_into_word();
 void FUN_00013108();
 void blit_sprite_row_remapped();
 void FUN_000132c4();

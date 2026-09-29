@@ -197,7 +197,7 @@ uint param_4;
     }
   }
   else {
-    uVar3 = FUN_000130e0(param_2 & 0xff | uVar3 << 8,0,0);
+    uVar3 = merge_byte_into_word(param_2 & 0xff | uVar3 << 8,0,0);
     DAT_000b4610 = (byte *)(DAT_000b4614 + (uVar3 & 0xffff));
     for (param_3 = param_3 & 0xffff; param_3 != 0; param_3 = param_3 - 1) {
       iVar4 = 0x10;
