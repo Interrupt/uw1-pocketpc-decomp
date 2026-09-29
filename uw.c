@@ -2932,7 +2932,7 @@ int DAT_002022fc;
 unsigned short u_INVALID_HANDLE_VALUE_00085944[] = u"INVALID_HANDLE_VALUE";
 /* Both real 0x80-element pointer-cache arrays (per free_frame_geometry_buffers's
    own comment -- "DAT_0023c7a0[0x140], DAT_002020f8[0x80]" -- and
-   FUN_00077a38's matching 0x80-iteration cleanup loop for DAT_00202308),
+   shutdown_game_resources's matching 0x80-iteration cleanup loop for DAT_00202308),
    same "lone undefined4 scalar indexed as an array" bug as DAT_0023c7a0
    right above (already fixed): each slot holds a real malloc'd buffer
    pointer (decode_critter_sprite_page/emit_catalog_object's per-page glyph decode),
@@ -22196,7 +22196,7 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
 
   /* Tracks (page,tier) slots already confirmed to have no file, separate
      from DAT_00202308 (0=never tried, else=a real Ordinal_1041 pointer
-     that FUN_00077a38 unconditionally frees at shutdown -- stuffing a
+     that shutdown_game_resources unconditionally frees at shutdown -- stuffing a
      sentinel in there instead would make that loop free garbage).
      Needed because resolve_critter_sprite_tier now probes every tier
      0-3 looking for the one whose range covers a given direction, and
@@ -36495,50 +36495,6 @@ LAB_00060f54:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
   return;
-}
-
-
-
-undefined4 FUN_00077a38()
-
-{
-  int iVar1;
-  void **piVar2;
-
-  FUN_000232b0();
-  if (DAT_0023c44c != 0) {
-    Ordinal_1018();
-  }
-  if (DAT_0023cca0 != 0) {
-    Ordinal_1018();
-  }
-  if (DAT_000890a4 != 0) {
-    Ordinal_1018();
-  }
-  if (DAT_000879b0 != 0) {
-    Ordinal_1018();
-  }
-  if (DAT_0024af78 != 0) {
-    Ordinal_1018();
-  }
-  if (DAT_0024af7c != 0) {
-    Ordinal_1018();
-  }
-  piVar2 = &DAT_00202308;
-  iVar1 = 0x80;
-  do {
-    if (*piVar2 != 0) {
-      Ordinal_1018();
-    }
-    iVar1 = iVar1 + -1;
-    piVar2 = piVar2 + 1;
-  } while (iVar1 != 0);
-  Ordinal_1018(&DAT_00202308);
-  FUN_0003baf4(0);
-  GXCloseDisplay();
-  GXCloseInput();
-  Ordinal_866(0);
-  return 0;
 }
 
 

@@ -1863,3 +1863,59 @@ int param_2;
   Ordinal_264();
   return;
 }
+
+
+
+
+
+// was FUN_00077a38 -- shutdown/cleanup routine: calls FUN_000232b0
+// (not yet named), frees several conditionally-allocated resources
+// (Ordinal_1018, likely LocalFree/free) and a 0x80-entry pointer
+// array (&DAT_00202308), then tears down the GAPI display/input
+// (GXCloseDisplay/GXCloseInput) and calls Ordinal_866(0) (likely
+// PostQuitMessage/ExitThread). No callers found by grep -- probably
+// reached only through dispatch_window_message's message-id table
+// (e.g. a WM_DESTROY-style handler), which is itself unpopulated at
+// runtime (see its own comment), so this is very likely dead on this
+// SDL-based host port.
+undefined4 shutdown_game_resources()
+
+{
+  int iVar1;
+  void **piVar2;
+
+  FUN_000232b0();
+  if (DAT_0023c44c != 0) {
+    Ordinal_1018();
+  }
+  if (DAT_0023cca0 != 0) {
+    Ordinal_1018();
+  }
+  if (DAT_000890a4 != 0) {
+    Ordinal_1018();
+  }
+  if (DAT_000879b0 != 0) {
+    Ordinal_1018();
+  }
+  if (DAT_0024af78 != 0) {
+    Ordinal_1018();
+  }
+  if (DAT_0024af7c != 0) {
+    Ordinal_1018();
+  }
+  piVar2 = &DAT_00202308;
+  iVar1 = 0x80;
+  do {
+    if (*piVar2 != 0) {
+      Ordinal_1018();
+    }
+    iVar1 = iVar1 + -1;
+    piVar2 = piVar2 + 1;
+  } while (iVar1 != 0);
+  Ordinal_1018(&DAT_00202308);
+  FUN_0003baf4(0);
+  GXCloseDisplay();
+  GXCloseInput();
+  Ordinal_866(0);
+  return 0;
+}

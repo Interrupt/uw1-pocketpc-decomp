@@ -1723,6 +1723,8 @@ extern short DAT_00086b2c;
 extern undefined DAT_00086b34;
 extern void * DAT_002020f8_arr[256];
 #define DAT_002020f8 DAT_002020f8_arr[0]
+extern void * DAT_00202308_arr[256];
+#define DAT_00202308 DAT_00202308_arr[0]
 extern undefined2 DAT_0023adb0;
 extern undefined2 DAT_0023adb8_backing[8192];
 #define DAT_0023adb8 DAT_0023adb8_backing[0]
@@ -3316,7 +3318,7 @@ undefined4 window_message_noop_handler();
 void store_window_extra_data_ptr();
 void dispatch_window_message();
 undefined4 blit_framebuffer_to_gx_display();
-undefined4 FUN_00077a38();
+undefined4 shutdown_game_resources();
 undefined4 handle_keyboard_message();
 undefined4 handle_mouse_message();
 void FUN_00077f30();
