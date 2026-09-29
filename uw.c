@@ -47196,61 +47196,75 @@ byte param_7;
       for (_i = 0; _i < 0x14; _i++) fprintf(stderr, " [%x]=%d", _i, (int)(unsigned char)DAT_00202c6c[_i]);
       fprintf(stderr, "\n");
     }
-    if (((DAT_00202c6c[7] | DAT_00202c6c[6]) & 0x300) == 0) {
-      bVar1 = *(byte *)((char *)DAT_00202c6c + 0x11);
-      /* Was `DAT_00202c6c[2]` -- offset 2 is local_3a, the LOW byte of
-         param_4 (the destination tile's Y coordinate, in eighths of a
-         tile), not a height/clearance value at all -- mixing an
-         absolute position into a "how much vertical room is there"
-         check made this pick the wrong branch essentially at random
-         depending on where in the map the step landed. Every OTHER use
-         of "the player's own clearance" in this same function (the
-         guard above, and the very next line below) reads offset 4
-         (local_38 = param_5, the player's current sub-tile height byte)
-         -- use that instead, matching them. Confirmed via a live struct
-         dump + before/after comparison at the exact reported repro: with
-         the offset-2 bug, DAT_00202c30 picked a near-zero garbage
-         candidate and the discrete step armed a bogus "start falling"
-         state, which a later per-tick gravity integration turned into a
-         wrong, large height jump (e.g. 768 -> 1024, reported as "ends up
-         at the ceiling"); with offset 4, the height field's own valid
-         floor-height candidate (e.g. 96, i.e. DAT_00204884=768) is kept
-         instead, matching what continuous analog movement already
-         computes correctly for the same tile. */
-      if ((int)(uVar8 + (int)(short)DAT_00202c6c[4]) < (int)(uint)bVar1) {
-        bVar1 = *(byte *)(DAT_00202c6c + 8);
+    /* HACK: every offset below this point (0xc, 0xe, 0x10, 0x14, 0x15, 0x16)
+       was wrong -- DAT_00202c6c is a real `byte *` (confirmed by its own
+       declaration and by collision_build_height_field's/FUN_00050b30's own,
+       independently-verified-correct byte-offset arithmetic on the exact
+       same pointer, e.g. `DAT_00202c6c + 0xc`/`+ 0xe` for the flags word,
+       `+ 0x11` for the max-height sentinel). This block instead used a mix
+       of `DAT_00202c6c[N]` bare indices and decimal-vs-hex-confused offsets
+       (`+ 10` meaning decimal 10 = 0xa, not the intended 0x14) that don't
+       correspond to anything collision_build_height_field actually writes --
+       most read either stale zero bytes or, worse, `local_32` (offset 0xa,
+       holding this call's own `param_2` -- the door/object's own encoded
+       arena slot index, e.g. 1013) reinterpreted as a "how many collision
+       candidates" count. Confirmed live (UW_DEBUG_DOOR, chasing "a door
+       used a second time re-opens instead of closing"): with the bug, this
+       function walked FUN_00051dd0's candidate-sort loop believing there
+       were up to 255 real candidates (really just the slot index's own low
+       byte), reading far out of bounds through DAT_00202c38/DAT_00202c39
+       and returning an essentially arbitrary 0 or 1 that differed per
+       door/slot -- which scheduler_advance_effect (the only caller reachable
+       from a door's own close swing) uses to decide whether to prematurely
+       clear the swing's direction bit. Retyped every access in this block to
+       match the real disassembly's own literal byte offsets exactly (fresh
+       Ghidra decompile of FUN_00051fa0 @ 0x51fa0), so the real, always-empty
+       candidate count at offset 0x14 is what's actually checked -- doors now
+       correctly finish their close swing instead of re-opening. */
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[fa0-check] off0xc_0xe=0x%x off0x14=%d param_2(slot)=%d\n",
+              (unsigned)(*(ushort *)(DAT_00202c6c + 0xc) | *(ushort *)(DAT_00202c6c + 0xe)),
+              (int)(unsigned char)DAT_00202c6c[0x14], (int)param_2);
+    if (((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
+      bVar1 = *(byte *)(DAT_00202c6c + 0x11);
+      if ((int)(uVar8 + (int)*(short *)(DAT_00202c6c + 4)) < (int)(uint)bVar1) {
+        bVar1 = *(byte *)(DAT_00202c6c + 0x10);
       }
       if (getenv("UW_DEBUG_STEPHEIGHT"))
-        fprintf(stderr, "[stepheight] uVar8=%u c6c4=%d c6c8=%d c6c11=%d c6c6=%d c6c7=%d -> DAT_00202c30=%d cur_z=%d\n",
-                uVar8, (int)(short)DAT_00202c6c[4], (int)*(byte *)(DAT_00202c6c + 8),
-                (int)*(byte *)((char *)DAT_00202c6c + 0x11), (int)DAT_00202c6c[6], (int)DAT_00202c6c[7],
+        fprintf(stderr, "[stepheight] uVar8=%u c6c4=%d c6c10=%d c6c11=%d c6c0xc=%d -> DAT_00202c30=%d cur_z=%d\n",
+                uVar8, (int)*(short *)(DAT_00202c6c + 4), (int)*(byte *)(DAT_00202c6c + 0x10),
+                (int)*(byte *)(DAT_00202c6c + 0x11), (int)*(short *)(DAT_00202c6c + 0xc),
                 (int)bVar1, (int)DAT_00204884);
       DAT_00202c30 = (ushort)bVar1;
-      uVar5 = (uint)*(byte *)(DAT_00202c6c + 4);
-      if ((uint)(int)(short)(ushort)*(byte *)(DAT_00202c6c + 4) < uVar8) {
+      uVar5 = (uint)*(byte *)(DAT_00202c6c + 8);
+      if ((uint)(int)(short)(ushort)*(byte *)(DAT_00202c6c + 8) < uVar8) {
         uVar5 = uVar8;
       }
-      if ((int)((uint)*(byte *)(DAT_00202c6c + 8) + (int)(short)uVar5) < (int)(short)DAT_00202c6c[2]
+      if ((int)((uint)*(byte *)(DAT_00202c6c + 0x10) + (int)(short)uVar5) < (int)*(short *)(DAT_00202c6c + 4)
          ) {
         DAT_00202c68 = 0x10;
       }
       else {
-        DAT_00202c68 = (short)(1 << ((int)(short)DAT_00202c6c[6] & 3U));
+        DAT_00202c68 = (short)(1 << ((int)*(short *)(DAT_00202c6c + 0xc) & 3U));
       }
       if ((DAT_00202c68 == 0x10) || (uVar3 = 1, param_2 < 0x100)) {
         uVar3 = 0;
       }
       collision_height_envelope(uVar3,1);
-      if (*(char *)(DAT_00202c6c + 10) != '\0') {
+      if (getenv("UW_DEBUG_DOOR"))
+        fprintf(stderr, "[fa0-check2] after collision_height_envelope: off0x14=%d off0x15=%d off0x16=%d uVar3(envelope_arg)=%d\n",
+                (int)(unsigned char)DAT_00202c6c[0x14], (int)(unsigned char)DAT_00202c6c[0x15],
+                (int)(unsigned char)DAT_00202c6c[0x16], (int)uVar3);
+      if (*(char *)(DAT_00202c6c + 0x14) != '\0') {
         iVar9 = -1;
         sVar7 = -1;
         FUN_00051dd0();
-        if (*(char *)((char *)DAT_00202c6c + 0x15) != '\0') {
-          DAT_00202c6c = (undefined2 *)uVar2;
+        if (*(char *)(DAT_00202c6c + 0x15) != '\0') {
+          DAT_00202c6c = uVar2;
           return 0;
         }
-        if ((*(char *)(DAT_00202c6c + 10) != '\0') &&
-           (iVar6 = 0, '\0' < *(char *)(DAT_00202c6c + 0xb))) {
+        if ((*(char *)(DAT_00202c6c + 0x14) != '\0') &&
+           (iVar6 = 0, '\0' < *(char *)(DAT_00202c6c + 0x16))) {
           do {
             sVar7 = (short)iVar9;
             if ((short)DAT_00202c30 < (short)(ushort)(byte)(&DAT_00202c38)[iVar6 * 6]) {
@@ -47259,7 +47273,7 @@ byte param_7;
               DAT_00202c30 = (ushort)(byte)(&DAT_00202c38)[iVar6 * 6];
             }
             iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
-          } while (iVar6 < *(char *)(DAT_00202c6c + 0xb));
+          } while (iVar6 < *(char *)(DAT_00202c6c + 0x16));
         }
         if (-1 < sVar7) {
           puVar4 = (ushort *)resolve_object_link(&DAT_00202c3a + sVar7 * 6);
@@ -47279,22 +47293,23 @@ byte param_7;
              rather than crash. */
           if ((puVar4 != (ushort *)0x0) &&
              (((&DAT_00202c93)[(*puVar4 & 0x1ff) * 0xd] & 2) == 0)) {
-            DAT_00202c6c = (undefined2 *)uVar2;
+            DAT_00202c6c = uVar2;
             return 0;
           }
           DAT_00202c68 = 1;
         }
       }
-      if (((param_6 == 0) && (((DAT_00202c6c[7] | DAT_00202c6c[6]) & 0x800) != 0)) &&
-         ((int)(short)DAT_00202c30 < (int)((int)(short)DAT_00202c6c[2] - uVar8))) {
-        DAT_00202c6c = (undefined2 *)uVar2;
-        return 0;
+      if ((param_6 != 0) ||
+         (((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x800) == 0) ||
+         ((int)((int)*(short *)(DAT_00202c6c + 4) - uVar8) <= (int)(short)DAT_00202c30)) {
+        DAT_00202c6c = uVar2;
+        return 1;
       }
-      DAT_00202c6c = (undefined2 *)uVar2;
-      return 1;
+      DAT_00202c6c = uVar2;
+      return 0;
     }
   }
-  DAT_00202c6c = (undefined2 *)uVar2;
+  DAT_00202c6c = uVar2;
   return 0;
 }
 #undef local_3c
@@ -74204,8 +74219,12 @@ ushort * param_1;
      ever actually run. */
   uVar4 = encode_object_slot_index((char *)param_1);
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] FUN_0007c3f4: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d ptr=%p\n",
-            (unsigned)uVar1, (unsigned)uVar5, (int)(((byte)uVar1 ^ bVar3) & 0x3f ^ bVar3), (int)uVar6, (int)uVar4, (void *)param_1);
+    fprintf(stderr, "[door] FUN_0007c3f4: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d ptr=%p tilefield16=0x%04x doortile_x=%d doortile_y=%d cur_a0=%d cur_a4=%d player_x=%d player_y=%d\n",
+            (unsigned)uVar1, (unsigned)uVar5, (int)(((byte)uVar1 ^ bVar3) & 0x3f ^ bVar3), (int)uVar6, (int)uVar4, (void *)param_1,
+            (unsigned)*(ushort *)((char *)param_1 + 0x16), (int)(*(ushort *)((char *)param_1 + 0x16) >> 10),
+            (int)((*(ushort *)((char *)param_1 + 0x16) & 0x3f0) >> 4), (int)(short)DAT_002020a0, (int)(short)DAT_002020a4,
+            (int)(*(ushort *)((char *)g_player_object + 0x16) >> 10),
+            (int)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4));
   scheduler_add_entry(uVar4,uVar6,0,(undefined1)DAT_002020a0,(char)DAT_002020a4);
   return;
 }
@@ -74898,6 +74917,9 @@ uint param_3;
         return 2;
       }
       uVar4 = param_1[2] & 0x3f;
+      if (getenv("UW_DEBUG_DOOR"))
+        fprintf(stderr, "[door] FUN_0007d0b0 case8(branchA): trigger_state(uVar4)=%d target_nibble=%d target_obj0=0x%04x\n",
+                (int)uVar4, (int)(*(byte *)((char *)_case8_p1 + 6) & 0xf), (unsigned)*_case8_p1);
       if (7 < (*(byte *)((char *)_case8_p1 + 6) & 0xf)) {
         if ((uVar4 != 1) && (uVar4 != 3)) {
           return 2;
@@ -74946,6 +74968,9 @@ uint param_3;
         }
       }
       uVar4 = param_1[2] & 0x3f;
+      if (getenv("UW_DEBUG_DOOR"))
+        fprintf(stderr, "[door] FUN_0007d0b0 case8(branchB): trigger_state(uVar4)=%d target_obj0=0x%04x\n",
+                (int)uVar4, (unsigned)*_case8_p1);
       if (uVar4 == 1) {
 LAB_0007dbc0:
         /* HACK: was `FUN_0007c580(DAT_0024cff4,iVar16);` -- same
@@ -77510,6 +77535,8 @@ LAB_00081254:
           goto LAB_00081254;
         }
         if (uVar8 == 4) {
+          int _swing_dirbit_in = (*puVar4 & 0x1000) != 0;
+          int _swing_openbits_in = (*puVar4 >> 9) & 7;
           if ((*puVar4 & 0x1000) != 0) {
             param_2 = (short)param_2 * -0x10000 >> 0x10;
           }
@@ -77523,6 +77550,10 @@ LAB_00081254:
           uVar5 = ((uVar5 & 0xe00) + (uVar5 & 0xf000) + param_2 * 0x200 ^ uVar5) & 0x1e00 ^ uVar5;
           *(char *)puVar4 = (char)*puVar4;
           *(char *)((char *)puVar4 + 1) = (char)(uVar5 >> 8);
+          if (getenv("UW_DEBUG_DOOR"))
+            fprintf(stderr, "[door] scheduler_step_entry SWING: elapsed_in=%d dirbit_in=%d openbits_in=%d -> obj0=0x%04x dirbit_out=%d openbits_out=%d advance=%d\n",
+                    param_2, _swing_dirbit_in, _swing_openbits_in, (unsigned)uVar5,
+                    (int)((uVar5 & 0x1000) != 0), (int)((uVar5 >> 9) & 7), (int)((uVar5 & 0x1000) != 0));
           if ((uVar5 & 0x1000) != 0) {
             scheduler_advance_effect(param_1,param_2);
           }
@@ -77947,6 +77978,13 @@ int param_2;
                        (uint)(*(byte *)((char *)puVar2 + 3) >> 5) + (short)DAT_0010144c * 8,
                        ((*(byte *)((char *)puVar2 + 3) & 0x1c) >> 2) + (short)DAT_00101454 * 8,uVar9,1,
                        8);
+  if (getenv("UW_DEBUG_DOOR")) {
+    int _type_id = (uVar7 & 0x30) + (uVar7 & 0xf) + 0x140;
+    fprintf(stderr, "[door] scheduler_advance_effect: FUN_00051fa0 returned iVar4=%d (0=settle proceeds, nonzero=skip) obj0=0x%04x quality_full=0x%02x type_id=0x%03x local_33=%d word1=0x%04x param5(height)=%d tile=(%d,%d)\n",
+            iVar4, (unsigned)*puVar2, (unsigned)uVar7, _type_id,
+            (int)(unsigned char)(&DAT_00202c90)[_type_id * 0xd], (unsigned)puVar2[1], (int)uVar9,
+            (int)DAT_0010144c, (int)DAT_00101454);
+  }
   if (iVar4 == 0) {
     uVar5 = (uint)*puVar2;
     if ((((uVar5 & 0x1c0) == 0x140) && ((uVar5 & 7) == 6)) ||
@@ -77958,12 +77996,18 @@ int param_2;
     *(byte *)((char *)puVar2 + 1) =
          ((byte)((uVar5 & 0xe00) + (param_2 + 1) * -0x200 >> 8) ^ bVar1) & 0x1e ^ bVar1;
     iVar6 = scheduler_get_delay(puVar2);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] scheduler_advance_effect: param_2(elapsed)=%d obj0(after settle)=0x%04x dirbit=%d openbits=%d get_delay=%d anim_type(iVar10)=%d\n",
+              param_2, (unsigned)*puVar2, (int)((*puVar2 & 0x1000) != 0), (int)((*puVar2 >> 9) & 7),
+              (int)iVar6, iVar10);
     iVar4 = (int)(short)iVar6;
     bVar11 = -1 < iVar4;
     if (bVar11) {
       iVar4 = (iVar10 - iVar6) + 1;
       (&DAT_0025077a)[iVar8] = (char)iVar4;
       DAT_002508fc = 1;
+      if (getenv("UW_DEBUG_DOOR"))
+        fprintf(stderr, "[door] scheduler_advance_effect: RE-ARMED new_delay=%d\n", iVar4);
     }
     uVar3 = 0;
     if (bVar11) {
