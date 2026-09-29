@@ -1515,6 +1515,9 @@ extern unsigned short u_HP_Jornada_540_000876cc[];
 extern char s__Program_Files_ZIO_Interactive_U_000876ec[];
 extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008771c[];
 extern char s__Program_Files_ZIO_Interactive_U_00087774[];
+extern undefined1 DAT_000830b0_backing[65536];
+#define DAT_000830b0 DAT_000830b0_backing[0]
+#define UNK_000830b4 DAT_000830b0_backing[4]
 extern undefined1 DAT_0023c128_arr[9];
 extern void (*const g_hud_panel_handlers_table[13])(void);
 /* Globals defined in uw.c but also used by functions that now live in
@@ -3309,9 +3312,9 @@ undefined4 capture_framebuffer_rect_to_grtile();
 undefined4 restore_captured_grtile_backdrop();
 void spawn_message_dispatch_thread();
 undefined4 create_main_window_and_init_display();
-undefined4 FUN_00077860();
-void FUN_00077868();
-void FUN_00077878();
+undefined4 window_message_noop_handler();
+void store_window_extra_data_ptr();
+void dispatch_window_message();
 undefined4 FUN_000778fc();
 undefined4 FUN_00077a38();
 undefined4 handle_keyboard_message();

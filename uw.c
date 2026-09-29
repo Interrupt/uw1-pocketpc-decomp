@@ -6300,9 +6300,18 @@ unsigned short u_HP_Jornada_540_000876cc[] = u"HP,Jornada_540";
 char s__Program_Files_ZIO_Interactive_U_000876ec[] = "\\Program_Files\\ZIO_Interactive\\U";
 unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008771c[] = u"Software\\Apps\\ZIO_Interactive_Ul";
 char s__Program_Files_ZIO_Interactive_U_00087774[] = "\\Program_Files\\ZIO_Interactive\\U";
-undefined1 DAT_000830b0;
-static undefined1 UNK_000830b4_backing[65536];
-#define UNK_000830b4 UNK_000830b4_backing[0]
+// DAT_000830b0 and UNK_000830b4 are the same {int msg_id; void
+// *handler;} 8-byte-stride table (dispatch_window_message walks
+// msg_id entries from &DAT_000830b0 via an `int*`, and reads the
+// matching handler from UNK_000830b4 + index*8 -- exactly
+// DAT_000830b0's own address + 4, i.e. the SAME struct's second
+// field), not two independent globals. Both were declared as a lone
+// byte / a separately-backed array, so the `int*` walk read past
+// DAT_000830b0's 1-byte allocation into unrelated memory. Aliased
+// into one shared backing array at their real relative offsets.
+undefined1 DAT_000830b0_backing[65536];
+#define DAT_000830b0 DAT_000830b0_backing[0]
+#define UNK_000830b4 DAT_000830b0_backing[4]
 undefined *PTR_GXCloseInput_000841e4;
 undefined *PTR_GXCloseDisplay_000841e8;
 undefined *PTR_GXSuspend_000841dc;
@@ -20272,7 +20281,7 @@ void FUN_0003b820()
   init_level_object_arena();
   input_bindings_init();
   FUN_0007ea30();
-  FUN_00077868(DAT_0023c540);
+  store_window_extra_data_ptr(DAT_0023c540);
   FUN_00037d50();
   iVar3 = FUN_00040cd4();
   if (iVar3 == 0) {
@@ -36485,50 +36494,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-undefined4 FUN_00077860(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
-{
-  return param_2;
-}
-
-
-
-void FUN_00077868(param_1)
-undefined4 param_1;
-
-{
-  FUN_0003af28(param_1,0x94,&DAT_00242010);
-  return;
-}
-
-
-
-void FUN_00077878(param_1,param_2)
-undefined4 param_1;
-int param_2;
-
-{
-  uint uVar1;
-  int *piVar2;
-  
-  piVar2 = (int *)&DAT_000830b0;
-  uVar1 = 0;
-  do {
-    if (param_2 == *piVar2) {
-      (**(code **)(&UNK_000830b4 + uVar1 * 8))();
-      return;
-    }
-    uVar1 = uVar1 + 1;
-    piVar2 = piVar2 + 2;
-  } while (uVar1 < 0x13);
-  Ordinal_264();
   return;
 }
 

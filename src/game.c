@@ -119,7 +119,7 @@ undefined4 param_4;
           }
         }
       }
-      uVar3 = FUN_00077860(param_1,local_38);
+      uVar3 = window_message_noop_handler(param_1,local_38);
       return uVar3;
     }
   }
@@ -1583,7 +1583,7 @@ LAB_0006b144:
 // was FUN_000773ac -- called from app_main_loop (src/game.c, WinMain's
 // real body) right before create_main_window_and_init_display below.
 // Builds a WinCE thread-creation parameter block (local_34=3, a
-// creation-flags constant; local_30=FUN_00077878, the thread's start
+// creation-flags constant; local_30=dispatch_window_message, the thread's start
 // routine -- a window-message-id dispatch table lookup, not yet
 // named; local_24=param_1, the app instance handle, as the thread
 // arg; local_18=Ordinal_919(0), likely the calling thread's id;
@@ -1608,7 +1608,7 @@ undefined4 param_2;
   
   local_34 = 3;
   local_2c = 0;
-  local_30 = FUN_00077878;
+  local_30 = dispatch_window_message;
   local_28 = 0;
   local_20 = 0;
   local_1c = 0;
@@ -1798,4 +1798,68 @@ undefined4 param_2;
     }
   }
   return 0;
+}
+
+
+
+
+
+// was FUN_00077860 -- trivial passthrough, returns param_2 unchanged.
+// Confirmed real use: app_main_loop (src/game.c) calls it at the very
+// end of the message pump as a return-value wrapper around its own
+// exit code, so despite the WndProc-shaped signature this specific
+// call site isn't dispatching a real window message -- it's just
+// reusing this identity function to pass the exit code through.
+undefined4 window_message_noop_handler(param_1,param_2)
+undefined4 param_1;
+undefined4 param_2;
+
+{
+  return param_2;
+}
+
+
+
+// was FUN_00077868 -- stores &DAT_00242010 into the window's extra-
+// data slot 0x94 via FUN_0003af28 (a SetWindowLong-style helper --
+// see its other use in create_main_window_and_init_display storing
+// g_uw_framebuffer at slot 0xca). WinCE window-procedure plumbing,
+// very likely inert on this SDL-based host port.
+void store_window_extra_data_ptr(param_1)
+undefined4 param_1;
+
+{
+  FUN_0003af28(param_1,0x94,&DAT_00242010);
+  return;
+}
+
+
+
+// was FUN_00077878 -- looks up window message id param_2 in a
+// {msg_id, handler_ptr} table (DAT_000830b0/UNK_000830b4, 0x13
+// entries, 8-byte stride) and calls the matched handler with no
+// forwarded args, or falls back to Ordinal_264 (likely DefWindowProc)
+// if no entry matches. This is the thread start routine
+// spawn_message_dispatch_thread sets up -- WinCE window-procedure
+// plumbing, very likely inert on this SDL-based host port.
+void dispatch_window_message(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  uint uVar1;
+  int *piVar2;
+  
+  piVar2 = (int *)&DAT_000830b0;
+  uVar1 = 0;
+  do {
+    if (param_2 == *piVar2) {
+      (**(code **)(&UNK_000830b4 + uVar1 * 8))();
+      return;
+    }
+    uVar1 = uVar1 + 1;
+    piVar2 = piVar2 + 2;
+  } while (uVar1 < 0x13);
+  Ordinal_264();
+  return;
 }
