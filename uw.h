@@ -1494,6 +1494,27 @@ extern undefined1 DAT_0023c118_arr[9];
 extern undefined1 DAT_0023c12c_arr[2];
 extern char DAT_0023c240_vitals[16];
 extern undefined1 DAT_0023cdb0_backing[32768];
+#define DAT_0023cdb0 DAT_0023cdb0_backing[0]
+extern undefined1 DAT_0023ce10_backing[65536];
+#define DAT_0023ce10 DAT_0023ce10_backing[0]
+#define DAT_0023ce1c (*(ushort *)(DAT_0023ce10_backing + 0xc))
+#define DAT_0023ce28 (*(ushort *)(DAT_0023ce10_backing + 0x18))
+#define DAT_0023ce34 (*(ushort *)(DAT_0023ce10_backing + 0x24))
+#define DAT_0023ce40 (*(ushort *)(DAT_0023ce10_backing + 0x30))
+#define DAT_0023ce4c (*(ushort *)(DAT_0023ce10_backing + 0x3c))
+#define DAT_0023ce58 (*(ushort *)(DAT_0023ce10_backing + 0x48))
+#define DAT_0023ce64 (*(ushort *)(DAT_0023ce10_backing + 0x54))
+extern undefined1 DAT_0023c698_backing[32768];
+#define DAT_0023c698 DAT_0023c698_backing[0]
+extern HWND__ *DAT_0023c548;
+extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[];
+extern char s__Program_Files_ZIO_Interactive_U_00087804[];
+extern unsigned short u_InstlDir_00087838[];
+extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008784c[];
+extern unsigned short u_HP_Jornada_540_000876cc[];
+extern char s__Program_Files_ZIO_Interactive_U_000876ec[];
+extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008771c[];
+extern char s__Program_Files_ZIO_Interactive_U_00087774[];
 extern undefined1 DAT_0023c128_arr[9];
 extern void (*const g_hud_panel_handlers_table[13])(void);
 /* Globals defined in uw.c but also used by functions that now live in
@@ -3286,8 +3307,8 @@ undefined4 grtile_alloc_registered();
 undefined4 invalidate_grtile_by_key();
 undefined4 capture_framebuffer_rect_to_grtile();
 undefined4 restore_captured_grtile_backdrop();
-void FUN_000773ac();
-undefined4 FUN_00077408();
+void spawn_message_dispatch_thread();
+undefined4 create_main_window_and_init_display();
 undefined4 FUN_00077860();
 void FUN_00077868();
 void FUN_00077878();

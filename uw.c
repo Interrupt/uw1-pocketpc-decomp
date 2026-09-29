@@ -2199,7 +2199,7 @@ ushort DAT_000853fc;
 ushort DAT_00085400;
 static undefined1 DAT_00101968_backing[8192];
 #define DAT_00101968 DAT_00101968_backing[0]
-static undefined1 DAT_0023c698_backing[32768];
+undefined1 DAT_0023c698_backing[32768];
 #define DAT_0023c698 DAT_0023c698_backing[0]
 ushort DAT_00101a6c;
 undefined4 DAT_00101a70;
@@ -6263,13 +6263,13 @@ unsigned short u_Software_Apps_ZIO_Interactive_Ul_0008784c[] = u"Software\\Apps\
 #define DAT_0023cdb8 (*(int *)(DAT_0023cdb0_backing + 8))
 #define DAT_0023cdbc (*(int *)(DAT_0023cdb0_backing + 0xc))
 #define DAT_0023cdc0 (*(int *)(DAT_0023cdb0_backing + 0x10))
-static undefined1 DAT_0023ce10_backing[65536];
+undefined1 DAT_0023ce10_backing[65536];
 #define DAT_0023ce10 DAT_0023ce10_backing[0]
 /* DAT_0023ce1c/28/34/40/4c/58/64 are the same GXGetDefaultKeys() struct's
    remaining 7 button.vk fields (b/c/start/up/down/left/right, each 0xc
    bytes after the previous one -- see gx_stub.c's GxKeyEntry) as
    DAT_0023ce10 (the "a" button). Same bug DAT_0023cdb0's comment above
-   already describes for GXGetDisplayProperties: FUN_00077408 populates
+   already describes for GXGetDisplayProperties: create_main_window_and_init_display populates
    this whole 0x60-byte struct with one sequential byte-copy loop
    starting at `&DAT_0023ce10`, but every field past the first had been
    declared as its own independent global instead of an alias into that
@@ -36486,207 +36486,6 @@ LAB_00060f54:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
   return;
-}
-
-
-
-void FUN_000773ac(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
-{
-  undefined4 local_34;
-  code *local_30;
-  undefined4 local_2c;
-  undefined4 local_28;
-  undefined4 local_24;
-  undefined4 local_20;
-  undefined4 local_1c;
-  undefined4 local_18;
-  undefined4 local_14;
-  undefined4 local_10;
-  
-  local_34 = 3;
-  local_2c = 0;
-  local_30 = FUN_00077878;
-  local_28 = 0;
-  local_20 = 0;
-  local_1c = 0;
-  local_24 = param_1;
-  local_18 = Ordinal_919(0);
-  local_14 = 0;
-  local_10 = param_2;
-  Ordinal_95(&local_34);
-  return;
-}
-
-
-
-undefined4 FUN_00077408(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
-{
-  bool bVar1;
-  char cVar2;
-  int iVar3;
-  char *pcVar4;
-  undefined1 *puVar5;
-  undefined *puVar6;
-  int iVar7;
-  undefined1 *puVar8;
-  char *pcVar9;
-  char *pcVar10;
-  undefined4 local_7d8;
-  undefined4 local_7d4;
-  undefined4 local_7d0;
-  undefined4 local_7c8;
-  undefined4 local_7c4;
-  undefined4 local_7c0;
-  undefined4 local_7bc;
-  undefined4 local_7b8 [2];
-  undefined1 auStack_7b0 [24];
-  undefined1 auStack_798 [96];
-  undefined1 auStack_738 [256];
-  undefined1 auStack_638 [520];
-  undefined1 auStack_430 [520];
-  undefined1 auStack_228 [520];
-  
-  Ordinal_885(1);
-  Ordinal_885(0);
-  DAT_0023c548 = (HWND__ *)
-                 Ordinal_246(0,u_UltimaUW_00087678,u_Ultima_Under_World_00087690,0x10000000);
-  if ((DAT_0023c548 != (HWND__ *)0x0) && (iVar3 = is_product_registered(DAT_0023c548,param_1), iVar3 != 0)) {
-    pcVar9 = &DAT_0023cca8;
-    Ordinal_1047(&DAT_0023cca8,0,0x104);
-    pcVar10 = &DAT_0023c698;
-    Ordinal_1047(&DAT_0023c698,0,0x104);
-    local_7c4 = 1;
-    local_7c0 = 0x208;
-    Ordinal_1047(auStack_638,0,0x208);
-    iVar3 = Ordinal_461(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008784c,0,0);
-    if (iVar3 == 0) {
-      Ordinal_463(local_7d4,u_InstlDir_00087838,0,&local_7c4);
-      pcVar4 = (char *)FUN_00022998(auStack_638);
-      do {
-        cVar2 = *pcVar4;
-        pcVar4 = pcVar4 + 1;
-        *pcVar9 = cVar2;
-        pcVar9 = pcVar9 + 1;
-      } while (cVar2 != '\0');
-      Ordinal_455(local_7d4);
-    }
-    else {
-      pcVar9 = s__Program_Files_ZIO_Interactive_U_00087804;
-      do {
-        cVar2 = *pcVar9;
-        pcVar9[0x1b54a4] = cVar2;
-        pcVar9 = pcVar9 + 1;
-      } while (cVar2 != '\0');
-    }
-    local_7c8 = 1;
-    local_7bc = 0x208;
-    Ordinal_1047(auStack_430,0,0x208);
-    iVar3 = Ordinal_461(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_000877a4,0,0);
-    if (iVar3 == 0) {
-      Ordinal_463(local_7d8,u_InstlDir_00087838,0,&local_7c8);
-      pcVar9 = (char *)FUN_00022998(auStack_430);
-      do {
-        cVar2 = *pcVar9;
-        pcVar9 = pcVar9 + 1;
-        *pcVar10 = cVar2;
-        pcVar10 = pcVar10 + 1;
-      } while (cVar2 != '\0');
-      Ordinal_455(local_7d8);
-    }
-    else {
-      pcVar10 = s__Program_Files_ZIO_Interactive_U_00087774;
-      do {
-        cVar2 = *pcVar10;
-        pcVar10[0x1b4f24] = cVar2;
-        pcVar10 = pcVar10 + 1;
-      } while (cVar2 != '\0');
-    }
-    local_7b8[0] = 1;
-    Ordinal_1047(auStack_228,0,0x208);
-    iVar3 = Ordinal_461(0x80000002,u_Software_Apps_ZIO_Interactive_Ul_0008771c,0,0);
-    if (iVar3 == 0) {
-      Ordinal_463(local_7d0,u_InstlDir_00087838,0,local_7b8);
-      pcVar10 = (char *)FUN_00022998(auStack_228);
-      pcVar9 = &DAT_00241f08;
-      do {
-        cVar2 = *pcVar10;
-        pcVar10 = pcVar10 + 1;
-        *pcVar9 = cVar2;
-        pcVar9 = pcVar9 + 1;
-      } while (cVar2 != '\0');
-      Ordinal_455(local_7d0);
-    }
-    else {
-      pcVar10 = s__Program_Files_ZIO_Interactive_U_000876ec;
-      do {
-        cVar2 = *pcVar10;
-        pcVar10[0x1ba81c] = cVar2;
-        pcVar10 = pcVar10 + 1;
-      } while (cVar2 != '\0');
-    }
-    Ordinal_266(DAT_0023c548,param_2);
-    Ordinal_267(DAT_0023c548);
-    iVar3 = GXOpenDisplay(DAT_0023c548,1);
-    if (iVar3 != 0) {
-      Ordinal_89(0x102,0x100,auStack_738,0);
-      iVar3 = Ordinal_230(auStack_738,u_HP_Jornada_540_000876cc);
-      if (iVar3 != 0) {
-        GXOpenInput();
-        puVar5 = (undefined1 *)GXGetDisplayProperties();
-        iVar3 = 0x18;
-        puVar8 = auStack_7b0;
-        do {
-          iVar7 = iVar3 + -1;
-          *puVar8 = *puVar5;
-          bVar1 = 0 < iVar3;
-          puVar5 = puVar5 + 1;
-          iVar3 = iVar7;
-          puVar8 = puVar8 + 1;
-        } while (iVar7 != 0 && bVar1);
-        puVar5 = &DAT_0023cdb0;
-        iVar3 = 0x18;
-        puVar8 = auStack_7b0;
-        do {
-          iVar7 = iVar3 + -1;
-          *puVar5 = *puVar8;
-          bVar1 = 0 < iVar3;
-          puVar5 = puVar5 + 1;
-          iVar3 = iVar7;
-          puVar8 = puVar8 + 1;
-        } while (iVar7 != 0 && bVar1);
-        puVar5 = (undefined1 *)GXGetDefaultKeys(auStack_798);
-        iVar3 = 0x60;
-        puVar8 = auStack_798;
-        do {
-          iVar7 = iVar3 + -1;
-          *puVar8 = *puVar5;
-          bVar1 = 0 < iVar3;
-          puVar5 = puVar5 + 1;
-          iVar3 = iVar7;
-          puVar8 = puVar8 + 1;
-        } while (iVar7 != 0 && bVar1);
-        puVar6 = &DAT_0023ce10;
-        iVar3 = 0x60;
-        puVar5 = auStack_798;
-        do {
-          iVar7 = iVar3 + -1;
-          *puVar6 = *puVar5;
-          bVar1 = 0 < iVar3;
-          puVar6 = puVar6 + 1;
-          iVar3 = iVar7;
-          puVar5 = puVar5 + 1;
-        } while (iVar7 != 0 && bVar1);
-      }
-      return 1;
-    }
-  }
-  return 0;
 }
 
 
