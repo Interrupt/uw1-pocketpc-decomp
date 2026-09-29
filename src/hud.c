@@ -1778,7 +1778,7 @@ void msg_scroll_more_prompt()
 
 
 // was FUN_0007f570 -- print a string to the message scroll, word-wrapped
-// at ~0x31 columns (one FUN_0007f6fc call per line).
+// at ~0x31 columns (one msg_scroll_split_escape_segments call per line).
 int message_scroll_print_wrapped(param_1)
 char *param_1;
 
@@ -1798,7 +1798,7 @@ char *param_1;
      is meant to NUL-terminate right at auStack_54's own end (offset 49)
      -- not a separate, unrelated 3-byte buffer the C compiler is free to
      place anywhere. Without the merge, that terminator write misses
-     auStack_54 entirely, so FUN_0007f6fc prints past its real content
+     auStack_54 entirely, so msg_scroll_split_escape_segments prints past its real content
      into whatever stack garbage follows until it happens to hit a zero
      byte -- confirmed via a real inscription message ("The writing
      reads: We attacked the entrance...") long enough to need this
@@ -1850,12 +1850,12 @@ char *param_1;
       uVar1 = *puVar4;
       *puVar4 = 0;
       iVar2 = ((int)puVar4 - (int)auStack_54) * 0x10000 >> 0x10;
-      FUN_0007f6fc(auStack_54,1);
+      msg_scroll_split_escape_segments(auStack_54,1);
       *puVar4 = uVar1;
       param_1 = iVar2 + param_1;
     }
     Ordinal_1044(auStack_54,param_1,(short)uVar3 + 1);
-    FUN_0007f6fc(auStack_54,0);
+    msg_scroll_split_escape_segments(auStack_54,0);
     DAT_00250720 = read_realtime_clock_units();
     if (DAT_00250708 != 0) {
       cursor_show_idle_tick();
@@ -3806,6 +3806,67 @@ undefined4 draw_conversation_window_decoration()
     DAT_00250728 = 0;
   }
   return 0;
+}
+
+
+
+
+
+// was FUN_0007f6fc -- confirmed by message_scroll_print_wrapped's own
+// pre-existing comment (src/hud.c) as its per-~49-char-chunk worker
+// (one call per line in the word-wrap loop). Splits
+// its chunk on embedded backslash (0x5c) bytes, treating each segment
+// as one call to msg_scroll_split_newline_segments; a segment whose
+// second byte is 'm' (or whose third byte is nonzero) forces the wrap
+// flag to 1 regardless of param_2 -- an in-text escape/formatting
+// marker whose exact purpose isn't confirmed.
+void msg_scroll_split_escape_segments(param_1,param_2)
+undefined1 * param_1;
+undefined4 param_2;
+
+{
+  undefined1 *puVar1;
+  undefined4 uVar2;
+  
+  while (puVar1 = (undefined1 *)Ordinal_1064(param_1 + 1,0x5c), puVar1 != (undefined1 *)0x0) {
+    *puVar1 = 0;
+    if ((puVar1[2] != '\0') || (uVar2 = param_2, puVar1[1] == 'm')) {
+      uVar2 = 1;
+    }
+    msg_scroll_split_newline_segments(param_1,uVar2);
+    *puVar1 = 0x5c;
+    param_1 = puVar1;
+  }
+  msg_scroll_split_newline_segments(param_1,param_2);
+  return;
+}
+
+
+
+// was FUN_0007f770 -- confirmed by pre-existing callers' comments
+// (src/object_actions.c) as "the scroll's own line-break logic": only
+// breaks its input on an embedded '\n' (ASCII 10) byte, calling
+// msg_scroll_draw_wrapped_span for each resulting line.
+void msg_scroll_split_newline_segments(param_1,param_2)
+char * param_1;
+undefined4 param_2;
+
+{
+  char cVar1;
+  char *iVar2;   /* was `int` -- Ordinal_1064 (strchr) returns a real
+                    64-bit pointer; truncating it made `*(char *)(iVar2+1)`
+                    a wild deref, e.g. crashing "You see nothing." on a
+                    right-click. */
+
+  while ((iVar2 = Ordinal_1064(param_1,10), iVar2 != 0 &&
+         (cVar1 = iVar2[1], cVar1 != '\0'))) {
+    iVar2[1] = 0;
+    msg_scroll_draw_wrapped_span(param_1,1);
+    param_1 = iVar2 + 1;
+    *param_1 = cVar1;
+  }
+  msg_scroll_draw_wrapped_span(param_1,param_2);
+  return;
 }
 
 

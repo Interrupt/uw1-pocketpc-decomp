@@ -36521,53 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007f6fc(param_1,param_2)
-undefined1 * param_1;
-undefined4 param_2;
-
-{
-  undefined1 *puVar1;
-  undefined4 uVar2;
-  
-  while (puVar1 = (undefined1 *)Ordinal_1064(param_1 + 1,0x5c), puVar1 != (undefined1 *)0x0) {
-    *puVar1 = 0;
-    if ((puVar1[2] != '\0') || (uVar2 = param_2, puVar1[1] == 'm')) {
-      uVar2 = 1;
-    }
-    FUN_0007f770(param_1,uVar2);
-    *puVar1 = 0x5c;
-    param_1 = puVar1;
-  }
-  FUN_0007f770(param_1,param_2);
-  return;
-}
-
-
-
-void FUN_0007f770(param_1,param_2)
-char * param_1;
-undefined4 param_2;
-
-{
-  char cVar1;
-  char *iVar2;   /* was `int` -- Ordinal_1064 (strchr) returns a real
-                    64-bit pointer; truncating it made `*(char *)(iVar2+1)`
-                    a wild deref, e.g. crashing "You see nothing." on a
-                    right-click. */
-
-  while ((iVar2 = Ordinal_1064(param_1,10), iVar2 != 0 &&
-         (cVar1 = iVar2[1], cVar1 != '\0'))) {
-    iVar2[1] = 0;
-    msg_scroll_draw_wrapped_span(param_1,1);
-    param_1 = iVar2 + 1;
-    *param_1 = cVar1;
-  }
-  msg_scroll_draw_wrapped_span(param_1,param_2);
-  return;
-}
-
-
-
 void FUN_0007fe20(param_1)
 short param_1;
 

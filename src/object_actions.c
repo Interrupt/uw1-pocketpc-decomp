@@ -150,7 +150,7 @@ LAB_000489fc:
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
   /* No trailing newline was ever appended, so back-to-back Looks (the
-     scroll's own line-break logic, FUN_0007f770, only breaks on an
+     scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
      embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
      line: confirmed live, 3 Looks at the sack rendered as one run-on
      "You see a sackYou see a sackYou see a sack" instead of 3 separate
@@ -596,7 +596,7 @@ LAB_000489fc:
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
   /* No trailing newline was ever appended, so back-to-back Looks (the
-     scroll's own line-break logic, FUN_0007f770, only breaks on an
+     scroll's own line-break logic, msg_scroll_split_newline_segments, only breaks on an
      embedded '\n' -- ASCII 10 -- byte) all landed on the same visible
      line: confirmed live, 3 Looks at the sack rendered as one run-on
      "You see a sackYou see a sackYou see a sack" instead of 3 separate
