@@ -1825,6 +1825,9 @@ void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_force_item_id_once(void);
 undefined4 LAB_000415d0(void *buf, unsigned size, int idx);
 void *alloc_door_frame_buffer();
+void close_door_object();
+void open_door_object();
+void toggle_door_object();
 ushort collision_neighbor_shade_or_zero(ushort *base, byte idx);
 int uw_always_show_cursor(void);
 int uw_turn_rate_accel(void);
@@ -3108,6 +3111,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/object_actions.h"
 #include "src/headers/weapon_swing.h"
 #include "src/headers/level.h"
+#include "src/headers/doors.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 

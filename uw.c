@@ -3123,25 +3123,6 @@ char s_views_00085a3c[] = "views";
 char s_question_00085a44[] = "question";
 char s__DATA_allpals_dat_00085a50[] = "\\DATA\\allpals.dat";
 undefined2 DAT_00202748;
-// was LAB_000415b4
-void *alloc_door_frame_buffer(param_1)
-unsigned int param_1;
-
-{
-  /* Ghidra couldn't resolve this address into a proper function (an
-     indirect-jump/jumptable target it gave up on). Was stubbed as a
-     bare `return 0;`, on the (wrong) assumption that it's "used purely
-     as a callback pointer elsewhere" -- it's actually passed as
-     load_door_frames's (doors.GR) allocator callback, the exact same role
-     as LAB_000415b0/LAB_000416e8/LAB_000416f8 (see LAB_000415b0's own
-     comment: a no-op allocator here makes load_gr_resource_entries treat every real
-     resource load as a failure even though the file read itself
-     succeeds) -- confirmed live via UW_DEBUG_DOOR: every one of doors.GR's
-     6 entries opened and read its header fine, then failed right at the
-     allocate-a-destination-buffer step. Real allocator like its
-     siblings. */
-  return Ordinal_1041(param_1);
-}
 char s_doors_00085a64[] = "doors";
  undefined1 DAT_0023b840_backing[8192];
 #define DAT_0023b840 DAT_0023b840_backing[0]
@@ -21331,7 +21312,7 @@ LAB_000382ac:
       if ((uVar1 & 0xf) < 8) {
         DAT_002020a4 = param_5;
         DAT_002020a0 = sVar2;
-        FUN_0007c580(param_2,param_1);
+        close_door_object(param_2,param_1);
       }
       FUN_00037f1c(param_1,1);
 LAB_00038100:
@@ -40740,7 +40721,7 @@ ushort * obj;
        RENDERED rotation never advanced.
 
        Confirmed live (same repro) that door quality is NOT a smooth
-       multi-tick counter: the real "open door" builtin (FUN_0007c708)
+       multi-tick counter: the real "open door" builtin (open_door_object)
        does a single, guarded `(quality & 0xf) + 8` -- one atomic
        closed(0-7) -> open(8-15) step, never incremented further (the
        guard `if (7 < (quality & 0xf)) return;` blocks any repeat) -- so
@@ -51576,10 +51557,10 @@ int param_3;
         }
         else if (uVar7 == 0xf) {
           if (((byte)param_2[3] & 0xf) < 8) {
-            FUN_0007c708(param_2);
+            open_door_object(param_2);
           }
           else {
-            FUN_0007c580(param_1,param_2);
+            close_door_object(param_1,param_2);
           }
         }
         goto LAB_00079cb8;
@@ -52504,11 +52485,11 @@ ushort * param_2;
         }
       }
       else if ((param_1 == g_player_object) || ((param_2[3] & 1) == 0)) {
-        FUN_0007c580(param_1,param_2);
+        close_door_object(param_1,param_2);
       }
     }
     else {
-      FUN_0007c708(param_2);
+      open_door_object(param_2);
     }
   }
   else if (uVar4 == 1) {
@@ -52668,102 +52649,6 @@ ushort * param_1;
   sVar1 = FUN_00081a84(param_1);
   if (-1 < sVar1) {
     FUN_00081abc(param_1,((int)sVar3 - (int)sVar1) * 0x10000 >> 0x10);
-  }
-  return;
-}
-
-
-
-void FUN_0007c580(param_1,param_2)
-char *param_1;
-ushort * param_2;
-
-{
-  ushort uVar1;
-  byte bVar2;
-  undefined4 uVar3;
-  ushort uVar4;
-  
-  if ((*param_2 & 0x1ff) == 0x1cf) {
-    uVar4 = param_2[3];
-    if ((uVar4 & 0xf) < 8) {
-      return;
-    }
-    *(byte *)(param_2 + 3) = ((char)(uVar4 & 0xf) - 8U ^ (byte)uVar4) & 0x3f ^ (byte)uVar4;
-    *(byte *)((char *)param_2 + 7) = (byte)(uVar4 >> 8);
-    FUN_0007c4a8(param_2);
-  }
-  else {
-    uVar4 = *param_2 & 0xf;
-    if (7 < uVar4) {
-      return;
-    }
-    uVar1 = param_2[3];
-    *(byte *)(param_2 + 3) = (byte)(uVar1 & 0xfffe);
-    *(byte *)((char *)param_2 + 7) = (byte)((uVar1 & 0xfffe) >> 8);
-    if (uVar4 != 6) {
-      uVar4 = param_2[1];
-      bVar2 = (byte)uVar4;
-      *(byte *)(param_2 + 1) = (bVar2 + 0x18 ^ bVar2) & 0x7f ^ bVar2;
-      *(byte *)((char *)param_2 + 3) = (byte)(uVar4 >> 8);
-    }
-    FUN_0007c2ec(param_1,param_2,7,(int)DAT_002020a0,DAT_002020a4);
-    FUN_0007c3f4(param_2);
-  }
-  uVar3 = 0x14;
-  if ((*param_2 & 7) != 6) {
-    uVar3 = 0xb;
-  }
-  FUN_00072c74(uVar3,(uint)(*(byte *)((char *)param_2 + 3) >> 5) + DAT_002020a0 * 8,
-               (*(byte *)((char *)param_2 + 3) >> 2 & 7) + DAT_002020a4 * 8,0);
-  return;
-}
-
-
-
-void FUN_0007c708(param_1)
-ushort * param_1;
-
-{
-  ushort uVar1;
-  undefined4 uVar2;
-  
-  if ((*param_1 & 0x1ff) == 0x1cf) {
-    uVar1 = param_1[3];
-    if (7 < (uVar1 & 0xf)) {
-      return;
-    }
-    *(byte *)(param_1 + 3) = ((char)(uVar1 & 0xf) + 8U ^ (byte)uVar1) & 0x3f ^ (byte)uVar1;
-    *(byte *)((char *)param_1 + 7) = (byte)(uVar1 >> 8);
-    FUN_0007c4a8(param_1);
-  }
-  else {
-    if ((*param_1 & 0xf) < 8) {
-      return;
-    }
-    FUN_0007c3f4(param_1);
-  }
-  uVar2 = 0x14;
-  if ((*param_1 & 7) != 6) {
-    uVar2 = 0xb;
-  }
-  FUN_00072c74(uVar2,(uint)(*(byte *)((char *)param_1 + 3) >> 5) + DAT_002020a0 * 8,
-               (*(byte *)((char *)param_1 + 3) >> 2 & 7) + DAT_002020a4 * 8,0);
-  return;
-}
-
-
-
-void FUN_0007c814(param_1,param_2)
-char *param_1;
-byte * param_2;
-
-{
-  if ((*param_2 & 0xf) < 8) {
-    FUN_0007c580();
-  }
-  else {
-    FUN_0007c708(param_2);
   }
   return;
 }
@@ -53216,18 +53101,18 @@ uint param_3;
       uVar4 = param_1[2] & 0x3f;
       if (uVar4 == 1) {
 LAB_0007dbc0:
-        FUN_0007c580(DAT_0024cff4,iVar16);
+        close_door_object(DAT_0024cff4,iVar16);
         return 2;
       }
       if (uVar4 != 2) {
         if (uVar4 == 3) {
-          FUN_0007c814(DAT_0024cff4,iVar16);
+          toggle_door_object(DAT_0024cff4,iVar16);
           return 2;
         }
         return 2;
       }
     }
-    FUN_0007c708(iVar16);
+    open_door_object(iVar16);
     return 2;
   case 9:
     goto LAB_0007dce4;
@@ -53738,7 +53623,7 @@ int param_1;
       DAT_002020a4 = local_1a;
       iVar2 = FUN_0007e6e0(param_1);
       if (iVar2 != 0) {
-        FUN_0007c708(pbVar1);
+        open_door_object(pbVar1);
       }
     }
     local_1c = local_1c + 1;

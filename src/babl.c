@@ -672,13 +672,13 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     DAT_002020a4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
     sVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
     if (sVar3 == 0) {
-      FUN_0007c580(0,iVar6);
+      close_door_object(0,iVar6);
     }
     else if (sVar3 == 1) {
-      FUN_0007c708(iVar6);
+      open_door_object(iVar6);
     }
     else if (sVar3 == 2) {
-      FUN_0007c814(0,iVar6);
+      toggle_door_object(0,iVar6);
     }
     uVar4 = 1;
     DAT_002020a0 = uVar1;

@@ -44,6 +44,7 @@ set(UW_SOURCES
   src/object_actions.c
   src/weapon_swing.c
   src/level.c
+  src/doors.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c
