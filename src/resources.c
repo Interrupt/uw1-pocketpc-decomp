@@ -197,7 +197,7 @@ void load_door_frames()
   } while (iVar3 < 6);
   DAT_00202744 = uVar1;
   DAT_00202748 = uVar2;
-  FUN_0007ec1c();
+  clear_ambient_sound_target();
   return;
 }
 

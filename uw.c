@@ -17056,7 +17056,7 @@ byte param_2;
 undefined4 FUN_00035dd8()
 
 {
-  FUN_0007ec1c();
+  clear_ambient_sound_target();
   DAT_00101960 = 3;
   return 3;
 }
@@ -17071,6 +17071,10 @@ void FUN_00035df8()
 
 
 
+// byte-identical duplicate body of clear_ambient_sound_target (was
+// FUN_0007ec1c) at a different address -- same split-symbol/naming-
+// collision pattern documented elsewhere in this file (e.g.
+// close_strings_pak_file vs thunk_FUN_00078e28).
 void thunk_FUN_0007ec1c()
 
 {
@@ -17630,7 +17634,7 @@ LAB_00036858:
   iVar12 = open_file_for_read(&DAT_00101968);
   local_5c = iVar12;
   if (iVar12 == -1) {
-    FUN_0007ec1c();
+    clear_ambient_sound_target();
   }
   else {
     iVar13 = read_file_handle(iVar12,puVar11,0x800);
@@ -20297,7 +20301,7 @@ void FUN_0003b820()
   undefined1 auStack_41c [520];
   undefined1 auStack_214 [520];
   
-  FUN_0007ea44(2);
+  start_ambient_sound_effect(2);
   init_string_resource_cache();
   init_level_object_arena();
   input_bindings_init();
@@ -20413,7 +20417,7 @@ void FUN_0003baf4()
   
   thunk_FUN_00057118();
   input_bindings_free();
-  FUN_0007eb34();
+  stop_ambient_sound_effect();
   FUN_000499a4();
   release_panel_wipe_grtiles();
   shutdown_sound_effects();
@@ -22099,7 +22103,7 @@ int param_1;
     (&DAT_0024ac18)[iVar8] = 0xff;
     iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
   } while (iVar8 < 0x80);
-  FUN_0007ec1c();
+  clear_ambient_sound_target();
   if (param_1 != 0) {
     /* Was pointed at the placeholder stack0xffdc3230 scalar (from an
        earlier undeclared-identifier pass) instead of the real 260-byte
@@ -22192,7 +22196,7 @@ void FUN_00040440()
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 0x80);
-  FUN_0007ec1c();
+  clear_ambient_sound_target();
   return;
 }
 
@@ -36517,92 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007ea44()
-
-{
-  int uw_ord2005_rem_169 = 0;
-  int iVar1;
-  int iVar2;
-  undefined4 uVar3;
-  int iVar4;
-  short extraout_r1;
-  
-  uVar3 = Ordinal_1053();
-  uw_ord2005_rem_169 = ((int)(uVar3)) % (8);
-  iVar1 = (uw_ord2005_rem_169 + 0x1b) * 0x20000 >> 0x10;
-  if (0 < iVar1) {
-    iVar4 = FUN_00049940(0x1e);
-    DAT_002506f0 = (short)iVar4;
-    iVar2 = (int)DAT_002506f0;
-    if (iVar2 == 0) {
-      FUN_0003c3b4(0x2001);
-    }
-    else {
-      if ((iVar2 < iVar1) && (0x23 < iVar2)) {
-        FUN_00049948();
-        iVar4 = FUN_00049940(0x1e,iVar4 + -6);
-        DAT_002506f0 = (short)iVar4;
-        if (DAT_002506f0 < 0x1e) {
-          FUN_0003c3b4(0x2002);
-          iVar4 = (int)DAT_002506f0;
-        }
-      }
-      FUN_0007eb70(iVar4);
-    }
-  }
-  DAT_002506ec = Ordinal_1041(0x10010);
-  if (DAT_002506ec == 0) {
-    FUN_0003c3b4(0x1007);
-  }
-  return;
-}
-
-
-
-void FUN_0007eb34()
-
-{
-  if (0 < DAT_002506f0) {
-    FUN_00049948();
-  }
-  if (DAT_002506ec != 0) {
-    Ordinal_1018();
-    DAT_002506ec = 0;
-  }
-  return;
-}
-
-
-
-void FUN_0007eb70(param_1)
-short param_1;
-
-{
-  DAT_0024d00c = 0x16;
-  DAT_0024fa18 = (short)(param_1 + -0x16 >> 1);
-  DAT_0024d008 = 0xff;
-  DAT_0024fa10 = 0xff;
-  DAT_0024d010 = 9;
-  DAT_0024d000 = 10;
-  DAT_0024f90c = 0xff;
-  DAT_0024fa28 = 0xff;
-  DAT_0024fa14 = DAT_002029c8;
-  return;
-}
-
-
-
-void FUN_0007ec1c()
-
-{
-  DAT_0024d008 = 0xff;
-  DAT_0024fa10 = 0xff;
-  DAT_0024f90c = 0xff;
-  return;
-}
-
-
-
 undefined4 FUN_0007ec50()
 
 {

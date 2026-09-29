@@ -1053,3 +1053,131 @@ void voice_sample_cluster_stub_2()
 {
   return;
 }
+
+
+// was FUN_0007ea44 -- probabilistically starts an ambient looping
+// sound effect: rolls a ~1-in-8-ish chance (Ordinal_1053 % 8), and if
+// it lands, tries to acquire an ambient-sound-class resource
+// (FUN_00049940(0x1e), not yet named -- reads as "get a free slot/
+// count for class 0x1e"). On failure to get any (result 0), reports a
+// fatal error (FUN_0003c3b4(0x2001), not yet named -- confirmed
+// elsewhere in this file as an Ordinal_1041-allocation-failure
+// handler, e.g. init_level_object_arena's FUN_0003c3b4(0x1002));
+// otherwise, if the acquired value is below the roll threshold and
+// above 0x23, releases it and retries with an adjusted count,
+// falling back to another fatal-error report if that retry still
+// comes up short. On success, calls init_ambient_sound_timing to set
+// up the effect's timing state. Regardless of the roll outcome,
+// always allocates a small (0x10010-flagged) buffer via Ordinal_1041,
+// reporting a third fatal-error code (0x1007) if that allocation
+// fails too -- this second half's exact purpose (distinct from the
+// ambient-sound roll above it) isn't confirmed.
+void start_ambient_sound_effect()
+
+{
+  int uw_ord2005_rem_169 = 0;
+  int iVar1;
+  int iVar2;
+  undefined4 uVar3;
+  int iVar4;
+  short extraout_r1;
+  
+  uVar3 = Ordinal_1053();
+  uw_ord2005_rem_169 = ((int)(uVar3)) % (8);
+  iVar1 = (uw_ord2005_rem_169 + 0x1b) * 0x20000 >> 0x10;
+  if (0 < iVar1) {
+    iVar4 = FUN_00049940(0x1e);
+    DAT_002506f0 = (short)iVar4;
+    iVar2 = (int)DAT_002506f0;
+    if (iVar2 == 0) {
+      FUN_0003c3b4(0x2001);
+    }
+    else {
+      if ((iVar2 < iVar1) && (0x23 < iVar2)) {
+        FUN_00049948();
+        iVar4 = FUN_00049940(0x1e,iVar4 + -6);
+        DAT_002506f0 = (short)iVar4;
+        if (DAT_002506f0 < 0x1e) {
+          FUN_0003c3b4(0x2002);
+          iVar4 = (int)DAT_002506f0;
+        }
+      }
+      init_ambient_sound_timing(iVar4);
+    }
+  }
+  DAT_002506ec = Ordinal_1041(0x10010);
+  if (DAT_002506ec == 0) {
+    FUN_0003c3b4(0x1007);
+  }
+  return;
+}
+
+
+
+// was FUN_0007eb34 -- the shutdown counterpart to
+// start_ambient_sound_effect: releases the acquired resource
+// (FUN_00049948, not yet named) when one is held (DAT_002506f0 > 0),
+// and stops the looping sound (Ordinal_1018) when one is playing
+// (DAT_002506ec != 0), clearing that handle afterward. Its only
+// confirmed caller runs during game shutdown, paired with
+// start_ambient_sound_effect(2)'s own call during game init.
+void stop_ambient_sound_effect()
+
+{
+  if (0 < DAT_002506f0) {
+    FUN_00049948();
+  }
+  if (DAT_002506ec != 0) {
+    Ordinal_1018();
+    DAT_002506ec = 0;
+  }
+  return;
+}
+
+
+
+// was FUN_0007eb70 -- initializes a 9-field ambient-sound-effect
+// state block (the DAT_0024d0xx/DAT_0024faxx globals; the two address
+// families suggest two parallel channels/slots), called by
+// start_ambient_sound_effect on a successful roll. param_1 seeds one
+// derived timing field (DAT_0024fa18); the rest are fixed constants.
+// The exact per-field meaning (delay, volume, pan?) isn't pinned down
+// beyond "ambient sound timing/target state" here.
+void init_ambient_sound_timing(param_1)
+short param_1;
+
+{
+  DAT_0024d00c = 0x16;
+  DAT_0024fa18 = (short)(param_1 + -0x16 >> 1);
+  DAT_0024d008 = 0xff;
+  DAT_0024fa10 = 0xff;
+  DAT_0024d010 = 9;
+  DAT_0024d000 = 10;
+  DAT_0024f90c = 0xff;
+  DAT_0024fa28 = 0xff;
+  DAT_0024fa14 = DAT_002029c8;
+  return;
+}
+
+
+
+// was FUN_0007ec1c -- resets 3 of init_ambient_sound_timing's 9
+// fields (the "target select" ones, all set to the sentinel 0xff)
+// without touching the other 6 timing fields. Called broadly across
+// level/character-creation transitions (src/chargen.c,
+// src/resources.c, and several not-yet-extracted uw.c call sites) to
+// avoid an ambient sound referencing a now-stale emitter. Has a
+// byte-identical duplicate at a different address, thunk_FUN_0007ec1c
+// (elsewhere in this file), left un-merged like this project's other
+// documented split-symbol duplicates.
+void clear_ambient_sound_target()
+
+{
+  DAT_0024d008 = 0xff;
+  DAT_0024fa10 = 0xff;
+  DAT_0024f90c = 0xff;
+  return;
+}
+
+
+

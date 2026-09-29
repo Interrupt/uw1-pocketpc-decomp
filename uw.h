@@ -1031,6 +1031,18 @@ extern undefined DAT_0007e644_backing[8192];
 #define DAT_0007e644 DAT_0007e644_backing[0]
 extern undefined DAT_00088640_backing[8192];
 #define DAT_00088640 DAT_00088640_backing[0]
+extern short DAT_002506f0;
+extern char *DAT_002506ec;
+extern undefined2 DAT_0024d00c;
+extern ushort DAT_0024fa18;
+extern undefined1 DAT_0024d008;
+extern undefined1 DAT_0024fa10;
+extern undefined1 DAT_0024d010;
+extern char DAT_0024d000;
+extern undefined1 DAT_0024f90c;
+extern char DAT_0024fa28;
+extern undefined2 DAT_0024fa14;
+extern undefined2 DAT_002029c8;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3510,10 +3522,10 @@ void reinstall_active_palette();
 void plot_pixel();
 void debug_print_init();
 void debug_print(char *param_1, ...);
-void FUN_0007ea44();
-void FUN_0007eb34();
-void FUN_0007eb70();
-void FUN_0007ec1c();
+void start_ambient_sound_effect();
+void stop_ambient_sound_effect();
+void init_ambient_sound_timing();
+void clear_ambient_sound_target();
 undefined4 FUN_0007ec50();
 char FUN_0007ec58();
 void FUN_0007ed20();
