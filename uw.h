@@ -2342,7 +2342,7 @@ void set_viewport_clip_rect();
 void draw_horizontal_line();
 void fill_viewport_and_flush();
 void blit_grtile_to_framebuffer();
-void FUN_000120c8();
+void blit_bitmap_to_framebuffer_clipped();
 void fade_in();
 void fade_out();
 void blit_raw_sprite_clipped();

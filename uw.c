@@ -6755,86 +6755,6 @@ undefined *PTR_Ordinal_35_000841cc;
 
 
 
-// WARNING: Globals starting with '_' overlap smaller symbols at the same address
-
-void FUN_000120c8(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
-short param_1;
-short param_2;
-/* Was `int`, truncating the real char* source-bitmap pointer callers
-   pass (e.g. DAT_001005c8) -- same role/bug as bitmap_blit_to_framebuffer's param_3. */
-char *param_3;
-short param_4;
-short param_5;
-short param_6;
-short param_7;
-int param_8;
-
-{
-  int iVar1;
-  int iVar2;
-  byte bVar3;
-  int iVar4;
-  byte *pbVar5;
-  int iVar6;
-  int iVar7;
-  
-  iVar4 = (int)param_1;
-  if ((int)DAT_000a85c4 <= param_5 + iVar4 + -1) {
-    if (iVar4 < DAT_000a85c4) {
-      iVar4 = (int)DAT_000a85c4;
-    }
-    if (iVar4 <= DAT_000842a4) {
-      if ((int)DAT_000a85c8 <= (int)param_4 + (int)param_2) {
-        if ((int)param_2 < (int)DAT_000a85c8) {
-          param_4 = (DAT_000a85c8 - param_2) + param_4;
-          param_2 = DAT_000a85c8;
-        }
-        iVar7 = (int)param_2;
-        if (iVar7 <= DAT_000842a8) {
-          if ((DAT_000842a8 - iVar7) + 1 < (int)param_4) {
-            param_4 = (DAT_000842a8 - param_2) + 1;
-          }
-          iVar1 = (int)param_5;
-          iVar2 = (int)param_4;
-          dirty_rect_union(iVar7,iVar2 + iVar7,iVar4,iVar1 + iVar4);
-          iVar4 = iVar7 * 0x140 + iVar4;
-          pbVar5 = (byte *)(param_7 * 0x140 + (int)param_6 + param_3);
-          iVar7 = 0;
-          if (0 < iVar2) {
-            do {
-              if (199 < iVar7) break;
-              iVar6 = 0;
-              if (0 < iVar1) {
-                do {
-                  if (0x13f < iVar6) break;
-                  bVar3 = *pbVar5;
-                  pbVar5 = pbVar5 + 1;
-                  if ((g_blit_transparent_mode & bVar3 == 0) == 0) {
-                    *(undefined2 *)((g_uw_framebuffer) + iVar4 * 2) =
-                         (&g_palette_rgb565)[bVar3];
-                  }
-                  iVar6 = iVar6 + 1;
-                  iVar4 = iVar4 + 1;
-                } while (iVar6 < iVar1);
-              }
-              iVar7 = iVar7 + 1;
-              if (param_6 != 0) {
-                pbVar5 = pbVar5 + (0x140 - iVar1);
-              }
-              iVar4 = (0x140 - iVar1) + iVar4;
-            } while (iVar7 < iVar2);
-          }
-          if (param_8 != 0) {
-            flush_dirty_rect_to_display(1);
-          }
-        }
-      }
-    }
-  }
-  debug_framebuffer_dump("FUN_000120c8");
-  return;
-}
-
 
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
@@ -9938,7 +9858,7 @@ void FUN_00023b38()
   rect_fill_or_save_restore(0x1e,0x85,0x7d,0xbc);
   FUN_00035df8(1);
   DAT_000fb858 = DAT_001005c8;
-  FUN_000120c8(0x1e,0x85,DAT_001005c8,0x37,0x5f,0x1e,0x85,1);
+  blit_bitmap_to_framebuffer_clipped(0x1e,0x85,DAT_001005c8,0x37,0x5f,0x1e,0x85,1);
   screen_backup_save();
   cursor_show_idle_tick();
   FUN_00035df8(0);
