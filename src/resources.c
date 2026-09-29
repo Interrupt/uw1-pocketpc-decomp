@@ -1355,7 +1355,7 @@ short param_7;
 // (0 = unsupported/returns NULL, 2/4/6/8/0xa are distinct bit-packed/
 // RLE decode paths, several confirmed live via real .GR data during
 // that investigation -- e.g. mode 8's RLE fill through
-// FUN_000132c4). Two confirmed real callers (decode_gr_entry_bitmap
+// decode_gr_rle_stream). Two confirmed real callers (decode_gr_entry_bitmap
 // and FUN_00040770) each independently had this exact "dropped
 // compression-mode argument" bug found and fixed in an earlier
 // session (see decode_gr_entry_bitmap's own HACK comment and
@@ -1550,14 +1550,14 @@ LAB_000130d0:
     DAT_000b4628 = pbVar5;
     DAT_000b461c = pbVar5;
     /* blit_sprite_row_remapped above resets DAT_000b4610 to the scratch
-       DAT_000842ac (memset to 0x0a) on the way out, but FUN_000132c4's RLE
+       DAT_000842ac (memset to 0x0a) on the way out, but decode_gr_rle_stream's RLE
        fill looks its run colours up through DAT_000b4610 -- for the RLE
        formats (6/8/0xa) that table is the auxiliary palette passed in
        param_2 (nibble -> 8-bit palette index). Ghidra dropped the setup;
        point it there so the sprite decodes to real colours instead of a
        flat 0x0a. */
     DAT_000b4610 = (byte *)param_2;
-    FUN_000132c4(uVar7,param_3,uVar8);
+    decode_gr_rle_stream(uVar7,param_3,uVar8);
     DAT_000b462c = DAT_000b4628;
   }
   return DAT_000b462c;
@@ -1616,4 +1616,170 @@ uint param_4;
   DAT_000b4610 = DAT_000b4614 + (uVar1 & 0xffff);
   DAT_000b4624 = DAT_000b4610;
   return;
+}
+
+
+// was FUN_000132c4 -- confirmed by decompress_gr_bitmap's own
+// pre-existing comment ("this function's RLE fill looks its run
+// colours up through DAT_000b4610") as the RLE-stream decoder behind
+// decompress_gr_bitmap's mode 6/8/0xa branches: reads a run-length/
+// tag-coded byte stream from the shared cursor (DAT_000b5630) and
+// writes resolved palette bytes (via DAT_000b4610, the shared
+// remap-table pointer select_gr_bitmap_remap_table sets up) into the
+// output cursor (DAT_000b461c), up to param_3 bytes of input.
+void decode_gr_rle_stream(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+uint param_3;
+
+{
+  bool bVar1;
+  undefined1 uVar2;
+  byte bVar3;
+  bool bVar4;
+  byte *pbVar5;
+  uint uVar6;
+  int iVar7;
+  uint uVar8;
+  uint uVar9;
+  byte *pbVar10;
+  uint uVar11;
+  
+  bVar4 = false;
+  DAT_000b4618 = DAT_000b5630 + (param_3 & 0xffff);
+  pbVar10 = DAT_000b5630;
+  uVar9 = 0;
+LAB_000132fc:
+  do {
+    if (pbVar10 < DAT_000b4618) {
+      DAT_000b5630 = pbVar10 + 1;
+      uVar11 = merge_byte_into_word(0,*pbVar10,0);
+      uVar8 = uVar11 & 0xff;
+      if (2 < uVar8) {
+        bVar3 = *DAT_000b5630;
+        DAT_000b5630 = DAT_000b5630 + 1;
+        uVar2 = *(undefined1 *)(DAT_000b4610 + (uint)bVar3);
+        iVar7 = 0;
+        do {
+          pbVar10 = DAT_000b5630;
+          if ((int)(uVar11 & 0xffff) <= iVar7) goto LAB_00013530;
+          iVar7 = iVar7 + 1;
+          *DAT_000b461c = uVar2;
+          DAT_000b461c = DAT_000b461c + 1;
+        } while( true );
+      }
+      if (uVar8 != 2) {
+        pbVar10 = DAT_000b5630;
+        if (uVar8 == 1) goto LAB_00013530;
+        bVar3 = *DAT_000b5630;
+        DAT_000b5630 = DAT_000b5630 + 1;
+        uVar11 = merge_byte_into_word(uVar11,bVar3,0);
+        if ((uVar11 & 0xff) != 0) {
+          uVar11 = (uVar11 & 0x7ff) << 4;
+          bVar3 = *DAT_000b5630;
+          DAT_000b5630 = DAT_000b5630 + 1;
+          uVar8 = merge_byte_into_word(uVar11,bVar3,0);
+          bVar3 = *DAT_000b5630;
+          DAT_000b5630 = DAT_000b5630 + 1;
+          uVar6 = merge_byte_into_word(uVar8,bVar3,0);
+          uVar2 = *(undefined1 *)(DAT_000b4610 + (uVar6 & 0xffff));
+          uVar11 = uVar8 & 0xffff | uVar11;
+          pbVar10 = DAT_000b5630;
+          do {
+            DAT_000b5630 = pbVar10;
+            if (uVar11 == 0) goto LAB_00013530;
+            uVar11 = uVar11 - 1;
+            *DAT_000b461c = uVar2;
+            DAT_000b461c = DAT_000b461c + 1;
+            pbVar10 = DAT_000b5630;
+          } while( true );
+        }
+        bVar3 = *DAT_000b5630;
+        DAT_000b5630 = DAT_000b5630 + 1;
+        uVar11 = merge_byte_into_word((uint)bVar3 << 4,(uint)bVar3 << 4 & 0xff | (uint)*DAT_000b5630,0);
+        uVar11 = merge_byte_into_word((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[1] | (uVar11 & 0xf) << 4,0);
+        uVar11 = merge_byte_into_word((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[2] | (uVar11 & 0xf) << 4,0);
+        pbVar10 = DAT_000b5630 + 3;
+        DAT_000b5630 = DAT_000b5630 + 4;
+        uVar8 = merge_byte_into_word(uVar11,*pbVar10,0);
+        uVar2 = *(undefined1 *)((uVar8 & 0xff) + DAT_000b4610);
+        uVar11 = uVar11 & 0xffff;
+        pbVar10 = DAT_000b5630;
+        do {
+          DAT_000b5630 = pbVar10;
+          if (uVar11 == 0) goto LAB_00013530;
+          uVar11 = uVar11 - 1;
+          *DAT_000b461c = uVar2;
+          DAT_000b461c = DAT_000b461c + 1;
+          pbVar10 = DAT_000b5630;
+        } while( true );
+      }
+      bVar4 = true;
+      uVar9 = (uint)*DAT_000b5630;
+      pbVar10 = DAT_000b5630 + 1;
+      pbVar5 = pbVar10;
+      if (uVar9 == 0) {
+        bVar3 = *pbVar10;
+        pbVar5 = DAT_000b5630 + 2;
+        if (bVar3 == 0) {
+          DAT_000b5630 = DAT_000b5630 + 3;
+          uVar9 = (uint)*pbVar5 << 4;
+          uVar9 = merge_byte_into_word(uVar9,uVar9 & 0xff | (uint)*DAT_000b5630,0);
+          uVar9 = merge_byte_into_word((uVar9 & 0x7ff) << 4,(uint)DAT_000b5630[1] | (uVar9 & 0xf) << 4,0);
+          uVar9 = merge_byte_into_word((uVar9 & 0x7ff) << 4,(uint)DAT_000b5630[2] | (uVar9 & 0xf) << 4,0);
+          pbVar10 = DAT_000b5630 + 3;
+          uVar9 = uVar9 & 0xffff;
+          pbVar5 = pbVar10;
+        }
+        else {
+          pbVar10 = DAT_000b5630 + 3;
+          uVar9 = (uint)*pbVar5 | (uint)bVar3 << 4;
+          pbVar5 = pbVar10;
+        }
+      }
+    }
+    else {
+      pbVar5 = DAT_000b5630;
+      if ((int)uVar9 < 1) {
+        return;
+      }
+    }
+    do {
+      DAT_000b5630 = pbVar5;
+      uVar11 = uVar9 - 1;
+      bVar1 = 0 < (int)uVar9;
+      uVar9 = uVar11;
+      if (bVar1) goto LAB_000132fc;
+      bVar4 = false;
+LAB_00013530:
+      pbVar5 = DAT_000b5630;
+    } while (bVar4);
+    uVar11 = (uint)*pbVar10;
+    DAT_000b5630 = pbVar10 + 1;
+    if (uVar11 == 0) {
+      DAT_000b5630 = pbVar10 + 2;
+      uVar11 = merge_byte_into_word(0,pbVar10[1],0);
+      if ((uVar11 & 0xff) == 0) {
+        bVar3 = *DAT_000b5630;
+        DAT_000b5630 = DAT_000b5630 + 1;
+        uVar11 = merge_byte_into_word((uint)bVar3 << 4,(uint)bVar3 << 4 & 0xff | (uint)*DAT_000b5630,0);
+        uVar11 = merge_byte_into_word((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[1] | (uVar11 & 0xf) << 4,0);
+        uVar11 = merge_byte_into_word((uVar11 & 0x7ff) << 4,(uint)DAT_000b5630[2] | (uVar11 & 0xf) << 4,0);
+        uVar11 = uVar11 & 0xff;
+        DAT_000b5630 = DAT_000b5630 + 3;
+      }
+      else {
+        uVar11 = (uVar11 & 0x7ff) << 4;
+        bVar3 = *DAT_000b5630;
+        DAT_000b5630 = DAT_000b5630 + 1;
+        uVar8 = merge_byte_into_word(uVar11,bVar3,0);
+        uVar11 = uVar8 & 0xffff | uVar11;
+      }
+    }
+    for (; pbVar10 = DAT_000b5630, DAT_000b5630 = pbVar10, uVar11 != 0; uVar11 = uVar11 - 1) {
+      DAT_000b5630 = pbVar10 + 1;
+      *DAT_000b461c = *(undefined1 *)(DAT_000b4610 + (uint)*pbVar10);
+      DAT_000b461c = DAT_000b461c + 1;
+    }
+  } while( true );
 }

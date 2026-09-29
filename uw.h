@@ -2360,7 +2360,7 @@ byte *decompress_gr_bitmap();
 uint merge_byte_into_word();
 void select_gr_bitmap_remap_table();
 void blit_sprite_row_remapped();
-void FUN_000132c4();
+void decode_gr_rle_stream();
 int FUN_00013774();
 void FUN_000137c0();
 void FUN_00013904();
