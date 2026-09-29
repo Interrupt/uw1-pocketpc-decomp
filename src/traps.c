@@ -778,3 +778,40 @@ undefined4 param_1;
 
 
 
+
+
+// was FUN_0007e6e0 -- returns 1 when param_1 is 0, or when the tile
+// (param_2,param_3) is more than 7 tiles away from the player's own
+// view tile (g_player_object+0x16, matching the "current view tile"
+// field used throughout this file) on either axis; returns 0 when
+// param_1 is nonzero AND the tile is within 7 tiles on both axes.
+// Both confirmed callers (FUN_0007e778, a world-object trap-trigger
+// sweep, and FUN_0007e85c's door-trigger sweep, both not yet named)
+// only
+// act on their own effect (dispatch_trap_type_effect /
+// open_door_object) when this returns nonzero, i.e. when the tile is
+// NOT near the player -- reads as "only fire background/ambient
+// triggers when the player isn't standing right there to see it",
+// though the exact rationale isn't confirmed beyond that pattern.
+undefined4 is_out_of_player_range(param_1,param_2,param_3)
+int param_1;
+short param_2;
+short param_3;
+
+{
+  uint uVar1;
+  undefined4 uVar2;
+  uint uVar3;
+  
+  if (((param_1 == 0) ||
+      (uVar3 = (int)(short)(*(ushort *)((char *)g_player_object + 0x16) >> 10) - (int)param_2,
+      uVar1 = (int)uVar3 >> 0x1f, 7 < (int)((uVar3 ^ uVar1) - uVar1))) ||
+     (uVar3 = (int)(short)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) - (int)param_3,
+     uVar1 = (int)uVar3 >> 0x1f, uVar2 = 0, 7 < (int)((uVar3 ^ uVar1) - uVar1))) {
+    uVar2 = 1;
+  }
+  return uVar2;
+}
+
+
+

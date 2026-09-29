@@ -3500,7 +3500,7 @@ undefined4 create_scripted_trap_pair_at_tile();
 void remove_trap_chain_marker();
 void free_trap_class_object();
 undefined4 check_object_area_for_spawn_block();
-undefined4 FUN_0007e6e0();
+undefined4 is_out_of_player_range();
 void FUN_0007e778();
 void FUN_0007e85c();
 void FUN_0007e998();

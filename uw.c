@@ -36517,28 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-undefined4 FUN_0007e6e0(param_1,param_2,param_3)
-int param_1;
-short param_2;
-short param_3;
-
-{
-  uint uVar1;
-  undefined4 uVar2;
-  uint uVar3;
-  
-  if (((param_1 == 0) ||
-      (uVar3 = (int)(short)(*(ushort *)((char *)g_player_object + 0x16) >> 10) - (int)param_2,
-      uVar1 = (int)uVar3 >> 0x1f, 7 < (int)((uVar3 ^ uVar1) - uVar1))) ||
-     (uVar3 = (int)(short)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4) - (int)param_3,
-     uVar1 = (int)uVar3 >> 0x1f, uVar2 = 0, 7 < (int)((uVar3 ^ uVar1) - uVar1))) {
-    uVar2 = 1;
-  }
-  return uVar2;
-}
-
-
-
 void FUN_0007e778(param_1)
 undefined4 param_1;
 
@@ -36561,7 +36539,7 @@ undefined4 param_1;
         uVar1 = *(undefined2 *)(iVar3 + 0xd);
         *(char *)(iVar3 + 0xd) = (char)uVar1;
         *(byte *)(iVar3 + 0xe) = (byte)((ushort)uVar1 >> 8) | 1;
-        iVar3 = FUN_0007e6e0(param_1,(int)local_14,(int)local_12);
+        iVar3 = is_out_of_player_range(param_1,(int)local_14,(int)local_12);
         if (iVar3 != 0) {
           dispatch_trap_type_effect(iVar2,(int)local_14,(int)local_12);
         }
@@ -36595,7 +36573,16 @@ int param_1;
        (iVar2 = rand_below(10), iVar2 < 3)) {
       DAT_002020a0 = local_1c;
       DAT_002020a4 = local_1a;
-      iVar2 = FUN_0007e6e0(param_1);
+      /* HACK: was a bare `FUN_0007e6e0(param_1);` -- dropped
+         arguments, the same class of bug fixed repeatedly elsewhere in
+         this file. is_out_of_player_range takes exactly three params
+         (an acting object plus a tile x/y), and its sibling caller
+         FUN_0007e778 (just above) calls it with its own loop tile
+         coordinates in this exact position; this loop's own
+         local_1c/local_1a (the tile just scanned, freshly stored into
+         DAT_002020a0/DAT_002020a4 the lines above) are obviously the
+         intended arguments here. */
+      iVar2 = is_out_of_player_range(param_1,(int)local_1c,(int)local_1a);
       if (iVar2 != 0) {
         open_door_object(pbVar1);
       }
