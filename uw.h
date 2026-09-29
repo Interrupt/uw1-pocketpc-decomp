@@ -966,6 +966,63 @@ extern undefined4 DAT_000d9ed8_arr[512];
 #define DAT_000c8af8 DAT_000c8ac0_mtx[14]
 #define DAT_000d9930 (DAT_000d9930_arr[0])
 #define DAT_000d9ed8 (DAT_000d9ed8_arr[0])
+/* Globals defined in uw.c but also used by functions that now live in
+   player.c (player state/movement/save persistence) -- extern'd here
+   so both translation units see the same storage. */
+extern undefined4 DAT_000858a0;
+extern undefined1 DAT_00085d20_backing[65536];
+#define DAT_00085d20 DAT_00085d20_backing[0]
+extern undefined1 DAT_00086da8;
+extern byte DAT_001013a4;
+extern short DAT_00201c70;
+extern undefined2 DAT_00201c78;
+extern short DAT_00202080;
+extern short DAT_00202088;
+extern undefined4 DAT_002020d8;
+extern uint DAT_002020e4;
+extern byte DAT_002020e8;
+extern byte * DAT_00202c6c;
+extern undefined1 DAT_00203303;
+extern undefined2 DAT_00203304;
+extern undefined2 DAT_002048b0_backing[8192];
+#define DAT_002048b0 DAT_002048b0_backing[0]
+extern undefined2 DAT_002048b2;
+extern undefined1 * DAT_002048b8;
+extern char * DAT_0023b82c;
+extern undefined4 DAT_0023bc98;
+extern undefined1 DAT_0023bca8_backing[8192];
+#define DAT_0023bca8 DAT_0023bca8_backing[0]
+extern undefined2 DAT_0023be98;
+extern undefined4 DAT_0023bea8;
+extern short DAT_0023beb4;
+extern unsigned char DAT_00085ac8_backing[16];
+#define g_light_source_slots DAT_00085ac8_backing[0]
+extern undefined1 * g_save_equip_table_ptr;
+extern undefined1 * g_save_record_base_ptr;
+extern char * g_save_record_buffer;
+extern byte * g_scratch_object_ptr;
+extern char s_player_dat_00085a74[];
+extern undefined1 DAT_00202800_backing[65536];
+extern undefined1 DAT_00204880_backing[128];
+#define DAT_00202806 DAT_00202800_backing[6]
+#define DAT_00204880 (*(short *)&DAT_00204880_backing[0])
+#define DAT_00204882 (*(short *)&DAT_00204880_backing[2])
+#define DAT_00204884 (*(short *)&DAT_00204880_backing[4])
+#define DAT_00204886 (*(short *)&DAT_00204880_backing[6])
+#define DAT_00204888 (*(short *)&DAT_00204880_backing[8])
+#define DAT_0020488c (*(short *)&DAT_00204880_backing[0xc])
+#define DAT_0020488e (*(short *)&DAT_00204880_backing[0xe])
+#define DAT_00204896 DAT_00204880_backing[0x16]
+#define DAT_00204897 DAT_00204880_backing[0x17]
+#define DAT_002048a1 DAT_00204880_backing[0x21]
+#define DAT_002048a3 DAT_00204880_backing[0x23]
+#define DAT_002048a4 DAT_00204880_backing[0x24]
+#define DAT_002048a7 DAT_00204880_backing[0x27]
+#define DAT_002048a8 DAT_00204880_backing[0x28]
+#define DAT_002048a9 DAT_00204880_backing[0x29]
+#define g_fall_accel (*(short *)&DAT_00204880_backing[0x10])
+#define g_jump_ascent_timer (*(short *)&DAT_00204880_backing[0x14])
+#define g_vertical_velocity (*(short *)&DAT_00204880_backing[0xa]) // was DAT_0020488a
 
 
 
@@ -1010,6 +1067,7 @@ void set_ambient_bias_without_light();
 void raster_triangle();
 void vec3_sub();
 void vec3_cross();
+undefined4 check_and_reset_landing_state();
 int raster_edge_step();
 void raster_triangle_perspective_setup();
 void raster_edge_setup();
@@ -2265,6 +2323,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/combat.h"
 #include "src/headers/bitmap.h"
 #include "src/headers/3d.h"
+#include "src/headers/player.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
