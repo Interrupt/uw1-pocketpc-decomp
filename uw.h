@@ -3419,7 +3419,7 @@ undefined1 *decode_strings_pak_entry();
 undefined1 walk_strings_pak_huffman_tree();
 int read_strings_pak_bit();
 undefined4 empty_container_into_world();
-void FUN_0007931c();
+void drop_creature_inventory_on_death();
 void FUN_00079350();
 void FUN_0007955c();
 void FUN_000795cc();

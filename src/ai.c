@@ -726,7 +726,7 @@ LAB_00033830:
       object_list_unlink(iVar5 + 2,DAT_0010190c);
       FUN_000798c4(DAT_0010190c);
       FUN_0002b258(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
-      FUN_0007931c(DAT_0010190c);
+      drop_creature_inventory_on_death(DAT_0010190c);
       free_object_slot(DAT_0010190c);
       return 0;
     }
@@ -1376,3 +1376,20 @@ ushort * param_1;
   return puVar9;
 }
 
+
+
+
+
+
+// was FUN_0007931c -- empties a dead creature's inventory into the
+// world, capping the number of items dropped via a per-monster-class
+// value (DAT_001007d9, indexed by the creature's type, 0x30-byte
+// stride -- see g_monster_max_stats_table's own comment for this
+// same table). Confirmed real caller: src/ai.c's death handling.
+void drop_creature_inventory_on_death(param_1)
+byte * param_1;
+
+{
+  empty_container_into_world(param_1,(&DAT_001007d9)[(*param_1 & 0x3f) * 0x30]);
+  return;
+}

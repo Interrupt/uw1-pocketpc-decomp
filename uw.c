@@ -36512,16 +36512,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007931c(param_1)
-byte * param_1;
-
-{
-  empty_container_into_world(param_1,(&DAT_001007d9)[(*param_1 & 0x3f) * 0x30]);
-  return;
-}
-
-
-
 void FUN_00079350(param_1)
 char *param_1;  /* was `int` -- truncated the real object pointer FUN_000798c4
                    passes in (on this 64-bit build), corrupting the address
