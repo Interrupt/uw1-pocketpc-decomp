@@ -41,6 +41,7 @@ set(UW_SOURCES
   src/text.c
   src/collision.c
   src/input.c
+  src/object_actions.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

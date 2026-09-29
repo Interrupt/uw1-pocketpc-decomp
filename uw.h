@@ -1590,6 +1590,22 @@ extern undefined DAT_00250658;
 extern int g_click_region_handler_n;
 extern int g_keybind_handler_n;
 extern short g_movement_mode;
+/* Globals defined in uw.c but also used by functions that now live in
+   object_actions.c (object action dispatch, critter sprite tier/page,
+   placement/combination checks) -- extern'd here so both translation
+   units see the same storage. */
+extern ushort DAT_002022f8;
+extern int DAT_002022fc;
+extern ushort DAT_00202300;
+extern ushort DAT_00202304;
+extern ushort DAT_00202508;
+#define DAT_00202c9b DAT_00202c90_backing[0xb]
+extern undefined1 DAT_0023ce70_backing[8192];
+#define DAT_0023ce70 DAT_0023ce70_backing[0]
+extern undefined1 DAT_0023ce71;
+extern ushort g_player_max_carry_weight;
+extern char s_belonging_to_00085c90[];
+extern char s_You_see_000858fc[];
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -1788,6 +1804,9 @@ void *alloc_door_frame_buffer();
 ushort collision_neighbor_shade_or_zero(ushort *base, byte idx);
 int uw_always_show_cursor(void);
 int uw_turn_rate_accel(void);
+undefined4 decode_critter_sprite_page();
+undefined4 resolve_critter_sprite_tier();
+byte *uw_load_critter_page_cached(int param_1, int param_2);
 void scroll_container_grid_up(void);
 void scroll_container_grid_down(void);
 int raster_edge_step();
@@ -3060,6 +3079,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/text.h"
 #include "src/headers/collision.h"
 #include "src/headers/input.h"
+#include "src/headers/object_actions.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
