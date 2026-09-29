@@ -134,7 +134,7 @@ void interact_look()
     sVar1 = roll_container_lockpick_check(g_interact_target,*(undefined1 *)(DAT_00086df8 + 0x2c));
     if (0 < sVar1) {
       local_18 = 1;
-      sVar1 = FUN_00080828(0,0xf4,&local_18);
+      sVar1 = prompt_yes_no_scroll(0,0xf4,&local_18);
       if ((sVar1 != 0) && (sVar1 < 4)) {
         local_18 = (uint)(sVar1 == 2);
         /* HACK: was a bare `echo_yes_no_to_scroll();` -- dropped

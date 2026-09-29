@@ -3566,7 +3566,7 @@ void msg_scroll_panel_reset();
 void echo_number_to_scroll();
 void echo_yes_no_to_scroll();
 undefined4 scroll_text_entry_prompt();
-undefined4 FUN_00080828();
+undefined4 prompt_yes_no_scroll();
 void scheduler_despawn_entry();
 void scheduler_remove_entry();
 void scheduler_finish_entry();

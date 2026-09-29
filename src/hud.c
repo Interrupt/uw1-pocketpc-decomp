@@ -4211,3 +4211,80 @@ LAB_0008062c:
 
 
 
+
+
+// was FUN_00080828 -- interactive yes/no scroll prompt: prints the
+// question (either param_1 directly, or print_scroll_message_by_id
+// on param_2 when param_1 is 0), echoes the current default answer
+// (*param_3) as "Yes"/"No", then loops on input: y/Y/n/N toggle and
+// re-echo the live answer; Enter/click/1/2/3 confirm with the current
+// answer written back to *param_3; Esc cancels (forces *param_3 to
+// 0/"No" and returns -1). Confirmed by its own two call sites
+// (echo_yes_no_to_scroll(0)/(iVar4) matching the exact "toggle and
+// re-echo" pattern) as the prompt behind those echo calls.
+undefined4 prompt_yes_no_scroll(param_1,param_2,param_3)
+int param_1;
+undefined4 param_2;
+int * param_3;
+
+{
+  short sVar1;
+  undefined *puVar2;
+  undefined4 uVar3;
+  int iVar4;
+  int iVar5;
+  
+  iVar5 = *param_3;
+  select_msg_scroll_mode_normal();
+  *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
+  if (param_1 == 0) {
+    print_scroll_message_by_id(param_2);
+  }
+  else {
+    message_scroll_print_wrapped(param_1);
+  }
+  DAT_0025070c = *(undefined2 *)(DAT_00250704 + 8);
+  if (*param_3 == 0) {
+    puVar2 = &s_No_0008799c;
+  }
+  else {
+    puVar2 = &s_Yes_000879a0;
+  }
+  message_scroll_print_wrapped(puVar2);
+  FUN_00057118();
+  wait_for_click_release(0);
+  while( true ) {
+    uVar3 = next_input_event();
+    sVar1 = (short)uVar3;
+    if ((((sVar1 == 0xd) || (sVar1 == 0x1b)) || (sVar1 == 1)) || ((sVar1 == 2 || (sVar1 == 3)))) {
+      cursor_show_idle_tick();
+      if (sVar1 == 0x1b) {
+        echo_yes_no_to_scroll(0);
+        *param_3 = 0;
+        uVar3 = 0xffffffff;
+      }
+      else {
+        *param_3 = iVar5;
+      }
+      return uVar3;
+    }
+    flush_dirty_rect_to_display(1);
+    if (sVar1 == 0x4e) break;
+    if (sVar1 == 0x59) goto LAB_0008090c;
+    if (sVar1 == 0x6e) break;
+    if (sVar1 == 0x79) {
+LAB_0008090c:
+      iVar4 = 1;
+LAB_00080918:
+      if (iVar4 != iVar5) {
+        echo_yes_no_to_scroll(iVar4);
+        iVar5 = iVar4;
+      }
+    }
+  }
+  iVar4 = 0;
+  goto LAB_00080918;
+}
+
+
+
