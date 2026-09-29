@@ -3385,3 +3385,77 @@ void draw_stats_panel_content()
   cursor_show_idle_tick();
   return;
 }
+
+
+
+
+
+// was FUN_00078434 -- handles a click on the stats panel's skill
+// list, scrolling it up or down by one (DAT_0024af80, the skill
+// scroll offset draw_stats_panel_skill_row reads) depending on click
+// position relative to DAT_00085a6c. Already had an existing comment
+// documenting a real dropped-argument bug already fixed here (a
+// scroll-direction bug -- "scrolling jumps somewhere else instead of
+// line by line"). Confirmed real caller: src/inventory.c's panel-
+// click dispatch.
+void handle_stats_panel_skill_scroll_click()
+
+{
+  undefined2 uVar1;
+  short sVar2;
+  uint uVar3;
+  ushort local_c [2];
+  
+  select_active_font(s_font5x6i_sys_00086e98);
+  *g_draw_color_index = 0x68;
+  *DAT_00084298 = 0x68;
+  if (DAT_00085a6c[1] < 8) {
+    local_c[0] = (ushort)DAT_0024af80;
+    sVar2 = -1;
+    if (0x24 < *DAT_00085a6c) {
+      sVar2 = 1;
+    }
+    uVar1 = 0xe;
+    if (sVar2 != 1) {
+      uVar1 = 0;
+    }
+    /* Was `step_value_toward_limit(local_c,uVar1,1);` -- dropped its 4th
+       argument (direction, -1/+1), the SAME `sVar2` value just
+       computed above from the click position but about to be
+       clobbered by this very call's own return value (Ghidra reused
+       the variable slot). step_value_toward_limit's own body branches on
+       param_4==-1 vs anything else to pick which bound check and
+       which sign to apply, so a dropped/garbage direction here could
+       clamp against the wrong bound or step the wrong way --
+       confirmed as the cause of "scrolling jumps somewhere else
+       instead of line by line". Re-derive the direction explicitly
+       instead of relying on the leftover register. */
+    sVar2 = step_value_toward_limit(local_c,uVar1,1,(0x24 < *DAT_00085a6c) ? 1 : -1);
+    if (sVar2 != 0) {
+      DAT_0024af80 = (byte)local_c[0];
+      FUN_00057118();
+      uVar3 = 0;
+      local_c[0] = 0;
+      do {
+        draw_stats_panel_skill_row(uVar3 & 0xff);
+        uVar3 = (int)(short)local_c[0] + 1;
+        local_c[0] = (ushort)uVar3;
+      } while ((int)(uVar3 * 0x10000) >> 0x10 < 6);
+      cursor_show_idle_tick();
+    }
+  }
+  select_active_font(s_font5x6p_sys_0008430c);
+  wait_for_click_release(1);
+  return;
+}
+
+
+
+void refresh_stats_panel_if_active()
+
+{
+  if (g_active_hud_panel == '\x02') {
+    redraw_active_hud_panel();
+  }
+  return;
+}

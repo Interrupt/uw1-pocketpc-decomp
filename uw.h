@@ -3373,7 +3373,7 @@ void draw_mana_stat_display();
 void draw_experience_points_display();
 void draw_stats_panel_skill_row();
 void draw_stats_panel_content();
-void FUN_00078434();
+void handle_stats_panel_skill_scroll_click();
 void refresh_stats_panel_if_active();
 undefined4 FUN_0007856c();
 void thunk_FUN_00078e28();

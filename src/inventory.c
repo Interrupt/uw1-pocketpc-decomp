@@ -81,7 +81,7 @@ void inventory_panel_click_region()
     FUN_0004497c();
   }
   else if (g_active_hud_panel == '\x02') {
-    FUN_00078434();
+    handle_stats_panel_skill_scroll_click();
   }
   return;
 }
