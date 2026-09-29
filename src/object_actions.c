@@ -2526,3 +2526,89 @@ uint * param_4;
 
 
 
+
+
+// was FUN_0007cc30 -- called by src/player.c's equip-effect refresh
+// loop right after apply_equipped_item_effect succeeds for an
+// equipped item; only acts when the item's flags word has bit 0x8000
+// set (the same gating bit resolve_object_variant_or_special_link
+// checks first). Under a specific class-bits condition (comparing
+// bits 0x1000/0x1c0 against a 0x140 sentinel), clears bit 0x1000 from
+// the item's flags word. Reads as "consume/clear a one-shot special-
+// item marker once its effect has been applied this refresh", but the
+// exact meaning of bit 0x1000 itself isn't pinned down further here.
+void clear_object_pending_special_flag(param_1)
+ushort * param_1;
+
+{
+  ushort uVar1;
+  uint uVar2;
+  uint uVar3;
+  uint uVar4;
+  bool bVar5;
+  
+  uVar1 = *param_1;
+  uVar3 = (uint)uVar1;
+  if ((uVar1 & 0x8000) != 0) {
+    uVar4 = uVar3 & 0x1000;
+    bVar5 = (uVar1 & 0x1000) != 0;
+    uVar2 = uVar3;
+    if (bVar5) {
+      uVar4 = uVar3 & 0x1c0;
+      uVar2 = 0x140;
+    }
+    if (bVar5 && uVar4 != uVar2) {
+      *(char *)param_1 = (char)(uVar3 & 0xefff);
+      *(char *)((char *)param_1 + 1) = (char)((uVar3 & 0xefff) >> 8);
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_0007cc78 -- trigger_object_use_babl_script's "finalize" step
+// for the interacting object (src/item_use.c's own comment already
+// names this function). Looks up param_1's linked/special sub-object
+// via the same FUN_000537d0 quality-link resolver
+// resolve_object_variant_or_special_link uses, and if that linked
+// object's byte+1 bit 3 (0x8) is set, reads its quality/charge field
+// (ushort at +4). When the low-6-bit charge count is already 0, rolls
+// a 1-in-~2.5 chance (rand_below(10) < 4) to destroy the linked object
+// outright (object_list_unlink + free_object_slot); otherwise
+// decrements just the low 6 bits of the charge byte, leaving the
+// upper bits untouched. Matches the "consume a discrete use/charge
+// count, destroying the object once exhausted" pattern used elsewhere
+// for depletable linked resources.
+void consume_linked_special_object_charge(param_1)
+int param_1;
+
+{
+  ushort uVar1;
+  byte bVar2;
+  int iVar3;
+  int iVar4;
+  ushort *local_c;
+  
+  if (((((*(byte *)(param_1 + 1) & 0x80) == 0) &&
+       (local_c = (ushort *)(param_1 + 6), (*local_c & 0xffc0) != 0)) &&
+      (iVar3 = FUN_000537d0(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
+    uVar1 = *(ushort *)(iVar3 + 4);
+    if ((uVar1 & 0x3f) == 0) {
+      iVar4 = rand_below(10);
+      if (iVar4 < 4) {
+        object_list_unlink(local_c,iVar3);
+        free_object_slot(iVar3);
+      }
+    }
+    else {
+      bVar2 = (byte)uVar1;
+      *(byte *)(iVar3 + 4) = (bVar2 - 1 ^ bVar2) & 0x3f ^ bVar2;
+      *(char *)(iVar3 + 5) = (char)(uVar1 >> 8);
+    }
+  }
+  return;
+}
+
+
+

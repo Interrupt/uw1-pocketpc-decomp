@@ -2168,14 +2168,15 @@ ushort * param_2;
 // was FUN_0007c1bc -- a shared "finalize object use" step called at
 // the end of virtually every use-object interaction path
 // (use_object_on_target, use_readable_item, dispatch_world_object_
-// interaction_by_family): checks resolve_object_variant_or_special_link (not yet named) for a
-// real link/description on the target (param_4), then either
+// interaction_by_family): checks resolve_object_variant_or_special_link
+// for a real link/description on the target (param_4), then either
 // triggers a babl conversation script (FUN_00039d1c) for the
 // player-only case, or -- gated on a per-player cooldown counter
 // (DAT_0024cfc8 vs a player field at offset +0xce) -- does the same
 // for the interacting object (param_3) and finalizes via
-// FUN_0007cc78; plays a "denied" sound effect if the cooldown hasn't
-// elapsed yet. Returns whether the script actually fired.
+// consume_linked_special_object_charge; plays a "denied" sound effect
+// if the cooldown hasn't elapsed yet. Returns whether the script
+// actually fired.
 undefined4 trigger_object_use_babl_script(param_1,param_2,param_3,param_4,param_5)
 undefined4 param_1;
 undefined4 param_2;
@@ -2203,7 +2204,7 @@ int param_5;
         puVar2 = param_3;
 LAB_0007c2b8:
         FUN_00039d1c(param_1,param_2,puVar2,param_3,local_1a,local_1c);
-        FUN_0007cc78(param_4);
+        consume_linked_special_object_charge(param_4);
         return 1;
       }
       play_sound_effect_with_pan(0x15,0x40,0);

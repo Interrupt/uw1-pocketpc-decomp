@@ -36517,68 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007cc30(param_1)
-ushort * param_1;
-
-{
-  ushort uVar1;
-  uint uVar2;
-  uint uVar3;
-  uint uVar4;
-  bool bVar5;
-  
-  uVar1 = *param_1;
-  uVar3 = (uint)uVar1;
-  if ((uVar1 & 0x8000) != 0) {
-    uVar4 = uVar3 & 0x1000;
-    bVar5 = (uVar1 & 0x1000) != 0;
-    uVar2 = uVar3;
-    if (bVar5) {
-      uVar4 = uVar3 & 0x1c0;
-      uVar2 = 0x140;
-    }
-    if (bVar5 && uVar4 != uVar2) {
-      *(char *)param_1 = (char)(uVar3 & 0xefff);
-      *(char *)((char *)param_1 + 1) = (char)((uVar3 & 0xefff) >> 8);
-    }
-  }
-  return;
-}
-
-
-
-void FUN_0007cc78(param_1)
-int param_1;
-
-{
-  ushort uVar1;
-  byte bVar2;
-  int iVar3;
-  int iVar4;
-  ushort *local_c;
-  
-  if (((((*(byte *)(param_1 + 1) & 0x80) == 0) &&
-       (local_c = (ushort *)(param_1 + 6), (*local_c & 0xffc0) != 0)) &&
-      (iVar3 = FUN_000537d0(&local_c,0,4,2,0), iVar3 != 0)) && ((*(byte *)(iVar3 + 1) & 8) != 0)) {
-    uVar1 = *(ushort *)(iVar3 + 4);
-    if ((uVar1 & 0x3f) == 0) {
-      iVar4 = rand_below(10);
-      if (iVar4 < 4) {
-        object_list_unlink(local_c,iVar3);
-        free_object_slot(iVar3);
-      }
-    }
-    else {
-      bVar2 = (byte)uVar1;
-      *(byte *)(iVar3 + 4) = (bVar2 - 1 ^ bVar2) & 0x3f ^ bVar2;
-      *(char *)(iVar3 + 5) = (char)(uVar1 >> 8);
-    }
-  }
-  return;
-}
-
-
-
 uint FUN_0007cdbc(param_1,param_2,param_3,param_4)
 ushort * param_1;
 ushort * param_2;

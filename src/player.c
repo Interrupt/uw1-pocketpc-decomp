@@ -726,7 +726,7 @@ LAB_000669a8:
       else {
         iVar5 = apply_equipped_item_effect(local_2c[0],local_2e[0],&local_30,iVar4);
         if (iVar5 != 0) {
-          FUN_0007cc30(g_scratch_object_ptr);
+          clear_object_pending_special_flag(g_scratch_object_ptr);
         }
       }
     }
