@@ -69,7 +69,7 @@ ushort * param_2;
       *(byte *)((char *)param_2 + 3) = (byte)(uVar4 >> 8);
     }
     trigger_object_trap_or_use_action(param_1,param_2,7,(int)DAT_002020a0,DAT_002020a4);
-    FUN_0007c3f4(param_2);
+    schedule_door_open_animation(param_2);
   }
   uVar3 = 0x14;
   if ((*param_2 & 7) != 6) {
@@ -108,7 +108,7 @@ ushort * param_1;
     if ((*param_1 & 0xf) < 8) {
       return;
     }
-    FUN_0007c3f4(param_1);
+    schedule_door_open_animation(param_1);
   }
   uVar2 = 0x14;
   if ((*param_1 & 7) != 6) {
@@ -302,5 +302,69 @@ void apply_special_object_use_effect()
     refresh_player_equipment_effects();
     set_pending_music_track(4);
   }
+  return;
+}
+
+
+
+
+
+// was FUN_0007c3f4 -- schedules a door's open animation: derives an
+// animation type from the door's own low bits (a "portcullis"-style
+// door, low 3 bits == 6, uses type 4; every other door type uses 5),
+// sets the door's quality/state field, forces its type-id bits to
+// 0x1cf, and pushes a scheduler entry for it. Already had an
+// existing comment documenting a real fixed bug here (the last of 3
+// stacked bugs -- scheduler_finish_entry's own missing argument and a
+// dead gate -- that all had to be fixed together before a door's
+// queued open animation could ever actually run). Confirmed real
+// callers in src/game.c and src/doors.c.
+void schedule_door_open_animation(param_1)
+ushort * param_1;
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  byte bVar3;
+  undefined4 uVar4;
+  uint uVar5;
+  undefined4 uVar6;
+  
+  uVar6 = 5;
+  uVar1 = *param_1;
+  uVar2 = param_1[3];
+  if ((uVar1 & 7) == 6) {
+    uVar6 = 4;
+  }
+  bVar3 = (byte)uVar2;
+  *(byte *)(param_1 + 3) = ((byte)uVar1 ^ bVar3) & 0x3f ^ bVar3;
+  *(char *)((char *)param_1 + 7) = (char)(uVar2 >> 8);
+  uVar5 = uVar1 & 0xffcf | 0x1cf;
+  *(char *)param_1 = (char)uVar5;
+  *(char *)((char *)param_1 + 1) = (char)(uVar5 >> 8);
+  /* HACK: was a bare `encode_object_slot_index();` -- dropped argument,
+     same class as scheduler_tick's own `scheduler_finish_entry();` fix just above
+     (see its comment). encode_object_slot_index's real signature takes
+     the object pointer it encodes (`char *param_1`, dereferenced via
+     pointer comparisons against DAT_002046b8/DAT_002046c4) -- with none
+     passed, this read garbage instead of this door object, so the
+     scheduled-effects queue entry scheduler_add_entry pushes right below
+     carried an encoded reference to the wrong (or no) object. Confirmed
+     live: scheduler_step_entry/scheduler_finish_entry (the queue's own per-tick step and
+     finalize) resolved this door's queue slot to NULL every time,
+     silently skipping it forever, once the separate scheduler_finish_entry
+     missing-argument bug and the DAT_000879ac dead-gate were both
+     already fixed -- this was the last of three stacked bugs that had
+     to be fixed together before a door's queued open animation could
+     ever actually run. */
+  uVar4 = encode_object_slot_index((char *)param_1);
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] schedule_door_open_animation: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d ptr=%p tilefield16=0x%04x doortile_x=%d doortile_y=%d cur_a0=%d cur_a4=%d player_x=%d player_y=%d\n",
+            (unsigned)uVar1, (unsigned)uVar5, (int)(((byte)uVar1 ^ bVar3) & 0x3f ^ bVar3), (int)uVar6, (int)uVar4, (void *)param_1,
+            (unsigned)*(ushort *)((char *)param_1 + 0x16), (int)(*(ushort *)((char *)param_1 + 0x16) >> 10),
+            (int)((*(ushort *)((char *)param_1 + 0x16) & 0x3f0) >> 4), (int)(short)DAT_002020a0, (int)(short)DAT_002020a4,
+            (int)(*(ushort *)((char *)g_player_object + 0x16) >> 10),
+            (int)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4));
+  scheduler_add_entry(uVar4,uVar6,0,(undefined1)DAT_002020a0,(char)DAT_002020a4);
   return;
 }

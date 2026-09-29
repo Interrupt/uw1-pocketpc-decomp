@@ -660,7 +660,7 @@ void init_gameplay_session()
      caller pushed onto it. Root-caused chasing a door-open bug report
      ("the door should animate in six to eight small steps over a few
      seconds, it doesn't"): the door's own open trigger (FUN_0007c708)
-     already queues a correct, gradual animation via FUN_0007c3f4, and
+     already queues a correct, gradual animation via schedule_door_open_animation, and
      that queue entry sat there forever, un-ticked, until an unrelated
      instant-snap fallback elsewhere silently finished the door in one
      step instead. Initialize alongside this function's other one-time

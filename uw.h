@@ -3466,7 +3466,7 @@ void dispatch_world_object_interaction_by_family();
 undefined4 check_object_combination();
 undefined4 trigger_object_use_babl_script();
 void trigger_object_trap_or_use_action();
-void FUN_0007c3f4();
+void schedule_door_open_animation();
 void FUN_0007c4a8();
 void FUN_0007c580();
 void FUN_0007c708();
