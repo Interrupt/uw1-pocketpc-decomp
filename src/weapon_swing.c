@@ -480,3 +480,18 @@ bool load_weapon_combat_maneuver_data()
   }
   return bVar7;
 }
+
+
+// was FUN_00012948 -- always returns immediately and does nothing
+// else; confirmed used two ways at its real call sites (uw.c): once
+// inside a 13-iteration animation loop (FUN_000411b8) alongside
+// weapon_overlay_and_full_redraw, and once passed BY ADDRESS as a
+// callback argument to FUN_00057118 (the same helper
+// wait_for_click_to_continue calls). Matches the same "dead/stripped
+// debug hook" pattern already confirmed for debug_print_init,
+// debug_print, and debug_noop_checkpoint elsewhere in this file.
+void debug_noop_frame_hook()
+
+{
+  return;
+}

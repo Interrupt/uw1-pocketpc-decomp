@@ -6760,11 +6760,6 @@ undefined *PTR_Ordinal_35_000841cc;
 
 
 
-void FUN_00012948()
-
-{
-  return;
-}
 
 
 
@@ -22253,7 +22248,7 @@ void FUN_000411b8()
   g_weapon_overlay_enabled = 0;
   iVar1 = 0;
   do {
-    FUN_00012948(iVar1);
+    debug_noop_frame_hook(iVar1);
     weapon_overlay_and_full_redraw();
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 0xd);
@@ -22272,7 +22267,7 @@ void FUN_000411cc()
   undefined4 uVar1;
   int iVar2;
   
-  FUN_00057118(0xc,FUN_00012948,0xf1);
+  FUN_00057118(0xc,debug_noop_frame_hook,0xf1);
   uVar1 = Ordinal_1041(0x4bec);
   Ordinal_1044(uVar1,DAT_00248410,0x4bec);
   g_weapon_overlay_enabled = 0;
