@@ -438,7 +438,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   sVar1 = babl_read_var_word((int)*(short *)(param_1 + -4));
   sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
   if (sVar2 == 10000) {
-    FUN_0007067c((int)(char)sVar1);
+    roll_skill_use_improvement((int)(char)sVar1);
   }
   else if ((-1 < sVar2) && (sVar2 < 0x1f)) {
     *(char *)(DAT_00086df8 + sVar1 + 0x21) = (char)sVar2;

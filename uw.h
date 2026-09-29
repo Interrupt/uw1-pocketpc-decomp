@@ -1307,6 +1307,8 @@ extern char s_cLightTabs_allocation_error_____000872e8[];
 extern undefined1 DAT_0008730c_backing[8192];
 #define DAT_0008730c DAT_0008730c_backing[0]
 extern undefined1 DAT_0008730d;
+extern undefined DAT_00087308_arr[3];
+#define DAT_00087308 DAT_00087308_arr[0]
 extern undefined1 DAT_0024fa38_backing[3072];
 #define DAT_0024fa38 DAT_0024fa38_backing[0]
 extern undefined2 DAT_00086b30;
@@ -3108,7 +3110,7 @@ undefined4 recompute_level7_hazard_from_character_level();
 void advance_character_level();
 undefined4 classify_skill_training_tier();
 void advance_skill_training();
-undefined4 FUN_0007067c();
+undefined4 roll_skill_use_improvement();
 void FUN_000707c8();
 void FUN_0007080c();
 void FUN_000708bc();

@@ -1978,13 +1978,12 @@ char param_1;
 
 // was FUN_00070524 -- 3-way tier classifier: param_1<7 -> tier 0,
 // param_1>9 -> tier 1, otherwise (7..9) -> tier 2. Its result indexes
-// DAT_0023be74 (the player's class base-stat row) at advance_skill_training's
-// call site to pick that tier's base training value. Its one call site
-// passes no visible argument (K&R "leftover register" shape) -- likely
-// a dropped-argument bug matching this project's established pattern,
-// most plausibly meaning to pass advance_skill_training's own skill-index
-// parameter, but not fixed here since no ARM disassembly was available
-// to confirm the real value (flagged, not guessed).
+// DAT_0023be74 (the player's class base-stat row) to pick a tier's
+// base training value -- called by both advance_skill_training and
+// roll_skill_use_improvement with their own skill-index parameter
+// (advance_skill_training's call site was missing this argument, a
+// dropped-argument bug fixed there once roll_skill_use_improvement's
+// sibling call confirmed the correct value to pass).
 undefined4 classify_skill_training_tier(param_1)
 short param_1;
 
@@ -2026,7 +2025,7 @@ short param_1;
   int iVar5;
   undefined2 uVar6;
   short sVar7;
-  
+
   iVar1 = (int)param_1;
   if (*(char *)(iVar1 + DAT_00086df8 + 0x21) == '\0') {
     cVar3 = '\x03';
@@ -2038,7 +2037,18 @@ short param_1;
     uVar6 = 0xd;
     sVar7 = 2;
   }
-  sVar4 = classify_skill_training_tier();
+  /* BUG FIX: was `classify_skill_training_tier()` with no argument --
+     dropped by Ghidra (same "ARM register-leftover doesn't survive a
+     literal recompile" idiom as every other dropped-argument bug in
+     this file). Confirmed via the sibling call in
+     roll_skill_use_improvement (was FUN_0007067c), which performs the
+     exact same DAT_0023be74[tier+5]/DAT_00086df8[param_1+0x21] dance
+     and explicitly passes its own skill-index parameter:
+     `classify_skill_training_tier((int)param_1)`. Without this, the
+     tier classification read whatever value was left over in the
+     argument register, potentially indexing DAT_0023be74 with a wrong
+     tier and applying the wrong class's training rate for this skill. */
+  sVar4 = classify_skill_training_tier(param_1);
   uVar2 = *(undefined1 *)(DAT_0023be74 + sVar4 + 5);
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
   pcVar_df8 = DAT_00086df8 + iVar1;
@@ -2058,4 +2068,76 @@ short param_1;
     *(undefined1 *)(iVar1 + DAT_00086df8 + 0x21) = 0x1e;
   }
   return;
+}
+
+
+
+
+
+
+// WARNING: Removing unreachable block (ram,0x00070700)
+
+// was FUN_0007067c -- the "skill improves through use" roll: on a
+// successful use of skill param_1, fails outright (returns false, no
+// change) if the skill's current progress (DAT_00086df8[param_1+0x21])
+// already exceeds double its class/tier's base value
+// (classify_skill_training_tier + DAT_0023be74[tier+5]) or has hit 0x1d
+// (29); otherwise increments the progress byte by 1 (plus a second +1
+// for tier!=0 skills still under half that base value, plus a further
+// Ordinal_2005-randomized chance +1), capping the final result at 30
+// (0x1e), and returns true. param_1==8 (a specific skill index) also
+// refreshes a per-level cached value at DAT_00086df8+0xc2 for the
+// current level.
+undefined4 roll_skill_use_improvement(param_1)
+char param_1;
+
+{
+  int iVar1;
+  undefined1 uVar2;
+  byte bVar3;
+  short sVar4;
+  undefined4 uVar5;
+  int extraout_r1;
+  uint uVar6;
+  int iVar7;
+  undefined4 uVar8;
+  
+  uVar8 = 1;
+  sVar4 = classify_skill_training_tier((int)param_1);
+  iVar7 = (int)sVar4;
+  uVar2 = (&DAT_00087308)[iVar7];
+  iVar1 = (int)param_1;
+  uVar6 = (uint)*(byte *)(iVar7 + DAT_0023be74 + 5);
+  bVar3 = *(byte *)(iVar1 + DAT_00086df8 + 0x21);
+  if ((uVar6 * 2 < (uint)bVar3) || (0x1d < bVar3)) {
+    uVar8 = 0;
+  }
+  else {
+    *(byte *)(iVar1 + DAT_00086df8 + 0x21) = bVar3 + 1;
+    if (iVar7 != 0) {
+      bVar3 = *(byte *)(iVar1 + DAT_00086df8 + 0x21);
+      if ((uint)bVar3 < (uint)((int)uVar6 >> 1)) {
+        *(byte *)(iVar1 + DAT_00086df8 + 0x21) = bVar3 + 1;
+      }
+    }
+    if (*(byte *)(iVar1 + DAT_00086df8 + 0x21) < uVar6) {
+      uVar5 = Ordinal_1053();
+      iVar7 = iVar1 + DAT_00086df8;
+      bVar3 = *(byte *)(iVar7 + 0x21);
+      Ordinal_2005(uVar2,uVar5);
+      if (extraout_r1 < (int)(uVar6 - bVar3)) {
+        *(byte *)(iVar7 + 0x21) = bVar3 + 1;
+      }
+    }
+    if (0x1e < *(byte *)(iVar1 + DAT_00086df8 + 0x21)) {
+      *(undefined1 *)(iVar1 + DAT_00086df8 + 0x21) = 0x1e;
+    }
+  }
+  if (iVar1 == 8) {
+    FUN_0003aea8();
+    if (DAT_00201b68 < 9) {
+      *(undefined1 *)(DAT_00201b68 + DAT_00086df8 + 0xc2) = *(undefined1 *)(DAT_00086df8 + 0x29);
+    }
+  }
+  return uVar8;
 }

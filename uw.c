@@ -6035,7 +6035,18 @@ undefined1 DAT_0024fa38_backing[3072];
 undefined1 DAT_0008730c_backing[8192];
 #define DAT_0008730c DAT_0008730c_backing[0]
 undefined1 DAT_0008730d;
-undefined DAT_00087308;
+/* Was a lone scalar, but roll_skill_use_improvement indexes it
+   `(&DAT_00087308)[tier]` for tier 0..2 (classify_skill_training_tier's
+   full range) as a per-tier probability threshold for
+   Ordinal_2005(uVar2, random). Widened to the real 3-entry array this
+   needs -- as a lone scalar, indices 1/2 read into whatever the
+   compiler placed next (s_and_00087310's string data on this host),
+   an arbitrary/wrong probability for tiers 1 and 2. Real per-tier
+   values weren't recovered (Ghidra never surfaced this as initialized
+   data), so left zero-initialized rather than guessed -- still an
+   improvement over reading unrelated string bytes as a probability. */
+undefined DAT_00087308_arr[3];
+#define DAT_00087308 DAT_00087308_arr[0]
 char s_and_00087310[] = "and";
 undefined DAT_00087318;
 char s_Chant_the_mantra__0008731c[] = "Chant_the_mantra:";
@@ -36410,64 +36421,6 @@ LAB_00060f54:
 
 
 
-// WARNING: Removing unreachable block (ram,0x00070700)
-
-undefined4 FUN_0007067c(param_1)
-char param_1;
-
-{
-  int iVar1;
-  undefined1 uVar2;
-  byte bVar3;
-  short sVar4;
-  undefined4 uVar5;
-  int extraout_r1;
-  uint uVar6;
-  int iVar7;
-  undefined4 uVar8;
-  
-  uVar8 = 1;
-  sVar4 = classify_skill_training_tier((int)param_1);
-  iVar7 = (int)sVar4;
-  uVar2 = (&DAT_00087308)[iVar7];
-  iVar1 = (int)param_1;
-  uVar6 = (uint)*(byte *)(iVar7 + DAT_0023be74 + 5);
-  bVar3 = *(byte *)(iVar1 + DAT_00086df8 + 0x21);
-  if ((uVar6 * 2 < (uint)bVar3) || (0x1d < bVar3)) {
-    uVar8 = 0;
-  }
-  else {
-    *(byte *)(iVar1 + DAT_00086df8 + 0x21) = bVar3 + 1;
-    if (iVar7 != 0) {
-      bVar3 = *(byte *)(iVar1 + DAT_00086df8 + 0x21);
-      if ((uint)bVar3 < (uint)((int)uVar6 >> 1)) {
-        *(byte *)(iVar1 + DAT_00086df8 + 0x21) = bVar3 + 1;
-      }
-    }
-    if (*(byte *)(iVar1 + DAT_00086df8 + 0x21) < uVar6) {
-      uVar5 = Ordinal_1053();
-      iVar7 = iVar1 + DAT_00086df8;
-      bVar3 = *(byte *)(iVar7 + 0x21);
-      Ordinal_2005(uVar2,uVar5);
-      if (extraout_r1 < (int)(uVar6 - bVar3)) {
-        *(byte *)(iVar7 + 0x21) = bVar3 + 1;
-      }
-    }
-    if (0x1e < *(byte *)(iVar1 + DAT_00086df8 + 0x21)) {
-      *(undefined1 *)(iVar1 + DAT_00086df8 + 0x21) = 0x1e;
-    }
-  }
-  if (iVar1 == 8) {
-    FUN_0003aea8();
-    if (DAT_00201b68 < 9) {
-      *(undefined1 *)(DAT_00201b68 + DAT_00086df8 + 0xc2) = *(undefined1 *)(DAT_00086df8 + 0x29);
-    }
-  }
-  return uVar8;
-}
-
-
-
 void FUN_000707c8(param_1,param_2)
 int param_1;
 int param_2;
@@ -36568,8 +36521,8 @@ LAB_00070980:
       FUN_00078c80(0x18);
     }
     else {
-      iVar6 = FUN_0007067c(iVar10);
-      iVar7 = FUN_0007067c(iVar10);
+      iVar6 = roll_skill_use_improvement(iVar10);
+      iVar7 = roll_skill_use_improvement(iVar10);
       if ((iVar6 == 0) && (iVar7 == 0)) {
 LAB_000709e0:
         uVar4 = 0;
@@ -36643,7 +36596,7 @@ LAB_00070c78:
         iVar7 = rand_below(cVar11);
         iVar7 = (sVar13 + iVar7) * 0x1000000 >> 0x18;
       }
-      iVar9 = FUN_0007067c(iVar7);
+      iVar9 = roll_skill_use_improvement(iVar7);
       if (iVar9 != 0) {
         local_60[uVar12] = (char)iVar7;
         uVar12 = uVar12 + 1 & 0xff;
