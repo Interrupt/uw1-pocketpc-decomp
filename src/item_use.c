@@ -1493,7 +1493,7 @@ int param_2;
     if (param_2 != 0) {
       finish_object_use(DAT_00202098,param_2,1);
     }
-    FUN_00081814(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
+    spawn_scheduled_effect_object(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
     iVar2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
     discard_misplaced_object(iVar2 + 2,param_1,1);
     DAT_002020a0 = -1;

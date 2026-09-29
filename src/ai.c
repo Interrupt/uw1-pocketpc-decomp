@@ -1250,7 +1250,7 @@ ushort * param_1;
   bVar5 = (byte)param_1[5] & 0x70;
   if (bVar5 == 0x10) {
     bVar13 = 8;
-    FUN_00081814(param_1,6,3,0,0,DAT_0010144c,DAT_00101454);
+    spawn_scheduled_effect_object(param_1,6,3,0,0,DAT_0010144c,DAT_00101454);
   }
   else if ((((bVar5 == 0x20) && (bVar13 == 10)) && (DAT_00201b68 == 8)) &&
           ((uVar11 = (int)((int)DAT_0010144c - 0x20U) >> 0x1f,

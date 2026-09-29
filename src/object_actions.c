@@ -1163,8 +1163,8 @@ undefined1 param_5;
 // neighbors (a 5-tile cross/"area" pattern), then schedules the
 // effect object to tick (scheduler_add_entry, type 4, delay 0). On
 // schedule failure frees the object slot; otherwise links it into
-// param_4's object list and calls spawn_effect_debris_burst (not yet named --
-// likely kicks off the effect's ongoing spread/animation).
+// param_4's object list and calls spawn_effect_debris_burst to spawn
+// a small burst of debris/particle objects around it.
 undefined4 cast_area_spell_effect(param_1,param_2,param_3,param_4,param_5)
 uint param_1;
 int param_2;
@@ -1236,7 +1236,7 @@ undefined1 param_5;
 
 // was FUN_000744e0 -- unconditional tile-trap damage effect at tile
 // (param_1,param_2): first alters the tile's texture/decoration
-// (FUN_00081814, not yet named -- group 7, subtype 4), then rolls
+// (spawn_scheduled_effect_object, group 7, subtype 4), then rolls
 // 5d4 damage and applies it to the target object (param_3) via
 // FUN_00038374 (damage type id 0x13), which internally still runs
 // the same resistance/flag check as trigger_type_flagged_trap_effect
@@ -1258,7 +1258,7 @@ undefined1 param_5;
   
   uVar3 = 0;
   uVar4 = (undefined2)param_1;
-  FUN_00081814(param_3,7,4,0,7,uVar4,(short)param_2);
+  spawn_scheduled_effect_object(param_3,7,4,0,7,uVar4,(short)param_2);
   uVar5 = (undefined1)((ushort)uVar4 >> 8);
   uVar1 = roll_dice_sum(5,4);
   uVar2 = FUN_000535fc(param_5);
@@ -1272,7 +1272,7 @@ undefined1 param_5;
 // real resistance roll via FUN_000382cc (mask 3, i.e. the random
 // partial-resist chance bits) against the target object (param_3);
 // if not resisted, alters the tile's texture/decoration
-// (FUN_00081814, group 7, subtype 4) and plays an effect on the
+// (spawn_scheduled_effect_object, group 7, subtype 4) and plays an effect on the
 // target (FUN_00034ac4), then -- unless param_2 is -1 ("no change")
 // -- overwrites the top 2 bits of the object's quality/link field
 // (offset +0xd/+0xe, a ushort) with param_2, leaving the lower 14
@@ -1291,7 +1291,7 @@ undefined2 param_5;
   
   cVar1 = FUN_000382cc(param_3,1,3);
   if (cVar1 != '\0') {
-    FUN_00081814(param_3,7,4,0,7,param_4,param_5);
+    spawn_scheduled_effect_object(param_3,7,4,0,7,param_4,param_5);
     FUN_00034ac4(param_3,param_1,1);
     if ((int)param_2 != 0xffffffff) {
       uVar2 = *(ushort *)(param_3 + 0xd) & 0x3fff;
@@ -1309,7 +1309,7 @@ undefined2 param_5;
 // was FUN_00074614 -- resistance-gated, one-time-effect object-state
 // trigger: like morph_tile_object_state, runs a real resistance roll
 // (FUN_000382cc, mask 3) before acting. On success, alters the
-// tile's texture/decoration (FUN_00081814) and, only the FIRST time
+// tile's texture/decoration (spawn_scheduled_effect_object) and, only the FIRST time
 // (guarded by flag bit 0x40 at offset +0x19, which it then sets
 // permanently), plays an effect on the target (FUN_00034ac4). Always
 // sets the object's quality/link field (offset +0xd/+0xe) top 2 bits
@@ -1325,7 +1325,7 @@ int param_3;
   
   cVar1 = FUN_000382cc(param_3,1,3);
   if (cVar1 != '\0') {
-    FUN_00081814(param_3,7,4,0,7,param_1,param_2);
+    spawn_scheduled_effect_object(param_3,7,4,0,7,param_1,param_2);
     if ((*(byte *)(param_3 + 0x19) & 0x40) == 0) {
       FUN_00034ac4(param_3,2,0);
     }

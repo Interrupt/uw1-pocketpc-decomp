@@ -11584,7 +11584,7 @@ undefined1 param_1;
           cVar10 = DAT_001005dc;
         }
         if (((&DAT_001007d8)[(uVar1 & 0x3f) * 0x30] & 0x18) != 0) {
-          FUN_00081814(puVar6,0,1,(int)local_38,(short)*(char *)((short)uVar8 + 0x84f18),
+          spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,(short)*(char *)((short)uVar8 + 0x84f18),
                        DAT_00100600,DAT_00100604);
           if (DAT_001005d8 == 0) {
             return;
@@ -11593,7 +11593,7 @@ undefined1 param_1;
             return;
           }
           uVar5 = Ordinal_1053();
-          FUN_00081814(puVar6,0,1,(int)local_38,
+          spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,
                        (uVar5 & 1) * 5 + (short)*(char *)((short)DAT_00100624 + 0x84f18) + -2,
                        DAT_00100600,DAT_00100604);
           return;
@@ -11608,10 +11608,10 @@ undefined1 param_1;
           cVar10 = ((byte)puVar6[1] & 0x7f) + 2;
           DAT_001005dc = cVar10;
         }
-        FUN_00081814(puVar6,0xb,1,(int)local_38,-(short)cVar10,DAT_00100600,DAT_00100604);
+        spawn_scheduled_effect_object(puVar6,0xb,1,(int)local_38,-(short)cVar10,DAT_00100600,DAT_00100604);
       }
       else {
-        FUN_00081814(puVar6,0xb,1,(int)local_38,-(short)cVar10,DAT_00100600,DAT_00100604);
+        spawn_scheduled_effect_object(puVar6,0xb,1,(int)local_38,-(short)cVar10,DAT_00100600,DAT_00100604);
       }
     }
   }
@@ -13171,7 +13171,7 @@ LAB_0002bb2c:
     if ((uVar1 & 0xf8) == 0x10) {
       DAT_00101924 = 1;
       DAT_00101734 = 0;
-      FUN_00081814(DAT_0010190c,6,3,0,0,(short)(char)((ushort)DAT_002048c0 >> 8),
+      spawn_scheduled_effect_object(DAT_0010190c,6,3,0,0,(short)(char)((ushort)DAT_002048c0 >> 8),
                    (short)(char)((ushort)_DAT_002048c2 >> 8));
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xcc | 0xc;
       uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
@@ -18363,7 +18363,7 @@ LAB_00038100:
           uVar5 = Ordinal_1053();
           if ((uVar5 & 3) == 0) {
             uVar4 = roll_dice_sum(6,10);
-            FUN_00081814(param_1,8,uVar4,0,0,sVar2,param_5);
+            spawn_scheduled_effect_object(param_1,8,uVar4,0,0,sVar2,param_5);
             sVar2 = rand_below(2);
             uVar6 = (int)sVar2 + 0xd5;
           }
@@ -36525,305 +36525,6 @@ LAB_00060f54:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
   return;
-}
-undefined4 FUN_00081814(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-ushort * param_1;
-int param_2;
-undefined4 param_3;
-undefined1 param_4;
-ushort param_5;
-short param_6;
-short param_7;
-
-{
-  undefined1 uVar1;
-  byte bVar2;
-  undefined2 uVar3;
-  short sVar4;
-  char *iVar5;  /* was `int` -- truncated spawn_new_object's real pointer */
-  uint uVar6;
-  undefined4 uVar7;
-  char *iVar8;  /* was `int` -- truncated tilemap_lookup's real pointer, same
-                   class as iVar5 above; crashed live in the sibling call
-                   shape at FUN_0004ad10/settle_mobile_to_immobile (see their comments) */
-  byte bVar9;
-
-  iVar5 = (char *)spawn_new_object(param_2 + 0x1c0,0);
-  if (iVar5 == (char *)0x0) {
-    return 0;
-  }
-  if (param_1 != (ushort *)0x0) {
-    uVar6 = (*(ushort *)(iVar5 + 2) ^ param_1[1]) & 0x1fff ^ (uint)param_1[1];
-    uVar1 = (undefined1)uVar6;
-    *(undefined1 *)(iVar5 + 2) = uVar1;
-    bVar2 = (byte)(uVar6 >> 8);
-    *(byte *)(iVar5 + 3) = bVar2;
-    bVar9 = *(byte *)((char *)param_1 + 3);
-    *(undefined1 *)(iVar5 + 2) = uVar1;
-    *(byte *)(iVar5 + 3) = (bVar9 ^ bVar2) & 0x1c ^ bVar2;
-  }
-  if ((short)param_5 < 0) {
-    uVar3 = *(undefined2 *)(iVar5 + 2);
-    bVar9 = (byte)uVar3 ^ (byte)((uint)param_5 * -0x10000 >> 0x10);
-  }
-  else {
-    if (param_1 == (ushort *)0x0) goto LAB_00081980;
-    bVar9 = (byte)(&DAT_00202c90)[(*param_1 & 0x1ff) * 0xd] >> 3;
-    uVar3 = *(undefined2 *)(iVar5 + 2);
-    if (bVar9 == 0) {
-      bVar9 = 1;
-    }
-    bVar9 = (char)param_5 * bVar9 + (char)param_1[1] ^ (byte)uVar3;
-  }
-  *(byte *)(iVar5 + 2) = bVar9 & 0x7f ^ (byte)uVar3;
-  *(char *)(iVar5 + 3) = (char)((ushort)uVar3 >> 8);
-LAB_00081980:
-  uVar7 = encode_object_slot_index(iVar5);
-  sVar4 = scheduler_add_entry(uVar7,param_3,param_4,(int)param_6 & 0xff,(char)param_7);
-  if (sVar4 == -1) {
-    free_object_slot(iVar5);
-    return 0;
-  }
-  iVar8 = (char *)tilemap_lookup((int)param_6,(int)param_7);
-  object_list_append_tail(iVar8 + 2,iVar5);
-  return 1;
-}
-
-
-
-// was FUN_000819f0: linear-searches the scheduler for the entry whose
-// encoded link matches encode_object_slot_index()'s last result (an
-// implicit-argument call, same idiom as this file's other bare
-// Ghidra-decompiled calls -- see e.g. scheduler_add_entry's own fix
-// comment for a case where that idiom was wrong; unconfirmed either
-// way for this specific call, left as originally decompiled). Returns
-// the slot index, or -1 if not found.
-int scheduler_find_entry()
-
-{
-  short sVar1;
-  int iVar2;
-  uint uVar3;
-  int iVar4;
-  
-  sVar1 = encode_object_slot_index();
-  iVar4 = 0;
-  uVar3 = (uint)g_scheduler_count;
-  if (uVar3 != 0) {
-    do {
-      if ((uint)(*(ushort *)(&DAT_00250778 + iVar4 * 6) >> 6) == (int)sVar1) break;
-      iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
-    } while (iVar4 < (int)uVar3);
-  }
-  iVar2 = -1;
-  if ((int)(short)iVar4 != uVar3) {
-    iVar2 = iVar4;
-  }
-  return iVar2;
-}
-
-
-
-// was FUN_00081a84: reads scheduler_find_entry's result's delay field.
-int scheduler_get_delay()
-
-{
-  short sVar1;
-  int iVar2;
-
-  sVar1 = scheduler_find_entry();
-  if (sVar1 < 0) {
-    iVar2 = -2;
-  }
-  else {
-    iVar2 = (int)*(short *)(&DAT_0025077a + sVar1 * 6);
-  }
-  return iVar2;
-}
-
-
-
-// was FUN_00081abc: re-arms scheduler_find_entry's result's delay field.
-void scheduler_set_delay(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
-{
-  short sVar1;
-  int iVar2;
-  
-  sVar1 = scheduler_find_entry();
-  if (-1 < sVar1) {
-    iVar2 = sVar1 * 6;
-    (&DAT_0025077a)[iVar2] = (char)param_2;
-    (&DAT_0025077b)[iVar2] = (char)((uint)param_2 >> 8);
-  }
-  return;
-}
-
-
-
-// was FUN_00081af4: scheduler_step_entry's bit-2 sub-handler, called
-// for entries whose per-class behavior flags select a positional/
-// directional step each tick -- respawns the entry's own impact/effect
-// sprite one tile position further along and re-arms its own delay via
-// scheduler_get_delay/scheduler_set_delay, rather than a plain
-// quality ramp. Exact original name/intent not otherwise recovered.
-undefined4 scheduler_advance_effect(param_1,param_2)
-short param_1;
-int param_2;
-
-{
-  byte bVar1;
-  ushort *puVar2;
-  undefined4 uVar3;
-  int iVar4;
-  uint uVar5;
-  int iVar6;
-  ushort uVar7;
-  int iVar8;
-  ushort uVar9;
-  int iVar10;
-  bool bVar11;
-  
-  iVar8 = param_1 * 6;
-  iVar10 = 5;
-  /* HACK: adds the NULL guard every other resolve_object_link call
-     site in this file has (this one had none at all -- a stale queue
-     entry resolving to NULL would dereference puVar2 below
-     unconditionally). */
-  puVar2 = (ushort *)resolve_object_link(&DAT_00250778 + iVar8);
-  if (puVar2 == (ushort *)0x0) {
-    return 0;
-  }
-  uVar7 = (ushort)(byte)puVar2[3];
-  DAT_0010144c = (ushort)(byte)(&DAT_0025077c)[iVar8];
-  uVar9 = (byte)puVar2[1] & 0x7f;
-  DAT_00101454 = (ushort)(byte)(&DAT_0025077d)[iVar8];
-  if ((uVar7 & 7) != 6) {
-    uVar9 = uVar9 - 0x18;
-  }
-  uVar3 = encode_object_slot_index(puVar2);
-  iVar4 = FUN_00051fa0((uVar7 & 0x30) + (uVar7 & 0xf) + 0x140,uVar3,
-                       (uint)(*(byte *)((char *)puVar2 + 3) >> 5) + (short)DAT_0010144c * 8,
-                       ((*(byte *)((char *)puVar2 + 3) & 0x1c) >> 2) + (short)DAT_00101454 * 8,uVar9,1,
-                       8);
-  if (getenv("UW_DEBUG_DOOR")) {
-    int _type_id = (uVar7 & 0x30) + (uVar7 & 0xf) + 0x140;
-    fprintf(stderr, "[door] scheduler_advance_effect: FUN_00051fa0 returned iVar4=%d (0=settle proceeds, nonzero=skip) obj0=0x%04x quality_full=0x%02x type_id=0x%03x local_33=%d word1=0x%04x param5(height)=%d tile=(%d,%d)\n",
-            iVar4, (unsigned)*puVar2, (unsigned)uVar7, _type_id,
-            (int)(unsigned char)(&DAT_00202c90)[_type_id * 0xd], (unsigned)puVar2[1], (int)uVar9,
-            (int)DAT_0010144c, (int)DAT_00101454);
-  }
-  if (iVar4 == 0) {
-    uVar5 = (uint)*puVar2;
-    if ((((uVar5 & 0x1c0) == 0x140) && ((uVar5 & 7) == 6)) ||
-       (((uVar5 & 0x1c0) == 0x1c0 && ((puVar2[3] & 7) == 6)))) {
-      iVar10 = 4;
-    }
-    bVar1 = (byte)((uVar5 & 0xefff) >> 8);
-    *(char *)puVar2 = (char)(uVar5 & 0xefff);
-    *(byte *)((char *)puVar2 + 1) =
-         ((byte)((uVar5 & 0xe00) + (param_2 + 1) * -0x200 >> 8) ^ bVar1) & 0x1e ^ bVar1;
-    iVar6 = scheduler_get_delay(puVar2);
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[door] scheduler_advance_effect: param_2(elapsed)=%d obj0(after settle)=0x%04x dirbit=%d openbits=%d get_delay=%d anim_type(iVar10)=%d\n",
-              param_2, (unsigned)*puVar2, (int)((*puVar2 & 0x1000) != 0), (int)((*puVar2 >> 9) & 7),
-              (int)iVar6, iVar10);
-    iVar4 = (int)(short)iVar6;
-    bVar11 = -1 < iVar4;
-    if (bVar11) {
-      iVar4 = (iVar10 - iVar6) + 1;
-      (&DAT_0025077a)[iVar8] = (char)iVar4;
-      DAT_002508fc = 1;
-      if (getenv("UW_DEBUG_DOOR"))
-        fprintf(stderr, "[door] scheduler_advance_effect: RE-ARMED new_delay=%d\n", iVar4);
-    }
-    uVar3 = 0;
-    if (bVar11) {
-      (&DAT_0025077b)[iVar8] = (char)((uint)iVar4 >> 8);
-    }
-  }
-  else {
-    uVar3 = 1;
-  }
-  return uVar3;
-}
-
-
-
-// was FUN_00081ce4: loads the whole scheduler table (g_scheduler_table,
-// 0x180 bytes = 64 entries * 6) from a save file, then recomputes
-// g_scheduler_count by re-scanning for the first empty entry.
-undefined4 scheduler_load(param_1,param_2)
-/* .ark handle-struct pointer -- was `undefined4`, truncating the stack
-   struct load_level_object_table passes and crashing read_archive_entry below. */
-undefined1 * param_1;
-int param_2;
-
-{
-  short sVar1;
-  undefined4 uVar2;
-  int iVar3;
-  ushort *puVar4;
-  
-  puVar4 = (ushort *)&DAT_00250778;
-  sVar1 = read_archive_entry(param_1,param_2 + 8,&DAT_00250778);
-  if (sVar1 == 0x180) {
-    g_scheduler_count = '\0';
-    iVar3 = 0;
-    do {
-      if ((*puVar4 & 0xffc0) == 0) break;
-      iVar3 = iVar3 + 6;
-      g_scheduler_count = g_scheduler_count + '\x01';
-      puVar4 = puVar4 + 3;
-    } while (iVar3 < 0x180);
-    uVar2 = 1;
-  }
-  else {
-    g_scheduler_count = '\0';
-    uVar2 = 0;
-  }
-  return uVar2;
-}
-
-
-
-// was FUN_00081d74: saves the whole scheduler table (g_scheduler_table,
-// 0x180 bytes) to a save file, and (if g_scheduler_count < 0x40) blanks
-// out one trailing empty entry first so a stale leftover doesn't get
-// misread as real data on the next scheduler_load.
-undefined4 scheduler_save(param_1,param_2)
-/* Was `undefined4` -- truncated the real 64-bit archive-handle-struct
-   pointer (FUN_00049b04's own `auStack_20`) write_archive_entry needs as its
-   own param_1. Same bug class as write_archive_entry's own param_3 fix right
-   above this function -- confirmed via the same crash chain, one call
-   further down (FUN_00049b04 -> scheduler_save -> write_archive_entry, this
-   function's own nested call, dereferencing the truncated handle
-   pointer). */
-undefined4 *param_1;
-int param_2;
-
-{
-  int iVar1;
-  
-  if (g_scheduler_count < 0x40) {
-    iVar1 = (uint)g_scheduler_count * 6;
-    (&DAT_00250778)[iVar1] = (&DAT_00250778)[iVar1] & 0x3f;
-    (&DAT_00250779)[iVar1] = 0;
-  }
-  /* Was `write_archive_entry(...); return 0;` -- a fabricated `return 0`
-     masking a real result (same bug class as the torch/ambient-light
-     fix earlier this session). Real ARM disassembly (0x81dbc-0x81dc0)
-     ends in a tail call (`b 0x15b94`, not `bl`) -- write_archive_entry's own
-     return value IS this function's return value, not a hardcoded
-     failure. Confirmed: without this, a real save's second archive
-     write (this header-table update, right after the main level-data
-     write) always reported failure even when the write underneath it
-     fully succeeded, so FUN_00049b04 -- and the whole save chain above
-     it -- always unwound through its failure path ("Save Game Failed")
-     no matter what. */
-  return write_archive_entry(param_1,param_2 + 8,&DAT_00250778,0x180);
 }
 
 
