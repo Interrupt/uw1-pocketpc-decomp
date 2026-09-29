@@ -1980,6 +1980,7 @@ extern short DAT_0023c250;
 extern short DAT_0023c254;
 extern short DAT_00087258;
 extern short DAT_0023c258;
+extern int DAT_0023c260;
 extern byte DAT_0023c25c;
 extern undefined4 DAT_0023c200_arr[3];
 #define DAT_0023c200 DAT_0023c200_arr[0]

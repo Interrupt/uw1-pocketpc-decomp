@@ -308,3 +308,125 @@ short param_1;
   DAT_000870e8 = 1;
   return;
 }
+
+
+
+
+
+
+// was FUN_0006e648 -- shared player-action animation state machine
+// (weapon raise/ready, among others): reads the requested action type
+// (DAT_0023c120, set via set_hud_status_value(8,N)), drives the current-action
+// state (DAT_0023c130) and its own sub-frame counter (DAT_000870e4),
+// and calls load_weapon_swing_sprites once a weapon-category change
+// needs new sprites. Only reachable via hud_panel_redraw_dispatch's
+// dirty-bit-gated dispatch table (g_hud_panel_handlers_table[12]), which
+// IS wired into the real per-frame dispatch (DAT_00085668, mode 0) --
+// confirmed live via UW_DEBUG_COMBAT that this runs continuously during
+// normal play, not dead code. DAT_000870e4 is also read (separately,
+// for different meaning) by the attack-swing state machine
+// (FUN_00027708) once armed -- the exact interaction between the two
+// during a live swing is still not fully understood (see memory.md).
+void advance_action_animation_frame()
+
+{
+  byte bVar1;
+  int iVar2;
+  FUN_00049924(2);
+  if (6 < DAT_0023c120) {
+    DAT_0023c120 = 6;
+  }
+  bVar1 = DAT_0023c130;
+  if (DAT_0023c120 == 6) {
+    if ((DAT_0023c130 == 6) || (DAT_0023c130 == 5)) {
+LAB_0006e770:
+      DAT_0023c130 = bVar1;
+      iVar2 = (int)DAT_000870e4;
+    }
+    else {
+      DAT_0023c130 = 5;
+LAB_0006e700:
+      iVar2 = -1;
+LAB_0006e704:
+      DAT_000870e4 = (short)iVar2;
+    }
+  }
+  else {
+    bVar1 = DAT_0023c120;
+    if (DAT_0023c120 != 4) goto LAB_0006e770;
+    if ((DAT_0023c130 == 6) || (DAT_0023c130 == 5)) {
+      DAT_0023c130 = 3;
+      iVar2 = 3;
+      goto LAB_0006e704;
+    }
+    if (DAT_0023c260 != 0) {
+      DAT_0023c130 = 4;
+      goto LAB_0006e700;
+    }
+    if (2 < DAT_0023c130) {
+      bVar1 = DAT_0023c130;
+      if ((DAT_0023c130 == 4) && (DAT_000870d8 == DAT_000870dc)) goto LAB_0006e7d0;
+      goto LAB_0006e770;
+    }
+    iVar2 = DAT_000870e4 + -2;
+    DAT_000870e4 = (short)iVar2;
+    if (iVar2 * 0x10000 >> 0x10 < -1) {
+      DAT_0023c130 = 4;
+    }
+  }
+  if (DAT_0023c130 == 3) {
+    DAT_000870e4 = (short)(iVar2 + -1);
+    if (-1 < (iVar2 + -1) * 0x10000 >> 0x10) {
+      return;
+    }
+    DAT_0023c130 = 4;
+    return;
+  }
+  if (DAT_0023c130 == 4) {
+    if (DAT_000870d8 != DAT_000870dc) {
+      DAT_000870e0 = 4;
+      DAT_0023c120 = 6;
+      return;
+    }
+  }
+  else {
+    if (DAT_0023c130 == 5) {
+      DAT_000870e4 = (short)(iVar2 + 1);
+      if ((iVar2 + 1) * 0x10000 >> 0x10 < 3) {
+        return;
+      }
+      DAT_0023c130 = 6;
+      return;
+    }
+    if (DAT_0023c130 == 6) {
+      if (DAT_000870d8 != DAT_000870dc) {
+        load_weapon_swing_sprites();
+        DAT_0023c120 = DAT_000870e0;
+        DAT_000870e0 = 6;
+        return;
+      }
+    }
+    else {
+      DAT_000870e4 = (short)(iVar2 + 1);
+      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+      if (iVar2 == 0) {
+        DAT_0023c260 = 0;
+        return;
+      }
+      if (iVar2 == 3) {
+        DAT_0023c1dc = DAT_0023c1dc & 0xfeff;
+        DAT_0023c260 = 1;
+        return;
+      }
+      if (iVar2 != 9) {
+        return;
+      }
+      DAT_0023c130 = 4;
+      DAT_0023c120 = 4;
+    }
+  }
+  DAT_000870e4 = -1;
+LAB_0006e7d0:
+  DAT_0023c1dc = DAT_0023c1dc & 0xfeff;
+  return;
+}
