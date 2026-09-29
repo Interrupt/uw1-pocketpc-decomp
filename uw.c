@@ -36392,39 +36392,6 @@ LAB_00060f54:
 
 
 
-void FUN_00065eb4()
-
-{
-  char *iVar1;
-  char cVar2;
-  
-  iVar1 = DAT_00086df8;
-  DAT_0020330c = 0;
-  cVar2 = Ordinal_2005(3,*(undefined1 *)(DAT_00086df8 + 0x2e));
-  DAT_00086db0 = '\r' - cVar2;
-  cVar2 = Ordinal_2005(5,*(undefined1 *)(iVar1 + 0x2e));
-  DAT_00086db1 = '\x0f' - cVar2;
-  DAT_0020208c = 0;
-  DAT_0010060c = 0;
-  DAT_0010060d = 0;
-  DAT_0010060e = 0;
-  DAT_0010060f = 0;
-  DAT_0023bc9c = 0;
-  DAT_0023bc98 = 0;
-  DAT_002020d0 = 0;
-  DAT_002020dc = 0;
-  DAT_002020d8 = 0;
-  DAT_002020d4 = 0;
-  DAT_000858c4 = 0x90;
-  if (DAT_0023bc94 != 0) {
-    DAT_000858c4 = 400;
-  }
-  DAT_002046cc = 0;
-  return;
-}
-
-
-
 void FUN_00065ff0(param_1)
 byte param_1;
 

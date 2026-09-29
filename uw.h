@@ -835,6 +835,24 @@ extern const undefined1 DAT_00086d68_region[64];
 extern undefined1 g_tile_feature_records_b92e_backing[65536];
 #define DAT_0023b92e g_tile_feature_records_b92e_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
+   player.c (reset_player_derived_state) -- extern'd here so both
+   translation units see the same storage. */
+extern undefined1 DAT_0020330c;
+extern char DAT_00086db0;
+extern char DAT_00086db1;
+extern undefined1 DAT_0010060c;
+extern undefined1 DAT_0010060d;
+extern undefined1 DAT_0010060e;
+extern undefined1 DAT_0010060f;
+extern undefined4 DAT_0023bc9c;
+extern undefined4 DAT_0023bc98;
+extern undefined4 DAT_002020d0;
+extern undefined4 DAT_002020dc;
+extern undefined4 DAT_002020d8;
+extern undefined4 DAT_002020d4;
+extern int DAT_0023bc94;
+extern byte DAT_002046cc;
+/* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
 extern undefined2 DAT_0023b908_backing[8192];
@@ -2853,7 +2871,7 @@ void flush_pending_tile_features();
 void emit_tile_features();
 void write_player_status_block();
 void read_player_status_block();
-void FUN_00065eb4();
+void reset_player_derived_state();
 void FUN_00065ff0();
 void FUN_000660d4();
 undefined4 FUN_000661b0();

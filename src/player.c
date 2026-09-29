@@ -643,7 +643,7 @@ LAB_000669a8:
   if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[weapon-gfx] refresh_player_equipment_effects: resolved category=%d\n", iVar4);
   request_weapon_swing_graphic(iVar4);
   DAT_0023be74[0x12] = DAT_0023be74[0x12] + (*(byte *)(DAT_00086df8 + (short)uVar11 + 0x21) >> 1);
-  FUN_00065eb4();
+  reset_player_derived_state();
   iVar5 = 0;
   bVar10 = 0;
   bVar9 = 0;
@@ -874,6 +874,46 @@ undefined4 param_1;
   FUN_00072b74(*(byte *)(DAT_00086df8 + 0xb5) >> 2 & 3);
   FUN_0005d2b0();
   FUN_0003dca4(*(ushort *)(DAT_00086df8 + 0xb6) & 7);
+  return;
+}
+
+
+
+
+// was FUN_00065eb4 -- recomputes the player's derived stealth/hide
+// thresholds (DAT_00086db0/DAT_00086db1, die-roll-jittered from a
+// player-stat byte at DAT_00086df8+0x2e) and resets a batch of
+// movement/combat scratch flags and counters (including the step-
+// counter default DAT_000858c4, doubled on hard difficulty). Called
+// from refresh_player_equipment_effects after an equipment change.
+void reset_player_derived_state()
+
+{
+  char *iVar1;
+  char cVar2;
+
+  iVar1 = DAT_00086df8;
+  DAT_0020330c = 0;
+  cVar2 = Ordinal_2005(3,*(undefined1 *)(DAT_00086df8 + 0x2e));
+  DAT_00086db0 = '\r' - cVar2;
+  cVar2 = Ordinal_2005(5,*(undefined1 *)(iVar1 + 0x2e));
+  DAT_00086db1 = '\x0f' - cVar2;
+  DAT_0020208c = 0;
+  DAT_0010060c = 0;
+  DAT_0010060d = 0;
+  DAT_0010060e = 0;
+  DAT_0010060f = 0;
+  DAT_0023bc9c = 0;
+  DAT_0023bc98 = 0;
+  DAT_002020d0 = 0;
+  DAT_002020dc = 0;
+  DAT_002020d8 = 0;
+  DAT_002020d4 = 0;
+  DAT_000858c4 = 0x90;
+  if (DAT_0023bc94 != 0) {
+    DAT_000858c4 = 400;
+  }
+  DAT_002046cc = 0;
   return;
 }
 
