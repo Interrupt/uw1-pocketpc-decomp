@@ -468,7 +468,7 @@ short param_1;
             mode_icon_highlight_on((int)g_cursor_mode);
             bVar3 = get_current_music_track();
             if ((bVar3 < 5) || (bVar3 = get_current_music_track(), 7 < bVar3)) {
-              FUN_000735b0(8);
+              set_pending_music_track(8);
             }
           }
           else {

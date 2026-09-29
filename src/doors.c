@@ -300,7 +300,7 @@ void apply_special_object_use_effect()
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
     refresh_player_equipment_effects();
-    FUN_000735b0(4);
+    set_pending_music_track(4);
   }
   return;
 }

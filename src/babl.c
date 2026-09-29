@@ -2129,7 +2129,7 @@ void FUN_000286cc()
   char local_44 [40];
   
   FUN_00076508();
-  FUN_000735b0(0xd);
+  set_pending_music_track(0xd);
   FUN_00073634();
   DAT_00100784 = Ordinal_1041(0x10000);
   Ordinal_1047(DAT_00100784,0,0x10000);

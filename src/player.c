@@ -2642,7 +2642,7 @@ short param_1;
   if (param_1 < 0) {
 LAB_0007158c:
     full_dungeon_redraw();
-    FUN_000735b0(0xd);
+    set_pending_music_track(0xd);
     FUN_00073634();
     FUN_000411b8(5);
     if (-1 < param_1) {

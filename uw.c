@@ -12132,7 +12132,7 @@ ushort * param_1;
   
   if ((*param_1 & 0x1c0) == 0x40) {
     set_hud_status_value(4,2);
-    FUN_000735b0(9);
+    set_pending_music_track(9);
     sVar1 = *(short *)(&DAT_001007f8 + ((byte)*param_1 & 0x3f) * 0x30);
     iVar2 = roll_dice_sum(2,(int)sVar1);
     iVar2 = iVar2 + sVar1 * 4;
@@ -16353,7 +16353,7 @@ ushort * param_3;
   if (0xf < sVar1) {
     uVar4 = 6;
   }
-  FUN_000735b0(uVar4);
+  set_pending_music_track(uVar4);
   DAT_00101944 = read_realtime_clock_units();
   return 0;
 }
@@ -20346,8 +20346,8 @@ void FUN_0003baf4()
   FUN_0007eb34();
   FUN_000499a4();
   release_panel_wipe_grtiles();
-  FUN_0007355c();
-  FUN_00073560();
+  shutdown_sound_effects();
+  shutdown_music_module();
   thunk_FUN_00078e28();
   pcVar2 = &DAT_0023cca8;
     stack0xffdc3250_ptr = acStack_108;
@@ -36445,40 +36445,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_0007355c()
-
-{
-  return;
-}
-
-
-
-void FUN_00073560()
-
-{
-  if (DAT_0023c3b8 != (undefined4 *)0x0) {
-    FUN_0004f748(DAT_0023c3b8,0);
-    FUN_0004cfc8(DAT_0023c3b8);
-    if (DAT_0023c3b8 != (undefined4 *)0x0) {
-      (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
-    }
-    DAT_0023c3b8 = (undefined4 *)0x0;
-  }
-  return;
-}
-
-
-
-void FUN_000735b0(param_1)
-undefined1 param_1;
-
-{
-  DAT_0023c384 = param_1;
   return;
 }
 

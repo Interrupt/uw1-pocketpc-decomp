@@ -20,7 +20,7 @@ void enter_automap_screen()
     register_key_binding(0x1b,1,2,change_game_mode);
     DAT_000bbefc = 1;
   }
-  FUN_000735b0(0xd);
+  set_pending_music_track(0xd);
   FUN_00073634();
   save_automap_reveal_to_archive(0,(int)DAT_00201b68);
   draw_automap_screen((int)DAT_00201b68);

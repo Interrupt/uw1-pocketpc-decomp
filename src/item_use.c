@@ -69,7 +69,7 @@ void ready_weapon()
     if ((4 < bVar2) && (bVar2 = get_current_music_track(), bVar2 < 8)) {
       return;
     }
-    FUN_000735b0(8);
+    set_pending_music_track(8);
   }
   return;
 }

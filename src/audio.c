@@ -691,3 +691,51 @@ int param_1;
   }
   return 0;
 }
+
+
+
+
+
+
+// was FUN_0007355c -- currently a no-op stub (Ghidra recovered an
+// empty body). Called immediately before shutdown_music_module in the
+// app-shutdown sequence, so most plausibly meant to shut down the
+// sound-effects subsystem as its counterpart.
+void shutdown_sound_effects()
+
+{
+  return;
+}
+
+
+
+// was FUN_00073560 -- fully shuts down the music module: stops
+// playback, releases the module's COM-style interface, and nulls the
+// handle. Called from the app-shutdown sequence right after
+// shutdown_sound_effects.
+void shutdown_music_module()
+
+{
+  if (DAT_0023c3b8 != (undefined4 *)0x0) {
+    FUN_0004f748(DAT_0023c3b8,0);
+    FUN_0004cfc8(DAT_0023c3b8);
+    if (DAT_0023c3b8 != (undefined4 *)0x0) {
+      (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
+    }
+    DAT_0023c3b8 = (undefined4 *)0x0;
+  }
+  return;
+}
+
+
+
+// was FUN_000735b0 -- sets the pending/current music track number
+// (DAT_0023c384, the value set_music_enabled resumes playing when
+// re-enabled).
+void set_pending_music_track(param_1)
+undefined1 param_1;
+
+{
+  DAT_0023c384 = param_1;
+  return;
+}
