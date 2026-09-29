@@ -2730,7 +2730,7 @@ short DAT_00202074;
 #define DAT_0008589c 0x3ac
 #define DAT_00085898 0xeb
 #define DAT_00085894 0xbc
-static undefined DAT_001c2000_backing[8192];
+undefined DAT_001c2000_backing[8192];
 #define DAT_001c2000 DAT_001c2000_backing[0]
 char s_out_of_000858dc[] = "out_of";
 undefined2 DAT_0020209c;
@@ -36427,189 +36427,6 @@ LAB_00060f54:
 
 
 
-void FUN_00070c90()
-
-{
-  int uw_ord2005_rem_139 = 0; int uw_ord2005_rem_140 = 0; int uw_ord2005_rem_141 = 0; int uw_ord2005_rem_142 = 0;
-  byte bVar1;
-  short sVar2;
-  char cVar3;
-  undefined1 uVar4;
-  byte bVar5;
-  short sVar6;
-  /* Was `undefined4`, truncating FUN_0007863c's real char* return on
-     this 64-bit host -- same bug class as the other FUN_0007863c
-     truncation fixes this session (e.g. character_generator_loop's uVar10). Used
-     consistently as a string pointer everywhere else in this function
-     (draw_text_string's first arg, Ordinal_1063's second arg), so retyping
-     is a straightforward drop-in fix. */
-  char *uVar7;
-  char *pcVar8;
-  int iVar9;
-  undefined4 uVar10;
-  char extraout_r1;
-  char extraout_r1_00;
-  short extraout_r1_01;
-  char *pcVar11;
-  int extraout_r1_02;
-  char *iVar12;
-  int iVar13;
-  char *iVar14;
-  short local_70;
-  undefined1 auStack_68 [16];
-  char local_58 [52];
-
-  select_active_font(s_fontchar_sys_00087330);
-  *DAT_00084298 = 0x5c;
-  *g_draw_color_index = 0x5c;
-  uVar7 = FUN_0007863c((int)DAT_00201c74);
-  /* Was `measure_text_width()` with no argument -- see draw_text_string/
-     measure_text_width's own comments above for the root "dropped argument"
-     bug this matches; uVar7 (the string FUN_0007863c just returned) is
-     right here, so pass it explicitly instead of hoping it's still
-     sitting in the right register. */
-  sVar6 = measure_text_width(uVar7);
-  iVar12 = (int)sVar6;
-  if (iVar12 < 0) {
-    iVar12 = iVar12 + 1;
-  }
-  draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),0x14);
-  pcVar8 = (char *)FUN_0007863c(699);
-  pcVar11 = local_58;
-  do {
-    cVar3 = *pcVar8;
-    pcVar8 = pcVar8 + 1;
-    *pcVar11 = cVar3;
-    pcVar11 = pcVar11 + 1;
-  } while (cVar3 != '\0');
-  sVar6 = Ordinal_1068(local_58);
-  iVar12 = DAT_00086df8;
-  if (9 < *(byte *)(DAT_00086df8 + 0x3d)) {
-    cVar3 = Ordinal_2005(10);
-    local_58[sVar6] = cVar3 + '0';
-    sVar6 = (short)((uint)((sVar6 + 1) * 0x10000) >> 0x10);
-  }
-  uw_ord2005_rem_139 = ((int)(*(undefined1 *)(iVar12 + 0x3d))) % (10);
-  local_58[sVar6] = uw_ord2005_rem_139 + '0';
-  iVar13 = (sVar6 + 1) * 0x10000 >> 0x10;
-  local_58[iVar13] = ' ';
-  local_58[(iVar13 + 1) * 0x10000 >> 0x10] = '\0';
-  uVar7 = FUN_0007863c((*(byte *)(iVar12 + 100) >> 5) + 0x17 | 0x400);
-  Ordinal_1063(local_58,uVar7);
-  iVar13 = *(short *)(DAT_000879b0 + 6) + 0x14;
-  sVar6 = measure_text_width(local_58);
-  iVar12 = (int)sVar6;
-  if (iVar12 < 0) {
-    iVar12 = iVar12 + 1;
-  }
-  draw_text_string(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
-  uVar7 = FUN_0007863c(700);
-  iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
-  sVar6 = measure_text_width(uVar7);
-  iVar12 = (int)sVar6;
-  if (iVar12 < 0) {
-    iVar12 = iVar12 + 1;
-  }
-  draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
-  sVar6 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
-  sVar6 = Ordinal_2005(0xc,(int)sVar6);
-  pcVar8 = (char *)FUN_0007863c(0x2bd);
-  pcVar11 = local_58;
-  do {
-    cVar3 = *pcVar8;
-    pcVar8 = pcVar8 + 1;
-    *pcVar11 = cVar3;
-    pcVar11 = pcVar11 + 1;
-  } while (cVar3 != '\0');
-  uVar7 = Ordinal_1025((int)sVar6,auStack_68,10);
-  Ordinal_1063(local_58,uVar7);
-  uVar7 = FUN_0007863c(0x2be);
-  Ordinal_1063(local_58,uVar7);
-  sVar6 = measure_text_width(local_58);
-  iVar12 = (int)sVar6;
-  if (iVar12 < 0) {
-    iVar12 = iVar12 + 1;
-  }
-  iVar13 = CONCAT11(*(undefined1 *)(DAT_000879b0 + 7),*(undefined1 *)(DAT_000879b0 + 6)) + iVar13;
-  draw_text_string(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
-  iVar12 = 0;
-  iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
-  do {
-    iVar14 = DAT_000879b0;
-    iVar9 = Ordinal_2005(3,iVar12);
-    sVar6 = 0xbe;
-    if (iVar9 == 0) {
-      sVar6 = 0x50;
-    }
-    uw_ord2005_rem_140 = ((int)(iVar12)) % (3);
-    sVar2 = *(short *)(iVar14 + 6);
-    uVar7 = FUN_0007863c((int)iVar12 + 0x11U | 0x400);
-    if (-1 < iVar12) {
-      if (iVar12 < 3) {
-        uVar4 = *(undefined1 *)((int)iVar12 + DAT_0023be74 + 5);
-      }
-      else if (iVar12 == 3) {
-        uVar4 = *(undefined1 *)(DAT_0023be74 + 4);
-      }
-      else {
-        if (iVar12 != 4) {
-          if (iVar12 == 5) {
-            uVar10 = Ordinal_2008(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
-            Ordinal_1039(uVar10,local_58,10);
-          }
-          goto LAB_00071110;
-        }
-        uVar4 = *(undefined1 *)(DAT_00086df8 + 0x38);
-      }
-      FUN_000229e0(uVar4,local_58,10);
-    }
-LAB_00071110:
-    local_70 = (short)((uint)(iVar13 * 0x10000) >> 0x10);
-    iVar14 = (int)uw_ord2005_rem_140 * (int)sVar2 + (int)local_70;
-    draw_text_string(uVar7,(int)sVar6,iVar14);
-    draw_text_string(local_58,sVar6 + 0x2d,iVar14);
-    iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
-    if (5 < iVar12) {
-      iVar12 = 0;
-      iVar13 = iVar13 + *(short *)(DAT_000879b0 + 6) * 2;
-      do {
-        bVar1 = *(byte *)((int)iVar12 + DAT_00086df8 + 0x21);
-        uVar7 = FUN_0007863c((int)iVar12 + 0x1fU | 0x400);
-        bVar5 = bVar1;
-        if (9 < bVar1) {
-          bVar5 = Ordinal_2005(10,bVar1);
-        }
-        local_58[0] = bVar5 + 0x30;
-        if (bVar1 < 10) {
-          local_58[1] = '\0';
-        }
-        else {
-          uw_ord2005_rem_141 = ((int)(bVar1)) % (10);
-          local_58[1] = uw_ord2005_rem_141 + '0';
-        }
-        local_58[2] = 0;
-        uw_ord2005_rem_142 = ((int)(iVar12)) % (3);
-        iVar14 = uw_ord2005_rem_142;
-        if (uw_ord2005_rem_142 == 0) {
-          iVar14 = DAT_000879b0;
-        }
-        if (uw_ord2005_rem_142 == 0) {
-          iVar13 = *(short *)(iVar14 + 6) + iVar13;
-        }
-        iVar14 = (short)uw_ord2005_rem_142 * 0x4a + 0x32;
-        draw_text_string(uVar7,iVar14,iVar13);
-        iVar9 = measure_text_width(local_58);
-        draw_text_string(local_58,(iVar14 - iVar9) + 0x46,iVar13);
-        iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
-      } while (iVar12 < 0x14);
-      flush_dirty_rect_to_display(1);
-      return;
-    }
-  } while( true );
-}
-
-
-
 undefined4 FUN_0007129c(param_1)
 short param_1;
 
@@ -36983,7 +36800,7 @@ void FUN_00071b94()
     Ordinal_1063(acStack_114,s__DATA_win2_byt_00087340);
     blit_fullscreen_bitmap_file(0xffffffff,acStack_114,1);
     dirty_rect_union(0,200,0,0x140);
-    FUN_00070c90();
+    render_endgame_character_stats();
     do {
       sVar3 = next_input_event();
     } while (sVar3 < 0);

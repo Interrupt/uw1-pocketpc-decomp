@@ -1312,6 +1312,9 @@ extern undefined DAT_00087308_arr[3];
 extern char s_and_00087310[];
 extern undefined DAT_00087318;
 extern char s_Chant_the_mantra__0008731c[];
+extern char s_fontchar_sys_00087330[];
+extern undefined DAT_001c2000_backing[8192];
+#define DAT_001c2000 DAT_001c2000_backing[0]
 extern undefined1 DAT_0024fa38_backing[3072];
 #define DAT_0024fa38 DAT_0024fa38_backing[0]
 extern undefined2 DAT_00086b30;
@@ -3117,7 +3120,7 @@ undefined4 roll_skill_use_improvement();
 void print_single_skill_improvement_message();
 void print_skill_improvement_list();
 void handle_mantra_chant();
-void FUN_00070c90();
+void render_endgame_character_stats();
 undefined4 FUN_0007129c();
 void FUN_0007141c();
 void FUN_00071510();
