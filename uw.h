@@ -924,6 +924,7 @@ extern char DAT_0023bf60;
 extern int DAT_0023bf64;
 #define DAT_002048a5 DAT_00204880_backing[0x25]
 #define DAT_002048a6 DAT_00204880_backing[0x26]
+extern char *g_menu_button_bitmaps[16];
 extern undefined DAT_00086e87_backing[64];
 #define DAT_00086e87 DAT_00086e87_backing[0]
 extern char s_font5x6i_sys_00086e98[];
@@ -2989,9 +2990,9 @@ void grant_experience_points();
 void refresh_experience_display();
 bool step_value_toward_limit();
 void project_position_by_heading();
-void FUN_0006a034();
-int FUN_0006a058();
-bool FUN_0006a0c8();
+void busy_wait_ms();
+int roll_dice_sum();
+bool populate_menu_button_bitmap_entry();
 void FUN_0006a168();
 void FUN_0006a1c4();
 void draw_menu_item_list();

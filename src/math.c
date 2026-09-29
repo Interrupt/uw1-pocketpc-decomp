@@ -108,3 +108,47 @@ short * param_4;
   return;
 }
 
+
+
+
+// was FUN_0006a034 -- busy-waits (spinning on read_realtime_clock_units)
+// for param_1 milliseconds.
+void busy_wait_ms(param_1)
+uint param_1;
+
+{
+  int iVar1;
+  uint uVar2;
+  
+  iVar1 = read_realtime_clock_units();
+  do {
+    uVar2 = read_realtime_clock_units();
+  } while (uVar2 < iVar1 + (param_1 & 0xffff));
+  return;
+}
+
+
+
+// was FUN_0006a058 -- classic "base + NdM" dice roll: param_1 doubles
+// as both the starting value and the iteration count, and each of
+// param_1 iterations adds a random 0..param_2-1 roll to the running
+// total. Used extensively (~20 call sites) for combat damage, loot
+// quantities, and other randomized game values.
+int roll_dice_sum(param_1,param_2)
+int param_1;
+short param_2;
+
+{
+  short sVar1;
+  int iVar2;
+  
+  if ((0 < param_2) && (iVar2 = (int)(short)param_1, 0 < iVar2)) {
+    do {
+      iVar2 = (iVar2 + -1) * 0x10000 >> 0x10;
+      sVar1 = rand_below((int)param_2);
+      param_1 = param_1 + sVar1;
+    } while (iVar2 != 0);
+  }
+  return param_1;
+}
+

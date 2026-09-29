@@ -190,7 +190,7 @@ undefined4 param_1;
      records x 0x10 bytes = 0x40): each record is [4-byte bitmap-ptr
      slot for unselected, 4-byte slot for selected (both now unused --
      see g_menu_button_bitmaps), 2-byte X, 2-byte Y, 2-byte W
-     (placeholder, overwritten by FUN_0006a0c8), 2-byte H (same)].
+     (placeholder, overwritten by populate_menu_button_bitmap_entry), 2-byte H (same)].
      Confirmed: their X/Y values (e.g. (0x62,0x52), (0x51,0x69),
      (0x48,0x81), (0x55,0x9a)) are exactly the button position data
      draw_menu_item_list reads back out at pcVar_rec+8/+10 -- previously always
@@ -214,7 +214,7 @@ undefined4 param_1;
   Ordinal_1047(local_82c,0,sizeof(local_82c));
   /* Record 0 (button 0): bitmap-ptr slots (offsets 0/4) are now unused
      -- see g_menu_button_bitmaps -- X/Y at 8/0xa, W/H placeholders
-     (overwritten by FUN_0006a0c8 once the real bitmap loads) at
+     (overwritten by populate_menu_button_bitmap_entry once the real bitmap loads) at
      0xc/0xe. */
   *(short *)(local_82c + 8) = 0x62;
   *(short *)(local_82c + 0xa) = 0x52;
@@ -304,7 +304,7 @@ undefined4 param_1;
       if ((DAT_0023bf70 == 0) ||
          /* Was a literal 0 here (an earlier fix pass believed this
             mirrored sibling call sites like FUN_00041a78's genuine
-            "no postprocessing needed" case) -- but FUN_0006a0c8 is
+            "no postprocessing needed" case) -- but populate_menu_button_bitmap_entry is
             exactly the postprocess_cb this resource load needs: same
             3-arg shape as chargen's LAB_000255d0 (see its comment near
             DAT_000fb880), and it writes the per-button bitmap-pointer/
@@ -314,7 +314,7 @@ undefined4 param_1;
             callback bug class as LAB_000255d0 was, just already
             decompiled as a named function instead of staying raw
             undecompiled ARM. */
-         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,&FUN_0006a0c8), iVar10 == 0)) {
+         (iVar10 = load_gr_resource_entries(s_opbtn_00086ee4,0,0xffffffff,&LAB_0006a0ac,&populate_menu_button_bitmap_entry), iVar10 == 0)) {
         FUN_0003c3c8(0x300d);
       }
       if (local_838 != 3) {
@@ -1096,5 +1096,38 @@ void handle_game_view_click_hold()
     move_custom_view_target(0);
   }
   return;
+}
+
+
+
+
+// was FUN_0006a0c8 -- postprocess callback for the main menu's "opbtn"
+// (OPBTN.GR) resource load -- populates DAT_0023bf6c's per-button
+// record table (bitmap pointer via g_menu_button_bitmaps, plus
+// width/height) as each button-state bitmap finishes loading.
+bool populate_menu_button_bitmap_entry(param_1,param_2,param_3)
+char *param_1;
+int param_2;
+short param_3;
+
+{
+  uint uVar1;
+  int iVar3;
+  int bmp_idx;
+
+  uVar1 = (int)param_3 & 1;
+  iVar3 = (int)param_3 >> 1;
+  bmp_idx = uVar1 + iVar3 * 4;
+  if ((uint)bmp_idx < sizeof(g_menu_button_bitmaps) / sizeof(g_menu_button_bitmaps[0])) {
+    g_menu_button_bitmaps[bmp_idx] = param_1 + 5;
+  }
+  if ((short)uVar1 == 0) {
+    char *rec = DAT_0023bf6c + iVar3 * 0x10;
+    rec[0xc] = param_1[1];
+    rec[0xd] = 0;
+    rec[0xe] = param_1[2];
+    rec[0xf] = 0;
+  }
+  return param_2 != 0;
 }
 

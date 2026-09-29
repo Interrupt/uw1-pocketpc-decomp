@@ -2552,7 +2552,7 @@ short DAT_00201c94;
    3 of the 48 slots point at functions this decompile never recovered:
    they're only ever reached indirectly through this table, so Ghidra's
    original auto-analysis had no direct call site to find them from (same
-   root cause as LAB_000255d0/FUN_0006a0c8 needing separate recovery).
+   root cause as LAB_000255d0/populate_menu_button_bitmap_entry needing separate recovery).
    Disassembling them directly (Ghidra, headless) shows they're
    conversation-portrait-animation and ambient-sound-cycling handlers --
    not needed to get a player standing in a rendered dungeon, so left
@@ -5348,7 +5348,7 @@ char s_font5x6i_sys_00086e98[] = "font5x6i.sys";
    this file -- truncating on this 64-bit host. */
 char *DAT_0023bf6c;
 ushort DAT_0023bf74;
-/* FUN_0006a0c8 (main menu button record populator) used to split each
+/* populate_menu_button_bitmap_entry (main menu button record populator) used to split each
    loaded button bitmap's real pointer into 4 bytes and pack it directly
    into DAT_0023bf6c's record array -- fine for a 32-bit pointer on the
    original binary, but silently truncates a real 64-bit pointer here
@@ -5356,10 +5356,10 @@ ushort DAT_0023bf74;
    low-32-bits-only value, SEGV). Same "route the real pointer through a
    dedicated global instead of packing it into an undersized field"
    pattern as g_chargen_textfield_buf. Index formula (shared by
-   FUN_0006a0c8/draw_menu_item_list) is (selected?1:0) + button_index*4 -- a
+   populate_menu_button_bitmap_entry/draw_menu_item_list) is (selected?1:0) + button_index*4 -- a
    stride of 4 per button, not 2, so up to 4 buttons needs slots through
    index 13 (1 + 3*4); sized generously to 16. */
-static char *g_menu_button_bitmaps[16];
+char *g_menu_button_bitmaps[16];
 char s__DATA_CREDIT3_BYT_00086ea8[] = "\\DATA\\CREDIT3.BYT";
 char s__DATA_CREDIT2_BYT_00086ebc[] = "\\DATA\\CREDIT2.BYT";
 char s__DATA_CREDIT1_BYT_00086ed0[] = "\\DATA\\CREDIT1.BYT";
@@ -9961,7 +9961,7 @@ int param_1;
   *(byte *)(DAT_00086df8 + 100) = *(byte *)(DAT_00086df8 + 100) & 0xfd | (bVar1 & 1) << 1;
   do {
     if (param_1 == 0) {
-      uVar2 = FUN_0006a058(3,4);
+      uVar2 = roll_dice_sum(3,4);
     }
     else {
       uVar2 = 0;
@@ -9972,7 +9972,7 @@ int param_1;
   iVar6 = 0;
   do {
     if (param_1 == 0) {
-      cVar3 = FUN_0006a058(2,10);
+      cVar3 = roll_dice_sum(2,10);
       cVar3 = cVar3 + '\n';
     }
     else {
@@ -11300,7 +11300,7 @@ undefined4 param_2;
          (pbVar5 = (byte *)FUN_000535fc((int)DAT_00100620),
          ((&DAT_001007da)[(*pbVar5 & 0x3f) * 0x30] & 1) == 0)) {
         bVar1 = *(byte *)(DAT_00086df8 + 100);
-        uVar4 = FUN_0006a058(2,3);
+        uVar4 = roll_dice_sum(2,3);
         FUN_00046030(8 - (bVar1 & 1),uVar4,4,0,1);
       }
       return 1 - iVar3;
@@ -11319,14 +11319,14 @@ undefined4 param_2;
       else if ((uVar8 != 0) && (uVar8 < 3)) {
         uVar8 = (*(byte *)(DAT_00086df8 + 100) & 1) + 7;
       }
-      uVar4 = FUN_0006a058(2,4);
+      uVar4 = roll_dice_sum(2,4);
       FUN_00046030(uVar8,uVar4,4,1,1);
     }
   }
   else if (((param_1 == 1) && ((uVar6 & 0x1f0) == 0x140)) &&
           (iVar3 = rand_below(0xc), iVar3 < (int)(((byte)*puVar2 & 7) * 2))) {
     bVar1 = *(byte *)(DAT_00086df8 + 100);
-    uVar4 = FUN_0006a058(2,4);
+    uVar4 = roll_dice_sum(2,4);
     FUN_00046030(8 - (bVar1 & 1),uVar4,4,0,1);
   }
   return 0;
@@ -11370,10 +11370,10 @@ undefined1 param_1;
   uw_ord2005_rem_7 = ((int)((int)sVar3)) % (6);
   DAT_0010061c = 0;
   if (sVar2 != 0) {
-    DAT_0010061c = FUN_0006a058((int)sVar2,6);
+    DAT_0010061c = roll_dice_sum((int)sVar2,6);
   }
   if (uw_ord2005_rem_7 != 0) {
-    sVar3 = FUN_0006a058(1,(int)uw_ord2005_rem_7);
+    sVar3 = roll_dice_sum(1,(int)uw_ord2005_rem_7);
     DAT_0010061c = sVar3 + DAT_0010061c;
   }
   uVar9 = (uint)DAT_00100628 + (int)(short)((int)((uint)DAT_001005fc * (int)DAT_0010061c) >> 7);
@@ -12071,7 +12071,7 @@ ushort * param_1;
     set_hud_status_value(4,2);
     FUN_000735b0(9);
     sVar1 = *(short *)(&DAT_001007f8 + ((byte)*param_1 & 0x3f) * 0x30);
-    iVar2 = FUN_0006a058(2,(int)sVar1);
+    iVar2 = roll_dice_sum(2,(int)sVar1);
     iVar2 = iVar2 + sVar1 * 4;
     if ((param_1[7] & 4) != 0) {
       uVar3 = Ordinal_1053();
@@ -18225,7 +18225,7 @@ LAB_00038100:
         else {
           uVar5 = Ordinal_1053();
           if ((uVar5 & 3) == 0) {
-            uVar4 = FUN_0006a058(6,10);
+            uVar4 = roll_dice_sum(6,10);
             FUN_00081814(param_1,8,uVar4,0,0,sVar2,param_5);
             sVar2 = rand_below(2);
             uVar6 = (int)sVar2 + 0xd5;
@@ -32018,7 +32018,7 @@ void FUN_000541d0()
   }
   iVar3 = roll_skill_check(*(undefined1 *)(iVar3 + 0x34),uVar1);
   if (((short)iVar3 < 1) && (*(byte *)(DAT_00086df8 + 0xb9) < 0x8c)) {
-    cVar2 = FUN_0006a058(3 - (int)(iVar3),4);
+    cVar2 = roll_dice_sum(3 - (int)(iVar3),4);
     *(char *)(DAT_00086df8 + 0xb9) = *(char *)(DAT_00086df8 + 0xb9) + cVar2;
   }
   if (0x78 < *(byte *)(DAT_00086df8 + 0xb9)) {
@@ -32026,7 +32026,7 @@ void FUN_000541d0()
     if ((-(int)iVar3 + 2) * 0x10000 >> 0x10 != 0) {
       FUN_000411e0(0xc6);
       FUN_00049924(2);
-      uVar1 = FUN_0006a058(2,-(int)iVar3 + 4);
+      uVar1 = roll_dice_sum(2,-(int)iVar3 + 4);
       FUN_00038374(g_player_object,0,0,0,uVar1,0);
     }
   }
@@ -32059,18 +32059,18 @@ char param_3;
     *puVar4 = (char)iVar2;
     puVar4[1] = (char)((uint)iVar2 >> 8);
     if (param_3 == '\0') {
-      uVar5 = FUN_0006a058(2,3);
+      uVar5 = roll_dice_sum(2,3);
       uVar5 = uVar5 & 0xff;
     }
     else if (param_3 == '\x01') {
       uVar5 = 1;
     }
     else if (param_3 == '@') {
-      uVar5 = FUN_0006a058(2,8);
+      uVar5 = roll_dice_sum(2,8);
       uVar5 = (uVar5 & 0xff) + 6;
     }
     else if (param_3 == -0x80) {
-      uVar5 = FUN_0006a058(3,0x14);
+      uVar5 = roll_dice_sum(3,0x14);
       uVar5 = (uVar5 & 0xff) + 0x18;
     }
     else {
@@ -36409,71 +36409,6 @@ LAB_00060f54:
 
 
 
-void FUN_0006a034(param_1)
-uint param_1;
-
-{
-  int iVar1;
-  uint uVar2;
-  
-  iVar1 = read_realtime_clock_units();
-  do {
-    uVar2 = read_realtime_clock_units();
-  } while (uVar2 < iVar1 + (param_1 & 0xffff));
-  return;
-}
-
-
-
-int FUN_0006a058(param_1,param_2)
-int param_1;
-short param_2;
-
-{
-  short sVar1;
-  int iVar2;
-  
-  if ((0 < param_2) && (iVar2 = (int)(short)param_1, 0 < iVar2)) {
-    do {
-      iVar2 = (iVar2 + -1) * 0x10000 >> 0x10;
-      sVar1 = rand_below((int)param_2);
-      param_1 = param_1 + sVar1;
-    } while (iVar2 != 0);
-  }
-  return param_1;
-}
-
-
-
-// Postprocess callback for the main menu's "opbtn" (OPBTN.GR) resource load -- populates DAT_0023bf6c's per-button record table (bitmap pointer via g_menu_button_bitmaps, plus width/height) as each button-state bitmap finishes loading.
-bool FUN_0006a0c8(param_1,param_2,param_3)
-char *param_1;
-int param_2;
-short param_3;
-
-{
-  uint uVar1;
-  int iVar3;
-  int bmp_idx;
-
-  uVar1 = (int)param_3 & 1;
-  iVar3 = (int)param_3 >> 1;
-  bmp_idx = uVar1 + iVar3 * 4;
-  if ((uint)bmp_idx < sizeof(g_menu_button_bitmaps) / sizeof(g_menu_button_bitmaps[0])) {
-    g_menu_button_bitmaps[bmp_idx] = param_1 + 5;
-  }
-  if ((short)uVar1 == 0) {
-    char *rec = DAT_0023bf6c + iVar3 * 0x10;
-    rec[0xc] = param_1[1];
-    rec[0xd] = 0;
-    rec[0xe] = param_1[2];
-    rec[0xf] = 0;
-  }
-  return param_2 != 0;
-}
-
-
-
 void FUN_0006a168()
 
 {
@@ -39348,7 +39283,7 @@ LAB_000709e0:
                     );
       }
 LAB_00070c78:
-      FUN_0006a034(0x20);
+      busy_wait_ms(0x20);
       return;
     }
     if (iVar6 == 0x15) {
@@ -39413,7 +39348,7 @@ LAB_00070c78:
   refresh_stats_panel_if_active();
 LAB_00070b58:
   refresh_player_equipment_effects();
-  FUN_0006a034(0x20);
+  busy_wait_ms(0x20);
   FUN_00057570();
   FUN_0005758c();
   return;
@@ -41395,7 +41330,7 @@ char param_2;
       iVar2 = -1;
     }
     else {
-      cVar1 = FUN_0006a058((int)param_2,8);
+      cVar1 = roll_dice_sum((int)param_2,8);
       iVar2 = (int)cVar1;
     }
     restore_stat_capped(param_1,iVar2);
@@ -41414,7 +41349,7 @@ char param_2;
   char cVar2;
   
   if ((*param_1 & 0x1c0) == 0x40) {
-    cVar2 = FUN_0006a058((int)param_2,8);
+    cVar2 = roll_dice_sum((int)param_2,8);
     bVar1 = (byte)param_1[4];
     if (3 < bVar1) {
       if ((int)((uint)bVar1 - (int)cVar2) < 4) {
@@ -41624,7 +41559,7 @@ undefined1 param_5;
   uVar4 = (undefined2)param_1;
   FUN_00081814(param_3,7,4,0,7,uVar4,(short)param_2);
   uVar5 = (undefined1)((ushort)uVar4 >> 8);
-  uVar1 = FUN_0006a058(5,4);
+  uVar1 = roll_dice_sum(5,4);
   uVar2 = FUN_000535fc(param_5);
   FUN_00038374(param_3,uVar2,param_1,param_2,CONCAT11(uVar3,uVar1),CONCAT11(uVar5,0x13));
   return 1;
@@ -41946,7 +41881,7 @@ uint param_2;
 {
   char cVar1;
   
-  cVar1 = FUN_0006a058(3,4);
+  cVar1 = roll_dice_sum(3,4);
   FUN_00074ad0(param_1,(int)cVar1,*(undefined4 *)(&DAT_00087604 + (param_2 & 0x3f) * 4),
                param_2 & 0xc0,4,2);
   return;
@@ -42381,7 +42316,7 @@ LAB_0007588c:
     uVar3 = 3;
     goto LAB_00075a0c;
   case 9:
-    cVar2 = FUN_0006a058(8,3);
+    cVar2 = roll_dice_sum(8,3);
     FUN_00074ad0(param_1,(int)cVar2,FUN_00075248,0x40,5,3);
     set_movement_animation_timer(0x40,0x28);
     FUN_00072fc8(0x12,param_1,0);
@@ -42441,7 +42376,7 @@ undefined1 param_4;
     if (iVar2 != 0) {
       do {
         iVar3 = (char *)resolve_object_link(iVar2 + 4);
-        uVar1 = FUN_0006a058((&DAT_0008762c)[bVar5],(&DAT_00087630)[bVar5]);
+        uVar1 = roll_dice_sum((&DAT_0008762c)[bVar5],(&DAT_00087630)[bVar5]);
         uVar4 = FUN_000535fc(param_4);
         FUN_00038374(iVar2,uVar4,param_1,(int)param_2,uVar1,(&DAT_00087634)[bVar5]);
         iVar2 = iVar3;
@@ -44249,7 +44184,7 @@ char *param_1;  /* was `int` -- truncated the real object pointer FUN_000798c4
     }
     else {
       cVar5 = Ordinal_2005(iVar1,iVar8);
-      sVar6 = FUN_0006a058(4,((int)cVar5 << 0x19) >> 0x18);
+      sVar6 = roll_dice_sum(4,((int)cVar5 << 0x19) >> 0x18);
       cVar5 = (char)(sVar6 >> 2);
     }
     uVar2 = (uint)cVar5;
