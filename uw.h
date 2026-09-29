@@ -3445,7 +3445,7 @@ void complete_use_item_on_special_target();
 void arm_use_item_on_special_target_prompt();
 void complete_use_item_on_quest_target();
 void complete_use_item_on_container();
-void FUN_0007a418();
+void complete_use_item_skill_check();
 void FUN_0007a478();
 undefined4 FUN_0007a53c();
 void FUN_0007a598();

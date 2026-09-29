@@ -1361,3 +1361,29 @@ ushort * param_1;
   }
   return;
 }
+
+
+
+
+
+// was FUN_0007a418 -- deferred-target-click completion callback,
+// gated on both param_2 and param_3 being nonzero: resets the
+// click-target UI state, then runs FUN_0003ab90 (not yet named -- a
+// skill-difficulty-check interaction that builds the target's
+// display name and compares its own difficulty rating against the
+// player's skill byte at offset +0x2f) against the target. No
+// callers found by grep in the remaining decompile.
+void complete_use_item_skill_check(param_1,param_2,param_3)
+undefined4 param_1;
+int param_2;
+int param_3;
+
+{
+  if ((param_2 != 0) && (param_3 != 0)) {
+    FUN_00057cac(3);
+    g_selected_object = 0;
+    g_cursor_holding_state = 0;
+    FUN_0003ab90(param_1,*(undefined1 *)(DAT_00086df8 + 0x2f),1);
+  }
+  return;
+}

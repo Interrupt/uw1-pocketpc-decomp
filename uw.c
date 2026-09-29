@@ -36520,23 +36520,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007a418(param_1,param_2,param_3)
-undefined4 param_1;
-int param_2;
-int param_3;
-
-{
-  if ((param_2 != 0) && (param_3 != 0)) {
-    FUN_00057cac(3);
-    g_selected_object = 0;
-    g_cursor_holding_state = 0;
-    FUN_0003ab90(param_1,*(undefined1 *)(DAT_00086df8 + 0x2f),1);
-  }
-  return;
-}
-
-
-
 void FUN_0007a478(param_1,param_2)
 ushort * param_1;
 int param_2;
@@ -36548,7 +36531,7 @@ int param_2;
   uVar1 = *param_1 & 0x1ff;
   if ((uVar1 < 0xc2) || (0xc6 < uVar1)) {
     if (uVar1 == 0xd7) {
-      pcVar2 = FUN_0007a418;
+      pcVar2 = complete_use_item_skill_check;
     }
     else {
       if (uVar1 != 0xd8) {
