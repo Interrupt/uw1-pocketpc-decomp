@@ -5002,14 +5002,14 @@ undefined1 DAT_00086d60_backing[65536];
 short DAT_0018957e;
 short DAT_0018957c;
 short DAT_00189576;
-static undefined2 DAT_0023b908_backing[8192];
+undefined2 DAT_0023b908_backing[8192];
 #define DAT_0023b908 DAT_0023b908_backing[0]
-static undefined2 DAT_0023b928_backing[8192];
+undefined2 DAT_0023b928_backing[8192];
 #define DAT_0023b928 DAT_0023b928_backing[0]
 char DAT_0023bb94;
-static undefined DAT_0023b90a_backing[8192];
+undefined DAT_0023b90a_backing[8192];
 #define DAT_0023b90a DAT_0023b90a_backing[0]
-static undefined1 DAT_0023b940_backing[65536];
+undefined1 DAT_0023b940_backing[65536];
 #define DAT_0023b940 DAT_0023b940_backing[0]
 /* Object/feature-draw sort scratch (emit_tile_features and helpers FUN_00064e3c/
    ec8/508c/5128/65210/652e8, ~uw.c:49340-49766). Ghidra split each of
@@ -36382,52 +36382,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_00064d34(param_1)
-char param_1;
-
-{
-  uint uVar1;
-  uint uVar2;
-  
-  if (param_1 == -10) {
-    Ordinal_1047(&DAT_0023b940,0,0x252);
-  }
-  else {
-    if (param_1 == '\0') {
-      uVar1 = (uint)DAT_0023b908;
-      if (uVar1 == 0) {
-        DAT_0023bb94 = param_1;
-        return;
-      }
-      uVar2 = (uint)DAT_0023b928;
-      if (8 < uVar2 + uVar1) {
-        uVar1 = 8 - uVar2;
-        DAT_0023b908 = (ushort)uVar1;
-      }
-      Ordinal_1044(&DAT_0023b928 + uVar2 + 1,&DAT_0023b90a,(uVar1 & 0xffff) << 1);
-      DAT_0023b928 = DAT_0023b928 + (short)uVar1;
-      DAT_0023bb94 = param_1;
-      return;
-    }
-    if (param_1 == '\x01') {
-      Ordinal_1044(&DAT_0023b908,&DAT_0023b928,0x12);
-      DAT_0023b928 = 0;
-      DAT_0023bb94 = param_1;
-      return;
-    }
-    if (param_1 != '\x02') {
-      DAT_0023bb94 = param_1;
-      return;
-    }
-  }
-  Ordinal_1047(&DAT_0023b908,0,0x12);
-  Ordinal_1047(&DAT_0023b928,0,0x12);
-  DAT_0023bb94 = param_1;
   return;
 }
 

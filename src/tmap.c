@@ -227,11 +227,11 @@ void walk_visible_tiles()
   if (0x2000 < (int)uVar6) {
     uVar6 = uVar6 - 0x4000;
   }
-  FUN_00064d34(0xfffffff6);
+  update_wall_partition_phase(0xfffffff6);
   DAT_0023b4e8 = g_visibility_ring_depth;
   if (-1 < g_visibility_ring_depth) {
     do {
-      FUN_00064d34(2);
+      update_wall_partition_phase(2);
       sVar1 = (short)uVar6;
       DAT_0023b4e4 = 0;
       uVar6 = (uint)sVar1;
@@ -246,7 +246,7 @@ void walk_visible_tiles()
         DAT_0023b820 = DAT_0023b820 + 2;
         uVar6 = ((short)uVar6 + iVar7) * 0x10000 >> 0x10;
       } while (DAT_0023b4e4 < 0x10);
-      FUN_00064d34(1);
+      update_wall_partition_phase(1);
       iVar4 = 0x20;
       DAT_0023b820 = puVar9 + 0x40;
       DAT_0023b4e4 = 0x20;
@@ -263,7 +263,7 @@ void walk_visible_tiles()
         DAT_0023b4e4 = (short)iVar4;
         DAT_0023b820 = DAT_0023b820 + -2;
       } while (0x10 < iVar4 * 0x10000 >> 0x10);
-      FUN_00064d34(0);
+      update_wall_partition_phase(0);
       if ((uVar6 * 0x10000 & 0xf0000000) == 0) {
         process_visible_tile_cell(&DAT_000b99d0 + ((int)(uVar6 * 0x10000) >> 0x10));
       }
@@ -1427,5 +1427,63 @@ short param_2;
     iVar1 = 0;
   }
   return iVar1;
+}
+
+
+
+
+// was FUN_00064d34 -- tracks which phase of the per-ring wall/tile
+// scan is current (recorded in DAT_0023bb94, read back by bitmap.c's
+// sprite-vs-wall depth-partition dispatch) and maintains a rolling
+// window of up to 8 recent wall-edge entries
+// (DAT_0023b908/DAT_0023b928) across ring boundaries: mode -10/2 does
+// a full reset, mode 1 copies the current window into the "previous"
+// slot, mode 0 appends the ring's own edge data (trimmed to the 8-
+// entry cap). Called once per ring phase from walk_visible_tiles.
+// Exact consumer semantics of the wall-edge data are not fully traced
+// -- named for its role in the state machine, not a confirmed meaning
+// of the buffer contents themselves.
+void update_wall_partition_phase(param_1)
+char param_1;
+
+{
+  uint uVar1;
+  uint uVar2;
+
+  if (param_1 == -10) {
+    Ordinal_1047(&DAT_0023b940,0,0x252);
+  }
+  else {
+    if (param_1 == '\0') {
+      uVar1 = (uint)DAT_0023b908;
+      if (uVar1 == 0) {
+        DAT_0023bb94 = param_1;
+        return;
+      }
+      uVar2 = (uint)DAT_0023b928;
+      if (8 < uVar2 + uVar1) {
+        uVar1 = 8 - uVar2;
+        DAT_0023b908 = (ushort)uVar1;
+      }
+      Ordinal_1044(&DAT_0023b928 + uVar2 + 1,&DAT_0023b90a,(uVar1 & 0xffff) << 1);
+      DAT_0023b928 = DAT_0023b928 + (short)uVar1;
+      DAT_0023bb94 = param_1;
+      return;
+    }
+    if (param_1 == '\x01') {
+      Ordinal_1044(&DAT_0023b908,&DAT_0023b928,0x12);
+      DAT_0023b928 = 0;
+      DAT_0023bb94 = param_1;
+      return;
+    }
+    if (param_1 != '\x02') {
+      DAT_0023bb94 = param_1;
+      return;
+    }
+  }
+  Ordinal_1047(&DAT_0023b908,0,0x12);
+  Ordinal_1047(&DAT_0023b928,0,0x12);
+  DAT_0023bb94 = param_1;
+  return;
 }
 

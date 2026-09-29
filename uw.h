@@ -829,6 +829,17 @@ extern double g_tune_leaf_hinge_offset;
 extern double g_tune_rotation_offset;
 extern double g_tune_wide_center;
 extern int g_uw_debug_pick_diag;
+/* Globals defined in uw.c but also used by functions that now live in
+   tmap.c (update_wall_partition_phase) -- extern'd here so both
+   translation units see the same storage. */
+extern undefined2 DAT_0023b908_backing[8192];
+#define DAT_0023b908 DAT_0023b908_backing[0]
+extern undefined2 DAT_0023b928_backing[8192];
+#define DAT_0023b928 DAT_0023b928_backing[0]
+extern undefined DAT_0023b90a_backing[8192];
+#define DAT_0023b90a DAT_0023b90a_backing[0]
+extern undefined1 DAT_0023b940_backing[65536];
+#define DAT_0023b940 DAT_0023b940_backing[0]
 extern char s_add_to_npc_inv_0008507c[];
 extern char s_babl_ask_000851ec[];
 extern char s_babl_fmenu_00085214[];
@@ -2822,7 +2833,7 @@ void emit_tile_objects();
 void emit_object_billboard();
 void emit_catalog_object();
 void emit_anim_object_frames();
-void FUN_00064d34();
+void update_wall_partition_phase();
 void FUN_00064e3c();
 void FUN_00064ec8();
 void sprite_partition_step();
