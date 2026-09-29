@@ -938,7 +938,7 @@ LAB_00073c90:
     adjust_level7_hazard_value(param_3,param_2);
     break;
   case 0xb:
-    FUN_00075808(param_3,param_2 & 0xffffffc0,param_2 & 0x3f);
+    dispatch_player_command(param_3,param_2 & 0xffffffc0,param_2 & 0x3f);
     break;
   case 0xc:
     break;
@@ -2061,6 +2061,170 @@ undefined4 param_2;
       bVar7 = bVar7 + 1;
       uVar6 = uVar6 + 1 & 0xff;
     } while (bVar7 < 8);
+  }
+  return;
+}
+
+
+
+
+
+// was FUN_000756c8 -- deferred target-click completion callback for
+// dispatch_player_command's cases 2-5 (stored into the DAT_002020b8
+// click-target callback slot, distinct from finish_object_use's own
+// DAT_00202098-driven item-use flow). Branches on DAT_00202094 (the
+// command id staged by dispatch_player_command): 3 rolls a lockpick
+// check against param_1 as a container, then a trap-disarm check on
+// success; 4 re-runs the target's duplicate right-click action list
+// (dispatch_object_action_dup) and, for most object classes, sets a
+// flag combination on it (offset +1/+3, bits 0x380); 5 checks whether
+// the player's held item combines with param_1
+// (check_object_combination) and prints a success/fail scroll
+// message. All paths then reset the click-target UI state
+// (FUN_00057cac, g_cursor_holding_state=0, wait_for_click_release).
+void complete_pending_player_command_target(param_1)
+ushort * param_1;
+
+{
+  ushort uVar1;
+  short sVar2;
+  undefined4 uVar3;
+  uint uVar4;
+  
+  if ((short)DAT_00202094 == 3) {
+    sVar2 = roll_container_lockpick_check(param_1,0x2d);
+    if (sVar2 != 0) {
+      roll_container_trap_disarm_check(param_1,0x2d);
+    }
+  }
+  else if ((short)DAT_00202094 == 4) {
+    dispatch_object_action_dup(param_1,3);
+    uVar4 = *param_1 & 0x1c0;
+    if (((uVar4 != 0x140) && (uVar4 != 0x40)) &&
+       (((&DAT_00202c9a)[(*param_1 & 0x1ff) * 0xd] & 3) != 2)) {
+      uVar1 = param_1[1];
+      *(char *)(param_1 + 1) = (char)(uVar1 | 0x380);
+      *(char *)((char *)param_1 + 3) = (char)((uVar1 | 0x380) >> 8);
+    }
+  }
+  else if ((short)DAT_00202094 == 5) {
+    sVar2 = check_object_combination(g_player_object,param_1,0xffffffd3);
+    if (sVar2 == 3) {
+      uVar3 = 0x10e;
+    }
+    else {
+      uVar3 = 0x10f;
+    }
+    FUN_00078c80(uVar3);
+  }
+  FUN_00057cac(3);
+  g_cursor_holding_state = 0;
+  wait_for_click_release(1);
+  return;
+}
+
+
+
+// was FUN_00075808 -- dispatch_special_action's case 0xb handler:
+// a numbered (0-0xc) player-command dispatcher, player-only. Case 1
+// casts Detect Life directly; cases 2-5 arm a deferred "click a
+// target" mode (g_cursor_holding_state=2, callback
+// complete_pending_player_command_target, command id staged in
+// DAT_00202094); case 6 clears a player status-flag pair; case 7
+// re-triggers a "use"-style action on the player and resets the
+// custom view target; case 9 rolls 8d3 and scans a cone in front of
+// the player spawning random objects via
+// spawn_random_variant_object_at_tile (matches "Create Food"'s
+// shape: a cone of randomly-varied food-like objects); case 10 is
+// gated on a player nibble field and, if set, arms a scheduled
+// location-check callback and resets the player's tile position
+// (a "recall"/"teleport home" effect); cases 0/8/0xb funnel into a
+// shared FUN_000542f8 call with a different mode constant; case 0xc
+// does a broad player-state reset (clears carry weight, refreshes
+// equipment effects, redraws the HUD) -- likely a "resurrect" or
+// "reset character" command.
+void dispatch_player_command(param_1,param_2,param_3)
+int param_1;
+undefined4 param_2;
+char param_3;
+
+{
+  undefined2 uVar1;
+  char cVar2;
+  undefined4 uVar3;
+  uint uVar4;
+  
+  if (param_1 != g_player_object) {
+    return;
+  }
+  switch((int)param_3) {
+  case 0:
+    uVar3 = 2;
+    goto LAB_00075a0c;
+  case 1:
+    cast_detect_life_spell(10,0x2d);
+    break;
+  case 2:
+    goto LAB_0007588c;
+  case 3:
+    goto LAB_0007588c;
+  case 4:
+    goto LAB_0007588c;
+  case 5:
+LAB_0007588c:
+    g_cursor_holding_state = 2;
+    DAT_00202098 = g_player_object;
+    DAT_002020b8 = complete_pending_player_command_target;
+    DAT_00202094 = (int)param_3;
+    FUN_00057c5c(0x1076);
+    break;
+  case 6:
+    uVar4 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
+    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar4;
+    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar4 >> 8);
+    break;
+  case 7:
+    FUN_000542f8(0xb,1,param_2);
+    set_custom_view_target(0);
+    set_view_subject_by_command(0xffffffff);
+    break;
+  case 8:
+    uVar3 = 3;
+    goto LAB_00075a0c;
+  case 9:
+    cVar2 = roll_dice_sum(8,3);
+    scan_area_ahead_of_object(param_1,(int)cVar2,spawn_random_variant_object_at_tile,0x40,5,3);
+    set_movement_animation_timer(0x40,0x28);
+    play_sound_effect_at_object(0x12,param_1,0);
+    break;
+  case 10:
+    if ((*(byte *)(DAT_00086df8 + 0x5e) & 0xf) == 0) {
+      FUN_00078c80(0x111);
+    }
+    else {
+      DAT_00201c9c = &check_scheduled_object_location_callback;
+      FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
+      set_player_tile_position(0,0,0);
+      FUN_00049924(0x7ffe);
+    }
+    break;
+  case 0xb:
+    uVar3 = 0;
+LAB_00075a0c:
+    FUN_000542f8(0xb,uVar3,param_2);
+    break;
+  case 0xc:
+    FUN_000444b0((char *)g_player_object + 6);
+    FUN_0003bc1c(0);
+    FUN_00044814();
+    FUN_00044920();
+    uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
+    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
+    *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x10;
+    *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
+    g_player_carry_weight = 0;
+    refresh_player_equipment_effects();
+    redraw_active_hud_panel();
   }
   return;
 }
