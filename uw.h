@@ -3433,7 +3433,7 @@ void spawn_creature_misc_item_drop();
 void spawn_creature_death_loot();
 ushort *use_object_on_target();
 bool finish_object_use();
-short *FUN_00079dec();
+short *begin_holding_object_on_cursor();
 void FUN_00079e64();
 void FUN_00079f1c();
 void FUN_00079f90();

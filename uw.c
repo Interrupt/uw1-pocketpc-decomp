@@ -36520,30 +36520,6 @@ LAB_00060f54:
 
 
 
-short *FUN_00079dec(param_1,param_2)
-short * param_1;
-uint param_2;
-
-{
-  if (g_selected_object == (short *)0x0) {
-    if (param_1 == (short *)0x0) {
-      param_1 = (short *)spawn_new_object(param_2,0);
-    }
-    else {
-      param_2 = (int)*param_1 & 0x1ff;
-    }
-    g_cursor_holding_state = 1;
-    g_selected_object = param_1;
-    FUN_00057c5c(param_2);
-  }
-  else {
-    param_1 = (short *)0x0;
-  }
-  return param_1;
-}
-
-
-
 void FUN_00079e64(param_1,param_2)
 undefined4 param_1;
 int param_2;
@@ -37267,7 +37243,7 @@ LAB_0007b7e4:
   case 299:
     iVar3 = FUN_00039d78();
     if (iVar3 != 0) {
-      iVar3 = FUN_00079dec(0,0xb6);
+      iVar3 = begin_holding_object_on_cursor(0,0xb6);
       uVar7 = *(undefined2 *)(iVar3 + 4);
       *(byte *)(iVar3 + 4) = (byte)uVar7 | 0x3f;
       *(char *)(iVar3 + 5) = (char)((ushort)uVar7 >> 8);

@@ -682,7 +682,7 @@ int param_1;
       }
       uVar3 = uVar3 + 1 & 0xff;
     } while (uVar3 < 9);
-    iVar2 = FUN_00079dec(0,0xae);
+    iVar2 = begin_holding_object_on_cursor(0,0xae);
     if (iVar2 != 0) {
       print_scroll_message_by_id(0x88);
       uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);

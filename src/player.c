@@ -2310,7 +2310,7 @@ LAB_00070c78:
     }
     if (iVar6 == 0x15) {
       if (((*(byte *)(DAT_00086df8 + 0x60) & 0x40) == 0) &&
-         (iVar10 = FUN_00079dec(0,0xe1), iVar10 != 0)) {
+         (iVar10 = begin_holding_object_on_cursor(0,0xe1), iVar10 != 0)) {
         print_scroll_message_by_id(0x1e);
         uVar2 = *(undefined2 *)(DAT_00086df8 + 0x5f);
         *(char *)(DAT_00086df8 + 0x5f) = (char)uVar2;
