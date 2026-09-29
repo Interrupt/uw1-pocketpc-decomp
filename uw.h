@@ -1322,6 +1322,15 @@ extern undefined4 * DAT_0023c404;
 extern void * g_grtile_real_ptrs[320];
 extern char s__DATA__00085970[];
 extern char s_doors_00085a64[];
+/* Globals defined in uw.c but also used by functions that now live in
+   item_use.c (item use) -- extern'd here so both translation units
+   see the same storage. */
+extern undefined1 DAT_00202a28_backing[256];
+#define g_food_effect_table DAT_00202a28_backing[0]
+extern undefined4 g_weapon_overlay_enabled;
+extern char s_is_locked__000878fc[];
+extern char s_That_000878f4[];
+extern char s_UNNAMED_00084f24[];
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -2782,6 +2791,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/containers.h"
 #include "src/headers/interact.h"
 #include "src/headers/resources.h"
+#include "src/headers/item_use.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 

@@ -34,6 +34,7 @@ set(UW_SOURCES
   src/containers.c
   src/interact.c
   src/resources.c
+  src/item_use.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c
