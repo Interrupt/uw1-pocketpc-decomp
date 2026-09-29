@@ -34,6 +34,7 @@ set(UW_SOURCES
   src/containers.c
   src/interact.c
   src/traps.c
+  src/scheduler.c
   src/resources.c
   src/item_use.c
   src/movement.c

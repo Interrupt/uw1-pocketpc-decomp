@@ -1334,7 +1334,7 @@ ushort * param_1;
     *(byte *)((char *)param_1 + 7) = 0;
     uVar1 = *puVar9;
     if ((uVar1 & 0x1c0) == 0x1c0) {
-      FUN_00080e00(puVar9,param_1);
+      scheduler_relink_entry(puVar9,param_1);
     }
     else if ((((uVar1 & 0x1f0) == 0x90) && (3 < (uVar1 & 0xf))) && ((uVar1 & 0xf) < 7)) {
       bVar5 = (byte)uVar1;

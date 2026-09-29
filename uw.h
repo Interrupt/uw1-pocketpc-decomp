@@ -1055,6 +1055,11 @@ extern undefined s_dash_000879a4_backing[8192];
 extern undefined s_scroll_prompt_arrow_000879a8_backing[8192];
 #define s_scroll_prompt_arrow_000879a8 s_scroll_prompt_arrow_000879a8_backing[0]
 extern int g_text_input_active;
+extern undefined1 DAT_00250730_backing[65536];
+#define DAT_00250730 DAT_00250730_backing[0]
+#define DAT_00250732 DAT_00250730_backing[2]
+#define DAT_00250733 DAT_00250730_backing[3]
+extern int DAT_002508fc;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3570,7 +3575,7 @@ undefined4 prompt_yes_no_scroll();
 void scheduler_despawn_entry();
 void scheduler_remove_entry();
 void scheduler_finish_entry();
-void FUN_00080e00();
+void scheduler_relink_entry();
 uint scheduler_add_entry();
 void scheduler_step_entry();
 void scheduler_tick();
