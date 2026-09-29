@@ -733,7 +733,7 @@ LAB_0007af3c:
     }
   }
   else {
-    if ((iVar1 != 0xff) && (iVar12 = FUN_00071b08(iVar12), iVar12 == 0)) {
+    if ((iVar1 != 0xff) && (iVar12 = adjust_player_hunger(iVar12), iVar12 == 0)) {
       uVar5 = 0x7e;
 LAB_0007b2e0:
       FUN_00078c80(uVar5);

@@ -2568,7 +2568,7 @@ static void (*const DAT_00085668_real_table[48])(void) = {
   /* mode 0 (in-game/dungeon view) */
   (void(*)(void))enter_dungeon_view, 0 /* Hack - Disabled: conversation portrait anim */, 0, (void(*)(void))dungeon_view_anim_tick,
   0, 0, 0, 0,
-  0, (void(*)(void))FUN_0003e644, (void(*)(void))FUN_00071b94, (void(*)(void))movement_pacing_handler,
+  0, (void(*)(void))FUN_0003e644, (void(*)(void))handle_game_victory_sequence, (void(*)(void))movement_pacing_handler,
   (void(*)(void))sync_player_stats_to_hud, (void(*)(void))hud_panel_redraw_dispatch, 0, 0 /* Hack - Disabled: mode-exit handler, unrecovered */,
   /* mode 1 */
   0, (void(*)(void))enter_automap_screen, 0, 0,
@@ -31950,7 +31950,7 @@ void FUN_00053c74()
   uw_ord2005_rem_117 = ((int)(DAT_002046d0)) % (0x18);
   if (uw_ord2005_rem_117 == 0) {
     sVar5 = Ordinal_1053();
-    FUN_00071b08(-3 - ((int)sVar5 & 3U));
+    adjust_player_hunger(-3 - ((int)sVar5 & 3U));
     uVar6 = (uint)*(ushort *)(DAT_00086df8 + 0x61);
     if ((*(ushort *)(DAT_00086df8 + 0x61) & 0x3f0) != 0) {
       uVar6 = ((uVar6 & 0xfff0) - 1 ^ uVar6) & 0x3f0 ^ uVar6;
@@ -36427,129 +36427,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_00071b08(param_1)
-short param_1;
-
-{
-  int iVar1;
-  int iVar2;
-  byte bVar3;
-  undefined4 uVar4;
-  
-  iVar1 = ((int)param_1 + (uint)*(byte *)(DAT_00086df8 + 0x39)) * 0x10000;
-  iVar2 = iVar1 >> 0x10;
-  if (iVar2 < 0x100) {
-    if (iVar2 < 0) {
-      *(undefined1 *)(DAT_00086df8 + 0x39) = 0;
-    }
-    else {
-      *(char *)(DAT_00086df8 + 0x39) = (char)((uint)iVar1 >> 0x10);
-    }
-    if (0 < param_1) {
-      bVar3 = *(byte *)(DAT_00086df8 + 0x3b) >> 3;
-      if (8 < bVar3) {
-        bVar3 = 8;
-      }
-      restore_stat_capped(g_player_object,bVar3);
-      *(undefined1 *)(DAT_00086df8 + 0x3b) = 0;
-    }
-    uVar4 = 1;
-  }
-  else {
-    uVar4 = 0;
-  }
-  return uVar4;
-}
-
-
-
-void FUN_00071b94()
-
-{
-  char stack0xffdc3244_buf [256];
-  char *stack0xffdc3244_ptr;
-  char cVar1;
-  undefined2 uVar2;
-  short sVar3;
-  char *pcVar4;
-  undefined2 *puVar5;
-  char *iVar6;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
-  char *pcVar7;
-  char *local_11c;  /* was `int` -- same truncation, derived from iVar6 */
-  char acStack_114 [260];
-  
-  if (DAT_0023c27c == '\0') {
-    if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
-      puVar5 = (undefined2 *)spawn_new_object(0x15a,0);
-      if (puVar5 != (undefined2 *)0x0) {
-        uVar2 = *puVar5;
-        *(char *)puVar5 = (char)uVar2;
-        *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar2 >> 8) | 0x80;
-        *(byte *)(puVar5 + 3) = *(byte *)(puVar5 + 3) & 0x3f;
-        *(undefined1 *)((char *)puVar5 + 7) = 0xb0;
-        iVar6 = tilemap_lookup(0x20,0x20);
-        local_11c = iVar6 + 2;
-        object_list_append_tail(local_11c,puVar5);
-      }
-      FUN_00078c80(0x117);
-      spin_view_full_rotation(0xffffffff);
-      FUN_000411b8(5);
-      if (puVar5 != (undefined2 *)0x0) {
-        object_list_unlink(local_11c,puVar5);
-        free_object_slot(puVar5);
-      }
-      FUN_000396a0(g_player_object,0x1b,0x17,9);
-      *(undefined1 *)(DAT_00086df8 + 0x6d) = 0xff;
-      FUN_00078c80(0x118);
-      DAT_00085730 = DAT_00085730 & 0xfe;
-      dungeon_view_anim_tick();
-      DAT_00085730 = DAT_00085730 | 1;
-    }
-  }
-  else {
-    dirty_rect_union(0,200,0,0x140);
-    *(undefined1 *)(DAT_00085a6c + 8) = 0;
-    *(undefined1 *)(DAT_00085a6c + 9) = 0;
-  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
-    DAT_000868d8 = 2;
-    FUN_00037c14(1);
-    FUN_00057118();
-    FUN_00040df0();
-    Ordinal_1047(acStack_114,0,0x104);
-    pcVar7 = &DAT_0023cca8;
-    stack0xffdc3244_ptr = stack0xffdc3244_buf;
-    pcVar4 = pcVar7;
-    stack0xffdc3244_ptr = acStack_114;
-    do {
-      cVar1 = *pcVar4;
-      *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
-      pcVar4 = pcVar4 + 1;
-    } while (cVar1 != '\0');
-    Ordinal_1063(acStack_114,s__DATA_win1_byt_00087350);
-    blit_fullscreen_bitmap_file(7,acStack_114,1);
-    Ordinal_496(3000);
-    dirty_rect_union(0,200,0,0x140);
-    Ordinal_1047(acStack_114,0,0x104);
-    do {
-      cVar1 = *pcVar7;
-      *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
-      pcVar7 = pcVar7 + 1;
-    } while (cVar1 != '\0');
-    Ordinal_1063(acStack_114,s__DATA_win2_byt_00087340);
-    blit_fullscreen_bitmap_file(0xffffffff,acStack_114,1);
-    dirty_rect_union(0,200,0,0x140);
-    render_endgame_character_stats();
-    do {
-      sVar3 = next_input_event();
-    } while (sVar3 < 0);
-    FUN_0003c038(0);
-    DAT_0023c27c = '\0';
-  }
-  return;
-}
-
-
-
 undefined4 FUN_00071e20()
 
 {
@@ -37915,7 +37792,7 @@ uint param_2;
      -- that table is the per-monster-class max-stat table, indexed by
      the low 6 bits of a monster object's own type id (a valid index
      for any real monster, 0x40-0x7f). But this function is also called
-     with param_1 == g_player_object (see FUN_00071b08's food-digestion
+     with param_1 == g_player_object (see adjust_player_hunger's food-digestion
      "restore a resting bonus" call, and this function's own existing
      `if (param_1 == g_player_object)` special case just below), and the
      player's object type happens to be 0x7f, whose low 6 bits (0x3f)

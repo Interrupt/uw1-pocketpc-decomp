@@ -2717,7 +2717,7 @@ LAB_0007158c:
           FUN_00073e14(g_player_object,((char)sVar3 + 1) * (int)(char)iVar4 + (int)(char)sVar3 + -1);
         }
         sVar3 = Ordinal_1053();
-        FUN_00071b08(-0x18 - ((int)sVar3 & 0x1fU));
+        adjust_player_hunger(-0x18 - ((int)sVar3 & 0x1fU));
         uVar6 = *(ushort *)(DAT_00086df8 + 0x61);
         if ((uVar6 & 0x3f0) < 0x200) {
           uVar6 = uVar6 & 0xfc0f;
@@ -2745,7 +2745,7 @@ LAB_0007158c:
         }
         FUN_00078c80(0x15);
         sVar3 = Ordinal_1053();
-        FUN_00071b08(-0xc - ((int)sVar3 & 0xfU));
+        adjust_player_hunger(-0xc - ((int)sVar3 & 0xfU));
         uVar6 = *(ushort *)(DAT_00086df8 + 0x61);
         if ((uVar6 & 0x3f0) < 0x100) {
           uVar6 = uVar6 & 0xfc0f;
@@ -2790,6 +2790,148 @@ LAB_0007158c:
       uVar5 = 0x14;
     }
     FUN_00078c80(uVar5);
+  }
+  return;
+}
+
+
+
+
+
+
+// was FUN_00071b08 -- adjusts the player's hunger byte
+// (DAT_00086df8+0x39) by param_1, clamped to 0..0xff (returns false if
+// it would go >=0x100 without applying anything). If param_1>0 (the
+// player just ate), also restores a capped amount of stat points from
+// the accumulated rest-debt byte (+0x3b) via restore_stat_capped and
+// clears it. Called by handle_rest_action with negative deltas (hunger
+// decay while resting).
+undefined4 adjust_player_hunger(param_1)
+short param_1;
+
+{
+  int iVar1;
+  int iVar2;
+  byte bVar3;
+  undefined4 uVar4;
+  
+  iVar1 = ((int)param_1 + (uint)*(byte *)(DAT_00086df8 + 0x39)) * 0x10000;
+  iVar2 = iVar1 >> 0x10;
+  if (iVar2 < 0x100) {
+    if (iVar2 < 0) {
+      *(undefined1 *)(DAT_00086df8 + 0x39) = 0;
+    }
+    else {
+      *(char *)(DAT_00086df8 + 0x39) = (char)((uint)iVar1 >> 0x10);
+    }
+    if (0 < param_1) {
+      bVar3 = *(byte *)(DAT_00086df8 + 0x3b) >> 3;
+      if (8 < bVar3) {
+        bVar3 = 8;
+      }
+      restore_stat_capped(g_player_object,bVar3);
+      *(undefined1 *)(DAT_00086df8 + 0x3b) = 0;
+    }
+    uVar4 = 1;
+  }
+  else {
+    uVar4 = 0;
+  }
+  return uVar4;
+}
+
+
+
+// was FUN_00071b94 -- the game-completion/victory sequence, gated on
+// DAT_0023c27c (0 = the one-time "ending cutscene" stage not yet run,
+// nonzero = show the victory stats screen). The cutscene stage (once
+// per game, guarded by DAT_00086df8+0x6d) spawns a special object
+// (catalog id 0x15a), links it into the current tile, spins the camera
+// a full rotation, then unlinks/frees the object and applies an effect
+// to the player (FUN_000396a0). The stats-screen stage blits
+// win1.byt/win2.byt as backgrounds, draws render_endgame_character_stats
+// on top, waits for input, then resets DAT_0023c27c to end the sequence.
+void handle_game_victory_sequence()
+
+{
+  char stack0xffdc3244_buf [256];
+  char *stack0xffdc3244_ptr;
+  char cVar1;
+  undefined2 uVar2;
+  short sVar3;
+  char *pcVar4;
+  undefined2 *puVar5;
+  char *iVar6;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+  char *pcVar7;
+  char *local_11c;  /* was `int` -- same truncation, derived from iVar6 */
+  char acStack_114 [260];
+  
+  if (DAT_0023c27c == '\0') {
+    if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
+      puVar5 = (undefined2 *)spawn_new_object(0x15a,0);
+      if (puVar5 != (undefined2 *)0x0) {
+        uVar2 = *puVar5;
+        *(char *)puVar5 = (char)uVar2;
+        *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar2 >> 8) | 0x80;
+        *(byte *)(puVar5 + 3) = *(byte *)(puVar5 + 3) & 0x3f;
+        *(undefined1 *)((char *)puVar5 + 7) = 0xb0;
+        iVar6 = tilemap_lookup(0x20,0x20);
+        local_11c = iVar6 + 2;
+        object_list_append_tail(local_11c,puVar5);
+      }
+      FUN_00078c80(0x117);
+      spin_view_full_rotation(0xffffffff);
+      FUN_000411b8(5);
+      if (puVar5 != (undefined2 *)0x0) {
+        object_list_unlink(local_11c,puVar5);
+        free_object_slot(puVar5);
+      }
+      FUN_000396a0(g_player_object,0x1b,0x17,9);
+      *(undefined1 *)(DAT_00086df8 + 0x6d) = 0xff;
+      FUN_00078c80(0x118);
+      DAT_00085730 = DAT_00085730 & 0xfe;
+      dungeon_view_anim_tick();
+      DAT_00085730 = DAT_00085730 | 1;
+    }
+  }
+  else {
+    dirty_rect_union(0,200,0,0x140);
+    *(undefined1 *)(DAT_00085a6c + 8) = 0;
+    *(undefined1 *)(DAT_00085a6c + 9) = 0;
+  DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
+    DAT_000868d8 = 2;
+    FUN_00037c14(1);
+    FUN_00057118();
+    FUN_00040df0();
+    Ordinal_1047(acStack_114,0,0x104);
+    pcVar7 = &DAT_0023cca8;
+    stack0xffdc3244_ptr = stack0xffdc3244_buf;
+    pcVar4 = pcVar7;
+    stack0xffdc3244_ptr = acStack_114;
+    do {
+      cVar1 = *pcVar4;
+      *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
+      pcVar4 = pcVar4 + 1;
+    } while (cVar1 != '\0');
+    Ordinal_1063(acStack_114,s__DATA_win1_byt_00087350);
+    blit_fullscreen_bitmap_file(7,acStack_114,1);
+    Ordinal_496(3000);
+    dirty_rect_union(0,200,0,0x140);
+    Ordinal_1047(acStack_114,0,0x104);
+    do {
+      cVar1 = *pcVar7;
+      *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
+      pcVar7 = pcVar7 + 1;
+    } while (cVar1 != '\0');
+    Ordinal_1063(acStack_114,s__DATA_win2_byt_00087340);
+    blit_fullscreen_bitmap_file(0xffffffff,acStack_114,1);
+    dirty_rect_union(0,200,0,0x140);
+    render_endgame_character_stats();
+    do {
+      sVar3 = next_input_event();
+    } while (sVar3 < 0);
+    FUN_0003c038(0);
+    DAT_0023c27c = '\0';
   }
   return;
 }
