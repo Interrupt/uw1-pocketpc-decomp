@@ -871,7 +871,7 @@ long Ordinal_1415()
  * looked-up mantra-list string before comparing them with strcmp, a
  * classic case-insensitive-match idiom) and by its 2 dropped-argument
  * call sites in the stats panel (draw_stats_panel_header's player title,
- * FUN_0007821c's skill names) -- both were calling this with zero
+ * draw_stats_panel_skill_row's skill names) -- both were calling this with zero
  * explicit arguments, relying on the K&R leftover-register idiom used
  * throughout this codebase, which doesn't reliably carry the
  * just-returned FUN_0007863c() string pointer through on this

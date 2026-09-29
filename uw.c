@@ -36503,83 +36503,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007821c(param_1)
-uint param_1;
-
-{
-  /* Was `undefined4` -- same Ordinal_1416 pointer-truncation class as
-     draw_stats_panel_header's player-title draw. */
-  char *uVar1;
-  int iVar2;
-  uint uVar3;
-  int iVar4;
-  undefined1 auStack_18 [4];
-  
-  uVar3 = param_1 & 0xff;
-  FUN_000229e0(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
-  FUN_00011c10(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
-               0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
-  /* Was `FUN_0007863c(id); uVar1 = Ordinal_1416();` -- same dropped-
-     argument bug as draw_stats_panel_header's player-title draw above; thread
-     the looked-up skill-name string through explicitly instead of
-     relying on leftover-register reuse. This is why no skill names
-     (Sword/Swimming/Mace/etc.) ever displayed. */
-  uVar1 = Ordinal_1416(FUN_0007863c((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400));
-  iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
-  draw_text_string(uVar1,0xf2,iVar4);
-  iVar2 = measure_text_width(auStack_18);
-  draw_text_string(auStack_18,0x138 - iVar2,iVar4);
-  return;
-}
-
-
-
-void draw_stats_panel_content()
-
-{
-  byte bVar1;
-
-  if (getenv("UW_DEBUG_CLICKREGION"))
-    fprintf(stderr, "[stats] draw_stats_panel_content (draw stats panel) entry, DAT_0024af88=%d\n", (int)DAT_0024af88);
-  if (DAT_0024af88 == 0) {
-    DAT_0024af88 = grtile_alloc_registered(0x96,0x2b);
-    if (DAT_0024af88 != 0) {
-      capture_framebuffer_rect_to_grtile(DAT_0024af88,0xf0,0x47,0x4b,0x2b);
-    }
-    DAT_0024af8c = grtile_alloc_registered(0x46,0x15);
-    if (DAT_0024af8c != 0) {
-      capture_framebuffer_rect_to_grtile(DAT_0024af8c,0x115,0x32,0x23,0x15);
-    }
-    if (getenv("UW_DEBUG_CLICKREGION"))
-      fprintf(stderr, "[stats] draw_stats_panel_content: allocated DAT_0024af88=%d DAT_0024af8c=%d\n", (int)DAT_0024af88, (int)DAT_0024af8c);
-  }
-  *g_draw_color_index = 0xf1;
-  *DAT_00084298 = 0xf1;
-  FUN_00057118();
-  select_active_font(s_font5x6i_sys_00086e98);
-  draw_stats_panel_header();
-  bVar1 = 0;
-  do {
-    draw_stats_panel_attribute_row(bVar1);
-    bVar1 = bVar1 + 1;
-  } while (bVar1 < 3);
-  draw_hp_stat_display();
-  draw_mana_stat_display();
-  draw_experience_points_display();
-  bVar1 = 0;
-  *g_draw_color_index = 0x68;
-  *DAT_00084298 = 0x68;
-  do {
-    FUN_0007821c(bVar1);
-    bVar1 = bVar1 + 1;
-  } while (bVar1 < 6);
-  select_active_font(s_font5x6p_sys_0008430c);
-  cursor_show_idle_tick();
-  return;
-}
-
-
-
 void FUN_00078434()
 
 {
@@ -36619,7 +36542,7 @@ void FUN_00078434()
       uVar3 = 0;
       local_c[0] = 0;
       do {
-        FUN_0007821c(uVar3 & 0xff);
+        draw_stats_panel_skill_row(uVar3 & 0xff);
         uVar3 = (int)(short)local_c[0] + 1;
         local_c[0] = (ushort)uVar3;
       } while ((int)(uVar3 * 0x10000) >> 0x10 < 6);

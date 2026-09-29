@@ -974,6 +974,8 @@ extern undefined DAT_00086e87_backing[64];
 #define DAT_00086e87 DAT_00086e87_backing[0]
 extern char s_font5x6i_sys_00086e98[];
 extern int DAT_0024af8c;
+extern byte DAT_0024af80;
+extern undefined4 DAT_0024af88;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3369,7 +3371,7 @@ void draw_stats_panel_attribute_row();
 void draw_hp_stat_display();
 void draw_mana_stat_display();
 void draw_experience_points_display();
-void FUN_0007821c();
+void draw_stats_panel_skill_row();
 void draw_stats_panel_content();
 void FUN_00078434();
 void refresh_stats_panel_if_active();
