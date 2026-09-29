@@ -3443,7 +3443,7 @@ void arm_use_item_on_player_prompt();
 void prompt_use_item_on_target();
 void complete_use_item_on_special_target();
 void arm_use_item_on_special_target_prompt();
-void FUN_0007a198();
+void complete_use_item_on_quest_target();
 void FUN_0007a3a8();
 void FUN_0007a418();
 void FUN_0007a478();

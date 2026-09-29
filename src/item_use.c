@@ -1262,3 +1262,74 @@ int param_2;
   }
   return;
 }
+
+
+
+
+
+// was FUN_0007a198 -- deferred-target-click completion callback for
+// a single specific quest interaction: requires the clicked target
+// to be object type 0x165 and the held item's quality to be exactly
+// 0x3e, plus a specific flag/field pattern on both objects (offset
+// +0x8000/+0x7fc0==0x840); on success, sets two player quest-flag
+// bits (DAT_00086df8+0x61/0x62), marks the target's quality "used",
+// triggers an effect via FUN_00028488 (not yet named), and syncs an
+// object at a fixed tile (0x36,0x34) to the player via FUN_0007cdbc.
+// Prints one of several failure/progress messages otherwise. No
+// callers found by grep in the remaining decompile -- likely a
+// one-off scripted quest puzzle, not a general mechanic.
+void complete_use_item_on_quest_target(param_1,param_2)
+ushort * param_1;
+undefined4 param_2;
+
+{
+  undefined2 uVar1;
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's/resolve_object_link's
+                   real `void *` returns */
+  undefined4 uVar3;
+  undefined2 local_2c [5];
+  ushort local_21;
+  byte local_1e;
+  undefined1 local_12;
+  
+  FUN_00057cac(3);
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
+  if ((*param_1 & 0x1ff) == 0x165) {
+    if ((*(byte *)(DAT_00202098 + 6) & 0x3f) == 0x3e) {
+      if ((((*param_1 & 0x8000) == 0) || ((param_1[3] & 0x8000) == 0)) ||
+         ((param_1[3] & 0x7fc0) != 0x840)) {
+        uVar3 = 0x103;
+        goto LAB_0007a38c;
+      }
+      uVar1 = *(undefined2 *)(DAT_00086df8 + 0x61);
+      *(char *)(DAT_00086df8 + 0x61) = (char)uVar1;
+      *(byte *)(DAT_00086df8 + 0x62) = (byte)((ushort)uVar1 >> 8) | 4;
+      uVar1 = *(undefined2 *)(DAT_00086df8 + 0x61);
+      *(char *)(DAT_00086df8 + 0x61) = (char)uVar1;
+      *(byte *)(DAT_00086df8 + 0x62) = (byte)((ushort)uVar1 >> 8) | 8;
+      *(byte *)(param_1 + 3) = (byte)param_1[3] & 0x3f | 0x80;
+      *(undefined1 *)((char *)param_1 + 7) = 0x88;
+      local_2c[0] = 0x7e;
+      local_21 = local_21 & 0xfff7 | 7;
+      local_1e = local_1e | 0xc0;
+      local_12 = 0x1b;
+      FUN_00028488(local_2c);
+      iVar2 = (char *)tilemap_lookup(0x36,0x34);
+      iVar2 = (char *)resolve_object_link(iVar2 + 2);
+      if (iVar2 != 0) {
+        FUN_0007cdbc(g_player_object,0,iVar2,0);
+      }
+    }
+    else {
+      print_scroll_message_by_id(0x86);
+    }
+    finish_object_use(DAT_00202098,param_2,1);
+  }
+  else {
+    uVar3 = 0x84;
+LAB_0007a38c:
+    print_scroll_message_by_id(uVar3);
+  }
+  return;
+}
