@@ -3425,3 +3425,93 @@ void babl_builtin_remove_talker()
   return;
 }
 
+
+
+
+// was FUN_00019120 -- copies the default conversation-globals template
+// (\DATA\babglobs.dat) into the active save's own copy
+// (\SAVE0\bglobals.dat), one variable-length record at a time. Called
+// during new-game/world-seeding, right after the lev.ark template copy
+// (see its two call sites' own comments). Returns 0 on success,
+// 0x3007 if the template can't be opened, 0x4001 on any read/write
+// failure against the destination.
+undefined4 seed_conversation_globals_for_new_game()
+
+{
+  char stack0xffdc323c_buf [256];
+  char *stack0xffdc323c_ptr;
+  char cVar1;
+  bool bVar2;
+  char *pcVar3;
+  int iVar4;
+  undefined4 uVar5;
+  int iVar6;
+  int iVar7;
+  char *pcVar8;
+  /* Was `undefined1 auStack_124[4]; short local_122;` -- a previous fix
+     widened auStack_124 to the 4 bytes read_file_handle/write_file_handle read
+     and write as one blob, but left local_122 as its own, separately-
+     declared local that's never actually assigned anywhere in this
+     function (only ever read, at `local_122 * 2` / `(int)local_122<<1`
+     below) -- genuinely uninitialized stack garbage, which is exactly
+     the "size" that overflowed file_io.c's write-size guard and, before
+     that guard existed, silently corrupted the heap (confirmed via ASAN/
+     a malloc-guard abort on an unrelated thread). The sibling function
+     right below this one (load_npc_conversation_variables) declares the equivalent pair as
+     two contiguous shorts (`short local_124; short local_122;`), which
+     is what this record header actually is: two 16-bit fields read by
+     one 4-byte call, the second being the following record's real
+     length. Restored that shape as a real 2-element array so the write-
+     through and the length read see the same bytes. */
+  short auStack_124 [2];
+#define local_122 auStack_124[1]
+  char acStack_11c [260];
+  
+  Ordinal_1047(acStack_11c,0,0x104);
+  pcVar8 = &DAT_0023cca8;
+    stack0xffdc323c_ptr = stack0xffdc323c_buf;
+  pcVar3 = pcVar8;
+    stack0xffdc323c_ptr = acStack_11c;
+  do {
+    cVar1 = *pcVar3;
+    *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
+    pcVar3 = pcVar3 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_11c,s__DATA_babglobs_dat_0008454c);
+  iVar4 = open_file_for_read(acStack_11c);
+  if (iVar4 == -1) {
+    uVar5 = 0x3007;
+  }
+  else {
+    Ordinal_1047(acStack_11c,0,0x104);
+    do {
+      cVar1 = *pcVar8;
+      *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
+      pcVar8 = pcVar8 + 1;
+    } while (cVar1 != '\0');
+    Ordinal_1063(acStack_11c,s__SAVE0_bglobals_dat_00084538);
+    iVar6 = open_existing_file_rw(acStack_11c);
+    if (iVar6 != -1) {
+      Ordinal_1047(DAT_00248410,0,0x1000);
+      do {
+        bVar2 = true;
+        iVar7 = read_file_handle(iVar4,auStack_124,4);
+        if (iVar7 != 4) goto LAB_00019240;
+        iVar7 = write_file_handle(iVar6,auStack_124,4);
+      } while ((iVar7 == 4) &&
+              (iVar7 = write_file_handle(iVar6,DAT_00248410,(int)local_122 << 1), iVar7 == local_122 * 2)
+              );
+      bVar2 = false;
+LAB_00019240:
+      Ordinal_553(iVar4);
+      Ordinal_553(iVar6);
+      if (bVar2) {
+        return 0;
+      }
+    }
+    uVar5 = 0x4001;
+  }
+  return uVar5;
+}
+#undef local_122
+

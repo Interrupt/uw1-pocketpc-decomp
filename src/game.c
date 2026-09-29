@@ -361,7 +361,7 @@ undefined4 param_1;
            FUN_00065b90->FUN_0007ef78 with a genuinely truncated pointer
            (fixed, FUN_0007ef78's param_3), but the *fatal* oversized-
            write abort seen afterward was a false trail from a completely
-           unrelated, pre-existing bug in FUN_00019120 (also fixed, see
+           unrelated, pre-existing bug in seed_conversation_globals_for_new_game (also fixed, see
            its own comment) that this code path happens to run right
            past. */
         write_player_save_record(acStack_6e4);
@@ -398,7 +398,7 @@ undefined4 param_1;
            instead of entering the dungeon. */
         Ordinal_164(auStack_22c,auStack_434,0);
         uw_file_copy(s__DATA_lev_ark_00085734, s__SAVE0_lev_ark_000842fc);
-        sVar3 = FUN_00019120();
+        sVar3 = seed_conversation_globals_for_new_game();
         if (sVar3 != 0) {
           FUN_0003c3c8();
         }
