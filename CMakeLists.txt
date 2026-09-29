@@ -27,6 +27,7 @@ set(UW_SOURCES
   src/bitmap.c
   src/3d.c
   src/player.c
+  src/tmap.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

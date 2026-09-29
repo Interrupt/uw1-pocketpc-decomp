@@ -340,6 +340,8 @@ LAB_00014684:
   if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE (broke on clip-bottom) span_calls=%d\n", _uw_span_calls);
   return;
 }
+#undef local_b8
+#undef local_70
 
 
 
