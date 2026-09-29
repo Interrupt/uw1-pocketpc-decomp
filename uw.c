@@ -7539,19 +7539,6 @@ int g_ambient_bias_reduction = 32;
 
 
 
-void FUN_0001825c()
-
-{
-  char *iVar1;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
-
-  iVar1 = (char *)tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
-                       (*(ushort *)(DAT_00100674 + 0x16) & 0x3f0) >> 4);
-  discard_misplaced_object(iVar1 + 2,DAT_00100674,1);
-  return;
-}
-
-
-
 undefined4 FUN_00019120()
 
 {

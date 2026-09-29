@@ -1943,7 +1943,7 @@ undefined1 babl_builtin_x_traps();
 undefined4 babl_builtin_place_object();
 ushort babl_builtin_take_from_npc_inv();
 void babl_builtin_add_to_npc_inv();
-void FUN_0001825c();
+void babl_builtin_remove_talker();
 void babl_builtin_set_quest();
 undefined1 babl_builtin_get_quest();
 undefined4 babl_builtin_gronk_door();

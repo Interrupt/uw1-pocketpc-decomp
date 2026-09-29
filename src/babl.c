@@ -2293,7 +2293,7 @@ void start_npc_conversation()
     babl_register_builtin(s_take_from_npc_inv_0008508c,babl_builtin_take_from_npc_inv);
     babl_register_builtin(s_add_to_npc_inv_0008507c,babl_builtin_add_to_npc_inv);
     babl_register_builtin(s_place_object_0008506c,babl_builtin_place_object);
-    babl_register_builtin(s_remove_talker_0008505c,FUN_0001825c);
+    babl_register_builtin(s_remove_talker_0008505c,babl_builtin_remove_talker);
     babl_register_builtin(s_x_skills_00085050,babl_builtin_x_skills);
     babl_register_builtin(s_x_traps_00085048,babl_builtin_x_traps);
     babl_register_builtin(s_x_obj_stuff_0008503c,babl_builtin_x_obj_stuff);
@@ -3404,6 +3404,24 @@ LAB_00019460:
   }
   #undef local_120
   #undef local_11e
+  return;
+}
+
+
+
+
+// was FUN_0001825c -- babl builtin "remove_talker": looks up the tile
+// the current conversation partner (DAT_00100674) is standing on (its
+// packed tile coords at offset 0x16) and discards it from that tile's
+// object list as misplaced.
+void babl_builtin_remove_talker()
+
+{
+  char *iVar1;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+
+  iVar1 = (char *)tilemap_lookup(*(ushort *)(DAT_00100674 + 0x16) >> 10,
+                       (*(ushort *)(DAT_00100674 + 0x16) & 0x3f0) >> 4);
+  discard_misplaced_object(iVar1 + 2,DAT_00100674,1);
   return;
 }
 
