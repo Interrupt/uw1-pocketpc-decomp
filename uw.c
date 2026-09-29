@@ -5948,13 +5948,13 @@ short DAT_0023c1ec;
 undefined2 DAT_000870e8;
 int DAT_0023c260;
 char s__DATA_weapons_cm_00087284[] = "\\DATA\\weapons.cm";
-static undefined1 DAT_00202700_backing[256];
+undefined1 DAT_00202700_backing[256];
 #define DAT_00202700 DAT_00202700_backing[0]
 /* Was 2 lone `undefined2` scalars (DAT_0023c268/DAT_0023c270) -- same
    split-symbol bug as DAT_0023c118/DAT_0023c200 elsewhere in this
    file (see DAT_0023c118's own comment for the full writeup): both
    are indexed as real 3-element short arrays by their respective
-   owners (FUN_0006e96c/FUN_0006ea54, the mode-icon-highlight sprite
+   owners (update_ready_rune_slot_icons/update_light_source_color_icons, the mode-icon-highlight sprite
    setup for the left/right dragon decorations), each written via a
    `(&DAT_0023c26X)[i] = ...` one-time-init loop. As bare scalars, the
    out-of-bounds writes for i=1,2 landed on whatever the compiler
@@ -5966,27 +5966,27 @@ static undefined1 DAT_00202700_backing[256];
    while chasing why the chain-hotspot/stats-panel flip's grtile setup
    never ran even after alloc_flip_grtile_slot/resolve_flip_grtile_slot
    were implemented for real. */
-static short DAT_0023c268_arr[3];
+short DAT_0023c268_arr[3];
 #define DAT_0023c268 DAT_0023c268_arr[0]
-static short DAT_0023c270_arr[3];
+short DAT_0023c270_arr[3];
 #define DAT_0023c270 DAT_0023c270_arr[0]
 /* DAT_00087210/DAT_00087218: real per-index position lookup tables --
    recovered directly from the real ARM binary's .data (raw uint16 reads
    at 0x87210/0x87218, not a function to decompile). DAT_00087210 (used
-   by FUN_0006e96c to X-position the 3 "ready to cast" rune-slot icons)
+   by update_ready_rune_slot_icons to X-position the 3 "ready to cast" rune-slot icons)
    is 176,191,206 -- evenly spaced by 15, confirming it's real per-slot
    data, not a scalar with garbage padding. Previously only index 0 had
    a nonzero (but still not verified-real) value; indices 1/2 read as
    0, landing both later slots' rune icons at the left screen edge --
    confirmed live: "left-clicking a rune draws it at the wrong X
    position in the spell-slot area" for any rune beyond the first
-   selected. DAT_00087218 (used by FUN_0006ea54, gated on
+   selected. DAT_00087218 (used by update_light_source_color_icons, gated on
    `*(short*)(DAT_00085a6c+8)==1` -- a different, rarer UI state) is
    86,69,52, decreasing by 17; recovered the same way even though no
    live report has hit it yet. */
-static const undefined2 DAT_00087210_arr[3] = {176, 191, 206};
+const undefined2 DAT_00087210_arr[3] = {176, 191, 206};
 #define DAT_00087210 DAT_00087210_arr[0]
-static const undefined2 DAT_00087218_arr[3] = {86, 69, 52};
+const undefined2 DAT_00087218_arr[3] = {86, 69, 52};
 #define DAT_00087218 DAT_00087218_arr[0]
 undefined2 DAT_0023c140;
 int DAT_0023c278;
@@ -23772,7 +23772,7 @@ void FUN_00044920()
   uVar1 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xf3ff;
   *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
   *(char *)(DAT_00086df8 + 0x60) = (char)(uVar1 >> 8);
-  FUN_0006e96c(DAT_00086df8 + 0x47);
+  update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
   return;
 }
 
@@ -23836,7 +23836,7 @@ void FUN_0004497c()
           *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
           *(byte *)(DAT_00086df8 + 0x60) =
                ((byte)((uVar1 & 0xfc00) + 0x400 >> 8) ^ bVar2) & 0xc ^ bVar2;
-          FUN_0006e96c(DAT_00086df8 + 0x47);
+          update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
         }
         else {
           local_20[0] = ((short)iVar6 + 0xe8U ^ local_20[0]) & 0x1ff ^ local_20[0];
@@ -36405,120 +36405,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-bool FUN_0006e89c()
-
-{
-  char stack0xffdc3248_buf [256];
-  char *stack0xffdc3248_ptr;
-  char cVar1;
-  undefined2 uVar2;
-  char *pcVar3;
-  int iVar4;
-  int iVar5;
-  int iVar6;
-  bool bVar7;
-  char acStack_110 [260];
-  
-  pcVar3 = &DAT_0023cca8;
-    stack0xffdc3248_ptr = acStack_110;
-  do {
-    cVar1 = *pcVar3;
-    *stack0xffdc3248_ptr = cVar1; stack0xffdc3248_ptr = stack0xffdc3248_ptr + 1;
-    pcVar3 = pcVar3 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_110,s__DATA_weapons_cm_00087284);
-  iVar4 = open_file_for_read(acStack_110);
-  if (iVar4 == 0) {
-    bVar7 = false;
-  }
-  else {
-    uVar2 = 0x10;
-    if ((*(byte *)(DAT_00086df8 + 100) & 0x1c) != 4) {
-      uVar2 = 0;
-    }
-    iVar5 = seek_file_handle(iVar4,uVar2,0);
-    iVar6 = read_file_handle(iVar4,&DAT_00202700,0x10);
-    bVar7 = iVar5 == 0 && iVar6 == 0x10;
-    Ordinal_553(iVar4);
-  }
-  return bVar7;
-}
-
-
-
-void FUN_0006e96c(param_1)
-/* Was `int`, truncating the real pointer callers pass (DAT_00086df8 +
-   0x47, DAT_00086df8 being a genuine `char *`). */
-char *param_1;
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  
-  if (DAT_0023c268 == 0) {
-    iVar2 = 0;
-    g_blit_transparent_mode = 1;
-    do {
-      uVar1 = sprite_list_alloc_raw_entry(1,0x10,0x10);
-      (&DAT_0023c268)[iVar2] = (short)uVar1;
-      sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087210)[iVar2],0x8b,0x10,0x10);
-      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-    } while (iVar2 < 3);
-    g_blit_transparent_mode = 0;
-  }
-  iVar2 = 0;
-  do {
-    if (*(byte *)(iVar2 + param_1) < 0x18) {
-      sprite_list_set_frame_id((int)(&DAT_0023c268)[iVar2],*(byte *)(iVar2 + param_1) + 0xe8);
-    }
-    else {
-      FUN_00076488((int)(&DAT_0023c268)[iVar2]);
-    }
-    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-  } while (iVar2 < 3);
-  FUN_00076508();
-  return;
-}
-
-
-
-void FUN_0006ea54(param_1)
-/* Same truncation bug as its sibling FUN_0006e96c above. */
-char *param_1;
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  
-  if (*(short *)(DAT_00085a6c + 8) == 1) {
-    if (DAT_0023c270 == 0) {
-      iVar2 = 0;
-      g_blit_transparent_mode = 1;
-      do {
-        uVar1 = sprite_list_alloc_raw_entry(1,0x10,0x12);
-        (&DAT_0023c270)[iVar2] = (short)uVar1;
-        sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087218)[iVar2],0x89,0x10,0x12);
-        iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-      } while (iVar2 < 3);
-      g_blit_transparent_mode = 0;
-    }
-    iVar2 = 0;
-    do {
-      if (*(byte *)(iVar2 + param_1) < 0x15) {
-        sprite_list_set_frame_id((int)(&DAT_0023c270)[iVar2],*(byte *)(iVar2 + param_1) + 0x20c0);
-      }
-      else {
-        FUN_00076488((int)(&DAT_0023c270)[iVar2]);
-      }
-      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-    } while (iVar2 < 3);
-    FUN_00076508();
-  }
   return;
 }
 

@@ -261,7 +261,7 @@ undefined4 journey_onward_load_slot_menu()
            position with the fixed chargen spawn point instead. Removed;
            load_level's own read is what places the player now. */
       }
-      FUN_0006e89c();
+      load_weapon_combat_maneuver_data();
       uVar5 = 1;
     }
   }
@@ -1217,7 +1217,7 @@ undefined4 param_2;
     if (iVar1 != 0) {
       iVar2 = 5;
       /* load_game_from_slot's own success branch just below (the mirror
-         Load path) calls FUN_0006e89c/sync_player_stats_to_hud/
+         Load path) calls load_weapon_combat_maneuver_data/sync_player_stats_to_hud/
          redraw_hud_panels/FUN_0003dca4(0xffffffff)/FUN_00049924(0x7ffe)
          after a successful load; this Save branch called none of them.
          Most of those are Load-specific (resyncing HUD/stats after
@@ -1260,7 +1260,7 @@ undefined4 param_2;
       iVar2 = 3;
     }
     else {
-      FUN_0006e89c();
+      load_weapon_combat_maneuver_data();
       iVar2 = 2;
       sync_player_stats_to_hud();
       redraw_hud_panels();

@@ -1878,6 +1878,9 @@ extern undefined1 g_weapon_swing_frame_y_offset_backing[256];
 extern undefined1 g_weapon_swing_frame_x_offset_backing[256];
 #define g_weapon_swing_frame_x_offset g_weapon_swing_frame_x_offset_backing[0]
 extern char s__DATA_weapons_dat_00087268[];
+extern char s__DATA_weapons_cm_00087284[];
+extern undefined1 DAT_00202700_backing[256];
+#define DAT_00202700 DAT_00202700_backing[0]
 extern char s_weapons_0008727c[];
 /* Globals defined in uw.c but also used by functions that now live in
    level.c (level loading) -- extern'd here so both translation units
@@ -1982,6 +1985,14 @@ extern short DAT_00087258;
 extern short DAT_0023c258;
 extern int DAT_0023c260;
 extern byte DAT_0023c25c;
+extern short DAT_0023c268_arr[3];
+#define DAT_0023c268 DAT_0023c268_arr[0]
+extern short DAT_0023c270_arr[3];
+#define DAT_0023c270 DAT_0023c270_arr[0]
+extern const undefined2 DAT_00087210_arr[3];
+#define DAT_00087210 DAT_00087210_arr[0]
+extern const undefined2 DAT_00087218_arr[3];
+#define DAT_00087218 DAT_00087218_arr[0]
 extern undefined4 DAT_0023c200_arr[3];
 #define DAT_0023c200 DAT_0023c200_arr[0]
 #define DAT_0023c202 DAT_0023c200_arr[1]
@@ -3052,9 +3063,9 @@ void request_weapon_swing_graphic();
 byte load_weapon_swing_sprites();
 void randomize_weapon_jump_shake();
 void advance_action_animation_frame();
-bool FUN_0006e89c();
-void FUN_0006e96c();
-void FUN_0006ea54();
+bool load_weapon_combat_maneuver_data();
+void update_ready_rune_slot_icons();
+void update_light_source_color_icons();
 void FUN_0006eb64();
 void redraw_active_hud_panel();
 void FUN_0006edb8();

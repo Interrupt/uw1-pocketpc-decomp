@@ -430,3 +430,53 @@ LAB_0006e7d0:
   DAT_0023c1dc = DAT_0023c1dc & 0xfeff;
   return;
 }
+
+
+
+
+
+
+// was FUN_0006e89c -- loads a 16-byte weapon combat-maneuver record
+// from \DATA\weapons.cm into DAT_00202700, seeking to offset 0x10 or 0
+// depending on a flag at DAT_00086df8+100 (bits 0x1c == 4, an
+// unidentified player/class condition). Called after character
+// generation and after a successful game load to (re)load the current
+// weapon's swing-animation data.
+bool load_weapon_combat_maneuver_data()
+
+{
+  char stack0xffdc3248_buf [256];
+  char *stack0xffdc3248_ptr;
+  char cVar1;
+  undefined2 uVar2;
+  char *pcVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  bool bVar7;
+  char acStack_110 [260];
+  
+  pcVar3 = &DAT_0023cca8;
+    stack0xffdc3248_ptr = acStack_110;
+  do {
+    cVar1 = *pcVar3;
+    *stack0xffdc3248_ptr = cVar1; stack0xffdc3248_ptr = stack0xffdc3248_ptr + 1;
+    pcVar3 = pcVar3 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_110,s__DATA_weapons_cm_00087284);
+  iVar4 = open_file_for_read(acStack_110);
+  if (iVar4 == 0) {
+    bVar7 = false;
+  }
+  else {
+    uVar2 = 0x10;
+    if ((*(byte *)(DAT_00086df8 + 100) & 0x1c) != 4) {
+      uVar2 = 0;
+    }
+    iVar5 = seek_file_handle(iVar4,uVar2,0);
+    iVar6 = read_file_handle(iVar4,&DAT_00202700,0x10);
+    bVar7 = iVar5 == 0 && iVar6 == 0x10;
+    Ordinal_553(iVar4);
+  }
+  return bVar7;
+}

@@ -921,7 +921,7 @@ void redraw_hud_panels()
   } while (iVar3 < 2);
   snap_compass_to_heading();
   sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
-  FUN_0006e96c(DAT_00086df8 + 0x47);
+  update_ready_rune_slot_icons(DAT_00086df8 + 0x47);
   FUN_00041a78(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
   /* bitmap_blit_to_framebuffer doesn't take a real "transparent mode"
      parameter -- it reads the global g_blit_transparent_mode instead (see its own
@@ -2435,6 +2435,99 @@ LAB_0006e244:
     DAT_0023c12f = 0;
     sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
     DAT_0023c1d8 = DAT_0023c1d8 & 0xff7f;
+  }
+  return;
+}
+
+
+
+
+
+
+// was FUN_0006e96c -- the "ready to cast" rune-slot icon updater (see
+// DAT_0023c268's own declaration comment): allocates 3 icon sprites on
+// first use (positioned via DAT_00087210) and, for each of the 3
+// selected-rune bytes at param_1[0..2], either shows the matching rune
+// icon (value+0xe8) or hides the slot (value >= 0x18).
+void update_ready_rune_slot_icons(param_1)
+/* Was `int`, truncating the real pointer callers pass (DAT_00086df8 +
+   0x47, DAT_00086df8 being a genuine `char *`). */
+char *param_1;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  
+  if (DAT_0023c268 == 0) {
+    iVar2 = 0;
+    g_blit_transparent_mode = 1;
+    do {
+      uVar1 = sprite_list_alloc_raw_entry(1,0x10,0x10);
+      (&DAT_0023c268)[iVar2] = (short)uVar1;
+      sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087210)[iVar2],0x8b,0x10,0x10);
+      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    } while (iVar2 < 3);
+    g_blit_transparent_mode = 0;
+  }
+  iVar2 = 0;
+  do {
+    if (*(byte *)(iVar2 + param_1) < 0x18) {
+      sprite_list_set_frame_id((int)(&DAT_0023c268)[iVar2],*(byte *)(iVar2 + param_1) + 0xe8);
+    }
+    else {
+      FUN_00076488((int)(&DAT_0023c268)[iVar2]);
+    }
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 3);
+  FUN_00076508();
+  return;
+}
+
+
+
+
+
+
+// was FUN_0006ea54 -- HUD light-color indicator: shows up to 3 small
+// icons (mirrored off the opposite screen edge from
+// update_ready_rune_slot_icons's rune slots -- DAT_00087218's X
+// positions decrease where DAT_00087210's increase, same sprite/icon
+// infrastructure reused for a different purpose) representing the
+// player's currently lit light sources' colors, driven by
+// compute_light_source_colors's own output (see its comment, which
+// names this function as its HUD consumer). Active only in the rarer
+// game mode *(short*)(DAT_00085a6c+8)==1 (exact mode not identified).
+void update_light_source_color_icons(param_1)
+/* Same truncation bug as its sibling update_ready_rune_slot_icons above. */
+char *param_1;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  
+  if (*(short *)(DAT_00085a6c + 8) == 1) {
+    if (DAT_0023c270 == 0) {
+      iVar2 = 0;
+      g_blit_transparent_mode = 1;
+      do {
+        uVar1 = sprite_list_alloc_raw_entry(1,0x10,0x12);
+        (&DAT_0023c270)[iVar2] = (short)uVar1;
+        sprite_list_set_rect(uVar1,(int)(short)(&DAT_00087218)[iVar2],0x89,0x10,0x12);
+        iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+      } while (iVar2 < 3);
+      g_blit_transparent_mode = 0;
+    }
+    iVar2 = 0;
+    do {
+      if (*(byte *)(iVar2 + param_1) < 0x15) {
+        sprite_list_set_frame_id((int)(&DAT_0023c270)[iVar2],*(byte *)(iVar2 + param_1) + 0x20c0);
+      }
+      else {
+        FUN_00076488((int)(&DAT_0023c270)[iVar2]);
+      }
+      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    } while (iVar2 < 3);
+    FUN_00076508();
   }
   return;
 }

@@ -476,7 +476,7 @@ undefined4 character_generator_start()
   DEBUG(TRACE, "[chargen] character generation starting");
   FUN_000232ec(1);
   uVar1 = run_character_generator();
-  FUN_0006e89c();
+  load_weapon_combat_maneuver_data();
   DEBUG(TRACE, "[chargen] character generation returning, result=%u", uVar1);
   return uVar1;
 }

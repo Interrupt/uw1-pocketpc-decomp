@@ -1138,7 +1138,7 @@ LAB_00066398:
 // layout apply_equipped_item_effect's light scan uses), via the
 // DAT_00086dc8 type->base-color lookup table plus the light-level
 // nibble. Consumed both to render a HUD light-color indicator
-// (FUN_0006ea54) and to pick a "you see a <color> light" message
+// (update_light_source_color_icons) and to pick a "you see a <color> light" message
 // string fragment.
 void compute_light_source_colors(param_1)
 undefined1 * param_1;
@@ -1268,7 +1268,7 @@ uint param_1;
   } while (uVar2 < 4);
   update_level7_floor_hazard_state(DAT_0023bc9c);
   compute_light_source_colors(auStack_c);
-  FUN_0006ea54(auStack_c);
+  update_light_source_color_icons(auStack_c);
   return;
 }
 
