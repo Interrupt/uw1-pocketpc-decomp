@@ -617,6 +617,7 @@ char s_npc_attitude_000845f8[] = "npc_attitude";
 // of walking off the end of a 1-byte global.
 #define DAT_001007da DAT_001007d4_backing[6]
 #define DAT_001007e2 DAT_001007d4_backing[0xe]
+#define DAT_001007ed DAT_001007d4_backing[0x19]
 /* Widened from 32768: FUN_00038680 does
    `Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
    memmove, confirmed by ASAN global-buffer-overflow), matching
@@ -2148,7 +2149,6 @@ char DAT_0010173c;
 char *DAT_00101400;
 undefined2 DAT_00101418;
 undefined2 DAT_00101908;
-undefined DAT_001007ed;
 undefined1 DAT_00101738;
 byte DAT_00101458;
 byte DAT_001018fc;
@@ -5171,7 +5171,7 @@ undefined4 DAT_0023be64;
    other places in this file: the bare message_scroll_print_wrapped()
    call forwards FUN_0007863c's just-returned r0) plus a newline, except
    uVar2==0xc which instead prints a numeric stat byte from the player
-   struct via FUN_0007541c. */
+   struct via cast_detect_life_spell. */
 undefined4 FUN_0007036c(param_1)
 short param_1;
 {
@@ -5182,7 +5182,7 @@ short param_1;
     uVar2 = ((uint)param_1 + 10) & 0xff;
     if ((uVar2 != 10) && (uVar2 != 0xb)) {
       if (uVar2 == 0xc) {
-        FUN_0007541c(8,*(undefined1 *)(DAT_00086df8 + (int)param_1 + 0x2b));
+        cast_detect_life_spell(8,*(undefined1 *)(DAT_00086df8 + (int)param_1 + 0x2b));
       }
       else {
         message_scroll_print_wrapped(FUN_0007863c((((int)(short)uVar2 + 0x1f) | 0x400)));
@@ -36483,107 +36483,6 @@ LAB_00060f54:
 
 
 
-void FUN_000753a0(param_1,param_2)
-ushort param_1;
-byte param_2;
-
-{
-  undefined4 uVar1;
-  
-  uVar1 = FUN_0007863c((int)(short)(ushort)(4 < param_2) + (int)(short)(ushort)(1 < param_2) + 0x3bU
-                       | 0x200);
-  FUN_0007ed20(uVar1,0,0,0,0,0,0,-1 - (param_1 & 0xff));
-  return;
-}
-
-
-
-void FUN_0007541c(param_1,param_2)
-short param_1;
-undefined4 param_2;
-
-{
-  int iVar1;
-  ushort uVar2;
-  ushort uVar3;
-  short sVar4;
-  ushort *puVar5;
-  uint uVar6;
-  byte bVar7;
-  int iVar8;
-  uint uVar9;
-  byte *pbVar10;
-  uint uVar11;
-  int iVar12;
-  uint uVar13;
-  byte local_2c [8];
-  
-  Ordinal_1047(local_2c,0,8);
-  uVar2 = *(ushort *)((char *)g_player_object + 0x16);
-  for (pbVar10 = DAT_002046c0; pbVar10 < DAT_002046c8; pbVar10 = pbVar10 + 1) {
-    puVar5 = (ushort *)((uint)*pbVar10 * 0x1b + DAT_002046b8);
-    uVar13 = (uint)*puVar5;
-    if ((uVar13 & 0x1c0) == 0x40) {
-      uVar3 = puVar5[0xb];
-      iVar8 = (uint)(uVar3 >> 10) - (uint)(uVar2 >> 10);
-      iVar12 = (uVar3 >> 4 & 0x3f) - (uVar2 >> 4 & 0x3f);
-      iVar1 = iVar8 * 0x1000000;
-      uVar6 = iVar1 >> 0x1f;
-      if ((((int)((iVar1 >> 0x18 ^ uVar6) - uVar6) < (int)param_1) &&
-          (iVar1 = iVar12 * 0x1000000, uVar6 = iVar1 >> 0x1f,
-          (int)((iVar1 >> 0x18 ^ uVar6) - uVar6) < (int)param_1)) &&
-         (sVar4 = roll_skill_check(param_2,0xf - ((byte)(&DAT_001007ed)[(uVar13 & 0x3f) * 0x30] & 0xf)),
-         0 < sVar4)) {
-        sVar4 = FUN_0007ec58(iVar8,iVar12);
-        local_2c[sVar4] = local_2c[sVar4] + 1;
-      }
-    }
-  }
-  uVar13 = 0;
-  uVar6 = 0;
-  do {
-    pbVar10 = local_2c + uVar6;
-    uVar6 = uVar6 + 1 & 0xff;
-    if (uVar13 < *pbVar10) {
-      uVar13 = (uint)*pbVar10;
-    }
-  } while (uVar6 < 8);
-  if (uVar13 == 0) {
-    FUN_00078c80(0x3e);
-  }
-  else {
-    uVar6 = 3;
-    if (uVar13 < 4) {
-      uVar6 = uVar13;
-    }
-    uVar9 = 0;
-    do {
-      if (local_2c[uVar9] == uVar13) {
-        FUN_000753a0(uVar9,local_2c[uVar9]);
-        uVar11 = uVar9;
-        uVar13 = uVar6;
-        break;
-      }
-      uVar9 = uVar9 + 1 & 0xff;
-      uVar11 = uVar6;
-    } while (uVar9 < 8);
-    uVar6 = Ordinal_1053();
-    uVar6 = uVar6 & 7;
-    bVar7 = 0;
-    do {
-      if (((uVar6 & 7) != uVar11) && (uVar13 < local_2c[uVar6 & 7])) {
-        FUN_000753a0(uVar6 & 7,local_2c[uVar6 & 7]);
-        return;
-      }
-      bVar7 = bVar7 + 1;
-      uVar6 = uVar6 + 1 & 0xff;
-    } while (bVar7 < 8);
-  }
-  return;
-}
-
-
-
 void FUN_000756c8(param_1)
 ushort * param_1;
 
@@ -36646,7 +36545,7 @@ char param_3;
     uVar3 = 2;
     goto LAB_00075a0c;
   case 1:
-    FUN_0007541c(10,0x2d);
+    cast_detect_life_spell(10,0x2d);
     break;
   case 2:
     goto LAB_0007588c;

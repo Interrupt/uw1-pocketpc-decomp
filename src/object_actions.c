@@ -1943,3 +1943,124 @@ int param_2;
   }
   return 1;
 }
+
+
+
+
+
+// was FUN_000753a0 -- prints a "creatures detected in this direction"
+// scroll message for cast_detect_life_spell below: param_1 is a 0-7
+// compass-direction bucket, param_2 is how many creatures were found
+// there. Picks a message tier (0/1/2, msgid 0x3b + tier) based on
+// the count (<=1 / 2-4 / >4), then displays it via FUN_0007ed20 with
+// a direction/compass icon index encoded as -1-param_1.
+void report_detected_creatures_in_direction(param_1,param_2)
+ushort param_1;
+byte param_2;
+
+{
+  undefined4 uVar1;
+  
+  uVar1 = FUN_0007863c((int)(short)(ushort)(4 < param_2) + (int)(short)(ushort)(1 < param_2) + 0x3bU
+                       | 0x200);
+  FUN_0007ed20(uVar1,0,0,0,0,0,0,-1 - (param_1 & 0xff));
+  return;
+}
+
+
+
+// was FUN_0007541c -- "Detect Life" spell: walks every active
+// creature (type 0x1c0==0x40) within a square radius param_1 of the
+// player, rolls a skill check (caster skill param_2 vs. a per-
+// monster-class "detect resist" nibble field, DAT_001007ed, part of
+// the same stride-0x30 table as g_monster_max_stats_table) for each
+// one in range, and buckets successful detections into 8 compass
+// directions (FUN_0007ec58) relative to the player. Reports the
+// direction with the most detections via
+// report_detected_creatures_in_direction; on a count tie, falls back
+// to a random direction with at least that many; prints a "nothing
+// detected" scroll message (id 0x3e) if no creatures were found at
+// all.
+void cast_detect_life_spell(param_1,param_2)
+short param_1;
+undefined4 param_2;
+
+{
+  int iVar1;
+  ushort uVar2;
+  ushort uVar3;
+  short sVar4;
+  ushort *puVar5;
+  uint uVar6;
+  byte bVar7;
+  int iVar8;
+  uint uVar9;
+  byte *pbVar10;
+  uint uVar11;
+  int iVar12;
+  uint uVar13;
+  byte local_2c [8];
+  
+  Ordinal_1047(local_2c,0,8);
+  uVar2 = *(ushort *)((char *)g_player_object + 0x16);
+  for (pbVar10 = DAT_002046c0; pbVar10 < DAT_002046c8; pbVar10 = pbVar10 + 1) {
+    puVar5 = (ushort *)((uint)*pbVar10 * 0x1b + DAT_002046b8);
+    uVar13 = (uint)*puVar5;
+    if ((uVar13 & 0x1c0) == 0x40) {
+      uVar3 = puVar5[0xb];
+      iVar8 = (uint)(uVar3 >> 10) - (uint)(uVar2 >> 10);
+      iVar12 = (uVar3 >> 4 & 0x3f) - (uVar2 >> 4 & 0x3f);
+      iVar1 = iVar8 * 0x1000000;
+      uVar6 = iVar1 >> 0x1f;
+      if ((((int)((iVar1 >> 0x18 ^ uVar6) - uVar6) < (int)param_1) &&
+          (iVar1 = iVar12 * 0x1000000, uVar6 = iVar1 >> 0x1f,
+          (int)((iVar1 >> 0x18 ^ uVar6) - uVar6) < (int)param_1)) &&
+         (sVar4 = roll_skill_check(param_2,0xf - ((byte)(&DAT_001007ed)[(uVar13 & 0x3f) * 0x30] & 0xf)),
+         0 < sVar4)) {
+        sVar4 = FUN_0007ec58(iVar8,iVar12);
+        local_2c[sVar4] = local_2c[sVar4] + 1;
+      }
+    }
+  }
+  uVar13 = 0;
+  uVar6 = 0;
+  do {
+    pbVar10 = local_2c + uVar6;
+    uVar6 = uVar6 + 1 & 0xff;
+    if (uVar13 < *pbVar10) {
+      uVar13 = (uint)*pbVar10;
+    }
+  } while (uVar6 < 8);
+  if (uVar13 == 0) {
+    FUN_00078c80(0x3e);
+  }
+  else {
+    uVar6 = 3;
+    if (uVar13 < 4) {
+      uVar6 = uVar13;
+    }
+    uVar9 = 0;
+    do {
+      if (local_2c[uVar9] == uVar13) {
+        report_detected_creatures_in_direction(uVar9,local_2c[uVar9]);
+        uVar11 = uVar9;
+        uVar13 = uVar6;
+        break;
+      }
+      uVar9 = uVar9 + 1 & 0xff;
+      uVar11 = uVar6;
+    } while (uVar9 < 8);
+    uVar6 = Ordinal_1053();
+    uVar6 = uVar6 & 7;
+    bVar7 = 0;
+    do {
+      if (((uVar6 & 7) != uVar11) && (uVar13 < local_2c[uVar6 & 7])) {
+        report_detected_creatures_in_direction(uVar6 & 7,local_2c[uVar6 & 7]);
+        return;
+      }
+      bVar7 = bVar7 + 1;
+      uVar6 = uVar6 + 1 & 0xff;
+    } while (bVar7 < 8);
+  }
+  return;
+}

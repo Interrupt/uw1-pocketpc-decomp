@@ -750,6 +750,7 @@ extern undefined DAT_001007d4_backing[8192];
 #define g_monster_max_stats_table DAT_001007d4_backing[0]
 #define DAT_001007da DAT_001007d4_backing[6]
 #define DAT_001007e2 DAT_001007d4_backing[0xe]
+#define DAT_001007ed DAT_001007d4_backing[0x19]
 extern short g_mouse_x;
 extern short g_mouse_y;
 extern ushort * g_player_object;
@@ -3253,8 +3254,8 @@ void cast_cone_damage_spell();
 void cast_targeted_search_effect();
 void cast_summon_or_spawn_effect();
 undefined4 spawn_random_variant_object_at_tile();
-void FUN_000753a0();
-void FUN_0007541c();
+void report_detected_creatures_in_direction();
+void cast_detect_life_spell();
 void FUN_000756c8();
 void FUN_00075808();
 void FUN_00075a88();
