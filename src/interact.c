@@ -148,7 +148,7 @@ void interact_look()
   else {
     DAT_002020e0 = 1;
   }
-  FUN_0007c2ec(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
+  trigger_object_trap_or_use_action(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
   if (g_cursor_mode == 3) {
     wait_for_click_release(1);
   }

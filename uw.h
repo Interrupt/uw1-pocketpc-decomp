@@ -1016,6 +1016,7 @@ extern undefined1 DAT_000878ec_backing[32768];
 extern undefined DAT_00085ce0_backing[8192];
 #define DAT_00085ce0 DAT_00085ce0_backing[0]
 extern char s_You_read_the_00085ce8[];
+extern undefined4 DAT_0024cfc8;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3463,8 +3464,8 @@ void dispatch_use_special_item_by_type();
 void use_readable_item();
 void dispatch_world_object_interaction_by_family();
 undefined4 check_object_combination();
-undefined4 FUN_0007c1bc();
-void FUN_0007c2ec();
+undefined4 trigger_object_use_babl_script();
+void trigger_object_trap_or_use_action();
 void FUN_0007c3f4();
 void FUN_0007c4a8();
 void FUN_0007c580();

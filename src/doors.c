@@ -68,7 +68,7 @@ ushort * param_2;
       *(byte *)(param_2 + 1) = (bVar2 + 0x18 ^ bVar2) & 0x7f ^ bVar2;
       *(byte *)((char *)param_2 + 3) = (byte)(uVar4 >> 8);
     }
-    FUN_0007c2ec(param_1,param_2,7,(int)DAT_002020a0,DAT_002020a4);
+    trigger_object_trap_or_use_action(param_1,param_2,7,(int)DAT_002020a0,DAT_002020a4);
     FUN_0007c3f4(param_2);
   }
   uVar3 = 0x14;

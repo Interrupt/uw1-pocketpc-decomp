@@ -775,8 +775,8 @@ LAB_0007b2e0:
   }
 LAB_0007b254:
   uVar14 = 0;
-  FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,param_1,param_2,1);
-  FUN_0007c2ec(param_1,param_2,4,(int)DAT_002020a0,CONCAT22(uVar14,DAT_002020a4));
+  trigger_object_use_babl_script((int)DAT_002020a0,(int)DAT_002020a4,param_1,param_2,1);
+  trigger_object_trap_or_use_action(param_1,param_2,4,(int)DAT_002020a0,CONCAT22(uVar14,DAT_002020a4));
   iVar11 = finish_object_use(param_2,param_3,1);
   if ((iVar11 != 0) && (g_cursor_holding_state == 1)) {
     g_selected_object = (ushort *)0x0;
@@ -984,8 +984,8 @@ int param_3;
     dispatch_use_special_item_by_type(param_1,puVar6,param_3);
   }
 LAB_00079cb8:
-  FUN_0007c2ec(param_1,param_2,4,(int)DAT_002020a0,CONCAT22(uVar8,DAT_002020a4));
-  FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,param_1,param_2,param_3);
+  trigger_object_trap_or_use_action(param_1,param_2,4,(int)DAT_002020a0,CONCAT22(uVar8,DAT_002020a4));
+  trigger_object_use_babl_script((int)DAT_002020a0,(int)DAT_002020a4,param_1,param_2,param_3);
   return param_2;
 }
 
@@ -1522,7 +1522,7 @@ int param_2;
 // was FUN_0007a704 -- deferred-target-click completion callback:
 // only fires for target type 0x16e whose quality-indexed tile-flag
 // lookup (DAT_0023add0) equals 0xb; on that match, consumes the held
-// item and triggers an effect (FUN_0007c2ec, not yet named) at the
+// item and triggers an effect (trigger_object_trap_or_use_action, not yet named) at the
 // player's own tile. Prints a "no effect" message (id 0x84)
 // otherwise. Confirmed real caller: use_object_on_target
 // (src/item_use.c).
@@ -1536,7 +1536,7 @@ undefined4 param_2;
   g_cursor_holding_state = 0;
   if (((*param_1 & 0x1ff) == 0x16e) && (((&DAT_0023add0)[(byte)param_1[3] & 0x3f] & 0xff) == 0xb)) {
     finish_object_use(DAT_00202098,param_2,1);
-    FUN_0007c2ec(g_player_object,param_1,7,(int)DAT_002020a0,DAT_002020a4);
+    trigger_object_trap_or_use_action(g_player_object,param_1,7,(int)DAT_002020a0,DAT_002020a4);
     return;
   }
   print_scroll_message_by_id(0x84);
@@ -1637,8 +1637,8 @@ uint param_2;
   byte *local_1c;
   
   if ((param_2 != 0) && (((*param_1 & 0xf) < 0xc || (0xf < (*param_1 & 0xf))))) {
-    FUN_0007c2ec(g_player_object,param_1,4,(int)DAT_002020a0,DAT_002020a4);
-    FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
+    trigger_object_trap_or_use_action(g_player_object,param_1,4,(int)DAT_002020a0,DAT_002020a4);
+    trigger_object_use_babl_script((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
     if ((param_1[1] & 0x80) == 0) {
       local_1c = param_1 + 6;
       iVar3 = FUN_000537d0(&local_1c,0,4,2,param_2 & 0xffff0000);
@@ -2061,8 +2061,8 @@ int param_2;
       }
     }
     else {
-      FUN_0007c2ec(g_player_object,param_1,4,(int)DAT_002020a0,DAT_002020a4);
-      FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
+      trigger_object_trap_or_use_action(g_player_object,param_1,4,(int)DAT_002020a0,DAT_002020a4);
+      trigger_object_use_babl_script((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
       finish_object_use(param_1,param_2,0);
     }
   }
@@ -2157,6 +2157,99 @@ ushort * param_2;
     *(char *)param_2 = (char)uVar5;
     *(char *)((char *)param_2 + 1) = (char)(uVar5 >> 8);
     FUN_00049924(2);
+  }
+  return;
+}
+
+
+
+
+
+// was FUN_0007c1bc -- a shared "finalize object use" step called at
+// the end of virtually every use-object interaction path
+// (use_object_on_target, use_readable_item, dispatch_world_object_
+// interaction_by_family): checks FUN_0007ca50 (not yet named) for a
+// real link/description on the target (param_4), then either
+// triggers a babl conversation script (FUN_00039d1c) for the
+// player-only case, or -- gated on a per-player cooldown counter
+// (DAT_0024cfc8 vs a player field at offset +0xce) -- does the same
+// for the interacting object (param_3) and finalizes via
+// FUN_0007cc78; plays a "denied" sound effect if the cooldown hasn't
+// elapsed yet. Returns whether the script actually fired.
+undefined4 trigger_object_use_babl_script(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined4 param_2;
+ushort * param_3;
+ushort * param_4;
+int param_5;
+
+{
+  int iVar1;
+  ushort *puVar2;
+  undefined2 local_1c;
+  undefined2 local_1a;
+  int local_18;
+  
+  iVar1 = FUN_0007ca50(param_4,&local_1a,&local_1c,&local_18);
+  if ((iVar1 != 0) && (local_18 != 0)) {
+    if (param_5 == 0) {
+      puVar2 = param_4;
+      if (((param_3 != g_player_object) || ((*param_4 & 0x1ff) < 0x98)) || (0x9b < (*param_4 & 0x1ff)))
+      goto LAB_0007c2b8;
+    }
+    else {
+      if (DAT_0024cfc8 <= *(uint *)(DAT_00086df8 + 0xce)) {
+        DAT_0024cfc8 = *(uint *)(DAT_00086df8 + 0xce) + 0x2fd;
+        puVar2 = param_3;
+LAB_0007c2b8:
+        FUN_00039d1c(param_1,param_2,puVar2,param_3,local_1a,local_1c);
+        FUN_0007cc78(param_4);
+        return 1;
+      }
+      play_sound_effect_with_pan(0x15,0x40,0);
+    }
+  }
+  return 0;
+}
+
+
+
+// was FUN_0007c2ec -- another shared "finalize object use/trap check"
+// step, called alongside trigger_object_use_babl_script throughout
+// the use-object interaction paths: if the interacting object
+// (param_2) isn't already flagged and has trapped/linked contents
+// (offset +6 quality bits), searches its container chain
+// (FUN_000537d0) for a matching entry -- a low-class match with an
+// empty extra-flags field and param_3==4 triggers a trap effect
+// (FUN_0007d074/FUN_0007dfd8, not yet named); a higher-class match
+// instead runs the general "use item on object" resolver
+// (FUN_0007cdbc -- confirmed in an earlier pass as the skill-gated
+// unlock/use resolver behind force_unlock_target_object).
+void trigger_object_trap_or_use_action(param_1,param_2,param_3,param_4,param_5)
+char *param_1;
+char *param_2;   /* was int -- the picked object (g_interact_target etc.), deref'd at param_2+1 / param_2+6 */
+undefined4 param_3;
+undefined4 param_4;
+undefined2 param_5;
+
+{
+  ushort *puVar1;
+  ushort *local_1c;
+  
+  if (((param_2 != 0) && ((*(byte *)(param_2 + 1) & 0x80) == 0)) &&
+     (local_1c = (ushort *)(param_2 + 6), (*local_1c & 0xffc0) != 0)) {
+    puVar1 = (ushort *)FUN_000537d0(&local_1c,0,6,0xffffffff,0xffff);
+    if (puVar1 != (ushort *)0x0) {
+      if ((*puVar1 & 0x30) < 0x20) {
+        if (((*puVar1 & 0x1e00) == 0) && ((short)param_3 == 4)) {
+          FUN_0007d074(param_1,param_2,puVar1,param_4,param_5);
+          FUN_0007dfd8(local_1c,puVar1);
+        }
+      }
+      else {
+        FUN_0007cdbc(param_1,param_2,puVar1,param_3);
+      }
+    }
   }
   return;
 }

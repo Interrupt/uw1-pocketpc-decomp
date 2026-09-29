@@ -18502,7 +18502,7 @@ undefined2 param_5;
     }
     bVar3 = iVar1 < 1;
     if (((bVar3) && (iVar4 == 0)) && (-1 < (short)param_4)) {
-      FUN_0007c2ec(param_2,param_1,4,param_4,param_5);
+      trigger_object_trap_or_use_action(param_2,param_1,4,param_4,param_5);
     }
   }
   else {
@@ -21814,7 +21814,7 @@ char *param_1;
 
 {
   if (DAT_002020ec != 0) {
-    FUN_0007c2ec(g_player_object,param_1,2,(int)DAT_002020a0,DAT_002020a4);
+    trigger_object_trap_or_use_action(g_player_object,param_1,2,(int)DAT_002020a0,DAT_002020a4);
     object_list_unlink(DAT_002020a8,param_1);
     FUN_00049924(2);
     DAT_002020ec = 0;
@@ -21962,7 +21962,7 @@ void FUN_0003f648()
   uint uVar2;
   uint uVar3;
   
-  FUN_0007c2ec(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
+  trigger_object_trap_or_use_action(g_player_object,g_interact_target,5,(int)DAT_002020a0,DAT_002020a4);
   if (g_interact_target == (ushort *)0x0) {
     g_interact_target = (ushort *)FUN_00045678(2);
     if (g_interact_target != (ushort *)0x0) goto LAB_0003f69c;
@@ -31790,7 +31790,7 @@ char param_1;
 /* param_1 was `undefined4 *`, so `resolve_object_link(*param_1)` and
    `*param_1 = local_28` truncated the 64-bit object-list pointer the
    callers hand in by address (crashing e.g. a right-click "look" at the
-   spawn-room sack: FUN_0007c2ec -> here -> resolve_object_link(garbage)).
+   spawn-room sack: trigger_object_trap_or_use_action -> here -> resolve_object_link(garbage)).
    It's a pointer-to-pointer -- ushort **. */
 ushort *FUN_000537d0(param_1,param_2,param_3,param_4,param_5)
 ushort ** param_1;
@@ -36515,75 +36515,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-undefined4 FUN_0007c1bc(param_1,param_2,param_3,param_4,param_5)
-undefined4 param_1;
-undefined4 param_2;
-ushort * param_3;
-ushort * param_4;
-int param_5;
-
-{
-  int iVar1;
-  ushort *puVar2;
-  undefined2 local_1c;
-  undefined2 local_1a;
-  int local_18;
-  
-  iVar1 = FUN_0007ca50(param_4,&local_1a,&local_1c,&local_18);
-  if ((iVar1 != 0) && (local_18 != 0)) {
-    if (param_5 == 0) {
-      puVar2 = param_4;
-      if (((param_3 != g_player_object) || ((*param_4 & 0x1ff) < 0x98)) || (0x9b < (*param_4 & 0x1ff)))
-      goto LAB_0007c2b8;
-    }
-    else {
-      if (DAT_0024cfc8 <= *(uint *)(DAT_00086df8 + 0xce)) {
-        DAT_0024cfc8 = *(uint *)(DAT_00086df8 + 0xce) + 0x2fd;
-        puVar2 = param_3;
-LAB_0007c2b8:
-        FUN_00039d1c(param_1,param_2,puVar2,param_3,local_1a,local_1c);
-        FUN_0007cc78(param_4);
-        return 1;
-      }
-      play_sound_effect_with_pan(0x15,0x40,0);
-    }
-  }
-  return 0;
-}
-
-
-
-void FUN_0007c2ec(param_1,param_2,param_3,param_4,param_5)
-char *param_1;
-char *param_2;   /* was int -- the picked object (g_interact_target etc.), deref'd at param_2+1 / param_2+6 */
-undefined4 param_3;
-undefined4 param_4;
-undefined2 param_5;
-
-{
-  ushort *puVar1;
-  ushort *local_1c;
-  
-  if (((param_2 != 0) && ((*(byte *)(param_2 + 1) & 0x80) == 0)) &&
-     (local_1c = (ushort *)(param_2 + 6), (*local_1c & 0xffc0) != 0)) {
-    puVar1 = (ushort *)FUN_000537d0(&local_1c,0,6,0xffffffff,0xffff);
-    if (puVar1 != (ushort *)0x0) {
-      if ((*puVar1 & 0x30) < 0x20) {
-        if (((*puVar1 & 0x1e00) == 0) && ((short)param_3 == 4)) {
-          FUN_0007d074(param_1,param_2,puVar1,param_4,param_5);
-          FUN_0007dfd8(local_1c,puVar1);
-        }
-      }
-      else {
-        FUN_0007cdbc(param_1,param_2,puVar1,param_3);
-      }
-    }
-  }
   return;
 }
 
