@@ -1730,7 +1730,7 @@ int param_1;
   
   sVar1 = *(short *)(DAT_00250704 + 0xe);
   sVar2 = *(short *)(DAT_00250704 + 4);
-  FUN_00012850((int)sVar2,((int)*(short *)(DAT_000879b0 + 6) + (int)sVar1) * 0x10000 >> 0x10,
+  copy_framebuffer_rect((int)sVar2,((int)*(short *)(DAT_000879b0 + 6) + (int)sVar1) * 0x10000 >> 0x10,
                ((int)*(short *)(DAT_00250704 + 6) - (int)sVar2) * 0x10000 >> 0x10,
                ((sVar1 * -0x10000 >> 0x10) - (int)*(short *)(DAT_000879b0 + 6)) + param_1,sVar2,
                sVar1);

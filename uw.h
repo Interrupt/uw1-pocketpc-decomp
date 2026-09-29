@@ -2346,7 +2346,7 @@ void blit_bitmap_to_framebuffer_clipped();
 void fade_in();
 void fade_out();
 void blit_raw_sprite_clipped();
-void FUN_00012850();
+void copy_framebuffer_rect();
 void FUN_00012948();
 void flush_dungeon_frame();
 void thunk_FUN_0003c310();

@@ -1308,3 +1308,74 @@ int param_8;
   return;
 }
 
+
+
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+// was FUN_00012850 -- copies a param_3-wide by param_4-tall rect
+// within the framebuffer from (param_5,param_6) to (param_1,param_2),
+// unioning the destination into the dirty-rect tracker and always
+// flushing to the display afterward. Only proceeds when param_6 <
+// param_2 (source row above destination row) -- this row-by-row
+// forward copy would corrupt overlapping regions in the other
+// direction, so this guard likely exists to keep the implementation
+// simple rather than handle both directions safely. Confirmed live
+// caller: msg_scroll_scroll_up_line (src/hud.c) uses this to shift
+// the message-scroll panel's existing text up by one line height
+// instead of doing a full redraw.
+void copy_framebuffer_rect(param_1,param_2,param_3,param_4,param_5,param_6)
+short param_1;
+short param_2;
+short param_3;
+short param_4;
+short param_5;
+short param_6;
+
+{
+  int iVar2;
+  void *pvVar_buf25800;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  int iVar8;
+  int iVar9;
+  int iVar10;
+  undefined2 *puVar11;
+
+  iVar7 = (int)param_2;
+  if (param_6 < iVar7) {
+    iVar4 = (int)param_4;
+    iVar5 = (int)param_3;
+    pvVar_buf25800 = g_uw_framebuffer;
+    iVar10 = 0x140 - iVar5;
+    dirty_rect_union(200 - iVar4,iVar4 + (200 - iVar4),iVar10,iVar7 + iVar10);
+    iVar6 = param_6 * 0x140 + (int)param_5;
+    iVar7 = iVar7 * 0x140 + (int)param_1;
+    iVar9 = 0;
+    if (0 < iVar4) {
+      do {
+        if (199 < iVar9) break;
+        iVar8 = 0;
+        if (0 < iVar5) {
+          puVar11 = (undefined2 *)((char *)pvVar_buf25800 + iVar7 * 2);
+          do {
+            if (0x13f < iVar8) break;
+            iVar8 = iVar8 + 1;
+            iVar7 = iVar7 + 1;
+            iVar2 = iVar6 * 2;
+            iVar6 = iVar6 + 1;
+            *(undefined2 *)((g_uw_framebuffer) + iVar2) = *puVar11;
+            puVar11 = puVar11 + 1;
+          } while (iVar8 < iVar5);
+        }
+        iVar9 = iVar9 + 1;
+        iVar6 = iVar10 + iVar6;
+        iVar7 = iVar10 + iVar7;
+      } while (iVar9 < iVar4);
+    }
+    debug_framebuffer_dump("copy_framebuffer_rect");
+    flush_dirty_rect_to_display(1);
+  }
+  return;
+}
