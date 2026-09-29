@@ -2158,9 +2158,9 @@ void FUN_000286cc()
     FUN_00046414();
     FUN_0003e644();
     DAT_00085c54 = 1;
-    FUN_0007f140();
+    select_msg_scroll_mode_2();
     msg_scroll_panel_reset(0);
-    FUN_0007f110();
+    select_msg_scroll_mode_conversation();
     msg_scroll_panel_reset(0);
     select_active_font(s_font5x6p_sys_0008430c);
     uVar6 = 2;
@@ -2206,7 +2206,7 @@ void FUN_000286cc()
       }
       DAT_001007c0 = DAT_00100784;
       init_barter_ui();
-      FUN_0007f0e0();
+      select_msg_scroll_mode_normal();
       cursor_show_idle_tick();
       DAT_0023bf0c = 0;
       reset_cursor_confine_rect();
@@ -2477,7 +2477,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
     uVar6 = babl_read_var_word(iVar12 + sVar2 + -1);
     sVar5 = (short)uVar6;
   }
-  FUN_0007f140();
+  select_msg_scroll_mode_2();
   msg_scroll_panel_reset(1);
   debug_noop_checkpoint();
   iVar12 = 0;
@@ -2547,7 +2547,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
     FUN_000295b4((short)_far_pick);
     return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
   }
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   DAT_0010078c = 1;
   DAT_00250718 = 1;
   FUN_00028ffc();

@@ -1044,6 +1044,8 @@ extern char DAT_0024fa28;
 extern undefined2 DAT_0024fa14;
 extern undefined2 DAT_002029c8;
 extern char s_very_near_00087954[];
+extern undefined1 g_msg_scroll_panel_state_conv_backing[65536];
+#define g_msg_scroll_panel_state_conv g_msg_scroll_panel_state_conv_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3535,11 +3537,11 @@ bool write_buffer_to_file();
 bool read_buffer_from_file();
 short read_xor_scrambled_block();
 int write_xor_scrambled_block();
-void FUN_0007f044();
-void FUN_0007f094();
-void FUN_0007f0e0();
-void FUN_0007f110();
-void FUN_0007f140();
+void init_msg_scroll_panel();
+void check_mouse_over_msg_scroll_panel();
+void select_msg_scroll_mode_normal();
+void select_msg_scroll_mode_conversation();
+void select_msg_scroll_mode_2();
 void FUN_0007f170();
 undefined4 msg_scroll_draw_edges();
 undefined4 FUN_0007f290();

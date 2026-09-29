@@ -298,7 +298,7 @@ void enter_dungeon_view_hud_init()
 {
   debug_print(s_init_gamedisp_goes_000858e8);
   FUN_00046414();
-  FUN_0007f044();
+  init_msg_scroll_panel();
   resume_music_playback();
   FUN_0003e2a4();
   if (DAT_000868d8 == 0) {
@@ -1821,7 +1821,7 @@ char *param_1;
             iVar2);
 
   if (iVar2 == 1 || iVar2 == 4) {
-    FUN_0007f094(iVar2);
+    check_mouse_over_msg_scroll_panel(iVar2);
     iVar2 = extraout_r3;
     if (DAT_00250708 != 0) {
       FUN_00057118();
@@ -2204,7 +2204,7 @@ int param_1;
   undefined2 uVar1;
   int iVar2;
 
-  if ((param_1 != 0) && (FUN_0007f094(), DAT_00250708 != 0)) {
+  if ((param_1 != 0) && (check_mouse_over_msg_scroll_panel(), DAT_00250708 != 0)) {
     FUN_00057118();
   }
   set_draw_color(0x2a);
@@ -3646,6 +3646,91 @@ int param_5;
       param_1[row * param_4 + col] = (unsigned char)best_index;
     }
   }
+}
+
+
+
+
+
+// was FUN_0007f044 -- one-time message-scroll-panel setup, called
+// once from src/hud.c's game init: points the shared panel-state
+// pointer (DAT_00250704) at g_msg_scroll_panel_state, selects mode 0,
+// and initializes+draws the panel's geometry/border.
+void init_msg_scroll_panel()
+
+{
+  DAT_00250704 = &g_msg_scroll_panel_state;
+  DAT_00250714 = 0;
+  msg_scroll_panel_init(0xf,0xa9,0x131,200,0);
+  msg_scroll_draw_edges();
+  return;
+}
+
+
+
+// was FUN_0007f094 -- checks whether the mouse cursor is currently
+// over the active message-scroll panel's rect (via FUN_00057d1c, not
+// yet named -- a point-in-rect hit test with a cursor-size margin,
+// confirmed by its own body testing g_mouse_x/g_mouse_y), storing the
+// hit/miss result in the shared DAT_00250708 flag other panel code
+// reads (e.g. wait_for_click_release/input-wait loops below).
+void check_mouse_over_msg_scroll_panel()
+
+{
+  DAT_00250708 = FUN_00057d1c((int)DAT_00250704[2],(int)DAT_00250704[1],(int)DAT_00250704[3],
+                              (int)*DAT_00250704);
+  return;
+}
+
+
+
+// was FUN_0007f0e0 -- selects the message-scroll panel's "normal"
+// mode (id 0): points the shared state pointer at
+// g_msg_scroll_panel_state and sets the dirty/needs-redraw flag
+// (DAT_0025071c).
+void select_msg_scroll_mode_normal()
+
+{
+  DAT_00250714 = 0;
+  DAT_0025071c = 1;
+  DAT_00250704 = &g_msg_scroll_panel_state;
+  return;
+}
+
+
+
+// was FUN_0007f110 -- selects the message-scroll panel's "NPC
+// conversation" mode (id 1, confirmed by a pre-existing comment on
+// g_msg_scroll_panel_state_conv's own declaration): points the shared
+// state pointer at the separate conversation-mode panel struct and
+// sets the dirty flag.
+void select_msg_scroll_mode_conversation()
+
+{
+  DAT_00250714 = 1;
+  DAT_0025071c = 1;
+  DAT_00250704 = &g_msg_scroll_panel_state_conv;
+  return;
+}
+
+
+
+// was FUN_0007f140 -- selects message-scroll mode id 2, reusing the
+// same underlying g_msg_scroll_panel_state buffer as mode 0
+// (select_msg_scroll_mode_normal) but under a distinct mode id.
+// Confirmed live usage (src/babl.c) calls this immediately before
+// select_msg_scroll_mode_conversation when entering a full-screen
+// barter/talk window, each followed by its own msg_scroll_panel_reset
+// -- reads as a transitional "reset the normal panel" step rather
+// than a genuinely distinct third display mode, but its exact
+// purpose beyond sharing mode 0's buffer isn't confirmed.
+void select_msg_scroll_mode_2()
+
+{
+  DAT_00250714 = 2;
+  DAT_0025071c = 1;
+  DAT_00250704 = &g_msg_scroll_panel_state;
+  return;
 }
 
 

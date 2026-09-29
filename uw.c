@@ -6474,7 +6474,7 @@ undefined4 DAT_0025071c;
    up to at least 0x17 -- same "split symbol" bug class as
    g_msg_scroll_panel_state's own sibling struct a few lines above, which already
    got the same fix). Confirmed live via lldb: entering NPC conversation
-   mode (FUN_0007f110, DAT_00250714==1) points DAT_00250704 at this
+   mode (select_msg_scroll_mode_conversation, DAT_00250714==1) points DAT_00250704 at this
    1-byte variable, so every field read past its own single byte --
    including the panel's own width (+6) and cursor-x (+8) -- silently
    reads whatever unrelated byte happens to sit next to it in this
@@ -6498,7 +6498,7 @@ undefined4 DAT_0025071c;
    (see compass-hud-position-fix's memory) -- every call site already
    does its own byte-offset pointer arithmetic against this base. */
 // was DAT_00087978
-static undefined1 g_msg_scroll_panel_state_conv_backing[65536] = {
+undefined1 g_msg_scroll_panel_state_conv_backing[65536] = {
   0x34,0x00,0x84,0x00,0x38,0x00,0xdb,0x00,0x3b,0x00,0x36,0x00,0x3b,0x00,0x36,0x00,
   0x00,0x00,0x00,0x00,0x00,0x00,0x2e,0x00,0x01,0x00,0x00,0x00,
 };
@@ -12485,7 +12485,7 @@ void FUN_00028bac()
   }
   pick_random_pending_music_track();
   g_active_hud_panel = DAT_00100678;
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   return;
 }
 
@@ -12512,7 +12512,7 @@ void FUN_00028ffc()
     }
     if (DAT_00250718 == 0) {
       FUN_0007f170(500,0);
-      FUN_0007f140();
+      select_msg_scroll_mode_2();
       msg_scroll_panel_reset(1);
       if (1 < DAT_00100794) {
         iVar4 = 1;
@@ -12533,7 +12533,7 @@ void FUN_00028ffc()
           iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
         } while (iVar4 < DAT_00100794);
       }
-      FUN_0007f0e0();
+      select_msg_scroll_mode_normal();
       DAT_00250718 = 1;
     }
     poll_input_bindings(DAT_00085a6c);
@@ -12607,7 +12607,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
     sVar4 = babl_read_var_word(iVar12 + sVar3 + -1);
     sVar5 = (short)uVar6;
   }
-  FUN_0007f140();
+  select_msg_scroll_mode_2();
   msg_scroll_panel_reset(1);
   debug_noop_checkpoint();
   iVar12 = 0;
@@ -12639,7 +12639,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
       sVar13 = sVar5 + 1;
     } while (iVar12 < DAT_00100794);
   }
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   DAT_0010078c = 1;
   DAT_00250718 = 1;
   FUN_00028ffc();
@@ -12673,11 +12673,11 @@ short param_1;
       DAT_00100790 = 0;
       DAT_0010078c = 0;
       wait_for_click_release(0);
-      FUN_0007f140();
+      select_msg_scroll_mode_2();
       msg_scroll_panel_reset(1);
-      FUN_0007f0e0();
+      select_msg_scroll_mode_normal();
       DAT_00250718 = 0;
-      FUN_0007f110();
+      select_msg_scroll_mode_conversation();
       if (1 < DAT_00100794) {
         iVar3 = 1;
         do {
@@ -12690,7 +12690,7 @@ short param_1;
           iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
         } while (iVar3 < DAT_00100794);
       }
-      FUN_0007f0e0();
+      select_msg_scroll_mode_normal();
       DAT_00100788 = param_1;
     }
   }
@@ -12717,7 +12717,7 @@ char *param_1; // was `undefined4` -- FUN_0001ac48 passes a real (possibly babl_
   } while (cVar1 != '\0');
   Ordinal_1063(DAT_001007c0,param_1);
   Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
-  FUN_0007f110();
+  select_msg_scroll_mode_conversation();
   /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, confirmed via an
      exhaustive real-binary reference search that this PocketPC port's
      conversation text never used the palette-indexed color path at
@@ -12738,7 +12738,7 @@ char *param_1; // was `undefined4` -- FUN_0001ac48 passes a real (possibly babl_
      single glyph is measured or drawn. Confirmed live via lldb (the
      explicit 0x2e was already gone, replaced by 0x60, by the time
      draw_text_string saw it). Set the persisted field itself, on the
-     struct FUN_0007f110 just pointed DAT_00250704 at, instead. */
+     struct select_msg_scroll_mode_conversation just pointed DAT_00250704 at, instead. */
   {
     int _saved_use_pal = g_text_use_palette_color;
     byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
@@ -12749,7 +12749,7 @@ char *param_1; // was `undefined4` -- FUN_0001ac48 passes a real (possibly babl_
     g_text_use_palette_color = _saved_use_pal;
   }
   debug_noop_checkpoint();
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   DAT_001007b4 = 0;
   return;
 }
@@ -12771,10 +12771,10 @@ char * param_1;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
-  FUN_0007f140();
+  select_msg_scroll_mode_2();
   message_scroll_print_wrapped(DAT_001007c0);
   debug_noop_checkpoint();
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   DAT_001007b4 = 1;
   return;
 }
@@ -12792,7 +12792,7 @@ char *param_1; // was `undefined4` -- FUN_000295b4 passes a real (possibly babl_
   *DAT_001007c0 = '\0';
   Ordinal_1063(DAT_001007c0,param_1);
   Ordinal_1063(DAT_001007c0,&DAT_00085234);
-  FUN_0007f110();
+  select_msg_scroll_mode_conversation();
   /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
      FUN_00029708's own comment on this same pattern. The PC original
      highlights the player's own echoed choice in a color distinct from
@@ -12820,7 +12820,7 @@ char *param_1; // was `undefined4` -- FUN_000295b4 passes a real (possibly babl_
      overwrites it from the panel's persisted *(DAT_00250704+0x16)
      field (see FUN_00029708's own comment on this, uw.c ~74875) before
      anything is drawn -- confirmed live via lldb. Set that persisted
-     field instead, on the struct FUN_0007f110 just pointed
+     field instead, on the struct select_msg_scroll_mode_conversation just pointed
      DAT_00250704 at. */
   {
     int _saved_use_pal = g_text_use_palette_color;
@@ -12832,7 +12832,7 @@ char *param_1; // was `undefined4` -- FUN_000295b4 passes a real (possibly babl_
     g_text_use_palette_color = _saved_use_pal;
   }
   debug_noop_checkpoint();
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   DAT_001007b4 = 1;
   return;
 }
@@ -12869,9 +12869,9 @@ int param_1;
   } while (cVar1 != '\0');
   Ordinal_1063(DAT_001007c0,iVar3);
   Ordinal_1063(DAT_001007c0,&DAT_00085234);
-  FUN_0007f110();
+  select_msg_scroll_mode_conversation();
   message_scroll_print_wrapped(DAT_001007c0);
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   debug_noop_checkpoint();
   if (iVar3 != iVar2) {
     babl_free(iVar3);
@@ -36521,61 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007f044()
-
-{
-  DAT_00250704 = &g_msg_scroll_panel_state;
-  DAT_00250714 = 0;
-  msg_scroll_panel_init(0xf,0xa9,0x131,200,0);
-  msg_scroll_draw_edges();
-  return;
-}
-
-
-
-void FUN_0007f094()
-
-{
-  DAT_00250708 = FUN_00057d1c((int)DAT_00250704[2],(int)DAT_00250704[1],(int)DAT_00250704[3],
-                              (int)*DAT_00250704);
-  return;
-}
-
-
-
-void FUN_0007f0e0()
-
-{
-  DAT_00250714 = 0;
-  DAT_0025071c = 1;
-  DAT_00250704 = &g_msg_scroll_panel_state;
-  return;
-}
-
-
-
-void FUN_0007f110()
-
-{
-  DAT_00250714 = 1;
-  DAT_0025071c = 1;
-  DAT_00250704 = &g_msg_scroll_panel_state_conv;
-  return;
-}
-
-
-
-void FUN_0007f140()
-
-{
-  DAT_00250714 = 2;
-  DAT_0025071c = 1;
-  DAT_00250704 = &g_msg_scroll_panel_state;
-  return;
-}
-
-
-
 void FUN_0007f170(param_1,param_2)
 short param_1;
 uint param_2;
@@ -36598,7 +36543,7 @@ uint param_2;
     flush_dirty_rect_to_display(1);
   } while ((param_1 == 0) || (uVar4 = read_realtime_clock_units(), uVar4 <= (uint)(param_1 + iVar3)));
   wait_for_click_release(1);
-  FUN_0007f094();
+  check_mouse_over_msg_scroll_panel();
   if ((param_2 & DAT_00250708) != 0) {
     FUN_00057118();
   }
@@ -36688,7 +36633,7 @@ short param_1;
   FUN_000229e0((int)param_1,auStack_18,10);
   iVar2 = (int)DAT_0025070c;
   sVar1 = *(short *)(DAT_00250704 + 10);
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(iVar2,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
@@ -36712,7 +36657,7 @@ int param_1;
   
   iVar3 = (int)DAT_0025070c;
   sVar1 = *(short *)(DAT_00250704 + 10);
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(iVar3,(int)sVar1,*(undefined2 *)(DAT_00250704 + 8),
@@ -36762,7 +36707,7 @@ short param_5;
   if (0x32 < param_5) {
     param_5 = 0x32;
   }
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   if (param_1 == (undefined *)0x0) {
     sVar3 = measure_text_width(&s_scroll_prompt_arrow_000879a8);
@@ -37018,7 +36963,7 @@ int * param_3;
   int iVar5;
   
   iVar5 = *param_3;
-  FUN_0007f0e0();
+  select_msg_scroll_mode_normal();
   *g_draw_color_index = (char)*(undefined2 *)(DAT_00250704 + 0x16);
   if (param_1 == 0) {
     print_scroll_message_by_id(param_2);
