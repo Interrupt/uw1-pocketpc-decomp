@@ -608,7 +608,7 @@ char *param_2;
         iVar4 = write_player_save_record(local_638);
         if (iVar4 != 0) {
           FUN_00078c80(0xaa);
-          iVar4 = FUN_0006bcd4((int)DAT_00201b68);
+          iVar4 = commit_level_to_save_slot((int)DAT_00201b68);
           if (iVar4 != 0) {
             FUN_00078c80(0xaa);
             uVar5 = FUN_0002295c(local_530);

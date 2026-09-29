@@ -72,6 +72,8 @@ LAB_0003f91c:
 void inventory_panel_click_region()
 
 {
+  if (getenv("UW_DEBUG_INV")) fprintf(stderr, "[inv] inventory_panel_click_region ENTRY g_active_hud_panel=%d mouse=(%d,%d)\n",
+      (int)g_active_hud_panel, (int)g_mouse_x, (int)g_mouse_y);
   if (g_active_hud_panel == '\0') {
     handle_inventory_panel_normal_click();
   }

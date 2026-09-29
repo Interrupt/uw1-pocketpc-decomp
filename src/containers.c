@@ -923,7 +923,23 @@ LAB_0004386c:
       local_28 = 0;
     }
     if ((*puVar4 & 0x1ff) == 0x8f) {
-      iVar10 = FUN_0004479c();
+      /* Real ARM binary calls FUN_0004479c() with 0 args here too
+         (confirmed via Ghidra decompile of the real auto_place_in_container
+         at 0x43734) -- same "leftover register" reliance already found
+         3 times this session (blit_sprite_row_remapped,
+         draw_hotspot_crosshair_marker's caller in FUN_0001bb04,
+         collision_build_height_field's neighbor lookups). FUN_0004479c's
+         param_1 is the object being checked against the rune item-id
+         range (0xe8-0x100) -- exactly this function's own param_1,
+         untouched since entry (last read a few lines up in
+         check_object_fits_in_slot's call), so that's what's actually
+         sitting in the register at this point. Passed explicitly since a
+         C recompile has no equivalent "whatever's left in the register"
+         state: the previously-uninitialized read made FUN_0004479c
+         almost always reject a genuine rune, always printing "You can
+         only put runes in the runes bag" even when dragging a real rune
+         into the rune bag. */
+      iVar10 = FUN_0004479c(param_1);
       if (iVar10 == 0) {
         FUN_00078c80(0xf7);
         goto LAB_000438ac;
