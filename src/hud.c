@@ -2704,7 +2704,7 @@ void release_hud_panel_flip_grtiles()
 // was FUN_0006edfc -- per-tick step of the HUD panel-switch flip
 // animation begun by begin_hud_panel_flip: advances a multi-stage
 // counter (DAT_0023c208, stages 1-7) drawing the squashed-panel flip
-// visual at each stage via FUN_0006f6e0/rect_fill_or_save_restore/
+// visual at each stage via squash_hud_panel_flip_rows/rect_fill_or_save_restore/
 // bitmap_blit_to_framebuffer, and finally swaps in the target panel
 // (g_active_hud_panel/g_hud_panel_handlers) partway through. Returns
 // true once the stage counter resets to 0 (transition complete),
@@ -2717,7 +2717,7 @@ bool advance_hud_panel_flip()
   /* Were `undefined4` -- truncated the real 64-bit pointers this
      function passes around (DAT_0023cca4 itself, and resolve_flip_grtile_slot's
      return value) to 32 bits on this host before handing them to
-     bitmap_blit_to_framebuffer/FUN_0006f6e0/FUN_0007e998, which then
+     bitmap_blit_to_framebuffer/squash_hud_panel_flip_rows/FUN_0007e998, which then
      reconstructed a wild pointer from just the low half. Same
      truncated-pointer-local class as everywhere else this session --
      this is what crashed the panel-switch wipe transition the first
@@ -2749,7 +2749,7 @@ bool advance_hud_panel_flip()
       uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
       FUN_0007e998(uVar4,(int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,(int)DAT_0023c144,
                    DAT_0023c140);
-      FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
+      squash_hud_panel_flip_rows(uVar4,uVar3,DAT_0023c208);
       set_draw_color(0xf1);
       iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
       iVar7 = (int)DAT_0023c144 - (int)DAT_0023c13c;
@@ -2828,7 +2828,7 @@ bool advance_hud_panel_flip()
     else if (1 < DAT_0023c208) {
       if (DAT_0023c208 < 4) {
         uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
-        FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
+        squash_hud_panel_flip_rows(uVar4,uVar3,DAT_0023c208);
         set_draw_color(0xf1);
         iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
         iVar7 = (int)DAT_0023c144 - (int)DAT_0023c13c;
@@ -2948,7 +2948,7 @@ bool advance_hud_panel_flip()
           }
           rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c140 + (uint)DAT_0023c14c,
                        DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
-          FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
+          squash_hud_panel_flip_rows(uVar4,uVar3,DAT_0023c208);
           iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
           if (iVar7 < 0) {
             iVar7 = iVar7 + 1;
@@ -3036,4 +3036,303 @@ LAB_0006f008:
   screen_backup_restore_rect(0xec,8,0x13f,0x7a);
 LAB_0006f6c8:
   return DAT_0023c208 == 0;
+}
+
+
+
+
+
+
+// was FUN_0006f6e0 -- draws one stage of the HUD panel-flip's squashed-
+// panel visual: looks up this stage's squash amount from the curve
+// table u_dgijjjigd_G__000871e0 (indexed by param_3, the stage number)
+// to compute DAT_0023c13c (squashed width) and DAT_0023c138 (current
+// panel height) for this stage, then copies each destination column
+// via copy_hud_panel_flip_column, sweeping the full source width
+// (DAT_0023c144) across the narrower destination via a fixed-point
+// accumulator (squashAccum/squashSrcCol) -- see the accumulator's own
+// comment for why it's needed (the original per-call-site dropped-
+// argument bugs made this a left-aligned crop instead of a real
+// resample before being fixed).
+void squash_hud_panel_flip_rows(param_1,param_2,param_3)
+char *param_1;
+char *param_2;
+short param_3;
+
+{
+  /* Were `undefined4` -- truncated the real 64-bit source/dest pointers
+     (already fixed to real pointers at advance_hud_panel_flip's call sites)
+     back down to 32 bits on entry. Same pointer-truncation class as
+     everywhere else this session. */
+  short sVar1;
+  wchar_t wVar2;
+  short sVar3;
+  short sVar4;
+  short sVar5;
+  short sVar6;
+  int iVar7;
+  int iVar8;
+  int iVar9;
+  int iVar10;
+  int iVar11;
+  /* Not decompiled -- QA: "the panel should fully squish horizontally
+     during the flip, ours just crops part of it". Root cause: every
+     copy_hud_panel_flip_column() call site in this function (all disassembly-
+     confirmed dropped-argument fixes from earlier this session)
+     advances param_1 (source column) and param_2 (dest column) by
+     exactly 1 EACH, every single call, with no exception anywhere in
+     this function -- confirmed at the instruction level, not a
+     decompiler artifact. Since the total number of calls always
+     equals DAT_0023c13c (the squashed width, strictly less than
+     DAT_0023c144's full 83 except at stage 0/8), that lockstep means
+     param_1 only ever reaches the first DAT_0023c13c source columns
+     and never reads the rest -- a left-aligned crop, not a resample.
+     A real squash needs param_1 to sweep the FULL source width
+     (DAT_0023c144) over the same DAT_0023c13c destination writes.
+     Added a simple fixed-point accumulator (new, not decompiled) to
+     do that: advance a running source-position accumulator by
+     DAT_0023c144 on every destination column written, and step
+     param_1 by however many whole source columns that accumulator
+     just crossed -- so by the last destination column, param_1 has
+     swept the entire source width, however narrow the destination
+     got. param_2 keeps its original (correct) +1-per-call advance. */
+  int squashAccum;
+  int squashSrcCol;
+
+  sVar6 = DAT_0023c144;
+  iVar8 = (int)param_3;
+  iVar11 = (int)DAT_0023c144;
+  wVar2 = u_dgijjjigd_G__000871e0[iVar8 + 8];
+  sVar3 = Ordinal_2005(100,iVar11 * wVar2);
+  sVar1 = DAT_0023c140;
+  iVar9 = (int)sVar3;
+  iVar10 = (int)DAT_0023c140;
+  DAT_0023c13c = sVar3;
+  sVar4 = Ordinal_2005(100,u_dgijjjigd_G__000871e0[iVar8] * iVar10);
+  sVar5 = Ordinal_2005((int)wVar2,100);
+  if (sVar5 == 1) {
+    sVar3 = (short)(sVar6 - iVar9);
+    sVar6 = Ordinal_2005(((sVar6 - iVar9) * 0x10000 >> 0x10) + 1,iVar11);
+    sVar6 = sVar6 + -1;
+  }
+  else {
+    sVar6 = 1;
+  }
+  squashAccum = 0;
+  squashSrcCol = 0;
+  iVar11 = 0;
+  if (iVar8 < 4) {
+    iVar8 = (iVar10 - sVar4) * 0x10000 >> 0x10;
+    iVar7 = iVar9 + ((iVar10 - sVar4) * 0x10000 >> 0x10);
+    DAT_0023c110 = 0;
+    iVar10 = iVar9 + iVar8 * 2;
+    DAT_0023c138 = sVar4;
+    if (0 < sVar3) {
+      do {
+        if (0 < sVar6) {
+          iVar9 = 0;
+          do {
+            sVar1 = (short)iVar10;
+            if (sVar1 < 1) {
+              DAT_0023c110 = DAT_0023c110 + 1;
+              DAT_0023c138 = DAT_0023c138 + -2;
+              iVar10 = iVar7 * 2 + (int)sVar1;
+            }
+            else {
+              iVar10 = (int)(short)(iVar8 << 1) + (int)sVar1;
+            }
+            /* Was `copy_hud_panel_flip_column();` -- dropped arguments. Real
+               disassembly (0006f884-0006f8a4) shows param_1/param_2
+               passed in as-is, then both incremented by 1 byte
+               afterward -- confirmed identical at all 3 call sites
+               in this function. */
+            copy_hud_panel_flip_column(param_1,param_2);
+            /* Not decompiled -- squash accumulator, see this
+               function's own comment near its locals. */
+            squashAccum = squashAccum + (int)DAT_0023c144;
+            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+            squashSrcCol = squashAccum / (int)DAT_0023c13c;
+            param_2 = param_2 + 1;
+            iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
+          } while (iVar9 < sVar6);
+          iVar9 = (int)DAT_0023c13c;
+        }
+        iVar11 = iVar11 + 1;
+      } while (iVar11 * 0x10000 >> 0x10 < (int)sVar3);
+    }
+  }
+  else {
+    DAT_0023c138 = sVar1 * 2 - sVar4;
+    iVar8 = (sVar4 - iVar10) * 0x10000;
+    iVar7 = iVar8 >> 0x10;
+    DAT_0023c110 = (short)((uint)iVar8 >> 0x10);
+    iVar8 = ((sVar4 - iVar10) * 0x10000 >> 0x10) - iVar9;
+    iVar10 = iVar7 * 2 - iVar9;
+    if (0 < sVar3) {
+      do {
+        if (0 < sVar6) {
+          iVar9 = 0;
+          do {
+            sVar1 = (short)iVar10;
+            if (sVar1 < 0) {
+              iVar10 = (int)(short)(iVar7 << 1) + (int)sVar1;
+            }
+            else {
+              DAT_0023c110 = DAT_0023c110 + -1;
+              DAT_0023c138 = DAT_0023c138 + 2;
+              iVar10 = iVar8 * 2 + (int)sVar1;
+            }
+            /* Was `copy_hud_panel_flip_column();` -- same dropped-argument bug as
+               the sibling branch above (real disassembly
+               0006f96c-0006f988). */
+            copy_hud_panel_flip_column(param_1,param_2);
+            /* Not decompiled -- squash accumulator, see this
+               function's own comment near its locals. */
+            squashAccum = squashAccum + (int)DAT_0023c144;
+            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+            squashSrcCol = squashAccum / (int)DAT_0023c13c;
+            param_2 = param_2 + 1;
+            iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
+          } while (iVar9 < sVar6);
+          iVar9 = (int)DAT_0023c13c;
+        }
+        iVar11 = iVar11 + 1;
+      } while (iVar11 * 0x10000 >> 0x10 < (int)sVar3);
+    }
+  }
+  for (iVar9 = iVar9 - (int)sVar3 * (int)sVar6; iVar9 = iVar9 * 0x10000 >> 0x10, 0 < iVar9;
+      iVar9 = iVar9 + -1) {
+    /* Was `copy_hud_panel_flip_column();` -- same dropped-argument bug (real
+       disassembly 0006f9ec-0006fa0c: leftover-rows loop). */
+    copy_hud_panel_flip_column(param_1,param_2);
+    /* Not decompiled -- squash accumulator, see this function's own
+       comment near its locals. */
+    squashAccum = squashAccum + (int)DAT_0023c144;
+    param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
+    squashSrcCol = squashAccum / (int)DAT_0023c13c;
+    param_2 = param_2 + 1;
+  }
+  DAT_0023c138 = sVar4;
+  return;
+}
+
+
+
+// was FUN_0006fa28 -- copies one column of the HUD panel-flip's
+// squashed panel content from a source column (param_1) into a
+// destination column (param_2), stepping through rows via the current
+// stage's DAT_0023c138/DAT_0023c140/DAT_0023c110/DAT_0023c13c/
+// DAT_0023c144 state (set up by squash_hud_panel_flip_rows just
+// before each call) to stretch, shrink, or pad the column as the
+// panel's height changes across the flip animation.
+void copy_hud_panel_flip_column(param_1,param_2)
+undefined1 * param_1;
+undefined1 * param_2;
+
+{
+  short sVar1;
+  short sVar2;
+  int iVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  short sVar7;
+
+  sVar7 = DAT_0023c138 - DAT_0023c140;
+  if (0 < DAT_0023c110) {
+    iVar3 = 0;
+    do {
+      *param_2 = 0;
+      param_2 = param_2 + DAT_0023c13c;
+      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+    } while (iVar3 < DAT_0023c110);
+  }
+  sVar2 = DAT_0023c140;
+  iVar3 = (int)sVar7;
+  if (iVar3 == 0) {
+    if (0 < DAT_0023c140) {
+      iVar3 = 0;
+      do {
+        *param_2 = *param_1;
+        param_2 = param_2 + DAT_0023c13c;
+        param_1 = param_1 + DAT_0023c144;
+        iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+      } while (iVar3 < DAT_0023c140);
+    }
+    sVar2 = 0;
+  }
+  else if (iVar3 < 1) {
+    sVar2 = Ordinal_2005(iVar3 + -1,(int)DAT_0023c140);
+    iVar6 = 0;
+    if (iVar3 < 0) {
+      iVar4 = (sVar2 + 1) * 0x10000 >> 0x10;
+      sVar1 = DAT_0023c144;
+      do {
+        if (iVar4 < 0) {
+          iVar5 = 0;
+          do {
+            *param_2 = *param_1;
+            iVar5 = (iVar5 + -1) * 0x10000 >> 0x10;
+            param_2 = param_2 + DAT_0023c13c;
+            param_1 = param_1 + DAT_0023c144;
+            sVar1 = DAT_0023c144;
+          } while (iVar4 < iVar5);
+        }
+        iVar6 = iVar6 + -1;
+        param_1 = param_1 + sVar1;
+      } while (iVar3 < iVar6 * 0x10000 >> 0x10);
+    }
+    sVar2 = (DAT_0023c138 - sVar7 * (short)(sVar2 + 1)) + -1;
+  }
+  else {
+    /* Was `Ordinal_2005(iVar3 + 1)` -- missing its dividend argument.
+       The sibling branch above (iVar3 < 1) makes the exact same call
+       shape fully: `Ordinal_2005(iVar3 + -1,(int)DAT_0023c140)`
+       (divisor=iVar3+/-1, dividend=DAT_0023c140), so by direct
+       symmetry this one is missing `(int)DAT_0023c140` too. Unlike
+       Ordinal_2005's own K&R "leftover register" idiom (safe on the
+       original ARM ABI, where an unfilled argument register
+       predictably still held the caller's last computed value), a
+       dropped argument here is NOT safe on this x86-64 recompile --
+       the reused register/stack slot holds architecture-mismatched
+       garbage, not the original value. sVar1 becomes this loop's
+       inner trip count, so garbage here produced an unbounded copy
+       loop and a wild param_1/param_2 write -- the intermittent,
+       ASLR-flaky crash/heap-corruption in this function. */
+    sVar1 = Ordinal_2005(iVar3 + 1,(int)DAT_0023c140);
+    iVar6 = 0;
+    if (0 < iVar3) {
+      do {
+        if (0 < sVar1) {
+          iVar4 = 0;
+          do {
+            *param_2 = *param_1;
+            param_2 = param_2 + DAT_0023c13c;
+            param_1 = param_1 + DAT_0023c144;
+            iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+          } while (iVar4 < sVar1);
+        }
+        iVar6 = iVar6 + 1;
+        *param_2 = *param_1;
+        param_2 = param_2 + DAT_0023c13c;
+        sVar2 = DAT_0023c140;
+      } while (iVar6 * 0x10000 >> 0x10 < iVar3);
+    }
+    sVar2 = sVar2 - sVar7 * sVar1;
+  }
+  for (iVar3 = (int)sVar2; 0 < iVar3; iVar3 = (iVar3 + -1) * 0x10000 >> 0x10) {
+    *param_2 = *param_1;
+    param_2 = param_2 + DAT_0023c13c;
+    param_1 = param_1 + DAT_0023c144;
+  }
+  if (0 < DAT_0023c110) {
+    iVar3 = 0;
+    do {
+      *param_2 = 0;
+      param_2 = param_2 + DAT_0023c13c;
+      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+    } while (iVar3 < DAT_0023c110);
+  }
+  *param_2 = 0;
+  return;
 }

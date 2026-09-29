@@ -6005,16 +6005,16 @@ short DAT_0023c110;
    string because its low bytes happen to be printable ASCII. It's
    really a 16-entry numeric squash-percentage curve for the chain
    flip animation's stage-by-stage width (symmetric: 100 down to 0 at
-   the midpoint, back up to 92), used by FUN_0006f6e0 as
+   the midpoint, back up to 92), used by squash_hud_panel_flip_rows as
    `table[stage]` and `table[stage+8]`. The string literal stopped at
    the first embedded NUL (index 12), silently truncating the real
    16-element array to 13 -- so `table[stage+8]` read out of bounds
    for stage 5/6/7 (indices 13/14/15), feeding garbage into
    DAT_0023c13c's stride computation and wild-writing past the grtile
-   buffer in FUN_0006fa28's pixel-copy loop (this is what was
+   buffer in copy_hud_panel_flip_column's pixel-copy loop (this is what was
    corrupting the heap). Recovered via a direct memory dump of the
    real binary at 0x000871e0. */
-static unsigned short u_dgijjjigd_G__000871e0[16] = {
+unsigned short u_dgijjjigd_G__000871e0[16] = {
   100,103,105,106,106,106,105,103,100,92,71,38,0,38,71,92
 };
 char s__DATA_shades_dat_000872a4[] = "\\DATA\\shades.dat";
@@ -36410,284 +36410,6 @@ LAB_00060f54:
 
 
 
-void FUN_0006f6e0(param_1,param_2,param_3)
-char *param_1;
-char *param_2;
-short param_3;
-
-{
-  /* Were `undefined4` -- truncated the real 64-bit source/dest pointers
-     (already fixed to real pointers at advance_hud_panel_flip's call sites)
-     back down to 32 bits on entry. Same pointer-truncation class as
-     everywhere else this session. */
-  short sVar1;
-  wchar_t wVar2;
-  short sVar3;
-  short sVar4;
-  short sVar5;
-  short sVar6;
-  int iVar7;
-  int iVar8;
-  int iVar9;
-  int iVar10;
-  int iVar11;
-  /* Not decompiled -- QA: "the panel should fully squish horizontally
-     during the flip, ours just crops part of it". Root cause: every
-     FUN_0006fa28() call site in this function (all disassembly-
-     confirmed dropped-argument fixes from earlier this session)
-     advances param_1 (source column) and param_2 (dest column) by
-     exactly 1 EACH, every single call, with no exception anywhere in
-     this function -- confirmed at the instruction level, not a
-     decompiler artifact. Since the total number of calls always
-     equals DAT_0023c13c (the squashed width, strictly less than
-     DAT_0023c144's full 83 except at stage 0/8), that lockstep means
-     param_1 only ever reaches the first DAT_0023c13c source columns
-     and never reads the rest -- a left-aligned crop, not a resample.
-     A real squash needs param_1 to sweep the FULL source width
-     (DAT_0023c144) over the same DAT_0023c13c destination writes.
-     Added a simple fixed-point accumulator (new, not decompiled) to
-     do that: advance a running source-position accumulator by
-     DAT_0023c144 on every destination column written, and step
-     param_1 by however many whole source columns that accumulator
-     just crossed -- so by the last destination column, param_1 has
-     swept the entire source width, however narrow the destination
-     got. param_2 keeps its original (correct) +1-per-call advance. */
-  int squashAccum;
-  int squashSrcCol;
-
-  sVar6 = DAT_0023c144;
-  iVar8 = (int)param_3;
-  iVar11 = (int)DAT_0023c144;
-  wVar2 = u_dgijjjigd_G__000871e0[iVar8 + 8];
-  sVar3 = Ordinal_2005(100,iVar11 * wVar2);
-  sVar1 = DAT_0023c140;
-  iVar9 = (int)sVar3;
-  iVar10 = (int)DAT_0023c140;
-  DAT_0023c13c = sVar3;
-  sVar4 = Ordinal_2005(100,u_dgijjjigd_G__000871e0[iVar8] * iVar10);
-  sVar5 = Ordinal_2005((int)wVar2,100);
-  if (sVar5 == 1) {
-    sVar3 = (short)(sVar6 - iVar9);
-    sVar6 = Ordinal_2005(((sVar6 - iVar9) * 0x10000 >> 0x10) + 1,iVar11);
-    sVar6 = sVar6 + -1;
-  }
-  else {
-    sVar6 = 1;
-  }
-  squashAccum = 0;
-  squashSrcCol = 0;
-  iVar11 = 0;
-  if (iVar8 < 4) {
-    iVar8 = (iVar10 - sVar4) * 0x10000 >> 0x10;
-    iVar7 = iVar9 + ((iVar10 - sVar4) * 0x10000 >> 0x10);
-    DAT_0023c110 = 0;
-    iVar10 = iVar9 + iVar8 * 2;
-    DAT_0023c138 = sVar4;
-    if (0 < sVar3) {
-      do {
-        if (0 < sVar6) {
-          iVar9 = 0;
-          do {
-            sVar1 = (short)iVar10;
-            if (sVar1 < 1) {
-              DAT_0023c110 = DAT_0023c110 + 1;
-              DAT_0023c138 = DAT_0023c138 + -2;
-              iVar10 = iVar7 * 2 + (int)sVar1;
-            }
-            else {
-              iVar10 = (int)(short)(iVar8 << 1) + (int)sVar1;
-            }
-            /* Was `FUN_0006fa28();` -- dropped arguments. Real
-               disassembly (0006f884-0006f8a4) shows param_1/param_2
-               passed in as-is, then both incremented by 1 byte
-               afterward -- confirmed identical at all 3 call sites
-               in this function. */
-            FUN_0006fa28(param_1,param_2);
-            /* Not decompiled -- squash accumulator, see this
-               function's own comment near its locals. */
-            squashAccum = squashAccum + (int)DAT_0023c144;
-            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
-            squashSrcCol = squashAccum / (int)DAT_0023c13c;
-            param_2 = param_2 + 1;
-            iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
-          } while (iVar9 < sVar6);
-          iVar9 = (int)DAT_0023c13c;
-        }
-        iVar11 = iVar11 + 1;
-      } while (iVar11 * 0x10000 >> 0x10 < (int)sVar3);
-    }
-  }
-  else {
-    DAT_0023c138 = sVar1 * 2 - sVar4;
-    iVar8 = (sVar4 - iVar10) * 0x10000;
-    iVar7 = iVar8 >> 0x10;
-    DAT_0023c110 = (short)((uint)iVar8 >> 0x10);
-    iVar8 = ((sVar4 - iVar10) * 0x10000 >> 0x10) - iVar9;
-    iVar10 = iVar7 * 2 - iVar9;
-    if (0 < sVar3) {
-      do {
-        if (0 < sVar6) {
-          iVar9 = 0;
-          do {
-            sVar1 = (short)iVar10;
-            if (sVar1 < 0) {
-              iVar10 = (int)(short)(iVar7 << 1) + (int)sVar1;
-            }
-            else {
-              DAT_0023c110 = DAT_0023c110 + -1;
-              DAT_0023c138 = DAT_0023c138 + 2;
-              iVar10 = iVar8 * 2 + (int)sVar1;
-            }
-            /* Was `FUN_0006fa28();` -- same dropped-argument bug as
-               the sibling branch above (real disassembly
-               0006f96c-0006f988). */
-            FUN_0006fa28(param_1,param_2);
-            /* Not decompiled -- squash accumulator, see this
-               function's own comment near its locals. */
-            squashAccum = squashAccum + (int)DAT_0023c144;
-            param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
-            squashSrcCol = squashAccum / (int)DAT_0023c13c;
-            param_2 = param_2 + 1;
-            iVar9 = (iVar9 + 1) * 0x10000 >> 0x10;
-          } while (iVar9 < sVar6);
-          iVar9 = (int)DAT_0023c13c;
-        }
-        iVar11 = iVar11 + 1;
-      } while (iVar11 * 0x10000 >> 0x10 < (int)sVar3);
-    }
-  }
-  for (iVar9 = iVar9 - (int)sVar3 * (int)sVar6; iVar9 = iVar9 * 0x10000 >> 0x10, 0 < iVar9;
-      iVar9 = iVar9 + -1) {
-    /* Was `FUN_0006fa28();` -- same dropped-argument bug (real
-       disassembly 0006f9ec-0006fa0c: leftover-rows loop). */
-    FUN_0006fa28(param_1,param_2);
-    /* Not decompiled -- squash accumulator, see this function's own
-       comment near its locals. */
-    squashAccum = squashAccum + (int)DAT_0023c144;
-    param_1 = param_1 + (squashAccum / (int)DAT_0023c13c - squashSrcCol);
-    squashSrcCol = squashAccum / (int)DAT_0023c13c;
-    param_2 = param_2 + 1;
-  }
-  DAT_0023c138 = sVar4;
-  return;
-}
-
-
-
-void FUN_0006fa28(param_1,param_2)
-undefined1 * param_1;
-undefined1 * param_2;
-
-{
-  short sVar1;
-  short sVar2;
-  int iVar3;
-  int iVar4;
-  int iVar5;
-  int iVar6;
-  short sVar7;
-
-  sVar7 = DAT_0023c138 - DAT_0023c140;
-  if (0 < DAT_0023c110) {
-    iVar3 = 0;
-    do {
-      *param_2 = 0;
-      param_2 = param_2 + DAT_0023c13c;
-      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-    } while (iVar3 < DAT_0023c110);
-  }
-  sVar2 = DAT_0023c140;
-  iVar3 = (int)sVar7;
-  if (iVar3 == 0) {
-    if (0 < DAT_0023c140) {
-      iVar3 = 0;
-      do {
-        *param_2 = *param_1;
-        param_2 = param_2 + DAT_0023c13c;
-        param_1 = param_1 + DAT_0023c144;
-        iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-      } while (iVar3 < DAT_0023c140);
-    }
-    sVar2 = 0;
-  }
-  else if (iVar3 < 1) {
-    sVar2 = Ordinal_2005(iVar3 + -1,(int)DAT_0023c140);
-    iVar6 = 0;
-    if (iVar3 < 0) {
-      iVar4 = (sVar2 + 1) * 0x10000 >> 0x10;
-      sVar1 = DAT_0023c144;
-      do {
-        if (iVar4 < 0) {
-          iVar5 = 0;
-          do {
-            *param_2 = *param_1;
-            iVar5 = (iVar5 + -1) * 0x10000 >> 0x10;
-            param_2 = param_2 + DAT_0023c13c;
-            param_1 = param_1 + DAT_0023c144;
-            sVar1 = DAT_0023c144;
-          } while (iVar4 < iVar5);
-        }
-        iVar6 = iVar6 + -1;
-        param_1 = param_1 + sVar1;
-      } while (iVar3 < iVar6 * 0x10000 >> 0x10);
-    }
-    sVar2 = (DAT_0023c138 - sVar7 * (short)(sVar2 + 1)) + -1;
-  }
-  else {
-    /* Was `Ordinal_2005(iVar3 + 1)` -- missing its dividend argument.
-       The sibling branch above (iVar3 < 1) makes the exact same call
-       shape fully: `Ordinal_2005(iVar3 + -1,(int)DAT_0023c140)`
-       (divisor=iVar3+/-1, dividend=DAT_0023c140), so by direct
-       symmetry this one is missing `(int)DAT_0023c140` too. Unlike
-       Ordinal_2005's own K&R "leftover register" idiom (safe on the
-       original ARM ABI, where an unfilled argument register
-       predictably still held the caller's last computed value), a
-       dropped argument here is NOT safe on this x86-64 recompile --
-       the reused register/stack slot holds architecture-mismatched
-       garbage, not the original value. sVar1 becomes this loop's
-       inner trip count, so garbage here produced an unbounded copy
-       loop and a wild param_1/param_2 write -- the intermittent,
-       ASLR-flaky crash/heap-corruption in this function. */
-    sVar1 = Ordinal_2005(iVar3 + 1,(int)DAT_0023c140);
-    iVar6 = 0;
-    if (0 < iVar3) {
-      do {
-        if (0 < sVar1) {
-          iVar4 = 0;
-          do {
-            *param_2 = *param_1;
-            param_2 = param_2 + DAT_0023c13c;
-            param_1 = param_1 + DAT_0023c144;
-            iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
-          } while (iVar4 < sVar1);
-        }
-        iVar6 = iVar6 + 1;
-        *param_2 = *param_1;
-        param_2 = param_2 + DAT_0023c13c;
-        sVar2 = DAT_0023c140;
-      } while (iVar6 * 0x10000 >> 0x10 < iVar3);
-    }
-    sVar2 = sVar2 - sVar7 * sVar1;
-  }
-  for (iVar3 = (int)sVar2; 0 < iVar3; iVar3 = (iVar3 + -1) * 0x10000 >> 0x10) {
-    *param_2 = *param_1;
-    param_2 = param_2 + DAT_0023c13c;
-    param_1 = param_1 + DAT_0023c144;
-  }
-  if (0 < DAT_0023c110) {
-    iVar3 = 0;
-    do {
-      *param_2 = 0;
-      param_2 = param_2 + DAT_0023c13c;
-      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-    } while (iVar3 < DAT_0023c110);
-  }
-  *param_2 = 0;
-  return;
-}
-
-
-
 void FUN_0006fed4()
 
 {
@@ -44576,7 +44298,7 @@ int param_1;
 
    capture_framebuffer_rect_to_grtile, the obvious existing primitive
    to delegate to, copies the live framebuffer's 16bpp RGB565 pixels
-   verbatim -- but the grtile buffers here and FUN_0006fa28's whole
+   verbatim -- but the grtile buffers here and copy_hud_panel_flip_column's whole
    squash-blit loop are 8bpp paletted (1 byte/pixel, confirmed via
    disassembly-recovered pointer stepping), same format
    decode_gr_entry_bitmap/FUN_00041a78 already decoded into this exact
