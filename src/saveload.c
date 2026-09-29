@@ -138,7 +138,7 @@ undefined4 journey_onward_load_slot_menu()
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
-  FUN_0006c98c(0xffffffff,acStack_1c0,1);
+  blit_fullscreen_bitmap_file(0xffffffff,acStack_1c0,1);
   cursor_show_idle_tick();
   probe_save_slots(acStack_b8,local_1d8);
   iVar4 = 0;
@@ -194,7 +194,7 @@ undefined4 journey_onward_load_slot_menu()
       pcVar9 = pcVar9 + 1;
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
-    FUN_0006c98c(0xffffffff,acStack_1c0,1);
+    blit_fullscreen_bitmap_file(0xffffffff,acStack_1c0,1);
     /* Was `uVar5 = FUN_0007863c(0x301);` -- FUN_0007863c returns a real
        char*, but uVar5 is this function's own `undefined4` 0/1/-1
        return-code variable, so storing the string pointer into it
@@ -230,7 +230,7 @@ undefined4 journey_onward_load_slot_menu()
     {
       char loadsrc[300];
       snprintf(loadsrc, sizeof(loadsrc), "\\SAVE%d", iVar4 + 1);
-      iVar4 = FUN_0006c670(&DAT_000857a0, loadsrc);
+      iVar4 = copy_save_slot_files(&DAT_000857a0, loadsrc);
     }
     if (iVar4 == 0) {
       uVar5 = 0xffffffff;
@@ -245,14 +245,14 @@ undefined4 journey_onward_load_slot_menu()
          possibly-stale/zero level number. */
       sVar2 = load_level(1);
       if (sVar2 != 0) {
-        FUN_0006c834(1,3);
+        save_or_restore_level_special_state(1,3);
         /* Was a hardcoded set_player_tile_position(0x20,2,1) here --
            worked around load_level leaving the player at tile (0,0)
            (unplaced, black 3D view) because the save/load path never
            actually wrote the live player position into \SAVE0\lev.ark
            to begin with (see [[save-load-position-not-persisted]]: 6
            bugs in the archive-write chain plus save_game_to_slot/
-           load_game_from_slot's own FUN_0006c670 calls having src/dest
+           load_game_from_slot's own copy_save_slot_files calls having src/dest
            backwards, all fixed). The player's tile position is just
            another field of its own object record, at a fixed offset
            inside the same arena load_level's object-table read
@@ -429,7 +429,7 @@ char param_1;
      acStack_630 copy a few lines up already does this correctly. That
      makes acStack_630/auStack_420 (unsubstituted "\SAVE0") the copy
      SOURCE and acStack_528/auStack_218 (digit-substituted "\SAVE<n>")
-     the copy DESTINATION for FUN_0006c670 below -- i.e. "Save Game"
+     the copy DESTINATION for copy_save_slot_files below -- i.e. "Save Game"
      snapshot-copies the live SAVE0 session into the chosen numbered
      slot. */
   stack0xffdc2e30_ptr = acStack_528;
@@ -445,7 +445,7 @@ char param_1;
   iVar4 = ensure_save_directory_exists(acStack_630);
   if (iVar4 != 0) {
     FUN_00078c80(0xaa);
-    /* Was FUN_0006c670(acStack_528,acStack_630) -- i.e. (dest="\SAVEn",
+    /* Was copy_save_slot_files(acStack_528,acStack_630) -- i.e. (dest="\SAVEn",
        src="\SAVE0"), copying the ACTIVE SESSION onto the chosen slot --
        a save-direction copy. That's backwards for this function: live
        testing confirms load_game_from_slot's own status text is "Restoring
@@ -462,9 +462,9 @@ char param_1;
        acStack_528 ("\SAVEn", the chosen slot) is the source -- loading
        the slot's saved state into the live session, matching what
        save_game_to_slot now does in the opposite direction. */
-    iVar4 = FUN_0006c670(acStack_630,acStack_528);
+    iVar4 = copy_save_slot_files(acStack_630,acStack_528);
     if (getenv("UW_DEBUG_SAVEDESC"))
-      fprintf(stderr, "[savedesc] FUN_0006c670 returned %d, acStack_528=%s\n", iVar4, acStack_528);
+      fprintf(stderr, "[savedesc] copy_save_slot_files returned %d, acStack_528=%s\n", iVar4, acStack_528);
     if (iVar4 != 0) {
       FUN_00078c80(0xaa);
       /* An earlier session added a snprintf("Level %d", ...) write-back
@@ -489,7 +489,7 @@ char param_1;
         FUN_00078c80(0xaa);
         sVar2 = load_level((int)DAT_00201b68);
         if (sVar2 != 0) {
-          FUN_0006c834((int)DAT_00201b68,3);
+          save_or_restore_level_special_state((int)DAT_00201b68,3);
           FUN_00078c80(0xaa);
           FUN_000358e8();
           return 1;
@@ -617,7 +617,7 @@ char *param_2;
             Ordinal_61(auStack_428,uVar5);
             uVar5 = FUN_0002295c(local_638);
             Ordinal_61(auStack_220,uVar5);
-            /* Was FUN_0006c670(local_638,local_530) -- i.e.
+            /* Was copy_save_slot_files(local_638,local_530) -- i.e.
                (dest="\SAVE0", src="\SAVEn"), copying the CHOSEN SLOT
                back onto the active session. That's backwards for this
                function: save_game_to_slot is the SAVE path (confirmed live --
@@ -636,7 +636,7 @@ char *param_2;
                writing the live session out to the chosen slot, matching
                what load_game_from_slot (the sibling Load path, own status text
                "Restoring Game ") does in the opposite direction. */
-            iVar4 = FUN_0006c670(local_530,local_638);
+            iVar4 = copy_save_slot_files(local_530,local_638);
             if (iVar4 != 0) {
               message_scroll_print_wrapped(&s_scroll_color_reset_00087038);
               uVar5 = 1;
@@ -1339,4 +1339,77 @@ LAB_0006c5f8:
     }
   }
   return 1;
+}
+
+
+
+
+
+
+/* Was a generic "copy every file matching dest\*.* " directory-copy
+   using CopyFileW/FindFirstFileW/FindNextFileW (Ordinal_164/167/181) via
+   wide-string paths built through Ordinal_58/61/63 -- all six of those
+   are still no-op stubs (Ordinal_167/181 real enough now for
+   ensure_save_directory_exists's own narrower directory-exists-or-create use, but not
+   real filename enumeration), so this always silently copied nothing.
+   Same situation the existing \SAVE0\lev.ark new-game seed already hit
+   and fixed the same way (see game.c's comment on that): making the
+   whole enumeration/wide-string machinery real is a much bigger lift
+   than this feature needs, since a save slot only ever holds the same 3
+   known files. Copy them directly instead, using the game's own
+   CreateFile-family wrappers (via uw_file_copy) against real ANSI
+   Windows-style paths -- both callers now pass their already-correct
+   acStack_630/acStack_528 (or local_638/local_530) buffers straight in,
+   instead of the broken wide copies of them this used to take. */
+// was FUN_0006c670
+undefined4 copy_save_slot_files(param_1,param_2)
+char *param_1;  /* destination directory, e.g. "\SAVE3" */
+char *param_2;  /* source directory, e.g. "\SAVE0" */
+
+{
+  /* Was a hardcoded 3-entry list missing "player.dat" entirely -- real
+     ARM disassembly of this function (0x6c670) shows it's genuinely
+     NOT a fixed-file-list copier at all: it calls what are clearly
+     FindFirstFile/FindNextFile/CopyFile-equivalents (0x8203c/0x82150/
+     0x81ff4), looping over and copying EVERY file in the source
+     directory (skipping only subdirectories, via a FILE_ATTRIBUTE_
+     DIRECTORY==0x10 check) -- a generic "copy this whole save folder"
+     operation, not a curated list an earlier session guessed at. A full
+     FindFirstFile-style reimplementation felt like more risk than this
+     specific bug warranted (the one real file it would additionally
+     pick up here, "_arc.tmp", is a zero-byte scratch file from the
+     archive-write path, harmless either way) -- confirmed the complete
+     real file set for a save directory empirically instead (`ls
+     data/SAVE0`) and added the one missing real file directly. Without
+     player.dat here, Save/Load's own player.dat write
+     (write_player_save_record) always goes straight to the fixed
+     \SAVE0\player.dat path and NOTHING ever copies a per-slot player.dat
+     to/from \SAVE<n> -- so every numbered slot shares the exact same,
+     single, always-most-recently-written player.dat regardless of which
+     slot you actually saved/loaded. Confirmed live and reported by QA:
+     the loaded dungeon state was correctly per-slot, but the player
+     character (inventory included) always reflected whichever save had
+     been made most recently, letting an item picked up after one save
+     be duplicated by loading an earlier save that still had it lying on
+     the ground -- the old \SAVE0\player.dat (with the item now in
+     inventory) was never actually replaced by loading, so it persisted
+     alongside the reloaded, not-yet-picked-up copy on the ground. */
+  static const char *file_suffixes[] = { "\\lev.ark", "\\bglobals.dat", "\\player.dat", "\\desc" };
+  char src[300];
+  char dst[300];
+  size_t i;
+  int ok;
+
+  ok = 1;
+  for (i = 0; i < sizeof(file_suffixes) / sizeof(file_suffixes[0]); i++) {
+    snprintf(src, sizeof(src), "%s%s", param_2, file_suffixes[i]);
+    snprintf(dst, sizeof(dst), "%s%s", param_1, file_suffixes[i]);
+    /* desc is optional (a brand new character who has never saved/loaded
+       before has no \SAVE0\desc yet) -- lev.ark/bglobals.dat/player.dat
+       are not. */
+    if (!uw_file_copy(src, dst) && i != 3) {
+      ok = 0;
+    }
+  }
+  return ok;
 }

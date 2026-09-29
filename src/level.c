@@ -55,7 +55,7 @@ void enter_dungeon_view()
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_41c,s__DATA_main_byt_000857a8);
-  iVar3 = FUN_0006c98c(0xffffffff,acStack_41c,0);
+  iVar3 = blit_fullscreen_bitmap_file(0xffffffff,acStack_41c,0);
   if (iVar3 == 0) {
     FUN_0003c3c8(0x300b);
   }
@@ -289,3 +289,106 @@ undefined4 param_1;
   return iVar2;
 }
 
+
+
+
+
+
+
+// was FUN_0006c79c -- level-transition entry point: cancels any held
+// cursor item (same "drop what you're holding" guard as elsewhere),
+// snapshots the leaving level's special per-level state
+// (save_or_restore_level_special_state(param_1, 1)), commits the leaving
+// level to its save slot, loads the new level, and on success restores
+// the new level's own special state (save_or_restore_level_special_state
+// (param_2, 0)).
+int transition_to_level(param_1,param_2)
+undefined4 param_1;
+undefined4 param_2;
+
+{
+  short sVar1;
+  int iVar2;
+  int iVar3;
+
+  FUN_00027694();
+  if ((g_cursor_holding_state == 2) && (g_selected_object != 0)) {
+    g_cursor_holding_state = 0;
+    g_selected_object = 0;
+    FUN_00057cac(3);
+  }
+  save_or_restore_level_special_state(param_1,1);
+  iVar2 = commit_level_to_save_slot(param_1);
+  iVar3 = 0;
+  if (iVar2 != 0) {
+    sVar1 = load_level(param_2);
+    iVar3 = (int)sVar1;
+    if (iVar3 == 0) {
+      iVar3 = 0;
+    }
+    else {
+      save_or_restore_level_special_state(param_2,0);
+    }
+  }
+  return iVar3;
+}
+
+
+
+
+
+
+// was FUN_0006c834 -- saves (param_2==1) or restores (param_2==0) a
+// leaving/entering level's special transient per-level state, called
+// from transition_to_level around commit_level_to_save_slot/load_level.
+// Only levels 7 and 9 have any such state: level 7's floor-hazard byte
+// (DAT_00086df8+0x38/+0x37, restored via update_level7_floor_hazard_state)
+// and level 9's DAT_00086b20 special value. param_2==3 (level 9 only)
+// clears DAT_00086b20 outright rather than saving/restoring it. Only
+// takes the save/restore/clear path when DAT_00086df8+0x60's bit 4 is
+// clear or this is a save/clear call (param_2!=0); a restore
+// (param_2==0) with that bit set instead calls FUN_0003bc1c(0).
+void save_or_restore_level_special_state(param_1,param_2)
+short param_1;
+short param_2;
+
+{
+  if (((*(byte *)(DAT_00086df8 + 0x60) & 0x10) == 0) || (param_2 != 0)) {
+    if (param_2 == 0) {
+      FUN_000359f4();
+    }
+    else if (param_2 == 1) {
+      FUN_0003513c();
+    }
+    if (param_1 == 7) {
+      if ((*(byte *)(DAT_00086df8 + 0x60) & 0x20) == 0) {
+        if (param_2 == 0) {
+          *(undefined1 *)(DAT_00086df8 + 0xb0) = *(undefined1 *)(DAT_00086df8 + 0x38);
+          *(undefined1 *)(DAT_00086df8 + 0x38) = 0;
+          *(undefined1 *)(DAT_00086df8 + 0x37) = 0;
+          update_level7_floor_hazard_state(*(byte *)(DAT_00086df8 + 0x62) >> 4 & 1);
+        }
+        else if (param_2 == 1) {
+          *(undefined1 *)(DAT_00086df8 + 0x38) = *(undefined1 *)(DAT_00086df8 + 0xb0);
+          *(byte *)(DAT_00086df8 + 0x37) = *(byte *)(DAT_00086df8 + 0xb0) >> 2;
+        }
+      }
+    }
+    else if (param_1 == 9) {
+      if (param_2 == 0) {
+        *(char *)(DAT_00086df8 + 0xb0) = (char)DAT_00086b20;
+        DAT_00086b20 = 0;
+      }
+      else if (param_2 == 1) {
+        DAT_00086b20 = (uint)*(byte *)(DAT_00086df8 + 0xb0);
+      }
+      else if (param_2 == 3) {
+        DAT_00086b20 = 0;
+      }
+    }
+  }
+  else {
+    FUN_0003bc1c(0);
+  }
+  return;
+}

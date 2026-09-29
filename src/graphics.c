@@ -223,7 +223,7 @@ short param_7;
   short sVar15;
   /* param_3 is the source-bitmap pointer (was `int`, truncating it on
      this 64-bit host -- every caller passes a real malloc'd/global
-     pixel-data pointer, e.g. FUN_0006c98c's OPSCR.BYT load buffer). This
+     pixel-data pointer, e.g. blit_fullscreen_bitmap_file's OPSCR.BYT load buffer). This
      accumulator reconstructs a moving source-row address from it each
      iteration, so it needs to stay a full-width pointer-sized value. */
   intptr_t local_34;
@@ -953,3 +953,52 @@ int param_3;
   return;
 }
 
+
+
+
+
+
+
+// was FUN_0006c98c -- loads and displays a raw 320x200 (64000-byte)
+// full-screen bitmap file (param_2, a path): optionally selects a
+// palette bank first (param_1, skipped if negative -- used for e.g.
+// the copyright screen), blits it to the framebuffer, and optionally
+// flushes it to the display immediately (param_3).
+undefined4 blit_fullscreen_bitmap_file(param_1,param_2,param_3)
+undefined4 param_1;
+char *param_2;
+int param_3;
+
+{
+  /* iVar1 was `int`, truncating the Ordinal_1041 (malloc) heap pointer
+     it holds -- it's used both as the fread-destination buffer and as
+     the source pointer handed to bitmap_blit_to_framebuffer (which now takes a real
+     char*). */
+  char *iVar1;
+  int iVar2;
+  undefined4 uVar3;
+
+  iVar1 = Ordinal_1041(64000);
+  if (iVar1 == 0) {
+    uVar3 = 0;
+  }
+  else {
+    iVar2 = FUN_0007ee4c(param_2,iVar1,64000);
+    if (iVar2 != 0) {
+      if (-1 < (short)param_1) {
+        FUN_00040df0();
+      }
+      set_viewport_clip_rect(0,0,0x13f,199);
+      if (-1 < (short)param_1) {
+        set_palette_bank(param_1);
+      }
+      bitmap_blit_to_framebuffer(0,0,iVar1,200,0x140,0,0,0);
+      if (param_3 != 0) {
+        flush_dirty_rect_to_display(1);
+      }
+    }
+    Ordinal_1018(iVar1);
+    uVar3 = 1;
+  }
+  return uVar3;
+}

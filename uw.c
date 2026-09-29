@@ -20210,7 +20210,7 @@ void FUN_0003b820()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_62c,s__DATA_pres1_byt_00085790);
-  FUN_0006c98c(5,acStack_62c,1);
+  blit_fullscreen_bitmap_file(5,acStack_62c,1);
   Ordinal_496(0x5dc);
   FUN_00072910(1,1);
   FUN_000769e8();
@@ -20223,7 +20223,7 @@ void FUN_0003b820()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_62c,s__DATA_pres2_byt_00085780);
-  FUN_0006c98c(6,acStack_62c,1);
+  blit_fullscreen_bitmap_file(6,acStack_62c,1);
   Ordinal_496(0x5dc);
   sVar2 = FUN_00041aac();
   if (sVar2 != 0) {
@@ -20238,7 +20238,7 @@ void FUN_0003b820()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_62c,s__DATA_COPYRIGHT_BYT_0008576c);
-  FUN_0006c98c(2,acStack_62c,1);
+  blit_fullscreen_bitmap_file(2,acStack_62c,1);
   sVar2 = init_cursor_subsystem();
   if (sVar2 < 0) {
     FUN_0003c3c8(2);
@@ -20585,7 +20585,7 @@ undefined4 dungeon_view_anim_tick()
       FUN_000411b8((int)g_visibility_max_ring_passes);
     }
     if (DAT_00201b68 != DAT_00201c7c) {
-      iVar1 = FUN_0006c79c();
+      iVar1 = transition_to_level();
       if (iVar1 == 0) {
         FUN_0003c3c8(0x300c);
       }
@@ -36410,196 +36410,6 @@ LAB_00060f54:
 
 
 
-/* Was a generic "copy every file matching dest\*.* " directory-copy
-   using CopyFileW/FindFirstFileW/FindNextFileW (Ordinal_164/167/181) via
-   wide-string paths built through Ordinal_58/61/63 -- all six of those
-   are still no-op stubs (Ordinal_167/181 real enough now for
-   ensure_save_directory_exists's own narrower directory-exists-or-create use, but not
-   real filename enumeration), so this always silently copied nothing.
-   Same situation the existing \SAVE0\lev.ark new-game seed already hit
-   and fixed the same way (see game.c's comment on that): making the
-   whole enumeration/wide-string machinery real is a much bigger lift
-   than this feature needs, since a save slot only ever holds the same 3
-   known files. Copy them directly instead, using the game's own
-   CreateFile-family wrappers (via uw_file_copy) against real ANSI
-   Windows-style paths -- both callers now pass their already-correct
-   acStack_630/acStack_528 (or local_638/local_530) buffers straight in,
-   instead of the broken wide copies of them this used to take. */
-undefined4 FUN_0006c670(param_1,param_2)
-char *param_1;  /* destination directory, e.g. "\SAVE3" */
-char *param_2;  /* source directory, e.g. "\SAVE0" */
-
-{
-  /* Was a hardcoded 3-entry list missing "player.dat" entirely -- real
-     ARM disassembly of this function (0x6c670) shows it's genuinely
-     NOT a fixed-file-list copier at all: it calls what are clearly
-     FindFirstFile/FindNextFile/CopyFile-equivalents (0x8203c/0x82150/
-     0x81ff4), looping over and copying EVERY file in the source
-     directory (skipping only subdirectories, via a FILE_ATTRIBUTE_
-     DIRECTORY==0x10 check) -- a generic "copy this whole save folder"
-     operation, not a curated list an earlier session guessed at. A full
-     FindFirstFile-style reimplementation felt like more risk than this
-     specific bug warranted (the one real file it would additionally
-     pick up here, "_arc.tmp", is a zero-byte scratch file from the
-     archive-write path, harmless either way) -- confirmed the complete
-     real file set for a save directory empirically instead (`ls
-     data/SAVE0`) and added the one missing real file directly. Without
-     player.dat here, Save/Load's own player.dat write
-     (write_player_save_record) always goes straight to the fixed
-     \SAVE0\player.dat path and NOTHING ever copies a per-slot player.dat
-     to/from \SAVE<n> -- so every numbered slot shares the exact same,
-     single, always-most-recently-written player.dat regardless of which
-     slot you actually saved/loaded. Confirmed live and reported by QA:
-     the loaded dungeon state was correctly per-slot, but the player
-     character (inventory included) always reflected whichever save had
-     been made most recently, letting an item picked up after one save
-     be duplicated by loading an earlier save that still had it lying on
-     the ground -- the old \SAVE0\player.dat (with the item now in
-     inventory) was never actually replaced by loading, so it persisted
-     alongside the reloaded, not-yet-picked-up copy on the ground. */
-  static const char *file_suffixes[] = { "\\lev.ark", "\\bglobals.dat", "\\player.dat", "\\desc" };
-  char src[300];
-  char dst[300];
-  size_t i;
-  int ok;
-
-  ok = 1;
-  for (i = 0; i < sizeof(file_suffixes) / sizeof(file_suffixes[0]); i++) {
-    snprintf(src, sizeof(src), "%s%s", param_2, file_suffixes[i]);
-    snprintf(dst, sizeof(dst), "%s%s", param_1, file_suffixes[i]);
-    /* desc is optional (a brand new character who has never saved/loaded
-       before has no \SAVE0\desc yet) -- lev.ark/bglobals.dat/player.dat
-       are not. */
-    if (!uw_file_copy(src, dst) && i != 3) {
-      ok = 0;
-    }
-  }
-  return ok;
-}
-
-
-
-int FUN_0006c79c(param_1,param_2)
-undefined4 param_1;
-undefined4 param_2;
-
-{
-  short sVar1;
-  int iVar2;
-  int iVar3;
-  
-  FUN_00027694();
-  if ((g_cursor_holding_state == 2) && (g_selected_object != 0)) {
-    g_cursor_holding_state = 0;
-    g_selected_object = 0;
-    FUN_00057cac(3);
-  }
-  FUN_0006c834(param_1,1);
-  iVar2 = commit_level_to_save_slot(param_1);
-  iVar3 = 0;
-  if (iVar2 != 0) {
-    sVar1 = load_level(param_2);
-    iVar3 = (int)sVar1;
-    if (iVar3 == 0) {
-      iVar3 = 0;
-    }
-    else {
-      FUN_0006c834(param_2,0);
-    }
-  }
-  return iVar3;
-}
-
-
-
-void FUN_0006c834(param_1,param_2)
-short param_1;
-short param_2;
-
-{
-  if (((*(byte *)(DAT_00086df8 + 0x60) & 0x10) == 0) || (param_2 != 0)) {
-    if (param_2 == 0) {
-      FUN_000359f4();
-    }
-    else if (param_2 == 1) {
-      FUN_0003513c();
-    }
-    if (param_1 == 7) {
-      if ((*(byte *)(DAT_00086df8 + 0x60) & 0x20) == 0) {
-        if (param_2 == 0) {
-          *(undefined1 *)(DAT_00086df8 + 0xb0) = *(undefined1 *)(DAT_00086df8 + 0x38);
-          *(undefined1 *)(DAT_00086df8 + 0x38) = 0;
-          *(undefined1 *)(DAT_00086df8 + 0x37) = 0;
-          update_level7_floor_hazard_state(*(byte *)(DAT_00086df8 + 0x62) >> 4 & 1);
-        }
-        else if (param_2 == 1) {
-          *(undefined1 *)(DAT_00086df8 + 0x38) = *(undefined1 *)(DAT_00086df8 + 0xb0);
-          *(byte *)(DAT_00086df8 + 0x37) = *(byte *)(DAT_00086df8 + 0xb0) >> 2;
-        }
-      }
-    }
-    else if (param_1 == 9) {
-      if (param_2 == 0) {
-        *(char *)(DAT_00086df8 + 0xb0) = (char)DAT_00086b20;
-        DAT_00086b20 = 0;
-      }
-      else if (param_2 == 1) {
-        DAT_00086b20 = (uint)*(byte *)(DAT_00086df8 + 0xb0);
-      }
-      else if (param_2 == 3) {
-        DAT_00086b20 = 0;
-      }
-    }
-  }
-  else {
-    FUN_0003bc1c(0);
-  }
-  return;
-}
-
-
-
-undefined4 FUN_0006c98c(param_1,param_2,param_3)
-undefined4 param_1;
-char *param_2;
-int param_3;
-
-{
-  /* iVar1 was `int`, truncating the Ordinal_1041 (malloc) heap pointer
-     it holds -- it's used both as the fread-destination buffer and as
-     the source pointer handed to bitmap_blit_to_framebuffer (which now takes a real
-     char*). */
-  char *iVar1;
-  int iVar2;
-  undefined4 uVar3;
-
-  iVar1 = Ordinal_1041(64000);
-  if (iVar1 == 0) {
-    uVar3 = 0;
-  }
-  else {
-    iVar2 = FUN_0007ee4c(param_2,iVar1,64000);
-    if (iVar2 != 0) {
-      if (-1 < (short)param_1) {
-        FUN_00040df0();
-      }
-      set_viewport_clip_rect(0,0,0x13f,199);
-      if (-1 < (short)param_1) {
-        set_palette_bank(param_1);
-      }
-      bitmap_blit_to_framebuffer(0,0,iVar1,200,0x140,0,0,0);
-      if (param_3 != 0) {
-        flush_dirty_rect_to_display(1);
-      }
-    }
-    Ordinal_1018(iVar1);
-    uVar3 = 1;
-  }
-  return uVar3;
-}
-
-
-
 void FUN_0006cb74()
 
 {
@@ -38937,7 +38747,7 @@ void FUN_00071b94()
       pcVar4 = pcVar4 + 1;
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_114,s__DATA_win1_byt_00087350);
-    FUN_0006c98c(7,acStack_114,1);
+    blit_fullscreen_bitmap_file(7,acStack_114,1);
     Ordinal_496(3000);
     dirty_rect_union(0,200,0,0x140);
     Ordinal_1047(acStack_114,0,0x104);
@@ -38947,7 +38757,7 @@ void FUN_00071b94()
       pcVar7 = pcVar7 + 1;
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_114,s__DATA_win2_byt_00087340);
-    FUN_0006c98c(0xffffffff,acStack_114,1);
+    blit_fullscreen_bitmap_file(0xffffffff,acStack_114,1);
     dirty_rect_union(0,200,0,0x140);
     FUN_00070c90();
     do {
