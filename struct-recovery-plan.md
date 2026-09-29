@@ -32,13 +32,18 @@ Two different problems currently hide behind identical-looking
 **Don't try to structify #2.** The first job of touching any new
 `_backing` global is deciding which bucket it's in — see Step 0.
 
-## Status (as of 2026-09-24, commit 225333e)
+## Status (updated 2026-09-30, code-cleanup-first-pass branch)
+
+Note: uw.c is now being split into src/*.c topic files in parallel
+(see the code-cleanup goal) -- `g_current_tile`/`g_level_tiles` and
+the raw fields they replace may live in a different file than uw.c by
+the time you read this; grep for the symbol name, not a line number.
 
 | Record | Base(s) | Stride | State |
 |---|---|---|---|
 | `uw_object_hdr_t` | `DAT_002046c4` | 8B | Type defined, bit-verified. Only the `heading` field is converted project-wide; `item_id`/`zpos`/`ypos`/`xpos`/`quality`/`next`/`owner`/`link` still raw at their ~300+ call sites. |
 | `uw_mobile_object_t` | `DAT_002046b8` | 27B (0x1b) | Header inherited from above. The 19-byte NPC-extra block has real field names for `npc_yhome`/`npc_xhome`/`npc_heading` only (wiki-sourced, only those 3 cross-checked against real code); `npc_hp`/`npc_goal`/`npc_gtarg`/`npc_level`/`npc_talkedto`/`npc_attitude`/`npc_height`/`npc_hunger`/`npc_whoami` are typed but **unverified against this binary** — confirm each before trusting it for a write. |
-| `uw_tile_t` | `DAT_002029cc` | 4B | Type defined, bit-verified. Only `wall_tex` converted (9 sites, all of them). `tile_type`/`floor_height`/`floor_tex`/`door_bit`/`no_magic`/`unk_light`/`obj_head` still raw. |
+| `uw_tile_t` | `DAT_002029cc` | 4B | Type defined, bit-verified. `wall_tex`, `tile_type`, and `floor_height` now converted project-wide (all known call sites, in src/tmap.c after the cleanup split). `floor_tex` converted at the one call site found this pass (src/tmap.c, the automap-reveal-adjacent read) but **not verified exhaustive** -- a fresh grep for the raw `>> 2 & 0xf`-on-byte-1 pattern hasn't been re-run against the other topic files yet. `door_bit`/`no_magic`/`unk_light`/`obj_head` still fully raw. |
 
 `g_mobile_objects`/`g_static_objects`/`g_level_tiles`/`g_current_tile`
 typed-view macros exist in uw.c and are safe to use for new code today.

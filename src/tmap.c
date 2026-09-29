@@ -441,7 +441,7 @@ byte * param_1;
     }
   }
   DAT_0023b4d0 = 200;
-  bVar15 = (byte)*DAT_0023b4ec >> 4;
+  bVar15 = g_current_tile->floor_height;
   uVar1 = (uint)bVar15;
   DAT_0023b4e0 = DAT_0023b820[1] & 0xf;
   if (DAT_0023b4e0 < 8) {
@@ -454,7 +454,7 @@ byte * param_1;
   else {
     local_84 = *param_1;
     if (local_84 == 0) {
-      local_84 = (&DAT_00086bf0)[(byte)*DAT_0023b4ec & 0xf];
+      local_84 = (&DAT_00086bf0)[g_current_tile->tile_type];
     }
   }
   local_30 = (int)(short)(ushort)bVar25 & 0x44;
@@ -487,8 +487,8 @@ LAB_0005e7e0:
   DAT_0023b818 = 0xe0;
   iVar16 = DAT_00086e6c;
   if (bVar39) {
-    (*DAT_0023b4f4)(auStack_50,DAT_0023b4e0,*(byte *)((char *)DAT_0023b4ec + 1) >> 2 & 0xf);
-    uVar28 = (*(byte *)((char *)DAT_0023b4ec + 1) & 0x3c) >> 2;
+    (*DAT_0023b4f4)(auStack_50,DAT_0023b4e0,g_current_tile->floor_tex);
+    uVar28 = g_current_tile->floor_tex;
     if ((short)(ushort)DAT_0023b4e0 < DAT_00086b24) {
       DAT_0023b81c = 2;
       if ((DAT_0023b4e0 != 0) || (DAT_00087938 != 'd')) {
