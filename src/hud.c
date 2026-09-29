@@ -1742,7 +1742,7 @@ int param_1;
     msg_scroll_draw_edges();
   }
   else {
-    FUN_0007f290();
+    draw_conversation_window_decoration();
   }
   return;
 }
@@ -2228,7 +2228,7 @@ int param_1;
     iVar2 = msg_scroll_draw_edges();
   }
   else {
-    iVar2 = FUN_0007f290();
+    iVar2 = draw_conversation_window_decoration();
   }
   if (param_1 != 0) {
     iVar2 = DAT_00250708;
@@ -3774,6 +3774,38 @@ uint param_2;
     FUN_00057118();
   }
   return;
+}
+
+
+
+
+
+// was FUN_0007f290 -- the conversation-mode counterpart to
+// msg_scroll_draw_edges (src/hud.c calls this one specifically when
+// DAT_00250704 does NOT point at g_msg_scroll_panel_state, i.e. the
+// panel is in conversation/mode-2, not normal mode). Draws 3 rows of
+// mirrored sprite pairs (a decorative frame/border) at fixed x
+// positions, animated through 6 frames via DAT_00250728 as a cycling
+// counter.
+undefined4 draw_conversation_window_decoration()
+
+{
+  int iVar1;
+  int iVar2;
+
+  iVar1 = 0;
+  do {
+    iVar2 = iVar1 * 0x1b + 0x34;
+    draw_sprite_by_id(DAT_00250728 + 0x20df,0x34,iVar2,0x1b,5);
+    draw_sprite_by_id(DAT_00250728 + 0x20e5,0xdc,iVar2,0x1b,5);
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 3);
+  iVar1 = (int)DAT_00250728;
+  DAT_00250728 = (short)(iVar1 + 1);
+  if ((iVar1 + 1) * 0x10000 >> 0x10 == 6) {
+    DAT_00250728 = 0;
+  }
+  return 0;
 }
 
 

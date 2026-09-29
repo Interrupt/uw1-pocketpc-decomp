@@ -1046,6 +1046,7 @@ extern undefined2 DAT_002029c8;
 extern char s_very_near_00087954[];
 extern undefined1 g_msg_scroll_panel_state_conv_backing[65536];
 #define g_msg_scroll_panel_state_conv g_msg_scroll_panel_state_conv_backing[0]
+extern short DAT_00250728;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3544,7 +3545,7 @@ void select_msg_scroll_mode_conversation();
 void select_msg_scroll_mode_2();
 void wait_for_click_to_continue();
 undefined4 msg_scroll_draw_edges();
-undefined4 FUN_0007f290();
+undefined4 draw_conversation_window_decoration();
 void msg_scroll_scroll_up_line();
 void msg_scroll_more_prompt();
 int message_scroll_print_wrapped();

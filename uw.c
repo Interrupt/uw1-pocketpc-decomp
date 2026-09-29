@@ -36521,29 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-undefined4 FUN_0007f290()
-
-{
-  int iVar1;
-  int iVar2;
-  
-  iVar1 = 0;
-  do {
-    iVar2 = iVar1 * 0x1b + 0x34;
-    draw_sprite_by_id(DAT_00250728 + 0x20df,0x34,iVar2,0x1b,5);
-    draw_sprite_by_id(DAT_00250728 + 0x20e5,0xdc,iVar2,0x1b,5);
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar1 < 3);
-  iVar1 = (int)DAT_00250728;
-  DAT_00250728 = (short)(iVar1 + 1);
-  if ((iVar1 + 1) * 0x10000 >> 0x10 == 6) {
-    DAT_00250728 = 0;
-  }
-  return 0;
-}
-
-
-
 void FUN_0007f6fc(param_1,param_2)
 undefined1 * param_1;
 undefined4 param_2;
