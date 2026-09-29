@@ -18,10 +18,10 @@
       manifestation is sensitive to memory layout/link order, only now
       exposed by the reorg reordering object files. Wasn't investigated
       further this round -- lower priority than the reorg work in
-      progress. UPDATE: re-checking after the babl.c extraction batch's
-      own fixes below -- worth re-testing whether either of those
-      resolves this one too (same general "32-bit sentinel idiom broken
-      on 64-bit" bug family), see that batch's commit for whether it did.
+      progress. UPDATE: re-tested after the babl.c extraction batch's own
+      change_game_mode fixes below -- still crashes the same way (exit
+      139, settle_mobile_to_immobile), unaffected -- different subsystem,
+      as expected. Still open.
 
 ## Fixed this round (code-cleanup-first-pass, babl.c extraction batch)
 - [x] `change_game_mode` / its sibling exit-mode dispatcher (~uw.c:27610/
