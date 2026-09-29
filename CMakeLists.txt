@@ -48,6 +48,7 @@ set(UW_SOURCES
   src/winfile_wrappers.c
   src/models.c
   src/math.c
+  src/registration.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

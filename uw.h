@@ -2999,17 +2999,17 @@ void draw_menu_item_list();
 int poll_menu_pointer_selection();
 int menu_button_list_navigate();
 undefined4 journey_onward_load_slot_menu();
-undefined2 FUN_0006b3dc();
-int FUN_0006b408();
-undefined4 FUN_0006b448();
-undefined4 FUN_0006b718();
-void FUN_0006b838();
-void FUN_0006b8c0();
-void FUN_0006b920();
-undefined4 FUN_0006b980();
-undefined4 FUN_0006ba54();
-undefined4 FUN_0006baf8();
-undefined4 FUN_0006bb64();
+undefined2 codewheel_letter_at_index();
+int codewheel_index_of_letter();
+undefined4 validate_codewheel_word();
+undefined4 check_registration_key_saved();
+void save_registration_key_validated();
+void set_power_status_flag_bit();
+void clear_power_status_flag_bit();
+undefined4 check_registration_key_dialog();
+undefined4 registration_key_dialog_proc();
+undefined4 is_product_registered();
+undefined4 check_save_disk_space();
 int load_level();
 undefined4 commit_level_to_save_slot();
 void probe_save_slots();
@@ -3349,6 +3349,15 @@ undefined4 FUN_000824f0();
 /* Globals defined in uw.c but also used by functions that now live in
    game.c (animate_title_palette_cycle's 14ms throttle timestamp). */
 extern ushort DAT_0023bf74;
+
+/* Globals defined in uw.c but also used by functions that now live in
+   registration.c. */
+extern int DAT_00086f0c;
+extern unsigned short u_BuildNo_00086f5c[];
+extern unsigned short u_Software_ZIO_Interactive_Ultima_U_00086f6c[];
+extern int DAT_0023c108;
+extern undefined DAT_0023bf78_backing[8192];
+#define DAT_0023bf78 DAT_0023bf78_backing[0]
 
 /* Declarations for the functions that used to live directly in this file
  * but were split out into their own topic .c files this session -- moved
