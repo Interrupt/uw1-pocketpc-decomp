@@ -6747,39 +6747,6 @@ undefined *PTR_Ordinal_35_000841cc;
 
 
 
-// WARNING: Globals starting with '_' overlap smaller symbols at the same address
-
-void FUN_00011b34()
-
-{
-  int iVar1;
-  short sVar2;
-  int iVar3;
-  int iVar4;
-  int iVar5;
-  
-  iVar3 = (int)DAT_000842a8;
-  iVar4 = 200 - DAT_000a85c8;
-  if (iVar4 < 200 - iVar3) {
-    iVar5 = iVar4 * 0x140;
-    sVar2 = DAT_000842a4;
-    do {
-      if (63999 < iVar5) break;
-      for (iVar1 = (int)DAT_000a85c4; (iVar1 < sVar2 && (iVar1 < 0x140)); iVar1 = iVar1 + 1) {
-        *(undefined2 *)((g_uw_framebuffer) + (iVar5 + iVar1) * 2) =
-             (&g_palette_rgb565)[DAT_000a85c0];
-        sVar2 = DAT_000842a4;
-      }
-      iVar4 = iVar4 + 1;
-      iVar5 = iVar5 + 0x140;
-    } while (iVar4 < 200 - iVar3);
-  }
-  debug_framebuffer_dump("FUN_00011b34");
-  flush_dirty_rect_to_display(1);
-  return;
-}
-
-
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
@@ -22427,7 +22394,7 @@ void FUN_00040df0()
   FUN_00057118();
   set_viewport_clip_rect(0,0,0x13f,199);
   set_draw_color(0);
-  FUN_00011b34();
+  fill_viewport_and_flush();
   cursor_show_idle_tick();
   return;
 }

@@ -1175,3 +1175,45 @@ uint param_3;
   debug_framebuffer_dump("draw_horizontal_line");
   return;
 }
+
+
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+// was FUN_00011b34 -- fills the current viewport/clip rect (the
+// DAT_000842a8/DAT_000842a4/DAT_000a85c4/DAT_000a85c8 bounds
+// set_viewport_clip_rect establishes) with the current draw color
+// index into g_palette_rgb565, then immediately flushes the dirty
+// rect to the display. Confirmed live caller sets the clip rect to
+// full-screen and the draw color to black right before calling this,
+// matching a "clear the screen" step.
+void fill_viewport_and_flush()
+
+{
+  int iVar1;
+  short sVar2;
+  int iVar3;
+  int iVar4;
+  int iVar5;
+
+  iVar3 = (int)DAT_000842a8;
+  iVar4 = 200 - DAT_000a85c8;
+  if (iVar4 < 200 - iVar3) {
+    iVar5 = iVar4 * 0x140;
+    sVar2 = DAT_000842a4;
+    do {
+      if (63999 < iVar5) break;
+      for (iVar1 = (int)DAT_000a85c4; (iVar1 < sVar2 && (iVar1 < 0x140)); iVar1 = iVar1 + 1) {
+        *(undefined2 *)((g_uw_framebuffer) + (iVar5 + iVar1) * 2) =
+             (&g_palette_rgb565)[DAT_000a85c0];
+        sVar2 = DAT_000842a4;
+      }
+      iVar4 = iVar4 + 1;
+      iVar5 = iVar5 + 0x140;
+    } while (iVar4 < 200 - iVar3);
+  }
+  debug_framebuffer_dump("fill_viewport_and_flush");
+  flush_dirty_rect_to_display(1);
+  return;
+}
+
+

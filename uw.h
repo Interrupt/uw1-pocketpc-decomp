@@ -2340,7 +2340,7 @@ void screen_backup_restore();
 void screen_backup_restore_rect();
 void set_viewport_clip_rect();
 void draw_horizontal_line();
-void FUN_00011b34();
+void fill_viewport_and_flush();
 void FUN_00011c10();
 void FUN_000120c8();
 void fade_in();
