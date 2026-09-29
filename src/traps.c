@@ -785,7 +785,7 @@ undefined4 param_1;
 // view tile (g_player_object+0x16, matching the "current view tile"
 // field used throughout this file) on either axis; returns 0 when
 // param_1 is nonzero AND the tile is within 7 tiles on both axes.
-// Both confirmed callers (FUN_0007e778, a world-object trap-trigger
+// Both confirmed callers (process_nearby_background_traps, a world-object trap-trigger
 // sweep, and FUN_0007e85c's door-trigger sweep, both not yet named)
 // only
 // act on their own effect (dispatch_trap_type_effect /
@@ -811,6 +811,63 @@ short param_3;
     uVar2 = 1;
   }
   return uVar2;
+}
+
+
+
+
+
+// was FUN_0007e778 -- periodic world-tick helper: scans every type-6
+// object within 7 tiles (FUN_000539b0, not yet named) and, for each
+// whose class bits (0x1e at +1) are clear, resolves its linked
+// sub-object, sets a flag bit on it, and -- only when
+// is_out_of_player_range(param_1, tile) is true -- fires
+// dispatch_trap_type_effect on it. Two confirmed callers pass
+// different param_1 values: src/player.c's rest/tick handler passes 0
+// (which is_out_of_player_range treats as "always fire", i.e.
+// unconditional regardless of player position), while a periodic
+// hunger-tick block in uw.c passes 1 under a random 1-in-4 gate
+// (respecting actual player proximity). Reads as "tick background/
+// ambient trap objects periodically, gated on the player not being
+// right next to them unless explicitly overridden".
+void process_nearby_background_traps(param_1)
+undefined4 param_1;
+
+{
+  undefined2 uVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  short local_14;
+  short local_12;
+
+  local_14 = 0;
+  local_12 = 0;
+  iVar2 = FUN_000539b0(6,0,7,&local_14,&local_12);
+  while (iVar2 != 0) {
+    if ((*(byte *)(iVar2 + 1) & 0x1e) == 0) {
+      iVar3 = resolve_object_link(iVar2 + 6);
+      /* HACK: was a bare `object_ptr_in_arena();` -- dropped argument,
+         the same class of bug fixed repeatedly elsewhere in this
+         file. object_ptr_in_arena takes exactly one argument at every
+         other call site in this codebase, and iVar3 (just set from
+         resolve_object_link on the line above) is obviously the
+         intended one here. */
+      iVar4 = object_ptr_in_arena(iVar3);
+      if (iVar4 != 0) {
+        uVar1 = *(undefined2 *)(iVar3 + 0xd);
+        *(char *)(iVar3 + 0xd) = (char)uVar1;
+        *(byte *)(iVar3 + 0xe) = (byte)((ushort)uVar1 >> 8) | 1;
+        iVar3 = is_out_of_player_range(param_1,(int)local_14,(int)local_12);
+        if (iVar3 != 0) {
+          dispatch_trap_type_effect(iVar2,(int)local_14,(int)local_12);
+        }
+      }
+    }
+    local_14 = local_14 + 1;
+    iVar2 = FUN_000539b0(6,0,7,&local_14,&local_12);
+  }
+  return;
 }
 
 

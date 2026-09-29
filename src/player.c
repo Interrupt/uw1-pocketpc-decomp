@@ -2686,7 +2686,7 @@ LAB_0007158c:
       iVar4 = FUN_00035894();
       if (iVar4 == 0) {
         FUN_0003513c();
-        FUN_0007e778(0);
+        process_nearby_background_traps(0);
         uVar5 = Ordinal_1053();
         uw_ord2005_rem_146 = ((int)(uVar5)) % (4);
         iVar4 = (uw_ord2005_rem_146 - iVar8) + 7;

@@ -32052,7 +32052,7 @@ void FUN_00053c74()
     }
     uVar6 = Ordinal_1053();
     if ((uVar6 & 3) == 0) {
-      FUN_0007e778(1);
+      process_nearby_background_traps(1);
     }
     FUN_00034af0();
     iVar10 = 0;
@@ -36517,42 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007e778(param_1)
-undefined4 param_1;
-
-{
-  undefined2 uVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  short local_14;
-  short local_12;
-  
-  local_14 = 0;
-  local_12 = 0;
-  iVar2 = FUN_000539b0(6,0,7,&local_14,&local_12);
-  while (iVar2 != 0) {
-    if ((*(byte *)(iVar2 + 1) & 0x1e) == 0) {
-      iVar3 = resolve_object_link(iVar2 + 6);
-      iVar4 = object_ptr_in_arena();
-      if (iVar4 != 0) {
-        uVar1 = *(undefined2 *)(iVar3 + 0xd);
-        *(char *)(iVar3 + 0xd) = (char)uVar1;
-        *(byte *)(iVar3 + 0xe) = (byte)((ushort)uVar1 >> 8) | 1;
-        iVar3 = is_out_of_player_range(param_1,(int)local_14,(int)local_12);
-        if (iVar3 != 0) {
-          dispatch_trap_type_effect(iVar2,(int)local_14,(int)local_12);
-        }
-      }
-    }
-    local_14 = local_14 + 1;
-    iVar2 = FUN_000539b0(6,0,7,&local_14,&local_12);
-  }
-  return;
-}
-
-
-
 void FUN_0007e85c(param_1)
 int param_1;
 
@@ -36577,7 +36541,7 @@ int param_1;
          arguments, the same class of bug fixed repeatedly elsewhere in
          this file. is_out_of_player_range takes exactly three params
          (an acting object plus a tile x/y), and its sibling caller
-         FUN_0007e778 (just above) calls it with its own loop tile
+         process_nearby_background_traps (just above) calls it with its own loop tile
          coordinates in this exact position; this loop's own
          local_1c/local_1a (the tile just scanned, freshly stored into
          DAT_002020a0/DAT_002020a4 the lines above) are obviously the
