@@ -1580,3 +1580,56 @@ LAB_0006fff4:
 #undef local_126
 #undef local_124
 #undef local_122
+
+
+
+
+
+
+// was FUN_00070118
+void load_light_tables()
+
+{
+  char stack0xffdc323c_buf [256];
+  char *stack0xffdc323c_ptr;
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  char *pcVar4;
+  char acStack_11c [260];
+  
+  DAT_0024fa2c = Ordinal_1041(0x1000);
+  if (getenv("UW_DEBUG_BAG_TRACE")) fprintf(stderr, "[bag-trace] DAT_0024fa2c allocated at %p\n", (void *)DAT_0024fa2c);
+  if (DAT_0024fa2c == 0) {
+    FUN_0003c4a8(s_cLightTabs_allocation_error_____000872e8);
+  }
+  Ordinal_1047(acStack_11c,0,0x104);
+  pcVar4 = &DAT_0023cca8;
+    stack0xffdc323c_ptr = stack0xffdc323c_buf;
+  pcVar2 = pcVar4;
+    stack0xffdc323c_ptr = acStack_11c;
+  do {
+    cVar1 = *pcVar2;
+    *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_11c,s__DATA_light_dat_000872c8);
+  iVar3 = open_file_for_read(acStack_11c);
+  if (iVar3 != -1) {
+    read_file_handle(iVar3,DAT_0024fa2c,0x1000);
+    Ordinal_553(iVar3);
+  }
+  Ordinal_1047(acStack_11c,0,0x104);
+  do {
+    cVar1 = *pcVar4;
+    *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
+    pcVar4 = pcVar4 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_11c,s__DATA_xfer_dat_000872d8);
+  iVar3 = open_file_for_read(acStack_11c);
+  if (iVar3 != -1) {
+    read_file_handle(iVar3,&DAT_0024fa38,0x600);
+    Ordinal_553(iVar3);
+  }
+  return;
+}

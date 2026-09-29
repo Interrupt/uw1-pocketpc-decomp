@@ -1302,6 +1302,10 @@ extern char *DAT_0024fa2c;
 extern char s__DATA_shades_dat_000872a4[];
 extern char s__DATA_mono_dat_000872b8[];
 extern char s__DATA_light_dat_000872c8[];
+extern char s__DATA_xfer_dat_000872d8[];
+extern char s_cLightTabs_allocation_error_____000872e8[];
+extern undefined1 DAT_0024fa38_backing[3072];
+#define DAT_0024fa38 DAT_0024fa38_backing[0]
 extern undefined2 DAT_00086b30;
 extern char DAT_00087938;
 #define DAT_000a85d0 DAT_000a85d0_backing[0]
@@ -3096,7 +3100,7 @@ void trigger_terrain_discovery_illustration();
 void trigger_inscription_illustration();
 void load_shading_level_config();
 void load_light_tables();
-void FUN_00070224();
+void toggle_light_table_flicker();
 undefined4 FUN_000703a0();
 void advance_character_level();
 undefined4 FUN_00070524();

@@ -923,10 +923,10 @@ void reset_player_derived_state()
 // was FUN_000660d4 -- toggles a randomized screen flicker effect
 // tracked in DAT_00086db4 (-1=off, 0/1/2 = which of 3 sub-effects):
 // param_1==0 cancels any active effect (restoring palette bank 0, or
-// stopping FUN_00070224's effect); param_1!=0 with no effect currently
+// stopping toggle_light_table_flicker's effect); param_1!=0 with no effect currently
 // active picks a random one (or forces sub-effect 0 if DAT_00086db8
 // is set) and starts it -- sub-effect 1 randomly cycles the palette
-// bank, sub-effect 2 drives FUN_00070224. Called from
+// bank, sub-effect 2 drives toggle_light_table_flicker. Called from
 // refresh_player_equipment_effects gated on bits 2-3 of the player's
 // status byte (DAT_00086df8+0x61) -- likely a worn item's
 // cursed/poisoned status flags, not confirmed.
@@ -945,7 +945,7 @@ int param_1;
         set_palette_bank(0);
       }
       else if (DAT_00086db4 == '\x02') {
-        FUN_00070224(0);
+        toggle_light_table_flicker(0);
       }
       DAT_00086db4 = -1;
     }
@@ -965,7 +965,7 @@ int param_1;
       set_palette_bank(uVar1 & 7);
     }
     else if (DAT_00086db4 == '\x02') {
-      FUN_00070224(1);
+      toggle_light_table_flicker(1);
     }
   }
   return;
@@ -1844,3 +1844,56 @@ void refresh_experience_display()
   return;
 }
 
+
+
+
+
+
+
+// was FUN_00070224 -- update_screen_flicker_effect's "sub-effect 2"
+// driver: param_1==0 restores the light remap table by reloading
+// LIGHT.DAT/MONO.DAT (mirroring load_light_tables' own load), param_1!=0
+// zeroes its first 16 entries instead, producing the visual light
+// distortion the flicker effect uses.
+void toggle_light_table_flicker(param_1)
+int param_1;
+
+{
+  char stack0xffdc324c_buf [256];
+  char *stack0xffdc324c_ptr;
+  char cVar1;
+  int iVar2;
+  char *pcVar3;
+  char acStack_10c [260];
+  
+  if (param_1 == 0) {
+    pcVar3 = &DAT_0023cca8;
+    stack0xffdc324c_ptr = stack0xffdc324c_buf;
+    do {
+      cVar1 = *pcVar3;
+      *stack0xffdc324c_ptr = cVar1; stack0xffdc324c_ptr = stack0xffdc324c_ptr + 1;
+      pcVar3 = pcVar3 + 1;
+    } while (cVar1 != '\0');
+    if (DAT_000872a0 == '\x05') {
+      pcVar3 = s__DATA_mono_dat_000872b8;
+    }
+    else {
+      pcVar3 = s__DATA_light_dat_000872c8;
+    }
+    Ordinal_1063(acStack_10c,pcVar3);
+    iVar2 = open_file_for_read(acStack_10c);
+    if (iVar2 != -1) {
+      read_file_handle(iVar2,DAT_0024fa2c,0x1000);
+      Ordinal_553(iVar2);
+    }
+  }
+  else {
+    iVar2 = 0;
+    do {
+      *(undefined1 *)(DAT_0024fa2c + iVar2 * 0x100) = 0;
+      *(undefined1 *)(DAT_0024fa2c + iVar2 * 0x100 + 1) = 0;
+      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    } while (iVar2 < 0x10);
+  }
+  return;
+}

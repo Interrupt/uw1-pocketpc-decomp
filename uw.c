@@ -6030,7 +6030,7 @@ char s__DATA_light_dat_000872c8[] = "\\DATA\\light.dat";
 char DAT_000872a0 = -1;
 char s__DATA_xfer_dat_000872d8[] = "\\DATA\\xfer.dat";
 char s_cLightTabs_allocation_error_____000872e8[] = "cLightTabs_allocation_error_...";
-static undefined1 DAT_0024fa38_backing[3072];
+undefined1 DAT_0024fa38_backing[3072];
 #define DAT_0024fa38 DAT_0024fa38_backing[0]
 static undefined1 DAT_0008730c_backing[8192];
 #define DAT_0008730c DAT_0008730c_backing[0]
@@ -36405,101 +36405,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-// was FUN_00070118
-void load_light_tables()
-
-{
-  char stack0xffdc323c_buf [256];
-  char *stack0xffdc323c_ptr;
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  char *pcVar4;
-  char acStack_11c [260];
-  
-  DAT_0024fa2c = Ordinal_1041(0x1000);
-  if (getenv("UW_DEBUG_BAG_TRACE")) fprintf(stderr, "[bag-trace] DAT_0024fa2c allocated at %p\n", (void *)DAT_0024fa2c);
-  if (DAT_0024fa2c == 0) {
-    FUN_0003c4a8(s_cLightTabs_allocation_error_____000872e8);
-  }
-  Ordinal_1047(acStack_11c,0,0x104);
-  pcVar4 = &DAT_0023cca8;
-    stack0xffdc323c_ptr = stack0xffdc323c_buf;
-  pcVar2 = pcVar4;
-    stack0xffdc323c_ptr = acStack_11c;
-  do {
-    cVar1 = *pcVar2;
-    *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_light_dat_000872c8);
-  iVar3 = open_file_for_read(acStack_11c);
-  if (iVar3 != -1) {
-    read_file_handle(iVar3,DAT_0024fa2c,0x1000);
-    Ordinal_553(iVar3);
-  }
-  Ordinal_1047(acStack_11c,0,0x104);
-  do {
-    cVar1 = *pcVar4;
-    *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
-    pcVar4 = pcVar4 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_11c,s__DATA_xfer_dat_000872d8);
-  iVar3 = open_file_for_read(acStack_11c);
-  if (iVar3 != -1) {
-    read_file_handle(iVar3,&DAT_0024fa38,0x600);
-    Ordinal_553(iVar3);
-  }
-  return;
-}
-
-
-
-void FUN_00070224(param_1)
-int param_1;
-
-{
-  char stack0xffdc324c_buf [256];
-  char *stack0xffdc324c_ptr;
-  char cVar1;
-  int iVar2;
-  char *pcVar3;
-  char acStack_10c [260];
-  
-  if (param_1 == 0) {
-    pcVar3 = &DAT_0023cca8;
-    stack0xffdc324c_ptr = stack0xffdc324c_buf;
-    do {
-      cVar1 = *pcVar3;
-      *stack0xffdc324c_ptr = cVar1; stack0xffdc324c_ptr = stack0xffdc324c_ptr + 1;
-      pcVar3 = pcVar3 + 1;
-    } while (cVar1 != '\0');
-    if (DAT_000872a0 == '\x05') {
-      pcVar3 = s__DATA_mono_dat_000872b8;
-    }
-    else {
-      pcVar3 = s__DATA_light_dat_000872c8;
-    }
-    Ordinal_1063(acStack_10c,pcVar3);
-    iVar2 = open_file_for_read(acStack_10c);
-    if (iVar2 != -1) {
-      read_file_handle(iVar2,DAT_0024fa2c,0x1000);
-      Ordinal_553(iVar2);
-    }
-  }
-  else {
-    iVar2 = 0;
-    do {
-      *(undefined1 *)(DAT_0024fa2c + iVar2 * 0x100) = 0;
-      *(undefined1 *)(DAT_0024fa2c + iVar2 * 0x100 + 1) = 0;
-      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-    } while (iVar2 < 0x10);
-  }
   return;
 }
 
