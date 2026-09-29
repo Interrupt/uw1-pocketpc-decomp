@@ -250,7 +250,7 @@ void stop_current_audio_handle()
 // (FUN_00013774, a sqrt-shaped distance function) and, if within range
 // (uVar3<=0x30, else fails outright), derives a distance-attenuated
 // volume and a stereo pan (via heading_to_sine_cosine against the
-// player's own facing) before dispatching to FUN_00073064 with the
+// player's own facing) before dispatching to allocate_and_play_sound_channel with the
 // per-sound-effect-id parameter table entries (DAT_0023c2b0/b1/b2/b3,
 // 5-byte stride per id). Fails (returns 0xff) if the sound-effects
 // subsystem is disabled or the sound is out of range.
@@ -346,7 +346,7 @@ LAB_00072f24:
     if (iVar5 < 0) {
       uVar3 = 0;
     }
-    uVar4 = FUN_00073064(param_1,(&DAT_0023c2b0)[iVar10],(&DAT_0023c2b1)[iVar10],uVar3 & 0xff,uVar7,
+    uVar4 = allocate_and_play_sound_channel(param_1,(&DAT_0023c2b0)[iVar10],(&DAT_0023c2b1)[iVar10],uVar3 & 0xff,uVar7,
                          *(undefined2 *)(&DAT_0023c2b3 + iVar10));
   }
   return uVar4;
@@ -386,7 +386,7 @@ uint param_3;
     if (0x7f < uVar1 && (int)(uVar1 - 0x7f) < 0) {
       uVar3 = 0;
     }
-    uVar2 = FUN_00073064(param_1,(&DAT_0023c2b0)[iVar4],(&DAT_0023c2b1)[iVar4],uVar3 & 0xff,param_2,
+    uVar2 = allocate_and_play_sound_channel(param_1,(&DAT_0023c2b0)[iVar4],(&DAT_0023c2b1)[iVar4],uVar3 & 0xff,param_2,
                          *(undefined2 *)(&DAT_0023c2b3 + iVar4));
   }
   return uVar2;
@@ -452,6 +452,124 @@ void stop_current_audio_handle_dup()
   }
   if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
     FUN_0004cfc8(DAT_0023c3b8);
+  }
+  return;
+}
+
+
+
+
+
+
+// was FUN_00073064 -- allocates a free sound channel slot (bit-scanned
+// from DAT_0023c39c, 4 channels) and maps sound-effect id param_1 to a
+// "sound group" value (4/8/0x10, ids 3/0x16 -> 4, 4/0x10 -> 0x10, else
+// 8; ids <7 fail outright, returning 0xff) stored per-channel in
+// g_sound_channel_state/g_sound_channel_group (see their own
+// declaration comment -- BUG FIX: was raw hardcoded-address writes),
+// then dispatches the actual sample trigger via trigger_sound_sample_note.
+// Called by play_positional_sound_effect and siblings as their final
+// low-level step.
+uint allocate_and_play_sound_channel(param_1,param_2,param_3,param_4)
+byte param_1;
+undefined4 param_2;
+undefined4 param_3;
+undefined1 param_4;
+
+{
+  byte bVar1;
+  uint uVar2;
+  undefined2 uVar3;
+  byte bVar4;
+  
+  bVar1 = 1;
+  bVar4 = DAT_0023c39c & 1;
+  for (uVar2 = 0; (bVar4 != 0 && (uVar2 < 4)); uVar2 = uVar2 + 1 & 0xff) {
+    bVar1 = bVar1 << 1;
+    bVar4 = DAT_0023c39c & bVar1;
+  }
+  if (param_1 == 3) {
+LAB_00073104:
+    uVar3 = 4;
+    goto LAB_00073108;
+  }
+  if (param_1 == 4) {
+LAB_000730fc:
+    uVar3 = 0x10;
+  }
+  else {
+    if (param_1 < 7) {
+      return 0xff;
+    }
+    if (8 < param_1) {
+      if (param_1 == 0x10) goto LAB_000730fc;
+      if (param_1 != 0x15) {
+        if (param_1 != 0x16) {
+          return 0xff;
+        }
+        goto LAB_00073104;
+      }
+    }
+    uVar3 = 8;
+  }
+LAB_00073108:
+  DAT_0023c39c = DAT_0023c39c | bVar1;
+  g_sound_channel_state[uVar2] = 2;
+  g_sound_channel_group[uVar2] = uVar3;
+  trigger_sound_sample_note(param_1,param_4);
+  return uVar2;
+}
+
+
+
+// was FUN_00073140 -- the low-level sound-sample trigger: lazily
+// reloads the current music module if playback had stopped
+// (DAT_00087448==0) and lazily allocates the sample-set handle
+// (DAT_0023c3bc) on first use, then triggers sample id param_1+800
+// as a one-shot note into the module player (FUN_0004b66c/
+// FUN_0004f594/FUN_0004f6b0), all through the audio interface
+// DAT_0023c3b8.
+void trigger_sound_sample_note(param_1)
+int param_1;
+
+{
+  char cVar1;
+  int iVar2;
+  undefined4 local_18;
+  
+  if (DAT_0023c3b8 != (undefined4 *)0x0) {
+    if (DAT_00087448 == 0) {
+      FUN_0004cfc8(DAT_0023c3b8);
+      if (DAT_0023c3b8 != (undefined4 *)0x0) {
+        (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
+      }
+      iVar2 = Ordinal_1095(0x10581);
+      if (iVar2 == 0) {
+        DAT_0023c3b8 = (undefined4 *)0x0;
+      }
+      else {
+        Ordinal_177(&local_18,&DAT_0023c3d4);
+        DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar2,local_18);
+      }
+      FUN_0004ca50();
+      DAT_0023c280 = read_realtime_clock_units();
+      DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
+    }
+    if (DAT_0023c3bc == 0) {
+      iVar2 = Ordinal_1095(0x1a);
+      if (iVar2 == 0) {
+        DAT_0023c3bc = 0;
+      }
+      else {
+        DAT_0023c3bc = FUN_0004b600();
+      }
+    }
+    FUN_0004f748(DAT_0023c3b8,0);
+    cVar1 = FUN_0004b66c(DAT_0023c3bc,DAT_0023c540,param_1 + 800);
+    if (cVar1 != '\0') {
+      FUN_0004f594(DAT_0023c3b8,DAT_0023c3bc,0);
+      FUN_0004f6b0(DAT_0023c3b8,0);
+    }
   }
   return;
 }

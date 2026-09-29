@@ -1992,6 +1992,12 @@ extern undefined DAT_0023c2b2_backing[8192];
 #define DAT_0023c2b2 DAT_0023c2b2_backing[0]
 extern undefined DAT_0023c2b3_backing[8192];
 #define DAT_0023c2b3 DAT_0023c2b3_backing[0]
+extern byte g_sound_channel_state[4];
+extern ushort g_sound_channel_group[4];
+extern byte DAT_0023c39c;
+extern undefined DAT_0023c3d4_backing[8192];
+#define DAT_0023c3d4 DAT_0023c3d4_backing[0]
+extern int DAT_0023c3bc;
 extern undefined DAT_0023b4dc;
 extern undefined2 DAT_0023b8c0;
 extern undefined2 DAT_0023bc8c;
@@ -3178,8 +3184,8 @@ undefined4 play_sound_effect_with_pan();
 undefined4 play_sound_effect_at_object();
 void stop_movement_sound_handle();
 void stop_current_audio_handle_dup();
-uint FUN_00073064();
-void FUN_00073140();
+uint allocate_and_play_sound_channel();
+void trigger_sound_sample_note();
 void FUN_0007328c();
 undefined4 FUN_00073474();
 void FUN_0007355c();

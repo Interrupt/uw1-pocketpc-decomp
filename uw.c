@@ -6095,7 +6095,20 @@ undefined DAT_0023c2b2_backing[8192];
 undefined DAT_0023c2b3_backing[8192];
 #define DAT_0023c2b3 DAT_0023c2b3_backing[0]
 byte DAT_0023c39c;
-static undefined DAT_0023c3d4_backing[8192];
+/* allocate_and_play_sound_channel indexed these two by raw hardcoded
+   original-binary literal addresses (0x23c338/0x23c350) rather than
+   real declared globals -- same "hardcoded address" bug class as
+   probe_save_slots's -0x87020 and the g_inv_hotspot fix elsewhere in
+   this file. No symbol was ever recovered at either address (nothing
+   else in the whole decompile references them), so on this 64-bit
+   recompile those writes landed on literal address 0x23c338/0x23c350
+   in the process's own address space -- unmapped, so a guaranteed
+   SIGSEGV the first time a sound effect played. Declared as the real
+   4-entry (one per sound channel) per-channel state/group arrays this
+   indexing implies and rewritten to index them properly. */
+byte g_sound_channel_state[4];
+ushort g_sound_channel_group[4];
+undefined DAT_0023c3d4_backing[8192];
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
 int DAT_0023c3bc;
 int DAT_0023c378;
@@ -36437,105 +36450,6 @@ LAB_00060f54:
 
 
 
-uint FUN_00073064(param_1,param_2,param_3,param_4)
-byte param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined1 param_4;
-
-{
-  byte bVar1;
-  uint uVar2;
-  undefined2 uVar3;
-  byte bVar4;
-  
-  bVar1 = 1;
-  bVar4 = DAT_0023c39c & 1;
-  for (uVar2 = 0; (bVar4 != 0 && (uVar2 < 4)); uVar2 = uVar2 + 1 & 0xff) {
-    bVar1 = bVar1 << 1;
-    bVar4 = DAT_0023c39c & bVar1;
-  }
-  if (param_1 == 3) {
-LAB_00073104:
-    uVar3 = 4;
-    goto LAB_00073108;
-  }
-  if (param_1 == 4) {
-LAB_000730fc:
-    uVar3 = 0x10;
-  }
-  else {
-    if (param_1 < 7) {
-      return 0xff;
-    }
-    if (8 < param_1) {
-      if (param_1 == 0x10) goto LAB_000730fc;
-      if (param_1 != 0x15) {
-        if (param_1 != 0x16) {
-          return 0xff;
-        }
-        goto LAB_00073104;
-      }
-    }
-    uVar3 = 8;
-  }
-LAB_00073108:
-  DAT_0023c39c = DAT_0023c39c | bVar1;
-  *(undefined1 *)(uVar2 + 0x23c338) = 2;
-  *(undefined2 *)(uVar2 * 2 + 0x23c350) = uVar3;
-  FUN_00073140(param_1,param_4);
-  return uVar2;
-}
-
-
-
-void FUN_00073140(param_1)
-int param_1;
-
-{
-  char cVar1;
-  int iVar2;
-  undefined4 local_18;
-  
-  if (DAT_0023c3b8 != (undefined4 *)0x0) {
-    if (DAT_00087448 == 0) {
-      FUN_0004cfc8(DAT_0023c3b8);
-      if (DAT_0023c3b8 != (undefined4 *)0x0) {
-        (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
-      }
-      iVar2 = Ordinal_1095(0x10581);
-      if (iVar2 == 0) {
-        DAT_0023c3b8 = (undefined4 *)0x0;
-      }
-      else {
-        Ordinal_177(&local_18,&DAT_0023c3d4);
-        DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar2,local_18);
-      }
-      FUN_0004ca50();
-      DAT_0023c280 = read_realtime_clock_units();
-      DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
-    }
-    if (DAT_0023c3bc == 0) {
-      iVar2 = Ordinal_1095(0x1a);
-      if (iVar2 == 0) {
-        DAT_0023c3bc = 0;
-      }
-      else {
-        DAT_0023c3bc = FUN_0004b600();
-      }
-    }
-    FUN_0004f748(DAT_0023c3b8,0);
-    cVar1 = FUN_0004b66c(DAT_0023c3bc,DAT_0023c540,param_1 + 800);
-    if (cVar1 != '\0') {
-      FUN_0004f594(DAT_0023c3b8,DAT_0023c3bc,0);
-      FUN_0004f6b0(DAT_0023c3b8,0);
-    }
-  }
-  return;
-}
-
-
-
 void FUN_0007328c(param_1)
 short param_1;
 
@@ -36570,7 +36484,7 @@ short param_1;
       if (param_1 != 0) {
         iVar6 = uVar2 + 0x32;
       }
-      FUN_00073140(iVar6,0x78);
+      trigger_sound_sample_note(iVar6,0x78);
       cVar5 = local_3c[uVar2];
       if ((uVar4 & 0x200) != 0) {
         cVar5 = cVar5 + '\f';
