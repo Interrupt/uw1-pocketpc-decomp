@@ -338,7 +338,7 @@ undefined4 param_2;
 // was FUN_0006bb64 -- startup disk-space check (its only caller checks
 // it right after init_gameplay_session and shows "Not enough disk space
 // for save game" on failure): builds a path from DAT_0023cca8 plus
-// FUN_0006c560's suffix and queries free space via the GetDiskFreeSpace-
+// ensure_save_directory_exists's suffix and queries free space via the GetDiskFreeSpace-
 // shaped Ordinal_184, requiring at least 0x9b0a0 (~635KB) free.
 // Ordinal_184 is stubbed to always report a large local_118 (see
 // ordinal_stubs.c), so this always reports success in this build.
@@ -368,7 +368,7 @@ undefined4 check_save_disk_space()
   acStack_109[iVar3] = '\0';
   uVar4 = FUN_0002295c(acStack_109 + 1);
   Ordinal_160(uVar4,0);
-  FUN_0006c560(acStack_109 + 1);
+  ensure_save_directory_exists(acStack_109 + 1);
   uVar4 = FUN_0002295c(acStack_109 + 1);
   /* local_114 is never actually passed to Ordinal_184 (only auStack_110
      and &local_118 are) -- in the original 32-bit binary this local

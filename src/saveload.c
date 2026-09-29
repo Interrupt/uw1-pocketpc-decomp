@@ -442,7 +442,7 @@ char param_1;
   uVar3 = FUN_0002295c(acStack_528);
   Ordinal_61(auStack_218,uVar3);
   FUN_00078c80(0xa6);
-  iVar4 = FUN_0006c560(acStack_630);
+  iVar4 = ensure_save_directory_exists(acStack_630);
   if (iVar4 != 0) {
     FUN_00078c80(0xaa);
     /* Was FUN_0006c670(acStack_528,acStack_630) -- i.e. (dest="\SAVEn",
@@ -507,7 +507,7 @@ char param_1;
 undefined4 save_game_to_slot(param_1,param_2)
 char param_1;
 /* Was `undefined4` -- truncates the real 64-bit buffer pointer
-   FUN_0006bfec passes in (a pointer into its own auStack_ac local,
+   handle_save_load_menu_action passes in (a pointer into its own auStack_ac local,
    see that function's comment). On the original 32-bit ARM binary this
    was harmless, but on this 64-bit recompile the parameter-spill in
    this function's own prologue drops the pointer's upper 32 bits the
@@ -584,7 +584,7 @@ char *param_2;
       if (iVar4 < 0) goto LAB_0006c540;
     }
     Ordinal_1063(local_530,&DAT_00087084);
-    iVar4 = FUN_0006c560(local_530);
+    iVar4 = ensure_save_directory_exists(local_530);
     if (iVar4 != 0) {
       Ordinal_1047(local_638,0,0x104);
       pcVar6 = pcVar8;
@@ -1108,3 +1108,235 @@ uint param_2;
   return iVar2;
 }
 
+
+
+
+
+
+
+// was FUN_0006bcd4 -- flushes the player's carried-inventory chain (freeing
+// the live objects, since write_player_save_record just above already
+// serialized them into the save buffer), then writes the current level's
+// live tilemap+object arena to its on-disk archive. Called both from the
+// explicit "Save Game" menu path (save_game_to_slot) and from level
+// transitions (so the level being left behind remembers its current state).
+undefined4 commit_level_to_save_slot(param_1)
+undefined4 param_1;
+
+{
+  ushort uVar1;
+  int iVar2;
+  undefined4 uVar3;
+  undefined1 auStack_20 [16];
+  
+  write_player_save_record(0);
+  /* Was `+ 3` -- confirmed wrong via Ghidra decompile of the real ARM
+     binary (0x6bcd4): it passes `+ 6`. FUN_000444b0 treats its argument
+     as a pointer to a 2-byte object link field (it immediately calls
+     resolve_object_link on it) -- offset 6 is the player object's real
+     "contents" field (sp_link, matching FUN_000444b0's own recursive
+     calls at +4/+6 a few lines into that function), the head of the
+     player's carried-inventory chain, which this function walks and
+     frees before the save write below (the inventory itself gets
+     separately serialized into the save buffer by
+     write_player_save_record just above). Offset 3 is a byte-misaligned
+     read straddling two unrelated 2-byte fields (the tail of the
+     player's position word and the head of their own "quality/chain"
+     word) -- a garbage value derived from the player's actual position,
+     resolved and then unlinked-and-freed via this same recursive walk.
+     Matches a live report of "saving a game makes items near the
+     player disappear": whatever real object that garbage link
+     happened to resolve to (plausibly something tile-adjacent, given
+     it's derived from position bytes) got deleted on every save. */
+  FUN_000444b0((char *)g_player_object + 6);
+  if (-1 < DAT_00202080) {
+    object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
+  }
+  DAT_00202080 = 0xffff;
+  uVar1 = *g_player_object;
+  *(char *)g_player_object = (char)(uVar1 & 0xfe3f);
+  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xfe3f) >> 8);
+  iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
+  if (getenv("UW_DEBUG_INPUTEVENT"))
+    fprintf(stderr, "[0006bcd4] open_level_archive=%d\n", iVar2);
+  uVar3 = 0;
+  if (iVar2 != 0) {
+    iVar2 = FUN_00049b04(auStack_20,param_1);
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[0006bcd4] FUN_00049b04=%d\n", iVar2);
+    if (((iVar2 != 0) && (iVar2 = FUN_0005b298(auStack_20,param_1), iVar2 != 0)) &&
+       (iVar2 = save_automap_reveal_to_archive(auStack_20,param_1), iVar2 != 0)) {
+      iVar2 = close_level_archive(auStack_20);
+      uVar3 = 1;
+      if (getenv("UW_DEBUG_INPUTEVENT"))
+        fprintf(stderr, "[0006bcd4] close_level_archive=%d uVar3=%d\n", iVar2, (int)uVar3);
+      if (iVar2 != 0) goto LAB_0006bdbc;
+    }
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[0006bcd4] falling through to fail, uVar3=0\n");
+    uVar3 = 0;
+  }
+LAB_0006bdbc:
+  FUN_00044624(0);
+  return uVar3;
+}
+
+
+
+// was handle_save_load_menu_action -- save/load menu action dispatcher: param_1==0
+// saves to slot param_2 (save_game_to_slot), otherwise loads from it
+// (load_game_from_slot; the middle "already-occupied slot" gate is
+// disabled dead code -- see its own comment). Shows the resulting
+// status message via FUN_00078c80(iVar2 + 0xa0) ("Save Game
+// Succeeded.", "Load Game Failed.", etc. -- iVar2 selects which).
+void handle_save_load_menu_action(param_1,param_2)
+short param_1;
+undefined4 param_2;
+
+{
+  int iVar1;
+  int iVar2;
+  short local_b4 [4];
+  undefined1 auStack_ac [160];
+
+  probe_save_slots(auStack_ac,local_b4);
+  if (param_1 == 0) {
+    /* Was `auStack_d4 + (short)param_2 * 0x28` into a phantom, separately
+       -declared 32-byte `auStack_d4` local -- confirmed via real ARM
+       disassembly (0x6c088-0x6c098) that no such buffer exists: the real
+       code computes sp+8 + (slot-1)*0x28, i.e. a pointer straight into
+       auStack_ac (the very buffer probe_save_slots just filled, at
+       sp+8), offset by (slot-1) records, not slot. Ghidra's own
+       `auStack_d4 [32]` was a stack-slot-splitting artifact (same bug
+       class as stack0xffdc2e30_buf/acStack_528 -- see load_game_from_slot's own
+       comment) -- the 32-byte size wasn't even big enough for the real
+       4x40-byte-record indexing it was being used with, which would have
+       stack-smashed for any slot past the first. */
+    iVar1 = save_game_to_slot(param_2,auStack_ac + ((short)param_2 - 1) * 0x28);
+    iVar2 = 4;
+    if (iVar1 != 0) {
+      iVar2 = 5;
+      /* load_game_from_slot's own success branch just below (the mirror
+         Load path) calls FUN_0006e89c/sync_player_stats_to_hud/
+         redraw_hud_panels/FUN_0003dca4(0xffffffff)/FUN_00049924(0x7ffe)
+         after a successful load; this Save branch called none of them.
+         Most of those are Load-specific (resyncing HUD/stats after
+         reloading a possibly-different character), but FUN_00049924
+         (ORs param_1 into DAT_00201c84, the dirty-bit register
+         main_loop_hud_flush's per-tick force-3D-redraw hack and
+         dispatch_sticky_mode_handlers both gate on) is a general
+         "something changed, redraw everything" signal with no Load-
+         specific meaning -- Save closing its own UI panel needs it just
+         as much as Load does. Without it, closing the Save dialog left
+         the 3D viewport rendering nothing (solid black) until some
+         *other* code path happened to set a dirty bit on its own --
+         confirmed live via a QA report ("3d view stops updating after
+         saving, but the game is still running") and reproduced with a
+         screenshot immediately after a scripted save: viewport solid
+         black, HUD chrome and "Save Game Succeeded." both drawing fine
+         around it. Fixed by calling FUN_00049924(0x7ffe) here too. */
+      FUN_00049924(0x7ffe);
+    }
+  }
+  else if (false) {
+    /* Was `(1 << (param_2-1) & local_b4[0]) == 0` -- local_b4[0] is the
+       bitmask probe_save_slots just built of which of the 4 numbered slots
+       already HAVE a save (bit set = a real "\SAVEn\desc" was found on
+       disk), so this required the chosen slot to already be occupied
+       before allowing a save into it -- meaning a brand new slot (the
+       common case: no prior saves exist at all, so this bitmask is all
+       zero) could never be saved to. The LOAD branch just above has no
+       equivalent gate (it tries save_game_to_slot unconditionally and lets it
+       fail for an empty slot), so this looks like an inverted/leftover
+       guard rather than an intentional "can't create new saves" limit.
+       Disabled so save always proceeds; kept as dead code (rather than
+       deleted) in case real disassembly turns up a legitimate reason for
+       it (e.g. a distinct "overwrite?" confirmation this decompile lost). */
+    iVar2 = 1;
+  }
+  else {
+    iVar1 = load_game_from_slot(param_2);
+    if (iVar1 == 0) {
+      iVar2 = 3;
+    }
+    else {
+      FUN_0006e89c();
+      iVar2 = 2;
+      sync_player_stats_to_hud();
+      redraw_hud_panels();
+      FUN_0003dca4(0xffffffff);
+      DAT_000858a0 = 1;
+      FUN_00049924(0x7ffe);
+    }
+  }
+  FUN_00078c80(iVar2 + 0xa0);
+  return;
+}
+
+
+
+// was ensure_save_directory_exists -- ensures the save-game directory exists: scans it
+// via the Ordinal_167/181 FindFirstFile/FindNextFile-shaped ordinals
+// (appending DAT_000870c8's "\*.*" wildcard) and, if that scan finds
+// nothing (directory missing or empty), strips the wildcard back off
+// and creates it via Ordinal_165 (CreateDirectory-shaped).
+undefined4 ensure_save_directory_exists(param_1)
+char * param_1;
+
+{
+  char cVar1;
+  short sVar2;
+  int iVar3;
+  char *uVar4;  /* was undefined4 -- truncated the real FUN_0002295c()
+                   pointer to 32 bits, which Ordinal_167 now actually
+                   dereferences (used to be a harmless no-op stub) */
+  int iVar5;
+  char *pcVar6;
+  int iVar7;
+  char *pcVar8;
+  bool bVar9;
+  bool bVar10;
+  char acStack_348 [264];
+  int local_240 [10];
+  undefined1 auStack_218 [520];
+
+  bVar9 = true;
+  iVar3 = -(int)param_1;
+  do {
+    cVar1 = *param_1;
+    param_1[(int)(acStack_348 + iVar3)] = cVar1;
+    param_1 = param_1 + 1;
+  } while (cVar1 != '\0');
+  iVar3 = Ordinal_1068(acStack_348);
+  Ordinal_1063(acStack_348,&DAT_000870c8);
+  uVar4 = FUN_0002295c(acStack_348);
+  iVar5 = Ordinal_167(uVar4,local_240);
+  bVar10 = iVar5 == -1;
+  while (!bVar10) {
+    if (local_240[0] != 0x10) goto LAB_0006c5f8;
+    iVar7 = Ordinal_181(iVar5,local_240);
+    bVar10 = iVar7 == 0;
+  }
+  bVar9 = false;
+LAB_0006c5f8:
+  if (bVar9) {
+    /* Was a `do { ... } while (sVar2 != 0)` loop rebuilding the path from
+       `FUN_00022998(auStack_218)` each pass -- auStack_218 is never
+       written anywhere in this function, so that read uninitialized
+       stack memory as a string, and the loop's own exit condition
+       (`Ordinal_181` against `iVar5`, a handle already exhausted by the
+       while-loop above) meant it could only ever run once anyway even if
+       that read were meaningful. Simplified to the one real step this
+       was trying to do: undo the "\*.*" suffix appended above (acStack_348
+       was NUL-terminated at its original length `iVar3` before the
+       suffix) and create that plain directory. Also fixes `Ordinal_165()`
+       being called with no arguments -- every other CreateDirectory-shaped
+       call in this file takes the path it's creating. */
+    acStack_348[iVar3] = '\0';
+    iVar7 = Ordinal_165(acStack_348);
+    if (iVar7 == 0) {
+      return 0;
+    }
+  }
+  return 1;
+}

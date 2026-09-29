@@ -3013,10 +3013,10 @@ undefined4 check_save_disk_space();
 int load_level();
 undefined4 commit_level_to_save_slot();
 void probe_save_slots();
-void FUN_0006bfec();
+void handle_save_load_menu_action();
 undefined4 load_game_from_slot();
 undefined4 save_game_to_slot();
-undefined4 FUN_0006c560();
+undefined4 ensure_save_directory_exists();
 undefined4 FUN_0006c670();
 int FUN_0006c79c();
 void FUN_0006c834();
@@ -3349,6 +3349,11 @@ undefined4 FUN_000824f0();
 /* Globals defined in uw.c but also used by functions that now live in
    game.c (animate_title_palette_cycle's 14ms throttle timestamp). */
 extern ushort DAT_0023bf74;
+
+/* Globals defined in uw.c but also used by functions that now live in
+   saveload.c (ensure_save_directory_exists's "\*.*" scan wildcard). */
+extern undefined DAT_000870c8_backing[8192];
+#define DAT_000870c8 DAT_000870c8_backing[0]
 
 /* Globals defined in uw.c but also used by functions that now live in
    registration.c. */

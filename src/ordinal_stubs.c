@@ -136,7 +136,7 @@ static int looks_like_real_pointer(const void *p)
     return (uintptr_t)p >= 0x10000;
 }
 
-/* CreateDirectory-shaped. Its one real call site (FUN_0006c560, the
+/* CreateDirectory-shaped. Its one real call site (ensure_save_directory_exists, the
  * save-slot-directory creator -- was calling this with the argument
  * dropped entirely) treats "the directory is there" as success whether
  * or not it already existed, so uw_ensure_directory's EEXIST-tolerant
@@ -149,14 +149,14 @@ long Ordinal_165(void *path_ptr)
 
 /* FindFirstFile-shaped. Every known caller only ever checks the return
  * value against -1 (not found) and, for the one caller that cares
- * (FUN_0006c560), reads back dwFileAttributes (the struct's first field)
+ * (ensure_save_directory_exists), reads back dwFileAttributes (the struct's first field)
  * to test FILE_ATTRIBUTE_DIRECTORY (0x10) -- none read the filename
  * fields a real WIN32_FIND_DATA also carries, so implemented against
  * stat() rather than a full opendir/readdir enumeration. Treats its
  * first argument as a plain path string (this port's Ordinal_196/197
  * "wide" conversions are ANSI passthroughs -- see their comments) and
  * strips a trailing wildcard component (e.g. "\*.*", appended by
- * FUN_0006c560 before calling this) since stat() doesn't understand
+ * ensure_save_directory_exists before calling this) since stat() doesn't understand
  * wildcards. */
 long Ordinal_167(void *path_ptr, unsigned int *out_attrs)
 {

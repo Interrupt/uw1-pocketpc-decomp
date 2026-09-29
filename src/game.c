@@ -349,7 +349,7 @@ undefined4 param_1;
           pcVar5 = pcVar5 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_6e4,&DAT_000857a0);
-        FUN_0006c560(acStack_6e4);
+        ensure_save_directory_exists(acStack_6e4);
         /* load_game_from_slot (was FUN_0006c0c0; the numbered-save-slot
            "Save Game" path) reads \SAVE0\player.dat before duplicating
            SAVE0 into the chosen slot, but nothing ever created that file
