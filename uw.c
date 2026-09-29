@@ -36427,23 +36427,6 @@ LAB_00060f54:
 
 
 
-void FUN_00072c44()
-
-{
-  undefined4 *puVar1;
-  
-  puVar1 = &DAT_00087448;
-  if (DAT_00087454 != 0) {
-    puVar1 = DAT_00087448;
-  }
-  if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
-    FUN_0004cfc8(DAT_0023c3b8);
-  }
-  return;
-}
-
-
-
 undefined4 FUN_00072c74(param_1,param_2,param_3,param_4)
 uint param_1;
 short param_2;
@@ -36606,11 +36589,16 @@ void FUN_0007305c()
 
 
 
-void thunk_FUN_00072c44()
+// was thunk_FUN_00072c44 -- byte-for-byte identical body to
+// stop_current_audio_handle (this project's established split-symbol/
+// naming-collision bug class -- see that function's own comment; kept
+// as a separately-named/addressed function per this project's
+// convention of preserving what Ghidra recovered).
+void stop_current_audio_handle_dup()
 
 {
   undefined4 *puVar1;
-  
+
   puVar1 = &DAT_00087448;
   if (DAT_00087454 != 0) {
     puVar1 = DAT_00087448;

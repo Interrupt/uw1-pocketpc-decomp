@@ -2973,7 +2973,7 @@ void handle_starvation_penalty()
     *(undefined1 *)((char *)g_player_object + 8) = 4;
     return;
   }
-  thunk_FUN_00072c44();
+  stop_current_audio_handle_dup();
   play_music_track(10,1);
   grant_experience_points((int)((uint)(*(uint3 *)(DAT_00086df8 + 0x4e) >> 3) * -0x10000) >> 0x10);
   full_dungeon_redraw();

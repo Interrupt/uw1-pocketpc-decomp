@@ -191,7 +191,7 @@ int param_1;
 
 // was FUN_00072c10 -- set_music_enabled's counterpart for the sound-
 // effects subsystem: param_1==0 disables it (also calling
-// thunk_FUN_00072c44 to clean up), param_1!=0 enables it.
+// stop_current_audio_handle_dup to clean up), param_1!=0 enables it.
 void set_sound_effects_enabled(param_1)
 int param_1;
 
@@ -199,11 +199,42 @@ int param_1;
   if (DAT_00087450 != 0) {
     if (param_1 == 0) {
       DAT_0008744c = 0;
-      thunk_FUN_00072c44();
+      stop_current_audio_handle_dup();
     }
     else {
       DAT_0008744c = 1;
     }
+  }
+  return;
+}
+
+
+
+
+
+
+// was FUN_00072c44 -- stops the current sound/music handle
+// (FUN_0004cfc8(DAT_0023c3b8)) if the audio subsystem is initialized
+// and a "handle" check passes. That check itself looks like a Ghidra
+// decompilation artifact rather than real original logic: it reads
+// DAT_00087448 (elsewhere in this file a plain int on/off flag, e.g.
+// is_music_playing) as if it were a pointer value, which only makes
+// sense as a mis-inferred type from this one call site -- left as
+// literally decompiled (not "fixed" to a guessed real condition) since
+// the practical effect (stop the handle whenever DAT_00087454 and
+// DAT_00087448 are both nonzero) matches every other gate in this
+// cluster and no live bug has been observed from it.
+void stop_current_audio_handle()
+
+{
+  undefined4 *puVar1;
+
+  puVar1 = &DAT_00087448;
+  if (DAT_00087454 != 0) {
+    puVar1 = DAT_00087448;
+  }
+  if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
+    FUN_0004cfc8(DAT_0023c3b8);
   }
   return;
 }
