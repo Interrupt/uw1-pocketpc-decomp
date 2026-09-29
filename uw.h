@@ -2993,8 +2993,8 @@ void project_position_by_heading();
 void busy_wait_ms();
 int roll_dice_sum();
 bool populate_menu_button_bitmap_entry();
-void FUN_0006a168();
-void FUN_0006a1c4();
+void animate_title_palette_cycle();
+void update_journey_onward_availability();
 void draw_menu_item_list();
 int FUN_0006ac38();
 int menu_button_list_navigate();
@@ -3345,6 +3345,10 @@ undefined4 FUN_000824f0();
 #define _DAT_0023c5ac (*(uint*)&DAT_0023c5ac)
 #define _DAT_0023ce10 (*(uint*)&DAT_0023ce10)
 #define Ordinal_2005_exref ((void*)&Ordinal_2005)
+
+/* Globals defined in uw.c but also used by functions that now live in
+   game.c (animate_title_palette_cycle's 14ms throttle timestamp). */
+extern ushort DAT_0023bf74;
 
 /* Declarations for the functions that used to live directly in this file
  * but were split out into their own topic .c files this session -- moved

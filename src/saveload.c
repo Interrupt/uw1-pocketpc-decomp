@@ -116,7 +116,7 @@ undefined4 journey_onward_load_slot_menu()
      probe_save_slots unconditionally writes 4 fixed-width 0x28(40)-byte
      records into whatever buffer its param_1 points at (uVar5*0x28 +
      charindex, for uVar5 = 0..3), i.e. it needs 0xA0 (160) bytes -- and
-     both its other call sites (draw_save_load_slot_list's auStack_ac, FUN_0006a1c4's
+     both its other call sites (draw_save_load_slot_list's auStack_ac, update_journey_onward_availability's
      auStack_a4) already correctly declare exactly that. Only this one
      was wrong, at less than a quarter the required size. Confirmed via
      AddressSanitizer: a real stack-buffer-overflow, reproducibly

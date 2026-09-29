@@ -926,7 +926,7 @@ int param_3;
        run_character_generator's pcVar3 fix elsewhere this session.
        Never exercised until Ordinal_535 (GetTickCount) stopped being a
        hardcoded 0 (see its comment): this branch (param_3!=0) is only
-       reached from FUN_0006a168's periodic timer, which always saw
+       reached from animate_title_palette_cycle's periodic timer, which always saw
        "0ms elapsed" and never fired before that fix. Confirmed via
        ASan SEGV the moment it first ran for real. */
     puVar1 = &DAT_00088d98 + (-3 + (param_2 & 0xff) * 3 + iVar5);

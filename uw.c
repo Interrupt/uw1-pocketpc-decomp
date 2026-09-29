@@ -36409,58 +36409,6 @@ LAB_00060f54:
 
 
 
-void FUN_0006a168()
-
-{
-  uint uVar1;
-  
-  uVar1 = read_realtime_clock_units();
-  if (0xd < (int)((uVar1 & 0xffff) - (uint)DAT_0023bf74)) {
-    palette_cycle_range(0x40,0x40,1);
-    reinstall_active_palette(0x40,0x40,0);
-    /* Palette-cycle animation on the menu's "Ultima Underworld" title (and
-       the copyright line): palette_cycle_range rotates PALS entries
-       0x40..0x7f -- the gold gradient ramp -- and reinstall_active_palette
-       rebuilds g_palette_rgb565. On the original 8bpp target the hardware
-       palette swap animated the screen for free; this port draws straight
-       to RGB565, so the already-composited pixels have to be recoloured
-       here. Re-blit exactly the pixels whose OPSCR source index is in the
-       cycled range (0x40..0x7f) -- that hits the title/copyright and never
-       the menu buttons (drawn on top, over non-gold stone). */
-    if (DAT_0023bf70 != (char *)0x0) {
-      unsigned char *_src = (unsigned char *)DAT_0023bf70;
-      unsigned short *_dst = (unsigned short *)g_uw_framebuffer;
-      unsigned short *_lut = &g_palette_rgb565;
-      int _i;
-      for (_i = 0; _i < 0x140 * 200; _i++) {
-        unsigned char _ix = _src[_i];
-        if ((_ix & 0xc0) == 0x40) _dst[_i] = _lut[_ix];
-      }
-      dirty_rect_union(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
-    }
-    DAT_0023bf74 = read_realtime_clock_units();
-  }
-  flush_dirty_rect_to_display(1);
-  return;
-}
-
-
-
-void FUN_0006a1c4(param_1)
-short param_1;
-
-{
-  short local_ac [4];
-  undefined1 auStack_a4 [160];
-  
-  if ((param_1 != 0) && (probe_save_slots(auStack_a4,local_ac), local_ac[0] == 0)) {
-    FUN_00037c14(0);
-  }
-  return;
-}
-
-
-
 // was FUN_0006a200. Draws one frame of a menu_button_list_navigate
 // list: param_3==0 blits pre-rendered bitmap buttons (the title screen's
 // Introduction/Create Character/.../Journey Onward), param_3!=0 draws
@@ -36600,7 +36548,7 @@ char param_3;
       iVar1 = (int)sVar5;
       bVar2 = bVar3;
       do {
-        FUN_0006a168();
+        animate_title_palette_cycle();
         FUN_00057504(&local_30,&local_2e);
         iVar8 = 0;
         if (0 < iVar1) {
@@ -36635,7 +36583,7 @@ char param_3;
     if (0 < sVar4) {
       iVar1 = (int)sVar5;
       do {
-        FUN_0006a168();
+        animate_title_palette_cycle();
         FUN_00057504(&local_30,&local_2e);
         iVar8 = 0;
         if (0 < iVar1) {
@@ -36701,10 +36649,10 @@ int param_4;
     /* Was: `ushort _cyc_t = DAT_0023bf74; ... if (DAT_0023bf74 != _cyc_t)
        draw_menu_item_list(...)` -- an earlier session's own addition
        (its comment claimed it was needed for the menu-item bitmaps to
-       shimmer in step with FUN_0006a168's gold-gradient palette
+       shimmer in step with animate_title_palette_cycle's gold-gradient palette
        rotation), not real recovered code: confirmed via a fresh ARM
        disassembly of this function (0x6af3c) that the real idle-wait
-       loop here is exactly `bl FUN_000735fc; bl FUN_0006a168;`, nothing
+       loop here is exactly `bl FUN_000735fc; bl animate_title_palette_cycle;`, nothing
        else -- no DAT_0023bf74 comparison, no second draw_menu_item_list
        call. That fabricated redraw ran with the small font selected
        (the line right above switches to it before this loop, which IS
@@ -36717,7 +36665,7 @@ int param_4;
        overlaid in the small one. Removed. */
     while (sVar2 = next_input_event(), sVar2 < 0) {
       FUN_000735fc();
-      FUN_0006a168();
+      animate_title_palette_cycle();
     }
     if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x param_4=%d\n", (int)sVar2, (int)param_4);
     sVar1 = (short)param_1;

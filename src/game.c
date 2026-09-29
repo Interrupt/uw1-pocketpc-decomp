@@ -246,7 +246,7 @@ undefined4 param_1;
   if (local_83c[0] != 0) {
     uVar2 = 3;
   }
-  FUN_0006a1c4(param_1);
+  update_journey_onward_availability(param_1);
   FUN_00057c5c(0x106c);
   cursor_show_idle_tick();
   bVar11 = false;
@@ -278,7 +278,7 @@ undefined4 param_1;
          load_pals_bank installs g_palette_rgb565 correctly for the menu's own
          draw, but never syncs DAT_00088d98 -- the buffer
          reinstall_active_palette() (called periodically by the menu's own hover-
-         loop timer, FUN_0006a168) always reinstalls from. Since nothing
+         loop timer, animate_title_palette_cycle) always reinstalls from. Since nothing
          else keeps DAT_00088d98 current for the menu screen, it holds
          whatever palette some other screen last loaded via
          set_palette_bank, and the timer clobbers the menu's correct
@@ -489,7 +489,7 @@ undefined4 param_1;
         draw_text_string(uVar7,0xa0 - (short)(iVar4 >> 1),0x5a);
         cursor_show_idle_tick();
         while (sVar3 = next_input_event(), sVar3 < 0) {
-          FUN_0006a168();
+          animate_title_palette_cycle();
         }
         select_active_font(s_FONT5X6P_SYS_00084e9c);
       }
@@ -1131,3 +1131,65 @@ short param_3;
   return param_2 != 0;
 }
 
+
+
+
+
+
+
+// was FUN_0006a168 -- throttled (14ms via DAT_0023bf74 vs
+// read_realtime_clock_units) palette-cycle animation for the main menu's
+// title/copyright gold gradient.
+void animate_title_palette_cycle()
+
+{
+  uint uVar1;
+  
+  uVar1 = read_realtime_clock_units();
+  if (0xd < (int)((uVar1 & 0xffff) - (uint)DAT_0023bf74)) {
+    palette_cycle_range(0x40,0x40,1);
+    reinstall_active_palette(0x40,0x40,0);
+    /* Palette-cycle animation on the menu's "Ultima Underworld" title (and
+       the copyright line): palette_cycle_range rotates PALS entries
+       0x40..0x7f -- the gold gradient ramp -- and reinstall_active_palette
+       rebuilds g_palette_rgb565. On the original 8bpp target the hardware
+       palette swap animated the screen for free; this port draws straight
+       to RGB565, so the already-composited pixels have to be recoloured
+       here. Re-blit exactly the pixels whose OPSCR source index is in the
+       cycled range (0x40..0x7f) -- that hits the title/copyright and never
+       the menu buttons (drawn on top, over non-gold stone). */
+    if (DAT_0023bf70 != (char *)0x0) {
+      unsigned char *_src = (unsigned char *)DAT_0023bf70;
+      unsigned short *_dst = (unsigned short *)g_uw_framebuffer;
+      unsigned short *_lut = &g_palette_rgb565;
+      int _i;
+      for (_i = 0; _i < 0x140 * 200; _i++) {
+        unsigned char _ix = _src[_i];
+        if ((_ix & 0xc0) == 0x40) _dst[_i] = _lut[_ix];
+      }
+      dirty_rect_union(0,200,0,0x140); /* recoloured pixels span the screen -- make sure the flush below carries them */
+    }
+    DAT_0023bf74 = read_realtime_clock_units();
+  }
+  flush_dirty_rect_to_display(1);
+  return;
+}
+
+
+
+// was FUN_0006a1c4 -- if param_1 is set, probes the save-slot archives via
+// probe_save_slots and, when no valid save slot exists, calls
+// FUN_00037c14(0) to disable/grey out the "Journey Onward" main-menu
+// option.
+void update_journey_onward_availability(param_1)
+short param_1;
+
+{
+  short local_ac [4];
+  undefined1 auStack_a4 [160];
+
+  if ((param_1 != 0) && (probe_save_slots(auStack_a4,local_ac), local_ac[0] == 0)) {
+    FUN_00037c14(0);
+  }
+  return;
+}
