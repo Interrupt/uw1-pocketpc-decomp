@@ -21928,7 +21928,7 @@ void FUN_0003f420()
           g_interact_target = 0;
           return;
         }
-        FUN_0007ca0c();
+        complete_cast_spell_on_target();
         return;
       }
       g_interact_target = pick_object_under_cursor(2);
@@ -36517,21 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-
-
-
-void FUN_0007ca0c()
-
-{
-  apply_targeted_spell_effect(DAT_00202098,(int)(char)DAT_00202094);
-  g_cursor_holding_state = 0;
-  FUN_00057cac(3);
-  wait_for_click_release(1);
-  return;
-}
-
-
-
 undefined4 FUN_0007ca50(param_1,param_2,param_3,param_4)
 ushort * param_1;
 ushort * param_2;

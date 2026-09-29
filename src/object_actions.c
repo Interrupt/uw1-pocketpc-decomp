@@ -2423,3 +2423,24 @@ uint param_3;
   message_scroll_print_wrapped(local_10c);
   return;
 }
+
+
+// was FUN_0007ca0c -- deferred-target-click completion callback that
+// finishes the "cast a spell effect on this target" flow: applies
+// the staged targeted spell effect (using the same DAT_00202098/
+// DAT_00202094 globals dispatch_player_command's own cases 2-5 stage
+// via prompt_use_item_on_target-style setup -- see
+// apply_targeted_spell_effect's own comment for that encoding), then
+// resets the click-target UI state. Confirmed caller: the world-click
+// target dispatcher (uw.c, g_cursor_holding_state == 3 branch), which
+// fires exactly when dispatch_player_command's case 5 staged this same
+// flow via g_cursor_holding_state = 3.
+void complete_cast_spell_on_target()
+
+{
+  apply_targeted_spell_effect((int)DAT_00202098,(int)(char)DAT_00202094);
+  g_cursor_holding_state = 0;
+  FUN_00057cac(3);
+  wait_for_click_release(1);
+  return;
+}

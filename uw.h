@@ -3473,7 +3473,7 @@ void FUN_0007c708();
 void FUN_0007c814();
 void try_empty_container();
 void try_combine_or_stow_object();
-void FUN_0007ca0c();
+void complete_cast_spell_on_target();
 undefined4 FUN_0007ca50();
 void FUN_0007cc30();
 void FUN_0007cc78();
