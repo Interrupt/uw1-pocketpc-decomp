@@ -1039,3 +1039,158 @@ char param_2;
   }
   return;
 }
+
+
+
+
+
+void *spawn_and_prime_spell_effect_object(param_1,param_2)
+/* Was `int spawn_and_prime_spell_effect_object(...)` -- returned spawn_new_object's real object
+   pointer through a 32-bit int, truncated on this host; both callers
+   (cast_single_tile_spell_effect, cast_area_spell_effect) also stored it into a 32-bit undefined4
+   before dereferencing it via encode_object_slot_index/
+   object_list_insert_head, same class of fix applied there too. */
+undefined4 param_1;
+byte * param_2;
+
+{
+  uint uVar1;
+  undefined2 uVar2;
+  byte bVar3;
+  char *iVar4;
+  undefined4 uVar5;
+  char extraout_r1;
+  byte bVar6;
+
+  iVar4 = (char *)spawn_new_object(param_1,0);
+  bVar6 = (*param_2 >> 4) * '\b';
+  uVar1 = (int)((uint)(*param_2 >> 4) << 0x13) >> 0x10;
+  if (uVar1 < 0x80) {
+    uVar5 = Ordinal_1053();
+    Ordinal_2005(0x80 - uVar1,uVar5);
+    bVar6 = bVar6 + extraout_r1;
+  }
+  uVar2 = *(undefined2 *)(iVar4 + 2);
+  bVar3 = (byte)uVar2;
+  *(byte *)(iVar4 + 2) = (bVar3 ^ bVar6) & 0x7f ^ bVar3;
+  *(char *)(iVar4 + 3) = (char)((ushort)uVar2 >> 8);
+  return iVar4;
+}
+
+
+
+// was FUN_000741f0 -- forcibly unlocks a target object: bails out if
+// the object already has bit 0x8000 set, if its "lock" field (offset
+// +3, bits 0xffc0) is zero (nothing to unlock), or if it's a
+// disallowed class (0x1c0 == 0x180). Otherwise looks up the
+// container/link (FUN_000537d0) and, IF found, temporarily forces the
+// player's pick-locks skill byte (DAT_00086df8+0x2c) to a guaranteed-
+// pass value (0x2d) before invoking force_unlock_target_object's
+// underlying "use item on object" resolver (FUN_0007cdbc, action code
+// 5 == unlock) so the skill check it performs against the lock's
+// difficulty always succeeds, then restores the real skill byte
+// afterward. Used for scripted/guaranteed unlocks (e.g. an "unlock"
+// spell) rather than a real skill-gated lockpick attempt (see
+// roll_container_lockpick_check in src/interact.c for that path).
+undefined4 force_unlock_target_object(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+ushort * param_3;
+
+{
+  undefined1 uVar1;
+  int iVar2;
+  ushort *local_14;
+  
+  if (((((*param_3 & 0x8000) == 0) && (local_14 = param_3 + 3, (*local_14 & 0xffc0) != 0)) &&
+      ((*param_3 & 0x1c0) != 0x180)) && (iVar2 = FUN_000537d0(&local_14,0,6,2,3), iVar2 != 0)) {
+    uVar1 = *(undefined1 *)(DAT_00086df8 + 0x2c);
+    *(undefined1 *)(DAT_00086df8 + 0x2c) = 0x2d;
+    FUN_0007cdbc(g_player_object,param_3,iVar2,5);
+    *(undefined1 *)(DAT_00086df8 + 0x2c) = uVar1;
+    return 1;
+  }
+  return 0;
+}
+
+
+
+// was FUN_000742c0 -- casts a single-tile spell effect at tile
+// (param_1,param_2): spawns a type-0x1c5 effect object via
+// spawn_and_prime_spell_effect_object, applies its damage to just
+// that one tile (FUN_00075a88 with damage-tier index 2-1=1), then
+// schedules the effect object to tick (scheduler_add_entry, type 4)
+// with a pseudo-random 0-3 initial delay. On schedule failure frees
+// the object slot; otherwise links it into param_4's object list.
+undefined4 cast_single_tile_spell_effect(param_1,param_2,param_3,param_4,param_5)
+uint param_1;
+undefined4 param_2;
+undefined4 param_3;
+int param_4;
+undefined1 param_5;
+
+{
+  int uw_ord2005_rem_153 = 0;
+  short sVar1;
+  char *uVar2;  /* was `undefined4` -- truncated spawn_and_prime_spell_effect_object's pointer */
+  undefined4 uVar3;
+  undefined4 uVar4;
+  uint extraout_r1;
+  undefined1 uVar5;
+
+  uVar2 = (char *)spawn_and_prime_spell_effect_object(0x1c5,param_4);
+  FUN_00075a88(param_1,param_2,2,param_5);
+  uVar3 = Ordinal_1053();
+  uVar4 = encode_object_slot_index(uVar2);
+  uVar5 = (undefined1)param_2;
+  uw_ord2005_rem_153 = ((int)(uVar3)) % (4);
+  sVar1 = scheduler_add_entry(uVar4,4,uw_ord2005_rem_153 & 0xff,param_1 & 0xff,uVar5);
+  if (sVar1 == -1) {
+    free_object_slot(uVar2);
+  }
+  else {
+    object_list_insert_head(param_4 + 2,uVar2);
+  }
+  return 1;
+}
+
+
+
+// was FUN_00074380 -- casts an area spell effect centered on tile
+// (param_1,param_2): spawns a type-0x1c2 effect object via
+// spawn_and_prime_spell_effect_object, applies damage (FUN_00075a88,
+// damage-tier index 1-1=0) to that tile and its four cardinal
+// neighbors (a 5-tile cross/"area" pattern), then schedules the
+// effect object to tick (scheduler_add_entry, type 4, delay 0). On
+// schedule failure frees the object slot; otherwise links it into
+// param_4's object list and calls FUN_00081388 (not yet named --
+// likely kicks off the effect's ongoing spread/animation).
+undefined4 cast_area_spell_effect(param_1,param_2,param_3,param_4,param_5)
+uint param_1;
+int param_2;
+undefined4 param_3;
+int param_4;
+undefined1 param_5;
+
+{
+  short sVar1;
+  char *uVar2;  /* was `undefined4` -- truncated spawn_and_prime_spell_effect_object's pointer */
+  undefined4 uVar3;
+
+  uVar2 = (char *)spawn_and_prime_spell_effect_object(0x1c2,param_4);
+  FUN_00075a88(param_1,param_2,1,param_5);
+  FUN_00075a88(param_1 + 1,param_2,1,param_5);
+  FUN_00075a88(param_1 - 1,param_2,1,param_5);
+  FUN_00075a88(param_1,param_2 + 1,1,param_5);
+  FUN_00075a88(param_1,param_2 + -1,1,param_5);
+  uVar3 = encode_object_slot_index(uVar2);
+  sVar1 = scheduler_add_entry(uVar3,4,0,param_1 & 0xff,(char)param_2);
+  if (sVar1 == -1) {
+    free_object_slot(uVar2);
+  }
+  else {
+    object_list_insert_head(param_4 + 2,uVar2);
+    FUN_00081388(uVar2,param_1,param_2);
+  }
+  return 1;
+}
