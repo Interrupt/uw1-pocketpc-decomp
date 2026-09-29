@@ -785,9 +785,8 @@ undefined4 param_1;
 // view tile (g_player_object+0x16, matching the "current view tile"
 // field used throughout this file) on either axis; returns 0 when
 // param_1 is nonzero AND the tile is within 7 tiles on both axes.
-// Both confirmed callers (process_nearby_background_traps, a world-object trap-trigger
-// sweep, and FUN_0007e85c's door-trigger sweep, both not yet named)
-// only
+// Both confirmed callers (process_nearby_background_traps and
+// tick_ambient_doors_and_scheduler) only
 // act on their own effect (dispatch_trap_type_effect /
 // open_door_object) when this returns nonzero, i.e. when the tile is
 // NOT near the player -- reads as "only fire background/ambient
@@ -866,6 +865,71 @@ undefined4 param_1;
     }
     local_14 = local_14 + 1;
     iVar2 = FUN_000539b0(6,0,7,&local_14,&local_12);
+  }
+  return;
+}
+
+
+
+
+
+// was FUN_0007e85c -- periodic world-tick helper, sibling to
+// process_nearby_background_traps: scans every type-5 (door) object
+// world-wide, and for each unlocked (class bit 0x80 clear), non-
+// trivial (quality nibble > 7) door, rolls a 30% chance
+// (rand_below(10) < 3) to open it via open_door_object -- but only
+// when is_out_of_player_range(param_1, tile) is true, gating the
+// effect the same way process_nearby_background_traps does.
+// Afterward, when param_1 is 0 and DAT_000879ac is set, advances the
+// scheduler 8 ticks (scheduler_tick(1) x8). Its only confirmed caller
+// (src/player.c's rest/tick handler, alongside
+// process_nearby_background_traps(0) a few lines later) always passes
+// 0. Reads as "simulate ambient doors opening and advance scheduled
+// events after a rest/wait", though the exact trigger condition for
+// the scheduler-advance half isn't confirmed.
+void tick_ambient_doors_and_scheduler(param_1)
+int param_1;
+
+{
+  byte *pbVar1;
+  int iVar2;
+  short local_1c;
+  short local_1a;
+  
+  local_1c = 0;
+  local_1a = 0;
+  pbVar1 = (byte *)FUN_000539b0(5,0,0xffffffff,&local_1c,&local_1a);
+  while (pbVar1 != (byte *)0x0) {
+    /* was folded into `int iVar2` (reused below for unrelated int
+       values) -- truncated tilemap_lookup's real `void *` return */
+    char *_tile2 = (char *)tilemap_lookup((int)local_1c,(int)local_1a);
+    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (*pbVar1 & 0xf))) &&
+       (iVar2 = rand_below(10), iVar2 < 3)) {
+      DAT_002020a0 = local_1c;
+      DAT_002020a4 = local_1a;
+      /* HACK: was a bare `FUN_0007e6e0(param_1);` -- dropped
+         arguments, the same class of bug fixed repeatedly elsewhere in
+         this file. is_out_of_player_range takes exactly three params
+         (an acting object plus a tile x/y), and its sibling caller
+         process_nearby_background_traps (just above) calls it with its own loop tile
+         coordinates in this exact position; this loop's own
+         local_1c/local_1a (the tile just scanned, freshly stored into
+         DAT_002020a0/DAT_002020a4 the lines above) are obviously the
+         intended arguments here. */
+      iVar2 = is_out_of_player_range(param_1,(int)local_1c,(int)local_1a);
+      if (iVar2 != 0) {
+        open_door_object(pbVar1);
+      }
+    }
+    local_1c = local_1c + 1;
+    pbVar1 = (byte *)FUN_000539b0(5,0,0xffffffff,&local_1c,&local_1a);
+  }
+  if ((param_1 == 0) && (DAT_000879ac != 0)) {
+    iVar2 = 0;
+    do {
+      scheduler_tick(1);
+      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    } while (iVar2 < 8);
   }
   return;
 }

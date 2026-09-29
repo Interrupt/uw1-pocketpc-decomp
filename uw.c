@@ -36517,55 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007e85c(param_1)
-int param_1;
-
-{
-  byte *pbVar1;
-  int iVar2;
-  short local_1c;
-  short local_1a;
-  
-  local_1c = 0;
-  local_1a = 0;
-  pbVar1 = (byte *)FUN_000539b0(5,0,0xffffffff,&local_1c,&local_1a);
-  while (pbVar1 != (byte *)0x0) {
-    /* was folded into `int iVar2` (reused below for unrelated int
-       values) -- truncated tilemap_lookup's real `void *` return */
-    char *_tile2 = (char *)tilemap_lookup((int)local_1c,(int)local_1a);
-    if ((((*(byte *)(_tile2 + 1) & 0x80) == 0) && (7 < (*pbVar1 & 0xf))) &&
-       (iVar2 = rand_below(10), iVar2 < 3)) {
-      DAT_002020a0 = local_1c;
-      DAT_002020a4 = local_1a;
-      /* HACK: was a bare `FUN_0007e6e0(param_1);` -- dropped
-         arguments, the same class of bug fixed repeatedly elsewhere in
-         this file. is_out_of_player_range takes exactly three params
-         (an acting object plus a tile x/y), and its sibling caller
-         process_nearby_background_traps (just above) calls it with its own loop tile
-         coordinates in this exact position; this loop's own
-         local_1c/local_1a (the tile just scanned, freshly stored into
-         DAT_002020a0/DAT_002020a4 the lines above) are obviously the
-         intended arguments here. */
-      iVar2 = is_out_of_player_range(param_1,(int)local_1c,(int)local_1a);
-      if (iVar2 != 0) {
-        open_door_object(pbVar1);
-      }
-    }
-    local_1c = local_1c + 1;
-    pbVar1 = (byte *)FUN_000539b0(5,0,0xffffffff,&local_1c,&local_1a);
-  }
-  if ((param_1 == 0) && (DAT_000879ac != 0)) {
-    iVar2 = 0;
-    do {
-      scheduler_tick(1);
-      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-    } while (iVar2 < 8);
-  }
-  return;
-}
-
-
-
 /* Not decompiled -- confirmed a genuine dead stub in the real binary
    too (disassembly at 0x0007e998 is just `cpy pc,lr`, 4 bytes, no
    body). This is the "capture the framebuffer rect we just drew panel
