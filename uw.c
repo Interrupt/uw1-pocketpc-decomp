@@ -6048,6 +6048,12 @@ undefined1 DAT_0008730d;
 undefined DAT_00087308_arr[3];
 #define DAT_00087308 DAT_00087308_arr[0]
 char s_and_00087310[] = "and";
+/* Used as a NUL-terminated string (&DAT_00087318) by
+   print_skill_improvement_list, joining middle entries of its skill-
+   name list (likely ", " between the original real data). Ghidra never
+   surfaced this as initialized string data, so it currently prints as
+   an empty separator -- not guessed at, same as this project's other
+   unrecovered-rodata symbols (e.g. DAT_00086f0c). */
 undefined DAT_00087318;
 char s_Chant_the_mantra__0008731c[] = "Chant_the_mantra:";
 char s_fontchar_sys_00087330[] = "fontchar.sys";
@@ -36421,64 +36427,6 @@ LAB_00060f54:
 
 
 
-void FUN_000707c8(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  if (param_2 == 0) {
-    FUN_00078c80(0x1b);
-  }
-  else {
-    FUN_00078c80(0x1c);
-    FUN_0007863c(param_1 + 0x1fU | 0x400);
-    message_scroll_print_wrapped();
-    message_scroll_print_wrapped(&DAT_00084f20);
-  }
-  return;
-}
-
-
-
-void FUN_0007080c(param_1)
-char * param_1;
-
-{
-  char *pcVar1;
-  int iVar2;
-  
-  if (*param_1 == -1) {
-    FUN_00078c80(0x1e);
-  }
-  else {
-    FUN_00078c80(0x1d);
-    if (*param_1 != -1) {
-      iVar2 = 0;
-      do {
-        if (3 < iVar2) break;
-        if (iVar2 == 3) {
-LAB_00070870:
-          pcVar1 = s_and_00087310;
-LAB_00070874:
-          message_scroll_print_wrapped(pcVar1);
-        }
-        else if (iVar2 != 0) {
-          if (param_1[iVar2 + 1] == -1) goto LAB_00070870;
-          pcVar1 = &DAT_00087318;
-          goto LAB_00070874;
-        }
-        FUN_0007863c((byte)param_1[iVar2] + 0x1f | 0x400);
-        message_scroll_print_wrapped();
-        iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-      } while (param_1[iVar2] != -1);
-    }
-    message_scroll_print_wrapped(&DAT_00084f20);
-  }
-  return;
-}
-
-
-
 void FUN_000708bc()
 
 {
@@ -36533,7 +36481,7 @@ LAB_000709e0:
         if ((iVar6 == 0) && (iVar7 == 0)) goto LAB_000709e0;
         uVar4 = 1;
       }
-      FUN_000707c8(iVar10 * 0x1000000 >> 0x18,uVar4);
+      print_single_skill_improvement_message(iVar10 * 0x1000000 >> 0x18,uVar4);
     }
   }
   else {
@@ -36603,7 +36551,7 @@ LAB_00070c78:
       }
       iVar6 = (iVar6 + -1) * 0x10000 >> 0x10;
     }
-    FUN_0007080c(local_60);
+    print_skill_improvement_list(local_60);
     *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + -1;
   }
   recompute_level7_hazard_from_character_level(0);

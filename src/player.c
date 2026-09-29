@@ -2141,3 +2141,76 @@ char param_1;
   }
   return uVar8;
 }
+
+
+
+
+
+
+// was FUN_000707c8 -- prints a single skill-improvement message:
+// param_2==0 shows message 0x1b ("no improvement"), otherwise message
+// 0x1c followed by param_1's skill name (resolved via
+// FUN_0007863c(param_1+0x1f|0x400), the skill-name string-id range).
+void print_single_skill_improvement_message(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  if (param_2 == 0) {
+    FUN_00078c80(0x1b);
+  }
+  else {
+    FUN_00078c80(0x1c);
+    FUN_0007863c(param_1 + 0x1fU | 0x400);
+    message_scroll_print_wrapped();
+    message_scroll_print_wrapped(&DAT_00084f20);
+  }
+  return;
+}
+
+
+
+// was FUN_0007080c -- prints a comma/and-joined list of improved skill
+// names from param_1 (a byte array of skill ids, -1-terminated, up to
+// 4 entries): message 0x1e if the list is empty (*param_1==-1), else
+// message 0x1d followed by each skill name, separated by DAT_00087318
+// between middle entries and s_and_00087310 ("and") before the last.
+// DAT_00087318's real content wasn't recovered (a likely ", " list
+// separator, currently prints as empty -- see its own declaration
+// comment) -- not guessed.
+void print_skill_improvement_list(param_1)
+char * param_1;
+
+{
+  char *pcVar1;
+  int iVar2;
+  
+  if (*param_1 == -1) {
+    FUN_00078c80(0x1e);
+  }
+  else {
+    FUN_00078c80(0x1d);
+    if (*param_1 != -1) {
+      iVar2 = 0;
+      do {
+        if (3 < iVar2) break;
+        if (iVar2 == 3) {
+LAB_00070870:
+          pcVar1 = s_and_00087310;
+LAB_00070874:
+          message_scroll_print_wrapped(pcVar1);
+        }
+        else if (iVar2 != 0) {
+          if (param_1[iVar2 + 1] == -1) goto LAB_00070870;
+          pcVar1 = &DAT_00087318;
+          goto LAB_00070874;
+        }
+        FUN_0007863c((byte)param_1[iVar2] + 0x1f | 0x400);
+        message_scroll_print_wrapped();
+        iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+      } while (param_1[iVar2] != -1);
+    }
+    message_scroll_print_wrapped(&DAT_00084f20);
+  }
+  return;
+}
