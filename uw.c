@@ -6434,14 +6434,14 @@ undefined1 DAT_0024cfe0_backing[8192];
 char *DAT_0024cff4;
 /* HACK: was `undefined4` -- truncated a real 64-bit object pointer.
    Same bug class as DAT_0024cff4 right above (already a real pointer
-   type) and countless other fixes throughout this file: FUN_0007d074
+   type) and countless other fixes throughout this file: apply_trap_or_link_effect
    stores its own real `ushort *` param_2 here, and it's read back as a
    pointer both directly (resolve_skill_gated_unlock_or_use's own param_2 at both call sites
    below) and via dereference (`*(byte*)(DAT_0024cff0+1)` further
    down). Confirmed live (bug-pull-chain-crash.txt, a saved repro):
    using a pull chain crashed with EXC_BAD_ACCESS at a wild address
    (0x4c029128, an obviously-truncated 32-bit value) dereferenced in
-   FUN_0007d0b0 -- traced back through FUN_0007d074's own matching
+   FUN_0007d0b0 -- traced back through apply_trap_or_link_effect's own matching
    param_3 truncation (fixed at its own declaration, see that
    function's comment) to this global being the same bug one hop
    earlier in the same call chain. */
@@ -36517,35 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-/* HACK: param_2 and param_3 were both `undefined4` -- truncated real
-   64-bit pointers (both are `ushort *` at every call site, e.g.
-   resolve_skill_gated_unlock_or_use's own `param_2` and `iVar3`/
-   resolve_object_link's result, in src/interact.c now), the same bug
-   class as DAT_0024cff0's own identical fix just above. Confirmed live
-   (bug-pull-chain-crash.txt): pulling a chain crashed with
-   EXC_BAD_ACCESS on a wild, obviously-truncated address
-   (0x4c029128) dereferenced one call further down, in FUN_0007d0b0 --
-   param_3 is passed straight through as that function's own real
-   `ushort *param_1`. */
-undefined4 FUN_0007d074(param_1,param_2,param_3,param_4,param_5)
-char *param_1;
-ushort *param_2;
-ushort *param_3;
-undefined4 param_4;
-short param_5;
-
-{
-  if (DAT_0024cff4 == 0) {
-    DAT_0024cff0 = param_2;
-    DAT_0024cff4 = param_1;
-  }
-  FUN_0007d0b0(param_3,param_4,(int)param_5);
-  DAT_0024cff4 = 0;
-  return 0;
-}
-
-
-
 int FUN_0007d0b0(param_1,param_2,param_3)
 ushort * param_1;
 uint param_2;

@@ -310,7 +310,7 @@ undefined4 param_2;
 // "disarm trap" mechanic: same container-contents/quality-gated setup,
 // but rolls a disarm skill check (roll_skill_check(param_2,8)) and
 // handles all three outcomes -- critical failure (<0: trap triggers,
-// via FUN_0007d074/FUN_0007dfd8 or resolve_skill_gated_unlock_or_use depending on whether
+// via apply_trap_or_link_effect/FUN_0007dfd8 or resolve_skill_gated_unlock_or_use depending on whether
 // the trapped item resolved through a link) with "Your bumbling
 // attempts have set o[ff the trap]", plain failure (==0: "Unable to
 // defuse trap"), and success (>0: "X was successfully dearmed on the
@@ -369,7 +369,7 @@ undefined4 param_2;
             message_scroll_print_wrapped(acStack_2c);
             message_scroll_print_wrapped(&DAT_00084f20);
             if (pbVar7 == (byte *)0x0) {
-              FUN_0007d074(g_player_object,param_1,pbVar4,(int)DAT_002020a0,DAT_002020a4);
+              apply_trap_or_link_effect(g_player_object,param_1,pbVar4,(int)DAT_002020a0,DAT_002020a4);
               FUN_0007dfd8(local_34[0],pbVar4);
             }
             else {
@@ -428,7 +428,7 @@ undefined4 param_2;
 // by param_3's low nibble; param_1 is the acting object (player or
 // tool), param_2 a secondary context object gating an extra class/
 // quality-bit check. Returns 2 for "denied"; on success, delegates to
-// FUN_0007d074 (trap/effect application) and, when the lock record
+// apply_trap_or_link_effect (trap/effect application) and, when the lock record
 // has bits set at +6 (0xffc0), also refreshes it via FUN_0007dfd8.
 uint resolve_skill_gated_unlock_or_use(param_1,param_2,param_3,param_4)
 ushort * param_1;
@@ -493,7 +493,7 @@ ushort param_4;
   if (iVar3 == 0) {
     return 2;
   }
-  uVar4 = FUN_0007d074(param_1,param_2,iVar3,bVar6,bVar7);
+  uVar4 = apply_trap_or_link_effect(param_1,param_2,iVar3,bVar6,bVar7);
   if ((*param_3 & 0x400) == 0) {
     if ((param_3[3] & 0xffc0) != 0) {
       iVar5 = (char *)tilemap_lookup(bVar6,bVar7);
@@ -503,6 +503,47 @@ ushort param_4;
     return uVar4;
   }
   return uVar4;
+}
+
+
+
+
+
+/* HACK: param_2 and param_3 were both `undefined4` -- truncated real
+   64-bit pointers (both are `ushort *` at every call site, e.g.
+   resolve_skill_gated_unlock_or_use's own `param_2` and `iVar3`/
+   resolve_object_link's result, in src/interact.c now), the same bug
+   class as DAT_0024cff0's own identical fix just above. Confirmed live
+   (bug-pull-chain-crash.txt): pulling a chain crashed with
+   EXC_BAD_ACCESS on a wild, obviously-truncated address
+   (0x4c029128) dereferenced one call further down, in FUN_0007d0b0 --
+   param_3 is passed straight through as that function's own real
+   `ushort *param_1`. */
+// was FUN_0007d074 -- thin re-entrancy-guarded wrapper around the
+// trap/link-effect type dispatcher FUN_0007d0b0 (not yet named, a
+// large switch on the trap/link record's type code). Stashes param_1/
+// param_2 (the acting object and a secondary context object) into
+// DAT_0024cff4/DAT_0024cff0 only on the OUTERMOST call (DAT_0024cff4
+// was 0), so a trap effect that itself triggers another trap keeps
+// referring back to the original triggering context; resets
+// DAT_0024cff4 to 0 unconditionally afterward. Confirmed by callers'
+// own comments as the general "trap/effect application" step invoked
+// alongside resolve_skill_gated_unlock_or_use.
+undefined4 apply_trap_or_link_effect(param_1,param_2,param_3,param_4,param_5)
+char *param_1;
+ushort *param_2;
+ushort *param_3;
+undefined4 param_4;
+short param_5;
+
+{
+  if (DAT_0024cff4 == 0) {
+    DAT_0024cff0 = param_2;
+    DAT_0024cff4 = param_1;
+  }
+  FUN_0007d0b0(param_3,param_4,(int)param_5);
+  DAT_0024cff4 = 0;
+  return 0;
 }
 
 
