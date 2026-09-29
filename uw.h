@@ -1050,6 +1050,11 @@ extern short DAT_00250728;
 extern short DAT_0025070c;
 extern char s_No_0008799c[];
 extern char s_Yes_000879a0[];
+extern undefined s_dash_000879a4_backing[8192];
+#define s_dash_000879a4 s_dash_000879a4_backing[0]
+extern undefined s_scroll_prompt_arrow_000879a8_backing[8192];
+#define s_scroll_prompt_arrow_000879a8 s_scroll_prompt_arrow_000879a8_backing[0]
+extern int g_text_input_active;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
