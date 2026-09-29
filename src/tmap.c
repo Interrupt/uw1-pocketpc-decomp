@@ -402,7 +402,7 @@ byte * param_1;
       *param_1 = automap_reveal_byte(DAT_0023b4ec);
       DAT_0023b810 = DAT_0023b810 + 1;
     }
-    FUN_00065348();
+    flush_pending_tile_features();
     return;
   }
   /* This branch emits a visible tile's 3D geometry slice for the dungeon
@@ -1485,5 +1485,437 @@ char param_1;
   Ordinal_1047(&DAT_0023b928,0,0x12);
   DAT_0023bb94 = param_1;
   return;
+}
+
+
+
+
+// was FUN_00064e3c -- bubble-sorts adjacent-index pairs in
+// DAT_0023b8c8/DAT_0023b8c9 (see the array-layout comment on their
+// declaration) over [param_1, param_2) by each entry's depth key
+// (compute_feature_depth_key's output, cached in DAT_0023bb98). Part
+// of emit_tile_features' per-tile object/feature draw-order sort.
+void sort_feature_pairs_by_depth(param_1,param_2)
+short param_1;
+int param_2;
+
+{
+  int iVar1;
+  int iVar2;
+  char cVar3;
+  int iVar4;
+  int iVar5;
+  
+  iVar5 = (param_2 + -1) * 0x10000 >> 0x10;
+  iVar1 = (int)param_1;
+  if (iVar1 <= iVar5) {
+    iVar4 = iVar1;
+    if (iVar5 < iVar1) goto LAB_00064ea8;
+    do {
+      do {
+        cVar3 = (&DAT_0023b8c8)[iVar4];
+        iVar2 = (iVar4 + 1) * 0x10000 >> 0x10;
+        if ((char)(&DAT_0023bb98)[cVar3 * 4] <
+            (char)(&DAT_0023bb98)[(char)(&DAT_0023b8c9)[iVar4] * 4]) {
+          (&DAT_0023b8c8)[iVar4] = (&DAT_0023b8c9)[iVar4];
+          (&DAT_0023b8c9)[iVar4] = cVar3;
+        }
+        iVar4 = iVar2;
+      } while (iVar2 <= iVar5);
+LAB_00064ea8:
+      iVar5 = (iVar5 + -1) * 0x10000 >> 0x10;
+      iVar4 = iVar1;
+    } while (iVar1 <= iVar5);
+  }
+  return;
+}
+
+
+
+// was FUN_00064ec8 -- initializes DAT_0023b8c8[0..param_1) to the
+// identity order (0,1,2,...) before sort_feature_pairs_by_depth
+// reorders it.
+void init_feature_sort_order(param_1)
+short param_1;
+
+{
+  int iVar1;
+  
+  iVar1 = 0;
+  if (0 < param_1) {
+    do {
+      (&DAT_0023b8c8)[iVar1] = (char)iVar1;
+      iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+    } while (iVar1 < param_1);
+  }
+  return;
+}
+
+
+
+/* param_1 (out record) and param_2 (src record) were `int`, truncating
+   the real pointers emit_tile_features passes. */
+// was FUN_00065210 -- computes a rotated-quad corner's screen X/Y
+// offset (param_1[1]/[2]) from a source feature record's facing byte
+// (param_2[3]) via the DAT_00086d68/DAT_00086d69 per-view-facing
+// corner-index remap table, plus copies a masked flag byte
+// (param_2[2] & 0x7f) into param_1[3].
+void resolve_billboard_corner_offset(param_1,param_2)
+byte *param_1;
+byte *param_2;
+
+{
+  *(undefined *)(param_1 + 1) =
+       (&DAT_00086d68)[((uint)(*(byte *)(param_2 + 3) >> 5) + DAT_0023b4a0 * 8) * 2] +
+       (&DAT_00086d68)[((*(byte *)(param_2 + 3) >> 2 & 7) + ((int)DAT_0023b4a0 + 1U & 3) * 8) * 2];
+  *(undefined *)(param_1 + 2) =
+       (&DAT_00086d69)[((uint)(*(byte *)(param_2 + 3) >> 5) + DAT_0023b4a0 * 8) * 2] +
+       (&DAT_00086d69)[((*(byte *)(param_2 + 3) >> 2 & 7) + ((int)DAT_0023b4a0 + 1U & 3) * 8) * 2];
+  *(byte *)(param_1 + 3) = *(byte *)(param_2 + 2) & 0x7f;
+  return;
+}
+
+
+
+// was FUN_000652e8 -- computes a feature's draw-order depth key
+// (written to param_1[0]) from its X/Y offsets (param_1[1]/[2]),
+// combined differently depending on which ring-scan phase is current
+// (DAT_0023bb94, see update_wall_partition_phase). Feeds
+// sort_feature_pairs_by_depth via DAT_0023bb98.
+void compute_feature_depth_key(param_1)
+char * param_1;
+
+{
+  char cVar1;
+  
+  if (DAT_0023bb94 == '\0') {
+    cVar1 = param_1[2] << 1;
+  }
+  else if (DAT_0023bb94 == '\x01') {
+    cVar1 = param_1[2] + param_1[1] + '\x01';
+  }
+  else {
+    if (DAT_0023bb94 != '\x02') {
+      return;
+    }
+    cVar1 = ('\b' - param_1[1]) + param_1[2];
+  }
+  *param_1 = cVar1;
+  return;
+}
+
+
+
+// was FUN_00065348 -- flushes any still-pending per-tile feature
+// records (a nonzero feature count at the current DAT_0023b940 slot,
+// or a nonzero DAT_0023b928 wall-partition entry) via
+// emit_tile_features, so nothing queued gets silently dropped.
+void flush_pending_tile_features()
+
+{
+  if (*(short *)(&DAT_0023b940 + DAT_0023b4e4 * 0x12) != 0) {
+    emit_tile_features(0);
+  }
+  if (DAT_0023b928 != 0) {
+    emit_tile_features(0);
+  }
+  return;
+}
+
+
+
+// was FUN_00065394
+void emit_tile_features(param_1)
+ushort * param_1;
+
+{
+  int iVar1;
+  uint uVar2;
+  short sVar3;
+  char *puVar4;  /* was `undefined4 uVar4` -- truncated FUN_000535fc's
+                    real pointer before forwarding it into
+                    resolve_billboard_corner_offset, which dereferences it (offset+2/+3).
+                    Confirmed live: the automap full-level sweep
+                    (demo_automap.txt) crashed here on tile (23,8), the
+                    first tile whose feature-object slot value made
+                    FUN_000535fc actually resolve to a real, non-null
+                    pointer. */
+  ushort *puVar5;
+  ushort *puVar6;
+  int iVar7;
+  char cVar8;
+  ushort uVar9;
+  uint uVar10;
+  ushort uVar11;
+  ushort uVar12;
+  int iVar13;
+  char *pcVar14;
+  int iVar15;
+  int iVar16;
+  short local_38;
+  short local_36;
+  undefined4 local_34;
+  int local_30;
+
+  local_34 = local_34 & 0xffff0000;
+  iVar13 = 0;
+  local_36 = -1;
+  iVar16 = 0;
+  iVar7 = 1;
+  local_38 = 0;
+  iVar15 = (int)DAT_0023b4e4;
+  if (*(short *)(&DAT_0023b940 + iVar15 * 0x12) != 0) {
+    do {
+      iVar1 = (int)(short)iVar13;
+      if (8 < iVar1) break;
+      uVar9 = *(ushort *)(&DAT_0023b940 + (iVar15 * 9 + (int)(short)iVar7) * 2);
+      (&DAT_0023b848)[iVar1] = uVar9 & 0x3ff;
+      /* Ghidra dropped the object-slot arg -- with it defaulting to 0,
+         FUN_000535fc returned NULL and resolve_billboard_corner_offset below dereferenced it,
+         which is why the whole tile-features/object pass was disabled.
+         Pass the slot id just stored, like the other FUN_000535fc call
+         sites in this function. */
+      puVar4 = (char *)FUN_000535fc((int)(short)(&DAT_0023b848)[iVar1]);
+      iVar15 = iVar1 * 4;
+      pcVar14 = &DAT_0023bb98 + iVar15;
+      /* FUN_000535fc legitimately returns NULL for a slot value that
+         isn't a currently-populated object (unlike the dropped-arg bug
+         fixed just above, this is a real "nothing here" case, not a
+         truncation/garbage-argument one) -- resolve_billboard_corner_offset dereferences
+         its second argument immediately, so skip it rather than
+         crashing. Confirmed live: demo_automap.txt's full-level sweep
+         crashed here on tile (30,17), the first tile whose feature
+         slot resolved to a genuinely empty object. */
+      if (puVar4 != NULL) {
+        resolve_billboard_corner_offset(pcVar14,puVar4);
+      }
+      if ((uVar9 & 0x1000) != 0) {
+        if ((uVar9 & 0x2000) == 0) {
+          cVar8 = (&DAT_0023bb99)[iVar15] + '\b';
+        }
+        else {
+          cVar8 = (&DAT_0023bb99)[iVar15] + -8;
+        }
+        (&DAT_0023bb99)[iVar15] = cVar8;
+      }
+      if ((uVar9 & 0x4000) != 0) {
+        (&DAT_0023bb9a)[iVar15] = (&DAT_0023bb9a)[iVar15] + '\b';
+      }
+      compute_feature_depth_key(pcVar14);
+      if ((uVar9 & 0x8000) != 0) {
+        *pcVar14 = *pcVar14 + -1;
+      }
+      local_38 = (short)((uint)((iVar1 + 1) * 0x10000) >> 0x10);
+      iVar13 = (int)local_38;
+      iVar7 = ((short)iVar7 + 1) * 0x10000 >> 0x10;
+      iVar15 = (int)DAT_0023b4e4;
+    } while (iVar7 <= (int)(uint)*(ushort *)(&DAT_0023b940 + iVar15 * 0x12));
+  }
+  if (DAT_0023b928 == 0) {
+    *(undefined2 *)(&DAT_0023b940 + DAT_0023b4e4 * 0x12) = 0;
+  }
+  else {
+    /* Ghidra dropped the size argument; the zero-branch above writes the
+       same destination as a plain `undefined2`, so this is a 2-byte
+       copy. */
+    Ordinal_1044(&DAT_0023b940 + DAT_0023b4e4 * 0x12,&DAT_0023b928,2);
+  }
+  DAT_0023b928 = 0;
+  puVar5 = (ushort *)resolve_object_link(param_1);
+  do {
+    sVar3 = (short)iVar13;
+    if ((puVar5 == (ushort *)0x0) || (local_30 = (int)(short)iVar16, 0x3b < local_30)) {
+      uVar10 = local_34;
+      if (((ushort)local_34 == 0) || (uVar10 = (uint)sVar3, (int)uVar10 < 2)) {
+        local_34 = uVar10;
+        init_feature_sort_order(iVar13);
+        local_34 = (uint)sVar3;
+        uVar10 = local_34;
+        if (1 < (int)local_34) {
+          sort_feature_pairs_by_depth(0,iVar13 + -1);
+          uVar10 = local_34;
+        }
+      }
+      else {
+        uVar9 = (ushort)local_34 & 0x3f;
+        local_34 = uVar10;
+        if (((ushort)local_34 & 0xffc0) == 0x5900) {
+          sprite_partition_tmap(uVar9,&local_36,iVar13);  /* args dropped by Ghidra; mirrors the sprite_partition_by_depth call below */
+        }
+        else {
+          sprite_partition_by_depth(uVar9,&local_36,iVar13);
+        }
+        iVar15 = (int)local_36;
+        if (1 < local_36) {
+          sort_feature_pairs_by_depth(0,iVar15 + -1);
+          iVar15 = (int)local_36;
+        }
+        if ((int)(short)iVar15 < (int)(uVar10 - 2)) {
+          sort_feature_pairs_by_depth(iVar15 + 1,iVar13 + -1);
+        }
+      }
+      if (0 < (int)uVar10) {
+        iVar15 = 0;
+        do {
+          cVar8 = (&DAT_0023b8c8)[iVar15];
+          puVar5 = (ushort *)FUN_000535fc((int)(short)(&DAT_0023b848)[cVar8]);
+          /* Same "FUN_000535fc can legitimately return NULL for an
+             empty slot" case as the fix above -- this loop dereferences
+             puVar5 immediately below (and passes it to
+             emit_tile_objects), so skip this index instead of crashing. */
+          if (puVar5 == (ushort *)0x0) {
+            iVar15 = (iVar15 + 1) * 0x10000 >> 0x10;
+            continue;
+          }
+          iVar7 = cVar8 * 4;
+          if (getenv("UW_DEBUG_OBJPOS") && puVar5 && (*puVar5 & 0x1ff) == 0x166)
+            fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
+                    (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
+                    (int)DAT_0023b4e4, (int)DAT_0023b4e8);
+          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (*puVar5 & 0x1f0) == 0x140)
+            fprintf(stderr, "[doorpos] tile-grid: cVar8=%d slot_x=%d slot_z=%d b4e4(tileX)=%d b4e8(tileZ)=%d tile_origin=(%d,%d)\n",
+                    (int)cVar8, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
+                    (int)DAT_0023b4e4, (int)DAT_0023b4e8,
+                    (int)DAT_0023b4e4 * 256, (int)DAT_0023b4e8 * 256);
+          DAT_0023b904 = ((short)(char)(&DAT_0023bb99)[iVar7] +
+                         (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
+          DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +
+                         (short)((uint)((int)DAT_0023b4e8 << 0x13) >> 0x10)) * 0x20 + 0x10;
+          if (((*puVar5 & 0x1c0) == 0x40) || (iVar16 = object_ptr_in_arena(puVar5), iVar16 == 0)) {
+            DAT_0023b91c = ((byte)puVar5[1] & 0x7f) << 3;
+          }
+          else {
+            DAT_0023b91c = *(short *)((char *)puVar5 + 0xf);
+          }
+          if (getenv("UW_DEBUG_THROW") && (*puVar5 & 0x1ff) == 0x80)
+            fprintf(stderr, "[throw-scrz] sack DAT_0023b91c=%d cam_ref(DAT_00086e6c+0xe)=%d in_arena=%d\n",
+                    (int)(short)DAT_0023b91c, (int)g_current_view->view_elevation,
+                    (int)object_ptr_in_arena(puVar5));
+          if (DAT_0023b830 == '\0') {
+            iVar7 = (int)(short)((int)((int)DAT_0023b904 -
+                                      ((int)g_current_view->view_x & 0xffU)) >> 5);
+            iVar16 = (int)(short)((int)((int)DAT_0023b920 -
+                                       ((int)g_current_view->view_y & 0xffU)) >> 5);
+            iVar13 = (int)(short)((int)DAT_0023b91c - (int)g_current_view->view_elevation >> 5);
+            if (((iVar7 * iVar7 * 0x10000 >> 0x10) + (iVar16 * iVar16 * 0x10000 >> 0x10) +
+                (iVar13 * iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10 < 1) {
+              sVar3 = 0;
+            }
+            else {
+              sVar3 = FUN_00013774();
+            }
+            iVar7 = (int)DAT_002506dc + (int)(short)((int)DAT_0025063c * (int)sVar3 >> 6);
+            sVar3 = (short)iVar7;
+            if (iVar7 * 0x10000 >> 0x10 < 0) {
+              sVar3 = 0;
+            }
+            DAT_0023bc88 = (undefined1)((int)DAT_0025064c + (int)sVar3);
+            if (0xe < ((int)DAT_0025064c + (int)sVar3 & 0xffU)) {
+              DAT_0023bc88 = 0xe;
+            }
+          }
+          else {
+            iVar16 = (char)(&DAT_0023bb99)[iVar7] + 0x40;
+            if (iVar16 < 0) {
+              iVar16 = (char)(&DAT_0023bb99)[iVar7] + 0x47;
+            }
+            iVar7 = (int)(char)(&DAT_0023bb9a)[iVar7];
+            if (iVar7 < 0) {
+              iVar7 = iVar7 + 7;
+            }
+            DAT_0023b8c4 = ((short)(iVar16 >> 3) + -8) * DAT_0023bc8c +
+                           (short)(iVar7 >> 3) * DAT_0023b8c0;
+          }
+          emit_tile_objects(puVar5);
+          iVar15 = (iVar15 + 1) * 0x10000 >> 0x10;
+        } while (iVar15 < (int)local_34);
+      }
+      return;
+    }
+    uVar10 = (uint)(short)(*puVar5 & 0x1ff);
+    if ((uVar10 == 0x164) || (((*puVar5 & 0x1f0) == 0x140 || (uVar10 == 0x1cf)))) {
+      uVar2 = local_34 >> 0x10;
+      local_34 = CONCAT22((short)uVar2,sVar3 + (short)((uVar10 << 0x16) >> 0x10));
+LAB_0006574c:
+      iVar15 = (int)sVar3;
+      pcVar14 = &DAT_0023bb98 + iVar15 * 4;
+      resolve_billboard_corner_offset(pcVar14,puVar5);
+LAB_00065770:
+      compute_feature_depth_key(pcVar14);
+      if ((uVar10 & 0x1c0) == 0x1c0) {
+        cVar8 = *pcVar14 + -1;
+LAB_000657b0:
+        *pcVar14 = cVar8;
+      }
+      else if ((uVar10 & 0x1fe) == 0x16e) {
+        cVar8 = *pcVar14 + ' ';
+        goto LAB_000657b0;
+      }
+      (&DAT_0023b848)[iVar15] = *param_1 >> 6;
+      if (iVar15 < 0x3c) {
+        local_38 = (short)((uint)((iVar15 + 1) * 0x10000) >> 0x10);
+        goto LAB_000657f4;
+      }
+    }
+    else {
+      if (((&DAT_00202c91)[uVar10 * 0xd] & 8) == 0) goto LAB_0006574c;
+      iVar15 = (int)local_38;
+      uVar11 = 0;
+      iVar7 = iVar15 * 4;
+      pcVar14 = &DAT_0023bb98 + iVar7;
+      resolve_billboard_corner_offset(pcVar14,puVar5);
+      uVar9 = (byte)(&DAT_00202c91)[uVar10 * 0xd] & 7;
+      if ((int)(char)(&DAT_0023bb9a)[iVar7] - (int)(short)uVar9 < 0) {
+        uVar11 = 0x4000;
+      }
+      if (DAT_0023bb94 == '\x01') {
+        uVar9 = (ushort)((uint)((short)uVar9 * -0x10000) >> 0x10);
+      }
+      uVar12 = uVar11;
+      if (((DAT_0023bb94 != '\0') &&
+          (((int)(char)(&DAT_0023bb99)[iVar7] + (int)(short)uVar9 & 0xfffffff8U) != 0)) &&
+         (uVar12 = uVar11 | 0x1000, DAT_0023bb94 == '\x02')) {
+        uVar12 = uVar11 | 0x3000;
+      }
+      if (uVar12 == 0) {
+LAB_0006576c:
+        iVar13 = (int)local_38;
+        goto LAB_00065770;
+      }
+      uVar12 = uVar12 | *param_1 >> 6;
+      if ((uVar10 & 0x1c0) == 0x1c0) {
+        uVar12 = uVar12 | 0x8000;
+      }
+      if ((uVar12 & 0x5000) == 0x5000) {
+        puVar6 = (ushort *)&DAT_0023b928;
+      }
+      else {
+        if ((uVar12 & 0x4000) == 0) {
+          if ((uVar12 & 0x2000) == 0) {
+            puVar6 = (ushort *)(&DAT_0023b92e + DAT_0023b4e4 * 0x12);
+            goto LAB_0006570c;
+          }
+          iVar7 = DAT_0023b4e4 + 1;
+        }
+        else {
+          iVar7 = (int)DAT_0023b4e4;
+        }
+        puVar6 = (ushort *)(&DAT_0023b940 + iVar7 * 0x12);
+      }
+LAB_0006570c:
+      if (8 < *puVar6) goto LAB_0006576c;
+      uVar9 = *puVar6 + 1;
+      *puVar6 = uVar9;
+      puVar6[uVar9] = uVar12;
+LAB_000657f4:
+      iVar13 = (int)local_38;
+    }
+    param_1 = puVar5 + 2;
+    /* Ghidra dropped the arg -- advance to the next object in the tile's
+       chain via the link field at puVar5+2 (== param_1), same as the
+       resolve_object_link(param_1) call that primes this loop. */
+    puVar5 = (ushort *)resolve_object_link(param_1);
+    iVar16 = (local_30 + 1) * 0x10000 >> 0x10;
+  } while( true );
 }
 

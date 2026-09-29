@@ -829,6 +829,11 @@ extern double g_tune_leaf_hinge_offset;
 extern double g_tune_rotation_offset;
 extern double g_tune_wide_center;
 extern int g_uw_debug_pick_diag;
+extern const undefined1 DAT_00086d68_region[64];
+#define DAT_00086d68 (*(const undefined1 *)DAT_00086d68_region)
+#define DAT_00086d69 (*(const undefined1 *)(DAT_00086d68_region + 1))
+extern undefined1 g_tile_feature_records_b92e_backing[65536];
+#define DAT_0023b92e g_tile_feature_records_b92e_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -1032,6 +1037,9 @@ extern undefined2 DAT_0023b848_backing[64];
 #define DAT_0023b848 DAT_0023b848_backing[0]
 extern undefined1 DAT_0023b8c8_backing[128];
 #define DAT_0023b8c8 DAT_0023b8c8_backing[0]
+#define DAT_0023b8c9 DAT_0023b8c8_backing[1]
+extern undefined2 DAT_0023b8c0;
+extern short DAT_0023b8c4;
 extern char DAT_0023bb94;
 extern undefined1 DAT_0023bb98_backing[512];
 #define DAT_0023bb98 DAT_0023bb98_backing[0]
@@ -2834,14 +2842,14 @@ void emit_object_billboard();
 void emit_catalog_object();
 void emit_anim_object_frames();
 void update_wall_partition_phase();
-void FUN_00064e3c();
-void FUN_00064ec8();
+void sort_feature_pairs_by_depth();
+void init_feature_sort_order();
 void sprite_partition_step();
 void sprite_partition_tmap();
 void sprite_partition_by_depth();
-void FUN_00065210();
-void FUN_000652e8();
-void FUN_00065348();
+void resolve_billboard_corner_offset();
+void compute_feature_depth_key();
+void flush_pending_tile_features();
 void emit_tile_features();
 void FUN_00065b90();
 void FUN_00065d4c();
