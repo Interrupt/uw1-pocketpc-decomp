@@ -3531,7 +3531,7 @@ undefined4 debug_noop_checkpoint();
 char compute_compass_direction();
 void print_message_with_proximity_qualifier();
 undefined4 debug_noop_overflow_hook();
-bool FUN_0007edf4();
+bool write_buffer_to_file();
 bool FUN_0007ee4c();
 short FUN_0007ee9c();
 int FUN_0007ef78();

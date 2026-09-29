@@ -36521,55 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-bool FUN_0007edf4(param_1,param_2,param_3)
-void *param_1;  /* was `undefined4` -- truncated the real data-buffer
-                   pointer (save_game_to_slot passes its own param_2, a real
-                   description-text buffer; the new save-description
-                   write above passes a real stack buffer too) */
-char *param_2;  /* was `undefined4` -- same truncation, for the real
-                   path-string pointer */
-ushort param_3;
-
-{
-  int iVar1;
-  uint uVar2;
-  bool bVar3;
-
-  /* Was `open_existing_file_rw(param_2)` (== uw_file_open_write(param_2, 0), our
-     port's "rb+", no-truncate" mode) -- real ARM disassembly of
-     open_existing_file_rw (0x2273c) shows the original game's own write-open
-     helper always ends up starting from an empty file regardless of
-     which branch it takes (TRUNCATE_EXISTING when the target already
-     exists, OPEN_ALWAYS -- i.e. create fresh -- when it doesn't), never
-     "open and preserve existing content". This function is now this
-     codebase's only caller (the save-slot description write in
-     save_game_to_slot); using the non-truncating wrapper here left
-     stale trailing bytes from a previous, longer description whenever a
-     shorter new name was saved over it -- confirmed live: saving
-     "MYCHAR" over a slot that had previously held a longer name left
-     the file as "MYCHAR\0EST\0" (the old name's un-truncated tail after
-     the new null terminator), which the title-screen slot picker then
-     displayed as if two different labels were drawn on top of each
-     other. Call uw_file_open_write directly with create_always=1
-     ("wb+", truncates) instead of going through open_existing_file_rw's
-     no-truncate wrapper -- deliberately NOT changing open_existing_file_rw
-     itself, since its other several callers (the level-archive
-     read-then-write path in particular) may rely on its current
-     preserve-existing-content behavior and weren't audited here. */
-  iVar1 = uw_file_open_write(param_2, 1);
-  if (iVar1 == -1) {
-    bVar3 = false;
-  }
-  else {
-    uVar2 = write_file_handle(iVar1,param_1,param_3);
-    bVar3 = uVar2 == param_3;
-    Ordinal_553(iVar1);
-  }
-  return bVar3;
-}
-
-
-
 bool FUN_0007ee4c(param_1,param_2,param_3)
 char *param_1;
 void *param_2;
