@@ -665,3 +665,82 @@ uint param_3;
 
 
 
+
+
+// was FUN_0007e558 -- the special-case cleanup free_trap_class_object
+// defers to for a class-0x180 (trap) object being deleted: param_2 is
+// the trap object itself, param_1 the link-field address it's being
+// unlinked from. Resolves the trap's own linked sub-object (offset
+// +6) and reads a 4-bit "remaining count" field from it (bits
+// 0x1e00). When the count is down to its last unit (==1), does a
+// full refresh sweep instead of an incremental one
+// (refresh_object_link_chain on the tile's object list) rather than
+// freeing param_2 directly here -- that sweep is expected to catch
+// param_2 itself along with any other stale markers. Otherwise,
+// decrements the count field in place and unlinks+frees param_2
+// immediately (object_list_unlink + free_object_slot).
+void remove_trap_chain_marker(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  uint uVar1;
+  ushort uVar2;
+  byte bVar3;
+  ushort *puVar4;
+  char *iVar5;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+
+  puVar4 = (ushort *)resolve_object_link(param_2 + 6);
+  uVar2 = *puVar4;
+  uVar1 = (uVar2 & 0x1e00) >> 9;
+  if ((short)uVar1 == 1) {
+    iVar5 = (char *)tilemap_lookup(*(byte *)(param_2 + 4) & 0x3f,*(ushort *)(param_2 + 6) & 0x3f);
+    refresh_object_link_chain(iVar5 + 2,puVar4);
+  }
+  else {
+    bVar3 = (byte)(uVar2 >> 8);
+    *(char *)puVar4 = (char)uVar2;
+    *(byte *)((char *)puVar4 + 1) = ((byte)(uVar1 * 0x200 + -1 >> 8) ^ bVar3) & 0x1e ^ bVar3;
+    object_list_unlink(param_1,param_2);
+    free_object_slot(param_2);
+  }
+  return;
+}
+
+
+
+// was FUN_0007e610 -- confirmed by its own caller's pre-existing
+// comment (free_linked_object_recursive, src/objects.c: "param_1==
+// 0x180 class (containers) instead defer to FUN_0007e610") as the
+// special-case delete path for a class-0x180 (trap) object, taken
+// instead of the normal recursive object-tree free. Dispatches on
+// param_2's own low class bits (0x30): a low-class ("open"?) trap
+// object goes straight to a full refresh_object_link_chain sweep;
+// anything else goes to the incremental
+// remove_trap_chain_marker path.
+//
+// HACK: both calls were bare `refresh_object_link_chain();` /
+// `FUN_0007e558();` in the original decompile -- dropped arguments,
+// the same class of bug fixed repeatedly elsewhere in this file. This
+// function does no other work before either call, so on ARM's
+// register-passthrough calling convention param_1/param_2 are still
+// sitting in r0/r1 unchanged from this function's own entry; both
+// callees take exactly this function's own two parameters (see their
+// own signatures), so passing them through explicitly restores the
+// evidently-intended behavior.
+void free_trap_class_object(param_1,param_2)
+undefined4 param_1;
+byte * param_2;
+
+{
+  if ((*param_2 & 0x30) < 0x11) {
+    refresh_object_link_chain(param_1,param_2);
+  }
+  else {
+    remove_trap_chain_marker(param_1,param_2);
+  }
+  return;
+}
+
+
+

@@ -36517,52 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007e558(param_1,param_2)
-undefined4 param_1;
-int param_2;
-
-{
-  uint uVar1;
-  ushort uVar2;
-  byte bVar3;
-  ushort *puVar4;
-  char *iVar5;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
-
-  puVar4 = (ushort *)resolve_object_link(param_2 + 6);
-  uVar2 = *puVar4;
-  uVar1 = (uVar2 & 0x1e00) >> 9;
-  if ((short)uVar1 == 1) {
-    iVar5 = (char *)tilemap_lookup(*(byte *)(param_2 + 4) & 0x3f,*(ushort *)(param_2 + 6) & 0x3f);
-    refresh_object_link_chain(iVar5 + 2,puVar4);
-  }
-  else {
-    bVar3 = (byte)(uVar2 >> 8);
-    *(char *)puVar4 = (char)uVar2;
-    *(byte *)((char *)puVar4 + 1) = ((byte)(uVar1 * 0x200 + -1 >> 8) ^ bVar3) & 0x1e ^ bVar3;
-    object_list_unlink(param_1,param_2);
-    free_object_slot(param_2);
-  }
-  return;
-}
-
-
-
-void FUN_0007e610(param_1,param_2)
-undefined4 param_1;
-byte * param_2;
-
-{
-  if ((*param_2 & 0x30) < 0x11) {
-    refresh_object_link_chain();
-  }
-  else {
-    FUN_0007e558();
-  }
-  return;
-}
-
-
-
 undefined4 FUN_0007e694(param_1)
 undefined4 param_1;
 

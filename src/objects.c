@@ -426,7 +426,7 @@ byte * param_2;
 // object it points at and delete it: recurse into two nested-object
 // link fields first (offsets 4/6, e.g. contained items or a wielded
 // weapon), then unlink+free the object itself. param_1==0x180 class
-// (containers) instead defer to FUN_0007e610.
+// (containers) instead defer to free_trap_class_object.
 void free_linked_object_recursive(param_1)
 char *param_1;  /* was `undefined4` -- truncated the real object-record
                    pointer (passed straight to resolve_object_link),
@@ -438,7 +438,7 @@ char *param_1;  /* was `undefined4` -- truncated the real object-record
   puVar1 = (ushort *)resolve_object_link(param_1); /* confirmed via ARM disassembly, 0x533e4 */
   if (puVar1 != (ushort *)0x0) {
     if ((*puVar1 & 0x1c0) == 0x180) {
-      FUN_0007e610(param_1,puVar1);
+      free_trap_class_object(param_1,puVar1);
     }
     else {
       if ((puVar1[2] & 0xffc0) != 0) {
