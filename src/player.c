@@ -1839,9 +1839,9 @@ void refresh_experience_display()
          draw_stats_panel_content (uw.c), passed explicitly here. */
       restore_captured_grtile_backdrop(DAT_0024af8c);
     }
-    FUN_00078088();
-    FUN_00078118();
-    FUN_000781a0();
+    draw_hp_stat_display();
+    draw_mana_stat_display();
+    draw_experience_points_display();
     select_active_font(s_font5x6p_sys_0008430c);
     cursor_show_idle_tick();
   }
@@ -3208,5 +3208,95 @@ void draw_stats_panel_header()
      guessed, this is cosmetic HUD text formatting. */
   iVar4 = measure_text_width(auStack_28);
   draw_text_string(auStack_28,0x138 - iVar4,0x16);
+  return;
+}
+
+
+
+
+
+// was FUN_0007802c -- draws one row of the stats panel's 3-value
+// attribute display: param_1 selects the row (0-2), reading byte
+// DAT_0023be74+5+row (see character_generator_loop's own init of
+// these 3 bytes via "roll 2d10+10", uw.c ~10097) and right-aligning
+// it at y = row*7+0x1d, just below the name/title/level header.
+// Called 3x in a loop from draw_stats_panel_content.
+void draw_stats_panel_attribute_row(param_1)
+uint param_1;
+
+{
+  int iVar1;
+  undefined1 auStack_c [4];
+  
+  FUN_000229e0(*(undefined1 *)((param_1 & 0xff) + DAT_0023be74 + 5),auStack_c,10);
+  iVar1 = measure_text_width(auStack_c);
+  draw_text_string(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
+  return;
+}
+
+
+
+// was FUN_00078088 -- draws the player's "current/max HP" fraction
+// (g_player_object offset+8, the real player HP byte) as "X/Y" text
+// at y=0x32. Called from draw_stats_panel_content and
+// refresh_experience_display (the latter re-running it whenever the
+// player's stats change while the stats panel is the active HUD
+// view).
+void draw_hp_stat_display()
+
+{
+  short sVar1;
+  int iVar2;
+  undefined1 auStack_c [8];
+  
+  FUN_000229e0(*(undefined1 *)((char *)g_player_object + 8),auStack_c,10);
+  sVar1 = Ordinal_1068(auStack_c);
+  auStack_c[sVar1] = 0x2f;
+  FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
+  iVar2 = measure_text_width(auStack_c);
+  draw_text_string(auStack_c,0x138 - iVar2,0x32);
+  return;
+}
+
+
+
+// was FUN_00078118 -- draws the player's "current/max mana" fraction
+// (DAT_00086df8+0x37/+0x38 -- offset 0x37 confirmed as "play_mana"
+// against babl.c's own read of the same offset) as "X/Y" text at
+// y=0x39. Same caller pair as draw_hp_stat_display above.
+void draw_mana_stat_display()
+
+{
+  short sVar1;
+  int iVar2;
+  undefined1 auStack_10 [8];
+  
+  FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_10,10);
+  sVar1 = Ordinal_1068(auStack_10);
+  auStack_10[sVar1] = 0x2f;
+  FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_10 + ((sVar1 + 1) * 0x10000 >> 0x10),10)
+  ;
+  iVar2 = measure_text_width(auStack_10);
+  draw_text_string(auStack_10,0x138 - iVar2,0x39);
+  return;
+}
+
+
+
+// was FUN_000781a0 -- draws the player's total experience points
+// (DAT_00086df8+0x4e, a 4-byte value) formatted via Ordinal_2008/
+// Ordinal_1039 at y=0x40. Same caller pair as draw_hp_stat_display
+// above.
+void draw_experience_points_display()
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  undefined1 auStack_18 [12];
+  
+  uVar1 = Ordinal_2008(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
+  Ordinal_1039(uVar1,auStack_18,10);
+  iVar2 = measure_text_width(auStack_18);
+  draw_text_string(auStack_18,0x138 - iVar2,0x40);
   return;
 }

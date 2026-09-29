@@ -36503,74 +36503,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007802c(param_1)
-uint param_1;
-
-{
-  int iVar1;
-  undefined1 auStack_c [4];
-  
-  FUN_000229e0(*(undefined1 *)((param_1 & 0xff) + DAT_0023be74 + 5),auStack_c,10);
-  iVar1 = measure_text_width(auStack_c);
-  draw_text_string(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
-  return;
-}
-
-
-
-void FUN_00078088()
-
-{
-  short sVar1;
-  int iVar2;
-  undefined1 auStack_c [8];
-  
-  FUN_000229e0(*(undefined1 *)((char *)g_player_object + 8),auStack_c,10);
-  sVar1 = Ordinal_1068(auStack_c);
-  auStack_c[sVar1] = 0x2f;
-  FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
-  iVar2 = measure_text_width(auStack_c);
-  draw_text_string(auStack_c,0x138 - iVar2,0x32);
-  return;
-}
-
-
-
-void FUN_00078118()
-
-{
-  short sVar1;
-  int iVar2;
-  undefined1 auStack_10 [8];
-  
-  FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_10,10);
-  sVar1 = Ordinal_1068(auStack_10);
-  auStack_10[sVar1] = 0x2f;
-  FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_10 + ((sVar1 + 1) * 0x10000 >> 0x10),10)
-  ;
-  iVar2 = measure_text_width(auStack_10);
-  draw_text_string(auStack_10,0x138 - iVar2,0x39);
-  return;
-}
-
-
-
-void FUN_000781a0()
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  undefined1 auStack_18 [12];
-  
-  uVar1 = Ordinal_2008(10,*(undefined4 *)(DAT_00086df8 + 0x4e));
-  Ordinal_1039(uVar1,auStack_18,10);
-  iVar2 = measure_text_width(auStack_18);
-  draw_text_string(auStack_18,0x138 - iVar2,0x40);
-  return;
-}
-
-
-
 void FUN_0007821c(param_1)
 uint param_1;
 
@@ -36628,12 +36560,12 @@ void draw_stats_panel_content()
   draw_stats_panel_header();
   bVar1 = 0;
   do {
-    FUN_0007802c(bVar1);
+    draw_stats_panel_attribute_row(bVar1);
     bVar1 = bVar1 + 1;
   } while (bVar1 < 3);
-  FUN_00078088();
-  FUN_00078118();
-  FUN_000781a0();
+  draw_hp_stat_display();
+  draw_mana_stat_display();
+  draw_experience_points_display();
   bVar1 = 0;
   *g_draw_color_index = 0x68;
   *DAT_00084298 = 0x68;
