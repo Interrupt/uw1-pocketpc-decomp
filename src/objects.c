@@ -600,7 +600,7 @@ void *spawn_new_object(param_1,param_2)
    object_list_insert_head(iVar4+2,iVar5)) and gates on it being
    non-null, so this whole "spawn a new object" path -- used for
    monster death drops among other things -- was silently dead code.
-   Confirmed live: FUN_00072288's per-turn call passed the always-zero
+   Confirmed live: handle_starvation_penalty's per-turn call passed the always-zero
    result straight into place_object_in_world -> find_object_placement, which dereferenced
    the resulting NULL pointer and crashed the first time this
    never-before-exercised turn-processing branch actually ran (hit by

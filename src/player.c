@@ -328,7 +328,7 @@ void sync_player_stats_to_hud()
                             0x10) + 8 >> 4) & 0xf);
   }
   if (*(char *)((char *)g_player_object + 8) == '\0') {
-    FUN_00072288();
+    handle_starvation_penalty();
   }
   uVar3 = read_realtime_clock_units();
   iVar1 = ((uVar3 >> 8) - DAT_002020e4) * 0x10000;
@@ -2933,5 +2933,103 @@ void handle_game_victory_sequence()
     FUN_0003c038(0);
     DAT_0023c27c = '\0';
   }
+  return;
+}
+
+
+
+
+
+
+// was FUN_00072288 -- the starvation handler: its one caller invokes
+// this every turn the player's hunger byte (g_player_object+8) reads 0.
+// Gated on DAT_00086df8+0x6d (also set by handle_game_victory_sequence's
+// ending cutscene -- its exact broader meaning here, "already suffered
+// starvation once" vs something victory-specific, isn't resolved): if
+// clear, this is treated as a first warning -- just reset hunger to 4,
+// no penalty. If already set, apply real starvation consequences: lose
+// experience (grant_experience_points with a derived negative amount),
+// drop any held cursor item, spawn an object (catalog 0xc2+0..4) near
+// the player and settle it into the world, and -- if DAT_00086df8+0x5e's
+// upper nibble is set and not on level 9 -- re-arm the
+// apply_special_object_use_effect callback and play a camera animation
+// before showing a message.
+void handle_starvation_penalty()
+
+{
+  int uw_ord2005_rem_148 = 0;
+  byte bVar1;
+  undefined1 uVar2;
+  byte bVar3;
+  undefined2 uVar4;
+  undefined4 uVar5;
+  int iVar6;
+  int iVar7;
+  uint uVar8;
+  short extraout_r1;
+  char *pNewObj;
+
+  if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
+    *(undefined1 *)((char *)g_player_object + 8) = 4;
+    return;
+  }
+  thunk_FUN_00072c44();
+  FUN_00072910(10,1);
+  grant_experience_points((int)((uint)(*(uint3 *)(DAT_00086df8 + 0x4e) >> 3) * -0x10000) >> 0x10);
+  full_dungeon_redraw();
+  FUN_000411b8(5);
+  FUN_00027694();
+  if (g_selected_object != 0) {
+    if ((g_cursor_holding_state == 1) || (g_cursor_holding_state == 0)) {
+      drop_object_near_target(g_player_object,g_selected_object,6,0);
+    }
+    else if (g_cursor_holding_state != 2) goto LAB_00072374;
+    g_cursor_holding_state = 0;
+    g_selected_object = 0;
+    FUN_00057cac(3);
+  }
+LAB_00072374:
+  uVar5 = Ordinal_1053();
+  uw_ord2005_rem_148 = ((int)(uVar5)) % (5);
+  /* Was `iVar6 = spawn_new_object(...)` (plain int) -- spawn_new_object now
+     really returns a fresh object pointer (see its fix) instead of
+     always 0, so storing it in a 32-bit int truncates it on this 64-bit
+     host. New pNewObj local rather than retyping iVar6, which is reused
+     below for dungeon_view_anim_tick()'s unrelated int result. */
+  pNewObj = (char *)spawn_new_object(uw_ord2005_rem_148 + 0xc2,0);
+  iVar7 = place_object_in_world((int)DAT_00204880 >> 5,(int)DAT_00204882 >> 5,(int)DAT_00204884 >> 3,
+                       pNewObj,0,1);
+  if (iVar7 != 0) {
+    uVar4 = *(undefined2 *)(pNewObj + 2);
+    bVar1 = (byte)uVar4;
+    *(byte *)(pNewObj + 2) = (*(byte *)((char *)g_player_object + 2) ^ bVar1) & 0x7f ^ bVar1;
+    *(char *)(pNewObj + 3) = (char)((ushort)uVar4 >> 8);
+    *(byte *)(pNewObj + 6) = *(byte *)(pNewObj + 6) | 0x3f;
+    *(undefined1 *)(pNewObj + 7) = *(undefined1 *)(pNewObj + 7);
+    uVar8 = (*(ushort *)(pNewObj + 2) ^ *(ushort *)((char *)g_player_object + 2)) & 0x1fff ^
+            (uint)*(ushort *)((char *)g_player_object + 2);
+    uVar2 = (undefined1)uVar8;
+    *(undefined1 *)(pNewObj + 2) = uVar2;
+    bVar3 = (byte)(uVar8 >> 8);
+    *(byte *)(pNewObj + 3) = bVar3;
+    bVar1 = *(byte *)((char *)g_player_object + 3);
+    *(undefined1 *)(pNewObj + 2) = uVar2;
+    *(byte *)(pNewObj + 3) = (bVar1 ^ bVar3) & 0x1c ^ bVar3;
+    settle_dropped_object(pNewObj,(int)DAT_00204880 >> 8,(int)DAT_00204882 >> 8,1);
+  }
+  if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
+    FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
+    DAT_00201c9c = apply_special_object_use_effect;
+    DAT_00085730 = 0;
+    iVar6 = dungeon_view_anim_tick();
+    DAT_00085730 = 3;
+    if (iVar6 != 0) {
+      FUN_00037c14(0x102);
+      thunk_FUN_0003c310(0xf1);
+      msg_scroll_panel_reset(1);
+      return;
+    }
+  }
+  FUN_0003c038(1);
   return;
 }

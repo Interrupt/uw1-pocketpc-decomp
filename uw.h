@@ -3136,7 +3136,7 @@ void handle_game_victory_sequence();
 undefined4 spawn_scheduled_door_texture_object();
 bool check_scheduled_object_level_match();
 void apply_special_object_use_effect();
-void FUN_00072288();
+void handle_starvation_penalty();
 undefined4 FUN_00072598();
 undefined4 FUN_0007266c();
 undefined4 FUN_00072910();
