@@ -851,3 +851,186 @@ int param_3;
   return;
 }
 
+
+
+
+
+
+ushort *use_object_on_target(param_1,param_2,param_3)
+/* Was `int param_1` -- every call site passes a real object pointer
+   (g_player_object, the player object, at most sites), truncating it to
+   32 bits on this 64-bit host. Same class as handle_object_drop_target's `iVar2`
+   fix just above this function's own callers. */
+ushort *param_1;
+ushort * param_2;
+int param_3;
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  ushort uVar3;
+  int iVar4;
+  undefined2 *puVar5;
+  ushort *puVar6;
+  uint uVar7;
+  undefined4 in_stack_ffffffe4;
+  undefined2 uVar8;
+  
+  uVar8 = (undefined2)((uint)in_stack_ffffffe4 >> 0x10);
+  uVar2 = *param_2;
+  uVar7 = (uint)uVar2;
+  if (*(short *)(DAT_00085a6c + 8) == 4) {
+    if ((uVar7 & 0x1c0) != 0x80) {
+      return param_2;
+    }
+    if ((uVar2 & 0x30) != 0) {
+      return param_2;
+    }
+  }
+  uVar3 = uVar2 >> 6 & 7;
+  uVar1 = (ushort)((uVar7 & 0x30) >> 4);
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] use_object_on_target: obj0=0x%04x class(uVar3)=%d family(uVar1)=%d ptr=%p\n",
+            (unsigned)uVar2, (int)uVar3, (int)uVar1, (void *)param_2);
+  if ((uVar2 >> 6 & 7) == 0) {
+    if (((uVar1 == 1) && (param_3 == 0)) && (param_1 != 0)) {
+      FUN_000545ac(param_2,param_1);
+    }
+  }
+  else if (uVar3 == 2) {
+    if (uVar1 == 0) {
+      try_combine_or_stow_object(param_1,param_2,param_3);
+    }
+    else if (uVar1 == 1) {
+      if (7 < (uVar7 & 0xf)) {
+        FUN_0007abbc(param_2,param_3);
+        return param_2;
+      }
+      /* Dropped arguments: use_light_source (light/extinguish a light
+         source) declares two params it dereferences immediately, but
+         was called bare here -- leftover ARM register garbage stood in
+         for the real torch object and mode. Confirmed live: clicking
+         the Torch inside an open backpack container read garbage for
+         `param_1[2] & 0x3f` (the torch's real fuel/charges field) and
+         almost always happened to read 0, printing "That light is
+         already used up" regardless of the torch's actual fuel. */
+      use_light_source(param_2,param_3);
+    }
+    else if (uVar1 == 3) {
+      use_food_item(param_1,param_2,param_3);
+      return param_2;
+    }
+  }
+  else if (uVar3 == 3) {
+    if (uVar1 < 2) {
+      FUN_0007a478(param_2,param_3);
+    }
+    else if (((uVar1 == 2) && ((uVar7 & 0x1ff) == 0xe7)) && (param_3 != 0)) {
+      FUN_00079ff0(param_2,FUN_0007a704);
+    }
+  }
+  else {
+    if (uVar3 == 4) {
+      if (uVar1 == 0) {
+        FUN_00079f90(param_2,param_3);
+        goto LAB_00079cb8;
+      }
+      if (uVar1 == 1) {
+        FUN_0007a7fc(param_1,param_2,param_3);
+        goto LAB_00079cb8;
+      }
+      puVar6 = param_2;
+      if (uVar1 != 2) {
+        if (uVar1 == 3) {
+          FUN_0007baf0(param_2,param_3);
+          return param_2;
+        }
+        goto LAB_00079cb8;
+      }
+    }
+    else {
+      if (uVar3 == 5) {
+        FUN_0007bcdc(param_1,param_2);
+        goto LAB_00079cb8;
+      }
+      if (uVar3 != 7) goto LAB_00079cb8;
+      uVar7 = uVar7 & 0xf;
+      if (uVar7 != 9) {
+        if (uVar7 == 10) {
+          iVar4 = finish_object_use(param_2,param_3,1);
+          if (iVar4 != 0) {
+            print_scroll_message_by_id(9);
+            puVar5 = (undefined2 *)FUN_00079dec(0,0x122);
+            *(byte *)(DAT_00086df8 + 0x5e) = *(byte *)(DAT_00086df8 + 0x5e) & 0xf;
+            uVar8 = *puVar5;
+            *(char *)puVar5 = (char)uVar8;
+            *(byte *)((char *)puVar5 + 1) = (byte)((ushort)uVar8 >> 8) | 0x20;
+            return (ushort *)0x0;
+          }
+        }
+        else if (uVar7 == 0xf) {
+          if (((byte)param_2[3] & 0xf) < 8) {
+            open_door_object(param_2);
+          }
+          else {
+            close_door_object(param_1,param_2);
+          }
+        }
+        goto LAB_00079cb8;
+      }
+      if (((param_2[2] & 0xffc0) == 0) ||
+         (puVar6 = (ushort *)resolve_object_link(param_2 + 2), (*puVar6 & 0x1ff) != 0x12e)) goto LAB_00079cb8;
+    }
+    FUN_0007b72c(param_1,puVar6,param_3);
+  }
+LAB_00079cb8:
+  FUN_0007c2ec(param_1,param_2,4,(int)DAT_002020a0,CONCAT22(uVar8,DAT_002020a4));
+  FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,param_1,param_2,param_3);
+  return param_2;
+}
+
+
+
+// was FUN_00079d08
+bool finish_object_use(param_1,param_2,param_3)
+/* Was `undefined4 param_1` -- a real object-record pointer (forwarded
+   to decrement_object_count/discard_misplaced_object, which both dereference it), truncated
+   to 32 bits on this host -- same class as many other fixes this
+   session. */
+ushort *param_1;
+int param_2;
+undefined4 param_3;
+
+{
+  short sVar1;
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's/discard_misplaced_object's
+                   real `void *`/`ushort *` returns; only ever compared to
+                   0 (FUN_00053644's plain int return also lands here, but
+                   is likewise only ever compared to 0, so char* is safe) */
+  undefined4 uVar3;
+  ushort local_14 [2];
+
+  if (param_2 == 0) {
+    iVar2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
+    uVar3 = encode_object_slot_index(param_1);
+    iVar2 = (char *)(intptr_t)FUN_00053644(iVar2 + 2,1,uVar3);
+    if (iVar2 == 0) {
+      sVar1 = encode_object_slot_index(param_1);
+      local_14[0] = local_14[0] & 0x3f | sVar1 << 6;
+      free_linked_object_recursive(local_14);
+      iVar2 = 0;
+    }
+    else {
+      iVar2 = (char *)discard_misplaced_object(DAT_002046b4,param_1,param_3);
+      FUN_00049924(2);
+    }
+  }
+  else {
+    /* Dropped argument: decrement_object_count declares one param (the object)
+       and forwards it on -- called bare here, same idiom as its own
+       fix. */
+    decrement_object_count(param_1);
+    iVar2 = (char *)discard_misplaced_object(0,param_1,param_3);
+  }
+  return iVar2 == 0;
+}
