@@ -1406,10 +1406,10 @@ short param_2;
 
   /* DAT_002029cc is set once, early (init_level_object_arena/
      reset_level_object_arena, a real malloc'd pointer via Ordinal_1041),
-     but has been separately observed (FUN_00066e90's own comment) to no
+     but has been separately observed (init_gameplay_session's own comment) to no
      longer hold that pointer by later points in a session -- some other
      write elsewhere in this file lands on its storage, a real,
-     documented, not-yet-root-caused bug. FUN_00066e90 already guards
+     documented, not-yet-root-caused bug. init_gameplay_session already guards
      its own use with this same bounds check; tilemap_lookup is the
      single shared accessor behind 70+ call sites, so guard here too
      rather than just the one caller -- confirmed live crashing via a

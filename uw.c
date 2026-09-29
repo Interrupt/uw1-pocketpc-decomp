@@ -1559,7 +1559,7 @@ ushort DAT_00100610;
    (reset_level_object_arena: `DAT_002046b8 = DAT_002029cc + 0x4000;`), truncating it
    on this 64-bit host and feeding a garbage near-zero base pointer to
    every reader, including a real crash (Ordinal_1047/memset on the
-   resulting ~0x1b address) in FUN_00066cb4. */
+   resulting ~0x1b address) in reset_player_object_record. */
 char *DAT_002046b8;
 undefined2 DAT_00100600;
 ushort DAT_00100604;
@@ -1624,7 +1624,7 @@ char DAT_00084f1c;
 /* Was `int` despite being assigned real pointer values derived from
    DAT_002046b8 (see there) and itself assigned into g_player_object
    (`char *`) -- truncating on this 64-bit host, part of the same crash
-   chain (FUN_00066cb4's Ordinal_1047 call reading g_player_object). */
+   chain (reset_player_object_record's Ordinal_1047 call reading g_player_object). */
 char *DAT_0023b82c;
  undefined1 DAT_001007d0_backing[6144];
 #define DAT_001007d0 DAT_001007d0_backing[0]
@@ -2375,7 +2375,7 @@ char *DAT_00110fc0 = DAT_00110fc0_scratch;
    read it directly): how far the shared draw/pick-buffer write cursor has
    drifted from its scratch buffer's base, and how much headroom is left
    before it walks off the end into whatever global happens to follow --
-   see draw_command_list_rewind's comment and FUN_00066e90's "stray write
+   see draw_command_list_rewind's comment and init_gameplay_session's "stray write
    corrupts an unrelated global, never root-caused" comment. */
 long uw_debug_pickbuf_drift(void) {
   return (long)(DAT_00110fc0 - DAT_00110fc0_scratch);
@@ -5091,7 +5091,12 @@ undefined1 DAT_00086da8;
    table (`(&DAT_00086dc8)[light_type & 0xf]`). Widened to match. */
 undefined DAT_00086dc8_backing[16];
 #define DAT_00086dc8 DAT_00086dc8_backing[0]
-undefined g_object_weight_table;
+/* Was a lone `undefined` scalar, but compute_object_weight indexes it
+   as a 512-entry (9-bit item-id, 0-0x1ff), 4-byte-stride table
+   (`(&g_object_weight_table)[item_id * 4]`, only byte 0 of each entry
+   read). Widened to match. */
+undefined g_object_weight_table_backing[2048];
+#define g_object_weight_table g_object_weight_table_backing[0]
 /* Was a lone `undefined` scalar 6 bytes past DAT_00202800 -- but
    DAT_00202800 is the REAL family-0 armor/weapon variant-effect table
    (already recovered as a proper 65536-byte backing array, stride 8
@@ -5112,7 +5117,7 @@ undefined g_object_weight_table;
 #define DAT_00202806 DAT_00202800_backing[6]
 undefined2 DAT_0023beb8;
 undefined2 DAT_0023be8c;
-static undefined DAT_00028bfc_backing[8192];
+undefined DAT_00028bfc_backing[8192];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
 undefined4 DAT_0023be64;
 /* was FUN_0007036c. Bound to key 0x88 in mode 0x1b, arg 2 (uw.c
@@ -5168,7 +5173,7 @@ void FUN_00071ac4()
   FUN_00071510(puVar1 != (ushort *)0x0);
   return;
 }
-/* Base of a large fixed-offset record (FUN_00066cb4: `DAT_00086df8 =
+/* Base of a large fixed-offset record (reset_player_object_record: `DAT_00086df8 =
    &DAT_0023bca8;`, then FUN_000232ec and others write through
    DAT_00086df8 at offsets up to at least 0xd1/209 -- a device/config-ish
    struct, not yet fully identified). Declared as a lone `undefined`
@@ -5308,7 +5313,7 @@ char DAT_0023bf18;
 // was DAT_00086dfc. movement_tick's enable gate for tick_mobile_objects
 // (the real per-tick NPC AI + mobile-object dispatcher) -- declared but
 // never assigned anywhere in this decompile, a permanently-false gate;
-// see FUN_00066e90's own comment for the fix.
+// see init_gameplay_session's own comment for the fix.
 int g_npc_tick_enabled;
 char DAT_00086e84;
 int DAT_0023bf64;
@@ -20213,7 +20218,7 @@ void FUN_0003b820()
   }
   reset_texture_id_lists();
   FUN_0005b828();
-  FUN_00066e90();
+  init_gameplay_session();
   FUN_0002b63c();
   FUN_000232ec(0);
   FUN_00075be0();
@@ -20433,7 +20438,7 @@ void FUN_0003bee4()
 {
   uint uVar1;
   
-  FUN_00066c90();
+  close_panels_before_level_change();
   refresh_player_equipment_effects();
   uVar1 = *(ushort *)((char *)g_player_object + 2) & 0xfc7f;
   *(char *)((char *)g_player_object + 2) = (char)uVar1;
@@ -23517,7 +23522,7 @@ short param_1;
 
 void FUN_000444b0(param_1)
 char *param_1;  /* was `undefined4` -- truncated the real g_player_object+6
-                   pointer FUN_00066c90 passes in. Pre-existing bug, but
+                   pointer close_panels_before_level_change passes in. Pre-existing bug, but
                    never bit until resolve_object_link (this function's
                    own first call) started actually using its argument
                    instead of being called with no argument at all. */
@@ -23574,7 +23579,7 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
   if ((param_1 != 0) && (-1 < DAT_00202080)) {
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
-  FUN_00066c90();
+  close_panels_before_level_change();
   if ((g_save_record_buffer == 0) && (g_save_record_buffer = Ordinal_1041(0x4000), g_save_record_buffer == 0)) {
     return 0;
   }
@@ -36391,262 +36396,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-// WARNING: Removing unreachable block (ram,0x000667b0)
-
-int compute_object_weight(param_1)
-ushort * param_1;
-
-{
-  ushort uVar1;
-  int iVar2;
-  
-  uVar1 = *param_1;
-  if (((uVar1 & 0x1c0) == 0) && ((uVar1 & 0x30) < 0x20)) {
-    iVar2 = 0;
-  }
-  else {
-    iVar2 = (((int)((uint)(byte)(&g_object_weight_table)[(uVar1 & 0x1ff) * 4] * ((byte)param_1[2] & 0x3f)) >>
-             6) + 1) * 0x10000 >> 0x10;
-  }
-  return iVar2;
-}
-
-
-
-void FUN_00066c90()
-
-{
-  close_backpack_container();
-  FUN_000444b0((char *)g_player_object + 6);
-  FUN_000465c8();
-  return;
-}
-
-
-
-void FUN_00066cb4()
-
-{
-  ushort uVar1;
-  
-  Ordinal_1047(g_player_object,0,0x1b);
-  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 7) = 0;
-  *(undefined1 *)((char *)g_player_object + 0xd) = 0xfd;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0x7fff);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0x7fff) >> 8);
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)uVar1;
-  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) | 0x20;
-  uVar1 = *g_player_object;
-  *(char *)g_player_object = (char)(uVar1 & 0xbfff);
-  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xbfff) >> 8);
-  uVar1 = g_player_object[1];
-  *(char *)((char *)g_player_object + 1) = (char)(uVar1 & 0xfc7f);
-  *(char *)((char *)g_player_object + 3) = (char)((uVar1 & 0xfc7f) >> 8);
-  *(byte *)((char *)g_player_object + 0xc) = (byte)g_player_object[0xc] & 0xe0;
-  uVar1 = g_player_object[2];
-  *(char *)((char *)g_player_object + 2) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)g_player_object + 5) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)((char *)g_player_object + 2) = (byte)g_player_object[2] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 5) = 0;
-  uVar1 = g_player_object[3];
-  *(char *)((char *)g_player_object + 3) = (char)(uVar1 & 0xffc0);
-  *(char *)((char *)g_player_object + 7) = (char)((uVar1 & 0xffc0) >> 8);
-  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
-  *(undefined1 *)((char *)g_player_object + 7) = 0;
-  *(undefined1 *)((char *)g_player_object + 0x11) = 0;
-  uVar1 = *g_player_object;
-  *(undefined1 *)g_player_object = 0x7f;
-  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) & 0xfe;
-  return;
-}
-
-
-
-void FUN_00066e90()
-
-{
-  int iVar1;
-
-  /* DAT_002029cc is set once, early (init_level_object_arena/reset_level_object_arena: a real
-     malloc'd pointer via Ordinal_1041), and DAT_002046b8/DAT_002046c4
-     are derived from it and never touched again. By the time this
-     function runs, though, DAT_002029cc has been observed (via a
-     temporary diagnostic print) to no longer hold that pointer -- some
-     other write elsewhere in this file is landing on its storage
-     between then and now, the same general "stray write corrupts an
-     unrelated global" class of bug as DAT_0023c5ac/DAT_0023c5b0 and
-     DAT_00110fc8/fc0/fcc earlier, but the actual writer wasn't pinned
-     down (not caught by ASAN as an out-of-bounds write, so it's likely
-     a plausible-looking but wrong destination computed elsewhere rather
-     than a classic overflow). Rather than dereference a pointer derived
-     from corrupted state (confirmed crashing in Ordinal_1047 by way of
-     FUN_00066cb4), bail out defensively if it doesn't look like a
-     plausible heap pointer. */
-  if ((uintptr_t)DAT_002029cc < 0x10000) {
-    return;
-  }
-  DAT_0023b82c = (byte *)(DAT_002046b8 + 0x1b);
-  DAT_00202080 = 0xffff;
-  DAT_00201c78 = 0;
-  DAT_00201c70 = 0;
-  DAT_0023beb4 = 0;
-  DAT_0023beb8 = 0;
-  /* Command-input mode. When set, handle_keyboard_message folds a WM_CHAR
-     letter to its uppercase code before dropping it in DAT_0023c448, so
-     the movement key bindings registered just below (W/S/X/A/D = VK
-     codes 0x57/0x53/0x58/0x41/0x44) actually match a keypress, and the
-     main loop ramps the hold-acceleration counter faster. It is a
-     link-time-initialised flag whose real setup Ghidra dropped (same
-     silently-zero class as DAT_00086e68 / DAT_0008589c etc.): left at 0
-     the keyboard movement keys were dead. Toggled off again by the
-     Caps-Lock key (VK 0x14) in handle_keyboard_message; text-entry
-     screens that need raw lowercase (chargen name entry) run before this
-     function. */
-  DAT_0024af60 = 1;
-  DAT_00201b68 = 1;
-  DAT_002048a7 = 8;
-  DAT_002048a3 = 1;
-  DAT_002048a4 = 0;
-  DAT_002048b8 = &check_and_reset_landing_state;
-  DAT_002048b2 = 0x1100;
-  DAT_002048b0 = 0;
-  g_player_object = DAT_0023b82c;
-  FUN_0006ff08(0);
-  DAT_0023be8c = 0;
-  DAT_00086df8 = &DAT_0023bca8;
-  /* HACK, same silently-zero class as DAT_0024af60 above and DAT_00086e68 /
-     DAT_0008589c elsewhere in this file: g_npc_tick_enabled is read exactly once
-     in this whole file, as the enable gate for movement_tick's per-frame
-     call to tick_mobile_objects (the real NPC/mobile-object AI+movement
-     dispatcher -- walks the mobile object arena, drives NPC pathing via
-     FUN_00034c10 and other mobile objects via mobile_object_tick) -- but it is
-     never written anywhere in this decompile, so the gate is permanently
-     false and NPCs/mobile objects never tick. This is a link-time-
-     initialised flag whose real setup Ghidra dropped, exactly like
-     DAT_0024af60's movement-key command-mode flag above. Initialize it
-     here, alongside this function's other one-time gameplay-enable flags. */
-  g_npc_tick_enabled = 1;
-  /* HACK, same silently-zero class as g_npc_tick_enabled just above:
-     DAT_000879ac gates all three per-tick call sites of scheduler_tick
-     (the scheduled-effects queue driver -- walks the queue
-     scheduler_add_entry pushes to, ticking scheduler_step_entry's gradual per-object
-     step until each entry's delay expires, then scheduler_finish_entry finalizes
-     it) that fire from ordinary gameplay: move_key_directional_step's
-     per-held-key-frame call, its sibling per-frame movement-pacing
-     call, and the per-tile-scan idle-animation call. Declared but never
-     assigned anywhere in this decompile (confirmed via a full-session
-     trace, UW_DEBUG_DOOR2=1: scheduler_tick never ran once, zero hits
-     across 470000+ log lines covering chargen, movement, and object
-     interaction), so the entire queue -- doors' real gradual open/close
-     swing among its users -- silently never advanced past whatever a
-     caller pushed onto it. Root-caused chasing a door-open bug report
-     ("the door should animate in six to eight small steps over a few
-     seconds, it doesn't"): the door's own open trigger (FUN_0007c708)
-     already queues a correct, gradual animation via FUN_0007c3f4, and
-     that queue entry sat there forever, un-ticked, until an unrelated
-     instant-snap fallback elsewhere silently finished the door in one
-     step instead. Initialize alongside this function's other one-time
-     gameplay-enable flags, matching g_npc_tick_enabled's own established
-     fix immediately above. */
-  DAT_000879ac = 1;
-  FUN_00066cb4();
-  iVar1 = (*g_player_object & 0x3f) * 0x30;
-  DAT_0023be74 = &DAT_001007d0 + iVar1;
-  g_player_object[8] = (&g_monster_max_stats_table)[iVar1];
-  if (DAT_00201c74 == 0) {
-    DAT_00201c74 = FUN_0007873c(DAT_00086df8,0x7d);
-  }
-  register_key_binding(0x3f,0xe,1,move_command_dispatch);
-  register_key_binding(0x8d,5,1,move_command_dispatch);
-  register_key_binding(0x8f,3,1,move_command_dispatch);
-  register_key_binding(0x91,4,1,move_command_dispatch);
-  register_key_binding(0x3f,0xe,1,move_command_dispatch);
-  register_key_binding(0x8d,5,1,move_command_dispatch);
-  register_key_binding(0x8f,3,1,move_command_dispatch);
-  register_key_binding(0x91,4,1,move_command_dispatch);
-  /* Z / C strafe: the original registered these as raw lowercase ascii
-     (0x7a 'z', 0x63 'c'), but every other letter movement key here uses
-     the uppercase VK code (W=0x57 ...) and handle_keyboard_message
-     upper-cases letters in command mode -- so as shipped the lowercase
-     entries could never match. Use the uppercase VK codes (VK_Z 0x5a,
-     VK_C 0x43) for consistency with W/S/X/A/D. */
-  register_key_binding(0x5a,9,1,move_command_dispatch);
-  register_key_binding(0x43,10,1,move_command_dispatch);
-  /* Sidestep: the DOS "," / "." strafe keys. decode_movement_command
-     already turns input codes 0x2c / 0x2e into g_movement_mode 9 / 10
-     (resolve_move_vector cases 9/10 = move at heading -/+ 90 degrees, facing
-     unchanged), but nothing routed those codes here -- move_command_dispatch
-     with arg 9/10 just re-runs decode_movement_command and returns. The
-     gx_stub Z/C keyboard poll feeds 0x2c / 0x2e. */
-  register_key_binding(0x2c,9,1,move_command_dispatch);
-  register_key_binding(0x2e,10,1,move_command_dispatch);
-  register_key_binding(0x93,8,1,move_command_dispatch);
-  register_key_binding(0x6c,0xc,0x1b,move_command_dispatch);
-  register_key_binding(0x6b,0xd,0x1b,move_command_dispatch);
-  register_key_binding(0x41,0xffffffff,1,move_key_directional_step);
-  register_key_binding(0x44,1,1,move_key_directional_step);
-  register_key_binding(0x53,0,1,move_key_directional_step);
-  register_key_binding(0x58,0xfffffffe,1,move_key_directional_step);
-  register_key_binding(0x57,2,1,move_key_directional_step);
-  register_click_region(0x6b,0xa7,0x7b,0x99,0xffff,1,move_key_directional_step);
-  register_click_region(0x82,0xa9,0x92,0x9c,0,1,move_key_directional_step);
-  register_click_region(0x9b,0xa7,0xaa,0x99,1,1,move_key_directional_step);
-  register_key_binding(0x33,1,0x11,&FUN_000680d0);
-  register_key_binding(0x31,0xffffffff,0x11,&FUN_000680d0);
-  register_key_binding(0x32,0,0x11,&FUN_000680d0);
-  register_key_binding(0x6a,7,0x1b,move_command_dispatch);
-  register_key_binding(0x4a,6,0x1b,move_command_dispatch);
-  register_key_binding(0x86,0,0x1b,toggle_stats_panel);
-  register_key_binding(0x89,0,0x1b,&FUN_00071ac4);
-  register_key_binding(0x88,2,0x1b,&FUN_0007036c);
-  register_key_binding(0x87,1,0x1b,FUN_00044d14);
-  register_key_binding(0x173,0x173,1,FUN_00056ebc);
-  register_key_binding(0x172,0x172,1,FUN_00056ebc);
-  register_key_binding(0x16d,0x16d,1,FUN_00056ebc);
-  register_key_binding(0x166,0x166,1,FUN_00056ebc);
-  register_key_binding(0x164,0x164,1,FUN_00056ebc);
-  register_key_binding(0x171,0x171,1,FUN_00056ebc);
-  register_key_binding(0x80,5,1,cursor_mode_button_click);
-  register_key_binding(0x81,4,1,cursor_mode_button_click);
-  register_key_binding(0x82,3,1,cursor_mode_button_click);
-  register_key_binding(0x83,2,1,cursor_mode_button_click);
-  register_key_binding(0x83,2,4,cursor_mode_button_click);
-  register_key_binding(0x84,1,1,cursor_mode_button_click);
-  register_key_binding(0x85,0,1,cursor_mode_button_click);
-  register_key_binding(0x70,9,1,FUN_00027708);
-  register_key_binding(0x2e,3,1,FUN_00027708);
-  register_key_binding(0x3b,6,1,FUN_00027708);
-  register_key_binding(0x4a3,0x4a3,7,FUN_00058734);
-  register_key_binding(9,9,7,FUN_00058734);
-  register_key_binding(0x8d,0x8d,7,FUN_00058734);
-  register_key_binding(0x93,0x93,7,FUN_00058734);
-  register_key_binding(0x8f,0x8f,7,FUN_00058734);
-  register_key_binding(0x91,0x91,7,FUN_00058734);
-  register_key_binding(0x8c,0x8c,7,FUN_00058734);
-  register_key_binding(0x8e,0x8e,7,FUN_00058734);
-  register_key_binding(0x92,0x92,7,FUN_00058734);
-  register_key_binding(0x94,0x94,7,FUN_00058734);
-  register_key_binding(0x95,0x95,7,FUN_00058734);
-  register_key_binding(0x96,0x96,7,FUN_00058734);
-  register_key_binding(0x1b,4,4,&DAT_00028bfc);
-  register_key_binding(0x31,1,4,FUN_000295b4);
-  register_key_binding(0x32,2,4,FUN_000295b4);
-  register_key_binding(0x33,3,4,FUN_000295b4);
-  register_key_binding(0x34,4,4,FUN_000295b4);
-  register_click_region(0x52,0x30,0x88,10,4,4,handle_barter_npc_panel_click);
-  register_click_region(0x8b,0x30,0xc1,10,4,4,handle_barter_player_panel_click);
-  register_click_region(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
-  register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
-  register_key_binding(0x286,0,0x1b,FUN_000679f4);
-  register_key_binding(0x30,0,0x1b,FUN_00067950);
   return;
 }
 
@@ -49529,7 +49278,7 @@ undefined4 param_1;
      confirmed crashing (EXC_BAD_ACCESS / SIGSEGV dereferencing *puVar4)
      the first time this function ever actually ran in this whole
      project's testing -- it's the scheduled-effects queue's own finalize step, reachable
-     only once DAT_000879ac (see FUN_00066e90's own fix) stopped being
+     only once DAT_000879ac (see init_gameplay_session's own fix) stopped being
      permanently zero, so nothing had exercised a real queue-entry
      resolution failure here before. A stale entry (its target object
      already freed/reused by the time its delay expires) is an entirely
@@ -49838,7 +49587,7 @@ LAB_00081254:
 // was FUN_0008128c: walks every live scheduler entry, called from
 // ordinary gameplay's own per-tick pacing (move_key_directional_step
 // and its per-frame sibling, gated by DAT_000879ac -- see
-// FUN_00066e90's own comment) with param_1 = elapsed ticks. Per entry:
+// init_gameplay_session's own comment) with param_1 = elapsed ticks. Per entry:
 // scheduler_step_entry while its delay hasn't expired yet,
 // scheduler_finish_entry once it has.
 void scheduler_tick(param_1)

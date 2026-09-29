@@ -509,7 +509,7 @@ ushort * param_1;
      the check on DAT_002046b8 (computed ONCE at level load as
      DAT_002029cc+0x4000, see reset_level_object_arena) rather than re-reading the
      LIVE DAT_002029cc: there's an existing, previously-documented,
-     never-root-caused bug (see FUN_00066e90's own comment a few
+     never-root-caused bug (see init_gameplay_session's own comment a few
      thousand lines down) where some stray write elsewhere in this file
      corrupts DAT_002029cc's storage well after level load -- confirmed
      here too (the live DAT_002029cc no longer matched the base

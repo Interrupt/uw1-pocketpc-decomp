@@ -506,3 +506,257 @@ undefined4 param_1;
   DAT_000868d8 = 0;
   return;
 }
+
+
+
+// was FUN_00066c90 -- closes the backpack container UI and clears the
+// player's transient inventory-view state before a level transition
+// (FUN_0003bee4, a resurrect/reset-position path) or a fresh level
+// load (load_level), so no dangling container reference survives the
+// change.
+void close_panels_before_level_change()
+
+{
+  close_backpack_container();
+  FUN_000444b0((char *)g_player_object + 6);
+  FUN_000465c8();
+  return;
+}
+
+
+
+// was FUN_00066cb4 -- zeroes g_player_object's whole 0x1b-byte record
+// then re-sets it to a fresh blank object header/mobile-record: a
+// default heading/quality pattern, item-id 0x7f (the player's fixed
+// item-id), and clears the container/link/status bitfields. Called
+// once from init_gameplay_session at the start of every session.
+void reset_player_object_record()
+
+{
+  ushort uVar1;
+
+  Ordinal_1047(g_player_object,0,0x1b);
+  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
+  *(undefined1 *)((char *)g_player_object + 7) = 0;
+  *(undefined1 *)((char *)g_player_object + 0xd) = 0xfd;
+  uVar1 = *g_player_object;
+  *(char *)g_player_object = (char)(uVar1 & 0x7fff);
+  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0x7fff) >> 8);
+  uVar1 = *g_player_object;
+  *(char *)g_player_object = (char)uVar1;
+  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) | 0x20;
+  uVar1 = *g_player_object;
+  *(char *)g_player_object = (char)(uVar1 & 0xbfff);
+  *(char *)((char *)g_player_object + 1) = (char)((uVar1 & 0xbfff) >> 8);
+  uVar1 = g_player_object[1];
+  *(char *)((char *)g_player_object + 1) = (char)(uVar1 & 0xfc7f);
+  *(char *)((char *)g_player_object + 3) = (char)((uVar1 & 0xfc7f) >> 8);
+  *(byte *)((char *)g_player_object + 0xc) = (byte)g_player_object[0xc] & 0xe0;
+  uVar1 = g_player_object[2];
+  *(char *)((char *)g_player_object + 2) = (char)(uVar1 & 0xffc0);
+  *(char *)((char *)g_player_object + 5) = (char)((uVar1 & 0xffc0) >> 8);
+  *(byte *)((char *)g_player_object + 2) = (byte)g_player_object[2] & 0x3f;
+  *(undefined1 *)((char *)g_player_object + 5) = 0;
+  uVar1 = g_player_object[3];
+  *(char *)((char *)g_player_object + 3) = (char)(uVar1 & 0xffc0);
+  *(char *)((char *)g_player_object + 7) = (char)((uVar1 & 0xffc0) >> 8);
+  *(byte *)((char *)g_player_object + 3) = (byte)g_player_object[3] & 0x3f;
+  *(undefined1 *)((char *)g_player_object + 7) = 0;
+  *(undefined1 *)((char *)g_player_object + 0x11) = 0;
+  uVar1 = *g_player_object;
+  *(undefined1 *)g_player_object = 0x7f;
+  *(byte *)((char *)g_player_object + 1) = (byte)(uVar1 >> 8) & 0xfe;
+  return;
+}
+
+
+
+// was FUN_00066e90 -- one-time gameplay session setup: initializes
+// player/camera/movement state (starting level 1, facing, locomotion
+// mode), the player object record (reset_player_object_record),
+// several link-time-initialized gameplay-enable flags this port's
+// decompile otherwise leaves permanently zero (g_npc_tick_enabled,
+// the scheduler-tick gate DAT_000879ac, the keyboard command-mode
+// flag DAT_0024af60 -- see each flag's own inline comment for the
+// bug this fixes), then registers the whole movement/UI key-binding
+// and click-region table. Called once at the start of a session.
+void init_gameplay_session()
+
+{
+  int iVar1;
+
+  /* DAT_002029cc is set once, early (init_level_object_arena/reset_level_object_arena: a real
+     malloc'd pointer via Ordinal_1041), and DAT_002046b8/DAT_002046c4
+     are derived from it and never touched again. By the time this
+     function runs, though, DAT_002029cc has been observed (via a
+     temporary diagnostic print) to no longer hold that pointer -- some
+     other write elsewhere in this file is landing on its storage
+     between then and now, the same general "stray write corrupts an
+     unrelated global" class of bug as DAT_0023c5ac/DAT_0023c5b0 and
+     DAT_00110fc8/fc0/fcc earlier, but the actual writer wasn't pinned
+     down (not caught by ASAN as an out-of-bounds write, so it's likely
+     a plausible-looking but wrong destination computed elsewhere rather
+     than a classic overflow). Rather than dereference a pointer derived
+     from corrupted state (confirmed crashing in Ordinal_1047 by way of
+     reset_player_object_record), bail out defensively if it doesn't look like a
+     plausible heap pointer. */
+  if ((uintptr_t)DAT_002029cc < 0x10000) {
+    return;
+  }
+  DAT_0023b82c = (byte *)(DAT_002046b8 + 0x1b);
+  DAT_00202080 = 0xffff;
+  DAT_00201c78 = 0;
+  DAT_00201c70 = 0;
+  DAT_0023beb4 = 0;
+  DAT_0023beb8 = 0;
+  /* Command-input mode. When set, handle_keyboard_message folds a WM_CHAR
+     letter to its uppercase code before dropping it in DAT_0023c448, so
+     the movement key bindings registered just below (W/S/X/A/D = VK
+     codes 0x57/0x53/0x58/0x41/0x44) actually match a keypress, and the
+     main loop ramps the hold-acceleration counter faster. It is a
+     link-time-initialised flag whose real setup Ghidra dropped (same
+     silently-zero class as DAT_00086e68 / DAT_0008589c etc.): left at 0
+     the keyboard movement keys were dead. Toggled off again by the
+     Caps-Lock key (VK 0x14) in handle_keyboard_message; text-entry
+     screens that need raw lowercase (chargen name entry) run before this
+     function. */
+  DAT_0024af60 = 1;
+  DAT_00201b68 = 1;
+  DAT_002048a7 = 8;
+  DAT_002048a3 = 1;
+  DAT_002048a4 = 0;
+  DAT_002048b8 = &check_and_reset_landing_state;
+  DAT_002048b2 = 0x1100;
+  DAT_002048b0 = 0;
+  g_player_object = DAT_0023b82c;
+  FUN_0006ff08(0);
+  DAT_0023be8c = 0;
+  DAT_00086df8 = &DAT_0023bca8;
+  /* HACK, same silently-zero class as DAT_0024af60 above and DAT_00086e68 /
+     DAT_0008589c elsewhere in this file: g_npc_tick_enabled is read exactly once
+     in this whole file, as the enable gate for movement_tick's per-frame
+     call to tick_mobile_objects (the real NPC/mobile-object AI+movement
+     dispatcher -- walks the mobile object arena, drives NPC pathing via
+     FUN_00034c10 and other mobile objects via mobile_object_tick) -- but it is
+     never written anywhere in this decompile, so the gate is permanently
+     false and NPCs/mobile objects never tick. This is a link-time-
+     initialised flag whose real setup Ghidra dropped, exactly like
+     DAT_0024af60's movement-key command-mode flag above. Initialize it
+     here, alongside this function's other one-time gameplay-enable flags. */
+  g_npc_tick_enabled = 1;
+  /* HACK, same silently-zero class as g_npc_tick_enabled just above:
+     DAT_000879ac gates all three per-tick call sites of scheduler_tick
+     (the scheduled-effects queue driver -- walks the queue
+     scheduler_add_entry pushes to, ticking scheduler_step_entry's gradual per-object
+     step until each entry's delay expires, then scheduler_finish_entry finalizes
+     it) that fire from ordinary gameplay: move_key_directional_step's
+     per-held-key-frame call, its sibling per-frame movement-pacing
+     call, and the per-tile-scan idle-animation call. Declared but never
+     assigned anywhere in this decompile (confirmed via a full-session
+     trace, UW_DEBUG_DOOR2=1: scheduler_tick never ran once, zero hits
+     across 470000+ log lines covering chargen, movement, and object
+     interaction), so the entire queue -- doors' real gradual open/close
+     swing among its users -- silently never advanced past whatever a
+     caller pushed onto it. Root-caused chasing a door-open bug report
+     ("the door should animate in six to eight small steps over a few
+     seconds, it doesn't"): the door's own open trigger (FUN_0007c708)
+     already queues a correct, gradual animation via FUN_0007c3f4, and
+     that queue entry sat there forever, un-ticked, until an unrelated
+     instant-snap fallback elsewhere silently finished the door in one
+     step instead. Initialize alongside this function's other one-time
+     gameplay-enable flags, matching g_npc_tick_enabled's own established
+     fix immediately above. */
+  DAT_000879ac = 1;
+  reset_player_object_record();
+  iVar1 = (*g_player_object & 0x3f) * 0x30;
+  DAT_0023be74 = &DAT_001007d0 + iVar1;
+  g_player_object[8] = (&g_monster_max_stats_table)[iVar1];
+  if (DAT_00201c74 == 0) {
+    DAT_00201c74 = FUN_0007873c(DAT_00086df8,0x7d);
+  }
+  register_key_binding(0x3f,0xe,1,move_command_dispatch);
+  register_key_binding(0x8d,5,1,move_command_dispatch);
+  register_key_binding(0x8f,3,1,move_command_dispatch);
+  register_key_binding(0x91,4,1,move_command_dispatch);
+  register_key_binding(0x3f,0xe,1,move_command_dispatch);
+  register_key_binding(0x8d,5,1,move_command_dispatch);
+  register_key_binding(0x8f,3,1,move_command_dispatch);
+  register_key_binding(0x91,4,1,move_command_dispatch);
+  /* Z / C strafe: the original registered these as raw lowercase ascii
+     (0x7a 'z', 0x63 'c'), but every other letter movement key here uses
+     the uppercase VK code (W=0x57 ...) and handle_keyboard_message
+     upper-cases letters in command mode -- so as shipped the lowercase
+     entries could never match. Use the uppercase VK codes (VK_Z 0x5a,
+     VK_C 0x43) for consistency with W/S/X/A/D. */
+  register_key_binding(0x5a,9,1,move_command_dispatch);
+  register_key_binding(0x43,10,1,move_command_dispatch);
+  /* Sidestep: the DOS "," / "." strafe keys. decode_movement_command
+     already turns input codes 0x2c / 0x2e into g_movement_mode 9 / 10
+     (resolve_move_vector cases 9/10 = move at heading -/+ 90 degrees, facing
+     unchanged), but nothing routed those codes here -- move_command_dispatch
+     with arg 9/10 just re-runs decode_movement_command and returns. The
+     gx_stub Z/C keyboard poll feeds 0x2c / 0x2e. */
+  register_key_binding(0x2c,9,1,move_command_dispatch);
+  register_key_binding(0x2e,10,1,move_command_dispatch);
+  register_key_binding(0x93,8,1,move_command_dispatch);
+  register_key_binding(0x6c,0xc,0x1b,move_command_dispatch);
+  register_key_binding(0x6b,0xd,0x1b,move_command_dispatch);
+  register_key_binding(0x41,0xffffffff,1,move_key_directional_step);
+  register_key_binding(0x44,1,1,move_key_directional_step);
+  register_key_binding(0x53,0,1,move_key_directional_step);
+  register_key_binding(0x58,0xfffffffe,1,move_key_directional_step);
+  register_key_binding(0x57,2,1,move_key_directional_step);
+  register_click_region(0x6b,0xa7,0x7b,0x99,0xffff,1,move_key_directional_step);
+  register_click_region(0x82,0xa9,0x92,0x9c,0,1,move_key_directional_step);
+  register_click_region(0x9b,0xa7,0xaa,0x99,1,1,move_key_directional_step);
+  register_key_binding(0x33,1,0x11,&FUN_000680d0);
+  register_key_binding(0x31,0xffffffff,0x11,&FUN_000680d0);
+  register_key_binding(0x32,0,0x11,&FUN_000680d0);
+  register_key_binding(0x6a,7,0x1b,move_command_dispatch);
+  register_key_binding(0x4a,6,0x1b,move_command_dispatch);
+  register_key_binding(0x86,0,0x1b,toggle_stats_panel);
+  register_key_binding(0x89,0,0x1b,&FUN_00071ac4);
+  register_key_binding(0x88,2,0x1b,&FUN_0007036c);
+  register_key_binding(0x87,1,0x1b,FUN_00044d14);
+  register_key_binding(0x173,0x173,1,FUN_00056ebc);
+  register_key_binding(0x172,0x172,1,FUN_00056ebc);
+  register_key_binding(0x16d,0x16d,1,FUN_00056ebc);
+  register_key_binding(0x166,0x166,1,FUN_00056ebc);
+  register_key_binding(0x164,0x164,1,FUN_00056ebc);
+  register_key_binding(0x171,0x171,1,FUN_00056ebc);
+  register_key_binding(0x80,5,1,cursor_mode_button_click);
+  register_key_binding(0x81,4,1,cursor_mode_button_click);
+  register_key_binding(0x82,3,1,cursor_mode_button_click);
+  register_key_binding(0x83,2,1,cursor_mode_button_click);
+  register_key_binding(0x83,2,4,cursor_mode_button_click);
+  register_key_binding(0x84,1,1,cursor_mode_button_click);
+  register_key_binding(0x85,0,1,cursor_mode_button_click);
+  register_key_binding(0x70,9,1,FUN_00027708);
+  register_key_binding(0x2e,3,1,FUN_00027708);
+  register_key_binding(0x3b,6,1,FUN_00027708);
+  register_key_binding(0x4a3,0x4a3,7,FUN_00058734);
+  register_key_binding(9,9,7,FUN_00058734);
+  register_key_binding(0x8d,0x8d,7,FUN_00058734);
+  register_key_binding(0x93,0x93,7,FUN_00058734);
+  register_key_binding(0x8f,0x8f,7,FUN_00058734);
+  register_key_binding(0x91,0x91,7,FUN_00058734);
+  register_key_binding(0x8c,0x8c,7,FUN_00058734);
+  register_key_binding(0x8e,0x8e,7,FUN_00058734);
+  register_key_binding(0x92,0x92,7,FUN_00058734);
+  register_key_binding(0x94,0x94,7,FUN_00058734);
+  register_key_binding(0x95,0x95,7,FUN_00058734);
+  register_key_binding(0x96,0x96,7,FUN_00058734);
+  register_key_binding(0x1b,4,4,&DAT_00028bfc);
+  register_key_binding(0x31,1,4,FUN_000295b4);
+  register_key_binding(0x32,2,4,FUN_000295b4);
+  register_key_binding(0x33,3,4,FUN_000295b4);
+  register_key_binding(0x34,4,4,FUN_000295b4);
+  register_click_region(0x52,0x30,0x88,10,4,4,handle_barter_npc_panel_click);
+  register_click_region(0x8b,0x30,0xc1,10,4,4,handle_barter_player_panel_click);
+  register_click_region(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
+  register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
+  register_key_binding(0x286,0,0x1b,FUN_000679f4);
+  register_key_binding(0x30,0,0x1b,FUN_00067950);
+  return;
+}
+

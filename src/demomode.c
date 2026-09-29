@@ -791,7 +791,7 @@ void demomode_pump(void) {
          * and how much headroom remains before it walks off the end into
          * whatever global follows -- testing the theory that this shared,
          * seemingly-unbounded cursor is the "stray write corrupts an
-         * unrelated global, never root-caused" bug FUN_00066e90's comment
+         * unrelated global, never root-caused" bug init_gameplay_session's comment
          * already documents. */
         extern long uw_debug_pickbuf_drift(void);
         extern long uw_debug_pickbuf_capacity(void);

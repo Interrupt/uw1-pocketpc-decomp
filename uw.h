@@ -864,6 +864,16 @@ extern char DAT_00086db4;
 extern int DAT_00086db8;
 extern undefined DAT_00086dc8_backing[16];
 #define DAT_00086dc8 DAT_00086dc8_backing[0]
+extern undefined g_object_weight_table_backing[2048];
+#define g_object_weight_table g_object_weight_table_backing[0]
+extern undefined2 DAT_0023beb8;
+extern undefined2 DAT_0023be8c;
+extern int g_npc_tick_enabled;
+extern undefined DAT_00028bfc_backing[8192];
+#define DAT_00028bfc DAT_00028bfc_backing[0]
+void FUN_000680d0();
+void FUN_00071ac4();
+undefined4 FUN_0007036c();
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -2892,9 +2902,9 @@ void update_level7_floor_hazard_state();
 void apply_equipment_effect_penalties();
 int compute_object_weight();
 void refresh_player_equipment_effects();
-void FUN_00066c90();
-void FUN_00066cb4();
-void FUN_00066e90();
+void close_panels_before_level_change();
+void reset_player_object_record();
+void init_gameplay_session();
 void FUN_0006764c();
 void FUN_000678e0();
 void FUN_00067950();

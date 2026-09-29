@@ -1272,3 +1272,26 @@ uint param_1;
   return;
 }
 
+
+
+
+// WARNING: Removing unreachable block (ram,0x000667b0)
+
+int compute_object_weight(param_1)
+ushort * param_1;
+
+{
+  ushort uVar1;
+  int iVar2;
+  
+  uVar1 = *param_1;
+  if (((uVar1 & 0x1c0) == 0) && ((uVar1 & 0x30) < 0x20)) {
+    iVar2 = 0;
+  }
+  else {
+    iVar2 = (((int)((uint)(byte)(&g_object_weight_table)[(uVar1 & 0x1ff) * 4] * ((byte)param_1[2] & 0x3f)) >>
+             6) + 1) * 0x10000 >> 0x10;
+  }
+  return iVar2;
+}
+
