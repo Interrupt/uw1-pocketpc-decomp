@@ -22,6 +22,7 @@ set(UW_SOURCES
   src/chargen.c
   src/babl.c
   src/automap.c
+  src/inventory.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

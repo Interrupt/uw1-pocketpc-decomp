@@ -782,6 +782,52 @@ extern int DAT_000bbefc;
 extern char * DAT_002029cc;
 extern char s__DATA_blnkmap_byt_00084338[];
 extern char s_fontbig_sys_0008432c[];
+/* Globals defined in uw.c but also used by functions that now live in
+   inventory.c (the inventory panel) -- extern'd here so both
+   translation units see the same storage. */
+extern short * DAT_00085a6c;
+extern unsigned char g_inventory_hotspot_table[0x17 * 0xe + 2];
+#define _DAT_00085bf0 (*(unsigned short *)&g_inventory_hotspot_table[288])
+#define DAT_00085bf2 g_inventory_hotspot_table[290]
+#define DAT_00085bf3 g_inventory_hotspot_table[291]
+#define DAT_00085bf4 g_inventory_hotspot_table[292]
+#define DAT_00085bf5 g_inventory_hotspot_table[293]
+#define g_inv_hotspot_click_x1 g_inventory_hotspot_table[0x0]
+#define g_inv_hotspot_click_y1 g_inventory_hotspot_table[0x2]
+#define g_inv_hotspot_click_x2 g_inventory_hotspot_table[0x4]
+#define g_inv_hotspot_click_y2 g_inventory_hotspot_table[0x6]
+#define g_inv_hotspot_draw_x (*(unsigned short *)&g_inventory_hotspot_table[0x8])
+#define g_inv_hotspot_draw_y (*(unsigned short *)&g_inventory_hotspot_table[0xa])
+#define g_inv_hotspot_dirty_w g_inventory_hotspot_table[0xc]
+#define g_inv_hotspot_dirty_h g_inventory_hotspot_table[0xd]
+extern unsigned char g_backpack_widget_to_slot_backing[0x17];
+#define g_backpack_widget_to_slot g_backpack_widget_to_slot_backing[0]
+#define DAT_00085c4c g_backpack_widget_to_slot_backing[20]
+extern unsigned char g_backpack_slot_to_widget_backing[0x1c];
+#define g_backpack_slot_to_widget g_backpack_slot_to_widget_backing[0]
+extern undefined2 g_save_record_count_backing[8192];
+#define g_save_record_count g_save_record_count_backing[0]
+extern undefined4 DAT_002028e8_backing[64];
+#define DAT_002028e8 DAT_002028e8_backing[0]
+extern code * DAT_002020b8;
+extern undefined4 DAT_00202938;
+extern undefined4 DAT_0020299c;
+extern undefined4 DAT_002029a0;
+extern char * DAT_002046b8;
+extern char * DAT_002046c4;
+extern undefined4 DAT_00204844;
+extern short DAT_0023bd80;
+extern short DAT_0023be5c;
+extern short DAT_0023be80;
+extern short DAT_0023be88;
+extern char * g_backpack_slot_table;
+#define g_equipped_items g_backpack_slot_table[0]
+extern char * g_current_container_record;
+extern undefined2 g_cursor_holding_state;
+extern ushort * g_interact_target;
+extern char * g_open_container_list;
+extern char * g_selected_object;
+extern char s_font4x5p_sys_0008431c[];
 
 
 
@@ -2028,7 +2074,12 @@ undefined4 FUN_000824f0();
 
 
 /* --- auto-generated overlap/exref aliases --- */
-#define _DAT_00085bf0 (*(uint*)&DAT_00085bf0)
+/* _DAT_00085bf0 dropped from here: superseded by the real, hand-traced
+   definition near the inventory.c extern block above (this
+   auto-generated one referenced a bare DAT_00085bf0 that was never a
+   real declared symbol -- the actual storage is g_inventory_hotspot_
+   table[288], see there). Conflicting with it broke the build the
+   moment inventory.c actually needed this symbol. */
 #define _DAT_00086999 (*(unsigned short*)&DAT_00086999)
 #define _DAT_0008699b (*(unsigned short*)&DAT_0008699b)
 #define _DAT_0008699f (*(unsigned short*)&DAT_0008699f)
@@ -2070,6 +2121,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/graphics.h"
 #include "src/headers/babl.h"
 #include "src/headers/automap.h"
+#include "src/headers/inventory.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
