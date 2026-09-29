@@ -2974,7 +2974,7 @@ void handle_starvation_penalty()
     return;
   }
   thunk_FUN_00072c44();
-  FUN_00072910(10,1);
+  play_music_track(10,1);
   grant_experience_points((int)((uint)(*(uint3 *)(DAT_00086df8 + 0x4e) >> 3) * -0x10000) >> 0x10);
   full_dungeon_redraw();
   FUN_000411b8(5);

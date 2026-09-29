@@ -49,6 +49,7 @@ set(UW_SOURCES
   src/models.c
   src/math.c
   src/registration.c
+  src/audio.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

@@ -6065,7 +6065,7 @@ char s_Unable_to_defuse_trap__0008736c[] = "Unable_to_defuse_trap.";
 char s_Your_bumbling_attempts_have_set_o_00087384[] = "Your_bumbling_attempts_have_set_o";
 char s_was_successfully_dearmed__000873b0[] = "was_successfully_dearmed.";
 char s_on_the_000873cc[] = "on_the";
-static undefined1 DAT_00087414_backing[65536];
+undefined1 DAT_00087414_backing[65536];
 #define DAT_00087414 DAT_00087414_backing[0]
 char s__SOUND__0008750c[] = "\\SOUND\\";
 char s_uw00_mod_00087514[] = "uw00.mod";
@@ -18047,7 +18047,7 @@ uint param_1;
     unaff_r8 = 0x70;
   }
   if (((uVar1 == 1) || (uVar1 == 2)) || (uVar1 == 3)) {
-    FUN_00072910(4,1);
+    play_music_track(4,1);
   }
   select_active_font(s_FONTBIG_SYS_00085454);
   DAT_0024cfac = (short)param_1 + 0xc00;
@@ -20229,7 +20229,7 @@ void FUN_0003b820()
   Ordinal_1063(acStack_62c,s__DATA_pres1_byt_00085790);
   blit_fullscreen_bitmap_file(5,acStack_62c,1);
   Ordinal_496(0x5dc);
-  FUN_00072910(1,1);
+  play_music_track(1,1);
   FUN_000769e8();
   Ordinal_1047(acStack_62c,0,0x104);
   pcVar4 = pcVar6;
@@ -36427,76 +36427,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_00072910(param_1,param_2)
-byte param_1;
-int param_2;
-
-{
-  char stack0xffdc3238_buf [256];
-  char *stack0xffdc3238_ptr;
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  undefined4 uVar4;
-  /* Was declared as just 2 bytes -- Ghidra only recovered the first
-     access, but this is filled from the 9-byte "uw00.mod\0" template
-     right below and local_12e/local_12d (now folded in as direct indexed
-     writes) patch the two '0' digits in place at offsets 2/3, so it needs
-     to hold the whole string. */
-  undefined1 auStack_130 [16];
-  undefined1 local_127;
-  undefined4 local_124;
-  char acStack_120 [260];
-
-  Ordinal_1044(auStack_130,s_uw00_mod_00087514,9);
-  local_127 = 0;
-  if ((DAT_00087454 == 0) || (DAT_00087448 == 0)) {
-    uVar4 = 0;
-  }
-  else {
-    if (param_1 != DAT_0023c3a8) {
-      pcVar2 = &DAT_0023cca8;
-    stack0xffdc3238_ptr = stack0xffdc3238_buf;
-      auStack_130[2] = (param_1 >> 3) + 0x30;
-      auStack_130[3] = (param_1 & 7) + 0x30;
-      do {
-        cVar1 = *pcVar2;
-        *stack0xffdc3238_ptr = cVar1; stack0xffdc3238_ptr = stack0xffdc3238_ptr + 1;
-        pcVar2 = pcVar2 + 1;
-      } while (cVar1 != '\0');
-      Ordinal_1063(acStack_120,s__SOUND__0008750c);
-      Ordinal_1063(acStack_120,auStack_130);
-      if (DAT_0023c3b8 != (undefined4 *)0x0) {
-        FUN_0004cfc8();
-        if (DAT_0023c3b8 != (undefined4 *)0x0) {
-          (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
-        }
-        DAT_0023c3b8 = (undefined4 *)0x0;
-      }
-      iVar3 = Ordinal_1095(0x10581);
-      if (iVar3 == 0) {
-        DAT_0023c3b8 = (undefined4 *)0x0;
-      }
-      else {
-        Ordinal_177(&local_124,acStack_120);
-        DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar3,local_124);
-      }
-    }
-    DAT_0023c384 = 0;
-    DAT_0023c3a8 = param_1;
-    if (param_2 != 0) {
-      FUN_0004ca50(DAT_0023c3b8);
-      DAT_0023c280 = read_realtime_clock_units();
-      DAT_0023c330 = *(undefined4 *)(&DAT_00087414 + (uint)DAT_0023c3a8 * 4);
-      DAT_00087448 = 1;
-    }
-    uVar4 = 1;
-  }
-  return uVar4;
-}
-
-
-
 void FUN_00072aac()
 
 {
@@ -36563,7 +36493,7 @@ int param_1;
       if (DAT_00087448 == 0) {
         DAT_00087448 = 1;
         FUN_000735c0();
-        FUN_00072910(DAT_0023c384,1);
+        play_music_track(DAT_0023c384,1);
         return;
       }
       uVar1 = 0;
@@ -37048,7 +36978,7 @@ void FUN_000735fc()
     if (DAT_0023c3a8 == '\x01') {
       cVar2 = '\x04';
     }
-    FUN_00072910(cVar2,1);
+    play_music_track(cVar2,1);
   }
   return;
 }
@@ -37100,18 +37030,18 @@ void FUN_00073634()
           uVar2 = 8;
           DAT_0023c384 = 8;
         }
-        FUN_00072910(uVar2,1);
+        play_music_track(uVar2,1);
         DAT_0023c378 = 0;
       }
     }
     else {
       if ((((uVar4 < 5) || (7 < uVar4)) || (uVar5 < 5)) || (7 < uVar5)) {
-        FUN_00072910(uVar2,1);
+        play_music_track(uVar2,1);
       }
       else {
         uVar2 = read_realtime_clock_units();
         if (DAT_0023c378 + 0x800U < uVar2) {
-          FUN_00072910(DAT_0023c384,1);
+          play_music_track(DAT_0023c384,1);
           DAT_0023c378 = read_realtime_clock_units();
         }
         else {
