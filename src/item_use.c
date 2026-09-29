@@ -1333,3 +1333,31 @@ LAB_0007a38c:
   }
   return;
 }
+
+
+
+
+
+// was FUN_0007a3a8 -- deferred-target-click completion callback:
+// resets DAT_0023bc94 and refreshes equipment effects, then if the
+// clicked target is a container-class object (type class 0x1f0==
+// 0x170), prints a progress message (id 0x9d) and re-dispatches
+// through use_object_on_target (letting that function's own
+// container-combination path finish the interaction); otherwise
+// prints a "can't do that" message (id 0x9e). No callers found by
+// grep in the remaining decompile.
+void complete_use_item_on_container(param_1)
+ushort * param_1;
+
+{
+  DAT_0023bc94 = 0;
+  refresh_player_equipment_effects();
+  if ((*param_1 & 0x1f0) == 0x170) {
+    print_scroll_message_by_id(0x9d);
+    use_object_on_target(g_player_object,param_1,0);
+  }
+  else {
+    print_scroll_message_by_id(0x9e);
+  }
+  return;
+}

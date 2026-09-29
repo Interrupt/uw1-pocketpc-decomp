@@ -36520,24 +36520,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007a3a8(param_1)
-ushort * param_1;
-
-{
-  DAT_0023bc94 = 0;
-  refresh_player_equipment_effects();
-  if ((*param_1 & 0x1f0) == 0x170) {
-    print_scroll_message_by_id(0x9d);
-    use_object_on_target(g_player_object,param_1,0);
-  }
-  else {
-    print_scroll_message_by_id(0x9e);
-  }
-  return;
-}
-
-
-
 void FUN_0007a418(param_1,param_2,param_3)
 undefined4 param_1;
 int param_2;
@@ -36581,7 +36563,7 @@ int param_2;
       }
       DAT_0023bc94 = 1;
       refresh_player_equipment_effects();
-      pcVar2 = FUN_0007a3a8;
+      pcVar2 = complete_use_item_on_container;
     }
   }
   else {
