@@ -482,7 +482,7 @@ LAB_000651b0:
       sVar4 = (short)cVar2;
       if (DAT_0023bb94 == '\x01') goto LAB_000651b0;
       uVar6 = 1;
-      if (*(short *)(DAT_00086e6c + 10) >> 5 < (short)cVar2) goto LAB_000651ec;
+      if (g_current_view->view_x >> 5 < (short)cVar2) goto LAB_000651ec;
     }
     uVar6 = 0;
   }

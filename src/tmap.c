@@ -467,7 +467,7 @@ byte * param_1;
   iVar33 = local_4c * 4;
   pbVar35 = (byte *)(iVar33 + UW_B50_LIT(0x86b70));
   if (local_4c == 4) {
-    if (*(short *)(&DAT_00085d20 + uVar1 * 2) < *(short *)(DAT_00086e6c + 0xe)) {
+    if (*(short *)(&DAT_00085d20 + uVar1 * 2) < g_current_view->view_elevation) {
 LAB_0005e988:
       bVar39 = true;
       goto LAB_0005e7e0;
@@ -476,10 +476,10 @@ LAB_0005e988:
   else {
     iVar16 = local_4c * 3;
     if (((int)*(short *)(&DAT_00085d20 + (uVar1 + *pbVar35) * 2) -
-        (int)*(short *)(DAT_00086e6c + 0xe)) * (int)*(char *)(UW_B50_LIT(0x86be1) + iVar16) +
-        (DAT_0023b4e8 * 0x100 - (int)*(short *)(DAT_00086e6c + 0x12)) *
+        (int)g_current_view->view_elevation) * (int)*(char *)(UW_B50_LIT(0x86be1) + iVar16) +
+        (DAT_0023b4e8 * 0x100 - (int)g_current_view->view_y) *
         (int)*(char *)(UW_B50_LIT(0x86be2) + iVar16) +
-        ((DAT_0023b4e4 + -0x10) * 0x100 - (int)*(short *)(DAT_00086e6c + 10)) *
+        ((DAT_0023b4e4 + -0x10) * 0x100 - (int)g_current_view->view_x) *
         (int)*(char *)(UW_B50_LIT(0x86be0) + iVar16) < 0) goto LAB_0005e988;
   }
   bVar39 = false;

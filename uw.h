@@ -218,6 +218,29 @@ typedef struct __attribute__((packed)) {
     unsigned short obj_head     : 10; /* bits 6-15: first object slot index on this tile */
 } uw_tile_t;  /* 4 bytes total */
 
+/* ~0x2e-byte "current view" scratch record: the screen-space eye/
+ * camera transform (world x/y/elevation, facing, and a camera-shake
+ * offset pair), written once per frame by update_current_view_from_subject
+ * (was FUN_00069470) from the live player state -- or, in that function's
+ * other branches, from an NPC/corpse being looked at -- then read all
+ * over the tile/sprite projection code. Single global instance, not an
+ * array: DAT_00086e6c_backing is a 64-byte oversized-safety-margin
+ * allocation (see its own comment) but only the ~0x2e (46) bytes below
+ * have a confirmed call site; the two gaps are left as honest raw
+ * bytes rather than guessed fields. */
+typedef struct __attribute__((packed)) {
+    unsigned char _unk00_09[10];   /* 0x00-0x09: unconfirmed */
+    short view_x;                  /* 0x0a: world X */
+    unsigned char _unk0c_0d[2];    /* 0x0c-0x0d: unconfirmed */
+    short view_elevation;          /* 0x0e: world Z / eye height (clamped <=1000 in update_current_view_from_subject) */
+    unsigned char _unk10_11[2];    /* 0x10-0x11: unconfirmed */
+    short view_y;                  /* 0x12: world Y */
+    unsigned char _unk14_27[0x14]; /* 0x14-0x27: unconfirmed */
+    short view_shake_x;            /* 0x28: camera-shake/bob X accumulator */
+    short view_shake_y;            /* 0x2a: camera-shake/bob Y accumulator */
+    short view_facing;             /* 0x2c: heading */
+} uw_current_view_t;  /* 0x2e (46) bytes total (of the 64-byte backing allocation) */
+
 typedef union IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion, *PIMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryUnion;
 
 typedef struct IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryStruct IMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryStruct, *PIMAGE_RESOURCE_DIRECTORY_ENTRY_DirectoryStruct;
@@ -1190,6 +1213,7 @@ extern short g_visibility_ring_depth;
 #define DAT_000ace32 UW_A85B(0x4862)
 #define DAT_000ace33 UW_A85B(0x4863)
 #define g_current_tile ((uw_tile_t *)DAT_0023b4ec)
+#define g_current_view ((uw_current_view_t *)DAT_00086e6c_backing)
 /* Globals defined in uw.c but also used by functions that now live in
    objects.c (the object table) -- extern'd here so both translation
    units see the same storage. */
@@ -2736,7 +2760,7 @@ void FUN_00068c1c();
 void apply_movement_tick();
 void FUN_0006907c();
 void FUN_00069424();
-void FUN_00069470();
+void update_current_view_from_subject();
 void sync_camera_from_player();
 undefined4 FUN_00069b68();
 void grant_experience_points();

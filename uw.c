@@ -4579,7 +4579,7 @@ byte DAT_0023b4a0;
    (real bytes recovered from UU.exe) -- see its definition further down. */
 // Was a lone `int` scalar but used throughout the renderer as a pointer to a
 // ~0x2e-byte "current view" record (screen-space player x/y/z/facing, written
-// by FUN_00069470 from DAT_00204880/82/84 + DAT_00201c70, then read all over
+// by update_current_view_from_subject from DAT_00204880/82/84 + DAT_00201c70, then read all over
 // the tile/sprite projection code). Never populated with a real address in
 // this decompile, so give it real backing storage like the other
 // lone-scalar-used-as-array globals found this session (DAT_000fb880-family).
@@ -38272,7 +38272,7 @@ LAB_00061d34:
        DAT_00086cc0 direction table (crash when an object first came into
        view down a long hallway). It is (that dividend) % 0x20. */
     {
-      short _col_angle = *(short *)(DAT_00086e6c + 0x2c);
+      short _col_angle = g_current_view->view_facing;
       short _quad_term = *(short *)(&DAT_00086a18 + DAT_0023b4a0 * 2);
       int _dm = ((param_1[1] >> 5 & 0x1c) -
                  ((int)((int)_col_angle +
@@ -39968,8 +39968,8 @@ ushort * obj;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   if (((*(byte *)((char *)obj + 1) & 0xe) == 0) || (local_34 != -1)) goto LAB_000647e4;
   uVar7 = (obj[1] >> 7) + DAT_0023b4a0 * -2;
-  iVar8 = ((int)DAT_0023b904 - (int)*(short *)(DAT_00086e6c + 10)) * 0x10000;
-  iVar3 = ((int)DAT_0023b920 - (int)*(short *)(DAT_00086e6c + 0x12)) * 0x10000;
+  iVar8 = ((int)DAT_0023b904 - (int)g_current_view->view_x) * 0x10000;
+  iVar3 = ((int)DAT_0023b920 - (int)g_current_view->view_y) * 0x10000;
   uVar6 = uVar7 & 3;
   if (uVar6 == 0) {
 LAB_00064794:
@@ -40449,14 +40449,14 @@ ushort * param_1;
           }
           if (getenv("UW_DEBUG_THROW") && (*puVar5 & 0x1ff) == 0x80)
             fprintf(stderr, "[throw-scrz] sack DAT_0023b91c=%d cam_ref(DAT_00086e6c+0xe)=%d in_arena=%d\n",
-                    (int)(short)DAT_0023b91c, (int)*(short *)(DAT_00086e6c + 0xe),
+                    (int)(short)DAT_0023b91c, (int)g_current_view->view_elevation,
                     (int)object_ptr_in_arena(puVar5));
           if (DAT_0023b830 == '\0') {
             iVar7 = (int)(short)((int)((int)DAT_0023b904 -
-                                      ((int)*(short *)(DAT_00086e6c + 10) & 0xffU)) >> 5);
+                                      ((int)g_current_view->view_x & 0xffU)) >> 5);
             iVar16 = (int)(short)((int)((int)DAT_0023b920 -
-                                       ((int)*(short *)(DAT_00086e6c + 0x12) & 0xffU)) >> 5);
-            iVar13 = (int)(short)((int)DAT_0023b91c - (int)*(short *)(DAT_00086e6c + 0xe) >> 5);
+                                       ((int)g_current_view->view_y & 0xffU)) >> 5);
+            iVar13 = (int)(short)((int)DAT_0023b91c - (int)g_current_view->view_elevation >> 5);
             if (((iVar7 * iVar7 * 0x10000 >> 0x10) + (iVar16 * iVar16 * 0x10000 >> 0x10) +
                 (iVar13 * iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10 < 1) {
               sVar3 = 0;
@@ -42151,7 +42151,16 @@ undefined1 param_2;
 
 
 
-void FUN_00069470()
+// Writes g_current_view (world x/y/elevation/facing + camera-shake
+// offsets) from whichever object DAT_0023b82c currently designates as
+// the view subject -- the player object (the common case), a specific
+// NPC/mobile object being looked at, or none (falls back to saved
+// DAT_0023be90-family scratch values). NOT the same function as
+// sync_camera_from_player below (was FUN_00069938), which goes the
+// other direction: g_current_view -> the DAT_000db438-family 3D camera
+// globals. Distinct names matter here since this file already had two
+// functions colliding on this name before this rename.
+void update_current_view_from_subject()
 
 {
   int iVar1;
@@ -42161,50 +42170,50 @@ void FUN_00069470()
   int iVar5;
   short local_c;
   short local_a;
-  
+
   if (DAT_0023b82c == g_player_object) {
-    *(short *)(DAT_00086e6c + 10) = DAT_00204880;
-    *(short *)(DAT_00086e6c + 0x12) = DAT_00204882;
-    *(short *)(DAT_00086e6c + 0xe) = DAT_00204884 + 0xa4;
-    *(short *)(DAT_00086e6c + 0x2c) = DAT_00201c70;
-    *(undefined2 *)(DAT_00086e6c + 0x28) = DAT_0023beb4;
-    *(undefined2 *)(DAT_00086e6c + 0x2a) = DAT_0023beb8;
+    g_current_view->view_x = DAT_00204880;
+    g_current_view->view_y = DAT_00204882;
+    g_current_view->view_elevation = DAT_00204884 + 0xa4;
+    g_current_view->view_facing = DAT_00201c70;
+    g_current_view->view_shake_x = DAT_0023beb4;
+    g_current_view->view_shake_y = DAT_0023beb8;
     if (DAT_0023bea8 == 0) {
       return;
     }
     if (getenv("UW_DEBUG_EYEHEIGHT"))
       fprintf(stderr, "[eyeheight] bea8=%d be98=%d base=%d -> %d\n",
-              (int)DAT_0023bea8, (int)DAT_0023be98, (int)*(short *)(DAT_00086e6c + 0xe),
-              (int)(*(short *)(DAT_00086e6c + 0xe) + DAT_0023be98));
-    *(short *)(DAT_00086e6c + 0xe) = *(short *)(DAT_00086e6c + 0xe) + DAT_0023be98;
-    if (1000 < *(short *)(DAT_00086e6c + 0xe)) {
-      *(undefined2 *)(DAT_00086e6c + 0xe) = 1000;
+              (int)DAT_0023bea8, (int)DAT_0023be98, (int)g_current_view->view_elevation,
+              (int)(g_current_view->view_elevation + DAT_0023be98));
+    g_current_view->view_elevation = g_current_view->view_elevation + DAT_0023be98;
+    if (1000 < g_current_view->view_elevation) {
+      g_current_view->view_elevation = 1000;
     }
-    *(short *)(DAT_00086e6c + 0x2c) = *(short *)(DAT_00086e6c + 0x2c) + DAT_0023be9a;
-    *(short *)(DAT_00086e6c + 0x28) = *(short *)(DAT_00086e6c + 0x28) + DAT_0023be9c;
-    sVar4 = *(short *)(DAT_00086e6c + 0x2a) + DAT_0023be9e;
+    g_current_view->view_facing = g_current_view->view_facing + DAT_0023be9a;
+    g_current_view->view_shake_x = g_current_view->view_shake_x + DAT_0023be9c;
+    sVar4 = g_current_view->view_shake_y + DAT_0023be9e;
 LAB_00069910:
-    *(short *)(DAT_00086e6c + 0x2a) = sVar4;
+    g_current_view->view_shake_y = sVar4;
   }
   else {
     if (DAT_0023b82c == 0) {
-      *(undefined2 *)(DAT_00086e6c + 10) = DAT_0023be90;
-      *(undefined2 *)(DAT_00086e6c + 0xe) = DAT_0023be94;
-      *(undefined2 *)(DAT_00086e6c + 0x12) = DAT_0023be92;
-      *(undefined2 *)(DAT_00086e6c + 0x2c) = DAT_0023bf00;
-      *(undefined2 *)(DAT_00086e6c + 0x28) = DAT_0023bf02;
+      g_current_view->view_x = DAT_0023be90;
+      g_current_view->view_elevation = DAT_0023be94;
+      g_current_view->view_y = DAT_0023be92;
+      g_current_view->view_facing = DAT_0023bf00;
+      g_current_view->view_shake_x = DAT_0023bf02;
       uVar2 = DAT_0023bf04;
     }
     else {
       if (DAT_002046b8 < DAT_0023b82c) {
-        *(ushort *)(DAT_00086e6c + 10) =
+        g_current_view->view_x =
              (short)((*(ushort *)(DAT_0023b82c + 0x16) & 0xfc00) >> 2) +
              (ushort)(*(byte *)(DAT_0023b82c + 3) & 0xe0);
-        *(ushort *)(DAT_00086e6c + 0x12) =
+        g_current_view->view_y =
              (*(byte *)(DAT_0023b82c + 3) & 0x1c) * 8 +
              (*(ushort *)(DAT_0023b82c + 0x16) & 0x3f0) * 0x10;
-        *(ushort *)(DAT_00086e6c + 0xe) = ((*(byte *)(DAT_0023b82c + 2) & 0x7f) + 0x16) * 8;
-        *(ushort *)(DAT_00086e6c + 0x2c) =
+        g_current_view->view_elevation = ((*(byte *)(DAT_0023b82c + 2) & 0x7f) + 0x16) * 8;
+        g_current_view->view_facing =
              ((*(ushort *)(DAT_0023b82c + 2) & 0xff80) +
              (short)(((*(byte *)(DAT_0023b82c + 0x18) & 0x1f) << 0x12) >> 0x10)) * 0x40;
         return;
@@ -42235,29 +42244,29 @@ LAB_00069910:
         if (iVar5 < 0) {
           iVar5 = iVar5 + 1;
         }
-        *(short *)(DAT_00086e6c + 10) =
+        g_current_view->view_x =
              (short)(iVar5 >> 1) + (short)(((uint)DAT_0023beac << 0x18) >> 0x10) + 0x80;
         iVar1 = (int)DAT_0023bea0 * (int)(short)(iVar1 >> 6);
         if (iVar1 < 0) {
           iVar1 = iVar1 + 1;
         }
-        *(short *)(DAT_00086e6c + 0x12) =
+        g_current_view->view_y =
              (short)(iVar1 >> 1) + (short)(((uint)DAT_0023beb0 << 0x18) >> 0x10) + 0x80;
-        *(ushort *)(DAT_00086e6c + 0xe) = DAT_00204884 + (0x52 - DAT_0023bf08) * 2;
-        *(short *)(DAT_00086e6c + 0x2c) = DAT_0023bea4 + 0x7fff;
-        *(undefined2 *)(DAT_00086e6c + 0x28) = 0;
+        g_current_view->view_elevation = DAT_00204884 + (0x52 - DAT_0023bf08) * 2;
+        g_current_view->view_facing = DAT_0023bea4 + 0x7fff;
+        g_current_view->view_shake_x = 0;
         sVar4 = DAT_0023bf08 << 0xb;
         goto LAB_00069910;
       }
       angle_to_screen_delta((int)DAT_00201c70,&local_c,&local_a);
-      *(short *)(DAT_00086e6c + 10) = DAT_00204880 - (local_c >> 7);
-      *(short *)(DAT_00086e6c + 0x12) = DAT_00204882 - (local_a >> 7);
-      *(short *)(DAT_00086e6c + 0xe) = DAT_00204884 + 0x148;
-      *(short *)(DAT_00086e6c + 0x2c) = DAT_00201c70;
-      *(undefined2 *)(DAT_00086e6c + 0x28) = DAT_0023beb4;
+      g_current_view->view_x = DAT_00204880 - (local_c >> 7);
+      g_current_view->view_y = DAT_00204882 - (local_a >> 7);
+      g_current_view->view_elevation = DAT_00204884 + 0x148;
+      g_current_view->view_facing = DAT_00201c70;
+      g_current_view->view_shake_x = DAT_0023beb4;
       uVar2 = DAT_0023beb8;
     }
-    *(undefined2 *)(DAT_00086e6c + 0x2a) = uVar2;
+    g_current_view->view_shake_y = uVar2;
   }
   return;
 }
@@ -42284,8 +42293,8 @@ void sync_camera_from_player()
   cVar1 = DAT_0023b4a0;
   iVar4 = DAT_00086e6c;
   sVar8 = 0;
-  uVar2 = *(ushort *)(DAT_00086e6c + 10) & 0xff;
-  uVar5 = *(ushort *)(DAT_00086e6c + 0x12) & 0xff;
+  uVar2 = g_current_view->view_x & 0xff;
+  uVar5 = g_current_view->view_y & 0xff;
   uVar3 = uVar2;
   uVar7 = uVar5;
   if (DAT_0023b4a0 != '\0') {

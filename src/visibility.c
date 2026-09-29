@@ -422,38 +422,38 @@ undefined4 build_frame_draw_list()
   undefined1 extraout_r1;
   byte bVar3;
   
-  FUN_00069470();
-  DAT_00101938 = (short)(char)((ushort)*(undefined2 *)(DAT_00086e6c + 10) >> 8);
-  DAT_0010193c = (short)(char)((ushort)*(undefined2 *)(DAT_00086e6c + 0x12) >> 8);
+  update_current_view_from_subject();
+  DAT_00101938 = (short)(char)((ushort)g_current_view->view_x >> 8);
+  DAT_0010193c = (short)(char)((ushort)g_current_view->view_y >> 8);
   DAT_0023aecc = tilemap_lookup(DAT_00101938,DAT_0010193c); // was called with no args (dropped-arg bug); tile coords computed just above
-  bVar3 = (byte)((short)(*(ushort *)(DAT_00086e6c + 0x2c) >> 0xd) + 1 >> 1) & 3;
+  bVar3 = (byte)((short)(g_current_view->view_facing >> 0xd) + 1 >> 1) & 3;
   DAT_0023b02c = &DAT_00086a20 + (char)bVar3 * 0x10;
   Ordinal_2005(2);
   DAT_0023b028 = extraout_r1;
   DAT_0023b4a0 = bVar3;
   sync_camera_from_player();
-  *(ushort *)(DAT_00086e6c + 10) = *(ushort *)(DAT_00086e6c + 10) & 0xff;
-  *(ushort *)(DAT_00086e6c + 0x12) = *(ushort *)(DAT_00086e6c + 0x12) & 0xff;
+  g_current_view->view_x = g_current_view->view_x & 0xff;
+  g_current_view->view_y = g_current_view->view_y & 0xff;
   if (DAT_0023b4a0 == 1) {
-    uVar2 = *(undefined2 *)(DAT_00086e6c + 10);
-    *(short *)(DAT_00086e6c + 10) = 0xff - *(short *)(DAT_00086e6c + 0x12);
-    *(undefined2 *)(DAT_00086e6c + 0x12) = uVar2;
+    uVar2 = g_current_view->view_x;
+    g_current_view->view_x = 0xff - g_current_view->view_y;
+    g_current_view->view_y = uVar2;
   }
   else {
     if (DAT_0023b4a0 == 2) {
-      *(short *)(DAT_00086e6c + 10) = 0xff - *(short *)(DAT_00086e6c + 10);
-      sVar1 = *(short *)(DAT_00086e6c + 0x12);
+      g_current_view->view_x = 0xff - g_current_view->view_x;
+      sVar1 = g_current_view->view_y;
     }
     else {
       if (DAT_0023b4a0 != 3) goto LAB_0005bd98;
-      sVar1 = *(short *)(DAT_00086e6c + 10);
-      *(undefined2 *)(DAT_00086e6c + 10) = *(undefined2 *)(DAT_00086e6c + 0x12);
+      sVar1 = g_current_view->view_x;
+      g_current_view->view_x = g_current_view->view_y;
     }
-    *(short *)(DAT_00086e6c + 0x12) = 0xff - sVar1;
+    g_current_view->view_y = 0xff - sVar1;
   }
 LAB_0005bd98:
-  *(short *)(DAT_00086e6c + 0x2c) =
-       *(short *)(DAT_00086e6c + 0x2c) - *(short *)(&DAT_00086a18 + (char)DAT_0023b4a0 * 2);
+  g_current_view->view_facing =
+       g_current_view->view_facing - *(short *)(&DAT_00086a18 + (char)DAT_0023b4a0 * 2);
   return 1;
 }
 
@@ -537,8 +537,8 @@ void seed_visibility_queue()
     g_visibility_ray_table = 0x81;
     DAT_0023aee5 = 0;
     DAT_0023aee7 = 0;
-    DAT_0023aee6 = (undefined1)*(undefined2 *)(DAT_00086e6c + 10);
-    DAT_0023aee8 = (undefined1)*(undefined2 *)(DAT_00086e6c + 0x12);
+    DAT_0023aee6 = (undefined1)g_current_view->view_x;
+    DAT_0023aee8 = (undefined1)g_current_view->view_y;
     DAT_0023aeea = (undefined2)((uint)DAT_0023aecc >> 8);
     DAT_0023aeec = (undefined1)((uint)DAT_0023aecc >> 0x18);
     DAT_0023aeed = 0x58;
@@ -548,8 +548,8 @@ void seed_visibility_queue()
     DAT_0023aef5 = 0xf;
     DAT_0023aefa = 0;
     DAT_0023aefc = 0;
-    DAT_0023aefb = (undefined1)*(undefined2 *)(DAT_00086e6c + 10);
-    DAT_0023aefd = (undefined1)*(undefined2 *)(DAT_00086e6c + 0x12);
+    DAT_0023aefb = (undefined1)g_current_view->view_x;
+    DAT_0023aefd = (undefined1)g_current_view->view_y;
     DAT_0023aefe = SUB42(DAT_0023aecc,0);
     DAT_0023af00 = (undefined2)((uint)DAT_0023aecc >> 0x10);
     _DAT_0023af02 = 0x23b058;
@@ -557,8 +557,8 @@ void seed_visibility_queue()
     DAT_0023aee9 = (char)DAT_0023aecc;
     g_visibility_ray_realptr[0] = DAT_0023aecc; // real-pointer side channel for advance_visibility_ray -- see g_visibility_ray_realptr's comment
     g_visibility_ray_realptr[1] = DAT_0023aecc; // entry 1's own copy of the same packed pointer (DAT_0023aefe/af00, same source)
-    angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
-    angle_to_screen_delta(*(short *)(DAT_00086e6c + 0x2c) + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
+    angle_to_screen_delta(g_current_view->view_facing + 0x2040,&DAT_0023aef6,&DAT_0023aef8);
+    angle_to_screen_delta(g_current_view->view_facing + -0x2040,&DAT_0023aee1,&DAT_0023aee3);
     /* angle_to_screen_delta writes a 2-byte X delta at DAT_0023aee1 and a
        2-byte Y delta at DAT_0023aee3, and every downstream reader
        (advance_visibility_ray's `*(short *)(param_1 + 1)` / `+ 3`) treats
@@ -849,12 +849,12 @@ byte * param_2;
       if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx1)[0x43] & 0xf) != 0xf) {
         cVar3 = *(char *)(param_1 + 7);
         if (('\x01' < cVar3) ||
-           (uVar7 = (uint)*(byte *)(param_1 + 6) - (int)*(short *)(DAT_00086e6c + 10),
+           (uVar7 = (uint)*(byte *)(param_1 + 6) - (int)g_current_view->view_x,
            uVar1 = (int)uVar7 >> 0x1f,
-           uVar6 = (uint)*(byte *)(param_1 + 8) - (int)*(short *)(DAT_00086e6c + 0x12),
+           uVar6 = (uint)*(byte *)(param_1 + 8) - (int)g_current_view->view_y,
            uVar2 = (int)uVar6 >> 0x1f,
            0x10 < (int)(((uVar6 ^ uVar2) - uVar2) + ((uVar7 ^ uVar1) - uVar1)))) {
-          iVar8 = (*(char *)(param_1 + 5) * 0x100 - (int)*(short *)(DAT_00086e6c + 10)) +
+          iVar8 = (*(char *)(param_1 + 5) * 0x100 - (int)g_current_view->view_x) +
                   (uint)*(byte *)(param_1 + 6);
           iVar5 = iVar8 * 0x10000;
           uVar1 = iVar5 >> 0x1f;
@@ -862,7 +862,7 @@ byte * param_2;
           iVar5 = (iVar8 - sVar4) + -2;
           *(char *)(param_1 + 1) = (char)iVar5;
           *(char *)(param_1 + 2) = (char)((uint)iVar5 >> 8);
-          iVar5 = cVar3 * 0x100 - (int)*(short *)(DAT_00086e6c + 0x12);
+          iVar5 = cVar3 * 0x100 - (int)g_current_view->view_y;
           *(char *)(param_1 + 3) = (char)iVar5;
           *(char *)(param_1 + 4) = (char)((uint)iVar5 >> 8);
         }
@@ -875,12 +875,12 @@ byte * param_2;
           if ((VISIBILITY_RAY_REALPTR(g_visibility_ray_realptr2, idx2)[0x43] & 0xf) != 0xf) {
             cVar3 = *(char *)(param_2 + 7);
             if (('\x01' < cVar3) ||
-               (uVar7 = (uint)*(byte *)(param_2 + 6) - (int)*(short *)(DAT_00086e6c + 10),
+               (uVar7 = (uint)*(byte *)(param_2 + 6) - (int)g_current_view->view_x,
                uVar1 = (int)uVar7 >> 0x1f,
-               uVar6 = (uint)*(byte *)(param_2 + 8) - (int)*(short *)(DAT_00086e6c + 0x12),
+               uVar6 = (uint)*(byte *)(param_2 + 8) - (int)g_current_view->view_y,
                uVar2 = (int)uVar6 >> 0x1f,
                0x10 < (int)(((uVar6 ^ uVar2) - uVar2) + ((uVar7 ^ uVar1) - uVar1)))) {
-              iVar8 = (*(char *)(param_2 + 5) * 0x100 - (int)*(short *)(DAT_00086e6c + 10)) +
+              iVar8 = (*(char *)(param_2 + 5) * 0x100 - (int)g_current_view->view_x) +
                       (uint)*(byte *)(param_2 + 6);
               iVar5 = iVar8 * 0x10000;
               uVar1 = iVar5 >> 0x1f;
@@ -888,7 +888,7 @@ byte * param_2;
               iVar5 = iVar8 + sVar4 + 2;
               *(char *)(param_2 + 1) = (char)iVar5;
               *(char *)(param_2 + 2) = (char)((uint)iVar5 >> 8);
-              iVar5 = (cVar3 * 0x100 - (int)*(short *)(DAT_00086e6c + 0x12)) + -1;
+              iVar5 = (cVar3 * 0x100 - (int)g_current_view->view_y) + -1;
               *(char *)(param_2 + 3) = (char)iVar5;
               *(char *)(param_2 + 4) = (char)((uint)iVar5 >> 8);
             }
@@ -1308,10 +1308,10 @@ void rebuild_dungeon_view()
   FUN_00058438(0);
   uVar1 = DAT_00086b30;
   DAT_0023b804 = 0;
-  sVar3 = *(short *)(DAT_00086e6c + 0x28);
+  sVar3 = g_current_view->view_shake_x;
   bVar5 = sVar3 == 0;
   if (bVar5) {
-    sVar3 = *(short *)(DAT_00086e6c + 0x2a);
+    sVar3 = g_current_view->view_shake_y;
   }
   if (bVar5 && sVar3 == 0) {
     DAT_0023b4dc = 1;

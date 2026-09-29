@@ -729,10 +729,10 @@ void emit_hud_draw_commands()
   bool bVar3;
   
   DAT_0023b830 = 1;
-  sVar1 = *(short *)(DAT_00086e6c + 0x28);
+  sVar1 = g_current_view->view_shake_x;
   bVar3 = sVar1 == 0;
   if (bVar3) {
-    sVar1 = *(short *)(DAT_00086e6c + 0x2a);
+    sVar1 = g_current_view->view_shake_y;
   }
   DAT_0023b4dc = (uint)(bVar3 && sVar1 == 0);
   *DAT_00110fc0 = 0x38;

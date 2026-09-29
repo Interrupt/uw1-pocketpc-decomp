@@ -900,7 +900,7 @@ undefined4 param_1;
     movement_tick(0x40,uVar3,1);
     /* movement_tick can come out of that one call with DAT_0023bea8=1 (a
        "climbing a step" eye-height bob in progress -- see
-       FUN_00069470/sync_camera_from_player's own comment on
+       update_current_view_from_subject's own comment on
        DAT_0023bea8/be98) if g_movement_mode happened to read as one of the
        climb-triggering values on this tick. For continuous analog
        movement (holding a movement letter) that's fine: movement_tick

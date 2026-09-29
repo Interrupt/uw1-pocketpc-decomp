@@ -243,8 +243,9 @@ void commit_player_move()
 // commit_player_move's own tile-index derivation), persistent yaw
 // (DAT_00201c70, 65536 units/360 degrees -- confirmed via the 0x2000 =
 // 45-degree turn-step increments in apply_heading_turn) and pitch
-// (DAT_0023beb4, signed 1/256-degree units -- see sync_camera_from_player's
-// own >>8 use of it), then reuses set_player_tile_position (for the integer
+// (DAT_0023beb4, signed 1/256-degree units -- see
+// update_current_view_from_subject's own >>8 use of it), then reuses
+// set_player_tile_position (for the integer
 // tile part: object-list relink, collision height field, locomotion state)
 // and commit_player_move (to pack the final fine position/yaw back into the
 // player object record g_player_object) so this goes through the same object-
@@ -260,20 +261,22 @@ void demo_set_player_pos(double x, double y, double z, double yaw_deg, double pi
     fprintf(stderr, "[floorz] tile=(%d,%d) natural z (from set_player_tile_position) = %d, overriding to %g\n",
             (int)floor(x), (int)floor(y), (int)DAT_00204884, z);
   }
-  /* Clear any in-flight smooth-turn interpolation (FUN_00069470's
-     DAT_0023bea8-gated add-on to DAT_00086e6c+0x2c): if a turn animation
-     was still mid-flight when this runs, FUN_00069470 would add its
-     leftover per-tick delta (DAT_0023be9a) on top of the DAT_00201c70
-     we're about to set below, so sync_camera_from_player's very next
-     [playerpos] print would show a transient, wrong yaw for one frame
+  /* Clear any in-flight smooth-turn interpolation
+     (update_current_view_from_subject's DAT_0023bea8-gated add-on to
+     DAT_00086e6c+0x2c): if a turn animation was still mid-flight when this
+     runs, update_current_view_from_subject would add its leftover per-tick
+     delta (DAT_0023be9a) on top of the DAT_00201c70 we're about to set
+     below, so sync_camera_from_player's very next [playerpos] print would
+     show a transient, wrong yaw for one frame
      until the animation finished on its own. Confirmed via testing: two
      back-to-back SETPLAYERPOS calls, the first (right after spawn, an
      interpolation still pending) showed the old yaw, the second (nothing
      pending any more) matched exactly. */
   DAT_0023bea8 = 0;
-  /* Force the camera to track the player object right now. FUN_00069470
-     (the function that actually copies DAT_00201c70/DAT_00204880 etc. into
-     the camera-facing DAT_00086e6c record sync_camera_from_player reads)
+  /* Force the camera to track the player object right now.
+     update_current_view_from_subject (the function that actually copies
+     DAT_00201c70/DAT_00204880 etc. into the camera-facing DAT_00086e6c
+     record sync_camera_from_player reads)
      only does that when DAT_0023b82c -- "whichever object the camera is
      currently tracking" -- equals g_player_object, the player object; normally
      true, but right after spawn/chargen it can still be unset/stale for a
