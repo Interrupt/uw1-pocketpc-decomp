@@ -1398,7 +1398,7 @@ undefined4 FUN_0006ba54();
 undefined4 FUN_0006baf8();
 undefined4 FUN_0006bb64();
 int load_level();
-undefined4 FUN_0006bcd4();
+undefined4 commit_level_to_save_slot();
 void probe_save_slots();
 void FUN_0006bfec();
 undefined4 load_game_from_slot();

@@ -6265,18 +6265,23 @@ static short DAT_0023c268_arr[3];
 #define DAT_0023c268 DAT_0023c268_arr[0]
 static short DAT_0023c270_arr[3];
 #define DAT_0023c270 DAT_0023c270_arr[0]
-/* DAT_00087210/DAT_00087218: read-only per-side (left/right dragon)
-   position lookup tables, same `(&DAT_000872XX)[i]` 3-wide indexing
-   pattern as their writable DAT_0023c26X siblings just above -- but
-   only ever READ, so under-sizing them doesn't corrupt anything else,
-   just returns wrong/adjacent-memory positions for indices 1/2.
-   Widened for the same safety reason; real per-index position data
-   not yet recovered (index 0 -- the only one exercised so far, both
-   dragons currently land on the same spot -- reads correctly since it
-   IS the real scalar). */
-static undefined2 DAT_00087210_arr[3];
+/* DAT_00087210/DAT_00087218: real per-index position lookup tables --
+   recovered directly from the real ARM binary's .data (raw uint16 reads
+   at 0x87210/0x87218, not a function to decompile). DAT_00087210 (used
+   by FUN_0006e96c to X-position the 3 "ready to cast" rune-slot icons)
+   is 176,191,206 -- evenly spaced by 15, confirming it's real per-slot
+   data, not a scalar with garbage padding. Previously only index 0 had
+   a nonzero (but still not verified-real) value; indices 1/2 read as
+   0, landing both later slots' rune icons at the left screen edge --
+   confirmed live: "left-clicking a rune draws it at the wrong X
+   position in the spell-slot area" for any rune beyond the first
+   selected. DAT_00087218 (used by FUN_0006ea54, gated on
+   `*(short*)(DAT_00085a6c+8)==1` -- a different, rarer UI state) is
+   86,69,52, decreasing by 17; recovered the same way even though no
+   live report has hit it yet. */
+static const undefined2 DAT_00087210_arr[3] = {176, 191, 206};
 #define DAT_00087210 DAT_00087210_arr[0]
-static undefined2 DAT_00087218_arr[3];
+static const undefined2 DAT_00087218_arr[3] = {86, 69, 52};
 #define DAT_00087218 DAT_00087218_arr[0]
 undefined2 DAT_0023c140;
 int DAT_0023c278;
@@ -33561,6 +33566,8 @@ LAB_0003f91c:
 void inventory_panel_click_region()
 
 {
+  if (getenv("UW_DEBUG_INV")) fprintf(stderr, "[inv] inventory_panel_click_region ENTRY g_active_hud_panel=%d mouse=(%d,%d)\n",
+      (int)g_active_hud_panel, (int)g_mouse_x, (int)g_mouse_y);
   if (g_active_hud_panel == '\0') {
     handle_inventory_panel_normal_click();
   }
@@ -37312,7 +37319,23 @@ LAB_0004386c:
       local_28 = 0;
     }
     if ((*puVar4 & 0x1ff) == 0x8f) {
-      iVar10 = FUN_0004479c();
+      /* Real ARM binary calls FUN_0004479c() with 0 args here too
+         (confirmed via Ghidra decompile of the real auto_place_in_container
+         at 0x43734) -- same "leftover register" reliance already found
+         3 times this session (blit_sprite_row_remapped,
+         draw_hotspot_crosshair_marker's caller in FUN_0001bb04,
+         collision_build_height_field's neighbor lookups). FUN_0004479c's
+         param_1 is the object being checked against the rune item-id
+         range (0xe8-0x100) -- exactly this function's own param_1,
+         untouched since entry (last read a few lines up in
+         check_object_fits_in_slot's call), so that's what's actually
+         sitting in the register at this point. Passed explicitly since a
+         C recompile has no equivalent "whatever's left in the register"
+         state: the previously-uninitialized read made FUN_0004479c
+         almost always reject a genuine rune, always printing "You can
+         only put runes in the runes bag" even when dragging a real rune
+         into the rune bag. */
+      iVar10 = FUN_0004479c(param_1);
       if (iVar10 == 0) {
         FUN_00078c80(0xf7);
         goto LAB_000438ac;
@@ -38025,16 +38048,44 @@ short * param_1;
   uint uVar1;
   int iVar2;
   undefined4 uVar3;
-  
+  byte *pbVar4;   /* was folded into iVar2 (a 32-bit int) -- see below */
+
   iVar2 = (((int)*param_1 & 0x1ffU) - 0xe8) * 0x10000;
   uVar1 = iVar2 >> 0x10;
   if (((int)uVar1 < 0) || (0x18 < (int)uVar1)) {
     uVar3 = 0;
   }
   else {
-    free_object_slot();
-    iVar2 = DAT_00086df8 + (iVar2 >> 0x13);
-    *(byte *)(iVar2 + 0x44) = (byte)(1 << (7 - (uVar1 & 7) & 0xff)) | *(byte *)(iVar2 + 0x44);
+    /* Was called with 0 args -- real ARM binary does the same bare call
+       (confirmed via Ghidra: FUN_00053004(), free_object_slot's real
+       address, at this exact spot) -- the same "leftover register"
+       reliance already found 4 times this session. param_1 (the rune
+       being placed) is read at this function's very entry (`*param_1`
+       just above) and never touched again before this call, so it's
+       what's actually still sitting in the register. free_object_slot's
+       own param_1 is dereferenced immediately (see its own body), so a
+       genuinely garbage argument crashes hard -- confirmed live: SIGSEGV
+       inside this function the moment a real rune (not the always-
+       rejected garbage from the OUTER dropped-argument bug fixed in the
+       previous commit) actually reached here. Runes get absorbed into
+       the bag's own internal bit-flags rather than remaining separate
+       inventory objects, so their own object slot needs freeing here --
+       matches this function's very next line setting a bit in
+       DAT_00086df8's rune-bag record. */
+    free_object_slot(param_1);
+    /* Was `iVar2 = DAT_00086df8 + (iVar2 >> 0x13); *(byte *)(iVar2 + 0x44) = ...`
+       -- DAT_00086df8 is a real 64-bit char* (the player stats/quest-flags
+       struct, DAT_0023bca8) on this host, but `iVar2` is a 32-bit int;
+       assigning the pointer sum into it silently truncated to the low 32
+       bits, then dereferenced that wrong, truncated address. Same
+       pointer-truncation bug class as dozens of other fixes across this
+       file. Confirmed live via a temporary diagnostic (UW_DEBUG_RUNEBAG):
+       DAT_00086df8 was a real, valid, in-bounds pointer with a value
+       above 0xffffffff, so truncating it landed on unmapped memory --
+       SIGSEGV placing a genuine rune into the rune bag, the exact
+       reported crash. Uses a real pointer-typed local instead. */
+    pbVar4 = (byte *)(DAT_00086df8 + (iVar2 >> 0x13));
+    pbVar4[0x44] = (byte)(1 << (7 - (uVar1 & 7) & 0xff)) | pbVar4[0x44];
     uVar3 = 1;
   }
   return uVar3;
@@ -38121,9 +38172,24 @@ void FUN_0004497c()
   short sVar4;
   short sVar5;
   int iVar6;
-  ushort local_20 [3];
-  undefined2 local_1a;
-  
+  /* Was two separately-declared locals, `ushort local_20[3]` immediately
+     followed by `undefined2 local_1a` -- Ghidra's own offset naming
+     (-0x20, then -0x1a, exactly 6 bytes later) confirms the real ARM
+     stack frame packs them contiguously, and the real code below relies
+     on that: dispatch_object_action_dup reads its param_1[3] (the
+     synthetic "look" object's owner field) as the 4th ushort of what
+     it's handed, but only 3 are ever declared, and local_1a (explicitly
+     zeroed, the very next line) is what's meant to BE that 4th slot.
+     C gives no such adjacency guarantee on this host -- confirmed live:
+     local_20[3] read real stack garbage that happened to decode to a
+     "headless" creature's owner-name index, so right-clicking a rune in
+     this alphabet grid printed "belonging to a headless" instead of
+     just the rune's name. Backing array + #define, same pattern used
+     throughout this file for exactly this class of bug. */
+  undefined1 local_20_backing[8];
+#define local_20 ((ushort *)(local_20_backing + 0))
+#define local_1a (*(undefined2 *)(local_20_backing + 6))
+
   psVar3 = DAT_00085a6c;
   if (g_cursor_holding_state == 0) {
     if (DAT_00085a6c[1] < 0x12) {
@@ -38168,6 +38234,8 @@ void FUN_0004497c()
   }
   return;
 }
+#undef local_20
+#undef local_1a
 
 
 
@@ -63482,7 +63550,13 @@ undefined4 param_1;
 
 
 
-undefined4 FUN_0006bcd4(param_1)
+// was FUN_0006bcd4 -- flushes the player's carried-inventory chain (freeing
+// the live objects, since write_player_save_record just above already
+// serialized them into the save buffer), then writes the current level's
+// live tilemap+object arena to its on-disk archive. Called both from the
+// explicit "Save Game" menu path (save_game_to_slot) and from level
+// transitions (so the level being left behind remembers its current state).
+undefined4 commit_level_to_save_slot(param_1)
 undefined4 param_1;
 
 {
@@ -63492,7 +63566,25 @@ undefined4 param_1;
   undefined1 auStack_20 [16];
   
   write_player_save_record(0);
-  FUN_000444b0((char *)g_player_object + 3);
+  /* Was `+ 3` -- confirmed wrong via Ghidra decompile of the real ARM
+     binary (0x6bcd4): it passes `+ 6`. FUN_000444b0 treats its argument
+     as a pointer to a 2-byte object link field (it immediately calls
+     resolve_object_link on it) -- offset 6 is the player object's real
+     "contents" field (sp_link, matching FUN_000444b0's own recursive
+     calls at +4/+6 a few lines into that function), the head of the
+     player's carried-inventory chain, which this function walks and
+     frees before the save write below (the inventory itself gets
+     separately serialized into the save buffer by
+     write_player_save_record just above). Offset 3 is a byte-misaligned
+     read straddling two unrelated 2-byte fields (the tail of the
+     player's position word and the head of their own "quality/chain"
+     word) -- a garbage value derived from the player's actual position,
+     resolved and then unlinked-and-freed via this same recursive walk.
+     Matches a live report of "saving a game makes items near the
+     player disappear": whatever real object that garbage link
+     happened to resolve to (plausibly something tile-adjacent, given
+     it's derived from position bytes) got deleted on every save. */
+  FUN_000444b0((char *)g_player_object + 6);
   if (-1 < DAT_00202080) {
     object_list_unlink(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   }
@@ -63951,7 +64043,7 @@ char *param_2;
         iVar4 = write_player_save_record(local_638);
         if (iVar4 != 0) {
           FUN_00078c80(0xaa);
-          iVar4 = FUN_0006bcd4((int)DAT_00201b68);
+          iVar4 = commit_level_to_save_slot((int)DAT_00201b68);
           if (iVar4 != 0) {
             FUN_00078c80(0xaa);
             uVar5 = FUN_0002295c(local_530);
@@ -64145,7 +64237,7 @@ undefined4 param_2;
     FUN_00057cac(3);
   }
   FUN_0006c834(param_1,1);
-  iVar2 = FUN_0006bcd4(param_1);
+  iVar2 = commit_level_to_save_slot(param_1);
   iVar3 = 0;
   if (iVar2 != 0) {
     sVar1 = load_level(param_2);
