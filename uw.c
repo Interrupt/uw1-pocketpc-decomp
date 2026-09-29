@@ -1647,7 +1647,7 @@ undefined DAT_001007e0;
 #define DAT_00084f20 DAT_00084f20_backing[0]
 char s_UNNAMED_00084f24[] = "UNNAMED";
 char s_Sorry__you_have_no_00084f2c[] = "Sorry,_you_have_no";
-static undefined DAT_002027d2_backing[8192];
+undefined DAT_002027d2_backing[8192];
 #define DAT_002027d2 DAT_002027d2_backing[0]
 ushort DAT_00202d54;
 static undefined1 DAT_002027d0_backing[256];
@@ -36520,87 +36520,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007955c(param_1)
-char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
-
-{
-  int uw_ord2005_rem_160 = 0;
-  byte bVar1;
-  undefined4 uVar2;
-  int extraout_r1;
-  char *pObj;  /* was reuse of `uVar2` (undefined4) -- truncated
-                  spawn_new_object's real pointer */
-
-  bVar1 = *(byte *)(g_despawn_creature_record + 0x27);
-  uVar2 = Ordinal_1053();
-  uw_ord2005_rem_160 = ((int)(uVar2)) % (0x10);
-  if (uw_ord2005_rem_160 < (int)(bVar1 & 0xf)) {
-    pObj = (char *)spawn_new_object((bVar1 >> 4) + 0xb0,0);
-    object_list_insert_head(param_1 + 6,pObj);
-  }
-  return;
-}
-
-
-
-void FUN_000795cc(param_1)
-char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
-
-{
-  int uw_ord2005_rem_161 = 0; int uw_ord2005_rem_162 = 0; int uw_ord2005_rem_163 = 0;
-  undefined2 uVar1;
-  byte bVar2;
-  short sVar3;
-  byte *pbVar4;
-  undefined4 uVar5;
-  char extraout_r1;
-  byte bVar6;
-  byte extraout_r1_00;
-  int extraout_r1_01;
-  uint extraout_r1_02;
-  uint uVar7;
-  uint uVar8;
-  
-  uVar8 = 0;
-  do {
-    bVar6 = *(byte *)(uVar8 + g_despawn_creature_record + 0x20);
-    if ((bVar6 & 1) != 0) {
-      pbVar4 = (byte *)spawn_new_object((bVar6 >> 1 & 0xf) + (bVar6 >> 5 & 3) * '\x10',0);
-      uVar5 = Ordinal_1053();
-      uw_ord2005_rem_161 = ((int)(uVar5)) % (2);
-      if (uw_ord2005_rem_161 == 0) {
-        uVar5 = Ordinal_1053();
-        sVar3 = DAT_00201b68;
-        Ordinal_2005((int)DAT_00201b68 << 2,uVar5);
-        bVar6 = extraout_r1 + (char)sVar3 * '\x04';
-      }
-      else {
-        uVar5 = Ordinal_1053();
-        uw_ord2005_rem_162 = ((int)(uVar5)) % (0x40);
-        bVar6 = uw_ord2005_rem_162;
-      }
-      uVar1 = *(undefined2 *)(pbVar4 + 4);
-      bVar2 = (byte)uVar1;
-      pbVar4[4] = (bVar2 ^ bVar6) & 0x3f ^ bVar2;
-      pbVar4[5] = (byte)((ushort)uVar1 >> 8);
-      if ((*pbVar4 & 0x30) == 0x10) {
-        if ((&DAT_002027d2)[(*pbVar4 & 0xf) * 3] == -0x40) {
-          uVar5 = Ordinal_1053();
-          uw_ord2005_rem_163 = ((int)(uVar5)) % (8);
-          uVar7 = (uw_ord2005_rem_163 & 0xffff) + 4;
-          pbVar4[6] = pbVar4[6] & 0x3f ^ (char)uVar7 * '@';
-          pbVar4[7] = (byte)(uVar7 >> 2);
-        }
-      }
-      object_list_insert_head(param_1 + 6,pbVar4);
-    }
-    uVar8 = uVar8 + 1 & 0xff;
-  } while (uVar8 < 2);
-  return;
-}
-
-
-
 void FUN_00079784(param_1)
 char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
 
@@ -36662,8 +36581,8 @@ ushort * param_1;
     g_despawn_creature_record = &DAT_001007d0 +
                    (((int)(short)*param_1 & 0xfU) + (short)((*param_1 & 0x30) >> 4) * 0x10) * 0x30;
     spawn_creature_treasure_drop(param_1);
-    FUN_0007955c(param_1);
-    FUN_000795cc(param_1);
+    spawn_creature_special_item_drop(param_1);
+    spawn_creature_equipment_drop(param_1);
     FUN_00079784(param_1);
     uVar1 = *(undefined2 *)((char *)param_1 + 0xd);
     *(char *)((char *)param_1 + 0xd) = (char)uVar1;

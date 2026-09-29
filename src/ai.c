@@ -1482,3 +1482,103 @@ char *param_1;  /* was `int` -- truncated the real object pointer FUN_000798c4
   }
   return;
 }
+
+
+
+
+
+// was FUN_0007955c -- second creature-death drop roll: chance from
+// g_despawn_creature_record's offset +0x27 low nibble; on a hit,
+// spawns a single fixed-type item (high nibble + 0xb0) and links it
+// into param_1's object chain. Simpler sibling of
+// spawn_creature_treasure_drop (no quantity computation, just a
+// single item spawn). No callers found by grep in the remaining
+// decompile.
+void spawn_creature_special_item_drop(param_1)
+char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
+
+{
+  int uw_ord2005_rem_160 = 0;
+  byte bVar1;
+  undefined4 uVar2;
+  int extraout_r1;
+  char *pObj;  /* was reuse of `uVar2` (undefined4) -- truncated
+                  spawn_new_object's real pointer */
+
+  bVar1 = *(byte *)(g_despawn_creature_record + 0x27);
+  uVar2 = Ordinal_1053();
+  uw_ord2005_rem_160 = ((int)(uVar2)) % (0x10);
+  if (uw_ord2005_rem_160 < (int)(bVar1 & 0xf)) {
+    pObj = (char *)spawn_new_object((bVar1 >> 4) + 0xb0,0);
+    object_list_insert_head(param_1 + 6,pObj);
+  }
+  return;
+}
+
+
+
+// was FUN_000795cc -- third creature-death drop roll: iterates 2
+// equipment-slot flag bytes (g_despawn_creature_record offsets
+// +0x20/+0x21), and for each with bit 0 set, spawns an item (type
+// from bits 1-4 + subtype bits 5-6) and rolls its quality either
+// level-scaled (50% chance) or fully random 0-63 (the other 50%).
+// For weapon-class items (type class 0x30==0x10) whose comobj.dat
+// record marks them as enchantable (DAT_002027d2 entry == -0x40),
+// also rolls a random enchantment/charge bonus. Links each spawned
+// item into param_1's object chain. No callers found by grep in the
+// remaining decompile.
+void spawn_creature_equipment_drop(param_1)
+char *param_1;  /* was `int` -- same pointer-truncation bug as spawn_creature_treasure_drop */
+
+{
+  int uw_ord2005_rem_161 = 0; int uw_ord2005_rem_162 = 0; int uw_ord2005_rem_163 = 0;
+  undefined2 uVar1;
+  byte bVar2;
+  short sVar3;
+  byte *pbVar4;
+  undefined4 uVar5;
+  char extraout_r1;
+  byte bVar6;
+  byte extraout_r1_00;
+  int extraout_r1_01;
+  uint extraout_r1_02;
+  uint uVar7;
+  uint uVar8;
+  
+  uVar8 = 0;
+  do {
+    bVar6 = *(byte *)(uVar8 + g_despawn_creature_record + 0x20);
+    if ((bVar6 & 1) != 0) {
+      pbVar4 = (byte *)spawn_new_object((bVar6 >> 1 & 0xf) + (bVar6 >> 5 & 3) * '\x10',0);
+      uVar5 = Ordinal_1053();
+      uw_ord2005_rem_161 = ((int)(uVar5)) % (2);
+      if (uw_ord2005_rem_161 == 0) {
+        uVar5 = Ordinal_1053();
+        sVar3 = DAT_00201b68;
+        Ordinal_2005((int)DAT_00201b68 << 2,uVar5);
+        bVar6 = extraout_r1 + (char)sVar3 * '\x04';
+      }
+      else {
+        uVar5 = Ordinal_1053();
+        uw_ord2005_rem_162 = ((int)(uVar5)) % (0x40);
+        bVar6 = uw_ord2005_rem_162;
+      }
+      uVar1 = *(undefined2 *)(pbVar4 + 4);
+      bVar2 = (byte)uVar1;
+      pbVar4[4] = (bVar2 ^ bVar6) & 0x3f ^ bVar2;
+      pbVar4[5] = (byte)((ushort)uVar1 >> 8);
+      if ((*pbVar4 & 0x30) == 0x10) {
+        if ((&DAT_002027d2)[(*pbVar4 & 0xf) * 3] == -0x40) {
+          uVar5 = Ordinal_1053();
+          uw_ord2005_rem_163 = ((int)(uVar5)) % (8);
+          uVar7 = (uw_ord2005_rem_163 & 0xffff) + 4;
+          pbVar4[6] = pbVar4[6] & 0x3f ^ (char)uVar7 * '@';
+          pbVar4[7] = (byte)(uVar7 >> 2);
+        }
+      }
+      object_list_insert_head(param_1 + 6,pbVar4);
+    }
+    uVar8 = uVar8 + 1 & 0xff;
+  } while (uVar8 < 2);
+  return;
+}
