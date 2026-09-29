@@ -1018,6 +1018,8 @@ extern undefined DAT_00085ce0_backing[8192];
 extern char s_You_read_the_00085ce8[];
 extern undefined4 DAT_0024cfc8;
 extern undefined4 DAT_0024cfcc;
+extern undefined1 DAT_0024cfe0_backing[8192];
+#define DAT_0024cfe0 DAT_0024cfe0_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3478,7 +3480,7 @@ void complete_cast_spell_on_target();
 undefined4 resolve_object_variant_or_special_link();
 void clear_object_pending_special_flag();
 void consume_linked_special_object_charge();
-uint FUN_0007cdbc();
+uint resolve_skill_gated_unlock_or_use();
 undefined4 FUN_0007d074();
 int FUN_0007d0b0();
 void FUN_0007deec();

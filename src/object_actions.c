@@ -1086,7 +1086,7 @@ byte * param_2;
 // container/link (FUN_000537d0) and, IF found, temporarily forces the
 // player's pick-locks skill byte (DAT_00086df8+0x2c) to a guaranteed-
 // pass value (0x2d) before invoking force_unlock_target_object's
-// underlying "use item on object" resolver (FUN_0007cdbc, action code
+// underlying "use item on object" resolver (resolve_skill_gated_unlock_or_use, action code
 // 5 == unlock) so the skill check it performs against the lock's
 // difficulty always succeeds, then restores the real skill byte
 // afterward. Used for scripted/guaranteed unlocks (e.g. an "unlock"
@@ -1106,7 +1106,7 @@ ushort * param_3;
       ((*param_3 & 0x1c0) != 0x180)) && (iVar2 = FUN_000537d0(&local_14,0,6,2,3), iVar2 != 0)) {
     uVar1 = *(undefined1 *)(DAT_00086df8 + 0x2c);
     *(undefined1 *)(DAT_00086df8 + 0x2c) = 0x2d;
-    FUN_0007cdbc(g_player_object,param_3,iVar2,5);
+    resolve_skill_gated_unlock_or_use(g_player_object,param_3,iVar2,5);
     *(undefined1 *)(DAT_00086df8 + 0x2c) = uVar1;
     return 1;
   }

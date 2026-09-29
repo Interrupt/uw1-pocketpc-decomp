@@ -310,7 +310,7 @@ undefined4 param_2;
 // "disarm trap" mechanic: same container-contents/quality-gated setup,
 // but rolls a disarm skill check (roll_skill_check(param_2,8)) and
 // handles all three outcomes -- critical failure (<0: trap triggers,
-// via FUN_0007d074/FUN_0007dfd8 or FUN_0007cdbc depending on whether
+// via FUN_0007d074/FUN_0007dfd8 or resolve_skill_gated_unlock_or_use depending on whether
 // the trapped item resolved through a link) with "Your bumbling
 // attempts have set o[ff the trap]", plain failure (==0: "Unable to
 // defuse trap"), and success (>0: "X was successfully dearmed on the
@@ -373,7 +373,7 @@ undefined4 param_2;
               FUN_0007dfd8(local_34[0],pbVar4);
             }
             else {
-              FUN_0007cdbc(g_player_object,param_1,pbVar7,0xffffffff);
+              resolve_skill_gated_unlock_or_use(g_player_object,param_1,pbVar7,0xffffffff);
             }
           }
           else {
@@ -416,3 +416,94 @@ undefined4 param_2;
   }
   return uVar8;
 }
+
+
+// was FUN_0007cdbc -- confirmed by its callers as the general
+// skill-gated "use item on object" resolver behind
+// force_unlock_target_object (action code 5 == unlock, gated on a
+// pick-locks skill check via roll_skill_check against the lock's
+// difficulty byte) and trigger_object_trap_or_use_action (higher-
+// class linked-content matches). param_4 is the requested action
+// code, checked against a per-lock-class table (DAT_0024cfe0) indexed
+// by param_3's low nibble; param_1 is the acting object (player or
+// tool), param_2 a secondary context object gating an extra class/
+// quality-bit check. Returns 2 for "denied"; on success, delegates to
+// FUN_0007d074 (trap/effect application) and, when the lock record
+// has bits set at +6 (0xffc0), also refreshes it via FUN_0007dfd8.
+uint resolve_skill_gated_unlock_or_use(param_1,param_2,param_3,param_4)
+ushort * param_1;
+ushort * param_2;
+ushort * param_3;
+ushort param_4;
+
+{
+  ushort uVar1;
+  short sVar2;
+  char *iVar3;  /* was `int` -- truncated resolve_object_link's real `void *` return */
+  uint uVar4;
+  char *iVar5;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+  byte bVar6;
+  byte bVar7;
+  
+  bVar6 = (byte)*param_3;
+  while( true ) {
+    if ((bVar6 & 0x30) != 0x20) {
+      return 2;
+    }
+    if ((short)param_4 < 0) break;
+    if ((((param_2 == (ushort *)0x0) || ((*param_2 & 0x1f0) != 0x170)) || ((*param_2 & 0xf) < 8)) ||
+       ((param_3[2] & 0xffc0) == 0)) {
+      if ((byte)(&DAT_0024cfe0)[(short)(bVar6 & 0xf)] != param_4) {
+        return 2;
+      }
+      if (param_1 != (ushort *)0x0) {
+        if ((*param_1 & 0x1ff) == 0x7f) {
+          if ((*param_3 & 0x800) == 0) {
+            return 2;
+          }
+          if (((param_4 == 5) && (((byte)param_3[1] & 0x7f) != 0)) &&
+             (sVar2 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x2c),(byte)param_3[1] & 0x7f),
+             sVar2 < 1)) {
+            return 2;
+          }
+        }
+        else if ((*param_1 & 0x1c0) == 0x40) {
+          if ((*param_3 & 0x1000) == 0) {
+            return 2;
+          }
+          if ((*param_3 & 0x1c0) == 0x140) {
+            return 2;
+          }
+        }
+        else {
+          uVar1 = *param_3;
+          if ((((uVar1 & 0x1000) != 0) && ((uVar1 & 0x1c0) != 0x140)) && ((uVar1 & 0x800) == 0)) {
+            return 2;
+          }
+        }
+      }
+      break;
+    }
+    param_3 = (ushort *)resolve_object_link(param_3 + 2);
+    bVar6 = (byte)*param_3;
+  }
+  iVar3 = (char *)resolve_object_link(param_3 + 3);
+  bVar6 = (byte)param_3[2] & 0x3f;
+  bVar7 = (byte)param_3[3] & 0x3f;
+  if (iVar3 == 0) {
+    return 2;
+  }
+  uVar4 = FUN_0007d074(param_1,param_2,iVar3,bVar6,bVar7);
+  if ((*param_3 & 0x400) == 0) {
+    if ((param_3[3] & 0xffc0) != 0) {
+      iVar5 = (char *)tilemap_lookup(bVar6,bVar7);
+      FUN_0007dfd8(iVar5 + 2,iVar3);
+      return uVar4 | 0x20;
+    }
+    return uVar4;
+  }
+  return uVar4;
+}
+
+
+

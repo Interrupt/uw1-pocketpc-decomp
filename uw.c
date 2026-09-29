@@ -6429,14 +6429,14 @@ char s_is_empty__0008790c[] = "is_empty.";
    loader (load_class6_variant_effect_table) reads exactly 0x10 bytes
    into it -- same lone-scalar-treated-as-array bug class fixed
    repeatedly elsewhere in this file. */
-static undefined1 DAT_0024cfe0_backing[8192];
+undefined1 DAT_0024cfe0_backing[8192];
 #define DAT_0024cfe0 DAT_0024cfe0_backing[0]
 char *DAT_0024cff4;
 /* HACK: was `undefined4` -- truncated a real 64-bit object pointer.
    Same bug class as DAT_0024cff4 right above (already a real pointer
    type) and countless other fixes throughout this file: FUN_0007d074
    stores its own real `ushort *` param_2 here, and it's read back as a
-   pointer both directly (FUN_0007cdbc's own param_2 at both call sites
+   pointer both directly (resolve_skill_gated_unlock_or_use's own param_2 at both call sites
    below) and via dereference (`*(byte*)(DAT_0024cff0+1)` further
    down). Confirmed live (bug-pull-chain-crash.txt, a saved repro):
    using a pull chain crashed with EXC_BAD_ACCESS at a wild address
@@ -21086,7 +21086,7 @@ LAB_0003c940:
              lldb, EXC_BAD_ACCESS at address 0). */
           if (uVar11 == 0) break;
           if ((*(ushort *)uVar11 & 0x1ff) == 0x1a0) {
-            FUN_0007cdbc(g_player_object,0,(ushort *)uVar11,0);
+            resolve_skill_gated_unlock_or_use(g_player_object,0,(ushort *)uVar11,0);
             iVar8 = extraout_r1;
           }
           iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
@@ -32394,7 +32394,7 @@ LAB_000548b8:
   if ((short)uVar8 != -1) {
     if (((&DAT_00202c97)[(short)uVar8 * 0xd] & 2) == 0) {
       if ((uVar8 & 0xffc0) == 0x180) {
-        uVar7 = FUN_0007cdbc(puVar4,0,puVar5,0);
+        uVar7 = resolve_skill_gated_unlock_or_use(puVar4,0,puVar5,0);
         return uVar7;
       }
     }
@@ -36517,88 +36517,11 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-uint FUN_0007cdbc(param_1,param_2,param_3,param_4)
-ushort * param_1;
-ushort * param_2;
-ushort * param_3;
-ushort param_4;
-
-{
-  ushort uVar1;
-  short sVar2;
-  char *iVar3;  /* was `int` -- truncated resolve_object_link's real `void *` return */
-  uint uVar4;
-  char *iVar5;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
-  byte bVar6;
-  byte bVar7;
-  
-  bVar6 = (byte)*param_3;
-  while( true ) {
-    if ((bVar6 & 0x30) != 0x20) {
-      return 2;
-    }
-    if ((short)param_4 < 0) break;
-    if ((((param_2 == (ushort *)0x0) || ((*param_2 & 0x1f0) != 0x170)) || ((*param_2 & 0xf) < 8)) ||
-       ((param_3[2] & 0xffc0) == 0)) {
-      if ((byte)(&DAT_0024cfe0)[(short)(bVar6 & 0xf)] != param_4) {
-        return 2;
-      }
-      if (param_1 != (ushort *)0x0) {
-        if ((*param_1 & 0x1ff) == 0x7f) {
-          if ((*param_3 & 0x800) == 0) {
-            return 2;
-          }
-          if (((param_4 == 5) && (((byte)param_3[1] & 0x7f) != 0)) &&
-             (sVar2 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x2c),(byte)param_3[1] & 0x7f),
-             sVar2 < 1)) {
-            return 2;
-          }
-        }
-        else if ((*param_1 & 0x1c0) == 0x40) {
-          if ((*param_3 & 0x1000) == 0) {
-            return 2;
-          }
-          if ((*param_3 & 0x1c0) == 0x140) {
-            return 2;
-          }
-        }
-        else {
-          uVar1 = *param_3;
-          if ((((uVar1 & 0x1000) != 0) && ((uVar1 & 0x1c0) != 0x140)) && ((uVar1 & 0x800) == 0)) {
-            return 2;
-          }
-        }
-      }
-      break;
-    }
-    param_3 = (ushort *)resolve_object_link(param_3 + 2);
-    bVar6 = (byte)*param_3;
-  }
-  iVar3 = (char *)resolve_object_link(param_3 + 3);
-  bVar6 = (byte)param_3[2] & 0x3f;
-  bVar7 = (byte)param_3[3] & 0x3f;
-  if (iVar3 == 0) {
-    return 2;
-  }
-  uVar4 = FUN_0007d074(param_1,param_2,iVar3,bVar6,bVar7);
-  if ((*param_3 & 0x400) == 0) {
-    if ((param_3[3] & 0xffc0) != 0) {
-      iVar5 = (char *)tilemap_lookup(bVar6,bVar7);
-      FUN_0007dfd8(iVar5 + 2,iVar3);
-      return uVar4 | 0x20;
-    }
-    return uVar4;
-  }
-  return uVar4;
-}
-
-
-
 /* HACK: param_2 and param_3 were both `undefined4` -- truncated real
    64-bit pointers (both are `ushort *` at every call site, e.g.
-   FUN_0007cdbc's own `param_2` and `iVar3`/resolve_object_link's
-   result just above this function), the same bug class as
-   DAT_0024cff0's own identical fix just above. Confirmed live
+   resolve_skill_gated_unlock_or_use's own `param_2` and `iVar3`/
+   resolve_object_link's result, in src/interact.c now), the same bug
+   class as DAT_0024cff0's own identical fix just above. Confirmed live
    (bug-pull-chain-crash.txt): pulling a chain crashed with
    EXC_BAD_ACCESS on a wild, obviously-truncated address
    (0x4c029128) dereferenced one call further down, in FUN_0007d0b0 --
@@ -37013,7 +36936,7 @@ LAB_0007d460:
         return 2;
       }
       uVar6 = resolve_object_link((ushort *)(iVar16 + 4));
-      iVar16 = FUN_0007cdbc(DAT_0024cff4,DAT_0024cff0,uVar6,0xffffffff);
+      iVar16 = resolve_skill_gated_unlock_or_use(DAT_0024cff4,DAT_0024cff0,uVar6,0xffffffff);
       return iVar16;
     }
     break;
@@ -37033,7 +36956,7 @@ LAB_0007d460:
         uVar4 = FUN_0007d0b0(puVar12,param_2,param_3);
       }
       else {
-        uVar4 = FUN_0007cdbc(DAT_0024cff4,DAT_0024cff0,puVar12,0xffffffff);
+        uVar4 = resolve_skill_gated_unlock_or_use(DAT_0024cff4,DAT_0024cff0,puVar12,0xffffffff);
       }
       iVar16 = (int)(short)(uVar4 | (ushort)iVar16);
     }

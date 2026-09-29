@@ -1274,7 +1274,7 @@ int param_2;
 // +0x8000/+0x7fc0==0x840); on success, sets two player quest-flag
 // bits (DAT_00086df8+0x61/0x62), marks the target's quality "used",
 // triggers an effect via FUN_00028488 (not yet named), and syncs an
-// object at a fixed tile (0x36,0x34) to the player via FUN_0007cdbc.
+// object at a fixed tile (0x36,0x34) to the player via resolve_skill_gated_unlock_or_use.
 // Prints one of several failure/progress messages otherwise. No
 // callers found by grep in the remaining decompile -- likely a
 // one-off scripted quest puzzle, not a general mechanic.
@@ -1318,7 +1318,7 @@ undefined4 param_2;
       iVar2 = (char *)tilemap_lookup(0x36,0x34);
       iVar2 = (char *)resolve_object_link(iVar2 + 2);
       if (iVar2 != 0) {
-        FUN_0007cdbc(g_player_object,0,iVar2,0);
+        resolve_skill_gated_unlock_or_use(g_player_object,0,iVar2,0);
       }
     }
     else {
@@ -2224,7 +2224,7 @@ LAB_0007c2b8:
 // empty extra-flags field and param_3==4 triggers a trap effect
 // (FUN_0007d074/FUN_0007dfd8, not yet named); a higher-class match
 // instead runs the general "use item on object" resolver
-// (FUN_0007cdbc -- confirmed in an earlier pass as the skill-gated
+// (resolve_skill_gated_unlock_or_use -- confirmed in an earlier pass as the skill-gated
 // unlock/use resolver behind force_unlock_target_object).
 void trigger_object_trap_or_use_action(param_1,param_2,param_3,param_4,param_5)
 char *param_1;
@@ -2248,7 +2248,7 @@ undefined2 param_5;
         }
       }
       else {
-        FUN_0007cdbc(param_1,param_2,puVar1,param_3);
+        resolve_skill_gated_unlock_or_use(param_1,param_2,puVar1,param_3);
       }
     }
   }
