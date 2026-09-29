@@ -1,6 +1,7 @@
 #include "uw.h"
 #include "debug.h"
 #include "gx_stub.h"
+#include "headers/debug_ui.h"
 #include <dlfcn.h>
 #include <math.h>
 #include <stdarg.h>
@@ -688,6 +689,64 @@ int DAT_000db450;
    processed after this one -- an override left set would face every
    later billboard this frame the wrong way. */
 int g_billboard_angle_override_deg = -1;
+/* Live-tunable door-frame anchor constants (UW_MODEL_TUNER=1) -- see the
+   wall-plane fix in emit_catalog_object's own catalog_u==1 block. Three
+   real regressions already came from guessing these numbers, rebuilding,
+   and only then finding out live whether a guess was right; this lets
+   the door panel show tunable rows so a value can be nudged and watched
+   change on screen the same frame, with no rebuild. g_tune_wide_center
+   is the wide/along-the-wall axis's offset from the tile's own origin;
+   g_tune_edge_offset is the wall-perpendicular axis's offset from
+   whichever tile edge it's nearest. Live QA confirmed both at 128.0 --
+   i.e. the "wall has real thickness, the perpendicular axis sits at
+   edge+16" theory (tried and initially reported as an improvement) was
+   itself wrong; the real answer is simpler, exact tile center on BOTH
+   axes, no wall-thickness concept needed. At edge_offset==128 the near/
+   far edge-side branch in the fix below collapses to the same value
+   either way (128 or 256-128), so this is equivalent to just always
+   centering -- kept as two separately-tunable fields anyway in case a
+   future model (not a full-tile-wide one like DFRAME.E) genuinely needs
+   something else. */
+double g_tune_wide_center = 128.0;
+double g_tune_edge_offset = 128.0;
+/* General object-tuner state (UW_MODEL_TUNER=1) -- was door-only (the
+   panel only populated inside catalog_u==1, and only showed the two
+   door-anchor fields above); generalized so ANY catalog this session's
+   native mesh path draws (boulder, bridge, door, ...) gets a live panel
+   whenever it's on screen, per direct request: "convert the door debug
+   tool to a general object debug tool so we can try giving the object
+   a rotation offset and view it from all angles." g_tune_rotation_offset
+   is added directly to the model's own real final rotation angle
+   (sVar13, degrees) right before build_euler_rotation_matrix runs, so
+   walking around a normally-facing object and nudging this field is
+   equivalent to spinning the OBJECT rather than the camera -- useful
+   for exactly the kind of "does this face-order bug only show from
+   certain angles" question that motivated adding it. g_tune_last_catalog
+   resets the offset to 0 whenever the catalog on screen changes, so a
+   leftover rotation from tuning one object (e.g. a boulder) doesn't
+   silently carry over and confuse the next one (e.g. a door) -- same
+   "reseed on id change" shape the original e-model-texturing tuner used
+   for its own per-model fields. */
+double g_tune_rotation_offset = 0.0;
+int g_tune_last_catalog = -1;
+/* UW_MODEL_TUNER=1's "hide_walls" toggle (debug panel, dbgui_field_toggle)
+   -- lets wall/floor tile geometry be filtered out of the render so a
+   single object's own faces (a decal, a boulder) can be inspected via
+   UW_DEBUG_RASTER/the dump_3d_frame face-dump tool without unrelated
+   wall polygons cluttering the trace (several of them coincidentally
+   share texture ids with the object being investigated, confirmed
+   while chasing the TMAP-decal backface report -- filtering by texture
+   id alone doesn't isolate one object's own draws). Checked at the two
+   "commit this wall quad" sites in process_visible_tile_cell (each already
+   writes the quad's geometry/texptr into the current arena slot, THEN
+   advances DAT_0023b83c/DAT_0023b838 to make it visible to the renderer)
+   -- when set, the advance is skipped, so the wall's just-written data is
+   silently overwritten by whatever gets emitted into that same slot next
+   (the next wall, or the tile's own floor/object via emit_tile_features)
+   instead of ever reaching render_visible_tile_list. Floor and objects are
+   untouched -- only process_visible_tile_cell's own wall-quad commits
+   check this flag. */
+int g_uw_hide_walls = 0;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
    view/camera matrix -- build_view_matrix writes the whole matrix in one shot
@@ -2521,6 +2580,61 @@ static undefined DAT_0017a4c0_backing[16384];
 #define DAT_0017a4c0 DAT_0017a4c0_backing[0]
 static undefined DAT_0017e0ec_backing[16384];
 #define DAT_0017e0ec DAT_0017e0ec_backing[0]
+/* g_anim_model_slot: real fix for tick_anim_record's own address-walk bug
+   (see that function's own comment). In the ORIGINAL binary, `DAT_00110ff0`
+   and these 29 model buffers are one contiguous array -- FUN_00038680's own
+   29 parse_e_model_file calls fill slots 1..29 in exactly this order, and
+   tick_anim_record/emit_catalog_object read a model's data back by walking
+   `base + slot*0x3c2c`. This port declares every DAT_XXXXXXXX as its OWN
+   separately-allocated C global (confirmed: DAT_00114c1c_backing and
+   DAT_00110ff0_backing are unrelated arrays, not adjacent slices of one
+   buffer) -- so that walk lands in DAT_00110ff0's own unrelated, always-
+   zero memory instead of a real model, and the whole real-mesh path in
+   emit_catalog_object was silently dead. Slot 0 is deliberately NULL (no
+   parse_e_model_file call ever targets it -- see FUN_00038680's own call
+   list, which starts at slot 1). Order matches that call list exactly. */
+static void * const g_anim_model_slot[30] = {
+  0,                 /* 0: unused */
+  &DAT_00114c1c,     /* 1: DFRAME.E */
+  &DAT_00118848,     /* 2: FBRIDGE.E */
+  &DAT_0011c474,     /* 3: BENCH.E */
+  &DAT_001200a0,     /* 4: 40LOTUS.E */
+  &DAT_00123ccc,     /* 5: ROCKSMAL.E */
+  &DAT_001278f8,     /* 6: ROCKMED.E */
+  &DAT_0012b524,     /* 7: ROCKBIG.E */
+  &DAT_0012f150,     /* 8: ARROW.E */
+  &DAT_00132d7c,     /* 9: BEAM.E */
+  &DAT_001369a8,     /* 10: NEWPILL.E */
+  &DAT_0013a5d4,     /* 11: SHRINE.E */
+  &DAT_0013e200,     /* 12: NEWPORT.E (1st load) */
+  &DAT_00141e2c,     /* 13: NEWPORT.E (2nd load) */
+  &DAT_00145a58,     /* 14: DOOR.E (1st load) */
+  &DAT_00149684,     /* 15: DOOR.E (2nd load) */
+  &DAT_0014d2b0,     /* 16: TMAP16X16.E (1st load) */
+  &DAT_00150edc,     /* 17: TMAP16X16.E (2nd load) */
+  &DAT_00154b08,     /* 18: TMAP16X16.E (3rd load) */
+  &DAT_00158734,     /* 19: GRAVE.E */
+  &DAT_0015c360,     /* 20: TMAP16X16.E (4th load) */
+  &DAT_0015ff8c,     /* 21: TMAP32X32.E */
+  &DAT_00163bb8,     /* 22: TMAP64X64.E */
+  &DAT_001677e4,     /* 23: GATE.E */
+  &DAT_0016b410,     /* 24: TABLF3.E */
+  &DAT_0016f03c,     /* 25: CHEST.E */
+  &DAT_00172c68,     /* 26: NITESTAN.E */
+  &DAT_00176894,     /* 27: BARRCLOS.E */
+  &DAT_0017a4c0,     /* 28: CHAIRSIM.E */
+  &DAT_0017e0ec,     /* 29: BED2.E */
+};
+/* Per-slot working copy for tick_anim_record's real fix -- a fresh
+   16384-byte memcpy of the real model buffer, refreshed every call rather
+   than reusing the original's incremental per-point "tick" (whose exact
+   purpose isn't needed just to get real geometry flowing, and a full fresh
+   copy is simpler and can't drift stale). Kept SEPARATE from the real
+   g_anim_model_slot buffers (not aliased directly onto them) so
+   emit_catalog_object's own writes into a face record's scratch tail
+   can never corrupt the same buffer a future real-3D-model consumer might
+   also read. */
+static unsigned char g_anim_model_scratch[30][16384];
 undefined1 DAT_00189588;
 undefined2 DAT_00110a78;
 undefined2 DAT_00110bc0;
@@ -3074,7 +3188,7 @@ unsigned short u_INVALID_HANDLE_VALUE_00085944[] = u"INVALID_HANDLE_VALUE";
    FUN_00077a38's matching 0x80-iteration cleanup loop for DAT_00202308),
    same "lone undefined4 scalar indexed as an array" bug as DAT_0023c7a0
    right above (already fixed): each slot holds a real malloc'd buffer
-   pointer (decode_critter_sprite_page/emit_object_billboard's per-page glyph decode),
+   pointer (decode_critter_sprite_page/emit_catalog_object's per-page glyph decode),
    so a 4-byte-stride int[] truncates/corrupts every other slot's pointer
    on this 64-bit host. Sized generously past the documented 0x80 like
    this file's other such tables. */
@@ -5139,7 +5253,7 @@ undefined2 DAT_00189586;
 ushort DAT_0018957a;
 /* .data 0x86c08: real billboard-catalog table, 30 records of 4 bytes
    each (byte0=flags/sub-frame-count, bytes1-3=up to 3 more per-entry
-   values -- see emit_object_billboard's own use of it), recovered
+   values -- see emit_catalog_object's own use of it), recovered
    directly from UU.exe. Was 4 lone `undefined` scalars Ghidra never
    gave real backing to -- same "split/orphaned data table" class as
    g_inventory_hotspot_table before its own recovery (see
@@ -8745,6 +8859,20 @@ char param_1;
 // the 3 verts by Y, builds 3 edges via raster_edge_setup, walks
 // scanlines stepping edges (raster_edge_step) and emitting spans
 // (raster_textured_span)
+//
+// UW_DEBUG_RASTER=1: logs every call's screen-space verts/clip rect/
+// texture id, which of the four bounding-box trivial-reject checks (if
+// any) fired, and the final raster_textured_span call count. Added
+// while tracing a QA report that a TMAP decal (catalog 22) draws
+// visible pixels from the front but none from behind, despite an
+// identical raster_triangle call count either way -- confirmed by
+// reading the whole function that there is no winding/normal-based
+// reject anywhere in it (the only early-outs are the four axis-aligned
+// bbox trivial-rejects above, each screen-space-only); a boulder face
+// sweep (catalog 7, which self-occludes so a silently-empty back face
+// would never have been visually noticed) showed span_calls>0 on every
+// one of 52 faces, so whatever's producing the decal's blank back side
+// still needs to be traced with this at the decal's own repro position.
 void raster_triangle(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 undefined4 param_1;
 void *param_2; /* was undefined4 -- the framebuffer base (g_uw_framebuffer) */
@@ -8783,6 +8911,14 @@ int * param_8;
 #define local_b8 (*(int *)(auStack_c4 + 0xc))
 #define local_70 (*(int *)(auStack_7c + 0xc))
 
+  if (getenv("UW_DEBUG_RASTER")) {
+    fprintf(stderr, "[raster] ENTRY texid=0x%x v0=(%g,%g) v1=(%g,%g) v2=(%g,%g) clip=(%d,%d,%d,%d) tex=%p\n",
+            (unsigned)param_4,
+            *(float *)param_3, *(float *)(param_3 + 1),
+            *(float *)(param_3 + 5), *(float *)(param_3 + 6),
+            *(float *)(param_3 + 10), *(float *)(param_3 + 11),
+            param_8[0], param_8[1], param_8[2], param_8[3], (void *)param_7);
+  }
   uVar8 = param_3[6];
   uVar10 = param_3[0xb];
   uVar6 = param_3[1];
@@ -8791,26 +8927,32 @@ int * param_8;
   iVar2 = Ordinal_2028(uVar4,uVar1);
   if (((iVar2 != 0) && (iVar2 = Ordinal_2028(param_3[5],uVar1), iVar2 != 0)) &&
      (iVar2 = Ordinal_2038(param_3[10],uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts left of clip-left\n");
     return;
   }
   uVar1 = Ordinal_2032(param_8[2]);
   iVar2 = Ordinal_2036(uVar4,uVar1);
   if (((iVar2 != 0) && (iVar2 = Ordinal_2036(param_3[5],uVar1), iVar2 != 0)) &&
      (iVar2 = Ordinal_2030(param_3[10],uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts right of clip-right\n");
     return;
   }
   uVar1 = Ordinal_2032(param_8[1]);
   iVar2 = Ordinal_2028(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = Ordinal_2028(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = Ordinal_2038(uVar10,uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts above clip-top\n");
     return;
   }
   uVar1 = Ordinal_2032(param_8[3]);
   iVar2 = Ordinal_2036(uVar6,uVar1);
   if (((iVar2 != 0) && (iVar2 = Ordinal_2036(uVar8,uVar1), iVar2 != 0)) &&
      (iVar2 = Ordinal_2030(uVar10,uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts below clip-bottom\n");
     return;
   }
+  if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] passed bbox reject, entering scanline setup\n");
+  int _uw_span_calls = 0;
   iVar2 = Ordinal_2028(uVar6,uVar8);
   if (iVar2 == 0) {
     iVar2 = Ordinal_2028(uVar10,uVar8);
@@ -8862,6 +9004,14 @@ LAB_00014684:
   raster_edge_setup(auStack_10c,param_3,uVar11,uVar4,param_8[1],auStack_154);
   raster_edge_setup(auStack_10c,param_3,uVar11,uVar1,param_8[1],auStack_c4);
   raster_edge_setup(auStack_10c,param_3,uVar1,uVar4,param_8[1],auStack_7c);
+  if (getenv("UW_DEBUG_RASTER")) {
+    fprintf(stderr, "[raster] sort top=%u mid=%u bot=%u  uVar7(short-half-idx)=%u uVar9(cmp)=%u  long_x0=%d short1_x0=%d short2_x0=%d\n",
+            (unsigned)uVar11, (unsigned)uVar1, (unsigned)uVar4,
+            (unsigned)uVar7, (unsigned)uVar9,
+            *(int *)(auStack_154 + 0x28) >> 0xe,
+            *(int *)(auStack_c4 + 0x28) >> 0xe,
+            *(int *)(auStack_7c + 0x28) >> 0xe);
+  }
   if (uVar9 < uVar7) {
     puVar3 = auStack_154;
     puVar5 = auStack_c4;
@@ -8869,6 +9019,10 @@ LAB_00014684:
   else {
     puVar3 = auStack_c4;
     puVar5 = auStack_154;
+  }
+  if (getenv("UW_DEBUG_RASTER")) {
+    fprintf(stderr, "[raster] first-half puVar3(assumed-left)_x0=%d puVar5(assumed-right)_x0=%d\n",
+            *(int *)(puVar3 + 0x28) >> 0xe, *(int *)(puVar5 + 0x28) >> 0xe);
   }
   iVar2 = local_b8;
   while( true ) {
@@ -8896,6 +9050,7 @@ LAB_00014684:
       while ((iVar2 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
         if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) &&
            (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)) {
+          _uw_span_calls++;
           raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,
                        param_4);
         }
@@ -8903,18 +9058,21 @@ LAB_00014684:
         raster_edge_step(auStack_154);
         iVar2 = iVar2 + -1;
       }
+      if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE span_calls=%d\n", _uw_span_calls);
       return;
     }
     iVar2 = iVar2 + -1;
     if (param_8[3] <= *(int *)(puVar3 + 8)) break;
     if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) && (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)
        ) {
+      _uw_span_calls++;
       raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,param_4
                   );
     }
     raster_edge_step(auStack_c4);
     raster_edge_step(auStack_154);
   }
+  if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE (broke on clip-bottom) span_calls=%d\n", _uw_span_calls);
   return;
 }
 #undef local_b8
@@ -14565,14 +14723,30 @@ LAB_0001dbcc:
 
 
 /* Ghidra lost the return value (literal `return 0`), so the sole caller
-   (emit_object_billboard) dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the
+   (emit_catalog_object) dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the
    moment an animated tile object (door, etc.) came into view. The
-   function ticks animation record `param_1` in place; it returns that
-   record's base, &DAT_00189590 + param_1*0x3c2c (== piVar2 before the
-   loop walks it). */
+   function ticks animation record `catalog` in place; it returns that
+   record's base, &DAT_00189590 + catalog*0x3c2c (== piVar2 before the
+   loop walks it).
+
+   REAL FIX: that address-walk formula only works in the original binary,
+   where DAT_00110ff0 and the 29 model buffers were one contiguous array
+   (see g_anim_model_slot's own comment for the full trace) -- in this
+   port every DAT_XXXXXXXX is its own separate C global, so the walk
+   lands in unrelated always-zero memory and this whole function would
+   silently return an empty record for every catalog. Now resolves
+   `catalog` through g_anim_model_slot (the real per-catalog model
+   address, in the same order FUN_00038680 loads them) and hands back a
+   fresh copy in g_anim_model_scratch -- a real npts/nparts/point-list/
+   face-list a caller can actually use, without ever aliasing (and
+   risking emit_catalog_object's own scratch writes corrupting) the
+   real model buffers. Falls back to the original (harmless, always-
+   empty) address-walk behavior for any catalog with no real model --
+   e.g. plain sprite/critter catalogs were never meant to reach this
+   table at all. */
 // was FUN_0001dc04
-void *tick_anim_record(param_1)
-short param_1;
+void *tick_anim_record(catalog)
+short catalog;
 
 {
   undefined4 uVar1;
@@ -14582,7 +14756,32 @@ short param_1;
   int iVar5;
   void *rec_base;
 
-  iVar4 = param_1 * 0x3c2c;
+  /* Native 3D catalog-object rendering (doors/frames drawing as real .E
+     model geometry instead of flat sprites) is enabled by default --
+     no env var needed, unlike this project's earlier, now-removed
+     g_model_map hack (which defaulted off). UW_DISABLE_3D_OBJECTS is
+     the opt-out, for QA comparison against the pre-this-feature
+     behavior, matching the naming convention UW_DISABLE_3D_GEOMETRY
+     (this file's own sibling flag for the tile/wall/floor renderer)
+     already established. Gated here, tick_anim_record's own single
+     choke point for every caller (doors via emit_anim_object_frames,
+     bridges/decals via the generic catalog dispatch) -- when set,
+     every catalog falls through to the address-walk below exactly as
+     it did before this session's fix, which lands in unrelated always-
+     zero memory and returns an empty (point_count==0) record, so
+     callers draw nothing for these objects rather than a stale flat
+     sprite (there's no old sprite path left to fall back to -- see
+     object-rendering-findings.txt). */
+  { static int _disabled = -1;
+    if (_disabled < 0) _disabled = (getenv("UW_DISABLE_3D_OBJECTS") != NULL);
+    if (!_disabled && catalog > 0 && catalog < 30 && g_anim_model_slot[catalog] != 0) {
+      void *dest = g_anim_model_scratch[catalog];
+      memcpy(dest, g_anim_model_slot[catalog], 16384);
+      return dest;
+    }
+  }
+
+  iVar4 = catalog * 0x3c2c;
   piVar2 = (int *)(&DAT_00189590 + iVar4);
   rec_base = piVar2;
   iVar5 = *piVar2;
@@ -14755,6 +14954,8 @@ int * param_1;
   }
   iVar3 = 0;
   piVar2 = param_1;
+  if (getenv("UW_DEBUG_DOOR_POS"))
+    fprintf(stderr, "[doorpos] translate_verts_to_camera_space: second-list record count param_1[1]=%d\n", param_1[1]);
   if (0 < param_1[1]) {
     do {
       *(undefined1 *)(piVar2 + 0x121b) = 1;
@@ -14835,7 +15036,7 @@ int * param_1;
 
 void FUN_0001e594(param_1,param_2,param_3,param_4)
 char *param_1;  /* was `int` -- truncated the real _anim pointer
-                   emit_object_billboard passes in, latent until the
+                   emit_catalog_object passes in, latent until the
                    DAT_00202c9X object-property fix let real property
                    data reach a nonzero case here */
 undefined4 param_2;
@@ -14948,7 +15149,7 @@ int param_4;
      of a global. Every one of those calls overflowed by 20-60+ bytes
      into whatever locals or padding happened to follow, corrupting the
      stack canary -- latent for as long as build_euler_rotation_matrix's
-     only real caller (emit_object_billboard's animation-rotation path)
+     only real caller (emit_catalog_object's animation-rotation path)
      never had real per-object-type property data reaching it with a
      nonzero angle; became a guaranteed `__stack_chk_fail` abort the
      moment the DAT_00202c9X object-property fix above let that happen
@@ -15406,6 +15607,15 @@ int param_2;
               iVar7 = iVar7 * 0xc + param_1;
               puVar8 = (undefined4 *)(iVar7 + 0x3010);
               uVar11 = *puVar8;
+              if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
+                int _lo = 0, _hi = -1;
+                sscanf(getenv("UW_DEBUG_NEARCLIP_RANGE"), "%d:%d", &_lo, &_hi);
+                if (local_48 >= _lo && local_48 <= _hi)
+                  fprintf(stderr, "[nearclip] rec=%d pointcount=%d edge=%d prev_vi=%d cur_vi=%d prev_w=%g cur_w=%g thresh=%g prev_behind=%d\n",
+                          local_48, iVar4, local_78, local_64,
+                          *(int *)(local_50 + 0x4818),
+                          *(float *)&uVar10, *(float *)&uVar11, *(float *)&DAT_00084608, iVar6);
+              }
               if (iVar6 == 0) {
                 iVar6 = Ordinal_2038(uVar11,DAT_00084608);
                 if (iVar6 != 0) {
@@ -15582,6 +15792,16 @@ LAB_0002029c:
               local_64 = local_78;
               local_78 = local_78 + 1;
             } while (local_78 < iVar4);
+            if (getenv("UW_DEBUG_DOOR_POS") && local_48 >= 26 && local_48 <= 32)
+              fprintf(stderr, "[doorpos] near_clip: emit_idx=%d iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
+                      local_48, iVar18, local_7c);
+            if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
+              int _lo = 0, _hi = -1;
+              sscanf(getenv("UW_DEBUG_NEARCLIP_RANGE"), "%d:%d", &_lo, &_hi);
+              if (local_48 >= _lo && local_48 <= _hi)
+                fprintf(stderr, "[nearclip] rec=%d FINAL iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
+                        local_48, iVar18, local_7c);
+            }
             if (iVar18 != 0) {
               *puVar20 = (char)iVar18;
               (&DAT_000bc039)[iVar19] = (char)((uint)iVar18 >> 8);
@@ -15590,6 +15810,9 @@ LAB_0002029c:
               /* carry the real texture pointer from emit index to render index */
               if ((unsigned)local_7c < UW_MAX_VIS_TILES && (unsigned)local_48 < UW_MAX_VIS_TILES) {
                 g_tile_texptr_out[local_7c] = g_tile_texptr_emit[local_48];
+                if (getenv("UW_DEBUG_DOOR_POS") && local_48 >= 26 && local_48 <= 32)
+                  fprintf(stderr, "[doorpos] texptr carry: emit_idx=%d out_idx=%d texptr=%p\n",
+                          local_48, local_7c, g_tile_texptr_emit[local_48]);
               }
               local_7c = local_7c + 1;
               (&DAT_000bc03b)[iVar19] = (char)((uint)iVar18 >> 0x18);
@@ -15737,6 +15960,10 @@ void render_visible_tile_list()
                          ? (intptr_t)g_tile_texptr_out[local_94]
                          : (intptr_t)piVar14[0x1a],
                        local_70_rect);
+          { char _facetag[32];
+            snprintf(_facetag, sizeof(_facetag), "rec%03d_tri%d_tex0x%x", local_94, iVar16, piVar14[0x1e]);
+            uw_debug_dump_3d_face(_facetag);
+          }
           iVar16 = iVar16 + 1;
           iVar17 = iVar17 + 0xc;
           piVar14 = (int *)*local_98;
@@ -15748,6 +15975,14 @@ void render_visible_tile_list()
     } while (local_94 < iVar15);
   }
   debug_framebuffer_dump("render_visible_tile_list");
+  { int _dumped = uw_debug_3d_frame_dump_finish();
+    if (_dumped >= 0) {
+      char _msg[80];
+      snprintf(_msg, sizeof(_msg), "[debug] dumped %d 3D faces to %s\n",
+               _dumped, uw_debug_3d_frame_dump_last_dir());
+      message_scroll_print_wrapped(_msg);
+    }
+  }
   return;
 }
 #undef local_70
@@ -15779,7 +16014,7 @@ void render_visible_tile_list()
 // lives at output offset 0, part count at offset 4, points at
 // `8 + i*0xc` (3 back-to-back floats), parts at `0xc14 + p*0x60` (a
 // vertex count then that many vertex-index ints from offset +4) -- see
-// emit_model_object's own use of this layout. Despite computing a real
+// emit_catalog_object's own use of this layout. Despite computing a real
 // per-face normal (vec3_sub + vec3_cross, see vec3_cross's comment) and
 // resolving per-face color (EXTENDED_COLORS against g_model_known_ext_
 // colors), neither survives into this output buffer -- confirmed by
@@ -15787,9 +16022,62 @@ void render_visible_tile_list()
 // normal's call site, not just this decompile. Only point positions and
 // vertex-index lists persist. Full writeup: object-rendering-findings.txt
 // UPDATE (7)/(8).
-void parse_e_model_file(param_1,param_2)
+/* Every .E model file in data/DATA3D/ is CRLF-terminated (confirmed via
+   `xxd` on ROCKBIG.E: the PARTS block's last entry ends "...8);\r\n}\r\n").
+   This parser's own end-of-PARTS-block check (s___c_1____00084954,
+   "%*c%1[}]" -- skip exactly one character, then test for '}') was
+   written assuming the ORIGINAL DOS/CE C runtime's text-mode fopen()
+   would already have collapsed that \r\n to a single \n, leaving %*c's
+   one-character skip landing exactly on '}'. POSIX fopen() never does
+   that translation regardless of mode string, so on this port the raw
+   \r survives, %*c skips it, and %1[}] then fails to match the '\n'
+   that follows -- the parser concludes there's ANOTHER part still to
+   read and parses one phantom extra PARTS entry off of "}\r\n\nNODES
+   {\r\n..." garbage (a degenerate 1-vertex "face" that reliably fails
+   to rasterize at runtime, confirmed live via UW_DEBUG_FACE51: every
+   .E model tested gets its real face count plus exactly one broken
+   trailing entry). Root-caused, not guessed: bisected with UW_DEBUG_
+   NEARCLIP_RANGE that the failing record's own point count is 1 before
+   near-clip ever touches it, then UW_DEBUG_EPARSE showed the parser
+   itself emitting a 53rd part (vertcount=1) for ROCKBIG.E's 52-entry
+   PARTS block. Fixed at the real root: strip \r from the file's own
+   byte stream before scanning, replicating the text-mode translation
+   the recovered scanf patterns were always written to expect, rather
+   than reworking every parser call site individually. */
+static void *uw_e_model_strip_cr(void *raw_fh) {
+  FILE *f = (FILE *)raw_fh;
+  long sz;
+  char *buf;
+  size_t n, r, w;
+  FILE *clean;
+  if (!f) return NULL;
+  if (fseek(f, 0, SEEK_END) != 0) return f;
+  sz = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  if (sz <= 0) return f;
+  buf = (char *)malloc((size_t)sz + 1);
+  if (!buf) return f;
+  n = fread(buf, 1, (size_t)sz, f);
+  fclose(f);
+  for (r = 0, w = 0; r < n; r++) {
+    if (buf[r] != '\r') buf[w++] = buf[r];
+  }
+  buf[w] = 0;
+  /* fmemopen keeps a reference to buf, not a copy -- intentionally never
+     freed (one small per-model leak at load time, ~29 models total,
+     same tolerance this codebase already extends to other load-time
+     scratch allocations). */
+  clean = fmemopen(buf, w, "r");
+  return clean ? clean : f;
+}
+
+void parse_e_model_file(param_1,param_2,flip_winding)
 char *param_1;
 undefined1 * param_2;
+int flip_winding; /* HACK: not part of the original recovered signature --
+                      see its own use site (the "HACK: flip_winding"
+                      comment, right before the PARTS block's per-face
+                      vertex-reversal) for the full rationale. */
 
 {
   char stack0xffdc3228_buf [256];
@@ -15869,7 +16157,7 @@ undefined1 * param_2;
   undefined1 auStack_150 [16];
   undefined1 auStack_140 [16];
   char acStack_130 [260];
-  
+
   local_258 = &DAT_000da480;
   Ordinal_1047(acStack_130,0,0x104);
   pcVar2 = &DAT_0023cca8;
@@ -15881,6 +16169,7 @@ undefined1 * param_2;
   } while (cVar18 != '\0');
   Ordinal_1063(acStack_130,param_1);
   pvVar_fh = Ordinal_1113(acStack_130,&DAT_00084a24);
+  pvVar_fh = uw_e_model_strip_cr(pvVar_fh);
   local_25c = pvVar_fh;
   /* This whole function's 11 fatal-error checks (Ordinal_1102 message +
      FUN_00082388, killing the entire process) originally treated any
@@ -16201,6 +16490,41 @@ LAB_000218b8:
                 param_2[iVar10 * 0x60 + 0xc15] = (char)((uint)iVar5 >> 8);
                 param_2[iVar10 * 0x60 + 0xc16] = (char)((uint)iVar5 >> 0x10);
                 param_2[iVar10 * 0x60 + 0xc17] = (char)((uint)iVar5 >> 0x18);
+                /* HACK: flip_winding (new parameter, not part of the
+                   original recovered signature) -- caller-supplied,
+                   per-model opt-in to reverse every face's just-read
+                   vertex list. Added because several models' faces render
+                   backward: raster_triangle has a real, working backface
+                   cull (confirmed this session via its left/right edge-
+                   assignment gate in raster_textured_span -- not a bug, a
+                   legitimate cheap cull the original engine relies on),
+                   so a backward-wound face silently disappears depending
+                   on which side of it the camera ends up on. A real
+                   per-face fix would need each face's own normal compared
+                   against the mesh's shape (tried, reverted per explicit
+                   instruction: too complicated for what's just a handful
+                   of known-bad models, and unreliable besides -- see
+                   object-rendering-findings.txt milestone 13, where that
+                   approach's own centroid heuristic gave the wrong answer
+                   for the boulder) -- a flat "flip everything in this
+                   file" flag, opted into only for the specific models
+                   confirmed backward BY EYE (not the offline heuristic --
+                   see milestone 13/14), is simpler and does the same job
+                   for these models specifically (see the call sites in
+                   the .E load list for which ones pass 1). */
+                if (flip_winding && 1 < iVar3) {
+                  int _flip_lo = 0, _flip_hi = iVar3 - 1;
+                  while (_flip_lo < _flip_hi) {
+                    int *_flip_pa = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_lo + 0x306) * 4);
+                    int *_flip_pb = (int *)(param_2 + (g_model_parse_part_count * 0x18 + _flip_hi + 0x306) * 4);
+                    int _flip_tmp = *_flip_pa;
+                    *_flip_pa = *_flip_pb;
+                    *_flip_pb = _flip_tmp;
+                    _flip_lo++; _flip_hi--;
+                  }
+                }
+                if (getenv("UW_DEBUG_EPARSE"))
+                  fprintf(stderr, "[eparse] %s part=%d vertcount=%d\n", param_1, g_model_parse_part_count, iVar5);
                 iVar5 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc18);
                 iVar10 = *(int *)(param_2 + g_model_parse_part_count * 0x60 + 0xc20);
                 vec3_sub(param_2 + iVar5 * 0xc + 8,
@@ -28692,35 +29016,35 @@ undefined2 param_5;
 void FUN_00038680()
 
 {
-  parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c);
-  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848);
-  parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474);
-  parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0);
-  parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc);
-  parse_e_model_file(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8);
-  parse_e_model_file(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524);
-  parse_e_model_file(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150);
-  parse_e_model_file(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c);
-  parse_e_model_file(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8);
-  parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4);
-  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200);
-  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08);
-  parse_e_model_file(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360);
-  parse_e_model_file(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c);
-  parse_e_model_file(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8);
-  parse_e_model_file(s__DATA3D_GATE_E_000854e4,&DAT_001677e4);
-  parse_e_model_file(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410);
-  parse_e_model_file(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c);
-  parse_e_model_file(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68);
-  parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894);
-  parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0);
-  parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec);
+  parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c,1);
+  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848,1);
+  parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474,0);
+  parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0,0);
+  parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc,0);
+  parse_e_model_file(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8,0);
+  parse_e_model_file(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524,1);
+  parse_e_model_file(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150,0);
+  parse_e_model_file(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c,0);
+  parse_e_model_file(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8,0);
+  parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4,0);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200,0);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c,0);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58,0);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08,0);
+  parse_e_model_file(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360,0);
+  parse_e_model_file(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c,0);
+  parse_e_model_file(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8,0);
+  parse_e_model_file(s__DATA3D_GATE_E_000854e4,&DAT_001677e4,0);
+  parse_e_model_file(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410,0);
+  parse_e_model_file(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c,0);
+  parse_e_model_file(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68,0);
+  parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894,0);
+  parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0,0);
+  parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec,0);
   Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);
   return;
 }
@@ -35421,8 +35745,31 @@ void load_door_frames()
      Deliberately deviating from the original's exact (buggy) value
      here per user direction: picked a fixed scratch base far past
      every real resource range this project has identified, so this
-     temporary borrow can never collide with anything real again. */
-  DAT_00202744 = 60000;
+     temporary borrow can never collide with anything real again.
+
+     REAL BUG FOUND (this session): the first choice, 60000, broke a
+     DIFFERENT thing than the collision this comment was written to
+     avoid -- emit_catalog_object's own `frame_or_texid` parameter
+     (the value emit_anim_object_frames passes straight through as
+     `60000 + door_type`, see its own comment) is a signed 16-bit
+     `short`, and that function uses `frame_or_texid < 0` as a real,
+     deliberate sentinel check (confirmed via disassembly: original
+     code, not something this project added) meaning "no specific
+     frame -- use the catalog's own internal multi-frame animation
+     logic instead." 60000 wraps to -5536 as a signed short, so the
+     door leaf's real, correctly-decoded texture was silently
+     discarded every time in favor of that internal fallback path --
+     confirmed live via UW_DEBUG_DOOR ("door leaf using the wrong
+     texture"). DAT_0024e090's own backing table is genuinely sized
+     for the full unsigned 0..65535 range (524288 bytes / 8-byte
+     stride), so 60000 is a perfectly valid WRITE index here -- the
+     bug is purely on the signed-short READ side deep in
+     emit_catalog_object, not fixable by widening this one constant's
+     own type. Lowered to stay under 32768 (comfortably clear of both
+     the ~919 real-resource ceiling above and the signed-short sign
+     bit here) so the exact same scratch-slot mechanism reads back
+     correctly on both ends. */
+  DAT_00202744 = 20000;
   do {
     /* Was passed `0` for the post-process/registration callback (param_5)
        -- with no registrar, even a successful allocate+read never stores
@@ -41476,6 +41823,19 @@ void main_loop_hud_flush()
     if (_div < 0) _div = (getenv("UW_DEBUG_DRAW_INV_POSITIONS") != NULL);
     if (_div) uw_debug_draw_inv_hotspot_positions();
   }
+  /* Debug UI: must draw HERE, after the forced 3D redraw above (or it
+     gets painted over) but before flush_dirty_rect_to_display(1) below
+     -- that call is the actual screen present for this tick (blits the
+     software framebuffer through to GXEndDraw/SDL_RenderPresent, see
+     gx_stub.c). Drawing from app_main_loop after this function returns
+     is one full tick too late: the present for THIS tick already
+     happens inside this function, and the very next tick's forced 3D
+     redraw runs and gets flushed before this function is reached
+     again -- so the panel's own pixels never survive to reach an
+     actually-presented frame. rect_fill_or_save_restore/draw_text_string
+     already call dirty_rect_union themselves, so the panel's region is
+     automatically included in the flush below once drawn here. */
+  dbgui_draw();
   uw_debug_dump_sprite_frames_once();
   uw_debug_dump_critter_sheet_once();
   uw_debug_force_item_id_once();
@@ -55732,8 +56092,10 @@ LAB_0005e7e0:
     (&DAT_000acde6)[iVar30] = 0;
     iVar16 = DAT_00086e6c;
     (&DAT_000acde7)[iVar30] = 0;
-    DAT_000a85d4 = iVar32 + 1;
-    DAT_0023b83c = DAT_000a85d4;
+    if (!g_uw_hide_walls) {
+      DAT_000a85d4 = iVar32 + 1;
+      DAT_0023b83c = DAT_000a85d4;
+    }
   }
   if (*(short *)(iVar16 + 0xe) < 0x3f5) {
     (*DAT_0023b80c)(auStack_50,DAT_0023b4e0,9);
@@ -55911,8 +56273,10 @@ LAB_0005e7e0:
     (&DAT_000acde5)[iVar19] = 0;
     (&DAT_000acde6)[iVar19] = 0;
     (&DAT_000acde7)[iVar19] = 0;
-    DAT_000a85d4 = DAT_0023b83c + 1;
-    DAT_0023b83c = DAT_000a85d4;
+    if (!g_uw_hide_walls) {
+      DAT_000a85d4 = DAT_0023b83c + 1;
+      DAT_0023b83c = DAT_000a85d4;
+    }
   }
   DAT_0023b818 = 0;
   local_54 = 0;
@@ -56190,12 +56554,12 @@ LAB_0005e7e0:
       (&DAT_000acde5)[iVar18] = 0;
       (&DAT_000acde6)[iVar18] = 0;
       (&DAT_000acde7)[iVar18] = 0;
-      DAT_000a85d4 = iVar32 + 1;
+      if (!g_uw_hide_walls) DAT_000a85d4 = iVar32 + 1;
       local_83 = DAT_0023b4e0;
       puVar23 = DAT_0023b4ec;
       iVar16 = DAT_00086e6c;
       bVar25 = DAT_0023b4e0;
-      DAT_0023b83c = DAT_000a85d4;
+      if (!g_uw_hide_walls) DAT_0023b83c = DAT_000a85d4;
     }
     local_54 = local_54 + 1 & 0xff;
     uVar27 = (short)uVar27 >> 1;
@@ -56410,8 +56774,10 @@ LAB_0005e7e0:
       DAT_000a85d0 = iVar16 + 4;
       DAT_0023b838 = DAT_000a85d0;
       (&DAT_000ace26)[iVar34] = (char)((uint)uVar17 >> 0x10);
-      DAT_000a85d4 = DAT_0023b83c + 1;
-      DAT_0023b83c = DAT_000a85d4;
+      if (!g_uw_hide_walls) {
+        DAT_000a85d4 = DAT_0023b83c + 1;
+        DAT_0023b83c = DAT_000a85d4;
+      }
       (&DAT_000ace27)[iVar34] = (char)((uint)uVar17 >> 0x18);
       (&DAT_000acde4)[iVar34] = 4;
       (&DAT_000acde5)[iVar34] = 0;
@@ -56448,277 +56814,14 @@ LAB_0005e7e0:
 
 
 
-// New (not decompiled from the binary): revives the ".E" 3D model data
-// FUN_00038680/parse_e_model_file already load at startup (data/DATA3D/*.E --
-// see uw.c ~24980) into 29 never-consumed buffers. Confirmed via a real
-// Ghidra reference search against UU.exe (whole-binary XREFs to all 29
-// buffer addresses, plus a raw byte-pattern data-table scan, plus a full
-// .text undefined-gap scan showing zero room for an undiscovered function)
-// that this WinCE port genuinely never wired a model renderer to this
-// data -- there is no hidden consumer to find, this is new code.
-//
-// Buffer layout (empirically confirmed against ROCKSMAL.E's real point/
-// part text, after fixing parse_e_model_file's own dropped-argument X-coordinate
-// bug -- see that fix's comment): offset 0 = point count (int), offset 4 =
-// part count (int, occasionally one spurious trailing entry with vcount<3
-// -- filtered below), points at offset 8 + i*0xc as 3 LE floats (X, Y-up,
-// Z-depth, matching the file's own axis order), parts at offset 0xc14 +
-// p*0x60: vertex count (int) then that many vertex-index ints (into the
-// points array) starting at +4.
-//
-// Rendering approach: this pushes each model FACE as its own record into
-// the shared tile/object geometry arena (DAT_000a85d0_backing, see its own
-// doc comment ~uw.c:116), reusing render_visible_tile_list's existing
-// N-gon fan rasterization. Model points are transformed by the object's
-// heading (0-7, 45-degree steps) and added to the object's already-
-// computed world anchor (DAT_0023b904/91c/920 -- despite the "scr" naming
-// from an earlier session's debug print, these are pre-translate world-ish
-// raw coordinates in the same 256-units/tile scale as tile geometry, NOT
-// final screen pixels -- confirmed by the boulder's observed anchor X of
-// 4208 matching tile ~16.4, not a plausible pixel column) in the same
-// (X, height, depth) field order process_visible_tile_cell uses for tile
-// vertices, then left for translate_verts_to_camera_space /
-// project_verts_through_view_matrix to camera-transform and project
-// exactly like tile geometry -- genuine per-vertex 3D projection, not a
-// screen-space billboard shortcut. UW_MODEL_SCALE (default 8.0) converts
-// the model's small local units (a rock spans roughly -18..24) into that
-// world scale; tune visually, same spirit as the existing UW_DECAL_PUSH
-// knob. Faces render texture-less (texptr left 0, matching how tile
-// raster_triangle calls with tex=0x0 already show up during normal
-// rendering) with a flat shade byte -- deliberately not textured, per the
-// project's "flat-shaded is a fine first cut" bar; a real UV/material
-// path (EXTENDED_COLORS in the .E format) is future work.
-static void emit_model_object(unsigned char *model, int heading, double scale, double yoff, double y_clip, double xoff_local, void *texptr)
-{
-  int npts = *(int *)model;
-  int nparts = *(int *)(model + 4);
-  if (npts <= 0 || npts > 600 || nparts <= 0) return;
-
-  /* The object's own world anchor height (DAT_0023b91c) appears to be a
-     ceiling-relative or otherwise offset reference rather than the tile's
-     floor height -- adding model-local Y (which is >=0, model-space "up"
-     from each model's own local origin) directly on top of it left the
-     rock floating up near the ceiling. A per-model yoff (g_model_map,
-     caller-supplied) empirically drops each model back onto the floor;
-     this is a real calibration gap (same class as the open "calibration
-     still open" note on the tmap-tile milestone), not a derivation from
-     the tile's real floor-height field -- see object-rendering-findings.txt. */
-  { const char *_s = getenv("UW_MODEL_SCALE"); if (_s) scale = atof(_s); }
-  { const char *_s = getenv("UW_MODEL_YOFF"); if (_s) yoff = atof(_s); }
-  { const char *_s = getenv("UW_MODEL_YCLIP"); if (_s) y_clip = atof(_s); }
-  double ang = heading * 45.0 * (3.14159265358979 / 180.0);
-  double ca = cos(ang), sa = sin(ang);
-
-  short ax = (short)DAT_0023b904;
-  short ah = (short)DAT_0023b91c;
-  short az = (short)DAT_0023b920;
-
-  /* Same ~512-vertex/~490-record arena cap the tile/quad paths already
-     guard (see that comment above LAB_emit_mesh_sprite_quad) -- sized here
-     for this specific model's real point/part counts rather than a fixed
-     4-vertex/1-record budget. */
-  if (DAT_0023b838 + npts >= 512 - 4 || DAT_0023b83c + nparts >= 490 - 1) return;
-
-  int base_vtx = DAT_0023b838;
-  int i;
-  for (i = 0; i < npts; i++) {
-    float mx = *(float *)(model + 8 + i*0xc) + (float)xoff_local;
-    float my = *(float *)(model + 8 + i*0xc + 4);
-    float mz = *(float *)(model + 8 + i*0xc + 8);
-    /* Clamp, don't drop. DFRAME.E's two "riser" faces aren't just
-       oversized junk above the real frame -- their BOTTOM edge (local Y
-       208) is the header panel connecting the two doorposts across the
-       top, and only their TOP edge (Y 1024) is the over-tall part
-       presumably meant for a ceiling clip we don't have. An earlier
-       version of this cutoff dropped the whole FACE if any vertex
-       exceeded y_clip, which silently deleted that connecting header
-       too -- confirmed visually (UW_MODEL_NO_LEAF=1 screenshot) as two
-       disconnected, floor-level post stumps with open background wall
-       showing between and above them, not a real archway. Clamping each
-       vertex's local Y to the cutoff instead keeps the connecting
-       geometry, just capping its height at a plausible ceiling rather
-       than drawing it unclipped to 4x a room's real height. Safe to
-       clamp per-vertex (not per-face) here because the affected points
-       (DFRAME.E's Y=1024 set) aren't shared with any other, unclipped
-       part. */
-    if (y_clip > 0 && my > y_clip) my = (float)y_clip;
-    double rx = mx*ca - mz*sa;
-    double rz = mx*sa + mz*ca;
-    float *vf = (float *)((char *)DAT_000a85d0_backing + 8 + (base_vtx + i)*0xc);
-    vf[0] = (float)(ax + rx*scale);
-    vf[1] = (float)(ah + my*scale + yoff);
-    vf[2] = (float)(az + rz*scale);
-  }
-  DAT_0023b838 = base_vtx + npts;
-  DAT_000a85d0 = DAT_0023b838;
-
-  int emitted = 0;
-  for (i = 0; i < nparts; i++) {
-    int pbase = 0xc14 + i*0x60;
-    int vcount = *(int *)(model + pbase);
-    if (vcount < 3 || vcount > 4) continue;
-    int v0 = *(int *)(model + pbase + 4);
-    int v1 = *(int *)(model + pbase + 8);
-    int v2 = *(int *)(model + pbase + 12);
-    int v3 = (vcount == 4) ? *(int *)(model + pbase + 16) : v2;
-    if (v0 < 0 || v0 >= npts || v1 < 0 || v1 >= npts || v2 < 0 || v2 >= npts || v3 < 0 || v3 >= npts) continue;
-
-    int rec = DAT_0023b83c;
-    int rb = rec * 0x60;
-    *(int *)(&DAT_000acde4 + rb) = 4;
-    *(int *)(&DAT_000acde8 + rb) = base_vtx + v0;
-    *(int *)(&DAT_000acdec + rb) = base_vtx + v1;
-    *(int *)(&DAT_000acdf0 + rb) = base_vtx + v2;
-    *(int *)(&DAT_000acdf4 + rb) = base_vtx + v3;
-    /* Real wall-rendering code (uw.c ~49025-49032, right above
-       emit_tile_objects) writes the texture's tile size (DAT_0023b824 --
-       0x10=16 for the wall-sized arena slot, 0x40=64 for floor/ceiling)
-       into BOTH of these fields, not zero -- confirmed this is what was
-       missing for texturing: with these left at 0, a textured record
-       drew as a perfectly flat, uniform color (both the wall-textured
-       frame and, before that experiment was reverted, the sprite-
-       textured leaf) instead of showing any real per-pixel texture
-       variation, even though the texture pointer itself decoded real
-       image data (checked via a nonzero-pixel histogram). 16 matches the
-       wall-sized convention since these are all wall-scale surfaces. */
-    int _texsize = texptr ? 16 : 0;
-    *(int *)(&DAT_000ace00 + rb) = _texsize;
-    *(int *)(&DAT_000ace04 + rb) = _texsize;
-    *(int *)(&DAT_000ace08 + rb) = 0;
-    *(int *)(&DAT_000ace0c + rb) = 0;
-    *(int *)(&DAT_000ace10 + rb) = 0;
-    *(int *)(&DAT_000ace14 + rb) = 0;
-    *(int *)(&DAT_000ace18 + rb) = 0;
-    *(int *)(&DAT_000ace1c + rb) = 0;
-    *(int *)(&DAT_000ace20 + rb) = 0;
-    *(int *)(&DAT_000ace24 + rb) = 0;
-    /* Same truncated-in-record-field problem every other texture
-       consumer in this file already worked around (the field is 4
-       bytes, a real pointer is 8 on this host): publish through the
-       g_tile_texptr_emit[] side channel render_visible_tile_list
-       actually reads from (via near_clip's out-index remap), keyed by
-       this record's own index, same convention as tile walls and the
-       object billboard sprite decoder. texptr==0 keeps the existing
-       flat-shaded fallback (raster_triangle already handles tex=0x0). */
-    *(int *)(&DAT_000acdfc + rb) = 0;
-    if (texptr && (unsigned)rec < UW_MAX_VIS_TILES) g_tile_texptr_emit[rec] = texptr;
-    short shade = (short)DAT_000da47c;
-    *(short *)(&DAT_000ace30 + rb) = shade;
-    *(short *)(&DAT_000ace32 + rb) = (short)(shade >> 15);
-    DAT_0023b83c = rec + 1;
-    DAT_000a85d4 = DAT_0023b83c;
-    emitted++;
-  }
-  if (getenv("UW_DEBUG_MODEL")) {
-    fprintf(stderr, "[model] heading=%d anchor=(%d,%d,%d) npts=%d nparts=%d emitted=%d base_vtx=%d\n",
-            heading, ax, ah, az, npts, nparts, emitted, base_vtx);
-  }
-}
-
-// Object-id -> DATA3D model lookup. comobj.dat has no id->model field
-// anywhere (confirmed by the due-diligence Ghidra searches in this
-// session's Models milestone -- see memory.md/object-rendering-findings.txt),
-// so every row here is hand-found the same way: UW_DUMP_NAMES to resolve
-// page-4 object names, cross-checked against UW_DUMP_OBJECTS_FILE to see
-// real placed ids on a level. scale/yoff/y_clip are per-entry because each
-// model's own local-unit convention differs, confirmed by actually reading
-// each .E file's POINTS range rather than assuming one scale fits all:
-// ROCKSMAL/MED/BIG's local points span roughly -20..25 on every axis (an
-// organic model authored in some smaller, model-specific unit -- empirically
-// needs scale=8 to read as a plausible rock size), while FBRIDGE/SHRINE/
-// DFRAME's points already span close to real tile-sized ranges (e.g.
-// FBRIDGE's X/Z run -128..128, exactly one 256-unit tile) -- architectural
-// models appear to be authored directly in world units, scale=1. DFRAME.E
-// additionally contains two Y ranges: a real frame (local Y 0..208, a
-// plausible door height) and separate "riser" parts extending to local Y
-// 1024 (4x a room's height) -- presumably meant to be clipped against each
-// room's real ceiling by whatever the original renderer's ceiling-clip step
-// was; we don't have that, so y_clip drops whole faces above the cutoff
-// instead of drawing the oversized risers unclipped (see emit_model_object).
-// Tuned visually per family via screenshots at known repro tiles, same
-// process as the original boulder calibration -- not derived from the
-// tile's real floor-height field (open item, see object-rendering-
-// findings.txt). UW_MODEL_SCALE/UW_MODEL_YOFF/UW_MODEL_YCLIP override every
-// entry at once, for interactive re-tuning.
-typedef struct {
-  int id;
-  void *model;
-  const char *name;
-  double scale;
-  double yoff;
-  double y_clip; // 0 = no clip
-  void *model2;  // optional second model composited at the same anchor
-                 // (the door family's leaf, DOOR.E, alongside its frame)
-  const char *name2;
-  double x_off2; // model2's local-space X shift before rotation, to
-                  // center it in model 1's opening
-} ModelMapEntry;
-
-static const ModelMapEntry g_model_map[] = {
-  // Boulders ("a_large boulder"=0x153/0x154, "a_boulder"=0x155,
-  // "a_small boulder"=0x156) -- calibrated at the original repro tile.
-  { 0x153, &DAT_0012b524, "ROCKBIG",  8.0, -200.0, 0, 0, 0, 0 },
-  { 0x154, &DAT_0012b524, "ROCKBIG",  8.0, -200.0, 0, 0, 0, 0 },
-  { 0x155, &DAT_001278f8, "ROCKMED",  8.0, -200.0, 0, 0, 0, 0 },
-  { 0x156, &DAT_00123ccc, "ROCKSMAL", 8.0, -200.0, 0, 0, 0, 0 },
-  // "a_bridge" = 0x164 (single id, no size variants found in the name
-  // table or any placed level).
-  { 0x164, &DAT_00118848, "FBRIDGE",  1.0, -100.0, 0, 0, 0, 0 },
-  // "a_shrine" = 0x157. Emits real geometry (confirmed via UW_DEBUG_MODEL,
-  // ~76 of 77 faces) but not yet visually confirmed on screen -- every
-  // standing tile/heading tried around its one placed instance on the
-  // test level showed ordinary walls, not the shrine (see object-
-  // rendering-findings.txt). Left wired (same treatment as the
-  // architectural models above) since the failure looks positional/
-  // occlusion-related, not a scale or Y problem -- open item.
-  { 0x157, &DAT_0013a5d4, "SHRINE",   1.0, -100.0, 0, 0, 0, 0 },
-  // Door family: DFRAME.E (the frame) plus DOOR.E (the leaf, model2) --
-  // DOOR.E's own local X (0..128) is shifted by x_off2=-64 to sit
-  // centered in DFRAME's inner opening (which spans local X -64..64,
-  // exactly DOOR.E's own width). y_clip=256.0: DFRAME.E's "riser" faces
-  // (see emit_model_object's own comment) get clamped at local Y 256
-  // rather than an arbitrary guess -- this is one tile's world height
-  // (256 units/tile, confirmed via FBRIDGE.E's own X/Z point range
-  // running exactly -128..128) divided by this entry's scale (1.0). Not
-  // a real per-tile ceiling lookup (no such field was found -- see
-  // object-rendering-findings.txt's due-diligence notes and memory.md's
-  // own "UW1's ceiling is a fixed per-level texture, no per-tile ceiling
-  // bits" finding from the earlier tmap-tile work); this assumes the
-  // common one-slab-per-level case rather than reading each room's real
-  // height, so a tall/multi-level room could still look capped short.
-  // Closed ids ("a_door" 0x140-0x145,
-  // "a_secret door" 0x147) get both frame+leaf; open ids ("an_open door"
-  // 0x148-0x14d, open "a_secret door" 0x14f) get the frame only -- we
-  // don't have the real open-door swing angle/pivot, so the least-wrong
-  // approximation is an empty doorway rather than a leaf floating in the
-  // wrong place. 0x146/0x14e have no resolved name (likely unused slots)
-  // and are deliberately left out. "a_door trap" (0x188) is a trigger
-  // object, not physical architecture -- not included.
-  { 0x140, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x141, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x142, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x143, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x144, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x145, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x147, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, &DAT_00145a58, "DOOR", -64.0 },
-  { 0x148, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x149, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14a, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14b, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14c, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14d, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-  { 0x14f, &DAT_00114c1c, "DFRAME", 1.0, -100.0, 256.0, 0, 0, 0 },
-};
-#define UW_MODEL_MAP_COUNT (int)(sizeof(g_model_map) / sizeof(g_model_map[0]))
-
-static const ModelMapEntry *lookup_object_model(int id)
-{
-  int i;
-  for (i = 0; i < UW_MODEL_MAP_COUNT; i++) {
-    if (g_model_map[i].id == id) return &g_model_map[i];
-  }
-  return 0;
-}
+/* Forward-declared (this file otherwise never pre-declares anything,
+   K&R-style throughout) because emit_tile_objects calls this before its
+   own definition further down, and clang's implicit-declaration
+   inference from that call site lands on a signature incompatible with
+   the real K&R definition otherwise -- a hard error, not just a
+   warning, once this function has a name distinct from a plain FUN_
+   address. Real parameter types, matching the definition exactly. */
+void emit_catalog_object(unsigned char catalog, char *obj, char heading, short frame_or_texid);
 
 // was FUN_00060aa0
 void emit_tile_objects(param_1)
@@ -56930,7 +57033,7 @@ ushort * param_1;
       if (_f == NULL) {
         fprintf(stderr, "[objcensus] failed to open '%s' for writing\n", _path);
       } else {
-        fprintf(_f, "tile_x\ttile_y\tid\tname\trenderclass\tmodel\theading\tquality\tflags\n");
+        fprintf(_f, "tile_x\ttile_y\tid\tname\trenderclass\theading\tquality\tflags\n");
         int _tx, _ty, _count = 0;
         for (_ty = 0; _ty < 0x40; _ty++) {
           for (_tx = 0; _tx < 0x40; _tx++) {
@@ -56955,15 +57058,9 @@ ushort * param_1;
               // session's findings) -- not the quality-adjective group
               // table UW_LOOK_SLOT resolves via namegrp*6+offset.
               char *_name = (char *)FUN_0007863c(0x800 | _id);
-              const ModelMapEntry *_me = lookup_object_model(_id);
-              char _modelbuf[32] = "";
-              if (_me) {
-                if (_me->model2) snprintf(_modelbuf, sizeof(_modelbuf), "%s+%s", _me->name, _me->name2);
-                else snprintf(_modelbuf, sizeof(_modelbuf), "%s", _me->name);
-              }
-              fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%s\t%d\t%d\t0x%04x\n",
+              fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%d\t%d\t0x%04x\n",
                       _tx, _ty, _id, (_name && _name[0]) ? _name : "(unnamed)",
-                      _rc, _modelbuf, _heading, _quality, (unsigned)_w);
+                      _rc, _heading, _quality, (unsigned)_w);
               _count++;
               ushort _nextw = *(ushort *)((char *)_rec + 6);
               _slot = (_nextw & 0xffc0) != 0 ? _nextw >> 6 : 0;
@@ -57048,111 +57145,6 @@ ushort * param_1;
     }
   }
   uVar27 = (uint)*param_1;
-  {
-    const ModelMapEntry *_me = lookup_object_model(uVar27 & 0x1ff);
-    if (_me && !getenv("UW_DISABLE_MODEL_RENDER")) {
-      /* Raw stored heading is in a fixed world-compass frame, but this
-         whole rendering pipeline (tile walk, wall/floor geometry, and the
-         object world anchor DAT_0023b904/91c/920 this function's own
-         vertices are placed relative to) operates in a frame pre-rotated
-         by DAT_0023b4a0 -- the camera's current 90-degree screen-rotation
-         quadrant (0-3, recomputed every frame from the camera's own yaw
-         in build_frame_draw_list). The door/sign billboard-angle-override
-         code a few hundred lines below already had to learn this the hard
-         way (see its own comment: "this same file rotates every OTHER
-         object's stored orientation-ish fields by it... but this heading
-         read never did" -- confirmed live to cause 90-degree-off/invisible
-         rendering from certain camera stances) -- apply the identical
-         `(raw - 2*quadrant) & 7` compensation here, or these models will
-         only ever look correctly oriented from whichever one camera
-         quadrant they happened to be calibrated in. */
-      int _raw_heading = (int)(param_1[1] >> 6 & 7);
-      int _heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
-      if (getenv("UW_DEBUG_MODEL"))
-        fprintf(stderr, "[model-heading] id=0x%03x raw=%d quadrant=%d compensated=%d\n",
-                (int)(uVar27 & 0x1ff), _raw_heading, (int)DAT_0023b4a0, _heading);
-      /* Frame texture: the tile's own real wall texture. DAT_0023b4ec is
-         the raw tile record currently being walked (confirmed by the
-         wall-rendering code just above emit_tile_objects in this same
-         function, uw.c ~48986: "UW1 tile word2 (bytes 2-3) bits 0-5 =
-         wall texture index" -- `(byte)DAT_0023b4ec[2] & 0x3f`). That
-         same wall-rendering code adds 0x3a before calling
-         get_texture_page() for the WALL-sized (16x16 arena slot) case
-         specifically (as opposed to the unmodified value used for the
-         64x64 floor/ceiling case a few lines earlier) -- reuse that
-         exact wall-slot formula since a door frame is architecturally a
-         wall surface, not a floor/ceiling one. DAT_0023b4ec stays valid
-         here because object emission for a tile's objects happens while
-         that same tile is still the "current" one being walked (objects
-         are emitted right after that tile's own wall/floor geometry,
-         within the same per-tile pass) -- not verified against a second,
-         differently-textured tile yet, flagged in the findings writeup. */
-      /* Only door frames (the id family with a model2 leaf) get the wall
-         texture -- boulders/bridge/shrine aren't wall-mounted, so the
-         tile they happen to be standing on has no bearing on how they
-         should look; leave them at texptr=0 (flat-shaded, unchanged). */
-      void *_frame_tex = 0;
-      if (_me->model2) { byte _wall_tex_id = (DAT_0023b4ec[2] & 0x3f) + 0x3a;
-        _frame_tex = get_texture_page(_wall_tex_id);
-        if (getenv("UW_DEBUG_MODEL"))
-          fprintf(stderr, "[model-frame-tex] id=0x%03x wall_tex_id=%d tex=%p\n",
-                  (int)(uVar27 & 0x1ff), (int)_wall_tex_id, _frame_tex);
-      }
-      /* Leaf texture: reuse the door's own already-resolved OBJECTS.GR
-         sprite frame formula (DAT_00202734 + (type&7) + 0x30 -- the same
-         expression the class-2 door billboard branch below uses,
-         confirmed live via UW_DEBUG_DOOR to match emit_anim_object_
-         frames's own computation) and decode it through FUN_00040770,
-         the same real sprite decoder the billboard path uses. That
-         function publishes the decoded buffer through g_tile_texptr_
-         emit[DAT_0023b83c] itself (same side channel every texture
-         consumer in this file uses, keyed by record index) -- capture it
-         right after the call rather than relying on index timing, then
-         hand it to emit_model_object explicitly so it can stamp it onto
-         every record THIS model actually creates (a leaf is several
-         faces/records, not one). texptr==0 (untextured, current
-         behavior) if there's no leaf for this id (open doors). */
-      void *_leaf_tex = 0;
-      if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
-        /* Was `DAT_00202734 + (uVar27 & 7) + 0x30` -- matches
-           load_door_frames's own (fixed) scratch base; see that
-           function's comment for why the original binary's formula
-           collided with the HUD icon preload range. */
-        int _sprite_frame = 60000 + (uVar27 & 7);
-        FUN_00040770((short)_sprite_frame, 0);
-        if ((unsigned)DAT_0023b83c < UW_MAX_VIS_TILES) _leaf_tex = g_tile_texptr_emit[DAT_0023b83c];
-        if (getenv("UW_DEBUG_MODEL")) {
-          int _w = (int)(short)DAT_00202508, _h = (int)(short)DAT_002022f8;
-          int _nz = 0, _tot = _w*_h;
-          if (_leaf_tex) { unsigned char *_b = (unsigned char *)_leaf_tex; for (int _k=0;_k<_tot;_k++) if (_b[_k]) _nz++; }
-          fprintf(stderr, "[model-leaf-tex] id=0x%03x sprite_frame=%d tex=%p w=%d h=%d nonzero=%d/%d\n",
-                  (int)(uVar27 & 0x1ff), _sprite_frame, _leaf_tex, _w, _h, _nz, _tot);
-        }
-      }
-      emit_model_object((unsigned char *)_me->model, _heading, _me->scale, _me->yoff, _me->y_clip, 0.0, _frame_tex);
-      if (_me->model2 && !getenv("UW_MODEL_NO_LEAF")) {
-        /* _leaf_tex decodes fine (confirmed via UW_DEBUG_MODEL's
-           nonzero-pixel count -- real sprite content, not garbage) but
-           applying it makes the leaf disappear rather than show the
-           sprite: render_visible_tile_list generates each vertex's
-           texcoord from its PROJECTED SCREEN POSITION (near_clip_visible_
-           tiles, offsets +0x3008/+0x300c), not a real per-vertex UV --
-           the same mechanism object-rendering-findings.txt's "LAST GAP"
-           section already documented as broken for 2D sprite billboards
-           for the identical reason (works for a world-fixed wall texture
-           that tiles across the whole screen-space range; a small finite
-           sprite bitmap mostly samples out of its own bounds -> reads as
-           transparent). Solving this needs a real per-vertex UV system
-           this codebase doesn't have for ANY object yet, sprite or model
-           -- out of scope for this pass. Defaulting to untextured (0)
-           until that exists; UW_MODEL_LEAF_TEXTURE=1 applies it anyway,
-           for experimenting with the actual failure mode. */
-        void *_apply_tex = getenv("UW_MODEL_LEAF_TEXTURE") ? _leaf_tex : 0;
-        emit_model_object((unsigned char *)_me->model2, _heading, _me->scale, _me->yoff, _me->y_clip, _me->x_off2, _apply_tex);
-      }
-      return;
-    }
-  }
   bVar1 = (&DAT_00202c9a)[(uVar27 & 0x1ff) * 0xd];
   bVar13 = bVar1 & 3;
   if (getenv("UW_DEBUG_OBJCLASS")) {
@@ -57702,45 +57694,49 @@ LAB_00061d34:
   }
   if (bVar13 == 2) {
     if ((uVar27 & 0x30) == 0) {
-      /* Doors. emit_anim_object_frames (the "real" handler for this
-         branch) draws entirely through emit_object_billboard, which
-         gates its behavior on DAT_00086c08[catalog_idx*4] -- a lone
-         `undefined` scalar (same "orphaned data table" class as
-         DAT_00086c80, fixed for TMOBJ signs below) with no writer
-         anywhere in this decompile. Reading it at a real door's
-         catalog index (confirmed live: 14) walks off into whatever
-         unrelated static byte happens to follow it in memory, so the
-         whole draw path runs on garbage flag bits -- net effect,
-         nothing ever reached a real screen pixel (confirmed: a door
-         6 tiles from spawn rendered as a plain, empty corridor).
-         Route the door's own already-resolved absolute OBJECTS.GR
-         frame through the same real, working sprite-decode + mesh-
-         quad path class 0 uses, exactly like the TMOBJ sign fix
-         a few lines below -- this only handles the door "leaf"
-         sprite itself, not emit_anim_object_frames's separate static
-         frame/jamb overlay (uVar10==0 iteration) or its open-door
-         swing animation (param_1==6 case); those are still open.
-         Formula was `DAT_00202734 + (type&7) + 0x30` -- matches
-         load_door_frames's own (fixed) scratch base; see that
-         function's comment for why the original binary's formula
-         collided with the HUD icon preload range. */
-      uVar27 = 60000 + (uVar27 & 7);
-      /* >>6, not >>7 -- >>7 is what emit_anim_object_frames itself reads
-         here, but that's fed to emit_object_billboard's own catalog-
-         driven rotation math, not a plain compass heading. >>6&7 matches
-         both the TMOBJ sign's own heading extraction just below and this
-         exact door's own DAT_00202c9a property-table heading value
-         (confirmed live: UW_DEBUG_OBJCLASS reports heading=5 for this
-         door; raw_b2/b3=0x50/0xaf -> (0xaf50>>6)&7 = 5, while >>7&7 gives
-         a different, wrong value). */
-      { int _raw_heading = (int)(*(short *)((char *)param_1 + 2) >> 6 & 7);
-        int _quadrant_heading = (_raw_heading - 2 * (int)DAT_0023b4a0) & 7;
-        g_billboard_angle_override_deg = ((_quadrant_heading + 1) & 7) * 45;
-        if (getenv("UW_DEBUG_DOOR"))
-          fprintf(stderr, "[door] emit_tile_objects: frame=%d raw_heading=%d quadrant=%d angle_deg=%d\n",
-                  uVar27, _raw_heading, (int)DAT_0023b4a0, g_billboard_angle_override_deg);
-      }
-      goto LAB_emit_mesh_sprite_quad;
+      /* Doors. emit_anim_object_frames is the real handler for this
+         branch: it draws through emit_catalog_object, whose own
+         tick_anim_record helper resolves a "catalog" id to the same 29
+         real .E model buffers loaded at startup -- genuine native 3D
+         mesh rendering (door frame + leaf), not a flat sprite. Traced
+         how DOS's dialog_script_event really calls dialog_action_here
+         for door ids (uw1-decomp/docs/decompilation/functions/
+         dialog_action_here.c): its body calls dialog_action_object with
+         catalog ids 1/0xc/0xe/0xf, the exact constants
+         emit_anim_object_frames already uses -- confirming it as the
+         real counterpart, not a guess. `uVar27 & 7` is the door's low 3
+         id bits (0x140-0x147 -> 7 door skins/types + secret), matching
+         emit_anim_object_frames's own `door_type` parameter. */
+      /* The anchor emit_tile_features computed just above (DAT_0023b904/
+         920) is a generic per-slot floor-object position, whose sub-tile
+         slot depends on how many OTHER objects share the tile and where
+         the camera is standing -- not on the door itself (same root
+         cause the wall-decal path already diagnosed, see LAB_emit_mesh_
+         sprite_quad's own g_billboard_angle_override_deg comment). Round
+         back down to the tile's own slot-quantized center the same way
+         (clear the low 5 bits -- one tile is 0x20 units -- then re-add
+         the +0x10 half-slot constant emit_tile_features' own formula
+         ends with) to remove that camera/other-object jitter.
+
+         QA report: "door frame looks to be offset 16 units into the
+         wall... to the right or left, depending on direction" -- this
+         snap alone does NOT fully fix that (confirmed still present
+         after this fix landed); tried computing an exact tile-center/
+         tile-edge anchor from the tile grid index and the model's real
+         final rotation angle instead (see this branch's git history for
+         the attempt), which made a different door disappear entirely in
+         live testing -- reverted rather than ship that regression. The
+         real fix needs the actual wall-edge side determined from real
+         disassembly/data, not inferred from the already-approximate
+         slot anchor -- still open, see object-rendering-findings.txt. */
+      DAT_0023b904 = (DAT_0023b904 & ~0x1f) | 0x10;
+      DAT_0023b920 = (DAT_0023b920 & ~0x1f) | 0x10;
+      if (getenv("UW_DEBUG_DOOR_POS"))
+        fprintf(stderr, "[doorpos] anchor=(%d,%d,%d) tile_word0=0x%04x\n",
+                (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,
+                (unsigned)*param_1);
+      emit_anim_object_frames(uVar27 & 7, param_1);
+      return;
     }
     /* DAT_00086c80 (the real per-sign-variant -> billboard-catalog
        index table) has now been recovered from the real binary -- see
@@ -57753,35 +57749,62 @@ LAB_00061d34:
     if (0x1f < iVar17) {
       return;
     }
-    /* EXPERIMENTAL, under live test (user report: with the real table
-       values in place, the previous "+DAT_00202734, absolute TMOBJ
-       frame via FUN_00040770's escape hatch" wiring rendered a lever/
-       dial graphic instead of a sign for the real starting-room sign --
-       screenshot-confirmed, so that formula is wrong). Trying this
-       project's OWN earlier-rejected alternative instead: call
-       emit_object_billboard directly with the real table value (now
-       meaningful data, not the all-zero placeholder that made this
-       look like "a completely unrelated graphic" when it was first
-       tried) as a billboard-catalog index, matching this exact
-       4-argument call shape used identically by the two other real
-       billboard call sites in this same function (search
-       "emit_object_billboard(0x14," and "0x16,"). Only weakly
-       evidenced (the fresh-decompile check that first suggested this
-       resolved its data reference to garbage -- see
-       [[tmobj-sign-table-recovery]] -- so this is going on the CALL
-       SHAPE matching those other two confirmed-real call sites, not a
-       clean disassembly of this specific branch). NOTE: switching to
-       emit_object_billboard means this decal loses the wall-flush
-       positioning fix below (g_billboard_angle_override_deg) --
-       billboards are camera-facing by construction and don't read that
-       override at all, so if this turns out to be the right graphic,
-       the positioning may need its own separate fix. */
-    if (getenv("UW_DEBUG_DOOR"))
-      fprintf(stderr, "[sign] variant=%d table_val=%d -> emit_object_billboard(catalog_idx=%d)\n",
-              iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-              (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
-    emit_object_billboard((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-                           param_1, 0xffffffff, 0xffffffff);
+    /* Confirmed correct: calling emit_catalog_object directly with the
+       real table value is right -- matches the exact 4-argument call
+       shape the two other real callers use (search
+       "emit_catalog_object(0x14," and "0x16,"), because this table can
+       resolve to a real loaded .E model catalog (e.g. FBRIDGE.E), not
+       just another flat sprite variant, so it has to go through the one
+       call that actually knows how to draw both.
+
+       heading=-1 told emit_catalog_object to use ITS OWN camera-
+       relative billboard angle instead of the object's real placed
+       orientation -- visibly wrong for a wall-mounted decal (e.g. the
+       starting room's own entry-door decal rotating with the camera's
+       yaw instead of staying fixed). Fixed the same way doors already
+       do it: pass the object's own real stored heading (word1 bits
+       7-9, doubled -- the exact formula emit_anim_object_frames already
+       uses) instead of -1. emit_catalog_object's own internal math
+       (the heading>=0 branch) already applies the camera-quadrant
+       correction itself, so nothing extra is needed at this call site. */
+    /* Real per-instance texture for the handful of these catalog ids
+       that are ALSO real .E-model geometry (confirmed via the DOS
+       decompile, ~/Github/uw1-decomp -- port/uw1_view.c:2297: "0x164
+       a_bridge row 2, b3 0x3e -> TMOBJ 30..31, two 32x32 planks").
+       Same TMOBJ_base+0x10+base+(flags%mod) formula as the lever/
+       switch/writing/gravestone ids resolve to via this same table --
+       but unlike those, a_bridge resolves to a REAL mesh catalog
+       (2, FBRIDGE.E) through the table two lines up, so it has to reach
+       emit_catalog_object directly (the one path that knows how to draw
+       the mesh) with a real frame_or_texid, not a flat-sprite escape
+       hatch that would trade the real 3D geometry away for a flat
+       billboard just to get the texture right. Falls back to -1
+       (untextured) for every other iVar17 without a confirmed real
+       formula -- not guessed. */
+    { static const struct { int iv17; int base; int mod; } _mesh_tex_row[] = {
+        { 0x164 - 0x150, 30, 2 },  /* a_bridge -> TMOBJ 30..31, two planks */
+      };
+      unsigned _mi;
+      int _tex_frame = 0xffffffff;
+      for (_mi = 0; _mi < sizeof(_mesh_tex_row)/sizeof(_mesh_tex_row[0]); _mi++) {
+        if (_mesh_tex_row[_mi].iv17 == iVar17) {
+          int _flags = (*param_1 >> 9) & 0xf;
+          int _off = _mesh_tex_row[_mi].base + (_flags % _mesh_tex_row[_mi].mod);
+          _tex_frame = (int)(short)DAT_00202734 + 0x10 + _off;
+          if (getenv("UW_DEBUG_DECAL"))
+            fprintf(stderr, "[mesh-tex] id=0x%03x iVar17=%d flags=%d off=%d abs_frame=%d\n",
+                    (int)(*param_1 & 0x1ff), iVar17, _flags, _off, _tex_frame);
+          break;
+        }
+      }
+      if (getenv("UW_DEBUG_DOOR"))
+        fprintf(stderr, "[sign] variant=%d table_val=%d heading=%d tex_frame=%d -> emit_catalog_object(catalog_idx=%d)\n",
+                iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+                (int)((param_1[1] >> 7 & 7) << 1), _tex_frame,
+                (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
+      emit_catalog_object((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+                             param_1, (param_1[1] >> 7 & 7) << 1, _tex_frame);
+    }
     return;
   }
   if (bVar13 != 3) {
@@ -57798,7 +57821,13 @@ LAB_00061d34:
       DAT_00110fc0 = DAT_00110fc0 + 1;
       DAT_00189580 = 0;
     }
-    emit_object_billboard(0x14,param_1,0xffffffff,(uVar27 & 0xf) + (uint)DAT_00202734);
+    /* Same heading fix as the generic DAT_00086c80 dispatch above (see
+       its own comment) -- this call was ALSO passing heading=-1
+       (camera-relative billboard angle) unconditionally. This is the
+       class-3 (button/switch/pull-chain) TMFLAT dispatch -- same fix,
+       same reasoning: these are real placed wall fixtures, not camera-
+       facing billboards. */
+    emit_catalog_object(0x14,param_1,(param_1[1] >> 7 & 7) << 1,(uVar27 & 0xf) + (uint)DAT_00202734);
     if (DAT_0023b830 != 0 || DAT_00086b2c != 0) {
       return;
     }
@@ -57841,7 +57870,10 @@ LAB_00060f54:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     DAT_00189580 = 0;
   }
-  emit_object_billboard(0x16,param_1,0xffffffff,(byte)param_1[3] & 0x3f);
+  /* Same heading fix as the generic DAT_00086c80 dispatch above (see its
+     own comment). Class-3's other sub-branch (force field/special tmap
+     obj). */
+  emit_catalog_object(0x16,param_1,(param_1[1] >> 7 & 7) << 1,(byte)param_1[3] & 0x3f);
   if (!bVar14) {
     return;
   }
@@ -57861,32 +57893,44 @@ LAB_00060f54:
 // WARNING: Removing unreachable block (ram,0x00064024)
 
 // was FUN_00061e60
-void emit_object_billboard(param_1,param_2,param_3,param_4)
-byte param_1;
+void emit_catalog_object(catalog,obj,heading,frame_or_texid)
+byte catalog;
 /* Object-record pointer -- was `uint`, truncating it (same class as
    object_list_insert_head above). */
-char *param_2;
-char param_3;
-short param_4;
+char *obj;
+char heading;
+short frame_or_texid;
 
 {
   int uw_ord2005_rem_123 = 0; int uw_ord2005_rem_124 = 0;
   int iVar1;
   int iVar2;
   int iVar3;
-  byte bVar4;
+  byte catalog_flags;
   byte bVar5;
   byte *pbVar6;
   short sVar7;
   byte bVar8;
   char cVar9;
   undefined2 uVar10;
-  ushort uVar11;
-  ushort uVar12;
+  ushort tex_w;
+  ushort tex_h;
   short sVar13;
-  uint uVar14;
+  uint catalog_u;
   char *pcVar15;
   int iVar16;
+  /* iVar16 stays `int` for its FIRST role (a small face-index scalar,
+     `faces_remaining-1`, used only to seed iVar22/local_58 before the
+     loop). Inside the loop it gets reassigned to the CURRENT face
+     record's address (`_anim + iVar22 + 0xc14`) and used purely as a
+     pointer from then on -- a real 64-bit-pointer-truncated-through-a-
+     32-bit-int bug (this whole project's own well-established bug
+     class -- see DAT_00110fc0/DAT_0023aed0's own history) that never
+     triggered here because this loop never ran with real face data
+     until tick_anim_record's own fix (see its comment) made local_48/
+     faces_remaining nonzero for the first time. Split into its own
+     real pointer, `_face_rec`, scoped to exactly its second role. */
+  char *_face_rec;
   undefined4 uVar17;
   int iVar18;
   undefined4 uVar19;
@@ -57906,21 +57950,44 @@ short param_4;
   int iVar29;
   char *_anim;
   int iVar30;
+  /* Same truncated-pointer bug as _face_rec (see its own comment), one
+     variable over: iVar30 has a genuine dual role. In the ceiling-clamp
+     pre-pass (catalog_u==1 branch, the do/while over local_60) it's a real
+     small vertex-index integer, into a 4-entry table -- left as `int`
+     there, untouched. From its first REAL pointer assignment onward
+     (`_face_rec + 8` face-record field, dereferenced to build a vertex
+     address), it's a full address -- split into its own pointer, `_vptr`. */
+  char *_vptr;
+  /* The per-corner UV read below is fixed at point.X (U) / point.Y (V) for
+     every face, unconditionally, in the real disassembly (verified via
+     actual ARM instructions, not just the decompile). That's correct for
+     vertical geometry (doors, frames -- Y genuinely varies with height)
+     but degenerates for a horizontal face like a bridge's own flat top,
+     where Y is constant across all 4 corners and V collapses to a single
+     texel. Pick Y or Z for V based on which the model's OWN real bounding
+     box (parse_e_model_file's already-ported computation at +0x3c24/
+     +0x3c28 -- Y's real min/extent) says is larger, comparing against a Z
+     extent this port computes the same way (this .E parser's own bounding
+     box only ever tracked X/Y in the real disassembly -- Z was never part
+     of the original mechanism). Decided ONCE per model-draw-call (not per
+     face), matching how the model itself is authored -- a model is either
+     fundamentally vertical or horizontal, not a mix. */
+  int _v_offset;
   undefined4 *puVar31;
   undefined4 *puVar32;
   ushort local_7c;
   ushort local_7a;
-  byte *local_70;
+  byte *texptr;
   int local_60;
   byte *local_58;
-  int local_48;
+  int faces_remaining;
   
-  uVar14 = (uint)param_1;
-  iVar1 = uVar14 * 4;
-  bVar4 = (&DAT_00086c08)[iVar1];
+  catalog_u = (uint)catalog;
+  iVar1 = catalog_u * 4;
+  catalog_flags = (&DAT_00086c08)[iVar1];
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] emit_object_billboard: catalog_idx=%d param_3(heading)=%d param_4(frame_or_id)=%d DAT_00086c08[idx]=0x%02x\n",
-            (int)param_1, (int)param_3, (int)param_4, (unsigned)bVar4);
+    fprintf(stderr, "[door] emit_catalog_object: catalog_idx=%d heading(heading)=%d frame_or_texid(frame_or_id)=%d DAT_00086c08[idx]=0x%02x\n",
+            (int)catalog, (int)heading, (int)frame_or_texid, (unsigned)catalog_flags);
   *DAT_00110fc0 = 2;
   local_7a = 0xffff;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -57932,23 +57999,23 @@ short param_4;
   puVar25 = DAT_00110fc0 + 1;
   DAT_00189584 = (ushort)DAT_0023bc88 * DAT_00086b30;
   DAT_00110fc0 = puVar25;
-  if ((bVar4 & 0x20) == 0) {
-    if ((bVar4 & 0x80) == 0) {
-      uVar21 = (int)(short)(ushort)bVar4 & 7;
+  if ((catalog_flags & 0x20) == 0) {
+    if ((catalog_flags & 0x80) == 0) {
+      uVar21 = (int)(short)(ushort)catalog_flags & 7;
       if (uVar21 != 0) {
         iVar29 = 0;
         do {
           *puVar25 = 2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          uVar11 = FUN_00038a8c(iVar29);
-          *DAT_00110fc0 = uVar11;
+          tex_w = FUN_00038a8c(iVar29);
+          *DAT_00110fc0 = tex_w;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
                (ushort)DAT_0023bc88 * DAT_00086b30 * 0x100;
           if (getenv("UW_DEBUG_DOOR"))
             fprintf(stderr, "[billboard] static sub-frame %d: mesh_slot=0x%04x pushed_val=0x%04x (catalog_byte=0x%02x)\n",
-                    iVar29, (unsigned)uVar11, (unsigned)*DAT_00110fc0,
+                    iVar29, (unsigned)tex_w, (unsigned)*DAT_00110fc0,
                     (unsigned)(byte)(&DAT_00086c09)[iVar29 + iVar1]);
           puVar25 = DAT_00110fc0 + 1;
           DAT_00110fc0 = puVar25;
@@ -57962,40 +58029,40 @@ short param_4;
     else {
       DAT_0023b804 = 1;
       uVar21 = read_realtime_clock_units();
-      uVar11 = (ushort)(uVar21 >> 6);
-      local_7c = uVar11 & 7;
+      tex_w = (ushort)(uVar21 >> 6);
+      local_7c = tex_w & 7;
       if ((uVar21 >> 6 & 4) != 0) {
-        local_7c = 3 - (uVar11 & 3);
+        local_7c = 3 - (tex_w & 3);
       }
-      uVar21 = (int)(short)(ushort)bVar4 & 7;
+      uVar21 = (int)(short)(ushort)catalog_flags & 7;
       puVar25 = DAT_00110fc0;
       if (uVar21 != 0) {
         iVar29 = 0;
         do {
           *puVar25 = 2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          uVar11 = FUN_00038a8c(iVar29);
-          *DAT_00110fc0 = uVar11;
+          tex_w = FUN_00038a8c(iVar29);
+          *DAT_00110fc0 = tex_w;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
-               (*(ushort *)(param_2 + 6) >> 6 & 0x1ff) + local_7c;
+               (*(ushort *)(obj + 6) >> 6 & 0x1ff) + local_7c;
           puVar25 = DAT_00110fc0 + 1;
           DAT_00110fc0 = puVar25;
           (&DAT_00189570)[iVar29] =
                (ushort)(byte)(&DAT_00086c09)[iVar29 + iVar1] +
-               ((*(ushort *)(param_2 + 6) & 0x7fc0) >> 6) + local_7c;
+               ((*(ushort *)(obj + 6) & 0x7fc0) >> 6) + local_7c;
           iVar29 = (iVar29 + 1) * 0x10000 >> 0x10;
         } while (iVar29 < (int)uVar21);
       }
     }
   }
   else {
-    local_58 = (byte *)get_texture_page((int)param_4);
+    local_58 = (byte *)get_texture_page((int)frame_or_texid);
     if (local_58 == (byte *)0x0) {
-      /* param_4 out of get_texture_page's 0..0x73 range -- reached with
+      /* frame_or_texid out of get_texture_page's 0..0x73 range -- reached with
          (uVar27 & 0xf) + DAT_00202734 (~0x2b8) from emit_tile_objects's
-         `(*param_1 & 0x30) == 0x30` branch, i.e. a special animated
+         `(*catalog & 0x30) == 0x30` branch, i.e. a special animated
          object (door frame etc.) whose texture lives in a different bank
          than the wall/floor tile pages this helper knows. Rather than
          dereference NULL (crash the instant such a tile comes into view),
@@ -58005,15 +58072,15 @@ short param_4;
     bVar5 = *local_58;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    uVar11 = FUN_00038a8c(0);
-    *DAT_00110fc0 = uVar11;
+    tex_w = FUN_00038a8c(0);
+    *DAT_00110fc0 = tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)bVar5;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    uVar11 = FUN_00038a8c(10);
-    *DAT_00110fc0 = uVar11;
+    tex_w = FUN_00038a8c(10);
+    *DAT_00110fc0 = tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)DAT_0023b4e0 * DAT_00086b30;
     DAT_00189584 = (ushort)DAT_0023b4e0 * DAT_00086b30;
@@ -58021,25 +58088,25 @@ short param_4;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     DAT_00189570 = (ushort)bVar5;
   }
-  iVar29 = (int)param_4;
-  if ((bVar4 & 0x10) != 0) {
+  iVar29 = (int)frame_or_texid;
+  if ((catalog_flags & 0x10) != 0) {
     bVar5 = (&DAT_00086c0b)[iVar1];
-    if (param_4 < 0) {
-      if (uVar14 == 2) {
+    if (frame_or_texid < 0) {
+      if (catalog_u == 2) {
         bVar8 = (bVar5 >> 5) + 1;
-        if ((*(byte *)(param_2 + 1) >> 1 & 0xf) < bVar8) {
+        if ((*(byte *)(obj + 1) >> 1 & 0xf) < bVar8) {
           DAT_0023b834 = 2;
-          Ordinal_2005(bVar8,*(byte *)(param_2 + 1) >> 1 & 0xf);
+          Ordinal_2005(bVar8,*(byte *)(obj + 1) >> 1 & 0xf);
           uVar21 = (uint)DAT_00202734;
           *puVar25 = 2;
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1 + uVar21 + 0x10;
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          uVar11 = FUN_00038a8c(0xb);
-          *DAT_00110fc0 = uVar11;
+          tex_w = FUN_00038a8c(0xb);
+          *DAT_00110fc0 = tex_w;
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          *DAT_00110fc0 = *(ushort *)(&DAT_00086d60 + (*(byte *)(param_2 + 1) >> 1 & 0xf) * 2);
+          *DAT_00110fc0 = *(ushort *)(&DAT_00086d60 + (*(byte *)(obj + 1) >> 1 & 0xf) * 2);
           DAT_00110fc0 = DAT_00110fc0 + 1;
-          DAT_00189586 = *(undefined2 *)(&DAT_00086d60 + (*(byte *)(param_2 + 1) >> 1 & 0xf) * 2);
+          DAT_00189586 = *(undefined2 *)(&DAT_00086d60 + (*(byte *)(obj + 1) >> 1 & 0xf) * 2);
           *DAT_00110fc0 = 0xb2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
           *DAT_00110fc0 = 6;
@@ -58048,7 +58115,7 @@ short param_4;
         }
         else {
           FUN_0005e12c(0,DAT_0023b4e0,
-                       ((*(byte *)(param_2 + 1) >> 1 & 0xf) - (uint)(bVar5 >> 5)) + -1);
+                       ((*(byte *)(obj + 1) >> 1 & 0xf) - (uint)(bVar5 >> 5)) + -1);
           iVar29 = -1;
           *DAT_00110fc0 = 0xb2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -58060,7 +58127,7 @@ short param_4;
       else {
         cVar9 = (bVar5 >> 5) + 1;
         if (cVar9 != '\0') {
-          Ordinal_2005(cVar9,*(byte *)(param_2 + 1) >> 1 & 0xf);
+          Ordinal_2005(cVar9,*(byte *)(obj + 1) >> 1 & 0xf);
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1_00 + (uint)DAT_00202734 + 0x10;
           if (getenv("UW_DEBUG_DOOR"))
             fprintf(stderr, "[billboard] extra-frame: bVar5=0x%02x cVar9=%d extraout_r1_00=%d DAT_00202734=%d -> iVar29=%d\n",
@@ -58083,15 +58150,15 @@ short param_4;
     }
     DAT_0023b818 = 0xe0;
   }
-  uVar11 = DAT_0023b91c;
-  if ((bVar4 & 8) != 0) {
+  tex_w = DAT_0023b91c;
+  if ((catalog_flags & 8) != 0) {
     *puVar25 = 0x4c;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = 0x400 - uVar11;
+    *DAT_00110fc0 = 0x400 - tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0x800;
     DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -58099,7 +58166,7 @@ short param_4;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = DAT_000b4620 + 0x30;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = (0x400 - uVar11) * 2 - 1;
+    *DAT_00110fc0 = (0x400 - tex_w) * 2 - 1;
     puVar25 = DAT_00110fc0 + 1;
     DAT_00110fc0 = puVar25;
   }
@@ -58122,88 +58189,184 @@ short param_4;
   cVar9 = DAT_0023b4a0;
   puVar25 = DAT_00110fc0 + 1;
   DAT_00110fc0 = puVar25;
-  if (param_3 < '\0') {
-    uw_ord2005_rem_123 = ((int)((*(ushort *)(param_2 + 2) >> 7 & 7) + (4 - DAT_0023b4a0) * 2)) % (8);
+  if (heading < '\0') {
+    uw_ord2005_rem_123 = ((int)((*(ushort *)(obj + 2) >> 7 & 7) + (4 - DAT_0023b4a0) * 2)) % (8);
     local_7c = (ushort)((uint)(uw_ord2005_rem_123 << 0x1d) >> 0x10);
   }
   else {
-    local_7c = ((short)param_3 + DAT_0023b4a0 * -4) * 0x1000;
+    local_7c = ((short)heading + DAT_0023b4a0 * -4) * 0x1000;
   }
-  if (((bVar4 & 0x40) != 0) && ((bVar4 & 0x10) == 0)) {
-    if (param_2 < DAT_002046c4) {
-      uVar11 = ((*(byte *)(param_2 + 0x14) >> 3) - 0x10) * 0x266;
-      uw_ord2005_rem_124 = ((int)((*(ushort *)(param_2 + 2) >> 2 & 0xe0) + cVar9 * -0x40 +
-                         (*(byte *)(param_2 + 0x18) & 0x1f) + 0x100)) % (0x100);
+  if (((catalog_flags & 0x40) != 0) && ((catalog_flags & 0x10) == 0)) {
+    if (obj < DAT_002046c4) {
+      tex_w = ((*(byte *)(obj + 0x14) >> 3) - 0x10) * 0x266;
+      uw_ord2005_rem_124 = ((int)((*(ushort *)(obj + 2) >> 2 & 0xe0) + cVar9 * -0x40 +
+                         (*(byte *)(obj + 0x18) & 0x1f) + 0x100)) % (0x100);
       local_7c = (ushort)((uint)(uw_ord2005_rem_124 << 0x18) >> 0x10);
     }
     else {
-      uVar11 = 0;
+      tex_w = 0;
     }
     *puVar25 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    uVar12 = FUN_00038a8c(5);
-    *DAT_00110fc0 = uVar12;
+    tex_h = FUN_00038a8c(5);
+    *DAT_00110fc0 = tex_h;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = uVar11;
+    *DAT_00110fc0 = tex_w;
     puVar25 = DAT_00110fc0 + 1;
     DAT_00110fc0 = puVar25;
-    DAT_0018957a = uVar11;
+    DAT_0018957a = tex_w;
   }
-  if (((uVar14 == 0x10) || (uVar14 == 0x11)) && (DAT_0023b830 == '\0' && DAT_00086b2c == 0)) {
+  if (((catalog_u == 0x10) || (catalog_u == 0x11)) && (DAT_0023b830 == '\0' && DAT_00086b2c == 0)) {
     local_7a = 0;
   }
   else if (((DAT_0023b830 == '\0') && ((*(byte *)(DAT_00086df8 + 0xb5) & 0xf0) == 0x10)) &&
-          (uVar14 == 2)) {
+          (catalog_u == 2)) {
     local_7a = 1;
   }
   if (local_7a != 0xffff) {
     *puVar25 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    uVar11 = FUN_00038a8c(8);
-    *DAT_00110fc0 = uVar11;
+    tex_w = FUN_00038a8c(8);
+    *DAT_00110fc0 = tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = local_7a;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     DAT_00189580 = local_7a;
   }
   sVar13 = (short)iVar29;
-  if ((sVar13 < 0) || ((sVar13 == 0 && (uVar14 == 0xc)))) {
-    uVar11 = 0x40;
-    uVar12 = 0x40;
-    local_70 = (byte *)0x0;
+  if ((sVar13 < 0) || ((sVar13 == 0 && (catalog_u == 0xc)))) {
+    tex_w = 0x40;
+    tex_h = 0x40;
+    texptr = (byte *)0x0;
   }
   else if (local_58 == (byte *)0x0) {
     pcVar15 = (char *)FUN_000408fc(iVar29);
-    uVar11 = (ushort)(byte)pcVar15[1];
-    uVar12 = (ushort)(byte)pcVar15[2];
+    tex_w = (ushort)(byte)pcVar15[1];
+    tex_h = (ushort)(byte)pcVar15[2];
     if (*pcVar15 == '\x04') {
-      local_70 = (byte *)(pcVar15 + 5);
+      texptr = (byte *)(pcVar15 + 5);
     }
     else {
-      local_70 = (byte *)FUN_000129f8(pcVar15 + 4,&DAT_00202520 + (uint)(byte)pcVar15[3] * 0x10);
+      texptr = (byte *)FUN_000129f8(pcVar15 + 4,&DAT_00202520 + (uint)(byte)pcVar15[3] * 0x10);
     }
   }
   else {
-    local_70 = local_58;
-    uVar11 = DAT_0023b824;
-    uVar12 = DAT_0023b824;
+    texptr = local_58;
+    tex_w = DAT_0023b824;
+    tex_h = DAT_0023b824;
   }
-  _anim = (char *)tick_anim_record(param_1);
-  local_48 = *(int *)(_anim + 4);
-  iVar16 = local_48 + -1;
+  _anim = (char *)tick_anim_record(catalog);
+  faces_remaining = *(int *)(_anim + 4);
+  if (getenv("UW_DEBUG_FACE51") && catalog == 7) {
+    static int _dumped_once = 0;
+    if (!_dumped_once) {
+      _dumped_once = 1;
+      int _kk;
+      fprintf(stderr, "[face51] model dump: catalog=%d faces_remaining=%d\n", (int)catalog, faces_remaining);
+      for (_kk = 0; _kk < faces_remaining; _kk++) {
+        int _pc = *(int *)(_anim + 0xc14 + _kk * 0x60);
+        fprintf(stderr, "[face51] model k=%d point_count=%d\n", _kk, _pc);
+      }
+    }
+  }
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[billboard] tick_anim_record(catalog=%d) -> _anim=%p point_count=%d face_count(faces_remaining)=%d\n",
+            (int)catalog, (void *)_anim, *(int *)_anim, faces_remaining);
+  /* DOOR.E's own local X range is [0,128] (confirmed live via the print
+     below, and by reading the raw data/DATA3D/DOOR.E file directly) --
+     NOT centered on 0, unlike every other model this path draws
+     (DFRAME.E's real opening, points 0-7, is exactly [-64,64] -- the
+     same 128-unit width, but centered). No per-catalog local offset
+     exists anywhere in the real disassembly for this call chain (traced
+     emit_anim_object_frames and this function itself, both confirmed
+     matching the real ARM instructions) -- DFRAME and DOOR share the
+     exact same world anchor and heading with nothing shifting one
+     relative to the other. Confirmed live (QA report: "door leaf...
+     offset into the door frame and not perfectly in the opening"):
+     drawing DOOR.E's raw [0,128] range at the same anchor as DFRAME's
+     centered opening leaves half the opening empty and pushes the leaf
+     128 units off-axis, half sticking out past the frame into the wall.
+     This is a data-convention mismatch specific to this PORT'S OWN .E
+     export (the original engine's real door leaf asset was presumably
+     already centered, matching how every other model here behaves) --
+     not a missing piece of original logic to port, so fix it as a
+     narrow compatibility shift using the model's own already-computed
+     bounding box (parse_e_model_file's real +0x3c1c min-X/+0x3c20
+     extent-X fields) rather than a bare hardcoded -64: re-centers
+     whatever this port's own DOOR.E actually contains, and is a no-op
+     for every already-correctly-centered model (DFRAME's own full
+     [-128,128] bounding box, including its riser posts, centers to a
+     0.0 shift). Scoped to catalog==14 only -- every other catalog this
+     path draws was already confirmed correctly positioned this
+     session, so don't risk perturbing them. */
+  if (catalog == 14) {
+    int _pcx = *(int *)_anim;
+    float _minX = *(float *)(_anim + 0x3c1c);
+    float _extX = *(float *)(_anim + 0x3c20);
+    float _shiftX = -(_minX + _extX * 0.5f);
+    int _px;
+    for (_px = 0; _px < _pcx; _px++) {
+      *(float *)(_anim + 8 + _px*0xc) += _shiftX;
+    }
+    /* The per-face U computation just below reads point.X back against
+       this SAME model's own +0x3c1c min-X field (see its own comment --
+       `(point.X - min_X) / extent_X`, mapped across the texture width).
+       Shifting the points without also shifting min-X by the identical
+       amount leaves U computed against the model's OLD, now-stale
+       origin -- confirmed live (QA report: "door UVs are incorrect...
+       U seems offset by half"): half of U's range went negative,
+       visibly wrapping the texture's own left/right edges into the
+       middle of the door instead of its true edges. extent_X is
+       unchanged by a pure translation, so only min-X needs updating. */
+    *(float *)(_anim + 0x3c1c) = _minX + _shiftX;
+    if (getenv("UW_DEBUG_DOOR_POS"))
+      fprintf(stderr, "[doorpos] catalog=14 (DOOR.E) re-centered: minX=%g extX=%g shiftX=%g new_minX=%g\n",
+              (double)_minX, (double)_extX, (double)_shiftX, (double)(_minX + _shiftX));
+  }
+  if (getenv("UW_DEBUG_DOOR_POS")) {
+    int _pc2 = *(int *)_anim;
+    float _minx = 0.0f, _maxx = 0.0f;
+    int _pj;
+    for (_pj = 0; _pj < _pc2; _pj++) {
+      float _x = *(float *)(_anim + 8 + _pj*0xc);
+      if (_pj == 0 || _x < _minx) _minx = _x;
+      if (_pj == 0 || _x > _maxx) _maxx = _x;
+    }
+    fprintf(stderr, "[doorpos] catalog=%d anchor=(%d,%d,%d) heading=%d local_X=[%g,%g] bbox_minX=%g bbox_extX=%g\n",
+            (int)catalog, (int)(short)DAT_0023b904, (int)(short)DAT_0023b91c, (int)(short)DAT_0023b920,
+            (int)heading, (double)_minx, (double)_maxx,
+            (double)*(float *)(_anim + 0x3c1c), (double)*(float *)(_anim + 0x3c20));
+  }
+  _v_offset = 0xc;  /* default: V <- point.Y, matching the original's own always-Y behavior */
+  { int _pc = *(int *)_anim;
+    if (_pc > 0) {
+      float _minz = 0.0f, _maxz = 0.0f;
+      int _pi;
+      for (_pi = 0; _pi < _pc; _pi++) {
+        float _z = *(float *)(_anim + 8 + _pi*0xc + 8);
+        if (_pi == 0 || _z < _minz) _minz = _z;
+        if (_pi == 0 || _z > _maxz) _maxz = _z;
+      }
+      { float _zext = _maxz - _minz;
+        float _yext = *(float *)(_anim + 0x3c28);   /* real, already-ported model Y extent */
+        if (_zext > _yext) _v_offset = 0x10;  /* V <- point.Z instead */
+      }
+    }
+  }
+  iVar16 = faces_remaining + -1;
   if (-1 < iVar16) {
-    iVar2 = (int)(short)uVar11;
-    iVar3 = (int)(short)uVar12;
+    iVar2 = (int)(short)tex_w;
+    iVar3 = (int)(short)tex_h;
     iVar22 = iVar16 * 0x60;
     local_58 = (byte *)(iVar16 * 0x18);
     do {
       sVar7 = DAT_000da47c;
-      iVar16 = iVar22 + _anim + 0xc14;
-      *(char *)(iVar16 + 0x4c) = (char)DAT_000da47c;
-      *(char *)(iVar16 + 0x4d) = (char)((ushort)sVar7 >> 8);
+      _face_rec = iVar22 + _anim + 0xc14;
+      *(char *)(_face_rec + 0x4c) = (char)DAT_000da47c;
+      *(char *)(_face_rec + 0x4d) = (char)((ushort)sVar7 >> 8);
       cVar9 = (char)(sVar7 >> 0xf);
-      *(char *)(iVar16 + 0x4e) = cVar9;
-      *(char *)(iVar16 + 0x4f) = cVar9;
+      *(char *)(_face_rec + 0x4e) = cVar9;
+      *(char *)(_face_rec + 0x4f) = cVar9;
       cVar9 = (&DAT_00086c09)[iVar1];
       pbVar23 = &DAT_00086c08 + iVar1;
       pbVar6 = (byte *)0x0;
@@ -58213,32 +58376,32 @@ short param_4;
       }
       if (cVar9 != '\0' && pbVar6 != (byte *)0x0) {
         uVar10 = (undefined2)((uint)pbVar23 >> 8);
-        *(char *)(iVar16 + 0x50) = (char)pbVar23;
+        *(char *)(_face_rec + 0x50) = (char)pbVar23;
       }
       else {
         uVar10 = 0;
-        *(char *)(iVar16 + 0x50) = cVar9;
+        *(char *)(_face_rec + 0x50) = cVar9;
       }
-      *(char *)(iVar16 + 0x51) = (char)uVar10;
-      *(char *)(iVar16 + 0x52) = (char)((ushort)uVar10 >> 8);
-      *(undefined1 *)(iVar16 + 0x53) = 0;
-      *(char *)(iVar16 + 0x18) = (char)local_70;
-      *(char *)(iVar16 + 0x19) = (char)((uint)local_70 >> 8);
-      *(char *)(iVar16 + 0x1a) = (char)((uint)local_70 >> 0x10);
-      *(char *)(iVar16 + 0x1b) = (char)((uint)local_70 >> 0x18);
-      *(char *)(iVar16 + 0x1c) = (char)uVar11;
-      *(char *)(iVar16 + 0x1d) = (char)(uVar11 >> 8);
+      *(char *)(_face_rec + 0x51) = (char)uVar10;
+      *(char *)(_face_rec + 0x52) = (char)((ushort)uVar10 >> 8);
+      *(undefined1 *)(_face_rec + 0x53) = 0;
+      *(char *)(_face_rec + 0x18) = (char)texptr;
+      *(char *)(_face_rec + 0x19) = (char)((uint)texptr >> 8);
+      *(char *)(_face_rec + 0x1a) = (char)((uint)texptr >> 0x10);
+      *(char *)(_face_rec + 0x1b) = (char)((uint)texptr >> 0x18);
+      *(char *)(_face_rec + 0x1c) = (char)tex_w;
+      *(char *)(_face_rec + 0x1d) = (char)(tex_w >> 8);
                     // WARNING: Store size is inaccurate
-      *(short *)(iVar16 + 0x1e) = (short)uVar11 >> 0xf;
+      *(short *)(_face_rec + 0x1e) = (short)tex_w >> 0xf;
                     // WARNING: Store size is inaccurate
-      *(short *)(iVar16 + 0x1f) = (short)uVar11 >> 0xf;
-      *(char *)(iVar16 + 0x20) = (char)uVar12;
-      *(char *)(iVar16 + 0x21) = (char)(uVar12 >> 8);
+      *(short *)(_face_rec + 0x1f) = (short)tex_w >> 0xf;
+      *(char *)(_face_rec + 0x20) = (char)tex_h;
+      *(char *)(_face_rec + 0x21) = (char)(tex_h >> 8);
                     // WARNING: Store size is inaccurate
-      *(short *)(iVar16 + 0x22) = (short)uVar12 >> 0xf;
+      *(short *)(_face_rec + 0x22) = (short)tex_h >> 0xf;
                     // WARNING: Store size is inaccurate
-      *(short *)(iVar16 + 0x23) = (short)uVar12 >> 0xf;
-      if (uVar14 == 1) {
+      *(short *)(_face_rec + 0x23) = (short)tex_h >> 0xf;
+      if (catalog_u == 1) {
         local_60 = 0;
         do {
           iVar27 = (int)(short)DAT_0023b91c;
@@ -58256,254 +58419,254 @@ short param_4;
           }
           local_60 = (local_60 + 1) * 0x10000 >> 0x10;
         } while (local_60 < 4);
-        iVar30 = *(int *)(iVar16 + 8) * 0xc + _anim;
+        _vptr = *(int *)(_face_rec + 8) * 0xc + _anim;
         uVar17 = Ordinal_2032(iVar2 + -1);
         puVar26 = (undefined4 *)(_anim + 0x3c1c);
-        uVar19 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar19 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar19 = Ordinal_2026(uVar19,0x3b800000);
         Ordinal_2026(uVar19,uVar17);
         uVar19 = Ordinal_2020();
-        *(char *)(iVar16 + 0x24) = (char)uVar19;
-        *(char *)(iVar16 + 0x25) = (char)((uint)uVar19 >> 8);
-        *(char *)(iVar16 + 0x26) = (char)((uint)uVar19 >> 0x10);
-        *(char *)(iVar16 + 0x27) = (char)((uint)uVar19 >> 0x18);
+        *(char *)(_face_rec + 0x24) = (char)uVar19;
+        *(char *)(_face_rec + 0x25) = (char)((uint)uVar19 >> 8);
+        *(char *)(_face_rec + 0x26) = (char)((uint)uVar19 >> 0x10);
+        *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar28 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar28);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x28) = (char)uVar20;
-        *(char *)(iVar16 + 0x29) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 7),
-                          CONCAT12(*(undefined1 *)(iVar16 + 6),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 5),*(undefined1 *)(iVar16 + 4))
+        *(char *)(_face_rec + 0x28) = (char)uVar20;
+        *(char *)(_face_rec + 0x29) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 7),
+                          CONCAT12(*(undefined1 *)(_face_rec + 6),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 5),*(undefined1 *)(_face_rec + 4))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x2c) = (char)uVar20;
-        *(char *)(iVar16 + 0x2d) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2e) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar28);
+        *(char *)(_face_rec + 0x2c) = (char)uVar20;
+        *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x30) = (char)uVar20;
-        *(char *)(iVar16 + 0x31) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x32) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x33) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0x13),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0x12),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0x11),
-                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x30) = (char)uVar20;
+        *(char *)(_face_rec + 0x31) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x32) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x33) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0x13),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0x12),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0x11),
+                                            *(undefined1 *)(_face_rec + 0x10)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x34) = (char)uVar20;
-        *(char *)(iVar16 + 0x35) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x36) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar28);
+        *(char *)(_face_rec + 0x34) = (char)uVar20;
+        *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x38) = (char)uVar20;
-        *(char *)(iVar16 + 0x39) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x3a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x3b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0xf),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0xe),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0xd),
-                                            *(undefined1 *)(iVar16 + 0xc)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x38) = (char)uVar20;
+        *(char *)(_face_rec + 0x39) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x3a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x3b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0xf),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0xe),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0xd),
+                                            *(undefined1 *)(_face_rec + 0xc)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar17);
         uVar17 = Ordinal_2020();
-        *(char *)(iVar16 + 0x3c) = (char)uVar17;
-        *(char *)(iVar16 + 0x3d) = (char)((uint)uVar17 >> 8);
-        *(char *)(iVar16 + 0x3e) = (char)((uint)uVar17 >> 0x10);
-        *(char *)(iVar16 + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar28);
+        *(char *)(_face_rec + 0x3c) = (char)uVar17;
+        *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
+        *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
+        *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
         uVar17 = Ordinal_2026(uVar17,0x3b800000);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
       }
-      else if (((uVar14 == 0xe) || (uVar14 == 0xf)) || (uVar14 == 0x13)) {
-        iVar30 = *(int *)(iVar16 + 0xc) * 0xc + _anim;
+      else if (((catalog_u == 0xe) || (catalog_u == 0xf)) || (catalog_u == 0x13)) {
+        _vptr = *(int *)(_face_rec + 0xc) * 0xc + _anim;
         uVar17 = Ordinal_2032(iVar2 + -1);
         puVar26 = (undefined4 *)(_anim + 0x3c1c);
-        uVar19 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar19 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         puVar28 = (undefined4 *)(_anim + 0x3c20);
         uVar19 = Ordinal_2047(uVar19,*puVar28);
         Ordinal_2026(uVar19,uVar17);
         uVar19 = Ordinal_2020();
-        *(char *)(iVar16 + 0x24) = (char)uVar19;
-        *(char *)(iVar16 + 0x25) = (char)((uint)uVar19 >> 8);
-        *(char *)(iVar16 + 0x26) = (char)((uint)uVar19 >> 0x10);
-        *(char *)(iVar16 + 0x27) = (char)((uint)uVar19 >> 0x18);
+        *(char *)(_face_rec + 0x24) = (char)uVar19;
+        *(char *)(_face_rec + 0x25) = (char)((uint)uVar19 >> 8);
+        *(char *)(_face_rec + 0x26) = (char)((uint)uVar19 >> 0x10);
+        *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x28) = (char)uVar20;
-        *(char *)(iVar16 + 0x29) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0x13),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0x12),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0x11),
-                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x28) = (char)uVar20;
+        *(char *)(_face_rec + 0x29) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0x13),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0x12),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0x11),
+                                            *(undefined1 *)(_face_rec + 0x10)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x2c) = (char)uVar20;
-        *(char *)(iVar16 + 0x2d) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2e) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x2c) = (char)uVar20;
+        *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x30) = (char)uVar20;
-        *(char *)(iVar16 + 0x31) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x32) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x33) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 7),
-                          CONCAT12(*(undefined1 *)(iVar16 + 6),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 5),*(undefined1 *)(iVar16 + 4))
+        *(char *)(_face_rec + 0x30) = (char)uVar20;
+        *(char *)(_face_rec + 0x31) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x32) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x33) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 7),
+                          CONCAT12(*(undefined1 *)(_face_rec + 6),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 5),*(undefined1 *)(_face_rec + 4))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x34) = (char)uVar20;
-        *(char *)(iVar16 + 0x35) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x36) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x34) = (char)uVar20;
+        *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x38) = (char)uVar20;
-        *(char *)(iVar16 + 0x39) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x3a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x3b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0xb),
-                          CONCAT12(*(undefined1 *)(iVar16 + 10),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 9),*(undefined1 *)(iVar16 + 8))
+        *(char *)(_face_rec + 0x38) = (char)uVar20;
+        *(char *)(_face_rec + 0x39) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x3a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x3b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0xb),
+                          CONCAT12(*(undefined1 *)(_face_rec + 10),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 9),*(undefined1 *)(_face_rec + 8))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar17 = Ordinal_2020();
-        *(char *)(iVar16 + 0x3c) = (char)uVar17;
-        *(char *)(iVar16 + 0x3d) = (char)((uint)uVar17 >> 8);
-        *(char *)(iVar16 + 0x3e) = (char)((uint)uVar17 >> 0x10);
-        *(char *)(iVar16 + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x3c) = (char)uVar17;
+        *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
+        *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
+        *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar17 = Ordinal_2047(uVar17,*puVar32);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
       }
       else {
-        iVar30 = *(int *)(iVar16 + 8) * 0xc + _anim;
+        _vptr = *(int *)(_face_rec + 8) * 0xc + _anim;
         uVar17 = Ordinal_2032(iVar2 + -1);
         puVar26 = (undefined4 *)(_anim + 0x3c1c);
-        uVar19 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar19 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         puVar28 = (undefined4 *)(_anim + 0x3c20);
         uVar19 = Ordinal_2047(uVar19,*puVar28);
         Ordinal_2026(uVar19,uVar17);
         uVar19 = Ordinal_2020();
-        *(char *)(iVar16 + 0x24) = (char)uVar19;
-        *(char *)(iVar16 + 0x25) = (char)((uint)uVar19 >> 8);
-        *(char *)(iVar16 + 0x26) = (char)((uint)uVar19 >> 0x10);
-        *(char *)(iVar16 + 0x27) = (char)((uint)uVar19 >> 0x18);
+        *(char *)(_face_rec + 0x24) = (char)uVar19;
+        *(char *)(_face_rec + 0x25) = (char)((uint)uVar19 >> 8);
+        *(char *)(_face_rec + 0x26) = (char)((uint)uVar19 >> 0x10);
+        *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x28) = (char)uVar20;
-        *(char *)(iVar16 + 0x29) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 7),
-                          CONCAT12(*(undefined1 *)(iVar16 + 6),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 5),*(undefined1 *)(iVar16 + 4))
+        *(char *)(_face_rec + 0x28) = (char)uVar20;
+        *(char *)(_face_rec + 0x29) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 7),
+                          CONCAT12(*(undefined1 *)(_face_rec + 6),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 5),*(undefined1 *)(_face_rec + 4))
                                   )) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x2c) = (char)uVar20;
-        *(char *)(iVar16 + 0x2d) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x2e) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x2c) = (char)uVar20;
+        *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x30) = (char)uVar20;
-        *(char *)(iVar16 + 0x31) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x32) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x33) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0x13),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0x12),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0x11),
-                                            *(undefined1 *)(iVar16 + 0x10)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x30) = (char)uVar20;
+        *(char *)(_face_rec + 0x31) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x32) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x33) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0x13),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0x12),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0x11),
+                                            *(undefined1 *)(_face_rec + 0x10)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x34) = (char)uVar20;
-        *(char *)(iVar16 + 0x35) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x36) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x34) = (char)uVar20;
+        *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar20 = Ordinal_2047(uVar20,*puVar32);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
-        *(char *)(iVar16 + 0x38) = (char)uVar20;
-        *(char *)(iVar16 + 0x39) = (char)((uint)uVar20 >> 8);
-        *(char *)(iVar16 + 0x3a) = (char)((uint)uVar20 >> 0x10);
-        *(char *)(iVar16 + 0x3b) = (char)((uint)uVar20 >> 0x18);
-        iVar30 = CONCAT13(*(undefined1 *)(iVar16 + 0xf),
-                          CONCAT12(*(undefined1 *)(iVar16 + 0xe),
-                                   CONCAT11(*(undefined1 *)(iVar16 + 0xd),
-                                            *(undefined1 *)(iVar16 + 0xc)))) * 0xc + _anim;
-        uVar20 = Ordinal_2015(*(undefined4 *)(iVar30 + 8),*puVar26);
+        *(char *)(_face_rec + 0x38) = (char)uVar20;
+        *(char *)(_face_rec + 0x39) = (char)((uint)uVar20 >> 8);
+        *(char *)(_face_rec + 0x3a) = (char)((uint)uVar20 >> 0x10);
+        *(char *)(_face_rec + 0x3b) = (char)((uint)uVar20 >> 0x18);
+        _vptr = CONCAT13(*(undefined1 *)(_face_rec + 0xf),
+                          CONCAT12(*(undefined1 *)(_face_rec + 0xe),
+                                   CONCAT11(*(undefined1 *)(_face_rec + 0xd),
+                                            *(undefined1 *)(_face_rec + 0xc)))) * 0xc + _anim;
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + 8),*puVar26);
         uVar20 = Ordinal_2047(uVar20,*puVar28);
         Ordinal_2026(uVar20,uVar17);
         uVar17 = Ordinal_2020();
-        *(char *)(iVar16 + 0x3c) = (char)uVar17;
-        *(char *)(iVar16 + 0x3d) = (char)((uint)uVar17 >> 8);
-        *(char *)(iVar16 + 0x3e) = (char)((uint)uVar17 >> 0x10);
-        *(char *)(iVar16 + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(iVar30 + 0xc),*puVar31);
+        *(char *)(_face_rec + 0x3c) = (char)uVar17;
+        *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
+        *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
+        *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
         uVar17 = Ordinal_2047(uVar17,*puVar32);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
       }
-      *(char *)(iVar16 + 0x40) = (char)uVar17;
-      *(char *)(iVar16 + 0x41) = (char)((uint)uVar17 >> 8);
-      *(char *)(iVar16 + 0x42) = (char)((uint)uVar17 >> 0x10);
-      *(char *)(iVar16 + 0x43) = (char)((uint)uVar17 >> 0x18);
+      *(char *)(_face_rec + 0x40) = (char)uVar17;
+      *(char *)(_face_rec + 0x41) = (char)((uint)uVar17 >> 8);
+      *(char *)(_face_rec + 0x42) = (char)((uint)uVar17 >> 0x10);
+      *(char *)(_face_rec + 0x43) = (char)((uint)uVar17 >> 0x18);
       local_58 = (byte *)((char *)local_58 + -0x18);
       iVar22 = iVar22 + -0x60;
-      local_48 = local_48 + -1;
-    } while (local_48 != 0);
+      faces_remaining = faces_remaining + -1;
+    } while (faces_remaining != 0);
   }
   uVar17 = Ordinal_2032((int)(short)DAT_0023b904);
   *(char *)(_anim + 0xc08) = (char)uVar17;
@@ -58520,8 +58683,8 @@ short param_4;
   *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
   *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
   *(char *)(_anim + 0xc13) = (char)((uint)uVar17 >> 0x18);
-  if (((uVar14 != 0xe) && (uVar14 != 0xf)) && (uVar14 != 0xc)) goto LAB_000640ec;
-  uVar21 = (int)((*(ushort *)(param_2 + 2) >> 7 & 7) + 1) >> 1;
+  if (((catalog_u != 0xe) && (catalog_u != 0xf)) && (catalog_u != 0xc)) goto LAB_000640ec;
+  uVar21 = (int)((*(ushort *)(obj + 2) >> 7 & 7) + 1) >> 1;
   if (3 < uVar21) {
     uVar21 = 0;
   }
@@ -58562,18 +58725,23 @@ switchD_00064038_default:
   FUN_0001e6f0(_anim,0x3f800000,0x3f99999a,0x3f800000);
 LAB_000640ec:
   if (sVar13 < 0) {
-    if (uVar14 == 7) {
+    if (catalog_u == 7) {
       FUN_0001e6f0(_anim,0x40200000,0x40200000,0x40200000);
     }
-    if ((sVar13 < 0) && ((uVar14 == 0x1b || (uVar14 == 0x19)))) {
+    if ((sVar13 < 0) && ((catalog_u == 0x1b || (catalog_u == 0x19)))) {
       FUN_0001e6f0(_anim,0x40000000,0x40000000,0x40000000);
     }
   }
-  if ((uVar14 == 0xe) || (uVar14 == 0xf)) {
+  if ((catalog_u == 0xe) || (catalog_u == 0xf)) {
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] swing: catalog=%d DAT_0018957a=%d local_7c(before)=%d\n",
+              (int)catalog_u, (int)(short)DAT_0018957a, (int)(short)local_7c);
     uVar17 = Ordinal_2032((int)(short)DAT_0018957a);
     uVar19 = Ordinal_2032((int)(short)local_7c);
     Ordinal_2051(uVar17,uVar19);
     local_7c = Ordinal_2020();
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] swing: local_7c(after)=%d\n", (int)(short)local_7c);
   }
   uVar17 = Ordinal_2032((int)(short)local_7c);
   uVar17 = Ordinal_2026(uVar17,0x38000000);
@@ -58582,15 +58750,267 @@ LAB_000640ec:
   }
   for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
   }
+  /* General object tuner (UW_MODEL_TUNER=1) -- runs for every catalog
+     this path draws, not just doors, so whatever real .E-model object
+     is currently on screen (boulder, bridge, door frame, ...) gets a
+     live rotation_offset field. Reset to 0 whenever the catalog on
+     screen changes so a leftover rotation from tuning one object
+     doesn't silently carry into the next. Applied directly to the
+     model's own real final rotation angle (degrees) before it's handed
+     to build_euler_rotation_matrix -- nudging this while walking around
+     an object spins the OBJECT, letting every face's true orientation
+     be checked without needing to physically walk a full circle around
+     it in the level (not always possible -- against a wall, etc). Door-
+     specific fields (wide_center/edge_offset) stay conditional on
+     catalog_u==1 in the SAME panel/dbgui_begin call, since dbgui_begin
+     resets the field list each time it's called and only one object's
+     panel can be shown per frame anyway (whichever ran last). */
+  if ((int)catalog_u != g_tune_last_catalog) {
+    g_tune_last_catalog = (int)catalog_u;
+    g_tune_rotation_offset = 0.0;
+  }
+  /* Was gated behind UW_MODEL_TUNER=1 -- on unconditionally now, per
+     direct request ("turn the debug panel on by default instead of
+     needing an env var"), so no relaunch-with-env-var step is needed
+     to use it. Still only POPULATES the field list here; the panel
+     itself stays hidden until backtick (dbgui_visible()/g_visible in
+     debug_ui.c, unchanged), so this has zero effect on normal play or
+     any of the regression demo scripts -- none of them press backtick. */
+  { char _tune_title[48];
+    snprintf(_tune_title, sizeof(_tune_title), "Object Tuner (catalog=%d)", (int)catalog_u);
+    dbgui_begin(_tune_title);
+    dbgui_field_double("rotation_offset", &g_tune_rotation_offset, 5.0);
+    if (catalog_u == 1) {
+      dbgui_field_double("wide_center", &g_tune_wide_center, 1.0);
+      dbgui_field_double("edge_offset", &g_tune_edge_offset, 1.0);
+    }
+    dbgui_field_button("dump_3d_frame", uw_debug_request_3d_frame_dump);
+    dbgui_field_toggle("hide_walls", &g_uw_hide_walls);
+    dbgui_end();
+  }
+  sVar13 = (short)((int)sVar13 + (int)g_tune_rotation_offset);
+  for (; 0x168 < sVar13; sVar13 = sVar13 + -0x168) {
+  }
+  for (; sVar13 < 0; sVar13 = sVar13 + 0x168) {
+  }
+  /* Real fix for the QA report "door frame... offset 16 units into the
+     wall... depending on direction" -- the generic per-object anchor
+     emit_tile_features computed is a floor-item slot position (one of
+     8 sub-tile slots, 32 units apart); it can land near a tile's true
+     center (128 from the tile's own origin) but, with only 8 discrete
+     slots, can never land exactly ON it (the two closest slots, 3 and
+     4, are 112/144 -- each 16 units off from 128, confirmed live via
+     UW_DEBUG_DOOR_POS's tile-grid dump). A full-tile-wide object like
+     DFRAME.E needs its along-the-wall axis at the tile's EXACT center,
+     not a slot approximation -- confirmed via a fresh Ghidra decompile
+     of process_visible_tile_cell that wall vertices themselves sit at
+     exact tile boundaries (`tileIndex * 256`), never slot-quantized.
+     Recompute both axes from the tile grid index: the axis DFRAME.E's
+     own wide local X rotates into (from the model's real final rotation
+     angle, not assumed) gets the tile's exact center; the wall-
+     perpendicular axis the model's thin local Z rotates into.
+
+     The perpendicular axis is ALSO the tile's exact center, not an
+     edge-relative offset -- live QA via the tuner (g_tune_wide_center/
+     g_tune_edge_offset below) confirmed both at 128.0 look correct once
+     a separate real bug (the anchor being baked into this model's own
+     scratch buffer BEFORE this fix used to run, so only the leaf's
+     later, separate call ever picked up an edited value -- see that
+     fix's own commit) stopped masking whether the frame was actually
+     responding. The earlier "wall has real thickness, perpendicular
+     axis sits at edge+16" theory was itself wrong, arrived at while
+     that masking bug made the frame look like it needed a different
+     number than the leaf when actually neither did -- it just wasn't
+     visibly moving. At edge_offset==128 the near/far edge-side branch
+     below collapses to the same value either way (128 or 256-128), so
+     this is really just "exact tile center on both axes," the edge-
+     relative framing kept only because a future non-full-tile-width
+     model might genuinely need it. Scoped to catalog_u==1 (DFRAME,
+     always drawn first) since DFRAME and the leaf share this same
+     anchor. */
+  if (catalog_u == 1) {
+    /* wide_center/edge_offset are now populated by the general object-
+       tuner panel above (see its own comment) -- kept live-editable via
+       the SAME globals, just no longer with their own separate
+       dbgui_begin call here. */
+    double _rad = (double)sVar13 * (3.14159265358979 / 180.0);
+    int _wideIsX = fabs(cos(_rad)) > fabs(sin(_rad));
+    int _tileOriginX = (int)DAT_0023b4e4 * 256;
+    int _tileOriginZ = (int)DAT_0023b4e8 * 256;
+    int _wide = (int)g_tune_wide_center;
+    int _edge = (int)g_tune_edge_offset;
+    if (_wideIsX) {
+      DAT_0023b904 = (short)(_tileOriginX + _wide);
+      DAT_0023b920 = (short)(_tileOriginZ +
+          (((int)(short)DAT_0023b920 - _tileOriginZ < 128) ? _edge : 256 - _edge));
+    } else {
+      DAT_0023b920 = (short)(_tileOriginZ + _wide);
+      DAT_0023b904 = (short)(_tileOriginX +
+          (((int)(short)DAT_0023b904 - _tileOriginX < 128) ? _edge : 256 - _edge));
+    }
+    if (getenv("UW_DEBUG_DOOR_POS"))
+      fprintf(stderr, "[doorpos] wall-plane fix: angle=%d wideIsX=%d tileOrigin=(%d,%d) wide=%d edge=%d -> anchor=(%d,%d)\n",
+              (int)sVar13, _wideIsX, _tileOriginX, _tileOriginZ, _wide, _edge,
+              (int)(short)DAT_0023b904, (int)(short)DAT_0023b920);
+    /* REAL BUG (found via QA: "this seems to just tune the door leaf
+       position, not the door frame"): the world anchor was already
+       baked into THIS model's own scratch buffer (_anim + 0xc08..0xc13,
+       the translation build_euler_rotation_matrix/transform_points_by_
+       matrix actually apply) several dozen lines above, from whatever
+       DAT_0023b904/920 held BEFORE this fix ran -- so adjusting the
+       globals here came too late to affect the frame's (catalog_u==1)
+       own transform this same call; only the LEAF's separate call
+       (catalog_u==14, later, re-running this same bake with the
+       by-then-already-modified globals) ever picked up the change.
+       Re-bake right here with the corrected values so this call's own
+       transform (a few lines below) actually uses them -- same
+       Ordinal_2032 float-encode + byte-split writes as the original
+       bake, just re-run after the correction instead of before it. */
+    uVar17 = Ordinal_2032((int)(short)DAT_0023b904);
+    *(char *)(_anim + 0xc08) = (char)uVar17;
+    *(char *)(_anim + 0xc09) = (char)((uint)uVar17 >> 8);
+    *(char *)(_anim + 0xc0a) = (char)((uint)uVar17 >> 0x10);
+    *(char *)(_anim + 0xc0b) = (char)((uint)uVar17 >> 0x18);
+    uVar17 = Ordinal_2032((int)(short)DAT_0023b91c);
+    *(char *)(_anim + 0xc0c) = (char)uVar17;
+    *(char *)(_anim + 0xc0d) = (char)((uint)uVar17 >> 8);
+    *(char *)(_anim + 0xc0e) = (char)((uint)uVar17 >> 0x10);
+    *(char *)(_anim + 0xc0f) = (char)((uint)uVar17 >> 0x18);
+    uVar17 = Ordinal_2032((int)(short)DAT_0023b920);
+    *(char *)(_anim + 0xc10) = (char)uVar17;
+    *(char *)(_anim + 0xc11) = (char)((uint)uVar17 >> 8);
+    *(char *)(_anim + 0xc12) = (char)((uint)uVar17 >> 0x10);
+    *(char *)(_anim + 0xc13) = (char)((uint)uVar17 >> 0x18);
+  }
+  { int _rec_start = DAT_0023b83c;
+  int _vtx_start = DAT_0023b838;
   build_euler_rotation_matrix(_anim,0,(int)sVar13,0);
   transform_points_by_matrix(&DAT_000a85d0,_anim);
   DAT_0023b83c = DAT_000a85d4;
   DAT_0023b838 = DAT_000a85d0;
+  if (getenv("UW_DEBUG_DOOR_POS"))
+    fprintf(stderr, "[doorpos] catalog=%d emitted records [%d,%d) vtx [%d,%d) faces_remaining_was=%d\n",
+            (int)catalog, _rec_start, (int)DAT_0023b83c, _vtx_start, (int)DAT_0023b838, faces_remaining);
+  /* transform_points_by_matrix is original, unmodified code -- it has no
+     idea g_tile_texptr_emit[] exists. It copies each face's texture
+     pointer (texptr) into the arena record's own byte offset +0x18..+0x1b,
+     but that's only a 32-bit field, truncating this platform's real 64-bit
+     pointer (the SAME bug class as _face_rec/_vptr above, just baked into
+     original code this time). This codebase's own rasterizer doesn't even
+     read that embedded field for this record format -- EVERY other writer
+     of this same 0x60-byte-stride record instead populates the side-
+     channel g_tile_texptr_emit[record_index], which this original
+     function was never taught to do. Backfill it for every record this
+     call just added. */
+  { int _ti; for (_ti = _rec_start; _ti < DAT_0023b83c; _ti++) {
+      if ((unsigned)_ti < UW_MAX_VIS_TILES) g_tile_texptr_emit[_ti] = texptr;
+    }
+  }
+  /* QA report: "backwards object model face sorting in a boulder
+     object... a portion of the floor shows through the boulder,
+     because far faces are drawn but near faces are hidden." This
+     engine has no z-buffer and no backface culling (confirmed
+     repeatedly this session), so a model's own faces are painted in
+     whatever order its .E file happens to list its parts -- a face
+     physically BEHIND another one, if listed later, simply overdraws
+     it, reading as "a hole in the model" with no geometry/winding/UV
+     bug involved. This exact fix (depth-sort a model's own just-
+     emitted records, farthest-from-camera first, right after they're
+     written) was already built, tested, and confirmed live for the
+     OLD emit_model_object/g_model_map path this session (git log
+     79e78aa on this project's own e-model-texturing branch) -- ported
+     here rather than re-invented, adapted only for this function's own
+     record range tracking (_rec_start/DAT_0023b83c, already present
+     above for the texptr backfill) since the underlying arena record
+     format (&DAT_000acde4 family, 0x60-byte stride) and vertex-position
+     storage (DAT_000a85d0_backing, 0xc-byte stride) are the exact same
+     shared structures transform_points_by_matrix just wrote into --
+     confirmed by reading its own field offsets, not assumed. Opt-out
+     via UW_MODEL_NO_DEPTH_SORT=1 for A/B comparison; on by default. */
+  if (getenv("UW_MODEL_NO_DEPTH_SORT") == 0 && DAT_0023b83c > _rec_start) {
+    double _eye_x = *(float *)&DAT_000db438, _eye_y = *(float *)&DAT_000db43c, _eye_z = *(float *)&DAT_000db440;
+    int _n = DAT_0023b83c - _rec_start;
+    if (_n <= 64) {
+      double _dist[64];
+      int _order[64];
+      int _k;
+      for (_k = 0; _k < _n; _k++) {
+        int rec = _rec_start + _k;
+        int rb = rec * 0x60;
+        int iv0 = *(int *)(&DAT_000acde8 + rb);
+        int iv1 = *(int *)(&DAT_000acdec + rb);
+        int iv2 = *(int *)(&DAT_000acdf0 + rb);
+        int iv3 = *(int *)(&DAT_000acdf4 + rb);
+        float *p0 = (float *)((char *)DAT_000a85d0_backing + 8 + iv0*0xc);
+        float *p1 = (float *)((char *)DAT_000a85d0_backing + 8 + iv1*0xc);
+        float *p2 = (float *)((char *)DAT_000a85d0_backing + 8 + iv2*0xc);
+        float *p3 = (float *)((char *)DAT_000a85d0_backing + 8 + iv3*0xc);
+        double cx = (p0[0]+p1[0]+p2[0]+p3[0]) * 0.25;
+        double cy = (p0[1]+p1[1]+p2[1]+p3[1]) * 0.25;
+        double cz = (p0[2]+p1[2]+p2[2]+p3[2]) * 0.25;
+        double dx = cx - _eye_x, dy = cy - _eye_y, dz = cz - _eye_z;
+        _dist[_k] = dx*dx + dy*dy + dz*dz;
+        _order[_k] = _k;
+        if (getenv("UW_DEBUG_FACE51") && (_k == 50 || _k == 51 || _k == 52)) {
+          fprintf(stderr, "[face51] catalog=%d k=%d iv=(%d,%d,%d,%d) p0=(%g,%g,%g) p1=(%g,%g,%g) p2=(%g,%g,%g) p3=(%g,%g,%g)\n",
+                  (int)catalog, _k, iv0, iv1, iv2, iv3,
+                  p0[0], p0[1], p0[2], p1[0], p1[1], p1[2],
+                  p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]);
+        }
+      }
+      /* Small N -- plain insertion sort, descending distance (farthest
+         first, so nearer faces paint last and correctly cover them). */
+      { int _a;
+        for (_a = 1; _a < _n; _a++) {
+          int _oi = _order[_a]; double _od = _dist[_oi];
+          int _b = _a - 1;
+          while (_b >= 0 && _dist[_order[_b]] < _od) { _order[_b+1] = _order[_b]; _b--; }
+          _order[_b+1] = _oi;
+        }
+      }
+      if (getenv("UW_DEBUG_MODEL")) {
+        int _changed = 0, _kk;
+        for (_kk = 0; _kk < _n; _kk++) if (_order[_kk] != _kk) _changed = 1;
+        fprintf(stderr, "[model-depthsort] catalog=%d n=%d order_changed=%d order=[", (int)catalog, _n, _changed);
+        for (_kk = 0; _kk < _n; _kk++) fprintf(stderr, "%d ", _order[_kk]);
+        fprintf(stderr, "] dist=[");
+        for (_kk = 0; _kk < _n; _kk++) fprintf(stderr, "%.0f ", _dist[_kk]);
+        fprintf(stderr, "]\n");
+      }
+      /* Apply via cycle-sort in place, whole-record memcpy plus the
+         parallel g_tile_texptr_emit[] side channel. */
+      { unsigned char _tmp[0x60]; void *_tmp_tex;
+        unsigned char _done[64] = {0};
+        int _a;
+        for (_a = 0; _a < _n; _a++) {
+          int _cur, _src;
+          if (_done[_a] || _order[_a] == _a) { _done[_a] = 1; continue; }
+          _cur = _a;
+          memcpy(_tmp, (char *)&DAT_000acde4 + (_rec_start+_a)*0x60, 0x60);
+          _tmp_tex = g_tile_texptr_emit[_rec_start+_a];
+          while (!_done[_cur]) {
+            _src = _order[_cur];
+            _done[_cur] = 1;
+            if (_src == _a) break;
+            memcpy((char *)&DAT_000acde4 + (_rec_start+_cur)*0x60, (char *)&DAT_000acde4 + (_rec_start+_src)*0x60, 0x60);
+            g_tile_texptr_emit[_rec_start+_cur] = g_tile_texptr_emit[_rec_start+_src];
+            _cur = _src;
+          }
+          memcpy((char *)&DAT_000acde4 + (_rec_start+_cur)*0x60, _tmp, 0x60);
+          g_tile_texptr_emit[_rec_start+_cur] = _tmp_tex;
+        }
+      }
+      if (getenv("UW_DEBUG_MODEL"))
+        fprintf(stderr, "[model-depthsort] catalog=%d rec=[%d,%d) eye=(%g,%g,%g)\n",
+                (int)catalog, _rec_start, (int)DAT_0023b83c, _eye_x, _eye_y, _eye_z);
+    }
+  }
+  }
   if (local_7a != 0xffff) {
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    uVar11 = FUN_00038a8c(8);
-    *DAT_00110fc0 = uVar11;
+    tex_w = FUN_00038a8c(8);
+    *DAT_00110fc0 = tex_w;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = local_7a - 1 & 1;
     DAT_00189580 = local_7a - 1 & 1;
@@ -58618,9 +59038,9 @@ LAB_000640ec:
 // WARNING: Removing unreachable block (ram,0x000647ac)
 
 // was FUN_00064384
-void emit_anim_object_frames(param_1,param_2)
-uint param_1;
-ushort * param_2;
+void emit_anim_object_frames(door_type,obj)
+uint door_type;
+ushort * obj;
 
 {
   short sVar1;
@@ -58643,52 +59063,100 @@ ushort * param_2;
   short local_28;
   short sVar2;
   
-  param_1 = param_1 & 7;
+  door_type = door_type & 7;
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] emit_anim_object_frames: param_1(cond_idx)=%d rec_word0=0x%04x rec_b1=0x%02x\n",
-            param_1, (unsigned)*param_2, (unsigned)*(byte *)((char *)param_2 + 1));
+    fprintf(stderr, "[door] emit_anim_object_frames: door_type(cond_idx)=%d rec_word0=0x%04x rec_b1=0x%02x\n",
+            door_type, (unsigned)*obj, (unsigned)*(byte *)((char *)obj + 1));
   local_38 = '\0';
   local_37 = '\x01';
   local_34 = -1;
   DAT_0023b834 = 1;
-  if (param_1 == 6) {
+  if (door_type == 6) {
     local_34 = DAT_0023b91c;
     local_38 = '\x01';
     local_37 = -1;
-    local_32 = DAT_0023b91c + (short)((*(byte *)((char *)param_2 + 1) & 0xe) >> 1) * -0x30;
+    local_32 = DAT_0023b91c + (short)((*(byte *)((char *)obj + 1) & 0xe) >> 1) * -0x30;
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     uVar5 = FUN_00038a8c(5);
     *DAT_00110fc0 = uVar5;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = *(byte *)((char *)param_2 + 1) >> 1 & 7;
+    *DAT_00110fc0 = *(byte *)((char *)obj + 1) >> 1 & 7;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    DAT_0018957a = (undefined2)((*(byte *)((char *)param_2 + 1) & 0xe) >> 1);
+    DAT_0018957a = (undefined2)((*(byte *)((char *)obj + 1) & 0xe) >> 1);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] anim_frames(type6): obj0=0x%04x bVar1=0x%02x DAT_0018957a=%d\n",
+              (unsigned)*obj, (unsigned)*(byte *)((char *)obj + 1), (int)(short)DAT_0018957a);
     *DAT_00110fc0 = 0x4c;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    *DAT_00110fc0 = (*(byte *)((char *)param_2 + 1) >> 1 & 7) * -0x30 + 0xd0;
+    *DAT_00110fc0 = (*(byte *)((char *)obj + 1) >> 1 & 7) * -0x30 + 0xd0;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0x400;
     sVar1 = local_32;
   }
   else {
-    if (((*param_2 & 0xe00) != 0) || ((*param_2 & 0x1c0) == 0x1c0)) {
+    if (((*obj & 0xe00) != 0) || ((*obj & 0x1c0) == 0x1c0)) {
       DAT_0023b91c = DAT_0023b91c + -0xc0;
     }
     sVar1 = DAT_0023b91c;
-    bVar4 = *(byte *)((char *)param_2 + 1);
+    bVar4 = *(byte *)((char *)obj + 1);
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    iVar8 = ((bVar4 >> 5 & 1) * 2 + -1) * (bVar4 >> 1 & 7);
+    /* HACK: the door's actual open/closed state lives in its real
+       "quality" field (obj[3] & 0x3f -- already established and
+       confirmed elsewhere in this file, e.g. UW_DUMP_OBJECTS_FILE's own
+       `_quality = _rec[3] & 0x3f`), NOT in bVar4 (word0's own high
+       byte, whose relevant bits -- `bVar4 >> 1 & 7`, what this line used
+       to read for "how far open" -- were confirmed live to sit at a
+       constant 0 the entire time a door opened in a recorded repro,
+       bug-open-door.txt). That's why DAT_0018957a (the swing-angle
+       contribution added to the door leaf's base heading a few hundred
+       lines down, in emit_catalog_object's own catalog_u==0xe/0xf
+       branch) was always 0: the door's "opening" STATE was real
+       (quality did move, "You see a moving door" was correct) but its
+       RENDERED rotation never advanced.
+
+       Confirmed live (same repro) that door quality is NOT a smooth
+       multi-tick counter: the real "open door" builtin (FUN_0007c708)
+       does a single, guarded `(quality & 0xf) + 8` -- one atomic
+       closed(0-7) -> open(8-15) step, never incremented further (the
+       guard `if (7 < (quality & 0xf)) return;` blocks any repeat) -- so
+       quality only ever measured 0 or 8 across the whole replay, never
+       anything between. A door's swing is therefore a single discrete
+       state flip in this engine, not an animated sweep, matching what
+       was visually confirmed: the leaf rotates once when quality
+       crosses to the 8-15 half and then holds. Since bits 0-2 of
+       quality stayed 0 whenever observed (only bit 3, the open/closed
+       flag itself, ever changed), the magnitude here is just that flag
+       -- `(obj[3] & 0x3f) >> 3` is 0 (closed) or 1 (open) for every
+       value seen -- so it's used as a boolean, then multiplied by a
+       fixed full-swing magnitude (5 raw units = 5*4096 = 20480, i.e.
+       roughly a 90-degree opening on the same 4096-per-eighth-turn
+       scale heading's own math already uses) rather than passed through
+       proportionally: a proportional 0/1 raw unit (the original, first
+       attempt at this fix) turned out to compute and apply correctly
+       end-to-end -- confirmed via a forced-value test that the exact
+       same catalog_u==0xe/0xf consumer swings the mesh dramatically at
+       larger magnitudes -- but was visually almost imperceptible at
+       magnitude 1, since quality never carries a larger value to scale
+       up from. The sign bit stays sourced from bVar4 (unverified
+       whether that's swing direction or something else, but it's
+       unrelated to the confirmed bug and this fix doesn't need to touch
+       it). */
+    iVar8 = ((bVar4 >> 5 & 1) * 2 + -1) * (((obj[3] & 0x3f) >> 3) != 0 ? 5 : 0);
     uVar5 = FUN_00038a8c(5);
     *DAT_00110fc0 = uVar5;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = (ushort)((uint)(iVar8 * 0x10000000) >> 0x10);
     DAT_0018957a = (undefined2)((iVar8 * 0x10000 >> 0x10) << 0xc);
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] anim_frames: door_type=%u obj0=0x%04x bVar4(obj+1)=0x%02x openbits=%d sign=%d iVar8=%d DAT_0018957a=%d quality(obj[3]&0x3f)=%d obj[3]=0x%04x\n",
+              door_type, (unsigned)*obj, (unsigned)bVar4, (bVar4 >> 1 & 7), (bVar4 >> 5 & 1), iVar8, (int)(short)DAT_0018957a,
+              (int)(obj[3] & 0x3f), (unsigned)obj[3]);
   }
   local_36 = 0x330 - sVar1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -58702,8 +59170,8 @@ ushort * param_2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 0x800;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  if (((*(byte *)((char *)param_2 + 1) & 0xe) == 0) || (local_34 != -1)) goto LAB_000647e4;
-  uVar7 = (param_2[1] >> 7) + DAT_0023b4a0 * -2;
+  if (((*(byte *)((char *)obj + 1) & 0xe) == 0) || (local_34 != -1)) goto LAB_000647e4;
+  uVar7 = (obj[1] >> 7) + DAT_0023b4a0 * -2;
   iVar8 = ((int)DAT_0023b904 - (int)*(short *)(DAT_00086e6c + 10)) * 0x10000;
   iVar3 = ((int)DAT_0023b920 - (int)*(short *)(DAT_00086e6c + 0x12)) * 0x10000;
   uVar6 = uVar7 & 3;
@@ -58737,7 +59205,7 @@ LAB_00064750:
     }
     iVar8 = (int)local_32;
   }
-  if (((int)(((uint)(*(byte *)((char *)param_2 + 1) >> 5) + (int)((short)(uVar7 & 7) >> 2) + iVar8) *
+  if (((int)(((uint)(*(byte *)((char *)obj + 1) >> 5) + (int)((short)(uVar7 & 7) >> 2) + iVar8) *
             0x10000) >> 0x10 & 1U) == 0) {
     local_37 = -1;
     local_38 = '\x01';
@@ -58748,9 +59216,9 @@ LAB_000647e4:
   uVar7 = FUN_00038a8c(3);
   *DAT_00110fc0 = uVar7;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  *DAT_00110fc0 = (*(byte *)((char *)param_2 + 1) >> 1 & 7) + (ushort)(-1 < local_34);
+  *DAT_00110fc0 = (*(byte *)((char *)obj + 1) >> 1 & 7) + (ushort)(-1 < local_34);
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  DAT_00189576 = (short)((*(byte *)((char *)param_2 + 1) & 0xe) >> 1) + (ushort)(-1 < local_34);
+  DAT_00189576 = (short)((*(byte *)((char *)obj + 1) & 0xe) >> 1) + (ushort)(-1 < local_34);
   uVar10 = (uint)local_38;
   if (uVar10 < 2) {
     do {
@@ -58797,7 +59265,7 @@ LAB_000647e4:
         uVar9 = 1;
         uVar11 = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
 LAB_00064cdc:
-        emit_object_billboard(uVar9,param_2,(param_2[1] >> 7 & 7) << 1,uVar11);
+        emit_catalog_object(uVar9,obj,(obj[1] >> 7 & 7) << 1,uVar11);
       }
       else {
         if (DAT_0023b830 != 0) {
@@ -58808,7 +59276,7 @@ LAB_00064cdc:
           DAT_00110fc0 = DAT_00110fc0 + 1;
         }
         if (local_34 < 0) {
-          local_28 = (short)param_1;
+          local_28 = (short)door_type;
           if (local_28 == 7) {
             if (DAT_0023b818 < '\x01') {
               FUN_0005e3c0(0,DAT_0023bc88,DAT_0023b91c >> 6 & 0xff,
@@ -58828,20 +59296,29 @@ LAB_00064cdc:
             uVar11 = *(byte *)(DAT_0023b4ec + 2) & 0x3f;
           }
           else {
-            /* Was `DAT_00202734 + param_1 + 0x30` -- matches
+            /* Was `DAT_00202734 + door_type + 0x30` -- matches
                load_door_frames's own (fixed) scratch base; see that
                function's comment for why the original binary's
-               formula collided with the HUD icon preload range. */
-            uVar11 = 60000 + param_1;
+               formula collided with the HUD icon preload range, and
+               why the base moved again from 60000 to 20000 (the first
+               fix broke a DIFFERENT thing: emit_catalog_object's own
+               `frame_or_texid < 0` sentinel check, a signed 16-bit
+               comparison -- 60000 wrapped negative as a short and got
+               silently reinterpreted as "no frame, use the catalog's
+               internal animation" instead of a real frame index). */
+            uVar11 = 20000 + door_type;
             uVar9 = 0xe;
           }
           if (getenv("UW_DEBUG_DOOR"))
-            fprintf(stderr, "[door] emit_anim_object_frames: local_34=%d local_28=%d -> emit_object_billboard(catalog=%d, heading=%d, frame_or_id=%d)\n",
-                    (int)local_34, (int)local_28, (int)uVar9, (int)((param_2[1] >> 7 & 7) << 1), (int)uVar11);
+            fprintf(stderr, "[door] emit_anim_object_frames: local_34=%d local_28=%d -> emit_catalog_object(catalog=%d, heading=%d, frame_or_id=%d)\n",
+                    (int)local_34, (int)local_28, (int)uVar9, (int)((obj[1] >> 7 & 7) << 1), (int)uVar11);
           goto LAB_00064cdc;
         }
         DAT_0023b91c = local_34;
-        emit_object_billboard(0xc,param_2,(param_2[1] >> 7 & 7) << 1,0);
+        if (getenv("UW_DEBUG_DOOR"))
+          fprintf(stderr, "[door] emit_anim_object_frames: local_34=%d -> emit_catalog_object(catalog=0xc, heading=%d, frame_or_id=0)\n",
+                  (int)local_34, (int)((obj[1] >> 7 & 7) << 1));
+        emit_catalog_object(0xc,obj,(obj[1] >> 7 & 7) << 1,0);
         DAT_0023b91c = local_32;
       }
       local_30 = (char)uVar10;
@@ -59284,6 +59761,11 @@ ushort * param_1;
             fprintf(stderr, "[objpos] cVar8=%d iVar7=%d bb99=%d bb9a=%d b4e4=%d b4e8=%d\n",
                     (int)cVar8, iVar7, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
                     (int)DAT_0023b4e4, (int)DAT_0023b4e8);
+          if (getenv("UW_DEBUG_DOOR_POS") && puVar5 && (*puVar5 & 0x1f0) == 0x140)
+            fprintf(stderr, "[doorpos] tile-grid: cVar8=%d slot_x=%d slot_z=%d b4e4(tileX)=%d b4e8(tileZ)=%d tile_origin=(%d,%d)\n",
+                    (int)cVar8, (int)(char)(&DAT_0023bb99)[iVar7], (int)(char)(&DAT_0023bb9a)[iVar7],
+                    (int)DAT_0023b4e4, (int)DAT_0023b4e8,
+                    (int)DAT_0023b4e4 * 256, (int)DAT_0023b4e8 * 256);
           DAT_0023b904 = ((short)(char)(&DAT_0023bb99)[iVar7] +
                          (short)((uint)((int)DAT_0023b4e4 << 0x13) >> 0x10)) * 0x20 + 0x10;
           DAT_0023b920 = ((short)(char)(&DAT_0023bb9a)[iVar7] +

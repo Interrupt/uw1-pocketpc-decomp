@@ -997,6 +997,8 @@ void demomode_pump(void) {
           g_force_flush = 1;
           flush_dirty_rect_to_display(1);
           g_force_flush = 0; }
+        if (getenv("UW_DEBUG_DOOR"))
+          fprintf(stderr, "[demo] SCREENSHOT %s\n", path);
         uw_save_screenshot(path);
         if (getenv("UW_DEBUG_INV")) {
             extern void uw_debug_dump_inventory_state(void);

@@ -23,6 +23,7 @@ add_executable(uw_dbg
   demomode.c
   democapture.c
   debug.c
+  debug_ui.c
 )
 
 target_include_directories(uw_dbg PRIVATE ${SDL2_INCLUDE_DIRS})
