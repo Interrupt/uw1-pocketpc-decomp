@@ -1260,3 +1260,430 @@ void sweep_apply_collision()
   return;
 }
 
+
+
+
+/* Fixed turn-rate accelerator value for decode_movement_command's turn
+   branches -- see that function's own comment for why turning was
+   decoupled from DAT_0024af6c (the held-key ramp, still used as-is for
+   forward/back). UW_TURN_ACCEL overrides it (same units as DAT_0024af6c,
+   i.e. plug in any value that function would otherwise have ramped to)
+   for retuning without a rebuild. */
+int uw_turn_rate_accel(void) {
+  static int v = -1;
+  if (v < 0) {
+    const char *e = getenv("UW_TURN_ACCEL");
+    v = e ? atoi(e) : 0x60;
+  }
+  return v;
+}
+
+// was FUN_000685e8 -- turn the latched input code (DAT_0023c448) into the
+// analog forward rate DAT_0023bf48 / turn rate DAT_0023bf4c. DAT_0023bf48
+// (forward/back) is scaled by the held-key accelerator DAT_0024af6c, which
+// is meant to -- and, per playtesting against DOS UW1, correctly does --
+// ramp walk into run the longer W/S stays held. NOTE: DAT_0024af6c ramps
+// to ~0x140 in this recompile, so the rate multiplies (esp. run's
+// 0x700000) overflowed int32 and produced a negative rate -- widened to
+// 64-bit below.
+//
+// DAT_0023bf4c (turn) uses uw_turn_rate_accel() instead of DAT_0024af6c
+// directly: side-by-side playtesting against DOS UW1 (same A/D-analog +
+// Shift+A/D-stepped scheme) found our turning ramped up to ~3x DOS's
+// speed and, since DAT_0024af6c is shared with forward/back (confirmed:
+// forward/run speed alone matched DOS fine), carried over an already-
+// ramped rate from a preceding held run/walk into an immediately-
+// following turn -- DOS's turn read as a constant, non-accelerating
+// rate throughout. uw_turn_rate_accel() reproduces that: a fixed value,
+// independent of how long any key (including a differently-coded one)
+// has been held.
+void decode_movement_command()
+
+{
+  DAT_0023bf48 = 0;
+  DAT_0023bf4c = 0;
+  if ((*DAT_00087950 != '\0') || (*DAT_0008794c != '\0')) {
+    if (*DAT_00087950 == '\0') {
+      DAT_0023bf48 = 0;
+      DAT_0023bf4c = 0;
+      return;
+    }
+    if (*DAT_0008794c == '\0') {
+      DAT_0023bf48 = 0;
+      DAT_0023bf4c = 0;
+      return;
+    }
+  }
+  if (*DAT_00087948 != '\0') {
+    DAT_0023bf48 = 0;
+    DAT_0023bf4c = 0;
+    return;
+  }
+  if (*DAT_00087944 != '\0') {
+    DAT_0023bf48 = 0;
+    DAT_0023bf4c = 0;
+    return;
+  }
+  if (DAT_0023c448 < 0x2f) {
+    if (DAT_0023c448 == 0x2e) {
+      g_movement_mode = 10;
+      DAT_0023bf48 = 0;
+      DAT_0023bf4c = 0;
+      return;
+    }
+    if (DAT_0023c448 < 0x20) {
+      if (DAT_0023c448 == 0x1f) {
+LAB_000687cc:
+        DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x500000 >> 0x10));
+        g_movement_mode = 1;
+        return;
+      }
+      if (DAT_0023c448 == 0x10) goto LAB_00068820;
+      if (DAT_0023c448 != 0x11) {
+        if (DAT_0023c448 != 0x12) {
+          if (DAT_0023c448 != 0x1e) {
+            DAT_0023bf48 = 0;
+            DAT_0023bf4c = 0;
+            return;
+          }
+LAB_000686a8:
+          DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * -0x5a0000 >> 0x10));
+          g_movement_mode = 1;
+          return;
+        }
+        goto LAB_000687fc;
+      }
+LAB_00068844:
+      DAT_0023bf48 = Ordinal_2005(100,(int)((long long)DAT_0024af6c * 0x700000 >> 0x10));
+      g_movement_mode = 1;
+      return;
+    }
+    if (DAT_0023c448 != 0x20) {
+      if (DAT_0023c448 == 0x2c) {
+        g_movement_mode = 9;
+        DAT_0023bf48 = 0;
+        DAT_0023bf4c = 0;
+        return;
+      }
+      if (DAT_0023c448 == 0x2d) {
+        g_movement_mode = 8;
+        DAT_0023bf48 = 0;
+        DAT_0023bf4c = 0;
+        return;
+      }
+      DAT_0023bf48 = 0;
+      DAT_0023bf4c = 0;
+      return;
+    }
+  }
+  else {
+    if (DAT_0023c448 == 0x3f) goto LAB_00068844;
+    if (DAT_0023c448 == 0x6b) {
+LAB_00068820:
+      if ((DAT_0020208c & 0x14) == 0) {
+        g_movement_mode = 0;
+        DAT_0023bf48 = 0;
+        DAT_0023bf4c = 0;
+        return;
+      }
+      g_movement_mode = 0xd;
+      DAT_0023bf48 = 0;
+      DAT_0023bf4c = 0;
+      return;
+    }
+    if (DAT_0023c448 == 0x6c) {
+LAB_000687fc:
+      if ((DAT_0020208c & 0x14) == 0) {
+        g_movement_mode = 0;
+        DAT_0023bf48 = 0;
+        DAT_0023bf4c = 0;
+        return;
+      }
+      g_movement_mode = 0xc;
+      DAT_0023bf48 = 0;
+      DAT_0023bf4c = 0;
+      return;
+    }
+    if (DAT_0023c448 == 0x8d) goto LAB_000687cc;
+    if (DAT_0023c448 == 0x8f) goto LAB_000686a8;
+    if (DAT_0023c448 != 0x91) {
+      if (DAT_0023c448 == 0x93) {
+        g_movement_mode = 8;
+        DAT_0023bf48 = 0;
+        DAT_0023bf4c = 0;
+        return;
+      }
+      DAT_0023bf48 = 0;
+      DAT_0023bf4c = 0;
+      return;
+    }
+  }
+  DAT_0023bf4c = Ordinal_2005(100,(int)((long long)uw_turn_rate_accel() * 0x5a0000 >> 0x10));
+  g_movement_mode = 1;
+  return;
+}
+
+
+
+// was FUN_000689a0
+void movement_pacing_handler()
+
+{
+  byte bVar1;
+  byte bVar2;
+  int iVar3;
+  uint uVar4;
+  uint uVar5;
+  uint uVar6;
+  undefined8 uVar7;
+  uint uVar_now;
+
+  /* Was 4 separate read_realtime_clock_units() (real wall-clock) reads in this
+     function -- replaced with uw_frame_clock_ms(), a fixed-step
+     substitute in the same 4ms-per-unit scale (see its own and
+     g_uw_frame_clock_units's comments). All 4 original reads are really
+     asking "what time is it right now", each then diffed against the
+     SAME DAT_0023bf54 reference -- captured once into uVar_now here so
+     they keep agreeing with each other exactly as they did when each
+     was a fresh (but, within the same real millisecond, effectively
+     identical) clock read. uVar6 is the actual movement/turn-distance
+     driver (movement_tick below); the other reads feed DAT_0023bf58's
+     animation-bob phase, which shares the same DAT_0023bf54 reference
+     point and so needs to move in step with it too. */
+  uVar_now = uw_frame_clock_ms();
+  if (getenv("UW_DEBUG_MOVEPACE")) {
+    static unsigned int call_count = 0;
+    static unsigned int last_real_ms = 0;
+    unsigned int real_ms = read_realtime_clock_units() * 4; /* back to real ms -- see its own comment */
+    call_count++;
+    fprintf(stderr, "[movepace] call=%u now=%u last=%u delta=%u mode=%d code=0x%x turnrate=%d real_ms=%u real_delta=%u\n",
+            call_count, uVar_now, (unsigned)DAT_0023bf54, uVar_now - (unsigned)DAT_0023bf54,
+            (int)g_movement_mode, (unsigned)DAT_0023c448, (int)DAT_0023bf4c,
+            real_ms, real_ms - last_real_ms);
+    last_real_ms = real_ms;
+  }
+  iVar3 = uVar_now;
+  uVar6 = iVar3 - DAT_0023bf54;
+  if (uVar6 < 0x41) {
+    uVar5 = uVar_now;
+    DAT_0023bf58 = ((char)(uVar5 >> 4) - (char)(DAT_0023bf54 >> 4)) + DAT_0023bf58;
+    uVar7 = uVar_now;
+    uVar5 = (uint)((ulonglong)uVar7 >> 0x20);
+    uVar4 = ((uint)uVar7 >> 6) - (DAT_0023bf54 >> 6) & 0xff;
+    if (uVar6 == 0) {
+      return;
+    }
+  }
+  else {
+    uVar6 = 0x40;
+    DAT_0023bf58 = DAT_0023bf58 + 4;
+    uVar4 = 1;
+    uVar5 = DAT_0023bf54;
+  }
+  if (uVar4 != 0) {
+    uVar5 = DAT_000879ac;
+  }
+  if (uVar4 != 0 && uVar5 != 0) {
+    scheduler_tick(uVar4);
+  }
+  iVar3 = *(int *)(DAT_00086df8 + 0xce) + uVar6;
+  *(char *)(DAT_00086df8 + 0xce) = (char)iVar3;
+  *(char *)(DAT_00086df8 + 0xcf) = (char)((uint)iVar3 >> 8);
+  *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar3 >> 0x10);
+  *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar3 >> 0x18);
+  DAT_0023bf54 = uVar_now;
+  if (DAT_002020d4 == 0) {
+    bVar2 = 0;
+  }
+  else {
+    bVar2 = DAT_0023bf58 & 1;
+    DAT_0023bf58 = DAT_0023bf58 >> 1;
+  }
+  bVar1 = DAT_0023bf58;
+  DAT_0023bf58 = bVar2;
+  movement_tick(uVar6 & 0xffff,bVar1,0);
+  return;
+}
+
+
+
+// was FUN_00068ad4
+void movement_tick(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+int param_3;
+
+{
+  short sVar1;
+  uint uVar2;
+  char *iVar3;
+  undefined4 uVar4;
+  ushort uVar5;
+  undefined4 unaff_r4;
+  undefined4 unaff_r5;
+  undefined4 unaff_r6;
+  undefined4 unaff_r7;
+  undefined4 unaff_lr;
+  undefined1 uVar6;
+  undefined8 uVar7;
+  
+  DAT_0023bea8 = 0;
+  DAT_0023be98 = 0;
+  DAT_0023bf18 = (char)param_1 + DAT_0023bf18;
+  if (g_movement_mode == 0) {
+    decode_movement_command();
+  }
+  if ((((((g_movement_mode != 0) || (g_jump_ascent_timer != 0)) || (g_vertical_velocity != 0)) ||
+       ((g_fall_accel != 0 || (DAT_0020488e != 0)))) || ((DAT_0020488c != 0 || (DAT_000858a0 != 0)))
+      ) && (param_3 == 0)) {
+    apply_movement_tick(param_1);
+  }
+  if (getenv("UW_DEBUG_NPC_GATE")) {
+    static unsigned callnum = 0;
+    callnum++;
+    if (callnum % 60 == 1)
+      fprintf(stderr, "[npc-gate] call=%u g_npc_tick_enabled=%d DAT_002020d0=%d param_2=0x%x (short)=%d\n",
+              callnum, g_npc_tick_enabled, DAT_002020d0, (unsigned)param_2, (short)param_2);
+  }
+  if (((g_npc_tick_enabled != 0) && (DAT_002020d0 == 0)) && ((short)param_2 != 0)) {
+    tick_mobile_objects(param_2);
+  }
+  if (*(char *)(DAT_00086df8 + 0xb8) != '\0') {
+    trigger_view_transition();
+  }
+  if ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0) {
+    if (DAT_00086e84 != -1) {
+      FUN_0007305c();
+      DAT_00086e84 = -1;
+    }
+    if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) == 0) && ((DAT_002048a8 & 0x10) == 0)) {
+      if (param_3 == 0) {
+        if (g_jump_ascent_timer != 0) {
+          uVar7 = read_realtime_clock_units();
+          uVar4 = (undefined4)((ulonglong)uVar7 >> 0x20);
+          if (DAT_0023bf5c < (uint)uVar7) {
+            uVar6 = DAT_0023bf60 != '\0';
+            if ((bool)uVar6) {
+              uVar4 = 0x48;
+            }
+            if (!(bool)uVar6) {
+              uVar4 = 0x38;
+              uVar6 = 2;
+            }
+            FUN_00072f30(uVar6,uVar4,((int)g_jump_ascent_timer >> 5 & 0xffU) - 0x10);
+            DAT_0023bf60 = DAT_0023bf60 == '\0';
+            sVar1 = Ordinal_2005(((int)g_jump_ascent_timer >> 2) + 1,6000);
+            uVar5 = sVar1 + 0x40;
+            if (200 < uVar5) {
+              uVar5 = 200;
+            }
+            iVar3 = read_realtime_clock_units();
+            DAT_0023bf5c = iVar3 + (uint)uVar5;
+          }
+        }
+      }
+      else {
+        uVar6 = DAT_0023bf60 != '\0';
+        iVar3 = DAT_00086df8;
+        if ((bool)uVar6) {
+          iVar3 = 0x48;
+        }
+        uVar2 = (int)g_jump_ascent_timer >> 5 & 0xff;
+        if (!(bool)uVar6) {
+          iVar3 = 0x38;
+          uVar6 = 2;
+        }
+        FUN_00072f30(uVar6,iVar3,uVar2 - 0x10,uVar2,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_lr);
+        DAT_0023bf60 = DAT_0023bf60 == '\0';
+        iVar3 = read_realtime_clock_units();
+        DAT_0023bf5c = iVar3 + 100;
+      }
+    }
+  }
+  else {
+    if ((DAT_00086e84 != -1) && (uVar2 = read_realtime_clock_units(), DAT_0023bf64 + 0x1800U <= uVar2)) {
+      FUN_0007305c();
+      DAT_00086e84 = -1;
+    }
+    if (DAT_00086e84 == -1) {
+      DAT_0023bf64 = read_realtime_clock_units();
+      DAT_00086e84 = FUN_00072f30(0,0x40,0);
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00068c1c -- forces movement to stop immediately: clears
+// g_movement_mode then repeatedly ticks apply_movement_tick(0x40)
+// until every pending momentum/fall/landing flag clears.
+void settle_movement_to_rest()
+
+{
+  g_movement_mode = 0;
+  while ((((g_jump_ascent_timer != 0 || (g_vertical_velocity != 0)) || (g_fall_accel != 0)) ||
+         (((DAT_0020488e != 0 || (DAT_0020488c != 0)) || (DAT_000858a0 != 0))))) {
+    apply_movement_tick(0x40);
+  }
+  return;
+}
+
+
+
+// was FUN_00068cac
+/* Was called with no args from both call sites (movement_tick's real
+   time-delta param_1, and settle_movement_to_rest's literal 0x40) -- dropped
+   argument, same pattern as apply_heading_turn below (which this
+   function itself calls with no args, same bug one level deeper).
+   Confirmed this matters now that the DAT_00204880-relative struct
+   fields are correctly aliased (see that fix's comment): apply_heading_turn
+   writes this forwarded value into DAT_00204892 (struct offset 0x12,
+   the "speed" field movement_sweep_setup's movement engine reads), so losing
+   it here meant that field could never become the real per-tick delta
+   even once the aliasing bug was fixed. */
+void apply_movement_tick(param_1)
+undefined4 param_1;
+
+{
+  byte bVar1;
+  char cVar2;
+  char cVar3;
+  short sVar4;
+
+  DAT_002048a5 = (&DAT_00202c91)[(*g_player_object & 0x1ff) * 0xd] & 7;
+  DAT_002048a6 = (&DAT_00202c90)[(*g_player_object & 0x1ff) * 0xd];
+  DAT_0023be9e = 0;
+  DAT_0023be9c = 0;
+  DAT_0023be9a = 0;
+  apply_heading_turn(param_1);
+  movement_collision_sweep(&DAT_00204880,&DAT_002048b0);
+  commit_player_move();
+  FUN_00049924(10);
+  sVar4 = g_movement_mode;
+  bVar1 = DAT_0023bf18;
+  if ((DAT_002048a8 & 0x10) == 0) {
+    if (((int)DAT_00202078 >> 2 < (int)g_jump_ascent_timer) && (g_movement_mode == 1)) {
+      cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)g_jump_ascent_timer << 2);
+      cVar3 = (char)(cVar2 + -1);
+      DAT_0023bea8 = 1;
+      if ((cVar2 + -1) * 0x1000000 >> 0x18 < 2) {
+        cVar3 = '\x02';
+      }
+      DAT_0023be98 = (short)(char)(&DAT_00086e38)[bVar1 >> 4] * (short)cVar3;
+    }
+    if (sVar4 == 7) {
+      DAT_0023be98 = -0x20;
+      DAT_0023be9c = 0xff00;
+      sVar4 = 0;
+      DAT_0023bea8 = 1;
+    }
+    if ((sVar4 == 9) || (sVar4 == 10)) {
+      DAT_0023bea8 = 1;
+      DAT_0023be98 = (short)(char)(&DAT_00086e48)[bVar1 >> 4] << 1;
+    }
+  }
+  g_movement_mode = 0;
+  return;
+}
+

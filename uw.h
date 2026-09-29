@@ -900,6 +900,30 @@ extern byte DAT_0023beac;
 extern undefined2 DAT_0023bea0;
 extern short DAT_0023bea4;
 extern short DAT_0023bf08;
+extern undefined DAT_00086e38;
+extern undefined DAT_00086e48;
+extern undefined DAT_00086e58;
+extern char DAT_00086e84;
+extern char *DAT_00087944;
+extern char *DAT_00087948;
+extern char *DAT_0008794c;
+extern char *DAT_00087950;
+extern undefined2 DAT_0023be9a;
+extern undefined2 DAT_0023be9c;
+extern undefined2 DAT_0023be9e;
+extern byte DAT_0023bf10;
+extern char DAT_0023bf14;
+extern char DAT_0023bf18;
+extern short DAT_0023bf30;
+extern short DAT_0023bf34;
+extern short DAT_0023bf38;
+extern short DAT_0023bf3c;
+extern short DAT_0023bf40;
+extern uint DAT_0023bf5c;
+extern char DAT_0023bf60;
+extern int DAT_0023bf64;
+#define DAT_002048a5 DAT_00204880_backing[0x25]
+#define DAT_002048a6 DAT_00204880_backing[0x26]
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -2950,10 +2974,10 @@ void uw_set_analog_move_turn(int fwd_held, int turn_dir);
 void move_key_directional_step();
 void movement_pacing_handler();
 void movement_tick();
-void FUN_00068c1c();
+void settle_movement_to_rest();
 void apply_movement_tick();
-void FUN_0006907c();
-void FUN_00069424();
+void trigger_view_transition();
+void set_movement_animation_timer();
 void update_current_view_from_subject();
 void sync_camera_from_player();
 undefined4 FUN_00069b68();

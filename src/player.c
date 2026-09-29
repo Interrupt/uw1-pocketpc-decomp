@@ -91,7 +91,7 @@ uint param_2;
                                           *(ushort *)(DAT_00202c6c + 0xc)));
   set_locomotion_state(DAT_002048a8,0);
   DAT_0023be98 = 0;
-  FUN_0006907c();
+  trigger_view_transition();
   DAT_000858a0 = 1;
   object_list_insert_head(DAT_002029cc + DAT_00202080 * 4 + 2,g_player_object);
   return;
@@ -1293,5 +1293,411 @@ ushort * param_1;
              6) + 1) * 0x10000 >> 0x10;
   }
   return iVar2;
+}
+
+
+
+
+// was FUN_0006907c -- starts a smooth camera transition: sets the
+// "turn animation in flight" flag (DAT_0023bea8, gates
+// update_current_view_from_subject's own per-tick facing interpolation),
+// resets the camera-shake accumulators, forces a resync, and computes
+// an eye-height bob offset from the player's landing/jump state.
+// Called after teleporting the player (set_player_tile_position) or
+// other position changes that should ease the view in rather than
+// snap it.
+void trigger_view_transition()
+
+{
+  int uw_ord2005_rem_126 = 0;
+  uint uVar1;
+  char cVar2;
+  char cVar3;
+  ushort uVar4;
+  undefined4 uVar5;
+  int extraout_r1;
+  uint uVar6;
+  char *iVar7;
+  byte bVar8;
+  short sVar9;
+  bool bVar10;
+  
+  cVar3 = '\x01';
+  DAT_0023bea8 = 1;
+  bVar8 = 1;
+  FUN_00049924(2);
+  DAT_0023be9e = 0;
+  DAT_0023be9c = 0;
+  DAT_0023be9a = 0;
+  if (((*(byte *)(DAT_00086df8 + 0xb8) & 0x11) != 0) &&
+     (sVar9 = -(ushort)*(byte *)(DAT_00086df8 + 0xb9), DAT_0023be98 = sVar9,
+     0x50 < *(byte *)(DAT_00086df8 + 0xb9))) {
+    iVar7 = (int)g_jump_ascent_timer;
+    cVar2 = Ordinal_2005((int)DAT_00202078 >> 1,(int)(iVar7) << 2);
+    cVar3 = (char)(cVar2 + -3);
+    if ((cVar2 + -3) * 0x1000000 >> 0x18 < 1) {
+      cVar3 = '\x01';
+    }
+    bVar8 = DAT_0023bf18 >> 4;
+    if (iVar7 == 0) {
+      uVar4 = Ordinal_1053();
+      DAT_0023be9e = (uVar4 & 0x1ff) - 0x100;
+      sVar9 = DAT_0023be98;
+    }
+    else {
+      DAT_0023be9e = (short)(char)(&DAT_00086e58)[(char)bVar8] * (short)cVar3 * 0x40;
+    }
+    DAT_0023be98 = sVar9 + (short)(char)(&DAT_00086e58)[(int)(char)bVar8 + 2U & 0xf] * (short)cVar3
+                           * 2;
+    uVar4 = Ordinal_1053();
+    DAT_0023be9a = ((uVar4 & 0x7f) - 0x40) * (short)cVar3;
+    uVar4 = Ordinal_1053();
+    DAT_0023be9c = ((uVar4 & 0x7f) - 0x40) * (short)cVar3;
+  }
+  if (((*(byte *)(DAT_00086df8 + 0xb8) & 2) != 0) && (DAT_0023bc98 == 0)) {
+    uVar5 = Ordinal_1053();
+    uw_ord2005_rem_126 = ((int)(uVar5)) % (5);
+    if (uw_ord2005_rem_126 == 0) {
+      FUN_00038374(g_player_object,0,0,0,1,8);
+    }
+  }
+  if ((*(byte *)(DAT_00086df8 + 0xb8) & 8) != 0) {
+    uVar6 = 0x10 - (DAT_0023bf18 >> 3);
+    uVar1 = (int)uVar6 >> 0x1f;
+    DAT_0023be98 = (short)(((uVar6 ^ uVar1) - uVar1) * 0x10000 >> 0x10) * 3;
+  }
+  if ((*(byte *)(DAT_00086df8 + 0xb8) & 0x60) != 0) {
+    iVar7 = DAT_00086df8;
+    if ((*(byte *)(DAT_00086df8 + 0xb8) & 0x40) != 0) {
+      bVar10 = DAT_0023bf14 == '\0';
+      DAT_0023bf14 = DAT_0023bf14 + -1;
+      if (bVar10) {
+        *(byte *)(DAT_00086df8 + 0xb8) = *(byte *)(DAT_00086df8 + 0xb8) ^ 0x40;
+        FUN_00049924(2);
+      }
+      iVar7 = DAT_00086df8;
+      cVar3 = Ordinal_2005(10,DAT_0023bf14);
+      if ('\b' < cVar3) {
+        cVar3 = '\b';
+      }
+    }
+    if ((*(byte *)(iVar7 + 0xb8) & 0x20) != 0) {
+      bVar10 = DAT_0023bf10 == 0;
+      DAT_0023bf10 = DAT_0023bf10 - 1;
+      if (bVar10) {
+        *(byte *)(iVar7 + 0xb8) = *(byte *)(iVar7 + 0xb8) ^ 0x20;
+        FUN_00049924(2);
+      }
+      bVar8 = DAT_0023bf10 >> 3;
+      if (3 < bVar8) {
+        bVar8 = 3;
+      }
+    }
+    cVar3 = bVar8 + cVar3;
+    uVar4 = Ordinal_1053();
+    DAT_0023be9a = ((uVar4 & 0xff) - 0x80) * (short)cVar3 + DAT_0023be9a;
+    uVar4 = Ordinal_1053();
+    DAT_0023be9c = ((uVar4 & 0x7f) - 0x40) * (short)cVar3 + DAT_0023be9c;
+    uVar4 = Ordinal_1053();
+    DAT_0023be9e = ((uVar4 & 0x1ff) - 0x100) * (short)cVar3 + DAT_0023be9e;
+  }
+  return;
+}
+
+
+
+// was FUN_00069424 -- sets a movement-animation sub-timer
+// (DAT_0023bf10 for param_1==0x20 "landing", DAT_0023bf14 for
+// param_1==0x40 "jump") to param_2 and ORs the corresponding bit into
+// the player's landing-state status byte (DAT_00086df8+0xb8).
+void set_movement_animation_timer(param_1,param_2)
+byte param_1;
+undefined1 param_2;
+
+{
+  undefined1 *puVar1;
+  
+  if (param_1 == 0x20) {
+    puVar1 = &DAT_0023bf10;
+  }
+  else {
+    if (param_1 != 0x40) {
+      return;
+    }
+    puVar1 = &DAT_0023bf14;
+  }
+  *puVar1 = param_2;
+  *(byte *)(DAT_00086df8 + 0xb8) = *(byte *)(DAT_00086df8 + 0xb8) | param_1;
+  return;
+}
+
+
+
+// Writes g_current_view (world x/y/elevation/facing + camera-shake
+// offsets) from whichever object DAT_0023b82c currently designates as
+// the view subject -- the player object (the common case), a specific
+// NPC/mobile object being looked at, or none (falls back to saved
+// DAT_0023be90-family scratch values). NOT the same function as
+// sync_camera_from_player below (was FUN_00069938), which goes the
+// other direction: g_current_view -> the DAT_000db438-family 3D camera
+// globals. Distinct names matter here since this file already had two
+// functions colliding on this name before this rename.
+void update_current_view_from_subject()
+
+{
+  int iVar1;
+  undefined2 uVar2;
+  int iVar3;
+  short sVar4;
+  int iVar5;
+  short local_c;
+  short local_a;
+
+  if (DAT_0023b82c == g_player_object) {
+    g_current_view->view_x = DAT_00204880;
+    g_current_view->view_y = DAT_00204882;
+    g_current_view->view_elevation = DAT_00204884 + 0xa4;
+    g_current_view->view_facing = DAT_00201c70;
+    g_current_view->view_shake_x = DAT_0023beb4;
+    g_current_view->view_shake_y = DAT_0023beb8;
+    if (DAT_0023bea8 == 0) {
+      return;
+    }
+    if (getenv("UW_DEBUG_EYEHEIGHT"))
+      fprintf(stderr, "[eyeheight] bea8=%d be98=%d base=%d -> %d\n",
+              (int)DAT_0023bea8, (int)DAT_0023be98, (int)g_current_view->view_elevation,
+              (int)(g_current_view->view_elevation + DAT_0023be98));
+    g_current_view->view_elevation = g_current_view->view_elevation + DAT_0023be98;
+    if (1000 < g_current_view->view_elevation) {
+      g_current_view->view_elevation = 1000;
+    }
+    g_current_view->view_facing = g_current_view->view_facing + DAT_0023be9a;
+    g_current_view->view_shake_x = g_current_view->view_shake_x + DAT_0023be9c;
+    sVar4 = g_current_view->view_shake_y + DAT_0023be9e;
+LAB_00069910:
+    g_current_view->view_shake_y = sVar4;
+  }
+  else {
+    if (DAT_0023b82c == 0) {
+      g_current_view->view_x = DAT_0023be90;
+      g_current_view->view_elevation = DAT_0023be94;
+      g_current_view->view_y = DAT_0023be92;
+      g_current_view->view_facing = DAT_0023bf00;
+      g_current_view->view_shake_x = DAT_0023bf02;
+      uVar2 = DAT_0023bf04;
+    }
+    else {
+      if (DAT_002046b8 < DAT_0023b82c) {
+        g_current_view->view_x =
+             (short)((*(ushort *)(DAT_0023b82c + 0x16) & 0xfc00) >> 2) +
+             (ushort)(*(byte *)(DAT_0023b82c + 3) & 0xe0);
+        g_current_view->view_y =
+             (*(byte *)(DAT_0023b82c + 3) & 0x1c) * 8 +
+             (*(ushort *)(DAT_0023b82c + 0x16) & 0x3f0) * 0x10;
+        g_current_view->view_elevation = ((*(byte *)(DAT_0023b82c + 2) & 0x7f) + 0x16) * 8;
+        g_current_view->view_facing =
+             ((*(ushort *)(DAT_0023b82c + 2) & 0xff80) +
+             (short)(((*(byte *)(DAT_0023b82c + 0x18) & 0x1f) << 0x12) >> 0x10)) * 0x40;
+        return;
+      }
+      if (DAT_0023b82c != DAT_002046b8 - 0x1b) {
+        if (DAT_0023b82c != DAT_002046b8 - 0x36) {
+          return;
+        }
+        angle_to_screen_delta(DAT_0023bea4,&local_a,&local_c);
+        iVar1 = (int)((0x40 - (uint)DAT_0023bf08) * 0x10000) >> 0x10;
+        iVar5 = (int)local_a;
+        if (iVar5 < 0) {
+          iVar5 = iVar5 + 0xff;
+        }
+        iVar5 = (short)((uint)iVar5 >> 8) * iVar1;
+        iVar3 = (int)local_c;
+        if (iVar5 < 0) {
+          iVar5 = iVar5 + 0x3f;
+        }
+        if (iVar3 < 0) {
+          iVar3 = iVar3 + 0xff;
+        }
+        iVar1 = (short)((uint)iVar3 >> 8) * iVar1;
+        if (iVar1 < 0) {
+          iVar1 = iVar1 + 0x3f;
+        }
+        iVar5 = (int)DAT_0023bea0 * (int)(short)(iVar5 >> 6);
+        if (iVar5 < 0) {
+          iVar5 = iVar5 + 1;
+        }
+        g_current_view->view_x =
+             (short)(iVar5 >> 1) + (short)(((uint)DAT_0023beac << 0x18) >> 0x10) + 0x80;
+        iVar1 = (int)DAT_0023bea0 * (int)(short)(iVar1 >> 6);
+        if (iVar1 < 0) {
+          iVar1 = iVar1 + 1;
+        }
+        g_current_view->view_y =
+             (short)(iVar1 >> 1) + (short)(((uint)DAT_0023beb0 << 0x18) >> 0x10) + 0x80;
+        g_current_view->view_elevation = DAT_00204884 + (0x52 - DAT_0023bf08) * 2;
+        g_current_view->view_facing = DAT_0023bea4 + 0x7fff;
+        g_current_view->view_shake_x = 0;
+        sVar4 = DAT_0023bf08 << 0xb;
+        goto LAB_00069910;
+      }
+      angle_to_screen_delta((int)DAT_00201c70,&local_c,&local_a);
+      g_current_view->view_x = DAT_00204880 - (local_c >> 7);
+      g_current_view->view_y = DAT_00204882 - (local_a >> 7);
+      g_current_view->view_elevation = DAT_00204884 + 0x148;
+      g_current_view->view_facing = DAT_00201c70;
+      g_current_view->view_shake_x = DAT_0023beb4;
+      uVar2 = DAT_0023beb8;
+    }
+    g_current_view->view_shake_y = uVar2;
+  }
+  return;
+}
+
+
+
+// was FUN_00069938 -- sync the 3D camera globals (DAT_000db438.. position,
+// DAT_000db448 pitch / DAT_000db44c yaw) from the player object DAT_00086e6c
+// (pos at +10/+0x12, view angle at +0x2c), applying the DAT_0023b4a0 screen
+// -rotation quadrant. Called from build_frame_draw_list each redraw.
+void sync_camera_from_player()
+
+{
+  char cVar1;
+  ushort uVar2;
+  ushort uVar3;
+  intptr_t iVar4; // holds DAT_00086e6c (a real pointer); was `int`, truncating it
+  ushort uVar5;
+  int iVar6;
+  ushort uVar7;
+  short sVar8;
+  ushort local_20;
+
+  cVar1 = DAT_0023b4a0;
+  iVar4 = DAT_00086e6c;
+  sVar8 = 0;
+  uVar2 = g_current_view->view_x & 0xff;
+  uVar5 = g_current_view->view_y & 0xff;
+  uVar3 = uVar2;
+  uVar7 = uVar5;
+  if (DAT_0023b4a0 != '\0') {
+    if (DAT_0023b4a0 == '\x01') {
+      uVar3 = 0xff - uVar5;
+      uVar7 = uVar2;
+    }
+    else if (DAT_0023b4a0 == '\x02') {
+      uVar3 = 0xff - uVar2;
+      uVar7 = 0xff - uVar5;
+    }
+    else {
+      uVar3 = local_20;
+      uVar7 = local_20;
+      if (DAT_0023b4a0 == '\x03') {
+        uVar3 = uVar5;
+        uVar7 = 0xff - uVar2;
+      }
+    }
+  }
+  DAT_000db438 = Ordinal_2032((int)DAT_0023bf30 + (int)(short)uVar3 + 0x1000);
+  DAT_000db43c = Ordinal_2032((int)*(short *)(iVar4 + 0xe) + (int)DAT_0023bf34);
+  DAT_000db440 = Ordinal_2032((int)DAT_0023bf38 + (int)(short)uVar7);
+  iVar6 = (int)DAT_0023beb4;
+  if (iVar6 == 0) {
+    DAT_000db448 = 0;
+  }
+  else if (iVar6 < 1) {
+    if (iVar6 < 0) {
+      iVar6 = iVar6 + 0xff;
+    }
+    DAT_000db448 = (iVar6 >> 8) + (int)DAT_0023bf3c + 0x168;
+  }
+  else {
+    if (iVar6 < 0) {
+      iVar6 = iVar6 + 0xff;
+    }
+    DAT_000db448 = (iVar6 >> 8) + (int)DAT_0023bf3c;
+  }
+  /* Hack - Testing: UW_HACK_PITCH overrides the camera pitch angle
+     (index into the sin/cos tables, 0..360). DAT_0023beb4 / DAT_0023bf3c
+     come out 0 with nothing driving the look-up/down, so the 3D view
+     looks dead level and the floor you are standing on projects entirely
+     below the viewport. A downward pitch (~300-340) brings it into view
+     for testing -- the real look pitch source is still unrecovered. */
+  { const char *_p = getenv("UW_HACK_PITCH"); if (_p) DAT_000db448 = atoi(_p); }
+  if (cVar1 == '\0') {
+    sVar8 = *(short *)(iVar4 + 0x2c);
+  }
+  else if (cVar1 == '\x01') {
+    sVar8 = *(short *)(iVar4 + 0x2c) + -0x4000;
+  }
+  else if (cVar1 == '\x02') {
+    sVar8 = *(short *)(iVar4 + 0x2c) + -0x8000;
+  }
+  else if (cVar1 == '\x03') {
+    sVar8 = *(short *)(iVar4 + 0x2c) + 0x4000;
+  }
+  if (sVar8 < 1) {
+    /* Ghidra dropped the dividend: this is the 16-bit view angle sVar8
+       converted to degrees, angle / 180 (0xb4). Without sVar8 passed
+       the divide ran on a leftover register -> yaw came out 0/360 ->
+       identity view rotation -> every tile projected behind the near
+       plane. */
+    iVar4 = Ordinal_2005(0xb4, (int)sVar8);
+    DAT_000db44c = iVar4 + DAT_0023bf40 + 0x168;
+  }
+  else {
+    iVar4 = Ordinal_2005(0xb4, (int)sVar8);
+    DAT_000db44c = iVar4 + DAT_0023bf40;
+  }
+  /* Always-on (no env var) position/heading debug print, for correlating
+     a live playtester's exact standing spot/facing with what the
+     decompile is doing -- e.g. pinning down the wall-decal depth/
+     parallax issue. First cut read the coarse per-tile position cached in
+     g_player_object (the player object, +0x16, only updated on tile-boundary
+     crossings) the same way demomode.c's own "player tile" TELEPORT/REVEAL
+     print does -- not fine-grained enough (whole tiles only). Switched to
+     DAT_00204880/82 (X/Y) and DAT_00204884 (Z), the true continuously-
+     updated fine-grained player position, format (tile<<8)|fine, 256
+     units/tile -- confirmed via commit_player_move's own tile-index
+     derivation from these exact fields. Pitch is degrees, 0-360, an index
+     into the DAT_000d9ed8/DAT_000d9930 sin/cos tables (same convention
+     emit_tile_objects's decal-angle override uses).
+     Yaw is NOT read from DAT_000db44c (this function's own "camera yaw"
+     local a few lines up) -- confirmed live (both by a full real-turning
+     sweep and by direct screenshot diffing at yaw 0/90/180/270, which
+     render as 4 genuinely different views despite DAT_000db44c reporting
+     near-identical values for all of them) that DAT_000db44c is only the
+     small residual *within* whichever 90-degree quadrant DAT_0023b4a0
+     already rotated the camera's world-space axes into a few lines above
+     (cVar1's branches) -- not the true compass heading. DAT_0023bf40, the
+     field that would need to add the quadrant's own 90*n back in to
+     reconstruct the full angle, has no writer anywhere in this decompile
+     (permanently 0), so DAT_000db44c alone folds every quarter-turn back
+     on top of the others. The renderer itself works around this by also
+     pre-rotating world-space positions via that same DAT_0023b4a0 (see
+     this function's own uVar3/uVar7 swaps above) rather than relying on
+     DAT_000db44c for the coarse direction, which is why the actual 3D
+     view rotates correctly even though DAT_000db44c doesn't reflect it --
+     but anything that reads DAT_000db44c directly as if it *were* the
+     full yaw (this print, previously) reports nonsense above/below one
+     quadrant. DAT_00201c70 (the player's own persistent yaw, 65536
+     units/360 degrees -- the same field SETPLAYERPOS writes and ordinary
+     turning increments by 0x2000/45 degrees) is the real, un-folded full
+     compass heading; convert it directly instead. Throttled to print
+     only on change. Set UW_QUIET_POSDEBUG=1 to silence it. */
+  if (!getenv("UW_QUIET_POSDEBUG")) {
+    static int _last_x = -1, _last_y = -1, _last_z = -1, _last_yaw = -1, _last_pitch = -1;
+    int _x = (unsigned short)DAT_00204880;
+    int _y = (unsigned short)DAT_00204882;
+    int _z = (short)DAT_00204884;
+    int _yaw = (int)lround(fmod((double)(unsigned short)DAT_00201c70 * (360.0 / 65536.0), 360.0));
+    if (_x != _last_x || _y != _last_y || _z != _last_z ||
+        _yaw != _last_yaw || DAT_000db448 != _last_pitch) {
+      _last_x = _x; _last_y = _y; _last_z = _z;
+      _last_yaw = _yaw; _last_pitch = DAT_000db448;
+      fprintf(stderr, "[playerpos] tile=(%.2f,%.2f) z=%d yaw=%d pitch=%d\n",
+              _x / 256.0, _y / 256.0, _z, _yaw, (int)DAT_000db448);
+    }
+  }
+  return;
 }
 

@@ -725,7 +725,7 @@ LAB_0007af3c:
           uVar8 = Ordinal_2005(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
           uVar8 = uVar8 & 0xff;
         }
-        FUN_00069424(0x40,uVar8);
+        set_movement_animation_timer(0x40,uVar8);
       }
     }
     else {
