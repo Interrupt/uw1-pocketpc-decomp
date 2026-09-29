@@ -570,3 +570,98 @@ undefined4 param_3;
 
 
 
+
+
+// was FUN_0007e2dc -- allocates two new object slots and links both
+// into the tile (param_1,param_2) object list at tilemap_lookup's
+// head: the first is initialized with class/flag bits matching
+// 0x180-bracket (the same "trap class" test dispatch_trap_type_effect
+// uses, `& 0x1c0 == 0x180`) and linked to the second via the
+// standard quality-link encoding (offset+2/3, matching
+// resolve_object_variant_or_special_link's own field layout); the
+// second stores param_3 in its low 4 bits (a trap-type code -- its
+// only confirmed caller, cast_summon_or_spawn_effect, passes 9, which
+// dispatch_trap_type_effect's case 9 cascades into case 10's "alert
+// nearby guards" effect). Returns the first object's encoded slot
+// index on success, 0 if either alloc_object_slot call failed. Reads
+// as "place a scripted trap object pair at this tile", but the exact
+// in-game spell/mechanic this serves beyond its one caller isn't
+// confirmed.
+undefined4 create_scripted_trap_pair_at_tile(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+uint param_3;
+
+{
+  int iVar1;
+  ushort uVar2;
+  byte bVar3;
+  ushort *puVar4;
+  ushort *puVar5;
+  byte *pbVar6;
+  uint uVar7;
+  undefined4 uVar8;
+  byte bVar9;
+  uint uVar10;
+  uint uVar11;
+  
+  puVar4 = (ushort *)alloc_object_slot(0);
+  if (puVar4 != (ushort *)0x0) {
+    puVar5 = (ushort *)alloc_object_slot(0);
+    if (puVar5 != (ushort *)0x0) {
+      pbVar6 = (byte *)tilemap_lookup(param_1,param_2);
+      uVar2 = *puVar4;
+      uVar7 = uVar2 & 0xffa0 | 0x61a0;
+      *(char *)puVar4 = (char)uVar7;
+      *(char *)((char *)puVar4 + 1) = (char)(uVar7 >> 8);
+      uVar7 = CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]) & 0xff80;
+      bVar9 = *pbVar6 >> 1 & 0x78;
+      *(byte *)(puVar4 + 1) = (byte)uVar7 | bVar9;
+      *(char *)((char *)puVar4 + 3) = (char)(uVar7 >> 8);
+      *(byte *)(puVar4 + 1) = bVar9;
+      *(undefined1 *)((char *)puVar4 + 3) = 0x6c;
+      uVar7 = uVar2 & 0xf3a0 | 0x61a0;
+      *(char *)puVar4 = (char)uVar7;
+      *(byte *)((char *)puVar4 + 1) = (byte)(uVar7 >> 8) | 0x90;
+      *(undefined1 *)(puVar4 + 2) = 0;
+      *(undefined1 *)((char *)puVar4 + 5) = 0;
+      uVar7 = encode_object_slot_index(puVar5);
+      iVar1 = (uVar7 & 0x3ff) << 6;
+      bVar3 = (byte)puVar4[3] & 0x3f | (byte)iVar1;
+      uVar2 = puVar4[2];
+      bVar9 = (byte)uVar2;
+      *(byte *)(puVar4 + 2) = (bVar9 ^ (byte)param_1) & 0x3f ^ bVar9;
+      *(char *)((char *)puVar4 + 5) = (char)(uVar2 >> 8);
+      *(byte *)(puVar4 + 3) = (bVar3 ^ (byte)param_2) & 0x3f ^ bVar3;
+      *(char *)((char *)puVar4 + 7) = (char)((uint)iVar1 >> 8);
+      object_list_insert_head(pbVar6 + 2,puVar4);
+      uVar7 = *puVar5 & 0xff8f | 0x180;
+      uVar11 = (uVar7 ^ param_3) & 0xf ^ uVar7;
+      *(char *)puVar5 = (char)uVar11;
+      *(byte *)((char *)puVar5 + 1) = (byte)(uVar7 >> 8) | 0x60;
+      bVar9 = *pbVar6 >> 1 & 0x78;
+      uVar7 = (uint)CONCAT11(*(undefined1 *)((char *)puVar5 + 3),(char)puVar5[1]);
+      uVar10 = uVar7 & 0xff80;
+      *(byte *)(puVar5 + 1) = bVar9 | (byte)uVar10;
+      *(char *)((char *)puVar5 + 3) = (char)(uVar10 >> 8);
+      uVar7 = uVar7 & 0x380;
+      *(byte *)(puVar5 + 1) = bVar9 | (byte)uVar7;
+      *(byte *)((char *)puVar5 + 3) = (byte)(uVar7 >> 8) | 0x6c;
+      *(byte *)(puVar5 + 3) = (byte)puVar5[3] & 0x3f;
+      *(undefined1 *)((char *)puVar5 + 7) = 0;
+      *(undefined1 *)(puVar5 + 2) = 0x3f;
+      *(undefined1 *)((char *)puVar5 + 5) = 0;
+      uVar11 = uVar11 & 0xe3ff;
+      *(char *)puVar5 = (char)uVar11;
+      *(byte *)((char *)puVar5 + 1) = (byte)(uVar11 >> 8) | 0xe2;
+      object_list_insert_head(pbVar6 + 2,puVar5);
+      uVar8 = encode_object_slot_index(puVar4);
+      return uVar8;
+    }
+    free_object_slot(puVar4);
+  }
+  return 0;
+}
+
+
+

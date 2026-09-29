@@ -1700,20 +1700,30 @@ uint param_2;
 
 // was FUN_00074d20 -- dispatch_special_action's case 8 handler:
 // projects a position in front of the caster (project_position_by_
-// heading) and branches on param_2: '\x03' just probes whether the
-// destination tile is occupied (FUN_0007e2dc) and reports success/
-// fail via a scroll message; '\x01' spawns a random monster from a
-// nearby ID range; '\x04' ("summon monster") picks a random valid,
-// non-hostile-flagged monster from g_monster_max_stats_table and does
-// a full spawn+setup (race/attitude sync for an NPC-cast summon,
-// player-owned flag for a player-cast one) -- this is the branch
-// whose Ordinal_2005-remainder bug was already found and fixed in an
-// earlier session pass (see the comment on uVar6/uVar10 below, which
-// was a genuine 100%-CPU infinite-loop bug, not just a wrong-value
-// one); any other param_2 spawns a fixed object id instead. On
-// success links the new object into the tile and settles it; on
-// failure (no valid spawn point, or occupied for case 3) prints a
-// "no effect"-style scroll message via print_scroll_message_by_id.
+// heading) and branches on param_2: '\x03' places a scripted trap-type-9
+// object pair at the destination tile via
+// create_scripted_trap_pair_at_tile (trap type 9 cascades to
+// dispatch_trap_type_effect's "alert nearby guards" case) and reports
+// success/fail via a scroll message -- CORRECTION: an earlier pass's
+// comment here described this as merely "probing whether the tile is
+// occupied", written before create_scripted_trap_pair_at_tile's own
+// body was examined; it unconditionally allocates and links two new
+// trap-class object records into the tile (failing only if object-
+// slot allocation itself fails), so this reads more like "place an
+// alarm trap at the target tile" than an occupancy check, though the
+// exact in-game spell this serves isn't confirmed; '\x01' spawns a
+// random monster from a nearby ID range; '\x04' ("summon monster")
+// picks a random valid, non-hostile-flagged monster from
+// g_monster_max_stats_table and does a full spawn+setup (race/
+// attitude sync for an NPC-cast summon, player-owned flag for a
+// player-cast one) -- this is the branch whose Ordinal_2005-remainder
+// bug was already found and fixed in an earlier session pass (see the
+// comment on uVar6/uVar10 below, which was a genuine 100%-CPU
+// infinite-loop bug, not just a wrong-value one); any other param_2
+// spawns a fixed object id instead. On success links the new object
+// into the tile and settles it; on failure (no valid spawn point, or
+// the case-3 trap-placement path) prints a "no effect"-style scroll
+// message via print_scroll_message_by_id.
 void cast_summon_or_spawn_effect(param_1,param_2)
 int param_1;
 char param_2;
@@ -1761,7 +1771,7 @@ char param_2;
   local_2c = (ushort)((int)(short)local_34 >> 3);
   local_2e = (ushort)((int)(short)local_32 >> 3);
   if (param_2 == '\x03') {
-    sVar3 = FUN_0007e2dc((int)(short)local_34 >> 3,(int)(short)local_32 >> 3,9);
+    sVar3 = create_scripted_trap_pair_at_tile((int)(short)local_34 >> 3,(int)(short)local_32 >> 3,9);
     if (sVar3 != 0) {
       uVar11 = 0x114;
     }

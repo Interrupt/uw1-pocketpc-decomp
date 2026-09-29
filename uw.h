@@ -3492,7 +3492,7 @@ void purge_tagged_objects_from_chain();
 void refresh_object_link_chain();
 undefined4 reset_object_ui_state_callback();
 undefined4 dispatch_quest_event_code();
-undefined4 FUN_0007e2dc();
+undefined4 create_scripted_trap_pair_at_tile();
 void FUN_0007e558();
 void FUN_0007e610();
 undefined4 FUN_0007e694();
