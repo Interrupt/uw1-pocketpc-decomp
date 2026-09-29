@@ -828,6 +828,26 @@ extern ushort * g_interact_target;
 extern char * g_open_container_list;
 extern char * g_selected_object;
 extern char s_font4x5p_sys_0008431c[];
+/* Globals defined in uw.c but also used by functions that now live in
+   combat.c (NPC melee combat AI) -- extern'd here so both translation
+   units see the same storage. */
+extern byte DAT_001013f8;
+extern char * DAT_00101400;
+extern char * DAT_00101404;
+extern char DAT_00101408;
+extern byte DAT_0010140c;
+extern char DAT_00101410;
+extern undefined1 DAT_00101420;
+extern int DAT_00101430;
+extern char DAT_0010143c;
+extern undefined DAT_00101444;
+extern undefined DAT_00101448;
+extern undefined4 DAT_00101734;
+extern char DAT_0010173c;
+extern ushort DAT_00101900;
+extern ushort * DAT_0010190c;
+extern byte DAT_00101918;
+extern undefined4 DAT_00101924;
 
 
 
@@ -2122,6 +2142,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/babl.h"
 #include "src/headers/automap.h"
 #include "src/headers/inventory.h"
+#include "src/headers/combat.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 

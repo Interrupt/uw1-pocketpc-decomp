@@ -23,6 +23,7 @@ set(UW_SOURCES
   src/babl.c
   src/automap.c
   src/inventory.c
+  src/combat.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c
