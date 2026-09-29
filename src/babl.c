@@ -3386,7 +3386,7 @@ void save_npc_conversation_variables()
   #define local_11e (*(short *)(local_120_backing + 2))
   char acStack_118 [260];
 
-  FUN_00078a04(0x7c);
+  reset_string_resource_page(0x7c);
   sVar2 = DAT_000bbf7c;
   uVar3 = DAT_000bbf14;
   pcVar4 = &DAT_0023cca8;

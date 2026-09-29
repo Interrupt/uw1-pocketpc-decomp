@@ -868,3 +868,53 @@ uint param_2;
   }
   return param_2;
 }
+
+
+
+
+
+// was FUN_00078a04 -- finds the string-resource cache page matching
+// param_1 and, if found, clears its entire contents: resets its
+// sub-index count (DAT_0024c7a2/3) and nulls out every one of its
+// 512 real-pointer/byte-plane slots (g_bfa2_real_ptrs and the
+// DAT_0024bfa2-family arrays). A no-op if the page isn't cached.
+// Confirmed real caller: src/babl.c, called with page 0x7c.
+void reset_string_resource_page(param_1)
+undefined4 param_1;
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  short sVar4;
+  
+  iVar3 = 0;
+  sVar4 = -1;
+  if (0 < DAT_0024cfc0) {
+    do {
+      sVar4 = (short)iVar3;
+      if (*(short *)(&DAT_0024bfa0 + iVar3 * 0x804) == (short)param_1) break;
+      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+      sVar4 = -1;
+    } while (iVar3 < DAT_0024cfc0);
+  }
+  iVar3 = (int)sVar4;
+  if (-1 < iVar3) {
+    iVar2 = iVar3 * 0x804;
+    (&DAT_0024bfa0)[iVar2] = (char)param_1;
+    (&DAT_0024bfa1)[iVar2] = (char)((uint)param_1 >> 8);
+    (&DAT_0024c7a2)[iVar2] = 0;
+    (&DAT_0024c7a3)[iVar2] = 0;
+    iVar2 = 0;
+    do {
+      iVar1 = (iVar3 * 0x201 + iVar2) * 4;
+      g_bfa2_real_ptrs[iVar1 / 4] = 0;
+      (&DAT_0024bfa2)[iVar1] = 0;
+      (&DAT_0024bfa3)[iVar1] = 0;
+      (&DAT_0024bfa4)[iVar1] = 0;
+      (&DAT_0024bfa5)[iVar1] = 0;
+      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    } while (iVar2 < 0x200);
+  }
+  return;
+}

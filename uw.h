@@ -3401,7 +3401,7 @@ void thunk_FUN_00078e28();
 char *get_message_string();
 int register_interned_string();
 uint overwrite_interned_string();
-void FUN_00078a04();
+void reset_string_resource_page();
 undefined4 FUN_00078b18();
 undefined1 *format_object_display_name();
 void FUN_00078c80();
