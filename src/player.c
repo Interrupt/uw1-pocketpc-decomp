@@ -708,7 +708,7 @@ LAB_000669a8:
     iVar4 = 0;
     do {
       bVar9 = *(byte *)(DAT_00086df8 + iVar4 * 2 + 0x3e);
-      FUN_000661b0(bVar9 & 0xf,bVar9 >> 4,&local_30,0xffffffff);
+      apply_equipped_item_effect(bVar9 & 0xf,bVar9 >> 4,&local_30,0xffffffff);
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < (int)(*(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf));
   }
@@ -724,7 +724,7 @@ LAB_000669a8:
         }
       }
       else {
-        iVar5 = FUN_000661b0(local_2c[0],local_2e[0],&local_30,iVar4);
+        iVar5 = apply_equipped_item_effect(local_2c[0],local_2e[0],&local_30,iVar4);
         if (iVar5 != 0) {
           FUN_0007cc30(g_scratch_object_ptr);
         }
@@ -969,5 +969,163 @@ int param_1;
     }
   }
   return;
+}
+
+
+
+
+// was FUN_000661b0 -- applies one "intrinsic equipment effect" opcode
+// (param_1, 0-0xd) with magnitude/argument param_2, against scratch
+// state param_3 and an equipment-slot/object index param_4. Called
+// from refresh_player_equipment_effects for both the fixed light-
+// radius contributions packed at DAT_00086df8+0x3e and per-equipped-
+// item property effects it resolves via FUN_00045f9c/FUN_0007ca50.
+// Individual opcode semantics aren't all confirmed (several, e.g. 4-8
+// and 10, are no-ops in this decompile); named for the dispatcher's
+// overall role, not a verified meaning of every case.
+undefined4 apply_equipped_item_effect(param_1,param_2,param_3,param_4)
+undefined1 param_1;
+byte param_2;
+ushort * param_3;
+int param_4;
+
+{
+  uint uVar1;
+  byte *pbVar2;
+  undefined4 *puVar3;
+  char *pcVar4;
+  byte bVar5;
+  int iVar6;
+  char cVar7;
+  ushort uVar8;
+  short local_1c [2];
+  
+  switch(param_1) {
+  case 0:
+    if (*(byte *)(DAT_00086df8 + 99) >> 4 < param_2) {
+      *(byte *)(DAT_00086df8 + 99) = param_2 << 4;
+    }
+    break;
+  case 1:
+    pbVar2 = &DAT_0020208c;
+    bVar5 = (byte)(1 << (uint)(byte)(param_2 - 1)) | DAT_0020208c;
+LAB_0006636c:
+    *pbVar2 = bVar5;
+    break;
+  case 2:
+    if ((ushort)param_2 <= *param_3 >> 4) {
+      return 0;
+    }
+    uVar8 = (*param_3 & 0xf) + (ushort)param_2 * 0x10;
+    goto LAB_00066290;
+  case 3:
+    uVar1 = (uint)param_2;
+    if (uVar1 == 1) {
+      DAT_0010060c = DAT_0010060c + '\x03';
+      DAT_0010060d = DAT_0010060d + '\x03';
+      DAT_0010060e = DAT_0010060e + '\x03';
+      DAT_0010060f = DAT_0010060f + '\x03';
+      return 0;
+    }
+    if (4 < uVar1) {
+      if (9 < uVar1) {
+        return 0;
+      }
+      DAT_0020330c = DAT_0020330c | *(byte *)((intptr_t)&DAT_00086db8 + uVar1 + 3);
+      return 0;
+    }
+    uVar8 = *param_3 | (ushort)(1 << (uVar1 - 1 & 0xff));
+LAB_00066290:
+    *param_3 = uVar8;
+    break;
+  case 4:
+    break;
+  case 5:
+    break;
+  case 6:
+    break;
+  case 7:
+    break;
+  case 8:
+    break;
+  case 9:
+    FUN_00074028(g_player_object);
+    break;
+  case 10:
+    break;
+  case 0xb:
+    if (param_2 == 0) {
+      puVar3 = &DAT_002020d0;
+    }
+    else if (param_2 == 1) {
+      puVar3 = &DAT_002020d8;
+    }
+    else {
+      if (param_2 != 2) {
+        if (param_2 == 3) {
+          DAT_000858c4 = 0;
+          return 0;
+        }
+        if (param_2 == 0xe) {
+          pbVar2 = &DAT_002046cc;
+          bVar5 = DAT_002046cc | 1;
+        }
+        else {
+          if (param_2 != 0xf) {
+            return 0;
+          }
+          pbVar2 = &DAT_002046cc;
+          bVar5 = DAT_002046cc | 2;
+        }
+        goto LAB_0006636c;
+      }
+      puVar3 = &DAT_002020d4;
+    }
+    goto LAB_00066398;
+  case 0xc:
+    param_4 = param_4 << 0x10;
+    iVar6 = param_4 >> 0x10;
+    if (-1 < iVar6) {
+      if (iVar6 < 5) {
+        local_1c[0] = (short)(char)(&DAT_00086da8)[iVar6];
+      }
+      else {
+        local_1c[0] = 0;
+        param_4 = 1;
+      }
+      local_1c[1] = 0xffff;
+      if (4 < iVar6) {
+        local_1c[1] = (short)param_4;
+      }
+      if (local_1c[0] != -1) {
+        iVar6 = 0;
+        do {
+          if (1 < iVar6) {
+            return 0;
+          }
+          cVar7 = '\0';
+          if ((param_2 & 8) == 0) {
+            (&DAT_0010060c)[local_1c[iVar6]] =
+                 (param_2 & 7) + (&DAT_0010060c)[local_1c[iVar6]] + '\x01';
+          }
+          else {
+            cVar7 = (param_2 & 7) + 1;
+          }
+          pcVar4 = (char *)(local_1c[0] + DAT_0023be74);
+          *pcVar4 = cVar7 + *pcVar4;
+          iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+        } while (local_1c[iVar6] != -1);
+      }
+    }
+    break;
+  case 0xd:
+    if (param_2 != 4) {
+      return 0;
+    }
+    puVar3 = &DAT_0023bc9c;
+LAB_00066398:
+    *puVar3 = 1;
+  }
+  return 0;
 }
 

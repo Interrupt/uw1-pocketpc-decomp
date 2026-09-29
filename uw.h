@@ -2884,7 +2884,7 @@ void read_player_status_block();
 void reset_player_derived_state();
 void load_floor_texture_arenas();
 void update_screen_flicker_effect();
-undefined4 FUN_000661b0();
+undefined4 apply_equipped_item_effect();
 void FUN_000664bc();
 void FUN_00066594();
 void FUN_00066634();
