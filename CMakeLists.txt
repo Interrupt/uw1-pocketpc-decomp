@@ -33,6 +33,7 @@ set(UW_SOURCES
   src/ai.c
   src/containers.c
   src/interact.c
+  src/traps.c
   src/resources.c
   src/item_use.c
   src/movement.c

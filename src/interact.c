@@ -516,11 +516,11 @@ ushort param_4;
    class as DAT_0024cff0's own identical fix just above. Confirmed live
    (bug-pull-chain-crash.txt): pulling a chain crashed with
    EXC_BAD_ACCESS on a wild, obviously-truncated address
-   (0x4c029128) dereferenced one call further down, in FUN_0007d0b0 --
+   (0x4c029128) dereferenced one call further down, in dispatch_trap_type_effect --
    param_3 is passed straight through as that function's own real
    `ushort *param_1`. */
 // was FUN_0007d074 -- thin re-entrancy-guarded wrapper around the
-// trap/link-effect type dispatcher FUN_0007d0b0 (not yet named, a
+// trap/link-effect type dispatcher dispatch_trap_type_effect (not yet named, a
 // large switch on the trap/link record's type code). Stashes param_1/
 // param_2 (the acting object and a secondary context object) into
 // DAT_0024cff4/DAT_0024cff0 only on the OUTERMOST call (DAT_0024cff4
@@ -541,7 +541,7 @@ short param_5;
     DAT_0024cff0 = param_2;
     DAT_0024cff4 = param_1;
   }
-  FUN_0007d0b0(param_3,param_4,(int)param_5);
+  dispatch_trap_type_effect(param_3,param_4,(int)param_5);
   DAT_0024cff4 = 0;
   return 0;
 }
