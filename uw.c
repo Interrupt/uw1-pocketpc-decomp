@@ -8001,39 +8001,6 @@ LAB_0001ad98:
 
 
 
-void FUN_0001b7c0()
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  
-  FUN_00057118();
-  iVar2 = 0;
-  do {
-    if (0 < (short)(&DAT_000bbfd0)[iVar2]) {
-      uVar1 = FUN_000535fc();
-      drop_object_near_target(g_player_object,uVar1,5,0);
-      FUN_00076e98((&DAT_000bc028)[iVar2]);
-    }
-    if (0 < (short)(&DAT_000bbfe8)[iVar2]) {
-      uVar1 = FUN_000535fc();
-      drop_object_near_target(DAT_00100674,uVar1,5,0);
-      FUN_00076e98((&DAT_000bc010)[iVar2]);
-    }
-    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-  } while (iVar2 < 4);
-  cursor_show_idle_tick();
-  iVar2 = 0;
-  do {
-    FUN_00076b24((&DAT_000bc028)[iVar2]);
-    FUN_00076b24((&DAT_000bc010)[iVar2]);
-    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-  } while (iVar2 < 4);
-  return;
-}
-
-
-
 void FUN_0001b89c()
 
 {
@@ -13319,7 +13286,7 @@ void FUN_00028bac()
     DAT_00100784 = 0;
   }
   if (DAT_001006d0 != 0) {
-    FUN_0001b7c0();
+    end_barter_ui();
   }
   FUN_000735c0();
   g_active_hud_panel = DAT_00100678;

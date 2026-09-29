@@ -2020,7 +2020,7 @@ void babl_get_variable();
 void init_babl_variable_defaults();
 void babl_builtin_setup_to_barter();
 void init_barter_ui();
-void FUN_0001b7c0();
+void end_barter_ui();
 void FUN_0001b89c();
 int FUN_0001b900();
 int FUN_0001b9a4();

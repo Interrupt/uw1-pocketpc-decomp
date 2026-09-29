@@ -2278,7 +2278,7 @@ void start_npc_conversation()
     babl_register_builtin(s_do_demand_00085174,babl_builtin_do_demand);
     babl_register_builtin(s_do_decline_00085168,&babl_builtin_do_decline);
     babl_register_builtin(s_do_judgement_00085158,FUN_0001cd3c);
-    babl_register_builtin(s_end_barter_0008514c,FUN_0001b7c0);
+    babl_register_builtin(s_end_barter_0008514c,end_barter_ui);
     babl_register_builtin(s_setup_to_barter_0008513c,babl_builtin_setup_to_barter);
     babl_register_builtin(s_pause_00085134,babl_builtin_pause);
     babl_register_builtin(s_set_likes_dislikes_00085120,babl_builtin_set_likes_dislikes);
@@ -3902,6 +3902,47 @@ void init_barter_ui()
   }
   DAT_000bc000 = 0;
   FUN_000228d4();
+  return;
+}
+
+
+
+
+// was FUN_0001b7c0 -- teardown counterpart to init_barter_ui: for
+// each of the 4 barter slots, if the player or NPC still has an
+// uncommitted offered item pending (DAT_000bbfd0/DAT_000bbfe8 > 0),
+// drops it back near its owner rather than letting it vanish, then
+// frees both slot pools' grtile icons. Called when leaving barter
+// mode (from the general end-of-conversation cleanup, guarded by
+// DAT_001006d0 -- "was barter active").
+void end_barter_ui()
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  
+  FUN_00057118();
+  iVar2 = 0;
+  do {
+    if (0 < (short)(&DAT_000bbfd0)[iVar2]) {
+      uVar1 = FUN_000535fc();
+      drop_object_near_target(g_player_object,uVar1,5,0);
+      FUN_00076e98((&DAT_000bc028)[iVar2]);
+    }
+    if (0 < (short)(&DAT_000bbfe8)[iVar2]) {
+      uVar1 = FUN_000535fc();
+      drop_object_near_target(DAT_00100674,uVar1,5,0);
+      FUN_00076e98((&DAT_000bc010)[iVar2]);
+    }
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 4);
+  cursor_show_idle_tick();
+  iVar2 = 0;
+  do {
+    FUN_00076b24((&DAT_000bc028)[iVar2]);
+    FUN_00076b24((&DAT_000bc010)[iVar2]);
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 4);
   return;
 }
 
