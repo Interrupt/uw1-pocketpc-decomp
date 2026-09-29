@@ -43,7 +43,7 @@
 //            debug string literally says "Look,_it's_a_text_trap").
 // The remaining cases (0-5, 9, 0xa, 0xc, 0xf) call still-unnamed
 // helper functions (FUN_00039bd8, FUN_000396a0, FUN_0004ac98,
-// FUN_0007e12c, FUN_00039790, FUN_0007ed20, FUN_000452dc) whose own
+// dispatch_quest_event_code, FUN_00039790, FUN_0007ed20, FUN_000452dc) whose own
 // purpose isn't pinned down yet, so their exact trap semantics are
 // left undetermined here rather than guessed at. After the switch,
 // if the record has a linked "next" object, it either recurses into
@@ -123,7 +123,7 @@ uint param_3;
     FUN_0004ac98(param_1,param_2,param_3);
     break;
   case 3:
-    iVar16 = FUN_0007e12c(param_1,param_2,param_3);
+    iVar16 = dispatch_quest_event_code(param_1,param_2,param_3);
     break;
   case 4:
     break;
@@ -466,6 +466,106 @@ LAB_0007d460:
     }
   }
   return iVar16;
+}
+
+
+
+
+
+// was FUN_0007e0d8 -- per-object callback passed to
+// for_each_object_of_type (see dispatch_quest_event_code's case 0x32,
+// which sweeps every object of class 0xd8). When the object's flags
+// nibble at +0xb is 7, resets it to 1. Also unconditionally resets
+// the cursor confine rect (reset_cursor_confine_rect) and calls
+// FUN_00028488 (not yet named) on the object. Reads as "reset a
+// stuck class-0xd8 object's UI-confine state", but the exact meaning
+// of the flag nibble isn't pinned down further here.
+undefined4 reset_object_ui_state_callback(param_1)
+int param_1;
+
+{
+  uint uVar1;
+  
+  if ((*(ushort *)(param_1 + 0xb) & 0xf) == 7) {
+    uVar1 = *(ushort *)(param_1 + 0xb) & 0xfff1;
+    *(byte *)(param_1 + 0xb) = (byte)uVar1 | 1;
+    *(char *)(param_1 + 0xc) = (char)(uVar1 >> 8);
+  }
+  reset_cursor_confine_rect();
+  FUN_00028488(param_1);
+  return 0;
+}
+
+
+
+// was FUN_0007e12c -- dispatch_trap_type_effect's case 3 handler
+// (called there as `FUN_0007e12c(param_1,param_2,param_3)`, the trap/
+// link record and its tile x,y). Switches on the record's quality
+// field (bits 0x3f at +4) across ~20 distinct codes, mostly
+// delegating to still-unnamed helpers (FUN_0003a4a0, FUN_0003a2b0,
+// FUN_0003a29c, FUN_00039f04, FUN_0003a0e8, FUN_0003a57c,
+// FUN_0003a5ec, FUN_0003dc78) whose own purpose isn't pinned down
+// yet. A few codes are more legible: code 2 calls
+// restore_view_from_object_record; code 0x32 sweeps every class-0xd8
+// object via for_each_object_of_type(reset_object_ui_state_callback);
+// codes 0x3b-0x3e are gated on DAT_0024cff4 == g_player_object (the
+// current trap-trigger context being the player); code 0x3f sets a
+// quest-ish byte (DAT_0023c27c) and calls FUN_00049924(0x400). Reads
+// as a "quest/cutscene event code" dispatcher, but most individual
+// codes' real meaning is left undetermined here rather than guessed
+// at.
+undefined4 dispatch_quest_event_code(param_1,param_2,param_3)
+int param_1;
+undefined4 param_2;
+undefined4 param_3;
+
+{
+  uint uVar1;
+  
+  uVar1 = *(ushort *)(param_1 + 4) & 0x3f;
+  if (uVar1 < 0x2a) {
+    if (uVar1 == 0x29) {
+      FUN_0003a4a0();
+    }
+    else if (uVar1 == 2) {
+      restore_view_from_object_record();
+    }
+    else if (2 < uVar1) {
+      if (uVar1 < 5) {
+        FUN_0003a2b0((*(byte *)(DAT_0024cff0 + 1) & 0x1e) >> 1,param_1,param_2,param_3);
+      }
+      else if (uVar1 == 5) {
+        FUN_0003a29c(*(ushort *)(param_1 + 6) & 0x3f);
+      }
+      else if (uVar1 == 0x18) {
+        FUN_00039f04(*(ushort *)(param_1 + 6) & 0x3f);
+      }
+      else if (uVar1 == 0x28) {
+        FUN_0003a0e8();
+      }
+    }
+  }
+  else if (uVar1 == 0x2a) {
+    FUN_0003a57c();
+  }
+  else if (uVar1 == 0x32) {
+    for_each_object_of_type(0xd8,0,0,reset_object_ui_state_callback);
+  }
+  else if (uVar1 == 0x39) {
+    FUN_0003a5ec();
+  }
+  else if (0x3b < uVar1) {
+    if (uVar1 < 0x3f) {
+      if (DAT_0024cff4 == g_player_object) {
+        FUN_0003dc78((*(ushort *)(param_1 + 4) & 0x3f) - 0x3b,*(ushort *)(param_1 + 6) & 0x3f);
+      }
+    }
+    else if (uVar1 == 0x3f) {
+      DAT_0023c27c = (*(byte *)(param_1 + 6) & 0x3f) + 1;
+      FUN_00049924(0x400);
+    }
+  }
+  return 2;
 }
 
 
