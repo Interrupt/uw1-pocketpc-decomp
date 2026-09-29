@@ -155,7 +155,7 @@ uint param_3;
     if (puVar12 == (ushort *)0x0) {
       return 2;
     }
-    if (((*puVar12 & 0x1c0) == 0x40) && (iVar16 = FUN_0007e694(puVar12), iVar16 != 0)) {
+    if (((*puVar12 & 0x1c0) == 0x40) && (iVar16 = check_object_area_for_spawn_block(puVar12), iVar16 != 0)) {
       return 2;
     }
     object_ptr_in_arena(puVar12);
@@ -740,6 +740,40 @@ byte * param_2;
     remove_trap_chain_marker(param_1,param_2);
   }
   return;
+}
+
+
+
+
+
+// was FUN_0007e694 -- its only confirmed caller is
+// dispatch_trap_type_effect's case 7 ("spawn trap"), which aborts the
+// spawn when this returns nonzero for the target object (class 0x40).
+// Stashes param_1 into DAT_0024cfd4 (for the callback below to read)
+// and zeroes DAT_0024cff8 (a shared "result" global) before running
+// scan_area_ahead_of_object with &DAT_0007e644 as its callback,
+// finally returning whatever DAT_0024cff8 ended up as.
+//
+// GAP: DAT_0007e644 is declared as a plain zero-initialized data
+// array (DAT_0007e644_backing[8192]), not a decompiled function --
+// but every other scan_area_ahead_of_object call site (see
+// src/object_actions.c) passes a real function or function-pointer-
+// table entry in this exact argument position, so &DAT_0007e644 is
+// almost certainly meant to be a callback Ghidra never recovered as
+// code, the same class of gap already documented for
+// DAT_00087604/PTR_FUN_00087614 (uw.c, ~line 1676) in an earlier
+// session pass. On this host the callback storage is zero-filled, so
+// if scan_area_ahead_of_object ever actually invokes it, real
+// behavior can't be inferred here -- left as an honest gap rather
+// than guessed at.
+undefined4 check_object_area_for_spawn_block(param_1)
+undefined4 param_1;
+
+{
+  DAT_0024cff8 = 0;
+  DAT_0024cfd4 = param_1;
+  scan_area_ahead_of_object(param_1,1,&DAT_0007e644,0,0,4);
+  return DAT_0024cff8;
 }
 
 

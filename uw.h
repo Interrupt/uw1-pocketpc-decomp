@@ -1025,6 +1025,10 @@ extern ushort *DAT_0024cff0;
 extern char s_Look__it_s_a_text_trap_00087918[];
 extern short DAT_0024cfd0;
 extern short DAT_0024cfd8;
+extern undefined4 DAT_0024cff8;
+extern undefined4 DAT_0024cfd4;
+extern undefined DAT_0007e644_backing[8192];
+#define DAT_0007e644 DAT_0007e644_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3495,7 +3499,7 @@ undefined4 dispatch_quest_event_code();
 undefined4 create_scripted_trap_pair_at_tile();
 void remove_trap_chain_marker();
 void free_trap_class_object();
-undefined4 FUN_0007e694();
+undefined4 check_object_area_for_spawn_block();
 undefined4 FUN_0007e6e0();
 void FUN_0007e778();
 void FUN_0007e85c();

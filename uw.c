@@ -6451,7 +6451,7 @@ short DAT_0024cfd0;
 short DAT_0024cfd8;
 undefined4 DAT_0024cff8;
 undefined4 DAT_0024cfd4;
-static undefined DAT_0007e644_backing[8192];
+undefined DAT_0007e644_backing[8192];
 #define DAT_0007e644 DAT_0007e644_backing[0]
 static undefined DAT_00088640_backing[8192];
 #define DAT_00088640 DAT_00088640_backing[0]
@@ -36517,18 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-undefined4 FUN_0007e694(param_1)
-undefined4 param_1;
-
-{
-  DAT_0024cff8 = 0;
-  DAT_0024cfd4 = param_1;
-  scan_area_ahead_of_object(param_1,1,&DAT_0007e644,0,0,4);
-  return DAT_0024cff8;
-}
-
-
-
 undefined4 FUN_0007e6e0(param_1,param_2,param_3)
 int param_1;
 short param_2;
