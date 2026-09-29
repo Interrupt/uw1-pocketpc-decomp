@@ -1657,12 +1657,12 @@ void tick_hud_panel_transition()
   if (g_committed_hud_panel != g_target_hud_panel) {
     if (DAT_0023c20c == 0) {
       DAT_0023c20c = 1;
-      FUN_0006eb64(g_target_hud_panel,0xec,8,0x53,0x72);
+      begin_hud_panel_flip(g_target_hud_panel,0xec,8,0x53,0x72);
       g_active_hud_panel = '\x04';
     }
-    iVar1 = FUN_0006edfc();
+    iVar1 = advance_hud_panel_flip();
     if (getenv("UW_DEBUG_CLICKREGION"))
-      fprintf(stderr, "[stats] tick_hud_panel_transition: FUN_0006edfc() -> %d\n", iVar1);
+      fprintf(stderr, "[stats] tick_hud_panel_transition: advance_hud_panel_flip() -> %d\n", iVar1);
     if (iVar1 == 1) {
       g_committed_hud_panel = g_target_hud_panel;
       g_active_hud_panel = g_target_hud_panel;
@@ -2311,7 +2311,7 @@ void reset_hud_panel_animation_state()
 
 
 // was thunk_FUN_0006edb8 -- Ghidra's own name (not related to the
-// unrelated, differently-addressed FUN_0006edb8 defined later in this
+// unrelated, differently-addressed release_hud_panel_flip_grtiles defined later in this
 // file, despite the identical-looking suffix -- this project's
 // established split-symbol/naming-collision bug class, not a real
 // thunk relationship). Releases the 3 grtile handles
@@ -2530,4 +2530,510 @@ char *param_1;
     FUN_00076508();
   }
   return;
+}
+
+
+
+
+
+
+// was FUN_0006eb64 -- begins the HUD panel-switch flip transition to
+// param_1 (the target panel): lazily allocates the 3 flip grtile slots
+// (DAT_0023c200/202/204) on first use, cleaning up via
+// release_hud_panel_flip_grtiles on failure, then captures the source
+// panel's current screen content into DAT_0023c200 and draws+captures
+// the target panel's content into DAT_0023c202 (restoring the source
+// content to screen afterward) so advance_hud_panel_flip's first tick
+// has both halves ready. Called once per transition by
+// tick_hud_panel_transition, which then drives advance_hud_panel_flip
+// every tick until it reports done.
+void begin_hud_panel_flip(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined2 param_2;
+undefined2 param_3;
+undefined2 param_4;
+undefined2 param_5;
+
+{
+  undefined1 uVar1;
+  /* Was `ushort` -- too narrow for alloc_flip_grtile_slot's real 4-byte
+     grtile key now that it's no longer a stub (harmless before, when
+     it always returned 0). Still reused a few lines down as a plain
+     0/1 success flag (FUN_00041a78's return), which fits fine in the
+     wider type too. */
+  undefined4 uVar2;
+  ushort uVar3;
+  /* Was `undefined4` -- truncated resolve_flip_grtile_slot's real
+     pointer return (see its own comment) to 32 bits on this host
+     before handing it to FUN_00041a78/bitmap_blit_to_framebuffer.
+     Harmless while resolve_flip_grtile_slot was a stub always
+     returning 0; a real truncated-pointer bug now that it isn't. */
+  char *uVar4;
+  /* Was `int` -- doubles as this loop's plain counter (0..2, fine
+     either way) AND, further down, resolve_flip_grtile_slot's real
+     pointer return used in pointer arithmetic (`iVar5 + 0x2800`),
+     which does need the wider type now that that call isn't a stub. */
+  intptr_t iVar5;
+  ushort uVar6;
+
+  uVar6 = 1;
+  DAT_0023c140 = param_5;
+  DAT_0023c144 = param_4;
+  DAT_0023c148 = param_2;
+  DAT_0023c14c = param_3;
+  if (DAT_0023c278 == 0) {
+    iVar5 = 0;
+    do {
+      if ((&DAT_0023c200)[iVar5] == 0) {
+        uVar2 = alloc_flip_grtile_slot();
+        /* Not decompiled -- see alloc_flip_grtile_slot's own comment.
+           This slot's newly-allocated key was never actually stored
+           back into the array, so this "already allocated?" check
+           above would see 0 again on every subsequent call even after
+           a real (non-stub) allocation succeeded -- invisible while
+           the allocator was a stub (there was never a real key to
+           lose), but a real bug once it does something. */
+        (&DAT_0023c200)[iVar5] = uVar2;
+        /* Was `uVar6 = uVar6 & uVar2;` -- a bitwise AND of the
+           success accumulator against uVar2 directly made sense when
+           uVar2 could only ever be the stub's constant 0, but uVar2 is
+           now a real (large, effectively-arbitrary-bit-pattern) grtile
+           key, so ANDing it directly could clear uVar6's low bit --
+           and so the whole accumulator -- on a perfectly successful
+           allocation just because that key's low bit happened to be
+           0. Normalize to a real boolean success check instead. */
+        uVar6 = uVar6 & (uVar2 != 0);
+      }
+      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
+    } while (iVar5 < 3);
+    if (uVar6 == 0) {
+      release_hud_panel_flip_grtiles();
+    }
+    else {
+      g_flip_grtile_cache_ready = g_flip_grtile_cache_ready | 1;
+    }
+    DAT_0023c278 = 1;
+  }
+  if (getenv("UW_DEBUG_CLICKREGION"))
+    fprintf(stderr, "[stats] begin_hud_panel_flip entry: param_1(target)=%d g_flip_grtile_cache_ready=0x%x DAT_0023c278=%d uVar6=%d\n",
+            (int)param_1, (unsigned)g_flip_grtile_cache_ready, (int)DAT_0023c278, (int)uVar6);
+  if ((g_flip_grtile_cache_ready & 1) != 0) {
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
+    uVar2 = FUN_00041a78(s_panels_00087260,param_1,uVar4);
+    iVar5 = resolve_flip_grtile_slot(DAT_0023c200);
+    uVar3 = FUN_00041a78(s_panels_00087260,3,iVar5 + 0x2800);
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] begin_hud_panel_flip: uVar4(dst202)=%u uVar2(decode1 ok)=%u iVar5(dst200)=%d uVar3(decode2 ok)=%u\n",
+              (unsigned)uVar4, (unsigned)uVar2, iVar5, (unsigned)uVar3);
+    if ((uVar2 & uVar3 & uVar6) == 0) {
+      if (getenv("UW_DEBUG_CLICKREGION"))
+        fprintf(stderr, "[stats] begin_hud_panel_flip: DECODE FAILED, calling FUN_0003c3c8(0x300e)\n");
+      FUN_0003c3c8(0x300e);
+    }
+    FUN_00057118();
+    /* Not decompiled -- capture the CURRENT (source/old panel's) live
+       screen content into DAT_0023c200's offset-0 region (its
+       0x2800 offset already holds the decoded chain graphic from
+       just above, so this doesn't collide) before the target panel's
+       content gets drawn over it below. Without this, advance_hud_panel_flip's
+       first tick captured "whatever's currently on screen" into
+       DAT_0023c200 believing it was grabbing the front (source) face
+       of the flip -- but by that point this function had already
+       drawn and captured the TARGET panel here, leaving it visible on
+       screen, so DAT_0023c200 ended up with the same target content
+       as DAT_0023c202. Both flip halves showed the target panel
+       instead of source-then-target. QA: "clicking the chain does
+       flip... but shows stats for both halves, should only switch at
+       the edge-on midpoint." */
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
+    FUN_0007e998(uVar4,0xec,8,0x53,0x72);
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
+    if (getenv("UW_DEBUG_CLICKREGION"))
+      fprintf(stderr, "[stats] begin_hud_panel_flip: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)uVar4);
+    bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
+    uVar1 = g_active_hud_panel;
+    g_active_hud_panel = (undefined1)param_1;
+    DAT_00085c54 = 0;
+    (*(code *)(&g_hud_panel_handlers)[(short)param_1])();
+    DAT_00085c54 = 1;
+    g_active_hud_panel = uVar1;
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
+    FUN_0007e998(uVar4,0xec,8,0x53,0x72);
+    /* Not decompiled -- put the source content (just captured above)
+       back on screen now that we're done using the screen as a
+       scratch surface to capture the target. Otherwise the target
+       panel stays visible here, and advance_hud_panel_flip's first tick's own
+       (unchanged) "capture whatever's on screen into DAT_0023c200"
+       step would just re-capture the target again, undoing the fix
+       above. */
+    uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
+    bitmap_blit_to_framebuffer(0xec,8,uVar4,0x72,0x53,0,0,1);
+    cursor_show_idle_tick();
+  }
+  DAT_0023c134 = (short)param_1;
+  return;
+}
+
+
+
+// was FUN_0006edb8 -- byte-for-byte identical body to
+// release_panel_wipe_grtiles (this project's established split-symbol/
+// naming-collision bug class -- see that function's own comment; not
+// merged into one, kept as separately-named/addressed functions per
+// this project's convention of preserving what Ghidra recovered).
+// Releases the 3 flip grtile handles (DAT_0023c200/202/204), called by
+// begin_hud_panel_flip on allocation failure.
+void release_hud_panel_flip_grtiles()
+
+{
+  int iVar1;
+
+  iVar1 = 0;
+  do {
+    if ((&DAT_0023c200)[iVar1] != 0) {
+      FUN_0004995c();
+      (&DAT_0023c200)[iVar1] = 0;
+    }
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 3);
+  return;
+}
+
+
+
+// was FUN_0006edfc -- per-tick step of the HUD panel-switch flip
+// animation begun by begin_hud_panel_flip: advances a multi-stage
+// counter (DAT_0023c208, stages 1-7) drawing the squashed-panel flip
+// visual at each stage via FUN_0006f6e0/rect_fill_or_save_restore/
+// bitmap_blit_to_framebuffer, and finally swaps in the target panel
+// (g_active_hud_panel/g_hud_panel_handlers) partway through. Returns
+// true once the stage counter resets to 0 (transition complete),
+// matching tick_hud_panel_transition's own use of the return value.
+bool advance_hud_panel_flip()
+
+{
+  undefined1 uVar1;
+  byte bVar2;
+  /* Were `undefined4` -- truncated the real 64-bit pointers this
+     function passes around (DAT_0023cca4 itself, and resolve_flip_grtile_slot's
+     return value) to 32 bits on this host before handing them to
+     bitmap_blit_to_framebuffer/FUN_0006f6e0/FUN_0007e998, which then
+     reconstructed a wild pointer from just the low half. Same
+     truncated-pointer-local class as everywhere else this session --
+     this is what crashed the panel-switch wipe transition the first
+     time it ever actually ran. */
+  char *uVar3;
+  char *uVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  int iVar8;
+  int iVar9;
+  bool bVar10;
+  /* Was `iVar7 + 0x2800` (iVar7 declared `int`) -- iVar7 is reused as
+     a plain int scratch everywhere else in this function, but in the
+     DAT_0023c208==4 stage it briefly holds resolve_flip_grtile_slot's
+     real 64-bit pointer, truncated to 32 bits before the +0x2800
+     offset, producing a wild address. Same pointer-truncation class
+     as uVar3/uVar4 above; needs its own real-pointer local since
+     iVar7's other uses in this function are genuine int arithmetic. */
+  char *pFlipSrc4;
+  
+  uVar3 = DAT_0023cca4;
+  bVar2 = DAT_0023c208 + 1;
+  if ((g_flip_grtile_cache_ready & 1) != 0) {
+    DAT_0023c208 = bVar2;
+    FUN_00057118();
+    uVar3 = resolve_flip_grtile_slot(DAT_0023c204);
+    if (DAT_0023c208 == 1) {
+      uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
+      FUN_0007e998(uVar4,(int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,(int)DAT_0023c144,
+                   DAT_0023c140);
+      FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
+      set_draw_color(0xf1);
+      iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
+      iVar7 = (int)DAT_0023c144 - (int)DAT_0023c13c;
+      if (iVar5 < 0) {
+        iVar5 = iVar5 + 1;
+      }
+      iVar9 = (int)DAT_0023c138 - (int)DAT_0023c140;
+      if (iVar7 < 0) {
+        iVar7 = iVar7 + 1;
+      }
+      if (iVar9 < 0) {
+        iVar9 = iVar9 + 1;
+      }
+      /* Not decompiled -- was `(iVar9 >> 1) - DAT_0023c14c`. Confirmed
+         via real ARM disassembly (0006f21c-0006f24c) that the shipped
+         binary genuinely computes it this way, so this is a real,
+         never-fixed bug in the original game's own compiled code for
+         this feature (which this whole investigation independently
+         confirmed is never reachable in any shipped build -- never
+         QA'd). QA (live): iVar9 (= DAT_0023c138-DAT_0023c140) stays
+         small (0-7) across the whole animation -- DAT_0023c138 is a
+         "should stay ~constant" height reference that actually
+         wobbles up to 106% of DAT_0023c140 due to the same curve
+         table's overshoot -- so the ORIGINAL buggy subtraction put
+         the panel's edge-erase strips and its squashed-content blit
+         ~15-16px ABOVE the panel's real top (DAT_0023c14c=8) instead
+         of a few px below it ("draws 16 pixels too high"). First fix
+         attempt just flipped the operand order (`DAT_0023c14c +
+         delta`), which was closer but still wrong: it anchors the
+         TOP edge at DAT_0023c14c and lets the panel grow downward as
+         DAT_0023c138 overshoots, drifting a few extra px low each
+         time the height wobbles ("shifts down a bit too much"). The
+         correct fix keeps the panel's VERTICAL CENTER fixed (not its
+         top) as its height wobbles -- `DAT_0023c14c -
+         (iVar9 >> 1)` -- since top = center - height/2 =
+         (DAT_0023c14c + DAT_0023c140/2) - DAT_0023c138/2 =
+         DAT_0023c14c - (DAT_0023c138-DAT_0023c140)/2. Verified live:
+         this keeps the computed center within 0.5px of the true
+         center (DAT_0023c14c+DAT_0023c140/2) at every stage, vs. the
+         addition version drifting up to 6px low at the most extreme
+         wobble (stage 3/5, DAT_0023c138=120). */
+      rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar9 >> 1 & 0xffffU),
+                   (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
+                   (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
+      iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
+      iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
+      if (iVar5 < 0) {
+        iVar5 = iVar5 + 1;
+      }
+      if (iVar7 < 0) {
+        iVar7 = iVar7 + 1;
+      }
+      iVar9 = (int)DAT_0023c13c + (int)DAT_0023c144;
+      if (iVar9 < 0) {
+        iVar9 = iVar9 + 1;
+      }
+      /* Not decompiled -- same "16 pixels too high" fix as above. */
+      rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
+                   (int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
+                   (int)DAT_0023c144 + (uint)DAT_0023c148,(uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff
+                  );
+      iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
+      if (iVar7 < 0) {
+        iVar7 = iVar7 + 1;
+      }
+      iVar5 = (int)DAT_0023c144 - (int)DAT_0023c13c;
+      if (iVar5 < 0) {
+        iVar5 = iVar5 + 1;
+      }
+      /* Not decompiled -- same "16 pixels too high" fix as above,
+         this time for the actual squashed-content blit position. */
+      bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
+                   (int)(short)DAT_0023c14c - (int)(short)(iVar7 >> 1),uVar3,(int)DAT_0023c138,
+                   DAT_0023c13c,0,0,1);
+    }
+    else if (1 < DAT_0023c208) {
+      if (DAT_0023c208 < 4) {
+        uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
+        FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
+        set_draw_color(0xf1);
+        iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
+        iVar7 = (int)DAT_0023c144 - (int)DAT_0023c13c;
+        if (iVar5 < 0) {
+          iVar5 = iVar5 + 1;
+        }
+        iVar9 = (int)DAT_0023c138 - (int)DAT_0023c140;
+        if (iVar7 < 0) {
+          iVar7 = iVar7 + 1;
+        }
+        if (iVar9 < 0) {
+          iVar9 = iVar9 + 1;
+        }
+        /* Not decompiled -- "16 pixels too high" fix, see the
+           identical block in the DAT_0023c208==1 branch above for the
+           full explanation (disassembly-confirmed real bug, not a
+           decompiler artifact). */
+        rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar9 >> 1 & 0xffffU),
+                     (int)(short)DAT_0023c148 + (iVar7 >> 1 & 0xffffU),
+                     (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
+        iVar5 = (int)DAT_0023c140 + (int)DAT_0023c138;
+        iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
+        if (iVar5 < 0) {
+          iVar5 = iVar5 + 1;
+        }
+        if (iVar7 < 0) {
+          iVar7 = iVar7 + 1;
+        }
+        iVar9 = (int)DAT_0023c13c + (int)DAT_0023c144;
+        if (iVar9 < 0) {
+          iVar9 = iVar9 + 1;
+        }
+        rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar9 >> 1) & 0xffff,
+                     (int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
+                     (int)DAT_0023c144 + (uint)DAT_0023c148,
+                     (uint)DAT_0023c14c + (iVar5 >> 1) & 0xffff);
+        iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
+        if (iVar7 < 0) {
+          iVar7 = iVar7 + 1;
+        }
+        iVar5 = (int)DAT_0023c144 - (int)DAT_0023c13c;
+        if (iVar5 < 0) {
+          iVar5 = iVar5 + 1;
+        }
+        bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
+                     (int)(short)DAT_0023c14c - (int)(short)(iVar7 >> 1),uVar3,(int)DAT_0023c138,
+                     DAT_0023c13c,0,0,1);
+      }
+      else if (DAT_0023c208 == 4) {
+        pFlipSrc4 = resolve_flip_grtile_slot(DAT_0023c200);
+        set_draw_color(0xf1);
+        iVar9 = (int)DAT_0023c140 + (int)DAT_0023c138;
+        iVar5 = (int)DAT_0023c144 + (int)DAT_0023c13c;
+        if (iVar9 < 0) {
+          iVar9 = iVar9 + 1;
+        }
+        iVar8 = (int)DAT_0023c138 - (int)DAT_0023c140;
+        if (iVar5 < 0) {
+          iVar5 = iVar5 + 1;
+        }
+        if (iVar8 < 0) {
+          iVar8 = iVar8 + 1;
+        }
+        iVar6 = (int)DAT_0023c144 - (int)DAT_0023c13c;
+        if (iVar6 < 0) {
+          iVar6 = iVar6 + 1;
+        }
+        /* Not decompiled -- "16 pixels too high" fix, see the
+           DAT_0023c208==1 branch above for the full explanation. */
+        rect_fill_or_save_restore((uint)DAT_0023c148 + (iVar6 >> 1) & 0xffff,
+                     (int)DAT_0023c14c - (iVar8 >> 1 & 0xffffU),
+                     (uint)DAT_0023c148 + (iVar5 >> 1) & 0xffff,
+                     (uint)DAT_0023c14c + (iVar9 >> 1) & 0xffff);
+        iVar5 = -(int)DAT_0023c140 + 0x78;
+        if (iVar5 < 0) {
+          iVar5 = -(int)DAT_0023c140 + 0x79;
+        }
+        iVar9 = DAT_0023c144 + -3;
+        if (iVar9 < 0) {
+          iVar9 = DAT_0023c144 + -2;
+        }
+        bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar9 >> 1),
+                     (int)(short)(iVar5 >> 1) - (int)(short)DAT_0023c14c,pFlipSrc4 + 0x2800,0x78,3,0,0,1
+                    );
+      }
+      else if (4 < DAT_0023c208) {
+        if (DAT_0023c208 < 8) {
+          uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
+          set_draw_color(0xf1);
+          iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
+          if (iVar7 < 0) {
+            iVar7 = iVar7 + 1;
+          }
+          /* Was missing its 4th argument (y2) -- real disassembly
+             (0006f3d8-0006f400) shows r3 genuinely computed as
+             `(short)DAT_0023c14c + (short)(iVar7 >> 1)` right before
+             the call, matching the same y1/y2-around-center pattern
+             every other rect_fill_or_save_restore call in this
+             function uses; the decompiler just dropped it from the
+             call's C syntax. Previously left as the original 3-arg
+             dropped-argument call because applying this fix crashed a
+             few ticks later -- that turned out to be a side effect of
+             FUN_0007e998/FUN_00041a78 being broken (this rect_fill
+             finally actually running exposed their bugs, rather than
+             being wrong itself); now that both are fixed, re-applying
+             this fix is what it takes for the panel-flip's "erase old
+             content" pass to bound itself correctly instead of wiping
+             out the static flask/chain area below the panel with a
+             leftover-register y2. */
+          /* Not decompiled -- "16 pixels too high" fix, see the
+             DAT_0023c208==1 branch above for the full explanation. */
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
+                       DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
+          iVar7 = (int)DAT_0023c138 + (int)DAT_0023c140;
+          if (iVar7 < 0) {
+            iVar7 = iVar7 + 1;
+          }
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c140 + (uint)DAT_0023c14c,
+                       DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
+          FUN_0006f6e0(uVar4,uVar3,DAT_0023c208);
+          iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
+          if (iVar7 < 0) {
+            iVar7 = iVar7 + 1;
+          }
+          iVar5 = (int)DAT_0023c144 - (int)DAT_0023c13c;
+          if (iVar5 < 0) {
+            iVar5 = iVar5 + 1;
+          }
+          /* Not decompiled -- "16 pixels too high" fix (the
+             squashed-content blit position itself this time). */
+          bitmap_blit_to_framebuffer((int)(short)DAT_0023c148 + (int)(short)(iVar5 >> 1),
+                       (int)(short)DAT_0023c14c - (int)(short)(iVar7 >> 1),uVar3,(int)DAT_0023c138,
+                       DAT_0023c13c,0,0,1);
+        }
+        else if (DAT_0023c208 == 8) {
+          uVar3 = resolve_flip_grtile_slot(DAT_0023c202);
+          set_draw_color(0xf1);
+          iVar7 = (int)DAT_0023c138 - (int)DAT_0023c140;
+          if (iVar7 < 0) {
+            iVar7 = iVar7 + 1;
+          }
+          /* Was missing its 4th argument (y2) -- same dropped-argument
+             bug as the sibling call above (real disassembly
+             0006f56c-0006f594, identical instruction pattern);
+             re-applied for the same reason (see that comment). Y1 also
+             fixed for the same "16 pixels too high" bug as every other
+             occurrence in this function (see DAT_0023c208==1 branch). */
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c14c - (iVar7 >> 1 & 0xffffU),
+                       DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
+          iVar7 = (int)DAT_0023c138 + (int)DAT_0023c140;
+          if (iVar7 < 0) {
+            iVar7 = iVar7 + 1;
+          }
+          rect_fill_or_save_restore((int)(short)DAT_0023c148,(int)DAT_0023c140 + (uint)DAT_0023c14c,
+                       DAT_0023c148 + DAT_0023c144,(uint)DAT_0023c14c + (iVar7 >> 1) & 0xffff);
+          bitmap_blit_to_framebuffer((int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,uVar3,(int)DAT_0023c140,
+                       DAT_0023c144,0,0,1);
+          DAT_0023c208 = 0;
+        }
+      }
+    }
+    draw_sprite_by_id(DAT_0023c208 + 0x20b8,0x110,4,1,1);
+    draw_sprite_by_id(DAT_0023c208 + 0x20b0,0x110,0x7a,1,1);
+    cursor_show_idle_tick();
+    goto LAB_0006f6c8;
+  }
+  if (DAT_0023c208 == '\x02') {
+    DAT_0023c208 = bVar2;
+    FUN_00041a78(s_panels_00087260,3,DAT_0023cca4);
+    FUN_00057118();
+    set_draw_color(0xf1);
+    rect_fill_or_save_restore(0xec,8,0x13f,0x7a);
+    draw_sprite_by_id(0x20bc,0x110,4,1,1);
+    draw_sprite_by_id(0x20b4,0x110,0x7a,1,1);
+    bitmap_blit_to_framebuffer(0x114,0xfffffffb,uVar3,0x78,3,0,0,1);
+LAB_0006f008:
+    cursor_show_idle_tick();
+  }
+  else {
+    if (DAT_0023c208 == '\x05') {
+      DAT_0023c208 = bVar2;
+      FUN_00041a78(s_panels_00087260,(int)DAT_0023c134,DAT_0023cca4);
+      FUN_00057118();
+      set_draw_color(0xf1);
+      rect_fill_or_save_restore(0x114,5,0x117,0x7d);
+      uVar1 = g_active_hud_panel;
+      g_active_hud_panel = (undefined1)DAT_0023c134;
+      screen_backup_restore_rect(0xec,8,0x13f,0x7a);
+      bitmap_blit_to_framebuffer(0xec,8,uVar3,0x72,0x53,0,0,1);
+      (*(code *)(&g_hud_panel_handlers)[DAT_0023c134])();
+      screen_backup_save();
+      g_active_hud_panel = uVar1;
+      draw_sprite_by_id(0x20b8,0x110,4,1,1);
+      draw_sprite_by_id(0x20b0,0x110,0x7a,1,1);
+      set_draw_color(0x1a);
+      rect_fill_or_save_restore(0xec,8,0x13e,0x79);
+      goto LAB_0006f008;
+    }
+    bVar10 = DAT_0023c208 == '\a';
+    DAT_0023c208 = bVar2;
+    if (bVar10) {
+      DAT_0023c208 = 0;
+    }
+  }
+  screen_backup_restore_rect(0xec,8,0x13f,0x7a);
+LAB_0006f6c8:
+  return DAT_0023c208 == 0;
 }

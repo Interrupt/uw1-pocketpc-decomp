@@ -207,12 +207,12 @@ void load_door_frames()
 /* alloc_flip_grtile_slot/resolve_flip_grtile_slot: were real, confirmed
    `mov r0,#0; cpy pc,lr` no-ops in the pristine binary (disassembly-
    verified at both real addresses, 0x4994c and 0x49954 -- not a
-   decompilation artifact). Their only caller, FUN_0006eb64's
+   decompilation artifact). Their only caller, begin_hud_panel_flip's
    double-buffered-grtile setup for the chain-hotspot panel-switch flip
    animation, unconditionally failed as a result (uVar6 = uVar6 &
    alloc_flip_grtile_slot() forced uVar6 to 0), so g_flip_grtile_cache_ready's
    ready bit could never be set and the entire staged blit path in
-   FUN_0006edfc was dead code -- in the shipped .exe, not just this
+   advance_hud_panel_flip was dead code -- in the shipped .exe, not just this
    decompile. See [[chain-hotspot-stats-panel]]: exhaustive real-binary
    cross-referencing found no other path to draw_stats_panel_content
    either, so this genuinely was inert in the original game.
@@ -234,7 +234,7 @@ undefined4 alloc_flip_grtile_slot()
   /* Not decompiled (see above). Sized generously (0x100*0x80 = 32768
      bytes) rather than exactly: the real per-slot sizes the original
      binary would have used were never recovered (this whole path was
-     dead, so nothing to disassemble), and FUN_0006eb64 itself indexes
+     dead, so nothing to disassemble), and begin_hud_panel_flip itself indexes
      one slot at a +0x2800 (10240) byte offset, so this needs enough
      headroom for whatever panels.GR frame-3 decode lands there on top
      of the base 0x72x0x53 panel rect every slot also needs to hold. */
