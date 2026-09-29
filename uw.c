@@ -12318,7 +12318,7 @@ ushort * param_1;
   uVar6 = *param_1 & 0x1ff;
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488 entry: param_1=%p uVar6(itemid)=0x%x raw=0x%x classcheck=0x%x\n", (void *)param_1, (unsigned)uVar6, (unsigned)*param_1, (unsigned)(*param_1 & 0x1c0));
   if (uVar6 == 0x157) {
-    FUN_000708bc(0);
+    handle_mantra_chant(0);
     return;
   }
   if (uVar6 == 0x16e) {
@@ -36427,145 +36427,6 @@ LAB_00060f54:
 
 
 
-void FUN_000708bc()
-
-{
-  char cVar1;
-  undefined2 uVar2;
-  short sVar3;
-  undefined4 uVar4;
-  undefined4 uVar5;
-  int iVar6;
-  int iVar7;
-  uint uVar8;
-  int iVar9;
-  int iVar10;
-  char cVar11;
-  uint uVar12;
-  short sVar13;
-  undefined1 local_60 [8];
-  undefined1 local_58 [52];
-  
-  local_58[0] = 0;
-  scroll_text_entry_prompt(s_Chant_the_mantra__0008731c,0,local_58,1,10);
-  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
-  iVar10 = 0x33;
-  do {
-    uVar4 = Ordinal_1416(local_58);
-    uVar5 = FUN_0007863c((int)(char)iVar10 | 0x400);
-    iVar6 = Ordinal_1065(uVar5,uVar4);
-    if (iVar6 == 0) break;
-    iVar10 = iVar10 + 1;
-  } while (iVar10 * 0x1000000 >> 0x18 < 0x4d);
-  if ((char)iVar10 == 'M') {
-    FUN_00078c80(0x19);
-    goto LAB_00070b58;
-  }
-  iVar10 = iVar10 + -0x33;
-  iVar6 = iVar10 * 0x1000000 >> 0x18;
-  if (iVar6 < 0x14) {
-    if (*(char *)(DAT_00086df8 + 0x52) == '\0') {
-LAB_00070980:
-      FUN_00078c80(0x18);
-    }
-    else {
-      iVar6 = roll_skill_use_improvement(iVar10);
-      iVar7 = roll_skill_use_improvement(iVar10);
-      if ((iVar6 == 0) && (iVar7 == 0)) {
-LAB_000709e0:
-        uVar4 = 0;
-      }
-      else {
-        FUN_00078c80(0x1a);
-        *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + -1;
-        if ((iVar6 == 0) && (iVar7 == 0)) goto LAB_000709e0;
-        uVar4 = 1;
-      }
-      print_single_skill_improvement_message(iVar10 * 0x1000000 >> 0x18,uVar4);
-    }
-  }
-  else {
-    if (iVar6 == 0x14) {
-      if ((*(byte *)(DAT_00086df8 + 0x60) & 0x80) == 0) {
-        uVar4 = FUN_0007863c(0x223);
-        FUN_0007ed20(uVar4,*(ushort *)((char *)g_player_object + 0x16) >> 10,
-                     (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4,(int)DAT_00201b68,0x18,0x2d,3,4
-                    );
-      }
-LAB_00070c78:
-      busy_wait_ms(0x20);
-      return;
-    }
-    if (iVar6 == 0x15) {
-      if (((*(byte *)(DAT_00086df8 + 0x60) & 0x40) == 0) &&
-         (iVar10 = FUN_00079dec(0,0xe1), iVar10 != 0)) {
-        FUN_00078c80(0x1e);
-        uVar2 = *(undefined2 *)(DAT_00086df8 + 0x5f);
-        *(char *)(DAT_00086df8 + 0x5f) = (char)uVar2;
-        *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar2 >> 8) | 0x40;
-      }
-      goto LAB_00070c78;
-    }
-    if (iVar6 == 0x16) {
-      FUN_00078c80(0x1f);
-      goto LAB_00070c78;
-    }
-    if (iVar6 == 0x17) {
-      sVar13 = 0;
-      cVar11 = '\a';
-      sVar3 = 3;
-    }
-    else if (iVar6 == 0x18) {
-      sVar13 = 7;
-      cVar11 = '\x03';
-      sVar3 = 2;
-    }
-    else {
-      if (iVar6 != 0x19) goto LAB_00070c78;
-      sVar13 = 10;
-      cVar11 = '\n';
-      sVar3 = 4;
-    }
-    if (*(char *)(DAT_00086df8 + 0x52) == '\0') goto LAB_00070980;
-    local_60[0] = 0xff;
-    uVar12 = 0;
-    local_60[1] = 0xff;
-    local_60[2] = 0xff;
-    local_60[3] = 0xff;
-    iVar10 = (int)cVar11;
-    iVar6 = (int)sVar3;
-    while ((iVar6 != 0 &&
-           (cVar1 = (char)iVar10, iVar10 = (cVar1 + -1) * 0x1000000 >> 0x18, cVar1 != 0))) {
-      if ((sVar13 == 7) &&
-         ((*(byte *)(DAT_00086df8 + 0x28) < 8 && (uVar8 = Ordinal_1053(), (uVar8 & 2) != 0)))) {
-        iVar7 = 7;
-      }
-      else {
-        iVar7 = rand_below(cVar11);
-        iVar7 = (sVar13 + iVar7) * 0x1000000 >> 0x18;
-      }
-      iVar9 = roll_skill_use_improvement(iVar7);
-      if (iVar9 != 0) {
-        local_60[uVar12] = (char)iVar7;
-        uVar12 = uVar12 + 1 & 0xff;
-      }
-      iVar6 = (iVar6 + -1) * 0x10000 >> 0x10;
-    }
-    print_skill_improvement_list(local_60);
-    *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + -1;
-  }
-  recompute_level7_hazard_from_character_level(0);
-  refresh_stats_panel_if_active();
-LAB_00070b58:
-  refresh_player_equipment_effects();
-  busy_wait_ms(0x20);
-  FUN_00057570();
-  FUN_0005758c();
-  return;
-}
-
-
-
 void FUN_00070c90()
 
 {
@@ -42619,7 +42480,7 @@ ushort * param_2;
   else if (uVar4 == 1) {
     uVar4 = uVar5 & 0xf;
     if (uVar4 == 7) {
-      FUN_000708bc(0);
+      handle_mantra_chant(0);
     }
     else if (((uVar4 == 0xb) || (uVar4 == 0xd)) && ((uVar5 & 0x8000) == 0)) {
       try_combine_or_stow_object(param_1,param_2,0);
