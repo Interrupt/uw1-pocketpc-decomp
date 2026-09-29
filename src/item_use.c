@@ -1437,3 +1437,80 @@ int param_2;
   prompt_use_item_on_target(param_1,pcVar2);
   return;
 }
+
+
+
+
+
+// was FUN_0007a53c -- for_each_object_of_type callback (see that
+// function's own callback contract): rolls a random value 0..param_2
+// against the matched object's own byte at offset +8, adds 1 to that
+// byte, and sets a flag bit at offset +0xe (bit 1). Always returns 0
+// (never removes the object from for_each_object_of_type's scan).
+// Confirmed real caller: complete_use_item_special_quest_event below.
+undefined4 apply_random_roll_to_matched_object(param_1,param_2)
+int param_1;
+short param_2;
+
+{
+  char cVar1;
+  
+  cVar1 = Ordinal_2005((int)param_2,*(undefined1 *)(param_1 + 8));
+  *(char *)(param_1 + 8) = cVar1 + '\x01';
+  *(undefined1 *)(param_1 + 0xd) = *(undefined1 *)(param_1 + 0xd);
+  *(byte *)(param_1 + 0xe) = *(byte *)(param_1 + 0xe) | 2;
+  return 0;
+}
+
+
+
+// was FUN_0007a598 -- deferred-target-click completion callback for
+// a single, major scripted quest event: only fires for target item
+// type 0x117. On success: prints a message (id 0x85), consumes the
+// held item, alters the target tile's texture, discards the object
+// from the tile, resets DAT_002020a0 to -1 (a sentinel), sets two
+// player status-flag bits (DAT_00086df8+0x5f/0x60 bit 0x20), sets
+// BOTH the player's current and max mana (offsets +0x37/+0x38 --
+// see draw_mana_stat_display's own confirmed "play_mana" field) from
+// a max-mana source byte (+0xb0), and applies a random roll (via
+// apply_random_roll_to_matched_object above) to every object of type
+// 0xe7 in the level. Prints a different message (id 0x84) for any
+// other clicked target. Given the scale of the state changes (mana
+// restored to full, a whole object class affected), this looks like
+// a major one-time quest/ritual completion rather than an everyday
+// item interaction; the exact quest isn't identified here. No
+// callers found by grep in the remaining decompile.
+void complete_use_item_special_quest_event(param_1,param_2)
+ushort * param_1;
+int param_2;
+
+{
+  undefined2 uVar1;
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+
+  if ((*param_1 & 0x1ff) == 0x117) {
+    print_scroll_message_by_id(0x85);
+    if (param_2 != 0) {
+      finish_object_use(DAT_00202098,param_2,1);
+    }
+    FUN_00081814(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
+    iVar2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
+    discard_misplaced_object(iVar2 + 2,param_1,1);
+    DAT_002020a0 = -1;
+    uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
+    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
+    *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x20;
+    *(undefined1 *)(DAT_00086df8 + 0x38) = *(undefined1 *)(DAT_00086df8 + 0xb0);
+    *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0xb0);
+    for_each_object_of_type(0xe7,0,2,apply_random_roll_to_matched_object);
+  }
+  else if (param_2 != 0) {
+    print_scroll_message_by_id(0x84);
+  }
+  if (g_selected_object != 0) {
+    FUN_00057cac(3);
+    g_selected_object = 0;
+    g_cursor_holding_state = 0;
+  }
+  return;
+}

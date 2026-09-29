@@ -36520,59 +36520,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_0007a53c(param_1,param_2)
-int param_1;
-short param_2;
-
-{
-  char cVar1;
-  
-  cVar1 = Ordinal_2005((int)param_2,*(undefined1 *)(param_1 + 8));
-  *(char *)(param_1 + 8) = cVar1 + '\x01';
-  *(undefined1 *)(param_1 + 0xd) = *(undefined1 *)(param_1 + 0xd);
-  *(byte *)(param_1 + 0xe) = *(byte *)(param_1 + 0xe) | 2;
-  return 0;
-}
-
-
-
-void FUN_0007a598(param_1,param_2)
-ushort * param_1;
-int param_2;
-
-{
-  undefined2 uVar1;
-  char *iVar2;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
-
-  if ((*param_1 & 0x1ff) == 0x117) {
-    print_scroll_message_by_id(0x85);
-    if (param_2 != 0) {
-      finish_object_use(DAT_00202098,param_2,1);
-    }
-    FUN_00081814(param_1,4,5,0,0,DAT_002020a0,DAT_002020a4);
-    iVar2 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
-    discard_misplaced_object(iVar2 + 2,param_1,1);
-    DAT_002020a0 = -1;
-    uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
-    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
-    *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x20;
-    *(undefined1 *)(DAT_00086df8 + 0x38) = *(undefined1 *)(DAT_00086df8 + 0xb0);
-    *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0xb0);
-    for_each_object_of_type(0xe7,0,2,FUN_0007a53c);
-  }
-  else if (param_2 != 0) {
-    print_scroll_message_by_id(0x84);
-  }
-  if (g_selected_object != 0) {
-    FUN_00057cac(3);
-    g_selected_object = 0;
-    g_cursor_holding_state = 0;
-  }
-  return;
-}
-
-
-
 void FUN_0007a704(param_1,param_2)
 ushort * param_1;
 undefined4 param_2;
@@ -36609,10 +36556,10 @@ int param_3;
   if (uVar3 == 0x112) {
     if (param_3 == 0) {
       DAT_00202098 = param_2;
-      FUN_0007a598(param_1,0,0);
+      complete_use_item_special_quest_event(param_1,0,0);
     }
     else {
-      prompt_use_item_on_target(param_2,FUN_0007a598);
+      prompt_use_item_on_target(param_2,complete_use_item_special_quest_event);
     }
   }
   else if (uVar3 == 0x114) {
