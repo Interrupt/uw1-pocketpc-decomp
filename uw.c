@@ -37701,7 +37701,23 @@ short * param_1;
     uVar3 = 0;
   }
   else {
-    free_object_slot();
+    /* Was called with 0 args -- real ARM binary does the same bare call
+       (confirmed via Ghidra: FUN_00053004(), free_object_slot's real
+       address, at this exact spot) -- the same "leftover register"
+       reliance already found 4 times this session. param_1 (the rune
+       being placed) is read at this function's very entry (`*param_1`
+       just above) and never touched again before this call, so it's
+       what's actually still sitting in the register. free_object_slot's
+       own param_1 is dereferenced immediately (see its own body), so a
+       genuinely garbage argument crashes hard -- confirmed live: SIGSEGV
+       inside this function the moment a real rune (not the always-
+       rejected garbage from the OUTER dropped-argument bug fixed in the
+       previous commit) actually reached here. Runes get absorbed into
+       the bag's own internal bit-flags rather than remaining separate
+       inventory objects, so their own object slot needs freeing here --
+       matches this function's very next line setting a bit in
+       DAT_00086df8's rune-bag record. */
+    free_object_slot(param_1);
     iVar2 = DAT_00086df8 + (iVar2 >> 0x13);
     *(byte *)(iVar2 + 0x44) = (byte)(1 << (7 - (uVar1 & 7) & 0xff)) | *(byte *)(iVar2 + 0x44);
     uVar3 = 1;
