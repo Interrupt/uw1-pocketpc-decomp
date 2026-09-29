@@ -573,3 +573,121 @@ int param_1;
   }
   return;
 }
+
+
+
+
+
+
+// was FUN_0007328c -- a playable musical instrument (param_1 selects
+// which of two instruments/octave ranges, offsetting the sound-sample
+// ids played): while active, number keys 1-0 each play a note
+// (trigger_sound_sample_note) and record it into a rolling 16-note
+// buffer, resetting that buffer if more than ~0x40 clock units pass
+// between notes. On exit (Escape), if this is the param_1==1
+// instrument, the player is on level 3, and standing within a small
+// area of a specific tile (both coordinate checks against
+// g_player_object's position bits), the last 9 notes played are
+// checked against check_secret_tune_match's hardcoded tune
+// ("@CA>@GHGC") -- playing it correctly (once per game, gated by a
+// flag bit at DAT_00086df8+0x60) triggers a hidden reward (message
+// 0x88), otherwise shows a generic "nothing happens" message (0xfb).
+// Not developer debug tooling: this is a real "play the secret tune
+// standing in the right spot" puzzle/easter egg.
+void play_musical_instrument(param_1)
+short param_1;
+
+{
+  ushort uVar1;
+  uint uVar2;
+  int iVar3;
+  uint uVar4;
+  char cVar5;
+  int iVar6;
+  uint uVar7;
+  char local_3c [16];
+  char local_2c [16];
+  
+  builtin_strncpy(local_3c,"<>@ACEGHJL",10);
+  iVar6 = -1;
+  Ordinal_1047(local_2c,0,0x10);
+  uVar7 = 0;
+  FUN_00078c80(0xfa);
+  while( true ) {
+    uVar4 = next_input_event();
+    uVar1 = (ushort)uVar4;
+    if (uVar1 == 0x1b) break;
+    flush_dirty_rect_to_display(1);
+    if (((uVar1 != 0) && (0x2f < (short)(uVar1 & 0xfcff))) && ((short)(uVar1 & 0xfcff) < 0x3a)) {
+      uVar2 = (uVar4 & 0xff) - 0x30;
+      if ((uVar2 & 0xff) == 0) {
+        uVar2 = 10;
+      }
+      uVar2 = uVar2 - 1 & 0xff;
+      iVar6 = uVar2 + 0x28;
+      if (param_1 != 0) {
+        iVar6 = uVar2 + 0x32;
+      }
+      trigger_sound_sample_note(iVar6,0x78);
+      cVar5 = local_3c[uVar2];
+      if ((uVar4 & 0x200) != 0) {
+        cVar5 = cVar5 + '\f';
+      }
+      if ((uVar4 & 0x100) != 0) {
+        cVar5 = cVar5 + -0xc;
+      }
+      local_2c[uVar7] = cVar5;
+      uVar7 = uVar7 + 1 & 0xf;
+      iVar6 = read_realtime_clock_units();
+    }
+    if ((0 < iVar6) && (iVar3 = read_realtime_clock_units(), 0x40 < (uint)(iVar3 - iVar6))) {
+      iVar6 = -1;
+    }
+  }
+  if ((((param_1 == 1) && (DAT_00201b68 == 3)) &&
+      (uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 10) - 0x18, uVar7 = (int)uVar4 >> 0x1f,
+      (int)((uVar4 ^ uVar7) - uVar7) < 3)) &&
+     ((uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f) - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
+      (int)((uVar4 ^ uVar7) - uVar7) < 3 && (iVar6 = check_secret_tune_match(local_2c), iVar6 != 0)))) {
+    return;
+  }
+  FUN_00078c80(0xfb);
+  return;
+}
+
+
+
+// was FUN_00073474 -- compares the 9 notes at param_1 against the
+// hardcoded secret tune "@CA>@GHGC". On a match, and only if the
+// one-time flag bit at DAT_00086df8+0x60 isn't already set, shows
+// message 0x88 and sets that flag (so the reward only triggers once
+// per game).
+undefined4 check_secret_tune_match(param_1)
+int param_1;
+
+{
+  undefined2 uVar1;
+  int iVar2;
+  uint uVar3;
+  char local_14 [12];
+  
+  builtin_strncpy(local_14,"@CA>@GHGC",9);
+  if ((*(byte *)(DAT_00086df8 + 0x60) & 0x80) == 0) {
+    uVar3 = 0;
+    do {
+      if (*(char *)(uVar3 + param_1) != local_14[uVar3]) {
+        return 0;
+      }
+      uVar3 = uVar3 + 1 & 0xff;
+    } while (uVar3 < 9);
+    iVar2 = FUN_00079dec(0,0xae);
+    if (iVar2 != 0) {
+      FUN_00078c80(0x88);
+      uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
+      *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
+      *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x80;
+      return 1;
+    }
+  }
+  return 0;
+}

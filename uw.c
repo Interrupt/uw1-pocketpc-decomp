@@ -36450,101 +36450,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007328c(param_1)
-short param_1;
-
-{
-  ushort uVar1;
-  uint uVar2;
-  int iVar3;
-  uint uVar4;
-  char cVar5;
-  int iVar6;
-  uint uVar7;
-  char local_3c [16];
-  char local_2c [16];
-  
-  builtin_strncpy(local_3c,"<>@ACEGHJL",10);
-  iVar6 = -1;
-  Ordinal_1047(local_2c,0,0x10);
-  uVar7 = 0;
-  FUN_00078c80(0xfa);
-  while( true ) {
-    uVar4 = next_input_event();
-    uVar1 = (ushort)uVar4;
-    if (uVar1 == 0x1b) break;
-    flush_dirty_rect_to_display(1);
-    if (((uVar1 != 0) && (0x2f < (short)(uVar1 & 0xfcff))) && ((short)(uVar1 & 0xfcff) < 0x3a)) {
-      uVar2 = (uVar4 & 0xff) - 0x30;
-      if ((uVar2 & 0xff) == 0) {
-        uVar2 = 10;
-      }
-      uVar2 = uVar2 - 1 & 0xff;
-      iVar6 = uVar2 + 0x28;
-      if (param_1 != 0) {
-        iVar6 = uVar2 + 0x32;
-      }
-      trigger_sound_sample_note(iVar6,0x78);
-      cVar5 = local_3c[uVar2];
-      if ((uVar4 & 0x200) != 0) {
-        cVar5 = cVar5 + '\f';
-      }
-      if ((uVar4 & 0x100) != 0) {
-        cVar5 = cVar5 + -0xc;
-      }
-      local_2c[uVar7] = cVar5;
-      uVar7 = uVar7 + 1 & 0xf;
-      iVar6 = read_realtime_clock_units();
-    }
-    if ((0 < iVar6) && (iVar3 = read_realtime_clock_units(), 0x40 < (uint)(iVar3 - iVar6))) {
-      iVar6 = -1;
-    }
-  }
-  if ((((param_1 == 1) && (DAT_00201b68 == 3)) &&
-      (uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 10) - 0x18, uVar7 = (int)uVar4 >> 0x1f,
-      (int)((uVar4 ^ uVar7) - uVar7) < 3)) &&
-     ((uVar4 = (*(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f) - 0x2d, uVar7 = (int)uVar4 >> 0x1f,
-      (int)((uVar4 ^ uVar7) - uVar7) < 3 && (iVar6 = FUN_00073474(local_2c), iVar6 != 0)))) {
-    return;
-  }
-  FUN_00078c80(0xfb);
-  return;
-}
-
-
-
-undefined4 FUN_00073474(param_1)
-int param_1;
-
-{
-  undefined2 uVar1;
-  int iVar2;
-  uint uVar3;
-  char local_14 [12];
-  
-  builtin_strncpy(local_14,"@CA>@GHGC",9);
-  if ((*(byte *)(DAT_00086df8 + 0x60) & 0x80) == 0) {
-    uVar3 = 0;
-    do {
-      if (*(char *)(uVar3 + param_1) != local_14[uVar3]) {
-        return 0;
-      }
-      uVar3 = uVar3 + 1 & 0xff;
-    } while (uVar3 < 9);
-    iVar2 = FUN_00079dec(0,0xae);
-    if (iVar2 != 0) {
-      FUN_00078c80(0x88);
-      uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
-      *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
-      *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x80;
-      return 1;
-    }
-  }
-  return 0;
-}
-
-
-
 void FUN_0007355c()
 
 {
@@ -40985,7 +40890,7 @@ LAB_0007b9b8:
     goto LAB_0007b7e4;
   case 0x124:
 LAB_0007b7e4:
-    FUN_0007328c((*param_2 & 0x1ff) - 0x123);
+    play_musical_instrument((*param_2 & 0x1ff) - 0x123);
     break;
   case 0x125:
     uVar6 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
