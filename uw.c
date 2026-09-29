@@ -3307,9 +3307,10 @@ undefined4 LAB_00041610(void *buf, unsigned size, int idx)
   return 1;
 }
 undefined2 DAT_000859a8;
-undefined4 LAB_00041670(void *buf, unsigned size, int idx)
+// was LAB_00041670
+undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx)
 {
-  /* Caller FUN_00041990 (TMFLAT.GR) with a fixed id base stashed in
+  /* Caller load_tmflat_gr (TMFLAT.GR) with a fixed id base stashed in
      DAT_000859a8 (0x170). Real ARM (0x41670): registers each entry at
      the running cursor DAT_00202744 and ADVANCES the cursor by one,
      recording DAT_0024d090[(0x170+idx)*4] = frame as the object-id ->
@@ -3359,7 +3360,7 @@ unsigned int param_1;
    registered anywhere (unlike every sibling load_gr_resource_entries
    call site, which DOES pass a real post-process callback to register
    its buffer into DAT_0024e090[] -- see LAB_000415d0/LAB_00041610/
-   LAB_00041670), and then simply discarded once load_gr_resource_entries's
+   register_tmflat_gr_entry), and then simply discarded once load_gr_resource_entries's
    loop moves on. Confirmed live: FUN_0006eb64's decode calls reported
    success while leaving their destination grtile buffer entirely
    zeroed (0/9462 nonzero bytes), which is exactly what "decode
@@ -35550,14 +35551,15 @@ char *param_1;
 
 
 
-undefined4 FUN_00041990(param_1,param_2,param_3)
+// was FUN_00041990
+undefined4 load_tmflat_gr(param_1,param_2,param_3)
 char *param_1;
 undefined2 param_2;
 undefined4 param_3;
 
 {
   DAT_000859a8 = param_2;
-  return load_gr_resource_entries(param_1,0,param_3,&LAB_000415b0,&LAB_00041670);
+  return load_gr_resource_entries(param_1,0,param_3,&LAB_000415b0,&register_tmflat_gr_entry);
 }
 
 
@@ -35692,7 +35694,7 @@ undefined4 FUN_00041aac()
     uVar10 = FUN_00041910(s_cursors_00085a1c);
     uVar11 = FUN_00041910(s_3dwin_00085a14);
     DAT_00202734 = DAT_00202744;
-    uVar12 = FUN_00041990(s_tmflat_00085a0c,0x170,0x10);
+    uVar12 = load_tmflat_gr(s_tmflat_00085a0c,0x170,0x10);
     /* DAT_00202738 is snapshotted AFTER this call, i.e. it's the base for
        whatever loads NEXT (LFTI.GR, see s_lfti_000859fc), not TMOBJ's own
        base -- confirmed by instrumenting this exact spot (DAT_00202744
