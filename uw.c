@@ -19417,7 +19417,7 @@ void FUN_0003a398()
     *(byte *)(DAT_00086df8 + 0x66) = (byte)((uint)uVar1 >> 8) | 1;
     *(char *)(DAT_00086df8 + 0x67) = (char)((uint)uVar1 >> 0x10);
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
-    FUN_00074028(g_player_object,3);
+    reduce_item_quality_on_use(g_player_object,3);
     decrement_object_count(iVar2);
     discard_misplaced_object(0,iVar2,1);
     FUN_00048110();
@@ -19447,7 +19447,7 @@ undefined4 param_3;
     *(byte *)(DAT_00086df8 + 0x66) = (byte)((uint)uVar1 >> 8) | 1;
     *(char *)(DAT_00086df8 + 0x67) = (char)((uint)uVar1 >> 0x10);
     *(char *)(DAT_00086df8 + 0x68) = (char)((uint)uVar1 >> 0x18);
-    FUN_00074028(g_player_object,3);
+    reduce_item_quality_on_use(g_player_object,3);
     decrement_object_count(iVar2);
     discard_misplaced_object(0,iVar2,1);
     FUN_00048110();
@@ -36474,35 +36474,6 @@ LAB_00060f54:
 
 
 
-void FUN_00074028(param_1,param_2)
-ushort * param_1;
-char param_2;
-
-{
-  byte bVar1;
-  char cVar2;
-  
-  if ((*param_1 & 0x1c0) == 0x40) {
-    cVar2 = roll_dice_sum((int)param_2,8);
-    bVar1 = (byte)param_1[4];
-    if (3 < bVar1) {
-      if ((int)((uint)bVar1 - (int)cVar2) < 4) {
-        cVar2 = '\x03';
-      }
-      else {
-        cVar2 = bVar1 - cVar2;
-      }
-      *(char *)(param_1 + 4) = cVar2;
-      if (param_1 == g_player_object) {
-        FUN_000411e0(0xa8);
-      }
-    }
-  }
-  return;
-}
-
-
-
 void FUN_000740b0(param_1,param_2)
 int param_1;
 char param_2;
@@ -40397,7 +40368,7 @@ LAB_0007b7e4:
     uVar6 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
     *(char *)(DAT_00086df8 + 0x5f) = (char)uVar6;
     *(char *)(DAT_00086df8 + 0x60) = (char)(uVar6 >> 8);
-    FUN_00074028(g_player_object,2);
+    reduce_item_quality_on_use(g_player_object,2);
     finish_object_use(param_2,param_3,1);
     iVar3 = 0xe0;
     goto LAB_0007b9b8;

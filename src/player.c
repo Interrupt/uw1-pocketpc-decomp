@@ -1049,7 +1049,7 @@ LAB_00066290:
   case 8:
     break;
   case 9:
-    FUN_00074028(g_player_object);
+    reduce_item_quality_on_use(g_player_object);
     break;
   case 10:
     break;

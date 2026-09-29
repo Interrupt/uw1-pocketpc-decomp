@@ -932,7 +932,7 @@ LAB_00073c90:
     FUN_00074d20(param_3,param_2);
     break;
   case 9:
-    FUN_00074028(param_3,param_2);
+    reduce_item_quality_on_use(param_3,param_2);
     break;
   case 10:
     adjust_level7_hazard_value(param_3,param_2);
@@ -959,4 +959,44 @@ LAB_00073c90:
     scheduler_tick(4);
   }
   return 1;
+}
+
+
+
+
+
+
+// was FUN_00074028 -- dispatch_special_action's "reduce item
+// durability" handler (its own case 9): only applies if the target
+// object's quality bits match 0x40 (same food/potion-shaped flag
+// apply_healing_item_effect gates on) and its quality/charge field
+// (offset 4, byte) is currently above 3. Rolls param_2 d8s
+// (roll_dice_sum) and subtracts the result, clamped to a floor of 3
+// rather than letting it drop lower. Plays a sound if the target is
+// the player object.
+void reduce_item_quality_on_use(param_1,param_2)
+ushort * param_1;
+char param_2;
+
+{
+  byte bVar1;
+  char cVar2;
+  
+  if ((*param_1 & 0x1c0) == 0x40) {
+    cVar2 = roll_dice_sum((int)param_2,8);
+    bVar1 = (byte)param_1[4];
+    if (3 < bVar1) {
+      if ((int)((uint)bVar1 - (int)cVar2) < 4) {
+        cVar2 = '\x03';
+      }
+      else {
+        cVar2 = bVar1 - cVar2;
+      }
+      *(char *)(param_1 + 4) = cVar2;
+      if (param_1 == g_player_object) {
+        FUN_000411e0(0xa8);
+      }
+    }
+  }
+  return;
 }
