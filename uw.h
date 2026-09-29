@@ -3315,7 +3315,7 @@ undefined4 create_main_window_and_init_display();
 undefined4 window_message_noop_handler();
 void store_window_extra_data_ptr();
 void dispatch_window_message();
-undefined4 FUN_000778fc();
+undefined4 blit_framebuffer_to_gx_display();
 undefined4 FUN_00077a38();
 undefined4 handle_keyboard_message();
 undefined4 handle_mouse_message();

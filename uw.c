@@ -36499,62 +36499,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_000778fc()
-
-{
-  undefined2 *puVar1;
-  undefined2 *puVar2;
-  undefined2 *puVar3;
-  int iVar4;
-  int iVar5;
-  undefined2 *puVar6;
-  int iVar7;
-  int iVar8;
-  
-  if (DAT_0024af70 != 0) {
-    DAT_0023c430 = GXBeginDraw();
-    if (DAT_0023c430 == (void *)0x0) {
-      return 0;
-    }
-    iVar7 = 0x28;
-    puVar2 = &DAT_00242010;
-    iVar4 = DAT_0023cdb8;
-    if (DAT_0023cdb8 < 0) {
-      iVar4 = DAT_0023cdb8 + 1;
-    }
-    iVar5 = DAT_0023cdbc;
-    if (DAT_0023cdbc < 0) {
-      iVar5 = DAT_0023cdbc + 1;
-    }
-    /* Same DAT_0023c430 (framebuffer pointer) truncation as build_rgb565_palette
-       above -- see its comment. */
-    puVar3 = (undefined2 *)((iVar4 >> 1) * 400 + (intptr_t)DAT_0023c430);
-    do {
-      iVar8 = 0x140;
-      puVar1 = puVar3;
-      puVar6 = puVar2;
-      do {
-        puVar1 = puVar1 + (iVar5 >> 1);
-        iVar8 = iVar8 + -1;
-        /* Bounds-guard: see the identical loop in build_rgb565_palette. */
-        if ((char *)puVar1 >= (char *)DAT_0023c430 &&
-            (char *)(puVar1 + 1) <= (char *)DAT_0023c430 + 153600) {
-          *puVar1 = *puVar6;
-        }
-        puVar6 = puVar6 + 0x28;
-      } while (iVar8 != 0);
-      iVar7 = iVar7 + -1;
-      puVar3 = puVar3 + (iVar4 >> 1);
-      puVar2 = puVar2 + 1;
-    } while (iVar7 != 0);
-    GXEndDraw();
-  }
-  dirty_rect_union(0,0xf0,0,0x140);
-  return 0;
-}
-
-
-
 undefined4 FUN_00077a38()
 
 {
