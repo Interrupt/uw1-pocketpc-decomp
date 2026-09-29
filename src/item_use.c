@@ -1655,3 +1655,96 @@ uint param_2;
   }
   return;
 }
+
+
+
+
+
+// was FUN_0007b2f0 -- deferred-target-click completion callback,
+// gated on param_2 != 0 && param_3 == 0 and the used item not
+// already being held by the player: for target types 0x153-0x156,
+// clones the item 1-2 times (each clone's type id nudged by a random
+// die roll toward 0x156), scattering the clones onto nearby tiles
+// (place_object_in_world) -- one specific type-id outcome (0x10)
+// also rolls a random enchantment bonus on the clone -- then discards
+// the original from its tile. Prints a "no effect" message (id 0x84)
+// for any other target type. No callers found by grep in the
+// remaining decompile.
+void complete_use_item_scatter_spawn(param_1,param_2,param_3)
+short * param_1;
+int param_2;
+int param_3;
+
+{
+  int uw_ord2005_rem_168 = 0;
+  undefined1 uVar1;
+  byte bVar2;
+  ushort uVar3;
+  short sVar4;
+  undefined4 uVar5;
+  int iVar6;
+  char *iVar7;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+  ushort *puVar8;
+  uint uVar9;
+  uint uVar10;
+  uint extraout_r1;
+  uint uVar11;
+
+  FUN_00057cac(3);
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
+  if ((param_2 != 0) && (param_3 == 0)) {
+    uVar5 = encode_object_slot_index(param_1);
+    iVar6 = FUN_00053644((char *)g_player_object + 6,1,uVar5);
+    if (iVar6 == 0) {
+      uVar11 = (int)*param_1 & 0x1ff;
+      if (((ushort)uVar11 < 0x153) || (0x156 < (ushort)uVar11)) {
+        print_scroll_message_by_id(0x84);
+      }
+      else {
+        print_scroll_message_by_id(0x87);
+        iVar7 = (char *)tilemap_lookup((int)DAT_002020a0,(int)DAT_002020a4);
+        sVar4 = rand_below(2);
+        iVar6 = ((int)sVar4 - uVar11) + 0x156;
+        while( true ) {
+          iVar6 = iVar6 * 0x10000 >> 0x10;
+          if ((iVar6 < 1) || (puVar8 = (ushort *)spawn_new_object(1,0), puVar8 == (ushort *)0x0)) break;
+          *(char *)puVar8 = (char)*param_1;
+          *(undefined1 *)((char *)puVar8 + 1) = *(undefined1 *)((char *)param_1 + 1);
+          *(char *)(puVar8 + 1) = (char)param_1[1];
+          *(undefined1 *)((char *)puVar8 + 3) = *(undefined1 *)((char *)param_1 + 3);
+          *(char *)(puVar8 + 2) = (char)param_1[2];
+          *(undefined1 *)((char *)puVar8 + 5) = *(undefined1 *)((char *)param_1 + 5);
+          *(char *)(puVar8 + 3) = (char)param_1[3];
+          *(undefined1 *)((char *)puVar8 + 7) = *(undefined1 *)((char *)param_1 + 7);
+          sVar4 = rand_below(2);
+          uVar9 = uVar11 + (int)sVar4 + 1;
+          if (0x156 < (int)(uVar9 * 0x10000) >> 0x10) {
+            uVar9 = 0x10;
+          }
+          uVar10 = (*puVar8 ^ uVar9) & 0x1ff ^ (uint)*puVar8;
+          uVar1 = (undefined1)uVar10;
+          *(undefined1 *)puVar8 = uVar1;
+          bVar2 = (byte)(uVar10 >> 8);
+          *(byte *)((char *)puVar8 + 1) = bVar2;
+          if ((short)uVar9 == 0x10) {
+            *(undefined1 *)puVar8 = uVar1;
+            *(byte *)((char *)puVar8 + 1) = bVar2 | 0x80;
+            uVar5 = Ordinal_1053();
+            uw_ord2005_rem_168 = ((int)(uVar5)) % (6);
+            uVar9 = (uw_ord2005_rem_168 & 0xffff) + 3;
+            *(byte *)(puVar8 + 3) = (byte)puVar8[3] & 0x3f ^ (char)uVar9 * '@';
+            *(char *)((char *)puVar8 + 7) = (char)(uVar9 >> 2);
+          }
+          uVar3 = param_1[1];
+          place_object_in_world((uint)(uVar3 >> 0xd) + DAT_002020a0 * 8,
+                       ((uVar3 & 0x1c00) >> 10) + DAT_002020a4 * 8,uVar3 & 0x7f,puVar8,6,0);
+          iVar6 = iVar6 + -1;
+        }
+        discard_misplaced_object(iVar7 + 2,param_1,1);
+        FUN_00049924(2);
+      }
+    }
+  }
+  return;
+}
