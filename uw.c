@@ -11830,7 +11830,7 @@ char * * param_2;
 /* param_1/param_2 were `int` -- both real object-record pointers
    (FUN_00027708 passes the now-fixed DAT_001005e4-derived pointer and
    DAT_001005e0, both `char *`), truncated to 32 bits on this 64-bit
-   host before being dereferenced here and forwarded to FUN_0007ca50
+   host before being dereferenced here and forwarded to resolve_object_variant_or_special_link
    (which already declares its own params as real pointers). */
 void FUN_000273f8(param_1,param_2,param_3)
 char * param_1;
@@ -11872,7 +11872,7 @@ short param_3;
   }
   DAT_00100610 = 1;
   DAT_001005f8 = param_3;
-  if (((param_2 != 0) && (FUN_0007ca50(param_2,&local_2c,&local_2a,&local_28), local_28 == 0)) &&
+  if (((param_2 != 0) && (resolve_object_variant_or_special_link(param_2,&local_2c,&local_2a,&local_28), local_28 == 0)) &&
      (local_2c == 0xc)) {
     if ((local_2a & 8) == 0) {
       DAT_00100608 = (local_2a & 7) + DAT_00100608 + 1;
@@ -25953,7 +25953,7 @@ int param_1;
 
 
 undefined4 FUN_00048b6c(param_1,param_2,param_3)
-ushort *param_1;   /* was undefined4 -- object ptr into FUN_0007ca50 */
+ushort *param_1;   /* was undefined4 -- object ptr into resolve_object_variant_or_special_link */
 short param_2;
 char *param_3;     /* was undefined4 -- caller's stack buffer for Ordinal_1063 */
 
@@ -25964,7 +25964,7 @@ char *param_3;     /* was undefined4 -- caller's stack buffer for Ordinal_1063 *
   undefined1 auStack_12 [2];
   int local_10;
   
-  iVar1 = FUN_0007ca50(param_1,&local_14,auStack_12,&local_10);
+  iVar1 = resolve_object_variant_or_special_link(param_1,&local_14,auStack_12,&local_10);
   if (iVar1 != 0) {
     if (param_2 == 2) {
       Ordinal_1063(param_3,s_magical_00085ca8);
@@ -26011,7 +26011,7 @@ char *param_3;   /* was int -- caller's stack buffer for Ordinal_1063/1044/1068 
   byte *local_1c;
   
   DAT_0024cfcc = 1;
-  local_1c = (byte *)FUN_0007ca50(param_1,local_26,&local_28,&local_20);
+  local_1c = (byte *)resolve_object_variant_or_special_link(param_1,local_26,&local_28,&local_20);
   DAT_0024cfcc = 0;
   if ((local_1c == (byte *)0x0) || (param_2 != 3)) {
 LAB_00048e80:
@@ -36517,70 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-undefined4 FUN_0007ca50(param_1,param_2,param_3,param_4)
-ushort * param_1;
-ushort * param_2;
-undefined2 * param_3;
-uint * param_4;
-
-{
-  byte bVar1;
-  ushort uVar2;
-  int iVar3;
-  ushort uVar4;
-  uint uVar5;
-  ushort *local_20;
-  
-  uVar2 = *param_1;
-  if ((uVar2 & 0x1c0) != 0x180) {
-    if (((uVar2 & 0x8000) == 0) && (local_20 = param_1 + 3, (*local_20 & 0xffc0) != 0)) {
-      param_1 = (ushort *)FUN_000537d0(&local_20,0,4,2,0);
-      if (param_1 == (ushort *)0x0) {
-        return 0;
-      }
-      if ((((param_1[2] & 0x3f) == 0) && (DAT_0024cfcc == 0)) &&
-         (iVar3 = rand_below(10), iVar3 < 4)) {
-        return 0;
-      }
-    }
-    else {
-      if ((uVar2 & 0x8000) == 0) {
-        return 0;
-      }
-      if ((uVar2 & 0x1000) == 0) {
-        return 0;
-      }
-      if ((uVar2 & 0x1c0) == 0x140) {
-        return 0;
-      }
-    }
-    if (param_1 != (ushort *)0x0) {
-      uVar5 = (uint)((*param_1 & 0x800) != 0);
-      *param_4 = uVar5;
-      if (uVar5 == 1) {
-        bVar1 = *(byte *)((char *)param_1 + 7) >> 4;
-        uVar2 = bVar1 & 7;
-        *param_2 = uVar2;
-        uVar4 = 0xffff;
-        if ((bVar1 & 7) != 0) {
-          uVar4 = uVar2 + 0xc;
-        }
-        *param_2 = uVar4;
-        uVar5 = param_1[3] & 0xfc0;
-      }
-      else {
-        *param_2 = (ushort)((*(byte *)((char *)param_1 + 7) & 0x7c) >> 2);
-        uVar5 = param_1[3] & 0x3c0;
-      }
-      *param_3 = (short)(uVar5 >> 6);
-      return 1;
-    }
-  }
-  return 0;
-}
-
-
-
 void FUN_0007cc30(param_1)
 ushort * param_1;
 

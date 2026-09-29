@@ -2444,3 +2444,85 @@ void complete_cast_spell_on_target()
   wait_for_click_release(1);
   return;
 }
+
+
+// was FUN_0007ca50 -- resolves an object instance's (param_1) packed
+// quality/variant field into a (class, value) pair plus a flag
+// distinguishing "ordinary quality variant" from "special/linked"
+// items. Evidence for this split: refresh_stats_panel-family equip
+// code (src/player.c) uses the (class, value) pair as an ordinary
+// item-variant key into apply_equipped_item_effect only when the flag
+// is clear, and treats a set flag as a distinct "special/linked item"
+// case instead; trigger_object_use_babl_script (src/item_use.c) only
+// fires its babl conversation script when the flag is set, describing
+// it as a check "for a real link/description on the target"; and the
+// combat-damage helper at FUN_000273f8 (uw.c) only applies its bonus
+// when the flag is CLEAR and the class equals 0xc. The class value 9
+// is confirmed (via FUN_00048b6c, uw.c) to mean "cursed" when printed
+// via the "cursed"/"magical" item-description strings. Class 0xc's
+// meaning beyond "combat-relevant" and the flag's exact semantics
+// (identified? has-babl-link? both?) are not pinned down further here.
+undefined4 resolve_object_variant_or_special_link(param_1,param_2,param_3,param_4)
+ushort * param_1;
+ushort * param_2;
+undefined2 * param_3;
+uint * param_4;
+
+{
+  byte bVar1;
+  ushort uVar2;
+  int iVar3;
+  ushort uVar4;
+  uint uVar5;
+  ushort *local_20;
+  
+  uVar2 = *param_1;
+  if ((uVar2 & 0x1c0) != 0x180) {
+    if (((uVar2 & 0x8000) == 0) && (local_20 = param_1 + 3, (*local_20 & 0xffc0) != 0)) {
+      param_1 = (ushort *)FUN_000537d0(&local_20,0,4,2,0);
+      if (param_1 == (ushort *)0x0) {
+        return 0;
+      }
+      if ((((param_1[2] & 0x3f) == 0) && (DAT_0024cfcc == 0)) &&
+         (iVar3 = rand_below(10), iVar3 < 4)) {
+        return 0;
+      }
+    }
+    else {
+      if ((uVar2 & 0x8000) == 0) {
+        return 0;
+      }
+      if ((uVar2 & 0x1000) == 0) {
+        return 0;
+      }
+      if ((uVar2 & 0x1c0) == 0x140) {
+        return 0;
+      }
+    }
+    if (param_1 != (ushort *)0x0) {
+      uVar5 = (uint)((*param_1 & 0x800) != 0);
+      *param_4 = uVar5;
+      if (uVar5 == 1) {
+        bVar1 = *(byte *)((char *)param_1 + 7) >> 4;
+        uVar2 = bVar1 & 7;
+        *param_2 = uVar2;
+        uVar4 = 0xffff;
+        if ((bVar1 & 7) != 0) {
+          uVar4 = uVar2 + 0xc;
+        }
+        *param_2 = uVar4;
+        uVar5 = param_1[3] & 0xfc0;
+      }
+      else {
+        *param_2 = (ushort)((*(byte *)((char *)param_1 + 7) & 0x7c) >> 2);
+        uVar5 = param_1[3] & 0x3c0;
+      }
+      *param_3 = (short)(uVar5 >> 6);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+

@@ -1908,7 +1908,7 @@ int param_3;
       return;
     }
     if (uVar1 == 0x12e) {
-      iVar3 = FUN_0007ca50(param_2,&local_24,local_20,auStack_1c);
+      iVar3 = resolve_object_variant_or_special_link(param_2,&local_24,local_20,auStack_1c);
       if (iVar3 != 0) {
         FUN_00039d1c((int)DAT_002020a0,(int)DAT_002020a4,param_2,param_1,CONCAT22(uVar7,local_24),
                      local_20[0]);
@@ -2168,7 +2168,7 @@ ushort * param_2;
 // was FUN_0007c1bc -- a shared "finalize object use" step called at
 // the end of virtually every use-object interaction path
 // (use_object_on_target, use_readable_item, dispatch_world_object_
-// interaction_by_family): checks FUN_0007ca50 (not yet named) for a
+// interaction_by_family): checks resolve_object_variant_or_special_link (not yet named) for a
 // real link/description on the target (param_4), then either
 // triggers a babl conversation script (FUN_00039d1c) for the
 // player-only case, or -- gated on a per-player cooldown counter
@@ -2190,7 +2190,7 @@ int param_5;
   undefined2 local_1a;
   int local_18;
   
-  iVar1 = FUN_0007ca50(param_4,&local_1a,&local_1c,&local_18);
+  iVar1 = resolve_object_variant_or_special_link(param_4,&local_1a,&local_1c,&local_18);
   if ((iVar1 != 0) && (local_18 != 0)) {
     if (param_5 == 0) {
       puVar2 = param_4;
