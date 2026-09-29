@@ -775,6 +775,60 @@ extern undefined2 DAT_000bbfe0;
 extern undefined *PTR_DAT_000845c8;
 extern undefined1 DAT_000845e8_backing[65536];
 #define DAT_000845e8 DAT_000845e8_backing[0]
+/* Globals defined in uw.c but also used by functions that now live in
+   models.c (tick_anim_record, emit_catalog_object,
+   emit_anim_object_frames) -- extern'd here so both translation units
+   see the same storage. */
+extern unsigned char DAT_00086c08_backing[0x78];
+#define DAT_00086c08 DAT_00086c08_backing[0]
+#define DAT_00086c09 DAT_00086c08_backing[1]
+#define DAT_00086c0a DAT_00086c08_backing[2]
+#define DAT_00086c0b DAT_00086c08_backing[3]
+extern undefined4 DAT_00086ce0;
+extern undefined4 DAT_00086ce4;
+extern undefined4 DAT_00086ce8;
+extern undefined4 DAT_00086cec;
+extern undefined4 DAT_00086cf0;
+extern undefined4 DAT_00086cf4;
+extern undefined4 DAT_00086cf8;
+extern undefined4 DAT_00086cfc;
+extern undefined1 DAT_00086d60_backing[65536];
+#define DAT_00086d60 DAT_00086d60_backing[0]
+extern short DAT_000b4620;
+extern char *DAT_00110fc0;
+extern undefined DAT_00110ff0_backing[985856];
+#define DAT_00110ff0 DAT_00110ff0_backing[0]
+extern undefined DAT_00110ffc;
+extern undefined1 DAT_00189590_backing[985856];
+#define DAT_00189590 DAT_00189590_backing[0]
+extern undefined DAT_0018959c;
+extern undefined DAT_0018959d;
+extern undefined DAT_0018959e;
+extern undefined DAT_0018959f;
+extern void * const g_anim_model_slot[30];
+extern unsigned char g_anim_model_scratch[30][16384];
+extern undefined2 DAT_00189570;
+extern short DAT_00189576;
+extern undefined2 DAT_00189578;
+extern ushort DAT_0018957a;
+extern short DAT_0018957c;
+extern short DAT_0018957e;
+extern ushort DAT_00189580;
+extern short DAT_00189584;
+extern undefined2 DAT_00189586;
+extern undefined2 DAT_00202734;
+extern undefined4 DAT_0023b804;
+extern ushort DAT_0023b81c;
+extern ushort DAT_0023b904;
+extern ushort DAT_0023b91c;
+extern ushort DAT_0023b920;
+extern byte DAT_0023bc88;
+extern double g_tune_edge_offset;
+extern int g_tune_last_catalog;
+extern double g_tune_leaf_hinge_offset;
+extern double g_tune_rotation_offset;
+extern double g_tune_wide_center;
+extern int g_uw_debug_pick_diag;
 extern char s_add_to_npc_inv_0008507c[];
 extern char s_babl_ask_000851ec[];
 extern char s_babl_fmenu_00085214[];
@@ -2766,6 +2820,7 @@ void FUN_0005e3c0();
 void process_visible_tile_cell();
 void emit_tile_objects();
 void emit_object_billboard();
+void emit_catalog_object();
 void emit_anim_object_frames();
 void FUN_00064d34();
 void FUN_00064e3c();
@@ -3211,6 +3266,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/level.h"
 #include "src/headers/doors.h"
 #include "src/headers/winfile_wrappers.h"
+#include "src/headers/models.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
