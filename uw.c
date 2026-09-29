@@ -8001,250 +8001,6 @@ LAB_0001ad98:
 
 
 
-void FUN_0001b89c()
-
-{
-  undefined4 uVar1;
-  
-  uVar1 = FUN_0001b900(*DAT_00085a6c + 0x8b,0x30 - DAT_00085a6c[1]);
-  if (-1 < (short)uVar1) {
-    FUN_0001bb04(1,uVar1,&DAT_000bbfd0,&DAT_000bbf98);
-    FUN_0007ec50();
-  }
-  return;
-}
-
-
-
-int FUN_0001b900(param_1,param_2)
-short param_1;
-short param_2;
-
-{
-  int iVar1;
-  
-  iVar1 = 0;
-  do {
-    if (((int)*(short *)(&DAT_000845b8 + iVar1 * 4) <= (int)param_1) &&
-       ((int)param_1 <= *(short *)(&DAT_000845b8 + iVar1 * 4) + 0x10)) {
-      if (((int)*(short *)(&DAT_000845ba + iVar1 * 4) <= (int)param_2) &&
-         ((int)param_2 <= *(short *)(&DAT_000845ba + iVar1 * 4) + 0x10)) {
-        return iVar1;
-      }
-    }
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-    if (3 < iVar1) {
-      return -1;
-    }
-  } while( true );
-}
-
-
-
-int FUN_0001b9a4(param_1,param_2)
-short param_1;
-short param_2;
-
-{
-  int iVar1;
-  
-  iVar1 = 0;
-  do {
-    if (((int)*(short *)(&DAT_000845d8 + iVar1 * 4) <= (int)param_1) &&
-       ((int)param_1 <= *(short *)(&DAT_000845d8 + iVar1 * 4) + 0x10)) {
-      if (((int)*(short *)(&DAT_000845da + iVar1 * 4) <= (int)param_2) &&
-         ((int)param_2 <= *(short *)(&DAT_000845da + iVar1 * 4) + 0x10)) {
-        return iVar1;
-      }
-    }
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-    if (3 < iVar1) {
-      return -1;
-    }
-  } while( true );
-}
-
-
-
-void FUN_0001ba48()
-
-{
-  undefined4 uVar1;
-  short local_8;
-  short local_6;
-  
-  FUN_00057504(&local_6,&local_8);
-  uVar1 = FUN_0001b900((int)local_6,(int)local_8);
-  if (-1 < (short)uVar1) {
-    FUN_0001bb04(1,uVar1,&DAT_000bbfd0,&DAT_000bbf98);
-  }
-  FUN_0007ec50();
-  return;
-}
-
-
-
-void FUN_0001baa0()
-
-{
-  undefined4 uVar1;
-  
-  uVar1 = FUN_0001b9a4(*DAT_00085a6c + 0x52,0x30 - DAT_00085a6c[1]);
-  if (-1 < (short)uVar1) {
-    FUN_0001bb04(0,uVar1,&DAT_000bbfe8,&DAT_000bbff0);
-    FUN_0007ec50();
-  }
-  return;
-}
-
-
-
-void FUN_0001bb04(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-undefined4 param_2;
-int param_3;
-int param_4;
-
-{
-  short sVar1;
-  int iVar2;
-  int iVar3;
-  uint *puVar4;
-  undefined4 uVar5;
-  int iVar6;
-  bool bVar7;
-  short local_38;
-  short local_36;
-  undefined4 local_10;
-  undefined4 local_c;
-  int local_8;
-  int local_4;
-  
-  iVar6 = 0;
-  bVar7 = g_selected_object != 0;
-  local_10 = param_1;
-  local_c = param_2;
-  local_8 = param_3;
-  local_4 = param_4;
-  if (!bVar7) {
-    if (*(short *)(param_3 + (short)param_2 * 2) == 0) {
-      return;
-    }
-    iVar2 = FUN_000576d0(1);
-    if (iVar2 != 0) {
-      if (((short)local_10 == 0) && (DAT_000bc008 == '\0')) {
-        return;
-      }
-      iVar2 = FUN_000535fc((int)*(short *)(local_8 + (short)local_c * 2));
-      if (((((*(byte *)(iVar2 + 1) & 0x80) != 0) && ((*(ushort *)(iVar2 + 6) & 0x8000) == 0)) &&
-          ((*(ushort *)(iVar2 + 6) & 0xffc0) != 0x40)) && (iVar6 = FUN_000470fc(iVar2), iVar6 == 0))
-      {
-        return;
-      }
-      iVar3 = check_object_carry_weight(iVar2);
-      if (iVar3 == 0) {
-        if ((iVar6 != 0) && (iVar6 != iVar2)) {
-          iVar3 = (*(ushort *)(iVar2 + 6) & 0xffc0) + (*(ushort *)(iVar6 + 6) & 0xffc0);
-          *(byte *)(iVar2 + 6) = (byte)iVar3 ^ (byte)*(ushort *)(iVar2 + 6) & 0x3f;
-          *(char *)(iVar2 + 7) = (char)((uint)iVar3 >> 8);
-          object_list_unlink(iVar2 + 4,iVar6);
-          free_object_slot(iVar6);
-        }
-        FUN_00078c80(0xfc);
-        return;
-      }
-      if (iVar6 != 0 && iVar6 != iVar2) {
-        object_list_insert_head(iVar2 + 4,iVar6);
-      }
-      bVar7 = true;
-      if ((iVar6 == 0) || (uVar5 = 1, iVar6 == iVar2)) {
-        uVar5 = 0;
-      }
-      FUN_0001c1c8((int)(short)local_c,local_8,uVar5);
-      FUN_0001bf9c((int)(short)local_10,(int)(short)local_c);
-      *(undefined4 *)(local_4 + (short)local_c * 4) = 0;
-      (&DAT_000bbfa8)[(short)local_c] = 0xffff;
-      (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
-      /* Real ARM binary also calls this with only 1 arg (confirmed via
-         Ghidra decompile of the real FUN_0001bb04) -- same "leftover
-         register" reliance as blit_sprite_row_remapped's dropped 4th
-         arg, not a decompile mistake: the original code never reloads
-         r1 here because it already holds the right value from earlier
-         in this same block. draw_hotspot_crosshair_marker's 2nd param is read as
-         `(short)param_2` and used purely as a small array/table index
-         (see its own body) -- local_c is exactly that same value, still
-         live and unchanged since being used on the previous 4 lines, so
-         it's what's actually sitting in that register at this point.
-         Passed explicitly since a C recompile has no equivalent
-         "whatever's left in the register" state (the uninitialized
-         param_2 this crashed on before being declared `undefined **`
-         let it be silently read as a wild pointer instead of the small
-         integer draw_hotspot_crosshair_marker actually expects -- ASan-confirmed
-         heap-buffer-overflow in plot_pixel, reached via this exact call
-         with a garbage index). */
-      draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
-      if (g_selected_object == 0) {
-        return;
-      }
-      if (iVar6 != 0) {
-        g_cursor_holding_state = 1;
-        return;
-      }
-      wait_for_click_release(1);
-      FUN_00057504(&local_36,&local_38);
-      sVar1 = FUN_0001bef4((int)local_36,(int)local_38,&local_10,&local_c,&local_8,&local_4);
-      if (sVar1 == 0) {
-        g_cursor_holding_state = 1;
-        handle_inventory_panel_click(0xffffffff);
-        return;
-      }
-    }
-    if (g_selected_object == 0) {
-      if ((*(ushort *)(DAT_00085a6c + 6) & 1) == 0) {
-        iVar6 = 1;
-        uVar5 = FUN_000535fc((int)*(short *)(local_8 + (short)local_c * 2));
-        if ((short)local_10 == 0) {
-          sVar1 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x29),0x14);
-          if (0 < sVar1) {
-            iVar6 = 2;
-          }
-        }
-        else {
-          iVar6 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x29),0xf);
-          iVar6 = iVar6 + 1;
-        }
-        dispatch_object_action(uVar5,iVar6);
-      }
-      else {
-        puVar4 = (uint *)(local_4 + (short)local_c * 4);
-        *puVar4 = (uint)(*puVar4 == 0);
-        draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
-      }
-      goto LAB_0001bec8;
-    }
-  }
-  wait_for_click_release(1);
-  g_cursor_holding_state = 1;
-  if ((short)local_10 == 0) {
-    g_cursor_holding_state = 1;
-    return;
-  }
-  FUN_0001c268((int)(short)local_10,(int)(short)local_c,local_8);
-  FUN_0001bf9c((int)(short)local_10,(int)(short)local_c);
-  *(undefined4 *)(local_4 + (short)local_c * 4) = 1;
-  draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
-  (&DAT_000bbfa8)[(short)local_c] = 0xffff;
-  (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
-LAB_0001bec8:
-  if ((bVar7) && (g_selected_object == 0)) {
-    FUN_00057cac(3);
-    g_cursor_holding_state = 0;
-  }
-  return;
-}
-
-
-
 undefined4 FUN_0001bef4(param_1,param_2,param_3,param_4,param_5,param_6)
 undefined4 param_1;
 undefined4 param_2;
@@ -8257,7 +8013,7 @@ undefined4 * param_6;
   short sVar1;
   undefined4 *puVar2;
   
-  sVar1 = FUN_0001b900();
+  sVar1 = hit_test_barter_player_slot();
   if ((uint)(int)sVar1 < 0x80000000) {
     *param_3 = 1;
     *param_4 = sVar1;
@@ -8265,7 +8021,7 @@ undefined4 * param_6;
     puVar2 = &DAT_000bbf98;
   }
   else {
-    sVar1 = FUN_0001b9a4(param_1,param_2);
+    sVar1 = hit_test_barter_npc_slot(param_1,param_2);
     if (sVar1 < 0) {
       return 0;
     }
@@ -8478,7 +8234,7 @@ LAB_0001c404:
 // of two tables selected by param_1 (worn-item slots vs backpack slots),
 // colored by whether a parallel "valid"/"used" table says that slot is
 // occupied. Found fixing a real ASan-caught crash: one caller
-// (FUN_0001bb04) passed only 1 of the 2 real arguments here, matching
+// (handle_barter_slot_click) passed only 1 of the 2 real arguments here, matching
 // the real ARM binary's own reliance on a leftover register value --
 // see that call site's own comment.
 void draw_hotspot_crosshair_marker(param_1,param_2)
@@ -24287,7 +24043,7 @@ short param_1;
         goto LAB_00042a10;
       }
       if (iVar2 == 0x18) {
-        FUN_0001ba48();
+        handle_barter_player_slot_drop();
         goto LAB_00042a10;
       }
     }
@@ -39859,8 +39615,8 @@ void FUN_00066e90()
   register_key_binding(0x32,2,4,FUN_000295b4);
   register_key_binding(0x33,3,4,FUN_000295b4);
   register_key_binding(0x34,4,4,FUN_000295b4);
-  register_click_region(0x52,0x30,0x88,10,4,4,FUN_0001baa0);
-  register_click_region(0x8b,0x30,0xc1,10,4,4,FUN_0001b89c);
+  register_click_region(0x52,0x30,0x88,10,4,4,handle_barter_npc_panel_click);
+  register_click_region(0x8b,0x30,0xc1,10,4,4,handle_barter_player_panel_click);
   register_click_region(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
   register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
   register_key_binding(0x286,0,0x1b,FUN_000679f4);

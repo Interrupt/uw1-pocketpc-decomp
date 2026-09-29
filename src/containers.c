@@ -927,7 +927,7 @@ LAB_0004386c:
          (confirmed via Ghidra decompile of the real auto_place_in_container
          at 0x43734) -- same "leftover register" reliance already found
          3 times this session (blit_sprite_row_remapped,
-         draw_hotspot_crosshair_marker's caller in FUN_0001bb04,
+         draw_hotspot_crosshair_marker's caller in handle_barter_slot_click,
          collision_build_height_field's neighbor lookups). FUN_0004479c's
          param_1 is the object being checked against the rune item-id
          range (0xe8-0x100) -- exactly this function's own param_1,
