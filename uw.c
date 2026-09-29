@@ -5196,7 +5196,7 @@ char s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08[] = "Lev_%d_@_%2.2u.%1.1u_%2.2u
 byte DAT_0023bd84;
 undefined1 DAT_00086e05;
 undefined1 DAT_00086e06;
-static undefined DAT_00086e00_backing[8192];
+undefined DAT_00086e00_backing[8192];
 #define DAT_00086e00 DAT_00086e00_backing[0]
 short DAT_0023be90;
 short DAT_0023be92;
@@ -36401,81 +36401,6 @@ LAB_00060f54:
 
 
 
-void FUN_00067950()
-
-{
-  int iVar1;
-  undefined1 auStack_2c [40];
-  
-  iVar1 = (int)DAT_00201c70;
-  if (iVar1 < 0) {
-    iVar1 = iVar1 + 0xff;
-  }
-  Ordinal_719(auStack_2c,s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08,(int)DAT_00201b68,
-              (int)DAT_00204880 >> 8,(int)DAT_00204880 >> 5 & 7,((int)DAT_00204882 << 0x10) >> 0x18,
-              ((int)DAT_00204882 << 0x10) >> 0x15 & 7,((int)DAT_00204884 << 0x10) >> 0x13,
-              iVar1 >> 8 & 0xffff);
-  message_scroll_print_wrapped(auStack_2c);
-  return;
-}
-
-
-
-void FUN_000679f4()
-
-{
-  if ((DAT_0023bd84 & 1) == 0) {
-    DAT_0023bd84 = DAT_0023bd84 | 1;
-    DAT_00086e05 = 10;
-    DAT_00086e06 = 0;
-  }
-  FUN_00078c80(0x113);
-  message_scroll_print_wrapped(&DAT_00086e00);
-  return;
-}
-
-
-
-void FUN_00067a44(param_1)
-short param_1;
-
-{
-  int iVar1;
-  short sVar2;
-  bool bVar3;
-  
-  bVar3 = param_1 == 1;
-  if (param_1 < 2) {
-    DAT_0023be90 = DAT_00204880;
-    sVar2 = 0x4880;
-    if (bVar3) {
-      sVar2 = DAT_00204884;
-    }
-    DAT_0023be92 = DAT_00204882;
-    if (bVar3) {
-      DAT_0023be94 = sVar2 + 0xa4;
-    }
-    DAT_0023bf00 = DAT_00201c70;
-    if (!bVar3) {
-      DAT_0023be94 = 0x458;
-      DAT_0023bf02 = 0xfc00;
-    }
-  }
-  else if (param_1 < 0x100) {
-    iVar1 = FUN_000535fc();
-    DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);
-    DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
-    DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;
-    DAT_0023bf00 = (*(ushort *)(iVar1 + 2) & 0xff80) << 6;
-  }
-  if (DAT_0023b82c == 0) {
-    FUN_00049924(2);
-  }
-  return;
-}
-
-
-
 void FUN_00067b98()
 
 {
@@ -36576,7 +36501,7 @@ short param_1;
 void FUN_00067e2c()
 
 {
-  FUN_00067a44();
+  set_custom_view_target();
   FUN_00067d10(0xffffffff);
   return;
 }
@@ -43682,7 +43607,7 @@ LAB_0007588c:
     break;
   case 7:
     FUN_000542f8(0xb,1,param_2);
-    FUN_00067a44(0);
+    set_custom_view_target(0);
     FUN_00067d10(0xffffffff);
     break;
   case 8:

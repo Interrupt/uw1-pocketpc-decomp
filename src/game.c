@@ -755,8 +755,100 @@ void init_gameplay_session()
   register_click_region(0x8b,0x30,0xc1,10,4,4,handle_barter_player_panel_click);
   register_click_region(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
   register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
-  register_key_binding(0x286,0,0x1b,FUN_000679f4);
-  register_key_binding(0x30,0,0x1b,FUN_00067950);
+  register_key_binding(0x286,0,0x1b,print_help_message);
+  register_key_binding(0x30,0,0x1b,print_player_position_debug);
+  return;
+}
+
+
+
+
+// was FUN_00067950 -- formats and prints a "Lev:d X:.. Y:.. Z:.. F:.."
+// style message showing the player's current level, tile position,
+// and facing. Registered as the '0' key binding in
+// init_gameplay_session -- a debug/cheat "show coordinates" command.
+void print_player_position_debug()
+
+{
+  int iVar1;
+  undefined1 auStack_2c [40];
+  
+  iVar1 = (int)DAT_00201c70;
+  if (iVar1 < 0) {
+    iVar1 = iVar1 + 0xff;
+  }
+  Ordinal_719(auStack_2c,s_Lev__d____2_2u__1_1u__2_2u__1_1u_00086e08,(int)DAT_00201b68,
+              (int)DAT_00204880 >> 8,(int)DAT_00204880 >> 5 & 7,((int)DAT_00204882 << 0x10) >> 0x18,
+              ((int)DAT_00204882 << 0x10) >> 0x15 & 7,((int)DAT_00204884 << 0x10) >> 0x13,
+              iVar1 >> 8 & 0xffff);
+  message_scroll_print_wrapped(auStack_2c);
+  return;
+}
+
+
+
+// was FUN_000679f4 -- prints a help/status message (string id 0x113)
+// built into the DAT_00086e00 buffer, one-time-initializing a small
+// counter pair (DAT_0023bd84 bit 0 guards it) the first time it's
+// shown. Registered as a special key binding in init_gameplay_session.
+void print_help_message()
+
+{
+  if ((DAT_0023bd84 & 1) == 0) {
+    DAT_0023bd84 = DAT_0023bd84 | 1;
+    DAT_00086e05 = 10;
+    DAT_00086e06 = 0;
+  }
+  FUN_00078c80(0x113);
+  message_scroll_print_wrapped(&DAT_00086e00);
+  return;
+}
+
+
+
+// was FUN_00067a44 -- populates the "look at" override fields
+// (DAT_0023be90/be92/be94/bf00/bf02) that
+// update_current_view_from_subject's DAT_0023b82c==0 branch reads:
+// param_1<2 resets to the player's own live position (param_1==1 also
+// applies the eye-height offset), param_1 in [2,0xff) instead resolves
+// an object by slot index and copies its position/heading. Forces a
+// camera resync (FUN_00049924) when no object is currently the view
+// subject.
+void set_custom_view_target(param_1)
+short param_1;
+
+{
+  int iVar1;
+  short sVar2;
+  bool bVar3;
+  
+  bVar3 = param_1 == 1;
+  if (param_1 < 2) {
+    DAT_0023be90 = DAT_00204880;
+    sVar2 = 0x4880;
+    if (bVar3) {
+      sVar2 = DAT_00204884;
+    }
+    DAT_0023be92 = DAT_00204882;
+    if (bVar3) {
+      DAT_0023be94 = sVar2 + 0xa4;
+    }
+    DAT_0023bf00 = DAT_00201c70;
+    if (!bVar3) {
+      DAT_0023be94 = 0x458;
+      DAT_0023bf02 = 0xfc00;
+    }
+  }
+  else if (param_1 < 0x100) {
+    iVar1 = FUN_000535fc();
+    DAT_0023be90 = (*(byte *)(iVar1 + 0x17) & 0xfc) * 0x40 + (*(byte *)(iVar1 + 3) & 0xe0);
+    DAT_0023be92 = (*(byte *)(iVar1 + 3) & 0x1c) * 8 + (*(ushort *)(iVar1 + 0x16) & 0x3f0) * 0x10;
+    DAT_0023be94 = (*(byte *)(iVar1 + 2) & 0x7f) << 3;
+    DAT_0023bf00 = (*(ushort *)(iVar1 + 2) & 0xff80) << 6;
+  }
+  if (DAT_0023b82c == 0) {
+    FUN_00049924(2);
+  }
   return;
 }
 
