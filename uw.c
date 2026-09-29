@@ -5086,7 +5086,11 @@ char s__DATA_f32_tr_00086de8[] = "\\DATA\\f32.tr";
 char DAT_00086db4;
 int DAT_00086db8;
 undefined1 DAT_00086da8;
-undefined DAT_00086dc8;
+/* Was a lone `undefined` scalar, but compute_light_source_colors
+   indexes it as a 16-entry (0-0xf) light-type -> base-color-index
+   table (`(&DAT_00086dc8)[light_type & 0xf]`). Widened to match. */
+undefined DAT_00086dc8_backing[16];
+#define DAT_00086dc8 DAT_00086dc8_backing[0]
 undefined g_object_weight_table;
 /* Was a lone `undefined` scalar 6 bytes past DAT_00202800 -- but
    DAT_00202800 is the REAL family-0 armor/weapon variant-effect table
@@ -23841,7 +23845,7 @@ void FUN_00044bd8()
         }
       }
       else {
-        FUN_000664bc(abStack_e);
+        compute_light_source_colors(abStack_e);
         FUN_0007863c(abStack_e[local_10] + 0x180 | 0xc00);
         message_scroll_print_wrapped();
         bVar1 = *(byte *)(DAT_00086df8 + local_10 * 2 + 0x3f);
@@ -36392,30 +36396,6 @@ LAB_00060f54:
 
 
 
-void FUN_000664bc(param_1)
-undefined1 * param_1;
-
-{
-  char cVar1;
-  uint uVar2;
-  
-  *param_1 = 0x15;
-  param_1[1] = 0x15;
-  param_1[2] = 0x15;
-  if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
-    uVar2 = 0;
-    do {
-      cVar1 = (&DAT_00086dc8)[*(byte *)(DAT_00086df8 + uVar2 * 2 + 0x3e) & 0xf];
-      param_1[uVar2] = cVar1;
-      param_1[uVar2] = (*(byte *)(DAT_00086df8 + uVar2 * 2 + 0x3e) >> 4) + cVar1;
-      uVar2 = uVar2 + 1 & 0xff;
-    } while (uVar2 < (*(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf));
-  }
-  return;
-}
-
-
-
 void FUN_00066594(param_1)
 uint param_1;
 
@@ -36499,7 +36479,7 @@ uint param_1;
     uVar2 = uVar2 + 1 & 0xff;
   } while (uVar2 < 4);
   FUN_00066594(DAT_0023bc9c);
-  FUN_000664bc(auStack_c);
+  compute_light_source_colors(auStack_c);
   FUN_0006ea54(auStack_c);
   return;
 }

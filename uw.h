@@ -862,6 +862,8 @@ extern char *DAT_0023ae34;
 extern char *DAT_0023ae30;
 extern char DAT_00086db4;
 extern int DAT_00086db8;
+extern undefined DAT_00086dc8_backing[16];
+#define DAT_00086dc8 DAT_00086dc8_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -2885,7 +2887,7 @@ void reset_player_derived_state();
 void load_floor_texture_arenas();
 void update_screen_flicker_effect();
 undefined4 apply_equipped_item_effect();
-void FUN_000664bc();
+void compute_light_source_colors();
 void FUN_00066594();
 void FUN_00066634();
 int compute_object_weight();

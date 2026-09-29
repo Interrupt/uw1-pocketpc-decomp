@@ -1129,3 +1129,36 @@ LAB_00066398:
   return 0;
 }
 
+
+
+
+// was FUN_000664bc -- fills param_1[0..2] (default color index 0x15
+// each) with per-light-source color indices derived from the ambient-
+// light contributions packed at DAT_00086df8+0x3e (same bitfield
+// layout apply_equipped_item_effect's light scan uses), via the
+// DAT_00086dc8 type->base-color lookup table plus the light-level
+// nibble. Consumed both to render a HUD light-color indicator
+// (FUN_0006ea54) and to pick a "you see a <color> light" message
+// string fragment.
+void compute_light_source_colors(param_1)
+undefined1 * param_1;
+
+{
+  char cVar1;
+  uint uVar2;
+
+  *param_1 = 0x15;
+  param_1[1] = 0x15;
+  param_1[2] = 0x15;
+  if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c0) != 0) {
+    uVar2 = 0;
+    do {
+      cVar1 = (&DAT_00086dc8)[*(byte *)(DAT_00086df8 + uVar2 * 2 + 0x3e) & 0xf];
+      param_1[uVar2] = cVar1;
+      param_1[uVar2] = (*(byte *)(DAT_00086df8 + uVar2 * 2 + 0x3e) >> 4) + cVar1;
+      uVar2 = uVar2 + 1 & 0xff;
+    } while (uVar2 < (*(ushort *)(DAT_00086df8 + 0x5f) >> 6 & 0xf));
+  }
+  return;
+}
+
