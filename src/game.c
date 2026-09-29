@@ -3,7 +3,7 @@
  * (the original monolithic decompile) once these functions' real roles
  * were confirmed. */
 #include "headers/game.h"
-#include "debug.h"
+#include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 

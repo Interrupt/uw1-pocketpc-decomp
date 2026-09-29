@@ -1,6 +1,6 @@
 #include "uw.h"
-#include "debug.h"
-#include "gx_stub.h"
+#include "src/headers/debug.h"
+#include "src/headers/gx_stub.h"
 #include <dlfcn.h>
 #include <math.h>
 #include <stdarg.h>
@@ -22942,7 +22942,21 @@ short param_4;
   iVar7 = (int)(char)param_4 - (int)(char)param_2;
   local_34 = param_2;
   local_33 = param_1;
-  pbVar4 = (byte *)tilemap_lookup();
+  /* Dropped both arguments -- was `tilemap_lookup()`. param_1/param_2 are
+     this line-walk's starting tile (just stashed into local_33/local_34
+     above, and into DAT_00101740/DAT_00101741 a few lines below as the
+     walk's "current position" state), matching *pbVar4's own use right
+     after (>> 4 = floor_height, presumably seeding a step-climb check
+     for the walk that follows). Confirmed as a live crash: called with
+     no args, tilemap_lookup ran on whatever garbage happened to be in
+     its parameter registers, occasionally returning NULL/a wild pointer
+     that *pbVar4 then dereferenced unchecked -- a real SIGSEGV in
+     npc_walk_toward_tile's call chain (demo_automap.txt). */
+  pbVar4 = (byte *)tilemap_lookup(param_1,param_2);
+  if (pbVar4 == 0) {
+    DAT_00101450 = 0;
+    return -1;
+  }
   iVar5 = ((int)(char)param_3 - (int)(char)param_1) * 0x1000000;
   iVar1 = iVar5 >> 0x18;
   if (iVar1 == 0) {

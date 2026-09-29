@@ -1,6 +1,6 @@
-#include "file_io.h"
+#include "headers/file_io.h"
 
-#include "debug.h"
+#include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

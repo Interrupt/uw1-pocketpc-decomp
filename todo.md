@@ -1,5 +1,25 @@
 # Known issues
 
+## Open
+- [ ] `demo_automap.txt` (explicitly excluded from the default regression
+      list already, see run-regressions.sh's own comment) crashes deep in
+      NPC tick logic: `settle_mobile_to_immobile` -> stack overflow-looking
+      recursion (same symbol appears twice in the ASan backtrace, though
+      no literal self-call was found in a quick read -- may be a stripped
+      static helper attributed to the wrong nearest symbol, needs lldb to
+      confirm), reached via sync_object_tile_position -> mobile_object_tick
+      during the code-cleanup-first-pass branch's file-reorg work. Also
+      preceded by a `resolve_object_link` out-of-range warning
+      (param_1=0x2, clearly a wild/garbage pointer) from `object_list_unlink`
+      just before the crash -- possibly the same root cause. NOT caused by
+      any logic change (the file-reorg batch that surfaced it moved files
+      and fixed #include paths only) -- but a same-script run on a clean
+      pre-reorg worktree did NOT crash, so this is a latent bug whose
+      manifestation is sensitive to memory layout/link order, only now
+      exposed by the reorg reordering object files. Wasn't investigated
+      further this round -- lower priority than the reorg work in
+      progress.
+
 ## Fixed this round
 - [x] Spacebar didn't add a space in name entry — SDL delivered the matching
       keydown (VK_SPACE, a mapped game button) and SDL_TEXTINPUT event in the

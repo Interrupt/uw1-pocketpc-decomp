@@ -3,7 +3,7 @@
  * software framebuffer. Split out of uw.c (the original monolithic
  * decompile) once these functions' real roles were confirmed. */
 #include "headers/graphics.h"
-#include "debug.h"
+#include "headers/debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 

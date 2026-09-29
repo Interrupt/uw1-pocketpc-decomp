@@ -11,19 +11,25 @@ set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 
-add_executable(uw_dbg
+# uw.c/uw.h stay at the repo root until the code-cleanup pass finishes
+# splitting them apart (see struct-recovery-plan.md and the cleanup
+# goal); everything already split out lives under src/, with its
+# headers under src/headers/.
+set(UW_SOURCES
   uw.c
-  graphics.c
-  game.c
-  chargen.c
-  main.c
-  gx_stub.c
-  ordinal_stubs.c
-  file_io.c
-  demomode.c
-  democapture.c
-  debug.c
+  src/graphics.c
+  src/game.c
+  src/chargen.c
+  src/main.c
+  src/gx_stub.c
+  src/ordinal_stubs.c
+  src/file_io.c
+  src/demomode.c
+  src/democapture.c
+  src/debug.c
 )
+
+add_executable(uw_dbg ${UW_SOURCES})
 
 target_include_directories(uw_dbg PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_directories(uw_dbg PRIVATE ${SDL2_LIBRARY_DIRS})
@@ -49,19 +55,7 @@ set_target_properties(uw_dbg PROPERTIES
 # adjacent heap memory. Kept as a separate target rather than folding into
 # uw_dbg itself so day-to-day interactive playtesting isn't slowed down by
 # ASan's overhead.
-add_executable(uw_asan
-  uw.c
-  graphics.c
-  game.c
-  chargen.c
-  main.c
-  gx_stub.c
-  ordinal_stubs.c
-  file_io.c
-  demomode.c
-  democapture.c
-  debug.c
-)
+add_executable(uw_asan ${UW_SOURCES})
 
 target_include_directories(uw_asan PRIVATE ${SDL2_INCLUDE_DIRS})
 target_link_directories(uw_asan PRIVATE ${SDL2_LIBRARY_DIRS})

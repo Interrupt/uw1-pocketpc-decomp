@@ -44,9 +44,9 @@
  * only the DELAY line WRITTEN to the file (for a deliberately slowed-
  * down replay, e.g. to watch it happen) -- it does not change how the
  * recorder itself counts ticks. */
-#include "democapture.h"
-#include "gx_stub.h"
-#include "demomode.h"
+#include "headers/democapture.h"
+#include "headers/gx_stub.h"
+#include "headers/demomode.h"
 
 #include <stdio.h>
 #include <stdlib.h>

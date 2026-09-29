@@ -7,10 +7,10 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-#include "ghidra_intrinsics.h"
-#include "ordinal_stubs.h"
-#include "gx_stub.h"
-#include "file_io.h"
+#include "src/headers/ghidra_intrinsics.h"
+#include "src/headers/ordinal_stubs.h"
+#include "src/headers/gx_stub.h"
+#include "src/headers/file_io.h"
 
 typedef unsigned char   undefined;
 
@@ -1852,8 +1852,8 @@ undefined4 FUN_000824f0();
  * here too so anything that already includes uw.h keeps working
  * unchanged. Safe against the circular #include "../uw.h" each of these
  * does themselves, since UW_H is already defined by this point. */
-#include "headers/graphics.h"
-#include "headers/game.h"
-#include "headers/chargen.h"
+#include "src/headers/graphics.h"
+#include "src/headers/game.h"
+#include "src/headers/chargen.h"
 
 #endif /* UW_H */

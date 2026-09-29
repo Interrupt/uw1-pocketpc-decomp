@@ -5,7 +5,7 @@
  * (color state, rect fill/save/restore, paletted-bitmap blitting into
  * the game's internal software framebuffer). Pulls in uw.h itself so
  * this header is self-contained for any caller. */
-#include "../uw.h"
+#include "../../uw.h"
 
 void set_draw_color();
 void rect_fill_or_save_restore();

@@ -131,8 +131,8 @@
  * demo that's driving toward a bad state can be stopped and the result
  * poked at by hand. That ESC is swallowed; it does not also reach the
  * game. With no demo running, ESC behaves normally. */
-#include "demomode.h"
-#include "uw.h"
+#include "headers/demomode.h"
+#include "../uw.h"
 
 #include <SDL.h>
 #include <stdio.h>

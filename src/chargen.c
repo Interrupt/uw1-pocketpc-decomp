@@ -4,7 +4,7 @@
  * out of uw.c (the original monolithic decompile) once these functions'
  * real roles were confirmed. */
 #include "headers/chargen.h"
-#include "debug.h"
+#include "headers/debug.h"
 
 
 

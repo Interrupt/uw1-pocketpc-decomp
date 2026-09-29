@@ -1,5 +1,5 @@
 /* See debug.h. */
-#include "debug.h"
+#include "headers/debug.h"
 
 #include <dlfcn.h>
 #include <stdarg.h>

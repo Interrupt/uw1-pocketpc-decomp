@@ -1,6 +1,6 @@
-#include "ordinal_stubs.h"
-#include "file_io.h"
-#include "debug.h"
+#include "headers/ordinal_stubs.h"
+#include "headers/file_io.h"
+#include "headers/debug.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
