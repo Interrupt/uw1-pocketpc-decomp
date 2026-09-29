@@ -7539,68 +7539,6 @@ int g_ambient_bias_reduction = 32;
 
 
 
-int FUN_00019d00(param_1)
-int * param_1;
-
-{
-  char cVar1;
-  short sVar2;
-  short sVar3;
-  short sVar4;
-  char *pcVar5;
-  int iVar6;
-  char cVar7;
-  undefined1 auStack_24 [20];
-  
-  pcVar5 = (char *)*param_1;
-  cVar7 = 'I';
-  cVar1 = *pcVar5;
-  *param_1 = (int)(pcVar5 + 1);
-  if (cVar1 != 'C') {
-    cVar7 = pcVar5[1];
-    *param_1 = (int)(pcVar5 + 2);
-  }
-  if (cVar7 == 'I') {
-    Ordinal_1071(auStack_24,*param_1,0x13);
-    sVar2 = Ordinal_993(auStack_24);
-    cVar7 = *(char *)*param_1;
-    while ((cVar7 != '\0' &&
-           ((iVar6 = Ordinal_1417((int)*(char *)*param_1,4), iVar6 != 0 ||
-            (*(char *)*param_1 == '-'))))) {
-      iVar6 = *param_1;
-      *param_1 = iVar6 + 1;
-      cVar7 = *(char *)(iVar6 + 1);
-    }
-    cVar7 = *(char *)*param_1;
-    if (((cVar7 == 'G') || (cVar7 == 'S')) || (cVar7 == 'P' || cVar7 == 'C')) {
-      sVar3 = FUN_00019d00(param_1);
-      sVar3 = sVar3 + -1;
-    }
-    else {
-      sVar3 = 0;
-    }
-    if (cVar1 != 'G') {
-      if (cVar1 != 'P') {
-        if (cVar1 != 'S') {
-          return (int)sVar2;
-        }
-        iVar6 = FUN_0001ae04(((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10);
-        return iVar6;
-      }
-      sVar4 = FUN_0001ae04((int)sVar2);
-      sVar2 = sVar3;
-      sVar3 = sVar4;
-    }
-    iVar6 = FUN_0001adc4(((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10);
-  }
-  else {
-    iVar6 = 0;
-  }
-  return iVar6;
-}
-
-
-
 void FUN_0001a1a4()
 
 {
@@ -8059,44 +7997,6 @@ LAB_0001ad98:
     }
     iVar4 = iVar4 + 0x20;
   } while( true );
-}
-
-
-
-int FUN_0001ada8(param_1)
-short param_1;
-
-{
-  return DAT_000bbf14 + param_1 * 2;
-}
-
-
-
-int FUN_0001adc4(param_1)
-short param_1;
-
-{
-  return (int)*(short *)(DAT_000bbf14 + param_1 * 2);
-}
-
-
-
-void FUN_0001ade4(param_1,param_2)
-short param_1;
-undefined2 param_2;
-
-{
-  *(undefined2 *)(DAT_000bbf14 + param_1 * 2) = param_2;
-  return;
-}
-
-
-
-int FUN_0001ae04(param_1)
-short param_1;
-
-{
-  return (int)*(short *)(DAT_000bbf0c + ((int)DAT_000bbf2c + (int)param_1) * 2);
 }
 
 
@@ -13706,8 +13606,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
   DAT_00100794 = 1;
   sVar2 = *(short *)(param_1 + -2);
   sVar3 = *(short *)(param_1 + -4);
-  uVar6 = FUN_0001adc4((int)sVar2);
-  sVar4 = FUN_0001adc4((int)sVar3);
+  uVar6 = babl_read_var_word((int)sVar2);
+  sVar4 = babl_read_var_word((int)sVar3);
   iVar12 = 1;
   sVar5 = (short)uVar6;
   while (sVar5 != 0) {
@@ -13736,8 +13636,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
       *(short *)(&DAT_001007a0 + sVar5 * 2) = (short)uVar6;
     }
     iVar12 = iVar12 + 1;
-    uVar6 = FUN_0001adc4(iVar12 + sVar2 + -1);
-    sVar4 = FUN_0001adc4(iVar12 + sVar3 + -1);
+    uVar6 = babl_read_var_word(iVar12 + sVar2 + -1);
+    sVar4 = babl_read_var_word(iVar12 + sVar3 + -1);
     sVar5 = (short)uVar6;
   }
   FUN_0007f140();
@@ -13978,7 +13878,7 @@ int param_1;
 {
   char cVar1;
   /* Was `int` -- reassigned to a real string pointer (FUN_0007863c/
-     babl_expand_string_refs) right after the small FUN_0001adc4 use,
+     babl_expand_string_refs) right after the small babl_read_var_word use,
      same bug class as DAT_001007c0's own fix above; never crashed
      before because this "print" builtin (idx 2) was never actually
      reached until babl_menu could run correctly. */
@@ -13989,7 +13889,7 @@ int param_1;
 
   /* Was 3 dropped register-forwarding args -- same class as
      babl_builtin_compare's own comment (uw.c ~10977). */
-  iVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  iVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
   iVar2 = (intptr_t)FUN_0007863c((int)iVar2);
   iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
   pcVar4 = &DAT_0008523c;

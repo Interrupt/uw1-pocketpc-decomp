@@ -53,7 +53,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   intptr_t iVar1;
   char *pcVar2;
 
-  iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  iVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar2 = (char *)FUN_0007863c((int)iVar1);
   return Ordinal_1068(pcVar2);
 }
@@ -76,7 +76,7 @@ undefined4 babl_builtin_sex(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix
 {
   /* Ghidra's own decompile of this one shows `void`, discarding
-     FUN_0001adc4's return value -- but on real ARM calling convention
+     babl_read_var_word's return value -- but on real ARM calling convention
      a tail call like this naturally leaves its callee's return value
      in r0 for the caller (the babl VM's generic builtin dispatcher,
      which DOES read every builtin's return value uniformly, same as
@@ -84,7 +84,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
      returning it explicitly here matches actual runtime behavior
      rather than Ghidra's weaker "nothing in THIS function reads r0
      afterward" signature inference. */
-  return FUN_0001adc4((int)*(short *)(param_1 + (intptr_t)((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 2) + -4));
+  return babl_read_var_word((int)*(short *)(param_1 + (intptr_t)((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 2) + -4));
 }
 /* Was a no-op stub here -- the real function was never decompiled, so
    the "do_decline" babl builtin (registered under that exact script
@@ -143,7 +143,7 @@ intptr_t param_1;
   undefined4 uVar11;
   bool bVar12;
 
-  sVar7 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar7 = babl_read_var_word((int)*(short *)(param_1 + -2));
   piVar4 = &DAT_00202948;
   piVar3 = (intptr_t *)&DAT_00100674;
   if (DAT_00202948 == 0) {
@@ -229,7 +229,7 @@ intptr_t param_1;
   intptr_t iVar10;
   undefined4 uVar11;
 
-  sVar7 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar7 = babl_read_var_word((int)*(short *)(param_1 + -2));
   piVar3 = &DAT_00202948;
   piVar2 = (intptr_t *)&DAT_00100674;
   if (DAT_00202948 == 0) {
@@ -301,7 +301,7 @@ intptr_t param_1;
   undefined4 uVar5;
   int iVar6;
 
-  uVar5 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  uVar5 = babl_read_var_word((int)*(short *)(param_1 + -2));
   puVar3 = (ushort *)spawn_new_object(uVar5,0);
   piVar2 = (intptr_t *)&DAT_00100674;
   if (puVar3 == (ushort *)0x0) {
@@ -343,8 +343,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   undefined4 uVar1;
   undefined4 uVar2;
   
-  uVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
-  uVar2 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  uVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
+  uVar2 = babl_read_var_word((int)*(short *)(param_1 + -4));
   FUN_00074be8(uVar2,0,uVar1,&babl_builtin_set_attitude_apply);
   return;
 }
@@ -369,9 +369,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar13;
   int iVar9;
   
-  iVar5 = FUN_0001adc4((int)*(short *)(param_1 + -2));
-  uVar2 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  uVar3 = FUN_0001adc4((int)*(short *)(param_1 + -6));
+  iVar5 = babl_read_var_word((int)*(short *)(param_1 + -2));
+  uVar2 = babl_read_var_word((int)*(short *)(param_1 + -4));
+  uVar3 = babl_read_var_word((int)*(short *)(param_1 + -6));
   uVar1 = *DAT_00100674;
   uVar11 = (uint)(*(byte *)((char *)DAT_00100674 + 0x17) >> 2);
   iVar13 = uVar11 - iVar5;
@@ -435,8 +435,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short sVar1;
   short sVar2;
 
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -4));
+  sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
   if (sVar2 == 10000) {
     FUN_0007067c((int)(char)sVar1);
   }
@@ -455,8 +455,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short sVar1;
   short sVar2;
 
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -4));
+  sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
   if ((-1 < sVar2) && (sVar2 < 0x40)) {
     *(char *)(DAT_00086df8 + sVar1 + 0x70) = (char)sVar2;
   }
@@ -479,10 +479,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar8;
   byte *pbVar9;
   
-  uVar3 = FUN_0001adc4((int)*(short *)(param_1 + -6));
+  uVar3 = babl_read_var_word((int)*(short *)(param_1 + -6));
   puVar4 = (undefined1 *)FUN_000535fc();
-  uVar5 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  uVar6 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  uVar5 = babl_read_var_word((int)*(short *)(param_1 + -4));
+  uVar6 = babl_read_var_word((int)*(short *)(param_1 + -2));
   puVar7 = (ushort *)(DAT_00100674 + 6);
   uVar2 = *puVar7;
   if ((uVar2 & 0xffc0) != 0) {
@@ -551,7 +551,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar3;
   int iVar4;
   
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
   iVar4 = 0;
   puVar2 = (ushort *)(DAT_00100674 + 6);
   if (0 < sVar1) {
@@ -573,7 +573,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 {
   undefined4 uVar1;
 
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
+  babl_read_var_word((int)*(short *)(param_1 + -2));
   uVar1 = FUN_000535fc();
   object_list_append_tail(DAT_00100674 + 6,uVar1);
   return;
@@ -590,8 +590,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short sVar2;
   uint uVar3;
   
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -4));
+  sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_set_quest: idx=%d value=%d\n", (int)sVar1, (int)sVar2);
   uVar3 = (uint)sVar1;
   if (-1 < (int)uVar3) {
@@ -623,7 +623,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar1;
   short sVar2;
   
-  sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
   iVar1 = (int)sVar2;
   if (-1 < iVar1) {
     if (0x1f < iVar1) {
@@ -634,7 +634,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
       if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> %d (byte-value slot)\n", iVar1, (int)*(undefined1 *)(iVar1 + DAT_00086df8 + 0x49));
       return *(undefined1 *)(iVar1 + DAT_00086df8 + 0x49);
     }
-    sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+    sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
     if ((*(uint *)(DAT_00086df8 + 0x65) & 1 << ((int)sVar2 & 0xffU)) != 0) {
       if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_builtin_get_quest: idx=%d -> 1 (flag bit set)\n", iVar1);
       return 1;
@@ -658,8 +658,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar6;
   ushort *local_24;   /* was int -- holds tilemap_lookup()+2, a 64-bit ptr */
 
-  uVar4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  uVar5 = FUN_0001adc4((int)*(short *)(param_1 + -6));
+  uVar4 = babl_read_var_word((int)*(short *)(param_1 + -4));
+  uVar5 = babl_read_var_word((int)*(short *)(param_1 + -6));
   local_24 = (ushort *)((char *)tilemap_lookup(uVar5,uVar4) + 2);
   iVar6 = FUN_000537d0(&local_24,0,5,0,0xffff);
   if ((iVar6 == 0) && (iVar6 = FUN_000537d0(&local_24,0,7,0,0xf), iVar6 == 0)) {
@@ -668,9 +668,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   else {
     uVar2 = DAT_002020a4;
     uVar1 = DAT_002020a0;
-    DAT_002020a0 = FUN_0001adc4((int)*(short *)(param_1 + -6));
-    DAT_002020a4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-    sVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+    DAT_002020a0 = babl_read_var_word((int)*(short *)(param_1 + -6));
+    DAT_002020a4 = babl_read_var_word((int)*(short *)(param_1 + -4));
+    sVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
     if (sVar3 == 0) {
       close_door_object(0,iVar6);
     }
@@ -706,16 +706,16 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   ushort *puVar11;
   uint uVar12;
   
-  psVar4 = (short *)FUN_0001ada8((int)*(short *)(param_1 + -0xe));
-  puVar5 = (ushort *)FUN_0001ada8((int)*(short *)(param_1 + -0xc));
-  psVar6 = (short *)FUN_0001ada8((int)*(short *)(param_1 + -10));
-  psVar7 = (short *)FUN_0001ada8((int)*(short *)(param_1 + -8));
-  psVar8 = (short *)FUN_0001ada8((int)*(short *)(param_1 + -6));
-  psVar9 = (short *)FUN_0001ada8((int)*(short *)(param_1 + -4));
-  puVar10 = (ushort *)FUN_0001ada8((int)*(short *)(param_1 + -2));
-  FUN_0001adc4((int)*(short *)(param_1 + -0x12));
+  psVar4 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -0xe));
+  puVar5 = (ushort *)babl_var_word_addr((int)*(short *)(param_1 + -0xc));
+  psVar6 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -10));
+  psVar7 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -8));
+  psVar8 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -6));
+  psVar9 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -4));
+  puVar10 = (ushort *)babl_var_word_addr((int)*(short *)(param_1 + -2));
+  babl_read_var_word((int)*(short *)(param_1 + -0x12));
   puVar11 = (ushort *)FUN_000535fc();
-  sVar3 = FUN_0001adc4((int)*(short *)(param_1 + -0x10));
+  sVar3 = babl_read_var_word((int)*(short *)(param_1 + -0x10));
   if (sVar3 == 0) {
     if (((*psVar4 != -1) && ((*puVar11 & 0x1c0) != 0x140)) &&
        (((&DAT_00202c9a)[(*puVar11 & 0x1ff) * 0xd] & 3) != 2)) {
@@ -804,12 +804,12 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   uint uVar7;
   ushort uVar8;
   
-  puVar2 = (ushort *)FUN_0001ada8((int)*(short *)(param_1 + -6));
-  psVar3 = (short *)FUN_0001ada8((int)*(short *)(param_1 + -4));
-  puVar4 = (ushort *)FUN_0001ada8((int)*(short *)(param_1 + -2));
-  FUN_0001adc4((int)*(short *)(param_1 + -10));
+  puVar2 = (ushort *)babl_var_word_addr((int)*(short *)(param_1 + -6));
+  psVar3 = (short *)babl_var_word_addr((int)*(short *)(param_1 + -4));
+  puVar4 = (ushort *)babl_var_word_addr((int)*(short *)(param_1 + -2));
+  babl_read_var_word((int)*(short *)(param_1 + -10));
   iVar5 = FUN_000535fc();
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -8));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -8));
   if (sVar1 == 0) {
     if (*puVar2 != 0xffff) {
       *puVar2 = (ushort)(*(byte *)(iVar5 + 3) >> 5);
@@ -1008,7 +1008,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 {
   short sVar1;
 
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
   sVar1 = rand_below((int)sVar1);
   return sVar1 + 1;
 }
@@ -1039,10 +1039,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
      call written as `()` in C loads no argument at all, so each of
      these read whatever garbage happened to be in the register instead.
      Chained explicitly. */
-  iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  iVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar3 = (char *)FUN_0007863c(iVar1);
   pcVar4 = (char *)babl_expand_string_refs(pcVar3);
-  iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  iVar1 = babl_read_var_word((int)*(short *)(param_1 + -4));
   pcVar5 = (char *)FUN_0007863c(iVar1);
   pcVar6 = (char *)babl_expand_string_refs(pcVar5);
   pcVar7 = pcVar6;
@@ -1079,9 +1079,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   undefined4 uVar2;
   undefined4 uVar3;
   
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -6));
-  uVar2 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  uVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -6));
+  uVar2 = babl_read_var_word((int)*(short *)(param_1 + -4));
+  uVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
   if (sVar1 < 2) {
     uVar3 = uVar2;
   }
@@ -1111,10 +1111,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
   /* Was 4 dropped register-forwarding args -- same class as babl_builtin_compare's
      own comment (uw.c ~10977). Chained explicitly. */
-  iVar5 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  iVar5 = babl_read_var_word((int)*(short *)(param_1 + -2));
   uVar1 = (intptr_t)FUN_0007863c((int)iVar5);
   iVar2 = (intptr_t)babl_expand_string_refs((char *)uVar1);
-  iVar5 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  iVar5 = babl_read_var_word((int)*(short *)(param_1 + -4));
   uVar3 = (intptr_t)FUN_0007863c((int)iVar5);
   uVar4 = (intptr_t)babl_expand_string_refs((char *)uVar3);
   Ordinal_1415(uVar3);
@@ -1158,9 +1158,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
      (uw.c ~10977). Chained explicitly: the first Ordinal_1068() forwards
      pcVar3 (the string just resolved right above it), matching the
      very next line's own explicit `Ordinal_1068(pcVar2)` call. */
-  iVar6 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  iVar6 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar2 = (char *)FUN_0007863c(iVar6);
-  iVar6 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  iVar6 = babl_read_var_word((int)*(short *)(param_1 + -4));
   pcVar3 = (char *)FUN_0007863c(iVar6);
   uVar4 = Ordinal_1068(pcVar3);
   uVar5 = Ordinal_1068(pcVar2);
@@ -1194,7 +1194,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   
   /* Was 3 dropped register-forwarding args -- same class as
      babl_builtin_compare's own comment (uw.c ~10977). */
-  iVar4 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  iVar4 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar2 = (char *)FUN_0007863c(iVar4);
   iVar3 = Ordinal_1068(pcVar2);
   iVar3 = babl_alloc(iVar3 + 1);
@@ -1220,13 +1220,13 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short sVar4;
   int iVar5;
   
-  sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
-  sVar3 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
+  sVar3 = babl_read_var_word((int)*(short *)(param_1 + -4));
   sVar1 = *(short *)(param_1 + -6);
   iVar5 = 0;
   if (0 < sVar3) {
     do {
-      sVar4 = FUN_0001adc4((sVar1 + iVar5) * 0x10000 >> 0x10);
+      sVar4 = babl_read_var_word((sVar1 + iVar5) * 0x10000 >> 0x10);
       if (sVar2 == sVar4) {
         return iVar5 + 1;
       }
@@ -1248,7 +1248,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
   /* Was 3 dropped register-forwarding args -- same class as
      babl_builtin_compare's own comment (uw.c ~10977). */
-  iVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  iVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
   pcVar3 = (char *)FUN_0007863c(iVar2);
   sVar1 = Ordinal_993(pcVar3);
   return (int)sVar1;
@@ -1324,7 +1324,7 @@ char * param_1;
         }
         cVar2 = *local_38[0];
         if (((cVar2 == 'G') || (cVar2 == 'S')) || (cVar2 == 'P' || cVar2 == 'C')) {
-          sVar4 = FUN_00019d00(local_38);
+          sVar4 = parse_babl_string_ref_expr(local_38);
           sVar4 = sVar4 + -1;
         }
         else {
@@ -1333,16 +1333,16 @@ char * param_1;
         sVar5 = sVar4;
         if (cVar1 == 'G') {
 LAB_00019bc8:
-          sVar3 = FUN_0001adc4(((int)sVar5 + (int)sVar3) * 0x10000 >> 0x10);
+          sVar3 = babl_read_var_word(((int)sVar5 + (int)sVar3) * 0x10000 >> 0x10);
         }
         else {
           if (cVar1 == 'P') {
-            sVar5 = FUN_0001ae04((int)sVar3);
+            sVar5 = babl_read_frame_word((int)sVar3);
             sVar3 = sVar4;
             goto LAB_00019bc8;
           }
           if (cVar1 == 'S') {
-            sVar3 = FUN_0001ae04(((int)sVar4 + (int)sVar3) * 0x10000 >> 0x10);
+            sVar3 = babl_read_frame_word(((int)sVar4 + (int)sVar3) * 0x10000 >> 0x10);
           }
         }
         if (cVar12 == 'I') {
@@ -1359,7 +1359,7 @@ LAB_00019bc8:
              the real binary shows no register load before this `bl`
              either, confirming it's genuine register-forwarding, not
              just this file's own decompile simplifying it away. sVar3
-             (just resolved by the FUN_0001adc4/FUN_0001ae04 calls
+             (just resolved by the babl_read_var_word/babl_read_frame_word calls
              immediately above, for the 'G'/'P'/'S' cases this branch
              handles) is the only value left sitting in r0 at this
              point, and FUN_0007863c's signature elsewhere (a message/
@@ -1937,11 +1937,11 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   bool bVar11;
   
   FUN_0007ec50();
-  uVar4 = FUN_0001adc4((int)*(short *)(param_1 + -10));
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -8));
-  uVar5 = FUN_0001adc4((int)*(short *)(param_1 + -6));
-  uVar6 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  uVar7 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  uVar4 = babl_read_var_word((int)*(short *)(param_1 + -10));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -8));
+  uVar5 = babl_read_var_word((int)*(short *)(param_1 + -6));
+  uVar6 = babl_read_var_word((int)*(short *)(param_1 + -4));
+  uVar7 = babl_read_var_word((int)*(short *)(param_1 + -2));
   if (DAT_000bc004 < 0) {
     FUN_0007863c(uVar6);
     FUN_00029708();
@@ -2029,8 +2029,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short local_2a;
   short local_28;
   
-  local_28 = FUN_0001adc4((int)*(short *)(param_1 + -4));
-  local_2a = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  local_28 = babl_read_var_word((int)*(short *)(param_1 + -4));
+  local_2a = babl_read_var_word((int)*(short *)(param_1 + -2));
   iVar12 = DAT_00086df8;
   bVar1 = *DAT_00100674;
   if (*(char *)(DAT_0023be74 + 4) == '\0') {
@@ -2097,8 +2097,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 undefined4 babl_builtin_set_likes_dislikes(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "set_likes_dislikes" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
-  DAT_000bc020 = FUN_0001ada8((int)*(short *)(param_1 + -4));
-  DAT_000bc000 = FUN_0001ada8((int)*(short *)(param_1 + -2));
+  DAT_000bc020 = babl_var_word_addr((int)*(short *)(param_1 + -4));
+  DAT_000bc000 = babl_var_word_addr((int)*(short *)(param_1 + -2));
   return 1;
 }
 
@@ -2434,7 +2434,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
   DAT_00100790 = 1;
   DAT_00100794 = 1;
   sVar2 = *(short *)(param_1 + -2);
-  uVar6 = FUN_0001adc4((int)sVar2);
+  uVar6 = babl_read_var_word((int)sVar2);
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_menu entry: param_1=%p sVar2(local-slot-idx)=%d DAT_000bbf78(stack-depth)=%d uVar6(first-msgid)=%u\n", (void *)param_1, (int)sVar2, (int)DAT_000bbf78, (unsigned)uVar6);
   iVar12 = 1;
   sVar5 = (short)uVar6;
@@ -2462,7 +2462,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
     DAT_00100794 = sVar5 + 1;
     *(short *)(&DAT_001007a0 + sVar5 * 2) = (short)uVar6;
     iVar12 = iVar12 + 1;
-    uVar6 = FUN_0001adc4(iVar12 + sVar2 + -1);
+    uVar6 = babl_read_var_word(iVar12 + sVar2 + -1);
     sVar5 = (short)uVar6;
   }
   FUN_0007f140();
@@ -2552,7 +2552,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar1;
 
   wait_for_click_release(0);
-  iVar1 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  iVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
   FUN_0007f170(iVar1 * 500,0);
   return 1;
 }
@@ -2577,16 +2577,16 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   do {
     sVar1 = (short)iVar5;
     if (iVar5 < (short)uVar3) {
-      FUN_0001ade4((int)*(short *)(param_1 + -4) + (int)sVar1,(int)local_24[iVar5]);
+      babl_write_var_word((int)*(short *)(param_1 + -4) + (int)sVar1,(int)local_24[iVar5]);
       sVar2 = *(short *)(param_1 + -2);
       iVar4 = (int)local_1c[iVar5];
     }
     else {
-      FUN_0001ade4((int)*(short *)(param_1 + -2) + (int)sVar1,0);
+      babl_write_var_word((int)*(short *)(param_1 + -2) + (int)sVar1,0);
       sVar2 = *(short *)(param_1 + -4);
       iVar4 = 0;
     }
-    FUN_0001ade4((int)sVar2 + (int)sVar1,iVar4);
+    babl_write_var_word((int)sVar2 + (int)sVar1,iVar4);
     iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
   } while (iVar5 < 4);
   return uVar3;
@@ -2607,7 +2607,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short local_1c [4];
   short asStack_14 [4];
   
-  sVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  sVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
   sVar4 = FUN_0001d1c0(local_1c,asStack_14);
   uVar1 = (uint)sVar3;
   iVar2 = (int)sVar4;
@@ -2655,7 +2655,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short local_3c [8];
   short local_2c [6];
   
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -8));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -8));
   iVar4 = 0;
   iVar6 = 0;
   sVar2 = FUN_0001d1c0(local_4c,local_3c);
@@ -2676,12 +2676,12 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < sVar2);
   }
-  FUN_0001ade4((int)*(short *)(param_1 + -6),iVar4);
-  FUN_0001ade4((int)*(short *)(param_1 + -2),iVar6);
+  babl_write_var_word((int)*(short *)(param_1 + -6),iVar4);
+  babl_write_var_word((int)*(short *)(param_1 + -2),iVar6);
   if (0 < (short)iVar4) {
     iVar5 = 0;
     do {
-      FUN_0001ade4((int)*(short *)(param_1 + -4) + (int)(short)iVar5,(int)local_2c[iVar5]);
+      babl_write_var_word((int)*(short *)(param_1 + -4) + (int)(short)iVar5,(int)local_2c[iVar5]);
       iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
     } while (iVar5 < (short)iVar4);
   }
@@ -2705,7 +2705,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short local_44 [12];
   undefined1 auStack_2c [8];
   
-  sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  sVar2 = babl_read_var_word((int)*(short *)(param_1 + -4));
   sVar3 = FUN_0001d1c0(auStack_2c,local_44 + 8);
   iVar5 = (int)sVar3;
   iVar1 = (int)sVar2;
@@ -2728,7 +2728,7 @@ LAB_00029e2c:
         iVar6 = 0;
         if (0 < iVar5) {
           do {
-            sVar2 = FUN_0001adc4((int)*(short *)(param_1 + -2) + (int)(short)iVar7);
+            sVar2 = babl_read_var_word((int)*(short *)(param_1 + -2) + (int)(short)iVar7);
             if ((local_44[iVar6 + 8] == sVar2) && (local_44[iVar6] == -1)) {
               local_44[iVar7 + 4] = (short)iVar6;
               local_44[(short)iVar6] = (short)iVar7;
@@ -2743,7 +2743,7 @@ LAB_00029e2c:
       if (0 < iVar1) {
         iVar5 = 0;
         do {
-          FUN_0001adc4((int)*(short *)(param_1 + -2) + (int)(short)iVar5);
+          babl_read_var_word((int)*(short *)(param_1 + -2) + (int)(short)iVar5);
           FUN_0001d3ac();
           iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
         } while (iVar5 < iVar1);
@@ -2767,7 +2767,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short local_1c [4];
   short local_14 [4];
   
-  uVar1 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  uVar1 = babl_read_var_word((int)*(short *)(param_1 + -4));
   FUN_0001d1c0(local_1c,local_14);
   iVar2 = 0;
   do {
@@ -2779,7 +2779,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
-  uVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  uVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
   iVar2 = FUN_000535fc(uVar1);
   if (-1 < (short)uVar3) {
     if ((*(byte *)(iVar2 + 1) & 0x80) != 0) {
@@ -2806,7 +2806,7 @@ LAB_00029f2c:
 void babl_builtin_do_inv_delete(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "do_inv_delete" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
+  babl_read_var_word((int)*(short *)(param_1 + -2));
   FUN_0001da00();
   return;
 }
@@ -2823,8 +2823,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   ushort uVar4;
   char *local_10;
   
-  sVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
-  uVar4 = FUN_0001adc4((int)*(short *)(param_1 + -4));
+  sVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
+  uVar4 = babl_read_var_word((int)*(short *)(param_1 + -4));
   local_10 = g_player_object;
   if ((sVar3 == 0) && (local_10 = DAT_00100674, (*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0)) {
     FUN_000798c4();
@@ -2868,9 +2868,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   char local_84 [16];
   char local_74 [80];
   
-  uVar2 = FUN_0001adc4((int)*(short *)(param_1 + -8));
-  sVar1 = FUN_0001adc4((int)*(short *)(param_1 + -6));
-  uVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  uVar2 = babl_read_var_word((int)*(short *)(param_1 + -8));
+  sVar1 = babl_read_var_word((int)*(short *)(param_1 + -6));
+  uVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
   uVar4 = FUN_0001cfa8(1,uVar2,(int)DAT_000bbfbc);
   iVar5 = FUN_000535fc(uVar2);
   if (((*(byte *)(iVar5 + 1) & 0x80) == 0) || ((*(ushort *)(iVar5 + 6) & 0x8000) != 0)) {
@@ -2928,7 +2928,7 @@ LAB_0002a154:
     pcVar7 = pcVar7 + 1;
   } while (cVar8 != '\0');
   uVar2 = FUN_0007873c(iVar5,0x7c);
-  FUN_0001ade4((int)*(short *)(param_1 + -4),uVar2);
+  babl_write_var_word((int)*(short *)(param_1 + -4),uVar2);
   return uVar4;
 }
 
@@ -2941,7 +2941,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   ushort uVar1;
   int iVar2;
 
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
+  babl_read_var_word((int)*(short *)(param_1 + -2));
   iVar2 = FUN_000535fc();
   if (((*(byte *)(iVar2 + 1) & 0x80) == 0) || ((*(ushort *)(iVar2 + 6) & 0x8000) != 0)) {
     uVar1 = 1;
@@ -2960,7 +2960,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 {
   int iVar1;
 
-  FUN_0001adc4((int)*(short *)(param_1 + -2));
+  babl_read_var_word((int)*(short *)(param_1 + -2));
   iVar1 = FUN_000535fc();
   return *(byte *)(iVar1 + 4) & 0x3f;
 }
@@ -2976,9 +2976,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   byte bVar3;
   int iVar4;
   
-  FUN_0001adc4((int)*(short *)(param_1 + -4));
+  babl_read_var_word((int)*(short *)(param_1 + -4));
   iVar4 = FUN_000535fc();
-  bVar3 = FUN_0001adc4((int)*(short *)(param_1 + -2));
+  bVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
   uVar1 = *(undefined2 *)(iVar4 + 4);
   bVar2 = (byte)uVar1;
   *(byte *)(iVar4 + 4) = (bVar2 ^ bVar3) & 0x3f ^ bVar2;
@@ -3555,5 +3555,130 @@ undefined1 * param_1;
   param_1[6] = 0;
   param_1[7] = 0;
   return;
+}
+
+
+
+
+// was FUN_00019d00 -- recursive parser for one "@X..." embedded
+// reference inside a babl display string (expand_string_refs's own
+// sub-parser for compound G/S/P/C-chained expressions; see that
+// function's matching inline copy of this same character-class logic).
+// param_1 is an in/out cursor pointer into the string being scanned.
+int parse_babl_string_ref_expr(param_1)
+int * param_1;
+
+{
+  char cVar1;
+  short sVar2;
+  short sVar3;
+  short sVar4;
+  char *pcVar5;
+  int iVar6;
+  char cVar7;
+  undefined1 auStack_24 [20];
+  
+  pcVar5 = (char *)*param_1;
+  cVar7 = 'I';
+  cVar1 = *pcVar5;
+  *param_1 = (int)(pcVar5 + 1);
+  if (cVar1 != 'C') {
+    cVar7 = pcVar5[1];
+    *param_1 = (int)(pcVar5 + 2);
+  }
+  if (cVar7 == 'I') {
+    Ordinal_1071(auStack_24,*param_1,0x13);
+    sVar2 = Ordinal_993(auStack_24);
+    cVar7 = *(char *)*param_1;
+    while ((cVar7 != '\0' &&
+           ((iVar6 = Ordinal_1417((int)*(char *)*param_1,4), iVar6 != 0 ||
+            (*(char *)*param_1 == '-'))))) {
+      iVar6 = *param_1;
+      *param_1 = iVar6 + 1;
+      cVar7 = *(char *)(iVar6 + 1);
+    }
+    cVar7 = *(char *)*param_1;
+    if (((cVar7 == 'G') || (cVar7 == 'S')) || (cVar7 == 'P' || cVar7 == 'C')) {
+      sVar3 = parse_babl_string_ref_expr(param_1);
+      sVar3 = sVar3 + -1;
+    }
+    else {
+      sVar3 = 0;
+    }
+    if (cVar1 != 'G') {
+      if (cVar1 != 'P') {
+        if (cVar1 != 'S') {
+          return (int)sVar2;
+        }
+        iVar6 = babl_read_frame_word(((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10);
+        return iVar6;
+      }
+      sVar4 = babl_read_frame_word((int)sVar2);
+      sVar2 = sVar3;
+      sVar3 = sVar4;
+    }
+    iVar6 = babl_read_var_word(((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10);
+  }
+  else {
+    iVar6 = 0;
+  }
+  return iVar6;
+}
+
+
+
+
+// was FUN_0001ada8 -- address-of counterpart to babl_read_var_word:
+// returns a pointer to word index param_1 in the conversation-variable
+// segment, for intrinsics that need to pass a variable by reference
+// (e.g. an out-parameter) rather than read its value.
+int babl_var_word_addr(param_1)
+short param_1;
+
+{
+  return DAT_000bbf14 + param_1 * 2;
+}
+
+
+
+// was FUN_0001adc4 -- reads word param_1 (a signed index, negative for
+// the common "stack operand a few slots back" caller pattern) from the
+// babl VM's conversation-variable segment (DAT_000bbf14). The single
+// most-called babl VM primitive in this file -- every babl_builtin_*
+// intrinsic uses it to decode its operands.
+int babl_read_var_word(param_1)
+short param_1;
+
+{
+  return (int)*(short *)(DAT_000bbf14 + param_1 * 2);
+}
+
+
+
+// was FUN_0001ade4 -- write-side counterpart to babl_read_var_word:
+// stores param_2 at word index param_1 in the conversation-variable
+// segment.
+void babl_write_var_word(param_1,param_2)
+short param_1;
+undefined2 param_2;
+
+{
+  *(undefined2 *)(DAT_000bbf14 + param_1 * 2) = param_2;
+  return;
+}
+
+
+
+// was FUN_0001ae04 -- reads word param_1, relative to the current call
+// frame base (DAT_000bbf2c), from the babl VM's stack segment
+// (DAT_000bbf0c, which sits immediately after DAT_000bbf14's variable
+// segment in the same allocation -- see the interpreter loop's own
+// setup). The stack-frame-relative counterpart to babl_read_var_word's
+// global-variable-segment read.
+int babl_read_frame_word(param_1)
+short param_1;
+
+{
+  return (int)*(short *)(DAT_000bbf0c + ((int)DAT_000bbf2c + (int)param_1) * 2);
 }
 
