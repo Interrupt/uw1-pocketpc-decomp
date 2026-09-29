@@ -3045,12 +3045,26 @@ undefined4 LAB_00041610(void *buf, unsigned size, int idx)
   return 1;
 }
 undefined2 DAT_000859a8;
-undefined4 LAB_00041670(void *buf, unsigned size, int idx)
+// was LAB_00041670
+undefined4 register_tmflat_gr_entry(void *buf, unsigned size, int idx)
 {
-  /* Caller FUN_00041990 (TMFLAT.GR) with a fixed base stashed in
-     DAT_000859a8 (0x170). */
+  /* Caller load_tmflat_gr (TMFLAT.GR) with a fixed id base stashed in
+     DAT_000859a8 (0x170). Real ARM (0x41670): registers each entry at
+     the running cursor DAT_00202744 and ADVANCES the cursor by one,
+     recording DAT_0024d090[(0x170+idx)*4] = frame as the object-id ->
+     frame remap. So TMFLAT occupies DAT_00202734..+0xf and TMOBJ
+     starts at DAT_00202734+0x10 -- the "+0x10" in emit_catalog_object's
+     per-instance frame formula. This used to register only at the id
+     alias and never advance the cursor, placing TMOBJ 16 frames early
+     so every "+DAT_00202734" / "+DAT_00202734+0x10" TMFLAT/TMOBJ frame
+     read landed on the wrong image (lever/pull-chain/sign/bridge).
+     The id alias (0x170+idx) is kept because this port resolves object
+     ids to frames as the identity (resolve_sprite_id_to_frame never
+     consults the remap). */
   (void)size;
   uw_register_gr_entry((unsigned)DAT_000859a8, buf, idx);
+  uw_register_gr_entry((unsigned)DAT_00202744, buf, 0);
+  DAT_00202744 = DAT_00202744 + 1;
   return 1;
 }
 void *LAB_000416e8(param_1)
@@ -3084,7 +3098,7 @@ unsigned int param_1;
    registered anywhere (unlike every sibling load_gr_resource_entries
    call site, which DOES pass a real post-process callback to register
    its buffer into DAT_0024e090[] -- see LAB_000415d0/LAB_00041610/
-   LAB_00041670), and then simply discarded once load_gr_resource_entries's
+   register_tmflat_gr_entry), and then simply discarded once load_gr_resource_entries's
    loop moves on. Confirmed live: FUN_0006eb64's decode calls reported
    success while leaving their destination grtile buffer entirely
    zeroed (0/9462 nonzero bytes), which is exactly what "decode
@@ -4788,9 +4802,9 @@ short DAT_0023b810;
    (now-working) visibility fill marked any tile visible. The six entries
    are contiguous in .data: b38,b3c / b40,b44 / b48,b4c -- one array, the
    symbols index it at 0..4. NOT const: FUN_0005d664 patches entries [1]
-   and [3] (b3c / b44) at runtime between FUN_0005dd84 and FUN_0005e12c. */
+   and [3] (b3c / b44) at runtime between FUN_0005dd84 and emit_floor_texture_select. */
  code *DAT_00086b38_fnptrs[6] = {
-  (code *)FUN_0005dd84, (code *)FUN_0005e12c,
+  (code *)FUN_0005dd84, (code *)emit_floor_texture_select,
   (code *)FUN_0005debc, (code *)FUN_0005dd84,
   (code *)FUN_0005dff4, (code *)FUN_0005e3c0,
 };
@@ -22903,14 +22917,15 @@ char *param_1;
 
 
 
-undefined4 FUN_00041990(param_1,param_2,param_3)
+// was FUN_00041990
+undefined4 load_tmflat_gr(param_1,param_2,param_3)
 char *param_1;
 undefined2 param_2;
 undefined4 param_3;
 
 {
   DAT_000859a8 = param_2;
-  return load_gr_resource_entries(param_1,0,param_3,&LAB_000415b0,&LAB_00041670);
+  return load_gr_resource_entries(param_1,0,param_3,&LAB_000415b0,&register_tmflat_gr_entry);
 }
 
 
@@ -23045,7 +23060,7 @@ undefined4 FUN_00041aac()
     uVar10 = FUN_00041910(s_cursors_00085a1c);
     uVar11 = FUN_00041910(s_3dwin_00085a14);
     DAT_00202734 = DAT_00202744;
-    uVar12 = FUN_00041990(s_tmflat_00085a0c,0x170,0x10);
+    uVar12 = load_tmflat_gr(s_tmflat_00085a0c,0x170,0x10);
     /* DAT_00202738 is snapshotted AFTER this call, i.e. it's the base for
        whatever loads NEXT (LFTI.GR, see s_lfti_000859fc), not TMOBJ's own
        base -- confirmed by instrumenting this exact spot (DAT_00202744
@@ -35008,13 +35023,13 @@ void FUN_0005d2b0()
     }
   }
   if (bVar4) {
-    DAT_00086b44 = FUN_0005e12c;
+    DAT_00086b44 = emit_floor_texture_select;
   }
   else {
     DAT_00086b44 = FUN_0005dd84;
   }
   if (bVar3) {
-    DAT_00086b3c = FUN_0005e12c;
+    DAT_00086b3c = emit_floor_texture_select;
   }
   else {
     DAT_00086b3c = FUN_0005dd84;
@@ -35175,7 +35190,8 @@ ushort param_4;
 
 
 
-void FUN_0005e12c(param_1,param_2,param_3)
+// was emit_floor_texture_select
+void emit_floor_texture_select(param_1,param_2,param_3)
 byte * param_1;
 uint param_2;
 short param_3;
@@ -36286,44 +36302,20 @@ LAB_00061d34:
        uses) instead of -1. emit_catalog_object's own internal math
        (the heading>=0 branch) already applies the camera-quadrant
        correction itself, so nothing extra is needed at this call site. */
-    /* Real per-instance texture for the handful of these catalog ids
-       that are ALSO real .E-model geometry (confirmed via the DOS
-       decompile, ~/Github/uw1-decomp -- port/uw1_view.c:2297: "0x164
-       a_bridge row 2, b3 0x3e -> TMOBJ 30..31, two 32x32 planks").
-       Same TMOBJ_base+0x10+base+(flags%mod) formula as the lever/
-       switch/writing/gravestone ids resolve to via this same table --
-       but unlike those, a_bridge resolves to a REAL mesh catalog
-       (2, FBRIDGE.E) through the table two lines up, so it has to reach
-       emit_catalog_object directly (the one path that knows how to draw
-       the mesh) with a real frame_or_texid, not a flat-sprite escape
-       hatch that would trade the real 3D geometry away for a flat
-       billboard just to get the texture right. Falls back to -1
-       (untextured) for every other iVar17 without a confirmed real
-       formula -- not guessed. */
-    { static const struct { int iv17; int base; int mod; } _mesh_tex_row[] = {
-        { 0x164 - 0x150, 30, 2 },  /* a_bridge -> TMOBJ 30..31, two planks */
-      };
-      unsigned _mi;
-      int _tex_frame = 0xffffffff;
-      for (_mi = 0; _mi < sizeof(_mesh_tex_row)/sizeof(_mesh_tex_row[0]); _mi++) {
-        if (_mesh_tex_row[_mi].iv17 == iVar17) {
-          int _flags = (*param_1 >> 9) & 0xf;
-          int _off = _mesh_tex_row[_mi].base + (_flags % _mesh_tex_row[_mi].mod);
-          _tex_frame = (int)(short)DAT_00202734 + 0x10 + _off;
-          if (getenv("UW_DEBUG_DECAL"))
-            fprintf(stderr, "[mesh-tex] id=0x%03x iVar17=%d flags=%d off=%d abs_frame=%d\n",
-                    (int)(*param_1 & 0x1ff), iVar17, _flags, _off, _tex_frame);
-          break;
-        }
-      }
-      if (getenv("UW_DEBUG_DOOR"))
-        fprintf(stderr, "[sign] variant=%d table_val=%d heading=%d tex_frame=%d -> emit_catalog_object(catalog_idx=%d)\n",
-                iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-                (int)((param_1[1] >> 7 & 7) << 1), _tex_frame,
-                (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
-      emit_catalog_object((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
-                             param_1, (param_1[1] >> 7 & 7) << 1, _tex_frame);
-    }
+    /* frame_or_texid=-1, exactly as the real call site (FUN_00060aa0:
+       `FUN_00061e60(uVar26 & 0xff, param_1, -1, -1)`): emit_catalog_object's
+       own catalog-2 branch resolves a_bridge's TMOBJ 30/31 plank frame (or
+       its flags>=2 floor texture) from the object's flags. A caller-side
+       `_mesh_tex_row` table used to precompute that frame here, bypassing
+       the real branch -- only ever needed because that branch read the
+       idivmod remainder from an uninitialised `extraout_r1`. */
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[sign] variant=%d table_val=%d heading=%d -> emit_catalog_object(catalog_idx=%d)\n",
+              iVar17, (short)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+              (int)((param_1[1] >> 7 & 7) << 1),
+              (unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2));
+    emit_catalog_object((uint)(unsigned char)*(ushort *)(&DAT_00086c80 + iVar17 * 2),
+                        param_1, (param_1[1] >> 7 & 7) << 1, -1);
     return;
   }
   if (bVar13 != 3) {

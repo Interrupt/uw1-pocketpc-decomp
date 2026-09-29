@@ -175,21 +175,31 @@ short frame_or_texid;
      (`_face_rec + 8` face-record field, dereferenced to build a vertex
      address), it's a full address -- split into its own pointer, `_vptr`. */
   char *_vptr;
-  /* The per-corner UV read below is fixed at point.X (U) / point.Y (V) for
-     every face, unconditionally, in the real disassembly (verified via
-     actual ARM instructions, not just the decompile). That's correct for
-     vertical geometry (doors, frames -- Y genuinely varies with height)
-     but degenerates for a horizontal face like a bridge's own flat top,
-     where Y is constant across all 4 corners and V collapses to a single
-     texel. Pick Y or Z for V based on which the model's OWN real bounding
-     box (parse_e_model_file's already-ported computation at +0x3c24/
-     +0x3c28 -- Y's real min/extent) says is larger, comparing against a Z
-     extent this port computes the same way (this .E parser's own bounding
-     box only ever tracked X/Y in the real disassembly -- Z was never part
-     of the original mechanism). Decided ONCE per model-draw-call (not per
-     face), matching how the model itself is authored -- a model is either
-     fundamentally vertical or horizontal, not a mix. */
+  /* DELIBERATE DEVIATION from the real binary. The per-corner UV read
+     below is fixed at point.X (U) / point.Y (V) for every face in the
+     real ARM code (fsub/fdiv/fmul at 0x63104/0x63108/0x637f4 -- no Z
+     term, no flat-face branch), transform_points_by_matrix copies those
+     ints verbatim into the arena and the rasterizer interpolates them.
+     For a horizontal face (FBRIDGE.E's 256x16x256 deck: all 4 corners at
+     Y=16) that gives V=31 on every corner -- one texture row stretched
+     along the whole bridge. That IS what the shipped binary drew (the
+     draw-list commands the same branch emits -- `2 <reg 0xb>
+     DAT_00086d60[flags]`, `0xb2 6` -- have no consumer anywhere in
+     UU.exe: the list-cursor accessors FUN_00038624/644/664 have zero
+     callers), but per direct request the deck should carry the full
+     32x32 plank/slab image like the DOS game. So, PER FACE: when every
+     corner shares one Y, take V from point.Z over the model's Z extent
+     (computed here the same way parse_e_model_file computes X/Y's);
+     every face with any Y variation keeps the exact original mapping.
+     An earlier model-wide version of this used Z but still divided by
+     the Y extent (16 units) -- V ran -248..248 on a 32-texel texture,
+     the "garbage bridge texture" QA report. */
   int _v_offset;
+  byte *_floor_tex = (byte *)0x0;
+  undefined4 _vmin_bits;
+  undefined4 _vext_bits;
+  float _model_minz;
+  float _model_extz;
   undefined4 *puVar31;
   undefined4 *puVar32;
   ushort local_7c;
@@ -314,6 +324,8 @@ short frame_or_texid;
         if ((*(byte *)(obj + 1) >> 1 & 0xf) < bVar8) {
           DAT_0023b834 = 2;
           Ordinal_2005(bVar8,*(byte *)(obj + 1) >> 1 & 0xf);
+          /* real ARM idivmod leaves the remainder in r1 (Ghidra's extraout_r1) */
+          extraout_r1 = (short)((*(byte *)(obj + 1) >> 1 & 0xf) % bVar8);
           uVar21 = (uint)DAT_00202734;
           *puVar25 = 2;
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1 + uVar21 + 0x10;
@@ -331,8 +343,18 @@ short frame_or_texid;
           DAT_00110fc0 = puVar25;
         }
         else {
-          FUN_0005e12c(0,DAT_0023b4e0,
+          emit_floor_texture_select(0,DAT_0023b4e0,
                        ((*(byte *)(obj + 1) >> 1 & 0xf) - (uint)(bVar5 >> 5)) + -1);
+          /* The real branch textures the bridge through draw-list
+             commands (0x3e/0xb2) this port has no consumer for -- resolve
+             the same floor texture emit_floor_texture_select just selected (index
+             +0x30 full-res / +0x6a low-res, its own level threshold)
+             directly, so a flags>=2 bridge isn't left with a NULL
+             texture. Not live-verified: every level-1 bridge has
+             flags 0/1. */
+          _floor_tex = (byte *)get_texture_page(
+              (((*(byte *)(obj + 1) >> 1 & 0xf) - (uint)(bVar5 >> 5)) + -1) +
+              (((int)(DAT_0023b4e0 & 0xff) < (int)DAT_00086b24) ? 0x30 : 0x6a));
           iVar29 = -1;
           *DAT_00110fc0 = 0xb2;
           DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -345,6 +367,7 @@ short frame_or_texid;
         cVar9 = (bVar5 >> 5) + 1;
         if (cVar9 != '\0') {
           Ordinal_2005(cVar9,*(byte *)(obj + 1) >> 1 & 0xf);
+          extraout_r1_00 = (short)((*(byte *)(obj + 1) >> 1 & 0xf) % (unsigned char)cVar9);
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1_00 + (uint)DAT_00202734 + 0x10;
           if (getenv("UW_DEBUG_DOOR"))
             fprintf(stderr, "[billboard] extra-frame: bVar5=0x%02x cVar9=%d extraout_r1_00=%d DAT_00202734=%d -> iVar29=%d\n",
@@ -472,6 +495,11 @@ short frame_or_texid;
     tex_w = DAT_0023b824;
     tex_h = DAT_0023b824;
   }
+  if (_floor_tex != (byte *)0x0) {
+    texptr = _floor_tex;
+    tex_w = DAT_0023b824;
+    tex_h = DAT_0023b824;
+  }
   _anim = (char *)tick_anim_record(catalog);
   faces_remaining = *(int *)(_anim + 4);
   if (getenv("UW_DEBUG_FACE51") && catalog == 7) {
@@ -554,20 +582,18 @@ short frame_or_texid;
             (int)heading, (double)_minx, (double)_maxx,
             (double)*(float *)(_anim + 0x3c1c), (double)*(float *)(_anim + 0x3c20));
   }
-  _v_offset = 0xc;  /* default: V <- point.Y, matching the original's own always-Y behavior */
+  _model_minz = 0.0f;
+  _model_extz = 1.0f;
   { int _pc = *(int *)_anim;
     if (_pc > 0) {
-      float _minz = 0.0f, _maxz = 0.0f;
+      float _maxz = 0.0f;
       int _pi;
       for (_pi = 0; _pi < _pc; _pi++) {
         float _z = *(float *)(_anim + 8 + _pi*0xc + 8);
-        if (_pi == 0 || _z < _minz) _minz = _z;
+        if (_pi == 0 || _z < _model_minz) _model_minz = _z;
         if (_pi == 0 || _z > _maxz) _maxz = _z;
       }
-      { float _zext = _maxz - _minz;
-        float _yext = *(float *)(_anim + 0x3c28);   /* real, already-ported model Y extent */
-        if (_zext > _yext) _v_offset = 0x10;  /* V <- point.Z instead */
-      }
+      if (_maxz > _model_minz) _model_extz = _maxz - _model_minz;
     }
   }
   iVar16 = faces_remaining + -1;
@@ -579,6 +605,19 @@ short frame_or_texid;
     do {
       sVar7 = DAT_000da47c;
       _face_rec = iVar22 + _anim + 0xc14;
+      _v_offset = 0xc;
+      _vmin_bits = *(undefined4 *)(_anim + 0x3c24);
+      _vext_bits = *(undefined4 *)(_anim + 0x3c28);
+      { int _vc = *(int *)_face_rec, _ci, _flat = (_vc > 1);
+        float _y0 = *(float *)(_anim + 8 + *(int *)(_face_rec + 4) * 0xc + 4);
+        for (_ci = 1; _ci < _vc && _ci < 4; _ci++)
+          if (*(float *)(_anim + 8 + *(int *)(_face_rec + 4 + _ci * 4) * 0xc + 4) != _y0) _flat = 0;
+        if (_flat) {
+          _v_offset = 0x10;
+          memcpy(&_vmin_bits, &_model_minz, 4);
+          memcpy(&_vext_bits, &_model_extz, 4);
+        }
+      }
       *(char *)(_face_rec + 0x4c) = (char)DAT_000da47c;
       *(char *)(_face_rec + 0x4d) = (char)((ushort)sVar7 >> 8);
       cVar9 = (char)(sVar7 >> 0xf);
@@ -649,7 +688,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar28 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -669,7 +708,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -689,7 +728,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
         uVar20 = Ordinal_2026(uVar20,0x3b800000);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
@@ -709,7 +748,7 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
         *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
         *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar28);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
         uVar17 = Ordinal_2026(uVar17,0x3b800000);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
@@ -729,9 +768,9 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
-        uVar20 = Ordinal_2047(uVar20,*puVar32);
+        uVar20 = Ordinal_2047(uVar20,_vext_bits);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
         *(char *)(_face_rec + 0x28) = (char)uVar20;
@@ -750,8 +789,8 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
-        uVar20 = Ordinal_2047(uVar20,*puVar32);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = Ordinal_2047(uVar20,_vext_bits);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
         *(char *)(_face_rec + 0x30) = (char)uVar20;
@@ -770,8 +809,8 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
-        uVar20 = Ordinal_2047(uVar20,*puVar32);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = Ordinal_2047(uVar20,_vext_bits);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
         *(char *)(_face_rec + 0x38) = (char)uVar20;
@@ -790,8 +829,8 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
         *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
         *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
-        uVar17 = Ordinal_2047(uVar17,*puVar32);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar17 = Ordinal_2047(uVar17,_vext_bits);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
       }
@@ -810,9 +849,9 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x27) = (char)((uint)uVar19 >> 0x18);
         uVar19 = Ordinal_2032(iVar3 + -1);
         puVar31 = (undefined4 *)(_anim + 0x3c24);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
         puVar32 = (undefined4 *)(_anim + 0x3c28);
-        uVar20 = Ordinal_2047(uVar20,*puVar32);
+        uVar20 = Ordinal_2047(uVar20,_vext_bits);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
         *(char *)(_face_rec + 0x28) = (char)uVar20;
@@ -831,8 +870,8 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x2d) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x2e) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x2f) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
-        uVar20 = Ordinal_2047(uVar20,*puVar32);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = Ordinal_2047(uVar20,_vext_bits);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
         *(char *)(_face_rec + 0x30) = (char)uVar20;
@@ -851,8 +890,8 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x35) = (char)((uint)uVar20 >> 8);
         *(char *)(_face_rec + 0x36) = (char)((uint)uVar20 >> 0x10);
         *(char *)(_face_rec + 0x37) = (char)((uint)uVar20 >> 0x18);
-        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
-        uVar20 = Ordinal_2047(uVar20,*puVar32);
+        uVar20 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar20 = Ordinal_2047(uVar20,_vext_bits);
         Ordinal_2026(uVar20,uVar19);
         uVar20 = Ordinal_2020();
         *(char *)(_face_rec + 0x38) = (char)uVar20;
@@ -871,8 +910,8 @@ short frame_or_texid;
         *(char *)(_face_rec + 0x3d) = (char)((uint)uVar17 >> 8);
         *(char *)(_face_rec + 0x3e) = (char)((uint)uVar17 >> 0x10);
         *(char *)(_face_rec + 0x3f) = (char)((uint)uVar17 >> 0x18);
-        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),*puVar31);
-        uVar17 = Ordinal_2047(uVar17,*puVar32);
+        uVar17 = Ordinal_2015(*(undefined4 *)(_vptr + _v_offset),_vmin_bits);
+        uVar17 = Ordinal_2047(uVar17,_vext_bits);
         Ordinal_2026(uVar17,uVar19);
         uVar17 = Ordinal_2020();
       }
