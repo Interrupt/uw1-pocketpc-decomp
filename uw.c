@@ -36474,65 +36474,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_00074614(param_1,param_2,param_3)
-undefined2 param_1;
-undefined2 param_2;
-int param_3;
-
-{
-  char cVar1;
-  
-  cVar1 = FUN_000382cc(param_3,1,3);
-  if (cVar1 != '\0') {
-    FUN_00081814(param_3,7,4,0,7,param_1,param_2);
-    if ((*(byte *)(param_3 + 0x19) & 0x40) == 0) {
-      FUN_00034ac4(param_3,2,0);
-    }
-    *(byte *)(param_3 + 0x19) = *(byte *)(param_3 + 0x19) | 0x40;
-    *(undefined1 *)(param_3 + 0xd) = *(undefined1 *)(param_3 + 0xd);
-    *(byte *)(param_3 + 0xe) = *(byte *)(param_3 + 0xe) | 0xc0;
-  }
-  return 1;
-}
-
-
-
-void FUN_000746b0(param_1,param_2,param_3)
-undefined4 param_1;
-undefined2 param_2;
-undefined4 param_3;
-
-{
-  morph_tile_object_state(2,1,param_3,param_1,param_2);
-  return;
-}
-
-
-
-void FUN_000746d4(param_1,param_2,param_3)
-undefined4 param_1;
-undefined2 param_2;
-undefined4 param_3;
-
-{
-  morph_tile_object_state(6,0xffffffff,param_3,param_1,param_2);
-  return;
-}
-
-
-
-void FUN_000746f8(param_1,param_2,param_3)
-undefined4 param_1;
-undefined2 param_2;
-undefined4 param_3;
-
-{
-  morph_tile_object_state(7,1,param_3,param_1,param_2);
-  return;
-}
-
-
-
 void FUN_0007471c(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 char param_1;
 byte param_2;

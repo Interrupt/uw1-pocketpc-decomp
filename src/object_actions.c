@@ -1301,3 +1301,81 @@ undefined2 param_5;
   }
   return 1;
 }
+
+
+
+
+
+// was FUN_00074614 -- resistance-gated, one-time-effect object-state
+// trigger: like morph_tile_object_state, runs a real resistance roll
+// (FUN_000382cc, mask 3) before acting. On success, alters the
+// tile's texture/decoration (FUN_00081814) and, only the FIRST time
+// (guarded by flag bit 0x40 at offset +0x19, which it then sets
+// permanently), plays an effect on the target (FUN_00034ac4). Always
+// sets the object's quality/link field (offset +0xd/+0xe) top 2 bits
+// to 3 (0xc0), unlike morph_tile_object_state's caller-supplied
+// state id -- this variant hardcodes a single fixed end state.
+undefined4 trigger_permanent_object_state_effect(param_1,param_2,param_3)
+undefined2 param_1;
+undefined2 param_2;
+int param_3;
+
+{
+  char cVar1;
+  
+  cVar1 = FUN_000382cc(param_3,1,3);
+  if (cVar1 != '\0') {
+    FUN_00081814(param_3,7,4,0,7,param_1,param_2);
+    if ((*(byte *)(param_3 + 0x19) & 0x40) == 0) {
+      FUN_00034ac4(param_3,2,0);
+    }
+    *(byte *)(param_3 + 0x19) = *(byte *)(param_3 + 0x19) | 0x40;
+    *(undefined1 *)(param_3 + 0xd) = *(undefined1 *)(param_3 + 0xd);
+    *(byte *)(param_3 + 0xe) = *(byte *)(param_3 + 0xe) | 0xc0;
+  }
+  return 1;
+}
+
+
+
+// was FUN_000746b0 -- thin wrapper: morph_tile_object_state with
+// texture/effect variant 2 and object-state id 1.
+void apply_tile_morph_variant_2(param_1,param_2,param_3)
+undefined4 param_1;
+undefined2 param_2;
+undefined4 param_3;
+
+{
+  morph_tile_object_state(2,1,param_3,param_1,param_2);
+  return;
+}
+
+
+
+// was FUN_000746d4 -- thin wrapper: morph_tile_object_state with
+// texture/effect variant 6 and object-state id -1 ("no change" --
+// this variant only affects the tile's texture/decoration, not the
+// target object's quality/link field).
+void apply_tile_morph_variant_6(param_1,param_2,param_3)
+undefined4 param_1;
+undefined2 param_2;
+undefined4 param_3;
+
+{
+  morph_tile_object_state(6,0xffffffff,param_3,param_1,param_2);
+  return;
+}
+
+
+
+// was FUN_000746f8 -- thin wrapper: morph_tile_object_state with
+// texture/effect variant 7 and object-state id 1.
+void apply_tile_morph_variant_7(param_1,param_2,param_3)
+undefined4 param_1;
+undefined2 param_2;
+undefined4 param_3;
+
+{
+  morph_tile_object_state(7,1,param_3,param_1,param_2);
+  return;
+}
