@@ -5238,7 +5238,7 @@ undefined4 param_1;
     if ((short)param_1 == -1) {
       sVar1 = -0x1000;
     }
-    if (FUN_00069eb0(puVar2,sVar1,0x400,(short)param_1) != 0) {
+    if (step_value_toward_limit(puVar2,sVar1,0x400,(short)param_1) != 0) {
       FUN_00049924(2);
     }
   }
@@ -36409,98 +36409,6 @@ LAB_00060f54:
 
 
 
-bool FUN_00069eb0(param_1,param_2,param_3,param_4)
-short * param_1;
-short param_2;
-short param_3;
-short param_4;
-
-{
-  int iVar1;
-  bool bVar2;
-  int iVar3;
-  
-  iVar3 = (int)*param_1;
-  iVar1 = (int)param_3;
-  if (param_4 == -1) {
-    if ((int)param_2 <= iVar3 - iVar1) {
-LAB_00069f08:
-      bVar2 = true;
-      goto LAB_00069ee8;
-    }
-  }
-  else if (iVar1 + iVar3 <= (int)param_2) goto LAB_00069f08;
-  bVar2 = false;
-LAB_00069ee8:
-  if (bVar2) {
-    *param_1 = (short)((uint)((iVar1 * param_4 + iVar3) * 0x10000) >> 0x10);
-  }
-  return bVar2;
-}
-
-
-
-// was FUN_00069f2c -- disassembly-confirmed faithful: given a compass
-// heading (param_1) and a distance (param_2), looks up
-// heading_to_sine_cosine and adds `*param_4(Y) += sin(heading)*dist`,
-// `*param_3(X) += cos(heading)*dist` -- the standard heading->direction-
-// vector projection, used to compute where a thrown/dropped object's
-// trajectory lands relative to the thrower's position.
-void project_position_by_heading(param_1,param_2,param_3,param_4)
-int param_1;
-short param_2;
-short * param_3;
-short * param_4;
-
-{
-  short sVar1;
-  short sVar2;
-  int iVar3;
-  short local_14;
-  short local_12;
-  
-  heading_to_sine_cosine((0x40U - param_1 & 0xff) << 8,&local_14,&local_12);
-  iVar3 = (int)local_14;
-  if (iVar3 < 0) {
-    iVar3 = iVar3 + 0x7f;
-  }
-  iVar3 = (iVar3 >> 7) * (int)param_2 * 0x10000 >> 0x10;
-  if (iVar3 < 0) {
-    iVar3 = iVar3 + 0xff;
-  }
-  sVar1 = (short)((uint)iVar3 >> 8);
-  iVar3 = (int)local_12;
-  if (iVar3 < 0) {
-    iVar3 = iVar3 + 0x7f;
-  }
-  iVar3 = (iVar3 >> 7) * (int)param_2 * 0x10000 >> 0x10;
-  if (iVar3 < 0) {
-    iVar3 = iVar3 + 0xff;
-  }
-  sVar2 = (short)((uint)iVar3 >> 8);
-  if (sVar1 < 1) {
-    if (sVar1 < 0) {
-      sVar1 = sVar1 + -1;
-    }
-  }
-  else {
-    sVar1 = sVar1 + 1;
-  }
-  if (sVar2 < 1) {
-    if (sVar2 < 0) {
-      sVar2 = sVar2 + -1;
-    }
-  }
-  else {
-    sVar2 = sVar2 + 1;
-  }
-  *param_4 = *param_4 + sVar1;
-  *param_3 = *param_3 + sVar2;
-  return;
-}
-
-
-
 void FUN_0006a034(param_1)
 uint param_1;
 
@@ -43658,18 +43566,18 @@ void FUN_00078434()
     if (sVar2 != 1) {
       uVar1 = 0;
     }
-    /* Was `FUN_00069eb0(local_c,uVar1,1);` -- dropped its 4th
+    /* Was `step_value_toward_limit(local_c,uVar1,1);` -- dropped its 4th
        argument (direction, -1/+1), the SAME `sVar2` value just
        computed above from the click position but about to be
        clobbered by this very call's own return value (Ghidra reused
-       the variable slot). FUN_00069eb0's own body branches on
+       the variable slot). step_value_toward_limit's own body branches on
        param_4==-1 vs anything else to pick which bound check and
        which sign to apply, so a dropped/garbage direction here could
        clamp against the wrong bound or step the wrong way --
        confirmed as the cause of "scrolling jumps somewhere else
        instead of line by line". Re-derive the direction explicitly
        instead of relying on the leftover register. */
-    sVar2 = FUN_00069eb0(local_c,uVar1,1,(0x24 < *DAT_00085a6c) ? 1 : -1);
+    sVar2 = step_value_toward_limit(local_c,uVar1,1,(0x24 < *DAT_00085a6c) ? 1 : -1);
     if (sVar2 != 0) {
       DAT_0024af80 = (byte)local_c[0];
       FUN_00057118();

@@ -2987,7 +2987,7 @@ void sync_camera_from_player();
 undefined4 roll_skill_check();
 void grant_experience_points();
 void refresh_experience_display();
-bool FUN_00069eb0();
+bool step_value_toward_limit();
 void project_position_by_heading();
 void FUN_0006a034();
 int FUN_0006a058();
@@ -3380,6 +3380,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/doors.h"
 #include "src/headers/winfile_wrappers.h"
 #include "src/headers/models.h"
+#include "src/headers/math.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
