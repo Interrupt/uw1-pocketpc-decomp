@@ -24,7 +24,7 @@ void enter_automap_screen()
   FUN_00073634();
   save_automap_reveal_to_archive(0,(int)DAT_00201b68);
   draw_automap_screen((int)DAT_00201b68);
-  DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,FUN_00016ef8);
+  DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,handle_automap_note_click);
   set_cursor_confine_rect(0,199,0x13f,0);
   FUN_00057118();
   FUN_00057c5c(0x1078);
@@ -46,7 +46,7 @@ void exit_automap_screen()
   FUN_00057118();
   unregister_key_binding((int)DAT_000b99c0);
   FUN_00057cac(0);
-  FUN_00017768((int)DAT_000ba9d0);
+  save_automap_notes_to_archive((int)DAT_000ba9d0);
   if ((DAT_000ba9d0 != DAT_00201b68) &&
      (iVar1 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
     load_automap_reveal_from_archive(auStack_1c,(int)DAT_00201b68);
@@ -406,7 +406,7 @@ undefined4 param_1;
     DAT_000ba9d0 = (short)param_1;
     set_palette_bank(1);
     screen_backup_save();
-    FUN_0001786c(param_1);
+    load_automap_notes_from_archive(param_1);
     *g_draw_color_index = 0x2d;
     *DAT_00084298 = 0x2d;
     select_active_font(s_fontbig_sys_0008432c);
@@ -593,6 +593,462 @@ void clear_automap_reveal_buffer()
 
 {
   Ordinal_1047(&DAT_000b99d0,0,0x1000);
+  return;
+}
+
+
+
+
+// was FUN_00016d7c -- given two note-button label records (param_1,
+// param_2) and a click point (param_3,param_4), measures each label's
+// rendered text-box distance to the click and returns whichever
+// pointer is closer (used by handle_automap_note_click's hit-testing).
+char *pick_closer_note_label(param_1,param_2,param_3,param_4)
+char * param_1;
+char * param_2;
+short param_3;
+short param_4;
+
+{
+  uint uVar1;
+  uint uVar2;
+  uint uVar3;
+  uint uVar4;
+  char cVar5;
+  short sVar6;
+  char *pcVar7;
+  int iVar8;
+  uint uVar9;
+  uint uVar10;
+  uint uVar11;
+  uint uVar12;
+  char acStack_50 [52];
+  
+  pcVar7 = param_2;
+  if ((param_1 != (char *)0x0) && (pcVar7 = param_1, param_2 != (char *)0x0)) {
+    do {
+      cVar5 = *pcVar7;
+      pcVar7[(int)(acStack_50 + -(int)param_1)] = cVar5;
+      pcVar7 = pcVar7 + 1;
+    } while (cVar5 != '\0');
+    sVar6 = measure_text_width(acStack_50);
+    iVar8 = (int)sVar6;
+    if (iVar8 < 0) {
+      iVar8 = iVar8 + 1;
+    }
+    uVar9 = ((iVar8 >> 1) - (int)param_3) + (int)*(short *)(param_1 + 0x32);
+    uVar1 = (int)uVar9 >> 0x1f;
+    uVar10 = ((int)param_4 - (int)*(short *)(param_1 + 0x34)) + 0xca;
+    uVar2 = (int)uVar10 >> 0x1f;
+    pcVar7 = param_2;
+    do {
+      cVar5 = *pcVar7;
+      pcVar7[(int)(acStack_50 + -(int)param_2)] = cVar5;
+      pcVar7 = pcVar7 + 1;
+    } while (cVar5 != '\0');
+    sVar6 = measure_text_width(acStack_50);
+    iVar8 = (int)sVar6;
+    if (iVar8 < 0) {
+      iVar8 = iVar8 + 1;
+    }
+    uVar11 = ((iVar8 >> 1) - (int)param_3) + (int)*(short *)(param_2 + 0x32);
+    uVar3 = (int)uVar11 >> 0x1f;
+    uVar12 = ((int)param_4 - (int)*(short *)(param_2 + 0x34)) + 0xca;
+    uVar4 = (int)uVar12 >> 0x1f;
+    pcVar7 = param_2;
+    if (((int)(((uVar12 ^ uVar4) - uVar4) * 0x10000) >> 0x10 <=
+         (int)(short)(((uVar10 ^ uVar2) - uVar2) * 0x10000 >> 0x10)) &&
+       ((int)(short)(((uVar9 ^ uVar1) - uVar1) * 0x10000 >> 0x10) <=
+        (int)(((uVar11 ^ uVar3) - uVar3) * 0x10000) >> 0x10)) {
+      pcVar7 = param_1;
+    }
+  }
+  return pcVar7;
+}
+
+
+
+// was FUN_00016ef8 -- automap "add/edit note" click handler: resolves
+// where the player clicked (map area vs. UI chrome), places, edits, or
+// removes a note into the DAT_000ba9d8 note-text array, and can invoke
+// switch_automap_level_display for the level-page navigation arrows.
+void handle_automap_note_click()
+
+{
+  char cVar1;
+  short sVar2;
+  short sVar3;
+  int iVar4;
+  char *pcVar5;
+  char *pcVar6;
+  int iVar7;
+  int iVar8;
+  char *pcVar9;
+  int iVar10;
+  short local_60;
+  short local_5e;
+  char local_5c [2];
+  short local_5a;
+  char local_58 [52];
+  
+  *g_draw_color_index = 0x2d;
+  *DAT_00084298 = 0x2d;
+  local_5e = *DAT_00085a6c;
+  local_60 = 200 - DAT_00085a6c[1];
+  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] handle_automap_note_click entry: local_5e=%d local_60=%d DAT_00085a6c[3]=%d\n", (int)local_5e, (int)local_60, (int)DAT_00085a6c[3]);
+  if (3 < DAT_00085a6c[3]) {
+    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] handle_automap_note_click: early return (DAT_00085a6c[3] > 3)\n");
+    return;
+  }
+  wait_for_click_release(1);
+  if ((((local_5e < 0x105) || (0x13f < local_5e)) || (0xb4 < local_60)) || (local_60 < 0x96)) {
+    if (((local_5e < 0x105) || (0x13f < local_5e)) || ((0x94 < local_60 || (local_60 < 0x77)))) {
+      if (local_5e < 0x114) {
+LAB_000170bc:
+        sVar2 = 0xfe;
+      }
+      else if (((local_5e < 0x140) && (local_60 < 0x11)) && (1 < local_60)) {
+        sVar2 = 0xfc;
+      }
+      else if ((((local_5e < 0x114) || (0x13f < local_5e)) || (199 < local_60)) ||
+              (sVar2 = 0xfb, local_60 < 0xb7)) goto LAB_000170bc;
+    }
+    else {
+      sVar2 = 0xfd;
+      set_cursor_confine_rect(0,199,0x13f,0);
+      FUN_00057118();
+      FUN_00057c5c(0x1079);
+      cursor_show_idle_tick();
+      do {
+        sVar3 = next_input_event();
+      } while (sVar3 != 1);
+      FUN_00057504(&local_5e,&local_60);
+      set_cursor_confine_rect(0,199,0x13f,0);
+      FUN_00057cac(1);
+    }
+  }
+  else {
+    sVar2 = 0xff;
+    change_game_mode(1);
+  }
+  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] handle_automap_note_click: branch sVar2=0x%x DAT_000bbef0(count)=%d\n", (unsigned)sVar2, (int)DAT_000bbef0);
+  if (sVar2 == 0xfb) {
+    if (0x62 < DAT_000ba9d0) goto LAB_0001764c;
+    iVar10 = DAT_000ba9d0 + 1;
+  }
+  else {
+    if (sVar2 != 0xfc) {
+      if (sVar2 == 0xfd) {
+        if (0 < DAT_000bbef0) {
+          pcVar5 = (char *)0x0;
+          iVar10 = 0;
+          iVar7 = (int)local_5a;
+          do {
+            iVar8 = iVar10 * 0x36;
+            pcVar9 = &DAT_000ba9d8 + iVar8;
+            pcVar6 = pcVar9;
+            do {
+              cVar1 = *pcVar6;
+              pcVar6[(int)(local_58 + -(int)pcVar9)] = cVar1;
+              pcVar6 = pcVar6 + 1;
+            } while (cVar1 != '\0');
+            sVar2 = measure_text_width(local_58);
+            if (((int)*(short *)(&DAT_000baa0a + iVar8) <= (int)local_5e) &&
+               ((int)local_5e <= (int)*(short *)(&DAT_000baa0a + iVar8) + (int)sVar2)) {
+              if (((int)local_60 <= *(short *)(&DAT_000baa0c + iVar8) + 5) &&
+                 (((int)*(short *)(&DAT_000baa0c + iVar8) <= (int)local_60 &&
+                  (pcVar5 = (char *)pick_closer_note_label(pcVar5,pcVar9), pcVar5 == pcVar9)))) {
+                iVar7 = iVar10;
+              }
+            }
+            iVar10 = (iVar10 + 1) * 0x10000 >> 0x10;
+          } while (iVar10 < DAT_000bbef0);
+          if (pcVar5 != (char *)0x0) {
+            DAT_000b99c4 = 1;
+            pcVar6 = pcVar5;
+            do {
+              cVar1 = *pcVar6;
+              pcVar6[(int)(local_58 + -(int)pcVar5)] = cVar1;
+              pcVar6 = pcVar6 + 1;
+            } while (cVar1 != '\0');
+            iVar10 = measure_text_width(local_58);
+            set_draw_color(0x1a);
+            rect_fill_or_save_restore((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
+                         (uint)*(ushort *)(pcVar5 + 0x32) + iVar10,*(ushort *)(pcVar5 + 0x34) + 5);
+            screen_backup_restore_rect((uint)*(ushort *)(pcVar5 + 0x32),(uint)*(ushort *)(pcVar5 + 0x34),
+                         (uint)*(ushort *)(pcVar5 + 0x32) + iVar10,*(ushort *)(pcVar5 + 0x34) + 5);
+            if ((int)(short)iVar7 == DAT_000bbef0 + -1) {
+              DAT_000bbef0 = (short)(DAT_000bbef0 + -1);
+            }
+            else {
+              iVar10 = (short)iVar7 * 0x36;
+              (&DAT_000baa0a)[iVar10] = 0xff;
+              (&DAT_000baa0b)[iVar10] = 0xff;
+            }
+            draw_automap_notes();
+          }
+        }
+        cursor_show_idle_tick();
+        goto LAB_0001764c;
+      }
+      if (sVar2 != 0xfe) goto LAB_0001764c;
+      DAT_000bbef4 = 1;
+      DAT_000bbef8 = 1;
+      local_5c[1] = 0;
+      if (DAT_000bbef0 != 100) {
+        iVar7 = DAT_000bbef0 * 0x36;
+        select_active_font(s_font4x5p_sys_0008431c);
+        FUN_00057c5c(0x107a);
+        iVar10 = -1;
+        (&DAT_000baa0a)[iVar7] = (char)local_5e;
+        (&DAT_000baa0b)[iVar7] = (char)((ushort)local_5e >> 8);
+        (&DAT_000baa0c)[iVar7] = (char)(local_60 + -4);
+        (&DAT_000baa0d)[iVar7] = (char)((uint)(local_60 + -4) >> 8);
+        local_58[0] = '\0';
+        iVar8 = *(short *)(&DAT_000baa0a + iVar7) + -1;
+        FUN_00057590(*(short *)(&DAT_000baa0a + iVar7) + 9,local_60 + -0x12);
+LAB_000171bc:
+        sVar2 = poll_input_event(0);
+        if (sVar2 < 0) goto LAB_000171a4;
+        goto LAB_000171d0;
+      }
+      iVar8 = (int)local_5a;
+      goto LAB_00017404;
+    }
+    if (DAT_000ba9d0 < 2) goto LAB_0001764c;
+    iVar10 = DAT_000ba9d0 + -1;
+  }
+  switch_automap_level_display(iVar10);
+LAB_0001764c:
+  wait_for_click_release(1);
+  return;
+LAB_000171a4:
+  sVar2 = FUN_000575c4(&local_5a);
+  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-poll: FUN_000575c4 returned %d local_5a=%d\n", (int)sVar2, (int)local_5a);
+  if (0 < sVar2) {
+LAB_000171d0:
+    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] key-loop: sVar2=%d local_58=\"%s\"\n", (int)sVar2, local_58);
+    if (((sVar2 == 0xd) || (sVar2 == 0x1b)) || (sVar2 < 4)) goto LAB_0001739c;
+    if ((sVar2 < 0x20) || (0x7a < sVar2)) {
+      if (sVar2 == 8) {
+        iVar10 = iVar10 + -1;
+        if (iVar10 * 0x10000 >> 0x10 < -1) {
+          iVar10 = -1;
+        }
+        iVar8 = measure_text_width(local_58);
+        if (0 < (short)iVar8) {
+          set_draw_color(0x1a);
+          rect_fill_or_save_restore((uint)*(ushort *)(&DAT_000baa0a + iVar7),
+                       (uint)*(ushort *)(&DAT_000baa0c + iVar7),
+                       (uint)*(ushort *)(&DAT_000baa0a + iVar7) + iVar8,
+                       *(ushort *)(&DAT_000baa0c + iVar7) + 6);
+          screen_backup_restore_rect((uint)*(ushort *)(&DAT_000baa0a + iVar7),
+                       (uint)*(ushort *)(&DAT_000baa0c + iVar7),
+                       (uint)*(ushort *)(&DAT_000baa0a + iVar7) + iVar8,
+                       *(ushort *)(&DAT_000baa0c + iVar7) + 6);
+        }
+      }
+    }
+    else {
+      local_5c[0] = Ordinal_1091(sVar2);
+      sVar2 = measure_text_width(local_58);
+      sVar3 = measure_text_width(local_5c);
+      if ((((int)sVar3 + (int)sVar2) * 0x10000 >> 0x10) + (int)*(short *)(&DAT_000baa0a + iVar7) <
+          0x13c) {
+        iVar8 = (iVar10 + 1) * 0x10000 >> 0x10;
+        if (iVar8 < 0x2e) {
+          local_58[iVar8] = local_5c[0];
+          iVar10 = iVar10 + 1;
+        }
+        else {
+          FUN_0007edec(300,10);
+          iVar10 = 0x2d;
+        }
+      }
+      else {
+        FUN_0007edec(300,10);
+      }
+    }
+    local_58[(short)iVar10 + 1] = '\0';
+    iVar4 = measure_text_width(local_58);
+    iVar8 = *(short *)(&DAT_000baa0a + iVar7) + iVar4 + -1;
+    FUN_00057590(*(short *)(&DAT_000baa0a + iVar7) + iVar4 + 9,local_60 + -0x12);
+    draw_text_string(local_58,(int)*(short *)(&DAT_000baa0a + iVar7),
+                 (int)*(short *)(&DAT_000baa0c + iVar7));
+    flush_dirty_rect_to_display(1);
+  }
+  goto LAB_000171bc;
+LAB_0001739c:
+  select_active_font(s_font5x6p_sys_0008430c);
+  if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: local_58=\"%s\" (empty=%d)\n", local_58, local_58[0]=='\0');
+  if (local_58[0] != '\0') {
+    DAT_000b99c4 = 1;
+    pcVar5 = local_58;
+    do {
+      cVar1 = *pcVar5;
+      pcVar5[(int)(&DAT_000ba9d8 + (iVar7 - (int)local_58))] = cVar1;
+      pcVar5 = pcVar5 + 1;
+    } while (cVar1 != '\0');
+    DAT_000bbef0 = DAT_000bbef0 + 1;
+    if (getenv("UW_DEBUG_AUTOMAP_NOTE")) fprintf(stderr, "[map-note] COMMIT: stored, new count=%d\n", (int)DAT_000bbef0);
+  }
+  flush_dirty_rect_to_display(1);
+LAB_00017404:
+  FUN_00057118();
+  draw_automap_notes();
+  FUN_00057590(iVar8 + 0x16,local_60 + -7);
+  FUN_00057cac(2);
+  flush_dirty_rect_to_display(1);
+  DAT_000bbef8 = 0;
+  DAT_000bbef4 = 1;
+  goto LAB_0001764c;
+}
+
+
+
+// was FUN_0001765c -- redraws every stored automap note (DAT_000bbef0
+// count of DAT_000ba9d8 records) as text at its saved screen position.
+void draw_automap_notes()
+
+{
+  char *wptr_5780;
+  char *wptr_5787;
+  char cVar1;
+  short sVar2;
+  char *pcVar3;
+  int iVar4;
+  char *pcVar5;
+  short sVar6;
+  int iVar7;
+  char acStack_baa20 [764376];
+  undefined1 auStack_48 [52];
+  
+  select_active_font(s_font4x5p_sys_0008431c);
+  *g_draw_color_index = 0x2d;
+  *DAT_00084298 = 0x2d;
+  if (0 < DAT_000bbef0) {
+    iVar7 = 0;
+    sVar6 = DAT_000bbef0;
+    do {
+      iVar4 = iVar7 * 0x36;
+      pcVar3 = &DAT_000ba9d8 + iVar4;
+    wptr_5787 = (acStack_baa20 + iVar7 * -0x36);
+      pcVar5 = pcVar3;
+    wptr_5780 = (acStack_baa20 + iVar7 * -0x36);
+      do {
+        cVar1 = *pcVar5;
+        *wptr_5780 = cVar1; wptr_5780 = wptr_5780 + 1;
+        pcVar5 = pcVar5 + 1;
+      } while (cVar1 != '\0');
+      sVar2 = *(short *)(&DAT_000baa0a + iVar4);
+      if (-1 < sVar2) {
+        do {
+          cVar1 = *pcVar3;
+          *wptr_5787 = cVar1; wptr_5787 = wptr_5787 + 1;
+          pcVar3 = pcVar3 + 1;
+        } while (cVar1 != '\0');
+        draw_text_string(auStack_48,(int)sVar2,(int)*(short *)(&DAT_000baa0c + iVar4));
+        sVar6 = DAT_000bbef0;
+      }
+      iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
+    } while (iVar7 < sVar6);
+  }
+  select_active_font(s_font5x6p_sys_0008430c);
+  return;
+}
+
+
+
+// was FUN_00017768 -- compacts out any deleted (negative-length) note
+// records, then writes the remaining DAT_000ba9d8 note array to archive
+// entry param_1+0x23.
+void save_automap_notes_to_archive(param_1)
+int param_1;
+
+{
+  short sVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  undefined1 auStack_2c [16];
+  
+  if (DAT_000b99c4 != 0) {
+    iVar3 = (int)DAT_000bbef0;
+    iVar2 = (int)DAT_000bbef0;
+    if (iVar2 != 0) {
+      sVar1 = DAT_000bbef0;
+      if (0 < iVar2) {
+        iVar4 = 0;
+        do {
+          if (*(short *)(&DAT_000baa0a + iVar4 * 0x36) < 0) {
+            Ordinal_1044(&DAT_000ba9d8 + iVar4 * 0x36,&DAT_000ba9d8 + (iVar4 + 1) * 0x36,
+                         iVar4 * -0x36 + 0x1518);
+            iVar3 = (iVar2 + -1) * 0x10000 >> 0x10;
+          }
+          iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+          iVar2 = (int)(short)iVar3;
+          sVar1 = (short)iVar3;
+        } while (iVar4 < iVar2);
+      }
+      DAT_000bbef0 = sVar1;
+      iVar2 = open_level_archive(auStack_2c,s__SAVE0_lev_ark_000842fc);
+      if (iVar2 != 0) {
+        write_archive_entry(auStack_2c,param_1 + 0x23,&DAT_000ba9d8,(uint)(DAT_000bbef0 * 0x360000) >> 0x10
+                    );
+        close_level_archive(auStack_2c);
+      }
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_0001786c -- reads archive entry param_1+0x23 back into the
+// DAT_000ba9d8 note array (the read-side counterpart to
+// save_automap_notes_to_archive), then redraws them.
+void load_automap_notes_from_archive(param_1)
+int param_1;
+
+{
+  undefined2 uVar1;
+  int iVar2;
+  undefined1 auStack_20 [16];
+  
+  DAT_000bbef0 = 0;
+  DAT_000b99c8 = 0;
+  iVar2 = open_level_archive(auStack_20,s__SAVE0_lev_ark_000842fc);
+  if (iVar2 != 0) {
+    uVar1 = read_archive_entry(auStack_20,param_1 + 0x23,&DAT_000ba9d8);
+    DAT_000b99c8 = Ordinal_2008(0x36,uVar1);
+    DAT_000bbef0 = DAT_000b99c8;
+    draw_automap_notes();
+    close_level_archive(auStack_20);
+  }
+  return;
+}
+
+
+
+// was FUN_00017b38 -- switches which level's automap page is on screen:
+// saves the current level's notes, clears the reveal buffer, loads the
+// new level's reveal state (if a real dungeon level, param_1<9), then
+// draws it.
+void switch_automap_level_display(param_1)
+undefined4 param_1;
+
+{
+  int iVar1;
+  undefined1 auStack_18 [16];
+  
+  save_automap_notes_to_archive((int)DAT_000ba9d0);
+  clear_automap_reveal_buffer();
+  if (((short)param_1 < 9) &&
+     (iVar1 = open_level_archive(auStack_18,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
+    load_automap_reveal_from_archive(auStack_18,param_1);
+    close_level_archive(auStack_18);
+  }
+  draw_automap_screen(param_1);
   return;
 }
 

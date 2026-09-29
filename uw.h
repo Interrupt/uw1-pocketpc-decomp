@@ -536,6 +536,19 @@ extern undefined1 DAT_001005cc;
 extern undefined1 DAT_001005cd;
 extern undefined1 DAT_001005ce;
 /* Globals defined in uw.c but also used by functions that now live in
+   automap.c (pick_closer_note_label, handle_automap_note_click,
+   draw_automap_notes, save_automap_notes_to_archive,
+   load_automap_notes_from_archive, switch_automap_level_display) --
+   extern'd here so both translation units see the same storage. */
+extern short DAT_000bbef0;
+extern undefined2 DAT_000b99c8;
+extern undefined1 DAT_000ba9d8_backing[32768];
+#define DAT_000ba9d8 DAT_000ba9d8_backing[0]
+extern undefined1 DAT_000baa0a;
+extern undefined1 DAT_000baa0b;
+extern undefined1 DAT_000baa0c;
+extern undefined1 DAT_000baa0d;
+/* Globals defined in uw.c but also used by functions that now live in
    game.c (app_main_loop, main_menu_loop) -- extern'd here so both
    translation units see the same storage. */
 extern undefined1 *DAT_00084298;
@@ -1916,13 +1929,13 @@ void darken_pixel();
 void darken_pixel_light();
 void draw_automap_cell();
 void draw_automap_door_edge();
-char *FUN_00016d7c();
-void FUN_00016ef8();
-void FUN_0001765c();
-void FUN_00017768();
-void FUN_0001786c();
+char *pick_closer_note_label();
+void handle_automap_note_click();
+void draw_automap_notes();
+void save_automap_notes_to_archive();
+void load_automap_notes_from_archive();
 void draw_automap_screen();
-void FUN_00017b38();
+void switch_automap_level_display();
 void babl_builtin_set_attitude();
 void babl_builtin_set_race_attitude();
 undefined1 babl_builtin_x_skills();
