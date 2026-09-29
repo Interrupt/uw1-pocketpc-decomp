@@ -3503,7 +3503,7 @@ undefined4 check_object_area_for_spawn_block();
 undefined4 is_out_of_player_range();
 void process_nearby_background_traps();
 void tick_ambient_doors_and_scheduler();
-void FUN_0007e998();
+void capture_framebuffer_rect_to_grtile_paletted();
 void reinstall_active_palette();
 void plot_pixel();
 void FUN_0007ea30();

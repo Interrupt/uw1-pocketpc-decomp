@@ -2646,7 +2646,7 @@ undefined2 param_5;
        flip... but shows stats for both halves, should only switch at
        the edge-on midpoint." */
     uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
-    FUN_0007e998(uVar4,0xec,8,0x53,0x72);
+    capture_framebuffer_rect_to_grtile_paletted(uVar4,0xec,8,0x53,0x72);
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
     if (getenv("UW_DEBUG_CLICKREGION"))
       fprintf(stderr, "[stats] begin_hud_panel_flip: pre-draw blit source uVar4(dst202)=%u\n", (unsigned)uVar4);
@@ -2658,7 +2658,7 @@ undefined2 param_5;
     DAT_00085c54 = 1;
     g_active_hud_panel = uVar1;
     uVar4 = resolve_flip_grtile_slot(DAT_0023c202);
-    FUN_0007e998(uVar4,0xec,8,0x53,0x72);
+    capture_framebuffer_rect_to_grtile_paletted(uVar4,0xec,8,0x53,0x72);
     /* Not decompiled -- put the source content (just captured above)
        back on screen now that we're done using the screen as a
        scratch surface to capture the target. Otherwise the target
@@ -2717,7 +2717,7 @@ bool advance_hud_panel_flip()
   /* Were `undefined4` -- truncated the real 64-bit pointers this
      function passes around (DAT_0023cca4 itself, and resolve_flip_grtile_slot's
      return value) to 32 bits on this host before handing them to
-     bitmap_blit_to_framebuffer/squash_hud_panel_flip_rows/FUN_0007e998, which then
+     bitmap_blit_to_framebuffer/squash_hud_panel_flip_rows/capture_framebuffer_rect_to_grtile_paletted, which then
      reconstructed a wild pointer from just the low half. Same
      truncated-pointer-local class as everywhere else this session --
      this is what crashed the panel-switch wipe transition the first
@@ -2747,7 +2747,7 @@ bool advance_hud_panel_flip()
     uVar3 = resolve_flip_grtile_slot(DAT_0023c204);
     if (DAT_0023c208 == 1) {
       uVar4 = resolve_flip_grtile_slot(DAT_0023c200);
-      FUN_0007e998(uVar4,(int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,(int)DAT_0023c144,
+      capture_framebuffer_rect_to_grtile_paletted(uVar4,(int)(short)DAT_0023c148,(int)(short)DAT_0023c14c,(int)DAT_0023c144,
                    DAT_0023c140);
       squash_hud_panel_flip_rows(uVar4,uVar3,DAT_0023c208);
       set_draw_color(0xf1);
@@ -2931,7 +2931,7 @@ bool advance_hud_panel_flip()
              call's C syntax. Previously left as the original 3-arg
              dropped-argument call because applying this fix crashed a
              few ticks later -- that turned out to be a side effect of
-             FUN_0007e998/FUN_00041a78 being broken (this rect_fill
+             capture_framebuffer_rect_to_grtile_paletted/FUN_00041a78 being broken (this rect_fill
              finally actually running exposed their bugs, rather than
              being wrong itself); now that both are fixed, re-applying
              this fix is what it takes for the panel-flip's "erase old
@@ -3557,3 +3557,96 @@ void flush_sprite_list_compositor()
   }
   return;
 }
+
+
+/* was FUN_0007e998 -- Not decompiled -- confirmed a genuine dead stub
+   in the real binary too (disassembly at 0x0007e998 is just
+   `cpy pc,lr`, 4 bytes, no body). This is the "capture the
+   framebuffer rect we just drew panel
+   content into, back into the grtile buffer" step (both real call
+   sites draw content live via draw_stats_panel_content/the target hud
+   panel handler and then immediately call this to snapshot it for the
+   flip animation to work from).
+
+   capture_framebuffer_rect_to_grtile, the obvious existing primitive
+   to delegate to, copies the live framebuffer's 16bpp RGB565 pixels
+   verbatim -- but the grtile buffers here and copy_hud_panel_flip_column's whole
+   squash-blit loop are 8bpp paletted (1 byte/pixel, confirmed via
+   disassembly-recovered pointer stepping), same format
+   decode_gr_entry_bitmap/FUN_00041a78 already decoded into this exact
+   buffer just before draw_stats_panel_content ran. A real fix needs
+   an actual 16bpp->8bpp palette-matching capture, which doesn't exist
+   anywhere else in this codebase -- implemented here as a per-pixel
+   nearest-color search against g_palette_rgb565 (the same 256-entry
+   RGB565 table every other paletted draw in this file already
+   indexes into, e.g. rect_fill_or_save_restore's fill mode and
+   uw_get_default_palette's own reverse-conversion precedent).
+
+   Writes tightly-packed rows (stride = width, no padding) starting at
+   the destination buffer's own base -- matching the layout
+   FUN_00041a78's decode already established for this same buffer
+   (bitmap_blit_to_framebuffer reads it back with that same width as
+   its own row stride, no separate pitch).
+
+   param_1 is the destination grtile buffer's real pointer (both call
+   sites already resolve it via resolve_flip_grtile_slot before
+   calling, unlike capture_framebuffer_rect_to_grtile which wants the
+   raw registry key instead -- see that function's own comment on this
+   same distinction). param_2/param_3 are the framebuffer capture
+   rect's x/y; param_4/param_5 are width/height, in that order --
+   confirmed by cross-checking both real call sites' literal argument
+   values against the adjacent, already-working
+   bitmap_blit_to_framebuffer call's own disassembly-verified
+   (x,y,src,HEIGHT,WIDTH,...) parameter order (that function's param_4
+   drives the row/Y loop, param_5 the column/X loop and source
+   stride) -- capture_framebuffer_rect_to_grtile_paletted's own two call sites consistently pass
+   their last two arguments in the opposite (width,height) order from
+   that sibling blit call sitting right next to each of them. */
+void capture_framebuffer_rect_to_grtile_paletted(param_1,param_2,param_3,param_4,param_5)
+unsigned char *param_1;
+int param_2;
+int param_3;
+int param_4;
+int param_5;
+
+{
+  int row;
+  int col;
+  int i;
+  unsigned short *pal565;
+  unsigned short src_pixel;
+  unsigned short pal_pixel;
+  int dr;
+  int dg;
+  int db;
+  int dist;
+  int best_index;
+  int best_dist;
+  short *fb_row;
+
+  pal565 = (unsigned short *)g_palette_rgb565_backing;
+  for (row = 0; row < param_5; row++) {
+    fb_row = (short *)((char *)g_uw_framebuffer + ((param_3 + row) * 0x140 + param_2) * 2);
+    for (col = 0; col < param_4; col++) {
+      src_pixel = (unsigned short)fb_row[col];
+      best_index = 0;
+      best_dist = 0x7fffffff;
+      for (i = 0; i < 256; i++) {
+        pal_pixel = pal565[i];
+        dr = (int)((src_pixel >> 11) & 0x1f) - (int)((pal_pixel >> 11) & 0x1f);
+        dg = (int)((src_pixel >> 5) & 0x3f) - (int)((pal_pixel >> 5) & 0x3f);
+        db = (int)(src_pixel & 0x1f) - (int)(pal_pixel & 0x1f);
+        dist = dr * dr + dg * dg + db * db;
+        if (dist < best_dist) {
+          best_dist = dist;
+          best_index = i;
+          if (dist == 0) break;
+        }
+      }
+      param_1[row * param_4 + col] = (unsigned char)best_index;
+    }
+  }
+}
+
+
+
