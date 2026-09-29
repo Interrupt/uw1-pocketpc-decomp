@@ -950,7 +950,7 @@ int param_3;
     }
     else {
       if (uVar3 == 5) {
-        FUN_0007bcdc(param_1,param_2);
+        dispatch_world_object_interaction_by_family(param_1,param_2);
         goto LAB_00079cb8;
       }
       if (uVar3 != 7) goto LAB_00079cb8;
@@ -2065,6 +2065,98 @@ int param_2;
       FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
       finish_object_use(param_1,param_2,0);
     }
+  }
+  return;
+}
+
+
+
+
+
+// was FUN_0007bcdc -- dispatches an interaction with a world object
+// by its own type-id "family" bits (bits 4-5): family 0 handles
+// doors (open/close, or a "locked"/"already open" scroll message for
+// the player); family 1 handles mantra-chant statues (low nibble 7,
+// handle_mantra_chant) and combinable levers/switches (nibble 0xb/
+// 0xd, try_combine_or_stow_object); families 2 and 3 cycle a small
+// state value (e.g. a multi-position switch or a lever with a
+// positional sound effect) and flush a redraw. Already had a
+// UW_DEBUG_DOOR diagnostic despite covering more than just doors.
+// Confirmed real caller: use_object_on_target's class-5 branch.
+void dispatch_world_object_interaction_by_family(param_1,param_2)
+ushort * param_1;
+ushort * param_2;
+
+{
+  char *wptr_59681;
+  char cVar1;
+  short sVar2;
+  char *pcVar3;
+  ushort uVar4;
+  ushort uVar5;
+  char acStack_84f44 [544548];
+  char acStack_20 [20];
+  
+  uVar5 = *param_2;
+  uVar4 = uVar5 >> 4 & 3;
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] dispatch_world_object_interaction_by_family: obj0=0x%04x family=%d low_nibble=%d\n",
+            (unsigned)uVar5, (int)uVar4, (int)(uVar5 & 0xf));
+  if ((uVar5 >> 4 & 3) == 0) {
+    if ((uVar5 & 0xf) < 8) {
+      sVar2 = check_object_combination(param_1,param_2,0);
+      if (sVar2 == 0) {
+        if ((*param_1 & 0x1ff) == 0x7f) {
+          sVar2 = build_object_display_name(acStack_20,param_2,0,0);
+          if (sVar2 == 0) {
+            pcVar3 = s_UNNAMED_00084f24;
+    wptr_59681 = acStack_84f44;
+            do {
+              cVar1 = *pcVar3;
+              *wptr_59681 = cVar1; wptr_59681 = wptr_59681 + 1;
+              pcVar3 = pcVar3 + 1;
+            } while (cVar1 != '\0');
+          }
+          message_scroll_print_wrapped(&DAT_00085c88);
+          message_scroll_print_wrapped(acStack_20);
+          message_scroll_print_wrapped(s_is_locked__000878fc);
+        }
+      }
+      else if ((param_1 == g_player_object) || ((param_2[3] & 1) == 0)) {
+        close_door_object(param_1,param_2);
+      }
+    }
+    else {
+      open_door_object(param_2);
+    }
+  }
+  else if (uVar4 == 1) {
+    uVar4 = uVar5 & 0xf;
+    if (uVar4 == 7) {
+      handle_mantra_chant(0);
+    }
+    else if (((uVar4 == 0xb) || (uVar4 == 0xd)) && ((uVar5 & 0x8000) == 0)) {
+      try_combine_or_stow_object(param_1,param_2,0);
+    }
+  }
+  else {
+    if (uVar4 == 2) {
+      if (((uVar5 & 0xf) != 1) && ((uVar5 & 0xf) != 2)) {
+        FUN_00049008(param_2,0xffffffff);
+        return;
+      }
+      uVar5 = ((uVar5 >> 9) + 1) * 0x200 & 0xe00 | uVar5 & 0xe1ff;
+    }
+    else {
+      if (uVar4 != 3) {
+        return;
+      }
+      play_positional_sound_effect(0x13,DAT_002020a0 * 8 + 3,DAT_002020a4 * 8 + 3,0);
+      uVar5 = ((uVar5 & 0xf) - 8 ^ *param_2) & 0xf ^ *param_2;
+    }
+    *(char *)param_2 = (char)uVar5;
+    *(char *)((char *)param_2 + 1) = (char)(uVar5 >> 8);
+    FUN_00049924(2);
   }
   return;
 }

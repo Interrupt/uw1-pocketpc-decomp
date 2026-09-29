@@ -3461,7 +3461,7 @@ void complete_use_item_scatter_spawn();
 void complete_use_item_fill_flask();
 void dispatch_use_special_item_by_type();
 void use_readable_item();
-void FUN_0007bcdc();
+void dispatch_world_object_interaction_by_family();
 undefined4 check_object_combination();
 undefined4 FUN_0007c1bc();
 void FUN_0007c2ec();
