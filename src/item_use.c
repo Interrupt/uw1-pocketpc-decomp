@@ -926,13 +926,13 @@ int param_3;
       FUN_0007a478(param_2,param_3);
     }
     else if (((uVar1 == 2) && ((uVar7 & 0x1ff) == 0xe7)) && (param_3 != 0)) {
-      FUN_00079ff0(param_2,FUN_0007a704);
+      prompt_use_item_on_target(param_2,FUN_0007a704);
     }
   }
   else {
     if (uVar3 == 4) {
       if (uVar1 == 0) {
-        FUN_00079f90(param_2,param_3);
+        arm_use_item_on_player_prompt(param_2,param_3);
         goto LAB_00079cb8;
       }
       if (uVar1 == 1) {
@@ -1066,4 +1066,150 @@ uint param_2;
     param_1 = (short *)0x0;
   }
   return param_1;
+}
+
+
+
+
+
+// was FUN_00079e64 -- deferred-target-click completion callback for
+// item type 0x101 specifically (armed by arm_use_item_on_player_
+// prompt below): clears the pending-target UI state, then checks
+// whether the held item (param_1) combines with the player, using
+// the player's own offset+0x31 byte (a mixture/poison-type index) as
+// the combination's extra parameter, and reports the result via one
+// of several scroll messages -- playing a sound effect on one
+// specific outcome (sVar1's default case).
+void complete_use_reagent_on_player(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  short sVar1;
+  undefined4 uVar2;
+
+  if (param_2 != 0) {
+    FUN_00057cac(3);
+    g_selected_object = 0;
+    g_cursor_holding_state = 0;
+    sVar1 = check_object_combination(g_player_object,param_1,
+                         (int)((uint)*(byte *)(DAT_00086df8 + 0x31) * -0x10000) >> 0x10);
+    if (sVar1 == 0) {
+      uVar2 = 0x78;
+    }
+    else if (sVar1 == 1) {
+      uVar2 = 3;
+    }
+    else if (sVar1 == 4) {
+      uVar2 = 0x7a;
+    }
+    else {
+      play_sound_effect_with_pan(0x13,0x40,0);
+      uVar2 = 0x79;
+    }
+    print_scroll_message_by_id(uVar2);
+  }
+  return;
+}
+
+
+
+// was FUN_00079f1c -- deferred-target-click completion callback for
+// item types 0x102-0x10e (armed by arm_use_item_on_player_prompt
+// below): the general case, combining the held item with the player
+// using the held item's own quality field (DAT_00202098+6, masked to
+// 0x3f) as the combination parameter, reporting the result via
+// message id (result+2).
+void complete_use_item_on_player(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  int iVar1;
+
+  if (param_2 != 0) {
+    FUN_00057cac(3);
+    g_selected_object = 0;
+    g_cursor_holding_state = 0;
+    iVar1 = check_object_combination(g_player_object,param_1,*(ushort *)(DAT_00202098 + 6) & 0x3f);
+    print_scroll_message_by_id(iVar1 + 2);
+  }
+  return;
+}
+
+
+
+// was FUN_00079f90 -- arms the "use item on target" prompt for a
+// held item whose type falls in 0x101-0x10e: picks
+// complete_use_reagent_on_player for the specific type 0x101, or
+// complete_use_item_on_player for 0x102-0x10e, then hands that
+// callback to prompt_use_item_on_target below. A no-op for any type
+// outside that range.
+void arm_use_item_on_player_prompt(param_1,param_2)
+ushort * param_1;
+int param_2;
+
+{
+  code *pcVar1;
+
+  if (param_2 != 0) {
+    if ((*param_1 & 0x1ff) == 0x101) {
+      pcVar1 = complete_use_reagent_on_player;
+    }
+    else {
+      if (0x10e < (*param_1 & 0x1ff)) {
+        return;
+      }
+      pcVar1 = complete_use_item_on_player;
+    }
+    prompt_use_item_on_target(param_1,pcVar1);
+  }
+  return;
+}
+
+
+
+// was FUN_00079ff0 -- the general "use item on target" prompt setup:
+// builds and prints "<item's display name> -- use it on what?" via
+// build_object_display_name, then prompts the player to click a
+// target (FUN_00057c5c) and arms the deferred-target-click state
+// (g_selected_object, g_cursor_holding_state=2, DAT_00202098=the
+// item being used, DAT_002020b8=the completion callback param_2 --
+// the same pending-click callback slot dispatch_player_command's own
+// cluster uses). param_2 is later invoked by whatever click-handling
+// code resolves the target (see complete_use_reagent_on_player and
+// complete_use_item_on_player above for two such callbacks).
+void prompt_use_item_on_target(param_1,param_2)
+ushort * param_1;
+undefined4 param_2;
+
+{
+  char *wptr_58645;
+  char cVar1;
+  short sVar2;
+  char *pcVar3;
+  int iVar4;
+  char acStack_87920 [555244];
+  char acStack_34 [40];
+  
+  pcVar3 = &DAT_000878ec;
+    wptr_58645 = acStack_87920;
+  do {
+    cVar1 = *pcVar3;
+    *wptr_58645 = cVar1; wptr_58645 = wptr_58645 + 1;
+    pcVar3 = pcVar3 + 1;
+  } while (cVar1 != '\0');
+  iVar4 = Ordinal_1068(acStack_34);
+  sVar2 = build_object_display_name(acStack_34 + iVar4,param_1,0,0);
+  if (sVar2 == 0) {
+    Ordinal_1063(acStack_34,s_UNNAMED_00084f24);
+  }
+  Ordinal_1063(acStack_34,s_on_what__000878e0);
+  message_scroll_print_wrapped(acStack_34);
+  FUN_00057c5c(*param_1 & 0x1ff);
+  g_selected_object = param_1;
+  g_cursor_holding_state = 2;
+  DAT_00202098 = param_1;
+  DAT_002020b8 = param_2;
+  return;
 }

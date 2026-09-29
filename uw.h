@@ -1010,6 +1010,9 @@ extern undefined1 DAT_002034b5_backing[8192];
 extern undefined DAT_002027d2_backing[8192];
 #define DAT_002027d2 DAT_002027d2_backing[0]
 extern undefined4 DAT_002046b4;
+extern char s_on_what__000878e0[];
+extern undefined1 DAT_000878ec_backing[32768];
+#define DAT_000878ec DAT_000878ec_backing[0]
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3434,10 +3437,10 @@ void spawn_creature_death_loot();
 ushort *use_object_on_target();
 bool finish_object_use();
 short *begin_holding_object_on_cursor();
-void FUN_00079e64();
-void FUN_00079f1c();
-void FUN_00079f90();
-void FUN_00079ff0();
+void complete_use_reagent_on_player();
+void complete_use_item_on_player();
+void arm_use_item_on_player_prompt();
+void prompt_use_item_on_target();
 void FUN_0007a0cc();
 void FUN_0007a180();
 void FUN_0007a198();
