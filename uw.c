@@ -6151,18 +6151,23 @@ static short DAT_0023c268_arr[3];
 #define DAT_0023c268 DAT_0023c268_arr[0]
 static short DAT_0023c270_arr[3];
 #define DAT_0023c270 DAT_0023c270_arr[0]
-/* DAT_00087210/DAT_00087218: read-only per-side (left/right dragon)
-   position lookup tables, same `(&DAT_000872XX)[i]` 3-wide indexing
-   pattern as their writable DAT_0023c26X siblings just above -- but
-   only ever READ, so under-sizing them doesn't corrupt anything else,
-   just returns wrong/adjacent-memory positions for indices 1/2.
-   Widened for the same safety reason; real per-index position data
-   not yet recovered (index 0 -- the only one exercised so far, both
-   dragons currently land on the same spot -- reads correctly since it
-   IS the real scalar). */
-static undefined2 DAT_00087210_arr[3];
+/* DAT_00087210/DAT_00087218: real per-index position lookup tables --
+   recovered directly from the real ARM binary's .data (raw uint16 reads
+   at 0x87210/0x87218, not a function to decompile). DAT_00087210 (used
+   by FUN_0006e96c to X-position the 3 "ready to cast" rune-slot icons)
+   is 176,191,206 -- evenly spaced by 15, confirming it's real per-slot
+   data, not a scalar with garbage padding. Previously only index 0 had
+   a nonzero (but still not verified-real) value; indices 1/2 read as
+   0, landing both later slots' rune icons at the left screen edge --
+   confirmed live: "left-clicking a rune draws it at the wrong X
+   position in the spell-slot area" for any rune beyond the first
+   selected. DAT_00087218 (used by FUN_0006ea54, gated on
+   `*(short*)(DAT_00085a6c+8)==1` -- a different, rarer UI state) is
+   86,69,52, decreasing by 17; recovered the same way even though no
+   live report has hit it yet. */
+static const undefined2 DAT_00087210_arr[3] = {176, 191, 206};
 #define DAT_00087210 DAT_00087210_arr[0]
-static undefined2 DAT_00087218_arr[3];
+static const undefined2 DAT_00087218_arr[3] = {86, 69, 52};
 #define DAT_00087218 DAT_00087218_arr[0]
 undefined2 DAT_0023c140;
 int DAT_0023c278;
@@ -37820,9 +37825,24 @@ void FUN_0004497c()
   short sVar4;
   short sVar5;
   int iVar6;
-  ushort local_20 [3];
-  undefined2 local_1a;
-  
+  /* Was two separately-declared locals, `ushort local_20[3]` immediately
+     followed by `undefined2 local_1a` -- Ghidra's own offset naming
+     (-0x20, then -0x1a, exactly 6 bytes later) confirms the real ARM
+     stack frame packs them contiguously, and the real code below relies
+     on that: dispatch_object_action_dup reads its param_1[3] (the
+     synthetic "look" object's owner field) as the 4th ushort of what
+     it's handed, but only 3 are ever declared, and local_1a (explicitly
+     zeroed, the very next line) is what's meant to BE that 4th slot.
+     C gives no such adjacency guarantee on this host -- confirmed live:
+     local_20[3] read real stack garbage that happened to decode to a
+     "headless" creature's owner-name index, so right-clicking a rune in
+     this alphabet grid printed "belonging to a headless" instead of
+     just the rune's name. Backing array + #define, same pattern used
+     throughout this file for exactly this class of bug. */
+  undefined1 local_20_backing[8];
+#define local_20 ((ushort *)(local_20_backing + 0))
+#define local_1a (*(undefined2 *)(local_20_backing + 6))
+
   psVar3 = DAT_00085a6c;
   if (g_cursor_holding_state == 0) {
     if (DAT_00085a6c[1] < 0x12) {
@@ -37867,6 +37887,8 @@ void FUN_0004497c()
   }
   return;
 }
+#undef local_20
+#undef local_1a
 
 
 
