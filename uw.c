@@ -6112,7 +6112,7 @@ undefined DAT_0023c3d4_backing[8192];
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
 int DAT_0023c3bc;
 int DAT_0023c378;
-static undefined1 DAT_000873e0_backing[65536];
+undefined1 DAT_000873e0_backing[65536];
 #define DAT_000873e0 DAT_000873e0_backing[0]
 undefined4 DAT_00087458;
 static undefined1 DAT_00087520_backing[32768];
@@ -10757,7 +10757,7 @@ undefined4 param_2;
   if ((*param_1 == 0) || (*(int *)(param_1 + 1) == 0)) {
     do {
       do {
-        FUN_000735fc(uVar6,param_2);
+        advance_menu_music_track(uVar6,param_2);
         flush_dirty_rect_to_display(1);
         uVar14 = next_input_event();
         param_2 = (undefined4)((ulonglong)uVar14 >> 0x20);
@@ -12413,7 +12413,7 @@ void FUN_00028bac()
   if (DAT_001006d0 != 0) {
     end_barter_ui();
   }
-  FUN_000735c0();
+  pick_random_pending_music_track();
   g_active_hud_panel = DAT_00100678;
   FUN_0007f0e0();
   return;
@@ -12436,7 +12436,7 @@ void FUN_00028ffc()
 
   while (DAT_0010078c != 0) {
     flush_dirty_rect_to_display(1);
-    FUN_000735fc();
+    advance_menu_music_track();
     if (DAT_00201c84 != 0) {
       dispatch_sticky_mode_handlers();
     }
@@ -17383,7 +17383,7 @@ int param_1;
 {
   int iVar1;
   
-  FUN_000735fc();
+  advance_menu_music_track();
   if (((*(byte *)(param_1 + 0x45) & 0x40) != 0) && (*(short *)(param_1 + 0x3f) != -1)) {
     FUN_00073ac0();
     iVar1 = FUN_00073ac4();
@@ -32871,7 +32871,7 @@ short param_1;
     while( true ) {
       sVar1 = next_input_event();
       if (-1 < sVar1) break;
-      FUN_000735fc();
+      advance_menu_music_track();
       flush_dirty_rect_to_display(1);
     }
     if (getenv("UW_DEBUG_PAUSEMENU"))
@@ -36446,124 +36446,6 @@ LAB_00060f54:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
   return;
-}
-
-
-
-void FUN_000735c0()
-
-{
-  int uw_ord2005_rem_149 = 0;
-  undefined4 uVar1;
-  char extraout_r1;
-  
-  uVar1 = Ordinal_1053();
-  uw_ord2005_rem_149 = ((int)(uVar1)) % (3);
-  DAT_0023c384 = uw_ord2005_rem_149 + '\x02';
-  return;
-}
-
-
-
-void FUN_000735fc()
-
-{
-  int iVar1;
-  char cVar2;
-  
-  cVar2 = DAT_0023c3a8;
-  iVar1 = FUN_00073870();
-  if (iVar1 != 0) {
-    if (DAT_0023c3a8 == '\x01') {
-      cVar2 = '\x04';
-    }
-    play_music_track(cVar2,1);
-  }
-  return;
-}
-
-
-
-void FUN_00073634()
-
-{
-  int uw_ord2005_rem_150 = 0; int uw_ord2005_rem_151 = 0;
-  int iVar1;
-  uint uVar2;
-  undefined4 uVar3;
-  uint extraout_r1;
-  uint uVar4;
-  uint extraout_r1_00;
-  uint uVar5;
-  
-  if (((DAT_00087454 != 0) && (DAT_00087448 != 0)) &&
-     (((DAT_0023c3a8 != 9 && (DAT_0023c3a8 != 0xb)) || (iVar1 = FUN_00073870(), iVar1 != 0)))) {
-    if (((DAT_0023c3a8 < 5) || (7 < DAT_0023c3a8)) ||
-       (uVar2 = read_realtime_clock_units(), uVar2 <= DAT_00101944 + 0xa00U)) {
-      uVar2 = (uint)DAT_0023c384;
-    }
-    else {
-      if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
-        uVar3 = Ordinal_1053();
-        uw_ord2005_rem_150 = ((int)(uVar3)) % (3);
-        uVar2 = (uw_ord2005_rem_150 & 0xff) + 2;
-      }
-      else {
-        uVar2 = 8;
-      }
-      DAT_0023c384 = (byte)uVar2;
-    }
-    uVar5 = uVar2 & 0xff;
-    if ((uVar5 == 0) || (uVar4 = (uint)DAT_0023c3a8, uVar5 == uVar4)) {
-      iVar1 = FUN_00073870();
-      if (iVar1 != 0) {
-        uVar2 = (uint)DAT_0023c3a8;
-        if ((((*(int *)(&DAT_000873e0 + uVar2 * 4) == 0) || ((1 < uVar2 && (uVar2 < 5)))) &&
-            ((short)DAT_00201b60 == 1)) || (uVar2 = (uint)DAT_0023c384, uVar2 == 0)) {
-          uVar3 = Ordinal_1053();
-          uw_ord2005_rem_151 = ((int)(uVar3)) % (3);
-          uVar2 = (uw_ord2005_rem_151 & 0xff) + 2;
-          DAT_0023c384 = (byte)uVar2;
-        }
-        if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) {
-          uVar2 = 8;
-          DAT_0023c384 = 8;
-        }
-        play_music_track(uVar2,1);
-        DAT_0023c378 = 0;
-      }
-    }
-    else {
-      if ((((uVar4 < 5) || (7 < uVar4)) || (uVar5 < 5)) || (7 < uVar5)) {
-        play_music_track(uVar2,1);
-      }
-      else {
-        uVar2 = read_realtime_clock_units();
-        if (DAT_0023c378 + 0x800U < uVar2) {
-          play_music_track(DAT_0023c384,1);
-          DAT_0023c378 = read_realtime_clock_units();
-        }
-        else {
-          DAT_0023c384 = DAT_0023c3a8;
-        }
-      }
-      if ((4 < DAT_0023c384) && (DAT_0023c384 < 8)) {
-        DAT_0023c378 = read_realtime_clock_units();
-      }
-    }
-  }
-  return;
-}
-
-
-
-bool FUN_00073870()
-
-{
-  int iVar1;
-  
-  iVar1 = read_realtime_clock_units();
-  return DAT_0023c330 * 0x100 + 3U < (uint)(iVar1 - DAT_0023c280);
 }
 
 

@@ -21,7 +21,7 @@ void enter_automap_screen()
     DAT_000bbefc = 1;
   }
   set_pending_music_track(0xd);
-  FUN_00073634();
+  update_ingame_music_track();
   save_automap_reveal_to_archive(0,(int)DAT_00201b68);
   draw_automap_screen((int)DAT_00201b68);
   DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,handle_automap_note_click);
@@ -52,7 +52,7 @@ void exit_automap_screen()
     load_automap_reveal_from_archive(auStack_1c,(int)DAT_00201b68);
     close_level_archive(auStack_1c);
   }
-  FUN_000735c0();
+  pick_random_pending_music_track();
   FUN_00040df0();
   DAT_000bbef4 = 0;
   reset_cursor_confine_rect();

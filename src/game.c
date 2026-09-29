@@ -253,7 +253,7 @@ undefined4 param_1;
   local_838 = 0;
   do {
     iVar4 = local_838;
-    FUN_000735fc();
+    advance_menu_music_track();
     if ((iVar4 < 4) && (-1 < iVar4)) {
       pvVar_buf10000 = Ordinal_1041(0x10000);
       DAT_0023bf70 = pvVar_buf10000;
@@ -1455,7 +1455,7 @@ int param_4;
        shimmer in step with animate_title_palette_cycle's gold-gradient palette
        rotation), not real recovered code: confirmed via a fresh ARM
        disassembly of this function (0x6af3c) that the real idle-wait
-       loop here is exactly `bl FUN_000735fc; bl animate_title_palette_cycle;`, nothing
+       loop here is exactly `bl advance_menu_music_track; bl animate_title_palette_cycle;`, nothing
        else -- no DAT_0023bf74 comparison, no second draw_menu_item_list
        call. That fabricated redraw ran with the small font selected
        (the line right above switches to it before this loop, which IS
@@ -1467,7 +1467,7 @@ int param_4;
        description doubled, once correctly in the large font and once
        overlaid in the small one. Removed. */
     while (sVar2 = next_input_event(), sVar2 < 0) {
-      FUN_000735fc();
+      advance_menu_music_track();
       animate_title_palette_cycle();
     }
     if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] menu_button_list_navigate: raw event=0x%x param_4=%d\n", (int)sVar2, (int)param_4);

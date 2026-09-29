@@ -2130,7 +2130,7 @@ void FUN_000286cc()
   
   FUN_00076508();
   set_pending_music_track(0xd);
-  FUN_00073634();
+  update_ingame_music_track();
   DAT_00100784 = Ordinal_1041(0x10000);
   Ordinal_1047(DAT_00100784,0,0x10000);
   FUN_00057118();

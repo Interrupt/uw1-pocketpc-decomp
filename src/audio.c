@@ -19,8 +19,10 @@
 // currently-playing module via its COM-style interface (DAT_0023c3b8),
 // opens and loads the new one via the MOD-player ordinals
 // (Ordinal_1095/177/FUN_0004bc94), and -- if param_2!=0 -- starts
-// playback (FUN_0004ca50) and records the start time and volume
-// (DAT_00087414-indexed per-track table) for later use.
+// playback (FUN_0004ca50) and records the start time and this track's
+// own duration (DAT_00087414-indexed per-track table -- see
+// advance_menu_music_track's own comment for how it's used) for later
+// use.
 undefined4 play_music_track(param_1,param_2)
 byte param_1;
 int param_2;
@@ -172,7 +174,7 @@ int param_1;
     else {
       if (DAT_00087448 == 0) {
         DAT_00087448 = 1;
-        FUN_000735c0();
+        pick_random_pending_music_track();
         play_music_track(DAT_0023c384,1);
         return;
       }
@@ -738,4 +740,148 @@ undefined1 param_1;
 {
   DAT_0023c384 = param_1;
   return;
+}
+
+
+
+
+
+
+// was FUN_000735c0 -- picks a random ambient music track (2..4) and
+// sets it as the pending track via set_pending_music_track.
+void pick_random_pending_music_track()
+
+{
+  int uw_ord2005_rem_149 = 0;
+  undefined4 uVar1;
+  char extraout_r1;
+
+  uVar1 = Ordinal_1053();
+  uw_ord2005_rem_149 = ((int)(uVar1)) % (3);
+  DAT_0023c384 = uw_ord2005_rem_149 + '\x02';
+  return;
+}
+
+
+
+// was FUN_000735fc -- the main-menu music loop-advance tick: if the
+// current track has finished playing (advance_menu_music_track_elapsed,
+// comparing elapsed time against the track's own duration), replays it
+// -- except track 1 (the title theme), which advances to track 4
+// instead of looping itself. Called from the main-menu idle-input loop
+// (menu_button_list_navigate and friends) alongside
+// animate_title_palette_cycle.
+void advance_menu_music_track()
+
+{
+  int iVar1;
+  char cVar2;
+
+  cVar2 = DAT_0023c3a8;
+  iVar1 = advance_menu_music_track_elapsed();
+  if (iVar1 != 0) {
+    if (DAT_0023c3a8 == '\x01') {
+      cVar2 = '\x04';
+    }
+    play_music_track(cVar2,1);
+  }
+  return;
+}
+
+
+
+
+
+
+// was FUN_00073634 -- the in-game ambient music selection tick:
+// picks/transitions between ambient music tracks based on the current
+// track group, combat state (DAT_00086df8+0x5f bit 2, forcing track 8
+// when in combat), and elapsed-time throttling (DAT_0023c378), calling
+// play_music_track once a transition is actually due. Early-outs
+// unless the audio subsystem is initialized and (for tracks 9/0xb
+// specifically) the current track has finished playing.
+void update_ingame_music_track()
+
+{
+  int uw_ord2005_rem_150 = 0; int uw_ord2005_rem_151 = 0;
+  int iVar1;
+  uint uVar2;
+  undefined4 uVar3;
+  uint extraout_r1;
+  uint uVar4;
+  uint extraout_r1_00;
+  uint uVar5;
+  
+  if (((DAT_00087454 != 0) && (DAT_00087448 != 0)) &&
+     (((DAT_0023c3a8 != 9 && (DAT_0023c3a8 != 0xb)) || (iVar1 = advance_menu_music_track_elapsed(), iVar1 != 0)))) {
+    if (((DAT_0023c3a8 < 5) || (7 < DAT_0023c3a8)) ||
+       (uVar2 = read_realtime_clock_units(), uVar2 <= DAT_00101944 + 0xa00U)) {
+      uVar2 = (uint)DAT_0023c384;
+    }
+    else {
+      if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
+        uVar3 = Ordinal_1053();
+        uw_ord2005_rem_150 = ((int)(uVar3)) % (3);
+        uVar2 = (uw_ord2005_rem_150 & 0xff) + 2;
+      }
+      else {
+        uVar2 = 8;
+      }
+      DAT_0023c384 = (byte)uVar2;
+    }
+    uVar5 = uVar2 & 0xff;
+    if ((uVar5 == 0) || (uVar4 = (uint)DAT_0023c3a8, uVar5 == uVar4)) {
+      iVar1 = advance_menu_music_track_elapsed();
+      if (iVar1 != 0) {
+        uVar2 = (uint)DAT_0023c3a8;
+        if ((((*(int *)(&DAT_000873e0 + uVar2 * 4) == 0) || ((1 < uVar2 && (uVar2 < 5)))) &&
+            ((short)DAT_00201b60 == 1)) || (uVar2 = (uint)DAT_0023c384, uVar2 == 0)) {
+          uVar3 = Ordinal_1053();
+          uw_ord2005_rem_151 = ((int)(uVar3)) % (3);
+          uVar2 = (uw_ord2005_rem_151 & 0xff) + 2;
+          DAT_0023c384 = (byte)uVar2;
+        }
+        if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) {
+          uVar2 = 8;
+          DAT_0023c384 = 8;
+        }
+        play_music_track(uVar2,1);
+        DAT_0023c378 = 0;
+      }
+    }
+    else {
+      if ((((uVar4 < 5) || (7 < uVar4)) || (uVar5 < 5)) || (7 < uVar5)) {
+        play_music_track(uVar2,1);
+      }
+      else {
+        uVar2 = read_realtime_clock_units();
+        if (DAT_0023c378 + 0x800U < uVar2) {
+          play_music_track(DAT_0023c384,1);
+          DAT_0023c378 = read_realtime_clock_units();
+        }
+        else {
+          DAT_0023c384 = DAT_0023c3a8;
+        }
+      }
+      if ((4 < DAT_0023c384) && (DAT_0023c384 < 8)) {
+        DAT_0023c378 = read_realtime_clock_units();
+      }
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00073870 -- true once the current music track's elapsed
+// play time exceeds its own recorded duration (DAT_0023c330, set by
+// play_music_track/resume_music_playback), i.e. "this track has finished
+// playing and it's time to loop or advance."
+bool advance_menu_music_track_elapsed()
+
+{
+  int iVar1;
+
+  iVar1 = read_realtime_clock_units();
+  return DAT_0023c330 * 0x100 + 3U < (uint)(iVar1 - DAT_0023c280);
 }

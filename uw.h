@@ -1998,6 +1998,9 @@ extern byte DAT_0023c39c;
 extern undefined DAT_0023c3d4_backing[8192];
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
 extern int DAT_0023c3bc;
+extern int DAT_0023c378;
+extern undefined1 DAT_000873e0_backing[65536];
+#define DAT_000873e0 DAT_000873e0_backing[0]
 extern undefined DAT_0023b4dc;
 extern undefined2 DAT_0023b8c0;
 extern undefined2 DAT_0023bc8c;
@@ -3191,10 +3194,10 @@ undefined4 check_secret_tune_match();
 void shutdown_sound_effects();
 void shutdown_music_module();
 void set_pending_music_track();
-void FUN_000735c0();
-void FUN_000735fc();
-void FUN_00073634();
-bool FUN_00073870();
+void pick_random_pending_music_track();
+void advance_menu_music_track();
+void update_ingame_music_track();
+bool advance_menu_music_track_elapsed();
 undefined4 FUN_000738ac();
 undefined4 FUN_000738bc();
 undefined4 FUN_000738c4();

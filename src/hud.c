@@ -480,7 +480,7 @@ short param_1;
         }
       }
       if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar4 = get_current_music_track(), cVar4 == '\b')) {
-        FUN_000735c0();
+        pick_random_pending_music_track();
       }
       wait_for_click_release(1);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {
@@ -550,7 +550,7 @@ short param_1;
         mode_icon_highlight_on(3);
       }
       if (((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) && (cVar2 = get_current_music_track(), cVar2 == '\b')) {
-        FUN_000735c0();
+        pick_random_pending_music_track();
       }
       wait_for_click_release(1);
       if (((g_cursor_mode == 1) || (g_cursor_mode == 3)) || (g_cursor_mode == 4)) {

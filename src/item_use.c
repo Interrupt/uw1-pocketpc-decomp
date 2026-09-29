@@ -103,7 +103,7 @@ void unready_weapon()
     }
     g_cursor_mode = 0;
     FUN_00027694();
-    FUN_000735c0();
+    pick_random_pending_music_track();
   }
   return;
 }

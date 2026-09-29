@@ -336,7 +336,7 @@ void sync_player_stats_to_hud()
     uVar3 = read_realtime_clock_units();
     DAT_002020e4 = uVar3 >> 8;
     DAT_002020e8 = (char)((uint)iVar1 >> 0x10) + DAT_002020e8;
-    FUN_00073634();
+    update_ingame_music_track();
     if (0x14 < DAT_002020e8) {
       DAT_002020e8 = 0;
       FUN_00053c74();
@@ -2643,7 +2643,7 @@ short param_1;
 LAB_0007158c:
     full_dungeon_redraw();
     set_pending_music_track(0xd);
-    FUN_00073634();
+    update_ingame_music_track();
     FUN_000411b8(5);
     if (-1 < param_1) {
       FUN_00078c80(0x10);
@@ -2676,7 +2676,7 @@ LAB_0007158c:
       apply_rest_status_effects();
     }
     if (*(char *)((char *)g_player_object + 8) == '\0') {
-      FUN_000735c0();
+      pick_random_pending_music_track();
     }
     else {
       iVar4 = FUN_00035894();
@@ -2767,7 +2767,7 @@ LAB_0007158c:
       DAT_00204886 = 0;
       refresh_stats_panel_if_active();
       full_dungeon_redraw();
-      FUN_000735c0();
+      pick_random_pending_music_track();
       if (bVar2) {
         FUN_000411cc(5);
       }
