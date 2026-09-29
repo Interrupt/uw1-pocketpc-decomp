@@ -169,10 +169,9 @@ void load_door_frames()
      door leaf's real, correctly-decoded texture was silently
      discarded every time in favor of that internal fallback path --
      confirmed live via UW_DEBUG_DOOR ("door leaf using the wrong
-     texture"). DAT_0024e090's own backing table is genuinely sized
-     for the full unsigned 0..65535 range (524288 bytes / 8-byte
-     stride), so 60000 is a perfectly valid WRITE index here -- the
-     bug is purely on the signed-short READ side deep in
+     texture"). g_grtile_registry's own backing table is genuinely sized
+     for the full unsigned 0..65535 range, so 60000 is a perfectly
+     valid WRITE index here -- the bug is purely on the signed-short READ side deep in
      emit_catalog_object, not fixable by widening this one constant's
      own type. Lowered to stay under 32768 (comfortably clear of both
      the ~919 real-resource ceiling above and the signed-short sign

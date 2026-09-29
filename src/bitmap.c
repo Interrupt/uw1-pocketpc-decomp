@@ -228,15 +228,15 @@ undefined4 param_3;
   char *pcVar3;
   char *iVar4;
 
-  /* DAT_0024e090 is an 8-byte-stride pointer table -- see its declaration
+  /* g_grtile_registry is a flat pointer array -- see its declaration
      comment; iVar4 is dereferenced as a pointer below (iVar4+5, matching
      the pcVar3+5 idiom in the branch right above it), so it's retyped
      from int to char* rather than truncated through a 4-byte read. */
-  iVar4 = *(char **)(&DAT_0024e090 + param_1 * 8);
+  iVar4 = (char *)g_grtile_registry[param_1];
   if (getenv("UW_DEBUG_MODEICON"))
     fprintf(stderr, "[modeicon] blit_object_sprite_by_frame: resolved_frame=%d DAT_00202738=%d slot_ptr=%p branch=%s\n",
             (int)param_1, (int)(uint)DAT_00202738, (void *)iVar4,
-            (int)param_1 < (int)(uint)DAT_00202738 ? "registered-resource(FUN_000408fc)" : "absolute-frame-table(DAT_0024e090)");
+            (int)param_1 < (int)(uint)DAT_00202738 ? "registered-resource(FUN_000408fc)" : "absolute-frame-table(g_grtile_registry)");
   if (iVar4 == (char *)0x0) {
     /* Table slot never populated. This used to be caused by 4 .GR
        resource names in the preload sequence around SCRLEDGE.GR
@@ -348,16 +348,16 @@ short param_6;
      FUN_00040bc0, just missed here). Without it, sVar1 came from
      whatever register was left over from an unrelated recent call,
      resolving to a stale/wrong slot in the absolute-frame table
-     (DAT_0024e090) -- e.g. showing whatever sprite (a door, etc.) had
+     (g_grtile_registry) -- e.g. showing whatever sprite (a door, etc.) had
      most recently been decoded into that slot, matching this
      project's established "mode icon draws a door sprite" bug
      pattern, just via a different dropped call site. */
   sVar1 = resolve_sprite_id_to_frame(param_1);
-  /* DAT_0024e090 is an 8-byte-stride pointer table -- see its declaration
+  /* g_grtile_registry is a flat pointer array -- see its declaration
      comment; mirrors the iVar4+5 idiom in blit_object_sprite_by_frame. */
   {
     static char dummy_sprite[8];
-    char *spr = *(char **)(&DAT_0024e090 + sVar1 * 8);
+    char *spr = (char *)g_grtile_registry[sVar1];
     if (spr == (char *)0x0) spr = dummy_sprite;  /* unregistered slot -- see blit_object_sprite_by_frame */
     blit_raw_sprite_clipped(param_2,param_3,spr + 5,
                  ((int)param_4 + (int)param_6) * 0x10000 >> 0x10,param_5,0,param_6,1);

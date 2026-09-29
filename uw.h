@@ -1147,8 +1147,7 @@ extern short DAT_0023c3f4;
 extern ushort DAT_0023c400;
 extern char * DAT_0023c40c;
 extern undefined2 DAT_0023c41c;
-extern undefined1 DAT_0024e090_backing[524288];
-#define DAT_0024e090 DAT_0024e090_backing[0]
+extern void *g_grtile_registry[65536];
 extern undefined4 DAT_000bbf20;
 extern undefined1 DAT_000bbf30;
 extern undefined2 DAT_000bbf88;

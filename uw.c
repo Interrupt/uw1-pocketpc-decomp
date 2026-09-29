@@ -2946,20 +2946,20 @@ int DAT_0023b83c;
 void *DAT_0023c7a0_arr[0x140];
 #define DAT_0023c7a0 DAT_0023c7a0_arr[0]
 undefined1 DAT_0023ce71;
-/* Actually a large table of 4-byte glyph/resource-pointer slots indexed
-   by font/char id (see FUN_000408fc and its populator around line
-   27761), not a single byte -- widened with the same #define-alias
-   pattern used for the DAT_0024bfa0-family tables.
-
-   It's a table of *pointer*-sized slots (each holds a resource buffer
-   address, written by FUN_00041708/FUN_00041770 and read back by
-   FUN_000408fc/blit_object_sprite_by_frame/sprite_list_flush_blit_raw), but every access site strided
-   it by 4 bytes and read/wrote it as 'int'/'undefined4' -- correct on the
-   original 32-bit binary where a pointer IS 4 bytes, truncating on this
-   64-bit host. Widened to an 8-byte stride (buffer doubled to match) and
-   every access site retyped to a real pointer read/write. */
- undefined1 DAT_0024e090_backing[524288];
-#define DAT_0024e090 DAT_0024e090_backing[0]
+/* struct-recovery-plan.md's "DAT_0024e090 pointer table" candidate:
+   a large table of glyph/resource-pointer slots indexed by font/char/
+   frame id (see FUN_000408fc and its populators uw_register_gr_entry/
+   FUN_00041708/FUN_00041770, read back by FUN_000408fc/
+   blit_object_sprite_by_frame/sprite_list_flush_blit_raw). Was a raw byte buffer
+   (DAT_0024e090_backing[524288]) with every access site manually
+   computing `&DAT_0024e090 + slot*8` and casting to a pointer type --
+   correct on the original 32-bit binary where a pointer IS 4 bytes
+   (the buffer was doubled from a 4-byte stride to fix that truncation
+   earlier this session), but the byte-buffer-plus-manual-stride shape
+   was never the real type. Retyped as what it actually is: a flat
+   array of pointers, same pattern already used for DAT_0023c7a0_arr
+   just above. */
+void *g_grtile_registry[65536];
 ushort DAT_00202738;
 ushort DAT_00202730;
 static undefined1 DAT_0024d090_backing[65536];
@@ -3014,17 +3014,17 @@ unsigned int param_1;
 /* load_gr_resource_entries's post-process callback: (decoded_buffer, byte_size,
    entry_index). Ghidra lost the real body (indirect-jump target); the old
    no-op stub read every .GR file but never REGISTERED the loaded buffers,
-   so FUN_000408fc's DAT_0024e090[] pointer table stayed empty for every
+   so FUN_000408fc's g_grtile_registry[] pointer table stayed empty for every
    resource loaded through here (QUESTION/VIEWS/ANIMO/BUTTONS/CURSORS/
    3DWIN/OBJECTS/TMFLAT/TMOBJ). Only FUN_00041708 (flasks/compass/...) was
    a real registrar. Register the buffer the same way FUN_00041708 does:
-   at DAT_0024e090[(base + entry_index) * 8]. */
-#define UW_DAT_0024E090_SLOTS (524288 / 8)
+   at g_grtile_registry[base + entry_index]. */
+#define UW_DAT_0024E090_SLOTS (sizeof(g_grtile_registry) / sizeof(g_grtile_registry[0]))
 static void uw_register_gr_entry(unsigned base, void *buf, int idx)
 {
   unsigned slot = base + (unsigned)idx;
   if (slot < UW_DAT_0024E090_SLOTS) {
-    *(void **)(&DAT_0024e090 + (unsigned long)slot * 8) = buf;
+    g_grtile_registry[slot] = buf;
   }
 }
 undefined4 LAB_000415d0(void *buf, unsigned size, int idx)
@@ -3097,7 +3097,7 @@ unsigned int param_1;
    completely unreachable: it's malloc'd fresh by LAB_000416f8, never
    registered anywhere (unlike every sibling load_gr_resource_entries
    call site, which DOES pass a real post-process callback to register
-   its buffer into DAT_0024e090[] -- see LAB_000415d0/LAB_00041610/
+   its buffer into g_grtile_registry[] -- see LAB_000415d0/LAB_00041610/
    register_tmflat_gr_entry), and then simply discarded once load_gr_resource_entries's
    loop moves on. Confirmed live: FUN_0006eb64's decode calls reported
    success while leaving their destination grtile buffer entirely
@@ -22251,7 +22251,7 @@ void *FUN_000408fc(param_1)
 short param_1;
 
 {
-  /* Glyph/font-resource-by-id lookup (DAT_0024e090 is indexed by
+  /* Glyph/font-resource-by-id lookup (g_grtile_registry is indexed by
      param_1). Several callers (FUN_00040770, FUN_00057dc0, etc.) call
      this with the argument dropped by Ghidra at their call site and then
      dereference the result unconditionally, so returning a real NULL for
@@ -22266,9 +22266,9 @@ short param_1;
     uVar1 = dummy_glyph;
   }
   else {
-    /* Fixed: DAT_0024e090 is now an 8-byte-stride pointer table (see its
+    /* Fixed: g_grtile_registry is a real pointer array (see its
        declaration comment); this used to be a 4-byte truncated read. */
-    uVar1 = *(void **)(&DAT_0024e090 + param_1 * 8);
+    uVar1 = g_grtile_registry[param_1];
     if (uVar1 == 0) {
       /* Table slot never populated (the resource that would have filled
          it, e.g. a missing/failed auxiliary .SYS load) -- same safe
@@ -22740,12 +22740,12 @@ short param_3;
   /* param_1 (a real buffer pointer, from load_gr_resource_entries's allocator
      callback) was declared int here and silently truncated to 32 bits on
      dereference -- see uw_alloc_grtile()'s comment for why this uses that
-     helper instead of grtile_alloc_registered directly. DAT_0024e090 is an 8-byte-
-     stride pointer table -- see its declaration comment. */
+     helper instead of grtile_alloc_registered directly. g_grtile_registry is
+     a flat pointer array -- see its declaration comment. */
   pvVar1 = uw_alloc_grtile(*(undefined1 *)((char *)param_1 + 1),*(byte *)((char *)param_1 + 2) + 1);
   if (pvVar1 != 0) {
     Ordinal_1044(pvVar1,param_1,(uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
-    *(void **)(&DAT_0024e090 + ((uint)DAT_00202744 + (int)param_3) * 8) = pvVar1;
+    g_grtile_registry[(uint)DAT_00202744 + (int)param_3] = pvVar1;
   }
   return pvVar1 != 0;
 }
@@ -22758,9 +22758,9 @@ undefined4 param_2;
 short param_3;
 
 {
-  /* See FUN_00041708 -- same param_1/DAT_0024e090 truncation fix.
+  /* See FUN_00041708 -- same param_1/g_grtile_registry truncation fix.
      This "overwrite an already-allocated slot" path blindly memcpy'd
-     width*height bytes into whatever pointer DAT_0024e090's table
+     width*height bytes into whatever pointer g_grtile_registry's table
      already held for this slot -- fine as long as that's still the SAME
      size it was originally allocated at, but nothing guarantees that:
      confirmed via AddressSanitizer, a real heap-buffer-overflow, 100%
@@ -22781,7 +22781,7 @@ short param_3;
   }
   Ordinal_1044(pvVar1,param_1,
                (uint)*(byte *)((char *)param_1 + 2) * (uint)*(byte *)((char *)param_1 + 1));
-  *(void **)(&DAT_0024e090 + ((uint)DAT_00202744 + (int)param_3) * 8) = pvVar1;
+  g_grtile_registry[(uint)DAT_00202744 + (int)param_3] = pvVar1;
   return 1;
 }
 
@@ -34156,7 +34156,7 @@ undefined4 param_1;
 {
   /* FUN_000408fc's argument is dropped by Ghidra at this call site;
      forwarding param_1 matches the resolve_sprite_id_to_frame(param_1) call right
-     above it and FUN_000408fc's own DAT_0024e090-indexed-by-id shape. */
+     above it and FUN_000408fc's own g_grtile_registry-indexed-by-id shape. */
   char *iVar1;
 
   FUN_00056fe8();
@@ -34164,7 +34164,7 @@ undefined4 param_1;
   /* Was unconditional `iVar1 = FUN_000408fc(param_1);` -- FUN_000408fc
      only covers ids below DAT_00202738 (the "still-compressed .GR
      resource entry, needs decoding" range); ids at or above it are
-     already-resident raw sprites living directly in DAT_0024e090's own
+     already-resident raw sprites living directly in g_grtile_registry's own
      table (see blit_object_sprite_by_frame's own identical branch,
      which this function was missing). For those higher ids
      FUN_000408fc's own table lookup misses (a *different* resource's
@@ -34182,7 +34182,7 @@ undefined4 param_1;
      already-correct behavior, for whatever legitimately-high-id items
      do reach here. */
   iVar1 = (int)(short)param_1 < (int)(uint)DAT_00202738 ?
-          FUN_000408fc(param_1) : *(char **)(&DAT_0024e090 + (int)(short)param_1 * 8);
+          FUN_000408fc(param_1) : (char *)g_grtile_registry[(int)(short)param_1];
   if (iVar1 == (char *)0x0) {
     /* Same "table slot never populated" fallback as
        blit_object_sprite_by_frame's own identical guard. */

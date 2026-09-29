@@ -23,7 +23,7 @@
 // weapon_swing_draw_tick (was FUN_0006fcb0) needs exactly this raw
 // buffer per frame to decode and blit during a swing (see
 // g_weapon_swing_raw_frames), matching doors' equivalent
-// DAT_0024e090[] table one-for-one. Register it there instead of
+// g_grtile_registry[] table one-for-one. Register it there instead of
 // discarding it.
 undefined4 weapon_swing_frame_loaded(void *buf, unsigned size, int idx)
 
