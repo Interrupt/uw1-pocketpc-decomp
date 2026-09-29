@@ -1162,3 +1162,48 @@ undefined1 * param_1;
   return;
 }
 
+
+
+
+// was FUN_00066594 -- on level 7 only (DAT_00201b68==7), swaps the
+// special floor texture between ids 0xc and 0xe via
+// load_floor_texture_arenas as param_1 toggles on/off, then sets or
+// clears bit 12 of the player status word at DAT_00086df8+0x61/0x62
+// to record the current state. Called with a quest-flag byte
+// (DAT_0023bc9c, set by apply_equipped_item_effect's opcode 0xd) and
+// with a bit read back out of that same status word elsewhere -- exact
+// narrative trigger (lava cooling/heating? a specific quest item?) not
+// confirmed.
+void update_level7_floor_hazard_state(param_1)
+uint param_1;
+
+{
+  char cVar1;
+  uint uVar2;
+  
+  if (DAT_00201b68 == 7) {
+    cVar1 = -1;
+    if (param_1 == 0) {
+      if (DAT_0023adc0 == 0xc) {
+        cVar1 = '\x0e';
+      }
+    }
+    else if (DAT_0023adc0 != 0xc) {
+      cVar1 = '\f';
+    }
+    if (-1 < cVar1) {
+      /* BUG FIX: was `load_floor_texture_arenas()` with no arguments,
+         relying on leftover register state -- cVar1 (just computed
+         above, the new special-floor texture id 0xc/0xe) is the value
+         that belongs here, matching load_floor_texture_arenas' own
+         param_1 role (same dropped-argument bug class documented
+         throughout this project). */
+      load_floor_texture_arenas(cVar1);
+    }
+  }
+  uVar2 = *(ushort *)(DAT_00086df8 + 0x61) & 0xefff;
+  *(char *)(DAT_00086df8 + 0x61) = (char)uVar2;
+  *(byte *)(DAT_00086df8 + 0x62) = (byte)(uVar2 >> 8) | (byte)(((param_1 & 1) << 0xc) >> 8);
+  return;
+}
+

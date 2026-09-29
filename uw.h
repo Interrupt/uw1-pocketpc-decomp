@@ -2888,7 +2888,7 @@ void load_floor_texture_arenas();
 void update_screen_flicker_effect();
 undefined4 apply_equipped_item_effect();
 void compute_light_source_colors();
-void FUN_00066594();
+void update_level7_floor_hazard_state();
 void FUN_00066634();
 int compute_object_weight();
 void refresh_player_equipment_effects();

@@ -36396,41 +36396,6 @@ LAB_00060f54:
 
 
 
-void FUN_00066594(param_1)
-uint param_1;
-
-{
-  char cVar1;
-  uint uVar2;
-  
-  if (DAT_00201b68 == 7) {
-    cVar1 = -1;
-    if (param_1 == 0) {
-      if (DAT_0023adc0 == 0xc) {
-        cVar1 = '\x0e';
-      }
-    }
-    else if (DAT_0023adc0 != 0xc) {
-      cVar1 = '\f';
-    }
-    if (-1 < cVar1) {
-      /* BUG FIX: was `load_floor_texture_arenas()` with no arguments,
-         relying on leftover register state -- cVar1 (just computed
-         above, the new special-floor texture id 0xc/0xe) is the value
-         that belongs here, matching load_floor_texture_arenas' own
-         param_1 role (same dropped-argument bug class documented
-         throughout this project). */
-      load_floor_texture_arenas(cVar1);
-    }
-  }
-  uVar2 = *(ushort *)(DAT_00086df8 + 0x61) & 0xefff;
-  *(char *)(DAT_00086df8 + 0x61) = (char)uVar2;
-  *(byte *)(DAT_00086df8 + 0x62) = (byte)(uVar2 >> 8) | (byte)(((param_1 & 1) << 0xc) >> 8);
-  return;
-}
-
-
-
 void FUN_00066634(param_1)
 uint param_1;
 
@@ -36478,7 +36443,7 @@ uint param_1;
     *(byte *)(uVar2 + DAT_0023be74) = ((byte)(uVar1 >> 5) & 0xf) + *(char *)(uVar2 + DAT_0023be74);
     uVar2 = uVar2 + 1 & 0xff;
   } while (uVar2 < 4);
-  FUN_00066594(DAT_0023bc9c);
+  update_level7_floor_hazard_state(DAT_0023bc9c);
   compute_light_source_colors(auStack_c);
   FUN_0006ea54(auStack_c);
   return;
@@ -39275,7 +39240,7 @@ short param_2;
           *(undefined1 *)(DAT_00086df8 + 0xb0) = *(undefined1 *)(DAT_00086df8 + 0x38);
           *(undefined1 *)(DAT_00086df8 + 0x38) = 0;
           *(undefined1 *)(DAT_00086df8 + 0x37) = 0;
-          FUN_00066594(*(byte *)(DAT_00086df8 + 0x62) >> 4 & 1);
+          update_level7_floor_hazard_state(*(byte *)(DAT_00086df8 + 0x62) >> 4 & 1);
         }
         else if (param_2 == 1) {
           *(undefined1 *)(DAT_00086df8 + 0x38) = *(undefined1 *)(DAT_00086df8 + 0xb0);

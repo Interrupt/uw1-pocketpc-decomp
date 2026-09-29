@@ -1424,7 +1424,7 @@ void dungeon_view_prepass_stub()
 // (the two floor-texture resolutions), optionally updating the active
 // "special floor" texture id (DAT_0023adc0) first unless param_1 is
 // the sentinel 0xff (keep current). Its one caller
-// (FUN_00066594, level-7 lava/moonstone floor-texture swap) has a
+// (update_level7_floor_hazard_state, level-7 lava/moonstone floor-texture swap) has a
 // dropped-argument bug of its own -- see that call site's own comment.
 void load_floor_texture_arenas(param_1)
 byte param_1;
