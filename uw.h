@@ -1305,6 +1305,23 @@ extern short DAT_000858c4;
 extern char * DAT_002020b0;
 extern int DAT_002020e0;
 extern undefined4 DAT_002020ec;
+/* Globals defined in uw.c but also used by functions that now live in
+   resources.c (.GR bitmap loading, flip-grtile slots, door frames) --
+   extern'd here so both translation units see the same storage. */
+extern undefined4 DAT_00202514;
+extern undefined DAT_00202518_backing[8192];
+#define DAT_00202518 DAT_00202518_backing[0]
+extern undefined4 DAT_00202728;
+extern ushort DAT_00202744;
+extern undefined2 DAT_00202748;
+extern char * DAT_0020274c;
+extern undefined1 DAT_0023b840_backing[8192];
+#define DAT_0023b840 DAT_0023b840_backing[0]
+extern char * DAT_0023c3fc;
+extern undefined4 * DAT_0023c404;
+extern void * g_grtile_real_ptrs[320];
+extern char s__DATA__00085970[];
+extern char s_doors_00085a64[];
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -1498,6 +1515,8 @@ void uw_debug_draw_inv_hotspot_positions(void);
 void uw_debug_dump_critter_sheet_once(void);
 void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_force_item_id_once(void);
+undefined4 LAB_000415d0(void *buf, unsigned size, int idx);
+void *alloc_door_frame_buffer();
 void scroll_container_grid_up(void);
 void scroll_container_grid_down(void);
 int raster_edge_step();
@@ -2762,6 +2781,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/ai.h"
 #include "src/headers/containers.h"
 #include "src/headers/interact.h"
+#include "src/headers/resources.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
