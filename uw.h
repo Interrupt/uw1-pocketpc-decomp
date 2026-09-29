@@ -3527,7 +3527,7 @@ void stop_ambient_sound_effect();
 void init_ambient_sound_timing();
 void clear_ambient_sound_target();
 undefined4 debug_noop_checkpoint();
-char FUN_0007ec58();
+char compute_compass_direction();
 void FUN_0007ed20();
 undefined4 FUN_0007edec();
 bool FUN_0007edf4();

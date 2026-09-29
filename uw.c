@@ -36521,58 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-char FUN_0007ec58(param_1,param_2)
-char param_1;
-char param_2;
-
-{
-  uint uVar1;
-  uint uVar2;
-  char cVar3;
-  int iVar4;
-  int iVar5;
-  int iVar6;
-  
-  uVar1 = (uint)param_1;
-  iVar4 = (uVar1 ^ (int)uVar1 >> 0x1f) - ((int)uVar1 >> 0x1f);
-  uVar2 = (uint)param_2;
-  iVar5 = (uVar2 ^ (int)uVar2 >> 0x1f) - ((int)uVar2 >> 0x1f);
-  iVar6 = iVar4;
-  if (iVar4 < 0) {
-    iVar6 = iVar4 + 1;
-  }
-  if (iVar5 < iVar6 >> 1) {
-    if ((int)uVar1 < 1) {
-      cVar3 = '\x06';
-    }
-    else {
-      cVar3 = '\x02';
-    }
-  }
-  else {
-    if (iVar5 < 0) {
-      iVar5 = iVar5 + 1;
-    }
-    if (iVar4 < iVar5 >> 1) {
-      if ((int)uVar2 < 1) {
-        cVar3 = '\x04';
-      }
-      else {
-        cVar3 = '\0';
-      }
-    }
-    else if ((int)uVar1 < 0) {
-      cVar3 = (0 < (int)uVar2) * '\x02' + '\x05';
-    }
-    else {
-      cVar3 = ((int)uVar2 < 0) * '\x02' + '\x01';
-    }
-  }
-  return cVar3;
-}
-
-
-
 void FUN_0007ed20(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
 undefined4 param_1;
 short param_2;

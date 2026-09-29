@@ -1985,7 +1985,7 @@ byte param_2;
 // monster-class "detect resist" nibble field, DAT_001007ed, part of
 // the same stride-0x30 table as g_monster_max_stats_table) for each
 // one in range, and buckets successful detections into 8 compass
-// directions (FUN_0007ec58) relative to the player. Reports the
+// directions (compute_compass_direction) relative to the player. Reports the
 // direction with the most detections via
 // report_detected_creatures_in_direction; on a count tie, falls back
 // to a random direction with at least that many; prints a "nothing
@@ -2027,7 +2027,7 @@ undefined4 param_2;
           (int)((iVar1 >> 0x18 ^ uVar6) - uVar6) < (int)param_1)) &&
          (sVar4 = roll_skill_check(param_2,0xf - ((byte)(&DAT_001007ed)[(uVar13 & 0x3f) * 0x30] & 0xf)),
          0 < sVar4)) {
-        sVar4 = FUN_0007ec58(iVar8,iVar12);
+        sVar4 = compute_compass_direction(iVar8,iVar12);
         local_2c[sVar4] = local_2c[sVar4] + 1;
       }
     }
@@ -2618,6 +2618,66 @@ int param_1;
     }
   }
   return;
+}
+
+
+
+
+
+// was FUN_0007ec58 -- confirmed by its only caller's own pre-existing
+// comment (cast_detect_life_spell, src/object_actions.c) as bucketing
+// a relative (dx,dy) offset into one of 8 compass directions (0-7).
+// Compares |param_2| against |param_1|/2 (and vice versa) to pick the
+// dominant axis, then the sign of the dominant (and near-tied
+// secondary) component selects the final octant code.
+char compute_compass_direction(param_1,param_2)
+char param_1;
+char param_2;
+
+{
+  uint uVar1;
+  uint uVar2;
+  char cVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  
+  uVar1 = (uint)param_1;
+  iVar4 = (uVar1 ^ (int)uVar1 >> 0x1f) - ((int)uVar1 >> 0x1f);
+  uVar2 = (uint)param_2;
+  iVar5 = (uVar2 ^ (int)uVar2 >> 0x1f) - ((int)uVar2 >> 0x1f);
+  iVar6 = iVar4;
+  if (iVar4 < 0) {
+    iVar6 = iVar4 + 1;
+  }
+  if (iVar5 < iVar6 >> 1) {
+    if ((int)uVar1 < 1) {
+      cVar3 = '\x06';
+    }
+    else {
+      cVar3 = '\x02';
+    }
+  }
+  else {
+    if (iVar5 < 0) {
+      iVar5 = iVar5 + 1;
+    }
+    if (iVar4 < iVar5 >> 1) {
+      if ((int)uVar2 < 1) {
+        cVar3 = '\x04';
+      }
+      else {
+        cVar3 = '\0';
+      }
+    }
+    else if ((int)uVar1 < 0) {
+      cVar3 = (0 < (int)uVar2) * '\x02' + '\x05';
+    }
+    else {
+      cVar3 = ((int)uVar2 < 0) * '\x02' + '\x01';
+    }
+  }
+  return cVar3;
 }
 
 
