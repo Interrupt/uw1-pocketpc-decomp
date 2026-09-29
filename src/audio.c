@@ -885,3 +885,121 @@ bool advance_menu_music_track_elapsed()
   iVar1 = read_realtime_clock_units();
   return DAT_0023c330 * 0x100 + 3U < (uint)(iVar1 - DAT_0023c280);
 }
+
+
+
+
+
+
+// was FUN_000738ac -- returns DAT_00087458, an audio-subsystem-related
+// flag not otherwise written anywhere in this decompile (always its
+// zero-initialized default in this build).
+undefined4 get_audio_subsystem_flag()
+
+{
+  return DAT_00087458;
+}
+
+
+
+// was FUN_000738bc -- always returns true; a trivial stub/constant
+// getter, audio-cluster sibling of get_audio_subsystem_flag.
+undefined4 audio_always_true_stub()
+
+{
+  return 1;
+}
+
+
+
+// was FUN_000738c4 -- plays a numbered voice/speech sample: lazily
+// reloads the music module if playback had stopped (same pattern as
+// trigger_sound_sample_note), waits for any currently-playing sample
+// to finish, lazily allocates the sample-set handle, then builds a
+// path from a base directory (DAT_00087520) plus param_1 formatted as
+// two ASCII digits into a filename template (DAT_00241f08) and loads/
+// plays that sample as a one-shot note. Neither buffer's real content
+// was recovered (both are zero-initialized, built entirely at
+// runtime), so the exact directory/filename pattern and what these
+// numbered samples actually are (spoken narration? sound bites?)
+// isn't confirmed.
+undefined4 play_numbered_voice_sample(param_1)
+short param_1;
+
+{
+  int uw_ord2005_rem_152 = 0;
+  char *wptr_54752;
+  char stack0xffdbdfe0_buf [256];
+  char *stack0xffdbdfe0_ptr;
+  char cVar1;
+  undefined4 uVar2;
+  int iVar3;
+  char *pcVar4;
+  char extraout_r1;
+  char acStack_87740 [554264];
+  undefined4 local_228 [2];
+  char acStack_220 [4];
+  char local_21c;
+  char local_21b;
+  char acStack_118 [260];
+  
+  if (DAT_0023c3b8 == (undefined4 *)0x0) {
+    uVar2 = 0;
+  }
+  else {
+    if (DAT_00087448 == 0) {
+      FUN_0004cfc8(DAT_0023c3b8);
+      if (DAT_0023c3b8 != (undefined4 *)0x0) {
+        (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
+      }
+      iVar3 = Ordinal_1095(0x10581);
+      if (iVar3 == 0) {
+        DAT_0023c3b8 = (undefined4 *)0x0;
+      }
+      else {
+        Ordinal_177(local_228,&DAT_0023c3d4);
+        DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar3,local_228[0]);
+      }
+      FUN_0004ca50();
+      DAT_0023c330 = 0;
+      DAT_00087448 = 1;
+    }
+    do {
+      cVar1 = FUN_0004f858(DAT_0023c3b8,0);
+    } while (cVar1 != '\0');
+    if (DAT_0023c3bc == 0) {
+      iVar3 = Ordinal_1095(0x1a);
+      if (iVar3 == 0) {
+        DAT_0023c3bc = 0;
+      }
+      else {
+        DAT_0023c3bc = FUN_0004b600();
+      }
+    }
+    pcVar4 = &DAT_00087520;
+    wptr_54752 = acStack_87740;
+    do {
+      cVar1 = *pcVar4;
+      *wptr_54752 = cVar1; wptr_54752 = wptr_54752 + 1;
+      pcVar4 = pcVar4 + 1;
+    } while (cVar1 != '\0');
+    local_21c = Ordinal_2005(10,(int)param_1);
+    local_21c = local_21c + '0';
+    uw_ord2005_rem_152 = ((int)((int)param_1)) % (10);
+    pcVar4 = &DAT_00241f08;
+    stack0xffdbdfe0_ptr = acStack_118;
+    local_21b = uw_ord2005_rem_152 + '0';
+    do {
+      cVar1 = *pcVar4;
+      *stack0xffdbdfe0_ptr = cVar1; stack0xffdbdfe0_ptr = stack0xffdbdfe0_ptr + 1;
+      pcVar4 = pcVar4 + 1;
+    } while (cVar1 != '\0');
+    Ordinal_1063(acStack_118,acStack_220);
+    uVar2 = FUN_0002295c(acStack_118);
+    FUN_0004b948(DAT_0023c3bc,DAT_0023c540,uVar2);
+    FUN_0004f594(DAT_0023c3b8,DAT_0023c3bc,0);
+    FUN_0004f6b0(DAT_0023c3b8,0);
+    uVar2 = 1;
+  }
+  return uVar2;
+}

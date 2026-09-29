@@ -6115,9 +6115,9 @@ int DAT_0023c378;
 undefined1 DAT_000873e0_backing[65536];
 #define DAT_000873e0 DAT_000873e0_backing[0]
 undefined4 DAT_00087458;
-static undefined1 DAT_00087520_backing[32768];
+undefined1 DAT_00087520_backing[32768];
 #define DAT_00087520 DAT_00087520_backing[0]
-static undefined1 DAT_00241f08_backing[32768];
+undefined1 DAT_00241f08_backing[32768];
 #define DAT_00241f08 DAT_00241f08_backing[0]
 uint DAT_00202094;
 uint DAT_00202098;
@@ -17346,7 +17346,7 @@ int param_2;
   int iVar2;
   
   if ((*(byte *)(param_2 + 0x45) & 0x20) != 0) {
-    if (((*(byte *)(param_2 + 0x45) & 0x40) != 0) || (iVar2 = FUN_000738bc(), iVar2 != 0)) {
+    if (((*(byte *)(param_2 + 0x45) & 0x40) != 0) || (iVar2 = audio_always_true_stub(), iVar2 != 0)) {
       uVar1 = *(undefined2 *)(param_1 + 4);
       *(char *)(param_2 + 0x3f) = (char)uVar1;
       *(char *)(param_2 + 0x40) = (char)((ushort)uVar1 >> 8);
@@ -17521,7 +17521,7 @@ LAB_00036858:
   local_c1 = param_2;
   local_bf = param_3;
   local_bd = param_4;
-  bVar4 = FUN_000738ac();
+  bVar4 = get_audio_subsystem_flag();
   local_8b = local_8b & 0xdf | (bVar4 & 1) << 5;
   local_88 = Ordinal_1041(0xb00);
   local_b8 = Ordinal_1041(0x300);
@@ -17858,7 +17858,7 @@ LAB_00036ca4:
               }
               if ((((local_8b & 0x20) != 0) && ((local_8b & 0x40) == 0)) &&
                  ((-1 < local_91 && (local_91 < 999)))) {
-                FUN_000738c4();
+                play_numbered_voice_sample();
                 local_8b = local_8b | 0x40;
               }
               uVar14 = (uint)*puVar11;
@@ -36446,105 +36446,6 @@ LAB_00060f54:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
   return;
-}
-
-
-
-undefined4 FUN_000738ac()
-
-{
-  return DAT_00087458;
-}
-
-
-
-undefined4 FUN_000738bc()
-
-{
-  return 1;
-}
-
-
-
-undefined4 FUN_000738c4(param_1)
-short param_1;
-
-{
-  int uw_ord2005_rem_152 = 0;
-  char *wptr_54752;
-  char stack0xffdbdfe0_buf [256];
-  char *stack0xffdbdfe0_ptr;
-  char cVar1;
-  undefined4 uVar2;
-  int iVar3;
-  char *pcVar4;
-  char extraout_r1;
-  char acStack_87740 [554264];
-  undefined4 local_228 [2];
-  char acStack_220 [4];
-  char local_21c;
-  char local_21b;
-  char acStack_118 [260];
-  
-  if (DAT_0023c3b8 == (undefined4 *)0x0) {
-    uVar2 = 0;
-  }
-  else {
-    if (DAT_00087448 == 0) {
-      FUN_0004cfc8(DAT_0023c3b8);
-      if (DAT_0023c3b8 != (undefined4 *)0x0) {
-        (**(code **)*DAT_0023c3b8)(DAT_0023c3b8,1);
-      }
-      iVar3 = Ordinal_1095(0x10581);
-      if (iVar3 == 0) {
-        DAT_0023c3b8 = (undefined4 *)0x0;
-      }
-      else {
-        Ordinal_177(local_228,&DAT_0023c3d4);
-        DAT_0023c3b8 = (undefined4 *)FUN_0004bc94(iVar3,local_228[0]);
-      }
-      FUN_0004ca50();
-      DAT_0023c330 = 0;
-      DAT_00087448 = 1;
-    }
-    do {
-      cVar1 = FUN_0004f858(DAT_0023c3b8,0);
-    } while (cVar1 != '\0');
-    if (DAT_0023c3bc == 0) {
-      iVar3 = Ordinal_1095(0x1a);
-      if (iVar3 == 0) {
-        DAT_0023c3bc = 0;
-      }
-      else {
-        DAT_0023c3bc = FUN_0004b600();
-      }
-    }
-    pcVar4 = &DAT_00087520;
-    wptr_54752 = acStack_87740;
-    do {
-      cVar1 = *pcVar4;
-      *wptr_54752 = cVar1; wptr_54752 = wptr_54752 + 1;
-      pcVar4 = pcVar4 + 1;
-    } while (cVar1 != '\0');
-    local_21c = Ordinal_2005(10,(int)param_1);
-    local_21c = local_21c + '0';
-    uw_ord2005_rem_152 = ((int)((int)param_1)) % (10);
-    pcVar4 = &DAT_00241f08;
-    stack0xffdbdfe0_ptr = acStack_118;
-    local_21b = uw_ord2005_rem_152 + '0';
-    do {
-      cVar1 = *pcVar4;
-      *stack0xffdbdfe0_ptr = cVar1; stack0xffdbdfe0_ptr = stack0xffdbdfe0_ptr + 1;
-      pcVar4 = pcVar4 + 1;
-    } while (cVar1 != '\0');
-    Ordinal_1063(acStack_118,acStack_220);
-    uVar2 = FUN_0002295c(acStack_118);
-    FUN_0004b948(DAT_0023c3bc,DAT_0023c540,uVar2);
-    FUN_0004f594(DAT_0023c3b8,DAT_0023c3bc,0);
-    FUN_0004f6b0(DAT_0023c3b8,0);
-    uVar2 = 1;
-  }
-  return uVar2;
 }
 
 
