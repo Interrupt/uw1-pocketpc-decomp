@@ -36521,51 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007ed20(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
-undefined4 param_1;
-short param_2;
-short param_3;
-short param_4;
-short param_5;
-short param_6;
-short param_7;
-short param_8;
-
-{
-  uint uVar1;
-  uint uVar2;
-  bool bVar3;
-  char *pcVar4;
-  
-  bVar3 = false;
-  message_scroll_print_wrapped();
-  if (param_8 < 0) {
-LAB_0007ed8c:
-    bVar3 = true;
-  }
-  else {
-    uVar1 = (int)param_2 - (int)param_5 >> 0x1f;
-    uVar2 = (int)param_3 - (int)param_6 >> 0x1f;
-    if ((int)param_8 <
-        (int)((((int)param_3 - (int)param_6 ^ uVar2) - uVar2) +
-             (((int)param_2 - (int)param_5 ^ uVar1) - uVar1))) goto LAB_0007ed8c;
-  }
-  if ((param_4 == param_7) || (param_4 == 0)) {
-    if ((bVar3) || (param_4 == 0)) goto LAB_0007edd8;
-    pcVar4 = s_very_near_00087954;
-  }
-  else {
-    if (!bVar3) goto LAB_0007edd8;
-    pcVar4 = s_and_00087310;
-  }
-  message_scroll_print_wrapped(pcVar4);
-LAB_0007edd8:
-  message_scroll_print_wrapped(&DAT_00084f20);
-  return;
-}
-
-
-
 undefined4 FUN_0007edec()
 
 {

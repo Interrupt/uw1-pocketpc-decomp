@@ -43,7 +43,7 @@
 //            debug string literally says "Look,_it's_a_text_trap").
 // The remaining cases (0-5, 9, 0xa, 0xc, 0xf) call still-unnamed
 // helper functions (FUN_00039bd8, FUN_000396a0, FUN_0004ac98,
-// dispatch_quest_event_code, FUN_00039790, FUN_0007ed20, FUN_000452dc) whose own
+// dispatch_quest_event_code, FUN_00039790, print_message_with_proximity_qualifier, FUN_000452dc) whose own
 // purpose isn't pinned down yet, so their exact trap semantics are
 // left undetermined here rather than guessed at. After the switch,
 // if the record has a linked "next" object, it either recurses into
@@ -323,7 +323,7 @@ LAB_0007dce4:
     }
     sVar3 = rand_below(*(undefined1 *)(DAT_00086df8 + 0x2a));
     uVar6 = get_message_string(0x2f5);
-    FUN_0007ed20(uVar6,*(ushort *)((char *)g_player_object + 0x16) >> 10,
+    print_message_with_proximity_qualifier(uVar6,*(ushort *)((char *)g_player_object + 0x16) >> 10,
                  (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4,0,
                  CONCAT22(uVar20,*(ushort *)(DAT_0024cff4 + 0x16) >> 10),
                  CONCAT22(uVar21,(*(ushort *)(DAT_0024cff4 + 0x16) & 0x3f0) >> 4),0,0);

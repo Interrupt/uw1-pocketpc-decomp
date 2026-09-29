@@ -1962,7 +1962,7 @@ int param_2;
 // scroll message for cast_detect_life_spell below: param_1 is a 0-7
 // compass-direction bucket, param_2 is how many creatures were found
 // there. Picks a message tier (0/1/2, msgid 0x3b + tier) based on
-// the count (<=1 / 2-4 / >4), then displays it via FUN_0007ed20 with
+// the count (<=1 / 2-4 / >4), then displays it via print_message_with_proximity_qualifier with
 // a direction/compass icon index encoded as -1-param_1.
 void report_detected_creatures_in_direction(param_1,param_2)
 ushort param_1;
@@ -1973,7 +1973,7 @@ byte param_2;
   
   uVar1 = get_message_string((int)(short)(ushort)(4 < param_2) + (int)(short)(ushort)(1 < param_2) + 0x3bU
                        | 0x200);
-  FUN_0007ed20(uVar1,0,0,0,0,0,0,-1 - (param_1 & 0xff));
+  print_message_with_proximity_qualifier(uVar1,0,0,0,0,0,0,-1 - (param_1 & 0xff));
   return;
 }
 
@@ -2678,6 +2678,77 @@ char param_2;
     }
   }
   return cVar3;
+}
+
+
+
+
+
+// was FUN_0007ed20 -- prints param_1 (a get_message_string result at
+// every confirmed call site) via message_scroll_print_wrapped, then
+// compares two (x,y) tile positions (param_2/3 vs param_5/6) against
+// a max-distance threshold (param_8, matching the abs-diff-sum bit
+// trick used elsewhere in this file, e.g. is_out_of_player_range) to
+// decide whether the two points are "near" each other. Based on that
+// proximity result and whether a facing/direction value (param_4)
+// matches param_7 or is 0, optionally prints an extra qualifier
+// string ("very_near" or "and"), then always prints whatever is
+// currently staged in the shared scratch message buffer
+// (DAT_00084f20) to finish the sentence. Reads as "announce a
+// detected event, appending how close/what direction it came from",
+// consistent with report_detected_creatures_in_direction's own use
+// for the Detect Life spell.
+void print_message_with_proximity_qualifier(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
+undefined4 param_1;
+short param_2;
+short param_3;
+short param_4;
+short param_5;
+short param_6;
+short param_7;
+short param_8;
+
+{
+  uint uVar1;
+  uint uVar2;
+  bool bVar3;
+  char *pcVar4;
+
+  bVar3 = false;
+  /* HACK: was a bare `message_scroll_print_wrapped();` -- dropped
+     argument, the same class of bug fixed repeatedly elsewhere in
+     this file. Every confirmed caller (report_detected_creatures_in_
+     direction, and call sites in dispatch_trap_type_effect/
+     src/player.c) builds param_1 via get_message_string specifically
+     to have a message printed -- with every OTHER print in this same
+     function passed an explicit argument (pcVar4, &DAT_00084f20) and
+     none of them being param_1, this first call is the only one that
+     would otherwise never use param_1 at all, making it obviously the
+     intended argument here. */
+  message_scroll_print_wrapped(param_1);
+  if (param_8 < 0) {
+LAB_0007ed8c:
+    bVar3 = true;
+  }
+  else {
+    uVar1 = (int)param_2 - (int)param_5 >> 0x1f;
+    uVar2 = (int)param_3 - (int)param_6 >> 0x1f;
+    if ((int)param_8 <
+        (int)((((int)param_3 - (int)param_6 ^ uVar2) - uVar2) +
+             (((int)param_2 - (int)param_5 ^ uVar1) - uVar1))) goto LAB_0007ed8c;
+  }
+  if ((param_4 == param_7) || (param_4 == 0)) {
+    if ((bVar3) || (param_4 == 0)) goto LAB_0007edd8;
+    pcVar4 = s_very_near_00087954;
+  }
+  else {
+    if (!bVar3) goto LAB_0007edd8;
+    pcVar4 = s_and_00087310;
+  }
+  message_scroll_print_wrapped(pcVar4);
+LAB_0007edd8:
+  message_scroll_print_wrapped(&DAT_00084f20);
+  return;
 }
 
 

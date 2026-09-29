@@ -1043,6 +1043,7 @@ extern undefined1 DAT_0024f90c;
 extern char DAT_0024fa28;
 extern undefined2 DAT_0024fa14;
 extern undefined2 DAT_002029c8;
+extern char s_very_near_00087954[];
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3528,7 +3529,7 @@ void init_ambient_sound_timing();
 void clear_ambient_sound_target();
 undefined4 debug_noop_checkpoint();
 char compute_compass_direction();
-void FUN_0007ed20();
+void print_message_with_proximity_qualifier();
 undefined4 FUN_0007edec();
 bool FUN_0007edf4();
 bool FUN_0007ee4c();

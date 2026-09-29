@@ -2300,7 +2300,7 @@ LAB_000709e0:
     if (iVar6 == 0x14) {
       if ((*(byte *)(DAT_00086df8 + 0x60) & 0x80) == 0) {
         uVar4 = get_message_string(0x223);
-        FUN_0007ed20(uVar4,*(ushort *)((char *)g_player_object + 0x16) >> 10,
+        print_message_with_proximity_qualifier(uVar4,*(ushort *)((char *)g_player_object + 0x16) >> 10,
                      (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4,(int)DAT_00201b68,0x18,0x2d,3,4
                     );
       }
