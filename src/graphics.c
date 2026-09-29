@@ -1379,3 +1379,37 @@ short param_6;
   }
   return;
 }
+
+
+// was FUN_00012958 -- resets the viewport/clip rect to the full
+// screen (0,0,0x13f,199).
+void reset_viewport_to_fullscreen()
+
+{
+  set_viewport_clip_rect(0,0,0x13f,199);
+  return;
+}
+
+
+
+// was FUN_000129d4 -- computes `((param_1 << 16) >> 18) - param_2 +
+// 199` (a Y-coordinate-ish transform; 199 matches the full-screen
+// clip rect's bottom edge used elsewhere, e.g.
+// reset_viewport_to_fullscreen) and returns it packed with param_3
+// unchanged in the CONCAT44 upper half -- the classic Ghidra
+// representation of an ARM function that returns two values in r0:r1.
+// Its only confirmed caller discards the return value entirely (see
+// the HACK comment on that call site), and this function has no
+// other observable side effects, so this computation currently has no
+// effect on program behavior either way -- left as an honest gap
+// rather than guessing at what consumer this fed before whatever
+// change made its result unused.
+undefined8 compute_view_y_bound(param_1,param_2,param_3)
+int param_1;
+int param_2;
+undefined4 param_3;
+
+{
+  return CONCAT44(param_3,(((param_1 << 0x10) >> 0x12) - param_2) + 199);
+}
+

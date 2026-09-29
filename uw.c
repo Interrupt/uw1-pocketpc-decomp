@@ -6786,24 +6786,6 @@ void thunk_FUN_0003c310()
 
 
 
-void FUN_00012958()
-
-{
-  set_viewport_clip_rect(0,0,0x13f,199);
-  return;
-}
-
-
-
-undefined8 FUN_000129d4(param_1,param_2,param_3)
-int param_1;
-int param_2;
-undefined4 param_3;
-
-{
-  return CONCAT44(param_3,(((param_1 << 0x10) >> 0x12) - param_2) + 199);
-}
-
 
 
 byte *FUN_000129f8(param_1,param_2,param_3)
@@ -34597,7 +34579,16 @@ int param_4;
   g_dungeon_view_active = 0;
   DAT_0023b020 = (undefined2)param_3;
   DAT_0023aed4 = (undefined2)param_4;
-  FUN_000129d4(param_1);
+  /* HACK: was `FUN_000129d4(param_1);` -- dropped 2 of 3 arguments,
+     the same class of bug fixed repeatedly elsewhere in this file.
+     Nothing between this function's own entry and this call touches
+     param_2/param_3, so on ARM's register-passthrough calling
+     convention they're still sitting in r1/r2 unchanged -- this
+     function's own first 3 parameters are the obviously-intended
+     arguments. The callee's return value is discarded either way (see
+     compute_view_y_bound's own comment on why this fix has no
+     observable behavioral effect). */
+  compute_view_y_bound(param_1,param_2,param_3);
   FUN_00057188(param_1,param_2,param_3,param_4);
   register_game_view_interact_zones(param_1,param_2 + param_4 + -1,param_3,param_4);
   if ((*(ushort *)(DAT_00085a6c + 8) & 8) == 0) {
@@ -34620,7 +34611,7 @@ int param_4;
 void FUN_0005b828()
 
 {
-  FUN_00012958();
+  reset_viewport_to_fullscreen();
   FUN_00038680();
   if (getenv("UW_DUMP_MODEL_RAW")) {
     unsigned char *_b = (unsigned char *)&DAT_00123ccc;
