@@ -708,7 +708,7 @@ LAB_0007af3c:
                              (*(ushort *)(DAT_00086df8 + 0x61) & 0x3f0) >> 4);
         if (sVar4 == -1) {
           FUN_00078c80(0xf1);
-          FUN_00071510(0xfffffffe);
+          handle_rest_action(0xfffffffe);
           if (*(char *)((char *)g_player_object + 8) == '\0') goto LAB_0007b254;
           FUN_00078c80(0xf3);
           uVar8 = Ordinal_2005(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);

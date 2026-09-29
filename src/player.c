@@ -2378,8 +2378,9 @@ LAB_00070b58:
 
 
 // was FUN_00070c90 -- draws the full character-sheet text overlay
-// (name, class, level, experience, the 6 core attributes in a 3-column
-// grid, and all 20 skill values in a 3x7 grid) on top of whatever
+// (name, class, level, elapsed game time (DAT_00086df8+0xce, this
+// project's already-documented game_time field), the 6 core attributes
+// in a 3-column grid, and all 20 skill values in a 3x7 grid) on top of whatever
 // background the caller already blit. Its one call site is the game-
 // completion/victory sequence (after blitting win1.byt/win2.byt), so
 // this is effectively the final character stats screen, though the
@@ -2598,6 +2599,197 @@ void apply_rest_status_effects()
   }
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
     FUN_00038374(g_player_object,0,0,0,0xff,0);
+  }
+  return;
+}
+
+
+
+
+
+
+// was FUN_00071510 -- the "Rest" command handler, reached either
+// directly (param_1<0) or, for param_1>=0, only after passing
+// preconditions (not poisoned/etc. per DAT_00086df8+0xb8, not falling,
+// not on level 9) and FUN_00035340 reporting it's unsafe to rest here
+// (message 0xf shown either way): advances game time
+// (DAT_00086df8+0xce) by a random 2-6 "day" count, heals HP/mana based
+// on hunger state (g_player_object+8) via adjust_player_hp, decays
+// hunger, rolls for a random level special event
+// (trigger_random_level_special_event), resets jump/fall physics state,
+// and redraws. apply_rest_status_effects (including the poison tick)
+// is only called for the original param_1<0 path specifically. When
+// preconditions pass and resting IS safe (param_1>=0), a different,
+// shorter message plays instead and none of the rest logic runs.
+void handle_rest_action(param_1)
+short param_1;
+
+{
+  int uw_ord2005_rem_145 = 0; int uw_ord2005_rem_146 = 0; int uw_ord2005_rem_147 = 0;
+  byte bVar1;
+  bool bVar2;
+  short sVar3;
+  int iVar4;
+  undefined4 uVar5;
+  short extraout_r1;
+  short extraout_r1_00;
+  short extraout_r1_01;
+  ushort uVar6;
+  uint uVar7;
+  int iVar8;
+  
+  bVar2 = true;
+  if (param_1 < 0) {
+LAB_0007158c:
+    full_dungeon_redraw();
+    FUN_000735b0(0xd);
+    FUN_00073634();
+    FUN_000411b8(5);
+    if (-1 < param_1) {
+      FUN_00078c80(0x10);
+    }
+    FUN_0007e85c(0);
+    FUN_00052d68(1,0x14);
+    uVar5 = Ordinal_1053();
+    uw_ord2005_rem_145 = ((int)(uVar5)) % (5);
+    iVar8 = uw_ord2005_rem_145 + 2;
+    iVar4 = (iVar8 * 0x10000 >> 0x10) * 0xe1000 + *(int *)(DAT_00086df8 + 0xce);
+    *(char *)(DAT_00086df8 + 0xce) = (char)iVar4;
+    *(char *)(DAT_00086df8 + 0xcf) = (char)((uint)iVar4 >> 8);
+    *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar4 >> 0x10);
+    *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar4 >> 0x18);
+    uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfc3f;
+    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar7;
+    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
+    uVar7 = *(ushort *)(DAT_00086df8 + 0x61) & 0xfff3;
+    *(char *)(DAT_00086df8 + 0x61) = (char)uVar7;
+    *(char *)(DAT_00086df8 + 0x62) = (char)(uVar7 >> 8);
+    FUN_0005404c(iVar8 * 0xb4,0);
+    if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
+      uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) >> 2 & 0xf;
+      FUN_00038374(g_player_object,0,0,0,(char)((int)((uVar7 + 1) * uVar7) >> 1),0x10);
+      uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
+      *(char *)(DAT_00086df8 + 0x5f) = (char)uVar7;
+      *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
+    }
+    if (param_1 < 0) {
+      apply_rest_status_effects();
+    }
+    if (*(char *)((char *)g_player_object + 8) == '\0') {
+      FUN_000735c0();
+    }
+    else {
+      iVar4 = FUN_00035894();
+      if (iVar4 == 0) {
+        FUN_0003513c();
+        FUN_0007e778(0);
+        uVar5 = Ordinal_1053();
+        uw_ord2005_rem_146 = ((int)(uVar5)) % (4);
+        iVar4 = (uw_ord2005_rem_146 - iVar8) + 7;
+        if (*(byte *)((char *)g_player_object + 8) < 10) {
+          uVar5 = Ordinal_1053();
+          uw_ord2005_rem_147 = ((int)(uVar5)) % (2);
+          iVar4 = iVar4 + uw_ord2005_rem_147 + 1;
+        }
+        iVar8 = (short)iVar4 * 0xe1000 + *(int *)(DAT_00086df8 + 0xce);
+        *(char *)(DAT_00086df8 + 0xce) = (char)iVar8;
+        *(char *)(DAT_00086df8 + 0xcf) = (char)((uint)iVar8 >> 8);
+        *(char *)(DAT_00086df8 + 0xd0) = (char)((uint)iVar8 >> 0x10);
+        *(char *)(DAT_00086df8 + 0xd1) = (char)((uint)iVar8 >> 0x18);
+        FUN_0005404c(iVar4 * 0xb4,0);
+        if ((*(byte *)(DAT_00086df8 + 0x39) < 0x41) || (iVar4 = 1, param_1 < 1)) {
+          iVar4 = 0;
+        }
+        bVar1 = *(byte *)(DAT_00086df8 + 0x3a);
+        *(undefined1 *)(DAT_00086df8 + 0x3a) = 0;
+        iVar8 = (bVar1 >> 1) + 2;
+        sVar3 = (short)iVar8;
+        if (5 < (uint)(iVar8 * 0x10000 >> 0x10)) {
+          sVar3 = 5;
+        }
+        if (*(char *)(DAT_00086df8 + 0x39) == '\0') {
+          FUN_00078c80(0x11);
+          FUN_00038374(g_player_object,0,0,0,2,0);
+        }
+        else {
+          adjust_player_hp(g_player_object,(((short)iVar4 + 1) * (int)sVar3 * 0x1000000 >> 0x18) + -1);
+          FUN_00073e14(g_player_object,0xfffffffa);
+          FUN_00073e14(g_player_object,((char)sVar3 + 1) * (int)(char)iVar4 + (int)(char)sVar3 + -1);
+        }
+        sVar3 = Ordinal_1053();
+        FUN_00071b08(-0x18 - ((int)sVar3 & 0x1fU));
+        uVar6 = *(ushort *)(DAT_00086df8 + 0x61);
+        if ((uVar6 & 0x3f0) < 0x200) {
+          uVar6 = uVar6 & 0xfc0f;
+        }
+        else {
+          uVar6 = ((uVar6 & 0xfff0) - 0x1f1 ^ uVar6) & 0x3f0 ^ uVar6;
+        }
+        *(char *)(DAT_00086df8 + 0x61) = (char)uVar6;
+        *(char *)(DAT_00086df8 + 0x62) = (char)(uVar6 >> 8);
+        if (-1 < param_1) {
+          iVar8 = trigger_random_level_special_event(iVar4);
+          bVar2 = true;
+          if (iVar8 != 0) {
+            bVar2 = false;
+          }
+        }
+        FUN_00078c80(0x13 - iVar4);
+      }
+      else {
+        if (*(byte *)(DAT_00086df8 + 0x3a) < 0x21) {
+          *(undefined1 *)(DAT_00086df8 + 0x3a) = 0;
+        }
+        else {
+          *(byte *)(DAT_00086df8 + 0x3a) = *(byte *)(DAT_00086df8 + 0x3a) - 0x20;
+        }
+        FUN_00078c80(0x15);
+        sVar3 = Ordinal_1053();
+        FUN_00071b08(-0xc - ((int)sVar3 & 0xfU));
+        uVar6 = *(ushort *)(DAT_00086df8 + 0x61);
+        if ((uVar6 & 0x3f0) < 0x100) {
+          uVar6 = uVar6 & 0xfc0f;
+        }
+        else {
+          uVar6 = ((uVar6 & 0xfff0) - 0xf1 ^ uVar6) & 0x3f0 ^ uVar6;
+        }
+        *(char *)(DAT_00086df8 + 0x61) = (char)uVar6;
+        *(char *)(DAT_00086df8 + 0x62) = (char)(uVar6 >> 8);
+      }
+      refresh_player_equipment_effects();
+      FUN_00040440();
+      g_jump_ascent_timer = 0;
+      g_fall_accel = 0;
+      DAT_0020488e = 0;
+      DAT_0020488c = 0;
+      g_vertical_velocity = 0;
+      DAT_00204888 = 0;
+      DAT_00204886 = 0;
+      refresh_stats_panel_if_active();
+      full_dungeon_redraw();
+      FUN_000735c0();
+      if (bVar2) {
+        FUN_000411cc(5);
+      }
+      else {
+        weapon_overlay_and_full_redraw();
+      }
+    }
+  }
+  else {
+    if ((((*(byte *)(DAT_00086df8 + 0xb8) & 0x1b) == 0) && (g_fall_accel == 0)) &&
+       (DAT_00201b68 != 9)) {
+      iVar4 = FUN_00035340();
+      if (iVar4 == 0) {
+        FUN_00078c80(0xf);
+        goto LAB_0007158c;
+      }
+      uVar5 = 0xe;
+    }
+    else {
+      uVar5 = 0x14;
+    }
+    FUN_00078c80(uVar5);
   }
   return;
 }
