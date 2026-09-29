@@ -622,7 +622,7 @@ LAB_0007ae1c:
     else {
       if (uVar8 != 0x92) {
         if (uVar8 == 0xb8) {
-          sVar4 = FUN_00069b68(*(undefined1 *)(DAT_0023be74 + 7),0x14);
+          sVar4 = roll_skill_check(*(undefined1 *)(DAT_0023be74 + 7),0x14);
           if (sVar4 != 0) {
             iVar11 = rand_below(3);
             FUN_00073e14(g_player_object,iVar11 * -0x1000000 >> 0x18);
@@ -704,7 +704,7 @@ LAB_0007af3c:
         }
         *(char *)(DAT_00086df8 + 0x61) = (char)uVar9;
         *(char *)(DAT_00086df8 + 0x62) = (char)(uVar9 >> 8);
-        sVar4 = FUN_00069b68(*(undefined1 *)(DAT_0023be74 + 5),
+        sVar4 = roll_skill_check(*(undefined1 *)(DAT_0023be74 + 5),
                              (*(ushort *)(DAT_00086df8 + 0x61) & 0x3f0) >> 4);
         if (sVar4 == -1) {
           FUN_00078c80(0xf1);

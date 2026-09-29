@@ -214,7 +214,7 @@ void commit_player_move()
       if (g_vertical_velocity != 0) {
         uVar3 = ((iVar7 >> 0x10) << 0x11) >> 0x10;
       }
-      sVar1 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x32),((int)(short)uVar3 << 0x11) >> 0x10)
+      sVar1 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x32),((int)(short)uVar3 << 0x11) >> 0x10)
       ;
       if (0 < sVar1) {
         sVar1 = Ordinal_2005(0x1e,(0x1e - (uint)*(byte *)(DAT_00086df8 + 0x32)) * (int)(short)uVar3)
@@ -1699,5 +1699,46 @@ void sync_camera_from_player()
     }
   }
   return;
+}
+
+
+
+
+// was FUN_00069b68 -- the game's general skill-check roll: rolls a
+// random value mod 31, offsets it by (param_1 - param_2) (typically a
+// skill/stat value minus a difficulty threshold), and buckets the
+// result into -1 (critical failure, <3), 0 (failure, 3-15), 1
+// (success, 16-28), or 2 (critical success, >=29). Used throughout
+// combat, item use, object interaction, and babl conversation scripts
+// for stealth/lockpicking/attack/persuasion-style checks against a
+// player skill byte.
+undefined4 roll_skill_check(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  int uw_ord2005_rem_127 = 0;
+  int iVar1;
+  undefined4 uVar2;
+  short extraout_r1;
+  
+  uVar2 = Ordinal_1053();
+  uw_ord2005_rem_127 = ((int)(uVar2)) % (0x1f);
+  iVar1 = ((uw_ord2005_rem_127 - param_2) + param_1) * 0x10000 >> 0x10;
+  if (iVar1 < 0x1d) {
+    if (iVar1 < 0x10) {
+      uVar2 = 0;
+      if (iVar1 < 3) {
+        uVar2 = 0xffffffff;
+      }
+    }
+    else {
+      uVar2 = 1;
+    }
+  }
+  else {
+    uVar2 = 2;
+  }
+  return uVar2;
 }
 

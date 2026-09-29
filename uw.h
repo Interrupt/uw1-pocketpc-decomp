@@ -2980,7 +2980,7 @@ void trigger_view_transition();
 void set_movement_animation_timer();
 void update_current_view_from_subject();
 void sync_camera_from_player();
-undefined4 FUN_00069b68();
+undefined4 roll_skill_check();
 void grant_experience_points();
 void FUN_00069e30();
 bool FUN_00069eb0();

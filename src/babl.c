@@ -4196,13 +4196,13 @@ int param_4;
         iVar6 = 1;
         uVar5 = FUN_000535fc((int)*(short *)(local_8 + (short)local_c * 2));
         if ((short)local_10 == 0) {
-          sVar1 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x29),0x14);
+          sVar1 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x29),0x14);
           if (0 < sVar1) {
             iVar6 = 2;
           }
         }
         else {
-          iVar6 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x29),0xf);
+          iVar6 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x29),0xf);
           iVar6 = iVar6 + 1;
         }
         dispatch_object_action(uVar5,iVar6);

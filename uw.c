@@ -11285,7 +11285,7 @@ undefined4 param_2;
     else {
       uVar6 = (uint)DAT_00100608;
     }
-    iVar3 = FUN_00069b68(DAT_00100628 + uVar6,(int)(char)(&DAT_001007e2)[uVar7 * 0x30]);
+    iVar3 = roll_skill_check(DAT_00100628 + uVar6,(int)(char)(&DAT_001007e2)[uVar7 * 0x30]);
     DAT_001005d8 = 0;
     if ((short)iVar3 != 2) {
       if ((((short)iVar3 == -1) && (param_1 == 1)) &&
@@ -19576,7 +19576,7 @@ undefined2 * param_3;
     uVar7 = 0xf;
   }
   *param_3 = uVar7;
-  sVar3 = FUN_00069b68(param_2,iVar5);
+  sVar3 = roll_skill_check(param_2,iVar5);
   if (sVar3 == -1) {
     uVar6 = Ordinal_1053();
     if ((int)((*(byte *)(param_1 + 4) & 0x3f) + (int)(short)param_2) < (int)(uVar6 & 0x3f)) {
@@ -21833,7 +21833,7 @@ LAB_0003f69c:
        (((&DAT_00202c9a)[(*g_interact_target & 0x1ff) * 0xd] & 3) != 2)) {
       uVar3 = (g_interact_target[1] & 0x380) >> 7;
       if ((uVar3 & 4) == 0) {
-        iVar1 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x29),10);
+        iVar1 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x29),10);
         uVar2 = iVar1 + 1;
         if ((int)(uVar2 * 0x10000) >> 0x10 == 0) {
           uVar2 = 1;
@@ -23948,7 +23948,7 @@ uint param_1;
     uVar4 = 1;
   }
   else {
-    sVar3 = FUN_00069b68(*(byte *)(DAT_00086df8 + 0x2a) + 5,(uint)bVar6 << 1);
+    sVar3 = roll_skill_check(*(byte *)(DAT_00086df8 + 0x2a) + 5,(uint)bVar6 << 1);
     if (sVar3 == 0) {
       uVar4 = 2;
     }
@@ -31893,7 +31893,7 @@ void FUN_00053c74()
       FUN_00038374(g_player_object,0,0,0,(char)((uVar3 & 0x3c) >> 2),0x10);
       iVar10 = DAT_00086df8;
     }
-    sVar5 = FUN_00069b68(*(undefined1 *)(iVar10 + 0x28),10);
+    sVar5 = roll_skill_check(*(undefined1 *)(iVar10 + 0x28),10);
     if (0 < sVar5) {
       FUN_00073e14(g_player_object,sVar5 * -0x1000000 >> 0x18);
     }
@@ -31925,7 +31925,7 @@ void FUN_00053c74()
       iVar10 = iVar10 + 1;
       local_20[0] = (short)iVar10;
     } while ((int)(iVar10) * 0x10000 >> 0x10 < 3);
-    sVar5 = FUN_00069b68(*(undefined1 *)(DAT_0023be74 + 5),0xf);
+    sVar5 = roll_skill_check(*(undefined1 *)(DAT_0023be74 + 5),0xf);
     if (0 < sVar5) {
       adjust_player_hp(g_player_object,0xffffffff);
     }
@@ -32008,13 +32008,13 @@ void FUN_000541d0()
     uVar1 = Ordinal_2005(*(short *)(DAT_00086df8 + 0x4c),(uint)*(ushort *)(DAT_00086df8 + 0x4a) << 5
                         );
   }
-  iVar3 = FUN_00069b68(*(undefined1 *)(iVar3 + 0x34),uVar1);
+  iVar3 = roll_skill_check(*(undefined1 *)(iVar3 + 0x34),uVar1);
   if (((short)iVar3 < 1) && (*(byte *)(DAT_00086df8 + 0xb9) < 0x8c)) {
     cVar2 = FUN_0006a058(3 - (int)(iVar3),4);
     *(char *)(DAT_00086df8 + 0xb9) = *(char *)(DAT_00086df8 + 0xb9) + cVar2;
   }
   if (0x78 < *(byte *)(DAT_00086df8 + 0xb9)) {
-    iVar3 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x34),uVar1);
+    iVar3 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x34),uVar1);
     if ((-(int)iVar3 + 2) * 0x10000 >> 0x10 != 0) {
       FUN_000411e0(0xc6);
       FUN_00049924(2);
@@ -32149,7 +32149,7 @@ undefined4 param_2;
   uVar7 = (ushort)bVar1;
   if ((param_1[0x12] == 1) && ((&DAT_002027d2)[iVar5] == -0x40)) {
     uVar6 = (*(byte *)(DAT_00086df8 + 0x27) + 0x18) * 8;
-    sVar4 = FUN_00069b68((uint)*(byte *)(DAT_00086df8 + 0x27),10);
+    sVar4 = roll_skill_check((uint)*(byte *)(DAT_00086df8 + 0x27),10);
     if (sVar4 == -1) {
       uVar6 = uVar6 - 0x80;
     }
@@ -36401,38 +36401,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_00069b68(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  int uw_ord2005_rem_127 = 0;
-  int iVar1;
-  undefined4 uVar2;
-  short extraout_r1;
-  
-  uVar2 = Ordinal_1053();
-  uw_ord2005_rem_127 = ((int)(uVar2)) % (0x1f);
-  iVar1 = ((uw_ord2005_rem_127 - param_2) + param_1) * 0x10000 >> 0x10;
-  if (iVar1 < 0x1d) {
-    if (iVar1 < 0x10) {
-      uVar2 = 0;
-      if (iVar1 < 3) {
-        uVar2 = 0xffffffff;
-      }
-    }
-    else {
-      uVar2 = 1;
-    }
-  }
-  else {
-    uVar2 = 2;
-  }
-  return uVar2;
-}
-
-
-
 // was FUN_00069bd0 -- add param_1 experience points to the character
 // (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level
 // when the Ordinal_2008(500) threshold is crossed.
@@ -39365,7 +39333,7 @@ short param_1;
   *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
   if (iVar5 != 0) {
     do {
-      cVar3 = FUN_00069b68(uVar2,0x14);
+      cVar3 = roll_skill_check(uVar2,0x14);
       *(char *)(iVar1 + 0x21 + DAT_00086df8) = *(char *)(iVar1 + 0x21 + DAT_00086df8) + cVar3;
       iVar5 = (iVar5 + -1) * 0x10000 >> 0x10;
     } while (0 < iVar5);
@@ -40424,7 +40392,7 @@ undefined4 param_2;
       pbVar1 = (byte *)resolve_object_link((ushort *)(pbVar1 + 6)); /* confirmed via ARM disassembly, 0x72628 */
     }
     if ((*pbVar1 & 0x3f) < 3) {
-      uVar2 = FUN_00069b68(param_2,8);
+      uVar2 = roll_skill_check(param_2,8);
       return uVar2;
     }
   }
@@ -40467,7 +40435,7 @@ undefined4 param_2;
         pbVar7 = pbVar3;
       }
       if ((*pbVar4 & 0x3f) < 3) {
-        uVar8 = FUN_00069b68(param_2,8);
+        uVar8 = roll_skill_check(param_2,8);
         if ((short)uVar8 < 1) {
           if ((short)uVar8 < 0) {
             message_scroll_print_wrapped(s_Your_bumbling_attempts_have_set_o_00087384);
@@ -42449,7 +42417,7 @@ undefined4 param_2;
       if ((((int)((iVar1 >> 0x18 ^ uVar6) - uVar6) < (int)param_1) &&
           (iVar1 = iVar12 * 0x1000000, uVar6 = iVar1 >> 0x1f,
           (int)((iVar1 >> 0x18 ^ uVar6) - uVar6) < (int)param_1)) &&
-         (sVar4 = FUN_00069b68(param_2,0xf - ((byte)(&DAT_001007ed)[(uVar13 & 0x3f) * 0x30] & 0xf)),
+         (sVar4 = roll_skill_check(param_2,0xf - ((byte)(&DAT_001007ed)[(uVar13 & 0x3f) * 0x30] & 0xf)),
          0 < sVar4)) {
         sVar4 = FUN_0007ec58(iVar8,iVar12);
         local_2c[sVar4] = local_2c[sVar4] + 1;
@@ -46038,7 +46006,7 @@ ushort param_4;
             return 2;
           }
           if (((param_4 == 5) && (((byte)param_3[1] & 0x7f) != 0)) &&
-             (sVar2 = FUN_00069b68(*(undefined1 *)(DAT_00086df8 + 0x2c),(byte)param_3[1] & 0x7f),
+             (sVar2 = roll_skill_check(*(undefined1 *)(DAT_00086df8 + 0x2c),(byte)param_3[1] & 0x7f),
              sVar2 < 1)) {
             return 2;
           }

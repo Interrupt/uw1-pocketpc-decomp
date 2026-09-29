@@ -800,7 +800,7 @@ short param_3;
     uVar5 = (byte)puVar4[1] & 0x7f;
     if (((uVar5 != 0xe) || (0x1e < (int)-uVar6)) &&
        ((uVar5 != 0xf &&
-        (sVar3 = FUN_00069b68((int)(uVar6 * -0x10000) >> 0x10,((byte)puVar4[1] & 0x7f) * 3),
+        (sVar3 = roll_skill_check((int)(uVar6 * -0x10000) >> 0x10,((byte)puVar4[1] & 0x7f) * 3),
         0 < sVar3)))) {
 LAB_0007c130:
       FUN_0007c2ec(param_1,param_2,6,(int)DAT_002020a0,DAT_002020a4);
