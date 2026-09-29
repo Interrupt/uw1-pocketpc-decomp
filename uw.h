@@ -1473,6 +1473,27 @@ extern char s_R__lu_P__lu_S__lu_F__d__d_00086b04[];
 #define DAT_0023aefe (*(undefined2 *)&g_visibility_ray_table_backing[0x1e])
 #define DAT_0023af00 (*(undefined2 *)&g_visibility_ray_table_backing[0x20])
 #define DAT_0023af02 g_visibility_ray_table_backing[0x22]
+/* Globals defined in uw.c but also used by functions that now live in
+   saveload.c (save/load) -- extern'd here so both translation units
+   see the same storage. */
+extern undefined2 DAT_000868dc;
+extern undefined DAT_00087030_backing[8192];
+#define DAT_00087030 DAT_00087030_backing[0]
+extern undefined DAT_00087084_backing[8192];
+#define DAT_00087084 DAT_00087084_backing[0]
+extern short DAT_002046f0;
+extern char s__6_Save_Game_Descriptions_0008703c[];
+extern char s__DATA_OPSCR_BYT_00086efc[];
+extern char s__not_used_yet__00087020[];
+extern char s__PLAYER_DAT_00087088[];
+extern char s__SAVE0_desc_00087078[];
+extern char s_I__00087074[];
+extern char s_II__0008706c[];
+extern char s_III__00087064[];
+extern char s_IV__0008705c[];
+extern char s_Please_enter_a_Save_Game_file_an_00087094[];
+extern undefined s_scroll_color_reset_00087038_backing[8192];
+#define s_scroll_color_reset_00087038 s_scroll_color_reset_00087038_backing[0]
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -2936,6 +2957,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/item_use.h"
 #include "src/headers/movement.h"
 #include "src/headers/visibility.h"
+#include "src/headers/saveload.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
