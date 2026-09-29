@@ -25,6 +25,7 @@ set(UW_SOURCES
   src/inventory.c
   src/combat.c
   src/bitmap.c
+  src/3d.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

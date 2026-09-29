@@ -1,0 +1,1293 @@
+/* The 3D transform/rasterization pipeline: vertex math, view matrix
+ * construction, camera-space transform/projection, near-plane
+ * clipping, and the triangle rasterizer (edge setup, perspective-
+ * correct texture span drawing). Split out of uw.c (the original
+ * monolithic decompile) once these functions' real roles were
+ * confirmed.
+ */
+#include "headers/3d.h"
+#include "headers/debug.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+
+
+
+// was FUN_000116a4 -- set the active viewport/clip rectangle (DAT_000a85c4/c8 top-left, DAT_000842a4/a8 bottom-right)
+void set_viewport_clip_rect(param_1,param_2,param_3,param_4)
+undefined2 param_1;
+undefined2 param_2;
+undefined2 param_3;
+undefined2 param_4;
+
+{
+  DAT_000a85c4 = param_1;
+  DAT_000a85c8 = param_2;
+  DAT_000842a4 = param_3;
+  DAT_000842a8 = param_4;
+  return;
+}
+
+
+
+
+// was FUN_000137c0 -- elementwise 3-float vector subtract, param_3 = param_2
+// - param_1. Confirmed by tracing its two call sites in parse_e_model_file
+// (was FUN_00020a74): both feed a shared vertex-position array (the
+// model's own POINTS, 0xc-byte stride) and the results go straight into
+// vec3_cross (was FUN_00013904) as the two edge vectors of a real
+// per-face normal computation -- see vec3_cross's own comment for why
+// that computed normal never actually gets used.
+void vec3_sub(param_1,param_2,param_3)
+undefined4 * param_1;
+undefined4 * param_2;
+undefined1 * param_3;
+
+{
+  undefined4 uVar1;
+  
+  uVar1 = Ordinal_2015(*param_2,*param_1);
+  *param_3 = (char)uVar1;
+  param_3[1] = (char)((uint)uVar1 >> 8);
+  param_3[2] = (char)((uint)uVar1 >> 0x10);
+  param_3[3] = (char)((uint)uVar1 >> 0x18);
+  uVar1 = Ordinal_2015(param_2[1],param_1[1]);
+  param_3[4] = (char)uVar1;
+  param_3[5] = (char)((uint)uVar1 >> 8);
+  param_3[6] = (char)((uint)uVar1 >> 0x10);
+  param_3[7] = (char)((uint)uVar1 >> 0x18);
+  uVar1 = Ordinal_2015(param_2[2],param_1[2]);
+  param_3[8] = (char)uVar1;
+  param_3[9] = (char)((uint)uVar1 >> 8);
+  param_3[10] = (char)((uint)uVar1 >> 0x10);
+  param_3[0xb] = (char)((uint)uVar1 >> 0x18);
+  return;
+}
+
+
+
+// was FUN_00013904 -- standard 3-float cross product, param_3 = param_1 x
+// param_2 (confirmed component-by-component, including the Y term's sign
+// flip the textbook formula requires). Its one real caller,
+// parse_e_model_file (was FUN_00020a74), uses it to compute each PARTS
+// face's real normal (two vec3_sub edge vectors, v1-v0 and v2-v0, crossed
+// together) right after reading that face's vertex-index list -- a
+// genuine, deliberate per-face normal computation. Traced the real ARM
+// disassembly at its call site (0x00021aa4, not just this decompile) to
+// rule out a dropped-store decompile bug: the instruction immediately
+// after `bl 0x00013904` is unrelated vertex-count bookkeeping, with no
+// store of the result anywhere in between. The original shipped binary
+// computes this normal and then genuinely never uses it -- not a
+// decompile loss, a real dead computation in the original game. See
+// object-rendering-findings.txt's UPDATE (7) ("THE .E PARSER COMPUTES A
+// REAL FACE NORMAL -- AND THROWS IT AWAY") for the full writeup, and
+// UPDATE (8) for the companion finding that UV data doesn't exist in
+// this format at all (never computed, unlike this normal).
+void vec3_cross(param_1,param_2,param_3)
+undefined4 * param_1;
+undefined4 * param_2;
+undefined1 * param_3;
+
+{
+  undefined4 uVar1;
+  undefined4 uVar2;
+  
+  uVar1 = Ordinal_2026(param_1[1],param_2[2]);
+  uVar2 = Ordinal_2026(param_1[2],param_2[1]);
+  uVar1 = Ordinal_2015(uVar1,uVar2);
+  *param_3 = (char)uVar1;
+  param_3[1] = (char)((uint)uVar1 >> 8);
+  param_3[2] = (char)((uint)uVar1 >> 0x10);
+  param_3[3] = (char)((uint)uVar1 >> 0x18);
+  uVar1 = Ordinal_2026(param_2[2],*param_1);
+  uVar2 = Ordinal_2026(param_1[2],*param_2);
+  Ordinal_2015(uVar1,uVar2);
+  uVar1 = Ordinal_2023();
+  param_3[4] = (char)uVar1;
+  param_3[5] = (char)((uint)uVar1 >> 8);
+  param_3[6] = (char)((uint)uVar1 >> 0x10);
+  param_3[7] = (char)((uint)uVar1 >> 0x18);
+  uVar1 = Ordinal_2026(param_2[1],*param_1);
+  uVar2 = Ordinal_2026(param_1[1],*param_2);
+  uVar1 = Ordinal_2015(uVar1,uVar2);
+  param_3[8] = (char)uVar1;
+  param_3[9] = (char)((uint)uVar1 >> 8);
+  param_3[10] = (char)((uint)uVar1 >> 0x10);
+  param_3[0xb] = (char)((uint)uVar1 >> 0x18);
+  return;
+}
+
+
+
+
+// was FUN_00014350 -- textured-triangle driver: viewport-culls, sorts
+// the 3 verts by Y, builds 3 edges via raster_edge_setup, walks
+// scanlines stepping edges (raster_edge_step) and emitting spans
+// (raster_textured_span)
+//
+// UW_DEBUG_RASTER=1: logs every call's screen-space verts/clip rect/
+// texture id, which of the four bounding-box trivial-reject checks (if
+// any) fired, and the final raster_textured_span call count. Added
+// while tracing a QA report that a TMAP decal (catalog 22) draws
+// visible pixels from the front but none from behind, despite an
+// identical raster_triangle call count either way -- confirmed by
+// reading the whole function that there is no winding/normal-based
+// reject anywhere in it (the only early-outs are the four axis-aligned
+// bbox trivial-rejects above, each screen-space-only); a boulder face
+// sweep (catalog 7, which self-occludes so a silently-empty back face
+// would never have been visually noticed) showed span_calls>0 on every
+// one of 52 faces, so whatever's producing the decal's blank back side
+// still needs to be traced with this at the decal's own repro position.
+void raster_triangle(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
+undefined4 param_1;
+void *param_2; /* was undefined4 -- the framebuffer base (g_uw_framebuffer) */
+undefined4 * param_3;
+undefined4 param_4;
+undefined4 param_5;
+undefined4 param_6;
+intptr_t param_7; /* was undefined4 -- the tile's texture pixel data pointer */
+int * param_8;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  undefined1 *puVar3;
+  undefined4 uVar4;
+  undefined1 *puVar5;
+  undefined4 uVar6;
+  uint uVar7;
+  undefined4 uVar8;
+  uint uVar9;
+  undefined4 uVar10;
+  undefined4 uVar11;
+  /* auStack_c4 / auStack_7c were 12-byte locals but raster_edge_setup (called
+     on each below) writes its edge record out to param_6[10] == byte
+     0x2b, overflowing them; Ghidra named the tail of each overflow
+     `local_b8` / `local_70` (the param_6[3] scanline-count field, byte
+     0xc). Widened to real 72-byte buffers like their siblings and
+     local_b8 / local_70 folded back in as element [3]. With them
+     undersized the edge-walk counts came back as stack garbage, so
+     raster_triangle's `while (local_70 != 0 && ...)` never ran the span
+     rasterizer raster_textured_span. */
+  undefined1 auStack_154 [72];
+  undefined1 auStack_10c [72];
+  undefined1 auStack_c4 [72];
+  undefined1 auStack_7c [72];
+#define local_b8 (*(int *)(auStack_c4 + 0xc))
+#define local_70 (*(int *)(auStack_7c + 0xc))
+
+  if (getenv("UW_DEBUG_RASTER")) {
+    fprintf(stderr, "[raster] ENTRY texid=0x%x v0=(%g,%g) v1=(%g,%g) v2=(%g,%g) clip=(%d,%d,%d,%d) tex=%p\n",
+            (unsigned)param_4,
+            *(float *)param_3, *(float *)(param_3 + 1),
+            *(float *)(param_3 + 5), *(float *)(param_3 + 6),
+            *(float *)(param_3 + 10), *(float *)(param_3 + 11),
+            param_8[0], param_8[1], param_8[2], param_8[3], (void *)param_7);
+  }
+  uVar8 = param_3[6];
+  uVar10 = param_3[0xb];
+  uVar6 = param_3[1];
+  uVar1 = Ordinal_2032(*param_8);
+  uVar4 = *param_3;
+  iVar2 = Ordinal_2028(uVar4,uVar1);
+  if (((iVar2 != 0) && (iVar2 = Ordinal_2028(param_3[5],uVar1), iVar2 != 0)) &&
+     (iVar2 = Ordinal_2038(param_3[10],uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts left of clip-left\n");
+    return;
+  }
+  uVar1 = Ordinal_2032(param_8[2]);
+  iVar2 = Ordinal_2036(uVar4,uVar1);
+  if (((iVar2 != 0) && (iVar2 = Ordinal_2036(param_3[5],uVar1), iVar2 != 0)) &&
+     (iVar2 = Ordinal_2030(param_3[10],uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts right of clip-right\n");
+    return;
+  }
+  uVar1 = Ordinal_2032(param_8[1]);
+  iVar2 = Ordinal_2028(uVar6,uVar1);
+  if (((iVar2 != 0) && (iVar2 = Ordinal_2028(uVar8,uVar1), iVar2 != 0)) &&
+     (iVar2 = Ordinal_2038(uVar10,uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts above clip-top\n");
+    return;
+  }
+  uVar1 = Ordinal_2032(param_8[3]);
+  iVar2 = Ordinal_2036(uVar6,uVar1);
+  if (((iVar2 != 0) && (iVar2 = Ordinal_2036(uVar8,uVar1), iVar2 != 0)) &&
+     (iVar2 = Ordinal_2030(uVar10,uVar1), iVar2 == 0)) {
+    if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] REJECT: all verts below clip-bottom\n");
+    return;
+  }
+  if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] passed bbox reject, entering scanline setup\n");
+  int _uw_span_calls = 0;
+  iVar2 = Ordinal_2028(uVar6,uVar8);
+  if (iVar2 == 0) {
+    iVar2 = Ordinal_2028(uVar10,uVar8);
+    if (iVar2 != 0) {
+      uVar11 = 2;
+      uVar1 = 1;
+      uVar4 = 0;
+      uVar7 = 1;
+      uVar9 = 0;
+      goto LAB_00014684;
+    }
+    uVar11 = 1;
+    iVar2 = Ordinal_2028(uVar6,uVar10);
+    if (iVar2 == 0) {
+      uVar4 = 0;
+      uVar9 = 3;
+      goto LAB_0001467c;
+    }
+    uVar1 = 0;
+    uVar7 = 3;
+  }
+  else {
+    iVar2 = Ordinal_2028(uVar10,uVar6);
+    if (iVar2 != 0) {
+      uVar11 = 2;
+      uVar1 = 0;
+      uVar4 = 1;
+      uVar7 = 0;
+      uVar9 = 1;
+      goto LAB_00014684;
+    }
+    uVar11 = 0;
+    iVar2 = Ordinal_2028(uVar8,uVar10);
+    if (iVar2 == 0) {
+      uVar4 = 1;
+      uVar9 = 1;
+LAB_0001467c:
+      uVar1 = 2;
+      uVar7 = 2;
+      goto LAB_00014684;
+    }
+    uVar1 = 1;
+    uVar7 = 1;
+  }
+  uVar4 = 2;
+  uVar9 = 2;
+LAB_00014684:
+  raster_triangle_perspective_setup(param_3,auStack_10c);
+  raster_edge_setup(auStack_10c,param_3,uVar11,uVar4,param_8[1],auStack_154);
+  raster_edge_setup(auStack_10c,param_3,uVar11,uVar1,param_8[1],auStack_c4);
+  raster_edge_setup(auStack_10c,param_3,uVar1,uVar4,param_8[1],auStack_7c);
+  if (getenv("UW_DEBUG_RASTER")) {
+    fprintf(stderr, "[raster] sort top=%u mid=%u bot=%u  uVar7(short-half-idx)=%u uVar9(cmp)=%u  long_x0=%d short1_x0=%d short2_x0=%d\n",
+            (unsigned)uVar11, (unsigned)uVar1, (unsigned)uVar4,
+            (unsigned)uVar7, (unsigned)uVar9,
+            *(int *)(auStack_154 + 0x28) >> 0xe,
+            *(int *)(auStack_c4 + 0x28) >> 0xe,
+            *(int *)(auStack_7c + 0x28) >> 0xe);
+  }
+  if (uVar9 < uVar7) {
+    puVar3 = auStack_154;
+    puVar5 = auStack_c4;
+  }
+  else {
+    puVar3 = auStack_c4;
+    puVar5 = auStack_154;
+  }
+  if (getenv("UW_DEBUG_RASTER")) {
+    fprintf(stderr, "[raster] first-half puVar3(assumed-left)_x0=%d puVar5(assumed-right)_x0=%d\n",
+            *(int *)(puVar3 + 0x28) >> 0xe, *(int *)(puVar5 + 0x28) >> 0xe);
+  }
+  iVar2 = local_b8;
+  while( true ) {
+    if (iVar2 == 0) {
+      if (uVar9 < uVar7) {
+        puVar3 = auStack_154;
+        puVar5 = auStack_7c;
+      }
+      else {
+        puVar3 = auStack_7c;
+        puVar5 = auStack_154;
+      }
+      /* Second-half (mid vertex -> bottom vertex) scanline walk. Ghidra
+         collapsed the original's private loop counter into the memory
+         reference `local_70` -- which IS the short edge auStack_7c's
+         remaining-scanline field (byte +0xc) -- AND kept an explicit
+         `local_70--`. raster_edge_step(auStack_7c) already decrements that
+         same field every iteration, so the counter was consumed twice per
+         scanline and the bottom half of every triangle drew only half its
+         rows. That was the diagonal white seam splitting each tile quad
+         (and the ceiling "wedge" gaps). Mirror the first-half loop above:
+         count down a private copy, let raster_edge_step own the edge
+         field. */
+      iVar2 = local_70;
+      while ((iVar2 != 0 && (*(int *)(puVar3 + 8) < param_8[3]))) {
+        if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) &&
+           (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)) {
+          _uw_span_calls++;
+          raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,
+                       param_4);
+        }
+        raster_edge_step(auStack_7c);
+        raster_edge_step(auStack_154);
+        iVar2 = iVar2 + -1;
+      }
+      if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE span_calls=%d\n", _uw_span_calls);
+      return;
+    }
+    iVar2 = iVar2 + -1;
+    if (param_8[3] <= *(int *)(puVar3 + 8)) break;
+    if ((*(int *)(puVar3 + 0x28) >> 0xe < param_8[2]) && (*param_8 < *(int *)(puVar5 + 0x28) >> 0xe)
+       ) {
+      _uw_span_calls++;
+      raster_textured_span(param_1,param_2,auStack_10c,puVar3,puVar5,param_5,param_6,param_7,param_8,param_4
+                  );
+    }
+    raster_edge_step(auStack_c4);
+    raster_edge_step(auStack_154);
+  }
+  if (getenv("UW_DEBUG_RASTER")) fprintf(stderr, "[raster] DONE (broke on clip-bottom) span_calls=%d\n", _uw_span_calls);
+  return;
+}
+
+
+
+
+// was FUN_00014868 -- advance one scanline down an edge record
+int raster_edge_step(param_1)
+intptr_t param_1; /* was int -- edge-walk struct pointer */
+
+{
+  int iVar1;
+
+  *(int *)(param_1 + 8) = *(int *)(param_1 + 8) + 1;
+  iVar1 = *(int *)(param_1 + 0xc) + -1;
+  *(int *)(param_1 + 0xc) = iVar1;
+  *(int *)(param_1 + 0x28) = *(int *)(param_1 + 0x2c) + *(int *)(param_1 + 0x28);
+  *(int *)(param_1 + 0x38) = *(int *)(param_1 + 0x3c) + *(int *)(param_1 + 0x38);
+  *(int *)(param_1 + 0x40) = *(int *)(param_1 + 0x44) + *(int *)(param_1 + 0x40);
+  *(int *)(param_1 + 0x30) = *(int *)(param_1 + 0x34) + *(int *)(param_1 + 0x30);
+  return iVar1;
+}
+
+
+
+// was FUN_000148c8 -- per-triangle perspective setup: 1/w, u/w, v/w per
+// vertex plus the screen-space interpolation gradients, into the
+// edge-coefficient array raster_edge_setup reads
+void raster_triangle_perspective_setup(param_1,param_2)
+undefined4 * param_1;
+undefined4 * param_2;
+
+{
+  undefined4 uVar1;
+  undefined4 uVar2;
+  undefined4 uVar3;
+  undefined4 uVar4;
+  undefined4 uVar5;
+  undefined4 *puVar6;
+  undefined4 *puVar7;
+  int iVar8;
+  undefined4 uVar9;
+  
+  uVar5 = param_1[0xb];
+  uVar4 = param_1[10];
+  uVar1 = Ordinal_2015(param_1[1],uVar5);
+  uVar2 = Ordinal_2015(param_1[5],uVar4);
+  uVar1 = Ordinal_2026(uVar1,uVar2);
+  uVar2 = Ordinal_2015(param_1[6],uVar5);
+  uVar4 = Ordinal_2015(*param_1,uVar4);
+  uVar2 = Ordinal_2026(uVar2,uVar4);
+  uVar1 = Ordinal_2015(uVar1,uVar2);
+  uVar1 = Ordinal_2047(0x3f800000,uVar1);
+  uVar2 = Ordinal_2023();
+  puVar6 = param_2 + 6;
+  iVar8 = 3;
+  puVar7 = param_1;
+  do {
+    uVar4 = Ordinal_2047(0x3f800000,puVar7[2]);
+    puVar6[-6] = uVar4;
+    uVar5 = Ordinal_2026(puVar7[3],uVar4);
+    puVar6[-3] = uVar5;
+    uVar4 = Ordinal_2026(puVar7[4],uVar4);
+    iVar8 = iVar8 + -1;
+    *puVar6 = uVar4;
+    puVar6 = puVar6 + 1;
+    puVar7 = puVar7 + 5;
+  } while (iVar8 != 0);
+  uVar5 = param_2[2];
+  uVar4 = Ordinal_2015(param_2[1],uVar5);
+  uVar9 = param_1[0xb];
+  uVar5 = Ordinal_2015(*param_2,uVar5);
+  uVar3 = Ordinal_2015(param_1[1],uVar9);
+  uVar3 = Ordinal_2026(uVar3,uVar4);
+  uVar9 = Ordinal_2015(param_1[6],uVar9);
+  uVar9 = Ordinal_2026(uVar9,uVar5);
+  uVar3 = Ordinal_2015(uVar3,uVar9);
+  uVar3 = Ordinal_2026(uVar3,uVar1);
+  param_2[9] = uVar3;
+  uVar9 = param_1[10];
+  uVar3 = Ordinal_2015(*param_1,uVar9);
+  uVar4 = Ordinal_2026(uVar3,uVar4);
+  uVar3 = Ordinal_2015(param_1[5],uVar9);
+  uVar5 = Ordinal_2026(uVar3,uVar5);
+  uVar4 = Ordinal_2015(uVar4,uVar5);
+  uVar4 = Ordinal_2026(uVar4,uVar2);
+  uVar5 = param_2[5];
+  param_2[10] = uVar4;
+  uVar4 = Ordinal_2015(param_2[4],uVar5);
+  uVar9 = param_1[0xb];
+  uVar5 = Ordinal_2015(param_2[3],uVar5);
+  uVar3 = Ordinal_2015(param_1[1],uVar9);
+  uVar3 = Ordinal_2026(uVar3,uVar4);
+  uVar9 = Ordinal_2015(param_1[6],uVar9);
+  uVar9 = Ordinal_2026(uVar9,uVar5);
+  uVar3 = Ordinal_2015(uVar3,uVar9);
+  uVar3 = Ordinal_2026(uVar3,uVar1);
+  param_2[0xb] = uVar3;
+  uVar9 = param_1[10];
+  uVar3 = Ordinal_2015(*param_1,uVar9);
+  uVar4 = Ordinal_2026(uVar3,uVar4);
+  uVar3 = Ordinal_2015(param_1[5],uVar9);
+  uVar5 = Ordinal_2026(uVar3,uVar5);
+  uVar4 = Ordinal_2015(uVar4,uVar5);
+  uVar4 = Ordinal_2026(uVar4,uVar2);
+  uVar5 = param_2[8];
+  param_2[0xc] = uVar4;
+  uVar4 = Ordinal_2015(param_2[7],uVar5);
+  uVar9 = param_1[0xb];
+  uVar5 = Ordinal_2015(param_2[6],uVar5);
+  uVar3 = Ordinal_2015(param_1[1],uVar9);
+  uVar3 = Ordinal_2026(uVar3,uVar4);
+  uVar9 = Ordinal_2015(param_1[6],uVar9);
+  uVar9 = Ordinal_2026(uVar9,uVar5);
+  uVar3 = Ordinal_2015(uVar3,uVar9);
+  uVar1 = Ordinal_2026(uVar3,uVar1);
+  param_2[0xd] = uVar1;
+  uVar3 = param_1[10];
+  uVar1 = Ordinal_2015(*param_1,uVar3);
+  uVar1 = Ordinal_2026(uVar1,uVar4);
+  uVar4 = Ordinal_2015(param_1[5],uVar3);
+  uVar4 = Ordinal_2026(uVar4,uVar5);
+  uVar1 = Ordinal_2015(uVar1,uVar4);
+  uVar1 = Ordinal_2026(uVar1,uVar2);
+  param_2[0xe] = uVar1;
+  Ordinal_2026(param_2[9],0x45800000);
+  uVar1 = Ordinal_2020();
+  param_2[0xf] = uVar1;
+  Ordinal_2026(param_2[0xb],0x45800000);
+  uVar1 = Ordinal_2020();
+  param_2[0x10] = uVar1;
+  Ordinal_2026(param_2[0xd],0x45800000);
+  uVar1 = Ordinal_2020();
+  param_2[0x11] = uVar1;
+  return;
+}
+
+
+
+// was FUN_00014ef4 -- per-edge setup: given two vertex indices, the
+// starting value and per-scanline step for x, u/w, v/w and 1/w
+void raster_edge_setup(param_1,param_2,param_3,param_4,param_5,param_6)
+intptr_t param_1; /* was int -- edge-coeff array pointer */
+intptr_t param_2; /* was int -- vertex array pointer (stride 0x14) */
+int param_3;
+int param_4;
+int param_5;
+undefined4 * param_6;
+
+{
+  int iVar1;
+  uint uVar2;
+  int iVar3;
+  undefined4 uVar4;
+  undefined4 uVar5;
+  undefined4 uVar6;
+  int iVar7;
+  undefined4 uVar8;
+  undefined4 uVar9;
+  undefined4 *puVar10;
+  undefined4 *puVar11;
+  undefined4 uVar12;
+  int local_34;
+  
+  puVar11 = (undefined4 *)(param_3 * 0x14 + param_2);
+  Ordinal_2026(puVar11[1],0x45800000);
+  uVar2 = Ordinal_2020();
+  if ((uVar2 & 0xfff) != 0) {
+    uVar2 = (uVar2 - (uVar2 & 0xfff)) + 0x1000;
+  }
+  iVar1 = (int)uVar2 >> 0xc;
+  param_6[2] = iVar1;
+  local_34 = 0;
+  if (iVar1 < param_5) {
+    local_34 = param_5 - iVar1;
+  }
+  puVar10 = (undefined4 *)(param_4 * 0x14 + param_2);
+  Ordinal_2026(puVar10[1],0x45800000);
+  uVar2 = Ordinal_2020();
+  if ((uVar2 & 0xfff) != 0) {
+    uVar2 = (uVar2 - (uVar2 & 0xfff)) + 0x1000;
+  }
+  iVar7 = ((int)uVar2 >> 0xc) - iVar1;
+  iVar3 = iVar7 - local_34;
+  if (iVar3 < 0) {
+    iVar7 = 0;
+  }
+  param_6[3] = iVar3;
+  if (iVar3 < 0) {
+    param_6[3] = iVar7;
+  }
+  uVar8 = puVar11[1];
+  uVar4 = Ordinal_2032(iVar1);
+  uVar4 = Ordinal_2015(uVar4,uVar8);
+  uVar8 = Ordinal_2015(puVar10[1],uVar8);
+  uVar9 = *puVar11;
+  uVar5 = Ordinal_2015(*puVar10,uVar9);
+  uVar6 = Ordinal_2032(local_34);
+  uVar4 = Ordinal_2051(uVar6,uVar4);
+  uVar8 = Ordinal_2047(0x3f800000,uVar8);
+  uVar6 = Ordinal_2026(uVar4,uVar5);
+  uVar6 = Ordinal_2026(uVar6,uVar8);
+  uVar6 = Ordinal_2051(uVar6,uVar9);
+  *param_6 = uVar6;
+  uVar8 = Ordinal_2026(uVar8,uVar5);
+  param_6[1] = uVar8;
+  uVar12 = *param_6;
+  uVar5 = Ordinal_2015(uVar12,*puVar11);
+  param_6[2] = iVar1 + local_34;
+  uVar6 = Ordinal_2026(*(undefined4 *)(param_1 + 0x28),uVar4);
+  uVar9 = Ordinal_2026(*(undefined4 *)(param_1 + 0x24),uVar5);
+  uVar6 = Ordinal_2051(uVar6,uVar9);
+  puVar11 = (undefined4 *)(param_1 + param_3 * 4);
+  uVar6 = Ordinal_2051(uVar6,*puVar11);
+  param_6[4] = uVar6;
+  uVar6 = Ordinal_2026(*(undefined4 *)(param_1 + 0x24),uVar8);
+  uVar6 = Ordinal_2051(uVar6,*(undefined4 *)(param_1 + 0x28));
+  param_6[5] = uVar6;
+  uVar6 = Ordinal_2026(*(undefined4 *)(param_1 + 0x30),uVar4);
+  uVar9 = Ordinal_2026(*(undefined4 *)(param_1 + 0x2c),uVar5);
+  uVar6 = Ordinal_2051(uVar6,uVar9);
+  uVar6 = Ordinal_2051(uVar6,puVar11[3]);
+  param_6[6] = uVar6;
+  uVar6 = Ordinal_2026(*(undefined4 *)(param_1 + 0x2c),uVar8);
+  uVar6 = Ordinal_2051(uVar6,*(undefined4 *)(param_1 + 0x30));
+  param_6[7] = uVar6;
+  uVar4 = Ordinal_2026(*(undefined4 *)(param_1 + 0x38),uVar4);
+  uVar5 = Ordinal_2026(*(undefined4 *)(param_1 + 0x34),uVar5);
+  uVar4 = Ordinal_2051(uVar4,uVar5);
+  uVar4 = Ordinal_2051(uVar4,puVar11[6]);
+  param_6[8] = uVar4;
+  uVar4 = Ordinal_2026(*(undefined4 *)(param_1 + 0x34),uVar8);
+  uVar4 = Ordinal_2051(uVar4,*(undefined4 *)(param_1 + 0x38));
+  param_6[9] = uVar4;
+  Ordinal_2026(uVar12,0x46800000);
+  uVar4 = Ordinal_2020();
+  param_6[10] = uVar4;
+  Ordinal_2026(param_6[4],0x46800000);
+  uVar4 = Ordinal_2020();
+  param_6[0xc] = uVar4;
+  Ordinal_2026(param_6[6],0x46800000);
+  uVar4 = Ordinal_2020();
+  param_6[0xe] = uVar4;
+  Ordinal_2026(param_6[8],0x46800000);
+  uVar4 = Ordinal_2020();
+  param_6[0x10] = uVar4;
+  Ordinal_2026(uVar8,0x46800000);
+  uVar4 = Ordinal_2020();
+  param_6[0xb] = uVar4;
+  Ordinal_2026(param_6[5],0x46800000);
+  uVar4 = Ordinal_2020();
+  param_6[0xd] = uVar4;
+  Ordinal_2026(param_6[7],0x46800000);
+  uVar4 = Ordinal_2020();
+  param_6[0xf] = uVar4;
+  Ordinal_2026(param_6[9],0x46800000);
+  uVar4 = Ordinal_2020();
+  param_6[0x11] = uVar4;
+  return;
+}
+
+
+
+// was FUN_0001548c -- the textured span rasterizer: for one scanline
+// span between two edges, perspective-divides per pixel, samples the
+// tile texture, shade-corrects and writes RGB565 into g_uw_framebuffer
+//
+// Checked for a "special/self-illuminated colour" exclusion from the
+// distance-shade multiply (user's global fire/water palette-animation
+// search) -- there isn't one, and none is needed: every texel's colour
+// is scaled by the same distance/light factor (DAT_000b5638) regardless
+// of palette index, BUT the colour itself is sampled from g_palette_rgb565
+// fresh on every single frame (unlike the 2D HUD/paperdoll icon path,
+// which composites once into the framebuffer and never re-reads the
+// palette -- see mode-icon-and-hud-icon-flicker-fixes memory). So any
+// wall/floor/ceiling texel whose palette index falls inside a range
+// palette_cycle_range rotates would already animate through this exact
+// code, for free, with no extra plumbing. Confirmed real lava-shaped
+// textures exist using exactly the fire-gradient range (16-23) already
+// wired up for the torch-icon fix: F32.TR/F16.TR entries 24/25 are
+// 94-100% pixels in that range (entry 23 ~28%), W64.TR/W16.TR entry 206
+// is ~93% -- unmistakably lava floor and a lava/torch wall texture. The
+// level loaded from a fresh game (UW_DEBUG_TEXIDS) doesn't reference any
+// of those specific texture ids in its own 48-wall/10-floor id lists, so
+// this couldn't be verified live from the default spawn point -- would
+// need a level that actually places one of them on screen.
+void raster_textured_span(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9,param_10)
+int param_1;
+intptr_t param_2; /* framebuffer base */
+intptr_t param_3; /* edge struct */
+intptr_t param_4; /* edge struct */
+intptr_t param_5; /* edge struct */
+int param_6;
+int param_7;
+intptr_t param_8; /* texture pixel data */
+int * param_9;
+byte param_10;
+
+{
+  byte bVar1;
+  uint uVar2;
+  int iVar3;
+  undefined4 uVar4;
+  undefined4 uVar5;
+  int iVar6;
+  short sVar7;
+  uint uVar8;
+  int iVar9;
+  ushort *puVar10;
+  int iVar11;
+  /* Ghidra merged two different variables into one `char *iVar12`: the
+     DAT_0023cca0-based stencil-buffer walker (used up to the puVar13
+     init) and, inside the span loop, a plain signed texel index. As a
+     pointer type the guard `-1 < iVar12` and the wrap test
+     `param_7 < iVar12` were unsigned pointer compares -- `-1` became
+     0xFFFF...F so `-1 < iVar12` was ALWAYS false and the texel fetch
+     `bVar1 = *(byte*)(iVar12 + param_8)` never ran (every span sampled
+     the flat fallback colour 0 -> nothing drawn). Signed intptr_t makes
+     both roles behave. */
+  intptr_t iVar12;
+  undefined1 *puVar13;
+  int iVar14;
+  int local_38;
+  int local_34;
+  intptr_t local_4; /* fb row pointer */
+  
+  iVar12 = (intptr_t)DAT_0023cca0;
+  uVar2 = *(uint *)(param_4 + 0x28);
+  uVar8 = uVar2 & 0x3fff;
+  if (uVar8 != 0) {
+    uVar2 = (uVar2 - uVar8) + 0x4000;
+  }
+  iVar6 = (int)uVar2 >> 0xe;
+  iVar3 = 0x4000 - uVar8;
+  uVar2 = *(uint *)(param_5 + 0x28);
+  if (uVar8 == 0) {
+    iVar3 = 0;
+  }
+  uVar8 = uVar2 & 0x3fff;
+  iVar3 = iVar3 >> 2;
+  if (uVar8 != 0) {
+    uVar2 = uVar2 - uVar8;
+  }
+  if (uVar8 != 0) {
+    uVar2 = uVar2 + 0x4000;
+  }
+  iVar11 = ((int)uVar2 >> 0xe) - iVar6;
+  local_38 = (*(int *)(param_3 + 0x3c) * iVar3 >> 0xc) + (*(int *)(param_4 + 0x30) >> 2);
+  iVar9 = 0;
+  iVar14 = (*(int *)(param_3 + 0x40) * iVar3 >> 0xc) + (*(int *)(param_4 + 0x38) >> 2);
+  local_34 = (*(int *)(param_3 + 0x44) * iVar3 >> 0xc) + (*(int *)(param_4 + 0x40) >> 2);
+  if (iVar6 < *param_9) {
+    iVar9 = *param_9 - iVar6;
+  }
+  if (param_9[2] < iVar11 + iVar6) {
+    iVar11 = param_9[2] - iVar6;
+  }
+  local_4 = param_2;
+  if (iVar9 != 0) {
+    uVar4 = Ordinal_2032(iVar9);
+    uVar5 = Ordinal_2026(*(undefined4 *)(param_3 + 0x24),uVar4);
+    Ordinal_2026(uVar5,0xc5800000);
+    iVar3 = Ordinal_2020();
+    local_38 = local_38 - iVar3;
+    uVar5 = Ordinal_2026(*(undefined4 *)(param_3 + 0x2c),uVar4);
+    Ordinal_2026(uVar5,0xc5800000);
+    iVar3 = Ordinal_2020();
+    iVar14 = iVar14 - iVar3;
+    uVar4 = Ordinal_2026(*(undefined4 *)(param_3 + 0x34),uVar4);
+    Ordinal_2026(uVar4,0xc5800000);
+    iVar3 = Ordinal_2020();
+    iVar12 = iVar12 + iVar9;
+    iVar11 = iVar11 - iVar9;
+    local_34 = local_34 - iVar3;
+    local_4 = param_2 + iVar9 * 2;
+  }
+  if (0 < iVar11) {
+    iVar6 = *(int *)(param_4 + 8) * param_1 + iVar6;
+    puVar13 = (undefined1 *)(iVar6 + iVar12);
+    puVar10 = (ushort *)(local_4 + iVar6 * 2);
+    do {
+      iVar6 = Ordinal_2005(local_38,0x1000000);
+      iVar12 = (local_34 >> 6) * iVar6 >> 0x12;
+      bVar1 = param_10;
+      if ((param_8 != 0) && (-1 < iVar12)) {
+        for (iVar12 = (int)(iVar12) * param_6 + ((iVar14 >> 6) * iVar6 >> 0x12); param_7 < iVar12;
+            iVar12 = iVar12 - param_7) {
+        }
+        bVar1 = *(byte *)(iVar12 + param_8);
+      }
+      if (bVar1 != 0) {
+        iVar12 = ((iVar6 >> 4) + (int)DAT_000842b0) * 0x10000 >> 0x10;
+        if (iVar12 < 0) {
+          iVar12 = 0;
+        }
+        sVar7 = (short)iVar12;
+        uVar2 = (uint)(ushort)(&g_palette_rgb565)[bVar1];
+        if (0x9f < sVar7) {
+          sVar7 = 0x9f;
+        }
+        iVar12 = (&DAT_000b5638)[sVar7];
+        *puVar10 = (ushort)(((((int)((uVar2 & 0xf800) << 1) >> 6) * (int)(iVar12) >> 0x12) << 6 |
+                            ((int)((uVar2 & 0x7e0) << 7) >> 6) * (int)(iVar12) >> 0x12) << 5) |
+                   (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * (int)(iVar12) >> 0x12);
+        if (DAT_0023b830 != '\0') {
+          *puVar13 = (char)DAT_000da47c;
+        }
+      }
+      iVar11 = iVar11 + -1;
+      puVar10 = puVar10 + 1;
+      puVar13 = puVar13 + 1;
+      local_38 = *(int *)(param_3 + 0x3c) + local_38;
+      iVar14 = *(int *)(param_3 + 0x40) + iVar14;
+      local_34 = *(int *)(param_3 + 0x44) + local_34;
+    } while (iVar11 != 0);
+  }
+  return;
+}
+
+
+
+
+// was FUN_0001de0c -- build the view/camera matrix into DAT_000c8ac0 from the camera translation (DAT_000db438/43c/440) and 3 axis rotations (DAT_000db448/44c/450)
+void build_view_matrix()
+
+{
+  undefined4 uVar1;
+  undefined4 uVar2;
+  undefined4 uVar3;
+  /* This function's four matrices (local_198.., auStack_158, local_118,
+     auStack_d8) were each declared as only as many bytes as this function
+     happens to name individual elements of, but FUN_0001422c (called on
+     each below) zeroes+identity-inits a real 0x40(64)-byte/16-element 4x4
+     float matrix at every one of these base pointers, and FUN_00013b8c
+     (the matrix multiply also called below) reads/writes the full 16
+     elements of whichever buffers it's given -- e.g. local_118 was only
+     `undefined4[2]` (8 bytes) despite being passed as a matrix-multiply
+     operand read up to element 10. That's a real stack-buffer overflow
+     (confirmed crashing with a __stack_chk_fail SIGABRT on a real run),
+     not just a decompiler cosmetic gap. Ghidra split each matrix into
+     these oddly-offset scalar names only because this function happens to
+     assign a handful of specific elements by name (a 2x2 rotation block
+     plus, for one matrix, a translation column) -- the untouched elements
+     still need to keep FUN_0001422c's identity-matrix values, which
+     requires them to actually share one real contiguous 64-byte buffer.
+     Widened all four to real 16-element arrays and switched every named
+     element write to an indexed one at its correct offset (verified
+     against each matrix's original Ghidra byte offset from its base). */
+  undefined4 local_198_mtx [16];
+  undefined1 auStack_158 [64];
+  undefined4 local_118 [16];
+  undefined1 auStack_d8 [64];
+  undefined1 auStack_98 [64];
+  undefined1 auStack_58 [64];
+
+  /* FUN_0001dd2c fills the per-degree sin/cos tables (DAT_000d9ed8 /
+     DAT_000d9930) this function's rotation blocks read from. Ghidra
+     recovered no caller for it anywhere, so the tables stayed zero and
+     every view matrix came out degenerate (all vertices projected to
+     one screen point). Build them once, lazily, right before first use. */
+  {
+    static int dd2c_done = 0;
+    if (!dd2c_done) { dd2c_done = 1; FUN_0001dd2c(); }
+  }
+
+  FUN_0001422c(auStack_d8);
+  FUN_0001422c(auStack_158);
+  FUN_0001422c(local_118);
+  FUN_0001422c(local_198_mtx);
+  ((undefined4 *)auStack_d8)[12] = Ordinal_2023(DAT_000db438);
+  ((undefined4 *)auStack_d8)[13] = Ordinal_2023(DAT_000db43c);
+  ((undefined4 *)auStack_d8)[14] = Ordinal_2023(DAT_000db440);
+  uVar1 = (&DAT_000d9ed8)[DAT_000db448];
+  uVar3 = (&DAT_000d9930)[DAT_000db448];
+  ((undefined4 *)auStack_158)[5] = uVar1;
+  ((undefined4 *)auStack_158)[6] = Ordinal_2023(uVar3);
+  Ordinal_2023(uVar3);
+  ((undefined4 *)auStack_158)[9] = Ordinal_2023();
+  uVar2 = (&DAT_000d9ed8)[DAT_000db44c];
+  uVar3 = (&DAT_000d9930)[DAT_000db44c];
+  ((undefined4 *)auStack_158)[10] = uVar1;
+  local_118[0] = uVar2;
+  Ordinal_2023(uVar3);
+  local_118[2] = Ordinal_2023();
+  local_118[8] = Ordinal_2023(uVar3);
+  uVar1 = (&DAT_000d9ed8)[DAT_000db450];
+  uVar3 = (&DAT_000d9930)[DAT_000db450];
+  local_198_mtx[0] = uVar1;
+  local_118[10] = uVar2;
+  local_198_mtx[1] = Ordinal_2023(uVar3);
+  Ordinal_2023(uVar3);
+  local_198_mtx[4] = Ordinal_2023();
+  local_198_mtx[5] = uVar1;
+  FUN_00013b8c(auStack_d8,local_118,auStack_98);
+  FUN_00013b8c(auStack_98,auStack_158,auStack_58);
+  FUN_00013b8c(auStack_58,local_198_mtx,&DAT_000c8ac0);
+  return;
+}
+
+
+
+// was FUN_0001dfe8 -- per visible-tile vertex: subtract the camera position (Ordinal_2051) to get camera-relative coords; also clears the per-tile visible flags
+void translate_verts_to_camera_space(param_1)
+int * param_1;
+
+{
+  undefined4 uVar1;
+  int *piVar2;
+  int iVar3;
+  
+  iVar3 = 0;
+  if (0 < *param_1) {
+    piVar2 = param_1;
+    do {
+      uVar1 = Ordinal_2051(piVar2[2],param_1[0x1202]);
+      *(char *)(piVar2 + 0x602) = (char)uVar1;
+      *(char *)((char *)piVar2 + 0x1809) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)piVar2 + 0x180a) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)piVar2 + 0x180b) = (char)((uint)uVar1 >> 0x18);
+      uVar1 = Ordinal_2051(piVar2[3],param_1[0x1203]);
+      *(char *)(piVar2 + 0x603) = (char)uVar1;
+      *(char *)((char *)piVar2 + 0x180d) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)piVar2 + 0x180e) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)piVar2 + 0x180f) = (char)((uint)uVar1 >> 0x18);
+      uVar1 = Ordinal_2051(piVar2[4],param_1[0x1204]);
+      *(char *)(piVar2 + 0x604) = (char)uVar1;
+      *(char *)((char *)piVar2 + 0x1811) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)piVar2 + 0x1812) = (char)((uint)uVar1 >> 0x10);
+      iVar3 = iVar3 + 1;
+      *(char *)((char *)piVar2 + 0x1813) = (char)((uint)uVar1 >> 0x18);
+      piVar2 = piVar2 + 3;
+    } while (iVar3 < *param_1);
+  }
+  iVar3 = 0;
+  piVar2 = param_1;
+  if (getenv("UW_DEBUG_DOOR_POS"))
+    fprintf(stderr, "[doorpos] translate_verts_to_camera_space: second-list record count param_1[1]=%d\n", param_1[1]);
+  if (0 < param_1[1]) {
+    do {
+      *(undefined1 *)(piVar2 + 0x121b) = 1;
+      iVar3 = iVar3 + 1;
+      *(undefined1 *)((char *)piVar2 + 0x486d) = 0;
+      *(undefined1 *)((char *)piVar2 + 0x486e) = 0;
+      *(undefined1 *)((char *)piVar2 + 0x486f) = 0;
+      *(undefined1 *)(piVar2 + 0x121c) = 0;
+      *(undefined1 *)((char *)piVar2 + 0x4871) = 0;
+      *(undefined1 *)((char *)piVar2 + 0x4872) = 0;
+      *(undefined1 *)((char *)piVar2 + 0x4873) = 0;
+      piVar2 = piVar2 + 0x18;
+    } while (iVar3 < param_1[1]);
+  }
+  return;
+}
+
+
+
+// was FUN_0001e274 -- per vertex: multiply-accumulate the camera-relative coord through the 4x4 view matrix DAT_000c8ac0 (Ordinal_2026 mul, Ordinal_2051 add) -> projected x,y,z,w
+void project_verts_through_view_matrix(param_1)
+int * param_1;
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  undefined4 uVar4;
+  undefined4 uVar5;
+  int *piVar6;
+  int iVar7;
+  
+  iVar7 = 0;
+  piVar6 = param_1;
+  if (-1 < *param_1) {
+    do {
+      iVar1 = piVar6[0x604];
+      iVar2 = piVar6[0x603];
+      iVar3 = piVar6[0x602];
+      uVar4 = Ordinal_2026(iVar3,DAT_000c8ac0);
+      uVar5 = Ordinal_2026(iVar2,DAT_000c8ad0);
+      uVar4 = Ordinal_2051(uVar4,uVar5);
+      uVar5 = Ordinal_2026(iVar1,DAT_000c8ae0);
+      uVar4 = Ordinal_2051(uVar4,uVar5);
+      uVar4 = Ordinal_2051(uVar4,DAT_000c8af0);
+      *(char *)(piVar6 + 0xc02) = (char)uVar4;
+      *(char *)((char *)piVar6 + 0x3009) = (char)((uint)uVar4 >> 8);
+      *(char *)((char *)piVar6 + 0x300a) = (char)((uint)uVar4 >> 0x10);
+      *(char *)((char *)piVar6 + 0x300b) = (char)((uint)uVar4 >> 0x18);
+      uVar4 = Ordinal_2026(iVar3,DAT_000c8ac4);
+      uVar5 = Ordinal_2026(iVar2,DAT_000c8ad4);
+      uVar4 = Ordinal_2051(uVar4,uVar5);
+      uVar5 = Ordinal_2026(iVar1,DAT_000c8ae4);
+      uVar4 = Ordinal_2051(uVar4,uVar5);
+      uVar4 = Ordinal_2051(uVar4,DAT_000c8af4);
+      *(char *)(piVar6 + 0xc03) = (char)uVar4;
+      *(char *)((char *)piVar6 + 0x300d) = (char)((uint)uVar4 >> 8);
+      *(char *)((char *)piVar6 + 0x300e) = (char)((uint)uVar4 >> 0x10);
+      *(char *)((char *)piVar6 + 0x300f) = (char)((uint)uVar4 >> 0x18);
+      uVar4 = Ordinal_2026(iVar3,DAT_000c8ac8);
+      uVar5 = Ordinal_2026(iVar2,DAT_000c8ad8);
+      uVar4 = Ordinal_2051(uVar4,uVar5);
+      uVar5 = Ordinal_2026(iVar1,DAT_000c8ae8);
+      uVar4 = Ordinal_2051(uVar4,uVar5);
+      uVar4 = Ordinal_2051(uVar4,DAT_000c8af8);
+      *(char *)(piVar6 + 0xc04) = (char)uVar4;
+      iVar7 = iVar7 + 1;
+      *(char *)((char *)piVar6 + 0x3011) = (char)((uint)uVar4 >> 8);
+      *(char *)((char *)piVar6 + 0x3012) = (char)((uint)uVar4 >> 0x10);
+      *(char *)((char *)piVar6 + 0x3013) = (char)((uint)uVar4 >> 0x18);
+      piVar6 = piVar6 + 3;
+    } while (iVar7 <= *param_1);
+  }
+  return;
+}
+
+
+
+
+/* param_1 (and every local below that's assigned an address derived from
+   it -- iVar5/6/7/12/14, local_50) was `int`, truncating the real 64-bit
+   &DAT_000a85d0 pointer this is always called with. Confirmed crashing
+   (EXC_BAD_ACCESS, param_1 read back as a tiny ~1MB-range garbage value)
+   on a real run. iVar4/13/18/19 and the local_7c/78/74/64/4c/48 group stay
+   `int` -- they're genuinely counts/loop indices/array indices, never
+   dereferenced as addresses themselves (confirmed by reading every use).
+   Same pointer-truncation pattern fixed repeatedly this session. */
+// was FUN_0001f370 -- near-plane (w=DAT_00084608=5.0) Sutherland-Hodgman clip of
+// each visible tile quad; writes clipped positions + interpolated texcoords into
+// the 0x88-byte render records at DAT_000bc038 and the DAT_000c4838[] pointer table
+void near_clip_visible_tiles(param_1,param_2)
+intptr_t param_1;
+int param_2;
+
+{
+  undefined1 uVar1;
+  undefined1 uVar2;
+  undefined1 uVar3;
+  int iVar4;
+  intptr_t iVar5;
+  intptr_t iVar6;
+  intptr_t iVar7;
+  undefined4 *puVar8;
+  undefined4 uVar9;
+  undefined4 uVar10;
+  undefined4 uVar11;
+  intptr_t iVar12;
+  int iVar13;
+  intptr_t iVar14;
+  undefined *puVar15;
+  undefined *puVar16;
+  undefined *puVar17;
+  int iVar18;
+  int iVar19;
+  undefined *puVar20;
+  int local_7c;
+  int local_78;
+  int local_74;
+  int local_64;
+  intptr_t local_50;
+  int local_4c;
+  int local_48;
+
+  if (param_2 == 0) {
+    DAT_000c8c98 = 0;
+  }
+  else {
+    local_48 = 0;
+    if (0 < *(int *)(param_1 + 4)) {
+      local_74 = 0;
+      local_7c = DAT_000c8c98;
+      local_4c = 0;
+      iVar14 = param_1;
+      do {
+        if ((*(int *)(iVar14 + 0x486c) != 0) && (*(int *)(iVar14 + 0x4870) == 0)) {
+          iVar19 = local_7c * 0x88;
+          puVar20 = &DAT_000bc038 + iVar19;
+          uVar10 = *(undefined4 *)(iVar14 + 0x4860);
+          (&DAT_000bc0ac)[iVar19] = (char)uVar10;
+          (&DAT_000bc0ad)[iVar19] = (char)((uint)uVar10 >> 8);
+          (&DAT_000bc0ae)[iVar19] = (char)((uint)uVar10 >> 0x10);
+          (&DAT_000bc0af)[iVar19] = (char)((uint)uVar10 >> 0x18);
+          uVar10 = *(undefined4 *)(iVar14 + 0x4864);
+          (&DAT_000bc0b0)[iVar19] = (char)uVar10;
+          (&DAT_000bc0b1)[iVar19] = (char)((uint)uVar10 >> 8);
+          (&DAT_000bc0b2)[iVar19] = (char)((uint)uVar10 >> 0x10);
+          (&DAT_000bc0b3)[iVar19] = (char)((uint)uVar10 >> 0x18);
+          uVar10 = *(undefined4 *)(iVar14 + 0x4868);
+          (&DAT_000bc0b4)[iVar19] = (char)uVar10;
+          (&DAT_000bc0b5)[iVar19] = (char)((uint)uVar10 >> 8);
+          (&DAT_000bc0b6)[iVar19] = (char)((uint)uVar10 >> 0x10);
+          (&DAT_000bc0b7)[iVar19] = (char)((uint)uVar10 >> 0x18);
+          iVar4 = *(int *)(iVar14 + 0x486c);
+          (&DAT_000bc0b8)[iVar19] = (char)iVar4;
+          (&DAT_000bc0b9)[iVar19] = (char)((uint)iVar4 >> 8);
+          (&DAT_000bc0ba)[iVar19] = (char)((uint)iVar4 >> 0x10);
+          (&DAT_000bc0bb)[iVar19] = (char)((uint)iVar4 >> 0x18);
+          iVar4 = *(int *)(iVar14 + 0x4870);
+          (&DAT_000bc0bc)[iVar19] = (char)iVar4;
+          (&DAT_000bc0bd)[iVar19] = (char)((uint)iVar4 >> 8);
+          (&DAT_000bc0be)[iVar19] = (char)((uint)iVar4 >> 0x10);
+          iVar18 = 0;
+          local_78 = 0;
+          (&DAT_000bc0bf)[iVar19] = (char)((uint)iVar4 >> 0x18);
+          uVar10 = *(undefined4 *)(iVar14 + 0x482c);
+          (&DAT_000bc0a0)[iVar19] = (char)uVar10;
+          (&DAT_000bc0a1)[iVar19] = (char)((uint)uVar10 >> 8);
+          (&DAT_000bc0a2)[iVar19] = (char)((uint)uVar10 >> 0x10);
+          (&DAT_000bc0a3)[iVar19] = (char)((uint)uVar10 >> 0x18);
+          uVar10 = *(undefined4 *)(iVar14 + 0x4830);
+          (&DAT_000bc0a4)[iVar19] = (char)uVar10;
+          (&DAT_000bc0a5)[iVar19] = (char)((uint)uVar10 >> 8);
+          (&DAT_000bc0a6)[iVar19] = (char)((uint)uVar10 >> 0x10);
+          (&DAT_000bc0a7)[iVar19] = (char)((uint)uVar10 >> 0x18);
+          uVar10 = *(undefined4 *)(iVar14 + 0x4834);
+          (&DAT_000bc0a8)[iVar19] = (char)uVar10;
+          (&DAT_000bc0a9)[iVar19] = (char)((uint)uVar10 >> 8);
+          (&DAT_000bc0aa)[iVar19] = (char)((uint)uVar10 >> 0x10);
+          (&DAT_000bc0ab)[iVar19] = (char)((uint)uVar10 >> 0x18);
+          iVar4 = *(int *)(iVar14 + 0x4814);
+          local_64 = iVar4 + -1;
+          if (0 < iVar4) {
+            puVar16 = &DAT_000bc044 + iVar19;
+            puVar15 = puVar20;
+            local_50 = iVar14;
+            do {
+              iVar7 = *(int *)(local_50 + 0x4818);
+              iVar5 = *(int *)(local_4c + local_64 * 4 + param_1 + 0x4818) * 0xc + param_1;
+              uVar10 = *(undefined4 *)(iVar5 + 0x3010);
+              iVar6 = Ordinal_2038(uVar10,DAT_00084608);
+              iVar7 = iVar7 * 0xc + param_1;
+              puVar8 = (undefined4 *)(iVar7 + 0x3010);
+              uVar11 = *puVar8;
+              if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
+                int _lo = 0, _hi = -1;
+                sscanf(getenv("UW_DEBUG_NEARCLIP_RANGE"), "%d:%d", &_lo, &_hi);
+                if (local_48 >= _lo && local_48 <= _hi)
+                  fprintf(stderr, "[nearclip] rec=%d pointcount=%d edge=%d prev_vi=%d cur_vi=%d prev_w=%g cur_w=%g thresh=%g prev_behind=%d\n",
+                          local_48, iVar4, local_78, local_64,
+                          *(int *)(local_50 + 0x4818),
+                          *(float *)&uVar10, *(float *)&uVar11, *(float *)&DAT_00084608, iVar6);
+              }
+              if (iVar6 == 0) {
+                iVar6 = Ordinal_2038(uVar11,DAT_00084608);
+                if (iVar6 != 0) {
+                  uVar9 = Ordinal_2015(DAT_00084608,uVar10);
+                  uVar10 = Ordinal_2015(uVar11,uVar10);
+                  uVar11 = Ordinal_2047(uVar9,uVar10);
+                  uVar10 = *(undefined4 *)(iVar5 + 0x3008);
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x3008),uVar10);
+                  uVar9 = Ordinal_2026(uVar9,uVar11);
+                  uVar10 = Ordinal_2051(uVar9,uVar10);
+                  puVar15[4] = (char)uVar10;
+                  puVar15[5] = (char)((uint)uVar10 >> 8);
+                  puVar15[6] = (char)((uint)uVar10 >> 0x10);
+                  puVar15[7] = (char)((uint)uVar10 >> 0x18);
+                  uVar10 = *(undefined4 *)(iVar5 + 0x300c);
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
+                  uVar9 = Ordinal_2026(uVar9,uVar11);
+                  uVar10 = Ordinal_2051(uVar9,uVar10);
+                  puVar15[8] = (char)uVar10;
+                  puVar15[9] = (char)((uint)uVar10 >> 8);
+                  puVar15[10] = (char)((uint)uVar10 >> 0x10);
+                  puVar15[0xb] = (char)((uint)uVar10 >> 0x18);
+                  uVar10 = DAT_00084608;
+                  *puVar16 = (char)DAT_00084608;
+                  puVar16[1] = (char)((uint)uVar10 >> 8);
+                  puVar16[2] = (char)((uint)uVar10 >> 0x10);
+                  puVar16[3] = (char)((uint)uVar10 >> 0x18);
+                  iVar6 = param_1 + (local_74 + local_78) * 8;
+                  iVar12 = param_1 + (local_74 + local_64) * 8;
+                  iVar5 = *(int *)(iVar12 + 0x4838);
+                  iVar13 = local_7c * 0x11;
+                  uVar10 = Ordinal_2032(*(int *)(iVar6 + 0x4838) - iVar5);
+                  uVar10 = Ordinal_2026(uVar10,uVar11);
+                  uVar9 = Ordinal_2032(iVar5);
+                  Ordinal_2051(uVar10,uVar9);
+                  uVar10 = Ordinal_2020();
+                  iVar5 = (iVar13 + 8 + iVar18) * 8;
+                  (&DAT_000bc038)[iVar5] = (char)uVar10;
+                  (&DAT_000bc039)[iVar5] = (char)((uint)uVar10 >> 8);
+                  (&DAT_000bc03a)[iVar5] = (char)((uint)uVar10 >> 0x10);
+                  (&DAT_000bc03b)[iVar5] = (char)((uint)uVar10 >> 0x18);
+                  iVar5 = *(int *)(iVar12 + 0x483c);
+                  uVar10 = Ordinal_2032(*(int *)(iVar6 + 0x483c) - iVar5);
+                  uVar10 = Ordinal_2026(uVar10,uVar11);
+                  uVar11 = Ordinal_2032(iVar5);
+                  Ordinal_2051(uVar10,uVar11);
+                  uVar10 = Ordinal_2020();
+                  iVar5 = (iVar13 + iVar18) * 8;
+                  (&DAT_000bc07c)[iVar5] = (char)uVar10;
+                  (&DAT_000bc07d)[iVar5] = (char)((uint)uVar10 >> 8);
+                  (&DAT_000bc07e)[iVar5] = (char)((uint)uVar10 >> 0x10);
+                  (&DAT_000bc07f)[iVar5] = (char)((uint)uVar10 >> 0x18);
+                  uVar1 = *(undefined1 *)(iVar7 + 0x3009);
+                  uVar2 = *(undefined1 *)(iVar7 + 0x300a);
+                  uVar3 = *(undefined1 *)(iVar7 + 0x300b);
+                  puVar15[0x10] = *(undefined1 *)(iVar7 + 0x3008);
+                  puVar15[0x11] = uVar1;
+                  puVar15[0x12] = uVar2;
+                  puVar15[0x13] = uVar3;
+                  uVar10 = *(undefined4 *)(iVar7 + 0x300c);
+                  puVar15[0x14] = (char)uVar10;
+                  puVar15[0x15] = (char)((uint)uVar10 >> 8);
+                  puVar15[0x16] = (char)((uint)uVar10 >> 0x10);
+                  puVar15[0x17] = (char)((uint)uVar10 >> 0x18);
+                  uVar10 = *puVar8;
+                  puVar17 = puVar16 + 0xc;
+                  *puVar17 = (char)uVar10;
+                  puVar16[0xd] = (char)((uint)uVar10 >> 8);
+                  puVar16[0xe] = (char)((uint)uVar10 >> 0x10);
+                  puVar16[0xf] = (char)((uint)uVar10 >> 0x18);
+                  iVar7 = (iVar13 + 8 + iVar18 + 1) * 8;
+                  iVar5 = (iVar13 + iVar18 + 1) * 8;
+                  uVar1 = *(undefined1 *)(iVar6 + 0x4839);
+                  uVar2 = *(undefined1 *)(iVar6 + 0x483a);
+                  uVar3 = *(undefined1 *)(iVar6 + 0x483b);
+                  (&DAT_000bc038)[iVar7] = *(undefined1 *)(iVar6 + 0x4838);
+                  (&DAT_000bc039)[iVar7] = uVar1;
+                  (&DAT_000bc03a)[iVar7] = uVar2;
+                  (&DAT_000bc03b)[iVar7] = uVar3;
+                  iVar7 = *(int *)(iVar6 + 0x483c);
+                  (&DAT_000bc07c)[iVar5] = (char)iVar7;
+                  (&DAT_000bc07d)[iVar5] = (char)((uint)iVar7 >> 8);
+                  (&DAT_000bc07e)[iVar5] = (char)((uint)iVar7 >> 0x10);
+                  (&DAT_000bc07f)[iVar5] = (char)((uint)iVar7 >> 0x18);
+                  iVar18 = iVar18 + 2;
+                  puVar15 = puVar15 + 0x18;
+                  goto LAB_0002029c;
+                }
+              }
+              else {
+                iVar6 = Ordinal_2038(uVar11,DAT_00084608); /* dropped args: is vert1 in front of the near plane? */
+                if (iVar6 == 0) {
+                  uVar9 = Ordinal_2015(DAT_00084608,uVar10);
+                  uVar10 = Ordinal_2015(uVar11,uVar10);
+                  uVar11 = Ordinal_2047(uVar9,uVar10);
+                  uVar10 = *(undefined4 *)(iVar5 + 0x3008);
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x3008),uVar10); /* dropped 2nd arg (vert0 ref coord) */
+                  uVar9 = Ordinal_2026(uVar9,uVar11);
+                  uVar10 = Ordinal_2051(uVar9,uVar10);
+                  puVar15[4] = (char)uVar10;
+                  puVar15[5] = (char)((uint)uVar10 >> 8);
+                  puVar15[6] = (char)((uint)uVar10 >> 0x10);
+                  puVar15[7] = (char)((uint)uVar10 >> 0x18);
+                  uVar10 = *(undefined4 *)(iVar5 + 0x300c);
+                  uVar9 = Ordinal_2015(*(undefined4 *)(iVar7 + 0x300c),uVar10); /* dropped 2nd arg (vert0 ref coord) */
+                  uVar9 = Ordinal_2026(uVar9,uVar11);
+                  uVar10 = Ordinal_2051(uVar9,uVar10);
+                  puVar15[8] = (char)uVar10;
+                  puVar15[9] = (char)((uint)uVar10 >> 8);
+                  puVar15[10] = (char)((uint)uVar10 >> 0x10);
+                  puVar15[0xb] = (char)((uint)uVar10 >> 0x18);
+                  uVar10 = DAT_00084608;
+                  *puVar16 = (char)DAT_00084608;
+                  puVar16[1] = (char)((uint)uVar10 >> 8);
+                  puVar16[2] = (char)((uint)uVar10 >> 0x10);
+                  puVar16[3] = (char)((uint)uVar10 >> 0x18);
+                  iVar6 = param_1 + (local_74 + local_78) * 8;
+                  iVar5 = param_1 + (local_74 + local_64) * 8;
+                  iVar7 = *(int *)(iVar5 + 0x4838);
+                  uVar10 = Ordinal_2032(*(int *)(iVar6 + 0x4838) - iVar7);
+                  uVar10 = Ordinal_2026(uVar10,uVar11);
+                  uVar9 = Ordinal_2032(iVar7);
+                  Ordinal_2051(uVar10,uVar9);
+                  uVar10 = Ordinal_2020();
+                  iVar7 = (local_7c * 0x11 + iVar18 + 8) * 8;
+                  (&DAT_000bc038)[iVar7] = (char)uVar10;
+                  (&DAT_000bc039)[iVar7] = (char)((uint)uVar10 >> 8);
+                  (&DAT_000bc03a)[iVar7] = (char)((uint)uVar10 >> 0x10);
+                  (&DAT_000bc03b)[iVar7] = (char)((uint)uVar10 >> 0x18);
+                  iVar7 = *(int *)(iVar5 + 0x483c);
+                  uVar10 = Ordinal_2032(*(int *)(iVar6 + 0x483c) - iVar7);
+                  uVar10 = Ordinal_2026(uVar10,uVar11);
+                  uVar11 = Ordinal_2032(iVar7);
+                  Ordinal_2051(uVar10,uVar11);
+                  uVar10 = Ordinal_2020();
+                }
+                else {
+                  uVar10 = *(undefined4 *)(iVar7 + 0x3008);
+                  puVar15[4] = (char)uVar10;
+                  puVar15[5] = (char)((uint)uVar10 >> 8);
+                  puVar15[6] = (char)((uint)uVar10 >> 0x10);
+                  puVar15[7] = (char)((uint)uVar10 >> 0x18);
+                  uVar10 = *(undefined4 *)(iVar7 + 0x300c);
+                  puVar15[8] = (char)uVar10;
+                  puVar15[9] = (char)((uint)uVar10 >> 8);
+                  puVar15[10] = (char)((uint)uVar10 >> 0x10);
+                  puVar15[0xb] = (char)((uint)uVar10 >> 0x18);
+                  uVar10 = *puVar8;
+                  *puVar16 = (char)uVar10;
+                  puVar16[1] = (char)((uint)uVar10 >> 8);
+                  puVar16[2] = (char)((uint)uVar10 >> 0x10);
+                  puVar16[3] = (char)((uint)uVar10 >> 0x18);
+                  iVar5 = param_1 + (local_74 + local_78) * 8;
+                  iVar7 = (local_7c * 0x11 + iVar18 + 8) * 8;
+                  uVar10 = *(undefined4 *)(iVar5 + 0x4838);
+                  (&DAT_000bc038)[iVar7] = (char)uVar10;
+                  (&DAT_000bc039)[iVar7] = (char)((uint)uVar10 >> 8);
+                  (&DAT_000bc03a)[iVar7] = (char)((uint)uVar10 >> 0x10);
+                  (&DAT_000bc03b)[iVar7] = (char)((uint)uVar10 >> 0x18);
+                  uVar10 = *(undefined4 *)(iVar5 + 0x483c);
+                }
+                iVar7 = (local_7c * 0x11 + iVar18) * 8;
+                (&DAT_000bc07c)[iVar7] = (char)uVar10;
+                iVar18 = iVar18 + 1;
+                puVar15 = puVar15 + 0xc;
+                (&DAT_000bc07d)[iVar7] = (char)((uint)uVar10 >> 8);
+                (&DAT_000bc07e)[iVar7] = (char)((uint)uVar10 >> 0x10);
+                (&DAT_000bc07f)[iVar7] = (char)((uint)uVar10 >> 0x18);
+                puVar17 = puVar16;
+LAB_0002029c:
+                puVar16 = puVar17 + 0xc;
+              }
+              local_50 = local_50 + 4;
+              local_64 = local_78;
+              local_78 = local_78 + 1;
+            } while (local_78 < iVar4);
+            if (getenv("UW_DEBUG_DOOR_POS") && local_48 >= 26 && local_48 <= 32)
+              fprintf(stderr, "[doorpos] near_clip: emit_idx=%d iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
+                      local_48, iVar18, local_7c);
+            if (getenv("UW_DEBUG_NEARCLIP_RANGE")) {
+              int _lo = 0, _hi = -1;
+              sscanf(getenv("UW_DEBUG_NEARCLIP_RANGE"), "%d:%d", &_lo, &_hi);
+              if (local_48 >= _lo && local_48 <= _hi)
+                fprintf(stderr, "[nearclip] rec=%d FINAL iVar18(clipped_verts)=%d out_idx_if_kept=%d\n",
+                        local_48, iVar18, local_7c);
+            }
+            if (iVar18 != 0) {
+              *puVar20 = (char)iVar18;
+              (&DAT_000bc039)[iVar19] = (char)((uint)iVar18 >> 8);
+              (&DAT_000bc03a)[iVar19] = (char)((uint)iVar18 >> 0x10);
+              (&DAT_000c4838)[local_7c] = puVar20;
+              /* carry the real texture pointer from emit index to render index */
+              if ((unsigned)local_7c < UW_MAX_VIS_TILES && (unsigned)local_48 < UW_MAX_VIS_TILES) {
+                g_tile_texptr_out[local_7c] = g_tile_texptr_emit[local_48];
+                if (getenv("UW_DEBUG_DOOR_POS") && local_48 >= 26 && local_48 <= 32)
+                  fprintf(stderr, "[doorpos] texptr carry: emit_idx=%d out_idx=%d texptr=%p\n",
+                          local_48, local_7c, g_tile_texptr_emit[local_48]);
+              }
+              local_7c = local_7c + 1;
+              (&DAT_000bc03b)[iVar19] = (char)((uint)iVar18 >> 0x18);
+              DAT_000c8c98 = local_7c;
+            }
+          }
+        }
+        local_48 = local_48 + 1;
+        local_4c = local_4c + 0x60;
+        iVar14 = iVar14 + 0x60;
+        local_74 = local_74 + 0xc;
+      } while (local_48 < *(int *)(param_1 + 4));
+    }
+  }
+  return;
+}
+

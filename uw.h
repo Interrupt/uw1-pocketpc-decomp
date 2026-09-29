@@ -886,6 +886,86 @@ extern char * DAT_0023c40c;
 extern undefined2 DAT_0023c41c;
 extern undefined1 DAT_0024e090_backing[524288];
 #define DAT_0024e090 DAT_0024e090_backing[0]
+/* Globals defined in uw.c but also used by functions that now live in
+   3d.c (the 3D transform/rasterization pipeline) -- extern'd here so
+   both translation units see the same storage. */
+#define UW_MAX_VIS_TILES 2048
+extern void * g_tile_texptr_emit[UW_MAX_VIS_TILES];
+extern void * g_tile_texptr_out[UW_MAX_VIS_TILES];
+extern char DAT_000842b0;
+extern undefined4 DAT_00084608;
+extern undefined4 DAT_000b5638_backing[160];
+#define DAT_000b5638 DAT_000b5638_backing[0]
+extern undefined DAT_000bc038_backing[32768];
+#define DAT_000bc038 DAT_000bc038_backing[0]
+extern void * DAT_000c4838_backing[4096];
+#define DAT_000c4838 DAT_000c4838_backing[0]
+extern undefined4 DAT_000c8ac0_mtx[16];
+#define DAT_000c8ac0 DAT_000c8ac0_mtx[0]
+extern int DAT_000c8c98;
+extern undefined2 DAT_000da47c;
+extern undefined4 DAT_000db438;
+extern undefined4 DAT_000db43c;
+extern undefined4 DAT_000db440;
+extern int DAT_000db448;
+extern int DAT_000db44c;
+extern int DAT_000db450;
+extern char DAT_0023b830;
+extern undefined4 DAT_000d9930_arr[512];
+extern undefined4 DAT_000d9ed8_arr[512];
+#define DAT_000bc039 DAT_000bc038_backing[1]
+#define DAT_000bc03a DAT_000bc038_backing[2]
+#define DAT_000bc03b DAT_000bc038_backing[3]
+#define DAT_000bc044 DAT_000bc038_backing[0xc]
+#define DAT_000bc07c DAT_000bc038_backing[0x44]
+#define DAT_000bc07d DAT_000bc038_backing[0x45]
+#define DAT_000bc07e DAT_000bc038_backing[0x46]
+#define DAT_000bc07f DAT_000bc038_backing[0x47]
+#define DAT_000bc0a0 DAT_000bc038_backing[0x68]
+#define DAT_000bc0a1 DAT_000bc038_backing[0x69]
+#define DAT_000bc0a2 DAT_000bc038_backing[0x6a]
+#define DAT_000bc0a3 DAT_000bc038_backing[0x6b]
+#define DAT_000bc0a4 DAT_000bc038_backing[0x6c]
+#define DAT_000bc0a5 DAT_000bc038_backing[0x6d]
+#define DAT_000bc0a6 DAT_000bc038_backing[0x6e]
+#define DAT_000bc0a7 DAT_000bc038_backing[0x6f]
+#define DAT_000bc0a8 DAT_000bc038_backing[0x70]
+#define DAT_000bc0a9 DAT_000bc038_backing[0x71]
+#define DAT_000bc0aa DAT_000bc038_backing[0x72]
+#define DAT_000bc0ab DAT_000bc038_backing[0x73]
+#define DAT_000bc0ac DAT_000bc038_backing[0x74]
+#define DAT_000bc0ad DAT_000bc038_backing[0x75]
+#define DAT_000bc0ae DAT_000bc038_backing[0x76]
+#define DAT_000bc0af DAT_000bc038_backing[0x77]
+#define DAT_000bc0b0 DAT_000bc038_backing[0x78]
+#define DAT_000bc0b1 DAT_000bc038_backing[0x79]
+#define DAT_000bc0b2 DAT_000bc038_backing[0x7a]
+#define DAT_000bc0b3 DAT_000bc038_backing[0x7b]
+#define DAT_000bc0b4 DAT_000bc038_backing[0x7c]
+#define DAT_000bc0b5 DAT_000bc038_backing[0x7d]
+#define DAT_000bc0b6 DAT_000bc038_backing[0x7e]
+#define DAT_000bc0b7 DAT_000bc038_backing[0x7f]
+#define DAT_000bc0b8 DAT_000bc038_backing[0x80]
+#define DAT_000bc0b9 DAT_000bc038_backing[0x81]
+#define DAT_000bc0ba DAT_000bc038_backing[0x82]
+#define DAT_000bc0bb DAT_000bc038_backing[0x83]
+#define DAT_000bc0bc DAT_000bc038_backing[0x84]
+#define DAT_000bc0bd DAT_000bc038_backing[0x85]
+#define DAT_000bc0be DAT_000bc038_backing[0x86]
+#define DAT_000bc0bf DAT_000bc038_backing[0x87]
+#define DAT_000c8ac4 DAT_000c8ac0_mtx[1]
+#define DAT_000c8ac8 DAT_000c8ac0_mtx[2]
+#define DAT_000c8ad0 DAT_000c8ac0_mtx[4]
+#define DAT_000c8ad4 DAT_000c8ac0_mtx[5]
+#define DAT_000c8ad8 DAT_000c8ac0_mtx[6]
+#define DAT_000c8ae0 DAT_000c8ac0_mtx[8]
+#define DAT_000c8ae4 DAT_000c8ac0_mtx[9]
+#define DAT_000c8ae8 DAT_000c8ac0_mtx[10]
+#define DAT_000c8af0 DAT_000c8ac0_mtx[12]
+#define DAT_000c8af4 DAT_000c8ac0_mtx[13]
+#define DAT_000c8af8 DAT_000c8ac0_mtx[14]
+#define DAT_000d9930 (DAT_000d9930_arr[0])
+#define DAT_000d9ed8 (DAT_000d9ed8_arr[0])
 
 
 
@@ -928,6 +1008,8 @@ void build_shade_lut();
 void FUN_00014324();
 void set_ambient_bias_without_light();
 void raster_triangle();
+void vec3_sub();
+void vec3_cross();
 int raster_edge_step();
 void raster_triangle_perspective_setup();
 void raster_edge_setup();
@@ -2182,6 +2264,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/inventory.h"
 #include "src/headers/combat.h"
 #include "src/headers/bitmap.h"
+#include "src/headers/3d.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
