@@ -755,7 +755,7 @@ LAB_000669a8:
   else {
     FUN_0006ff08(6);
   }
-  FUN_000660d4((*(byte *)(DAT_00086df8 + 0x61) & 0xc) != 0);
+  update_screen_flicker_effect((*(byte *)(DAT_00086df8 + 0x61) & 0xc) != 0);
   FUN_0003dbd8();
   FUN_0003dca4(0xffffffff);
   return;
@@ -914,6 +914,60 @@ void reset_player_derived_state()
     DAT_000858c4 = 400;
   }
   DAT_002046cc = 0;
+  return;
+}
+
+
+
+
+// was FUN_000660d4 -- toggles a randomized screen flicker effect
+// tracked in DAT_00086db4 (-1=off, 0/1/2 = which of 3 sub-effects):
+// param_1==0 cancels any active effect (restoring palette bank 0, or
+// stopping FUN_00070224's effect); param_1!=0 with no effect currently
+// active picks a random one (or forces sub-effect 0 if DAT_00086db8
+// is set) and starts it -- sub-effect 1 randomly cycles the palette
+// bank, sub-effect 2 drives FUN_00070224. Called from
+// refresh_player_equipment_effects gated on bits 2-3 of the player's
+// status byte (DAT_00086df8+0x61) -- likely a worn item's
+// cursed/poisoned status flags, not confirmed.
+void update_screen_flicker_effect(param_1)
+int param_1;
+
+{
+  int uw_ord2005_rem_125 = 0;
+  ushort uVar1;
+  undefined4 uVar2;
+  char extraout_r1;
+  
+  if (param_1 == 0) {
+    if (-1 < DAT_00086db4) {
+      if (DAT_00086db4 == '\x01') {
+        set_palette_bank(0);
+      }
+      else if (DAT_00086db4 == '\x02') {
+        FUN_00070224(0);
+      }
+      DAT_00086db4 = -1;
+    }
+  }
+  else if (DAT_00086db4 < '\0') {
+    if (DAT_00086db8 == 0) {
+      uVar2 = Ordinal_1053();
+      uw_ord2005_rem_125 = ((int)(uVar2)) % (3);
+      DAT_00086db4 = uw_ord2005_rem_125;
+    }
+    else {
+      DAT_00086db4 = '\0';
+      DAT_00086db8 = 0;
+    }
+    if (DAT_00086db4 == '\x01') {
+      uVar1 = Ordinal_1053();
+      set_palette_bank(uVar1 & 7);
+    }
+    else if (DAT_00086db4 == '\x02') {
+      FUN_00070224(1);
+    }
+  }
   return;
 }
 

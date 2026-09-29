@@ -36392,49 +36392,6 @@ LAB_00060f54:
 
 
 
-void FUN_000660d4(param_1)
-int param_1;
-
-{
-  int uw_ord2005_rem_125 = 0;
-  ushort uVar1;
-  undefined4 uVar2;
-  char extraout_r1;
-  
-  if (param_1 == 0) {
-    if (-1 < DAT_00086db4) {
-      if (DAT_00086db4 == '\x01') {
-        set_palette_bank(0);
-      }
-      else if (DAT_00086db4 == '\x02') {
-        FUN_00070224(0);
-      }
-      DAT_00086db4 = -1;
-    }
-  }
-  else if (DAT_00086db4 < '\0') {
-    if (DAT_00086db8 == 0) {
-      uVar2 = Ordinal_1053();
-      uw_ord2005_rem_125 = ((int)(uVar2)) % (3);
-      DAT_00086db4 = uw_ord2005_rem_125;
-    }
-    else {
-      DAT_00086db4 = '\0';
-      DAT_00086db8 = 0;
-    }
-    if (DAT_00086db4 == '\x01') {
-      uVar1 = Ordinal_1053();
-      set_palette_bank(uVar1 & 7);
-    }
-    else if (DAT_00086db4 == '\x02') {
-      FUN_00070224(1);
-    }
-  }
-  return;
-}
-
-
-
 undefined4 FUN_000661b0(param_1,param_2,param_3,param_4)
 undefined1 param_1;
 byte param_2;
