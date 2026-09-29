@@ -16726,7 +16726,7 @@ undefined4 FUN_00035340()
 
 {
   DAT_00101954 = 0;
-  FUN_00074ad0(g_player_object,0x7f,FUN_000352d0,0,0,2);
+  scan_area_ahead_of_object(g_player_object,0x7f,FUN_000352d0,0,0,2);
   return DAT_00101954;
 }
 
@@ -16861,7 +16861,7 @@ undefined4 FUN_00035894()
 
 {
   DAT_00101950 = 0;
-  FUN_00074ad0(g_player_object,1,FUN_00035394,0,0,8);
+  scan_area_ahead_of_object(g_player_object,1,FUN_00035394,0,0,8);
   return DAT_00101950;
 }
 
@@ -16995,7 +16995,7 @@ byte param_2;
   DAT_0010195c = bVar1;
   if (DAT_0010195c != 0) {
     DAT_00101958 = param_1;
-    FUN_0007471c(0x14,0,FUN_00035a18,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
+    scan_area_for_matching_objects(0x14,0,FUN_00035a18,0,(char)DAT_002020a0 + -7,(char)DAT_002020a4 + -7,0xf,0xf);
     if ((param_1[3] & 0x1f) < 0x1c) {
       uVar2 = param_1[3] & 0xffc0;
       *(char *)(param_1 + 3) = (char)uVar2;
@@ -36474,197 +36474,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007471c(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8)
-char param_1;
-byte param_2;
-codeval * param_3;
-char param_4;
-char param_5;
-char param_6;
-char param_7;
-char param_8;
-
-{
-  int iVar1;
-  ushort uVar2;
-  ushort uVar3;
-  int iVar4;
-  undefined4 uVar5;
-  ushort *puVar6;
-  int iVar7;
-  int iVar8;
-  int iVar9;
-  int extraout_r1;
-  int iVar10;
-  char cVar11;
-  int iVar12;
-  ushort *puVar13;
-  byte *pbVar14;
-  int iVar15;
-  int iVar16;
-  bool bVar17;
-  bool bVar18;
-  short local_60;
-  short local_5e;
-  
-  iVar1 = (int)param_5;
-  local_5e = 0;
-  if (((iVar1 < 0x40) && (iVar8 = iVar1 + param_7, -1 < iVar8)) &&
-     (iVar10 = (int)param_6, iVar10 < 0x40)) {
-    iVar12 = (int)param_8;
-    iVar16 = iVar10 + param_8;
-    if (-1 < iVar16) {
-      if (iVar1 < 0) {
-        param_7 = (char)((uint)(iVar8 * 0x1000000) >> 0x18);
-        param_5 = '\0';
-      }
-      else if (0x3f < iVar8) {
-        param_7 = '@' - param_5;
-      }
-      bVar17 = iVar10 < 0;
-      bVar18 = iVar10 == 0;
-      if (bVar17) {
-        param_6 = '\0';
-        iVar12 = iVar16 * 0x1000000 >> 0x18;
-      }
-      else {
-        bVar18 = iVar16 == 0x40;
-      }
-      if (!bVar18 && (!bVar17 && 0x3f < iVar16)) {
-        iVar12 = iVar10 << 0x18;
-      }
-      if (!bVar18 && (!bVar17 && 0x3f < iVar16)) {
-        iVar12 = iVar12 >> 0x18;
-      }
-      cVar11 = (char)iVar12;
-      iVar1 = (int)param_7;
-      if (!bVar18 && (!bVar17 && 0x3f < iVar16)) {
-        cVar11 = '@' - cVar11;
-      }
-      if ((0 < iVar1) && (iVar8 = (int)cVar11, 0 < iVar8)) {
-        iVar12 = (int)param_6;
-        iVar10 = (int)param_5;
-        /* was folded into `int iVar16` (reused above for unrelated int
-           values) -- truncated tilemap_lookup's real `void *` return */
-        char *_tile16 = (char *)tilemap_lookup(iVar10,iVar12);
-        iVar9 = iVar1 + param_5;
-        do {
-          local_60 = (short)iVar10;
-          iVar7 = (int)local_60;
-          if (iVar7 <= iVar9) {
-            iVar4 = iVar8 + param_6;
-            do {
-              iVar15 = (int)(short)iVar12;
-              if ((short)iVar12 <= iVar4) {
-                do {
-                  if (((-1 < iVar7) && (iVar7 < 0x40)) && ((-1 < iVar15 && (iVar15 < 0x40)))) {
-                    pbVar14 = (byte *)(_tile16 + (((iVar15 - param_6) * 0x40 - (int)param_5) + iVar7)
-                                                * 4);
-                    if (param_4 == '@') {
-                      if ((*pbVar14 & 0xf) != 0) {
-                        uVar5 = Ordinal_1053();
-                        Ordinal_2005(iVar8 * iVar1 + 3,uVar5);
-                        if (((extraout_r1 < param_1) &&
-                            (iVar10 = (*param_3)((int)local_60,iVar12,0,pbVar14,param_2),
-                            iVar10 != 0)) &&
-                           (iVar10 = (param_1 + -1) * 0x1000000,
-                           param_1 = (char)((uint)iVar10 >> 0x18), iVar10 >> 0x18 == 0)) {
-                          return;
-                        }
-                      }
-                    }
-                    else {
-                      puVar13 = (ushort *)(pbVar14 + 2);
-                      puVar6 = (ushort *)resolve_object_link(puVar13);
-                      while (puVar6 != (ushort *)0x0) {
-                        uVar2 = *puVar13;
-                        if (param_4 == -0x80) {
-LAB_000749c4:
-                          iVar10 = (*param_3)((int)local_60,iVar12,puVar6,pbVar14,param_2);
-                          if ((iVar10 != 0) &&
-                             (iVar10 = (int)param_1, param_1 = (char)(iVar10 + -1),
-                             (iVar10 + -1) * 0x1000000 >> 0x18 < 1)) {
-                            return;
-                          }
-                        }
-                        else if (param_4 == '\0') {
-                          if ((*puVar6 & 0x1c0) == 0x40) {
-                            uVar3 = encode_object_slot_index(puVar6);
-                            if (uVar3 != param_2) goto LAB_000749c4;
-                            goto LAB_000749bc;
-                          }
-                        }
-                        else {
-LAB_000749bc:
-                          if (param_4 == -0x40) goto LAB_000749c4;
-                        }
-                        if (*puVar13 >> 6 == uVar2 >> 6) {
-                          puVar13 = puVar6 + 2;
-                        }
-                        puVar6 = (ushort *)resolve_object_link(puVar13);
-                      }
-                    }
-                  }
-                  iVar12 = (iVar15 + 1) * 0x10000 >> 0x10;
-                  iVar15 = iVar12;
-                } while (iVar12 <= iVar4);
-                iVar10 = (int)(short)param_5;
-                iVar12 = (int)(short)param_6;
-              }
-              iVar15 = (iVar7 + 1) * 0x10000;
-              iVar7 = iVar15 >> 0x10;
-              local_60 = (short)((uint)iVar15 >> 0x10);
-            } while (iVar7 <= iVar9);
-          }
-        } while (((param_4 == '@') && ('\0' < param_1)) &&
-                (iVar7 = (int)local_5e, local_5e = (short)((uint)((iVar7 + 1) * 0x10000) >> 0x10),
-                iVar7 < 4));
-      }
-    }
-  }
-  return;
-}
-
-
-
-void FUN_00074ad0(param_1,param_2,param_3,param_4,param_5,param_6)
-char *param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-undefined1 param_5;
-char param_6;
-
-{
-  char cVar1;
-  ushort uVar2;
-  uint uVar3;
-  ushort local_1c;
-  ushort local_1a;
-  
-  uVar2 = encode_object_slot_index();
-  uVar3 = *(ushort *)(param_1 + 2) & 0x380;
-  if ((short)uVar2 < 0x100) {
-    uVar2 = uVar2 & 0xff;
-    uVar3 = (*(byte *)(param_1 + 0x18) & 0x1f) + (uVar3 >> 2);
-    local_1a = *(ushort *)(param_1 + 0x16) >> 10;
-    local_1c = (ushort)((*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4);
-  }
-  else {
-    uVar3 = uVar3 >> 2;
-    uVar2 = 0;
-    local_1a = (ushort)DAT_0023c3dc;
-    local_1c = (ushort)DAT_0023c3d8;
-  }
-  project_position_by_heading(uVar3,param_5,&local_1a,&local_1c);
-  cVar1 = param_6 * '\x02' + '\x01';
-  FUN_0007471c(param_2,uVar2,param_3,param_4,(char)local_1a - param_6,(char)local_1c - param_6,cVar1
-               ,cVar1);
-  return;
-}
-
-
-
 void FUN_00074be8(param_1,param_2,param_3,param_4)
 ushort param_1;
 int param_2;
@@ -36704,7 +36513,7 @@ uint param_2;
   char cVar1;
   
   cVar1 = roll_dice_sum(3,4);
-  FUN_00074ad0(param_1,(int)cVar1,*(undefined4 *)(&DAT_00087604 + (param_2 & 0x3f) * 4),
+  scan_area_ahead_of_object(param_1,(int)cVar1,*(undefined4 *)(&DAT_00087604 + (param_2 & 0x3f) * 4),
                param_2 & 0xc0,4,2);
   return;
 }
@@ -36717,7 +36526,7 @@ uint param_2;
 
 {
   if (param_1 == g_player_object) {
-    FUN_00074ad0(param_1,1,(&PTR_FUN_00087614)[param_2 & 0x3f],param_2 & 0xc0,4,2);
+    scan_area_ahead_of_object(param_1,1,(&PTR_FUN_00087614)[param_2 & 0x3f],param_2 & 0xc0,4,2);
   }
   return;
 }
@@ -37139,7 +36948,7 @@ LAB_0007588c:
     goto LAB_00075a0c;
   case 9:
     cVar2 = roll_dice_sum(8,3);
-    FUN_00074ad0(param_1,(int)cVar2,FUN_00075248,0x40,5,3);
+    scan_area_ahead_of_object(param_1,(int)cVar2,FUN_00075248,0x40,5,3);
     set_movement_animation_timer(0x40,0x28);
     play_sound_effect_at_object(0x12,param_1,0);
     break;
@@ -41341,7 +41150,7 @@ undefined4 param_1;
 {
   DAT_0024cff8 = 0;
   DAT_0024cfd4 = param_1;
-  FUN_00074ad0(param_1,1,&DAT_0007e644,0,0,4);
+  scan_area_ahead_of_object(param_1,1,&DAT_0007e644,0,0,4);
   return DAT_0024cff8;
 }
 
