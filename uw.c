@@ -36520,38 +36520,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007abbc(param_1,param_2)
-byte * param_1;
-uint param_2;
-
-{
-  undefined2 uVar1;
-  byte bVar2;
-  int iVar3;
-  byte *local_1c;
-  
-  if ((param_2 != 0) && (((*param_1 & 0xf) < 0xc || (0xf < (*param_1 & 0xf))))) {
-    FUN_0007c2ec(g_player_object,param_1,4,(int)DAT_002020a0,DAT_002020a4);
-    FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
-    if ((param_1[1] & 0x80) == 0) {
-      local_1c = param_1 + 6;
-      iVar3 = FUN_000537d0(&local_1c,0,4,2,param_2 & 0xffff0000);
-      if (iVar3 == 0) {
-        uVar1 = *(undefined2 *)param_1;
-        bVar2 = (byte)uVar1;
-        *param_1 = (bVar2 + 4 ^ bVar2) & 0xf ^ bVar2;
-        param_1[1] = (byte)((ushort)uVar1 >> 8);
-        print_scroll_message_by_id(0x7d);
-        find_or_assign_object_widget(param_1);
-        FUN_0004503c();
-      }
-    }
-  }
-  return;
-}
-
-
-
 void FUN_0007b2f0(param_1,param_2,param_3)
 short * param_1;
 int param_2;

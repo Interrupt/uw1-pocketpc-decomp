@@ -3452,7 +3452,7 @@ void complete_use_item_special_quest_event();
 void complete_use_item_on_flagged_tile();
 void dispatch_use_held_item_by_type();
 void use_light_source();
-void FUN_0007abbc();
+void refuel_light_source_item();
 undefined4 use_food_item();
 void FUN_0007b2f0();
 void FUN_0007b5a4();
