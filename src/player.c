@@ -753,7 +753,7 @@ LAB_000669a8:
     }
   }
   else {
-    FUN_0006ff08(6);
+    load_shading_level_config(6);
   }
   update_screen_flicker_effect((*(byte *)(DAT_00086df8 + 0x61) & 0xc) != 0);
   FUN_0003dbd8();

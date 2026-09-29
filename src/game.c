@@ -629,7 +629,7 @@ void init_gameplay_session()
   DAT_002048b2 = 0x1100;
   DAT_002048b0 = 0;
   g_player_object = DAT_0023b82c;
-  FUN_0006ff08(0);
+  load_shading_level_config(0);
   DAT_0023be8c = 0;
   DAT_00086df8 = &DAT_0023bca8;
   /* HACK, same silently-zero class as DAT_0024af60 above and DAT_00086e68 /
@@ -1010,7 +1010,7 @@ short param_3;
   DAT_0023bf00 = (*(ushort *)(param_1 + 2) & 0xff80) << 6;
   DAT_0023bf02 = 0;
   DAT_0023bf04 = 0;
-  FUN_0006ff08(6);
+  load_shading_level_config(6);
   iVar1 = DAT_00086b20;
   if (DAT_00086b20 != 0) {
     DAT_00086b20 = 0;

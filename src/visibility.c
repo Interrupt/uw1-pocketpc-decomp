@@ -834,7 +834,7 @@ byte * param_2;
      ceiling of 16 passes" writeup). User-supplied evidence points at
      SHADES.DAT instead: its 6-field-per-record layout (field 3 is the
      per-level view-distance default) is already parsed correctly by
-     FUN_0006ff08 into g_visibility_max_ring_passes (was DAT_0023bca0)
+     load_shading_level_config into g_visibility_max_ring_passes (was DAT_0023bca0)
      -- confirmed live, and against the raw file bytes, that record 0's
      field 3 really is 3, not 16 (fields 4/5, the texture-LOD
      thresholds, both really are 16 -- easy to conflate). Whatever the
@@ -1463,3 +1463,120 @@ byte param_1;
   return;
 }
 
+
+
+
+
+
+
+// was FUN_0006ff08 -- loads a shading-level configuration (early-outs
+// if param_1 already matches the currently-loaded DAT_000872a0):
+// swaps in LIGHT.DAT or MONO.DAT (special-cased around shading level 5)
+// into DAT_0024fa2c, then seeks SHADES.DAT to param_1's 12-byte record
+// and unpacks it into DAT_0025063c/DAT_0025064c/DAT_002506dc/
+// g_visibility_max_ring_passes/DAT_00086b28/DAT_00086b24 (the texture-
+// LOD distance threshold), rebuilding the visibility light grid
+// afterward.
+void load_shading_level_config(param_1)
+char param_1;
+
+{
+  char stack0xffdc323c_buf [256];
+  char *stack0xffdc323c_ptr;
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  char *pcVar4;
+  if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
+    fprintf(stderr, "[load_shading_level_config] called param_1=%d DAT_000872a0=%d DAT_00201b68=%d\n",
+            (int)param_1, (int)DAT_000872a0, (int)DAT_00201b68);
+  /* Ghidra modelled the 12-byte SHADES.DAT per-level header as six
+     separate `short` locals that read_file_handle(&local_12c, 0xc) reads
+     into as one contiguous block -- but the C compiler is free to lay
+     them out non-contiguously / reorder them, so only local_12c landed
+     where the read wrote and local_12a..local_122 read stack garbage
+     (observed: DAT_00086b24, the texture-LOD distance threshold, came
+     out 0 instead of the file's 16 -> every visible tile fell to the
+     16x16 low-detail texture, walls included). Real 6-short array. */
+  short _shades_hdr[6];
+#define local_12c (_shades_hdr[0])
+#define local_12a (_shades_hdr[1])
+#define local_128 (_shades_hdr[2])
+#define local_126 (_shades_hdr[3])
+#define local_124 (_shades_hdr[4])
+#define local_122 (_shades_hdr[5])
+  char acStack_11c [260];
+  
+  if (DAT_000872a0 == param_1) {
+    return;
+  }
+  pcVar4 = &DAT_0023cca8;
+    stack0xffdc323c_ptr = acStack_11c;
+  if (DAT_000872a0 == '\x05') {
+    Ordinal_1047(acStack_11c,0,0x104);
+    pcVar2 = pcVar4;
+    stack0xffdc323c_ptr = stack0xffdc323c_buf;
+    do {
+      cVar1 = *pcVar2;
+      *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
+      pcVar2 = pcVar2 + 1;
+    } while (cVar1 != '\0');
+    pcVar2 = s__DATA_light_dat_000872c8;
+  }
+  else {
+    if (param_1 != '\x05') goto LAB_0006fff4;
+    Ordinal_1047(acStack_11c,0,0x104);
+    pcVar2 = pcVar4;
+    stack0xffdc323c_ptr = stack0xffdc323c_buf;
+    do {
+      cVar1 = *pcVar2;
+      *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
+      pcVar2 = pcVar2 + 1;
+    } while (cVar1 != '\0');
+    pcVar2 = s__DATA_mono_dat_000872b8;
+  }
+  Ordinal_1063(acStack_11c,pcVar2);
+  iVar3 = open_file_for_read(acStack_11c);
+  if (iVar3 != -1) {
+    read_file_handle(iVar3,DAT_0024fa2c,0x1000);
+    Ordinal_553(iVar3);
+  }
+LAB_0006fff4:
+  DAT_000872a0 = param_1;
+  Ordinal_1047(acStack_11c,0,0x104);
+  do {
+    cVar1 = *pcVar4;
+    *stack0xffdc323c_ptr = cVar1; stack0xffdc323c_ptr = stack0xffdc323c_ptr + 1;
+    pcVar4 = pcVar4 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_11c,s__DATA_shades_dat_000872a4);
+  iVar3 = open_file_for_read(acStack_11c);
+  if (iVar3 != -1) {
+    seek_file_handle(iVar3,param_1 * 0xc0000 >> 0x10,0);
+    read_file_handle(iVar3,_shades_hdr,0xc);
+    DAT_0025063c = local_12c;
+    if (local_12c < 2) {
+      DAT_0025063c = 1;
+    }
+    DAT_0025064c = local_12a;
+    DAT_002506dc = local_128;
+    g_visibility_max_ring_passes = local_126;
+    DAT_00086b28 = local_124;
+    DAT_00086b24 = local_122;
+    Ordinal_553(iVar3);
+    if (getenv("UW_DEBUG_AUTOMAP_REVEAL"))
+      fprintf(stderr, "[load_shading_level_config] loaded SHADES.DAT record %d: DAT_0025063c=%d DAT_0025064c=%d"
+              " DAT_002506dc=%d g_visibility_max_ring_passes=%d DAT_00086b28=%d DAT_00086b24=%d\n",
+              (int)param_1, (int)DAT_0025063c, (int)DAT_0025064c, (int)DAT_002506dc,
+              (int)g_visibility_max_ring_passes, (int)DAT_00086b28, (int)DAT_00086b24);
+    build_visibility_light_grid((int)g_visibility_max_ring_passes);
+    FUN_00049924(2);
+  }
+  return;
+}
+#undef local_12c
+#undef local_12a
+#undef local_128
+#undef local_126
+#undef local_124
+#undef local_122
