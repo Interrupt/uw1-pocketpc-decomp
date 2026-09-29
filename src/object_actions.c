@@ -919,7 +919,7 @@ LAB_00073c90:
       FUN_00057c5c(0x1075);
     }
     else {
-      FUN_000740b0(param_3,param_2);
+      apply_targeted_spell_effect(param_3,param_2);
     }
     break;
   case 6:
@@ -997,6 +997,45 @@ char param_2;
         FUN_000411e0(0xa8);
       }
     }
+  }
+  return;
+}
+
+
+
+
+
+// was FUN_000740b0 -- dispatch_special_action's case 5 ("spawn a
+// targeted spell-effect object") worker: param_2 (1-4) selects one of
+// four effect-object subtypes {7,5,4,6} and FUN_0004a588 spawns that
+// object near/at param_1's location (returning whether the spawn
+// succeeded). If param_1 is the player and the spawn failed, prints
+// a "no effect" scroll message (id 0xff) via FUN_00078c80. Otherwise,
+// if a mana cost was staged in DAT_0023c3e0 (set by whatever queued
+// this cast), deducts it from the player's mana stat
+// (DAT_00086df8+0x37, "play_mana" -- see babl.c's own read of the
+// same offset). DAT_0023c3e0 is always cleared back to 0 afterward.
+void apply_targeted_spell_effect(param_1,param_2)
+int param_1;
+char param_2;
+
+{
+  int iVar1;
+  undefined1 auStack_d [5];
+
+  auStack_d[1] = 7;
+  auStack_d[2] = 5;
+  auStack_d[3] = 4;
+  auStack_d[4] = 6;
+  iVar1 = FUN_0004a588(param_1,auStack_d[param_2]);
+  if (param_1 == g_player_object) {
+    if (iVar1 == 0) {
+      FUN_00078c80(0xff);
+    }
+    else if (DAT_0023c3e0 != '\0') {
+      *(char *)(DAT_00086df8 + 0x37) = *(char *)(DAT_00086df8 + 0x37) - DAT_0023c3e0;
+    }
+    DAT_0023c3e0 = '\0';
   }
   return;
 }

@@ -1140,6 +1140,7 @@ extern undefined1 DAT_0023bb98_backing[512];
 #define DAT_0023bb98 DAT_0023bb98_backing[0]
 #define DAT_0023bb99 DAT_0023bb98_backing[1]
 #define DAT_0023bb9a DAT_0023bb98_backing[2]
+extern char DAT_0023c3e0;
 extern char * DAT_0023c3e4;
 extern char * DAT_0023c3e8;
 extern char * DAT_0023c3ec;
@@ -3228,7 +3229,7 @@ void adjust_player_hp();
 void restore_stat_capped();
 void apply_healing_item_effect();
 void reduce_item_quality_on_use();
-void FUN_000740b0();
+void apply_targeted_spell_effect();
 void *FUN_00074150();
 undefined4 FUN_000741f0();
 undefined4 FUN_000742c0();

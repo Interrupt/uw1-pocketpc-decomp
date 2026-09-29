@@ -36474,33 +36474,6 @@ LAB_00060f54:
 
 
 
-void FUN_000740b0(param_1,param_2)
-int param_1;
-char param_2;
-
-{
-  int iVar1;
-  undefined1 auStack_d [5];
-  
-  auStack_d[1] = 7;
-  auStack_d[2] = 5;
-  auStack_d[3] = 4;
-  auStack_d[4] = 6;
-  iVar1 = FUN_0004a588(param_1,auStack_d[param_2]);
-  if (param_1 == g_player_object) {
-    if (iVar1 == 0) {
-      FUN_00078c80(0xff);
-    }
-    else if (DAT_0023c3e0 != '\0') {
-      *(char *)(DAT_00086df8 + 0x37) = *(char *)(DAT_00086df8 + 0x37) - DAT_0023c3e0;
-    }
-    DAT_0023c3e0 = '\0';
-  }
-  return;
-}
-
-
-
 void *FUN_00074150(param_1,param_2)
 /* Was `int FUN_00074150(...)` -- returned spawn_new_object's real object
    pointer through a 32-bit int, truncated on this host; both callers
@@ -40699,7 +40672,7 @@ ushort * param_1;
 void FUN_0007ca0c()
 
 {
-  FUN_000740b0(DAT_00202098,(int)(char)DAT_00202094);
+  apply_targeted_spell_effect(DAT_00202098,(int)(char)DAT_00202094);
   g_cursor_holding_state = 0;
   FUN_00057cac(3);
   wait_for_click_release(1);
