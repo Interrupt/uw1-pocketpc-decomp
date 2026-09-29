@@ -1962,8 +1962,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   else {
     iVar8 = barter_offer_is_empty(&DAT_000bbfd0,&DAT_000bbf98);
     if ((iVar8 == 0) && (iVar8 = barter_offer_is_empty(&DAT_000bbfe8,&DAT_000bbff0), iVar8 == 0)) {
-      sVar2 = FUN_0001cf20(1,&DAT_000bbfd0,&DAT_000bbf98,&DAT_000bbfb0,DAT_000bbfbc);
-      sVar3 = FUN_0001cf20(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc8,DAT_000bbfbc);
+      sVar2 = sum_barter_offer_value(1,&DAT_000bbfd0,&DAT_000bbf98,&DAT_000bbfb0,DAT_000bbfbc);
+      sVar3 = sum_barter_offer_value(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc8,DAT_000bbfbc);
       iVar8 = (int)sVar3;
       if (iVar8 < 1) {
         sVar2 = 100;
@@ -2057,7 +2057,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   bVar2 = *(byte *)(iVar12 + 0x5f);
   sVar5 = Ordinal_2005(6,*(undefined1 *)(iVar12 + 0x30));
   bVar3 = *(byte *)(iVar12 + 0x3d);
-  sVar6 = FUN_0001cf20(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc8,DAT_000bbfbc);
+  sVar6 = sum_barter_offer_value(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc8,DAT_000bbfbc);
   uVar8 = (uint)(byte)(&g_monster_max_stats_table)[(*DAT_00100674 & 0x3f) * 0x30];
   if (uVar8 == 0) {
     iVar12 = 1;
@@ -2289,7 +2289,7 @@ void start_npc_conversation()
     babl_register_builtin(s_do_offer_00085180,babl_builtin_do_offer);
     babl_register_builtin(s_do_demand_00085174,babl_builtin_do_demand);
     babl_register_builtin(s_do_decline_00085168,&babl_builtin_do_decline);
-    babl_register_builtin(s_do_judgement_00085158,FUN_0001cd3c);
+    babl_register_builtin(s_do_judgement_00085158,babl_builtin_do_judgement);
     babl_register_builtin(s_end_barter_0008514c,end_barter_ui);
     babl_register_builtin(s_setup_to_barter_0008513c,babl_builtin_setup_to_barter);
     babl_register_builtin(s_pause_00085134,babl_builtin_pause);
@@ -2883,7 +2883,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   uVar2 = babl_read_var_word((int)*(short *)(param_1 + -8));
   sVar1 = babl_read_var_word((int)*(short *)(param_1 + -6));
   uVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  uVar4 = FUN_0001cfa8(1,uVar2,(int)DAT_000bbfbc);
+  uVar4 = compute_barter_item_value(1,uVar2,(int)DAT_000bbfbc);
   iVar5 = FUN_000535fc(uVar2);
   if (((*(byte *)(iVar5 + 1) & 0x80) == 0) || ((*(ushort *)(iVar5 + 6) & 0x8000) != 0)) {
     uVar9 = 1;
@@ -3891,11 +3891,11 @@ void init_barter_ui()
   DAT_000bc008 = 0;
   uVar3 = encode_object_slot_index(DAT_00100674);
   Ordinal_1061(uVar3);
-  DAT_000bc024 = FUN_0001d170(((&DAT_001007de)[iVar6] & 0xf) * '\x06',0xffffffe7,0x19);
-  DAT_000bc004 = FUN_0001d170(*(ushort *)(&DAT_001007dd + iVar6) >> 0xc,0xffffffec,100);
-  DAT_000bbfbc = FUN_0001d170((0xf - (uint)((byte)(&DAT_001007dd)[iVar6] >> 4)) * 6,0xffffffe7,0x32)
+  DAT_000bc024 = randomize_value_pct(((&DAT_001007de)[iVar6] & 0xf) * '\x06',0xffffffe7,0x19);
+  DAT_000bc004 = randomize_value_pct(*(ushort *)(&DAT_001007dd + iVar6) >> 0xc,0xffffffec,100);
+  DAT_000bbfbc = randomize_value_pct((0xf - (uint)((byte)(&DAT_001007dd)[iVar6] >> 4)) * 6,0xffffffe7,0x32)
   ;
-  iVar7 = FUN_0001d170(*(ushort *)(&DAT_001007dd + iVar6) & 0xf,0xffffffec,0x14);
+  iVar7 = randomize_value_pct(*(ushort *)(&DAT_001007dd + iVar6) & 0xf,0xffffffec,0x14);
   DAT_000bbfe0 = (undefined2)iVar7;
   DAT_000bbfb8 = 0;
   bVar2 = *(byte *)(DAT_00086df8 + 0x30);
@@ -4649,5 +4649,231 @@ void finalize_player_barter_items()
       return;
     }
   } while( true );
+}
+
+
+
+
+// was FUN_0001cd3c -- babl builtin "do_judgement": sums each side's
+// total offer value (sum_barter_offer_value, item values cached via
+// compute_barter_item_value), computes the offered-vs-asked
+// percentage difference, buckets it into 9 fairness tiers and the
+// NPC's haggle-skill (DAT_00086df8+0x33) into 5 tiers, then builds and
+// prints a reaction message from string-table fragments selected by
+// both tiers.
+void babl_builtin_do_judgement()
+
+{
+  char cVar1;
+  short sVar2;
+  short sVar3;
+  char *pcVar4;
+  undefined4 uVar5;
+  int iVar6;
+  char *pcVar7;
+  int iVar8;
+  uint uVar9;
+  char local_60 [80];
+  
+  uVar9 = (uint)*(byte *)(DAT_00086df8 + 0x33);
+  sVar2 = Ordinal_2005(0x1e,uVar9 * 0x2d);
+  sVar3 = sum_barter_offer_value(0,&DAT_000bbfd0,&DAT_000bbf98,&DAT_000bbfa8,0x32 - sVar2);
+  sVar2 = sum_barter_offer_value(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc0,0x32 - sVar2);
+  iVar6 = (int)sVar2;
+  if (iVar6 < 1) {
+    sVar2 = 100;
+  }
+  else {
+    sVar2 = Ordinal_2005(iVar6,(sVar3 - iVar6) * 100);
+  }
+  if (uVar9 < 6) {
+    iVar6 = 0;
+  }
+  else if (uVar9 < 0xc) {
+    iVar6 = 1;
+  }
+  else if (uVar9 < 0x12) {
+    iVar6 = 2;
+  }
+  else {
+    iVar6 = 3;
+    if (0x17 < uVar9) {
+      iVar6 = 4;
+    }
+  }
+  if (sVar2 < 0x33) {
+    if (sVar2 < 0x24) {
+      if (sVar2 < 0x1a) {
+        if (sVar2 < 0xb) {
+          if (sVar2 < -9) {
+            if (sVar2 < -0x18) {
+              if (sVar2 < -0x22) {
+                iVar8 = 7;
+                if (sVar2 < -0x31) {
+                  iVar8 = 8;
+                }
+              }
+              else {
+                iVar8 = 6;
+              }
+            }
+            else {
+              iVar8 = 5;
+            }
+          }
+          else {
+            iVar8 = 4;
+          }
+        }
+        else {
+          iVar8 = 3;
+        }
+      }
+      else {
+        iVar8 = 2;
+      }
+    }
+    else {
+      iVar8 = 1;
+    }
+  }
+  else {
+    iVar8 = 0;
+  }
+  pcVar4 = (char *)FUN_0007863c(iVar6 + 3U | 0xe00);
+  pcVar7 = local_60;
+  do {
+    cVar1 = *pcVar4;
+    pcVar4 = pcVar4 + 1;
+    *pcVar7 = cVar1;
+    pcVar7 = pcVar7 + 1;
+  } while (cVar1 != '\0');
+  uVar5 = FUN_0007863c(0xe02);
+  Ordinal_1063(local_60,uVar5);
+  uVar5 = FUN_0007863c(iVar8 + 8U | 0xe00);
+  Ordinal_1063(local_60,uVar5);
+  FUN_000297dc(local_60);
+  return;
+}
+
+
+
+// was FUN_0001cf20 -- sums the total value of one side's barter offer:
+// for each of the 4 slots with a positive count (param_3) and item
+// index (param_2), computes (and caches into param_4, a per-slot
+// value array initialized to -1) that item's value via
+// compute_barter_item_value, then adds it to the running total.
+int sum_barter_offer_value(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+int param_2;
+int param_3;
+int param_4;
+short param_5;
+
+{
+  short sVar1;
+  int iVar2;
+  short *psVar3;
+  int iVar4;
+  int iVar5;
+  
+  iVar5 = 0;
+  iVar4 = 0;
+  do {
+    if (0 < *(int *)(param_3 + iVar4 * 4)) {
+      iVar2 = (int)*(short *)(iVar4 * 2 + param_2);
+      if (0 < iVar2) {
+        psVar3 = (short *)(iVar4 * 2 + param_4);
+        if (*psVar3 == -1) {
+          sVar1 = compute_barter_item_value(param_1,iVar2,(int)param_5);
+          *psVar3 = sVar1;
+        }
+        iVar5 = ((int)*psVar3 + (int)(short)iVar5) * 0x10000 >> 0x10;
+      }
+    }
+    iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+  } while (iVar4 < 4);
+  return iVar5;
+}
+
+
+
+// was FUN_0001cfa8 -- computes one item's barter value: base value
+// from its comobj.dat property row (doubled if magic, when param_1
+// gates that check), times quantity (or 1 for non-stackable items),
+// scaled by its condition/durability (out of 0x3f), then randomized
+// by +/-param_3 percent via randomize_value_pct.
+undefined4 compute_barter_item_value(param_1,param_2,param_3)
+short param_1;
+undefined4 param_2;
+undefined4 param_3;
+
+{
+  int iVar1;
+  short sVar2;
+  ushort uVar3;
+  ushort *puVar4;
+  undefined4 uVar5;
+  short sVar6;
+  uint uVar7;
+  int iVar8;
+  
+  puVar4 = (ushort *)FUN_000535fc(param_2);
+  if (param_1 == 0) {
+    uVar7 = (uint)*puVar4;
+    sVar6 = *(short *)(&DAT_00202c95 + (uVar7 & 0x1ff) * 0xd);
+  }
+  else {
+    sVar2 = FUN_0001dab8(param_2);
+    if (sVar2 == -1) {
+      return 0;
+    }
+    uVar7 = (uint)*puVar4;
+    sVar6 = *(short *)(&DAT_00202c95 + (uVar7 & 0x1ff) * 0xd);
+    if (sVar2 != 0) {
+      sVar6 = (short)(sVar6 * 3 >> 1);
+    }
+  }
+  if (((uVar7 & 0x8000) == 0) || ((puVar4[3] & 0x8000) != 0)) {
+    uVar3 = 1;
+  }
+  else {
+    uVar3 = puVar4[3] >> 6;
+  }
+  iVar8 = (int)(short)uVar3 * (int)sVar6 * 0x10000 >> 0x10;
+  if (0 < iVar8) {
+    iVar1 = (int)(short)((byte)puVar4[2] & 0x3f);
+    if (iVar1 == 0) {
+      iVar8 = 0;
+    }
+    else {
+      iVar8 = (int)(short)(iVar1 * iVar8 >> 6);
+      if (iVar8 == 0) {
+        iVar8 = 1;
+      }
+    }
+  }
+  Ordinal_1061((int)(short)param_2);
+  uVar5 = randomize_value_pct(iVar8,(short)param_3 * -0x10000 >> 0x10,param_3);
+  FUN_000228d4();
+  return uVar5;
+}
+
+
+
+// was FUN_0001d170 -- randomizes param_1 by a random percentage in
+// [param_2, param_3), used throughout the barter UI for haggle-value
+// jitter.
+int randomize_value_pct(param_1,param_2,param_3)
+short param_1;
+short param_2;
+short param_3;
+
+{
+  int iVar1;
+  
+  iVar1 = rand_below((int)param_3 - (int)param_2);
+  iVar1 = Ordinal_2005(100,(iVar1 + param_2) * (int)param_1);
+  return (iVar1 + param_1) * 0x10000 >> 0x10;
 }
 
