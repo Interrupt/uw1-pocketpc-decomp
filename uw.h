@@ -893,6 +893,13 @@ extern short DAT_0023be92;
 extern short DAT_0023be94;
 extern short DAT_0023bf00;
 extern undefined2 DAT_0023bf02;
+extern int DAT_000db500;
+extern undefined2 DAT_0023bf04;
+extern byte DAT_0023beb0;
+extern byte DAT_0023beac;
+extern undefined2 DAT_0023bea0;
+extern short DAT_0023bea4;
+extern short DAT_0023bf08;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -2929,14 +2936,14 @@ void unregister_game_view_interact_zones();
 void print_player_position_debug();
 void print_help_message();
 void set_custom_view_target();
-void FUN_00067b98();
-void FUN_00067d10();
-void FUN_00067e2c();
-void FUN_00067e40();
-void FUN_00067f1c();
+void move_custom_view_target();
+void set_view_subject_by_command();
+void enter_free_camera_mode();
+void restore_view_from_object_record();
+void spin_view_full_rotation();
 void *tilemap_lookup();
 void *spawn_new_object();
-void FUN_00068260();
+void handle_game_view_click_hold();
 void move_command_dispatch();
 void decode_movement_command();
 void uw_set_analog_move_turn(int fwd_held, int turn_dir);

@@ -7076,7 +7076,7 @@ void FUN_00012948()
    every tick called GXEndDraw() twice -- once here, once from that trailing
    flush -- and each is independently vsync-throttled (see GXEndDraw's own
    comment: real GAPI hardware blocked every call until the next refresh),
-   roughly doubling real per-tick time. FUN_00067f1c's own call site (a
+   roughly doubling real per-tick time. spin_view_full_rotation's own call site (a
    rare one-shot 64-substep view-spin animation with no other per-substep
    flush) leaves the flag clear and keeps flushing every substep as before. */
 int g_suppress_frame_timed_flush = 0;
@@ -20465,7 +20465,7 @@ void FUN_0003bee4()
     }
     else {
       g_cursor_holding_state = 0;
-      FUN_00067d10(1);
+      set_view_subject_by_command(1);
     }
   }
   return;
@@ -21693,7 +21693,7 @@ void FUN_0003f420()
             (int)*(short *)(DAT_00085a6c + 8), (unsigned)*(ushort *)(DAT_00085a6c + 6));
   }
   if ((*(ushort *)(DAT_00085a6c + 6) & 1) != 0) {
-    FUN_00068260();
+    handle_game_view_click_hold();
   }
   if (*(short *)(DAT_00085a6c + 8) != 1) {
     if (*(short *)(DAT_00085a6c + 8) != 0x10) {
@@ -22598,14 +22598,14 @@ void FUN_00041210()
 
 {
   full_dungeon_redraw();
-  FUN_00067d10(0xffffffff);
+  set_view_subject_by_command(0xffffffff);
   FUN_000411b8(5);
   full_dungeon_redraw();
   FUN_000411cc(5);
   wait_for_click_release(1);
   full_dungeon_redraw();
   FUN_000411b8(5);
-  FUN_00067d10(1);
+  set_view_subject_by_command(1);
   full_dungeon_redraw();
   FUN_000411cc(5);
   return;
@@ -31787,7 +31787,7 @@ short * param_1;
   }
   else {
     if (((uVar5 & 0xf) == 0xb) && ((uVar5 & 0xf0) == 0x10)) {
-      FUN_00067d10(1);
+      set_view_subject_by_command(1);
     }
     if ((*(byte *)(DAT_00086df8 + *param_1 * 2 + 0x3e) & 0xf) == 1) {
       DAT_000858a0 = 1;
@@ -36401,211 +36401,6 @@ LAB_00060f54:
 
 
 
-void FUN_00067b98()
-
-{
-  short *psVar1;
-  short sVar2;
-  uint uVar3;
-  int iVar4;
-  undefined1 local_14;
-  char cStack_13;
-  undefined1 local_12;
-  char cStack_11;
-  
-  psVar1 = DAT_00085a6c;
-  sVar2 = Ordinal_2005((int)DAT_0023be88,DAT_00085a6c[1] * 3);
-  uVar3 = Ordinal_2005((int)DAT_0023bd80,*psVar1 * 3);
-  iVar4 = (uint)DAT_0023bf00 + ((uVar3 & 0xffff) + 0x3f) * 0x400;
-  DAT_0023bf00 = (ushort)iVar4;
-  if (sVar2 != 1) {
-    angle_to_screen_delta(iVar4,&local_14,&local_12);
-    DAT_0023be90 = (short)cStack_13 * (sVar2 + -1) + DAT_0023be90;
-    DAT_0023be92 = (short)cStack_11 * (sVar2 + -1) + DAT_0023be92;
-  }
-  if (DAT_0023be90 < 0x180) {
-    DAT_0023be90 = 0x180;
-  }
-  if (0x3d80 < DAT_0023be90) {
-    DAT_0023be90 = 0x3d80;
-  }
-  if (DAT_0023be92 < 0x180) {
-    DAT_0023be92 = 0x180;
-  }
-  if (0x3d80 < DAT_0023be92) {
-    DAT_0023be92 = 0x3d80;
-  }
-  if (DAT_0023b82c == 0) {
-    FUN_00049924(2);
-  }
-  return;
-}
-
-
-
-void FUN_00067d10(param_1)
-short param_1;
-
-{
-  int iVar1;
-  short sVar2;
-  
-  if (param_1 == -1) {
-    DAT_0023b82c = 0;
-    return;
-  }
-  if (param_1 == 0) {
-    if (DAT_000db500 == 0) {
-      return;
-    }
-    sVar2 = encode_object_slot_index();
-    iVar1 = (int)sVar2;
-    if (iVar1 == 0) {
-      return;
-    }
-    if (0xff < iVar1) {
-      return;
-    }
-    if (iVar1 < 2) {
-      return;
-    }
-    DAT_0023b82c = iVar1 * 0x1b + DAT_002046b8;
-  }
-  else if (param_1 == 1) {
-    if (DAT_0023b82c == g_player_object) {
-      return;
-    }
-    DAT_0023b82c = g_player_object;
-  }
-  else {
-    if (param_1 != 2) {
-      if (param_1 != 3) {
-        return;
-      }
-      if (DAT_002046b8 - 0x1b <= DAT_0023b82c) {
-        DAT_0023b82c = DAT_002046b8 - 0x36;
-        FUN_00049924(2);
-      }
-    }
-    if (DAT_0023b82c < DAT_002046b8) {
-      return;
-    }
-    DAT_0023b82c = DAT_002046b8 - 0x1b;
-  }
-  FUN_00049924(2);
-  return;
-}
-
-
-
-void FUN_00067e2c()
-
-{
-  set_custom_view_target();
-  FUN_00067d10(0xffffffff);
-  return;
-}
-
-
-
-void FUN_00067e40(param_1,param_2,param_3)
-int param_1;
-short param_2;
-short param_3;
-
-{
-  int iVar1;
-  
-  DAT_0023be90 = (*(byte *)(param_1 + 3) & 0xe0) + param_2 * 0x100;
-  DAT_0023be92 = (*(byte *)(param_1 + 3) & 0x1c) * 8 + param_3 * 0x100;
-  DAT_0023be94 = (*(byte *)(param_1 + 2) & 0x7f) << 3;
-  DAT_0023bf00 = (*(ushort *)(param_1 + 2) & 0xff80) << 6;
-  DAT_0023bf02 = 0;
-  DAT_0023bf04 = 0;
-  FUN_0006ff08(6);
-  iVar1 = DAT_00086b20;
-  if (DAT_00086b20 != 0) {
-    DAT_00086b20 = 0;
-  }
-  FUN_00041210();
-  if (iVar1 != 0) {
-    DAT_00086b20 = 1;
-  }
-  refresh_player_equipment_effects();
-  return;
-}
-
-
-
-// was FUN_00067f1c -- spins the view through a full rotation over 64
-// substeps (DAT_0023bea4, a rotation-like value, accumulates by a
-// fixed 0xccb step each call), redrawing via render_dungeon_frame_timed
-// every substep. Its only current call site (FUN_00067dc4-area, ~line
-// 60497) is a rare one-shot scripted event, not ordinary player
-// turning -- which also makes render_dungeon_frame_timed (and, in
-// turn, weapon_swing_draw_tick, the only thing that actually draws the
-// weapon-swing overlay) unreachable from normal per-tick gameplay:
-// walking/turning redraws via dungeon_view_anim_tick -> full_dungeon_redraw,
-// which never calls either. Called with an unused `0xffffffff`
-// argument this K&R declaration doesn't accept -- harmless (K&R
-// ignores extra args) but not yet understood; flagging rather than
-// guessing.
-void FUN_00067f1c()
-
-{
-  int iVar1;
-  ushort uVar2;
-  short sVar3;
-  short sVar4;
-  uint uVar5;
-  int iVar6;
-  int iVar7;
-  
-  DAT_0023beb0 = 0x20;
-  DAT_0023beac = 0x20;
-  FUN_00067d10(3);
-  iVar6 = (uint)DAT_0023beac * 0x100 - (int)DAT_00204880;
-  iVar7 = (uint)DAT_0023beb0 * 0x100 - (int)DAT_00204882;
-  uVar5 = FUN_00013774(iVar7 * iVar7 + iVar6 * iVar6);
-  uVar5 = (uVar5 & 0xffff) >> 6;
-  DAT_0023bea0 = (undefined2)uVar5;
-  iVar1 = uVar5 << 6;
-  sVar3 = Ordinal_2005(iVar1,iVar6 * 0x8000);
-  sVar4 = Ordinal_2005(iVar1,iVar7 * 0x8000);
-  DAT_0023bea4 = FUN_00049fb4((int)sVar4,(int)sVar3);
-  DAT_0023bf08 = 0;
-  do {
-    render_dungeon_frame_timed();
-    DAT_0023bea4 = DAT_0023bea4 + 0xccb;
-    sVar3 = DAT_0023bf08 + 1;
-    uVar2 = DAT_0023bf08 + 1;
-    DAT_0023bf08 = sVar3;
-  } while (uVar2 < 0x40);
-  FUN_00067d10(1);
-  return;
-}
-
-
-
-void FUN_00068260()
-
-{
-  if (DAT_002020d8 == 0) {
-    move_command_dispatch(0xffffffff);
-    if (DAT_0023bf0c == '\0') {
-      set_cursor_confine_rect((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
-                   ((int)DAT_0023be80 - (int)DAT_0023be88) + 1);
-    }
-    DAT_0023bf0c = '\x02';
-  }
-  else {
-    FUN_00067b98(0);
-  }
-  return;
-}
-
-
-
 /* Fixed turn-rate accelerator value for decode_movement_command's turn
    branches -- see that function's own comment for why turning was
    decoupled from DAT_0024af6c (the held-key ramp, still used as-is for
@@ -41164,7 +40959,7 @@ void FUN_00071b94()
         object_list_append_tail(local_11c,puVar5);
       }
       FUN_00078c80(0x117);
-      FUN_00067f1c(0xffffffff);
+      spin_view_full_rotation(0xffffffff);
       FUN_000411b8(5);
       if (puVar5 != (undefined2 *)0x0) {
         object_list_unlink(local_11c,puVar5);
@@ -43608,7 +43403,7 @@ LAB_0007588c:
   case 7:
     FUN_000542f8(0xb,1,param_2);
     set_custom_view_target(0);
-    FUN_00067d10(0xffffffff);
+    set_view_subject_by_command(0xffffffff);
     break;
   case 8:
     uVar3 = 3;
@@ -47645,7 +47440,7 @@ undefined4 param_3;
       FUN_0003a4a0();
     }
     else if (uVar1 == 2) {
-      FUN_00067e40();
+      restore_view_from_object_record();
     }
     else if (2 < uVar1) {
       if (uVar1 < 5) {

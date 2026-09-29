@@ -852,3 +852,249 @@ short param_1;
   return;
 }
 
+
+
+
+// was FUN_00067b98 -- moves the "custom view target" position
+// (DAT_0023be90/be92, set up by set_custom_view_target) based on the
+// live mouse cursor position relative to the game-view rect
+// (DAT_0023bd80/be88 from register_game_view_interact_zones),
+// rotating the view facing (DAT_0023bf00) toward the drag direction
+// and clamping the position to valid map bounds. The free-camera
+// counterpart to normal player movement, driven from
+// handle_game_view_click_hold when DAT_002020d8 (free-camera mode) is
+// set.
+void move_custom_view_target()
+
+{
+  short *psVar1;
+  short sVar2;
+  uint uVar3;
+  int iVar4;
+  undefined1 local_14;
+  char cStack_13;
+  undefined1 local_12;
+  char cStack_11;
+  
+  psVar1 = DAT_00085a6c;
+  sVar2 = Ordinal_2005((int)DAT_0023be88,DAT_00085a6c[1] * 3);
+  uVar3 = Ordinal_2005((int)DAT_0023bd80,*psVar1 * 3);
+  iVar4 = (uint)DAT_0023bf00 + ((uVar3 & 0xffff) + 0x3f) * 0x400;
+  DAT_0023bf00 = (ushort)iVar4;
+  if (sVar2 != 1) {
+    angle_to_screen_delta(iVar4,&local_14,&local_12);
+    DAT_0023be90 = (short)cStack_13 * (sVar2 + -1) + DAT_0023be90;
+    DAT_0023be92 = (short)cStack_11 * (sVar2 + -1) + DAT_0023be92;
+  }
+  if (DAT_0023be90 < 0x180) {
+    DAT_0023be90 = 0x180;
+  }
+  if (0x3d80 < DAT_0023be90) {
+    DAT_0023be90 = 0x3d80;
+  }
+  if (DAT_0023be92 < 0x180) {
+    DAT_0023be92 = 0x180;
+  }
+  if (0x3d80 < DAT_0023be92) {
+    DAT_0023be92 = 0x3d80;
+  }
+  if (DAT_0023b82c == 0) {
+    FUN_00049924(2);
+  }
+  return;
+}
+
+
+
+// was FUN_00067d10 -- sets DAT_0023b82c, the object the camera
+// currently tracks (read by update_current_view_from_subject and many
+// others), by opcode: -1 clears it (free-camera mode), 0 selects
+// whatever object is under the cursor (gated on DAT_000db500, a
+// spectate-enable flag), 1 resets to the player, 2/3 step to the
+// next/previous mobile-object slot (cycling through NPCs). A
+// debug/spectator-mode view-subject switcher.
+void set_view_subject_by_command(param_1)
+short param_1;
+
+{
+  int iVar1;
+  short sVar2;
+  
+  if (param_1 == -1) {
+    DAT_0023b82c = 0;
+    return;
+  }
+  if (param_1 == 0) {
+    if (DAT_000db500 == 0) {
+      return;
+    }
+    sVar2 = encode_object_slot_index();
+    iVar1 = (int)sVar2;
+    if (iVar1 == 0) {
+      return;
+    }
+    if (0xff < iVar1) {
+      return;
+    }
+    if (iVar1 < 2) {
+      return;
+    }
+    DAT_0023b82c = iVar1 * 0x1b + DAT_002046b8;
+  }
+  else if (param_1 == 1) {
+    if (DAT_0023b82c == g_player_object) {
+      return;
+    }
+    DAT_0023b82c = g_player_object;
+  }
+  else {
+    if (param_1 != 2) {
+      if (param_1 != 3) {
+        return;
+      }
+      if (DAT_002046b8 - 0x1b <= DAT_0023b82c) {
+        DAT_0023b82c = DAT_002046b8 - 0x36;
+        FUN_00049924(2);
+      }
+    }
+    if (DAT_0023b82c < DAT_002046b8) {
+      return;
+    }
+    DAT_0023b82c = DAT_002046b8 - 0x1b;
+  }
+  FUN_00049924(2);
+  return;
+}
+
+
+
+// was FUN_00067e2c -- enters free-camera mode: resets the custom view
+// target to the player's own position, then clears the view subject
+// (set_view_subject_by_command(-1)) so move_custom_view_target starts
+// driving the camera instead of normal player movement.
+//
+// BUG FIX: set_custom_view_target was called with zero visible
+// arguments despite taking one (same dropped-argument bug class
+// documented throughout this project) -- 0 is the "reset to player
+// position" case per its own switch, matching this function's own
+// role, so pass it explicitly rather than relying on leftover
+// register state.
+void enter_free_camera_mode()
+
+{
+  set_custom_view_target(0);
+  set_view_subject_by_command(0xffffffff);
+  return;
+}
+
+
+
+// was FUN_00067e40 -- directly sets the custom view target's full
+// state (position/facing) from an object record (param_1) with
+// explicit x/y overrides (param_2/param_3), resets a couple of
+// tracked deltas, forces a camera resync, briefly clears then
+// restores an unrelated toggle (DAT_00086b20) around FUN_00041210,
+// and refreshes equipment effects. Purpose consistent with restoring
+// a saved/teleported viewpoint; exact caller context not traced.
+void restore_view_from_object_record(param_1,param_2,param_3)
+int param_1;
+short param_2;
+short param_3;
+
+{
+  int iVar1;
+  
+  DAT_0023be90 = (*(byte *)(param_1 + 3) & 0xe0) + param_2 * 0x100;
+  DAT_0023be92 = (*(byte *)(param_1 + 3) & 0x1c) * 8 + param_3 * 0x100;
+  DAT_0023be94 = (*(byte *)(param_1 + 2) & 0x7f) << 3;
+  DAT_0023bf00 = (*(ushort *)(param_1 + 2) & 0xff80) << 6;
+  DAT_0023bf02 = 0;
+  DAT_0023bf04 = 0;
+  FUN_0006ff08(6);
+  iVar1 = DAT_00086b20;
+  if (DAT_00086b20 != 0) {
+    DAT_00086b20 = 0;
+  }
+  FUN_00041210();
+  if (iVar1 != 0) {
+    DAT_00086b20 = 1;
+  }
+  refresh_player_equipment_effects();
+  return;
+}
+
+
+
+// was spin_view_full_rotation -- spins the view through a full rotation over 64
+// substeps (DAT_0023bea4, a rotation-like value, accumulates by a
+// fixed 0xccb step each call), redrawing via render_dungeon_frame_timed
+// every substep. Its only current call site (FUN_00067dc4-area, ~line
+// 60497) is a rare one-shot scripted event, not ordinary player
+// turning -- which also makes render_dungeon_frame_timed (and, in
+// turn, weapon_swing_draw_tick, the only thing that actually draws the
+// weapon-swing overlay) unreachable from normal per-tick gameplay:
+// walking/turning redraws via dungeon_view_anim_tick -> full_dungeon_redraw,
+// which never calls either. Called with an unused `0xffffffff`
+// argument this K&R declaration doesn't accept -- harmless (K&R
+// ignores extra args) but not yet understood; flagging rather than
+// guessing.
+void spin_view_full_rotation()
+
+{
+  int iVar1;
+  ushort uVar2;
+  short sVar3;
+  short sVar4;
+  uint uVar5;
+  int iVar6;
+  int iVar7;
+  
+  DAT_0023beb0 = 0x20;
+  DAT_0023beac = 0x20;
+  set_view_subject_by_command(3);
+  iVar6 = (uint)DAT_0023beac * 0x100 - (int)DAT_00204880;
+  iVar7 = (uint)DAT_0023beb0 * 0x100 - (int)DAT_00204882;
+  uVar5 = FUN_00013774(iVar7 * iVar7 + iVar6 * iVar6);
+  uVar5 = (uVar5 & 0xffff) >> 6;
+  DAT_0023bea0 = (undefined2)uVar5;
+  iVar1 = uVar5 << 6;
+  sVar3 = Ordinal_2005(iVar1,iVar6 * 0x8000);
+  sVar4 = Ordinal_2005(iVar1,iVar7 * 0x8000);
+  DAT_0023bea4 = FUN_00049fb4((int)sVar4,(int)sVar3);
+  DAT_0023bf08 = 0;
+  do {
+    render_dungeon_frame_timed();
+    DAT_0023bea4 = DAT_0023bea4 + 0xccb;
+    sVar3 = DAT_0023bf08 + 1;
+    uVar2 = DAT_0023bf08 + 1;
+    DAT_0023bf08 = sVar3;
+  } while (uVar2 < 0x40);
+  set_view_subject_by_command(1);
+  return;
+}
+
+
+
+// was FUN_00068260 -- the "3D-viewport's own click-and-hold-to-walk
+// region" handler (per input.c's own comment), called from
+// FUN_0003f420 while a button is held: drives ordinary player
+// movement (move_command_dispatch) normally, or
+// move_custom_view_target when free-camera mode (DAT_002020d8) is
+// active.
+void handle_game_view_click_hold()
+
+{
+  if (DAT_002020d8 == 0) {
+    move_command_dispatch(0xffffffff);
+    if (DAT_0023bf0c == '\0') {
+      set_cursor_confine_rect((int)DAT_0023be5c,(int)DAT_0023be80,(int)DAT_0023bd80 + (int)DAT_0023be5c + -1,
+                   ((int)DAT_0023be80 - (int)DAT_0023be88) + 1);
+    }
+    DAT_0023bf0c = '\x02';
+  }
+  else {
+    move_custom_view_target(0);
+  }
+  return;
+}
+

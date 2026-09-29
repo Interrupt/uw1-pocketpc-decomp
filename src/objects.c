@@ -288,7 +288,7 @@ char *param_1;
     sVar1 = Ordinal_2005(0x1b,param_1 - DAT_002046b8);
     *psVar2 = sVar1;
     if (param_1 == DAT_0023b82c) {
-      FUN_00067e2c((int)*(short *)DAT_002046a8);
+      enter_free_camera_mode((int)*(short *)DAT_002046a8);
     }
     FUN_00053774((int)*(short *)DAT_002046a8);
   }
