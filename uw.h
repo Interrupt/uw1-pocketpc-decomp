@@ -848,6 +848,44 @@ extern ushort DAT_00101900;
 extern ushort * DAT_0010190c;
 extern byte DAT_00101918;
 extern undefined4 DAT_00101924;
+/* Globals defined in uw.c but also used by functions that now live in
+   bitmap.c (sprite blitting / sprite-list system) -- extern'd here so
+   both translation units see the same storage. */
+extern undefined1 DAT_000842ac_backing[4096];
+#define DAT_000842ac ((void *)DAT_000842ac_backing)
+extern undefined1 DAT_00086e6c_backing[64];
+#define DAT_00086e6c ((intptr_t)DAT_00086e6c_backing)
+#define DAT_00087638 0x8000u
+#define DAT_0008763c 0x4000u
+#define DAT_00087640 0x2000u
+#define DAT_00087648 0x0800u
+extern byte * DAT_000b4610;
+extern char * DAT_000b4614;
+extern byte * DAT_000b461c;
+extern byte * DAT_000b4628;
+extern byte * DAT_000b5630;
+extern undefined1 DAT_00202520_backing[1024];
+#define DAT_00202520 DAT_00202520_backing[0]
+extern ushort DAT_00202738;
+extern byte DAT_0023b4a0;
+extern undefined2 DAT_0023b848_backing[64];
+#define DAT_0023b848 DAT_0023b848_backing[0]
+extern undefined1 DAT_0023b8c8_backing[128];
+#define DAT_0023b8c8 DAT_0023b8c8_backing[0]
+extern char DAT_0023bb94;
+extern undefined1 DAT_0023bb98_backing[512];
+#define DAT_0023bb98 DAT_0023bb98_backing[0]
+#define DAT_0023bb99 DAT_0023bb98_backing[1]
+#define DAT_0023bb9a DAT_0023bb98_backing[2]
+extern char * DAT_0023c3e4;
+extern char * DAT_0023c3e8;
+extern char * DAT_0023c3ec;
+extern short DAT_0023c3f4;
+extern ushort DAT_0023c400;
+extern char * DAT_0023c40c;
+extern undefined2 DAT_0023c41c;
+extern undefined1 DAT_0024e090_backing[524288];
+#define DAT_0024e090 DAT_0024e090_backing[0]
 
 
 
@@ -2143,6 +2181,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/automap.h"
 #include "src/headers/inventory.h"
 #include "src/headers/combat.h"
+#include "src/headers/bitmap.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
