@@ -1748,3 +1748,74 @@ int param_3;
   }
   return;
 }
+
+
+
+
+
+// was FUN_0007b5a4 -- deferred-target-click completion callback,
+// gated on both param_2 and param_3 nonzero: for target types
+// 0xcc/0xcd (a fillable source, e.g. a fountain/well), consumes the
+// held item and rewrites its type to 0x91 (matches this function's
+// own 0x90/0x91 branch, so likely "empty flask" -> "filled flask"),
+// then refreshes its inventory widget. For a held item already of
+// type 0x90/0x91, tops off its quality/fill-level field (offset +2,
+// low 6 bits) unless already full, printing a fill-progress message;
+// types 0x94/0x95 print a sibling message pair without modifying
+// anything. Any other combination just reports "no effect". No
+// callers found by grep in the remaining decompile.
+void complete_use_item_fill_flask(param_1,param_2,param_3)
+ushort * param_1;
+int param_2;
+int param_3;
+
+{
+  int iVar1;
+  ushort uVar2;
+  short sVar3;
+  int iVar4;
+  
+  uVar2 = *param_1 & 0x1ff;
+  if ((uVar2 == 0x90) || (sVar3 = 4, uVar2 == 0x94)) {
+    sVar3 = 0;
+  }
+  iVar1 = (int)sVar3;
+  FUN_00057cac(3);
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
+  if ((param_2 != 0) && (param_3 != 0)) {
+    if ((uVar2 < 0xcc) || (0xcd < uVar2)) {
+      if ((uVar2 == 0x90) || (uVar2 == 0x91)) {
+        uVar2 = param_1[2];
+        if ((uVar2 & 0x3f) != 0x3f) {
+          if ((uVar2 & 0x3f) < 0x20) {
+            uVar2 = (uVar2 - 0x20 ^ uVar2) & 0x3f ^ uVar2;
+          }
+          else {
+            uVar2 = uVar2 | 0x3f;
+          }
+          *(char *)(param_1 + 2) = (char)uVar2;
+          *(char *)((char *)param_1 + 5) = (char)(uVar2 >> 8);
+          print_scroll_message_by_id(iVar1 + 0xb3);
+          finish_object_use(DAT_00202098,param_2,1);
+          return;
+        }
+        iVar4 = iVar1 + 0xb4;
+      }
+      else if ((uVar2 == 0x94) || (iVar4 = 0xb1, uVar2 == 0x95)) {
+        iVar4 = iVar1 + 0xb2;
+      }
+      print_scroll_message_by_id(iVar4);
+    }
+    else {
+      print_scroll_message_by_id(0xb5);
+      finish_object_use(DAT_00202098,param_2,1);
+      uVar2 = *param_1;
+      *(undefined1 *)param_1 = 0x91;
+      *(byte *)((char *)param_1 + 1) = (byte)(uVar2 >> 8) & 0xfe;
+      find_or_assign_object_widget(param_1);
+      FUN_0004503c();
+    }
+  }
+  return;
+}

@@ -3455,7 +3455,7 @@ void use_light_source();
 void refuel_light_source_item();
 undefined4 use_food_item();
 void complete_use_item_scatter_spawn();
-void FUN_0007b5a4();
+void complete_use_item_fill_flask();
 void FUN_0007b72c();
 void FUN_0007baf0();
 void FUN_0007bcdc();
