@@ -3933,7 +3933,7 @@ static undefined1 DAT_00202a58_backing[65536];
    stopped the player at a wall. Alias every field into the one backing
    buffer. Per-corner layout: [0]=shape/index, [1..2]=diag corner offsets,
    [3..4]=a uint16 flag word (read wide as _DAT_00202bfb / c00 / c05). */
-static undefined1 DAT_00202bf8_backing[32768];
+ undefined1 DAT_00202bf8_backing[32768];
 #define DAT_00202bf8 DAT_00202bf8_backing[0]
 #define DAT_00202bf9  (DAT_00202bf8_backing[0x01])
 #define DAT_00202bfa  (DAT_00202bf8_backing[0x02])
@@ -3955,7 +3955,7 @@ static undefined1 DAT_00202bf8_backing[32768];
 #define DAT_00202c0d  (DAT_00202bf8_backing[0x15])
 #define DAT_00202c0e  (DAT_00202bf8_backing[0x16])
 #define DAT_00202c14  (*(unsigned int *)(DAT_00202bf8_backing + 0x1c))
-static undefined1 DAT_00202c70_backing[65536];
+ undefined1 DAT_00202c70_backing[65536];
 #define DAT_00202c70 DAT_00202c70_backing[0]
 /* At offset 8 of the DAT_00202c70 corner-height block -- collision_build_height_field's
    `Ordinal_1047(&DAT_00202c70, 0x11, 0x12)` (memset) seeds it (and every
@@ -16189,40 +16189,6 @@ void FUN_0002b63c()
 
 
 
-// was FUN_0002b7a0. Builds the collision_build_height_field scratch
-// buffer (DAT_00202c6c, a local 24-byte struct) for param_1, then
-// returns a combined height/step-limit field. Called with a dropped
-// argument from npc_ai_tick (relies on register-reuse from the
-// immediately preceding build_object_placement_snapshot call, whose
-// first argument is the same object pointer this function expects).
-int build_collision_height_field_for_object(param_1)
-ushort * param_1;
-
-{
-  undefined2 uVar1;
-  int iVar2;
-  undefined1 local_24 [24];
-  
-  DAT_00202c6c = local_24;
-  uVar1 = encode_object_slot_index(param_1);
-  DAT_00202c6c[10] = (char)uVar1;
-  DAT_00202c6c[0xb] = (char)((ushort)uVar1 >> 8);
-  DAT_00202c6c[8] = (&DAT_00202c91)[(*param_1 & 0x1ff) * 0xd] & 7;
-  DAT_00202c6c[9] = (&DAT_00202c90)[(*param_1 & 0x1ff) * 0xd];
-  iVar2 = ((param_1[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)param_1 + 3) >> 5);
-  *DAT_00202c6c = (char)iVar2;
-  DAT_00202c6c[1] = (char)((uint)iVar2 >> 8);
-  iVar2 = ((*(byte *)((char *)param_1 + 3) & 0x1c) >> 2) + ((param_1[0xb] & 0x3f0) >> 1);
-  DAT_00202c6c[2] = (char)iVar2;
-  DAT_00202c6c[3] = (char)((uint)iVar2 >> 8);
-  DAT_00202c6c[4] = (byte)param_1[1] & 0x7f;
-  DAT_00202c6c[5] = 0;
-  collision_build_height_field(8);
-  return (int)(short)(*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc));
-}
-
-
-
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this
@@ -16373,63 +16339,6 @@ ushort * param_1;
     DAT_00101924 = 1;
   }
   return 0;
-}
-
-
-
-// was FUN_0002bd70. Writes a small field into the object-placement
-// snapshot buffer (param_1, one of DAT_00204920/DAT_0010172c's chosen
-// targets) then runs movement_collision_sweep.
-/* Second argument was previously left undeclared, relying on it still
-   sitting in the same ABI register (r1) at the tail call to
-   movement_collision_sweep() -- a K&R "dropped-argument" idiom already
-   seen (and fixed) elsewhere this session (FUN_00073b18). It reliably
-   works in the REAL ARM binary only because that compiler's generated
-   code for this function body happens to never touch r1 between entry
-   and the call; nothing about C guarantees that on a different compiler/
-   platform, and on this port's build it isn't reliable -- confirmed
-   live: an intermittent (~3/10 runs) SIGSEGV in sweep_apply_collision,
-   indirect-calling through a garbage function pointer read from
-   movement_collision_sweep's own param_2 (DAT_002048bc), newly exposed
-   now that NPCs actually move far enough to hit real collisions (see
-   this function's own byte-0x14 fix just above). Both real call sites
-   already pass a real second argument explicitly
-   (apply_placement_collision_sweep(&DAT_00204920,&DAT_002049a0) and
-   (DAT_0010172c,DAT_00101438)) -- give it a real declared parameter and
-   forward it explicitly instead of relying on register leftovers. */
-undefined4 apply_placement_collision_sweep(param_1,param_2)
-intptr_t param_1;
-intptr_t param_2;
-
-{
-  /* param_1 was `int`, truncating the real 64-bit pointers callers pass
-     (&DAT_00204920, and DAT_0010172c after its own fix above) -- same
-     class of bug as DAT_0010172c's own fix. Confirmed live via lldb:
-     read as 0xb6c724 instead of the real 0x100b6c724, crashing on this
-     very first dereference the moment an NPC's per-tick AI got this
-     far. */
-  /* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this
-     NPC-AI cluster this session (see
-     [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
-     `ushort *`, so the bare `DAT_0010190c + 0x14` here scaled to byte
-     offset 0x28 (unrelated data) instead of the real byte 0x14
-     (confirmed via disassembly of this exact function, 0x2bd7c:
-     `ldrb r3,[r2,#0x14]` -- raw, unscaled). This byte's low 3 bits are
-     the same field npc_idle_behavior_tick sets on every idle-toggle
-     transition; the value computed here feeds movement_sweep_setup's
-     sub-step-count formula (DAT_00086990 = offset0x12 * velocity),
-     which multiplies by ZERO whenever this read comes out wrong/empty
-     -- capping every physics sub-step loop to a single negligible
-     iteration regardless of how large the (correctly-computed)
-     per-tick velocity is. This is very likely the actual root cause of
-     the "walk animation plays for a few seconds but the NPC never
-     reaches an adjacent tile" symptom: real velocity was being
-     computed (confirmed live), but the sub-step count that turns
-     velocity into actual swept distance was silently starved at zero. */
-  *(char *)(param_1 + 0x12) = (char)(((*(byte *)((char *)DAT_0010190c + 0x14) & 7) << 0x14) >> 0x10);
-  *(undefined1 *)(param_1 + 0x13) = 0;
-  movement_collision_sweep(param_1,param_2);
-  return 1;
 }
 
 
@@ -35203,55 +35112,6 @@ uint param_2;
 
 
 
-// was FUN_00050c18 -- per-corner slope/blocked flag word from the packed tile height DAT_00202c78
-bool collision_corner_flags(param_1)
-uint param_1;
-
-{
-  undefined2 uVar1;
-  undefined1 uVar2;
-  uint uVar3;
-  ushort uVar4;
-  int local_14;
-  
-  *(byte *)(DAT_00202c6c + 0xc) = (byte)(DAT_00202c78 >> 8) & 3;
-  *(undefined1 *)(DAT_00202c6c + 0xd) = 0;
-  uVar2 = collision_sample_floor_height(4,&local_14);
-  *(undefined1 *)(DAT_00202c6c + 0x10) = uVar2;
-  uVar3 = (uint)*(byte *)(DAT_00202c6c + 0x10);
-  if (getenv("UW_DEBUG_RAMP"))
-    fprintf(stderr, "[ramp-corner-flags] DAT_00202c78=0x%x shape=%d uVar3(sampled)=%d off4=%d param_1(steplim)=%d\n",
-            (unsigned)DAT_00202c78, (int)(DAT_00202c78 & 0xf), (int)uVar3,
-            (int)*(short *)(DAT_00202c6c + 4), (int)param_1);
-  if (uVar3 == 0x80) {
-    uVar4 = *(ushort *)(DAT_00202c6c + 0xc) | 0x200;
-  }
-  else if ((int)((param_1 & 0xff) + (int)*(short *)(DAT_00202c6c + 4)) < (int)uVar3) {
-    uVar4 = *(ushort *)(DAT_00202c6c + 0xc) | 0x100;
-  }
-  else {
-    uVar4 = *(ushort *)(DAT_00202c6c + 0xc);
-    if ((int)uVar3 < (int)((int)*(short *)(DAT_00202c6c + 4) - (param_1 & 0xff))) {
-      uVar4 = uVar4 | 0x800;
-    }
-    else {
-      *(byte *)(DAT_00202c6c + 0xc) = (byte)uVar4 | 4;
-      *(char *)(DAT_00202c6c + 0xd) = (char)(uVar4 >> 8);
-      uVar4 = *(ushort *)(DAT_00202c6c + 0xc) | (ushort)(8 << ((int)(short)DAT_00202c78 >> 8 & 3U));
-    }
-  }
-  *(char *)(DAT_00202c6c + 0xc) = (char)uVar4;
-  *(char *)(DAT_00202c6c + 0xd) = (char)(uVar4 >> 8);
-  if (5 < (DAT_00202c78 & 0xf)) {
-    uVar1 = *(undefined2 *)(DAT_00202c6c + 0xc);
-    *(char *)(DAT_00202c6c + 0xc) = (char)uVar1;
-    *(byte *)(DAT_00202c6c + 0xd) = (byte)((ushort)uVar1 >> 8) | 0x20;
-  }
-  return local_14 == 0;
-}
-
-
-
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
 /* Recovered from UU.exe .data at 0x86878 (28 real bytes, then the
@@ -35285,178 +35145,13 @@ static const signed char DAT_00086878_arr[256] = {
    style defensive treatment as resolve_object_link's own out-of-range
    guard: skip the neighbor (leave its shade unresolved) instead of
    reading unmapped/unrelated memory. */
-static ushort collision_neighbor_shade_or_zero(ushort *base, byte idx) {
+ushort collision_neighbor_shade_or_zero(ushort *base, byte idx) {
   ptrdiff_t off = (ptrdiff_t)DAT_00086878_IDX(idx) * 2;
   ushort *p = base + off;
   if ((char *)p < DAT_002029cc || (char *)(p + 1) > DAT_002029cc + 0x4000) {
     return 0;
   }
   return *p;
-}
-
-// was FUN_00050d78 -- build the per-corner tile height field the sweep collides against
-void collision_build_height_field(param_1)
-uint param_1;
-
-{
-  byte *pbVar1;
-  ushort *puVar2;
-  ushort uVar3;
-  short sVar4;
-  int iVar5;
-  uint uVar6;
-  int iVar7;
-  uint uVar8;
-  int iVar9;
-  undefined1 *puVar10;
-  byte bVar11;
-  byte bVar12;
-  byte bVar13;
-  byte bVar14;
-  short sVar15;
-  bool bVar16;
-  byte abStack_b4 [128];
-  byte local_34 [8];
-  
-  Ordinal_1047(&DAT_00202c70,0x11,0x12);
-  puVar10 = &DAT_00202bf8;
-  iVar7 = 5;
-  do {
-    puVar10[3] = 0;
-    iVar7 = iVar7 + -1;
-    puVar10[4] = 0;
-    puVar10 = puVar10 + 5;
-  } while (iVar7 != 0);
-  _DAT_00202c34 =
-       (ushort *)
-       tilemap_lookup((int)*(short *)DAT_00202c6c >> 3,(int)*(short *)(DAT_00202c6c + 2) >> 3);
-  /* off-map tile -- this function derefs _DAT_00202c34 below and assumes a
-     valid record; the sweep collision-revert path can reach here out of
-     bounds. */
-  if (_DAT_00202c34 == (ushort *)0x0) {
-    return;
-  }
-  bVar11 = 4;
-  bVar12 = *DAT_00202c6c;
-  bVar13 = DAT_00202c6c[2];
-  DAT_00202c0c = 4;
-  DAT_00202c0d = (undefined1)(bVar12 & 7);
-  DAT_00202c0e = (undefined1)(bVar13 & 7);
-  if (DAT_00202c78 == 0x1111) {
-    uVar3 = *_DAT_00202c34;
-    DAT_00202c78 = (uVar3 & 0xf) +
-                   (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10;
-  }
-  collision_corner_flags(param_1);
-  pbVar1 = DAT_00202c6c + 0xc;
-  DAT_00202c6c[0xe] = (byte)*(undefined2 *)pbVar1;
-  DAT_00202c6c[0xf] = (byte)((ushort)*(undefined2 *)pbVar1 >> 8);
-  DAT_00202c6c[0x11] = DAT_00202c6c[0x10];
-  if (getenv("UW_DEBUG_RAMP"))
-    fprintf(stderr, "[ramp-inside-bhf] after-copy d8=%d d9=%d uVar3(DAT_00202c6c[8])=%d\n",
-            (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11], (int)(uint)(ushort)DAT_00202c6c[8]);
-  puVar2 = _DAT_00202c34;
-  uVar3 = (ushort)DAT_00202c6c[8];
-  if (uVar3 != 0) {
-    for (sVar15 = (bVar13 & 7) - uVar3; sVar15 < 0; sVar15 = sVar15 + 8) {
-      bVar11 = bVar11 - 3;
-    }
-    for (sVar4 = (bVar12 & 7) - uVar3; sVar4 < 0; sVar4 = sVar4 + 8) {
-      bVar11 = bVar11 - 1;
-    }
-    DAT_00202bfa = (undefined1)sVar15;
-    DAT_00202bf9 = (undefined1)sVar4;
-    bVar12 = bVar11;
-    for (sVar4 = sVar4 + (ushort)DAT_00202c6c[8] * 2; 7 < sVar4; sVar4 = sVar4 + -8) {
-      bVar12 = bVar12 + 1;
-    }
-    DAT_00202bfe = (undefined1)sVar4;
-    bVar13 = bVar12;
-    for (sVar15 = sVar15 + (ushort)DAT_00202c6c[8] * 2; 7 < sVar15; sVar15 = sVar15 + -8) {
-      bVar13 = bVar13 + 3;
-    }
-    DAT_00202c04 = (undefined1)sVar15;
-    bVar14 = bVar13;
-    for (sVar4 = sVar4 + (ushort)DAT_00202c6c[8] * -2; sVar4 < 0; sVar4 = sVar4 + 8) {
-      bVar14 = bVar14 - 1;
-    }
-    DAT_00202c08 = (undefined1)sVar4;
-    DAT_00202bf8 = bVar11;
-    DAT_00202bfd = bVar12;
-    DAT_00202bff = DAT_00202bfa;
-    DAT_00202c02 = bVar13;
-    DAT_00202c03 = DAT_00202bfe;
-    DAT_00202c07 = bVar14;
-    DAT_00202c09 = DAT_00202c04;
-    if (*(short *)(&DAT_00202c70 + (uint)bVar11 * 2) == 0x1111) {
-      uVar3 = collision_neighbor_shade_or_zero(_DAT_00202c34, bVar11);
-      *(ushort *)(&DAT_00202c70 + (uint)bVar11 * 2) =
-           (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
-      ;
-    }
-    if (*(short *)(&DAT_00202c70 + (uint)bVar12 * 2) == 0x1111) {
-      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar12);
-      *(ushort *)(&DAT_00202c70 + (uint)bVar12 * 2) =
-           (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
-      ;
-    }
-    if (*(short *)(&DAT_00202c70 + (uint)bVar13 * 2) == 0x1111) {
-      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar13);
-      *(ushort *)(&DAT_00202c70 + (uint)bVar13 * 2) =
-           (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
-      ;
-    }
-    if (*(short *)(&DAT_00202c70 + (uint)bVar14 * 2) == 0x1111) {
-      uVar3 = collision_neighbor_shade_or_zero(puVar2, bVar14);
-      *(ushort *)(&DAT_00202c70 + (uint)bVar14 * 2) =
-           (uVar3 & 0xf) + (((&DAT_0023ae40)[uVar3 >> 10 & 0xf] & 0xff) + (uVar3 >> 4 & 0xf)) * 0x10
-      ;
-    }
-    DAT_00202c14 = 1;
-    iVar7 = 0;
-    do {
-      iVar5 = FUN_00050b30(iVar7,param_1 & 0xff);
-      if (iVar5 == 0) {
-        iVar5 = iVar7 * 5;
-        if (((&DAT_00202bfc)[iVar5] & 3) == 0) {
-          local_34[1] = 0x10;
-          local_34[2] = 2;
-          local_34[3] = 8;
-          local_34[0] = 4;
-          iVar9 = 0;
-          local_34[4] = 4;
-          do {
-            pbVar1 = DAT_00202c6c;
-            uVar6 = (uint)(char)iVar9;
-            uVar8 = (uint)(&DAT_00202bf8)[iVar5];
-            bVar16 = (&DAT_00202bf8)[(iVar7 + uVar6 * -2 + 1 & 3) * 5] != uVar8;
-            if (bVar16) {
-              uVar6 = (uint)local_34[uVar6 + iVar7];
-              uVar8 = (uint)(byte)(&DAT_000878d0)[(int)*(short *)(&DAT_00202c70 + uVar8 * 2) & 0xf];
-            }
-            if (bVar16 && (uVar6 & uVar8) != 0) {
-              (&DAT_00202bfb)[iVar5] = 0;
-              (&DAT_00202bfc)[iVar5] = 2;
-              pbVar1[0x11] = 0x80;
-              iVar9 = 2;
-            }
-            iVar9 = iVar9 + 1;
-          } while (iVar9 * 0x1000000 >> 0x18 < 2);
-          DAT_00202c14 = 0;
-        }
-      }
-      uVar3 = *(ushort *)(DAT_00202c6c + 0xe) | DAT_00202c0a | _DAT_00202c05 | _DAT_00202c00 |
-              _DAT_00202bfb;
-      DAT_00202c6c[0xe] = (byte)uVar3;
-      DAT_00202c6c[0xf] = (byte)(uVar3 >> 8);
-      iVar7 = (iVar7 + 1) * 0x1000000 >> 0x18;
-    } while (iVar7 < 4);
-  }
-  if (getenv("UW_DEBUG_RAMP"))
-    fprintf(stderr, "[ramp-bhf-end] d8=%d d9=%d macro_d8=%d macro_d9=%d\n",
-            (int)DAT_00202c6c[0x10], (int)DAT_00202c6c[0x11],
-            (int)DAT_002049d8, (int)DAT_002049d9);
-  return;
 }
 
 
@@ -35682,192 +35377,6 @@ int param_5;
       (&DAT_00202c3c)[iVar7] = (char)iVar13;
       (&DAT_00202c3d)[iVar7] = (char)((uint)iVar13 >> 8);
     }
-  }
-  return;
-}
-
-
-
-// was FUN_000518c0 -- reduce the height field to floor/ceiling envelope + block flags
-void collision_height_envelope(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  char cVar1;
-  int iVar2;
-  ushort uVar3;
-  byte bVar4;
-  intptr_t iVar5;  /* was int -- holds the void* tilemap_lookup returns (a
-                      real 64-bit tile-array pointer); truncated to 32
-                      bits it made `*(ushort *)(iVar5 + ...)` a wild
-                      deref -- the crash the first time a keyboard
-                      forward step actually dispatched. */
-  ushort *puVar6;
-  ushort *puVar7;
-  short sVar8;
-  int iVar9;
-  int iVar10;
-  int iVar11;
-  int iVar12;
-  byte *pbVar13;
-  int iVar14;
-  int local_3c;
-  
-  local_3c = 0;
-  int _px = (int)*(short *)DAT_00202c6c >> 3;
-  int _py = (int)*(short *)(DAT_00202c6c + 2) >> 3;
-  iVar5 = tilemap_lookup(_px, _py);
-  /* off-map tile (DAT_00202c6c position outside 0..63): this function assumes
-     a valid tile record and derefs iVar5 + offsets below. The sweep's
-     collision revert path (sweep_step(-1)) can reach here with an out-of-
-     bounds position. */
-  if (iVar5 == 0) {
-    return;
-  }
-  if (*(short *)(DAT_00202c6c + 10) != 0) {
-    /* Ghidra dropped FUN_000535fc's argument -- it's the object-slot id
-       this branch just tested non-zero (classic `if ((id=..)!=0) rec=f(id)`);
-       without it f() ran on a leftover register and handed back a wild
-       pointer that passed the != 0 guard and crashed on deref. */
-    puVar6 = (ushort *)FUN_000535fc((int)*(short *)(DAT_00202c6c + 10));
-    if (puVar6 != (ushort *)0x0 && (*puVar6 & 0x1c0) == 0x40) {
-      local_3c = 1;
-    }
-    else {
-      local_3c = 0;
-    }
-  }
-  DAT_00202c6c[0x14] = 0;
-  DAT_00202c18 = *DAT_00202c6c & 7;
-  DAT_00202c1c = DAT_00202c6c[2] & 7;
-  if ((param_1 == 0) || (DAT_00202c6c[9] != 0)) {
-    bVar4 = DAT_00202c6c[8];
-    if ((local_3c != 0) && (0 < (char)bVar4)) {
-      bVar4 = (byte)((uint)(((char)bVar4 + -1) * 0x1000000) >> 0x18);
-    }
-  }
-  else {
-    bVar4 = 0;
-  }
-  DAT_00202c20 = (undefined1)((int)(char)DAT_00202c18 - (int)(char)bVar4);
-  iVar11 = ((int)(char)bVar4 + (int)(char)DAT_00202c1c) * 0x1000000;
-  iVar9 = ((int)(char)bVar4 + (int)(char)DAT_00202c18) * 0x1000000;
-  iVar12 = iVar11 >> 0x18;
-  iVar14 = iVar9 >> 0x18;
-  DAT_00202c2c = (undefined1)((uint)iVar11 >> 0x18);
-  DAT_00202c28 = (undefined1)((uint)iVar9 >> 0x18);
-  DAT_00202c24 = (undefined1)((int)(char)DAT_00202c1c - (int)(char)bVar4);
-  iVar11 = ((int)(char)DAT_00202c1c - (int)(char)bVar4) * 0x1000000 >> 0x18;
-  iVar9 = iVar11 + -0xb;
-  iVar10 = iVar14 + 4;
-  if (iVar9 < 0) {
-    iVar9 = iVar11 + -4;
-  }
-  iVar11 = iVar12 + 4;
-  if (iVar10 < 0) {
-    iVar10 = iVar14 + 0xb;
-  }
-  if (iVar11 < 0) {
-    iVar11 = iVar12 + 0xb;
-  }
-  cVar1 = (char)(iVar9 >> 3);
-  iVar9 = ((int)(char)DAT_00202c18 - (int)(char)bVar4) * 0x1000000 >> 0x18;
-  iVar12 = iVar9 + -0xb;
-  if (iVar12 < 0) {
-    iVar12 = iVar9 + -4;
-  }
-  iVar9 = (int)(char)(iVar10 >> 3);
-  iVar12 = (int)(char)(iVar12 >> 3);
-  if (iVar12 <= iVar9) {
-    iVar11 = (int)(char)(iVar11 >> 3);
-    pbVar13 = DAT_00202c6c;
-    do {
-      iVar14 = (int)cVar1;
-      if (cVar1 <= iVar11) {
-        do {
-          /* Was raw pointer arithmetic straight off iVar5 (the CURRENT
-             tile's own record, from tilemap_lookup(_px,_py)):
-             `iVar5 + (dx + dy*0x40)*4 + 2` -- algebraically the right way
-             to reach a neighbouring tile's record in a flat 64x64 array
-             (base + ((_px+dx)+(_py+dy)*64)*4), but with none of
-             tilemap_lookup's own bounds check that a plain
-             tilemap_lookup(_px+dx,_py+dy) call gets for free. This scan's
-             dx/dy (iVar12/iVar14) range up to +-11 tiles, so anywhere
-             within ~11 tiles of the map edge -- confirmed via lldb,
-             walking toward a critter near tile (17,7) -- (_px+dx) or
-             (_py+dy) goes negative or >=64, landing this "neighbour"
-             pointer far outside the real DAT_002029cc array and crashing
-             on the very next dereference. Route through tilemap_lookup
-             so an out-of-map neighbour is treated as "no object here"
-             instead. */
-          void *_ntile = tilemap_lookup(_px + (char)iVar12, _py + (char)iVar14);
-          iVar10 = 0;
-          sVar8 = 0;
-          if (_ntile == 0) {
-            puVar6 = 0;
-            uVar3 = 0;
-          } else {
-            puVar6 = (ushort *)((char *)_ntile + 2);
-            uVar3 = *puVar6;
-          }
-          while ((uVar3 & 0xffc0) != 0) {
-            sVar8 = (short)iVar10;
-            if (0x3f < sVar8) break;
-            if ((uint)(uVar3 >> 6) != (int)*(short *)(pbVar13 + 10)) {
-              puVar7 = (ushort *)resolve_object_link(puVar6);
-              /* resolve_object_link can now return NULL for an
-                 out-of-range link (see its own comment) where this loop's
-                 `while ((uVar3 & 0xffc0) != 0)` condition alone used to
-                 guarantee success -- and since the chain-advance below
-                 uses this same puVar6 through the same function, a NULL
-                 here means the chain itself is unsafe to keep walking
-                 (advancing anyway would resolve against address 4).
-                 Give up on this tile's object chain instead of
-                 dereferencing NULL or walking into near-NULL memory. */
-              if (puVar7 == (ushort *)0x0) break;
-              iVar10 = (*puVar7 & 0x1ff) * 0xd;
-              if ((((local_3c == 0) || (((&DAT_00202c93)[iVar10] & 4) == 0)) &&
-                  (((&DAT_00202c90)[iVar10] != '\0' || (puVar7 < DAT_002046c4)))) &&
-                 ((((DAT_002046c4 <= puVar7 || ((*puVar7 & 0x1c0) == 0x40)) ||
-                   ((*(byte *)((char *)puVar7 + 0x15) & 0x80) == 0)) &&
-                  ((param_2 == 0 || (((&DAT_00202c97)[iVar10] & 1) != 0)))))) {
-                FUN_00051658(puVar7,*puVar6 >> 6,iVar12,iVar14,local_3c);
-              }
-            }
-            /* was `iVar10 = resolve_object_link(...); puVar6 = (ushort
-               *)(iVar10 + 4);` -- iVar10 is `int`, truncating the real
-               64-bit object-record pointer resolve_object_link returns,
-               so the very next `*puVar6` was a wild deref (the second
-               crash a keyboard forward step hits). Keep the pointer in
-               its own width; iVar10 is reset to the loop counter right
-               after anyway. */
-            { intptr_t _objp = (intptr_t)resolve_object_link(puVar6);
-              /* Same missing-NULL-guard bug as the first resolve_object_link
-                 call above, just on the chain-advance itself instead of the
-                 per-object handling: resolve_object_link can return NULL
-                 for an out-of-range link, and this unconditionally turned
-                 that into puVar6 = (ushort*)4, dereferenced by `uVar3 =
-                 *puVar6` a few lines down (or, if that near-NULL address
-                 happened to be mapped, silently kept walking a chain from
-                 garbage). Confirmed via lldb: EXC_BAD_ACCESS right here,
-                 walking into an obstacle (e.g. standing next to a critter). */
-              if (_objp == 0) break;
-              puVar6 = (ushort *)(_objp + 4); }
-            iVar2 = (sVar8 + 1) * 0x10000;
-            iVar10 = iVar2 >> 0x10;
-            sVar8 = (short)((uint)iVar2 >> 0x10);
-            pbVar13 = DAT_00202c6c;
-            uVar3 = *puVar6;
-          }
-          if (sVar8 == 0x40) {
-            return;
-          }
-          iVar14 = iVar14 + 1;
-        } while (iVar14 * 0x1000000 >> 0x18 <= iVar11);
-      }
-      iVar12 = (iVar12 + 1) * 0x1000000 >> 0x18;
-    } while (iVar12 <= iVar9);
   }
   return;
 }

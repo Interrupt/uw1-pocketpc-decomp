@@ -1506,6 +1506,39 @@ extern char * g_font_glyph_data_base;
 extern ushort g_font_line_height;
 extern short g_font_row_stride;
 extern undefined2 g_text_flat_color;
+/* Globals defined in uw.c but also used by functions that now live in
+   collision.c (collision geometry) -- extern'd here so both
+   translation units see the same storage. */
+extern undefined1 DAT_00202bf8_backing[32768];
+#define DAT_00202bf8 DAT_00202bf8_backing[0]
+extern undefined1 DAT_00202c70_backing[65536];
+#define DAT_00202c70 DAT_00202c70_backing[0]
+extern ushort * _DAT_00202c34;
+extern char DAT_00202c18;
+extern char DAT_00202c1c;
+extern char DAT_00202c20;
+extern char DAT_00202c24;
+extern char DAT_00202c28;
+extern char DAT_00202c2c;
+#define DAT_00202bf9  (DAT_00202bf8_backing[0x01])
+#define DAT_00202bfa  (DAT_00202bf8_backing[0x02])
+#define DAT_00202bfb  (DAT_00202bf8_backing[0x03])
+#define DAT_00202bfc  (DAT_00202bf8_backing[0x04])
+#define DAT_00202bfd  (DAT_00202bf8_backing[0x05])
+#define DAT_00202bfe  (DAT_00202bf8_backing[0x06])
+#define DAT_00202bff  (DAT_00202bf8_backing[0x07])
+#define DAT_00202c02  (DAT_00202bf8_backing[0x0a])
+#define DAT_00202c03  (DAT_00202bf8_backing[0x0b])
+#define DAT_00202c04  (DAT_00202bf8_backing[0x0c])
+#define DAT_00202c07  (DAT_00202bf8_backing[0x0f])
+#define DAT_00202c08  (DAT_00202bf8_backing[0x10])
+#define DAT_00202c09  (DAT_00202bf8_backing[0x11])
+#define DAT_00202c0a  (*(unsigned short *)(DAT_00202bf8_backing + 0x12))
+#define DAT_00202c0c  (DAT_00202bf8_backing[0x14])
+#define DAT_00202c0d  (DAT_00202bf8_backing[0x15])
+#define DAT_00202c0e  (DAT_00202bf8_backing[0x16])
+#define DAT_00202c14  (*(unsigned int *)(DAT_00202bf8_backing + 0x1c))
+#define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -1701,6 +1734,7 @@ void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_force_item_id_once(void);
 undefined4 LAB_000415d0(void *buf, unsigned size, int idx);
 void *alloc_door_frame_buffer();
+ushort collision_neighbor_shade_or_zero(ushort *base, byte idx);
 void scroll_container_grid_up(void);
 void scroll_container_grid_down(void);
 int raster_edge_step();
@@ -2971,6 +3005,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/visibility.h"
 #include "src/headers/saveload.h"
 #include "src/headers/text.h"
+#include "src/headers/collision.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
