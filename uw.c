@@ -3309,10 +3309,23 @@ undefined4 LAB_00041610(void *buf, unsigned size, int idx)
 undefined2 DAT_000859a8;
 undefined4 LAB_00041670(void *buf, unsigned size, int idx)
 {
-  /* Caller FUN_00041990 (TMFLAT.GR) with a fixed base stashed in
-     DAT_000859a8 (0x170). */
+  /* Caller FUN_00041990 (TMFLAT.GR) with a fixed id base stashed in
+     DAT_000859a8 (0x170). Real ARM (0x41670): registers each entry at
+     the running cursor DAT_00202744 and ADVANCES the cursor by one,
+     recording DAT_0024d090[(0x170+idx)*4] = frame as the object-id ->
+     frame remap. So TMFLAT occupies DAT_00202734..+0xf and TMOBJ
+     starts at DAT_00202734+0x10 -- the "+0x10" in emit_catalog_object's
+     per-instance frame formula. This used to register only at the id
+     alias and never advance the cursor, placing TMOBJ 16 frames early
+     so every "+DAT_00202734" / "+DAT_00202734+0x10" TMFLAT/TMOBJ frame
+     read landed on the wrong image (lever/pull-chain/sign/bridge).
+     The id alias (0x170+idx) is kept because this port resolves object
+     ids to frames as the identity (resolve_sprite_id_to_frame never
+     consults the remap). */
   (void)size;
   uw_register_gr_entry((unsigned)DAT_000859a8, buf, idx);
+  uw_register_gr_entry((unsigned)DAT_00202744, buf, 0);
+  DAT_00202744 = DAT_00202744 + 1;
   return 1;
 }
 void *LAB_000416e8(param_1)
@@ -58165,6 +58178,8 @@ short frame_or_texid;
         if ((*(byte *)(obj + 1) >> 1 & 0xf) < bVar8) {
           DAT_0023b834 = 2;
           Ordinal_2005(bVar8,*(byte *)(obj + 1) >> 1 & 0xf);
+          /* real ARM idivmod leaves the remainder in r1 (Ghidra's extraout_r1) */
+          extraout_r1 = (short)((*(byte *)(obj + 1) >> 1 & 0xf) % bVar8);
           uVar21 = (uint)DAT_00202734;
           *puVar25 = 2;
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1 + uVar21 + 0x10;
@@ -58196,6 +58211,7 @@ short frame_or_texid;
         cVar9 = (bVar5 >> 5) + 1;
         if (cVar9 != '\0') {
           Ordinal_2005(cVar9,*(byte *)(obj + 1) >> 1 & 0xf);
+          extraout_r1_00 = (short)((*(byte *)(obj + 1) >> 1 & 0xf) % (unsigned char)cVar9);
           iVar29 = (bVar5 & 0x1f) + (int)extraout_r1_00 + (uint)DAT_00202734 + 0x10;
           if (getenv("UW_DEBUG_DOOR"))
             fprintf(stderr, "[billboard] extra-frame: bVar5=0x%02x cVar9=%d extraout_r1_00=%d DAT_00202734=%d -> iVar29=%d\n",
