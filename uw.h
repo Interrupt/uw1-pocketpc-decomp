@@ -1539,6 +1539,57 @@ extern char DAT_00202c2c;
 #define DAT_00202c0e  (DAT_00202bf8_backing[0x16])
 #define DAT_00202c14  (*(unsigned int *)(DAT_00202bf8_backing + 0x1c))
 #define DAT_00202c78 (*(unsigned short *)(DAT_00202c70_backing + 8))
+/* Globals defined in uw.c but also used by functions that now live in
+   input.c (key bindings, movement commands, mouse) -- extern'd here
+   so both translation units see the same storage. */
+#define DAT_00086e68 15
+extern void (*g_keybind_handler[512])(int);
+extern int g_keybind_handler_n;
+extern void (*g_click_region_handler[128])(int);
+extern int g_click_region_handler_n;
+extern undefined2 DAT_00085a70;
+extern short DAT_00086968;
+extern undefined2 DAT_0008696a;
+extern undefined2 DAT_0008696c;
+extern short DAT_0008696e;
+extern short DAT_00086974;
+extern undefined DAT_00086e70;
+extern short * DAT_000876c4;
+extern int DAT_000879ac;
+extern undefined4 DAT_000bbef8;
+extern short DAT_00202078;
+extern short DAT_0020207a;
+extern short DAT_0020207c;
+extern ushort DAT_00202084;
+extern byte DAT_0020208c;
+extern undefined4 DAT_002020d4;
+extern undefined2 DAT_0020288c;
+extern char * DAT_00202890;
+extern undefined2 DAT_00202898;
+extern char * DAT_0020289c;
+extern short DAT_00204700;
+extern short DAT_00204708;
+extern undefined2 DAT_0020470c;
+extern undefined2 DAT_00204710;
+extern short DAT_00204778;
+extern short DAT_0020477c;
+extern short DAT_00204780;
+extern short DAT_00204788;
+extern undefined2 DAT_00204830;
+extern undefined2 DAT_00204834;
+extern short DAT_00204840;
+extern short DAT_00204850;
+extern int DAT_0020485c;
+extern int DAT_00204864;
+extern short DAT_0023bf48;
+extern short DAT_0023bf4c;
+extern undefined4 DAT_0023bf50;
+extern undefined4 DAT_0023bf54;
+extern byte DAT_0023bf58;
+extern undefined DAT_00250658;
+extern int g_click_region_handler_n;
+extern int g_keybind_handler_n;
+extern short g_movement_mode;
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -1735,6 +1786,8 @@ void uw_debug_force_item_id_once(void);
 undefined4 LAB_000415d0(void *buf, unsigned size, int idx);
 void *alloc_door_frame_buffer();
 ushort collision_neighbor_shade_or_zero(ushort *base, byte idx);
+int uw_always_show_cursor(void);
+int uw_turn_rate_accel(void);
 void scroll_container_grid_up(void);
 void scroll_container_grid_down(void);
 int raster_edge_step();
@@ -3006,6 +3059,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/saveload.h"
 #include "src/headers/text.h"
 #include "src/headers/collision.h"
+#include "src/headers/input.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
