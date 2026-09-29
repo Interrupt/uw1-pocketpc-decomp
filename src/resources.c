@@ -1151,3 +1151,36 @@ undefined4 param_1;
   DAT_000878bc = DAT_000878bc + 1;
   return uVar1;
 }
+
+
+// was FUN_0007ee4c -- the mirror-image "read" counterpart to
+// write_buffer_to_file: opens param_1 for read and reads param_3
+// bytes into param_2, returning whether the full byte count was
+// read. Widely used across uw.c and src/automap.c, src/chargen.c,
+// src/game.c, src/graphics.c for various fixed-size resource/palette/
+// bitmap loads (several call sites pass a fixed 64000 = 320*200,
+// e.g. a full-screen 8bpp image).
+bool read_buffer_from_file(param_1,param_2,param_3)
+char *param_1;
+void *param_2;
+int param_3;
+
+{
+  int iVar1;
+  int iVar2;
+  bool bVar3;
+
+  iVar1 = open_file_for_read(param_1);
+  if (iVar1 == -1) {
+    bVar3 = false;
+  }
+  else {
+    iVar2 = read_file_handle(iVar1,param_2,param_3);
+    bVar3 = iVar2 == param_3;
+    Ordinal_553(iVar1);
+  }
+  return bVar3;
+}
+
+
+

@@ -427,7 +427,7 @@ long Ordinal_535()
 }
 
 /* CloseHandle-shaped file-close, used ~49 times across uw.c (e.g.
- * FUN_0007ee4c closes every file it opens through this). Was a no-op,
+ * read_buffer_from_file closes every file it opens through this). Was a no-op,
  * so every file handle ever opened leaked -- harmless until a loop that
  * opens+"closes" a file every frame (e.g. the credits screen, reopening
  * CREDIT1/2/3.BYT once per tick while waiting for input) exhausted the

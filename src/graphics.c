@@ -983,7 +983,7 @@ int param_3;
     uVar3 = 0;
   }
   else {
-    iVar2 = FUN_0007ee4c(param_2,iVar1,64000);
+    iVar2 = read_buffer_from_file(param_2,iVar1,64000);
     if (iVar2 != 0) {
       if (-1 < (short)param_1) {
         FUN_00040df0();

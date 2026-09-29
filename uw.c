@@ -12239,7 +12239,7 @@ void FUN_00028004()
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_108,s__DATA_cmb_dat_00084f40);
-  FUN_0007ee4c(acStack_108,&DAT_00100630,0x3c);
+  read_buffer_from_file(acStack_108,&DAT_00100630,0x3c);
   return;
 }
 
@@ -36521,30 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-bool FUN_0007ee4c(param_1,param_2,param_3)
-char *param_1;
-void *param_2;
-int param_3;
-
-{
-  int iVar1;
-  int iVar2;
-  bool bVar3;
-
-  iVar1 = open_file_for_read(param_1);
-  if (iVar1 == -1) {
-    bVar3 = false;
-  }
-  else {
-    iVar2 = read_file_handle(iVar1,param_2,param_3);
-    bVar3 = iVar2 == param_3;
-    Ordinal_553(iVar1);
-  }
-  return bVar3;
-}
-
-
-
 short FUN_0007ee9c(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 byte param_2;

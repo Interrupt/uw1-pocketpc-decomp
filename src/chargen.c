@@ -418,7 +418,7 @@ int run_character_generator()
             pcVar9 = pcVar9 + 1;
           } while (cVar1 != '\0');
           Ordinal_1063(acStack_128,s__DATA_CHARGEN_BYT_00084eac);
-          uVar5 = FUN_0007ee4c(acStack_128,iVar4,64000);
+          uVar5 = read_buffer_from_file(acStack_128,iVar4,64000);
           uVar7 = load_pals_bank(3,pcVar_palbuf);
           if ((uVar5 & uVar7) != 0) {
             FUN_00057118();

@@ -358,7 +358,7 @@ int param_4;
    64-bit malloc'd pointer on this host -- same pointer-truncation
    pattern fixed repeatedly this session. Confirmed via lldb: this is
    why the automap screen loaded blnkmap.byt's file handle successfully
-   but FUN_0007ee4c (the actual read-into-buffer call) still failed --
+   but read_buffer_from_file (the actual read-into-buffer call) still failed --
    it was reading 64000 real bytes into a wild, truncated destination
    address instead of the buffer Ordinal_1041 actually allocated. */
 void draw_automap_screen(param_1)
@@ -385,7 +385,7 @@ undefined4 param_1;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__DATA_blnkmap_byt_00084338);
-  iVar5 = FUN_0007ee4c(acStack_11c,uVar3,64000);
+  iVar5 = read_buffer_from_file(acStack_11c,uVar3,64000);
   if (iVar5 == 0) {
     cursor_show_idle_tick();
     exit_automap_screen();

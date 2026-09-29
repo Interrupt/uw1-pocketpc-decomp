@@ -269,7 +269,7 @@ undefined4 param_1;
       } while (cVar1 != '\0');
       Ordinal_1063(acStack_7ec,s__DATA_opscr_byt_00086eec);
       DEBUG(TRACE, "blitting %s", s__DATA_opscr_byt_00086eec);
-      FUN_0007ee4c(acStack_7ec,pvVar_buf10000,64000);
+      read_buffer_from_file(acStack_7ec,pvVar_buf10000,64000);
       FUN_00057118();
       // HACK: deviation from the real binary -- was load_pals_bank(2, temp_buf),
       /* confirmed via ARM disassembly of the original UU.exe
