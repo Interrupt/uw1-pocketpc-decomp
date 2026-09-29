@@ -21,6 +21,7 @@ set(UW_SOURCES
   src/game.c
   src/chargen.c
   src/babl.c
+  src/automap.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

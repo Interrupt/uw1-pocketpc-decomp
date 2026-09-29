@@ -758,6 +758,30 @@ extern char s_x_obj_pos_00085030[];
 extern char s_x_obj_stuff_0008503c[];
 extern char s_x_skills_00085050[];
 extern char s_x_traps_00085048[];
+/* Globals defined in uw.c but also used by functions that now live in
+   automap.c (the automap screen) -- extern'd here so both translation
+   units see the same storage. */
+extern const unsigned char DAT_000842c0_real_table[64];
+#define DAT_000842c0 (*(undefined1 *)DAT_000842c0_real_table)
+extern const unsigned char DAT_000842f0_real_table[4];
+#define DAT_000842f0 (*(undefined1 *)DAT_000842f0_real_table)
+extern const signed char DAT_000842f4_real_table[4];
+#define DAT_000842f4 (*(undefined1 *)DAT_000842f4_real_table)
+extern const signed char DAT_000842f8_real_table[4];
+#define DAT_000842f8 (*(undefined1 *)DAT_000842f8_real_table)
+extern undefined1 DAT_000878d0_backing[256];
+#define DAT_000878d0 DAT_000878d0_backing[0]
+extern undefined2 DAT_000b99c0;
+extern undefined4 DAT_000b99c4;
+extern undefined1 DAT_000b99d0_backing[8192];
+#define DAT_000b99d0 DAT_000b99d0_backing[0]
+extern short DAT_000ba9d0;
+extern char DAT_000ba9d4;
+extern undefined4 DAT_000bbef4;
+extern int DAT_000bbefc;
+extern char * DAT_002029cc;
+extern char s__DATA_blnkmap_byt_00084338[];
+extern char s_fontbig_sys_0008432c[];
 
 
 
@@ -1605,6 +1629,7 @@ void free_frame_geometry_buffers();
 void FUN_0005bac0();
 void full_dungeon_redraw();
 void automap_reveal_all_tiles(void);
+byte automap_reveal_byte(byte *tile_rec);
 void render_dungeon_frame_timed();
 undefined4 build_frame_draw_list();
 void build_visibility_light_grid();
@@ -2044,6 +2069,7 @@ undefined4 FUN_000824f0();
  * does themselves, since UW_H is already defined by this point. */
 #include "src/headers/graphics.h"
 #include "src/headers/babl.h"
+#include "src/headers/automap.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
