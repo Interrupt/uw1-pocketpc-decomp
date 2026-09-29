@@ -550,6 +550,19 @@ extern char s_opbtn_00086ee4[];
 extern unsigned short u_Ultima_Under_World_00087690[];
 extern unsigned short u_UltimaUW_00087678[];
 /* Globals defined in uw.c but also used by functions that now live in
+   saveload.c (open_level_archive, close_level_archive,
+   write_archive_entry, read_archive_entry) -- extern'd here so both
+   translation units see the same storage. */
+extern char s__arc_tmp_000842b4[];
+extern undefined DAT_000b78b8_backing[8192];
+#define DAT_000b78b8 DAT_000b78b8_backing[0]
+extern undefined1 DAT_000b98b8_backing[32768];
+#define DAT_000b98b8 DAT_000b98b8_backing[0]
+extern undefined1 DAT_000b98b9_backing[32768];
+#define DAT_000b98b9 DAT_000b98b9_backing[0]
+extern undefined1 DAT_000b58b8_backing[16384];
+#define DAT_000b58b8 DAT_000b58b8_backing[0]
+/* Globals defined in uw.c but also used by functions that now live in
    chargen.c (character_generator_start, run_character_generator,
    character_generator_loop) -- extern'd here so both translation units
    see the same storage. */
@@ -1850,8 +1863,8 @@ void raster_triangle_perspective_setup();
 void raster_edge_setup();
 void raster_textured_span();
 bool open_level_archive();
-byte FUN_00015a58();
-bool FUN_00015b94();
+byte close_level_archive();
+bool write_archive_entry();
 undefined2 read_archive_entry();
 int FUN_0001629c();
 void enter_automap_screen();

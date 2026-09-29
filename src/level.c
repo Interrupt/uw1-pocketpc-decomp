@@ -181,7 +181,7 @@ int param_2;
   }
   sVar2 = FUN_00081ce4(auStack_20,param_2);
   if (param_1 == (undefined1 *)0x0) {
-    FUN_00015a58(auStack_20);
+    close_level_archive(auStack_20);
   }
   return (int)sVar2;
 }
@@ -275,7 +275,7 @@ undefined4 param_1;
         FUN_000164e4(auStack_1c,param_1);
       }
     }
-    FUN_00015a58(auStack_1c);
+    close_level_archive(auStack_1c);
   }
   return iVar2;
 }

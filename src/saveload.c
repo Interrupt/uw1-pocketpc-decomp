@@ -1,7 +1,9 @@
 /* Save/load: the slot-list menu (draw, "journey onward" selection),
- * slot probing, and the actual game save/load. Split out of uw.c (the
- * original monolithic decompile) once these functions' real roles
- * were confirmed.
+ * slot probing, the actual game save/load, and the low-level .ark
+ * archive I/O primitives (open/close/read-entry/write-entry) those
+ * and the level loader build on. Split out of uw.c (the original
+ * monolithic decompile) once these functions' real roles were
+ * confirmed.
  */
 #include "headers/saveload.h"
 #include "headers/debug.h"
@@ -650,5 +652,413 @@ LAB_0006c540:
 LAB_0006c544:
   msg_scroll_panel_reset(1);
   return uVar5;
+}
+
+
+
+// was FUN_00015870
+/* param_2 was dropped entirely -- declared with only 1 parameter but
+   every caller passes 2 (the filename to open, e.g.
+   s__SAVE0_lev_ark_000842fc). `Ordinal_1063(local_120);` (a strcat-
+   shaped Ordinal used with an explicit 2-arg form everywhere else in
+   this file) was being called with just 1 visible argument, relying on
+   whatever the compiler happened to leave in the dropped argument's
+   register -- and `local_120` itself was never initialized first
+   either, so the "destination" that register leftover got appended
+   onto was uninitialized stack garbage, not an empty string. Confirmed
+   via lldb (this exact call site): this "worked" for the level-load
+   caller purely because the stack garbage there happened to already
+   read as an empty string, and broke for the automap-entry caller
+   (FUN_00016434, exercised for the first time by the new OPENMAP
+   demomode command) once different preceding activity left a stray
+   0x01 byte on the stack instead, producing a corrupt filename
+   ("\x01\SAVE0\lev.ark") and a failed file open. Fixed by copying
+   param_2 into local_120 directly instead of relying on either the
+   DAT_0023cca8 scratch-buffer copy or the dropped-argument concat --
+   neither was ever the real filename source. */
+bool open_level_archive(param_1,param_2)
+undefined1 * param_1;
+char * param_2;
+
+{
+  char cVar1;
+  char *pcVar2;
+  char *pcVar9;
+  int iVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  uint uVar7;
+  bool bVar8;
+  /* Was reusing `iVar3` (an int, otherwise a loop counter / file handle
+     elsewhere in this function) to also hold Ordinal_1407's (strrchr)
+     return -- harmless while that ordinal was a dead `return 0;` stub
+     (see its own comment: fixed for real this session), but now that it
+     returns a genuine 64-bit pointer into local_228, storing it in an
+     `int` truncates it, and `*(undefined1*)(iVar3+1)=0` writes through
+     the truncated wild pointer. Confirmed via lldb crash in this exact
+     line reached from the "Journey Onward" title-screen load, the first
+     real exercise of this path since the stub got fixed. Dedicated
+     pointer local instead of reusing iVar3. */
+  char *pLastSlash;
+  ushort local_230 [4];
+  char local_228 [264];
+  char local_120 [260];
+
+  pcVar2 = param_2;
+  pcVar9 = local_120;
+  do {
+    cVar1 = *pcVar2;
+    *pcVar9 = cVar1; pcVar9 = pcVar9 + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  iVar3 = 0;
+  do {
+    pcVar2 = local_120 + iVar3;
+    local_228[iVar3] = *pcVar2;
+    iVar3 = iVar3 + 1;
+  } while (*pcVar2 != '\0');
+  pLastSlash = (char *)Ordinal_1407(local_228,0x5c);
+  if (pLastSlash == 0) {
+    local_228[0] = '\0';
+  }
+  else {
+    pLastSlash[1] = 0;
+  }
+  Ordinal_1063(local_228,s__arc_tmp_000842b4);
+  /* Was `FUN_00022810(local_120)` -- opens read-only (uw_file_open_read).
+     This handle (*param_1 in every downstream caller) is later WRITTEN
+     to directly by write_archive_entry (the archive-entry byte-write a level
+     save/transition uses to flush the live in-memory object arena --
+     including the player's own position, since the player is just a
+     fixed-offset object inside that same arena -- back into this file)
+     -- a write through a read-only handle silently writes 0 bytes,
+     write_archive_entry returns false, and the whole save chain unwinds
+     through its failure path ("Save Game Failed"), never actually
+     persisting anything. Confirmed via tracing: SAVE0/lev.ark stayed
+     byte-identical across saves no matter what the player did.
+     FUN_0002273c (uw_file_open_write with create_always=0) opens "rb+"
+     on an existing file -- read AND write, no truncation -- exactly
+     what every other caller of this handle already assumed. Falls back
+     to "wb+" (create) only if the file doesn't already exist, which
+     every real caller here doesn't hit (\SAVE0\lev.ark is always
+     seeded before this runs). */
+  iVar3 = FUN_0002273c(local_120);
+  if (iVar3 == -1) {
+    bVar8 = false;
+  }
+  else {
+    iVar4 = FUN_0002285c(iVar3,local_230,2);
+    iVar5 = FUN_0002285c(iVar3,&DAT_000b78b8,(uint)local_230[0] << 2);
+    uVar7 = (uint)local_230[0];
+    iVar6 = FUN_0002273c(local_228);
+    *param_1 = (char)iVar3;
+    param_1[1] = (char)((uint)iVar3 >> 8);
+    param_1[4] = (char)iVar6;
+    param_1[10] = 0xb8;
+    param_1[2] = (char)((uint)iVar3 >> 0x10);
+    param_1[0xe] = 0;
+    bVar8 = (iVar4 == 2 && iVar5 == uVar7 * 4) && iVar6 != -1;
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[archive] iVar4=%d iVar5=%d uVar7=%u iVar6=%d bVar8=%d\n", iVar4, iVar5, uVar7, iVar6, (int)bVar8);
+    param_1[3] = (char)((uint)iVar3 >> 0x18);
+    param_1[5] = (char)((uint)iVar6 >> 8);
+    iVar3 = 0;
+    param_1[6] = (char)((uint)iVar6 >> 0x10);
+    param_1[7] = (char)((uint)iVar6 >> 0x18);
+    param_1[8] = (char)local_230[0];
+    param_1[9] = (char)(local_230[0] >> 8);
+    param_1[0xb] = 0x78;
+    param_1[0xc] = 0xb;
+    param_1[0xd] = 0;
+    do {
+      cVar1 = local_120[iVar3];
+      (&DAT_000b98b8)[iVar3] = cVar1;
+      iVar3 = iVar3 + 1;
+    } while (cVar1 != '\0');
+    iVar3 = Ordinal_1068(local_120);
+    pcVar2 = local_228;
+    do {
+      cVar1 = *pcVar2;
+      pcVar2[(int)(&DAT_000b98b9 + (iVar3 - (int)local_228))] = cVar1;
+      pcVar2 = pcVar2 + 1;
+    } while (cVar1 != '\0');
+  }
+  return bVar8;
+}
+
+
+
+// was FUN_00015a58 -- finalizes and closes an open_level_archive handle:
+// rewrites the entry-offset table header if the dirty flag (param_1+0xe)
+// is set, closes both file handles, and commits the tmp-file rename back
+// over the real archive name.
+byte close_level_archive(param_1)
+undefined4 * param_1;
+
+{
+  char cVar1;
+  ushort uVar2;
+  int iVar3;
+  int iVar4;
+  char *pcVar5;
+  bool bVar6;
+  char acStack_118 [260];
+  
+  bVar6 = true;
+  uVar2 = *(ushort *)(param_1 + 2);
+  if (*(char *)((char *)param_1 + 0xe) != '\0') {
+    iVar3 = FUN_00022850(*param_1,2,0);
+    iVar4 = FUN_00022884(*param_1,&DAT_000b78b8,(uVar2 & 0x3fff) << 2);
+    bVar6 = iVar3 == 2 && iVar4 == (uVar2 & 0x3fff) * 4;
+  }
+  iVar4 = Ordinal_553(*param_1);
+  Ordinal_553(CONCAT13(*(undefined1 *)((char *)param_1 + 7),*(undefined3 *)(param_1 + 1)));
+  iVar3 = Ordinal_1068(&DAT_000b98b8);
+  pcVar5 = &DAT_000b98b9 + iVar3;
+  iVar3 = -(int)pcVar5;
+  do {
+    cVar1 = *pcVar5;
+    pcVar5[(int)(acStack_118 + iVar3)] = cVar1;
+    pcVar5 = pcVar5 + 1;
+  } while (cVar1 != '\0');
+  FUN_000227b8(acStack_118);
+  return bVar6 & iVar4 != 0;
+}
+
+
+
+// was FUN_00015b94 -- write_archive_entry(handle, entry_index, src_buf,
+// len): the write-side counterpart to read_archive_entry, resizing the
+// archive's entry table when the new length doesn't fit the existing
+// slot.
+bool write_archive_entry(param_1,param_2,param_3,param_4)
+undefined4 * param_1;
+uint param_2;
+/* Was `undefined4` -- truncated the real 64-bit `DAT_002029cc` (the live
+   object arena) pointer FUN_00049b04 passes in as the source buffer for
+   the archive-entry write. Harmless while every actual write attempt
+   through it failed anyway for other reasons (Ordinal_1407 stub,
+   read-only archive handle -- both fixed, see open_level_archive's and
+   Ordinal_1407's own comments); with those fixed this is the last thing
+   standing between a save and actually writing anything: fwrite() on
+   the truncated (now only-32-bit, so on a 64-bit host a wild/unmapped)
+   pointer fails with EFAULT, confirmed via a UW_DEBUG_INPUTEVENT trace
+   in uw_file_write (errno 14, "Bad address"). */
+void *param_3;
+uint param_4;
+
+{
+  char *wptr_4897;
+  char cVar1;
+  undefined2 uVar2;
+  short sVar3;
+  undefined4 uVar4;
+  int iVar5;
+  uint uVar6;
+  uint *puVar7;
+  int iVar8;
+  undefined4 uVar9;
+  undefined4 uVar10;
+  undefined4 uVar11;
+  uint uVar12;
+  uint uVar13;
+  char *pcVar14;
+  uint uVar15;
+  uint uVar16;
+  uint uVar17;
+  char acStack_b9ae8 [759728];
+  char local_338 [264];
+  char acStack_230 [263];
+  char acStack_129 [261];
+  
+  iVar8 = (param_2 & 0xffff) * 4;
+  uVar16 = 0;
+  /* param_1+0xa..0xd held the literal 0x000b78b8 (&DAT_000b78b8's address
+     in the original 32-bit binary) as the .ark entry-offset table
+     pointer -- see read_archive_entry's matching comment. The table is a fixed
+     global; use its real address. */
+  uVar15 = *(uint *)((char *)&DAT_000b78b8 + iVar8);
+  if (getenv("UW_DEBUG_INPUTEVENT"))
+    fprintf(stderr, "[15b94] param_2=%u entrycount=%u uVar15=%u param_4=%u handle1=%d handle2=%d\n",
+            param_2, (uint)*(ushort *)(param_1 + 2), uVar15, param_4, (int)*param_1, (int)param_1[1]);
+  if ((param_2 & 0xffff) <= (uint)*(ushort *)(param_1 + 2)) {
+    if (uVar15 == 0) {
+      uVar4 = FUN_00022850(*param_1,0,2);
+      uVar15 = FUN_00022884(*param_1,param_3,param_4 & 0xffff);
+      if (getenv("UW_DEBUG_INPUTEVENT"))
+        fprintf(stderr, "[15b94] fast-path seek=%d write_wrote=%u want=%u\n", (int)uVar4, uVar15, param_4 & 0xffff);
+      *(undefined1 *)((char *)param_1 + 0xe) = 1;
+      *(undefined4 *)((char *)&DAT_000b78b8 + iVar8) = uVar4;
+      return uVar15 == (param_4 & 0xffff);
+    }
+    iVar5 = FUN_00022850(*param_1,0,2);
+    uVar17 = iVar5 - *(int *)((char *)&DAT_000b78b8 + iVar8);
+    if (*(ushort *)(param_1 + 2) != 0) {
+      uVar12 = 0;
+      do {
+        uVar6 = *(uint *)((char *)&DAT_000b78b8 + uVar12 * 4);
+        uVar13 = uVar6 - uVar15;
+        if ((uVar15 < uVar6) && (uVar13 < uVar17)) {
+          uVar17 = uVar13;
+        }
+        uVar12 = uVar12 + 1 & 0xffff;
+      } while (uVar12 < *(ushort *)(param_1 + 2));
+    }
+    param_4 = param_4 & 0xffff;
+    if (uVar17 != param_4) {
+      *(undefined1 *)((char *)param_1 + 0xe) = 1;
+      FUN_00022850(CONCAT13(*(undefined1 *)((char *)param_1 + 3),
+                            CONCAT12(*(undefined1 *)((char *)param_1 + 2),
+                                     CONCAT11(*(undefined1 *)((char *)param_1 + 1),
+                                              *(undefined1 *)param_1))),0,0);
+      FUN_00022850(param_1[1],0,0);
+      if (uVar15 != 0) {
+        do {
+          uVar12 = uVar15 - uVar16;
+          if (0x2000 < uVar12) {
+            uVar12 = 0x2000;
+          }
+          uVar2 = FUN_0002285c(*param_1,&DAT_000b58b8,uVar12 & 0xffff);
+          iVar5 = FUN_00022884(param_1[1],&DAT_000b58b8,uVar2);
+          uVar16 = uVar16 + iVar5;
+        } while (uVar16 < uVar15);
+      }
+      FUN_00022850(*param_1,uVar17,1);
+      while( true ) {
+        sVar3 = FUN_0002285c(*param_1,&DAT_000b58b8,0x2000);
+        if (sVar3 == 0) break;
+        iVar5 = FUN_00022884(param_1[1],&DAT_000b58b8);
+        uVar16 = uVar16 + iVar5;
+      }
+      FUN_00022884(param_1[1],param_3,param_4);
+      if (*(short *)(param_1 + 2) != 0) {
+        uVar12 = 0;
+        do {
+          puVar7 = (uint *)((char *)&DAT_000b78b8 + uVar12 * 4);
+          uVar6 = *puVar7;
+          if (uVar6 != 0 && uVar15 < uVar6) {
+            *puVar7 = uVar6 - (uVar17 & 0xffff);
+          }
+          uVar12 = uVar12 + 1 & 0xffff;
+        } while (uVar12 < *(ushort *)(param_1 + 2));
+      }
+      pcVar14 = &DAT_000b98b8;
+    wptr_4897 = acStack_b9ae8;
+      *(uint *)((char *)&DAT_000b78b8 + iVar8) = uVar16;
+      do {
+        cVar1 = *pcVar14;
+        *wptr_4897 = cVar1; wptr_4897 = wptr_4897 + 1;
+        pcVar14 = pcVar14 + 1;
+      } while (cVar1 != '\0');
+      iVar8 = Ordinal_1068(&DAT_000b98b8);
+      pcVar14 = &DAT_000b98b9 + iVar8;
+      iVar8 = -(int)pcVar14;
+      do {
+        cVar1 = *pcVar14;
+        pcVar14[(int)(local_338 + iVar8)] = cVar1;
+        pcVar14 = pcVar14 + 1;
+      } while (cVar1 != '\0');
+      iVar8 = 0;
+      do {
+        cVar1 = local_338[iVar8];
+        acStack_129[iVar8 + 1] = cVar1;
+        iVar8 = iVar8 + 1;
+      } while (cVar1 != '\0');
+      iVar8 = Ordinal_1068(local_338);
+      acStack_129[iVar8] = '_';
+      Ordinal_553(*param_1);
+      Ordinal_553(param_1[1]);
+      FUN_000227b8(acStack_230);
+      uVar4 = FUN_000227d4(local_338);
+      uVar9 = FUN_0002273c(acStack_230);
+      uVar10 = Ordinal_172(uVar4,0);
+      uVar11 = Ordinal_1041();
+      FUN_0002285c(uVar4,uVar11,uVar10);
+      FUN_00022884(uVar9,uVar11,uVar10);
+      Ordinal_1018(uVar11);
+      Ordinal_553(uVar4);
+      Ordinal_553(uVar9);
+      FUN_000227b8(local_338);
+      uVar4 = FUN_00022810(acStack_230);
+      *(char *)param_1 = (char)uVar4;
+      *(char *)((char *)param_1 + 1) = (char)((uint)uVar4 >> 8);
+      *(char *)((char *)param_1 + 2) = (char)((uint)uVar4 >> 0x10);
+      *(char *)((char *)param_1 + 3) = (char)((uint)uVar4 >> 0x18);
+      uVar4 = FUN_0002273c(local_338);
+      *(char *)(param_1 + 1) = (char)uVar4;
+      *(char *)((char *)param_1 + 5) = (char)((uint)uVar4 >> 8);
+      *(char *)((char *)param_1 + 6) = (char)((uint)uVar4 >> 0x10);
+      *(char *)((char *)param_1 + 7) = (char)((uint)uVar4 >> 0x18);
+      return true;
+    }
+    FUN_00022850(CONCAT13(*(undefined1 *)((char *)param_1 + 3),
+                          CONCAT12(*(undefined1 *)((char *)param_1 + 2),
+                                   CONCAT11(*(undefined1 *)((char *)param_1 + 1),*(undefined1 *)param_1
+                                           ))),uVar15,0);
+    uVar15 = FUN_00022884(*param_1,param_3,param_4);
+    if (getenv("UW_DEBUG_INPUTEVENT"))
+      fprintf(stderr, "[15b94] exact-fit path: handle1=%d wrote=%u want=%u\n", (int)*param_1, uVar15, param_4);
+    if (uVar15 == param_4) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
+undefined2 read_archive_entry(param_1,param_2,param_3)
+undefined4 * param_1;
+uint param_2;
+/* Was `undefined4`, truncating the real destination buffer pointer the
+   callers pass (load_level_object_table: the malloc'd DAT_002029cc workspace;
+   FUN_000164e4: &DAT_000b99d0). Forwarded straight to FUN_0002285c
+   (uw_file_read), which needs a valid pointer -- the truncated value
+   segfaulted the level loader on the first real read. */
+void *param_3;
+
+{
+  undefined2 uVar1;
+  int iVar2;
+  uint uVar3;
+  uint uVar4;
+  uint uVar5;
+  uint uVar6;
+  uint uVar7;
+  
+  /* param_1+10 (bytes 0xa..0xd) held the literal address 0x000b78b8 --
+     &DAT_000b78b8's location in the ORIGINAL 32-bit binary -- baked in by
+     open_level_archive as the .ark entry-offset table pointer. That table is a
+     single fixed global (open_level_archive/close_level_archive read the archive
+     straight into &DAT_000b78b8), so on this recompile just use its real
+     address instead of the truncated literal (which dereferenced as
+     ~0xb78b8 and crashed the level loader). Same "hardcoded original-
+     binary address" bug class as probe_save_slots's -0x87020. */
+  if (((uint)*(ushort *)(param_1 + 2) < (param_2 & 0xffff)) ||
+     (uVar6 = *(uint *)((char *)&DAT_000b78b8 + (param_2 & 0xffff) * 4), uVar6 == 0)) {
+    uVar1 = 0;
+  }
+  else {
+    iVar2 = FUN_00022850(*param_1,0,2);
+    uVar7 = iVar2 - uVar6;
+    if (*(ushort *)(param_1 + 2) != 0) {
+      uVar5 = 0;
+      do {
+        uVar3 = *(uint *)((char *)&DAT_000b78b8 + uVar5 * 4);
+        uVar4 = uVar3 - uVar6;
+        if (uVar3 <= uVar6) {
+          uVar4 = 0;
+        }
+        if ((uVar4 != 0) && (uVar4 < uVar7)) {
+          uVar7 = uVar4;
+        }
+        uVar5 = uVar5 + 1 & 0xffff;
+      } while (uVar5 < *(ushort *)(param_1 + 2));
+    }
+    FUN_00022850(*param_1,uVar6,0);
+    uVar1 = FUN_0002285c(*param_1,param_3,uVar7 & 0xffff);
+  }
+  return uVar1;
 }
 

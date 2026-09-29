@@ -3274,7 +3274,7 @@ undefined1 *param_2;
        whatever garbage this host happened to leave in the argument
        register. */
     sVar1 = read_archive_entry(auStack_20,DAT_001007c4,local_28);
-    FUN_00015a58(auStack_20);
+    close_level_archive(auStack_20);
     if (sVar1 < 1) {
       /* Was `message_scroll_print_wrapped(...); return 1;` -- a second,
          separate bug on top of the already-fixed dropped-argument one

@@ -50,7 +50,7 @@ void exit_automap_screen()
   if ((DAT_000ba9d0 != DAT_00201b68) &&
      (iVar1 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
     FUN_000164e4(auStack_1c,(int)DAT_00201b68);
-    FUN_00015a58(auStack_1c);
+    close_level_archive(auStack_1c);
   }
   FUN_000735c0();
   FUN_00040df0();
