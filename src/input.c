@@ -880,7 +880,7 @@ undefined4 param_1;
     DAT_0023bf58 = DAT_0023bf58 + 4;
     g_jump_ascent_timer = 0;
     if (DAT_000879ac != 0) {
-      FUN_0008128c(1);
+      scheduler_tick(1);
     }
     iVar2 = *(int *)(DAT_00086df8 + 0xce) + 0x40;
     *(char *)(DAT_00086df8 + 0xce) = (char)iVar2;

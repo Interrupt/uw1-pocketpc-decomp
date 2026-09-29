@@ -1716,7 +1716,14 @@ extern undefined1 DAT_00088d98_backing[1536];
 extern undefined4 DAT_002029d0;
 extern char * DAT_002046a0;
 extern char * DAT_002046ac;
-extern undefined1 DAT_00250770;
+extern undefined1 g_scheduler_count;
+extern char *g_scheduler_table;
+#define DAT_00250778 g_scheduler_table[0]
+#define DAT_00250779 g_scheduler_table[1]
+#define DAT_0025077a g_scheduler_table[2]
+#define DAT_0025077b g_scheduler_table[3]
+#define DAT_0025077c g_scheduler_table[4]
+#define DAT_0025077d g_scheduler_table[5]
 extern char s__DATA_main_byt_000857a8[];
 extern short DAT_00084f10;
 extern char DAT_000870d8;
@@ -3105,22 +3112,22 @@ void FUN_0007fe20();
 void FUN_0007fee8();
 undefined4 scroll_text_entry_prompt();
 undefined4 FUN_00080828();
-void FUN_0008097c();
-void FUN_000809cc();
-void FUN_00080a98();
+void scheduler_despawn_entry();
+void scheduler_remove_entry();
+void scheduler_finish_entry();
 void FUN_00080e00();
-uint FUN_00080ed4();
-void FUN_00081034();
-void FUN_0008128c();
+uint scheduler_add_entry();
+void scheduler_step_entry();
+void scheduler_tick();
 void FUN_00081388();
 undefined4 FUN_000816e0();
 undefined4 FUN_00081814();
-int FUN_000819f0();
-int FUN_00081a84();
-void FUN_00081abc();
-undefined4 FUN_00081af4();
-undefined4 FUN_00081ce4();
-undefined4 FUN_00081d74();
+int scheduler_find_entry();
+int scheduler_get_delay();
+void scheduler_set_delay();
+undefined4 scheduler_advance_effect();
+undefined4 scheduler_load();
+undefined4 scheduler_save();
 void entry(undefined4 param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4);
 void FUN_00082328();
 void FUN_00082358();

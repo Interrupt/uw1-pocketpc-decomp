@@ -5,6 +5,8 @@
  * open_door_object for how the naming was confirmed (live repro tied
  * FUN_0007c708 to the "closed -> open" quality transition). */
 #include "headers/doors.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 // was LAB_000415b4
 void *alloc_door_frame_buffer(param_1)
@@ -39,7 +41,10 @@ ushort * param_2;
   byte bVar2;
   undefined4 uVar3;
   ushort uVar4;
-  
+
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] close_door_object (close) called: obj0=0x%04x dirbit=%d openbits=%d quality_low4=%d\n",
+            (unsigned)*param_2, (int)((*param_2 & 0x1000) != 0), (int)((*param_2 >> 9) & 7), (int)(param_2[3] & 0xf));
   if ((*param_2 & 0x1ff) == 0x1cf) {
     uVar4 = param_2[3];
     if ((uVar4 & 0xf) < 8) {
@@ -86,7 +91,10 @@ ushort * param_1;
 {
   ushort uVar1;
   undefined4 uVar2;
-  
+
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] open_door_object called: obj0=0x%04x already_1cf=%d quality_low4=%d\n",
+            (unsigned)*param_1, (int)((*param_1 & 0x1ff) == 0x1cf), (int)(param_1[3] & 0xf));
   if ((*param_1 & 0x1ff) == 0x1cf) {
     uVar1 = param_1[3];
     if (7 < (uVar1 & 0xf)) {

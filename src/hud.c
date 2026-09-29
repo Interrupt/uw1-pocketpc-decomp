@@ -583,6 +583,15 @@ void main_loop_hud_flush()
   {
     static int _force = -1;
     if (_force < 0) _force = (getenv("UW_NO_FORCE_3D_REDRAW") == NULL);
+    if (getenv("UW_DEBUG_DOOR")) {
+      static int _last_b64 = -1, _last_c90 = -1;
+      if ((int)DAT_00201b64 != _last_b64 || (int)DAT_00201c90 != _last_c90) {
+        fprintf(stderr, "[door] main_loop_hud_flush: DAT_00201b64=%d DAT_00201c90=%d\n",
+                (int)DAT_00201b64, (int)DAT_00201c90);
+        _last_b64 = (int)DAT_00201b64;
+        _last_c90 = (int)DAT_00201c90;
+      }
+    }
     if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0) {
       _did_force_redraw = 1;
       /* Rebuild AND re-rasterise the 3D dungeon view every main-loop

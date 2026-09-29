@@ -529,14 +529,16 @@ ushort * param_1;
   if (param_1 != (ushort *)0x0) {
     char *_lo = DAT_002046b8 - 0x4000;
     /* (DAT_002046b8-0x4000) is this arena buffer's own base (aliased as
-       _lo just above); +0x7c08+0x3a is its new true end, covering
+       _lo just above); +0x7c08+0x3a+0x180 is its new true end, covering
        g_backpack_slot_table's reservation there (28 slots + g_current_container_link,
-       see both their comments) -- the buffer itself was widened by the
-       same 0x3a bytes in init_level_object_arena. This replaces the narrower
+       see both their comments) plus g_scheduler_table's own 0x180-byte
+       reservation right after it (see its own, DAT_00250778's, comment)
+       -- the buffer itself was widened by the same 0x3a+0x180 bytes in
+       init_level_object_arena. This replaces the narrower
        DAT_002046c4+0x1800 the original binary's own object table alone
-       would need -- the new reservation sits well past that, in
+       would need -- the new reservations sit well past that, in
        previously-unallocated space, not inside it. */
-    char *_hi = (DAT_002046b8 - 0x4000) + 0x7c08 + 0x3a;
+    char *_hi = (DAT_002046b8 - 0x4000) + 0x7c08 + 0x3a + 0x180;
     if ((char *)param_1 < _lo || (char *)param_1 >= _hi) {
       /* Throttled: this guard also fires every idle tick before any level
          is loaded (DAT_002046b8/DAT_002046c4 aren't set up yet, so

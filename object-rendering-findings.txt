@@ -1940,3 +1940,428 @@ beyond, holding stable (correctly, since nothing re-closes it) for the
 rest of the replay.
 
 run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (16): root-caused why the door's animation was a
+single snap instead of a gradual six-to-eight-step swing -- a real,
+designed scheduled-effects queue existed and was correctly triggered,
+but was completely non-functional, disabled by FIVE independent bugs
+stacked on top of each other
+═══════════════════════════════════════════════════════════════════════════
+Follow-up to milestone 15: that fix made the door visibly open, but via
+an instant one-step snap (the same single `quality += 8` this whole
+investigation eventually found and fixed at its actual source). Direct
+user correction: "when opening a door, the angle should be getting
+updated in small steps - the original game had six or eight position
+changes across a few seconds that ended with the door fully open."
+
+Traced the real "open door" trigger (FUN_0007c708) and found it
+already, correctly, sets up a genuine multi-tick scheduled animation --
+FUN_0007c3f4 flips the object to a temporary "in motion" sentinel id
+and pushes an entry onto a shared scheduled-effects queue (also used
+for blood splats and combat highlights) via FUN_00080ed4;
+FUN_0008128c is meant to walk that queue every tick, calling
+FUN_00081034 to step each pending entry's "quality" by one and
+FUN_00080a98 to finalize it once its delay expires. This exactly
+matches the six-to-eight-step design described. The mechanism was
+simply never running, for five stacked reasons, found and fixed one at
+a time via UW_DEBUG_DOOR/UW_DEBUG_DOOR2 live tracing against
+bug-open-door.txt:
+
+1. DAT_000879ac (gates all three ordinary-gameplay call sites of
+   FUN_0008128c) was declared but never assigned anywhere in this
+   decompile -- a permanently-zero "link-time-initialized flag Ghidra
+   dropped," the exact same bug class already fixed for
+   g_npc_tick_enabled a few lines above in FUN_00066e90. Confirmed via
+   a full-session trace: FUN_0008128c never ran once, zero hits across
+   470000+ log lines. Fixed by initializing it alongside
+   g_npc_tick_enabled, same function, same convention.
+
+2. FUN_0008128c's own call to its finalize step was a bare
+   `FUN_00080a98();` -- a dropped argument (the current slot index),
+   despite FUN_00080a98's own param_1 being immediately used to index
+   the queue's per-slot arrays, identical to a correctly-argumented
+   FUN_00081034 call two lines below in the SAME loop. Fixed by passing
+   the slot index.
+
+3. FUN_00080a98 and FUN_00081034 both call resolve_object_link with no
+   NULL guard at all (crashed live, EXC_BAD_ACCESS, the first time this
+   code path ever actually ran in this whole project's testing, once
+   fix #1 let it start running) -- same class as ~140 other guarded
+   call sites elsewhere in this file. Fixed with the same guard.
+
+4. FUN_0007c3f4's own push called `encode_object_slot_index();` with no
+   argument -- another dropped argument (the door object pointer),
+   despite the function's real signature dereferencing it directly.
+   Confirmed this made the queue entry reference the wrong (or no)
+   object. Fixed by passing the door object pointer.
+
+5. Even with 1-4 fixed, the queue's own link-table (DAT_00250778) still
+   resolved to NULL every time: it's a plain standalone static array in
+   this recompile, never inside the level object arena's malloc'd
+   buffer the way it evidently was in the original's flat, fixed-
+   address memory map -- so resolve_object_link's real, necessary
+   arena-bounds guard (protecting its ~140 other callers against wild
+   pointers) rejected every address into it. This is the exact same bug
+   class already solved once in this file for g_equipped_items/
+   g_backpack_slot_table (see that global's own comment) -- followed
+   that precedent exactly rather than bypassing the check: gave
+   DAT_00250778 real backing storage inside the arena buffer (a new
+   `g_queue_link_table` pointer, set up in reset_level_object_arena
+   right after g_backpack_slot_table's own tail reservation), widened
+   the arena's malloc size and resolve_object_link's bounds to match.
+
+   Discovering this then surfaced a SIXTH bug in the same family: the
+   queue record's five sibling fields (DAT_00250779 through
+   DAT_0025077d) were never separate arrays either -- every access site
+   indexes them with the exact same slot*6 index as DAT_00250778 in the
+   same function, and FUN_00080ed4's own push code proves the intended
+   byte layout directly (DAT_00250778 holds the encoded link's low 2
+   bits, DAT_00250779 the next 8 bits, read back together as one
+   ushort). They were re-aliased into g_queue_link_table at their
+   correct byte offsets (1-5) instead of remaining bare/separate
+   globals -- confirmed via a dedicated re-derivation of all ~24 access
+   sites, no exceptions, matching the 0x180-byte (64 slots * 6 bytes)
+   save/load blob size exactly.
+
+   A near-identical seventh instance of the same pattern surfaced one
+   layer deeper still: DAT_00250732/DAT_00250733 (the per-class step
+   target/increment FUN_00081034 compares quality against) were ALSO
+   separate/bare globals instead of views into DAT_00250730's own
+   already-correctly-loaded 4-byte-stride config table
+   (load_class7_variant_effect_table's own comment describes this exact
+   stride). Without this fix quality entered FUN_00081034's increment
+   block successfully but stayed stuck at 0 forever (confirmed live,
+   200+ calls, no change) -- the "current < target" comparison was
+   always false against a target that read as 0. Re-aliased the same
+   way.
+
+With all seven fixed, quality genuinely steps through multiple distinct
+values across separate ticks (confirmed live: 5,6,7,8 and 13,14,15,16
+in one replay) instead of jumping straight from 0 to a final value, and
+the milestone-15 instant-snap fallback in FUN_0007c708 (which used to
+short-circuit this real animation on a redundant re-trigger, cutting it
+off at its very first frame -- see that function's own updated comment)
+was changed to a no-op: with the queue actually running, a door already
+mid-animation ignoring a repeat "open" poke is correct on its own,
+without needing to rush-finish anything. The door now completes fully
+via the queue alone; confirmed live the instant-snap path never needs
+to fire for a normal open to finish.
+
+Separately confirmed (not yet fixed, not blocking): interact_use's own
+click-region dispatch genuinely fires twice for a single mouse
+click-and-hold (two distinct real OS-level input events, not a stale
+cached one) -- this is what re-triggers FUN_0007c708's now-neutered
+"already mid-animation" branch in the first place. Root cause of the
+duplicate dispatch itself (somewhere in poll_input_bindings/
+FUN_0003f420/wait_for_click_release's interaction) is still open for a
+future pass; harmless now that the branch it used to trigger is a
+no-op instead of a shortcut.
+
+Also still open: the "point-blank, standing directly against the door"
+close-up viewport does not appear to visually refresh continuously
+enough to show every intermediate step in a scripted demo that holds
+the mouse perfectly still (screenshot brightness-sampling across 40+
+frames spanning the whole open sequence found no visible change, even
+though the traced quality/swing values are confirmed correct and
+changing underneath) -- FUN_0008128c itself is only driven by discrete
+input events (mouse clicks/moves), not a continuous per-frame
+heartbeat, so a scripted demo with zero further input after the
+initial click-and-hold never advances the queue at all; real play's
+naturally-continuous small mouse movements should drive this far more
+often. Needs live interactive verification (not a static scripted
+wait) to confirm the visual smoothness matches the now-confirmed-
+correct underlying state.
+
+run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (17): the swing-angle SOURCE FIELD itself was wrong --
+milestone 15's "quality" fix was a genuine bug, not a fix. Root-caused
+against fresh Ghidra decompiles of the real UU.exe binary, per direct
+instruction ("check the disassembly ... see how they actually handled
+this animation")
+═══════════════════════════════════════════════════════════════════════════
+Live user testing of milestone 16's state found three symptoms: the door
+doesn't visibly swing on its hinge, "fully open" only shows it cracked a
+little, and during the animation it swings way too far (almost 90
+degrees). All three trace back to the same root cause.
+
+Used the existing Ghidra headless tooling (analyzeHeadless against
+/Users/ccuddigan/Projects/UW1/decomp, program "UU.exe" -- the real ARM
+WinCE binary this whole port decompiles, found alongside the DOS
+original "UW.EXE" in the same Ghidra project) to get fresh, unmodified
+decompiles of FUN_00064384 (emit_anim_object_frames) and FUN_00081034
+(scheduler_step_entry) straight from the binary, bypassing this
+project's own possibly-already-hacked C source entirely.
+
+Finding: the real door-open trigger's swing-magnitude line was always
+`iVar8 = sign * (bVar4 >> 1 & 7)` -- reading bits 9-11 of the door
+object's own word0 -- NOT quality (obj[3] & 0x3f) at all. Milestone
+15's fix (substituting a fabricated `((quality>>3)!=0) ? 5 : 0`
+boolean-times-fixed-magnitude value) replaced a CORRECT field read
+with an incorrect one, based on a stale live trace taken before the
+scheduler chain (milestone 16) was fixed -- at that point in the
+investigation the real field genuinely did sit at a constant 0, but
+that was a symptom of the scheduler being broken, not evidence the
+field itself was wrong.
+
+The real mechanism, confirmed by reading scheduler_step_entry's own
+fresh decompile: doors' real loaded class-7 behavior flags (from
+objects.dat, read into DAT_00250730) are 0x84 -- bit 2 set, bit 0 (the
+"quality ramp toward a target" path milestone 16 verified and got
+excited about) NOT set. Bit 2's branch (`uVar8 == 4` in
+scheduler_step_entry) directly increments the SAME word0 bits 9-11 by
+the elapsed-ticks parameter every tick, merged back via the same
+`& 0xe00` / `& 0x1e00` masks emit_anim_object_frames reads through --
+this is the real six-to-eight-step gradual sweep, and milestone 16's
+scheduler fixes (all still correct and necessary) already made it run;
+it just never got a chance to matter because emit_anim_object_frames
+was discarding its result and substituting a fixed, oversized value
+instead. (Quality really does just flip +8/-8 open/closed in one
+atomic step, as milestone 16 found -- that part was right. It's simply
+not what drives the visible swing angle.)
+
+Reverted the swing-magnitude line to its real original form. Confirmed
+live (UW_DEBUG_DOOR, bug-open-door.txt): the field now genuinely steps
+0 -> 1 -> 2 -> 3 -> 4 -> 5 across separate ticks (not jumping straight
+to a fixed value), and a full split-screenshot replay shows the door
+leaf swung open on its hinge at a moderate, correct-looking angle by
+the end of the sequence (not the ~90-degree overshoot nor a barely-
+cracked sliver). A mid-sequence screenshot still shows the door closed
+despite the trace confirming the field had already advanced by then --
+consistent with the already-documented, separate, not-yet-fixed
+finding that this viewport only refreshes on discrete input events in
+a scripted demo with zero further input, not a continuous per-frame
+heartbeat; needs live interactive testing (real, continuously-moving
+mouse input) to confirm the visual smoothness matches the now-
+confirmed-correct underlying state.
+
+Tooling note for future passes: the real ARM WinCE binary (UU.exe) is
+already imported into the SAME Ghidra project as the DOS original
+(UW.EXE) that other work this session referenced -- both live under
+/Users/ccuddigan/Projects/UW1/decomp (UW.gpr), addressable via
+analyzeHeadless with -process "UU.exe". Its own address space
+(ARM:LE:32:v8, image base 0x00010000) matches every "// was
+FUN_XXXXXXXX" comment throughout this file directly -- e.g.
+emit_anim_object_frames's own address, 0x64384, is exactly where
+FUN_00064384 lives in that project. This is a much higher-confidence
+ground truth than re-deriving intent from this project's own C source
+alone, and should be reached for earlier next time a HACK's exact
+original behavior is in doubt.
+
+run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (18): QA pass on milestone 17 -- fixed a real
+regression from milestone 16, added a tunable for the hinge-pivot report,
+and investigated (but did not resolve) the close-reopens-instead-of-
+closing report in depth
+═══════════════════════════════════════════════════════════════════════════
+Live QA on milestone 17's swing-angle fix found three things: "door
+swings open now" (confirmed working), "rotation origin is in the middle
+of the leaf and not the hinge, so rotation looks off", and "trying to
+close the door seems to put the door back in the opening state, not
+closing state".
+
+1. CONFIRMED REGRESSION, FIXED: milestone 16 made FUN_0007c708's
+   `id == 0x1cf` branch a no-op, on the theory that 0x1cf was a
+   transient "still mid the current scheduled animation" sentinel and
+   a redundant re-trigger should do nothing. Checked every place that
+   could plausibly reset an object's id away from 0x1cf once set
+   (FUN_0007c4a8, scheduler_finish_entry's own tail, scheduler_despawn_entry)
+   and found none -- it's a PERMANENT identity change on first use, not
+   a transient flag. The real caller (try_combine_or_stow_object,
+   `(*param_2 & 0xf) < 8 ? FUN_0007c580 : FUN_0007c708`) routes every
+   use after the first through this exact branch via the object's own
+   now-permanently-high low nibble. The no-op broke every subsequent
+   open, not just the redundant-click case it targeted. Reverted to
+   match the real disassembly exactly.
+
+2. HINGE PIVOT (rotation origin in the middle, not the hinge): traced
+   to an EARLIER session's own anchor fix (g_tune_wide_center/
+   g_tune_edge_offset, both 128 = exact tile center), added to fix the
+   door FRAME's wall-plane position -- confirmed correct for DFRAME
+   (a symmetric, full-tile-wide, non-rotating object) but never
+   verified for the LEAF, which silently shares the exact same anchor
+   (DAT_0023b904/920 are globals, set once by the frame's own call and
+   simply still in place when the leaf's separate call runs moments
+   later). DOOR.E's own local mesh isn't symmetric around its origin
+   (POINTS span local X 0-128, not centered), so build_euler_rotation_matrix
+   rotating around that origin, placed at the frame's centered anchor,
+   pivots roughly mid-leaf instead of at the hinge edge. Added a
+   SEPARATE, live-tunable `g_tune_leaf_hinge_offset` (starts at 0.0,
+   zero behavior change until adjusted) plus its own object-tuner panel
+   row, gated to catalog_u==0xe/0xf, applied as an offset along the
+   same "wide" axis wide_center itself offsets. Not yet dialed in to a
+   confirmed-correct value -- needs the same live nudge-and-watch
+   process wide_center/edge_offset themselves were tuned with
+   (backtick to open the panel while a real door is swinging).
+
+3. CLOSE REOPENS INSTEAD OF CLOSING: investigated in real depth against
+   fresh disassembly but NOT resolved. Confirmed live that the actual
+   dispatcher for a plain "use" click is NOT the quality-based one at
+   use_object_on_target (`quality < 8 ? FUN_0007c708 : FUN_0007c580`)
+   but a DIFFERENT one in try_combine_or_stow_object, keyed on the
+   object's own word0 low nibble instead (`(*param_2 & 0xf) < 8 ?
+   FUN_0007c580 : FUN_0007c708`) -- FUN_0007c580 fires on a door's
+   first-ever use (word0 low nibble starts at 0), FUN_0007c708 fires on
+   literally every use after that, forever, since word0's low nibble
+   becomes part of the permanent 0x1cf identity (finding 1 above) and
+   never resets. FUN_0007c708's own `id==0x1cf` branch (now correctly
+   restored) only ever ADDS 8 to quality's low nibble, guarded to
+   no-op once quality is already >= 8 -- meaning, via THIS dispatcher,
+   a door that's already open has no path back to a closing action at
+   all; every subsequent click just no-ops. Whether this is a genuine
+   gap in this port (a missing/miswired third code path), a
+   misidentified caller (there may be a different, not-yet-found
+   dispatcher for plain reuse that this session never located), or
+   actually matches original 1992 behavior (doors closing via a
+   different mechanism entirely, e.g. proximity/auto-close, not a
+   second click) is still an open question. Needs either a fresh
+   disassembly pass specifically tracing try_combine_or_stow_object's
+   own caller(s) and every other site that calls FUN_0007c580/
+   FUN_0007c708, or real knowledge of how doors close in the original
+   game, to resolve with confidence rather than more guessing.
+
+Tooling note: this session's disassembly work used
+/private/tmp/ghidra_scripts/DumpDoorSwing.java, DumpSchedulerFns.java,
+and DumpDoorDir.java (decompile+disassemble a list of hardcoded
+addresses against the UU.exe program via analyzeHeadless) -- kept in
+place for a future pass on the close-dispatch question, just change
+the address list.
+
+run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (19): fixed the object tuner's per-catalog field
+visibility bug, and root-caused + fixed a real crash using a pull chain
+(bug-pull-chain-crash.txt) -- three stacked pointer-truncation bugs
+═══════════════════════════════════════════════════════════════════════════
+Two QA reports: "only able to tune leaf_hinge_offset on doors of type
+14, not 1" (a usability bug in milestone 18's own new tunable), and "using
+a pull chain to open a door causes a crash" (a real, reproducible
+EXC_BAD_ACCESS, repro saved as bug-pull-chain-crash.txt).
+
+TUNER VISIBILITY: the object-tuner panel's field list resets on every
+single emit_catalog_object call within a frame (not once per door), so
+with the frame (catalog_u==1) and leaf (catalog_u==0xe/0xf) drawing in
+the same frame plus whatever else is in the scene, whichever catalog
+happened to draw LAST determined which fields were visible -- leaf_
+hinge_offset (gated to catalog_u==0xe/0xf only) was invisible whenever
+catalog 1 drew last. Fixed by showing all three door-family tunables
+(wide_center, edge_offset, leaf_hinge_offset) together whenever ANY
+door catalog (1, 0xe, or 0xf) was the last one drawn, instead of
+splitting them by exact catalog.
+
+PULL-CHAIN CRASH: reproduced immediately via lldb against the saved
+repro. Root-caused through THREE separate, stacked pointer-truncation
+bugs along the same call chain (use_object_on_target ->
+FUN_0007c2ec -> FUN_0007cdbc -> FUN_0007d074 -> FUN_0007d0b0's own
+"case 8" -> object_list_insert_head), each one only surfacing once the
+previous one was fixed and execution got one step further:
+
+1. FUN_0007d074's own param_2/param_3 were both declared `undefined4`
+   (32-bit) despite being real `ushort *` pointers at every call site
+   (confirmed via FUN_0007cdbc's own matching parameter types) -- and
+   DAT_0024cff0, which param_2 gets stored into, had the exact same
+   bug (also dereferenced directly elsewhere in the same function).
+   Classic pointer truncation on this 64-bit host; retyped all three.
+
+2. Fixed with (1), the crash moved one call deeper into
+   FUN_0007d0b0's own "case 8": a bare `object_list_insert_head(local_34);`
+   -- a dropped second argument (every other call site of this
+   function passes exactly two) -- with puVar10 (an object slot this
+   same block had just allocated and populated) the obvious missing
+   argument.
+
+3. Fixed with (2), the crash moved again, this time into
+   object_list_insert_head itself, with an invalid FIRST argument this
+   time. Traced to `iVar16`/`iVar11` -- both plain `int` locals in
+   FUN_0007d0b0, but reused within this same "case 8" to hold
+   FUN_000537d0's real `ushort *` return value (already flagged, but
+   left unfixed, by an EARLIER session's own comment: "a separate,
+   not-yet-fixed truncation bug ... out of scope for this
+   tilemap_lookup-focused pass"). iVar16/iVar11 are genuinely reused
+   for unrelated small integers in every OTHER case of this switch (and
+   iVar11 even earlier within this same case), so a blanket retype
+   wasn't safe -- added two dedicated, correctly-typed locals
+   (_case8_p1/_case8_p2) scoped to just this case's own pointer uses
+   instead, including two further uses of the same truncated value
+   (FUN_0007c580/FUN_0007c814 calls) the original fixer's comment
+   hadn't traced out to.
+
+Confirmed live: bug-pull-chain-crash.txt no longer crashes (reaches
+"end of input, exiting" cleanly) after all three fixes landed together
+-- fixing any one or two in isolation only moved the crash one call
+frame deeper, never resolved it.
+
+run-regressions.sh: 6/6 clean.
+
+═══════════════════════════════════════════════════════════════════════════
+MILESTONE 2026-09-28 (20): resolved the "close via chain works, close via
+direct click doesn't" mystery -- confirmed via fresh disassembly that
+direct-click's one-way behavior is GENUINE ORIGINAL GAME DESIGN, not a
+port bug. Also fixed one more independent pointer-truncation bug found
+along the way
+═══════════════════════════════════════════════════════════════════════════
+QA follow-up: "Using the pull chain works to open the door / Using the
+pull chain again closes the door properly / Using the door when open
+does not close the door, but shows the end part of the opening
+animation... Interesting - closing the door works fine via the pull
+chain use chain, but not using the door directly. Look into that."
+
+Traced the two interaction paths (which milestone 18 had already
+partly identified) all the way to source, and this time verified BOTH
+against a fresh, unmodified Ghidra decompile of the real UU.exe binary
+rather than reasoning from this project's own (possibly already
+HACK-adjusted) C source:
+
+- Direct door click routes through FUN_0007bcdc, gated on the door's
+  own word0 low nibble (`(*param_2 & 0xf) < 8 ? [try combination, then
+  FUN_0007c580] : FUN_0007c708`). Confirmed byte-for-byte identical
+  against the real binary's own FUN_0007bcdc -- this project's C source
+  is completely faithful here, not a decompilation error. Since word0's
+  low nibble becomes part of the door's permanent "activated" identity
+  on first use (see milestone 18's own finding) and never resets, this
+  path's FUN_0007c580 (the only branch that can actually close a door)
+  is only ever reachable on a door's FIRST-EVER interaction; every
+  later click permanently routes to FUN_0007c708 (open), which no-ops
+  once already open. Confirmed the SAME in FUN_0007c814 (the "toggle"
+  action available to level scripts, `sVar3==2` in
+  babl_builtin_gronk_door) -- it checks the exact same word0 field, so
+  it would have the identical one-way problem if anything actually used
+  it that way.
+
+- The pull chain does NOT go through either of those word0-gated
+  paths for its own toggling. babl_builtin_gronk_door (the real
+  script-triggered door action, called from level-script effects like
+  a chain's own "use" behavior) dispatches on `sVar3` -- a value read
+  directly from the CHAIN's own script parameter -- calling
+  FUN_0007c580 (close) or FUN_0007c708 (open) EXPLICITLY, not via
+  FUN_0007c814's word0-based toggle. The chain's own alternating
+  behavior comes from whatever independently toggles which explicit
+  action (sVar3==0 vs sVar3==1) the chain's script requests each pull
+  -- outside the scope of this investigation, but structurally
+  separate from and unaffected by the door's own permanently-stuck
+  word0 nibble.
+
+CONCLUSION: this is genuine original 1992 engine design, not a bug
+introduced by this port. A plain click can only ever open a door once
+via this path (any door state after that is fixed); closing a door is
+by design something switches/levers/chains do via their own,
+independently-tracked toggle state, not something re-clicking the door
+itself was ever supposed to do. Not "fixed" -- changing FUN_0007bcdc's
+dispatch condition to use quality instead of word0 (which WOULD make
+direct clicks toggle correctly) would be a deliberate GAMEPLAY CHANGE
+diverging from the authentic original, not a bug fix, and wasn't made.
+
+Found and fixed one more, independent bug while tracing this:
+babl_builtin_gronk_door's own `iVar6` -- declared plain `int`,
+truncating FUN_000537d0's real `ushort *` return on this 64-bit host,
+the exact same bug class as dozens of others already fixed this
+session, just never yet hit hard enough to visibly misbehave (per the
+function's own pre-existing comment: "never exercised deep enough to
+crash/misbehave visibly yet"). Retyped to `ushort *`.
+
+run-regressions.sh: 6/6 clean.

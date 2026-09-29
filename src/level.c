@@ -79,8 +79,11 @@ undefined4 init_level_object_arena()
     /* Widened by 0x3a bytes: 28 backpack/equipment slots * 2 bytes
        (0x38) plus g_current_container_link's own 2 bytes, both now reserved at
        this buffer's tail -- see reset_level_object_arena and g_equipped_items's/
-       g_current_container_link's own comments. */
-    DAT_002029cc = Ordinal_1041(0x7c08 + 0x3a);
+       g_current_container_link's own comments. Further widened by 0x180
+       bytes right after that for g_scheduler_table (the scheduled-
+       effects queue's own link table) -- see its own (DAT_00250778's)
+       comment. */
+    DAT_002029cc = Ordinal_1041(0x7c08 + 0x3a + 0x180);
     if (DAT_002029cc == 0) {
       FUN_0003c3b4(0x1002);
     }
@@ -179,7 +182,7 @@ int param_2;
   else {
     FUN_0003c3c8(3);
   }
-  sVar2 = FUN_00081ce4(auStack_20,param_2);
+  sVar2 = scheduler_load(auStack_20,param_2);
   if (param_1 == (undefined1 *)0x0) {
     close_level_archive(auStack_20);
   }
@@ -221,6 +224,12 @@ void reset_level_object_arena()
      see its own comment -- so this table is both physically present
      and accepted by resolve_object_link's guard. */
   g_backpack_slot_table = DAT_002029cc + 0x7c08;
+  /* g_scheduler_table lives in this same arena buffer too, right after
+     g_backpack_slot_table's own 0x3a-byte reservation -- see
+     DAT_00250778's own comment for the full explanation, and
+     init_level_object_arena's/resolve_object_link's for the matching
+     allocation-size/bounds widening by this same 0x180. */
+  g_scheduler_table = DAT_002029cc + 0x7c08 + 0x3a;
   iVar3 = 2;
   DAT_002046a0 = DAT_0020469c;
   DAT_002046a4 = puVar1;
@@ -237,7 +246,7 @@ void reset_level_object_arena()
     *(undefined1 *)((char *)g_player_object + 7) = 0;
     FUN_000465c8();
   }
-  DAT_00250770 = 0;
+  g_scheduler_count = 0;
   DAT_002046c0 = DAT_002046a0 + 2;
   DAT_002046c8 = DAT_002046a0 + 2;
   return;

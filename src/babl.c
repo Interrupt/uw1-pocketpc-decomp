@@ -499,7 +499,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
          pointer parameter) -- confirmed individually via disassembly for
          a representative sample of these sites (this one, FUN_00052af4,
          roll_object_destroy_chance, sum_container_weight, serialize_inventory_link_chain, FUN_00072598,
-         FUN_0007deec, FUN_00080ed4, babl_builtin_take_from_npc_inv), and applied by the
+         FUN_0007deec, scheduler_add_entry, babl_builtin_take_from_npc_inv), and applied by the
          same pattern to the rest. */
       iVar8 = resolve_object_link(puVar7);
       puVar7 = (ushort *)(iVar8 + 4);
@@ -655,14 +655,23 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short sVar3;
   undefined4 uVar4;
   undefined4 uVar5;
-  int iVar6;
+  /* HACK: was plain `int iVar6` -- truncated FUN_000537d0's real
+     `ushort *` return (same bug class as its own signature comment)
+     on this 64-bit host. Confirmed live (UW_DEBUG_DOOR) chasing a
+     pull-chain-vs-direct-click door toggle report: this is the real
+     script-triggered door action (open/close/toggle, sVar3==0/1/2),
+     reached from level scripts like a pull chain's own "use" effect --
+     passed straight through to close_door_object/open_door_object/
+     toggle_door_object below, all of which expect a real pointer. */
+  ushort *iVar6;
   ushort *local_24;   /* was int -- holds tilemap_lookup()+2, a 64-bit ptr */
 
   uVar4 = babl_read_var_word((int)*(short *)(param_1 + -4));
   uVar5 = babl_read_var_word((int)*(short *)(param_1 + -6));
   local_24 = (ushort *)((char *)tilemap_lookup(uVar5,uVar4) + 2);
   iVar6 = FUN_000537d0(&local_24,0,5,0,0xffff);
-  if ((iVar6 == 0) && (iVar6 = FUN_000537d0(&local_24,0,7,0,0xf), iVar6 == 0)) {
+  if ((iVar6 == (ushort *)0x0) &&
+     (iVar6 = FUN_000537d0(&local_24,0,7,0,0xf), iVar6 == (ushort *)0x0)) {
     uVar4 = 0;
   }
   else {
@@ -671,6 +680,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     DAT_002020a0 = babl_read_var_word((int)*(short *)(param_1 + -6));
     DAT_002020a4 = babl_read_var_word((int)*(short *)(param_1 + -4));
     sVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] babl_builtin_gronk_door: sVar3(action)=%d obj0=0x%04x\n",
+              (int)sVar3, (unsigned)*iVar6);
     if (sVar3 == 0) {
       close_door_object(0,iVar6);
     }

@@ -34,6 +34,8 @@ void interact_default()
         interact_talk_npc();
         return;
       }
+      if (getenv("UW_DEBUG_DOOR"))
+        fprintf(stderr, "[door] interact_default -> interact_use\n");
       interact_use();
       return;
     }
@@ -178,6 +180,9 @@ void interact_use()
   int iVar1;
 
   DEBUG(INFO, "Interact use");
+  if (getenv("UW_DEBUG_DOOR"))
+    fprintf(stderr, "[door] interact_use() called: g_interact_target=%p obj0=0x%04x\n",
+            (void *)g_interact_target, g_interact_target ? (unsigned)*g_interact_target : 0);
 
   wait_for_click_release(1);
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
@@ -187,6 +192,8 @@ void interact_use()
     }
   }
   else {
+    if (getenv("UW_DEBUG_DOOR"))
+      fprintf(stderr, "[door] interact_use() -> use_object_on_target\n");
     use_object_on_target(g_player_object,g_interact_target,0);
   }
   return;
