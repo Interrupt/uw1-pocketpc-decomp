@@ -2996,7 +2996,7 @@ bool populate_menu_button_bitmap_entry();
 void animate_title_palette_cycle();
 void update_journey_onward_availability();
 void draw_menu_item_list();
-int FUN_0006ac38();
+int poll_menu_pointer_selection();
 int menu_button_list_navigate();
 undefined4 journey_onward_load_slot_menu();
 undefined2 FUN_0006b3dc();
