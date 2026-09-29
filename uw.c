@@ -36520,47 +36520,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007a478(param_1,param_2)
-ushort * param_1;
-int param_2;
-
-{
-  ushort uVar1;
-  code *pcVar2;
-  
-  uVar1 = *param_1 & 0x1ff;
-  if ((uVar1 < 0xc2) || (0xc6 < uVar1)) {
-    if (uVar1 == 0xd7) {
-      pcVar2 = complete_use_item_skill_check;
-    }
-    else {
-      if (uVar1 != 0xd8) {
-        if (param_2 == 0) {
-          return;
-        }
-        if (((uVar1 != 0xd9) && (uVar1 != 0xce)) && (uVar1 != 0xcf)) {
-          return;
-        }
-        use_food_item(g_player_object,param_1,param_2);
-        return;
-      }
-      DAT_0023bc94 = 1;
-      refresh_player_equipment_effects();
-      pcVar2 = complete_use_item_on_container;
-    }
-  }
-  else {
-    if (param_2 == 0) {
-      return;
-    }
-    pcVar2 = complete_use_item_on_quest_target;
-  }
-  prompt_use_item_on_target(param_1,pcVar2);
-  return;
-}
-
-
-
 undefined4 FUN_0007a53c(param_1,param_2)
 int param_1;
 short param_2;

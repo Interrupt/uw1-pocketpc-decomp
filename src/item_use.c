@@ -923,7 +923,7 @@ int param_3;
   }
   else if (uVar3 == 3) {
     if (uVar1 < 2) {
-      FUN_0007a478(param_2,param_3);
+      arm_use_item_on_target_prompt(param_2,param_3);
     }
     else if (((uVar1 == 2) && ((uVar7 & 0x1ff) == 0xe7)) && (param_3 != 0)) {
       prompt_use_item_on_target(param_2,FUN_0007a704);
@@ -1385,5 +1385,55 @@ int param_3;
     g_cursor_holding_state = 0;
     FUN_0003ab90(param_1,*(undefined1 *)(DAT_00086df8 + 0x2f),1);
   }
+  return;
+}
+
+
+
+
+
+// was FUN_0007a478 -- item-type dispatcher for use_object_on_target's
+// class-3 branch: types 0xc2-0xc6 arm complete_use_item_on_quest_target
+// (the one-off scripted puzzle); 0xd7 arms complete_use_item_skill_check;
+// 0xd8 sets DAT_0023bc94 and arms complete_use_item_on_container;
+// 0xd9/0xce/0xcf use a food item directly (use_food_item, no target
+// prompt); anything else is a no-op. Confirmed real caller:
+// use_object_on_target (src/item_use.c).
+void arm_use_item_on_target_prompt(param_1,param_2)
+ushort * param_1;
+int param_2;
+
+{
+  ushort uVar1;
+  code *pcVar2;
+  
+  uVar1 = *param_1 & 0x1ff;
+  if ((uVar1 < 0xc2) || (0xc6 < uVar1)) {
+    if (uVar1 == 0xd7) {
+      pcVar2 = complete_use_item_skill_check;
+    }
+    else {
+      if (uVar1 != 0xd8) {
+        if (param_2 == 0) {
+          return;
+        }
+        if (((uVar1 != 0xd9) && (uVar1 != 0xce)) && (uVar1 != 0xcf)) {
+          return;
+        }
+        use_food_item(g_player_object,param_1,param_2);
+        return;
+      }
+      DAT_0023bc94 = 1;
+      refresh_player_equipment_effects();
+      pcVar2 = complete_use_item_on_container;
+    }
+  }
+  else {
+    if (param_2 == 0) {
+      return;
+    }
+    pcVar2 = complete_use_item_on_quest_target;
+  }
+  prompt_use_item_on_target(param_1,pcVar2);
   return;
 }
