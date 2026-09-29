@@ -310,7 +310,7 @@ undefined4 param_2;
 // "disarm trap" mechanic: same container-contents/quality-gated setup,
 // but rolls a disarm skill check (roll_skill_check(param_2,8)) and
 // handles all three outcomes -- critical failure (<0: trap triggers,
-// via apply_trap_or_link_effect/FUN_0007dfd8 or resolve_skill_gated_unlock_or_use depending on whether
+// via apply_trap_or_link_effect/refresh_object_link_chain or resolve_skill_gated_unlock_or_use depending on whether
 // the trapped item resolved through a link) with "Your bumbling
 // attempts have set o[ff the trap]", plain failure (==0: "Unable to
 // defuse trap"), and success (>0: "X was successfully dearmed on the
@@ -370,7 +370,7 @@ undefined4 param_2;
             message_scroll_print_wrapped(&DAT_00084f20);
             if (pbVar7 == (byte *)0x0) {
               apply_trap_or_link_effect(g_player_object,param_1,pbVar4,(int)DAT_002020a0,DAT_002020a4);
-              FUN_0007dfd8(local_34[0],pbVar4);
+              refresh_object_link_chain(local_34[0],pbVar4);
             }
             else {
               resolve_skill_gated_unlock_or_use(g_player_object,param_1,pbVar7,0xffffffff);
@@ -429,7 +429,7 @@ undefined4 param_2;
 // tool), param_2 a secondary context object gating an extra class/
 // quality-bit check. Returns 2 for "denied"; on success, delegates to
 // apply_trap_or_link_effect (trap/effect application) and, when the lock record
-// has bits set at +6 (0xffc0), also refreshes it via FUN_0007dfd8.
+// has bits set at +6 (0xffc0), also refreshes it via refresh_object_link_chain.
 uint resolve_skill_gated_unlock_or_use(param_1,param_2,param_3,param_4)
 ushort * param_1;
 ushort * param_2;
@@ -497,7 +497,7 @@ ushort param_4;
   if ((*param_3 & 0x400) == 0) {
     if ((param_3[3] & 0xffc0) != 0) {
       iVar5 = (char *)tilemap_lookup(bVar6,bVar7);
-      FUN_0007dfd8(iVar5 + 2,iVar3);
+      refresh_object_link_chain(iVar5 + 2,iVar3);
       return uVar4 | 0x20;
     }
     return uVar4;
@@ -544,6 +544,91 @@ short param_5;
   dispatch_trap_type_effect(param_3,param_4,(int)param_5);
   DAT_0024cff4 = 0;
   return 0;
+}
+
+
+
+
+
+// was FUN_0007deec -- recursive helper for refresh_object_link_chain:
+// walks param_1's object link chain (resolve_object_link), and for
+// each entry whose class matches 0x1a0 (bits 0x1f0) and whose quality/
+// tag field (bits >>6) equals the shared "current tag" global
+// (DAT_0024cfd0, set by refresh_object_link_chain before calling in),
+// unlinks and frees it and decrements the shared remaining-count
+// global (DAT_0024cfd8). Also recurses into any entry's own nested
+// link chain (bits 0xffc0 at +6) when that entry isn't itself flagged
+// 0x8000. Reads as "purge stale tagged marker objects from this
+// chain", consistent with refresh_object_link_chain's own role
+// refreshing a lock/link record's linked-object state.
+void purge_tagged_objects_from_chain(param_1)
+ushort *param_1;  /* was `undefined4` -- truncated the real object-record
+                     pointer (passed to resolve_object_link and to itself
+                     recursively as `puVar1+3`), latent until those calls
+                     started actually using their arguments */
+
+{
+  ushort *puVar1;
+  
+  for (puVar1 = (ushort *)resolve_object_link(param_1); puVar1 != (ushort *)0x0; /* confirmed via ARM disassembly, 0x7deec */
+      puVar1 = (ushort *)resolve_object_link(puVar1 + 2)) {
+    if (((*puVar1 & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(puVar1[3] >> 6))) {
+      object_list_unlink(param_1,puVar1);
+      free_object_slot(puVar1);
+      *(byte *)(puVar1 + 3) = (byte)puVar1[3] & 0x3f;
+      *(undefined1 *)((char *)puVar1 + 7) = 0;
+      DAT_0024cfd8 = DAT_0024cfd8 + -1;
+    }
+    if (((*puVar1 & 0x8000) == 0) && ((puVar1[3] & 0xffc0) != 0)) {
+      purge_tagged_objects_from_chain(puVar1 + 3); /* was called with no argument; confirmed via ARM disassembly, 0x7dfbc */
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_0007dfd8 -- confirmed by callers' own comments
+// (resolve_skill_gated_unlock_or_use, trigger_object_trap_or_use_action)
+// as the "refresh" step run after a lock/link record's own use/pull
+// action. Reads param_2's own quality field (bits 0x1e at +1) as a
+// "remaining tag count"; if nonzero, stashes param_2's own slot index
+// as the shared "current tag" (DAT_0024cfd0) and scans every world
+// object slot (DAT_002029cc, up to 0x1000 entries) with a link chain,
+// calling purge_tagged_objects_from_chain on each to remove any
+// stale 0x1a0-class markers tagged with this record. Afterward, looks
+// up param_1 via FUN_00053644 (not yet named) and, if found, unlinks
+// and frees DAT_002046b4 (a global whose own role isn't pinned down
+// here).
+void refresh_object_link_chain(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  undefined4 uVar1;
+  char *iVar2;
+  short sVar3;
+  ushort uVar4;
+  
+  DAT_0024cfd8 = (short)((*(byte *)(param_2 + 1) & 0x1e) >> 1);
+  if (DAT_0024cfd8 != 0) {
+    DAT_0024cfd0 = encode_object_slot_index(param_2);
+    iVar2 = DAT_002029cc;
+    sVar3 = DAT_0024cfd8;
+    for (uVar4 = 0; (0 < sVar3 && (uVar4 < 0x1000)); uVar4 = uVar4 + 1) {
+      if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
+        purge_tagged_objects_from_chain(iVar2 + 2); /* was called with no argument, same bug class as resolve_object_link's */
+        sVar3 = DAT_0024cfd8;
+      }
+      iVar2 = iVar2 + 4;
+    }
+  }
+  uVar1 = encode_object_slot_index(param_2);
+  iVar2 = FUN_00053644(param_1,1,uVar1);
+  if (iVar2 != 0) {
+    unlink_and_free_object(DAT_002046b4);
+  }
+  return;
 }
 
 

@@ -2222,7 +2222,7 @@ LAB_0007c2b8:
 // (offset +6 quality bits), searches its container chain
 // (FUN_000537d0) for a matching entry -- a low-class match with an
 // empty extra-flags field and param_3==4 triggers a trap effect
-// (apply_trap_or_link_effect/FUN_0007dfd8, not yet named); a higher-class match
+// (apply_trap_or_link_effect/refresh_object_link_chain, not yet named); a higher-class match
 // instead runs the general "use item on object" resolver
 // (resolve_skill_gated_unlock_or_use -- confirmed in an earlier pass as the skill-gated
 // unlock/use resolver behind force_unlock_target_object).
@@ -2244,7 +2244,7 @@ undefined2 param_5;
       if ((*puVar1 & 0x30) < 0x20) {
         if (((*puVar1 & 0x1e00) == 0) && ((short)param_3 == 4)) {
           apply_trap_or_link_effect(param_1,param_2,puVar1,param_4,param_5);
-          FUN_0007dfd8(local_1c,puVar1);
+          refresh_object_link_chain(local_1c,puVar1);
         }
       }
       else {

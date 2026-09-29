@@ -36517,66 +36517,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007deec(param_1)
-ushort *param_1;  /* was `undefined4` -- truncated the real object-record
-                     pointer (passed to resolve_object_link and to itself
-                     recursively as `puVar1+3`), latent until those calls
-                     started actually using their arguments */
-
-{
-  ushort *puVar1;
-  
-  for (puVar1 = (ushort *)resolve_object_link(param_1); puVar1 != (ushort *)0x0; /* confirmed via ARM disassembly, 0x7deec */
-      puVar1 = (ushort *)resolve_object_link(puVar1 + 2)) {
-    if (((*puVar1 & 0x1f0) == 0x1a0) && ((int)DAT_0024cfd0 == (uint)(puVar1[3] >> 6))) {
-      object_list_unlink(param_1,puVar1);
-      free_object_slot(puVar1);
-      *(byte *)(puVar1 + 3) = (byte)puVar1[3] & 0x3f;
-      *(undefined1 *)((char *)puVar1 + 7) = 0;
-      DAT_0024cfd8 = DAT_0024cfd8 + -1;
-    }
-    if (((*puVar1 & 0x8000) == 0) && ((puVar1[3] & 0xffc0) != 0)) {
-      FUN_0007deec(puVar1 + 3); /* was called with no argument; confirmed via ARM disassembly, 0x7dfbc */
-    }
-  }
-  return;
-}
-
-
-
-void FUN_0007dfd8(param_1,param_2)
-undefined4 param_1;
-int param_2;
-
-{
-  undefined4 uVar1;
-  char *iVar2;
-  short sVar3;
-  ushort uVar4;
-  
-  DAT_0024cfd8 = (short)((*(byte *)(param_2 + 1) & 0x1e) >> 1);
-  if (DAT_0024cfd8 != 0) {
-    DAT_0024cfd0 = encode_object_slot_index(param_2);
-    iVar2 = DAT_002029cc;
-    sVar3 = DAT_0024cfd8;
-    for (uVar4 = 0; (0 < sVar3 && (uVar4 < 0x1000)); uVar4 = uVar4 + 1) {
-      if ((*(ushort *)(iVar2 + 2) & 0xffc0) != 0) {
-        FUN_0007deec(iVar2 + 2); /* was called with no argument, same bug class as resolve_object_link's */
-        sVar3 = DAT_0024cfd8;
-      }
-      iVar2 = iVar2 + 4;
-    }
-  }
-  uVar1 = encode_object_slot_index(param_2);
-  iVar2 = FUN_00053644(param_1,1,uVar1);
-  if (iVar2 != 0) {
-    unlink_and_free_object(DAT_002046b4);
-  }
-  return;
-}
-
-
-
 undefined4 FUN_0007e0d8(param_1)
 int param_1;
 
@@ -36745,7 +36685,7 @@ int param_2;
   uVar1 = (uVar2 & 0x1e00) >> 9;
   if ((short)uVar1 == 1) {
     iVar5 = (char *)tilemap_lookup(*(byte *)(param_2 + 4) & 0x3f,*(ushort *)(param_2 + 6) & 0x3f);
-    FUN_0007dfd8(iVar5 + 2,puVar4);
+    refresh_object_link_chain(iVar5 + 2,puVar4);
   }
   else {
     bVar3 = (byte)(uVar2 >> 8);
@@ -36765,7 +36705,7 @@ byte * param_2;
 
 {
   if ((*param_2 & 0x30) < 0x11) {
-    FUN_0007dfd8();
+    refresh_object_link_chain();
   }
   else {
     FUN_0007e558();

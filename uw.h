@@ -1023,6 +1023,8 @@ extern undefined1 DAT_0024cfe0_backing[8192];
 extern char *DAT_0024cff4;
 extern ushort *DAT_0024cff0;
 extern char s_Look__it_s_a_text_trap_00087918[];
+extern short DAT_0024cfd0;
+extern short DAT_0024cfd8;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3486,8 +3488,8 @@ void consume_linked_special_object_charge();
 uint resolve_skill_gated_unlock_or_use();
 undefined4 apply_trap_or_link_effect();
 int dispatch_trap_type_effect();
-void FUN_0007deec();
-void FUN_0007dfd8();
+void purge_tagged_objects_from_chain();
+void refresh_object_link_chain();
 undefined4 FUN_0007e0d8();
 undefined4 FUN_0007e12c();
 undefined4 FUN_0007e2dc();
