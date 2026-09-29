@@ -1118,7 +1118,7 @@ ushort * param_3;
 // was FUN_000742c0 -- casts a single-tile spell effect at tile
 // (param_1,param_2): spawns a type-0x1c5 effect object via
 // spawn_and_prime_spell_effect_object, applies its damage to just
-// that one tile (FUN_00075a88 with damage-tier index 2-1=1), then
+// that one tile (damage_all_objects_at_tile with damage-tier index 2-1=1), then
 // schedules the effect object to tick (scheduler_add_entry, type 4)
 // with a pseudo-random 0-3 initial delay. On schedule failure frees
 // the object slot; otherwise links it into param_4's object list.
@@ -1139,7 +1139,7 @@ undefined1 param_5;
   undefined1 uVar5;
 
   uVar2 = (char *)spawn_and_prime_spell_effect_object(0x1c5,param_4);
-  FUN_00075a88(param_1,param_2,2,param_5);
+  damage_all_objects_at_tile(param_1,param_2,2,param_5);
   uVar3 = Ordinal_1053();
   uVar4 = encode_object_slot_index(uVar2);
   uVar5 = (undefined1)param_2;
@@ -1158,7 +1158,7 @@ undefined1 param_5;
 
 // was FUN_00074380 -- casts an area spell effect centered on tile
 // (param_1,param_2): spawns a type-0x1c2 effect object via
-// spawn_and_prime_spell_effect_object, applies damage (FUN_00075a88,
+// spawn_and_prime_spell_effect_object, applies damage (damage_all_objects_at_tile,
 // damage-tier index 1-1=0) to that tile and its four cardinal
 // neighbors (a 5-tile cross/"area" pattern), then schedules the
 // effect object to tick (scheduler_add_entry, type 4, delay 0). On
@@ -1178,11 +1178,11 @@ undefined1 param_5;
   undefined4 uVar3;
 
   uVar2 = (char *)spawn_and_prime_spell_effect_object(0x1c2,param_4);
-  FUN_00075a88(param_1,param_2,1,param_5);
-  FUN_00075a88(param_1 + 1,param_2,1,param_5);
-  FUN_00075a88(param_1 - 1,param_2,1,param_5);
-  FUN_00075a88(param_1,param_2 + 1,1,param_5);
-  FUN_00075a88(param_1,param_2 + -1,1,param_5);
+  damage_all_objects_at_tile(param_1,param_2,1,param_5);
+  damage_all_objects_at_tile(param_1 + 1,param_2,1,param_5);
+  damage_all_objects_at_tile(param_1 - 1,param_2,1,param_5);
+  damage_all_objects_at_tile(param_1,param_2 + 1,1,param_5);
+  damage_all_objects_at_tile(param_1,param_2 + -1,1,param_5);
   uVar3 = encode_object_slot_index(uVar2);
   sVar1 = scheduler_add_entry(uVar3,4,0,param_1 & 0xff,(char)param_2);
   if (sVar1 == -1) {
@@ -2225,6 +2225,49 @@ LAB_00075a0c:
     g_player_carry_weight = 0;
     refresh_player_equipment_effects();
     redraw_active_hud_panel();
+  }
+  return;
+}
+
+
+
+
+
+// was FUN_00075a88 -- walks every object on tile (param_1,param_2)
+// (tilemap_lookup + the object linked list) and applies damage to
+// each one via the general damage dispatcher (FUN_00038374, not yet
+// named): rolls dice from a damage-tier table (DAT_0008762c/
+// DAT_00087630, indexed by param_3-1) and looks up a damage-type id
+// from DAT_00087634 at the same index. A no-op if param_3 is 0.
+// Already-confirmed caller: cast_single_tile_spell_effect and
+// cast_area_spell_effect in src/object_actions.c.
+void damage_all_objects_at_tile(param_1,param_2,param_3,param_4)
+undefined4 param_1;
+short param_2;
+char param_3;
+undefined1 param_4;
+
+{
+  undefined1 uVar1;
+  char *iVar2;  /* was `int` -- truncated tilemap_lookup's/resolve_object_link's
+                   real `void *` returns */
+  char *iVar3;  /* was `int` -- same, holds resolve_object_link's return */
+  undefined4 uVar4;
+  byte bVar5;
+
+  bVar5 = param_3 - 1;
+  if (param_3 != '\0') {
+    iVar2 = (char *)tilemap_lookup(param_1);
+    iVar2 = (char *)resolve_object_link(iVar2 + 2);
+    if (iVar2 != 0) {
+      do {
+        iVar3 = (char *)resolve_object_link(iVar2 + 4);
+        uVar1 = roll_dice_sum((&DAT_0008762c)[bVar5],(&DAT_00087630)[bVar5]);
+        uVar4 = FUN_000535fc(param_4);
+        FUN_00038374(iVar2,uVar4,param_1,(int)param_2,uVar1,(&DAT_00087634)[bVar5]);
+        iVar2 = iVar3;
+      } while (iVar3 != 0);
+    }
   }
   return;
 }

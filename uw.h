@@ -1993,6 +1993,10 @@ extern char *DAT_00202098;
 extern undefined1 DAT_00087604_backing[65536];
 #define DAT_00087604 DAT_00087604_backing[0]
 extern undefined *PTR_FUN_00087614;
+extern undefined DAT_0008762c_backing[8192];
+#define DAT_0008762c DAT_0008762c_backing[0]
+#define DAT_00087630 DAT_0008762c_backing[4]
+#define DAT_00087634 DAT_0008762c_backing[8]
 extern int DAT_00087450;
 extern undefined4 DAT_0008744c;
 extern undefined DAT_0023c2b0_backing[8192];
@@ -3259,7 +3263,7 @@ void report_detected_creatures_in_direction();
 void cast_detect_life_spell();
 void complete_pending_player_command_target();
 void dispatch_player_command();
-void FUN_00075a88();
+void damage_all_objects_at_tile();
 undefined4 FUN_00075be0();
 void sprite_list_queue_slot_redraw();
 int sprite_list_alloc_entry();

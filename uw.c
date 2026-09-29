@@ -6168,10 +6168,17 @@ void check_scheduled_object_location_callback()
   check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) & 0xf,0x126);
   return;
 }
-static undefined DAT_0008762c_backing[8192];
+undefined DAT_0008762c_backing[8192];
 #define DAT_0008762c DAT_0008762c_backing[0]
-undefined DAT_00087630;
-undefined DAT_00087634;
+// DAT_00087630 and DAT_00087634 are further fields (offsets +4 and
+// +8) in this same damage-tier table, not standalone globals -- both
+// were declared as lone bytes and then indexed with the table's own
+// `[tier]` stride by damage_all_objects_at_tile (dice-sides and
+// damage-type-id fields alongside DAT_0008762c's dice-count field).
+// Aliased into the same backing array, matching the
+// DAT_001007da/DAT_001007e2/DAT_001007ed fix in an earlier pass.
+#define DAT_00087630 DAT_0008762c_backing[4]
+#define DAT_00087634 DAT_0008762c_backing[8]
 char *DAT_0023c3e8;
 /* Was `int`, truncating the real pointer assigned to it
    (`DAT_0023c3e8 + 0x500`, a genuine 64-bit heap pointer on this host) --
@@ -36483,39 +36490,6 @@ LAB_00060f54:
 
 
 
-void FUN_00075a88(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-short param_2;
-char param_3;
-undefined1 param_4;
-
-{
-  undefined1 uVar1;
-  char *iVar2;  /* was `int` -- truncated tilemap_lookup's/resolve_object_link's
-                   real `void *` returns */
-  char *iVar3;  /* was `int` -- same, holds resolve_object_link's return */
-  undefined4 uVar4;
-  byte bVar5;
-
-  bVar5 = param_3 - 1;
-  if (param_3 != '\0') {
-    iVar2 = (char *)tilemap_lookup(param_1);
-    iVar2 = (char *)resolve_object_link(iVar2 + 2);
-    if (iVar2 != 0) {
-      do {
-        iVar3 = (char *)resolve_object_link(iVar2 + 4);
-        uVar1 = roll_dice_sum((&DAT_0008762c)[bVar5],(&DAT_00087630)[bVar5]);
-        uVar4 = FUN_000535fc(param_4);
-        FUN_00038374(iVar2,uVar4,param_1,(int)param_2,uVar1,(&DAT_00087634)[bVar5]);
-        iVar2 = iVar3;
-      } while (iVar3 != 0);
-    }
-  }
-  return;
-}
-
-
-
 undefined4 FUN_00075be0()
 
 {
@@ -42490,7 +42464,7 @@ undefined4 param_4;
       if (iVar1 == 0) {
         FUN_00081388(param_1,param_2,param_3);
       }
-      FUN_00075a88(param_2,param_3,(uVar6 & 0xff) + 1,param_4);
+      damage_all_objects_at_tile(param_2,param_3,(uVar6 & 0xff) + 1,param_4);
       return 1;
     }
   }
