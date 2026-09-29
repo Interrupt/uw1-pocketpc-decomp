@@ -1725,6 +1725,7 @@ extern void * DAT_002020f8_arr[256];
 #define DAT_002020f8 DAT_002020f8_arr[0]
 extern void * DAT_00202308_arr[256];
 #define DAT_00202308 DAT_00202308_arr[0]
+extern char DAT_002506ab;
 extern undefined2 DAT_0023adb0;
 extern undefined2 DAT_0023adb8_backing[8192];
 #define DAT_0023adb8 DAT_0023adb8_backing[0]
