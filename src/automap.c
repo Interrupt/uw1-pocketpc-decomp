@@ -861,12 +861,12 @@ LAB_000171d0:
           iVar10 = iVar10 + 1;
         }
         else {
-          FUN_0007edec(300,10);
+          debug_noop_overflow_hook(300,10);
           iVar10 = 0x2d;
         }
       }
       else {
-        FUN_0007edec(300,10);
+        debug_noop_overflow_hook(300,10);
       }
     }
     local_58[(short)iVar10 + 1] = '\0';
@@ -1051,4 +1051,24 @@ undefined4 param_1;
   draw_automap_screen(param_1);
   return;
 }
+
+
+
+// was FUN_0007edec -- always returns 0 and does nothing else; both
+// confirmed callers (src/automap.c's note-text composition, when the
+// wrapped line buffer overflows its 46-char limit or a word doesn't
+// fit) pass literal args (300,10) that this decompiled signature
+// takes no parameters for and can't use. Matches the same "dead/
+// stripped debug hook" pattern already confirmed for debug_print_init,
+// debug_print, and debug_noop_checkpoint elsewhere in this file --
+// likely a stripped-out warning/beep for "automap note text
+// truncated", though not individually re-checked against the real
+// disassembly to confirm.
+undefined4 debug_noop_overflow_hook()
+
+{
+  return 0;
+}
+
+
 

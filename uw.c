@@ -36521,14 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-undefined4 FUN_0007edec()
-
-{
-  return 0;
-}
-
-
-
 bool FUN_0007edf4(param_1,param_2,param_3)
 void *param_1;  /* was `undefined4` -- truncated the real data-buffer
                    pointer (save_game_to_slot passes its own param_2, a real
