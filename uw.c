@@ -5097,9 +5097,9 @@ short DAT_0023b810;
    (now-working) visibility fill marked any tile visible. The six entries
    are contiguous in .data: b38,b3c / b40,b44 / b48,b4c -- one array, the
    symbols index it at 0..4. NOT const: FUN_0005d664 patches entries [1]
-   and [3] (b3c / b44) at runtime between FUN_0005dd84 and FUN_0005e12c. */
+   and [3] (b3c / b44) at runtime between FUN_0005dd84 and emit_floor_texture_select. */
 static code *DAT_00086b38_fnptrs[6] = {
-  (code *)FUN_0005dd84, (code *)FUN_0005e12c,
+  (code *)FUN_0005dd84, (code *)emit_floor_texture_select,
   (code *)FUN_0005debc, (code *)FUN_0005dd84,
   (code *)FUN_0005dff4, (code *)FUN_0005e3c0,
 };
@@ -55264,13 +55264,13 @@ void FUN_0005d2b0()
     }
   }
   if (bVar4) {
-    DAT_00086b44 = FUN_0005e12c;
+    DAT_00086b44 = emit_floor_texture_select;
   }
   else {
     DAT_00086b44 = FUN_0005dd84;
   }
   if (bVar3) {
-    DAT_00086b3c = FUN_0005e12c;
+    DAT_00086b3c = emit_floor_texture_select;
   }
   else {
     DAT_00086b3c = FUN_0005dd84;
@@ -55656,7 +55656,8 @@ ushort param_4;
 
 
 
-void FUN_0005e12c(param_1,param_2,param_3)
+// was emit_floor_texture_select
+void emit_floor_texture_select(param_1,param_2,param_3)
 byte * param_1;
 uint param_2;
 short param_3;
@@ -58185,11 +58186,11 @@ short frame_or_texid;
           DAT_00110fc0 = puVar25;
         }
         else {
-          FUN_0005e12c(0,DAT_0023b4e0,
+          emit_floor_texture_select(0,DAT_0023b4e0,
                        ((*(byte *)(obj + 1) >> 1 & 0xf) - (uint)(bVar5 >> 5)) + -1);
           /* The real branch textures the bridge through draw-list
              commands (0x3e/0xb2) this port has no consumer for -- resolve
-             the same floor texture FUN_0005e12c just selected (index
+             the same floor texture emit_floor_texture_select just selected (index
              +0x30 full-res / +0x6a low-res, its own level threshold)
              directly, so a flags>=2 bridge isn't left with a NULL
              texture. Not live-verified: every level-1 bridge has
