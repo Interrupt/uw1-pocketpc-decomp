@@ -2151,7 +2151,7 @@ void FUN_000286cc()
     bitmap_blit_to_framebuffer(0x2a,0x7f,DAT_00100738,10,0xc0,0,0,1);
     bitmap_blit_to_framebuffer(0xec,8,DAT_0010073c,0x72,0x54,0,0,1);
     set_draw_color(0xf1);
-    FUN_000116dc(0x34,0x30,0xdc);
+    draw_horizontal_line(0x34,0x30,0xdc);
     DAT_00100678 = g_active_hud_panel;
     g_active_hud_panel = 0;
     DAT_00085c54 = 0;

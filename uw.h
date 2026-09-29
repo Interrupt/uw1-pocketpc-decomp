@@ -2339,7 +2339,7 @@ undefined4 screen_backup_save();
 void screen_backup_restore();
 void screen_backup_restore_rect();
 void set_viewport_clip_rect();
-void FUN_000116dc();
+void draw_horizontal_line();
 void FUN_00011b34();
 void FUN_00011c10();
 void FUN_000120c8();

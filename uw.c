@@ -6744,35 +6744,6 @@ undefined *PTR_Ordinal_35_000841cc;
 
 
 
-// WARNING: Globals starting with '_' overlap smaller symbols at the same address
-
-void FUN_000116dc(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-uint param_3;
-
-{
-  uint uVar1;
-  int iVar2;
-  int iVar3;
-  
-  param_2 = param_2 & 0xffff;
-  uVar1 = param_1 & 0xffff;
-  param_3 = param_3 & 0xffff;
-  dirty_rect_union(param_2,param_2,uVar1,param_3);
-  if (uVar1 < param_3) {
-    iVar3 = param_3 - uVar1;
-    iVar2 = (param_2 * 0x140 + (param_1 & 0xffff)) * 2;
-    do {
-      iVar3 = iVar3 + -1;
-      *(undefined2 *)(iVar2 + (g_uw_framebuffer)) =
-           (&g_palette_rgb565)[DAT_000a85c0];
-      iVar2 = iVar2 + 2;
-    } while (iVar3 != 0);
-  }
-  debug_framebuffer_dump("FUN_000116dc");
-  return;
-}
 
 
 
