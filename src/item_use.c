@@ -334,7 +334,7 @@ int param_2;
       if (param_2 != 0) {
         FUN_00078c80(0xfd);
       }
-      FUN_00072f30(0xf,0x40,0xf6);
+      play_sound_effect_with_pan(0xf,0x40,0xf6);
       return 0;
     }
     uVar2 = param_1[1];

@@ -1570,7 +1570,7 @@ int param_3;
               uVar4 = 0x38;
               uVar6 = 2;
             }
-            FUN_00072f30(uVar6,uVar4,((int)g_jump_ascent_timer >> 5 & 0xffU) - 0x10);
+            play_sound_effect_with_pan(uVar6,uVar4,((int)g_jump_ascent_timer >> 5 & 0xffU) - 0x10);
             DAT_0023bf60 = DAT_0023bf60 == '\0';
             sVar1 = Ordinal_2005(((int)g_jump_ascent_timer >> 2) + 1,6000);
             uVar5 = sVar1 + 0x40;
@@ -1593,7 +1593,7 @@ int param_3;
           iVar3 = 0x38;
           uVar6 = 2;
         }
-        FUN_00072f30(uVar6,iVar3,uVar2 - 0x10,uVar2,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_lr);
+        play_sound_effect_with_pan(uVar6,iVar3,uVar2 - 0x10,uVar2,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_lr);
         DAT_0023bf60 = DAT_0023bf60 == '\0';
         iVar3 = read_realtime_clock_units();
         DAT_0023bf5c = iVar3 + 100;
@@ -1607,7 +1607,7 @@ int param_3;
     }
     if (DAT_00086e84 == -1) {
       DAT_0023bf64 = read_realtime_clock_units();
-      DAT_00086e84 = FUN_00072f30(0,0x40,0);
+      DAT_00086e84 = play_sound_effect_with_pan(0,0x40,0);
     }
   }
   return;

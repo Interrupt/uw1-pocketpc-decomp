@@ -351,3 +351,69 @@ LAB_00072f24:
   }
   return uVar4;
 }
+
+
+
+
+
+
+// was FUN_00072f30 -- play_positional_sound_effect's non-positional
+// sibling: plays sound effect param_1 with an explicit pan (param_2,
+// passed straight through) and a volume boost (param_3, added to the
+// per-id base volume DAT_0023c2b2[id] and clamped to 0..0x7f) rather
+// than deriving pan/volume from a world position.
+undefined4 play_sound_effect_with_pan(param_1,param_2,param_3)
+uint param_1;
+undefined1 param_2;
+uint param_3;
+
+{
+  uint uVar1;
+  undefined4 uVar2;
+  uint uVar3;
+  int iVar4;
+  
+  if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
+    uVar2 = 0xff;
+  }
+  else {
+    iVar4 = (param_1 & 0xff) * 5;
+    uVar1 = (int)(((param_3 & 0xff) + (uint)(byte)(&DAT_0023c2b2)[iVar4]) * 0x10000) >> 0x10;
+    uVar3 = uVar1;
+    if (0x7f < uVar1) {
+      uVar3 = 0x7f;
+    }
+    if (0x7f < uVar1 && (int)(uVar1 - 0x7f) < 0) {
+      uVar3 = 0;
+    }
+    uVar2 = FUN_00073064(param_1,(&DAT_0023c2b0)[iVar4],(&DAT_0023c2b1)[iVar4],uVar3 & 0xff,param_2,
+                         *(undefined2 *)(&DAT_0023c2b3 + iVar4));
+  }
+  return uVar2;
+}
+
+
+
+// was FUN_00072fc8 -- play_positional_sound_effect's convenience
+// wrapper taking an object pointer (param_2) instead of raw
+// coordinates: extracts the object's world position and forwards to
+// play_positional_sound_effect.
+undefined4 play_sound_effect_at_object(param_1,param_2,param_3)
+undefined4 param_1;
+int param_2;
+undefined4 param_3;
+
+{
+  undefined4 uVar1;
+  
+  if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
+    uVar1 = 0xff;
+  }
+  else {
+    uVar1 = play_positional_sound_effect(param_1,((*(ushort *)(param_2 + 0x16) & 0xfc00) >> 7) +
+                                 (uint)(*(byte *)(param_2 + 3) >> 5),
+                         (*(byte *)(param_2 + 3) >> 2 & 7) +
+                         ((*(ushort *)(param_2 + 0x16) & 0x3f0) >> 1),param_3);
+  }
+  return uVar1;
+}

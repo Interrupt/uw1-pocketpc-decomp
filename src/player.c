@@ -131,7 +131,7 @@ void debug_print_player_position(const char *label)
 // pack sub-tile position / height / facing into the player object record
 // (g_player_object +2/+3/+0x16/+0x17/+0x18), auto-straighten the facing
 // toward the travel direction, then handle a pending landing impact
-// (fall damage FUN_00038374 + thud FUN_00072f30) and refresh the
+// (fall damage FUN_00038374 + thud play_sound_effect_with_pan) and refresh the
 // locomotion pose. Called every tick from apply_movement_tick.
 void commit_player_move()
 
@@ -225,7 +225,7 @@ void commit_player_move()
         FUN_00038374(g_player_object,0,0,0,(char)uVar3,0);
       }
       if ((1 < (short)uVar3) || ((DAT_002048a8 & 0x10) != 0)) {
-        FUN_00072f30(0xf,0x40,((uVar3 & 0xff) + 0x31) * 4);
+        play_sound_effect_with_pan(0xf,0x40,((uVar3 & 0xff) + 0x31) * 4);
       }
     }
     _DAT_002048a9 = 0;

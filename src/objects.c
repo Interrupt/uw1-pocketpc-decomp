@@ -170,7 +170,7 @@ LAB_0004b06c:
     DEBUG(INFO, "[drop] object id=0x%03x landed at tile=(%d,%d)\n",
           (unsigned)(*puVar6 & 0x1ff), puVar6[0xb] >> 10, (puVar6[0xb] & 0x3f0) >> 4);
     object_list_insert_head(pbTile + 2,puVar6);
-    FUN_00072fc8(10,puVar6,0);
+    play_sound_effect_at_object(10,puVar6,0);
     /* HACK, not disassembly-derived at this call site -- same fix as
        drop_held_object_near_player's trajectory branch, see that
        comment for the full explanation. This function (like that one)

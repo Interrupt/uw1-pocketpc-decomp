@@ -11429,7 +11429,7 @@ undefined1 param_1;
   uVar9 = (uint)DAT_00100628 + (int)(short)((int)((uint)DAT_001005fc * (int)DAT_0010061c) >> 7);
   sVar3 = (short)uVar9;
   if (DAT_00100620 == 1) {
-    FUN_00072f30(3,0x40,(uVar9 & 0xff) << 2);
+    play_sound_effect_with_pan(3,0x40,(uVar9 & 0xff) << 2);
   }
   else {
     play_positional_sound_effect(4,(uint)(*(byte *)((char *)puVar6 + 3) >> 5) + DAT_00100600 * 8,
@@ -11583,7 +11583,7 @@ LAB_00026fe8:
   }
   uVar4 = FUN_000535fc((int)DAT_00100620);
 LAB_0002701c:
-  FUN_00072fc8(uVar5,uVar4,0);
+  play_sound_effect_at_object(uVar5,uVar4,0);
   return 0;
 }
 
@@ -12020,12 +12020,12 @@ undefined1 param_7;
   DAT_00100624 = sVar1 + 4;
   DAT_0010061c = param_6;
   if (param_3 == g_player_object) {
-    FUN_00072f30(3,0,0);
+    play_sound_effect_with_pan(3,0,0);
   }
   else {
     iVar3 = object_ptr_in_arena(param_3);
     if (iVar3 != 0) {
-      FUN_00072fc8(4,param_3,0);
+      play_sound_effect_at_object(4,param_3,0);
     }
   }
   FUN_00026858(param_7);
@@ -17358,7 +17358,7 @@ int param_2;
 undefined4 FUN_000366a0()
 
 {
-  FUN_00072f30(0x11,0x40,0);
+  play_sound_effect_with_pan(0x11,0x40,0);
   return 0;
 }
 
@@ -23942,7 +23942,7 @@ short param_1;
     if (((*(ushort *)(DAT_00085a6c + 6) & 2) == 0) || (param_1 != 0)) {
       DAT_002028d0 = 1;
       if (*(uint *)(DAT_00086df8 + 0xce) < (uint)DAT_002028d4 + DAT_002028d8) {
-        FUN_00072f30(0x15,0x40,0);
+        play_sound_effect_with_pan(0x15,0x40,0);
       }
       else {
         wait_for_click_release(1);
@@ -23975,7 +23975,7 @@ undefined4 FUN_00044e74(param_1)
 int param_1;
 
 {
-  FUN_00072f30(0x16,0x40,0);
+  play_sound_effect_with_pan(0x16,0x40,0);
   FUN_00078c80(param_1 + 0xd2);
   return 0;
 }
@@ -24029,7 +24029,7 @@ uint param_1;
       }
       iVar5 = FUN_00073b74(bVar7,bVar1,g_player_object,g_player_object);
       if (iVar5 != 0) {
-        FUN_00072f30(0x10,0x40,0);
+        play_sound_effect_with_pan(0x10,0x40,0);
         return 1;
       }
       DAT_0023c3e0 = 0;
@@ -27027,7 +27027,7 @@ short param_1;
       free_object_slot();
     }
     if ((iVar1 == 9) || (iVar1 == 10)) {
-      FUN_00072f30(9,0x40,0);
+      play_sound_effect_with_pan(9,0x40,0);
     }
   }
   return;
@@ -36437,60 +36437,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_00072f30(param_1,param_2,param_3)
-uint param_1;
-undefined1 param_2;
-uint param_3;
-
-{
-  uint uVar1;
-  undefined4 uVar2;
-  uint uVar3;
-  int iVar4;
-  
-  if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
-    uVar2 = 0xff;
-  }
-  else {
-    iVar4 = (param_1 & 0xff) * 5;
-    uVar1 = (int)(((param_3 & 0xff) + (uint)(byte)(&DAT_0023c2b2)[iVar4]) * 0x10000) >> 0x10;
-    uVar3 = uVar1;
-    if (0x7f < uVar1) {
-      uVar3 = 0x7f;
-    }
-    if (0x7f < uVar1 && (int)(uVar1 - 0x7f) < 0) {
-      uVar3 = 0;
-    }
-    uVar2 = FUN_00073064(param_1,(&DAT_0023c2b0)[iVar4],(&DAT_0023c2b1)[iVar4],uVar3 & 0xff,param_2,
-                         *(undefined2 *)(&DAT_0023c2b3 + iVar4));
-  }
-  return uVar2;
-}
-
-
-
-undefined4 FUN_00072fc8(param_1,param_2,param_3)
-undefined4 param_1;
-int param_2;
-undefined4 param_3;
-
-{
-  undefined4 uVar1;
-  
-  if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
-    uVar1 = 0xff;
-  }
-  else {
-    uVar1 = play_positional_sound_effect(param_1,((*(ushort *)(param_2 + 0x16) & 0xfc00) >> 7) +
-                                 (uint)(*(byte *)(param_2 + 3) >> 5),
-                         (*(byte *)(param_2 + 3) >> 2 & 7) +
-                         ((*(ushort *)(param_2 + 0x16) & 0x3f0) >> 1),param_3);
-  }
-  return uVar1;
-}
-
-
-
 void FUN_0007305c()
 
 {
@@ -38217,7 +38163,7 @@ LAB_0007588c:
     cVar2 = roll_dice_sum(8,3);
     FUN_00074ad0(param_1,(int)cVar2,FUN_00075248,0x40,5,3);
     set_movement_animation_timer(0x40,0x28);
-    FUN_00072fc8(0x12,param_1,0);
+    play_sound_effect_at_object(0x12,param_1,0);
     break;
   case 10:
     if ((*(byte *)(DAT_00086df8 + 0x5e) & 0xf) == 0) {
@@ -40481,7 +40427,7 @@ int param_2;
       uVar2 = 0x7a;
     }
     else {
-      FUN_00072f30(0x13,0x40,0);
+      play_sound_effect_with_pan(0x13,0x40,0);
       uVar2 = 0x79;
     }
     FUN_00078c80(uVar2);
@@ -41367,7 +41313,7 @@ LAB_0007c2b8:
         FUN_0007cc78(param_4);
         return 1;
       }
-      FUN_00072f30(0x15,0x40,0);
+      play_sound_effect_with_pan(0x15,0x40,0);
     }
   }
   return 0;

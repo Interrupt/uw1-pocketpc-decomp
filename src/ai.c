@@ -1109,7 +1109,7 @@ ushort * param_2;
     if ((*param_1 & 0x1c0) != 0x40) {
       uVar2 = Ordinal_2005(0x32,(short)(*(ushort *)(&DAT_00202c91 + (*param_1 & 0x1ff) * 0xd) >> 4)
                                 + -600);
-      FUN_00072fc8(0xf,param_1,uVar2);
+      play_sound_effect_at_object(0xf,param_1,uVar2);
     }
     FUN_00038374(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
   }
