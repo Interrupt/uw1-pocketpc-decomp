@@ -1194,3 +1194,110 @@ undefined1 param_5;
   }
   return 1;
 }
+
+
+
+
+
+// was FUN_00074474 -- gated trap/effect trigger: FUN_000382cc (not
+// yet named) is the shared per-object-type-flags helper used
+// throughout this cluster -- with a real multi-bit damage-type mask
+// and nonzero low bits it's a genuine resistance roll (see
+// morph_tile_object_state below), but called here with a single flag
+// bit (0x80) and a dummy pass-value (1) it works as a plain
+// membership test: it returns 0 when the target's object-type record
+// (DAT_00202c99, same 13-byte-stride per-type table used by
+// dispatch_object_action) HAS bit 0x80 set, and the nonzero pass-value
+// when it doesn't. This function fires ONLY on the "has the flag"
+// (0) case, applying a fixed damage-type-3, magnitude-0xff effect
+// (FUN_00038374, not yet named) to the target -- i.e. it's a trap
+// effect that only harms objects whose type carries that particular
+// flag. Returns whether the object had the flag.
+bool trigger_type_flagged_trap_effect(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+undefined4 param_4;
+undefined1 param_5;
+
+{
+  char cVar1;
+  undefined4 uVar2;
+  
+  cVar1 = FUN_000382cc(param_3,1,0x80);
+  if (cVar1 == '\0') {
+    uVar2 = FUN_000535fc(param_5);
+    FUN_00038374(param_3,uVar2,param_1,param_2,0xff,3);
+  }
+  return cVar1 == '\0';
+}
+
+
+
+// was FUN_000744e0 -- unconditional tile-trap damage effect at tile
+// (param_1,param_2): first alters the tile's texture/decoration
+// (FUN_00081814, not yet named -- group 7, subtype 4), then rolls
+// 5d4 damage and applies it to the target object (param_3) via
+// FUN_00038374 (damage type id 0x13), which internally still runs
+// the same resistance/flag check as trigger_type_flagged_trap_effect
+// above -- so a target immune to type 0x13 can still take zero
+// effective damage even though this function always "fires".
+undefined4 trigger_tile_damage_trap_effect(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+undefined4 param_2;
+undefined4 param_3;
+undefined4 param_4;
+undefined1 param_5;
+
+{
+  undefined1 uVar1;
+  undefined4 uVar2;
+  undefined1 uVar3;
+  undefined2 uVar4;
+  undefined1 uVar5;
+  
+  uVar3 = 0;
+  uVar4 = (undefined2)param_1;
+  FUN_00081814(param_3,7,4,0,7,uVar4,(short)param_2);
+  uVar5 = (undefined1)((ushort)uVar4 >> 8);
+  uVar1 = roll_dice_sum(5,4);
+  uVar2 = FUN_000535fc(param_5);
+  FUN_00038374(param_3,uVar2,param_1,param_2,CONCAT11(uVar3,uVar1),CONCAT11(uVar5,0x13));
+  return 1;
+}
+
+
+
+// was FUN_0007455c -- resistance-gated object-state morph: runs a
+// real resistance roll via FUN_000382cc (mask 3, i.e. the random
+// partial-resist chance bits) against the target object (param_3);
+// if not resisted, alters the tile's texture/decoration
+// (FUN_00081814, group 7, subtype 4) and plays an effect on the
+// target (FUN_00034ac4), then -- unless param_2 is -1 ("no change")
+// -- overwrites the top 2 bits of the object's quality/link field
+// (offset +0xd/+0xe, a ushort) with param_2, leaving the lower 14
+// bits untouched. Used by the three thin wrappers immediately below
+// with different fixed state ids (2, 6, 7).
+undefined4 morph_tile_object_state(param_1,param_2,param_3,param_4,param_5)
+undefined4 param_1;
+char param_2;
+int param_3;
+undefined2 param_4;
+undefined2 param_5;
+
+{
+  char cVar1;
+  uint uVar2;
+  
+  cVar1 = FUN_000382cc(param_3,1,3);
+  if (cVar1 != '\0') {
+    FUN_00081814(param_3,7,4,0,7,param_4,param_5);
+    FUN_00034ac4(param_3,param_1,1);
+    if ((int)param_2 != 0xffffffff) {
+      uVar2 = *(ushort *)(param_3 + 0xd) & 0x3fff;
+      *(char *)(param_3 + 0xd) = (char)uVar2;
+      *(byte *)(param_3 + 0xe) = (byte)(uVar2 >> 8) | (byte)((((int)param_2 & 3U) << 0xe) >> 8);
+    }
+  }
+  return 1;
+}

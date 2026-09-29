@@ -36474,79 +36474,6 @@ LAB_00060f54:
 
 
 
-bool FUN_00074474(param_1,param_2,param_3,param_4,param_5)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-undefined1 param_5;
-
-{
-  char cVar1;
-  undefined4 uVar2;
-  
-  cVar1 = FUN_000382cc(param_3,1,0x80);
-  if (cVar1 == '\0') {
-    uVar2 = FUN_000535fc(param_5);
-    FUN_00038374(param_3,uVar2,param_1,param_2,0xff,3);
-  }
-  return cVar1 == '\0';
-}
-
-
-
-undefined4 FUN_000744e0(param_1,param_2,param_3,param_4,param_5)
-undefined4 param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-undefined1 param_5;
-
-{
-  undefined1 uVar1;
-  undefined4 uVar2;
-  undefined1 uVar3;
-  undefined2 uVar4;
-  undefined1 uVar5;
-  
-  uVar3 = 0;
-  uVar4 = (undefined2)param_1;
-  FUN_00081814(param_3,7,4,0,7,uVar4,(short)param_2);
-  uVar5 = (undefined1)((ushort)uVar4 >> 8);
-  uVar1 = roll_dice_sum(5,4);
-  uVar2 = FUN_000535fc(param_5);
-  FUN_00038374(param_3,uVar2,param_1,param_2,CONCAT11(uVar3,uVar1),CONCAT11(uVar5,0x13));
-  return 1;
-}
-
-
-
-undefined4 FUN_0007455c(param_1,param_2,param_3,param_4,param_5)
-undefined4 param_1;
-char param_2;
-int param_3;
-undefined2 param_4;
-undefined2 param_5;
-
-{
-  char cVar1;
-  uint uVar2;
-  
-  cVar1 = FUN_000382cc(param_3,1,3);
-  if (cVar1 != '\0') {
-    FUN_00081814(param_3,7,4,0,7,param_4,param_5);
-    FUN_00034ac4(param_3,param_1,1);
-    if ((int)param_2 != 0xffffffff) {
-      uVar2 = *(ushort *)(param_3 + 0xd) & 0x3fff;
-      *(char *)(param_3 + 0xd) = (char)uVar2;
-      *(byte *)(param_3 + 0xe) = (byte)(uVar2 >> 8) | (byte)((((int)param_2 & 3U) << 0xe) >> 8);
-    }
-  }
-  return 1;
-}
-
-
-
 undefined4 FUN_00074614(param_1,param_2,param_3)
 undefined2 param_1;
 undefined2 param_2;
@@ -36576,7 +36503,7 @@ undefined2 param_2;
 undefined4 param_3;
 
 {
-  FUN_0007455c(2,1,param_3,param_1,param_2);
+  morph_tile_object_state(2,1,param_3,param_1,param_2);
   return;
 }
 
@@ -36588,7 +36515,7 @@ undefined2 param_2;
 undefined4 param_3;
 
 {
-  FUN_0007455c(6,0xffffffff,param_3,param_1,param_2);
+  morph_tile_object_state(6,0xffffffff,param_3,param_1,param_2);
   return;
 }
 
@@ -36600,7 +36527,7 @@ undefined2 param_2;
 undefined4 param_3;
 
 {
-  FUN_0007455c(7,1,param_3,param_1,param_2);
+  morph_tile_object_state(7,1,param_3,param_1,param_2);
   return;
 }
 
