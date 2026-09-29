@@ -198,7 +198,7 @@ short param_5;
   pbVar11 = uw_load_critter_page_cached(param_1, param_2);
   if (pbVar11 == (byte *)0) {
     /* Missing/unopenable per-page resource file -- was an unconditional
-       FUN_00082388(0xffffffff) hard exit (only reachable for a real
+       terminate_process(0xffffffff) hard exit (only reachable for a real
        object, class 1, that no object in the previously-tested level
        area happened to use -- confirmed via lldb backtrace: reached
        from emit_tile_objects's class-1 branch via resolve_critter_sprite_tier, one

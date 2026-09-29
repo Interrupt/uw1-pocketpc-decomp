@@ -331,7 +331,7 @@ undefined4 param_1;
     if (getenv("UW_DEBUG_TITLEMENU")) fprintf(stderr, "[titlemenu] uVar8=%d uVar2=%d navigate->%d\n", (int)uVar8, (int)uVar2, local_838);
     if (local_838 == -1) {
       FUN_0003baf4(0);
-      FUN_00082388(1);
+      terminate_process(1);
     }
     else if (local_838 == 0) {
       FUN_00037c14(0);

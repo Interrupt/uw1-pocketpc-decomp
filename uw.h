@@ -3589,11 +3589,11 @@ undefined4 scheduler_advance_effect();
 undefined4 scheduler_load();
 undefined4 scheduler_save();
 void entry(undefined4 param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4);
-void FUN_00082328();
-void FUN_00082358();
-void FUN_00082388();
-undefined4 FUN_00082448();
-undefined4 FUN_000824f0();
+void run_static_initializers();
+void call_function_pointer_range();
+void terminate_process();
+undefined4 register_atexit_handler();
+undefined4 register_default_atexit_handler();
 
 
 /* --- auto-generated overlap/exref aliases --- */
