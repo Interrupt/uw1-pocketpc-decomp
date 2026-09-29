@@ -12899,7 +12899,7 @@ int FUN_0002990c()
   else {
     iVar3 = get_message_string();
     if (iVar3 == 0) {
-      FUN_00078918(DAT_001007b8,(int)DAT_001007bc);
+      overwrite_interned_string(DAT_001007b8,(int)DAT_001007bc);
     }
   }
   FUN_0007ec50();
@@ -36508,41 +36508,6 @@ LAB_00060f54:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
   return;
-}
-
-
-uint FUN_00078918(param_1,param_2)
-char *param_1;
-uint param_2;
-
-{
-  int iVar1;
-  short sVar2;
-  
-  iVar1 = 0;
-  sVar2 = -1;
-  if (0 < DAT_0024cfc0) {
-    do {
-      sVar2 = (short)iVar1;
-      if ((int)*(short *)(&DAT_0024bfa0 + iVar1 * 0x804) == (param_2 & 0xffff) >> 9) break;
-      iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-      sVar2 = -1;
-    } while (iVar1 < DAT_0024cfc0);
-  }
-  if (sVar2 < 0) {
-    param_2 = 0;
-  }
-  else {
-    iVar1 = (sVar2 * 0x201 + (int)(short)((ushort)param_2 & 0x1ff)) * 4;
-    /* Real pointer tracked separately -- see g_bfa2_real_ptrs's comment
-       and register_interned_string's identical write above. */
-    g_bfa2_real_ptrs[iVar1 / 4] = param_1;
-    (&DAT_0024bfa2)[iVar1] = (char)param_1;
-    (&DAT_0024bfa3)[iVar1] = (char)((uint)param_1 >> 8);
-    (&DAT_0024bfa4)[iVar1] = (char)((uint)param_1 >> 0x10);
-    (&DAT_0024bfa5)[iVar1] = (char)((uint)param_1 >> 0x18);
-  }
-  return param_2;
 }
 
 

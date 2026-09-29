@@ -823,3 +823,48 @@ undefined4 param_2;
   return (int)(short)((short)param_2 << 9 | uVar3);
 }
 
+
+
+
+
+// was FUN_00078918 -- overwrites an already-interned string in
+// place: param_2 is an existing packed message id (page in bits 9+,
+// sub-index in the low 9 bits, same encoding as get_message_string/
+// register_interned_string), param_1 is the new real string pointer.
+// Looks up the page and, if found, rewrites the real-pointer side
+// table entry at that exact sub-index (does not allocate a new
+// slot). Returns param_2 unchanged on success, or 0 if the page
+// wasn't found. No callers found by grep in the remaining decompile.
+uint overwrite_interned_string(param_1,param_2)
+char *param_1;
+uint param_2;
+
+{
+  int iVar1;
+  short sVar2;
+  
+  iVar1 = 0;
+  sVar2 = -1;
+  if (0 < DAT_0024cfc0) {
+    do {
+      sVar2 = (short)iVar1;
+      if ((int)*(short *)(&DAT_0024bfa0 + iVar1 * 0x804) == (param_2 & 0xffff) >> 9) break;
+      iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+      sVar2 = -1;
+    } while (iVar1 < DAT_0024cfc0);
+  }
+  if (sVar2 < 0) {
+    param_2 = 0;
+  }
+  else {
+    iVar1 = (sVar2 * 0x201 + (int)(short)((ushort)param_2 & 0x1ff)) * 4;
+    /* Real pointer tracked separately -- see g_bfa2_real_ptrs's comment
+       and register_interned_string's identical write above. */
+    g_bfa2_real_ptrs[iVar1 / 4] = param_1;
+    (&DAT_0024bfa2)[iVar1] = (char)param_1;
+    (&DAT_0024bfa3)[iVar1] = (char)((uint)param_1 >> 8);
+    (&DAT_0024bfa4)[iVar1] = (char)((uint)param_1 >> 0x10);
+    (&DAT_0024bfa5)[iVar1] = (char)((uint)param_1 >> 0x18);
+  }
+  return param_2;
+}
