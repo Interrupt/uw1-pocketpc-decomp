@@ -315,8 +315,8 @@ ushort * param_2;
     if (puVar3 != (undefined1 *)0x0) {
     *puVar3 = (char)((uVar5 + 0x31) * 0x1000000 >> 0x18);
     }
-    iVar4 = FUN_000226e8(acStack_128,0);
-    if ((iVar4 != -1) && (iVar4 = FUN_000227d4(acStack_128), iVar4 != -1)) {
+    iVar4 = win_file_exists(acStack_128,0);
+    if ((iVar4 != -1) && (iVar4 = open_file_for_read(acStack_128), iVar4 != -1)) {
       /* Pad the record with spaces before reading the real "desc" file
          text over the front of it -- journey_onward_load_slot_menu's caller trims
          trailing spaces off this record to find where the real text
@@ -326,7 +326,7 @@ ushort * param_2;
          slot's button label ran into garbage bytes following its real
          description. */
       Ordinal_1047(uVar5 * 0x28 + param_1,0x20,0x28);
-      FUN_0002285c(iVar4,uVar5 * 0x28 + param_1,0x27);
+      read_file_handle(iVar4,uVar5 * 0x28 + param_1,0x27);
       *param_2 = *param_2 | (ushort)(1 << (uVar5 & 0xff));
       Ordinal_553(iVar4);
     }
@@ -575,7 +575,7 @@ char *param_2;
       iVar4 = iVar4 + 1;
     } while (*pcVar6 != '\0');
     uVar5 = Ordinal_1063(local_638,s__PLAYER_DAT_00087088);
-    iVar4 = FUN_000226e8(uVar5,0);
+    iVar4 = win_file_exists(uVar5,0);
     if (iVar4 == -1) {
       FUN_0002295c(local_530);
       Ordinal_161();
@@ -726,7 +726,7 @@ char * param_2;
     pLastSlash[1] = 0;
   }
   Ordinal_1063(local_228,s__arc_tmp_000842b4);
-  /* Was `FUN_00022810(local_120)` -- opens read-only (uw_file_open_read).
+  /* Was `open_existing_file_rw_alt(local_120)` -- opens read-only (uw_file_open_read).
      This handle (*param_1 in every downstream caller) is later WRITTEN
      to directly by write_archive_entry (the archive-entry byte-write a level
      save/transition uses to flush the live in-memory object arena --
@@ -737,21 +737,21 @@ char * param_2;
      through its failure path ("Save Game Failed"), never actually
      persisting anything. Confirmed via tracing: SAVE0/lev.ark stayed
      byte-identical across saves no matter what the player did.
-     FUN_0002273c (uw_file_open_write with create_always=0) opens "rb+"
+     open_existing_file_rw (uw_file_open_write with create_always=0) opens "rb+"
      on an existing file -- read AND write, no truncation -- exactly
      what every other caller of this handle already assumed. Falls back
      to "wb+" (create) only if the file doesn't already exist, which
      every real caller here doesn't hit (\SAVE0\lev.ark is always
      seeded before this runs). */
-  iVar3 = FUN_0002273c(local_120);
+  iVar3 = open_existing_file_rw(local_120);
   if (iVar3 == -1) {
     bVar8 = false;
   }
   else {
-    iVar4 = FUN_0002285c(iVar3,local_230,2);
-    iVar5 = FUN_0002285c(iVar3,&DAT_000b78b8,(uint)local_230[0] << 2);
+    iVar4 = read_file_handle(iVar3,local_230,2);
+    iVar5 = read_file_handle(iVar3,&DAT_000b78b8,(uint)local_230[0] << 2);
     uVar7 = (uint)local_230[0];
-    iVar6 = FUN_0002273c(local_228);
+    iVar6 = open_existing_file_rw(local_228);
     *param_1 = (char)iVar3;
     param_1[1] = (char)((uint)iVar3 >> 8);
     param_1[4] = (char)iVar6;
@@ -808,8 +808,8 @@ undefined4 * param_1;
   bVar6 = true;
   uVar2 = *(ushort *)(param_1 + 2);
   if (*(char *)((char *)param_1 + 0xe) != '\0') {
-    iVar3 = FUN_00022850(*param_1,2,0);
-    iVar4 = FUN_00022884(*param_1,&DAT_000b78b8,(uVar2 & 0x3fff) << 2);
+    iVar3 = seek_file_handle(*param_1,2,0);
+    iVar4 = write_file_handle(*param_1,&DAT_000b78b8,(uVar2 & 0x3fff) << 2);
     bVar6 = iVar3 == 2 && iVar4 == (uVar2 & 0x3fff) * 4;
   }
   iVar4 = Ordinal_553(*param_1);
@@ -822,7 +822,7 @@ undefined4 * param_1;
     pcVar5[(int)(acStack_118 + iVar3)] = cVar1;
     pcVar5 = pcVar5 + 1;
   } while (cVar1 != '\0');
-  FUN_000227b8(acStack_118);
+  close_file_handle(acStack_118);
   return bVar6 & iVar4 != 0;
 }
 
@@ -884,15 +884,15 @@ uint param_4;
             param_2, (uint)*(ushort *)(param_1 + 2), uVar15, param_4, (int)*param_1, (int)param_1[1]);
   if ((param_2 & 0xffff) <= (uint)*(ushort *)(param_1 + 2)) {
     if (uVar15 == 0) {
-      uVar4 = FUN_00022850(*param_1,0,2);
-      uVar15 = FUN_00022884(*param_1,param_3,param_4 & 0xffff);
+      uVar4 = seek_file_handle(*param_1,0,2);
+      uVar15 = write_file_handle(*param_1,param_3,param_4 & 0xffff);
       if (getenv("UW_DEBUG_INPUTEVENT"))
         fprintf(stderr, "[15b94] fast-path seek=%d write_wrote=%u want=%u\n", (int)uVar4, uVar15, param_4 & 0xffff);
       *(undefined1 *)((char *)param_1 + 0xe) = 1;
       *(undefined4 *)((char *)&DAT_000b78b8 + iVar8) = uVar4;
       return uVar15 == (param_4 & 0xffff);
     }
-    iVar5 = FUN_00022850(*param_1,0,2);
+    iVar5 = seek_file_handle(*param_1,0,2);
     uVar17 = iVar5 - *(int *)((char *)&DAT_000b78b8 + iVar8);
     if (*(ushort *)(param_1 + 2) != 0) {
       uVar12 = 0;
@@ -908,30 +908,30 @@ uint param_4;
     param_4 = param_4 & 0xffff;
     if (uVar17 != param_4) {
       *(undefined1 *)((char *)param_1 + 0xe) = 1;
-      FUN_00022850(CONCAT13(*(undefined1 *)((char *)param_1 + 3),
+      seek_file_handle(CONCAT13(*(undefined1 *)((char *)param_1 + 3),
                             CONCAT12(*(undefined1 *)((char *)param_1 + 2),
                                      CONCAT11(*(undefined1 *)((char *)param_1 + 1),
                                               *(undefined1 *)param_1))),0,0);
-      FUN_00022850(param_1[1],0,0);
+      seek_file_handle(param_1[1],0,0);
       if (uVar15 != 0) {
         do {
           uVar12 = uVar15 - uVar16;
           if (0x2000 < uVar12) {
             uVar12 = 0x2000;
           }
-          uVar2 = FUN_0002285c(*param_1,&DAT_000b58b8,uVar12 & 0xffff);
-          iVar5 = FUN_00022884(param_1[1],&DAT_000b58b8,uVar2);
+          uVar2 = read_file_handle(*param_1,&DAT_000b58b8,uVar12 & 0xffff);
+          iVar5 = write_file_handle(param_1[1],&DAT_000b58b8,uVar2);
           uVar16 = uVar16 + iVar5;
         } while (uVar16 < uVar15);
       }
-      FUN_00022850(*param_1,uVar17,1);
+      seek_file_handle(*param_1,uVar17,1);
       while( true ) {
-        sVar3 = FUN_0002285c(*param_1,&DAT_000b58b8,0x2000);
+        sVar3 = read_file_handle(*param_1,&DAT_000b58b8,0x2000);
         if (sVar3 == 0) break;
-        iVar5 = FUN_00022884(param_1[1],&DAT_000b58b8);
+        iVar5 = write_file_handle(param_1[1],&DAT_000b58b8);
         uVar16 = uVar16 + iVar5;
       }
-      FUN_00022884(param_1[1],param_3,param_4);
+      write_file_handle(param_1[1],param_3,param_4);
       if (*(short *)(param_1 + 2) != 0) {
         uVar12 = 0;
         do {
@@ -969,34 +969,34 @@ uint param_4;
       acStack_129[iVar8] = '_';
       Ordinal_553(*param_1);
       Ordinal_553(param_1[1]);
-      FUN_000227b8(acStack_230);
-      uVar4 = FUN_000227d4(local_338);
-      uVar9 = FUN_0002273c(acStack_230);
+      close_file_handle(acStack_230);
+      uVar4 = open_file_for_read(local_338);
+      uVar9 = open_existing_file_rw(acStack_230);
       uVar10 = Ordinal_172(uVar4,0);
       uVar11 = Ordinal_1041();
-      FUN_0002285c(uVar4,uVar11,uVar10);
-      FUN_00022884(uVar9,uVar11,uVar10);
+      read_file_handle(uVar4,uVar11,uVar10);
+      write_file_handle(uVar9,uVar11,uVar10);
       Ordinal_1018(uVar11);
       Ordinal_553(uVar4);
       Ordinal_553(uVar9);
-      FUN_000227b8(local_338);
-      uVar4 = FUN_00022810(acStack_230);
+      close_file_handle(local_338);
+      uVar4 = open_existing_file_rw_alt(acStack_230);
       *(char *)param_1 = (char)uVar4;
       *(char *)((char *)param_1 + 1) = (char)((uint)uVar4 >> 8);
       *(char *)((char *)param_1 + 2) = (char)((uint)uVar4 >> 0x10);
       *(char *)((char *)param_1 + 3) = (char)((uint)uVar4 >> 0x18);
-      uVar4 = FUN_0002273c(local_338);
+      uVar4 = open_existing_file_rw(local_338);
       *(char *)(param_1 + 1) = (char)uVar4;
       *(char *)((char *)param_1 + 5) = (char)((uint)uVar4 >> 8);
       *(char *)((char *)param_1 + 6) = (char)((uint)uVar4 >> 0x10);
       *(char *)((char *)param_1 + 7) = (char)((uint)uVar4 >> 0x18);
       return true;
     }
-    FUN_00022850(CONCAT13(*(undefined1 *)((char *)param_1 + 3),
+    seek_file_handle(CONCAT13(*(undefined1 *)((char *)param_1 + 3),
                           CONCAT12(*(undefined1 *)((char *)param_1 + 2),
                                    CONCAT11(*(undefined1 *)((char *)param_1 + 1),*(undefined1 *)param_1
                                            ))),uVar15,0);
-    uVar15 = FUN_00022884(*param_1,param_3,param_4);
+    uVar15 = write_file_handle(*param_1,param_3,param_4);
     if (getenv("UW_DEBUG_INPUTEVENT"))
       fprintf(stderr, "[15b94] exact-fit path: handle1=%d wrote=%u want=%u\n", (int)*param_1, uVar15, param_4);
     if (uVar15 == param_4) {
@@ -1013,7 +1013,7 @@ undefined4 * param_1;
 uint param_2;
 /* Was `undefined4`, truncating the real destination buffer pointer the
    callers pass (load_level_object_table: the malloc'd DAT_002029cc workspace;
-   FUN_000164e4: &DAT_000b99d0). Forwarded straight to FUN_0002285c
+   FUN_000164e4: &DAT_000b99d0). Forwarded straight to read_file_handle
    (uw_file_read), which needs a valid pointer -- the truncated value
    segfaulted the level loader on the first real read. */
 void *param_3;
@@ -1040,7 +1040,7 @@ void *param_3;
     uVar1 = 0;
   }
   else {
-    iVar2 = FUN_00022850(*param_1,0,2);
+    iVar2 = seek_file_handle(*param_1,0,2);
     uVar7 = iVar2 - uVar6;
     if (*(ushort *)(param_1 + 2) != 0) {
       uVar5 = 0;
@@ -1056,8 +1056,8 @@ void *param_3;
         uVar5 = uVar5 + 1 & 0xffff;
       } while (uVar5 < *(ushort *)(param_1 + 2));
     }
-    FUN_00022850(*param_1,uVar6,0);
-    uVar1 = FUN_0002285c(*param_1,param_3,uVar7 & 0xffff);
+    seek_file_handle(*param_1,uVar6,0);
+    uVar1 = read_file_handle(*param_1,param_3,uVar7 & 0xffff);
   }
   return uVar1;
 }

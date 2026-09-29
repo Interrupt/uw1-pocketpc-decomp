@@ -288,10 +288,10 @@ char *param_1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_110,s__DATA__00085970);
   Ordinal_1063(acStack_110,param_1);
-  iVar3 = FUN_000227d4(acStack_110);
+  iVar3 = open_file_for_read(acStack_110);
   if (iVar3 != -1) {
     DAT_0020250c = 1;
-    FUN_0002285c(iVar3,DAT_000879b0,0xc);
+    read_file_handle(iVar3,DAT_000879b0,0xc);
     /* Was `((int)DAT_000879b0[1] + (int)*DAT_000879b0) * 0x80` -- reads
        header bytes 0 and 1 (both always 1 and 0 across every font file
        checked) giving a constant 128-byte read regardless of the font.
@@ -307,7 +307,7 @@ char *param_1;
        than any of these font files' real data -- so just read up to
        that whole capacity; fread naturally stops at EOF for smaller
        files. */
-    FUN_0002285c(iVar3,DAT_000890a4,0x1080);
+    read_file_handle(iVar3,DAT_000890a4,0x1080);
     Ordinal_553(iVar3);
     load_font_metrics();
   }

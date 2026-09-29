@@ -356,9 +356,9 @@ int run_character_generator()
       pcVar3 = pcVar3 + 1;
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_128,s__DATA_skills_dat_00084ee4);
-    iVar4 = FUN_000227d4(acStack_128);
+    iVar4 = open_file_for_read(acStack_128);
     if (iVar4 != -1) {
-      uVar5 = FUN_0002285c(iVar4,&DAT_000fb8f0,0x348);
+      uVar5 = read_file_handle(iVar4,&DAT_000fb8f0,0x348);
       Ordinal_1044(&DAT_000fb860,&DAT_000fb8f0,0x20);
       Ordinal_553(iVar4);
       if ((0x27 < uVar5) && (uVar5 != 0)) {
@@ -371,10 +371,10 @@ int run_character_generator()
           pcVar3 = pcVar3 + 1;
         } while (cVar1 != '\0');
         Ordinal_1063(acStack_128,s__DATA_chrgen_dat_00084ed0);
-        iVar4 = FUN_000227d4(acStack_128);
+        iVar4 = open_file_for_read(acStack_128);
         if (iVar4 != -1) {
           puVar8 = &DAT_000fb8f0 + uVar5;
-          FUN_0002285c(iVar4,puVar8,10000);
+          read_file_handle(iVar4,puVar8,10000);
           Ordinal_553(iVar4);
           /* Was `(char *)(uVar5 + 0xfb990)` -- a literal original-binary
              address (0xfb990 = &DAT_000fb990's address there) added to

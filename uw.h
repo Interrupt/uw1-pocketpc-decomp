@@ -2023,14 +2023,14 @@ void transform_points_by_matrix();
 void near_clip_visible_tiles();
 void render_visible_tile_list();
 void FUN_00020a74();
-undefined4 FUN_000226e8();
-undefined4 FUN_0002273c();
-bool FUN_000227b8();
-undefined4 FUN_000227d4();
-undefined4 FUN_00022810();
-undefined4 FUN_00022850();
-undefined4 FUN_0002285c();
-undefined4 FUN_00022884();
+undefined4 win_file_exists();
+undefined4 open_existing_file_rw();
+bool close_file_handle();
+undefined4 open_file_for_read();
+undefined4 open_existing_file_rw_alt();
+undefined4 seek_file_handle();
+undefined4 read_file_handle();
+undefined4 write_file_handle();
 uint FUN_000228ac();
 void FUN_000228d4();
 undefined4 rand_below();
@@ -3156,6 +3156,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/weapon_swing.h"
 #include "src/headers/level.h"
 #include "src/headers/doors.h"
+#include "src/headers/winfile_wrappers.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 

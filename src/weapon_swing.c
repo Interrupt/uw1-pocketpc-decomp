@@ -127,22 +127,22 @@ byte load_weapon_swing_sprites()
         pcVar5 = pcVar5 + 1;
       } while (cVar1 != '\0');
       Ordinal_1063(acStack_118,s__DATA_weapons_dat_00087268);
-      iVar6 = FUN_000227d4(acStack_118);
+      iVar6 = open_file_for_read(acStack_118);
       bVar2 = bVar2 & iVar6 != -1;
       if (iVar6 != -1) {
-        /* Was `bVar3 = FUN_00022850(...)` truncated straight to a byte
+        /* Was `bVar3 = seek_file_handle(...)` truncated straight to a byte
            and then bitwise-&'d into bVar2's overall success flag below --
-           FUN_00022850 (SetFilePointer-shaped, see uw_file_seek) returns
+           seek_file_handle (SetFilePointer-shaped, see uw_file_seek) returns
            the real new file offset on success (fits fine in a byte here,
            but is not itself a 0/1 boolean) or -1 on failure, so `& 1`
            against an arbitrary offset like 136 (0x88, bit 0 clear) zeroed
            the whole AND chain even on a successful seek. Normalize to a
            real boolean first, matching every other success flag in this
            expression. */
-        iSeekResult = FUN_00022850(iVar6,(int)((iVar8 + (bVar3 & 1) * -4 + 4) * 0x380000) >> 0x10,0);
+        iSeekResult = seek_file_handle(iVar6,(int)((iVar8 + (bVar3 & 1) * -4 + 4) * 0x380000) >> 0x10,0);
         bVar3 = iSeekResult != -1;
-        iVar8 = FUN_0002285c(iVar6,&g_weapon_swing_frame_x_offset,0x1c);
-        iVar7 = FUN_0002285c(iVar6,&g_weapon_swing_frame_y_offset,0x1c);
+        iVar8 = read_file_handle(iVar6,&g_weapon_swing_frame_x_offset,0x1c);
+        iVar7 = read_file_handle(iVar6,&g_weapon_swing_frame_y_offset,0x1c);
         bVar4 = Ordinal_553(iVar6);
         bVar2 = iVar7 == 0x1c & bVar4 & bVar2 & bVar3 & iVar8 == 0x1c;
       }

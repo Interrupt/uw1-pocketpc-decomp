@@ -1466,9 +1466,9 @@ undefined1 DAT_00088d98_backing[1536];
    running. Returns 1 on success. */
 static int uw_load_pals_dat_scaled(int pal_index, unsigned char *out_rgb) {
     unsigned char raw[768];
-    undefined4 handle = FUN_000227d4("\\DATA\\pals.dat");
-    FUN_00022850(handle, pal_index * 0x300, 0);
-    short got = (short)FUN_0002285c(handle, raw, 0x300);
+    undefined4 handle = open_file_for_read("\\DATA\\pals.dat");
+    seek_file_handle(handle, pal_index * 0x300, 0);
+    short got = (short)read_file_handle(handle, raw, 0x300);
     Ordinal_553(handle);
     if (got != 0x300) return 0;
     expand_pals_bytes(out_rgb, raw, 0);
@@ -3885,7 +3885,7 @@ static undefined1 DAT_002029d8_backing[256];
 #define g_light_radius_table DAT_002029d8_backing[0]
 // g_food_effect_table was DAT_00202a28: a per-food-type (indexed by the
 // object id's low nibble) effect/quality byte table, loaded at runtime
-// (FUN_0002285c) and read by use_food_item to decide a food item's
+// (read_file_handle) and read by use_food_item to decide a food item's
 // flavor text and whether it's harmful.
  undefined1 DAT_00202a28_backing[256];
 #define g_food_effect_table DAT_00202a28_backing[0]
@@ -6359,12 +6359,12 @@ static undefined1 DAT_00250730_backing[65536];
    `(*local_13c[i])(iVar3)` with iVar3 = the open objects.dat handle).
    Reads 0x40 bytes -- 16 nibble-indexed entries at a 4-byte stride --
    into DAT_00250730, the exact buffer class7_variant_effect_table_lookup
-   indexes below. Recovered via Ghidra headless; FUN_0002285c is this
+   indexes below. Recovered via Ghidra headless; read_file_handle is this
    file's uw_file_read wrapper. */
 void load_class7_variant_effect_table(param_1)
 int param_1;
 {
-  FUN_0002285c(param_1,&DAT_00250730,0x40);
+  read_file_handle(param_1,&DAT_00250730,0x40);
   return;
 }
 /* was FUN_0007cd6c: dispatch slot 6, same boot-time loader list. Reads
@@ -6375,7 +6375,7 @@ int param_1;
 void load_class6_variant_effect_table(param_1)
 int param_1;
 {
-  FUN_0002285c(param_1,&DAT_0024cfe0,0x10);
+  read_file_handle(param_1,&DAT_0024cfe0,0x10);
   return;
 }
 /* was FUN_0007cd7c: class6_variant_effect_table_lookup, dispatch slot 6
@@ -7551,14 +7551,14 @@ uint param_2;
   int iVar5;
   int local_14;
 
-  iVar2 = FUN_000227d4(param_1);
+  iVar2 = open_file_for_read(param_1);
   if (iVar2 == -1) {
     iVar2 = -1;
   }
   else {
     iVar5 = (param_2 & 0xffff) * 4 + 2;
-    iVar3 = FUN_00022850(iVar2,iVar5,0);
-    iVar4 = FUN_0002285c(iVar2,&local_14,4);
+    iVar3 = seek_file_handle(iVar2,iVar5,0);
+    iVar4 = read_file_handle(iVar2,&local_14,4);
     iVar2 = Ordinal_553(iVar2);
     if ((iVar3 == iVar5 && iVar4 == 4) && iVar2 != 0) {
       if (local_14 == 0) {
@@ -8124,7 +8124,7 @@ undefined4 FUN_00019120()
   int iVar7;
   char *pcVar8;
   /* Was `undefined1 auStack_124[4]; short local_122;` -- a previous fix
-     widened auStack_124 to the 4 bytes FUN_0002285c/FUN_00022884 read
+     widened auStack_124 to the 4 bytes read_file_handle/write_file_handle read
      and write as one blob, but left local_122 as its own, separately-
      declared local that's never actually assigned anywhere in this
      function (only ever read, at `local_122 * 2` / `(int)local_122<<1`
@@ -8153,7 +8153,7 @@ undefined4 FUN_00019120()
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__DATA_babglobs_dat_0008454c);
-  iVar4 = FUN_000227d4(acStack_11c);
+  iVar4 = open_file_for_read(acStack_11c);
   if (iVar4 == -1) {
     uVar5 = 0x3007;
   }
@@ -8165,16 +8165,16 @@ undefined4 FUN_00019120()
       pcVar8 = pcVar8 + 1;
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_11c,s__SAVE0_bglobals_dat_00084538);
-    iVar6 = FUN_0002273c(acStack_11c);
+    iVar6 = open_existing_file_rw(acStack_11c);
     if (iVar6 != -1) {
       Ordinal_1047(DAT_00248410,0,0x1000);
       do {
         bVar2 = true;
-        iVar7 = FUN_0002285c(iVar4,auStack_124,4);
+        iVar7 = read_file_handle(iVar4,auStack_124,4);
         if (iVar7 != 4) goto LAB_00019240;
-        iVar7 = FUN_00022884(iVar6,auStack_124,4);
+        iVar7 = write_file_handle(iVar6,auStack_124,4);
       } while ((iVar7 == 4) &&
-              (iVar7 = FUN_00022884(iVar6,DAT_00248410,(int)local_122 << 1), iVar7 == local_122 * 2)
+              (iVar7 = write_file_handle(iVar6,DAT_00248410,(int)local_122 << 1), iVar7 == local_122 * 2)
               );
       bVar2 = false;
 LAB_00019240:
@@ -11606,136 +11606,6 @@ LAB_0002263c:
 
 
 
-undefined4 FUN_000226e8()
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  
-  uVar1 = FUN_0002295c();
-  iVar2 = Ordinal_168(uVar1,0x80000000,1,0,3,0x80,0);
-  if (iVar2 == -1) {
-    uVar1 = 0xffffffff;
-  }
-  else {
-    Ordinal_553(iVar2);
-    uVar1 = 0;
-  }
-  return uVar1;
-}
-
-
-
-/* --- Real file I/O -------------------------------------------------
- * These 7 functions are CreateFile/ReadFile/WriteFile/SetFilePointer/
- * CloseHandle-shaped wrappers around coredll ordinals (Ordinal_168 =
- * CreateFile, Ordinal_170 = ReadFile, Ordinal_171 = WriteFile,
- * Ordinal_173 = SetFilePointer, Ordinal_165 = CloseHandle -- identified
- * from their argument shapes, e.g. Ordinal_168(path, 0xC0000000,
- * 1, 0, disposition, 0x80, 0) matches CreateFile's
- * (name, access, share, secattrs, disposition, flags, template)).
- * Several of these wrappers also had their own arguments dropped by
- * Ghidra (declared with zero visible parameters despite being called
- * with 1-3 args elsewhere), so on top of the ordinals being stubs, the
- * wrappers themselves couldn't have forwarded real arguments even with a
- * working CreateFile/ReadFile stub behind them. Given both layers needed
- * reconstructing, they're implemented directly against real file I/O
- * (file_io.h) rather than routing back through fake Win32 ordinals. */
-
-undefined4 FUN_0002273c(param_1)
-char *param_1;
-
-{
-  return (undefined4)uw_file_open_write(param_1, 0);
-}
-
-
-
-bool FUN_000227b8(param_1)
-int param_1;
-
-{
-  return uw_file_close(param_1) == 0;
-}
-
-
-
-undefined4 FUN_000227d4(param_1)
-char *param_1;
-
-{
-  return (undefined4)uw_file_open_read(param_1);
-}
-
-
-
-/* Was `uw_file_open_read(param_1)` (read-only, "rb") -- confirmed WRONG
-   via Ghidra headless: the real ARM body (0x22810) calls
-   `Ordinal_168(fname, 0xc0000000, 1, 0, 3, 0x80, 0)` --
-   GENERIC_READ|GENERIC_WRITE (0xc0000000), OPEN_EXISTING (disposition
-   3) -- a read-write handle, not read-only. Every one of this port's 3
-   real callers already relies on that: save_npc_conversation_variables (this file's
-   per-NPC conversation-variable save to \SAVE0\bglobals.dat, called at
-   the end of every babl-VM interpreter yield) opens through this
-   function then immediately writes through the same handle -- silently
-   a no-op with the old read-only mapping, which is why NO conversation
-   state (attitude progress, quest-style script variables, and
-   critically npc_talkedto) ever actually persisted to disk: every
-   subsequent conversation reloaded whatever bglobals.dat already held
-   (its first, likely-all-zero content) instead of what the script had
-   just set, making every NPC's dialogue look like the player's first
-   meeting every single time. The other 2 callers (uw.c ~9516 and
-   ~28019) write through this same handle too, confirming the fix
-   applies uniformly. A sibling call site (uw.c ~9270, the level-save
-   archive path) had already independently hit this identical bug and
-   was fixed there by switching that ONE call site to FUN_0002273c
-   instead of touching this function's body -- fixing the real root
-   cause here supersedes that workaround without conflicting with it
-   (FUN_0002273c is also read-write, just with different
-   create-vs-open-existing disposition logic). */
-undefined4 FUN_00022810(param_1)
-char *param_1;
-
-{
-  return (undefined4)uw_file_open_write(param_1, 0);
-}
-
-
-
-
-undefined4 FUN_00022850(param_1,param_2,param_3)
-int param_1;
-int param_2;
-int param_3;
-
-{
-  return (undefined4)uw_file_seek(param_1, param_2, param_3);
-}
-
-
-
-undefined4 FUN_0002285c(param_1,param_2,param_3)
-int param_1;
-void *param_2;
-unsigned int param_3;
-
-{
-  return (undefined4)uw_file_read(param_1, param_2, param_3);
-}
-
-
-
-undefined4 FUN_00022884(param_1,param_2,param_3)
-int param_1;
-void *param_2;
-unsigned int param_3;
-
-{
-  return (undefined4)uw_file_write(param_1, param_2, param_3);
-}
-
-
-
 uint FUN_000228ac(param_1,param_2,param_3)
 uint param_1;
 uint param_2;
@@ -15112,7 +14982,7 @@ void FUN_0002a2c8(param_1)
 undefined4 param_1;
 
 {
-  FUN_0002285c(param_1,&DAT_001007d0,0xc00);
+  read_file_handle(param_1,&DAT_001007d0,0xc00);
   return;
 }
 
@@ -19808,13 +19678,13 @@ LAB_00036858:
     (&DAT_00101968)[_i] = '\0';
   }
   Ordinal_1063(&DAT_00101968,acStack_d0);
-  iVar12 = FUN_000227d4(&DAT_00101968);
+  iVar12 = open_file_for_read(&DAT_00101968);
   local_5c = iVar12;
   if (iVar12 == -1) {
     FUN_0007ec1c();
   }
   else {
-    iVar13 = FUN_0002285c(iVar12,puVar11,0x800);
+    iVar13 = read_file_handle(iVar12,puVar11,0x800);
     if (iVar13 != 0) {
       local_8b = local_8b | 0x19;
       local_8f = -1;
@@ -19855,7 +19725,7 @@ LAB_00036858:
         uVar2 = *puVar21;
       }
       local_84 = puVar21;
-      iVar10 = FUN_000227d4(&DAT_00101968);
+      iVar10 = open_file_for_read(&DAT_00101968);
       uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10);
       while ((local_74 = iVar10, iVar10 != -1 &&
              (uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10), (local_8b & 8) != 0))) {
@@ -19866,7 +19736,7 @@ LAB_00036858:
         iVar9 = Ordinal_1041(uVar15);
         local_80 = iVar9;
         Ordinal_1047(iVar9,0,uVar15);
-        FUN_0002285c(iVar10,iVar9,uVar15);
+        read_file_handle(iVar10,iVar9,uVar15);
         uVar14 = local_88;
         DAT_000853fc = 0xffff;
         Ordinal_1044(local_88,iVar9,0xb00);
@@ -20066,8 +19936,8 @@ LAB_00036ca4:
                   }
                 }
                 else {
-                  FUN_00022850(iVar9,((int)local_84 - (int)puVar21 >> 1) + -0x400,1);
-                  FUN_0002285c(iVar9,puVar21,0x800);
+                  seek_file_handle(iVar9,((int)local_84 - (int)puVar21 >> 1) + -0x400,1);
+                  read_file_handle(iVar9,puVar21,0x800);
                   local_84 = puVar21;
                   iVar9 = local_5c;
                 }
@@ -20229,7 +20099,7 @@ LAB_00036ca4:
           local_80 = 0;
         }
         Ordinal_553(local_74);
-        iVar10 = FUN_000227d4(&DAT_00101968);
+        iVar10 = open_file_for_read(&DAT_00101968);
         uVar24 = (undefined2)((uint)in_stack_ffffff10 >> 0x10);
       }
 LAB_00037a94:
@@ -20411,12 +20281,12 @@ undefined4 param_4;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_12c,acStack_144);
-  iVar3 = FUN_00022810(acStack_144);
-  iVar4 = FUN_00022850(iVar3,4,0);
-  iVar5 = FUN_00022884(iVar3,&uStack_c,2);
-  iVar6 = FUN_00022884(iVar3,&uStack_c,2);
-  iVar7 = FUN_00022850(iVar3,4,1);
-  iVar8 = FUN_00022884(iVar3,&uStack_c,2);
+  iVar3 = open_existing_file_rw_alt(acStack_144);
+  iVar4 = seek_file_handle(iVar3,4,0);
+  iVar5 = write_file_handle(iVar3,&uStack_c,2);
+  iVar6 = write_file_handle(iVar3,&uStack_c,2);
+  iVar7 = seek_file_handle(iVar3,4,1);
+  iVar8 = write_file_handle(iVar3,&uStack_c,2);
   iVar9 = Ordinal_553(iVar3);
   if ((((((iVar3 != -1 && iVar4 != -1) && iVar5 == 2) && iVar6 == 2) && iVar7 != -1) && iVar8 == 2)
       && iVar9 != 0) {
@@ -24277,7 +24147,7 @@ int param_1;
     /* Was pointed at the placeholder stack0xffdc3230 scalar (from an
        earlier undeclared-identifier pass) instead of the real 260-byte
        path buffer acStack_128 that both copy loops below (and the
-       Ordinal_1063/FUN_000227d4 calls right after) actually operate on. */
+       Ordinal_1063/open_file_for_read calls right after) actually operate on. */
     local_12c = (undefined1 *)acStack_128;
     pcVar4 = &DAT_0023cca8;
     wptr_26821 = local_12c;
@@ -24287,7 +24157,7 @@ int param_1;
       pcVar4 = pcVar4 + 1;
     } while (cVar2 != '\0');
     Ordinal_1063(acStack_128,s__CRIT_assoc_anm_00085934);
-    iVar8 = FUN_000227d4(acStack_128);
+    iVar8 = open_file_for_read(acStack_128);
     if (iVar8 == -1) {
       iVar8 = 0;
       do {
@@ -24296,8 +24166,8 @@ int param_1;
       } while (iVar8 < 0x80);
       return 0;
     }
-    FUN_00022850(iVar8,0x100,0);
-    FUN_0002285c(iVar8,&DAT_0023ce70,0x80);
+    seek_file_handle(iVar8,0x100,0);
+    read_file_handle(iVar8,&DAT_0023ce70,0x80);
     iVar10 = 0;
     do {
       DAT_00085910 = (char)((short)iVar10 >> 3) + '0';
@@ -24319,10 +24189,10 @@ int param_1;
           pcVar4 = pcVar4 + 1;
         } while (cVar2 != '\0');
         Ordinal_1063(acStack_128,&DAT_00085908);
-        puVar6 = (undefined1 *)FUN_000227d4(acStack_128);
+        puVar6 = (undefined1 *)open_file_for_read(acStack_128);
         iVar7 = extraout_r2;
         if (puVar6 != (undefined1 *)0xffffffff) {
-          iVar7 = FUN_0002285c(puVar6,&local_130,2);
+          iVar7 = read_file_handle(puVar6,&local_130,2);
           uVar9 = 0xa0;
           if (iVar7 == 2) {
             uVar9 = (ushort)local_12f + (ushort)local_130;
@@ -24417,7 +24287,7 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
       pcVar4 = pcVar4 + 1;
     } while (cVar2 != '\0');
     Ordinal_1063(stack0xffdc3238_buf, &DAT_00085920);
-    iVar5 = FUN_000227d4(stack0xffdc3238_buf);
+    iVar5 = open_file_for_read(stack0xffdc3238_buf);
     if (getenv("UW_DEBUG_CRITTER"))
       fprintf(stderr, "[critter] load_critter_page_cached: cache-miss page[%d] type=%d tier=%d file=\"%s\" open=%s\n",
               iVar1, param_1, param_2, stack0xffdc3238_buf, iVar5 == -1 ? "FAIL" : "ok");
@@ -24429,7 +24299,7 @@ byte *uw_load_critter_page_cached(int param_1, int param_2) {
     }
     pbVar11 = (byte *)Ordinal_1041(0x7fff);
     (&DAT_00202308)[iVar1] = pbVar11;
-    FUN_0002285c(iVar5,pbVar11,0x7fff);
+    read_file_handle(iVar5,pbVar11,0x7fff);
     Ordinal_553(iVar5);
   }
   if (getenv("UW_DEBUG_CRITTER_TABLESPAN")) {
@@ -24746,9 +24616,9 @@ void *param_2;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_420,s__DATA_pals_dat_00085978);
-  uVar4 = FUN_000227d4(acStack_420);
-  FUN_00022850(uVar4,(short)param_1 * 0x300,0);
-  sVar2 = FUN_0002285c(uVar4,param_2,0x300);
+  uVar4 = open_file_for_read(acStack_420);
+  seek_file_handle(uVar4,(short)param_1 * 0x300,0);
+  sVar2 = read_file_handle(uVar4,param_2,0x300);
   Ordinal_553(uVar4);
   if (sVar2 == 0x300) {
     expand_pals_bytes(auStack_318,param_2,0);
@@ -24933,15 +24803,15 @@ undefined4 FUN_00041260()
   int iVar1;
   undefined4 uVar2;
   
-  iVar1 = FUN_0002285c(DAT_00202514,&DAT_00202724,1);
+  iVar1 = read_file_handle(DAT_00202514,&DAT_00202724,1);
   if (iVar1 == 1) {
     if (*DAT_00202720 == 0) {
-      FUN_00022850(DAT_00202514,(uint)DAT_00202724 << 5,1);
+      seek_file_handle(DAT_00202514,(uint)DAT_00202724 << 5,1);
     }
     else {
       iVar1 = Ordinal_1041((uint)DAT_00202724 << 5);
       *DAT_00202720 = iVar1;
-      iVar1 = FUN_0002285c(DAT_00202514,*DAT_00202720,(uint)DAT_00202724 << 5);
+      iVar1 = read_file_handle(DAT_00202514,*DAT_00202720,(uint)DAT_00202724 << 5);
       if (iVar1 != (uint)DAT_00202724 * 0x20) goto LAB_000412d8;
     }
     uVar2 = 1;
@@ -24981,7 +24851,7 @@ void *param_2;
   
   param_1 = param_1 & 0xffff;
   if (param_1 == (ushort)DAT_00202728 - 1) {
-    iVar2 = FUN_00022850(DAT_00202514,0,2);
+    iVar2 = seek_file_handle(DAT_00202514,0,2);
     iVar5 = *(int *)(DAT_0020274c + param_1 * 4);
     uVar6 = iVar2 - iVar5;
   }
@@ -24990,7 +24860,7 @@ void *param_2;
     iVar5 = *piVar1;
     uVar6 = piVar1[1] - iVar5;
   }
-  iVar5 = FUN_00022850(DAT_00202514,iVar5,0);
+  iVar5 = seek_file_handle(DAT_00202514,iVar5,0);
   if (iVar5 == -1) {
     uVar4 = 0xffffffff;
   }
@@ -25000,7 +24870,7 @@ void *param_2;
       uVar4 = 0;
     }
     else {
-      uVar3 = FUN_0002285c(DAT_00202514,param_2,uVar6);
+      uVar3 = read_file_handle(DAT_00202514,param_2,uVar6);
       uVar4 = 0xffffffff;
       if (uVar3 == uVar6) {
         uVar4 = uVar6;
@@ -25332,12 +25202,12 @@ undefined4 FUN_00041aac()
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_128,s__DATA_allpals_dat_00085a50);
-  iVar3 = FUN_000227d4(acStack_128);
+  iVar3 = open_file_for_read(acStack_128);
   if (iVar3 == -1) {
     uVar4 = 0x3008;
   }
   else {
-    FUN_0002285c(iVar3,&DAT_00202520,0x200);
+    read_file_handle(iVar3,&DAT_00202520,0x200);
     Ordinal_553(iVar3);
     uVar5 = FUN_00041910(s_question_00085a44);
     uVar6 = FUN_00041910(s_views_00085a3c);
@@ -25398,9 +25268,9 @@ void load_armor_variant_tables(param_1)
 undefined4 param_1;
 
 {
-  FUN_0002285c(param_1,&DAT_00202800,0x80);
-  FUN_0002285c(param_1,&DAT_002027d0,0x30);
-  FUN_0002285c(param_1,&DAT_00202750,0x80);
+  read_file_handle(param_1,&DAT_00202800,0x80);
+  read_file_handle(param_1,&DAT_002027d0,0x30);
+  read_file_handle(param_1,&DAT_00202750,0x80);
   if (getenv("UW_DEBUG_ARMOR_TABLES")) {
     int _i;
     for (_i = 0; _i < 32; _i++)
@@ -25907,14 +25777,14 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_124,param_1);
     Ordinal_1063(acStack_124,s_player_dat_00085a74);
-    iVar3 = FUN_000227d4(acStack_124);
+    iVar3 = open_file_for_read(acStack_124);
     if (iVar3 == -1) {
       uVar4 = 0;
       goto LAB_00044730;
     }
     FUN_00065d4c();
-    FUN_0002285c(iVar3,&g_save_record_count,2);
-    FUN_0002285c(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
+    read_file_handle(iVar3,&g_save_record_count,2);
+    read_file_handle(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
     Ordinal_553(iVar3);
     FUN_0004638c();
   }
@@ -28337,7 +28207,7 @@ short param_2;
   char local_128 [8];
   char acStack_120 [260];
   /* iVar5 above is a real int (file handle) for the uVar8==5/grave.dat
-     branch's FUN_000227d4/Ordinal_553 calls -- but is reused later in the
+     branch's open_file_for_read/Ordinal_553 calls -- but is reused later in the
      shared tail (untouched by that branch, e.g. the sign/TMOBJ uVar8==6
      case) to hold FUN_0007863c's real `char *` return, truncating it on
      this 64-bit host. Confirmed via lldb: right-clicking a rendered sign
@@ -28400,9 +28270,9 @@ short param_2;
         pcVar4 = pcVar4 + 1;
       } while (cVar1 != '\0');
       Ordinal_1063(acStack_120,s__DATA_grave_dat_00085cf8);
-      iVar5 = FUN_000227d4(acStack_120);
-      iVar6 = FUN_00022850(iVar5,(short)uVar9,0);
-      iVar7 = FUN_0002285c(iVar5,local_128,1);
+      iVar5 = open_file_for_read(acStack_120);
+      iVar6 = seek_file_handle(iVar5,(short)uVar9,0);
+      iVar7 = read_file_handle(iVar5,local_128,1);
       bVar3 = Ordinal_553(iVar5);
       if ((iVar7 == 1 & bVar3 & (iVar5 != -1 && iVar6 != -1)) == 0) {
         return;
@@ -29162,9 +29032,9 @@ void load_light_food_effect_tables(param_1)
 undefined4 param_1;
 
 {
-  FUN_0002285c(param_1,&g_carry_weight_limit_table,0x30);
-  FUN_0002285c(param_1,&g_light_radius_table,0x20);
-  FUN_0002285c(param_1,&g_food_effect_table,0x10);
+  read_file_handle(param_1,&g_carry_weight_limit_table,0x30);
+  read_file_handle(param_1,&g_light_radius_table,0x20);
+  read_file_handle(param_1,&g_food_effect_table,0x10);
   return;
 }
 
@@ -33515,12 +33385,12 @@ undefined4 FUN_00052674()
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__DATA_objects_dat_000868a8);
-  iVar3 = FUN_000227d4(acStack_11c);
+  iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 == -1) {
     uVar4 = 0x3005;
   }
   else {
-    FUN_0002285c(iVar3,auStack_142,2);
+    read_file_handle(iVar3,auStack_142,2);
     do {
       if (local_13c[iVar5] != (code *)0x0) {
         (*local_13c[iVar5])(iVar3);
@@ -33535,24 +33405,24 @@ undefined4 FUN_00052674()
       pcVar7 = pcVar7 + 1;
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_11c,s__DATA_comobj_dat_00086894);
-    iVar5 = FUN_000227d4(acStack_11c);
+    iVar5 = open_file_for_read(acStack_11c);
     if (iVar5 == -1) {
       uVar4 = 0x3006;
     }
     else {
-      FUN_0002285c(iVar5,auStack_142,2);
+      read_file_handle(iVar5,auStack_142,2);
       puVar6 = &DAT_00202c90;
       iVar3 = 0x200;
       do {
-        FUN_0002285c(iVar5,puVar6,3);
-        FUN_0002285c(iVar5,puVar6 + 3,1);
-        FUN_0002285c(iVar5,puVar6 + 5,2);
-        FUN_0002285c(iVar5,puVar6 + 7,2);
-        FUN_0002285c(iVar5,puVar6 + 9,1);
-        FUN_0002285c(iVar5,local_144,1);
+        read_file_handle(iVar5,puVar6,3);
+        read_file_handle(iVar5,puVar6 + 3,1);
+        read_file_handle(iVar5,puVar6 + 5,2);
+        read_file_handle(iVar5,puVar6 + 7,2);
+        read_file_handle(iVar5,puVar6 + 9,1);
+        read_file_handle(iVar5,local_144,1);
         puVar6[10] = ((puVar6[10] ^ local_144[0]) & 3 ^ puVar6[10] ^ local_144[0]) & 3 ^
                      local_144[0];
-        FUN_0002285c(iVar5,puVar6 + 0xb,1);
+        read_file_handle(iVar5,puVar6 + 0xb,1);
         iVar3 = iVar3 + -1;
         puVar6 = puVar6 + 0xd;
       } while (iVar3 != 0);
@@ -40618,7 +40488,7 @@ undefined4 param_1;
   uVar3 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xf807 | (uint)DAT_002048a8 << 3;
   DAT_00086df8[0xb6] = (byte)uVar3;
   DAT_00086df8[0xb7] = (byte)(uVar3 >> 8);
-  FUN_00022884(param_1,local_14,1);
+  write_file_handle(param_1,local_14,1);
   FUN_0007ef78(param_1,local_14[0],DAT_00086df8,0xd2);
   return;
 }
@@ -40631,7 +40501,7 @@ undefined4 param_1;
 {
   undefined1 local_10 [4];
   
-  FUN_0002285c(param_1,local_10,1);
+  read_file_handle(param_1,local_10,1);
   FUN_0007ee9c(param_1,local_10[0],DAT_00086df8,0xd2);
   *(undefined1 *)(DAT_0023be74 + 5) = *(undefined1 *)(DAT_00086df8 + 0x1e);
   *(undefined1 *)(DAT_0023be74 + 6) = *(undefined1 *)(DAT_00086df8 + 0x1f);
@@ -44194,7 +44064,7 @@ bool FUN_0006e89c()
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_110,s__DATA_weapons_cm_00087284);
-  iVar4 = FUN_000227d4(acStack_110);
+  iVar4 = open_file_for_read(acStack_110);
   if (iVar4 == 0) {
     bVar7 = false;
   }
@@ -44203,8 +44073,8 @@ bool FUN_0006e89c()
     if ((*(byte *)(DAT_00086df8 + 100) & 0x1c) != 4) {
       uVar2 = 0;
     }
-    iVar5 = FUN_00022850(iVar4,uVar2,0);
-    iVar6 = FUN_0002285c(iVar4,&DAT_00202700,0x10);
+    iVar5 = seek_file_handle(iVar4,uVar2,0);
+    iVar6 = read_file_handle(iVar4,&DAT_00202700,0x10);
     bVar7 = iVar5 == 0 && iVar6 == 0x10;
     Ordinal_553(iVar4);
   }
@@ -45077,7 +44947,7 @@ char param_1;
     fprintf(stderr, "[FUN_0006ff08] called param_1=%d DAT_000872a0=%d DAT_00201b68=%d\n",
             (int)param_1, (int)DAT_000872a0, (int)DAT_00201b68);
   /* Ghidra modelled the 12-byte SHADES.DAT per-level header as six
-     separate `short` locals that FUN_0002285c(&local_12c, 0xc) reads
+     separate `short` locals that read_file_handle(&local_12c, 0xc) reads
      into as one contiguous block -- but the C compiler is free to lay
      them out non-contiguously / reorder them, so only local_12c landed
      where the read wrote and local_12a..local_122 read stack garbage
@@ -45122,9 +44992,9 @@ char param_1;
     pcVar2 = s__DATA_mono_dat_000872b8;
   }
   Ordinal_1063(acStack_11c,pcVar2);
-  iVar3 = FUN_000227d4(acStack_11c);
+  iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
-    FUN_0002285c(iVar3,DAT_0024fa2c,0x1000);
+    read_file_handle(iVar3,DAT_0024fa2c,0x1000);
     Ordinal_553(iVar3);
   }
 LAB_0006fff4:
@@ -45136,10 +45006,10 @@ LAB_0006fff4:
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__DATA_shades_dat_000872a4);
-  iVar3 = FUN_000227d4(acStack_11c);
+  iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
-    FUN_00022850(iVar3,param_1 * 0xc0000 >> 0x10,0);
-    FUN_0002285c(iVar3,_shades_hdr,0xc);
+    seek_file_handle(iVar3,param_1 * 0xc0000 >> 0x10,0);
+    read_file_handle(iVar3,_shades_hdr,0xc);
     DAT_0025063c = local_12c;
     if (local_12c < 2) {
       DAT_0025063c = 1;
@@ -45197,9 +45067,9 @@ void load_light_tables()
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__DATA_light_dat_000872c8);
-  iVar3 = FUN_000227d4(acStack_11c);
+  iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
-    FUN_0002285c(iVar3,DAT_0024fa2c,0x1000);
+    read_file_handle(iVar3,DAT_0024fa2c,0x1000);
     Ordinal_553(iVar3);
   }
   Ordinal_1047(acStack_11c,0,0x104);
@@ -45209,9 +45079,9 @@ void load_light_tables()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__DATA_xfer_dat_000872d8);
-  iVar3 = FUN_000227d4(acStack_11c);
+  iVar3 = open_file_for_read(acStack_11c);
   if (iVar3 != -1) {
-    FUN_0002285c(iVar3,&DAT_0024fa38,0x600);
+    read_file_handle(iVar3,&DAT_0024fa38,0x600);
     Ordinal_553(iVar3);
   }
   return;
@@ -45245,9 +45115,9 @@ int param_1;
       pcVar3 = s__DATA_light_dat_000872c8;
     }
     Ordinal_1063(acStack_10c,pcVar3);
-    iVar2 = FUN_000227d4(acStack_10c);
+    iVar2 = open_file_for_read(acStack_10c);
     if (iVar2 != -1) {
-      FUN_0002285c(iVar2,DAT_0024fa2c,0x1000);
+      read_file_handle(iVar2,DAT_0024fa2c,0x1000);
       Ordinal_553(iVar2);
     }
   }
@@ -50240,18 +50110,18 @@ undefined4 FUN_00078d18()
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_118,s__DATA__00085970);
   Ordinal_1063(acStack_118,s_strings_pak_000878c0);
-  iVar3 = FUN_000227d4(acStack_118);
+  iVar3 = open_file_for_read(acStack_118);
   if (iVar3 != -1) {
     DAT_0024cfb8 = (short *)Ordinal_1041(2);
-    FUN_0002285c(iVar3,DAT_0024cfb8,2);
+    read_file_handle(iVar3,DAT_0024cfb8,2);
     DAT_0024cfa8 = Ordinal_1041((int)*DAT_0024cfb8 << 2);
     if (DAT_0024cfa8 == 0) {
       Ordinal_553(iVar3);
       return 0x1001;
     }
-    FUN_0002285c(iVar3,DAT_0024cfa8,(int)*DAT_0024cfb8 << 2);
+    read_file_handle(iVar3,DAT_0024cfa8,(int)*DAT_0024cfb8 << 2);
     Ordinal_553(iVar3);
-    DAT_0024bf98 = FUN_000227d4(acStack_118);
+    DAT_0024bf98 = open_file_for_read(acStack_118);
     if (DAT_0024bf98 != -1) {
       return 0;
     }
@@ -50291,35 +50161,35 @@ short param_2;
   
   uVar5 = 0;
   puVar6 = &DAT_0024af98 + DAT_0024cfb4;
-  FUN_00022850(DAT_0024bf98,*DAT_0024cfb8 * 4 + 2,0);
+  seek_file_handle(DAT_0024bf98,*DAT_0024cfb8 * 4 + 2,0);
   /* If this read fails (e.g. DAT_0024bf98 holds a corrupted/invalid
      handle -- see FUN_0007907c's comment for the known separate bug
      this guards against), local_30 stays uninitialized garbage and the
      search loop below would iterate up to 65535 times, one failing
      read each, instead of the fast "not found" bailout every other
      failure path in this function already takes. */
-  if (FUN_0002285c(DAT_0024bf98,&local_30,2) == 0) {
+  if (read_file_handle(DAT_0024bf98,&local_30,2) == 0) {
     *puVar6 = 0;
     return puVar6;
   }
   uVar4 = 0;
   if (local_30 != 0) {
     do {
-      FUN_0002285c(DAT_0024bf98,&local_2c,2);
+      read_file_handle(DAT_0024bf98,&local_2c,2);
       if ((uint)local_2c == (int)param_1) break;
-      FUN_00022850(DAT_0024bf98,4,1);
+      seek_file_handle(DAT_0024bf98,4,1);
       uVar4 = uVar4 + 1;
     } while (uVar4 < local_30);
   }
   if (uVar4 != local_30) {
-    FUN_0002285c(DAT_0024bf98,&local_28,4);
-    FUN_00022850(DAT_0024bf98,local_28,0);
-    FUN_0002285c(DAT_0024bf98,&local_2e,2);
+    read_file_handle(DAT_0024bf98,&local_28,4);
+    seek_file_handle(DAT_0024bf98,local_28,0);
+    read_file_handle(DAT_0024bf98,&local_2e,2);
     iVar1 = (int)param_2;
     if (iVar1 < (int)(uint)local_2e) {
-      FUN_00022850(DAT_0024bf98,iVar1 << 1,1);
-      FUN_0002285c(DAT_0024bf98,&local_2a,2);
-      FUN_00022850(DAT_0024bf98,(((uint)local_2e - iVar1) + -1) * 2 + (uint)local_2a,1);
+      seek_file_handle(DAT_0024bf98,iVar1 << 1,1);
+      read_file_handle(DAT_0024bf98,&local_2a,2);
+      seek_file_handle(DAT_0024bf98,(((uint)local_2e - iVar1) + -1) * 2 + (uint)local_2a,1);
       DAT_000878bc = 8;
       do {
         cVar2 = FUN_0007907c(DAT_0024bf98,*DAT_0024cfb8 + -1);
@@ -50396,7 +50266,7 @@ undefined4 param_1;
   ushort uVar1;
 
   if (DAT_000878bc == 8) {
-    if (FUN_0002285c(param_1,&DAT_0024cfbc,1) == 0) {
+    if (read_file_handle(param_1,&DAT_0024cfbc,1) == 0) {
       return -1;
     }
     DAT_000878bc = 0;
@@ -53257,9 +53127,9 @@ ushort param_3;
   uint uVar2;
   bool bVar3;
 
-  /* Was `FUN_0002273c(param_2)` (== uw_file_open_write(param_2, 0), our
+  /* Was `open_existing_file_rw(param_2)` (== uw_file_open_write(param_2, 0), our
      port's "rb+", no-truncate" mode) -- real ARM disassembly of
-     FUN_0002273c (0x2273c) shows the original game's own write-open
+     open_existing_file_rw (0x2273c) shows the original game's own write-open
      helper always ends up starting from an empty file regardless of
      which branch it takes (TRUNCATE_EXISTING when the target already
      exists, OPEN_ALWAYS -- i.e. create fresh -- when it doesn't), never
@@ -53273,8 +53143,8 @@ ushort param_3;
      the new null terminator), which the title-screen slot picker then
      displayed as if two different labels were drawn on top of each
      other. Call uw_file_open_write directly with create_always=1
-     ("wb+", truncates) instead of going through FUN_0002273c's
-     no-truncate wrapper -- deliberately NOT changing FUN_0002273c
+     ("wb+", truncates) instead of going through open_existing_file_rw's
+     no-truncate wrapper -- deliberately NOT changing open_existing_file_rw
      itself, since its other several callers (the level-archive
      read-then-write path in particular) may rely on its current
      preserve-existing-content behavior and weren't audited here. */
@@ -53283,7 +53153,7 @@ ushort param_3;
     bVar3 = false;
   }
   else {
-    uVar2 = FUN_00022884(iVar1,param_1,param_3);
+    uVar2 = write_file_handle(iVar1,param_1,param_3);
     bVar3 = uVar2 == param_3;
     Ordinal_553(iVar1);
   }
@@ -53302,12 +53172,12 @@ int param_3;
   int iVar2;
   bool bVar3;
 
-  iVar1 = FUN_000227d4(param_1);
+  iVar1 = open_file_for_read(param_1);
   if (iVar1 == -1) {
     bVar3 = false;
   }
   else {
-    iVar2 = FUN_0002285c(iVar1,param_2,param_3);
+    iVar2 = read_file_handle(iVar1,param_2,param_3);
     bVar3 = iVar2 == param_3;
     Ordinal_553(iVar1);
   }
@@ -53344,7 +53214,7 @@ short param_4;
     if (0x4f < iVar2) {
       iVar2 = 0x50;
     }
-    sVar1 = FUN_0002285c(param_1,local_b4,iVar2);
+    sVar1 = read_file_handle(param_1,local_b4,iVar2);
     if (0 < sVar1) {
       iVar2 = 0;
       do {
@@ -53403,7 +53273,7 @@ short param_4;
     if (0x4f < iVar1) {
       iVar1 = 0x50;
     }
-    uVar3 = FUN_00022884(param_1,local_64,iVar1);
+    uVar3 = write_file_handle(param_1,local_64,iVar1);
     iVar5 = iVar5 + (uVar3 & 0xffff);
     param_3 = param_3 + 0x50;
   }

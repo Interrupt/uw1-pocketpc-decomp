@@ -472,12 +472,12 @@ char * param_1;
         param_1 = param_1 + 1;
       } while (cVar1 != '\0');
       Ordinal_1063(acStack_114,s_player_dat_00085a74);
-      iVar2 = FUN_0002273c(acStack_114);
+      iVar2 = open_existing_file_rw(acStack_114);
       bVar3 = iVar2 != -1;
       if (bVar3) {
         FUN_00065b90();
-        FUN_00022884(iVar2,&g_save_record_count,2);
-        FUN_00022884(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
+        write_file_handle(iVar2,&g_save_record_count,2);
+        write_file_handle(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
         Ordinal_553(iVar2);
       }
       if (g_save_record_buffer != 0) {

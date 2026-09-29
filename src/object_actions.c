@@ -188,7 +188,7 @@ short param_5;
   int iVar10;
   byte *pbVar11;
   void **piVar12;
-  /* iVar5 above is a real int (file handle) for FUN_000227d4's return,
+  /* iVar5 above is a real int (file handle) for open_file_for_read's return,
      reused later in this same function as if it held Ordinal_1041's
      `void *` return (the decoded glyph buffer) -- same "reused scalar"
      bug already fixed in FUN_00049008 this session. Separate real

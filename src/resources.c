@@ -97,19 +97,19 @@ char param_2;
       Ordinal_1063(local_114, ".GR");
     }
   }
-  DAT_00202514 = FUN_000227d4(local_114);
+  DAT_00202514 = open_file_for_read(local_114);
   if (getenv("UW_DEBUG_DOOR"))
     fprintf(stderr, "[door] open_gr_resource_file: path='%s' param_2=%d open_handle=%d\n", local_114, (int)param_2, (int)DAT_00202514);
   if (DAT_00202514 != -1) {
-    iVar3 = FUN_0002285c(DAT_00202514,local_11c,1);
+    iVar3 = read_file_handle(DAT_00202514,local_11c,1);
     if (getenv("UW_DEBUG_DOOR"))
       fprintf(stderr, "[door] open_gr_resource_file: header_read=%d header_byte=%d expected=%d\n", iVar3, (int)local_11c[0], (int)uVar1);
     if (((((iVar3 == 1) && (local_11c[0] == uVar1)) &&
-         ((uVar1 != 2 || (iVar3 = FUN_0002285c(DAT_00202514,&DAT_00202518,1), iVar3 == 1)))) &&
-        (iVar3 = FUN_0002285c(DAT_00202514,&DAT_00202728,2), iVar3 == 2)) &&
+         ((uVar1 != 2 || (iVar3 = read_file_handle(DAT_00202514,&DAT_00202518,1), iVar3 == 1)))) &&
+        (iVar3 = read_file_handle(DAT_00202514,&DAT_00202728,2), iVar3 == 2)) &&
        (((uVar1 != 3 || (iVar3 = FUN_00041260(), iVar3 != 0)) &&
         (DAT_0020274c = Ordinal_1041(((ushort)DAT_00202728 + 1) * 4), DAT_0020274c != 0)))) {
-      iVar3 = FUN_0002285c(DAT_00202514,DAT_0020274c,((ushort)DAT_00202728 + 1) * 4);
+      iVar3 = read_file_handle(DAT_00202514,DAT_0020274c,((ushort)DAT_00202728 + 1) * 4);
       if (iVar3 == ((ushort)DAT_00202728 + 1) * 4) {
         return 1;
       }

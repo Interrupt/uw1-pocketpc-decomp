@@ -934,7 +934,7 @@ int param_2;
 
 
 void load_npc_conversation_variables(param_1,param_2)
-intptr_t param_1; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer its own caller passes (load_npc_conversation_record); dormant (silently never reached the write) until the scan-alignment fix in this same function let execution actually get to FUN_0002285c(iVar4,param_1,...) below, which then crashed writing through the truncated address
+intptr_t param_1; // was `undefined4` -- truncated the real 64-bit DAT_000bbf14 pointer its own caller passes (load_npc_conversation_record); dormant (silently never reached the write) until the scan-alignment fix in this same function let execution actually get to read_file_handle(iVar4,param_1,...) below, which then crashed writing through the truncated address
 short param_2;
 
 {
@@ -950,7 +950,7 @@ short param_2;
      there for the full explanation. This is the load side: local_122
      (the record's LENGTH) was silently corrupted by whatever this
      compiler's own stack layout happens to place after local_124 (the
-     ID), feeding a garbage skip-distance into FUN_00022850's seek and
+     ID), feeding a garbage skip-distance into seek_file_handle's seek and
      misaligning every subsequent scan iteration. */
   undefined1 local_124_backing[4];
   #define local_124 (*(short *)(local_124_backing + 0))
@@ -965,12 +965,12 @@ short param_2;
     pcVar3 = pcVar3 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_11c,s__SAVE0_bglobals_dat_00084538);
-  iVar4 = FUN_000227d4(acStack_11c);
+  iVar4 = open_file_for_read(acStack_11c);
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, want %d shorts\n", acStack_11c, iVar4, (int)DAT_001007c4, (int)param_2);
   if (iVar4 != -1) {
     bVar2 = false;
     do {
-      uVar5 = FUN_0002285c(iVar4,local_124_backing,4);
+      uVar5 = read_file_handle(iVar4,local_124_backing,4);
       if ((uVar5 < 4) || ((int)(uint)DAT_001007c4 < (int)local_124)) {
         if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] load_npc_conversation_variables: scan stopped, uVar5=%u local_124=%d (no matching record found)\n", uVar5, (int)local_124);
         break;
@@ -979,7 +979,7 @@ short param_2;
         if (param_2 < local_122) {
           local_122 = param_2;
         }
-        uVar5 = FUN_0002285c(iVar4,param_1,(int)local_122 << 1);
+        uVar5 = read_file_handle(iVar4,param_1,(int)local_122 << 1);
         if (uVar5 < (uint)((int)local_122 << 1)) {
           bVar2 = true;
         }
@@ -989,7 +989,7 @@ short param_2;
                 (int)((short*)param_1)[5], (int)((short*)param_1)[6], (int)((short*)param_1)[7], (int)((short*)param_1)[8], (int)((short*)param_1)[9]);
       }
       else {
-        FUN_00022850(iVar4,(int)local_122 << 1,1);
+        seek_file_handle(iVar4,(int)local_122 << 1,1);
       }
     } while (!bVar2);
     Ordinal_553(iVar4);
@@ -3270,7 +3270,7 @@ undefined1 *param_2;
        get no response": Bragit's own directory-table slot (record 67)
        is genuinely non-empty (199494, confirmed live) -- read_archive_
        entry's early "empty slot" check was never the problem, the
-       actual FUN_0002285c(fd,param_3,len) read was silently failing on
+       actual read_file_handle(fd,param_3,len) read was silently failing on
        whatever garbage this host happened to leave in the argument
        register. */
     sVar1 = read_archive_entry(auStack_20,DAT_001007c4,local_28);
@@ -3353,7 +3353,7 @@ void save_npc_conversation_variables()
      recompiled. Confirmed via the real ARM disassembly that both reads
      genuinely are meant to be one 4-byte record (matching
      load_npc_conversation_variables's own identical pattern, its own load-side mirror).
-     The corrupted length then feeds FUN_00022850's own seek-forward-
+     The corrupted length then feeds seek_file_handle's own seek-forward-
      to-next-record call, misaligning every subsequent scan iteration
      -- this is the actual root cause of "talking to Bragit again
      starts fresh": his own script-local conversation state (a SEPARATE
@@ -3377,14 +3377,14 @@ void save_npc_conversation_variables()
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_118,s__SAVE0_bglobals_dat_00084538);
-  iVar5 = FUN_00022810(acStack_118);
+  iVar5 = open_existing_file_rw_alt(acStack_118);
   if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: open %s -> handle=%d, wanted conv-id(DAT_001007c4)=%d, sVar2(DAT_000bbf7c)=%d, buf(DAT_000bbf14)=%p first10=%d %d %d %d %d %d %d %d %d %d\n",
           acStack_118, iVar5, (int)DAT_001007c4, (int)sVar2, (void*)uVar3,
           (int)((short*)uVar3)[0], (int)((short*)uVar3)[1], (int)((short*)uVar3)[2], (int)((short*)uVar3)[3], (int)((short*)uVar3)[4],
           (int)((short*)uVar3)[5], (int)((short*)uVar3)[6], (int)((short*)uVar3)[7], (int)((short*)uVar3)[8], (int)((short*)uVar3)[9]);
   if (iVar5 != -1) {
     while( true ) {
-      uVar6 = FUN_0002285c(iVar5,local_120_backing,4);
+      uVar6 = read_file_handle(iVar5,local_120_backing,4);
       if ((uVar6 < 4) ||
          (uVar7 = (uint)local_120, uVar6 = (uint)DAT_001007c4,
          uVar7 != uVar6 && (int)uVar6 <= (int)uVar7)) {
@@ -3392,13 +3392,13 @@ void save_npc_conversation_variables()
         goto LAB_00019460;
       }
       if (uVar7 == uVar6) break;
-      FUN_00022850(iVar5,(int)local_11e << 1,1);
+      seek_file_handle(iVar5,(int)local_11e << 1,1);
     }
     if (sVar2 < local_11e) {
       local_11e = sVar2;
     }
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] save_npc_conversation_variables: MATCH id=%d, writing %d bytes\n", (int)local_120, (int)local_11e << 1);
-    FUN_00022884(iVar5,uVar3,(int)local_11e << 1);
+    write_file_handle(iVar5,uVar3,(int)local_11e << 1);
 LAB_00019460:
     Ordinal_553(iVar5);
   }

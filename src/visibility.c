@@ -180,7 +180,7 @@ char *param_4;
   byte local_24 [2];
   short local_22;
 
-  iVar1 = FUN_000227d4(param_1);
+  iVar1 = open_file_for_read(param_1);
   if (iVar1 == -1) {
     /* param_1 is built from "\DATA\" (s__DATA__00085970) with no filename
        ever appended -- Ghidra dropped whatever Ordinal_1063 call(s) would
@@ -195,20 +195,20 @@ char *param_4;
     *param_3 = 0;
     return;
   }
-  FUN_0002285c(iVar1,local_24,1);
+  read_file_handle(iVar1,local_24,1);
   if (local_24[0] != 2) {
     FUN_0003c3c8(0x3010);
   }
-  FUN_0002285c(iVar1,local_24,1);
+  read_file_handle(iVar1,local_24,1);
   iVar5 = (uint)local_24[0] * (uint)local_24[0];
-  FUN_0002285c(iVar1,&local_22,2);
+  read_file_handle(iVar1,&local_22,2);
   iVar2 = Ordinal_1346(4,(int)local_22);
   if (iVar2 == 0) {
     FUN_0003c3c8(0x1008);
     iVar3 = (int)local_22;
   }
   else {
-    FUN_0002285c(iVar1,iVar2,(int)local_22 << 2);
+    read_file_handle(iVar1,iVar2,(int)local_22 << 2);
     iVar3 = 0;
     if (0 < *param_3) {
       iVar3 = 0;
@@ -222,8 +222,8 @@ char *param_4;
            the level's real ceiling id 15. Read ids consecutively. */
         iVar4 = (int)param_2[iVar3];
         if (iVar4 < 0) break;
-        FUN_00022850(iVar1,*(undefined4 *)(iVar2 + iVar4 * 4),0);
-        iVar4 = FUN_0002285c(iVar1,param_4,iVar5);
+        seek_file_handle(iVar1,*(undefined4 *)(iVar2 + iVar4 * 4),0);
+        iVar4 = read_file_handle(iVar1,param_4,iVar5);
         if (iVar4 != iVar5) {
           FUN_0003c3c8(0x3012);
         }
@@ -267,18 +267,18 @@ char *param_2;
     pcVar2 = pcVar2 + 1;
   } while (cVar1 != '\0');
   Ordinal_1063(acStack_120,s__DATA_terrain_dat_000869ec);
-  iVar3 = FUN_000227d4(acStack_120);
+  iVar3 = open_file_for_read(acStack_120);
   if (iVar3 != 0) {
     iVar4 = 0;
     do {
-      FUN_00022850(iVar3,(int)*(short *)(iVar4 * 2 + param_1) << 1,0);
-      FUN_0002285c(iVar3,&DAT_0023add0 + iVar4,2);
+      seek_file_handle(iVar3,(int)*(short *)(iVar4 * 2 + param_1) << 1,0);
+      read_file_handle(iVar3,&DAT_0023add0 + iVar4,2);
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 0x30);
     iVar4 = 0;
     do {
-      FUN_00022850(iVar3,(*(short *)(iVar4 * 2 + param_2) + 0x100) * 2,0);
-      FUN_0002285c(iVar3,&DAT_0023ae40 + iVar4,2);
+      seek_file_handle(iVar3,(*(short *)(iVar4 * 2 + param_2) + 0x100) * 2,0);
+      read_file_handle(iVar3,&DAT_0023ae40 + iVar4,2);
       iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
     } while (iVar4 < 10);
     Ordinal_553(iVar3);

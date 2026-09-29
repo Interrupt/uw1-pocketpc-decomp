@@ -45,6 +45,7 @@ set(UW_SOURCES
   src/weapon_swing.c
   src/level.c
   src/doors.c
+  src/winfile_wrappers.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c
