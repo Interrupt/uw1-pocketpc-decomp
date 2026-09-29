@@ -62,6 +62,7 @@ add_executable(uw_asan
   demomode.c
   democapture.c
   debug.c
+  debug_ui.c
 )
 
 target_include_directories(uw_asan PRIVATE ${SDL2_INCLUDE_DIRS})
