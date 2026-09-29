@@ -359,8 +359,8 @@ undefined4 param_1;
            body: malloc+serialize+CreateFile+WriteFile) -- called here
            too, alongside the \SAVE0\lev.ark seed a few lines down. First
            attempt chased a red herring: this newly reaches
-           write_player_status_block->FUN_0007ef78 with a genuinely truncated pointer
-           (fixed, FUN_0007ef78's param_3), but the *fatal* oversized-
+           write_player_status_block->write_xor_scrambled_block with a genuinely truncated pointer
+           (fixed, write_xor_scrambled_block's param_3), but the *fatal* oversized-
            write abort seen afterward was a false trail from a completely
            unrelated, pre-existing bug in seed_conversation_globals_for_new_game (also fixed, see
            its own comment) that this code path happens to run right

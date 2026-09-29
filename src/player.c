@@ -801,7 +801,7 @@ char param_2;
 // bytes, world x/y/z/facing, locomotion state) into the 0xd2-byte
 // DAT_00086df8 player-status block, then writes it to file handle
 // param_1 through a length-prefixed, presumably checksummed/XOR'd
-// wrapper (FUN_0007ef78). Called from write_player_save_record as the
+// wrapper (write_xor_scrambled_block). Called from write_player_save_record as the
 // player.dat header write step.
 void write_player_status_block(param_1)
 undefined4 param_1;
@@ -841,7 +841,7 @@ undefined4 param_1;
   DAT_00086df8[0xb6] = (byte)uVar3;
   DAT_00086df8[0xb7] = (byte)(uVar3 >> 8);
   write_file_handle(param_1,local_14,1);
-  FUN_0007ef78(param_1,local_14[0],DAT_00086df8,0xd2);
+  write_xor_scrambled_block(param_1,local_14[0],DAT_00086df8,0xd2);
   return;
 }
 
@@ -858,7 +858,7 @@ undefined4 param_1;
   undefined1 local_10 [4];
   
   read_file_handle(param_1,local_10,1);
-  FUN_0007ee9c(param_1,local_10[0],DAT_00086df8,0xd2);
+  read_xor_scrambled_block(param_1,local_10[0],DAT_00086df8,0xd2);
   *(undefined1 *)(DAT_0023be74 + 5) = *(undefined1 *)(DAT_00086df8 + 0x1e);
   *(undefined1 *)(DAT_0023be74 + 6) = *(undefined1 *)(DAT_00086df8 + 0x1f);
   *(undefined1 *)(DAT_0023be74 + 7) = *(undefined1 *)(DAT_00086df8 + 0x20);
@@ -3459,3 +3459,113 @@ void refresh_stats_panel_if_active()
   }
   return;
 }
+
+
+// was FUN_0007ee9c -- confirmed by read_player_status_block
+// (src/player.c) as the low-level "read and de-scramble" primitive
+// behind the player.dat status block: reads param_4 bytes from file
+// handle param_1 into param_3, 80 (0x50) bytes at a time, XOR'ing
+// each chunk against a rolling key derived from param_2 (incremented
+// by 3 every 80 bytes) -- a simple byte-scrambling obfuscation, not
+// real encryption. Returns the total byte count actually read.
+short read_xor_scrambled_block(param_1,param_2,param_3,param_4)
+undefined4 param_1;
+byte param_2;
+char *param_3;  /* was `int` -- same DAT_00086df8-pointer truncation bug
+                   as its sibling write_xor_scrambled_block (see that function's
+                   comment); this one is reached from the save-slot-copy
+                   path (read_player_status_block <- FUN_00044624) rather than
+                   write_player_status_block's caller */
+short param_4;
+
+{
+  short sVar1;
+  int iVar2;
+  short sVar3;
+  byte local_b4 [80];
+  byte local_64 [80];
+  
+  sVar3 = 0;
+  iVar2 = 0;
+  do {
+    param_2 = param_2 + 3;
+    local_64[iVar2] = param_2;
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 0x50);
+  for (; iVar2 = (int)param_4, 0 < iVar2; param_4 = param_4 + -0x50) {
+    if (0x4f < iVar2) {
+      iVar2 = 0x50;
+    }
+    sVar1 = read_file_handle(param_1,local_b4,iVar2);
+    if (0 < sVar1) {
+      iVar2 = 0;
+      do {
+        *(byte *)(iVar2 + param_3) = local_64[iVar2] ^ local_b4[iVar2];
+        iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+      } while (iVar2 < sVar1);
+    }
+    sVar3 = sVar1 + sVar3;
+    param_3 = param_3 + 0x50;
+  }
+  return sVar3;
+}
+
+
+
+// was FUN_0007ef78 -- write-side mirror of read_xor_scrambled_block,
+// confirmed by write_player_status_block (src/player.c): XOR-
+// scrambles param_4 bytes from param_3 against the same rolling
+// param_2-derived key, 80 bytes at a time, writing each chunk to file
+// handle param_1. Returns the total byte count actually written.
+int write_xor_scrambled_block(param_1,param_2,param_3,param_4)
+undefined4 param_1;
+byte param_2;
+char *param_3;  /* was `int` -- truncated the real DAT_00086df8 pointer
+                   write_player_status_block passes in, latent until something
+                   (write_player_save_record, the player.dat writer) actually called
+                   write_player_status_block -- previously only reachable from the
+                   Load Game path */
+short param_4;
+
+{
+  int iVar1;
+  int iVar2;
+  uint uVar3;
+  int iVar4;
+  int iVar5;
+  byte abStack_80b4 [80];
+  byte abStack_8064 [32688];
+  byte local_b4 [80];
+  byte local_64 [80];
+  
+  iVar5 = 0;
+  iVar1 = 0;
+  do {
+    param_2 = param_2 + 3;
+    local_b4[iVar1] = param_2;
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 0x50);
+  for (; iVar1 = (int)param_4, 0 < iVar1; param_4 = param_4 + -0x50) {
+    iVar2 = 0;
+    while( true ) {
+      iVar4 = iVar1;
+      if (0x4f < iVar1) {
+        iVar4 = 0x50;
+      }
+      iVar2 = (int)(short)iVar2;
+      if (iVar4 <= iVar2) break;
+      local_64[iVar2] = local_b4[iVar2] ^ *(byte *)(iVar2 + param_3);
+      iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    }
+    if (0x4f < iVar1) {
+      iVar1 = 0x50;
+    }
+    uVar3 = write_file_handle(param_1,local_64,iVar1);
+    iVar5 = iVar5 + (uVar3 & 0xffff);
+    param_3 = param_3 + 0x50;
+  }
+  return iVar5;
+}
+
+
+
