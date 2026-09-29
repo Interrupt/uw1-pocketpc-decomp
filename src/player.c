@@ -2564,3 +2564,40 @@ LAB_00071110:
     }
   } while( true );
 }
+
+
+
+
+
+
+// was FUN_0007141c -- applies pending status effects around a rest
+// action: clears any active screen-flash effect (bits 1/2 of
+// DAT_00086df8+0xb8) both before and after settling movement/refreshing
+// equipment effects, and if bit 3 (poison) is set and not in a gated
+// game state (DAT_0020208c bits 0x16), applies a randomized damage tick
+// (12-57, type 0x10) to the player via FUN_00038374 -- the "poisoned
+// while you sleep" mechanic.
+void apply_rest_status_effects()
+
+{
+  int uw_ord2005_rem_144 = 0;
+  undefined4 uVar1;
+  char extraout_r1;
+  undefined1 uVar2;
+
+  if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
+    FUN_00038374(g_player_object,0,0,0,0xff,0);
+  }
+  refresh_player_equipment_effects();
+  settle_movement_to_rest();
+  if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) != 0) && ((DAT_0020208c & 0x16) == 0)) {
+    uVar1 = Ordinal_1053();
+    uVar2 = 0x10;
+    uw_ord2005_rem_144 = ((int)(uVar1)) % (6);
+    FUN_00038374(g_player_object,0,0,0,uw_ord2005_rem_144 * '\n' + '\f',uVar2);
+  }
+  if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
+    FUN_00038374(g_player_object,0,0,0,0xff,0);
+  }
+  return;
+}

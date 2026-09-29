@@ -36427,33 +36427,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007141c()
-
-{
-  int uw_ord2005_rem_144 = 0;
-  undefined4 uVar1;
-  char extraout_r1;
-  undefined1 uVar2;
-  
-  if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
-    FUN_00038374(g_player_object,0,0,0,0xff,0);
-  }
-  refresh_player_equipment_effects();
-  settle_movement_to_rest();
-  if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) != 0) && ((DAT_0020208c & 0x16) == 0)) {
-    uVar1 = Ordinal_1053();
-    uVar2 = 0x10;
-    uw_ord2005_rem_144 = ((int)(uVar1)) % (6);
-    FUN_00038374(g_player_object,0,0,0,uw_ord2005_rem_144 * '\n' + '\f',uVar2);
-  }
-  if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
-    FUN_00038374(g_player_object,0,0,0,0xff,0);
-  }
-  return;
-}
-
-
-
 void FUN_00071510(param_1)
 short param_1;
 
@@ -36506,7 +36479,7 @@ LAB_0007158c:
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
     }
     if (param_1 < 0) {
-      FUN_0007141c();
+      apply_rest_status_effects();
     }
     if (*(char *)((char *)g_player_object + 8) == '\0') {
       FUN_000735c0();

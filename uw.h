@@ -3122,7 +3122,7 @@ void print_skill_improvement_list();
 void handle_mantra_chant();
 void render_endgame_character_stats();
 undefined4 trigger_random_level_special_event();
-void FUN_0007141c();
+void apply_rest_status_effects();
 void FUN_00071510();
 undefined4 FUN_00071b08();
 void FUN_00071b94();
