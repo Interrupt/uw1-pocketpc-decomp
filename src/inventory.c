@@ -398,7 +398,7 @@ undefined4 param_1;
       redraw_inventory_widget_range(param_1,param_1);
     }
     else {
-      FUN_00076e98((&DAT_002028e8)[iVar1]);
+      restore_captured_grtile_backdrop((&DAT_002028e8)[iVar1]);
       if (iVar1 == 0x15) {
         if (DAT_0020299c != 0) {
           uVar2 = 0x101b;
@@ -469,7 +469,7 @@ joined_r0x00048308:
         if (iVar6 != 0x14) {
           /* Was called here with g_blit_transparent_mode==1 (set just
              above this loop, for the item-sprite draw further down
-             which genuinely needs it). FUN_00076e98 restores a saved
+             which genuinely needs it). restore_captured_grtile_backdrop restores a saved
              framebuffer tile pixel-for-pixel -- raw RGB565 screen
              data, not palette-indexed sprite art -- and it also
              respects g_blit_transparent_mode (skipping any source
@@ -494,7 +494,7 @@ joined_r0x00048308:
              the restore itself; the sprite draw right after still
              runs under the loop's own transparent mode, unaffected. */
           g_blit_transparent_mode = 0;
-          FUN_00076e98((&DAT_002028e8)[iVar6]);
+          restore_captured_grtile_backdrop((&DAT_002028e8)[iVar6]);
           g_blit_transparent_mode = 1;
           auStack_54[iVar6] = 1;
           if (getenv("UW_DEBUG_INV"))
@@ -551,7 +551,7 @@ joined_r0x00048308:
       return;
     }
     if (iVar3 == 0x14) {
-      FUN_00076e98(DAT_00202938);
+      restore_captured_grtile_backdrop(DAT_00202938);
       local_2c = 1;
       if (getenv("UW_DEBUG_W20"))
         fprintf(stderr, "[w20] slot=%d raw=0x%04x occupied=%d DAT_00202938=%p x=%d y=%d w=%d h=%d\n",

@@ -1833,7 +1833,11 @@ void refresh_experience_display()
     FUN_00057118();
     select_active_font(s_font5x6i_sys_00086e98);
     if (DAT_0024af8c != 0) {
-      FUN_00076e98();
+      /* Ghidra dropped the arg here (relying on register carryover from
+         the `!= 0` compare) -- same class of bug fixed throughout this
+         session. DAT_0024af8c is the grtile key allocated in
+         draw_stats_panel_content (uw.c), passed explicitly here. */
+      restore_captured_grtile_backdrop(DAT_0024af8c);
     }
     FUN_00078088();
     FUN_00078118();

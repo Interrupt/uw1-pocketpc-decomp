@@ -226,7 +226,7 @@ void load_door_frames()
    Written to match this file's own already-established grtile
    conventions (grtile_alloc_registered's opaque-key allocation,
    and the g_grtile_real_ptrs registry-walk resolution already used by
-   capture_framebuffer_rect_to_grtile/FUN_00076e98/FUN_00011c10) rather
+   capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop/FUN_00011c10) rather
    than invented from nothing. */
 undefined4 alloc_flip_grtile_slot()
 
@@ -248,7 +248,7 @@ undefined4 param_1;
 
 {
   /* Not decompiled (see above). Same registry-walk resolution as
-     capture_framebuffer_rect_to_grtile/FUN_00076e98/FUN_00011c10:
+     capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop/FUN_00011c10:
      grtile_alloc_registered's return value is an opaque truncated
      identity key (see its own comment), not a real pointer -- find
      the matching record in the DAT_0023c3fc registry and return the
@@ -290,7 +290,7 @@ uint param_2;
      packed byte-by-byte into the record below as an opaque 4-byte
      identity key, and *that* truncated key -- not the real pointer -- is
      what this function returns and what all 11 of its other callers
-     store/compare/pass into FUN_00076e98/capture_framebuffer_rect_to_grtile ("does this key
+     store/compare/pass into restore_captured_grtile_backdrop/capture_framebuffer_rect_to_grtile ("does this key
      match a record's stored key"): self-consistent lookups that don't
      need the real address, so leave this alone. The one caller that DOES
      need the real, dereferenceable pointer (FUN_00041708, feeding a
@@ -496,3 +496,128 @@ short param_5;
   return 0;
 }
 
+
+
+
+
+
+// was FUN_000769e8 -- allocates and zero-initializes the grtile
+// registry's record table (DAT_0023c3fc, 0x1540 bytes / 0x11-byte
+// stride = 320 records exactly, matching g_grtile_real_ptrs's own
+// 320-entry size), and sets its "end" pointer (DAT_0023c404).
+// Backs grtile_alloc_registered/capture_framebuffer_rect_to_grtile/
+// restore_captured_grtile_backdrop/invalidate_grtile_by_key below --
+// the "captured framebuffer region" system used to save/restore
+// backdrop pixels behind menus, dialogs, and HUD overlays.
+void init_grtile_registry()
+
+{
+  DAT_0023c3fc = Ordinal_1041(0x1540);
+  if (DAT_0023c3fc != 0) {
+    Ordinal_1047(DAT_0023c3fc,0,0x1540);
+    DAT_0023c404 = DAT_0023c3fc + 0x11;
+  }
+  return;
+}
+
+
+
+
+// was FUN_00076b24 -- searches the grtile registry (DAT_0023c3fc)
+// for a record whose key matches param_1, and if found, zeroes that
+// record's own key field (marking the slot free/invalid). Returns
+// 0xffffffff if no match was found before reaching the table's end
+// (DAT_0023c404). Fixed a dropped-argument call site in
+// src/hud.c's flush_sprite_list_compositor while moving this (see
+// its own comment).
+undefined4 invalidate_grtile_by_key(param_1)
+int param_1;
+
+{
+  int *piVar1;
+  
+  piVar1 = DAT_0023c3fc;
+  while( true ) {
+    if (piVar1 == DAT_0023c404) {
+      return 0xffffffff;
+    }
+    if (*piVar1 == param_1) break;
+    piVar1 = (int *)((char *)piVar1 + 0x11);
+  }
+  *(undefined1 *)(piVar1 + 2) = 0;
+  return 0;
+}
+
+
+
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+// was FUN_00076e98 -- looks up a grtile registry record by key
+// (param_1) and blits its previously-captured backdrop pixels
+// (tracked via g_grtile_real_ptrs, not the truncated key itself --
+// see param_1's own comment) back into the real framebuffer at the
+// record's stored rect, honoring g_blit_transparent_mode, then marks
+// the affected rect dirty. Fixed a dropped-argument call site in
+// src/player.c's refresh_experience_display while moving this (see
+// its own comment). Widely used throughout babl.c, chargen.c,
+// containers.c, and inventory.c to restore backdrops behind closed
+// menus/dialogs.
+undefined4 restore_captured_grtile_backdrop(param_1)
+short * param_1;
+
+{
+  int iVar1;
+  short sVar2;
+  int iVar3;
+  undefined4 *puVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  /* param_1 is grtile_alloc_registered's opaque truncated identity key, not a
+     real pointer -- same issue as capture_framebuffer_rect_to_grtile above. Read glyph
+     pixels back through the real pointer tracked in
+     g_grtile_real_ptrs instead of dereferencing the key directly. */
+  short *psVar_target;
+
+  iVar3 = 0;
+  puVar4 = DAT_0023c3fc;
+  while (param_1 != (short *)*puVar4) {
+    iVar3 = iVar3 + 1;
+    puVar4 = (undefined4 *)((char *)puVar4 + 0x11);
+    if (0x13f < iVar3) {
+      return 0xffffffff;
+    }
+  }
+  psVar_target = (short *)g_grtile_real_ptrs[iVar3];
+  iVar5 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 9);
+  iVar7 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xb);
+  iVar1 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xd);
+  iVar3 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xf);
+  iVar6 = iVar7 * 0x140 + iVar5;
+  dirty_rect_union(iVar7,iVar3 + iVar7,iVar5,iVar1 + iVar5);
+  iVar5 = 0;
+  if (0 < iVar3) {
+    do {
+      if (199 < iVar5) {
+        return 0;
+      }
+      iVar7 = 0;
+      if (0 < iVar1) {
+        do {
+          if (0x13f < iVar7) break;
+          sVar2 = *psVar_target;
+          iVar7 = iVar7 + 1;
+          psVar_target = psVar_target + 1;
+          if ((g_blit_transparent_mode & sVar2 == 0) == 0) {
+            *(short *)((g_uw_framebuffer) + iVar6 * 2) = sVar2;
+          }
+          iVar6 = iVar6 + 1;
+        } while (iVar7 < iVar1);
+      }
+      iVar5 = iVar5 + 1;
+      iVar6 = iVar6 + (0x140 - iVar1);
+    } while (iVar5 < iVar3);
+  }
+  debug_framebuffer_dump("restore_captured_grtile_backdrop");
+  return 0;
+}

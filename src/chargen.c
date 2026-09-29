@@ -192,7 +192,7 @@ LAB_00025468:
         local_5c_buf[local_64[0] + 3] = 0;
         DAT_001005c0 = FUN_00023c90((int)DAT_001005c0,local_5c_buf + 4);
         FUN_00057118();
-        FUN_00076e98(local_60);
+        restore_captured_grtile_backdrop(local_60);
         FUN_00023b38();
         cursor_show_idle_tick();
         uVar15 = FUN_000238b4(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
@@ -304,7 +304,7 @@ LAB_00025468:
       screen_backup_restore();
       set_draw_color(0x1a);
       rect_fill_or_save_restore(0xa0,199,0x13f,0);
-      FUN_00076b24(local_60);
+      invalidate_grtile_by_key(local_60);
       return 1;
     }
   } while( true );

@@ -3947,20 +3947,20 @@ void end_barter_ui()
     if (0 < (short)(&DAT_000bbfd0)[iVar2]) {
       uVar1 = FUN_000535fc();
       drop_object_near_target(g_player_object,uVar1,5,0);
-      FUN_00076e98((&DAT_000bc028)[iVar2]);
+      restore_captured_grtile_backdrop((&DAT_000bc028)[iVar2]);
     }
     if (0 < (short)(&DAT_000bbfe8)[iVar2]) {
       uVar1 = FUN_000535fc();
       drop_object_near_target(DAT_00100674,uVar1,5,0);
-      FUN_00076e98((&DAT_000bc010)[iVar2]);
+      restore_captured_grtile_backdrop((&DAT_000bc010)[iVar2]);
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
   cursor_show_idle_tick();
   iVar2 = 0;
   do {
-    FUN_00076b24((&DAT_000bc028)[iVar2]);
-    FUN_00076b24((&DAT_000bc010)[iVar2]);
+    invalidate_grtile_by_key((&DAT_000bc028)[iVar2]);
+    invalidate_grtile_by_key((&DAT_000bc010)[iVar2]);
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 4);
   return;
@@ -4323,13 +4323,13 @@ short param_2;
   puVar10 = &DAT_000845d8;
   iVar1 = iVar3 * 4;
   if (psVar2 == (short *)0x0) {
-    FUN_00076e98((&DAT_000bc010)[iVar3]);
+    restore_captured_grtile_backdrop((&DAT_000bc010)[iVar3]);
     if (sVar4 == 0) goto LAB_0001c1b4;
     draw_sprite_by_id(uVar9,(int)*(short *)(&DAT_000845d8 + iVar1),(int)*(short *)(&DAT_000845da + iVar1)
                  ,0x10,0x10);
   }
   else {
-    FUN_00076e98((&DAT_000bc028)[iVar3]);
+    restore_captured_grtile_backdrop((&DAT_000bc028)[iVar3]);
     if (sVar4 == 0) goto LAB_0001c1b4;
     draw_sprite_by_id(uVar9,(int)*(short *)(&DAT_000845b8 + iVar1),(int)*(short *)(&DAT_000845ba + iVar1)
                  ,0x10,0x10);
@@ -4583,7 +4583,7 @@ short param_1;
     if ((0 < (short)(&DAT_000bbfe8)[iVar2]) && ((param_1 == 0 || ((&DAT_000bbff0)[iVar2] == 0)))) {
       uVar1 = FUN_000535fc();
       object_list_insert_head(DAT_00100674 + 6,uVar1);
-      FUN_00076e98((&DAT_000bc010)[iVar2]);
+      restore_captured_grtile_backdrop((&DAT_000bc010)[iVar2]);
       (&DAT_000bbff0)[iVar2] = 0;
       (&DAT_000bbfe8)[iVar2] = 0;
       draw_hotspot_crosshair_marker(0,iVar2);
@@ -4648,7 +4648,7 @@ void finalize_player_barter_items()
         if (puVar2 != (ushort *)0x0) {
           object_list_insert_head(DAT_00100674 + 6,puVar2);
         }
-        FUN_00076e98((&DAT_000bc028)[local_28]);
+        restore_captured_grtile_backdrop((&DAT_000bc028)[local_28]);
         (&DAT_000bbf98)[local_28] = 0;
         *psVar5 = 0;
         draw_hotspot_crosshair_marker(1,(int)local_2c);
@@ -4993,7 +4993,7 @@ short param_1;
   iVar1 = 0;
   do {
     if ((&DAT_000bbfd0)[iVar1] == param_1) {
-      FUN_00076e98((&DAT_000bc028)[iVar1]);
+      restore_captured_grtile_backdrop((&DAT_000bc028)[iVar1]);
       (&DAT_000bbfd0)[iVar1] = 0;
       (&DAT_000bbf98)[iVar1] = 0;
       draw_hotspot_crosshair_marker(1,iVar1);

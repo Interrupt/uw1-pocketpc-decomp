@@ -5094,10 +5094,10 @@ const undefined1 DAT_00086d68_region[64] = {
    the first was already out of bounds, so this single-byte overflow
    became a wild write landing squarely on grtile_alloc_registered's
    own DAT_0023c3fc (an unrelated, ordinarily 5440-byte-safe pointer
-   table used by capture_framebuffer_rect_to_grtile/FUN_00076e98),
+   table used by capture_framebuffer_rect_to_grtile/restore_captured_grtile_backdrop),
    observed corrupting it one ushort at a time across repeated calls
    until it held the exact non-pointer bit pattern (0x10f010f010f010f0)
-   that then crashed FUN_00076e98's own linear scan of that table --
+   that then crashed restore_captured_grtile_backdrop's own linear scan of that table --
    the intermittent (ASLR-dependent, since it depends on this build's
    own relative global layout) HUD-compositor crash long tracked as a
    separate, pre-existing, unsolved issue. Widened to match its
@@ -6909,7 +6909,7 @@ short param_7;
   /* Was `int local_2c = param_3 + ...` -- param_3 is
      grtile_alloc_registered's opaque truncated identity key, not a real
      pointer (same issue already fixed in capture_framebuffer_rect_to_grtile
-     and FUN_00076e98, see their own comments -- FUN_00011c10 was the one
+     and restore_captured_grtile_backdrop, see their own comments -- FUN_00011c10 was the one
      remaining consumer still dereferencing the key directly instead of
      resolving it through g_grtile_real_ptrs first). Crashed the instant
      the stats panel -- the only caller that reaches this with a real
@@ -20293,7 +20293,7 @@ void FUN_0003b820()
   blit_fullscreen_bitmap_file(5,acStack_62c,1);
   Ordinal_496(0x5dc);
   play_music_track(1,1);
-  FUN_000769e8();
+  init_grtile_registry();
   Ordinal_1047(acStack_62c,0,0x104);
   pcVar4 = pcVar6;
     stack0xffdc2d2c_ptr = acStack_62c;
@@ -25877,7 +25877,7 @@ void FUN_00048110()
   if (g_active_hud_panel == '\0') {
     DAT_00085c50 = 0xffff;
     if (g_current_container_record == 0) {
-      FUN_00076e98(DAT_002028ec);
+      restore_captured_grtile_backdrop(DAT_002028ec);
     }
     else {
       draw_sprite_by_id(0x2097,0xec,0x51,0x29,0x54);
@@ -25904,7 +25904,7 @@ int param_1;
   iVar4 = ((int)g_player_max_carry_weight - (int)g_player_carry_weight) * 0x10000;
   iVar1 = iVar4 >> 0x10;
   if (DAT_00085c50 != iVar1) {
-    FUN_00076e98(DAT_002028e8);
+    restore_captured_grtile_backdrop(DAT_002028e8);
     DAT_00085c50 = (short)((uint)iVar4 >> 0x10);
     bVar5 = param_1 != 0;
     *g_draw_color_index = 0xe0;
@@ -36486,110 +36486,6 @@ LAB_00060f54:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
   return;
-}
-
-
-
-void FUN_000769e8()
-
-{
-  DAT_0023c3fc = Ordinal_1041(0x1540);
-  if (DAT_0023c3fc != 0) {
-    Ordinal_1047(DAT_0023c3fc,0,0x1540);
-    DAT_0023c404 = DAT_0023c3fc + 0x11;
-  }
-  return;
-}
-
-
-
-/* Real pointers for grtile_alloc_registered's DAT_0023c3fc record table, indexed
-   by record slot (see grtile_alloc_registered's comment). DAT_0023c3fc holds
-   0x1540/0x11 = 320 records exactly. */
- void *g_grtile_real_ptrs[320];
-
-
-
-undefined4 FUN_00076b24(param_1)
-int param_1;
-
-{
-  int *piVar1;
-  
-  piVar1 = DAT_0023c3fc;
-  while( true ) {
-    if (piVar1 == DAT_0023c404) {
-      return 0xffffffff;
-    }
-    if (*piVar1 == param_1) break;
-    piVar1 = (int *)((char *)piVar1 + 0x11);
-  }
-  *(undefined1 *)(piVar1 + 2) = 0;
-  return 0;
-}
-
-
-
-// WARNING: Globals starting with '_' overlap smaller symbols at the same address
-
-undefined4 FUN_00076e98(param_1)
-short * param_1;
-
-{
-  int iVar1;
-  short sVar2;
-  int iVar3;
-  undefined4 *puVar4;
-  int iVar5;
-  int iVar6;
-  int iVar7;
-  /* param_1 is grtile_alloc_registered's opaque truncated identity key, not a
-     real pointer -- same issue as capture_framebuffer_rect_to_grtile above. Read glyph
-     pixels back through the real pointer tracked in
-     g_grtile_real_ptrs instead of dereferencing the key directly. */
-  short *psVar_target;
-
-  iVar3 = 0;
-  puVar4 = DAT_0023c3fc;
-  while (param_1 != (short *)*puVar4) {
-    iVar3 = iVar3 + 1;
-    puVar4 = (undefined4 *)((char *)puVar4 + 0x11);
-    if (0x13f < iVar3) {
-      return 0xffffffff;
-    }
-  }
-  psVar_target = (short *)g_grtile_real_ptrs[iVar3];
-  iVar5 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 9);
-  iVar7 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xb);
-  iVar1 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xd);
-  iVar3 = (int)*(short *)((char *)DAT_0023c3fc + iVar3 * 0x11 + 0xf);
-  iVar6 = iVar7 * 0x140 + iVar5;
-  dirty_rect_union(iVar7,iVar3 + iVar7,iVar5,iVar1 + iVar5);
-  iVar5 = 0;
-  if (0 < iVar3) {
-    do {
-      if (199 < iVar5) {
-        return 0;
-      }
-      iVar7 = 0;
-      if (0 < iVar1) {
-        do {
-          if (0x13f < iVar7) break;
-          sVar2 = *psVar_target;
-          iVar7 = iVar7 + 1;
-          psVar_target = psVar_target + 1;
-          if ((g_blit_transparent_mode & sVar2 == 0) == 0) {
-            *(short *)((g_uw_framebuffer) + iVar6 * 2) = sVar2;
-          }
-          iVar6 = iVar6 + 1;
-        } while (iVar7 < iVar1);
-      }
-      iVar5 = iVar5 + 1;
-      iVar6 = iVar6 + (0x140 - iVar1);
-    } while (iVar5 < iVar3);
-  }
-  debug_framebuffer_dump("FUN_00076e98");
-  return 0;
 }
 
 

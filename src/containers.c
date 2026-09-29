@@ -120,7 +120,7 @@ void close_backpack_container()
     } while (iVar1 < 0x14);
     FUN_00057118();
     if ((((short)DAT_00201b60 == 1) || ((short)DAT_00201b60 == 4)) && (g_active_hud_panel == '\0')) {
-      FUN_00076e98(DAT_002028ec);
+      restore_captured_grtile_backdrop(DAT_002028ec);
       FUN_00048110();
     }
     cursor_show_idle_tick();
@@ -498,7 +498,7 @@ short param_1;
            g_container_icon_backup_grtile allocation above and the
            DAT_002028a0 loop just above that (for widgets 12-19) --
            this one's real "open container indicator" mechanism (see
-           DAT_00085c4c's own comment) needs FUN_00076e98(DAT_00202938)
+           DAT_00085c4c's own comment) needs restore_captured_grtile_backdrop(DAT_00202938)
            to have real saved pixels to restore before its own sprite
            draw, same as every other widget's redraw. Never allocated
            before because nothing reached this branch: widget 20's own

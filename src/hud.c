@@ -3406,7 +3406,7 @@ undefined4 param_1;
 // (DAT_0023c3e8..DAT_0023c414, 0x14-byte stride): the first captures
 // framebuffer regions behind "background capture" sprites into a
 // grtile (capture_framebuffer_rect_to_grtile) or forwards to
-// FUN_00076e98/FUN_00076b24 (not yet named) for other status-word
+// restore_captured_grtile_backdrop/invalidate_grtile_by_key (not yet named) for other status-word
 // bit combinations; the second actually draws each queued sprite via
 // draw_sprite_by_id (for a plain sprite) or sprite_list_flush_blit_raw
 // (for a raw-blit entry), toggling g_blit_transparent_mode around each
@@ -3439,7 +3439,7 @@ void flush_sprite_list_compositor()
           puVar4 = puVar4 + 1;
           puVar6 = (ushort *)((uint)*puVar4 * 0x14 + DAT_0023c3e8);
           if ((*puVar6 & DAT_00087640) == 0) {
-            FUN_00076e98(*(undefined4 *)(puVar6 + 8));
+            restore_captured_grtile_backdrop(*(undefined4 *)(puVar6 + 8));
           }
           else {
             uVar1 = DAT_0023c408 & *puVar6;
@@ -3454,7 +3454,15 @@ void flush_sprite_list_compositor()
                          CONCAT12((char)puVar6[9],
                                   CONCAT11(*(undefined1 *)((char *)puVar6 + 0x11),(char)puVar6[8]))) !=
                 0) {
-              FUN_00076b24();
+              /* Ghidra dropped the arg here (relying on register
+                 carryover from the CONCAT-reconstructed nonzero check
+                 just above) -- same class of bug fixed throughout this
+                 session. That CONCAT chain reconstructs, byte by byte,
+                 exactly `*(undefined4 *)(puVar6 + 8)` -- the same
+                 grtile key field restore_captured_grtile_backdrop reads
+                 a few lines up -- so pass it explicitly instead of
+                 relying on leftover register state. */
+              invalidate_grtile_by_key(*(undefined4 *)(puVar6 + 8));
             }
           }
           puVar6 = DAT_0023c40c;
