@@ -2584,7 +2584,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short local_24 [4];
   short local_1c [4];
   
-  uVar3 = FUN_0001d1c0(local_24,local_1c);
+  uVar3 = collect_included_player_barter_items(local_24,local_1c);
   iVar5 = 0;
   do {
     sVar1 = (short)iVar5;
@@ -2620,7 +2620,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short asStack_14 [4];
   
   sVar3 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  sVar4 = FUN_0001d1c0(local_1c,asStack_14);
+  sVar4 = collect_included_player_barter_items(local_1c,asStack_14);
   uVar1 = (uint)sVar3;
   iVar2 = (int)sVar4;
   if ((int)uVar1 < 1000) {
@@ -2670,7 +2670,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   sVar1 = babl_read_var_word((int)*(short *)(param_1 + -8));
   iVar4 = 0;
   iVar6 = 0;
-  sVar2 = FUN_0001d1c0(local_4c,local_3c);
+  sVar2 = collect_included_player_barter_items(local_4c,local_3c);
   if ((sVar1 < 1000) && (0 < sVar2)) {
     iVar5 = 0;
     do {
@@ -2718,7 +2718,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   undefined1 auStack_2c [8];
   
   sVar2 = babl_read_var_word((int)*(short *)(param_1 + -4));
-  sVar3 = FUN_0001d1c0(auStack_2c,local_44 + 8);
+  sVar3 = collect_included_player_barter_items(auStack_2c,local_44 + 8);
   iVar5 = (int)sVar3;
   iVar1 = (int)sVar2;
   if (iVar5 < iVar1) {
@@ -2780,7 +2780,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   short local_14 [4];
   
   uVar1 = babl_read_var_word((int)*(short *)(param_1 + -4));
-  FUN_0001d1c0(local_1c,local_14);
+  collect_included_player_barter_items(local_1c,local_14);
   iVar2 = 0;
   do {
     if (local_1c[iVar2] != 0) {
@@ -2805,7 +2805,7 @@ LAB_00029efc:
     uVar1 = 0;
   }
   else {
-    FUN_0001d258(iVar2);
+    add_item_to_npc_inventory(iVar2);
 LAB_00029f2c:
     uVar1 = 1;
   }
@@ -4875,5 +4875,75 @@ short param_3;
   iVar1 = rand_below((int)param_3 - (int)param_2);
   iVar1 = Ordinal_2005(100,(iVar1 + param_2) * (int)param_1);
   return (iVar1 + param_1) * 0x10000 >> 0x10;
+}
+
+
+
+
+// was FUN_0001d1c0 -- collects the player's barter slots marked
+// "included in trade" (DAT_000bbf98) into two parallel out-arrays
+// (param_2 = slot indices, param_1 = item ids) and returns how many
+// were found. Used by several babl builtins (e.g. "show_inv") that
+// need to enumerate what the player has offered.
+int collect_included_player_barter_items(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  ushort *puVar1;
+  int iVar2;
+  int iVar3;
+  
+  iVar3 = 0;
+  iVar2 = 0;
+  do {
+    if ((&DAT_000bbf98)[iVar2] != 0) {
+      puVar1 = (ushort *)FUN_000535fc((int)(short)(&DAT_000bbfd0)[iVar2]);
+      iVar3 = (int)(short)iVar3;
+      *(undefined2 *)(param_2 + iVar3 * 2) = (&DAT_000bbfd0)[iVar2];
+      *(ushort *)(param_1 + iVar3 * 2) = *puVar1 & 0x1ff;
+      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+    }
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 4);
+  return iVar3;
+}
+
+
+
+// was FUN_0001d258 -- gives an item to the current conversation
+// partner's (DAT_00100674) inventory: if it's item-id 0xa1 (gold) and
+// both it and an existing stack in the NPC's inventory are stackable
+// (weightless bit set) with matching item-id and combined quantity
+// under 999, merges into that stack and frees the incoming object's
+// slot instead of inserting a duplicate. Otherwise (or for any other
+// item-id) just links it into the NPC's inventory list directly.
+void add_item_to_npc_inventory(param_1)
+ushort * param_1;
+
+{
+  ushort *puVar1;
+  int iVar2;
+  
+  if ((*param_1 & 0x1ff) == 0xa1) {
+    puVar1 = (ushort *)(DAT_00100674 + 6);
+    while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
+      if (((((*param_1 & 0x8000) != 0) && ((*puVar1 & 0x8000) != 0)) && ((param_1[3] & 0x8000) == 0)
+          ) && ((((puVar1[3] & 0x8000) == 0 && (((*puVar1 ^ *param_1) & 0x1ff) == 0)) &&
+                ((ushort)((puVar1[3] >> 6) + (param_1[3] >> 6)) < 999)))) {
+        iVar2 = (puVar1[3] & 0xffc0) + (param_1[3] & 0xffc0);
+        *(byte *)(puVar1 + 3) = (byte)iVar2 ^ (byte)puVar1[3] & 0x3f;
+        *(char *)((char *)puVar1 + 7) = (char)((uint)iVar2 >> 8);
+        free_object_slot(param_1);
+        param_1 = (ushort *)0x0;
+        break;
+      }
+      puVar1 = puVar1 + 2;
+    }
+  }
+  if (param_1 != (ushort *)0x0) {
+    object_list_insert_head(DAT_00100674 + 6,param_1);
+  }
+  return;
 }
 

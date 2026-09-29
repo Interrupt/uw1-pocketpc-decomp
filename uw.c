@@ -8126,63 +8126,6 @@ LAB_0001ad98:
 
 
 
-int FUN_0001d1c0(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  ushort *puVar1;
-  int iVar2;
-  int iVar3;
-  
-  iVar3 = 0;
-  iVar2 = 0;
-  do {
-    if ((&DAT_000bbf98)[iVar2] != 0) {
-      puVar1 = (ushort *)FUN_000535fc((int)(short)(&DAT_000bbfd0)[iVar2]);
-      iVar3 = (int)(short)iVar3;
-      *(undefined2 *)(param_2 + iVar3 * 2) = (&DAT_000bbfd0)[iVar2];
-      *(ushort *)(param_1 + iVar3 * 2) = *puVar1 & 0x1ff;
-      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-    }
-    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-  } while (iVar2 < 4);
-  return iVar3;
-}
-
-
-
-void FUN_0001d258(param_1)
-ushort * param_1;
-
-{
-  ushort *puVar1;
-  int iVar2;
-  
-  if ((*param_1 & 0x1ff) == 0xa1) {
-    puVar1 = (ushort *)(DAT_00100674 + 6);
-    while (puVar1 = (ushort *)resolve_object_link(puVar1), puVar1 != (ushort *)0x0) {
-      if (((((*param_1 & 0x8000) != 0) && ((*puVar1 & 0x8000) != 0)) && ((param_1[3] & 0x8000) == 0)
-          ) && ((((puVar1[3] & 0x8000) == 0 && (((*puVar1 ^ *param_1) & 0x1ff) == 0)) &&
-                ((ushort)((puVar1[3] >> 6) + (param_1[3] >> 6)) < 999)))) {
-        iVar2 = (puVar1[3] & 0xffc0) + (param_1[3] & 0xffc0);
-        *(byte *)(puVar1 + 3) = (byte)iVar2 ^ (byte)puVar1[3] & 0x3f;
-        *(char *)((char *)puVar1 + 7) = (char)((uint)iVar2 >> 8);
-        free_object_slot(param_1);
-        param_1 = (ushort *)0x0;
-        break;
-      }
-      puVar1 = puVar1 + 2;
-    }
-  }
-  if (param_1 != (ushort *)0x0) {
-    object_list_insert_head(DAT_00100674 + 6,param_1);
-  }
-  return;
-}
-
-
-
 void FUN_0001d3ac(param_1)
 short param_1;
 
@@ -8190,7 +8133,7 @@ short param_1;
   int iVar1;
   
   FUN_000535fc();
-  FUN_0001d258();
+  add_item_to_npc_inventory();
   FUN_00057118();
   iVar1 = 0;
   do {
