@@ -92,14 +92,14 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
    NPC's barter script declined an offer, same bug class as babl_menu
    before its own recovery. Recovered from the real ARM binary (Ghidra
    headless): it's a thin wrapper handing back every item currently
-   staged on the barter table (param_1=0 to FUN_0001c79c, matching
+   staged on the barter table (param_1=0 to finalize_npc_barter_items, matching
    that function's own "give everything back" branch) -- genuinely
-   void, FUN_0001c79c itself returns nothing meaningful either. */
+   void, finalize_npc_barter_items itself returns nothing meaningful either. */
 // was FUN_0001cd34
 void babl_builtin_do_decline()
 
 {
-  FUN_0001c79c(0);
+  finalize_npc_barter_items(0);
   return;
 }
 /* Was a no-op stub here ("Ghidra couldn't resolve this address...
@@ -1960,8 +1960,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     sVar2 = DAT_000bbfb8;
   }
   else {
-    iVar8 = FUN_0001c538(&DAT_000bbfd0,&DAT_000bbf98);
-    if ((iVar8 == 0) && (iVar8 = FUN_0001c538(&DAT_000bbfe8,&DAT_000bbff0), iVar8 == 0)) {
+    iVar8 = barter_offer_is_empty(&DAT_000bbfd0,&DAT_000bbf98);
+    if ((iVar8 == 0) && (iVar8 = barter_offer_is_empty(&DAT_000bbfe8,&DAT_000bbff0), iVar8 == 0)) {
       sVar2 = FUN_0001cf20(1,&DAT_000bbfd0,&DAT_000bbf98,&DAT_000bbfb0,DAT_000bbfbc);
       sVar3 = FUN_0001cf20(0,&DAT_000bbfe8,&DAT_000bbff0,&DAT_000bbfc8,DAT_000bbfbc);
       iVar8 = (int)sVar3;
@@ -1976,8 +1976,8 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
       if (iVar9 <= iVar8) {
         FUN_0007863c(uVar4);
         FUN_00029708();
-        FUN_0001c79c(1);
-        FUN_0001c85c();
+        finalize_npc_barter_items(1);
+        finalize_player_barter_items();
         DAT_000bc008 = 1;
         return 1;
       }
@@ -2084,7 +2084,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
      ((bVar4 & 0x40) != 0)) {
     FUN_0007863c((int)local_28);
     FUN_00029708();
-    FUN_0001c79c(1);
+    finalize_npc_barter_items(1);
     DAT_000bc008 = 1;
     if (0 < local_2c) {
       local_2c = (short)((uint)((local_2c + -1) * 0x10000) >> 0x10);
@@ -2095,7 +2095,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   else {
     FUN_0007863c((int)local_2a);
     FUN_00029708();
-    FUN_0001c79c(0);
+    finalize_npc_barter_items(0);
     FUN_00034ac4(DAT_00100674,5,1);
     uVar9 = 0;
   }
@@ -4481,5 +4481,173 @@ LAB_0001c404:
   redraw_barter_slot_icon(param_2,param_3);
   FUN_0007ec50();
   return uVar8;
+}
+
+
+
+
+// was FUN_0001c420 -- draws a 5-pixel plot_pixel crosshair (center + one
+// pixel each direction) at a coordinate pair looked up by index from one
+// of two tables selected by param_1 (worn-item slots vs backpack slots),
+// colored by whether a parallel "valid"/"used" table says that slot is
+// occupied. Found fixing a real ASan-caught crash: one caller
+// (handle_barter_slot_click) passed only 1 of the 2 real arguments here, matching
+// the real ARM binary's own reliance on a leftover register value --
+// see that call site's own comment.
+void draw_hotspot_crosshair_marker(param_1,param_2)
+short param_1;
+undefined ** param_2;
+
+{
+  short sVar1;
+  int iVar2;
+  undefined2 uVar3;
+  undefined4 *puVar4;
+  
+  sVar1 = (short)param_2;
+  if (param_1 != 0) {
+    param_2 = &PTR_DAT_000845c8;
+  }
+  iVar2 = (int)sVar1;
+  if (param_1 != 0) {
+    param_2 = param_2 + iVar2;
+    puVar4 = &DAT_000bbf98;
+  }
+  else {
+    param_2 = (undefined **)(&DAT_000845e8 + iVar2 * 4);
+    puVar4 = &DAT_000bbff0;
+  }
+  uVar3 = 0x60;
+  if (puVar4[iVar2] != 1) {
+    uVar3 = 0xf1;
+  }
+  FUN_00057118();
+  plot_pixel((int)*(short *)param_2,(int)*(short *)((char *)param_2 + 2),uVar3);
+  plot_pixel(*(short *)param_2 + -1,(int)*(short *)((char *)param_2 + 2),uVar3);
+  plot_pixel(*(short *)param_2 + 1,(int)*(short *)((char *)param_2 + 2),uVar3);
+  plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + -1,uVar3);
+  plot_pixel((int)*(short *)param_2,*(short *)((char *)param_2 + 2) + 1,uVar3);
+  cursor_show_idle_tick();
+  FUN_0007ec50();
+  return;
+}
+
+
+
+// was FUN_0001c538 -- checks whether ANY of the 4 barter slots has a
+// valid paired (count > 0, value > 0) entry across param_1 (a short
+// count array) and param_2 (an int value array). Returns 1 if none do
+// (the offer is effectively empty), 0 if at least one slot qualifies.
+undefined4 barter_offer_is_empty(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  int iVar1;
+  
+  iVar1 = 0;
+  while ((*(int *)(param_2 + iVar1 * 4) < 1 || (*(short *)(param_1 + iVar1 * 2) < 1))) {
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+    if (3 < iVar1) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+
+// was FUN_0001c79c -- for each occupied NPC-side barter slot where
+// param_1==0 or the slot isn't marked "included in trade"
+// (DAT_000bbff0), links its item back into the NPC's own inventory
+// list and clears the slot's icon/state. Effectively returns whatever
+// wasn't actually part of the accepted deal.
+void finalize_npc_barter_items(param_1)
+short param_1;
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  
+  FUN_00057118();
+  iVar2 = 0;
+  do {
+    if ((0 < (short)(&DAT_000bbfe8)[iVar2]) && ((param_1 == 0 || ((&DAT_000bbff0)[iVar2] == 0)))) {
+      uVar1 = FUN_000535fc();
+      object_list_insert_head(DAT_00100674 + 6,uVar1);
+      FUN_00076e98((&DAT_000bc010)[iVar2]);
+      (&DAT_000bbff0)[iVar2] = 0;
+      (&DAT_000bbfe8)[iVar2] = 0;
+      draw_hotspot_crosshair_marker(0,iVar2);
+    }
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 4);
+  cursor_show_idle_tick();
+  FUN_0007ec50();
+  return;
+}
+
+
+
+// was FUN_0001c85c -- commits the player's accepted-for-trade items
+// (the mirror image of finalize_npc_barter_items's condition: this one
+// processes slots WHERE DAT_000bbf98's "included in trade" flag IS
+// set, i.e. actually completes the deal for that item rather than
+// returning it): links each such item into the NPC's inventory,
+// merging its quantity into a matching existing stackable item there
+// first if one exists, then clears the slot's icon/state.
+void finalize_player_barter_items()
+
+{
+  short sVar1;
+  ushort *puVar2;
+  ushort *puVar3;
+  int iVar4;
+  short *psVar5;
+  short local_2c;
+  int local_28;
+  
+  FUN_00057118();
+  local_2c = 0;
+  local_28 = 0;
+  do {
+    psVar5 = &DAT_000bbfd0 + local_28;
+    if (0 < *psVar5) {
+      if (((&DAT_000bbf98)[local_28] != 0) && (sVar1 = FUN_0001dab8(), sVar1 != -1)) {
+        puVar2 = (ushort *)FUN_000535fc((int)*psVar5);
+        puVar3 = (ushort *)resolve_object_link(DAT_00100674 + 6);
+        if ((*puVar2 & 0x1ff) == 0xa1) {
+          for (; puVar3 != (ushort *)0x0; puVar3 = (ushort *)resolve_object_link(puVar3 + 2)) {
+            if (((((*puVar2 & 0x8000) != 0) && ((*puVar3 & 0x8000) != 0)) &&
+                ((puVar2[3] & 0x8000) == 0)) &&
+               ((((puVar3[3] & 0x8000) == 0 && (((*puVar3 ^ *puVar2) & 0x1ff) == 0)) &&
+                ((ushort)((puVar3[3] >> 6) + (puVar2[3] >> 6)) < 999)))) {
+              iVar4 = (puVar3[3] & 0xffc0) + (puVar2[3] & 0xffc0);
+              *(byte *)(puVar3 + 3) = (byte)iVar4 ^ (byte)puVar3[3] & 0x3f;
+              *(char *)((char *)puVar3 + 7) = (char)((uint)iVar4 >> 8);
+              free_object_slot(puVar2);
+              puVar2 = (ushort *)0x0;
+              break;
+            }
+          }
+        }
+        if (puVar2 != (ushort *)0x0) {
+          object_list_insert_head(DAT_00100674 + 6,puVar2);
+        }
+        FUN_00076e98((&DAT_000bc028)[local_28]);
+        (&DAT_000bbf98)[local_28] = 0;
+        *psVar5 = 0;
+        draw_hotspot_crosshair_marker(1,(int)local_2c);
+      }
+    }
+    iVar4 = (local_28 + 1) * 0x10000;
+    local_28 = iVar4 >> 0x10;
+    local_2c = (short)((uint)iVar4 >> 0x10);
+    if (3 < local_28) {
+      cursor_show_idle_tick();
+      FUN_0007ec50();
+      return;
+    }
+  } while( true );
 }
 

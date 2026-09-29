@@ -772,6 +772,9 @@ extern undefined2 DAT_000bbfdc;
 extern undefined DAT_001007de_backing[8192];
 #define DAT_001007de DAT_001007de_backing[0]
 extern undefined2 DAT_000bbfe0;
+extern undefined *PTR_DAT_000845c8;
+extern undefined1 DAT_000845e8_backing[65536];
+#define DAT_000845e8 DAT_000845e8_backing[0]
 extern char s_add_to_npc_inv_0008507c[];
 extern char s_babl_ask_000851ec[];
 extern char s_babl_fmenu_00085214[];
@@ -2040,7 +2043,7 @@ void pick_up_barter_slot_item();
 void place_item_in_barter_slot();
 undefined4 merge_or_swap_barter_slot_item();
 void draw_hotspot_crosshair_marker(); // was FUN_0001c420
-undefined4 FUN_0001c538();
+undefined4 barter_offer_is_empty();
 undefined4 babl_builtin_do_offer();
 int babl_builtin_set_attitude_apply();
 undefined2 babl_builtin_length();
@@ -2049,8 +2052,8 @@ void babl_builtin_do_decline();
 undefined4 babl_builtin_take_from_npc();
 undefined4 babl_builtin_take_id_from_npc();
 undefined4 babl_builtin_do_inv_create();
-void FUN_0001c79c();
-void FUN_0001c85c();
+void finalize_npc_barter_items();
+void finalize_player_barter_items();
 undefined4 babl_builtin_do_demand();
 void FUN_0001cd3c();
 int FUN_0001cf20();
