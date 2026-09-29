@@ -926,7 +926,7 @@ int param_3;
       arm_use_item_on_target_prompt(param_2,param_3);
     }
     else if (((uVar1 == 2) && ((uVar7 & 0x1ff) == 0xe7)) && (param_3 != 0)) {
-      prompt_use_item_on_target(param_2,FUN_0007a704);
+      prompt_use_item_on_target(param_2,complete_use_item_on_flagged_tile);
     }
   }
   else {
@@ -936,7 +936,7 @@ int param_3;
         goto LAB_00079cb8;
       }
       if (uVar1 == 1) {
-        FUN_0007a7fc(param_1,param_2,param_3);
+        dispatch_use_held_item_by_type(param_1,param_2,param_3);
         goto LAB_00079cb8;
       }
       puVar6 = param_2;
@@ -1511,6 +1511,105 @@ int param_2;
     FUN_00057cac(3);
     g_selected_object = 0;
     g_cursor_holding_state = 0;
+  }
+  return;
+}
+
+
+
+
+
+// was FUN_0007a704 -- deferred-target-click completion callback:
+// only fires for target type 0x16e whose quality-indexed tile-flag
+// lookup (DAT_0023add0) equals 0xb; on that match, consumes the held
+// item and triggers an effect (FUN_0007c2ec, not yet named) at the
+// player's own tile. Prints a "no effect" message (id 0x84)
+// otherwise. Confirmed real caller: use_object_on_target
+// (src/item_use.c).
+void complete_use_item_on_flagged_tile(param_1,param_2)
+ushort * param_1;
+undefined4 param_2;
+
+{
+  FUN_00057cac(3);
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
+  if (((*param_1 & 0x1ff) == 0x16e) && (((&DAT_0023add0)[(byte)param_1[3] & 0x3f] & 0xff) == 0xb)) {
+    finish_object_use(DAT_00202098,param_2,1);
+    FUN_0007c2ec(g_player_object,param_1,7,(int)DAT_002020a0,DAT_002020a4);
+    return;
+  }
+  print_scroll_message_by_id(0x84);
+  return;
+}
+
+
+
+// was FUN_0007a7fc -- dispatches by the HELD item's own type (not
+// the target's): type 0x112 either directly triggers
+// complete_use_item_special_quest_event (if param_3==0, using
+// param_2 as the item and skipping the target-click prompt) or arms
+// it as a deferred-target-click completion (otherwise); 0x114 calls
+// FUN_0003a398 (not yet named) when param_3!=0; 0x115 advances a
+// 3-state player counter (DAT_00086df8+0x61, wrapping) and triggers
+// an effect via FUN_00037c14 (not yet named), then rewrites the
+// item's own low byte to 0xd5 and clears one bit of its high byte
+// before flushing a redraw (FUN_00049924 or FUN_00048110 depending
+// on param_3); 0x11b uses a food item directly. Confirmed real
+// caller: use_object_on_target's class-1/family-1 branch
+// (src/item_use.c).
+void dispatch_use_held_item_by_type(param_1,param_2,param_3)
+undefined4 param_1;
+ushort * param_2;
+int param_3;
+
+{
+  int uw_ord2005_rem_167 = 0;
+  byte bVar1;
+  undefined4 uVar2;
+  ushort uVar3;
+  short extraout_r1;
+  int iVar4;
+  
+  uVar3 = *param_2 & 0x1ff;
+  if (uVar3 == 0x112) {
+    if (param_3 == 0) {
+      DAT_00202098 = param_2;
+      complete_use_item_special_quest_event(param_1,0,0);
+    }
+    else {
+      prompt_use_item_on_target(param_2,complete_use_item_special_quest_event);
+    }
+  }
+  else if (uVar3 == 0x114) {
+    if (param_3 != 0) {
+      FUN_0003a398();
+    }
+  }
+  else if (uVar3 == 0x115) {
+    uVar2 = Ordinal_1053();
+    uw_ord2005_rem_167 = ((int)(uVar2)) % (3);
+    iVar4 = (int)uw_ord2005_rem_167;
+    uVar3 = *(ushort *)(DAT_00086df8 + 0x61);
+    if ((uVar3 & 3) < 3) {
+      bVar1 = (byte)uVar3;
+      *(byte *)(DAT_00086df8 + 0x61) = (bVar1 + 1 ^ bVar1) & 3 ^ bVar1;
+      *(char *)(DAT_00086df8 + 0x62) = (char)(uVar3 >> 8);
+      iVar4 = 3 - (*(byte *)(DAT_00086df8 + 0x61) & 3);
+    }
+    FUN_00037c14(iVar4 + 0xb);
+    uVar3 = *param_2;
+    *(undefined1 *)param_2 = 0xd5;
+    *(byte *)((char *)param_2 + 1) = (byte)(uVar3 >> 8) & 0xfe;
+    if (param_3 == 0) {
+      FUN_00049924(2);
+    }
+    else {
+      FUN_00048110();
+    }
+  }
+  else if (uVar3 == 0x11b) {
+    use_food_item(param_1,param_2,param_3);
   }
   return;
 }
