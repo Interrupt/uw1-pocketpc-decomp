@@ -36520,37 +36520,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007c4a8(param_1)
-ushort * param_1;
-
-{
-  short sVar1;
-  ushort uVar2;
-  short sVar3;
-  
-  sVar3 = 5;
-  uVar2 = *param_1;
-  if ((((uVar2 & 0x1c0) == 0x140) && ((uVar2 & 7) == 6)) ||
-     (((uVar2 & 0x1c0) == 0x1c0 && ((param_1[3] & 7) == 6)))) {
-    sVar3 = 4;
-  }
-  if ((uVar2 & 0x1000) == 0) {
-    uVar2 = ((uVar2 & 0xe00) - 0xe01 ^ uVar2) & 0x1e00 ^ uVar2;
-  }
-  else {
-    uVar2 = uVar2 & 0xefff;
-  }
-  *(char *)param_1 = (char)uVar2;
-  *(char *)((char *)param_1 + 1) = (char)(uVar2 >> 8);
-  sVar1 = scheduler_get_delay(param_1);
-  if (-1 < sVar1) {
-    scheduler_set_delay(param_1,((int)sVar3 - (int)sVar1) * 0x10000 >> 0x10);
-  }
-  return;
-}
-
-
-
 void FUN_0007ca0c()
 
 {
@@ -38861,7 +38830,7 @@ undefined4 param_1;
         bVar3 = (byte)uVar1;
         *(byte *)(puVar4 + 3) = (bVar3 ^ (byte)uVar5) & 0x3f ^ bVar3;
         *(byte *)((char *)puVar4 + 7) = (byte)(uVar1 >> 8);
-        FUN_0007c4a8(puVar4);
+        adjust_door_close_animation_delay(puVar4);
         return;
       }
       play_positional_sound_effect(0xc,(uint)(*(byte *)((char *)puVar4 + 3) >> 5) + (short)DAT_0010144c * 8,

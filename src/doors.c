@@ -52,7 +52,7 @@ ushort * param_2;
     }
     *(byte *)(param_2 + 3) = ((char)(uVar4 & 0xf) - 8U ^ (byte)uVar4) & 0x3f ^ (byte)uVar4;
     *(byte *)((char *)param_2 + 7) = (byte)(uVar4 >> 8);
-    FUN_0007c4a8(param_2);
+    adjust_door_close_animation_delay(param_2);
   }
   else {
     uVar4 = *param_2 & 0xf;
@@ -102,7 +102,7 @@ ushort * param_1;
     }
     *(byte *)(param_1 + 3) = ((char)(uVar1 & 0xf) + 8U ^ (byte)uVar1) & 0x3f ^ (byte)uVar1;
     *(byte *)((char *)param_1 + 7) = (byte)(uVar1 >> 8);
-    FUN_0007c4a8(param_1);
+    adjust_door_close_animation_delay(param_1);
   }
   else {
     if ((*param_1 & 0xf) < 8) {
@@ -366,5 +366,44 @@ ushort * param_1;
             (int)(*(ushort *)((char *)g_player_object + 0x16) >> 10),
             (int)((*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4));
   scheduler_add_entry(uVar4,uVar6,0,(undefined1)DAT_002020a0,(char)DAT_002020a4);
+  return;
+}
+
+
+
+
+
+// was FUN_0007c4a8 -- companion to schedule_door_open_animation for
+// closing a door: derives the same portcullis-aware animation type
+// (4 vs 5), decrements the door's state field, and, if it already
+// has a live scheduler entry, adjusts that entry's remaining delay
+// to match the new animation type's timing. Confirmed real caller in
+// src/doors.c.
+void adjust_door_close_animation_delay(param_1)
+ushort * param_1;
+
+{
+  short sVar1;
+  ushort uVar2;
+  short sVar3;
+  
+  sVar3 = 5;
+  uVar2 = *param_1;
+  if ((((uVar2 & 0x1c0) == 0x140) && ((uVar2 & 7) == 6)) ||
+     (((uVar2 & 0x1c0) == 0x1c0 && ((param_1[3] & 7) == 6)))) {
+    sVar3 = 4;
+  }
+  if ((uVar2 & 0x1000) == 0) {
+    uVar2 = ((uVar2 & 0xe00) - 0xe01 ^ uVar2) & 0x1e00 ^ uVar2;
+  }
+  else {
+    uVar2 = uVar2 & 0xefff;
+  }
+  *(char *)param_1 = (char)uVar2;
+  *(char *)((char *)param_1 + 1) = (char)(uVar2 >> 8);
+  sVar1 = scheduler_get_delay(param_1);
+  if (-1 < sVar1) {
+    scheduler_set_delay(param_1,((int)sVar3 - (int)sVar1) * 0x10000 >> 0x10);
+  }
   return;
 }

@@ -3467,7 +3467,7 @@ undefined4 check_object_combination();
 undefined4 trigger_object_use_babl_script();
 void trigger_object_trap_or_use_action();
 void schedule_door_open_animation();
-void FUN_0007c4a8();
+void adjust_door_close_animation_delay();
 void FUN_0007c580();
 void FUN_0007c708();
 void FUN_0007c814();
