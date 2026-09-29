@@ -3070,3 +3070,76 @@ char param_2;
   }
   return;
 }
+
+
+
+
+
+
+// was FUN_00073f60
+void restore_stat_capped(param_1,param_2)
+byte * param_1;
+uint param_2;
+
+{
+  uint uVar1;
+  byte bVar2;
+
+  uVar1 = (param_2 & 0xff) + (uint)param_1[8];
+  /* Was an unconditional `(&g_monster_max_stats_table)[(*param_1 & 0x3f) * 0x30]` cap
+     -- that table is the per-monster-class max-stat table, indexed by
+     the low 6 bits of a monster object's own type id (a valid index
+     for any real monster, 0x40-0x7f). But this function is also called
+     with param_1 == g_player_object (see adjust_player_hunger's food-digestion
+     "restore a resting bonus" call, and this function's own existing
+     `if (param_1 == g_player_object)` special case just below), and the
+     player's object type happens to be 0x7f, whose low 6 bits (0x3f)
+     index the table's last, unused/zeroed entry. That zero cap then
+     clamped the player's HP down to 0 every time -- confirmed live via
+     UW_DEBUG_INV: "restore_stat_capped *param_1=0x7f class=0x3f cap=0
+     uVar1=42 hp_before=34" immediately followed by the player's death
+     sequence after simply eating a loaf of bread. Use the real player
+     max-HP stat (DAT_0023be74+4, the same source adjust_player_hp already
+     uses for player HP capping) instead of the monster table when the
+     target is the player. */
+  bVar2 = (param_1 == g_player_object) ? *(byte *)(DAT_0023be74 + 4) :
+          (&g_monster_max_stats_table)[(*param_1 & 0x3f) * 0x30];
+  if (bVar2 < uVar1) {
+    param_1[8] = bVar2;
+  }
+  else {
+    param_1[8] = (byte)uVar1;
+  }
+  if (param_1 == g_player_object) {
+    refresh_experience_display();
+  }
+  return;
+}
+
+
+
+// was FUN_00073fc4 -- dispatch_special_action's "healing item" handler
+// (its own case 4): only applies if the target object's quality bits
+// match 0x40 (a food/potion-shaped flag), then restores HP via
+// restore_stat_capped -- param_2==0xf is a full-heal sentinel (-1),
+// otherwise param_2 is a dice count rolled via roll_dice_sum (d8s).
+void apply_healing_item_effect(param_1,param_2)
+ushort * param_1;
+char param_2;
+
+{
+  char cVar1;
+  int iVar2;
+  
+  if ((*param_1 & 0x1c0) == 0x40) {
+    if (param_2 == '\x0f') {
+      iVar2 = -1;
+    }
+    else {
+      cVar1 = roll_dice_sum((int)param_2,8);
+      iVar2 = (int)cVar1;
+    }
+    restore_stat_capped(param_1,iVar2);
+  }
+  return;
+}

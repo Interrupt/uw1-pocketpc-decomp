@@ -909,7 +909,7 @@ LAB_00073c90:
     if (param_4 == 0) {
       return 0;
     }
-    FUN_00073fc4(param_4,param_2);
+    apply_healing_item_effect(param_4,param_2);
     return 1;
   case 5:
     if (param_3 == g_player_object) {

@@ -3226,7 +3226,7 @@ undefined4 dispatch_special_action();
 void adjust_level7_hazard_value();
 void adjust_player_hp();
 void restore_stat_capped();
-void FUN_00073fc4();
+void apply_healing_item_effect();
 void FUN_00074028();
 void FUN_000740b0();
 void *FUN_00074150();
