@@ -924,6 +924,10 @@ extern char DAT_0023bf60;
 extern int DAT_0023bf64;
 #define DAT_002048a5 DAT_00204880_backing[0x25]
 #define DAT_002048a6 DAT_00204880_backing[0x26]
+extern undefined DAT_00086e87_backing[64];
+#define DAT_00086e87 DAT_00086e87_backing[0]
+extern char s_font5x6i_sys_00086e98[];
+extern int DAT_0024af8c;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -2982,7 +2986,7 @@ void update_current_view_from_subject();
 void sync_camera_from_player();
 undefined4 roll_skill_check();
 void grant_experience_points();
-void FUN_00069e30();
+void refresh_experience_display();
 bool FUN_00069eb0();
 void project_position_by_heading();
 void FUN_0006a034();

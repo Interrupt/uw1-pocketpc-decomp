@@ -5332,7 +5332,15 @@ short DAT_0023bf34;
 short DAT_0023bf38;
 short DAT_0023bf3c;
 short DAT_0023bf40;
-undefined DAT_00086e87;
+/* Was a lone `undefined` scalar, but grant_experience_points indexes
+   it as a per-character-level XP-threshold table
+   (`(&DAT_00086e87)[level]`), with the loop's own upper bound (0x10 =
+   16) confirming at least 17 entries (0-16) are live; the very first
+   access (by the raw current-level byte, before any bounds check) has
+   no visible cap of its own, so widened with a safety margin rather
+   than the bare minimum. */
+undefined DAT_00086e87_backing[64];
+#define DAT_00086e87 DAT_00086e87_backing[0]
 int DAT_0024af8c;
 char s_font5x6i_sys_00086e98[] = "font5x6i.sys";
 /* Was `int` despite holding a real stack address (main_menu_loop:
@@ -16252,7 +16260,7 @@ ushort * param_3;
   if (param_2 < (byte)param_1[4]) {
     *(byte *)(param_1 + 4) = (byte)param_1[4] - param_2;
     if (param_1 == g_player_object) {
-      FUN_00069e30();
+      refresh_experience_display();
     }
   }
   else {
@@ -36401,102 +36409,6 @@ LAB_00060f54:
 
 
 
-// was FUN_00069bd0 -- add param_1 experience points to the character
-// (DAT_00086df8 + 0x4e), capped per call, and run advance_character_level
-// when the Ordinal_2008(500) threshold is crossed.
-void grant_experience_points(param_1)
-short param_1;
-
-{
-  byte bVar1;
-  uint uVar2;
-  uint uVar3;
-  short sVar4;
-  uint uVar5;
-  uint uVar6;
-  int iVar7;
-  char *iVar8;
-  
-  iVar8 = DAT_00086df8;
-  iVar7 = (int)param_1;
-  if (iVar7 < 0) {
-    uVar2 = *(uint *)(DAT_00086df8 + 0x4e);
-    if ((uint)-iVar7 < uVar2 || -uVar2 == iVar7) {
-      iVar7 = uVar2 + iVar7;
-    }
-    else {
-      iVar7 = 0;
-    }
-    *(char *)(DAT_00086df8 + 0x4e) = (char)iVar7;
-    *(char *)(DAT_00086df8 + 0x4f) = (char)((uint)iVar7 >> 8);
-    *(char *)(DAT_00086df8 + 0x50) = (char)((uint)iVar7 >> 0x10);
-    *(char *)(DAT_00086df8 + 0x51) = (char)((uint)iVar7 >> 0x18);
-  }
-  else if (*(uint *)(DAT_00086df8 + 0x4e) < 0x17701) {
-    if ((DAT_00201b68 + 1) * 2 < (int)(uint)*(byte *)(DAT_00086df8 + 0x3d)) {
-      if (iVar7 < 0) {
-        iVar7 = iVar7 + 1;
-      }
-      param_1 = (short)(iVar7 >> 1) + 1;
-    }
-    sVar4 = Ordinal_2008(3000,*(uint *)(DAT_00086df8 + 0x4e) + (int)param_1);
-    if ((short)(ushort)*(byte *)(iVar8 + 0x53) < sVar4) {
-      *(byte *)(iVar8 + 0x52) = ((char)sVar4 - *(byte *)(iVar8 + 0x53)) + *(char *)(iVar8 + 0x52);
-      *(char *)(DAT_00086df8 + 0x53) = (char)sVar4;
-      iVar8 = DAT_00086df8;
-    }
-    uVar2 = *(uint *)(iVar8 + 0x4e);
-    iVar7 = uVar2 + (int)param_1;
-    *(char *)(iVar8 + 0x4e) = (char)iVar7;
-    *(char *)(DAT_00086df8 + 0x4f) = (char)((uint)iVar7 >> 8);
-    *(char *)(DAT_00086df8 + 0x50) = (char)((uint)iVar7 >> 0x10);
-    *(char *)(DAT_00086df8 + 0x51) = (char)((uint)iVar7 >> 0x18);
-    iVar8 = DAT_00086df8;
-    iVar7 = 0;
-    uVar3 = *(uint *)(DAT_00086df8 + 0x4e);
-    sVar4 = Ordinal_2008(500);
-    uVar5 = (uint)*(byte *)(iVar8 + 0x3d);
-    bVar1 = (&DAT_00086e87)[uVar5];
-    uVar6 = uVar5;
-    while (((short)(ushort)bVar1 <= sVar4 && ((int)uVar6 < 0x10))) {
-      iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
-      uVar6 = iVar7 + uVar5;
-      bVar1 = (&DAT_00086e87)[uVar6];
-    }
-    if ((short)iVar7 != 0) {
-      advance_character_level(iVar7);
-    }
-    if ((uint)(int)(short)(uVar2 >> 4) < uVar3 >> 4) {
-      FUN_00069e30();
-    }
-  }
-  return;
-}
-
-
-
-void FUN_00069e30()
-
-{
-  if (g_active_hud_panel == '\x02') {
-    *g_draw_color_index = 0xf1;
-    *DAT_00084298 = 0xf1;
-    FUN_00057118();
-    select_active_font(s_font5x6i_sys_00086e98);
-    if (DAT_0024af8c != 0) {
-      FUN_00076e98();
-    }
-    FUN_00078088();
-    FUN_00078118();
-    FUN_000781a0();
-    select_active_font(s_font5x6p_sys_0008430c);
-    cursor_show_idle_tick();
-  }
-  return;
-}
-
-
-
 bool FUN_00069eb0(param_1,param_2,param_3,param_4)
 short * param_1;
 short param_2;
@@ -41513,7 +41425,7 @@ char param_2;
     if (*(byte *)(DAT_00086df8 + 0x38) < *(byte *)(DAT_00086df8 + 0x37)) {
       *(byte *)(DAT_00086df8 + 0x37) = *(byte *)(DAT_00086df8 + 0x38);
     }
-    FUN_00069e30();
+    refresh_experience_display();
   }
   return;
 }
@@ -41555,7 +41467,7 @@ uint param_2;
     param_1[8] = (byte)uVar1;
   }
   if (param_1 == g_player_object) {
-    FUN_00069e30();
+    refresh_experience_display();
   }
   return;
 }
