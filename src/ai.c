@@ -753,7 +753,7 @@ LAB_000337fc:
     if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
     cVar4 = FUN_0003298c(0x1e,0);
     DAT_00202a3c = (short)cVar4;
-    FUN_00073b40(DAT_00101404[(*(byte *)((char *)DAT_0010190c + 0x19) >> 2 & 3) + 0x29],DAT_0010190c,0)
+    dispatch_tile_special_action(DAT_00101404[(*(byte *)((char *)DAT_0010190c + 0x19) >> 2 & 3) + 0x29],DAT_0010190c,0)
     ;
     *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
     uVar9 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;

@@ -821,3 +821,142 @@ LAB_0007c130:
   return 0;
 }
 
+
+
+
+
+
+
+// was FUN_00073b40 -- looks up tile-type id param_1 (0..0x34) in a
+// per-type 4-byte-stride table (DAT_00087530/DAT_00087533) to get a
+// "special action" type/id pair, then forwards to dispatch_special_action
+// with param_2/param_3 as the actor object and an extra parameter.
+void dispatch_tile_special_action(param_1,param_2,param_3)
+uint param_1;
+undefined4 param_2;
+undefined4 param_3;
+
+{
+  param_1 = param_1 & 0xff;
+  if (param_1 < 0x35) {
+    dispatch_special_action((byte)(&DAT_00087530)[param_1 * 4] >> 3,(&DAT_00087533)[param_1 * 4],param_2,
+                 param_3);
+  }
+  return;
+}
+
+
+
+// was FUN_00073b74 -- the general "SPECIAL" action dispatcher (see
+// the SPECIAL ILLUSTRATED BOOK/SCROLL comment elsewhere in this file
+// for one example caller shape). param_1&0xff selects the action type
+// (0-0xe, a case switch); param_3 is the acting object (an object
+// pointer when >= DAT_002046c4/uw_object_hdr_t's own table base and
+// param_1<=0xb, else treated as something else and the no-magic tile
+// check uses fixed coordinates DAT_0023c3dc/DAT_0023c3d8 instead of
+// the object's own position). Gates on tile_is_no_magic for most
+// action types (magic-disallowed tiles suppress the action), then
+// dispatches per type: teleport/message/sign display (0-3, via
+// FUN_000542f8), a "hold param_4 as cursor item" variant (4), pick-up
+// (5), several object-modifying handlers (6-10), a scheduled-drop
+// variant (0xb), a no-op (0xc), player status-effect toggles (0xd),
+// and a generic dialog-box trigger plus scheduler tick (0xe). Full
+// semantics of each numbered handler not traced individually.
+undefined4 dispatch_special_action(param_1,param_2,param_3,param_4)
+uint param_1;
+uint param_2;
+uint param_3;
+int param_4;
+
+{
+  undefined2 uVar1;
+  int iVar2;
+
+  if ((param_3 < DAT_002046c4) || (0xb < (param_1 & 0xff))) {
+    iVar2 = tile_is_no_magic(*(ushort *)(param_3 + 0x16) >> 10,
+                         (*(ushort *)(param_3 + 0x16) & 0x3f0) >> 4);
+    if (iVar2 != 0) {
+      return 0;
+    }
+    if (DAT_00201b68 == 9) {
+      return 0;
+    }
+  }
+  else {
+    iVar2 = tile_is_no_magic(DAT_0023c3dc,DAT_0023c3d8);
+    if (iVar2 != 0) {
+      return 0;
+    }
+  }
+  switch(param_1 & 0xff) {
+  case 0:
+    goto LAB_00073c90;
+  case 1:
+    if (((param_2 & 0x3f) == 3) || ((param_2 & 0x3f) == 5)) {
+      FUN_0003dba0(param_3);
+    }
+    goto LAB_00073c90;
+  case 2:
+    goto LAB_00073c90;
+  case 3:
+LAB_00073c90:
+    if ((param_3 != g_player_object) ||
+       (iVar2 = FUN_000542f8(param_1,param_2 & 0x3f,param_2 & 0xc0), iVar2 == 0)) {
+      return 0;
+    }
+    break;
+  case 4:
+    if (param_4 == 0) {
+      return 0;
+    }
+    FUN_00073fc4(param_4,param_2);
+    return 1;
+  case 5:
+    if (param_3 == g_player_object) {
+      g_cursor_holding_state = 3;
+      DAT_00202094 = param_2 & 0xff;
+      DAT_00202098 = g_player_object;
+      FUN_00057c5c(0x1075);
+    }
+    else {
+      FUN_000740b0(param_3,param_2);
+    }
+    break;
+  case 6:
+    FUN_00074c64(param_3,param_2);
+    break;
+  case 7:
+    FUN_00074cc8(param_3,param_2);
+    break;
+  case 8:
+    FUN_00074d20(param_3,param_2);
+    break;
+  case 9:
+    FUN_00074028(param_3,param_2);
+    break;
+  case 10:
+    FUN_00073e14(param_3,param_2);
+    break;
+  case 0xb:
+    FUN_00075808(param_3,param_2 & 0xffffffc0,param_2 & 0x3f);
+    break;
+  case 0xc:
+    break;
+  case 0xd:
+    if ((param_2 & 0xff) == 3) {
+      FUN_00039f04(4,0,0);
+    }
+    else if ((param_2 & 0xff) == 5) {
+      FUN_00078c80(0xe4);
+      uVar1 = *(undefined2 *)(DAT_00086df8 + 0x61);
+      *(byte *)(DAT_00086df8 + 0x61) = (byte)uVar1 | 0xc;
+      *(char *)(DAT_00086df8 + 0x62) = (char)((ushort)uVar1 >> 8);
+      refresh_player_equipment_effects();
+    }
+    break;
+  case 0xe:
+    FUN_00037c14(param_2 & 0xff);
+    scheduler_tick(4);
+  }
+  return 1;
+}

@@ -1982,6 +1982,10 @@ extern undefined1 DAT_0023c384;
 extern undefined4 DAT_0023c280;
 extern undefined4 DAT_0023c330;
 extern short DAT_0023c32c;
+extern undefined1 DAT_0023c3dc;
+extern undefined1 DAT_0023c3d8;
+extern uint DAT_00202094;
+extern char *DAT_00202098;
 extern int DAT_00087450;
 extern undefined4 DAT_0008744c;
 extern undefined DAT_0023c2b0_backing[8192];
@@ -2004,6 +2008,12 @@ extern undefined1 DAT_000873e0_backing[65536];
 extern undefined4 DAT_00087458;
 extern undefined1 DAT_00087520_backing[32768];
 #define DAT_00087520 DAT_00087520_backing[0]
+extern undefined1 DAT_00087531_backing[210];
+#define DAT_00087531 DAT_00087531_backing[0]
+extern undefined DAT_00087530_backing[210];
+#define DAT_00087530 DAT_00087530_backing[0]
+extern undefined DAT_00087533_backing[210];
+#define DAT_00087533 DAT_00087533_backing[0]
 extern undefined1 DAT_00241f08_backing[32768];
 #define DAT_00241f08 DAT_00241f08_backing[0]
 extern undefined DAT_0023b4dc;
@@ -3210,9 +3220,9 @@ void voice_sample_cluster_stub_1();
 bool is_voice_sample_finished();
 void stop_voice_sample();
 void voice_sample_cluster_stub_2();
-byte FUN_00073b18();
-void FUN_00073b40();
-undefined4 FUN_00073b74();
+byte tile_is_no_magic();
+void dispatch_tile_special_action();
+undefined4 dispatch_special_action();
 void FUN_00073e14();
 void adjust_player_hp();
 void restore_stat_capped();

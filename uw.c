@@ -3670,10 +3670,23 @@ char s_player_dat_00085a74[] = "\\player.dat";
 int DAT_002028d0;
 char s_Not_a_spell_00085a80[] = "Not_a_spell";
 byte DAT_002028d4;
-undefined1 DAT_00087531;
+/* dispatch_tile_special_action/dispatch_special_action's own comment
+   confirms this is really a 4-byte-stride per-tile-type table (up to
+   0x35/53 entries): DAT_00087530 (byte 0, >>3 = action type),
+   DAT_00087531 (bytes 1-2, a short field read elsewhere in this file),
+   DAT_00087533 (byte 3, action sub-parameter). All three were lone
+   scalars despite being indexed `(&DAT_X)[i*4]`/`*(short*)(&DAT_X+i*4)`
+   for i up to 0x33/0x2f -- widened each to its own real backing array
+   (struct-recovery-plan.md candidate: not merged into one named struct
+   here, just correctly sized, since only 3 of the 4 bytes per record
+   have a confirmed reader). */
+undefined1 DAT_00087531_backing[210];
+#define DAT_00087531 DAT_00087531_backing[0]
 char DAT_0023c3e0;
-undefined DAT_00087530;
-undefined DAT_00087533;
+undefined DAT_00087530_backing[210];
+#define DAT_00087530 DAT_00087530_backing[0]
+undefined DAT_00087533_backing[210];
+#define DAT_00087533 DAT_00087533_backing[0]
 undefined4 DAT_002046b4;
 undefined DAT_00085a90;
 char s_were_00085a98[] = "were";
@@ -6120,7 +6133,18 @@ undefined1 DAT_00087520_backing[32768];
 undefined1 DAT_00241f08_backing[32768];
 #define DAT_00241f08 DAT_00241f08_backing[0]
 uint DAT_00202094;
-uint DAT_00202098;
+/* Was `uint` (4 bytes), truncating the real object pointer stored here
+   (confirmed by its own assignments -- `DAT_00202098 = g_player_object;`/
+   `= param_1;` where param_1 is a real `ushort *` object pointer right
+   next to a parallel `g_selected_object = param_1;` -- and its readers,
+   e.g. `finish_object_use(DAT_00202098,...)`/`*(ushort*)(DAT_00202098+6)`,
+   all treating it as a pointer). Same truncated-pointer-global bug class
+   as everywhere else in this project (g_player_object itself, etc.) --
+   on this 64-bit host the upper 32 bits of any stored pointer were
+   silently dropped, corrupting DAT_00202098 for every later reader.
+   The "held item currently being used" global driving the item-use
+   dispatch chain (finish_object_use and friends). */
+char *DAT_00202098;
 static undefined1 DAT_00087604_backing[65536];
 #define DAT_00087604 DAT_00087604_backing[0]
 undefined *PTR_FUN_00087614;
@@ -15160,7 +15184,7 @@ undefined4 FUN_00030aac()
     bVar1 = *(byte *)(DAT_00101404 + 0x2d);
     uw_ord2005_rem_59 = ((int)(uVar2)) % (0x100);
     if (((uw_ord2005_rem_59 < (int)(uint)(bVar1 >> 1)) &&
-        (iVar3 = FUN_00073b18(DAT_00101918,DAT_001013f8), iVar3 == 0)) &&
+        (iVar3 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar3 == 0)) &&
        ((DAT_00201b68 != 7 ||
         (((*(byte *)(DAT_00086df8 + 0x60) & 0x20) != 0 || (*(char *)(DAT_00101404 + 9) != '\x13'))))
        )) {
@@ -15190,11 +15214,11 @@ undefined4 FUN_00030be0()
   int extraout_r1_00;
   uint uVar5;
   
-  iVar3 = FUN_00073b18(DAT_00101918,DAT_001013f8);
+  iVar3 = tile_is_no_magic(DAT_00101918,DAT_001013f8);
   if ((((iVar3 == 0) &&
        (((DAT_00201b68 != 7 || ((*(byte *)(DAT_00086df8 + 0x60) & 0x20) != 0)) ||
         (*(char *)(DAT_00101404 + 9) != '\x13')))) &&
-      (((DAT_00101900 < 0x40 && (iVar3 = FUN_00073b18(DAT_00101918,DAT_001013f8), iVar3 == 0)) &&
+      (((DAT_00101900 < 0x40 && (iVar3 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar3 == 0)) &&
        (iVar3 = FUN_0002d4e8(DAT_00101910,DAT_0010141c,
                              (uint)(byte)(&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd] +
                              ((byte)DAT_0010190c[1] & 0x7f),DAT_00101908,DAT_00101418,
@@ -15840,7 +15864,7 @@ LAB_000339fc:
           }
           if ((DAT_00101900 < 3) ||
              (((*(byte *)(DAT_00101404 + 0x2d) & 1) != 0 &&
-              (iVar7 = FUN_00073b18(DAT_00101918,DAT_001013f8), iVar7 == 0)))) {
+              (iVar7 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar7 == 0)))) {
             if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x20) != 0) goto LAB_00033d18;
             if (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x10) == 0) &&
                (iVar7 = FUN_00034270(*(undefined1 *)(DAT_00101404 + 4),
@@ -19133,10 +19157,10 @@ undefined1 param_6;
   DAT_0023c3d8 = param_2;
   DAT_0023c3dc = param_1;
   if ((short)param_5 < 0) {
-    FUN_00073b40(param_6,param_3,param_4);
+    dispatch_tile_special_action(param_6,param_3,param_4);
   }
   else {
-    FUN_00073b74(param_5 & 0xff,param_6,param_3);
+    dispatch_special_action(param_5 & 0xff,param_6,param_3);
   }
   return 2;
 }
@@ -24040,7 +24064,7 @@ uint param_1;
         *(byte *)(DAT_00086df8 + 0x37) = *(char *)(DAT_00086df8 + 0x37) + bVar6 * -3;
         DAT_0023c3e0 = '\0';
       }
-      iVar5 = FUN_00073b74(bVar7,bVar1,g_player_object,g_player_object);
+      iVar5 = dispatch_special_action(bVar7,bVar1,g_player_object,g_player_object);
       if (iVar5 != 0) {
         play_sound_effect_with_pan(0x10,0x40,0);
         return 1;
@@ -36450,147 +36474,6 @@ LAB_00060f54:
 
 
 
-byte FUN_00073b18(param_1,param_2)
-/* was declared with empty parens and called tilemap_lookup() with no
-   explicit args, relying on its 2 real args still sitting in the same
-   ABI registers/stack slots at the nested call (a K&R "dropped-arg"
-   register-forwarding idiom used elsewhere in this file, e.g. the
-   DAT_0023aecc fix). Every one of this function's 6 call sites passes
-   exactly 2 args -- fragile on this host's calling convention:
-   intermittently (~1/18 runs) an intervening op clobbered the forwarded
-   registers before reaching tilemap_lookup, corrupting its args and
-   crashing FUN_00073b18 + 16 (demo_critter_orbit_cardinal.txt). Given
-   real declared parameters and forwarded explicitly instead. */
-int param_1;
-int param_2;
-
-{
-  char *iVar1;  /* was `int` -- same tilemap_lookup pointer-truncation
-                   bug as FUN_0002b258/FUN_00079350 etc this session */
-
-  iVar1 = (char *)tilemap_lookup(param_1,param_2);
-  return *(byte *)(iVar1 + 1) >> 6 & 1;
-}
-
-
-
-void FUN_00073b40(param_1,param_2,param_3)
-uint param_1;
-undefined4 param_2;
-undefined4 param_3;
-
-{
-  param_1 = param_1 & 0xff;
-  if (param_1 < 0x35) {
-    FUN_00073b74((byte)(&DAT_00087530)[param_1 * 4] >> 3,(&DAT_00087533)[param_1 * 4],param_2,
-                 param_3);
-  }
-  return;
-}
-
-
-
-undefined4 FUN_00073b74(param_1,param_2,param_3,param_4)
-uint param_1;
-uint param_2;
-uint param_3;
-int param_4;
-
-{
-  undefined2 uVar1;
-  int iVar2;
-  
-  if ((param_3 < DAT_002046c4) || (0xb < (param_1 & 0xff))) {
-    iVar2 = FUN_00073b18(*(ushort *)(param_3 + 0x16) >> 10,
-                         (*(ushort *)(param_3 + 0x16) & 0x3f0) >> 4);
-    if (iVar2 != 0) {
-      return 0;
-    }
-    if (DAT_00201b68 == 9) {
-      return 0;
-    }
-  }
-  else {
-    iVar2 = FUN_00073b18(DAT_0023c3dc,DAT_0023c3d8);
-    if (iVar2 != 0) {
-      return 0;
-    }
-  }
-  switch(param_1 & 0xff) {
-  case 0:
-    goto LAB_00073c90;
-  case 1:
-    if (((param_2 & 0x3f) == 3) || ((param_2 & 0x3f) == 5)) {
-      FUN_0003dba0(param_3);
-    }
-    goto LAB_00073c90;
-  case 2:
-    goto LAB_00073c90;
-  case 3:
-LAB_00073c90:
-    if ((param_3 != g_player_object) ||
-       (iVar2 = FUN_000542f8(param_1,param_2 & 0x3f,param_2 & 0xc0), iVar2 == 0)) {
-      return 0;
-    }
-    break;
-  case 4:
-    if (param_4 == 0) {
-      return 0;
-    }
-    FUN_00073fc4(param_4,param_2);
-    return 1;
-  case 5:
-    if (param_3 == g_player_object) {
-      g_cursor_holding_state = 3;
-      DAT_00202094 = param_2 & 0xff;
-      DAT_00202098 = g_player_object;
-      FUN_00057c5c(0x1075);
-    }
-    else {
-      FUN_000740b0(param_3,param_2);
-    }
-    break;
-  case 6:
-    FUN_00074c64(param_3,param_2);
-    break;
-  case 7:
-    FUN_00074cc8(param_3,param_2);
-    break;
-  case 8:
-    FUN_00074d20(param_3,param_2);
-    break;
-  case 9:
-    FUN_00074028(param_3,param_2);
-    break;
-  case 10:
-    FUN_00073e14(param_3,param_2);
-    break;
-  case 0xb:
-    FUN_00075808(param_3,param_2 & 0xffffffc0,param_2 & 0x3f);
-    break;
-  case 0xc:
-    break;
-  case 0xd:
-    if ((param_2 & 0xff) == 3) {
-      FUN_00039f04(4,0,0);
-    }
-    else if ((param_2 & 0xff) == 5) {
-      FUN_00078c80(0xe4);
-      uVar1 = *(undefined2 *)(DAT_00086df8 + 0x61);
-      *(byte *)(DAT_00086df8 + 0x61) = (byte)uVar1 | 0xc;
-      *(char *)(DAT_00086df8 + 0x62) = (char)((ushort)uVar1 >> 8);
-      refresh_player_equipment_effects();
-    }
-    break;
-  case 0xe:
-    FUN_00037c14(param_2 & 0xff);
-    scheduler_tick(4);
-  }
-  return 1;
-}
-
-
-
 void FUN_00073e14(param_1,param_2)
 char *param_1;
 char param_2;
@@ -37335,7 +37218,7 @@ char param_2;
          (wrong) candidate ever fails either loop's retry condition,
          nothing about the computation can ever change to let it pass,
          and the loop spins at 100% CPU forever. This is reached from
-         FUN_00073b74's spell-effect dispatch (case 8, "summon
+         dispatch_special_action's spell-effect dispatch (case 8, "summon
          monster"), for BOTH player- and NPC-cast spells (see the
          sibling `param_1 == g_player_object` check just above) --
          likely the real cause of the reported "game hangs in a 100%

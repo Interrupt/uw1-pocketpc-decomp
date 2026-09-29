@@ -54,7 +54,7 @@ ushort * param_1;
 /* Second argument was previously left undeclared, relying on it still
    sitting in the same ABI register (r1) at the tail call to
    movement_collision_sweep() -- a K&R "dropped-argument" idiom already
-   seen (and fixed) elsewhere this session (FUN_00073b18). It reliably
+   seen (and fixed) elsewhere this session (tile_is_no_magic). It reliably
    works in the REAL ARM binary only because that compiler's generated
    code for this function body happens to never touch r1 between entry
    and the call; nothing about C guarantees that on a different compiler/

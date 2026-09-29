@@ -1919,3 +1919,31 @@ LAB_000657f4:
   } while( true );
 }
 
+
+
+
+
+
+
+// was FUN_00073b18 -- struct-recovery-plan.md: converts a
+// uw_tile_t.no_magic read (was `*(byte*)(tile+1) >> 6 & 1`, bit 6 of
+// byte 1 = overall bit 14 = no_magic per uw_tile_t's own field-
+// confirmed layout) to the real struct field.
+/* was declared with empty parens and called tilemap_lookup() with no
+   explicit args, relying on its 2 real args still sitting in the same
+   ABI registers/stack slots at the nested call (a K&R "dropped-arg"
+   register-forwarding idiom used elsewhere in this file, e.g. the
+   DAT_0023aecc fix). Every one of this function's 6 call sites passes
+   exactly 2 args -- fragile on this host's calling convention:
+   intermittently (~1/18 runs) an intervening op clobbered the forwarded
+   registers before reaching tilemap_lookup, corrupting its args and
+   crashing tile_is_no_magic + 16 (demo_critter_orbit_cardinal.txt). Given
+   real declared parameters and forwarded explicitly instead. */
+byte tile_is_no_magic(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  uw_tile_t *tile = (uw_tile_t *)tilemap_lookup(param_1,param_2);
+  return tile->no_magic;
+}
