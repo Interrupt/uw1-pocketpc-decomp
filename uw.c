@@ -5160,59 +5160,6 @@ undefined2 DAT_0023be8c;
 undefined DAT_00028bfc_backing[8192];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
 undefined4 DAT_0023be64;
-/* was FUN_0007036c. Bound to key 0x88 in mode 0x1b, arg 2 (uw.c
-   ~59574, register_key_binding). DAT_00070398 and DAT_00070354 were two
-   separate literal-pool constants that Ghidra headless confirms BOTH
-   resolve to the exact same address (DAT_0023be64) -- so this guard is
-   unconditionally true; kept as an explicit always-true branch (rather
-   than silently deleting the check or writing a self-comparison that
-   would trip -Wtautological-compare) since why the original had two
-   loads of the same global here isn't recovered. `*DAT_0007039c` was
-   another literal-pool constant (address of DAT_00086df8, the already-
-   named player-stats struct pointer) -- resolved directly to that named
-   global rather than left as a fresh DAT_. Prints a resolved string
-   (the same "dropped register-forwarding arg" idiom already fixed ~30
-   other places in this file: the bare message_scroll_print_wrapped()
-   call forwards get_message_string's just-returned r0) plus a newline, except
-   uVar2==0xc which instead prints a numeric stat byte from the player
-   struct via cast_detect_life_spell. */
-undefined4 FUN_0007036c(param_1)
-short param_1;
-{
-  undefined4 uVar1;
-  uint uVar2;
-
-  if (1) {
-    uVar2 = ((uint)param_1 + 10) & 0xff;
-    if ((uVar2 != 10) && (uVar2 != 0xb)) {
-      if (uVar2 == 0xc) {
-        cast_detect_life_spell(8,*(undefined1 *)(DAT_00086df8 + (int)param_1 + 0x2b));
-      }
-      else {
-        message_scroll_print_wrapped(get_message_string((((int)(short)uVar2 + 0x1f) | 0x400)));
-        message_scroll_print_wrapped(&s_scroll_newline_0008522c);
-      }
-    }
-    uVar1 = 1;
-  }
-  else {
-    uVar1 = 0;
-  }
-  return uVar1;
-}
-/* was FUN_00071ac4. Bound to key 0x89 in mode 0x1b (uw.c ~59573).
-   FUN_000452dc returns `ushort *`; its return was captured into a plain
-   `int` in the original decompile, the same pointer-truncation bug
-   class fixed ~30 other places in this file. */
-void FUN_00071ac4()
-{
-  ushort *puVar1;
-  undefined1 auStack_10 [4];
-
-  puVar1 = FUN_000452dc(4,2,1,4,(undefined2 *)auStack_10);
-  handle_rest_action(puVar1 != (ushort *)0x0);
-  return;
-}
 /* Base of a large fixed-offset record (reset_player_object_record: `DAT_00086df8 =
    &DAT_0023bca8;`, then FUN_000232ec and others write through
    DAT_00086df8 at offsets up to at least 0xd1/209 -- a device/config-ish
@@ -5243,47 +5190,6 @@ short DAT_0023be92;
 short DAT_0023be94;
 short DAT_0023bf00;
 undefined2 DAT_0023bf02;
-/* was FUN_000680d0. Bound to keys '1'/'2'/'3' (0x31/0x32/0x33) in mode
-   0x11 with args -1/0/1 respectively (uw.c ~59567-59569,
-   register_key_binding). Nudges a heading field by a fixed step,
-   clamped to +-0x1000 (1/256-degree units), marking the view dirty
-   (FUN_00049924(2)) whenever it actually changed. DAT_000680f4/DAT_000680f8
-   were literal-pool constants resolving to DAT_0023beb4 and
-   DAT_0023bf00 respectively; the original's `DAT_000680f8 + 2` was raw
-   pointer arithmetic across two separately-declared globals that are
-   really adjacent fields of one struct (DAT_0023bf00/DAT_0023bf02,
-   already an established pair via their shared use at uw.c ~60832) --
-   replaced with a direct reference to DAT_0023bf02 instead of address-
-   of-plus-2 arithmetic on an unrelated global. DAT_0023bf2c (from
-   DAT_000680fc) is a freshly-declared flag selecting which of the two
-   fields this nudges; no other reader/writer of it exists yet in this
-   file. */
-short DAT_0023bf2c;
-void FUN_000680d0(param_1)
-undefined4 param_1;
-{
-  short sVar1;
-  short *puVar2;
-
-  puVar2 = &DAT_0023beb4;
-  if (DAT_0023bf2c != 0) {
-    puVar2 = (short *)&DAT_0023bf02;
-  }
-  if ((short)param_1 == 0) {
-    FUN_00049924(2);
-    *puVar2 = 0;
-  }
-  else {
-    sVar1 = 0x1000;
-    if ((short)param_1 == -1) {
-      sVar1 = -0x1000;
-    }
-    if (step_value_toward_limit(puVar2,sVar1,0x400,(short)param_1) != 0) {
-      FUN_00049924(2);
-    }
-  }
-  return;
-}
 int DAT_000db500;
 undefined2 DAT_0023bf04;
 byte DAT_0023beb0;

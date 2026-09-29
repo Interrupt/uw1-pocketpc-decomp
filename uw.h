@@ -916,9 +916,9 @@ extern undefined2 DAT_0023be8c;
 extern int g_npc_tick_enabled;
 extern undefined DAT_00028bfc_backing[8192];
 #define DAT_00028bfc DAT_00028bfc_backing[0]
-void FUN_000680d0();
-void FUN_00071ac4();
-undefined4 FUN_0007036c();
+void debug_adjust_view_heading();
+void debug_force_rest_action();
+undefined4 print_debug_stat_message();
 extern undefined2 DAT_0023be6c;
 extern undefined2 DAT_0023be68;
 extern undefined2 DAT_0023be70;
