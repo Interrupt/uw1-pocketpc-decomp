@@ -2200,7 +2200,7 @@ void FUN_000286cc()
       g_blit_transparent_mode = 1;
       bitmap_blit_to_framebuffer(0x2d,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
       g_blit_transparent_mode = 0;
-      sVar2 = FUN_00078b18(local_44,DAT_00100674,0,0);
+      sVar2 = build_object_display_name(local_44,DAT_00100674,0,0);
       if (sVar2 != 0) {
         draw_text_string(local_44,0x30,3);
       }
@@ -2937,7 +2937,7 @@ LAB_0002a154:
     Ordinal_1063(local_74,local_84);
   }
   iVar6 = Ordinal_1068(local_74);
-  FUN_00078b18(local_74 + iVar6,iVar5,(int)sVar1,1 < uVar9);
+  build_object_display_name(local_74 + iVar6,iVar5,(int)sVar1,1 < uVar9);
   FUN_00048bf0(iVar5,uVar3,local_74);
   iVar5 = Ordinal_1068(local_74);
   iVar5 = babl_alloc(iVar5 + 1);
@@ -4142,7 +4142,7 @@ int param_4;
           object_list_unlink(iVar2 + 4,iVar6);
           free_object_slot(iVar6);
         }
-        FUN_00078c80(0xfc);
+        print_scroll_message_by_id(0xfc);
         return;
       }
       if (iVar6 != 0 && iVar6 != iVar2) {

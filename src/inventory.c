@@ -244,7 +244,7 @@ short param_1;
           if (((uVar3 & 0x1c0) == 0x80) && ((uVar3 & 0x30) == 0)) {
             puVar4 = g_open_container_list;
             if ((DAT_00085a6c[4] == 4) && ((uVar3 & 0xf) != 0xf)) {
-              FUN_00078c80(0xba);
+              print_scroll_message_by_id(0xba);
               return;
             }
             for (; puVar4 != (undefined4 *)0x0; puVar4 = (undefined4 *)*puVar4) {

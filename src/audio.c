@@ -614,7 +614,7 @@ short param_1;
   iVar6 = -1;
   Ordinal_1047(local_2c,0,0x10);
   uVar7 = 0;
-  FUN_00078c80(0xfa);
+  print_scroll_message_by_id(0xfa);
   while( true ) {
     uVar4 = next_input_event();
     uVar1 = (ushort)uVar4;
@@ -653,7 +653,7 @@ short param_1;
       (int)((uVar4 ^ uVar7) - uVar7) < 3 && (iVar6 = check_secret_tune_match(local_2c), iVar6 != 0)))) {
     return;
   }
-  FUN_00078c80(0xfb);
+  print_scroll_message_by_id(0xfb);
   return;
 }
 
@@ -684,7 +684,7 @@ int param_1;
     } while (uVar3 < 9);
     iVar2 = FUN_00079dec(0,0xae);
     if (iVar2 != 0) {
-      FUN_00078c80(0x88);
+      print_scroll_message_by_id(0x88);
       uVar1 = *(undefined2 *)(DAT_00086df8 + 0x5f);
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar1;
       *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x80;

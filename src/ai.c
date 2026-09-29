@@ -1268,7 +1268,7 @@ ushort * param_1;
       bVar3 = false;
       *(char *)(DAT_00086df8 + 0x6d) = *(char *)(DAT_00086df8 + 0x6d) + -1;
       if (*(char *)(DAT_00086df8 + 0x6d) == '\0') {
-        FUN_00078c80(0x116);
+        print_scroll_message_by_id(0x116);
         FUN_00049924(0x400);
       }
       else {

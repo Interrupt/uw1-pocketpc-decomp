@@ -799,7 +799,7 @@ void print_help_message()
     DAT_00086e05 = 10;
     DAT_00086e06 = 0;
   }
-  FUN_00078c80(0x113);
+  print_scroll_message_by_id(0x113);
   message_scroll_print_wrapped(&DAT_00086e00);
   return;
 }

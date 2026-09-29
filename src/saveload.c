@@ -441,10 +441,10 @@ char param_1;
   Ordinal_1063(acStack_528,acStack_650);
   uVar3 = FUN_0002295c(acStack_528);
   Ordinal_61(auStack_218,uVar3);
-  FUN_00078c80(0xa6);
+  print_scroll_message_by_id(0xa6);
   iVar4 = ensure_save_directory_exists(acStack_630);
   if (iVar4 != 0) {
-    FUN_00078c80(0xaa);
+    print_scroll_message_by_id(0xaa);
     /* Was copy_save_slot_files(acStack_528,acStack_630) -- i.e. (dest="\SAVEn",
        src="\SAVE0"), copying the ACTIVE SESSION onto the chosen slot --
        a save-direction copy. That's backwards for this function: live
@@ -466,7 +466,7 @@ char param_1;
     if (getenv("UW_DEBUG_SAVEDESC"))
       fprintf(stderr, "[savedesc] copy_save_slot_files returned %d, acStack_528=%s\n", iVar4, acStack_528);
     if (iVar4 != 0) {
-      FUN_00078c80(0xaa);
+      print_scroll_message_by_id(0xaa);
       /* An earlier session added a snprintf("Level %d", ...) write-back
          to this slot's desc file here, reasoning the decompile never
          reconstructed a "type a save description" prompt for Save, so
@@ -486,11 +486,11 @@ char param_1;
       FUN_0003bee4();
       iVar4 = FUN_00044624(&DAT_000857a0);
       if (iVar4 != 0) {
-        FUN_00078c80(0xaa);
+        print_scroll_message_by_id(0xaa);
         sVar2 = load_level((int)DAT_00201b68);
         if (sVar2 != 0) {
           save_or_restore_level_special_state((int)DAT_00201b68,3);
-          FUN_00078c80(0xaa);
+          print_scroll_message_by_id(0xaa);
           FUN_000358e8();
           return 1;
         }
@@ -567,7 +567,7 @@ char *param_2;
   sVar2 = scroll_text_entry_prompt(0,param_2,param_2,1,0x1e);
   if (((sVar2 != 0x1b) && (sVar2 != 1)) && (sVar2 != 2)) {
     message_scroll_print_wrapped(&s_scroll_newline_0008522c);
-    FUN_00078c80(0xa7);
+    print_scroll_message_by_id(0xa7);
     iVar4 = 0;
     do {
       pcVar6 = local_530 + iVar4;
@@ -599,7 +599,7 @@ char *param_2;
       iVar4 = FUN_0007edf4(param_2,local_638,(uVar7 & 0xffff) + 1);
       if (iVar4 != 0) {
         pcVar3[2] = '\0';
-        FUN_00078c80(0xaa);
+        print_scroll_message_by_id(0xaa);
         Ordinal_1047(local_638,0,0x104);
         do {
           cVar1 = *pcVar8;
@@ -609,10 +609,10 @@ char *param_2;
         Ordinal_1063(local_638,&DAT_000857a0);
         iVar4 = write_player_save_record(local_638);
         if (iVar4 != 0) {
-          FUN_00078c80(0xaa);
+          print_scroll_message_by_id(0xaa);
           iVar4 = commit_level_to_save_slot((int)DAT_00201b68);
           if (iVar4 != 0) {
-            FUN_00078c80(0xaa);
+            print_scroll_message_by_id(0xaa);
             uVar5 = FUN_0002295c(local_530);
             Ordinal_61(auStack_428,uVar5);
             uVar5 = FUN_0002295c(local_638);
@@ -1187,7 +1187,7 @@ LAB_0006bdbc:
 // saves to slot param_2 (save_game_to_slot), otherwise loads from it
 // (load_game_from_slot; the middle "already-occupied slot" gate is
 // disabled dead code -- see its own comment). Shows the resulting
-// status message via FUN_00078c80(iVar2 + 0xa0) ("Save Game
+// status message via print_scroll_message_by_id(iVar2 + 0xa0) ("Save Game
 // Succeeded.", "Load Game Failed.", etc. -- iVar2 selects which).
 void handle_save_load_menu_action(param_1,param_2)
 short param_1;
@@ -1269,7 +1269,7 @@ undefined4 param_2;
       FUN_00049924(0x7ffe);
     }
   }
-  FUN_00078c80(iVar2 + 0xa0);
+  print_scroll_message_by_id(iVar2 + 0xa0);
   return;
 }
 

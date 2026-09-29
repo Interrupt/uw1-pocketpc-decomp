@@ -136,7 +136,7 @@ LAB_000489fc:
     Ordinal_1063(acStack_7c,acStack_ac);
   }
   iVar9 = Ordinal_1068(acStack_7c);
-  FUN_00078b18(acStack_7c + iVar9,param_1,cVar10 == '\0',uVar11);
+  build_object_display_name(acStack_7c + iVar9,param_1,cVar10 == '\0',uVar11);
   FUN_00048bf0(param_1,param_2,acStack_7c);
   if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
@@ -582,7 +582,7 @@ LAB_000489fc:
     Ordinal_1063(acStack_7c,local_ac);
   }
   iVar9 = Ordinal_1068(acStack_7c);
-  FUN_00078b18(acStack_7c + iVar9,param_1,cVar10 == '\0',uVar11);
+  build_object_display_name(acStack_7c + iVar9,param_1,cVar10 == '\0',uVar11);
   FUN_00048bf0(param_1,param_2,acStack_7c);
   if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
@@ -947,7 +947,7 @@ LAB_00073c90:
       FUN_00039f04(4,0,0);
     }
     else if ((param_2 & 0xff) == 5) {
-      FUN_00078c80(0xe4);
+      print_scroll_message_by_id(0xe4);
       uVar1 = *(undefined2 *)(DAT_00086df8 + 0x61);
       *(byte *)(DAT_00086df8 + 0x61) = (byte)uVar1 | 0xc;
       *(char *)(DAT_00086df8 + 0x62) = (char)((ushort)uVar1 >> 8);
@@ -1010,7 +1010,7 @@ char param_2;
 // four effect-object subtypes {7,5,4,6} and FUN_0004a588 spawns that
 // object near/at param_1's location (returning whether the spawn
 // succeeded). If param_1 is the player and the spawn failed, prints
-// a "no effect" scroll message (id 0xff) via FUN_00078c80. Otherwise,
+// a "no effect" scroll message (id 0xff) via print_scroll_message_by_id. Otherwise,
 // if a mana cost was staged in DAT_0023c3e0 (set by whatever queued
 // this cast), deducts it from the player's mana stat
 // (DAT_00086df8+0x37, "play_mana" -- see babl.c's own read of the
@@ -1030,7 +1030,7 @@ char param_2;
   iVar1 = FUN_0004a588(param_1,auStack_d[param_2]);
   if (param_1 == g_player_object) {
     if (iVar1 == 0) {
-      FUN_00078c80(0xff);
+      print_scroll_message_by_id(0xff);
     }
     else if (DAT_0023c3e0 != '\0') {
       *(char *)(DAT_00086df8 + 0x37) = *(char *)(DAT_00086df8 + 0x37) - DAT_0023c3e0;
@@ -1713,7 +1713,7 @@ uint param_2;
 // one); any other param_2 spawns a fixed object id instead. On
 // success links the new object into the tile and settles it; on
 // failure (no valid spawn point, or occupied for case 3) prints a
-// "no effect"-style scroll message via FUN_00078c80.
+// "no effect"-style scroll message via print_scroll_message_by_id.
 void cast_summon_or_spawn_effect(param_1,param_2)
 int param_1;
 char param_2;
@@ -1888,7 +1888,7 @@ char param_2;
     }
     uVar11 = 0x115;
   }
-  FUN_00078c80(uVar11);
+  print_scroll_message_by_id(uVar11);
   return;
 }
 
@@ -2032,7 +2032,7 @@ undefined4 param_2;
     }
   } while (uVar6 < 8);
   if (uVar13 == 0) {
-    FUN_00078c80(0x3e);
+    print_scroll_message_by_id(0x3e);
   }
   else {
     uVar6 = 3;
@@ -2115,7 +2115,7 @@ ushort * param_1;
     else {
       uVar3 = 0x10f;
     }
-    FUN_00078c80(uVar3);
+    print_scroll_message_by_id(uVar3);
   }
   FUN_00057cac(3);
   g_cursor_holding_state = 0;
@@ -2199,7 +2199,7 @@ LAB_0007588c:
     break;
   case 10:
     if ((*(byte *)(DAT_00086df8 + 0x5e) & 0xf) == 0) {
-      FUN_00078c80(0x111);
+      print_scroll_message_by_id(0x111);
     }
     else {
       DAT_00201c9c = &check_scheduled_object_location_callback;
@@ -2269,5 +2269,115 @@ undefined1 param_4;
       } while (iVar3 != 0);
     }
   }
+  return;
+}
+
+
+
+
+
+// was FUN_00078b18 -- builds an object's display name into param_1's
+// buffer. For a creature (type class 0x1c0==0x40) with a valid
+// "whoami" id (param_2[0xd], uw_mobile_object_t's npc_whoami field),
+// looks up and copies that creature's proper name string directly.
+// For any other object, looks up the object-type's generic name
+// message and runs it through format_object_display_name (below,
+// singular/plural template substitution based on param_3, the
+// quantity) before copying the formatted result out. Returns 0 if
+// the name lookup failed or came back empty, 1 on success. Confirmed
+// caller: dispatch_object_action's own "Look" text builder.
+undefined4 build_object_display_name(param_1,param_2,param_3,param_4)
+char * param_1;
+ushort * param_2;
+undefined4 param_3;
+undefined4 param_4;
+
+{
+  char cVar1;
+  uint uVar2;
+  char *pcVar3;
+  int iVar4;
+  
+  if ((((*param_2 & 0x1c0) == 0x40) && (uVar2 = (uint)(byte)param_2[0xd], uVar2 != 0)) &&
+     (uVar2 < 0xf0)) {
+    pcVar3 = (char *)get_message_string(uVar2 + 0x10 | 0xe00);
+    if ((pcVar3 == (char *)0x0) || (*pcVar3 == '\0')) {
+      return 0;
+    }
+    iVar4 = (int)param_1 - (int)pcVar3;
+    do {
+      cVar1 = *pcVar3;
+      pcVar3[iVar4] = cVar1;
+      pcVar3 = pcVar3 + 1;
+    } while (cVar1 != '\0');
+  }
+  else {
+    pcVar3 = (char *)get_message_string(*param_2 & 0x1ff | 0x800);
+    if (pcVar3 == (char *)0x0) {
+      return 0;
+    }
+    if (*pcVar3 == '\0') {
+      return 0;
+    }
+    pcVar3 = (char *)format_object_display_name(pcVar3,param_3,param_4);
+    do {
+      cVar1 = *pcVar3;
+      pcVar3 = pcVar3 + 1;
+      *param_1 = cVar1;
+      param_1 = param_1 + 1;
+    } while (cVar1 != '\0');
+  }
+  return 1;
+}
+
+
+
+undefined1 *format_object_display_name(param_1,param_2,param_3)
+undefined1 * param_1;
+int param_2;
+int param_3;
+
+{
+  undefined1 *puVar1;
+  int iVar2;
+  
+  puVar1 = (undefined1 *)Ordinal_1064(param_1,0x26);
+  if (param_3 == 0) {
+    if (puVar1 != (undefined1 *)0x0) {
+      *puVar1 = 0;
+    }
+  }
+  else if (puVar1 == (undefined1 *)0x0) {
+    iVar2 = Ordinal_1068(param_1);
+    param_1[iVar2] = 0x73;
+    (param_1 + iVar2)[1] = 0;
+  }
+  else {
+    param_1 = puVar1 + 1;
+  }
+  puVar1 = (undefined1 *)Ordinal_1064(param_1,0x5f);
+  if (puVar1 != (undefined1 *)0x0) {
+    if (param_2 == 0) {
+      param_1 = puVar1 + 1;
+    }
+    else {
+      *puVar1 = 0x20;
+    }
+  }
+  return param_1;
+}
+
+
+
+// was FUN_00078c80 -- looks up message id param_1 (in the 0x200
+// message-page range) and prints it to the message scroll. Already
+// widely used by name throughout this codebase's comments (e.g.
+// trigger_type_flagged_trap_effect, apply_targeted_spell_effect) as
+// "the message-scroll-print helper".
+void print_scroll_message_by_id(param_1)
+uint param_1;
+
+{
+  message_scroll_print_wrapped(get_message_string(param_1 | 0x200)); // was two separate calls with message_scroll_print_wrapped()'s arg dropped; see uw.c ~7961's sibling call and its comment
   return;
 }

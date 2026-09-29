@@ -941,7 +941,7 @@ LAB_0004386c:
          into the rune bag. */
       iVar10 = FUN_0004479c(param_1);
       if (iVar10 == 0) {
-        FUN_00078c80(0xf7);
+        print_scroll_message_by_id(0xf7);
         goto LAB_000438ac;
       }
     }
@@ -1270,7 +1270,7 @@ int param_2;
       pcVar3 = pcVar3 + 1;
     } while (cVar1 != '\0');
     iVar2 = Ordinal_1068(acStack_5c);
-    FUN_00078b18(acStack_5c + iVar2,param_1,0,0);
+    build_object_display_name(acStack_5c + iVar2,param_1,0,0);
     Ordinal_1063(acStack_5c,s_is_empty__0008790c);
     message_scroll_print_wrapped(acStack_5c);
   }

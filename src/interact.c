@@ -79,7 +79,7 @@ void interact_default()
           *(char *)((char *)g_interact_target + 7) = (char)((uint)iVar1 >> 8);
           object_list_unlink(g_interact_target + 2,puVar3);
         }
-        FUN_00078c80(0x5f);
+        print_scroll_message_by_id(0x5f);
         return;
       }
       iVar1 = FUN_00053920(g_interact_target,0x126);
@@ -94,7 +94,7 @@ void interact_default()
     }
     iVar1 = (short)iVar1 + 0x5d;
   }
-  FUN_00078c80(iVar1);
+  print_scroll_message_by_id(iVar1);
 LAB_0003f11c:
   wait_for_click_release(1);
   return;
@@ -188,7 +188,7 @@ void interact_use()
   iVar1 = target_in_range((int)DAT_000858c4,g_interact_target,DAT_002020b0);
   if ((iVar1 == 0) || (iVar1 = target_line_of_sight((int)DAT_000858c4,g_interact_target), iVar1 != 0)) {
     if ((*g_interact_target & 0x1fe) != 0x16e) {
-      FUN_00078c80(0xb9);
+      print_scroll_message_by_id(0xb9);
     }
   }
   else {
@@ -356,7 +356,7 @@ undefined4 param_2;
         if ((short)uVar8 < 1) {
           if ((short)uVar8 < 0) {
             message_scroll_print_wrapped(s_Your_bumbling_attempts_have_set_o_00087384);
-            sVar2 = FUN_00078b18(acStack_2c,pbVar4,0,0);
+            sVar2 = build_object_display_name(acStack_2c,pbVar4,0,0);
             if (sVar2 == 0) {
               pcVar6 = s_UNNAMED_00084f24;
     wptr_53920 = acStackY_84f50;
@@ -381,7 +381,7 @@ undefined4 param_2;
           }
         }
         else {
-          sVar2 = FUN_00078b18(acStack_2c,pbVar4,0,0);
+          sVar2 = build_object_display_name(acStack_2c,pbVar4,0,0);
           pcVar6 = s_UNNAMED_00084f24;
     wptr_53956 = acStackY_84f50;
           if (sVar2 == 0) {
@@ -396,7 +396,7 @@ undefined4 param_2;
           message_scroll_print_wrapped(&DAT_00085c88);
           message_scroll_print_wrapped(acStack_2c);
           message_scroll_print_wrapped(s_on_the_000873cc);
-          sVar2 = FUN_00078b18(acStack_2c,param_1,0,0);
+          sVar2 = build_object_display_name(acStack_2c,param_1,0,0);
           if (sVar2 == 0) {
             do {
               cVar1 = *pcVar6;

@@ -1970,7 +1970,7 @@ char param_1;
   }
   uw_ord2005_rem_138 = ((int)(*(undefined1 *)(iVar1 + 0x3d))) % (10);
   DAT_0008730d = (undefined1)((uint)((uw_ord2005_rem_138 + 0x30) * 0x1000000) >> 0x18);
-  FUN_00078c80(0x93);
+  print_scroll_message_by_id(0x93);
   message_scroll_print_wrapped(&DAT_0008730c);
   *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + param_1;
   recompute_level7_hazard_from_character_level(0);
@@ -2161,10 +2161,10 @@ int param_2;
 
 {
   if (param_2 == 0) {
-    FUN_00078c80(0x1b);
+    print_scroll_message_by_id(0x1b);
   }
   else {
-    FUN_00078c80(0x1c);
+    print_scroll_message_by_id(0x1c);
     get_message_string(param_1 + 0x1fU | 0x400);
     message_scroll_print_wrapped();
     message_scroll_print_wrapped(&DAT_00084f20);
@@ -2190,10 +2190,10 @@ char * param_1;
   int iVar2;
   
   if (*param_1 == -1) {
-    FUN_00078c80(0x1e);
+    print_scroll_message_by_id(0x1e);
   }
   else {
-    FUN_00078c80(0x1d);
+    print_scroll_message_by_id(0x1d);
     if (*param_1 != -1) {
       iVar2 = 0;
       do {
@@ -2270,7 +2270,7 @@ void handle_mantra_chant()
     iVar10 = iVar10 + 1;
   } while (iVar10 * 0x1000000 >> 0x18 < 0x4d);
   if ((char)iVar10 == 'M') {
-    FUN_00078c80(0x19);
+    print_scroll_message_by_id(0x19);
     goto LAB_00070b58;
   }
   iVar10 = iVar10 + -0x33;
@@ -2278,7 +2278,7 @@ void handle_mantra_chant()
   if (iVar6 < 0x14) {
     if (*(char *)(DAT_00086df8 + 0x52) == '\0') {
 LAB_00070980:
-      FUN_00078c80(0x18);
+      print_scroll_message_by_id(0x18);
     }
     else {
       iVar6 = roll_skill_use_improvement(iVar10);
@@ -2288,7 +2288,7 @@ LAB_000709e0:
         uVar4 = 0;
       }
       else {
-        FUN_00078c80(0x1a);
+        print_scroll_message_by_id(0x1a);
         *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + -1;
         if ((iVar6 == 0) && (iVar7 == 0)) goto LAB_000709e0;
         uVar4 = 1;
@@ -2311,7 +2311,7 @@ LAB_00070c78:
     if (iVar6 == 0x15) {
       if (((*(byte *)(DAT_00086df8 + 0x60) & 0x40) == 0) &&
          (iVar10 = FUN_00079dec(0,0xe1), iVar10 != 0)) {
-        FUN_00078c80(0x1e);
+        print_scroll_message_by_id(0x1e);
         uVar2 = *(undefined2 *)(DAT_00086df8 + 0x5f);
         *(char *)(DAT_00086df8 + 0x5f) = (char)uVar2;
         *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar2 >> 8) | 0x40;
@@ -2319,7 +2319,7 @@ LAB_00070c78:
       goto LAB_00070c78;
     }
     if (iVar6 == 0x16) {
-      FUN_00078c80(0x1f);
+      print_scroll_message_by_id(0x1f);
       goto LAB_00070c78;
     }
     if (iVar6 == 0x17) {
@@ -2650,7 +2650,7 @@ LAB_0007158c:
     update_ingame_music_track();
     FUN_000411b8(5);
     if (-1 < param_1) {
-      FUN_00078c80(0x10);
+      print_scroll_message_by_id(0x10);
     }
     FUN_0007e85c(0);
     FUN_00052d68(1,0x14);
@@ -2712,7 +2712,7 @@ LAB_0007158c:
           sVar3 = 5;
         }
         if (*(char *)(DAT_00086df8 + 0x39) == '\0') {
-          FUN_00078c80(0x11);
+          print_scroll_message_by_id(0x11);
           FUN_00038374(g_player_object,0,0,0,2,0);
         }
         else {
@@ -2738,7 +2738,7 @@ LAB_0007158c:
             bVar2 = false;
           }
         }
-        FUN_00078c80(0x13 - iVar4);
+        print_scroll_message_by_id(0x13 - iVar4);
       }
       else {
         if (*(byte *)(DAT_00086df8 + 0x3a) < 0x21) {
@@ -2747,7 +2747,7 @@ LAB_0007158c:
         else {
           *(byte *)(DAT_00086df8 + 0x3a) = *(byte *)(DAT_00086df8 + 0x3a) - 0x20;
         }
-        FUN_00078c80(0x15);
+        print_scroll_message_by_id(0x15);
         sVar3 = Ordinal_1053();
         adjust_player_hunger(-0xc - ((int)sVar3 & 0xfU));
         uVar6 = *(ushort *)(DAT_00086df8 + 0x61);
@@ -2785,7 +2785,7 @@ LAB_0007158c:
        (DAT_00201b68 != 9)) {
       iVar4 = FUN_00035340();
       if (iVar4 == 0) {
-        FUN_00078c80(0xf);
+        print_scroll_message_by_id(0xf);
         goto LAB_0007158c;
       }
       uVar5 = 0xe;
@@ -2793,7 +2793,7 @@ LAB_0007158c:
     else {
       uVar5 = 0x14;
     }
-    FUN_00078c80(uVar5);
+    print_scroll_message_by_id(uVar5);
   }
   return;
 }
@@ -2883,7 +2883,7 @@ void handle_game_victory_sequence()
         local_11c = iVar6 + 2;
         object_list_append_tail(local_11c,puVar5);
       }
-      FUN_00078c80(0x117);
+      print_scroll_message_by_id(0x117);
       spin_view_full_rotation(0xffffffff);
       FUN_000411b8(5);
       if (puVar5 != (undefined2 *)0x0) {
@@ -2892,7 +2892,7 @@ void handle_game_victory_sequence()
       }
       FUN_000396a0(g_player_object,0x1b,0x17,9);
       *(undefined1 *)(DAT_00086df8 + 0x6d) = 0xff;
-      FUN_00078c80(0x118);
+      print_scroll_message_by_id(0x118);
       DAT_00085730 = DAT_00085730 & 0xfe;
       dungeon_view_anim_tick();
       DAT_00085730 = DAT_00085730 | 1;

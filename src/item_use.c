@@ -332,7 +332,7 @@ int param_2;
       if (getenv("UW_DEBUG_THROW"))
         fprintf(stderr, "[throw-fallback] -> BAILED, item never inserted anywhere\n");
       if (param_2 != 0) {
-        FUN_00078c80(0xfd);
+        print_scroll_message_by_id(0xfd);
       }
       play_sound_effect_with_pan(0xf,0x40,0xf6);
       return 0;
@@ -521,7 +521,7 @@ int param_2;
     uVar5 = 0x7c;
   }
 LAB_0007ab1c:
-  FUN_00078c80(uVar5);
+  print_scroll_message_by_id(uVar5);
   return;
 }
 
@@ -549,7 +549,7 @@ int param_3;
   undefined2 uVar14;
   /* Was 76 bytes with a separate 555248-byte `acStackY_87970` "prefix"
      buffer that a copy loop wrote "That " into -- but the very next
-     lines (Ordinal_1068/FUN_00078b18) read and append to acStack_7c,
+     lines (Ordinal_1068/build_object_display_name) read and append to acStack_7c,
      which never got that prefix, so it started from stale/uninitialized
      stack content. Same split-buffer decompile artifact already fixed
      in build_creature_look_text's acStack_7c (see its comment): the
@@ -557,7 +557,7 @@ int param_3;
      the real buffer is acStack_7c. Confirmed live: eating the bread
      inside an open container printed a message built from garbage
      stack bytes and, via Ordinal_1068 returning a wild "current length"
-     into that garbage, FUN_00078b18 wrote the object's name out of
+     into that garbage, build_object_display_name wrote the object's name out of
      bounds of the 76-byte buffer -- corrupting the stack badly enough
      to zero the player's HP field, immediately killing the character
      (a UW_DEBUG_INV hp-debug trace showed HP was still 34 right before
@@ -577,7 +577,7 @@ int param_3;
   }
   if (param_2 == g_selected_object) {
     if (1 < uVar9) {
-      FUN_00078c80(0x77);
+      print_scroll_message_by_id(0x77);
       return 0xfffffffe;
     }
   }
@@ -693,7 +693,7 @@ LAB_0007af3c:
   iVar1 = (int)(short)iVar12;
   if (iVar1 < 1) {
     if (iVar1 < 0) {
-      FUN_00078c80(iVar11);
+      print_scroll_message_by_id(iVar11);
       if ((iVar1 < -1) && (-0x7f < iVar1)) {
         uVar9 = *(ushort *)(DAT_00086df8 + 0x61);
         if ((int)((uVar9 >> 4 & 0x3f) - iVar1) < 0x40) {
@@ -707,17 +707,17 @@ LAB_0007af3c:
         sVar4 = roll_skill_check(*(undefined1 *)(DAT_0023be74 + 5),
                              (*(ushort *)(DAT_00086df8 + 0x61) & 0x3f0) >> 4);
         if (sVar4 == -1) {
-          FUN_00078c80(0xf1);
+          print_scroll_message_by_id(0xf1);
           handle_rest_action(0xfffffffe);
           if (*(char *)((char *)g_player_object + 8) == '\0') goto LAB_0007b254;
-          FUN_00078c80(0xf3);
+          print_scroll_message_by_id(0xf3);
           uVar8 = Ordinal_2005(6,*(ushort *)(DAT_00086df8 + 0x61) >> 4 & 0x3f);
           uVar8 = (uVar8 & 0xff) + 10;
         }
         else {
           if (sVar4 != 0) {
             if (sVar4 == 2) {
-              FUN_00078c80(0xf2);
+              print_scroll_message_by_id(0xf2);
               adjust_player_hp(g_player_object,0xfffffffe);
             }
             goto LAB_0007b254;
@@ -729,21 +729,21 @@ LAB_0007af3c:
       }
     }
     else {
-      FUN_00078c80(iVar11);
+      print_scroll_message_by_id(iVar11);
     }
   }
   else {
     if ((iVar1 != 0xff) && (iVar12 = adjust_player_hunger(iVar12), iVar12 == 0)) {
       uVar5 = 0x7e;
 LAB_0007b2e0:
-      FUN_00078c80(uVar5);
+      print_scroll_message_by_id(uVar5);
       return 0;
     }
     if ((short)iVar11 == 0) {
       acStack_7c[0] = '\0';
       Ordinal_1063(acStack_7c, s_That_000878f4);
       iVar11 = Ordinal_1068(acStack_7c);
-      sVar4 = FUN_00078b18(acStack_7c + iVar11,param_2,0,0);
+      sVar4 = build_object_display_name(acStack_7c + iVar11,param_2,0,0);
       if (sVar4 == 0) {
         Ordinal_1063(acStack_7c,s_UNNAMED_00084f24);
       }
@@ -759,7 +759,7 @@ LAB_0007b2e0:
       message_scroll_print_wrapped(acStack_7c);
       iVar11 = iVar11 + 0xac;
     }
-    FUN_00078c80(iVar11);
+    print_scroll_message_by_id(iVar11);
     if ((*param_2 & 0x1ff) == 0xb9) {
       uVar9 = *(ushort *)(DAT_00086df8 + 0x5f);
       if ((uVar9 & 0x3c) < 0x10) {
@@ -811,7 +811,7 @@ int param_3;
   
   sVar2 = check_object_combination(param_1,param_2,0);
   if (sVar2 == 0) {
-    sVar2 = FUN_00078b18(acStack_24,param_2,0,0);
+    sVar2 = build_object_display_name(acStack_24,param_2,0,0);
     if (sVar2 == 0) {
       pcVar3 = s_UNNAMED_00084f24;
     wptr_60073 = acStack_84f48;
