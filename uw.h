@@ -735,6 +735,7 @@ extern undefined1 DAT_00202c90_backing[65536];
 #define DAT_00202c90 DAT_00202c90_backing[0]
 #define DAT_00202c91 DAT_00202c90_backing[1]
 #define DAT_00202c93 DAT_00202c90_backing[3]
+#define DAT_00202c95 DAT_00202c90_backing[5]
 #define DAT_00202c97 DAT_00202c90_backing[7]
 #define DAT_00202c98 DAT_00202c90_backing[8]
 #define DAT_00202c99 DAT_00202c90_backing[9]
@@ -2003,7 +2004,7 @@ void babl_register_builtin();
 void babl_set_variable();
 void babl_get_variable();
 void init_babl_variable_defaults();
-void FUN_0001b288();
+void babl_builtin_setup_to_barter();
 void FUN_0001b474();
 void FUN_0001b7c0();
 void FUN_0001b89c();

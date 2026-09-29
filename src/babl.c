@@ -2279,7 +2279,7 @@ void start_npc_conversation()
     babl_register_builtin(s_do_decline_00085168,&babl_builtin_do_decline);
     babl_register_builtin(s_do_judgement_00085158,FUN_0001cd3c);
     babl_register_builtin(s_end_barter_0008514c,FUN_0001b7c0);
-    babl_register_builtin(s_setup_to_barter_0008513c,FUN_0001b288);
+    babl_register_builtin(s_setup_to_barter_0008513c,babl_builtin_setup_to_barter);
     babl_register_builtin(s_pause_00085134,babl_builtin_pause);
     babl_register_builtin(s_set_likes_dislikes_00085120,babl_builtin_set_likes_dislikes);
     babl_register_builtin(s_do_inv_create_00085110,&babl_builtin_do_inv_create);
@@ -3737,6 +3737,84 @@ void init_babl_variable_defaults()
     iVar2 = iVar2 + 0x20;
     sVar1 = *psVar3;
   }
+  return;
+}
+
+
+
+
+// was FUN_0001b288 -- babl builtin "setup_to_barter": walks the current
+// conversation partner's (DAT_00100674) inventory list, culling items
+// that fail a comobj.dat property check or lose a random roll (once 4
+// items have already been kept, via DAT_000bbfe8's rotating 4-slot
+// pool), unlinking the losers from the NPC and re-linking a
+// previously-culled item back in their place. Bounded to the first 40
+// (0x28) items walked. Net effect: the barter/trade view shows a
+// rotating subset of the NPC's full inventory rather than everything
+// at once.
+void babl_builtin_setup_to_barter()
+
+{
+  int iVar1;
+  bool bVar2;
+  bool bVar3;
+  ushort uVar4;
+  short sVar5;
+  ushort *puVar6;
+  ushort *puVar7;
+  uint uVar8;
+  undefined4 uVar9;
+  short *psVar10;
+  short sVar11;
+  int iVar12;
+  int iVar13;
+  ushort *puVar14;
+  
+  sVar11 = 0;
+  bVar2 = false;
+  bVar3 = false;
+  if ((*(byte *)(DAT_00100674 + 0xe) & 0x10) == 0) {
+    FUN_000798c4();
+  }
+  iVar13 = DAT_00100674 + 6;
+  puVar6 = (ushort *)resolve_object_link(iVar13);
+  iVar12 = 0;
+  puVar14 = (ushort *)0x0;
+  while (((puVar6 != (ushort *)0x0 && (puVar6 != puVar14)) &&
+         (iVar1 = (int)sVar11, sVar11 = (short)((uint)((iVar1 + 1) * 0x10000) >> 0x10), iVar1 < 0x28
+         ))) {
+    puVar7 = (ushort *)resolve_object_link(puVar6 + 2);
+    if ((((*puVar6 & 0x30) == 0) && (!bVar2)) ||
+       ((*(short *)(&DAT_00202c95 + (*puVar6 & 0x1ff) * 0xd) == 0 ||
+        ((bVar3 && (uVar8 = Ordinal_1053(), (uVar8 & 7) < 5)))))) {
+      uVar4 = *puVar6;
+      puVar6 = puVar7;
+      if ((uVar4 & 0x30) == 0) {
+        bVar2 = true;
+      }
+    }
+    else {
+      object_list_unlink(iVar13,puVar6);
+      psVar10 = &DAT_000bbfe8 + (short)iVar12;
+      if (*psVar10 != 0) {
+        if (puVar14 == (ushort *)0x0) {
+          puVar14 = (ushort *)FUN_000535fc((int)*psVar10);
+        }
+        uVar9 = FUN_000535fc((int)*psVar10);
+        object_list_insert_head(DAT_00100674 + 6,uVar9);
+      }
+      sVar5 = encode_object_slot_index(puVar6);
+      *psVar10 = sVar5;
+      FUN_0001bf9c(0,iVar12);
+      iVar12 = ((short)iVar12 + 1) * 0x10000 >> 0x10;
+      puVar6 = puVar7;
+      if (3 < iVar12) {
+        iVar12 = 0;
+        bVar3 = true;
+      }
+    }
+  }
+  FUN_0007ec50();
   return;
 }
 
