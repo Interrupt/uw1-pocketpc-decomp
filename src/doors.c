@@ -226,3 +226,81 @@ undefined4 spawn_scheduled_door_texture_object()
   }
   return uVar4;
 }
+
+
+
+
+
+
+// was FUN_00072084 -- checks whether param_1 (a stored level number)
+// matches the current level (DAT_00201b68); if so, decodes param_2's
+// packed tile coordinates (FUN_000539b0) and shows a debug "At X Y"
+// message. Called by apply_special_object_use_effect with
+// DAT_00086df8+0x5e's upper nibble (the level spawn_scheduled_door_texture_object
+// stores there) and catalog id 0x1ca, so this gates that feature's
+// effect on still being on the same level the special object was
+// placed on.
+bool check_scheduled_object_level_match(param_1,param_2)
+short param_1;
+ushort param_2;
+
+{
+  bool bVar1;
+  short local_8;
+  short local_6;
+  
+  DAT_00201c9c = 0;
+  local_8 = 0;
+  local_6 = 0;
+  bVar1 = param_1 == DAT_00201b68;
+  if (bVar1) {
+    FUN_000539b0((int)(short)param_2 >> 6,(short)param_2 >> 4 & 3,param_2 & 0xf,&local_8,&local_6);
+    FUN_0007ea34(s_At__d__d_00087360,(int)local_8,(int)local_6);
+    DAT_00201c90 = local_8;
+    DAT_00201c8c = local_6;
+  }
+  return bVar1;
+}
+
+
+
+// was FUN_0007213c -- applies a bundle of player-state changes (hunger
+// restoration scaled off the class base-stat row DAT_0023be74+4, the
+// level-7 hazard byte, equipment flags, and clearing status bits at
+// DAT_00086df8+0x5f) when check_scheduled_object_level_match confirms the
+// player is still on the level where spawn_scheduled_door_texture_object's
+// catalog-0x1ca object was placed. Exact gameplay meaning (what
+// interaction triggers this) not identified.
+void apply_special_object_use_effect()
+
+{
+  char cVar1;
+  int iVar2;
+  uint uVar3;
+  
+  iVar2 = check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) >> 4,0x1ca);
+  if (iVar2 != 0) {
+    if (*(byte *)(DAT_0023be74 + 4) < 9) {
+      *(byte *)((char *)g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
+    }
+    else {
+      cVar1 = rand_below(3);
+      *(char *)((char *)g_player_object + 8) = (-2 - cVar1) + *(char *)(DAT_0023be74 + 4);
+    }
+    *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
+    if (8 < *(byte *)(DAT_00086df8 + 0x38)) {
+      *(byte *)(DAT_00086df8 + 0x37) =
+           (-2 - (*(byte *)(DAT_00086df8 + 0x38) >> 3)) + *(char *)(DAT_00086df8 + 0x37);
+    }
+    *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
+    uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
+    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
+    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
+    uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfc3f;
+    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
+    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
+    refresh_player_equipment_effects();
+    FUN_000735b0(4);
+  }
+  return;
+}

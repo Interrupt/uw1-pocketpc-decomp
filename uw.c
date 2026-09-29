@@ -6101,15 +6101,15 @@ uint DAT_00202098;
 static undefined1 DAT_00087604_backing[65536];
 #define DAT_00087604 DAT_00087604_backing[0]
 undefined *PTR_FUN_00087614;
-/* was FUN_00072268. Stored into the DAT_00201c9c generic no-arg
+/* was check_scheduled_object_location_callback. Stored into the DAT_00201c9c generic no-arg
    callback slot (uw.c ~30449, `(*DAT_00201c9c)();`) rather than called
    directly. `*DAT_00072284` was a literal-pool constant resolving to
    the already-named player-stats struct pointer DAT_00086df8; reads a
    nibble from it at offset 0x5e and hands it (plus a fixed msgid 0x126)
-   to the already-recovered FUN_00072084. */
-void FUN_00072268()
+   to the already-recovered check_scheduled_object_level_match. */
+void check_scheduled_object_location_callback()
 {
-  FUN_00072084(*(byte *)(DAT_00086df8 + 0x5e) & 0xf,0x126);
+  check_scheduled_object_level_match(*(byte *)(DAT_00086df8 + 0x5e) & 0xf,0x126);
   return;
 }
 static undefined DAT_0008762c_backing[8192];
@@ -36427,66 +36427,6 @@ LAB_00060f54:
 
 
 
-bool FUN_00072084(param_1,param_2)
-short param_1;
-ushort param_2;
-
-{
-  bool bVar1;
-  short local_8;
-  short local_6;
-  
-  DAT_00201c9c = 0;
-  local_8 = 0;
-  local_6 = 0;
-  bVar1 = param_1 == DAT_00201b68;
-  if (bVar1) {
-    FUN_000539b0((int)(short)param_2 >> 6,(short)param_2 >> 4 & 3,param_2 & 0xf,&local_8,&local_6);
-    FUN_0007ea34(s_At__d__d_00087360,(int)local_8,(int)local_6);
-    DAT_00201c90 = local_8;
-    DAT_00201c8c = local_6;
-  }
-  return bVar1;
-}
-
-
-
-void FUN_0007213c()
-
-{
-  char cVar1;
-  int iVar2;
-  uint uVar3;
-  
-  iVar2 = FUN_00072084(*(byte *)(DAT_00086df8 + 0x5e) >> 4,0x1ca);
-  if (iVar2 != 0) {
-    if (*(byte *)(DAT_0023be74 + 4) < 9) {
-      *(byte *)((char *)g_player_object + 8) = *(byte *)(DAT_0023be74 + 4);
-    }
-    else {
-      cVar1 = rand_below(3);
-      *(char *)((char *)g_player_object + 8) = (-2 - cVar1) + *(char *)(DAT_0023be74 + 4);
-    }
-    *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
-    if (8 < *(byte *)(DAT_00086df8 + 0x38)) {
-      *(byte *)(DAT_00086df8 + 0x37) =
-           (-2 - (*(byte *)(DAT_00086df8 + 0x38) >> 3)) + *(char *)(DAT_00086df8 + 0x37);
-    }
-    *(byte *)((char *)g_player_object + 0x15) = *(byte *)((char *)g_player_object + 0x15) & 0xec | 0x2c;
-    uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
-    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
-    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
-    uVar3 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xfc3f;
-    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar3;
-    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
-    refresh_player_equipment_effects();
-    FUN_000735b0(4);
-  }
-  return;
-}
-
-
-
 void FUN_00072288()
 
 {
@@ -36552,7 +36492,7 @@ LAB_00072374:
   }
   if (((*(byte *)(DAT_00086df8 + 0x5e) & 0xf0) != 0) && (DAT_00201b68 != 9)) {
     FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) >> 4);
-    DAT_00201c9c = FUN_0007213c;
+    DAT_00201c9c = apply_special_object_use_effect;
     DAT_00085730 = 0;
     iVar6 = dungeon_view_anim_tick();
     DAT_00085730 = 3;
@@ -38764,7 +38704,7 @@ LAB_0007588c:
       FUN_00078c80(0x111);
     }
     else {
-      DAT_00201c9c = &FUN_00072268;
+      DAT_00201c9c = &check_scheduled_object_location_callback;
       FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
       set_player_tile_position(0,0,0);
       FUN_00049924(0x7ffe);
