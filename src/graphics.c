@@ -1,7 +1,9 @@
 /* Low-level pixel-primitive functions: color state, rect fill/save/
- * restore, and paletted-bitmap blitting into the game's internal
- * software framebuffer. Split out of uw.c (the original monolithic
- * decompile) once these functions' real roles were confirmed. */
+ * restore, paletted-bitmap blitting into the game's internal software
+ * framebuffer, the whole-screen backup/restore save state used by
+ * transient panels, palette fade in/out, and the per-frame dungeon-view
+ * driver/flush. Split out of uw.c (the original monolithic decompile)
+ * once these functions' real roles were confirmed. */
 #include "headers/graphics.h"
 #include "headers/debug.h"
 #include <stdio.h>
@@ -321,3 +323,299 @@ short param_7;
   debug_framebuffer_dump("blit");
   return;
 }
+
+
+
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+// Snapshots the current 320x200 framebuffer into the DAT_000891b0 backup
+// buffer, skipping any pixel already equal to g_transparent_screen_color.
+// First half of the transient-panel idiom: a caller saves a clean
+// background here, draws a panel over it leaving untouched areas in the
+// transparent key color, then calls screen_backup_restore[_rect] to pour
+// the saved pixels back into those gaps.
+undefined4 screen_backup_save()
+
+{
+  short sVar1;
+  short *psVar2;
+  short *psVar3;
+  int iVar4;
+  int iVar5;
+  
+  sVar1 = g_transparent_screen_color;
+  iVar5 = 200;
+  psVar3 = (short *)(g_uw_framebuffer);
+  psVar2 = psVar3;
+  do {
+    iVar4 = 0x140;
+    do {
+      iVar4 = iVar4 + -1;
+      if (*psVar2 != sVar1) {
+        /* `(intptr_t)&DAT_000891b0` fixed globally across the file (17
+           sites) -- taking a global's address then truncating it through
+           `(int)` before pointer arithmetic, same bug class as the
+           `(TYPE *)((int)VAR + offset)` pattern fixed much earlier, just
+           differently shaped so the original regex-based pass missed it.
+           `(int)psVar3`/`(int)psVar2` right here are a related but
+           distinct case (casting pointer *variables*, not `&global`, to
+           int) not swept up by that fix; left alone since psVar2/psVar3
+           are both short-array cursors into the same nearby buffers in
+           practice and this hasn't been observed to crash, but worth
+           revisiting if it does. */
+        *(short *)(((intptr_t)&DAT_000891b0 - (int)psVar3) + (int)psVar2) = *psVar2;
+      }
+      psVar2 = psVar2 + 1;
+    } while (iVar4 != 0);
+    iVar5 = iVar5 + -1;
+  } while (iVar5 != 0);
+  return 0;
+}
+
+
+
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+// Whole-screen composite: every framebuffer pixel still equal to
+// g_transparent_screen_color is refilled from the screen_backup_save
+// snapshot (DAT_000891b0), then the frame is presented.
+void screen_backup_restore()
+
+{
+  int iVar1;
+  short *psVar2;
+  int iVar3;
+  
+  dirty_rect_union(0,200,0,0x140);
+  iVar1 = 0;
+  do {
+    iVar3 = 0x140;
+    do {
+      iVar3 = iVar3 + -1;
+      psVar2 = (short *)(iVar1 + (g_uw_framebuffer));
+      if (*psVar2 == g_transparent_screen_color) {
+        *psVar2 = *(short *)((intptr_t)&DAT_000891b0 + iVar1);
+      }
+      iVar1 = iVar1 + 2;
+    } while (iVar3 != 0);
+  } while (iVar1 < 0x1f400);
+  debug_framebuffer_dump("screen_backup_restore");
+  flush_dirty_rect_to_display(1);
+  return;
+}
+
+
+
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+// screen_backup_restore bounded to the rect (param_1,param_2)-(param_3,
+// param_4); unlike the full-screen version it does not present.
+void screen_backup_restore_rect(param_1,param_2,param_3,param_4)
+uint param_1;
+uint param_2;
+uint param_3;
+uint param_4;
+
+{
+  uint uVar1;
+  int iVar2;
+  short *psVar3;
+  int iVar4;
+  
+  dirty_rect_union(0,200,0,0x140);
+  param_2 = param_2 & 0xffff;
+  if (param_2 < (param_4 & 0xffff)) {
+    iVar4 = param_2 * 0x140;
+    do {
+      if (63999 < iVar4) {
+        return;
+      }
+      uVar1 = param_1 & 0xffff;
+      while (((int)uVar1 < (int)(param_3 & 0xffff) && ((int)uVar1 < 0x140))) {
+        iVar2 = iVar4 + uVar1;
+        uVar1 = uVar1 + 1;
+        psVar3 = (short *)(iVar2 * 2 + (g_uw_framebuffer));
+        if (*psVar3 == g_transparent_screen_color) {
+          *psVar3 = (&DAT_000891b0)[iVar2];
+        }
+      }
+      param_2 = param_2 + 1;
+      iVar4 = iVar4 + 0x140;
+    } while ((int)param_2 < (int)(param_4 & 0xffff));
+  }
+  debug_framebuffer_dump("screen_backup_restore_rect");
+  return;
+}
+
+
+
+
+// was FUN_000122d4
+void fade_in(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+ushort *param_3;
+
+{
+  int iVar1;
+  ushort uVar2;
+  ushort *puVar3;
+  undefined4 uVar4;
+  int iVar5;
+  ushort *puVar6;
+  int iVar7;
+  /* iVar8 held a `param_3 - puVar3` relative offset then re-added to
+     puVar6 to reconstruct a destination pointer -- correct as pointer
+     *difference* arithmetic, but iVar8/`(int)puVar6` truncated both
+     the difference and the re-addition to 32 bits on this 64-bit host
+     now that param_3 is a real (not truncated) pointer. Kept as the
+     same relative-offset idiom, just computed/applied via intptr_t. */
+  intptr_t iVar8;
+  int iVar9;
+  /* in_stack_0000000c/in_stack_00000014 were declared as fresh locals
+     but never assigned anywhere -- reading them was reading
+     uninitialized memory. param_1/param_2 are, symmetrically, declared
+     but never otherwise used in this function. Classic Ghidra artifact
+     where the same two incoming arguments got modeled twice (once as
+     real parameters, once as phantom "leftover on the stack" locals)
+     due to a calling-convention mismatch; param_1/param_2 are what
+     FUN_00040f34 actually needs here. */
+
+  puVar3 = (ushort *)Ordinal_1041(0x1f400);
+  FUN_00040f34(param_1,param_2);
+  Ordinal_1044(puVar3,param_3,0x1f400);
+  iVar9 = 1;
+  // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
+  uint diag_t0 = read_realtime_clock_units();
+  do {
+    uVar4 = Ordinal_2032(iVar9);
+    uVar4 = Ordinal_2026(uVar4,0x3e000000);
+    Ordinal_2026(uVar4,0x45800000);
+    iVar5 = Ordinal_2020();
+    iVar8 = (intptr_t)param_3 - (intptr_t)puVar3;
+    iVar7 = 64000;
+    puVar6 = puVar3;
+    do {
+      iVar7 = iVar7 + -1;
+      iVar1 = ((int)((*puVar6 & 0xf800) << 1) >> 6) * iVar5 >> 0x12;
+      *(short *)(iVar8 + (intptr_t)puVar6) = (short)((uint)(iVar1 << 0x1b) >> 0x10);
+      uVar2 = (ushort)(iVar1 << 0xb) |
+              (ushort)((((int)((*puVar6 & 0x7e0) << 7) >> 6) * iVar5 >> 0x12) << 5);
+      *(ushort *)(iVar8 + (intptr_t)puVar6) = uVar2;
+      *(ushort *)(iVar8 + (intptr_t)puVar6) =
+           uVar2 | (ushort)(((int)((*puVar6 & 0x1f) << 0xc) >> 6) * iVar5 >> 0x12);
+      puVar6 = puVar6 + 1;
+    } while (iVar7 != 0);
+    flush_dirty_rect_to_display(1);
+    iVar9 = iVar9 + 1;
+  } while (iVar9 < 9);
+  iVar9 = 64000;
+  puVar6 = puVar3;
+  do {
+    iVar9 = iVar9 + -1;
+    *(ushort *)(((intptr_t)param_3 - (intptr_t)puVar3) + (intptr_t)puVar6) = *puVar6;
+    puVar6 = puVar6 + 1;
+  } while (iVar9 != 0);
+  flush_dirty_rect_to_display(1);
+  DEBUG(TRACE, "[fade] fade_in total elapsed=%ums", read_realtime_clock_units() - diag_t0);
+  debug_framebuffer_dump("fade_in");
+  Ordinal_1018(puVar3);
+  return;
+}
+
+
+
+// was FUN_00012444
+void fade_out(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+undefined2 * param_3;
+
+{
+  int iVar1;
+  ushort uVar2;
+  ushort uVar3;
+  ushort *puVar4;
+  undefined4 uVar5;
+  int iVar6;
+  ushort *puVar7;
+  ushort *puVar8;
+  int iVar9;
+  int iVar10;
+  int iVar11;
+  /* Same phantom in_stack_/unused-param_1,2 artifact as fade_in
+     right above -- see its comment. */
+
+  puVar4 = (ushort *)Ordinal_1041(0x1f400);
+  FUN_00040f34(param_1,param_2);
+  Ordinal_1044(puVar4,param_3,0x1f400);
+  iVar11 = 7;
+  iVar10 = 64000;
+  // HACK: diagnostic addition, not in the original decompile -- timestamps this fade for the TRACE log below.
+  uint diag_t0 = read_realtime_clock_units();
+  do {
+    uVar5 = Ordinal_2032(iVar11);
+    uVar5 = Ordinal_2026(uVar5,0x3e000000);
+    Ordinal_2026(uVar5,0x45800000);
+    iVar6 = Ordinal_2020();
+    iVar9 = 64000;
+    puVar7 = puVar4;
+    do {
+      iVar9 = iVar9 + -1;
+      iVar1 = ((int)((*puVar7 & 0xf800) << 1) >> 6) * iVar6 >> 0x12;
+      /* Same param_3/puVar4/puVar7 offset-reconstruction truncation as
+         fade_in right above -- see its comment. */
+      puVar8 = (ushort *)(((intptr_t)param_3 - (intptr_t)puVar4) + (intptr_t)puVar7);
+      *puVar8 = (ushort)((uint)(iVar1 << 0x1b) >> 0x10);
+      uVar3 = (ushort)(iVar1 << 0xb) |
+              (ushort)((((int)((*puVar7 & 0x7e0) << 7) >> 6) * iVar6 >> 0x12) << 5);
+      *puVar8 = uVar3;
+      uVar2 = *puVar7;
+      puVar7 = puVar7 + 1;
+      *puVar8 = uVar3 | (ushort)(((int)((uVar2 & 0x1f) << 0xc) >> 6) * iVar6 >> 0x12);
+    } while (iVar9 != 0);
+    flush_dirty_rect_to_display(1);
+    iVar11 = iVar11 + -1;
+  } while (0 < iVar11);
+  while (iVar10 = iVar10 + -1, -1 < iVar10) {
+    *param_3 = 0;
+    param_3 = param_3 + 1;
+  }
+  flush_dirty_rect_to_display(1);
+  DEBUG(TRACE, "[fade] fade_out total elapsed=%ums", read_realtime_clock_units() - diag_t0);
+  debug_framebuffer_dump("fade_out");
+  Ordinal_1018(puVar4);
+  return;
+}
+
+
+// was FUN_0001294c -- render_dungeon_frame_timed's own per-frame screen
+// flush step (see g_suppress_frame_timed_flush above)
+void flush_dungeon_frame()
+
+{
+  if (!g_suppress_frame_timed_flush) {
+    flush_dirty_rect_to_display(1);
+  }
+  return;
+}
+
+
+
+
+// was FUN_00012970 -- 3D dungeon-view frame driver: clears the viewport then runs the whole pipeline (view matrix, visibility walk, vertex transform, near-clip, rasterize, cleanup)
+undefined4 render_dungeon_view()
+
+{
+  set_draw_color(0);
+  rect_fill_or_save_restore(0x34,0x13,0xe0,0x83);
+  build_view_matrix();
+  near_clip_visible_tiles(0,0);
+  translate_verts_to_camera_space(&DAT_000a85d0);
+  project_verts_through_view_matrix(&DAT_000a85d0);
+  near_clip_visible_tiles(&DAT_000a85d0,1);
+  render_visible_tile_list();
+  free_frame_geometry_buffers();
+  return 0;
+}
+

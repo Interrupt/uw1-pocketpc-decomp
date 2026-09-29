@@ -492,6 +492,12 @@ extern undefined2 DAT_000842a8;
 extern int DAT_00204848;
 extern int g_blit_transparent_mode;
 /* Globals defined in uw.c but also used by functions that now live in
+   graphics.c (screen_backup_save/restore/restore_rect) -- extern'd here so
+   both translation units see the same storage. */
+#define g_transparent_screen_color (*(short *)&g_palette_rgb565_backing[26])
+extern undefined2 DAT_000891b0_backing[76800];
+#define DAT_000891b0 DAT_000891b0_backing[0]
+/* Globals defined in uw.c but also used by functions that now live in
    game.c (app_main_loop, main_menu_loop) -- extern'd here so both
    translation units see the same storage. */
 extern undefined1 *DAT_00084298;
