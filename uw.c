@@ -5490,7 +5490,7 @@ static undefined DAT_000870cc_backing[8192];
 
    FOLLOW-UP (this session, chasing the chain-hotspot/stats-panel
    revival): that first fix under-sized both arrays. set_hud_status_value
-   and FUN_0006cbf0's own reset loop (`while (iVar1 < 9)`) both index
+   and reset_hud_panel_animation_state's own reset loop (`while (iVar1 < 9)`) both index
    `(&DAT_0023c118)[i]`/`(&DAT_0023c128)[i]` up to i=8, and disassembly
    of the real chain-hotspot handler chain (0x6cfb0-0x6cfdc) confirms
    g_target_hud_panel's real address is exactly DAT_0023c118+6 -- so widened
@@ -5574,7 +5574,7 @@ short DAT_0023c22c;
    (iVar6=0/1, left/right dragon's HEAD-animation sprite-list slot
    handle -- a separate, dynamically-allocated overlay sprite driving
    the head's reaction animation, distinct from DAT_0023c230's own
-   static head sub-sprite) and `FUN_0006cbf0` resets both elements
+   static head sub-sprite) and `reset_hud_panel_animation_state` resets both elements
    individually (`FUN_00076488((int)DAT_0023c1e8);
    FUN_00076488((int)DAT_0023c1ea);`) -- confirming these are really
    one 2-element array (0x23c1e8/0x23c1ea are exactly 2 bytes apart in
@@ -5591,7 +5591,7 @@ short DAT_0023c22c;
 #define DAT_0023c1ea DAT_0023c1e8_arr[1]
 /* Same split-symbol bug, same fix: `hud_dragon_reaction_tick` indexes
    `&DAT_0023c1e4 + iVar6` (the animation-phase state byte per dragon
-   side) and `FUN_0006cbf0` resets both elements individually
+   side) and `reset_hud_panel_animation_state` resets both elements individually
    (`DAT_0023c1e6 = 0; ... DAT_0023c1e4 = 0;`) -- 0x23c1e4/0x23c1e6 are
    exactly 2 bytes apart in the original binary, confirming this is
    really one 2-element array too. */
@@ -20478,7 +20478,7 @@ void FUN_0003bee4()
   DAT_00201c70 = 0;
   DAT_00201c78 = 0;
   DAT_00086b20 = 1;
-  FUN_0006cbf0();
+  reset_hud_panel_animation_state();
   DAT_00201c94 = 0;
   unready_weapon();
   DAT_000868d8 = 2;
@@ -20517,7 +20517,7 @@ short param_1;
   reset_cursor_confine_rect();
   if (param_1 == 1) {
     set_hud_status_value(2,0);
-    FUN_0006cb74();
+    snap_compass_to_heading();
     hud_vitals_threshold_shake(0);
     message_scroll_print_wrapped(s_You_died_000857b8);
     FUN_00037c14(0x103);
@@ -36405,53 +36405,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_0006cb74()
-
-{
-  byte bVar1;
-  uint uVar2;
-  
-  bVar1 = DAT_0023c11a;
-  uVar2 = (uint)DAT_0023c11a;
-  sprite_list_set_frame_id((int)DAT_0023c228,(uVar2 & 3) + 0x2059);
-  sprite_list_set_position((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)(ushort)bVar1],
-               (int)(short)(&DAT_00087150)[(short)(ushort)bVar1]);
-  sprite_list_set_frame_id((int)DAT_0023c22c,uVar2 + 0x205d);
-  FUN_00076508();
-  return;
-}
-
-
-
-void FUN_0006cbf0()
-
-{
-  int iVar1;
-  
-  iVar1 = 0;
-  do {
-    (&DAT_0023c118)[iVar1] = 0;
-    (&DAT_0023c128)[iVar1] = 0;
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar1 < 9);
-  FUN_00076488((int)DAT_0023c1e8);
-  FUN_00076488((int)DAT_0023c1ea);
-  DAT_0023c1e6 = 0;
-  g_active_hud_panel = 0;
-  DAT_0023c1e4 = 0;
-  DAT_0023c220 = 0;
-  DAT_0023c1d8 = DAT_0023c1d8 & 0xff7f;
-  DAT_0023c11f = 4;
-  DAT_0023c120 = 6;
-  DAT_0023c130 = 6;
-  DAT_000870e0 = 6;
-  DAT_000870e4 = 0;
-  FUN_00076508();
   return;
 }
 

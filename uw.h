@@ -1869,6 +1869,7 @@ extern char s_You_see_000858fc[];
    translation units see the same storage. */
 #define UW_WEAPON_SWING_FRAME_COUNT 28
 extern void * g_weapon_swing_raw_frames[UW_WEAPON_SWING_FRAME_COUNT];
+extern undefined1 DAT_000870e0;
 extern short DAT_000870e4;
 extern undefined2 DAT_000870e8;
 extern short DAT_0023c1ec;
@@ -1952,14 +1953,17 @@ extern ushort DAT_0023c1dc;
 extern ushort DAT_0023c1e0;
 extern undefined2 DAT_0023c1e4_arr[2];
 #define DAT_0023c1e4 DAT_0023c1e4_arr[0]
+#define DAT_0023c1e6 DAT_0023c1e4_arr[1]
 extern short DAT_0023c1e8_arr[2];
 #define DAT_0023c1e8 DAT_0023c1e8_arr[0]
+#define DAT_0023c1ea DAT_0023c1e8_arr[1]
 extern undefined1 DAT_0023c1f0_backing[65536];
 #define DAT_0023c1f0 DAT_0023c1f0_backing[0]
 extern undefined1 DAT_0023c1f8_backing[65536];
 #define DAT_0023c1f8 DAT_0023c1f8_backing[0]
 extern int DAT_0023c20c;
 extern short DAT_0023c21c;
+extern undefined2 DAT_0023c220;
 extern short DAT_0023c224_arr[2];
 #define DAT_0023c224 DAT_0023c224_arr[0]
 extern short DAT_0023c228;
@@ -2007,6 +2011,7 @@ extern char s_panels_00087260[];
 #define DAT_00087114 (*(short *)(DAT_00087112_backing + 2))
 #define DAT_000871b8 (*(undefined1 *)DAT_000871b8_arr)
 #define DAT_0023c11d DAT_0023c11c_arr[1]
+#define DAT_0023c11f DAT_0023c118_arr[7]
 #define DAT_0023c120 DAT_0023c118_arr[8]
 #define DAT_0023c12d DAT_0023c12c_arr[1]
 #define DAT_0023c244 DAT_0023c240_vitals[4]
@@ -3021,8 +3026,8 @@ int transition_to_level();
 void save_or_restore_level_special_state();
 undefined4 blit_fullscreen_bitmap_file();
 void hud_vitals_threshold_shake();
-void FUN_0006cb74();
-void FUN_0006cbf0();
+void snap_compass_to_heading();
+void reset_hud_panel_animation_state();
 void redraw_hud_panels();
 void thunk_FUN_0006edb8();
 void set_hud_status_value();

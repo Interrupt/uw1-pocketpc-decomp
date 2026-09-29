@@ -919,7 +919,7 @@ void redraw_hud_panels()
     sprite_list_set_frame_id((int)(short)(&DAT_0023c238)[iVar3],iVar2 + 0x207b);
     iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
   } while (iVar3 < 2);
-  FUN_0006cb74();
+  snap_compass_to_heading();
   sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
   FUN_0006e96c(DAT_00086df8 + 0x47);
   FUN_00041a78(s_panels_00087260,g_active_hud_panel,DAT_0023cca4);
@@ -2239,3 +2239,68 @@ int param_1;
   return;
 }
 
+
+
+
+
+
+
+// was FUN_0006cb74 -- snaps the compass dial (DAT_0023c228) and needle
+// (DAT_0023c22c) sprites straight to the player's real current heading
+// (DAT_0023c11a), unlike hud_compass_needle_tick's own one-increment-
+// per-call stepping toward it via DAT_0023c12a (which this function
+// never touches). Used where the needle shouldn't visibly animate into
+// place -- e.g. on HUD panel open/reset.
+void snap_compass_to_heading()
+
+{
+  byte bVar1;
+  uint uVar2;
+
+  bVar1 = DAT_0023c11a;
+  uVar2 = (uint)DAT_0023c11a;
+  sprite_list_set_frame_id((int)DAT_0023c228,(uVar2 & 3) + 0x2059);
+  sprite_list_set_position((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)(ushort)bVar1],
+               (int)(short)(&DAT_00087150)[(short)(ushort)bVar1]);
+  sprite_list_set_frame_id((int)DAT_0023c22c,uVar2 + 0x205d);
+  FUN_00076508();
+  return;
+}
+
+
+
+// was FUN_0006cbf0 -- resets the HUD panel subsystem's transient
+// animation/selection state: zeroes the two 9-entry per-panel-button
+// state arrays (DAT_0023c118/DAT_0023c128), hides the two sprites
+// DAT_0023c1e8/DAT_0023c1ea via FUN_00076488, clears the active-panel
+// selector (g_active_hud_panel) and the panel-switch animation counters
+// FUN_0006e1d4 drives (DAT_0023c220 and friends), and reseeds
+// DAT_0023c11f/DAT_0023c120/DAT_0023c130/DAT_000870e0/DAT_000870e4 back
+// to their startup defaults (matching redraw_hud_panels's own initial
+// values for the latter two).
+void reset_hud_panel_animation_state()
+
+{
+  int iVar1;
+
+  iVar1 = 0;
+  do {
+    (&DAT_0023c118)[iVar1] = 0;
+    (&DAT_0023c128)[iVar1] = 0;
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 9);
+  FUN_00076488((int)DAT_0023c1e8);
+  FUN_00076488((int)DAT_0023c1ea);
+  DAT_0023c1e6 = 0;
+  g_active_hud_panel = 0;
+  DAT_0023c1e4 = 0;
+  DAT_0023c220 = 0;
+  DAT_0023c1d8 = DAT_0023c1d8 & 0xff7f;
+  DAT_0023c11f = 4;
+  DAT_0023c120 = 6;
+  DAT_0023c130 = 6;
+  DAT_000870e0 = 6;
+  DAT_000870e4 = 0;
+  FUN_00076508();
+  return;
+}
