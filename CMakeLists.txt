@@ -38,6 +38,7 @@ set(UW_SOURCES
   src/movement.c
   src/visibility.c
   src/saveload.c
+  src/text.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

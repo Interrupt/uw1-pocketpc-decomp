@@ -1494,6 +1494,18 @@ extern char s_IV__0008705c[];
 extern char s_Please_enter_a_Save_Game_file_an_00087094[];
 extern undefined s_scroll_color_reset_00087038_backing[8192];
 #define s_scroll_color_reset_00087038 s_scroll_color_reset_00087038_backing[0]
+/* Globals defined in uw.c but also used by functions that now live in
+   text.c (text/font rendering) -- extern'd here so both translation
+   units see the same storage. */
+extern undefined2 DAT_000890b0_backing[32768];
+#define DAT_000890b0 DAT_000890b0_backing[0]
+extern undefined2 DAT_000a85b0;
+extern short DAT_000a85b8;
+extern undefined4 DAT_0020250c;
+extern char * g_font_glyph_data_base;
+extern ushort g_font_line_height;
+extern short g_font_row_stride;
+extern undefined2 g_text_flat_color;
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -2958,6 +2970,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/movement.h"
 #include "src/headers/visibility.h"
 #include "src/headers/saveload.h"
+#include "src/headers/text.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
