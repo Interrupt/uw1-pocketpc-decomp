@@ -7539,24 +7539,6 @@ int g_ambient_bias_reduction = 32;
 
 
 
-void FUN_00019660(param_1)
-undefined1 * param_1;
-
-{
-  DAT_000bbf04 = param_1;
-  *param_1 = 0xff;
-  param_1[1] = 0xff;
-  param_1[2] = 0xff;
-  param_1[3] = 0xff;
-  DAT_000bbf04[4] = 0;
-  DAT_000bbf04[5] = 0;
-  DAT_000bbf04[6] = 0;
-  DAT_000bbf04[7] = 0;
-  return;
-}
-
-
-
 int FUN_00019d00(param_1)
 int * param_1;
 

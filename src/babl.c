@@ -872,7 +872,7 @@ int param_1;
    real allocator -- see babl_free/babl_resize's own comments for
    the matching free()/no-op halves. DAT_000bbf04 (the original
    allocator's free-list head) is now unused by this trio; left
-   declared since FUN_00019660 (uw.c ~11090, an unrelated scratch-
+   declared since init_conv_var_terminator_record (uw.c ~11090, an unrelated scratch-
    buffer setup that happens to reuse the same global address in the
    original binary) still writes to it. */
 {
@@ -3239,13 +3239,13 @@ undefined1 *param_2;
 
   /* Was `undefined4 param_2` (32-bit) -- truncated the real 64-bit
      buffer pointer (DAT_00100784 + 0x400, passed in from start_npc_conversation)
-     before it ever reached FUN_00019660's own `*param_1 = 0xff` write,
+     before it ever reached init_conv_var_terminator_record's own `*param_1 = 0xff` write,
      the Talk-mode crash in bug-critter-talk.txt (EXC_BAD_ACCESS at the
      truncated 32-bit address, confirmed live via lldb: param_2 came in
      as 0x58270400, the real 0x158270400 buffer address with its high
      32 bits dropped). Same truncation-bug class as the tilemap_lookup
      pointer-truncation sweep earlier this session. */
-  FUN_00019660(param_2);
+  init_conv_var_terminator_record(param_2);
   DAT_000bbf30 = 0;
   DAT_000bbf20 = param_1;
   iVar2 = open_level_archive(auStack_20,param_1);
@@ -3514,4 +3514,46 @@ LAB_00019240:
   return uVar5;
 }
 #undef local_122
+
+
+
+
+// was FUN_00019660 -- writes an 8-byte "terminator" record (id/marker
+// bytes 0xffffffff, value bytes 0) at the head of the conversation-
+// globals destination buffer, ahead of load_npc_conversation_record's
+// real archive read, so a variable-list scan sees an immediate
+// terminator if no real records ever get filled in. Also stashes
+// param_1 into DAT_000bbf04 -- the original babl allocator's free-list
+// head, now unused by babl_alloc/babl_free/babl_resize (see
+// babl_alloc's own comment); this write is vestigial but harmless.
+//
+// BUG FIX: the original decompile wrote the trailing 4 zero bytes as
+// `DAT_000bbf04[4..7]`, but DAT_000bbf04 is declared `uint *` (4-byte
+// stride), so that indexed 16 bytes past the record start (offset
+// 16-19), not the intended byte offsets 4-7 -- a wild write 12 bytes
+// beyond the real 8-byte record, using whatever memory happens to sit
+// there. This was a real bug in the original decompile, just never
+// observed to matter until moving this function out of uw.c changed
+// static layout enough to put something load-bearing at that offset
+// (confirmed live: SIGSEGV deep in the renderer, reproducibly, only
+// after this extraction -- moving it back and bisecting isolated it to
+// this exact write). Use param_1 (the correctly byte-typed pointer,
+// already in scope, same address DAT_000bbf04 was just set to) for
+// the byte-offset writes instead, matching the pattern the leading
+// 4 bytes already use.
+void init_conv_var_terminator_record(param_1)
+undefined1 * param_1;
+
+{
+  DAT_000bbf04 = param_1;
+  *param_1 = 0xff;
+  param_1[1] = 0xff;
+  param_1[2] = 0xff;
+  param_1[3] = 0xff;
+  param_1[4] = 0;
+  param_1[5] = 0;
+  param_1[6] = 0;
+  param_1[7] = 0;
+  return;
+}
 
