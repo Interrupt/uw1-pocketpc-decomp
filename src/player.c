@@ -475,7 +475,13 @@ char * param_1;
       iVar2 = open_existing_file_rw(acStack_114);
       bVar3 = iVar2 != -1;
       if (bVar3) {
-        FUN_00065b90();
+        /* BUG FIX: was `write_player_status_block()` with no arguments,
+           relying on leftover register state -- iVar2 (the file
+           handle, used the very next line) is the value that belongs
+           here, matching write_player_status_block's own param_1 role
+           (same dropped-argument bug class documented throughout this
+           project). */
+        write_player_status_block(iVar2);
         write_file_handle(iVar2,&g_save_record_count,2);
         write_file_handle(iVar2,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
         Ordinal_553(iVar2);
@@ -785,6 +791,89 @@ char param_2;
     }
     FUN_00069e30();
   }
+  return;
+}
+
+
+
+
+// was FUN_00065b90 -- packs live game state (recent equip/attack
+// bytes, world x/y/z/facing, locomotion state) into the 0xd2-byte
+// DAT_00086df8 player-status block, then writes it to file handle
+// param_1 through a length-prefixed, presumably checksummed/XOR'd
+// wrapper (FUN_0007ef78). Called from write_player_save_record as the
+// player.dat header write step.
+void write_player_status_block(param_1)
+undefined4 param_1;
+
+{
+  undefined2 uVar1;
+  byte bVar2;
+  uint uVar3;
+  byte local_14 [4];
+  
+  local_14[0] = *DAT_00086df8 ^ 0xaa;
+  DAT_00086df8[0x1e] = *(byte *)(DAT_0023be74 + 5);
+  DAT_00086df8[0x1f] = *(byte *)(DAT_0023be74 + 6);
+  DAT_00086df8[0x20] = *(byte *)(DAT_0023be74 + 7);
+  DAT_00086df8[0x35] = *(byte *)((char *)g_player_object + 8);
+  DAT_00086df8[0x36] = *(byte *)(DAT_0023be74 + 4);
+  uVar1 = DAT_00204880;
+  DAT_00086df8[0x54] = (byte)DAT_00204880;
+  DAT_00086df8[0x55] = (byte)((ushort)uVar1 >> 8);
+  uVar1 = DAT_00204882;
+  DAT_00086df8[0x56] = (byte)DAT_00204882;
+  DAT_00086df8[0x57] = (byte)((ushort)uVar1 >> 8);
+  uVar1 = DAT_00204884;
+  DAT_00086df8[0x58] = (byte)DAT_00204884;
+  DAT_00086df8[0x59] = (byte)((ushort)uVar1 >> 8);
+  uVar1 = DAT_00201c70;
+  DAT_00086df8[0x5a] = (byte)DAT_00201c70;
+  DAT_00086df8[0x5b] = (byte)((ushort)uVar1 >> 8);
+  uVar1 = DAT_00201b68;
+  DAT_00086df8[0x5c] = (byte)DAT_00201b68;
+  DAT_00086df8[0x5d] = (byte)((ushort)uVar1 >> 8);
+  bVar2 = FUN_00072b58();
+  DAT_00086df8[0xb5] = (bVar2 ^ DAT_00086df8[0xb5]) & 3 ^ DAT_00086df8[0xb5];
+  bVar2 = FUN_00072b3c();
+  DAT_00086df8[0xb5] = DAT_00086df8[0xb5] & 0xf3 | (bVar2 & 3) << 2;
+  uVar3 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xf807 | (uint)DAT_002048a8 << 3;
+  DAT_00086df8[0xb6] = (byte)uVar3;
+  DAT_00086df8[0xb7] = (byte)(uVar3 >> 8);
+  write_file_handle(param_1,local_14,1);
+  FUN_0007ef78(param_1,local_14[0],DAT_00086df8,0xd2);
+  return;
+}
+
+
+
+// was FUN_00065d4c -- read-side counterpart to
+// write_player_status_block: reads the 0xd2-byte DAT_00086df8 player-
+// status block from file handle param_1 and unpacks it back into the
+// live game-state globals it was packed from.
+void read_player_status_block(param_1)
+undefined4 param_1;
+
+{
+  undefined1 local_10 [4];
+  
+  read_file_handle(param_1,local_10,1);
+  FUN_0007ee9c(param_1,local_10[0],DAT_00086df8,0xd2);
+  *(undefined1 *)(DAT_0023be74 + 5) = *(undefined1 *)(DAT_00086df8 + 0x1e);
+  *(undefined1 *)(DAT_0023be74 + 6) = *(undefined1 *)(DAT_00086df8 + 0x1f);
+  *(undefined1 *)(DAT_0023be74 + 7) = *(undefined1 *)(DAT_00086df8 + 0x20);
+  *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_00086df8 + 0x35);
+  *(undefined1 *)(DAT_0023be74 + 4) = *(undefined1 *)(DAT_00086df8 + 0x36);
+  DAT_00204880 = *(undefined2 *)(DAT_00086df8 + 0x54);
+  DAT_00204882 = *(undefined2 *)(DAT_00086df8 + 0x56);
+  DAT_00204884 = *(undefined2 *)(DAT_00086df8 + 0x58);
+  DAT_00201c70 = *(undefined2 *)(DAT_00086df8 + 0x5a);
+  DAT_00201b68 = *(undefined2 *)(DAT_00086df8 + 0x5c);
+  DAT_002048a8 = (undefined1)(*(ushort *)(DAT_00086df8 + 0xb6) >> 3);
+  FUN_00072c10(*(byte *)(DAT_00086df8 + 0xb5) & 3);
+  FUN_00072b74(*(byte *)(DAT_00086df8 + 0xb5) >> 2 & 3);
+  FUN_0005d2b0();
+  FUN_0003dca4(*(ushort *)(DAT_00086df8 + 0xb6) & 7);
   return;
 }
 

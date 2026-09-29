@@ -23589,7 +23589,12 @@ char *param_1;  /* was `int` -- truncated the real DAT_000857a0 pointer
       uVar4 = 0;
       goto LAB_00044730;
     }
-    FUN_00065d4c();
+    /* BUG FIX: was `read_player_status_block()` with no arguments,
+       relying on leftover register state -- iVar3 (the file handle,
+       used the very next line) is the value that belongs here,
+       matching read_player_status_block's own param_1 role (same
+       dropped-argument bug class documented throughout this project). */
+    read_player_status_block(iVar3);
     read_file_handle(iVar3,&g_save_record_count,2);
     read_file_handle(iVar3,g_save_record_buffer,g_save_record_count * 8 + 0x5b + 220);
     Ordinal_553(iVar3);
@@ -36387,78 +36392,6 @@ LAB_00060f54:
 
 
 
-void FUN_00065b90(param_1)
-undefined4 param_1;
-
-{
-  undefined2 uVar1;
-  byte bVar2;
-  uint uVar3;
-  byte local_14 [4];
-  
-  local_14[0] = *DAT_00086df8 ^ 0xaa;
-  DAT_00086df8[0x1e] = *(byte *)(DAT_0023be74 + 5);
-  DAT_00086df8[0x1f] = *(byte *)(DAT_0023be74 + 6);
-  DAT_00086df8[0x20] = *(byte *)(DAT_0023be74 + 7);
-  DAT_00086df8[0x35] = *(byte *)((char *)g_player_object + 8);
-  DAT_00086df8[0x36] = *(byte *)(DAT_0023be74 + 4);
-  uVar1 = DAT_00204880;
-  DAT_00086df8[0x54] = (byte)DAT_00204880;
-  DAT_00086df8[0x55] = (byte)((ushort)uVar1 >> 8);
-  uVar1 = DAT_00204882;
-  DAT_00086df8[0x56] = (byte)DAT_00204882;
-  DAT_00086df8[0x57] = (byte)((ushort)uVar1 >> 8);
-  uVar1 = DAT_00204884;
-  DAT_00086df8[0x58] = (byte)DAT_00204884;
-  DAT_00086df8[0x59] = (byte)((ushort)uVar1 >> 8);
-  uVar1 = DAT_00201c70;
-  DAT_00086df8[0x5a] = (byte)DAT_00201c70;
-  DAT_00086df8[0x5b] = (byte)((ushort)uVar1 >> 8);
-  uVar1 = DAT_00201b68;
-  DAT_00086df8[0x5c] = (byte)DAT_00201b68;
-  DAT_00086df8[0x5d] = (byte)((ushort)uVar1 >> 8);
-  bVar2 = FUN_00072b58();
-  DAT_00086df8[0xb5] = (bVar2 ^ DAT_00086df8[0xb5]) & 3 ^ DAT_00086df8[0xb5];
-  bVar2 = FUN_00072b3c();
-  DAT_00086df8[0xb5] = DAT_00086df8[0xb5] & 0xf3 | (bVar2 & 3) << 2;
-  uVar3 = *(ushort *)(DAT_00086df8 + 0xb6) & 0xf807 | (uint)DAT_002048a8 << 3;
-  DAT_00086df8[0xb6] = (byte)uVar3;
-  DAT_00086df8[0xb7] = (byte)(uVar3 >> 8);
-  write_file_handle(param_1,local_14,1);
-  FUN_0007ef78(param_1,local_14[0],DAT_00086df8,0xd2);
-  return;
-}
-
-
-
-void FUN_00065d4c(param_1)
-undefined4 param_1;
-
-{
-  undefined1 local_10 [4];
-  
-  read_file_handle(param_1,local_10,1);
-  FUN_0007ee9c(param_1,local_10[0],DAT_00086df8,0xd2);
-  *(undefined1 *)(DAT_0023be74 + 5) = *(undefined1 *)(DAT_00086df8 + 0x1e);
-  *(undefined1 *)(DAT_0023be74 + 6) = *(undefined1 *)(DAT_00086df8 + 0x1f);
-  *(undefined1 *)(DAT_0023be74 + 7) = *(undefined1 *)(DAT_00086df8 + 0x20);
-  *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_00086df8 + 0x35);
-  *(undefined1 *)(DAT_0023be74 + 4) = *(undefined1 *)(DAT_00086df8 + 0x36);
-  DAT_00204880 = *(undefined2 *)(DAT_00086df8 + 0x54);
-  DAT_00204882 = *(undefined2 *)(DAT_00086df8 + 0x56);
-  DAT_00204884 = *(undefined2 *)(DAT_00086df8 + 0x58);
-  DAT_00201c70 = *(undefined2 *)(DAT_00086df8 + 0x5a);
-  DAT_00201b68 = *(undefined2 *)(DAT_00086df8 + 0x5c);
-  DAT_002048a8 = (undefined1)(*(ushort *)(DAT_00086df8 + 0xb6) >> 3);
-  FUN_00072c10(*(byte *)(DAT_00086df8 + 0xb5) & 3);
-  FUN_00072b74(*(byte *)(DAT_00086df8 + 0xb5) >> 2 & 3);
-  FUN_0005d2b0();
-  FUN_0003dca4(*(ushort *)(DAT_00086df8 + 0xb6) & 7);
-  return;
-}
-
-
-
 void FUN_00065eb4()
 
 {
@@ -49225,8 +49158,8 @@ byte param_2;
 char *param_3;  /* was `int` -- same DAT_00086df8-pointer truncation bug
                    as its sibling FUN_0007ef78 (see that function's
                    comment); this one is reached from the save-slot-copy
-                   path (FUN_00065d4c <- FUN_00044624) rather than
-                   FUN_00065b90's caller */
+                   path (read_player_status_block <- FUN_00044624) rather than
+                   write_player_status_block's caller */
 short param_4;
 
 {
@@ -49267,9 +49200,9 @@ int FUN_0007ef78(param_1,param_2,param_3,param_4)
 undefined4 param_1;
 byte param_2;
 char *param_3;  /* was `int` -- truncated the real DAT_00086df8 pointer
-                   FUN_00065b90 passes in, latent until something
+                   write_player_status_block passes in, latent until something
                    (write_player_save_record, the player.dat writer) actually called
-                   FUN_00065b90 -- previously only reachable from the
+                   write_player_status_block -- previously only reachable from the
                    Load Game path */
 short param_4;
 
