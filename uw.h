@@ -1331,6 +1331,71 @@ extern undefined4 g_weapon_overlay_enabled;
 extern char s_is_locked__000878fc[];
 extern char s_That_000878f4[];
 extern char s_UNNAMED_00084f24[];
+/* Globals defined in uw.c but also used by functions that now live in
+   movement.c (the movement collision sweep) -- extern'd here so both
+   translation units see the same storage. */
+extern unsigned char DAT_002049c8_backing[64];
+extern unsigned char DAT_00086998_backing[16];
+extern undefined1 DAT_00086986_backing[65536];
+#define DAT_00086986 DAT_00086986_backing[0]
+extern short DAT_00086980;
+extern short DAT_00086982;
+extern short DAT_00086984;
+extern short DAT_0008698a;
+extern ushort DAT_0008698c;
+extern short DAT_0008698e;
+extern short DAT_00086990;
+extern ushort DAT_00086992;
+extern short DAT_00086994;
+extern short DAT_00086996;
+extern unsigned char DAT_000869a8_backing[16];
+#define DAT_000869a8 DAT_000869a8_backing[0]
+extern undefined DAT_00202c32;
+extern undefined1 DAT_00202c38_backing[8192];
+#define DAT_00202c38 DAT_00202c38_backing[0]
+extern undefined1 DAT_00202c39_backing[8192];
+#define DAT_00202c39 DAT_00202c39_backing[0]
+extern undefined1 DAT_00202c3a_backing[8192];
+#define DAT_00202c3a DAT_00202c3a_backing[0]
+extern undefined1 DAT_00202c3b_backing[8192];
+#define DAT_00202c3b DAT_00202c3b_backing[0]
+extern undefined1 DAT_00202c3c_backing[65536];
+#define DAT_00202c3c DAT_00202c3c_backing[0]
+extern undefined1 DAT_00202c3d_backing[8192];
+#define DAT_00202c3d DAT_00202c3d_backing[0]
+extern int DAT_00204870;
+extern char * DAT_00204874;
+extern undefined4 DAT_00204878;
+extern char * DAT_002048bc;
+extern undefined * DAT_00204988;
+extern undefined * DAT_00204998;
+extern undefined1 * DAT_002049a8;
+extern undefined * DAT_002049b8;
+extern char DAT_002049bc;
+extern undefined1 DAT_002049c0;
+extern short * g_sweep_foot_pos;
+extern short * g_sweep_velocity;
+#define DAT_00086987 DAT_00086986_backing[1]
+#define DAT_00086998  (*(signed char *)(DAT_00086998_backing + 0))
+#define DAT_00086999  (DAT_00086998_backing[1])
+#define DAT_0008699a  (DAT_00086998_backing[2])
+#define DAT_0008699b  (DAT_00086998_backing[3])
+#define DAT_0008699f  (DAT_00086998_backing[7])
+#define DAT_000869a1  (DAT_00086998_backing[9])
+#define DAT_000869a2  (DAT_00086998_backing[10])
+#define DAT_002049c8 (*(short *)(DAT_002049c8_backing + 0x00))
+#define DAT_002049ce (*(undefined2 *)(DAT_002049c8_backing + 0x06))
+#define DAT_002049d0 (DAT_002049c8_backing[0x08])
+#define DAT_002049d1 (DAT_002049c8_backing[0x09])
+#define DAT_002049d2 (*(undefined2 *)(DAT_002049c8_backing + 0x0a))
+#define DAT_002049d4 (*(ushort *)(DAT_002049c8_backing + 0x0c))
+#define DAT_002049d6 (*(ushort *)(DAT_002049c8_backing + 0x0e))
+#define DAT_002049d8 (DAT_002049c8_backing[0x10])
+#define DAT_002049d9 (DAT_002049c8_backing[0x11])
+#define DAT_002049da (DAT_002049c8_backing[0x12])
+#define DAT_002049dc (DAT_002049c8_backing[0x14])
+#define DAT_002049dd (DAT_002049c8_backing[0x15])
+#define DAT_002049de (DAT_002049c8_backing[0x16])
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -2792,6 +2857,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/interact.h"
 #include "src/headers/resources.h"
 #include "src/headers/item_use.h"
+#include "src/headers/movement.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
