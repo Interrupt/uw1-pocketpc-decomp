@@ -122,7 +122,7 @@ void babl_builtin_do_decline()
    (if check_object_carry_weight says it fits -- opens a brief item-
    view popup via FUN_00057c5c) or, if it doesn't fit, stages it in
    one of the 4 player-side barter-table slots (DAT_000bbfd0/bbfa8/
-   bbf98/bbfc0, the same table sprite_list/FUN_0001b474 sets up)
+   bbf98/bbfc0, the same table sprite_list/init_barter_ui sets up)
    instead of dropping it. DAT_00202948/DAT_002020c4's own exact
    semantics aren't independently confirmed (see their own comment) --
    this is a faithful 1:1 port of the real disassembly, not yet
@@ -2193,7 +2193,7 @@ void FUN_000286cc()
         draw_text_string(local_44,0x30,3);
       }
       DAT_001007c0 = DAT_00100784;
-      FUN_0001b474();
+      init_barter_ui();
       FUN_0007f0e0();
       cursor_show_idle_tick();
       DAT_0023bf0c = 0;
@@ -3815,6 +3815,93 @@ void babl_builtin_setup_to_barter()
     }
   }
   FUN_0007ec50();
+  return;
+}
+
+
+
+
+// was FUN_0001b474 -- initializes the barter/trade UI: allocates the
+// 4-slot left/right item-icon grtile pools (DAT_000bc028/DAT_000bc010),
+// captures the trade-scale panel background under them from the
+// framebuffer, resets the barter-slot state arrays and hotspot
+// crosshair markers (4 slots each, matching
+// babl_builtin_setup_to_barter's own rotating pool), and computes the
+// NPC's starting haggle/scale values from their comobj.dat-style
+// personality row (indexed by NPC class at DAT_001007de+iVar6).
+// Called right before start_npc_conversation when entering barter mode.
+void init_barter_ui()
+
+{
+  int iVar1;
+  byte bVar2;
+  undefined2 uVar3;
+  short sVar4;
+  undefined4 uVar5;
+  int iVar6;
+  int iVar7;
+  
+  iVar7 = 0;
+  iVar6 = (*DAT_00100674 & 0x3f) * 0x30;
+  g_blit_transparent_mode = 1;
+  do {
+    uVar5 = grtile_alloc_registered(0x10,0x20);
+    (&DAT_000bc028)[iVar7] = uVar5;
+    uVar5 = grtile_alloc_registered(0x10,0x20);
+    (&DAT_000bc010)[iVar7] = uVar5;
+    iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
+  } while (iVar7 < 4);
+  iVar7 = 0;
+  do {
+    iVar1 = iVar7 * 4;
+    capture_framebuffer_rect_to_grtile((&DAT_000bc028)[iVar7],(int)*(short *)(&DAT_000845b8 + iVar1),
+                 (int)*(short *)(&DAT_000845ba + iVar1),0x10,0x10);
+    capture_framebuffer_rect_to_grtile((&DAT_000bc010)[iVar7],(int)*(short *)(&DAT_000845d8 + iVar1),
+                 (int)*(short *)(&DAT_000845da + iVar1),0x10,0x10);
+    iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
+  } while (iVar7 < 4);
+  iVar7 = 0;
+  DAT_000bbfd8 = 0;
+  DAT_000bbfdc = 0;
+  do {
+    (&DAT_000bbfd0)[iVar7] = 0;
+    (&DAT_000bbfe8)[iVar7] = 0;
+    (&DAT_000bbfa8)[iVar7] = 0xffff;
+    (&DAT_000bbfc0)[iVar7] = 0xffff;
+    (&DAT_000bbfa8)[iVar7 + 4] = 0xffff;
+    (&DAT_000bbfc0)[iVar7 + 4] = 0xffff;
+    (&DAT_000bbf98)[iVar7] = 0;
+    (&DAT_000bbff0)[iVar7] = 0;
+    draw_hotspot_crosshair_marker(1,iVar7);
+    draw_hotspot_crosshair_marker(0,iVar7);
+    iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
+  } while (iVar7 < 4);
+  DAT_000bc008 = 0;
+  uVar3 = encode_object_slot_index(DAT_00100674);
+  Ordinal_1061(uVar3);
+  DAT_000bc024 = FUN_0001d170(((&DAT_001007de)[iVar6] & 0xf) * '\x06',0xffffffe7,0x19);
+  DAT_000bc004 = FUN_0001d170(*(ushort *)(&DAT_001007dd + iVar6) >> 0xc,0xffffffec,100);
+  DAT_000bbfbc = FUN_0001d170((0xf - (uint)((byte)(&DAT_001007dd)[iVar6] >> 4)) * 6,0xffffffe7,0x32)
+  ;
+  iVar7 = FUN_0001d170(*(ushort *)(&DAT_001007dd + iVar6) & 0xf,0xffffffec,0x14);
+  DAT_000bbfe0 = (undefined2)iVar7;
+  DAT_000bbfb8 = 0;
+  bVar2 = *(byte *)(DAT_00086df8 + 0x30);
+  DAT_000bc024 = DAT_000bc024 + (ushort)bVar2 * -2;
+  DAT_000bc004 = DAT_000bc004 + ((short)(ushort)bVar2 >> 1);
+  sVar4 = Ordinal_2005(6,(ushort)bVar2);
+  DAT_000bbfe0 = (undefined2)(iVar7 - sVar4);
+  iVar7 = (iVar7 - sVar4) * 0x10000 >> 0x10;
+  uVar3 = DAT_000bbfe0;
+  if (iVar7 < 1) {
+    uVar3 = 1;
+  }
+  DAT_000bc020 = 0;
+  if (iVar7 < 1) {
+    DAT_000bbfe0 = uVar3;
+  }
+  DAT_000bc000 = 0;
+  FUN_000228d4();
   return;
 }
 

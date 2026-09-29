@@ -584,7 +584,7 @@ undefined4 DAT_000bbff0;
 undefined4 DAT_000bc010;
 undefined4 DAT_000bc028;
 undefined DAT_001007dd;
-static undefined DAT_001007de_backing[8192];
+undefined DAT_001007de_backing[8192];
 #define DAT_001007de DAT_001007de_backing[0]
 char *g_selected_object;
 undefined2 g_cursor_holding_state;
@@ -7997,83 +7997,6 @@ LAB_0001ad98:
     }
     iVar4 = iVar4 + 0x20;
   } while( true );
-}
-
-
-
-void FUN_0001b474()
-
-{
-  int iVar1;
-  byte bVar2;
-  undefined2 uVar3;
-  short sVar4;
-  undefined4 uVar5;
-  int iVar6;
-  int iVar7;
-  
-  iVar7 = 0;
-  iVar6 = (*DAT_00100674 & 0x3f) * 0x30;
-  g_blit_transparent_mode = 1;
-  do {
-    uVar5 = grtile_alloc_registered(0x10,0x20);
-    (&DAT_000bc028)[iVar7] = uVar5;
-    uVar5 = grtile_alloc_registered(0x10,0x20);
-    (&DAT_000bc010)[iVar7] = uVar5;
-    iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
-  } while (iVar7 < 4);
-  iVar7 = 0;
-  do {
-    iVar1 = iVar7 * 4;
-    capture_framebuffer_rect_to_grtile((&DAT_000bc028)[iVar7],(int)*(short *)(&DAT_000845b8 + iVar1),
-                 (int)*(short *)(&DAT_000845ba + iVar1),0x10,0x10);
-    capture_framebuffer_rect_to_grtile((&DAT_000bc010)[iVar7],(int)*(short *)(&DAT_000845d8 + iVar1),
-                 (int)*(short *)(&DAT_000845da + iVar1),0x10,0x10);
-    iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
-  } while (iVar7 < 4);
-  iVar7 = 0;
-  DAT_000bbfd8 = 0;
-  DAT_000bbfdc = 0;
-  do {
-    (&DAT_000bbfd0)[iVar7] = 0;
-    (&DAT_000bbfe8)[iVar7] = 0;
-    (&DAT_000bbfa8)[iVar7] = 0xffff;
-    (&DAT_000bbfc0)[iVar7] = 0xffff;
-    (&DAT_000bbfa8)[iVar7 + 4] = 0xffff;
-    (&DAT_000bbfc0)[iVar7 + 4] = 0xffff;
-    (&DAT_000bbf98)[iVar7] = 0;
-    (&DAT_000bbff0)[iVar7] = 0;
-    draw_hotspot_crosshair_marker(1,iVar7);
-    draw_hotspot_crosshair_marker(0,iVar7);
-    iVar7 = (iVar7 + 1) * 0x10000 >> 0x10;
-  } while (iVar7 < 4);
-  DAT_000bc008 = 0;
-  uVar3 = encode_object_slot_index(DAT_00100674);
-  Ordinal_1061(uVar3);
-  DAT_000bc024 = FUN_0001d170(((&DAT_001007de)[iVar6] & 0xf) * '\x06',0xffffffe7,0x19);
-  DAT_000bc004 = FUN_0001d170(*(ushort *)(&DAT_001007dd + iVar6) >> 0xc,0xffffffec,100);
-  DAT_000bbfbc = FUN_0001d170((0xf - (uint)((byte)(&DAT_001007dd)[iVar6] >> 4)) * 6,0xffffffe7,0x32)
-  ;
-  iVar7 = FUN_0001d170(*(ushort *)(&DAT_001007dd + iVar6) & 0xf,0xffffffec,0x14);
-  DAT_000bbfe0 = (undefined2)iVar7;
-  DAT_000bbfb8 = 0;
-  bVar2 = *(byte *)(DAT_00086df8 + 0x30);
-  DAT_000bc024 = DAT_000bc024 + (ushort)bVar2 * -2;
-  DAT_000bc004 = DAT_000bc004 + ((short)(ushort)bVar2 >> 1);
-  sVar4 = Ordinal_2005(6,(ushort)bVar2);
-  DAT_000bbfe0 = (undefined2)(iVar7 - sVar4);
-  iVar7 = (iVar7 - sVar4) * 0x10000 >> 0x10;
-  uVar3 = DAT_000bbfe0;
-  if (iVar7 < 1) {
-    uVar3 = 1;
-  }
-  DAT_000bc020 = 0;
-  if (iVar7 < 1) {
-    DAT_000bbfe0 = uVar3;
-  }
-  DAT_000bc000 = 0;
-  FUN_000228d4();
-  return;
 }
 
 

@@ -758,6 +758,20 @@ extern char s__DATA_cnv_ark_00084fc8[];
 extern char s__SAVE0_bglobals_dat_00084538[];
 extern char s__DATA_babglobs_dat_0008454c[];
 extern uint *DAT_000bbf04;
+/* Globals defined in uw.c but also used by functions that now live in
+   babl.c (init_barter_ui) -- extern'd here so both translation units
+   see the same storage. */
+extern undefined4 DAT_000bc028;
+extern undefined4 DAT_000bc010;
+extern undefined1 DAT_000845b8;
+extern undefined1 DAT_000845ba;
+extern undefined1 DAT_000845d8;
+extern undefined1 DAT_000845da;
+extern undefined2 DAT_000bbfd8;
+extern undefined2 DAT_000bbfdc;
+extern undefined DAT_001007de_backing[8192];
+#define DAT_001007de DAT_001007de_backing[0]
+extern undefined2 DAT_000bbfe0;
 extern char s_add_to_npc_inv_0008507c[];
 extern char s_babl_ask_000851ec[];
 extern char s_babl_fmenu_00085214[];
@@ -2005,7 +2019,7 @@ void babl_set_variable();
 void babl_get_variable();
 void init_babl_variable_defaults();
 void babl_builtin_setup_to_barter();
-void FUN_0001b474();
+void init_barter_ui();
 void FUN_0001b7c0();
 void FUN_0001b89c();
 int FUN_0001b900();
