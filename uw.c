@@ -36520,43 +36520,6 @@ LAB_00060f54:
 
 
 
-void FUN_0007a0cc(param_1)
-ushort * param_1;
-
-{
-  ushort uVar1;
-  
-  if (((*param_1 & 0x1ff) < 0x140) || (0x147 < (*param_1 & 0x1ff))) {
-    print_scroll_message_by_id(0x80);
-  }
-  else {
-    print_scroll_message_by_id(0x81);
-    uVar1 = param_1[3];
-    *(byte *)(param_1 + 3) = (byte)uVar1 | 0x3f;
-    *(char *)((char *)param_1 + 7) = (char)(uVar1 >> 8);
-    finish_object_use(DAT_00202098,1,1);
-  }
-  FUN_00057cac(3);
-  g_selected_object = 0;
-  g_cursor_holding_state = 0;
-  return;
-}
-
-
-
-void FUN_0007a180(param_1,param_2)
-undefined4 param_1;
-int param_2;
-
-{
-  if (param_2 != 0) {
-    prompt_use_item_on_target(param_1,FUN_0007a0cc);
-  }
-  return;
-}
-
-
-
 void FUN_0007a198(param_1,param_2)
 ushort * param_1;
 undefined4 param_2;
@@ -37117,7 +37080,7 @@ LAB_0007b7e4:
   case 0x126:
     break;
   case 0x127:
-    FUN_0007a180(param_2,param_3);
+    arm_use_item_on_special_target_prompt(param_2,param_3);
     break;
   case 0x128:
     pcVar5 = FUN_0007b2f0;

@@ -1213,3 +1213,52 @@ undefined4 param_2;
   DAT_002020b8 = param_2;
   return;
 }
+
+
+
+
+
+// was FUN_0007a0cc -- deferred-target-click completion callback for
+// a use-item interaction restricted to target types 0x140-0x147:
+// prints a "no effect" message (id 0x80) if the clicked target isn't
+// in that range; otherwise prints a success message (id 0x81), sets
+// bits on the target's quality field, and consumes the held item via
+// finish_object_use. Armed by arm_use_item_on_special_target_prompt
+// below. No callers found by grep in the remaining decompile.
+void complete_use_item_on_special_target(param_1)
+ushort * param_1;
+
+{
+  ushort uVar1;
+  
+  if (((*param_1 & 0x1ff) < 0x140) || (0x147 < (*param_1 & 0x1ff))) {
+    print_scroll_message_by_id(0x80);
+  }
+  else {
+    print_scroll_message_by_id(0x81);
+    uVar1 = param_1[3];
+    *(byte *)(param_1 + 3) = (byte)uVar1 | 0x3f;
+    *(char *)((char *)param_1 + 7) = (char)(uVar1 >> 8);
+    finish_object_use(DAT_00202098,1,1);
+  }
+  FUN_00057cac(3);
+  g_selected_object = 0;
+  g_cursor_holding_state = 0;
+  return;
+}
+
+
+
+// was FUN_0007a180 -- arms the "use item on target" prompt with
+// complete_use_item_on_special_target as the completion callback. No
+// callers found by grep in the remaining decompile.
+void arm_use_item_on_special_target_prompt(param_1,param_2)
+undefined4 param_1;
+int param_2;
+
+{
+  if (param_2 != 0) {
+    prompt_use_item_on_target(param_1,complete_use_item_on_special_target);
+  }
+  return;
+}
