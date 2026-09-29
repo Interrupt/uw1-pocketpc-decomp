@@ -5597,8 +5597,8 @@ short DAT_0023c22c;
    handle -- a separate, dynamically-allocated overlay sprite driving
    the head's reaction animation, distinct from DAT_0023c230's own
    static head sub-sprite) and `reset_hud_panel_animation_state` resets both elements
-   individually (`FUN_00076488((int)DAT_0023c1e8);
-   FUN_00076488((int)DAT_0023c1ea);`) -- confirming these are really
+   individually (`clear_sprite_list_slot_flag((int)DAT_0023c1e8);
+   clear_sprite_list_slot_flag((int)DAT_0023c1ea);`) -- confirming these are really
    one 2-element array (0x23c1e8/0x23c1ea are exactly 2 bytes apart in
    the original binary), not two independent globals. As separate C
    symbols on this host, `(&DAT_0023c1e8)[1]` read/wrote whatever the
@@ -5641,7 +5641,7 @@ char *DAT_0023cca4;
    Ghidra just never labeled a cross-reference to this .data. Real
    values recovered via direct memory dump (Ghidra headless,
    `mem.getShort`). (The color-0-key transparency issue this comment
-   used to also mention, in the sprite-list compositor FUN_00076508,
+   used to also mention, in the sprite-list compositor flush_sprite_list_compositor,
    is a separate, still-open bug -- unrelated to position.) */
 
 /* .data 0x87170 -- X of the dragon HEAD sub-sprite, [0]=left
@@ -6192,12 +6192,12 @@ char *DAT_0023c40c;
 /* Same "was `int`, truncating a real pointer" bug as DAT_0023c3ec right
    above -- assigned `DAT_0023c40c + 0x100` (a real 64-bit pointer) and
    then compared against/derived into real `ushort *` locals throughout
-   FUN_00076508 and friends. */
+   flush_sprite_list_compositor and friends. */
 ushort *DAT_0023c414;
 char *DAT_0023c3e4;
 /* Same truncation bug as DAT_0023c414/DAT_0023c3ec above, though this one
    is never read back anywhere in this decompile -- fixed for consistency
-   regardless. Its assignment (FUN_00075be0) computes it from
+   regardless. Its assignment (init_sprite_list_buffers) computes it from
    DAT_0023c40c + 0x100, the same expression as DAT_0023c414, rather than
    from DAT_0023c3e4 (the buffer it's presumably meant to bound) -- looks
    like a genuine bug already present in the original, not a decompile
@@ -6207,7 +6207,7 @@ undefined2 DAT_0023c41c;
 /* Sprite-list record status-word bit flags (.data ~0x87638). Ghidra
    split these off as lone `ushort` scalars and never recovered their
    values, so they were all 0 -- which made the whole sprite-list
-   compositor (FUN_00076508 & helpers: sprite_list_alloc_entry/76194 slot alloc,
+   compositor (flush_sprite_list_compositor & helpers: sprite_list_alloc_entry/76194 slot alloc,
    sprite_list_set_frame_id frame set, sprite_list_queue_slot_redraw bucketing) inert: the free-slot
    scan `(DAT_00087638 & status) == 0` always matched slot 0, and the
    compositor's draw gate `(status & DAT_0008763c) != 0` was never true,
@@ -6223,7 +6223,7 @@ undefined2 DAT_0023c41c;
 ushort DAT_0023c400;
 short DAT_0023c3f4;
 /* AND-mask complements of the flags above -- each used once, to clear one
-   status bit (FUN_00076488 hide: clear "has frame"; compositor loop 1:
+   status bit (clear_sprite_list_slot_flag hide: clear "has frame"; compositor loop 1:
    clear "needs restore setup" / "restore pending"). .bss, never
    initialised in this decompile -> were 0 -> those clears wiped the
    whole status word. */
@@ -20332,7 +20332,7 @@ void FUN_0003b820()
   init_gameplay_session();
   FUN_0002b63c();
   FUN_000232ec(0);
-  FUN_00075be0();
+  init_sprite_list_buffers();
   FUN_0003bb84();
   load_light_tables();
   FUN_00028004();
@@ -36485,187 +36485,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-undefined4 FUN_00075be0()
-
-{
-  DAT_0023c3e8 = Ordinal_1041(0x514);
-  if (DAT_0023c3e8 != 0) {
-    Ordinal_1047(DAT_0023c3e8,0,0x514);
-    DAT_0023c3ec = DAT_0023c3e8 + 0x500;
-  }
-  DAT_0023c40c = Ordinal_1041(0x102);
-  if (DAT_0023c40c != 0) {
-    Ordinal_1047(DAT_0023c40c,0,0x102);
-    DAT_0023c414 = DAT_0023c40c + 0x100;
-  }
-  DAT_0023c3e4 = Ordinal_1041(0x102);
-  if (DAT_0023c3e4 != 0) {
-    Ordinal_1047(DAT_0023c3e4,0,0x102);
-    DAT_0023c410 = DAT_0023c40c + 0x100;
-  }
-  return 0;
-}
-
-
-
-undefined4 FUN_00076488(param_1)
-undefined4 param_1;
-
-{
-  ushort uVar1;
-  ushort *puVar2;
-  
-  if ((short)param_1 < 0x40) {
-    puVar2 = (ushort *)((short)param_1 * 0x14 + DAT_0023c3e8);
-    if ((*puVar2 & DAT_0008763c) == 0) {
-      return 0;
-    }
-    uVar1 = DAT_0023c418 & *puVar2;
-    *(char *)puVar2 = (char)uVar1;
-    *(char *)((char *)puVar2 + 1) = (char)(uVar1 >> 8);
-    sprite_list_queue_slot_redraw(param_1);
-  }
-  return 0xffffffff;
-}
-
-
-
-void FUN_00076508()
-
-{
-  ushort uVar1;
-  bool bVar2;
-  ushort *puVar3;
-  ushort *puVar4;
-  ushort uVar5;
-  ushort *puVar6;
-  ushort *puVar7;
-  
-  bVar2 = false;
-  if (DAT_0023c41c != 0) {
-    FUN_00057118();
-    puVar7 = DAT_0023c414 + -0x20;
-    puVar6 = DAT_0023c40c;
-    if (DAT_0023c40c < puVar7) {
-      do {
-        puVar4 = puVar7;
-        for (uVar5 = *puVar7; uVar5 != 0; uVar5 = uVar5 - 1) {
-          puVar4 = puVar4 + 1;
-          puVar6 = (ushort *)((uint)*puVar4 * 0x14 + DAT_0023c3e8);
-          if ((*puVar6 & DAT_00087640) == 0) {
-            FUN_00076e98(*(undefined4 *)(puVar6 + 8));
-          }
-          else {
-            uVar1 = DAT_0023c408 & *puVar6;
-            *(char *)puVar6 = (char)uVar1;
-            *(char *)((char *)puVar6 + 1) = (char)(uVar1 >> 8);
-          }
-          if ((*puVar6 & DAT_00087644) != 0) {
-            uVar1 = DAT_0023c3f0 & *puVar6;
-            *(char *)puVar6 = (char)uVar1;
-            *(char *)((char *)puVar6 + 1) = (char)(uVar1 >> 8);
-            if (CONCAT13(*(undefined1 *)((char *)puVar6 + 0x13),
-                         CONCAT12((char)puVar6[9],
-                                  CONCAT11(*(undefined1 *)((char *)puVar6 + 0x11),(char)puVar6[8]))) !=
-                0) {
-              FUN_00076b24();
-            }
-          }
-          puVar6 = DAT_0023c40c;
-        }
-        puVar7 = puVar7 + -0x20;
-      } while (puVar6 < puVar7);
-    }
-    if (puVar6 < DAT_0023c414) {
-      do {
-        puVar7 = puVar6 + 1;
-        if (bVar2) {
-          puVar4 = puVar7;
-          for (uVar5 = *puVar6; uVar5 != 0; uVar5 = uVar5 - 1) {
-            puVar3 = (ushort *)((uint)*puVar4 * 0x14 + DAT_0023c3e8);
-            if ((*puVar3 & DAT_0008763c) == 0) {
-              uVar1 = *puVar3 | DAT_00087640;
-              *(char *)puVar3 = (char)uVar1;
-              *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
-            }
-            else {
-              capture_framebuffer_rect_to_grtile(*(undefined4 *)(puVar3 + 8),(int)(short)puVar3[1],(int)(short)puVar3[2],
-                           (int)(short)puVar3[3],puVar3[4]);
-            }
-            puVar4 = puVar4 + 1;
-          }
-        }
-        uVar5 = *puVar6;
-        if (uVar5 != 0) {
-          for (; uVar5 != 0; uVar5 = uVar5 - 1) {
-            puVar4 = (ushort *)((uint)*puVar7 * 0x14 + DAT_0023c3e8);
-            uVar1 = *puVar4;
-            if ((uVar1 & DAT_0008763c) != 0) {
-              /* UW_DIAG_SPRLIST: one line per sprite the HUD sprite-list
-                 compositor draws -- id / x / y / w / h -- handy for
-                 filling in the still-zero compass/dragon layout tables
-                 (see the FIXME[hud-*-layout] blocks). */
-              if (getenv("UW_DIAG_SPRLIST"))
-                fprintf(stderr, "[sprlist] slot=%u id=0x%x x=%d y=%d w=%d h=%d path=%s\n",
-                        (unsigned)*puVar7, (unsigned)(short)puVar4[7],
-                        (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                        (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
-                        (int)(ushort)puVar4[3], (int)(ushort)puVar4[4],
-                        puVar4[5] == 0 ? "draw_sprite_by_id" : "sprite_list_flush_blit_raw");
-              if (puVar4[5] == 0) {
-                g_blit_transparent_mode = 1;
-                if ((uVar1 & DAT_00087648) == 0) {
-                  draw_sprite_by_id((int)(short)puVar4[7],
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
-                               puVar4[3]);
-                }
-                else {
-                  draw_sprite_by_id((int)(short)puVar4[7],
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
-                               puVar4[3]);
-                }
-              }
-              else {
-                g_blit_transparent_mode = 1;
-                if ((uVar1 & DAT_00087648) == 0) {
-                  sprite_list_flush_blit_raw((int)(short)puVar4[7],
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
-                               (int)(short)puVar4[4],
-                               CONCAT11(*(undefined1 *)((char *)puVar4 + 7),(char)puVar4[3]),puVar4[5])
-                  ;
-                }
-                else {
-                  sprite_list_flush_blit_raw((int)(short)puVar4[7],
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
-                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
-                               (int)(short)puVar4[4],
-                               CONCAT11(*(undefined1 *)((char *)puVar4 + 7),(char)puVar4[3]),puVar4[5])
-                  ;
-                }
-              }
-              g_blit_transparent_mode = 0;
-            }
-            puVar7 = puVar7 + 1;
-          }
-          *puVar6 = 0;
-        }
-        bVar2 = true;
-        puVar6 = puVar6 + 0x20;
-      } while (puVar6 < DAT_0023c414);
-    }
-    cursor_show_idle_tick();
-    DAT_0023c41c = 0;
-  }
   return;
 }
 

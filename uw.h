@@ -1121,7 +1121,13 @@ extern undefined1 DAT_00086e6c_backing[64];
 #define DAT_00087638 0x8000u
 #define DAT_0008763c 0x4000u
 #define DAT_00087640 0x2000u
+#define DAT_00087644 0x1000u
 #define DAT_00087648 0x0800u
+extern ushort *DAT_0023c414;
+extern char *DAT_0023c410;
+#define DAT_0023c418 ((ushort)~0x4000u)
+#define DAT_0023c408 ((ushort)~0x2000u)
+#define DAT_0023c3f0 ((ushort)~0x1000u)
 extern byte * DAT_000b4610;
 extern char * DAT_000b4614;
 extern byte * DAT_000b461c;
@@ -3264,7 +3270,7 @@ void cast_detect_life_spell();
 void complete_pending_player_command_target();
 void dispatch_player_command();
 void damage_all_objects_at_tile();
-undefined4 FUN_00075be0();
+undefined4 init_sprite_list_buffers();
 void sprite_list_queue_slot_redraw();
 int sprite_list_alloc_entry();
 int sprite_list_alloc_raw_entry();
@@ -3272,8 +3278,8 @@ undefined4 sprite_list_set_rect();
 undefined4 sprite_list_set_position();
 undefined4 sprite_list_set_frame_id();
 undefined4 sprite_list_set_frame_id_transparent();
-undefined4 FUN_00076488();
-void FUN_00076508();
+undefined4 clear_sprite_list_slot_flag();
+void flush_sprite_list_compositor();
 undefined4 sprite_list_set_lifetime();
 void FUN_000769e8();
 undefined4 grtile_alloc_registered();

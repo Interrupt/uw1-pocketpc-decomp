@@ -2128,7 +2128,7 @@ void FUN_000286cc()
   undefined2 uVar6;
   char local_44 [40];
   
-  FUN_00076508();
+  flush_sprite_list_compositor();
   set_pending_music_track(0xd);
   update_ingame_music_track();
   DAT_00100784 = Ordinal_1041(0x10000);

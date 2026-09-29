@@ -849,7 +849,7 @@ short param_1;
       sprite_list_set_position((int)(short)(&DAT_0023c224)[iVar1],(int)*(short *)(&DAT_000870ec + iVar1 * 2),
                    (int)(short)(&DAT_000870f2)[iVar3]);
       sprite_list_set_frame_id((int)(short)(&DAT_0023c224)[iVar1],iVar3 + iVar4);
-      FUN_00076508();
+      flush_sprite_list_compositor();
       iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
     } while (iVar3 < (int)(uint)*pbVar5);
   }
@@ -945,7 +945,7 @@ void redraw_hud_panels()
   bitmap_blit_to_framebuffer(0xec,8,DAT_0023cca4,0x72,0x53,0,0,1);
   g_blit_transparent_mode = 0;
   (*(code *)(&g_hud_panel_handlers)[g_active_hud_panel])();
-  FUN_00076508();
+  flush_sprite_list_compositor();
   return;
 }
 
@@ -1167,7 +1167,7 @@ void hud_panel_redraw_dispatch()
     bVar8 = true;
   }
   if (bVar8) {
-    FUN_00076508();
+    flush_sprite_list_compositor();
     DAT_0023c150 = bVar2;
   }
   return;
@@ -1445,7 +1445,7 @@ LAB_0006ddf0:
         if (sVar4 != 5) {
           return;
         }
-        FUN_00076488((int)*psVar11);
+        clear_sprite_list_slot_flag((int)*psVar11);
 LAB_0006de00:
         (&DAT_0023c12c)[iVar6] = 0;
         *psVar7 = 0;
@@ -1541,7 +1541,7 @@ LAB_0006dd88:
       sVar4 = *psVar7;
       if (sVar4 == 1) {
         (&DAT_0023c11c)[iVar6] = 0;
-        FUN_00076488((int)(short)(&DAT_0023c234)[iVar6]);
+        clear_sprite_list_slot_flag((int)(short)(&DAT_0023c234)[iVar6]);
         iVar8 = iVar6 * 3 + 2;
         iVar5 = iVar8 * 2;
         sprite_list_set_rect((int)*psVar11,(int)*(short *)(&DAT_00087178 + iVar5),
@@ -1566,7 +1566,7 @@ LAB_0006dd88:
           if (sVar4 != 5) {
             return;
           }
-          FUN_00076488((int)*psVar11);
+          clear_sprite_list_slot_flag((int)*psVar11);
           sprite_list_set_frame_id((int)(short)(&DAT_0023c234)[iVar6],(&DAT_000871d8)[iVar6]);
           goto LAB_0006de00;
         }
@@ -2263,7 +2263,7 @@ void snap_compass_to_heading()
   sprite_list_set_position((int)DAT_0023c22c,(int)(short)(&DAT_00087130)[(short)(ushort)bVar1],
                (int)(short)(&DAT_00087150)[(short)(ushort)bVar1]);
   sprite_list_set_frame_id((int)DAT_0023c22c,uVar2 + 0x205d);
-  FUN_00076508();
+  flush_sprite_list_compositor();
   return;
 }
 
@@ -2272,7 +2272,7 @@ void snap_compass_to_heading()
 // was FUN_0006cbf0 -- resets the HUD panel subsystem's transient
 // animation/selection state: zeroes the two 9-entry per-panel-button
 // state arrays (DAT_0023c118/DAT_0023c128), hides the two sprites
-// DAT_0023c1e8/DAT_0023c1ea via FUN_00076488, clears the active-panel
+// DAT_0023c1e8/DAT_0023c1ea via clear_sprite_list_slot_flag, clears the active-panel
 // selector (g_active_hud_panel) and the panel-switch animation counters
 // hud_panel_wipe_transition_tick drives (DAT_0023c220 and friends), and reseeds
 // DAT_0023c11f/DAT_0023c120/DAT_0023c130/DAT_000870e0/DAT_000870e4 back
@@ -2289,8 +2289,8 @@ void reset_hud_panel_animation_state()
     (&DAT_0023c128)[iVar1] = 0;
     iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
   } while (iVar1 < 9);
-  FUN_00076488((int)DAT_0023c1e8);
-  FUN_00076488((int)DAT_0023c1ea);
+  clear_sprite_list_slot_flag((int)DAT_0023c1e8);
+  clear_sprite_list_slot_flag((int)DAT_0023c1ea);
   DAT_0023c1e6 = 0;
   g_active_hud_panel = 0;
   DAT_0023c1e4 = 0;
@@ -2301,7 +2301,7 @@ void reset_hud_panel_animation_state()
   DAT_0023c130 = 6;
   DAT_000870e0 = 6;
   DAT_000870e4 = 0;
-  FUN_00076508();
+  flush_sprite_list_compositor();
   return;
 }
 
@@ -2475,11 +2475,11 @@ char *param_1;
       sprite_list_set_frame_id((int)(&DAT_0023c268)[iVar2],*(byte *)(iVar2 + param_1) + 0xe8);
     }
     else {
-      FUN_00076488((int)(&DAT_0023c268)[iVar2]);
+      clear_sprite_list_slot_flag((int)(&DAT_0023c268)[iVar2]);
     }
     iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
   } while (iVar2 < 3);
-  FUN_00076508();
+  flush_sprite_list_compositor();
   return;
 }
 
@@ -2523,11 +2523,11 @@ char *param_1;
         sprite_list_set_frame_id((int)(&DAT_0023c270)[iVar2],*(byte *)(iVar2 + param_1) + 0x20c0);
       }
       else {
-        FUN_00076488((int)(&DAT_0023c270)[iVar2]);
+        clear_sprite_list_slot_flag((int)(&DAT_0023c270)[iVar2]);
       }
       iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
     } while (iVar2 < 3);
-    FUN_00076508();
+    flush_sprite_list_compositor();
   }
   return;
 }
@@ -3334,5 +3334,218 @@ undefined1 * param_2;
     } while (iVar3 < DAT_0023c110);
   }
   *param_2 = 0;
+  return;
+}
+
+
+
+
+
+// was FUN_00075be0 -- allocates and zero-initializes the HUD sprite-
+// list compositor's 3 backing buffers: DAT_0023c3e8 (0x514 bytes,
+// 0x14-byte stride per sprite-slot record -- see
+// clear_sprite_list_slot_flag/flush_sprite_list_compositor below) and
+// two 0x102-byte queue/index buffers (DAT_0023c40c, DAT_0023c3e4),
+// each recording its own "end" pointer (DAT_0023c3ec/0x414/0x410).
+// Allocation failure for any one buffer just skips that buffer's
+// end-pointer setup rather than aborting.
+undefined4 init_sprite_list_buffers()
+
+{
+  DAT_0023c3e8 = Ordinal_1041(0x514);
+  if (DAT_0023c3e8 != 0) {
+    Ordinal_1047(DAT_0023c3e8,0,0x514);
+    DAT_0023c3ec = DAT_0023c3e8 + 0x500;
+  }
+  DAT_0023c40c = Ordinal_1041(0x102);
+  if (DAT_0023c40c != 0) {
+    Ordinal_1047(DAT_0023c40c,0,0x102);
+    DAT_0023c414 = DAT_0023c40c + 0x100;
+  }
+  DAT_0023c3e4 = Ordinal_1041(0x102);
+  if (DAT_0023c3e4 != 0) {
+    Ordinal_1047(DAT_0023c3e4,0,0x102);
+    DAT_0023c410 = DAT_0023c40c + 0x100;
+  }
+  return 0;
+}
+
+
+
+// was FUN_00076488 -- clears a HUD sprite-list slot's status-word
+// flags (masked by DAT_0023c418) and queues it for redraw, but only
+// if the slot's status word currently has DAT_0008763c set (a
+// "valid/active" bit); a no-op otherwise, or for an out-of-range
+// slot index (>= 0x40). See sprite_list_queue_slot_redraw in
+// src/bitmap.c for the actual redraw-queue mechanism this calls into.
+undefined4 clear_sprite_list_slot_flag(param_1)
+undefined4 param_1;
+
+{
+  ushort uVar1;
+  ushort *puVar2;
+  
+  if ((short)param_1 < 0x40) {
+    puVar2 = (ushort *)((short)param_1 * 0x14 + DAT_0023c3e8);
+    if ((*puVar2 & DAT_0008763c) == 0) {
+      return 0;
+    }
+    uVar1 = DAT_0023c418 & *puVar2;
+    *(char *)puVar2 = (char)uVar1;
+    *(char *)((char *)puVar2 + 1) = (char)(uVar1 >> 8);
+    sprite_list_queue_slot_redraw(param_1);
+  }
+  return 0xffffffff;
+}
+
+
+
+// was FUN_00076508 -- the HUD sprite-list compositor's per-call
+// flush/draw pass, gated on DAT_0023c41c (skips entirely if not
+// dirty). Two passes over the sprite-slot record array
+// (DAT_0023c3e8..DAT_0023c414, 0x14-byte stride): the first captures
+// framebuffer regions behind "background capture" sprites into a
+// grtile (capture_framebuffer_rect_to_grtile) or forwards to
+// FUN_00076e98/FUN_00076b24 (not yet named) for other status-word
+// bit combinations; the second actually draws each queued sprite via
+// draw_sprite_by_id (for a plain sprite) or sprite_list_flush_blit_raw
+// (for a raw-blit entry), toggling g_blit_transparent_mode around each
+// draw. Supports a UW_DIAG_SPRLIST env-var diagnostic (one line per
+// drawn sprite: id/x/y/w/h) already documented at its call site.
+// Finishes by calling cursor_show_idle_tick and clearing the dirty
+// flag. Confirmed real callers throughout src/hud.c (vitals bar,
+// dragon reaction, compass needle, panel transitions) and one in
+// src/babl.c.
+void flush_sprite_list_compositor()
+
+{
+  ushort uVar1;
+  bool bVar2;
+  ushort *puVar3;
+  ushort *puVar4;
+  ushort uVar5;
+  ushort *puVar6;
+  ushort *puVar7;
+  
+  bVar2 = false;
+  if (DAT_0023c41c != 0) {
+    FUN_00057118();
+    puVar7 = DAT_0023c414 + -0x20;
+    puVar6 = DAT_0023c40c;
+    if (DAT_0023c40c < puVar7) {
+      do {
+        puVar4 = puVar7;
+        for (uVar5 = *puVar7; uVar5 != 0; uVar5 = uVar5 - 1) {
+          puVar4 = puVar4 + 1;
+          puVar6 = (ushort *)((uint)*puVar4 * 0x14 + DAT_0023c3e8);
+          if ((*puVar6 & DAT_00087640) == 0) {
+            FUN_00076e98(*(undefined4 *)(puVar6 + 8));
+          }
+          else {
+            uVar1 = DAT_0023c408 & *puVar6;
+            *(char *)puVar6 = (char)uVar1;
+            *(char *)((char *)puVar6 + 1) = (char)(uVar1 >> 8);
+          }
+          if ((*puVar6 & DAT_00087644) != 0) {
+            uVar1 = DAT_0023c3f0 & *puVar6;
+            *(char *)puVar6 = (char)uVar1;
+            *(char *)((char *)puVar6 + 1) = (char)(uVar1 >> 8);
+            if (CONCAT13(*(undefined1 *)((char *)puVar6 + 0x13),
+                         CONCAT12((char)puVar6[9],
+                                  CONCAT11(*(undefined1 *)((char *)puVar6 + 0x11),(char)puVar6[8]))) !=
+                0) {
+              FUN_00076b24();
+            }
+          }
+          puVar6 = DAT_0023c40c;
+        }
+        puVar7 = puVar7 + -0x20;
+      } while (puVar6 < puVar7);
+    }
+    if (puVar6 < DAT_0023c414) {
+      do {
+        puVar7 = puVar6 + 1;
+        if (bVar2) {
+          puVar4 = puVar7;
+          for (uVar5 = *puVar6; uVar5 != 0; uVar5 = uVar5 - 1) {
+            puVar3 = (ushort *)((uint)*puVar4 * 0x14 + DAT_0023c3e8);
+            if ((*puVar3 & DAT_0008763c) == 0) {
+              uVar1 = *puVar3 | DAT_00087640;
+              *(char *)puVar3 = (char)uVar1;
+              *(char *)((char *)puVar3 + 1) = (char)(uVar1 >> 8);
+            }
+            else {
+              capture_framebuffer_rect_to_grtile(*(undefined4 *)(puVar3 + 8),(int)(short)puVar3[1],(int)(short)puVar3[2],
+                           (int)(short)puVar3[3],puVar3[4]);
+            }
+            puVar4 = puVar4 + 1;
+          }
+        }
+        uVar5 = *puVar6;
+        if (uVar5 != 0) {
+          for (; uVar5 != 0; uVar5 = uVar5 - 1) {
+            puVar4 = (ushort *)((uint)*puVar7 * 0x14 + DAT_0023c3e8);
+            uVar1 = *puVar4;
+            if ((uVar1 & DAT_0008763c) != 0) {
+              /* UW_DIAG_SPRLIST: one line per sprite the HUD sprite-list
+                 compositor draws -- id / x / y / w / h -- handy for
+                 filling in the still-zero compass/dragon layout tables
+                 (see the FIXME[hud-*-layout] blocks). */
+              if (getenv("UW_DIAG_SPRLIST"))
+                fprintf(stderr, "[sprlist] slot=%u id=0x%x x=%d y=%d w=%d h=%d path=%s\n",
+                        (unsigned)*puVar7, (unsigned)(short)puVar4[7],
+                        (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
+                        (int)(short)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
+                        (int)(ushort)puVar4[3], (int)(ushort)puVar4[4],
+                        puVar4[5] == 0 ? "draw_sprite_by_id" : "sprite_list_flush_blit_raw");
+              if (puVar4[5] == 0) {
+                g_blit_transparent_mode = 1;
+                if ((uVar1 & DAT_00087648) == 0) {
+                  draw_sprite_by_id((int)(short)puVar4[7],
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
+                               puVar4[3]);
+                }
+                else {
+                  draw_sprite_by_id((int)(short)puVar4[7],
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 9),(char)puVar4[4]),
+                               puVar4[3]);
+                }
+              }
+              else {
+                g_blit_transparent_mode = 1;
+                if ((uVar1 & DAT_00087648) == 0) {
+                  sprite_list_flush_blit_raw((int)(short)puVar4[7],
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
+                               (int)(short)puVar4[4],
+                               CONCAT11(*(undefined1 *)((char *)puVar4 + 7),(char)puVar4[3]),puVar4[5])
+                  ;
+                }
+                else {
+                  sprite_list_flush_blit_raw((int)(short)puVar4[7],
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 3),(char)puVar4[1]),
+                               (int)CONCAT11(*(undefined1 *)((char *)puVar4 + 5),(char)puVar4[2]),
+                               (int)(short)puVar4[4],
+                               CONCAT11(*(undefined1 *)((char *)puVar4 + 7),(char)puVar4[3]),puVar4[5])
+                  ;
+                }
+              }
+              g_blit_transparent_mode = 0;
+            }
+            puVar7 = puVar7 + 1;
+          }
+          *puVar6 = 0;
+        }
+        bVar2 = true;
+        puVar6 = puVar6 + 0x20;
+      } while (puVar6 < DAT_0023c414);
+    }
+    cursor_show_idle_tick();
+    DAT_0023c41c = 0;
+  }
   return;
 }
