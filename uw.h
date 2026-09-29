@@ -2341,7 +2341,7 @@ void screen_backup_restore_rect();
 void set_viewport_clip_rect();
 void draw_horizontal_line();
 void fill_viewport_and_flush();
-void FUN_00011c10();
+void blit_grtile_to_framebuffer();
 void FUN_000120c8();
 void fade_in();
 void fade_out();

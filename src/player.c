@@ -3307,7 +3307,7 @@ void draw_experience_points_display()
 
 // was FUN_0007821c -- draws one row of the stats panel's skill list:
 // param_1 selects the skill index, restores the captured backdrop
-// rect behind that row (FUN_00011c10), then draws the skill's name
+// rect behind that row (blit_grtile_to_framebuffer), then draws the skill's name
 // (a message lookup at DAT_0024af80+index+0x1f) and its numeric
 // value (DAT_00086df8+0x21+index) side by side. Called in a loop
 // from draw_stats_panel_content.
@@ -3325,7 +3325,7 @@ uint param_1;
   
   uVar3 = param_1 & 0xff;
   FUN_000229e0(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
-  FUN_00011c10(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
+  blit_grtile_to_framebuffer(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
                0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
   /* Was `get_message_string(id); uVar1 = Ordinal_1416();` -- same dropped-
      argument bug as draw_stats_panel_header's player-title draw above; thread
