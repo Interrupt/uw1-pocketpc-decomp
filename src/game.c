@@ -1055,7 +1055,7 @@ void spin_view_full_rotation()
   set_view_subject_by_command(3);
   iVar6 = (uint)DAT_0023beac * 0x100 - (int)DAT_00204880;
   iVar7 = (uint)DAT_0023beb0 * 0x100 - (int)DAT_00204882;
-  uVar5 = FUN_00013774(iVar7 * iVar7 + iVar6 * iVar6);
+  uVar5 = integer_sqrt(iVar7 * iVar7 + iVar6 * iVar6);
   uVar5 = (uVar5 & 0xffff) >> 6;
   DAT_0023bea0 = (undefined2)uVar5;
   iVar1 = uVar5 << 6;

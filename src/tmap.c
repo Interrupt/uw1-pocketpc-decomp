@@ -1802,7 +1802,16 @@ ushort * param_1;
               sVar3 = 0;
             }
             else {
-              sVar3 = FUN_00013774();
+              /* HACK: was a bare `integer_sqrt();` -- dropped argument,
+                 the same class of bug fixed repeatedly elsewhere in
+                 this file. The if-condition just above computes this
+                 exact 3D distance-squared expression and only takes
+                 this branch when it's nonzero -- obviously the
+                 intended argument here, matching every other
+                 confirmed integer_sqrt call site's own
+                 "distance squared in, distance out" shape. */
+              sVar3 = integer_sqrt(((iVar7 * iVar7 * 0x10000 >> 0x10) + (iVar16 * iVar16 * 0x10000 >> 0x10) +
+                (iVar13 * iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10);
             }
             iVar7 = (int)DAT_002506dc + (int)(short)((int)DAT_0025063c * (int)sVar3 >> 6);
             sVar3 = (short)iVar7;

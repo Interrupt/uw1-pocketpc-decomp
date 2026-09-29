@@ -2361,7 +2361,7 @@ uint merge_byte_into_word();
 void select_gr_bitmap_remap_table();
 void blit_sprite_row_remapped();
 void decode_gr_rle_stream();
-int FUN_00013774();
+int integer_sqrt();
 void FUN_000137c0();
 void FUN_00013904();
 void FUN_00013b8c();

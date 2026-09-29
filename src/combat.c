@@ -55,7 +55,16 @@ void npc_combat_approach_tick()
     }
   }
   else {
-    sVar4 = FUN_00013774();
+    /* HACK: was a bare `integer_sqrt();` -- dropped argument, the same
+       class of bug fixed repeatedly elsewhere in this file. No other
+       distance value is computed in this branch to reuse, but
+       DAT_00101444*DAT_00101444 + DAT_00101448*DAT_00101448 (dx*dx +
+       dy*dy) is the canonical "distance squared" expression this
+       exact file uses at every other integer_sqrt-shaped call site
+       (see e.g. npc_combat_approach_tick's own sibling functions) --
+       used here as the most defensible reconstruction, though not
+       independently confirmed the way the tmap.c fix was. */
+    sVar4 = integer_sqrt(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448);
     cVar3 = DAT_00101918;
     iVar8 = (int)DAT_00101408;
     iVar5 = Ordinal_2005((int)sVar4,

@@ -152,3 +152,29 @@ short param_2;
   return param_1;
 }
 
+
+
+// was FUN_00013774 -- integer square root via Newton's method (bit-
+// shift initial guess, refine with Ordinal_2005 division until the
+// estimate stops decreasing). Confirmed by src/audio.c's own comment
+// as "a sqrt-shaped distance function"; every confirmed caller passes
+// a sum-of-squares (dx*dx + dy*dy, the canonical "distance squared"
+// expression used throughout this codebase's positioning/AI math).
+int integer_sqrt(param_1)
+int param_1;
+
+{
+  int iVar1;
+  int iVar2;
+  
+  iVar2 = param_1;
+  iVar1 = param_1 >> 1;
+  if (1 < param_1) {
+    do {
+      iVar2 = iVar1;
+      iVar1 = Ordinal_2005(iVar2,param_1);
+      iVar1 = iVar2 + iVar1 >> 1;
+    } while (iVar1 < iVar2);
+  }
+  return iVar2;
+}

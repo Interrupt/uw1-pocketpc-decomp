@@ -479,7 +479,7 @@ short param_1;
       }
       else {
         sVar2 = (short)((iVar4 << 8) >> 5);
-        sVar2 = FUN_00013774((int)sVar2 * (int)sVar2 * 0x20000 >> 0x10);
+        sVar2 = integer_sqrt((int)sVar2 * (int)sVar2 * 0x20000 >> 0x10);
         iVar3 = (int)DAT_002506dc + (int)(short)((int)sVar2 * (int)DAT_0025063c >> 6);
         sVar2 = (short)iVar3;
         if (iVar3 * 0x10000 >> 0x10 < 0) {
@@ -497,7 +497,7 @@ short param_1;
     do {
       iVar3 = 0;
       do {
-        sVar2 = FUN_00013774((0x10 - iVar3) * (0x10 - iVar3) + iVar4 * iVar4);
+        sVar2 = integer_sqrt((0x10 - iVar3) * (0x10 - iVar3) + iVar4 * iVar4);
         if (iVar1 < sVar2) {
           (&DAT_0023b039)[(iVar4 * 0x21 + iVar3) * 2] = 0xf;
         }

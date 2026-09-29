@@ -6794,24 +6794,6 @@ void thunk_FUN_0003c310()
 
 
 
-int FUN_00013774(param_1)
-int param_1;
-
-{
-  int iVar1;
-  int iVar2;
-  
-  iVar2 = param_1;
-  iVar1 = param_1 >> 1;
-  if (1 < param_1) {
-    do {
-      iVar2 = iVar1;
-      iVar1 = Ordinal_2005(iVar2,param_1);
-      iVar1 = iVar2 + iVar1 >> 1;
-    } while (iVar1 < iVar2);
-  }
-  return iVar2;
-}
 
 
 
@@ -14755,7 +14737,7 @@ char param_2;
   uVar8 = 0;
   uVar4 = *(ushort *)(DAT_0010190c + 2) >> 2 & 0xff;
   uVar4 = (uVar4 ^ *(byte *)(DAT_0010190c + 0x18)) & 0x1f ^ uVar4;
-  uVar3 = FUN_00013774((int)DAT_00101444 * (int)DAT_00101444 + (int)DAT_00101448 * (int)DAT_00101448
+  uVar3 = integer_sqrt((int)DAT_00101444 * (int)DAT_00101444 + (int)DAT_00101448 * (int)DAT_00101448
                       );
   uVar6 = (uint)param_1;
   uVar1 = (uint)param_2;
@@ -14823,7 +14805,7 @@ int param_2;
   FUN_00034044();
   bVar1 = *(byte *)(DAT_0010190c + 2);
   bVar2 = *(byte *)(DAT_00101400 + 2);
-  uVar3 = FUN_00013774(DAT_00101728);
+  uVar3 = integer_sqrt(DAT_00101728);
   iVar6 = (int)(((bVar2 & 0x7f) - (bVar1 & 0x7f)) * 0x10000) >> 0x10;
   if (uVar3 == 0) {
     iVar5 = 0xf;

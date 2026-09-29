@@ -249,7 +249,7 @@ void stop_current_audio_handle()
 // was FUN_00072c74 -- plays sound effect param_1 positioned at world
 // coordinates (param_2,param_3), with a base volume/id-derived
 // parameter block param_4: computes the distance from the player
-// (FUN_00013774, a sqrt-shaped distance function) and, if within range
+// (integer_sqrt, a sqrt-shaped distance function) and, if within range
 // (uVar3<=0x30, else fails outright), derives a distance-attenuated
 // volume and a stereo pan (via heading_to_sine_cosine against the
 // player's own facing) before dispatching to allocate_and_play_sound_channel with the
@@ -288,7 +288,7 @@ LAB_00072f24:
     uVar8 = (int)param_3 -
             ((int)(((*(ushort *)((char *)g_player_object + 0x16) >> 1 & 0x1f8) +
                    ((*(byte *)((char *)g_player_object + 3) & 0x1c) >> 2)) * 0x10000) >> 0x10);
-    uVar3 = FUN_00013774(uVar8 * uVar8 + uVar9 * uVar9);
+    uVar3 = integer_sqrt(uVar8 * uVar8 + uVar9 * uVar9);
     uVar3 = uVar3 & 0xffff;
     if (uVar3 == 0) {
       uVar7 = 0x40;
