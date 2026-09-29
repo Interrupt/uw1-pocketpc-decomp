@@ -6385,7 +6385,7 @@ short DAT_0024cfc0;
 char s_strings_pak_000878c0[] = "strings.pak";
 short DAT_0024cfb4;
 undefined2 DAT_000878bc;
-/* FUN_00078e60's decoded-string ring buffer: DAT_0024cfb4 cycles
+/* decode_strings_pak_entry's decoded-string ring buffer: DAT_0024cfb4 cycles
    through offsets 0, 0x200, 0x400, ... wrapping back to 0 once it
    would reach 0x1000 (4096), and each slot can hold up to a 0x200-byte
    decoded string. Declared as a single scalar byte, this let every
@@ -6397,9 +6397,9 @@ undefined2 DAT_000878bc;
    the root cause of the "most chargen text doesn't render" bug: once
    DAT_0024bf98 is corrupted, every subsequent compressed-string decode
    for the rest of the process fails. */
-static undefined1 DAT_0024af98_backing[4096];
+undefined1 DAT_0024af98_backing[4096];
 #define DAT_0024af98 DAT_0024af98_backing[0]
-static undefined2 DAT_0024cfbc_backing[8192];
+undefined2 DAT_0024cfbc_backing[8192];
 #define DAT_0024cfbc DAT_0024cfbc_backing[0]
 /* was `int` -- truncated pointer to a 64-bit address on assignment in
    FUN_000798c4 (&DAT_001007d0 + index*0x30), causing FUN_00079350 to
@@ -10954,7 +10954,7 @@ LAB_00024dd4:
   else {
     pcVar_str = get_message_string(uVar6 | 0x400);
     iVar7 = measure_text_width(pcVar_str);
-    /* get_message_string's compressed-string decoder (FUN_0007907c and its
+    /* get_message_string's compressed-string decoder (walk_strings_pak_huffman_tree and its
        tree-walk helpers) has a separate, deeper bug -- confirmed via
        diagnostics that this field's label lookup returns a fragment of
        an unrelated, much longer string instead of the short intended
@@ -36508,143 +36508,6 @@ LAB_00060f54:
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
   return;
-}
-
-
-
-undefined1 *FUN_00078e60(param_1,param_2)
-short param_1;
-short param_2;
-
-{
-  int iVar1;
-  char cVar2;
-  uint uVar3;
-  ushort uVar4;
-  uint uVar5;
-  undefined1 *puVar6;
-  ushort local_30;
-  ushort local_2e;
-  ushort local_2c;
-  ushort local_2a;
-  undefined4 local_28;
-  
-  uVar5 = 0;
-  puVar6 = &DAT_0024af98 + DAT_0024cfb4;
-  seek_file_handle(DAT_0024bf98,*DAT_0024cfb8 * 4 + 2,0);
-  /* If this read fails (e.g. DAT_0024bf98 holds a corrupted/invalid
-     handle -- see FUN_0007907c's comment for the known separate bug
-     this guards against), local_30 stays uninitialized garbage and the
-     search loop below would iterate up to 65535 times, one failing
-     read each, instead of the fast "not found" bailout every other
-     failure path in this function already takes. */
-  if (read_file_handle(DAT_0024bf98,&local_30,2) == 0) {
-    *puVar6 = 0;
-    return puVar6;
-  }
-  uVar4 = 0;
-  if (local_30 != 0) {
-    do {
-      read_file_handle(DAT_0024bf98,&local_2c,2);
-      if ((uint)local_2c == (int)param_1) break;
-      seek_file_handle(DAT_0024bf98,4,1);
-      uVar4 = uVar4 + 1;
-    } while (uVar4 < local_30);
-  }
-  if (uVar4 != local_30) {
-    read_file_handle(DAT_0024bf98,&local_28,4);
-    seek_file_handle(DAT_0024bf98,local_28,0);
-    read_file_handle(DAT_0024bf98,&local_2e,2);
-    iVar1 = (int)param_2;
-    if (iVar1 < (int)(uint)local_2e) {
-      seek_file_handle(DAT_0024bf98,iVar1 << 1,1);
-      read_file_handle(DAT_0024bf98,&local_2a,2);
-      seek_file_handle(DAT_0024bf98,(((uint)local_2e - iVar1) + -1) * 2 + (uint)local_2a,1);
-      DAT_000878bc = 8;
-      do {
-        cVar2 = FUN_0007907c(DAT_0024bf98,*DAT_0024cfb8 + -1);
-        uVar3 = uVar5 + 1;
-        puVar6[uVar5] = cVar2;
-        uVar5 = uVar3 & 0xffff;
-        if ((cVar2 == -1) || (cVar2 == '|')) break;
-      } while ((uVar3 & 0xffff) < 0x200);
-      puVar6[(uVar3 & 0xffff) - 1] = 0;
-      if ((DAT_0024cfb4 + 0x200) * 0x10000 >> 0x10 < 0x1000) {
-        DAT_0024cfb4 = (short)(DAT_0024cfb4 + 0x200);
-        return puVar6;
-      }
-      DAT_0024cfb4 = 0;
-      return puVar6;
-    }
-  }
-  *puVar6 = 0;
-  return puVar6;
-}
-
-
-
-undefined1 FUN_0007907c(param_1,param_2)
-undefined4 param_1;
-ushort param_2;
-
-{
-  short sVar1;
-  /* Was `int iVar2`, truncating DAT_0024cfa8 (a real char* pointer). */
-  char *iVar2;
-  /* Guard against a known, separate, not-yet-root-caused bug: under
-     some string IDs the compressed-string file handle this receives
-     (traced back to DAT_0024bf98) ends up corrupted before reaching
-     here, so every underlying file read fails and this tree walk never
-     reaches a leaf node -- an unbounded busy loop that hangs the whole
-     game (confirmed via lldb: uw_file_read spinning forever on a
-     garbage handle). No real Huffman tree used by this format is
-     anywhere near this deep, so treat exceeding it as corrupt/failed
-     decode and bail out with the same separator sentinel a normal
-     decode already uses to signal "stop appending". */
-  int iVar3 = 0;
-  while (*(char *)((short)param_2 * 4 + DAT_0024cfa8 + 2) != -1) {
-    if (256 < iVar3) {
-      return '|';
-    }
-    iVar3 = iVar3 + 1;
-    sVar1 = FUN_000790e0(param_1);
-    if (sVar1 == -1) {
-      return '|';
-    }
-    iVar2 = (short)param_2 * 4 + DAT_0024cfa8;
-    if (sVar1 == 0) {
-      param_2 = (ushort)*(byte *)(iVar2 + 2);
-    }
-    else {
-      param_2 = (ushort)*(byte *)(iVar2 + 3);
-    }
-  }
-  return *(undefined1 *)(DAT_0024cfa8 + (short)param_2 * 4);
-}
-
-
-
-/* Returns -1 (instead of a 0/0x80 bit value) when the underlying file
-   read fails, so FUN_0007907c's caller can bail out immediately rather
-   than spinning through its iteration cap one failed read at a time --
-   see FUN_0007907c's comment for the corrupted-handle bug this guards
-   against. */
-int FUN_000790e0(param_1)
-undefined4 param_1;
-
-{
-  ushort uVar1;
-
-  if (DAT_000878bc == 8) {
-    if (read_file_handle(param_1,&DAT_0024cfbc,1) == 0) {
-      return -1;
-    }
-    DAT_000878bc = 0;
-  }
-  uVar1 = DAT_0024cfbc & 0x80;
-  DAT_0024cfbc = DAT_0024cfbc << 1;
-  DAT_000878bc = DAT_000878bc + 1;
-  return uVar1;
 }
 
 

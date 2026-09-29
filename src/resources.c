@@ -688,12 +688,12 @@ void thunk_FUN_00078e28()
 // this game: param_1 packs a page number (bits 9+) and a sub-index
 // within that page (low 9 bits). Searches the string-resource cache
 // (DAT_0024bfa0-family) for the page; if not yet cached, decodes it
-// via FUN_00078e60 (not yet named) and returns the string directly;
+// via decode_strings_pak_entry (not yet named) and returns the string directly;
 // if already cached, returns the pointer from the real-pointer side
 // table (g_bfa2_real_ptrs). ~130 call sites throughout this codebase.
 //
 // Was `undefined4` return -- truncating the real char* string pointer
-// FUN_00078e60 returns (and the string pointers stored in the
+// decode_strings_pak_entry returns (and the string pointers stored in the
 // DAT_0024bfa0-family table read below). Most callers pass the
 // result straight into a char*-typed argument so aren't affected by
 // this fix, but any caller that first stores it in an
@@ -724,19 +724,19 @@ ushort param_1;
     if (uVar1 == 0) {
       uVar1 = (uint)DAT_0024cfac;
     }
-    /* Was `FUN_00078e60(uVar1)` -- called with only one explicit
+    /* Was `decode_strings_pak_entry(uVar1)` -- called with only one explicit
        argument, relying on a register-leftover idiom for the second
        (the "dropped argument" pattern used throughout this file, e.g.
        Ordinal_1068/draw_text_string earlier this session) to still hold
        the string's sub-index within this page. That register doesn't
        reliably survive here either (confirmed: string lookups that
        should succeed -- e.g. chargen field labels -- came back as
-       genuinely empty strings, because FUN_00078e60's own `iVar1 <
+       genuinely empty strings, because decode_strings_pak_entry's own `iVar1 <
        local_2e` bounds check saw garbage and fell straight through to
        its "not found" empty-string return). param_1's low 9 bits are
        exactly this sub-index (uVar1 above is `param_1 >> 9`, the page
        number) -- pass it explicitly instead. */
-    uVar2 = (char *)FUN_00078e60(uVar1,(uint)(param_1 & 0x1ff));
+    uVar2 = (char *)decode_strings_pak_entry(uVar1,(uint)(param_1 & 0x1ff));
   }
   else {
     /* Was reading 4 consecutive bytes from DAT_0024bfa2 alone, but the
@@ -990,4 +990,164 @@ void close_strings_pak_file()
   Ordinal_1018(DAT_0024cfb8);
   Ordinal_1018(DAT_0024cfa8);
   return;
+}
+
+
+
+
+
+// was FUN_00078e60 -- decodes one string out of STRINGS.PAK: seeks
+// the page's offset-table entry for param_1, finds param_2's
+// sub-offset within that page's own sub-table, then reads
+// compressed bytes one at a time via walk_strings_pak_huffman_tree (not yet named)
+// until a terminator (-1 or '|') or the 0x200-byte cap, writing into
+// the decoded-string ring buffer (DAT_0024af98, cycling through
+// DAT_0024cfb4 -- see that global's own comment). Already widely
+// referenced by this exact name throughout this codebase's existing
+// comments describing the string-resource system. Confirmed real
+// caller: get_message_string.
+undefined1 *decode_strings_pak_entry(param_1,param_2)
+short param_1;
+short param_2;
+
+{
+  int iVar1;
+  char cVar2;
+  uint uVar3;
+  ushort uVar4;
+  uint uVar5;
+  undefined1 *puVar6;
+  ushort local_30;
+  ushort local_2e;
+  ushort local_2c;
+  ushort local_2a;
+  undefined4 local_28;
+  
+  uVar5 = 0;
+  puVar6 = &DAT_0024af98 + DAT_0024cfb4;
+  seek_file_handle(DAT_0024bf98,*DAT_0024cfb8 * 4 + 2,0);
+  /* If this read fails (e.g. DAT_0024bf98 holds a corrupted/invalid
+     handle -- see walk_strings_pak_huffman_tree's comment for the known separate bug
+     this guards against), local_30 stays uninitialized garbage and the
+     search loop below would iterate up to 65535 times, one failing
+     read each, instead of the fast "not found" bailout every other
+     failure path in this function already takes. */
+  if (read_file_handle(DAT_0024bf98,&local_30,2) == 0) {
+    *puVar6 = 0;
+    return puVar6;
+  }
+  uVar4 = 0;
+  if (local_30 != 0) {
+    do {
+      read_file_handle(DAT_0024bf98,&local_2c,2);
+      if ((uint)local_2c == (int)param_1) break;
+      seek_file_handle(DAT_0024bf98,4,1);
+      uVar4 = uVar4 + 1;
+    } while (uVar4 < local_30);
+  }
+  if (uVar4 != local_30) {
+    read_file_handle(DAT_0024bf98,&local_28,4);
+    seek_file_handle(DAT_0024bf98,local_28,0);
+    read_file_handle(DAT_0024bf98,&local_2e,2);
+    iVar1 = (int)param_2;
+    if (iVar1 < (int)(uint)local_2e) {
+      seek_file_handle(DAT_0024bf98,iVar1 << 1,1);
+      read_file_handle(DAT_0024bf98,&local_2a,2);
+      seek_file_handle(DAT_0024bf98,(((uint)local_2e - iVar1) + -1) * 2 + (uint)local_2a,1);
+      DAT_000878bc = 8;
+      do {
+        cVar2 = walk_strings_pak_huffman_tree(DAT_0024bf98,*DAT_0024cfb8 + -1);
+        uVar3 = uVar5 + 1;
+        puVar6[uVar5] = cVar2;
+        uVar5 = uVar3 & 0xffff;
+        if ((cVar2 == -1) || (cVar2 == '|')) break;
+      } while ((uVar3 & 0xffff) < 0x200);
+      puVar6[(uVar3 & 0xffff) - 1] = 0;
+      if ((DAT_0024cfb4 + 0x200) * 0x10000 >> 0x10 < 0x1000) {
+        DAT_0024cfb4 = (short)(DAT_0024cfb4 + 0x200);
+        return puVar6;
+      }
+      DAT_0024cfb4 = 0;
+      return puVar6;
+    }
+  }
+  *puVar6 = 0;
+  return puVar6;
+}
+
+
+
+// was FUN_0007907c -- walks STRINGS.PAK's per-page Huffman-style
+// decode tree (stored in DAT_0024cfa8, 4 bytes/node) one bit at a
+// time (read_strings_pak_bit) starting from tree-node param_2, until
+// reaching a leaf (terminator byte != -1), returning the decoded
+// byte. Already had an existing comment documenting a real
+// corrupted-file-handle infinite-loop guard already added here
+// (bails out with the '|' separator sentinel after 256 tree steps
+// instead of hanging forever). Confirmed real caller:
+// decode_strings_pak_entry.
+undefined1 walk_strings_pak_huffman_tree(param_1,param_2)
+undefined4 param_1;
+ushort param_2;
+
+{
+  short sVar1;
+  /* Was `int iVar2`, truncating DAT_0024cfa8 (a real char* pointer). */
+  char *iVar2;
+  /* Guard against a known, separate, not-yet-root-caused bug: under
+     some string IDs the compressed-string file handle this receives
+     (traced back to DAT_0024bf98) ends up corrupted before reaching
+     here, so every underlying file read fails and this tree walk never
+     reaches a leaf node -- an unbounded busy loop that hangs the whole
+     game (confirmed via lldb: uw_file_read spinning forever on a
+     garbage handle). No real Huffman tree used by this format is
+     anywhere near this deep, so treat exceeding it as corrupt/failed
+     decode and bail out with the same separator sentinel a normal
+     decode already uses to signal "stop appending". */
+  int iVar3 = 0;
+  while (*(char *)((short)param_2 * 4 + DAT_0024cfa8 + 2) != -1) {
+    if (256 < iVar3) {
+      return '|';
+    }
+    iVar3 = iVar3 + 1;
+    sVar1 = read_strings_pak_bit(param_1);
+    if (sVar1 == -1) {
+      return '|';
+    }
+    iVar2 = (short)param_2 * 4 + DAT_0024cfa8;
+    if (sVar1 == 0) {
+      param_2 = (ushort)*(byte *)(iVar2 + 2);
+    }
+    else {
+      param_2 = (ushort)*(byte *)(iVar2 + 3);
+    }
+  }
+  return *(undefined1 *)(DAT_0024cfa8 + (short)param_2 * 4);
+}
+
+
+
+// was FUN_000790e0 -- reads one bit from STRINGS.PAK's compressed
+// bitstream (DAT_0024cfbc, refilled from the file one byte at a time
+// via DAT_000878bc as a bit-position counter), returning -1 instead
+// of a 0/0x80 bit value on a file-read failure so
+// walk_strings_pak_huffman_tree's caller can bail out immediately
+// rather than spinning through its iteration cap one failed read at
+// a time (already had an existing comment documenting this).
+int read_strings_pak_bit(param_1)
+undefined4 param_1;
+
+{
+  ushort uVar1;
+
+  if (DAT_000878bc == 8) {
+    if (read_file_handle(param_1,&DAT_0024cfbc,1) == 0) {
+      return -1;
+    }
+    DAT_000878bc = 0;
+  }
+  uVar1 = DAT_0024cfbc & 0x80;
+  DAT_0024cfbc = DAT_0024cfbc << 1;
+  DAT_000878bc = DAT_000878bc + 1;
+  return uVar1;
 }
