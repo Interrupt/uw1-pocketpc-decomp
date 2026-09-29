@@ -32793,7 +32793,7 @@ ushort *pick_object_under_cursor()
     if(puVar3) {
       DEBUG(INFO, "[pick] found slot=%u -> objid=0x%03x", uVar4, (unsigned)(*puVar3 & 0x1ff));
       if (_pick_diag)
-        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x\n", uVar4, (unsigned)(*puVar3 & 0x1ff));
+        fprintf(stderr, "[pick] found slot=%u -> objid=0x%03x ptr=%p\n", uVar4, (unsigned)(*puVar3 & 0x1ff), (void *)puVar3);
     }
 
     DAT_002020a8 = DAT_002020b0 + 2;
@@ -41586,6 +41586,15 @@ void main_loop_hud_flush()
   {
     static int _force = -1;
     if (_force < 0) _force = (getenv("UW_NO_FORCE_3D_REDRAW") == NULL);
+    if (getenv("UW_DEBUG_DOOR")) {
+      static int _last_b64 = -1, _last_c90 = -1;
+      if ((int)DAT_00201b64 != _last_b64 || (int)DAT_00201c90 != _last_c90) {
+        fprintf(stderr, "[door] main_loop_hud_flush: DAT_00201b64=%d DAT_00201c90=%d\n",
+                (int)DAT_00201b64, (int)DAT_00201c90);
+        _last_b64 = (int)DAT_00201b64;
+        _last_c90 = (int)DAT_00201c90;
+      }
+    }
     if (_force && DAT_00201b64 == 0 && DAT_00201c90 == 0) {
       _did_force_redraw = 1;
       /* Rebuild AND re-rasterise the 3D dungeon view every main-loop
@@ -72630,8 +72639,8 @@ int param_3;
   uVar3 = uVar2 >> 6 & 7;
   uVar1 = (ushort)((uVar7 & 0x30) >> 4);
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] use_object_on_target: obj0=0x%04x class(uVar3)=%d family(uVar1)=%d\n",
-            (unsigned)uVar2, (int)uVar3, (int)uVar1);
+    fprintf(stderr, "[door] use_object_on_target: obj0=0x%04x class(uVar3)=%d family(uVar1)=%d ptr=%p\n",
+            (unsigned)uVar2, (int)uVar3, (int)uVar1, (void *)param_2);
   if ((uVar2 >> 6 & 7) == 0) {
     if (((uVar1 == 1) && (param_3 == 0)) && (param_1 != 0)) {
       FUN_000545ac(param_2,param_1);
@@ -74195,8 +74204,8 @@ ushort * param_1;
      ever actually run. */
   uVar4 = encode_object_slot_index((char *)param_1);
   if (getenv("UW_DEBUG_DOOR"))
-    fprintf(stderr, "[door] FUN_0007c3f4: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d\n",
-            (unsigned)uVar1, (unsigned)uVar5, (int)(((byte)uVar1 ^ bVar3) & 0x3f ^ bVar3), (int)uVar6, (int)uVar4);
+    fprintf(stderr, "[door] FUN_0007c3f4: obj0(before)=0x%04x obj0(after)=0x%04x quality(after)=%d uVar6(anim_type)=%d slot=%d ptr=%p\n",
+            (unsigned)uVar1, (unsigned)uVar5, (int)(((byte)uVar1 ^ bVar3) & 0x3f ^ bVar3), (int)uVar6, (int)uVar4, (void *)param_1);
   scheduler_add_entry(uVar4,uVar6,0,(undefined1)DAT_002020a0,(char)DAT_002020a4);
   return;
 }
