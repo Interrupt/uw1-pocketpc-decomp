@@ -417,3 +417,41 @@ undefined4 param_3;
   }
   return uVar1;
 }
+
+
+
+
+
+
+// was FUN_0007305c -- currently a no-op stub (Ghidra recovered an
+// empty body). Its two call sites, both in movement.c's per-tick
+// footstep/jump sound handling, call it right before resetting
+// DAT_00086e84 (a sound-handle-in-progress marker) to -1, so this was
+// most plausibly meant to stop that in-progress movement sound.
+void stop_movement_sound_handle()
+
+{
+  return;
+}
+
+
+
+// was thunk_FUN_00072c44 -- byte-for-byte identical body to
+// stop_current_audio_handle (this project's established split-symbol/
+// naming-collision bug class -- see that function's own comment; kept
+// as a separately-named/addressed function per this project's
+// convention of preserving what Ghidra recovered).
+void stop_current_audio_handle_dup()
+
+{
+  undefined4 *puVar1;
+
+  puVar1 = &DAT_00087448;
+  if (DAT_00087454 != 0) {
+    puVar1 = DAT_00087448;
+  }
+  if (DAT_00087454 != 0 && puVar1 != (undefined4 *)0x0) {
+    FUN_0004cfc8(DAT_0023c3b8);
+  }
+  return;
+}

@@ -1553,7 +1553,7 @@ int param_3;
   }
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 1) == 0) {
     if (DAT_00086e84 != -1) {
-      FUN_0007305c();
+      stop_movement_sound_handle();
       DAT_00086e84 = -1;
     }
     if (((*(byte *)(DAT_00086df8 + 0xb8) & 8) == 0) && ((DAT_002048a8 & 0x10) == 0)) {
@@ -1602,7 +1602,7 @@ int param_3;
   }
   else {
     if ((DAT_00086e84 != -1) && (uVar2 = read_realtime_clock_units(), DAT_0023bf64 + 0x1800U <= uVar2)) {
-      FUN_0007305c();
+      stop_movement_sound_handle();
       DAT_00086e84 = -1;
     }
     if (DAT_00086e84 == -1) {

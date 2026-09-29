@@ -3176,7 +3176,7 @@ void stop_current_audio_handle();
 undefined4 play_positional_sound_effect();
 undefined4 play_sound_effect_with_pan();
 undefined4 play_sound_effect_at_object();
-void FUN_0007305c();
+void stop_movement_sound_handle();
 void stop_current_audio_handle_dup();
 uint FUN_00073064();
 void FUN_00073140();
