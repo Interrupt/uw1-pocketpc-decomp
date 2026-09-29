@@ -21564,7 +21564,7 @@ ushort *pick_object_under_cursor()
   /* Guard never present in the decompile: nothing bounds-checked
      g_mouse_x/g_mouse_y against the 3D viewport's own registered rect
      (DAT_0023be5c/DAT_0023bd80 x-range, DAT_0023be80-DAT_0023be88..
-     DAT_0023be80 y-range -- the same rect FUN_0006764c registers for
+     DAT_0023be80 y-range -- the same rect register_game_view_interact_zones registers for
      FUN_0003f420 and hit_test_inventory_widget already reuses for its own 0x17
      special case) before indexing the pick stencil DAT_0023cca0. That
      was harmless while every right-click interact stayed inside the
@@ -34894,7 +34894,7 @@ int param_4;
   DAT_0023aed4 = (undefined2)param_4;
   FUN_000129d4(param_1);
   FUN_00057188(param_1,param_2,param_3,param_4);
-  FUN_0006764c(param_1,param_2 + param_4 + -1,param_3,param_4);
+  register_game_view_interact_zones(param_1,param_2 + param_4 + -1,param_3,param_4);
   if ((*(ushort *)(DAT_00085a6c + 8) & 8) == 0) {
     if ((*(ushort *)(DAT_00085a6c + 8) & 1) == 0) {
       DAT_0023aed8 = 0x7ed2;
@@ -36396,74 +36396,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_0006764c(param_1,param_2,param_3,param_4)
-int param_1;
-int param_2;
-int param_3;
-int param_4;
-
-{
-  int iVar1;
-  short sVar2;
-  short sVar3;
-  short sVar4;
-  short sVar5;
-  int iVar6;
-  int iVar7;
-  int iVar8;
-  int iVar9;
-  int iVar10;
-  
-  unregister_key_binding((int)DAT_0023be8c);
-  iVar9 = (param_2 - param_4) + 1;
-  sVar2 = (short)param_1;
-  iVar10 = param_1 + param_3 + -1;
-  sVar3 = (short)param_2;
-  sVar4 = (short)param_3;
-  sVar5 = (short)param_4;
-  DAT_0023bd80 = sVar4;
-  DAT_0023be5c = sVar2;
-  DAT_0023be80 = sVar3;
-  DAT_0023be88 = sVar5;
-  DAT_0023be8c = register_click_region(param_1,param_2,iVar10,iVar9,0,0x1b,FUN_0003f420);
-  iVar6 = Ordinal_2005(0xf,sVar5 * 3);
-  iVar6 = (sVar3 - iVar6) * 0x10000 >> 0x10;
-  iVar7 = Ordinal_2005(0xf,sVar4 * 5);
-  iVar1 = (iVar7 + sVar2) * 0x10000 >> 0x10;
-  DAT_0023be6c = FUN_00057af0(param_1,param_2,iVar1,iVar6,0x106f);
-  iVar7 = ((sVar2 - iVar7) + (int)sVar4) * 0x10000 >> 0x10;
-  DAT_0023be68 = FUN_00057af0(iVar7,param_2,iVar10,iVar6,0x1070);
-  DAT_0023be70 = FUN_00057af0(iVar1,param_2,iVar7,iVar6,0x106e);
-  iVar8 = Ordinal_2005(0xf,sVar5 * 6);
-  iVar8 = (sVar3 - iVar8) * 0x10000 >> 0x10;
-  DAT_0023be7c = FUN_00057af0(param_1,iVar6,iVar1,iVar8,0x1071);
-  DAT_0023be84 = FUN_00057af0(iVar7,iVar6,iVar10,iVar8,0x1072);
-  DAT_0023be78 = FUN_00057af0(iVar1,iVar8,iVar7,iVar9,0x106d);
-  DAT_0023be60 = FUN_00057af0(param_1,iVar8,iVar1,iVar9,0x1073);
-  DAT_0023bd7c = FUN_00057af0(iVar7,iVar8,iVar10,iVar9,0x1074);
-  return;
-}
-
-
-
-void FUN_000678e0()
-
-{
-  unregister_key_binding((int)DAT_0023be8c);
-  DAT_0023be8c = 0;
-  FUN_00057bb0((int)DAT_0023be6c);
-  FUN_00057bb0((int)DAT_0023be68);
-  FUN_00057bb0((int)DAT_0023be7c);
-  FUN_00057bb0((int)DAT_0023be84);
-  FUN_00057bb0((int)DAT_0023be70);
-  FUN_00057bb0((int)DAT_0023be78);
-  FUN_00057bb0((int)DAT_0023be60);
-  FUN_00057bb0((int)DAT_0023bd7c);
   return;
 }
 

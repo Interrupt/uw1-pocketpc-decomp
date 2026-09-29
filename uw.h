@@ -874,6 +874,14 @@ extern undefined DAT_00028bfc_backing[8192];
 void FUN_000680d0();
 void FUN_00071ac4();
 undefined4 FUN_0007036c();
+extern undefined2 DAT_0023be6c;
+extern undefined2 DAT_0023be68;
+extern undefined2 DAT_0023be70;
+extern undefined2 DAT_0023be7c;
+extern undefined2 DAT_0023be84;
+extern undefined2 DAT_0023be78;
+extern undefined2 DAT_0023be60;
+extern undefined2 DAT_0023bd7c;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -2905,8 +2913,8 @@ void refresh_player_equipment_effects();
 void close_panels_before_level_change();
 void reset_player_object_record();
 void init_gameplay_session();
-void FUN_0006764c();
-void FUN_000678e0();
+void register_game_view_interact_zones();
+void unregister_game_view_interact_zones();
 void FUN_00067950();
 void FUN_000679f4();
 void FUN_00067a44();
