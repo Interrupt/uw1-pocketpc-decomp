@@ -22,7 +22,7 @@ void enter_automap_screen()
   }
   FUN_000735b0(0xd);
   FUN_00073634();
-  FUN_00016434(0,(int)DAT_00201b68);
+  save_automap_reveal_to_archive(0,(int)DAT_00201b68);
   draw_automap_screen((int)DAT_00201b68);
   DAT_000b99c0 = register_click_region(0,200,0x13f,1,0,2,FUN_00016ef8);
   set_cursor_confine_rect(0,199,0x13f,0);
@@ -49,7 +49,7 @@ void exit_automap_screen()
   FUN_00017768((int)DAT_000ba9d0);
   if ((DAT_000ba9d0 != DAT_00201b68) &&
      (iVar1 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
-    FUN_000164e4(auStack_1c,(int)DAT_00201b68);
+    load_automap_reveal_from_archive(auStack_1c,(int)DAT_00201b68);
     close_level_archive(auStack_1c);
   }
   FUN_000735c0();
@@ -498,6 +498,101 @@ int param_2;
   uVar2 = *puVar1;
   *puVar1 = (uVar2 >> 1 & 0x7bef) + (uVar2 >> 2 & 0x39e7);
   debug_framebuffer_dump("darken_pixel_light");
+  return;
+}
+
+
+
+
+// was FUN_00016434 -- writes the DAT_000b99d0 automap-reveal buffer
+// (64x64 grid, one nibble/byte per tile -- see automap.c's readers) to
+// archive entry param_2+0x1a. If param_1 is NULL, opens/closes
+// \SAVE0\lev.ark itself via open_level_archive/close_level_archive;
+// otherwise param_1 is a caller-owned 16-byte archive-handle struct
+// (copied in/out here) and the caller manages its lifetime.
+undefined4 save_automap_reveal_to_archive(param_1,param_2)
+undefined1 * param_1;
+int param_2;
+
+{
+  bool bVar1;
+  int iVar2;
+  int iVar3;
+  undefined1 *puVar4;
+  int iVar5;
+  undefined1 *puVar6;
+  undefined1 auStack_1c [16];
+  
+  if (param_1 == (undefined1 *)0x0) {
+    iVar2 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc);
+    if (iVar2 == 0) {
+      return 0;
+    }
+  }
+  else {
+    iVar2 = 0xf;
+    puVar4 = param_1;
+    puVar6 = auStack_1c;
+    do {
+      iVar3 = iVar2 + -1;
+      *puVar6 = *puVar4;
+      bVar1 = 0 < iVar2;
+      iVar2 = iVar3;
+      puVar4 = puVar4 + 1;
+      puVar6 = puVar6 + 1;
+    } while (iVar3 != 0 && bVar1);
+  }
+  iVar2 = write_archive_entry(auStack_1c,param_2 + 0x1a,&DAT_000b99d0,0x1000);
+  if (param_1 == (undefined1 *)0x0) {
+    close_level_archive(auStack_1c);
+  }
+  else {
+    iVar3 = 0xf;
+    puVar4 = auStack_1c;
+    do {
+      iVar5 = iVar3 + -1;
+      *param_1 = *puVar4;
+      bVar1 = 0 < iVar3;
+      iVar3 = iVar5;
+      puVar4 = puVar4 + 1;
+      param_1 = param_1 + 1;
+    } while (iVar5 != 0 && bVar1);
+  }
+  if (iVar2 == 0) {
+    return 0;
+  }
+  return 1;
+}
+
+
+
+// was FUN_000164e4 -- reads archive entry param_2+0x1a back into the
+// DAT_000b99d0 automap-reveal buffer (the read-side counterpart to
+// save_automap_reveal_to_archive).
+undefined4 load_automap_reveal_from_archive(param_1,param_2)
+/* .ark handle-struct pointer -- was `undefined4`, truncating it before
+   read_archive_entry. */
+undefined1 * param_1;
+int param_2;
+
+{
+  short sVar1;
+  undefined4 uVar2;
+  
+  sVar1 = read_archive_entry(param_1,param_2 + 0x1a,&DAT_000b99d0);
+  if ((sVar1 == 0) || (uVar2 = 0, sVar1 == 0x1000)) {
+    uVar2 = 1;
+  }
+  return uVar2;
+}
+
+
+
+// was FUN_000165bc
+void clear_automap_reveal_buffer()
+
+{
+  Ordinal_1047(&DAT_000b99d0,0,0x1000);
   return;
 }
 

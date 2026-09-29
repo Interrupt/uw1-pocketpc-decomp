@@ -669,7 +669,7 @@ LAB_0006c544:
    via lldb (this exact call site): this "worked" for the level-load
    caller purely because the stack garbage there happened to already
    read as an empty string, and broke for the automap-entry caller
-   (FUN_00016434, exercised for the first time by the new OPENMAP
+   (save_automap_reveal_to_archive, exercised for the first time by the new OPENMAP
    demomode command) once different preceding activity left a stray
    0x01 byte on the stack instead, producing a corrupt filename
    ("\x01\SAVE0\lev.ark") and a failed file open. Fixed by copying
@@ -1013,7 +1013,7 @@ undefined4 * param_1;
 uint param_2;
 /* Was `undefined4`, truncating the real destination buffer pointer the
    callers pass (load_level_object_table: the malloc'd DAT_002029cc workspace;
-   FUN_000164e4: &DAT_000b99d0). Forwarded straight to read_file_handle
+   load_automap_reveal_from_archive: &DAT_000b99d0). Forwarded straight to read_file_handle
    (uw_file_read), which needs a valid pointer -- the truncated value
    segfaulted the level loader on the first real read. */
 void *param_3;
@@ -1060,5 +1060,51 @@ void *param_3;
     uVar1 = read_file_handle(*param_1,param_3,uVar7 & 0xffff);
   }
   return uVar1;
+}
+
+
+
+
+// was FUN_0001629c -- opens the archive at win path param_1 directly
+// (bypassing open_level_archive/close_level_archive), seeks to entry
+// param_2's slot in the entry-offset table, and reports whether it has
+// a nonzero offset (1 = has data, 0 = empty slot, -1 = I/O error).
+// Used e.g. to probe cnv.ark for a given conversation-id entry before
+// switching into conversation mode.
+int probe_archive_entry_exists(param_1,param_2)
+char *param_1;
+uint param_2;
+
+{
+  short sVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  int iVar5;
+  int local_14;
+
+  iVar2 = open_file_for_read(param_1);
+  if (iVar2 == -1) {
+    iVar2 = -1;
+  }
+  else {
+    iVar5 = (param_2 & 0xffff) * 4 + 2;
+    iVar3 = seek_file_handle(iVar2,iVar5,0);
+    iVar4 = read_file_handle(iVar2,&local_14,4);
+    iVar2 = Ordinal_553(iVar2);
+    if ((iVar3 == iVar5 && iVar4 == 4) && iVar2 != 0) {
+      if (local_14 == 0) {
+        sVar1 = 0;
+      }
+      else {
+        sVar1 = 1;
+      }
+    }
+    else {
+      sVar1 = -1;
+    }
+    iVar2 = (int)sVar1;
+  }
+  return iVar2;
 }
 

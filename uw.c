@@ -7539,129 +7539,6 @@ int g_ambient_bias_reduction = 32;
 
 
 
-int FUN_0001629c(param_1,param_2)
-char *param_1;
-uint param_2;
-
-{
-  short sVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  int iVar5;
-  int local_14;
-
-  iVar2 = open_file_for_read(param_1);
-  if (iVar2 == -1) {
-    iVar2 = -1;
-  }
-  else {
-    iVar5 = (param_2 & 0xffff) * 4 + 2;
-    iVar3 = seek_file_handle(iVar2,iVar5,0);
-    iVar4 = read_file_handle(iVar2,&local_14,4);
-    iVar2 = Ordinal_553(iVar2);
-    if ((iVar3 == iVar5 && iVar4 == 4) && iVar2 != 0) {
-      if (local_14 == 0) {
-        sVar1 = 0;
-      }
-      else {
-        sVar1 = 1;
-      }
-    }
-    else {
-      sVar1 = -1;
-    }
-    iVar2 = (int)sVar1;
-  }
-  return iVar2;
-}
-
-
-
-undefined4 FUN_00016434(param_1,param_2)
-undefined1 * param_1;
-int param_2;
-
-{
-  bool bVar1;
-  int iVar2;
-  int iVar3;
-  undefined1 *puVar4;
-  int iVar5;
-  undefined1 *puVar6;
-  undefined1 auStack_1c [16];
-  
-  if (param_1 == (undefined1 *)0x0) {
-    iVar2 = open_level_archive(auStack_1c,s__SAVE0_lev_ark_000842fc);
-    if (iVar2 == 0) {
-      return 0;
-    }
-  }
-  else {
-    iVar2 = 0xf;
-    puVar4 = param_1;
-    puVar6 = auStack_1c;
-    do {
-      iVar3 = iVar2 + -1;
-      *puVar6 = *puVar4;
-      bVar1 = 0 < iVar2;
-      iVar2 = iVar3;
-      puVar4 = puVar4 + 1;
-      puVar6 = puVar6 + 1;
-    } while (iVar3 != 0 && bVar1);
-  }
-  iVar2 = write_archive_entry(auStack_1c,param_2 + 0x1a,&DAT_000b99d0,0x1000);
-  if (param_1 == (undefined1 *)0x0) {
-    close_level_archive(auStack_1c);
-  }
-  else {
-    iVar3 = 0xf;
-    puVar4 = auStack_1c;
-    do {
-      iVar5 = iVar3 + -1;
-      *param_1 = *puVar4;
-      bVar1 = 0 < iVar3;
-      iVar3 = iVar5;
-      puVar4 = puVar4 + 1;
-      param_1 = param_1 + 1;
-    } while (iVar5 != 0 && bVar1);
-  }
-  if (iVar2 == 0) {
-    return 0;
-  }
-  return 1;
-}
-
-
-
-undefined4 FUN_000164e4(param_1,param_2)
-/* .ark handle-struct pointer -- was `undefined4`, truncating it before
-   read_archive_entry. */
-undefined1 * param_1;
-int param_2;
-
-{
-  short sVar1;
-  undefined4 uVar2;
-  
-  sVar1 = read_archive_entry(param_1,param_2 + 0x1a,&DAT_000b99d0);
-  if ((sVar1 == 0) || (uVar2 = 0, sVar1 == 0x1000)) {
-    uVar2 = 1;
-  }
-  return uVar2;
-}
-
-
-
-void FUN_000165bc()
-
-{
-  Ordinal_1047(&DAT_000b99d0,0,0x1000);
-  return;
-}
-
-
-
 char *FUN_00016d7c(param_1,param_2,param_3,param_4)
 char * param_1;
 char * param_2;
@@ -8085,10 +7962,10 @@ undefined4 param_1;
   undefined1 auStack_18 [16];
   
   FUN_00017768((int)DAT_000ba9d0);
-  FUN_000165bc();
+  clear_automap_reveal_buffer();
   if (((short)param_1 < 9) &&
      (iVar1 = open_level_archive(auStack_18,s__SAVE0_lev_ark_000842fc), iVar1 != 0)) {
-    FUN_000164e4(auStack_18,param_1);
+    load_automap_reveal_from_archive(auStack_18,param_1);
     close_level_archive(auStack_18);
   }
   draw_automap_screen(param_1);
@@ -14248,7 +14125,7 @@ LAB_000285e4:
       pcVar4 = pcVar4 + 1;
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_114,s__DATA_cnv_ark_00084fc8);
-    sVar2 = FUN_0001629c(acStack_114,uVar6);
+    sVar2 = probe_archive_entry_exists(acStack_114,uVar6);
     if (0 < sVar2) {
       change_game_mode(4);
       return;
@@ -43115,7 +42992,7 @@ undefined4 param_1;
     if (getenv("UW_DEBUG_INPUTEVENT"))
       fprintf(stderr, "[0006bcd4] FUN_00049b04=%d\n", iVar2);
     if (((iVar2 != 0) && (iVar2 = FUN_0005b298(auStack_20,param_1), iVar2 != 0)) &&
-       (iVar2 = FUN_00016434(auStack_20,param_1), iVar2 != 0)) {
+       (iVar2 = save_automap_reveal_to_archive(auStack_20,param_1), iVar2 != 0)) {
       iVar2 = close_level_archive(auStack_20);
       uVar3 = 1;
       if (getenv("UW_DEBUG_INPUTEVENT"))
