@@ -16,14 +16,14 @@
 
 
 /* Was a no-op stub -- the real function was never decompiled, so
-   babl_builtin_set_attitude's own FUN_00074be8 iteration (invoked once
+   babl_builtin_set_attitude's own for_each_object_of_type iteration (invoked once
    per matching-race object it walks) silently never wrote the new
    attitude value into any of them. Recovered from the real ARM binary
    (Ghidra headless): writes the babl script's requested attitude
    value into the object's own attitude bits (byte offset 0xd/0xe,
    masked to the low 14 bits, same field babl_builtin_set_race_attitude
    writes more directly a few functions up). Callback signature
-   confirmed from FUN_00074be8's own call site: `(*param_4)(iVar1,param_3)`
+   confirmed from for_each_object_of_type's own call site: `(*param_4)(iVar1,param_3)`
    with iVar1 a real object pointer and param_3 the attitude value. */
 int babl_builtin_set_attitude_apply(param_1,param_2)
 intptr_t param_1;
@@ -345,7 +345,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   
   uVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
   uVar2 = babl_read_var_word((int)*(short *)(param_1 + -4));
-  FUN_00074be8(uVar2,0,uVar1,&babl_builtin_set_attitude_apply);
+  for_each_object_of_type(uVar2,0,uVar1,&babl_builtin_set_attitude_apply);
   return;
 }
 

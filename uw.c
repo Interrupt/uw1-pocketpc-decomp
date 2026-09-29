@@ -19520,7 +19520,7 @@ void FUN_0003a654()
   *(byte *)(DAT_00086df8 + 0x6e) = (byte)uVar1 | 4;
   *(char *)(DAT_00086df8 + 0x6f) = (char)((ushort)uVar1 >> 8);
   do {
-    FUN_00074be8(*(undefined1 *)(iVar4 + 0x85638),0,0,FUN_0003a604);
+    for_each_object_of_type(*(undefined1 *)(iVar4 + 0x85638),0,0,FUN_0003a604);
     iVar4 = (iVar4 + -1) * 0x1000000 >> 0x18;
   } while (0 < iVar4);
   iVar4 = tilemap_lookup(0x17,0x38);
@@ -36474,37 +36474,6 @@ LAB_00060f54:
 
 
 
-void FUN_00074be8(param_1,param_2,param_3,param_4)
-ushort param_1;
-int param_2;
-undefined4 param_3;
-codeval * param_4;
-
-{
-  intptr_t iVar1; // was `int` -- FUN_000535fc returns a real 64-bit object pointer, truncated on this host (this loop was never exercised until babl_builtin_set_attitude's own recovery)
-  undefined1 *puVar2;
-
-  puVar2 = DAT_002046c0;
-  if (DAT_002046c0 < DAT_002046c8) {
-    do {
-      iVar1 = (intptr_t)FUN_000535fc(*puVar2);
-      if (*(byte *)(iVar1 + 0x1a) == param_1) {
-        iVar1 = (*param_4)(iVar1,param_3);
-        if (iVar1 != 0) {
-          puVar2 = puVar2 + -1;
-        }
-        if (param_2 == 0) {
-          return;
-        }
-      }
-      puVar2 = puVar2 + 1;
-    } while (puVar2 < DAT_002046c8);
-  }
-  return;
-}
-
-
-
 void FUN_00074c64(param_1,param_2)
 undefined4 param_1;
 uint param_2;
@@ -39513,7 +39482,7 @@ int param_2;
     *(byte *)(DAT_00086df8 + 0x60) = (byte)((ushort)uVar1 >> 8) | 0x20;
     *(undefined1 *)(DAT_00086df8 + 0x38) = *(undefined1 *)(DAT_00086df8 + 0xb0);
     *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0xb0);
-    FUN_00074be8(0xe7,0,2,FUN_0007a53c);
+    for_each_object_of_type(0xe7,0,2,FUN_0007a53c);
   }
   else if (param_2 != 0) {
     FUN_00078c80(0x84);
@@ -40999,7 +40968,7 @@ undefined4 param_3;
     FUN_0003a57c();
   }
   else if (uVar1 == 0x32) {
-    FUN_00074be8(0xd8,0,0,FUN_0007e0d8);
+    for_each_object_of_type(0xd8,0,0,FUN_0007e0d8);
   }
   else if (uVar1 == 0x39) {
     FUN_0003a5ec();

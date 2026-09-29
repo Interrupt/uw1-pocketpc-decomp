@@ -3243,7 +3243,7 @@ void apply_tile_morph_variant_6();
 void apply_tile_morph_variant_7();
 void scan_area_for_matching_objects();
 void scan_area_ahead_of_object();
-void FUN_00074be8();
+void for_each_object_of_type();
 void FUN_00074c64();
 void FUN_00074cc8();
 void FUN_00074d20();

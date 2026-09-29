@@ -1597,3 +1597,46 @@ char param_6;
                ,cVar1);
   return;
 }
+
+
+
+
+
+// was FUN_00074be8 -- iterates the active-object slot range
+// [DAT_002046c0, DAT_002046c8), and for each object whose type-id
+// byte (offset +0x1a) matches param_1, invokes callback param_4 as
+// (object, param_3). If the callback returns nonzero, backs the scan
+// pointer up by one slot (a swap-remove-style adjustment, matching
+// how babl_builtin_set_attitude_apply's caller expects to be able to
+// mutate the set while iterating). If param_2 is 0, stops after the
+// first match; otherwise scans every matching object in range. See
+// src/babl.c's babl_builtin_set_attitude for a confirmed real caller
+// and the callback contract.
+void for_each_object_of_type(param_1,param_2,param_3,param_4)
+ushort param_1;
+int param_2;
+undefined4 param_3;
+codeval * param_4;
+
+{
+  intptr_t iVar1; // was `int` -- FUN_000535fc returns a real 64-bit object pointer, truncated on this host (this loop was never exercised until babl_builtin_set_attitude's own recovery)
+  undefined1 *puVar2;
+
+  puVar2 = DAT_002046c0;
+  if (DAT_002046c0 < DAT_002046c8) {
+    do {
+      iVar1 = (intptr_t)FUN_000535fc(*puVar2);
+      if (*(byte *)(iVar1 + 0x1a) == param_1) {
+        iVar1 = (*param_4)(iVar1,param_3);
+        if (iVar1 != 0) {
+          puVar2 = puVar2 + -1;
+        }
+        if (param_2 == 0) {
+          return;
+        }
+      }
+      puVar2 = puVar2 + 1;
+    } while (puVar2 < DAT_002046c8);
+  }
+  return;
+}
