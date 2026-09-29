@@ -1013,6 +1013,9 @@ extern undefined4 DAT_002046b4;
 extern char s_on_what__000878e0[];
 extern undefined1 DAT_000878ec_backing[32768];
 #define DAT_000878ec DAT_000878ec_backing[0]
+extern undefined DAT_00085ce0_backing[8192];
+#define DAT_00085ce0 DAT_00085ce0_backing[0]
+extern char s_You_read_the_00085ce8[];
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3457,7 +3460,7 @@ undefined4 use_food_item();
 void complete_use_item_scatter_spawn();
 void complete_use_item_fill_flask();
 void dispatch_use_special_item_by_type();
-void FUN_0007baf0();
+void use_readable_item();
 void FUN_0007bcdc();
 undefined4 check_object_combination();
 undefined4 FUN_0007c1bc();

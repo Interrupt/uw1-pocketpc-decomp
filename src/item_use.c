@@ -942,7 +942,7 @@ int param_3;
       puVar6 = param_2;
       if (uVar1 != 2) {
         if (uVar1 == 3) {
-          FUN_0007baf0(param_2,param_3);
+          use_readable_item(param_2,param_3);
           return param_2;
         }
         goto LAB_00079cb8;
@@ -1990,6 +1990,81 @@ LAB_0007b7e4:
     pcVar5 = complete_use_item_fill_flask;
 LAB_0007b8b8:
     prompt_use_item_on_target(param_2,pcVar5);
+  }
+  return;
+}
+
+
+
+
+
+// was FUN_0007baf0 -- "read" a book/sign/scroll-like item: type
+// 0x13b (likely a dedicated multi-page book) switches to a reading
+// UI mode (change_game_mode) when the current UI state permits.
+// Other readable items (not the "inscribed" class 0x1000/0x140 combo)
+// either print "You read the <name>: <text>" via message_scroll_
+// print_wrapped -- fixing a dropped-argument bug already documented
+// here -- when they have a real text id, or (for the "already
+// triggered" bit 0x400 case) fire a babl/effect trigger via
+// FUN_00037c14 instead. Anything else falls through to a generic
+// tile-effect trigger + finish_object_use. Confirmed real caller:
+// use_object_on_target's family-3 branch (src/item_use.c).
+void use_readable_item(param_1,param_2)
+ushort * param_1;
+int param_2;
+
+{
+  ushort uVar2;
+  short sVar3;
+  int iVar5;
+  /* Same split-buffer decompile artifact fixed in use_food_item (see its
+     comment) and in build_creature_look_text: the "You read the "
+     prefix was copied into a phantom, oversized acStackY_85d64 buffer
+     that nothing else ever reads, leaving the real acStack_7c (read by
+     Ordinal_1068 just below) uninitialized. Fixed the same way: seed
+     acStack_7c directly, widened for safety. */
+  char acStack_7c [256];
+  
+  if (param_2 != 0) {
+    uVar2 = *param_1;
+    if ((uVar2 & 0x1ff) == 0x13b) {
+      if (*(short *)(DAT_00085a6c + 8) == 1) {
+        change_game_mode(2);
+      }
+    }
+    else if (((uVar2 & 0x1000) == 0) || ((uVar2 & 0x1c0) == 0x140)) {
+      if ((uVar2 & 0x400) == 0) {
+        if ((param_1[3] & 0x7fc0) < 0x4000) {
+          acStack_7c[0] = '\0';
+          Ordinal_1063(acStack_7c, s_You_read_the_00085ce8);
+          iVar5 = Ordinal_1068(acStack_7c);
+          sVar3 = build_object_display_name(acStack_7c + iVar5,param_1,0,0);
+          if (sVar3 == 0) {
+            Ordinal_1063(acStack_7c,s_UNNAMED_00084f24);
+          }
+          Ordinal_1063(acStack_7c,&DAT_00085ce0);
+          message_scroll_print_wrapped(acStack_7c);
+          /* Was `get_message_string(id); message_scroll_print_wrapped();`
+             -- the SAME dropped-argument idiom fixed throughout this
+             session (a register-carryover call with no explicit args).
+             Thread the looked-up book/sign text through explicitly
+             instead of relying on leftover register state. */
+          message_scroll_print_wrapped(get_message_string(param_1[3] >> 6 | 0x600));
+          message_scroll_print_wrapped(&s_scroll_newline_0008522c);
+        }
+        else {
+          FUN_000282ac();
+        }
+      }
+      else {
+        FUN_00037c14((param_1[3] >> 6 & 0x1ff) + 0x100);
+      }
+    }
+    else {
+      FUN_0007c2ec(g_player_object,param_1,4,(int)DAT_002020a0,DAT_002020a4);
+      FUN_0007c1bc((int)DAT_002020a0,(int)DAT_002020a4,g_player_object,param_1,param_2);
+      finish_object_use(param_1,param_2,0);
+    }
   }
   return;
 }
