@@ -575,6 +575,189 @@ extern char s_FONTCHAR_SYS_00084ec0[];
 extern char s__DATA_chrgen_dat_00084ed0[];
 extern char s__DATA_skills_dat_00084ee4[];
 extern char s_chrbtns_00084ef8[];
+/* Globals defined in uw.c but also used by functions that now live in
+   babl.c (the conversation/dialogue scripting VM) -- extern'd here so
+   both translation units see the same storage. */
+extern char DAT_000845a8[];
+extern char DAT_00085240_backing[8192];
+#define DAT_00085240 DAT_00085240_backing[0]
+extern char DAT_00085244_backing[32768];
+#define DAT_00085244 DAT_00085244_backing[0]
+extern char DAT_00085248_backing[32768];
+#define DAT_00085248 DAT_00085248_backing[0]
+extern undefined4 DAT_00085c54;
+extern intptr_t DAT_000bbf00;
+extern intptr_t DAT_000bbf0c;
+extern int DAT_000bbf10;
+extern intptr_t DAT_000bbf14;
+extern char * DAT_000bbf18;
+extern short DAT_000bbf1c;
+extern short DAT_000bbf24;
+extern short DAT_000bbf2c;
+extern intptr_t DAT_000bbf70;
+extern short DAT_000bbf74;
+extern short DAT_000bbf78;
+extern short DAT_000bbf7c;
+extern char * DAT_000bbf80;
+extern short DAT_000bbf84;
+extern undefined2 DAT_000bbf8c;
+extern undefined4 DAT_000bbf98;
+extern undefined2 DAT_000bbfa8_backing[8192];
+#define DAT_000bbfa8 DAT_000bbfa8_backing[0]
+extern undefined2 DAT_000bbfb0_backing[8192];
+#define DAT_000bbfb0 DAT_000bbfb0_backing[0]
+extern undefined2 DAT_000bbfb8;
+extern undefined2 DAT_000bbfbc;
+extern undefined2 DAT_000bbfc0_backing[8192];
+#define DAT_000bbfc0 DAT_000bbfc0_backing[0]
+extern undefined2 DAT_000bbfc8_backing[8192];
+#define DAT_000bbfc8 DAT_000bbfc8_backing[0]
+extern undefined2 DAT_000bbfd0;
+extern undefined2 DAT_000bbfe8;
+extern undefined4 DAT_000bbff0;
+extern char * DAT_000bc000;
+extern short DAT_000bc004;
+extern undefined1 DAT_000bc008;
+extern char * DAT_000bc020;
+extern short DAT_000bc024;
+extern char * DAT_00100670;
+extern ushort * DAT_00100674;
+extern undefined1 DAT_00100678;
+extern undefined1 DAT_00100680_backing[65536];
+#define DAT_00100680 DAT_00100680_backing[0]
+extern undefined1 DAT_001006d8_backing[65536];
+#define DAT_001006d8 DAT_001006d8_backing[0]
+extern char * DAT_00100728_backing[256];
+#define DAT_00100728 DAT_00100728_backing[0]
+#define DAT_0010072c DAT_00100728_backing[1]
+#define DAT_00100730 DAT_00100728_backing[2]
+#define DAT_00100734 DAT_00100728_backing[3]
+#define DAT_00100738 DAT_00100728_backing[4]
+#define DAT_0010073c DAT_00100728_backing[5]
+extern short DAT_00100770_backing[32768];
+#define DAT_00100770 DAT_00100770_backing[0]
+extern char * DAT_00100784;
+extern short DAT_00100788;
+extern short DAT_0010078c;
+extern undefined2 DAT_00100790;
+extern short DAT_00100794;
+extern undefined1 DAT_001007a0_backing[65536];
+#define DAT_001007a0 DAT_001007a0_backing[0]
+extern char DAT_001007b4;
+extern char * DAT_001007b8;
+extern char * DAT_001007c0;
+extern ushort DAT_001007c4;
+extern undefined DAT_001007d5_backing[8192];
+#define DAT_001007d5 DAT_001007d5_backing[0]
+extern undefined DAT_001007d9_backing[8192];
+#define DAT_001007d9 DAT_001007d9_backing[0]
+extern undefined DAT_001007dd;
+extern undefined DAT_001007e3;
+extern undefined DAT_001007fd;
+extern short DAT_00201b68;
+extern short DAT_00201c74;
+extern undefined2 DAT_002020a0;
+extern undefined2 DAT_002020a4;
+extern short DAT_002020c4;
+extern intptr_t DAT_00202948;
+extern undefined4 DAT_00202c84;
+extern undefined1 DAT_00202c90_backing[65536];
+#define DAT_00202c91 DAT_00202c90_backing[1]
+#define DAT_00202c9a DAT_00202c90_backing[0xa]
+extern char * DAT_0023be74;
+extern undefined1 DAT_0023bf0c;
+extern undefined2 DAT_0024cfac;
+extern int DAT_00250718;
+extern undefined1 g_active_hud_panel;
+extern undefined2 g_cursor_mode;
+extern undefined DAT_001007d4_backing[8192];
+#define g_monster_max_stats_table DAT_001007d4_backing[0]
+extern short g_mouse_x;
+extern short g_mouse_y;
+extern ushort * g_player_object;
+undefined4 LAB_0001a120();
+char * LAB_00028688();
+undefined4 LAB_000286a4();
+extern char s__DATA_cnv_ark_00084fc8[];
+extern char s__SAVE0_bglobals_dat_00084538[];
+extern char s_add_to_npc_inv_0008507c[];
+extern char s_babl_ask_000851ec[];
+extern char s_babl_fmenu_00085214[];
+extern char s_babl_menu_00085220[];
+extern char s_charhead_00084fe0[];
+extern char s_check_inv_quality_000850ec[];
+extern char s_converse_00084ff4[];
+extern char s_count_inv_000850d0[];
+extern char s_do_decline_00085168[];
+extern char s_do_demand_00085174[];
+extern char s_do_inv_create_00085110[];
+extern char s_do_inv_delete_00085100[];
+extern char s_do_judgement_00085158[];
+extern char s_do_offer_00085180[];
+extern char s_dungeon_level_000852b0[];
+extern char s_end_barter_0008514c[];
+extern char s_find_barter_00085024[];
+extern char s_find_barter_total_00085010[];
+extern char s_find_inv_000851c0[];
+extern char s_font5x6p_sys_0008430c[];
+extern char s_game_days_0008528c[];
+extern char s_game_mins_00085298[];
+extern char s_game_time_000852a4[];
+extern char s_genhead_00084fd8[];
+extern char s_get_quest_00085208[];
+extern char s_give_ptr_npc_00085000[];
+extern char s_give_to_npc_000851cc[];
+extern char s_gronk_door_000850c4[];
+extern char s_heads_00084fec[];
+extern char s_identify_inv_0008518c[];
+extern char s_new_player_exp_0008527c[];
+extern char s_npc_arms_00085374[];
+extern char s_npc_attitude_000845f8[];
+extern char s_npc_goal_0008535c[];
+extern char s_npc_gtarg_00085350[];
+extern char s_npc_health_00085388[];
+extern char s_npc_hp_00085380[];
+extern char s_npc_hunger_00085394[];
+extern char s_npc_level_00085334[];
+extern char s_npc_name_00085310[];
+extern char s_npc_power_00085368[];
+extern char s_npc_talkedto_00085340[];
+extern char s_npc_whoami_000853a0[];
+extern char s_npc_xhome_00085328[];
+extern char s_npc_yhome_0008531c[];
+extern char s_pause_00085134[];
+extern char s_place_object_0008506c[];
+extern char s_play_arms_000852e4[];
+extern char s_play_drawn_00085258[];
+extern char s_play_health_000852f8[];
+extern char s_play_hp_000852f0[];
+extern char s_play_hunger_00085304[];
+extern char s_play_level_000852c0[];
+extern char s_play_mana_000852cc[];
+extern char s_play_name_0008524c[];
+extern char s_play_poison_00085264[];
+extern char s_play_power_000852d8[];
+extern char s_play_sex_00085270[];
+extern char s_print_000851e4[];
+extern char s_remove_talker_0008505c[];
+extern char s_respond_000845ac[];
+extern undefined s_scroll_newline_0008522c_backing[8192];
+#define s_scroll_newline_0008522c s_scroll_newline_0008522c_backing[0]
+extern char s_set_attitude_000850b4[];
+extern char s_set_inv_quality_000850dc[];
+extern char s_set_likes_dislikes_00085120[];
+extern char s_set_quest_000851fc[];
+extern char s_set_race_attitude_000850a0[];
+extern char s_setup_to_barter_0008513c[];
+extern char s_sex_000851f8[];
+extern char s_show_inv_000851d8[];
+extern char s_take_from_npc_000851b0[];
+extern char s_take_from_npc_inv_0008508c[];
+extern char s_take_id_from_npc_0008519c[];
+extern char s_x_obj_pos_00085030[];
+extern char s_x_obj_stuff_0008503c[];
+extern char s_x_skills_00085050[];
+extern char s_x_traps_00085048[];
 
 
 
@@ -726,6 +909,13 @@ undefined4 FUN_0001c2c4();
 void draw_hotspot_crosshair_marker(); // was FUN_0001c420
 undefined4 FUN_0001c538();
 undefined4 babl_builtin_do_offer();
+int babl_builtin_set_attitude_apply();
+undefined2 babl_builtin_length();
+undefined4 babl_builtin_sex();
+void babl_builtin_do_decline();
+undefined4 babl_builtin_take_from_npc();
+undefined4 babl_builtin_take_id_from_npc();
+undefined4 babl_builtin_do_inv_create();
 void FUN_0001c79c();
 void FUN_0001c85c();
 undefined4 babl_builtin_do_demand();
@@ -1853,6 +2043,7 @@ undefined4 FUN_000824f0();
  * unchanged. Safe against the circular #include "../uw.h" each of these
  * does themselves, since UW_H is already defined by this point. */
 #include "src/headers/graphics.h"
+#include "src/headers/babl.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 

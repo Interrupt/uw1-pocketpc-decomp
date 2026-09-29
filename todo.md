@@ -18,7 +18,35 @@
       manifestation is sensitive to memory layout/link order, only now
       exposed by the reorg reordering object files. Wasn't investigated
       further this round -- lower priority than the reorg work in
-      progress.
+      progress. UPDATE: re-checking after the babl.c extraction batch's
+      own fixes below -- worth re-testing whether either of those
+      resolves this one too (same general "32-bit sentinel idiom broken
+      on 64-bit" bug family), see that batch's commit for whether it did.
+
+## Fixed this round (code-cleanup-first-pass, babl.c extraction batch)
+- [x] `change_game_mode` / its sibling exit-mode dispatcher (~uw.c:27610/
+      27760) silently ran a disabled/-1 mode's table dispatch as if it
+      were a real one, indexing `DAT_00085668_real_table` (384 bytes)
+      with a wild offset -- an ASan global-buffer-overflow, live-crashing
+      `demo_automap_note_test.txt` the first time this session's babl.c
+      extraction shifted link order enough to land the wild read in a
+      poisoned redzone (same "pre-existing bug newly exposed by
+      reordering" class as the entry above). Two stacked bugs, both real:
+      (1) `DAT_00201b64` (the "current mode" sentinel, `undefined2` i.e.
+      unsigned) zero-extended its `0xffff`-means-"disabled" sentinel to
+      `0x0000ffff` on cast to `int` instead of sign-extending to -1;
+      retyped to `short`. (2) Even fixed, the guard comparing the
+      resulting pointer against a fabricated `(code*)0xffffffff` sentinel
+      was ITSELF broken on this 64-bit host: the negative pointer
+      sign-extends to a 64-bit all-ones value, but the *unsigned* literal
+      `0xffffffff` zero-extends to only the low 32 bits set -- they can
+      never compare equal, so the guard was always true. Fixed both call
+      sites to compare the real source short against -1 directly instead
+      of fabricating a pointer sentinel. A second, previously-unguarded
+      call site to the same table (change_game_mode's own exit-mode
+      dispatch) got the same guard added -- it had no check at all
+      before, matching a real "NULL indirect call" crash already
+      documented in its own comment for a different input.
 
 ## Fixed this round
 - [x] Spacebar didn't add a space in name entry — SDL delivered the matching

@@ -683,7 +683,7 @@ void demomode_pump(void) {
         {
             /* Print the player's tile so a scripted TELEPORT/REVEAL sweep
                can be correlated with what's on screen. */
-            extern void *g_player_object;
+            extern ushort *g_player_object;
             unsigned short *pl = (unsigned short *)g_player_object;
             if (pl)
                 fprintf(stderr, "[demo] player tile = (%d,%d)\n",
@@ -851,7 +851,7 @@ void demomode_pump(void) {
          * uses) and print each object's raw type/flags words, independent
          * of any render-time culling -- ground truth for "is this object
          * actually in the level's loaded object list at all". */
-        extern void *g_player_object;
+        extern ushort *g_player_object;
         extern void *tilemap_lookup(int row, int col);
         extern void *resolve_object_link(void *link_field);
         unsigned short *pl = (unsigned short *)g_player_object;
