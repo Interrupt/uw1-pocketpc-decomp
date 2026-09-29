@@ -3364,7 +3364,7 @@ undefined4 blit_framebuffer_to_gx_display();
 undefined4 shutdown_game_resources();
 undefined4 handle_keyboard_message();
 undefined4 handle_mouse_message();
-void FUN_00077f30();
+void draw_stats_panel_header();
 void FUN_0007802c();
 void FUN_00078088();
 void FUN_00078118();

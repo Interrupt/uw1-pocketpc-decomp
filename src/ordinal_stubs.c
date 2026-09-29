@@ -710,7 +710,7 @@ int Ordinal_1070(const char *a, const char *b, unsigned int n)
  * "doesn't guarantee termination" semantics require. Was a no-op stub
  * returning 0, which left every such buffer as uninitialized stack
  * garbage -- confirmed as the cause of the player name never
- * displaying on the stats panel (FUN_00077f30 draws whatever garbage
+ * displaying on the stats panel (draw_stats_panel_header draws whatever garbage
  * was left in its local buffer instead of the real name). */
 long Ordinal_1071(dest, src, n)
 char *dest;
@@ -870,7 +870,7 @@ long Ordinal_1415()
  * "chant the mantra" puzzle: uppercases the player's typed word and a
  * looked-up mantra-list string before comparing them with strcmp, a
  * classic case-insensitive-match idiom) and by its 2 dropped-argument
- * call sites in the stats panel (FUN_00077f30's player title,
+ * call sites in the stats panel (draw_stats_panel_header's player title,
  * FUN_0007821c's skill names) -- both were calling this with zero
  * explicit arguments, relying on the K&R leftover-register idiom used
  * throughout this codebase, which doesn't reliably carry the

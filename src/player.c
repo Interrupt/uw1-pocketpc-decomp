@@ -3147,3 +3147,66 @@ char param_2;
   }
   return;
 }
+
+
+
+
+
+// was FUN_00077f30 -- draws the stats panel's name/title/level
+// header. Called from draw_stats_panel_content. Draws the player's
+// name (uppercased via Ordinal_1416, the real _strupr), then their
+// title (a gender+race-derived message lookup), then their level
+// number (0-3 capped, offset 0x3d) right-aligned. Already referenced
+// by this name in existing comments in src/ordinal_stubs.c and
+// src/saveload.c documenting two real bugs already fixed here in an
+// earlier session pass (a truncated-pointer crash and a dropped-
+// argument bug that left the player's title never drawn).
+void draw_stats_panel_header()
+
+{
+  char cVar1;
+  short sVar2;
+  /* Was `undefined4` -- truncated Ordinal_1416's real 64-bit string
+     pointer return (see that ordinal's own comment: it's `_strupr`,
+     genuinely implemented now instead of a stub) to 32 bits on this
+     host before handing it to draw_text_string. Harmless while
+     Ordinal_1416 was a stub always returning 0; a real
+     pointer-truncation crash now that it isn't. Same class as
+     everywhere else this session. */
+  char *uVar3;
+  int iVar4;
+  undefined1 auStack_28 [30];
+  undefined1 local_a;
+
+  Ordinal_1071(auStack_28,DAT_00086df8,0xf);
+  local_a = 0;
+  Ordinal_1416(auStack_28);
+  sVar2 = measure_text_width(auStack_28);
+  iVar4 = -(int)sVar2 + 0x48;
+  if (iVar4 < 0) {
+    iVar4 = -(int)sVar2 + 0x49;
+  }
+  draw_text_string(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
+  /* Was `FUN_0007863c(id); uVar3 = Ordinal_1416();` -- Ordinal_1416
+     (real body: `_strupr`, see its own comment) needs an explicit
+     string argument, but was called with none, relying on the K&R
+     leftover-register idiom (this project's established "dropped
+     argument" pattern) to still hold FUN_0007863c's just-returned
+     string pointer. That register doesn't reliably carry through on
+     this recompile, so uVar3 came back NULL/garbage and the player's
+     title was never drawn. Thread the string through explicitly. */
+  uVar3 = Ordinal_1416(FUN_0007863c((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
+  draw_text_string(uVar3,0xf2,0x16);
+  FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
+  cVar1 = *(byte *)(DAT_00086df8 + 0x3d) - 1;
+  if (3 < *(byte *)(DAT_00086df8 + 0x3d)) {
+    cVar1 = '\x03';
+  }
+  /* Originally `cVar1 * 3 + 0x878b0`: index into a small string table at a
+     fixed original-binary address Ghidra never recovered contents for
+     (see open_gr_resource_file for the same pattern) -- skipped rather than
+     guessed, this is cosmetic HUD text formatting. */
+  iVar4 = measure_text_width(auStack_28);
+  draw_text_string(auStack_28,0x138 - iVar4,0x16);
+  return;
+}

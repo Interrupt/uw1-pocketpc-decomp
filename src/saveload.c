@@ -517,7 +517,7 @@ char param_1;
    confirmed crash: "Enter a save/load name" renders fine (that prompt
    is a static string, not this buffer), but touching the corrupted
    buffer once you start typing segfaults. Same bug class as
-   FUN_00077f30's uVar3 fix earlier this session. */
+   draw_stats_panel_header's uVar3 fix earlier this session. */
 char *param_2;
 
 {

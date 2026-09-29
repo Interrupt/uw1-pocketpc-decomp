@@ -36503,58 +36503,6 @@ LAB_00060f54:
 
 
 
-void FUN_00077f30()
-
-{
-  char cVar1;
-  short sVar2;
-  /* Was `undefined4` -- truncated Ordinal_1416's real 64-bit string
-     pointer return (see that ordinal's own comment: it's `_strupr`,
-     genuinely implemented now instead of a stub) to 32 bits on this
-     host before handing it to draw_text_string. Harmless while
-     Ordinal_1416 was a stub always returning 0; a real
-     pointer-truncation crash now that it isn't. Same class as
-     everywhere else this session. */
-  char *uVar3;
-  int iVar4;
-  undefined1 auStack_28 [30];
-  undefined1 local_a;
-
-  Ordinal_1071(auStack_28,DAT_00086df8,0xf);
-  local_a = 0;
-  Ordinal_1416(auStack_28);
-  sVar2 = measure_text_width(auStack_28);
-  iVar4 = -(int)sVar2 + 0x48;
-  if (iVar4 < 0) {
-    iVar4 = -(int)sVar2 + 0x49;
-  }
-  draw_text_string(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
-  /* Was `FUN_0007863c(id); uVar3 = Ordinal_1416();` -- Ordinal_1416
-     (real body: `_strupr`, see its own comment) needs an explicit
-     string argument, but was called with none, relying on the K&R
-     leftover-register idiom (this project's established "dropped
-     argument" pattern) to still hold FUN_0007863c's just-returned
-     string pointer. That register doesn't reliably carry through on
-     this recompile, so uVar3 came back NULL/garbage and the player's
-     title was never drawn. Thread the string through explicitly. */
-  uVar3 = Ordinal_1416(FUN_0007863c((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
-  draw_text_string(uVar3,0xf2,0x16);
-  FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
-  cVar1 = *(byte *)(DAT_00086df8 + 0x3d) - 1;
-  if (3 < *(byte *)(DAT_00086df8 + 0x3d)) {
-    cVar1 = '\x03';
-  }
-  /* Originally `cVar1 * 3 + 0x878b0`: index into a small string table at a
-     fixed original-binary address Ghidra never recovered contents for
-     (see open_gr_resource_file for the same pattern) -- skipped rather than
-     guessed, this is cosmetic HUD text formatting. */
-  iVar4 = measure_text_width(auStack_28);
-  draw_text_string(auStack_28,0x138 - iVar4,0x16);
-  return;
-}
-
-
-
 void FUN_0007802c(param_1)
 uint param_1;
 
@@ -36628,7 +36576,7 @@ uint param_1;
 
 {
   /* Was `undefined4` -- same Ordinal_1416 pointer-truncation class as
-     FUN_00077f30's player-title draw. */
+     draw_stats_panel_header's player-title draw. */
   char *uVar1;
   int iVar2;
   uint uVar3;
@@ -36640,7 +36588,7 @@ uint param_1;
   FUN_00011c10(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
                0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
   /* Was `FUN_0007863c(id); uVar1 = Ordinal_1416();` -- same dropped-
-     argument bug as FUN_00077f30's player-title draw above; thread
+     argument bug as draw_stats_panel_header's player-title draw above; thread
      the looked-up skill-name string through explicitly instead of
      relying on leftover-register reuse. This is why no skill names
      (Sword/Swimming/Mace/etc.) ever displayed. */
@@ -36677,7 +36625,7 @@ void draw_stats_panel_content()
   *DAT_00084298 = 0xf1;
   FUN_00057118();
   select_active_font(s_font5x6i_sys_00086e98);
-  FUN_00077f30();
+  draw_stats_panel_header();
   bVar1 = 0;
   do {
     FUN_0007802c(bVar1);
