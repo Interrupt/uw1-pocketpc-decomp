@@ -2370,7 +2370,7 @@ void start_npc_conversation()
                 (int)g_mouse_x, (int)g_mouse_y);
       }
     }
-    FUN_0007f170(uVar3,0);
+    wait_for_click_to_continue(uVar3,0);
   }
   return;
 }
@@ -2565,7 +2565,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
 
   wait_for_click_release(0);
   iVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  FUN_0007f170(iVar1 * 500,0);
+  wait_for_click_to_continue(iVar1 * 500,0);
   return 1;
 }
 

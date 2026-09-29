@@ -1763,7 +1763,7 @@ void msg_scroll_more_prompt()
   uVar2 = *g_draw_color_index;
   *g_draw_color_index = 0xd4;
   draw_text_string(s__MORE__00087994,(int)*(short *)(DAT_00250704 + 0xc),(int)sVar3);
-  FUN_0007f170(0,1);
+  wait_for_click_to_continue(0,1);
   set_draw_color(0x2a);
   rect_fill_or_save_restore(*(undefined2 *)(DAT_00250704 + 0xc),(int)sVar3,*(undefined2 *)(DAT_00250704 + 6),
                *(undefined2 *)(DAT_00250704 + 2));
@@ -1932,7 +1932,7 @@ LAB_0007f8b0:
       }
       if (cVar2 == 'P') {
 LAB_0007f894:
-        FUN_0007f170(iVar5 + 200,1);
+        wait_for_click_to_continue(iVar5 + 200,1);
       }
       else if (cVar2 == 'm') {
         msg_scroll_more_prompt();
@@ -3730,6 +3730,49 @@ void select_msg_scroll_mode_2()
   DAT_00250714 = 2;
   DAT_0025071c = 1;
   DAT_00250704 = &g_msg_scroll_panel_state;
+  return;
+}
+
+
+
+
+
+// was FUN_0007f170 -- input-pump wait loop used by the message-scroll
+// panel: waits for the next distinct input event (or, if param_1 is
+// nonzero, until param_1 clock units elapse), flushing the dirty
+// rect and showing the idle-cursor tick each iteration when the
+// mouse is already over the panel (DAT_00250708) and param_2 is set.
+// Confirmed by its src/hud.c call site drawing the "--MORE--" prompt
+// text immediately beforehand (param_1=0, i.e. wait indefinitely) as
+// the "wait for the player to click through this page" step; after
+// the wait, re-checks the mouse-over-panel state and, if param_2's
+// bit matches, calls FUN_00057118 (not yet named).
+void wait_for_click_to_continue(param_1,param_2)
+short param_1;
+uint param_2;
+
+{
+  short sVar1;
+  short sVar2;
+  int iVar3;
+  uint uVar4;
+  
+  wait_for_click_release(1);
+  sVar1 = next_input_event();
+  iVar3 = read_realtime_clock_units();
+  if (DAT_00250708 != 0 && param_2 != 0) {
+    cursor_show_idle_tick();
+  }
+  do {
+    sVar2 = next_input_event();
+    if (sVar1 != sVar2) break;
+    flush_dirty_rect_to_display(1);
+  } while ((param_1 == 0) || (uVar4 = read_realtime_clock_units(), uVar4 <= (uint)(param_1 + iVar3)));
+  wait_for_click_release(1);
+  check_mouse_over_msg_scroll_panel();
+  if ((param_2 & DAT_00250708) != 0) {
+    FUN_00057118();
+  }
   return;
 }
 

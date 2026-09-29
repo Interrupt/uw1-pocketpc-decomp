@@ -12511,7 +12511,7 @@ void FUN_00028ffc()
       dispatch_sticky_mode_handlers();
     }
     if (DAT_00250718 == 0) {
-      FUN_0007f170(500,0);
+      wait_for_click_to_continue(500,0);
       select_msg_scroll_mode_2();
       msg_scroll_panel_reset(1);
       if (1 < DAT_00100794) {
@@ -36521,37 +36521,6 @@ LAB_00060f54:
   DAT_00189580 = 1;
   return;
 }
-void FUN_0007f170(param_1,param_2)
-short param_1;
-uint param_2;
-
-{
-  short sVar1;
-  short sVar2;
-  int iVar3;
-  uint uVar4;
-  
-  wait_for_click_release(1);
-  sVar1 = next_input_event();
-  iVar3 = read_realtime_clock_units();
-  if (DAT_00250708 != 0 && param_2 != 0) {
-    cursor_show_idle_tick();
-  }
-  do {
-    sVar2 = next_input_event();
-    if (sVar1 != sVar2) break;
-    flush_dirty_rect_to_display(1);
-  } while ((param_1 == 0) || (uVar4 = read_realtime_clock_units(), uVar4 <= (uint)(param_1 + iVar3)));
-  wait_for_click_release(1);
-  check_mouse_over_msg_scroll_panel();
-  if ((param_2 & DAT_00250708) != 0) {
-    FUN_00057118();
-  }
-  return;
-}
-
-
-
 undefined4 FUN_0007f290()
 
 {

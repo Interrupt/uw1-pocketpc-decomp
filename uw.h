@@ -3542,7 +3542,7 @@ void check_mouse_over_msg_scroll_panel();
 void select_msg_scroll_mode_normal();
 void select_msg_scroll_mode_conversation();
 void select_msg_scroll_mode_2();
-void FUN_0007f170();
+void wait_for_click_to_continue();
 undefined4 msg_scroll_draw_edges();
 undefined4 FUN_0007f290();
 void msg_scroll_scroll_up_line();
