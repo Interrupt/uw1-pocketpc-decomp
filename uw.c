@@ -463,7 +463,7 @@ short DAT_000bbf7c;
 /* Was `int` -- a real 64-bit heap pointer (babl_alloc, i.e. malloc)
    truncated through a 32-bit int, same bug class as DAT_000bbf70/
    DAT_000bbf00 below (see their own comment) -- widened to intptr_t so
-   the existing integer arithmetic throughout build_babl_symbol_table/FUN_0001b0a4/
+   the existing integer arithmetic throughout build_babl_symbol_table/init_babl_variable_defaults/
    etc. keeps compiling unchanged (intptr_t participates in ordinary
    integer arithmetic; a real pointer type would need every site
    recast). */
@@ -494,7 +494,7 @@ short DAT_000bbf24;
 /* Was `int` -- build_babl_symbol_table assigns it a real 64-bit heap pointer
    (`DAT_000bbf70 = babl_alloc((iVar11+1)*0x20)`) and every reader
    throughout this whole babl-symbol-table cluster (babl_register_builtin/
-   FUN_0001ac48/FUN_0001acf8/babl_set_variable/babl_get_variable/FUN_0001b0a4/
+   FUN_0001ac48/FUN_0001acf8/babl_set_variable/babl_get_variable/init_babl_variable_defaults/
    build_babl_symbol_table itself) does plain `int`-width pointer arithmetic on
    it. Truncating this on a 64-bit host is the crash one step past the
    read_archive_entry dropped-argument fix (uw.c ~10984's comment):
@@ -7925,7 +7925,7 @@ void FUN_0001ac48()
   intptr_t iVar1;
   intptr_t iVar2;
   int iVar3;
-  intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix
+  intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as init_babl_variable_defaults's own fix
 
   /* Was a dropped register-forwarding arg -- same class as
      babl_builtin_compare's own comment (uw.c ~10977); this is the crash in
@@ -7969,7 +7969,7 @@ void FUN_0001acf8()
   intptr_t iVar1;
   intptr_t iVar2;
   int iVar3;
-  intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix
+  intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as init_babl_variable_defaults's own fix
 
   /* Was a dropped register-forwarding arg -- same class as
      FUN_0001ac48's own fix just above. */
@@ -7997,56 +7997,6 @@ LAB_0001ad98:
     }
     iVar4 = iVar4 + 0x20;
   } while( true );
-}
-
-
-
-void FUN_0001b0a4()
-
-{
-  short sVar1;
-  intptr_t iVar2; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t; see its own comment) right back down
-  short *psVar3;
-  int iVar4;
-
-  /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
-     comment (uw.c ~12260) -- unlike its siblings this one dereferences
-     unconditionally before any loop check, so guard the read itself
-     rather than the loop condition. */
-  psVar3 = (short *)(DAT_000bbf70 + 0x18);
-  sVar1 = (DAT_000bbf70 == 0) ? 0 : *(short *)(DAT_000bbf70 + 0x18);
-  iVar2 = DAT_000bbf70;
-  while (sVar1 != 0) {
-    if (*(short *)(iVar2 + 0x1e) != 0x111) {
-      sVar1 = *(short *)(iVar2 + 0x1c);
-      if (sVar1 == 0x126) {
-        *(undefined2 *)(DAT_000bbf14 + *(short *)(iVar2 + 0x1a) * 2) = 0;
-      }
-      else if (sVar1 == 0x128) {
-        *(undefined2 *)(DAT_000bbf14 + *(short *)(iVar2 + 0x1a) * 2) = DAT_000bbf88;
-      }
-      else if (sVar1 == 0x12a) {
-        if (0 < *psVar3) {
-          iVar4 = 0;
-          do {
-            *(undefined2 *)(DAT_000bbf14 + (iVar4 + *(short *)(iVar2 + 0x1a)) * 2) = DAT_000bbf88;
-            iVar4 = ((int)iVar4 + 1) * 0x10000 >> 0x10;
-          } while (iVar4 < *psVar3);
-        }
-      }
-      else if ((sVar1 == 299) && (0 < *psVar3)) {
-        iVar4 = 0;
-        do {
-          *(undefined2 *)(DAT_000bbf14 + (iVar4 + *(short *)(iVar2 + 0x1a)) * 2) = 0;
-          iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
-        } while (iVar4 < *psVar3);
-      }
-    }
-    psVar3 = (short *)(iVar2 + 0x38);
-    iVar2 = iVar2 + 0x20;
-    sVar1 = *psVar3;
-  }
-  return;
 }
 
 

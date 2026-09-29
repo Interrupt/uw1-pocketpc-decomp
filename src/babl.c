@@ -1816,7 +1816,7 @@ short param_3;
 
 {
   undefined1 uVar1;
-  intptr_t iVar2; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix; this is the crash in bug-critter-talk.txt's own successful-conversation-load path (via sync_conv_vars_from_npc's npc_whoami lookup)
+  intptr_t iVar2; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as init_babl_variable_defaults's own fix; this is the crash in bug-critter-talk.txt's own successful-conversation-load path (via sync_conv_vars_from_npc's npc_whoami lookup)
   uint uVar3;
   int iVar4;
   uint uVar5;
@@ -1886,7 +1886,7 @@ short param_3;
 
 {
   int iVar1;
-  intptr_t iVar2; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as FUN_0001b0a4's own fix
+  intptr_t iVar2; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as init_babl_variable_defaults's own fix
 
   iVar2 = DAT_000bbf70;
   while( true ) {
@@ -2236,7 +2236,7 @@ void start_npc_conversation()
      reading function this success branch calls into turned into an
      unbounded chase (fixed 5 separate crash sites this way -- see
      babl_register_builtin/FUN_0001ac48/FUN_0001acf8/babl_set_variable/babl_get_variable/
-     FUN_0001b0a4's own comments -- before finding a 6th at
+     init_babl_variable_defaults's own comments -- before finding a 6th at
      FUN_0001a1c8's DAT_000bbf80 dereference). Whether the real 32-bit
      binary's equivalent register value is reliably negative here (real
      memory garbage that happens to differ from this port's freshly-
@@ -3312,7 +3312,7 @@ undefined1 *param_2;
     puVar3 = (undefined1 *)babl_alloc(1);
     *puVar3 = 0;
     DAT_000bbf88 = FUN_0007873c(puVar3,0x7c);
-    FUN_0001b0a4();
+    init_babl_variable_defaults();
     babl_register_builtin(s_compare_000845a0,babl_builtin_compare);
     babl_register_builtin(s_random_00084598,babl_builtin_random);
     babl_register_builtin(s_plural_00084590,babl_builtin_plural);
@@ -3680,5 +3680,63 @@ short param_1;
 
 {
   return (int)*(short *)(DAT_000bbf0c + ((int)DAT_000bbf2c + (int)param_1) * 2);
+}
+
+
+
+
+// was FUN_0001b0a4 -- walks the babl symbol table (DAT_000bbf70, 0x20-
+// byte records) once at VM startup and initializes each variable's
+// default value by its declared type (offset 0x1c): string-typed
+// variables (0x128 scalar, 0x12a array) get the shared empty-string
+// handle DAT_000bbf88, integer-typed ones (0x126 scalar, 299 array)
+// get zeroed. Symbols of any other type (bound-function names, etc.)
+// are left untouched.
+void init_babl_variable_defaults()
+
+{
+  short sVar1;
+  intptr_t iVar2; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t; see its own comment) right back down
+  short *psVar3;
+  int iVar4;
+
+  /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
+     comment (uw.c ~12260) -- unlike its siblings this one dereferences
+     unconditionally before any loop check, so guard the read itself
+     rather than the loop condition. */
+  psVar3 = (short *)(DAT_000bbf70 + 0x18);
+  sVar1 = (DAT_000bbf70 == 0) ? 0 : *(short *)(DAT_000bbf70 + 0x18);
+  iVar2 = DAT_000bbf70;
+  while (sVar1 != 0) {
+    if (*(short *)(iVar2 + 0x1e) != 0x111) {
+      sVar1 = *(short *)(iVar2 + 0x1c);
+      if (sVar1 == 0x126) {
+        *(undefined2 *)(DAT_000bbf14 + *(short *)(iVar2 + 0x1a) * 2) = 0;
+      }
+      else if (sVar1 == 0x128) {
+        *(undefined2 *)(DAT_000bbf14 + *(short *)(iVar2 + 0x1a) * 2) = DAT_000bbf88;
+      }
+      else if (sVar1 == 0x12a) {
+        if (0 < *psVar3) {
+          iVar4 = 0;
+          do {
+            *(undefined2 *)(DAT_000bbf14 + (iVar4 + *(short *)(iVar2 + 0x1a)) * 2) = DAT_000bbf88;
+            iVar4 = ((int)iVar4 + 1) * 0x10000 >> 0x10;
+          } while (iVar4 < *psVar3);
+        }
+      }
+      else if ((sVar1 == 299) && (0 < *psVar3)) {
+        iVar4 = 0;
+        do {
+          *(undefined2 *)(DAT_000bbf14 + (iVar4 + *(short *)(iVar2 + 0x1a)) * 2) = 0;
+          iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+        } while (iVar4 < *psVar3);
+      }
+    }
+    psVar3 = (short *)(iVar2 + 0x38);
+    iVar2 = iVar2 + 0x20;
+    sVar1 = *psVar3;
+  }
+  return;
 }
 

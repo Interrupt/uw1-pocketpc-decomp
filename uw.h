@@ -2002,7 +2002,7 @@ int babl_read_frame_word();
 void babl_register_builtin();
 void babl_set_variable();
 void babl_get_variable();
-void FUN_0001b0a4();
+void init_babl_variable_defaults();
 void FUN_0001b288();
 void FUN_0001b474();
 void FUN_0001b7c0();
