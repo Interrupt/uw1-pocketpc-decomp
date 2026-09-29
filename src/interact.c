@@ -131,7 +131,7 @@ void interact_look()
   }
   dispatch_object_action(g_interact_target,uVar3);
   if (g_cursor_mode == 3) {
-    sVar1 = FUN_00072598(g_interact_target,*(undefined1 *)(DAT_00086df8 + 0x2c));
+    sVar1 = roll_container_lockpick_check(g_interact_target,*(undefined1 *)(DAT_00086df8 + 0x2c));
     if (0 < sVar1) {
       local_18 = 1;
       sVar1 = FUN_00080828(0,0xf4,&local_18);
@@ -264,4 +264,39 @@ undefined4 param_1;
     FUN_00037d6c(0x101,param_1);
   }
   return;
+}
+
+
+
+
+
+
+// was FUN_00072598 -- rolls a skill check (roll_skill_check(param_2,8))
+// against the first contained item in container param_1, but only if
+// that item's own quality/type field (after resolving through a link
+// when a specific bit is set) is below 3 -- e.g. checking whether a
+// container holds something pickable/breakable in a low-quality state.
+// param_2 is the skill id to check, most plausibly the picklock skill
+// given the container-contents-search shape (not otherwise confirmed).
+undefined4 roll_container_lockpick_check(param_1,param_2)
+char *param_1;
+undefined4 param_2;
+
+{
+  byte *pbVar1;
+  undefined4 uVar2;
+  ushort *local_c;
+  
+  if ((((*(byte *)(param_1 + 1) & 0x80) == 0) &&
+      (local_c = (ushort *)(param_1 + 6), (*local_c & 0xffc0) != 0)) &&
+     (pbVar1 = (byte *)FUN_000537d0(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
+    if (0x1f < (*pbVar1 & 0x30)) {
+      pbVar1 = (byte *)resolve_object_link((ushort *)(pbVar1 + 6)); /* confirmed via ARM disassembly, 0x72628 */
+    }
+    if ((*pbVar1 & 0x3f) < 3) {
+      uVar2 = roll_skill_check(param_2,8);
+      return uVar2;
+    }
+  }
+  return 0;
 }

@@ -3137,7 +3137,7 @@ undefined4 spawn_scheduled_door_texture_object();
 bool check_scheduled_object_level_match();
 void apply_special_object_use_effect();
 void handle_starvation_penalty();
-undefined4 FUN_00072598();
+undefined4 roll_container_lockpick_check();
 undefined4 FUN_0007266c();
 undefined4 FUN_00072910();
 void FUN_00072aac();

@@ -36427,31 +36427,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_00072598(param_1,param_2)
-char *param_1;
-undefined4 param_2;
-
-{
-  byte *pbVar1;
-  undefined4 uVar2;
-  ushort *local_c;
-  
-  if ((((*(byte *)(param_1 + 1) & 0x80) == 0) &&
-      (local_c = (ushort *)(param_1 + 6), (*local_c & 0xffc0) != 0)) &&
-     (pbVar1 = (byte *)FUN_000537d0(&local_c,0,6,0xffffffff,0xffff), pbVar1 != (byte *)0x0)) {
-    if (0x1f < (*pbVar1 & 0x30)) {
-      pbVar1 = (byte *)resolve_object_link((ushort *)(pbVar1 + 6)); /* confirmed via ARM disassembly, 0x72628 */
-    }
-    if ((*pbVar1 & 0x3f) < 3) {
-      uVar2 = roll_skill_check(param_2,8);
-      return uVar2;
-    }
-  }
-  return 0;
-}
-
-
-
 undefined4 FUN_0007266c(param_1,param_2)
 char *param_1;
 undefined4 param_2;
@@ -38530,7 +38505,7 @@ ushort * param_1;
   uint uVar4;
   
   if ((short)DAT_00202094 == 3) {
-    sVar2 = FUN_00072598(param_1,0x2d);
+    sVar2 = roll_container_lockpick_check(param_1,0x2d);
     if (sVar2 != 0) {
       FUN_0007266c(param_1,0x2d);
     }
