@@ -976,6 +976,25 @@ extern char s_font5x6i_sys_00086e98[];
 extern int DAT_0024af8c;
 extern byte DAT_0024af80;
 extern undefined4 DAT_0024af88;
+extern undefined1 DAT_0024bfa0_backing[1052672];
+#define DAT_0024bfa0 DAT_0024bfa0_backing[0]
+extern undefined1 DAT_0024bfa1_backing[1052672];
+#define DAT_0024bfa1 DAT_0024bfa1_backing[0]
+extern undefined1 DAT_0024bfa2_backing[1052672];
+#define DAT_0024bfa2 DAT_0024bfa2_backing[0]
+extern undefined1 DAT_0024bfa3_backing[1052672];
+#define DAT_0024bfa3 DAT_0024bfa3_backing[0]
+extern undefined1 DAT_0024bfa4_backing[1052672];
+#define DAT_0024bfa4 DAT_0024bfa4_backing[0]
+extern undefined1 DAT_0024bfa5_backing[1052672];
+#define DAT_0024bfa5 DAT_0024bfa5_backing[0]
+extern undefined1 DAT_0024c7a2_backing[1052672];
+#define DAT_0024c7a2 DAT_0024c7a2_backing[0]
+extern undefined1 DAT_0024c7a3_backing[1052672];
+#define DAT_0024c7a3 DAT_0024c7a3_backing[0]
+extern undefined4 DAT_0024bf98;
+extern unsigned short *DAT_0024cfb8;
+extern char *DAT_0024cfa8;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3375,7 +3394,7 @@ void draw_stats_panel_skill_row();
 void draw_stats_panel_content();
 void handle_stats_panel_skill_scroll_click();
 void refresh_stats_panel_if_active();
-undefined4 FUN_0007856c();
+undefined4 init_string_resource_cache();
 void thunk_FUN_00078e28();
 char *FUN_0007863c();
 int FUN_0007873c();

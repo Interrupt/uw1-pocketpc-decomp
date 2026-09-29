@@ -6328,17 +6328,17 @@ undefined4 DAT_0024af88;
    unboundedly as new entries are registered at runtime -- 8200 bytes
    only covers ~4 records, and ASAN caught real startup traffic already
    exceeding that. Widened further to a generous 64-record margin. */
-static undefined1 DAT_0024bfa0_backing[1052672];
+undefined1 DAT_0024bfa0_backing[1052672];
 #define DAT_0024bfa0 DAT_0024bfa0_backing[0]
-static undefined1 DAT_0024bfa1_backing[1052672];
+undefined1 DAT_0024bfa1_backing[1052672];
 #define DAT_0024bfa1 DAT_0024bfa1_backing[0]
-static undefined1 DAT_0024bfa2_backing[1052672];
+undefined1 DAT_0024bfa2_backing[1052672];
 #define DAT_0024bfa2 DAT_0024bfa2_backing[0]
-static undefined1 DAT_0024bfa3_backing[1052672];
+undefined1 DAT_0024bfa3_backing[1052672];
 #define DAT_0024bfa3 DAT_0024bfa3_backing[0]
-static undefined1 DAT_0024bfa4_backing[1052672];
+undefined1 DAT_0024bfa4_backing[1052672];
 #define DAT_0024bfa4 DAT_0024bfa4_backing[0]
-static undefined1 DAT_0024bfa5_backing[1052672];
+undefined1 DAT_0024bfa5_backing[1052672];
 #define DAT_0024bfa5 DAT_0024bfa5_backing[0]
 /* The record-registration function (near FUN_00078820, "the string-
    interning cache") splits a real char* pointer byte-by-byte across
@@ -6350,9 +6350,18 @@ static undefined1 DAT_0024bfa5_backing[1052672];
    used instead wherever the real pointer is needed. Sized to match
    DAT_0024bfa2_backing's total addressable slot count (1052672/4). */
 static char *g_bfa2_real_ptrs[263168];
-static undefined1 DAT_0024c7a2_backing[8200];
+/* Was undersized at 8200 bytes (~4 records) while their DAT_0024bfa0-
+   family siblings (same 0x804-byte-stride, same DAT_0024cfc0 record
+   count, same growing-table indexing -- see that comment above) were
+   already widened to 1052672 bytes. Both are indexed identically
+   (`sVar5 * 0x804`, sVar5 up to DAT_0024cfc0-1) by the exact same
+   string-resource-cache registration path (FUN_0007863c), so once
+   more than ~4 pages register at runtime -- already observed for the
+   sibling arrays -- this pair silently read/wrote out of bounds.
+   Widened to match. */
+undefined1 DAT_0024c7a2_backing[1052672];
 #define DAT_0024c7a2 DAT_0024c7a2_backing[0]
-static undefined1 DAT_0024c7a3_backing[8200];
+undefined1 DAT_0024c7a3_backing[1052672];
 #define DAT_0024c7a3 DAT_0024c7a3_backing[0]
 undefined4 DAT_0024bf98;
 /* Declared char* despite always being allocated/read/cast as a single
@@ -20281,7 +20290,7 @@ void FUN_0003b820()
   undefined1 auStack_214 [520];
   
   FUN_0007ea44(2);
-  FUN_0007856c();
+  init_string_resource_cache();
   init_level_object_arena();
   input_bindings_init();
   FUN_0007ea30();
@@ -36498,52 +36507,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-undefined4 FUN_0007856c()
-
-{
-  int iVar1;
-  short sVar2;
-  int iVar3;
-  int iVar4;
-  
-  iVar4 = 0;
-  do {
-    iVar3 = iVar4 * 0x804;
-    (&DAT_0024bfa0)[iVar3] = 0xff;
-    (&DAT_0024bfa1)[iVar3] = 0xff;
-    (&DAT_0024c7a2)[iVar3] = 0;
-    (&DAT_0024c7a3)[iVar3] = 0;
-    iVar3 = 0;
-    do {
-      iVar1 = (iVar4 * 0x201 + iVar3) * 4;
-      (&DAT_0024bfa2)[iVar1] = 0;
-      (&DAT_0024bfa3)[iVar1] = 0;
-      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-      (&DAT_0024bfa4)[iVar1] = 0;
-      (&DAT_0024bfa5)[iVar1] = 0;
-    } while (iVar3 < 0x200);
-    iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
-  } while (iVar4 < 2);
-  sVar2 = FUN_00078d18();
-  if (sVar2 != 0) {
-    FUN_0003c3b4();
-  }
-  return 1;
-}
-
-
-
-void thunk_FUN_00078e28()
-
-{
-  Ordinal_553(DAT_0024bf98);
-  Ordinal_1018(DAT_0024cfb8);
-  Ordinal_1018(DAT_0024cfa8);
   return;
 }
 

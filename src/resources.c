@@ -621,3 +621,61 @@ short * param_1;
   debug_framebuffer_dump("restore_captured_grtile_backdrop");
   return 0;
 }
+
+
+
+
+
+// was FUN_0007856c -- initializes the string-resource page cache
+// (DAT_0024bfa0-family, see that global's own comment): clears the
+// first 2 cache-record slots (0x804/2052-byte stride, matching
+// FUN_0007863c's/what's documented as FUN_0007873c's own indexing) to
+// an empty/sentinel state (DAT_0024bfa0/1 = 0xffff, the page-id
+// short field; DAT_0024c7a2/3 and the 512-entry DAT_0024bfa2/3/4/5
+// sub-arrays zeroed), then calls FUN_00078d18 (not yet named) and,
+// conditionally, FUN_0003c3b4 -- likely a "load the default/startup
+// string table" step. This cache grows unboundedly at runtime as
+// more pages are registered; this only seeds its initial 2 slots.
+undefined4 init_string_resource_cache()
+
+{
+  int iVar1;
+  short sVar2;
+  int iVar3;
+  int iVar4;
+  
+  iVar4 = 0;
+  do {
+    iVar3 = iVar4 * 0x804;
+    (&DAT_0024bfa0)[iVar3] = 0xff;
+    (&DAT_0024bfa1)[iVar3] = 0xff;
+    (&DAT_0024c7a2)[iVar3] = 0;
+    (&DAT_0024c7a3)[iVar3] = 0;
+    iVar3 = 0;
+    do {
+      iVar1 = (iVar4 * 0x201 + iVar3) * 4;
+      (&DAT_0024bfa2)[iVar1] = 0;
+      (&DAT_0024bfa3)[iVar1] = 0;
+      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+      (&DAT_0024bfa4)[iVar1] = 0;
+      (&DAT_0024bfa5)[iVar1] = 0;
+    } while (iVar3 < 0x200);
+    iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+  } while (iVar4 < 2);
+  sVar2 = FUN_00078d18();
+  if (sVar2 != 0) {
+    FUN_0003c3b4();
+  }
+  return 1;
+}
+
+
+
+void thunk_FUN_00078e28()
+
+{
+  Ordinal_553(DAT_0024bf98);
+  Ordinal_1018(DAT_0024cfb8);
+  Ordinal_1018(DAT_0024cfa8);
+  return;
+}
