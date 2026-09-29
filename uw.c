@@ -21376,7 +21376,7 @@ void FUN_0003df28()
   
   message_scroll_print_wrapped(&s_scroll_newline_0008522c);
   sVar1 = Ordinal_2005(0x1e,*(undefined1 *)(DAT_00086df8 + 0x39));
-  FUN_00078c94(0x40,sVar1 + 0x68,0x67);
+  print_scroll_message_concat(0x40,sVar1 + 0x68,0x67);
   sVar1 = Ordinal_2005(0x17,*(undefined1 *)(DAT_00086df8 + 0x3a));
   iVar3 = (int)sVar1;
   if (5 < iVar3) {
@@ -21384,17 +21384,17 @@ void FUN_0003df28()
   }
   print_scroll_message_by_id(0x76 - iVar3);
   message_scroll_print_wrapped(&DAT_00084f20);
-  FUN_00078c94(0x41,DAT_00201b68 + 0x19a,0x42);
+  print_scroll_message_concat(0x41,DAT_00201b68 + 0x19a,0x42);
   sVar1 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
   sVar2 = Ordinal_2005(0xc,(int)sVar1);
   uw_ord2005_rem_111 = ((int)((int)sVar1)) % (0xc);
   if (sVar2 < 0x65) {
-    FUN_00078c94(0x43,sVar2 + 0x19b,0x44);
+    print_scroll_message_concat(0x43,sVar2 + 0x19b,0x44);
   }
   else {
     print_scroll_message_by_id(0x45);
   }
-  FUN_00078c94(0x46,uw_ord2005_rem_111 + 0x47,0x53);
+  print_scroll_message_concat(0x46,uw_ord2005_rem_111 + 0x47,0x53);
   wait_for_click_release(1);
   return;
 }
@@ -21430,7 +21430,7 @@ void FUN_0003e0b4()
         FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
         if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
           sVar2 = Ordinal_2005(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
-          FUN_00078c94(0x5b,sVar2 + 0x54,0x5c);
+          print_scroll_message_concat(0x5b,sVar2 + 0x54,0x5c);
         }
       }
       else {
@@ -36507,41 +36507,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void FUN_00078c94(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-uint param_3;
-
-{
-  char cVar1;
-  char *pcVar2;
-  char *uVar3;   /* was undefined4 -- get_message_string returns char*; truncating
-                    it fed Ordinal_1063 (strcat) a wild src pointer */
-  char *pcVar4;
-  char local_10c [256];
-  
-  pcVar4 = local_10c;
-  pcVar2 = (char *)get_message_string(param_1 | 0x200);
-  do {
-    cVar1 = *pcVar2;
-    pcVar2 = pcVar2 + 1;
-    *pcVar4 = cVar1;
-    pcVar4 = pcVar4 + 1;
-  } while (cVar1 != '\0');
-  if (-1 < (short)param_2) {
-    uVar3 = get_message_string(param_2 | 0x200);
-    Ordinal_1063(local_10c,uVar3);
-  }
-  if (-1 < (short)param_3) {
-    uVar3 = get_message_string(param_3 | 0x200);
-    Ordinal_1063(local_10c,uVar3);
-  }
-  message_scroll_print_wrapped(local_10c);
   return;
 }
 

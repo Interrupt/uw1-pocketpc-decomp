@@ -2381,3 +2381,45 @@ uint param_1;
   message_scroll_print_wrapped(get_message_string(param_1 | 0x200)); // was two separate calls with message_scroll_print_wrapped()'s arg dropped; see uw.c ~7961's sibling call and its comment
   return;
 }
+
+
+
+
+
+// was FUN_00078c94 -- prints a scroll message built by concatenating
+// up to 3 message ids: param_1 is always looked up and copied first,
+// then param_2 and param_3 are each appended in turn if non-negative
+// (a caller passing -1 skips that piece). No callers found by grep
+// in the remaining decompile.
+void print_scroll_message_concat(param_1,param_2,param_3)
+uint param_1;
+uint param_2;
+uint param_3;
+
+{
+  char cVar1;
+  char *pcVar2;
+  char *uVar3;   /* was undefined4 -- get_message_string returns char*; truncating
+                    it fed Ordinal_1063 (strcat) a wild src pointer */
+  char *pcVar4;
+  char local_10c [256];
+  
+  pcVar4 = local_10c;
+  pcVar2 = (char *)get_message_string(param_1 | 0x200);
+  do {
+    cVar1 = *pcVar2;
+    pcVar2 = pcVar2 + 1;
+    *pcVar4 = cVar1;
+    pcVar4 = pcVar4 + 1;
+  } while (cVar1 != '\0');
+  if (-1 < (short)param_2) {
+    uVar3 = get_message_string(param_2 | 0x200);
+    Ordinal_1063(local_10c,uVar3);
+  }
+  if (-1 < (short)param_3) {
+    uVar3 = get_message_string(param_3 | 0x200);
+    Ordinal_1063(local_10c,uVar3);
+  }
+  message_scroll_print_wrapped(local_10c);
+  return;
+}

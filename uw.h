@@ -3405,7 +3405,7 @@ void reset_string_resource_page();
 undefined4 build_object_display_name();
 undefined1 *format_object_display_name();
 void print_scroll_message_by_id();
-void FUN_00078c94();
+void print_scroll_message_concat();
 undefined4 FUN_00078d18();
 void FUN_00078e28();
 undefined1 *FUN_00078e60();
