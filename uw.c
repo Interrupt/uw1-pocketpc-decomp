@@ -6788,24 +6788,6 @@ void thunk_FUN_0003c310()
 
 
 
-void FUN_00013108(param_1,param_2,param_3,param_4)
-undefined4 param_1;
-uint param_2;
-undefined4 param_3;
-uint param_4;
-
-{
-  uint uVar1;
-  
-  uVar1 = (param_4 & 0xffff) >> 8;
-  if (uVar1 != 0xff) {
-    param_2 = param_2 & 0xff | uVar1 << 8;
-  }
-  uVar1 = merge_byte_into_word(param_2,0,0);
-  DAT_000b4610 = DAT_000b4614 + (uVar1 & 0xffff);
-  DAT_000b4624 = DAT_000b4610;
-  return;
-}
 
 
 
