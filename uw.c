@@ -4189,7 +4189,7 @@ undefined4 LAB_00073b10()
 /* Both were `int` -- real 64-bit pointers (DAT_002046a8/DAT_0020469c,
    both `char *`) stored through a 32-bit global truncate them on this
    host. DAT_002046a0 feeds DAT_002046c0/DAT_002046c8's own bases
-   (used by FUN_00053750's message-buffer write), confirmed live as
+   (used by active_mobile_list_add's message-buffer write), confirmed live as
    the next crash in the spawn_new_object "spawn object" chain once the
    earlier truncations in that same chain were fixed. */
 char *DAT_002046ac;
@@ -31756,7 +31756,8 @@ char *param_1;
 
 
 
-void FUN_00053750(param_1)
+// was active_mobile_list_add
+void active_mobile_list_add(param_1)
 undefined1 param_1;
 
 {
@@ -31767,7 +31768,8 @@ undefined1 param_1;
 
 
 
-void FUN_00053774(param_1)
+// was active_mobile_list_remove
+void active_mobile_list_remove(param_1)
 char param_1;
 
 {

@@ -257,7 +257,7 @@ int param_1;
     if ((DAT_002046a8 < DAT_002046a4) && (FUN_00052d68(3,5), DAT_002046a8 < DAT_002046a4)) {
       return 0;
     }
-    FUN_00053750((int)*(short *)DAT_002046a8);
+    active_mobile_list_add((int)*(short *)DAT_002046a8);
     pvVar1 = (uint)*(ushort *)DAT_002046a8 * 0x1b + DAT_002046b8;
     puVar2 = (ushort *)DAT_002046a8;
   }
@@ -290,7 +290,7 @@ char *param_1;
     if (param_1 == DAT_0023b82c) {
       enter_free_camera_mode((int)*(short *)DAT_002046a8);
     }
-    FUN_00053774((int)*(short *)DAT_002046a8);
+    active_mobile_list_remove((int)*(short *)DAT_002046a8);
   }
   else {
     DAT_0020469c = DAT_0020469c + 2;

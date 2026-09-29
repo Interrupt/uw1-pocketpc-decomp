@@ -57,7 +57,7 @@ int mobile_object_tick()
      which the removal below satisfies. */
   if (tilemap_lookup((int)(char)(*(ushort *)&DAT_00204920 >> 8),
                      (int)(char)(*(ushort *)(&DAT_00204920 + 2) >> 8)) == 0) {
-    FUN_00053774((char)encode_object_slot_index(DAT_0010190c));
+    active_mobile_list_remove((char)encode_object_slot_index(DAT_0010190c));
     return 0;
   }
   apply_placement_collision_sweep(&DAT_00204920,&DAT_002049a0);
