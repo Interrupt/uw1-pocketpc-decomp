@@ -41,6 +41,25 @@ int mobile_object_tick()
     DAT_002049a0 = 0;
   }
   build_object_placement_snapshot(DAT_0010190c,&DAT_00204920);
+  /* A non-NPC object in the active mobile list has its world position
+     read straight from record bytes +0xb/+0xd/+0xf (see
+     build_object_placement_snapshot). The shipped level data lists
+     objects there that were never projectiles -- level 1 slot 226 is a
+     door linked on tile (59,14) whose bytes are NPC-style fields (goal
+     4, attitude bits) and decode to x=4, y=0x4000: tile (0,64). The
+     real engine's unchecked tilemap_lookup lands that inside the object
+     table and quietly settles the door onto mobile slot 0's bytes,
+     freeing slot 226 while (59,14) still links to it; this port's
+     tilemap_lookup returns NULL and settle_mobile_to_immobile crashed
+     on it. Such an object isn't mobile at all: drop it from the active
+     list and leave its record and tile link alone. Returning 0 is
+     tick_mobile_objects' "entry removed, re-examine this index" signal,
+     which the removal below satisfies. */
+  if (tilemap_lookup((int)(char)(*(ushort *)&DAT_00204920 >> 8),
+                     (int)(char)(*(ushort *)(&DAT_00204920 + 2) >> 8)) == 0) {
+    FUN_00053774((char)encode_object_slot_index(DAT_0010190c));
+    return 0;
+  }
   apply_placement_collision_sweep(&DAT_00204920,&DAT_002049a0);
   DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
   DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
@@ -1320,6 +1339,15 @@ ushort * param_1;
      for unrelated small-integer math earlier in this function, so given
      its own dedicated pointer local rather than widening iVar8 itself). */
   pbTile = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
+  /* Off-map landing tile (a projectile carried past the map edge --
+     sync_object_tile_position already skipped its own unlink/insert on
+     the same NULL). There is no tile list to settle into, so destroy
+     the object outright: freeing it also removes it from the active
+     mobile list, which is what returning 0 promises tick_mobile_objects. */
+  if (pbTile == (char *)0x0) {
+    discard_misplaced_object((char *)0x0,param_1,1);
+    return (ushort *)0x0;
+  }
   pbTile = pbTile + 2;
   if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
     *(byte *)puVar9 = (byte)*param_1;
