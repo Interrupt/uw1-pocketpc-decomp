@@ -522,6 +522,20 @@ extern undefined2 DAT_000891b0_backing[76800];
 #define DAT_000891b0 DAT_000891b0_backing[0]
 extern int g_ambient_bias_reduction;
 /* Globals defined in uw.c but also used by functions that now live in
+   graphics.c (expand_pals_bytes, build_rgb565_palette,
+   palette_cycle_range) -- extern'd here so both translation units see
+   the same storage. */
+extern int DAT_0024af70;
+extern undefined1 DAT_00084a40_backing[32768];
+#define DAT_00084a40 DAT_00084a40_backing[0]
+extern undefined2 DAT_00242010_backing[32768];
+#define DAT_00242010 DAT_00242010_backing[0]
+extern undefined2 DAT_00248418_backing[20 * 256];
+#define DAT_00248418 DAT_00248418_backing[0]
+extern undefined1 DAT_001005cc;
+extern undefined1 DAT_001005cd;
+extern undefined1 DAT_001005ce;
+/* Globals defined in uw.c but also used by functions that now live in
    game.c (app_main_loop, main_menu_loop) -- extern'd here so both
    translation units see the same storage. */
 extern undefined1 *DAT_00084298;

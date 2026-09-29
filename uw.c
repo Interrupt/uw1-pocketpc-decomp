@@ -1291,9 +1291,9 @@ int DAT_0024af70;
 undefined *PTR_GXBeginDraw_00084200;
 void *DAT_0023c430;
 undefined *PTR_GXEndDraw_000841fc;
-static undefined1 DAT_00084a40_backing[32768];
+undefined1 DAT_00084a40_backing[32768];
 #define DAT_00084a40 DAT_00084a40_backing[0]
-static undefined2 DAT_00242010_backing[32768];
+undefined2 DAT_00242010_backing[32768];
 #define DAT_00242010 DAT_00242010_backing[0]
 /* Was a lone `undefined2` scalar, but build_rgb565_palette uses it as the base of a
    20-level x 256-entry faded-palette table (`(ushort*)(&DAT_00248418 +
@@ -1305,7 +1305,7 @@ static undefined2 DAT_00242010_backing[32768];
    then produced a wild out-of-bounds array read/UAF-style crash much later
    in FUN_0007863c's string lookup. Same lone-scalar-used-as-array pattern
    fixed repeatedly this session (DAT_002028e8, g_visibility_ray_table, etc). */
-static undefined2 DAT_00248418_backing[20 * 256];
+undefined2 DAT_00248418_backing[20 * 256];
 #define DAT_00248418 DAT_00248418_backing[0]
 short DAT_00084f10;
 int g_force_flush;
@@ -11775,197 +11775,6 @@ undefined1 param_4;
 
 
 
-// was expand_pals_bytes -- expand PALS.DAT 6-bit channel bytes (param_2) to 8-bit into
-// param_1; param_3!=0 copies unscaled
-void expand_pals_bytes(param_1,param_2,param_3)
-char *param_1;
-char * param_2;
-int param_3;
-
-{
-  char *pcVar1;
-  char *pcVar2;
-  int iVar3;
-
-  /* param_1 was declared `int` despite every caller passing a real
-     pointer (e.g. load_pals_bank: `expand_pals_bytes(auStack_318,param_2,0);`)
-     -- truncating it on this 64-bit host. The `param_1 - (int)param_2`
-     / `param_2 + param_1` dance below reconstructs param_1 as a
-     relative *offset* from param_2 so the loop can address both
-     buffers through param_2-relative arithmetic; that only works if the
-     subtraction/re-addition isn't itself truncating, so param_1 is kept
-     a real pointer and the offset computed via intptr_t instead. */
-  intptr_t offset = (intptr_t)param_1 - (intptr_t)param_2;
-  iVar3 = 0;
-  if (param_3 == 0) {
-    do {
-      pcVar2 = param_2 + offset;
-      *pcVar2 = *param_2 << 2;
-      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-      pcVar2[1] = param_2[1] << 2;
-      pcVar1 = param_2 + 2;
-      param_2 = param_2 + 3;
-      pcVar2[2] = *pcVar1 << 2;
-    } while (iVar3 < 0x100);
-  }
-  else {
-    do {
-      pcVar2 = param_2 + offset;
-      *pcVar2 = *param_2;
-      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-      pcVar2[1] = param_2[1];
-      pcVar1 = param_2 + 2;
-      param_2 = param_2 + 3;
-      pcVar2[2] = *pcVar1;
-    } while (iVar3 < 0x100);
-  }
-  return;
-}
-
-
-
-// was build_rgb565_palette -- build g_palette_rgb565 from an RGB buffer (param_1; NULL =
-// built-in default). param_2==0 also builds the 21-level shade ramp DAT_00248418.
-void build_rgb565_palette(param_1,param_2)
-undefined1 * param_1;
-short param_2;
-
-{
-  byte *pbVar1;
-  byte *pbVar2;
-  byte bVar3;
-  short sVar4;
-  ushort uVar5;
-  ushort uVar6;
-  undefined4 uVar7;
-  int iVar8;
-  int iVar9;
-  int iVar10;
-  undefined4 uVar11;
-  undefined4 uVar12;
-  undefined4 uVar13;
-  undefined4 uVar14;
-  byte *pbVar15;
-  undefined2 *puVar16;
-  undefined2 *puVar17;
-  undefined2 *puVar18;
-  undefined2 *puVar19;
-  ushort *puVar20;
-  int iVar21;
-
-  DEBUG(TRACE, "[palette] build_rgb565_palette installing g_palette_rgb565, param_1=%s param_2=%d",
-        param_1 ? "buffer" : "NULL(default)", param_2);
-  if (param_1 == (undefined1 *)0x0) {
-    puVar20 = &g_palette_rgb565;
-    iVar21 = 0x100;
-    pbVar15 = &DAT_00084a40;
-    do {
-      pbVar1 = pbVar15 + 1;
-      iVar21 = iVar21 + -1;
-      pbVar2 = pbVar15 + 2;
-      bVar3 = *pbVar15;
-      pbVar15 = pbVar15 + 4;
-      *puVar20 = (ushort)bVar3 | ((ushort)*pbVar1 | (ushort)*pbVar2 << 6) << 5;
-      puVar20 = puVar20 + 1;
-    } while (iVar21 != 0);
-  }
-  else {
-    iVar21 = 0;
-    do {
-      uVar7 = Ordinal_2032(*param_1);
-      Ordinal_2026(uVar7,0x3fc00000);
-      iVar8 = Ordinal_2020();
-      if (0xff < iVar8) {
-        iVar8 = 0xff;
-      }
-      uVar7 = Ordinal_2032(param_1[1]);
-      Ordinal_2026(uVar7,0x3fc00000);
-      iVar9 = Ordinal_2020();
-      if (0xff < iVar9) {
-        iVar9 = 0xff;
-      }
-      uVar7 = Ordinal_2032(param_1[2]);
-      Ordinal_2026(uVar7,0x3fc00000);
-      iVar10 = Ordinal_2020();
-      if (0xff < iVar10) {
-        iVar10 = 0xff;
-      }
-      param_1 = param_1 + 3;
-      *(ushort *)((intptr_t)&g_palette_rgb565 + iVar21) =
-           (ushort)(iVar10 >> 3) | (ushort)((iVar9 >> 2 | (iVar8 >> 3) << 6) << 5);
-      if (param_2 == 0) {
-        uVar7 = Ordinal_2032(iVar8 >> 3);
-        uVar11 = Ordinal_2032(iVar9 >> 2);
-        uVar12 = Ordinal_2032(iVar10 >> 3);
-        iVar8 = 0;
-        puVar20 = (ushort *)((intptr_t)&DAT_00248418 + iVar21);
-        do {
-          uVar13 = Ordinal_2032(iVar8 + 0x14);
-          uVar14 = Ordinal_2026(uVar13,uVar7);
-          Ordinal_2026(uVar14,0x3d430c31);
-          sVar4 = Ordinal_2018();
-          uVar14 = Ordinal_2026(uVar13,uVar11);
-          Ordinal_2026(uVar14,0x3d430c31);
-          uVar5 = Ordinal_2018();
-          uVar13 = Ordinal_2026(uVar13,uVar12);
-          Ordinal_2026(uVar13,0x3d430c31);
-          uVar6 = Ordinal_2018();
-          *puVar20 = uVar6 | (uVar5 | sVar4 << 6) << 5;
-          iVar8 = iVar8 + -1;
-          puVar20 = puVar20 + 0x100;
-        } while (-0x14 < iVar8);
-      }
-      iVar21 = iVar21 + 2;
-    } while (iVar21 < 0x200);
-  }
-  if ((DAT_0024af70 != 0) && (DAT_0023c430 = GXBeginDraw(), DAT_0023c430 != (void *)0x0)) {
-    iVar8 = 0x28;
-    puVar17 = &DAT_00242010;
-    iVar21 = DAT_0023cdb8;
-    if (DAT_0023cdb8 < 0) {
-      iVar21 = DAT_0023cdb8 + 1;
-    }
-    iVar9 = DAT_0023cdbc;
-    if (DAT_0023cdbc < 0) {
-      iVar9 = DAT_0023cdbc + 1;
-    }
-    /* DAT_0023c430 is the real framebuffer pointer from GXBeginDraw();
-       `(int)` here truncated it on this 64-bit host (missed by the
-       earlier project-wide `(int)VAR + offset` sweep since here the
-       pointer is the second operand, "offset + (int)VAR", not the
-       first). First bug actually reached during real frame rendering. */
-    puVar18 = (undefined2 *)((iVar21 >> 1) * 400 + (intptr_t)DAT_0023c430);
-    do {
-      iVar10 = 0x140;
-      puVar16 = puVar18;
-      puVar19 = puVar17;
-      do {
-        puVar16 = puVar16 + (iVar9 >> 1);
-        iVar10 = iVar10 + -1;
-        /* Bounds-guard: this loop's hardcoded `400` initial offset and
-           320-iteration span don't fit within the real GAPI hardware
-           framebuffer's actual size (240x320 RGB565 = 153600 bytes) for
-           every geometry this ends up running under, and the original
-           intent behind the literal 400 hasn't been identified -- write
-           only if it lands inside the buffer GXBeginDraw() returned,
-           rather than risk corrupting unrelated heap memory. */
-        if ((char *)puVar16 >= (char *)DAT_0023c430 &&
-            (char *)(puVar16 + 1) <= (char *)DAT_0023c430 + 153600) {
-          *puVar16 = *puVar19;
-        }
-        puVar19 = puVar19 + 0x28;
-      } while (iVar10 != 0);
-      iVar8 = iVar8 + -1;
-      puVar18 = puVar18 + (iVar21 >> 1);
-      puVar17 = puVar17 + 1;
-    } while (iVar8 != 0);
-    GXEndDraw();
-  }
-  return;
-}
-
-
-
 void FUN_000232b0()
 
 {
@@ -13059,73 +12868,6 @@ LAB_00024dd4:
     *(undefined1 *)(g_chargen_textfield_buf + uVar13) = 0;
   }
   return uVar10;
-}
-
-
-
-
-
-
-// was palette_cycle_range -- rotate a contiguous run of DAT_00088d98 palette entries by
-// one. Confirmed real callers so far: the title screen's own gold-gradient
-// animation (0x40-0x7f), FUN_0003601c's special-illustrated-book/scroll
-// view feature (see its own comment -- NOT ordinary lava/water/torch tile
-// shimmer, ruled out live), and the equipped-lit-torch HUD icon flicker
-// this project added (range 16-23, the confirmed fire gradient in PALS.DAT
-// bank 0 -- see mode-icon-and-hud-icon-flicker-fixes memory). Whatever
-// drives ordinary per-tile water/lava/wall-torch animation during normal
-// walking, if the original game has one at all, is still unfound.
-void palette_cycle_range(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-int param_3;
-
-{
-  undefined *puVar1;
-  int iVar2;
-  short sVar3;
-  int iVar4;
-  int iVar5;
-  
-  iVar5 = (param_1 & 0xff) * 3;
-  sVar3 = 3;
-  puVar1 = &DAT_00088d98 + iVar5;
-  if (param_3 == 0) {
-    sVar3 = -3;
-  }
-  else {
-    /* Was `(undefined *)(... + 0x88d95)` -- a literal original-binary
-       address (0x88d95 = &DAT_00088d98's real address there, minus 3)
-       instead of real pointer arithmetic against the actual (relocated)
-       global -- same bug class as probe_save_slots's `-0x87020` fix and
-       run_character_generator's pcVar3 fix elsewhere this session.
-       Never exercised until Ordinal_535 (GetTickCount) stopped being a
-       hardcoded 0 (see its comment): this branch (param_3!=0) is only
-       reached from FUN_0006a168's periodic timer, which always saw
-       "0ms elapsed" and never fired before that fix. Confirmed via
-       ASan SEGV the moment it first ran for real. */
-    puVar1 = &DAT_00088d98 + (-3 + (param_2 & 0xff) * 3 + iVar5);
-  }
-  DAT_001005cc = *puVar1;
-  iVar4 = 0;
-  DAT_001005cd = puVar1[1];
-  DAT_001005ce = puVar1[2];
-  iVar5 = (param_2 & 0xff) - 1;
-  if (0 < iVar5) {
-    do {
-      iVar2 = 0;
-      do {
-        puVar1[iVar2] = puVar1[iVar2 - sVar3];
-        iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-      } while (iVar2 < 3);
-      iVar4 = iVar4 + 1;
-      puVar1 = puVar1 + -(int)sVar3;
-    } while (iVar4 * 0x10000 >> 0x10 < iVar5);
-  }
-  *puVar1 = DAT_001005cc;
-  puVar1[1] = DAT_001005cd;
-  puVar1[2] = DAT_001005ce;
-  return;
 }
 
 
