@@ -662,7 +662,10 @@ extern short DAT_002020c4;
 extern intptr_t DAT_00202948;
 extern undefined4 DAT_00202c84;
 extern undefined1 DAT_00202c90_backing[65536];
+#define DAT_00202c90 DAT_00202c90_backing[0]
 #define DAT_00202c91 DAT_00202c90_backing[1]
+#define DAT_00202c93 DAT_00202c90_backing[3]
+#define DAT_00202c98 DAT_00202c90_backing[8]
 #define DAT_00202c9a DAT_00202c90_backing[0xa]
 extern char * DAT_0023be74;
 extern undefined1 DAT_0023bf0c;
@@ -1153,6 +1156,23 @@ extern short g_visibility_ring_depth;
 #define DAT_000ace32 UW_A85B(0x4862)
 #define DAT_000ace33 UW_A85B(0x4863)
 #define g_current_tile ((uw_tile_t *)DAT_0023b4ec)
+/* Globals defined in uw.c but also used by functions that now live in
+   objects.c (the object table) -- extern'd here so both translation
+   units see the same storage. */
+extern short DAT_0010144c;
+extern short DAT_00101454;
+extern short DAT_00202a38;
+extern short DAT_00202a3c;
+extern short DAT_00202a40;
+extern char * DAT_00202a44;
+extern ushort DAT_00202a48;
+extern ushort DAT_00202a4c;
+extern undefined2 DAT_00202a50;
+extern undefined2 DAT_00202a54;
+extern char * DAT_0020469c;
+extern char * DAT_002046a4;
+extern char * DAT_002046a8;
+extern char * DAT_002046bc;
 #define DAT_00202806 DAT_00202800_backing[6]
 #define DAT_00204880 (*(short *)&DAT_00204880_backing[0])
 #define DAT_00204882 (*(short *)&DAT_00204880_backing[2])
@@ -2474,6 +2494,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/3d.h"
 #include "src/headers/player.h"
 #include "src/headers/tmap.h"
+#include "src/headers/objects.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
