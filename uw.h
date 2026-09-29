@@ -1269,6 +1269,23 @@ extern undefined DAT_0023cf0a;
 extern undefined DAT_0023cf0b;
 extern undefined DAT_0023cf0c;
 extern char s_named_00085d18[];
+/* Globals defined in uw.c but also used by functions that now live in
+   containers.c (the open-container/backpack view stack) -- extern'd
+   here so both translation units see the same storage. */
+extern undefined1 DAT_00085c88_backing[32768];
+#define DAT_00085c88 DAT_00085c88_backing[0]
+extern undefined4 DAT_002028a0_backing[64];
+#define DAT_002028a0 DAT_002028a0_backing[0]
+extern undefined DAT_00202978_backing[8192];
+#define DAT_00202978 DAT_00202978_backing[0]
+extern undefined2 DAT_00202980;
+extern ushort DAT_00202986;
+extern short g_player_carry_weight;
+extern char s_is_empty__0008790c[];
+#define DAT_002028ec DAT_002028e8_backing[1]
+#define DAT_00202951 g_backpack_slot_table[1]
+#define g_backpack_widget_to_slot_plus1 g_backpack_widget_to_slot_backing[1]
+#define g_current_container_link (*(ushort *)&g_backpack_slot_table[56])
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -1462,6 +1479,8 @@ void uw_debug_draw_inv_hotspot_positions(void);
 void uw_debug_dump_critter_sheet_once(void);
 void uw_debug_dump_sprite_frames_once(void);
 void uw_debug_force_item_id_once(void);
+void scroll_container_grid_up(void);
+void scroll_container_grid_down(void);
 int raster_edge_step();
 void raster_triangle_perspective_setup();
 void raster_edge_setup();
@@ -2722,6 +2741,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/objects.h"
 #include "src/headers/hud.h"
 #include "src/headers/ai.h"
+#include "src/headers/containers.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
