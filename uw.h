@@ -1396,6 +1396,83 @@ extern short * g_sweep_velocity;
 #define DAT_002049dc (DAT_002049c8_backing[0x14])
 #define DAT_002049dd (DAT_002049c8_backing[0x15])
 #define DAT_002049de (DAT_002049c8_backing[0x16])
+/* Globals defined in uw.c but also used by functions that now live in
+   visibility.c (dungeon-view visibility/draw-list build) -- extern'd
+   here so both translation units see the same storage. */
+extern undefined1 g_visibility_ray_table_backing[1024];
+extern const undefined1 DAT_00086af0_arr[4];
+extern const undefined1 DAT_00086af8_region[12];
+extern short DAT_00086b2c;
+extern undefined DAT_00086b34;
+extern void * DAT_002020f8_arr[256];
+#define DAT_002020f8 DAT_002020f8_arr[0]
+extern undefined2 DAT_0023adb0;
+extern undefined2 DAT_0023adb8_backing[8192];
+#define DAT_0023adb8 DAT_0023adb8_backing[0]
+extern undefined2 DAT_0023add0_backing[8192];
+#define DAT_0023add0 DAT_0023add0_backing[0]
+extern undefined2 DAT_0023ae40_backing[8192];
+#define DAT_0023ae40 DAT_0023ae40_backing[0]
+extern undefined2 DAT_0023ae58_backing[8192];
+#define DAT_0023ae58 DAT_0023ae58_backing[0]
+extern undefined2 DAT_0023aeb8_backing[8192];
+#define DAT_0023aeb8 DAT_0023aeb8_backing[0]
+extern int DAT_0023aec8;
+extern undefined2 * DAT_0023aed0;
+extern undefined2 DAT_0023aed4;
+extern undefined2 DAT_0023b020;
+extern undefined1 DAT_0023b028;
+extern undefined * DAT_0023b02c;
+extern undefined1 DAT_0023b039_backing[4096];
+#define DAT_0023b039 DAT_0023b039_backing[0]
+extern undefined1 DAT_0023b4a8_backing[65536];
+#define DAT_0023b4a8 DAT_0023b4a8_backing[0]
+extern ushort DAT_0023b4c8;
+extern short DAT_0023b4cc;
+extern undefined4 DAT_0023b804;
+extern undefined1 DAT_0023b841;
+extern undefined1 DAT_0024f090;
+extern undefined1 DAT_0024f0ca;
+extern short DAT_0025063c;
+extern short DAT_0025064c;
+extern short DAT_002506dc;
+extern undefined4 g_dungeon_view_active;
+extern short g_visibility_max_ring_passes;
+extern char * g_visibility_ray_realptr[24];
+extern char * g_visibility_ray_realptr2[24];
+#define g_visibility_ray_table g_visibility_ray_table_backing[0]
+extern undefined1 g_visibility_ring_done;
+extern char s__DATA_terrain_dat_000869ec[];
+extern char s_bad_tmap_ids_size_000869b7[];
+extern char s_R__lu_P__lu_S__lu_F__d__d_00086b04[];
+#define DAT_00086a18 (*(undefined1 *)(DAT_00086a00_region + 0x18))
+#define DAT_00086a60 (*(undefined1 *)(DAT_00086a00_region + 0x60))
+#define DAT_00086af0 (*(undefined1 *)DAT_00086af0_arr)
+#define DAT_00086af8 (*(undefined1 *)(DAT_00086af8_region + 0))
+#define DAT_00086afc (*(undefined1 *)(DAT_00086af8_region + 4))
+#define DAT_00086b00 (*(undefined1 *)(DAT_00086af8_region + 8))
+#define DAT_0023aee1 g_visibility_ray_table_backing[1]
+#define DAT_0023aee3 g_visibility_ray_table_backing[3]
+#define DAT_0023aee5 g_visibility_ray_table_backing[5]
+#define DAT_0023aee6 g_visibility_ray_table_backing[6]
+#define DAT_0023aee7 g_visibility_ray_table_backing[7]
+#define DAT_0023aee8 g_visibility_ray_table_backing[8]
+#define DAT_0023aee9 g_visibility_ray_table_backing[9]
+#define DAT_0023aeea (*(undefined2 *)&g_visibility_ray_table_backing[0xa])
+#define DAT_0023aeec g_visibility_ray_table_backing[0xc]
+#define DAT_0023aeed g_visibility_ray_table_backing[0xd]
+#define DAT_0023aeee (*(undefined2 *)&g_visibility_ray_table_backing[0xe])
+#define DAT_0023aef0 g_visibility_ray_table_backing[0x10]
+#define DAT_0023aef5 g_visibility_ray_table_backing[0x15]
+#define DAT_0023aef6 (*(undefined2 *)&g_visibility_ray_table_backing[0x16])
+#define DAT_0023aef8 (*(undefined2 *)&g_visibility_ray_table_backing[0x18])
+#define DAT_0023aefa g_visibility_ray_table_backing[0x1a]
+#define DAT_0023aefb g_visibility_ray_table_backing[0x1b]
+#define DAT_0023aefc g_visibility_ray_table_backing[0x1c]
+#define DAT_0023aefd g_visibility_ray_table_backing[0x1d]
+#define DAT_0023aefe (*(undefined2 *)&g_visibility_ray_table_backing[0x1e])
+#define DAT_0023af00 (*(undefined2 *)&g_visibility_ray_table_backing[0x20])
+#define DAT_0023af02 g_visibility_ray_table_backing[0x22]
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -2858,6 +2935,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/resources.h"
 #include "src/headers/item_use.h"
 #include "src/headers/movement.h"
+#include "src/headers/visibility.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
