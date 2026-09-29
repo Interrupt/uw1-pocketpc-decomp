@@ -30,6 +30,7 @@ set(UW_SOURCES
   src/tmap.c
   src/objects.c
   src/hud.c
+  src/ai.c
   src/main.c
   src/gx_stub.c
   src/ordinal_stubs.c

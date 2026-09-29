@@ -665,7 +665,9 @@ extern undefined1 DAT_00202c90_backing[65536];
 #define DAT_00202c90 DAT_00202c90_backing[0]
 #define DAT_00202c91 DAT_00202c90_backing[1]
 #define DAT_00202c93 DAT_00202c90_backing[3]
+#define DAT_00202c97 DAT_00202c90_backing[7]
 #define DAT_00202c98 DAT_00202c90_backing[8]
+#define DAT_00202c99 DAT_00202c90_backing[9]
 #define DAT_00202c9a DAT_00202c90_backing[0xa]
 extern char * DAT_0023be74;
 extern undefined1 DAT_0023bf0c;
@@ -1189,6 +1191,84 @@ extern char DAT_0023c240_vitals[16];
 extern undefined1 DAT_0023cdb0_backing[32768];
 extern undefined1 DAT_0023c128_arr[9];
 extern void (*const g_hud_panel_handlers_table[13])(void);
+/* Globals defined in uw.c but also used by functions that now live in
+   ai.c (NPC AI) -- extern'd here so both translation units see the
+   same storage. */
+extern undefined DAT_00084f20_backing[8192];
+#define DAT_00084f20 DAT_00084f20_backing[0]
+extern undefined1 DAT_000853b0;
+extern undefined1 DAT_000853b1;
+extern ushort DAT_000853b8;
+extern undefined DAT_000853d8;
+extern undefined DAT_000868c0;
+extern undefined1 DAT_001007d0_backing[6144];
+#define DAT_001007d0 DAT_001007d0_backing[0]
+extern undefined4 DAT_001013fc;
+extern ushort DAT_00101414;
+extern ushort DAT_0010141c;
+extern undefined1 DAT_0010142c;
+extern byte DAT_00101434;
+extern char * DAT_00101438;
+extern undefined4 DAT_00101440;
+extern byte DAT_00101450;
+extern byte DAT_00101458;
+extern undefined1 DAT_00101460;
+extern undefined1 DAT_001014e0;
+extern undefined1 DAT_001014e1;
+extern undefined4 DAT_00101560;
+extern undefined DAT_00101568_backing[8192];
+#define DAT_00101568 DAT_00101568_backing[0]
+extern undefined DAT_00101569;
+extern void * DAT_0010172c;
+extern byte DAT_00101730;
+extern undefined1 DAT_00101738;
+extern char DAT_00101740_backing[8192];
+#define DAT_00101740 DAT_00101740_backing[0]
+extern char DAT_00101741;
+extern undefined1 DAT_00101743;
+extern undefined2 DAT_00101744;
+extern undefined1 DAT_00101746;
+extern undefined1 DAT_00101747;
+extern undefined1 DAT_00101748;
+extern byte DAT_001018fc;
+extern char * DAT_00101904;
+extern ushort DAT_00101910;
+extern undefined4 DAT_00101914;
+extern undefined4 DAT_0010191c;
+extern undefined4 DAT_00101920;
+extern char DAT_00101928;
+extern short DAT_00101938;
+extern short DAT_0010193c;
+extern undefined4 DAT_00101944;
+extern char DAT_00101948;
+extern undefined DAT_002027d1_backing[8192];
+#define DAT_002027d1 DAT_002027d1_backing[0]
+extern short DAT_002046b0;
+extern byte * DAT_002046c0;
+extern byte * DAT_002046c8;
+extern undefined2 DAT_002048c0_backing[32768];
+#define DAT_002048c0 DAT_002048c0_backing[0]
+extern undefined1 DAT_002048f0_backing[65536];
+#define DAT_002048f0 DAT_002048f0_backing[0]
+extern undefined DAT_00204920_backing[8192];
+#define DAT_00204920 DAT_00204920_backing[0]
+extern undefined1 DAT_00204950_backing[65536];
+#define DAT_00204950 DAT_00204950_backing[0]
+extern undefined1 DAT_00204980_backing[65536];
+#define DAT_00204980 DAT_00204980_backing[0]
+extern undefined2 DAT_00204990_backing[32768];
+#define DAT_00204990 DAT_00204990_backing[0]
+extern undefined2 DAT_002049a0_backing[8192];
+#define DAT_002049a0 DAT_002049a0_backing[0]
+extern undefined2 DAT_002049b0_backing[32768];
+#define DAT_002049b0 DAT_002049b0_backing[0]
+extern undefined1 DAT_0023cf08_backing[40960];
+#define DAT_0023cf08 DAT_0023cf08_backing[0]
+extern undefined DAT_0023cf09;
+extern undefined DAT_0023cf0a;
+extern undefined DAT_0023cf0b;
+extern undefined DAT_0023cf0c;
+extern char s_named_00085d18[];
 extern short DAT_00084f10;
 extern char DAT_000870d8;
 extern char DAT_000870dc;
@@ -2641,6 +2721,7 @@ undefined4 FUN_000824f0();
 #include "src/headers/tmap.h"
 #include "src/headers/objects.h"
 #include "src/headers/hud.h"
+#include "src/headers/ai.h"
 #include "src/headers/game.h"
 #include "src/headers/chargen.h"
 
