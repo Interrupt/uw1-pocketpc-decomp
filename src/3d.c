@@ -773,7 +773,7 @@ void build_view_matrix()
      auStack_d8) were each declared as only as many bytes as this function
      happens to name individual elements of, but FUN_0001422c (called on
      each below) zeroes+identity-inits a real 0x40(64)-byte/16-element 4x4
-     float matrix at every one of these base pointers, and FUN_00013b8c
+     float matrix at every one of these base pointers, and multiply_matrix4x4
      (the matrix multiply also called below) reads/writes the full 16
      elements of whichever buffers it's given -- e.g. local_118 was only
      `undefined4[2]` (8 bytes) despite being passed as a matrix-multiply
@@ -833,9 +833,9 @@ void build_view_matrix()
   Ordinal_2023(uVar3);
   local_198_mtx[4] = Ordinal_2023();
   local_198_mtx[5] = uVar1;
-  FUN_00013b8c(auStack_d8,local_118,auStack_98);
-  FUN_00013b8c(auStack_98,auStack_158,auStack_58);
-  FUN_00013b8c(auStack_58,local_198_mtx,&DAT_000c8ac0);
+  multiply_matrix4x4(auStack_d8,local_118,auStack_98);
+  multiply_matrix4x4(auStack_98,auStack_158,auStack_58);
+  multiply_matrix4x4(auStack_58,local_198_mtx,&DAT_000c8ac0);
   return;
 }
 
@@ -1293,3 +1293,104 @@ LAB_0002029c:
   return;
 }
 
+
+
+// was FUN_00013b8c -- confirmed by two independent pre-existing
+// comments (uw.c's DAT_000c8ac0-family global-layout note, and
+// src/3d.c's own build_view_matrix-adjacent comment) as a 4x4
+// (really 4x3-affine, homogeneous) matrix multiply: param_1/param_2
+// are 16-float (64-byte) input matrices, param_3 the 16-float output.
+// Uses Ordinal_2026 (float multiply) and Ordinal_2051 (float add) for
+// the 12 real rotation/translation elements; the 4 "column 3" slots
+// are hardcoded to the standard affine bottom row (0,0,0,1) rather
+// than actually computed.
+void multiply_matrix4x4(param_1,param_2,param_3)
+undefined4 * param_1;
+undefined4 * param_2;
+undefined4 * param_3;
+
+{
+  undefined4 uVar1;
+  undefined4 uVar2;
+  
+  uVar1 = Ordinal_2026(param_2[8],param_1[2]);
+  uVar2 = Ordinal_2026(param_1[1],param_2[4]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(*param_1,*param_2);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  *param_3 = uVar1;
+  uVar1 = Ordinal_2026(param_2[9],param_1[2]);
+  uVar2 = Ordinal_2026(param_1[1],param_2[5]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_2[1],*param_1);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  param_3[1] = uVar1;
+  uVar1 = Ordinal_2026(param_2[10],param_1[2]);
+  uVar2 = Ordinal_2026(param_2[6],param_1[1]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_2[2],*param_1);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  param_3[2] = uVar1;
+  param_3[3] = 0;
+  uVar1 = Ordinal_2026(param_1[6],param_2[8]);
+  uVar2 = Ordinal_2026(param_1[5],param_2[4]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_1[4],*param_2);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  param_3[4] = uVar1;
+  uVar1 = Ordinal_2026(param_1[6],param_2[9]);
+  uVar2 = Ordinal_2026(param_1[5],param_2[5]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_1[4],param_2[1]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  param_3[5] = uVar1;
+  uVar1 = Ordinal_2026(param_1[6],param_2[10]);
+  uVar2 = Ordinal_2026(param_1[5],param_2[6]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_1[4],param_2[2]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  param_3[6] = uVar1;
+  param_3[7] = 0;
+  uVar1 = Ordinal_2026(param_1[10],param_2[8]);
+  uVar2 = Ordinal_2026(param_1[9],param_2[4]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_1[8],*param_2);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  param_3[8] = uVar1;
+  uVar1 = Ordinal_2026(param_1[10],param_2[9]);
+  uVar2 = Ordinal_2026(param_1[9],param_2[5]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_1[8],param_2[1]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  param_3[9] = uVar1;
+  uVar1 = Ordinal_2026(param_1[10],param_2[10]);
+  uVar2 = Ordinal_2026(param_1[9],param_2[6]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_1[8],param_2[2]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  param_3[10] = uVar1;
+  param_3[0xb] = 0;
+  uVar1 = Ordinal_2026(param_1[0xe],param_2[8]);
+  uVar2 = Ordinal_2026(param_1[0xd],param_2[4]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_1[0xc],*param_2);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = Ordinal_2051(uVar1,param_2[0xc]);
+  param_3[0xc] = uVar1;
+  uVar1 = Ordinal_2026(param_1[0xe],param_2[9]);
+  uVar2 = Ordinal_2026(param_1[0xd],param_2[5]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_1[0xc],param_2[1]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = Ordinal_2051(uVar1,param_2[0xd]);
+  param_3[0xd] = uVar1;
+  uVar1 = Ordinal_2026(param_1[0xe],param_2[10]);
+  uVar2 = Ordinal_2026(param_1[0xd],param_2[6]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar2 = Ordinal_2026(param_1[0xc],param_2[2]);
+  uVar1 = Ordinal_2051(uVar1,uVar2);
+  uVar1 = Ordinal_2051(uVar1,param_2[0xe]);
+  param_3[0xe] = uVar1;
+  param_3[0xf] = 0x3f800000;
+  return;
+}

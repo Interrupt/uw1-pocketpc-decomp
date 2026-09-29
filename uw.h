@@ -2364,7 +2364,7 @@ void decode_gr_rle_stream();
 int integer_sqrt();
 void FUN_000137c0();
 void FUN_00013904();
-void FUN_00013b8c();
+void multiply_matrix4x4();
 void FUN_0001422c();
 void FUN_00014258();
 void build_shade_lut();

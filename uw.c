@@ -750,7 +750,7 @@ int g_uw_debug_pick_diag = 0;
 /* DAT_000c8ac0-family: 12 separately-declared globals that are really the
    12 non-translation-column elements of one 4x4 (16 x undefined4, 64-byte)
    view/camera matrix -- build_view_matrix writes the whole matrix in one shot
-   via `FUN_00013b8c(...,...,&DAT_000c8ac0)`, a matrix-multiply that treats
+   via `multiply_matrix4x4(...,...,&DAT_000c8ac0)`, a matrix-multiply that treats
    its output as one contiguous 64-byte buffer starting at DAT_000c8ac0
    (including the 4 never-individually-named "column 3" slots at
    +0xc/+0x1c/+0x2c/+0x3c, always 0/0/0/1 for this kind of matrix). As
@@ -6797,96 +6797,6 @@ void thunk_FUN_0003c310()
 
 
 
-void FUN_00013b8c(param_1,param_2,param_3)
-undefined4 * param_1;
-undefined4 * param_2;
-undefined4 * param_3;
-
-{
-  undefined4 uVar1;
-  undefined4 uVar2;
-  
-  uVar1 = Ordinal_2026(param_2[8],param_1[2]);
-  uVar2 = Ordinal_2026(param_1[1],param_2[4]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(*param_1,*param_2);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  *param_3 = uVar1;
-  uVar1 = Ordinal_2026(param_2[9],param_1[2]);
-  uVar2 = Ordinal_2026(param_1[1],param_2[5]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_2[1],*param_1);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  param_3[1] = uVar1;
-  uVar1 = Ordinal_2026(param_2[10],param_1[2]);
-  uVar2 = Ordinal_2026(param_2[6],param_1[1]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_2[2],*param_1);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  param_3[2] = uVar1;
-  param_3[3] = 0;
-  uVar1 = Ordinal_2026(param_1[6],param_2[8]);
-  uVar2 = Ordinal_2026(param_1[5],param_2[4]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[4],*param_2);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  param_3[4] = uVar1;
-  uVar1 = Ordinal_2026(param_1[6],param_2[9]);
-  uVar2 = Ordinal_2026(param_1[5],param_2[5]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[4],param_2[1]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  param_3[5] = uVar1;
-  uVar1 = Ordinal_2026(param_1[6],param_2[10]);
-  uVar2 = Ordinal_2026(param_1[5],param_2[6]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[4],param_2[2]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  param_3[6] = uVar1;
-  param_3[7] = 0;
-  uVar1 = Ordinal_2026(param_1[10],param_2[8]);
-  uVar2 = Ordinal_2026(param_1[9],param_2[4]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[8],*param_2);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  param_3[8] = uVar1;
-  uVar1 = Ordinal_2026(param_1[10],param_2[9]);
-  uVar2 = Ordinal_2026(param_1[9],param_2[5]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[8],param_2[1]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  param_3[9] = uVar1;
-  uVar1 = Ordinal_2026(param_1[10],param_2[10]);
-  uVar2 = Ordinal_2026(param_1[9],param_2[6]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[8],param_2[2]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  param_3[10] = uVar1;
-  param_3[0xb] = 0;
-  uVar1 = Ordinal_2026(param_1[0xe],param_2[8]);
-  uVar2 = Ordinal_2026(param_1[0xd],param_2[4]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[0xc],*param_2);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar1 = Ordinal_2051(uVar1,param_2[0xc]);
-  param_3[0xc] = uVar1;
-  uVar1 = Ordinal_2026(param_1[0xe],param_2[9]);
-  uVar2 = Ordinal_2026(param_1[0xd],param_2[5]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[0xc],param_2[1]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar1 = Ordinal_2051(uVar1,param_2[0xd]);
-  param_3[0xd] = uVar1;
-  uVar1 = Ordinal_2026(param_1[0xe],param_2[10]);
-  uVar2 = Ordinal_2026(param_1[0xd],param_2[6]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar2 = Ordinal_2026(param_1[0xc],param_2[2]);
-  uVar1 = Ordinal_2051(uVar1,uVar2);
-  uVar1 = Ordinal_2051(uVar1,param_2[0xe]);
-  param_3[0xe] = uVar1;
-  param_3[0xf] = 0x3f800000;
-  return;
-}
 
 
 
@@ -7532,7 +7442,7 @@ int param_4;
   /* This whole local block was a run of individually-named scalars
      (local_164, local_160, ... auStack_124[5], local_a4[2], ...) instead
      of the real 4x4 (16-`undefined4`/64-byte) matrix buffers
-     FUN_0001422c/FUN_00013b8c/FUN_00014258 actually read and write --
+     FUN_0001422c/multiply_matrix4x4/FUN_00014258 actually read and write --
      same "split-symbol matrix" bug class as FUN_00014258's own pointer-
      truncation fix (see its comment), just on the caller's stack instead
      of a global. Every one of those calls overflowed by 20-60+ bytes
@@ -7654,7 +7564,7 @@ LAB_0001e9c4:
         else {
           if (uVar11 != 6) {
             if (uVar11 != 7) goto LAB_0001ea18;
-            FUN_00013b8c(auStack_124,local_a4,auStack_64,uVar8,uVar14);
+            multiply_matrix4x4(auStack_124,local_a4,auStack_64,uVar8,uVar14);
             puVar4 = auStack_64;
             goto LAB_0001e9c4;
           }
@@ -7662,7 +7572,7 @@ LAB_0001e9c4:
         }
         puVar4 = auStack_124;
       }
-      FUN_00013b8c(puVar4,puVar7,&local_164);
+      multiply_matrix4x4(puVar4,puVar7,&local_164);
       goto LAB_0001ea18;
     }
     puVar4 = local_a4;
