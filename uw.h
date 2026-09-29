@@ -1977,6 +1977,14 @@ extern short DAT_0023c238_arr[2];
 extern int DAT_0023c23c;
 #define DAT_0023c240 DAT_0023c240_vitals[0]
 extern short DAT_0023c250;
+extern short DAT_0023c254;
+extern short DAT_00087258;
+extern short DAT_0023c258;
+extern byte DAT_0023c25c;
+extern undefined4 DAT_0023c200_arr[3];
+#define DAT_0023c200 DAT_0023c200_arr[0]
+#define DAT_0023c202 DAT_0023c200_arr[1]
+#define DAT_0023c204 DAT_0023c200_arr[2]
 extern void * DAT_0023c430;
 extern short DAT_0023c63c;
 extern undefined * DAT_00250704;
@@ -2021,6 +2029,7 @@ extern char s_panels_00087260[];
 #define DAT_0023cdbc (*(int *)(DAT_0023cdb0_backing + 0xc))
 #define DAT_0023cdc0 (*(int *)(DAT_0023cdb0_backing + 0x10))
 #define g_committed_hud_panel DAT_0023c128_arr[6]
+#define DAT_0023c12f DAT_0023c128_arr[7]
 #define g_hud_panel_handlers (g_hud_panel_handlers_table[0])
 #define g_hud_panel_ticker_handlers (g_hud_panel_handlers_table[4])
 #define g_target_hud_panel DAT_0023c118_arr[6]
@@ -3029,18 +3038,18 @@ void hud_vitals_threshold_shake();
 void snap_compass_to_heading();
 void reset_hud_panel_animation_state();
 void redraw_hud_panels();
-void thunk_FUN_0006edb8();
+void release_panel_wipe_grtiles();
 void set_hud_status_value();
 void hud_panel_redraw_dispatch();
 void hud_vitals_bar_tick();
 void hud_dragon_reaction_tick();
 void hud_compass_needle_tick();
-void FUN_0006e038();
+void update_hud_status_icon_frame();
 void tick_hud_panel_transition();
-void FUN_0006e1d4();
+void hud_panel_wipe_transition_tick();
 void request_weapon_swing_graphic();
 byte load_weapon_swing_sprites();
-void FUN_0006e554();
+void randomize_weapon_jump_shake();
 void advance_action_animation_frame();
 bool FUN_0006e89c();
 void FUN_0006e96c();

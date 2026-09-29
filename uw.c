@@ -5674,8 +5674,8 @@ char *DAT_0023cca4;
    (now-real, 8-byte-on-this-host) pointer size. */
 void (*const g_hud_panel_handlers_table[13])(void) = {
   (void(*)(void))FUN_0003e644, (void(*)(void))FUN_000448a8, (void(*)(void))draw_stats_panel_content, 0,
-  (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))FUN_0006e038,
-  (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))tick_hud_panel_transition, (void(*)(void))FUN_0006e1d4,
+  (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_vitals_bar_tick, (void(*)(void))hud_compass_needle_tick, (void(*)(void))update_hud_status_icon_frame,
+  (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))hud_dragon_reaction_tick, (void(*)(void))tick_hud_panel_transition, (void(*)(void))hud_panel_wipe_transition_tick,
   (void(*)(void))advance_action_animation_frame,
 };
 #define g_hud_panel_handlers (g_hud_panel_handlers_table[0])
@@ -5728,7 +5728,7 @@ char s_panels_00087260[] = "panels";
    resolve_flip_grtile_slot's registry-key comparison. Not a concern
    while both allocator/resolver were stubs (every stored value was 0
    either way), but a real requirement now that they aren't. */
-static undefined4 DAT_0023c200_arr[3];
+undefined4 DAT_0023c200_arr[3];
 #define DAT_0023c200 DAT_0023c200_arr[0]
 #define DAT_0023c202 DAT_0023c200_arr[1]
 #define DAT_0023c204 DAT_0023c200_arr[2]
@@ -20305,7 +20305,7 @@ void FUN_0003baf4()
   input_bindings_free();
   FUN_0007eb34();
   FUN_000499a4();
-  thunk_FUN_0006edb8();
+  release_panel_wipe_grtiles();
   FUN_0007355c();
   FUN_00073560();
   thunk_FUN_00078e28();
@@ -36405,152 +36405,6 @@ LAB_00060f54:
   *DAT_00110fc0 = 1;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   DAT_00189580 = 1;
-  return;
-}
-
-
-
-void thunk_FUN_0006edb8()
-
-{
-  int iVar1;
-  
-  iVar1 = 0;
-  do {
-    if ((&DAT_0023c200)[iVar1] != 0) {
-      FUN_0004995c();
-      (&DAT_0023c200)[iVar1] = 0;
-    }
-    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar1 < 3);
-  return;
-}
-
-
-
-void FUN_0006e038()
-
-{
-  uint uVar1;
-  char cVar2;
-  undefined4 uVar3;
-  int iVar4;
-  
-  cVar2 = DAT_0023c11b;
-  uVar1 = (uint)DAT_0023c11b;
-  if ((-1 < (int)uVar1) && ((int)uVar1 < 0xe)) {
-    if (DAT_0023c254 == 0) {
-      uVar3 = sprite_list_alloc_entry(0);
-      DAT_0023c254 = (short)uVar3;
-      sprite_list_set_rect(uVar3,4,0x8c,1,1);
-    }
-    if (uVar1 == 9) {
-      iVar4 = (int)DAT_00087258;
-      DAT_00087258 = DAT_00087258 + 1;
-      sprite_list_set_frame_id((int)DAT_0023c254,iVar4 + 0x2098);
-      if (0xd < DAT_00087258) {
-        DAT_00087258 = 9;
-      }
-      DAT_0023c1d8 = DAT_0023c1d8 | 8;
-    }
-    else {
-      if (DAT_0023c258 == 9) {
-        DAT_00087258 = 9;
-      }
-      sprite_list_set_frame_id((int)DAT_0023c254,(uVar1 & 0xffff) + 0x2098);
-      DAT_0023c1d8 = DAT_0023c1d8 & 0xfff7;
-    }
-    DAT_0023c258 = (short)cVar2;
-  }
-  return;
-}
-
-
-
-void FUN_0006e1d4()
-
-{
-  int iVar1;
-  
-  if ((uint)DAT_0023c12f == (uint)DAT_0023c11f) {
-    DAT_0023c220 = 2;
-    DAT_0023c25c = 0;
-  }
-  else {
-    if ((uint)DAT_0023c12f == DAT_0023c11f - 4) goto LAB_0006e244;
-    if (DAT_0023c25c != 0) {
-      DAT_0023c220 = 2;
-      DAT_0023c25c = 0;
-    }
-    DAT_0023c12f = DAT_0023c11f;
-  }
-  DAT_0023c11f = DAT_0023c11f + 4;
-LAB_0006e244:
-  iVar1 = (int)DAT_0023c220;
-  if ((iVar1 == 3) && (DAT_0023c25c < 0x10)) {
-    DAT_0023c25c = DAT_0023c25c + 1;
-  }
-  else {
-    DAT_0023c220 = DAT_0023c220 + 1;
-    sprite_list_set_frame_id((int)DAT_0023c21c,
-                 (uint)DAT_0023c12f * 3 + -3 + (uint)*(ushort *)(iVar1 * 2 + 0x87200));
-  }
-  if (5 < DAT_0023c220) {
-    DAT_0023c25c = 0;
-    DAT_0023c220 = 0;
-    DAT_0023c12f = 0;
-    sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
-    DAT_0023c1d8 = DAT_0023c1d8 & 0xff7f;
-  }
-  return;
-}
-
-
-
-void FUN_0006e554(param_1)
-short param_1;
-
-{
-  int uw_ord2005_rem_134 = 0; int uw_ord2005_rem_135 = 0; int uw_ord2005_rem_136 = 0; int uw_ord2005_rem_137 = 0;
-  undefined4 uVar1;
-  int iVar2;
-  undefined2 extraout_r1;
-  undefined2 extraout_r1_00;
-  undefined2 extraout_r1_01;
-  undefined2 extraout_r1_02;
-  
-  if (param_1 == 0) {
-    DAT_0023c1ec = 0;
-  }
-  else if (param_1 == 1) {
-    if (DAT_0023c1ec < 1) {
-      iVar2 = Ordinal_1053();
-      uw_ord2005_rem_134 = ((int)(-iVar2)) % (5);
-      DAT_0023c1ec = uw_ord2005_rem_134;
-    }
-    else {
-      uVar1 = Ordinal_1053();
-      uw_ord2005_rem_135 = ((int)(uVar1)) % (5);
-      DAT_0023c1ec = uw_ord2005_rem_135;
-    }
-  }
-  else {
-    if (param_1 != 2) {
-      return;
-    }
-    if (DAT_0023c1ec < 1) {
-      iVar2 = Ordinal_1053();
-      uw_ord2005_rem_136 = ((int)(-iVar2)) % (10);
-      DAT_0023c1ec = uw_ord2005_rem_136;
-    }
-    else {
-      uVar1 = Ordinal_1053();
-      uw_ord2005_rem_137 = ((int)(uVar1)) % (10);
-      DAT_0023c1ec = uw_ord2005_rem_137;
-    }
-    Ordinal_1053();
-  }
-  DAT_000870e8 = 1;
   return;
 }
 

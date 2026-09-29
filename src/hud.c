@@ -2274,7 +2274,7 @@ void snap_compass_to_heading()
 // state arrays (DAT_0023c118/DAT_0023c128), hides the two sprites
 // DAT_0023c1e8/DAT_0023c1ea via FUN_00076488, clears the active-panel
 // selector (g_active_hud_panel) and the panel-switch animation counters
-// FUN_0006e1d4 drives (DAT_0023c220 and friends), and reseeds
+// hud_panel_wipe_transition_tick drives (DAT_0023c220 and friends), and reseeds
 // DAT_0023c11f/DAT_0023c120/DAT_0023c130/DAT_000870e0/DAT_000870e4 back
 // to their startup defaults (matching redraw_hud_panels's own initial
 // values for the latter two).
@@ -2302,5 +2302,139 @@ void reset_hud_panel_animation_state()
   DAT_000870e0 = 6;
   DAT_000870e4 = 0;
   FUN_00076508();
+  return;
+}
+
+
+
+
+
+
+// was thunk_FUN_0006edb8 -- Ghidra's own name (not related to the
+// unrelated, differently-addressed FUN_0006edb8 defined later in this
+// file, despite the identical-looking suffix -- this project's
+// established split-symbol/naming-collision bug class, not a real
+// thunk relationship). Releases the 3 grtile handles
+// (DAT_0023c200/202/204, see that array's own declaration comment)
+// backing the HUD panel-switch wipe transition, clearing each that's
+// still set via the currently-no-op FUN_0004995c.
+void release_panel_wipe_grtiles()
+
+{
+  int iVar1;
+
+  iVar1 = 0;
+  do {
+    if ((&DAT_0023c200)[iVar1] != 0) {
+      FUN_0004995c();
+      (&DAT_0023c200)[iVar1] = 0;
+    }
+    iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar1 < 3);
+  return;
+}
+
+
+
+
+
+
+// was FUN_0006e038 -- updates a small HUD status-icon sprite
+// (DAT_0023c254, allocated on first use) from the state code
+// DAT_0023c11b (0..0xd/13; out-of-range values leave the icon alone).
+// Most values just select a single static frame (0x2098 + value); the
+// special value 9 instead cycles through frames 0x2098+DAT_00087258
+// (wrapping 9..0xd) once per call, matching an animated variant of
+// whatever this icon represents, and sets bit 3 of DAT_0023c1d8 (a
+// "dirty"/"animating" flag other icons in this cluster also use, e.g.
+// hud_compass_needle_tick's own bit 2). Exact icon identity not
+// confirmed (no icon-name string or comment found nearby) -- named for
+// its mechanism, not its meaning.
+void update_hud_status_icon_frame()
+
+{
+  uint uVar1;
+  char cVar2;
+  undefined4 uVar3;
+  int iVar4;
+
+  cVar2 = DAT_0023c11b;
+  uVar1 = (uint)DAT_0023c11b;
+  if ((-1 < (int)uVar1) && ((int)uVar1 < 0xe)) {
+    if (DAT_0023c254 == 0) {
+      uVar3 = sprite_list_alloc_entry(0);
+      DAT_0023c254 = (short)uVar3;
+      sprite_list_set_rect(uVar3,4,0x8c,1,1);
+    }
+    if (uVar1 == 9) {
+      iVar4 = (int)DAT_00087258;
+      DAT_00087258 = DAT_00087258 + 1;
+      sprite_list_set_frame_id((int)DAT_0023c254,iVar4 + 0x2098);
+      if (0xd < DAT_00087258) {
+        DAT_00087258 = 9;
+      }
+      DAT_0023c1d8 = DAT_0023c1d8 | 8;
+    }
+    else {
+      if (DAT_0023c258 == 9) {
+        DAT_00087258 = 9;
+      }
+      sprite_list_set_frame_id((int)DAT_0023c254,(uVar1 & 0xffff) + 0x2098);
+      DAT_0023c1d8 = DAT_0023c1d8 & 0xfff7;
+    }
+    DAT_0023c258 = (short)cVar2;
+  }
+  return;
+}
+
+
+
+
+
+
+// was FUN_0006e1d4 -- per-tick driver for the small HUD panel-switch
+// wipe-transition icon (sprite handle DAT_0023c21c, same one
+// snap_compass_to_heading's sibling reset_hud_panel_animation_state resets
+// to frame 0x20a6 ("idle") and redraw_hud_panels allocates at a 1x1
+// screen position). Steps a wipe-progress counter (DAT_0023c12f)
+// toward its target (DAT_0023c11f, advanced by 4 each time it's caught
+// up to) via a small state machine (DAT_0023c220/DAT_0023c25c) that
+// selects successive frames from the table at 0x87200, then resets
+// everything back to idle once DAT_0023c220 exceeds 5.
+void hud_panel_wipe_transition_tick()
+
+{
+  int iVar1;
+
+  if ((uint)DAT_0023c12f == (uint)DAT_0023c11f) {
+    DAT_0023c220 = 2;
+    DAT_0023c25c = 0;
+  }
+  else {
+    if ((uint)DAT_0023c12f == DAT_0023c11f - 4) goto LAB_0006e244;
+    if (DAT_0023c25c != 0) {
+      DAT_0023c220 = 2;
+      DAT_0023c25c = 0;
+    }
+    DAT_0023c12f = DAT_0023c11f;
+  }
+  DAT_0023c11f = DAT_0023c11f + 4;
+LAB_0006e244:
+  iVar1 = (int)DAT_0023c220;
+  if ((iVar1 == 3) && (DAT_0023c25c < 0x10)) {
+    DAT_0023c25c = DAT_0023c25c + 1;
+  }
+  else {
+    DAT_0023c220 = DAT_0023c220 + 1;
+    sprite_list_set_frame_id((int)DAT_0023c21c,
+                 (uint)DAT_0023c12f * 3 + -3 + (uint)*(ushort *)(iVar1 * 2 + 0x87200));
+  }
+  if (5 < DAT_0023c220) {
+    DAT_0023c25c = 0;
+    DAT_0023c220 = 0;
+    DAT_0023c12f = 0;
+    sprite_list_set_frame_id((int)DAT_0023c21c,0x20a6);
+    DAT_0023c1d8 = DAT_0023c1d8 & 0xff7f;
+  }
   return;
 }

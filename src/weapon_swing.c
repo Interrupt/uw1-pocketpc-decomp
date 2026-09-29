@@ -191,7 +191,7 @@ void weapon_swing_draw_tick()
       sVar1 = Ordinal_2005(799,(int)g_jump_ascent_timer << 1);
       sVar1 = sVar1 + 1;
     }
-    FUN_0006e554((int)sVar1);
+    randomize_weapon_jump_shake((int)sVar1);
     if ((DAT_0023c130 == 3) || (DAT_0023c130 == 5)) {
       sVar1 = DAT_000870e4 + 0x12;
     }
@@ -250,3 +250,61 @@ void weapon_overlay_and_full_redraw()
   return;
 }
 
+
+
+
+
+
+
+// was FUN_0006e554 -- sets DAT_0023c1ec (the weapon-swing sprite's
+// horizontal jitter offset, applied in src/weapon_swing.c's blit) from
+// param_1's shake intensity: 0 clears it, 1 picks a small random value
+// (-4..4, via Ordinal_1053 mod 5), 2 a larger one (-9..9, mod 10).
+// Its one caller derives param_1 from g_jump_ascent_timer, so this is
+// the weapon-bob jitter while the player is airborne from a jump.
+void randomize_weapon_jump_shake(param_1)
+short param_1;
+
+{
+  int uw_ord2005_rem_134 = 0; int uw_ord2005_rem_135 = 0; int uw_ord2005_rem_136 = 0; int uw_ord2005_rem_137 = 0;
+  undefined4 uVar1;
+  int iVar2;
+  undefined2 extraout_r1;
+  undefined2 extraout_r1_00;
+  undefined2 extraout_r1_01;
+  undefined2 extraout_r1_02;
+  
+  if (param_1 == 0) {
+    DAT_0023c1ec = 0;
+  }
+  else if (param_1 == 1) {
+    if (DAT_0023c1ec < 1) {
+      iVar2 = Ordinal_1053();
+      uw_ord2005_rem_134 = ((int)(-iVar2)) % (5);
+      DAT_0023c1ec = uw_ord2005_rem_134;
+    }
+    else {
+      uVar1 = Ordinal_1053();
+      uw_ord2005_rem_135 = ((int)(uVar1)) % (5);
+      DAT_0023c1ec = uw_ord2005_rem_135;
+    }
+  }
+  else {
+    if (param_1 != 2) {
+      return;
+    }
+    if (DAT_0023c1ec < 1) {
+      iVar2 = Ordinal_1053();
+      uw_ord2005_rem_136 = ((int)(-iVar2)) % (10);
+      DAT_0023c1ec = uw_ord2005_rem_136;
+    }
+    else {
+      uVar1 = Ordinal_1053();
+      uw_ord2005_rem_137 = ((int)(uVar1)) % (10);
+      DAT_0023c1ec = uw_ord2005_rem_137;
+    }
+    Ordinal_1053();
+  }
+  DAT_000870e8 = 1;
+  return;
+}
