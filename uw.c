@@ -36483,47 +36483,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_00075248(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  int uw_ord2005_rem_157 = 0; int uw_ord2005_rem_158 = 0;
-  byte bVar1;
-  undefined1 uVar2;
-  undefined4 uVar3;
-  char *iVar4;  /* was `int` -- truncated spawn_new_object's real pointer */
-  int iVar5;
-  char extraout_r1;
-  short extraout_r1_00;
-  uint uVar6;
-
-  uVar3 = Ordinal_1053();
-  uw_ord2005_rem_157 = ((int)(uVar3)) % (3);
-  iVar4 = (char *)spawn_new_object(uw_ord2005_rem_157 + 0x154,0);
-  uVar6 = *(ushort *)(iVar4 + 2) & 0xffee;
-  *(byte *)(iVar4 + 2) = (byte)uVar6 | 0x6e;
-  *(char *)(iVar4 + 3) = (char)(uVar6 >> 8);
-  iVar5 = place_object_in_world(param_1 * 8 + 3,param_2 * 8 + 3,0x6e,iVar4,0,0);
-  if ((iVar5 != 0) && (iVar5 = object_ptr_in_arena(iVar4), iVar5 != 0)) {
-    bVar1 = Ordinal_1053();
-    *(byte *)(iVar4 + 0x13) =
-         ((bVar1 & 3) + 2 ^ *(byte *)(iVar4 + 0x13)) & 0x7f ^ *(byte *)(iVar4 + 0x13);
-    uVar2 = Ordinal_1053();
-    *(undefined1 *)(iVar4 + 9) = uVar2;
-    bVar1 = Ordinal_1053();
-    *(byte *)(iVar4 + 10) =
-         ((bVar1 & 3) + DAT_00101928 ^ *(byte *)(iVar4 + 10)) & 0xf ^ *(byte *)(iVar4 + 10);
-    uVar3 = Ordinal_1053();
-    bVar1 = *(byte *)(iVar4 + 0x14);
-    uw_ord2005_rem_158 = ((int)(uVar3)) % (3);
-    *(byte *)(iVar4 + 0x14) = (uw_ord2005_rem_158 + 1U ^ bVar1) & 7 ^ bVar1;
-  }
-  return 1;
-}
-
-
-
 void FUN_000753a0(param_1,param_2)
 ushort param_1;
 byte param_2;
@@ -36718,7 +36677,7 @@ LAB_0007588c:
     goto LAB_00075a0c;
   case 9:
     cVar2 = roll_dice_sum(8,3);
-    scan_area_ahead_of_object(param_1,(int)cVar2,FUN_00075248,0x40,5,3);
+    scan_area_ahead_of_object(param_1,(int)cVar2,spawn_random_variant_object_at_tile,0x40,5,3);
     set_movement_animation_timer(0x40,0x28);
     play_sound_effect_at_object(0x12,param_1,0);
     break;

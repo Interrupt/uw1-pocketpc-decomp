@@ -1891,3 +1891,55 @@ char param_2;
   FUN_00078c80(uVar11);
   return;
 }
+
+
+
+
+
+// was FUN_00075248 -- spawns one of 3 object-id variants (0x154-0x156,
+// chosen at random) centered in tile (param_1,param_2), sets its
+// quality field to 0x6e, and places it in the world
+// (place_object_in_world). On success, randomizes several of its
+// data fields (offsets 9, 0x10/0x11 XORed with DAT_00101928, 0x13,
+// 0x14) -- likely a sprite-variant/rotation seed for a purely
+// decorative or loot-pile-style object rather than anything
+// gameplay-mechanical. No callers found by grep in the remaining
+// decompile.
+undefined4 spawn_random_variant_object_at_tile(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  int uw_ord2005_rem_157 = 0; int uw_ord2005_rem_158 = 0;
+  byte bVar1;
+  undefined1 uVar2;
+  undefined4 uVar3;
+  char *iVar4;  /* was `int` -- truncated spawn_new_object's real pointer */
+  int iVar5;
+  char extraout_r1;
+  short extraout_r1_00;
+  uint uVar6;
+
+  uVar3 = Ordinal_1053();
+  uw_ord2005_rem_157 = ((int)(uVar3)) % (3);
+  iVar4 = (char *)spawn_new_object(uw_ord2005_rem_157 + 0x154,0);
+  uVar6 = *(ushort *)(iVar4 + 2) & 0xffee;
+  *(byte *)(iVar4 + 2) = (byte)uVar6 | 0x6e;
+  *(char *)(iVar4 + 3) = (char)(uVar6 >> 8);
+  iVar5 = place_object_in_world(param_1 * 8 + 3,param_2 * 8 + 3,0x6e,iVar4,0,0);
+  if ((iVar5 != 0) && (iVar5 = object_ptr_in_arena(iVar4), iVar5 != 0)) {
+    bVar1 = Ordinal_1053();
+    *(byte *)(iVar4 + 0x13) =
+         ((bVar1 & 3) + 2 ^ *(byte *)(iVar4 + 0x13)) & 0x7f ^ *(byte *)(iVar4 + 0x13);
+    uVar2 = Ordinal_1053();
+    *(undefined1 *)(iVar4 + 9) = uVar2;
+    bVar1 = Ordinal_1053();
+    *(byte *)(iVar4 + 10) =
+         ((bVar1 & 3) + DAT_00101928 ^ *(byte *)(iVar4 + 10)) & 0xf ^ *(byte *)(iVar4 + 10);
+    uVar3 = Ordinal_1053();
+    bVar1 = *(byte *)(iVar4 + 0x14);
+    uw_ord2005_rem_158 = ((int)(uVar3)) % (3);
+    *(byte *)(iVar4 + 0x14) = (uw_ord2005_rem_158 + 1U ^ bVar1) & 7 ^ bVar1;
+  }
+  return 1;
+}

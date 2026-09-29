@@ -3252,7 +3252,7 @@ void for_each_object_of_type();
 void cast_cone_damage_spell();
 void cast_targeted_search_effect();
 void cast_summon_or_spawn_effect();
-undefined4 FUN_00075248();
+undefined4 spawn_random_variant_object_at_tile();
 void FUN_000753a0();
 void FUN_0007541c();
 void FUN_000756c8();
