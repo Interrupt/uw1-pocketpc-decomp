@@ -2889,7 +2889,7 @@ void update_screen_flicker_effect();
 undefined4 apply_equipped_item_effect();
 void compute_light_source_colors();
 void update_level7_floor_hazard_state();
-void FUN_00066634();
+void apply_equipment_effect_penalties();
 int compute_object_weight();
 void refresh_player_equipment_effects();
 void FUN_00066c90();

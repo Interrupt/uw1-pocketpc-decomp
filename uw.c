@@ -36396,61 +36396,6 @@ LAB_00060f54:
 
 
 
-void FUN_00066634(param_1)
-uint param_1;
-
-{
-  uint uVar1;
-  uint uVar2;
-  byte bVar3;
-  byte bVar4;
-  byte bVar5;
-  undefined1 auStack_c [4];
-  
-  bVar4 = 0;
-  bVar5 = DAT_00086db0;
-  do {
-    if ((param_1 & 1) != 0) {
-      if (bVar4 == 1) {
-        bVar3 = bVar5;
-        if (0x10 < bVar5) {
-          bVar3 = 0x10;
-        }
-        bVar5 = bVar5 - bVar3;
-        DAT_00086db0 = bVar5;
-      }
-      else if (bVar4 == 2) {
-        bVar3 = DAT_00086db1;
-        if (5 < DAT_00086db1) {
-          bVar3 = 5;
-        }
-        DAT_00086db1 = DAT_00086db1 - bVar3;
-      }
-      else if (bVar4 == 3) {
-        bVar3 = DAT_00086db1;
-        if (0x10 < DAT_00086db1) {
-          bVar3 = 0x10;
-        }
-        DAT_00086db1 = DAT_00086db1 - bVar3;
-      }
-    }
-    bVar4 = bVar4 + 1;
-    uVar1 = param_1 & 0xffff;
-    param_1 = uVar1 >> 1;
-  } while (bVar4 < 4);
-  uVar2 = 0;
-  do {
-    *(byte *)(uVar2 + DAT_0023be74) = ((byte)(uVar1 >> 5) & 0xf) + *(char *)(uVar2 + DAT_0023be74);
-    uVar2 = uVar2 + 1 & 0xff;
-  } while (uVar2 < 4);
-  update_level7_floor_hazard_state(DAT_0023bc9c);
-  compute_light_source_colors(auStack_c);
-  FUN_0006ea54(auStack_c);
-  return;
-}
-
-
-
 // WARNING: Removing unreachable block (ram,0x000667b0)
 
 int compute_object_weight(param_1)
