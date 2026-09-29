@@ -981,7 +981,7 @@ int param_3;
       if (((param_2[2] & 0xffc0) == 0) ||
          (puVar6 = (ushort *)resolve_object_link(param_2 + 2), (*puVar6 & 0x1ff) != 0x12e)) goto LAB_00079cb8;
     }
-    FUN_0007b72c(param_1,puVar6,param_3);
+    dispatch_use_special_item_by_type(param_1,puVar6,param_3);
   }
 LAB_00079cb8:
   FUN_0007c2ec(param_1,param_2,4,(int)DAT_002020a0,CONCAT22(uVar8,DAT_002020a4));
@@ -1816,6 +1816,180 @@ int param_3;
       find_or_assign_object_widget(param_1);
       FUN_0004503c();
     }
+  }
+  return;
+}
+
+
+
+
+
+// was FUN_0007b72c -- the central "use this special/unique item
+// directly" dispatcher for item types 0x121-0x12f and 299/300,
+// covering: resting in a bed (0x121, gated on the current UI state);
+// door-texture scheduling (0x122); playing one of 2 musical
+// instruments (0x123/0x124); a food-quality-reducing item (0x125);
+// arming the special-target prompt (0x127, arm_use_item_on_special_
+// target_prompt) or the scatter-spawn (0x128) and fill-flask (0x12d)
+// completions via prompt_use_item_on_target; a specific quest item
+// (0x129) that searches nearby containers for a matching combinable
+// item and merges their quantities -- already fixed here (an earlier
+// comment documents a real "already holding the matching quest item"
+// check that was silently always false due to a sign-extension bug,
+// same class as swap_cursor_and_slot_item's own fix); and 2 more
+// object-type-specific branches (0x12e/0x12f) outside the switch,
+// handled when param_3==0 (a "not yet holding a target" pre-check).
+// Confirmed real caller: use_object_on_target's class-4 branch.
+void dispatch_use_special_item_by_type(param_1,param_2,param_3)
+int param_1;
+ushort * param_2;
+int param_3;
+
+{
+  ushort uVar1;
+  int iVar2;
+  int iVar3;
+  ushort *puVar4;
+  code *pcVar5;
+  uint uVar6;
+  undefined4 in_stack_ffffffd4;
+  undefined2 uVar7;
+  short local_24;
+  short local_22;
+  short local_20 [2];
+  undefined1 auStack_1c [4];
+  
+  uVar7 = (undefined2)((uint)in_stack_ffffffd4 >> 0x10);
+  if (param_3 == 0) {
+    uVar1 = *param_2 & 0x1ff;
+    if (uVar1 == 0x129) {
+      if (param_1 != g_player_object) {
+        return;
+      }
+      /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+         own identical fix comment. 0x129 has its own bit 8 set, so this
+         comparison could never even succeed while reading a
+         sign-extended single byte (0x29's own top bit is clear, so
+         char-sign-extension never contributes that bit) -- this
+         "already holding the matching quest item" check was silently
+         always false. */
+      if ((g_selected_object == (ushort *)0x0) || ((*(ushort *)g_selected_object & 0x1ff) != 0x129)) {
+        puVar4 = (ushort *)FUN_000452dc(4,2,9,2,&local_22);
+        if (puVar4 == (ushort *)0x0) {
+          puVar4 = (ushort *)FUN_000452dc(4,2,9,4,&local_22);
+          if (puVar4 == (ushort *)0x0) {
+            puVar4 = (ushort *)0x0;
+          }
+          else {
+            local_20[0] = 2;
+          }
+        }
+        else {
+          local_20[0] = 1;
+        }
+      }
+      else {
+        local_20[0] = 0;
+        puVar4 = g_selected_object;
+      }
+      if (puVar4 == (ushort *)0x0) {
+        return;
+      }
+      iVar3 = (puVar4[3] & 0xffc0) + (param_2[3] & 0xffc0);
+      *(byte *)(puVar4 + 3) = (byte)iVar3 ^ (byte)puVar4[3] & 0x3f;
+      *(char *)((char *)puVar4 + 7) = (char)((uint)iVar3 >> 8);
+      if (local_20[0] == 1) {
+        FUN_0004503c((int)local_22);
+      }
+      else if (local_20[0] == 2) {
+        refresh_container_view();
+      }
+      finish_object_use(param_2,0,1);
+      return;
+    }
+    if (uVar1 == 0x12e) {
+      iVar3 = FUN_0007ca50(param_2,&local_24,local_20,auStack_1c);
+      if (iVar3 != 0) {
+        FUN_00039d1c((int)DAT_002020a0,(int)DAT_002020a4,param_2,param_1,CONCAT22(uVar7,local_24),
+                     local_20[0]);
+        iVar3 = 0xf9;
+        if (local_24 == 4) goto LAB_0007b9b8;
+      }
+      iVar3 = 0xed;
+    }
+    else {
+      if (uVar1 != 0x12f) {
+        return;
+      }
+      iVar3 = 0x112;
+    }
+    goto LAB_0007b9b8;
+  }
+  switch(*param_2 & 0x1ff) {
+  case 0x121:
+    if (*(short *)(DAT_00085a6c + 8) == 1) {
+      handle_rest_action(1);
+    }
+    break;
+  case 0x122:
+    iVar3 = 9;
+    iVar2 = spawn_scheduled_door_texture_object();
+    if (iVar2 == -1) {
+LAB_0007b894:
+      iVar3 = iVar3 + 1;
+      finish_object_use(param_2,param_3,1);
+    }
+    else if (iVar2 != 0) {
+      if (iVar2 != 1) goto LAB_0007b9b8;
+      iVar3 = 10;
+      goto LAB_0007b894;
+    }
+    iVar3 = iVar3 + 1;
+LAB_0007b9b8:
+    print_scroll_message_by_id(iVar3);
+    return;
+  case 0x123:
+    goto LAB_0007b7e4;
+  case 0x124:
+LAB_0007b7e4:
+    play_musical_instrument((*param_2 & 0x1ff) - 0x123);
+    break;
+  case 0x125:
+    uVar6 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
+    *(char *)(DAT_00086df8 + 0x5f) = (char)uVar6;
+    *(char *)(DAT_00086df8 + 0x60) = (char)(uVar6 >> 8);
+    reduce_item_quality_on_use(g_player_object,2);
+    finish_object_use(param_2,param_3,1);
+    iVar3 = 0xe0;
+    goto LAB_0007b9b8;
+  case 0x126:
+    break;
+  case 0x127:
+    arm_use_item_on_special_target_prompt(param_2,param_3);
+    break;
+  case 0x128:
+    pcVar5 = complete_use_item_scatter_spawn;
+    goto LAB_0007b8b8;
+  case 0x129:
+    break;
+  case 0x12a:
+    break;
+  case 299:
+    iVar3 = FUN_00039d78();
+    if (iVar3 != 0) {
+      iVar3 = begin_holding_object_on_cursor(0,0xb6);
+      uVar7 = *(undefined2 *)(iVar3 + 4);
+      *(byte *)(iVar3 + 4) = (byte)uVar7 | 0x3f;
+      *(char *)(iVar3 + 5) = (char)((ushort)uVar7 >> 8);
+    }
+    wait_for_click_release(1);
+    break;
+  case 300:
+    break;
+  case 0x12d:
+    pcVar5 = complete_use_item_fill_flask;
+LAB_0007b8b8:
+    prompt_use_item_on_target(param_2,pcVar5);
   }
   return;
 }
