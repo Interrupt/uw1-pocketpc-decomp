@@ -36392,45 +36392,6 @@ LAB_00060f54:
 
 
 
-void FUN_00065ff0(param_1)
-byte param_1;
-
-{
-  char stack0xffdc3244_buf [256];
-  char *stack0xffdc3244_ptr;
-  char cVar1;
-  char *pcVar2;
-  char *pcVar3;
-  char acStack_114 [260];
-  
-  if (param_1 != 0xff) {
-    DAT_0023adc0 = (ushort)param_1;
-  }
-  Ordinal_1047(acStack_114,0,0x104);
-  pcVar3 = &DAT_0023cca8;
-    stack0xffdc3244_ptr = stack0xffdc3244_buf;
-  pcVar2 = pcVar3;
-    stack0xffdc3244_ptr = acStack_114;
-  do {
-    cVar1 = *pcVar2;
-    *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_114,s__DATA_f32_tr_00086de8);
-  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
-  Ordinal_1047(acStack_114,0,0x104);
-  do {
-    cVar1 = *pcVar3;
-    *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
-    pcVar3 = pcVar3 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_114,s__DATA_f16_tr_00086dd8);
-  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
-  return;
-}
-
-
-
 void FUN_000660d4(param_1)
 int param_1;
 
@@ -36664,7 +36625,13 @@ uint param_1;
       cVar1 = '\f';
     }
     if (-1 < cVar1) {
-      FUN_00065ff0();
+      /* BUG FIX: was `load_floor_texture_arenas()` with no arguments,
+         relying on leftover register state -- cVar1 (just computed
+         above, the new special-floor texture id 0xc/0xe) is the value
+         that belongs here, matching load_floor_texture_arenas' own
+         param_1 role (same dropped-argument bug class documented
+         throughout this project). */
+      load_floor_texture_arenas(cVar1);
     }
   }
   uVar2 = *(ushort *)(DAT_00086df8 + 0x61) & 0xefff;

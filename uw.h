@@ -853,6 +853,14 @@ extern undefined4 DAT_002020d4;
 extern int DAT_0023bc94;
 extern byte DAT_002046cc;
 /* Globals defined in uw.c but also used by functions that now live in
+   visibility.c (load_floor_texture_arenas) -- extern'd here so both
+   translation units see the same storage. */
+extern ushort DAT_0023adc0;
+extern char s__DATA_f16_tr_00086dd8[];
+extern char s__DATA_f32_tr_00086de8[];
+extern char *DAT_0023ae34;
+extern char *DAT_0023ae30;
+/* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
 extern undefined2 DAT_0023b908_backing[8192];
@@ -2872,7 +2880,7 @@ void emit_tile_features();
 void write_player_status_block();
 void read_player_status_block();
 void reset_player_derived_state();
-void FUN_00065ff0();
+void load_floor_texture_arenas();
 void FUN_000660d4();
 undefined4 FUN_000661b0();
 void FUN_000664bc();

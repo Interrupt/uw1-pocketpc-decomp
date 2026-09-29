@@ -1417,3 +1417,49 @@ void dungeon_view_prepass_stub()
   return;
 }
 
+
+
+
+// was FUN_00065ff0 -- (re)loads the f32.tr/f16.tr floor-texture arenas
+// (the two floor-texture resolutions), optionally updating the active
+// "special floor" texture id (DAT_0023adc0) first unless param_1 is
+// the sentinel 0xff (keep current). Its one caller
+// (FUN_00066594, level-7 lava/moonstone floor-texture swap) has a
+// dropped-argument bug of its own -- see that call site's own comment.
+void load_floor_texture_arenas(param_1)
+byte param_1;
+
+{
+  char stack0xffdc3244_buf [256];
+  char *stack0xffdc3244_ptr;
+  char cVar1;
+  char *pcVar2;
+  char *pcVar3;
+  char acStack_114 [260];
+  
+  if (param_1 != 0xff) {
+    DAT_0023adc0 = (ushort)param_1;
+  }
+  Ordinal_1047(acStack_114,0,0x104);
+  pcVar3 = &DAT_0023cca8;
+    stack0xffdc3244_ptr = stack0xffdc3244_buf;
+  pcVar2 = pcVar3;
+    stack0xffdc3244_ptr = acStack_114;
+  do {
+    cVar1 = *pcVar2;
+    *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_114,s__DATA_f32_tr_00086de8);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae34);
+  Ordinal_1047(acStack_114,0,0x104);
+  do {
+    cVar1 = *pcVar3;
+    *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
+    pcVar3 = pcVar3 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_114,s__DATA_f16_tr_00086dd8);
+  load_texture_arena(acStack_114,&DAT_0023adb8,&DAT_0023aeb8,DAT_0023ae30);
+  return;
+}
+
