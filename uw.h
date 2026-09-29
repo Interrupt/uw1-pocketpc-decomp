@@ -2034,11 +2034,11 @@ int hit_test_barter_npc_slot();
 void handle_barter_player_slot_drop();
 void handle_barter_npc_panel_click();
 void handle_barter_slot_click();
-undefined4 FUN_0001bef4();
-void FUN_0001bf9c();
-void FUN_0001c1c8();
-void FUN_0001c268();
-undefined4 FUN_0001c2c4();
+undefined4 resolve_barter_slot_at_point();
+void redraw_barter_slot_icon();
+void pick_up_barter_slot_item();
+void place_item_in_barter_slot();
+undefined4 merge_or_swap_barter_slot_item();
 void draw_hotspot_crosshair_marker(); // was FUN_0001c420
 undefined4 FUN_0001c538();
 undefined4 babl_builtin_do_offer();

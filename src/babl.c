@@ -189,7 +189,7 @@ intptr_t param_1;
             *(undefined2 *)((intptr_t)&DAT_000bbfc0 + (iVar2 + 4) * 2) = 0xffff;
             *(undefined2 *)(iVar5 + iVar2 * 2) = 0xffff;
             draw_hotspot_crosshair_marker(0,(int)iVar10);
-            FUN_0001bf9c(1,(int)iVar10);
+            redraw_barter_slot_icon(1,(int)iVar10);
           }
           else {
             *piVar4 = (intptr_t)puVar9;
@@ -264,7 +264,7 @@ intptr_t param_1;
           *(undefined2 *)((intptr_t)&DAT_000bbfc0 + (iVar1 + 4) * 2) = 0xffff;
           *(undefined2 *)(iVar4 + iVar1 * 2) = 0xffff;
           draw_hotspot_crosshair_marker(0,(int)iVar10);
-          FUN_0001bf9c(1,(int)iVar10);
+          redraw_barter_slot_icon(1,(int)iVar10);
         }
         else {
           *piVar3 = (intptr_t)puVar9;
@@ -3817,7 +3817,7 @@ void babl_builtin_setup_to_barter()
       }
       sVar5 = encode_object_slot_index(puVar6);
       *psVar10 = sVar5;
-      FUN_0001bf9c(0,iVar12);
+      redraw_barter_slot_icon(0,iVar12);
       iVar12 = ((short)iVar12 + 1) * 0x10000 >> 0x10;
       puVar6 = puVar7;
       if (3 < iVar12) {
@@ -4144,8 +4144,8 @@ int param_4;
       if ((iVar6 == 0) || (uVar5 = 1, iVar6 == iVar2)) {
         uVar5 = 0;
       }
-      FUN_0001c1c8((int)(short)local_c,local_8,uVar5);
-      FUN_0001bf9c((int)(short)local_10,(int)(short)local_c);
+      pick_up_barter_slot_item((int)(short)local_c,local_8,uVar5);
+      redraw_barter_slot_icon((int)(short)local_10,(int)(short)local_c);
       *(undefined4 *)(local_4 + (short)local_c * 4) = 0;
       (&DAT_000bbfa8)[(short)local_c] = 0xffff;
       (&DAT_000bbfa8)[(short)local_c + 4] = 0xffff;
@@ -4176,7 +4176,7 @@ int param_4;
       }
       wait_for_click_release(1);
       FUN_00057504(&local_36,&local_38);
-      sVar1 = FUN_0001bef4((int)local_36,(int)local_38,&local_10,&local_c,&local_8,&local_4);
+      sVar1 = resolve_barter_slot_at_point((int)local_36,(int)local_38,&local_10,&local_c,&local_8,&local_4);
       if (sVar1 == 0) {
         g_cursor_holding_state = 1;
         handle_inventory_panel_click(0xffffffff);
@@ -4213,8 +4213,8 @@ int param_4;
     g_cursor_holding_state = 1;
     return;
   }
-  FUN_0001c268((int)(short)local_10,(int)(short)local_c,local_8);
-  FUN_0001bf9c((int)(short)local_10,(int)(short)local_c);
+  place_item_in_barter_slot((int)(short)local_10,(int)(short)local_c,local_8);
+  redraw_barter_slot_icon((int)(short)local_10,(int)(short)local_c);
   *(undefined4 *)(local_4 + (short)local_c * 4) = 1;
   draw_hotspot_crosshair_marker((int)(short)local_10,(int)(short)local_c);
   (&DAT_000bbfa8)[(short)local_c] = 0xffff;
@@ -4225,5 +4225,261 @@ LAB_0001bec8:
     g_cursor_holding_state = 0;
   }
   return;
+}
+
+
+
+
+// was FUN_0001bef4 -- hit-tests a point against both barter panels
+// (player first, then NPC) and, on a hit, fills in the out-parameters
+// with which side (1=player/0=npc, *param_3), slot index (*param_4),
+// and that side's paired state-array pointers (*param_5/*param_6).
+// Returns 1 on a hit, 0 otherwise. Used by handle_barter_slot_click to
+// re-resolve where the cursor ended up after a click-and-drag.
+undefined4 resolve_barter_slot_at_point(param_1,param_2,param_3,param_4,param_5,param_6)
+undefined4 param_1;
+undefined4 param_2;
+undefined2 * param_3;
+short * param_4;
+undefined4 * param_5;
+undefined4 * param_6;
+
+{
+  short sVar1;
+  undefined4 *puVar2;
+  
+  sVar1 = hit_test_barter_player_slot();
+  if ((uint)(int)sVar1 < 0x80000000) {
+    *param_3 = 1;
+    *param_4 = sVar1;
+    *param_5 = &DAT_000bbfd0;
+    puVar2 = &DAT_000bbf98;
+  }
+  else {
+    sVar1 = hit_test_barter_npc_slot(param_1,param_2);
+    if (sVar1 < 0) {
+      return 0;
+    }
+    *param_3 = 0;
+    *param_4 = sVar1;
+    *param_5 = &DAT_000bbfe8;
+    puVar2 = &DAT_000bbff0;
+  }
+  *param_6 = puVar2;
+  return 1;
+}
+
+
+
+// was FUN_0001bf9c -- redraws one barter slot's icon: frees the old
+// grtile capture, redraws the trade-scale panel background if the slot
+// is now empty, otherwise draws the item's sprite (plus a small stack-
+// count label when quantity > 1). param_1 selects the side (0=NPC,
+// nonzero=player), param_2 the slot index.
+void redraw_barter_slot_icon(param_1,param_2)
+short param_1;
+short param_2;
+
+{
+  int iVar1;
+  short *psVar2;
+  int iVar3;
+  short sVar4;
+  undefined2 *puVar5;
+  short *psVar6;
+  undefined4 uVar7;
+  ushort uVar8;
+  uint uVar9;
+  undefined1 *puVar10;
+  undefined1 auStack_2c [8];
+  
+  FUN_00057118();
+  psVar2 = (short *)(int)param_1;
+  g_blit_transparent_mode = 1;
+  if (psVar2 == (short *)0x0) {
+    puVar5 = &DAT_000bbfe8;
+  }
+  else {
+    puVar5 = &DAT_000bbfd0;
+  }
+  iVar3 = (int)param_2;
+  sVar4 = puVar5[iVar3];
+  if (sVar4 == 0) {
+    uVar9 = (uint)param_1;
+    psVar6 = psVar2;
+  }
+  else {
+    psVar6 = (short *)FUN_000535fc();
+    uVar9 = (int)*psVar6 & 0x1ff;
+  }
+  puVar10 = &DAT_000845d8;
+  iVar1 = iVar3 * 4;
+  if (psVar2 == (short *)0x0) {
+    FUN_00076e98((&DAT_000bc010)[iVar3]);
+    if (sVar4 == 0) goto LAB_0001c1b4;
+    draw_sprite_by_id(uVar9,(int)*(short *)(&DAT_000845d8 + iVar1),(int)*(short *)(&DAT_000845da + iVar1)
+                 ,0x10,0x10);
+  }
+  else {
+    FUN_00076e98((&DAT_000bc028)[iVar3]);
+    if (sVar4 == 0) goto LAB_0001c1b4;
+    draw_sprite_by_id(uVar9,(int)*(short *)(&DAT_000845b8 + iVar1),(int)*(short *)(&DAT_000845ba + iVar1)
+                 ,0x10,0x10);
+  }
+  if (sVar4 != 0) {
+    if (((short)(*psVar6 & -0x8000) == 0) || ((psVar6[3] & 0x8000U) != 0)) {
+      uVar8 = 0;
+    }
+    else {
+      uVar8 = (ushort)psVar6[3] >> 6;
+    }
+    g_blit_transparent_mode = 0;
+    if (1 < uVar8) {
+      select_active_font(s_font4x5p_sys_0008431c);
+      *g_draw_color_index = 0x60;
+      if (psVar2 == (short *)0x0) {
+        uVar7 = Ordinal_1025(uVar8,auStack_2c,10);
+      }
+      else {
+        uVar7 = Ordinal_1025(uVar8,auStack_2c,10);
+        puVar10 = &DAT_000845b8;
+      }
+      draw_text_string(uVar7,*(short *)(puVar10 + iVar1) + 3,*(short *)((int)(puVar10 + iVar1) + 2) + 1)
+      ;
+      select_active_font(s_font5x6p_sys_0008430c);
+    }
+  }
+LAB_0001c1b4:
+  cursor_show_idle_tick();
+  FUN_0007ec50();
+  return;
+}
+
+
+
+// was FUN_0001c1c8 -- removes the item from barter slot param_1
+// (offset param_2 into the side's state array) into g_selected_object
+// (the cursor's held item), clearing the slot. If param_3 is set,
+// re-links the picked-up object back into its owner's inventory list
+// first (so it's not orphaned while held).
+void pick_up_barter_slot_item(param_1,param_2,param_3)
+short param_1;
+int param_2;
+int param_3;
+
+{
+  short sVar1;
+  short *psVar2;
+  bool bVar3;
+  
+  psVar2 = (short *)(param_2 + param_1 * 2);
+  bVar3 = g_selected_object != (ushort *)0x0;
+  g_selected_object = (ushort *)FUN_000535fc((int)*psVar2);
+  *psVar2 = 0;
+  if (g_selected_object != (ushort *)0x0) {
+    if (param_3 != 0) {
+      resolve_object_link(g_selected_object + 2);
+      sVar1 = encode_object_slot_index();
+      *psVar2 = sVar1;
+    }
+    FUN_00057118();
+    if (bVar3) {
+      FUN_00057cac(0);
+    }
+    /* Was `*g_selected_object & 0x1ff` -- see swap_cursor_and_slot_item's
+       own identical fix comment (g_selected_object is `char *`, a
+       single signed byte; the real 9-bit objid needs a `ushort` read). */
+    FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
+    cursor_show_idle_tick();
+    FUN_0007ec50();
+  }
+  return;
+}
+
+
+
+// was FUN_0001c268 -- drops g_selected_object (the cursor's held item)
+// into a barter slot: if the slot is empty, places it directly;
+// otherwise defers to merge_or_swap_barter_slot_item to stack or swap
+// against the existing occupant.
+void place_item_in_barter_slot(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+int param_3;
+
+{
+  short sVar1;
+  int iVar2;
+  short *psVar3;
+  
+  psVar3 = (short *)(param_3 + (short)param_2 * 2);
+  if (*psVar3 == 0) {
+    sVar1 = encode_object_slot_index(g_selected_object);
+    *psVar3 = sVar1;
+  }
+  else {
+    iVar2 = merge_or_swap_barter_slot_item(g_selected_object,param_1,param_2,param_3);
+    if (iVar2 == 0) {
+      return;
+    }
+  }
+  g_selected_object = 0;
+  return;
+}
+
+
+
+// was FUN_0001c2c4 -- called when dropping the cursor's held item onto
+// an already-occupied barter slot: if both items are the same
+// stackable item-id (weightless/quantity-bit set) and combining
+// wouldn't exceed 999, merges the quantities and frees the held
+// object's slot; otherwise swaps the held item for the slot's current
+// occupant (picking the old one up via pick_up_barter_slot_item first).
+// Redraws the slot's icon either way.
+undefined4 merge_or_swap_barter_slot_item(param_1,param_2,param_3,param_4)
+ushort * param_1;
+undefined4 param_2;
+undefined4 param_3;
+int param_4;
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  ushort uVar3;
+  short sVar4;
+  ushort *puVar5;
+  int iVar6;
+  short *psVar7;
+  undefined4 uVar8;
+  
+  psVar7 = (short *)(param_4 + (short)param_3 * 2);
+  uVar8 = 0;
+  puVar5 = (ushort *)FUN_000535fc((int)*psVar7);
+  uVar1 = *puVar5;
+  if ((uVar1 & 0x1c0) == 0x80 && (uVar1 & 0x30) == 0) {
+    return 0;
+  }
+  if (((*param_1 & 0x8000) != 0) && ((uVar1 & 0x8000) != 0)) {
+    uVar2 = param_1[3];
+    if ((uVar2 & 0x8000) == 0) {
+      uVar3 = puVar5[3];
+      if ((((uVar3 & 0x8000) == 0) && (((*param_1 ^ uVar1) & 0x1ff) == 0)) &&
+         ((ushort)((uVar3 >> 6) + (uVar2 >> 6)) < 999)) {
+        iVar6 = (uVar3 & 0xffc0) + (uVar2 & 0xffc0);
+        *(byte *)(puVar5 + 3) = (byte)iVar6 ^ (byte)uVar3 & 0x3f;
+        *(char *)((char *)puVar5 + 7) = (char)((uint)iVar6 >> 8);
+        free_object_slot(param_1);
+        uVar8 = 1;
+        goto LAB_0001c404;
+      }
+    }
+  }
+  sVar4 = encode_object_slot_index(g_selected_object);
+  pick_up_barter_slot_item(param_3,param_4,0);
+  *psVar7 = sVar4;
+LAB_0001c404:
+  redraw_barter_slot_icon(param_2,param_3);
+  FUN_0007ec50();
+  return uVar8;
 }
 
