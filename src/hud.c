@@ -1811,7 +1811,7 @@ char *param_1;
   iVar2 = (int)(short)DAT_00201b60;
   /* Debug: log every string handed to the message scroll.
      param_1 is NULL at the call sites that only flush a pending
-     inline graphic token (FUN_0007863c). DAT_00201b60 (1 or 4) is the
+     inline graphic token (get_message_string). DAT_00201b60 (1 or 4) is the
      "message scroll is the active text sink" gate -- anything else is
      dropped on the floor, so note that too. */
 

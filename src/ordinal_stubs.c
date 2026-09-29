@@ -874,7 +874,7 @@ long Ordinal_1415()
  * draw_stats_panel_skill_row's skill names) -- both were calling this with zero
  * explicit arguments, relying on the K&R leftover-register idiom used
  * throughout this codebase, which doesn't reliably carry the
- * just-returned FUN_0007863c() string pointer through on this
+ * just-returned get_message_string() string pointer through on this
  * recompile; fixed at those call sites to pass it explicitly. Was a
  * no-op stub returning 0, so every string passed through it vanished
  * (drawn as a NULL pointer) -- confirmed as the cause of the player's

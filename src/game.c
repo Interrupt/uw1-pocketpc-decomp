@@ -467,7 +467,7 @@ undefined4 param_1;
       sVar3 = journey_onward_load_slot_menu();
       bVar11 = sVar3 == 1;
       if (sVar3 == -1) {
-        uVar7 = FUN_0007863c(0x2a9);
+        uVar7 = get_message_string(0x2a9);
         Ordinal_1047(acStack_7ec,0,0x104);
         pcVar5 = &DAT_0023cca8;
         pcVar_dst = acStack_7ec;

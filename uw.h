@@ -995,6 +995,8 @@ extern undefined1 DAT_0024c7a3_backing[1052672];
 extern undefined4 DAT_0024bf98;
 extern unsigned short *DAT_0024cfb8;
 extern char *DAT_0024cfa8;
+extern char *g_bfa2_real_ptrs[263168];
+extern short DAT_0024cfc0;
 /* Globals defined in uw.c but also used by functions that now live in
    tmap.c (update_wall_partition_phase) -- extern'd here so both
    translation units see the same storage. */
@@ -3396,7 +3398,7 @@ void handle_stats_panel_skill_scroll_click();
 void refresh_stats_panel_if_active();
 undefined4 init_string_resource_cache();
 void thunk_FUN_00078e28();
-char *FUN_0007863c();
+char *get_message_string();
 int FUN_0007873c();
 uint FUN_00078918();
 void FUN_00078a04();

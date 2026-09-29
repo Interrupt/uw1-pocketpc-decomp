@@ -44,7 +44,7 @@ char *param_3;
   undefined1 uVar7;
   short sVar8;
   uint uVar9;
-  /* Was `undefined4`, truncating FUN_0007863c's real char* return
+  /* Was `undefined4`, truncating get_message_string's real char* return
      before measure_text_width/draw_text_string use it as a pointer. */
   char *uVar10;
   int iVar11;
@@ -138,7 +138,7 @@ LAB_00025468:
       bVar2 = (byte)uVar15;
       switch(iVar12) {
       case 0:
-        uVar10 = FUN_0007863c(*(byte *)(pcVar_name + uVar1) | 0x400);
+        uVar10 = get_message_string(*(byte *)(pcVar_name + uVar1) | 0x400);
         uVar7 = 0xc;
         if (uVar1 == 0) {
           uVar7 = 7;
@@ -166,7 +166,7 @@ LAB_00025468:
         *(byte *)(DAT_00086df8 + 100) = (bVar2 ^ bVar3) & 1 ^ bVar3;
         break;
       case 2:
-        uVar10 = FUN_0007863c(*(byte *)(pcVar_name + uVar1 * 2) | 0x400);
+        uVar10 = get_message_string(*(byte *)(pcVar_name + uVar1 * 2) | 0x400);
         *(byte *)(DAT_00086df8 + 100) =
              (byte)((uVar1 & 7) << 5) | *(byte *)(DAT_00086df8 + 100) & 0x1f;
         FUN_00023cdc();
@@ -281,7 +281,7 @@ LAB_00025468:
       }
     }
     if (7 < sVar8) {
-      uVar10 = FUN_0007863c(0x300);
+      uVar10 = get_message_string(0x300);
       FUN_00057118();
       FUN_00035df8(1);
       DAT_000fb858 = DAT_001005c8;

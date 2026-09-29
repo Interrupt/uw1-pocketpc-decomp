@@ -900,19 +900,19 @@ char *param_2;   /* was undefined4 -- the caller's stack description buffer
   char *pcVar_desc;
   undefined1 *puVar8;
 
-  pcVar3 = (char *)FUN_0007863c(*param_1 & 0x1ff | 0x800);
+  pcVar3 = (char *)get_message_string(*param_1 & 0x1ff | 0x800);
   bVar1 = (byte)param_1[0xd];
   if ((pcVar3 == (char *)0x0) || (*pcVar3 == '\0')) {
     pcVar3 = (char *)0x0;
   }
   if (((0xef < bVar1) && (bVar1 != 0xff)) ||
-     (pcVar4 = (char *)FUN_0007863c((byte)((byte)param_1[7] >> 6) + 0x60 | 0xa00),
+     (pcVar4 = (char *)get_message_string((byte)((byte)param_1[7] >> 6) + 0x60 | 0xa00),
       pcVar4 == (char *)0x0 || *pcVar4 == '\0'))
   {
     pcVar4 = (char *)0x0;
   }
   if ((bVar1 == 0) ||
-     (pcVar5 = (char *)FUN_0007863c((int)(short)(ushort)bVar1 + 0x10U | 0xe00),
+     (pcVar5 = (char *)get_message_string((int)(short)(ushort)bVar1 + 0x10U | 0xe00),
       pcVar5 == (char *)0x0 || *pcVar5 == '\0')) {
     pcVar5 = (char *)0x0;
   }

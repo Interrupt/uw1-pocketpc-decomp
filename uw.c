@@ -1341,7 +1341,7 @@ undefined2 DAT_00242010_backing[32768];
    DAT_0024cfc0 (a totally unrelated string-page counter ~26KB away) that
    showed this exact write clobbering it into a huge garbage value, which
    then produced a wild out-of-bounds array read/UAF-style crash much later
-   in FUN_0007863c's string lookup. Same lone-scalar-used-as-array pattern
+   in get_message_string's string lookup. Same lone-scalar-used-as-array pattern
    fixed repeatedly this session (DAT_002028e8, g_visibility_ray_table, etc). */
 undefined2 DAT_00248418_backing[20 * 256];
 #define DAT_00248418 DAT_00248418_backing[0]
@@ -5173,7 +5173,7 @@ undefined4 DAT_0023be64;
    global rather than left as a fresh DAT_. Prints a resolved string
    (the same "dropped register-forwarding arg" idiom already fixed ~30
    other places in this file: the bare message_scroll_print_wrapped()
-   call forwards FUN_0007863c's just-returned r0) plus a newline, except
+   call forwards get_message_string's just-returned r0) plus a newline, except
    uVar2==0xc which instead prints a numeric stat byte from the player
    struct via cast_detect_life_spell. */
 undefined4 FUN_0007036c(param_1)
@@ -5189,7 +5189,7 @@ short param_1;
         cast_detect_life_spell(8,*(undefined1 *)(DAT_00086df8 + (int)param_1 + 0x2b));
       }
       else {
-        message_scroll_print_wrapped(FUN_0007863c((((int)(short)uVar2 + 0x1f) | 0x400)));
+        message_scroll_print_wrapped(get_message_string((((int)(short)uVar2 + 0x1f) | 0x400)));
         message_scroll_print_wrapped(&s_scroll_newline_0008522c);
       }
     }
@@ -6349,13 +6349,13 @@ undefined1 DAT_0024bfa5_backing[1052672];
    the same way (record*0x201+slot, i.e. the byte-plane index /4) is
    used instead wherever the real pointer is needed. Sized to match
    DAT_0024bfa2_backing's total addressable slot count (1052672/4). */
-static char *g_bfa2_real_ptrs[263168];
+char *g_bfa2_real_ptrs[263168];
 /* Was undersized at 8200 bytes (~4 records) while their DAT_0024bfa0-
    family siblings (same 0x804-byte-stride, same DAT_0024cfc0 record
    count, same growing-table indexing -- see that comment above) were
    already widened to 1052672 bytes. Both are indexed identically
    (`sVar5 * 0x804`, sVar5 up to DAT_0024cfc0-1) by the exact same
-   string-resource-cache registration path (FUN_0007863c), so once
+   string-resource-cache registration path (get_message_string), so once
    more than ~4 pages register at runtime -- already observed for the
    sibling arrays -- this pair silently read/wrote out of bounds.
    Widened to match. */
@@ -8150,7 +8150,7 @@ void FUN_0001aba0()
 {
   short sVar1;
   /* iVar2-iVar5 were `int` but hold real string pointers from
-     FUN_0007863c/babl_expand_string_refs -- truncated a real 64-bit pointer on
+     get_message_string/babl_expand_string_refs -- truncated a real 64-bit pointer on
      assignment even with each call's own dropped argument now fixed
      (this function's own next crash site, uw.c ~70085's comment).
      Widened to intptr_t. */
@@ -8163,9 +8163,9 @@ void FUN_0001aba0()
      babl_builtin_compare's own comment (uw.c ~10977), now confirmed reachable
      live (bug-critter-talk.txt) since this whole babl-VM cluster
      started actually running this session. */
-  iVar2 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  iVar2 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
-  iVar4 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2 + -2));
+  iVar4 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2 + -2));
   iVar5 = (intptr_t)babl_expand_string_refs((char *)iVar4);
   sVar1 = Ordinal_1065((char*)iVar5,(char*)iVar3);
   if (iVar5 != iVar4) {
@@ -8186,7 +8186,7 @@ void FUN_0001ac48()
 
 {
   /* iVar1/iVar2 were `int` but hold a real string pointer from
-     FUN_0007863c/babl_expand_string_refs -- truncated even with the dropped
+     get_message_string/babl_expand_string_refs -- truncated even with the dropped
      argument below now fixed (uw.c ~70085's comment). Widened to
      intptr_t. */
   intptr_t iVar1;
@@ -8199,7 +8199,7 @@ void FUN_0001ac48()
      bug-critter-talk.txt one step past the DAT_000bbf70-width fix
      below (babl_expand_string_refs read whatever garbage register instead of the
      just-resolved string, then dereferenced it inside Ordinal_1064). */
-  iVar1 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  iVar1 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
@@ -8240,7 +8240,7 @@ void FUN_0001acf8()
 
   /* Was a dropped register-forwarding arg -- same class as
      FUN_0001ac48's own fix just above. */
-  iVar1 = (intptr_t)FUN_0007863c((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  iVar1 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
   iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
   DAT_000bbf78 = DAT_000bbf78 + -1;
   iVar4 = DAT_000bbf70;
@@ -10223,7 +10223,7 @@ void FUN_00023b38()
 {
   int iVar1;
   int iVar2;
-  /* Was `undefined4`, truncating FUN_0007863c's real char* return. */
+  /* Was `undefined4`, truncating get_message_string's real char* return. */
   char *uVar3;
   int iVar4;
   int iVar5;
@@ -10244,7 +10244,7 @@ void FUN_00023b38()
     if (5 < (short)iVar4) break;
     iVar1 = (int)(short)iVar2;
     if (*(char *)(iVar1 + DAT_00086df8 + 0x21) != '\0') {
-      uVar3 = FUN_0007863c(iVar2 + 0x1fU | 0x400);
+      uVar3 = get_message_string(iVar2 + 0x1fU | 0x400);
       FUN_000229e0(*(undefined1 *)(iVar1 + DAT_00086df8 + 0x21),auStack_24,10);
       iVar5 = iVar4 * 0xb + 0x85;
       draw_text_string(uVar3,0x1e,iVar5);
@@ -10371,7 +10371,7 @@ short * param_1;
   short sVar5;
   undefined2 uVar6;
   short sVar7;
-  /* Was `undefined4`, truncating FUN_0007863c's real char* return
+  /* Was `undefined4`, truncating get_message_string's real char* return
      (a string-resource lookup) before it's passed to measure_text_width
      (strlen-shaped) and draw_text_string (draw string). */
   char *uVar8;
@@ -10459,7 +10459,7 @@ short * param_1;
     iVar10 = (iVar10 - uVar13) + -4;
   }
   else {
-    uVar8 = FUN_0007863c((int)*param_1 | 0x400);
+    uVar8 = get_message_string((int)*param_1 | 0x400);
     iVar11 = 0xa4;
     /* This field is a plain 4-byte nonzero marker ("is this a text-
        entry field") for whichever record is currently being processed
@@ -10521,7 +10521,7 @@ short * param_1;
           /* param_1+3 (byte offset +6 in the record) holds a relative
              offset from &DAT_000fb8f0, not an absolute pointer -- see
              the write site in run_character_generator. Reconstruct before use. */
-          uVar8 = FUN_0007863c(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + local_28 * 2) | 0x400);
+          uVar8 = get_message_string(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + local_28 * 2) | 0x400);
           sVar5 = measure_text_width(uVar8);
           iVar9 = (int)sVar7 - (int)sVar5;
           if (iVar9 < 0) {
@@ -10782,7 +10782,7 @@ undefined4 param_2;
   undefined2 uVar4;
   short sVar5;
   uint uVar6;
-  /* FUN_0007863c's return (the label string for this field) was
+  /* get_message_string's return (the label string for this field) was
      discarded here, with the very next line calling measure_text_width() with
      no argument -- relying on register leftovers to still hold that
      same return value (the "dropped argument" idiom, same root bug as
@@ -10945,16 +10945,16 @@ LAB_00024dd4:
     {
       char *item_text = "";
       if ((param_1[6] == 0) && (*(int *)(param_1 + 3) != 0)) {
-        item_text = FUN_0007863c(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + uVar10 * 2) | 0x400);
+        item_text = get_message_string(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + uVar10 * 2) | 0x400);
       }
-      char *field_label = (*param_1 != 0) ? FUN_0007863c((int)*param_1 | 0x400) : "";
+      char *field_label = (*param_1 != 0) ? get_message_string((int)*param_1 | 0x400) : "";
       DEBUG(TRACE, "[chargen] button selected: index=%u text=\"%s\" label=\"%s\"", uVar10, item_text, field_label);
     }
   }
   else {
-    pcVar_str = FUN_0007863c(uVar6 | 0x400);
+    pcVar_str = get_message_string(uVar6 | 0x400);
     iVar7 = measure_text_width(pcVar_str);
-    /* FUN_0007863c's compressed-string decoder (FUN_0007907c and its
+    /* get_message_string's compressed-string decoder (FUN_0007907c and its
        tree-walk helpers) has a separate, deeper bug -- confirmed via
        diagnostics that this field's label lookup returns a fragment of
        an unrelated, much longer string instead of the short intended
@@ -12459,7 +12459,7 @@ LAB_0002865c:
      has no CNV.ARK conversation record, so start_npc_conversation hits this
      same pattern too (uw.c ~19211) printing "You get no response"
      before the crash. */
-  message_scroll_print_wrapped(FUN_0007863c(uVar3));
+  message_scroll_print_wrapped(get_message_string(uVar3));
   return;
 }
 
@@ -12571,7 +12571,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
   sVar5 = (short)uVar6;
   while (sVar5 != 0) {
     if (sVar4 != 0) {
-      uVar7 = (intptr_t)FUN_0007863c(uVar6);
+      uVar7 = (intptr_t)get_message_string(uVar6);
       *(intptr_t *)(&DAT_001006d8 + DAT_00100794 * 8) = uVar7;
       iVar8 = (intptr_t)babl_expand_string_refs((char *)uVar7); // was a dropped register-forwarding arg -- same class as babl_builtin_compare's own comment (uw.c ~10977)
       sVar5 = DAT_00100794;
@@ -12836,7 +12836,7 @@ int param_1;
 
 {
   char cVar1;
-  /* Was `int` -- reassigned to a real string pointer (FUN_0007863c/
+  /* Was `int` -- reassigned to a real string pointer (get_message_string/
      babl_expand_string_refs) right after the small babl_read_var_word use,
      same bug class as DAT_001007c0's own fix above; never crashed
      before because this "print" builtin (idx 2) was never actually
@@ -12849,7 +12849,7 @@ int param_1;
   /* Was 3 dropped register-forwarding args -- same class as
      babl_builtin_compare's own comment (uw.c ~10977). */
   iVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  iVar2 = (intptr_t)FUN_0007863c((int)iVar2);
+  iVar2 = (intptr_t)get_message_string((int)iVar2);
   iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
   pcVar4 = &DAT_0008523c;
   pcVar5 = DAT_001007c0;
@@ -12897,7 +12897,7 @@ int FUN_0002990c()
     DAT_001007bc = FUN_0007873c(DAT_001007b8,0x7c);
   }
   else {
-    iVar3 = FUN_0007863c();
+    iVar3 = get_message_string();
     if (iVar3 == 0) {
       FUN_00078918(DAT_001007b8,(int)DAT_001007bc);
     }
@@ -17005,7 +17005,7 @@ ushort * param_3;
       *(char *)((char *)param_3 + 0xd) = (char)uVar6;
       *(byte *)(param_3 + 7) = (byte)(uVar6 >> 8) | (byte)(((uVar8 & 3) << 0xe) >> 8);
       FUN_00078b18(auStack_74,param_3,1,0);
-      uVar4 = FUN_0007863c(uVar8 + 0xe1 | 0x200);
+      uVar4 = get_message_string(uVar8 + 0xe1 | 0x200);
       Ordinal_1063(auStack_74,uVar4);
       message_scroll_print_wrapped(auStack_74);
       return 1;
@@ -17284,7 +17284,7 @@ int param_2;
   
   if ((*(byte *)(param_2 + 0x45) & 1) != 0) {
     *(undefined1 *)(param_2 + 0x34) = *param_1;
-    local_44[0] = FUN_0007863c((int)*(short *)(param_1 + 2));
+    local_44[0] = get_message_string((int)*(short *)(param_1 + 2));
     iVar12 = 0;
     iVar11 = 0;
     iVar9 = 0;
@@ -21417,7 +21417,7 @@ void FUN_0003e0b4()
     fprintf(stderr, "[flask] FUN_0003e0b4 entry: xoff=%d yoff=%d\n", (int)sVar2, (int)DAT_00085a6c[1]);
   if ((sVar2 < 0x1a) || (0x27 < sVar2)) {
     if (DAT_00085a6c[1] < 0x1f) {
-      pcVar3 = (char *)FUN_0007863c((int)(short)(ushort)(0x1e < sVar2) + 0x59U | 0x200);
+      pcVar3 = (char *)get_message_string((int)(short)(ushort)(0x1e < sVar2) + 0x59U | 0x200);
       pcVar4 = local_84;
       do {
         cVar1 = *pcVar3;
@@ -21788,7 +21788,7 @@ short param_2;
       uVar2 = 0x1ff;
     }
     message_scroll_print_wrapped(s_You_see_000858fc);
-    FUN_0007863c(uVar2 | 0x1400);
+    get_message_string(uVar2 | 0x1400);
     message_scroll_print_wrapped();
     message_scroll_print_wrapped(&DAT_00084f20);
     /* Same missing-newline issue as dispatch_object_action/dispatch_object_action_dup's own
@@ -23512,7 +23512,7 @@ short param_1;
     /* Page 4 of comobj's string data is the base object-name table,
        indexed directly by id (0x800 | id) -- same lookup the
        UW_DUMP_OBJECTS_FILE census tool already uses. */
-    char *_useName = (char *)FUN_0007863c(0x800 | (*puVar2 & 0x1ff));
+    char *_useName = (char *)get_message_string(0x800 | (*puVar2 & 0x1ff));
     DEBUG(INFO, "[inv] use item: id=0x%03x type=0x%03x name=\"%s\"\n",
           (unsigned)(*puVar2 & 0x1ff), (unsigned)(*puVar2 & 0x1f0),
           (_useName && _useName[0]) ? _useName : "(unnamed)");
@@ -23985,7 +23985,7 @@ void FUN_00044bd8()
       }
       else {
         compute_light_source_colors(abStack_e);
-        FUN_0007863c(abStack_e[local_10] + 0x180 | 0xc00);
+        get_message_string(abStack_e[local_10] + 0x180 | 0xc00);
         message_scroll_print_wrapped();
         bVar1 = *(byte *)(DAT_00086df8 + local_10 * 2 + 0x3f);
         if (bVar1 < 3) {
@@ -26030,7 +26030,7 @@ LAB_00048e80:
       }
     }
     local_28 = (short)uVar3;
-    pcVar4 = (char *)FUN_0007863c(uVar3 | 0xc00);
+    pcVar4 = (char *)get_message_string(uVar3 | 0xc00);
     if ((pcVar4 == (char *)0x0) || (*pcVar4 == '\0')) {
       pcVar4 = s_UNNAMED_00084f24;
     }
@@ -26123,12 +26123,12 @@ short param_2;
           }
           Ordinal_1063(acStack_6c,&DAT_00085ce0);
           message_scroll_print_wrapped(acStack_6c);
-          FUN_0007863c(param_1[3] >> 6 | 0x600);
+          get_message_string(param_1[3] >> 6 | 0x600);
           message_scroll_print_wrapped();
           puVar5 = &s_scroll_newline_0008522c;
         }
         else {
-          puVar5 = (undefined *)FUN_0007863c(uVar3 >> 6 | 0x600);
+          puVar5 = (undefined *)get_message_string(uVar3 >> 6 | 0x600);
         }
         message_scroll_print_wrapped(puVar5);
       }
@@ -26164,7 +26164,7 @@ short param_2;
   /* iVar5 above is a real int (file handle) for the uVar8==5/grave.dat
      branch's open_file_for_read/Ordinal_553 calls -- but is reused later in the
      shared tail (untouched by that branch, e.g. the sign/TMOBJ uVar8==6
-     case) to hold FUN_0007863c's real `char *` return, truncating it on
+     case) to hold get_message_string's real `char *` return, truncating it on
      this 64-bit host. Confirmed via lldb: right-clicking a rendered sign
      (object type 0x166) crashed in strchr with a wild pointer, called
      from format_object_display_name(iVar5,...) here. Separate real-pointer local so
@@ -26233,17 +26233,17 @@ short param_2;
         return;
       }
     }
-    pcVar_str = (char *)FUN_0007863c(uVar9 | 0x1000);
+    pcVar_str = (char *)get_message_string(uVar9 | 0x1000);
     if (pcVar_str != (char *)0x0 && local_128[0] != '\0') {
       msg_scroll_panel_reset(1);
     }
     if (((*param_1 & 0xf) == 6) || (local_128[0] == '\0')) {
       /* was two separate calls with message_scroll_print_wrapped()'s arg
-         dropped -- same pattern already fixed at line ~9137: FUN_0007863c's
+         dropped -- same pattern already fixed at line ~9137: get_message_string's
          return (char *) flows straight into message_scroll_print_wrapped
          as its argument. Confirmed via UW_DEBUG_OBJPOS: this is the
          sign/plaque "The writing reads: " lead-in line. */
-      message_scroll_print_wrapped((char *)FUN_0007863c((*param_1 >> 9 & 0xf) + sVar10 | 0x1000));
+      message_scroll_print_wrapped((char *)get_message_string((*param_1 >> 9 & 0xf) + sVar10 | 0x1000));
     }
     if (pcVar_str != (char *)0x0) {
       /* Same dropped-argument pattern: format_object_display_name's real `undefined1 *`
@@ -26311,7 +26311,7 @@ short param_2;
   int iVar1;
   
   if ((param_2 != 0) &&
-     (iVar1 = FUN_0007863c((*(byte *)(param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
+     (iVar1 = get_message_string((*(byte *)(param_1 + 6) & 0x3f) + 100 | 0xa00), iVar1 != 0)) {
     message_scroll_print_wrapped();
   }
   return;
@@ -35581,7 +35581,7 @@ ushort * param_1;
       if (_qual != 0) {
         _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)_rec[2] >> 4 & 3) + 1);
       }
-      char *_nm = (char *)FUN_0007863c(_grp * 6 + _off | 0xa00);
+      char *_nm = (char *)get_message_string(_grp * 6 + _off | 0xa00);
       fprintf(stderr, "[lookslot] slot=%d id=0x%03x flags=0x%04x has_lookbit=%d namegrp=%d name='%s'\n",
               _slot, _id, (unsigned)_w0, g_object_type_props[_id].has_look_description, _grp, _nm ? _nm : "(null)");
     }
@@ -35703,7 +35703,7 @@ ushort * param_1;
               // table, indexed directly by id (see UW_DUMP_NAMES/this
               // session's findings) -- not the quality-adjective group
               // table UW_LOOK_SLOT resolves via namegrp*6+offset.
-              char *_name = (char *)FUN_0007863c(0x800 | _id);
+              char *_name = (char *)get_message_string(0x800 | _id);
               fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%d\t%d\t0x%04x\n",
                       _tx, _ty, _id, (_name && _name[0]) ? _name : "(unnamed)",
                       _rc, _heading, _quality, (unsigned)_w);
@@ -35754,13 +35754,13 @@ ushort * param_1;
                 int _n = 0, _guard2 = 0;
                 while (_item != NULL && _guard2++ < 32) {
                   int _iid = *_item & 0x1ff;
-                  char *_iname = (char *)FUN_0007863c(0x800 | _iid);
+                  char *_iname = (char *)get_message_string(0x800 | _iid);
                   strncat(_names, (_iname && _iname[0]) ? _iname : "?", sizeof(_names) - strlen(_names) - 2);
                   strncat(_names, ",", sizeof(_names) - strlen(_names) - 1);
                   _n++;
                   _item = (ushort *)resolve_object_link((ushort *)((char *)_item + 4));
                 }
-                char *_name = (char *)FUN_0007863c(0x800 | _id);
+                char *_name = (char *)get_message_string(0x800 | _id);
                 fprintf(_f, "%d\t%d\t0x%03x\t%s\t%d\t%s\n", _tx, _ty, _id,
                         (_name && _name[0]) ? _name : "(unnamed)", _n, _names);
                 _count++;
@@ -35781,7 +35781,7 @@ ushort * param_1;
       int _id, _pg;
       for (_pg = 0; _pg < 16; _pg++) {
         for (_id = 0; _id < 0x200; _id++) {
-          char *_nm = (char *)FUN_0007863c((_pg << 9) | _id);
+          char *_nm = (char *)get_message_string((_pg << 9) | _id);
           if (_nm && _nm[0]) {
             fprintf(stderr, "[names] page=%d id=0x%03x name='%s'\n", _pg, _id, _nm);
           }
@@ -35802,7 +35802,7 @@ ushort * param_1;
             (int)(short)DAT_0023b904, (int)(short)DAT_0023b920, (int)(short)DAT_0023b91c);
     { int _k;
       for (_k = 0; _k < 6; _k++) {
-        char *_n = (char *)FUN_0007863c(_grp * 6 + _k | 0xa00);
+        char *_n = (char *)get_message_string(_grp * 6 + _k | 0xa00);
         fprintf(stderr, "[%d]='%s' ", _k, _n ? _n : "(null)");
       }
     }
@@ -36185,7 +36185,7 @@ LAB_00061d34:
         if (_qual != 0) {
           _off = (((&DAT_00202c97)[_iv] & 0xc) == 0xc) ? 5 : (((byte)param_1[2] >> 4 & 3) + 1);
         }
-        char *_nm = (char *)FUN_0007863c(_grp * 6 + _off | 0xa00);
+        char *_nm = (char *)get_message_string(_grp * 6 + _off | 0xa00);
         fprintf(stderr, "[critter-name] id=0x%03x namegrp=%d name='%s'\n",
                 _id, _grp, _nm ? _nm : "(null)");
       }
@@ -36512,67 +36512,6 @@ LAB_00060f54:
 
 
 
-/* Was `undefined4` return -- truncating the real char* string pointer
-   FUN_00078e60 returns (and the string pointers stored in the
-   DAT_0024bfa0-family table read below). This is a widely-used string-
-   resource lookup (~82 call sites); most pass the result straight into
-   a char*-typed argument at the call site so aren't affected by this
-   fix, but any caller that first stores it in an `undefined4`/`int`
-   local before using it as a pointer needs that local retyped too --
-   fix those as they're actually hit crashing, same as everywhere else
-   this session. */
-char *FUN_0007863c(param_1)
-ushort param_1;
-
-{
-  uint uVar1;
-  char *uVar2;
-  int iVar3;
-  short sVar4;
-
-  uVar1 = (uint)(param_1 >> 9);
-  iVar3 = 0;
-  sVar4 = -1;
-  if (0 < DAT_0024cfc0) {
-    do {
-      sVar4 = (short)iVar3;
-      if ((int)*(short *)(&DAT_0024bfa0 + iVar3 * 0x804) == uVar1) break;
-      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-      sVar4 = -1;
-    } while (iVar3 < DAT_0024cfc0);
-  }
-  if (sVar4 < 0) {
-    if (uVar1 == 0) {
-      uVar1 = (uint)DAT_0024cfac;
-    }
-    /* Was `FUN_00078e60(uVar1)` -- called with only one explicit
-       argument, relying on a register-leftover idiom for the second
-       (the "dropped argument" pattern used throughout this file, e.g.
-       Ordinal_1068/draw_text_string earlier this session) to still hold
-       the string's sub-index within this page. That register doesn't
-       reliably survive here either (confirmed: string lookups that
-       should succeed -- e.g. chargen field labels -- came back as
-       genuinely empty strings, because FUN_00078e60's own `iVar1 <
-       local_2e` bounds check saw garbage and fell straight through to
-       its "not found" empty-string return). param_1's low 9 bits are
-       exactly this sub-index (uVar1 above is `param_1 >> 9`, the page
-       number) -- pass it explicitly instead. */
-    uVar2 = (char *)FUN_00078e60(uVar1,(uint)(param_1 & 0x1ff));
-  }
-  else {
-    /* Was reading 4 consecutive bytes from DAT_0024bfa2 alone, but the
-       register function actually splits the pointer across bfa2/3/4/5
-       at the SAME (un-multiplied-by-4) index -- that read was pulling
-       the real low byte plus 3 zero padding bytes, not reconstructing
-       anything real, and only ever captured 32 bits regardless. Use
-       the real-pointer side table instead -- see its comment. */
-    uVar2 = g_bfa2_real_ptrs[sVar4 * 0x201 + (int)(short)(param_1 & 0x1ff)];
-  }
-  return uVar2;
-}
-
-
-
 int FUN_0007873c(param_1,param_2)
 char *param_1;
 undefined4 param_2;
@@ -36727,7 +36666,7 @@ undefined4 param_4;
   
   if ((((*param_2 & 0x1c0) == 0x40) && (uVar2 = (uint)(byte)param_2[0xd], uVar2 != 0)) &&
      (uVar2 < 0xf0)) {
-    pcVar3 = (char *)FUN_0007863c(uVar2 + 0x10 | 0xe00);
+    pcVar3 = (char *)get_message_string(uVar2 + 0x10 | 0xe00);
     if ((pcVar3 == (char *)0x0) || (*pcVar3 == '\0')) {
       return 0;
     }
@@ -36739,7 +36678,7 @@ undefined4 param_4;
     } while (cVar1 != '\0');
   }
   else {
-    pcVar3 = (char *)FUN_0007863c(*param_2 & 0x1ff | 0x800);
+    pcVar3 = (char *)get_message_string(*param_2 & 0x1ff | 0x800);
     if (pcVar3 == (char *)0x0) {
       return 0;
     }
@@ -36800,7 +36739,7 @@ void FUN_00078c80(param_1)
 uint param_1;
 
 {
-  message_scroll_print_wrapped(FUN_0007863c(param_1 | 0x200)); // was two separate calls with message_scroll_print_wrapped()'s arg dropped; see uw.c ~7961's sibling call and its comment
+  message_scroll_print_wrapped(get_message_string(param_1 | 0x200)); // was two separate calls with message_scroll_print_wrapped()'s arg dropped; see uw.c ~7961's sibling call and its comment
   return;
 }
 
@@ -36814,13 +36753,13 @@ uint param_3;
 {
   char cVar1;
   char *pcVar2;
-  char *uVar3;   /* was undefined4 -- FUN_0007863c returns char*; truncating
+  char *uVar3;   /* was undefined4 -- get_message_string returns char*; truncating
                     it fed Ordinal_1063 (strcat) a wild src pointer */
   char *pcVar4;
   char local_10c [256];
   
   pcVar4 = local_10c;
-  pcVar2 = (char *)FUN_0007863c(param_1 | 0x200);
+  pcVar2 = (char *)get_message_string(param_1 | 0x200);
   do {
     cVar1 = *pcVar2;
     pcVar2 = pcVar2 + 1;
@@ -36828,11 +36767,11 @@ uint param_3;
     pcVar4 = pcVar4 + 1;
   } while (cVar1 != '\0');
   if (-1 < (short)param_2) {
-    uVar3 = FUN_0007863c(param_2 | 0x200);
+    uVar3 = get_message_string(param_2 | 0x200);
     Ordinal_1063(local_10c,uVar3);
   }
   if (-1 < (short)param_3) {
-    uVar3 = FUN_0007863c(param_3 | 0x200);
+    uVar3 = get_message_string(param_3 | 0x200);
     Ordinal_1063(local_10c,uVar3);
   }
   message_scroll_print_wrapped(local_10c);
@@ -38258,7 +38197,7 @@ int param_2;
           }
           Ordinal_1063(acStack_7c,&DAT_00085ce0);
           message_scroll_print_wrapped(acStack_7c);
-          FUN_0007863c(param_1[3] >> 6 | 0x600);
+          get_message_string(param_1[3] >> 6 | 0x600);
           message_scroll_print_wrapped();
           message_scroll_print_wrapped(&s_scroll_newline_0008522c);
         }
@@ -39029,7 +38968,7 @@ LAB_0007dce4:
       return 2;
     }
     sVar3 = rand_below(*(undefined1 *)(DAT_00086df8 + 0x2a));
-    uVar6 = FUN_0007863c(0x2f5);
+    uVar6 = get_message_string(0x2f5);
     FUN_0007ed20(uVar6,*(ushort *)((char *)g_player_object + 0x16) >> 10,
                  (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4,0,
                  CONCAT22(uVar20,*(ushort *)(DAT_0024cff4 + 0x16) >> 10),
@@ -39154,7 +39093,7 @@ LAB_0007d460:
   case 0xf:
     break;
   case 0x10:
-    iVar11 = FUN_0007863c((byte)param_1[3] & 0x3f | ((byte)param_1[2] & 0x2f | 0x90) << 5);
+    iVar11 = get_message_string((byte)param_1[3] & 0x3f | ((byte)param_1[2] & 0x2f | 0x90) << 5);
     FUN_0007ea34(s_Look__it_s_a_text_trap_00087918);
     if (iVar11 != 0) {
       message_scroll_print_wrapped(iVar11);

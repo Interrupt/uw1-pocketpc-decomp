@@ -95,7 +95,7 @@ undefined4 journey_onward_load_slot_menu()
   undefined4 uVar5;
   char *pcVar_str;  /* was folded into uVar5 (`undefined4`, this
                         function's own 0/1/-1 return-code variable),
-                        truncating the real FUN_0007863c() string
+                        truncating the real get_message_string() string
                         pointer it also briefly held -- same "reused
                         scalar" bug already fixed elsewhere this session
                         (see dispatch_object_action's uVar11 comment) */
@@ -195,13 +195,13 @@ undefined4 journey_onward_load_slot_menu()
     } while (cVar1 != '\0');
     Ordinal_1063(acStack_1c0,s__DATA_OPSCR_BYT_00086efc);
     blit_fullscreen_bitmap_file(0xffffffff,acStack_1c0,1);
-    /* Was `uVar5 = FUN_0007863c(0x301);` -- FUN_0007863c returns a real
+    /* Was `uVar5 = get_message_string(0x301);` -- get_message_string returns a real
        char*, but uVar5 is this function's own `undefined4` 0/1/-1
        return-code variable, so storing the string pointer into it
        truncated it on this 64-bit build (same "reused scalar" bug
        already fixed elsewhere this session -- see dispatch_object_action's
        uVar11 comment). Use a real pointer local instead. */
-    pcVar_str = (char *)FUN_0007863c(0x301);
+    pcVar_str = (char *)get_message_string(0x301);
     select_active_font(s_fontbig_sys_0008432c);
     *g_draw_color_index = 0xa2;
     *DAT_00084298 = 0xa2;

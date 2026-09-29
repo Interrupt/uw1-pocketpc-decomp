@@ -2154,7 +2154,7 @@ char param_1;
 // was FUN_000707c8 -- prints a single skill-improvement message:
 // param_2==0 shows message 0x1b ("no improvement"), otherwise message
 // 0x1c followed by param_1's skill name (resolved via
-// FUN_0007863c(param_1+0x1f|0x400), the skill-name string-id range).
+// get_message_string(param_1+0x1f|0x400), the skill-name string-id range).
 void print_single_skill_improvement_message(param_1,param_2)
 int param_1;
 int param_2;
@@ -2165,7 +2165,7 @@ int param_2;
   }
   else {
     FUN_00078c80(0x1c);
-    FUN_0007863c(param_1 + 0x1fU | 0x400);
+    get_message_string(param_1 + 0x1fU | 0x400);
     message_scroll_print_wrapped();
     message_scroll_print_wrapped(&DAT_00084f20);
   }
@@ -2209,7 +2209,7 @@ LAB_00070874:
           pcVar1 = &DAT_00087318;
           goto LAB_00070874;
         }
-        FUN_0007863c((byte)param_1[iVar2] + 0x1f | 0x400);
+        get_message_string((byte)param_1[iVar2] + 0x1f | 0x400);
         message_scroll_print_wrapped();
         iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
       } while (param_1[iVar2] != -1);
@@ -2226,7 +2226,7 @@ LAB_00070874:
 
 // was FUN_000708bc -- the "Chant the mantra" feature: prompts for a
 // typed mantra word (scroll_text_entry_prompt), matches it against the
-// known-mantra string table (string ids 0x33..0x4c via FUN_0007863c,
+// known-mantra string table (string ids 0x33..0x4c via get_message_string,
 // compared with Ordinal_1065) and dispatches on which one matched:
 // - ids 0x33..0x46 (iVar6<0x14): single-skill mantras, spending one
 //   "mantra use" (DAT_00086df8+0x52) for two roll_skill_use_improvement
@@ -2264,7 +2264,7 @@ void handle_mantra_chant()
   iVar10 = 0x33;
   do {
     uVar4 = Ordinal_1416(local_58);
-    uVar5 = FUN_0007863c((int)(char)iVar10 | 0x400);
+    uVar5 = get_message_string((int)(char)iVar10 | 0x400);
     iVar6 = Ordinal_1065(uVar5,uVar4);
     if (iVar6 == 0) break;
     iVar10 = iVar10 + 1;
@@ -2299,7 +2299,7 @@ LAB_000709e0:
   else {
     if (iVar6 == 0x14) {
       if ((*(byte *)(DAT_00086df8 + 0x60) & 0x80) == 0) {
-        uVar4 = FUN_0007863c(0x223);
+        uVar4 = get_message_string(0x223);
         FUN_0007ed20(uVar4,*(ushort *)((char *)g_player_object + 0x16) >> 10,
                      (*(ushort *)((char *)g_player_object + 0x16) & 0x3f0) >> 4,(int)DAT_00201b68,0x18,0x2d,3,4
                     );
@@ -2399,8 +2399,8 @@ void render_endgame_character_stats()
   undefined1 uVar4;
   byte bVar5;
   short sVar6;
-  /* Was `undefined4`, truncating FUN_0007863c's real char* return on
-     this 64-bit host -- same bug class as the other FUN_0007863c
+  /* Was `undefined4`, truncating get_message_string's real char* return on
+     this 64-bit host -- same bug class as the other get_message_string
      truncation fixes this session (e.g. character_generator_loop's uVar10). Used
      consistently as a string pointer everywhere else in this function
      (draw_text_string's first arg, Ordinal_1063's second arg), so retyping
@@ -2424,10 +2424,10 @@ void render_endgame_character_stats()
   select_active_font(s_fontchar_sys_00087330);
   *DAT_00084298 = 0x5c;
   *g_draw_color_index = 0x5c;
-  uVar7 = FUN_0007863c((int)DAT_00201c74);
+  uVar7 = get_message_string((int)DAT_00201c74);
   /* Was `measure_text_width()` with no argument -- see draw_text_string/
      measure_text_width's own comments above for the root "dropped argument"
-     bug this matches; uVar7 (the string FUN_0007863c just returned) is
+     bug this matches; uVar7 (the string get_message_string just returned) is
      right here, so pass it explicitly instead of hoping it's still
      sitting in the right register. */
   sVar6 = measure_text_width(uVar7);
@@ -2436,7 +2436,7 @@ void render_endgame_character_stats()
     iVar12 = iVar12 + 1;
   }
   draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),0x14);
-  pcVar8 = (char *)FUN_0007863c(699);
+  pcVar8 = (char *)get_message_string(699);
   pcVar11 = local_58;
   do {
     cVar3 = *pcVar8;
@@ -2456,7 +2456,7 @@ void render_endgame_character_stats()
   iVar13 = (sVar6 + 1) * 0x10000 >> 0x10;
   local_58[iVar13] = ' ';
   local_58[(iVar13 + 1) * 0x10000 >> 0x10] = '\0';
-  uVar7 = FUN_0007863c((*(byte *)(iVar12 + 100) >> 5) + 0x17 | 0x400);
+  uVar7 = get_message_string((*(byte *)(iVar12 + 100) >> 5) + 0x17 | 0x400);
   Ordinal_1063(local_58,uVar7);
   iVar13 = *(short *)(DAT_000879b0 + 6) + 0x14;
   sVar6 = measure_text_width(local_58);
@@ -2465,7 +2465,7 @@ void render_endgame_character_stats()
     iVar12 = iVar12 + 1;
   }
   draw_text_string(local_58,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
-  uVar7 = FUN_0007863c(700);
+  uVar7 = get_message_string(700);
   iVar13 = *(short *)(DAT_000879b0 + 6) + iVar13;
   sVar6 = measure_text_width(uVar7);
   iVar12 = (int)sVar6;
@@ -2475,7 +2475,7 @@ void render_endgame_character_stats()
   draw_text_string(uVar7,0xa0 - (short)((int)(iVar12) >> 1),iVar13);
   sVar6 = Ordinal_2008(&DAT_001c2000,*(undefined4 *)(DAT_00086df8 + 0xce));
   sVar6 = Ordinal_2005(0xc,(int)sVar6);
-  pcVar8 = (char *)FUN_0007863c(0x2bd);
+  pcVar8 = (char *)get_message_string(0x2bd);
   pcVar11 = local_58;
   do {
     cVar3 = *pcVar8;
@@ -2485,7 +2485,7 @@ void render_endgame_character_stats()
   } while (cVar3 != '\0');
   uVar7 = Ordinal_1025((int)sVar6,auStack_68,10);
   Ordinal_1063(local_58,uVar7);
-  uVar7 = FUN_0007863c(0x2be);
+  uVar7 = get_message_string(0x2be);
   Ordinal_1063(local_58,uVar7);
   sVar6 = measure_text_width(local_58);
   iVar12 = (int)sVar6;
@@ -2505,7 +2505,7 @@ void render_endgame_character_stats()
     }
     uw_ord2005_rem_140 = ((int)(iVar12)) % (3);
     sVar2 = *(short *)(iVar14 + 6);
-    uVar7 = FUN_0007863c((int)iVar12 + 0x11U | 0x400);
+    uVar7 = get_message_string((int)iVar12 + 0x11U | 0x400);
     if (-1 < iVar12) {
       if (iVar12 < 3) {
         uVar4 = *(undefined1 *)((int)iVar12 + DAT_0023be74 + 5);
@@ -2536,7 +2536,7 @@ LAB_00071110:
       iVar13 = iVar13 + *(short *)(DAT_000879b0 + 6) * 2;
       do {
         bVar1 = *(byte *)((int)iVar12 + DAT_00086df8 + 0x21);
-        uVar7 = FUN_0007863c((int)iVar12 + 0x1fU | 0x400);
+        uVar7 = get_message_string((int)iVar12 + 0x1fU | 0x400);
         bVar5 = bVar1;
         if (9 < bVar1) {
           bVar5 = Ordinal_2005(10,bVar1);
@@ -3187,15 +3187,15 @@ void draw_stats_panel_header()
     iVar4 = -(int)sVar2 + 0x49;
   }
   draw_text_string(auStack_28,(short)(iVar4 >> 1) + 0xf2,0xf);
-  /* Was `FUN_0007863c(id); uVar3 = Ordinal_1416();` -- Ordinal_1416
+  /* Was `get_message_string(id); uVar3 = Ordinal_1416();` -- Ordinal_1416
      (real body: `_strupr`, see its own comment) needs an explicit
      string argument, but was called with none, relying on the K&R
      leftover-register idiom (this project's established "dropped
-     argument" pattern) to still hold FUN_0007863c's just-returned
+     argument" pattern) to still hold get_message_string's just-returned
      string pointer. That register doesn't reliably carry through on
      this recompile, so uVar3 came back NULL/garbage and the player's
      title was never drawn. Thread the string through explicitly. */
-  uVar3 = Ordinal_1416(FUN_0007863c((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
+  uVar3 = Ordinal_1416(get_message_string((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
   draw_text_string(uVar3,0xf2,0x16);
   FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
   cVar1 = *(byte *)(DAT_00086df8 + 0x3d) - 1;
@@ -3327,12 +3327,12 @@ uint param_1;
   FUN_000229e0(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
   FUN_00011c10(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
                0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
-  /* Was `FUN_0007863c(id); uVar1 = Ordinal_1416();` -- same dropped-
+  /* Was `get_message_string(id); uVar1 = Ordinal_1416();` -- same dropped-
      argument bug as draw_stats_panel_header's player-title draw above; thread
      the looked-up skill-name string through explicitly instead of
      relying on leftover-register reuse. This is why no skill names
      (Sword/Swimming/Mace/etc.) ever displayed. */
-  uVar1 = Ordinal_1416(FUN_0007863c((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400));
+  uVar1 = Ordinal_1416(get_message_string((uint)DAT_0024af80 + (int)(short)uVar3 + 0x1f | 0x400));
   iVar4 = ((int)(uVar3 * 0x70000) >> 0x10) + 0x48;
   draw_text_string(uVar1,0xf2,iVar4);
   iVar2 = measure_text_width(auStack_18);

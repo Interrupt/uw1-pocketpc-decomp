@@ -43,7 +43,7 @@ uint param_2;
    asked for a string's length, same bug class as babl_menu before its
    own recovery. Recovered from the real ARM binary (Ghidra headless);
    it dropped 2 register-forwarding args in the same shape as every
-   other sibling in this cluster (FUN_0007863c/Ordinal_1068 called
+   other sibling in this cluster (get_message_string/Ordinal_1068 called
    with no args in the raw decompile, relying on the value already
    sitting in r0 from the previous call -- chained explicitly here). */
 // was FUN_00019a60
@@ -54,7 +54,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   char *pcVar2;
 
   iVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  pcVar2 = (char *)FUN_0007863c((int)iVar1);
+  pcVar2 = (char *)get_message_string((int)iVar1);
   return Ordinal_1068(pcVar2);
 }
 
@@ -1052,10 +1052,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
      these read whatever garbage happened to be in the register instead.
      Chained explicitly. */
   iVar1 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  pcVar3 = (char *)FUN_0007863c(iVar1);
+  pcVar3 = (char *)get_message_string(iVar1);
   pcVar4 = (char *)babl_expand_string_refs(pcVar3);
   iVar1 = babl_read_var_word((int)*(short *)(param_1 + -4));
-  pcVar5 = (char *)FUN_0007863c(iVar1);
+  pcVar5 = (char *)get_message_string(iVar1);
   pcVar6 = (char *)babl_expand_string_refs(pcVar5);
   pcVar7 = pcVar6;
   do {
@@ -1107,7 +1107,7 @@ undefined4 babl_builtin_contains(param_1)
 intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sibling babl builtin's own `param_1` fix (this "contains" builtin was simply never exercised deep enough to crash/misbehave visibly yet)
 {
   /* uVar1/iVar2/uVar3/uVar4/iVar5/iVar7 were `undefined4`/`int` (4 bytes)
-     but hold real string pointers from FUN_0007863c/babl_expand_string_refs/
+     but hold real string pointers from get_message_string/babl_expand_string_refs/
      Ordinal_1072 (iVar5 doubly so -- reused below as `iVar5 = iVar2`
      then in pointer arithmetic `iVar5 = iVar5 + iVar7`) -- truncated a
      real 64-bit pointer on assignment even with each call's own
@@ -1124,10 +1124,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   /* Was 4 dropped register-forwarding args -- same class as babl_builtin_compare's
      own comment (uw.c ~10977). Chained explicitly. */
   iVar5 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  uVar1 = (intptr_t)FUN_0007863c((int)iVar5);
+  uVar1 = (intptr_t)get_message_string((int)iVar5);
   iVar2 = (intptr_t)babl_expand_string_refs((char *)uVar1);
   iVar5 = babl_read_var_word((int)*(short *)(param_1 + -4));
-  uVar3 = (intptr_t)FUN_0007863c((int)iVar5);
+  uVar3 = (intptr_t)get_message_string((int)iVar5);
   uVar4 = (intptr_t)babl_expand_string_refs((char *)uVar3);
   Ordinal_1415(uVar3);
   Ordinal_1415(uVar1);
@@ -1165,15 +1165,15 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   int iVar6;
   int iVar7;
   
-  /* Was 4 dropped register-forwarding args (2x FUN_0007863c, 2x
+  /* Was 4 dropped register-forwarding args (2x get_message_string, 2x
      Ordinal_1068) -- same class as babl_builtin_compare's own comment
      (uw.c ~10977). Chained explicitly: the first Ordinal_1068() forwards
      pcVar3 (the string just resolved right above it), matching the
      very next line's own explicit `Ordinal_1068(pcVar2)` call. */
   iVar6 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  pcVar2 = (char *)FUN_0007863c(iVar6);
+  pcVar2 = (char *)get_message_string(iVar6);
   iVar6 = babl_read_var_word((int)*(short *)(param_1 + -4));
-  pcVar3 = (char *)FUN_0007863c(iVar6);
+  pcVar3 = (char *)get_message_string(iVar6);
   uVar4 = Ordinal_1068(pcVar3);
   uVar5 = Ordinal_1068(pcVar2);
   iVar6 = babl_alloc((int)(((uVar4 & 0xffff) + (uVar5 & 0xffff) + 1) * 0x10000) >> 0x10);
@@ -1207,7 +1207,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   /* Was 3 dropped register-forwarding args -- same class as
      babl_builtin_compare's own comment (uw.c ~10977). */
   iVar4 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  pcVar2 = (char *)FUN_0007863c(iVar4);
+  pcVar2 = (char *)get_message_string(iVar4);
   iVar3 = Ordinal_1068(pcVar2);
   iVar3 = babl_alloc(iVar3 + 1);
   iVar4 = iVar3 - (int)pcVar2;
@@ -1261,7 +1261,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   /* Was 3 dropped register-forwarding args -- same class as
      babl_builtin_compare's own comment (uw.c ~10977). */
   iVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  pcVar3 = (char *)FUN_0007863c(iVar2);
+  pcVar3 = (char *)get_message_string(iVar2);
   sVar1 = Ordinal_993(pcVar3);
   return (int)sVar1;
 }
@@ -1374,10 +1374,10 @@ LAB_00019bc8:
              (just resolved by the babl_read_var_word/babl_read_frame_word calls
              immediately above, for the 'G'/'P'/'S' cases this branch
              handles) is the only value left sitting in r0 at this
-             point, and FUN_0007863c's signature elsewhere (a message/
+             point, and get_message_string's signature elsewhere (a message/
              string-table-index -> char* resolver, e.g. its 0xe01 "You
              get no response" callers) matches passing exactly that. */
-          pcVar9 = (char *)FUN_0007863c(sVar3);
+          pcVar9 = (char *)get_message_string(sVar3);
           if (pcVar9 != (char *)0x0) {
             pcVar8 = (char *)babl_expand_string_refs(pcVar9);
             pcVar10 = pcVar8;
@@ -1955,7 +1955,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   uVar6 = babl_read_var_word((int)*(short *)(param_1 + -4));
   uVar7 = babl_read_var_word((int)*(short *)(param_1 + -2));
   if (DAT_000bc004 < 0) {
-    FUN_0007863c(uVar6);
+    get_message_string(uVar6);
     FUN_00029708();
     sVar2 = DAT_000bbfb8;
   }
@@ -1974,7 +1974,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
       iVar9 = (int)DAT_000bc024;
       iVar8 = (int)sVar2;
       if (iVar9 <= iVar8) {
-        FUN_0007863c(uVar4);
+        get_message_string(uVar4);
         FUN_00029708();
         finalize_npc_barter_items(1);
         finalize_player_barter_items();
@@ -1988,7 +1988,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
       }
       else {
         if (iVar8 < iVar10) {
-          FUN_0007863c(uVar5);
+          get_message_string(uVar5);
           FUN_00029708();
           DAT_000bbfb8 = sVar2;
           DAT_000bc004 = DAT_000bc004 + -2;
@@ -2002,13 +2002,13 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
         iVar9 = (iVar9 - iVar8) - (iVar10 >> 1);
       }
       if (iVar9 < 0 != bVar11) {
-        FUN_0007863c((int)sVar1);
+        get_message_string((int)sVar1);
         FUN_00029708();
         DAT_000bc004 = DAT_000bc004 + -1;
       }
     }
     else {
-      FUN_0007863c(uVar7);
+      get_message_string(uVar7);
       FUN_00029708();
       DAT_000bc008 = 0;
       sVar2 = DAT_000bbfb8;
@@ -2082,7 +2082,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
             0x10000) >> 0x10 <
        (int)((((bVar2 & 2) >> 1) + (int)sVar5 + (uint)bVar3 + iVar11) * 0x10000) >> 0x10) ||
      ((bVar4 & 0x40) != 0)) {
-    FUN_0007863c((int)local_28);
+    get_message_string((int)local_28);
     FUN_00029708();
     finalize_npc_barter_items(1);
     DAT_000bc008 = 1;
@@ -2093,7 +2093,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     uVar9 = 1;
   }
   else {
-    FUN_0007863c((int)local_2a);
+    get_message_string((int)local_2a);
     FUN_00029708();
     finalize_npc_barter_items(0);
     FUN_00034ac4(DAT_00100674,5,1);
@@ -2174,7 +2174,7 @@ void FUN_000286cc()
       g_blit_transparent_mode = 1;
       bitmap_blit_to_framebuffer(0xc5,0xc,DAT_00100728,0x22,CONCAT22(uVar6,0x22),0,0,1);
       g_blit_transparent_mode = 0;
-      pcVar4 = (char *)FUN_0007863c((int)DAT_00201c74);
+      pcVar4 = (char *)get_message_string((int)DAT_00201c74);
       pcVar5 = local_44;
       do {
         cVar1 = *pcVar4;
@@ -2268,7 +2268,7 @@ void start_npc_conversation()
        Bragit has no CNV.ARK conversation record (sVar1<0 here is the
        real, correct "You get no response" case, not a bug), but
        printing that message crashed on the dropped argument. */
-    message_scroll_print_wrapped(FUN_0007863c(0xe01));
+    message_scroll_print_wrapped(get_message_string(0xe01));
   }
   else {
     babl_register_builtin(s_babl_menu_00085220,&babl_menu); // was &LAB_0002912c, the no-op stub
@@ -2321,12 +2321,12 @@ void start_npc_conversation()
     /* Debug-only static dump of every string in this NPC's own compiled
        conversation, independent of which branches a live playthrough
        happens to reach -- see bragit-talk-again-investigation. Message
-       ids are (page<<9)|subindex (FUN_0007863c's own comment); page 0
+       ids are (page<<9)|subindex (get_message_string's own comment); page 0
        is this just-loaded conversation's own string table. */
     if (getenv("UW_DEBUG_DUMP_CONV_STRINGS")) {
       int _dump_i;
       for (_dump_i = 0; _dump_i < 0x200; _dump_i++) {
-        char *_dump_s = FUN_0007863c((ushort)_dump_i);
+        char *_dump_s = get_message_string((ushort)_dump_i);
         if (_dump_s && *_dump_s) {
           fprintf(stderr, "[babl] conv string msgid=%d: \"%s\"\n", _dump_i, _dump_s);
         }
@@ -2410,7 +2410,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
   short sVar5;
   undefined4 uVar6;
   /* uVar7/iVar8/iVar9 were `undefined4`/`int` (4 bytes) but hold real
-     string pointers from FUN_0007863c/babl_expand_string_refs/
+     string pointers from get_message_string/babl_expand_string_refs/
      Ordinal_1068 -- and DAT_001006d8/DAT_00100680 (the per-item raw-
      string / expanded-string caches, both raw byte-array backings
      manually indexed) were stored/read with a `* 4` stride sized for
@@ -2451,7 +2451,7 @@ intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call o
   iVar12 = 1;
   sVar5 = (short)uVar6;
   while (sVar5 != 0) {
-    uVar7 = (intptr_t)FUN_0007863c(uVar6);
+    uVar7 = (intptr_t)get_message_string(uVar6);
     *(intptr_t *)(&DAT_001006d8 + DAT_00100794 * 8) = uVar7;
     iVar8 = (intptr_t)babl_expand_string_refs((char *)uVar7);
     sVar5 = DAT_00100794;
@@ -3312,13 +3312,13 @@ undefined1 *param_2;
          babl_register_builtin, crashing at DAT_000bbf70+0x18. This is the exact
          crash in bug-critter-talk.txt: Bragit has no real conversation
          record, so this early-return path is supposed to be the one
-         taken. Was: message_scroll_print_wrapped(FUN_0007863c(0xe01));
+         taken. Was: message_scroll_print_wrapped(get_message_string(0xe01));
          return 1; -- two separate calls with message_scroll_print_
          wrapped()'s arg dropped; fresh Ghidra disassembly (0x44c90-
          0x44c94) shows no register load between the two `bl`s --
-         FUN_0007863c's return (char *) flows straight into
+         get_message_string's return (char *) flows straight into
          message_scroll_print_wrapped as its argument. */
-      return message_scroll_print_wrapped(FUN_0007863c(0xe01));
+      return message_scroll_print_wrapped(get_message_string(0xe01));
     }
   }
   iVar2 = build_babl_symbol_table();
@@ -4754,7 +4754,7 @@ void babl_builtin_do_judgement()
   else {
     iVar8 = 0;
   }
-  pcVar4 = (char *)FUN_0007863c(iVar6 + 3U | 0xe00);
+  pcVar4 = (char *)get_message_string(iVar6 + 3U | 0xe00);
   pcVar7 = local_60;
   do {
     cVar1 = *pcVar4;
@@ -4762,9 +4762,9 @@ void babl_builtin_do_judgement()
     *pcVar7 = cVar1;
     pcVar7 = pcVar7 + 1;
   } while (cVar1 != '\0');
-  uVar5 = FUN_0007863c(0xe02);
+  uVar5 = get_message_string(0xe02);
   Ordinal_1063(local_60,uVar5);
-  uVar5 = FUN_0007863c(iVar8 + 8U | 0xe00);
+  uVar5 = get_message_string(iVar8 + 8U | 0xe00);
   Ordinal_1063(local_60,uVar5);
   FUN_000297dc(local_60);
   return;

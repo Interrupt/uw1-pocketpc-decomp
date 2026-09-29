@@ -629,7 +629,7 @@ short * param_1;
 // was FUN_0007856c -- initializes the string-resource page cache
 // (DAT_0024bfa0-family, see that global's own comment): clears the
 // first 2 cache-record slots (0x804/2052-byte stride, matching
-// FUN_0007863c's/what's documented as FUN_0007873c's own indexing) to
+// get_message_string's/what's documented as FUN_0007873c's own indexing) to
 // an empty/sentinel state (DAT_0024bfa0/1 = 0xffff, the page-id
 // short field; DAT_0024c7a2/3 and the 512-entry DAT_0024bfa2/3/4/5
 // sub-arrays zeroed), then calls FUN_00078d18 (not yet named) and,
@@ -678,4 +678,74 @@ void thunk_FUN_00078e28()
   Ordinal_1018(DAT_0024cfb8);
   Ordinal_1018(DAT_0024cfa8);
   return;
+}
+
+
+
+
+
+// was FUN_0007863c -- the core message-string lookup used throughout
+// this game: param_1 packs a page number (bits 9+) and a sub-index
+// within that page (low 9 bits). Searches the string-resource cache
+// (DAT_0024bfa0-family) for the page; if not yet cached, decodes it
+// via FUN_00078e60 (not yet named) and returns the string directly;
+// if already cached, returns the pointer from the real-pointer side
+// table (g_bfa2_real_ptrs). ~130 call sites throughout this codebase.
+//
+// Was `undefined4` return -- truncating the real char* string pointer
+// FUN_00078e60 returns (and the string pointers stored in the
+// DAT_0024bfa0-family table read below). Most callers pass the
+// result straight into a char*-typed argument so aren't affected by
+// this fix, but any caller that first stores it in an
+// `undefined4`/`int` local before using it as a pointer needs that
+// local retyped too -- fix those as they're actually hit crashing,
+// same as everywhere else this session.
+char *get_message_string(param_1)
+ushort param_1;
+
+{
+  uint uVar1;
+  char *uVar2;
+  int iVar3;
+  short sVar4;
+
+  uVar1 = (uint)(param_1 >> 9);
+  iVar3 = 0;
+  sVar4 = -1;
+  if (0 < DAT_0024cfc0) {
+    do {
+      sVar4 = (short)iVar3;
+      if ((int)*(short *)(&DAT_0024bfa0 + iVar3 * 0x804) == uVar1) break;
+      iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+      sVar4 = -1;
+    } while (iVar3 < DAT_0024cfc0);
+  }
+  if (sVar4 < 0) {
+    if (uVar1 == 0) {
+      uVar1 = (uint)DAT_0024cfac;
+    }
+    /* Was `FUN_00078e60(uVar1)` -- called with only one explicit
+       argument, relying on a register-leftover idiom for the second
+       (the "dropped argument" pattern used throughout this file, e.g.
+       Ordinal_1068/draw_text_string earlier this session) to still hold
+       the string's sub-index within this page. That register doesn't
+       reliably survive here either (confirmed: string lookups that
+       should succeed -- e.g. chargen field labels -- came back as
+       genuinely empty strings, because FUN_00078e60's own `iVar1 <
+       local_2e` bounds check saw garbage and fell straight through to
+       its "not found" empty-string return). param_1's low 9 bits are
+       exactly this sub-index (uVar1 above is `param_1 >> 9`, the page
+       number) -- pass it explicitly instead. */
+    uVar2 = (char *)FUN_00078e60(uVar1,(uint)(param_1 & 0x1ff));
+  }
+  else {
+    /* Was reading 4 consecutive bytes from DAT_0024bfa2 alone, but the
+       register function actually splits the pointer across bfa2/3/4/5
+       at the SAME (un-multiplied-by-4) index -- that read was pulling
+       the real low byte plus 3 zero padding bytes, not reconstructing
+       anything real, and only ever captured 32 bits regardless. Use
+       the real-pointer side table instead -- see its comment. */
+    uVar2 = g_bfa2_real_ptrs[sVar4 * 0x201 + (int)(short)(param_1 & 0x1ff)];
+  }
+  return uVar2;
 }

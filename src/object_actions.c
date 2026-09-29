@@ -96,7 +96,7 @@ int param_2;
     }
     iVar5 = (int)sVar4;
   }
-  pcVar6 = (char *)FUN_0007863c(((byte)(&DAT_00202c9b)[iVar9] & 0xf) * 6 + iVar5 | 0xa00);
+  pcVar6 = (char *)get_message_string(((byte)(&DAT_00202c9b)[iVar9] & 0xf) * 6 + iVar5 | 0xa00);
   if (pcVar6 != (char *)0x0) {
     cVar2 = *pcVar6;
     if (cVar2 != '\0') {
@@ -141,11 +141,11 @@ LAB_000489fc:
   if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     Ordinal_1063(acStack_7c,s_belonging_to_00085c90);
-    /* uVar11 is `undefined4` (reused as a flag above); assigning FUN_0007863c's
+    /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's
        char* to it truncated the pointer -> Ordinal_1063 (strcat) walked a wild
        address, crashing a right-click "look" at any owned container (the
        spawn-room sack). Use the char* local. */
-    pcVar6 = FUN_0007863c((bVar1 & 0x1f) + 0x172 | 0x200);
+    pcVar6 = get_message_string((bVar1 & 0x1f) + 0x172 | 0x200);
     Ordinal_1063(acStack_7c,pcVar6);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
@@ -542,7 +542,7 @@ int param_2;
     }
     iVar5 = (int)sVar4;
   }
-  pcVar6 = (char *)FUN_0007863c(((byte)(&DAT_00202c9b)[iVar9] & 0xf) * 6 + iVar5 | 0xa00);
+  pcVar6 = (char *)get_message_string(((byte)(&DAT_00202c9b)[iVar9] & 0xf) * 6 + iVar5 | 0xa00);
   if (pcVar6 != (char *)0x0) {
     cVar2 = *pcVar6;
     if (cVar2 != '\0') {
@@ -587,11 +587,11 @@ LAB_000489fc:
   if (((g_object_type_props[*param_1 & 0x1ff].is_container) &&
       (bVar1 = (byte)param_1[3], (bVar1 & 0x3f) != 0)) && ((bVar1 & 0x1f) < 0x1c)) {
     Ordinal_1063(acStack_7c,s_belonging_to_00085c90);
-    /* uVar11 is `undefined4` (reused as a flag above); assigning FUN_0007863c's
+    /* uVar11 is `undefined4` (reused as a flag above); assigning get_message_string's
        char* to it truncated the pointer -> Ordinal_1063 (strcat) walked a wild
        address, crashing a right-click "look" at any owned container (the
        spawn-room sack). Use the char* local. */
-    pcVar6 = FUN_0007863c((bVar1 & 0x1f) + 0x172 | 0x200);
+    pcVar6 = get_message_string((bVar1 & 0x1f) + 0x172 | 0x200);
     Ordinal_1063(acStack_7c,pcVar6);
   }
   Ordinal_1063(acStack_7c,&DAT_00084f20);
@@ -1961,7 +1961,7 @@ byte param_2;
 {
   undefined4 uVar1;
   
-  uVar1 = FUN_0007863c((int)(short)(ushort)(4 < param_2) + (int)(short)(ushort)(1 < param_2) + 0x3bU
+  uVar1 = get_message_string((int)(short)(ushort)(4 < param_2) + (int)(short)(ushort)(1 < param_2) + 0x3bU
                        | 0x200);
   FUN_0007ed20(uVar1,0,0,0,0,0,0,-1 - (param_1 & 0xff));
   return;
