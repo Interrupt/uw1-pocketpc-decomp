@@ -860,14 +860,14 @@ void sweep_land_on_surface()
     sweep_kill_velocity();
     *(undefined1 *)(DAT_00204874 + 0x14) = 2;
     uVar3 = Ordinal_2005(0x32,(short)(uVar2 >> 4) + -600);
-    FUN_00072c74(5,(int)*DAT_00204874 >> 5,(int)DAT_00204874[1] >> 5,uVar3);
+    play_positional_sound_effect(5,(int)*DAT_00204874 >> 5,(int)DAT_00204874[1] >> 5,uVar3);
     return;
   }
   sVar4 = DAT_00204874[5];
   uVar8 = (int)sVar4 >> 0x1f;
   uVar11 = Ordinal_2005(0x32,(short)(uVar2 >> 4) + -600);
   uVar8 = Ordinal_2005(10,((int)sVar4 ^ uVar8) - uVar8);
-  FUN_00072c74(0xf,(int)*psVar9 >> 5,(int)psVar9[1] >> 5,(uVar11 & 0xff) + (uVar8 & 0xff) + -0x28);
+  play_positional_sound_effect(0xf,(int)*psVar9 >> 5,(int)psVar9[1] >> 5,(uVar11 & 0xff) + (uVar8 & 0xff) + -0x28);
   uVar8 = FUN_000546c4((int)DAT_00086998,(int)DAT_002049d2);
   psVar9 = DAT_00204874;
   if ((uVar8 & 0x18) != 0) {

@@ -6079,11 +6079,21 @@ undefined4 DAT_0023c330;
 short DAT_0023c32c;
 int DAT_00087450;
 undefined4 DAT_0008744c;
-static undefined DAT_0023c2b0_backing[8192];
+undefined DAT_0023c2b0_backing[8192];
 #define DAT_0023c2b0 DAT_0023c2b0_backing[0]
-undefined DAT_0023c2b1;
-undefined DAT_0023c2b2;
-undefined DAT_0023c2b3;
+/* Same per-sound-effect-id table shape as DAT_0023c2b0 just above (all
+   four indexed by play_positional_sound_effect's own `id*5`-stride
+   iVar10) -- were lone scalars, so every id past 0 read into whatever
+   the compiler placed next, corrupting the volume/pan parameters
+   play_positional_sound_effect derives for any sound but the first.
+   Widened to match DAT_0023c2b0_backing's own generous sizing (max
+   real index is 0xff*5+4=1279, given the 8-bit id field). */
+undefined DAT_0023c2b1_backing[8192];
+#define DAT_0023c2b1 DAT_0023c2b1_backing[0]
+undefined DAT_0023c2b2_backing[8192];
+#define DAT_0023c2b2 DAT_0023c2b2_backing[0]
+undefined DAT_0023c2b3_backing[8192];
+#define DAT_0023c2b3 DAT_0023c2b3_backing[0]
 byte DAT_0023c39c;
 static undefined DAT_0023c3d4_backing[8192];
 #define DAT_0023c3d4 DAT_0023c3d4_backing[0]
@@ -11174,7 +11184,7 @@ byte * param_3;
   *(byte *)(iVar7 + 2) = (DAT_00202c6c[4] + 8 ^ bVar2) & 0x7f ^ bVar2;
   *(byte *)(iVar7 + 3) = bVar1;
   if (DAT_00100610 == 1) {
-    FUN_00072c74(7,*(undefined2 *)DAT_00202c6c,*(undefined2 *)(DAT_00202c6c + 2),0);
+    play_positional_sound_effect(7,*(undefined2 *)DAT_00202c6c,*(undefined2 *)(DAT_00202c6c + 2),0);
   }
   uVar8 = encode_object_slot_index(iVar7);
   sVar6 = scheduler_add_entry(uVar8,2,0,(int)sVar4 >> 3 & 0xff,(char)((int)sVar5 >> 3));
@@ -11422,7 +11432,7 @@ undefined1 param_1;
     FUN_00072f30(3,0x40,(uVar9 & 0xff) << 2);
   }
   else {
-    FUN_00072c74(4,(uint)(*(byte *)((char *)puVar6 + 3) >> 5) + DAT_00100600 * 8,
+    play_positional_sound_effect(4,(uint)(*(byte *)((char *)puVar6 + 3) >> 5) + DAT_00100600 * 8,
                  (*(byte *)((char *)puVar6 + 3) >> 2 & 7) + DAT_00100604 * 8,(uVar9 & 0xff) << 2);
   }
   uVar8 = DAT_00100624;
@@ -15756,7 +15766,7 @@ void FUN_00033880()
         if (bVar10 != 5) goto LAB_000339fc;
         uVar6 = 0xd;
       }
-      FUN_00072c74(uVar6,DAT_00101910,DAT_0010141c,0);
+      play_positional_sound_effect(uVar6,DAT_00101910,DAT_0010141c,0);
     }
 LAB_000339fc:
     if ((*(byte *)(DAT_00101404 + 10) & 2) == 0) {
@@ -16244,7 +16254,7 @@ int param_1;
   }
   else {
     if ((*(byte *)(DAT_00101404 + 8) & 7) == 1) {
-      FUN_00072c74(6,DAT_00101910,DAT_0010141c,0);
+      play_positional_sound_effect(6,DAT_00101910,DAT_0010141c,0);
     }
     uVar2 = 1;
   }
@@ -36427,106 +36437,6 @@ LAB_00060f54:
 
 
 
-undefined4 FUN_00072c74(param_1,param_2,param_3,param_4)
-uint param_1;
-short param_2;
-short param_3;
-uint param_4;
-
-{
-  short sVar1;
-  short sVar2;
-  uint uVar3;
-  undefined4 uVar4;
-  int iVar5;
-  int iVar6;
-  undefined1 uVar7;
-  uint uVar8;
-  uint uVar9;
-  int iVar10;
-  short local_28;
-  short local_26;
-  
-  if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
-LAB_00072f24:
-    uVar4 = 0xff;
-  }
-  else {
-    iVar10 = (param_1 & 0xff) * 5;
-    uVar9 = (int)param_2 -
-            ((int)(((*(ushort *)((char *)g_player_object + 0x16) >> 7 & 0x1f8) +
-                   (uint)(*(byte *)((char *)g_player_object + 3) >> 5)) * 0x10000) >> 0x10);
-    uVar8 = (int)param_3 -
-            ((int)(((*(ushort *)((char *)g_player_object + 0x16) >> 1 & 0x1f8) +
-                   ((*(byte *)((char *)g_player_object + 3) & 0x1c) >> 2)) * 0x10000) >> 0x10);
-    uVar3 = FUN_00013774(uVar8 * uVar8 + uVar9 * uVar9);
-    uVar3 = uVar3 & 0xffff;
-    if (uVar3 == 0) {
-      uVar7 = 0x40;
-      iVar5 = ((param_4 & 0xff) + (uint)(byte)(&DAT_0023c2b2)[iVar10]) * 0x10000;
-    }
-    else {
-      if (uVar8 == uVar3) {
-        sVar1 = 0x7f;
-      }
-      else if (-uVar3 == uVar8) {
-        sVar1 = 0x80;
-      }
-      else {
-        sVar1 = Ordinal_2005(uVar3,uVar8 * 0x80);
-      }
-      if (uVar9 == uVar3) {
-        sVar2 = 0x7f;
-      }
-      else if (-uVar3 == uVar9) {
-        sVar2 = 0x80;
-      }
-      else {
-        sVar2 = Ordinal_2005(uVar3,uVar9 * 0x80);
-      }
-      heading_to_sine_cosine(((0x40 - (*(byte *)((char *)g_player_object + 0x18) & 0x1f)) * 4 -
-                   ((int)*(short *)((char *)g_player_object + 2) & 0x380U)) * 0x40,&local_28,&local_26);
-      iVar5 = (int)local_28;
-      iVar6 = (int)local_26;
-      local_28 = (short)(char)((ushort)local_28 >> 8);
-      local_26 = (short)(char)((ushort)local_26 >> 8);
-      iVar6 = 0x40 - (short)((uint)((iVar6 >> 8) * (int)sVar1 - (iVar5 >> 8) * (int)sVar2) >> 8);
-      iVar5 = iVar6 * 0x10000 >> 0x10;
-      if (0x7f < iVar5) {
-        iVar6 = 0x7f;
-      }
-      uVar7 = (undefined1)iVar6;
-      iVar6 = iVar5 + -0x7f;
-      if (iVar5 < 0x80) {
-        iVar6 = iVar5;
-      }
-      iVar5 = ((param_4 & 0xff) + (uint)(byte)(&DAT_0023c2b2)[iVar10]) * 0x10000;
-      if (iVar6 < 0) {
-        uVar7 = 0;
-      }
-      if (0x30 < uVar3) goto LAB_00072f24;
-      if (7 < uVar3) {
-        iVar5 = Ordinal_2005(0x28,(0x30 - uVar3) * (int)(short)((uint)iVar5 >> 0x10));
-        iVar5 = iVar5 << 0x10;
-      }
-    }
-    uVar3 = iVar5 >> 0x10;
-    iVar5 = (int)(short)((uint)iVar5 >> 0x10);
-    if (0x7f < iVar5) {
-      uVar3 = 0x7f;
-      iVar5 = iVar5 + -0x7f;
-    }
-    if (iVar5 < 0) {
-      uVar3 = 0;
-    }
-    uVar4 = FUN_00073064(param_1,(&DAT_0023c2b0)[iVar10],(&DAT_0023c2b1)[iVar10],uVar3 & 0xff,uVar7,
-                         *(undefined2 *)(&DAT_0023c2b3 + iVar10));
-  }
-  return uVar4;
-}
-
-
-
 undefined4 FUN_00072f30(param_1,param_2,param_3)
 uint param_1;
 undefined1 param_2;
@@ -36571,7 +36481,7 @@ undefined4 param_3;
     uVar1 = 0xff;
   }
   else {
-    uVar1 = FUN_00072c74(param_1,((*(ushort *)(param_2 + 0x16) & 0xfc00) >> 7) +
+    uVar1 = play_positional_sound_effect(param_1,((*(ushort *)(param_2 + 0x16) & 0xfc00) >> 7) +
                                  (uint)(*(byte *)(param_2 + 3) >> 5),
                          (*(byte *)(param_2 + 3) >> 2 & 7) +
                          ((*(ushort *)(param_2 + 0x16) & 0x3f0) >> 1),param_3);
@@ -41415,7 +41325,7 @@ ushort * param_2;
       if (uVar4 != 3) {
         return;
       }
-      FUN_00072c74(0x13,DAT_002020a0 * 8 + 3,DAT_002020a4 * 8 + 3,0);
+      play_positional_sound_effect(0x13,DAT_002020a0 * 8 + 3,DAT_002020a4 * 8 + 3,0);
       uVar5 = ((uVar5 & 0xf) - 8 ^ *param_2) & 0xf ^ *param_2;
     }
     *(char *)param_2 = (char)uVar5;
@@ -43892,7 +43802,7 @@ undefined4 param_1;
         FUN_0007c4a8(puVar4);
         return;
       }
-      FUN_00072c74(0xc,(uint)(*(byte *)((char *)puVar4 + 3) >> 5) + (short)DAT_0010144c * 8,
+      play_positional_sound_effect(0xc,(uint)(*(byte *)((char *)puVar4 + 3) >> 5) + (short)DAT_0010144c * 8,
                    (*(byte *)((char *)puVar4 + 3) >> 2 & 7) + (short)DAT_00101454 * 8,0);
     }
     uVar2 = puVar4[1];

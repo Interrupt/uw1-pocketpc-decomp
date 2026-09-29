@@ -1984,6 +1984,14 @@ extern undefined4 DAT_0023c330;
 extern short DAT_0023c32c;
 extern int DAT_00087450;
 extern undefined4 DAT_0008744c;
+extern undefined DAT_0023c2b0_backing[8192];
+#define DAT_0023c2b0 DAT_0023c2b0_backing[0]
+extern undefined DAT_0023c2b1_backing[8192];
+#define DAT_0023c2b1 DAT_0023c2b1_backing[0]
+extern undefined DAT_0023c2b2_backing[8192];
+#define DAT_0023c2b2 DAT_0023c2b2_backing[0]
+extern undefined DAT_0023c2b3_backing[8192];
+#define DAT_0023c2b3 DAT_0023c2b3_backing[0]
 extern undefined DAT_0023b4dc;
 extern undefined2 DAT_0023b8c0;
 extern undefined2 DAT_0023bc8c;
@@ -3165,7 +3173,7 @@ undefined4 is_sound_effects_enabled();
 void set_music_enabled();
 void set_sound_effects_enabled();
 void stop_current_audio_handle();
-undefined4 FUN_00072c74();
+undefined4 play_positional_sound_effect();
 undefined4 FUN_00072f30();
 undefined4 FUN_00072fc8();
 void FUN_0007305c();

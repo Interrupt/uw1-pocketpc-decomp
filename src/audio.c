@@ -238,3 +238,116 @@ void stop_current_audio_handle()
   }
   return;
 }
+
+
+
+
+
+
+// was FUN_00072c74 -- plays sound effect param_1 positioned at world
+// coordinates (param_2,param_3), with a base volume/id-derived
+// parameter block param_4: computes the distance from the player
+// (FUN_00013774, a sqrt-shaped distance function) and, if within range
+// (uVar3<=0x30, else fails outright), derives a distance-attenuated
+// volume and a stereo pan (via heading_to_sine_cosine against the
+// player's own facing) before dispatching to FUN_00073064 with the
+// per-sound-effect-id parameter table entries (DAT_0023c2b0/b1/b2/b3,
+// 5-byte stride per id). Fails (returns 0xff) if the sound-effects
+// subsystem is disabled or the sound is out of range.
+undefined4 play_positional_sound_effect(param_1,param_2,param_3,param_4)
+uint param_1;
+short param_2;
+short param_3;
+uint param_4;
+
+{
+  short sVar1;
+  short sVar2;
+  uint uVar3;
+  undefined4 uVar4;
+  int iVar5;
+  int iVar6;
+  undefined1 uVar7;
+  uint uVar8;
+  uint uVar9;
+  int iVar10;
+  short local_28;
+  short local_26;
+  
+  if ((DAT_00087450 == 0) || (DAT_0008744c == 0)) {
+LAB_00072f24:
+    uVar4 = 0xff;
+  }
+  else {
+    iVar10 = (param_1 & 0xff) * 5;
+    uVar9 = (int)param_2 -
+            ((int)(((*(ushort *)((char *)g_player_object + 0x16) >> 7 & 0x1f8) +
+                   (uint)(*(byte *)((char *)g_player_object + 3) >> 5)) * 0x10000) >> 0x10);
+    uVar8 = (int)param_3 -
+            ((int)(((*(ushort *)((char *)g_player_object + 0x16) >> 1 & 0x1f8) +
+                   ((*(byte *)((char *)g_player_object + 3) & 0x1c) >> 2)) * 0x10000) >> 0x10);
+    uVar3 = FUN_00013774(uVar8 * uVar8 + uVar9 * uVar9);
+    uVar3 = uVar3 & 0xffff;
+    if (uVar3 == 0) {
+      uVar7 = 0x40;
+      iVar5 = ((param_4 & 0xff) + (uint)(byte)(&DAT_0023c2b2)[iVar10]) * 0x10000;
+    }
+    else {
+      if (uVar8 == uVar3) {
+        sVar1 = 0x7f;
+      }
+      else if (-uVar3 == uVar8) {
+        sVar1 = 0x80;
+      }
+      else {
+        sVar1 = Ordinal_2005(uVar3,uVar8 * 0x80);
+      }
+      if (uVar9 == uVar3) {
+        sVar2 = 0x7f;
+      }
+      else if (-uVar3 == uVar9) {
+        sVar2 = 0x80;
+      }
+      else {
+        sVar2 = Ordinal_2005(uVar3,uVar9 * 0x80);
+      }
+      heading_to_sine_cosine(((0x40 - (*(byte *)((char *)g_player_object + 0x18) & 0x1f)) * 4 -
+                   ((int)*(short *)((char *)g_player_object + 2) & 0x380U)) * 0x40,&local_28,&local_26);
+      iVar5 = (int)local_28;
+      iVar6 = (int)local_26;
+      local_28 = (short)(char)((ushort)local_28 >> 8);
+      local_26 = (short)(char)((ushort)local_26 >> 8);
+      iVar6 = 0x40 - (short)((uint)((iVar6 >> 8) * (int)sVar1 - (iVar5 >> 8) * (int)sVar2) >> 8);
+      iVar5 = iVar6 * 0x10000 >> 0x10;
+      if (0x7f < iVar5) {
+        iVar6 = 0x7f;
+      }
+      uVar7 = (undefined1)iVar6;
+      iVar6 = iVar5 + -0x7f;
+      if (iVar5 < 0x80) {
+        iVar6 = iVar5;
+      }
+      iVar5 = ((param_4 & 0xff) + (uint)(byte)(&DAT_0023c2b2)[iVar10]) * 0x10000;
+      if (iVar6 < 0) {
+        uVar7 = 0;
+      }
+      if (0x30 < uVar3) goto LAB_00072f24;
+      if (7 < uVar3) {
+        iVar5 = Ordinal_2005(0x28,(0x30 - uVar3) * (int)(short)((uint)iVar5 >> 0x10));
+        iVar5 = iVar5 << 0x10;
+      }
+    }
+    uVar3 = iVar5 >> 0x10;
+    iVar5 = (int)(short)((uint)iVar5 >> 0x10);
+    if (0x7f < iVar5) {
+      uVar3 = 0x7f;
+      iVar5 = iVar5 + -0x7f;
+    }
+    if (iVar5 < 0) {
+      uVar3 = 0;
+    }
+    uVar4 = FUN_00073064(param_1,(&DAT_0023c2b0)[iVar10],(&DAT_0023c2b1)[iVar10],uVar3 & 0xff,uVar7,
+                         *(undefined2 *)(&DAT_0023c2b3 + iVar10));
+  }
+  return uVar4;
+}

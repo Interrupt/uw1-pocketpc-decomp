@@ -75,7 +75,7 @@ ushort * param_2;
   if ((*param_2 & 7) != 6) {
     uVar3 = 0xb;
   }
-  FUN_00072c74(uVar3,(uint)(*(byte *)((char *)param_2 + 3) >> 5) + DAT_002020a0 * 8,
+  play_positional_sound_effect(uVar3,(uint)(*(byte *)((char *)param_2 + 3) >> 5) + DAT_002020a0 * 8,
                (*(byte *)((char *)param_2 + 3) >> 2 & 7) + DAT_002020a4 * 8,0);
   return;
 }
@@ -114,7 +114,7 @@ ushort * param_1;
   if ((*param_1 & 7) != 6) {
     uVar2 = 0xb;
   }
-  FUN_00072c74(uVar2,(uint)(*(byte *)((char *)param_1 + 3) >> 5) + DAT_002020a0 * 8,
+  play_positional_sound_effect(uVar2,(uint)(*(byte *)((char *)param_1 + 3) >> 5) + DAT_002020a0 * 8,
                (*(byte *)((char *)param_1 + 3) >> 2 & 7) + DAT_002020a4 * 8,0);
   return;
 }
