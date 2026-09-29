@@ -1304,6 +1304,9 @@ extern char s__DATA_mono_dat_000872b8[];
 extern char s__DATA_light_dat_000872c8[];
 extern char s__DATA_xfer_dat_000872d8[];
 extern char s_cLightTabs_allocation_error_____000872e8[];
+extern undefined1 DAT_0008730c_backing[8192];
+#define DAT_0008730c DAT_0008730c_backing[0]
+extern undefined1 DAT_0008730d;
 extern undefined1 DAT_0024fa38_backing[3072];
 #define DAT_0024fa38 DAT_0024fa38_backing[0]
 extern undefined2 DAT_00086b30;
@@ -3101,10 +3104,10 @@ void trigger_inscription_illustration();
 void load_shading_level_config();
 void load_light_tables();
 void toggle_light_table_flicker();
-undefined4 FUN_000703a0();
+undefined4 recompute_level7_hazard_from_character_level();
 void advance_character_level();
-undefined4 FUN_00070524();
-void FUN_00070548();
+undefined4 classify_skill_training_tier();
+void advance_skill_training();
 undefined4 FUN_0007067c();
 void FUN_000707c8();
 void FUN_0007080c();

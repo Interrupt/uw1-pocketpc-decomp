@@ -277,7 +277,7 @@ LAB_00025468:
           goto LAB_00025468;
         }
         sVar8 = 8;
-        uVar15 = FUN_000703a0(1);
+        uVar15 = recompute_level7_hazard_from_character_level(1);
       }
     }
     if (7 < sVar8) {

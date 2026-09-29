@@ -1897,3 +1897,165 @@ int param_1;
   }
   return;
 }
+
+
+
+
+
+
+// was FUN_000703a0 -- recomputes the level-7-specific hazard/regen
+// fields derived from the player's current character level
+// (DAT_00086df8+0x3d) and their class's base stat row (DAT_0023be74,
+// see its own declaration comment): writes a scaled value to
+// DAT_00086df8+0xb0 (if the current level is 7) or +0x38 otherwise --
+// the same pair save_or_restore_level_special_state saves/restores for
+// level 7's floor hazard -- and a 2-byte regen-rate field at +0x4c/
+// +0x4d. param_1!=0 also copies the new +0x38 value into +0x37 (the
+// active hazard byte). Called by advance_character_level after a
+// level-up (param_1=0) and by chargen (context not traced here).
+undefined4 recompute_level7_hazard_from_character_level(param_1)
+int param_1;
+
+{
+  undefined1 uVar1;
+  char cVar2;
+  char *iVar3;
+  
+  iVar3 = DAT_0023be74;
+  cVar2 = Ordinal_2005(5,(uint)*(byte *)(DAT_00086df8 + 0x3d) * (uint)*(byte *)(DAT_0023be74 + 5));
+  *(char *)(iVar3 + 4) = cVar2 + '\x1e';
+  uVar1 = (undefined1)
+          ((int)((*(byte *)(DAT_00086df8 + 0x28) + 1) * (uint)*(byte *)(DAT_0023be74 + 7)) >> 3);
+  if (DAT_00201b68 == 7) {
+    *(undefined1 *)(DAT_00086df8 + 0xb0) = uVar1;
+  }
+  else {
+    *(undefined1 *)(DAT_00086df8 + 0x38) = uVar1;
+  }
+  iVar3 = (uint)*(byte *)(DAT_0023be74 + 5) * 0x14;
+  *(char *)(DAT_00086df8 + 0x4c) = (char)iVar3;
+  *(char *)(DAT_00086df8 + 0x4d) = (char)((uint)iVar3 >> 8);
+  if (param_1 != 0) {
+    *(undefined1 *)(DAT_00086df8 + 0x37) = *(undefined1 *)(DAT_00086df8 + 0x38);
+  }
+  return 0;
+}
+
+
+
+// was FUN_00070464 -- raise the character level byte (DAT_00086df8 + 0x3d)
+// by param_1, show the "attained experience level N" scroll message, and
+// bump the dependent stat at +0x52.
+void advance_character_level(param_1)
+char param_1;
+
+{
+  int uw_ord2005_rem_138 = 0;
+  char *iVar1;
+  char cVar2;
+  int extraout_r1;
+  
+  *(char *)(DAT_00086df8 + 0x3d) = *(char *)(DAT_00086df8 + 0x3d) + param_1;
+  iVar1 = DAT_00086df8;
+  if (*(byte *)(DAT_00086df8 + 0x3d) < 10) {
+    DAT_0008730c = ' ';
+  }
+  else {
+    cVar2 = Ordinal_2005(10);
+    DAT_0008730c = cVar2 + '0';
+  }
+  uw_ord2005_rem_138 = ((int)(*(undefined1 *)(iVar1 + 0x3d))) % (10);
+  DAT_0008730d = (undefined1)((uint)((uw_ord2005_rem_138 + 0x30) * 0x1000000) >> 0x18);
+  FUN_00078c80(0x93);
+  message_scroll_print_wrapped(&DAT_0008730c);
+  *(char *)(DAT_00086df8 + 0x52) = *(char *)(DAT_00086df8 + 0x52) + param_1;
+  recompute_level7_hazard_from_character_level(0);
+  refresh_stats_panel_if_active();
+  return;
+}
+
+
+
+// was FUN_00070524 -- 3-way tier classifier: param_1<7 -> tier 0,
+// param_1>9 -> tier 1, otherwise (7..9) -> tier 2. Its result indexes
+// DAT_0023be74 (the player's class base-stat row) at advance_skill_training's
+// call site to pick that tier's base training value. Its one call site
+// passes no visible argument (K&R "leftover register" shape) -- likely
+// a dropped-argument bug matching this project's established pattern,
+// most plausibly meaning to pass advance_skill_training's own skill-index
+// parameter, but not fixed here since no ARM disassembly was available
+// to confirm the real value (flagged, not guessed).
+undefined4 classify_skill_training_tier(param_1)
+short param_1;
+
+{
+  undefined4 uVar1;
+  
+  if (param_1 < 7) {
+    uVar1 = 0;
+  }
+  else {
+    uVar1 = 2;
+    if (9 < param_1) {
+      uVar1 = 1;
+    }
+  }
+  return uVar1;
+}
+
+
+
+// was FUN_00070548 -- advances the skill/combat-category progress byte
+// at DAT_00086df8[param_1+0x21] (one of the per-skill bytes babl.c's
+// own "play_arms" variable sums, see its comment) toward its 30 (0x1e)
+// cap: a flat increment (larger the first time the byte is still 0),
+// a class-scaled random bonus (via classify_skill_training_tier and the
+// player's class stat row DAT_0023be74), and 2-3 roll_skill_check rolls.
+void advance_skill_training(param_1)
+short param_1;
+
+{
+  int iVar1;
+  undefined1 uVar2;
+  char cVar3;
+  short sVar4;
+  /* iVar5 doubles as a real pointer (DAT_00086df8 + iVar1) early on
+     and a plain int loop counter (from sVar7) later -- mutually
+     exclusive, but both squeezed into `int`, truncating the pointer. */
+  char *pcVar_df8;
+  int iVar5;
+  undefined2 uVar6;
+  short sVar7;
+  
+  iVar1 = (int)param_1;
+  if (*(char *)(iVar1 + DAT_00086df8 + 0x21) == '\0') {
+    cVar3 = '\x03';
+    uVar6 = 9;
+    sVar7 = 3;
+  }
+  else {
+    cVar3 = '\x01';
+    uVar6 = 0xd;
+    sVar7 = 2;
+  }
+  sVar4 = classify_skill_training_tier();
+  uVar2 = *(undefined1 *)(DAT_0023be74 + sVar4 + 5);
+  *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
+  pcVar_df8 = DAT_00086df8 + iVar1;
+  cVar3 = Ordinal_2005(uVar6,uVar2);
+  *(char *)(pcVar_df8 + 0x21) = cVar3 + *(char *)(pcVar_df8 + 0x21);
+  iVar5 = (int)sVar7;
+  cVar3 = rand_below(iVar5);
+  *(char *)(iVar1 + DAT_00086df8 + 0x21) = *(char *)(iVar1 + DAT_00086df8 + 0x21) + cVar3;
+  if (iVar5 != 0) {
+    do {
+      cVar3 = roll_skill_check(uVar2,0x14);
+      *(char *)(iVar1 + 0x21 + DAT_00086df8) = *(char *)(iVar1 + 0x21 + DAT_00086df8) + cVar3;
+      iVar5 = (iVar5 + -1) * 0x10000 >> 0x10;
+    } while (0 < iVar5);
+  }
+  if (0x1e < *(byte *)(iVar1 + DAT_00086df8 + 0x21)) {
+    *(undefined1 *)(iVar1 + DAT_00086df8 + 0x21) = 0x1e;
+  }
+  return;
+}
