@@ -500,7 +500,7 @@ int Ordinal_864(void *msg, void *hwndFilter, unsigned int wMsgFilterMin, unsigne
      *
      * DAT_0023c448 only ever reflects keyboard state, though -- mouse
      * events are handled synchronously and completely inline in
-     * uw_pump_events (FUN_00077dd0 finishes with each one immediately),
+     * uw_pump_events (handle_mouse_message finishes with each one immediately),
      * leaving no "pending" state for DAT_0023c448 to hold the way
      * keyboard input does. Without also checking
      * uw_take_mouse_event_pending(), poll_input_event never falls through to
@@ -520,7 +520,7 @@ long Ordinal_866()
 
 /* Real coredll ordinal: PostMessage(hwnd, msg, wParam, lParam). Confirmed
  * via Ghidra headless disassembly -- this is the exact call the recovered
- * mouse handler (FUN_00077dd0 in uw.c) makes to re-dispatch a stylus tap
+ * mouse handler (handle_mouse_message in uw.c) makes to re-dispatch a stylus tap
  * on the chargen on-screen keyboard as a synthetic WM_CHAR/WM_KEYDOWN.
  * This port never builds a real Win32 MSG queue (see Ordinal_864's
  * comment -- handle_keyboard_message is driven directly from DAT_0023c448), so
@@ -731,14 +731,46 @@ long Ordinal_1072()
     return 0;
 }
 
-long Ordinal_1090()
+/* Windows CE keyboard-translation ordinal (likely a VK-code-to-character
+ * case transform, given its sibling Ordinal_1091 and their shared call
+ * site at uw.c ~50479: `if (DAT_0023c448 == 0x400) sVar1 =
+ * Ordinal_1090(sVar1); else sVar1 = Ordinal_1091();` -- a caps/shift-state
+ * branch feeding the translated key code onward). Was a no-op stub
+ * returning 0 even though its own call site already passes a real
+ * argument -- every character typed down this specific path (whichever
+ * keyboard state selects this branch) silently became NUL. Implemented
+ * as an identity passthrough: real semantics (whatever exact case-fold
+ * Windows CE's own import performs) aren't recovered, but returning the
+ * input unchanged is strictly better than always returning 0/NUL, and
+ * is correct for the common case where the raw key code is already the
+ * intended printable character. */
+long Ordinal_1090(param_1)
+long param_1;
 {
-    return 0;
+    return param_1;
 }
 
-long Ordinal_1091()
+/* Sibling of Ordinal_1090 just above -- same fix, same reasoning. This
+ * one's OWN call site (uw.c ~10375, the automap note-text-entry loop)
+ * was ALSO calling it bare (no argument), the classic "dropped
+ * register-forwarding arg" idiom this whole project hits repeatedly:
+ * real ARM code relies on the immediately-preceding computation
+ * leaving the intended character code in r0, which this compiler does
+ * not reproduce for a literal `Ordinal_1091()` call. Confirmed live via
+ * UW_DEBUG_AUTOMAP_NOTE tracing: typing "TEST" while placing an automap
+ * note correctly decoded each keystroke (sVar2 read back 84/69/83/84 =
+ * 'T'/'E'/'S'/'T') but the note's own text buffer stayed empty the
+ * entire time, because every appended character came from this
+ * always-0 stub -- the single root cause of "leaving notes doesn't
+ * work in the automap" (every character typed was silently replaced
+ * with NUL, so the buffer's first byte was always the string
+ * terminator). Fixed the call site to pass the real key code (uw.c's
+ * own `sVar2`) explicitly, same as Ordinal_1090's own call site
+ * already does. */
+long Ordinal_1091(param_1)
+long param_1;
 {
-    return 0;
+    return param_1;
 }
 
 long Ordinal_1094()

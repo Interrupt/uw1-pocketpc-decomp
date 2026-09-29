@@ -1,0 +1,21 @@
+# Opens the automap, clicks to place a note, types "Test", and commits
+# it with ENTER -- regression test for the note-taking feature (was
+# completely broken: every typed character silently became NUL via a
+# no-op Ordinal_1091 stub, see the "map notes" fix commit).
+ENTER
+ENTER
+WAIT 2
+OPENMAP
+WAIT 20
+SCREENSHOT /tmp/mapnote_00_opened.bmp
+SDLCLICK 300 300
+WAIT 5
+SCREENSHOT /tmp/mapnote_01_clicked.bmp
+TYPE Test
+WAIT 5
+SCREENSHOT /tmp/mapnote_02_typed.bmp
+ENTER
+WAIT 10
+SCREENSHOT /tmp/mapnote_03_committed.bmp
+WAIT 10
+SCREENSHOT /tmp/mapnote_04_settled.bmp

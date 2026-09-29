@@ -1,2 +1,7 @@
-clang -std=gnu11 -g -O0 -Wno-implicit-function-declaration -Wno-int-conversion -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -Wno-incompatible-function-pointer-types -Wno-deprecated-non-prototype $(sdl2-config --cflags) -o build/uw_dbg uw.c graphics.c game.c chargen.c main.c gx_stub.c ordinal_stubs.c file_io.c demomode.c democapture.c debug.c $(sdl2-config --libs) 2>&1 | grep -iE "error:"
+#!/bin/sh
+# Configure (if needed) and build build/uw_dbg via CMake.
+cd "$(dirname "$0")"
+
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug || exit 1
+cmake --build build -j 2>&1 | grep -iE "error:"
 echo "built"
