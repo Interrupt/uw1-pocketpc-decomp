@@ -4621,7 +4621,13 @@ void finalize_player_barter_items()
   do {
     psVar5 = &DAT_000bbfd0 + local_28;
     if (0 < *psVar5) {
-      if (((&DAT_000bbf98)[local_28] != 0) && (sVar1 = FUN_0001dab8(), sVar1 != -1)) {
+      /* BUG FIX: was `check_npc_item_preference()` with no arguments,
+         relying on leftover register state (same dropped-argument bug
+         class documented throughout this project) -- *psVar5 (the
+         slot's item-value, already used the very next line) is the
+         value that belongs here; see check_npc_item_preference's own
+         comment. */
+      if (((&DAT_000bbf98)[local_28] != 0) && (sVar1 = check_npc_item_preference(*psVar5), sVar1 != -1)) {
         puVar2 = (ushort *)FUN_000535fc((int)*psVar5);
         puVar3 = (ushort *)resolve_object_link(DAT_00100674 + 6);
         if ((*puVar2 & 0x1ff) == 0xa1) {
@@ -4832,7 +4838,7 @@ undefined4 param_3;
     sVar6 = *(short *)(&DAT_00202c95 + (uVar7 & 0x1ff) * 0xd);
   }
   else {
-    sVar2 = FUN_0001dab8(param_2);
+    sVar2 = check_npc_item_preference(param_2);
     if (sVar2 == -1) {
       return 0;
     }
@@ -5025,5 +5031,77 @@ short param_1;
     } while (puVar1 != (ushort *)0x0);
   }
   return 0;
+}
+
+
+
+
+// was FUN_0001dab8 -- checks an item's slot-value against the NPC's
+// "wanted" (DAT_000bc020) and "refused" (DAT_000bc000) item-id/item-
+// class preference lists: returns 1 if specifically wanted (or an
+// item-id hit in the wanted list), -1 if specifically refused (an
+// item-id hit in the refused list, or if the item's comobj.dat value
+// is 0 -- worthless), 0 if neutral. Used by compute_barter_item_value
+// (refused items are worth nothing; wanted items get a value bonus)
+// and finalize_player_barter_items (refused items skip the special
+// gold-stacking merge path).
+//
+// BUG FIX: was called with zero visible arguments (both here, calling
+// FUN_000535fc(), and at its own call site in
+// finalize_player_barter_items), relying on leftover register state --
+// the real slot-value argument (this function's own param_1) flows
+// through fine at its OTHER call site (compute_barter_item_value,
+// already correct), confirming the intended signature. Added the
+// missing param_1 and threaded it through explicitly.
+undefined4 check_npc_item_preference(param_1)
+short param_1;
+
+{
+  ushort uVar1;
+  ushort *puVar2;
+  undefined4 uVar3;
+  uint uVar4;
+  int iVar5;
+  int iVar6;
+
+  puVar2 = (ushort *)FUN_000535fc(param_1);
+  if (*(short *)(&DAT_00202c95 + (*puVar2 & 0x1ff) * 0xd) == 0) {
+LAB_0001dbcc:
+    uVar3 = 0xffffffff;
+  }
+  else {
+    uVar1 = *puVar2 & 0x1ff;
+    iVar5 = ((int)(short)uVar1 >> 4) + 1000;
+    uVar3 = 0;
+    if ((DAT_000bc020 != (short *)0x0) && (uVar4 = (uint)*DAT_000bc020, -1 < (int)uVar4)) {
+      iVar6 = 0;
+      do {
+        if ((int)uVar4 < 1000) {
+          if ((int)(short)uVar1 == uVar4) {
+            return 1;
+          }
+        }
+        else if (iVar5 * 0x10000 >> 0x10 == uVar4) {
+          uVar3 = 1;
+        }
+        iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+        uVar4 = (uint)DAT_000bc020[iVar6];
+      } while (uVar4 < 0x80000000);
+    }
+    if ((DAT_000bc000 != (short *)0x0) && (uVar4 = (uint)*DAT_000bc000, -1 < (int)uVar4)) {
+      iVar6 = 0;
+      do {
+        if ((int)uVar4 < 1000) {
+          if ((int)(short)uVar1 == uVar4) goto LAB_0001dbcc;
+        }
+        else if (iVar5 * 0x10000 >> 0x10 == uVar4) {
+          uVar3 = 0xffffffff;
+        }
+        iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+        uVar4 = (uint)DAT_000bc000[iVar6];
+      } while (uVar4 < 0x80000000);
+    }
+  }
+  return uVar3;
 }
 

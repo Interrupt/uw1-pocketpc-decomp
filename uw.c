@@ -8126,59 +8126,6 @@ LAB_0001ad98:
 
 
 
-undefined4 FUN_0001dab8()
-
-{
-  ushort uVar1;
-  ushort *puVar2;
-  undefined4 uVar3;
-  uint uVar4;
-  int iVar5;
-  int iVar6;
-  
-  puVar2 = (ushort *)FUN_000535fc();
-  if (*(short *)(&DAT_00202c95 + (*puVar2 & 0x1ff) * 0xd) == 0) {
-LAB_0001dbcc:
-    uVar3 = 0xffffffff;
-  }
-  else {
-    uVar1 = *puVar2 & 0x1ff;
-    iVar5 = ((int)(short)uVar1 >> 4) + 1000;
-    uVar3 = 0;
-    if ((DAT_000bc020 != (short *)0x0) && (uVar4 = (uint)*DAT_000bc020, -1 < (int)uVar4)) {
-      iVar6 = 0;
-      do {
-        if ((int)uVar4 < 1000) {
-          if ((int)(short)uVar1 == uVar4) {
-            return 1;
-          }
-        }
-        else if (iVar5 * 0x10000 >> 0x10 == uVar4) {
-          uVar3 = 1;
-        }
-        iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
-        uVar4 = (uint)DAT_000bc020[iVar6];
-      } while (uVar4 < 0x80000000);
-    }
-    if ((DAT_000bc000 != (short *)0x0) && (uVar4 = (uint)*DAT_000bc000, -1 < (int)uVar4)) {
-      iVar6 = 0;
-      do {
-        if ((int)uVar4 < 1000) {
-          if ((int)(short)uVar1 == uVar4) goto LAB_0001dbcc;
-        }
-        else if (iVar5 * 0x10000 >> 0x10 == uVar4) {
-          uVar3 = 0xffffffff;
-        }
-        iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
-        uVar4 = (uint)DAT_000bc000[iVar6];
-      } while (uVar4 < 0x80000000);
-    }
-  }
-  return uVar3;
-}
-
-
-
 /* Ghidra lost the return value (literal `return 0`), so the sole caller
    (emit_catalog_object) dereferenced NULL at `*(int *)(iVar29 + 4)` -> crash the
    moment an animated tile object (door, etc.) came into view. The

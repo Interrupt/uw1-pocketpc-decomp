@@ -2064,7 +2064,7 @@ void add_item_to_npc_inventory();
 void give_barter_item_by_item_id();
 undefined4 remove_item_from_npc_inventory_by_id();
 undefined4 babl_builtin_set_likes_dislikes();
-undefined4 FUN_0001dab8();
+undefined4 check_npc_item_preference();
 void *tick_anim_record();
 void FUN_0001dd2c();
 void build_view_matrix();
