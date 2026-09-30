@@ -1781,7 +1781,7 @@ undefined4 try_npc_special_ability_no_los()
 
 // was FUN_00030be0 -- an NPC combat sub-goal attempt (sibling of
 // try_npc_special_ability_no_los): requires a clear line of sight
-// (check_fine_line_of_sight) and a resource check (FUN_00032410(1),
+// (check_fine_line_of_sight) and a resource check (check_npc_target_alignment(1),
 // likely "can afford this ability's cost"), rolls a chance from byte
 // 0x2d, and on success switches to state 0xd plus picks between 2
 // variants (byte 0x19 bits 2-3) via a further roll -- likely a ranged
@@ -1808,7 +1808,7 @@ undefined4 try_npc_special_ability_ranged()
                              ((byte)DAT_0010190c[1] & 0x7f),DAT_00101908,DAT_00101418,
                              (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
                              ((byte)DAT_00101400[1] & 0x7f)), iVar3 != 0)))) &&
-     (iVar3 = FUN_00032410(1), iVar3 != 0)) {
+     (iVar3 = check_npc_target_alignment(1), iVar3 != 0)) {
     uVar4 = Ordinal_1053();
     bVar1 = *(byte *)(DAT_00101404 + 0x2d);
     uw_ord2005_rem_60 = ((int)(uVar4)) % (0x80);
@@ -1855,7 +1855,7 @@ undefined4 try_npc_special_ability_alt()
                             ((byte)DAT_0010190c[1] & 0x7f),DAT_00101908,DAT_00101418,
                             (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
                             ((byte)DAT_00101400[1] & 0x7f)), iVar2 != 0)) &&
-     (iVar2 = FUN_00032410(1), iVar2 != 0)) {
+     (iVar2 = check_npc_target_alignment(1), iVar2 != 0)) {
     uVar3 = Ordinal_1053();
     bVar1 = *(byte *)(DAT_00101404 + 6);
     uw_ord2005_rem_62 = ((int)(uVar3)) % (0xc0);
@@ -1938,4 +1938,143 @@ uint param_2;
     }
   }
   return param_1;
+}
+
+
+// was FUN_00032410 -- checks/adjusts an NPC's 8-way facing toward a
+// target position (DAT_00101908/0x1c minus DAT_00101910/0x1c, the same
+// aim-point delta check_fine_line_of_sight's own callers compute):
+// param_1==0 checks the coarse 8-way heading via
+// compute_movement_heading, returning 1 if already facing that way or
+// nudging the facing one step closer and returning 0 otherwise;
+// param_1!=0 delegates entirely to check_npc_fine_facing_alignment
+// (a finer-grained sibling check) instead. Called from the special-
+// ability sub-goal functions with param_1=1 to gate on precise aim.
+undefined4 check_npc_target_alignment(param_1)
+int param_1;
+
+{
+  int uw_ord2005_rem_87 = 0; int uw_ord2005_rem_88 = 0; int uw_ord2005_rem_89 = 0;
+  int iVar1;
+  int iVar2;
+  ushort uVar3;
+  char *iVar4;
+  char cVar5;
+  undefined4 uVar6;
+  char extraout_r1;
+  uint extraout_r1_00;
+  uint extraout_r1_01;
+  uint uVar7;
+  
+  iVar1 = (int)(((uint)DAT_00101908 - (uint)DAT_00101910) * 0x1000000) >> 0x18;
+  iVar2 = (int)(((uint)DAT_00101418 - (uint)DAT_0010141c) * 0x1000000) >> 0x18;
+  cVar5 = compute_movement_heading(iVar1,iVar2);
+  iVar4 = DAT_0010190c;
+  uVar3 = *(ushort *)((char *)DAT_0010190c + 2);
+  uw_ord2005_rem_87 = ((int)(((int)cVar5 - ((int)(char)(uVar3 >> 7) & 7U)) + 8)) % (8);
+  if (param_1 == 0) {
+    if (uw_ord2005_rem_87 == '\0') {
+      uVar6 = 1;
+    }
+    else {
+      uVar7 = uVar3 >> 7 & 7;
+      if (uw_ord2005_rem_87 < '\x05') {
+        uw_ord2005_rem_88 = ((int)(uVar7 + 1)) % (8);
+        uVar7 = uw_ord2005_rem_88;
+      }
+      else {
+        uw_ord2005_rem_89 = ((int)(uVar7 - 1)) % (8);
+        uVar7 = uw_ord2005_rem_89;
+      }
+      uVar7 = uVar3 & 0xfc7f | (uVar7 & 7) << 7;
+      *(char *)(iVar4 + 2) = (char)uVar7;
+      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      uVar6 = 0;
+    }
+  }
+  else {
+    uVar6 = check_npc_fine_facing_alignment(iVar1,iVar2);
+  }
+  return uVar6;
+}
+
+
+
+// was FUN_0003276c -- checks/adjusts an NPC's fine-grained facing
+// toward a target delta (param_1,param_2): computes the precise angle
+// via slope ratios fed through FUN_00049fb4 (an atan2-shaped helper,
+// not yet named), and if the NPC's current fine facing (byte 2's own
+// angle XORed with a jitter field at byte 0x18) is already within a
+// band of the target angle, returns 1 (aligned); otherwise nudges the
+// facing by a fixed step toward it and returns 0.
+undefined4 check_npc_fine_facing_alignment(param_1,param_2)
+char param_1;
+char param_2;
+
+{
+  int uw_ord2005_rem_90 = 0; int uw_ord2005_rem_91 = 0; int uw_ord2005_rem_92 = 0;
+  uint uVar1;
+  short sVar2;
+  uint uVar3;
+  uint uVar4;
+  int iVar5;
+  uint extraout_r1;
+  uint extraout_r1_00;
+  uint extraout_r1_01;
+  uint uVar6;
+  int iVar7;
+  undefined4 uVar8;
+  
+  uVar8 = 0;
+  uVar4 = *(ushort *)((char *)DAT_0010190c + 2) >> 2 & 0xff;
+  uVar4 = (uVar4 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^ uVar4;
+  uVar3 = integer_sqrt((int)DAT_00101444 * (int)DAT_00101444 + (int)DAT_00101448 * (int)DAT_00101448
+                      );
+  uVar6 = (uint)param_1;
+  uVar1 = (uint)param_2;
+  uVar3 = uVar3 & 0xffff;
+  if (uVar3 == 0) {
+    uVar8 = 1;
+  }
+  else {
+    if (uVar1 == uVar3) {
+      iVar7 = 0x7fff;
+    }
+    else {
+      iVar7 = -0x8000;
+      if (-uVar3 != uVar1) {
+        sVar2 = Ordinal_2005(uVar3,uVar1 << 0xf);
+        iVar7 = (int)sVar2;
+      }
+    }
+    iVar5 = 0x7fff;
+    if ((uVar6 != uVar3) && (iVar5 = -0x8000, -uVar3 != uVar6)) {
+      sVar2 = Ordinal_2005(uVar3,uVar6 << 0xf);
+      iVar5 = (int)sVar2;
+    }
+    uVar3 = FUN_00049fb4(iVar7,iVar5);
+    uw_ord2005_rem_90 = ((int)(0x140 - ((uVar3 & 0xffff) >> 8))) % (0x100);
+    uVar3 = uw_ord2005_rem_90 & 0xff;
+    uVar6 = uVar3 - uVar4 & 0xff;
+    if ((uVar6 < 0x20) || (0xe0 < uVar6)) {
+      uVar8 = 1;
+    }
+    else {
+      if (uVar6 < 0x80) {
+        uw_ord2005_rem_91 = ((int)(uVar4 + 0x20)) % (0x100);
+        uVar3 = uw_ord2005_rem_91;
+      }
+      else {
+        uw_ord2005_rem_92 = ((int)(uVar4 + 0xe0)) % (0x100);
+        uVar3 = uw_ord2005_rem_92;
+      }
+      uVar3 = uVar3 & 0xff;
+    }
+    uVar6 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 0xffe0) << 2;
+    *(char *)((char *)DAT_0010190c + 2) = (char)uVar6;
+    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar6 >> 8);
+    *(byte *)((char *)DAT_0010190c + 0x18) =
+         (*(byte *)((char *)DAT_0010190c + 0x18) ^ (byte)uVar3) & 0x1f ^ *(byte *)((char *)DAT_0010190c + 0x18);
+  }
+  return uVar8;
 }

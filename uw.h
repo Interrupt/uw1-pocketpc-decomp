@@ -2785,8 +2785,8 @@ void npc_combat_disengage_tick();
 void npc_react_to_nearby_player();
 void npc_wander_return_home_exact_tick();
 undefined4 detect_npc_wander_proximity();
-undefined4 FUN_00032410();
-undefined4 FUN_0003276c();
+undefined4 check_npc_target_alignment();
+undefined4 check_npc_fine_facing_alignment();
 int FUN_0003298c();
 void FUN_00032aa4();
 undefined4 npc_ai_tick(); // was FUN_00032d38
