@@ -6800,40 +6800,6 @@ void thunk_FUN_0003c310()
 
 
 
-void FUN_0001422c(param_1)
-undefined4 * param_1;
-
-{
-  Ordinal_1047(param_1,0,0x40);
-  param_1[0xf] = 0x3f800000;
-  param_1[10] = 0x3f800000;
-  param_1[5] = 0x3f800000;
-  *param_1 = 0x3f800000;
-  return;
-}
-
-
-
-/* Copy a 4x4 matrix param_1 -> param_2. param_1 was `int`, and the body
-   computed the source address as `(param_1 - (int)param_2) + (int)puVar1`
-   -- a 32-bit byte delta -- so on a 64-bit host both the source pointer
-   and the delta truncated (wild read; crashed build_euler_rotation_matrix
-   once the object-render path started calling it with real property
-   data). It's just element-wise `param_2[i] = param_1[i]` for i in 0..15. */
-void FUN_00014258(param_1,param_2)
-undefined4 * param_1;
-undefined4 * param_2;
-
-{
-  int i;
-
-  for (i = 0; i < 16; i = i + 1) {
-    param_2[i] = param_1[i];
-  }
-  return;
-}
-
-
 
 // Tunable: extra units ADDED to DAT_000842b0's computed value (more
 // negative there is brighter, so this darkens the view) in BOTH
@@ -7442,8 +7408,8 @@ int param_4;
   /* This whole local block was a run of individually-named scalars
      (local_164, local_160, ... auStack_124[5], local_a4[2], ...) instead
      of the real 4x4 (16-`undefined4`/64-byte) matrix buffers
-     FUN_0001422c/multiply_matrix4x4/FUN_00014258 actually read and write --
-     same "split-symbol matrix" bug class as FUN_00014258's own pointer-
+     set_identity_matrix4x4/multiply_matrix4x4/copy_matrix4x4 actually read and write --
+     same "split-symbol matrix" bug class as copy_matrix4x4's own pointer-
      truncation fix (see its comment), just on the caller's stack instead
      of a global. Every one of those calls overflowed by 20-60+ bytes
      into whatever locals or padding happened to follow, corrupting the
@@ -7454,9 +7420,9 @@ int param_4;
      moment the DAT_00202c9X object-property fix above let that happen
      (confirmed via ASAN + a stack-canary abort in exactly this
      function). Restructured into four real 16-element matrix buffers
-     (one per FUN_0001422c call site: the unconditional one, then one per
+     (one per set_identity_matrix4x4 call site: the unconditional one, then one per
      param_2/3/4 branch), with each formerly-named scalar mapped to its
-     real row-major slot -- confirmed against FUN_0001422c's own identity
+     real row-major slot -- confirmed against set_identity_matrix4x4's own identity
      writes (indices 0/5/10/15, the standard 4x4 diagonal): the named
      locals for each cluster line up exactly on a 4-wide row stride
      (e.g. local_164/154/144 are 0x10 apart = row 0/1/2 of column 0),
@@ -7496,10 +7462,10 @@ int param_4;
   if (((param_2 == 0) && (param_3 == 0)) && (param_4 == 0)) {
     return;
   }
-  FUN_0001422c(local_164_arr);
+  set_identity_matrix4x4(local_164_arr);
   uVar8 = extraout_r3;
   if (param_2 != 0) {
-    FUN_0001422c(auStack_124);
+    set_identity_matrix4x4(auStack_124);
     uVar10 = (&DAT_000d9ed8)[param_2];
     local_10c = (&DAT_000d9930)[param_2];
     local_110 = uVar10;
@@ -7508,7 +7474,7 @@ int param_4;
     local_fc = uVar10;
   }
   if (param_3 != 0) {
-    FUN_0001422c(local_a4);
+    set_identity_matrix4x4(local_a4);
     uVar10 = (&DAT_000d9ed8)[param_3];
     uVar12 = (&DAT_000d9930)[param_3];
     uVar11 = uVar14;
@@ -7520,7 +7486,7 @@ int param_4;
     local_7c = uVar10;
   }
   if (param_4 != 0) {
-    FUN_0001422c(local_e4_arr);
+    set_identity_matrix4x4(local_e4_arr);
     uVar10 = (&DAT_000d9ed8)[param_4];
     local_e0 = (&DAT_000d9930)[param_4];
     local_e4 = uVar10;
@@ -7578,7 +7544,7 @@ LAB_0001e9c4:
     puVar4 = local_a4;
   }
 LAB_0001ea10:
-  FUN_00014258(puVar4,&local_164);
+  copy_matrix4x4(puVar4,&local_164);
 LAB_0001ea18:
   iVar13 = 0;
   piVar9 = param_1;

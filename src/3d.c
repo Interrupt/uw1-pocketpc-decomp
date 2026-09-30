@@ -771,7 +771,7 @@ void build_view_matrix()
   undefined4 uVar3;
   /* This function's four matrices (local_198.., auStack_158, local_118,
      auStack_d8) were each declared as only as many bytes as this function
-     happens to name individual elements of, but FUN_0001422c (called on
+     happens to name individual elements of, but set_identity_matrix4x4 (called on
      each below) zeroes+identity-inits a real 0x40(64)-byte/16-element 4x4
      float matrix at every one of these base pointers, and multiply_matrix4x4
      (the matrix multiply also called below) reads/writes the full 16
@@ -783,7 +783,7 @@ void build_view_matrix()
      these oddly-offset scalar names only because this function happens to
      assign a handful of specific elements by name (a 2x2 rotation block
      plus, for one matrix, a translation column) -- the untouched elements
-     still need to keep FUN_0001422c's identity-matrix values, which
+     still need to keep set_identity_matrix4x4's identity-matrix values, which
      requires them to actually share one real contiguous 64-byte buffer.
      Widened all four to real 16-element arrays and switched every named
      element write to an indexed one at its correct offset (verified
@@ -805,10 +805,10 @@ void build_view_matrix()
     if (!dd2c_done) { dd2c_done = 1; FUN_0001dd2c(); }
   }
 
-  FUN_0001422c(auStack_d8);
-  FUN_0001422c(auStack_158);
-  FUN_0001422c(local_118);
-  FUN_0001422c(local_198_mtx);
+  set_identity_matrix4x4(auStack_d8);
+  set_identity_matrix4x4(auStack_158);
+  set_identity_matrix4x4(local_118);
+  set_identity_matrix4x4(local_198_mtx);
   ((undefined4 *)auStack_d8)[12] = Ordinal_2023(DAT_000db438);
   ((undefined4 *)auStack_d8)[13] = Ordinal_2023(DAT_000db43c);
   ((undefined4 *)auStack_d8)[14] = Ordinal_2023(DAT_000db440);
@@ -1394,3 +1394,44 @@ undefined4 * param_3;
   param_3[0xf] = 0x3f800000;
   return;
 }
+
+
+// was FUN_0001422c -- confirmed by src/3d.c's own pre-existing
+// comment ("set_identity_matrix4x4's identity-matrix values") as a 4x4 identity
+// matrix setter: zeroes the 16-float (64-byte) buffer, then sets the
+// four diagonal elements to 1.0f.
+void set_identity_matrix4x4(param_1)
+undefined4 * param_1;
+
+{
+  Ordinal_1047(param_1,0,0x40);
+  param_1[0xf] = 0x3f800000;
+  param_1[10] = 0x3f800000;
+  param_1[5] = 0x3f800000;
+  *param_1 = 0x3f800000;
+  return;
+}
+
+
+
+/* was FUN_00014258 -- copy a 4x4 matrix param_1 -> param_2. param_1
+   was `int`, and the body
+   computed the source address as `(param_1 - (int)param_2) + (int)puVar1`
+   -- a 32-bit byte delta -- so on a 64-bit host both the source pointer
+   and the delta truncated (wild read; crashed build_euler_rotation_matrix
+   once the object-render path started calling it with real property
+   data). It's just element-wise `param_2[i] = param_1[i]` for i in 0..15. */
+void copy_matrix4x4(param_1,param_2)
+undefined4 * param_1;
+undefined4 * param_2;
+
+{
+  int i;
+
+  for (i = 0; i < 16; i = i + 1) {
+    param_2[i] = param_1[i];
+  }
+  return;
+}
+
+
