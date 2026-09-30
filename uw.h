@@ -1750,6 +1750,7 @@ extern char DAT_00101928;
 extern short DAT_00101938;
 extern short DAT_0010193c;
 extern undefined4 DAT_00101944;
+extern undefined4 DAT_00101954; // "alerted hostile found" flag, set by detect_unsafe_rest_object_callback
 extern char DAT_00101948;
 extern undefined DAT_002027d1_backing[8192];
 #define DAT_002027d1 DAT_002027d1_backing[0]
@@ -2813,8 +2814,8 @@ undefined4 resolve_tile_entry_offset();
 void npc_movement_tick();
 undefined4 settle_misplaced_mobile_object();
 void advance_mobile_objects();
-undefined4 FUN_000352d0();
-undefined4 FUN_00035340();
+undefined4 detect_unsafe_rest_object_callback();
+undefined4 check_rest_area_unsafe();
 undefined4 FUN_00035394();
 undefined4 FUN_00035894();
 void FUN_000358e8();

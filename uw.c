@@ -9565,33 +9565,6 @@ short param_1;
 
 
 
-undefined4 FUN_000352d0(param_1,param_2,param_3)
-undefined4 param_1;
-undefined4 param_2;
-int param_3;
-
-{
-  byte bVar1;
-  short sVar2;
-  
-  sVar2 = encode_object_slot_index(param_3);
-  if (((sVar2 != 1) &&
-      (((bVar1 = *(byte *)(param_3 + 0xb) & 0xf, bVar1 == 5 || (bVar1 == 4)) || (bVar1 == 9)))) &&
-     ((*(byte *)(param_3 + 0x19) & 1) != 0)) {
-    DAT_00101954 = 1;
-  }
-  return 0;
-}
-
-
-
-undefined4 FUN_00035340()
-
-{
-  DAT_00101954 = 0;
-  scan_area_ahead_of_object(g_player_object,0x7f,FUN_000352d0,0,0,2);
-  return DAT_00101954;
-}
 
 
 

@@ -2615,7 +2615,7 @@ void apply_rest_status_effects()
 // was FUN_00071510 -- the "Rest" command handler, reached either
 // directly (param_1<0) or, for param_1>=0, only after passing
 // preconditions (not poisoned/etc. per DAT_00086df8+0xb8, not falling,
-// not on level 9) and FUN_00035340 reporting it's unsafe to rest here
+// not on level 9) and check_rest_area_unsafe reporting it's unsafe to rest here
 // (message 0xf shown either way): advances game time
 // (DAT_00086df8+0xce) by a random 2-6 "day" count, heals HP/mana based
 // on hunger state (g_player_object+8) via adjust_player_hp, decays
@@ -2783,7 +2783,7 @@ LAB_0007158c:
   else {
     if ((((*(byte *)(DAT_00086df8 + 0xb8) & 0x1b) == 0) && (g_fall_accel == 0)) &&
        (DAT_00201b68 != 9)) {
-      iVar4 = FUN_00035340();
+      iVar4 = check_rest_area_unsafe();
       if (iVar4 == 0) {
         print_scroll_message_by_id(0xf);
         goto LAB_0007158c;
@@ -3569,3 +3569,42 @@ short param_4;
 
 
 
+
+
+// was FUN_000352d0 -- scan_area_ahead_of_object callback: flags
+// DAT_00101954 if the scanned object (param_3) isn't the player, its
+// class-record quality nibble (byte 0xb) is 4, 5, or 9 (a hostile
+// creature category), and its own alerted/aware flag (byte 0x19, bit
+// 0) is set. Used by check_rest_area_unsafe to detect a nearby
+// alerted hostile within resting range.
+undefined4 detect_unsafe_rest_object_callback(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+int param_3;
+
+{
+  byte bVar1;
+  short sVar2;
+
+  sVar2 = encode_object_slot_index(param_3);
+  if (((sVar2 != 1) &&
+      (((bVar1 = *(byte *)(param_3 + 0xb) & 0xf, bVar1 == 5 || (bVar1 == 4)) || (bVar1 == 9)))) &&
+     ((*(byte *)(param_3 + 0x19) & 1) != 0)) {
+    DAT_00101954 = 1;
+  }
+  return 0;
+}
+
+
+
+// was FUN_00035340 -- scans a radius (0x7f) around the player for an
+// alerted hostile creature (detect_unsafe_rest_object_callback) and
+// returns whether one was found. handle_rest_action's non-negative
+// path reads this to decide whether resting is safe here.
+undefined4 check_rest_area_unsafe()
+
+{
+  DAT_00101954 = 0;
+  scan_area_ahead_of_object(g_player_object,0x7f,detect_unsafe_rest_object_callback,0,0,2);
+  return DAT_00101954;
+}
