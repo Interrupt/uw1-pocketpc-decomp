@@ -8329,44 +8329,6 @@ undefined4 param_1;
 
 
 
-int FUN_000271dc(param_1)
-short param_1;
-
-{
-  char *wptr_14062;
-  char cVar1;
-  short sVar2;
-  int iVar3;
-  char *pcVar4;
-  char acStackY_84f60 [544528];
-  short local_4c [4];
-  ushort local_44 [4];
-  char acStack_3c [52];
-  
-  cVar1 = (&DAT_002027d2)[param_1 * 3];
-  iVar3 = FUN_000452dc(0,1,(int)cVar1,4,local_4c);
-  if (iVar3 == 0) {
-    local_44[0] = ((short)cVar1 + 0x10U ^ local_44[0]) & 0x1ff ^ local_44[0];
-    message_scroll_print_wrapped(s_Sorry__you_have_no_00084f2c);
-    sVar2 = build_object_display_name(acStack_3c,local_44,0,1);
-    if (sVar2 == 0) {
-      pcVar4 = s_UNNAMED_00084f24;
-    wptr_14062 = acStackY_84f60;
-      do {
-        cVar1 = *pcVar4;
-        *wptr_14062 = cVar1; wptr_14062 = wptr_14062 + 1;
-        pcVar4 = pcVar4 + 1;
-      } while (cVar1 != '\0');
-    }
-    message_scroll_print_wrapped(acStack_3c);
-    message_scroll_print_wrapped(&DAT_00084f20);
-    iVar3 = -1;
-  }
-  else {
-    iVar3 = (int)local_4c[0];
-  }
-  return iVar3;
-}
 
 
 
@@ -8399,7 +8361,7 @@ char * * param_2;
     if ((uVar2 & 0x1f0) == 0x10) {
       iVar5 = (uVar1 & 0xf) * 3;
       if ((-1 < (char)(&DAT_002027d2)[iVar5]) && ((char)(&DAT_002027d2)[iVar5] < '\x10')) {
-        sVar3 = FUN_000271dc(uVar2 & 0xf);
+        sVar3 = find_and_consume_ammo(uVar2 & 0xf);
         if (sVar3 < 0) {
           wait_for_click_release(1);
           return 0xffffffff;
@@ -23679,7 +23641,12 @@ short param_1;
   ushort *puVar7;
   uint uVar8;
   
-  uVar5 = FUN_000271dc();
+  /* Was a dropped argument -- find_and_consume_ammo's own param_1 (weapon
+     type). The very next line re-derives the identical
+     `(&DAT_002027d2)[param_1*3]` table lookup find_and_consume_ammo's own
+     body performs internally, confirming this caller's param_1 is the
+     value that belongs here. */
+  uVar5 = find_and_consume_ammo(param_1);
   if (-1 < (short)uVar5) {
     iVar1 = (int)param_1;
     cVar3 = (&DAT_002027d2)[iVar1 * 3];

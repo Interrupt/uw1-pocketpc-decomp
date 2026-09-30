@@ -1801,6 +1801,7 @@ extern undefined4 g_weapon_overlay_enabled;
 extern char s_is_locked__000878fc[];
 extern char s_That_000878f4[];
 extern char s_UNNAMED_00084f24[];
+extern char s_Sorry__you_have_no_00084f2c[];
 /* Globals defined in uw.c but also used by functions that now live in
    movement.c (the movement collision sweep) -- extern'd here so both
    translation units see the same storage. */
@@ -2610,7 +2611,7 @@ void apply_melee_damage();
 undefined4 play_weapon_impact_sound();
 void compute_attack_relative_facing();
 undefined4 process_melee_attack_swing();
-int FUN_000271dc();
+int find_and_consume_ammo();
 undefined4 FUN_000272c0();
 void FUN_000273f8();
 void FUN_000275e0();
