@@ -2868,7 +2868,7 @@ void render_babl_dialog_window();
 void display_book_or_scroll_page();
 void cache_ambient_sound_handle();
 void record_illustration_discovery_and_display();
-undefined4 FUN_00037f1c();
+undefined4 discard_container_contents();
 undefined4 FUN_00037fe8();
 undefined4 FUN_00038028();
 undefined4 FUN_000382cc();

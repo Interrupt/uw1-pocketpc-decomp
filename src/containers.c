@@ -1278,3 +1278,42 @@ int param_2;
   return;
 }
 
+
+
+// was FUN_00037f1c -- for a container-like object param_1 (skipped if
+// its class-flag byte's top bit is set) with a nonempty contents
+// chain (offset 6), unlinks and frees matching contained objects one
+// at a time via FUN_000537d0's scan; if param_2 is 0, removes only
+// the first match and stops, otherwise keeps removing until none are
+// left. Returns whether anything was removed. Sibling to
+// try_empty_container (a different implementation for a different
+// object-class case), used here for doors and a couple of specific
+// item types.
+undefined4 discard_container_contents(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  ushort *local_18;
+
+  uVar2 = 0;
+  if (((*(byte *)(param_1 + 1) & 0x80) == 0) &&
+     (local_18 = (ushort *)(param_1 + 6), (*local_18 & 0xffc0) != 0)) {
+    iVar1 = FUN_000537d0(&local_18,1,4,0,0xf);
+    while (iVar1 != 0) {
+      object_list_unlink(local_18,iVar1);
+      free_object_slot(iVar1);
+      if (param_2 == 0) {
+        return uVar2;
+      }
+      uVar2 = 1;
+      iVar1 = FUN_000537d0(&local_18,1,4,0,0xf);
+    }
+  }
+  else {
+    uVar2 = 0;
+  }
+  return uVar2;
+}

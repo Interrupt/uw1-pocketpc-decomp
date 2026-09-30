@@ -9635,34 +9635,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_00037f1c(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  int iVar1;
-  undefined4 uVar2;
-  ushort *local_18;
-  
-  uVar2 = 0;
-  if (((*(byte *)(param_1 + 1) & 0x80) == 0) &&
-     (local_18 = (ushort *)(param_1 + 6), (*local_18 & 0xffc0) != 0)) {
-    iVar1 = FUN_000537d0(&local_18,1,4,0,0xf);
-    while (iVar1 != 0) {
-      object_list_unlink(local_18,iVar1);
-      free_object_slot(iVar1);
-      if (param_2 == 0) {
-        return uVar2;
-      }
-      uVar2 = 1;
-      iVar1 = FUN_000537d0(&local_18,1,4,0,0xf);
-    }
-  }
-  else {
-    uVar2 = 0;
-  }
-  return uVar2;
-}
 
 
 
@@ -9718,14 +9690,14 @@ LAB_000382ac:
         DAT_002020a0 = sVar2;
         close_door_object(param_2,param_1);
       }
-      FUN_00037f1c(param_1,1);
+      discard_container_contents(param_1,1);
 LAB_00038100:
       uVar6 = 0xffffffff;
     }
     else if (((uVar1 & 0x1ff) == 0x15d) || ((uVar1 & 0x1ff) == 0x15b)) {
       DAT_002020a4 = param_5;
       DAT_002020a0 = sVar2;
-      FUN_00037f1c(param_1,0);
+      discard_container_contents(param_1,0);
       try_combine_or_stow_object(0,param_1,0);
     }
     else if ((uVar1 & 0x1f0) == 0x80) {
