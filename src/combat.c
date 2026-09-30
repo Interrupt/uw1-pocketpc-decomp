@@ -510,7 +510,7 @@ LAB_000314d0:
         iVar7 = DAT_0010190c;
       }
       if (DAT_00101430 == 0) {
-        uVar1 = FUN_000318d8(uVar1,0x18);
+        uVar1 = adjust_heading_away_from_player(uVar1,0x18);
         iVar7 = DAT_0010190c;
       }
       *(byte *)(iVar7 + 9) = (byte)uVar1;
@@ -1869,4 +1869,73 @@ undefined4 try_npc_special_ability_alt()
     return 1;
   }
   return 0;
+}
+
+
+// was FUN_000318d8 -- adjusts an NPC's current heading (param_1) to
+// swerve away from the player when the player is within param_2 tiles
+// (distance squared): if closer than threshold, computes the heading
+// toward the player and, based on the angular difference from the
+// NPC's own current heading, snaps param_1 to one of 4 discrete
+// swerve-left/swerve-right offsets around it. Already had its 5
+// fabricated-remainder Ordinal_2005/extraout_r1 calls fixed by an
+// earlier pass this session (see that fix's own comment just below).
+uint adjust_heading_away_from_player(param_1,param_2)
+uint param_1;
+uint param_2;
+
+{
+  /* Was `int`, truncating the real 64-bit pointer FUN_000535fc(1)
+     returns -- same class of bug fixed repeatedly elsewhere this
+     session. Confirmed live crashing on the very first dereference (the
+     first time this newly-reachable NPC AI path called it). Reused for
+     small-int arithmetic afterward; intptr_t is safe for that too. */
+  intptr_t iVar1;
+  uint uVar2;
+  uint extraout_r1;
+  uint extraout_r1_00;
+  uint extraout_r1_01;
+  uint extraout_r1_02;
+  uint extraout_r1_03;
+  uint extraout_r1_04;
+  uint uVar3;
+  uint uVar4;
+  uint uVar5;
+  
+  iVar1 = FUN_000535fc(1);
+  uVar3 = ((*(ushort *)(iVar1 + 0x16) >> 7 & 0x1f8) + (uint)(*(byte *)(iVar1 + 3) >> 5)) -
+          (uint)DAT_00101910;
+  uVar5 = ((*(ushort *)(iVar1 + 0x16) >> 1 & 0x1f8) + ((*(byte *)(iVar1 + 3) & 0x1c) >> 2)) -
+          (uint)DAT_0010141c;
+  uVar2 = uVar5 & 0xffff;
+  uVar4 = uVar3 & 0xffff;
+  if ((int)(uVar4 * uVar4 + uVar2 * uVar2 & 0xffff) < (int)((param_2 & 0xffff) * (param_2 & 0xffff))
+     ) {
+    uVar2 = compute_movement_heading((int)(uVar3 * 0x1000000) >> 0x18,(int)(uVar5 * 0x1000000) >> 0x18);
+    /* All 5 Ordinal_2005 calls below were the same fabricated-remainder
+       bug fixed elsewhere this session (this port's Ordinal_2005 never
+       populates extraout_r1/extraout_r1_NN) -- computed each remainder
+       directly instead. Divisors are constants (8, 0x100), so `% 8`/
+       `% 0x100` is exact (the latter equals `& 0xff`, matching the
+       explicit mask this code already applies to the overall result). */
+    iVar1 = (((uVar2 & 0xff) + 4) % 8) * 0x20;
+    uVar4 = param_1 & 0xff;
+    uVar2 = ((iVar1 - uVar4) + 0x100) & 0xff;
+    if ((0x3f < uVar2) && (uVar2 < 0xc1)) {
+      if (uVar2 < 0x60) {
+        param_1 = (iVar1 + 0xe0) & 0xff;
+      }
+      else if (uVar2 < 0x80) {
+        param_1 = (uVar4 + 0x20) & 0xff;
+      }
+      else if (uVar2 < 0xa1) {
+        param_1 = (uVar4 + 0xe0) & 0xff;
+      }
+      else {
+        param_1 = (iVar1 + 0x20) & 0xff;
+      }
+      param_1 = param_1 & 0xff;
+    }
+  }
+  return param_1;
 }

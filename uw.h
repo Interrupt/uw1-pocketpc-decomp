@@ -2780,7 +2780,7 @@ undefined4 try_npc_special_ability_ranged();
 undefined4 try_npc_special_ability_alt();
 void npc_combat_engage_wide_tick();
 void npc_combat_position_tick();
-uint FUN_000318d8();
+uint adjust_heading_away_from_player();
 void npc_combat_disengage_tick();
 void FUN_00031dbc();
 void npc_wander_return_home_exact_tick();
