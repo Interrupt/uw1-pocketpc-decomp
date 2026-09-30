@@ -2376,17 +2376,26 @@ void * const g_anim_model_slot[30] = {
    also read. */
 unsigned char g_anim_model_scratch[30][16384];
 undefined1 DAT_00189588;
-undefined2 DAT_00110a78;
-undefined2 DAT_00110bc0;
-undefined1 DAT_00110fd0;
-undefined1 DAT_00201b18;
+/* Was a single `undefined2`/`undefined1` scalar, but
+   init_glyph_width_table (the only function anywhere in this
+   decompile that touches any of these 4 globals) indexes each one via
+   `(&DAT_xxx)[i]` up to the extents below -- an out-of-bounds
+   scalar-as-array access, same class of bug as DAT_001007ee earlier
+   this session. Widened to real arrays; sizes match the highest index
+   each is ever written to in that function (DAT_00110bc0's stride-0x10
+   writes imply a wider structure this decompile doesn't otherwise use,
+   sized here to its observed 32x16 shape). */
+undefined2 DAT_00110a78[0xa0];
+undefined2 DAT_00110bc0[0x200];
+undefined1 DAT_00110fd0[0x20];
+undefined1 DAT_00201b18[0x20];
 undefined2 DAT_00189570;
 undefined2 DAT_00189572;
 undefined2 DAT_00189574;
 char * DAT_00110fc8 = 0;
 /* DAT_00110fc0 is a byte-cursor written through directly by other
    functions too (e.g. FUN_0005b828: `*DAT_00110fc0 = 0;
-   DAT_00110fc0 = DAT_00110fc0 + 1;`), not just by FUN_0003894c (which
+   DAT_00110fc0 = DAT_00110fc0 + 1;`), not just by init_glyph_width_table (which
    would normally seed it from DAT_00110fc8 -- see that function's
    comment on why it skips instead). Left NULL by default (same
    tentative-definition zero-init issue as DAT_00110fc8/DAT_00110fcc),
@@ -9656,71 +9665,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_0003894c()
-
-{
-  int iVar1;
-  char *iVar2;
-  int iVar3;
-  ushort uVar4;
-  int iVar5;
-  uint uVar6;
-  
-  /* DAT_00110fc8 (and DAT_00110fcc, used identically a bit further down)
-     are real pointers (`char *`) but are never assigned anywhere in this
-     decompile -- whatever originally set them up (almost certainly
-     another dropped/unrecovered call site, the same class of bug as the
-     "argument dropped entirely" cases documented on Ordinal_1041/1063)
-     couldn't be traced. Confirmed via a temporary diagnostic print that
-     this was NOT reading a proper zero: as a plain tentative definition
-     (`char * DAT_00110fc8;`, no initializer) it read back an
-     unpredictable nonzero bit pattern instead of NULL every run --
-     giving both globals an explicit `= 0` initializer (see their
-     declarations) fixed that and made this guard actually effective.
-     Skip this glyph-width-table setup rather than dereference garbage;
-     whatever UI text this feeds may render with wrong character spacing
-     until the real initializer is found. */
-  if (DAT_00110fc8 == 0) {
-    return;
-  }
-  iVar2 = DAT_00110fc8;
-  DAT_00189570 = 99;
-  DAT_00189572 = 0x30;
-  DAT_00189574 = 0x50;
-  DAT_00110fc0 = DAT_00110fc8;
-  iVar3 = 0;
-  do {
-    (&DAT_00201b18)[iVar3] = (char)iVar3;
-    (&DAT_00110bc0)[iVar3 * 0x10] = 0xffff;
-    (&DAT_00110fd0)[iVar3] = 0;
-    iVar1 = (iVar3 + 1) * 0x10000;
-    iVar5 = iVar1 >> 0x10;
-    (&DAT_00110a78)[iVar3] = 0xffff;
-    iVar3 = iVar5;
-  } while (iVar5 < 0x20);
-  iVar3 = (int)(short)((uint)iVar1 >> 0x10);
-  while (iVar3 < 0x60) {
-    (&DAT_00110a78)[iVar3] = 0xffff;
-    iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-    iVar5 = iVar3;
-  }
-  for (iVar3 = (int)(short)iVar5; iVar3 < 0xa0; iVar3 = (iVar3 + 1) * 0x10000 >> 0x10) {
-    uVar4 = *(ushort *)(iVar3 * 2 + iVar2 + -0x158);
-    uVar6 = (uint)uVar4;
-    if (uVar6 != 0xffffffff) {
-      uVar4 = uVar4 >> 1;
-    }
-    if (uVar6 != 0xffffffff) {
-      (&DAT_00110a78)[iVar3] = uVar4;
-    }
-    else {
-      (&DAT_00110a78)[iVar3] = 0xffff;
-    }
-  }
-  DAT_00110fc4 = 0x1f;
-  DAT_00189588 = 0x20;
-  return;
-}
 
 
 
@@ -9767,19 +9711,19 @@ undefined2 param_2;
     DAT_00201b10 = param_2;
   }
   else {
-    if ((&DAT_00110a78)[param_1] != -1) {
+    if (DAT_00110a78[param_1] != -1) {
       *DAT_00110fc0 =
-           (((short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1) + 1) * 0x7fff + (&DAT_00110a78)[param_1]
+           (((short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1) + 1) * 0x7fff + DAT_00110a78[param_1]
            ) * 2;
       goto LAB_00038c04;
     }
-    pbVar3 = &DAT_00110fd0 + param_1;
+    pbVar3 = DAT_00110fd0 + param_1;
     if ((*pbVar3 == 0x10) || (0x1f < param_1)) {
       terminate_process(0xffffffec);
     }
     psVar2 = DAT_00110fc0;
     bVar1 = *pbVar3;
-    (&DAT_00110bc0)[(uint)bVar1 + param_1 * 0x10] = (short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1);
+    DAT_00110bc0[(uint)bVar1 + param_1 * 0x10] = (short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1);
     *pbVar3 = bVar1 + 1;
   }
   *psVar2 = 0;
@@ -9810,16 +9754,16 @@ uint param_1;
          ((DAT_00201b10 + DAT_00201b38) * 0x7fff + (short)(DAT_00110fc0 - DAT_00110fc8 >> 1)) * 2;
   }
   else {
-    (&DAT_00110a78)[param_1] = (short)(DAT_00110fc0 - DAT_00110fc8 >> 1);
-    if ((param_1 < 0x20) && ((&DAT_00110fd0)[param_1] != 0)) {
+    DAT_00110a78[param_1] = (short)(DAT_00110fc0 - DAT_00110fc8 >> 1);
+    if ((param_1 < 0x20) && (DAT_00110fd0[param_1] != 0)) {
       iVar1 = 0;
       do {
-        *(ushort *)(iVar2 + (uint)(ushort)(&DAT_00110bc0)[param_1 * 0x10 + iVar1] * 2) =
-             (((&DAT_00110bc0)[param_1 * 0x10 + iVar1] + 1) * 0x7fff + (&DAT_00110a78)[param_1]) * 2
+        *(ushort *)(iVar2 + (uint)(ushort)DAT_00110bc0[param_1 * 0x10 + iVar1] * 2) =
+             ((DAT_00110bc0[param_1 * 0x10 + iVar1] + 1) * 0x7fff + DAT_00110a78[param_1]) * 2
         ;
         iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
         iVar2 = DAT_00110fc8;
-      } while (iVar1 < (int)(uint)(byte)(&DAT_00110fd0)[param_1]);
+      } while (iVar1 < (int)(uint)(byte)DAT_00110fd0[param_1]);
     }
   }
   return;
@@ -26219,7 +26163,7 @@ void FUN_0005b828()
       fprintf(stderr, "\n");
     }
   }
-  FUN_0003894c();
+  init_glyph_width_table();
   FUN_00038acc();
   FUN_00038ab0();
   DAT_0023aed0 = DAT_00110fc0;

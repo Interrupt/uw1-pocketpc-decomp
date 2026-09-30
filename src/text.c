@@ -426,3 +426,80 @@ undefined1 param_4;
   }
   return;
 }
+
+
+// was FUN_0003894c -- initializes the glyph-width lookup table
+// (DAT_00110a78, 0xa0/160 entries) for the currently-loaded font: the
+// first 0x60 entries default to 0xffff ("no glyph"/fixed-width
+// fallback), while entries 0x60-0x9f are read from the real font data
+// (DAT_00110fc8, halved from its raw stored width) with 0xffff read
+// through unchanged. Also resets a few related font-state globals
+// (DAT_00189570/72/74, DAT_00110fc0/fc4, DAT_00189588) and a parallel
+// glyph-index/offset table (DAT_00201b18/DAT_00110bc0/DAT_00110fd0).
+// Guarded on DAT_00110fc8 being set -- see that global's own comment
+// for why it's sometimes NULL in this decompile.
+void init_glyph_width_table()
+
+{
+  int iVar1;
+  char *iVar2;
+  int iVar3;
+  ushort uVar4;
+  int iVar5;
+  uint uVar6;
+
+  /* DAT_00110fc8 (and DAT_00110fcc, used identically a bit further down)
+     are real pointers (`char *`) but are never assigned anywhere in this
+     decompile -- whatever originally set them up (almost certainly
+     another dropped/unrecovered call site, the same class of bug as the
+     "argument dropped entirely" cases documented on Ordinal_1041/1063)
+     couldn't be traced. Confirmed via a temporary diagnostic print that
+     this was NOT reading a proper zero: as a plain tentative definition
+     (`char * DAT_00110fc8;`, no initializer) it read back an
+     unpredictable nonzero bit pattern instead of NULL every run --
+     giving both globals an explicit `= 0` initializer (see their
+     declarations) fixed that and made this guard actually effective.
+     Skip this glyph-width-table setup rather than dereference garbage;
+     whatever UI text this feeds may render with wrong character spacing
+     until the real initializer is found. */
+  if (DAT_00110fc8 == 0) {
+    return;
+  }
+  iVar2 = DAT_00110fc8;
+  DAT_00189570 = 99;
+  DAT_00189572 = 0x30;
+  DAT_00189574 = 0x50;
+  DAT_00110fc0 = DAT_00110fc8;
+  iVar3 = 0;
+  do {
+    DAT_00201b18[iVar3] = (char)iVar3;
+    DAT_00110bc0[iVar3 * 0x10] = 0xffff;
+    DAT_00110fd0[iVar3] = 0;
+    iVar1 = (iVar3 + 1) * 0x10000;
+    iVar5 = iVar1 >> 0x10;
+    DAT_00110a78[iVar3] = 0xffff;
+    iVar3 = iVar5;
+  } while (iVar5 < 0x20);
+  iVar3 = (int)(short)((uint)iVar1 >> 0x10);
+  while (iVar3 < 0x60) {
+    DAT_00110a78[iVar3] = 0xffff;
+    iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+    iVar5 = iVar3;
+  }
+  for (iVar3 = (int)(short)iVar5; iVar3 < 0xa0; iVar3 = (iVar3 + 1) * 0x10000 >> 0x10) {
+    uVar4 = *(ushort *)(iVar3 * 2 + iVar2 + -0x158);
+    uVar6 = (uint)uVar4;
+    if (uVar6 != 0xffffffff) {
+      uVar4 = uVar4 >> 1;
+    }
+    if (uVar6 != 0xffffffff) {
+      DAT_00110a78[iVar3] = uVar4;
+    }
+    else {
+      DAT_00110a78[iVar3] = 0xffff;
+    }
+  }
+  DAT_00110fc4 = 0x1f;
+  DAT_00189588 = 0x20;
+  return;
+}
