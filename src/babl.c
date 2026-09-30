@@ -3921,7 +3921,7 @@ void init_barter_ui()
     DAT_000bbfe0 = uVar3;
   }
   DAT_000bc000 = 0;
-  FUN_000228d4();
+  compute_dimension_volume();
   return;
 }
 
@@ -4869,7 +4869,7 @@ undefined4 param_3;
   }
   Ordinal_1061((int)(short)param_2);
   uVar5 = randomize_value_pct(iVar8,(short)param_3 * -0x10000 >> 0x10,param_3);
-  FUN_000228d4();
+  compute_dimension_volume();
   return uVar5;
 }
 

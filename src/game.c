@@ -73,7 +73,7 @@ undefined4 param_4;
       g_weapon_swing_startup_scratch_buffer = g_weapon_swing_current_frame;
       *DAT_000876bc = 0;
       *DAT_000876c0 = 0;
-      FUN_000228d4();
+      compute_dimension_volume();
       FUN_0003b820();
       build_trig_tables();
       FUN_0003bb60();
@@ -2066,5 +2066,30 @@ undefined4 param_1;
       FUN_00049924(2);
     }
   }
+  return;
+}
+
+
+// was FUN_000228d4 -- reads a 10-byte structure via Ordinal_25 into a
+// stack buffer, then multiplies 3 of its ushort fields together (each
+// +1, converting a 0-based max-index into a count) and passes the
+// product to Ordinal_1061. Currently a functional no-op: both Ordinal_25
+// and Ordinal_1061 are unimplemented (return-0/write-nothing) stubs in
+// src/ordinal_stubs.c, so local_a/local_8/local_6 are read uninitialized
+// and the computed product is discarded by its own stub callee. The
+// real WinCE API these ordinals correspond to, and therefore this
+// function's true purpose, is not otherwise confirmed -- named
+// structurally from what the code visibly does (multiply 3
+// count-like dimensions), not from a confirmed real-world meaning.
+void compute_dimension_volume()
+
+{
+  undefined1 auStack_14 [10];
+  ushort local_a;
+  ushort local_8;
+  ushort local_6;
+
+  Ordinal_25(auStack_14);
+  Ordinal_1061((local_6 + 1) * (local_8 + 1) * (local_a + 1));
   return;
 }

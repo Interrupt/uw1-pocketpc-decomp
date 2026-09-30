@@ -8238,37 +8238,6 @@ LAB_0002263c:
 
 
 
-uint FUN_000228ac(param_1,param_2,param_3)
-uint param_1;
-uint param_2;
-int param_3;
-
-{
-  uint uVar1;
-  
-  if (param_3 == 0) {
-    uVar1 = param_1 & 0xff00 | param_2 & 0xff;
-  }
-  else {
-    uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
-  }
-  return uVar1;
-}
-
-
-
-void FUN_000228d4()
-
-{
-  undefined1 auStack_14 [10];
-  ushort local_a;
-  ushort local_8;
-  ushort local_6;
-  
-  Ordinal_25(auStack_14);
-  Ordinal_1061((local_6 + 1) * (local_8 + 1) * (local_a + 1));
-  return;
-}
 
 
 

@@ -214,8 +214,8 @@ short param_3;
       } while (-1 < (int)uVar1);
     }
     else if (param_3 == 0x10) {
-      uVar2 = FUN_000228ac(0,*param_2,1);
-      uVar1 = FUN_000228ac(uVar2,param_2[1],0);
+      uVar2 = pack_word_byte(0,*param_2,1);
+      uVar1 = pack_word_byte(uVar2,param_2[1],0);
       uVar3 = 0xf;
       do {
         if ((uVar1 & 0xffff & 1 << (uVar3 & 0xff)) == 0) {
@@ -313,4 +313,31 @@ char *param_1;
   }
   return iVar3 != -1;
 }
+
+
+
+// was FUN_000228ac -- sets one byte of a 16-bit word, keeping the other
+// byte from param_1: param_3==0 keeps param_1's high byte and sets the
+// low byte from param_2; param_3!=0 keeps param_1's low byte and sets
+// the high byte from param_2 (shifted up). Used by unpack_glyph_bitmap
+// (src/text.c) to assemble a big-endian 16-bit font glyph row from two
+// separate bytes.
+uint pack_word_byte(param_1,param_2,param_3)
+uint param_1;
+uint param_2;
+int param_3;
+
+{
+  uint uVar1;
+  
+  if (param_3 == 0) {
+    uVar1 = param_1 & 0xff00 | param_2 & 0xff;
+  }
+  else {
+    uVar1 = param_1 & 0xff | (param_2 & 0xff) << 8;
+  }
+  return uVar1;
+}
+
+
 
