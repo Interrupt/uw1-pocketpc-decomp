@@ -17,7 +17,7 @@
 // few are pinned down with real confidence from cross-referencing
 // already-named callees and sibling code:
 //   case 6:  triggers a babl conversation script directly (calls
-//            FUN_00039d1c, the same function
+//            dispatch_trap_special_or_tile_action, the same function
 //            trigger_object_use_babl_script's own comment already
 //            names as "triggers a babl conversation script").
 //   case 7:  spawns a brand-new object at this tile from a linked
@@ -139,7 +139,7 @@ uint param_3;
                           uVar4 >> 0xd,uVar4 >> 10 & 7,0);
     break;
   case 6:
-    iVar16 = FUN_00039d1c(param_2,param_3,param_1,DAT_0024cff4,
+    iVar16 = dispatch_trap_special_or_tile_action(param_2,param_3,param_1,DAT_0024cff4,
                           CONCAT22(uVar20,(ushort)(byte)param_1[2]) & 0xffff003f,
                           CONCAT22(uVar21,(ushort)(byte)param_1[3]) & 0xffff003f);
     break;
@@ -1132,6 +1132,35 @@ uint param_2;
      (iVar3 = apply_typed_damage_to_object(iVar2,0,*(ushort *)(iVar2 + 0x16) >> 10,
                            (*(ushort *)(iVar2 + 0x16) & 0x3f0) >> 4,(char)sVar4,4), iVar3 != 0)) {
     return 0x10;
+  }
+  return 2;
+}
+
+
+// was FUN_00039d1c -- shared special-action dispatch helper: stashes
+// two coordinate/context bytes (param_1/param_2) into
+// DAT_0023c3dc/DAT_0023c3d8, then dispatches by the sign of param_5
+// (a signed action id): negative runs dispatch_tile_special_action,
+// non-negative runs dispatch_special_action. Always returns 2. Used
+// by dispatch_trap_type_effect's case 6 (a "run a special action"
+// trap) and directly by item-use code in src/item_use.c (one call
+// site's own comment: "triggers a babl conversation script").
+undefined4 dispatch_trap_special_or_tile_action(param_1,param_2,param_3,param_4,param_5,param_6)
+undefined1 param_1;
+undefined1 param_2;
+undefined4 param_3;
+undefined4 param_4;
+ushort param_5;
+undefined1 param_6;
+
+{
+  DAT_0023c3d8 = param_2;
+  DAT_0023c3dc = param_1;
+  if ((short)param_5 < 0) {
+    dispatch_tile_special_action(param_6,param_3,param_4);
+  }
+  else {
+    dispatch_special_action(param_5 & 0xff,param_6,param_3);
   }
   return 2;
 }

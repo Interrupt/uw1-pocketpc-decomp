@@ -9683,25 +9683,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_00039d1c(param_1,param_2,param_3,param_4,param_5,param_6)
-undefined1 param_1;
-undefined1 param_2;
-undefined4 param_3;
-undefined4 param_4;
-ushort param_5;
-undefined1 param_6;
-
-{
-  DAT_0023c3d8 = param_2;
-  DAT_0023c3dc = param_1;
-  if ((short)param_5 < 0) {
-    dispatch_tile_special_action(param_6,param_3,param_4);
-  }
-  else {
-    dispatch_special_action(param_5 & 0xff,param_6,param_3);
-  }
-  return 2;
-}
 
 
 

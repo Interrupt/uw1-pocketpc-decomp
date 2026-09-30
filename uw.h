@@ -2986,7 +2986,7 @@ undefined4 find_placement_via_tile_flood_fill();
 undefined4 teleport_object_to_level_tile();
 undefined4 apply_area_terrain_effect();
 undefined4 apply_poison_or_damage_trap_effect();
-undefined4 FUN_00039d1c();
+undefined4 dispatch_trap_special_or_tile_action();
 undefined4 FUN_00039d78();
 void FUN_00039f04();
 void FUN_0003a0e8();

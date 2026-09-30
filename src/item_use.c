@@ -1910,7 +1910,7 @@ int param_3;
     if (uVar1 == 0x12e) {
       iVar3 = resolve_object_variant_or_special_link(param_2,&local_24,local_20,auStack_1c);
       if (iVar3 != 0) {
-        FUN_00039d1c((int)DAT_002020a0,(int)DAT_002020a4,param_2,param_1,CONCAT22(uVar7,local_24),
+        dispatch_trap_special_or_tile_action((int)DAT_002020a0,(int)DAT_002020a4,param_2,param_1,CONCAT22(uVar7,local_24),
                      local_20[0]);
         iVar3 = 0xf9;
         if (local_24 == 4) goto LAB_0007b9b8;
@@ -2170,7 +2170,7 @@ ushort * param_2;
 // (use_object_on_target, use_readable_item, dispatch_world_object_
 // interaction_by_family): checks resolve_object_variant_or_special_link
 // for a real link/description on the target (param_4), then either
-// triggers a babl conversation script (FUN_00039d1c) for the
+// triggers a babl conversation script (dispatch_trap_special_or_tile_action) for the
 // player-only case, or -- gated on a per-player cooldown counter
 // (DAT_0024cfc8 vs a player field at offset +0xce) -- does the same
 // for the interacting object (param_3) and finalizes via
@@ -2203,7 +2203,7 @@ int param_5;
         DAT_0024cfc8 = *(uint *)(DAT_00086df8 + 0xce) + 0x2fd;
         puVar2 = param_3;
 LAB_0007c2b8:
-        FUN_00039d1c(param_1,param_2,puVar2,param_3,local_1a,local_1c);
+        dispatch_trap_special_or_tile_action(param_1,param_2,puVar2,param_3,local_1a,local_1c);
         consume_linked_special_object_charge(param_4);
         return 1;
       }
