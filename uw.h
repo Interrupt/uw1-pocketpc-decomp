@@ -1823,6 +1823,8 @@ extern undefined4 DAT_00101728;
 extern undefined DAT_00101749;
 extern undefined DAT_000853c4;
 extern undefined1 DAT_0010174a;
+extern undefined2 DAT_00101418;
+extern undefined2 DAT_00101908;
 extern char s_named_00085d18[];
 /* Globals defined in uw.c but also used by functions that now live in
    containers.c (the open-container/backpack view stack) -- extern'd
@@ -2773,9 +2775,9 @@ void npc_notice_and_idle_tick();
 void npc_combat_engage_close_tick();
 undefined4 npc_combat_set_stance();
 void npc_wander_reposition();
-undefined4 FUN_00030aac();
-undefined4 FUN_00030be0();
-undefined4 FUN_00030e50();
+undefined4 try_npc_special_ability_no_los();
+undefined4 try_npc_special_ability_ranged();
+undefined4 try_npc_special_ability_alt();
 void npc_combat_engage_wide_tick();
 void npc_combat_position_tick();
 uint FUN_000318d8();

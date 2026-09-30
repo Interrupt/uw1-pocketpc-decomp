@@ -109,8 +109,8 @@ void npc_combat_approach_tick()
 
 // was FUN_0002ff94 -- goal 5: attacks (npc_combat_set_stance) if
 // within dist^2<100 (~10 tiles) of the tracked target or already at
-// its tile, else picks a sub-goal (FUN_00030e50/FUN_00030aac/
-// FUN_00030be0, not yet named)
+// its tile, else picks a sub-goal (try_npc_special_ability_alt/
+// try_npc_special_ability_no_los/try_npc_special_ability_ranged)
 void npc_combat_engage_close_tick()
 
 {
@@ -156,12 +156,12 @@ void npc_combat_engage_close_tick()
   }
   else if ((*(byte *)(DAT_00101404 + 0x2d) & 0xfe) == 0) {
     if ((*(byte *)(DAT_00101404 + 0x20) >> 1 & 0xf0) != 0x10) goto LAB_000302bc;
-    iVar6 = FUN_00030e50();
+    iVar6 = try_npc_special_ability_alt();
   }
   else {
-    iVar6 = FUN_00030aac();
+    iVar6 = try_npc_special_ability_no_los();
     if ((iVar6 != 0) || ((*(byte *)(DAT_00101404 + 0x2d) & 1) == 0)) goto LAB_000302bc;
-    iVar6 = FUN_00030be0();
+    iVar6 = try_npc_special_ability_ranged();
   }
   if (iVar6 != 0) {
     bVar3 = *(byte *)(DAT_0010190c + 0x15) & 0x3f;
@@ -387,18 +387,18 @@ void npc_combat_engage_wide_tick()
       ;
     }
     else {
-      iVar2 = FUN_00030aac();
+      iVar2 = try_npc_special_ability_no_los();
       if (iVar2 == 0) {
         if ((*(byte *)(DAT_00101404 + 0x2d) & 0xfe) == 0) {
           if ((*(byte *)(DAT_00101404 + 0x20) >> 1 & 0xf0) == 0x10) {
-            FUN_00030e50();
+            try_npc_special_ability_alt();
           }
           else {
             npc_combat_position_tick();
           }
         }
         else {
-          FUN_00030be0();
+          try_npc_special_ability_ranged();
         }
       }
     }
@@ -490,7 +490,7 @@ LAB_000314d0:
   }
   else {
     if ((DAT_00101924 == 0) || (DAT_00101430 != 0)) {
-      iVar7 = FUN_00030aac();
+      iVar7 = try_npc_special_ability_no_los();
       if (iVar7 != 0) {
         return;
       }
@@ -1734,4 +1734,139 @@ undefined4 param_1;
 {
   read_file_handle(param_1,&DAT_001007d0,0xc00);
   return;
+}
+
+
+// was FUN_00030aac -- an NPC combat sub-goal attempt (one of 3
+// confirmed sibling sub-goals npc_combat_engage_close_tick picks
+// between when not yet close enough to attack, per its own comment).
+// Requires the monster's stat template to have a special-ability id
+// assigned (byte 0x2c != -1, no line-of-sight check needed -- likely a
+// self-targeted ability), rolls a chance from byte 0x2d, and on
+// success switches the NPC into state 0xd (byte 0x15) to begin it.
+// The exact real-world ability this and its two siblings below
+// represent isn't otherwise confirmed; named structurally.
+undefined4 try_npc_special_ability_no_los()
+
+{
+  int uw_ord2005_rem_59 = 0;
+  byte bVar1;
+  undefined4 uVar2;
+  int iVar3;
+  int extraout_r1;
+  uint uVar4;
+  
+  if (*(char *)(DAT_00101404 + 0x2c) != -1) {
+    uVar2 = Ordinal_1053();
+    bVar1 = *(byte *)(DAT_00101404 + 0x2d);
+    uw_ord2005_rem_59 = ((int)(uVar2)) % (0x100);
+    if (((uw_ord2005_rem_59 < (int)(uint)(bVar1 >> 1)) &&
+        (iVar3 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar3 == 0)) &&
+       ((DAT_00201b68 != 7 ||
+        (((*(byte *)(DAT_00086df8 + 0x60) & 0x20) != 0 || (*(char *)(DAT_00101404 + 9) != '\x13'))))
+       )) {
+      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xcd | 0xd;
+      *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 0xc;
+      uVar4 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
+      *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar4;
+      *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar4 >> 8);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+
+// was FUN_00030be0 -- an NPC combat sub-goal attempt (sibling of
+// try_npc_special_ability_no_los): requires a clear line of sight
+// (check_fine_line_of_sight) and a resource check (FUN_00032410(1),
+// likely "can afford this ability's cost"), rolls a chance from byte
+// 0x2d, and on success switches to state 0xd plus picks between 2
+// variants (byte 0x19 bits 2-3) via a further roll -- likely a ranged
+// spell/breath attack with two possible effect variants.
+undefined4 try_npc_special_ability_ranged()
+
+{
+  int uw_ord2005_rem_60 = 0; int uw_ord2005_rem_61 = 0;
+  byte bVar1;
+  char cVar2;
+  int iVar3;
+  undefined4 uVar4;
+  short extraout_r1;
+  int extraout_r1_00;
+  uint uVar5;
+  
+  iVar3 = tile_is_no_magic(DAT_00101918,DAT_001013f8);
+  if ((((iVar3 == 0) &&
+       (((DAT_00201b68 != 7 || ((*(byte *)(DAT_00086df8 + 0x60) & 0x20) != 0)) ||
+        (*(char *)(DAT_00101404 + 9) != '\x13')))) &&
+      (((DAT_00101900 < 0x40 && (iVar3 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar3 == 0)) &&
+       (iVar3 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
+                             (uint)(byte)(&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd] +
+                             ((byte)DAT_0010190c[1] & 0x7f),DAT_00101908,DAT_00101418,
+                             (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
+                             ((byte)DAT_00101400[1] & 0x7f)), iVar3 != 0)))) &&
+     (iVar3 = FUN_00032410(1), iVar3 != 0)) {
+    uVar4 = Ordinal_1053();
+    bVar1 = *(byte *)(DAT_00101404 + 0x2d);
+    uw_ord2005_rem_60 = ((int)(uVar4)) % (0x80);
+    if (uw_ord2005_rem_60 < (short)(ushort)(bVar1 >> 1)) {
+      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xcd | 0xd;
+      uVar4 = Ordinal_1053();
+      uw_ord2005_rem_61 = ((int)(uVar4)) % (0x10);
+      cVar2 = '\x01';
+      if (10 < uw_ord2005_rem_61) {
+        cVar2 = '\x02';
+      }
+      *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xf3 | cVar2 << 2;
+      uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
+      *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar5;
+      *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar5 >> 8);
+    }
+    return 1;
+  }
+  return 0;
+}
+
+
+
+// was FUN_00030e50 -- an NPC combat sub-goal attempt (third sibling of
+// try_npc_special_ability_no_los/_ranged): also requires line of sight
+// and the same resource check, but uses a distinct probability byte
+// (stat template byte 6) and switches to a different state (0x5
+// rather than 0xd) on success -- likely a distinct ranged/missile
+// attack type from the other two.
+undefined4 try_npc_special_ability_alt()
+
+{
+  int uw_ord2005_rem_62 = 0;
+  byte bVar1;
+  int iVar2;
+  undefined4 uVar3;
+  int extraout_r1;
+  uint uVar4;
+  
+  if (((DAT_00101900 < 0x10) &&
+      (iVar2 = check_fine_line_of_sight(DAT_00101910,DAT_0010141c,
+                            (uint)(byte)(&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd] +
+                            ((byte)DAT_0010190c[1] & 0x7f),DAT_00101908,DAT_00101418,
+                            (ushort)(byte)(&DAT_00202c90)[(*DAT_00101400 & 0x1ff) * 0xd] +
+                            ((byte)DAT_00101400[1] & 0x7f)), iVar2 != 0)) &&
+     (iVar2 = FUN_00032410(1), iVar2 != 0)) {
+    uVar3 = Ordinal_1053();
+    bVar1 = *(byte *)(DAT_00101404 + 6);
+    uw_ord2005_rem_62 = ((int)(uVar3)) % (0xc0);
+    if (uw_ord2005_rem_62 <= (int)(uint)bVar1) {
+      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
+      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc5 | 5;
+      uVar4 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
+      *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar4;
+      *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar4 >> 8);
+    }
+    return 1;
+  }
+  return 0;
 }
