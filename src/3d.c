@@ -795,14 +795,14 @@ void build_view_matrix()
   undefined1 auStack_98 [64];
   undefined1 auStack_58 [64];
 
-  /* FUN_0001dd2c fills the per-degree sin/cos tables (DAT_000d9ed8 /
+  /* build_trig_tables fills the per-degree sin/cos tables (DAT_000d9ed8 /
      DAT_000d9930) this function's rotation blocks read from. Ghidra
      recovered no caller for it anywhere, so the tables stayed zero and
      every view matrix came out degenerate (all vertices projected to
      one screen point). Build them once, lazily, right before first use. */
   {
     static int dd2c_done = 0;
-    if (!dd2c_done) { dd2c_done = 1; FUN_0001dd2c(); }
+    if (!dd2c_done) { dd2c_done = 1; build_trig_tables(); }
   }
 
   set_identity_matrix4x4(auStack_d8);
@@ -1435,3 +1435,37 @@ undefined4 * param_2;
 }
 
 
+
+
+// was FUN_0001dd2c -- builds the renderer's 361-entry (0..360 degrees)
+// per-degree sin/cos tables: for each angle, converts degrees to radians
+// (multiplying by the pi/180 constant folded into the Ordinal_2027 call),
+// then calls cos (Ordinal_1004) into DAT_000d9ed8[angle] and sin
+// (Ordinal_1058) into DAT_000d9930[angle] -- see both ordinals' own
+// comments in src/ordinal_stubs.c. Every 3D rotation/view-matrix call
+// site in src/3d.c and src/player.c reads through these two tables
+// instead of calling sin/cos directly.
+void build_trig_tables()
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  undefined8 uVar3;
+  
+  iVar2 = 0;
+  do {
+    Ordinal_2032(iVar2);
+    uVar3 = Ordinal_2021();
+    Ordinal_2027((int)uVar3,(int)((ulonglong)uVar3 >> 0x20),0xa50de271,0x3f91df45);
+    Ordinal_2044();
+    uVar3 = Ordinal_2021();
+    Ordinal_1004();
+    uVar1 = Ordinal_2044();
+    (&DAT_000d9ed8)[iVar2] = uVar1;
+    Ordinal_1058((int)uVar3,(int)((ulonglong)uVar3 >> 0x20));
+    uVar1 = Ordinal_2044();
+    (&DAT_000d9930)[iVar2] = uVar1;
+    iVar2 = iVar2 + 1;
+  } while (iVar2 < 0x169);
+  return;
+}

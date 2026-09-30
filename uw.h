@@ -2525,7 +2525,7 @@ undefined4 remove_item_from_npc_inventory_by_id();
 undefined4 babl_builtin_set_likes_dislikes();
 undefined4 check_npc_item_preference();
 void *tick_anim_record();
-void FUN_0001dd2c();
+void build_trig_tables();
 void build_view_matrix();
 void translate_verts_to_camera_space();
 void project_verts_through_view_matrix();

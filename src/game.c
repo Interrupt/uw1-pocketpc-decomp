@@ -75,7 +75,7 @@ undefined4 param_4;
       *DAT_000876c0 = 0;
       FUN_000228d4();
       FUN_0003b820();
-      FUN_0001dd2c();
+      build_trig_tables();
       FUN_0003bb60();
       main_menu_loop(1);
       DAT_00201c98 = 1;

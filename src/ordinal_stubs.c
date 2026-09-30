@@ -557,7 +557,7 @@ long Ordinal_993()
 }
 
 /* cos(x): x is a double bit-pattern arriving in the return/first-arg
-   register (chained from Ordinal_2021 in FUN_0001dd2c, which builds the
+   register (chained from Ordinal_2021 in build_trig_tables, which builds the
    renderer's per-degree cos table DAT_000d9ed8). Was a return-0 stub,
    which left the whole view matrix zero -> every 3D vertex projected to
    a single point. */
@@ -650,7 +650,7 @@ void *Ordinal_1054(void *ptr, unsigned int size)
 }
 
 /* sin(x): x is a double bit-pattern split across the first two arg
-   registers (FUN_0001dd2c passes it as two ints). Builds DAT_000d9930. */
+   registers (build_trig_tables passes it as two ints). Builds DAT_000d9930. */
 long Ordinal_1058(lo, hi)
 unsigned int lo;
 unsigned int hi;
@@ -1015,7 +1015,7 @@ unsigned int x;
 
 /* Softfloat float -> double: single-precision bit pattern in the
    first-arg register (chained), returns the double bit pattern. Was a
-   return-0 stub -- part of FUN_0001dd2c's sin/cos table build. */
+   return-0 stub -- part of build_trig_tables's sin/cos table build. */
 long Ordinal_2021(x)
 unsigned long long x;
 {
@@ -1052,7 +1052,7 @@ unsigned int b;
 }
 
 /* Softfloat double MULTIPLY: a * b, each passed as a lo/hi int pair.
-   FUN_0001dd2c multiplies (double)degrees by the constant
+   build_trig_tables multiplies (double)degrees by the constant
    0x3f91df45a50de271 == PI/180. Was a return-0 stub. */
 long Ordinal_2027(alo, ahi, blo, bhi)
 unsigned int alo;

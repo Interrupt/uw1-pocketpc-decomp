@@ -635,10 +635,10 @@ undefined DAT_0018959f;
 undefined *PTR_Ordinal_2021_00084030;
 undefined *PTR_Ordinal_2027_00084094;
 undefined *PTR_Ordinal_2044_00084034;
-/* FUN_0001dd2c builds these as 361-entry (0..360 degrees) sin / cos
+/* build_trig_tables builds these as 361-entry (0..360 degrees) sin / cos
    tables (float bit patterns); every reader indexes
    `(&DAT_000d99xx)[angle]`. Were lone `undefined4` scalars, so
-   FUN_0001dd2c's `[0..360]` writes smashed ~1.4 KB of adjacent
+   build_trig_tables's `[0..360]` writes smashed ~1.4 KB of adjacent
    globals. In UU.exe they are contiguous .bss (0xd9930 sin, 0xd9ed8
    cos). */
  undefined4 DAT_000d9930_arr[512];
@@ -6813,30 +6813,6 @@ int g_ambient_bias_reduction = 32;
 
 
 
-void FUN_0001dd2c()
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  undefined8 uVar3;
-  
-  iVar2 = 0;
-  do {
-    Ordinal_2032(iVar2);
-    uVar3 = Ordinal_2021();
-    Ordinal_2027((int)uVar3,(int)((ulonglong)uVar3 >> 0x20),0xa50de271,0x3f91df45);
-    Ordinal_2044();
-    uVar3 = Ordinal_2021();
-    Ordinal_1004();
-    uVar1 = Ordinal_2044();
-    (&DAT_000d9ed8)[iVar2] = uVar1;
-    Ordinal_1058((int)uVar3,(int)((ulonglong)uVar3 >> 0x20));
-    uVar1 = Ordinal_2044();
-    (&DAT_000d9930)[iVar2] = uVar1;
-    iVar2 = iVar2 + 1;
-  } while (iVar2 < 0x169);
-  return;
-}
 
 
 
@@ -34470,7 +34446,7 @@ LAB_emit_mesh_sprite_quad:
     DAT_00110fc0 = DAT_00110fc0 + 1;
     FUN_00040770(uVar27,(uint)DAT_0023bc88 * (int)DAT_00086b30);
     /* DAT_000d9ed8/DAT_000d9930[angle] = sin/cos(angle degrees) (see
-       FUN_0001dd2c). Normally angle = DAT_000db44c, the CAMERA's yaw,
+       build_trig_tables). Normally angle = DAT_000db44c, the CAMERA's yaw,
        which is what makes this quad extend along the camera's own
        right-vector -- i.e. always face the camera, a real billboard.
        A wall-mounted decal (emit_tile_objects's TMOBJ/sign branch)
