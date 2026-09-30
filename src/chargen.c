@@ -21,7 +21,7 @@ char *param_3;
   int iVar4;
   /* iVar4 doubles as the character record's name-string pointer field
      (read from pcVar_rec+6, a relative offset from &DAT_000fb8f0 --
-     see the write site in run_character_generator and FUN_00023de8's matching
+     see the write site in run_character_generator and draw_chargen_field_value's matching
      read-site comments) early in each state, and a plain screen-
      coordinate int in case 4 later -- mutually exclusive, but the
      pointer role can't just reuse `iVar4 + base` arithmetic since it's
@@ -31,7 +31,7 @@ char *param_3;
   char *pcVar5;
   /* iVar13 doubles as a "current character record" pointer (0x14-byte
      stride into param_3, computed fresh at the top of each state-machine
-     iteration and consumed by FUN_00023de8/FUN_0002431c/FUN_00024840,
+     iteration and consumed by draw_chargen_field_value/FUN_0002431c/FUN_00024840,
      all of which take a real `short *`) and, later in the SAME
      iteration inside case 4, a plain screen-coordinate int -- mutually
      exclusive in practice (the pointer role is only read before the
@@ -110,7 +110,7 @@ char *param_3;
     // Fills the left-page stats/portrait area (x:17-142,y:0-199) with a solid backing color, on top of the parchment the reblit above just redrew. Runs *after* that reblit (confirmed via disassembly), so despite looking like an eraser this can't be "protecting" the area from it -- more likely just the stats card's background color. The stats themselves only get redrawn when the switch below happens to hit case 2 or 3, so they're only visible for one frame after finishing class/skill picks. This contradicts a real-device reference screenshot showing stats persisting through later screens (e.g. name entry) -- root cause not yet found; see the STILL OPEN notes.
     rect_fill_or_save_restore(0x11,0,0x8e,199);
     screen_backup_restore();
-    FUN_00023de8((short *)pcVar_rec);
+    draw_chargen_field_value((short *)pcVar_rec);
     FUN_0002431c((short *)pcVar_rec,0,0xff);
     screen_backup_restore();
     uVar15 = FUN_00024840((short *)pcVar_rec);
@@ -169,7 +169,7 @@ LAB_00025468:
         uVar10 = get_message_string(*(byte *)(pcVar_name + uVar1 * 2) | 0x400);
         *(byte *)(DAT_00086df8 + 100) =
              (byte)((uVar1 & 7) << 5) | *(byte *)(DAT_00086df8 + 100) & 0x1f;
-        FUN_00023cdc();
+        reroll_attributes_for_class_race();
         iVar12 = advance_skill_tree_node(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
         if (iVar12 == 0) {
           sVar8 = 3;
@@ -390,7 +390,7 @@ int run_character_generator()
             /* Was a 4-byte split of the absolute pointer `pcVar3`
                ((char)pcVar3, >>8, >>0x10, >>0x18) -- correct for a
                32-bit binary, but only ever captured pcVar3's low 32
-               bits here, and the read sites (FUN_00023de8 etc.) treat
+               bits here, and the read sites (draw_chargen_field_value etc.) treat
                those 4 bytes as the whole pointer. Since pcVar3 always
                points within DAT_000fb8f0's small fixed-address buffer,
                store a relative offset from &DAT_000fb8f0 instead -- it
@@ -690,7 +690,7 @@ char *param_4;
              binary) and an earlier pass disabled the whole loop believing
              the field was never populated -- but run_character_generator
              (chargen.c) DOES write it, as a relative offset from
-             &DAT_000fb8f0 (same convention FUN_00023de8's read site uses).
+             &DAT_000fb8f0 (same convention draw_chargen_field_value's read site uses).
              Reconstruct the real pointer that way instead of skipping. */
           {
             char *list = (char *)&DAT_000fb8f0 + *(int *)(param_3 + 6);
@@ -817,4 +817,293 @@ char *param_2;
     }
   }
   return param_1;
+}
+
+
+// was FUN_00023cdc -- applies the just-chosen class/race's attribute
+// bonuses (looked up from &DAT_000fb860 by a class/race-derived index)
+// to the 3 rolled attributes (DAT_0023be74+5/6/7), clears the skill
+// array (DAT_00086df8+0x21, 20 slots) for a fresh pick, then randomly
+// distributes a class/race-specific bonus-point pool (&DAT_000fb863)
+// across the 3 attributes in 1-4 point increments, capped at 0x1e (30)
+// each. Called by character_generator_loop when the player confirms a
+// class/race choice, transitioning into skill selection.
+void reroll_attributes_for_class_race()
+
+{
+  int uw_ord2005_rem_2 = 0;
+  byte bVar1;
+  int iVar2;
+  uint uVar3;
+  undefined4 uVar4;
+  int extraout_r1;
+  /* Was `int`, truncating the real char* pointer DAT_0023be74. */
+  char *iVar5;
+  /* iVar6 doubles as a plain int index (into &DAT_000fb860) in the
+     first loop and a real pointer (DAT_00086df8 + iVar2) in the
+     second -- mutually exclusive, but both squeezed into `int`,
+     truncating the pointer role. Dedicated variable for that role. */
+  int iVar6;
+  char *pcVar_df8;
+  uint uVar7;
+
+  iVar2 = 0;
+  do {
+    iVar6 = iVar2 + (uint)(*(byte *)(DAT_00086df8 + 100) >> 5) * 4;
+    iVar5 = DAT_0023be74 + iVar2;
+    iVar2 = iVar2 + 1;
+    *(undefined *)(iVar5 + 5) = (&DAT_000fb860)[iVar6];
+  } while (iVar2 < 3);
+  iVar2 = 0;
+  do {
+    pcVar_df8 = DAT_00086df8 + iVar2;
+    iVar2 = iVar2 + 1;
+    *(undefined1 *)(pcVar_df8 + 0x21) = 0;
+  } while (iVar2 < 0x14);
+  for (uVar7 = (uint)(byte)(&DAT_000fb863)[(uint)(*(byte *)(DAT_00086df8 + 100) >> 5) * 4];
+      0 < (int)uVar7; uVar7 = uVar7 - uVar3) {
+    uVar3 = Ordinal_1053();
+    uVar3 = (uVar3 & 3) + 1;
+    if ((int)uVar7 < (int)uVar3) {
+      uVar3 = uVar7;
+    }
+    uVar4 = Ordinal_1053();
+    uw_ord2005_rem_2 = ((int)(uVar4)) % (3);
+    bVar1 = *(byte *)(DAT_0023be74 + uw_ord2005_rem_2 + 5);
+    if (0x1e < (int)(bVar1 + uVar3)) {
+      uVar3 = 0x1e - bVar1;
+    }
+    *(byte *)(DAT_0023be74 + uw_ord2005_rem_2 + 5) = (char)uVar3 + bVar1;
+  }
+  recompute_level7_hazard_from_character_level(1);
+  *(undefined1 *)((char *)g_player_object + 8) = *(undefined1 *)(DAT_0023be74 + 4);
+  return;
+}
+
+
+
+/* character_generator_loop's per-record array is raw CHRGEN.DAT file data laid out
+   as 8 contiguous 0x14-byte records; the name-entry text field (record
+   6) is the only one that needs a *real* buffer pointer, stored at
+   record6_base+2 (aka `param_1+1` in draw_chargen_field_value/FUN_0002431c/
+   FUN_00024840's short-indexed reads, aka `param_3+0x7a`). In the
+   original 32-bit binary that field is only 4 bytes wide -- the low 32
+   bits of the buffer's address, just used as a "is this a text field"
+   nonzero check, never dereferenced as a real pointer directly by that
+   struct field's own storage. Widening it to an 8-byte pointer store/
+   load (an earlier fix attempt) corrupts the 4 bytes immediately after
+   it (record 6's own name-offset field at record6_base+6) and, worse,
+   for every OTHER record the same 8-byte-wide read pulls in whatever
+   raw file bytes follow their own (unrelated, genuinely 4-byte) low
+   bytes, misfiring as "nonzero" and sending every record into text-
+   entry mode with a garbage buffer pointer (confirmed via ASAN: BUS
+   error dereferencing 0x15b00000000-style nonsense for record 0).
+   Keep the field's ORIGINAL 4-byte marker semantics (any nonzero value
+   -- the exact bits never mattered) and stash the one real buffer
+   pointer here instead; only ever one text-entry field is active at a
+   time (character creation's name field), so a single global is
+   sufficient. Not `static` -- also used by chargen.c; see the extern
+   declaration in uw.h. */
+char *g_chargen_textfield_buf;
+
+// was FUN_00023de8 -- draws the current chargen field's label and
+// current value/text (and, for the name field, the "Enter your
+// name..." prompt).
+void draw_chargen_field_value(param_1)
+short * param_1;
+
+{
+  byte bVar1;
+  byte bVar2;
+  /* Was `int iVar3` holding DAT_000fb858 (a real pointer, used as
+     bitmap_blit_to_framebuffer's source-bitmap arg right after) -- truncating. Only
+     ever used for this one pointer-holding role in this function. */
+  char *iVar3;
+  short sVar4;
+  short sVar5;
+  undefined2 uVar6;
+  short sVar7;
+  /* Was `undefined4`, truncating get_message_string's real char* return
+     (a string-resource lookup) before it's passed to measure_text_width
+     (strlen-shaped) and draw_text_string (draw string). */
+  char *uVar8;
+  int iVar9;
+  int iVar10;
+  int iVar11;
+  /* iVar11 doubles as a real pointer (DAT_000fb858 + a small table
+     offset, read from right after) early on, and a plain int for
+     screen-coordinate math for the rest of the function -- mutually
+     exclusive, but both squeezed into `int iVar11`, truncating the
+     pointer since DAT_000fb858 is a real 64-bit pointer. Dedicated
+     variable for the pointer role only. */
+  char *pcVar_off;
+  /* Was `extraout_r1` -- the classic "call Ordinal_2005, discard its
+     return, read the remainder via a register-leftover" idiom (same
+     class as FUN_0002431c's sVar_rem fix earlier this session), but
+     here that register was never even assigned in our C translation
+     -- genuinely uninitialized. This value is the column-within-row
+     remainder of `local_28 / param_1[8]` (items-per-row), gating both
+     whether the draw cursor wraps to a new row (Y advance) and where
+     X resets to for that new row. With it always uninitialized-
+     nonzero, Y never advanced and X grew unbounded every item --
+     confirmed via a caller-tagged diagnostic: all 8 class names drew
+     on the same row, X running from 288 to 1072 (screen is 320 wide). */
+  int iVar_rem;
+  uint uVar12;
+  uint uVar13;
+  ushort local_2c;
+  int local_28;
+
+  if (*(int *)(param_1 + 3) == 0) {
+    uVar12 = (uint)(short)local_2c;
+    iVar10 = 9;
+    uVar13 = (uint)(short)local_2c;
+  }
+  else {
+    pcVar_off = DAT_000fb858 + (&DAT_000fb880)[param_1[6]];
+    sVar7 = *param_1;
+    FUN_00035df8(0);
+    DAT_000fb858 = DAT_001005c4;
+    iVar10 = 0x14;
+    /* DAT_000fb880 (indexed by param_1[6], a race/portrait-style
+       selector) is never written anywhere in this decompile -- no call
+       site populates it, so it's permanently all-zero. With a zero
+       table entry, pcVar_off lands exactly at DAT_000fb858's buffer
+       start and `pcVar_off + -3/-4` reads before the allocation
+       (heap-buffer-overflow). Since there's no real data to read here
+       (this table's real populator is unrecovered, same class as the
+       already-documented non-functional glyph-width/texture-LUT
+       subsystems), fall back to 0 instead of underrunning the buffer. */
+    if (pcVar_off - DAT_000fb858 < 4) {
+      bVar1 = 0;
+      bVar2 = 0;
+    } else {
+      bVar1 = *(byte *)(pcVar_off + -3);
+      bVar2 = *(byte *)(pcVar_off + -4);
+    }
+    uVar13 = (uint)bVar1;
+    if ((sVar7 != 0) == 0) {
+      iVar10 = 0;
+    }
+    uVar12 = (uint)bVar2;
+    sVar5 = param_1[5];
+    local_2c = (ushort)bVar1;
+    sVar4 = Ordinal_2005(0xc4 - iVar10,(int)sVar5 * ((short)(ushort)bVar1 + 4) + -4);
+    iVar10 = sVar4 + 1;
+    *(char *)(param_1 + 8) = (char)iVar10;
+    *(char *)((char *)param_1 + 0x11) = (char)((uint)iVar10 >> 8);
+    iVar10 = iVar10 * 0x10000 >> 0x10;
+    sVar5 = Ordinal_2005(iVar10,iVar10 + sVar5 + -1);
+    *(char *)(param_1 + 7) = (char)sVar5;
+    *(char *)((char *)param_1 + 0xf) = (char)((ushort)sVar5 >> 8);
+    uVar6 = Ordinal_2005(iVar10 + 1,0xa0 - (short)(ushort)bVar2 * iVar10);
+    *(char *)(param_1 + 9) = (char)uVar6;
+    *(char *)((char *)param_1 + 0x13) = (char)((ushort)uVar6 >> 8);
+    iVar10 = -(((int)(sVar7 != 0) + (int)sVar5) * ((short)(ushort)bVar1 + 4));
+    iVar11 = iVar10 + 200;
+    if (iVar11 < 0) {
+      iVar11 = iVar10 + 0xc9;
+    }
+    iVar10 = (short)(iVar11 >> 1) + 3;
+  }
+  if (*param_1 == 0) {
+    iVar11 = (int)(short)local_2c;
+    iVar10 = (iVar10 - uVar13) + -4;
+  }
+  else {
+    uVar8 = get_message_string((int)*param_1 | 0x400);
+    iVar11 = 0xa4;
+    /* This field is a plain 4-byte nonzero marker ("is this a text-
+       entry field") for whichever record is currently being processed
+       -- see g_chargen_textfield_buf's comment near character_generator_loop for
+       why it must stay a narrow 4-byte read (widening it to 8 bytes
+       pulls in unrelated file data from other records and misfires). */
+    if (*(int *)(param_1 + 1) == 0) {
+      sVar7 = measure_text_width(uVar8);
+      iVar9 = -(int)sVar7 + 0x91;
+      if (iVar9 < 0) {
+        iVar9 = -(int)sVar7 + 0x92;
+      }
+      iVar9 = ((iVar9 >> 1) + 0xa4) * 0x10000 >> 0x10;
+    }
+    else {
+      bitmap_blit_to_framebuffer(0xa4,iVar10,DAT_000fb898 + DAT_000fb858,0x10,0x91,0,0,1);
+      iVar11 = 0xa8;
+      iVar9 = 0xa8;
+    }
+    draw_text_string(uVar8,iVar9,iVar10 + 3);
+    if (*param_1 == 7) {
+      draw_text_string(s_Enter_your_name_and_00084e88,0xaa,0x3c);
+      draw_text_string(s_then_press_the_Enter_00084e70,0xaa,0x46);
+      draw_text_string(s_key_to_continue_00084e60,0xb9,0x50);
+    }
+  }
+  if (*(int *)(param_1 + 3) != 0) {
+    g_blit_transparent_mode = 0;
+    FUN_00035df8(0);
+    DAT_000fb858 = DAT_001005c4;
+    if (0 < param_1[5]) {
+      local_28 = 0;
+      do {
+        iVar3 = DAT_000fb858;
+        Ordinal_2005((int)param_1[8],local_28);
+        iVar_rem = (param_1[8] == 0) ? 0 : (int)local_28 % (int)param_1[8];
+        iVar9 = iVar_rem;
+        if (iVar_rem == 0) {
+          iVar9 = (int)(short)local_2c;
+          iVar11 = 0xa0 - uVar12;
+        }
+        if (iVar_rem == 0) {
+          iVar10 = iVar10 + iVar9 + 4;
+        }
+        sVar7 = (short)uVar12;
+        iVar11 = CONCAT11(*(undefined1 *)((char *)param_1 + 0x13),(char)param_1[9]) + iVar11 + uVar12;
+        /* Investigated as a possible "missing button outline" source this
+           session -- ruled out. DAT_000fb880[idx] here is constant across
+           every item in the list (idx is derived from the field's own
+           record, not per item), and its real CHRBTNS.GR pixel data is the
+           ornate gold bracket decoration running down the left page, not a
+           per-button border (confirmed by rendering it and by direct
+           inspection of the source .GR file's bytes). The actual button
+           outlines render correctly elsewhere in this same screen. */
+        bitmap_blit_to_framebuffer(iVar11,iVar10,
+                     (&DAT_000fb880)[CONCAT11(*(undefined1 *)((char *)param_1 + 0xd),(char)param_1[6])]
+                     + iVar3,(int)(short)local_2c,sVar7,0,0,0);
+        if (param_1[6] == 0) {
+          /* param_1+3 (byte offset +6 in the record) holds a relative
+             offset from &DAT_000fb8f0, not an absolute pointer -- see
+             the write site in run_character_generator. Reconstruct before use. */
+          uVar8 = get_message_string(*(byte *)(((char *)&DAT_000fb8f0 + *(int *)(param_1 + 3)) + local_28 * 2) | 0x400);
+          sVar5 = measure_text_width(uVar8);
+          iVar9 = (int)sVar7 - (int)sVar5;
+          if (iVar9 < 0) {
+            iVar9 = iVar9 + 1;
+          }
+          draw_text_string(uVar8,iVar11 + (short)(iVar9 >> 1),iVar10 + 3);
+        }
+        else if (param_1[6] == 3) {
+          /* Portrait/head selector (chargen state 4). The DAT_000fb880
+             index Ghidra reconstructed here -- list[0] + sext(list[1]) +
+             local_28 -- evaluates to 1 + local_28 for this build's
+             CHRGEN.DAT (record 4's list is just {1}), which lands on
+             chrbtns entries 1-5 (button plates / armour tiles), not the
+             heads, and it has no sex term at all. chrbtns entries 7-16
+             are the ten head graphics (five male then five female);
+             character_generator_loop case 4 already indexes the matching
+             body figures as `17 + sexbit*5 + idx`. Use the same shape for
+             the heads: `7 + sexbit*5 + local_28`. */
+          {
+            int head_idx = 7 + ((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 5) + local_28;
+            g_blit_transparent_mode = 1;
+            bitmap_blit_to_framebuffer(iVar11,iVar10,
+                         (&DAT_000fb880)[head_idx] + DAT_000fb858,(int)(short)local_2c,
+                         sVar7,0,0,1);
+            g_blit_transparent_mode = 0;
+          }
+        }
+        local_28 = (local_28 + 1) * 0x10000 >> 0x10;
+      } while (local_28 < param_1[5]);
+    }
+  }
+  return;
 }

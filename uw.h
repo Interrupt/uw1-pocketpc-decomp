@@ -666,6 +666,12 @@ extern undefined1 DAT_000fb860_backing[256];
    full-body figure offsets read by character_generator_loop case 4. */
 extern undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb8c4 (((undefined1 *)DAT_000fb880_backing)[0x44])
+#define DAT_000fb880 DAT_000fb880_backing[0]
+#define DAT_000fb898 (((int *)DAT_000fb880_backing)[6])
+extern undefined DAT_000fb863;
+extern char s_key_to_continue_00084e60[];
+extern char s_then_press_the_Enter_00084e70[];
+extern char s_Enter_your_name_and_00084e88[];
 extern undefined1 DAT_000fb8f0_backing[1680];
 #define DAT_000fb8f0 DAT_000fb8f0_backing[0]
 extern char *DAT_001005c4;
@@ -2571,8 +2577,8 @@ undefined4 advance_skill_tree_node();
 void draw_chargen_attribute_summary();
 void draw_selected_skills_list();
 int apply_confirmed_skill_picks();
-void FUN_00023cdc();
-void FUN_00023de8();
+void reroll_attributes_for_class_race();
+void draw_chargen_field_value();
 undefined4 FUN_0002431c();
 uint character_generator_touch_select();
 uint FUN_00024840();
