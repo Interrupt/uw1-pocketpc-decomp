@@ -403,7 +403,7 @@ short param_2;
 // the 16-bit DAT_00086df8+0x6e mask): picks a candidate id (favoring
 // low ids 0-3 gated by which of that mask's own bits 1/2/4/8 are set,
 // falling back to a random id 4-9 if none of those are available or
-// already used), then shows it via FUN_00037c14 (this file's general
+// already used), then shows it via display_book_or_scroll_page (this file's general
 // dialog-box routine, see its own "box drawing routine" comment) and
 // marks its bit used. If no id was available at all (or
 // DAT_00086df8+0x62 bit 3 is set), just busy-waits ~0x180 clock units
@@ -458,11 +458,61 @@ short param_1;
     uVar1 = 0;
   }
   else {
-    FUN_00037c14(iVar3 + 0x18);
+    display_book_or_scroll_page(iVar3 + 0x18);
     uVar2 = (uint)*(ushort *)(DAT_00086df8 + 0x6e) ^ 1 << ((int)(short)iVar3 & 0xffU) & 0xffffU;
     *(char *)(DAT_00086df8 + 0x6e) = (char)uVar2;
     *(char *)(DAT_00086df8 + 0x6f) = (char)(uVar2 >> 8);
     uVar1 = 1;
   }
   return uVar1;
+}
+
+
+// was FUN_000396a0 -- teleports object param_1 to tile
+// (param_2,param_3) on level param_4. Confirmed as the "teleporter
+// trap" handler (dispatch_trap_type_effect's case 1, teleporting the
+// current trigger object DAT_0024cff4 to a trap-record-specified
+// tile/level). Only proceeds if the target level matches the current
+// level (DAT_00201b68) or the target is the player. Skips the
+// find_placement_via_tile_flood_fill relocate step when both
+// coordinates are the 0x3f sentinel (used elsewhere purely to refresh
+// the player's tracked position/redraw state without moving them).
+// Returns 0x10 on success, 2 if blocked (wrong level, or no valid
+// nearby tile found).
+undefined4 teleport_object_to_level_tile(param_1,param_2,param_3,param_4)
+char *param_1;
+int param_2;
+int param_3;
+short param_4;
+
+{
+  short sVar1;
+  int iVar2;
+  undefined4 uVar3;
+  short local_1c;
+  short local_1a;
+
+  sVar1 = DAT_00201b68;
+  if ((param_4 == DAT_00201b68) || (param_1 == g_player_object)) {
+    if (((param_4 == 0) || (param_4 == DAT_00201b68)) &&
+       (((short)param_2 != 0x3f && ((short)param_3 != 0x3f)))) {
+      iVar2 = find_placement_via_tile_flood_fill(param_1,param_2,param_3,&local_1c,&local_1a,0);
+      if (iVar2 == 0) goto LAB_00039784;
+      param_2 = (int)local_1c;
+      param_3 = (int)local_1a;
+      param_4 = sVar1;
+    }
+    if (param_1 == g_player_object) {
+      DAT_00201c90 = (undefined2)param_2;
+      DAT_00201c8c = (undefined2)param_3;
+      DAT_00201c7c = param_4;
+      FUN_00049924(0x20);
+    }
+    uVar3 = 0x10;
+  }
+  else {
+LAB_00039784:
+    uVar3 = 2;
+  }
+  return uVar3;
 }

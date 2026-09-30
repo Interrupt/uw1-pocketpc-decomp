@@ -9674,43 +9674,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_000396a0(param_1,param_2,param_3,param_4)
-char *param_1;
-int param_2;
-int param_3;
-short param_4;
-
-{
-  short sVar1;
-  int iVar2;
-  undefined4 uVar3;
-  short local_1c;
-  short local_1a;
-  
-  sVar1 = DAT_00201b68;
-  if ((param_4 == DAT_00201b68) || (param_1 == g_player_object)) {
-    if (((param_4 == 0) || (param_4 == DAT_00201b68)) &&
-       (((short)param_2 != 0x3f && ((short)param_3 != 0x3f)))) {
-      iVar2 = find_placement_via_tile_flood_fill(param_1,param_2,param_3,&local_1c,&local_1a,0);
-      if (iVar2 == 0) goto LAB_00039784;
-      param_2 = (int)local_1c;
-      param_3 = (int)local_1a;
-      param_4 = sVar1;
-    }
-    if (param_1 == g_player_object) {
-      DAT_00201c90 = (undefined2)param_2;
-      DAT_00201c8c = (undefined2)param_3;
-      DAT_00201c7c = param_4;
-      FUN_00049924(0x20);
-    }
-    uVar3 = 0x10;
-  }
-  else {
-LAB_00039784:
-    uVar3 = 2;
-  }
-  return uVar3;
-}
 
 
 
