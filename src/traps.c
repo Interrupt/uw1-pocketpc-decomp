@@ -503,7 +503,7 @@ int param_1;
 // link record and its tile x,y). Switches on the record's quality
 // field (bits 0x3f at +4) across ~20 distinct codes, mostly
 // delegating to still-unnamed helpers (FUN_0003a4a0, FUN_0003a2b0,
-// FUN_0003a29c, FUN_00039f04, FUN_0003a0e8, FUN_0003a57c,
+// FUN_0003a29c, handle_level4_maze_puzzle_button, FUN_0003a0e8, FUN_0003a57c,
 // FUN_0003a5ec, FUN_0003dc78) whose own purpose isn't pinned down
 // yet. A few codes are more legible: code 2 calls
 // restore_view_from_object_record; code 0x32 sweeps every class-0xd8
@@ -538,7 +538,7 @@ undefined4 param_3;
         FUN_0003a29c(*(ushort *)(param_1 + 6) & 0x3f);
       }
       else if (uVar1 == 0x18) {
-        FUN_00039f04(*(ushort *)(param_1 + 6) & 0x3f);
+        handle_level4_maze_puzzle_button(*(ushort *)(param_1 + 6) & 0x3f);
       }
       else if (uVar1 == 0x28) {
         FUN_0003a0e8();
@@ -1163,4 +1163,89 @@ undefined1 param_6;
     dispatch_special_action(param_5 & 0xff,param_6,param_3);
   }
   return 2;
+}
+
+
+// was FUN_00039f04 -- handler for a level-4-exclusive interactive
+// puzzle mechanism (only active when DAT_00201b68==4; prints "not
+// here" message 0xbf on any other level): param_1 selects a numbered
+// button/action (0/1 advance a shared step counter at
+// DAT_00086df8+0x8a and redraw the puzzle's wall pattern around a
+// fixed base tile (0x30,0x30) via apply_area_terrain_effect, 2/3
+// advance separate X/Y cursor bytes, 4 resets the counter and clears
+// the pattern). Strongly resembles a maze/wall-shifting puzzle device
+// (a set of directional buttons carving a path through movable
+// walls), though its exact in-game name/lore isn't confirmed here.
+void handle_level4_maze_puzzle_button(param_1)
+short param_1;
+
+{
+  byte *pbVar1;
+  byte *pbVar2;
+  short sVar3;
+  int iVar4;
+  undefined4 uVar5;
+  int iVar6;
+  int iVar7;
+  int iVar8;
+  int iVar9;
+  undefined2 uVar10;
+  undefined2 uVar11;
+  
+  if (DAT_00201b68 == 4) {
+    if (param_1 < 0) {
+      return;
+    }
+    if (param_1 < 2) {
+      pbVar1 = (byte *)(DAT_00086df8 + 0x88);
+      iVar8 = *pbVar1 + 0x30;
+      pbVar2 = (byte *)(DAT_00086df8 + 0x89);
+      iVar9 = *pbVar2 + 0x30;
+      if (1 < *(byte *)(DAT_00086df8 + 0x8a)) {
+        *(byte *)(DAT_00086df8 + 0x8a) = *(byte *)(DAT_00086df8 + 0x8a) - 1;
+        iVar6 = *pbVar1 + 0x2f;
+        iVar7 = *pbVar2 + 0x2f;
+        uVar10 = 2;
+        uVar11 = 2;
+        iVar4 = iVar8;
+        if ((*(char *)(DAT_00086df8 + 0x88) == '\0') ||
+           (iVar4 = iVar6, *(char *)(DAT_00086df8 + 0x88) == '\a')) {
+          iVar6 = iVar4;
+          uVar10 = 1;
+        }
+        iVar4 = iVar9;
+        if ((*(char *)(DAT_00086df8 + 0x89) == '\0') ||
+           (iVar4 = iVar7, *(char *)(DAT_00086df8 + 0x89) == '\a')) {
+          iVar7 = iVar4;
+          uVar11 = 1;
+        }
+        sVar3 = param_1 * 2 + 1;
+        apply_area_terrain_effect(iVar6,iVar7,0x3f,0xf,0xf,0xf,uVar10,uVar11,sVar3);
+        apply_area_terrain_effect(iVar8,iVar9,0x3f,0xf,0xf,0xf,0,0,sVar3);
+        return;
+      }
+      print_scroll_message_by_id(0xc0);
+      *(undefined1 *)(DAT_00086df8 + 0x8a) = 1;
+      return;
+    }
+    if (param_1 == 2) {
+      *(byte *)(DAT_00086df8 + 0x89) = *(char *)(DAT_00086df8 + 0x89) + 1U & 7;
+      return;
+    }
+    if (param_1 == 3) {
+      *(byte *)(DAT_00086df8 + 0x88) = *(char *)(DAT_00086df8 + 0x88) + 1U & 7;
+      return;
+    }
+    if (param_1 != 4) {
+      return;
+    }
+    *(undefined1 *)(DAT_00086df8 + 0x8a) = 0x3f;
+    apply_area_terrain_effect(0x30,0x30,0x3f,0xf,4,0xf,7,7,0);
+    uVar5 = 0xc1;
+  }
+  else {
+    uVar5 = 0xbf;
+  }
+  print_scroll_message_by_id(uVar5);
+  return;
 }

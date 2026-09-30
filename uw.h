@@ -2988,7 +2988,7 @@ undefined4 apply_area_terrain_effect();
 undefined4 apply_poison_or_damage_trap_effect();
 undefined4 dispatch_trap_special_or_tile_action();
 undefined4 try_climb_wall();
-void FUN_00039f04();
+void handle_level4_maze_puzzle_button();
 void FUN_0003a0e8();
 void FUN_0003a29c();
 void FUN_0003a2b0();

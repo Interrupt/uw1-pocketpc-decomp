@@ -944,7 +944,7 @@ LAB_00073c90:
     break;
   case 0xd:
     if ((param_2 & 0xff) == 3) {
-      FUN_00039f04(4,0,0);
+      handle_level4_maze_puzzle_button(4,0,0);
     }
     else if ((param_2 & 0xff) == 5) {
       print_scroll_message_by_id(0xe4);
@@ -2213,7 +2213,7 @@ LAB_0007588c:
     }
     else {
       DAT_00201c9c = &check_scheduled_object_location_callback;
-      FUN_000396a0(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
+      teleport_object_to_level_tile(g_player_object,0x3f,0x3f,*(byte *)(DAT_00086df8 + 0x5e) & 0xf);
       set_player_tile_position(0,0,0);
       FUN_00049924(0x7ffe);
     }
