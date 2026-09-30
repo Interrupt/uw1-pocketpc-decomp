@@ -1018,6 +1018,14 @@ extern undefined1 DAT_002034b5_backing[8192];
 #define DAT_002034b5 DAT_002034b5_backing[0]
 extern undefined DAT_002027d2_backing[8192];
 #define DAT_002027d2 DAT_002027d2_backing[0]
+extern ushort DAT_00202d54;
+extern undefined1 DAT_002027d0_backing[256];
+#define DAT_002027d0 DAT_002027d0_backing[0]
+extern undefined1 DAT_00202800_backing[65536];
+#define DAT_00202800 DAT_00202800_backing[0]
+extern undefined DAT_00202878;
+extern unsigned char DAT_00084eff_backing[12];
+#define DAT_00084eff DAT_00084eff_backing[0]
 extern undefined4 DAT_002046b4;
 extern char s_on_what__000878e0[];
 extern undefined1 DAT_000878ec_backing[32768];
@@ -2612,8 +2620,8 @@ undefined4 play_weapon_impact_sound();
 void compute_attack_relative_facing();
 undefined4 process_melee_attack_swing();
 int find_and_consume_ammo();
-undefined4 FUN_000272c0();
-void FUN_000273f8();
+undefined4 resolve_equipped_weapon_attack();
+void compute_player_weapon_attack_stats();
 void FUN_000275e0();
 void FUN_0002764c();
 void FUN_00027694();

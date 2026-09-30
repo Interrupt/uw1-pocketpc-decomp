@@ -1650,7 +1650,7 @@ char s_Sorry__you_have_no_00084f2c[] = "Sorry,_you_have_no";
 undefined DAT_002027d2_backing[8192];
 #define DAT_002027d2 DAT_002027d2_backing[0]
 ushort DAT_00202d54;
-static undefined1 DAT_002027d0_backing[256];
+undefined1 DAT_002027d0_backing[256];
 #define DAT_002027d0 DAT_002027d0_backing[0]
  undefined1 DAT_00202800_backing[65536];
 #define DAT_00202800 DAT_00202800_backing[0]
@@ -1660,7 +1660,7 @@ undefined DAT_00202878;
    value (3-9, from interact_attack's screen-position-to-3x3-grid
    mapping -- this is the real "attack from top/left/right/bottom
    throws a different attack" mechanic the user reported as broken),
-   and FUN_000273f8 separately indexes it by the same attack-type value
+   and compute_player_weapon_attack_stats separately indexes it by the same attack-type value
    for a damage bonus lookup. A single byte can't hold 10 real,
    distinct per-direction values -- recovered the real content via
    Ghidra headless memory dump (0x84eff, 12 bytes -- Ghidra's own next
@@ -1671,7 +1671,7 @@ undefined DAT_00202878;
    00,02,02,02,00,00,00,01 -- real variation across the attack-type
    range, not the flat/garbage result a bare 1-byte read would produce
    once indexed past its own storage. */
-static unsigned char DAT_00084eff_backing[12] = {
+unsigned char DAT_00084eff_backing[12] = {
   0x00,0x02,0x02,0x02,0x00,0x00,0x00,0x01,0x01,0x01,0x00,0x00
 };
 #define DAT_00084eff DAT_00084eff_backing[0]
@@ -1693,7 +1693,7 @@ short DAT_0010062c;
 undefined4 DAT_001005ec;
 short DAT_00100618;
 short DAT_000870e4;
-/* Was `undefined4` -- FUN_000272c0 writes a real static-global address
+/* Was `undefined4` -- resolve_equipped_weapon_attack writes a real static-global address
    through this (via its own `int *param_1`, truncating with an
    explicit `(int)`/`(intptr_t)` cast at all 3 of its assignments), and
    FUN_00027708 reads it back and dereferences it as a pointer
@@ -4101,7 +4101,7 @@ undefined4 LAB_0007913c()
    globals loaded from objects.dat by the already-correct load_armor_variant_tables
    (called via FUN_00052674's boot-time dispatch table, same loader
    that reaches load_light_food_effect_tables) and already read
-   elsewhere in this file (FUN_000272c0, uw.c ~17840). */
+   elsewhere in this file (resolve_equipped_weapon_attack, uw.c ~17840). */
 void *class0_variant_effect_table_lookup()
 
 {
@@ -8332,114 +8332,6 @@ undefined4 param_1;
 
 
 
-/* param_1 was `int *` -- every store through it (`&DAT_002027d0 +
-   iVar5`, `&DAT_00202800 + ...`, `&DAT_00202878`) is a real static-
-   global address explicitly cast down to `(int)`/`(intptr_t)`,
-   truncating it on this 64-bit host before the caller (FUN_00027708)
-   reads it back and dereferences it as a pointer. param_2 had the
-   same problem one level removed: it points at DAT_001005e0 (a real
-   `char *`), but was declared `undefined4 *` (4 bytes), so `*param_2 =
-   puVar4` only ever wrote the low 32 bits of get_equipped_item_at_slot's real
-   pointer into the first half of that 8-byte slot. */
-undefined4 FUN_000272c0(param_1,param_2)
-char * * param_1;
-char * * param_2;
-
-{
-  uint uVar1;
-  ushort uVar2;
-  short sVar3;
-  ushort *puVar4;
-  int iVar5;
-
-  *param_1 = 0;
-  puVar4 = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
-  *param_2 = (char *)puVar4;
-  if (puVar4 != (ushort *)0x0) {
-    uVar2 = *puVar4;
-    uVar1 = (uint)(short)(uVar2 & 0x1ff);
-    if ((uVar2 & 0x1f0) == 0x10) {
-      iVar5 = (uVar1 & 0xf) * 3;
-      if ((-1 < (char)(&DAT_002027d2)[iVar5]) && ((char)(&DAT_002027d2)[iVar5] < '\x10')) {
-        sVar3 = find_and_consume_ammo(uVar2 & 0xf);
-        if (sVar3 < 0) {
-          wait_for_click_release(1);
-          return 0xffffffff;
-        }
-        *param_1 = &DAT_002027d0 + iVar5;
-        return 0;
-      }
-    }
-    else if ((uVar2 & 0x1f0) == 0) {
-      *param_1 = &DAT_00202800 + (uVar1 & 0xf) * 8;
-      DAT_001005f4 = (byte)(&DAT_00202c91)[uVar1 * 0xd] & 7;
-    }
-  }
-  if (*param_1 == 0) {
-    *param_1 = &DAT_00202878;
-    DAT_001005f4 = DAT_00202d54 & 7;
-  }
-  return 1;
-}
-
-
-
-/* param_1/param_2 were `int` -- both real object-record pointers
-   (FUN_00027708 passes the now-fixed DAT_001005e4-derived pointer and
-   DAT_001005e0, both `char *`), truncated to 32 bits on this 64-bit
-   host before being dereferenced here and forwarded to resolve_object_variant_or_special_link
-   (which already declares its own params as real pointers). */
-void FUN_000273f8(param_1,param_2,param_3)
-char * param_1;
-char * param_2;
-short param_3;
-
-{
-  byte bVar1;
-  char *iVar2;
-  ushort uVar3;
-  short sVar4;
-  short sVar5;
-  short local_2c;
-  ushort local_2a;
-  int local_28;
-  
-  iVar2 = DAT_00086df8;
-  bVar1 = *(byte *)(param_1 + 6);
-  uVar3 = (ushort)bVar1;
-  if ((5 < bVar1) || (bVar1 < 2)) {
-    uVar3 = 2;
-  }
-  sVar5 = (ushort)*(byte *)((short)uVar3 + DAT_00086df8 + 0x21) +
-          (ushort)(*(byte *)(DAT_00086df8 + 0x21) >> 1);
-  DAT_00100608 = sVar5;
-  sVar4 = Ordinal_2005(7,*(undefined1 *)(DAT_00086df8 + 0x1f));
-  DAT_00100608 = sVar5 + sVar4;
-  if (*(char *)(iVar2 + 0xb4) != '\0') {
-    DAT_00100608 = DAT_00100608 + 7;
-  }
-  if ((short)uVar3 == 2) {
-    sVar4 = Ordinal_2005(6);
-    sVar5 = Ordinal_2005(5,(uint)*(byte *)(iVar2 + 0x23) << 1);
-    DAT_0010061c = sVar4 + sVar5 + 4;
-  }
-  else {
-    sVar4 = Ordinal_2005(9,(&DAT_001007d5)[(*g_player_object & 0x3f) * 0x30]);
-    DAT_0010061c = (ushort)*(byte *)(param_1 + (uint)(byte)(&DAT_00084eff)[param_3]) + sVar4;
-  }
-  DAT_00100610 = 1;
-  DAT_001005f8 = param_3;
-  if (((param_2 != 0) && (resolve_object_variant_or_special_link(param_2,&local_2c,&local_2a,&local_28), local_28 == 0)) &&
-     (local_2c == 0xc)) {
-    if ((local_2a & 8) == 0) {
-      DAT_00100608 = (local_2a & 7) + DAT_00100608 + 1;
-    }
-    else {
-      DAT_0010061c = (local_2a & 7) + DAT_0010061c + 1;
-    }
-  }
-  return;
-}
 
 
 
@@ -8544,7 +8436,7 @@ LAB_00027754:
             DAT_00100614 = *(char *)(pRecord + 3) + (char)local_20[0];
             *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) | 0xf;
             DAT_001005fc = DAT_00100614;
-            FUN_000273f8(pRecord,DAT_001005e0,(int)DAT_00100618);
+            compute_player_weapon_attack_stats(pRecord,DAT_001005e0,(int)DAT_00100618);
             process_melee_attack_swing();
             DAT_0010062c = 0xfff6;
             return;
@@ -8609,7 +8501,7 @@ LAB_00027754:
     }
     else if (((((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) && (iVar5 = (int)param_1, iVar5 != 0)) &&
              (DAT_000870e4 == -1)) &&
-            (DAT_00100618 = param_1, sVar4 = FUN_000272c0(&DAT_001005e4,&DAT_001005e0), -1 < sVar4))
+            (DAT_00100618 = param_1, sVar4 = resolve_equipped_weapon_attack(&DAT_001005e4,&DAT_001005e0), -1 < sVar4))
     {
       if (sVar4 == 0) {
         DAT_00100618 = -1;

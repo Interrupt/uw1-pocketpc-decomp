@@ -2466,7 +2466,7 @@ void complete_cast_spell_on_target()
 // case instead; trigger_object_use_babl_script (src/item_use.c) only
 // fires its babl conversation script when the flag is set, describing
 // it as a check "for a real link/description on the target"; and the
-// combat-damage helper at FUN_000273f8 (uw.c) only applies its bonus
+// combat-damage helper at compute_player_weapon_attack_stats (uw.c) only applies its bonus
 // when the flag is CLEAR and the class equals 0xc. The class value 9
 // is confirmed (via FUN_00048b6c, uw.c) to mean "cursed" when printed
 // via the "cursed"/"magical" item-description strings. Class 0xc's

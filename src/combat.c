@@ -1386,3 +1386,138 @@ undefined4 process_melee_attack_swing()
   uVar2 = play_weapon_impact_sound(uVar2);
   return uVar2;
 }
+
+
+// was FUN_000272c0 -- resolves the player's currently equipped weapon
+// (the item in the off-hand slot, 8-handedness) into an attack-data
+// record pointer (*param_1) and outputs the raw item pointer itself
+// (*param_2): if it's a ranged weapon (category 0x10) with a valid ammo
+// type, finds/consumes the matching ammo (returning -1/0xffffffff and
+// canceling the swing via wait_for_click_release if none is found) and
+// points param_1 at its ammo-type weapon-data record
+// (&DAT_002027d0+offset); if it's melee (category 0), points param_1 at
+// its own weapon-data record (&DAT_00202800+offset) instead; if nothing
+// is equipped (or neither category matched), falls back to the
+// unarmed/fist data record (&DAT_00202878). Returns 1 for the
+// melee/unarmed paths, 0 for a successful ranged shot.
+//
+// param_1 was `int *` -- every store through it (`&DAT_002027d0 +
+// iVar5`, `&DAT_00202800 + ...`, `&DAT_00202878`) is a real static-
+// global address explicitly cast down to `(int)`/`(intptr_t)`,
+// truncating it on this 64-bit host before the caller (FUN_00027708)
+// reads it back and dereferences it as a pointer. param_2 had the
+// same problem one level removed: it points at DAT_001005e0 (a real
+// `char *`), but was declared `undefined4 *` (4 bytes), so `*param_2 =
+// puVar4` only ever wrote the low 32 bits of get_equipped_item_at_slot's real
+// pointer into the first half of that 8-byte slot.
+undefined4 resolve_equipped_weapon_attack(param_1,param_2)
+char * * param_1;
+char * * param_2;
+
+{
+  uint uVar1;
+  ushort uVar2;
+  short sVar3;
+  ushort *puVar4;
+  int iVar5;
+
+  *param_1 = 0;
+  puVar4 = (ushort *)get_equipped_item_at_slot(8 - (*(byte *)(DAT_00086df8 + 100) & 1));
+  *param_2 = (char *)puVar4;
+  if (puVar4 != (ushort *)0x0) {
+    uVar2 = *puVar4;
+    uVar1 = (uint)(short)(uVar2 & 0x1ff);
+    if ((uVar2 & 0x1f0) == 0x10) {
+      iVar5 = (uVar1 & 0xf) * 3;
+      if ((-1 < (char)(&DAT_002027d2)[iVar5]) && ((char)(&DAT_002027d2)[iVar5] < '\x10')) {
+        sVar3 = find_and_consume_ammo(uVar2 & 0xf);
+        if (sVar3 < 0) {
+          wait_for_click_release(1);
+          return 0xffffffff;
+        }
+        *param_1 = &DAT_002027d0 + iVar5;
+        return 0;
+      }
+    }
+    else if ((uVar2 & 0x1f0) == 0) {
+      *param_1 = &DAT_00202800 + (uVar1 & 0xf) * 8;
+      DAT_001005f4 = (byte)(&DAT_00202c91)[uVar1 * 0xd] & 7;
+    }
+  }
+  if (*param_1 == 0) {
+    *param_1 = &DAT_00202878;
+    DAT_001005f4 = DAT_00202d54 & 7;
+  }
+  return 1;
+}
+
+
+
+// was FUN_000273f8 -- computes the player's own weapon-swing attack
+// stats: to-hit base (DAT_00100608, from the player's own weapon skill
+// plus a strength-derived bonus, +7 more if a "berserk"-shaped flag at
+// DAT_00086df8+0xb4 is set) and damage dice pool (DAT_0010061c, from
+// unarmed skill or a weapon-type-derived table lookup), sets
+// DAT_00100610=1 to mark the player as attacker, and if the weapon item
+// (param_2) resolves to a special enchanted-weapon link (category 0xc
+// via resolve_object_variant_or_special_link), adds its bonus into
+// whichever of the two stats its own flag bit selects. Feeds directly
+// into resolve_weapon_hit_skill_check/apply_melee_damage's own reads of
+// these same globals.
+//
+// param_1/param_2 were `int` -- both real object-record pointers
+// (FUN_00027708 passes the now-fixed DAT_001005e4-derived pointer and
+// DAT_001005e0, both `char *`), truncated to 32 bits on this 64-bit
+// host before being dereferenced here and forwarded to resolve_object_variant_or_special_link
+// (which already declares its own params as real pointers).
+void compute_player_weapon_attack_stats(param_1,param_2,param_3)
+char * param_1;
+char * param_2;
+short param_3;
+
+{
+  byte bVar1;
+  char *iVar2;
+  ushort uVar3;
+  short sVar4;
+  short sVar5;
+  short local_2c;
+  ushort local_2a;
+  int local_28;
+  
+  iVar2 = DAT_00086df8;
+  bVar1 = *(byte *)(param_1 + 6);
+  uVar3 = (ushort)bVar1;
+  if ((5 < bVar1) || (bVar1 < 2)) {
+    uVar3 = 2;
+  }
+  sVar5 = (ushort)*(byte *)((short)uVar3 + DAT_00086df8 + 0x21) +
+          (ushort)(*(byte *)(DAT_00086df8 + 0x21) >> 1);
+  DAT_00100608 = sVar5;
+  sVar4 = Ordinal_2005(7,*(undefined1 *)(DAT_00086df8 + 0x1f));
+  DAT_00100608 = sVar5 + sVar4;
+  if (*(char *)(iVar2 + 0xb4) != '\0') {
+    DAT_00100608 = DAT_00100608 + 7;
+  }
+  if ((short)uVar3 == 2) {
+    sVar4 = Ordinal_2005(6);
+    sVar5 = Ordinal_2005(5,(uint)*(byte *)(iVar2 + 0x23) << 1);
+    DAT_0010061c = sVar4 + sVar5 + 4;
+  }
+  else {
+    sVar4 = Ordinal_2005(9,(&DAT_001007d5)[(*g_player_object & 0x3f) * 0x30]);
+    DAT_0010061c = (ushort)*(byte *)(param_1 + (uint)(byte)(&DAT_00084eff)[param_3]) + sVar4;
+  }
+  DAT_00100610 = 1;
+  DAT_001005f8 = param_3;
+  if (((param_2 != 0) && (resolve_object_variant_or_special_link(param_2,&local_2c,&local_2a,&local_28), local_28 == 0)) &&
+     (local_2c == 0xc)) {
+    if ((local_2a & 8) == 0) {
+      DAT_00100608 = (local_2a & 7) + DAT_00100608 + 1;
+    }
+    else {
+      DAT_0010061c = (local_2a & 7) + DAT_0010061c + 1;
+    }
+  }
+  return;
+}
