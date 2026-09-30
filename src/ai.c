@@ -431,7 +431,7 @@ LAB_0002e998:
   }
 LAB_0002ea00:
   if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0) {
-    iVar6 = FUN_0002df2c(&DAT_00101568 + (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf) * 0x1c);
+    iVar6 = walk_using_cached_path(&DAT_00101568 + (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf) * 0x1c);
     if (iVar6 != 0) goto LAB_0002ed50;
 LAB_0002ebfc:
     DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
@@ -467,7 +467,7 @@ LAB_0002ed50:
   }
   bVar9 = *(byte *)((char *)DAT_0010190c + 0x18);
   if (((bVar9 & 0x20) == 0) && ((bVar9 & 0x80) != 0)) {
-    uVar8 = FUN_0002e3b4(iVar1,iVar2);
+    uVar8 = compute_movement_heading(iVar1,iVar2);
     *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
     uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
     *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
@@ -488,7 +488,7 @@ LAB_0002ed50:
     if ((local_3c == 0) &&
        (sVar5 = try_direct_line_walk(DAT_00101918,DAT_001013f8,param_1 & 0xff,param_2), sVar5 == 1)) {
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x80;
-      uVar8 = FUN_0002e3b4(iVar1,iVar2);
+      uVar8 = compute_movement_heading(iVar1,iVar2);
       *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
       uVar8 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar8 & 7) << 7;
       *(char *)((char *)DAT_0010190c + 2) = (char)uVar8;
@@ -511,7 +511,7 @@ LAB_0002ed50:
         uVar8 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0xfff0;
         *(byte *)((char *)DAT_0010190c + 0x16) = local_40[0] & 0xf | (byte)uVar8;
         *(char *)((char *)DAT_0010190c + 0x17) = (char)(uVar8 >> 8);
-        FUN_0002df2c(&DAT_00101568 + (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf) * 0x1c);
+        walk_using_cached_path(&DAT_00101568 + (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf) * 0x1c);
         goto LAB_0002ed50;
       }
     }
@@ -2522,4 +2522,198 @@ short param_7;
     uVar6 = 0;
   }
   return uVar6;
+}
+
+
+// was FUN_0002df2c -- the top-level "walk via cached path" driver:
+// checks the cache slot's position match (check_path_cache_position_match)
+// and advances it a step if valid (advance_cached_path_step); if the
+// path isn't blocked, computes a heading toward the sub-tile-precise
+// interpolated position between waypoints (via compute_movement_heading) and
+// steers the NPC there, else delegates to handle_blocked_cached_path.
+// Returns 0 only when the position check fails outright.
+undefined4 walk_using_cached_path(param_1)
+byte * param_1;
+
+{
+  byte bVar1;
+  byte bVar2;
+  byte bVar3;
+  int iVar5;
+  undefined4 uVar6;
+  uint uVar7;
+  int iVar8;
+  byte bVar4;
+  
+  bVar1 = *param_1;
+  bVar2 = param_1[1];
+  iVar5 = check_path_cache_position_match(param_1[2] >> 7,DAT_00101918,DAT_001013f8,DAT_00101910 & 7,DAT_0010141c & 7,
+                       bVar1,bVar2);
+  bVar3 = DAT_00101918;
+  bVar4 = DAT_001013f8;
+  if ((iVar5 == 0) || (iVar5 = advance_cached_path_step(param_1), bVar3 = bVar1, bVar4 = bVar2, iVar5 != 0)) {
+    if ((param_1[2] & 0x80) == 0) {
+      if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
+        FUN_0002ee80(*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f,
+                     *(ushort *)((char *)DAT_0010190c + 0xf) >> 6 & 0x3f);
+      }
+      uVar7 = (uint)*param_1;
+      iVar5 = uVar7 * 8;
+      if (bVar3 == uVar7) {
+        iVar5 = iVar5 + 4;
+      }
+      else if (uVar7 < bVar3) {
+        iVar5 = iVar5 + 7;
+      }
+      uVar7 = (uint)param_1[1];
+      iVar8 = uVar7 * 8;
+      if (bVar4 == uVar7) {
+        iVar8 = iVar8 + 4;
+      }
+      else if (uVar7 < bVar4) {
+        iVar8 = iVar8 + 7;
+      }
+      uVar7 = compute_movement_heading((int)((iVar5 - (uint)DAT_00101910) * 0x1000000) >> 0x18,
+                           (int)((iVar8 - (uint)DAT_0010141c) * 0x1000000) >> 0x18);
+      *(char *)((char *)DAT_0010190c + 9) = (char)((uVar7 & 0xff) << 5);
+      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 7) << 7;
+      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
+      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
+      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
+    }
+    else {
+      handle_blocked_cached_path(param_1);
+    }
+    uVar6 = 1;
+  }
+  else {
+    uVar6 = 0;
+  }
+  return uVar6;
+}
+
+
+
+// was FUN_0002e104 -- handles a blocked/exhausted cached path: if the
+// NPC is close (<3 tiles) to the cache's own tracked endpoint, takes
+// one more direction-table-driven step past it (marking DAT_00101920
+// and several NPC-record state bits, likely "path needs recompute
+// soon") and steers toward that; otherwise just steers directly toward
+// the cache's own last tracked position. Called from
+// walk_using_cached_path when advance_cached_path_step marked the path
+// blocked.
+void handle_blocked_cached_path(param_1)
+byte * param_1;
+
+{
+  int uw_ord2005_rem_16 = 0;
+  int iVar1;
+  byte bVar2;
+  uint extraout_r1;
+  uint uVar3;
+  uint uVar4;
+  uint uVar5;
+  uint uVar6;
+  uint uVar7;
+  
+  uVar7 = (uint)*param_1;
+  iVar1 = uVar7 * 8;
+  uVar3 = iVar1 - 2;
+  if (DAT_00101918 == uVar7) {
+    uVar3 = iVar1 + 4;
+  }
+  else if (uVar7 < DAT_00101918) {
+    uVar3 = iVar1 + 9;
+  }
+  uVar6 = (uint)param_1[1];
+  iVar1 = uVar6 * 8;
+  uVar5 = iVar1 - 2;
+  if (DAT_001013f8 == uVar6) {
+    uVar5 = iVar1 + 4;
+  }
+  else if (uVar6 < DAT_001013f8) {
+    uVar5 = iVar1 + 9;
+  }
+  uVar4 = (uVar3 & 0xffff) - (uint)DAT_00101910;
+  uVar3 = (uVar5 & 0xffff) - (uint)DAT_0010141c;
+  if ((int)(((uVar3 ^ (int)uVar3 >> 0x1f) - ((int)uVar3 >> 0x1f)) +
+           ((uVar4 ^ (int)uVar4 >> 0x1f) - ((int)uVar4 >> 0x1f))) < 3) {
+    bVar2 = param_1[(param_1[2] >> 2 & 0x1f) + 4];
+    uw_ord2005_rem_16 = ((int)(param_1[2] & 0x7f)) % (4);
+    iVar1 = (short)(bVar2 >> ((uw_ord2005_rem_16 & 0x7f) << 1) & 3) * 2;
+    uVar3 = compute_movement_heading(((int)(char)(&DAT_000853b0)[iVar1] + uVar7 & 0xff) -
+                         (uint)(*(ushort *)((char *)DAT_0010190c + 0x16) >> 10),
+                         ((int)(char)(&DAT_000853b1)[iVar1] + uVar6 & 0xff) -
+                         (*(ushort *)((char *)DAT_0010190c + 0x16) >> 4 & 0x3f));
+    DAT_00101920 = 1;
+    *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
+    uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
+    *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
+    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
+    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 7 | 0xb0;
+    *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x8b | 0xb;
+  }
+  else {
+    uVar3 = compute_movement_heading((int)(uVar4 * 0x1000000) >> 0x18,(int)(uVar3 * 0x1000000) >> 0x18);
+    *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
+    uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
+    *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
+    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
+    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
+  }
+  return;
+}
+
+
+
+// was FUN_0002e3b4 -- computes an 8-way movement heading (0-7) from a
+// relative (param_1,param_2) delta, used by walk_using_cached_path/
+// handle_blocked_cached_path to steer an NPC's facing/movement byte 9.
+// Distinct from compute_compass_direction (a different, separately
+// confirmed algorithm used for a different purpose) despite both
+// producing an octant-shaped 0-7 result from a delta.
+undefined4 compute_movement_heading(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  int iVar4;
+  undefined4 uVar5;
+  
+  iVar1 = (int)(char)param_2;
+  iVar2 = (param_2 << 0x19) >> 0x18;
+  iVar3 = (param_1 << 0x19) >> 0x18;
+  iVar4 = (int)(char)param_1;
+  if (iVar3 < iVar1) {
+    if (-iVar2 < iVar4) {
+      uVar5 = 0;
+      if (iVar1 <= -iVar3) {
+        uVar5 = 7;
+      }
+    }
+    else {
+      uVar5 = 5;
+      if (iVar4 <= iVar2) {
+        uVar5 = 6;
+      }
+    }
+  }
+  else if (-iVar2 < iVar4) {
+    uVar5 = 2;
+    if (iVar4 <= iVar2) {
+      uVar5 = 1;
+    }
+  }
+  else {
+    uVar5 = 3;
+    if (iVar1 <= -iVar3) {
+      uVar5 = 4;
+    }
+  }
+  return uVar5;
 }

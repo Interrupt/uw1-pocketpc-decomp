@@ -8875,177 +8875,6 @@ LAB_0002c8cc:
 
 
 
-undefined4 FUN_0002df2c(param_1)
-byte * param_1;
-
-{
-  byte bVar1;
-  byte bVar2;
-  byte bVar3;
-  int iVar5;
-  undefined4 uVar6;
-  uint uVar7;
-  int iVar8;
-  byte bVar4;
-  
-  bVar1 = *param_1;
-  bVar2 = param_1[1];
-  iVar5 = check_path_cache_position_match(param_1[2] >> 7,DAT_00101918,DAT_001013f8,DAT_00101910 & 7,DAT_0010141c & 7,
-                       bVar1,bVar2);
-  bVar3 = DAT_00101918;
-  bVar4 = DAT_001013f8;
-  if ((iVar5 == 0) || (iVar5 = advance_cached_path_step(param_1), bVar3 = bVar1, bVar4 = bVar2, iVar5 != 0)) {
-    if ((param_1[2] & 0x80) == 0) {
-      if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
-        FUN_0002ee80(*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f,
-                     *(ushort *)((char *)DAT_0010190c + 0xf) >> 6 & 0x3f);
-      }
-      uVar7 = (uint)*param_1;
-      iVar5 = uVar7 * 8;
-      if (bVar3 == uVar7) {
-        iVar5 = iVar5 + 4;
-      }
-      else if (uVar7 < bVar3) {
-        iVar5 = iVar5 + 7;
-      }
-      uVar7 = (uint)param_1[1];
-      iVar8 = uVar7 * 8;
-      if (bVar4 == uVar7) {
-        iVar8 = iVar8 + 4;
-      }
-      else if (uVar7 < bVar4) {
-        iVar8 = iVar8 + 7;
-      }
-      uVar7 = FUN_0002e3b4((int)((iVar5 - (uint)DAT_00101910) * 0x1000000) >> 0x18,
-                           (int)((iVar8 - (uint)DAT_0010141c) * 0x1000000) >> 0x18);
-      *(char *)((char *)DAT_0010190c + 9) = (char)((uVar7 & 0xff) << 5);
-      uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
-      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
-    }
-    else {
-      FUN_0002e104(param_1);
-    }
-    uVar6 = 1;
-  }
-  else {
-    uVar6 = 0;
-  }
-  return uVar6;
-}
-
-
-
-void FUN_0002e104(param_1)
-byte * param_1;
-
-{
-  int uw_ord2005_rem_16 = 0;
-  int iVar1;
-  byte bVar2;
-  uint extraout_r1;
-  uint uVar3;
-  uint uVar4;
-  uint uVar5;
-  uint uVar6;
-  uint uVar7;
-  
-  uVar7 = (uint)*param_1;
-  iVar1 = uVar7 * 8;
-  uVar3 = iVar1 - 2;
-  if (DAT_00101918 == uVar7) {
-    uVar3 = iVar1 + 4;
-  }
-  else if (uVar7 < DAT_00101918) {
-    uVar3 = iVar1 + 9;
-  }
-  uVar6 = (uint)param_1[1];
-  iVar1 = uVar6 * 8;
-  uVar5 = iVar1 - 2;
-  if (DAT_001013f8 == uVar6) {
-    uVar5 = iVar1 + 4;
-  }
-  else if (uVar6 < DAT_001013f8) {
-    uVar5 = iVar1 + 9;
-  }
-  uVar4 = (uVar3 & 0xffff) - (uint)DAT_00101910;
-  uVar3 = (uVar5 & 0xffff) - (uint)DAT_0010141c;
-  if ((int)(((uVar3 ^ (int)uVar3 >> 0x1f) - ((int)uVar3 >> 0x1f)) +
-           ((uVar4 ^ (int)uVar4 >> 0x1f) - ((int)uVar4 >> 0x1f))) < 3) {
-    bVar2 = param_1[(param_1[2] >> 2 & 0x1f) + 4];
-    uw_ord2005_rem_16 = ((int)(param_1[2] & 0x7f)) % (4);
-    iVar1 = (short)(bVar2 >> ((uw_ord2005_rem_16 & 0x7f) << 1) & 3) * 2;
-    uVar3 = FUN_0002e3b4(((int)(char)(&DAT_000853b0)[iVar1] + uVar7 & 0xff) -
-                         (uint)(*(ushort *)((char *)DAT_0010190c + 0x16) >> 10),
-                         ((int)(char)(&DAT_000853b1)[iVar1] + uVar6 & 0xff) -
-                         (*(ushort *)((char *)DAT_0010190c + 0x16) >> 4 & 0x3f));
-    DAT_00101920 = 1;
-    *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
-    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 7 | 0xb0;
-    *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x8b | 0xb;
-  }
-  else {
-    uVar3 = FUN_0002e3b4((int)(uVar4 * 0x1000000) >> 0x18,(int)(uVar3 * 0x1000000) >> 0x18);
-    *(char *)((char *)DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
-    uVar3 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
-    *(char *)((char *)DAT_0010190c + 2) = (char)uVar3;
-    *(char *)((char *)DAT_0010190c + 3) = (char)(uVar3 >> 8);
-    *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
-  }
-  return;
-}
-
-
-
-undefined4 FUN_0002e3b4(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  int iVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  undefined4 uVar5;
-  
-  iVar1 = (int)(char)param_2;
-  iVar2 = (param_2 << 0x19) >> 0x18;
-  iVar3 = (param_1 << 0x19) >> 0x18;
-  iVar4 = (int)(char)param_1;
-  if (iVar3 < iVar1) {
-    if (-iVar2 < iVar4) {
-      uVar5 = 0;
-      if (iVar1 <= -iVar3) {
-        uVar5 = 7;
-      }
-    }
-    else {
-      uVar5 = 5;
-      if (iVar4 <= iVar2) {
-        uVar5 = 6;
-      }
-    }
-  }
-  else if (-iVar2 < iVar4) {
-    uVar5 = 2;
-    if (iVar4 <= iVar2) {
-      uVar5 = 1;
-    }
-  }
-  else {
-    uVar5 = 3;
-    if (iVar1 <= -iVar3) {
-      uVar5 = 4;
-    }
-  }
-  return uVar5;
-}
 
 
 
@@ -9787,7 +9616,7 @@ uint param_2;
   uVar4 = uVar3 & 0xffff;
   if ((int)(uVar4 * uVar4 + uVar2 * uVar2 & 0xffff) < (int)((param_2 & 0xffff) * (param_2 & 0xffff))
      ) {
-    uVar2 = FUN_0002e3b4((int)(uVar3 * 0x1000000) >> 0x18,(int)(uVar5 * 0x1000000) >> 0x18);
+    uVar2 = compute_movement_heading((int)(uVar3 * 0x1000000) >> 0x18,(int)(uVar5 * 0x1000000) >> 0x18);
     /* All 5 Ordinal_2005 calls below were the same fabricated-remainder
        bug fixed elsewhere this session (this port's Ordinal_2005 never
        populates extraout_r1/extraout_r1_NN) -- computed each remainder
@@ -9837,7 +9666,7 @@ void FUN_00031dbc()
     *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar5 >> 8);
     FUN_00034044();
     if ((ushort)(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448) < 0x90) {
-      uVar5 = FUN_0002e3b4((int)(char)DAT_00101444,(int)(char)DAT_00101448);
+      uVar5 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
       *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
@@ -9944,7 +9773,7 @@ LAB_000323ac:
                  (uint)((byte)(&DAT_001007ed)[((byte)*DAT_00101400 & 0x3f) * 0x30] >> 4)) >> 4;
     puVar7 = DAT_0010190c;
     if (iVar2 <= iVar5 * iVar5 * 0x10000 >> 0x10) {
-      cVar4 = FUN_0002e3b4();
+      cVar4 = compute_movement_heading();
       puVar7 = DAT_0010190c;
       uVar3 = DAT_0010190c[1];
       uw_ord2005_rem_86 = ((int)(((int)cVar4 - ((int)(char)(uVar3 >> 7) & 7U)) + 8)) % (8);
@@ -9990,7 +9819,7 @@ int param_1;
   
   iVar1 = (int)(((uint)DAT_00101908 - (uint)DAT_00101910) * 0x1000000) >> 0x18;
   iVar2 = (int)(((uint)DAT_00101418 - (uint)DAT_0010141c) * 0x1000000) >> 0x18;
-  cVar5 = FUN_0002e3b4(iVar1,iVar2);
+  cVar5 = compute_movement_heading(iVar1,iVar2);
   iVar4 = DAT_0010190c;
   uVar3 = *(ushort *)((char *)DAT_0010190c + 2);
   uw_ord2005_rem_87 = ((int)(((int)cVar5 - ((int)(char)(uVar3 >> 7) & 7U)) + 8)) % (8);

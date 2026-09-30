@@ -42,7 +42,7 @@ void npc_combat_approach_tick()
       *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar7 >> 8) | (byte)(((uw_ord2005_rem_40 & 0xf) << 0xc) >> 8)
       ;
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
-      uVar7 = FUN_0002e3b4((int)(char)DAT_00101444,(int)(char)DAT_00101448);
+      uVar7 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
       uVar7 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar7 & 7) << 7;
       *(char *)((char *)DAT_0010190c + 2) = (char)uVar7;
       *(char *)((char *)DAT_0010190c + 3) = (char)(uVar7 >> 8);
@@ -234,7 +234,7 @@ ushort param_1;
   byte bVar8;
   uint uVar9;
   
-  uVar4 = FUN_0002e3b4((int)(char)DAT_00101444,(int)(char)DAT_00101448);
+  uVar4 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
   uVar9 = uVar4 & 0xff;
   uVar4 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar4 & 7) << 7;
   *(char *)(DAT_0010190c + 2) = (char)uVar4;
@@ -369,7 +369,7 @@ void npc_combat_engage_wide_tick()
       npc_combat_set_stance();
     }
     else if (DAT_00101900 < 5) {
-      uVar3 = FUN_0002e3b4((int)(char)DAT_00101444,(int)(char)DAT_00101448);
+      uVar3 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
       *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
       *(char *)(DAT_0010190c + 9) = (char)((uVar3 & 0xff) << 5);
       uVar3 = *(ushort *)(DAT_0010190c + 2) & 0xfc7f | (uVar3 & 7) << 7;
@@ -442,7 +442,7 @@ void npc_combat_position_tick()
   if (DAT_00101734 == 0) {
     return;
   }
-  uVar1 = FUN_0002e3b4((int)(char)DAT_00101444,(int)(char)DAT_00101448);
+  uVar1 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
   uVar6 = *(ushort *)(DAT_0010190c + 2);
   bVar4 = *(byte *)(DAT_00101400 + 2);
   if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
@@ -631,7 +631,7 @@ void npc_combat_disengage_tick()
       }
     }
     else {
-      uVar7 = FUN_0002e3b4((int)(char)DAT_00101444,(int)(char)DAT_00101448);
+      uVar7 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
       *(byte *)(DAT_0010190c + 0x13) = *(byte *)(DAT_0010190c + 0x13) & 0x80;
       *(byte *)(DAT_0010190c + 0x15) = *(byte *)(DAT_0010190c + 0x15) & 0xe0 | 0x20;
       *(byte *)(DAT_0010190c + 0x14) = *(byte *)(DAT_0010190c + 0x14) & 0xfe | 6;
