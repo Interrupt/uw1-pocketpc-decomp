@@ -976,16 +976,16 @@ LAB_0006409c:
   uVar19 = (&DAT_00086ce4)[uVar21 * 8];
   uVar17 = (&DAT_00086ce0)[uVar21 * 8];
 LAB_000640c0:
-  FUN_0001e594(_anim,uVar17,0,uVar19);
+  apply_model_position_offset(_anim,uVar17,0,uVar19);
 switchD_00064038_default:
-  FUN_0001e6f0(_anim,0x3f800000,0x3f99999a,0x3f800000);
+  scale_model_part_offsets(_anim,0x3f800000,0x3f99999a,0x3f800000);
 LAB_000640ec:
   if (sVar13 < 0) {
     if (catalog_u == 7) {
-      FUN_0001e6f0(_anim,0x40200000,0x40200000,0x40200000);
+      scale_model_part_offsets(_anim,0x40200000,0x40200000,0x40200000);
     }
     if ((sVar13 < 0) && ((catalog_u == 0x1b || (catalog_u == 0x19)))) {
-      FUN_0001e6f0(_anim,0x40000000,0x40000000,0x40000000);
+      scale_model_part_offsets(_anim,0x40000000,0x40000000,0x40000000);
     }
   }
   if ((catalog_u == 0xe) || (catalog_u == 0xf)) {
@@ -1615,3 +1615,102 @@ LAB_00064cdc:
   return;
 }
 
+
+
+// was FUN_0001e594 -- adds a per-axis float offset (param_2/3/4, each an
+// int converted to float via Ordinal_2032) to the model animation
+// block's own stored position floats at offsets 0xc08/0xc0c/0xc10 (x/y/z).
+// The one real caller (emit_catalog_object, src/models.c) uses it to
+// apply a heading-dependent directional offset (looked up from the
+// DAT_00086cXX direction tables) before scale_model_part_offsets below
+// applies its own per-axis scale -- together these look like the
+// position+scale setup for a swinging door/portcullis model's visual
+// offset from its tile-grid position.
+void apply_model_position_offset(param_1,param_2,param_3,param_4)
+char *param_1;  /* was `int` -- truncated the real _anim pointer
+                   emit_catalog_object passes in, latent until the
+                   DAT_00202c9X object-property fix let real property
+                   data reach a nonzero case here */
+undefined4 param_2;
+undefined4 param_3;
+undefined4 param_4;
+
+{
+  undefined4 uVar1;
+  
+  uVar1 = Ordinal_2032(param_2);
+  uVar1 = Ordinal_2051(*(undefined4 *)(param_1 + 0xc08),uVar1);
+  *(char *)(param_1 + 0xc08) = (char)uVar1;
+  *(char *)(param_1 + 0xc09) = (char)((uint)uVar1 >> 8);
+  *(char *)(param_1 + 0xc0a) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(param_1 + 0xc0b) = (char)((uint)uVar1 >> 0x18);
+  uVar1 = Ordinal_2032(param_3);
+  uVar1 = Ordinal_2051(*(undefined4 *)(param_1 + 0xc0c),uVar1);
+  *(char *)(param_1 + 0xc0c) = (char)uVar1;
+  *(char *)(param_1 + 0xc0d) = (char)((uint)uVar1 >> 8);
+  *(char *)(param_1 + 0xc0e) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(param_1 + 0xc0f) = (char)((uint)uVar1 >> 0x18);
+  uVar1 = Ordinal_2032(param_4);
+  uVar1 = Ordinal_2051(*(undefined4 *)(param_1 + 0xc10),uVar1);
+  *(char *)(param_1 + 0xc10) = (char)uVar1;
+  *(char *)(param_1 + 0xc11) = (char)((uint)uVar1 >> 8);
+  *(char *)(param_1 + 0xc12) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(param_1 + 0xc13) = (char)((uint)uVar1 >> 0x18);
+  return;
+}
+
+
+
+// was FUN_0001e6f0 -- multiplies (Ordinal_2026, float MULTIPLY) a model
+// animation block's own position floats by per-axis scale factors
+// (param_2/3/4). param_1[0] is read as a sub-part count; each iteration
+// scales the 3 floats at the current element's own offsets +8/+0xc/+0x10
+// (bytes) and then advances by 3 ints (12 bytes) to the next element --
+// so this walks an array of per-part transform records, scaling each
+// part's position in place. Real call sites (emit_catalog_object,
+// src/models.c) use it for door/portcullis-family catalog objects,
+// scaling by (1.0,1.2,1.0), (2.5,2.5,2.5) or (2.0,2.0,2.0) depending on
+// the specific catalog id -- the exact per-part record layout beyond
+// these 3 float fields isn't otherwise confirmed.
+void scale_model_part_offsets(param_1,param_2,param_3,param_4)
+int * param_1;
+undefined4 param_2;
+undefined4 param_3;
+undefined4 param_4;
+
+{
+  undefined4 uVar1;
+  int *piVar2;
+  int iVar3;
+  
+  iVar3 = 0;
+  piVar2 = param_1;
+  if (0 < *param_1) {
+    do {
+      uVar1 = Ordinal_2026(piVar2[2],param_2);
+      *(char *)(piVar2 + 2) = (char)uVar1;
+      *(char *)((char *)piVar2 + 9) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)piVar2 + 10) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)piVar2 + 0xb) = (char)((uint)uVar1 >> 0x18);
+      uVar1 = Ordinal_2026(CONCAT13(*(undefined1 *)((char *)piVar2 + 0xf),
+                                    CONCAT12(*(undefined1 *)((char *)piVar2 + 0xe),
+                                             CONCAT11(*(undefined1 *)((char *)piVar2 + 0xd),
+                                                      (char)piVar2[3]))),param_3);
+      *(char *)(piVar2 + 3) = (char)uVar1;
+      *(char *)((char *)piVar2 + 0xd) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)piVar2 + 0xe) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)piVar2 + 0xf) = (char)((uint)uVar1 >> 0x18);
+      uVar1 = Ordinal_2026(CONCAT13(*(undefined1 *)((char *)piVar2 + 0x13),
+                                    CONCAT12(*(undefined1 *)((char *)piVar2 + 0x12),
+                                             CONCAT11(*(undefined1 *)((char *)piVar2 + 0x11),
+                                                      (char)piVar2[4]))),param_4);
+      *(char *)(piVar2 + 4) = (char)uVar1;
+      iVar3 = iVar3 + 1;
+      *(char *)((char *)piVar2 + 0x11) = (char)((uint)uVar1 >> 8);
+      *(char *)((char *)piVar2 + 0x12) = (char)((uint)uVar1 >> 0x10);
+      *(char *)((char *)piVar2 + 0x13) = (char)((uint)uVar1 >> 0x18);
+      piVar2 = piVar2 + 3;
+    } while (iVar3 < *param_1);
+  }
+  return;
+}
