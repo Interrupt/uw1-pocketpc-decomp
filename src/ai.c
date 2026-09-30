@@ -3721,3 +3721,44 @@ void randomize_active_npc_flags()
   }
   return;
 }
+
+
+// was FUN_00034ba8 -- looks up a within-tile entry-point offset
+// (written to *param_2/*param_3, x/y in 1/8-tile units) based on the
+// destination tile's type nibble (param_1, from tilemap_lookup's low
+// 4 type bits). Returns 0 (offset left unset) for type 0 (solid rock,
+// not enterable); diagonal-wall types get an asymmetric corner offset
+// so NPCs don't clip into the angled wall, everything else gets the
+// tile-center default (4,4).
+undefined4 resolve_tile_entry_offset(param_1,param_2,param_3)
+char param_1;
+undefined1 * param_2;
+undefined1 * param_3;
+
+{
+  undefined1 uVar1;
+
+  if (param_1 == '\0') {
+    return 0;
+  }
+  if (param_1 == '\x02') {
+LAB_00034bf0:
+    *param_2 = 6;
+    *param_3 = 1;
+  }
+  else {
+    if (param_1 == '\x03') {
+      uVar1 = 1;
+    }
+    else if (param_1 == '\x04') {
+      uVar1 = 6;
+    }
+    else {
+      if (param_1 == '\x05') goto LAB_00034bf0;
+      uVar1 = 4;
+    }
+    *param_2 = uVar1;
+    *param_3 = uVar1;
+  }
+  return 1;
+}

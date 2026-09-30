@@ -2809,7 +2809,7 @@ undefined4 object_tick_is_due(); // was FUN_0003495c
 void tick_mobile_objects(); // was FUN_000349bc
 void npc_set_goal_for_object();
 void randomize_active_npc_flags();
-undefined4 FUN_00034ba8();
+undefined4 resolve_tile_entry_offset();
 void FUN_00034c10();
 undefined4 FUN_00034fa4();
 void FUN_0003513c();

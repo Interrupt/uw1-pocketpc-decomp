@@ -9559,38 +9559,6 @@ short param_1;
 
 
 
-undefined4 FUN_00034ba8(param_1,param_2,param_3)
-char param_1;
-undefined1 * param_2;
-undefined1 * param_3;
-
-{
-  undefined1 uVar1;
-  
-  if (param_1 == '\0') {
-    return 0;
-  }
-  if (param_1 == '\x02') {
-LAB_00034bf0:
-    *param_2 = 6;
-    *param_3 = 1;
-  }
-  else {
-    if (param_1 == '\x03') {
-      uVar1 = 1;
-    }
-    else if (param_1 == '\x04') {
-      uVar1 = 6;
-    }
-    else {
-      if (param_1 == '\x05') goto LAB_00034bf0;
-      uVar1 = 4;
-    }
-    *param_2 = uVar1;
-    *param_3 = uVar1;
-  }
-  return 1;
-}
 
 
 
@@ -9670,7 +9638,7 @@ LAB_00034db4:
   uVar8 = param_1[3] & 0x3f;
   puVar4 = (ushort *)tilemap_lookup(uVar10,uVar8);
   if (((uVar9 != uVar10) || (uVar11 != uVar8)) &&
-     (iVar5 = FUN_00034ba8(*puVar4 & 0xf,&local_2c,local_2b), iVar5 != 0)) {
+     (iVar5 = resolve_tile_entry_offset(*puVar4 & 0xf,&local_2c,local_2b), iVar5 != 0)) {
     if (((&DAT_001007da)[iVar6] & 0x80) == 0) {
       uVar9 = (uint)(byte)((byte)*puVar4 >> 4) << 3;
     }
@@ -9915,7 +9883,7 @@ ushort * param_3;
         bVar1 = (&DAT_00101733)[uVar9 * 7];
         bVar2 = (&DAT_00101732)[uVar9 * 7];
         puVar7 = (ushort *)tilemap_lookup((uint)bVar2,(uint)bVar1);
-        iVar11 = FUN_00034ba8(*puVar7 & 0xf,&local_28,local_27);
+        iVar11 = resolve_tile_entry_offset(*puVar7 & 0xf,&local_28,local_27);
         if (iVar11 != 0) {
           bVar3 = (&DAT_0023cf0a)[((int)(short)(ushort)bVar1 + (short)(ushort)bVar2 * 0x40) * 5];
           uVar6 = encode_object_slot_index(param_3);
