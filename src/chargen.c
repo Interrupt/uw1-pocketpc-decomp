@@ -68,7 +68,7 @@ char *param_3;
      (see the README). Merged into one 10-byte array: local_5c's old 4
      bytes are index [0,4), local_58's old 6 bytes are index [4,10).
      local_5c's own VALUE was never read anywhere (only its address),
-     so its old write is dropped; FUN_000238b4/FUN_00023c90 get
+     so its old write is dropped; advance_skill_tree_node/FUN_00023c90 get
      `local_5c_buf + 4` where they used to get `local_58`. */
   undefined1 local_5c_buf [10];
   undefined1 auStack_4c [32];
@@ -170,7 +170,7 @@ LAB_00025468:
         *(byte *)(DAT_00086df8 + 100) =
              (byte)((uVar1 & 7) << 5) | *(byte *)(DAT_00086df8 + 100) & 0x1f;
         FUN_00023cdc();
-        iVar12 = FUN_000238b4(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
+        iVar12 = advance_skill_tree_node(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
         if (iVar12 == 0) {
           sVar8 = 3;
         }
@@ -187,7 +187,7 @@ LAB_00025468:
       case 3:
         /* (int)&local_5c truncated a real stack address; and
            *(int*)(param_3+0x42) is the same never-written, never-zeroed
-           record field skipped in FUN_000238b4 above -- always take the
+           record field skipped in advance_skill_tree_node above -- always take the
            fallback instead of reading through arbitrary heap garbage. */
         local_5c_buf[local_64[0] + 3] = 0;
         DAT_001005c0 = FUN_00023c90((int)DAT_001005c0,local_5c_buf + 4);
@@ -195,7 +195,7 @@ LAB_00025468:
         restore_captured_grtile_backdrop(local_60);
         FUN_00023b38();
         cursor_show_idle_tick();
-        uVar15 = FUN_000238b4(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
+        uVar15 = advance_skill_tree_node(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
         if ((int)uVar15 == 0) {
           sVar8 = 4;
         }
@@ -633,4 +633,82 @@ int param_1;
   DAT_00201b68 = 1;
   refresh_player_equipment_effects();
   return;
+}
+
+
+// was FUN_000238b4 -- walks the character-generator skill tree (param_4,
+// a compact [count][id0][id1]...-encoded tree) starting from the cursor
+// index *param_1: for each leaf skill entry, records its id into the
+// output array param_2 (up to 5 entries) and advances the cursor,
+// returning 0 once done (or the array is full) so character_generator_loop
+// moves to its next state; on hitting a branch/submenu node instead,
+// populates the skill record param_3 with that submenu's choice count
+// and string-id list and returns 1, so the caller re-enters this same
+// state to show the sub-menu. See its own long-standing internal
+// comments for the specific field-layout evidence.
+undefined4 advance_skill_tree_node(param_1,param_2,param_3,param_4)
+byte * param_1;
+char *param_2;
+char *param_3;
+char *param_4;
+
+{
+  byte bVar1;
+  short sVar2;
+  int iVar3;
+  byte *pbVar4;
+  int iVar5;
+  
+  sVar2 = 0;
+  iVar3 = (uint)(*(byte *)(DAT_00086df8 + 100) >> 5) * 5 + (uint)*param_1;
+  if (iVar3 != 0) {
+    iVar5 = 0;
+    do {
+      sVar2 = (ushort)*(byte *)(param_4 + sVar2) + sVar2 + 1;
+      iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
+    } while (iVar5 < iVar3);
+  }
+  if (*param_1 < 5) {
+    do {
+      pbVar4 = (byte *)(param_4 + sVar2);
+      if (*pbVar4 == 0) {
+        *(undefined1 *)(param_2 + (uint)*param_1) = 0x14;
+      }
+      else {
+        if (*pbVar4 != 1) {
+          iVar3 = (int)sVar2;
+          /* Branch node in the skill tree: [count][id0][id1]...  Set the
+             skill record's on-screen item count to this sub-menu's choice
+             count and populate its string-id list with the choice names
+             (skill id + 0x1f = its string number in block 4), then return
+             1 so character_generator_loop keeps state 3 and shows the
+             sub-menu drawn from that list. */
+          *(undefined1 *)(param_3 + 10) = *(undefined1 *)(iVar3 + param_4);
+          *(undefined1 *)(param_3 + 0xb) = 0;
+          /* param_3+6 is the skill record's string-list field. Ghidra had
+             this as a bare absolute pointer (correct for the 32-bit
+             binary) and an earlier pass disabled the whole loop believing
+             the field was never populated -- but run_character_generator
+             (chargen.c) DOES write it, as a relative offset from
+             &DAT_000fb8f0 (same convention FUN_00023de8's read site uses).
+             Reconstruct the real pointer that way instead of skipping. */
+          {
+            char *list = (char *)&DAT_000fb8f0 + *(int *)(param_3 + 6);
+            iVar5 = 0;
+            do {
+              list[iVar5 * 2] = *(char *)(iVar5 + iVar3 + param_4 + 1) + '\x1f';
+              iVar5 = (iVar5 + 1) * 0x10000 >> 0x10;
+            } while (iVar5 < (int)(uint)*(byte *)(iVar3 + param_4));
+          }
+          *param_1 = *param_1 + 1;
+          return 1;
+        }
+        *(byte *)(param_2 + (uint)*param_1) = pbVar4[1];
+        sVar2 = (ushort)*pbVar4 + sVar2 + 1;
+      }
+      bVar1 = *param_1;
+      *param_1 = bVar1 + 1;
+    } while ((byte)(bVar1 + 1) < 5);
+  }
+  return 0;
 }

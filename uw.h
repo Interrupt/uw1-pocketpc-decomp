@@ -2559,7 +2559,7 @@ void flush_dirty_rect_to_display();
 void flush_dirty_rect_to_display_240();
 void end_gx_draw_session();
 void init_new_character_record();
-undefined4 FUN_000238b4();
+undefined4 advance_skill_tree_node();
 void FUN_00023a00();
 void FUN_00023b38();
 int FUN_00023c90();
