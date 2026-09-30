@@ -955,7 +955,7 @@ LAB_00073c90:
     }
     break;
   case 0xe:
-    FUN_00037c14(param_2 & 0xff);
+    display_book_or_scroll_page(param_2 & 0xff);
     scheduler_tick(4);
   }
   return 1;
@@ -1199,7 +1199,7 @@ undefined1 param_5;
 
 
 
-// was FUN_00074474 -- gated trap/effect trigger: FUN_000382cc (not
+// was FUN_00074474 -- gated trap/effect trigger: resolve_damage_type_resistance (not
 // yet named) is the shared per-object-type-flags helper used
 // throughout this cluster -- with a real multi-bit damage-type mask
 // and nonzero low bits it's a genuine resistance roll (see
@@ -1224,7 +1224,7 @@ undefined1 param_5;
   char cVar1;
   undefined4 uVar2;
   
-  cVar1 = FUN_000382cc(param_3,1,0x80);
+  cVar1 = resolve_damage_type_resistance(param_3,1,0x80);
   if (cVar1 == '\0') {
     uVar2 = FUN_000535fc(param_5);
     FUN_00038374(param_3,uVar2,param_1,param_2,0xff,3);
@@ -1269,7 +1269,7 @@ undefined1 param_5;
 
 
 // was FUN_0007455c -- resistance-gated object-state morph: runs a
-// real resistance roll via FUN_000382cc (mask 3, i.e. the random
+// real resistance roll via resolve_damage_type_resistance (mask 3, i.e. the random
 // partial-resist chance bits) against the target object (param_3);
 // if not resisted, alters the tile's texture/decoration
 // (spawn_scheduled_effect_object, group 7, subtype 4) and plays an effect on the
@@ -1289,7 +1289,7 @@ undefined2 param_5;
   char cVar1;
   uint uVar2;
   
-  cVar1 = FUN_000382cc(param_3,1,3);
+  cVar1 = resolve_damage_type_resistance(param_3,1,3);
   if (cVar1 != '\0') {
     spawn_scheduled_effect_object(param_3,7,4,0,7,param_4,param_5);
     npc_set_goal_for_object(param_3,param_1,1);
@@ -1308,7 +1308,7 @@ undefined2 param_5;
 
 // was FUN_00074614 -- resistance-gated, one-time-effect object-state
 // trigger: like morph_tile_object_state, runs a real resistance roll
-// (FUN_000382cc, mask 3) before acting. On success, alters the
+// (resolve_damage_type_resistance, mask 3) before acting. On success, alters the
 // tile's texture/decoration (spawn_scheduled_effect_object) and, only the FIRST time
 // (guarded by flag bit 0x40 at offset +0x19, which it then sets
 // permanently), plays an effect on the target (npc_set_goal_for_object). Always
@@ -1323,7 +1323,7 @@ int param_3;
 {
   char cVar1;
   
-  cVar1 = FUN_000382cc(param_3,1,3);
+  cVar1 = resolve_damage_type_resistance(param_3,1,3);
   if (cVar1 != '\0') {
     spawn_scheduled_effect_object(param_3,7,4,0,7,param_1,param_2);
     if ((*(byte *)(param_3 + 0x19) & 0x40) == 0) {

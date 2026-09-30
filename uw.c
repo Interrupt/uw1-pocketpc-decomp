@@ -9644,33 +9644,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_000382cc(param_1,param_2,param_3)
-ushort * param_1;
-undefined4 param_2;
-uint param_3;
-
-{
-  int uw_ord2005_rem_102 = 0;
-  undefined4 uVar1;
-  int extraout_r1;
-  uint uVar2;
-  
-  uVar2 = (uint)(byte)(&DAT_00202c99)[(*param_1 & 0x1ff) * 0xd];
-  if ((uVar2 & param_3 & 0xff) != 0) {
-    if ((param_3 & 3) != 0) {
-      uVar1 = Ordinal_1053();
-      uw_ord2005_rem_102 = ((int)(uVar1)) % (3);
-      if (uw_ord2005_rem_102 < (int)(uVar2 & 3)) {
-        return 0;
-      }
-      param_3 = param_3 & 0xfc;
-    }
-    if ((uVar2 & param_3 & 0xff) != 0) {
-      return 0;
-    }
-  }
-  return param_2;
-}
 
 
 
@@ -9687,7 +9660,7 @@ undefined1 param_6;
   undefined4 uVar2;
   int iVar3;
   
-  uVar1 = FUN_000382cc(param_1,param_5,param_6);
+  uVar1 = resolve_damage_type_resistance(param_1,param_5,param_6);
   if ((*param_1 & 0x1c0) == 0x40) {
     uVar2 = apply_damage_to_object(param_1,uVar1,param_2);
   }
@@ -10424,7 +10397,7 @@ uint param_2;
     if (iVar2 == g_player_object) {
       uVar5 = *(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf;
       if ((-uVar5 != iVar3 && (int)uVar5 <= -iVar3) &&
-         (cVar1 = FUN_000382cc(g_player_object,1,0x10), cVar1 != '\0')) {
+         (cVar1 = resolve_damage_type_resistance(g_player_object,1,0x10), cVar1 != '\0')) {
         uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
         *(byte *)(DAT_00086df8 + 0x5f) =
              (byte)uVar5 | (byte)(((param_2 & 0xffff) * -0x10000 >> 0x10 & 0xf) << 2);
@@ -24145,7 +24118,7 @@ LAB_000564d8:
           fprintf(stderr, "[f98] BAIL: (uVar2&7)==6 class-table gate, returning param_1 unchanged\n");
         return param_1;
       }
-      cVar4 = FUN_000382cc(param_1,1,8);
+      cVar4 = resolve_damage_type_resistance(param_1,1,8);
       goto LAB_000564d0;
     }
     if ((uVar2 & 8) != 0) {

@@ -1649,7 +1649,7 @@ short param_5;
   }
   if ((iVar5 != 0) && (DAT_00100620 == 1)) {
     if (((short)(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) < param_5) &&
-       (cVar2 = FUN_000382cc(g_player_object,1,0x10), cVar2 != '\0')) {
+       (cVar2 = resolve_damage_type_resistance(g_player_object,1,0x10), cVar2 != '\0')) {
       uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
       *(byte *)(DAT_00086df8 + 0x5f) = (byte)uVar7 | (byte)(((int)param_5 & 0xfU) << 2);
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
@@ -2167,4 +2167,42 @@ ushort * param_3;
   set_pending_music_track(uVar4);
   DAT_00101944 = read_realtime_clock_units();
   return 0;
+}
+
+
+// was FUN_000382cc -- resolves elemental/damage-type resistance for
+// object param_1 against a damage-type bitmask (param_3), returning
+// the effective damage to apply: 0 if fully resisted, otherwise
+// param_2 (the original damage amount) unchanged. Looks up the
+// object type's resistance byte (DAT_00202c99, 13-byte stride per
+// type) and ANDs it with param_3; if the low 2 bits (a specific
+// damage sub-category) match, rolls a 1/3 chance to still let it
+// through before checking the remaining bits. Only known caller:
+// FUN_00038374's non-NPC damage-application path.
+undefined4 resolve_damage_type_resistance(param_1,param_2,param_3)
+ushort * param_1;
+undefined4 param_2;
+uint param_3;
+
+{
+  int uw_ord2005_rem_102 = 0;
+  undefined4 uVar1;
+  int extraout_r1;
+  uint uVar2;
+
+  uVar2 = (uint)(byte)(&DAT_00202c99)[(*param_1 & 0x1ff) * 0xd];
+  if ((uVar2 & param_3 & 0xff) != 0) {
+    if ((param_3 & 3) != 0) {
+      uVar1 = Ordinal_1053();
+      uw_ord2005_rem_102 = ((int)(uVar1)) % (3);
+      if (uw_ord2005_rem_102 < (int)(uVar2 & 3)) {
+        return 0;
+      }
+      param_3 = param_3 & 0xfc;
+    }
+    if ((uVar2 & param_3 & 0xff) != 0) {
+      return 0;
+    }
+  }
+  return param_2;
 }
