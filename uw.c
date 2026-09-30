@@ -9610,26 +9610,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_00035fdc(param_1,param_2)
-undefined1 * param_1;
-undefined1 * param_2;
-
-{
-  undefined1 uVar1;
-  int iVar2;
-  
-  iVar2 = 0;
-  do {
-    *param_2 = param_1[2];
-    param_2[1] = param_1[1];
-    uVar1 = *param_1;
-    param_1 = param_1 + 4;
-    param_2[2] = uVar1;
-    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-    param_2 = param_2 + 3;
-  } while (iVar2 < 0x100);
-  return;
-}
 
 
 
@@ -10119,7 +10099,7 @@ LAB_00036858:
           uVar16 = uVar16 + 8;
         } while (iVar10 != 0);
         local_64 = uVar14;
-        FUN_00035fdc(uVar14 + 0x100,local_b8);
+        convert_palette_bgrx_to_rgb(uVar14 + 0x100,local_b8);
         build_rgb565_palette(local_b8,0xffffffff);
         local_54 = read_realtime_clock_units();
         local_4c = local_54;

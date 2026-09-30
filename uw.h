@@ -2848,7 +2848,7 @@ void thunk_FUN_0007ec1c();
 void bubble_sort_indices_by_key_table();
 undefined2 load_voice_sample_page();
 uint read_voice_sample_page_chunk();
-void FUN_00035fdc();
+void convert_palette_bgrx_to_rgb();
 void FUN_0003601c();
 undefined4 FUN_000360f4();
 undefined4 FUN_00036460();

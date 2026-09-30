@@ -1430,3 +1430,30 @@ void end_gx_draw_session()
   Ordinal_1018(DAT_0023c638);
   return;
 }
+
+
+// was FUN_00035fdc -- converts a 256-entry, 4-bytes-per-entry
+// BGRX/RGBQUAD-style palette (param_1) into a packed 3-bytes-per-entry
+// RGB buffer (param_2), reversing each entry's first 3 bytes. Its only
+// call site feeds the output straight into build_rgb565_palette,
+// confirming the RGB byte order.
+void convert_palette_bgrx_to_rgb(param_1,param_2)
+undefined1 * param_1;
+undefined1 * param_2;
+
+{
+  undefined1 uVar1;
+  int iVar2;
+
+  iVar2 = 0;
+  do {
+    *param_2 = param_1[2];
+    param_2[1] = param_1[1];
+    uVar1 = *param_1;
+    param_1 = param_1 + 4;
+    param_2[2] = uVar1;
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+    param_2 = param_2 + 3;
+  } while (iVar2 < 0x100);
+  return;
+}
