@@ -3989,3 +3989,153 @@ void advance_mobile_objects()
   }
   return;
 }
+
+
+// was FUN_00035394 -- scan_area_ahead_of_object callback used while
+// the player rests: for an eligible non-player NPC (param_3, not
+// currently fleeing/special per byte 7's top bits) within its
+// stat-template's perception range of the player, on a 50/50 roll
+// tries creature_find_path_to_tile to the player and, if a path of
+// more than one step is found, walks that cached path checking each
+// tile for traps (dispatch_trap_type_effect), then teleports the NPC
+// to the path's final tile (resolve_tile_entry_offset placement) and
+// starts it walking toward the player's current position
+// (npc_set_walk_target). Sets DAT_00101950 on success -- this is the
+// "a monster sneaks up and interrupts your rest" mechanic.
+undefined4 spawn_rest_interrupt_monster_callback(param_1,param_2,param_3)
+undefined4 param_1;
+undefined4 param_2;
+ushort * param_3;
+
+{
+  int uw_ord2005_rem_101 = 0;
+  byte bVar1;
+  byte bVar2;
+  byte bVar3;
+  ushort uVar4;
+  short sVar5;
+  undefined4 uVar6;
+  ushort *puVar7;
+  ushort *puVar8;
+  uint uVar9;
+  int extraout_r1;
+  uint extraout_r1_00;
+  uint uVar10;
+  int iVar11;
+  uint uVar12;
+  int iVar13;
+  bool bVar14;
+  undefined8 uVar15;
+  undefined2 in_stack_ffffffcc;
+  undefined1 uVar16;
+  undefined4 in_stack_ffffffd0;
+  byte local_28;
+  byte local_27 [3];
+  
+  uVar16 = (undefined1)((ushort)in_stack_ffffffcc >> 8);
+  sVar5 = encode_object_slot_index(param_3);
+  if ((sVar5 != 1) && ((param_3[7] & 0xc0) == 0)) {
+    uVar6 = Ordinal_1053();
+    uw_ord2005_rem_101 = ((int)(uVar6)) % (2);
+    if (uw_ord2005_rem_101 != 0) {
+      setup_npc_ai_tick_state(param_3);
+      uVar4 = *(ushort *)((char *)g_player_object + 0x16);
+      iVar13 = (uint)DAT_001013f8 - ((uVar4 & 0x3f0) >> 4);
+      iVar11 = (uint)DAT_00101918 - (uint)(uVar4 >> 10);
+      uVar9 = (uint)(*(byte *)(DAT_00101404 + 0x1c) >> 4);
+      if (((((iVar11 * 0x10000 >> 0x10) * (iVar11 * 0x10000 >> 0x10) +
+            (iVar13 * 0x10000 >> 0x10) * (iVar13 * 0x10000 >> 0x10)) * 0x10000 >> 0x10 <=
+            (int)(uVar9 * uVar9 * 3)) &&
+          (iVar11 = creature_find_path_to_tile((uint)DAT_00101918,(uint)DAT_001013f8,
+                                 *(byte *)((char *)DAT_0010190c + 2) >> 3 & 0xf,(uint)(uVar4 >> 10),
+                                 CONCAT11(uVar16,(char)(uVar4 >> 4)) & 0xff3f,
+                                 CONCAT31((int3)((uint)in_stack_ffffffd0 >> 8),
+                                          *(byte *)((char *)g_player_object + 2) >> 3) & 0xffffff0f,0),
+          iVar11 != 0)) && (1 < DAT_0010142c)) {
+        uVar9 = 0;
+        if (DAT_0010142c != 0) {
+          uVar12 = 0;
+          do {
+            iVar11 = uVar12 * 7;
+            uVar15 = tilemap_lookup((&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
+            uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
+            for (puVar7 = (ushort *)((char *)uVar15 + 2); (*puVar7 & 0xffc0) != 0; puVar7 = puVar7 + 2)
+            {
+              uVar15 = resolve_object_link(puVar7,uVar9);
+              uVar9 = (uint)((ulonglong)uVar15 >> 0x20);
+              puVar7 = (ushort *)uVar15;
+              if ((((*puVar7 & 0x1c0) == 0x180) && ((*puVar7 & 0x30) == 0x20)) &&
+                 ((puVar7[3] & 0xffc0) != 0)) {
+                puVar8 = (ushort *)resolve_object_link(puVar7 + 3);
+                uVar9 = (uint)*puVar8;
+                if ((uVar9 & 0x1c0) == 0x180) {
+                  uVar10 = uVar9 & 0x30;
+                  bVar14 = (*puVar8 & 0x30) == 0;
+                  if (bVar14) {
+                    uVar10 = uVar9 & 0xf;
+                  }
+                  if (bVar14 && uVar10 == 9) {
+                    dispatch_trap_type_effect(puVar8,(&DAT_00101740)[iVar11],(&DAT_00101741)[iVar11]);
+                    uVar9 = extraout_r1_00;
+                  }
+                }
+              }
+            }
+            uVar12 = uVar12 + 1 & 0xff;
+            uVar9 = (uint)DAT_0010142c;
+          } while (uVar12 < uVar9);
+        }
+        bVar1 = (&DAT_00101733)[uVar9 * 7];
+        bVar2 = (&DAT_00101732)[uVar9 * 7];
+        puVar7 = (ushort *)tilemap_lookup((uint)bVar2,(uint)bVar1);
+        iVar11 = resolve_tile_entry_offset(*puVar7 & 0xf,&local_28,local_27);
+        if (iVar11 != 0) {
+          bVar3 = (&DAT_0023cf0a)[((int)(short)(ushort)bVar1 + (short)(ushort)bVar2 * 0x40) * 5];
+          uVar6 = encode_object_slot_index(param_3);
+          iVar11 = FUN_00051fa0(*param_3 & 0x1ff,uVar6,
+                                (int)(((uint)local_28 + (short)(ushort)bVar2 * 8) * 0x10000) >> 0x10
+                                ,(int)(((uint)local_27[0] + (short)(ushort)bVar1 * 8) * 0x10000) >>
+                                 0x10,(ushort)((uint)bVar3 << 3) & 0xff,
+                                *(byte *)(DAT_00101404 + 10) >> 7,8);
+          if (iVar11 != 0) {
+            /* was folded into `int iVar11` (reused above for unrelated
+               int arithmetic) -- truncated tilemap_lookup's real
+               `void *` return */
+            char *_tile11 = (char *)tilemap_lookup(DAT_00101918,DAT_001013f8);
+            object_list_unlink(_tile11 + 2,param_3);
+            object_list_insert_head(puVar7 + 1,param_3);
+            uVar9 = bVar1 & 0x3f | (uint)bVar2 << 6;
+            *(byte *)(param_3 + 0xb) = (byte)param_3[0xb] & 0xf | (byte)(uVar9 << 4);
+            *(char *)((char *)param_3 + 0x17) = (char)(uVar9 >> 4);
+            uVar9 = (uint)bVar3 << 3 & 0x7f | (local_27[0] & 7 | (local_28 & 7) << 3) << 10 |
+                    CONCAT11(*(undefined1 *)((char *)param_3 + 3),(char)param_3[1]) & 0x380;
+            *(char *)(param_3 + 1) = (char)uVar9;
+            *(char *)((char *)param_3 + 3) = (char)(uVar9 >> 8);
+            *(byte *)((char *)param_3 + 0x19) = *(byte *)((char *)param_3 + 0x19) | 1;
+            npc_set_walk_target(*(ushort *)((char *)g_player_object + 0x16) >> 10,
+                         *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
+                         *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
+            DAT_00101950 = 1;
+            return 1;
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+
+
+// was FUN_00035894 -- scans nearby NPCs via
+// spawn_rest_interrupt_monster_callback and reports whether one
+// teleported in to interrupt the player's rest. handle_rest_action
+// checks this once resting begins to decide whether to run the
+// "peaceful rest" or "interrupted rest" branch.
+undefined4 check_rest_interrupted_by_monster()
+
+{
+  DAT_00101950 = 0;
+  scan_area_ahead_of_object(g_player_object,1,spawn_rest_interrupt_monster_callback,0,0,8);
+  return DAT_00101950;
+}

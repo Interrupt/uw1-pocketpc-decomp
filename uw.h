@@ -1750,6 +1750,7 @@ extern char DAT_00101928;
 extern short DAT_00101938;
 extern short DAT_0010193c;
 extern undefined4 DAT_00101944;
+extern undefined4 DAT_00101950; // "rest interrupted by monster" flag, set by spawn_rest_interrupt_monster_callback
 extern undefined4 DAT_00101954; // "alerted hostile found" flag, set by detect_unsafe_rest_object_callback
 extern char DAT_00101948;
 extern undefined DAT_002027d1_backing[8192];
@@ -2816,8 +2817,8 @@ undefined4 settle_misplaced_mobile_object();
 void advance_mobile_objects();
 undefined4 detect_unsafe_rest_object_callback();
 undefined4 check_rest_area_unsafe();
-undefined4 FUN_00035394();
-undefined4 FUN_00035894();
+undefined4 spawn_rest_interrupt_monster_callback();
+undefined4 check_rest_interrupted_by_monster();
 void FUN_000358e8();
 void FUN_00035960();
 void FUN_000359f4();

@@ -2683,7 +2683,7 @@ LAB_0007158c:
       pick_random_pending_music_track();
     }
     else {
-      iVar4 = FUN_00035894();
+      iVar4 = check_rest_interrupted_by_monster();
       if (iVar4 == 0) {
         advance_mobile_objects();
         process_nearby_background_traps(0);
