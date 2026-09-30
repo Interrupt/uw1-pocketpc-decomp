@@ -2906,8 +2906,8 @@ LAB_000309a0:
 // was FUN_00031dbc -- called unconditionally at the tail of
 // npc_idle_behavior_tick: if the NPC's own "aware" state flag (byte
 // 0x13) is clear or the player is currently in a special mode (byte
-// 0x5f bit 1), refreshes the delta-to-player (FUN_00034044, not yet
-// named) and, if the player is within ~12 tiles, switches the NPC
+// 0x5f bit 1), refreshes the delta-to-player (refresh_npc_target_delta)
+// and, if the player is within ~12 tiles, switches the NPC
 // into a distinct alert/react state (byte 0x15=0x20, byte 0x14=6) and
 // picks a heading toward the player with a randomized facing nudge.
 void npc_react_to_nearby_player()
@@ -2927,7 +2927,7 @@ void npc_react_to_nearby_player()
     uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf01f;
     *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar5 | 0x10;
     *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar5 >> 8);
-    FUN_00034044();
+    refresh_npc_target_delta();
     if ((ushort)(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448) < 0x90) {
       uVar5 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
       *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
@@ -3054,7 +3054,7 @@ int param_2;
   int iVar5;
   int iVar6;
   
-  FUN_00034044();
+  refresh_npc_target_delta();
   bVar1 = *(byte *)((char *)DAT_0010190c + 2);
   bVar2 = *(byte *)(DAT_00101400 + 2);
   uVar3 = integer_sqrt(DAT_00101728);
@@ -3270,7 +3270,7 @@ LAB_000339fc:
           *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar11;
           *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar11 >> 8);
         }
-        iVar7 = FUN_00034044();
+        iVar7 = refresh_npc_target_delta();
         if (iVar7 != 0) {
           bVar3 = true;
           if (*(char *)((char *)DAT_0010190c + 0x12) == '\x01') {
@@ -3332,7 +3332,7 @@ LAB_00033d18:
     npc_idle_behavior_tick();
     break;
   case 3:
-    if ((bVar3) || (iVar7 = FUN_00034044(), iVar7 != 0)) {
+    if ((bVar3) || (iVar7 = refresh_npc_target_delta(), iVar7 != 0)) {
       npc_combat_approach_tick();
     }
     else {
@@ -3343,11 +3343,11 @@ LAB_00033ef8:
   case 4:
     goto LAB_00033e9c;
   case 5:
-    if ((!bVar3) && (iVar7 = FUN_00034044(), iVar7 == 0)) goto LAB_00033ef8;
+    if ((!bVar3) && (iVar7 = refresh_npc_target_delta(), iVar7 == 0)) goto LAB_00033ef8;
     npc_combat_engage_close_tick();
     break;
   case 6:
-    if ((!bVar3) && (iVar7 = FUN_00034044(), iVar7 == 0)) goto LAB_00033ef8;
+    if ((!bVar3) && (iVar7 = refresh_npc_target_delta(), iVar7 == 0)) goto LAB_00033ef8;
     npc_combat_position_tick();
     break;
   case 7:
@@ -3358,7 +3358,7 @@ LAB_00033e9c:
     npc_wander_return_home_tick();
     break;
   case 9:
-    if ((!bVar3) && (iVar7 = FUN_00034044(), iVar7 == 0)) goto LAB_00033ef8;
+    if ((!bVar3) && (iVar7 = refresh_npc_target_delta(), iVar7 == 0)) goto LAB_00033ef8;
     npc_combat_engage_wide_tick();
     break;
   case 10:
@@ -3494,4 +3494,48 @@ LAB_00032690:
     *(byte *)((char *)DAT_0010190c + 9) = DAT_00101458;
   }
   return;
+}
+
+
+// was FUN_00034044 -- refreshes the whole "delta to tracked target"
+// state every function in this NPC AI cluster reads: looks up the
+// target object from the NPC's own goal-target slot (byte 0xb's high
+// nibble), and if it's valid and alive, recomputes the target's tile
+// position (DAT_00101408/10), level (DAT_00101420), fine position
+// (DAT_00101908/18), delta (DAT_00101444/8), and both a tile-level and
+// fine-level distance-squared (DAT_00101900/DAT_00101728). Returns 0
+// if there's no valid target to track.
+undefined4 refresh_npc_target_delta()
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  int iVar3;
+  uint uVar4;
+  int iVar5;
+  
+  DAT_00101400 = FUN_000535fc((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xff0) >> 4);
+  if ((DAT_00101400 == 0) || (*(char *)(DAT_00101400 + 8) == '\0')) {
+    uVar1 = 0;
+  }
+  else {
+    DAT_00101408 = *(byte *)(DAT_00101400 + 0x17) >> 2;
+    uVar4 = *(ushort *)(DAT_00101400 + 0x16) >> 4 & 0x3f;
+    DAT_00101410 = (undefined1)uVar4;
+    DAT_00101420 = *(byte *)(DAT_00101400 + 2) >> 3 & 0xf;
+    iVar3 = (uint)DAT_00101408 * 8 + (uint)(*(byte *)(DAT_00101400 + 3) >> 5);
+    DAT_00101908 = (undefined2)iVar3;
+    iVar2 = (*(byte *)(DAT_00101400 + 3) >> 2 & 7) + uVar4 * 8;
+    DAT_00101418 = (undefined2)iVar2;
+    DAT_00101444 = (short)((uint)(iVar3 * 0x10000) >> 0x10) - DAT_00101910;
+    DAT_00101448 = (short)((uint)(iVar2 * 0x10000) >> 0x10) - DAT_0010141c;
+    iVar5 = (uint)DAT_00101408 - (uint)DAT_00101918;
+    DAT_00101900 = (undefined2)
+                   ((iVar5 * iVar5 + (uVar4 - DAT_001013f8) * (uVar4 - DAT_001013f8)) * 0x10000 >>
+                   0x10);
+    DAT_00101728 = (iVar3 - (uint)DAT_00101910) * (iVar3 - (uint)DAT_00101910) +
+                   (iVar2 - (uint)DAT_0010141c) * (iVar2 - (uint)DAT_0010141c);
+    uVar1 = 1;
+  }
+  return uVar1;
 }

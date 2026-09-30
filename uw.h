@@ -2797,7 +2797,7 @@ int compute_vertical_aim_offset();
 void setup_npc_ai_tick_state();
 undefined4 npc_ai_tick(); // was FUN_00032d38
 void npc_ai_default_tick();
-undefined4 FUN_00034044();
+undefined4 refresh_npc_target_delta();
 undefined4 FUN_00034270();
 int FUN_0003431c();
 void npc_set_goal();

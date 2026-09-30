@@ -9230,7 +9230,7 @@ void npc_notice_and_idle_tick()
     uVar6 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf01f;
     *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar6 | 0x10;
     *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar6 >> 8);
-    FUN_00034044();
+    refresh_npc_target_delta();
     if ((*(byte *)((char *)DAT_0010190c + 0x19) & 1) != 0) {
 LAB_0002fe88:
       npc_set_goal(5,1);
@@ -9424,40 +9424,6 @@ void npc_wander_return_home_exact_tick()
 
 
 
-undefined4 FUN_00034044()
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  int iVar3;
-  uint uVar4;
-  int iVar5;
-  
-  DAT_00101400 = FUN_000535fc((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xff0) >> 4);
-  if ((DAT_00101400 == 0) || (*(char *)(DAT_00101400 + 8) == '\0')) {
-    uVar1 = 0;
-  }
-  else {
-    DAT_00101408 = *(byte *)(DAT_00101400 + 0x17) >> 2;
-    uVar4 = *(ushort *)(DAT_00101400 + 0x16) >> 4 & 0x3f;
-    DAT_00101410 = (undefined1)uVar4;
-    DAT_00101420 = *(byte *)(DAT_00101400 + 2) >> 3 & 0xf;
-    iVar3 = (uint)DAT_00101408 * 8 + (uint)(*(byte *)(DAT_00101400 + 3) >> 5);
-    DAT_00101908 = (undefined2)iVar3;
-    iVar2 = (*(byte *)(DAT_00101400 + 3) >> 2 & 7) + uVar4 * 8;
-    DAT_00101418 = (undefined2)iVar2;
-    DAT_00101444 = (short)((uint)(iVar3 * 0x10000) >> 0x10) - DAT_00101910;
-    DAT_00101448 = (short)((uint)(iVar2 * 0x10000) >> 0x10) - DAT_0010141c;
-    iVar5 = (uint)DAT_00101408 - (uint)DAT_00101918;
-    DAT_00101900 = (undefined2)
-                   ((iVar5 * iVar5 + (uVar4 - DAT_001013f8) * (uVar4 - DAT_001013f8)) * 0x10000 >>
-                   0x10);
-    DAT_00101728 = (iVar3 - (uint)DAT_00101910) * (iVar3 - (uint)DAT_00101910) +
-                   (iVar2 - (uint)DAT_0010141c) * (iVar2 - (uint)DAT_0010141c);
-    uVar1 = 1;
-  }
-  return uVar1;
-}
 
 
 

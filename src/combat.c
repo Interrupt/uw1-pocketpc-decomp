@@ -611,7 +611,7 @@ void npc_combat_disengage_tick()
     uVar7 = *(ushort *)(DAT_0010190c + 0xb) & 0xf01f;
     *(byte *)(DAT_0010190c + 0xb) = (byte)uVar7 | 0x10;
     *(char *)(DAT_0010190c + 0xc) = (char)(uVar7 >> 8);
-    FUN_00034044();
+    refresh_npc_target_delta();
     uVar6 = DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448;
     cVar3 = detect_npc_wander_proximity(auStack_1b,&uStack_1c);
     if ((cVar3 == '\x01') || (399 < uVar6)) {
