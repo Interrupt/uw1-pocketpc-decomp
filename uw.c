@@ -8908,43 +8908,6 @@ byte param_3;
 
 
 
-void FUN_0002ee80(param_1,param_2)
-undefined1 param_1;
-undefined1 param_2;
-
-{
-  int uw_ord2005_rem_20 = 0;
-  char cVar1;
-  byte *pbVar2;
-  uint uVar3;
-  undefined4 uVar4;
-  char extraout_r1;
-  uint uVar5;
-  
-  if (DAT_00101914 == 0) {
-    pbVar2 = (byte *)tilemap_lookup(param_1,param_2);
-    uVar5 = *(byte *)((char *)DAT_0010190c + 2) & 0x7f;
-    uVar3 = (uint)(*pbVar2 >> 4) * 8 + 0x14;
-    if (0x78 < uVar3) {
-      uVar3 = 0x78;
-    }
-    if (((DAT_0010191c == 0) || (0x77 < uVar5)) && ((int)(uVar3 - 8) <= (int)uVar5)) {
-      if ((uVar5 < 0x79) && (uVar5 <= uVar3 + 8)) {
-        uVar4 = Ordinal_1053();
-        uw_ord2005_rem_20 = ((int)(uVar4)) % (3);
-        cVar1 = uw_ord2005_rem_20 + '\x0f';
-      }
-      else {
-        cVar1 = '\x0e';
-      }
-    }
-    else {
-      cVar1 = '\x12';
-    }
-    *(byte *)((char *)DAT_0010190c + 0x14) = cVar1 << 3 | *(byte *)((char *)DAT_0010190c + 0x14) & 7;
-  }
-  return;
-}
 
 
 

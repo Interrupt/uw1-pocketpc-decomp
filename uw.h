@@ -2764,7 +2764,7 @@ void handle_blocked_cached_path();
 undefined4 compute_movement_heading();
 void npc_set_walk_target();
 void npc_walk_toward_tile();
-void FUN_0002ee80();
+void set_npc_altitude_state();
 void FUN_0002efa0();
 void npc_idle_behavior_tick();
 void npc_combat_approach_tick();

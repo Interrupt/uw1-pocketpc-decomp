@@ -474,7 +474,7 @@ LAB_0002ed50:
     *(char *)((char *)DAT_0010190c + 3) = (char)(uVar8 >> 8);
     *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
     if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
-      FUN_0002ee80(param_1,param_2);
+      set_npc_altitude_state(param_1,param_2);
     }
     goto LAB_0002ed50;
   }
@@ -2554,7 +2554,7 @@ byte * param_1;
   if ((iVar5 == 0) || (iVar5 = advance_cached_path_step(param_1), bVar3 = bVar1, bVar4 = bVar2, iVar5 != 0)) {
     if ((param_1[2] & 0x80) == 0) {
       if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
-        FUN_0002ee80(*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f,
+        set_npc_altitude_state(*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f,
                      *(ushort *)((char *)DAT_0010190c + 0xf) >> 6 & 0x3f);
       }
       uVar7 = (uint)*param_1;
@@ -2716,4 +2716,50 @@ int param_2;
     }
   }
   return uVar5;
+}
+
+
+// was FUN_0002ee80 -- sets a flying/levitating NPC's vertical
+// movement/animation state (packed into the top bits of record byte
+// 0x14): compares its current altitude (byte 2 & 0x7f) against the
+// target tile (param_1,param_2)'s own ceiling-derived height, picking
+// a climb/descend/random-hover animation code. Called from
+// walk_using_cached_path only for monsters whose stat template sets
+// the flying-locomotion flag bit (0x80).
+void set_npc_altitude_state(param_1,param_2)
+undefined1 param_1;
+undefined1 param_2;
+
+{
+  int uw_ord2005_rem_20 = 0;
+  char cVar1;
+  byte *pbVar2;
+  uint uVar3;
+  undefined4 uVar4;
+  char extraout_r1;
+  uint uVar5;
+  
+  if (DAT_00101914 == 0) {
+    pbVar2 = (byte *)tilemap_lookup(param_1,param_2);
+    uVar5 = *(byte *)((char *)DAT_0010190c + 2) & 0x7f;
+    uVar3 = (uint)(*pbVar2 >> 4) * 8 + 0x14;
+    if (0x78 < uVar3) {
+      uVar3 = 0x78;
+    }
+    if (((DAT_0010191c == 0) || (0x77 < uVar5)) && ((int)(uVar3 - 8) <= (int)uVar5)) {
+      if ((uVar5 < 0x79) && (uVar5 <= uVar3 + 8)) {
+        uVar4 = Ordinal_1053();
+        uw_ord2005_rem_20 = ((int)(uVar4)) % (3);
+        cVar1 = uw_ord2005_rem_20 + '\x0f';
+      }
+      else {
+        cVar1 = '\x0e';
+      }
+    }
+    else {
+      cVar1 = '\x12';
+    }
+    *(byte *)((char *)DAT_0010190c + 0x14) = cVar1 << 3 | *(byte *)((char *)DAT_0010190c + 0x14) & 7;
+  }
+  return;
 }
