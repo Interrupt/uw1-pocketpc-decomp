@@ -932,7 +932,7 @@ int mask;
  * quotient. A prior no-op stub (`return 0`) silently zeroed every
  * division result in the game and left `extraout_r1` reads pointing at
  * genuinely uninitialized memory -- confirmed as the cause of a SIGSEGV
- * in FUN_000229e0 indexing a hex-digit table with garbage. K&R-declared
+ * in itoa_radix indexing a hex-digit table with garbage. K&R-declared
  * (matching the project's established Ordinal_1068-style pattern) so
  * call sites that only pass one argument -- relying on the original
  * ABI's register-content-reuse from a preceding computation -- still

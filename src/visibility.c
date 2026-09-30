@@ -976,7 +976,7 @@ LAB_0005cf04:
           /* Was reading the division helper's remainder back via the
              extraout_r1 register-leftover trick (see Ordinal_2005's
              comment) -- computed directly instead, same fix as
-             FUN_000229e0's identical pattern. The quotient this call
+             itoa_radix's identical pattern. The quotient this call
              also produced was never used (its return value was
              discarded here too), so the call itself is gone. */
           cVar12 = (char)((iVar3 + 1) % 2);

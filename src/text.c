@@ -341,3 +341,88 @@ int param_3;
 
 
 
+
+
+// was FUN_000229e0 -- itoa-style integer-to-string helper: writes
+// param_1's string representation in base param_3 into buffer param_2
+// (via the s_0123456789ABCDEF_00084a28 digit table), handling a '-'
+// sign for negative values. param_4 is only used as the literal output
+// character for the param_1==0 special case (hardcoded to '0' whenever
+// the caller doesn't override it) -- every real call site omits it and
+// always passes base 10, so this isn't the dropped-argument bug class
+// seen elsewhere in this file; the unused-when-nonzero param_4 is simply
+// never read outside that one branch.
+void itoa_radix(param_1,param_2,param_3,param_4)
+int param_1;
+undefined1 * param_2;
+undefined4 param_3;
+undefined1 param_4;
+
+{
+  char cVar1;
+  int extraout_r1;
+  char *pcVar2;
+  int iVar3;
+  int iVar4;
+  bool bVar5;
+  bool bVar6;
+  /* acStack_41[31] and local_22[2] were separate Ghidra locals, but
+     their names encode adjacent stack offsets in the original binary
+     (-0x41 to -0x22 is exactly 31 bytes) and the code walks backward
+     from `local_22 + 1` straight into acStack_41 -- the classic
+     "separate locals relied on being contiguous" artifact documented
+     in the README. Merged into one 33-byte array; local_22[x] becomes
+     acStack_41[31 + x]. */
+  char acStack_41 [33];
+  /* param_2 - pcVar2 offset-reconstruction idiom (same pattern as
+     expand_pals_bytes): `(int)param_2 - (int)pcVar2` truncated both real
+     pointers before iVar3's later `pcVar2[iVar3]` re-addition. iVar3
+     itself is reused for a plain int digit-counter earlier in this
+     function, so this needs its own dedicated variable. */
+  intptr_t offset;
+  
+  bVar5 = param_1 < 0;
+  bVar6 = param_1 == 0;
+  if (bVar6) {
+    param_4 = 0x30;
+  }
+  acStack_41[32] = 0;
+  if (bVar6) {
+    *param_2 = param_4;
+    param_2[1] = 0;
+  }
+  iVar3 = 0x1f;
+  if (!bVar6) {
+    if (bVar5) {
+      param_1 = -param_1;
+    }
+    if (0 < param_1) {
+      pcVar2 = acStack_41 + 32;
+      do {
+        iVar3 = iVar3 + -1;
+        pcVar2 = pcVar2 + -1;
+        /* Original idiom read the divide helper's remainder back via
+           the extraout_r1 register-leftover trick (see Ordinal_2005's
+           comment) -- computed directly here instead, since C gives us
+           no portable way to recover "whatever was left in r1" and the
+           uninitialized read was corrupting this index (confirmed
+           SIGSEGV). */
+        *pcVar2 = s_0123456789ABCDEF_00084a28[param_1 % param_3];
+        param_1 = Ordinal_2005(param_3,param_1);
+      } while (0 < param_1);
+    }
+    iVar4 = iVar3;
+    if (bVar5) {
+      iVar4 = iVar3 + -1;
+      acStack_41[iVar3] = '-';
+    }
+    pcVar2 = acStack_41 + iVar4 + 1;
+    offset = (intptr_t)param_2 - (intptr_t)pcVar2;
+    do {
+      cVar1 = *pcVar2;
+      pcVar2[offset] = cVar1;
+      pcVar2 = pcVar2 + 1;
+    } while (cVar1 != '\0');
+  }
+  return;
+}

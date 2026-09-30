@@ -410,7 +410,7 @@ undefined4 param_1;
     *g_draw_color_index = 0x2d;
     *DAT_00084298 = 0x2d;
     select_active_font(s_fontbig_sys_0008432c);
-    FUN_000229e0(iVar5,auStack_124,10);
+    itoa_radix(iVar5,auStack_124,10);
     sVar2 = measure_text_width(auStack_124);
     iVar5 = (int)sVar2;
     if (iVar5 < 0) {

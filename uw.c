@@ -8299,80 +8299,6 @@ undefined4 param_1;
 
 
 
-void FUN_000229e0(param_1,param_2,param_3,param_4)
-int param_1;
-undefined1 * param_2;
-undefined4 param_3;
-undefined1 param_4;
-
-{
-  char cVar1;
-  int extraout_r1;
-  char *pcVar2;
-  int iVar3;
-  int iVar4;
-  bool bVar5;
-  bool bVar6;
-  /* acStack_41[31] and local_22[2] were separate Ghidra locals, but
-     their names encode adjacent stack offsets in the original binary
-     (-0x41 to -0x22 is exactly 31 bytes) and the code walks backward
-     from `local_22 + 1` straight into acStack_41 -- the classic
-     "separate locals relied on being contiguous" artifact documented
-     in the README. Merged into one 33-byte array; local_22[x] becomes
-     acStack_41[31 + x]. */
-  char acStack_41 [33];
-  /* param_2 - pcVar2 offset-reconstruction idiom (same pattern as
-     expand_pals_bytes): `(int)param_2 - (int)pcVar2` truncated both real
-     pointers before iVar3's later `pcVar2[iVar3]` re-addition. iVar3
-     itself is reused for a plain int digit-counter earlier in this
-     function, so this needs its own dedicated variable. */
-  intptr_t offset;
-  
-  bVar5 = param_1 < 0;
-  bVar6 = param_1 == 0;
-  if (bVar6) {
-    param_4 = 0x30;
-  }
-  acStack_41[32] = 0;
-  if (bVar6) {
-    *param_2 = param_4;
-    param_2[1] = 0;
-  }
-  iVar3 = 0x1f;
-  if (!bVar6) {
-    if (bVar5) {
-      param_1 = -param_1;
-    }
-    if (0 < param_1) {
-      pcVar2 = acStack_41 + 32;
-      do {
-        iVar3 = iVar3 + -1;
-        pcVar2 = pcVar2 + -1;
-        /* Original idiom read the divide helper's remainder back via
-           the extraout_r1 register-leftover trick (see Ordinal_2005's
-           comment) -- computed directly here instead, since C gives us
-           no portable way to recover "whatever was left in r1" and the
-           uninitialized read was corrupting this index (confirmed
-           SIGSEGV). */
-        *pcVar2 = s_0123456789ABCDEF_00084a28[param_1 % param_3];
-        param_1 = Ordinal_2005(param_3,param_1);
-      } while (0 < param_1);
-    }
-    iVar4 = iVar3;
-    if (bVar5) {
-      iVar4 = iVar3 + -1;
-      acStack_41[iVar3] = '-';
-    }
-    pcVar2 = acStack_41 + iVar4 + 1;
-    offset = (intptr_t)param_2 - (intptr_t)pcVar2;
-    do {
-      cVar1 = *pcVar2;
-      pcVar2[offset] = cVar1;
-      pcVar2 = pcVar2 + 1;
-    } while (cVar1 != '\0');
-  }
-  return;
-}
 
 
 
@@ -8610,19 +8536,19 @@ void FUN_00023a00()
   set_draw_color(0x1a);
   rect_fill_or_save_restore(0x5d,0x32,0x8c,0x7a);
   screen_backup_restore();
-  FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
+  itoa_radix(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
   draw_text_string(&DAT_00084e58,0x5d,0x32);
   iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x32);
-  FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 6),auStack_14,10);
+  itoa_radix(*(undefined1 *)(DAT_0023be74 + 6),auStack_14,10);
   draw_text_string(&DAT_00084e50,0x5d,0x44);
   iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x44);
-  FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 7),auStack_14,10);
+  itoa_radix(*(undefined1 *)(DAT_0023be74 + 7),auStack_14,10);
   draw_text_string(&DAT_00084e48,0x5d,0x56);
   iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x56);
-  FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_14,10);
+  itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_14,10);
   draw_text_string(&DAT_00084e40,0x5d,0x68);
   iVar1 = measure_text_width(auStack_14);
   draw_text_string(auStack_14,0x8c - iVar1,0x68);
@@ -8658,7 +8584,7 @@ void FUN_00023b38()
     iVar1 = (int)(short)iVar2;
     if (*(char *)(iVar1 + DAT_00086df8 + 0x21) != '\0') {
       uVar3 = get_message_string(iVar2 + 0x1fU | 0x400);
-      FUN_000229e0(*(undefined1 *)(iVar1 + DAT_00086df8 + 0x21),auStack_24,10);
+      itoa_radix(*(undefined1 *)(iVar1 + DAT_00086df8 + 0x21),auStack_24,10);
       iVar5 = iVar4 * 0xb + 0x85;
       draw_text_string(uVar3,0x1e,iVar5);
       iVar2 = measure_text_width(auStack_24);
@@ -8984,7 +8910,7 @@ byte param_3;
   /* Was `short extraout_r1` -- the classic "call Ordinal_2005 once for
      the quotient, call it again with identical args purely to grab the
      remainder via the register-leftover idiom" pattern already fixed
-     elsewhere this session (see FUN_000229e0), except here the second
+     elsewhere this session (see itoa_radix), except here the second
      call's return was silently dropped without ever assigning
      extraout_r1 at all -- it was genuinely uninitialized garbage,
      multiplied straight into the button/portrait X draw coordinate
@@ -19848,16 +19774,16 @@ void FUN_0003e0b4()
         pcVar4 = pcVar4 + 1;
       } while (cVar1 != '\0');
       if (*DAT_00085a6c < 0x1e) {
-        FUN_000229e0(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
-        FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
+        itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_94,10);
+        itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_a4,10);
         if ((*(byte *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
           sVar2 = Ordinal_2005(3,(*(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf) - 1);
           print_scroll_message_concat(0x5b,sVar2 + 0x54,0x5c);
         }
       }
       else {
-        FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_94,10);
-        FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_a4,10);
+        itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_94,10);
+        itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_a4,10);
       }
       Ordinal_1063(local_84,auStack_94);
       Ordinal_1063(local_84,s_out_of_000858dc);
@@ -24361,7 +24287,7 @@ int param_1;
     bVar5 = param_1 != 0;
     *g_draw_color_index = 0xe0;
     uVar3 = Ordinal_2005(10,iVar1);
-    FUN_000229e0(uVar3,auStack_24,10);
+    itoa_radix(uVar3,auStack_24,10);
     sVar2 = measure_text_width(auStack_24);
     iVar4 = (int)sVar2;
     if (iVar4 < 0) {

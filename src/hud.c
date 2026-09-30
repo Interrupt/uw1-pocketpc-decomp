@@ -3874,9 +3874,9 @@ undefined4 param_2;
 
 
 // was FUN_0007fe20 -- prints the decimal string form of param_1 (via
-// FUN_000229e0, an unnamed itoa-style helper) to the message scroll,
-// restoring the cursor to the saved column (DAT_0025070c) first. Used
-// to echo a numeric answer back after a scroll-based prompt.
+// itoa_radix) to the message scroll, restoring the cursor to the saved
+// column (DAT_0025070c) first. Used to echo a numeric answer back after
+// a scroll-based prompt.
 void echo_number_to_scroll(param_1)
 short param_1;
 
@@ -3885,7 +3885,7 @@ short param_1;
   int iVar2;
   undefined1 auStack_18 [8];
 
-  FUN_000229e0((int)param_1,auStack_18,10);
+  itoa_radix((int)param_1,auStack_18,10);
   iVar2 = (int)DAT_0025070c;
   sVar1 = *(short *)(DAT_00250704 + 10);
   select_msg_scroll_mode_normal();

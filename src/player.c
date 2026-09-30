@@ -2523,7 +2523,7 @@ void render_endgame_character_stats()
         }
         uVar4 = *(undefined1 *)(DAT_00086df8 + 0x38);
       }
-      FUN_000229e0(uVar4,local_58,10);
+      itoa_radix(uVar4,local_58,10);
     }
 LAB_00071110:
     local_70 = (short)((uint)(iVar13 * 0x10000) >> 0x10);
@@ -3197,7 +3197,7 @@ void draw_stats_panel_header()
      title was never drawn. Thread the string through explicitly. */
   uVar3 = Ordinal_1416(get_message_string((*(byte *)(DAT_00086df8 + 100) >> 5) + 0x17 | 0x400));
   draw_text_string(uVar3,0xf2,0x16);
-  FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
+  itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x3d),auStack_28,10);
   cVar1 = *(byte *)(DAT_00086df8 + 0x3d) - 1;
   if (3 < *(byte *)(DAT_00086df8 + 0x3d)) {
     cVar1 = '\x03';
@@ -3228,7 +3228,7 @@ uint param_1;
   int iVar1;
   undefined1 auStack_c [4];
   
-  FUN_000229e0(*(undefined1 *)((param_1 & 0xff) + DAT_0023be74 + 5),auStack_c,10);
+  itoa_radix(*(undefined1 *)((param_1 & 0xff) + DAT_0023be74 + 5),auStack_c,10);
   iVar1 = measure_text_width(auStack_c);
   draw_text_string(auStack_c,0x138 - iVar1,(param_1 & 0xff) * 7 + 0x1d);
   return;
@@ -3249,10 +3249,10 @@ void draw_hp_stat_display()
   int iVar2;
   undefined1 auStack_c [8];
   
-  FUN_000229e0(*(undefined1 *)((char *)g_player_object + 8),auStack_c,10);
+  itoa_radix(*(undefined1 *)((char *)g_player_object + 8),auStack_c,10);
   sVar1 = Ordinal_1068(auStack_c);
   auStack_c[sVar1] = 0x2f;
-  FUN_000229e0(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
+  itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_c + ((sVar1 + 1) * 0x10000 >> 0x10),10);
   iVar2 = measure_text_width(auStack_c);
   draw_text_string(auStack_c,0x138 - iVar2,0x32);
   return;
@@ -3271,10 +3271,10 @@ void draw_mana_stat_display()
   int iVar2;
   undefined1 auStack_10 [8];
   
-  FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_10,10);
+  itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x37),auStack_10,10);
   sVar1 = Ordinal_1068(auStack_10);
   auStack_10[sVar1] = 0x2f;
-  FUN_000229e0(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_10 + ((sVar1 + 1) * 0x10000 >> 0x10),10)
+  itoa_radix(*(undefined1 *)(DAT_00086df8 + 0x38),auStack_10 + ((sVar1 + 1) * 0x10000 >> 0x10),10)
   ;
   iVar2 = measure_text_width(auStack_10);
   draw_text_string(auStack_10,0x138 - iVar2,0x39);
@@ -3324,7 +3324,7 @@ uint param_1;
   undefined1 auStack_18 [4];
   
   uVar3 = param_1 & 0xff;
-  FUN_000229e0(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
+  itoa_radix(*(undefined1 *)(DAT_0024af80 + uVar3 + DAT_00086df8 + 0x21),auStack_18,10);
   blit_grtile_to_framebuffer(0xf0,((int)(uVar3 * 0x70000) >> 0x10) + 0x47,DAT_0024af88,((param_1 & 0xff) + 1) * 7,
                0x4b,0,(short)(uVar3 * 0x70000 >> 0x10),1);
   /* Was `get_message_string(id); uVar1 = Ordinal_1416();` -- same dropped-

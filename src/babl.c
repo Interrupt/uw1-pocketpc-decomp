@@ -1358,7 +1358,7 @@ LAB_00019bc8:
           }
         }
         if (cVar12 == 'I') {
-          FUN_000229e0((int)sVar3,local_30,10);
+          itoa_radix((int)sVar3,local_30,10);
           pcVar9 = local_30;
           do {
             cVar1 = *pcVar9;
