@@ -771,6 +771,7 @@ extern undefined DAT_00085234_backing[8192];
 extern undefined1 DAT_0008523c_backing[32768];
 #define DAT_0008523c DAT_0008523c_backing[0]
 extern short DAT_001007bc;
+extern undefined *DAT_001007c8;
 extern ushort DAT_001007c4;
 extern undefined DAT_001007d5_backing[8192];
 #define DAT_001007d5 DAT_001007d5_backing[0]
@@ -2690,7 +2691,7 @@ ushort babl_builtin_count_inv();
 byte babl_builtin_check_inv_quality();
 undefined4 babl_builtin_set_inv_quality();
 void load_monster_combat_stats();
-undefined4 FUN_0002a35c();
+undefined4 init_monster_spawn_defaults();
 void sync_conv_vars_from_npc();
 bool sync_conv_vars_to_npc();
 void FUN_0002b258();
