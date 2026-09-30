@@ -1955,8 +1955,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
   uVar6 = babl_read_var_word((int)*(short *)(param_1 + -4));
   uVar7 = babl_read_var_word((int)*(short *)(param_1 + -2));
   if (DAT_000bc004 < 0) {
-    get_message_string(uVar6);
-    FUN_00029708();
+    /* Was a dropped register-forwarding argument -- same class as
+       babl_builtin_compare's own comment (uw.c ~10977). Thread
+       get_message_string's own return through explicitly. */
+    babl_builtin_say(get_message_string(uVar6));
     sVar2 = DAT_000bbfb8;
   }
   else {
@@ -1974,8 +1976,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
       iVar9 = (int)DAT_000bc024;
       iVar8 = (int)sVar2;
       if (iVar9 <= iVar8) {
-        get_message_string(uVar4);
-        FUN_00029708();
+        /* Was a dropped register-forwarding argument -- same class as
+       babl_builtin_compare's own comment (uw.c ~10977). Thread
+       get_message_string's own return through explicitly. */
+        babl_builtin_say(get_message_string(uVar4));
         finalize_npc_barter_items(1);
         finalize_player_barter_items();
         DAT_000bc008 = 1;
@@ -1988,8 +1992,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
       }
       else {
         if (iVar8 < iVar10) {
-          get_message_string(uVar5);
-          FUN_00029708();
+          /* Was a dropped register-forwarding argument -- same class as
+       babl_builtin_compare's own comment (uw.c ~10977). Thread
+       get_message_string's own return through explicitly. */
+          babl_builtin_say(get_message_string(uVar5));
           DAT_000bbfb8 = sVar2;
           DAT_000bc004 = DAT_000bc004 + -2;
           return 0;
@@ -2002,14 +2008,18 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
         iVar9 = (iVar9 - iVar8) - (iVar10 >> 1);
       }
       if (iVar9 < 0 != bVar11) {
-        get_message_string((int)sVar1);
-        FUN_00029708();
+        /* Was a dropped register-forwarding argument -- same class as
+       babl_builtin_compare's own comment (uw.c ~10977). Thread
+       get_message_string's own return through explicitly. */
+        babl_builtin_say(get_message_string((int)sVar1));
         DAT_000bc004 = DAT_000bc004 + -1;
       }
     }
     else {
-      get_message_string(uVar7);
-      FUN_00029708();
+      /* Was a dropped register-forwarding argument -- same class as
+       babl_builtin_compare's own comment (uw.c ~10977). Thread
+       get_message_string's own return through explicitly. */
+      babl_builtin_say(get_message_string(uVar7));
       DAT_000bc008 = 0;
       sVar2 = DAT_000bbfb8;
     }
@@ -2082,8 +2092,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
             0x10000) >> 0x10 <
        (int)((((bVar2 & 2) >> 1) + (int)sVar5 + (uint)bVar3 + iVar11) * 0x10000) >> 0x10) ||
      ((bVar4 & 0x40) != 0)) {
-    get_message_string((int)local_28);
-    FUN_00029708();
+    /* Was a dropped register-forwarding argument -- same class as
+       babl_builtin_compare's own comment (uw.c ~10977). Thread
+       get_message_string's own return through explicitly. */
+    babl_builtin_say(get_message_string((int)local_28));
     finalize_npc_barter_items(1);
     DAT_000bc008 = 1;
     if (0 < local_2c) {
@@ -2093,8 +2105,10 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
     uVar9 = 1;
   }
   else {
-    get_message_string((int)local_2a);
-    FUN_00029708();
+    /* Was a dropped register-forwarding argument -- same class as
+       babl_builtin_compare's own comment (uw.c ~10977). Thread
+       get_message_string's own return through explicitly. */
+    babl_builtin_say(get_message_string((int)local_2a));
     finalize_npc_barter_items(0);
     FUN_00034ac4(DAT_00100674,5,1);
     uVar9 = 0;
@@ -2273,13 +2287,13 @@ void start_npc_conversation()
   else {
     babl_register_builtin(s_babl_menu_00085220,&babl_menu); // was &LAB_0002912c, the no-op stub
     babl_register_builtin(s_babl_fmenu_00085214,babl_fmenu);
-    babl_register_builtin(DAT_000845a8,FUN_00029708);
-    babl_register_builtin(s_respond_000845ac,FUN_0002977c);
+    babl_register_builtin(DAT_000845a8,babl_builtin_say);
+    babl_register_builtin(s_respond_000845ac,babl_builtin_respond);
     babl_register_builtin(s_get_quest_00085208,babl_builtin_get_quest);
     babl_register_builtin(s_set_quest_000851fc,babl_builtin_set_quest);
     babl_register_builtin(s_sex_000851f8,babl_builtin_sex);
     babl_register_builtin(s_babl_ask_000851ec,FUN_0002990c);
-    babl_register_builtin(s_print_000851e4,FUN_00029850);
+    babl_register_builtin(s_print_000851e4,babl_builtin_print);
     babl_register_builtin(s_show_inv_000851d8,babl_builtin_show_inv);
     babl_register_builtin(s_give_to_npc_000851cc,babl_builtin_give_to_npc);
     babl_register_builtin(s_find_inv_000851c0,babl_builtin_find_inv);
@@ -2418,7 +2432,7 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
      in this cluster. Confirmed live via lldb: this is the crash one
      step past babl_menu's own `param_1` truncation fix. Widened to
      intptr_t and `* 8` throughout (also fixed in babl_fmenu just below
-     and its two other readers, run_babl_menu_wait_loop/FUN_000295b4). */
+     and its two other readers, run_babl_menu_wait_loop/select_babl_menu_response). */
   intptr_t uVar7;
   intptr_t iVar8;
   intptr_t iVar9;
@@ -2544,7 +2558,7 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
       }
     }
     if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] UW_DEBUG_AUTO_FAREWELL: auto-selecting item %d (\"%s\")\n", _far_pick, *(char **)(&DAT_00100680 + _far_pick * 8));
-    FUN_000295b4((short)_far_pick);
+    select_babl_menu_response((short)_far_pick);
     return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
   }
   select_msg_scroll_mode_normal();
@@ -4767,7 +4781,7 @@ void babl_builtin_do_judgement()
   Ordinal_1063(local_60,uVar5);
   uVar5 = get_message_string(iVar8 + 8U | 0xe00);
   Ordinal_1063(local_60,uVar5);
-  FUN_000297dc(local_60);
+  echo_selected_conversation_choice(local_60);
   return;
 }
 
@@ -5862,4 +5876,262 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
   DAT_00250718 = 1;
   run_babl_menu_wait_loop();
   return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
+}
+
+
+// was FUN_000295b4 -- selects a babl_menu/babl_fmenu response: registered
+// as the click/key handler for the numbered response hotkeys and the
+// response-list click region (src/game.c). param_1==0 means "resolve
+// from a click position" via DAT_00100770 (the line->item map
+// babl_fmenu/babl_menu built); otherwise param_1 is the response
+// number directly. On a valid selection, echoes the chosen text
+// (echo_selected_conversation_choice), frees the per-choice string
+// buffers, and stores the choice index in DAT_00100788 (babl_fmenu's
+// own return value).
+void select_babl_menu_response(param_1)
+short param_1;
+
+{
+  int iVar1;
+  short sVar2;
+  /* Was `int` -- same DAT_00100680/DAT_001006d8 `* 8` stride / pointer-
+     width fix as babl_menu's own comment. Also fixed a dropped
+     babl_free() argument below -- it must free the DAT_00100680-side
+     (expanded) copy when it differs from the DAT_001006d8-side (raw)
+     one, matching every other "if (x != cached) free x" sibling in
+     this file. */
+  intptr_t iVar3;
+
+  if (DAT_00100790 != 0) {
+    if (param_1 == 0) {
+      sVar2 = Ordinal_2005((int)*(short *)(DAT_000879b0 + 6),
+                           0xa9 - ((200 - *(short *)(DAT_00085a6c + 2)) * 0x10000 >> 0x10));
+      param_1 = (&DAT_00100770)[sVar2];
+    }
+    iVar1 = (int)param_1;
+    if ((0 < iVar1) && (iVar1 < DAT_00100794)) {
+      DAT_00100790 = 0;
+      DAT_0010078c = 0;
+      wait_for_click_release(0);
+      select_msg_scroll_mode_2();
+      msg_scroll_panel_reset(1);
+      select_msg_scroll_mode_normal();
+      DAT_00250718 = 0;
+      select_msg_scroll_mode_conversation();
+      if (1 < DAT_00100794) {
+        iVar3 = 1;
+        do {
+          if (iVar3 == iVar1) {
+            echo_selected_conversation_choice(*(char **)(&DAT_00100680 + iVar3 * 8));
+          }
+          if (*(intptr_t *)(&DAT_001006d8 + iVar3 * 8) != *(intptr_t *)(&DAT_00100680 + iVar3 * 8)) {
+            babl_free(*(intptr_t *)(&DAT_00100680 + iVar3 * 8));
+          }
+          iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
+        } while (iVar3 < DAT_00100794);
+      }
+      select_msg_scroll_mode_normal();
+      DAT_00100788 = param_1;
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00029708 -- babl_builtin_say: the "say" babl script builtin
+// (registered via babl_register_builtin(DAT_000845a8="say", ...)),
+// prints the NPC's spoken line to the conversation scroll in its
+// dark-brown speech color.
+void babl_builtin_say(param_1)
+char *param_1; // was `undefined4` -- babl_op_say passes a real (possibly babl_alloc'd) string pointer, truncated on 64-bit; same bug class as babl_builtin_respond/echo_selected_conversation_choice's own fixes
+
+{
+  char cVar1;
+  char *pcVar2;
+  char *pcVar3;
+  
+  pcVar2 = &DAT_00085230;
+  pcVar3 = DAT_001007c0;
+  do {
+    cVar1 = *pcVar2;
+    pcVar2 = pcVar2 + 1;
+    *pcVar3 = cVar1;
+    pcVar3 = pcVar3 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(DAT_001007c0,param_1);
+  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
+  select_msg_scroll_mode_conversation();
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, confirmed via an
+     exhaustive real-binary reference search that this PocketPC port's
+     conversation text never used the palette-indexed color path at
+     all -- every reference to g_text_use_palette_color across the
+     whole ARM binary was enumerated and none are near this code, so
+     flat black is genuinely what this port always drew here). The PC
+     original renders NPC speech in a dark brown; palette index 0x2e
+     (confirmed a real warm dark-brown entry, RGB ~(88,60,48), via a
+     live palette dump) already happens to be this conversation's own
+     ambient default color for unrelated reasons, so reusing it here
+     gives the same look intentionally instead of by accident.
+
+     Setting *g_draw_color_index directly here does nothing:
+     message_scroll_print_wrapped's own entry unconditionally
+     overwrites it from *(DAT_00250704+0x16) -- the panel's own
+     PERSISTED color, left over from whatever last printed into this
+     same panel struct (see its own read at uw.c ~74875) -- before a
+     single glyph is measured or drawn. Confirmed live via lldb (the
+     explicit 0x2e was already gone, replaced by 0x60, by the time
+     draw_text_string saw it). Set the persisted field itself, on the
+     struct select_msg_scroll_mode_conversation just pointed DAT_00250704 at, instead. */
+  {
+    int _saved_use_pal = g_text_use_palette_color;
+    byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
+    g_text_use_palette_color = 1;
+    *(byte *)(DAT_00250704 + 0x16) = 0x2e;
+    message_scroll_print_wrapped(DAT_001007c0);
+    *(byte *)(DAT_00250704 + 0x16) = _saved_color;
+    g_text_use_palette_color = _saved_use_pal;
+  }
+  debug_noop_checkpoint();
+  select_msg_scroll_mode_normal();
+  DAT_001007b4 = 0;
+  return;
+}
+
+
+
+// was FUN_0002977c -- babl_builtin_respond: the "respond" babl script
+// builtin (registered via babl_register_builtin(s_respond_000845ac,
+// ...)), prints text to the conversation scroll in the default (non
+// speech-colored) mode.
+void babl_builtin_respond(param_1)
+char * param_1;
+
+{
+  char cVar1;
+  char *pcVar2;
+  
+  pcVar2 = DAT_001007c0;
+  do {
+    cVar1 = *param_1;
+    param_1 = param_1 + 1;
+    *pcVar2 = cVar1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
+  select_msg_scroll_mode_2();
+  message_scroll_print_wrapped(DAT_001007c0);
+  debug_noop_checkpoint();
+  select_msg_scroll_mode_normal();
+  DAT_001007b4 = 1;
+  return;
+}
+
+
+
+// was FUN_000297dc -- echoes the player's selected conversation-menu
+// choice text to the scroll, highlighted in white (rather than the
+// NPC's dark-brown speech color babl_builtin_say uses). Called from
+// select_babl_menu_response on a valid selection.
+void echo_selected_conversation_choice(param_1)
+char *param_1; // was `undefined4` -- select_babl_menu_response passes a real (possibly babl_alloc'd) string pointer, truncated on 64-bit; same bug class as babl_menu's own fix
+
+{
+  char cVar1;
+  char *pcVar2;
+  char *pcVar3;
+
+  *DAT_001007c0 = '\0';
+  Ordinal_1063(DAT_001007c0,param_1);
+  Ordinal_1063(DAT_001007c0,&DAT_00085234);
+  select_msg_scroll_mode_conversation();
+  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
+     babl_builtin_say's own comment on this same pattern. The PC original
+     highlights the player's own echoed choice in a color distinct from
+     the NPC's dark-brown speech; per the user's own preference this
+     is plain white here. Palette index 0x60 is a real, live-confirmed
+     pure white (RGB (255,255,255)) -- also, coincidentally, this
+     printed string's own original "\1" prefix byte's real mapping (see
+     below), so this happens to match what a naive reading of that
+     escape code would already produce, just applied reliably instead
+     of being silently overridden. Two earlier tries at a more orange
+     highlight (0x29, then 0x2b, then a genuinely vivid 0x06) were
+     tried and reverted per user feedback.
+
+     Two things had to be fixed before ANY explicit color choice here
+     actually rendered: (1) DAT_001007c0 originally started with the
+     "\1" control code (from DAT_00085238) which msg_scroll_draw_wrapped_span
+     re-parses on its own, resetting the color to "\1"'s real mapping
+     (0x60) -- stripped that leading escape above so nothing re-parses
+     over this bracket's own color (moot now that the target color IS
+     0x60 again, but left stripped since relying on the embedded escape
+     code instead of this explicit bracket would silently break again
+     the next time this color is changed). (2) setting
+     *g_draw_color_index directly here was ALSO a no-op regardless:
+     message_scroll_print_wrapped's own entry unconditionally
+     overwrites it from the panel's persisted *(DAT_00250704+0x16)
+     field (see babl_builtin_say's own comment on this, uw.c ~74875) before
+     anything is drawn -- confirmed live via lldb. Set that persisted
+     field instead, on the struct select_msg_scroll_mode_conversation just pointed
+     DAT_00250704 at. */
+  {
+    int _saved_use_pal = g_text_use_palette_color;
+    byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
+    g_text_use_palette_color = 1;
+    *(byte *)(DAT_00250704 + 0x16) = 0x60;
+    message_scroll_print_wrapped(DAT_001007c0);
+    *(byte *)(DAT_00250704 + 0x16) = _saved_color;
+    g_text_use_palette_color = _saved_use_pal;
+  }
+  debug_noop_checkpoint();
+  select_msg_scroll_mode_normal();
+  DAT_001007b4 = 1;
+  return;
+}
+
+
+
+// was FUN_00029850 -- babl_builtin_print: the "print" babl script
+// builtin (registered via babl_register_builtin(s_print_000851e4,
+// ...)), resolves a message-id operand read from the bytecode
+// (babl_read_var_word) into text and prints it to the conversation
+// scroll.
+void babl_builtin_print(param_1)
+int param_1;
+
+{
+  char cVar1;
+  /* Was `int` -- reassigned to a real string pointer (get_message_string/
+     babl_expand_string_refs) right after the small babl_read_var_word use,
+     same bug class as DAT_001007c0's own fix above; never crashed
+     before because this "print" builtin (idx 2) was never actually
+     reached until babl_menu could run correctly. */
+  intptr_t iVar2;
+  intptr_t iVar3;
+  char *pcVar4;
+  char *pcVar5;
+
+  /* Was 3 dropped register-forwarding args -- same class as
+     babl_builtin_compare's own comment (uw.c ~10977). */
+  iVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
+  iVar2 = (intptr_t)get_message_string((int)iVar2);
+  iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
+  pcVar4 = &DAT_0008523c;
+  pcVar5 = DAT_001007c0;
+  do {
+    cVar1 = *pcVar4;
+    pcVar4 = pcVar4 + 1;
+    *pcVar5 = cVar1;
+    pcVar5 = pcVar5 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(DAT_001007c0,iVar3);
+  Ordinal_1063(DAT_001007c0,&DAT_00085234);
+  select_msg_scroll_mode_conversation();
+  message_scroll_print_wrapped(DAT_001007c0);
+  select_msg_scroll_mode_normal();
+  debug_noop_checkpoint();
+  if (iVar3 != iVar2) {
+    babl_free(iVar3);
+  }
+  return;
 }

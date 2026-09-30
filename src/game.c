@@ -748,13 +748,13 @@ void init_gameplay_session()
   register_key_binding(0x95,0x95,7,FUN_00058734);
   register_key_binding(0x96,0x96,7,FUN_00058734);
   register_key_binding(0x1b,4,4,&DAT_00028bfc);
-  register_key_binding(0x31,1,4,FUN_000295b4);
-  register_key_binding(0x32,2,4,FUN_000295b4);
-  register_key_binding(0x33,3,4,FUN_000295b4);
-  register_key_binding(0x34,4,4,FUN_000295b4);
+  register_key_binding(0x31,1,4,select_babl_menu_response);
+  register_key_binding(0x32,2,4,select_babl_menu_response);
+  register_key_binding(0x33,3,4,select_babl_menu_response);
+  register_key_binding(0x34,4,4,select_babl_menu_response);
   register_click_region(0x52,0x30,0x88,10,4,4,handle_barter_npc_panel_click);
   register_click_region(0x8b,0x30,0xc1,10,4,4,handle_barter_player_panel_click);
-  register_click_region(0xf,200,0x131,0xa9,0,4,FUN_000295b4);
+  register_click_region(0xf,200,0x131,0xa9,0,4,select_babl_menu_response);
   register_click_region(8,0x74,0x20,0xfffffffa,0xffff,4,cursor_mode_button_click_restricted);
   register_key_binding(0x286,0,0x1b,print_help_message);
   register_key_binding(0x30,0,0x1b,print_player_position_debug);

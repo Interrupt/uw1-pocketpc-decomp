@@ -764,6 +764,12 @@ extern undefined1 DAT_001007a0_backing[65536];
 extern char DAT_001007b4;
 extern char * DAT_001007b8;
 extern char * DAT_001007c0;
+extern undefined1 DAT_00085230_backing[32768];
+#define DAT_00085230 DAT_00085230_backing[0]
+extern undefined DAT_00085234_backing[8192];
+#define DAT_00085234 DAT_00085234_backing[0]
+extern undefined1 DAT_0008523c_backing[32768];
+#define DAT_0008523c DAT_0008523c_backing[0]
 extern ushort DAT_001007c4;
 extern undefined DAT_001007d5_backing[8192];
 #define DAT_001007d5 DAT_001007d5_backing[0]
@@ -2664,11 +2670,11 @@ void start_npc_conversation();
 void run_babl_menu_wait_loop();
 int babl_menu(); // was LAB_0002912c, a no-op stub -- see its own comment next to babl_fmenu
 int babl_fmenu();
-void FUN_000295b4();
-void FUN_00029708();
-void FUN_0002977c();
-void FUN_000297dc();
-void FUN_00029850();
+void select_babl_menu_response();
+void babl_builtin_say();
+void babl_builtin_respond();
+void echo_selected_conversation_choice();
+void babl_builtin_print();
 undefined4 babl_builtin_pause();
 int FUN_0002990c();
 undefined4 babl_builtin_show_inv();

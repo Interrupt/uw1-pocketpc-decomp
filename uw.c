@@ -1787,7 +1787,7 @@ int g_text_input_active;
 undefined1 DAT_00100678;
 undefined4 DAT_00085c54;
 short DAT_00201c74;
-char *DAT_001007c0; // was `undefined4` -- assigned a real 64-bit pointer (DAT_00100784, uw.c ~19277) and used as a real string buffer by FUN_0002977c/FUN_000297dc/etc.; truncated on 64-bit, crashing the first time any of those functions actually ran (selecting a babl_menu response)
+char *DAT_001007c0; // was `undefined4` -- assigned a real 64-bit pointer (DAT_00100784, uw.c ~19277) and used as a real string buffer by babl_builtin_respond/echo_selected_conversation_choice/etc.; truncated on 64-bit, crashing the first time any of those functions actually ran (selecting a babl_menu response)
 undefined1 DAT_0023bf0c;
 undefined2 g_cursor_mode;
 /* Recovered by disassembling the original UU.exe (same method as
@@ -1900,7 +1900,7 @@ undefined2 DAT_00100790;
 short DAT_00100788;
  undefined1 DAT_001006d8_backing[65536];
 #define DAT_001006d8 DAT_001006d8_backing[0]
-/* Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/FUN_000295b4
+/* Was a lone `undefined2` scalar, but babl_menu/babl_fmenu/select_babl_menu_response
    all index it as a real array -- `(&DAT_00100770)[idx]` for idx up to
    9 (a fixed "10 visible scroll lines" loop bound) and up to whatever
    message_scroll_print_wrapped's own wrapped-line-count returns, which
@@ -1930,19 +1930,19 @@ short DAT_00100788;
    initialized global missing real .data content" bug class as the
    scroll's \6-header/color-code fixes elsewhere in this file: all 4
    were plain zero-filled backing arrays (silently printing nothing),
-   confirmed live as the cause of a real, visible bug -- FUN_000297dc/
-   FUN_00029850 (echoing the player's selected conversation choice
+   confirmed live as the cause of a real, visible bug -- echo_selected_conversation_choice/
+   babl_builtin_print (echoing the player's selected conversation choice
    before the NPC's reply) append DAT_00085234 as a trailing separator,
    expecting it to insert a newline after the echoed choice; with it
    empty, the echoed text ran straight into the NPC's next line with
    no break at all (e.g. "...the Abyss.Exploring, eh?..."). */
-static undefined1 DAT_00085230_backing[32768] = { 0x5c,0x50,0x00 };
+undefined1 DAT_00085230_backing[32768] = { 0x5c,0x50,0x00 };
 #define DAT_00085230 DAT_00085230_backing[0]
-static undefined DAT_00085234_backing[8192] = { 0x5c,0x30,0x0a,0x00 };
+undefined DAT_00085234_backing[8192] = { 0x5c,0x30,0x0a,0x00 };
 #define DAT_00085234 DAT_00085234_backing[0]
 static undefined1 DAT_00085238_backing[32768] = { 0x5c,0x31,0x00 };
 #define DAT_00085238 DAT_00085238_backing[0]
-static undefined1 DAT_0008523c_backing[32768] = { 0x5c,0x32,0x00 };
+undefined1 DAT_0008523c_backing[32768] = { 0x5c,0x32,0x00 };
 #define DAT_0008523c DAT_0008523c_backing[0]
 short DAT_001007bc;
 /* DAT_00085240/44/48 are the look-text word-separator/article
@@ -8362,236 +8362,6 @@ undefined4 param_1;
 
 
 
-void FUN_000295b4(param_1)
-short param_1;
-
-{
-  int iVar1;
-  short sVar2;
-  /* Was `int` -- same DAT_00100680/DAT_001006d8 `* 8` stride / pointer-
-     width fix as babl_menu's own comment. Also fixed a dropped
-     babl_free() argument below -- it must free the DAT_00100680-side
-     (expanded) copy when it differs from the DAT_001006d8-side (raw)
-     one, matching every other "if (x != cached) free x" sibling in
-     this file. */
-  intptr_t iVar3;
-
-  if (DAT_00100790 != 0) {
-    if (param_1 == 0) {
-      sVar2 = Ordinal_2005((int)*(short *)(DAT_000879b0 + 6),
-                           0xa9 - ((200 - *(short *)(DAT_00085a6c + 2)) * 0x10000 >> 0x10));
-      param_1 = (&DAT_00100770)[sVar2];
-    }
-    iVar1 = (int)param_1;
-    if ((0 < iVar1) && (iVar1 < DAT_00100794)) {
-      DAT_00100790 = 0;
-      DAT_0010078c = 0;
-      wait_for_click_release(0);
-      select_msg_scroll_mode_2();
-      msg_scroll_panel_reset(1);
-      select_msg_scroll_mode_normal();
-      DAT_00250718 = 0;
-      select_msg_scroll_mode_conversation();
-      if (1 < DAT_00100794) {
-        iVar3 = 1;
-        do {
-          if (iVar3 == iVar1) {
-            FUN_000297dc(*(char **)(&DAT_00100680 + iVar3 * 8));
-          }
-          if (*(intptr_t *)(&DAT_001006d8 + iVar3 * 8) != *(intptr_t *)(&DAT_00100680 + iVar3 * 8)) {
-            babl_free(*(intptr_t *)(&DAT_00100680 + iVar3 * 8));
-          }
-          iVar3 = (iVar3 + 1) * 0x10000 >> 0x10;
-        } while (iVar3 < DAT_00100794);
-      }
-      select_msg_scroll_mode_normal();
-      DAT_00100788 = param_1;
-    }
-  }
-  return;
-}
-
-
-
-void FUN_00029708(param_1)
-char *param_1; // was `undefined4` -- babl_op_say passes a real (possibly babl_alloc'd) string pointer, truncated on 64-bit; same bug class as FUN_0002977c/FUN_000297dc's own fixes
-
-{
-  char cVar1;
-  char *pcVar2;
-  char *pcVar3;
-  
-  pcVar2 = &DAT_00085230;
-  pcVar3 = DAT_001007c0;
-  do {
-    cVar1 = *pcVar2;
-    pcVar2 = pcVar2 + 1;
-    *pcVar3 = cVar1;
-    pcVar3 = pcVar3 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(DAT_001007c0,param_1);
-  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
-  select_msg_scroll_mode_conversation();
-  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested, confirmed via an
-     exhaustive real-binary reference search that this PocketPC port's
-     conversation text never used the palette-indexed color path at
-     all -- every reference to g_text_use_palette_color across the
-     whole ARM binary was enumerated and none are near this code, so
-     flat black is genuinely what this port always drew here). The PC
-     original renders NPC speech in a dark brown; palette index 0x2e
-     (confirmed a real warm dark-brown entry, RGB ~(88,60,48), via a
-     live palette dump) already happens to be this conversation's own
-     ambient default color for unrelated reasons, so reusing it here
-     gives the same look intentionally instead of by accident.
-
-     Setting *g_draw_color_index directly here does nothing:
-     message_scroll_print_wrapped's own entry unconditionally
-     overwrites it from *(DAT_00250704+0x16) -- the panel's own
-     PERSISTED color, left over from whatever last printed into this
-     same panel struct (see its own read at uw.c ~74875) -- before a
-     single glyph is measured or drawn. Confirmed live via lldb (the
-     explicit 0x2e was already gone, replaced by 0x60, by the time
-     draw_text_string saw it). Set the persisted field itself, on the
-     struct select_msg_scroll_mode_conversation just pointed DAT_00250704 at, instead. */
-  {
-    int _saved_use_pal = g_text_use_palette_color;
-    byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
-    g_text_use_palette_color = 1;
-    *(byte *)(DAT_00250704 + 0x16) = 0x2e;
-    message_scroll_print_wrapped(DAT_001007c0);
-    *(byte *)(DAT_00250704 + 0x16) = _saved_color;
-    g_text_use_palette_color = _saved_use_pal;
-  }
-  debug_noop_checkpoint();
-  select_msg_scroll_mode_normal();
-  DAT_001007b4 = 0;
-  return;
-}
-
-
-
-void FUN_0002977c(param_1)
-char * param_1;
-
-{
-  char cVar1;
-  char *pcVar2;
-  
-  pcVar2 = DAT_001007c0;
-  do {
-    cVar1 = *param_1;
-    param_1 = param_1 + 1;
-    *pcVar2 = cVar1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(DAT_001007c0,&s_scroll_newline_0008522c);
-  select_msg_scroll_mode_2();
-  message_scroll_print_wrapped(DAT_001007c0);
-  debug_noop_checkpoint();
-  select_msg_scroll_mode_normal();
-  DAT_001007b4 = 1;
-  return;
-}
-
-
-
-void FUN_000297dc(param_1)
-char *param_1; // was `undefined4` -- FUN_000295b4 passes a real (possibly babl_alloc'd) string pointer, truncated on 64-bit; same bug class as babl_menu's own fix
-
-{
-  char cVar1;
-  char *pcVar2;
-  char *pcVar3;
-
-  *DAT_001007c0 = '\0';
-  Ordinal_1063(DAT_001007c0,param_1);
-  Ordinal_1063(DAT_001007c0,&DAT_00085234);
-  select_msg_scroll_mode_conversation();
-  /* DEVIATION FROM AUTHENTIC BEHAVIOR (user requested) -- see
-     FUN_00029708's own comment on this same pattern. The PC original
-     highlights the player's own echoed choice in a color distinct from
-     the NPC's dark-brown speech; per the user's own preference this
-     is plain white here. Palette index 0x60 is a real, live-confirmed
-     pure white (RGB (255,255,255)) -- also, coincidentally, this
-     printed string's own original "\1" prefix byte's real mapping (see
-     below), so this happens to match what a naive reading of that
-     escape code would already produce, just applied reliably instead
-     of being silently overridden. Two earlier tries at a more orange
-     highlight (0x29, then 0x2b, then a genuinely vivid 0x06) were
-     tried and reverted per user feedback.
-
-     Two things had to be fixed before ANY explicit color choice here
-     actually rendered: (1) DAT_001007c0 originally started with the
-     "\1" control code (from DAT_00085238) which msg_scroll_draw_wrapped_span
-     re-parses on its own, resetting the color to "\1"'s real mapping
-     (0x60) -- stripped that leading escape above so nothing re-parses
-     over this bracket's own color (moot now that the target color IS
-     0x60 again, but left stripped since relying on the embedded escape
-     code instead of this explicit bracket would silently break again
-     the next time this color is changed). (2) setting
-     *g_draw_color_index directly here was ALSO a no-op regardless:
-     message_scroll_print_wrapped's own entry unconditionally
-     overwrites it from the panel's persisted *(DAT_00250704+0x16)
-     field (see FUN_00029708's own comment on this, uw.c ~74875) before
-     anything is drawn -- confirmed live via lldb. Set that persisted
-     field instead, on the struct select_msg_scroll_mode_conversation just pointed
-     DAT_00250704 at. */
-  {
-    int _saved_use_pal = g_text_use_palette_color;
-    byte _saved_color = *(byte *)(DAT_00250704 + 0x16);
-    g_text_use_palette_color = 1;
-    *(byte *)(DAT_00250704 + 0x16) = 0x60;
-    message_scroll_print_wrapped(DAT_001007c0);
-    *(byte *)(DAT_00250704 + 0x16) = _saved_color;
-    g_text_use_palette_color = _saved_use_pal;
-  }
-  debug_noop_checkpoint();
-  select_msg_scroll_mode_normal();
-  DAT_001007b4 = 1;
-  return;
-}
-
-
-
-void FUN_00029850(param_1)
-int param_1;
-
-{
-  char cVar1;
-  /* Was `int` -- reassigned to a real string pointer (get_message_string/
-     babl_expand_string_refs) right after the small babl_read_var_word use,
-     same bug class as DAT_001007c0's own fix above; never crashed
-     before because this "print" builtin (idx 2) was never actually
-     reached until babl_menu could run correctly. */
-  intptr_t iVar2;
-  intptr_t iVar3;
-  char *pcVar4;
-  char *pcVar5;
-
-  /* Was 3 dropped register-forwarding args -- same class as
-     babl_builtin_compare's own comment (uw.c ~10977). */
-  iVar2 = babl_read_var_word((int)*(short *)(param_1 + -2));
-  iVar2 = (intptr_t)get_message_string((int)iVar2);
-  iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
-  pcVar4 = &DAT_0008523c;
-  pcVar5 = DAT_001007c0;
-  do {
-    cVar1 = *pcVar4;
-    pcVar4 = pcVar4 + 1;
-    *pcVar5 = cVar1;
-    pcVar5 = pcVar5 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(DAT_001007c0,iVar3);
-  Ordinal_1063(DAT_001007c0,&DAT_00085234);
-  select_msg_scroll_mode_conversation();
-  message_scroll_print_wrapped(DAT_001007c0);
-  select_msg_scroll_mode_normal();
-  debug_noop_checkpoint();
-  if (iVar3 != iVar2) {
-    babl_free(iVar3);
-  }
-  return;
-}
 
 
 
