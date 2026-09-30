@@ -412,7 +412,7 @@ LAB_0002e6fc:
         uVar7 = Ordinal_1053();
         uw_ord2005_rem_17 = ((int)(uVar7)) % (4);
         if ((uw_ord2005_rem_17 != 0) && ((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0)) {
-          FUN_0002efa0(DAT_00101904);
+          npc_arrival_interaction(DAT_00101904);
           goto LAB_0002e998;
         }
         bVar9 = *(byte *)((char *)DAT_0010190c + 0x18);
@@ -2760,6 +2760,65 @@ undefined1 param_2;
       cVar1 = '\x12';
     }
     *(byte *)((char *)DAT_0010190c + 0x14) = cVar1 << 3 | *(byte *)((char *)DAT_0010190c + 0x14) & 7;
+  }
+  return;
+}
+
+
+// was FUN_0002efa0 -- an NPC's "arrived at destination tile" reaction:
+// if a "use on arrival" flag is set in its stat template (byte 0x2e),
+// uses the object it arrived on; if that object is a specific
+// combinable-ingredient-shaped category (0x140) with a low sub-id, and
+// the arrival-flag is set, randomly either combines with it
+// (check_object_combination) or (the arrival-flag clear path) has a
+// 1-in-4 chance to instead damage it via FUN_00038374 (the shared
+// damage/hit-visual primitive, not yet named) with a random roll
+// bounded by the stat template's own byte at +0x14. Contains a
+// confirmed fabricated-remainder Ordinal_2005/extraout_r1 fix (see its
+// own comment).
+void npc_arrival_interaction(param_1)
+ushort * param_1;
+
+{
+  int uw_ord2005_rem_21 = 0; int uw_ord2005_rem_22 = 0;
+  undefined4 uVar1;
+  undefined1 extraout_r1;
+  int extraout_r1_00;
+  int extraout_r1_01;
+  undefined1 uVar2;
+  
+  if ((*param_1 & 7) != 7) {
+    if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
+      DAT_002020a0 = (ushort)DAT_00101424;
+      DAT_002020a4 = (ushort)DAT_00101428;
+      use_object_on_target(DAT_0010190c,param_1,0);
+    }
+    if (((*param_1 & 0x1f0) == 0x140) && ((*param_1 & 0xf) < 8)) {
+      if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
+        uVar1 = Ordinal_1053();
+        uw_ord2005_rem_21 = ((int)(uVar1)) % (2);
+        if (uw_ord2005_rem_21 != 0) {
+          check_object_combination(DAT_0010190c,param_1,
+                       (int)((uint)*(byte *)(DAT_00101404 + 0x2e) * -0x10000) >> 0x10);
+          return;
+        }
+      }
+      uVar1 = Ordinal_1053();
+      uw_ord2005_rem_22 = ((int)(uVar1)) % (4);
+      if (uw_ord2005_rem_22 == 0) {
+        uVar1 = Ordinal_1053();
+        uVar2 = 4;
+        /* Was `Ordinal_2005(...); FUN_00038374(...,extraout_r1,...)` --
+           same fabricated-remainder bug fixed throughout this session
+           (this port's Ordinal_2005 never populates extraout_r1).
+           Ordinal_2005(divisor,dividend) here divides the random roll
+           (uVar1) by the stat-template byte at +0x14 (a max-damage-
+           shaped value); compute that remainder -- a bounded random
+           damage roll in [0,byte_val) -- directly instead. */
+        uw_ord2005_rem_21 = (int)uVar1 % (int)(uint)(*(byte *)(DAT_00101404 + 0x14));
+        FUN_00038374(param_1,DAT_0010190c,DAT_00101424,DAT_00101428,uw_ord2005_rem_21,uVar2);
+      }
+    }
   }
   return;
 }

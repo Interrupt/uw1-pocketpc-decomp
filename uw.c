@@ -8911,45 +8911,6 @@ byte param_3;
 
 
 
-void FUN_0002efa0(param_1)
-ushort * param_1;
-
-{
-  int uw_ord2005_rem_21 = 0; int uw_ord2005_rem_22 = 0;
-  undefined4 uVar1;
-  undefined1 extraout_r1;
-  int extraout_r1_00;
-  int extraout_r1_01;
-  undefined1 uVar2;
-  
-  if ((*param_1 & 7) != 7) {
-    if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
-      DAT_002020a0 = (ushort)DAT_00101424;
-      DAT_002020a4 = (ushort)DAT_00101428;
-      use_object_on_target(DAT_0010190c,param_1,0);
-    }
-    if (((*param_1 & 0x1f0) == 0x140) && ((*param_1 & 0xf) < 8)) {
-      if (*(char *)(DAT_00101404 + 0x2e) != '\0') {
-        uVar1 = Ordinal_1053();
-        uw_ord2005_rem_21 = ((int)(uVar1)) % (2);
-        if (uw_ord2005_rem_21 != 0) {
-          check_object_combination(DAT_0010190c,param_1,
-                       (int)((uint)*(byte *)(DAT_00101404 + 0x2e) * -0x10000) >> 0x10);
-          return;
-        }
-      }
-      uVar1 = Ordinal_1053();
-      uw_ord2005_rem_22 = ((int)(uVar1)) % (4);
-      if (uw_ord2005_rem_22 == 0) {
-        uVar1 = Ordinal_1053();
-        uVar2 = 4;
-        Ordinal_2005(*(undefined1 *)(DAT_00101404 + 0x14),uVar1);
-        FUN_00038374(param_1,DAT_0010190c,DAT_00101424,DAT_00101428,extraout_r1,uVar2);
-      }
-    }
-  }
-  return;
-}
 
 
 
