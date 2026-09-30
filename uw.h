@@ -2807,8 +2807,8 @@ undefined4 handle_monster_death();
 undefined4 apply_damage_to_object();
 undefined4 object_tick_is_due(); // was FUN_0003495c
 void tick_mobile_objects(); // was FUN_000349bc
-void FUN_00034ac4();
-void FUN_00034af0();
+void npc_set_goal_for_object();
+void randomize_active_npc_flags();
 undefined4 FUN_00034ba8();
 void FUN_00034c10();
 undefined4 FUN_00034fa4();

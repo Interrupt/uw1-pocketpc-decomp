@@ -2110,7 +2110,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
        get_message_string's own return through explicitly. */
     babl_builtin_say(get_message_string((int)local_2a));
     finalize_npc_barter_items(0);
-    FUN_00034ac4(DAT_00100674,5,1);
+    npc_set_goal_for_object(DAT_00100674,5,1);
     uVar9 = 0;
   }
   return uVar9;
@@ -3218,7 +3218,7 @@ char *param_1;
   *(char *)(param_1 + 7) = (char)((ushort)uVar1 >> 8);
   babl_get_variable(s_npc_goal_0008535c,&local_10,1);
   babl_get_variable(s_npc_gtarg_00085350,&local_e,1);
-  FUN_00034ac4(param_1,(undefined1)local_10,local_e);
+  npc_set_goal_for_object(param_1,(undefined1)local_10,local_e);
   uVar1 = *(undefined2 *)(param_1 + 0xd);
   *(char *)(param_1 + 0xd) = (char)uVar1;
   *(byte *)(param_1 + 0xe) = (byte)((ushort)uVar1 >> 8) | 0x20;

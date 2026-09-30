@@ -3664,3 +3664,60 @@ int param_1;
   }
   return uVar2;
 }
+
+
+// was FUN_00034ac4 -- calls npc_set_goal(param_2,param_3) as if
+// param_1 were the "current NPC" (DAT_0010190c), temporarily swapping
+// that context pointer in and restoring the caller's own value
+// afterward. Lets a caller change another NPC's goal without disturbing
+// its own in-progress AI-tick context.
+void npc_set_goal_for_object(param_1,param_2,param_3)
+char *param_1;
+undefined4 param_2;
+undefined4 param_3;
+
+{
+  char *uVar1;
+
+  uVar1 = DAT_0010190c;
+  DAT_0010190c = param_1;
+  npc_set_goal(param_2,param_3);
+  DAT_0010190c = uVar1;
+  return;
+}
+
+
+
+// was FUN_00034af0 -- for every NPC in the active mobile list
+// (DAT_002046c0..DAT_002046c8), randomly re-rolls two flag bits on its
+// mobile-object record's byte 0x19: bit 7 is set/cleared on a 50/50
+// coin flip, and bit 6 is cleared unless a separate 1-in-4 roll hits.
+// Byte 0x19's exact meaning isn't documented by the wiki; this only
+// captures the observed random-flag-refresh behavior.
+void randomize_active_npc_flags()
+
+{
+  int uw_ord2005_rem_98 = 0; int uw_ord2005_rem_99 = 0;
+  undefined4 uVar1;
+  uint extraout_r1;
+  int extraout_r1_00;
+  byte *pbVar2;
+  int iVar3;
+  
+  pbVar2 = DAT_002046c0;
+  if (DAT_002046c0 < DAT_002046c8) {
+    do {
+      iVar3 = (uint)*pbVar2 * 0x1b + DAT_002046b8;
+      uVar1 = Ordinal_1053();
+      uw_ord2005_rem_98 = ((int)(uVar1)) % (2);
+      *(byte *)(iVar3 + 0x19) = (byte)((uw_ord2005_rem_98 & 1) << 7) | *(byte *)(iVar3 + 0x19) & 0x7f;
+      uVar1 = Ordinal_1053();
+      uw_ord2005_rem_99 = ((int)(uVar1)) % (4);
+      if (uw_ord2005_rem_99 != 1) {
+        *(byte *)(iVar3 + 0x19) = *(byte *)(iVar3 + 0x19) & 0xbf;
+      }
+      pbVar2 = pbVar2 + 1;
+    } while (pbVar2 < DAT_002046c8);
+  }
+  return;
+}

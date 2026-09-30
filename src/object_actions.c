@@ -1273,7 +1273,7 @@ undefined1 param_5;
 // partial-resist chance bits) against the target object (param_3);
 // if not resisted, alters the tile's texture/decoration
 // (spawn_scheduled_effect_object, group 7, subtype 4) and plays an effect on the
-// target (FUN_00034ac4), then -- unless param_2 is -1 ("no change")
+// target (npc_set_goal_for_object), then -- unless param_2 is -1 ("no change")
 // -- overwrites the top 2 bits of the object's quality/link field
 // (offset +0xd/+0xe, a ushort) with param_2, leaving the lower 14
 // bits untouched. Used by the three thin wrappers immediately below
@@ -1292,7 +1292,7 @@ undefined2 param_5;
   cVar1 = FUN_000382cc(param_3,1,3);
   if (cVar1 != '\0') {
     spawn_scheduled_effect_object(param_3,7,4,0,7,param_4,param_5);
-    FUN_00034ac4(param_3,param_1,1);
+    npc_set_goal_for_object(param_3,param_1,1);
     if ((int)param_2 != 0xffffffff) {
       uVar2 = *(ushort *)(param_3 + 0xd) & 0x3fff;
       *(char *)(param_3 + 0xd) = (char)uVar2;
@@ -1311,7 +1311,7 @@ undefined2 param_5;
 // (FUN_000382cc, mask 3) before acting. On success, alters the
 // tile's texture/decoration (spawn_scheduled_effect_object) and, only the FIRST time
 // (guarded by flag bit 0x40 at offset +0x19, which it then sets
-// permanently), plays an effect on the target (FUN_00034ac4). Always
+// permanently), plays an effect on the target (npc_set_goal_for_object). Always
 // sets the object's quality/link field (offset +0xd/+0xe) top 2 bits
 // to 3 (0xc0), unlike morph_tile_object_state's caller-supplied
 // state id -- this variant hardcodes a single fixed end state.
@@ -1327,7 +1327,7 @@ int param_3;
   if (cVar1 != '\0') {
     spawn_scheduled_effect_object(param_3,7,4,0,7,param_1,param_2);
     if ((*(byte *)(param_3 + 0x19) & 0x40) == 0) {
-      FUN_00034ac4(param_3,2,0);
+      npc_set_goal_for_object(param_3,2,0);
     }
     *(byte *)(param_3 + 0x19) = *(byte *)(param_3 + 0x19) | 0x40;
     *(undefined1 *)(param_3 + 0xd) = *(undefined1 *)(param_3 + 0xd);
