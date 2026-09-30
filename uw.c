@@ -15207,7 +15207,10 @@ LAB_000309a0:
         ((param_3 < 2 &&
          (uVar1 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,
          3 < (int)(((int)DAT_0010140c - (int)DAT_00101420 ^ uVar1) - uVar1))))))) &&
-      (npc_walk_toward_tile(local_10 & 0xff,local_c & 0xff), (*(byte *)((char *)DAT_0010190c + 0x18) & 0x40) != 0)))
+      /* Dropped third argument: at the real call (0x30a6c) r2 still holds
+         DAT_00101420 from the `ldrb r2,[r5]` that fed the
+         npc_set_walk_target call above -- pass it explicitly. */
+      (npc_walk_toward_tile(local_10 & 0xff,local_c & 0xff,DAT_00101420), (*(byte *)((char *)DAT_0010190c + 0x18) & 0x40) != 0)))
      ) {
     npc_clear_special_goal();
     *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) & 0xfd;
