@@ -375,7 +375,12 @@ LAB_0002e6fc:
       iVar6 = (uVar3 & 0xf) * 0x1c;
       if ((uVar3 >> 10 == (ushort)(byte)(&DAT_00101568)[(int)iVar6]) &&
          ((uVar3 & 0x3f0) >> 4 == (uint)(byte)(&DAT_00101569)[(int)iVar6])) {
-        FUN_0002dd4c();
+        /* Was a dropped argument -- called with no args (`FUN_0002dd4c();`
+           before this rename). This whole block's own cache-slot record (iVar6-offset into
+           &DAT_00101568/1569, the same `slot*0x1c` byte record layout
+           save_walk_path_to_cache_slot writes) is exactly what this
+           function needs to advance. */
+        advance_cached_path_step(&DAT_00101568 + (int)iVar6);
       }
     }
     return;
@@ -2384,4 +2389,137 @@ undefined1 * param_1;
     } while (uVar1 < DAT_0010142c);
   }
   return;
+}
+
+
+// was FUN_0002dd4c -- advances a cached NPC walk path (the 28-byte
+// per-slot record save_walk_path_to_cache_slot writes, keyed on the
+// current step index at param_1[2]&0x7f vs the total step count at
+// param_1[3]) by one step: applies the current step's direction delta
+// (looked up from the 2-bit packed table via &DAT_000853b0/1) to the
+// record's own tracked position (param_1[0]/[1]), then either advances
+// the step index (if that step's 1-bit "blocked" flag, from the table
+// at param_1+0x14, is clear) or sets the record's own high bit
+// (param_1[2]|=0x80) marking the cached path as blocked/stale instead.
+// Returns 1 if a step was available to advance, 0 if the path was
+// already exhausted.
+undefined4 advance_cached_path_step(param_1)
+char * param_1;
+
+{
+  int uw_ord2005_rem_14 = 0; int uw_ord2005_rem_15 = 0;
+  int iVar1;
+  byte bVar2;
+  byte bVar3;
+  undefined4 uVar4;
+  uint extraout_r1;
+  uint extraout_r1_00;
+  byte bVar5;
+  
+  bVar2 = param_1[2];
+  bVar5 = bVar2 & 0x7f;
+  if (bVar5 < (byte)param_1[3]) {
+    bVar3 = param_1[(bVar2 >> 2 & 0x1f) + 4];
+    uw_ord2005_rem_14 = ((int)(bVar5)) % (4);
+    iVar1 = (short)(bVar3 >> ((uw_ord2005_rem_14 & 0x7f) << 1) & 3) * 2;
+    *param_1 = *param_1 + (&DAT_000853b0)[iVar1];
+    param_1[1] = param_1[1] + (&DAT_000853b1)[iVar1];
+    bVar3 = param_1[(bVar2 >> 3 & 0xf) + 0x14];
+    uw_ord2005_rem_15 = ((int)(bVar5)) % (8);
+    if ((bVar3 >> (uw_ord2005_rem_15 & 0xff) & 1) == 0) {
+      param_1[2] = bVar5;
+    }
+    else {
+      param_1[2] = bVar2 | 0x80;
+    }
+    bVar2 = param_1[2];
+    param_1[2] = (bVar2 + 1 ^ bVar2) & 0x7f ^ bVar2;
+    uVar4 = 1;
+  }
+  else {
+    uVar4 = 0;
+  }
+  return uVar4;
+}
+
+
+
+// was FUN_0002de40 -- checks whether an NPC's current tile position
+// matches its cached path's expected position for this tick. param_1
+// is the cache record's own "blocked" flag (param_1[2]>>7 at the call
+// site); if clear, computes a predicted next-step position from
+// param_2/3 (current x/y) toward param_6/7 (target x/y), snapping via
+// the same 6-tile-threshold direction logic used elsewhere in NPC
+// pathing, then compares the (possibly-updated) param_2/3 against
+// param_6/7 for exact equality. If the blocked flag was set, skips the
+// prediction and just compares the raw input coordinates directly.
+undefined4 check_path_cache_position_match(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+int param_1;
+short param_2;
+short param_3;
+short param_4;
+short param_5;
+short param_6;
+short param_7;
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  short sVar4;
+  short sVar5;
+  undefined4 uVar6;
+  int iVar7;
+  bool bVar8;
+  bool bVar9;
+  
+  if (param_1 == 0) {
+    iVar1 = (int)param_4;
+    bVar9 = SBORROW4(iVar1,6);
+    iVar7 = iVar1 + -6;
+    bVar8 = iVar1 == 6;
+    sVar5 = 0;
+    if (5 < iVar1) {
+      iVar2 = (int)param_2;
+      iVar3 = (int)param_6;
+      bVar9 = SBORROW4(iVar3,iVar2);
+      iVar7 = iVar3 - iVar2;
+      bVar8 = iVar3 == iVar2;
+      sVar5 = param_2;
+    }
+    if (bVar8 || iVar7 < 0 != bVar9) {
+      sVar4 = param_2;
+      if ((iVar1 < 2) && (sVar5 = param_2, param_6 < param_2)) {
+        sVar4 = param_2 + -1;
+      }
+    }
+    else {
+      sVar4 = sVar5 + 1;
+    }
+    param_2 = sVar4;
+    iVar7 = (int)param_5;
+    bVar9 = SBORROW4(iVar7,6);
+    iVar1 = iVar7 + -6;
+    bVar8 = iVar7 == 6;
+    if (5 < iVar7) {
+      iVar2 = (int)param_3;
+      iVar3 = (int)param_7;
+      bVar9 = SBORROW4(iVar3,iVar2);
+      iVar1 = iVar3 - iVar2;
+      bVar8 = iVar3 == iVar2;
+      sVar5 = param_3;
+    }
+    if (bVar8 || iVar1 < 0 != bVar9) {
+      if ((iVar7 < 2) && (param_7 < param_3)) {
+        param_3 = param_3 + -1;
+      }
+    }
+    else {
+      param_3 = sVar5 + 1;
+    }
+  }
+  if ((param_2 != param_6) || (uVar6 = 1, param_3 != param_7)) {
+    uVar6 = 0;
+  }
+  return uVar6;
 }

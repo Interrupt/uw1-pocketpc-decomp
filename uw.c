@@ -8872,117 +8872,6 @@ LAB_0002c8cc:
 
 
 
-undefined4 FUN_0002dd4c(param_1)
-char * param_1;
-
-{
-  int uw_ord2005_rem_14 = 0; int uw_ord2005_rem_15 = 0;
-  int iVar1;
-  byte bVar2;
-  byte bVar3;
-  undefined4 uVar4;
-  uint extraout_r1;
-  uint extraout_r1_00;
-  byte bVar5;
-  
-  bVar2 = param_1[2];
-  bVar5 = bVar2 & 0x7f;
-  if (bVar5 < (byte)param_1[3]) {
-    bVar3 = param_1[(bVar2 >> 2 & 0x1f) + 4];
-    uw_ord2005_rem_14 = ((int)(bVar5)) % (4);
-    iVar1 = (short)(bVar3 >> ((uw_ord2005_rem_14 & 0x7f) << 1) & 3) * 2;
-    *param_1 = *param_1 + (&DAT_000853b0)[iVar1];
-    param_1[1] = param_1[1] + (&DAT_000853b1)[iVar1];
-    bVar3 = param_1[(bVar2 >> 3 & 0xf) + 0x14];
-    uw_ord2005_rem_15 = ((int)(bVar5)) % (8);
-    if ((bVar3 >> (uw_ord2005_rem_15 & 0xff) & 1) == 0) {
-      param_1[2] = bVar5;
-    }
-    else {
-      param_1[2] = bVar2 | 0x80;
-    }
-    bVar2 = param_1[2];
-    param_1[2] = (bVar2 + 1 ^ bVar2) & 0x7f ^ bVar2;
-    uVar4 = 1;
-  }
-  else {
-    uVar4 = 0;
-  }
-  return uVar4;
-}
-
-
-
-undefined4 FUN_0002de40(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-int param_1;
-short param_2;
-short param_3;
-short param_4;
-short param_5;
-short param_6;
-short param_7;
-
-{
-  int iVar1;
-  int iVar2;
-  int iVar3;
-  short sVar4;
-  short sVar5;
-  undefined4 uVar6;
-  int iVar7;
-  bool bVar8;
-  bool bVar9;
-  
-  if (param_1 == 0) {
-    iVar1 = (int)param_4;
-    bVar9 = SBORROW4(iVar1,6);
-    iVar7 = iVar1 + -6;
-    bVar8 = iVar1 == 6;
-    sVar5 = 0;
-    if (5 < iVar1) {
-      iVar2 = (int)param_2;
-      iVar3 = (int)param_6;
-      bVar9 = SBORROW4(iVar3,iVar2);
-      iVar7 = iVar3 - iVar2;
-      bVar8 = iVar3 == iVar2;
-      sVar5 = param_2;
-    }
-    if (bVar8 || iVar7 < 0 != bVar9) {
-      sVar4 = param_2;
-      if ((iVar1 < 2) && (sVar5 = param_2, param_6 < param_2)) {
-        sVar4 = param_2 + -1;
-      }
-    }
-    else {
-      sVar4 = sVar5 + 1;
-    }
-    param_2 = sVar4;
-    iVar7 = (int)param_5;
-    bVar9 = SBORROW4(iVar7,6);
-    iVar1 = iVar7 + -6;
-    bVar8 = iVar7 == 6;
-    if (5 < iVar7) {
-      iVar2 = (int)param_3;
-      iVar3 = (int)param_7;
-      bVar9 = SBORROW4(iVar3,iVar2);
-      iVar1 = iVar3 - iVar2;
-      bVar8 = iVar3 == iVar2;
-      sVar5 = param_3;
-    }
-    if (bVar8 || iVar1 < 0 != bVar9) {
-      if ((iVar7 < 2) && (param_7 < param_3)) {
-        param_3 = param_3 + -1;
-      }
-    }
-    else {
-      param_3 = sVar5 + 1;
-    }
-  }
-  if ((param_2 != param_6) || (uVar6 = 1, param_3 != param_7)) {
-    uVar6 = 0;
-  }
-  return uVar6;
-}
 
 
 
@@ -9001,11 +8890,11 @@ byte * param_1;
   
   bVar1 = *param_1;
   bVar2 = param_1[1];
-  iVar5 = FUN_0002de40(param_1[2] >> 7,DAT_00101918,DAT_001013f8,DAT_00101910 & 7,DAT_0010141c & 7,
+  iVar5 = check_path_cache_position_match(param_1[2] >> 7,DAT_00101918,DAT_001013f8,DAT_00101910 & 7,DAT_0010141c & 7,
                        bVar1,bVar2);
   bVar3 = DAT_00101918;
   bVar4 = DAT_001013f8;
-  if ((iVar5 == 0) || (iVar5 = FUN_0002dd4c(param_1), bVar3 = bVar1, bVar4 = bVar2, iVar5 != 0)) {
+  if ((iVar5 == 0) || (iVar5 = advance_cached_path_step(param_1), bVar3 = bVar1, bVar4 = bVar2, iVar5 != 0)) {
     if ((param_1[2] & 0x80) == 0) {
       if ((*(byte *)(DAT_00101404 + 10) & 0x80) != 0) {
         FUN_0002ee80(*(ushort *)((char *)DAT_0010190c + 0xf) & 0x3f,
