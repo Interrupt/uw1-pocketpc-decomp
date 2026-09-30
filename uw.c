@@ -8374,61 +8374,6 @@ undefined4 param_1;
 
 
 
-void FUN_0002b258(param_1,param_2,param_3)
-byte * param_1;
-ushort param_2;
-ushort param_3;
-
-{
-  int uw_ord2005_rem_12 = 0;
-  byte bVar1;
-  byte bVar2;
-  undefined2 uVar3;
-  char *iVar4;  /* was `int` -- truncated tilemap_lookup's real `void *`
-                    return (crash: object_list_insert_head(iVar4 + 2, ...)
-                    below dereferences the truncated address) */
-  uint uVar6;
-  undefined4 uVar7;
-  int extraout_r1;
-  char *pDropObj;  /* was `int iVar5`/reused `int iVar4` -- truncated
-                       spawn_new_object's real object pointer in both of
-                       this function's drop branches */
-
-  iVar4 = (char *)tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
-  ;
-  if (((param_2 & 0xff) != 0) &&
-     (pDropObj = (char *)spawn_new_object((short)(param_2 & 0xff) + 0xd8,0), pDropObj != NULL)) {
-    uVar6 = (*(ushort *)(pDropObj + 2) ^ *(ushort *)(param_1 + 2)) & 0x1fff ^
-            (uint)*(ushort *)(param_1 + 2);
-    bVar1 = (byte)uVar6;
-    *(byte *)(pDropObj + 2) = bVar1;
-    bVar2 = (byte)(uVar6 >> 8);
-    *(byte *)(pDropObj + 3) = bVar2;
-    bVar2 = (param_1[3] ^ bVar2) & 0x1c ^ bVar2;
-    *(byte *)(pDropObj + 2) = bVar1;
-    *(byte *)(pDropObj + 3) = bVar2;
-    *(byte *)(pDropObj + 2) = (param_1[2] ^ bVar1) & 0x7f ^ bVar1;
-    *(byte *)(pDropObj + 3) = bVar2;
-    uVar6 = CONCAT11(*(undefined1 *)(pDropObj + 5),*(undefined1 *)(pDropObj + 4)) & 0xffe8;
-    *(byte *)(pDropObj + 4) = (byte)uVar6 | 0x28;
-    *(char *)(pDropObj + 5) = (char)(uVar6 >> 8);
-    object_list_insert_head(iVar4 + 2,pDropObj);
-    settle_dropped_object(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
-  }
-  if ((param_3 & 0xff) != 0) {
-    uVar7 = Ordinal_1053();
-    uw_ord2005_rem_12 = ((int)(uVar7)) % (0x10);
-    if ((uw_ord2005_rem_12 < 7) &&
-       (pDropObj = (char *)spawn_new_object((short)(param_3 & 0xff) + 0xc0,0), pDropObj != NULL)) {
-      uVar3 = *(undefined2 *)(pDropObj + 6);
-      bVar1 = (byte)uVar3;
-      *(byte *)(pDropObj + 6) = (*param_1 ^ bVar1) & 0x3f ^ bVar1;
-      *(char *)(pDropObj + 7) = (char)((ushort)uVar3 >> 8);
-      drop_object_near_target(param_1,pDropObj,4,0);
-    }
-  }
-  return;
-}
 
 
 

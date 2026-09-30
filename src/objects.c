@@ -596,7 +596,7 @@ void *spawn_new_object(param_1,param_2)
 /* Was `undefined4 FUN_00068138(...)` ending in a hardcoded `return 0;`
    that discarded the freshly-allocated object pointer (puVar3) on every
    call, even on success. Every call site dereferences the return value
-   as a pointer (e.g. FUN_0002b258's `iVar5+2`/`+3`/`+4`/`+5` writes,
+   as a pointer (e.g. drop_monster_loot's `iVar5+2`/`+3`/`+4`/`+5` writes,
    object_list_insert_head(iVar4+2,iVar5)) and gates on it being
    non-null, so this whole "spawn a new object" path -- used for
    monster death drops among other things -- was silently dead code.

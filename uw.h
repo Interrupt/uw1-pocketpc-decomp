@@ -2694,7 +2694,7 @@ void load_monster_combat_stats();
 undefined4 init_monster_spawn_defaults();
 void sync_conv_vars_from_npc();
 bool sync_conv_vars_to_npc();
-void FUN_0002b258();
+void drop_monster_loot();
 int mobile_object_tick(); // was FUN_0002b47c
 void FUN_0002b63c();
 int build_collision_height_field_for_object(); // was FUN_0002b7a0

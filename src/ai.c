@@ -725,7 +725,7 @@ LAB_00033830:
       iVar5 = tilemap_lookup();
       object_list_unlink(iVar5 + 2,DAT_0010190c);
       spawn_creature_death_loot(DAT_0010190c);
-      FUN_0002b258(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
+      drop_monster_loot(DAT_0010190c,(byte)DAT_00101404[8] >> 5,(byte)DAT_00101404[10] >> 2 & 7);
       drop_creature_inventory_on_death(DAT_0010190c);
       free_object_slot(DAT_0010190c);
       return 0;
@@ -1740,3 +1740,68 @@ undefined4 param_4;
 
 
 
+
+
+// was FUN_0002b258 -- drops a dead monster's loot: if param_2 (a
+// gold-category nibble from the monster's own template data) is
+// nonzero, spawns a gold-pile object (0xd8+category) at the corpse's
+// own tile; if param_3 (a treasure-category nibble) is nonzero, rolls
+// a 7-in-16 chance to spawn a treasure item (0xc0+category) and drop
+// it near the corpse. Called from the monster death path (src/ai.c)
+// with param_1 the monster object and both category nibbles read from
+// its own stat template.
+void drop_monster_loot(param_1,param_2,param_3)
+byte * param_1;
+ushort param_2;
+ushort param_3;
+
+{
+  int uw_ord2005_rem_12 = 0;
+  byte bVar1;
+  byte bVar2;
+  undefined2 uVar3;
+  char *iVar4;  /* was `int` -- truncated tilemap_lookup's real `void *`
+                    return (crash: object_list_insert_head(iVar4 + 2, ...)
+                    below dereferences the truncated address) */
+  uint uVar6;
+  undefined4 uVar7;
+  int extraout_r1;
+  char *pDropObj;  /* was `int iVar5`/reused `int iVar4` -- truncated
+                       spawn_new_object's real object pointer in both of
+                       this function's drop branches */
+
+  iVar4 = (char *)tilemap_lookup(*(ushort *)(param_1 + 0x16) >> 10,(*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4)
+  ;
+  if (((param_2 & 0xff) != 0) &&
+     (pDropObj = (char *)spawn_new_object((short)(param_2 & 0xff) + 0xd8,0), pDropObj != NULL)) {
+    uVar6 = (*(ushort *)(pDropObj + 2) ^ *(ushort *)(param_1 + 2)) & 0x1fff ^
+            (uint)*(ushort *)(param_1 + 2);
+    bVar1 = (byte)uVar6;
+    *(byte *)(pDropObj + 2) = bVar1;
+    bVar2 = (byte)(uVar6 >> 8);
+    *(byte *)(pDropObj + 3) = bVar2;
+    bVar2 = (param_1[3] ^ bVar2) & 0x1c ^ bVar2;
+    *(byte *)(pDropObj + 2) = bVar1;
+    *(byte *)(pDropObj + 3) = bVar2;
+    *(byte *)(pDropObj + 2) = (param_1[2] ^ bVar1) & 0x7f ^ bVar1;
+    *(byte *)(pDropObj + 3) = bVar2;
+    uVar6 = CONCAT11(*(undefined1 *)(pDropObj + 5),*(undefined1 *)(pDropObj + 4)) & 0xffe8;
+    *(byte *)(pDropObj + 4) = (byte)uVar6 | 0x28;
+    *(char *)(pDropObj + 5) = (char)(uVar6 >> 8);
+    object_list_insert_head(iVar4 + 2,pDropObj);
+    settle_dropped_object(pDropObj,(int)DAT_0010144c,(int)DAT_00101454,1);
+  }
+  if ((param_3 & 0xff) != 0) {
+    uVar7 = Ordinal_1053();
+    uw_ord2005_rem_12 = ((int)(uVar7)) % (0x10);
+    if ((uw_ord2005_rem_12 < 7) &&
+       (pDropObj = (char *)spawn_new_object((short)(param_3 & 0xff) + 0xc0,0), pDropObj != NULL)) {
+      uVar3 = *(undefined2 *)(pDropObj + 6);
+      bVar1 = (byte)uVar3;
+      *(byte *)(pDropObj + 6) = (*param_1 ^ bVar1) & 0x3f ^ bVar1;
+      *(char *)(pDropObj + 7) = (char)((ushort)uVar3 >> 8);
+      drop_object_near_target(param_1,pDropObj,4,0);
+    }
+  }
+  return;
+}
