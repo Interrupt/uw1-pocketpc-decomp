@@ -1772,6 +1772,41 @@ extern undefined2 DAT_002049a0_backing[8192];
 #define DAT_002049a0 DAT_002049a0_backing[0]
 extern undefined2 DAT_002049b0_backing[32768];
 #define DAT_002049b0 DAT_002049b0_backing[0]
+undefined4 collision_response_mobile_object();
+extern undefined1 DAT_00101424;
+extern undefined1 DAT_00101428_backing[8192];
+#define DAT_00101428 DAT_00101428_backing[0]
+extern undefined DAT_002048c2;
+extern undefined2 DAT_002048c6;
+extern undefined2 DAT_002048c8;
+extern undefined2 DAT_002048cc;
+extern undefined2 DAT_002048ce;
+extern short DAT_002048d0;
+extern undefined1 DAT_002048d7;
+extern undefined2 DAT_002048fa;
+extern undefined2 DAT_002048fc;
+extern undefined2 DAT_002048fe;
+extern undefined1 DAT_00204907;
+extern undefined2 DAT_0020492c;
+extern undefined2 DAT_0020492e;
+extern undefined1 DAT_00204937;
+extern undefined2 DAT_00204956;
+extern undefined2 DAT_00204958;
+extern undefined2 DAT_0020495c;
+extern undefined2 DAT_0020495e;
+extern undefined1 DAT_00204967;
+extern undefined DAT_00204982;
+extern undefined2 DAT_00204984;
+extern undefined DAT_00204986;
+extern undefined DAT_00204992;
+extern undefined2 DAT_00204994;
+extern undefined2 DAT_00204996;
+extern undefined2 DAT_002049a2;
+extern undefined2 DAT_002049a4;
+extern undefined2 DAT_002049a6;
+extern undefined2 DAT_002049b2;
+extern undefined2 DAT_002049b4;
+extern undefined2 DAT_002049b6;
 extern undefined1 DAT_0023cf08_backing[40960];
 #define DAT_0023cf08 DAT_0023cf08_backing[0]
 extern undefined DAT_0023cf09;
@@ -2696,11 +2731,11 @@ void sync_conv_vars_from_npc();
 bool sync_conv_vars_to_npc();
 void drop_monster_loot();
 int mobile_object_tick(); // was FUN_0002b47c
-void FUN_0002b63c();
+void init_collision_response_profiles();
 int build_collision_height_field_for_object(); // was FUN_0002b7a0
-undefined4 FUN_0002b960();
-undefined4 FUN_0002bbec();
-undefined4 FUN_0002bc9c();
+undefined4 collision_response_default();
+undefined4 collision_response_alt_locomotion();
+undefined4 collision_response_other_locomotion();
 undefined4 apply_placement_collision_sweep(); // was FUN_0002bd70
 undefined4 tile_pair_los_blocked();
 undefined4 FUN_0002c8e0();

@@ -2038,15 +2038,18 @@ undefined2 DAT_002049b6;
  undefined2 DAT_002049b0_backing[32768];
 #define DAT_002049b0 DAT_002049b0_backing[0]
 undefined *DAT_002049b8;
-undefined4 LAB_0002bbe4()
+// was LAB_0002bbe4 -- the "mobile object" collision-response callback
+// (slot 2, DAT_002049a8), used by mobile_object_tick for generic
+// mobile/projectile objects. Ghidra couldn't resolve this address from
+// its own indirect-jump/jumptable call site, but a direct Ghidra
+// headless lookup by address (0x2bbe4) DOES decompile it: `undefined4
+// FUN_0002bbe4(void) { return 0; }` -- confirmed via disassembly that
+// this genuinely IS a no-op in the real binary too (generic
+// mobile/projectile objects get no special collision response), not a
+// "Ghidra gave up" placeholder. Kept as-is; not a bug.
+undefined4 collision_response_mobile_object()
 
 {
-  /* Ghidra couldn't resolve this address from its own indirect-jump/
-     jumptable call site, but a direct Ghidra headless lookup by
-     address (0x2bbe4) DOES decompile it: `undefined4 FUN_0002bbe4(void)
-     { return 0; }` -- confirmed via disassembly that this genuinely IS
-     a no-op in the real binary too, not a "Ghidra gave up" placeholder.
-     Kept as-is; not a bug. */
   return 0;
 }
 short DAT_002048d0;
@@ -2067,7 +2070,7 @@ char *DAT_00101904;
 undefined4 DAT_00101560;
 undefined4 DAT_001013fc;
 undefined1 DAT_00101424;
-static undefined1 DAT_00101428_backing[8192];
+undefined1 DAT_00101428_backing[8192];
 #define DAT_00101428 DAT_00101428_backing[0]
 undefined2 DAT_002048fa;
 undefined4 DAT_0010191c;
@@ -8379,197 +8382,6 @@ undefined4 param_1;
 
 // WARNING: Globals starting with '_' overlap smaller symbols at the same address
 
-void FUN_0002b63c()
-
-{
-  DAT_002048cc = 0;
-  DAT_002048ce = 0;
-  DAT_002048d7 = 0x80;
-  DAT_002048fc = 0;
-  DAT_002048fe = 0;
-  DAT_00204907 = 0x80;
-  DAT_0020492c = 0;
-  DAT_0020492e = 0;
-  DAT_00204937 = 0;
-  DAT_0020495c = 0;
-  DAT_0020495e = 0;
-  DAT_00204967 = 0x80;
-  _DAT_00204982 = 0x1f30;
-  DAT_00204984 = 0x1010;
-  _DAT_00204986 = 0x20;
-  _DAT_00204980 = 0;
-  DAT_00204988 = FUN_0002b960;
-  _DAT_00204992 = 0x700;
-  DAT_00204994 = 0x80;
-  DAT_00204996 = 0;
-  DAT_00204990 = 0x1000;
-  DAT_00204998 = FUN_0002bbec;
-  DAT_002049a2 = 0;
-  DAT_002049a4 = 0;
-  DAT_002049a6 = 0;
-  DAT_002049a0 = 0;
-  DAT_002049a8 = &LAB_0002bbe4;
-  DAT_002049b2 = 0x1728;
-  DAT_002049b4 = 0x10a8;
-  DAT_002049b6 = 0;
-  DAT_002049b0 = 0x10;
-  DAT_002049b8 = FUN_0002bc9c;
-  return;
-}
-
-
-
-// WARNING: Globals starting with '_' overlap smaller symbols at the same address
-
-/* HACK: same ushort-vs-byte pointer-scaling bug as the rest of this
-   NPC-AI cluster this session (see
-   [[ushort-byte-scaling-bug-npc-cluster]]) -- DAT_0010190c is
-   `ushort *`, so every bare `DAT_0010190c + N` here was scaling N by
-   2. Verified against fresh disassembly of this function's entry
-   (0x2b998): `ldrb r3,[r0,#0x14]` -- raw, unscaled byte 0x14. This is
-   the DAT_00204980 collision-config buffer's real callback (see
-   sweep_apply_collision's fix this session), called via the same
-   indirect-callback path as FUN_0002bbec/FUN_0002bc9c. Cast every
-   offset to a byte pointer throughout this function so none of them
-   are scaled. */
-undefined4 FUN_0002b960(param_1)
-ushort * param_1;
-
-{
-  ushort uVar1;
-  undefined4 *puVar2;
-  int iVar3;
-  undefined4 uVar4;
-  uint uVar5;
-  
-  uVar1 = *param_1;
-  if ((uVar1 & 0x1000) != 0) {
-    if (DAT_002048d0 == 0) {
-      DAT_002048d0 = -4;
-    }
-    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
-    DAT_00101924 = 1;
-    uVar4 = 0;
-    puVar2 = &DAT_00101734;
-LAB_0002bb2c:
-    *puVar2 = uVar4;
-    return 0;
-  }
-  if ((uVar1 & 0x10) != 0) {
-    if ((uVar1 & 0xf8) == 0x10) {
-      DAT_00101924 = 1;
-      DAT_00101734 = 0;
-      spawn_scheduled_effect_object(DAT_0010190c,6,3,0,0,(short)(char)((ushort)DAT_002048c0 >> 8),
-                   (short)(char)((ushort)_DAT_002048c2 >> 8));
-      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xcc | 0xc;
-      uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xfff;
-      *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar5;
-      *(byte *)((char *)DAT_0010190c + 0xc) = (byte)(uVar5 >> 8) | 0x30;
-      *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xf9 | 1;
-      return 1;
-    }
-    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) {
-      DAT_00101924 = 1;
-      DAT_002048c6 = 0;
-      DAT_002048c8 = 0;
-      return 1;
-    }
-  }
-  if ((((uVar1 & 0x800) != 0) && ((DAT_00101414 & 0x800) == 0)) ||
-     (((uVar1 & 0x20) != 0 && ((DAT_00101414 & 0x20) == 0)))) {
-    if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) {
-      DAT_00101924 = 1;
-      DAT_002048c6 = 0;
-      DAT_002048c8 = 0;
-      return 1;
-    }
-    return 0;
-  }
-  if ((uVar1 & 0x300) != 0) {
-    puVar2 = &DAT_00101924;
-    uVar4 = 1;
-    goto LAB_0002bb2c;
-  }
-  if ((uVar1 & 0x400) != 0) {
-    iVar3 = FUN_0005aea0(&DAT_00101424,&DAT_00101428);
-    if (iVar3 != 0) {
-      DAT_00101560 = 1;
-      DAT_00101924 = 1;
-      DAT_001013fc = 1;
-      DAT_00101904 = iVar3;
-      goto LAB_0002bbc4;
-    }
-    DAT_00101924 = 1;
-    DAT_001013fc = 1;
-    DAT_00101904 = FUN_0005b010();
-  }
-  if (DAT_00101924 == 0) {
-    return 0;
-  }
-LAB_0002bbc4:
-  if (DAT_00101734 != 0) {
-    return 1;
-  }
-  return 0;
-}
-
-
-
-undefined4 FUN_0002bbec(param_1)
-ushort * param_1;
-
-{
-  DAT_00101734 = 1;
-  if ((*param_1 & 0x200) == 0) {
-    if ((*param_1 & 0x100) != 0) {
-      DAT_002048fa = 0x80;
-      DAT_0010191c = 1;
-    }
-    if ((*param_1 & 0x400) != 0) {
-      DAT_00101924 = 1;
-      DAT_001013fc = 1;
-      DAT_00101904 = FUN_0005b010();
-    }
-    if ((DAT_00101924 != 0) && (DAT_00101734 != 0)) {
-      return 1;
-    }
-  }
-  else {
-    DAT_00101924 = 1;
-  }
-  return 0;
-}
-
-
-
-undefined4 FUN_0002bc9c(param_1)
-ushort * param_1;
-
-{
-  if ((*param_1 & 0x300) == 0) {
-    if ((*param_1 & 0x400) != 0) {
-      DAT_00204958 = 0;
-      DAT_00204956 = 0;
-      DAT_00101924 = 1;
-      DAT_001013fc = 1;
-      DAT_00101904 = FUN_0005b010();
-    }
-    if ((*param_1 & 8) != 0) {
-      DAT_00204958 = 0;
-      DAT_00204956 = 0;
-      DAT_00101924 = 1;
-    }
-    if ((DAT_00101924 != 0) && (DAT_00101734 != 0)) {
-      return 1;
-    }
-  }
-  else {
-    DAT_00204958 = 0;
-    DAT_00204956 = 0;
-    DAT_00101924 = 1;
-  }
-  return 0;
-}
 
 
 
@@ -15661,7 +15473,7 @@ void FUN_0003b820()
   reset_texture_id_lists();
   FUN_0005b828();
   init_gameplay_session();
-  FUN_0002b63c();
+  init_collision_response_profiles();
   init_new_character_record(0);
   init_sprite_list_buffers();
   FUN_0003bb84();
