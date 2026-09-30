@@ -41,25 +41,6 @@ int mobile_object_tick()
     DAT_002049a0 = 0;
   }
   build_object_placement_snapshot(DAT_0010190c,&DAT_00204920);
-  /* A non-NPC object in the active mobile list has its world position
-     read straight from record bytes +0xb/+0xd/+0xf (see
-     build_object_placement_snapshot). The shipped level data lists
-     objects there that were never projectiles -- level 1 slot 226 is a
-     door linked on tile (59,14) whose bytes are NPC-style fields (goal
-     4, attitude bits) and decode to x=4, y=0x4000: tile (0,64). The
-     real engine's unchecked tilemap_lookup lands that inside the object
-     table and quietly settles the door onto mobile slot 0's bytes,
-     freeing slot 226 while (59,14) still links to it; this port's
-     tilemap_lookup returns NULL and settle_mobile_to_immobile crashed
-     on it. Such an object isn't mobile at all: drop it from the active
-     list and leave its record and tile link alone. Returning 0 is
-     tick_mobile_objects' "entry removed, re-examine this index" signal,
-     which the removal below satisfies. */
-  if (tilemap_lookup((int)(char)(*(ushort *)&DAT_00204920 >> 8),
-                     (int)(char)(*(ushort *)(&DAT_00204920 + 2) >> 8)) == 0) {
-    active_mobile_list_remove((char)encode_object_slot_index(DAT_0010190c));
-    return 0;
-  }
   apply_placement_collision_sweep(&DAT_00204920,&DAT_002049a0);
   DAT_0010144c = (ushort)(*(byte *)((char *)DAT_0010190c + 0x17) >> 2);
   DAT_00101454 = (undefined2)((DAT_0010190c[0xb] & 0x3f0) >> 4);
