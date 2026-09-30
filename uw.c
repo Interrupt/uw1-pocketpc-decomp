@@ -2226,8 +2226,7 @@ undefined *PTR_FUN_00085408;
 undefined1 DAT_00085448_backing[32768];
 char s_FONTBIG_SYS_00085454[] = "FONTBIG.SYS";
 char *DAT_002506ec;
-static undefined1 DAT_00085460_backing[32768];
-#define DAT_00085460 DAT_00085460_backing[0]
+undefined1 DAT_00085460_backing[32768];
 /* Was `uint`, truncating the real pointer this holds (`DAT_002029cc +
    0x5b00`, assigned in reset_level_object_arena -- see there) on this 64-bit host.
    Most uses are pointer<->pointer comparisons or subtractions between
@@ -9633,69 +9632,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_00037d6c(param_1,param_2,param_3,param_4)
-uint param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined4 param_4;
-
-{
-  char *wptr_22113;
-  char stack0xffdc383c_buf [256];
-  char *stack0xffdc383c_ptr;
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  int iVar4;
-  int iVar5;
-  int iVar6;
-  int iVar7;
-  int iVar8;
-  int iVar9;
-  char acStack_855a4 [545888];
-  char acStack_144 [4];
-  char local_140;
-  char local_13f;
-  char acStack_12c [260];
-  undefined4 uStack_c;
-  undefined4 uStack_8;
-  undefined4 uStack_4;
-  
-  pcVar2 = &DAT_00085460;
-    wptr_22113 = acStack_855a4;
-  uStack_c = param_2;
-  uStack_8 = param_3;
-  uStack_4 = param_4;
-  do {
-    cVar1 = *pcVar2;
-    *wptr_22113 = cVar1; wptr_22113 = wptr_22113 + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  acStack_144[3] = ((byte)((param_1 & 0xffff) >> 6) & 7) + 0x30;
-  local_140 = ((byte)((param_1 & 0xffff) >> 3) & 7) + 0x30;
-  local_13f = ((byte)param_1 & 7) + 0x30;
-  Ordinal_1047(acStack_12c,0,0x104);
-  pcVar2 = &DAT_0023c698;
-    stack0xffdc383c_ptr = acStack_12c;
-  do {
-    cVar1 = *pcVar2;
-    *stack0xffdc383c_ptr = cVar1; stack0xffdc383c_ptr = stack0xffdc383c_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_12c,acStack_144);
-  iVar3 = open_existing_file_rw_alt(acStack_144);
-  iVar4 = seek_file_handle(iVar3,4,0);
-  iVar5 = write_file_handle(iVar3,&uStack_c,2);
-  iVar6 = write_file_handle(iVar3,&uStack_c,2);
-  iVar7 = seek_file_handle(iVar3,4,1);
-  iVar8 = write_file_handle(iVar3,&uStack_c,2);
-  iVar9 = Ordinal_553(iVar3);
-  if ((((((iVar3 != -1 && iVar4 != -1) && iVar5 == 2) && iVar6 == 2) && iVar7 != -1) && iVar8 == 2)
-      && iVar9 != 0) {
-    display_book_or_scroll_page(param_1);
-  }
-  return;
-}
 
 
 

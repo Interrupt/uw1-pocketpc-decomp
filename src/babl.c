@@ -7193,3 +7193,84 @@ LAB_00037d3c:
   g_text_use_palette_color = 0;
   return;
 }
+
+
+// was FUN_00037d6c -- for illustration page param_1, opens (or
+// creates) a small per-illustration marker file (its name built from
+// param_1's octal digits via the same template as
+// babl_render_op_show_code), and only if every file operation
+// succeeds, shows the page via display_book_or_scroll_page. Confirmed
+// caller: trigger_terrain_discovery_illustration's "you've found
+// something" discovery moment (passing only param_1/param_2, the
+// current level).
+// Note: all 3 write_file_handle calls read from the same &uStack_c
+// address (param_2's stack slot) rather than advancing to
+// &uStack_8/&uStack_4 (param_3/param_4's slots) for the 2nd/3rd write
+// -- looks like a dropped pointer-advance, but NOT fixed here: both
+// known callers only ever pass param_1/param_2, leaving param_3/
+// param_4 as whatever garbage occupies those registers, so writing
+// them to the file would very plausibly be worse than the current
+// (redundant but well-defined) triple-write of param_2's value.
+void record_illustration_discovery_and_display(param_1,param_2,param_3,param_4)
+uint param_1;
+undefined4 param_2;
+undefined4 param_3;
+undefined4 param_4;
+
+{
+  char *wptr_22113;
+  char stack0xffdc383c_buf [256];
+  char *stack0xffdc383c_ptr;
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  int iVar8;
+  int iVar9;
+  char acStack_855a4 [545888];
+  char acStack_144 [4];
+  char local_140;
+  char local_13f;
+  char acStack_12c [260];
+  undefined4 uStack_c;
+  undefined4 uStack_8;
+  undefined4 uStack_4;
+  
+  pcVar2 = &DAT_00085460;
+    wptr_22113 = acStack_855a4;
+  uStack_c = param_2;
+  uStack_8 = param_3;
+  uStack_4 = param_4;
+  do {
+    cVar1 = *pcVar2;
+    *wptr_22113 = cVar1; wptr_22113 = wptr_22113 + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  acStack_144[3] = ((byte)((param_1 & 0xffff) >> 6) & 7) + 0x30;
+  local_140 = ((byte)((param_1 & 0xffff) >> 3) & 7) + 0x30;
+  local_13f = ((byte)param_1 & 7) + 0x30;
+  Ordinal_1047(acStack_12c,0,0x104);
+  pcVar2 = &DAT_0023c698;
+    stack0xffdc383c_ptr = acStack_12c;
+  do {
+    cVar1 = *pcVar2;
+    *stack0xffdc383c_ptr = cVar1; stack0xffdc383c_ptr = stack0xffdc383c_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_12c,acStack_144);
+  iVar3 = open_existing_file_rw_alt(acStack_144);
+  iVar4 = seek_file_handle(iVar3,4,0);
+  iVar5 = write_file_handle(iVar3,&uStack_c,2);
+  iVar6 = write_file_handle(iVar3,&uStack_c,2);
+  iVar7 = seek_file_handle(iVar3,4,1);
+  iVar8 = write_file_handle(iVar3,&uStack_c,2);
+  iVar9 = Ordinal_553(iVar3);
+  if ((((((iVar3 != -1 && iVar4 != -1) && iVar5 == 2) && iVar6 == 2) && iVar7 != -1) && iVar8 == 2)
+      && iVar9 != 0) {
+    display_book_or_scroll_page(param_1);
+  }
+  return;
+}

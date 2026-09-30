@@ -237,9 +237,9 @@ void interact_attack()
 
 
 // was FUN_0006fed4 -- triggers the "illustrated book/scroll" full-
-// screen picture feature (via FUN_00037d6c -> FUN_00037c14, see the
+// screen picture feature (via record_illustration_discovery_and_display -> display_book_or_scroll_page, see the
 // "SPECIAL ILLUSTRATED BOOK/SCROLL" comment elsewhere in this file for
-// how FUN_00037c14's argument selects which picture) with illustration
+// how display_book_or_scroll_page's argument selects which picture) with illustration
 // index 0x100 and the current level (DAT_00201b68) as payload. Its one
 // caller fires this when reading a terrain description for a terrain
 // type flagged 9 in DAT_0023add0 -- a special "you've found something"
@@ -247,7 +247,7 @@ void interact_attack()
 void trigger_terrain_discovery_illustration()
 
 {
-  FUN_00037d6c(0x100,(int)DAT_00201b68);
+  record_illustration_discovery_and_display(0x100,(int)DAT_00201b68);
   return;
 }
 
@@ -266,7 +266,7 @@ undefined4 param_1;
 
 {
   if ((short)param_1 != 0) {
-    FUN_00037d6c(0x101,param_1);
+    record_illustration_discovery_and_display(0x101,param_1);
   }
   return;
 }
