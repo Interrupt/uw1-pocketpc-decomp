@@ -2804,7 +2804,7 @@ void npc_set_goal();
 void npc_clear_special_goal();
 undefined4 initiate_npc_death();
 undefined4 handle_monster_death();
-undefined4 FUN_000346a0();
+undefined4 apply_damage_to_object();
 undefined4 object_tick_is_due(); // was FUN_0003495c
 void tick_mobile_objects(); // was FUN_000349bc
 void FUN_00034ac4();

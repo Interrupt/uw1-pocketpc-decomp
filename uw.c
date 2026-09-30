@@ -9522,87 +9522,6 @@ void npc_clear_special_goal()
 
 
 
-undefined4 FUN_000346a0(param_1,param_2,param_3)
-ushort * param_1;
-byte param_2;
-ushort * param_3;
-
-{
-  short sVar1;
-  uint uVar2;
-  int iVar3;
-  undefined4 uVar4;
-  int iVar5;
-  bool bVar6;
-  
-  bVar6 = param_3 == (ushort *)0x0;
-  iVar5 = (((int)(short)*param_1 & 0xfU) + (short)((*param_1 & 0x30) >> 4) * 0x10) * 0x30;
-  if (bVar6) {
-    param_3 = (ushort *)0x0;
-  }
-  *(byte *)((char *)param_1 + 0x11) = *(char *)((char *)param_1 + 0x11) + param_2;
-  if (!bVar6) {
-    if ((*param_3 & 0x1c0) == 0x40) {
-      sVar1 = encode_object_slot_index();
-      uVar2 = (uint)sVar1;
-      if (0xff < (int)uVar2) {
-        uVar2 = 0;
-      }
-      param_3 = (ushort *)(uVar2 & 0xff);
-    }
-    else {
-      param_3 = (ushort *)(uint)(byte)param_3[9];
-    }
-  }
-  uVar2 = (uint)param_3 & 0xff;
-  if (uVar2 != 0) {
-    *(char *)(param_1 + 9) = (char)param_3;
-  }
-  if ((uVar2 == 1) && ((param_1[5] & 0x80) == 0)) {
-    DAT_000853d0 = (&DAT_001007d9)[iVar5];
-    DAT_0010194c = encode_object_slot_index(param_1);
-    DAT_0010192c = *(byte *)((char *)param_1 + 0x17) >> 2;
-    DAT_00101930 = (byte)(param_1[0xb] >> 4) & 0x3f;
-    DAT_00101934 = (byte)param_1[1] >> 3 & 0xf;
-    DAT_00101940 = *(undefined4 *)(DAT_00086df8 + 0xce);
-  }
-  if (param_2 < (byte)param_1[4]) {
-    *(byte *)(param_1 + 4) = (byte)param_1[4] - param_2;
-    if (param_1 == g_player_object) {
-      refresh_experience_display();
-    }
-  }
-  else {
-    *(undefined1 *)(param_1 + 4) = 0;
-    iVar3 = handle_monster_death(param_1);
-    if (iVar3 != 0) {
-      if (uVar2 == 1) {
-        award_monster_kill_experience(param_1);
-      }
-      return 1;
-    }
-  }
-  if (uVar2 == 1) {
-    sVar1 = Ordinal_2005((byte)(&g_monster_max_stats_table)[iVar5] + 1,(uint)(byte)param_1[4] << 6);
-    uVar4 = 5;
-  }
-  else {
-    if (param_1 != g_player_object) {
-      return 0;
-    }
-    if (uVar2 == 0) {
-      return 0;
-    }
-    sVar1 = Ordinal_2005(*(byte *)(DAT_0023be74 + 4) + 1,(uint)(byte)g_player_object[4] << 6);
-    uVar4 = 7;
-  }
-  if (0xf < sVar1) {
-    uVar4 = 6;
-  }
-  set_pending_music_track(uVar4);
-  DAT_00101944 = read_realtime_clock_units();
-  return 0;
-}
 
 
 
@@ -11615,7 +11534,7 @@ undefined1 param_6;
   
   uVar1 = FUN_000382cc(param_1,param_5,param_6);
   if ((*param_1 & 0x1c0) == 0x40) {
-    uVar2 = FUN_000346a0(param_1,uVar1,param_2);
+    uVar2 = apply_damage_to_object(param_1,uVar1,param_2);
   }
   else {
     iVar3 = FUN_00038418(param_1,param_2,uVar1 & 0xff,param_3,param_4);
