@@ -732,9 +732,9 @@ void init_gameplay_session()
   register_key_binding(0x83,2,4,cursor_mode_button_click);
   register_key_binding(0x84,1,1,cursor_mode_button_click);
   register_key_binding(0x85,0,1,cursor_mode_button_click);
-  register_key_binding(0x70,9,1,FUN_00027708);
-  register_key_binding(0x2e,3,1,FUN_00027708);
-  register_key_binding(0x3b,6,1,FUN_00027708);
+  register_key_binding(0x70,9,1,tick_weapon_swing_state);
+  register_key_binding(0x2e,3,1,tick_weapon_swing_state);
+  register_key_binding(0x3b,6,1,tick_weapon_swing_state);
   register_key_binding(0x4a3,0x4a3,7,FUN_00058734);
   register_key_binding(9,9,7,FUN_00058734);
   register_key_binding(0x8d,0x8d,7,FUN_00058734);

@@ -325,7 +325,7 @@ short param_1;
 // confirmed live via UW_DEBUG_COMBAT that this runs continuously during
 // normal play, not dead code. DAT_000870e4 is also read (separately,
 // for different meaning) by the attack-swing state machine
-// (FUN_00027708) once armed -- the exact interaction between the two
+// (tick_weapon_swing_state) once armed -- the exact interaction between the two
 // during a live swing is still not fully understood (see memory.md).
 void advance_action_animation_frame()
 
@@ -539,4 +539,216 @@ short param_1;
     iVar3 = (int)local_4c[0];
   }
   return iVar3;
+}
+
+
+// was FUN_000275e0 -- resets the weapon-swing state machine after a
+// completed swing: sets DAT_0010062c to a cooldown value, clears the
+// "swing charging" cursor-holding flags, and resets the HUD status
+// icons. Called from tick_weapon_swing_state's own swing-completion
+// path.
+void reset_weapon_swing_state()
+
+{
+  DAT_0010062c = 0xfff6;
+  DAT_00084f10 = 0xffff;
+  set_hud_status_value(3,0);
+  g_cursor_holding_state = g_cursor_holding_state + -4;
+  FUN_00057cac(3);
+  set_hud_status_value(8,4);
+  DAT_001005ec = 0;
+  return;
+}
+
+
+
+// was FUN_0002764c -- sets the HUD's weapon-ready status icon (a
+// different icon depending on a flag bit at DAT_00086df8+0x5f) and
+// clears the swing-charge status icon.
+void update_weapon_ready_hud_icon()
+
+{
+  undefined4 uVar1;
+  
+  uVar1 = 4;
+  if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
+    uVar1 = 6;
+  }
+  set_hud_status_value(8,uVar1);
+  set_hud_status_value(3,0);
+  return;
+}
+
+
+
+// was FUN_00027694 -- fully cancels an in-progress weapon swing
+// (charging or mid-animation): releases any held swing-charge cursor
+// state, updates the HUD icons, and resets the swing phase counter
+// (DAT_0010062c), pending-swing marker (DAT_00084f10), and attacker
+// marker (DAT_00100610) to their idle values. Called whenever gameplay
+// interrupts a swing in progress (opening inventory, changing level,
+// using an item).
+void cancel_weapon_swing()
+
+{
+  if ((DAT_001005ec != 0) && (DAT_00100618 == 0)) {
+    g_cursor_holding_state = g_cursor_holding_state + -4;
+    FUN_00057cac(3);
+  }
+  update_weapon_ready_hud_icon();
+  DAT_0010062c = 0;
+  DAT_00084f10 = 0xffff;
+  DAT_00100610 = 0xffff;
+  return;
+}
+
+
+
+// was FUN_00027708 -- per-frame weapon-swing state machine: param_1 is
+// the requested attack direction/type (0=none, from interact_attack's
+// screen-position-to-3x3-grid mapping), and DAT_0010062c is the swing
+// phase counter (negative while charging/swinging). If no swing is in
+// progress and a direction is requested, resolves the equipped weapon
+// (resolve_equipped_weapon_attack) and starts charging; while charging,
+// tracks elapsed real time (read_realtime_clock_units) into a charge
+// percentage (DAT_00100614) shown on the HUD; once the charge/swing
+// countdown completes, calls compute_player_weapon_attack_stats and
+// process_melee_attack_swing to actually resolve the attack, then
+// resets state via reset_weapon_swing_state. Own "[swing]" debug trace.
+void tick_weapon_swing_state(param_1)
+short param_1;
+
+{
+  byte bVar1;
+  bool bVar2;
+  ushort uVar3;
+  short sVar4;
+  int iVar5;
+  int iVar6;
+  undefined2 local_20 [2];
+  /* Was folded into `iVar5` (int) -- the pointer DAT_001005e4 now
+     carries (see its own fix) needs to stay a real 64-bit pointer
+     across this function's two dereference sites below (~17130 and
+     ~17180). iVar5 itself keeps its OTHER, disjoint int uses further
+     down (FUN_000571c0's result, and the whole "start a new swing"
+     else-if branch) -- those never run in the same call as these
+     dereferences, so they're left as plain int. */
+  char *pRecord;
+
+  if (((short)DAT_00084f10 < 1) || ((&DAT_00250658)[(short)DAT_00084f10] == '\0')) {
+    uVar3 = FUN_000575c4(local_20);
+    bVar2 = false;
+    if ((uVar3 & 2) == 0) goto LAB_00027754;
+  }
+  bVar2 = true;
+LAB_00027754:
+  pRecord = DAT_001005e4;
+  if (getenv("UW_DEBUG_COMBAT") && (param_1 != 0 || DAT_000870e4 != -1 || DAT_0010062c != 0)) {
+    fprintf(stderr, "[swing] param_1=%d flags5f=0x%x DAT_000870e4=%d DAT_0010062c=%d bVar2=%d pRecord=%p DAT_00100618=%d DAT_001005ec=%u DAT_001005e8=%d\n",
+            (int)param_1, (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)DAT_000870e4,
+            (int)DAT_0010062c, (int)bVar2, (void *)pRecord, (int)DAT_00100618, DAT_001005ec, (int)DAT_001005e8);
+  }
+  if (DAT_0010062c < 1) {
+    if (DAT_0010062c < 0) {
+      if ((-1 < DAT_000870e4) || (-10 < DAT_0010062c)) {
+        if (6 < DAT_000870e4) {
+          return;
+        }
+        if (2 < DAT_000870e4) {
+          if (DAT_000870e4 != 3) {
+            if (DAT_000870e4 != 6) {
+              return;
+            }
+            if (DAT_0010062c < -9) {
+              return;
+            }
+            set_hud_status_value(3,0);
+            local_20[0] = Ordinal_2005(100,((int)(((uint)*(byte *)(pRecord + 5) -
+                                                  (uint)*(byte *)(pRecord + 3)) * 0x10000) >> 0x10) *
+                                           (uint)DAT_00100614);
+            DAT_00100614 = *(char *)(pRecord + 3) + (char)local_20[0];
+            *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) | 0xf;
+            DAT_001005fc = DAT_00100614;
+            compute_player_weapon_attack_stats(pRecord,DAT_001005e0,(int)DAT_00100618);
+            process_melee_attack_swing();
+            DAT_0010062c = 0xfff6;
+            return;
+          }
+          if (DAT_001005ec != 0) {
+            if ((!bVar2) && (-1 < DAT_00100618)) {
+              iVar5 = FUN_000571c0();
+              if (iVar5 != 0) {
+                FUN_0004a210(*DAT_001005e0 & 0xf);
+              }
+              reset_weapon_swing_state();
+              return;
+            }
+            if (-1 < DAT_00100618) {
+              return;
+            }
+            set_hud_status_value(3,9);
+            DAT_00100618 = 0;
+            g_cursor_holding_state = g_cursor_holding_state + 4;
+            FUN_00057c5c(0x1075);
+            return;
+          }
+          if (!bVar2) {
+            if (DAT_0010062c < -4) {
+              return;
+            }
+            set_hud_status_value(8,-1 - DAT_0010062c);
+            DAT_0010062c = 0xfffb;
+            return;
+          }
+          *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) & 0xfa | 10;
+          if (DAT_001005e8 < 0) {
+            DAT_001005f0 = read_realtime_clock_units();
+            DAT_001005e8 = 0;
+            return;
+          }
+          sVar4 = read_realtime_clock_units();
+          DAT_001005e8 = (sVar4 - (short)DAT_001005f0) + DAT_001005e8;
+          DAT_001005f0 = read_realtime_clock_units();
+          if (DAT_001005e8 < 0x11) {
+            return;
+          }
+          do {
+            DAT_00100614 = DAT_00100614 + *(char *)(pRecord + 4);
+            if (100 < DAT_00100614) {
+              DAT_00100614 = 100;
+            }
+            sVar4 = Ordinal_2005(0xc,DAT_00100614);
+            set_hud_status_value(3,sVar4 + 1);
+            iVar6 = (int)DAT_001005e8;
+            DAT_001005e8 = (short)(iVar6 + -0x10);
+          } while (0x10 < (iVar6 + -0x10) * 0x10000 >> 0x10);
+          return;
+        }
+        if (bVar2) {
+          return;
+        }
+      }
+      update_weapon_ready_hud_icon();
+      DAT_0010062c = 0;
+      DAT_00084f10 = 0xffff;
+    }
+    else if (((((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) && (iVar5 = (int)param_1, iVar5 != 0)) &&
+             (DAT_000870e4 == -1)) &&
+            (DAT_00100618 = param_1, sVar4 = resolve_equipped_weapon_attack(&DAT_001005e4,&DAT_001005e0), -1 < sVar4))
+    {
+      if (sVar4 == 0) {
+        DAT_00100618 = -1;
+      }
+      DAT_001005ec = (uint)(sVar4 == 0);
+      bVar1 = (&DAT_00084eff)[iVar5];
+      DAT_0010062c = (short)(-1 - (uint)bVar1);
+      iVar5 = Ordinal_2005(3,iVar5);
+      DAT_00084f10 = (ushort)(byte)(&DAT_00084f0b)[iVar5];
+      set_hud_status_value(8,-1 - (-1 - (uint)bVar1));
+      set_hud_status_value(3,1);
+      DAT_001005e8 = -1;
+      DAT_00100614 = 0;
+    }
+  }
+  return;
 }

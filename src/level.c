@@ -311,7 +311,7 @@ undefined4 param_2;
   int iVar2;
   int iVar3;
 
-  FUN_00027694();
+  cancel_weapon_swing();
   if ((g_cursor_holding_state == 2) && (g_selected_object != 0)) {
     g_cursor_holding_state = 0;
     g_selected_object = 0;

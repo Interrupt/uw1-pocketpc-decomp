@@ -313,7 +313,7 @@ void sync_player_stats_to_hud()
   byte bVar2;
   uint uVar3;
   
-  FUN_00027708(0);
+  tick_weapon_swing_state(0);
   bVar2 = *(byte *)((char *)g_player_object + 8);
   set_hud_status_value(0,bVar2);
   if (((uint)DAT_001013a4 < (uint)*(byte *)((char *)g_player_object + 0x11) * 4) ||
@@ -2982,7 +2982,7 @@ void handle_starvation_penalty()
   grant_experience_points((int)((uint)(*(uint3 *)(DAT_00086df8 + 0x4e) >> 3) * -0x10000) >> 0x10);
   full_dungeon_redraw();
   FUN_000411b8(5);
-  FUN_00027694();
+  cancel_weapon_swing();
   if (g_selected_object != 0) {
     if ((g_cursor_holding_state == 1) || (g_cursor_holding_state == 0)) {
       drop_object_near_target(g_player_object,g_selected_object,6,0);

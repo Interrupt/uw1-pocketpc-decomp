@@ -1404,7 +1404,7 @@ undefined4 process_melee_attack_swing()
 // param_1 was `int *` -- every store through it (`&DAT_002027d0 +
 // iVar5`, `&DAT_00202800 + ...`, `&DAT_00202878`) is a real static-
 // global address explicitly cast down to `(int)`/`(intptr_t)`,
-// truncating it on this 64-bit host before the caller (FUN_00027708)
+// truncating it on this 64-bit host before the caller (tick_weapon_swing_state)
 // reads it back and dereferences it as a pointer. param_2 had the
 // same problem one level removed: it points at DAT_001005e0 (a real
 // `char *`), but was declared `undefined4 *` (4 bytes), so `*param_2 =
@@ -1466,7 +1466,7 @@ char * * param_2;
 // these same globals.
 //
 // param_1/param_2 were `int` -- both real object-record pointers
-// (FUN_00027708 passes the now-fixed DAT_001005e4-derived pointer and
+// (tick_weapon_swing_state passes the now-fixed DAT_001005e4-derived pointer and
 // DAT_001005e0, both `char *`), truncated to 32 bits on this 64-bit
 // host before being dereferenced here and forwarded to resolve_object_variant_or_special_link
 // (which already declares its own params as real pointers).

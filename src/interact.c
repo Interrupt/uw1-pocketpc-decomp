@@ -226,7 +226,7 @@ void interact_attack()
   if (iVar4 * 0x10000 >> 0x10 < 2) {
     iVar4 = 2;
   }
-  FUN_00027708(iVar4 + 1);
+  tick_weapon_swing_state(iVar4 + 1);
   return;
 }
 

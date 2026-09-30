@@ -645,14 +645,14 @@ void main_loop_hud_flush()
   if (DAT_00201c84 != 0) {
     dispatch_sticky_mode_handlers();
   }
-  /* HACK: drive the attack-swing state machine (FUN_00027708) every
+  /* HACK: drive the attack-swing state machine (tick_weapon_swing_state) every
      main-loop tick. Its own body is a real, correct state machine
      (wind-up -> resolve-impact -> follow-through -> return-to-idle,
      gated on DAT_0010062c/DAT_000870e4 and a real-elapsed-time
      accumulator read via read_realtime_clock_units()), but interact_attack only
      ever calls it ONCE, with a nonzero param_1, to arm the swing
      (DAT_0010062c set to a negative wind-up countdown). Nothing else
-     in the normal per-tick path calls FUN_00027708(0) to let that
+     in the normal per-tick path calls tick_weapon_swing_state(0) to let that
      countdown actually progress -- its only two "continue" (param_1==0)
      call sites are one-shot level-load/save-load edge cases, not a
      per-frame driver. Confirmed live: a real attack arms correctly
@@ -660,14 +660,14 @@ void main_loop_hud_flush()
      then sits frozen forever, since nothing ever asks it to advance
      past that point. Matches this same file's DAT_00085668 per-frame
      dispatch table being link-time data Ghidra couldn't recover (see
-     its own comment) -- FUN_00027708(0) was almost certainly one of
+     its own comment) -- tick_weapon_swing_state(0) was almost certainly one of
      that table's real entries originally. Calling it here is cheap
      when idle (a couple of int compares) and exactly mirrors the
      already-fixed render_dungeon_frame_timed hack above. Set
      UW_NO_FORCE_SWING_TICK to restore the (broken) original behaviour. */
   { static int _swing_tick = -1;
     if (_swing_tick < 0) _swing_tick = (getenv("UW_NO_FORCE_SWING_TICK") == NULL);
-    if (_swing_tick) FUN_00027708(0);
+    if (_swing_tick) tick_weapon_swing_state(0);
   }
   { unsigned int _t1 = 0, _t2 = 0;
     if (_dbg_hf) _t1 = read_realtime_clock_units() * 4;

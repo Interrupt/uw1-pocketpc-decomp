@@ -16,7 +16,7 @@
 // was FUN_0003ff10 -- enters combat stance: readies the weapon in the
 // player's hand (called from handle_object_drop_target when the
 // weapon-hand paperdoll slot is clicked, via toggle_weapon_ready), sets
-// flags5f bit 2 (FUN_00027708's attack-swing "start new swing" gate)
+// flags5f bit 2 (tick_weapon_swing_state's attack-swing "start new swing" gate)
 // and requests advance_action_animation_frame raise the weapon
 // (DAT_0023c120 = 4).
 void ready_weapon()
@@ -102,7 +102,7 @@ void unready_weapon()
       mode_icon_highlight_off(2);
     }
     g_cursor_mode = 0;
-    FUN_00027694();
+    cancel_weapon_swing();
     pick_random_pending_music_track();
   }
   return;

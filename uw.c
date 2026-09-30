@@ -1655,7 +1655,7 @@ undefined1 DAT_002027d0_backing[256];
  undefined1 DAT_00202800_backing[65536];
 #define DAT_00202800 DAT_00202800_backing[0]
 undefined DAT_00202878;
-/* Was a lone `undefined` scalar (1 byte), but FUN_00027708 indexes it
+/* Was a lone `undefined` scalar (1 byte), but tick_weapon_swing_state indexes it
    as `(&DAT_00084eff)[iVar5]` with iVar5 = the swing's own attack-type
    value (3-9, from interact_attack's screen-position-to-3x3-grid
    mapping -- this is the real "attack from top/left/right/bottom
@@ -1677,8 +1677,8 @@ unsigned char DAT_00084eff_backing[12] = {
 #define DAT_00084eff DAT_00084eff_backing[0]
  undefined DAT_001007d5_backing[8192];
 #define DAT_001007d5 DAT_001007d5_backing[0]
-/* Was `undefined2` (unsigned short) -- every real use in FUN_00027708/
-   FUN_000275e0/FUN_0002764c/FUN_00027694 (the attack-swing state
+/* Was `undefined2` (unsigned short) -- every real use in tick_weapon_swing_state/
+   reset_weapon_swing_state/update_weapon_ready_hud_icon/cancel_weapon_swing (the attack-swing state
    machine) treats this as a signed negative countdown (assigned
    literal bit patterns like 0xfff6/-10, 0xfffb/-5, and compared with
    `< 0`, `< -4`, `< -9`, `< -10`). With an unsigned type, a stored
@@ -1696,7 +1696,7 @@ short DAT_000870e4;
 /* Was `undefined4` -- resolve_equipped_weapon_attack writes a real static-global address
    through this (via its own `int *param_1`, truncating with an
    explicit `(int)`/`(intptr_t)` cast at all 3 of its assignments), and
-   FUN_00027708 reads it back and dereferences it as a pointer
+   tick_weapon_swing_state reads it back and dereferences it as a pointer
    (`*(byte*)(iVar5+3)` etc.) once the attack-swing state machine
    reaches its "resolve impact" phase (DAT_000870e4==3). Confirmed live:
    right-clicking to start an attack in Combat mode crashes a few ticks
@@ -1709,12 +1709,12 @@ short DAT_001005e8;
 undefined DAT_001005f0;
 byte DAT_00100614;
 /* Was a lone `undefined` scalar, same bug as DAT_00084eff just above --
-   FUN_00027708 indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 =
+   tick_weapon_swing_state indexes it as `(&DAT_00084f0b)[iVar5]` with iVar5 =
    attack-type/3 (0-3), selecting which of a small set of swing
    animations (`DAT_00084f10`) to play. Recovered via Ghidra headless
    (0x84f0b, 5 bytes -- DAT_00084f10, the next real symbol, starts
    exactly 5 bytes later): 00 34 27 19 00. */
-static unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
+unsigned char DAT_00084f0b_backing[5] = {0x00,0x34,0x27,0x19,0x00};
 #define DAT_00084f0b DAT_00084f0b_backing[0]
 undefined DAT_00250658;
 undefined DAT_001007e1;
@@ -8335,190 +8335,6 @@ undefined4 param_1;
 
 
 
-void FUN_000275e0()
-
-{
-  DAT_0010062c = 0xfff6;
-  DAT_00084f10 = 0xffff;
-  set_hud_status_value(3,0);
-  g_cursor_holding_state = g_cursor_holding_state + -4;
-  FUN_00057cac(3);
-  set_hud_status_value(8,4);
-  DAT_001005ec = 0;
-  return;
-}
-
-
-
-void FUN_0002764c()
-
-{
-  undefined4 uVar1;
-  
-  uVar1 = 4;
-  if ((*(byte *)(DAT_00086df8 + 0x5f) & 2) == 0) {
-    uVar1 = 6;
-  }
-  set_hud_status_value(8,uVar1);
-  set_hud_status_value(3,0);
-  return;
-}
-
-
-
-void FUN_00027694()
-
-{
-  if ((DAT_001005ec != 0) && (DAT_00100618 == 0)) {
-    g_cursor_holding_state = g_cursor_holding_state + -4;
-    FUN_00057cac(3);
-  }
-  FUN_0002764c();
-  DAT_0010062c = 0;
-  DAT_00084f10 = 0xffff;
-  DAT_00100610 = 0xffff;
-  return;
-}
-
-
-
-void FUN_00027708(param_1)
-short param_1;
-
-{
-  byte bVar1;
-  bool bVar2;
-  ushort uVar3;
-  short sVar4;
-  int iVar5;
-  int iVar6;
-  undefined2 local_20 [2];
-  /* Was folded into `iVar5` (int) -- the pointer DAT_001005e4 now
-     carries (see its own fix) needs to stay a real 64-bit pointer
-     across this function's two dereference sites below (~17130 and
-     ~17180). iVar5 itself keeps its OTHER, disjoint int uses further
-     down (FUN_000571c0's result, and the whole "start a new swing"
-     else-if branch) -- those never run in the same call as these
-     dereferences, so they're left as plain int. */
-  char *pRecord;
-
-  if (((short)DAT_00084f10 < 1) || ((&DAT_00250658)[(short)DAT_00084f10] == '\0')) {
-    uVar3 = FUN_000575c4(local_20);
-    bVar2 = false;
-    if ((uVar3 & 2) == 0) goto LAB_00027754;
-  }
-  bVar2 = true;
-LAB_00027754:
-  pRecord = DAT_001005e4;
-  if (getenv("UW_DEBUG_COMBAT") && (param_1 != 0 || DAT_000870e4 != -1 || DAT_0010062c != 0)) {
-    fprintf(stderr, "[swing] param_1=%d flags5f=0x%x DAT_000870e4=%d DAT_0010062c=%d bVar2=%d pRecord=%p DAT_00100618=%d DAT_001005ec=%u DAT_001005e8=%d\n",
-            (int)param_1, (unsigned)*(byte *)(DAT_00086df8 + 0x5f), (int)DAT_000870e4,
-            (int)DAT_0010062c, (int)bVar2, (void *)pRecord, (int)DAT_00100618, DAT_001005ec, (int)DAT_001005e8);
-  }
-  if (DAT_0010062c < 1) {
-    if (DAT_0010062c < 0) {
-      if ((-1 < DAT_000870e4) || (-10 < DAT_0010062c)) {
-        if (6 < DAT_000870e4) {
-          return;
-        }
-        if (2 < DAT_000870e4) {
-          if (DAT_000870e4 != 3) {
-            if (DAT_000870e4 != 6) {
-              return;
-            }
-            if (DAT_0010062c < -9) {
-              return;
-            }
-            set_hud_status_value(3,0);
-            local_20[0] = Ordinal_2005(100,((int)(((uint)*(byte *)(pRecord + 5) -
-                                                  (uint)*(byte *)(pRecord + 3)) * 0x10000) >> 0x10) *
-                                           (uint)DAT_00100614);
-            DAT_00100614 = *(char *)(pRecord + 3) + (char)local_20[0];
-            *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) | 0xf;
-            DAT_001005fc = DAT_00100614;
-            compute_player_weapon_attack_stats(pRecord,DAT_001005e0,(int)DAT_00100618);
-            process_melee_attack_swing();
-            DAT_0010062c = 0xfff6;
-            return;
-          }
-          if (DAT_001005ec != 0) {
-            if ((!bVar2) && (-1 < DAT_00100618)) {
-              iVar5 = FUN_000571c0();
-              if (iVar5 != 0) {
-                FUN_0004a210(*DAT_001005e0 & 0xf);
-              }
-              FUN_000275e0();
-              return;
-            }
-            if (-1 < DAT_00100618) {
-              return;
-            }
-            set_hud_status_value(3,9);
-            DAT_00100618 = 0;
-            g_cursor_holding_state = g_cursor_holding_state + 4;
-            FUN_00057c5c(0x1075);
-            return;
-          }
-          if (!bVar2) {
-            if (DAT_0010062c < -4) {
-              return;
-            }
-            set_hud_status_value(8,-1 - DAT_0010062c);
-            DAT_0010062c = 0xfffb;
-            return;
-          }
-          *(byte *)(DAT_0023be74 + 0x1d) = *(byte *)(DAT_0023be74 + 0x1d) & 0xfa | 10;
-          if (DAT_001005e8 < 0) {
-            DAT_001005f0 = read_realtime_clock_units();
-            DAT_001005e8 = 0;
-            return;
-          }
-          sVar4 = read_realtime_clock_units();
-          DAT_001005e8 = (sVar4 - (short)DAT_001005f0) + DAT_001005e8;
-          DAT_001005f0 = read_realtime_clock_units();
-          if (DAT_001005e8 < 0x11) {
-            return;
-          }
-          do {
-            DAT_00100614 = DAT_00100614 + *(char *)(pRecord + 4);
-            if (100 < DAT_00100614) {
-              DAT_00100614 = 100;
-            }
-            sVar4 = Ordinal_2005(0xc,DAT_00100614);
-            set_hud_status_value(3,sVar4 + 1);
-            iVar6 = (int)DAT_001005e8;
-            DAT_001005e8 = (short)(iVar6 + -0x10);
-          } while (0x10 < (iVar6 + -0x10) * 0x10000 >> 0x10);
-          return;
-        }
-        if (bVar2) {
-          return;
-        }
-      }
-      FUN_0002764c();
-      DAT_0010062c = 0;
-      DAT_00084f10 = 0xffff;
-    }
-    else if (((((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0) && (iVar5 = (int)param_1, iVar5 != 0)) &&
-             (DAT_000870e4 == -1)) &&
-            (DAT_00100618 = param_1, sVar4 = resolve_equipped_weapon_attack(&DAT_001005e4,&DAT_001005e0), -1 < sVar4))
-    {
-      if (sVar4 == 0) {
-        DAT_00100618 = -1;
-      }
-      DAT_001005ec = (uint)(sVar4 == 0);
-      bVar1 = (&DAT_00084eff)[iVar5];
-      DAT_0010062c = (short)(-1 - (uint)bVar1);
-      iVar5 = Ordinal_2005(3,iVar5);
-      DAT_00084f10 = (ushort)(byte)(&DAT_00084f0b)[iVar5];
-      set_hud_status_value(8,-1 - (-1 - (uint)bVar1));
-      set_hud_status_value(3,1);
-      DAT_001005e8 = -1;
-      DAT_00100614 = 0;
-    }
-  }
-  return;
-}
 
 
 
@@ -16059,7 +15875,7 @@ int param_2;
         grant_experience_points(500);
       }
       *(undefined1 *)(param_1 + 0x12) = 0;
-      FUN_00027694();
+      cancel_weapon_swing();
       *(byte *)(param_1 + 0x15) = *(byte *)(param_1 + 0x15) & 0xe0 | 0x20;
       uVar2 = CONCAT11(*(undefined1 *)(param_1 + 0xc),*(undefined1 *)(param_1 + 0xb)) & 0xfff;
       *(char *)(param_1 + 0xb) = (char)uVar2;
