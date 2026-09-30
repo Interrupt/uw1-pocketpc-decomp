@@ -1552,7 +1552,7 @@ undefined4 param_2;
 // it as a deferred-target-click completion (otherwise); 0x114 calls
 // FUN_0003a398 (not yet named) when param_3!=0; 0x115 advances a
 // 3-state player counter (DAT_00086df8+0x61, wrapping) and triggers
-// an effect via FUN_00037c14 (not yet named), then rewrites the
+// an effect via display_book_or_scroll_page, then rewrites the
 // item's own low byte to 0xd5 and clears one bit of its high byte
 // before flushing a redraw (FUN_00049924 or FUN_00048110 depending
 // on param_3); 0x11b uses a food item directly. Confirmed real
@@ -1597,7 +1597,7 @@ int param_3;
       *(char *)(DAT_00086df8 + 0x62) = (char)(uVar3 >> 8);
       iVar4 = 3 - (*(byte *)(DAT_00086df8 + 0x61) & 3);
     }
-    FUN_00037c14(iVar4 + 0xb);
+    display_book_or_scroll_page(iVar4 + 0xb);
     uVar3 = *param_2;
     *(undefined1 *)param_2 = 0xd5;
     *(byte *)((char *)param_2 + 1) = (byte)(uVar3 >> 8) & 0xfe;
@@ -2006,7 +2006,7 @@ LAB_0007b8b8:
 // print_wrapped -- fixing a dropped-argument bug already documented
 // here -- when they have a real text id, or (for the "already
 // triggered" bit 0x400 case) fire a babl/effect trigger via
-// FUN_00037c14 instead. Anything else falls through to a generic
+// display_book_or_scroll_page instead. Anything else falls through to a generic
 // tile-effect trigger + finish_object_use. Confirmed real caller:
 // use_object_on_target's family-3 branch (src/item_use.c).
 void use_readable_item(param_1,param_2)
@@ -2057,7 +2057,7 @@ int param_2;
         }
       }
       else {
-        FUN_00037c14((param_1[3] >> 6 & 0x1ff) + 0x100);
+        display_book_or_scroll_page((param_1[3] >> 6 & 0x1ff) + 0x100);
       }
     }
     else {

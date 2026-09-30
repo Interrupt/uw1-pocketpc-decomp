@@ -2863,7 +2863,7 @@ undefined4 babl_render_op_say();
 undefined4 babl_render_op_play_sound();
 void babl_render_tick();
 void render_babl_dialog_window();
-void FUN_00037c14();
+void display_book_or_scroll_page();
 void FUN_00037d50();
 void FUN_00037d6c();
 undefined4 FUN_00037f1c();

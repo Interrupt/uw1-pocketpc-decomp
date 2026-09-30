@@ -6474,7 +6474,7 @@ int param_1;
 // was FUN_0003671c -- the main babl conversation/book-viewer window
 // renderer, shared by ordinary NPC dialogue AND the special
 // illustrated-book/scroll full-screen viewer (its only known caller,
-// FUN_00037c14, picks param_2..param_5 -- a style flag plus window
+// display_book_or_scroll_page, picks param_2..param_5 -- a style flag plus window
 // geometry -- based on whether the requested display id is a regular
 // text page (<0x100) or a picture page (>=0x100)). Runs its own
 // modal input-handling loop (next_input_event/read_realtime_clock_units
@@ -7127,4 +7127,69 @@ LAB_00037a94:
 LAB_00037a8c:
   Ordinal_553(local_74);
   goto LAB_00037a94;
+}
+
+
+// was FUN_00037c14 -- the general-purpose "display a numbered
+// text/scroll/picture page" entry point: for page ids under 0x100
+// (ordinary scroll/book text, or a few reserved control ids like 0
+// for greying out a main-menu item) picks fullscreen-ish window
+// geometry and plays a music cue for ids 1-3; for ids >= 0x100
+// (illustrated pictures) picks the smaller inset window geometry
+// instead. Sets g_text_use_palette_color for the duration of the draw
+// and delegates the actual rendering to render_babl_dialog_window.
+void display_book_or_scroll_page(param_1)
+uint param_1;
+
+{
+  uint uVar1;
+  undefined4 uVar2;
+  undefined4 unaff_r6;
+  undefined4 unaff_r7;
+  undefined2 unaff_r8;
+
+  uVar1 = param_1 & 0xffff;
+  if (uVar1 < 0x100) {
+    uVar2 = 0;
+    unaff_r6 = 199;
+    unaff_r7 = 0x140;
+    unaff_r8 = 200;
+  }
+  else {
+    uVar2 = 0x34;
+  }
+  g_text_use_palette_color = 1;
+  if (uVar1 >= 0x100) {
+    unaff_r6 = 0xb5;
+    unaff_r7 = 0xac;
+    unaff_r8 = 0x70;
+  }
+  if (((uVar1 == 1) || (uVar1 == 2)) || (uVar1 == 3)) {
+    play_music_track(4,1);
+  }
+  select_active_font(s_FONTBIG_SYS_00085454);
+  DAT_0024cfac = (short)param_1 + 0xc00;
+  FUN_00057118();
+  render_babl_dialog_window(param_1,uVar2,unaff_r6,unaff_r7,unaff_r8);
+  select_active_font(s_font5x6p_sys_0008430c);
+  if (DAT_00201c98 != 0) {
+    FUN_0005b36c();
+  }
+  if (uVar1 < 0x100) {
+    if (*(short *)(DAT_00085a6c + 8) == 1) {
+      change_game_mode(1);
+      goto LAB_00037d3c;
+    }
+    if (*(short *)(DAT_00085a6c + 8) == 0) goto LAB_00037d3c;
+    set_palette_bank(0);
+    uVar2 = 0x7ffe;
+  }
+  else {
+    uVar2 = 2;
+  }
+  FUN_00049924(uVar2);
+LAB_00037d3c:
+  cursor_show_idle_tick();
+  g_text_use_palette_color = 0;
+  return;
 }

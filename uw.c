@@ -54,7 +54,7 @@ char *g_font_glyph_data_base;
 // the palette index *g_draw_color_index; zero (the default -- nothing
 // else in this decompile ever sets it) uses the flat g_text_flat_color
 // instead. A reentrancy/mode flag set only around one unrelated dialog-
-// box drawing routine (FUN_00037c14), so callers elsewhere that want
+// box drawing routine (display_book_or_scroll_page), so callers elsewhere that want
 // palette-indexed text (e.g. draw_menu_item_list's highlighted save-slot
 // labels) must force it themselves for the duration of the draw.
 int g_text_use_palette_color;
@@ -9627,61 +9627,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_00037c14(param_1)
-uint param_1;
-
-{
-  uint uVar1;
-  undefined4 uVar2;
-  undefined4 unaff_r6;
-  undefined4 unaff_r7;
-  undefined2 unaff_r8;
-  
-  uVar1 = param_1 & 0xffff;
-  if (uVar1 < 0x100) {
-    uVar2 = 0;
-    unaff_r6 = 199;
-    unaff_r7 = 0x140;
-    unaff_r8 = 200;
-  }
-  else {
-    uVar2 = 0x34;
-  }
-  g_text_use_palette_color = 1;
-  if (uVar1 >= 0x100) {
-    unaff_r6 = 0xb5;
-    unaff_r7 = 0xac;
-    unaff_r8 = 0x70;
-  }
-  if (((uVar1 == 1) || (uVar1 == 2)) || (uVar1 == 3)) {
-    play_music_track(4,1);
-  }
-  select_active_font(s_FONTBIG_SYS_00085454);
-  DAT_0024cfac = (short)param_1 + 0xc00;
-  FUN_00057118();
-  render_babl_dialog_window(param_1,uVar2,unaff_r6,unaff_r7,unaff_r8);
-  select_active_font(s_font5x6p_sys_0008430c);
-  if (DAT_00201c98 != 0) {
-    FUN_0005b36c();
-  }
-  if (uVar1 < 0x100) {
-    if (*(short *)(DAT_00085a6c + 8) == 1) {
-      change_game_mode(1);
-      goto LAB_00037d3c;
-    }
-    if (*(short *)(DAT_00085a6c + 8) == 0) goto LAB_00037d3c;
-    set_palette_bank(0);
-    uVar2 = 0x7ffe;
-  }
-  else {
-    uVar2 = 2;
-  }
-  FUN_00049924(uVar2);
-LAB_00037d3c:
-  cursor_show_idle_tick();
-  g_text_use_palette_color = 0;
-  return;
-}
 
 
 
@@ -9753,7 +9698,7 @@ undefined4 param_4;
   iVar9 = Ordinal_553(iVar3);
   if ((((((iVar3 != -1 && iVar4 != -1) && iVar5 == 2) && iVar6 == 2) && iVar7 != -1) && iVar8 == 2)
       && iVar9 != 0) {
-    FUN_00037c14(param_1);
+    display_book_or_scroll_page(param_1);
   }
   return;
 }
@@ -11044,7 +10989,7 @@ void FUN_0003a5ec()
 
 {
   scheduler_tick(4);
-  FUN_00037c14(3);
+  display_book_or_scroll_page(3);
   return;
 }
 
@@ -11074,7 +11019,7 @@ void FUN_0003a654()
                        then as tilemap_lookup's real `void *` return below;
                        intptr_t is safe for both */
 
-  FUN_00037c14(2);
+  display_book_or_scroll_page(2);
   iVar4 = 9;
   uVar1 = *(undefined2 *)(DAT_00086df8 + 0x6e);
   *(byte *)(DAT_00086df8 + 0x6e) = (byte)uVar1 | 4;
@@ -11332,7 +11277,7 @@ int param_3;
       return;
     }
   }
-  FUN_00037c14(0x104);
+  display_book_or_scroll_page(0x104);
   iVar2 = FUN_0003a99c(param_1,param_2,local_6c);
   if (param_3 == 0) {
     if ((short)iVar2 == -2) {
@@ -11960,7 +11905,7 @@ void FUN_0003bb60()
   do {
     sVar1 = next_input_event();
   } while (3 < sVar1);
-  FUN_00037c14(9);
+  display_book_or_scroll_page(9);
   return;
 }
 
@@ -12149,7 +12094,7 @@ short param_1;
     snap_compass_to_heading();
     hud_vitals_threshold_shake(0);
     message_scroll_print_wrapped(s_You_died_000857b8);
-    FUN_00037c14(0x103);
+    display_book_or_scroll_page(0x103);
     Ordinal_496(2000);
   }
   do {
@@ -17671,7 +17616,7 @@ short param_2;
         message_scroll_print_wrapped(puVar5);
       }
       else {
-        FUN_00037c14((param_1[3] >> 6 & 0x1ff) + 0x100);
+        display_book_or_scroll_page((param_1[3] >> 6 & 0x1ff) + 0x100);
       }
     }
   }
