@@ -98,12 +98,12 @@ char *param_3;
     iVar4 = *(int *)(pcVar_rec + 6);
     pcVar_name = (char *)&DAT_000fb8f0 + iVar4;
     screen_backup_save((int)uVar15,(int)(uVar15 >> 0x20));
-    FUN_00035df8(1);
+    chargen_ui_transition_hook(1);
     DAT_000fb858 = DAT_001005c8;
     // Redraws the raw parchment background (both pages, 0,0 to 320,200) from scratch every loop iteration -- this is the mechanism that clears stale text from the *right* page between prompts (confirmed: disabling it leaves old prompt text visibly bleeding through under new prompt text). As a side effect it also wipes any stats text the previous iteration's switch-case drew on the left page. Confirmed present in the real ARM disassembly at this exact spot, in this exact order relative to the fill below -- not a decompilation bug.
     bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
     cursor_show_idle_tick();
-    FUN_00035df8(0);
+    chargen_ui_transition_hook(0);
     DAT_000fb858 = DAT_001005c4;
     FUN_00057118();
     set_draw_color(0x1a);
@@ -124,13 +124,13 @@ char *param_3;
       local_64[0] = 0;
       memset(local_5c_buf + 4, 0x14, 6);
       DAT_001005c0 = 0;
-      FUN_00035df8(1);
+      chargen_ui_transition_hook(1);
       DAT_000fb858 = DAT_001005c8;
       bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
 LAB_00025468:
       sVar8 = 0;
       cursor_show_idle_tick();
-      FUN_00035df8(0);
+      chargen_ui_transition_hook(0);
       DAT_000fb858 = DAT_001005c4;
       uVar15 = screen_backup_save();
     }
@@ -204,7 +204,7 @@ LAB_00025468:
         g_blit_transparent_mode = 1;
         iVar14 = *(int *)(&DAT_000fb8c4 + ((*(byte *)(DAT_00086df8 + 100) >> 1 & 1) * 5 + uVar1) * 4
                          );
-        FUN_00035df8(0);
+        chargen_ui_transition_hook(0);
         DAT_000fb858 = DAT_001005c4;
         /* iVar14 is chrbtns.gr's cumulative offset for the chosen body
            figure (entry 17 + sexbit*5 + portraitIdx) -- now that
@@ -271,7 +271,7 @@ LAB_00025468:
           local_64[0] = 0;
           memset(local_5c_buf + 4, 0x14, 6);
           DAT_001005c0 = 0;
-          FUN_00035df8(1);
+          chargen_ui_transition_hook(1);
           DAT_000fb858 = DAT_001005c8;
           bitmap_blit_to_framebuffer(0,0,DAT_001005c8,200,0x140,0,0,1);
           goto LAB_00025468;
@@ -283,7 +283,7 @@ LAB_00025468:
     if (7 < sVar8) {
       uVar10 = get_message_string(0x300);
       FUN_00057118();
-      FUN_00035df8(1);
+      chargen_ui_transition_hook(1);
       DAT_000fb858 = DAT_001005c8;
       screen_backup_restore();
       bitmap_blit_to_framebuffer(0,0,DAT_000fb858,200,0x140,0,0,1);
@@ -336,7 +336,7 @@ int run_character_generator()
   undefined2 uVar10;
   char acStack_128 [260];
   
-  FUN_00035dd8();
+  reset_dialogue_speech_state();
   DAT_001005c4 = Ordinal_1041(0x10000);
   DAT_001005c8 = Ordinal_1041(0x10000);
   iVar4 = DAT_001005c4;
@@ -408,7 +408,7 @@ int run_character_generator()
           select_active_font(s_FONTCHAR_SYS_00084ec0);
           *g_draw_color_index = 0x49;
           *DAT_00084298 = 0x49;
-          FUN_00035df8(1);
+          chargen_ui_transition_hook(1);
           iVar4 = DAT_001005c8;
           pcVar_palbuf = DAT_001005c8 + 64000;
           Ordinal_1047(acStack_128,0,0x104);
@@ -429,7 +429,7 @@ int run_character_generator()
               FUN_0005b36c();
             }
             if (iVar4 == 0) {
-              FUN_00035df8(1);
+              chargen_ui_transition_hook(1);
             }
             thunk_FUN_0007ec1c();
             if (DAT_001005c4 != 0) {
@@ -767,12 +767,12 @@ void draw_selected_skills_list()
 
   set_draw_color(0x1a);
   rect_fill_or_save_restore(0x1e,0x85,0x7d,0xbc);
-  FUN_00035df8(1);
+  chargen_ui_transition_hook(1);
   DAT_000fb858 = DAT_001005c8;
   blit_bitmap_to_framebuffer_clipped(0x1e,0x85,DAT_001005c8,0x37,0x5f,0x1e,0x85,1);
   screen_backup_save();
   cursor_show_idle_tick();
-  FUN_00035df8(0);
+  chargen_ui_transition_hook(0);
   DAT_000fb858 = DAT_001005c4;
   iVar4 = 0;
   iVar2 = 0;
@@ -962,7 +962,7 @@ short * param_1;
   else {
     pcVar_off = DAT_000fb858 + (&DAT_000fb880)[param_1[6]];
     sVar7 = *param_1;
-    FUN_00035df8(0);
+    chargen_ui_transition_hook(0);
     DAT_000fb858 = DAT_001005c4;
     iVar10 = 0x14;
     /* DAT_000fb880 (indexed by param_1[6], a race/portrait-style
@@ -1040,7 +1040,7 @@ short * param_1;
   }
   if (*(int *)(param_1 + 3) != 0) {
     g_blit_transparent_mode = 0;
-    FUN_00035df8(0);
+    chargen_ui_transition_hook(0);
     DAT_000fb858 = DAT_001005c4;
     if (0 < param_1[5]) {
       local_28 = 0;
@@ -1183,7 +1183,7 @@ byte param_3;
         iVar6 = (int)local_28;
         iVar7 = *(int *)(&DAT_000fb884 + (iVar9 + param_1[6]) * 4);
         FUN_00057118();
-        FUN_00035df8(0);
+        chargen_ui_transition_hook(0);
         DAT_000fb858 = DAT_001005c4;
         g_blit_transparent_mode = 1;
         bitmap_blit_to_framebuffer((int)sVar_rem * ((int)sVar4 + (uint)bVar2) + iVar6,
@@ -1533,7 +1533,7 @@ LAB_00024dd4:
     else {
       pcVar_off = (&DAT_000fb880)[param_1[6]] + DAT_000fb858;
       sVar5 = *param_1;
-      FUN_00035df8(0);
+      chargen_ui_transition_hook(0);
       iVar9 = 0x14;
       if ((sVar5 != 0) == 0) {
         iVar9 = 0;
@@ -1610,4 +1610,19 @@ LAB_00024dd4:
     *(undefined1 *)(g_chargen_textfield_buf + uVar13) = 0;
   }
   return uVar10;
+}
+
+
+// was FUN_00035df8 -- takes no parameters and its decompiled body
+// takes no action, yet every call site in src/chargen.c passes a 0/1
+// flag at UI-transition points (screen changes, button
+// presses/releases). Left un-asserted whether this is a genuine
+// no-op in the real binary (e.g. an instrumentation hook compiled out
+// of this build) or a decompilation gap -- not confirmed via
+// disassembly. Kept as-is, matching its real (argument-less) decompiled
+// signature.
+void chargen_ui_transition_hook()
+
+{
+  return;
 }

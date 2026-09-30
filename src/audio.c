@@ -1181,3 +1181,18 @@ void clear_ambient_sound_target()
 
 
 
+
+
+// was FUN_00035dd8 -- clears the current ambient sound target and
+// resets DAT_00101960 (the talking-portrait mouth-frame cycle count,
+// confirmed via its use a few thousand lines below in the babl
+// conversation-rendering loop, which wraps a frame counter at this
+// value) to its default of 3. Called once at the start of
+// character-generation's intro speech sequence.
+undefined4 reset_dialogue_speech_state()
+
+{
+  clear_ambient_sound_target();
+  DAT_00101960 = 3;
+  return 3;
+}

@@ -1841,6 +1841,7 @@ extern char DAT_0010194c; // last attacker's object slot index
 extern char DAT_000853d0; // last attacker's class id
 extern int DAT_00101940; // game-clock timestamp the attack was recorded at
 extern byte DAT_0010195c; // current noise type/volume, set by emit_noise_alert
+extern undefined2 DAT_00101960; // talking-portrait mouth-frame cycle count, reset by reset_dialogue_speech_state
 extern ushort *DAT_00101958; // current noise source object, set by emit_noise_alert
 extern char s_named_00085d18[];
 /* Globals defined in uw.c but also used by functions that now live in
@@ -2833,8 +2834,8 @@ void save_last_attacker_record();
 void clear_last_attacker_record();
 undefined4 alert_npc_to_noise_callback();
 void emit_noise_alert();
-undefined4 FUN_00035dd8();
-void FUN_00035df8();
+undefined4 reset_dialogue_speech_state();
+void chargen_ui_transition_hook();
 void thunk_FUN_0007ec1c();
 void FUN_00035e00();
 undefined2 FUN_00035ec4();
