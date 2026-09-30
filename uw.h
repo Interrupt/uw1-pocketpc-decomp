@@ -2626,7 +2626,7 @@ undefined4 FUN_0002de40();
 undefined4 FUN_0002df2c();
 void FUN_0002e104();
 undefined4 FUN_0002e3b4();
-void FUN_0002e454();
+void npc_set_walk_target();
 void npc_walk_toward_tile();
 void FUN_0002ee80();
 void FUN_0002efa0();

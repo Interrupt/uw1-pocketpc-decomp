@@ -14627,7 +14627,9 @@ int param_2;
 
 
 
-void FUN_0002e454(param_1,param_2,param_3)
+// was npc_set_walk_target -- write an NPC's goal (byte 0xf bits 0-5), goal target
+// (bits 6-11) and attitude (byte 0xd bits 4-7), flagging the change in byte 0x18
+void npc_set_walk_target(param_1,param_2,param_3)
 byte param_1;
 uint param_2;
 byte param_3;
@@ -15077,7 +15079,7 @@ LAB_0002fe88:
       cVar3 = FUN_00032180(local_17,&local_18);
       if (cVar3 == '\0') {
         *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
-        FUN_0002e454(local_17[0],local_18,DAT_00101420);
+        npc_set_walk_target(local_17[0],local_18,DAT_00101420);
         goto LAB_0002fe88;
       }
       if ((cVar3 != '\x01') && (cVar3 == '\x02')) {
@@ -15193,7 +15195,7 @@ LAB_00030984:
           goto LAB_00030984;
         }
       }
-      FUN_0002e454(local_10 & 0xff,local_c & 0xff,DAT_00101420);
+      npc_set_walk_target(local_10 & 0xff,local_c & 0xff,DAT_00101420);
     }
   }
 LAB_000309a0:
@@ -15873,7 +15875,7 @@ LAB_000339fc:
             cVar4 = '\x01';
           }
           npc_set_goal(5,cVar4);
-          FUN_0002e454(DAT_0010192c,DAT_00101930,DAT_00101934);
+          npc_set_walk_target(DAT_0010192c,DAT_00101930,DAT_00101934);
         }
       }
       cVar4 = *(char *)((char *)DAT_0010190c + 0x12);
@@ -15902,7 +15904,7 @@ LAB_000339fc:
             uVar11 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0x3fff;
             *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar11;
             *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
-            FUN_0002e454(*(ushort *)((char *)g_player_object + 0x16) >> 10,
+            npc_set_walk_target(*(ushort *)((char *)g_player_object + 0x16) >> 10,
                          *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
                          *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
             *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
@@ -16887,7 +16889,7 @@ ushort * param_3;
             *(char *)(param_3 + 1) = (char)uVar9;
             *(char *)((char *)param_3 + 3) = (char)(uVar9 >> 8);
             *(byte *)((char *)param_3 + 0x19) = *(byte *)((char *)param_3 + 0x19) | 1;
-            FUN_0002e454(*(ushort *)((char *)g_player_object + 0x16) >> 10,
+            npc_set_walk_target(*(ushort *)((char *)g_player_object + 0x16) >> 10,
                          *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
                          *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
             DAT_00101950 = 1;

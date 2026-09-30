@@ -336,7 +336,7 @@ undefined1 param_3;
   
   local_3c = 0;
   local_38 = 0;
-  FUN_0002e454(param_1);
+  npc_set_walk_target(param_1);
   if (((*(byte *)((char *)DAT_0010190c + 0x18) & 0x20) != 0) &&
      ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0)) {
     DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
