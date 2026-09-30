@@ -1579,7 +1579,7 @@ undefined4 FUN_0001a1c8()
          immediately -- this is why every NPC conversation this session
          (bug-critter-talk.txt's Bragit, with a real CNV.ARK record) never
          printed a line or showed a menu: the interpreter always aborted
-         after its first real instruction, before FUN_00028ffc's menu loop
+         after its first real instruction, before run_babl_menu_wait_loop's menu loop
          or any print builtin ever ran, so control fell straight back to
          change_game_mode(1) (dungeon view) while the conversation frame
          was still on screen -- the reported "dialog area not rendered,
@@ -2217,7 +2217,7 @@ void FUN_000286cc()
       return;
     }
   }
-  FUN_00028bac();
+  exit_talk_mode();
   return;
 }
 
@@ -2398,7 +2398,7 @@ void start_npc_conversation()
    against the real disassembly; every global/helper this calls
    (DAT_00100790/794/78c/788, DAT_001006d8/100680/1007a0/100770,
    babl_alloc, babl_expand_string_refs, message_scroll_print_wrapped,
-   FUN_00028ffc, etc.) is the exact same shared struct/state babl_fmenu
+   run_babl_menu_wait_loop, etc.) is the exact same shared struct/state babl_fmenu
    already uses successfully -- placed here, after babl_fmenu, so those
    are already declared. */
 int babl_menu(param_1)
@@ -2418,7 +2418,7 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
      in this cluster. Confirmed live via lldb: this is the crash one
      step past babl_menu's own `param_1` truncation fix. Widened to
      intptr_t and `* 8` throughout (also fixed in babl_fmenu just below
-     and its two other readers, FUN_00028ffc/FUN_000295b4). */
+     and its two other readers, run_babl_menu_wait_loop/FUN_000295b4). */
   intptr_t uVar7;
   intptr_t iVar8;
   intptr_t iVar9;
@@ -2550,7 +2550,7 @@ intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builti
   select_msg_scroll_mode_normal();
   DAT_0010078c = 1;
   DAT_00250718 = 1;
-  FUN_00028ffc();
+  run_babl_menu_wait_loop();
   return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
 }
 
@@ -5671,4 +5671,84 @@ LAB_0001ad98:
     }
     iVar4 = iVar4 + 0x20;
   } while( true );
+}
+
+
+// was FUN_00028bac -- the game-mode dispatch table's mode-exit handler
+// for mode 2 (Talk/conversation, see the table entry at uw.c ~2595):
+// frees a conditionally-held resource, ends barter UI if one was open,
+// restores the HUD panel, resumes ambient music selection, and resets
+// the message scroll mode -- the cleanup that runs on leaving a
+// conversation.
+void exit_talk_mode()
+
+{
+  if (DAT_00100784 != 0) {
+    Ordinal_1018();
+    DAT_00100784 = 0;
+  }
+  if (DAT_001006d0 != 0) {
+    end_barter_ui();
+  }
+  pick_random_pending_music_track();
+  g_active_hud_panel = DAT_00100678;
+  select_msg_scroll_mode_normal();
+  return;
+}
+
+
+
+// was FUN_00028ffc -- the babl conversation menu's idle-tick wait loop:
+// re-runs the same numbered-choice-list redraw babl_menu itself builds
+// (same "4 contiguous stack locals" layout, per its own comment) every
+// idle tick while waiting for the player to click a response, pumping
+// music/sticky-mode handlers and input in between.
+void run_babl_menu_wait_loop()
+
+{
+  char cVar1;
+  char *pcVar3;
+  char *pcVar5;
+  int iVar4;
+  /* Same "4 separate stack locals relied on being one contiguous
+     buffer" fix as babl_menu's own comment (uw.c ~19505) -- this is
+     the SAME menu redraw, just re-run every idle tick while waiting
+     for the player's click, so it has the identical bug. */
+  char local_bc [160];
+
+  while (DAT_0010078c != 0) {
+    flush_dirty_rect_to_display(1);
+    advance_menu_music_track();
+    if (DAT_00201c84 != 0) {
+      dispatch_sticky_mode_handlers();
+    }
+    if (DAT_00250718 == 0) {
+      wait_for_click_to_continue(500,0);
+      select_msg_scroll_mode_2();
+      msg_scroll_panel_reset(1);
+      if (1 < DAT_00100794) {
+        iVar4 = 1;
+        do {
+          pcVar3 = *(char **)(&DAT_00100680 + iVar4 * 8);
+          local_bc[0] = (undefined1)((uint)((iVar4 + 0x30) * 0x1000000) >> 0x18);
+          local_bc[1] = 0x2e;
+          local_bc[2] = 0x20;
+          pcVar5 = local_bc + 3;
+          do {
+            cVar1 = *pcVar3;
+            pcVar3 = pcVar3 + 1;
+            *pcVar5 = cVar1;
+            pcVar5 = pcVar5 + 1;
+          } while (cVar1 != '\0');
+          Ordinal_1063(local_bc,&s_scroll_newline_0008522c);
+          message_scroll_print_wrapped(local_bc);
+          iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
+        } while (iVar4 < DAT_00100794);
+      }
+      select_msg_scroll_mode_normal();
+      DAT_00250718 = 1;
+    }
+    poll_input_bindings(DAT_00085a6c);
+  }
+  return;
 }

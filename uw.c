@@ -2592,7 +2592,7 @@ static void (*const DAT_00085668_real_table[48])(void) = {
   (void(*)(void))FUN_000286cc, 0, 0, 0,
   0, 0, 0, 0,
   0, 0, 0, 0,
-  0, 0, 0, (void(*)(void))FUN_00028bac,
+  0, 0, 0, (void(*)(void))exit_talk_mode,
 };
 #define DAT_00085668_backing ((undefined1 *)DAT_00085668_real_table)
 #define DAT_00085668 DAT_00085668_backing[0]
@@ -8356,73 +8356,6 @@ undefined4 param_1;
 
 
 
-void FUN_00028bac()
-
-{
-  if (DAT_00100784 != 0) {
-    Ordinal_1018();
-    DAT_00100784 = 0;
-  }
-  if (DAT_001006d0 != 0) {
-    end_barter_ui();
-  }
-  pick_random_pending_music_track();
-  g_active_hud_panel = DAT_00100678;
-  select_msg_scroll_mode_normal();
-  return;
-}
-
-
-
-void FUN_00028ffc()
-
-{
-  char cVar1;
-  char *pcVar3;
-  char *pcVar5;
-  int iVar4;
-  /* Same "4 separate stack locals relied on being one contiguous
-     buffer" fix as babl_menu's own comment (uw.c ~19505) -- this is
-     the SAME menu redraw, just re-run every idle tick while waiting
-     for the player's click, so it has the identical bug. */
-  char local_bc [160];
-
-  while (DAT_0010078c != 0) {
-    flush_dirty_rect_to_display(1);
-    advance_menu_music_track();
-    if (DAT_00201c84 != 0) {
-      dispatch_sticky_mode_handlers();
-    }
-    if (DAT_00250718 == 0) {
-      wait_for_click_to_continue(500,0);
-      select_msg_scroll_mode_2();
-      msg_scroll_panel_reset(1);
-      if (1 < DAT_00100794) {
-        iVar4 = 1;
-        do {
-          pcVar3 = *(char **)(&DAT_00100680 + iVar4 * 8);
-          local_bc[0] = (undefined1)((uint)((iVar4 + 0x30) * 0x1000000) >> 0x18);
-          local_bc[1] = 0x2e;
-          local_bc[2] = 0x20;
-          pcVar5 = local_bc + 3;
-          do {
-            cVar1 = *pcVar3;
-            pcVar3 = pcVar3 + 1;
-            *pcVar5 = cVar1;
-            pcVar5 = pcVar5 + 1;
-          } while (cVar1 != '\0');
-          Ordinal_1063(local_bc,&s_scroll_newline_0008522c);
-          message_scroll_print_wrapped(local_bc);
-          iVar4 = (iVar4 + 1) * 0x10000 >> 0x10;
-        } while (iVar4 < DAT_00100794);
-      }
-      select_msg_scroll_mode_normal();
-      DAT_00250718 = 1;
-    }
-    poll_input_bindings(DAT_00085a6c);
-  }
-  return;
-}
 
 
 
@@ -8525,7 +8458,7 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own
   select_msg_scroll_mode_normal();
   DAT_0010078c = 1;
   DAT_00250718 = 1;
-  FUN_00028ffc();
+  run_babl_menu_wait_loop();
   return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
 }
 

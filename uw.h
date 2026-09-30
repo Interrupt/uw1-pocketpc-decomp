@@ -754,6 +754,7 @@ extern char * DAT_00100728_backing[256];
 extern short DAT_00100770_backing[32768];
 #define DAT_00100770 DAT_00100770_backing[0]
 extern char * DAT_00100784;
+extern short DAT_001006d0;
 extern short DAT_00100788;
 extern short DAT_0010078c;
 extern undefined2 DAT_00100790;
@@ -2658,9 +2659,9 @@ bool is_object_consumed_in_combination();
 undefined4 check_offering_container_puzzle();
 void attempt_talk_interaction();
 void FUN_000286cc();
-void FUN_00028bac();
+void exit_talk_mode();
 void start_npc_conversation();
-void FUN_00028ffc();
+void run_babl_menu_wait_loop();
 int babl_menu(); // was LAB_0002912c, a no-op stub -- see its own comment in uw.c next to FUN_00029358 (babl_fmenu)
 int FUN_00029358();
 void FUN_000295b4();
