@@ -2637,7 +2637,7 @@ void reset_weapon_swing_state();
 void update_weapon_ready_hud_icon();
 void cancel_weapon_swing();
 void tick_weapon_swing_state();
-void FUN_00027b3c();
+void apply_direct_object_hit();
 int FUN_00027ce0();
 void FUN_00027f14();
 void FUN_00028004();

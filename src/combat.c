@@ -1521,3 +1521,58 @@ short param_3;
   }
   return;
 }
+
+
+// was FUN_00027b3c -- a general-purpose "attacker object directly hits
+// target object" damage-application entry point (parallel to, but
+// independent of, the player's own tick_weapon_swing_state chain):
+// fills in the same globals resolve_combat_hit_zone/apply_melee_damage
+// read (attacker type param_1, target slot from param_3,
+// resolve_combat_hit_zone's own hit-zone roll from both objects'
+// hitbox-span data, damage dice param_6), plays an impact sound, then
+// calls apply_melee_damage(param_7). Its one confirmed real caller
+// (uw.c ~28596, a thrown/ranged-weapon-family impact handler) passes a
+// negative param_7 and a skill-check-scaled damage roll, suggesting
+// this is also the shared path for ranged/thrown projectile impacts,
+// not just melee.
+void apply_direct_object_hit(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+undefined2 param_1;
+ushort * param_2;
+ushort * param_3;
+undefined2 param_4;
+undefined2 param_5;
+undefined2 param_6;
+undefined1 param_7;
+
+{
+  short sVar1;
+  uint uVar2;
+  int iVar3;
+  uint uVar4;
+  
+  DAT_00100604 = param_5;
+  DAT_001005d8 = 0;
+  DAT_00100628 = 0;
+  DAT_001005dc = ((byte)param_2[1] & 0x7f) + ((byte)(&DAT_00202c90)[(*param_2 & 0x1ff) * 0xd] >> 1);
+  DAT_001005fc = 0x80;
+  DAT_00100600 = param_4;
+  DAT_00100610 = param_1;
+  DAT_00100620 = encode_object_slot_index(param_3);
+  uVar4 = (byte)param_2[1] & 0x7f;
+  uVar2 = (byte)param_3[1] & 0x7f;
+  sVar1 = resolve_combat_hit_zone(uVar2,(byte)(&DAT_00202c90)[(*param_3 & 0x1ff) * 0xd] + uVar2,uVar4,
+                       (byte)(&DAT_00202c90)[(*param_2 & 0x1ff) * 0xd] + uVar4);
+  DAT_00100624 = sVar1 + 4;
+  DAT_0010061c = param_6;
+  if (param_3 == g_player_object) {
+    play_sound_effect_with_pan(3,0,0);
+  }
+  else {
+    iVar3 = object_ptr_in_arena(param_3);
+    if (iVar3 != 0) {
+      play_sound_effect_at_object(4,param_3,0);
+    }
+  }
+  apply_melee_damage(param_7);
+  return;
+}

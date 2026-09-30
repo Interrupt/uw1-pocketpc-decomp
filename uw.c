@@ -8338,47 +8338,6 @@ undefined4 param_1;
 
 
 
-void FUN_00027b3c(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
-undefined2 param_1;
-ushort * param_2;
-ushort * param_3;
-undefined2 param_4;
-undefined2 param_5;
-undefined2 param_6;
-undefined1 param_7;
-
-{
-  short sVar1;
-  uint uVar2;
-  int iVar3;
-  uint uVar4;
-  
-  DAT_00100604 = param_5;
-  DAT_001005d8 = 0;
-  DAT_00100628 = 0;
-  DAT_001005dc = ((byte)param_2[1] & 0x7f) + ((byte)(&DAT_00202c90)[(*param_2 & 0x1ff) * 0xd] >> 1);
-  DAT_001005fc = 0x80;
-  DAT_00100600 = param_4;
-  DAT_00100610 = param_1;
-  DAT_00100620 = encode_object_slot_index(param_3);
-  uVar4 = (byte)param_2[1] & 0x7f;
-  uVar2 = (byte)param_3[1] & 0x7f;
-  sVar1 = resolve_combat_hit_zone(uVar2,(byte)(&DAT_00202c90)[(*param_3 & 0x1ff) * 0xd] + uVar2,uVar4,
-                       (byte)(&DAT_00202c90)[(*param_2 & 0x1ff) * 0xd] + uVar4);
-  DAT_00100624 = sVar1 + 4;
-  DAT_0010061c = param_6;
-  if (param_3 == g_player_object) {
-    play_sound_effect_with_pan(3,0,0);
-  }
-  else {
-    iVar3 = object_ptr_in_arena(param_3);
-    if (iVar3 != 0) {
-      play_sound_effect_at_object(4,param_3,0);
-    }
-  }
-  apply_melee_damage(param_7);
-  return;
-}
 
 
 
@@ -28593,7 +28552,7 @@ undefined4 param_2;
     uVar2 = DAT_002046e0;
     uVar3 = DAT_002046e4;
   }
-  FUN_00027b3c(param_1[0x12],param_1,param_2,uVar2,uVar3,uVar7,-(&DAT_002027d2)[iVar5]);
+  apply_direct_object_hit(param_1[0x12],param_1,param_2,uVar2,uVar3,uVar7,-(&DAT_002027d2)[iVar5]);
   return;
 }
 
