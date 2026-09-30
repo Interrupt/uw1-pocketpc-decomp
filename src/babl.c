@@ -6178,3 +6178,57 @@ int babl_builtin_ask()
   debug_noop_checkpoint();
   return (int)DAT_001007bc;
 }
+
+
+// was FUN_00035e00 -- in-place bubble sort of param_2 byte-index
+// entries in the buffer param_3 (initialized here to 0..param_2-1
+// before sorting), ordered by an unsigned 16-bit key looked up as
+// *(ushort*)(param_1 + entry*6) for each entry. Only known caller is
+// the babl conversation-rendering loop, sorting subtitle/voice-timing
+// entries into playback order.
+void bubble_sort_indices_by_key_table(param_1,param_2,param_3)
+int param_1;
+uint param_2;
+int param_3;
+
+{
+  byte bVar1;
+  ushort uVar2;
+  ushort uVar3;
+  bool bVar4;
+  byte *pbVar5;
+  int iVar6;
+
+  param_2 = param_2 & 0xffff;
+  iVar6 = 0;
+  if (param_2 != 0) {
+    do {
+      *(char *)(iVar6 + param_3) = (char)iVar6;
+      iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+    } while (iVar6 < (int)param_2);
+  }
+  do {
+    bVar4 = true;
+    if (param_2 < 2) {
+      return;
+    }
+    iVar6 = 1;
+    do {
+      pbVar5 = (byte *)(iVar6 + param_3);
+      bVar1 = *pbVar5;
+      uVar2 = *(ushort *)((uint)bVar1 * 6 + param_1);
+      uVar3 = *(ushort *)((uint)pbVar5[-1] * 6 + param_1);
+      if (uVar2 < uVar3) {
+        *pbVar5 = pbVar5[-1];
+      }
+      if (uVar2 < uVar3) {
+        pbVar5[-1] = bVar1;
+      }
+      iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
+      if (uVar2 < uVar3) {
+        bVar4 = false;
+      }
+    } while (iVar6 < (int)param_2);
+  } while (!bVar4);
+  return;
+}

@@ -9597,52 +9597,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_00035e00(param_1,param_2,param_3)
-int param_1;
-uint param_2;
-int param_3;
-
-{
-  byte bVar1;
-  ushort uVar2;
-  ushort uVar3;
-  bool bVar4;
-  byte *pbVar5;
-  int iVar6;
-  
-  param_2 = param_2 & 0xffff;
-  iVar6 = 0;
-  if (param_2 != 0) {
-    do {
-      *(char *)(iVar6 + param_3) = (char)iVar6;
-      iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
-    } while (iVar6 < (int)param_2);
-  }
-  do {
-    bVar4 = true;
-    if (param_2 < 2) {
-      return;
-    }
-    iVar6 = 1;
-    do {
-      pbVar5 = (byte *)(iVar6 + param_3);
-      bVar1 = *pbVar5;
-      uVar2 = *(ushort *)((uint)bVar1 * 6 + param_1);
-      uVar3 = *(ushort *)((uint)pbVar5[-1] * 6 + param_1);
-      if (uVar2 < uVar3) {
-        *pbVar5 = pbVar5[-1];
-      }
-      if (uVar2 < uVar3) {
-        pbVar5[-1] = bVar1;
-      }
-      iVar6 = (iVar6 + 1) * 0x10000 >> 0x10;
-      if (uVar2 < uVar3) {
-        bVar4 = false;
-      }
-    } while (iVar6 < (int)param_2);
-  } while (!bVar4);
-  return;
-}
 
 
 
@@ -10217,7 +10171,7 @@ LAB_00036858:
         build_rgb565_palette(local_b8,0xffffffff);
         local_54 = read_realtime_clock_units();
         local_4c = local_54;
-        FUN_00035e00(uVar14 + 0x500,*(undefined2 *)(uVar14 + 6),local_70);
+        bubble_sort_indices_by_key_table(uVar14 + 0x500,*(undefined2 *)(uVar14 + 6),local_70);
         local_93 = 0;
         iVar10 = (int)acStack_d0[7];
         acStack_d0[7] = (char)(iVar10 + 1);

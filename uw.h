@@ -2837,7 +2837,7 @@ void emit_noise_alert();
 undefined4 reset_dialogue_speech_state();
 void chargen_ui_transition_hook();
 void thunk_FUN_0007ec1c();
-void FUN_00035e00();
+void bubble_sort_indices_by_key_table();
 undefined2 FUN_00035ec4();
 uint FUN_00035f24();
 void FUN_00035fdc();
