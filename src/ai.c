@@ -60,7 +60,7 @@ int mobile_object_tick()
 // (DAT_0023cf08-family scratch arrays hold each visited tile's parent
 // direction/cost, capped at 0x20 rings) and using tile_pair_los_blocked
 // to test whether each candidate step is wall-blocked. Calls
-// FUN_0002d110 to reconstruct the path on success. Creature AI, not
+// reconstruct_path_from_bfs to reconstruct the path on success. Creature AI, not
 // part of the 3D render chain -- see tile_pair_los_blocked's comment.
 undefined4 creature_find_path_to_tile(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
 undefined4 param_1;
@@ -261,7 +261,7 @@ undefined1 param_7;
                                         *(undefined2 *)(DAT_00101438 + 6),(&DAT_0023cf0a)[iVar19],
                                         &DAT_0023cf0a + iVar19,&local_5c), uVar11 = local_38,
                  bVar14 = local_5b, iVar15 != 0)) {
-                FUN_0002d110(local_5a,param_4,param_5);
+                reconstruct_path_from_bfs(local_5a,param_4,param_5);
                 return 1;
               }
             }
@@ -481,7 +481,7 @@ LAB_0002ed50:
   }
   else {
     if ((local_3c == 0) &&
-       (sVar5 = FUN_0002d1e0(DAT_00101918,DAT_001013f8,param_1 & 0xff,param_2), sVar5 == 1)) {
+       (sVar5 = try_direct_line_walk(DAT_00101918,DAT_001013f8,param_1 & 0xff,param_2), sVar5 == 1)) {
       *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) | 0x80;
       uVar8 = FUN_0002e3b4(iVar1,iVar2);
       *(char *)((char *)DAT_0010190c + 9) = (char)((uVar8 & 0xff) << 5);
@@ -1819,4 +1819,180 @@ ushort param_3;
     }
   }
   return;
+}
+
+
+// was FUN_0002d110 -- reconstructs an NPC's walk path from
+// creature_find_path_to_tile's BFS parent-pointer scratch arrays
+// (&DAT_0023cf08-family), walking backward from the found tile
+// (param_1 ring count, param_2/param_3 its coordinates) and filling the
+// step arrays (DAT_00101739-746) the NPC's own movement code then
+// walks forward through.
+void reconstruct_path_from_bfs(param_1,param_2,param_3)
+byte param_1;
+undefined1 param_2;
+undefined1 param_3;
+
+{
+  int iVar1;
+  uint uVar2;
+  int iVar3;
+  
+  DAT_0010142c = param_1 + 1;
+  (&DAT_00101740)[(param_1 + 1) * 7] = param_2;
+  (&DAT_00101748)[(uint)param_1 * 7] = param_3;
+  DAT_00101743 = 0;
+  DAT_00101744 = 0;
+  DAT_00101746 = 0;
+  for (uVar2 = (uint)(byte)(param_1 + 1); uVar2 != 0; uVar2 = uVar2 + 0xff & 0xff) {
+    iVar1 = uVar2 * 7;
+    iVar3 = ((uint)(byte)(&DAT_00101741)[iVar1] + (uint)(byte)(&DAT_00101740)[iVar1] * 0x40) * 5;
+    (&DAT_00101739)[iVar1] = (&DAT_0023cf08)[iVar3];
+    (&DAT_0010173a)[iVar1] = (&DAT_0023cf09)[iVar3];
+    (&DAT_00101743)[iVar1] = (&DAT_0023cf0b)[iVar3] & 1;
+    *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1) = 0;
+    *(undefined1 *)((intptr_t)&DAT_00101744 + iVar1 + 1) = 0;
+    (&DAT_00101746)[iVar1] = 0;
+  }
+  return;
+}
+
+
+
+// was FUN_0002d1e0 -- attempts a direct straight-line walk from tile
+// (param_1,param_2) toward tile (param_3,param_4): sets up a
+// Bresenham-style line-walk state (DAT_00101740/etc), stepping through
+// can_step_between_tiles-checked tiles via FUN_0002d9f4. Returns 1 if
+// a clear direct line exists (the NPC's simple, preferred pathing
+// strategy, tried before falling back to creature_find_path_to_tile's
+// slower BFS search), -1 if blocked/no line possible.
+int try_direct_line_walk(param_1,param_2,param_3,param_4)
+byte param_1;
+byte param_2;
+short param_3;
+short param_4;
+
+{
+  int iVar1;
+  char cVar2;
+  short sVar3;
+  byte *pbVar4;
+  int iVar5;
+  char cVar6;
+  int iVar7;
+  uint uVar8;
+  byte *pbVar9;
+  uint uVar10;
+  byte *pbVar11;
+  byte local_34;
+  byte local_33;
+  char local_32;
+  byte local_31;
+  undefined1 auStack_30 [4];
+  uint local_2c;
+  uint local_28;
+  
+  local_2c = (uint)param_3;
+  local_31 = 0x40;
+  local_28 = (uint)param_4;
+  iVar7 = (int)(char)param_4 - (int)(char)param_2;
+  local_34 = param_2;
+  local_33 = param_1;
+  /* Dropped both arguments -- was `tilemap_lookup()`. param_1/param_2 are
+     this line-walk's starting tile (just stashed into local_33/local_34
+     above, and into DAT_00101740/DAT_00101741 a few lines below as the
+     walk's "current position" state), matching *pbVar4's own use right
+     after (>> 4 = floor_height, presumably seeding a step-climb check
+     for the walk that follows). Confirmed as a live crash: called with
+     no args, tilemap_lookup ran on whatever garbage happened to be in
+     its parameter registers, occasionally returning NULL/a wild pointer
+     that *pbVar4 then dereferenced unchecked -- a real SIGSEGV in
+     npc_walk_toward_tile's call chain (demo_automap.txt). */
+  pbVar4 = (byte *)tilemap_lookup(param_1,param_2);
+  if (pbVar4 == 0) {
+    DAT_00101450 = 0;
+    return -1;
+  }
+  iVar5 = ((int)(char)param_3 - (int)(char)param_1) * 0x1000000;
+  iVar1 = iVar5 >> 0x18;
+  if (iVar1 == 0) {
+    iVar5 = iVar7 * 0x1000000;
+  }
+  DAT_00101450 = 0;
+  if (iVar1 == 0 && iVar5 >> 0x18 == 0) {
+    DAT_00101450 = 0;
+    return -1;
+  }
+  iVar5 = iVar7 * 0x1000000 >> 0x18;
+  if (iVar1 < iVar5) {
+    if (iVar1 < -iVar5) {
+      pbVar9 = &local_33;
+      pbVar11 = &local_34;
+      cVar2 = Ordinal_2005(iVar1,iVar5 << 7);
+      goto LAB_0002d330;
+    }
+    pbVar9 = &local_34;
+    pbVar11 = &local_33;
+    cVar2 = Ordinal_2005(iVar5,iVar1 << 7);
+  }
+  else {
+    if (iVar1 < -iVar5) {
+      pbVar9 = &local_34;
+      pbVar11 = &local_33;
+      cVar2 = Ordinal_2005(iVar5,iVar1 << 7);
+      iVar5 = iVar1;
+LAB_0002d330:
+      local_32 = -1;
+      cVar6 = -1;
+      if (0 < iVar5) {
+        local_32 = '\x01';
+      }
+      goto LAB_0002d340;
+    }
+    pbVar9 = &local_33;
+    pbVar11 = &local_34;
+    cVar2 = Ordinal_2005(iVar1,iVar5 << 7);
+    iVar1 = iVar5;
+  }
+  cVar6 = '\x01';
+  local_32 = '\x01';
+  if (iVar1 < 1) {
+    local_32 = -1;
+  }
+LAB_0002d340:
+  DAT_0010142c = 1;
+  DAT_00101742 = *pbVar4 >> 4;
+  *pbVar9 = *pbVar9 + cVar6;
+  uVar10 = (uint)local_34;
+  uVar8 = (uint)local_33;
+  DAT_00101740 = param_1;
+  DAT_00101741 = param_2;
+  iVar5 = FUN_0002d9f4(uVar8,uVar10);
+  while( true ) {
+    if (iVar5 == 0) {
+      return 0;
+    }
+    local_31 = cVar2 + local_31;
+    if ((local_31 & 0x80) != 0) {
+      local_31 = local_31 & 0x7f;
+      *pbVar11 = local_32 + *pbVar11;
+      uVar10 = (uint)local_34;
+      uVar8 = (uint)local_33;
+      iVar5 = FUN_0002d9f4(uVar8,uVar10);
+      if (iVar5 == 0) {
+        return 0;
+      }
+    }
+    if ((uVar8 == local_2c) && (uVar10 == local_28)) break;
+    *pbVar9 = cVar6 + *pbVar9;
+    uVar10 = (uint)local_34;
+    uVar8 = (uint)local_33;
+    iVar5 = FUN_0002d9f4(uVar8,uVar10);
+  }
+  iVar5 = (uint)DAT_0010142c * 7;
+  sVar3 = tile_pair_los_blocked((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
+                       (&DAT_0010173a)[iVar5],0,0,*(undefined2 *)(DAT_00101438 + 4),
+                       *(undefined2 *)(DAT_00101438 + 6),*(undefined1 *)((intptr_t)&DAT_00101734 + iVar5)
+                       ,(intptr_t)&DAT_00101734 + iVar5,auStack_30);
+  return (int)sVar3;
 }

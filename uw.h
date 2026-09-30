@@ -1813,6 +1813,12 @@ extern undefined DAT_0023cf09;
 extern undefined DAT_0023cf0a;
 extern undefined DAT_0023cf0b;
 extern undefined DAT_0023cf0c;
+extern undefined1 DAT_00101739;
+extern undefined1 DAT_0010173a;
+extern byte DAT_00101742;
+extern undefined DAT_00101732_backing[8192];
+#define DAT_00101732 DAT_00101732_backing[0]
+extern undefined DAT_00101733;
 extern char s_named_00085d18[];
 /* Globals defined in uw.c but also used by functions that now live in
    containers.c (the open-container/backpack view stack) -- extern'd
@@ -2740,8 +2746,8 @@ undefined4 apply_placement_collision_sweep(); // was FUN_0002bd70
 undefined4 tile_pair_los_blocked();
 undefined4 can_step_between_tiles();
 undefined4 creature_find_path_to_tile();
-void FUN_0002d110();
-int FUN_0002d1e0();
+void reconstruct_path_from_bfs();
+int try_direct_line_walk();
 undefined4 FUN_0002d4e8();
 undefined4 FUN_0002d9f4();
 undefined4 FUN_0002db4c();
