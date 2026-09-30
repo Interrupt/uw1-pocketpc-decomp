@@ -1122,7 +1122,7 @@ ushort * param_2;
                                 + -600);
       play_sound_effect_at_object(0xf,param_1,uVar2);
     }
-    FUN_00038374(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
+    apply_typed_damage_to_object(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,(char)(uVar1 >> 8),0);
   }
   if (param_1 < DAT_002046c4) {
     *(byte *)(param_1 + 4) = (byte)param_2[0xf];
@@ -1136,7 +1136,7 @@ ushort * param_2;
     uVar6 = Ordinal_1053();
     uw_ord2005_rem_118 = ((int)(uVar6)) % (5);
     if (uw_ord2005_rem_118 == 0) {
-      FUN_00038374(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,1,8);
+      apply_typed_damage_to_object(param_1,0,(int)(short)DAT_0010144c,(int)DAT_00101454,1,8);
     }
   }
   if ((*param_1 & 0x1c0) != 0x40) {
@@ -2771,7 +2771,7 @@ undefined1 param_2;
 // combinable-ingredient-shaped category (0x140) with a low sub-id, and
 // the arrival-flag is set, randomly either combines with it
 // (check_object_combination) or (the arrival-flag clear path) has a
-// 1-in-4 chance to instead damage it via FUN_00038374 (the shared
+// 1-in-4 chance to instead damage it via apply_typed_damage_to_object (the shared
 // damage/hit-visual primitive, not yet named) with a random roll
 // bounded by the stat template's own byte at +0x14. Contains a
 // confirmed fabricated-remainder Ordinal_2005/extraout_r1 fix (see its
@@ -2808,7 +2808,7 @@ ushort * param_1;
       if (uw_ord2005_rem_22 == 0) {
         uVar1 = Ordinal_1053();
         uVar2 = 4;
-        /* Was `Ordinal_2005(...); FUN_00038374(...,extraout_r1,...)` --
+        /* Was `Ordinal_2005(...); apply_typed_damage_to_object(...,extraout_r1,...)` --
            same fabricated-remainder bug fixed throughout this session
            (this port's Ordinal_2005 never populates extraout_r1).
            Ordinal_2005(divisor,dividend) here divides the random roll
@@ -2816,7 +2816,7 @@ ushort * param_1;
            shaped value); compute that remainder -- a bounded random
            damage roll in [0,byte_val) -- directly instead. */
         uw_ord2005_rem_21 = (int)uVar1 % (int)(uint)(*(byte *)(DAT_00101404 + 0x14));
-        FUN_00038374(param_1,DAT_0010190c,DAT_00101424,DAT_00101428,uw_ord2005_rem_21,uVar2);
+        apply_typed_damage_to_object(param_1,DAT_0010190c,DAT_00101424,DAT_00101428,uw_ord2005_rem_21,uVar2);
       }
     }
   }

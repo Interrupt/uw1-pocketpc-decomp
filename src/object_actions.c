@@ -1210,7 +1210,7 @@ undefined1 param_5;
 // dispatch_object_action) HAS bit 0x80 set, and the nonzero pass-value
 // when it doesn't. This function fires ONLY on the "has the flag"
 // (0) case, applying a fixed damage-type-3, magnitude-0xff effect
-// (FUN_00038374, not yet named) to the target -- i.e. it's a trap
+// (apply_typed_damage_to_object, not yet named) to the target -- i.e. it's a trap
 // effect that only harms objects whose type carries that particular
 // flag. Returns whether the object had the flag.
 bool trigger_type_flagged_trap_effect(param_1,param_2,param_3,param_4,param_5)
@@ -1227,7 +1227,7 @@ undefined1 param_5;
   cVar1 = resolve_damage_type_resistance(param_3,1,0x80);
   if (cVar1 == '\0') {
     uVar2 = FUN_000535fc(param_5);
-    FUN_00038374(param_3,uVar2,param_1,param_2,0xff,3);
+    apply_typed_damage_to_object(param_3,uVar2,param_1,param_2,0xff,3);
   }
   return cVar1 == '\0';
 }
@@ -1238,7 +1238,7 @@ undefined1 param_5;
 // (param_1,param_2): first alters the tile's texture/decoration
 // (spawn_scheduled_effect_object, group 7, subtype 4), then rolls
 // 5d4 damage and applies it to the target object (param_3) via
-// FUN_00038374 (damage type id 0x13), which internally still runs
+// apply_typed_damage_to_object (damage type id 0x13), which internally still runs
 // the same resistance/flag check as trigger_type_flagged_trap_effect
 // above -- so a target immune to type 0x13 can still take zero
 // effective damage even though this function always "fires".
@@ -1262,7 +1262,7 @@ undefined1 param_5;
   uVar5 = (undefined1)((ushort)uVar4 >> 8);
   uVar1 = roll_dice_sum(5,4);
   uVar2 = FUN_000535fc(param_5);
-  FUN_00038374(param_3,uVar2,param_1,param_2,CONCAT11(uVar3,uVar1),CONCAT11(uVar5,0x13));
+  apply_typed_damage_to_object(param_3,uVar2,param_1,param_2,CONCAT11(uVar3,uVar1),CONCAT11(uVar5,0x13));
   return 1;
 }
 
@@ -2245,7 +2245,7 @@ LAB_00075a0c:
 
 // was FUN_00075a88 -- walks every object on tile (param_1,param_2)
 // (tilemap_lookup + the object linked list) and applies damage to
-// each one via the general damage dispatcher (FUN_00038374, not yet
+// each one via the general damage dispatcher (apply_typed_damage_to_object, not yet
 // named): rolls dice from a damage-tier table (DAT_0008762c/
 // DAT_00087630, indexed by param_3-1) and looks up a damage-type id
 // from DAT_00087634 at the same index. A no-op if param_3 is 0.
@@ -2274,7 +2274,7 @@ undefined1 param_4;
         iVar3 = (char *)resolve_object_link(iVar2 + 4);
         uVar1 = roll_dice_sum((&DAT_0008762c)[bVar5],(&DAT_00087630)[bVar5]);
         uVar4 = FUN_000535fc(param_4);
-        FUN_00038374(iVar2,uVar4,param_1,(int)param_2,uVar1,(&DAT_00087634)[bVar5]);
+        apply_typed_damage_to_object(iVar2,uVar4,param_1,(int)param_2,uVar1,(&DAT_00087634)[bVar5]);
         iVar2 = iVar3;
       } while (iVar3 != 0);
     }

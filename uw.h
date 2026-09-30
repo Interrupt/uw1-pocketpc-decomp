@@ -2872,7 +2872,7 @@ undefined4 discard_container_contents();
 undefined4 reset_burnt_out_item_state();
 undefined4 apply_object_destruction_effect();
 undefined4 resolve_damage_type_resistance();
-undefined4 FUN_00038374();
+undefined4 apply_typed_damage_to_object();
 bool FUN_00038418();
 void FUN_00038680();
 void FUN_0003894c();

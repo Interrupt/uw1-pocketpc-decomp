@@ -1099,7 +1099,7 @@ undefined4 param_2;
 
 // was FUN_00026858 -- applies a landed melee hit's damage: rolls a
 // damage dice pool, reduces it by the target's armor value (looked up
-// from &DAT_001007d0), plays the impact sound, and calls FUN_00038374
+// from &DAT_001007d0), plays the impact sound, and calls apply_typed_damage_to_object
 // (the same "apply damage/hit visual" primitive src/ai.c's monster
 // attack code also calls, not yet named) to actually apply it. On
 // nonzero final damage, either staggers the player (if the target is
@@ -1191,7 +1191,7 @@ undefined1 param_1;
     sVar3 = sVar3 >> 1;
   }
   uVar7 = FUN_000535fc((int)DAT_00100610);
-  iVar11 = FUN_00038374(puVar6,uVar7,(int)DAT_00100600,(int)DAT_00100604,
+  iVar11 = apply_typed_damage_to_object(puVar6,uVar7,(int)DAT_00100600,(int)DAT_00100604,
                         CONCAT11(uVar12,(char)sVar3),CONCAT11(uVar13,param_1));
   sVar2 = DAT_00100610;
   cVar10 = DAT_001005dc;
@@ -1381,7 +1381,7 @@ undefined4 process_melee_attack_swing()
     }
     uVar4 = FUN_000535fc((int)DAT_00100610);
     uVar5 = FUN_000535fc((int)DAT_00100620);
-    FUN_00038374(uVar5,uVar4,(int)DAT_00100600,(int)DAT_00100604,0,4);
+    apply_typed_damage_to_object(uVar5,uVar4,(int)DAT_00100600,(int)DAT_00100604,0,4);
   }
   uVar2 = play_weapon_impact_sound(uVar2);
   return uVar2;
@@ -2178,7 +2178,7 @@ ushort * param_3;
 // type) and ANDs it with param_3; if the low 2 bits (a specific
 // damage sub-category) match, rolls a 1/3 chance to still let it
 // through before checking the remaining bits. Only known caller:
-// FUN_00038374's non-NPC damage-application path.
+// apply_typed_damage_to_object's non-NPC damage-application path.
 undefined4 resolve_damage_type_resistance(param_1,param_2,param_3)
 ushort * param_1;
 undefined4 param_2;
@@ -2205,4 +2205,44 @@ uint param_3;
     }
   }
   return param_2;
+}
+
+
+// was FUN_00038374 -- the general-purpose "apply damage/effect to
+// any object" entry point (param_1: target; param_2: the damaging
+// object/weapon, or 0; param_3/param_4: tile x/y, when relevant;
+// param_5: raw damage amount; param_6: damage-type bitmask). Resolves
+// elemental resistance first (resolve_damage_type_resistance), then
+// for an NPC target (class 0x40) applies HP damage directly
+// (apply_damage_to_object); for anything else, checks eligibility via
+// FUN_00038418 (not yet named) before routing to
+// apply_object_destruction_effect for the object-specific
+// destroy/transform handling.
+undefined4 apply_typed_damage_to_object(param_1,param_2,param_3,param_4,param_5,param_6)
+ushort * param_1;
+undefined4 param_2;
+undefined4 param_3;
+undefined2 param_4;
+undefined1 param_5;
+undefined1 param_6;
+
+{
+  uint uVar1;
+  undefined4 uVar2;
+  int iVar3;
+
+  uVar1 = resolve_damage_type_resistance(param_1,param_5,param_6);
+  if ((*param_1 & 0x1c0) == 0x40) {
+    uVar2 = apply_damage_to_object(param_1,uVar1,param_2);
+  }
+  else {
+    iVar3 = FUN_00038418(param_1,param_2,uVar1 & 0xff,param_3,param_4);
+    if (iVar3 == 0) {
+      uVar2 = 0;
+    }
+    else {
+      uVar2 = apply_object_destruction_effect(param_1,param_2,param_6,param_3,param_4);
+    }
+  }
+  return uVar2;
 }

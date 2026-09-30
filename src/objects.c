@@ -680,7 +680,7 @@ char *param_2;
 
 
 // was FUN_00038028 -- applies a destruction/transformation effect
-// (from FUN_00038374's dispatch, its only known caller) to a non-NPC
+// (from apply_typed_damage_to_object's dispatch, its only known caller) to a non-NPC
 // object (param_1) at tile param_4/param_5: doors get their contents
 // discarded; two special container-ish types (0x15d/0x15b) discard
 // contents and try to combine/stow; ordinary containers (class 0x80)

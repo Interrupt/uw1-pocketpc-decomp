@@ -9647,34 +9647,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_00038374(param_1,param_2,param_3,param_4,param_5,param_6)
-ushort * param_1;
-undefined4 param_2;
-undefined4 param_3;
-undefined2 param_4;
-undefined1 param_5;
-undefined1 param_6;
-
-{
-  uint uVar1;
-  undefined4 uVar2;
-  int iVar3;
-  
-  uVar1 = resolve_damage_type_resistance(param_1,param_5,param_6);
-  if ((*param_1 & 0x1c0) == 0x40) {
-    uVar2 = apply_damage_to_object(param_1,uVar1,param_2);
-  }
-  else {
-    iVar3 = FUN_00038418(param_1,param_2,uVar1 & 0xff,param_3,param_4);
-    if (iVar3 == 0) {
-      uVar2 = 0;
-    }
-    else {
-      uVar2 = apply_object_destruction_effect(param_1,param_2,param_6,param_3,param_4);
-    }
-  }
-  return uVar2;
-}
 
 
 
@@ -10409,7 +10381,7 @@ uint param_2;
     }
   }
   if ((0 < sVar4) &&
-     (iVar3 = FUN_00038374(iVar2,0,*(ushort *)(iVar2 + 0x16) >> 10,
+     (iVar3 = apply_typed_damage_to_object(iVar2,0,*(ushort *)(iVar2 + 0x16) >> 10,
                            (*(ushort *)(iVar2 + 0x16) & 0x3f0) >> 4,(char)sVar4,4), iVar3 != 0)) {
     return 0x10;
   }
@@ -16174,7 +16146,7 @@ int param_5;
     }
   }
   bVar1 = *(byte *)(puVar5 + 2);
-  iVar6 = FUN_00038374(puVar5,0,0xffffffff,0xffffffff,param_2,param_3);
+  iVar6 = apply_typed_damage_to_object(puVar5,0,0xffffffff,0xffffffff,param_2,param_3);
   if (iVar6 == 0) {
     if ((*(byte *)(puVar5 + 2) & 0x3f) == (bVar1 & 0x3f)) {
       return 0xffffffff;
@@ -23282,7 +23254,7 @@ void FUN_00053c74()
       bVar1 = (byte)uVar3;
       *(byte *)(iVar10 + 0x5f) = ((bVar1 & 0xfc) - 1 ^ bVar1) & 0x3c ^ bVar1;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar3 >> 8);
-      FUN_00038374(g_player_object,0,0,0,(char)((uVar3 & 0x3c) >> 2),0x10);
+      apply_typed_damage_to_object(g_player_object,0,0,0,(char)((uVar3 & 0x3c) >> 2),0x10);
       iVar10 = DAT_00086df8;
     }
     sVar5 = roll_skill_check(*(undefined1 *)(iVar10 + 0x28),10);
@@ -23411,7 +23383,7 @@ void FUN_000541d0()
       FUN_000411e0(0xc6);
       FUN_00049924(2);
       uVar1 = roll_dice_sum(2,-(int)iVar3 + 4);
-      FUN_00038374(g_player_object,0,0,0,uVar1,0);
+      apply_typed_damage_to_object(g_player_object,0,0,0,uVar1,0);
     }
   }
   return;

@@ -131,7 +131,7 @@ void debug_print_player_position(const char *label)
 // pack sub-tile position / height / facing into the player object record
 // (g_player_object +2/+3/+0x16/+0x17/+0x18), auto-straighten the facing
 // toward the travel direction, then handle a pending landing impact
-// (fall damage FUN_00038374 + thud play_sound_effect_with_pan) and refresh the
+// (fall damage apply_typed_damage_to_object + thud play_sound_effect_with_pan) and refresh the
 // locomotion pose. Called every tick from apply_movement_tick.
 void commit_player_move()
 
@@ -222,7 +222,7 @@ void commit_player_move()
         uVar3 = (uint)sVar1;
       }
       if (3 < (short)uVar3) {
-        FUN_00038374(g_player_object,0,0,0,(char)uVar3,0);
+        apply_typed_damage_to_object(g_player_object,0,0,0,(char)uVar3,0);
       }
       if ((1 < (short)uVar3) || ((DAT_002048a8 & 0x10) != 0)) {
         play_sound_effect_with_pan(0xf,0x40,((uVar3 & 0xff) + 0x31) * 4);
@@ -1358,7 +1358,7 @@ void trigger_view_transition()
     uVar5 = Ordinal_1053();
     uw_ord2005_rem_126 = ((int)(uVar5)) % (5);
     if (uw_ord2005_rem_126 == 0) {
-      FUN_00038374(g_player_object,0,0,0,1,8);
+      apply_typed_damage_to_object(g_player_object,0,0,0,1,8);
     }
   }
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 8) != 0) {
@@ -2580,7 +2580,7 @@ LAB_00071110:
 // DAT_00086df8+0xb8) both before and after settling movement/refreshing
 // equipment effects, and if bit 3 (poison) is set and not in a gated
 // game state (DAT_0020208c bits 0x16), applies a randomized damage tick
-// (12-57, type 0x10) to the player via FUN_00038374 -- the "poisoned
+// (12-57, type 0x10) to the player via apply_typed_damage_to_object -- the "poisoned
 // while you sleep" mechanic.
 void apply_rest_status_effects()
 
@@ -2591,7 +2591,7 @@ void apply_rest_status_effects()
   undefined1 uVar2;
 
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
-    FUN_00038374(g_player_object,0,0,0,0xff,0);
+    apply_typed_damage_to_object(g_player_object,0,0,0,0xff,0);
   }
   refresh_player_equipment_effects();
   settle_movement_to_rest();
@@ -2599,10 +2599,10 @@ void apply_rest_status_effects()
     uVar1 = Ordinal_1053();
     uVar2 = 0x10;
     uw_ord2005_rem_144 = ((int)(uVar1)) % (6);
-    FUN_00038374(g_player_object,0,0,0,uw_ord2005_rem_144 * '\n' + '\f',uVar2);
+    apply_typed_damage_to_object(g_player_object,0,0,0,uw_ord2005_rem_144 * '\n' + '\f',uVar2);
   }
   if ((*(byte *)(DAT_00086df8 + 0xb8) & 3) != 0) {
-    FUN_00038374(g_player_object,0,0,0,0xff,0);
+    apply_typed_damage_to_object(g_player_object,0,0,0,0xff,0);
   }
   return;
 }
@@ -2671,7 +2671,7 @@ LAB_0007158c:
     FUN_0005404c(iVar8 * 0xb4,0);
     if ((*(ushort *)(DAT_00086df8 + 0x5f) & 0x3c) != 0) {
       uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) >> 2 & 0xf;
-      FUN_00038374(g_player_object,0,0,0,(char)((int)((uVar7 + 1) * uVar7) >> 1),0x10);
+      apply_typed_damage_to_object(g_player_object,0,0,0,(char)((int)((uVar7 + 1) * uVar7) >> 1),0x10);
       uVar7 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
       *(char *)(DAT_00086df8 + 0x5f) = (char)uVar7;
       *(char *)(DAT_00086df8 + 0x60) = (char)(uVar7 >> 8);
@@ -2713,7 +2713,7 @@ LAB_0007158c:
         }
         if (*(char *)(DAT_00086df8 + 0x39) == '\0') {
           print_scroll_message_by_id(0x11);
-          FUN_00038374(g_player_object,0,0,0,2,0);
+          apply_typed_damage_to_object(g_player_object,0,0,0,2,0);
         }
         else {
           adjust_player_hp(g_player_object,(((short)iVar4 + 1) * (int)sVar3 * 0x1000000 >> 0x18) + -1);
@@ -2904,7 +2904,7 @@ void handle_game_victory_sequence()
     *(undefined1 *)(DAT_00085a6c + 9) = 0;
   DAT_00085a6c[4] = 0; /* mirror to the real byte-8 mode field -- see set_game_mode */
     DAT_000868d8 = 2;
-    FUN_00037c14(1);
+    display_book_or_scroll_page(1);
     FUN_00057118();
     FUN_00040df0();
     Ordinal_1047(acStack_114,0,0x104);
@@ -3028,7 +3028,7 @@ LAB_00072374:
     iVar6 = dungeon_view_anim_tick();
     DAT_00085730 = 3;
     if (iVar6 != 0) {
-      FUN_00037c14(0x102);
+      display_book_or_scroll_page(0x102);
       thunk_FUN_0003c310(0xf1);
       msg_scroll_panel_reset(1);
       return;
