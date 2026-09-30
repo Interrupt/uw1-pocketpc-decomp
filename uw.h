@@ -2981,7 +2981,7 @@ void save_draw_command_cursor();
 void init_draw_command_cursor();
 void emit_glyph_draw_command();
 void finalize_glyph_draw_command();
-undefined4 FUN_00038d4c();
+undefined4 find_placement_via_tile_flood_fill();
 undefined4 FUN_000396a0();
 undefined4 FUN_00039790();
 undefined4 FUN_00039bd8();

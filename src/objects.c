@@ -777,3 +777,275 @@ LAB_00038100:
   }
   return uVar4;
 }
+
+
+// WARNING: Type propagation algorithm not settling
+
+// was FUN_00038d4c -- searches outward from tile (param_2,param_3)
+// via a double-buffered BFS flood-fill (local_80/local_58, each a
+// 10-entry x/y coordinate-pair frontier list; local_a4/local_b0 swap
+// between them each wave) for a tile where object param_1 can be
+// placed (FUN_00051fa0). Expansion direction from each tile is gated
+// by its type (bVar8, 0-5: floor vs. diagonal-wall variants), each
+// branch mirroring the same 4-neighbor/diagonal-corner pattern seen
+// in resolve_tile_entry_offset, with per-tile visited bitmasks
+// (auStack_98/uStack_9a) preventing revisits. Stops and returns 1 as
+// soon as a placement succeeds (writing the found tile into
+// param_4/param_5), or 0 once the frontier is exhausted. param_6
+// gates an extra step that discards misplaced/arena objects
+// encountered along the way.
+undefined4 find_placement_via_tile_flood_fill(param_1,param_2,param_3,param_4,param_5,param_6)
+ushort * param_1;
+short param_2;
+short param_3;
+short * param_4;
+short * param_5;
+int param_6;
+
+{
+  int iVar1;
+  int iVar2;
+  uint uVar3;
+  char cVar4;
+  char cVar5;
+  undefined1 *puVar6;
+  char cVar7;
+  byte bVar8;
+  int iVar9;
+  byte *pbVar10;
+  ushort *puVar11;
+  int iVar12;
+  undefined4 uVar13;
+  int iVar14;
+  char *pcVar15;
+  uint uVar16;
+  ushort uVar17;
+  char cVar18;
+  uint uVar19;
+  uint uVar20;
+  char cVar21;
+  undefined1 *local_b0;
+  uint local_a8;
+  undefined1 *local_a4;
+  uint local_a0;
+  ushort uStack_9a;
+  ushort auStack_98 [12];
+  /* local_80 is the start of a >=0x14-byte struct (Ghidra only tracked
+     the first two bytes as named locals); widened to fit the real memset
+     below instead of overflowing a 1-byte stack slot. local_7f is now a
+     separate, unaliased byte purely to avoid rewriting its few use sites.
+     NOT text formatting (a prior pass's guess, now corrected): local_80/
+     local_58 are the two BFS frontier buffers, each holding up to 10
+     (x,y) tile-coordinate byte pairs -- see this function's own comment. */
+  undefined1 local_80 [0x14];
+  undefined1 local_7f;
+  undefined1 local_58 [40];
+  
+  Ordinal_1047(local_80,0,0x14);
+  Ordinal_1047(local_58,0,0x14);
+  Ordinal_1047(auStack_98,0,9);
+  iVar9 = param_2 + -4;
+  if (iVar9 < 1) {
+    iVar9 = 1;
+  }
+  cVar21 = (char)iVar9;
+  if ('9' < cVar21) {
+    cVar21 = ':';
+  }
+  iVar9 = param_3 + -4;
+  if (iVar9 < 1) {
+    iVar9 = 1;
+  }
+  cVar7 = (char)iVar9;
+  if ('9' < cVar7) {
+    cVar7 = ':';
+  }
+  iVar9 = (cVar21 + 9) * 0x1000000 >> 0x18;
+  if (0x3d < iVar9) {
+    iVar9 = 0x3e;
+  }
+  cVar4 = (char)iVar9;
+  iVar9 = (cVar7 + 9) * 0x1000000 >> 0x18;
+  if (0x3d < iVar9) {
+    iVar9 = 0x3e;
+  }
+  cVar5 = (char)iVar9;
+  local_a4 = local_80;
+  local_b0 = local_58;
+  local_80[0] = (char)param_2;
+  local_7f = (char)param_3;
+  iVar9 = (int)cVar21;
+  iVar1 = (int)cVar7;
+  auStack_98[param_2 - iVar9] =
+       auStack_98[param_2 - iVar9] | (ushort)(1 << (param_3 - iVar1 & 0xffU));
+  local_a0 = 1;
+  do {
+    puVar6 = local_b0;
+    uVar20 = 0;
+    local_a8 = 0;
+    do {
+      cVar21 = (local_a4 + local_a8 * 2)[1];
+      cVar7 = local_a4[local_a8 * 2];
+      pbVar10 = (byte *)tilemap_lookup((int)cVar7,(int)cVar21);
+      if (param_6 != 0) {
+        for (puVar11 = (ushort *)(pbVar10 + 2); (*puVar11 & 0xffc0) != 0; puVar11 = puVar11 + 2) {
+          puVar11 = (ushort *)resolve_object_link(puVar11);
+          if (((&DAT_00202c90)[(*puVar11 & 0x1ff) * 0xd] != '\0') ||
+             (iVar12 = object_ptr_in_arena(puVar11), iVar12 != 0)) {
+            discard_misplaced_object(pbVar10 + 2,puVar11,0);
+          }
+        }
+      }
+      cVar18 = '\x04';
+      if (((&DAT_000878d0)[*pbVar10 & 0xf] & 0x20) == 0) {
+        cVar18 = '\0';
+      }
+      uVar13 = encode_object_slot_index(param_1);
+      iVar12 = (int)(short)cVar21;
+      iVar2 = (int)(short)cVar7;
+      iVar14 = FUN_00051fa0(*param_1 & 0x1ff,uVar13,((iVar2 << 0x13) >> 0x10) + 3,
+                            ((iVar12 << 0x13) >> 0x10) + 3,(*pbVar10 >> 4) * '\b' + cVar18,0,8);
+      if (iVar14 != 0) {
+        *param_4 = (short)cVar7;
+        *param_5 = (short)cVar21;
+        return 1;
+      }
+      bVar8 = *pbVar10 & 0xf;
+      if ((*pbVar10 & 0xf) != 0) {
+        if (bVar8 == 2) {
+          uVar19 = iVar12 - iVar1;
+          uVar16 = 1 << (uVar19 & 0xff);
+          iVar14 = iVar2 - iVar9;
+          puVar11 = auStack_98 + iVar14;
+          if (((((uVar16 & (int)(short)auStack_98[iVar14 + 1]) == 0) && (uVar20 < 0x14)) &&
+              (iVar9 <= iVar2 + 1)) &&
+             (((iVar2 + 1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))) {
+            cVar18 = '\x01';
+            auStack_98[iVar14 + 1] = auStack_98[iVar14 + 1] | (ushort)uVar16;
+LAB_00039590:
+            local_b0[uVar20 * 2] = cVar7 + cVar18;
+            (local_b0 + uVar20 * 2)[1] = cVar21;
+            uVar20 = uVar20 + 1 & 0xff;
+          }
+LAB_000395ac:
+          uVar16 = 1 << (uVar19 - 1 & 0xff);
+          uVar17 = *puVar11;
+          if ((((uVar16 & (int)(short)uVar17) != 0) || (0x13 < uVar20)) ||
+             (((iVar2 < iVar9 || ((cVar4 < iVar2 || (iVar12 + -1 < iVar1)))) ||
+              ((int)cVar5 < iVar12 + -1)))) goto LAB_00039638;
+          pcVar15 = local_b0 + uVar20 * 2;
+          *pcVar15 = cVar7;
+          cVar21 = cVar21 + -1;
+LAB_00039620:
+          *puVar11 = uVar17 | (ushort)uVar16;
+        }
+        else {
+          if (bVar8 == 3) {
+            uVar19 = iVar12 - iVar1;
+            uVar16 = 1 << (uVar19 & 0xff);
+            iVar14 = iVar2 - iVar9;
+            puVar11 = auStack_98 + iVar14;
+            if ((((uVar16 & (int)(short)(&uStack_9a)[iVar14]) == 0) && (uVar20 < 0x14)) &&
+               ((iVar9 <= iVar2 + -1 &&
+                (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))))) {
+              cVar18 = -1;
+              (&uStack_9a)[iVar14] = (&uStack_9a)[iVar14] | (ushort)uVar16;
+              goto LAB_00039590;
+            }
+            goto LAB_000395ac;
+          }
+          if (bVar8 == 4) {
+            uVar19 = iVar12 - iVar1;
+            uVar16 = 1 << (uVar19 & 0xff);
+            iVar14 = iVar2 - iVar9;
+            puVar11 = auStack_98 + iVar14;
+            if ((((((uVar16 & (int)(short)auStack_98[iVar14 + 1]) == 0) && (uVar20 < 0x14)) &&
+                 (iVar9 <= iVar2 + 1)) && ((iVar2 + 1 <= (int)cVar4 && (iVar1 <= iVar12)))) &&
+               (iVar12 <= cVar5)) {
+              cVar18 = '\x01';
+              auStack_98[iVar14 + 1] = auStack_98[iVar14 + 1] | (ushort)uVar16;
+LAB_000393ec:
+              local_b0[uVar20 * 2] = cVar7 + cVar18;
+              (local_b0 + uVar20 * 2)[1] = cVar21;
+              uVar20 = uVar20 + 1 & 0xff;
+            }
+LAB_00039408:
+            uVar16 = 1 << (uVar19 + 1 & 0xff);
+            uVar17 = *puVar11;
+            if (((((uVar16 & (int)(short)uVar17) != 0) || (0x13 < uVar20)) ||
+                ((iVar2 < iVar9 || ((cVar4 < iVar2 || (iVar12 + 1 < iVar1)))))) ||
+               ((int)cVar5 < iVar12 + 1)) goto LAB_00039638;
+            pcVar15 = local_b0 + uVar20 * 2;
+            *pcVar15 = cVar7;
+            cVar21 = cVar21 + '\x01';
+            goto LAB_00039620;
+          }
+          if (bVar8 == 5) {
+            uVar19 = iVar12 - iVar1;
+            uVar16 = 1 << (uVar19 & 0xff);
+            iVar14 = iVar2 - iVar9;
+            puVar11 = auStack_98 + iVar14;
+            if ((((uVar16 & (int)(short)(&uStack_9a)[iVar14]) == 0) && (uVar20 < 0x14)) &&
+               ((iVar9 <= iVar2 + -1 &&
+                (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))))) {
+              cVar18 = -1;
+              (&uStack_9a)[iVar14] = (&uStack_9a)[iVar14] | (ushort)uVar16;
+              goto LAB_000393ec;
+            }
+            goto LAB_00039408;
+          }
+          uVar19 = iVar12 - iVar1;
+          uVar16 = 1 << (uVar19 & 0xff);
+          iVar14 = iVar2 - iVar9;
+          puVar11 = auStack_98 + iVar14;
+          uVar17 = (&uStack_9a)[iVar14];
+          if (((((uVar16 & (int)(short)uVar17) == 0) && (uVar20 < 0x14)) && (iVar9 <= iVar2 + -1))
+             && (((iVar2 + -1 <= (int)cVar4 && (iVar1 <= iVar12)) && (iVar12 <= cVar5)))) {
+            local_b0[uVar20 * 2] = cVar7 + -1;
+            (local_b0 + uVar20 * 2)[1] = cVar21;
+            uVar20 = uVar20 + 1 & 0xff;
+            (&uStack_9a)[iVar14] = uVar17 | (ushort)uVar16;
+          }
+          uVar3 = 1 << (uVar19 - 1 & 0xff);
+          uVar17 = *puVar11;
+          if ((((uVar3 & (int)(short)uVar17) == 0) && (uVar20 < 0x14)) &&
+             ((iVar9 <= iVar2 &&
+              (((iVar2 <= cVar4 && (iVar1 <= iVar12 + -1)) && (iVar12 + -1 <= (int)cVar5)))))) {
+            local_b0[uVar20 * 2] = cVar7;
+            *puVar11 = uVar17 | (ushort)uVar3;
+            (local_b0 + uVar20 * 2)[1] = cVar21 + -1;
+            uVar20 = uVar20 + 1 & 0xff;
+          }
+          uVar17 = auStack_98[iVar14 + 1];
+          if ((((uVar16 & (int)(short)uVar17) == 0) && (uVar20 < 0x14)) &&
+             (((iVar9 <= iVar2 + 1 && ((iVar2 + 1 <= (int)cVar4 && (iVar1 <= iVar12)))) &&
+              (iVar12 <= cVar5)))) {
+            local_b0[uVar20 * 2] = cVar7 + '\x01';
+            (local_b0 + uVar20 * 2)[1] = cVar21;
+            uVar20 = uVar20 + 1 & 0xff;
+            auStack_98[iVar14 + 1] = uVar17 | (ushort)uVar16;
+          }
+          uVar16 = 1 << (uVar19 + 1 & 0xff);
+          uVar17 = *puVar11;
+          if ((((((uVar16 & (int)(short)uVar17) != 0) || (0x13 < uVar20)) || (iVar2 < iVar9)) ||
+              ((cVar4 < iVar2 || (iVar12 + 1 < iVar1)))) || ((int)cVar5 < iVar12 + 1))
+          goto LAB_00039638;
+          pcVar15 = local_b0 + uVar20 * 2;
+          *pcVar15 = cVar7;
+          cVar21 = cVar21 + '\x01';
+          *puVar11 = uVar17 | (ushort)uVar16;
+        }
+        pcVar15[1] = cVar21;
+        uVar20 = uVar20 + 1 & 0xff;
+      }
+LAB_00039638:
+      local_a8 = local_a8 + 1 & 0xff;
+    } while (local_a8 < local_a0);
+    local_b0 = local_a4;
+    local_a4 = puVar6;
+    local_a0 = uVar20;
+    if (uVar20 == 0) {
+      return 0;
+    }
+  } while( true );
+}
