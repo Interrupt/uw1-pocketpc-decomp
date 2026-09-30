@@ -2798,7 +2798,7 @@ void setup_npc_ai_tick_state();
 undefined4 npc_ai_tick(); // was FUN_00032d38
 void npc_ai_default_tick();
 undefined4 refresh_npc_target_delta();
-undefined4 FUN_00034270();
+undefined4 check_npc_morale_flee();
 int FUN_0003431c();
 void npc_set_goal();
 void npc_clear_special_goal();

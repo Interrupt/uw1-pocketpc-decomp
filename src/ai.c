@@ -3287,7 +3287,7 @@ LAB_000339fc:
               (iVar7 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar7 == 0)))) {
             if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x20) != 0) goto LAB_00033d18;
             if (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x10) == 0) &&
-               (iVar7 = FUN_00034270(*(undefined1 *)(DAT_00101404 + 4),
+               (iVar7 = check_npc_morale_flee(*(undefined1 *)(DAT_00101404 + 4),
                                      *(undefined1 *)((char *)DAT_0010190c + 8),
                                      *(byte *)(DAT_00101404 + 0x1c) & 0xf,
                                      *(undefined1 *)((char *)DAT_0010190c + 0x11)), iVar7 != 0)) {
@@ -3535,6 +3535,50 @@ undefined4 refresh_npc_target_delta()
                    0x10);
     DAT_00101728 = (iVar3 - (uint)DAT_00101910) * (iVar3 - (uint)DAT_00101910) +
                    (iVar2 - (uint)DAT_0010141c) * (iVar2 - (uint)DAT_0010141c);
+    uVar1 = 1;
+  }
+  return uVar1;
+}
+
+
+// was FUN_00034270 -- an NPC morale/flee-shaped check: param_1 is a
+// stat-template byte (byte 4), param_2 the NPC's own current HP (byte
+// 8); if param_2 falls outside a band scaled off param_1, returns 0
+// outright. Otherwise, once param_4 (an NPC record field, byte 0x11)
+// drops to half of param_1 or below, rolls a random chance (biased by
+// the param_2/param_1 ratio and param_3, another stat-template field)
+// to decide whether the check fails. Confirmed via its one real call
+// site (src/ai.c) gating a state transition to state 6 -- likely a
+// low-HP flee/morale-break reaction, though the exact real-world
+// meaning of param_3/param_4 isn't independently confirmed.
+undefined4 check_npc_morale_flee(param_1,param_2,param_3,param_4)
+uint param_1;
+uint param_2;
+uint param_3;
+uint param_4;
+
+{
+  int uw_ord2005_rem_97 = 0;
+  undefined4 uVar1;
+  int iVar2;
+  int extraout_r1;
+  
+  param_1 = param_1 & 0xff;
+  param_2 = param_2 & 0xff;
+  if (((uint)((int)(param_1 * 3) >> 2) < param_2) || (param_2 < param_1 >> 3)) {
+LAB_000342b0:
+    uVar1 = 0;
+  }
+  else {
+    if ((param_4 & 0xff) <= param_1 >> 1) {
+      if (param_1 == 0) goto LAB_000342b0;
+      uVar1 = Ordinal_1053();
+      uw_ord2005_rem_97 = ((int)(uVar1)) % (4);
+      iVar2 = Ordinal_2005(param_1,param_2 << 4);
+      if ((int)(0xf - (param_3 & 0xff)) < (int)(uw_ord2005_rem_97 + iVar2 & 0xffffU)) {
+        return 0;
+      }
+    }
     uVar1 = 1;
   }
   return uVar1;

@@ -9427,38 +9427,6 @@ void npc_wander_return_home_exact_tick()
 
 
 
-undefined4 FUN_00034270(param_1,param_2,param_3,param_4)
-uint param_1;
-uint param_2;
-uint param_3;
-uint param_4;
-
-{
-  int uw_ord2005_rem_97 = 0;
-  undefined4 uVar1;
-  int iVar2;
-  int extraout_r1;
-  
-  param_1 = param_1 & 0xff;
-  param_2 = param_2 & 0xff;
-  if (((uint)((int)(param_1 * 3) >> 2) < param_2) || (param_2 < param_1 >> 3)) {
-LAB_000342b0:
-    uVar1 = 0;
-  }
-  else {
-    if ((param_4 & 0xff) <= param_1 >> 1) {
-      if (param_1 == 0) goto LAB_000342b0;
-      uVar1 = Ordinal_1053();
-      uw_ord2005_rem_97 = ((int)(uVar1)) % (4);
-      iVar2 = Ordinal_2005(param_1,param_2 << 4);
-      if ((int)(0xf - (param_3 & 0xff)) < (int)(uw_ord2005_rem_97 + iVar2 & 0xffffU)) {
-        return 0;
-      }
-    }
-    uVar1 = 1;
-  }
-  return uVar1;
-}
 
 
 
