@@ -8323,115 +8323,6 @@ undefined4 param_1;
 
 
 
-undefined4 FUN_00026194()
-
-{
-  byte bVar1;
-  char cVar2;
-  short sVar3;
-  int iVar4;
-  int iVar5;
-  ushort *puVar6;
-  uint uVar7;
-  /* Same "6 independent locals treated as one contiguous record via
-     DAT_00202c6c" bug already fixed in FUN_000546c4's own sibling
-     collision-envelope caller (see its own comment, uw.c ~46514) --
-     this function has the IDENTICAL local name set (local_3c/3a/38/
-     34/33/32) and was never converted. Every DAT_00202c6c[N] read
-     throughout collision_height_envelope/collision_build_height_field/
-     FUN_00051dd0/spawn_blood_splat_object assumes one contiguous record, but as
-     independent C locals this compiler is free to place them (and
-     every OTHER local in this function, including iVar5) anywhere,
-     with any padding. Confirmed live via UW_DEBUG_COMBAT tracing: a
-     real attack swing's own `iVar5` (a small, masked heading value,
-     mathematically bounded to 0-255) read back as 0x80808080
-     (uninitialized-pattern garbage) at spawn_blood_splat_object's own call site --
-     writes through DAT_00202c6c at offsets up to 0x15 (from this
-     function's own body) were silently scribbling over whatever
-     unrelated local the compiler happened to place there instead of
-     real struct fields, this session's own instance of the "attacking
-     seems to do nothing, and generating a blood-splat effect crashes"
-     QA report (the crash instances presumably hit some OTHER
-     overlapping local worse than iVar5 was hit here). Same fix:
-     real backing array, zeroed before use, sized generously (0x20)
-     past the highest offset (0x15) this function's own body touches. */
-  undefined1 local_pos_record[0x20];
-#define local_3c (*(short *)(local_pos_record + 0))
-#define local_3a (*(short *)(local_pos_record + 2))
-#define local_38 (*(short *)(local_pos_record + 4))
-#define local_34 (local_pos_record[8])
-#define local_33 (local_pos_record[9])
-#define local_32 (*(short *)(local_pos_record + 0xa))
-
-  Ordinal_1047(local_pos_record, 0, sizeof(local_pos_record));
-  DAT_00202c6c = &local_3c;
-  uVar7 = (uint)DAT_001005f4;
-  local_34 = (char)DAT_001005f4 + '\x01';
-  local_32 = DAT_00100610;
-  local_33 = (char)((uVar7 & 0xff) << 3) + '\x04';
-  iVar5 = (int)DAT_00100610;
-  puVar6 = (ushort *)(iVar5 * 0x1b + DAT_002046b8);
-  bVar1 = (&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd];
-  iVar4 = Ordinal_2005(3,(int)DAT_001005f8);
-  sVar3 = Ordinal_2005(3,(uint)bVar1 * iVar4);
-  sVar3 = ((byte)puVar6[1] & 0x7f) + sVar3;
-  if (iVar5 == 1) {
-    iVar5 = (int)DAT_0023beb4;
-    if (iVar5 < 0) {
-      iVar5 = iVar5 + 0x1ff;
-    }
-    sVar3 = sVar3 + (short)(iVar5 >> 9);
-  }
-  local_38 = sVar3;
-  cVar2 = Ordinal_2005(6,(&DAT_00202c90)[(*puVar6 & 0x1ff) * 0xd]);
-  DAT_001005dc = cVar2 + (char)sVar3;
-  local_3c = (short)((puVar6[0xb] & 0xfc00) >> 7) + (ushort)(*(byte *)((char *)puVar6 + 3) >> 5);
-  local_3a = (short)((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
-  iVar5 = ((byte)puVar6[0xc] & 0x1f) + ((puVar6[1] & 0x380) >> 2);
-  project_position_by_heading(iVar5,uVar7 + 3,&local_3c,&local_3a);
-  collision_height_envelope(0,1);
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: blocked=%d\n", (int)*(char *)((char *)DAT_00202c6c + 0x14));
-  if (*(char *)((char *)DAT_00202c6c + 0x14) == '\0') {
-    collision_build_height_field(0);
-    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: no-block path, height field bits=0x%x\n", (unsigned)(*(ushort *)((char *)DAT_00202c6c + 0xe) | *(ushort *)((char *)DAT_00202c6c + 0xc)));
-    if (((*(ushort *)((char *)DAT_00202c6c + 0xe) | *(ushort *)((char *)DAT_00202c6c + 0xc)) & 0x300) != 0
-       ) {
-      iVar4 = ((puVar6[0xb] & 0xfc00) >> 7) + (uint)(*(byte *)((char *)puVar6 + 3) >> 5);
-      *(char *)DAT_00202c6c = (char)iVar4;
-      *(char *)((char *)DAT_00202c6c + 1) = (char)((uint)iVar4 >> 8);
-      iVar4 = ((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
-      *(char *)((char *)DAT_00202c6c + 2) = (char)iVar4;
-      *(char *)((char *)DAT_00202c6c + 3) = (char)((uint)iVar4 >> 8);
-      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: calling spawn_blood_splat_object (wall splat) with iVar5=%d DAT_001005f4=%d\n", iVar5, (int)DAT_001005f4);
-      spawn_blood_splat_object(iVar5,DAT_001005f4 + 3,DAT_00202c6c);
-    }
-  }
-  else {
-    FUN_00051dd0();
-    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: blocked path, creature_hit_flag=%d\n", (int)*(char *)((char *)DAT_00202c6c + 0x15));
-    if (*(char *)((char *)DAT_00202c6c + 0x15) != '\0') {
-      sVar3 = find_nearest_hit_target();
-      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: find_nearest_hit_target returned %d\n", (int)sVar3);
-      if (-1 < sVar3) {
-        iVar5 = sVar3 * 6;
-        DAT_00100624 = resolve_combat_hit_zone((&DAT_00202c39)[iVar5],(&DAT_00202c38)[iVar5],
-                                    (int)*(short *)((char *)DAT_00202c6c + 4),
-                                    (uint)*(byte *)((char *)DAT_00202c6c + 9) +
-                                    (int)*(short *)((char *)DAT_00202c6c + 4));
-        DAT_00100620 = *(ushort *)(&DAT_00202c3a + iVar5) >> 6;
-        if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: HIT target slot=%d\n", (int)DAT_00100620);
-        return 1;
-      }
-    }
-  }
-  return 0;
-}
-#undef local_3c
-#undef local_3a
-#undef local_38
-#undef local_34
-#undef local_33
-#undef local_32
 
 
 
@@ -8739,7 +8630,7 @@ undefined4 FUN_000270d0()
   undefined4 uVar4;
   undefined4 uVar5;
   
-  iVar1 = FUN_00026194();
+  iVar1 = resolve_melee_swing_hit();
   if (iVar1 == 0) {
     uVar2 = 0;
   }
