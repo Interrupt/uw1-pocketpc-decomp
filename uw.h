@@ -1690,6 +1690,11 @@ extern undefined1 DAT_0023c698_backing[32768];
 #define DAT_0023c698 DAT_0023c698_backing[0]
 extern undefined1 DAT_00101968_backing[8192]; // babl render-text scratch buffer (message-format/filename reuse)
 #define DAT_00101968 DAT_00101968_backing[0]
+extern undefined1 DAT_00085448_backing[32768]; // render_babl_dialog_window's own local text-scratch buffer, copied into its huge stack buffer
+#define DAT_00085448 DAT_00085448_backing[0]
+extern ushort DAT_00101a6c;
+extern undefined4 DAT_00101a70;
+extern undefined *PTR_FUN_00085408;
 extern HWND__ *DAT_0023c548;
 extern unsigned short u_Software_Apps_ZIO_Interactive_Ul_000877a4[];
 extern char s__Program_Files_ZIO_Interactive_U_00087804[];
@@ -2857,7 +2862,7 @@ undefined4 babl_render_op_show_code();
 undefined4 babl_render_op_say();
 undefined4 babl_render_op_play_sound();
 void babl_render_tick();
-void FUN_0003671c();
+void render_babl_dialog_window();
 void FUN_00037c14();
 void FUN_00037d50();
 void FUN_00037d6c();
