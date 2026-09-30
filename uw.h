@@ -2849,7 +2849,7 @@ void bubble_sort_indices_by_key_table();
 undefined2 load_voice_sample_page();
 uint read_voice_sample_page_chunk();
 void convert_palette_bgrx_to_rgb();
-void FUN_0003601c();
+void tick_book_illustration_palette_cycles();
 undefined4 FUN_000360f4();
 undefined4 FUN_00036460();
 undefined4 FUN_0003651c();

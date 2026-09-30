@@ -9613,61 +9613,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-/* NOT a per-tile lava/water/torch tile-shimmer driver, despite looking
-   like one -- traced both of its two real call sites (uw.c ~37381 and
-   ~68657) and they're gated on a special object flag right where the
-   game prints "You read the..." and dispatches to
-   FUN_00037c14((param_1[3]>>6&0x1ff)+0x100): this is the SPECIAL
-   ILLUSTRATED BOOK/SCROLL full-screen view feature (a rare object
-   class that shows a picture, with a few small animated palette-cycled
-   details, when read -- distinct from an ordinary scroll's text
-   popup). Confirmed unreachable from normal per-tick gameplay
-   rendering: a live UW_DEBUG_PALCYCLE_RECORDS trace never fired once
-   across several walking demos nor 60 real ticks standing directly on
-   the known water tile from [[water-wading-and-wall-slide-findings]]
-   (SETPLAYERPOS 6.58 4.92 0 191 0) -- ruling this specific function
-   out as the mechanism for ordinary water/lava/wall-torch shimmer
-   during play, if the original game has one at all. Iterates a
-   16-slot table of 8-byte records (last-update clock, a rate value
-   Ordinal_2005'd against 0x38e, then a start/end palette-index byte
-   pair) -- genuinely reusable for animating multiple independent
-   palette ranges, but nothing in its enclosing function
-   (FUN_0003671c) was found writing real per-object data into that
-   table; it may be uninitialized/link-time data this decompile never
-   recovered, same class of gap as other tables in this file. */
-void FUN_0003601c(param_1)
-ushort * param_1;
-
-{
-  undefined2 uVar1;
-  uint uVar2;
-  int iVar3;
-  int iVar4;
-  
-  iVar4 = 0x10;
-  do {
-    if (getenv("UW_DEBUG_PALCYCLE_RECORDS") && param_1[1] != 0) {
-      fprintf(stderr, "[palcycle] slot=%d last=%u rate=%u start=%d end=%d\n",
-              0x10 - iVar4, (unsigned)*param_1, (unsigned)param_1[1],
-              (int)(byte)param_1[3], (int)*(byte *)((char *)param_1 + 7));
-    }
-    if (param_1[1] != 0) {
-      uVar2 = read_realtime_clock_units();
-      iVar3 = Ordinal_2005(param_1[1],0x38e);
-      if (iVar3 <= (int)((uVar2 & 0xffff) - (uint)*param_1)) {
-        uVar2 = (1 - (uint)(byte)param_1[3]) + (uint)*(byte *)((char *)param_1 + 7);
-        palette_cycle_range((uint)(byte)param_1[3],uVar2,0);
-        reinstall_active_palette(uVar2 & 0xff,(char)param_1[3],1);
-        uVar1 = read_realtime_clock_units();
-        *(char *)param_1 = (char)uVar1;
-        *(char *)((char *)param_1 + 1) = (char)((ushort)uVar1 >> 8);
-      }
-    }
-    iVar4 = iVar4 + -1;
-    param_1 = param_1 + 4;
-  } while (iVar4 != 0);
-  return;
-}
 
 
 
@@ -10229,7 +10174,7 @@ LAB_00036ca4:
                     uVar14 = local_88;
                   }
                   if (param_1 != 10) {
-                    FUN_0003601c(uVar14 + 0x80);
+                    tick_book_illustration_palette_cycles(uVar14 + 0x80);
                   }
                   FUN_000366bc(acStack_d0);
                   sVar6 = -1;
@@ -10374,7 +10319,7 @@ LAB_00036ca4:
                      ((local_8b & 0x80) == 0)) break;
                   sVar6 = -1;
                   if (param_1 != 10) {
-                    FUN_0003601c(local_88 + 0x80);
+                    tick_book_illustration_palette_cycles(local_88 + 0x80);
                   }
                   FUN_000366bc(acStack_d0);
                   if (((local_8b & 0x80) != 0) && (iVar9 = is_voice_sample_finished(), iVar9 != 0)) {
