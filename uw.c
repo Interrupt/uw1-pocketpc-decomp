@@ -9118,7 +9118,7 @@ LAB_0002f6cc:
   *(byte *)((char *)DAT_0010190c + 0xc) = (byte)((uVar1 & 0xfff) >> 8) | (byte)(((uVar7 & 0xf) << 0xc) >> 8)
   ;
 LAB_0002f810:
-  FUN_00031dbc();
+  npc_react_to_nearby_player();
   return;
 }
 
@@ -9332,47 +9332,6 @@ LAB_0002fe88:
 
 
 
-void FUN_00031dbc()
-
-{
-  int uw_ord2005_rem_82 = 0; int uw_ord2005_rem_83 = 0;
-  ushort uVar1;
-  char *iVar2;
-  undefined4 uVar3;
-  int extraout_r1;
-  uint extraout_r1_00;
-  uint uVar4;
-  uint uVar5;
-  
-  if (((*(byte *)((char *)DAT_0010190c + 0x13) & 0x7f) == 0) || ((*(byte *)(DAT_00086df8 + 0x5f) & 2) != 0))
-  {
-    uVar5 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf01f;
-    *(byte *)((char *)DAT_0010190c + 0xb) = (byte)uVar5 | 0x10;
-    *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar5 >> 8);
-    FUN_00034044();
-    if ((ushort)(DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448) < 0x90) {
-      uVar5 = compute_movement_heading((int)(char)DAT_00101444,(int)(char)DAT_00101448);
-      *(byte *)((char *)DAT_0010190c + 0x13) = *(byte *)((char *)DAT_0010190c + 0x13) & 0x80;
-      *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xe0 | 0x20;
-      *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfe | 6;
-      uVar3 = Ordinal_1053();
-      uw_ord2005_rem_82 = ((int)(uVar3)) % (2);
-      if (uw_ord2005_rem_82 != 0) {
-        uVar1 = *(ushort *)((char *)DAT_0010190c + 0xb);
-        uw_ord2005_rem_83 = ((int)((uVar1 >> 0xc) + 1)) % (4);
-        uVar4 = uVar1 & 0xfff;
-        *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar4;
-        *(byte *)((char *)DAT_0010190c + 0xc) =
-             (byte)(uVar4 >> 8) | (byte)(((uw_ord2005_rem_83 & 0xf) << 0xc) >> 8);
-      }
-      uVar5 = *(ushort *)((char *)DAT_0010190c + 2) & 0xfc7f | (uVar5 & 7) << 7;
-      *(char *)((char *)DAT_0010190c + 2) = (char)uVar5;
-      *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
-      *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xe0;
-    }
-  }
-  return;
-}
 
 
 

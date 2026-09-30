@@ -2782,7 +2782,7 @@ void npc_combat_engage_wide_tick();
 void npc_combat_position_tick();
 uint adjust_heading_away_from_player();
 void npc_combat_disengage_tick();
-void FUN_00031dbc();
+void npc_react_to_nearby_player();
 void npc_wander_return_home_exact_tick();
 undefined4 FUN_00032180();
 undefined4 FUN_00032410();
