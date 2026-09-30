@@ -2869,7 +2869,7 @@ void display_book_or_scroll_page();
 void cache_ambient_sound_handle();
 void record_illustration_discovery_and_display();
 undefined4 discard_container_contents();
-undefined4 FUN_00037fe8();
+undefined4 reset_burnt_out_item_state();
 undefined4 FUN_00038028();
 undefined4 FUN_000382cc();
 undefined4 FUN_00038374();

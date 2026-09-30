@@ -9638,26 +9638,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_00037fe8(param_1,param_2)
-undefined4 param_1;
-/* Object-record pointer -- was `uint`, truncating it (same class as
-   object_list_insert_head/object_list_append_tail below). */
-char *param_2;
-
-{
-  int iVar1;
-
-  if (param_2 < DAT_002046c4) {
-    *(undefined1 *)(param_2 + 8) = 0;
-  }
-  else {
-    iVar1 = discard_misplaced_object(param_1,param_2,0);
-    if (iVar1 == 0) {
-      return 1;
-    }
-  }
-  return 0;
-}
 
 
 
@@ -9712,7 +9692,7 @@ LAB_00038100:
              for unrelated int values) -- truncated tilemap_lookup's real
              `void *` return */
           char *_tile3 = (char *)tilemap_lookup(param_4,(int)param_5);
-          iVar3 = FUN_00037fe8(_tile3 + 2,param_1);
+          iVar3 = reset_burnt_out_item_state(_tile3 + 2,param_1);
           if (iVar3 != 0) goto LAB_000382ac;
           uVar6 = 0xffffffff;
         }

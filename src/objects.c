@@ -647,3 +647,33 @@ undefined4 param_2;
   return puVar3;
 }
 
+
+
+// was FUN_00037fe8 -- resets an object (param_2) whose burnt-out/
+// spent counterpart type is being assigned (its only known caller
+// checks item type ids 0xd5/0xd6, the same "spent" marker ids seen
+// elsewhere as a candle/torch-style burnout transition): for a mobile
+// object, just zeroes its HP field; for a plain object-header object,
+// discards it if it's misplaced (discard_misplaced_object). Returns 1
+// if the object was left alone (not misplaced), 0 if it was reset/
+// discarded.
+undefined4 reset_burnt_out_item_state(param_1,param_2)
+undefined4 param_1;
+/* Object-record pointer -- was `uint`, truncating it (same class as
+   object_list_insert_head/object_list_append_tail below). */
+char *param_2;
+
+{
+  int iVar1;
+
+  if (param_2 < DAT_002046c4) {
+    *(undefined1 *)(param_2 + 8) = 0;
+  }
+  else {
+    iVar1 = discard_misplaced_object(param_1,param_2,0);
+    if (iVar1 == 0) {
+      return 1;
+    }
+  }
+  return 0;
+}
