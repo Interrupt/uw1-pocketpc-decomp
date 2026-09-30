@@ -2420,7 +2420,7 @@ long uw_debug_pickbuf_capacity(void) {
 }
 undefined1 DAT_00110fc4;
 undefined4 DAT_00110bb8;
-/* Was `undefined4` (4 bytes) despite FUN_00038acc using it to reset
+/* Was `undefined4` (4 bytes) despite init_draw_command_cursor using it to reset
    DAT_00110fc0 (`char *`) -- truncating on this 64-bit host, and
    overwriting the DAT_00110fc0_scratch fallback (see DAT_00110fc0's own
    comment) with a truncated garbage/NULL pointer right before
@@ -9668,106 +9668,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-int FUN_00038a8c(param_1)
-int param_1;
-
-{
-  return (param_1 + 0x7ff4) * 2 + (uint)(ushort)DAT_00110fc8;
-}
-
-
-
-void FUN_00038ab0()
-
-{
-  DAT_00110bb8 = DAT_00110fc0;
-  return;
-}
-
-
-
-void FUN_00038acc()
-
-{
-  DAT_00110fc0 = DAT_00110fcc;
-  return;
-}
-
-
-
-void FUN_00038ae8(param_1,param_2)
-uint param_1;
-undefined2 param_2;
-
-{
-  byte bVar1;
-  short *psVar2;
-  byte *pbVar3;
-  
-  param_1 = param_1 & 0xff;
-  if (param_1 == 0xa0) {
-    DAT_00201b38 = (undefined2)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1);
-    psVar2 = DAT_00110fc0;
-    DAT_00201b10 = param_2;
-  }
-  else {
-    if (DAT_00110a78[param_1] != -1) {
-      *DAT_00110fc0 =
-           (((short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1) + 1) * 0x7fff + DAT_00110a78[param_1]
-           ) * 2;
-      goto LAB_00038c04;
-    }
-    pbVar3 = DAT_00110fd0 + param_1;
-    if ((*pbVar3 == 0x10) || (0x1f < param_1)) {
-      terminate_process(0xffffffec);
-    }
-    psVar2 = DAT_00110fc0;
-    bVar1 = *pbVar3;
-    DAT_00110bc0[(uint)bVar1 + param_1 * 0x10] = (short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1);
-    *pbVar3 = bVar1 + 1;
-  }
-  *psVar2 = 0;
-LAB_00038c04:
-  DAT_00110fc0 = DAT_00110fc0 + 1;
-  return;
-}
-
-
-
-void FUN_00038c14(param_1)
-uint param_1;
-
-{
-  int iVar1;
-  char *iVar2;
-
-  /* Same never-initialized-in-this-decompile DAT_00110fc8 issue documented
-     on its sibling function above (see that comment) -- guard this one the
-     same way instead of dereferencing NULL. */
-  if (DAT_00110fc8 == 0) {
-    return;
-  }
-  iVar2 = DAT_00110fc8;
-  param_1 = param_1 & 0xff;
-  if (param_1 == 0xa0) {
-    *(ushort *)(DAT_00110fc8 + (uint)DAT_00201b38 * 2) =
-         ((DAT_00201b10 + DAT_00201b38) * 0x7fff + (short)(DAT_00110fc0 - DAT_00110fc8 >> 1)) * 2;
-  }
-  else {
-    DAT_00110a78[param_1] = (short)(DAT_00110fc0 - DAT_00110fc8 >> 1);
-    if ((param_1 < 0x20) && (DAT_00110fd0[param_1] != 0)) {
-      iVar1 = 0;
-      do {
-        *(ushort *)(iVar2 + (uint)(ushort)DAT_00110bc0[param_1 * 0x10 + iVar1] * 2) =
-             ((DAT_00110bc0[param_1 * 0x10 + iVar1] + 1) * 0x7fff + DAT_00110a78[param_1]) * 2
-        ;
-        iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
-        iVar2 = DAT_00110fc8;
-      } while (iVar1 < (int)(uint)(byte)DAT_00110fd0[param_1]);
-    }
-  }
-  return;
-}
 
 
 
@@ -26164,8 +26064,8 @@ void FUN_0005b828()
     }
   }
   init_glyph_width_table();
-  FUN_00038acc();
-  FUN_00038ab0();
+  init_draw_command_cursor();
+  save_draw_command_cursor();
   DAT_0023aed0 = DAT_00110fc0;
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
@@ -26181,7 +26081,7 @@ void FUN_0005bac0()
 {
   draw_command_list_rewind();
   emit_hud_draw_commands();
-  FUN_00038c14(0xa0);
+  finalize_glyph_draw_command(0xa0);
   *DAT_00110fc0 = 0;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   set_viewport_clip_rect(0,0,DAT_0023b020 + -1,DAT_0023aed4 + -1);
@@ -27525,7 +27425,7 @@ LAB_00061d34:
     if (DAT_0023b830 == 0 && DAT_00086b2c == 0) {
       *DAT_00110fc0 = 2;
       DAT_00110fc0 = DAT_00110fc0 + 1;
-      uVar16 = FUN_00038a8c(8);
+      uVar16 = get_catalog_sprite_width(8);
       *DAT_00110fc0 = uVar16;
       DAT_00110fc0 = DAT_00110fc0 + 1;
       *DAT_00110fc0 = 0;
@@ -27544,7 +27444,7 @@ LAB_00061d34:
     }
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    uVar16 = FUN_00038a8c(8);
+    uVar16 = get_catalog_sprite_width(8);
     *DAT_00110fc0 = uVar16;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 1;
@@ -27574,7 +27474,7 @@ LAB_00060f54:
   if (bVar14) {
     *DAT_00110fc0 = 2;
     DAT_00110fc0 = DAT_00110fc0 + 1;
-    uVar16 = FUN_00038a8c(8);
+    uVar16 = get_catalog_sprite_width(8);
     *DAT_00110fc0 = uVar16;
     DAT_00110fc0 = DAT_00110fc0 + 1;
     *DAT_00110fc0 = 0;
@@ -27590,7 +27490,7 @@ LAB_00060f54:
   }
   *DAT_00110fc0 = 2;
   DAT_00110fc0 = DAT_00110fc0 + 1;
-  uVar16 = FUN_00038a8c(8);
+  uVar16 = get_catalog_sprite_width(8);
   *DAT_00110fc0 = uVar16;
   DAT_00110fc0 = DAT_00110fc0 + 1;
   *DAT_00110fc0 = 1;

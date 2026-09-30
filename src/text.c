@@ -503,3 +503,137 @@ void init_glyph_width_table()
   DAT_00189588 = 0x20;
   return;
 }
+
+
+// was FUN_00038a8c -- computes a catalog sprite/texture id's stored
+// width value from the glyph/sprite data table (DAT_00110fc8). Widely
+// used across the HUD, dungeon-view, and 3D model-rendering code
+// (as "tex_w"/"tex_h" at its call sites) to look up a catalog
+// sprite's width for layout/UV purposes -- shares its underlying
+// table with the glyph-width system (init_glyph_width_table,
+// emit_glyph_draw_command, finalize_glyph_draw_command).
+int get_catalog_sprite_width(param_1)
+int param_1;
+
+{
+  return (param_1 + 0x7ff4) * 2 + (uint)(ushort)DAT_00110fc8;
+}
+
+
+
+// was FUN_00038ab0 -- saves the current draw-command list write
+// cursor (DAT_00110fc0) into DAT_00110bb8.
+void save_draw_command_cursor()
+
+{
+  DAT_00110bb8 = DAT_00110fc0;
+  return;
+}
+
+
+
+// was FUN_00038acc -- one-time bootstrap: resets the draw-command
+// list write cursor (DAT_00110fc0) to its buffer base (DAT_00110fcc).
+// Only known caller runs during game init, immediately before
+// DAT_0023aed0 (the list start draw_command_list_rewind later resets
+// to) is captured from the resulting cursor position.
+void init_draw_command_cursor()
+
+{
+  DAT_00110fc0 = DAT_00110fcc;
+  return;
+}
+
+
+
+// was FUN_00038ae8 -- emits a glyph/sprite reference (param_1, a
+// catalog id; param_2 a value used only for the special id 0xa0) into
+// the draw-command list at the write cursor. For an already-
+// registered glyph (DAT_00110a78[id] != -1) writes a direct
+// byte-code reference and returns; otherwise records this occurrence
+// in the pending-reference table (DAT_00110bc0/DAT_00110fd0, up to 16
+// per glyph) to be backpatched once the glyph's width is known via
+// finalize_glyph_draw_command. Id 0xa0 is a special end-of-list
+// marker, saving its own state into DAT_00201b38/DAT_00201b10 instead.
+void emit_glyph_draw_command(param_1,param_2)
+uint param_1;
+undefined2 param_2;
+
+{
+  byte bVar1;
+  short *psVar2;
+  byte *pbVar3;
+  
+  param_1 = param_1 & 0xff;
+  if (param_1 == 0xa0) {
+    DAT_00201b38 = (undefined2)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1);
+    psVar2 = DAT_00110fc0;
+    DAT_00201b10 = param_2;
+  }
+  else {
+    if (DAT_00110a78[param_1] != -1) {
+      *DAT_00110fc0 =
+           (((short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1) + 1) * 0x7fff + DAT_00110a78[param_1]
+           ) * 2;
+      goto LAB_00038c04;
+    }
+    pbVar3 = DAT_00110fd0 + param_1;
+    if ((*pbVar3 == 0x10) || (0x1f < param_1)) {
+      terminate_process(0xffffffec);
+    }
+    psVar2 = DAT_00110fc0;
+    bVar1 = *pbVar3;
+    DAT_00110bc0[(uint)bVar1 + param_1 * 0x10] = (short)((int)DAT_00110fc0 - (int)DAT_00110fc8 >> 1);
+    *pbVar3 = bVar1 + 1;
+  }
+  *psVar2 = 0;
+LAB_00038c04:
+  DAT_00110fc0 = DAT_00110fc0 + 1;
+  return;
+}
+
+
+
+// was FUN_00038c14 -- finalizes a glyph/sprite id's draw-command
+// entry (param_1): computes its width from the current cursor delta
+// and records it in DAT_00110a78, then backpatches every pending
+// reference emit_glyph_draw_command recorded for it. Id 0xa0 instead
+// backpatches the special end-of-list marker saved by that function's
+// own 0xa0 branch. Always called with 0xa0 at every currently-visible
+// call site (list-finalize time); the general id path is reached
+// internally by the glyph/sprite catalog build this shares with
+// emit_glyph_draw_command.
+void finalize_glyph_draw_command(param_1)
+uint param_1;
+
+{
+  int iVar1;
+  char *iVar2;
+
+  /* Same never-initialized-in-this-decompile DAT_00110fc8 issue documented
+     on its sibling function above (see that comment) -- guard this one the
+     same way instead of dereferencing NULL. */
+  if (DAT_00110fc8 == 0) {
+    return;
+  }
+  iVar2 = DAT_00110fc8;
+  param_1 = param_1 & 0xff;
+  if (param_1 == 0xa0) {
+    *(ushort *)(DAT_00110fc8 + (uint)DAT_00201b38 * 2) =
+         ((DAT_00201b10 + DAT_00201b38) * 0x7fff + (short)(DAT_00110fc0 - DAT_00110fc8 >> 1)) * 2;
+  }
+  else {
+    DAT_00110a78[param_1] = (short)(DAT_00110fc0 - DAT_00110fc8 >> 1);
+    if ((param_1 < 0x20) && (DAT_00110fd0[param_1] != 0)) {
+      iVar1 = 0;
+      do {
+        *(ushort *)(iVar2 + (uint)(ushort)DAT_00110bc0[param_1 * 0x10 + iVar1] * 2) =
+             ((DAT_00110bc0[param_1 * 0x10 + iVar1] + 1) * 0x7fff + DAT_00110a78[param_1]) * 2
+        ;
+        iVar1 = (iVar1 + 1) * 0x10000 >> 0x10;
+        iVar2 = DAT_00110fc8;
+      } while (iVar1 < (int)(uint)(byte)DAT_00110fd0[param_1]);
+    }
+  }
+  return;
+}
