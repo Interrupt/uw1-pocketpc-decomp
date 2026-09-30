@@ -1430,6 +1430,12 @@ extern undefined DAT_001007f8;
 extern char s__DATA_cmb_dat_00084f40[];
 extern undefined2 DAT_00100630_backing[32768];
 #define DAT_00100630 DAT_00100630_backing[0]
+extern char s_objsbecombinable_returns__d_00084f50[];
+extern char s_combination__d_is__d_and__d__00084f70[];
+extern char s_checking_if__d_and__d_are_combin_00084f90[];
+extern undefined1 DAT_00100634_backing[65536];
+#define DAT_00100634 DAT_00100634_backing[0]
+extern undefined2 DAT_00100632;
 extern undefined2 DAT_00100624;
 extern ushort DAT_00100620;
 extern undefined1 DAT_00203303;
@@ -2646,9 +2652,9 @@ void apply_direct_object_hit();
 int resolve_npc_melee_attack();
 void award_monster_kill_experience();
 void load_combat_data_file();
-int FUN_0002805c();
-undefined4 FUN_0002822c();
-bool FUN_00028254();
+int objects_are_combinable();
+undefined4 spawn_combined_object();
+bool is_object_consumed_in_combination();
 undefined4 FUN_000282ac();
 void FUN_00028488();
 void FUN_000286cc();

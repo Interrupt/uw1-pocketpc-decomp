@@ -2254,3 +2254,95 @@ undefined2 param_5;
   }
   return;
 }
+
+
+// was FUN_0002805c -- checks if two objects are combinable: searches
+// the combat/combination data table (&DAT_00100630, loaded by
+// load_combat_data_file, 10 entries) for an unordered match of the two
+// object ids, returning the combination index or -1 if none matches.
+// Own debug trace confirms this role verbatim ("checking if %d and %d
+// are combinable" / "objsbecombinable returns %d").
+int objects_are_combinable(param_1,param_2)
+ushort * param_1;
+ushort * param_2;
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  ushort uVar3;
+  ushort uVar4;
+  int iVar5;
+  short sVar6;
+  ushort *puVar7;
+  int iVar8;
+  
+  uVar2 = *param_1;
+  if ((((uVar2 & 0x8000) == 0) || ((param_1[3] & 0xffc0) < 0x41)) &&
+     (((uVar2 & 0x8000) != 0 || ((param_1[3] & 0xffc0) == 0)))) {
+    uVar1 = *param_2;
+    if ((((uVar1 & 0x8000) == 0) || ((param_2[3] & 0xffc0) < 0x41)) &&
+       (((uVar1 & 0x8000) != 0 || ((param_2[3] & 0xffc0) == 0)))) {
+      uVar1 = uVar1 & 0x1ff;
+      uVar2 = uVar2 & 0x1ff;
+      debug_print(s_checking_if__d_and__d_are_combin_00084f90,uVar2,uVar1);
+      puVar7 = &DAT_00100630;
+      iVar8 = 0;
+      do {
+        uVar3 = *puVar7 & 0x1ff;
+        uVar4 = puVar7[1] & 0x1ff;
+        debug_print(s_combination__d_is__d_and__d__00084f70,iVar8,uVar3,uVar4);
+        if (((*puVar7 | puVar7[1]) & 0x8000) != 0) {
+          if (((uVar3 == uVar2) && (uVar4 == uVar1)) || ((uVar3 == uVar1 && (uVar4 == uVar2))))
+          break;
+          puVar7 = puVar7 + 3;
+        }
+        iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
+      } while (iVar8 < 10);
+      sVar6 = (short)iVar8;
+      iVar8 = (int)sVar6;
+      iVar5 = -1;
+      if (iVar8 != 10) {
+        iVar5 = iVar8;
+      }
+      debug_print(s_objsbecombinable_returns__d_00084f50,iVar5);
+      if (iVar8 == 10) {
+        sVar6 = -1;
+      }
+      return (int)sVar6;
+    }
+  }
+  return -1;
+}
+
+
+
+// was FUN_0002822c -- spawns the resulting object for combination
+// index param_1 (the id looked up from &DAT_00100634, the same
+// combination-table stride objects_are_combinable searches).
+undefined4 spawn_combined_object(param_1)
+short param_1;
+
+{
+  spawn_new_object((int)*(short *)(&DAT_00100634 + param_1 * 6),0);
+  return 0;
+}
+
+
+
+// was FUN_00028254 -- checks whether object param_1 is the "consumed"
+// ingredient half of combination index param_2: picks whichever of the
+// combination table's two id slots matches param_1's own id, and
+// returns that slot's own high bit (its "consumed" flag).
+bool is_object_consumed_in_combination(param_1,param_2)
+ushort * param_1;
+short param_2;
+
+{
+  ushort *puVar1;
+
+  puVar1 = &DAT_00100630 + param_2 * 3;
+  if (((*puVar1 ^ *param_1) & 0x1ff) != 0) {
+    puVar1 = &DAT_00100632 + param_2 * 3;
+  }
+  return (*puVar1 & 0x8000) != 0;
+}

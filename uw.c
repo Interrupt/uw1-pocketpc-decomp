@@ -1725,7 +1725,7 @@ undefined2 DAT_00100630_backing[32768];
 char s_objsbecombinable_returns__d_00084f50[] = "objsbecombinable_returns_%d";
 char s_combination__d_is__d_and__d__00084f70[] = "combination_%d_is_%d_and_%d.";
 char s_checking_if__d_and__d_are_combin_00084f90[] = "checking_if_%d_and_%d_are_combin";
-static undefined1 DAT_00100634_backing[65536];
+undefined1 DAT_00100634_backing[65536];
 #define DAT_00100634 DAT_00100634_backing[0]
 undefined2 DAT_00100632;
 char *g_current_container_record;
@@ -8347,83 +8347,6 @@ undefined4 param_1;
 
 
 
-int FUN_0002805c(param_1,param_2)
-ushort * param_1;
-ushort * param_2;
-
-{
-  ushort uVar1;
-  ushort uVar2;
-  ushort uVar3;
-  ushort uVar4;
-  int iVar5;
-  short sVar6;
-  ushort *puVar7;
-  int iVar8;
-  
-  uVar2 = *param_1;
-  if ((((uVar2 & 0x8000) == 0) || ((param_1[3] & 0xffc0) < 0x41)) &&
-     (((uVar2 & 0x8000) != 0 || ((param_1[3] & 0xffc0) == 0)))) {
-    uVar1 = *param_2;
-    if ((((uVar1 & 0x8000) == 0) || ((param_2[3] & 0xffc0) < 0x41)) &&
-       (((uVar1 & 0x8000) != 0 || ((param_2[3] & 0xffc0) == 0)))) {
-      uVar1 = uVar1 & 0x1ff;
-      uVar2 = uVar2 & 0x1ff;
-      debug_print(s_checking_if__d_and__d_are_combin_00084f90,uVar2,uVar1);
-      puVar7 = &DAT_00100630;
-      iVar8 = 0;
-      do {
-        uVar3 = *puVar7 & 0x1ff;
-        uVar4 = puVar7[1] & 0x1ff;
-        debug_print(s_combination__d_is__d_and__d__00084f70,iVar8,uVar3,uVar4);
-        if (((*puVar7 | puVar7[1]) & 0x8000) != 0) {
-          if (((uVar3 == uVar2) && (uVar4 == uVar1)) || ((uVar3 == uVar1 && (uVar4 == uVar2))))
-          break;
-          puVar7 = puVar7 + 3;
-        }
-        iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
-      } while (iVar8 < 10);
-      sVar6 = (short)iVar8;
-      iVar8 = (int)sVar6;
-      iVar5 = -1;
-      if (iVar8 != 10) {
-        iVar5 = iVar8;
-      }
-      debug_print(s_objsbecombinable_returns__d_00084f50,iVar5);
-      if (iVar8 == 10) {
-        sVar6 = -1;
-      }
-      return (int)sVar6;
-    }
-  }
-  return -1;
-}
-
-
-
-undefined4 FUN_0002822c(param_1)
-short param_1;
-
-{
-  spawn_new_object((int)*(short *)(&DAT_00100634 + param_1 * 6),0);
-  return 0;
-}
-
-
-
-bool FUN_00028254(param_1,param_2)
-ushort * param_1;
-short param_2;
-
-{
-  ushort *puVar1;
-  
-  puVar1 = &DAT_00100630 + param_2 * 3;
-  if (((*puVar1 ^ *param_1) & 0x1ff) != 0) {
-    puVar1 = &DAT_00100632 + param_2 * 3;
-  }
-  return (*puVar1 & 0x8000) != 0;
-}
 
 
 
@@ -21919,7 +21842,7 @@ uint param_2;
   }
   iVar5 = FUN_00047b38(param_1,puVar4);
   if (iVar5 == 0) {
-    uVar6 = FUN_0002805c(param_1,puVar4);
+    uVar6 = objects_are_combinable(param_1,puVar4);
     if ((short)uVar6 < 0) {
       if (iVar1 < 0x13) {
         puVar4 = (ushort *)extract_and_refresh_slot_item(0xffffffff,0xffffffff,0xffffffff,param_2,0);
@@ -21941,11 +21864,14 @@ uint param_2;
       }
     }
     else {
-      puVar7 = (ushort *)FUN_0002822c();
+      /* Was a dropped argument -- spawn_combined_object's own combination
+         index, matching objects_are_combinable's return value (uVar6)
+         used at every other call site in this branch. */
+      puVar7 = (ushort *)spawn_combined_object(uVar6);
       if (puVar7 == (ushort *)0x0) {
         return 0;
       }
-      iVar5 = FUN_00028254(param_1,uVar6);
+      iVar5 = is_object_consumed_in_combination(param_1,uVar6);
       if (iVar5 == 1) {
         discard_misplaced_object(0,param_1,1);
         g_cursor_holding_state = 1;
@@ -21955,7 +21881,7 @@ uint param_2;
            own identical fix comment. */
         FUN_00057c5c(*(ushort *)g_selected_object & 0x1ff);
       }
-      iVar8 = FUN_00028254(puVar4,uVar6);
+      iVar8 = is_object_consumed_in_combination(puVar4,uVar6);
       if (iVar8 != 0) {
         if (iVar5 == 0) {
           place_held_item_in_empty_slot(puVar7,param_2);
