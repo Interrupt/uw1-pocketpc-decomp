@@ -2215,7 +2215,7 @@ uint param_3;
 // elemental resistance first (resolve_damage_type_resistance), then
 // for an NPC target (class 0x40) applies HP damage directly
 // (apply_damage_to_object); for anything else, checks eligibility via
-// FUN_00038418 (not yet named) before routing to
+// apply_object_durability_damage (not yet named) before routing to
 // apply_object_destruction_effect for the object-specific
 // destroy/transform handling.
 undefined4 apply_typed_damage_to_object(param_1,param_2,param_3,param_4,param_5,param_6)
@@ -2236,7 +2236,7 @@ undefined1 param_6;
     uVar2 = apply_damage_to_object(param_1,uVar1,param_2);
   }
   else {
-    iVar3 = FUN_00038418(param_1,param_2,uVar1 & 0xff,param_3,param_4);
+    iVar3 = apply_object_durability_damage(param_1,param_2,uVar1 & 0xff,param_3,param_4);
     if (iVar3 == 0) {
       uVar2 = 0;
     }
@@ -2245,4 +2245,76 @@ undefined1 param_6;
     }
   }
   return uVar2;
+}
+
+
+// was FUN_00038418 -- applies durability damage (param_3, already
+// shifted right by the object type's hardness/resistance divisor from
+// DAT_00202c97) to a non-NPC object param_1, returning whether it
+// broke (durability reached 0). Bails out early (false, no damage)
+// for a protected object (flag bit 0x2000) or an indestructible class
+// (hardness divisor of 3) or non-positive adjusted damage. Uses
+// different durability fields depending on whether the object is a
+// live world object (object_ptr_in_arena) vs a portcullis/door-range
+// type (0x140-0x147) vs an ordinary item. On breaking (and not
+// in-arena, with a valid tile), also fires
+// trigger_object_trap_or_use_action(action 4).
+bool apply_object_durability_damage(param_1,param_2,param_3,param_4,param_5)
+ushort * param_1;
+undefined4 param_2;
+short param_3;
+undefined4 param_4;
+undefined2 param_5;
+
+{
+  int iVar1;
+  ushort uVar2;
+  bool bVar3;
+  int iVar4;
+  int iVar5;
+  uint uVar6;
+  
+  if ((((*param_1 & 0x2000) == 0) &&
+      (uVar6 = ((byte)(&DAT_00202c97)[(*param_1 & 0x1ff) * 0xd] & 0xc) >> 2, (short)uVar6 != 3)) &&
+     (iVar5 = (int)param_3 >> uVar6, 0 < (short)iVar5)) {
+    iVar4 = object_ptr_in_arena(param_1);
+    if (iVar4 == 0) {
+      if ((0x13f < (*param_1 & 0x1ff)) && ((*param_1 & 0x1ff) < 0x148)) {
+        uVar2 = param_1[3];
+        if (((uVar2 & 1) != 0) && ((uVar2 & 0x3e) != 0)) {
+          uVar6 = (uVar2 >> 1 & 0x1f) - iVar5;
+          if ((int)(uVar6 * 0x10000) >> 0x10 < 1) {
+            uVar6 = 0;
+          }
+          *(byte *)(param_1 + 3) = (byte)(uVar2 & 0xffc1) | (byte)((uVar6 & 0x1f) << 1);
+          *(char *)((char *)param_1 + 7) = (char)((uVar2 & 0xffc1) >> 8);
+          return false;
+        }
+      }
+      uVar2 = param_1[2];
+      iVar5 = ((int)(short)uVar2 & 0x3fU) - iVar5;
+      iVar1 = iVar5 * 0x10000 >> 0x10;
+      if (iVar1 < 1) {
+        iVar5 = 0;
+      }
+      *(byte *)(param_1 + 2) = ((byte)uVar2 ^ (byte)iVar5) & 0x3f ^ (byte)uVar2;
+      *(char *)((char *)param_1 + 5) = (char)(uVar2 >> 8);
+    }
+    else {
+      iVar5 = (uint)(byte)param_1[4] - iVar5;
+      iVar1 = iVar5 * 0x10000 >> 0x10;
+      if (iVar1 < 1) {
+        iVar5 = 0;
+      }
+      *(char *)(param_1 + 4) = (char)iVar5;
+    }
+    bVar3 = iVar1 < 1;
+    if (((bVar3) && (iVar4 == 0)) && (-1 < (short)param_4)) {
+      trigger_object_trap_or_use_action(param_2,param_1,4,param_4,param_5);
+    }
+  }
+  else {
+    bVar3 = false;
+  }
+  return bVar3;
 }
