@@ -2810,9 +2810,9 @@ void tick_mobile_objects(); // was FUN_000349bc
 void npc_set_goal_for_object();
 void randomize_active_npc_flags();
 undefined4 resolve_tile_entry_offset();
-void FUN_00034c10();
-undefined4 FUN_00034fa4();
-void FUN_0003513c();
+void npc_movement_tick();
+undefined4 settle_misplaced_mobile_object();
+void advance_mobile_objects();
 undefined4 FUN_000352d0();
 undefined4 FUN_00035340();
 undefined4 FUN_00035394();

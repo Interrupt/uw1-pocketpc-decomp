@@ -2685,7 +2685,7 @@ LAB_0007158c:
     else {
       iVar4 = FUN_00035894();
       if (iVar4 == 0) {
-        FUN_0003513c();
+        advance_mobile_objects();
         process_nearby_background_traps(0);
         uVar5 = Ordinal_1053();
         uw_ord2005_rem_146 = ((int)(uVar5)) % (4);

@@ -358,7 +358,7 @@ short param_2;
       FUN_000359f4();
     }
     else if (param_2 == 1) {
-      FUN_0003513c();
+      advance_mobile_objects();
     }
     if (param_1 == 7) {
       if ((*(byte *)(DAT_00086df8 + 0x60) & 0x20) == 0) {

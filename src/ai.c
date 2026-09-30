@@ -3762,3 +3762,230 @@ LAB_00034bf0:
   }
   return 1;
 }
+
+
+// was FUN_00034c10 -- per-tick movement/animation step for an active
+// NPC (class 0x40), called by advance_mobile_objects. Nudges the NPC's
+// HP toward its stat-template max, applies a random facing jitter,
+// bumps a shared per-class animation-frame accumulator (param_2, a
+// 64-byte scratch buffer keyed by class) toward/away from a rest frame
+// depending on which quadrant it's facing, and if it has just entered
+// a new tile, resolves an entry-point offset for that tile
+// (resolve_tile_entry_offset) and re-links it into the new tile's
+// object list at that sub-tile position.
+//
+// WARNING: Removing unreachable block (ram,0x00034e70)
+// WARNING: Removing unreachable block (ram,0x00034d4c)
+
+void npc_movement_tick(param_1,param_2)
+ushort * param_1;
+char *param_2; // was `int` -- truncated advance_mobile_objects's real stack-buffer
+                // pointer (acStack_58, a char[64] scratch record) on this
+                // 64-bit host. Confirmed live via lldb (bug surfaced after
+                // merging origin/main into this branch): param_2 arrived as
+                // a small, wild 32-bit value (the low half of the real
+                // stack address), and `pcVar3 = (char*)(param_2 + offset);
+                // cVar7 = *pcVar3 - 1;` dereferenced it, segfaulting.
+                // Pre-existing bug (present on both branches individually,
+                // stack-layout dependent -- whether the truncated address
+                // happens to still land in mapped memory), just not
+                // triggered until this merge's combined code size shifted
+                // the real stack layout enough to make it fatal.
+
+{
+  int uw_ord2005_rem_100 = 0;
+  byte bVar1;
+  undefined4 uVar2;
+  char *pcVar3;
+  ushort *puVar4;
+  int iVar5;
+  uint extraout_r1;
+  int iVar6;
+  char cVar7;
+  uint uVar8;
+  uint uVar9;
+  uint uVar10;
+  uint uVar11;
+  byte local_2c;
+  byte local_2b [3];
+  char *local_28;  /* was `int` -- truncated tilemap_lookup's real `void *` return */
+
+  iVar6 = ((byte)*param_1 & 0x3f) * 0x30;
+  uVar9 = (uint)(param_1[0xb] >> 10);
+  uVar11 = param_1[0xb] >> 4 & 0x3f;
+  local_28 = (char *)tilemap_lookup(uVar9,uVar11);
+  if (getenv("UW_DEBUG_NPC_TICK"))
+    fprintf(stderr, "[npc-tick] obj=%p class=0x%x tile=(%u,%u) target=(%u,%u)\n",
+            (void *)param_1, (unsigned)(*param_1 & 0x1ff), uVar9, uVar11,
+            (unsigned)((byte)param_1[2] & 0x3f), (unsigned)(param_1[3] & 0x3f));
+  if ((param_1[7] & 1) != 0) {
+    unlink_and_free_object(local_28 + 2,param_1);
+    return;
+  }
+  *(byte *)((char *)param_1 + 0x19) = *(byte *)((char *)param_1 + 0x19) & 0xc;
+  uVar2 = Ordinal_1053();
+  uw_ord2005_rem_100 = ((int)(uVar2)) % (8);
+  uVar8 = param_1[1] & 0xfc7f | (uw_ord2005_rem_100 & 7) << 7;
+  *(byte *)(param_1 + 1) = (byte)uVar8;
+  *(byte *)((char *)param_1 + 3) = (byte)(uVar8 >> 8);
+  if (((uint)(byte)param_1[4] < (uint)(byte)(&g_monster_max_stats_table)[iVar6]) && ((param_1[7] & 2) == 0)) {
+    *(byte *)(param_1 + 4) =
+         (byte)((int)((uint)(byte)param_1[4] + (uint)(byte)(&g_monster_max_stats_table)[iVar6]) >> 1);
+  }
+  if ((param_1[5] & 0x80) == 0) {
+    bVar1 = (byte)param_1[7] >> 6;
+    if (bVar1 == 0) {
+      pcVar3 = (char *)(param_2 + (uint)(byte)(&DAT_001007d9)[iVar6]);
+      cVar7 = *pcVar3 + -1;
+    }
+    else {
+      if (bVar1 != 3) goto LAB_00034db4;
+      pcVar3 = (char *)(param_2 + (uint)(byte)(&DAT_001007d9)[iVar6]);
+      cVar7 = *pcVar3 + '\x01';
+    }
+    *pcVar3 = cVar7;
+  }
+LAB_00034db4:
+  uVar10 = (byte)param_1[2] & 0x3f;
+  uVar8 = param_1[3] & 0x3f;
+  puVar4 = (ushort *)tilemap_lookup(uVar10,uVar8);
+  if (((uVar9 != uVar10) || (uVar11 != uVar8)) &&
+     (iVar5 = resolve_tile_entry_offset(*puVar4 & 0xf,&local_2c,local_2b), iVar5 != 0)) {
+    if (((&DAT_001007da)[iVar6] & 0x80) == 0) {
+      uVar9 = (uint)(byte)((byte)*puVar4 >> 4) << 3;
+    }
+    else {
+      uVar9 = (int)(((byte)((byte)*puVar4 >> 4) + 0x10) * 8) >> 1;
+    }
+    uVar2 = encode_object_slot_index(param_1);
+    iVar6 = FUN_00051fa0(*param_1 & 0x1ff,uVar2,
+                         (int)(((uint)local_2c + uVar10 * 8) * 0x10000) >> 0x10,
+                         (int)(((uint)local_2b[0] + uVar8 * 8) * 0x10000) >> 0x10,(short)uVar9,
+                         (byte)(&DAT_001007da)[iVar6] >> 7,8);
+    if (iVar6 != 0) {
+      object_list_unlink(local_28 + 2,param_1);
+      object_list_insert_head(puVar4 + 1,param_1);
+      uVar8 = uVar8 | uVar10 << 6;
+      *(byte *)(param_1 + 0xb) = (byte)param_1[0xb] & 0xf | (byte)(uVar8 << 4);
+      *(byte *)((char *)param_1 + 0x17) = (byte)((uVar8 << 0x14) >> 0x18);
+      uVar9 = uVar9 | (local_2b[0] & 7 | (local_2c & 7) << 3) << 10 |
+              CONCAT11(*(byte *)((char *)param_1 + 3),(byte)param_1[1]) & 0x380;
+      *(byte *)(param_1 + 1) = (byte)uVar9;
+      *(byte *)((char *)param_1 + 3) = (byte)(uVar9 >> 8);
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00034fa4 -- per-tick settle step for a non-NPC active
+// mobile object (thrown/dropped items, projectiles, etc). Caches the
+// object's own tile x/y into DAT_0010144c/DAT_00101454, and if it's
+// misplaced (discard_misplaced_object) and eligible to settle
+// (settle_mobile_to_immobile), unlinks it and re-drops it into the
+// world via find_object_placement at its resolved tile position.
+undefined4 settle_misplaced_mobile_object(param_1)
+int param_1;
+
+{
+  byte bVar1;
+  byte bVar2;
+  byte bVar3;
+  byte *pbVar4;
+  int iVar5;
+  int iVar6;
+  uint uVar7;
+  byte *pbVar8;
+
+  bVar3 = *(byte *)(param_1 + 0x17) >> 2;
+  DAT_0010144c = (ushort)bVar3;
+  bVar1 = *(byte *)(param_1 + 3);
+  uVar7 = (*(ushort *)(param_1 + 0x16) & 0x3f0) >> 4;
+  DAT_00101454 = (undefined2)uVar7;
+  bVar2 = *(byte *)(param_1 + 3);
+  pbVar4 = (byte *)tilemap_lookup(DAT_0010144c,DAT_00101454);
+  pbVar8 = pbVar4 + 2;
+  iVar5 = discard_misplaced_object(pbVar8,param_1,0);
+  if ((iVar5 != 0) && (iVar5 = settle_mobile_to_immobile(param_1), iVar5 != 0)) {
+    object_list_unlink(pbVar8,iVar5);
+    DAT_00202c84 = 1;
+    iVar6 = find_object_placement(iVar5,(uint)(bVar1 >> 5) + (uint)bVar3 * 8,
+                         ((bVar2 & 0x1c) >> 2) + uVar7 * 8,(uint)(*pbVar4 >> 4) << 3,6);
+    if (iVar6 == 0) {
+      uVar7 = *(ushort *)(iVar5 + 2) & 0xff80;
+      *(byte *)(iVar5 + 2) = *pbVar4 >> 1 & 0x78 | (byte)uVar7;
+      *(char *)(iVar5 + 3) = (char)(uVar7 >> 8);
+      object_list_insert_head(pbVar8,iVar5);
+    }
+  }
+  return 1;
+}
+
+
+
+// was FUN_0003513c -- second per-tick pass over the active mobile
+// list (after tick_mobile_objects' own goal-AI pass): drives each
+// NPC's movement/animation via npc_movement_tick, or settles each
+// non-NPC mobile object via settle_misplaced_mobile_object, sharing a
+// 64-byte per-class animation-frame-delta scratch buffer (acStack_58)
+// between them; then applies each object's accumulated delta to its
+// own animation-frame field in a second loop.
+void advance_mobile_objects()
+
+{
+  ushort *puVar1;
+  byte *pbVar2;
+  char cVar3;
+  int iVar5;
+  uint uVar6;
+  byte *pbVar7;
+  byte *pbVar8;
+  char acStack_58 [64];
+  int iVar4;
+
+  Ordinal_1047(acStack_58,0,0x40);
+  pbVar7 = DAT_002046c0;
+  if (DAT_002046c0 < DAT_002046c8) {
+    do {
+      puVar1 = (ushort *)((uint)*pbVar7 * 0x1b + DAT_002046b8);
+      if ((*puVar1 & 0x1c0) == 0x40) {
+        npc_movement_tick(puVar1,acStack_58);
+      }
+      else {
+        iVar5 = settle_misplaced_mobile_object(puVar1);
+        if (iVar5 != 0) {
+          pbVar7 = pbVar7 + -1;
+        }
+      }
+      pbVar7 = pbVar7 + 1;
+    } while (pbVar7 < DAT_002046c8);
+  }
+  pbVar7 = DAT_002046c8;
+  pbVar8 = DAT_002046c0;
+  if (DAT_002046c0 < DAT_002046c8) {
+    do {
+      pbVar2 = (byte *)((uint)*pbVar8 * 0x1b + DAT_002046b8);
+      if (((pbVar2[10] & 0x80) == 0) &&
+         (iVar5 = (int)acStack_58[(byte)(&DAT_001007d9)[(*pbVar2 & 0x3f) * 0x30]], iVar5 != 0)) {
+        iVar4 = (uint)(*(ushort *)(pbVar2 + 0xd) >> 0xe) + iVar5;
+        cVar3 = (char)iVar4;
+        iVar4 = iVar4 * 0x1000000 >> 0x18;
+        if (iVar5 < 0) {
+          if (iVar4 < 0) {
+            cVar3 = '\0';
+          }
+        }
+        else if (3 < iVar4) {
+          cVar3 = '\x03';
+        }
+        uVar6 = *(ushort *)(pbVar2 + 0xd) & 0x3fff;
+        pbVar2[0xd] = (byte)uVar6;
+        pbVar2[0xe] = (byte)(uVar6 >> 8) | (byte)((((int)cVar3 & 3U) << 0xe) >> 8);
+        pbVar7 = DAT_002046c8;
+      }
+      pbVar8 = pbVar8 + 1;
+    } while (pbVar8 < pbVar7);
+  }
+  return;
+}

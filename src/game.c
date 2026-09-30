@@ -638,7 +638,7 @@ void init_gameplay_session()
      in this whole file, as the enable gate for movement_tick's per-frame
      call to tick_mobile_objects (the real NPC/mobile-object AI+movement
      dispatcher -- walks the mobile object arena, drives NPC pathing via
-     FUN_00034c10 and other mobile objects via mobile_object_tick) -- but it is
+     npc_movement_tick and other mobile objects via mobile_object_tick) -- but it is
      never written anywhere in this decompile, so the gate is permanently
      false and NPCs/mobile objects never tick. This is a link-time-
      initialised flag whose real setup Ghidra dropped, exactly like

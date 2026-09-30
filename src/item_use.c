@@ -369,8 +369,8 @@ int param_2;
          IMMOBILE list (alloc_object_slot(0)) once it stops moving --
          settle_mobile_to_immobile does exactly that (decay/destroy roll, then
          alloc_object_slot(0) + field copy + relink), but its only
-         known callers (FUN_00034fa4, itself only reached via
-         FUN_0003513c) fire solely on a dungeon-level transition, not
+         known callers (settle_misplaced_mobile_object, itself only reached via
+         advance_mobile_objects) fire solely on a dungeon-level transition, not
          during ordinary same-level play -- there is no per-tick,
          delta-time-driven object physics loop anywhere in this
          codebase that would otherwise call it. Since this port
