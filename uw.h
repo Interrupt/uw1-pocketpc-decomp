@@ -1808,6 +1808,10 @@ extern short DAT_00086996;
 extern unsigned char DAT_000869a8_backing[16];
 #define DAT_000869a8 DAT_000869a8_backing[0]
 extern undefined DAT_00202c32;
+extern ushort DAT_00100610;
+extern char *DAT_002046b8;
+extern undefined2 DAT_00100600;
+extern ushort DAT_00100604;
 extern undefined1 DAT_00202c38_backing[8192];
 #define DAT_00202c38 DAT_00202c38_backing[0]
 extern undefined1 DAT_00202c39_backing[8192];
@@ -2584,9 +2588,9 @@ undefined4 draw_chargen_field_options();
 uint character_generator_touch_select();
 uint wait_for_chargen_field_input();
 void palette_cycle_range();
-undefined4 FUN_00025a98();
-int FUN_00025b84();
-void FUN_00025ed8();
+undefined4 resolve_combat_hit_zone();
+int find_nearest_hit_target();
+void spawn_blood_splat_object();
 undefined4 FUN_00026194();
 int FUN_00026570();
 void FUN_00026858();

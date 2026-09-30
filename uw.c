@@ -8320,220 +8320,6 @@ undefined4 param_1;
 
 
 
-undefined4 FUN_00025a98(param_1,param_2,param_3,param_4)
-short param_1;
-short param_2;
-short param_3;
-short param_4;
-
-{
-  int uw_ord2005_rem_3 = 0; int uw_ord2005_rem_4 = 0; int uw_ord2005_rem_5 = 0;
-  int iVar1;
-  undefined4 uVar2;
-  int extraout_r1;
-  int extraout_r1_00;
-  int extraout_r1_01;
-  
-  iVar1 = (int)(short)((int)param_3 + (int)param_4 >> 1);
-  if (iVar1 < param_1 + 1) {
-    return 2;
-  }
-  if (param_2 + -1 < iVar1) {
-LAB_00025aec:
-    uVar2 = 3;
-  }
-  else {
-    if (iVar1 < (short)((int)param_2 + (int)param_1 >> 1)) {
-      uVar2 = Ordinal_1053();
-      uw_ord2005_rem_3 = ((int)(uVar2)) % (2);
-      if (uw_ord2005_rem_3 != 0) {
-        return 2;
-      }
-    }
-    else {
-      uVar2 = Ordinal_1053();
-      uw_ord2005_rem_4 = ((int)(uVar2)) % (3);
-      if (uw_ord2005_rem_4 == 0) goto LAB_00025aec;
-    }
-    uVar2 = Ordinal_1053();
-    uw_ord2005_rem_5 = ((int)(uVar2)) % (3);
-    uVar2 = 0;
-    if (uw_ord2005_rem_5 == 0) {
-      uVar2 = 1;
-    }
-  }
-  return uVar2;
-}
-
-
-
-int FUN_00025b84(param_1)
-short * param_1;
-
-{
-  byte bVar1;
-  char cVar2;
-  ushort uVar3;
-  ushort uVar4;
-  int iVar5;
-  ushort *puVar6;
-  uint uVar7;
-  uint uVar8;
-  int iVar9;
-  int iVar10;
-  int iVar11;
-  int iVar12;
-  short local_34;
-  short local_32;
-  
-  cVar2 = (char)param_1[0xb];
-  iVar12 = -1;
-  local_32 = -1;
-  iVar11 = 100000;
-  local_34 = (short)cVar2;
-  iVar9 = (int)(((int)cVar2 + (uint)*(byte *)((char *)param_1 + 0x15)) * 0x10000) >> 0x10;
-  iVar10 = (int)(short)cVar2;
-  iVar5 = (short)DAT_00100610 * 0x1b + DAT_002046b8;
-  uVar3 = *(ushort *)(iVar5 + 0x16);
-  bVar1 = *(byte *)(iVar5 + 3);
-  if (iVar10 < iVar9) {
-    do {
-      uVar4 = *(ushort *)(&DAT_00202c3a + iVar10 * 6);
-      puVar6 = (ushort *)FUN_000535fc();
-      if ((((*puVar6 & 0x1c0) != 0x180) && (uVar4 >> 6 != DAT_00100610)) &&
-         (((DAT_00100610 != 1 ||
-           ((iVar5 = object_ptr_in_arena(puVar6), iVar5 == 0 ||
-            ((*(byte *)((char *)puVar6 + 0x19) & 0x40) == 0)))) ||
-          ((iVar10 == iVar9 + -1 && (iVar11 == 100000)))))) {
-        uVar7 = (int)*(short *)(&DAT_00202c3c + iVar10 * 6) + (((int)*param_1 << 0x10) >> 0x13) &
-                0x3f;
-        DAT_00100600 = (undefined2)uVar7;
-        iVar5 = (int)*(short *)(&DAT_00202c3c + iVar10 * 6) -
-                ((int)((uVar7 - (((int)*param_1 << 0x10) >> 0x13)) * 0x10000) >> 0x10);
-        if (iVar5 < 0) {
-          iVar5 = iVar5 + 0x3f;
-        }
-        uVar8 = (int)(short)(iVar5 >> 6) + (((int)param_1[1] << 0x10) >> 0x13) & 0x3f;
-        DAT_00100604 = (ushort)uVar8;
-        iVar5 = (int)(((uVar7 * -8 - (uint)(*(byte *)((char *)puVar6 + 3) >> 5)) +
-                      (int)(short)((uVar3 >> 7 & 0x1f8) + (ushort)(bVar1 >> 5))) * 0x10000) >> 0x10;
-        iVar12 = (int)(((uVar8 * -8 - ((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2)) +
-                       (int)(short)((uVar3 >> 1 & 0x1f8) + (short)((bVar1 & 0x1c) >> 2))) * 0x10000)
-                 >> 0x10;
-        iVar5 = iVar5 * iVar5 + iVar12 * iVar12;
-        if (iVar5 < iVar11) {
-          local_32 = local_34;
-          iVar11 = iVar5;
-        }
-      }
-      iVar5 = (iVar10 + 1) * 0x10000;
-      iVar10 = iVar5 >> 0x10;
-      local_34 = (short)((uint)iVar5 >> 0x10);
-    } while (iVar10 < iVar9);
-    iVar12 = (int)local_32;
-  }
-  if (-1 < (short)iVar12) {
-    uVar7 = (int)*(short *)(&DAT_00202c3c + (short)iVar12 * 6) + (((int)*param_1 << 0x10) >> 0x13) &
-            0x3f;
-    DAT_00100600 = (undefined2)uVar7;
-    iVar9 = (int)*(short *)(&DAT_00202c3c + (short)iVar12 * 6) -
-            ((int)((uVar7 - (((int)*param_1 << 0x10) >> 0x13)) * 0x10000) >> 0x10);
-    if (iVar9 < 0) {
-      iVar9 = iVar9 + 0x3f;
-    }
-    DAT_00100604 = (short)(iVar9 >> 6) + (param_1[1] >> 3) & 0x3f;
-  }
-  return iVar12;
-}
-
-
-
-void FUN_00025ed8(param_1,param_2,param_3)
-undefined4 param_1;
-int param_2;
-byte * param_3;
-
-{
-  byte bVar1;
-  byte bVar2;
-  ushort uVar3;
-  short sVar4;
-  short sVar5;
-  short sVar6;
-  char *iVar7;  /* was `int` -- truncated spawn_new_object's real object
-                   pointer, latent while that function always returned 0 */
-  undefined4 uVar8;
-  char *iVar9;  /* was `int` -- truncated tilemap_lookup's real `void *`
-                   return (same class as iVar7 above and this whole
-                   file's dominant bug). Latent for a long time since
-                   this whole "resolve impact" swing code path was
-                   unreachable until a separate signedness bug on
-                   DAT_0010062c was fixed -- confirmed crashing
-                   (EXC_BAD_ACCESS in object_list_append_tail,
-                   dereferencing the truncated `iVar9 + 2` as a wild
-                   32-bit address) the first time a real attack swing
-                   ever reached this far. */
-  uint uVar10;
-  short local_18;
-  short local_16;
-
-  param_2 = param_2 + 1;
-  DAT_00202c6c = param_3;
-  param_3[8] = 1;
-  DAT_00202c6c[10] = 0;
-  DAT_00202c6c[0xb] = 0;
-  local_18 = (short)((uint)((int)*(short *)DAT_00202c6c << 0x14) >> 0x10);
-  local_16 = (short)((uint)((int)*(short *)(DAT_00202c6c + 2) << 0x14) >> 0x10);
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] FUN_00025ed8 ENTRY param_1=%d param_2=%d\n", (int)param_1, param_2);
-  while (collision_build_height_field(0),
-        ((*(ushort *)(DAT_00202c6c + 0xe) | *(ushort *)(DAT_00202c6c + 0xc)) & 0x300) == 0) {
-    project_position_by_heading(param_1,0x10,&local_18,&local_16);
-    param_2 = param_2 + -1;
-    *DAT_00202c6c = (byte)((int)local_18 >> 4);
-    DAT_00202c6c[1] = (byte)((uint)((int)local_18 >> 4) >> 8);
-    DAT_00202c6c[2] = (byte)((int)local_16 >> 4);
-    DAT_00202c6c[3] = (byte)((uint)((int)local_16 >> 4) >> 8);
-    if (param_2 * 0x10000 >> 0x10 < 1) {
-      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] FUN_00025ed8: no floor/ceiling boundary found within range, bailing\n");
-      return;
-    }
-  }
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] FUN_00025ed8: spawning object 0x1cb\n");
-  iVar7 = (char *)spawn_new_object(0x1cb,0);
-  if (iVar7 == (char *)0x0) {
-    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] FUN_00025ed8: spawn_new_object FAILED (returned NULL)\n");
-    return;
-  }
-  uVar3 = *(ushort *)(iVar7 + 2);
-  uVar10 = uVar3 & 0x1fff;
-  bVar1 = (byte)(((*DAT_00202c6c & 7) << 0xd) >> 8);
-  *(char *)(iVar7 + 2) = (char)uVar10;
-  *(byte *)(iVar7 + 3) = (byte)(uVar10 >> 8) | bVar1;
-  uVar10 = uVar3 & 0x3ff;
-  bVar1 = (byte)(uVar10 >> 8) | bVar1 | (byte)(((DAT_00202c6c[2] & 7) << 10) >> 8);
-  bVar2 = (byte)uVar10;
-  *(byte *)(iVar7 + 2) = bVar2;
-  *(byte *)(iVar7 + 3) = bVar1;
-  sVar4 = *(short *)DAT_00202c6c;
-  sVar5 = *(short *)(DAT_00202c6c + 2);
-  *(byte *)(iVar7 + 2) = (DAT_00202c6c[4] + 8 ^ bVar2) & 0x7f ^ bVar2;
-  *(byte *)(iVar7 + 3) = bVar1;
-  if (DAT_00100610 == 1) {
-    play_positional_sound_effect(7,*(undefined2 *)DAT_00202c6c,*(undefined2 *)(DAT_00202c6c + 2),0);
-  }
-  uVar8 = encode_object_slot_index(iVar7);
-  sVar6 = scheduler_add_entry(uVar8,2,0,(int)sVar4 >> 3 & 0xff,(char)((int)sVar5 >> 3));
-  if (sVar6 == -1) {
-    if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] FUN_00025ed8: scheduler_add_entry queue full, freeing slot\n");
-    free_object_slot(iVar7);
-    return;
-  }
-  iVar9 = tilemap_lookup((int)sVar4 >> 3,(int)sVar5 >> 3);
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] FUN_00025ed8: tilemap_lookup(%d,%d)=%p, appending\n", (int)sVar4>>3, (int)sVar5>>3, (void*)iVar9);
-  object_list_append_tail(iVar9 + 2,iVar7);
-  if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[blood-splat] FUN_00025ed8: SUCCESS, splat placed\n");
-  return;
-}
 
 
 
@@ -8553,13 +8339,13 @@ undefined4 FUN_00026194()
      this function has the IDENTICAL local name set (local_3c/3a/38/
      34/33/32) and was never converted. Every DAT_00202c6c[N] read
      throughout collision_height_envelope/collision_build_height_field/
-     FUN_00051dd0/FUN_00025ed8 assumes one contiguous record, but as
+     FUN_00051dd0/spawn_blood_splat_object assumes one contiguous record, but as
      independent C locals this compiler is free to place them (and
      every OTHER local in this function, including iVar5) anywhere,
      with any padding. Confirmed live via UW_DEBUG_COMBAT tracing: a
      real attack swing's own `iVar5` (a small, masked heading value,
      mathematically bounded to 0-255) read back as 0x80808080
-     (uninitialized-pattern garbage) at FUN_00025ed8's own call site --
+     (uninitialized-pattern garbage) at spawn_blood_splat_object's own call site --
      writes through DAT_00202c6c at offsets up to 0x15 (from this
      function's own body) were silently scribbling over whatever
      unrelated local the compiler happened to place there instead of
@@ -8616,19 +8402,19 @@ undefined4 FUN_00026194()
       iVar4 = ((*(byte *)((char *)puVar6 + 3) & 0x1c) >> 2) + ((puVar6[0xb] & 0x3f0) >> 1);
       *(char *)((char *)DAT_00202c6c + 2) = (char)iVar4;
       *(char *)((char *)DAT_00202c6c + 3) = (char)((uint)iVar4 >> 8);
-      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: calling FUN_00025ed8 (wall splat) with iVar5=%d DAT_001005f4=%d\n", iVar5, (int)DAT_001005f4);
-      FUN_00025ed8(iVar5,DAT_001005f4 + 3,DAT_00202c6c);
+      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: calling spawn_blood_splat_object (wall splat) with iVar5=%d DAT_001005f4=%d\n", iVar5, (int)DAT_001005f4);
+      spawn_blood_splat_object(iVar5,DAT_001005f4 + 3,DAT_00202c6c);
     }
   }
   else {
     FUN_00051dd0();
     if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: blocked path, creature_hit_flag=%d\n", (int)*(char *)((char *)DAT_00202c6c + 0x15));
     if (*(char *)((char *)DAT_00202c6c + 0x15) != '\0') {
-      sVar3 = FUN_00025b84();
-      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: FUN_00025b84 returned %d\n", (int)sVar3);
+      sVar3 = find_nearest_hit_target();
+      if (getenv("UW_DEBUG_COMBAT")) fprintf(stderr, "[hit-test] FUN_00026194: find_nearest_hit_target returned %d\n", (int)sVar3);
       if (-1 < sVar3) {
         iVar5 = sVar3 * 6;
-        DAT_00100624 = FUN_00025a98((&DAT_00202c39)[iVar5],(&DAT_00202c38)[iVar5],
+        DAT_00100624 = resolve_combat_hit_zone((&DAT_00202c39)[iVar5],(&DAT_00202c38)[iVar5],
                                     (int)*(short *)((char *)DAT_00202c6c + 4),
                                     (uint)*(byte *)((char *)DAT_00202c6c + 9) +
                                     (int)*(short *)((char *)DAT_00202c6c + 4));
@@ -9350,7 +9136,7 @@ undefined1 param_7;
   DAT_00100620 = encode_object_slot_index(param_3);
   uVar4 = (byte)param_2[1] & 0x7f;
   uVar2 = (byte)param_3[1] & 0x7f;
-  sVar1 = FUN_00025a98(uVar2,(byte)(&DAT_00202c90)[(*param_3 & 0x1ff) * 0xd] + uVar2,uVar4,
+  sVar1 = resolve_combat_hit_zone(uVar2,(byte)(&DAT_00202c90)[(*param_3 & 0x1ff) * 0xd] + uVar2,uVar4,
                        (byte)(&DAT_00202c90)[(*param_2 & 0x1ff) * 0xd] + uVar4);
   DAT_00100624 = sVar1 + 4;
   DAT_0010061c = param_6;
