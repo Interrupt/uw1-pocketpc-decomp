@@ -143,10 +143,10 @@ void npc_combat_engage_close_tick()
   uVar4 = DAT_00101444 * DAT_00101444 + DAT_00101448 * DAT_00101448;
   cVar2 = DAT_0010143c - DAT_00101918;
   cVar1 = DAT_0010173c - DAT_001013f8;
-  if ((*(ushort *)(DAT_0010190c + 0xb) & 0xff0) == 0x10) {
-    uVar5 = *(ushort *)(DAT_0010190c + 0xd) & 0x3fff;
-    *(char *)(DAT_0010190c + 0xd) = (char)uVar5;
-    *(char *)(DAT_0010190c + 0xe) = (char)(uVar5 >> 8);
+  if ((*(ushort *)((char *)DAT_0010190c + 0xb) & 0xff0) == 0x10) {
+    uVar5 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0x3fff;
+    *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar5;
+    *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar5 >> 8);
   }
   if (((uVar4 < 100) || ((DAT_00101918 == DAT_00101408 && (DAT_001013f8 == DAT_00101410)))) &&
      ((uVar5 = (int)DAT_0010140c - (int)DAT_00101420 >> 0x1f,

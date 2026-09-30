@@ -336,7 +336,13 @@ undefined1 param_3;
   
   local_3c = 0;
   local_38 = 0;
-  FUN_0002e454(param_1);
+  /* Dropped arguments: the real call (0x2e5c0) is made with r0/r1/r2
+     still holding this function's own three incoming parameters (the
+     prologue spills all three, `stmdb sp!,{r0,r1,r2}`), so the
+     destination y and the third value were whatever this port's ABI
+     left in those registers -- garbage written straight into the NPC
+     record by npc_set_walk_target. */
+  npc_set_walk_target(param_1,param_2,param_3);
   if (((*(byte *)((char *)DAT_0010190c + 0x18) & 0x20) != 0) &&
      ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) != 0)) {
     DAT_000853b8 = DAT_000853b8 | (ushort)(1 << (*(byte *)((char *)DAT_0010190c + 0x16) & 0xf));
@@ -1320,6 +1326,15 @@ ushort * param_1;
      for unrelated small-integer math earlier in this function, so given
      its own dedicated pointer local rather than widening iVar8 itself). */
   pbTile = (char *)tilemap_lookup((int)DAT_0010144c,(int)DAT_00101454);
+  /* Off-map landing tile (a projectile carried past the map edge --
+     sync_object_tile_position already skipped its own unlink/insert on
+     the same NULL). There is no tile list to settle into, so destroy
+     the object outright: freeing it also removes it from the active
+     mobile list, which is what returning 0 promises tick_mobile_objects. */
+  if (pbTile == (char *)0x0) {
+    discard_misplaced_object((char *)0x0,param_1,1);
+    return (ushort *)0x0;
+  }
   pbTile = pbTile + 2;
   if ((bVar3) && (puVar9 = (ushort *)alloc_object_slot(0), puVar9 != (ushort *)0x0)) {
     *(byte *)puVar9 = (byte)*param_1;
