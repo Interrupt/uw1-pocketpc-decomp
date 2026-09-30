@@ -9519,49 +9519,6 @@ void npc_clear_special_goal()
 
 
 
-undefined4 FUN_000345b8(param_1)
-int param_1;
-
-{
-  int iVar1;
-  undefined4 uVar2;
-  uint uVar3;
-  
-  if ((*(char *)(param_1 + 0x1a) == '\0') || (iVar1 = FUN_0003a73c(param_1,0), iVar1 != 0)) {
-    uVar2 = 1;
-    *(byte *)(param_1 + 0x15) = *(byte *)(param_1 + 0x15) & 0xcc | 0xc;
-    uVar3 = CONCAT11(*(undefined1 *)(param_1 + 0xc),*(undefined1 *)(param_1 + 0xb)) & 0xfff;
-    *(char *)(param_1 + 0xb) = (char)uVar3;
-    *(char *)(param_1 + 0xc) = (char)(uVar3 >> 8);
-    *(byte *)(param_1 + 0x14) = *(byte *)(param_1 + 0x14) & 0xfc | 4;
-    *(undefined1 *)(param_1 + 8) = 0;
-  }
-  else {
-    uVar2 = 0;
-  }
-  return uVar2;
-}
-
-
-
-undefined4 FUN_00034634(param_1)
-int param_1;
-
-{
-  int iVar1;
-  undefined4 uVar2;
-  
-  if (((*(byte *)(param_1 + 0x15) & 0x3f) == 0xc) || (iVar1 = FUN_000345b8(), iVar1 == 0)) {
-    uVar2 = 0;
-  }
-  else {
-    if ((*(byte *)(DAT_00101404 + 8) & 7) == 1) {
-      play_positional_sound_effect(6,DAT_00101910,DAT_0010141c,0);
-    }
-    uVar2 = 1;
-  }
-  return uVar2;
-}
 
 
 
@@ -9617,7 +9574,7 @@ ushort * param_3;
   }
   else {
     *(undefined1 *)(param_1 + 4) = 0;
-    iVar3 = FUN_00034634(param_1);
+    iVar3 = handle_monster_death(param_1);
     if (iVar3 != 0) {
       if (uVar2 == 1) {
         award_monster_kill_experience(param_1);

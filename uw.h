@@ -2802,8 +2802,8 @@ undefined4 check_npc_morale_flee();
 int compute_pathfind_search_radius();
 void npc_set_goal();
 void npc_clear_special_goal();
-undefined4 FUN_000345b8();
-undefined4 FUN_00034634();
+undefined4 initiate_npc_death();
+undefined4 handle_monster_death();
 undefined4 FUN_000346a0();
 undefined4 object_tick_is_due(); // was FUN_0003495c
 void tick_mobile_objects(); // was FUN_000349bc

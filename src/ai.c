@@ -3607,3 +3607,60 @@ int compute_pathfind_search_radius()
   }
   return 0;
 }
+
+
+// was FUN_000345b8 -- transitions an NPC object into the death state
+// (goal 0xc, the state npc_ai_default_tick's own goal-0xc branch reads
+// to drop loot and free the slot): allowed unconditionally if byte
+// 0x1a is 0 (a "not immortal/scripted" marker), or via FUN_0003a73c's
+// own eligibility check otherwise. On success, sets goal 0xc, clears
+// the animation-frame nibble, and zeroes HP (byte 8). Returns 1 if the
+// transition happened, 0 if blocked.
+undefined4 initiate_npc_death(param_1)
+int param_1;
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  uint uVar3;
+
+  if ((*(char *)(param_1 + 0x1a) == '\0') || (iVar1 = FUN_0003a73c(param_1,0), iVar1 != 0)) {
+    uVar2 = 1;
+    *(byte *)(param_1 + 0x15) = *(byte *)(param_1 + 0x15) & 0xcc | 0xc;
+    uVar3 = CONCAT11(*(undefined1 *)(param_1 + 0xc),*(undefined1 *)(param_1 + 0xb)) & 0xfff;
+    *(char *)(param_1 + 0xb) = (char)uVar3;
+    *(char *)(param_1 + 0xc) = (char)(uVar3 >> 8);
+    *(byte *)(param_1 + 0x14) = *(byte *)(param_1 + 0x14) & 0xfc | 4;
+    *(undefined1 *)(param_1 + 8) = 0;
+  }
+  else {
+    uVar2 = 0;
+  }
+  return uVar2;
+}
+
+
+
+// was FUN_00034634 -- wraps initiate_npc_death: bails out early (returns
+// 0) if the NPC is already in goal 0xc (dead) or initiate_npc_death()
+// refuses the transition; otherwise plays a positional death sound
+// (only for goal-category 1 NPCs) and returns 1. Callers use the
+// return value to gate award_monster_kill_experience().
+undefined4 handle_monster_death(param_1)
+int param_1;
+
+{
+  int iVar1;
+  undefined4 uVar2;
+
+  if (((*(byte *)(param_1 + 0x15) & 0x3f) == 0xc) || (iVar1 = initiate_npc_death(param_1), iVar1 == 0)) {
+    uVar2 = 0;
+  }
+  else {
+    if ((*(byte *)(DAT_00101404 + 8) & 7) == 1) {
+      play_positional_sound_effect(6,DAT_00101910,DAT_0010141c,0);
+    }
+    uVar2 = 1;
+  }
+  return uVar2;
+}
