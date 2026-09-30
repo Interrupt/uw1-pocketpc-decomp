@@ -2655,7 +2655,7 @@ void load_combat_data_file();
 int objects_are_combinable();
 undefined4 spawn_combined_object();
 bool is_object_consumed_in_combination();
-undefined4 FUN_000282ac();
+undefined4 check_offering_container_puzzle();
 void FUN_00028488();
 void FUN_000286cc();
 void FUN_00028bac();

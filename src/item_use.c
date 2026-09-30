@@ -2053,7 +2053,7 @@ int param_2;
           message_scroll_print_wrapped(&s_scroll_newline_0008522c);
         }
         else {
-          FUN_000282ac();
+          check_offering_container_puzzle();
         }
       }
       else {
@@ -2345,4 +2345,82 @@ short param_2;
     puVar1 = &DAT_00100632 + param_2 * 3;
   }
   return (*puVar1 & 0x8000) != 0;
+}
+
+
+// was FUN_000282ac -- a specific puzzle/quest handler triggered by
+// "reading" a special item (its own caller only reaches here for a
+// message-id field in a reserved high range, not a normal book/sign
+// text): searches a nearby container for exactly one each of 3
+// hardcoded object ids (0xd9/0xb8/0xbe), and on a full match, marks the
+// container "opened" (leaving any nested-container UI showing it first),
+// frees its now-consumed contents, and prints a success scroll message
+// (id 0x95); prints a "missing item"/"container not found" message
+// (0x94/0x96) otherwise. The specific real-world puzzle/location this
+// corresponds to isn't otherwise confirmed from the code alone.
+undefined4 check_offering_container_puzzle()
+
+{
+  short *psVar1;
+  ushort uVar2;
+  bool bVar3;
+  short sVar4;
+  ushort *puVar5;
+  undefined4 uVar6;
+  ushort *puVar7;
+  int iVar8;
+  uint uVar9;
+  undefined1 auStack_30 [4];
+  short local_2c [4];
+  short local_24 [4];
+  
+  local_24[0] = 0xd9;
+  local_24[1] = 0xb8;
+  local_24[2] = 0xbe;
+  local_2c[0] = 0;
+  local_2c[1] = 0;
+  local_2c[2] = 0;
+  puVar5 = (ushort *)FUN_000452dc(2,0,0xe,4,auStack_30);
+  if (puVar5 == (ushort *)0x0) {
+    uVar6 = 0x96;
+  }
+  else {
+    puVar7 = puVar5 + 3;
+    while (puVar7 = (ushort *)resolve_object_link(puVar7), puVar7 != (ushort *)0x0) {
+      bVar3 = false;
+      uVar2 = *puVar7;
+      iVar8 = 0;
+      do {
+        psVar1 = local_24 + iVar8;
+        local_2c[iVar8] = local_2c[iVar8] + (ushort)((uVar2 & 0x1ff) == (int)*psVar1);
+        iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
+        bVar3 = (bool)(bVar3 | (uVar2 & 0x1ff) == (int)*psVar1);
+      } while (iVar8 < 3);
+      if (!bVar3) goto LAB_000283ec;
+      puVar7 = puVar7 + 2;
+    }
+    bVar3 = true;
+    iVar8 = 0;
+    do {
+      bVar3 = (bool)(bVar3 & local_2c[iVar8] != 0);
+      iVar8 = (iVar8 + 1) * 0x10000 >> 0x10;
+    } while (iVar8 < 3);
+    if (bVar3) {
+      sVar4 = encode_object_slot_index(puVar5);
+      if ((uint)(*(ushort *)(g_current_container_record + 8) >> 6) == (int)sVar4) {
+        leave_nested_container_level();
+      }
+      free_linked_object_recursive(puVar5 + 3);
+      uVar9 = *puVar5 & 0xff1b | 0x11b;
+      *(char *)puVar5 = (char)uVar9;
+      *(char *)((char *)puVar5 + 1) = (char)(uVar9 >> 8);
+      FUN_00048110();
+      print_scroll_message_by_id(0x95);
+      return 1;
+    }
+LAB_000283ec:
+    uVar6 = 0x94;
+  }
+  print_scroll_message_by_id(uVar6);
+  return 0;
 }
