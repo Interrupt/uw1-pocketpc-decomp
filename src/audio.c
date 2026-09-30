@@ -1267,3 +1267,18 @@ LAB_00035fd4:
   }
   return uVar1;
 }
+
+
+// was FUN_00037d50 -- copies the current ambient-sound loop handle
+// (DAT_002506ec, set by start_ambient_sound_effect) into DAT_00101a70.
+// Its only confirmed call site runs during game init, right after
+// start_ambient_sound_effect(2). DAT_00101a70 also appears to double
+// as scratch state elsewhere (e.g. a bitmap pointer inside
+// render_babl_dialog_window) at times this handle wouldn't be live,
+// so treat it as a reused scratch slot rather than a dedicated field.
+void cache_ambient_sound_handle()
+
+{
+  DAT_00101a70 = DAT_002506ec;
+  return;
+}

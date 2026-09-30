@@ -2864,7 +2864,7 @@ undefined4 babl_render_op_play_sound();
 void babl_render_tick();
 void render_babl_dialog_window();
 void display_book_or_scroll_page();
-void FUN_00037d50();
+void cache_ambient_sound_handle();
 void FUN_00037d6c();
 undefined4 FUN_00037f1c();
 undefined4 FUN_00037fe8();

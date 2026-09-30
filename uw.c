@@ -9630,12 +9630,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_00037d50()
-
-{
-  DAT_00101a70 = DAT_002506ec;
-  return;
-}
 
 
 
@@ -11767,7 +11761,7 @@ void FUN_0003b820()
   input_bindings_init();
   debug_print_init();
   store_window_extra_data_ptr(DAT_0023c540);
-  FUN_00037d50();
+  cache_ambient_sound_handle();
   iVar3 = FUN_00040cd4();
   if (iVar3 == 0) {
     FUN_0003c3c8(0x3003);
