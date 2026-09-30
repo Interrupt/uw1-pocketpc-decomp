@@ -194,7 +194,7 @@ LAB_000302bc:
     if ((*(byte *)(DAT_00101404 + 0x2d) & 1) == 0) {
       local_28 = 1;
     }
-    FUN_00030874(DAT_00101408,DAT_00101410,local_28);
+    npc_wander_reposition(DAT_00101408,DAT_00101410,local_28);
   }
   else {
     *(byte *)(DAT_0010190c + 0x19) = *(byte *)(DAT_0010190c + 0x19) & 0xfe;

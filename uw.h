@@ -2772,7 +2772,7 @@ void npc_wander_return_home_tick();
 void npc_notice_and_idle_tick();
 void npc_combat_engage_close_tick();
 undefined4 npc_combat_set_stance();
-void FUN_00030874();
+void npc_wander_reposition();
 undefined4 FUN_00030aac();
 undefined4 FUN_00030be0();
 undefined4 FUN_00030e50();
