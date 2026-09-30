@@ -2827,7 +2827,7 @@ short DAT_0023bd80;
                           to interact_talk_npc/interact_use itself when
                           the target under the cursor is an NPC instead
                           of an object
-     4  interact_talk_npc  (0x3f128) talk to NPC (FUN_00028488)
+     4  interact_talk_npc  (0x3f128) talk to NPC (interact_talk_npc)
    i.e. mode 2 (g_cursor_mode==2) is the real numeric Attack mode, and
    mode 5 is Talk-to-NPC -- confirmed independently by ready_weapon's own
    pre-session value (`g_cursor_mode = 2`, see its own comment) and by
@@ -8353,82 +8353,6 @@ undefined4 param_1;
 
 
 
-void FUN_00028488(param_1)
-ushort * param_1;
-
-{
-  char stack0xffdc3244_buf [256];
-  char *stack0xffdc3244_ptr;
-  char cVar1;
-  short sVar2;
-  undefined4 uVar3;
-  char *pcVar4;
-  ushort uVar5;
-  ushort uVar6;
-  char acStack_114 [260];
-  
-  uVar6 = *param_1 & 0x1ff;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488 entry: param_1=%p uVar6(itemid)=0x%x raw=0x%x classcheck=0x%x\n", (void *)param_1, (unsigned)uVar6, (unsigned)*param_1, (unsigned)(*param_1 & 0x1c0));
-  if (uVar6 == 0x157) {
-    handle_mantra_chant(0);
-    return;
-  }
-  if (uVar6 == 0x16e) {
-    if (((&DAT_0023add0)[(byte)param_1[3] & 0x3f] & 0xff) != 8) {
-      return;
-    }
-    print_scroll_message_by_id(0x110);
-    return;
-  }
-  if ((*param_1 & 0x1c0) != 0x40) {
-    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488: not-a-creature branch (uVar3=0xe00)\n");
-    uVar3 = 0xe00;
-    goto LAB_0002865c;
-  }
-  uVar6 = (ushort)(byte)param_1[0xd];
-  DAT_00100674 = param_1;
-  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] FUN_00028488: conv-id byte(uVar6)=0x%x uVar5=0x%x flagbits(param_1+7)=0x%x flagbyte(param_1+0x19)=0x%x\n", (unsigned)uVar6, (unsigned)(*(ushort *)((char *)param_1 + 0xb) & 0xf), (unsigned)(param_1[7] & 0xc0), (unsigned)(*(byte *)((char *)param_1 + 0x19) & 0x40));
-  if (((uVar6 == 0x16) || (uVar6 == 0x8e)) || (uVar6 == 0xe7)) {
-LAB_000285e4:
-    if (uVar6 == 0) {
-      uVar6 = ((byte)*param_1 & 0x3f) + 0x100;
-    }
-    DAT_001007c4 = uVar6;
-    Ordinal_1047(acStack_114,0,0x104);
-    pcVar4 = &DAT_0023cca8;
-    stack0xffdc3244_ptr = acStack_114;
-    do {
-      cVar1 = *pcVar4;
-      *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
-      pcVar4 = pcVar4 + 1;
-    } while (cVar1 != '\0');
-    Ordinal_1063(acStack_114,s__DATA_cnv_ark_00084fc8);
-    sVar2 = probe_archive_entry_exists(acStack_114,uVar6);
-    if (0 < sVar2) {
-      change_game_mode(4);
-      return;
-    }
-  }
-  else {
-    uVar5 = *(ushort *)((char *)param_1 + 0xb) & 0xf;
-    if ((((((((uVar5 != 5) && (uVar5 != 6)) && (uVar5 != 9)) ||
-           ((*(ushort *)((char *)param_1 + 0xb) & 0xff0) != 0x10)) && ((param_1[7] & 0xc0) != 0)) ||
-         ((*(byte *)((char *)param_1 + 0x19) & 0x40) != 0)) && (uVar6 != 0xff)) || (uVar5 == 10))
-    goto LAB_000285e4;
-  }
-  uVar3 = 0xe01;
-LAB_0002865c:
-  /* Was two separate calls with message_scroll_print_wrapped()'s arg
-     dropped -- same register-forwarding hazard already fixed at
-     load_npc_conversation_record's own sVar1<0 branch (uw.c ~10987, see its comment)
-     and, unfixed, exactly what crashed replaying bug-critter-talk.txt
-     one step further than this file's other Talk-crash fixes: Bragit
-     has no CNV.ARK conversation record, so start_npc_conversation hits this
-     same pattern too (uw.c ~19211) printing "You get no response"
-     before the crash. */
-  message_scroll_print_wrapped(get_message_string(uVar3));
-  return;
-}
 
 
 
@@ -15482,7 +15406,7 @@ void FUN_0003a57c()
   uVar3 = CONCAT11(*(undefined1 *)(iVar2 + 0xc),*(undefined1 *)(iVar2 + 0xb)) & 0xfffa;
   *(byte *)(iVar2 + 0xb) = (byte)uVar3 | 10;
   *(char *)(iVar2 + 0xc) = (char)(uVar3 >> 8);
-  FUN_00028488();
+  interact_talk_npc();
   free_object_slot(iVar2);
   return;
 }
@@ -15557,7 +15481,7 @@ int param_2;
   cVar1 = *(char *)(param_1 + 0x1a);
   if (cVar1 == '\v') {
     if (param_2 == 0) {
-      FUN_00028488(param_1);
+      attempt_talk_interaction(param_1);
       *(undefined1 *)(param_1 + 8) = 0x3c;
       return 0;
     }
@@ -15574,7 +15498,7 @@ int param_2;
       uVar2 = CONCAT11(*(undefined1 *)(param_1 + 0xc),*(undefined1 *)(param_1 + 0xb)) & 0xfff;
       *(char *)(param_1 + 0xb) = (char)uVar2;
       *(char *)(param_1 + 0xc) = (char)(uVar2 >> 8);
-      FUN_00028488(param_1);
+      attempt_talk_interaction(param_1);
       return 0;
     }
   }

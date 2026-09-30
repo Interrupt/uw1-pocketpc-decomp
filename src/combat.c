@@ -656,7 +656,7 @@ void npc_combat_disengage_tick()
         if (('\x02' < uw_ord2005_rem_81) && (uw_ord2005_rem_81 < '\x06')) {
           DAT_0023bf0c = 0;
           reset_cursor_confine_rect();
-          FUN_00028488(DAT_0010190c);
+          attempt_talk_interaction(DAT_0010190c);
         }
       }
     }

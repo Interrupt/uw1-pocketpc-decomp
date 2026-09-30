@@ -107,7 +107,7 @@ void interact_talk_npc()
 
 {
   wait_for_click_release(1);
-  FUN_00028488(g_interact_target);
+  attempt_talk_interaction(g_interact_target);
   return;
 }
 
@@ -638,3 +638,91 @@ int param_2;
 
 
 
+
+
+// was FUN_00028488 -- the actual talk-interaction worker: handles the
+// mantra-chant and special-lever/statue item ids, then for creatures
+// checks whether a real CNV.ARK conversation record exists
+// (probe_archive_entry_exists) and switches to Talk game mode if so,
+// else prints a "no conversation here"-style fallback scroll message.
+// Own "[babl]" debug trace. NOT the same function as the
+// zero-argument interact_talk_npc() just above (that's the
+// interaction dispatch-table's own thin wrapper, itself calling this
+// one with g_interact_target) -- named separately to avoid colliding
+// with that already-established name.
+void attempt_talk_interaction(param_1)
+ushort * param_1;
+
+{
+  char stack0xffdc3244_buf [256];
+  char *stack0xffdc3244_ptr;
+  char cVar1;
+  short sVar2;
+  undefined4 uVar3;
+  char *pcVar4;
+  ushort uVar5;
+  ushort uVar6;
+  char acStack_114 [260];
+  
+  uVar6 = *param_1 & 0x1ff;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction entry: param_1=%p uVar6(itemid)=0x%x raw=0x%x classcheck=0x%x\n", (void *)param_1, (unsigned)uVar6, (unsigned)*param_1, (unsigned)(*param_1 & 0x1c0));
+  if (uVar6 == 0x157) {
+    handle_mantra_chant(0);
+    return;
+  }
+  if (uVar6 == 0x16e) {
+    if (((&DAT_0023add0)[(byte)param_1[3] & 0x3f] & 0xff) != 8) {
+      return;
+    }
+    print_scroll_message_by_id(0x110);
+    return;
+  }
+  if ((*param_1 & 0x1c0) != 0x40) {
+    if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction: not-a-creature branch (uVar3=0xe00)\n");
+    uVar3 = 0xe00;
+    goto LAB_0002865c;
+  }
+  uVar6 = (ushort)(byte)param_1[0xd];
+  DAT_00100674 = param_1;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] attempt_talk_interaction: conv-id byte(uVar6)=0x%x uVar5=0x%x flagbits(param_1+7)=0x%x flagbyte(param_1+0x19)=0x%x\n", (unsigned)uVar6, (unsigned)(*(ushort *)((char *)param_1 + 0xb) & 0xf), (unsigned)(param_1[7] & 0xc0), (unsigned)(*(byte *)((char *)param_1 + 0x19) & 0x40));
+  if (((uVar6 == 0x16) || (uVar6 == 0x8e)) || (uVar6 == 0xe7)) {
+LAB_000285e4:
+    if (uVar6 == 0) {
+      uVar6 = ((byte)*param_1 & 0x3f) + 0x100;
+    }
+    DAT_001007c4 = uVar6;
+    Ordinal_1047(acStack_114,0,0x104);
+    pcVar4 = &DAT_0023cca8;
+    stack0xffdc3244_ptr = acStack_114;
+    do {
+      cVar1 = *pcVar4;
+      *stack0xffdc3244_ptr = cVar1; stack0xffdc3244_ptr = stack0xffdc3244_ptr + 1;
+      pcVar4 = pcVar4 + 1;
+    } while (cVar1 != '\0');
+    Ordinal_1063(acStack_114,s__DATA_cnv_ark_00084fc8);
+    sVar2 = probe_archive_entry_exists(acStack_114,uVar6);
+    if (0 < sVar2) {
+      change_game_mode(4);
+      return;
+    }
+  }
+  else {
+    uVar5 = *(ushort *)((char *)param_1 + 0xb) & 0xf;
+    if ((((((((uVar5 != 5) && (uVar5 != 6)) && (uVar5 != 9)) ||
+           ((*(ushort *)((char *)param_1 + 0xb) & 0xff0) != 0x10)) && ((param_1[7] & 0xc0) != 0)) ||
+         ((*(byte *)((char *)param_1 + 0x19) & 0x40) != 0)) && (uVar6 != 0xff)) || (uVar5 == 10))
+    goto LAB_000285e4;
+  }
+  uVar3 = 0xe01;
+LAB_0002865c:
+  /* Was two separate calls with message_scroll_print_wrapped()'s arg
+     dropped -- same register-forwarding hazard already fixed at
+     load_npc_conversation_record's own sVar1<0 branch (uw.c ~10987, see its comment)
+     and, unfixed, exactly what crashed replaying bug-critter-talk.txt
+     one step further than this file's other Talk-crash fixes: Bragit
+     has no CNV.ARK conversation record, so start_npc_conversation hits this
+     same pattern too (uw.c ~19211) printing "You get no response"
+     before the crash. */
+  message_scroll_print_wrapped(get_message_string(uVar3));
+  return;
+}

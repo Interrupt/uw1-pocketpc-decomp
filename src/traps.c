@@ -477,7 +477,7 @@ LAB_0007d460:
 // which sweeps every object of class 0xd8). When the object's flags
 // nibble at +0xb is 7, resets it to 1. Also unconditionally resets
 // the cursor confine rect (reset_cursor_confine_rect) and calls
-// FUN_00028488 (not yet named) on the object. Reads as "reset a
+// attempt_talk_interaction on the object. Reads as "reset a
 // stuck class-0xd8 object's UI-confine state", but the exact meaning
 // of the flag nibble isn't pinned down further here.
 undefined4 reset_object_ui_state_callback(param_1)
@@ -492,7 +492,7 @@ int param_1;
     *(char *)(param_1 + 0xc) = (char)(uVar1 >> 8);
   }
   reset_cursor_confine_rect();
-  FUN_00028488(param_1);
+  attempt_talk_interaction(param_1);
   return 0;
 }
 

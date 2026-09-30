@@ -2263,8 +2263,8 @@ void start_npc_conversation()
   if (sVar1 < 0 || DAT_000bbf70 == 0) {
     /* Was two separate calls with message_scroll_print_wrapped()'s arg
        dropped -- same pattern already fixed at load_npc_conversation_record's own
-       sVar1<0 branch (uw.c ~10987) and at FUN_00028488's tail (uw.c
-       ~19070). This is the specific crash in bug-critter-talk.txt:
+       sVar1<0 branch (uw.c ~10987) and at attempt_talk_interaction's tail
+       (uw.c ~19070). This is the specific crash in bug-critter-talk.txt:
        Bragit has no CNV.ARK conversation record (sVar1<0 here is the
        real, correct "You get no response" case, not a bug), but
        printing that message crashed on the dropped argument. */
@@ -3017,8 +3017,9 @@ intptr_t param_1; // was `int` -- same pointer-truncation bug class as every sib
    real conversation-open setup, unconditional on every "talk to NPC",
    not gated behind any debug/cheat flag), as
    `sync_conv_vars_from_npc(DAT_00100674)` where DAT_00100674 is the NPC
-   just talked to (assigned in FUN_00028488's own interact-with-object
-   path). Publishes every field babl conversation scripts can read --
+   just talked to (assigned in attempt_talk_interaction's own
+   interact-with-object path). Publishes every field babl conversation
+   scripts can read --
    npc_xhome/npc_yhome/npc_goal/npc_gtarg/npc_talkedto/npc_level/
    npc_attitude/npc_hp/npc_health/npc_arms/npc_power/npc_hunger/
    npc_whoami/npc_name, plus the PLAYER's own play_health/play_hp/

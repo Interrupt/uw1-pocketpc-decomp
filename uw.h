@@ -2656,7 +2656,7 @@ int objects_are_combinable();
 undefined4 spawn_combined_object();
 bool is_object_consumed_in_combination();
 undefined4 check_offering_container_puzzle();
-void FUN_00028488();
+void attempt_talk_interaction();
 void FUN_000286cc();
 void FUN_00028bac();
 void start_npc_conversation();

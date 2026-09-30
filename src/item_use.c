@@ -1273,7 +1273,7 @@ int param_2;
 // 0x3e, plus a specific flag/field pattern on both objects (offset
 // +0x8000/+0x7fc0==0x840); on success, sets two player quest-flag
 // bits (DAT_00086df8+0x61/0x62), marks the target's quality "used",
-// triggers an effect via FUN_00028488 (not yet named), and syncs an
+// triggers an effect via attempt_talk_interaction, and syncs an
 // object at a fixed tile (0x36,0x34) to the player via resolve_skill_gated_unlock_or_use.
 // Prints one of several failure/progress messages otherwise. No
 // callers found by grep in the remaining decompile -- likely a
@@ -1314,7 +1314,7 @@ undefined4 param_2;
       local_21 = local_21 & 0xfff7 | 7;
       local_1e = local_1e | 0xc0;
       local_12 = 0x1b;
-      FUN_00028488(local_2c);
+      attempt_talk_interaction(local_2c);
       iVar2 = (char *)tilemap_lookup(0x36,0x34);
       iVar2 = (char *)resolve_object_link(iVar2 + 2);
       if (iVar2 != 0) {
