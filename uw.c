@@ -2113,7 +2113,7 @@ undefined DAT_00101732_backing[8192];
 undefined DAT_00101733;
 undefined4 DAT_00101728;
 /* Was `undefined4` (4 bytes), truncating the real 64-bit pointers
-   npc_ai_tick/FUN_00032aa4 store here (&DAT_002048c0/002048f0/00204950,
+   npc_ai_tick/setup_npc_ai_tick_state store here (&DAT_002048c0/002048f0/00204950,
    one of a 3-way "which per-class scratch buffer" choice) -- same class
    of bug as npc_ai_tick's own iVar5 fix and FUN_000535fc's header
    comment. Confirmed live via lldb: DAT_0010172c read 0xb6c724 instead
@@ -9394,48 +9394,6 @@ void npc_wander_return_home_exact_tick()
 
 
 
-void FUN_00032aa4(param_1)
-ushort * param_1;
-
-{
-  byte bVar1;
-  uint uVar2;
-  int iVar3;
-  
-  DAT_0010190c = param_1;
-  DAT_00101738 = encode_object_slot_index();
-  iVar3 = ((byte)*DAT_0010190c & 0x3f) * 0x30;
-  DAT_00101404 = &DAT_001007d0 + iVar3;
-  DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
-  uVar2 = DAT_0010190c[0xb] >> 4 & 0x3f;
-  DAT_001013f8 = (char)uVar2;
-  DAT_0010140c = (byte)DAT_0010190c[1] >> 3 & 0xf;
-  DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
-                 (ushort)(*(byte *)((char *)DAT_0010190c + 3) >> 5);
-  DAT_0010141c = (*(byte *)((char *)DAT_0010190c + 3) >> 2 & 7) + (short)((uVar2 << 0x13) >> 0x10);
-  DAT_0010143c = (byte)DAT_0010190c[2] & 0x3f;
-  DAT_0010173c = (byte)DAT_0010190c[3] & 0x3f;
-  DAT_00101458 = *(byte *)((char *)DAT_0010190c + 9);
-  bVar1 = (byte)(DAT_0010190c[1] >> 2);
-  DAT_001018fc = (bVar1 ^ (byte)DAT_0010190c[0xc]) & 0x1f ^ bVar1;
-  DAT_00101434 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x7f;
-  DAT_00101730 = (&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd];
-  if (((&DAT_001007da)[iVar3] & 0x80) == 0) {
-    if (((&DAT_001007da)[iVar3] & 0x40) == 0) {
-      DAT_0010172c = &DAT_002048c0;
-      DAT_00101438 = (undefined2 *)&DAT_00204980;
-    }
-    else {
-      DAT_0010172c = (undefined2 *)&DAT_00204950;
-      DAT_00101438 = &DAT_002049b0;
-    }
-  }
-  else {
-    DAT_0010172c = (undefined2 *)&DAT_002048f0;
-    DAT_00101438 = &DAT_00204990;
-  }
-  return;
-}
 
 
 
@@ -10492,7 +10450,7 @@ ushort * param_3;
     uVar6 = Ordinal_1053();
     uw_ord2005_rem_101 = ((int)(uVar6)) % (2);
     if (uw_ord2005_rem_101 != 0) {
-      FUN_00032aa4(param_3);
+      setup_npc_ai_tick_state(param_3);
       uVar4 = *(ushort *)((char *)g_player_object + 0x16);
       iVar13 = (uint)DAT_001013f8 - ((uVar4 & 0x3f0) >> 4);
       iVar11 = (uint)DAT_00101918 - (uint)(uVar4 >> 10);

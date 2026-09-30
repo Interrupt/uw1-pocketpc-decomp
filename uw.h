@@ -2788,7 +2788,7 @@ undefined4 detect_npc_wander_proximity();
 undefined4 check_npc_target_alignment();
 undefined4 check_npc_fine_facing_alignment();
 int compute_vertical_aim_offset();
-void FUN_00032aa4();
+void setup_npc_ai_tick_state();
 undefined4 npc_ai_tick(); // was FUN_00032d38
 void FUN_00033880();
 undefined4 FUN_00034044();

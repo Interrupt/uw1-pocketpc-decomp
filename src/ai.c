@@ -3085,3 +3085,61 @@ int param_2;
   }
   return iVar5 >> 0x18;
 }
+
+
+// was FUN_00032aa4 -- the per-tick NPC AI setup step: stashes the
+// current NPC object into DAT_0010190c and computes the whole
+// derived-state fan-out virtually every other function in this NPC AI
+// cluster reads -- its own stat template pointer (DAT_00101404), its
+// slot-encoded id (DAT_00101738), position/delta fields
+// (DAT_00101918/0x1c/0x910/etc.), and which of the collision-response
+// profile buffers to use for this monster's locomotion type. Called at
+// the very start of npc_ai_tick before dispatching to any goal
+// handler. Fixed a confirmed dropped-argument bug (see its own
+// comment).
+void setup_npc_ai_tick_state(param_1)
+ushort * param_1;
+
+{
+  byte bVar1;
+  uint uVar2;
+  int iVar3;
+  
+  DAT_0010190c = param_1;
+  /* Was a dropped argument -- was `encode_object_slot_index();` with no
+     args. param_1 (just stashed above as DAT_0010190c, the "current
+     NPC" this whole per-tick setup is for) is the obvious intended
+     argument. */
+  DAT_00101738 = encode_object_slot_index(param_1);
+  iVar3 = ((byte)*DAT_0010190c & 0x3f) * 0x30;
+  DAT_00101404 = &DAT_001007d0 + iVar3;
+  DAT_00101918 = *(byte *)((char *)DAT_0010190c + 0x17) >> 2;
+  uVar2 = DAT_0010190c[0xb] >> 4 & 0x3f;
+  DAT_001013f8 = (char)uVar2;
+  DAT_0010140c = (byte)DAT_0010190c[1] >> 3 & 0xf;
+  DAT_00101910 = (short)(((uint)DAT_00101918 << 0x13) >> 0x10) +
+                 (ushort)(*(byte *)((char *)DAT_0010190c + 3) >> 5);
+  DAT_0010141c = (*(byte *)((char *)DAT_0010190c + 3) >> 2 & 7) + (short)((uVar2 << 0x13) >> 0x10);
+  DAT_0010143c = (byte)DAT_0010190c[2] & 0x3f;
+  DAT_0010173c = (byte)DAT_0010190c[3] & 0x3f;
+  DAT_00101458 = *(byte *)((char *)DAT_0010190c + 9);
+  bVar1 = (byte)(DAT_0010190c[1] >> 2);
+  DAT_001018fc = (bVar1 ^ (byte)DAT_0010190c[0xc]) & 0x1f ^ bVar1;
+  DAT_00101434 = *(byte *)((char *)DAT_0010190c + 0x13) & 0x7f;
+  DAT_00101730 = (&DAT_00202c90)[(*DAT_0010190c & 0x1ff) * 0xd];
+  if (((&DAT_001007da)[iVar3] & 0x80) == 0) {
+    if (((&DAT_001007da)[iVar3] & 0x40) == 0) {
+      DAT_0010172c = &DAT_002048c0;
+      DAT_00101438 = (undefined2 *)&DAT_00204980;
+    }
+    else {
+      DAT_0010172c = (undefined2 *)&DAT_00204950;
+      DAT_00101438 = &DAT_002049b0;
+    }
+  }
+  else {
+    DAT_0010172c = (undefined2 *)&DAT_002048f0;
+    DAT_00101438 = &DAT_00204990;
+  }
+  return;
+}
