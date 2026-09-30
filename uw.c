@@ -9680,42 +9680,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_00039bd8(param_1,param_2)
-undefined4 param_1;
-uint param_2;
-
-{
-  char cVar1;
-  int iVar2;
-  int iVar3;
-  short sVar4;
-  uint uVar5;
-  
-  sVar4 = (short)param_2;
-  iVar2 = FUN_000535fc();
-  iVar3 = (int)sVar4;
-  if (iVar3 < 0) {
-    if (iVar2 == g_player_object) {
-      uVar5 = *(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf;
-      if ((-uVar5 != iVar3 && (int)uVar5 <= -iVar3) &&
-         (cVar1 = resolve_damage_type_resistance(g_player_object,1,0x10), cVar1 != '\0')) {
-        uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
-        *(byte *)(DAT_00086df8 + 0x5f) =
-             (byte)uVar5 | (byte)(((param_2 & 0xffff) * -0x10000 >> 0x10 & 0xf) << 2);
-        *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
-      }
-    }
-    else {
-      sVar4 = (short)((uint)(iVar3 * -0x10000) >> 0x10);
-    }
-  }
-  if ((0 < sVar4) &&
-     (iVar3 = apply_typed_damage_to_object(iVar2,0,*(ushort *)(iVar2 + 0x16) >> 10,
-                           (*(ushort *)(iVar2 + 0x16) & 0x3f0) >> 4,(char)sVar4,4), iVar3 != 0)) {
-    return 0x10;
-  }
-  return 2;
-}
 
 
 

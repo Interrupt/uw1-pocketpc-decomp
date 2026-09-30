@@ -42,7 +42,7 @@
 //            message_scroll_print_wrapped -- a "text trap" (its own
 //            debug string literally says "Look,_it's_a_text_trap").
 // The remaining cases (0-5, 9, 0xa, 0xc, 0xf) call still-unnamed
-// helper functions (FUN_00039bd8, teleport_object_to_level_tile, FUN_0004ac98,
+// helper functions (apply_poison_or_damage_trap_effect, teleport_object_to_level_tile, FUN_0004ac98,
 // dispatch_quest_event_code, apply_area_terrain_effect, print_message_with_proximity_qualifier, FUN_000452dc) whose own
 // purpose isn't pinned down yet, so their exact trap semantics are
 // left undetermined here rather than guessed at. After the switch,
@@ -113,7 +113,7 @@ uint param_3;
       sVar3 = 1;
     }
     uVar7 = encode_object_slot_index(DAT_0024cff4);
-    iVar16 = FUN_00039bd8(uVar7,((byte)param_1[2] & 0x3f) * (int)sVar3,4,uVar6);
+    iVar16 = apply_poison_or_damage_trap_effect(uVar7,((byte)param_1[2] & 0x3f) * (int)sVar3,4,uVar6);
     break;
   case 1:
     iVar16 = teleport_object_to_level_tile(DAT_0024cff4,(byte)param_1[2] & 0x3f,(byte)param_1[3] & 0x3f,
@@ -328,7 +328,7 @@ LAB_0007dce4:
                  CONCAT22(uVar20,*(ushort *)(DAT_0024cff4 + 0x16) >> 10),
                  CONCAT22(uVar21,(*(ushort *)(DAT_0024cff4 + 0x16) & 0x3f0) >> 4),0,0);
     uVar6 = encode_object_slot_index(DAT_0024cff4);
-    iVar16 = FUN_00039bd8(uVar6,sVar3 + 3,4,0);
+    iVar16 = apply_poison_or_damage_trap_effect(uVar6,sVar3 + 3,4,0);
     return iVar16;
   case 0xb:
     local_34 = (char *)tilemap_lookup(param_1[2] & 0x3f,(byte)param_1[3] & 0x3f);
@@ -1078,5 +1078,60 @@ LAB_0003987c:
     } while ((iVar12 + 1) * 0x10000 >> 0x10 <= iVar1);
   }
   FUN_00049924(6);
+  return 2;
+}
+
+
+// was FUN_00039bd8 -- confirmed as dispatch_trap_type_effect's case 0
+// AND case 0xb handler (a "poison dart"-style trap): param_2's low 16
+// bits are a signed delta -- negative poisons the player directly
+// (adjusting their poison-level nibble at DAT_00086df8+0x5f, gated on
+// resolve_damage_type_resistance's poison check), positive instead
+// applies typed damage via apply_typed_damage_to_object (hardcoding
+// its damage-type bitmask to 4) to the object FUN_000535fc resolves
+// (not yet named -- likely "get trap's current target"). Returns 0x10
+// on a successful damage application, else 2.
+// Note: both known callers pass 2 more arguments than this signature
+// declares (a constant 4, matching the hardcoded damage-type bitmask
+// above -- consistent, not a bug) and a 4th value computed specially
+// per call site (case 0: 2 or 0 from a 1-in-10 roll; case 0xb: a
+// literal 0) that has no other use at either call site and is simply
+// dropped here. NOT fixed: no concrete evidence for where inside this
+// function that 4th value should plug in, so speculatively adding it
+// risks a behavior change rather than a verified bug fix.
+undefined4 apply_poison_or_damage_trap_effect(param_1,param_2)
+undefined4 param_1;
+uint param_2;
+
+{
+  char cVar1;
+  int iVar2;
+  int iVar3;
+  short sVar4;
+  uint uVar5;
+  
+  sVar4 = (short)param_2;
+  iVar2 = FUN_000535fc();
+  iVar3 = (int)sVar4;
+  if (iVar3 < 0) {
+    if (iVar2 == g_player_object) {
+      uVar5 = *(byte *)(DAT_00086df8 + 0x5f) >> 2 & 0xf;
+      if ((-uVar5 != iVar3 && (int)uVar5 <= -iVar3) &&
+         (cVar1 = resolve_damage_type_resistance(g_player_object,1,0x10), cVar1 != '\0')) {
+        uVar5 = *(ushort *)(DAT_00086df8 + 0x5f) & 0xffc3;
+        *(byte *)(DAT_00086df8 + 0x5f) =
+             (byte)uVar5 | (byte)(((param_2 & 0xffff) * -0x10000 >> 0x10 & 0xf) << 2);
+        *(char *)(DAT_00086df8 + 0x60) = (char)(uVar5 >> 8);
+      }
+    }
+    else {
+      sVar4 = (short)((uint)(iVar3 * -0x10000) >> 0x10);
+    }
+  }
+  if ((0 < sVar4) &&
+     (iVar3 = apply_typed_damage_to_object(iVar2,0,*(ushort *)(iVar2 + 0x16) >> 10,
+                           (*(ushort *)(iVar2 + 0x16) & 0x3f0) >> 4,(char)sVar4,4), iVar3 != 0)) {
+    return 0x10;
+  }
   return 2;
 }
