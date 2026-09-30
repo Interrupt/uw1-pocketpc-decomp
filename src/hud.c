@@ -1300,7 +1300,7 @@ short param_1;
 // was FUN_0006d894, briefly named hud_damage_flash_tick by an earlier
 // pass. Renamed again: despite the "damage" name, its 3 real callers
 // (msg_scroll_scroll_up_line on every message-scroll line,
-// sync_player_stats_to_hud on an HP/poison threshold, FUN_00027f14 on
+// sync_player_stats_to_hud on an HP/poison threshold, award_monster_kill_experience on
 // a trap/switch-type object trigger) are mostly unrelated to damage --
 // "damage" only describes one of the three. What this function
 // actually drives, dispatched via set_hud_status_value's status

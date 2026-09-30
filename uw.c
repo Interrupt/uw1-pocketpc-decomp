@@ -1720,7 +1720,7 @@ undefined DAT_00250658;
 undefined DAT_001007e1;
 undefined DAT_001007f8;
 char s__DATA_cmb_dat_00084f40[] = "\\DATA\\cmb.dat";
-static undefined2 DAT_00100630_backing[32768];
+undefined2 DAT_00100630_backing[32768];
 #define DAT_00100630 DAT_00100630_backing[0]
 char s_objsbecombinable_returns__d_00084f50[] = "objsbecombinable_returns_%d";
 char s_combination__d_is__d_and__d__00084f70[] = "combination_%d_is_%d_and_%d.";
@@ -8344,58 +8344,6 @@ undefined4 param_1;
 
 
 
-void FUN_00027f14(param_1)
-ushort * param_1;
-
-{
-  int uw_ord2005_rem_10 = 0;
-  short sVar1;
-  int iVar2;
-  undefined4 uVar3;
-  int extraout_r1;
-  
-  if ((*param_1 & 0x1c0) == 0x40) {
-    set_hud_status_value(4,2);
-    set_pending_music_track(9);
-    sVar1 = *(short *)(&DAT_001007f8 + ((byte)*param_1 & 0x3f) * 0x30);
-    iVar2 = roll_dice_sum(2,(int)sVar1);
-    iVar2 = iVar2 + sVar1 * 4;
-    if ((param_1[7] & 4) != 0) {
-      uVar3 = Ordinal_1053();
-      uw_ord2005_rem_10 = ((int)(uVar3)) % (0x18);
-      iVar2 = (uw_ord2005_rem_10 + 0x18) * (iVar2 * 0x10000 >> 0x10);
-      if (iVar2 < 0) {
-        iVar2 = iVar2 + 0xf;
-      }
-      iVar2 = (int)(short)(iVar2 >> 4);
-    }
-    grant_experience_points(iVar2);
-  }
-  return;
-}
-
-
-
-void FUN_00028004()
-
-{
-  char stack0xffdc3250_buf [256];
-  char *stack0xffdc3250_ptr;
-  char cVar1;
-  char *pcVar2;
-  char acStack_108 [260];
-  
-  pcVar2 = &DAT_0023cca8;
-    stack0xffdc3250_ptr = acStack_108;
-  do {
-    cVar1 = *pcVar2;
-    *stack0xffdc3250_ptr = cVar1; stack0xffdc3250_ptr = stack0xffdc3250_ptr + 1;
-    pcVar2 = pcVar2 + 1;
-  } while (cVar1 != '\0');
-  Ordinal_1063(acStack_108,s__DATA_cmb_dat_00084f40);
-  read_buffer_from_file(acStack_108,&DAT_00100630,0x3c);
-  return;
-}
 
 
 
@@ -12555,7 +12503,7 @@ ushort * param_3;
     iVar3 = FUN_00034634(param_1);
     if (iVar3 != 0) {
       if (uVar2 == 1) {
-        FUN_00027f14(param_1);
+        award_monster_kill_experience(param_1);
       }
       return 1;
     }
@@ -16528,7 +16476,7 @@ void FUN_0003b820()
   init_sprite_list_buffers();
   FUN_0003bb84();
   load_light_tables();
-  FUN_00028004();
+  load_combat_data_file();
   iVar3 = check_save_disk_space();
   if (iVar3 == 0) {
     FUN_0003c4a8(s_Not_enough_disk_space_for_save_g_00085744);

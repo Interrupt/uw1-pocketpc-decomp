@@ -1657,3 +1657,67 @@ short param_5;
   }
   return iVar5;
 }
+
+
+// was FUN_00027f14 -- grants the player experience for killing param_1
+// (a monster object, category 0x40): plays a HUD update and music
+// sting, rolls XP from the monster's own stat table (&DAT_001007f8),
+// with a random spread when a specific stat flag bit is set, then
+// grants it via grant_experience_points. Called from the monster
+// take-damage/death path (uw.c's own killed-by-player branch) once a
+// kill is confirmed.
+void award_monster_kill_experience(param_1)
+ushort * param_1;
+
+{
+  int uw_ord2005_rem_10 = 0;
+  short sVar1;
+  int iVar2;
+  undefined4 uVar3;
+  int extraout_r1;
+  
+  if ((*param_1 & 0x1c0) == 0x40) {
+    set_hud_status_value(4,2);
+    set_pending_music_track(9);
+    sVar1 = *(short *)(&DAT_001007f8 + ((byte)*param_1 & 0x3f) * 0x30);
+    iVar2 = roll_dice_sum(2,(int)sVar1);
+    iVar2 = iVar2 + sVar1 * 4;
+    if ((param_1[7] & 4) != 0) {
+      uVar3 = Ordinal_1053();
+      uw_ord2005_rem_10 = ((int)(uVar3)) % (0x18);
+      iVar2 = (uw_ord2005_rem_10 + 0x18) * (iVar2 * 0x10000 >> 0x10);
+      if (iVar2 < 0) {
+        iVar2 = iVar2 + 0xf;
+      }
+      iVar2 = (int)(short)(iVar2 >> 4);
+    }
+    grant_experience_points(iVar2);
+  }
+  return;
+}
+
+
+
+// was FUN_00028004 -- loads the combat data file (\DATA\cmb.dat,
+// s__DATA_cmb_dat_00084f40) relative to the game data path
+// (DAT_0023cca8) into the &DAT_00100630 buffer (0x3c bytes).
+void load_combat_data_file()
+
+{
+  char stack0xffdc3250_buf [256];
+  char *stack0xffdc3250_ptr;
+  char cVar1;
+  char *pcVar2;
+  char acStack_108 [260];
+  
+  pcVar2 = &DAT_0023cca8;
+    stack0xffdc3250_ptr = acStack_108;
+  do {
+    cVar1 = *pcVar2;
+    *stack0xffdc3250_ptr = cVar1; stack0xffdc3250_ptr = stack0xffdc3250_ptr + 1;
+    pcVar2 = pcVar2 + 1;
+  } while (cVar1 != '\0');
+  Ordinal_1063(acStack_108,s__DATA_cmb_dat_00084f40);
+  read_buffer_from_file(acStack_108,&DAT_00100630,0x3c);
+  return;
+}
