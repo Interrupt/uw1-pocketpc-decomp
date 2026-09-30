@@ -753,7 +753,7 @@ LAB_000337fc:
       if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
       uVar9 = ((byte)DAT_00101404[0x20] & 0x1e) >> 1;
       iVar5 = (short)uVar9 * 3;
-      cVar4 = FUN_0003298c((&DAT_002027d1)[iVar5],1);
+      cVar4 = compute_vertical_aim_offset((&DAT_002027d1)[iVar5],1);
       DAT_00202a3c = (short)cVar4;
       FUN_0004a510(DAT_0010190c,uVar9,(&DAT_002027d1)[iVar5]);
       *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xc0;
@@ -762,7 +762,7 @@ LAB_000337fc:
       goto LAB_000337fc;
     }
     if ((uVar9 & 0xf000) != 0x4000) goto LAB_00033810;
-    cVar4 = FUN_0003298c(0x1e,0);
+    cVar4 = compute_vertical_aim_offset(0x1e,0);
     DAT_00202a3c = (short)cVar4;
     dispatch_tile_special_action(DAT_00101404[(*(byte *)((char *)DAT_0010190c + 0x19) >> 2 & 3) + 0x29],DAT_0010190c,0)
     ;
@@ -3031,4 +3031,57 @@ LAB_000323ac:
     }
   }
   return uVar6;
+}
+
+
+// was FUN_0003298c -- computes a vertical aim/pitch offset toward the
+// tracked target: derives it from the height difference between the
+// NPC and target scaled by distance (integer_sqrt(DAT_00101728)),
+// clamped to [-0xf,0xf], optionally blended with an extra
+// param_1-scaled component when both param_1 and param_2 are nonzero.
+// Confirmed via its real call sites (src/ai.c) feeding a ranged/thrown
+// weapon launch's own pitch parameter (DAT_00202a3c) right before
+// FUN_0004a510.
+int compute_vertical_aim_offset(param_1,param_2)
+short param_1;
+int param_2;
+
+{
+  byte bVar1;
+  byte bVar2;
+  ushort uVar3;
+  short sVar4;
+  int iVar5;
+  int iVar6;
+  
+  FUN_00034044();
+  bVar1 = *(byte *)((char *)DAT_0010190c + 2);
+  bVar2 = *(byte *)(DAT_00101400 + 2);
+  uVar3 = integer_sqrt(DAT_00101728);
+  iVar6 = (int)(((bVar2 & 0x7f) - (bVar1 & 0x7f)) * 0x10000) >> 0x10;
+  if (uVar3 == 0) {
+    iVar5 = 0xf;
+    if (iVar6 < 1) {
+      iVar5 = -0xf;
+    }
+    iVar5 = iVar5 << 0x18;
+  }
+  else {
+    sVar4 = Ordinal_2005((int)(short)uVar3,iVar6 << 2);
+    iVar5 = (int)sVar4;
+    if (0xf < iVar5) {
+      iVar5 = 0xf;
+    }
+    if ((short)iVar5 < -0xf) {
+      iVar5 = -0xf;
+    }
+    if ((param_2 == 0) || (param_1 == 0)) {
+      iVar5 = iVar5 << 0x18;
+    }
+    else {
+      iVar6 = Ordinal_2005((int)param_1,(uint)uVar3 * 3);
+      iVar5 = (iVar6 + (short)iVar5) * 0x1000000;
+    }
+  }
+  return iVar5 >> 0x18;
 }

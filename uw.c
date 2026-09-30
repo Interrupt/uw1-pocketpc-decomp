@@ -9391,49 +9391,6 @@ void npc_wander_return_home_exact_tick()
 
 
 
-int FUN_0003298c(param_1,param_2)
-short param_1;
-int param_2;
-
-{
-  byte bVar1;
-  byte bVar2;
-  ushort uVar3;
-  short sVar4;
-  int iVar5;
-  int iVar6;
-  
-  FUN_00034044();
-  bVar1 = *(byte *)((char *)DAT_0010190c + 2);
-  bVar2 = *(byte *)(DAT_00101400 + 2);
-  uVar3 = integer_sqrt(DAT_00101728);
-  iVar6 = (int)(((bVar2 & 0x7f) - (bVar1 & 0x7f)) * 0x10000) >> 0x10;
-  if (uVar3 == 0) {
-    iVar5 = 0xf;
-    if (iVar6 < 1) {
-      iVar5 = -0xf;
-    }
-    iVar5 = iVar5 << 0x18;
-  }
-  else {
-    sVar4 = Ordinal_2005((int)(short)uVar3,iVar6 << 2);
-    iVar5 = (int)sVar4;
-    if (0xf < iVar5) {
-      iVar5 = 0xf;
-    }
-    if ((short)iVar5 < -0xf) {
-      iVar5 = -0xf;
-    }
-    if ((param_2 == 0) || (param_1 == 0)) {
-      iVar5 = iVar5 << 0x18;
-    }
-    else {
-      iVar6 = Ordinal_2005((int)param_1,(uint)uVar3 * 3);
-      iVar5 = (iVar6 + (short)iVar5) * 0x1000000;
-    }
-  }
-  return iVar5 >> 0x18;
-}
 
 
 
