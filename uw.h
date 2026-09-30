@@ -869,6 +869,93 @@ extern undefined DAT_0018959c;
 extern undefined DAT_0018959d;
 extern undefined DAT_0018959e;
 extern undefined DAT_0018959f;
+/* The 29 catalog 3D model buffers load_3d_object_models fills via
+   parse_e_model_file, indexed by g_anim_model_slot -- see that array's
+   own comment for the slot-order table. */
+extern undefined DAT_00114c1c_backing[16384];
+#define DAT_00114c1c DAT_00114c1c_backing[0]
+extern undefined DAT_00118848_backing[16384];
+#define DAT_00118848 DAT_00118848_backing[0]
+extern undefined DAT_0011c474_backing[16384];
+#define DAT_0011c474 DAT_0011c474_backing[0]
+extern undefined DAT_001200a0_backing[16384];
+#define DAT_001200a0 DAT_001200a0_backing[0]
+extern undefined DAT_00123ccc_backing[16384];
+#define DAT_00123ccc DAT_00123ccc_backing[0]
+extern undefined DAT_001278f8_backing[16384];
+#define DAT_001278f8 DAT_001278f8_backing[0]
+extern undefined DAT_0012b524_backing[16384];
+#define DAT_0012b524 DAT_0012b524_backing[0]
+extern undefined DAT_0012f150_backing[16384];
+#define DAT_0012f150 DAT_0012f150_backing[0]
+extern undefined DAT_00132d7c_backing[16384];
+#define DAT_00132d7c DAT_00132d7c_backing[0]
+extern undefined DAT_001369a8_backing[16384];
+#define DAT_001369a8 DAT_001369a8_backing[0]
+extern undefined DAT_0013a5d4_backing[16384];
+#define DAT_0013a5d4 DAT_0013a5d4_backing[0]
+extern undefined DAT_0013e200_backing[16384];
+#define DAT_0013e200 DAT_0013e200_backing[0]
+extern undefined DAT_00141e2c_backing[16384];
+#define DAT_00141e2c DAT_00141e2c_backing[0]
+extern undefined DAT_00145a58_backing[16384];
+#define DAT_00145a58 DAT_00145a58_backing[0]
+extern undefined DAT_00149684_backing[16384];
+#define DAT_00149684 DAT_00149684_backing[0]
+extern undefined DAT_0014d2b0_backing[16384];
+#define DAT_0014d2b0 DAT_0014d2b0_backing[0]
+extern undefined DAT_00150edc_backing[16384];
+#define DAT_00150edc DAT_00150edc_backing[0]
+extern undefined DAT_00154b08_backing[16384];
+#define DAT_00154b08 DAT_00154b08_backing[0]
+extern undefined DAT_00158734_backing[16384];
+#define DAT_00158734 DAT_00158734_backing[0]
+extern undefined DAT_0015c360_backing[16384];
+#define DAT_0015c360 DAT_0015c360_backing[0]
+extern undefined DAT_0015ff8c_backing[16384];
+#define DAT_0015ff8c DAT_0015ff8c_backing[0]
+extern undefined DAT_00163bb8_backing[16384];
+#define DAT_00163bb8 DAT_00163bb8_backing[0]
+extern undefined DAT_001677e4_backing[16384];
+#define DAT_001677e4 DAT_001677e4_backing[0]
+extern undefined DAT_0016b410_backing[16384];
+#define DAT_0016b410 DAT_0016b410_backing[0]
+extern undefined DAT_0016f03c_backing[16384];
+#define DAT_0016f03c DAT_0016f03c_backing[0]
+extern undefined DAT_00172c68_backing[16384];
+#define DAT_00172c68 DAT_00172c68_backing[0]
+extern undefined DAT_00176894_backing[16384];
+#define DAT_00176894 DAT_00176894_backing[0]
+extern undefined DAT_0017a4c0_backing[16384];
+#define DAT_0017a4c0 DAT_0017a4c0_backing[0]
+extern undefined DAT_0017e0ec_backing[16384];
+#define DAT_0017e0ec DAT_0017e0ec_backing[0]
+extern char s__DATA3D_40LOTUS_E_000855e8[];
+extern char s__DATA3D_ARROW_E_0008559c[];
+extern char s__DATA3D_BARRCLOS_E_00085498[];
+extern char s__DATA3D_BEAM_E_0008558c[];
+extern char s__DATA3D_BED2_E_00085474[];
+extern char s__DATA3D_BENCH_E_000855fc[];
+extern char s__DATA3D_CHAIRSIM_E_00085484[];
+extern char s__DATA3D_CHEST_E_000854c0[];
+extern char s__DATA3D_DFRAME_E_00085620[];
+extern char s__DATA3D_DOOR_E_00085540[];
+extern char s__DATA3D_FBRIDGE_E_0008560c[];
+extern char s__DATA3D_GATE_E_000854e4[];
+extern char s__DATA3D_GRAVE_E_0008551c[];
+extern char s__DATA3D_NEWPILL_E_00085578[];
+extern char s__DATA3D_NEWPORT_E_00085550[];
+extern char s__DATA3D_NITESTAN_E_000854ac[];
+extern char s__DATA3D_ROCKBIG_E_000855ac[];
+extern char s__DATA3D_ROCKMED_E_000855c0[];
+extern char s__DATA3D_ROCKSMAL_E_000855d4[];
+extern char s__DATA3D_SHRINE_E_00085564[];
+extern char s__DATA3D_TABLF3_E_000854d0[];
+extern char s__DATA3D_TMAP16X16_E_0008552c[];
+extern char s__DATA3D_TMAP32X32_E_00085508[];
+extern char s__DATA3D_TMAP64X64_E_000854f4[];
+void parse_e_model_file();
+
 extern void * const g_anim_model_slot[30];
 extern unsigned char g_anim_model_scratch[30][16384];
 extern undefined2 DAT_00189570;
@@ -2874,7 +2961,7 @@ undefined4 apply_object_destruction_effect();
 undefined4 resolve_damage_type_resistance();
 undefined4 apply_typed_damage_to_object();
 bool apply_object_durability_damage();
-void FUN_00038680();
+void load_3d_object_models();
 void FUN_0003894c();
 int FUN_00038a8c();
 void FUN_00038ab0();

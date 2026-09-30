@@ -618,7 +618,7 @@ char s_npc_attitude_000845f8[] = "npc_attitude";
 #define DAT_001007da DAT_001007d4_backing[6]
 #define DAT_001007e2 DAT_001007d4_backing[0xe]
 #define DAT_001007ed DAT_001007d4_backing[0x19]
-/* Widened from 32768: FUN_00038680 does
+/* Widened from 32768: load_3d_object_models does
    `Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);` (a 492928-byte
    memmove, confirmed by ASAN global-buffer-overflow), matching
    DAT_00189590's own size (985856, an earlier widening pass already
@@ -2262,67 +2262,67 @@ char s__DATA3D_40LOTUS_E_000855e8[] = "\\DATA3D\\40LOTUS.E";
 char s__DATA3D_BENCH_E_000855fc[] = "\\DATA3D\\BENCH.E";
 char s__DATA3D_FBRIDGE_E_0008560c[] = "\\DATA3D\\FBRIDGE.E";
 char s__DATA3D_DFRAME_E_00085620[] = "\\DATA3D\\DFRAME.E";
-static undefined DAT_00114c1c_backing[16384];
+undefined DAT_00114c1c_backing[16384];
 #define DAT_00114c1c DAT_00114c1c_backing[0]
-static undefined DAT_00118848_backing[16384];
+undefined DAT_00118848_backing[16384];
 #define DAT_00118848 DAT_00118848_backing[0]
-static undefined DAT_0011c474_backing[16384];
+undefined DAT_0011c474_backing[16384];
 #define DAT_0011c474 DAT_0011c474_backing[0]
-static undefined DAT_001200a0_backing[16384];
+undefined DAT_001200a0_backing[16384];
 #define DAT_001200a0 DAT_001200a0_backing[0]
-static undefined DAT_00123ccc_backing[16384];
+undefined DAT_00123ccc_backing[16384];
 #define DAT_00123ccc DAT_00123ccc_backing[0]
-static undefined DAT_001278f8_backing[16384];
+undefined DAT_001278f8_backing[16384];
 #define DAT_001278f8 DAT_001278f8_backing[0]
-static undefined DAT_0012b524_backing[16384];
+undefined DAT_0012b524_backing[16384];
 #define DAT_0012b524 DAT_0012b524_backing[0]
-static undefined DAT_0012f150_backing[16384];
+undefined DAT_0012f150_backing[16384];
 #define DAT_0012f150 DAT_0012f150_backing[0]
-static undefined DAT_00132d7c_backing[16384];
+undefined DAT_00132d7c_backing[16384];
 #define DAT_00132d7c DAT_00132d7c_backing[0]
-static undefined DAT_001369a8_backing[16384];
+undefined DAT_001369a8_backing[16384];
 #define DAT_001369a8 DAT_001369a8_backing[0]
-static undefined DAT_0013a5d4_backing[16384];
+undefined DAT_0013a5d4_backing[16384];
 #define DAT_0013a5d4 DAT_0013a5d4_backing[0]
-static undefined DAT_0013e200_backing[16384];
+undefined DAT_0013e200_backing[16384];
 #define DAT_0013e200 DAT_0013e200_backing[0]
-static undefined DAT_00141e2c_backing[16384];
+undefined DAT_00141e2c_backing[16384];
 #define DAT_00141e2c DAT_00141e2c_backing[0]
-static undefined DAT_00145a58_backing[16384];
+undefined DAT_00145a58_backing[16384];
 #define DAT_00145a58 DAT_00145a58_backing[0]
-static undefined DAT_00149684_backing[16384];
+undefined DAT_00149684_backing[16384];
 #define DAT_00149684 DAT_00149684_backing[0]
-static undefined DAT_0014d2b0_backing[16384];
+undefined DAT_0014d2b0_backing[16384];
 #define DAT_0014d2b0 DAT_0014d2b0_backing[0]
-static undefined DAT_00150edc_backing[16384];
+undefined DAT_00150edc_backing[16384];
 #define DAT_00150edc DAT_00150edc_backing[0]
-static undefined DAT_00154b08_backing[16384];
+undefined DAT_00154b08_backing[16384];
 #define DAT_00154b08 DAT_00154b08_backing[0]
-static undefined DAT_00158734_backing[16384];
+undefined DAT_00158734_backing[16384];
 #define DAT_00158734 DAT_00158734_backing[0]
-static undefined DAT_0015c360_backing[16384];
+undefined DAT_0015c360_backing[16384];
 #define DAT_0015c360 DAT_0015c360_backing[0]
-static undefined DAT_0015ff8c_backing[16384];
+undefined DAT_0015ff8c_backing[16384];
 #define DAT_0015ff8c DAT_0015ff8c_backing[0]
-static undefined DAT_00163bb8_backing[16384];
+undefined DAT_00163bb8_backing[16384];
 #define DAT_00163bb8 DAT_00163bb8_backing[0]
-static undefined DAT_001677e4_backing[16384];
+undefined DAT_001677e4_backing[16384];
 #define DAT_001677e4 DAT_001677e4_backing[0]
-static undefined DAT_0016b410_backing[16384];
+undefined DAT_0016b410_backing[16384];
 #define DAT_0016b410 DAT_0016b410_backing[0]
-static undefined DAT_0016f03c_backing[16384];
+undefined DAT_0016f03c_backing[16384];
 #define DAT_0016f03c DAT_0016f03c_backing[0]
-static undefined DAT_00172c68_backing[16384];
+undefined DAT_00172c68_backing[16384];
 #define DAT_00172c68 DAT_00172c68_backing[0]
-static undefined DAT_00176894_backing[16384];
+undefined DAT_00176894_backing[16384];
 #define DAT_00176894 DAT_00176894_backing[0]
-static undefined DAT_0017a4c0_backing[16384];
+undefined DAT_0017a4c0_backing[16384];
 #define DAT_0017a4c0 DAT_0017a4c0_backing[0]
-static undefined DAT_0017e0ec_backing[16384];
+undefined DAT_0017e0ec_backing[16384];
 #define DAT_0017e0ec DAT_0017e0ec_backing[0]
 /* g_anim_model_slot: real fix for tick_anim_record's own address-walk bug
    (see that function's own comment). In the ORIGINAL binary, `DAT_00110ff0`
-   and these 29 model buffers are one contiguous array -- FUN_00038680's own
+   and these 29 model buffers are one contiguous array -- load_3d_object_models's own
    29 parse_e_model_file calls fill slots 1..29 in exactly this order, and
    tick_anim_record/emit_catalog_object read a model's data back by walking
    `base + slot*0x3c2c`. This port declares every DAT_XXXXXXXX as its OWN
@@ -2331,7 +2331,7 @@ static undefined DAT_0017e0ec_backing[16384];
    buffer) -- so that walk lands in DAT_00110ff0's own unrelated, always-
    zero memory instead of a real model, and the whole real-mesh path in
    emit_catalog_object was silently dead. Slot 0 is deliberately NULL (no
-   parse_e_model_file call ever targets it -- see FUN_00038680's own call
+   parse_e_model_file call ever targets it -- see load_3d_object_models's own call
    list, which starts at slot 1). Order matches that call list exactly. */
 void * const g_anim_model_slot[30] = {
   0,                 /* 0: unused */
@@ -7214,7 +7214,7 @@ int * param_2;
 // was FUN_00020a74 -- parses one DATA3D/*.E text-format 3D model script
 // (param_1 = file path, param_2 = ~16KB per-model output buffer) into
 // point positions and per-part (per-face) vertex-index lists. Called 29
-// times from FUN_00038680 at startup, once per model file. Point count
+// times from load_3d_object_models at startup, once per model file. Point count
 // lives at output offset 0, part count at offset 4, points at
 // `8 + i*0xc` (3 back-to-back floats), parts at `0xc14 + p*0x60` (a
 // vertex count then that many vertex-index ints from offset +4) -- see
@@ -9653,41 +9653,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-void FUN_00038680()
-
-{
-  parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c,1);
-  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848,1);
-  parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474,0);
-  parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0,0);
-  parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc,0);
-  parse_e_model_file(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8,0);
-  parse_e_model_file(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524,1);
-  parse_e_model_file(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150,0);
-  parse_e_model_file(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c,0);
-  parse_e_model_file(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8,0);
-  parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4,0);
-  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200,0);
-  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c,0);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58,0);
-  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684,0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0,0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc,0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08,0);
-  parse_e_model_file(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734,0);
-  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360,0);
-  parse_e_model_file(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c,0);
-  parse_e_model_file(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8,0);
-  parse_e_model_file(s__DATA3D_GATE_E_000854e4,&DAT_001677e4,0);
-  parse_e_model_file(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410,0);
-  parse_e_model_file(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c,0);
-  parse_e_model_file(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68,0);
-  parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894,0);
-  parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0,0);
-  parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec,0);
-  Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);
-  return;
-}
 
 
 
@@ -26230,7 +26195,7 @@ void FUN_0005b828()
 
 {
   reset_viewport_to_fullscreen();
-  FUN_00038680();
+  load_3d_object_models();
   if (getenv("UW_DUMP_MODEL_RAW")) {
     unsigned char *_b = (unsigned char *)&DAT_00123ccc;
     int _k;

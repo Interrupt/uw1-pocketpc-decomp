@@ -28,7 +28,7 @@
    lands in unrelated always-zero memory and this whole function would
    silently return an empty record for every catalog. Now resolves
    `catalog` through g_anim_model_slot (the real per-catalog model
-   address, in the same order FUN_00038680 loads them) and hands back a
+   address, in the same order load_3d_object_models loads them) and hands back a
    fresh copy in g_anim_model_scratch -- a real npts/nparts/point-list/
    face-list a caller can actually use, without ever aliasing (and
    risking emit_catalog_object's own scratch writes corrupting) the
@@ -1712,5 +1712,48 @@ undefined4 param_4;
       piVar2 = piVar2 + 3;
     } while (iVar3 < *param_1);
   }
+  return;
+}
+
+
+// was FUN_00038680 -- loads every catalog 3D object model (.E files:
+// door frame, footbridge, bench, lotus, rocks, arrow, beam, shrine,
+// doors, tilemap decals, grave, gate, table, chest, nightstand,
+// barrel/closet, chair, bed) via parse_e_model_file into their
+// respective geometry buffers, then decompresses a final large shared
+// data block. The one-time 3D model-catalog init.
+void load_3d_object_models()
+
+{
+  parse_e_model_file(s__DATA3D_DFRAME_E_00085620,&DAT_00114c1c,1);
+  parse_e_model_file(s__DATA3D_FBRIDGE_E_0008560c,&DAT_00118848,1);
+  parse_e_model_file(s__DATA3D_BENCH_E_000855fc,&DAT_0011c474,0);
+  parse_e_model_file(s__DATA3D_40LOTUS_E_000855e8,&DAT_001200a0,0);
+  parse_e_model_file(s__DATA3D_ROCKSMAL_E_000855d4,&DAT_00123ccc,0);
+  parse_e_model_file(s__DATA3D_ROCKMED_E_000855c0,&DAT_001278f8,0);
+  parse_e_model_file(s__DATA3D_ROCKBIG_E_000855ac,&DAT_0012b524,1);
+  parse_e_model_file(s__DATA3D_ARROW_E_0008559c,&DAT_0012f150,0);
+  parse_e_model_file(s__DATA3D_BEAM_E_0008558c,&DAT_00132d7c,0);
+  parse_e_model_file(s__DATA3D_NEWPILL_E_00085578,&DAT_001369a8,0);
+  parse_e_model_file(s__DATA3D_SHRINE_E_00085564,&DAT_0013a5d4,0);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_0013e200,0);
+  parse_e_model_file(s__DATA3D_NEWPORT_E_00085550,&DAT_00141e2c,0);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00145a58,0);
+  parse_e_model_file(s__DATA3D_DOOR_E_00085540,&DAT_00149684,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0014d2b0,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00150edc,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_00154b08,0);
+  parse_e_model_file(s__DATA3D_GRAVE_E_0008551c,&DAT_00158734,0);
+  parse_e_model_file(s__DATA3D_TMAP16X16_E_0008552c,&DAT_0015c360,0);
+  parse_e_model_file(s__DATA3D_TMAP32X32_E_00085508,&DAT_0015ff8c,0);
+  parse_e_model_file(s__DATA3D_TMAP64X64_E_000854f4,&DAT_00163bb8,0);
+  parse_e_model_file(s__DATA3D_GATE_E_000854e4,&DAT_001677e4,0);
+  parse_e_model_file(s__DATA3D_TABLF3_E_000854d0,&DAT_0016b410,0);
+  parse_e_model_file(s__DATA3D_CHEST_E_000854c0,&DAT_0016f03c,0);
+  parse_e_model_file(s__DATA3D_NITESTAN_E_000854ac,&DAT_00172c68,0);
+  parse_e_model_file(s__DATA3D_BARRCLOS_E_00085498,&DAT_00176894,0);
+  parse_e_model_file(s__DATA3D_CHAIRSIM_E_00085484,&DAT_0017a4c0,0);
+  parse_e_model_file(s__DATA3D_BED2_E_00085474,&DAT_0017e0ec,0);
+  Ordinal_1044(&DAT_00189590,&DAT_00110ff0,0x78580);
   return;
 }
