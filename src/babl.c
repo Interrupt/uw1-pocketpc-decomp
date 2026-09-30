@@ -6232,3 +6232,197 @@ int param_3;
   } while (!bVar4);
   return;
 }
+
+
+// was FUN_000360f4 -- babl conversation-text render opcode handler
+// (see PTR_FUN_00085408's own comment): if the render state's flag
+// byte (param_2+0x45) has bit 0 set, looks up a message string keyed
+// by param_1's own 16-bit id field, splits it on newlines into up to
+// 6 paragraphs, then word-wraps each paragraph at the 0x140-pixel
+// (320px) viewport width via measure_text_width, storing up to 6
+// resulting line-start pointers into the render state's line table
+// (param_2+0x1c..). Returns 2 (opcode word-count consumed by its
+// caller's script-stream cursor).
+undefined4 babl_render_op_wrap_message(param_1,param_2)
+undefined1 * param_1;
+int param_2;
+
+{
+  undefined1 uVar1;
+  short sVar2;
+  int iVar3;
+  undefined1 *puVar4;
+  int iVar5;
+  int *piVar6;
+  int *piVar7;
+  undefined1 *puVar8;
+  int iVar9;
+  undefined1 *puVar10;
+  int iVar11;
+  int iVar12;
+  int local_4c;
+  int local_44 [6];
+  
+  if ((*(byte *)(param_2 + 0x45) & 1) != 0) {
+    *(undefined1 *)(param_2 + 0x34) = *param_1;
+    local_44[0] = get_message_string((int)*(short *)(param_1 + 2));
+    iVar12 = 0;
+    iVar11 = 0;
+    iVar9 = 0;
+    local_44[1] = Ordinal_1064(local_44[0],10);
+    if (local_44[1] != 0) {
+      piVar6 = local_44;
+      do {
+        if (5 < iVar9) break;
+        piVar7 = piVar6 + 1;
+        iVar9 = iVar9 + 1;
+        puVar4 = (undefined1 *)*piVar7 + 1;
+        *(undefined1 *)*piVar7 = 0;
+        *piVar7 = (int)puVar4;
+        iVar3 = Ordinal_1064(puVar4,10);
+        piVar6[2] = iVar3;
+        piVar6 = piVar7;
+      } while (iVar3 != 0);
+    }
+    local_4c = 0;
+    piVar6 = local_44;
+    do {
+      puVar4 = (undefined1 *)*piVar6;
+      if ((puVar4 == (undefined1 *)0x0) || (5 < iVar11)) break;
+      iVar9 = 0;
+      if (puVar4 != (undefined1 *)0x0) {
+        puVar8 = (undefined1 *)(param_2 + (iVar11 + 7) * 4);
+        do {
+          iVar3 = Ordinal_1064(puVar4,0x20);
+          if (iVar3 == 0) {
+            sVar2 = measure_text_width(puVar4);
+            iVar3 = (int)sVar2;
+            puVar10 = (undefined1 *)0x0;
+            if (iVar3 + iVar9 < 0x141) {
+              iVar5 = *piVar6;
+              iVar11 = iVar11 + 1;
+              iVar12 = iVar12 + 1;
+              *puVar8 = (char)iVar5;
+              puVar8[1] = (char)((uint)iVar5 >> 8);
+              puVar8[2] = (char)((uint)iVar5 >> 0x10);
+              puVar8[3] = (char)((uint)iVar5 >> 0x18);
+              puVar8 = puVar8 + 4;
+            }
+          }
+          else {
+            puVar10 = (undefined1 *)(iVar3 + 1);
+            uVar1 = *puVar10;
+            *puVar10 = 0;
+            sVar2 = measure_text_width(puVar4);
+            *puVar10 = uVar1;
+            iVar3 = (int)sVar2;
+          }
+          iVar9 = iVar3 + iVar9;
+          if (0x140 < iVar9) {
+            puVar4[-1] = 0;
+            iVar11 = iVar11 + 1;
+            iVar3 = *piVar6;
+            *piVar6 = (int)puVar4;
+            iVar12 = iVar12 + 1;
+            *puVar8 = (char)iVar3;
+            iVar9 = 0;
+            puVar8[1] = (char)((uint)iVar3 >> 8);
+            puVar8[2] = (char)((uint)iVar3 >> 0x10);
+            puVar8[3] = (char)((uint)iVar3 >> 0x18);
+            puVar8 = puVar8 + 4;
+            puVar10 = puVar4;
+          }
+          puVar4 = puVar10;
+        } while (puVar10 != (undefined1 *)0x0);
+      }
+      piVar6 = piVar6 + 1;
+      local_4c = local_4c + 1;
+    } while (local_4c < 6);
+    if (5 < iVar12) {
+      iVar12 = 6;
+    }
+    *(char *)(param_2 + 0x35) = (char)iVar12;
+    *(char *)(param_2 + 0x36) = (char)((uint)iVar12 >> 8);
+  }
+  return 2;
+}
+
+
+
+// was FUN_00036460 -- babl conversation-text render opcode handler
+// (see PTR_FUN_00085408's own comment): unpacks 5 octal digits (0-7,
+// three 3-bit fields from param_1's first word, two more from its
+// second) into a "DDD-DD"-shaped scratch message buffer at fixed
+// positions, copies a template string (DAT_0023c698) into
+// DAT_00101968, then formats it with that buffer via Ordinal_1063.
+// Confirmed name uncertain -- no direct evidence of what game feature
+// displays a 5-digit octal code this way (a lock combination or
+// puzzle answer are plausible). Returns 2.
+undefined4 babl_render_op_show_code(param_1,param_2)
+ushort * param_1;
+int param_2;
+
+{
+  char cVar1;
+  char *pcVar2;
+
+  *(byte *)(param_2 + 3) = ((byte)(*param_1 >> 6) & 7) + 0x30;
+  *(byte *)(param_2 + 4) = ((byte)(*param_1 >> 3) & 7) + 0x30;
+  *(byte *)(param_2 + 5) = ((byte)*param_1 & 7) + 0x30;
+  *(byte *)(param_2 + 8) = ((byte)(param_1[1] >> 3) & 7) + 0x30;
+  *(byte *)(param_2 + 9) = ((byte)param_1[1] & 7) + 0x30;
+  Ordinal_1047(&DAT_00101968,0,0x104);
+  /* strcpy(&DAT_00101968, &DAT_0023c698). Ghidra baked the delta between
+     the two globals as -0x13ad30, which only resolves in the original
+     0x00xx_xxxx address space -- in the recompile pcVar2[-0x13ad30] is a
+     wild pointer (ASan: global-buffer-overflow). Bounded indexed copy. */
+  {
+    int _i = 0;
+    while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
+      (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
+    }
+    (&DAT_00101968)[_i] = '\0';
+  }
+  Ordinal_1063(&DAT_00101968,param_2);
+  return 2;
+}
+
+
+
+// was FUN_0003651c -- babl conversation-text render opcode handler
+// (see PTR_FUN_00085408's own comment) for a "say" directive: if the
+// render state's flag byte has bit 0x20 set (voice available for this
+// line) and either bit 0x40 (voice already forced on) or
+// audio_always_true_stub allows it, stashes the voice-sample id
+// (param_1+4) into the render state and delegates to
+// babl_render_op_wrap_message for the text; otherwise clears the
+// voice-sample id (0xffff, "none") and the 0x20 flag before still
+// delegating to babl_render_op_wrap_message. Returns 3.
+undefined4 babl_render_op_say(param_1,param_2)
+int param_1;
+int param_2;
+
+{
+  undefined2 uVar1;
+  int iVar2;
+
+  if ((*(byte *)(param_2 + 0x45) & 0x20) != 0) {
+    if (((*(byte *)(param_2 + 0x45) & 0x40) != 0) || (iVar2 = audio_always_true_stub(), iVar2 != 0)) {
+      uVar1 = *(undefined2 *)(param_1 + 4);
+      *(char *)(param_2 + 0x3f) = (char)uVar1;
+      *(char *)(param_2 + 0x40) = (char)((ushort)uVar1 >> 8);
+      babl_render_op_wrap_message(param_1,param_2);
+      if (*(short *)(param_1 + 4) != 999) {
+        return 3;
+      }
+      *(undefined1 *)(param_2 + 0x3f) = 0xff;
+      *(undefined1 *)(param_2 + 0x40) = 0xff;
+      return 3;
+    }
+    *(undefined1 *)(param_2 + 0x3f) = 0xff;
+    *(undefined1 *)(param_2 + 0x40) = 0xff;
+    *(byte *)(param_2 + 0x45) = *(byte *)(param_2 + 0x45) & 0xdf;
+  }
+  babl_render_op_wrap_message(param_1,param_2);
+  return 3;
+}

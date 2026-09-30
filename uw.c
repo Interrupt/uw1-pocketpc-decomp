@@ -2210,12 +2210,18 @@ undefined1 DAT_0024f90c;
 ushort DAT_000853f8;
 ushort DAT_000853fc;
 ushort DAT_00085400;
-static undefined1 DAT_00101968_backing[8192];
-#define DAT_00101968 DAT_00101968_backing[0]
+undefined1 DAT_00101968_backing[8192];
 undefined1 DAT_0023c698_backing[32768];
 #define DAT_0023c698 DAT_0023c698_backing[0]
 ushort DAT_00101a6c;
 undefined4 DAT_00101a70;
+/* Dispatch table of babl conversation-text render-time opcode handlers
+   (distinct from the babl_builtin_* script-language builtins): a raw
+   compiled dialogue-text stream can embed a byte < 0x10 that indexes
+   this table, each entry a (script_arg_ptr, render_state_ptr) ->
+   words-consumed handler, called from the conversation-rendering loop
+   at its three known call sites. Known entries: babl_render_op_wrap_message,
+   babl_render_op_say. */
 undefined *PTR_FUN_00085408;
 static undefined1 DAT_00085448_backing[32768];
 #define DAT_00085448 DAT_00085448_backing[0]
@@ -9616,171 +9622,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_000360f4(param_1,param_2)
-undefined1 * param_1;
-int param_2;
-
-{
-  undefined1 uVar1;
-  short sVar2;
-  int iVar3;
-  undefined1 *puVar4;
-  int iVar5;
-  int *piVar6;
-  int *piVar7;
-  undefined1 *puVar8;
-  int iVar9;
-  undefined1 *puVar10;
-  int iVar11;
-  int iVar12;
-  int local_4c;
-  int local_44 [6];
-  
-  if ((*(byte *)(param_2 + 0x45) & 1) != 0) {
-    *(undefined1 *)(param_2 + 0x34) = *param_1;
-    local_44[0] = get_message_string((int)*(short *)(param_1 + 2));
-    iVar12 = 0;
-    iVar11 = 0;
-    iVar9 = 0;
-    local_44[1] = Ordinal_1064(local_44[0],10);
-    if (local_44[1] != 0) {
-      piVar6 = local_44;
-      do {
-        if (5 < iVar9) break;
-        piVar7 = piVar6 + 1;
-        iVar9 = iVar9 + 1;
-        puVar4 = (undefined1 *)*piVar7 + 1;
-        *(undefined1 *)*piVar7 = 0;
-        *piVar7 = (int)puVar4;
-        iVar3 = Ordinal_1064(puVar4,10);
-        piVar6[2] = iVar3;
-        piVar6 = piVar7;
-      } while (iVar3 != 0);
-    }
-    local_4c = 0;
-    piVar6 = local_44;
-    do {
-      puVar4 = (undefined1 *)*piVar6;
-      if ((puVar4 == (undefined1 *)0x0) || (5 < iVar11)) break;
-      iVar9 = 0;
-      if (puVar4 != (undefined1 *)0x0) {
-        puVar8 = (undefined1 *)(param_2 + (iVar11 + 7) * 4);
-        do {
-          iVar3 = Ordinal_1064(puVar4,0x20);
-          if (iVar3 == 0) {
-            sVar2 = measure_text_width(puVar4);
-            iVar3 = (int)sVar2;
-            puVar10 = (undefined1 *)0x0;
-            if (iVar3 + iVar9 < 0x141) {
-              iVar5 = *piVar6;
-              iVar11 = iVar11 + 1;
-              iVar12 = iVar12 + 1;
-              *puVar8 = (char)iVar5;
-              puVar8[1] = (char)((uint)iVar5 >> 8);
-              puVar8[2] = (char)((uint)iVar5 >> 0x10);
-              puVar8[3] = (char)((uint)iVar5 >> 0x18);
-              puVar8 = puVar8 + 4;
-            }
-          }
-          else {
-            puVar10 = (undefined1 *)(iVar3 + 1);
-            uVar1 = *puVar10;
-            *puVar10 = 0;
-            sVar2 = measure_text_width(puVar4);
-            *puVar10 = uVar1;
-            iVar3 = (int)sVar2;
-          }
-          iVar9 = iVar3 + iVar9;
-          if (0x140 < iVar9) {
-            puVar4[-1] = 0;
-            iVar11 = iVar11 + 1;
-            iVar3 = *piVar6;
-            *piVar6 = (int)puVar4;
-            iVar12 = iVar12 + 1;
-            *puVar8 = (char)iVar3;
-            iVar9 = 0;
-            puVar8[1] = (char)((uint)iVar3 >> 8);
-            puVar8[2] = (char)((uint)iVar3 >> 0x10);
-            puVar8[3] = (char)((uint)iVar3 >> 0x18);
-            puVar8 = puVar8 + 4;
-            puVar10 = puVar4;
-          }
-          puVar4 = puVar10;
-        } while (puVar10 != (undefined1 *)0x0);
-      }
-      piVar6 = piVar6 + 1;
-      local_4c = local_4c + 1;
-    } while (local_4c < 6);
-    if (5 < iVar12) {
-      iVar12 = 6;
-    }
-    *(char *)(param_2 + 0x35) = (char)iVar12;
-    *(char *)(param_2 + 0x36) = (char)((uint)iVar12 >> 8);
-  }
-  return 2;
-}
-
-
-
-undefined4 FUN_00036460(param_1,param_2)
-ushort * param_1;
-int param_2;
-
-{
-  char cVar1;
-  char *pcVar2;
-  
-  *(byte *)(param_2 + 3) = ((byte)(*param_1 >> 6) & 7) + 0x30;
-  *(byte *)(param_2 + 4) = ((byte)(*param_1 >> 3) & 7) + 0x30;
-  *(byte *)(param_2 + 5) = ((byte)*param_1 & 7) + 0x30;
-  *(byte *)(param_2 + 8) = ((byte)(param_1[1] >> 3) & 7) + 0x30;
-  *(byte *)(param_2 + 9) = ((byte)param_1[1] & 7) + 0x30;
-  Ordinal_1047(&DAT_00101968,0,0x104);
-  /* strcpy(&DAT_00101968, &DAT_0023c698). Ghidra baked the delta between
-     the two globals as -0x13ad30, which only resolves in the original
-     0x00xx_xxxx address space -- in the recompile pcVar2[-0x13ad30] is a
-     wild pointer (ASan: global-buffer-overflow). Bounded indexed copy. */
-  {
-    int _i = 0;
-    while (_i < 0x103 && (&DAT_0023c698)[_i] != '\0') {
-      (&DAT_00101968)[_i] = (&DAT_0023c698)[_i]; _i++;
-    }
-    (&DAT_00101968)[_i] = '\0';
-  }
-  Ordinal_1063(&DAT_00101968,param_2);
-  return 2;
-}
-
-
-
-undefined4 FUN_0003651c(param_1,param_2)
-int param_1;
-int param_2;
-
-{
-  undefined2 uVar1;
-  int iVar2;
-  
-  if ((*(byte *)(param_2 + 0x45) & 0x20) != 0) {
-    if (((*(byte *)(param_2 + 0x45) & 0x40) != 0) || (iVar2 = audio_always_true_stub(), iVar2 != 0)) {
-      uVar1 = *(undefined2 *)(param_1 + 4);
-      *(char *)(param_2 + 0x3f) = (char)uVar1;
-      *(char *)(param_2 + 0x40) = (char)((ushort)uVar1 >> 8);
-      FUN_000360f4(param_1,param_2);
-      if (*(short *)(param_1 + 4) != 999) {
-        return 3;
-      }
-      *(undefined1 *)(param_2 + 0x3f) = 0xff;
-      *(undefined1 *)(param_2 + 0x40) = 0xff;
-      return 3;
-    }
-    *(undefined1 *)(param_2 + 0x3f) = 0xff;
-    *(undefined1 *)(param_2 + 0x40) = 0xff;
-    *(byte *)(param_2 + 0x45) = *(byte *)(param_2 + 0x45) & 0xdf;
-  }
-  FUN_000360f4(param_1,param_2);
-  return 3;
-}
 
 
 
