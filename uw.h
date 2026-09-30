@@ -1819,6 +1819,8 @@ extern byte DAT_00101742;
 extern undefined DAT_00101732_backing[8192];
 #define DAT_00101732 DAT_00101732_backing[0]
 extern undefined DAT_00101733;
+extern undefined4 DAT_00101728;
+extern undefined DAT_00101749;
 extern char s_named_00085d18[];
 /* Globals defined in uw.c but also used by functions that now live in
    containers.c (the open-container/backpack view stack) -- extern'd
@@ -2749,7 +2751,7 @@ undefined4 creature_find_path_to_tile();
 void reconstruct_path_from_bfs();
 int try_direct_line_walk();
 undefined4 check_fine_line_of_sight();
-undefined4 FUN_0002d9f4();
+undefined4 record_line_walk_step();
 undefined4 FUN_0002db4c();
 void FUN_0002dba4();
 void FUN_0002dbf4();

@@ -8866,44 +8866,6 @@ LAB_0002c8cc:
 
 
 
-undefined4 FUN_0002d9f4(param_1,param_2)
-undefined1 param_1;
-undefined1 param_2;
-
-{
-  uint uVar1;
-  int iVar2;
-  uint uVar3;
-  undefined1 auStack_14 [4];
-  
-  DAT_00101450 = 0;
-  iVar2 = (uint)DAT_0010142c * 7;
-  (&DAT_00101740)[iVar2] = param_1;
-  (&DAT_00101741)[iVar2] = param_2;
-  uVar3 = DAT_0010142c + 1;
-  uVar1 = uVar3 & 0xff;
-  DAT_0010142c = (byte)uVar3;
-  if (uVar1 < 0x40) {
-    if (uVar1 == 2) {
-      iVar2 = tile_pair_los_blocked(0,0,DAT_00101740,DAT_00101741,DAT_00101747,DAT_00101748,
-                           *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
-                           DAT_00101742,&DAT_00101749,auStack_14);
-    }
-    else {
-      iVar2 = uVar1 * 7;
-      iVar2 = tile_pair_los_blocked(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
-                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2),(&DAT_00101732)[iVar2],
-                           (&DAT_00101733)[iVar2],(&DAT_00101739)[iVar2],(&DAT_0010173a)[iVar2],
-                           *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
-                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2 + 1),
-                           (intptr_t)&DAT_00101734 + iVar2,auStack_14);
-    }
-    if ((iVar2 != 0) && (DAT_00101440 == 0)) {
-      return 1;
-    }
-  }
-  return 0;
-}
 
 
 

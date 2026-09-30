@@ -1862,7 +1862,7 @@ undefined1 param_3;
 // was FUN_0002d1e0 -- attempts a direct straight-line walk from tile
 // (param_1,param_2) toward tile (param_3,param_4): sets up a
 // Bresenham-style line-walk state (DAT_00101740/etc), stepping through
-// can_step_between_tiles-checked tiles via FUN_0002d9f4. Returns 1 if
+// can_step_between_tiles-checked tiles via record_line_walk_step. Returns 1 if
 // a clear direct line exists (the NPC's simple, preferred pathing
 // strategy, tried before falling back to creature_find_path_to_tile's
 // slower BFS search), -1 if blocked/no line possible.
@@ -1967,7 +1967,7 @@ LAB_0002d340:
   uVar8 = (uint)local_33;
   DAT_00101740 = param_1;
   DAT_00101741 = param_2;
-  iVar5 = FUN_0002d9f4(uVar8,uVar10);
+  iVar5 = record_line_walk_step(uVar8,uVar10);
   while( true ) {
     if (iVar5 == 0) {
       return 0;
@@ -1978,7 +1978,7 @@ LAB_0002d340:
       *pbVar11 = local_32 + *pbVar11;
       uVar10 = (uint)local_34;
       uVar8 = (uint)local_33;
-      iVar5 = FUN_0002d9f4(uVar8,uVar10);
+      iVar5 = record_line_walk_step(uVar8,uVar10);
       if (iVar5 == 0) {
         return 0;
       }
@@ -1987,7 +1987,7 @@ LAB_0002d340:
     *pbVar9 = cVar6 + *pbVar9;
     uVar10 = (uint)local_34;
     uVar8 = (uint)local_33;
-    iVar5 = FUN_0002d9f4(uVar8,uVar10);
+    iVar5 = record_line_walk_step(uVar8,uVar10);
   }
   iVar5 = (uint)DAT_0010142c * 7;
   sVar3 = tile_pair_los_blocked((&DAT_00101732)[iVar5],(&DAT_00101733)[iVar5],(&DAT_00101739)[iVar5],
@@ -2223,6 +2223,53 @@ LAB_0002d808:
     local_37 = (byte)uVar13;
     local_36 = (byte)uVar11;
     uVar9 = uVar5 + uVar9;
+  }
+  return 0;
+}
+
+
+// was FUN_0002d9f4 -- records the next waypoint (param_1,param_2) into
+// try_direct_line_walk's own step-array state (DAT_00101740/41), then
+// validates line-of-sight for that step via tile_pair_los_blocked
+// (a special-cased 2-step check when this is only the walk's 2nd
+// waypoint, else the general per-step form). Returns 1 if the line is
+// now blocked (DAT_00101450 stays 0, matching try_direct_line_walk's
+// own success/failure convention).
+undefined4 record_line_walk_step(param_1,param_2)
+undefined1 param_1;
+undefined1 param_2;
+
+{
+  uint uVar1;
+  int iVar2;
+  uint uVar3;
+  undefined1 auStack_14 [4];
+  
+  DAT_00101450 = 0;
+  iVar2 = (uint)DAT_0010142c * 7;
+  (&DAT_00101740)[iVar2] = param_1;
+  (&DAT_00101741)[iVar2] = param_2;
+  uVar3 = DAT_0010142c + 1;
+  uVar1 = uVar3 & 0xff;
+  DAT_0010142c = (byte)uVar3;
+  if (uVar1 < 0x40) {
+    if (uVar1 == 2) {
+      iVar2 = tile_pair_los_blocked(0,0,DAT_00101740,DAT_00101741,DAT_00101747,DAT_00101748,
+                           *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
+                           DAT_00101742,&DAT_00101749,auStack_14);
+    }
+    else {
+      iVar2 = uVar1 * 7;
+      iVar2 = tile_pair_los_blocked(*(undefined1 *)((intptr_t)&DAT_00101728 + iVar2 + 3),
+                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2),(&DAT_00101732)[iVar2],
+                           (&DAT_00101733)[iVar2],(&DAT_00101739)[iVar2],(&DAT_0010173a)[iVar2],
+                           *(undefined2 *)(DAT_00101438 + 4),*(undefined2 *)(DAT_00101438 + 6),
+                           *(undefined1 *)((intptr_t)&DAT_0010172c + iVar2 + 1),
+                           (intptr_t)&DAT_00101734 + iVar2,auStack_14);
+    }
+    if ((iVar2 != 0) && (DAT_00101440 == 0)) {
+      return 1;
+    }
   }
   return 0;
 }
