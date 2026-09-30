@@ -791,7 +791,7 @@ LAB_000337fc:
        (an NPC's "pick a new wander/patrol target" state) is exactly what
        the QA-reported "NPC teleports away on its first tick" bug was
        tracing back to -- FUN_00027ce0 computes DAT_00100608/DAT_0010061c
-       (target position deltas) then calls FUN_000270d0 to path there;
+       (target position deltas) then calls process_melee_attack_swing to path there;
        with param_5 uninitialized/garbage and param_2 (the modulo-9
        remainder) also fabricated-garbage before this fix, the computed
        target tile could land anywhere. */

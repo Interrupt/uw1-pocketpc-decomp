@@ -1018,3 +1018,371 @@ undefined4 resolve_melee_swing_hit()
 #undef local_34
 #undef local_33
 #undef local_32
+
+
+// was FUN_00026570 -- resolves whether a confirmed hit actually
+// penetrates: rolls a skill check (weapon skill + facing modifier vs
+// the target's armor-class-shaped table at &DAT_001007e2), and on a
+// natural "2" result (fumble/special outcome) triggers an extra
+// stagger/sound reaction via FUN_00046030 instead. Returns 1-result as
+// a hit/miss-shaped flag; called right after resolve_melee_swing_hit
+// confirms a creature was struck.
+int resolve_weapon_hit_skill_check(param_1,param_2)
+short param_1;
+undefined4 param_2;
+
+{
+  int uw_ord2005_rem_6 = 0;
+  byte bVar1;
+  ushort *puVar2;
+  int iVar3;
+  undefined4 uVar4;
+  byte *pbVar5;
+  int extraout_r1;
+  uint uVar6;
+  uint uVar7;
+  ushort uVar8;
+  
+  puVar2 = (ushort *)FUN_000535fc(param_2);
+  uVar6 = (uint)*puVar2;
+  if ((uVar6 & 0x1c0) == 0x40) {
+    uVar7 = uVar6 & 0x3f;
+    if (DAT_00100620 == 1) {
+      uVar6 = (int)DAT_00100608 - (int)(char)(&DAT_0010060c)[DAT_00100624];
+    }
+    if (DAT_00100620 == 1) {
+      DAT_00100608 = (short)uVar6;
+    }
+    else {
+      uVar6 = (uint)DAT_00100608;
+    }
+    iVar3 = roll_skill_check(DAT_00100628 + uVar6,(int)(char)(&DAT_001007e2)[uVar7 * 0x30]);
+    DAT_001005d8 = 0;
+    if ((short)iVar3 != 2) {
+      if ((((short)iVar3 == -1) && (param_1 == 1)) &&
+         (pbVar5 = (byte *)FUN_000535fc((int)DAT_00100620),
+         ((&DAT_001007da)[(*pbVar5 & 0x3f) * 0x30] & 1) == 0)) {
+        bVar1 = *(byte *)(DAT_00086df8 + 100);
+        uVar4 = roll_dice_sum(2,3);
+        FUN_00046030(8 - (bVar1 & 1),uVar4,4,0,1);
+      }
+      return 1 - iVar3;
+    }
+    DAT_001005d8 = 1;
+    uVar6 = Ordinal_1053();
+    DAT_0010061c = (short)((int)((uVar6 & 0x1f) + 0x30) >> 5) * DAT_0010061c;
+    if ((short)param_2 == 1) {
+      FUN_000411e0(0xb8);
+      uVar8 = DAT_00100624 + 1U & 3;
+      if (uVar8 == 3) {
+        uVar4 = Ordinal_1053();
+        uw_ord2005_rem_6 = ((int)(uVar4)) % (5);
+        uVar8 = (uw_ord2005_rem_6 == 0) + 3;
+      }
+      else if ((uVar8 != 0) && (uVar8 < 3)) {
+        uVar8 = (*(byte *)(DAT_00086df8 + 100) & 1) + 7;
+      }
+      uVar4 = roll_dice_sum(2,4);
+      FUN_00046030(uVar8,uVar4,4,1,1);
+    }
+  }
+  else if (((param_1 == 1) && ((uVar6 & 0x1f0) == 0x140)) &&
+          (iVar3 = rand_below(0xc), iVar3 < (int)(((byte)*puVar2 & 7) * 2))) {
+    bVar1 = *(byte *)(DAT_00086df8 + 100);
+    uVar4 = roll_dice_sum(2,4);
+    FUN_00046030(8 - (bVar1 & 1),uVar4,4,0,1);
+  }
+  return 0;
+}
+
+
+
+// was FUN_00026858 -- applies a landed melee hit's damage: rolls a
+// damage dice pool, reduces it by the target's armor value (looked up
+// from &DAT_001007d0), plays the impact sound, and calls FUN_00038374
+// (the same "apply damage/hit visual" primitive src/ai.c's monster
+// attack code also calls, not yet named) to actually apply it. On
+// nonzero final damage, either staggers the player (if the target is
+// the player) or spawns the appropriate damage-number/blood-effect via
+// spawn_scheduled_effect_object depending on target type and armor
+// flags.
+void apply_melee_damage(param_1)
+undefined1 param_1;
+
+{
+  int uw_ord2005_rem_7 = 0; int uw_ord2005_rem_8 = 0;
+  uint uVar1;
+  short sVar2;
+  short sVar3;
+  ushort uVar4;
+  ushort uVar5;
+  ushort *puVar6;
+  undefined4 uVar7;
+  short extraout_r1;
+  int extraout_r1_00;
+  ushort uVar8;
+  uint uVar9;
+  char cVar10;
+  int iVar11;
+  undefined2 in_stack_ffffffbc;
+  undefined1 uVar12;
+  undefined2 in_stack_ffffffc0;
+  undefined1 uVar13;
+  short local_38;
+  
+  uVar13 = (undefined1)((ushort)in_stack_ffffffc0 >> 8);
+  uVar12 = (undefined1)((ushort)in_stack_ffffffbc >> 8);
+  puVar6 = (ushort *)FUN_000535fc((int)DAT_00100620);
+  uVar5 = *puVar6;
+  sVar3 = DAT_0010061c;
+  if (DAT_0010061c < 2) {
+    sVar3 = 2;
+  }
+  sVar2 = Ordinal_2005(6,(int)sVar3);
+  uw_ord2005_rem_7 = ((int)((int)sVar3)) % (6);
+  DAT_0010061c = 0;
+  if (sVar2 != 0) {
+    DAT_0010061c = roll_dice_sum((int)sVar2,6);
+  }
+  if (uw_ord2005_rem_7 != 0) {
+    sVar3 = roll_dice_sum(1,(int)uw_ord2005_rem_7);
+    DAT_0010061c = sVar3 + DAT_0010061c;
+  }
+  uVar9 = (uint)DAT_00100628 + (int)(short)((int)((uint)DAT_001005fc * (int)DAT_0010061c) >> 7);
+  sVar3 = (short)uVar9;
+  if (DAT_00100620 == 1) {
+    play_sound_effect_with_pan(3,0x40,(uVar9 & 0xff) << 2);
+  }
+  else {
+    play_positional_sound_effect(4,(uint)(*(byte *)((char *)puVar6 + 3) >> 5) + DAT_00100600 * 8,
+                 (*(byte *)((char *)puVar6 + 3) >> 2 & 7) + DAT_00100604 * 8,(uVar9 & 0xff) << 2);
+  }
+  uVar8 = DAT_00100624;
+  sVar2 = DAT_00100620;
+  uVar1 = (uint)(short)(uVar5 & 0x1ff);
+  uVar5 = uVar5 & 0x1c0;
+  if (uVar5 == 0x40) {
+    iVar11 = (uVar1 & 0x3f) * 0x30;
+    uw_ord2005_rem_8 = ((int)((int)(short)DAT_00100624)) % (4);
+    uVar4 = (ushort)(byte)(&DAT_001007d0)[iVar11 + uw_ord2005_rem_8];
+    if (uVar4 == 0xff) {
+      DAT_00100624 = uVar8 & 4;
+      uVar4 = (ushort)(byte)(&DAT_001007d0)[iVar11];
+    }
+    if ((sVar2 != 1) && ((puVar6[7] & 4) != 0)) {
+      uVar4 = Ordinal_2005(3,(short)uVar4 * 5);
+    }
+    if ((int)(uVar9 * 0x10000) >> 0x10 < (int)(short)uVar4) {
+      sVar3 = 0;
+    }
+    else {
+      sVar3 = (short)(uVar9 * 0x10000 >> 0x10) - uVar4;
+    }
+  }
+  iVar11 = (int)sVar3;
+  if (iVar11 < 0) {
+    iVar11 = iVar11 + 3;
+  }
+  local_38 = (short)(iVar11 >> 2);
+  if (3 < local_38) {
+    local_38 = 3;
+  }
+  if ((sVar2 == 1) && (*(char *)(DAT_00086df8 + 0xb4) != '\0')) {
+    sVar3 = sVar3 >> 1;
+  }
+  uVar7 = FUN_000535fc((int)DAT_00100610);
+  iVar11 = FUN_00038374(puVar6,uVar7,(int)DAT_00100600,(int)DAT_00100604,
+                        CONCAT11(uVar12,(char)sVar3),CONCAT11(uVar13,param_1));
+  sVar2 = DAT_00100610;
+  cVar10 = DAT_001005dc;
+  if ((sVar3 != 0) && (DAT_00100610 != -1)) {
+    if (3 < (short)DAT_00100624) {
+      DAT_00084f1c = -DAT_001005dc;
+      DAT_00100624 = 4;
+    }
+    uVar8 = DAT_00100624;
+    sVar3 = Ordinal_2005(0x1b,DAT_0023b82c - DAT_002046b8);
+    if (DAT_00100620 == sVar3) {
+      set_movement_animation_timer(0x20,(uint)(byte)local_38 * 5);
+    }
+    else {
+      if (uVar5 == 0x40) {
+        if (sVar2 == 1) {
+          if ((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30] == '\0') {
+            iVar11 = 0;
+          }
+          else {
+            sVar3 = Ordinal_2005((&g_monster_max_stats_table)[(uVar1 & 0x3f) * 0x30],(uint)(byte)puVar6[4] * 3);
+            iVar11 = (int)sVar3;
+          }
+          if (2 < (short)iVar11) {
+            iVar11 = 2;
+          }
+          set_hud_status_value(7,3 - iVar11);
+          uVar8 = DAT_00100624;
+          cVar10 = DAT_001005dc;
+        }
+        if (((&DAT_001007d8)[(uVar1 & 0x3f) * 0x30] & 0x18) != 0) {
+          spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,(short)*(char *)((short)uVar8 + 0x84f18),
+                       DAT_00100600,DAT_00100604);
+          if (DAT_001005d8 == 0) {
+            return;
+          }
+          if (DAT_00100610 != 1) {
+            return;
+          }
+          uVar5 = Ordinal_1053();
+          spawn_scheduled_effect_object(puVar6,0,1,(int)local_38,
+                       (uVar5 & 1) * 5 + (short)*(char *)((short)DAT_00100624 + 0x84f18) + -2,
+                       DAT_00100600,DAT_00100604);
+          return;
+        }
+        iVar11 = 0;
+      }
+      if (iVar11 != 0) {
+        puVar6 = (ushort *)0x0;
+      }
+      if (((uVar1 & 0x1f0) == 0x140) || (uVar1 == 0x1cf)) {
+        if ((int)cVar10 < (int)(puVar6[1] & 0x7f)) {
+          cVar10 = ((byte)puVar6[1] & 0x7f) + 2;
+          DAT_001005dc = cVar10;
+        }
+        spawn_scheduled_effect_object(puVar6,0xb,1,(int)local_38,-(short)cVar10,DAT_00100600,DAT_00100604);
+      }
+      else {
+        spawn_scheduled_effect_object(puVar6,0xb,1,(int)local_38,-(short)cVar10,DAT_00100600,DAT_00100604);
+      }
+    }
+  }
+  return;
+}
+
+
+
+// was FUN_00026eb4 -- picks and plays a combat impact sound effect: id
+// 10 for a whiffed/no-target swing (param_1==0), else id 7 or 8
+// depending on whether the attacker's weapon type and the target's
+// armor/shield type both indicate a "blocked" match (a metal-on-metal
+// clang vs a duller impact).
+undefined4 play_weapon_impact_sound(param_1)
+short param_1;
+
+{
+  uint uVar1;
+  byte bVar2;
+  ushort uVar3;
+  undefined4 uVar4;
+  undefined4 uVar5;
+  ushort *puVar6;
+  byte bVar7;
+  
+  if (param_1 == 0) {
+    uVar4 = FUN_000535fc((int)(short)DAT_00100610);
+    uVar5 = 10;
+    goto LAB_0002701c;
+  }
+  puVar6 = (ushort *)FUN_000535fc((int)(short)DAT_00100610);
+  DAT_00100610 = *puVar6 & 0x1ff;
+  uVar1 = (uint)(short)DAT_00100610;
+  if ((uVar1 == 1) || (0xff < uVar1)) {
+    bVar7 = 1;
+  }
+  else {
+    bVar7 = (byte)(&DAT_001007e0)[(uVar1 & 0x3f) * 0x30] >> 6;
+  }
+  if (DAT_00100620 == 1) {
+    puVar6 = (ushort *)get_equipped_item_at_slot((char)DAT_00100624 + 1U & 3);
+    if (((((puVar6 == (ushort *)0x0) || (uVar3 = *puVar6 & 0x1ff, uVar3 == 0x20)) || (uVar3 == 0x23)
+         ) || ((uVar3 == 0x26 || (uVar3 == 0x29)))) || (uVar3 == 0x2c)) {
+LAB_00026fe8:
+      bVar2 = 0;
+    }
+    else {
+      bVar2 = 1;
+    }
+  }
+  else {
+    if (0xff < DAT_00100620) goto LAB_00026fe8;
+    bVar2 = (byte)(&DAT_001007e0)[(uVar1 & 0x3f) * 0x30] >> 4 & 3;
+  }
+  if ((bVar7 != 1) || (uVar5 = 7, bVar2 != 1)) {
+    uVar5 = 8;
+  }
+  uVar4 = FUN_000535fc((int)DAT_00100620);
+LAB_0002701c:
+  play_sound_effect_at_object(uVar5,uVar4,0);
+  return 0;
+}
+
+
+
+// was FUN_0002702c -- computes the attacker's facing relative to the
+// target (DAT_00100628, a mirrored 0-4 octant offset from the two
+// objects' own heading fields), used by resolve_weapon_hit_skill_check
+// as a to-hit modifier (rear/flank attacks presumably easier to land).
+void compute_attack_relative_facing()
+
+{
+  int uw_ord2005_rem_9 = 0;
+  int iVar1;
+  int iVar2;
+  uint extraout_r1;
+  
+  iVar1 = FUN_000535fc((int)DAT_00100620);
+  iVar2 = FUN_000535fc((int)DAT_00100610);
+  uw_ord2005_rem_9 = ((int)(((*(ushort *)(iVar1 + 2) >> 7 & 7) - (*(ushort *)(iVar2 + 2) >> 7 & 7)) + 0xc)) % (8);
+  DAT_00100628 = (char)uw_ord2005_rem_9;
+  if (4 < (uw_ord2005_rem_9 & 0xff)) {
+    DAT_00100628 = '\b' - DAT_00100628;
+  }
+  return;
+}
+
+
+
+// was FUN_000270d0 -- top-level melee swing resolution: calls
+// resolve_melee_swing_hit to hit-test the swing, then (if a creature
+// was struck and isn't already excluded by a same-faction/arena check)
+// computes relative facing, resolves the weapon-vs-armor skill check,
+// and either plays a whiff sound (skill check failed) or applies
+// damage and a hit-flash effect. Returns the final outcome flag via
+// play_weapon_impact_sound's own return value.
+undefined4 process_melee_attack_swing()
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  int iVar3;
+  undefined4 uVar4;
+  undefined4 uVar5;
+  
+  iVar1 = resolve_melee_swing_hit();
+  if (iVar1 == 0) {
+    uVar2 = 0;
+  }
+  else {
+    if ((DAT_00100610 != 1) && (iVar1 = (int)DAT_00100620, DAT_00100620 != 1)) {
+      FUN_000535fc();
+      iVar3 = object_ptr_in_arena();
+      iVar1 = 0;
+      if (iVar3 != 0) {
+        iVar3 = FUN_000535fc((int)DAT_00100620);
+        iVar1 = FUN_000535fc((int)DAT_00100610);
+        if (((*(byte *)(iVar3 + 0x19) ^ *(byte *)(iVar1 + 0x19)) & 0x40) == 0) {
+          return 0;
+        }
+      }
+    }
+    compute_attack_relative_facing(iVar1);
+    uVar2 = resolve_weapon_hit_skill_check((int)DAT_00100610,(int)DAT_00100620);
+    if ((short)uVar2 == 0) {
+      apply_melee_damage(4);
+      return 1;
+    }
+    uVar4 = FUN_000535fc((int)DAT_00100610);
+    uVar5 = FUN_000535fc((int)DAT_00100620);
+    FUN_00038374(uVar5,uVar4,(int)DAT_00100600,(int)DAT_00100604,0,4);
+  }
+  uVar2 = play_weapon_impact_sound(uVar2);
+  return uVar2;
+}
