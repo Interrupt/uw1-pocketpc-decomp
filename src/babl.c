@@ -2272,7 +2272,7 @@ void start_npc_conversation()
   }
   else {
     babl_register_builtin(s_babl_menu_00085220,&babl_menu); // was &LAB_0002912c, the no-op stub
-    babl_register_builtin(s_babl_fmenu_00085214,FUN_00029358);
+    babl_register_builtin(s_babl_fmenu_00085214,babl_fmenu);
     babl_register_builtin(DAT_000845a8,FUN_00029708);
     babl_register_builtin(s_respond_000845ac,FUN_0002977c);
     babl_register_builtin(s_get_quest_00085208,babl_builtin_get_quest);
@@ -2390,8 +2390,8 @@ void start_npc_conversation()
    Recovered from the real ARM binary
    (/Users/ccuddigan/Projects/UW1/uw-arm/UU.exe, image base 0x10000,
    function at 0x2912c) via Ghidra headless disassembly + decompile --
-   it's structurally identical to babl_fmenu just below (FUN_00029358,
-   already correctly ported) with the second (filter-list) parameter
+   it's structurally identical to babl_fmenu just below (already
+   correctly ported) with the second (filter-list) parameter
    and its `if (sVar4 != 0)` gate removed: babl_menu shows every item
    in its list unconditionally, where babl_fmenu only shows the ones
    whose parallel filter-list entry is nonzero. Confirmed line-for-line
@@ -5751,4 +5751,115 @@ void run_babl_menu_wait_loop()
     poll_input_bindings(DAT_00085a6c);
   }
   return;
+}
+
+
+// was FUN_00029358 -- babl_fmenu: the "filtered menu" babl script
+// builtin, structurally identical to babl_menu (registered under
+// s_babl_fmenu_00085214) but reading two parallel variable-slot
+// indices via babl_read_var_word and only showing a choice when its
+// second ("filter") value is nonzero, where babl_menu shows every item
+// unconditionally. Confirmed via uw.h's own pre-existing cross-reference
+// and babl_menu's own comment naming this exact function.
+int babl_fmenu(param_1)
+intptr_t param_1; // was `int` -- same pointer-truncation bug as babl_menu's own fix just above (this function's identical caller convention was simply never exercised deep enough to crash yet)
+
+{
+  char cVar1;
+  short sVar2;
+  short sVar3;
+  short sVar4;
+  short sVar5;
+  undefined4 uVar6;
+  /* Same width/stride fix as babl_menu's own comment just above --
+     uVar7/iVar8/iVar9 hold real string pointers, and
+     DAT_001006d8/DAT_00100680 need a `* 8` stride to match. */
+  intptr_t uVar7;
+  intptr_t iVar8;
+  intptr_t iVar9;
+  char *pcVar10;
+  char *pcVar11;
+  int iVar12;
+  short sVar13;
+  /* Same "4 separate stack locals relied on being one contiguous
+     buffer" fix as babl_menu's own comment -- confirmed the identical
+     bug here too. Merged into one real buffer. */
+  char local_c4 [160];
+
+  sVar13 = 0;
+  DAT_00100790 = 1;
+  DAT_00100794 = 1;
+  sVar2 = *(short *)(param_1 + -2);
+  sVar3 = *(short *)(param_1 + -4);
+  uVar6 = babl_read_var_word((int)sVar2);
+  sVar4 = babl_read_var_word((int)sVar3);
+  iVar12 = 1;
+  sVar5 = (short)uVar6;
+  while (sVar5 != 0) {
+    if (sVar4 != 0) {
+      uVar7 = (intptr_t)get_message_string(uVar6);
+      *(intptr_t *)(&DAT_001006d8 + DAT_00100794 * 8) = uVar7;
+      iVar8 = (intptr_t)babl_expand_string_refs((char *)uVar7); // was a dropped register-forwarding arg -- same class as babl_builtin_compare's own comment (uw.c ~10977)
+      sVar5 = DAT_00100794;
+      iVar9 = (int)DAT_00100794;
+      *(intptr_t *)(&DAT_00100680 + iVar9 * 8) = iVar8;
+      if (iVar8 == *(intptr_t *)(&DAT_001006d8 + iVar9 * 8)) {
+        iVar9 = Ordinal_1068(*(intptr_t *)(&DAT_001006d8 + iVar9 * 8));
+        pcVar10 = (char *)babl_alloc(iVar9 + 1);
+        iVar9 = (int)DAT_00100794;
+        *(char **)(&DAT_00100680 + iVar9 * 8) = pcVar10;
+        pcVar11 = *(char **)(&DAT_001006d8 + iVar9 * 8);
+        do {
+          cVar1 = *pcVar11;
+          pcVar11 = pcVar11 + 1;
+          *pcVar10 = cVar1;
+          pcVar10 = pcVar10 + 1;
+          sVar5 = DAT_00100794;
+        } while (cVar1 != '\0');
+      }
+      DAT_00100794 = sVar5 + 1;
+      *(short *)(&DAT_001007a0 + sVar5 * 2) = (short)uVar6;
+    }
+    iVar12 = iVar12 + 1;
+    uVar6 = babl_read_var_word(iVar12 + sVar2 + -1);
+    sVar4 = babl_read_var_word(iVar12 + sVar3 + -1);
+    sVar5 = (short)uVar6;
+  }
+  select_msg_scroll_mode_2();
+  msg_scroll_panel_reset(1);
+  debug_noop_checkpoint();
+  iVar12 = 0;
+  do {
+    (&DAT_00100770)[iVar12] = 0xffff;
+    iVar12 = ((int)iVar12 + 1) * 0x10000 >> 0x10;
+  } while (iVar12 < 10);
+  iVar12 = 1;
+  if (1 < DAT_00100794) {
+    do {
+      pcVar10 = *(char **)(&DAT_00100680 + iVar12 * 8);
+      local_c4[0] = (char)iVar12 + '0';
+      local_c4[1] = 0x2e;
+      local_c4[2] = 0x20;
+      pcVar11 = local_c4 + 3;
+      do {
+        cVar1 = *pcVar10;
+        pcVar10 = pcVar10 + 1;
+        *pcVar11 = cVar1;
+        pcVar11 = pcVar11 + 1;
+      } while (cVar1 != '\0');
+      Ordinal_1063(local_c4,&s_scroll_newline_0008522c);
+      sVar5 = message_scroll_print_wrapped(local_c4);
+      debug_noop_checkpoint();
+      for (iVar9 = (int)sVar13; iVar9 <= sVar5; iVar9 = (iVar9 + 1) * 0x10000 >> 0x10) {
+        (&DAT_00100770)[iVar9] = (short)iVar12;
+      }
+      iVar12 = (iVar12 + 1) * 0x10000 >> 0x10;
+      sVar13 = sVar5 + 1;
+    } while (iVar12 < DAT_00100794);
+  }
+  select_msg_scroll_mode_normal();
+  DAT_0010078c = 1;
+  DAT_00250718 = 1;
+  run_babl_menu_wait_loop();
+  return (int)*(short *)(&DAT_001007a0 + DAT_00100788 * 2);
 }

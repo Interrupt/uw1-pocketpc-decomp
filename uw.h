@@ -2662,8 +2662,8 @@ void FUN_000286cc();
 void exit_talk_mode();
 void start_npc_conversation();
 void run_babl_menu_wait_loop();
-int babl_menu(); // was LAB_0002912c, a no-op stub -- see its own comment in uw.c next to FUN_00029358 (babl_fmenu)
-int FUN_00029358();
+int babl_menu(); // was LAB_0002912c, a no-op stub -- see its own comment next to babl_fmenu
+int babl_fmenu();
 void FUN_000295b4();
 void FUN_00029708();
 void FUN_0002977c();
