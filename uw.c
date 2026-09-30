@@ -8365,48 +8365,9 @@ undefined4 param_1;
 
 
 
-int FUN_0002990c()
-
-{
-  char cVar1;
-  char *pcVar2;
-  int iVar3;
-  char *pcVar4;
-  char local_a8 [160];
-  
-  scroll_text_entry_prompt(0,0,local_a8,1,0x32);
-  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
-  debug_noop_checkpoint();
-  pcVar2 = local_a8;
-  pcVar4 = DAT_001007b8;
-  do {
-    cVar1 = *pcVar2;
-    pcVar2 = pcVar2 + 1;
-    *pcVar4 = cVar1;
-    pcVar4 = pcVar4 + 1;
-  } while (cVar1 != '\0');
-  if (DAT_001007bc == 0) {
-    DAT_001007bc = register_interned_string(DAT_001007b8,0x7c);
-  }
-  else {
-    iVar3 = get_message_string();
-    if (iVar3 == 0) {
-      overwrite_interned_string(DAT_001007b8,(int)DAT_001007bc);
-    }
-  }
-  debug_noop_checkpoint();
-  return (int)DAT_001007bc;
-}
 
 
 
-void FUN_0002a2c8(param_1)
-undefined4 param_1;
-
-{
-  read_file_handle(param_1,&DAT_001007d0,0xc00);
-  return;
-}
 
 
 
@@ -26856,7 +26817,7 @@ undefined4 FUN_00052674()
   local_13c[3] = (code *)0x0;
   local_13c[0] = load_armor_variant_tables;
   local_13c[4] = (code *)0x0;
-  local_13c[1] = FUN_0002a2c8;
+  local_13c[1] = load_monster_combat_stats;
   local_13c[5] = (code *)0x0;
   local_13c[2] = load_light_food_effect_tables;
   local_13c[6] = (code *)&load_class6_variant_effect_table;

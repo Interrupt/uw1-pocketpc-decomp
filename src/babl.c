@@ -2292,7 +2292,7 @@ void start_npc_conversation()
     babl_register_builtin(s_get_quest_00085208,babl_builtin_get_quest);
     babl_register_builtin(s_set_quest_000851fc,babl_builtin_set_quest);
     babl_register_builtin(s_sex_000851f8,babl_builtin_sex);
-    babl_register_builtin(s_babl_ask_000851ec,FUN_0002990c);
+    babl_register_builtin(s_babl_ask_000851ec,babl_builtin_ask);
     babl_register_builtin(s_print_000851e4,babl_builtin_print);
     babl_register_builtin(s_show_inv_000851d8,babl_builtin_show_inv);
     babl_register_builtin(s_give_to_npc_000851cc,babl_builtin_give_to_npc);
@@ -6134,4 +6134,47 @@ int param_1;
     babl_free(iVar3);
   }
   return;
+}
+
+
+// was FUN_0002990c -- babl_builtin_ask: the "ask" babl script builtin
+// (registered via babl_register_builtin(s_babl_ask_000851ec, ...)),
+// prompts the player for freeform text input via
+// scroll_text_entry_prompt, then interns the typed text (registering a
+// new interned string, or overwriting the existing one if it no longer
+// resolves), returning its interned-string id.
+int babl_builtin_ask()
+
+{
+  char cVar1;
+  char *pcVar2;
+  int iVar3;
+  char *pcVar4;
+  char local_a8 [160];
+  
+  scroll_text_entry_prompt(0,0,local_a8,1,0x32);
+  message_scroll_print_wrapped(&s_scroll_newline_0008522c);
+  debug_noop_checkpoint();
+  pcVar2 = local_a8;
+  pcVar4 = DAT_001007b8;
+  do {
+    cVar1 = *pcVar2;
+    pcVar2 = pcVar2 + 1;
+    *pcVar4 = cVar1;
+    pcVar4 = pcVar4 + 1;
+  } while (cVar1 != '\0');
+  if (DAT_001007bc == 0) {
+    DAT_001007bc = register_interned_string(DAT_001007b8,0x7c);
+  }
+  else {
+    /* Was a dropped argument -- checking whether the existing interned
+       string DAT_001007bc still resolves, same class as this session's
+       other register-forwarding fixes. */
+    iVar3 = (int)get_message_string((int)DAT_001007bc);
+    if (iVar3 == 0) {
+      overwrite_interned_string(DAT_001007b8,(int)DAT_001007bc);
+    }
+  }
+  debug_noop_checkpoint();
+  return (int)DAT_001007bc;
 }

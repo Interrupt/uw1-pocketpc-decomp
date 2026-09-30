@@ -770,6 +770,7 @@ extern undefined DAT_00085234_backing[8192];
 #define DAT_00085234 DAT_00085234_backing[0]
 extern undefined1 DAT_0008523c_backing[32768];
 #define DAT_0008523c DAT_0008523c_backing[0]
+extern short DAT_001007bc;
 extern ushort DAT_001007c4;
 extern undefined DAT_001007d5_backing[8192];
 #define DAT_001007d5 DAT_001007d5_backing[0]
@@ -2676,7 +2677,7 @@ void babl_builtin_respond();
 void echo_selected_conversation_choice();
 void babl_builtin_print();
 undefined4 babl_builtin_pause();
-int FUN_0002990c();
+int babl_builtin_ask();
 undefined4 babl_builtin_show_inv();
 int babl_builtin_find_barter();
 bool babl_builtin_find_barter_total();
@@ -2688,7 +2689,7 @@ undefined4 babl_builtin_identify_inv();
 ushort babl_builtin_count_inv();
 byte babl_builtin_check_inv_quality();
 undefined4 babl_builtin_set_inv_quality();
-void FUN_0002a2c8();
+void load_monster_combat_stats();
 undefined4 FUN_0002a35c();
 void sync_conv_vars_from_npc();
 bool sync_conv_vars_to_npc();
