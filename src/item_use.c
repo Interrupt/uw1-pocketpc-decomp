@@ -1975,7 +1975,7 @@ LAB_0007b7e4:
   case 0x12a:
     break;
   case 299:
-    iVar3 = FUN_00039d78();
+    iVar3 = try_climb_wall();
     if (iVar3 != 0) {
       iVar3 = begin_holding_object_on_cursor(0,0xb6);
       uVar7 = *(undefined2 *)(iVar3 + 4);
@@ -2422,5 +2422,58 @@ LAB_000283ec:
     uVar6 = 0x94;
   }
   print_scroll_message_by_id(uVar6);
+  return 0;
+}
+
+
+// was FUN_00039d78 -- the "climb" command handler: projects a point
+// 11 units ahead of the player along their current heading, checks
+// the tile there is a climbable wall/door of a height the player's
+// own stat allows (else message 0x65, "can't climb here"), then rolls
+// a 1-in-5 success chance. On success, checks encumbrance (comparing
+// carried weight against a capacity derived from _DAT_002035cf and
+// the player record) -- if too heavy, prints message 99 and returns 1
+// (abort without spending the attempt); otherwise prints the success
+// message 0x66. On the 4-in-5 failure roll, prints message 100.
+// Returns 0 whenever a climb attempt (successful or not) actually
+// happened.
+// WARNING: Globals starting with '_' overlap smaller symbols at the same address
+
+undefined4 try_climb_wall()
+
+{
+  int uw_ord2005_rem_103 = 0;
+  ushort uVar1;
+  ushort *puVar2;
+  undefined4 uVar3;
+  int extraout_r1;
+  short local_8;
+  short local_6;
+  
+  local_6 = DAT_00204880 >> 5;
+  local_8 = DAT_00204882 >> 5;
+  project_position_by_heading((int)DAT_00201c70 >> 8,0xb,&local_6,&local_8);
+  puVar2 = (ushort *)tilemap_lookup((int)local_6 >> 3,(int)local_8 >> 3);
+  uVar1 = *puVar2;
+  if ((((uVar1 & 0xf) == 0) || (((&DAT_0023ae40)[uVar1 >> 10 & 0xf] & 0xfff0) != 0x10)) ||
+     ((int)(*(byte *)((char *)g_player_object + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
+    uVar3 = 0x65;
+  }
+  else {
+    uVar3 = Ordinal_1053();
+    uw_ord2005_rem_103 = ((int)(uVar3)) % (5);
+    if (uw_ord2005_rem_103 == 0) {
+      if ((uint)(_DAT_002035cf >> 4) + (uint)*(ushort *)(DAT_00086df8 + 0x4a) <
+          (uint)*(ushort *)(DAT_00086df8 + 0x4c)) {
+        print_scroll_message_by_id(99);
+        return 1;
+      }
+      uVar3 = 0x66;
+    }
+    else {
+      uVar3 = 100;
+    }
+  }
+  print_scroll_message_by_id(uVar3);
   return 0;
 }

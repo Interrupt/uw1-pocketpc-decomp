@@ -2987,7 +2987,7 @@ undefined4 teleport_object_to_level_tile();
 undefined4 apply_area_terrain_effect();
 undefined4 apply_poison_or_damage_trap_effect();
 undefined4 dispatch_trap_special_or_tile_action();
-undefined4 FUN_00039d78();
+undefined4 try_climb_wall();
 void FUN_00039f04();
 void FUN_0003a0e8();
 void FUN_0003a29c();
@@ -3872,6 +3872,7 @@ undefined4 register_default_atexit_handler();
 #define _DAT_00202bfb (*(unsigned short*)(DAT_00202bf8_backing + 0x03))
 #define _DAT_00202c00 (*(unsigned short*)(DAT_00202bf8_backing + 0x08))
 #define _DAT_00202c05 (*(unsigned short*)(DAT_00202bf8_backing + 0x0d))
+extern undefined DAT_002035cf;
 #define _DAT_002035cf (*(uint*)&DAT_002035cf)
 /* The travel-direction stash the movement sweep compares against
    DAT_00201c78: apply_heading_turn writes it as two bytes (DAT_002048a1

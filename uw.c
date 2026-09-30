@@ -9686,46 +9686,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-// WARNING: Globals starting with '_' overlap smaller symbols at the same address
-
-undefined4 FUN_00039d78()
-
-{
-  int uw_ord2005_rem_103 = 0;
-  ushort uVar1;
-  ushort *puVar2;
-  undefined4 uVar3;
-  int extraout_r1;
-  short local_8;
-  short local_6;
-  
-  local_6 = DAT_00204880 >> 5;
-  local_8 = DAT_00204882 >> 5;
-  project_position_by_heading((int)DAT_00201c70 >> 8,0xb,&local_6,&local_8);
-  puVar2 = (ushort *)tilemap_lookup((int)local_6 >> 3,(int)local_8 >> 3);
-  uVar1 = *puVar2;
-  if ((((uVar1 & 0xf) == 0) || (((&DAT_0023ae40)[uVar1 >> 10 & 0xf] & 0xfff0) != 0x10)) ||
-     ((int)(*(byte *)((char *)g_player_object + 2) >> 3 & 0xf) <= (int)((uVar1 >> 4 & 0xf) - 1))) {
-    uVar3 = 0x65;
-  }
-  else {
-    uVar3 = Ordinal_1053();
-    uw_ord2005_rem_103 = ((int)(uVar3)) % (5);
-    if (uw_ord2005_rem_103 == 0) {
-      if ((uint)(_DAT_002035cf >> 4) + (uint)*(ushort *)(DAT_00086df8 + 0x4a) <
-          (uint)*(ushort *)(DAT_00086df8 + 0x4c)) {
-        print_scroll_message_by_id(99);
-        return 1;
-      }
-      uVar3 = 0x66;
-    }
-    else {
-      uVar3 = 100;
-    }
-  }
-  print_scroll_message_by_id(uVar3);
-  return 0;
-}
 
 
 
