@@ -1825,6 +1825,12 @@ extern undefined DAT_000853c4;
 extern undefined1 DAT_0010174a;
 extern undefined2 DAT_00101418;
 extern undefined2 DAT_00101908;
+extern byte DAT_0010192c;
+extern byte DAT_00101930;
+extern undefined1 DAT_00101934;
+extern char DAT_0010194c;
+extern char DAT_000853d0;
+extern int DAT_00101940;
 extern char s_named_00085d18[];
 /* Globals defined in uw.c but also used by functions that now live in
    containers.c (the open-container/backpack view stack) -- extern'd
@@ -2790,7 +2796,7 @@ undefined4 check_npc_fine_facing_alignment();
 int compute_vertical_aim_offset();
 void setup_npc_ai_tick_state();
 undefined4 npc_ai_tick(); // was FUN_00032d38
-void FUN_00033880();
+void npc_ai_default_tick();
 undefined4 FUN_00034044();
 undefined4 FUN_00034270();
 int FUN_0003431c();

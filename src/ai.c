@@ -717,12 +717,12 @@ undefined4 npc_ai_tick()
   if (((uVar9 & 0xf) == 0xb) || ((uVar9 & 0xf) == 3)) {
 LAB_00033830:
     if (getenv("UW_DEBUG_NPC_WANDER"))
-      fprintf(stderr, "[npc-branch] obj=%p entering FUN_00033880 pre_tile=(%u,%u)\n",
+      fprintf(stderr, "[npc-branch] obj=%p entering npc_ai_default_tick pre_tile=(%u,%u)\n",
               (void *)DAT_0010190c,
               (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
-    FUN_00033880();
+    npc_ai_default_tick();
     if (getenv("UW_DEBUG_NPC_WANDER"))
-      fprintf(stderr, "[npc-branch] obj=%p returned from FUN_00033880 post_tile=(%u,%u)\n",
+      fprintf(stderr, "[npc-branch] obj=%p returned from npc_ai_default_tick post_tile=(%u,%u)\n",
               (void *)DAT_0010190c,
               (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
     goto LAB_00033834;
@@ -3140,6 +3140,358 @@ ushort * param_1;
   else {
     DAT_0010172c = (undefined2 *)&DAT_002048f0;
     DAT_00101438 = &DAT_00204990;
+  }
+  return;
+}
+
+
+// was FUN_00033880 -- npc_ai_tick's `case 0xb`/default dispatch target,
+// confirmed via this function's own already-documented internal
+// comments: the shared per-tick tail for every "no special goal" NPC
+// (idle/wander goals 0xb/3, but also the fallback landing point every
+// non-special AI state shares). At its head, checks whether the NPC
+// should notice/react to the player (playing an alert sound cue keyed
+// off its stat template, then transitioning into goal 5/combat via
+// npc_set_goal+npc_set_walk_target when detection conditions are met);
+// at its tail (unconditionally reached, also the direct entry point
+// for other goal values per this file's own cross-references),
+// gradually orients the NPC's facing toward the last-seen player
+// direction. Already had 2 confirmed real bugs fixed by an earlier
+// pass (an inverted branch condition and several fabricated-remainder
+// Ordinal_2005 reads) -- see their own comments.
+void npc_ai_default_tick()
+
+{
+  int uw_ord2005_rem_93 = 0; int uw_ord2005_rem_94 = 0; int uw_ord2005_rem_95 = 0; int uw_ord2005_rem_96 = 0;
+  byte bVar1;
+  ushort uVar2;
+  bool bVar3;
+  char cVar4;
+  uint uVar5;
+  undefined4 uVar6;
+  char *iVar7;
+  ushort *puVar8;
+  undefined1 extraout_r1;
+  undefined1 uVar9;
+  undefined1 extraout_r1_00;
+  byte extraout_r1_01;
+  undefined1 extraout_r1_02;
+  char extraout_r1_03;
+  uint extraout_r1_04;
+  uint extraout_r1_05;
+  uint extraout_r1_06;
+  uint extraout_r1_07;
+  uint extraout_r1_08;
+  byte bVar10;
+  uint uVar11;
+  undefined4 unaff_r4;
+  undefined4 unaff_r5;
+  undefined4 unaff_r6;
+  undefined4 unaff_r7;
+  uint uVar12;
+  undefined4 unaff_r8;
+  undefined4 unaff_r9;
+  undefined4 unaff_lr;
+  
+  bVar3 = false;
+  DAT_00101920 = 0;
+  *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xdf;
+  *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) & 0xbf;
+  uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
+  if ((uVar2 & 0xf) != 0xb) {
+    if (((*(byte *)((char *)DAT_0010190c + 0x15) & 0x3f) == 0x2c) && ((uVar2 & 0x1000) == 0x1000)) {
+      bVar10 = *(byte *)(DAT_00101404 + 0x10) & 0xf;
+      if (bVar10 == 1) {
+        if ((uVar2 & 0xf000) == 0x1000) {
+          uVar6 = 1;
+        }
+        else {
+          if ((uVar2 & 0xf000) != 0x3000) goto LAB_000339fc;
+          uVar6 = 2;
+        }
+      }
+      else if (bVar10 == 2) {
+        uVar6 = 0x17;
+      }
+      else if (bVar10 == 3) {
+        uVar6 = 5;
+      }
+      else if (bVar10 == 4) {
+        uVar6 = 0xe;
+      }
+      else {
+        if (bVar10 != 5) goto LAB_000339fc;
+        uVar6 = 0xd;
+      }
+      play_positional_sound_effect(uVar6,DAT_00101910,DAT_0010141c,0);
+    }
+LAB_000339fc:
+    if ((*(byte *)(DAT_00101404 + 10) & 2) == 0) {
+      if (((((((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0) && (DAT_0010194c != DAT_00101738)) &&
+            (DAT_000853d0 == *(char *)(DAT_00101404 + 9))) &&
+           ((*(byte *)((char *)DAT_0010190c + 10) & 0x80) == 0)) ||
+          ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0)) &&
+         ((*(uint *)(DAT_00086df8 + 0xce) < DAT_00101940 + 0x200U &&
+          (uVar11 = (int)((uint)DAT_00101918 - (uint)DAT_0010192c) >> 0x1f,
+          uVar5 = (int)((uint)DAT_001013f8 - (uint)DAT_00101930) >> 0x1f,
+          (int)((((uint)DAT_001013f8 - (uint)DAT_00101930 ^ uVar5) - uVar5) +
+               (((uint)DAT_00101918 - (uint)DAT_0010192c ^ uVar11) - uVar11)) <
+          (int)(*(byte *)(DAT_00101404 + 0x1e) & 0xf))))) {
+        uVar11 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0x3fff;
+        *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar11;
+        *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
+        *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
+        bVar10 = *(byte *)((char *)DAT_0010190c + 0xb) & 0xf;
+        if ((bVar10 != 9) && (bVar10 != 6)) {
+          cVar4 = DAT_0010194c;
+          if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0) {
+            cVar4 = '\x01';
+          }
+          npc_set_goal(5,cVar4);
+          npc_set_walk_target(DAT_0010192c,DAT_00101930,DAT_00101934);
+        }
+      }
+      cVar4 = *(char *)((char *)DAT_0010190c + 0x12);
+      /* Added a NULL guard on FUN_000535fc's result: it legitimately
+         returns NULL for an out-of-range slot index (its own established
+         behavior/contract), and this code unconditionally dereferenced
+         it. Confirmed live crashing (EXC_BAD_ACCESS at 0x19) the first
+         time this branch was reached with a real (previously always-0,
+         now-fixed) random cVar4 value from this session's Ordinal_2005
+         sweep -- a pre-existing bug in this never-before-exercised
+         function, not something the sweep itself introduced. */
+      if ((cVar4 != '\0') &&
+         (((cVar4 == '\x01' && ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) == 0)) ||
+          (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x40) != 0 ||
+           (iVar7 = FUN_000535fc(cVar4), (iVar7 != 0) && (*(byte *)(iVar7 + 0x19) & 0x40) != 0)))))) {
+        if ((uint)*(byte *)((char *)DAT_0010190c + 0x12) != (*(ushort *)((char *)DAT_0010190c + 0xb) >> 4 & 0xff)) {
+          uVar11 = *(ushort *)((char *)DAT_0010190c + 0xb) & 0xf00f |
+                   (uint)*(byte *)((char *)DAT_0010190c + 0x12) << 4;
+          *(char *)((char *)DAT_0010190c + 0xb) = (char)uVar11;
+          *(char *)((char *)DAT_0010190c + 0xc) = (char)(uVar11 >> 8);
+        }
+        iVar7 = FUN_00034044();
+        if (iVar7 != 0) {
+          bVar3 = true;
+          if (*(char *)((char *)DAT_0010190c + 0x12) == '\x01') {
+            uVar11 = *(ushort *)((char *)DAT_0010190c + 0xd) & 0x3fff;
+            *(char *)((char *)DAT_0010190c + 0xd) = (char)uVar11;
+            *(char *)((char *)DAT_0010190c + 0xe) = (char)(uVar11 >> 8);
+            npc_set_walk_target(*(ushort *)((char *)g_player_object + 0x16) >> 10,
+                         *(ushort *)((char *)g_player_object + 0x16) >> 4 & 0x3f,
+                         *(byte *)((char *)g_player_object + 2) >> 3 & 0xf);
+            *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 1;
+          }
+          if ((DAT_00101900 < 3) ||
+             (((*(byte *)(DAT_00101404 + 0x2d) & 1) != 0 &&
+              (iVar7 = tile_is_no_magic(DAT_00101918,DAT_001013f8), iVar7 == 0)))) {
+            if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x20) != 0) goto LAB_00033d18;
+            if (((*(byte *)((char *)DAT_0010190c + 0x19) & 0x10) == 0) &&
+               (iVar7 = FUN_00034270(*(undefined1 *)(DAT_00101404 + 4),
+                                     *(undefined1 *)((char *)DAT_0010190c + 8),
+                                     *(byte *)(DAT_00101404 + 0x1c) & 0xf,
+                                     *(undefined1 *)((char *)DAT_0010190c + 0x11)), iVar7 != 0)) {
+              uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
+              uVar6 = 6;
+            }
+            else {
+              if ((*(byte *)((char *)DAT_0010190c + 0x19) & 0x10) == 0) goto LAB_00033d18;
+              *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 0x10;
+              uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
+              uVar6 = 9;
+            }
+          }
+          else {
+            *(byte *)((char *)DAT_0010190c + 0x19) = *(byte *)((char *)DAT_0010190c + 0x19) | 0x20;
+LAB_00033d18:
+            uVar9 = *(undefined1 *)((char *)DAT_0010190c + 0x12);
+            uVar6 = 5;
+          }
+          npc_set_goal(uVar6,uVar9);
+          *(undefined1 *)((char *)DAT_0010190c + 0x12) = 0;
+          *(undefined1 *)((char *)DAT_0010190c + 0x11) = 0;
+        }
+      }
+    }
+  }
+  /* Main per-tick goal dispatch -- see this function's header comment
+     for the scaling-bug fix that applies here too (was reading byte
+     0x16 instead of the real goal nibble at byte 0xb). */
+  if (getenv("UW_DEBUG_NPC_GOAL_SWITCH"))
+    fprintf(stderr, "[npc-goal-switch] obj=%p goal=%d tile=(%u,%u)\n", (void *)DAT_0010190c,
+            (int)(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf),
+            (unsigned)(DAT_0010190c[0xb] >> 10), (unsigned)((DAT_0010190c[0xb] & 0x3f0) >> 4));
+  switch(*(ushort *)((char *)DAT_0010190c + 0xb) & 0xf) {
+  case 0:
+    goto LAB_00033e9c;
+  case 1:
+    puVar8 = (ushort *)tilemap_lookup(DAT_0010143c,DAT_0010173c);
+    npc_walk_toward_tile(DAT_0010143c,DAT_0010173c,*puVar8 >> 4 & 0xf);
+    break;
+  case 2:
+    npc_idle_behavior_tick();
+    break;
+  case 3:
+    if ((bVar3) || (iVar7 = FUN_00034044(), iVar7 != 0)) {
+      npc_combat_approach_tick();
+    }
+    else {
+LAB_00033ef8:
+      npc_clear_special_goal();
+    }
+    break;
+  case 4:
+    goto LAB_00033e9c;
+  case 5:
+    if ((!bVar3) && (iVar7 = FUN_00034044(), iVar7 == 0)) goto LAB_00033ef8;
+    npc_combat_engage_close_tick();
+    break;
+  case 6:
+    if ((!bVar3) && (iVar7 = FUN_00034044(), iVar7 == 0)) goto LAB_00033ef8;
+    npc_combat_position_tick();
+    break;
+  case 7:
+LAB_00033e9c:
+    npc_notice_and_idle_tick();
+    break;
+  case 8:
+    npc_wander_return_home_tick();
+    break;
+  case 9:
+    if ((!bVar3) && (iVar7 = FUN_00034044(), iVar7 == 0)) goto LAB_00033ef8;
+    npc_combat_engage_wide_tick();
+    break;
+  case 10:
+    npc_combat_disengage_tick();
+    break;
+  case 0xb:
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) & 0xfc | 4;
+    uVar6 = Ordinal_1053();
+    iVar7 = DAT_0010190c;
+    bVar10 = *(byte *)((char *)DAT_0010190c + 0x13);
+    uw_ord2005_rem_93 = ((int)(uVar6)) % (2);
+    *(byte *)(iVar7 + 0x13) = (uw_ord2005_rem_93 ^ bVar10) & 0x7f ^ bVar10;
+    uVar6 = Ordinal_1053();
+    uw_ord2005_rem_94 = ((int)(uVar6)) % (0x100);
+    *(undefined1 *)((char *)DAT_0010190c + 9) = uw_ord2005_rem_94;
+    uVar6 = Ordinal_1053();
+    uw_ord2005_rem_95 = ((int)(uVar6)) % (3);
+    *(byte *)((char *)DAT_0010190c + 0x14) =
+         *(byte *)((char *)DAT_0010190c + 0x14) & 7 ^ (uw_ord2005_rem_95 + '\x0f') * '\b';
+    iVar7 = DAT_0010190c;
+    uVar2 = *(ushort *)((char *)DAT_0010190c + 0xb);
+    uw_ord2005_rem_96 = ((int)((uVar2 >> 0xc) + 1)) % (4);
+    uVar11 = uVar2 & 0xfff;
+    *(char *)(iVar7 + 0xb) = (char)uVar11;
+    *(byte *)((char *)DAT_0010190c + 0xc) =
+         (byte)(uVar11 >> 8) | (byte)(((uw_ord2005_rem_96 & 0xf) << 0xc) >> 8);
+    *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x40;
+    break;
+  case 0xc:
+    npc_wander_return_home_exact_tick();
+    break;
+  default:
+    *(byte *)((char *)DAT_0010190c + 0x14) = *(byte *)((char *)DAT_0010190c + 0x14) | 7;
+  }
+  iVar7 = DAT_0010190c;
+  /* HACK: same ushort-vs-byte pointer-arithmetic scaling bug as
+     process_visible_tile_cell's sibling npc_notice_and_idle_tick (fixed earlier this
+     session) -- DAT_0010190c is `ushort *`, so bare `DAT_0010190c + 2`
+     scales to byte offset 4, but real disassembly of this exact block
+     (0x32578-0x3257c: `ldrb r3,[r4,#0x3]; ldrb r2,[r4,#0x2]`) reads raw
+     BYTE offsets 2/3. Cast to a byte pointer first so the offset isn't
+     doubled; see the matching write fix a few lines down (was
+     `DAT_0010190c + 3`, same bug, confirmed via 0x32654-0x3265c:
+     `ldr r1,[r6,#0x0]; strb r3,[r1,#0x3]` -- also raw byte 3, not the
+     scaled byte 6 the undecorated expression computed). */
+  uVar2 = *(ushort *)((char *)DAT_0010190c + 2);
+  bVar10 = *(byte *)((char *)DAT_0010190c + 9);
+  uVar11 = uVar2 >> 2 & 0xff;
+  uVar11 = (uVar11 ^ *(byte *)((char *)DAT_0010190c + 0x18)) & 0x1f ^ uVar11;
+  uVar12 = (uint)DAT_001018fc;
+  /* Was `Ordinal_2005(0x100,(uVar11-uVar12)+0x100,*(undefined1*)(DAT_0010190c+2),
+     Ordinal_2005_exref,unaff_r4,unaff_r5,unaff_r6,unaff_r7,unaff_r8,unaff_r9,
+     unaff_lr);` -- badly garbled. Real disassembly (0x3256c-0x32768, this
+     function's actual body per Ghidra -- npc_ai_default_tick's own "0x33880"
+     entry point is just one jump-table case landing in a shared tail
+     block starting here) confirms this is genuinely a plain 2-argument
+     `Ordinal_2005(0x100,(uVar11-uVar12)+0x100)` call; the extra
+     "arguments" are a decompiler artifact with no real source (the
+     unaff_rN/unaff_lr names mean "whatever these callee-saved registers
+     happened to hold since function entry", never actually read by the
+     real code here). All 5 Ordinal_2005 calls in this function also
+     have the by-now-familiar fabricated-remainder bug (this port's
+     Ordinal_2005 never populates extraout_r1); computed each directly
+     instead (divisor is always the constant 0x100, so `% 0x100` == the
+     `& 0xff` already applied everywhere the remainder is consumed).
+     Confirmed live: this function is npc_ai_tick's `case 0xb`/default
+     dispatch target (the "orient toward last-seen-player direction"
+     tail shared by every non-special AI state), and was the real source
+     of the QA-reported "NPC disappears/teleports on its first tick" bug
+     -- with the remainder always reading as garbage/0, the facing-delta
+     clamp this computes could send an object's orientation (and, via
+     the offset+2/+3 tile-position bits it also writes here, its
+     position) to an arbitrary value on the very first tick any NPC ran
+     this path. */
+  uVar5 = ((uVar11 - uVar12) + 0x100) & 0xff;
+  if ((0x1f < uVar5) && (uVar5 < 0xe1)) {
+    if (uVar5 < 0x80) {
+      uVar11 = (uVar12 + 0x20) & 0xff;
+    }
+    else {
+      uVar11 = (uVar12 + 0xe0) & 0xff;
+    }
+    uVar11 = uVar11 & 0xff;
+  }
+  uVar5 = uVar2 & 0xfc7f | (uVar11 & 0xffe0) << 2;
+  *(char *)(iVar7 + 2) = (char)uVar5;
+  *(char *)((char *)DAT_0010190c + 3) = (char)(uVar5 >> 8);
+  *(byte *)((char *)DAT_0010190c + 0x18) =
+       (*(byte *)((char *)DAT_0010190c + 0x18) ^ (byte)uVar11) & 0x1f ^ *(byte *)((char *)DAT_0010190c + 0x18);
+  iVar7 = DAT_0010190c;
+  /* Was `if (DAT_00101430 == 0)` -- an inverted condition, confirmed via
+     real disassembly (`cmp r0,#0x0; beq 0x326a4`, where r0 is
+     DAT_00101430 and 0x326a4 is the simple "just copy DAT_00101458"
+     branch this decompile currently has as the ELSE): the real branch
+     runs this whole Ordinal_2005-laden "randomly step the facing toward
+     the last-known player direction" block when DAT_00101430 is
+     NONZERO, and takes the simple path when it's zero -- exactly
+     backwards from what was here. DAT_00101430 defaults to 0 at the top
+     of npc_ai_tick (its only other writer in this file), so with the
+     inverted condition, ordinary NPCs took this complex branch on
+     essentially every tick instead of the simple one -- combined with
+     this branch's own fabricated-remainder bugs (fixed above), this was
+     the real source of the QA-reported "NPC teleports on its first
+     tick" bug. */
+  if (DAT_00101430 != 0) {
+    if (DAT_00101434 < 2) {
+      return;
+    }
+    bVar1 = *(byte *)((char *)DAT_0010190c + 0x13);
+    if ((bVar1 & 0x7f) < 2) {
+      return;
+    }
+    uVar5 = (uint)DAT_00101458;
+    uVar11 = ((bVar10 - uVar5) + 0x100) & 0xff;
+    if ((uVar11 < 0x20) || (0xe0 < uVar11)) {
+      *(byte *)(iVar7 + 9) = bVar10;
+      return;
+    }
+    if (uVar11 < 0x40) {
+      uVar9 = (uVar5 + 0x20) & 0xff;
+    }
+    else {
+      if (uVar11 < 0xc1) {
+        *(byte *)(iVar7 + 0x13) = bVar1 & 0x80;
+        goto LAB_00032690;
+      }
+      uVar9 = (uVar5 + 0xe0) & 0xff;
+    }
+    *(undefined1 *)(iVar7 + 9) = uVar9;
+  }
+  else {
+LAB_00032690:
+    *(byte *)((char *)DAT_0010190c + 9) = DAT_00101458;
   }
   return;
 }
