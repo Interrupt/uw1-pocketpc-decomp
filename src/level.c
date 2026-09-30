@@ -279,7 +279,7 @@ undefined4 param_1;
       load_level_texture_ids(auStack_1c,param_1);
       clear_automap_reveal_buffer();
       reset_npc_path_cache();
-      FUN_000359f4();
+      clear_last_attacker_record();
       if (iVar2 == 1) {
         load_automap_reveal_from_archive(auStack_1c,param_1);
       }
@@ -355,7 +355,7 @@ short param_2;
 {
   if (((*(byte *)(DAT_00086df8 + 0x60) & 0x10) == 0) || (param_2 != 0)) {
     if (param_2 == 0) {
-      FUN_000359f4();
+      clear_last_attacker_record();
     }
     else if (param_2 == 1) {
       advance_mobile_objects();

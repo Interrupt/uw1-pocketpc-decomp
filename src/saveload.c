@@ -491,7 +491,7 @@ char param_1;
         if (sVar2 != 0) {
           save_or_restore_level_special_state((int)DAT_00201b68,3);
           print_scroll_message_by_id(0xaa);
-          FUN_000358e8();
+          load_last_attacker_record();
           return 1;
         }
       }
@@ -538,7 +538,7 @@ char *param_2;
   undefined1 auStack_428 [520];
   undefined1 auStack_220 [520];
   
-  FUN_00035960();
+  save_last_attacker_record();
   pcVar8 = &DAT_0023cca8;
     stack0xffdc2d20_ptr = stack0xffdc2d20_buf;
   pcVar3 = pcVar8;

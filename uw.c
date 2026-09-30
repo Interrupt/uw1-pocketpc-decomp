@@ -9571,46 +9571,6 @@ short param_1;
 
 
 
-void FUN_000358e8()
-
-{
-  DAT_0010194c = *(undefined1 *)(DAT_00086df8 + 0xba);
-  DAT_000853d0 = *(undefined1 *)(DAT_00086df8 + 0xbb);
-  DAT_00101940 = *(undefined4 *)(DAT_00086df8 + 0xbc);
-  DAT_0010192c = *(undefined1 *)(DAT_00086df8 + 0xc0);
-  DAT_00101930 = *(undefined1 *)(DAT_00086df8 + 0xc1);
-  return;
-}
-
-
-
-void FUN_00035960()
-
-{
-  undefined4 uVar1;
-  
-  *(undefined1 *)(DAT_00086df8 + 0xba) = DAT_0010194c;
-  *(undefined1 *)(DAT_00086df8 + 0xbb) = DAT_000853d0;
-  uVar1 = DAT_00101940;
-  *(char *)(DAT_00086df8 + 0xbc) = (char)DAT_00101940;
-  *(char *)(DAT_00086df8 + 0xbd) = (char)((uint)uVar1 >> 8);
-  *(char *)(DAT_00086df8 + 0xbe) = (char)((uint)uVar1 >> 0x10);
-  *(char *)(DAT_00086df8 + 0xbf) = (char)((uint)uVar1 >> 0x18);
-  *(undefined1 *)(DAT_00086df8 + 0xc0) = DAT_0010192c;
-  *(undefined1 *)(DAT_00086df8 + 0xc1) = DAT_00101930;
-  return;
-}
-
-
-
-void FUN_000359f4()
-
-{
-  DAT_0010194c = 0;
-  DAT_000853d0 = 0xff;
-  reset_npc_path_cache();
-  return;
-}
 
 
 

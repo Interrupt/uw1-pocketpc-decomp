@@ -1827,12 +1827,18 @@ extern undefined DAT_000853c4;
 extern undefined1 DAT_0010174a;
 extern undefined2 DAT_00101418;
 extern undefined2 DAT_00101908;
-extern byte DAT_0010192c;
-extern byte DAT_00101930;
-extern undefined1 DAT_00101934;
-extern char DAT_0010194c;
-extern char DAT_000853d0;
-extern int DAT_00101940;
+/* "Last attacker" record, confirmed via check_npc_morale_flee's own use
+   (src/ai.c ~3230): a saved snapshot of who last attacked the current
+   NPC (tile x/y/heading + slot index + class id), with an expiry
+   timestamp so the alert reaction only fires while it's still recent.
+   Persisted to/from the save-game block (DAT_00086df8+0xba..0xc1) by
+   load_last_attacker_record/save_last_attacker_record. */
+extern byte DAT_0010192c; // last attacker's tile x
+extern byte DAT_00101930; // last attacker's tile y
+extern undefined1 DAT_00101934; // last attacker's heading
+extern char DAT_0010194c; // last attacker's object slot index
+extern char DAT_000853d0; // last attacker's class id
+extern int DAT_00101940; // game-clock timestamp the attack was recorded at
 extern char s_named_00085d18[];
 /* Globals defined in uw.c but also used by functions that now live in
    containers.c (the open-container/backpack view stack) -- extern'd
@@ -2819,9 +2825,9 @@ undefined4 detect_unsafe_rest_object_callback();
 undefined4 check_rest_area_unsafe();
 undefined4 spawn_rest_interrupt_monster_callback();
 undefined4 check_rest_interrupted_by_monster();
-void FUN_000358e8();
-void FUN_00035960();
-void FUN_000359f4();
+void load_last_attacker_record();
+void save_last_attacker_record();
+void clear_last_attacker_record();
 undefined4 FUN_00035a18();
 void FUN_00035cb0();
 undefined4 FUN_00035dd8();

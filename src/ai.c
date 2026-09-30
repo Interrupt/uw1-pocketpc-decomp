@@ -4139,3 +4139,54 @@ undefined4 check_rest_interrupted_by_monster()
   scan_area_ahead_of_object(g_player_object,1,spawn_rest_interrupt_monster_callback,0,0,8);
   return DAT_00101950;
 }
+
+
+// was FUN_000358e8 -- loads the "last attacker" record (see the
+// globals' own comment in uw.h) from its serialized slot in the
+// save-game block (DAT_00086df8+0xba..0xc1).
+void load_last_attacker_record()
+
+{
+  DAT_0010194c = *(undefined1 *)(DAT_00086df8 + 0xba);
+  DAT_000853d0 = *(undefined1 *)(DAT_00086df8 + 0xbb);
+  DAT_00101940 = *(undefined4 *)(DAT_00086df8 + 0xbc);
+  DAT_0010192c = *(undefined1 *)(DAT_00086df8 + 0xc0);
+  DAT_00101930 = *(undefined1 *)(DAT_00086df8 + 0xc1);
+  return;
+}
+
+
+
+// was FUN_00035960 -- the inverse of load_last_attacker_record:
+// writes the current "last attacker" record back into its serialized
+// slot in the save-game block.
+void save_last_attacker_record()
+
+{
+  undefined4 uVar1;
+
+  *(undefined1 *)(DAT_00086df8 + 0xba) = DAT_0010194c;
+  *(undefined1 *)(DAT_00086df8 + 0xbb) = DAT_000853d0;
+  uVar1 = DAT_00101940;
+  *(char *)(DAT_00086df8 + 0xbc) = (char)DAT_00101940;
+  *(char *)(DAT_00086df8 + 0xbd) = (char)((uint)uVar1 >> 8);
+  *(char *)(DAT_00086df8 + 0xbe) = (char)((uint)uVar1 >> 0x10);
+  *(char *)(DAT_00086df8 + 0xbf) = (char)((uint)uVar1 >> 0x18);
+  *(undefined1 *)(DAT_00086df8 + 0xc0) = DAT_0010192c;
+  *(undefined1 *)(DAT_00086df8 + 0xc1) = DAT_00101930;
+  return;
+}
+
+
+
+// was FUN_000359f4 -- clears the "last attacker" slot/class fields
+// (0 and 0xff, both sentinel "none" values matched against real slot
+// indices/class ids elsewhere) and resets the NPC pathing cache.
+void clear_last_attacker_record()
+
+{
+  DAT_0010194c = 0;
+  DAT_000853d0 = 0xff;
+  reset_npc_path_cache();
+  return;
+}
