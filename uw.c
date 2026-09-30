@@ -9677,135 +9677,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined4 FUN_00039790(param_1,param_2,param_3,param_4,param_5,param_6,param_7,param_8,param_9)
-short param_1;
-int param_2;
-short param_3;
-short param_4;
-short param_5;
-short param_6;
-short param_7;
-short param_8;
-short param_9;
-
-{
-  int iVar1;
-  int iVar2;
-  uint uVar3;
-  short sVar4;
-  ushort uVar5;
-  byte bVar6;
-  ushort *puVar7;
-  ushort *puVar8;
-  int iVar9;
-  uint uVar10;
-  uint extraout_r1;
-  uint uVar11;
-  int iVar12;
-  uint uVar13;
-  undefined8 uVar14;
-  short local_44;
-  
-  sVar4 = (short)param_2;
-  iVar1 = ((int)param_7 + (int)param_1) * 0x10000 >> 0x10;
-  if (param_1 <= iVar1) {
-    uVar13 = (uint)param_5;
-    iVar2 = ((int)param_8 + (int)sVar4) * 0x10000 >> 0x10;
-    local_44 = param_1;
-    do {
-      if (sVar4 <= iVar2) {
-        iVar12 = (int)(short)uVar13;
-        do {
-          puVar7 = (ushort *)tilemap_lookup((int)local_44,param_2);
-          uVar10 = *puVar7 >> 4 & 0xf;
-          if ((param_9 == 1) || (param_9 == 3)) {
-            uVar13 = (uVar10 - (int)param_9) + 2;
-            iVar12 = (int)(uVar13 * 0x10000) >> 0x10;
-            if (-1 < iVar12) goto LAB_0003987c;
-          }
-          else {
-LAB_0003987c:
-            if (iVar12 < 0xe) {
-              uVar11 = *puVar7 & 0xff0f;
-              *(byte *)puVar7 = (byte)uVar11 | (byte)((uVar13 & 0xf) << 4);
-              *(byte *)((char *)puVar7 + 1) = (byte)(uVar11 >> 8);
-            }
-          }
-          uVar11 = (uint)(byte)((byte)*puVar7 >> 4);
-          uVar3 = (uint)(short)uVar10;
-          if (uVar3 < uVar11) {
-            for (puVar8 = puVar7 + 1; (*puVar8 & 0xffc0) != 0; puVar8 = puVar8 + 2) {
-              puVar8 = (ushort *)resolve_object_link(puVar8);
-              if (((*puVar8 & 0x1c0) != 0x180) && ((int)(puVar8[1] & 0x7f) < iVar12 * 8)) {
-                uVar10 = puVar8[1] & 0xff80;
-                *(byte *)(puVar8 + 1) = (byte)uVar10 | (byte)((uVar13 & 0xf) << 3);
-                *(char *)((char *)puVar8 + 3) = (char)(uVar10 >> 8);
-                iVar9 = object_ptr_in_arena(puVar8);
-                if ((iVar9 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
-                  if (puVar8 == g_player_object) {
-                    DAT_00204884 = (undefined2)(iVar12 << 6);
-                  }
-                }
-                else {
-                  *(char *)((char *)puVar8 + 0xf) = (char)((uVar13 << 0x16) >> 0x10);
-                  *(char *)(puVar8 + 8) = (char)(((uVar13 & 0x3ff) << 6) >> 8);
-                }
-              }
-            }
-          }
-          else if (uVar11 < uVar3) {
-            for (puVar8 = puVar7 + 1; (*puVar8 & 0xffc0) != 0; puVar8 = puVar8 + 2) {
-              uVar14 = resolve_object_link(puVar8,uVar10);
-              uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
-              puVar8 = (ushort *)uVar14;
-              if (((*puVar8 & 0x1c0) != 0x180) && ((puVar8[1] & 0x7f) == uVar3 * 8)) {
-                uVar10 = puVar8[1] & 0xff80;
-                *(byte *)(puVar8 + 1) = (byte)uVar10 | (byte)((uVar13 & 0xf) << 3);
-                *(char *)((char *)puVar8 + 3) = (char)(uVar10 >> 8);
-                uVar14 = object_ptr_in_arena(puVar8);
-                uVar10 = (uint)((ulonglong)uVar14 >> 0x20);
-                if (((int)uVar14 == 0) || ((*puVar8 & 0x1c0) == 0x40)) {
-                  if (puVar8 == g_player_object) {
-                    set_locomotion_state(0x10);
-                    uVar10 = extraout_r1;
-                  }
-                }
-                else {
-                  *(char *)((char *)puVar8 + 0xf) = (char)((uVar13 << 0x16) >> 0x10);
-                  *(char *)(puVar8 + 8) = (char)(((uVar13 & 0x3ff) << 6) >> 8);
-                }
-              }
-            }
-          }
-          if (param_4 < 0xb) {
-            uVar5 = *puVar7;
-            *(byte *)puVar7 = (byte)(uVar5 & 0xc3ff);
-            *(byte *)((char *)puVar7 + 1) =
-                 (byte)((uVar5 & 0xc3ff) >> 8) | (byte)((((int)param_4 & 0xfU) << 10) >> 8);
-          }
-          if (param_3 < 0x30) {
-            uVar5 = puVar7[1];
-            bVar6 = (byte)uVar5;
-            *(byte *)(puVar7 + 1) = (bVar6 ^ (byte)param_3) & 0x3f ^ bVar6;
-            *(byte *)((char *)puVar7 + 3) = (byte)(uVar5 >> 8);
-          }
-          if (param_6 < 10) {
-            uVar5 = *puVar7;
-            bVar6 = (byte)uVar5;
-            *(byte *)puVar7 = (bVar6 ^ (byte)param_6) & 0xf ^ bVar6;
-            *(byte *)((char *)puVar7 + 1) = (byte)(uVar5 >> 8);
-          }
-          param_2 = param_2 + 1;
-        } while (param_2 * 0x10000 >> 0x10 <= iVar2);
-        param_2 = (int)sVar4;
-      }
-      iVar12 = (int)local_44;
-      local_44 = (short)(iVar12 + 1);
-    } while ((iVar12 + 1) * 0x10000 >> 0x10 <= iVar1);
-  }
-  FUN_00049924(6);
-  return 2;
-}
 
 
 
@@ -9957,8 +9828,8 @@ short param_1;
           uVar11 = 1;
         }
         sVar3 = param_1 * 2 + 1;
-        FUN_00039790(iVar6,iVar7,0x3f,0xf,0xf,0xf,uVar10,uVar11,sVar3);
-        FUN_00039790(iVar8,iVar9,0x3f,0xf,0xf,0xf,0,0,sVar3);
+        apply_area_terrain_effect(iVar6,iVar7,0x3f,0xf,0xf,0xf,uVar10,uVar11,sVar3);
+        apply_area_terrain_effect(iVar8,iVar9,0x3f,0xf,0xf,0xf,0,0,sVar3);
         return;
       }
       print_scroll_message_by_id(0xc0);
@@ -9977,7 +9848,7 @@ short param_1;
       return;
     }
     *(undefined1 *)(DAT_00086df8 + 0x8a) = 0x3f;
-    FUN_00039790(0x30,0x30,0x3f,0xf,4,0xf,7,7,0);
+    apply_area_terrain_effect(0x30,0x30,0x3f,0xf,4,0xf,7,7,0);
     uVar5 = 0xc1;
   }
   else {
@@ -10088,7 +9959,7 @@ undefined4 param_4;
   iVar4 = (*(byte *)(param_2 + 2) & 0x7f) + param_1 * 8;
   if ((*(byte *)(param_2 + 4) & 0x3f) == 3) {
     if (iVar4 * 0x10000 >> 0x10 < 0x68) {
-      FUN_00039790(param_3,param_4,0xff,0xff,(short)(iVar4 * 0x10000 >> 0x13),0xff,0,0,0);
+      apply_area_terrain_effect(param_3,param_4,0xff,0xff,(short)(iVar4 * 0x10000 >> 0x13),0xff,0,0,0);
     }
   }
   else {
