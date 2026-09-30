@@ -138,7 +138,7 @@ static int g_mouse_event_pending = 0;
 /* A button-up dispatched on the very next poll after its matching
  * button-down leaves character_generator_touch_select's position-
  * validation loop (uw.c's character_generator_touch_select, called via
- * FUN_00024840) with zero chances to ever run: its first internal poll
+ * wait_for_chargen_field_input) with zero chances to ever run: its first internal poll
  * (a *second* call, right after the outer poll that consumed the
  * button-down) immediately dequeues the already-queued button-up,
  * resetting DAT_0023c63c before the loop body -- which does the actual
@@ -509,7 +509,7 @@ void uw_pump_events(void) {
                 }
                 /* SDL auto-repeats a held key as a stream of SDL_KEYDOWN
                  * events; the game's menu/chargen "wait for one keypress"
-                 * loops (e.g. FUN_00024840) treat every keydown as a
+                 * loops (e.g. wait_for_chargen_field_input) treat every keydown as a
                  * fresh confirm/select, so a held Enter blasts through
                  * many unrelated screens in a fraction of a second
                  * (confirmed via a state-trace: 3 full character-

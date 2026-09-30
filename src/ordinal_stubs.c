@@ -894,7 +894,7 @@ char *str;
  * every call site ORs together the standard CRT _ctype.h bit values as
  * its mask (_UPPER=1, _LOWER=2, _DIGIT=4, _SPACE=8, _PUNCT=0x10,
  * _CONTROL=0x20, _BLANK=0x40, _HEX=0x80, _ALPHA=0x103) and checks the
- * result against 0, e.g. FUN_00024840's name-entry field tests
+ * result against 0, e.g. wait_for_chargen_field_input's name-entry field tests
  * `Ordinal_1417(ch, 0x157)` (_ALPHA|_DIGIT|_PUNCT|_BLANK, i.e. "any
  * typeable name character") to decide whether to append a typed
  * character to the name buffer. A prior no-op stub (`return 0`) made

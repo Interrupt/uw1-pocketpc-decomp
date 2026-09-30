@@ -667,6 +667,7 @@ extern undefined1 DAT_000fb860_backing[256];
 extern undefined4 DAT_000fb880_backing[4096];
 #define DAT_000fb8c4 (((undefined1 *)DAT_000fb880_backing)[0x44])
 #define DAT_000fb880 DAT_000fb880_backing[0]
+#define DAT_000fb884 (((undefined1 *)DAT_000fb880_backing)[4])
 #define DAT_000fb898 (((int *)DAT_000fb880_backing)[6])
 extern undefined DAT_000fb863;
 extern char s_key_to_continue_00084e60[];
@@ -2579,9 +2580,9 @@ void draw_selected_skills_list();
 int apply_confirmed_skill_picks();
 void reroll_attributes_for_class_race();
 void draw_chargen_field_value();
-undefined4 FUN_0002431c();
+undefined4 draw_chargen_field_options();
 uint character_generator_touch_select();
-uint FUN_00024840();
+uint wait_for_chargen_field_input();
 void palette_cycle_range();
 undefined4 FUN_00025a98();
 int FUN_00025b84();

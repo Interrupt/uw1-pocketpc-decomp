@@ -577,7 +577,7 @@ undefined4 npc_ai_tick()
     /* Was `Ordinal_2005(0x10,(bVar3&0xf)+8); bVar8 = extraout_r1;` -- the
        classic "call idivmod, then read its remainder back through the
        extraout_r1 register-leftover fiction" pattern already fixed
-       elsewhere this session (itoa_radix, FUN_0002431c's sVar_rem):
+       elsewhere this session (itoa_radix, draw_chargen_field_options's sVar_rem):
        this port's Ordinal_2005 (ordinal_stubs.c) only returns the
        quotient through its real C return value and never touches
        anything a recompiled build's own extraout_r1 local could

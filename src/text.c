@@ -56,7 +56,7 @@ short param_3;
      (the "dropped argument" idiom used throughout this file). That
      register no longer reliably holds param_1 by this point under this
      compiler/ABI (confirmed via ASAN: iVar2 came out larger than the
-     caller's actual buffer, e.g. FUN_00024840's 4-byte `local_2c`
+     caller's actual buffer, e.g. wait_for_chargen_field_input's 4-byte `local_2c`
      scratch string, causing a stack-buffer-overflow read here). iVar2
      is provably meant to be strlen(param_1) -- the very next line
      computes the same length via measure_text_width(param_1), and the
