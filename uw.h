@@ -1842,6 +1842,14 @@ extern char DAT_000853d0; // last attacker's class id
 extern int DAT_00101940; // game-clock timestamp the attack was recorded at
 extern byte DAT_0010195c; // current noise type/volume, set by emit_noise_alert
 extern undefined2 DAT_00101960; // talking-portrait mouth-frame cycle count, reset by reset_dialogue_speech_state
+/* Voice-sample page size cache used by load_voice_sample_page and
+   read_voice_sample_page_chunk. DAT_000853f8 was mis-declared as a
+   1-byte `undefined` in the original decompile despite holding a
+   computed size masked with & 0xffff elsewhere -- widened to ushort,
+   matching its siblings, to stop the silent truncation. */
+extern ushort DAT_000853f8;
+extern ushort DAT_000853fc;
+extern ushort DAT_00085400;
 extern ushort *DAT_00101958; // current noise source object, set by emit_noise_alert
 extern char s_named_00085d18[];
 /* Globals defined in uw.c but also used by functions that now live in
@@ -2838,8 +2846,8 @@ undefined4 reset_dialogue_speech_state();
 void chargen_ui_transition_hook();
 void thunk_FUN_0007ec1c();
 void bubble_sort_indices_by_key_table();
-undefined2 FUN_00035ec4();
-uint FUN_00035f24();
+undefined2 load_voice_sample_page();
+uint read_voice_sample_page_chunk();
 void FUN_00035fdc();
 void FUN_0003601c();
 undefined4 FUN_000360f4();

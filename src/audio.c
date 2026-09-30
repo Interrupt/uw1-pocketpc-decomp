@@ -1196,3 +1196,74 @@ undefined4 reset_dialogue_speech_state()
   DAT_00101960 = 3;
   return 3;
 }
+
+
+// was FUN_00035ec4 -- fully loads one voice-sample page (param_2,
+// indexing into the resource at param_1) into the caller's buffer
+// (param_4, a freshly-allocated 0x10000-byte block at its only known
+// call site) in a single Ordinal_1044 read, sized from the page's own
+// header fields at param_3. See the sibling
+// read_voice_sample_page_chunk for the incremental/streaming variant
+// used during actual playback.
+undefined2 load_voice_sample_page(param_1,param_2,param_3,param_4)
+int param_1;
+int param_2;
+int param_3;
+undefined4 param_4;
+
+{
+  undefined2 uVar1;
+
+  DAT_000853f8 = (*(ushort *)(param_3 + 2) + 4) * 2 + (uint)*(ushort *)(param_3 + 4);
+  /* Ghidra dropped the size argument at this call site; the sibling
+     function read_voice_sample_page_chunk computes the equivalent size the same way and
+     passes it explicitly (& 0xffff), so reuse the value just computed
+     into DAT_000853f8 above. */
+  Ordinal_1044(param_4,param_1 + param_2 * 0x10000 + 0xb00,DAT_000853f8 & 0xffff);
+  uVar1 = (undefined2)DAT_000853f8;
+  return uVar1;
+}
+
+
+
+// was FUN_00035f24 -- incremental/streaming counterpart to
+// load_voice_sample_page: reads up to param_4 bytes of voice-sample
+// page param_2 into param_5, caching the page's total remaining size
+// (DAT_000853fc/DAT_00085400) across calls so repeated calls for the
+// same page don't recompute it, and returning 0 once the page is
+// exhausted. Used by the babl conversation-rendering loop to stream
+// sample audio in playback-sized pieces.
+uint read_voice_sample_page_chunk(param_1,param_2,param_3,param_4,param_5)
+int param_1;
+ushort param_2;
+int param_3;
+uint param_4;
+undefined4 param_5;
+
+{
+  uint uVar1;
+
+  if ((param_4 & 0xffff) == 0) {
+LAB_00035fd4:
+    uVar1 = 0;
+  }
+  else {
+    if ((uint)param_2 == (uint)DAT_000853fc) {
+      uVar1 = (uint)DAT_00085400;
+      if (uVar1 == 0) goto LAB_00035fd4;
+    }
+    else {
+      uVar1 = (uint)*(ushort *)(param_3 + 4) + (*(ushort *)(param_3 + 2) + 4) * 2;
+      DAT_000853fc = param_2;
+    }
+    if ((uVar1 & 0xffff) < (param_4 & 0xffff)) {
+      DAT_00085400 = 0;
+    }
+    else {
+      DAT_00085400 = (short)uVar1 - (short)param_4;
+      uVar1 = param_4;
+    }
+    Ordinal_1044(param_5,param_1 + (uint)param_2 * 0x10000 + 0xb00,uVar1 & 0xffff);
+  }
+  return uVar1;
+}

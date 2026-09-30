@@ -2200,7 +2200,14 @@ undefined2 DAT_00101960;
 undefined1 DAT_0024d008;
 undefined1 DAT_0024fa10;
 undefined1 DAT_0024f90c;
-undefined DAT_000853f8;
+/* was `undefined` (1 byte) -- load_voice_sample_page computes
+   `(*(ushort*)(param_3+2)+4)*2 + (uint)*(ushort*)(param_3+4)` into
+   this global then reads it back masked with & 0xffff and returns it
+   as undefined2, so a 1-byte declaration silently truncated any
+   sample-page size over 255 bytes before it was ever read back.
+   Widened to match its sibling size-cache globals DAT_000853fc/
+   DAT_00085400 (both ushort). */
+ushort DAT_000853f8;
 ushort DAT_000853fc;
 ushort DAT_00085400;
 static undefined1 DAT_00101968_backing[8192];
@@ -9600,61 +9607,6 @@ void thunk_FUN_0007ec1c()
 
 
 
-undefined2 FUN_00035ec4(param_1,param_2,param_3,param_4)
-int param_1;
-int param_2;
-int param_3;
-undefined4 param_4;
-
-{
-  undefined2 uVar1;
-  
-  DAT_000853f8 = (*(ushort *)(param_3 + 2) + 4) * 2 + (uint)*(ushort *)(param_3 + 4);
-  /* Ghidra dropped the size argument at this call site; the sibling
-     function FUN_00035f24 computes the equivalent size the same way and
-     passes it explicitly (& 0xffff), so reuse the value just computed
-     into DAT_000853f8 above. */
-  Ordinal_1044(param_4,param_1 + param_2 * 0x10000 + 0xb00,DAT_000853f8 & 0xffff);
-  uVar1 = (undefined2)DAT_000853f8;
-  return uVar1;
-}
-
-
-
-uint FUN_00035f24(param_1,param_2,param_3,param_4,param_5)
-int param_1;
-ushort param_2;
-int param_3;
-uint param_4;
-undefined4 param_5;
-
-{
-  uint uVar1;
-  
-  if ((param_4 & 0xffff) == 0) {
-LAB_00035fd4:
-    uVar1 = 0;
-  }
-  else {
-    if ((uint)param_2 == (uint)DAT_000853fc) {
-      uVar1 = (uint)DAT_00085400;
-      if (uVar1 == 0) goto LAB_00035fd4;
-    }
-    else {
-      uVar1 = (uint)*(ushort *)(param_3 + 4) + (*(ushort *)(param_3 + 2) + 4) * 2;
-      DAT_000853fc = param_2;
-    }
-    if ((uVar1 & 0xffff) < (param_4 & 0xffff)) {
-      DAT_00085400 = 0;
-    }
-    else {
-      DAT_00085400 = (short)uVar1 - (short)param_4;
-      uVar1 = param_4;
-    }
-    Ordinal_1044(param_5,param_1 + (uint)param_2 * 0x10000 + 0xb00,uVar1 & 0xffff);
-  }
-  return uVar1;
-}
 
 
 
@@ -10224,7 +10176,7 @@ LAB_00036ca4:
             else {
               iVar12 = Ordinal_1346(0x10000,1);
               piVar17[iVar10] = iVar12;
-              FUN_00035ec4(iVar9,(uint)*(byte *)(iVar10 + local_70),
+              load_voice_sample_page(iVar9,(uint)*(byte *)(iVar10 + local_70),
                            (uint)*(byte *)(iVar10 + local_70) * 6 + uVar14 + 0x500,iVar12);
             }
             iVar10 = iVar10 + 1;
@@ -10418,7 +10370,7 @@ LAB_00036ca4:
               if ((uint)local_d8 < (uint)*(ushort *)(local_88 + 6)) {
                 uVar18 = (uint)*(byte *)((uint)local_d8 + local_70);
                 in_stack_ffffff10 = (uint)local_6c + *piVar17;
-                uVar7 = FUN_00035f24(local_80,uVar18,uVar18 * 6 + local_88 + 0x500,uVar14,
+                uVar7 = read_voice_sample_page_chunk(local_80,uVar18,uVar18 * 6 + local_88 + 0x500,uVar14,
                                      in_stack_ffffff10);
                 uVar18 = (uint)uVar7;
                 if (uVar18 != 0xffffffff) {
