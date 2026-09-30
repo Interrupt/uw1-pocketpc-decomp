@@ -1901,3 +1901,84 @@ ushort * param_1;
   }
   return 0;
 }
+
+
+// was FUN_0002c8e0 -- checks whether movement is blocked stepping from
+// tile (param_3,param_4) to adjacent tile (param_5,param_6): tests the
+// per-tile-type wall/door bitmask (&DAT_000878d0, indexed by each
+// tile's own type nibble) for a wall on the shared edge in either
+// direction, and checks a height/floor threshold (param_7) against the
+// destination tile's own ceiling byte. param_1/param_2 are an optional
+// "origin" tile -- if provided and different from (param_3,param_4),
+// an extra check gates the step on the origin tile too. Used as the
+// per-step tile-transition primitive by a path-tracing routine (not
+// yet named) walking a line of tiles between two points.
+undefined4 can_step_between_tiles(param_1,param_2,param_3,param_4,param_5,param_6,param_7)
+byte param_1;
+byte param_2;
+byte param_3;
+byte param_4;
+byte param_5;
+byte param_6;
+byte param_7;
+
+{
+  byte bVar1;
+  byte *pbVar2;
+  ushort *puVar3;
+  uint uVar4;
+  uint uVar5;
+  
+  pbVar2 = (byte *)tilemap_lookup(param_3,param_4);
+  puVar3 = (ushort *)tilemap_lookup(param_5,param_6);
+  uVar5 = *pbVar2 & 0xf;
+  uVar4 = *puVar3 & 0xf;
+  if ((param_1 == 0) || ((param_1 == param_3 && (param_2 == param_4)))) {
+    if ((param_3 < param_5) && (((&DAT_000878d0)[uVar4] & 2) != 0)) {
+      return 0;
+    }
+    if ((param_5 < param_3) && (((&DAT_000878d0)[uVar4] & 4) != 0)) {
+      return 0;
+    }
+    if ((param_4 < param_6) && (((&DAT_000878d0)[uVar4] & 8) != 0)) {
+      return 0;
+    }
+    if ((param_6 < param_4) && (((&DAT_000878d0)[uVar4] & 0x10) != 0)) {
+      return 0;
+    }
+    if (param_5 <= param_3) goto LAB_0002caa4;
+    bVar1 = (&DAT_000878d0)[uVar5];
+  }
+  else {
+    if (param_5 == 0) {
+      return 1;
+    }
+    if ((param_3 < param_5) && (((&DAT_000878d0)[uVar4] & 2) != 0)) {
+      return 0;
+    }
+    if ((param_5 < param_3) && (((&DAT_000878d0)[uVar4] & 4) != 0)) {
+      return 0;
+    }
+    if ((param_4 < param_6) && (((&DAT_000878d0)[uVar4] & 8) != 0)) {
+      return 0;
+    }
+    if ((param_6 < param_4) && (((&DAT_000878d0)[uVar4] & 0x10) != 0)) {
+      return 0;
+    }
+    if (param_5 <= param_3) goto LAB_0002caa4;
+    bVar1 = (&DAT_000878d0)[uVar5];
+  }
+  if ((bVar1 & 4) != 0) {
+    return 0;
+  }
+LAB_0002caa4:
+  if ((((param_3 <= param_5) || (((&DAT_000878d0)[uVar5] & 2) == 0)) &&
+      ((param_6 <= param_4 || (((&DAT_000878d0)[uVar5] & 0x10) == 0)))) &&
+     ((param_4 <= param_6 || (((&DAT_000878d0)[uVar5] & 8) == 0)))) {
+    if ((*puVar3 >> 1 & 0x78) <= (param_7 & 0xfff8)) {
+      return 1;
+    }
+    return 0;
+  }
+  return 0;
+}

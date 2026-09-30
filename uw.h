@@ -2738,7 +2738,7 @@ undefined4 collision_response_alt_locomotion();
 undefined4 collision_response_other_locomotion();
 undefined4 apply_placement_collision_sweep(); // was FUN_0002bd70
 undefined4 tile_pair_los_blocked();
-undefined4 FUN_0002c8e0();
+undefined4 can_step_between_tiles();
 undefined4 creature_find_path_to_tile();
 void FUN_0002d110();
 int FUN_0002d1e0();
