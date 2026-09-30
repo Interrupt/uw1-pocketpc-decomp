@@ -1527,7 +1527,7 @@ undefined4 build_babl_symbol_table()
      port) -- babl_register_builtin's own `*(undefined4*)` store below
      only wrote the low 4 bytes of it, and every other slot's write
      clobbered its next-door neighbor's high 4 bytes. Confirmed live via
-     lldb: FUN_0001ab30's builtin-call opcode (uw.c ~12057) read back a
+     lldb: babl_op_call_builtin's builtin-call opcode (uw.c ~12057) read back a
      wild, clearly-not-a-code-address function pointer and crashed --
      this is the reported "any input after Talk opens crashes" bug.
      Widened to `* 8` throughout (allocation and all 5 index sites). */
@@ -1569,7 +1569,7 @@ undefined4 FUN_0001a1c8()
       /* Was `DAT_000bbf80 + DAT_000bbf74` (byte offset) -- DAT_000bbf74 is
          the babl VM's own instruction pointer, counted in 16-bit WORDS
          (every other reader of it against this same DAT_000bbf80 buffer --
-         FUN_0001aa0c/FUN_0001ab30, uw.c ~11971/12037 -- does
+         babl_op_call/babl_op_call_builtin, uw.c ~11971/12037 -- does
          `DAT_000bbf80 + DAT_000bbf74 * 2 [+ 2]`). Confirmed live via lldb:
          iteration 0 (DAT_000bbf74==0) happens to read the right word either
          way, but iteration 1 read byte offset 1 instead of word offset 1,
@@ -1592,47 +1592,47 @@ undefined4 FUN_0001a1c8()
       case 0:
         goto LAB_0001a2d8;
       case 1:
-        FUN_0001a5e0();
+        babl_op_add();
         break;
       case 2:
-        FUN_0001a654();
+        babl_op_mul();
         break;
       case 3:
-        FUN_0001a69c();
+        babl_op_sub();
         break;
       case 4:
-        FUN_0001a6e4();
+        babl_op_div();
         break;
       case 5:
-        FUN_0001a74c();
+        babl_op_mod();
         break;
       case 6:
-        FUN_0001a7b4();
+        babl_op_or();
         break;
       case 7:
-        FUN_0001a808();
+        babl_op_and();
         break;
       case 8:
         puVar8 = (ushort *)(DAT_000bbf0c + DAT_000bbf78 * 2);
         *puVar8 = (ushort)(*puVar8 == 0);
         break;
       case 9:
-        FUN_0001a85c();
+        babl_op_gt();
         break;
       case 10:
-        FUN_0001a8a4();
+        babl_op_ge();
         break;
       case 0xb:
-        FUN_0001a8ec();
+        babl_op_lt();
         break;
       case 0xc:
-        FUN_0001a934();
+        babl_op_le();
         break;
       case 0xd:
-        FUN_0001a97c();
+        babl_op_eq();
         break;
       case 0xe:
-        FUN_0001a9c4();
+        babl_op_ne();
         break;
       case 0xf:
         DAT_000bbf74 = psVar7[1];
@@ -1654,13 +1654,13 @@ LAB_0001a3f0:
         DAT_000bbf74 = psVar7[1] + DAT_000bbf74 + 1;
         goto LAB_0001a5a4;
       case 0x13:
-        FUN_0001aa0c();
+        babl_op_call();
         goto LAB_0001a5a4;
       case 0x14:
-        FUN_0001ab30();
+        babl_op_call_builtin();
         goto LAB_0001a5a4;
       case 0x15:
-        sVar2 = FUN_0001aa54();
+        sVar2 = babl_op_return();
         goto LAB_0001a5a4;
       case 0x16:
         DAT_000bbf78 = DAT_000bbf78 + 1;
@@ -1700,13 +1700,13 @@ LAB_0001a4f0:
         DAT_000bbf78 = *(short *)(DAT_000bbf0c + DAT_000bbf78 * 2) + DAT_000bbf78 + -1;
         goto LAB_0001a2d8;
       case 0x1f:
-        FUN_0001aa88();
+        babl_op_push_var_raw();
         break;
       case 0x20:
-        FUN_0001aaf8();
+        babl_op_set_var();
         break;
       case 0x21:
-        FUN_0001aab4();
+        babl_op_combine_index();
         break;
       case 0x22:
         goto LAB_0001a2d8;
@@ -1723,20 +1723,20 @@ LAB_0001a470:
         *(short *)(DAT_000bbf0c + (iVar6 * 0x10000 >> 0x10) * 2) = sVar3;
         break;
       case 0x25:
-        FUN_0001aba0();
+        babl_op_string_eq();
         break;
       case 0x26:
       default:
         sVar2 = 0;
         goto LAB_0001a5a4;
       case 0x27:
-        FUN_0001ac48();
+        babl_op_say();
         break;
       case 0x28:
-        FUN_0001acf8();
+        babl_op_respond();
         break;
       case 0x29:
-        FUN_0001a628();
+        babl_op_negate();
       }
       DAT_000bbf74 = DAT_000bbf74 + 1;
 LAB_0001a5a4:
@@ -1770,7 +1770,7 @@ intptr_t param_2; // was `undefined4` -- every real caller passes a code address
   char *pcVar4;
 
   /* HACK: added `DAT_000bbf70 != 0` -- this whole babl-symbol-table
-     cluster (babl_register_builtin/FUN_0001ac48/etc.) uniformly assumes
+     cluster (babl_register_builtin/babl_op_say/etc.) uniformly assumes
      DAT_000bbf70 already points at a real, build_babl_symbol_table()-initialized
      record array before touching it. It's declared `int` (not even a
      pointer) and starts at 0; load_npc_conversation_record's own "no CNV.ARK record
@@ -2247,7 +2247,7 @@ void start_npc_conversation()
      (2) individually NULL-guarding every DAT_000bbf70/DAT_000bbf80-
      reading function this success branch calls into turned into an
      unbounded chase (fixed 5 separate crash sites this way -- see
-     babl_register_builtin/FUN_0001ac48/FUN_0001acf8/babl_set_variable/babl_get_variable/
+     babl_register_builtin/babl_op_say/babl_op_respond/babl_set_variable/babl_get_variable/
      init_babl_variable_defaults's own comments -- before finding a 6th at
      FUN_0001a1c8's DAT_000bbf80 dereference). Whether the real 32-bit
      binary's equivalent register value is reliably negative here (real
@@ -2402,7 +2402,7 @@ void start_npc_conversation()
    already uses successfully -- placed here, after babl_fmenu, so those
    are already declared. */
 int babl_menu(param_1)
-intptr_t param_1; // was `int` -- the real caller (FUN_0001ab30's builtin-call opcode) passes a full 64-bit stack pointer (DAT_000bbf0c + DAT_000bbf78*2), truncated on 64-bit before this function's own `param_1 + -2` dereference; same bug class as babl_set_variable/babl_register_builtin elsewhere in this cluster
+intptr_t param_1; // was `int` -- the real caller (babl_op_call_builtin's builtin-call opcode) passes a full 64-bit stack pointer (DAT_000bbf0c + DAT_000bbf78*2), truncated on 64-bit before this function's own `param_1 + -2` dereference; same bug class as babl_set_variable/babl_register_builtin elsewhere in this cluster
 
 {
   char cVar1;
@@ -3323,7 +3323,7 @@ undefined1 *param_2;
   }
   iVar2 = build_babl_symbol_table();
   if (-1 < iVar2) {
-    FUN_0001a1a4(iVar2);
+    babl_vm_load_script(iVar2);
     babl_free(local_28);
     DAT_000bbf14 = babl_alloc((DAT_000bbf7c + 0x800) * 2);
     load_npc_conversation_variables(DAT_000bbf14,(int)DAT_000bbf7c);
@@ -5124,3 +5124,550 @@ undefined4 debug_noop_checkpoint()
 
 
 
+
+
+// was FUN_0001a1a4 -- the babl VM's own "load bytecode into the run buffer"
+// step: an `Ordinal_1044` (memcpy-shaped) copy of the parsed script's
+// bytecode (DAT_000bbf18, word count DAT_000bbf10) into the VM's live
+// opcode buffer (DAT_000bbf80), run once by start_npc_conversation right
+// after build_babl_symbol_table() succeeds, before any opcode dispatch.
+// param_1: was declared with zero params, but its one real call site
+// (start_npc_conversation, src/babl.c) passes build_babl_symbol_table()'s
+// own return value explicitly (`babl_vm_load_script(iVar2)`) despite the
+// K&R signature declaring none -- same "real call site outranks the K&R
+// signature" evidence as register_default_atexit_handler's own fix. Added
+// the parameter to match; the body itself doesn't read it, matching what
+// looks like a genuinely-unused/ignored register argument in the real code.
+void babl_vm_load_script(param_1)
+int param_1;
+
+{
+  Ordinal_1044(DAT_000bbf80,DAT_000bbf18,(uint)(ushort)DAT_000bbf10 << 1);
+  return;
+}
+
+
+
+// was FUN_0001a5e0 -- babl VM opcode 1 (ADD): pops the top two stack
+// slots, pushes their sum.
+void babl_op_add()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(short *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = *psVar2 + psVar2[-1];
+  return;
+}
+
+
+
+// was FUN_0001a628 -- babl VM opcode 0x29 (NEGATE): negates the
+// top-of-stack value in place.
+void babl_op_negate()
+
+{
+  short *psVar1;
+  
+  psVar1 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  *psVar1 = -*psVar1;
+  return;
+}
+
+
+
+// was FUN_0001a654 -- babl VM opcode 2 (MULTIPLY): pops the top two stack
+// slots, pushes their product.
+void babl_op_mul()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(short *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = psVar2[-1] * *psVar2;
+  return;
+}
+
+
+
+// was FUN_0001a69c -- babl VM opcode 3 (SUBTRACT): pops the top two stack
+// slots (a=second-from-top, b=top), pushes a-b.
+void babl_op_sub()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(short *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = psVar2[-1] - *psVar2;
+  return;
+}
+
+
+
+// was FUN_0001a6e4 -- babl VM opcode 4 (DIVIDE): pops the top two stack
+// slots (a=dividend=second-from-top, b=divisor=top), pushes a/b via
+// Ordinal_2005 (ARM soft-division, quotient in the primary return); pushes
+// 0xffff as a divide-by-zero sentinel instead of dividing when b==0.
+void babl_op_div()
+
+{
+  int iVar1;
+  undefined2 uVar2;
+  short *psVar3;
+  int iVar4;
+  int iVar5;
+  
+  iVar1 = DAT_000bbf0c;
+  iVar5 = (int)DAT_000bbf78;
+  psVar3 = (short *)(DAT_000bbf0c + iVar5 * 2);
+  iVar4 = (int)*psVar3;
+  if (iVar4 == 0) {
+    uVar2 = 0xffff;
+  }
+  else {
+    uVar2 = Ordinal_2005(iVar4,(int)psVar3[-1]);
+  }
+  iVar4 = (iVar5 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar4 >> 0x10);
+  *(undefined2 *)(iVar1 + (iVar4 >> 0x10) * 2) = uVar2;
+  return;
+}
+
+
+
+// was FUN_0001a74c -- babl VM opcode 5 (MODULO): identical setup to
+// babl_op_div's own DIVIDE, but reads `extraout_r1` (the ARM soft-division
+// routine's remainder register) instead of Ordinal_2005's own quotient
+// return -- same divide-by-zero 0xffff sentinel as DIVIDE.
+void babl_op_mod()
+
+{
+  int iVar1;
+  undefined2 extraout_r1;
+  undefined2 uVar2;
+  short *psVar3;
+  int iVar4;
+  int iVar5;
+  
+  iVar1 = DAT_000bbf0c;
+  iVar5 = (int)DAT_000bbf78;
+  psVar3 = (short *)(DAT_000bbf0c + iVar5 * 2);
+  iVar4 = (int)*psVar3;
+  if (iVar4 == 0) {
+    uVar2 = 0xffff;
+  }
+  else {
+    Ordinal_2005(iVar4,(int)psVar3[-1]);
+    uVar2 = extraout_r1;
+  }
+  iVar4 = (iVar5 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar4 >> 0x10);
+  *(undefined2 *)(iVar1 + (iVar4 >> 0x10) * 2) = uVar2;
+  return;
+}
+
+
+
+// was FUN_0001a7b4 -- babl VM opcode 6 (logical OR): pops the top two
+// stack slots, pushes 1 if either is nonzero, else 0.
+void babl_op_or()
+
+{
+  int iVar1;
+  undefined2 uVar2;
+  short *psVar3;
+  
+  psVar3 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  if ((psVar3[-1] != 0) || (uVar2 = 0, *psVar3 != 0)) {
+    uVar2 = 1;
+  }
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(undefined2 *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = uVar2;
+  return;
+}
+
+
+
+// was FUN_0001a808 -- babl VM opcode 7 (logical AND): pops the top two
+// stack slots, pushes 1 if both are nonzero, else 0.
+void babl_op_and()
+
+{
+  int iVar1;
+  undefined2 uVar2;
+  short *psVar3;
+  
+  psVar3 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  if ((psVar3[-1] == 0) || (uVar2 = 1, *psVar3 == 0)) {
+    uVar2 = 0;
+  }
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(undefined2 *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = uVar2;
+  return;
+}
+
+
+
+// was FUN_0001a85c -- babl VM opcode 9 (GREATER_THAN): pops a
+// (second-from-top) and b (top), pushes 1 if a>b else 0.
+void babl_op_gt()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(ushort *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = (ushort)(*psVar2 < psVar2[-1]);
+  return;
+}
+
+
+
+// was FUN_0001a8a4 -- babl VM opcode 10 (GREATER_EQUAL): pops a
+// (second-from-top) and b (top), pushes 1 if a>=b else 0.
+void babl_op_ge()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(ushort *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = (ushort)(*psVar2 <= psVar2[-1]);
+  return;
+}
+
+
+
+// was FUN_0001a8ec -- babl VM opcode 0xb (LESS_THAN): pops a
+// (second-from-top) and b (top), pushes 1 if a<b else 0.
+void babl_op_lt()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(ushort *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = (ushort)(psVar2[-1] < *psVar2);
+  return;
+}
+
+
+
+// was FUN_0001a934 -- babl VM opcode 0xc (LESS_EQUAL): pops a
+// (second-from-top) and b (top), pushes 1 if a<=b else 0.
+void babl_op_le()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(ushort *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = (ushort)(psVar2[-1] <= *psVar2);
+  return;
+}
+
+
+
+// was FUN_0001a97c -- babl VM opcode 0xd (EQUAL): pops the top two stack
+// slots, pushes 1 if equal else 0.
+void babl_op_eq()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(ushort *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = (ushort)(psVar2[-1] == *psVar2);
+  return;
+}
+
+
+
+// was FUN_0001a9c4 -- babl VM opcode 0xe (NOT_EQUAL): pops the top two
+// stack slots, pushes 1 if unequal else 0.
+void babl_op_ne()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(ushort *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = (ushort)(psVar2[-1] != *psVar2);
+  return;
+}
+
+
+
+// was FUN_0001aa0c -- babl VM opcode 0x13 (CALL): pushes the return
+// address (ip+2, past this opcode's own operand word) onto the stack, then
+// jumps to the absolute target address read from the bytecode operand.
+void babl_op_call()
+
+{
+  DAT_000bbf78 = DAT_000bbf78 + 1;
+  *(short *)(DAT_000bbf0c + DAT_000bbf78 * 2) = DAT_000bbf74 + 2;
+  DAT_000bbf74 = *(undefined2 *)(DAT_000bbf80 + DAT_000bbf74 * 2 + 2);
+  return;
+}
+
+
+
+// was FUN_0001aa54 -- babl VM opcode 0x15 (RETURN): if the call stack is
+// non-empty, pops a return address into ip and returns true (continue
+// running); if empty (top-level script with no open call frame), returns
+// false, which the dispatch loop treats as "end of script" and stops.
+bool babl_op_return()
+
+{
+  int iVar1;
+  
+  iVar1 = (int)DAT_000bbf78;
+  if (0 < iVar1) {
+    DAT_000bbf74 = *(undefined2 *)(DAT_000bbf0c + iVar1 * 2);
+    DAT_000bbf78 = DAT_000bbf78 + -1;
+  }
+  return 0 < iVar1;
+}
+
+
+
+// was FUN_0001aa88 -- babl VM opcode 0x1f (PUSH_VAR): raw "push variable
+// value" opcode, see its own comment below.
+void babl_op_push_var_raw()
+
+{
+  short *psVar1;
+
+  psVar1 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  /* Raw "push variable value" VM opcode: indexes DAT_000bbf14 directly by
+     the symbol's compiled-in slot number, bypassing babl_get_variable's
+     name-based lookup entirely -- this is the actual path a script's own
+     `if npc_talkedto ...` check would read through, and babl_get_variable's
+     own npc_talkedto watch (see its own comment) is blind to it. See
+     bragit-talk-again-investigation. */
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] push-var (raw opcode): slot=%d value=%d\n", (int)*psVar1, (int)*(short *)(DAT_000bbf14 + *psVar1 * 2));
+  *psVar1 = *(short *)(DAT_000bbf14 + *psVar1 * 2);
+  return;
+}
+
+
+
+// was FUN_0001aab4 -- babl VM opcode 0x21: pops the top two stack slots
+// (a=second-from-top, b=top), pushes a+b-1. Same pop-two/push-one shape as
+// the arithmetic opcodes, but the "-1" adjustment doesn't match any of
+// ADD/SUB/MUL/DIV/MOD above -- sits between the raw variable-slot opcodes
+// PUSH_VAR (0x1f) and SET_VAR (0x20), so this is likely a 1-based-index
+// combining step for array-style variable access (base+index-1 ->
+// 0-based slot), but that's inference, not confirmed against a real
+// caller or named cross-reference. Named generically pending stronger
+// evidence.
+void babl_op_combine_index()
+
+{
+  int iVar1;
+  short *psVar2;
+  
+  psVar2 = (short *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  iVar1 = (DAT_000bbf78 + -1) * 0x10000;
+  DAT_000bbf78 = (short)((uint)iVar1 >> 0x10);
+  *(short *)(DAT_000bbf0c + (iVar1 >> 0x10) * 2) = psVar2[-1] + *psVar2 + -1;
+  return;
+}
+
+
+
+// was FUN_0001aaf8 -- babl VM opcode 0x20 (SET_VAR): pops a value (top)
+// and a slot index (second-from-top), stores the value into DAT_000bbf14
+// at that slot (the same raw variable-slot array babl_op_push_var_raw
+// reads).
+void babl_op_set_var()
+
+{
+  undefined2 *puVar1;
+  
+  puVar1 = (undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  *(undefined2 *)(DAT_000bbf14 + (short)puVar1[-1] * 2) = *puVar1;
+  DAT_000bbf78 = DAT_000bbf78 + -2;
+  return;
+}
+
+
+
+// was FUN_0001ab30 -- babl VM opcode 0x14 (CALL_BUILTIN): reads a builtin
+// index from the bytecode operand, invokes the matching native function
+// pointer out of the DAT_000bbf00 table (registered by
+// babl_register_builtin/babl_op_say/babl_op_respond) passing the current
+// stack top as its argument slot, and pushes the builtin's own return
+// value back onto the stack.
+void babl_op_call_builtin()
+
+{
+  undefined2 uVar1;
+  
+  DAT_000bbf08 = *(short *)(DAT_000bbf80 + DAT_000bbf74 * 2 + 2);
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] call builtin idx=%d stack_depth(DAT_000bbf78)=%d arg_slot=%p\n", (int)DAT_000bbf08, (int)DAT_000bbf78, (void *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  uVar1 = (**(codeval **)(DAT_000bbf00 + DAT_000bbf08 * 8))(DAT_000bbf0c + DAT_000bbf78 * 2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
+  *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2) = uVar1;
+  DAT_000bbf1c = *(undefined2 *)(DAT_000bbf0c + DAT_000bbf78 * 2);
+  DAT_000bbf74 = DAT_000bbf74 + 2;
+  return;
+}
+
+
+
+// was FUN_0001aba0 -- babl VM opcode 0x25 (STRING_EQUAL): pops two
+// message-id operands, resolves each through get_message_string +
+// babl_expand_string_refs, compares the expanded text with Ordinal_1065
+// (strcmp-shaped), and pushes 1 if equal else 0.
+void babl_op_string_eq()
+
+{
+  short sVar1;
+  /* iVar2-iVar5 were `int` but hold real string pointers from
+     get_message_string/babl_expand_string_refs -- truncated a real 64-bit pointer on
+     assignment even with each call's own dropped argument now fixed
+     (this function's own next crash site, uw.c ~70085's comment).
+     Widened to intptr_t. */
+  intptr_t iVar2;
+  intptr_t iVar3;
+  intptr_t iVar4;
+  intptr_t iVar5;
+
+  /* Was 2 dropped register-forwarding args -- same class as
+     babl_builtin_compare's own comment (uw.c ~10977), now confirmed reachable
+     live (bug-critter-talk.txt) since this whole babl-VM cluster
+     started actually running this session. */
+  iVar2 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  iVar3 = (intptr_t)babl_expand_string_refs((char *)iVar2);
+  iVar4 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2 + -2));
+  iVar5 = (intptr_t)babl_expand_string_refs((char *)iVar4);
+  sVar1 = Ordinal_1065((char*)iVar5,(char*)iVar3);
+  if (iVar5 != iVar4) {
+    babl_free(iVar5);
+  }
+  if (iVar3 != iVar2) {
+    babl_free(iVar3);
+  }
+  iVar2 = (int)DAT_000bbf78;
+  DAT_000bbf78 = (short)(iVar2 + -1);
+  *(ushort *)(DAT_000bbf0c + ((iVar2 + -1) * 0x10000 >> 0x10) * 2) = (ushort)(sVar1 == 0);
+  return;
+}
+
+
+
+// was FUN_0001ac48 -- babl VM opcode 0x27 (SAY): resolves and expands the
+// top-of-stack message-id operand into text, then looks that text up
+// against the "say" symbol in the babl symbol table (DAT_000845a8, see
+// its own comment above) and invokes the matching registered builtin with
+// the expanded string -- the babl script "say" keyword.
+void babl_op_say()
+
+{
+  /* iVar1/iVar2 were `int` but hold a real string pointer from
+     get_message_string/babl_expand_string_refs -- truncated even with the dropped
+     argument below now fixed (uw.c ~70085's comment). Widened to
+     intptr_t. */
+  intptr_t iVar1;
+  intptr_t iVar2;
+  int iVar3;
+  intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as init_babl_variable_defaults's own fix
+
+  /* Was a dropped register-forwarding arg -- same class as
+     babl_builtin_compare's own comment (uw.c ~10977); this is the crash in
+     bug-critter-talk.txt one step past the DAT_000bbf70-width fix
+     below (babl_expand_string_refs read whatever garbage register instead of the
+     just-resolved string, then dereferenced it inside Ordinal_1064). */
+  iVar1 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
+  DAT_000bbf78 = DAT_000bbf78 + -1;
+  iVar4 = DAT_000bbf70;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say entry: looking for symbol \"%s\" text=\"%s\"\n", (char *)DAT_000845a8, (char *)iVar2);
+  do {
+    /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
+       comment (uw.c ~12260) -- every reader of this babl-symbol table
+       shares the same crash when no conversation record was loaded. */
+    if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say: NO symbol match, text discarded\n");
+LAB_0001ace8:
+      if (iVar2 != iVar1) {
+        babl_free(iVar2);
+      }
+      return;
+    }
+    iVar3 = Ordinal_1065(DAT_000845a8,iVar4);
+    if (iVar3 == 0) {
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_say: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
+      (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))(iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
+      goto LAB_0001ace8;
+    }
+    iVar4 = iVar4 + 0x20;
+  } while( true );
+}
+
+
+
+// was FUN_0001acf8 -- babl VM opcode 0x28 (RESPOND): identical to
+// babl_op_say, but hardcoded to the "respond" symbol
+// (s_respond_000845ac) instead of "say" -- the babl script "respond"
+// keyword.
+void babl_op_respond()
+
+{
+  /* iVar1/iVar2 were `int` -- same pointer-truncation fix as
+     babl_op_say's own comment just above. */
+  intptr_t iVar1;
+  intptr_t iVar2;
+  int iVar3;
+  intptr_t iVar4; // was `int` -- re-truncated DAT_000bbf70 (now intptr_t) right back down, same as init_babl_variable_defaults's own fix
+
+  /* Was a dropped register-forwarding arg -- same class as
+     babl_op_say's own fix just above. */
+  iVar1 = (intptr_t)get_message_string((int)*(short *)(DAT_000bbf0c + DAT_000bbf78 * 2));
+  iVar2 = (intptr_t)babl_expand_string_refs((char *)iVar1);
+  DAT_000bbf78 = DAT_000bbf78 + -1;
+  iVar4 = DAT_000bbf70;
+  if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond entry: looking for symbol \"respond\" text=\"%s\"\n", (char *)iVar2);
+  do {
+    /* Same DAT_000bbf70-uninitialized guard as babl_register_builtin's own
+       comment (uw.c ~12260). */
+    if (iVar4 == 0 || *(short *)(iVar4 + 0x18) == 0) {
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond: NO symbol match, text discarded\n");
+LAB_0001ad98:
+      if (iVar2 != iVar1) {
+        babl_free(iVar2);
+      }
+      return;
+    }
+    iVar3 = Ordinal_1065(s_respond_000845ac,iVar4);
+    if (iVar3 == 0) {
+      if (getenv("UW_DEBUG_BABL")) fprintf(stderr, "[babl] babl_op_respond: matched symbol \"%s\", calling its bound fn idx=%d\n", (char *)iVar4, (int)*(short *)(iVar4 + 0x1a));
+      (**(code **)(DAT_000bbf00 + *(short *)(iVar4 + 0x1a) * 8))(iVar2); // was `* 4` -- DAT_000bbf00's own comment (uw.c ~11468)
+      goto LAB_0001ad98;
+    }
+    iVar4 = iVar4 + 0x20;
+  } while( true );
+}
