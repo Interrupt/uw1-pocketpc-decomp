@@ -8302,15 +8302,6 @@ undefined4 param_1;
 
 
 
-void FUN_000232b0()
-
-{
-  if (DAT_0023c430 != 0) {
-    GXEndDraw();
-  }
-  Ordinal_1018(DAT_0023c638);
-  return;
-}
 
 
 

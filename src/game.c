@@ -1869,8 +1869,8 @@ int param_2;
 
 
 
-// was FUN_00077a38 -- shutdown/cleanup routine: calls FUN_000232b0
-// (not yet named), frees several conditionally-allocated resources
+// was FUN_00077a38 -- shutdown/cleanup routine: calls end_gx_draw_session,
+// frees several conditionally-allocated resources
 // (Ordinal_1018, likely LocalFree/free) and a 0x80-entry pointer
 // array (&DAT_00202308), then tears down the GAPI display/input
 // (GXCloseDisplay/GXCloseInput) and calls Ordinal_866(0) (likely
@@ -1885,7 +1885,7 @@ undefined4 shutdown_game_resources()
   int iVar1;
   void **piVar2;
 
-  FUN_000232b0();
+  end_gx_draw_session();
   if (DAT_0023c44c != 0) {
     Ordinal_1018();
   }

@@ -2265,6 +2265,7 @@ extern undefined4 DAT_0023c200_arr[3];
 #define DAT_0023c202 DAT_0023c200_arr[1]
 #define DAT_0023c204 DAT_0023c200_arr[2]
 extern void * DAT_0023c430;
+extern undefined4 DAT_0023c638;
 extern short DAT_0023c63c;
 extern undefined * DAT_00250704;
 extern undefined4 DAT_00250708;
@@ -2556,7 +2557,7 @@ void expand_pals_bytes();
 void build_rgb565_palette();
 void flush_dirty_rect_to_display();
 void flush_dirty_rect_to_display_240();
-void FUN_000232b0();
+void end_gx_draw_session();
 void FUN_000232ec();
 undefined4 FUN_000238b4();
 void FUN_00023a00();

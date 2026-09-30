@@ -1413,3 +1413,20 @@ undefined4 param_3;
   return CONCAT44(param_3,(((param_1 << 0x10) >> 0x12) - param_2) + 199);
 }
 
+
+
+// was FUN_000232b0 -- ends the active GAPI/GX draw session
+// (GXEndDraw, guarded by DAT_0023c430 tracking whether one is open) and
+// releases DAT_0023c638 (an offscreen/back-buffer pointer -- Ordinal_1018
+// is a deliberate no-op/leak stub, see its own comment). Called by
+// shutdown_game_resources right before the rest of that function tears
+// down the display and input devices.
+void end_gx_draw_session()
+
+{
+  if (DAT_0023c430 != 0) {
+    GXEndDraw();
+  }
+  Ordinal_1018(DAT_0023c638);
+  return;
+}
