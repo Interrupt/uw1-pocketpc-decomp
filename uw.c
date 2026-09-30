@@ -1356,13 +1356,13 @@ int g_force_flush;
 int g_force_redraw_no_xp;
 short DAT_0023c63c;
 undefined4 DAT_0023c638;
-static undefined DAT_00084e40_backing[8192];
+undefined DAT_00084e40_backing[8192];
 #define DAT_00084e40 DAT_00084e40_backing[0]
-static undefined DAT_00084e48_backing[8192];
+undefined DAT_00084e48_backing[8192];
 #define DAT_00084e48 DAT_00084e48_backing[0]
-static undefined DAT_00084e50_backing[8192];
+undefined DAT_00084e50_backing[8192];
 #define DAT_00084e50 DAT_00084e50_backing[0]
-static undefined DAT_00084e58_backing[8192];
+undefined DAT_00084e58_backing[8192];
 #define DAT_00084e58 DAT_00084e58_backing[0]
 char *DAT_001005c8;
 /* Was `undefined4` (4 bytes), but assigned real char* pointers
@@ -8311,93 +8311,6 @@ undefined4 param_1;
 
 
 
-void FUN_00023a00()
-
-{
-  int iVar1;
-  undefined1 auStack_14 [12];
-  
-  set_draw_color(0x1a);
-  rect_fill_or_save_restore(0x5d,0x32,0x8c,0x7a);
-  screen_backup_restore();
-  itoa_radix(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
-  draw_text_string(&DAT_00084e58,0x5d,0x32);
-  iVar1 = measure_text_width(auStack_14);
-  draw_text_string(auStack_14,0x8c - iVar1,0x32);
-  itoa_radix(*(undefined1 *)(DAT_0023be74 + 6),auStack_14,10);
-  draw_text_string(&DAT_00084e50,0x5d,0x44);
-  iVar1 = measure_text_width(auStack_14);
-  draw_text_string(auStack_14,0x8c - iVar1,0x44);
-  itoa_radix(*(undefined1 *)(DAT_0023be74 + 7),auStack_14,10);
-  draw_text_string(&DAT_00084e48,0x5d,0x56);
-  iVar1 = measure_text_width(auStack_14);
-  draw_text_string(auStack_14,0x8c - iVar1,0x56);
-  itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_14,10);
-  draw_text_string(&DAT_00084e40,0x5d,0x68);
-  iVar1 = measure_text_width(auStack_14);
-  draw_text_string(auStack_14,0x8c - iVar1,0x68);
-  return;
-}
-
-
-
-void FUN_00023b38()
-
-{
-  int iVar1;
-  int iVar2;
-  /* Was `undefined4`, truncating get_message_string's real char* return. */
-  char *uVar3;
-  int iVar4;
-  int iVar5;
-  undefined1 auStack_24 [12];
-
-  set_draw_color(0x1a);
-  rect_fill_or_save_restore(0x1e,0x85,0x7d,0xbc);
-  FUN_00035df8(1);
-  DAT_000fb858 = DAT_001005c8;
-  blit_bitmap_to_framebuffer_clipped(0x1e,0x85,DAT_001005c8,0x37,0x5f,0x1e,0x85,1);
-  screen_backup_save();
-  cursor_show_idle_tick();
-  FUN_00035df8(0);
-  DAT_000fb858 = DAT_001005c4;
-  iVar4 = 0;
-  iVar2 = 0;
-  do {
-    if (5 < (short)iVar4) break;
-    iVar1 = (int)(short)iVar2;
-    if (*(char *)(iVar1 + DAT_00086df8 + 0x21) != '\0') {
-      uVar3 = get_message_string(iVar2 + 0x1fU | 0x400);
-      itoa_radix(*(undefined1 *)(iVar1 + DAT_00086df8 + 0x21),auStack_24,10);
-      iVar5 = iVar4 * 0xb + 0x85;
-      draw_text_string(uVar3,0x1e,iVar5);
-      iVar2 = measure_text_width(auStack_24);
-      draw_text_string(auStack_24,0x7d - iVar2,iVar5);
-      iVar4 = ((short)iVar4 + 1) * 0x10000 >> 0x10;
-    }
-    iVar2 = (iVar1 + 1) * 0x10000 >> 0x10;
-  } while (iVar2 < 0x14);
-  screen_backup_restore();
-  return;
-}
-
-
-
-int FUN_00023c90(param_1,param_2)
-int param_1;
-char *param_2;
-
-{
-  int iVar1;
-
-  for (iVar1 = param_1 << 0x10; iVar1 = iVar1 >> 0x10, iVar1 < 6; iVar1 = (iVar1 + 1) * 0x10000) {
-    if (*(byte *)(iVar1 + param_2) < 0x14) {
-      advance_skill_training(*(byte *)(iVar1 + param_2));
-      param_1 = param_1 + 1;
-    }
-  }
-  return param_1;
-}
 
 
 

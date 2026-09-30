@@ -2266,6 +2266,14 @@ extern undefined4 DAT_0023c200_arr[3];
 #define DAT_0023c204 DAT_0023c200_arr[2]
 extern void * DAT_0023c430;
 extern undefined4 DAT_0023c638;
+extern undefined DAT_00084e40_backing[8192];
+#define DAT_00084e40 DAT_00084e40_backing[0]
+extern undefined DAT_00084e48_backing[8192];
+#define DAT_00084e48 DAT_00084e48_backing[0]
+extern undefined DAT_00084e50_backing[8192];
+#define DAT_00084e50 DAT_00084e50_backing[0]
+extern undefined DAT_00084e58_backing[8192];
+#define DAT_00084e58 DAT_00084e58_backing[0]
 extern short DAT_0023c63c;
 extern undefined * DAT_00250704;
 extern undefined4 DAT_00250708;
@@ -2560,9 +2568,9 @@ void flush_dirty_rect_to_display_240();
 void end_gx_draw_session();
 void init_new_character_record();
 undefined4 advance_skill_tree_node();
-void FUN_00023a00();
-void FUN_00023b38();
-int FUN_00023c90();
+void draw_chargen_attribute_summary();
+void draw_selected_skills_list();
+int apply_confirmed_skill_picks();
 void FUN_00023cdc();
 void FUN_00023de8();
 undefined4 FUN_0002431c();

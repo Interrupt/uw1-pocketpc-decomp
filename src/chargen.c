@@ -68,7 +68,7 @@ char *param_3;
      (see the README). Merged into one 10-byte array: local_5c's old 4
      bytes are index [0,4), local_58's old 6 bytes are index [4,10).
      local_5c's own VALUE was never read anywhere (only its address),
-     so its old write is dropped; advance_skill_tree_node/FUN_00023c90 get
+     so its old write is dropped; advance_skill_tree_node/apply_confirmed_skill_picks get
      `local_5c_buf + 4` where they used to get `local_58`. */
   undefined1 local_5c_buf [10];
   undefined1 auStack_4c [32];
@@ -174,13 +174,13 @@ LAB_00025468:
         if (iVar12 == 0) {
           sVar8 = 3;
         }
-        DAT_001005c0 = FUN_00023c90(0,local_5c_buf + 4);
+        DAT_001005c0 = apply_confirmed_skill_picks(0,local_5c_buf + 4);
         FUN_00057118();
         iVar12 = measure_text_width(uVar10);
         draw_text_string(uVar10,0x8f - iVar12,0x16);
-        FUN_00023a00();
+        draw_chargen_attribute_summary();
         capture_framebuffer_rect_to_grtile(local_60,0x1e,0x85,0x5f,0x37);
-        FUN_00023b38();
+        draw_selected_skills_list();
         uVar15 = cursor_show_idle_tick();
         sVar8 = sVar8 + 1;
         break;
@@ -190,10 +190,10 @@ LAB_00025468:
            record field skipped in advance_skill_tree_node above -- always take the
            fallback instead of reading through arbitrary heap garbage. */
         local_5c_buf[local_64[0] + 3] = 0;
-        DAT_001005c0 = FUN_00023c90((int)DAT_001005c0,local_5c_buf + 4);
+        DAT_001005c0 = apply_confirmed_skill_picks((int)DAT_001005c0,local_5c_buf + 4);
         FUN_00057118();
         restore_captured_grtile_backdrop(local_60);
-        FUN_00023b38();
+        draw_selected_skills_list();
         cursor_show_idle_tick();
         uVar15 = advance_skill_tree_node(local_64,local_5c_buf + 4,param_3 + 0x3c,pcVar_p2off);
         if ((int)uVar15 == 0) {
@@ -711,4 +711,110 @@ char *param_4;
     } while ((byte)(bVar1 + 1) < 5);
   }
   return 0;
+}
+
+
+// was FUN_00023a00 -- draws the chargen stat screen's 4 attribute values
+// (DAT_0023be74 offsets +5/+6/+7 -- the 3 rolled 2d10+10 attributes set
+// by init_new_character_record -- and +4, a 4th value read rather than
+// rolled there) as right-aligned numbers next to their (missing-.data,
+// currently-empty) labels. Real labels not otherwise confirmed.
+void draw_chargen_attribute_summary()
+
+{
+  int iVar1;
+  undefined1 auStack_14 [12];
+  
+  set_draw_color(0x1a);
+  rect_fill_or_save_restore(0x5d,0x32,0x8c,0x7a);
+  screen_backup_restore();
+  itoa_radix(*(undefined1 *)(DAT_0023be74 + 5),auStack_14,10);
+  draw_text_string(&DAT_00084e58,0x5d,0x32);
+  iVar1 = measure_text_width(auStack_14);
+  draw_text_string(auStack_14,0x8c - iVar1,0x32);
+  itoa_radix(*(undefined1 *)(DAT_0023be74 + 6),auStack_14,10);
+  draw_text_string(&DAT_00084e50,0x5d,0x44);
+  iVar1 = measure_text_width(auStack_14);
+  draw_text_string(auStack_14,0x8c - iVar1,0x44);
+  itoa_radix(*(undefined1 *)(DAT_0023be74 + 7),auStack_14,10);
+  draw_text_string(&DAT_00084e48,0x5d,0x56);
+  iVar1 = measure_text_width(auStack_14);
+  draw_text_string(auStack_14,0x8c - iVar1,0x56);
+  itoa_radix(*(undefined1 *)(DAT_0023be74 + 4),auStack_14,10);
+  draw_text_string(&DAT_00084e40,0x5d,0x68);
+  iVar1 = measure_text_width(auStack_14);
+  draw_text_string(auStack_14,0x8c - iVar1,0x68);
+  return;
+}
+
+
+
+// was FUN_00023b38 -- draws the chargen skill-selection screen: blits a
+// backdrop bitmap, then lists up to 6 of the player's currently-selected
+// skills (nonzero entries in DAT_00086df8+0x21, up to 20 slots) with
+// each skill's name (get_message_string) and its point value
+// (itoa_radix), right-aligned.
+void draw_selected_skills_list()
+
+{
+  int iVar1;
+  int iVar2;
+  /* Was `undefined4`, truncating get_message_string's real char* return. */
+  char *uVar3;
+  int iVar4;
+  int iVar5;
+  undefined1 auStack_24 [12];
+
+  set_draw_color(0x1a);
+  rect_fill_or_save_restore(0x1e,0x85,0x7d,0xbc);
+  FUN_00035df8(1);
+  DAT_000fb858 = DAT_001005c8;
+  blit_bitmap_to_framebuffer_clipped(0x1e,0x85,DAT_001005c8,0x37,0x5f,0x1e,0x85,1);
+  screen_backup_save();
+  cursor_show_idle_tick();
+  FUN_00035df8(0);
+  DAT_000fb858 = DAT_001005c4;
+  iVar4 = 0;
+  iVar2 = 0;
+  do {
+    if (5 < (short)iVar4) break;
+    iVar1 = (int)(short)iVar2;
+    if (*(char *)(iVar1 + DAT_00086df8 + 0x21) != '\0') {
+      uVar3 = get_message_string(iVar2 + 0x1fU | 0x400);
+      itoa_radix(*(undefined1 *)(iVar1 + DAT_00086df8 + 0x21),auStack_24,10);
+      iVar5 = iVar4 * 0xb + 0x85;
+      draw_text_string(uVar3,0x1e,iVar5);
+      iVar2 = measure_text_width(auStack_24);
+      draw_text_string(auStack_24,0x7d - iVar2,iVar5);
+      iVar4 = ((short)iVar4 + 1) * 0x10000 >> 0x10;
+    }
+    iVar2 = (iVar1 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 0x14);
+  screen_backup_restore();
+  return;
+}
+
+
+
+// was FUN_00023c90 -- walks param_2 (the skill-id array
+// advance_skill_tree_node fills) from index param_1 up to 6, calling
+// advance_skill_training on each valid skill id (<0x14) to actually
+// apply it to the player record, and returns the updated count. Called
+// from character_generator_loop each time a new skill choice is
+// confirmed, with param_1 tracking how many entries have already been
+// applied across calls.
+int apply_confirmed_skill_picks(param_1,param_2)
+int param_1;
+char *param_2;
+
+{
+  int iVar1;
+
+  for (iVar1 = param_1 << 0x10; iVar1 = iVar1 >> 0x10, iVar1 < 6; iVar1 = (iVar1 + 1) * 0x10000) {
+    if (*(byte *)(iVar1 + param_2) < 0x14) {
+      advance_skill_training(*(byte *)(iVar1 + param_2));
+      param_1 = param_1 + 1;
+    }
+  }
+  return param_1;
 }
