@@ -493,14 +493,14 @@ LAB_0002ed50:
       if ((*(byte *)((char *)DAT_0010190c + 0x15) & 0x80) == 0) goto LAB_0002ed50;
       goto LAB_0002ebfc;
     }
-    iVar6 = FUN_0002db4c(local_40);
+    iVar6 = pop_pending_path_cache_slot(local_40);
     if (iVar6 != 0) {
       uVar4 = FUN_0003431c();
       iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,*(byte *)((char *)DAT_0010190c + 2) >> 3 & 0xf,param_1,
                            param_2,param_3,uVar4);
       if (iVar6 != 0) {
         DAT_000853b8 = DAT_000853b8 & ~(ushort)(1 << (uint)local_40[0]);
-        FUN_0002dbf4(&DAT_00101568 + (uint)local_40[0] * 0x1c);
+        save_walk_path_to_cache_slot(&DAT_00101568 + (uint)local_40[0] * 0x1c);
         *(byte *)((char *)DAT_0010190c + 0x18) = *(byte *)((char *)DAT_0010190c + 0x18) & 0xbf;
         *(byte *)((char *)DAT_0010190c + 0x15) = *(byte *)((char *)DAT_0010190c + 0x15) | 0x80;
         uVar8 = *(ushort *)((char *)DAT_0010190c + 0x16) & 0xfff0;
@@ -2272,4 +2272,116 @@ undefined1 param_2;
     }
   }
   return 0;
+}
+
+
+// was FUN_0002db4c -- pops the lowest set bit (0-15) from
+// DAT_000853b8, the pending "path cache slot needs recompute" bitmask
+// (set per-NPC via `1 << (record's own byte 0xb & 0xf)` slot index),
+// outputting it via *param_1. Returns 1 if a pending slot was found, 0
+// if the mask is empty.
+undefined4 pop_pending_path_cache_slot(param_1)
+undefined1 * param_1;
+
+{
+  uint uVar1;
+
+  if (DAT_000853b8 != 0) {
+    uVar1 = 0;
+    do {
+      if (((uint)DAT_000853b8 & 1 << uVar1) != 0) {
+        *param_1 = (char)uVar1;
+        return 1;
+      }
+      uVar1 = uVar1 + 1 & 0xff;
+    } while (uVar1 < 0x10);
+  }
+  return 0;
+}
+
+
+
+// was FUN_0002dba4 -- resets the NPC path-cache system: clears a
+// per-record flag (byte 0x15 bit 7, likely "path cached") on every
+// object slot 2-255, then resets DAT_000853b8 to 0xffff, marking all
+// 16 path-cache slots pending recompute. Called on level load
+// (src/level.c) and once more at uw.c ~11583.
+void reset_npc_path_cache()
+
+{
+  /* Was `int`, truncating FUN_000535fc's real pointer return. */
+  char *iVar1;
+  int iVar2;
+
+  iVar2 = 2;
+  do {
+    iVar1 = FUN_000535fc(iVar2);
+    *(byte *)(iVar1 + 0x15) = *(byte *)(iVar1 + 0x15) & 0x7f;
+    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
+  } while (iVar2 < 0x100);
+  DAT_000853b8 = 0xffff;
+  return;
+}
+
+
+
+// was FUN_0002dbf4 -- serializes the just-computed walk path
+// (DAT_00101740/41 start, DAT_0010142c step count, and the per-step
+// direction arrays try_direct_line_walk/record_line_walk_step filled)
+// into a compact bitfield cache record at param_1: 2 bits per step
+// (packed via a direction lookup table, &DAT_000853c4) plus 1 bit per
+// step (&DAT_0010174a). Called right after pop_pending_path_cache_slot
+// pops a slot, to save that slot's freshly-computed path for reuse.
+void save_walk_path_to_cache_slot(param_1)
+undefined1 * param_1;
+
+{
+  uint uVar1;
+  int iVar2;
+  int iVar3;
+  uint uVar4;
+  uint uVar5;
+  
+  uVar5 = 0;
+  param_1[2] = param_1[2] & 0x80;
+  *param_1 = DAT_00101740;
+  param_1[1] = DAT_00101741;
+  param_1[3] = DAT_0010142c;
+  uVar1 = 0;
+  if (DAT_0010142c != 0) {
+    uVar4 = 0;
+    do {
+      iVar3 = 0;
+      uVar1 = 0;
+      do {
+        iVar2 = (uVar1 + uVar4) * 7;
+        iVar3 = iVar3 + (((byte)(&DAT_000853c4)
+                                [(((uint)(byte)(&DAT_00101747)[iVar2] -
+                                  (uint)(byte)(&DAT_00101740)[iVar2]) * 3 -
+                                 (uint)(byte)(&DAT_00101741)[iVar2]) +
+                                 (uint)(byte)(&DAT_00101748)[iVar2]] & 3) << ((uVar1 & 0x7f) << 1));
+        uVar1 = uVar1 + 1 & 0xff;
+      } while (uVar1 < 4);
+      param_1[(uVar4 >> 2) + 4] = (char)iVar3;
+      uVar5 = uVar5 + 4;
+      uVar1 = (uint)DAT_0010142c;
+      uVar4 = uVar5 & 0xff;
+    } while (uVar4 < uVar1);
+  }
+  uVar5 = 0;
+  if (uVar1 != 0) {
+    uVar1 = 0;
+    do {
+      iVar3 = 0;
+      uVar4 = 0;
+      do {
+        iVar3 = iVar3 + (((byte)(&DAT_0010174a)[(uVar4 + uVar1) * 7] & 1) << uVar4);
+        uVar4 = uVar4 + 1 & 0xff;
+      } while (uVar4 < 8);
+      param_1[(uVar1 >> 3) + 0x14] = (char)iVar3;
+      uVar5 = uVar5 + 8;
+      uVar1 = uVar5 & 0xff;
+    } while (uVar1 < DAT_0010142c);
+  }
+  return;
 }

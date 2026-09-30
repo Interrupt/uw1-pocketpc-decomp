@@ -278,7 +278,7 @@ undefined4 param_1;
     if (0 < iVar2) {
       load_level_texture_ids(auStack_1c,param_1);
       clear_automap_reveal_buffer();
-      FUN_0002dba4();
+      reset_npc_path_cache();
       FUN_000359f4();
       if (iVar2 == 1) {
         load_automap_reveal_from_archive(auStack_1c,param_1);

@@ -1821,6 +1821,8 @@ extern undefined DAT_00101732_backing[8192];
 extern undefined DAT_00101733;
 extern undefined4 DAT_00101728;
 extern undefined DAT_00101749;
+extern undefined DAT_000853c4;
+extern undefined1 DAT_0010174a;
 extern char s_named_00085d18[];
 /* Globals defined in uw.c but also used by functions that now live in
    containers.c (the open-container/backpack view stack) -- extern'd
@@ -2752,9 +2754,9 @@ void reconstruct_path_from_bfs();
 int try_direct_line_walk();
 undefined4 check_fine_line_of_sight();
 undefined4 record_line_walk_step();
-undefined4 FUN_0002db4c();
-void FUN_0002dba4();
-void FUN_0002dbf4();
+undefined4 pop_pending_path_cache_slot();
+void reset_npc_path_cache();
+void save_walk_path_to_cache_slot();
 undefined4 FUN_0002dd4c();
 undefined4 FUN_0002de40();
 undefined4 FUN_0002df2c();

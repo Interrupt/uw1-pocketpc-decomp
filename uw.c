@@ -8869,99 +8869,6 @@ LAB_0002c8cc:
 
 
 
-undefined4 FUN_0002db4c(param_1)
-undefined1 * param_1;
-
-{
-  uint uVar1;
-  
-  if (DAT_000853b8 != 0) {
-    uVar1 = 0;
-    do {
-      if (((uint)DAT_000853b8 & 1 << uVar1) != 0) {
-        *param_1 = (char)uVar1;
-        return 1;
-      }
-      uVar1 = uVar1 + 1 & 0xff;
-    } while (uVar1 < 0x10);
-  }
-  return 0;
-}
-
-
-
-void FUN_0002dba4()
-
-{
-  /* Was `int`, truncating FUN_000535fc's real pointer return. */
-  char *iVar1;
-  int iVar2;
-
-  iVar2 = 2;
-  do {
-    iVar1 = FUN_000535fc(iVar2);
-    *(byte *)(iVar1 + 0x15) = *(byte *)(iVar1 + 0x15) & 0x7f;
-    iVar2 = (iVar2 + 1) * 0x10000 >> 0x10;
-  } while (iVar2 < 0x100);
-  DAT_000853b8 = 0xffff;
-  return;
-}
-
-
-
-void FUN_0002dbf4(param_1)
-undefined1 * param_1;
-
-{
-  uint uVar1;
-  int iVar2;
-  int iVar3;
-  uint uVar4;
-  uint uVar5;
-  
-  uVar5 = 0;
-  param_1[2] = param_1[2] & 0x80;
-  *param_1 = DAT_00101740;
-  param_1[1] = DAT_00101741;
-  param_1[3] = DAT_0010142c;
-  uVar1 = 0;
-  if (DAT_0010142c != 0) {
-    uVar4 = 0;
-    do {
-      iVar3 = 0;
-      uVar1 = 0;
-      do {
-        iVar2 = (uVar1 + uVar4) * 7;
-        iVar3 = iVar3 + (((byte)(&DAT_000853c4)
-                                [(((uint)(byte)(&DAT_00101747)[iVar2] -
-                                  (uint)(byte)(&DAT_00101740)[iVar2]) * 3 -
-                                 (uint)(byte)(&DAT_00101741)[iVar2]) +
-                                 (uint)(byte)(&DAT_00101748)[iVar2]] & 3) << ((uVar1 & 0x7f) << 1));
-        uVar1 = uVar1 + 1 & 0xff;
-      } while (uVar1 < 4);
-      param_1[(uVar4 >> 2) + 4] = (char)iVar3;
-      uVar5 = uVar5 + 4;
-      uVar1 = (uint)DAT_0010142c;
-      uVar4 = uVar5 & 0xff;
-    } while (uVar4 < uVar1);
-  }
-  uVar5 = 0;
-  if (uVar1 != 0) {
-    uVar1 = 0;
-    do {
-      iVar3 = 0;
-      uVar4 = 0;
-      do {
-        iVar3 = iVar3 + (((byte)(&DAT_0010174a)[(uVar4 + uVar1) * 7] & 1) << uVar4);
-        uVar4 = uVar4 + 1 & 0xff;
-      } while (uVar4 < 8);
-      param_1[(uVar1 >> 3) + 0x14] = (char)iVar3;
-      uVar5 = uVar5 + 8;
-      uVar1 = uVar5 & 0xff;
-    } while (uVar1 < DAT_0010142c);
-  }
-  return;
-}
 
 
 
@@ -11580,7 +11487,7 @@ void FUN_000359f4()
 {
   DAT_0010194c = 0;
   DAT_000853d0 = 0xff;
-  FUN_0002dba4();
+  reset_npc_path_cache();
   return;
 }
 
@@ -26317,7 +26224,7 @@ int param_3;
    many callers already store the result through a pointer-typed local
    (e.g. `puVar4 = (undefined1 *)FUN_000535fc()`), so they got a
    truncated pointer back regardless of their own care. Confirmed as a
-   crash source in FUN_0002dba4 (level-load object-table reset). */
+   crash source in reset_npc_path_cache (level-load object-table reset). */
 void *FUN_000535fc(param_1)
 short param_1;
 
