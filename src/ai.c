@@ -500,7 +500,7 @@ LAB_0002ed50:
     }
     iVar6 = pop_pending_path_cache_slot(local_40);
     if (iVar6 != 0) {
-      uVar4 = FUN_0003431c();
+      uVar4 = compute_pathfind_search_radius();
       iVar6 = creature_find_path_to_tile(DAT_00101918,DAT_001013f8,*(byte *)((char *)DAT_0010190c + 2) >> 3 & 0xf,param_1,
                            param_2,param_3,uVar4);
       if (iVar6 != 0) {
@@ -3582,4 +3582,28 @@ LAB_000342b0:
     uVar1 = 1;
   }
   return uVar1;
+}
+
+
+// was FUN_0003431c -- computes the BFS search-radius parameter passed
+// to creature_find_path_to_tile: gated on the NPC being alive/awake
+// and having a nonzero stat-template byte 4 (with a quest-mode
+// exception), returns a value derived from that stat scaled by the
+// NPC's own current HP plus a further stat-template component, or 0
+// if any gate fails (which creature_find_path_to_tile presumably
+// treats as "search nothing"/immediate failure).
+int compute_pathfind_search_radius()
+
+{
+  char *iVar1;
+  uint uVar2;
+  
+  iVar1 = DAT_00101404;
+  if (((((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) && (*(char *)(DAT_00101404 + 4) != '\0')) &&
+      ((*(byte *)((char *)DAT_0010190c + 1) & 0x20) == 0)) &&
+     ((DAT_00201b68 != 6 || (*(char *)((char *)DAT_0010190c + 0x1a) != '\x16')))) {
+    uVar2 = Ordinal_2005(*(char *)(DAT_00101404 + 4),(uint)*(byte *)((char *)DAT_0010190c + 8) << 2);
+    return (uVar2 & 0xff) + (*(byte *)(iVar1 + 0x1c) >> 2 & 3);
+  }
+  return 0;
 }

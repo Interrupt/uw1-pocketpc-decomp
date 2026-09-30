@@ -9430,21 +9430,6 @@ void npc_wander_return_home_exact_tick()
 
 
 
-int FUN_0003431c()
-
-{
-  char *iVar1;
-  uint uVar2;
-  
-  iVar1 = DAT_00101404;
-  if (((((*(byte *)((char *)DAT_0010190c + 0xe) & 0xc0) == 0) && (*(char *)(DAT_00101404 + 4) != '\0')) &&
-      ((*(byte *)((char *)DAT_0010190c + 1) & 0x20) == 0)) &&
-     ((DAT_00201b68 != 6 || (*(char *)((char *)DAT_0010190c + 0x1a) != '\x16')))) {
-    uVar2 = Ordinal_2005(*(char *)(DAT_00101404 + 4),(uint)*(byte *)((char *)DAT_0010190c + 8) << 2);
-    return (uVar2 & 0xff) + (*(byte *)(iVar1 + 0x1c) >> 2 & 3);
-  }
-  return 0;
-}
 
 
 
